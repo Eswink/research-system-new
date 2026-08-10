@@ -1,11 +1,12 @@
 ---
 description: 涉及 Research Console、页面、UX 或 shadcn 组件时的强制技能路由
+globs: "apps/**/*.tsx, apps/**/*.ts, apps/web/**"
 alwaysApply: false
 ---
 
 # UI 技能路由
 
-在读取或修改任何 UI 前，先校验 `.cursor/skills.lock.yaml` 中所需全局 Skill 的安装树；缺失或摘要漂移时停止 UI 工作并报告，不静默升级。
+本规则仅作用于 UI 相关文件（`apps/**/*.tsx`、`apps/**/*.ts`、`apps/web/**`）触发的任务；非 UI 文件不加载。在读取或修改任何 UI 前，先校验 `.cursor/skills.lock.yaml` 中所需全局 Skill 的安装树；缺失或摘要漂移时停止 UI 工作并报告，不静默升级。
 
 | 任务类型 | 强制路由 |
 | --- | --- |

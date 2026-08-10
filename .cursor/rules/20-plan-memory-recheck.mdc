@@ -8,9 +8,10 @@ alwaysApply: true
 - 多文件、多阶段、存在架构权衡或需求歧义的任务必须先使用 Cursor Plan Mode 做只读调查和用户确认；未获批准不得实施。
 - 用户批准后，使用项目 `all-plan` Skill 将计划固化到 `.cursor/plans/tasks/`，并在 `.cursor/plans/ALL_PLAN.md` 建立唯一活动索引。
 - 项目计划是 Cursor Plan 的持久执行投影，不替代 Cursor Plan Mode，也不能绕过用户确认。
+- `all-plan`、`recheck`、`engineering-memory` 均为显式调用流程：由用户或已获用户批准的根代理显式触发，模型不会在任务中自动调用它们；未调用独立复检不得标记 `DONE`。
 - 每个 checklist 项只有在计划文件中存在对应证据后才能勾选。任务只有关联 `PASS` 或 `PASS_WITH_WARNINGS` 复检时才能标记 `DONE`。
 - 状态使用 `DRAFT`、`APPROVED`、`IN_PROGRESS`、`VERIFYING`、`BLOCKED`、`DONE`、`CANCELLED`、`REOPENED`；状态变化追加记录，不静默改写历史。
 - 完成前使用 `recheck` Skill 从原始验收条件重新核对；实现者的自报、聊天记录或待办状态都不是通过证据。
 - 复检结果仅允许 `PASS`、`PASS_WITH_WARNINGS`、`REVISE`、`BLOCK`。后两者必须把任务恢复为实施态；已完成任务失效时使用 `REOPENED` 并新增复检 attempt。
-- 只有已验证、可复现且有 provenance 的事实才能通过 `engineering-memory` Skill 写入 `.cursor/memory/`。不得保存自由聊天摘要、凭据、完整 Prompt 或未经验证的推断。
+- 只有已验证、可复现且有 provenance 的事实才能通过 `engineering-memory` Skill 写入 `.cursor/memory/`。工程记忆仅在存在可复用事实时创建；无可复用事实时在任务计划或复检中显式记录"无可复用事实"，不得伪造记忆条目。
 - 工程计划和记忆不得写入产品 `MemoryRecord`、`ResearchTask`、数据库、事件流、向量索引或 Runtime Context。

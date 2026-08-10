@@ -36,7 +36,19 @@ EXPECTED_RULES = {
     "30-ui-skill-routing.mdc",
     "40-python.mdc",
     "41-typescript.mdc",
+    "42-command-encoding.mdc",
+    "43-git-commit-policy.mdc",
+    "44-code-architecture.mdc",
     "50-contract-assets.mdc",
+}
+EXPECTED_RULE_METADATA = {
+    "30-ui-skill-routing.mdc": {"always_apply": False, "has_globs": True},
+    "40-python.mdc": {"always_apply": False, "has_globs": True},
+    "41-typescript.mdc": {"always_apply": False, "has_globs": True},
+    "42-command-encoding.mdc": {"always_apply": True, "has_globs": False},
+    "43-git-commit-policy.mdc": {"always_apply": True, "has_globs": False},
+    "44-code-architecture.mdc": {"always_apply": True, "has_globs": False},
+    "50-contract-assets.mdc": {"always_apply": False, "has_globs": True},
 }
 EXPECTED_SKILLS = {
     "repository-orientation",
@@ -175,6 +187,11 @@ def check_hooks() -> None:
         script = command.split()[-1]
         if not (ROOT / script).exists():
             add_error(f".cursor/hooks.json stop 脚本不存在: {script}")
+            continue
+        script_text = read_text(ROOT / script)
+        code_only = re.sub(r"\"\"\"(?:.|\n)*?\"\"\"|\'\'\'(?:.|\n)*?\'\'\'|#[^\n]*", "", script_text)
+        if re.search(r"git\s+(?:commit|push)\b", code_only):
+            add_error(f".cursor/hooks stop 脚本不得执行 git commit/push: {script}")
 
 
 def check_required_structure() -> None:
@@ -216,6 +233,14 @@ def check_rules() -> None:
             add_error(f"Rule alwaysApply 必须为 bool: {path.relative_to(ROOT)}")
         if always_apply is False and not metadata.get("description") and not metadata.get("globs"):
             add_error(f"非 always Rule 必须设置 description 或 globs: {path.relative_to(ROOT)}")
+        expected = EXPECTED_RULE_METADATA.get(path.name)
+        if expected is not None:
+            if always_apply is not expected["always_apply"]:
+                add_error(f"Rule alwaysApply 与期望不符: {path.name}: {always_apply!r} != {expected['always_apply']}")
+            if expected["has_globs"] and not metadata.get("globs"):
+                add_error(f"Rule 缺少 globs: {path.name}")
+            if not expected["has_globs"] and metadata.get("globs"):
+                add_error(f"Rule 不应设置 globs（应为 alwaysApply）: {path.name}")
 
     delegation_path = rule_root / "10-agent-delegation.mdc"
     delegation_text = read_text(delegation_path)
@@ -465,7 +490,8 @@ def check_plans_and_rechecks() -> None:
                     if recheck_meta.get("result") not in {"PASS", "PASS_WITH_WARNINGS"}:
                         add_error(f"DONE 任务复检未通过: {plan_id}: {recheck_meta.get('result')!r}")
             if not memory_entries:
-                add_error(f"DONE 任务缺少工程记忆引用: {plan_id}")
+                if "无可复用事实" not in body and "无可复用事实" not in (latest_recheck and read_text(resolve_repository_path(str(latest_recheck), path)) or ""):
+                    add_error(f"DONE 任务既无工程记忆引用，也未声明无可复用事实: {plan_id}")
             if "待填写" in body or "PENDING" in body:
                 add_error(f"DONE 任务仍包含占位内容: {plan_id}")
 

@@ -1,6 +1,6 @@
 ---
-description: Research OS TypeScript、React 和联合类型穷尽处理约束
-globs: "**/*.ts, **/*.tsx, **/*.mts, **/*.cts"
+description: Research OS TypeScript、React 和联合类型穷尽处理约束（作用于 M0 产品代码）
+globs: "apps/**/*.ts, apps/**/*.tsx, services/**/*.ts, services/**/*.tsx, packages/**/*.ts, packages/**/*.tsx, adapters/**/*.ts, adapters/**/*.tsx, tests/**/*.ts, tests/**/*.tsx, apps/**/*.mts, apps/**/*.cts, services/**/*.mts, services/**/*.cts, packages/**/*.mts, packages/**/*.cts"
 alwaysApply: false
 ---
 
@@ -22,12 +22,14 @@ const assertNever = (value: never): never => {
 
 ## 代码规模与复杂度阈值
 
-以下为硬性约束，超出必须拆分或重构，禁止通过关闭 lint 规则规避：
+以下为硬性约束，超出必须拆分或重构，禁止通过关闭 lint 规则规避。本规则仅作用于未来 M0 产品代码目录（`apps/ services/ packages/ adapters/ tests/`）。
 
 - 行长 ≤ 100（Prettier/Biome `printWidth = 100`）。
 - 函数体 ≤ 50 行。
 - 单文件 ≤ 300 行。
 - 圈复杂度 ≤ 15（ESLint `complexity`）。
 - `max-depth ≤ 4`、`max-params ≤ 3`、`max-nested-callbacks ≤ 10`。
+
+豁免：`apps/`、`packages/` 之外的构建脚本、生成代码与 Cursor 工程脚本不受上述阈值约束，但任何修改必须通过对应校验器。
 
 未来 M0 建包时在 `package.json`/ESLint 配置中落地上述 `max-*` 项，并配置 dependency-cruiser `forbidden` 跨层规则（见 `44-code-architecture.mdc`）；未配置前不得进入 M0 代码阶段。

@@ -14,7 +14,7 @@ alwaysApply: true
   - 工程记忆已写入（如有）；
   - ALL_PLAN 已完成勾选与状态更新（如任务计划收尾）。
 - 同一个任务只产生一个语义提交；收尾时序见 `.cursor/skills/all-plan/SKILL.md`，本规则不重复定义状态机。
-- 会话结束仍有未提交变更时，由 `.cursor/hooks/hooks.json` 的 `stop` 事件兜底生成快照提交（见 `.cursor/hooks/snapshot_commit.py`），消息固定为 `chore(worktree): snapshot uncommitted changes`，与本规则定义的语义提交可区分。
+- 会话结束仍有未提交变更时，`.cursor/hooks.json` 的 `stop` 事件仅审计并报告残留变更（见 `.cursor/hooks/snapshot_commit.py`），**不自动提交**；语义提交只能由 agent 在任务收尾完成后显式执行。中止（aborted/error）会话不触发任何提交。
 
 ## 提交信息（Conventional Commits）
 
@@ -37,7 +37,7 @@ docs(rules): add code scale limits to python and typescript rules
 
 - 禁止 `git add -A`、`git add .`、`git add --all`。
 - 按变更实际涉及的范围逐项添加：`AGENTS.md`、`docs/`、`schemas/`、`examples/`、`scripts/`、`.cursor/` 等目录或具体文件。
-- `.env*`、`*.pem`、`*.key`、凭据样例之外的任何含密钥模式的文件绝不入库。
+- `.env*`、`*.pem`、`*.key` 及内容含密钥模式的文件绝不入库。`.env.example` 是已跟踪的脱敏样例，可入库；真实凭据（含密钥值）无论文件名如何一律禁止。
 
 ## 提交前门禁
 
@@ -57,7 +57,7 @@ docs(rules): add code scale limits to python and typescript rules
 
 ## 推送与回滚
 
-- 默认不 push；是否推送由用户显式决定。
+- 默认不 push；是否推送由用户显式决定（用户明确授权的发布/同步任务除外）。
 - 未 push：回滚用 `git reset --soft HEAD~1`（保留工作区，可修改后重提）。
 - 已 push：回滚用 `git revert`，不改写公开历史。
-- 提交完成后，将 commit hash 记录到任务计划"影响报告"。
+- 提交完成后，在任务最终汇报中报告 commit hash；如需在任务计划"影响报告"中记录，应在本任务提交前写入，禁止提交后再次修改已提交的计划文件。

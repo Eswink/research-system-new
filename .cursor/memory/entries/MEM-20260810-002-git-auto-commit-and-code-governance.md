@@ -1,7 +1,7 @@
 ---
 id: MEM-20260810-002
 title: Git 自动提交策略与代码工程约束基线
-status: ACTIVE
+status: SUPERSEDED
 created_at: 2026-08-10
 updated_at: 2026-08-10
 scope: repository

@@ -5,17 +5,18 @@ alwaysApply: true
 
 # 代码架构与解耦约束
 
-代码规模与复杂度的量化阈值见 `40-python.mdc` 与 `41-typescript.mdc`；本规则定义语言无关的架构约束，两者配套执行。
+代码规模与复杂度的量化阈值见 `40-python.mdc` 与 `41-typescript.mdc`（仅作用于 M0 产品代码目录）；本规则定义语言无关的架构约束，两者配套执行。
 
 ## 单一职责
 
 - 一个模块只承担一个职责；职责混叠时拆分模块，而不是在模块内用开关分支掩盖。
-- 超过阈值（文件 > 300 行、函数 > 50 行）必须拆分；禁止"神类"（God Class）、超长文件与万用工具模块。
+- 超过 `40-python.mdc`/`41-typescript.mdc` 阈值（文件行数、函数行数）必须拆分；禁止"神类"（God Class）、超长文件与万用工具模块。
 
 ## 依赖方向
 
-- 默认分层：`domain → application → adapter/infra`。依赖只能自上而下，反向依赖视为错误。
-- Domain 不得 import 任何 adapter、框架、具体厂商类型或上游 Runtime 类型；只依赖自身契约与稳定标准库。
+- 源码依赖方向为 `adapter/infra → application → domain`；即 adapter 与基础设施实现依赖 application 与 domain，application 依赖 domain，domain 不依赖任何外层。反向依赖视为错误。
+- 调用/数据流方向为 `domain → application → adapter/infra`：领域逻辑通过端口（Port）向下游适配器发出请求。依赖方向与调用方向相反，二者不得混写。
+- Domain 不得 import 任何 adapter、框架、具体厂商类型或上游 Runtime 类型；只依赖自身契约与稳定标准库（与 `docs/architecture/SYSTEM_ARCHITECTURE.md` "Domain 不依赖具体实现"一致）。
 - 跨层交互走端口（Port）与适配器（Adapter）接口，禁止在调用链上直接穿透依赖。
 - 发现复杂度扩散、参数爆发、状态回溯或跨层泄漏时，先调整模块边界、状态机或数据流，不在调用链上继续打补丁。
 

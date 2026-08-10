@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""Cursor stop hook：会话结束后对未提交变更生成快照提交。
+"""Cursor stop hook：会话结束后审计并报告未提交变更。
 
 职责
 - 只在 agent 会话结束（stop 事件）时运行，作为 .cursor/rules/43-git-commit-policy.mdc
-  语义提交的兜底：无论会话是 completed / aborted / error，只要工作区残留未提交变更，
-  就生成一个固定消息的快照提交，防止变更堆积。
-- 仅本地提交，绝不 push。
+  语义提交的观测层：无论会话是 completed / aborted / error，只报告残留变更，
+  绝不执行 git add / git commit / git push。
+- 语义提交只允许由 agent 在任务复检通过、收尾完成后显式执行（见 43 规则）。
 
 范围与安全
-- 提交 tracked 文件的修改，以及白名单目录下新增的未跟踪文件；
-  白名单目录：.cursor/ docs/ schemas/ examples/ scripts/
-- 显式跳过敏感文件：.env*、*.pem、*.key、*.p12，以及内容含密钥模式的文件。
-- 白名单之外的未跟踪文件跳过并打印警告，绝不入库。
+- 仅读取 git 状态（git status --porcelain），按白名单目录与敏感文件规则分类：
+  - tracked 修改；
+  - 白名单目录（.cursor/ docs/ schemas/ examples/ scripts/）下的未跟踪文件；
+  - 敏感文件（.env*、*.pem、*.key、*.p12 及内容含密钥模式）与白名单外未跟踪文件，
+    仅提示，绝不 add。
 - 幂等：无变更时直接退出 0。
+- 绝不修改工作区、暂存区或提交历史；失败退出码 0/1 均不影响 agent 会话（fail-open）。
 
 调试
 - 直接执行 `python .cursor/hooks/snapshot_commit.py --debug` 可跳过 stdin 在真实工作区跑一次。
@@ -40,12 +42,6 @@ SENSITIVE_CONTENT_RE = re.compile(
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----"
 )
 
-COMMIT_MESSAGE = "chore(worktree): snapshot uncommitted changes"
-
-# 需要排除自动快照的分支名。当前仓库唯一分支 main 必须兜底，因此默认为空；
-# 未来如存在禁止自动提交的分支，在此扩展。
-SKIP_BRANCHES: tuple[str, ...] = ()
-
 
 def run_git(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -56,13 +52,6 @@ def run_git(*args: str) -> subprocess.CompletedProcess[str]:
         encoding="utf-8",
         errors="replace",
     )
-
-
-def current_branch() -> str | None:
-    result = run_git("branch", "--show-current")
-    if result.returncode != 0:
-        return None
-    return result.stdout.strip() or None
 
 
 def is_sensitive_path(relative: str) -> bool:
@@ -77,19 +66,17 @@ def is_sensitive_path(relative: str) -> bool:
     return False
 
 
-def parse_status_porcelain() -> tuple[list[str], list[str]]:
-    """返回 (可提交路径, 跳过路径)。
-
-    解析 git status --porcelain（非 -z）输出：
-    - 普通行 `XY path`，路径从第 4 列开始，可含空格；
-    - 重命名/复制行 `XY old -> new`，提交时只需 add new 路径；
-    - 未跟踪（??）仅当位于白名单目录时才纳入。
-    """
+def classify_status() -> dict[str, list[str]]:
+    """返回分类后的变更清单，只读，不执行任何写操作。"""
     result = run_git("status", "--porcelain")
+    categories: dict[str, list[str]] = {
+        "modified": [],
+        "allowed_untracked": [],
+        "sensitive": [],
+        "outside_whitelist": [],
+    }
     if result.returncode != 0:
-        return [], []
-    commitable: list[str] = []
-    skipped: list[str] = []
+        return categories
     for line in result.stdout.splitlines():
         if len(line) < 4:
             continue
@@ -99,16 +86,20 @@ def parse_status_porcelain() -> tuple[list[str], list[str]]:
             path = raw_path.split(" -> ", 1)[-1]
         else:
             path = raw_path
-        status = "untracked" if xy.startswith("??") else "modified"
-        if is_sensitive_path(path):
-            skipped.append(f"{path} (敏感文件)")
-            continue
-        parts = path.split("/", 1)
-        if status == "untracked" and not (len(parts) == 2 and parts[0] in ALLOWED_DIRS):
-            skipped.append(f"{path} (白名单目录之外)")
+        if xy.startswith("??"):
+            parts = path.split("/", 1)
+            if is_sensitive_path(path):
+                categories["sensitive"].append(path)
+            elif len(parts) == 2 and parts[0] in ALLOWED_DIRS:
+                categories["allowed_untracked"].append(path)
+            else:
+                categories["outside_whitelist"].append(path)
         else:
-            commitable.append(path)
-    return commitable, skipped
+            if is_sensitive_path(path):
+                categories["sensitive"].append(path)
+            else:
+                categories["modified"].append(path)
+    return categories
 
 
 def main() -> int:
@@ -122,29 +113,16 @@ def main() -> int:
     if event.get("hook_event_name") not in (None, "stop"):
         return 0
 
-    branch = current_branch() or "detached"
-    if branch in SKIP_BRANCHES:
-        print(f"[snapshot-commit] skip on branch {branch}", flush=True)
+    categories = classify_status()
+    total = sum(len(items) for items in categories.values())
+    if total == 0:
+        print("[snapshot-commit] no uncommitted changes", flush=True)
         return 0
 
-    commitable, skipped = parse_status_porcelain()
-    if not commitable:
-        print("[snapshot-commit] no changes to commit", flush=True)
-        return 0
-
-    add_result = run_git("add", "--", *commitable)
-    if add_result.returncode != 0:
-        print(f"[snapshot-commit] git add failed: {add_result.stderr.strip()}", flush=True)
-        return 1
-
-    commit_result = run_git("commit", "-m", COMMIT_MESSAGE)
-    if commit_result.returncode != 0:
-        print(f"[snapshot-commit] git commit failed: {commit_result.stderr.strip()}", flush=True)
-        return 1
-
-    print(f"[snapshot-commit] committed: {COMMIT_MESSAGE}", flush=True)
-    for item in skipped:
-        print(f"[snapshot-commit] skipped: {item}", flush=True)
+    print(f"[snapshot-commit] {total} uncommitted change(s) reported (audit only, no commit)", flush=True)
+    for label, items in categories.items():
+        for item in items:
+            print(f"[snapshot-commit] {label}: {item}", flush=True)
     return 0
 
 
