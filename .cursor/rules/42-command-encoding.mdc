@@ -1,0 +1,17 @@
+---
+description: 执行命令与读写文本文件时强制 UTF-8 编码环境，防止中文乱码
+alwaysApply: true
+---
+
+# 命令编码约束
+
+- 本仓库命令默认在 Windows PowerShell 7+（`pwsh`，本机 7.6.4）中执行；`&&`、`||` 链式运算符可用，但 `&&`/`||` 的右侧不能是赋值语句（解析错误），变量赋值先用 `;` 分隔，命令链再用 `&&`：
+  ```powershell
+  $env:PYTHONUTF8 = "1"; $env:PYTHONIOENCODING = "utf-8"; python -B .cursor/skills/governance-check/scripts/validate.py && Write-Output "ok"
+  ```
+- 执行会输出中文或处理中文文本的命令（Python 脚本、pip、git 等）前，必须确保 UTF-8 编码环境，等同 `PYTHONUTF8=1` + `PYTHONIOENCODING=utf-8`：
+  - PowerShell：`$env:PYTHONUTF8 = "1"; $env:PYTHONIOENCODING = "utf-8"`（控制台仍乱码时追加 `chcp 65001`）。
+  - CMD（仅当明确在 cmd.exe 中执行时）：`set PYTHONUTF8=1 && set PYTHONIOENCODING=utf-8`。
+- 新建或修改的脚本、数据文件一律以 UTF-8 保存和提交；禁止以 GBK/ANSI 编码写入仓库。
+- Python 读写文本文件必须显式传 `encoding="utf-8"`，不依赖平台默认编码（Windows 默认 GBK）。
+- 终端输出出现乱码时，先按上述环境变量修正编码再重试，不用转换脚本掩盖问题。

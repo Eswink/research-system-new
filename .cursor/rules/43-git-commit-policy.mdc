@@ -1,0 +1,63 @@
+---
+description: 任务完成后自动 git 提交的策略：触发时机、Conventional Commits、白名单 add、提交前门禁与回滚
+alwaysApply: true
+---
+
+# Git 提交策略
+
+任务收尾完成后自动执行一次 git 提交，避免变更堆积、便于回滚。仅本地 commit，默认不 push。
+
+## 触发时机
+
+- 任务满足以下全部条件后，由 agent 自动执行最终提交：
+  - 复检结果为 `PASS` 或 `PASS_WITH_WARNINGS`；
+  - 工程记忆已写入（如有）；
+  - ALL_PLAN 已完成勾选与状态更新（如任务计划收尾）。
+- 同一个任务只产生一个语义提交；收尾时序见 `.cursor/skills/all-plan/SKILL.md`，本规则不重复定义状态机。
+- 会话结束仍有未提交变更时，由 `.cursor/hooks/hooks.json` 的 `stop` 事件兜底生成快照提交（见 `.cursor/hooks/snapshot_commit.py`），消息固定为 `chore(worktree): snapshot uncommitted changes`，与本规则定义的语义提交可区分。
+
+## 提交信息（Conventional Commits）
+
+格式：`<type>(<scope>): <subject>`
+
+- `type` ∈ `feat | fix | refactor | docs | chore | test`
+- `scope`：按目录或领域命名，例如 `plans`、`governance`、`rules`、`docs`、`schemas`
+- `subject`：≤ 72 字符，祈使句，说明做了什么
+- 正文说明 why（可选，但涉及非平凡决策时必须写）
+
+示例：
+
+```text
+feat(plans): add PLAN-20260810-002 git auto-commit workflow
+
+docs(rules): add code scale limits to python and typescript rules
+```
+
+## 白名单 add
+
+- 禁止 `git add -A`、`git add .`、`git add --all`。
+- 按变更实际涉及的范围逐项添加：`AGENTS.md`、`docs/`、`schemas/`、`examples/`、`scripts/`、`.cursor/` 等目录或具体文件。
+- `.env*`、`*.pem`、`*.key`、凭据样例之外的任何含密钥模式的文件绝不入库。
+
+## 提交前门禁
+
+- 契约资产（`schemas/`、`examples/`、受引用文档）有变更时，先运行：
+
+  ```powershell
+  $env:PYTHONUTF8 = "1"; $env:PYTHONIOENCODING = "utf-8"; python -B scripts/validate_bundle.py
+  ```
+
+- Cursor 治理资产（`.cursor/`）有变更时，再运行：
+
+  ```powershell
+  $env:PYTHONUTF8 = "1"; $env:PYTHONIOENCODING = "utf-8"; python -B .cursor/skills/governance-check/scripts/validate.py
+  ```
+
+- 任一校验失败不得提交；先修复，再重新校验并提交。
+
+## 推送与回滚
+
+- 默认不 push；是否推送由用户显式决定。
+- 未 push：回滚用 `git reset --soft HEAD~1`（保留工作区，可修改后重提）。
+- 已 push：回滚用 `git revert`，不改写公开历史。
+- 提交完成后，将 commit hash 记录到任务计划"影响报告"。

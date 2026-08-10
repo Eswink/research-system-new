@@ -26,6 +26,7 @@ Rules 不能重新定义产品边界；Skills 不能覆盖 Rules；计划不能�
 | `.cursor/plans/tasks/` | 单任务计划、状态和追加式执行记录 | 产品 `ResearchTask` 持久化 |
 | `.cursor/plans/rechecks/` | 独立验收与复检 attempt | 自报完成 |
 | `.cursor/memory/` | 经证据提炼的工程事实与决策经验 | 自由聊天摘要或产品 Memory |
+| `.cursor/hooks.json` + `.cursor/hooks/` | 会话结束兜底快照提交 | 替代任务语义提交（语义提交见 `43-git-commit-policy.mdc`） |
 
 ## 标准闭环
 
@@ -37,6 +38,7 @@ Cursor Plan Mode 只读研究
 → recheck 独立复检
 → engineering-memory 提炼
 → ALL_PLAN 勾选
+→ 按 43-git-commit-policy.mdc 执行 git 提交（仅本地）
 → 到期或变更触发再复检
 ```
 

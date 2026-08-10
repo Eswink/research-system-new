@@ -19,3 +19,15 @@ const assertNever = (value: never): never => {
 - API DTO 与 Domain 类型分离；UI 状态、OpenHands 类型和具体模型厂商不得渗入 Domain 契约。
 - 状态转换集中定义并可测试，禁止在多个组件中散落字符串状态判断。
 - 涉及页面或组件时同时遵循 `30-ui-skill-routing.mdc`。
+
+## 代码规模与复杂度阈值
+
+以下为硬性约束，超出必须拆分或重构，禁止通过关闭 lint 规则规避：
+
+- 行长 ≤ 100（Prettier/Biome `printWidth = 100`）。
+- 函数体 ≤ 50 行。
+- 单文件 ≤ 300 行。
+- 圈复杂度 ≤ 15（ESLint `complexity`）。
+- `max-depth ≤ 4`、`max-params ≤ 3`、`max-nested-callbacks ≤ 10`。
+
+未来 M0 建包时在 `package.json`/ESLint 配置中落地上述 `max-*` 项，并配置 dependency-cruiser `forbidden` 跨层规则（见 `44-code-architecture.mdc`）；未配置前不得进入 M0 代码阶段。

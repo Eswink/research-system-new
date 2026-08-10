@@ -150,6 +150,33 @@ def tree_digest(root: Path) -> tuple[int, str]:
     return len(records), hasher.hexdigest()
 
 
+def check_hooks() -> None:
+    """校验 Cursor hooks 配置：hooks.json 合法且 stop 事件指向存在的脚本。"""
+    hooks_json = ROOT / ".cursor" / "hooks.json"
+    if not hooks_json.exists():
+        add_error("缺失 .cursor/hooks.json 自动提交配置")
+        return
+    hooks = load_yaml(hooks_json)
+    if not isinstance(hooks, dict) or hooks.get("version") != 1:
+        add_error(".cursor/hooks.json version 必须为 1")
+        return
+    hook_defs = hooks.get("hooks") or {}
+    if not isinstance(hook_defs, dict) or "stop" not in hook_defs:
+        add_error(".cursor/hooks.json 缺少 stop 事件")
+        return
+    for entry in hook_defs["stop"]:
+        if not isinstance(entry, dict):
+            add_error(".cursor/hooks.json stop 条目必须是对象")
+            continue
+        command = entry.get("command")
+        if not isinstance(command, str) or not command:
+            add_error(".cursor/hooks.json stop 条目缺少 command")
+            continue
+        script = command.split()[-1]
+        if not (ROOT / script).exists():
+            add_error(f".cursor/hooks.json stop 脚本不存在: {script}")
+
+
 def check_required_structure() -> None:
     required_files = {
         ".cursor/README.md",
@@ -161,6 +188,8 @@ def check_required_structure() -> None:
         path = ROOT / relative
         if not path.exists() or path.stat().st_size == 0:
             add_error(f"缺失或空治理文件: {relative}")
+
+    check_hooks()
 
     rule_root = CURSOR_ROOT / "rules"
     actual_rules = {path.name for path in rule_root.glob("*.mdc")}

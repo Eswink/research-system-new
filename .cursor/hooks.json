@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "stop": [
+      {
+        "command": "python .cursor/hooks/snapshot_commit.py",
+        "failClosed": false
+      }
+    ]
+  }
+}

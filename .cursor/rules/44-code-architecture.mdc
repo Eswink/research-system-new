@@ -1,0 +1,35 @@
+---
+description: 语言无关的工程级解耦约束：单一职责、依赖单向、反模式与 M0 工具链配置要求
+alwaysApply: true
+---
+
+# 代码架构与解耦约束
+
+代码规模与复杂度的量化阈值见 `40-python.mdc` 与 `41-typescript.mdc`；本规则定义语言无关的架构约束，两者配套执行。
+
+## 单一职责
+
+- 一个模块只承担一个职责；职责混叠时拆分模块，而不是在模块内用开关分支掩盖。
+- 超过阈值（文件 > 300 行、函数 > 50 行）必须拆分；禁止"神类"（God Class）、超长文件与万用工具模块。
+
+## 依赖方向
+
+- 默认分层：`domain → application → adapter/infra`。依赖只能自上而下，反向依赖视为错误。
+- Domain 不得 import 任何 adapter、框架、具体厂商类型或上游 Runtime 类型；只依赖自身契约与稳定标准库。
+- 跨层交互走端口（Port）与适配器（Adapter）接口，禁止在调用链上直接穿透依赖。
+- 发现复杂度扩散、参数爆发、状态回溯或跨层泄漏时，先调整模块边界、状态机或数据流，不在调用链上继续打补丁。
+
+## 反模式清单
+
+- 长参数列表：超过 `40-python.mdc`/`41-typescript.mdc` 参数上限时引入参数对象/值对象。
+- 状态字符串散落：状态机与状态转换集中定义并可测试，禁止在多个模块中散落字符串状态判断。
+- 枚举/联合类型变体扩散：对判别联合或 enum 的 `switch` 必须在 `default` 分支做穷尽检查（TS 用 `never`，Python 用显式错误），使新增变体在编译/测试期失败。
+- 不可测试的副作用：副作用集中在 adapter、port 实现或明确的 orchestration 边界；业务逻辑保持纯函数。
+
+## M0 工具链配置要求
+
+未来创建 `apps/`、`services/`、`packages/` 时，必须在引入业务代码前落地以下工具链，否则不得进入 M0 代码阶段：
+
+- Python：ruff（`line-length = 100`，启用 `C90`，mccabe `max-complexity = 10`）+ mypy `strict` + import-linter 边界契约（禁止 Domain → adapter/框架 的 import 规则）。
+- TypeScript：ESLint（`complexity`、`max-depth`、`max-params`、`max-nested-callbacks`、`max-lines-per-function`，取值见 `41-typescript.mdc`）+ dependency-cruiser `forbidden` 跨层规则（含环检测）。
+- 配置落地后以 lint/typecheck 通过作为提交门禁之一（见 `43-git-commit-policy.mdc`）。

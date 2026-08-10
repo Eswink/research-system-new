@@ -12,3 +12,16 @@ alwaysApply: false
 - 使用稳定 enum、UTC、UUID、`Decimal` 或最小货币单位；需要 digest 的结构必须确定性序列化。
 - 错误使用可分类、可测试的数据结构；禁止用裸字符串模拟 retry、policy 或状态机语义。
 - 新模块必须提供与职责相称的测试；真实付费 LLM、外部网络和真实凭据不得成为默认测试依赖。
+
+## 代码规模与复杂度阈值
+
+以下为硬性约束，超出必须拆分或重构，禁止通过关闭 lint 规则规避：
+
+- 行长 ≤ 100（未来 ruff 配置 `line-length = 100`）。
+- 函数体 ≤ 50 行。
+- 单文件 ≤ 300 行。
+- 圈复杂度 CCN ≤ 10（ruff mccabe `max-complexity = 10`）。
+- 函数参数 ≤ 5（超限使用参数对象/值对象）。
+- 嵌套块深度 ≤ 4。
+
+未来 M0 建包时在 `pyproject.toml` 落地 ruff 与 mypy `strict`，并配置 import-linter 边界契约（见 `44-code-architecture.mdc`）；未配置前不得进入 M0 代码阶段。

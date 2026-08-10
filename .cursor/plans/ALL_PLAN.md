@@ -13,6 +13,7 @@
 | Done | Plan | Status | Updated | Latest Recheck | Memory |
 | --- | --- | --- | --- | --- | --- |
 | [x] | [PLAN-20260810-001](tasks/PLAN-20260810-001-cursor-governance-bootstrap.md) | DONE | 2026-08-10 | [RECHECK-20260810-002](rechecks/RECHECK-20260810-002-cursor-governance-bootstrap.md) | [MEM-20260810-001](../memory/entries/MEM-20260810-001-repository-baseline.md) |
+| [x] | [PLAN-20260810-002](tasks/PLAN-20260810-002-git-auto-commit-and-code-governance.md) | DONE | 2026-08-10 | [RECHECK-20260810-003](rechecks/RECHECK-20260810-003-git-auto-commit-and-code-governance.md) | [MEM-20260810-002](../memory/entries/MEM-20260810-002-git-auto-commit-and-code-governance.md) |
 
 ## 最近完成
 
