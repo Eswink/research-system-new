@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/team-template.schema.json",
+  "title": "TeamTemplate",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id",
+    "roles"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "min_instances",
+          "max_instances"
+        ]
+      }
+    }
+  }
+}

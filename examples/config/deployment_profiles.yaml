@@ -1,0 +1,19 @@
+deployment_profiles:
+  local:
+    workflow_engine: local
+    policy_engine: native
+    workspace_backend: openhands_docker
+    multi_tenant: false
+
+  team:
+    workflow_engine: local_durable_queue
+    policy_engine: native
+    workspace_backend: openhands_agent_server_pool
+    secret_manager: external_adapter
+
+  hardened:
+    workflow_engine: temporal
+    policy_engine: opa
+    workspace_backend: remote_hardened
+    egress_proxy: required
+    otel_collector: required

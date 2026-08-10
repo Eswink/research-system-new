@@ -1,0 +1,34 @@
+policy:
+  default_effect: DENY
+
+  allow:
+    - capability: workspace.read
+      scope: project
+    - capability: artifact.read
+      scope: project
+    - capability: artifact.write
+      scope: run
+    - capability: literature.search
+      scope: approved_tool_providers
+    - capability: network.academic
+      scope: approved_domains
+
+  allow_with_constraints:
+    - capability: workspace.write.notes
+      constraints: {path_prefix: /notes}
+    - capability: workspace.write.code
+      constraints: {requires_workspace_lease: true, path_prefix: /code}
+    - capability: code.execute
+      constraints: {sandbox_required: true, max_seconds: 1800}
+
+  require_approval:
+    - capability: package.install
+    - capability: workspace.delete
+    - capability: external.publish
+    - action: TOOL_PACK_INSTALL_OR_UPDATE
+    - action: MODEL_OR_TOOLSET_CHANGE_DURING_RUN
+
+  deny:
+    - capability: network.public
+    - action: MOUNT_DOCKER_SOCKET
+    - action: PRIVILEGED_CONTAINER

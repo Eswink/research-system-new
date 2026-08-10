@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/handoff-bundle.schema.json",
+  "title": "HandoffBundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "producer",
+    "summary",
+    "digest"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "producer": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "structured_output": {},
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "known_failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "digest": {
+      "type": "string"
+    }
+  }
+}

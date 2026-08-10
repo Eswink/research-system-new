@@ -1,0 +1,87 @@
+# Research Protocol v0.2.2
+
+## 1. Protocol 是可编译定义
+
+```text
+ProtocolDefinition
+→ Compiler
+→ CompiledRunPlan
+→ Preflight
+→ RunManifest
+```
+
+Protocol 不直接执行 Agent。
+
+## 2. Macro Phases
+
+```text
+P0  Intake
+P1  Target Profiling
+P2  Domain & Literature Discovery
+P3  Evidence Modeling
+P4  Opportunity Exploration
+P5  Question/Hypothesis
+P6  Experiment Design
+P7  Experiment Execution
+P8  Result Analysis & Validation
+P9  Claim Assembly
+P10 Adversarial Evaluation
+P11 Deliverable Assembly
+P12 Reproducibility Audit
+```
+
+按项目裁剪。
+
+## 3. Phase Definition
+
+```text
+inputs
+outputs
+dependencies
+strategy
+required_roles
+required_capabilities
+task_contracts
+budget
+timeout
+retry
+gate
+stop_conditions
+```
+
+## 4. Compile
+
+Compiler 负责：
+
+- DAG/循环规则验证；
+- Role/Agent/Model 解析；
+- Tool/Capability 解析；
+- Workspace/Compute 规划；
+- Budget 聚合；
+- Gate 注入；
+- TaskContract materialization。
+
+## 5. Dry Run
+
+用户可在启动前查看：
+
+```text
+预计启动哪些 Role
+每个 Agent 使用哪个模型
+可调用哪些 Tool
+需要什么 Workspace/Compute
+预计成本
+哪些动作需要审批
+```
+
+## 6. Dynamic Role Activation
+
+TeamTemplate 只是候选池。
+
+Protocol + Budget + Task complexity 决定实际激活 Role。
+
+简单任务可把某些 Role 折叠为 Skill，避免 Agent proliferation。
+
+## 7. Negative Result
+
+科学负结果不是系统 FAILED。

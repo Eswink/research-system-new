@@ -1,0 +1,75 @@
+schema_version: 1
+verified_at: "2026-08-10"
+digest_algorithm: "sha256-path-content-lf-v1"
+digest_algorithm_description: >-
+  Sort files by POSIX relative path; normalize CRLF to LF for non-binary
+  content; hash each file; then hash "path\\0file_sha256\\n" records.
+
+skills:
+  - name: impeccable
+    required_for:
+      - frontend_design
+      - frontend_ux_review
+      - frontend_visual_quality
+    source:
+      repository: "https://github.com/pbakaus/impeccable"
+      tag: "skill-v4.0.4"
+      tag_object: "fb0942f57736841580a65088637f94da4a4ba87c"
+      revision: "9a949fb543d44cfb406f61bcab99d95d7f12cf1d"
+      license: "Apache-2.0"
+    installation_policy:
+      mode: "ALL_LISTED_INSTALLATIONS_MUST_MATCH"
+      note: >-
+        The global installer produced Agent-Skills-standard,
+        Claude-compatible, and Cursor-native variants with the same declared
+        version. Cursor may discover all three locations; each observed tree
+        is locked independently, and UI work must follow the runtime-reported
+        loaded skill base.
+    installations:
+      - provider: "agents_standard"
+        path: "~/.agents/skills/impeccable"
+        declared_version: "4.0.4"
+        expected_file_count: 152
+        tree_digest: "730ca9f0ffd6724c5a8dc454efb30fd3c7f07bffc6f71c0b75c44e792a881ff2"
+      - provider: "claude_compatible"
+        path: "~/.claude/skills/impeccable"
+        declared_version: "4.0.4"
+        expected_file_count: 147
+        tree_digest: "7ea30aafa2ab7fbea839e88c020483234af55f7c5ebe76baeb6a3fb64b06a76e"
+      - provider: "cursor_native"
+        path: "~/.cursor/skills/impeccable"
+        declared_version: "4.0.4"
+        expected_file_count: 147
+        tree_digest: "556b2d302767c6eacaed548adc8397856950db6bb21252016dac61f44c51fd85"
+    source_equivalence:
+      status: "UNVERIFIED_INSTALL_TRANSFORM"
+      note: >-
+        The installed Skill declares 4.0.4 and is pinned by its observed tree
+        digest. Its tree is not byte-equivalent to the release source after
+        newline normalization, so this is a reproducible local configuration,
+        not proof of complete upstream identity.
+
+  - name: shadcn
+    required_for:
+      - shadcn_project_initialization
+      - frontend_component_search
+      - frontend_component_implementation
+      - frontend_component_update
+    source:
+      repository: "https://github.com/shadcn-ui/ui"
+      path: "skills/shadcn"
+      revision: "6cd3f4c65c361ab6554e06a77e6a0af9cf8b6e37"
+      license: "MIT"
+    installation_policy:
+      mode: "ALL_LISTED_INSTALLATIONS_MUST_MATCH"
+    installations:
+      - provider: "claude_compatible"
+        path: "~/.claude/skills/shadcn"
+        expected_file_count: 15
+        tree_digest: "70af5ae5f3ba7f5177a1342a0161dc7093eaf168192cf85f132faa38614afbdf"
+    source_equivalence:
+      status: "VERIFIED_NORMALIZED_TREE"
+      note: >-
+        The installed tree matches the pinned upstream subtree after CRLF to
+        LF normalization. The shadcn CLI package version must additionally be
+        pinned in the future web lockfile before component installation.

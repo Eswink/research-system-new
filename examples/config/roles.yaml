@@ -1,0 +1,372 @@
+roles:
+  research_director:
+    role_type: ResearchDirector
+    category: management
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - research_state.read
+    - evidence.read
+    - experiment.read
+    - decision.propose
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  research_planner:
+    role_type: ResearchPlanner
+    category: management
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - research_state.read
+    - protocol.propose
+    - budget.read
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  supervisor:
+    role_type: Supervisor
+    category: management
+    default_model_profile: research_fast
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - run.read
+    - agent_run.read
+    - budget.read
+    - decision.propose
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  domain_researcher:
+    role_type: DomainResearcher
+    category: discovery
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - literature.search
+    - literature.read
+    - workspace.write.notes
+    - evidence.propose
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: notes_only
+  literature_scout:
+    role_type: LiteratureScout
+    category: discovery
+    default_model_profile: research_fast
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - literature.search
+    - literature.read
+    - citation.inspect
+    - workspace.write.notes
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: notes_only
+  evidence_curator:
+    role_type: EvidenceCurator
+    category: discovery
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - literature.read
+    - evidence.read
+    - evidence.write
+    - artifact.read
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  citation_graph_researcher:
+    role_type: CitationGraphResearcher
+    category: discovery
+    default_model_profile: research_fast
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - literature.search
+    - citation.inspect
+    - evidence.propose
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
+  opportunity_explorer:
+    role_type: OpportunityExplorer
+    category: exploration
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - evidence.read
+    - research_map.read
+    - idea.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  idea_generator:
+    role_type: IdeaGenerator
+    category: exploration
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - evidence.read
+    - idea.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  novelty_reviewer:
+    role_type: NoveltyReviewer
+    category: exploration
+    default_model_profile: critic_independent
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - literature.search
+    - literature.read
+    - evidence.read
+    - idea.review
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
+  skeptic:
+    role_type: Skeptic
+    category: exploration
+    default_model_profile: critic_independent
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - evidence.read
+    - idea.review
+    - experiment.read
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  methodologist:
+    role_type: Methodologist
+    category: experiment
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - evidence.read
+    - experiment_plan.read
+    - experiment_plan.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  experiment_designer:
+    role_type: ExperimentDesigner
+    category: experiment
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - experiment_plan.write
+    - dataset.read
+    - workspace.read
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  experiment_engineer:
+    role_type: ExperimentEngineer
+    category: experiment
+    default_model_profile: coding_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - workspace.read
+    - workspace.write.code
+    - code.execute
+    - git.diff
+    - experiment.execute
+    - artifact.read
+    - artifact.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: isolated_writable
+  result_analyst:
+    role_type: ResultAnalyst
+    category: experiment
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - experiment.read
+    - artifact.read
+    - statistics.execute
+    - evidence.propose
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
+  statistician:
+    role_type: Statistician
+    category: experiment
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - experiment.read
+    - statistics.execute
+    - evidence.propose
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
+  reproducibility_auditor:
+    role_type: ReproducibilityAuditor
+    category: evaluation
+    default_model_profile: critic_independent
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - workspace.read
+    - experiment.read
+    - artifact.read
+    - provenance.read
+    - audit.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
+  scientific_reviewer:
+    role_type: ScientificReviewer
+    category: evaluation
+    default_model_profile: critic_independent
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - research_state.read
+    - evidence.read
+    - experiment.read
+    - literature.search
+    - review.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
+  methodology_reviewer:
+    role_type: MethodologyReviewer
+    category: evaluation
+    default_model_profile: critic_independent
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - experiment_plan.read
+    - experiment.read
+    - evidence.read
+    - review.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  statistical_reviewer:
+    role_type: StatisticalReviewer
+    category: evaluation
+    default_model_profile: critic_independent
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - experiment.read
+    - statistics.execute
+    - review.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
+  evidence_reviewer:
+    role_type: EvidenceReviewer
+    category: evaluation
+    default_model_profile: critic_independent
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - claim.read
+    - evidence.read
+    - literature.read
+    - review.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
+  target_fit_reviewer:
+    role_type: TargetFitReviewer
+    category: evaluation
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - target.read
+    - claim.read
+    - artifact.read
+    - review.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  meta_reviewer:
+    role_type: MetaReviewer
+    category: evaluation
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - review.read
+    - evidence.read
+    - decision.propose
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: read_only
+  research_writer:
+    role_type: ResearchWriter
+    category: deliverable
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - claim.read
+    - evidence.read
+    - experiment.read
+    - artifact.read
+    - deliverable.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: deliverable_only
+  scientific_editor:
+    role_type: ScientificEditor
+    category: deliverable
+    default_model_profile: research_fast
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - deliverable.read
+    - deliverable.edit
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+    workspace_policy: deliverable_only
+  citation_auditor:
+    role_type: CitationAuditor
+    category: deliverable
+    default_model_profile: critic_independent
+    activation_default: REQUIRED_BY_PROTOCOL
+    requested_capabilities:
+    - deliverable.read
+    - claim.read
+    - evidence.read
+    - literature.read
+    - citation.validate
+    - audit.write
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only

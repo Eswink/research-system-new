@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/toolpack-manifest.schema.json",
+  "title": "ToolPackManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "source",
+    "resolved_revision",
+    "digest",
+    "license",
+    "tools",
+    "requested_capabilities"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "resolved_revision": {
+      "type": "string"
+    },
+    "digest": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "requested_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "network_domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+# Run State Machine v0.2.2
+
+## ResearchRun
+
+```text
+DRAFT
+→ COMPILING
+→ PREFLIGHT
+→ READY
+→ RUNNING
+↔ WAITING_FOR_APPROVAL
+↔ PAUSED
+→ DEGRADED
+→ SUCCEEDED
+→ FAILED
+→ CANCELLED
+```
+
+合法转换集中定义。
+
+## PhaseRun
+
+```text
+PENDING
+READY
+RUNNING
+WAITING
+PAUSED
+SUCCEEDED
+FAILED
+CANCELLED
+SKIPPED
+```
+
+## ResearchTask
+
+```text
+CREATED
+QUEUED
+LEASED
+RUNNING
+WAITING_FOR_TOOL
+WAITING_FOR_APPROVAL
+RETRY_SCHEDULED
+SUCCEEDED
+FAILED
+DEAD_LETTER
+CANCELLED
+```
+
+## AgentSession
+
+```text
+CREATED
+INITIALIZING
+RUNNING
+WAITING_FOR_APPROVAL
+PAUSED
+STUCK
+SUCCEEDED
+FAILED
+CANCELLED
+```
+
+## Transition Rules
+
+- `RUNNING` 前必须有 PASS Preflight 和 frozen Manifest；
+- `SUCCEEDED` 前必须满足 Task/Phase acceptance criteria；
+- `FAILED` 不等于科学负结果；
+- 运行中改变关键依赖需 Manifest Revision/Fork；
+- terminal state 默认不可回退。

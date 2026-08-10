@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/model-definition.schema.json",
+  "title": "ModelDefinition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "endpoint_id",
+    "model_name"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "endpoint_id": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "model_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": [
+          "USER_DECLARED",
+          "DISCOVERED",
+          "PROBED",
+          "ADMIN_OVERRIDE",
+          "RUNTIME_OBSERVED"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+autonomy_levels:
+  guarded:
+    level: GUARDED_AUTONOMOUS
+    approvals:
+      - PACKAGE_INSTALL
+      - NEW_NETWORK_DOMAIN
+      - BUDGET_INCREASE
+      - DESTRUCTIVE_WORKSPACE_ACTION
+      - TOOL_PACK_INSTALL_OR_UPDATE
+      - MODEL_OR_TOOLSET_CHANGE_DURING_RUN
+      - EXTERNAL_PUBLISH
+
+  supervised:
+    level: SUPERVISED
+    approve_all_side_effects: true
+
+  full_within_policy:
+    level: FULLY_AUTONOMOUS
+    hard_denies_remain_enforced: true

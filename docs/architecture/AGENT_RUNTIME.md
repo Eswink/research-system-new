@@ -1,0 +1,105 @@
+# Agent Runtime Architecture v0.2.2
+
+## 1. Port
+
+```python
+class AgentRuntime(Protocol):
+    async def create_session(self, spec: AgentSessionSpec) -> AgentSessionHandle: ...
+    async def run(self, session_id: str) -> AgentSessionResult: ...
+    async def pause(self, session_id: str) -> None: ...
+    async def cancel(self, session_id: str) -> None: ...
+    async def stream_events(self, session_id: str): ...
+    async def fork(self, session_id: str, spec: ForkSpec) -> AgentSessionHandle: ...
+```
+
+## 2. Session Spec
+
+```text
+TaskContract
+RoleDefinition
+AgentSpec
+Resolved Model
+Frozen Tool Set
+WorkspaceLease
+ContextSnapshot
+RuntimePolicy
+BudgetReservation
+RunManifest ref
+```
+
+## 3. MVP Adapter
+
+```text
+OpenHandsRuntimeAdapter
+→ OpenHands Agent
+→ Conversation
+→ Tools/MCP
+→ Workspace
+```
+
+## 4. Adapter Guardrails
+
+### Resume
+
+OpenHands 可以允许 LLM/context 在恢复时变化；Research OS 先验证 Manifest。模型或关键 Context 改变时必须 Fork/Revision。
+
+### Tool Set
+
+OpenHands 恢复要求工具名一致，因此 Session 的 Effective Tool Set 冻结。
+
+### Direct Tool Execution
+
+绕过 Agent loop 的直接执行必须经过 Research OS Policy Wrapper；高风险调用禁止直接透传。
+
+### Secrets
+
+OpenHands SecretRegistry 只能作为 runtime injection 辅助，不是 canonical secret manager。
+
+## 5. Status Mapping
+
+```text
+IDLE
+RUNNING
+WAITING_FOR_APPROVAL
+PAUSED
+STUCK
+SUCCEEDED
+FAILED
+CANCELLED
+```
+
+Adapter 必须把上游状态转换成 Research OS 状态。
+
+## 6. Stuck Handling
+
+结合 OpenHands stuck detector 与 Research OS progress signal：
+
+```text
+repeated actions
+repeated errors
+no artifact/progress
+monologue
+budget burn without progress
+```
+
+触发：
+
+```text
+retry
+replan
+switch agent
+require approval
+stop
+```
+
+## 7. Fork
+
+Fork 用于：
+
+- A/B model；
+- alternate strategy；
+- tool-set change；
+- debug；
+- review challenge。
+
+Fork 必须创建新的 Domain lineage，不覆盖源 Run。

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/agent-spec.schema.json",
+  "title": "AgentSpec",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id",
+    "role",
+    "model_binding"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "model_binding": {
+      "type": "object",
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "EXPLICIT_MODEL",
+            "MODEL_PROFILE",
+            "INHERIT"
+          ]
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

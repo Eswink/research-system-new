@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/role-definition.schema.json",
+  "title": "RoleDefinition",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id",
+    "role_type"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "role_type": {
+      "type": "string"
+    },
+    "default_model_profile": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+team_templates:
+  lean:
+    display_name: Lean
+    roles:
+      research_director: {min_instances: 1, max_instances: 1}
+      domain_researcher: {min_instances: 1, max_instances: 1}
+      literature_scout: {min_instances: 1, max_instances: 2}
+      evidence_curator: {min_instances: 1, max_instances: 1}
+      experiment_designer: {min_instances: 1, max_instances: 1}
+      experiment_engineer: {min_instances: 1, max_instances: 1}
+      result_analyst: {min_instances: 1, max_instances: 1}
+      scientific_reviewer: {min_instances: 1, max_instances: 2}
+      research_writer: {min_instances: 1, max_instances: 1}
+
+  standard:
+    display_name: Standard
+    roles:
+      research_director: {min_instances: 1, max_instances: 1}
+      research_planner: {min_instances: 1, max_instances: 1}
+      domain_researcher: {min_instances: 1, max_instances: 1}
+      literature_scout: {min_instances: 2, max_instances: 4}
+      evidence_curator: {min_instances: 1, max_instances: 2}
+      opportunity_explorer: {min_instances: 1, max_instances: 2}
+      idea_generator: {min_instances: 2, max_instances: 4}
+      skeptic: {min_instances: 1, max_instances: 2}
+      methodologist: {min_instances: 1, max_instances: 1}
+      experiment_designer: {min_instances: 1, max_instances: 1}
+      experiment_engineer: {min_instances: 1, max_instances: 2}
+      result_analyst: {min_instances: 1, max_instances: 2}
+      statistician: {min_instances: 1, max_instances: 1}
+      scientific_reviewer: {min_instances: 2, max_instances: 4}
+      evidence_reviewer: {min_instances: 1, max_instances: 1}
+      meta_reviewer: {min_instances: 1, max_instances: 1}
+      research_writer: {min_instances: 1, max_instances: 1}
+      citation_auditor: {min_instances: 1, max_instances: 1}
+
+  rigorous:
+    display_name: Rigorous
+    extends: standard
+    roles:
+      novelty_reviewer: {min_instances: 1, max_instances: 2}
+      methodology_reviewer: {min_instances: 1, max_instances: 2}
+      statistical_reviewer: {min_instances: 1, max_instances: 1}
+      target_fit_reviewer: {min_instances: 1, max_instances: 1}
+      reproducibility_auditor: {min_instances: 1, max_instances: 1}
+      scientific_editor: {min_instances: 1, max_instances: 1}

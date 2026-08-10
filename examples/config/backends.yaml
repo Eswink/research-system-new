@@ -1,0 +1,27 @@
+runtimes:
+  primary:
+    type: OPENHANDS_NATIVE
+    workspace_backend: openhands_docker
+    policy_wrapped_direct_tools: true
+
+workflow_engines:
+  local:
+    type: LOCAL
+  local_durable_queue:
+    type: LOCAL_POSTGRES_QUEUE
+  temporal:
+    type: TEMPORAL
+    enabled: false
+
+workspace_backends:
+  openhands_docker:
+    type: OPENHANDS_DOCKER
+    trust_profile: SANDBOXED_STANDARD
+  openhands_agent_server_pool:
+    type: OPENHANDS_REMOTE
+    trust_profile: SANDBOXED_RESTRICTED
+  remote_hardened:
+    type: REMOTE_HARDENED
+    trust_profile: HARDENED_UNTRUSTED
+
+future_optional_runtimes: []

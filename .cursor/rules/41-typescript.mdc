@@ -1,0 +1,21 @@
+---
+description: Research OS TypeScript、React 和联合类型穷尽处理约束
+globs: "**/*.ts, **/*.tsx, **/*.mts, **/*.cts"
+alwaysApply: false
+---
+
+# TypeScript 约束
+
+- 所有 import 放在模块顶部。除非存在严格的循环依赖且在代码中说明边界原因，不得在函数体、类型注解或接口字段中内联 import。
+- 默认使用函数式模块、纯转换、判别联合和组合；React 使用函数组件，不在 UI 中复制后端 Canonical State。
+- 对 discriminated union 或 enum 的 `switch` 必须在 `default` 分支执行 `never` 穷尽检查，使新增 variant 在编译期失败。
+
+```typescript
+const assertNever = (value: never): never => {
+  throw new Error(`Unhandled variant: ${String(value)}`);
+};
+```
+
+- API DTO 与 Domain 类型分离；UI 状态、OpenHands 类型和具体模型厂商不得渗入 Domain 契约。
+- 状态转换集中定义并可测试，禁止在多个组件中散落字符串状态判断。
+- 涉及页面或组件时同时遵循 `30-ui-skill-routing.mdc`。

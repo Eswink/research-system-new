@@ -1,0 +1,20 @@
+---
+description: 涉及 Research Console、页面、UX 或 shadcn 组件时的强制技能路由
+alwaysApply: false
+---
+
+# UI 技能路由
+
+在读取或修改任何 UI 前，先校验 `.cursor/skills.lock.yaml` 中所需全局 Skill 的安装树；缺失或摘要漂移时停止 UI 工作并报告，不静默升级。
+
+| 任务类型 | 强制路由 |
+| --- | --- |
+| 页面、流程、信息架构、视觉方向、交互设计 | 先读取并遵循全局 `impeccable`；按其路由进入 `shape`、`new-work` 或相应命令 |
+| UX 审查、可访问性、响应式、性能、视觉收口 | 使用 `impeccable` 的 `critique`、`audit`、`optimize`、`harden` 或 `polish` |
+| shadcn 初始化、组件检索、文档、添加、组合、更新或修复 | 读取并遵循全局 `shadcn`；先读取项目上下文，再 search/docs/view，修改前先 dry-run/diff |
+| 页面设计并实现 | `Impeccable 定义方向与质量底线 → shadcn 实现组件 → Impeccable audit/polish` |
+
+- Research Console 属于 Impeccable 的 `Operate` 模式；密度、扫描性、状态可见性、审批与错误恢复优先于装饰。
+- 纯设计任务不强制运行 shadcn；纯组件机械修复不重新设计，但如果引入新的 UX/视觉决策，必须先回到 Impeccable。
+- 使用现有组件和语义 token，禁止绕过 shadcn 组件约束手写等价 UI。
+- registry 必须明确；未经用户批准不得使用 `--overwrite`。未来 `apps/web` 建立后，shadcn CLI 的确切包版本必须由 `packageManager` 与 lockfile 固定，浮动 `@latest` 只作为上游 Skill 示例，不是本项目供应链许可。

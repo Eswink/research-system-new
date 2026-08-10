@@ -1,0 +1,36 @@
+task_contracts:
+  domain_discovery:
+    version: 1.0.0
+    purpose: Build a scoped domain map and source set.
+    required_capabilities:
+      - literature.search
+      - literature.read
+    output_schema: domain_discovery_output_v1
+    acceptance_criteria:
+      - type: SCHEMA_VALID
+      - type: ARTIFACT_EXISTS
+        artifact: source_set
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 10
+    retry_policy:
+      max_attempts: 3
+      retryable_categories: [MODEL_RATE_LIMIT, TOOL_TIMEOUT]
+
+  experiment_execution:
+    version: 1.0.0
+    purpose: Execute a preregistered experiment in an isolated workspace.
+    required_capabilities:
+      - workspace.read
+      - workspace.write.code
+      - code.execute
+      - artifact.write
+    output_schema: experiment_run_output_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: metrics
+      - type: TEST_PASSES
+      - type: POLICY_COMPLIANT
+    idempotency_scope: experiment_spec_digest
+    retry_policy:
+      max_attempts: 2
+      retryable_categories: [WORKER_CRASH, MODEL_RATE_LIMIT]

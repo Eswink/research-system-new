@@ -1,0 +1,20 @@
+budgets:
+  low_cost:
+    model:
+      max_input_tokens: 1000000
+      max_output_tokens: 150000
+      max_requests: 500
+      max_cost_usd: null
+    compute:
+      max_cpu_hours: 4
+      max_gpu_hours: 0
+    tools:
+      max_requests: 1000
+    wall_clock:
+      max_hours: 6
+    parallelism:
+      max_agent_sessions: 4
+    thresholds:
+      soft_warning_ratio: 0.70
+      approval_ratio: 0.90
+      hard_stop_ratio: 1.00

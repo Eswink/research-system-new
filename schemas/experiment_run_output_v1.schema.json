@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/experiment_run_output_v1.schema.json",
+  "title": "ExperimentRunOutputV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "experiment_run_id",
+    "status",
+    "artifact_refs",
+    "metrics"
+  ],
+  "properties": {
+    "experiment_run_id": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "SUCCEEDED",
+        "FAILED",
+        "NEGATIVE_RESULT"
+      ]
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metrics": {
+      "type": "object"
+    },
+    "failure_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

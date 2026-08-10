@@ -1,0 +1,22 @@
+memory_policy:
+  session:
+    auto_write: true
+    expires_after_days: 7
+
+  run:
+    auto_write_types:
+      - DECISION
+      - FAILURE
+      - OPEN_QUESTION
+
+  project:
+    require_provenance: true
+    require_gate_for_types:
+      - FACT
+      - LESSON
+      - NEGATIVE_RESULT
+    review_after_days: 90
+
+  vector_index:
+    canonical: false
+    rebuildable: true

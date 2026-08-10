@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/llm-endpoint.schema.json",
+  "title": "LLMEndpoint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "protocol",
+    "base_url",
+    "credential_ref"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protocol": {
+      "const": "OPENAI_COMPATIBLE"
+    },
+    "base_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "credential_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "request_timeout_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3600
+    },
+    "max_retries": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "concurrency_limit": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

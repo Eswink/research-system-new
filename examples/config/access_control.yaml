@@ -1,0 +1,14 @@
+access_control:
+  roles:
+    project_owner:
+      allow: [project.manage, run.manage, model.assign, tool.approve, approval.decide]
+    researcher:
+      allow: [project.read, run.create, run.intervene, artifact.read]
+    reviewer:
+      allow: [project.read, review.write, artifact.read]
+    observer:
+      allow: [project.read, run.read]
+
+  agent_principals:
+    inherit_human_permissions: false
+    use_task_scoped_capabilities: true

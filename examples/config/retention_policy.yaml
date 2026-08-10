@@ -1,0 +1,8 @@
+retention_policy:
+  domain_events: {days: 365}
+  runtime_telemetry: {days: 30, capture_content: false}
+  source_documents: {days: 180, export_allowed: false}
+  experiment_artifacts: {days: 365}
+  deliverables: {days: 365}
+  quarantined_artifacts: {days: 14}
+  legal_hold_supported: true

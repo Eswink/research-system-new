@@ -1,0 +1,35 @@
+agents:
+  director:
+    role: research_director
+    model_binding: {type: MODEL_PROFILE, value: research_strong}
+
+  domain_a:
+    role: domain_researcher
+    model_binding: {type: EXPLICIT_MODEL, value: research_alpha}
+
+  scout_a:
+    role: literature_scout
+    model_binding: {type: EXPLICIT_MODEL, value: research_alpha}
+
+  scout_b:
+    role: literature_scout
+    model_binding: {type: EXPLICIT_MODEL, value: reviewer_gamma}
+
+  engineer:
+    role: experiment_engineer
+    model_binding: {type: EXPLICIT_MODEL, value: coding_beta}
+
+  reviewer_a:
+    role: scientific_reviewer
+    model_binding: {type: EXPLICIT_MODEL, value: reviewer_gamma}
+    workspace_policy: read_only
+
+  reviewer_b:
+    role: scientific_reviewer
+    model_binding: {type: EXPLICIT_MODEL, value: research_alpha}
+    workspace_policy: read_only
+
+  writer:
+    role: research_writer
+    model_binding: {type: MODEL_PROFILE, value: research_strong}
+    workspace_policy: deliverable_only

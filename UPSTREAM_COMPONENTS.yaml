@@ -1,0 +1,56 @@
+audit_date: "2026-08-10"
+release: "v0.2.2"
+
+components:
+  - id: openhands_sdk
+    source: "https://github.com/OpenHands/software-agent-sdk"
+    decision: dependency_adapter
+    role: primary_generic_agent_runtime
+    controls:
+      - pin_exact_version
+      - contract_tests
+      - policy_wrap_direct_tool_execution
+      - manifest_check_on_resume
+      - freeze_session_tool_set
+      - pin_plugin_revision
+
+  - id: temporal
+    source: "https://github.com/temporalio/temporal"
+    decision: later_adapter
+    role: durable_workflow
+
+  - id: opa
+    source: "https://github.com/open-policy-agent/opa"
+    decision: optional_adapter
+    role: centralized_policy_engine
+
+  - id: opentelemetry
+    source: "https://opentelemetry.io/"
+    decision: dependency_standard
+    role: telemetry
+    controls:
+      - genai_content_capture_off_by_default
+
+  - id: mcp
+    source: "https://modelcontextprotocol.io/"
+    decision: protocol
+    role: research_tool_integration
+    controls:
+      - roots_not_access_control
+      - scoped_authorization
+      - schema_version_tracking
+
+  - id: swe_rex
+    source: "https://github.com/SWE-agent/SWE-ReX"
+    decision: optional_adapter
+    role: remote_parallel_execution
+
+  - id: cline_kanban
+    source: "https://github.com/cline/kanban"
+    decision: ux_algorithm_donor
+    role: task_worktree_reference
+
+  - id: claw_ai_lab
+    source: "https://github.com/Claw-AI-Lab/Claw-AI-Lab"
+    decision: research_ux_donor
+    role: research_console_reference

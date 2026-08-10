@@ -1,0 +1,21 @@
+model_profiles:
+  research_strong:
+    primary: research_alpha
+    fallback:
+      - reviewer_gamma
+
+  research_fast:
+    primary: reviewer_gamma
+    fallback:
+      - research_alpha
+
+  coding_strong:
+    primary: coding_beta
+    hard_capabilities:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+
+  critic_independent:
+    primary: reviewer_gamma
+    fallback:
+      - research_alpha

@@ -1,0 +1,10 @@
+llm_endpoints:
+  main:
+    name: Main Relay
+    protocol: OPENAI_COMPATIBLE
+    base_url: https://xxx.com/api/v1
+    credential_ref: llm_main_key
+    request_timeout_seconds: 120
+    max_retries: 2
+    concurrency_limit: 8
+    enabled: true
