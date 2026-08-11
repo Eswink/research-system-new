@@ -23,6 +23,7 @@
 
 - `architecture/SYSTEM_ARCHITECTURE.md`
 - `architecture/DOMAIN_MODEL.md`
+- `architecture/DETERMINISTIC_SERIALIZATION.md`
 - `architecture/ROLE_MODEL.md`
 - `architecture/TASK_HANDOFF.md`
 - `architecture/AGENT_RUNTIME.md`

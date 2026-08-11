@@ -12,13 +12,13 @@
 
 ## M1 / P0 — Validation & Domain
 
-- [ ] bootstrap validation script in CI
-- [ ] Domain entities/enums/invariants
-- [ ] JSON/YAML schema loaders
-- [ ] Run/Phase/Task state machines
-- [ ] RunManifest + Revision + digest
-- [ ] append-only Usage Ledger
-- [ ] Artifact digest/verification
+- [x] bootstrap validation script in CI
+- [x] Domain entities/enums/invariants
+- [x] JSON/YAML schema loaders
+- [x] Run/Phase/Task state machines
+- [x] RunManifest + Revision + digest
+- [x] append-only Usage Ledger
+- [x] Artifact digest/verification
 
 ## M3 / P0 — Model Relay
 

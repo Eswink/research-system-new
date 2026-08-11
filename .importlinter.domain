@@ -1,0 +1,21 @@
+[importlinter]
+root_package = packages
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:domain-purity]
+name = Domain kernel purity
+type = forbidden
+source_modules =
+    packages.domain
+forbidden_modules =
+    jsonschema
+    yaml
+    fastapi
+    sqlalchemy
+    temporalio
+    openhands
+    lite_llm
+    litellm
+    openai
+    anthropic

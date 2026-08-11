@@ -316,6 +316,9 @@ def check_yaml_and_references() -> None:
 
     # Profiles.
     for pid, profile in profiles.items():
+        validate_strict_instance(
+            "model-profile.schema.json", {"id": pid, **profile}, f"ModelProfile/{pid}"
+        )
         refs = [profile.get("primary"), *(profile.get("fallback") or [])]
         for ref in refs:
             if ref and ref not in models:
@@ -504,6 +507,7 @@ def check_json_schemas() -> None:
         "handoff-bundle.schema.json",
         "llm-endpoint.schema.json",
         "model-definition.schema.json",
+        "model-profile.schema.json",
         "preflight-report.schema.json",
         "protocol.schema.json",
         "role-definition.schema.json",

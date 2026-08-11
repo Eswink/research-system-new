@@ -48,6 +48,7 @@ python_version = "3.12"
 strict = true
 warn_unused_configs = true
 files = [
+    "packages",
     ".cursor/hooks/common.py",
     ".cursor/hooks/secret_guard.py",
     ".cursor/hooks/shell_guard.py",
@@ -62,4 +63,5 @@ exclude = ["^tests/architecture/python/fixtures/invalid/"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+pythonpath = ["."]
 addopts = ["--strict-config", "--strict-markers"]
