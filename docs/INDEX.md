@@ -70,12 +70,14 @@
 ## Reliability
 
 - `reliability/RUN_STATE_MACHINE.md`
+- `reliability/CIRCUIT_BREAKER.md`
 - `reliability/FAILURE_MODEL.md`
 
 ## Integrations
 
 - `integration/LLM_ENDPOINTS.md`
 - `integration/MODEL_GATEWAY.md`
+- `integration/MODEL_PROBE.md`
 - `integration/OPENHANDS_ADAPTER.md`
 - `integration/MCP_TOOL_PROVIDERS.md`
 - `integration/POLICY_ENGINE.md`

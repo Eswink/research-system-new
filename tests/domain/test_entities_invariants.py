@@ -36,6 +36,8 @@ def test_failure_categories_cover_document() -> None:
         "CONFIGURATION",
         "MODEL_AUTH",
         "MODEL_RATE_LIMIT",
+        "MODEL_TIMEOUT",
+        "MODEL_RELAY_UNAVAILABLE",
         "MODEL_INCOMPATIBLE",
         "MODEL_DRIFT",
         "TOOL_UNAVAILABLE",

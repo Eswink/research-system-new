@@ -22,16 +22,16 @@
 
 ## M3 / P0 — Model Relay
 
-- [ ] LLMEndpoint CRUD + encrypted credential ref
-- [ ] manual ModelDefinition
-- [ ] endpoint test
-- [ ] optional model discovery
-- [ ] capability probe
-- [ ] ModelEligibilityPolicy
-- [ ] endpoint health/circuit breaker
-- [ ] ModelRuntimeFingerprint
-- [ ] fallback audit
-- [ ] secret redaction
+- [x] LLMEndpoint CRUD + encrypted credential ref
+- [x] manual ModelDefinition
+- [x] endpoint test
+- [x] optional model discovery
+- [x] capability probe
+- [x] ModelEligibilityPolicy
+- [x] endpoint health/circuit breaker
+- [x] ModelRuntimeFingerprint
+- [x] fallback audit
+- [x] secret redaction
 
 ## M4 / P0 — Role / Team / Task
 

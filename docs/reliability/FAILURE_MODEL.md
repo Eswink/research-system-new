@@ -6,6 +6,8 @@
 CONFIGURATION
 MODEL_AUTH
 MODEL_RATE_LIMIT
+MODEL_TIMEOUT
+MODEL_RELAY_UNAVAILABLE
 MODEL_INCOMPATIBLE
 MODEL_DRIFT
 TOOL_UNAVAILABLE
@@ -28,6 +30,8 @@ SCIENTIFIC_NEGATIVE_RESULT
 | Category | Auto Retry | Notes |
 |---|---|---|
 | MODEL_RATE_LIMIT | Yes | backoff/jitter |
+| MODEL_TIMEOUT | Yes | backoff/jitter |
+| MODEL_RELAY_UNAVAILABLE | Yes | 5xx 中转站故障，backoff/jitter |
 | TOOL_TIMEOUT | Conditional | only idempotent |
 | WORKER_LOST | Yes | lease expiry/dedupe |
 | MODEL_INCOMPATIBLE | No | preflight/config fix |

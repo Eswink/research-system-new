@@ -8,6 +8,8 @@
 | mypy 2.3.0 | MIT; artifacts pinned in `uv.lock` | ADOPTED strict typecheck tooling |
 | pytest 9.1.1 | MIT; artifacts pinned in `uv.lock` | ADOPTED test tooling |
 | import-linter 2.13 | BSD-2-Clause; artifacts pinned in `uv.lock` | ADOPTED Python architecture tooling |
+| httpx 0.28.1 | BSD-3-Clause; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED OpenAI-compatible HTTP transport |
+| tenacity 9.1.4 | Apache-2.0; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED retry/backoff policy |
 | pnpm 9.15.1 | MIT; runtime pinned by `packageManager` and CI | ADOPTED package manager |
 | TypeScript 6.0.3 | Apache-2.0; exact package + sha512 integrity in `pnpm-lock.yaml` | ADOPTED typecheck tooling |
 | ESLint / `@eslint/js` 10.8.1 / 10.0.1 | MIT; exact packages + sha512 integrity in `pnpm-lock.yaml` | ADOPTED lint tooling |

@@ -1,0 +1,15 @@
+endpoint_config_digest: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+requested_model_id: model-alpha
+returned_model_identifier: model-alpha
+system_fingerprint: fp_example_001
+selected_response_metadata:
+  x-request-id: req_example_001
+  x-ratelimit-limit-requests: "120"
+probe_suite_digest: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+calibration_prompt_version: probe-suite-v1
+calibration_result_digest: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+observed_capabilities:
+  - CHAT
+  - STREAMING
+  - TOOL_CALLING_NATIVE
+captured_at: "2026-08-11T12:00:00Z"

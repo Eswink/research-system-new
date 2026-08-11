@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 from adapters.contracts.base import load_flat_collection, load_yaml, mapping_under
+from packages.domain.circuit_breaker import CircuitBreakerConfig
 from packages.domain.enums import CapabilitySource, CapabilityStatus, ModelCapability
-from packages.domain.models import CapabilityAssertion, LLMEndpoint, ModelDefinition, ModelProfile
+from packages.domain.models import (
+    CapabilityAssertion,
+    EndpointDiscoveryConfig,
+    LLMEndpoint,
+    ModelDefinition,
+    ModelProfile,
+)
 
 
 def load_llm_endpoints(relative_path: str) -> dict[str, LLMEndpoint]:
@@ -12,6 +19,8 @@ def load_llm_endpoints(relative_path: str) -> dict[str, LLMEndpoint]:
     for key, raw in load_flat_collection(
         relative_path, "llm_endpoints", "llm-endpoint.schema.json"
     ).items():
+        discovery_raw = raw.get("discovery") or {}
+        circuit_raw = raw.get("circuit_breaker") or {}
         collection[key] = LLMEndpoint(
             id=raw["id"],
             name=raw["name"],
@@ -22,6 +31,19 @@ def load_llm_endpoints(relative_path: str) -> dict[str, LLMEndpoint]:
             request_timeout_seconds=raw.get("request_timeout_seconds", 60),
             max_retries=raw.get("max_retries", 3),
             concurrency_limit=raw.get("concurrency_limit", 4),
+            discovery=EndpointDiscoveryConfig(
+                enabled=bool(discovery_raw.get("enabled", False)),
+                allow_models=tuple(str(item) for item in (discovery_raw.get("allow_models") or [])),
+            )
+            if discovery_raw
+            else None,
+            circuit_breaker=CircuitBreakerConfig(
+                failure_threshold=int(circuit_raw.get("failure_threshold", 5)),
+                open_timeout_seconds=int(circuit_raw.get("open_timeout_seconds", 60)),
+                half_open_max_probes=int(circuit_raw.get("half_open_max_probes", 1)),
+            )
+            if circuit_raw
+            else None,
         )
     return collection
 

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/endpoint-health.schema.json",
+  "title": "EndpointHealthRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["endpoint_id", "state", "recorded_at"],
+  "properties": {
+    "endpoint_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "enum": ["UNKNOWN", "HEALTHY", "DEGRADED", "OPEN_CIRCUIT", "DISABLED"]
+    },
+    "circuit_state": {
+      "type": ["string", "null"],
+      "enum": ["CLOSED", "OPEN", "HALF_OPEN", null]
+    },
+    "consecutive_failures": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "last_error_category": {
+      "type": ["string", "null"],
+      "enum": [
+        "CONFIGURATION",
+        "MODEL_AUTH",
+        "MODEL_RATE_LIMIT",
+        "MODEL_TIMEOUT",
+        "MODEL_RELAY_UNAVAILABLE",
+        "MODEL_INCOMPATIBLE",
+        "MODEL_DRIFT",
+        "TOOL_UNAVAILABLE",
+        "TOOL_SCHEMA_MISMATCH",
+        "TOOL_TIMEOUT",
+        "POLICY_DENIED",
+        "APPROVAL_REJECTED",
+        "WORKSPACE_FAILURE",
+        "EXECUTION_FAILURE",
+        "ARTIFACT_CORRUPTION",
+        "VALIDATION_FAILURE",
+        "BUDGET_EXHAUSTED",
+        "WORKER_LOST",
+        "SYSTEM_BUG",
+        "SCIENTIFIC_NEGATIVE_RESULT",
+        null
+      ]
+    },
+    "opened_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

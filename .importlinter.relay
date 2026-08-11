@@ -1,0 +1,15 @@
+[importlinter]
+root_package = adapters
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:relay-no-vendor-sdk]
+name = Relay uses protocol HTTP only, no vendor SDK
+type = forbidden
+source_modules =
+    adapters.relay
+forbidden_modules =
+    openai
+    litellm
+    lite_llm
+    anthropic

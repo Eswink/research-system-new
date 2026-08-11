@@ -262,6 +262,10 @@ def check_yaml_and_references() -> None:
     handoff_fixture = load_yaml("examples/contracts/handoff_bundle.yaml") or {}
     preflight_fixture = load_yaml("examples/contracts/preflight_report.yaml") or {}
     toolpack_fixture = load_yaml("examples/contracts/toolpack_manifest.yaml") or {}
+    probe_fixture = load_yaml("examples/contracts/probe_result.yaml") or {}
+    health_fixture = load_yaml("examples/contracts/endpoint_health.yaml") or {}
+    fingerprint_fixture = load_yaml("examples/contracts/model_runtime_fingerprint.yaml") or {}
+    fallback_fixture = load_yaml("examples/contracts/fallback_audit_record.yaml") or {}
 
     memory_types = canonical_text_values("docs/architecture/CONTEXT_ENGINE.md", "## 5. Memory Types")
     session_states = canonical_text_values("docs/reliability/RUN_STATE_MACHINE.md", "## AgentSession")
@@ -274,6 +278,10 @@ def check_yaml_and_references() -> None:
         ("handoff-bundle.schema.json", handoff_fixture, "HandoffBundle fixture"),
         ("preflight-report.schema.json", preflight_fixture, "PreflightReport fixture"),
         ("toolpack-manifest.schema.json", toolpack_fixture, "ToolPackManifest fixture"),
+        ("probe-result.schema.json", probe_fixture, "ModelProbeResult fixture"),
+        ("endpoint-health.schema.json", health_fixture, "EndpointHealthRecord fixture"),
+        ("model-runtime-fingerprint.schema.json", fingerprint_fixture, "ModelRuntimeFingerprint fixture"),
+        ("fallback-audit-record.schema.json", fallback_fixture, "FallbackAuditRecord fixture"),
     ):
         validate_strict_instance(schema_name, fixture, label)
     unknown_toolpack_caps = set(toolpack_fixture.get("requested_capabilities") or []) - capabilities
@@ -503,12 +511,16 @@ def check_json_schemas() -> None:
     expected_schema_files = {
         "agent-spec.schema.json",
         "domain_discovery_output_v1.schema.json",
+        "endpoint-health.schema.json",
         "experiment_run_output_v1.schema.json",
+        "fallback-audit-record.schema.json",
         "handoff-bundle.schema.json",
         "llm-endpoint.schema.json",
         "model-definition.schema.json",
         "model-profile.schema.json",
+        "model-runtime-fingerprint.schema.json",
         "preflight-report.schema.json",
+        "probe-result.schema.json",
         "protocol.schema.json",
         "role-definition.schema.json",
         "task-contract.schema.json",

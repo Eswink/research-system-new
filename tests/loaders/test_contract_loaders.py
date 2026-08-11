@@ -71,6 +71,11 @@ def test_load_llm_endpoints_from_fixture() -> None:
     assert endpoint.protocol == "OPENAI_COMPATIBLE"
     assert endpoint.credential_ref == "llm_main_key"
     assert endpoint.request_timeout_seconds == 120
+    assert endpoint.discovery is not None
+    assert endpoint.discovery.enabled is True
+    assert endpoint.discovery.allow_models == ("model-alpha",)
+    assert endpoint.circuit_breaker is not None
+    assert endpoint.circuit_breaker.failure_threshold == 5
 
 
 def test_load_models_from_fixture() -> None:

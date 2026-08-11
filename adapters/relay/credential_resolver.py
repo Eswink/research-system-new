@@ -1,0 +1,25 @@
+"""env-based credential resolver。
+
+credential_ref 指向环境变量名；值以 SecretValue 密封，永不落盘/log。
+"""
+
+from __future__ import annotations
+
+import os
+
+from packages.application.model_relay.ports import SecretValue
+
+
+class EnvCredentialResolver:
+    """从环境变量解析凭据。"""
+
+    def __init__(self, environment: dict[str, str] | None = None) -> None:
+        self._environment = environment if environment is not None else dict(os.environ)
+
+    def resolve(self, credential_ref: str) -> SecretValue:
+        if credential_ref not in self._environment:
+            raise KeyError(f"credential_ref not found in environment: {credential_ref!r}")
+        value = self._environment[credential_ref]
+        if not value:
+            raise ValueError(f"credential_ref is empty in environment: {credential_ref!r}")
+        return SecretValue(value)

@@ -57,6 +57,52 @@ components:
       explicit_approval: true
       required_checks: [lock_refresh, license_review, schema_regression]
 
+  - id: httpx
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: openai_compatible_http_transport
+    source:
+      kind: PYPI
+      package: httpx
+      url: "https://pypi.org/project/httpx/0.28.1/"
+    resolution:
+      version: "0.28.1"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc"
+    license:
+      spdx: BSD-3-Clause
+      evidence: "https://raw.githubusercontent.com/encode/httpx/0.28.1/LICENSE.md"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, relay_gateway_regression]
+
+  - id: tenacity
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: retry_backoff_policy
+    source:
+      kind: PYPI
+      package: tenacity
+      url: "https://pypi.org/project/tenacity/9.1.4/"
+    resolution:
+      version: "9.1.4"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "adb31d4c263f2bd041081ab33b498309a57c77f9acf2db65aadf0898179cf93a"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://raw.githubusercontent.com/jd/tenacity/9.1.4/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, relay_gateway_regression]
+
   - id: openhands_sdk
     adoption_status: PLANNED
     decision_status: APPROVED

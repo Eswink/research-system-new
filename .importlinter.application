@@ -1,0 +1,19 @@
+[importlinter]
+root_package = packages
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:application-layers]
+name = Application depends on domain only
+type = layers
+layers =
+    packages.application
+    packages.domain
+
+[importlinter:contract:application-uses-ports-not-adapters]
+name = Application must not import adapters
+type = forbidden
+source_modules =
+    packages.application
+forbidden_modules =
+    adapters

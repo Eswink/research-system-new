@@ -10,13 +10,24 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from packages.domain.circuit_breaker import CircuitBreakerConfig
 from packages.domain.core import Digest, Timestamp
 from packages.domain.enums import (
     CapabilitySource,
     CapabilityStatus,
+    EndpointHealth,
+    FailureCategory,
     ModelBindingMode,
     ModelCapability,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class EndpointDiscoveryConfig:
+    """可选 `/models` discovery 配置；默认不启用（manual ModelDefinition 是唯一强依赖）。"""
+
+    enabled: bool = False
+    allow_models: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +41,8 @@ class LLMEndpoint:
     request_timeout_seconds: int = 60
     max_retries: int = 3
     concurrency_limit: int = 4
+    discovery: EndpointDiscoveryConfig | None = None
+    circuit_breaker: CircuitBreakerConfig | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -134,13 +147,29 @@ class ModelRuntimeFingerprint:
 
 
 @dataclass(frozen=True, slots=True)
+class CapabilityProbeFailure:
+    """单项能力 probe 失败（区分“模型不支持”与网络/认证/限流等运行失败）。"""
+
+    capability: ModelCapability
+    error_category: FailureCategory
+    error_message_redacted: str | None = None
+    probed_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        if self.probed_at is not None:
+            Timestamp(self.probed_at)
+
+
+@dataclass(frozen=True, slots=True)
 class ModelProbeResult:
     model_id: str
     ok: bool
     observed_capabilities: frozenset[ModelCapability] = frozenset()
     returned_model_name: str | None = None
     system_fingerprint: str | None = None
-    error_category: str | None = None
+    error_category: FailureCategory | None = None
+    error_message: str | None = None
+    capability_failures: tuple[CapabilityProbeFailure, ...] = field(default_factory=tuple)
     probed_at: datetime | None = None
 
     def __post_init__(self) -> None:
@@ -148,3 +177,81 @@ class ModelProbeResult:
             raise ValueError("model_id must not be empty")
         if self.probed_at is not None:
             Timestamp(self.probed_at)
+
+
+@dataclass(frozen=True, slots=True)
+class ProbeSuiteSpec:
+    """Probe suite 定义（步骤 + 固定消息 + structured schema）。
+
+    `probe_suite_digest` 用 canonical serialization 对定义计算（见
+    docs/integration/MODEL_PROBE.md）。
+    """
+
+    version: str
+    steps: tuple[str, ...]
+    fixture_message: str
+    structured_schema: dict[str, object]
+    include_vision: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.version:
+            raise ValueError("probe suite version must not be empty")
+        if not self.steps:
+            raise ValueError("probe suite must declare at least one step")
+        if not self.fixture_message:
+            raise ValueError("fixture_message must not be empty")
+        if not self.structured_schema:
+            raise ValueError("structured_schema must not be empty")
+
+
+@dataclass(frozen=True, slots=True)
+class FallbackAuditRecord:
+    """Fallback 审计记录（对应 schemas/fallback-audit-record.schema.json）。"""
+
+    from_model: str
+    to_model: str
+    reason: str
+    occurred_at: datetime
+    task_ref: str | None = None
+    manifest_policy: str | None = None
+    session_switched: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.from_model:
+            raise ValueError("from_model must not be empty")
+        if not self.to_model:
+            raise ValueError("to_model must not be empty")
+        if not self.reason:
+            raise ValueError("reason must not be empty")
+        Timestamp(self.occurred_at)
+
+
+@dataclass(frozen=True, slots=True)
+class EndpointProbeSnapshot:
+    """单次 endpoint 探测快照（HTTP 层观察结果）。"""
+
+    ok: bool
+    returned_model_name: str | None = None
+    system_fingerprint: str | None = None
+    safe_response_metadata: dict[str, str] = field(default_factory=dict)
+    usage_reported: bool = False
+    error_category: FailureCategory | None = None
+    error_message_redacted: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EndpointHealthRecord:
+    """Endpoint 健康记录（对应 schemas/endpoint-health.schema.json）。"""
+
+    endpoint_id: str
+    state: EndpointHealth
+    recorded_at: datetime
+    circuit_state: str | None = None
+    consecutive_failures: int = 0
+    last_error_category: FailureCategory | None = None
+    opened_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        if not self.endpoint_id:
+            raise ValueError("endpoint_id must not be empty")
+        Timestamp(self.recorded_at)

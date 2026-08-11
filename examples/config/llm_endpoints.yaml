@@ -8,3 +8,11 @@ llm_endpoints:
     max_retries: 2
     concurrency_limit: 8
     enabled: true
+    discovery:
+      enabled: true
+      allow_models:
+        - model-alpha
+    circuit_breaker:
+      failure_threshold: 5
+      open_timeout_seconds: 60
+      half_open_max_probes: 1

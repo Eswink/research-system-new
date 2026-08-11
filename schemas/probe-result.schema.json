@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/probe-result.schema.json",
+  "title": "ModelProbeResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["model_id", "ok"],
+  "properties": {
+    "model_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "observed_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "CHAT",
+          "STREAMING",
+          "TOOL_CALLING_NATIVE",
+          "TOOL_CALLING_EMULATED",
+          "STRUCTURED_OUTPUT_NATIVE",
+          "STRUCTURED_OUTPUT_PROMPTED",
+          "VISION",
+          "REASONING",
+          "EMBEDDING",
+          "SEED",
+          "USAGE_REPORTING",
+          "SYSTEM_FINGERPRINT"
+        ]
+      }
+    },
+    "returned_model_name": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "system_fingerprint": {
+      "type": ["string", "null"]
+    },
+    "error_category": {
+      "type": ["string", "null"],
+      "enum": [
+        "CONFIGURATION",
+        "MODEL_AUTH",
+        "MODEL_RATE_LIMIT",
+        "MODEL_TIMEOUT",
+        "MODEL_RELAY_UNAVAILABLE",
+        "MODEL_INCOMPATIBLE",
+        "MODEL_DRIFT",
+        "TOOL_UNAVAILABLE",
+        "TOOL_SCHEMA_MISMATCH",
+        "TOOL_TIMEOUT",
+        "POLICY_DENIED",
+        "APPROVAL_REJECTED",
+        "WORKSPACE_FAILURE",
+        "EXECUTION_FAILURE",
+        "ARTIFACT_CORRUPTION",
+        "VALIDATION_FAILURE",
+        "BUDGET_EXHAUSTED",
+        "WORKER_LOST",
+        "SYSTEM_BUG",
+        "SCIENTIFIC_NEGATIVE_RESULT",
+        null
+      ]
+    },
+    "error_message": {
+      "type": ["string", "null"]
+    },
+    "capability_failures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capabilityProbeFailure"
+      }
+    },
+    "probed_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "capabilityProbeFailure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "error_category"],
+      "properties": {
+        "capability": {
+          "enum": [
+            "CHAT",
+            "STREAMING",
+            "TOOL_CALLING_NATIVE",
+            "TOOL_CALLING_EMULATED",
+            "STRUCTURED_OUTPUT_NATIVE",
+            "STRUCTURED_OUTPUT_PROMPTED",
+            "VISION",
+            "REASONING",
+            "EMBEDDING",
+            "SEED",
+            "USAGE_REPORTING",
+            "SYSTEM_FINGERPRINT"
+          ]
+        },
+        "error_category": {
+          "enum": [
+            "CONFIGURATION",
+            "MODEL_AUTH",
+            "MODEL_RATE_LIMIT",
+            "MODEL_TIMEOUT",
+            "MODEL_RELAY_UNAVAILABLE",
+            "MODEL_INCOMPATIBLE",
+            "MODEL_DRIFT",
+            "TOOL_UNAVAILABLE",
+            "TOOL_SCHEMA_MISMATCH",
+            "TOOL_TIMEOUT",
+            "POLICY_DENIED",
+            "APPROVAL_REJECTED",
+            "WORKSPACE_FAILURE",
+            "EXECUTION_FAILURE",
+            "ARTIFACT_CORRUPTION",
+            "VALIDATION_FAILURE",
+            "BUDGET_EXHAUSTED",
+            "WORKER_LOST",
+            "SYSTEM_BUG",
+            "SCIENTIFIC_NEGATIVE_RESULT"
+          ]
+        },
+        "error_message": {
+          "type": ["string", "null"]
+        },
+        "probed_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

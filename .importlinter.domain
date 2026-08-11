@@ -19,3 +19,8 @@ forbidden_modules =
     litellm
     openai
     anthropic
+    httpx
+    httpcore
+    anyio
+    starlette
+    tenacity

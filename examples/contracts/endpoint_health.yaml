@@ -1,0 +1,7 @@
+endpoint_id: main
+state: DEGRADED
+circuit_state: OPEN
+consecutive_failures: 6
+last_error_category: MODEL_RATE_LIMIT
+opened_at: "2026-08-11T11:58:00Z"
+recorded_at: "2026-08-11T12:00:00Z"

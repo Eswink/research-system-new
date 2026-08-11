@@ -97,3 +97,17 @@ Sources:
 - https://docs.openhands.dev/openhands/usage/sandboxes/docker
 - https://github.com/SWE-agent/SWE-ReX
 - https://e2b.dev/docs
+
+## Model Relay Transport (M3)
+
+- OpenAI Chat Completions + Models API 官方机器可读规范为 `openai/openai-openapi` 的 `openapi.yaml` v2.3.0（MIT，developers.openai.com）；chat/completions 仍是全行业 OPENAI_COMPATIBLE 的事实基线。
+- httpx 0.28.1（BSD-3-Clause）提供 `MockTransport`/`ASGITransport`，可完全离线的确定性测试；SSE 事件流需自行按行解析（httpx 不内置）。
+- tenacity 9.1.4（Apache-2.0）承载 FAILURE_MODEL retry matrix 的薄包装（429 退避+jitter；401/403、400/422 不重试）。
+- 不引入 openai-python SDK（类型/错误语义绑定 vendor），不引入 pybreaker（circuit breaker 在 domain 自实现以保持零依赖与穷尽测试）。
+
+Sources:
+
+- https://github.com/openai/openai-openapi
+- https://developers.openai.com/api/docs
+- https://www.python-httpx.org/advanced/transports/
+- https://tenacity.readthedocs.io/

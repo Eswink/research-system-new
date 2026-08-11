@@ -38,4 +38,10 @@ Official/primary sources reviewed for v0.4.0:
 - https://github.com/SWE-agent/SWE-ReX
 - https://e2b.dev/docs
 
+## Model Relay Transport (M3)
+
+- https://developers.openai.com/api/docs （OpenAI API reference；权威机器可读规范为 https://github.com/openai/openai-openapi 的 openapi.yaml v2.3.0，MIT）
+- https://www.python-httpx.org/advanced/transports/ （httpx 0.28.1，BSD-3-Clause；MockTransport/ASGITransport 用于离线确定性测试）
+- https://tenacity.readthedocs.io/ （tenacity 9.1.4，Apache-2.0）
+
 Re-check exact license/version before locking dependencies.

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.4.0 — 2026-08-11
+
+- M3 Model Relay Compatibility 落地：OpenAI-compatible 中转站运行层（EndpointStore CRUD、env credential resolver、endpoint test、`/models` discovery、capability probe、ModelEligibilityPolicy、circuit breaker、ModelRuntimeFingerprint、fallback audit、secret redaction）。
+- 新增 `packages/application/model_relay`（Ports + eligibility + probe/discovery/fingerprint/fallback use cases）与 `adapters/relay`（httpx gateway + SSE 解析 + env resolver + YAML/内存 store）。
+- 新增 4 个契约 schema（probe-result / endpoint-health / model-runtime-fingerprint / fallback-audit-record）与 4 个契约 fixture；`llm-endpoint.schema.json` 扩展 discovery/circuit_breaker 配置。
+- 新增依赖 httpx 0.28.1（BSD-3-Clause）与 tenacity 9.1.4（Apache-2.0），均 pin + 供应链登记。
+- 新增 `docs/reliability/CIRCUIT_BREAKER.md` 与 `docs/integration/MODEL_PROBE.md`。
+- 新增 application/relay 依赖边界契约（`.importlinter.application` / `.importlinter.relay`）。
+- 全部 339 测试通过；m0 18 个确定性门禁通过。
+
 ## v0.4.0 — 2026-08-10
 
 - Cursor 工程自动化脚本迁移到对应 `.cursor/skills/<skill>/scripts/`；删除根 `scripts/`。

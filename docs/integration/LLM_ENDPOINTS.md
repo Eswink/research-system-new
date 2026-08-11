@@ -58,6 +58,14 @@ Optional /models      # 兼容时使用
 
 Discovery 结果不能自动启用，需用户确认。
 
+Endpoint 可选配置（`llm-endpoint.schema.json`）：
+
+```yaml
+discovery:
+  enabled: true
+  allow_models: [model-alpha]   # 允许加入候选的模型白名单
+```
+
 ## 6. Probe
 
 ```text
@@ -86,6 +94,15 @@ DISABLED
 ```
 
 记录 latency/error rate/rate-limit/circuit 状态。
+
+Circuit breaker 配置（`llm-endpoint.schema.json`，迁移表见 `docs/reliability/CIRCUIT_BREAKER.md`）：
+
+```yaml
+circuit_breaker:
+  failure_threshold: 5
+  open_timeout_seconds: 60
+  half_open_max_probes: 1
+```
 
 ## 8. Drift Fingerprint
 
