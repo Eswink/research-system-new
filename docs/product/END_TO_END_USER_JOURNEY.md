@@ -1,4 +1,4 @@
-# End-to-End User Journey v0.2.2
+# End-to-End User Journey v0.4.0
 
 ## 1. 首次配置
 

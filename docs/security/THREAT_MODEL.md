@@ -1,4 +1,4 @@
-# Threat Model v0.2.2
+# Threat Model v0.4.0
 
 ## 1. 保护资产
 

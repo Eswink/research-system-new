@@ -1,6 +1,7 @@
 ---
 name: engineering-memory
 description: 从已验证的计划、复检和仓库证据中提炼“做了什么、为何这样做、如何复现”的工程记忆，并维护 provenance、置信度、适用范围和复核策略。
+disable-model-invocation: true
 ---
 
 # Engineering Memory

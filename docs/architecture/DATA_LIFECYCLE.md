@@ -1,4 +1,4 @@
-# Data & Artifact Lifecycle v0.2.2
+# Data & Artifact Lifecycle v0.4.0
 
 ## 1. Source of Truth
 

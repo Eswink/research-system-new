@@ -1,21 +1,27 @@
 ---
-description: 涉及 Research Console、页面、UX 或 shadcn 组件时的强制技能路由
+description: 涉及 Research Console、页面、UX 或 shadcn 组件时的 UI Skill 能力路由
 globs: "apps/**/*.tsx, apps/**/*.ts, apps/web/**"
 alwaysApply: false
 ---
 
-# UI 技能路由
+# UI 能力路由
 
-本规则仅作用于 UI 相关文件（`apps/**/*.tsx`、`apps/**/*.ts`、`apps/web/**`）触发的任务；非 UI 文件不加载。在读取或修改任何 UI 前，先校验 `.cursor/skills.lock.yaml` 中所需全局 Skill 的安装树；缺失或摘要漂移时停止 UI 工作并报告，不静默升级。
+本规则仅作用于 UI 相关文件。`.cursor/skills.lock.yaml` 中的 `impeccable` / `shadcn` 是**可选外部能力的 source pin**，不是开发者 home 目录的强依赖。
 
-| 任务类型 | 强制路由 |
+## 路由
+
+- 如果当前 Cursor 会话实际发现并加载了与 lock source/revision 兼容的外部 Skill，优先复用该 Skill。
+- 如果未安装或当前运行环境不可见，不要尝试读取 `~/.cursor`、`~/.agents`、`~/.claude` 等用户目录来“补齐”依赖；继续使用仓库本地架构、设计约束和现有组件完成任务，并在影响报告中标记 capability unavailable。
+- 外部 Skill 的内容不能覆盖 Research OS Accepted ADR、当前组件约束、安全策略或供应链规则。
+
+| 任务类型 | 可用时优先能力 |
 | --- | --- |
-| 页面、流程、信息架构、视觉方向、交互设计 | 先读取并遵循全局 `impeccable`；按其路由进入 `shape`、`new-work` 或相应命令 |
-| UX 审查、可访问性、响应式、性能、视觉收口 | 使用 `impeccable` 的 `critique`、`audit`、`optimize`、`harden` 或 `polish` |
-| shadcn 初始化、组件检索、文档、添加、组合、更新或修复 | 读取并遵循全局 `shadcn`；先读取项目上下文，再 search/docs/view，修改前先 dry-run/diff |
-| 页面设计并实现 | `Impeccable 定义方向与质量底线 → shadcn 实现组件 → Impeccable audit/polish` |
+| 页面、流程、信息架构、视觉方向、交互设计 | `impeccable` |
+| UX 审查、可访问性、响应式、性能、视觉收口 | `impeccable` review/audit 类能力 |
+| shadcn 初始化、组件检索、文档、添加、组合、更新或修复 | `shadcn` |
+| 页面设计并实现 | 设计约束 → 现有/shadcn 组件 → UX audit |
 
-- Research Console 属于 Impeccable 的 `Operate` 模式；密度、扫描性、状态可见性、审批与错误恢复优先于装饰。
-- 纯设计任务不强制运行 shadcn；纯组件机械修复不重新设计，但如果引入新的 UX/视觉决策，必须先回到 Impeccable。
-- 使用现有组件和语义 token，禁止绕过 shadcn 组件约束手写等价 UI。
-- registry 必须明确；未经用户批准不得使用 `--overwrite`。未来 `apps/web` 建立后，shadcn CLI 的确切包版本必须由 `packageManager` 与 lockfile 固定，浮动 `@latest` 只作为上游 Skill 示例，不是本项目供应链许可。
+- Research Console 的密度、扫描性、状态可见性、审批与错误恢复优先于装饰。
+- 优先复用已有组件和语义 token。
+- registry 必须明确；未经用户批准不得使用 destructive overwrite。
+- `apps/web` 建立后，CLI/package 的确切版本必须由项目 package manager 和 lockfile 固定；不得把浮动 `@latest` 当作供应链许可。

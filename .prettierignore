@@ -1,0 +1,8 @@
+node_modules/
+.pnpm-store/
+.venv/
+.cursor/runtime/
+FRAMEWORK_MANIFEST.json
+.cursor/releases/RELEASE_EVIDENCE.json
+pnpm-lock.yaml
+uv.lock

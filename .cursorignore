@@ -1,0 +1,26 @@
+# Real credentials / environment files
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.env
+
+# Private keys / local credentials
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/id_rsa*
+**/id_ed25519*
+**/.aws/credentials
+**/.config/gcloud/application_default_credentials.json
+**/credentials.json
+**/secrets.json
+
+# Framework runtime state is not agent context
+.cursor/runtime/
+
+# Local generated artifacts
+__pycache__/
+*.pyc

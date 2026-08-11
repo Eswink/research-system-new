@@ -1,4 +1,4 @@
-# Product Definition v0.2.2
+# Product Definition v0.4.0
 
 ## 1. 产品是什么
 

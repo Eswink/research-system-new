@@ -33,4 +33,4 @@ task_contracts:
     idempotency_scope: experiment_spec_digest
     retry_policy:
       max_attempts: 2
-      retryable_categories: [WORKER_CRASH, MODEL_RATE_LIMIT]
+      retryable_categories: [WORKER_LOST, MODEL_RATE_LIMIT]

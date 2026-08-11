@@ -1,0 +1,19 @@
+task_id: task-domain-discovery-001
+producer: agent-domain-a
+summary: Scoped domain map and source set are ready for evidence modeling.
+structured_output:
+  domain: agentic research systems
+artifact_refs:
+  - artifact-domain-map-001
+claim_refs:
+  - claim-scope-001
+evidence_refs:
+  - evidence-source-set-001
+decision_refs:
+  - decision-scope-001
+open_questions:
+  - Which benchmark should anchor the first experiment?
+known_failures: []
+recommended_next_actions:
+  - Validate source coverage before opportunity exploration.
+digest: sha256:fixture-only

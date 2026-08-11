@@ -1,4 +1,4 @@
-# Capability & Security v0.2.2
+# Capability & Security v0.4.0
 
 ## 1. Capability 示例
 

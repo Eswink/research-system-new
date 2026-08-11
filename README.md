@@ -1,119 +1,111 @@
-# Research OS Bootstrap v0.2.2
+# Research OS Cursor Engineering Framework v0.4.0
 
-Research OS 是一个面向长时程 Autonomous R&D 的软件系统。
+本仓库是 Research OS 的 **system specification + Cursor project engineering framework**。
 
-它不是“自动写论文工具”，也不是 Codex / Claude Code 的外壳。论文、技术报告、代码、实验包、Benchmark 结果只是 Deliverable。
+当前仓库统一版本：`0.4.0`，唯一来源为根 `VERSION`。
 
-## v0.2.2 的主题
+## 产品边界
 
-v0.2.1 已冻结：
+Research OS 保持：
 
-- 用户通过 `Base URL + API Key + Model ID` 接入 OpenAI-compatible LLM 中转站；
-- 每个 Agent 可以独立配置模型；
+```text
+User LLM Relay = Base URL + API Key + Model ID
+```
+
+并保持：
+
+- 每个 Agent 独立配置模型；
 - Role 与 Agent 分离；
-- OpenHands Software Agent SDK 是通用 Agent Runtime 基底；
-- Tools / MCP / Workspace / Sandbox / Evidence / Evaluation 保持独立。
+- OpenHands Native 作为 MVP 通用 Agent Runtime；
+- Tool / Skill / Capability 独立；
+- MCP / REST Research Tools 独立于 LLM Relay；
+- Workspace / Sandbox / Evidence / Evaluation / RunManifest 由 Research OS 控制。
 
-v0.2.2 在不改变上述边界的前提下，补齐：
-
-```text
-端到端用户旅程
-Protocol 编译与 Preflight
-Task / Handoff 契约
-Model 兼容性与同名漂移检测
-Team Template 与动态 Role 激活
-预算预留与 Usage Ledger
-工作流幂等、租约、恢复与补偿
-Memory 写入门禁
-MCP / Plugin 供应链治理
-安全威胁模型
-Artifact 生命周期
-可观测性与隐私
-部署分级
-任务级 Agent 身份与访问控制
-中转站数据边界与数据治理
-研究诚信规则
-备份恢复、SLO 与容量准入
-评测与发布门禁
-```
-
-## 用户的模型接入保持简单
+## Cursor 工程层
 
 ```text
-LLMEndpoint
-├ Base URL: https://xxx.com/api/v1
-├ API Key: ********
-└ Models
-   ├ model-alpha
-   ├ model-beta
-   └ model-gamma
+AGENTS.md             跨工具工程契约
+.cursor/rules/        稳定、作用域化约束
+.cursor/skills/       可重复工程流程
+.cursor/agents/       独立上下文的专业子代理
+.cursor/hooks.json    机器观测与防护
+.cursor/knowledge/    Cursor 官方规范、caveat 与工程证据
+.cursor/learning/     受控经验提案与回放
+.cursor/plans/        项目计划与证据
+.cursor/memory/       已验证仓库工程经验
 ```
 
-Research OS 不要求用户分别配置 OpenAI、Anthropic、DeepSeek 或其他厂商。
+## Subagent 原则
 
-## Agent 配置
+Subagent **不是每个任务必需**。只有并行调查、独立验证或明显可分离工作流有收益时才委派。
+
+一次并行委派波次中：
 
 ```text
-DomainResearcher       → model-alpha
-LiteratureScout A      → model-beta
-LiteratureScout B      → model-gamma
-ExperimentEngineer     → model-beta
-ScientificReviewer A   → model-gamma
-ScientificReviewer B   → model-alpha
-ResearchWriter         → model-alpha
+child subagents < 4
 ```
 
-同一 Role 可以有多个 Agent 实例并绑定不同模型。
+即最多 3 个并行子代理。
 
-## 核心架构
+这不是“整个用户任务累计只能创建 3 个”。前一波完成并被根代理整合后，如果仍有新的独立必要工作，可以启动下一波。
 
-```text
-                         Research Console
-                                |
-                         Control Plane API
-                                |
-                     Protocol Compiler / Preflight
-                                |
-                         WorkflowEngine Port
-                                |
-                      Compiled Phase / Task Plan
-                                |
-                         AgentRuntime Port
-                                |
-                    OpenHandsRuntimeAdapter
-                                |
-        +-----------------------+-----------------------+
-        |                       |                       |
-   Model Gateway          Tool Runtime             Workspace
-        |                       |                       |
- LLMEndpoint              Native/MCP/REST       Local/Docker/Remote
-        |
- User Relay + Model IDs
+子代理禁止继续创建子代理，避免调用树失控。
 
-=================== Research OS Owned Kernel ===================
+## Cursor 工程规范
 
-Domain / Role / Protocol / Task Contract / RunManifest
-Policy / Budget / Memory / Evidence / Experiment Provenance
-Evaluation / Artifact Lifecycle / Events / Audit / UI
-```
+- Project Rules 使用 `.cursor/rules/*.mdc`。
+- Skills 使用 `<skill>/SKILL.md`，只在相关时加载。
+- Custom Subagents 放在 workspace root 的 `.cursor/agents/*.md`。
+- Hooks 用于机器级观测/阻断，但不是 OS Sandbox。
+- MCP 是外部工具/数据连接边界，不替代产品 Capability/Policy。
+
+## Cursor Runtime
+
+完整治理 profile 以 IDE/local 为主验证目标。Cloud Agent 的 Hook 支持面不同；敏感 MCP/credential 工作流必须使用等价 Cloud/Enterprise 或 Research OS 产品安全控制。
+
+## 当前阶段
+
+当前仍是 docs-first specification 与 Cursor engineering framework。M0 Repository Foundation Quality Gate 已落地冻结 Python/TypeScript 工具链、lint、strict typecheck、双语言依赖边界负测、测试入口和 Windows/Linux CI 定义。
+
+M0 不伪造 Domain、Compiler、OpenHands、数据库或 UI 业务实现。`packages/domain`、`packages/application`、`adapters`、`services`、`apps/web` 只在首个真实职责模块进入时创建；当前依赖方向由 `tests/architecture/` 中可放行、可拒绝的双语言夹具证明。
 
 ## 开发入口
 
-依次阅读：
-
 1. `AGENTS.md`
-2. `CODEX_BOOTSTRAP.md`
+2. `.cursor/README.md`
 3. `docs/INDEX.md`
 4. `docs/PRODUCT.md`
-5. `docs/product/END_TO_END_USER_JOURNEY.md`
-6. `docs/architecture/SYSTEM_ARCHITECTURE.md`
-7. `docs/architecture/DOMAIN_MODEL.md`
-8. `docs/architecture/TASK_HANDOFF.md`
-9. `docs/architecture/MODEL_COMPATIBILITY.md`
-10. `docs/security/THREAT_MODEL.md`
-11. `docs/references/OPEN_SOURCE_REUSE_AUDIT.md`
-12. `BACKLOG.md`
+5. `docs/architecture/SYSTEM_ARCHITECTURE.md`
+6. `docs/architecture/DOMAIN_MODEL.md`
+7. `.cursor/knowledge/INDEX.md`
+8. `BACKLOG.md`
 
-## 发布质量
+## 校验
 
-本包在发布前至少经过三轮独立门禁审核，低于阈值的轮次会被打回重做。审核记录位于 `docs/reviews/`。
+首次准备或锁文件变更后，先同步冻结环境：
+
+### POSIX shell
+
+```bash
+export PYTHONUTF8=1 PYTHONIOENCODING=utf-8
+uv lock --check
+uv sync --frozen --dev
+pnpm install --frozen-lockfile
+uv run --frozen --no-sync python -B .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going
+# 可选 GNU Make convenience：make bootstrap && make validate-all
+```
+
+### PowerShell
+
+```powershell
+$env:PYTHONUTF8 = "1"
+$env:PYTHONIOENCODING = "utf-8"
+uv lock --check
+uv sync --frozen --dev
+pnpm install --frozen-lockfile
+uv run --frozen --no-sync python -B .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going
+```
+
+可用 `--profile framework`、`--profile python` 或 `--profile typescript` 单独定位失败。聚合入口只执行确定性校验与 eval，不安装依赖，也不生成或刷新 `FRAMEWORK_MANIFEST.json` / Release Evidence。
+
+本仓库不内置会话级自审次数、固定 reviewer 人数或数值自评分阈值。是否需要独立 reviewer，由变更风险和任务范围决定。

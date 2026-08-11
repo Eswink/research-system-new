@@ -1,4 +1,4 @@
-# Run State Machine v0.2.2
+# Run State Machine v0.4.0
 
 ## ResearchRun
 

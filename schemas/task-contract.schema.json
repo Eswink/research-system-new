@@ -3,26 +3,119 @@
   "$id": "https://research-os.local/schemas/task-contract.schema.json",
   "title": "TaskContract",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "id",
     "version",
     "purpose",
-    "acceptance_criteria"
+    "required_capabilities",
+    "output_schema",
+    "acceptance_criteria",
+    "retry_policy"
   ],
   "properties": {
-    "id": {
-      "type": "string"
+    "id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "purpose": {"type": "string", "minLength": 1},
+    "input_schema": {"type": "string", "minLength": 1},
+    "output_schema": {"type": "string", "pattern": "^[a-z][a-z0-9_]*_v[0-9]+$"},
+    "required_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
     },
-    "version": {
-      "type": "string"
-    },
-    "purpose": {
-      "type": "string"
+    "required_artifacts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
     },
     "acceptance_criteria": {
       "type": "array",
-      "minItems": 1
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/acceptanceCriterion"}
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["number", "null"],
+        "minimum": 0
+      }
+    },
+    "timeout_seconds": {"type": "integer", "minimum": 1},
+    "retry_policy": {"$ref": "#/$defs/retryPolicy"},
+    "failure_policy": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {"type": "string", "minLength": 1},
+          {"type": "boolean"},
+          {"type": "integer", "minimum": 0},
+          {"type": "array", "items": {"type": "string", "minLength": 1}}
+        ]
+      }
+    },
+    "idempotency_scope": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "acceptanceCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": [
+            "SCHEMA_VALID",
+            "ARTIFACT_EXISTS",
+            "TEST_PASSES",
+            "METRIC_THRESHOLD",
+            "EVIDENCE_COVERAGE",
+            "REVIEW_SCORE",
+            "POLICY_COMPLIANT",
+            "HUMAN_APPROVAL",
+            "CUSTOM_EVALUATOR"
+          ]
+        },
+        "artifact": {"type": "string", "minLength": 1},
+        "minimum_sources": {"type": "integer", "minimum": 0},
+        "metric": {"type": "string", "minLength": 1},
+        "operator": {"enum": ["GT", "GTE", "EQ", "LTE", "LT"]},
+        "threshold": {"type": "number"},
+        "evaluator": {"type": "string", "minLength": 1}
+      }
+    },
+    "retryPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_attempts", "retryable_categories"],
+      "properties": {
+        "max_attempts": {"type": "integer", "minimum": 1},
+        "retryable_categories": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "CONFIGURATION",
+              "MODEL_AUTH",
+              "MODEL_RATE_LIMIT",
+              "MODEL_INCOMPATIBLE",
+              "MODEL_DRIFT",
+              "TOOL_UNAVAILABLE",
+              "TOOL_SCHEMA_MISMATCH",
+              "TOOL_TIMEOUT",
+              "POLICY_DENIED",
+              "APPROVAL_REJECTED",
+              "WORKSPACE_FAILURE",
+              "EXECUTION_FAILURE",
+              "ARTIFACT_CORRUPTION",
+              "VALIDATION_FAILURE",
+              "BUDGET_EXHAUSTED",
+              "WORKER_LOST",
+              "SYSTEM_BUG",
+              "SCIENTIFIC_NEGATIVE_RESULT"
+            ]
+          }
+        }
+      }
     }
   }
 }

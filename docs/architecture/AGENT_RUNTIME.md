@@ -1,4 +1,4 @@
-# Agent Runtime Architecture v0.2.2
+# Agent Runtime Architecture v0.4.0
 
 ## 1. Port
 
@@ -57,8 +57,11 @@ OpenHands SecretRegistry 只能作为 runtime injection 辅助，不是 canonica
 
 ## 5. Status Mapping
 
+Canonical `AgentSession` 状态只来自 `docs/reliability/RUN_STATE_MACHINE.md`：
+
 ```text
-IDLE
+CREATED
+INITIALIZING
 RUNNING
 WAITING_FOR_APPROVAL
 PAUSED
@@ -68,7 +71,18 @@ FAILED
 CANCELLED
 ```
 
-Adapter 必须把上游状态转换成 Research OS 状态。
+上游状态不是 Domain enum。Adapter 使用显式映射，例如：
+
+```text
+OpenHands IDLE                     → CREATED
+OpenHands RUNNING                  → RUNNING
+OpenHands WAITING_FOR_CONFIRMATION → WAITING_FOR_APPROVAL
+OpenHands PAUSED                   → PAUSED
+OpenHands STUCK                    → STUCK
+OpenHands terminal result          → SUCCEEDED / FAILED / CANCELLED
+```
+
+已开始执行的 Session 若再次收到含义不明确的 `IDLE`，Adapter 必须产生映射错误或受控恢复 finding，不得把状态静默回退到 `CREATED`。
 
 ## 6. Stuck Handling
 

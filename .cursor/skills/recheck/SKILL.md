@@ -22,7 +22,7 @@ disable-model-invocation: true
 4. **质量**：lint、typecheck、test、bundle/governance validator、内部链接与确定性 digest。
 5. **安全**：凭据、权限、默认 deny、日志/Prompt 隐私、供应链 pin。
 6. **兼容性**：Domain/API/schema、迁移、上游版本和恢复路径。
-7. **计划完整性**：状态历史、子代理预算、执行证据和工程记忆 provenance。
+7. **计划完整性**：状态历史、子代理 wave 记录、执行证据和工程记忆 provenance。
 
 ## 判定
 

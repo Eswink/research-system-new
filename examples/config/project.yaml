@@ -4,8 +4,8 @@ project:
   data_classification: PUBLIC
   target_profile:
     type: INTERNAL_TECHNICAL_REPORT
-  protocol: ai_ml_research_v0_2_2
-  team_template: lean
+  protocol: ai_ml_research_v0_4_0
+  team_template: standard
   autonomy: guarded
   budget: low_cost
   default_model_profile: research_strong

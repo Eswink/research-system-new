@@ -1,4 +1,4 @@
-# OpenHands Adapter Plan v0.2.2
+# OpenHands Adapter Plan v0.4.0
 
 ## 1. Decision
 

@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "tests/architecture/typescript/fixtures/valid/**/*.ts",
+    "tests/tooling/typescript/**/*.ts"
+  ],
+  "exclude": ["node_modules", "tests/architecture/typescript/fixtures/invalid"]
+}

@@ -1,4 +1,4 @@
-# Research Integrity v0.2.2
+# Research Integrity v0.4.0
 
 本文件适用于软件/研发过程，不把系统限定为论文生产。
 

@@ -1,10 +1,108 @@
 {
   "version": 1,
   "hooks": {
+    "sessionStart": [
+      {
+        "command": "python -B .cursor/hooks/session_context.py",
+        "failClosed": false,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "python -B .cursor/hooks/shell_guard.py",
+        "failClosed": true,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
+    "subagentStart": [
+      {
+        "command": "python -B .cursor/hooks/subagent_guard.py",
+        "failClosed": true,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "python -B .cursor/hooks/change_tracker.py",
+        "failClosed": false,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
+    "preCompact": [
+      {
+        "command": "python -B .cursor/hooks/compaction_checkpoint.py",
+        "failClosed": false,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
     "stop": [
       {
-        "command": "python .cursor/hooks/snapshot_commit.py",
-        "failClosed": false
+        "command": "python -B .cursor/hooks/evolution_gate.py",
+        "failClosed": false,
+        "loop_limit": 5,
+        "type": "command",
+        "timeout": 5
+      },
+      {
+        "command": "python -B .cursor/hooks/snapshot_commit.py",
+        "failClosed": false,
+        "loop_limit": 1,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
+    "sessionEnd": [
+      {
+        "command": "python -B .cursor/hooks/session_cleanup.py",
+        "failClosed": false,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
+    "postToolUseFailure": [
+      {
+        "command": "python -B .cursor/hooks/failure_observer.py",
+        "failClosed": false,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": "python -B .cursor/hooks/subagent_stop.py",
+        "failClosed": false,
+        "type": "command",
+        "timeout": 5
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "command": "python -B .cursor/hooks/secret_guard.py",
+        "failClosed": true,
+        "matcher": "Read",
+        "timeout": 5
+      },
+      {
+        "type": "command",
+        "command": "python -B .cursor/hooks/subagent_pretool_guard.py",
+        "failClosed": true,
+        "matcher": "Task",
+        "timeout": 5
+      }
+    ],
+    "beforeMCPExecution": [
+      {
+        "command": "python -B .cursor/hooks/mcp_guard.py",
+        "failClosed": true,
+        "timeout": 5,
+        "type": "command"
       }
     ]
   }

@@ -1,4 +1,4 @@
-# Failure Model v0.2.2
+# Failure Model v0.4.0
 
 ## Categories
 

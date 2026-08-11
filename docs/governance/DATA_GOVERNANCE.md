@@ -1,4 +1,4 @@
-# Data Governance v0.2.2
+# Data Governance v0.4.0
 
 ## 1. Data Classification
 

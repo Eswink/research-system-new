@@ -1,16 +1,16 @@
 ---
 id: MEM-20260810-003
 title: 治理规则审计修正与自动提交安全边界
-status: ACTIVE
+status: RETIRED
 created_at: 2026-08-10
-updated_at: 2026-08-10
+updated_at: 2026-08-11
 scope: repository
 confidence: 0.93
 review_after: 2026-11-10
 source_plans:
-  - .cursor/plans/tasks/PLAN-20260810-003-governance-rules-audit-fix.md
+  - .cursor/plans/archive/PLAN-20260810-003-governance-rules-audit-fix.md
 source_rechecks:
-  - .cursor/plans/rechecks/RECHECK-20260810-004-governance-rules-audit-fix.md
+  - .cursor/plans/archive/RECHECK-20260810-004-governance-rules-audit-fix.md
 supersedes:
   - .cursor/memory/entries/MEM-20260810-002-git-auto-commit-and-code-governance.md
 tags:
@@ -58,8 +58,8 @@ tags:
 
 | 类型 | 引用 | 支持的结论 |
 | --- | --- | --- |
-| plan | `.cursor/plans/tasks/PLAN-20260810-003-governance-rules-audit-fix.md` | 目标、范围、验收条件与证据 |
-| recheck | `.cursor/plans/rechecks/RECHECK-20260810-004-governance-rules-audit-fix.md` | PASS_WITH_WARNINGS，AC 全部通过 |
+| plan | `.cursor/plans/archive/PLAN-20260810-003-governance-rules-audit-fix.md` | 目标、范围、验收条件与证据 |
+| recheck | `.cursor/plans/archive/RECHECK-20260810-004-governance-rules-audit-fix.md` | PASS_WITH_WARNINGS，AC 全部通过 |
 | repository | `.cursor/hooks/snapshot_commit.py` | 只审计实现与敏感文件分类 |
 | repository | `.cursor/rules/43-git-commit-policy.mdc` | 语义提交与 push 授权边界 |
 | repository | `.cursor/rules/44-code-architecture.mdc` | 依赖方向修正 |

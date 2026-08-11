@@ -1,37 +1,35 @@
-# Milestones v0.2.2
+# Milestones v0.4.0
 
-## M0 — Schema & Validators
+`CODEX_BOOTSTRAP.md` 是里程碑详细定义；本文件只提供同一编号体系的执行索引，不维护第二套阶段语义。
 
-Domain、JSON Schema、bundle validator、fixtures。
+## M0 — Repository Foundation Quality Gate
 
-## M1 — Compile / Preflight
+可复现 Python/TypeScript 工具链、`domain/application/adapter/entry` 依赖边界、architecture/contract test 入口和 Windows/Linux CI。M0 用正反向架构夹具证明门禁语义，不创建空生产包，也不实现产品业务能力。
 
-Role/Model/Tool/Workspace/Budget/Policy resolution。
+## M1 — Domain Kernel & Contract Assets
 
-## M2 — OpenHands Relay Spike
+稳定实体、值对象、枚举、状态机、RunManifest/Revision、JSON/YAML Schema、确定性 digest 与 invariant tests。
 
-用户中转站 → OpenHands Native Agent → safe Tool/Workspace。
+## M2 — Protocol Compiler + Preflight
 
-## M3 — Reliable Task Runtime
+Role/Agent/Model/Tool/Workspace/Budget/Policy resolution，生成 CompiledRunPlan 与机器可读 PreflightReport。
 
-TaskContract、Lease、Outbox、Idempotency、Retry、Cancel。
+## M3 — Model Relay Compatibility
 
-## M4 — Research Tool Plane
+用户中转站、ModelDefinition、capability probe、eligibility、health/circuit breaker、runtime fingerprint 与 secret redaction。
 
-MCP/REST、ToolPack、credentials、health/circuit breaker。
+## M4 — Role / Team / Task
 
-## M5 — Research Memory & Evidence
+26 个 Role fixtures、TeamTemplate 解析、per-Agent model binding、TaskContract、AcceptanceCriteria 与 HandoffBundle。
 
-Memory gate、Source/Evidence/Claim、Artifact lifecycle。
+## M5 — Ports + Fakes
 
-## M6 — First Real Experiment
+WorkflowEngine、AgentRuntime、ModelGateway、ToolProvider、WorkspaceBackend、ArtifactStore 等 inward-owned Ports、Fake 实现和 contract suite。
 
-Sandbox、metric、provenance、review gate。
+## M6 — OpenHands Spike
 
-## M7 — Research Console
+用户中转站 → OpenHands Native Agent → frozen Tool Set → safe Workspace；验证 Policy Wrapper、resume drift、Fork 与 plugin pin。
 
-Models/Team/Preflight/Timeline/Workspace/Evidence/Eval。
+## M7 — Reliable Mock Vertical Slice
 
-## M8 — Durable Production
-
-Temporal、OPA adapter、remote sandbox、central secrets/OTel。
+Compile → Preflight → Manifest Freeze → Lease/Idempotency/Outbox → Agent Session → Tool/Handoff/Artifact/Evidence/Evaluation，并注入重复投递、超时、worker 丢失、预算与取消故障。

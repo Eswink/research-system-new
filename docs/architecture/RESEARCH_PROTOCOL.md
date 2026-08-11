@@ -1,4 +1,4 @@
-# Research Protocol v0.2.2
+# Research Protocol v0.4.0
 
 ## 1. Protocol 是可编译定义
 
@@ -74,13 +74,21 @@ Compiler 负责：
 哪些动作需要审批
 ```
 
-## 6. Dynamic Role Activation
+## 6. Team Resolution / Dynamic Role Activation
 
-TeamTemplate 只是候选池。
+`Project.team_template` 是本次 Compile 的唯一 TeamTemplate 选择输入；Protocol 不绑定另一套 TeamTemplate，只声明各 Phase 的 `required_roles` / `required_capabilities` 约束。
 
-Protocol + Budget + Task complexity 决定实际激活 Role。
+```text
+Project.team_template
+→ resolve + flatten TeamTemplate
+→ apply Protocol phase constraints
+→ apply Budget / Policy / availability
+→ Compiled Team Plan
+```
 
-简单任务可把某些 Role 折叠为 Skill，避免 Agent proliferation。
+若已选 TeamTemplate 无法满足 Phase 角色下限，Compiler 必须给出机器可读 finding；不得静默改用另一模板。Role folding 只有在 Protocol/Policy 明确定义等价 Skill 与验收条件时才允许。
+
+TeamTemplate 是候选池，Protocol + Budget + Task complexity 决定实际激活 Role，避免 Agent proliferation。
 
 ## 7. Negative Result
 

@@ -1,4 +1,4 @@
-# Upstream Dependency Policy v0.2.2
+# Upstream Dependency Policy v0.4.0
 
 ## Pin
 

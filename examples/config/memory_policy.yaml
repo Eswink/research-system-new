@@ -6,7 +6,7 @@ memory_policy:
   run:
     auto_write_types:
       - DECISION
-      - FAILURE
+      - NEGATIVE_RESULT
       - OPEN_QUESTION
 
   project:

@@ -1,6 +1,16 @@
-# Engineering Backlog v0.2.2
+# Engineering Backlog v0.4.0
 
-## P0 — Validation & Domain
+## M0 — Repository Foundation Quality Gate
+
+- [x] Python 3.12 + uv exact lockfile
+- [x] ruff + mypy strict + import-linter + pytest
+- [x] pnpm exact lockfile + ESLint + dependency-cruiser + TypeScript
+- [x] `domain / application / adapter / entry` architecture positive/negative tests
+- [x] offline quality/contract test entrypoints without real LLM/network/credentials
+- [x] Windows + Linux CI deterministic gate definition
+- [x] system-spec / Cursor governance validators wired into CI
+
+## M1 / P0 — Validation & Domain
 
 - [ ] bootstrap validation script in CI
 - [ ] Domain entities/enums/invariants
@@ -10,7 +20,7 @@
 - [ ] append-only Usage Ledger
 - [ ] Artifact digest/verification
 
-## P0 — Model Relay
+## M3 / P0 — Model Relay
 
 - [ ] LLMEndpoint CRUD + encrypted credential ref
 - [ ] manual ModelDefinition
@@ -23,7 +33,7 @@
 - [ ] fallback audit
 - [ ] secret redaction
 
-## P0 — Role / Team / Task
+## M4 / P0 — Role / Team / Task
 
 - [ ] 26 Role fixtures
 - [ ] Lean/Standard/Rigorous templates
@@ -33,7 +43,7 @@
 - [ ] TaskContract / AcceptanceCriteria
 - [ ] HandoffBundle
 
-## P0 — Protocol / Preflight
+## M2 / P0 — Protocol / Preflight
 
 - [ ] Protocol compiler
 - [ ] DAG validation
@@ -43,7 +53,7 @@
 - [ ] CompiledRunPlan / PreflightReport
 - [ ] dry-run projection
 
-## P0 — Reliable Runtime
+## M7 / P0 — Reliable Runtime
 
 - [ ] WorkflowEngine port + Fake
 - [ ] PostgreSQL task queue
@@ -54,7 +64,7 @@
 - [ ] cancellation/compensation
 - [ ] duplicate delivery tests
 
-## P0 — OpenHands Adapter
+## M6 / P0 — OpenHands Adapter
 
 - [ ] relay mapping
 - [ ] Agent/Conversation lifecycle

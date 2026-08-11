@@ -1,4 +1,4 @@
-# Database Schema Sketch v0.2.2
+# Database Schema Sketch v0.4.0
 
 
 ## Identity / Governance

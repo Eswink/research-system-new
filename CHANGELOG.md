@@ -1,33 +1,30 @@
 # Changelog
 
-## v0.2.2 — 2026-08-10
+## v0.4.0 — 2026-08-10
 
-### Added
+- Cursor 工程自动化脚本迁移到对应 `.cursor/skills/<skill>/scripts/`；删除根 `scripts/`。
+- 清理遗留的双版本语义与 `research_os_baseline` session context。
+- Reviewer 输出改为 hard gate + evidence，不固化数值自评分。
+- Plan Mode 改为风险/歧义驱动；明确用户已授权实现时不重复确认。
+- 区分 learning lifecycle 与 framework evolution lifecycle。
 
-- Protocol Compiler / CompiledRunPlan / Preflight。
-- ResearchTask / TaskContract / HandoffBundle / AcceptanceCriterion。
-- TeamTemplate、RoleActivationPolicy 和 Lean/Standard/Rigorous presets。
-- ModelCompatibilityProfile、ModelProbeResult、EndpointHealth、ModelRuntimeFingerprint。
-- 模型同名漂移检测与 Role-Model Eligibility。
-- BudgetReservation、UsageLedger 和 Quota。
-- MemoryWriteProposal 与 evidence-backed memory。
-- 工作流幂等、Task Lease、Outbox、Retry、Circuit Breaker、Compensation。
-- ToolPackManifest、ToolInstallation、Trust Level 和供应链治理。
-- AutonomyLevel、ApprovalRequest 和 Intervention。
-- Artifact 内容寻址、保留、归档和 GC。
-- 安全 Threat Model。
-- OpenTelemetry 隐私策略和运行指标。
-- Local / Team / Distributed / HPC 部署分级。
-- Human、Service 与 task-scoped AgentPrincipal 身份边界。
-- LLM Relay 数据出站、数据分级、来源权利、保留与删除治理。
-- 研究诚信、冲突披露、负结果和禁止伪造规则。
-- Backup/Restore、RPO/RTO、SLO、容量准入与降级策略。
-- Eval Harness、Quality Gate 和 Canary/Regression。
-- 可执行的 bundle validation script。
 
-### Preserved
+当前主包统一为一个版本体系。
 
-- 用户通过统一 LLM 中转站配置模型。
-- 每个 Agent 可独立配置模型。
-- OpenHands Native Runtime 是 MVP。
-- Tools/MCP/Workspace/Sandbox/Evidence/Evaluation 既定架构。
+### Research OS
+- 用户通过 OpenAI-compatible 中转站配置 `Base URL + API Key + Model ID`。
+- 每个 Agent 可独立绑定模型。
+- Role / Agent / Task / Handoff 分离。
+- OpenHands Native 是 MVP Agent Runtime adapter。
+- Tool / Skill / Capability、Workspace、Evidence、Experiment、Evaluation 保持独立。
+- 包含 Protocol compile/preflight、可靠任务语义、预算、数据治理和安全边界。
+
+### Cursor Engineering Framework
+- Project Rules 使用 `.cursor/rules/*.mdc`。
+- Agent Skills 使用 `SKILL.md`。
+- Custom Subagents 使用 `.cursor/agents/*.md`。
+- Hooks 提供 secret/shell/subagent/evolution 等机器级控制。
+- Cursor 工程知识库存放于 `.cursor/knowledge/`。
+- 自学习采用 Observation → Proposal → Replay → Validation → Promotion。
+- Subagent 改为“按波次最多 3 个”，取消整个用户任务累计 3 个上限。
+- 发布质量由确定性 validators/evals + release manifest 驱动；独立 reviewer 按变更风险选择。

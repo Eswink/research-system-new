@@ -1,4 +1,4 @@
-# Workflow Reliability v0.2.2
+# Workflow Reliability v0.4.0
 
 ## 1. 执行语义
 
@@ -30,21 +30,24 @@ attempt
 
 ## 3. Retry Classification
 
+Canonical failure categories 只定义在 `docs/reliability/FAILURE_MODEL.md`。Workflow 不维护第二套 failure enum，而是根据以下输入产生 retry disposition：
+
 ```text
-TRANSIENT_NETWORK
-RATE_LIMIT
-MODEL_UNAVAILABLE
-TOOL_TIMEOUT
-WORKER_CRASH
-VALIDATION_FAILURE
-POLICY_DENIED
-BUDGET_EXHAUSTED
-NON_IDEMPOTENT_FAILURE
-SCIENTIFIC_NEGATIVE_RESULT
-SYSTEM_BUG
+FailureRecord.category
++ operation idempotency
++ attempt budget
++ endpoint/provider health
++ policy/budget decision
+→ retry / rework / manual recovery / terminal
 ```
 
-只有允许重试的类别自动重试。
+关键规则：
+
+- `MODEL_RATE_LIMIT`、`WORKER_LOST` 可在预算和幂等条件满足时自动重试；
+- `TOOL_TIMEOUT` 仅对幂等调用或已有 compensation 的调用重试；
+- `VALIDATION_FAILURE` 创建新 attempt/rework，不复用已失败输出；
+- `POLICY_DENIED`、`APPROVAL_REJECTED`、`BUDGET_EXHAUSTED` 进入人工或策略决策；
+- `SCIENTIFIC_NEGATIVE_RESULT` 是研究结果，不转换为系统失败重试。
 
 ## 4. Backoff / Circuit Breaker
 

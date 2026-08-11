@@ -1,4 +1,4 @@
-# Observability v0.2.2
+# Observability v0.4.0
 
 ## 1. Trace Hierarchy
 

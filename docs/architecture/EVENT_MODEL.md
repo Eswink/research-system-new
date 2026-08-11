@@ -1,4 +1,4 @@
-# Event Model v0.2.2
+# Event Model v0.4.0
 
 ## 1. Domain Events
 

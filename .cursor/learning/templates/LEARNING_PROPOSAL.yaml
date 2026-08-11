@@ -1,0 +1,40 @@
+schema_version: 1
+id: LEARN-YYYYMMDD-NNN
+status: PROPOSED
+created_at: YYYY-MM-DD
+summary: ""
+severity: NORMAL
+category: reliability
+source_type: validator_failure
+source_refs: []
+occurrences:
+  - task_ref: ""
+    evidence_ref: ""
+problem:
+  observed_behavior: ""
+  expected_behavior: ""
+  reproduction: ""
+hypothesis:
+  root_cause: ""
+  confidence: 0.0
+proposal:
+  target_type: EVAL
+  target_paths: []
+  change_summary: ""
+  blast_radius: ""
+replay:
+  before_cases: []
+  before_result: ""
+  after_cases: []
+  after_result: ""
+validation:
+  commands: []
+  evidence_refs: []
+  result: FAIL
+approvals: []
+promotion:
+  authorization_ref: ""
+  promoted_at: ""
+  promoted_digest: ""
+  regression_digest: ""
+supersedes: []

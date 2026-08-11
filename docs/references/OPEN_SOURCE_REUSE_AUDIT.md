@@ -1,4 +1,4 @@
-# Open-source Reuse Audit v0.2.2
+# Open-source Reuse Audit v0.4.0
 
 Audit date: 2026-08-10.
 

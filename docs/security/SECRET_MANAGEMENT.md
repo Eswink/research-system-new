@@ -1,4 +1,4 @@
-# Secret Management v0.2.2
+# Secret Management v0.4.0
 
 ## 1. Secret 类型
 

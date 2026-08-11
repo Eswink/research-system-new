@@ -1,4 +1,4 @@
-# User Configuration v0.2.2
+# User Configuration v0.4.0
 
 ## 1. First-run Wizard
 

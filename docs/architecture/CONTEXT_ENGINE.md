@@ -1,4 +1,4 @@
-# Context & Memory Architecture v0.2.2
+# Context & Memory Architecture v0.4.0
 
 ## 1. 两个问题分开
 

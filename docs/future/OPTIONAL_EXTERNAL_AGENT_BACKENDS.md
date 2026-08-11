@@ -1,6 +1,6 @@
 # Optional External Agent Backends
 
-不属于 v0.2.2 MVP。
+不属于 v0.4.0 MVP。
 
 未来可能接入：
 

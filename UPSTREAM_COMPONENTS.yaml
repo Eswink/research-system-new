@@ -1,13 +1,70 @@
-audit_date: "2026-08-10"
-release: "v0.2.2"
+schema_version: 2
+audit_date: "2026-08-11"
+project_version_source: VERSION
+policy:
+  adopted_requires:
+    - immutable_resolution
+    - sha256_integrity
+    - spdx_license
+    - license_evidence
+    - upgrade_gate
+  planned_must_not_claim_resolution: true
 
 components:
+  - id: pyyaml
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: BUILD_TOOLING
+    role: cursor_validator_yaml_parser
+    source:
+      kind: PYPI
+      package: PyYAML
+      url: "https://pypi.org/project/PyYAML/6.0.3/"
+    resolution:
+      version: "6.0.3"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"
+    license:
+      spdx: MIT
+      evidence: "https://raw.githubusercontent.com/yaml/pyyaml/6.0.3/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, validator_regression]
+
+  - id: jsonschema
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: BUILD_TOOLING
+    role: contract_schema_validator
+    source:
+      kind: PYPI
+      package: jsonschema
+      url: "https://pypi.org/project/jsonschema/4.26.0/"
+    resolution:
+      version: "4.26.0"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "0c26707e2efad8aa1bfc5b7ce170f3fccc2e4918ff85989ba9ffa9facb2be326"
+    license:
+      spdx: MIT
+      evidence: "https://raw.githubusercontent.com/python-jsonschema/jsonschema/v4.26.0/COPYING"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, schema_regression]
+
   - id: openhands_sdk
-    source: "https://github.com/OpenHands/software-agent-sdk"
-    decision: dependency_adapter
+    adoption_status: PLANNED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
     role: primary_generic_agent_runtime
+    source: "https://github.com/OpenHands/software-agent-sdk"
     controls:
-      - pin_exact_version
+      - pin_exact_version_before_adoption
       - contract_tests
       - policy_wrap_direct_tool_execution
       - manifest_check_on_resume
@@ -15,42 +72,56 @@ components:
       - pin_plugin_revision
 
   - id: temporal
-    source: "https://github.com/temporalio/temporal"
-    decision: later_adapter
+    adoption_status: PLANNED
+    decision_status: DEFERRED
+    integration_mode: ADAPTER
     role: durable_workflow
+    source: "https://github.com/temporalio/temporal"
 
   - id: opa
-    source: "https://github.com/open-policy-agent/opa"
-    decision: optional_adapter
+    adoption_status: PLANNED
+    decision_status: OPTIONAL
+    integration_mode: ADAPTER
     role: centralized_policy_engine
+    source: "https://github.com/open-policy-agent/opa"
 
   - id: opentelemetry
-    source: "https://opentelemetry.io/"
-    decision: dependency_standard
+    adoption_status: PLANNED
+    decision_status: APPROVED
+    integration_mode: STANDARD
     role: telemetry
+    source: "https://opentelemetry.io/"
     controls:
       - genai_content_capture_off_by_default
 
   - id: mcp
-    source: "https://modelcontextprotocol.io/"
-    decision: protocol
+    adoption_status: PLANNED
+    decision_status: APPROVED
+    integration_mode: PROTOCOL
     role: research_tool_integration
+    source: "https://modelcontextprotocol.io/"
     controls:
       - roots_not_access_control
       - scoped_authorization
       - schema_version_tracking
 
   - id: swe_rex
-    source: "https://github.com/SWE-agent/SWE-ReX"
-    decision: optional_adapter
+    adoption_status: PLANNED
+    decision_status: OPTIONAL
+    integration_mode: ADAPTER
     role: remote_parallel_execution
+    source: "https://github.com/SWE-agent/SWE-ReX"
 
   - id: cline_kanban
-    source: "https://github.com/cline/kanban"
-    decision: ux_algorithm_donor
+    adoption_status: PLANNED
+    decision_status: REFERENCE_ONLY
+    integration_mode: REFERENCE
     role: task_worktree_reference
+    source: "https://github.com/cline/kanban"
 
   - id: claw_ai_lab
-    source: "https://github.com/Claw-AI-Lab/Claw-AI-Lab"
-    decision: research_ux_donor
+    adoption_status: PLANNED
+    decision_status: REFERENCE_ONLY
+    integration_mode: REFERENCE
     role: research_console_reference
+    source: "https://github.com/Claw-AI-Lab/Claw-AI-Lab"

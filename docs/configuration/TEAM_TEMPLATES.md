@@ -1,4 +1,4 @@
-# Team Templates v0.2.2
+# Team Templates v0.4.0
 
 ## LEAN
 
@@ -36,8 +36,10 @@ ResultAnalyst
 Statistician
 ScientificReviewer ×2
 EvidenceReviewer
+MethodologyReviewer
 MetaReviewer
 ResearchWriter
+ReproducibilityAuditor
 CitationAuditor
 ```
 
@@ -47,12 +49,11 @@ CitationAuditor
 
 - 多模型 LiteratureScout；
 - NoveltyReviewer；
-- MethodologyReviewer；
+- MethodologyReviewer 扩容；
 - StatisticalReviewer；
 - TargetFitReviewer；
-- ReproducibilityAuditor；
+- 更严格的 ReproducibilityAuditor 审计与 Quality Gate；
 - ScientificEditor；
-- 更严格 Quality Gate。
 
 ## 重要规则
 

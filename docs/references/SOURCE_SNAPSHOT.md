@@ -1,6 +1,6 @@
 # Source Snapshot — 2026-08-10
 
-Official/primary sources reviewed for v0.2.2:
+Official/primary sources reviewed for v0.4.0:
 
 ## OpenHands
 

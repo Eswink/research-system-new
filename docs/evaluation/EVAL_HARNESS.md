@@ -1,4 +1,4 @@
-# Evaluation Harness v0.2.2
+# Evaluation Harness v0.4.0
 
 ## 1. Fixed Test Layers
 

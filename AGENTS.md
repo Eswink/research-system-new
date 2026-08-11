@@ -1,4 +1,4 @@
-# AGENTS.md — Research OS v0.2.2 Engineering Contract
+# AGENTS.md — Research OS Cursor Engineering Contract v0.4.0
 
 ## 1. 不可改变的产品边界
 

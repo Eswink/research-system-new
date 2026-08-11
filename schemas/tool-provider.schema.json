@@ -3,30 +3,28 @@
   "$id": "https://research-os.local/schemas/tool-provider.schema.json",
   "title": "ToolProviderSpec",
   "type": "object",
-  "additionalProperties": true,
-  "required": [
-    "id",
-    "kind",
-    "capabilities"
-  ],
+  "additionalProperties": false,
+  "required": ["id", "kind", "trust_level", "capabilities", "effect_class"],
   "properties": {
-    "id": {
-      "type": "string"
-    },
-    "kind": {
-      "enum": [
-        "NATIVE",
-        "MCP",
-        "REST",
-        "CLI",
-        "REMOTE_WORKER"
-      ]
-    },
+    "id": {"type": "string", "minLength": 1},
+    "kind": {"enum": ["NATIVE", "MCP", "REST", "CLI", "REMOTE_WORKER"]},
+    "trust_level": {"enum": ["BUILT_IN", "VERIFIED", "USER_APPROVED", "UNTRUSTED", "REVOKED"]},
+    "transport": {"enum": ["streamable_http", "stdio", "native", "rest", "cli", "remote_worker"]},
+    "endpoint_env": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "minLength": 1},
     "capabilities": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
-    }
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "effect_class": {
+      "enum": ["READ_ONLY", "WRITE", "EXECUTE", "NETWORK", "SECRET_USE", "DESTRUCTIVE", "EXTERNAL_PUBLISH"]
+    },
+    "network_domains": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "health_check": {"type": "boolean"}
   }
 }

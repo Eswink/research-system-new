@@ -11,7 +11,8 @@
   ],
   "properties": {
     "domain_map": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": {}
     },
     "source_refs": {
       "type": "array",

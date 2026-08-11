@@ -4,38 +4,31 @@
   "title": "ModelDefinition",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "id",
-    "endpoint_id",
-    "model_name"
-  ],
+  "required": ["id", "endpoint_id", "model_name", "capabilities"],
   "properties": {
-    "id": {
-      "type": "string"
-    },
-    "endpoint_id": {
-      "type": "string"
-    },
-    "display_name": {
-      "type": "string"
-    },
-    "model_name": {
-      "type": "string",
-      "minLength": 1
-    },
-    "enabled": {
-      "type": "boolean"
-    },
+    "id": {"type": "string", "minLength": 1},
+    "endpoint_id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "model_name": {"type": "string", "minLength": 1},
+    "enabled": {"type": "boolean"},
     "capabilities": {
       "type": "object",
-      "additionalProperties": {
-        "enum": [
-          "USER_DECLARED",
-          "DISCOVERED",
-          "PROBED",
-          "ADMIN_OVERRIDE",
-          "RUNTIME_OBSERVED"
-        ]
+      "additionalProperties": {"$ref": "#/$defs/capabilityAssertion"}
+    }
+  },
+  "$defs": {
+    "capabilityAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "confidence", "source", "last_verified_at", "probe_version"],
+      "properties": {
+        "status": {"enum": ["SUPPORTED", "UNSUPPORTED", "UNKNOWN", "DEGRADED"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "source": {
+          "enum": ["USER_DECLARED", "DISCOVERED", "PROBED", "ADMIN_OVERRIDE", "RUNTIME_OBSERVED"]
+        },
+        "last_verified_at": {"type": ["string", "null"], "format": "date-time"},
+        "probe_version": {"type": ["string", "null"]}
       }
     }
   }

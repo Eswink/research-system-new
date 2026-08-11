@@ -1,4 +1,4 @@
-# Budget, Quota & Cost Ledger v0.2.2
+# Budget, Quota & Cost Ledger v0.4.0
 
 ## 1. 预算维度
 

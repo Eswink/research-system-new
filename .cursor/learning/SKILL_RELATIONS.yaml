@@ -1,0 +1,53 @@
+schema_version: 1
+skills:
+  repository-orientation:
+    kind: discovery
+  all-plan:
+    kind: planning
+  recheck:
+    kind: verification
+  engineering-memory:
+    kind: memory
+  governance-check:
+    kind: validation
+  cursor-framework-check:
+    kind: validation
+  refresh-cursor-kb:
+    kind: knowledge
+  semantic-commit:
+    kind: release
+  framework-release:
+    kind: release
+  capture-learning:
+    kind: learning
+  consolidate-learning:
+    kind: learning
+  promote-learning:
+    kind: learning
+  evolve-framework:
+    kind: evolution
+relations:
+  - from: all-plan
+    to: recheck
+    type: followed_by
+  - from: recheck
+    to: engineering-memory
+    type: gates
+  - from: recheck
+    to: semantic-commit
+    type: gates
+  - from: capture-learning
+    to: consolidate-learning
+    type: followed_by
+  - from: consolidate-learning
+    to: promote-learning
+    type: gates
+  - from: promote-learning
+    to: framework-release
+    type: requires
+  - from: evolve-framework
+    to: refresh-cursor-kb
+    type: may_require
+  - from: evolve-framework
+    to: framework-release
+    type: requires

@@ -1,0 +1,25 @@
+{
+  "name": "research-system-tooling",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.1",
+  "engines": {
+    "node": ">=22.18.0 <23"
+  },
+  "scripts": {
+    "format:check": "prettier --check package.json pnpm-workspace.yaml tsconfig.base.json tsconfig.json eslint.config.mjs dependency-cruiser.config.mjs tools/**/*.mjs tests/**/*.mjs tests/**/*.ts",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "boundaries": "depcruise --config dependency-cruiser.config.mjs --output-type err tests/architecture/typescript/fixtures/valid",
+    "test": "node --test tests/architecture/typescript/dependency-boundaries.test.mjs tests/tooling/eslint-rule.test.mjs",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run boundaries && pnpm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "dependency-cruiser": "18.2.0",
+    "eslint": "10.8.1",
+    "prettier": "3.9.6",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.67.0"
+  }
+}

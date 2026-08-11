@@ -3,14 +3,14 @@ id: MEM-20260810-002
 title: Git 自动提交策略与代码工程约束基线
 status: SUPERSEDED
 created_at: 2026-08-10
-updated_at: 2026-08-10
+updated_at: 2026-08-11
 scope: repository
 confidence: 0.92
 review_after: 2026-11-10
 source_plans:
-  - .cursor/plans/tasks/PLAN-20260810-002-git-auto-commit-and-code-governance.md
+  - .cursor/plans/archive/PLAN-20260810-002-git-auto-commit-and-code-governance.md
 source_rechecks:
-  - .cursor/plans/rechecks/RECHECK-20260810-003-git-auto-commit-and-code-governance.md
+  - .cursor/plans/archive/RECHECK-20260810-003-git-auto-commit-and-code-governance.md
 supersedes: []
 tags:
   - git
@@ -57,8 +57,8 @@ tags:
 
 | 类型 | 引用 | 支持的结论 |
 | --- | --- | --- |
-| plan | `.cursor/plans/tasks/PLAN-20260810-002-git-auto-commit-and-code-governance.md` | 目标、范围、验收条件与证据 |
-| recheck | `.cursor/plans/rechecks/RECHECK-20260810-003-git-auto-commit-and-code-governance.md` | PASS_WITH_WARNINGS，AC 全部通过 |
+| plan | `.cursor/plans/archive/PLAN-20260810-002-git-auto-commit-and-code-governance.md` | 目标、范围、验收条件与证据 |
+| recheck | `.cursor/plans/archive/RECHECK-20260810-003-git-auto-commit-and-code-governance.md` | PASS_WITH_WARNINGS，AC 全部通过 |
 | repository | `.cursor/rules/43-git-commit-policy.mdc` | 提交策略与回滚指引 |
 | repository | `.cursor/hooks/snapshot_commit.py` | 兜底实现与敏感文件过滤 |
 | repository | `.cursor/rules/40-python.mdc`、`41-typescript.mdc`、`44-code-architecture.mdc` | 阈值与解耦约束 |

@@ -24,6 +24,6 @@ alwaysApply: false
 - 函数参数 ≤ 5（超限使用参数对象/值对象）。
 - 嵌套块深度 ≤ 4。
 
-豁免：`scripts/`、`.cursor/` 下的冻结 Bootstrap 与 Cursor 治理脚本不受上述行数/CCN 阈值约束，但任何修改必须通过对应校验器（`scripts/validate_bundle.py` 或 `.cursor/skills/governance-check/scripts/validate.py`），并为新增逻辑提供测试。
+豁免：`.cursor/skills/*/scripts/` 下的工程自动化脚本不受上述行数/CCN 阈值约束，但任何修改必须通过对应校验器（`.cursor/skills/system-spec-check/scripts/validate_bundle.py` 或 `.cursor/skills/governance-check/scripts/validate.py`），并为新增逻辑提供测试。
 
 未来 M0 建包时在 `pyproject.toml` 落地 ruff 与 mypy `strict`，并配置 import-linter 边界契约（见 `44-code-architecture.mdc`）；未配置前不得进入 M0 代码阶段。

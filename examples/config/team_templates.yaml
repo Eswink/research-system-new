@@ -30,8 +30,10 @@ team_templates:
       statistician: {min_instances: 1, max_instances: 1}
       scientific_reviewer: {min_instances: 2, max_instances: 4}
       evidence_reviewer: {min_instances: 1, max_instances: 1}
+      methodology_reviewer: {min_instances: 1, max_instances: 1}
       meta_reviewer: {min_instances: 1, max_instances: 1}
       research_writer: {min_instances: 1, max_instances: 1}
+      reproducibility_auditor: {min_instances: 1, max_instances: 1}
       citation_auditor: {min_instances: 1, max_instances: 1}
 
   rigorous:

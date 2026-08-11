@@ -1,4 +1,4 @@
-# SLO & Capacity Planning v0.2.2
+# SLO & Capacity Planning v0.4.0
 
 ## Suggested Indicators
 

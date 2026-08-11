@@ -1,4 +1,4 @@
-# CODEX_BOOTSTRAP.md — v0.2.2 Engineering Bootstrap
+# CODEX_BOOTSTRAP.md — Research OS Cursor Engineering Bootstrap v0.4.0
 
 ## 目标
 
@@ -13,55 +13,81 @@ User LLM Relay
 + Existing Tool/MCP/Workspace Wheels
 ```
 
-## M0 — Repository Foundation
+## M0 — Repository Foundation Quality Gate
+
+M0 固化的目标模块边界如下；本阶段不创建只有占位文件的生产目录：
 
 ```text
 apps/web
-services/api
-services/orchestrator
-services/evaluator
-services/tool_gateway
+
+services/*
 
 packages/domain
-packages/protocols
-packages/tasks
-packages/roles
-packages/models
-packages/tools
-packages/workspace
-packages/policies
-packages/memory
-packages/provenance
-packages/events
-packages/budget
-packages/observability
+packages/application
 
-adapters/openhands
-adapters/local_workflow
-adapters/postgres
-adapters/object_store
+adapters/*
 
-tests/contracts
-scripts
+tests/architecture
 infra
+```
+
+当前通过 `tests/architecture/python` 与 `tests/architecture/typescript` 的正反向夹具证明依赖规则能够放行正确图并拒绝错误图。上述生产目录只在首个真实职责模块及其测试同时进入时创建，避免用空包制造假门禁。
+
+职责边界：
+
+```text
+apps/web
+→ UI entry adapter，只消费 API DTO，不复制 Canonical State
+
+services/*
+→ entry adapter + composition root，负责装配 use case 与具体 adapter
+
+packages/application
+→ use cases + inward-owned Ports + DTO/Domain 映射
+
+packages/domain
+→ 纯实体、值对象、决策、事件和状态机
+  protocols/tasks/roles/models/tools/... 是内部领域模块，不提前拆成互相依赖的顶层包
+
+adapters/*
+→ 实现 application Ports，承接 OpenHands、数据库、对象存储和工作流副作用
+```
+
+编译期依赖：
+
+```text
+apps / services / adapters → packages/application → packages/domain
+```
+
+运行时出站调用：
+
+```text
+application use case → inward-owned Port → injected adapter
 ```
 
 Python：
 
 - 3.12+
-- uv
-- Pydantic v2
-- SQLAlchemy 2
-- Alembic
+- uv + exact lockfile
 - pytest
 - ruff
-- mypy
+- mypy strict
+- import-linter
 
 Web：
 
-- pnpm
-- Next.js
+- pnpm + exact lockfile
 - TypeScript
+- ESLint
+- dependency-cruiser
+
+M0 完成条件：
+
+- Windows/Linux 可从 lockfile 确定性安装；
+- lint、strict typecheck、dependency boundary、unit/contract test 均有命令入口；
+- CI 执行上述门禁及 system-spec / Cursor governance validators；
+- composition root 是具体 adapter 的唯一装配位置；
+- 不引入真实 LLM、OpenHands、数据库或 UI 业务行为。
 
 ## M1 — Domain Kernel
 
@@ -271,7 +297,7 @@ Project
 
 ## Definition of Done
 
-- `scripts/validate_bundle.py` 通过
+- `.cursor/skills/system-spec-check/scripts/validate_bundle.py` 通过
 - Domain tests 通过
 - Role/Model/Protocol references 完整
 - Preflight 能拒绝不兼容模型

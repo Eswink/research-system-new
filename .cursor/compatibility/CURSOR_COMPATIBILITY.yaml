@@ -1,0 +1,37 @@
+schema_version: 1
+knowledge_verified_at: "2026-08-11"
+runtime_tested_versions:
+  - cursor_version: "3.14.7"
+    platform: windows
+    python_version: "3.11.9"
+    tested_at: "2026-08-11"
+    status: PASS_WITH_MITIGATION
+    live_probes:
+      normal_read_allowed: PASS
+      pretool_secret_read_denied: PASS
+      powershell_root_delete_denied: PASS
+    subprocess_probes:
+      utf8_bom_input: PASS
+      utf8_json_output: PASS
+      malformed_json_fail_closed: PASS
+      invalid_utf8_fail_closed: PASS
+      security_behavior_matrix: PASS
+    caveats:
+      - id: BEFORE_READ_FILE_CONTENT_INVALID_JSON
+        observed: beforeReadFile may serialize non-ASCII source content as invalid JSON on Windows
+        mitigation: bind secret_guard to fail-closed preToolUse matcher=Read and inspect only the target path
+policy:
+  unknown_version: WARN_AND_RUN_PROBE
+  changed_major_version: REQUIRE_KB_REFRESH_AND_PROBE
+  official_docs_override_caveats: true
+probes:
+  - hook_json_utf8_bom
+  - malformed_input_fail_closed
+  - session_context
+  - pretool_secret_read_denied
+  - dangerous_shell_denied
+  - subagent_parallel_wave
+  - stop_loop_opt_in
+note: >-
+  Runtime evidence distinguishes live Cursor probes from local subprocess regression.
+  PASS_WITH_MITIGATION applies only while the documented preToolUse Read binding remains active.

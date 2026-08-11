@@ -1,4 +1,4 @@
-# System Architecture v0.2.2
+# System Architecture v0.4.0
 
 ## 1. Control / Execution / Data 三平面
 
@@ -49,7 +49,50 @@ Project Draft
 → Deliverable
 ```
 
-## 3. 关键端口
+## 3. 代码所有权与依赖方向
+
+```text
+apps/web
+└─ UI entry adapter；只消费 API DTO，不持有后端 Canonical State
+
+services/*
+├─ inbound entry adapter
+└─ composition root；装配 use case、Port 与具体 adapter
+
+packages/application
+├─ use cases / orchestration
+├─ inward-owned Ports
+└─ API DTO ↔ Domain 显式映射
+
+packages/domain
+├─ 纯实体、值对象、决策、事件与状态机
+└─ protocols/tasks/roles/models/tools/... 作为内部领域模块
+
+adapters/*
+└─ 实现 application Ports；承接外部 I/O 与副作用
+```
+
+M0 仅在 `tests/architecture/` 中用双语言正反向夹具固化这些边界。生产目录不以 `.gitkeep`、空包或虚构实体提前占位；首个真实模块进入时，必须同时声明语言/包归属、公开入口和相应测试。
+
+编译期依赖只允许：
+
+```text
+apps / services / adapters → packages/application → packages/domain
+```
+
+`packages/application` 不 import 具体 adapter；`packages/domain` 不知道 Web、ORM、LLM、OpenHands、Workflow 或 provider SDK。具体实现只由 `services/*` composition root 注入。
+
+运行时控制流与源码依赖方向分开表达：
+
+```text
+Inbound:
+entry adapter → application use case → domain
+
+Outbound:
+application use case → inward-owned Port → injected adapter
+```
+
+## 4. 关键端口
 
 ```text
 WorkflowEngine
@@ -69,7 +112,7 @@ Evaluator
 
 Domain 不依赖具体实现。
 
-## 4. Model Runtime
+## 5. Model Runtime
 
 ```text
 AgentSpec
@@ -82,7 +125,7 @@ AgentSpec
 → User Relay
 ```
 
-## 5. Tool Runtime
+## 6. Tool Runtime
 
 ```text
 Requested Capabilities
@@ -93,7 +136,7 @@ Requested Capabilities
 → freeze in AgentSession
 ```
 
-## 6. Durable Boundary
+## 7. Durable Boundary
 
 ### Domain State
 业务真相。
@@ -109,13 +152,13 @@ Requested Capabilities
 
 四者关联，不互相替代。
 
-## 7. 数据一致性
+## 8. 数据一致性
 
 Domain 写入与 Event 发布采用 Transactional Outbox。
 
 Worker 执行按 at-least-once 设计，业务副作用通过 idempotency/lease/dedupe 控制。
 
-## 8. 部署演进
+## 9. 部署演进
 
 ```text
 Local Developer

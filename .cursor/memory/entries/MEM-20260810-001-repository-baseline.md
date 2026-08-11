@@ -1,17 +1,17 @@
 ---
 id: MEM-20260810-001
 title: Research OS 仓库基线与 Cursor 治理边界
-status: ACTIVE
+status: RETIRED
 created_at: 2026-08-10
-updated_at: 2026-08-10
+updated_at: 2026-08-11
 scope: repository
 confidence: 0.96
 review_after: 2026-11-10
 source_plans:
-  - .cursor/plans/tasks/PLAN-20260810-001-cursor-governance-bootstrap.md
+  - .cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md
 source_rechecks:
-  - .cursor/plans/rechecks/RECHECK-20260810-001-cursor-governance-bootstrap.md
-  - .cursor/plans/rechecks/RECHECK-20260810-002-cursor-governance-bootstrap.md
+  - .cursor/plans/archive/RECHECK-20260810-001-cursor-governance-bootstrap.md
+  - .cursor/plans/archive/RECHECK-20260810-002-cursor-governance-bootstrap.md
 supersedes: []
 tags:
   - repository-baseline
@@ -64,7 +64,7 @@ Research OS 当前是 `v0.2.2` docs-first Bootstrap：已存在产品架构、AD
 
 | 类型 | 引用 | 支持的结论 |
 | --- | --- | --- |
-| plan | `.cursor/plans/tasks/PLAN-20260810-001-cursor-governance-bootstrap.md` | 用户批准范围、目录结构、状态机和实施证据 |
-| recheck | `.cursor/plans/rechecks/RECHECK-20260810-001-cursor-governance-bootstrap.md` | Bootstrap、治理校验、语法、安全和供应链检查已通过 |
+| plan | `.cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md` | 用户批准范围、目录结构、状态机和实施证据 |
+| recheck | `.cursor/plans/archive/RECHECK-20260810-001-cursor-governance-bootstrap.md` | Bootstrap、治理校验、语法、安全和供应链检查已通过 |
 | repository | `AGENTS.md`、`CODEX_BOOTSTRAP.md`、`docs/adr/ADR-0017-evidence-backed-memory.md` | 产品边界、目标工程结构和产品 Memory 写入门禁 |
 | digest | `BOOTSTRAP_MANIFEST.json`、`.cursor/skills.lock.yaml` | 冻结原始包与全局 UI Skill 安装树基线 |

@@ -1,0 +1,26 @@
+id: literature-tools-fixture
+version: 0.4.0
+source: https://example.invalid/research-os-fixtures/literature-tools
+resolved_revision: fixture-revision-only
+digest: sha256:fixture-only
+signature: null
+license: Apache-2.0
+tools:
+  - literature.search
+  - literature.read
+skills:
+  - literature-discovery
+requested_capabilities:
+  - literature.search
+  - literature.read
+network_domains:
+  - research-tools.example.com
+credentials:
+  - name: research_tool_token
+    scope: tool-provider:literature-tools-fixture
+    required: false
+compatibility:
+  research_os: 0.4.0
+  mcp_protocol: null
+  python: null
+  node: null

@@ -5,13 +5,26 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
+import os
 import re
+import subprocess
 from pathlib import Path
 from typing import Any, Iterable
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[4]
+
+def _discover_root() -> Path:
+    explicit = os.environ.get("CURSOR_FRAMEWORK_ROOT")
+    if explicit:
+        return Path(explicit).resolve()
+    here = Path(__file__).resolve()
+    for candidate in (here.parent, *here.parents):
+        if (candidate / "VERSION").is_file() and (candidate / ".cursor" / "framework.json").is_file():
+            return candidate
+    raise RuntimeError("Cannot locate repository root (VERSION + .cursor/framework.json)")
+
+ROOT = _discover_root()
 CURSOR_ROOT = ROOT / ".cursor"
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
@@ -33,6 +46,8 @@ EXPECTED_RULES = {
     "00-repository-contract.mdc",
     "10-agent-delegation.mdc",
     "20-plan-memory-recheck.mdc",
+    "21-cursor-framework-governance.mdc",
+    "22-learning-promotion.mdc",
     "30-ui-skill-routing.mdc",
     "40-python.mdc",
     "41-typescript.mdc",
@@ -42,12 +57,14 @@ EXPECTED_RULES = {
     "50-contract-assets.mdc",
 }
 EXPECTED_RULE_METADATA = {
+    "21-cursor-framework-governance.mdc": {"always_apply": True, "has_globs": False},
+    "22-learning-promotion.mdc": {"always_apply": True, "has_globs": False},
     "30-ui-skill-routing.mdc": {"always_apply": False, "has_globs": True},
     "40-python.mdc": {"always_apply": False, "has_globs": True},
     "41-typescript.mdc": {"always_apply": False, "has_globs": True},
     "42-command-encoding.mdc": {"always_apply": True, "has_globs": False},
     "43-git-commit-policy.mdc": {"always_apply": True, "has_globs": False},
-    "44-code-architecture.mdc": {"always_apply": True, "has_globs": False},
+    "44-code-architecture.mdc": {"always_apply": False, "has_globs": True},
     "50-contract-assets.mdc": {"always_apply": False, "has_globs": True},
 }
 EXPECTED_SKILLS = {
@@ -163,42 +180,73 @@ def tree_digest(root: Path) -> tuple[int, str]:
 
 
 def check_hooks() -> None:
-    """校验 Cursor hooks 配置：hooks.json 合法且 stop 事件指向存在的脚本。"""
+    """校验 Cursor hooks 配置与本项目依赖的关键事件。"""
     hooks_json = ROOT / ".cursor" / "hooks.json"
     if not hooks_json.exists():
-        add_error("缺失 .cursor/hooks.json 自动提交配置")
+        add_error("缺失 .cursor/hooks.json")
         return
     hooks = load_yaml(hooks_json)
     if not isinstance(hooks, dict) or hooks.get("version") != 1:
         add_error(".cursor/hooks.json version 必须为 1")
         return
     hook_defs = hooks.get("hooks") or {}
-    if not isinstance(hook_defs, dict) or "stop" not in hook_defs:
-        add_error(".cursor/hooks.json 缺少 stop 事件")
+    if not isinstance(hook_defs, dict):
+        add_error(".cursor/hooks.json hooks 必须为对象")
         return
-    for entry in hook_defs["stop"]:
-        if not isinstance(entry, dict):
-            add_error(".cursor/hooks.json stop 条目必须是对象")
+    required={"sessionStart","beforeShellExecution","beforeMCPExecution","preToolUse","subagentStart","subagentStop","stop"}
+    missing=required-set(hook_defs)
+    if missing:
+        add_error(f".cursor/hooks.json 缺少事件: {sorted(missing)}")
+    for event_name, entries in hook_defs.items():
+        if not isinstance(entries, list):
+            add_error(f"Hook entries 必须为列表: {event_name}")
             continue
-        command = entry.get("command")
-        if not isinstance(command, str) or not command:
-            add_error(".cursor/hooks.json stop 条目缺少 command")
-            continue
-        script = command.split()[-1]
-        if not (ROOT / script).exists():
-            add_error(f".cursor/hooks.json stop 脚本不存在: {script}")
-            continue
-        script_text = read_text(ROOT / script)
-        code_only = re.sub(r"\"\"\"(?:.|\n)*?\"\"\"|\'\'\'(?:.|\n)*?\'\'\'|#[^\n]*", "", script_text)
-        if re.search(r"git\s+(?:commit|push)\b", code_only):
-            add_error(f".cursor/hooks stop 脚本不得执行 git commit/push: {script}")
-
+        for entry in entries:
+            if not isinstance(entry, dict):
+                add_error(f"Hook 条目必须为对象: {event_name}")
+                continue
+            if entry.get("type") != "command":
+                add_error(f"Hook type 必须为 command: {event_name}")
+            timeout = entry.get("timeout")
+            if not isinstance(timeout, (int, float)) or timeout <= 0 or timeout > 30:
+                add_error(f"Hook timeout 必须显式设置且 <=30s: {event_name}")
+            command = entry.get("command")
+            if not isinstance(command, str) or not command:
+                add_error(f"Hook 缺少 command: {event_name}")
+                continue
+            script = next((token for token in reversed(command.split()) if token.endswith((".py",".sh",".ts",".js"))), "")
+            if not script or not (ROOT / script).exists():
+                add_error(f"Hook 脚本不存在: {event_name}: {script or command}")
+                continue
+            if event_name in {"beforeReadFile","beforeShellExecution","beforeMCPExecution","preToolUse","subagentStart"} and entry.get("failClosed") is not True:
+                add_error(f"Guard Hook 必须 failClosed: {event_name}")
+            if event_name == "preToolUse" and command.endswith("subagent_pretool_guard.py") and entry.get("matcher") != "Task":
+                add_error("Subagent preToolUse guard 必须 matcher=Task")
+            if event_name == "preToolUse" and command.endswith("secret_guard.py") and entry.get("matcher") != "Read":
+                add_error("Secret preToolUse guard 必须 matcher=Read")
+            if event_name == "stop":
+                script_text = read_text(ROOT / script)
+                code_only = re.sub(r'"""(?:.|\n)*?"""|\'\'\'(?:.|\n)*?\'\'\'|#[^\n]*', "", script_text)
+                if re.search(r"git\s+(?:commit|push)\b", code_only):
+                    add_error(f".cursor/hooks stop 脚本不得执行 git commit/push: {script}")
+    read_guards = [
+        entry
+        for entry in hook_defs.get("preToolUse") or []
+        if isinstance(entry, dict) and str(entry.get("command") or "").endswith("secret_guard.py")
+    ]
+    if len(read_guards) != 1 or read_guards[0].get("matcher") != "Read" or read_guards[0].get("failClosed") is not True:
+        add_error("Read secret guard 必须唯一绑定为 fail-closed preToolUse matcher=Read")
 
 def check_required_structure() -> None:
     required_files = {
         ".cursor/README.md",
+        ".cursorignore",
+        "VERSION",
+        ".cursor/framework.json",
+        ".cursor/compatibility/CURSOR_COMPATIBILITY.yaml",
         ".cursor/skills.lock.yaml",
         ".cursor/plans/ALL_PLAN.md",
+        ".cursor/plans/archive/README.md",
         ".cursor/memory/INDEX.md",
     }
     for relative in required_files:
@@ -261,6 +309,21 @@ def check_rules() -> None:
         if "子代理" in text and re.search(r"(?:最多|上限|少于)\s*\d+", text):
             add_error(f"子代理数值预算只能由 10-agent-delegation.mdc 定义: {path.relative_to(ROOT)}")
 
+    git_text = read_text(rule_root / "43-git-commit-policy.mdc")
+    if "每个任务默认一个本地语义提交" in git_text:
+        add_error("Git Rule 不得为每个任务默认创建 commit")
+    if re.search(r"提交必须.*最新 recheck|必须发生在.*recheck", git_text, re.I):
+        add_error("Git Rule 不得把 recheck 变成所有提交的无条件前置")
+
+    arch_meta, arch_body = parse_frontmatter(rule_root / "44-code-architecture.mdc")
+    if arch_meta.get("alwaysApply") is not False or not arch_meta.get("globs"):
+        add_error("Architecture Rule 必须限定到产品代码 globs，不得 Always Apply")
+    if "调用/数据流方向为 `domain → application → adapter/infra`" in arch_body:
+        add_error("Architecture Rule 混淆 runtime control flow 与 dependency direction")
+    for required_flow in ("entry adapter → application use case → domain", "application → inward-owned Port → adapter / infrastructure"):
+        if required_flow not in arch_body:
+            add_error(f"Architecture Rule 缺少明确控制流: {required_flow}")
+
 
 def check_skills() -> None:
     skill_root = CURSOR_ROOT / "skills"
@@ -279,7 +342,7 @@ def check_skills() -> None:
         if disable is not None and not isinstance(disable, bool):
             add_error(f"disable-model-invocation 必须为 bool: {path.relative_to(ROOT)}")
 
-    explicit_skills = {"all-plan", "recheck"}
+    explicit_skills = {"all-plan", "recheck", "engineering-memory"}
     for name in explicit_skills:
         path = skill_root / name / "SKILL.md"
         metadata, _ = parse_frontmatter(path)
@@ -289,149 +352,142 @@ def check_skills() -> None:
 
 def check_external_skill_lock() -> None:
     path = CURSOR_ROOT / "skills.lock.yaml"
-    lock = load_yaml(path)
-    if not isinstance(lock, dict):
-        add_error("skills.lock.yaml 顶层必须是对象")
+    if not path.exists():
+        add_error("缺少 .cursor/skills.lock.yaml")
         return
-    if lock.get("schema_version") != 1:
-        add_error("skills.lock.yaml schema_version 必须为 1")
-    if lock.get("digest_algorithm") != "sha256-path-content-lf-v1":
-        add_error("skills.lock.yaml digest_algorithm 不受支持")
+    try:
+        payload = yaml.safe_load(read_text(path)) or {}
+    except Exception as exc:  # noqa: BLE001
+        add_error(f"外部 Skill lock 无法解析: {exc}")
+        return
 
-    skills = lock.get("skills")
+    if payload.get("schema_version") != 3:
+        add_error("skills.lock.yaml schema_version 必须为 3")
+    policy = payload.get("policy") or {}
+    if policy.get("mode") != "SOURCE_PIN_ONLY":
+        add_error("skills.lock.yaml 必须使用 SOURCE_PIN_ONLY 便携策略")
+    if policy.get("digest_scheme") != "PATH_AND_CONTENT_SHA256_V1":
+        add_error("skills.lock.yaml 必须声明 PATH_AND_CONTENT_SHA256_V1")
+    policy_gate = policy.get("upgrade_gate") or {}
+    required_upgrade_checks = {
+        "immutable_revision_resolution",
+        "content_digest_verification",
+        "license_review",
+        "content_diff_review",
+        "capability_permission_network_credential_diff",
+        "cursor_compatibility_validation",
+    }
+    if policy_gate.get("explicit_user_approval") is not True:
+        add_error("外部 Skill 升级必须要求显式用户批准")
+    if set(policy_gate.get("required_checks") or []) != required_upgrade_checks:
+        add_error("外部 Skill 全局升级检查集合不完整")
+
+    skills = payload.get("skills") or []
     if not isinstance(skills, list):
-        add_error("skills.lock.yaml skills 必须是数组")
+        add_error("skills.lock.yaml skills 必须为列表")
         return
-    locked_names = {item.get("name") for item in skills if isinstance(item, dict)}
-    for required in {"impeccable", "shadcn"}:
-        if required not in locked_names:
-            add_error(f"外部技能锁缺少: {required}")
-
-    for item in skills:
-        if not isinstance(item, dict):
-            add_error("skills.lock.yaml skill 条目必须是对象")
+    seen: set[str] = set()
+    for entry in skills:
+        if not isinstance(entry, dict):
+            add_error("外部 Skill 条目必须是对象")
             continue
-        name = item.get("name", "<unknown>")
-        source = item.get("source") or {}
-        policy = item.get("installation_policy") or {}
-        installations = item.get("installations")
+        name = entry.get("name")
+        if not isinstance(name, str) or not name:
+            add_error("外部 Skill 缺少 name")
+            continue
+        if name in seen:
+            add_error(f"外部 Skill 重复: {name}")
+        seen.add(name)
+        if entry.get("availability") != "OPTIONAL":
+            add_error(f"外部 user-level Skill 必须显式标记 OPTIONAL: {name}")
+        source = entry.get("source") or {}
         revision = source.get("revision")
+        source_path = source.get("path")
+        if not source.get("repository") or not source.get("license") or not source.get("license_evidence"):
+            add_error(f"外部 Skill 缺少 repository/license/license_evidence: {name}")
+        if not isinstance(source_path, str) or not source_path or source_path.startswith(("/", "\\")) or ".." in Path(source_path).parts:
+            add_error(f"外部 Skill source.path 必须是安全相对路径: {name}")
         if not isinstance(revision, str) or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
             add_error(f"外部 Skill revision 必须是完整 commit: {name}")
-        if not source.get("repository") or not source.get("license"):
-            add_error(f"外部 Skill 缺少 repository/license: {name}")
-        if policy.get("mode") != "ALL_LISTED_INSTALLATIONS_MUST_MATCH":
-            add_error(f"外部 Skill installation_policy 不受支持: {name}")
-        if not isinstance(installations, list) or not installations:
-            add_error(f"外部 Skill 必须声明至少一个安装树: {name}")
-            continue
+        license_evidence = str(source.get("license_evidence") or "")
+        if revision and revision not in license_evidence:
+            add_error(f"外部 Skill license evidence 必须绑定锁定 revision: {name}")
 
-        listed_paths: set[Path] = set()
-        for installation in installations:
-            if not isinstance(installation, dict):
-                add_error(f"外部 Skill installation 必须是对象: {name}")
-                continue
-            raw_path = installation.get("path")
-            provider = installation.get("provider")
-            if not isinstance(raw_path, str) or not provider:
-                add_error(f"外部 Skill installation 缺少 path/provider: {name}")
-                continue
-            installed_path = Path(raw_path).expanduser()
-            resolved_path = installed_path.resolve()
-            if resolved_path in listed_paths:
-                add_error(f"外部 Skill 重复声明安装路径: {name}: {raw_path}")
-                continue
-            listed_paths.add(resolved_path)
-            if not installed_path.exists():
-                add_error(f"已锁定的全局 Skill 安装不存在: {name}/{provider}: {raw_path}")
-                continue
+        content = entry.get("content") or {}
+        digest = content.get("digest")
+        if content.get("digest_algorithm") != "sha256" or content.get("digest_scheme") != "PATH_AND_CONTENT_SHA256_V1":
+            add_error(f"外部 Skill content digest 算法/方案无效: {name}")
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None or digest == "0" * 64:
+            add_error(f"外部 Skill content digest 必须是非占位 SHA-256: {name}")
+        if not isinstance(content.get("file_count"), int) or isinstance(content.get("file_count"), bool) or content.get("file_count", 0) <= 0:
+            add_error(f"外部 Skill content file_count 必须为正整数: {name}")
+        as_date(content.get("verified_at"), f"skills.lock.{name}.content.verified_at")
 
-            expected_count = installation.get("expected_file_count")
-            expected_digest = installation.get("tree_digest")
-            actual_count, actual_digest = tree_digest(installed_path)
-            if actual_count != expected_count:
-                add_error(
-                    f"全局 Skill 文件数漂移: {name}/{provider}: "
-                    f"{actual_count} != {expected_count}"
-                )
-            if actual_digest != expected_digest:
-                add_error(
-                    f"全局 Skill digest 漂移: {name}/{provider}: "
-                    f"{actual_digest} != {expected_digest}"
-                )
+        item_gate = entry.get("upgrade_gate") or {}
+        if item_gate.get("explicit_user_approval") is not True or item_gate.get("required_checks") != "inherit_policy":
+            add_error(f"外部 Skill 条目必须继承显式升级门禁: {name}")
+        if "installations" in entry:
+            add_error(f"便携主包不得锁定用户 home 目录 installation: {name}")
 
-            declared_version = installation.get("declared_version")
-            if declared_version:
-                metadata, _ = parse_frontmatter(installed_path / "SKILL.md")
-                if str(metadata.get("version")) != str(declared_version):
-                    add_error(
-                        f"全局 Skill 声明版本漂移: {name}/{provider}: "
-                        f"{metadata.get('version')!r} != {declared_version!r}"
-                    )
-
-        discoverable_roots = (
-            Path("~/.agents/skills").expanduser(),
-            Path("~/.cursor/skills").expanduser(),
-            Path("~/.claude/skills").expanduser(),
-            Path("~/.codex/skills").expanduser(),
-        )
-        unlisted = {
-            (root / str(name)).resolve()
-            for root in discoverable_roots
-            if (root / str(name)).exists() and (root / str(name)).resolve() not in listed_paths
-        }
-        if unlisted:
-            add_error(f"发现未锁定的同名全局 Skill: {name}: {sorted(map(str, unlisted))}")
-
-
-def check_bootstrap_manifest() -> None:
-    path = ROOT / "BOOTSTRAP_MANIFEST.json"
-    try:
-        manifest = json.loads(read_text(path))
-    except json.JSONDecodeError as exc:
-        add_error(f"BOOTSTRAP_MANIFEST.json 无法解析: {exc}")
+def check_version_source() -> None:
+    version_path = ROOT / "VERSION"
+    if not version_path.exists():
+        add_error("缺少 VERSION")
         return
-    for item in manifest.get("files", []):
-        relative = item.get("path")
-        expected = item.get("sha256")
-        target = ROOT / str(relative)
-        if not target.exists():
-            add_error(f"冻结 Bootstrap 文件缺失: {relative}")
-            continue
-        actual = hashlib.sha256(target.read_bytes()).hexdigest()
-        if actual != expected:
-            add_error(f"冻结 Bootstrap digest 漂移: {relative}")
-
+    version = read_text(version_path).strip()
+    try:
+        framework = json.loads(read_text(CURSOR_ROOT / "framework.json"))
+    except json.JSONDecodeError as exc:
+        add_error(f".cursor/framework.json 无法解析: {exc}")
+        return
+    if framework.get("framework_version") != version:
+        add_error("framework_version 与 VERSION 不一致")
+    if framework.get("version_source") != "VERSION":
+        add_error("framework version_source 必须为 VERSION")
+    if "research_os_baseline" in framework:
+        add_error("不得维护独立 research_os_baseline")
 
 def load_task_plans() -> dict[str, tuple[Path, dict[str, Any], str]]:
     result: dict[str, tuple[Path, dict[str, Any], str]] = {}
-    for path in sorted((CURSOR_ROOT / "plans" / "tasks").glob("PLAN-*.md")):
-        metadata, body = parse_frontmatter(path)
-        plan_id = metadata.get("id")
-        if not isinstance(plan_id, str) or re.fullmatch(r"PLAN-\d{8}-\d{3}", plan_id) is None:
-            add_error(f"任务计划 ID 无效: {path.relative_to(ROOT)}: {plan_id!r}")
-            continue
-        if not path.name.startswith(plan_id + "-"):
-            add_error(f"任务计划文件名必须以 ID 开头: {path.relative_to(ROOT)}")
-        if plan_id in result:
-            add_error(f"任务计划 ID 重复: {plan_id}")
-        result[plan_id] = (path, metadata, body)
+    plan_roots = (
+        CURSOR_ROOT / "plans" / "tasks",
+        CURSOR_ROOT / "plans" / "archive",
+    )
+    for plan_root in plan_roots:
+        for path in sorted(plan_root.glob("PLAN-*.md")):
+            metadata, body = parse_frontmatter(path)
+            plan_id = metadata.get("id")
+            if not isinstance(plan_id, str) or re.fullmatch(r"PLAN-\d{8}-\d{3}", plan_id) is None:
+                add_error(f"任务计划 ID 无效: {path.relative_to(ROOT)}: {plan_id!r}")
+                continue
+            if not path.name.startswith(plan_id + "-"):
+                add_error(f"任务计划文件名必须以 ID 开头: {path.relative_to(ROOT)}")
+            if plan_id in result:
+                add_error(f"任务计划 ID 重复: {plan_id}")
+            if plan_root.name == "archive" and metadata.get("status") not in {"DONE", "CANCELLED"}:
+                add_error(f"归档任务必须为 DONE/CANCELLED: {plan_id}: {metadata.get('status')!r}")
+            result[plan_id] = (path, metadata, body)
     return result
 
 
 def load_rechecks() -> dict[str, tuple[Path, dict[str, Any], str]]:
     result: dict[str, tuple[Path, dict[str, Any], str]] = {}
-    for path in sorted((CURSOR_ROOT / "plans" / "rechecks").glob("RECHECK-*.md")):
-        metadata, body = parse_frontmatter(path)
-        recheck_id = metadata.get("id")
-        if not isinstance(recheck_id, str) or re.fullmatch(r"RECHECK-\d{8}-\d{3}", recheck_id) is None:
-            add_error(f"复检 ID 无效: {path.relative_to(ROOT)}: {recheck_id!r}")
-            continue
-        if not path.name.startswith(recheck_id + "-"):
-            add_error(f"复检文件名必须以 ID 开头: {path.relative_to(ROOT)}")
-        if recheck_id in result:
-            add_error(f"复检 ID 重复: {recheck_id}")
-        result[recheck_id] = (path, metadata, body)
+    recheck_roots = (
+        CURSOR_ROOT / "plans" / "rechecks",
+        CURSOR_ROOT / "plans" / "archive",
+    )
+    for recheck_root in recheck_roots:
+        for path in sorted(recheck_root.glob("RECHECK-*.md")):
+            metadata, body = parse_frontmatter(path)
+            recheck_id = metadata.get("id")
+            if not isinstance(recheck_id, str) or re.fullmatch(r"RECHECK-\d{8}-\d{3}", recheck_id) is None:
+                add_error(f"复检 ID 无效: {path.relative_to(ROOT)}: {recheck_id!r}")
+                continue
+            if not path.name.startswith(recheck_id + "-"):
+                add_error(f"复检文件名必须以 ID 开头: {path.relative_to(ROOT)}")
+            if recheck_id in result:
+                add_error(f"复检 ID 重复: {recheck_id}")
+            result[recheck_id] = (path, metadata, body)
     return result
 
 
@@ -450,12 +506,11 @@ def check_plans_and_rechecks() -> None:
         status = metadata.get("status")
         if status not in PLAN_STATUSES:
             add_error(f"任务状态无效: {plan_id}: {status!r}")
-        budget = metadata.get("subagent_budget")
-        used = metadata.get("subagents_used")
-        if not isinstance(budget, int) or not 0 <= budget <= 3:
-            add_error(f"subagent_budget 必须在 0–3: {plan_id}: {budget!r}")
-        if not isinstance(used, int) or used < 0 or isinstance(budget, bool) or (isinstance(budget, int) and used > budget):
-            add_error(f"subagents_used 无效或超过预算: {plan_id}: {used!r}/{budget!r}")
+        parallel_limit = metadata.get("subagent_parallel_limit")
+        if parallel_limit != 3:
+            add_error(f"subagent_parallel_limit 必须为 3: {plan_id}: {parallel_limit!r}")
+        if "subagent_budget" in metadata or "subagents_used" in metadata:
+            add_error(f"任务计划不得使用累计 subagent budget 字段: {plan_id}")
         for field in ("created_at", "updated_at"):
             as_date(metadata.get(field), f"{plan_id}.{field}")
         for heading in ("## 验收条件", "## 实施清单", "## 证据", "## 状态历史", "## 影响报告"):
@@ -578,6 +633,53 @@ def check_memory() -> None:
         add_error(f"工程记忆未加入 INDEX: {memory_id}")
 
 
+def check_git_history_preservation() -> None:
+    git_marker = ROOT / ".git"
+    if not git_marker.exists():
+        add_warning("当前包不含本地 Git 元数据，跳过历史身份删除保护")
+        return
+
+    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    completed = subprocess.run(
+        [
+            "git",
+            "log",
+            "--all",
+            "--format=",
+            "--name-only",
+            "--",
+            ".cursor/plans",
+            ".cursor/memory/entries",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+        check=False,
+    )
+    if completed.returncode != 0:
+        add_error(f"无法读取本地 Git 治理历史: {completed.stderr.strip()}")
+        return
+
+    identity_re = re.compile(r"(?:PLAN|RECHECK|MEM)-\d{8}-\d{3}")
+    historical_ids = set(identity_re.findall(completed.stdout))
+    current_ids = {
+        match.group(0)
+        for root in (
+            CURSOR_ROOT / "plans" / "tasks",
+            CURSOR_ROOT / "plans" / "rechecks",
+            CURSOR_ROOT / "plans" / "archive",
+            CURSOR_ROOT / "memory" / "entries",
+        )
+        for path in root.glob("*.md")
+        if (match := identity_re.search(path.name)) is not None
+    }
+    missing = historical_ids - current_ids
+    if missing:
+        add_error(f"治理历史身份从工作树消失，必须归档而非删除: {sorted(missing)}")
+
+
 def iter_cursor_text_files() -> Iterable[Path]:
     for path in CURSOR_ROOT.rglob("*"):
         if path.is_file() and path.suffix.lower() in {".md", ".mdc", ".yaml", ".yml", ".py"}:
@@ -587,15 +689,16 @@ def iter_cursor_text_files() -> Iterable[Path]:
 def check_links_and_secrets() -> None:
     for path in sorted(iter_cursor_text_files()):
         text = read_text(path)
-        for target in MARKDOWN_LINK_RE.findall(text):
-            clean_target = target.split("#", 1)[0].strip()
-            if not clean_target or clean_target.startswith(("http://", "https://", "mailto:")):
-                continue
-            if any(token in clean_target for token in ("...", "YYYY", "{", "}")):
-                continue
-            resolved = resolve_repository_path(clean_target, path)
-            if not resolved.exists():
-                add_error(f"Markdown 链接失效: {path.relative_to(ROOT)} -> {target}")
+        if path.suffix.lower() in {".md", ".mdc"}:
+            for target in MARKDOWN_LINK_RE.findall(text):
+                clean_target = target.split("#", 1)[0].strip()
+                if not clean_target or clean_target.startswith(("http://", "https://", "mailto:")):
+                    continue
+                if any(token in clean_target for token in ("...", "YYYY", "{", "}")):
+                    continue
+                resolved = resolve_repository_path(clean_target, path)
+                if not resolved.exists():
+                    add_error(f"Markdown 链接失效: {path.relative_to(ROOT)} -> {target}")
         for label, pattern in SECRET_PATTERNS.items():
             if pattern.search(text):
                 add_error(f"Cursor 治理资产疑似包含 {label}: {path.relative_to(ROOT)}")
@@ -607,9 +710,10 @@ def main() -> int:
         check_rules,
         check_skills,
         check_external_skill_lock,
-        check_bootstrap_manifest,
+        check_version_source,
         check_plans_and_rechecks,
         check_memory,
+        check_git_history_preservation,
         check_links_and_secrets,
     )
     for check in checks:
@@ -625,10 +729,10 @@ def main() -> int:
 
     print("Cursor 治理验证通过")
     print("- Rules / Skills frontmatter 与作用域有效")
-    print("- 子代理预算少于 4 且禁止嵌套")
+    print("- 子代理按 wave 最多 3；无全任务累计上限；禁止嵌套")
     print("- ALL_PLAN / Task Plan / Recheck / Memory 交叉引用一致")
-    print("- Impeccable / shadcn 安装树与技能锁一致")
-    print("- v0.2.2 Bootstrap 冻结文件摘要未漂移")
+    print("- 外部 Skill 使用 immutable revision + content digest + upgrade gate；主包不依赖开发者 home 目录安装")
+    print("- VERSION 与 Cursor framework metadata 单一版本源一致")
     print("- 未发现明显凭据材料")
     return 0
 

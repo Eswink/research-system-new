@@ -1,0 +1,22 @@
+[importlinter]
+root_package = architecture_fixture
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:layers]
+name = Clean architecture dependency direction
+type = layers
+layers =
+    architecture_fixture.services
+    architecture_fixture.adapters
+    architecture_fixture.application
+    architecture_fixture.domain
+
+[importlinter:contract:entry]
+name = Entry adapters use application instead of domain
+type = forbidden
+source_modules =
+    architecture_fixture.services
+forbidden_modules =
+    architecture_fixture.domain
+allow_indirect_imports = True

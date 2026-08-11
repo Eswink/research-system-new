@@ -1,0 +1,30 @@
+cases:
+  - id: evolution-inactive-no-followup
+    state: {active: false}
+    stop: {status: completed, loop_count: 0}
+    expect_followup: false
+
+  - id: evolution-active-followup
+    state: {active: true, target_version: "9.9.9", release_gate: PENDING, next_action: "run replay", max_followups: 5}
+    stop: {status: completed, loop_count: 0}
+    expect_followup: true
+
+  - id: evolution-error-no-followup
+    state: {active: true, target_version: "9.9.9", release_gate: PENDING, next_action: "run replay", max_followups: 5}
+    stop: {status: error, loop_count: 0}
+    expect_followup: false
+
+  - id: evolution-aborted-no-followup
+    state: {active: true, target_version: "9.9.9", release_gate: PENDING, next_action: "run replay", max_followups: 5}
+    stop: {status: aborted, loop_count: 0}
+    expect_followup: false
+
+  - id: evolution-loop-limit-no-followup
+    state: {active: true, target_version: "9.9.9", release_gate: PENDING, next_action: "run replay", max_followups: 5}
+    stop: {status: completed, loop_count: 5}
+    expect_followup: false
+
+  - id: evolution-pass-no-followup
+    state: {active: true, target_version: "9.9.9", release_gate: PASS, next_action: "done", max_followups: 5}
+    stop: {status: completed, loop_count: 0}
+    expect_followup: false

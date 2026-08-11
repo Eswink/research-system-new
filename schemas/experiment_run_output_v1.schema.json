@@ -28,7 +28,10 @@
       }
     },
     "metrics": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": {
+        "type": ["number", "string", "boolean", "null"]
+      }
     },
     "failure_ref": {
       "type": [

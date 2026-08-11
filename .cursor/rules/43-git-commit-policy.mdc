@@ -1,63 +1,14 @@
 ---
-description: 任务完成后自动 git 提交的策略：触发时机、Conventional Commits、白名单 add、提交前门禁与回滚
+description: Git 硬边界：默认不提交/不推送、禁止广域暂存和破坏性历史操作；需要提交时按显式语义流程执行
 alwaysApply: true
 ---
+# Git Hard Boundaries
 
-# Git 提交策略
-
-任务收尾完成后自动执行一次 git 提交，避免变更堆积、便于回滚。仅本地 commit，默认不 push。
-
-## 触发时机
-
-- 任务满足以下全部条件后，由 agent 自动执行最终提交：
-  - 复检结果为 `PASS` 或 `PASS_WITH_WARNINGS`；
-  - 工程记忆已写入（如有）；
-  - ALL_PLAN 已完成勾选与状态更新（如任务计划收尾）。
-- 同一个任务只产生一个语义提交；收尾时序见 `.cursor/skills/all-plan/SKILL.md`，本规则不重复定义状态机。
-- 会话结束仍有未提交变更时，`.cursor/hooks.json` 的 `stop` 事件仅审计并报告残留变更（见 `.cursor/hooks/snapshot_commit.py`），**不自动提交**；语义提交只能由 agent 在任务收尾完成后显式执行。中止（aborted/error）会话不触发任何提交。
-
-## 提交信息（Conventional Commits）
-
-格式：`<type>(<scope>): <subject>`
-
-- `type` ∈ `feat | fix | refactor | docs | chore | test`
-- `scope`：按目录或领域命名，例如 `plans`、`governance`、`rules`、`docs`、`schemas`
-- `subject`：≤ 72 字符，祈使句，说明做了什么
-- 正文说明 why（可选，但涉及非平凡决策时必须写）
-
-示例：
-
-```text
-feat(plans): add PLAN-20260810-002 git auto-commit workflow
-
-docs(rules): add code scale limits to python and typescript rules
-```
-
-## 白名单 add
-
-- 禁止 `git add -A`、`git add .`、`git add --all`。
-- 按变更实际涉及的范围逐项添加：`AGENTS.md`、`docs/`、`schemas/`、`examples/`、`scripts/`、`.cursor/` 等目录或具体文件。
-- `.env*`、`*.pem`、`*.key` 及内容含密钥模式的文件绝不入库。`.env.example` 是已跟踪的脱敏样例，可入库；真实凭据（含密钥值）无论文件名如何一律禁止。
-
-## 提交前门禁
-
-- 契约资产（`schemas/`、`examples/`、受引用文档）有变更时，先运行：
-
-  ```powershell
-  $env:PYTHONUTF8 = "1"; $env:PYTHONIOENCODING = "utf-8"; python -B scripts/validate_bundle.py
-  ```
-
-- Cursor 治理资产（`.cursor/`）有变更时，再运行：
-
-  ```powershell
-  $env:PYTHONUTF8 = "1"; $env:PYTHONIOENCODING = "utf-8"; python -B .cursor/skills/governance-check/scripts/validate.py
-  ```
-
-- 任一校验失败不得提交；先修复，再重新校验并提交。
-
-## 推送与回滚
-
-- 默认不 push；是否推送由用户显式决定（用户明确授权的发布/同步任务除外）。
-- 未 push：回滚用 `git reset --soft HEAD~1`（保留工作区，可修改后重提）。
-- 已 push：回滚用 `git revert`，不改写公开历史。
-- 提交完成后，在任务最终汇报中报告 commit hash；如需在任务计划"影响报告"中记录，应在本任务提交前写入，禁止提交后再次修改已提交的计划文件。
+- **默认不创建 Git commit，也不 push。** 只有用户明确要求提交/发布/同步，或当前已授权计划明确把本地提交列为交付步骤时，才进入提交流程。
+- `git push`、创建/更新远端 PR、tag/release 等外部副作用必须有与当前任务匹配的明确授权。
+- 禁止 `git add -A`、`git add --all`、`git add .`；需要提交时按任务白名单路径显式暂存。
+- 真实 `.env*`、私钥、凭据和任何检测出的 secret 永不进入提交；`.env.example` 等脱敏模板除外。
+- 禁止 `git reset --hard`、destructive `git clean` 和改写已公开历史，除非用户明确要求且已评估影响。
+- 提交前必须运行**与实际变更范围相关**的 validators/tests。只有当当前任务按风险/计划要求执行 `recheck` 时，语义提交才依赖该 recheck 的通过结果；简单、明确、无需 recheck 的任务不得被本规则反向强迫创建 recheck。
+- Stop Hook 只报告工作区状态，不执行 add/commit/push。
+- 具体暂存、Conventional Commit、验证和 rollback 流程使用显式 `semantic-commit` Skill。

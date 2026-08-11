@@ -1,36 +1,59 @@
 ---
-description: 语言无关的工程级解耦约束：单一职责、依赖单向、反模式与 M0 工具链配置要求
-alwaysApply: true
+description: 产品代码的语言无关架构边界：Clean/Hexagonal 依赖方向、控制流、Port/Adapter 与副作用隔离
+globs: "apps/**, services/**, packages/**, adapters/**, tests/**"
+alwaysApply: false
 ---
-
 # 代码架构与解耦约束
 
-代码规模与复杂度的量化阈值见 `40-python.mdc` 与 `41-typescript.mdc`（仅作用于 M0 产品代码目录）；本规则定义语言无关的架构约束，两者配套执行。
+本 Rule 仅用于 Research OS 产品代码，不应在纯文档、知识库或 Cursor Framework 维护任务中长期占用上下文。
 
 ## 单一职责
 
-- 一个模块只承担一个职责；职责混叠时拆分模块，而不是在模块内用开关分支掩盖。
-- 超过 `40-python.mdc`/`41-typescript.mdc` 阈值（文件行数、函数行数）必须拆分；禁止"神类"（God Class）、超长文件与万用工具模块。
+- 一个模块承担一个清晰职责；复杂度扩散时优先拆模块/状态机/Port，不使用大量模式开关掩盖边界问题。
+- Python/TypeScript 的量化复杂度门槛由对应语言 Rule 管理。
 
-## 依赖方向
+## 依赖方向（compile-time dependency）
 
-- 源码依赖方向为 `adapter/infra → application → domain`；即 adapter 与基础设施实现依赖 application 与 domain，application 依赖 domain，domain 不依赖任何外层。反向依赖视为错误。
-- 调用/数据流方向为 `domain → application → adapter/infra`：领域逻辑通过端口（Port）向下游适配器发出请求。依赖方向与调用方向相反，二者不得混写。
-- Domain 不得 import 任何 adapter、框架、具体厂商类型或上游 Runtime 类型；只依赖自身契约与稳定标准库（与 `docs/architecture/SYSTEM_ARCHITECTURE.md` "Domain 不依赖具体实现"一致）。
-- 跨层交互走端口（Port）与适配器（Adapter）接口，禁止在调用链上直接穿透依赖。
-- 发现复杂度扩散、参数爆发、状态回溯或跨层泄漏时，先调整模块边界、状态机或数据流，不在调用链上继续打补丁。
+```text
+adapter / infrastructure → application → domain
+```
 
-## 反模式清单
+- Domain 不 import application、adapter、Web/ORM/LLM/runtime/provider 等外层类型。
+- Application 可以依赖 Domain，并拥有/使用对外 I/O 所需的 Port/interface。
+- Adapter/Infrastructure 实现这些 Port，并依赖内层契约。
 
-- 长参数列表：超过 `40-python.mdc`/`41-typescript.mdc` 参数上限时引入参数对象/值对象。
-- 状态字符串散落：状态机与状态转换集中定义并可测试，禁止在多个模块中散落字符串状态判断。
-- 枚举/联合类型变体扩散：对判别联合或 enum 的 `switch` 必须在 `default` 分支做穷尽检查（TS 用 `never`，Python 用显式错误），使新增变体在编译/测试期失败。
-- 不可测试的副作用：副作用集中在 adapter、port 实现或明确的 orchestration 边界；业务逻辑保持纯函数。
+## 运行时控制流（runtime control/data flow）
 
-## M0 工具链配置要求
+不要把运行时控制流写成“domain → application → adapter”。正确区分：
 
-未来创建 `apps/`、`services/`、`packages/` 时，必须在引入业务代码前落地以下工具链，否则不得进入 M0 代码阶段：
+```text
+Inbound:
+entry adapter → application use case → domain
 
-- Python：ruff（`line-length = 100`，启用 `C90`，mccabe `max-complexity = 10`）+ mypy `strict` + import-linter 边界契约（禁止 Domain → adapter/框架 的 import 规则）。
-- TypeScript：ESLint（`complexity`、`max-depth`、`max-params`、`max-nested-callbacks`、`max-lines-per-function`，取值见 `41-typescript.mdc`）+ dependency-cruiser `forbidden` 跨层规则（含环检测）。
-- 配置落地后以 lint/typecheck 通过作为提交门禁之一（见 `43-git-commit-policy.mdc`）。
+Outbound side effect:
+application → inward-owned Port → adapter / infrastructure
+```
+
+Domain 可以返回领域决策、事件或值，但**不会主动调用 Application/Adapter**，也不知道具体基础设施存在。
+
+## Port / Adapter
+
+- 跨外部边界（数据库、模型、工具、消息、Artifact Store、Agent Runtime）通过内层拥有的 Port 与外层 Adapter 连接。
+- 禁止调用链直接穿透多层访问具体实现。
+- 副作用集中在 Adapter、Port 实现或明确 orchestration 边界；业务规则尽量保持可单测。
+
+## 反模式
+
+- God class / 万用 utils / 状态字符串散落；
+- 新 enum/union 变体不能被穷尽检查发现；
+- Domain import FastAPI/SQLAlchemy/OpenHands/LiteLLM/Temporal/provider SDK；
+- Application 直接实例化具体 adapter 而绕过 composition root；
+- 为修局部 bug 在多层同时增加同一策略判断。
+
+## M0 工具链
+
+未来创建产品代码目录时，在引入业务代码前落地：
+
+- Python：ruff + mypy strict + import-linter（或等价依赖边界测试）；
+- TypeScript：ESLint + dependency-cruiser（或等价依赖/环检测）；
+- CI 对 dependency boundary、lint、typecheck、test 执行确定性门禁。

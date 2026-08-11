@@ -1,4 +1,4 @@
-# Workspace & Execution Runtime v0.2.2
+# Workspace & Execution Runtime v0.4.0
 
 ## 1. Research Workspace
 

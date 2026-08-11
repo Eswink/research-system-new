@@ -1,0 +1,65 @@
+[project]
+name = "research-system"
+version = "0.4.0"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.13",
+    "jsonschema>=4.26.0",
+    "mypy>=2.3.0",
+    "pytest>=9.1.1",
+    "pyyaml>=6.0.3",
+    "ruff>=0.16.2",
+    "types-pyyaml>=6.0.12.20260724",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+preview = true
+extend-exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "build",
+    "dist",
+    "node_modules",
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "E501", "F", "I", "C90", "PLR0913", "PLR1702"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-args = 5
+max-nested-blocks = 4
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+files = [
+    ".cursor/hooks/common.py",
+    ".cursor/hooks/secret_guard.py",
+    ".cursor/hooks/shell_guard.py",
+    ".cursor/hooks/mcp_guard.py",
+    ".cursor/hooks/subagent_guard.py",
+    ".cursor/hooks/subagent_pretool_guard.py",
+    ".cursor/skills/cursor-framework-check/scripts/run_all_checks.py",
+    "tests",
+]
+exclude = ["^tests/architecture/python/fixtures/invalid/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = ["--strict-config", "--strict-markers"]

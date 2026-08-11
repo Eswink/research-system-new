@@ -1,0 +1,75 @@
+{
+  "framework_version": "0.4.0",
+  "generated_at": "2026-08-11T04:32:43.784003+00:00",
+  "gate": "DETERMINISTIC_VALIDATION",
+  "environment": {
+    "python_version": "3.13.5",
+    "python_implementation": "CPython",
+    "platform": "linux"
+  },
+  "commands": [
+    {
+      "command": [
+        "python",
+        "-B",
+        ".cursor/skills/system-spec-check/scripts/validate_bundle.py"
+      ],
+      "returncode": 0,
+      "output_sha256": "29fa4e10d586e10c7eb3dd2b042872e8bd1390327699e87ae7b081e553395a23"
+    },
+    {
+      "command": [
+        "python",
+        "-B",
+        ".cursor/skills/governance-check/scripts/validate.py"
+      ],
+      "returncode": 0,
+      "output_sha256": "3cb981365058536d676402f9eb661bca9475185bcea25c82c19ab8ebf3bfdb50"
+    },
+    {
+      "command": [
+        "python",
+        "-B",
+        ".cursor/skills/cursor-framework-check/scripts/validate_cursor_framework.py"
+      ],
+      "returncode": 0,
+      "output_sha256": "d59a6767c9af13c2b9b5bdb0844cff884671e917e1c619897d9ced9eabc38572"
+    },
+    {
+      "command": [
+        "python",
+        "-B",
+        ".cursor/skills/learning-check/scripts/validate_cursor_learning.py"
+      ],
+      "returncode": 0,
+      "output_sha256": "ea84f3c6f8ca1d99b3261ae4830d00fcfb5c1603d4527dc6ea04413b2e0d41a3"
+    },
+    {
+      "command": [
+        "python",
+        "-B",
+        ".cursor/skills/cursor-framework-check/scripts/run_cursor_hook_evals.py"
+      ],
+      "returncode": 0,
+      "output_sha256": "8364ef5fa418bd4adfa5a8e4821f85f79336f4c2e8203932e8851f5186f35019"
+    },
+    {
+      "command": [
+        "python",
+        "-B",
+        ".cursor/skills/cursor-framework-check/scripts/run_cursor_framework_evals.py"
+      ],
+      "returncode": 0,
+      "output_sha256": "2e5f46b108283c686d9cb9f796980258dddd60696ae1139b6b2a260c03034c7d"
+    },
+    {
+      "command": [
+        "python",
+        "-B",
+        ".cursor/skills/learning-check/scripts/run_cursor_learning_evals.py"
+      ],
+      "returncode": 0,
+      "output_sha256": "9f705d3d28d1e54f170899f9e90f689dd71fcbb49bf7e312737f3e9e77aba740"
+    }
+  ]
+}

@@ -1,15 +1,15 @@
 ---
-description: 文档、Schema、示例配置和 Bootstrap 发布快照的交叉引用约束
-globs: "docs/**/*.md, schemas/**/*.json, examples/**/*.yaml, BOOTSTRAP_MANIFEST.json, UPSTREAM_COMPONENTS.yaml, AGENTS.md, README.md, CODEX_BOOTSTRAP.md, BACKLOG.md, CHANGELOG.md, Makefile"
+description: 文档、Schema、示例配置和 Framework 发布快照的交叉引用约束
+globs: "docs/**/*.md, schemas/**/*.json, examples/**/*.yaml, FRAMEWORK_MANIFEST.json, VERSION, UPSTREAM_COMPONENTS.yaml, AGENTS.md, README.md, CODEX_BOOTSTRAP.md, BACKLOG.md, CHANGELOG.md, Makefile"
 alwaysApply: false
 ---
 
 # 契约资产约束
 
-- 修改前先判断目标是产品契约、示例、工程治理资产还是冻结发布快照，不得混用命名空间。
+- `VERSION` 是当前仓库唯一项目版本源；Research OS system specification 与 Cursor Engineering Framework 不维护并行版本号。
 - 修改 `schemas/`、`examples/` 或受引用文档时，同步核对 ID、枚举、DAG、Role/Agent/Model/Tool 引用和 `docs/INDEX.md`。
 - 产品 Memory、Task、Handoff、Preflight、Manifest 与 Cursor 工程 Plan/Memory/Recheck 必须保持隔离。
-- `BOOTSTRAP_MANIFEST.json` 是 v0.2.2 已批准发布包的内容摘要。除非用户明确要求制作新的发布包并执行完整发布复审，否则不得更新其哈希、文件计数或批准状态。BOOTSTRAP_MANIFEST 所列冻结发布资产（含 `AGENTS.md`、`scripts/validate_bundle.py` 等）只在显式发布流程中变更。
+- `FRAMEWORK_MANIFEST.json` 是显式发布流程生成的内容摘要，不是日常开发输入；普通任务不得为了“让哈希通过”修改 validator 或伪造 Manifest。
 - 外部依赖优先采用 dependency/adapter；版本、commit、digest、许可证和升级门禁必须明确。不得引入未 pin 的插件、Skill、MCP 或 registry 资产。
-- 契约资产变更后至少运行 `python -B scripts/validate_bundle.py`；Cursor 治理资产变更还要运行 `.cursor/skills/governance-check/scripts/validate.py`。
+- 契约资产变更后至少运行 `python -B .cursor/skills/system-spec-check/scripts/validate_bundle.py`；Cursor 治理资产变更还要运行 `.cursor/skills/governance-check/scripts/validate.py`。
 - 文档声明必须可由源码、Schema、示例、测试或运行行为支持；注释和未来规划不能覆盖当前运行事实。

@@ -1,4 +1,4 @@
-# Role, Team & Agent Model v0.2.2
+# Role, Team & Agent Model v0.4.0
 
 ## 1. 分层
 

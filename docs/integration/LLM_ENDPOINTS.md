@@ -1,4 +1,4 @@
-# LLM Endpoint Integration v0.2.2
+# LLM Endpoint Integration v0.4.0
 
 ## 1. MVP 用户输入
 

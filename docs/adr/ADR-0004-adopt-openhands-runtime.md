@@ -1,7 +1,7 @@
 # ADR-0004 — Adopt OpenHands SDK Behind an Adapter
 
 Status: Accepted
-Updated: 2026-08-10 for v0.2.2
+Updated: 2026-08-10 for v0.4.0
 
 ## Decision
 

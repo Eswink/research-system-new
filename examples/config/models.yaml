@@ -4,26 +4,33 @@ models:
     display_name: Research Alpha
     model_name: model-alpha
     capabilities:
-      CHAT: USER_DECLARED
-      STREAMING: PROBED
-      TOOL_CALLING_NATIVE: PROBED
-      STRUCTURED_OUTPUT_NATIVE: PROBED
-      USAGE_REPORTING: PROBED
+      CHAT: &user_declared_supported
+        status: SUPPORTED
+        confidence: 0.5
+        source: USER_DECLARED
+        last_verified_at: null
+        probe_version: null
+      STREAMING: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported
+      STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
+      USAGE_REPORTING: *user_declared_supported
+
   coding_beta:
     endpoint: main
     display_name: Coding Beta
     model_name: model-beta
     capabilities:
-      CHAT: USER_DECLARED
-      STREAMING: PROBED
-      TOOL_CALLING_NATIVE: PROBED
-      STRUCTURED_OUTPUT_NATIVE: PROBED
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported
+      STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
+
   reviewer_gamma:
     endpoint: main
     display_name: Reviewer Gamma
     model_name: model-gamma
     capabilities:
-      CHAT: USER_DECLARED
-      STREAMING: PROBED
-      STRUCTURED_OUTPUT_PROMPTED: PROBED
-      TOOL_CALLING_NATIVE: PROBED
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      STRUCTURED_OUTPUT_PROMPTED: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported

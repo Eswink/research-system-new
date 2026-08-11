@@ -1,0 +1,66 @@
+{
+  "schema_version": 2,
+  "framework_name": "research-os-cursor-engineering-framework",
+  "framework_version": "0.4.0",
+  "version_source": "VERSION",
+  "release_channel": "stable",
+  "quality_policy": {
+    "deterministic_release_gate": true,
+    "scoped_review": true,
+    "reviewer_selection": "by_change_risk_and_scope"
+  },
+  "subagent_policy": {
+    "delegation_is_optional": true,
+    "max_parallel_per_wave": 3,
+    "cumulative_task_limit": null,
+    "nested_delegation": false,
+    "custom_reviewers_background": false
+  },
+  "cursor_knowledge": {
+    "verified_at": "2026-08-11",
+    "index": ".cursor/knowledge/INDEX.md",
+    "sources": ".cursor/knowledge/SOURCES.yaml"
+  },
+  "runtime_state_dir": ".cursor/runtime",
+  "self_evolution": {
+    "enabled": true,
+    "default_active": false,
+    "require_explicit_user_intent": true,
+    "stop_loop_limit": 5,
+    "promotion_policy": ".cursor/learning/README.md",
+    "learning_lifecycle": [
+      "OBSERVE",
+      "PROPOSE",
+      "CONSOLIDATE",
+      "REPLAY",
+      "VALIDATE",
+      "PROMOTE"
+    ],
+    "framework_evolution_lifecycle": [
+      "ORIENT",
+      "REFRESH_KB",
+      "SELECT_PROPOSALS",
+      "IMPLEMENT_CANDIDATE",
+      "REPLAY",
+      "VALIDATE",
+      "PROMOTE",
+      "RELEASE"
+    ]
+  },
+  "cursor_runtime_profiles": {
+    "ide_local": {
+      "status": "supported",
+      "project_hooks": "full_project_hook_set"
+    },
+    "cloud_agent": {
+      "status": "conditional",
+      "unsupported_project_hook_dependencies": [
+        "sessionStart",
+        "sessionEnd",
+        "beforeMCPExecution",
+        "afterMCPExecution"
+      ],
+      "sensitive_mcp_policy": "do_not_rely_on_project_mcp_hook; require alternate enterprise/product controls"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+schema_version: 1
+framework_version: 0.4.0
+next_sequence: 1
+statuses: [PROPOSED, CLUSTERED, REPLAYING, REVIEWING, ACCEPTED, REJECTED, SUPERSEDED]
+entries: []

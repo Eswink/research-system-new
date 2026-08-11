@@ -1,0 +1,2 @@
+# Deterministic line endings across Windows/Linux checkouts and release digests.
+* text=auto eol=lf

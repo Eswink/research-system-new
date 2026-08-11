@@ -3,28 +3,84 @@
   "$id": "https://research-os.local/schemas/protocol.schema.json",
   "title": "ProtocolDefinition",
   "type": "object",
-  "additionalProperties": true,
-  "required": [
-    "id",
-    "version",
-    "phases"
-  ],
+  "additionalProperties": false,
+  "required": ["id", "version", "phases"],
   "properties": {
-    "id": {
-      "type": "string"
-    },
-    "version": {
-      "type": "string"
-    },
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*_v[0-9]+_[0-9]+_[0-9]+$"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "phases": {
       "type": "array",
       "minItems": 1,
-      "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "strategy"
-        ]
+      "items": {"$ref": "#/$defs/phase"}
+    }
+  },
+  "$defs": {
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "strategy"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "strategy": {
+          "enum": [
+            "deterministic",
+            "parallel_agents",
+            "map_reduce",
+            "population_search",
+            "iterative_optimizer",
+            "single_agent"
+          ]
+        },
+        "depends_on": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "inputs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "outputs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "required_roles": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/roleRequirement"}
+        },
+        "required_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "task_contract": {"type": "string", "minLength": 1},
+        "task_contracts": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "timeout_seconds": {"type": "integer", "minimum": 1},
+        "gate": {"type": "string", "minLength": 1},
+        "stop_conditions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_iterations": {"type": "integer", "minimum": 1},
+            "budget_exhausted": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "roleRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "min_instances", "max_instances"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "min_instances": {"type": "integer", "minimum": 0},
+        "max_instances": {"type": "integer", "minimum": 0}
       }
     }
   }

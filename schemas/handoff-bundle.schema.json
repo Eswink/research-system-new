@@ -4,49 +4,30 @@
   "title": "HandoffBundle",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "task_id",
-    "producer",
-    "summary",
-    "digest"
-  ],
+  "required": ["task_id", "producer", "summary", "digest"],
   "properties": {
-    "task_id": {
-      "type": "string"
-    },
-    "producer": {
-      "type": "string"
-    },
-    "summary": {
-      "type": "string"
-    },
+    "task_id": {"type": "string", "minLength": 1},
+    "producer": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1},
     "structured_output": {},
-    "artifact_refs": {
+    "artifact_refs": {"$ref": "#/$defs/refs"},
+    "claim_refs": {"$ref": "#/$defs/refs"},
+    "evidence_refs": {"$ref": "#/$defs/refs"},
+    "decision_refs": {"$ref": "#/$defs/refs"},
+    "open_questions": {"$ref": "#/$defs/textItems"},
+    "known_failures": {"$ref": "#/$defs/textItems"},
+    "recommended_next_actions": {"$ref": "#/$defs/textItems"},
+    "digest": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "refs": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
     },
-    "evidence_refs": {
+    "textItems": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "open_questions": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "known_failures": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "digest": {
-      "type": "string"
+      "items": {"type": "string", "minLength": 1}
     }
   }
 }

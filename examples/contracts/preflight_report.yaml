@@ -1,0 +1,10 @@
+status: WARN
+findings:
+  - code: MODEL_CAPABILITY_UNVERIFIED
+    severity: WARNING
+    message: Tool-calling support is user-declared and requires a probe before RUNNING.
+    subject_ref: model-definition:research_alpha
+estimated_cost: null
+reserved_budget_ref: budget-reservation:example
+unresolved_risks:
+  - Model capability assertions are not yet probe-verified.

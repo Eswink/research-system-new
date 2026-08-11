@@ -3,20 +3,50 @@
   "$id": "https://research-os.local/schemas/role-definition.schema.json",
   "title": "RoleDefinition",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "id",
-    "role_type"
+    "role_type",
+    "category",
+    "default_model_profile",
+    "activation_default",
+    "requested_capabilities",
+    "hard_model_capabilities",
+    "workspace_policy"
   ],
   "properties": {
-    "id": {
-      "type": "string"
+    "id": {"type": "string", "minLength": 1},
+    "role_type": {"type": "string", "minLength": 1},
+    "category": {
+      "enum": ["management", "discovery", "exploration", "experiment", "evaluation", "deliverable"]
     },
-    "role_type": {
-      "type": "string"
+    "default_model_profile": {"type": "string", "minLength": 1},
+    "activation_default": {
+      "enum": ["ALWAYS", "REQUIRED_BY_PROTOCOL", "ON_DEMAND", "BUDGET_PERMITTING", "DISABLED"]
     },
-    "default_model_profile": {
-      "type": "string"
+    "requested_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "hard_model_capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "all_of": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "any_of": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "workspace_policy": {
+      "enum": ["read_only", "notes_only", "isolated_writable", "deliverable_only"]
     }
   }
 }

@@ -1,4 +1,4 @@
-# Documentation Index — v0.2.2
+# Documentation Index — v0.4.0
 
 ## Start
 
@@ -6,6 +6,13 @@
 - `../AGENTS.md`
 - `../CODEX_BOOTSTRAP.md`
 - `PRODUCT.md`
+
+## Contract / Decision Assets
+
+- [Accepted ADRs](adr/)
+- [JSON Schemas](../schemas/)
+- [Configuration and contract examples](../examples/)
+- [Pinned/planned upstream component registry](../UPSTREAM_COMPONENTS.yaml)
 
 ## Product
 
@@ -88,22 +95,15 @@
 ## Open Source / Upstream
 
 - `references/OPEN_SOURCE_REUSE_AUDIT.md`
-- `references/UPSTREAM_FINDINGS_V0_2_2.md`
+- `references/UPSTREAM_FINDINGS_V0_4_0.md`
 - `references/LICENSE_MATRIX.md`
 - `references/SOURCE_SNAPSHOT.md`
 - `references/UPSTREAM_POLICY.md`
 
-## Roadmap / Migration
+## Roadmap / Versioning
 
-- `roadmap/VERTICAL_SLICE_V0_2_2.md`
-- `roadmap/MILESTONES.md`
-- `migrations/V0_2_1_TO_V0_2_2.md`
-
-## Release Review
-
-- `reviews/REVIEW_RUBRIC.md`
-- `reviews/REVIEW_ROUND_1.md`
-- `reviews/REVIEW_ROUND_2.md`
-- `reviews/REVIEW_ROUND_3.md`
-- `reviews/REVIEW_ROUND_4.md`
-- `reviews/RELEASE_QUALITY_REPORT.md`
+- `../CODEX_BOOTSTRAP.md` — canonical milestone details and M0 quality gate
+- `../BACKLOG.md` — implementation projection
+- `roadmap/VERTICAL_SLICE_V0_4_0.md`
+- `roadmap/MILESTONES.md` — milestone index, same numbering as Bootstrap
+- `versioning/VERSION_POLICY.md`

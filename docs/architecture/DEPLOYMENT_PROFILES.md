@@ -1,4 +1,4 @@
-# Deployment Profiles v0.2.2
+# Deployment Profiles v0.4.0
 
 ## A. Local Developer
 

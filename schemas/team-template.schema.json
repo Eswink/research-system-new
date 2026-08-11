@@ -3,23 +3,33 @@
   "$id": "https://research-os.local/schemas/team-template.schema.json",
   "title": "TeamTemplate",
   "type": "object",
-  "additionalProperties": true,
-  "required": [
-    "id",
-    "roles"
-  ],
+  "additionalProperties": false,
+  "required": ["id", "display_name", "roles"],
   "properties": {
-    "id": {
-      "type": "string"
-    },
+    "id": {"type": "string", "minLength": 1},
+    "display_name": {"type": "string", "minLength": 1},
+    "extends": {"type": "string", "minLength": 1},
     "roles": {
       "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "required": [
-          "min_instances",
-          "max_instances"
-        ]
+      "additionalProperties": {"$ref": "#/$defs/rolePool"}
+    }
+  },
+  "$defs": {
+    "rolePool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_instances", "max_instances"],
+      "properties": {
+        "min_instances": {"type": "integer", "minimum": 0},
+        "max_instances": {"type": "integer", "minimum": 0},
+        "concurrency": {"type": "integer", "minimum": 1},
+        "selection_strategy": {
+          "enum": ["FIXED", "ROUND_ROBIN", "CAPABILITY_BEST_FIT", "COST_AWARE", "EVAL_SCORE_AWARE"]
+        },
+        "model_profile": {"type": "string", "minLength": 1},
+        "activation_policy": {
+          "enum": ["ALWAYS", "REQUIRED_BY_PROTOCOL", "ON_DEMAND", "BUDGET_PERMITTING", "DISABLED"]
+        }
       }
     }
   }

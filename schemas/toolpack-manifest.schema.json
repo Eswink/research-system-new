@@ -12,44 +12,52 @@
     "digest",
     "license",
     "tools",
-    "requested_capabilities"
+    "skills",
+    "requested_capabilities",
+    "credentials",
+    "compatibility"
   ],
   "properties": {
-    "id": {
-      "type": "string"
-    },
-    "version": {
-      "type": "string"
-    },
-    "source": {
-      "type": "string"
-    },
-    "resolved_revision": {
-      "type": "string"
-    },
-    "digest": {
-      "type": "string"
-    },
-    "license": {
-      "type": "string"
-    },
-    "tools": {
+    "id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "source": {"type": "string", "minLength": 1},
+    "resolved_revision": {"type": "string", "minLength": 1},
+    "digest": {"type": "string", "minLength": 1},
+    "signature": {"type": ["string", "null"]},
+    "license": {"type": "string", "minLength": 1},
+    "tools": {"$ref": "#/$defs/refs"},
+    "skills": {"$ref": "#/$defs/refs"},
+    "requested_capabilities": {"$ref": "#/$defs/refs"},
+    "network_domains": {"$ref": "#/$defs/refs"},
+    "credentials": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "scope"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "scope": {"type": "string", "minLength": 1},
+          "required": {"type": "boolean"}
+        }
       }
     },
-    "requested_capabilities": {
-      "type": "array",
-      "items": {
-        "type": "string"
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "research_os": {"type": "string", "minLength": 1},
+        "mcp_protocol": {"type": ["string", "null"]},
+        "python": {"type": ["string", "null"]},
+        "node": {"type": ["string", "null"]}
       }
-    },
-    "network_domains": {
+    }
+  },
+  "$defs": {
+    "refs": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
     }
   }
 }

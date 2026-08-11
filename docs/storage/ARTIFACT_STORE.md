@@ -1,4 +1,4 @@
-# Artifact Store v0.2.2
+# Artifact Store v0.4.0
 
 ## Interface
 

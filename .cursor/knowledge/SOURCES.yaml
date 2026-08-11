@@ -1,0 +1,180 @@
+schema_version: 1
+verified_at: '2026-08-11'
+policy:
+  normative_tiers:
+  - T1_OFFICIAL
+  design_evidence_tiers:
+  - T1_OFFICIAL
+  - T2_PRIMARY_RESEARCH
+  caveat_tiers:
+  - T3_OBSERVED_CAVEAT
+  refresh_after_days: 30
+sources:
+- id: cursor-rules
+  tier: T1_OFFICIAL
+  title: Cursor Rules
+  url: https://cursor.com/docs/rules
+  topics:
+  - rules
+  - agents-md
+  - scoping
+  verified_at: '2026-08-10'
+  invalidate_on:
+  - cursor-major-release
+  - rules-schema-change
+- id: cursor-skills
+  tier: T1_OFFICIAL
+  title: Cursor Agent Skills
+  url: https://cursor.com/docs/skills
+  topics:
+  - skills
+  - skill-md
+  - paths
+  - discovery
+  verified_at: '2026-08-10'
+  invalidate_on:
+  - cursor-major-release
+  - skills-schema-change
+- id: cursor-subagents
+  tier: T1_OFFICIAL
+  title: Cursor Subagents
+  url: https://cursor.com/docs/subagents
+  topics:
+  - subagents
+  - custom-agents
+  - parallel-review
+  verified_at: '2026-08-10'
+  invalidate_on:
+  - cursor-major-release
+  - subagent-schema-change
+- id: cursor-hooks
+  tier: T1_OFFICIAL
+  title: Cursor Hooks
+  url: https://cursor.com/docs/hooks
+  topics:
+  - hooks
+  - security
+  - stop-loop
+  - cloud-hooks
+  - cloud-agent-hooks
+  verified_at: '2026-08-10'
+  invalidate_on:
+  - cursor-major-release
+  - hooks-schema-change
+- id: cursor-mcp
+  tier: T1_OFFICIAL
+  title: Cursor MCP
+  url: https://cursor.com/docs/mcp
+  topics:
+  - mcp
+  - tools
+  - resources
+  - transports
+  verified_at: '2026-08-10'
+  invalidate_on:
+  - mcp-support-change
+- id: cursor-ignore
+  tier: T1_OFFICIAL
+  title: Cursor Ignore File
+  url: https://cursor.com/docs/reference/ignore-file
+  topics:
+  - cursorignore
+  - context-security
+  - secrets
+  verified_at: '2026-08-10'
+  invalidate_on:
+  - ignore-semantics-change
+- id: cursor-plugins
+  tier: T1_OFFICIAL
+  title: Cursor Plugins
+  url: https://cursor.com/docs/plugins
+  topics:
+  - plugins
+  - packaging
+  verified_at: '2026-08-10'
+  invalidate_on:
+  - plugin-schema-change
+- id: cursor-plan-mode
+  tier: T1_OFFICIAL
+  title: Cursor Plan Mode
+  url: https://cursor.com/docs/agent/plan-mode
+  topics:
+  - planning
+  verified_at: '2026-08-10'
+  invalidate_on:
+  - plan-mode-change
+- id: config-study-2602-14690
+  tier: T2_PRIMARY_RESEARCH
+  title: 'Configuring Agentic AI Coding Tools: An Exploratory Study'
+  url: https://arxiv.org/abs/2602.14690
+  topics:
+  - configuration
+  - agents-md
+  - skills
+  - subagents
+  verified_at: '2026-08-10'
+- id: guardrails-2604-11088
+  tier: T2_PRIMARY_RESEARCH
+  title: Do Agent Rules Shape or Distort? Guardrails Beat Guidance in Coding Agents
+  url: https://arxiv.org/abs/2604.11088
+  topics:
+  - rules
+  - guardrails
+  - evaluation
+  verified_at: '2026-08-10'
+- id: gse-2608-06153
+  tier: T2_PRIMARY_RESEARCH
+  title: Learning Globally Reusable Skills for Coding Agents
+  url: https://arxiv.org/abs/2608.06153
+  topics:
+  - skill-evolution
+  - replay
+  - consolidation
+  verified_at: '2026-08-10'
+- id: cursor-forum-subagent-task
+  tier: T3_OBSERVED_CAVEAT
+  title: Custom subagent Task tool compatibility reports
+  url: https://forum.cursor.com/t/task-tool-not-injected-in-ide-sessions-subagents-unavailable-custom-subagents/156421
+  topics:
+  - subagent-caveat
+  verified_at: '2026-08-10'
+- id: cursor-forum-model-pin
+  tier: T3_OBSERVED_CAVEAT
+  title: Subagent model choice compatibility reports
+  url: https://forum.cursor.com/t/subagent-model-choice-not-respected/163645
+  topics:
+  - subagent-model-caveat
+  verified_at: '2026-08-10'
+- id: cursor-forum-subagent-start-deny
+  tier: T3_OBSERVED_CAVEAT
+  title: subagentStart deny enforcement compatibility report
+  url: https://forum.cursor.com/t/subagentstart-hook-deny-is-not-enforced/166143/7
+  topics:
+  - subagent-hook-caveat
+  - deny
+  verified_at: '2026-08-10'
+- id: cursor-forum-background-subagent-stop
+  tier: T3_OBSERVED_CAVEAT
+  title: Background subagentStop compatibility report
+  url: https://forum.cursor.com/t/subagentstop-never-fires-for-background-subagents-documented-summary-modified-files-agent-transcript-path-missing-or-null/166681/5
+  topics:
+  - subagent-hook-caveat
+  - background
+  verified_at: '2026-08-10'
+- id: cursor-forum-subagent-parent-linkage
+  tier: T3_OBSERVED_CAVEAT
+  title: Subagent hook parent linkage compatibility report
+  url: https://forum.cursor.com/t/subagentstart-hook-parent-conversation-id-always-equals-conversation-id-and-subagent-conversations-have-no-link-back-to-their-parent/163054
+  topics:
+  - subagent-hook-caveat
+  - hierarchy
+  verified_at: '2026-08-10'
+- id: cursor-forum-cursorignore
+  tier: T3_OBSERVED_CAVEAT
+  title: Cursor ignore scope and terminal limitation
+  url: https://forum.cursor.com/t/cursor-does-not-ignore-files-in-gitignore/154430/9
+  topics:
+  - cursorignore
+  - secrets
+  - context-security
+  verified_at: '2026-08-10'

@@ -1,4 +1,4 @@
-# System Role Catalog v0.2.2
+# System Role Catalog v0.4.0
 
 系统角色是可覆盖的模板，不绑定具体 Model ID。
 
@@ -20,7 +20,7 @@ Capabilities：
 - research_state.read
 - evidence.read
 - experiment.read
-- decision.write
+- decision.propose
 
 Workspace：默认只读。
 
@@ -77,7 +77,7 @@ Skills：
 
 Capabilities：
 
-- web.search
+- literature.search
 - literature.search
 - literature.read
 - workspace.write.notes
@@ -503,7 +503,7 @@ Capabilities：
 7. ExperimentEngineer 等执行角色使用隔离 Workspace。
 
 
-## v0.2.2 Role Runtime Matrix
+## v0.4.0 Role Runtime Matrix
 
 | Role Group | Typical Workspace | Model Hard Requirement | Default Effect |
 |---|---|---|---|

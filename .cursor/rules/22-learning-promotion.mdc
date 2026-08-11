@@ -1,0 +1,13 @@
+---
+description: 自学习 hard boundaries：Observation/Proposal 不得直接改变正式 Rule/Skill；Promotion 必须回放、确定性验证和显式授权
+alwaysApply: true
+---
+
+# Learning Promotion Hard Boundaries
+- Runtime Observation 不是工程事实，不得直接写 Rule/Skill/Memory。
+- 普通单次失败不得直接晋升；先形成 LEARN proposal，并等待独立复现或确定性权威证据。
+- Promotion 必须包含 before/after replay、deterministic regression validation 和显式授权。
+- Reviewer 按变更风险和范围选择，不规定固定人数、固定轮数或数值评分。
+- Stop Hook 只能在用户显式启动 evolution state 后继续；不得默认自循环。
+- 自学习流程不得修改 validator 或授权规则来绕过失败门禁。
+- rejected/superseded proposal 保留历史，不静默删除失败证据。

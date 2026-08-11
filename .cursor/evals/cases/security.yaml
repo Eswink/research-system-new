@@ -1,0 +1,109 @@
+cases:
+  - id: secret-env-read
+    hook: secret_guard.py
+    input:
+      tool_name: Read
+      tool_input: {path: ".env.local"}
+    expect: {permission: deny}
+  - id: secret-credential-basename-read
+    hook: secret_guard.py
+    input:
+      tool_name: Read
+      tool_input: {path: "C:\\workspace\\config\\credentials.json"}
+    expect: {permission: deny}
+  - id: secret-private-key-read
+    hook: secret_guard.py
+    input:
+      tool_name: Read
+      tool_input: {path: "/workspace/certs/signing.pem"}
+    expect: {permission: deny}
+  - id: safe-env-example
+    hook: secret_guard.py
+    input:
+      tool_name: Read
+      tool_input: {path: ".env.example"}
+    expect: {permission: allow}
+  - id: safe-source-read
+    hook: secret_guard.py
+    input:
+      tool_name: Read
+      tool_input: {path: "packages/domain/model.py"}
+    expect: {permission: allow}
+  - id: missing-read-path
+    hook: secret_guard.py
+    input: {tool_name: Read, tool_input: {}}
+    expect: {permission: deny}
+
+  - id: git-push
+    hook: shell_guard.py
+    input: {command: "git push origin main"}
+    expect: {permission: ask}
+  - id: package-install
+    hook: shell_guard.py
+    input: {command: "python -m pip install jsonschema"}
+    expect: {permission: ask}
+  - id: external-publish
+    hook: shell_guard.py
+    input: {command: "docker push registry.example/research-os:0.4.0"}
+    expect: {permission: ask}
+  - id: powershell-drive-root-delete
+    hook: shell_guard.py
+    input: {command: "Remove-Item -LiteralPath C:\\ -Recurse -Force"}
+    expect: {permission: deny}
+  - id: cmd-drive-root-delete
+    hook: shell_guard.py
+    input: {command: "rd /s /q C:\\"}
+    expect: {permission: deny}
+  - id: posix-root-delete
+    hook: shell_guard.py
+    input: {command: "rm -rf -- /"}
+    expect: {permission: deny}
+  - id: posix-home-delete
+    hook: shell_guard.py
+    input: {command: "rm --recursive --force $HOME"}
+    expect: {permission: deny}
+  - id: scoped-delete
+    hook: shell_guard.py
+    input: {command: "rm -rf .cursor/runtime/cache"}
+    expect: {permission: allow}
+  - id: hard-reset
+    hook: shell_guard.py
+    input: {command: "git reset --hard HEAD~1"}
+    expect: {permission: deny}
+  - id: force-clean
+    hook: shell_guard.py
+    input: {command: "git clean -fd"}
+    expect: {permission: deny}
+  - id: credential-shell-reference
+    hook: shell_guard.py
+    input: {command: "python tools/check.py C:\\workspace\\credentials.json"}
+    expect: {permission: deny}
+  - id: safe-env-example-shell
+    hook: shell_guard.py
+    input: {command: "python tools/check.py .env.example"}
+    expect: {permission: allow}
+  - id: safe-git-status
+    hook: shell_guard.py
+    input: {command: "git status --short"}
+    expect: {permission: allow}
+  - id: missing-shell-command
+    hook: shell_guard.py
+    input: {}
+    expect: {permission: deny}
+
+  - id: ordinary-mcp-call
+    hook: mcp_guard.py
+    input:
+      tool_name: papers.search
+      tool_input: {query: "agent systems"}
+    expect: {permission: ask}
+  - id: credential-path-mcp-call
+    hook: mcp_guard.py
+    input:
+      tool_name: fs.read
+      tool_input: {path: "/home/alice/.ssh/id_ed25519"}
+    expect: {permission: deny}
+  - id: missing-mcp-input
+    hook: mcp_guard.py
+    input: {tool_name: papers.search}
+    expect: {permission: deny}
