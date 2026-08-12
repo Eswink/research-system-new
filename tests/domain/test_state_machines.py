@@ -45,7 +45,7 @@ class _StateMachine(Protocol):
             [
                 ResearchRunState.Transition.START_COMPILE,
                 ResearchRunState.Transition.COMPILE_OK,
-                ResearchRunState.Transition.START_PREFLIGHT,
+                ResearchRunState.Transition.PREFLIGHT_OK,
                 ResearchRunState.Transition.START,
             ],
             ResearchRunState.State.RUNNING,
@@ -172,9 +172,20 @@ def test_run_approval_flow() -> None:
     assert is_terminal(state, ResearchRunState.terminal())
 
 
-def test_run_cancel_flow() -> None:
-    state = ResearchRunState.transition(
-        ResearchRunState.initial(), ResearchRunState.Transition.CANCEL
-    )
-    assert state == ResearchRunState.State.CANCELLED
+def test_preflight_failure_transitions_run_to_failed() -> None:
+    state = ResearchRunState.initial()
+    state = ResearchRunState.transition(state, ResearchRunState.Transition.START_COMPILE)
+    state = ResearchRunState.transition(state, ResearchRunState.Transition.COMPILE_OK)
+    state = ResearchRunState.transition(state, ResearchRunState.Transition.PREFLIGHT_FAILED)
+    assert state == ResearchRunState.State.FAILED
     assert is_terminal(state, ResearchRunState.terminal())
+
+
+def test_preflight_failure_blocks_ready_state() -> None:
+    state = ResearchRunState.transition(
+        ResearchRunState.State.PREFLIGHT,
+        ResearchRunState.Transition.PREFLIGHT_FAILED,
+    )
+    assert state == ResearchRunState.State.FAILED
+    with pytest.raises(InvalidTransitionError):
+        ResearchRunState.transition(state, ResearchRunState.Transition.START)

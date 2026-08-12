@@ -21,6 +21,7 @@
       "required": ["id", "strategy"],
       "properties": {
         "id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
         "strategy": {
           "enum": [
             "deterministic",
@@ -62,7 +63,16 @@
           "items": {"type": "string", "minLength": 1}
         },
         "timeout_seconds": {"type": "integer", "minimum": 1},
-        "gate": {"type": "string", "minLength": 1},
+        "gate": {
+          "enum": [
+            "POLICY_GATE",
+            "BUDGET_GATE",
+            "QUALITY_GATE",
+            "HUMAN_GATE",
+            "SECURITY_GATE",
+            "PUBLISH_GATE"
+          ]
+        },
         "stop_conditions": {
           "type": "object",
           "additionalProperties": false,

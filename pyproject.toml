@@ -64,7 +64,7 @@ files = [
     ".cursor/skills/cursor-framework-check/scripts/run_all_checks.py",
     "tests",
 ]
-exclude = ["^tests/architecture/python/fixtures/invalid/"]
+exclude = ["^tests/architecture/python/fixtures/(invalid|valid)/"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

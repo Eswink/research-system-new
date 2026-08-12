@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/budget-policy.schema.json",
+  "title": "BudgetPolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "model",
+    "compute",
+    "tools",
+    "wall_clock",
+    "parallelism",
+    "thresholds"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "model": {"$ref": "#/$defs/modelBudget"},
+    "compute": {"$ref": "#/$defs/computeBudget"},
+    "tools": {"$ref": "#/$defs/toolBudget"},
+    "wall_clock": {"$ref": "#/$defs/wallClockBudget"},
+    "parallelism": {"$ref": "#/$defs/parallelismBudget"},
+    "thresholds": {"$ref": "#/$defs/thresholds"}
+  },
+  "$defs": {
+    "modelBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_input_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "max_output_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "max_requests": {"type": ["integer", "null"], "minimum": 0},
+        "max_cost_usd": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "computeBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_cpu_hours": {"type": ["number", "null"], "minimum": 0},
+        "max_gpu_hours": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "toolBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_requests": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "wallClockBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_hours": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "parallelismBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_agent_sessions": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soft_warning_ratio", "approval_ratio", "hard_stop_ratio"],
+      "properties": {
+        "soft_warning_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+        "approval_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+        "hard_stop_ratio": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}

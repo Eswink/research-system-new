@@ -1,10 +1,15 @@
 status: WARN
 findings:
-  - code: MODEL_CAPABILITY_UNVERIFIED
+  - code: POLICY_APPROVAL_REQUIRED
     severity: WARNING
-    message: Tool-calling support is user-declared and requires a probe before RUNNING.
-    subject_ref: model-definition:research_alpha
+    message: approval required for capability literature.search
+    subject_ref: "phase:intake"
+  - code: BUDGET_LIMIT_UNKNOWN
+    severity: WARNING
+    message: "budget limit is not configured: model_requests"
+    subject_ref: "budget"
 estimated_cost: null
-reserved_budget_ref: budget-reservation:example
+reserved_budget_ref: null
 unresolved_risks:
-  - Model capability assertions are not yet probe-verified.
+  - "approval required: literature.search"
+  - "budget limit not configured: model_requests"

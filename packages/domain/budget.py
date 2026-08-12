@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 from typing import Sequence
 
@@ -60,10 +61,15 @@ class BudgetPolicy:
     id: str
     thresholds: dict[ResourceType, BudgetThreshold] = field(default_factory=dict)
     hard_limits: dict[str, int] = field(default_factory=dict)
+    threshold_ratios: dict[str, Decimal] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.id:
             raise ValueError("budget policy id must not be empty")
+        if any(quantity < 0 for quantity in self.hard_limits.values()):
+            raise ValueError("budget hard limits must be non-negative")
+        if any(not 0 <= ratio <= 1 for ratio in self.threshold_ratios.values()):
+            raise ValueError("budget threshold ratios must be in [0, 1]")
 
 
 @dataclass(frozen=True, slots=True)

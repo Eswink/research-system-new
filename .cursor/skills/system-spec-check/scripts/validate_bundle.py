@@ -261,6 +261,7 @@ def check_yaml_and_references() -> None:
     policy = (load_yaml("examples/config/policy.yaml") or {}).get("policy", {})
     handoff_fixture = load_yaml("examples/contracts/handoff_bundle.yaml") or {}
     preflight_fixture = load_yaml("examples/contracts/preflight_report.yaml") or {}
+    compiled_plan_fixture = load_yaml("examples/contracts/compiled_run_plan.yaml") or {}
     toolpack_fixture = load_yaml("examples/contracts/toolpack_manifest.yaml") or {}
     probe_fixture = load_yaml("examples/contracts/probe_result.yaml") or {}
     health_fixture = load_yaml("examples/contracts/endpoint_health.yaml") or {}
@@ -277,6 +278,7 @@ def check_yaml_and_references() -> None:
     for schema_name, fixture, label in (
         ("handoff-bundle.schema.json", handoff_fixture, "HandoffBundle fixture"),
         ("preflight-report.schema.json", preflight_fixture, "PreflightReport fixture"),
+        ("compiled-run-plan.schema.json", compiled_plan_fixture, "CompiledRunPlan fixture"),
         ("toolpack-manifest.schema.json", toolpack_fixture, "ToolPackManifest fixture"),
         ("probe-result.schema.json", probe_fixture, "ModelProbeResult fixture"),
         ("endpoint-health.schema.json", health_fixture, "EndpointHealthRecord fixture"),
@@ -427,6 +429,25 @@ def check_yaml_and_references() -> None:
             if capability and capability not in capabilities:
                 ERRORS.append(f"Policy {section} 引用未注册 Capability: {capability}")
 
+    for budget_id, budget in budgets.items():
+        validate_strict_instance(
+            "budget-policy.schema.json",
+            {"id": budget_id, **budget},
+            f"BudgetPolicy/{budget_id}",
+        )
+    policy_instance = {
+        "id": policy.get("id", "project-policy"),
+        "version": policy.get("version", (ROOT / "VERSION").read_text(encoding="utf-8").strip()),
+        **policy,
+    }
+    validate_strict_instance("policy.schema.json", policy_instance, "PolicyDefinition/project")
+    for workspace_id, workspace in (backends.get("workspace_backends") or {}).items():
+        validate_strict_instance(
+            "workspace.schema.json",
+            {"id": workspace_id, **workspace},
+            f"WorkspaceBackend/{workspace_id}",
+        )
+
     # Tools / contracts.
     for provider_id, provider in tools.items():
         validate_strict_instance("tool-provider.schema.json", {"id": provider_id, **provider}, f"ToolProvider/{provider_id}")
@@ -497,6 +518,8 @@ def check_yaml_and_references() -> None:
         ERRORS.append("project.yaml Autonomy 不存在")
     if project.get("budget") not in budgets:
         ERRORS.append("project.yaml Budget 不存在")
+    if project.get("workspace_backend") not in (backends.get("workspace_backends") or {}):
+        ERRORS.append("project.yaml workspace_backend 未在 backends.yaml 注册")
 
     workflows = backends.get("workflow_engines", {})
     workspaces = backends.get("workspace_backends", {})
@@ -510,6 +533,8 @@ def check_yaml_and_references() -> None:
 def check_json_schemas() -> None:
     expected_schema_files = {
         "agent-spec.schema.json",
+        "budget-policy.schema.json",
+        "compiled-run-plan.schema.json",
         "domain_discovery_output_v1.schema.json",
         "endpoint-health.schema.json",
         "experiment_run_output_v1.schema.json",
@@ -521,12 +546,14 @@ def check_json_schemas() -> None:
         "model-runtime-fingerprint.schema.json",
         "preflight-report.schema.json",
         "probe-result.schema.json",
+        "policy.schema.json",
         "protocol.schema.json",
         "role-definition.schema.json",
         "task-contract.schema.json",
         "team-template.schema.json",
         "tool-provider.schema.json",
         "toolpack-manifest.schema.json",
+        "workspace.schema.json",
     }
     schemas = list((ROOT / "schemas").glob("*.json"))
     actual_schema_files = {path.name for path in schemas}

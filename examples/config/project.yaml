@@ -9,3 +9,4 @@ project:
   autonomy: guarded
   budget: low_cost
   default_model_profile: research_strong
+  workspace_backend: openhands_docker

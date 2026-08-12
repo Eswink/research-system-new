@@ -62,9 +62,10 @@ class ToolProviderSpec:
     capabilities: list[str] = field(default_factory=list)
     effect_class: EffectClass = EffectClass.READ_ONLY
     transport: str | None = None
+    endpoint_env: str | None = None
     network_domains: list[str] = field(default_factory=list)
     protocol_version: str | None = None
-    health_check: str | None = None
+    health_check: bool = False
 
     def __post_init__(self) -> None:
         if not self.id:

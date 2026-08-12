@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/policy.schema.json",
+  "title": "PolicyDefinition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "default_effect"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "default_effect": {
+      "enum": ["ALLOW", "DENY", "REQUIRE_APPROVAL", "ALLOW_WITH_CONSTRAINTS"]
+    },
+    "allow": {"$ref": "#/$defs/rules"},
+    "allow_with_constraints": {"$ref": "#/$defs/rules"},
+    "require_approval": {"$ref": "#/$defs/rules"},
+    "deny": {"$ref": "#/$defs/rules"}
+  },
+  "$defs": {
+    "rules": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/rule"}
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "capability": {"type": "string", "minLength": 1},
+        "action": {"type": "string", "minLength": 1},
+        "scope": {"type": "string", "minLength": 1},
+        "constraints": {"$ref": "#/$defs/constraints"}
+      },
+      "anyOf": [{"required": ["capability"]}, {"required": ["action"]}]
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {"type": "string"},
+          {"type": "number"},
+          {"type": "boolean"},
+          {"type": "array", "items": {"type": "string"}}
+        ]
+      }
+    }
+  }
+}

@@ -7,13 +7,17 @@ import pytest
 from adapters.contracts import (
     ContractLoadError,
     load_agents,
+    load_budget_policies,
     load_collection,
     load_llm_endpoints,
     load_model_profiles,
     load_models,
+    load_policy,
+    load_protocol,
     load_roles,
     load_task_contracts,
     load_team_templates,
+    load_tool_providers,
     load_yaml,
 )
 from packages.domain.enums import (
@@ -145,3 +149,24 @@ def test_model_profile_schema_validates_fixture() -> None:
     for profile_id, body in profiles.items():
         errors = list(validator.iter_errors({"id": profile_id, **body}))
         assert not errors, (profile_id, [e.message for e in errors])
+
+
+def test_load_protocol_example() -> None:
+    protocol = load_protocol("examples/protocols/ai_ml_research_v0_4_0.yaml")
+    assert protocol.id == "ai_ml_research_v0_4_0"
+    assert len(protocol.phases) == 11
+    assert protocol.phases[1].task_contracts == ["domain_discovery"]
+    assert protocol.phases[5].stop_conditions is not None
+
+
+def test_load_budget_policy_and_resource_contracts() -> None:
+    budget = load_budget_policies("examples/config/budgets.yaml")["low_cost"]
+    assert budget.hard_limits["tool_requests"] == 1000
+    policy = load_policy("examples/config/policy.yaml")
+    assert policy.default_effect.value == "DENY"
+    providers = load_tool_providers("examples/config/tool_providers.yaml")
+    assert providers["research_mcp"].capabilities == [
+        "literature.search",
+        "literature.read",
+        "citation.inspect",
+    ]

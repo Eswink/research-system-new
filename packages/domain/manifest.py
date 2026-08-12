@@ -22,6 +22,7 @@ class RunManifest:
     project_id: str
     protocol_version: Version
     protocol_digest: Digest | None = None
+    compiled_plan_digest: Digest | None = None
     source_commit: str | None = None
     role_definitions: dict[str, object] = field(default_factory=dict)
     agent_specs: dict[str, object] = field(default_factory=dict)

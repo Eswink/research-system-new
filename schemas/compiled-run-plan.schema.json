@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/compiled-run-plan.schema.json",
+  "title": "CompiledRunPlan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol_id",
+    "protocol_version",
+    "protocol_digest",
+    "phase_dag",
+    "phases",
+    "task_contract_refs",
+    "role_pools",
+    "agent_candidates",
+    "resolved_models",
+    "model_eligibility",
+    "tool_requirements",
+    "workspace_requirements",
+    "budget_reservations",
+    "tool_pack_digests",
+    "gates",
+    "stop_conditions"
+  ],
+  "properties": {
+    "protocol_id": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "protocol_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "phase_dag": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"type": "string", "minLength": 1}
+      }
+    },
+    "phases": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/phase"}},
+    "task_contract_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "role_pools": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "agent_candidates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"type": "string", "minLength": 1}
+      }
+    },
+    "resolved_models": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "model_eligibility": {"type": "array", "items": {"$ref": "#/$defs/modelEligibility"}},
+    "tool_requirements": {"type": "array", "items": {"$ref": "#/$defs/toolRequirement"}},
+    "workspace_requirements": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/workspaceRequirement"}
+    },
+    "budget_reservations": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/budgetReservation"}
+    },
+    "tool_pack_digests": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+    },
+    "gates": {"type": "array", "items": {"$ref": "#/$defs/gate"}},
+    "stop_conditions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/stopConditions"}
+    }
+  },
+  "$defs": {
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "strategy", "depends_on", "task_contract_refs"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "strategy": {
+          "enum": [
+            "deterministic",
+            "parallel_agents",
+            "map_reduce",
+            "population_search",
+            "iterative_optimizer",
+            "single_agent"
+          ]
+        },
+        "depends_on": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "task_contract_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "timeout_seconds": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "modelEligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "role_id", "model_id", "eligible", "hard_capabilities"],
+      "properties": {
+        "agent_id": {"type": "string", "minLength": 1},
+        "role_id": {"type": "string", "minLength": 1},
+        "model_id": {"type": "string", "minLength": 1},
+        "eligible": {"type": "boolean"},
+        "hard_capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "missing_capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "toolRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id", "capability", "provider_ids"],
+      "properties": {
+        "phase_id": {"type": "string", "minLength": 1},
+        "capability": {"type": "string", "minLength": 1},
+        "provider_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "workspaceRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id", "workspace_backend", "trust_profile"],
+      "properties": {
+        "phase_id": {"type": "string", "minLength": 1},
+        "workspace_backend": {"type": "string", "minLength": 1},
+        "trust_profile": {"type": "string", "minLength": 1},
+        "compute_profile": {"type": ["string", "null"]}
+      }
+    },
+    "budgetReservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scope", "resource_type", "quantity", "unit"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "scope": {"type": "string", "minLength": 1},
+        "resource_type": {"type": "string", "minLength": 1},
+        "quantity": {"type": "integer", "minimum": 0},
+        "unit": {"type": "string", "minLength": 1}
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id", "gate"],
+      "properties": {
+        "phase_id": {"type": "string", "minLength": 1},
+        "gate": {"type": "string", "minLength": 1}
+      }
+    },
+    "stopConditions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id", "budget_exhausted"],
+      "properties": {
+        "phase_id": {"type": "string", "minLength": 1},
+        "max_iterations": {"type": ["integer", "null"], "minimum": 1},
+        "budget_exhausted": {"type": "boolean"}
+      }
+    }
+  }
+}

@@ -3,12 +3,14 @@
 活动计划索引；归档任务保留原始状态历史与复检 provenance。
 
 ## Active
-| Done | Plan | Status |
-| --- | --- | --- |
+
+无活动计划。
 
 ## Recently Completed
+
 | Done | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260812-003](tasks/PLAN-20260812-003-m2-protocol-compiler-preflight.md) | DONE |
 | [x] | [PLAN-20260810-001](archive/PLAN-20260810-001-cursor-governance-bootstrap.md) | DONE |
 | [x] | [PLAN-20260810-002](archive/PLAN-20260810-002-git-auto-commit-and-code-governance.md) | DONE |
 | [x] | [PLAN-20260810-003](archive/PLAN-20260810-003-governance-rules-audit-fix.md) | DONE |

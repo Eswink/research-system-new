@@ -35,19 +35,29 @@ P12 Reproducibility Audit
 ## 3. Phase Definition
 
 ```text
+id
+strategy
+depends_on
 inputs
 outputs
-dependencies
-strategy
 required_roles
 required_capabilities
-task_contracts
-budget
-timeout
-retry
+task_contract(s)
+timeout_seconds
 gate
 stop_conditions
 ```
+
+说明：
+
+- 策略六种外部契约：`deterministic` / `parallel_agents` / `map_reduce` /
+  `population_search` / `iterative_optimizer` / `single_agent`（见
+  `schemas/protocol.schema.json`）。
+- `task_contract` 是便捷单值，归一化到 `task_contracts` 列表；编译结果只暴露
+  `task_contract_refs`。
+- Phase 级 `retry` 不在 Protocol 外部契约内：重试由 `TaskContract.retry_policy`
+  承载（M4/M7 使用）；Phase `budget` 由 Compiler 依据 phase 属性聚合为
+  `BudgetReservation`，不做 Phase 级自由预算字段。
 
 ## 4. Compile
 

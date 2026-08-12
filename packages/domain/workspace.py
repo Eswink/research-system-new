@@ -16,6 +16,7 @@ from packages.domain.enums import TrustProfile
 class Workspace:
     id: str
     name: str
+    backend_type: str | None = None
     trust_profile: TrustProfile = TrustProfile.SANDBOXED_STANDARD
     read_scopes: list[str] = field(default_factory=list)
     write_scopes: list[str] = field(default_factory=list)

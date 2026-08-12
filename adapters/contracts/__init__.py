@@ -13,19 +13,33 @@ from typing import Any, Callable
 
 from adapters.contracts.base import ContractLoadError, load_yaml
 from adapters.contracts.models_loaders import load_llm_endpoints, load_model_profiles, load_models
+from adapters.contracts.protocol_loaders import load_protocol
+from adapters.contracts.resource_loaders import (
+    load_budget_policies,
+    load_policy,
+    load_project,
+    load_tool_providers,
+    load_workspaces,
+)
 from adapters.contracts.roles_loaders import load_agents, load_roles, load_team_templates
 from adapters.contracts.tasks_loaders import load_task_contracts
 
 __all__ = [
     "ContractLoadError",
     "load_agents",
+    "load_budget_policies",
     "load_collection",
     "load_llm_endpoints",
     "load_model_profiles",
     "load_models",
+    "load_policy",
+    "load_project",
+    "load_protocol",
     "load_roles",
     "load_task_contracts",
     "load_team_templates",
+    "load_tool_providers",
+    "load_workspaces",
     "load_yaml",
 ]
 
@@ -37,6 +51,9 @@ _COLLECTION_LOADERS: dict[str, Callable[..., dict[str, Any]]] = {
     "models": load_models,
     "model_profiles": load_model_profiles,
     "task_contracts": load_task_contracts,
+    "budget_policies": load_budget_policies,
+    "tool_providers": load_tool_providers,
+    "workspaces": load_workspaces,
 }
 
 

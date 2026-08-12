@@ -10,6 +10,8 @@ policy:
       scope: run
     - capability: literature.search
       scope: approved_tool_providers
+    - capability: literature.read
+      scope: approved_tool_providers
     - capability: network.academic
       scope: approved_domains
 

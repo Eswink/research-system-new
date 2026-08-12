@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/workspace.schema.json",
+  "title": "WorkspaceBackendSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "trust_profile"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "type": {"type": "string", "minLength": 1},
+    "trust_profile": {
+      "enum": [
+        "TRUSTED_LOCAL",
+        "SANDBOXED_STANDARD",
+        "SANDBOXED_RESTRICTED",
+        "HARDENED_UNTRUSTED"
+      ]
+    },
+    "enabled": {"type": "boolean"}
+  }
+}

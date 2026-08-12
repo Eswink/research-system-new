@@ -27,8 +27,8 @@ class ResearchRunState:
     class Transition:
         START_COMPILE = "START_COMPILE"
         COMPILE_OK = "COMPILE_OK"
-        START_PREFLIGHT = "START_PREFLIGHT"
         PREFLIGHT_OK = "PREFLIGHT_OK"
+        PREFLIGHT_FAILED = "PREFLIGHT_FAILED"
         START = "START"
         PAUSE = "PAUSE"
         RESUME = "RESUME"
@@ -44,7 +44,8 @@ class ResearchRunState:
     _TRANSITIONS: dict[tuple[str, str], str] = {
         (State.DRAFT, Transition.START_COMPILE): State.COMPILING,
         (State.COMPILING, Transition.COMPILE_OK): State.PREFLIGHT,
-        (State.PREFLIGHT, Transition.START_PREFLIGHT): State.READY,
+        (State.PREFLIGHT, Transition.PREFLIGHT_OK): State.READY,
+        (State.PREFLIGHT, Transition.PREFLIGHT_FAILED): State.FAILED,
         (State.READY, Transition.START): State.RUNNING,
         (State.RUNNING, Transition.PAUSE): State.PAUSED,
         (State.PAUSED, Transition.RESUME): State.RUNNING,

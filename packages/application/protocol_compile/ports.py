@@ -1,0 +1,88 @@
+"""Protocol Compiler / Preflight 的 application-owned ports 与请求 DTO。"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Mapping, Protocol, runtime_checkable
+
+from packages.application.model_relay.ports import CredentialResolver
+from packages.domain.budget import BudgetPolicy, BudgetReservation
+from packages.domain.enums import EndpointHealth
+from packages.domain.models import LLMEndpoint, ModelDefinition, ModelProfile
+from packages.domain.policy import PolicyDefinition
+from packages.domain.roles import AgentSpec, RoleDefinition, TeamTemplate
+from packages.domain.tasks import TaskContract
+from packages.domain.tools import ToolProviderSpec
+from packages.domain.workspace import Workspace
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectSettings:
+    project_id: str
+    team_template_id: str
+    default_model_profile_id: str | None
+    budget_policy_id: str
+    workspace_backend: str
+    compute_profile: str | None = None
+    policy_id: str = "project-policy"
+
+    def __post_init__(self) -> None:
+        if not self.project_id:
+            raise ValueError("project_id must not be empty")
+        if not self.team_template_id:
+            raise ValueError("team_template_id must not be empty")
+        if not self.budget_policy_id:
+            raise ValueError("budget_policy_id must not be empty")
+        if not self.workspace_backend:
+            raise ValueError("workspace_backend must not be empty")
+
+    @classmethod
+    def from_mapping(cls, project_id: str, raw: Mapping[str, object]) -> ProjectSettings:
+        return cls(
+            project_id=project_id,
+            team_template_id=str(raw["team_template"]),
+            default_model_profile_id=(
+                str(raw["default_model_profile"]) if raw.get("default_model_profile") else None
+            ),
+            budget_policy_id=str(raw["budget"]),
+            workspace_backend=str(raw["workspace_backend"]),
+            compute_profile=(str(raw["compute_profile"]) if raw.get("compute_profile") else None),
+            policy_id=str(raw.get("policy", "project-policy")),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class CatalogSnapshot:
+    roles: Mapping[str, RoleDefinition] = field(default_factory=dict)
+    agents: Mapping[str, AgentSpec] = field(default_factory=dict)
+    team_templates: Mapping[str, TeamTemplate] = field(default_factory=dict)
+    models: Mapping[str, ModelDefinition] = field(default_factory=dict)
+    model_profiles: Mapping[str, ModelProfile] = field(default_factory=dict)
+    task_contracts: Mapping[str, TaskContract] = field(default_factory=dict)
+    endpoints: Mapping[str, LLMEndpoint] = field(default_factory=dict)
+    tool_providers: Mapping[str, ToolProviderSpec] = field(default_factory=dict)
+    workspaces: Mapping[str, Workspace] = field(default_factory=dict)
+    tool_pack_digests: Mapping[str, str] = field(default_factory=dict)
+    budget_policies: Mapping[str, BudgetPolicy] = field(default_factory=dict)
+    policy: PolicyDefinition | None = None
+
+
+@runtime_checkable
+class ResourceCatalog(Protocol):
+    def snapshot(self) -> CatalogSnapshot: ...
+
+
+@runtime_checkable
+class BudgetReservationPort(Protocol):
+    def reserve(self, reservations: tuple[BudgetReservation, ...], policy: BudgetPolicy) -> str: ...
+
+
+@dataclass(frozen=True, slots=True)
+class PreflightContext:
+    catalog: CatalogSnapshot
+    project: ProjectSettings
+    credentials: CredentialResolver | None = None
+    endpoint_health: Mapping[str, EndpointHealth] = field(default_factory=dict)
+    provider_health: Mapping[str, bool] = field(default_factory=dict)
+    workspace_available: Mapping[str, bool] = field(default_factory=dict)
+    budget_reserver: BudgetReservationPort | None = None

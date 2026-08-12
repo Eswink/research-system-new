@@ -1,0 +1,21 @@
+protocol_id: ai_ml_research_v0_4_0
+protocol_version: 0.4.0
+protocol_digest: sha256:237f8bb470d2d0b44c3a99521ef33fa099aaabd385c1cd8671c55c064a4146d9
+phase_dag:
+  intake: []
+phases:
+  - id: intake
+    strategy: deterministic
+    depends_on: []
+    task_contract_refs: []
+task_contract_refs: []
+role_pools: {}
+agent_candidates: {}
+resolved_models: {}
+model_eligibility: []
+tool_requirements: []
+workspace_requirements: []
+budget_reservations: []
+tool_pack_digests: {}
+gates: []
+stop_conditions: []
