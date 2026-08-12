@@ -15,6 +15,7 @@ from packages.domain.budget import BudgetReservation
 from packages.domain.core import Digest, Money, Version
 from packages.domain.enums import GateType, ModelCapability
 from packages.domain.serialization import digest_of
+from packages.domain.team_plan import PhaseAssignment, RoleActivationRecord
 
 
 class PreflightStatus(StrEnum):
@@ -52,6 +53,8 @@ class CompileFindingCode(StrEnum):
     TOOL_UNAVAILABLE = "TOOL_UNAVAILABLE"
     SUPPLY_CHAIN_UNPINNED = "SUPPLY_CHAIN_UNPINNED"
     WORKSPACE_UNAVAILABLE = "WORKSPACE_UNAVAILABLE"
+    WORKSPACE_POLICY_VIOLATION = "WORKSPACE_POLICY_VIOLATION"
+    SELECTION_STRATEGY_DEGRADED = "SELECTION_STRATEGY_DEGRADED"
     PROTOCOL_INVALID = "PROTOCOL_INVALID"
 
 
@@ -66,6 +69,8 @@ class PreflightFindingCode(StrEnum):
     - BUDGET_MISSING / BUDGET_EXHAUSTED / BUDGET_LIMIT_UNKNOWN /
       BUDGET_RESOURCE_UNMAPPED：预算面（未映射 ResourceType 表示预算检查不完整）
     - HUMAN_GATE_REQUIRED：人工门
+    - ROLE_DISABLED / AGENT_PERMISSION_DENIED / HETEROGENEITY_VIOLATION：
+      Role/Agent/Team 面（M4）
     """
 
     POLICY_DENIED = "POLICY_DENIED"
@@ -83,6 +88,9 @@ class PreflightFindingCode(StrEnum):
     BUDGET_LIMIT_UNKNOWN = "BUDGET_LIMIT_UNKNOWN"
     BUDGET_RESOURCE_UNMAPPED = "BUDGET_RESOURCE_UNMAPPED"
     HUMAN_GATE_REQUIRED = "HUMAN_GATE_REQUIRED"
+    ROLE_DISABLED = "ROLE_DISABLED"
+    AGENT_PERMISSION_DENIED = "AGENT_PERMISSION_DENIED"
+    HETEROGENEITY_VIOLATION = "HETEROGENEITY_VIOLATION"
 
 
 @dataclass(frozen=True, slots=True)
@@ -240,6 +248,9 @@ class CompiledRunPlan:
     tool_pack_digests: dict[str, str]
     gates: list[GateRequirement]
     stop_conditions: list[CompiledStopCondition]
+    role_activations: list[RoleActivationRecord] = field(default_factory=list)
+    phase_assignments: list[PhaseAssignment] = field(default_factory=list)
+    agent_workspace_policies: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.protocol_id:

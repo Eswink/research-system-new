@@ -115,7 +115,8 @@ def required_files() -> list[str]:
         ".cursor/framework.json",
         "docs/INDEX.md", "docs/PRODUCT.md",
         "docs/product/END_TO_END_USER_JOURNEY.md", "docs/product/CONSOLE_INFORMATION_ARCHITECTURE.md",
-        "docs/architecture/SYSTEM_ARCHITECTURE.md", "docs/architecture/DOMAIN_MODEL.md",
+        "docs/architecture/SYSTEM_ARCHITECTURE.md", "docs/architecture/PORTS.md",
+        "docs/architecture/DOMAIN_MODEL.md",
         "docs/architecture/ROLE_MODEL.md", "docs/architecture/TASK_HANDOFF.md",
         "docs/architecture/MODEL_COMPATIBILITY.md", "docs/architecture/TOOL_RUNTIME.md",
         "docs/architecture/WORKSPACE_RUNTIME.md", "docs/architecture/CONTEXT_ENGINE.md",
@@ -237,6 +238,7 @@ def validate_strict_instance(schema_name: str, instance: Any, label: str) -> Non
 def check_yaml_and_references() -> None:
     roles = (load_yaml("examples/config/roles.yaml") or {}).get("roles", {})
     agents = (load_yaml("examples/config/agents.yaml") or {}).get("agents", {})
+    skills = (load_yaml("examples/config/skills.yaml") or {}).get("skills", {})
     endpoints = (load_yaml("examples/config/llm_endpoints.yaml") or {}).get("llm_endpoints", {})
     models = (load_yaml("examples/config/models.yaml") or {}).get("models", {})
     profiles = (load_yaml("examples/config/model_profiles.yaml") or {}).get("model_profiles", {})
@@ -352,8 +354,25 @@ def check_yaml_and_references() -> None:
         for mid in [profile.get("primary"), *(profile.get("fallback") or [])]:
             if mid and required_model_caps - model_caps.get(mid, set()):
                 ERRORS.append(f"Role {rid} 默认模型 {mid} 不满足: {sorted(required_model_caps - model_caps.get(mid, set()))}")
+        for skill_ref in role.get("default_skills", []):
+            if skill_ref not in skills:
+                ERRORS.append(f"Role {rid} 引用不存在 Skill: {skill_ref}")
+        for capability in role.get("forbidden_capabilities", []):
+            if capability not in capabilities:
+                ERRORS.append(f"Role {rid} 禁止未注册 Capability: {capability}")
+        denied = set(role.get("requested_capabilities", [])) & set(role.get("forbidden_capabilities", []))
+        if denied:
+            ERRORS.append(f"Role {rid} 同时请求与禁止 Capability: {sorted(denied)}")
+
+    # Skills.
+    for sid, skill in skills.items():
+        validate_strict_instance("skill.schema.json", {"id": sid, **skill}, f"SkillSpec/{sid}")
+        for capability in skill.get("capabilities", []):
+            if capability not in capabilities:
+                ERRORS.append(f"Skill {sid} 引用未注册 Capability: {capability}")
 
     # Agents.
+    writer_models: set[str] = set()
     reviewer_models: set[str] = set()
     for aid, agent in agents.items():
         validate_strict_instance("agent-spec.schema.json", {"id": aid, **agent}, f"AgentSpec/{aid}")
@@ -379,10 +398,29 @@ def check_yaml_and_references() -> None:
             missing = required - model_caps.get(mid, set())
             if missing:
                 ERRORS.append(f"Agent {aid} / Model {mid} 不满足 Role 能力: {sorted(missing)}")
-        if role_id == "scientific_reviewer" and mids:
+        panel_role = (roles[role_id] or {}).get("review_panel_role", "NONE")
+        if panel_role == "REVIEWER" and mids:
             reviewer_models.add(mids[0])
-    if len(reviewer_models) < 2:
-        WARNINGS.append("示例 ScientificReviewer 未形成两个不同主模型")
+        if panel_role == "WRITER" and mids:
+            writer_models.add(mids[0])
+        for skill_ref in agent.get("skill_refs", []):
+            if skill_ref not in skills:
+                ERRORS.append(f"Agent {aid} 引用不存在 Skill: {skill_ref}")
+        for capability in agent.get("capability_refs", []):
+            if capability not in capabilities:
+                ERRORS.append(f"Agent {aid} 引用未注册 Capability: {capability}")
+        for capability in agent.get("capability_refs", []):
+            if capability in set((roles.get(role_id) or {}).get("forbidden_capabilities", [])):
+                ERRORS.append(f"Agent {aid} 请求 Role {role_id} 禁止的 Capability: {capability}")
+        budget_ref = agent.get("budget_policy_ref")
+        if budget_ref and budget_ref not in budgets:
+            ERRORS.append(f"Agent {aid} 引用不存在 BudgetPolicy: {budget_ref}")
+    if not reviewer_models:
+        ERRORS.append("示例缺少 review_panel_role=REVIEWER 的 Agent")
+    if not writer_models:
+        ERRORS.append("示例缺少 review_panel_role=WRITER 的 Agent")
+    if reviewer_models & writer_models:
+        ERRORS.append(f"示例 Writer/Reviewer 共享模型: {sorted(reviewer_models & writer_models)}")
 
     # Team templates and inheritance cycles.
     for tid, team in teams.items():
@@ -535,8 +573,10 @@ def check_json_schemas() -> None:
         "agent-spec.schema.json",
         "budget-policy.schema.json",
         "compiled-run-plan.schema.json",
+        "domain_discovery_input_v1.schema.json",
         "domain_discovery_output_v1.schema.json",
         "endpoint-health.schema.json",
+        "experiment_run_input_v1.schema.json",
         "experiment_run_output_v1.schema.json",
         "fallback-audit-record.schema.json",
         "handoff-bundle.schema.json",
@@ -549,6 +589,7 @@ def check_json_schemas() -> None:
         "policy.schema.json",
         "protocol.schema.json",
         "role-definition.schema.json",
+        "skill.schema.json",
         "task-contract.schema.json",
         "team-template.schema.json",
         "tool-provider.schema.json",

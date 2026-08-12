@@ -48,6 +48,7 @@ roles:
     requested_capabilities:
     - literature.search
     - literature.read
+    - evidence.read
     - workspace.write.notes
     - evidence.propose
     hard_model_capabilities:
@@ -55,6 +56,8 @@ roles:
       - CHAT
       - TOOL_CALLING_NATIVE
     workspace_policy: notes_only
+    default_skills:
+    - evidence_modeling
   literature_scout:
     role_type: LiteratureScout
     category: discovery
@@ -70,6 +73,8 @@ roles:
       - CHAT
       - TOOL_CALLING_NATIVE
     workspace_policy: notes_only
+    default_skills:
+    - literature_scouting
   evidence_curator:
     role_type: EvidenceCurator
     category: discovery
@@ -195,6 +200,11 @@ roles:
       - CHAT
       - TOOL_CALLING_NATIVE
     workspace_policy: isolated_writable
+    default_skills:
+    - experiment_engineering
+    forbidden_capabilities:
+    - external.publish
+    - evidence.write
   result_analyst:
     role_type: ResultAnalyst
     category: experiment
@@ -245,6 +255,7 @@ roles:
     category: evaluation
     default_model_profile: critic_independent
     activation_default: REQUIRED_BY_PROTOCOL
+    review_panel_role: REVIEWER
     requested_capabilities:
     - research_state.read
     - evidence.read
@@ -256,6 +267,16 @@ roles:
       - CHAT
       - TOOL_CALLING_NATIVE
     workspace_policy: read_only
+    default_skills:
+    - scientific_review
+    forbidden_capabilities:
+    - workspace.write.code
+    - workspace.delete
+    - evidence.write
+    - experiment.execute
+    - code.execute
+    - deliverable.write
+    - external.publish
   methodology_reviewer:
     role_type: MethodologyReviewer
     category: evaluation
@@ -289,6 +310,7 @@ roles:
     category: evaluation
     default_model_profile: critic_independent
     activation_default: REQUIRED_BY_PROTOCOL
+    review_panel_role: REVIEWER
     requested_capabilities:
     - claim.read
     - evidence.read
@@ -318,6 +340,7 @@ roles:
     category: evaluation
     default_model_profile: research_strong
     activation_default: REQUIRED_BY_PROTOCOL
+    review_panel_role: REVIEWER
     requested_capabilities:
     - review.read
     - evidence.read
@@ -331,6 +354,7 @@ roles:
     category: deliverable
     default_model_profile: research_strong
     activation_default: REQUIRED_BY_PROTOCOL
+    review_panel_role: WRITER
     requested_capabilities:
     - claim.read
     - evidence.read
@@ -341,11 +365,19 @@ roles:
       all_of:
       - CHAT
     workspace_policy: deliverable_only
+    default_skills:
+    - scholarly_writing
+    forbidden_capabilities:
+    - evidence.write
+    - experiment.execute
+    - experiment_plan.write
+    - external.publish
   scientific_editor:
     role_type: ScientificEditor
     category: deliverable
     default_model_profile: research_fast
     activation_default: REQUIRED_BY_PROTOCOL
+    review_panel_role: WRITER
     requested_capabilities:
     - deliverable.read
     - deliverable.edit
@@ -353,6 +385,11 @@ roles:
       all_of:
       - CHAT
     workspace_policy: deliverable_only
+    forbidden_capabilities:
+    - evidence.write
+    - experiment.execute
+    - experiment_plan.write
+    - external.publish
   citation_auditor:
     role_type: CitationAuditor
     category: deliverable

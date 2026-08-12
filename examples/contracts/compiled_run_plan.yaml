@@ -12,6 +12,7 @@ task_contract_refs: []
 role_pools: {}
 agent_candidates: {}
 resolved_models: {}
+agent_workspace_policies: {}
 model_eligibility: []
 tool_requirements: []
 workspace_requirements: []
@@ -19,3 +20,5 @@ budget_reservations: []
 tool_pack_digests: {}
 gates: []
 stop_conditions: []
+role_activations: []
+phase_assignments: []

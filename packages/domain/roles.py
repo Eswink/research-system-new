@@ -11,7 +11,9 @@ from dataclasses import dataclass, field
 
 from packages.domain.enums import (
     ActivationPolicy,
+    BackendKind,
     ModelBindingMode,
+    ReviewPanelRole,
     RoleCategory,
     SelectionStrategy,
     WorkspacePolicy,
@@ -36,12 +38,20 @@ class RoleDefinition:
     )
     default_model_profile: str | None = None
     workspace_policy: WorkspacePolicy = WorkspacePolicy.READ_ONLY
+    default_skills: list[str] = field(default_factory=list)
+    forbidden_capabilities: list[str] = field(default_factory=list)
+    review_panel_role: ReviewPanelRole = ReviewPanelRole.NONE
 
     def __post_init__(self) -> None:
         if not self.id:
             raise ValueError("role id must not be empty")
         if not self.role_type:
             raise ValueError("role type must not be empty")
+        denied = set(self.requested_capabilities) & set(self.forbidden_capabilities)
+        if denied:
+            raise ValueError(
+                f"role {self.id} requests and forbids the same capability: {sorted(denied)}"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,11 +68,30 @@ class AgentBinding:
 
 
 @dataclass(frozen=True, slots=True)
+class AgentContextConfig:
+    """Agent 会话上下文配置面（M4 仅配置契约，运行时执行在 M6/M7）。"""
+
+    max_context_tokens: int | None = None
+    max_iterations: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.max_context_tokens is not None and self.max_context_tokens < 1:
+            raise ValueError("max_context_tokens must be >= 1")
+        if self.max_iterations is not None and self.max_iterations < 1:
+            raise ValueError("max_iterations must be >= 1")
+
+
+@dataclass(frozen=True, slots=True)
 class AgentSpec:
     id: str
     role: str
     model_binding: AgentBinding
-    workspace_policy: WorkspacePolicy = WorkspacePolicy.READ_ONLY
+    workspace_policy: WorkspacePolicy | None = None
+    skill_refs: list[str] = field(default_factory=list)
+    capability_refs: list[str] = field(default_factory=list)
+    context: AgentContextConfig | None = None
+    runtime_kind: BackendKind | None = None
+    budget_policy_ref: str | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -78,7 +107,7 @@ class RolePool:
     concurrency: int = 1
     selection_strategy: SelectionStrategy = SelectionStrategy.FIXED
     model_profile: str | None = None
-    activation_policy: ActivationPolicy = ActivationPolicy.ON_DEMAND
+    activation_policy: ActivationPolicy | None = None
 
     def __post_init__(self) -> None:
         if self.min_instances < 0:

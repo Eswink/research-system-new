@@ -47,6 +47,19 @@
     },
     "workspace_policy": {
       "enum": ["read_only", "notes_only", "isolated_writable", "deliverable_only"]
+    },
+    "review_panel_role": {
+      "enum": ["WRITER", "REVIEWER", "NONE"]
+    },
+    "default_skills": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "forbidden_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
     }
   }
 }

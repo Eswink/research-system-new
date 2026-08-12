@@ -1,0 +1,45 @@
+skills:
+  literature_scouting:
+    version: 1.0.0
+    description: Systematic literature search and source screening.
+    capabilities:
+      - literature.search
+      - literature.read
+      - citation.inspect
+  citation_audit:
+    version: 1.0.0
+    description: Verify citations and inspect citation graphs.
+    capabilities:
+      - citation.inspect
+      - citation.validate
+      - literature.read
+  evidence_modeling:
+    version: 1.0.0
+    description: Structure evidence and propose source-backed claims.
+    capabilities:
+      - evidence.read
+      - evidence.propose
+      - literature.read
+  experiment_engineering:
+    version: 1.0.0
+    description: Plan and execute reproducible experiments in isolated workspaces.
+    capabilities:
+      - workspace.read
+      - workspace.write.code
+      - experiment.execute
+      - artifact.write
+  scientific_review:
+    version: 1.0.0
+    description: Read-only critical review of claims, methods and evidence.
+    capabilities:
+      - research_state.read
+      - evidence.read
+      - experiment.read
+      - review.write
+  scholarly_writing:
+    version: 1.0.0
+    description: Draft and edit research deliverables from verified evidence.
+    capabilities:
+      - claim.read
+      - evidence.read
+      - deliverable.write

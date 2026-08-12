@@ -2,34 +2,58 @@ agents:
   director:
     role: research_director
     model_binding: {type: MODEL_PROFILE, value: research_strong}
+    context:
+      max_context_tokens: 16000
+      max_iterations: 40
+    runtime_kind: OPENHANDS_NATIVE
+    budget_policy_ref: low_cost
 
   domain_a:
     role: domain_researcher
     model_binding: {type: EXPLICIT_MODEL, value: research_alpha}
+    skill_refs: [evidence_modeling]
+    capability_refs: [literature.search]
+    context:
+      max_context_tokens: 24000
+    runtime_kind: OPENHANDS_NATIVE
 
   scout_a:
     role: literature_scout
     model_binding: {type: EXPLICIT_MODEL, value: research_alpha}
+    skill_refs: [literature_scouting]
+    runtime_kind: OPENHANDS_NATIVE
 
   scout_b:
     role: literature_scout
     model_binding: {type: EXPLICIT_MODEL, value: reviewer_gamma}
+    skill_refs: [literature_scouting]
+    runtime_kind: OPENHANDS_NATIVE
 
   engineer:
     role: experiment_engineer
     model_binding: {type: EXPLICIT_MODEL, value: coding_beta}
+    skill_refs: [experiment_engineering]
+    capability_refs: [code.execute]
+    context:
+      max_iterations: 80
+    runtime_kind: OPENHANDS_NATIVE
+    budget_policy_ref: low_cost
 
   reviewer_a:
     role: scientific_reviewer
     model_binding: {type: EXPLICIT_MODEL, value: reviewer_gamma}
     workspace_policy: read_only
+    skill_refs: [scientific_review]
 
   reviewer_b:
     role: scientific_reviewer
-    model_binding: {type: EXPLICIT_MODEL, value: research_alpha}
+    model_binding: {type: EXPLICIT_MODEL, value: coding_beta}
     workspace_policy: read_only
+    skill_refs: [scientific_review]
 
   writer:
     role: research_writer
     model_binding: {type: MODEL_PROFILE, value: research_strong}
     workspace_policy: deliverable_only
+    skill_refs: [scholarly_writing]
+    capability_refs: [deliverable.write]

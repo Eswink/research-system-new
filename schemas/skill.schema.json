@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/skill.schema.json",
+  "title": "SkillSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "capabilities"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "description": {"type": "string", "minLength": 1},
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

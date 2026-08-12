@@ -5,8 +5,20 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from packages.application.model_relay.eligibility import decide_eligibility
-from packages.application.protocol_compile.ports import CatalogSnapshot, ProjectSettings
-from packages.domain.enums import CapabilityStatus, ModelBindingMode, ModelCapability
+from packages.application.ports import CatalogSnapshot, ProjectSettings
+from packages.application.protocol_compile.assignments import phase_assignments
+from packages.application.protocol_compile.requirements import (
+    aggregate_required_roles,
+    merged_team_roles,
+)
+from packages.application.protocol_compile.selection import degradation_findings, select_agents
+from packages.application.protocol_compile.workspace_policy import resolve_agent_workspace_policy
+from packages.domain.activation import activate_roles
+from packages.domain.enums import (
+    CapabilityStatus,
+    ModelBindingMode,
+    ModelCapability,
+)
 from packages.domain.protocols import (
     CompileFindingCode,
     FindingSeverity,
@@ -15,6 +27,7 @@ from packages.domain.protocols import (
     ProtocolDefinition,
 )
 from packages.domain.roles import AgentSpec, RolePool
+from packages.domain.team_plan import PhaseAssignment, RoleActivationRecord
 
 
 @dataclass(slots=True)
@@ -23,6 +36,9 @@ class RoleResolution:
     agent_candidates: dict[str, list[str]] = field(default_factory=dict)
     resolved_models: dict[str, str] = field(default_factory=dict)
     model_eligibility: list[ModelEligibilityRecord] = field(default_factory=list)
+    role_activations: list[RoleActivationRecord] = field(default_factory=list)
+    phase_assignments: list[PhaseAssignment] = field(default_factory=list)
+    agent_workspace_policies: dict[str, str] = field(default_factory=dict)
     findings: list[PreflightFinding] = field(default_factory=list)
 
 
@@ -31,27 +47,11 @@ class RoleResolutionContext:
     team_roles: dict[str, RolePool]
     catalog: CatalogSnapshot
     project: ProjectSettings
+    phase_capabilities: set[str] = field(default_factory=set)
 
 
 def _finding(code: str, message: str, subject: str | None = None) -> PreflightFinding:
     return PreflightFinding(code, FindingSeverity.ERROR, message, subject)
-
-
-def _merged_team_roles(template_id: str, catalog: CatalogSnapshot) -> dict[str, RolePool]:
-    lineage: list[dict[str, RolePool]] = []
-    current = template_id
-    visited: set[str] = set()
-    while current and current not in visited:
-        visited.add(current)
-        template = catalog.team_templates.get(current)
-        if template is None:
-            break
-        lineage.append(template.roles)
-        current = template.extends or ""
-    merged: dict[str, RolePool] = {}
-    for roles in reversed(lineage):
-        merged.update(roles)
-    return merged
 
 
 def _model_profile_id(
@@ -187,24 +187,21 @@ def _resolve_agents(
     for agent_id in candidates:
         agent = context.catalog.agents[agent_id]
         model_id, profile_id, model_finding = _model_id_for_agent(
-            agent,
-            role_id,
-            context.team_roles,
-            context.catalog,
-            context.project,
+            agent, role_id, context.team_roles, context.catalog, context.project
         )
         if model_finding:
             result.findings.append(model_finding)
             continue
         assert model_id is not None
         result.resolved_models[agent_id] = model_id
-        eligibility = _eligibility(
-            agent_id,
-            role_id,
-            model_id,
-            profile_id,
-            context.catalog,
+        role = context.catalog.roles.get(role_id)
+        workspace_policy, workspace_finding = resolve_agent_workspace_policy(
+            agent, role.workspace_policy if role else None
         )
+        result.agent_workspace_policies[agent_id] = workspace_policy
+        if workspace_finding is not None:
+            result.findings.append(workspace_finding)
+        eligibility = _eligibility(agent_id, role_id, model_id, profile_id, context.catalog)
         result.model_eligibility.append(eligibility)
         if not eligibility.eligible:
             missing = ", ".join(item.value for item in eligibility.missing_capabilities)
@@ -222,6 +219,7 @@ def _resolve_role(
     role_id: str,
     minimum: int,
     maximum: int,
+    offset: int,
     context: RoleResolutionContext,
 ) -> RoleResolution:
     result = RoleResolution(
@@ -232,24 +230,35 @@ def _resolve_role(
     pool = context.team_roles.get(role_id)
     candidate_limit = min(maximum, pool.max_instances) if pool else maximum
     candidates = sorted(
-        agent.id for agent in context.catalog.agents.values() if agent.role == role_id
-    )[:candidate_limit]
-    result.role_pools[role_id] = len(candidates)
-    result.agent_candidates[role_id] = candidates
-    if len(candidates) < minimum:
+        (agent for agent in context.catalog.agents.values() if agent.role == role_id),
+        key=lambda agent: agent.id,
+    )
+    if pool is None:
+        selected = [agent.id for agent in candidates[:candidate_limit]]
+    else:
+        selected = select_agents(
+            candidates,
+            pool,
+            candidate_limit,
+            offset=offset,
+            required_capabilities=context.phase_capabilities,
+        )
+    result.role_pools[role_id] = len(selected)
+    result.agent_candidates[role_id] = selected
+    if pool is not None:
+        result.findings.extend(degradation_findings(pool, role_id))
+    if len(selected) < minimum:
         result.findings.append(
             _finding(
                 CompileFindingCode.AGENT_MISSING.value,
-                (
-                    f"role {role_id} requires {minimum} agents but "
-                    f"only {len(candidates)} are available"
-                ),
+                f"role {role_id} requires {minimum} agents but only {len(selected)} are available",
                 f"role:{role_id}",
             )
         )
-    resolved = _resolve_agents(role_id, candidates, context)
+    resolved = _resolve_agents(role_id, selected, context)
     result.resolved_models.update(resolved.resolved_models)
     result.model_eligibility.extend(resolved.model_eligibility)
+    result.agent_workspace_policies.update(resolved.agent_workspace_policies)
     result.findings.extend(resolved.findings)
     return result
 
@@ -259,23 +268,31 @@ def resolve_roles(
     catalog: CatalogSnapshot,
     project: ProjectSettings,
 ) -> RoleResolution:
-    team_roles = _merged_team_roles(project.team_template_id, catalog)
-    requirements: dict[str, tuple[int, int]] = {}
-    for phase in protocol.phases:
-        for requirement in phase.required_roles:
-            current = requirements.get(requirement.role, (0, 0))
-            requirements[requirement.role] = (
-                max(current[0], requirement.min_instances),
-                max(current[1], requirement.max_instances),
-            )
+    team_roles = merged_team_roles(project.team_template_id, catalog)
+    requirements, phase_capabilities = aggregate_required_roles(protocol)
+    context = RoleResolutionContext(team_roles, catalog, project, phase_capabilities)
     result = RoleResolution()
-    context = RoleResolutionContext(team_roles, catalog, project)
-    for role_id in sorted(requirements):
+    activation = activate_roles(set(requirements), team_roles, catalog.roles)
+    result.role_activations = [
+        RoleActivationRecord(
+            role_id=decision.role_id,
+            activated=decision.activated,
+            policy=decision.policy.value,
+            reason=decision.reason,
+            folded_skill=decision.folded_skill,
+        )
+        for decision in activation.decisions
+    ]
+    result.findings.extend(activation.findings)
+    ordered_roles = sorted(requirements)
+    for offset, role_id in enumerate(ordered_roles):
         minimum, maximum = requirements[role_id]
-        resolved = _resolve_role(role_id, minimum, maximum, context)
+        resolved = _resolve_role(role_id, minimum, maximum, offset, context)
         result.role_pools.update(resolved.role_pools)
         result.agent_candidates.update(resolved.agent_candidates)
         result.resolved_models.update(resolved.resolved_models)
         result.model_eligibility.extend(resolved.model_eligibility)
+        result.agent_workspace_policies.update(resolved.agent_workspace_policies)
         result.findings.extend(resolved.findings)
+    result.phase_assignments = phase_assignments(protocol, result.agent_candidates, activation)
     return result

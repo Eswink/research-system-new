@@ -39,15 +39,10 @@ BUDGET_PERMITTING
 DISABLED
 ```
 
-Protocol Compiler 根据：
-
-- Phase；
-- Task complexity；
-- budget；
-- model/tool availability；
-- quality target；
-
-生成实际 Team Plan。
+实现：`packages/domain/activation.py::activate_roles`（纯函数）。Protocol Compiler 按
+phase 聚合 required roles 后生成 `RoleActivationRecord` 投影进入 `CompiledRunPlan`；
+DISABLED 且被协议要求时产生 ERROR finding，Preflight 不放行。Role 未声明等价
+Skill 时 REQUIRED_BY_PROTOCOL / ON_DEMAND 折叠只产生"未激活"决策，不产生 agent。
 
 ## 4. Role Collapsing
 
@@ -58,7 +53,8 @@ CitationGraphResearcher → LiteratureScout 的 Skill
 ScientificEditor        → ResearchWriter 的 Skill
 ```
 
-不要为了角色目录而实例化 Agent。
+Role 通过 `default_skills` 声明可折叠等价 Skill；折叠只在 Role 显式声明时允许
+（RESEARCH_PROTOCOL.md §6），未声明的角色不折叠。不要为了角色目录而实例化 Agent。
 
 ## 5. Per-Agent Model Binding
 
@@ -72,6 +68,21 @@ Agent explicit ModelDefinition
 
 解析结果在 Preflight 和 RunManifest 中冻结。
 
+### Workspace Policy
+
+Agent 未显式配置 `workspace_policy` 时继承 Role 默认策略；有效值投影进
+CompiledRunPlan 的 `agent_workspace_policies`（Preflight 冻结）。显式配置不得
+宽于 Role 边界（WORKSPACE_RUNTIME.md §3 的 Role-aware Policy）：
+
+- Role `read_only` → Agent 只能 `read_only`；
+- Role `notes_only` → Agent ∈ {`read_only`, `notes_only`}；
+- Role `deliverable_only` → Agent ∈ {`read_only`, `deliverable_only`}；
+- Role `isolated_writable` → Agent 任意。
+
+越界配置在编译期产生 `WORKSPACE_POLICY_VIOLATION` finding，Preflight 不得放行。
+示例：`experiment_engineer` 未配置 → 继承 `isolated_writable`；`reviewer_a/b`
+显式 `read_only` 与 Role 一致。
+
 ## 6. Heterogeneous Panel
 
 ```text
@@ -81,7 +92,16 @@ EvidenceReviewer     → model-gamma
 MetaReviewer         → model-alpha
 ```
 
-同一模型不应同时承担 Writer、所有 Reviewer 和最终 MetaReviewer，除非用户明确选择低成本模式。
+同一模型不应同时承担 Writer、所有 Reviewer 和最终 MetaReviewer，除非用户明确选择
+低成本模式。实现：`packages/application/preflight/role_checks.py::check_heterogeneity`
+（HETEROGENEITY_VIOLATION），`Preflight` 在启动前拦截 writer/reviewer 共享模型的
+配置；示例 fixture 中 reviewer_a/reviewer_b 使用两个不同主模型（validate_bundle 校验）。
+
+RoleDefinition 通过可选字段 `review_panel_role`（`WRITER` / `REVIEWER` / `NONE`，
+缺省 `NONE`）声明在评审面板中的角色；异构约束按该属性聚合，不依赖 role id，
+因此自定义角色也可以进入独立评审面板。示例中 `research_writer` / `scientific_editor`
+为 WRITER，`scientific_reviewer` / `evidence_reviewer` / `meta_reviewer` 为 REVIEWER，
+其余角色 NONE（不参与异构计算）。
 
 ## 7. Agent Pool
 
@@ -92,7 +112,7 @@ min_instances
 max_instances
 concurrency
 selection_strategy
-model_diversity_rule
+activation_policy
 ```
 
 Selection Strategy：
@@ -104,6 +124,12 @@ CAPABILITY_BEST_FIT
 COST_AWARE
 EVAL_SCORE_AWARE
 ```
+
+实现：`packages/application/protocol_compile/selection.py::select_agents`。编译期
+无运行时成本/评分数据源，COST_AWARE / EVAL_SCORE_AWARE 确定性退化为 FIXED，且
+编译期产生 `SELECTION_STRATEGY_DEGRADED`（INFO finding，subject=`role:<id>`）使
+退化可见；运行时数据源接入（M5+）后应回填真实选择并移除该 finding。
+CAPABILITY_BEST_FIT 按 agent.capability_refs 与 phase 所需 capabilities 交集排序。
 
 ## 8. User-defined Role
 

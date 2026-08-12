@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from packages.application.ports import CatalogSnapshot, ProjectSettings
 from packages.application.protocol_compile.dag import DagResult, compile_dag, is_phase_id
-from packages.application.protocol_compile.ports import CatalogSnapshot, ProjectSettings
 from packages.application.protocol_compile.requirements import (
     budget_reservations,
     task_contract_refs,
@@ -130,6 +130,9 @@ def _assemble_plan(
         tool_pack_digests=dict(sorted(catalog.tool_pack_digests.items())),
         gates=parts.gates,
         stop_conditions=_stop_conditions(protocol),
+        role_activations=list(parts.roles.role_activations),
+        phase_assignments=list(parts.roles.phase_assignments),
+        agent_workspace_policies=dict(parts.roles.agent_workspace_policies),
     )
 
 
@@ -173,7 +176,8 @@ def compile_protocol(
         gates=gates,
     )
     plan = _assemble_plan(protocol, parts, catalog)
-    # 只有阻断性 ERROR 才使计划不可用；INFO（如孤立 phase）随计划携带。
-    if any(finding.severity is FindingSeverity.ERROR for finding in findings):
+    # ERROR 使计划不可用；INFO/WARNING（如策略退化、孤立 phase）随计划携带，
+    # 由 Preflight 聚合展示（不得静默丢弃）。
+    if findings:
         return CompileResult(plan, tuple(findings))
     return CompileResult(plan, ())

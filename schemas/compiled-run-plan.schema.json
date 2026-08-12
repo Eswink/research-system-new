@@ -14,6 +14,7 @@
     "role_pools",
     "agent_candidates",
     "resolved_models",
+    "agent_workspace_policies",
     "model_eligibility",
     "tool_requirements",
     "workspace_requirements",
@@ -50,6 +51,12 @@
       "type": "object",
       "additionalProperties": {"type": "string", "minLength": 1}
     },
+    "agent_workspace_policies": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": ["read_only", "notes_only", "isolated_writable", "deliverable_only"]
+      }
+    },
     "model_eligibility": {"type": "array", "items": {"$ref": "#/$defs/modelEligibility"}},
     "tool_requirements": {"type": "array", "items": {"$ref": "#/$defs/toolRequirement"}},
     "workspace_requirements": {
@@ -68,6 +75,14 @@
     "stop_conditions": {
       "type": "array",
       "items": {"$ref": "#/$defs/stopConditions"}
+    },
+    "role_activations": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/roleActivation"}
+    },
+    "phase_assignments": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/phaseAssignment"}
     }
   },
   "$defs": {
@@ -155,6 +170,33 @@
         "phase_id": {"type": "string", "minLength": 1},
         "max_iterations": {"type": ["integer", "null"], "minimum": 1},
         "budget_exhausted": {"type": "boolean"}
+      }
+    },
+    "roleActivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role_id", "activated", "policy", "reason"],
+      "properties": {
+        "role_id": {"type": "string", "minLength": 1},
+        "activated": {"type": "boolean"},
+        "policy": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "folded_skill": {"type": ["string", "null"]}
+      }
+    },
+    "phaseAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id"],
+      "properties": {
+        "phase_id": {"type": "string", "minLength": 1},
+        "role_assignments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
       }
     }
   }

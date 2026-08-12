@@ -15,6 +15,7 @@
 - BudgetThreshold: docs/architecture/BUDGET_QUOTA.md
 - RoleCategory / ActivationPolicy / WorkspacePolicy: schemas/role-definition.schema.json
 - SelectionStrategy: docs/architecture/ROLE_MODEL.md
+- ComparisonOperator: schemas/task-contract.schema.json
 """
 
 from __future__ import annotations
@@ -227,6 +228,14 @@ class SelectionStrategy(StrEnum):
     EVAL_SCORE_AWARE = "EVAL_SCORE_AWARE"
 
 
+class ComparisonOperator(StrEnum):
+    GT = "GT"
+    GTE = "GTE"
+    EQ = "EQ"
+    LTE = "LTE"
+    LT = "LT"
+
+
 class AcceptanceCriterionType(StrEnum):
     SCHEMA_VALID = "SCHEMA_VALID"
     ARTIFACT_EXISTS = "ARTIFACT_EXISTS"
@@ -243,3 +252,11 @@ class ModelBindingMode(StrEnum):
     EXPLICIT_MODEL = "EXPLICIT_MODEL"
     MODEL_PROFILE = "MODEL_PROFILE"
     INHERIT = "INHERIT"
+
+
+class ReviewPanelRole(StrEnum):
+    """Role 在评审面板中的角色（异构评审约束按此属性聚合，不依赖 role id）。"""
+
+    WRITER = "WRITER"
+    REVIEWER = "REVIEWER"
+    NONE = "NONE"

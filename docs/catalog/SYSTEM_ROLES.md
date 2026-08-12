@@ -78,12 +78,13 @@ Skills：
 Capabilities：
 
 - literature.search
-- literature.search
 - literature.read
 - workspace.write.notes
 - evidence.propose
 
 推荐 ModelProfile：`research_strong`
+
+实际绑定：`examples/config/roles.yaml` 使用 Skill `evidence_modeling`，与本文档 Skill 建议允许存在差异（fixture 以 roles.yaml 为准）。
 
 ---
 
@@ -452,6 +453,13 @@ Capabilities：
 
 ResearchWriter 不能直接把 unsupported prose 变成 VERIFIED Claim。
 
+禁止（`forbidden_capabilities` 承载，见 `examples/config/roles.yaml`）：
+
+- evidence.write
+- experiment.execute
+- experiment_plan.write
+- external.publish
+
 ---
 
 ### 25. ScientificEditor
@@ -463,11 +471,11 @@ Capabilities：
 - deliverable.read
 - deliverable.edit
 
-禁止：
+禁止（`forbidden_capabilities` 承载，见 `examples/config/roles.yaml`）：
 
-- 修改 Claim truth status
-- 修改 Experiment metric
-- 创建 Evidence
+- 修改 Claim truth status（evidence.write / experiment.execute / experiment_plan.write）
+- 创建 Evidence（evidence.write）
+- 外部发布（external.publish）
 
 推荐 ModelProfile：`research_fast`
 
@@ -498,9 +506,9 @@ Capabilities：
 2. Protocol 决定所需 Role。
 3. 同 Role 可以启动多个 Agent。
 4. 每个 Agent 可以绑定不同 ModelDefinition。
-5. 简单 Role 可退化为 Skill，避免 Agent proliferation。
-6. Reviewer 默认 Workspace read-only。
-7. ExperimentEngineer 等执行角色使用隔离 Workspace。
+5. 简单 Role 可退化为 Skill，避免 Agent proliferation（Role 声明 `default_skills` 即声明可折叠等价 Skill）。
+6. Reviewer 默认 Workspace read-only，且 `forbidden_capabilities` 禁止写 Claim/Evidence/Experiment 执行类能力。
+7. ExperimentEngineer 等执行角色使用隔离 Workspace，禁止外部发布与 Evidence 写入。
 
 
 ## v0.4.0 Role Runtime Matrix

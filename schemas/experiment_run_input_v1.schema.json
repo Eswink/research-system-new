@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/experiment_run_input_v1.schema.json",
+  "title": "ExperimentRunInputV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["experiment_spec"],
+  "properties": {
+    "experiment_spec": {"type": "string", "minLength": 1},
+    "hypothesis": {"type": "string", "minLength": 1},
+    "seed": {"type": "integer", "minimum": 0}
+  }
+}

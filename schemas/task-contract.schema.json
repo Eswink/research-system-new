@@ -75,6 +75,7 @@
             "CUSTOM_EVALUATOR"
           ]
         },
+        "description": {"type": "string", "minLength": 1},
         "artifact": {"type": "string", "minLength": 1},
         "minimum_sources": {"type": "integer", "minimum": 0},
         "metric": {"type": "string", "minLength": 1},

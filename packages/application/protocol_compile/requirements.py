@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from packages.application.protocol_compile.ports import CatalogSnapshot, ProjectSettings
+from packages.application.ports import CatalogSnapshot, ProjectSettings
 from packages.domain.budget import BudgetReservation, ResourceType
 from packages.domain.protocols import (
     CompileFindingCode,
@@ -16,10 +16,29 @@ from packages.domain.protocols import (
     ToolRequirement,
     WorkspaceRequirement,
 )
+from packages.domain.roles import RolePool
 
 
 def finding(code: str, message: str, subject: str | None = None) -> PreflightFinding:
     return PreflightFinding(code, FindingSeverity.ERROR, message, subject)
+
+
+def merged_team_roles(template_id: str, catalog: CatalogSnapshot) -> dict[str, RolePool]:
+    """TeamTemplate extends 链确定性 deep merge（parent 先、child 覆盖）。"""
+    lineage: list[dict[str, RolePool]] = []
+    current = template_id
+    visited: set[str] = set()
+    while current and current not in visited:
+        visited.add(current)
+        template = catalog.team_templates.get(current)
+        if template is None:
+            break
+        lineage.append(template.roles)
+        current = template.extends or ""
+    merged: dict[str, RolePool] = {}
+    for roles in reversed(lineage):
+        merged.update(roles)
+    return merged
 
 
 def task_contract_refs(
@@ -46,6 +65,23 @@ def phase_capabilities(phase: ProtocolPhase, catalog: CatalogSnapshot) -> set[st
         if contract is not None:
             capabilities.update(contract.required_capabilities)
     return capabilities
+
+
+def aggregate_required_roles(
+    protocol: ProtocolDefinition,
+) -> tuple[dict[str, tuple[int, int]], set[str]]:
+    """聚合全部 phase 的 required_roles（min/max 取各 phase 最大值）与 phase capabilities。"""
+    requirements: dict[str, tuple[int, int]] = {}
+    phase_capability_set: set[str] = set()
+    for phase in protocol.phases:
+        phase_capability_set.update(phase.required_capabilities)
+        for requirement in phase.required_roles:
+            current = requirements.get(requirement.role, (0, 0))
+            requirements[requirement.role] = (
+                max(current[0], requirement.min_instances),
+                max(current[1], requirement.max_instances),
+            )
+    return requirements, phase_capability_set
 
 
 def tool_requirements(

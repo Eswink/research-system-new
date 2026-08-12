@@ -5,13 +5,20 @@ task_contracts:
     required_capabilities:
       - literature.search
       - literature.read
+    input_schema: domain_discovery_input_v1
     output_schema: domain_discovery_output_v1
+    budget:
+      model_cost_usd: 12.00
+      tool_requests: null
     acceptance_criteria:
       - type: SCHEMA_VALID
       - type: ARTIFACT_EXISTS
         artifact: source_set
       - type: EVIDENCE_COVERAGE
         minimum_sources: 10
+    failure_policy:
+      on_validation_failure: DEAD_LETTER
+      allow_partial_evidence: false
     retry_policy:
       max_attempts: 3
       retryable_categories: [MODEL_RATE_LIMIT, TOOL_TIMEOUT]
@@ -24,6 +31,7 @@ task_contracts:
       - workspace.write.code
       - code.execute
       - artifact.write
+    input_schema: experiment_run_input_v1
     output_schema: experiment_run_output_v1
     acceptance_criteria:
       - type: ARTIFACT_EXISTS

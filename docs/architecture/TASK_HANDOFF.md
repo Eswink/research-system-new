@@ -22,21 +22,21 @@ Phase
 
 ## 2. TaskContract
 
-最低字段：
+最低字段（实现 `packages/domain/tasks.py::TaskContract` + `schemas/task-contract.schema.json`）：
 
 ```yaml
 id:
 version:
 purpose:
-input_schema:
-output_schema:
+input_schema:      # 引用 schemas/ 下 *_v{n} 输入 schema
+output_schema:     # 引用 schemas/ 下 *_v{n} 输出 schema
 required_capabilities:
 required_artifacts:
 acceptance_criteria:
-budget:
-timeout:
+budget:            # resource → 数量/上限（Decimal 或 null）
+timeout_seconds:
 retry_policy:
-failure_policy:
+failure_policy:    # resource → 字符串/布尔/整数/字符串数组
 idempotency_scope:
 ```
 
@@ -56,21 +56,31 @@ HUMAN_APPROVAL
 CUSTOM_EVALUATOR
 ```
 
-LLM 不能自行宣布验收通过。
+结构化参数：`artifact` / `minimum_sources` / `metric` / `operator`（GT/GTE/EQ/LTE/LT）/
+`threshold` / `evaluator` / `description`。
+
+LLM 不能自行宣布验收通过：求值器（`packages/domain/acceptance.py`）只依赖显式注入的
+`CriterionInputs`（structured output、artifacts、tests、metrics、evidence count、
+review score、policy decision、human approval）；SCHEMA_VALID 经 jsonschema 校验
+`output_schema`，未注入校验器时 fail-closed。CUSTOM_EVALUATOR 必须由编排层执行，不自动通过。
 
 ## 4. HandoffBundle
 
-只传结构化、可引用的信息：
+只传结构化、可引用的信息（实现 `packages/domain/tasks.py::HandoffBundle`）：
 
 ```text
+task_id
+producer            # 人类可读 producer 描述
+producer_agent_id   # 结构化 agent 引用（可选）
+producer_role_id    # 结构化 role 引用（可选）
 summary
+created_at          # UTC
 structured output
-artifacts
-claims/evidence
-decisions
+artifacts / claims / evidence / decisions refs
 failures
 open questions
 next-action hints
+digest              # sha256:<64 hex>，由创建方对 bundle 确定性序列化
 ```
 
 禁止把完整聊天记录作为唯一 Handoff。

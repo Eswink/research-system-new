@@ -31,6 +31,28 @@
     },
     "workspace_policy": {
       "enum": ["read_only", "notes_only", "isolated_writable", "deliverable_only"]
-    }
+    },
+    "skill_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "capability_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_context_tokens": {"type": "integer", "minimum": 1},
+        "max_iterations": {"type": "integer", "minimum": 1}
+      }
+    },
+    "runtime_kind": {
+      "enum": ["OPENHANDS_NATIVE", "SPECIALIZED_LANGGRAPH", "EXTERNAL_AGENT_ACP", "CLINE_SDK", "CUSTOM_RUNTIME"]
+    },
+    "budget_policy_ref": {"type": "string", "minLength": 1}
   }
 }

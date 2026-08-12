@@ -8,9 +8,10 @@ LLM 不能自行宣布验收通过；副作用绑定 task_id + attempt + operati
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 
-from packages.domain.core import ID, Digest
-from packages.domain.enums import AcceptanceCriterionType, FailureCategory
+from packages.domain.core import ID, Digest, Timestamp
+from packages.domain.enums import AcceptanceCriterionType, ComparisonOperator, FailureCategory
 from packages.domain.state_machines import ResearchTaskState
 
 
@@ -26,9 +27,25 @@ class RetryPolicy:
 
 @dataclass(frozen=True, slots=True)
 class AcceptanceCriterion:
+    """验收标准；结构化参数与 schemas/task-contract.schema.json 的 acceptanceCriterion 对齐。
+
+    `description`/`target` 为向后兼容的展示字段；求值语义以 type 与结构化参数为准
+    （见 packages/domain/acceptance.py）。
+    """
+
     type: AcceptanceCriterionType
     description: str = ""
     target: str | None = None
+    artifact: str | None = None
+    minimum_sources: int | None = None
+    metric: str | None = None
+    operator: ComparisonOperator | None = None
+    threshold: Decimal | None = None
+    evaluator: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.minimum_sources is not None and self.minimum_sources < 0:
+            raise ValueError("minimum_sources must be >= 0")
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,11 +54,14 @@ class TaskContract:
     version: str
     purpose: str
     required_capabilities: list[str] = field(default_factory=list)
+    input_schema: str | None = None
     output_schema: str | None = None
     required_artifacts: list[str] = field(default_factory=list)
     acceptance_criteria: list[AcceptanceCriterion] = field(default_factory=list)
+    budget: dict[str, Decimal | None] = field(default_factory=dict)
     timeout_seconds: int | None = None
     retry_policy: RetryPolicy | None = None
+    failure_policy: dict[str, str | bool | int | list[str]] = field(default_factory=dict)
     idempotency_scope: str = "task"
 
     def __post_init__(self) -> None:
@@ -85,6 +105,9 @@ class HandoffBundle:
     producer: str
     summary: str
     digest: Digest
+    created_at: Timestamp = field(default_factory=Timestamp.now)
+    producer_agent_id: str | None = None
+    producer_role_id: str | None = None
     structured_output: dict[str, object] = field(default_factory=dict)
     artifact_refs: list[str] = field(default_factory=list)
     claim_refs: list[str] = field(default_factory=list)
@@ -97,3 +120,5 @@ class HandoffBundle:
     def __post_init__(self) -> None:
         if not self.producer:
             raise ValueError("handoff producer must not be empty")
+        if not self.summary:
+            raise ValueError("handoff summary must not be empty")

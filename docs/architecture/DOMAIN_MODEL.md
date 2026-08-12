@@ -79,6 +79,8 @@ workspace/compute requirements
 budgets
 gates
 stop conditions
+role activations   # Role 激活/折叠投影（RoleActivationRecord）
+phase assignments  # phase → role → agent 稳定绑定（PhaseAssignment）
 ```
 
 ### PreflightReport
@@ -98,14 +100,18 @@ unresolved risks
 ```text
 RoleDefinition
 TeamTemplate
-RoleActivationPolicy
+ActivationPolicy / RoleActivationDecision（packages/domain/activation.py）
 RolePool
-AgentSpec
+AgentSpec（model_binding + skill_refs + capability_refs + workspace/context/runtime/budget）
 AgentRun
 AgentSession
 ```
 
-Role 不绑定具体 ModelDefinition。
+Role 不绑定具体 ModelDefinition（ADR-0011）；Role 通过 `default_skills` 声明可折叠
+等价 Skill，通过 `forbidden_capabilities` 声明权限边界（Reviewer 只读 / Writer 不
+得改 Claim truth / ExperimentEngineer 不得外部发布）。Agent 配置面见
+`schemas/agent-spec.schema.json`；激活/折叠与 phase 绑定投影进入
+CompiledRunPlan（role_activations / phase_assignments）。
 
 ## 4. Task / Handoff
 
@@ -127,31 +133,44 @@ lease_id?
 ### TaskContract
 
 ```text
+id
+version
+purpose
 input_schema
 output_schema
+required_capabilities
 required_artifacts
 acceptance_criteria
-capabilities
 budget
-timeout
+timeout_seconds
 retry_policy
 failure_policy
+idempotency_scope
 ```
+
+实现：`packages/domain/tasks.py`；结构化验收参数（artifact/minimum_sources/metric/
+operator/threshold/evaluator）与求值器见 `packages/domain/acceptance.py`。
 
 ### HandoffBundle
 
 ```text
 task_id
 producer
+producer_agent_id?
+producer_role_id?
 summary
+created_at
 structured_output
 artifact_refs
 claim/evidence refs
+decision_refs
 open_questions
 known_failures
 recommended_next_actions
 digest
 ```
+
+实现：`packages/domain/tasks.py`；加载器 `adapters/contracts/tasks_loaders.py::load_handoff_bundles`。
 
 ## 5. Model
 

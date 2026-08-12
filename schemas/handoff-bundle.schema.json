@@ -8,7 +8,10 @@
   "properties": {
     "task_id": {"type": "string", "minLength": 1},
     "producer": {"type": "string", "minLength": 1},
+    "producer_agent_id": {"type": "string", "minLength": 1},
+    "producer_role_id": {"type": "string", "minLength": 1},
     "summary": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
     "structured_output": {},
     "artifact_refs": {"$ref": "#/$defs/refs"},
     "claim_refs": {"$ref": "#/$defs/refs"},
@@ -17,7 +20,7 @@
     "open_questions": {"$ref": "#/$defs/textItems"},
     "known_failures": {"$ref": "#/$defs/textItems"},
     "recommended_next_actions": {"$ref": "#/$defs/textItems"},
-    "digest": {"type": "string", "minLength": 1}
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
   },
   "$defs": {
     "refs": {
