@@ -13,6 +13,9 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260812-006](entries/MEM-20260812-006-m5r-upstream-qualification.md) | ACTIVE | repository | 0.90 | 2026-11-12 | PLAN-20260812-006 |
+| [MEM-20260812-005](entries/MEM-20260812-005-m5-ports-fakes-review.md) | ACTIVE | repository | 0.95 | 2026-11-12 | PLAN-20260812-005 |
+| [MEM-20260812-004](entries/MEM-20260812-004-m4-role-team-task.md) | ACTIVE | repository | 0.95 | 2026-11-12 | PLAN-20260812-004 |
 | [MEM-20260812-003](entries/MEM-20260812-003-m2-protocol-compiler-preflight.md) | ACTIVE | repository | 0.95 | 2026-11-12 | PLAN-20260812-003 |
 | [MEM-20260811-002](entries/MEM-20260811-002-m3-model-relay-wiring.md) | ACTIVE | repository | 0.95 | 2026-11-11 | PLAN-20260811-002 |
 | [MEM-20260811-001](entries/MEM-20260811-001-m1-domain-kernel-wiring.md) | ACTIVE | repository | 0.95 | 2026-11-11 | PLAN-20260811-001 |

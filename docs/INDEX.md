@@ -22,6 +22,7 @@
 ## Architecture
 
 - `architecture/SYSTEM_ARCHITECTURE.md`
+- `architecture/PORTS.md`
 - `architecture/DOMAIN_MODEL.md`
 - `architecture/DETERMINISTIC_SERIALIZATION.md`
 - `architecture/ROLE_MODEL.md`
@@ -102,6 +103,13 @@
 - `references/LICENSE_MATRIX.md`
 - `references/SOURCE_SNAPSHOT.md`
 - `references/UPSTREAM_POLICY.md`
+- `references/upstream/OPENHANDS_REVISION_LOCK.yaml` — OpenHands SDK v1.42.0 机器可读 revision lock（M5R）
+- `references/upstream/OPENHANDS_SOURCE_AUDIT.md` — OpenHands SDK 源码级审计（M5R）
+- `references/upstream/M5_PORT_COMPATIBILITY_MATRIX.md` — M5 Port 现实校验矩阵（M5R）
+- `references/upstream/M5_CORRECTIONS_LOG.md` — M5 修正记录（零代码修正，M5R）
+- `references/upstream/M6_ADAPTER_DESIGN_NOTES.md` — M6 Adapter 设计承接（M5R）
+- `references/upstream/M6_RISK_REGISTER.md` — M6 风险登记（M5R）
+- `references/upstream/M6_READINESS_REPORT.md` — M6 Readiness 报告（M5R）
 
 ## Roadmap / Versioning
 

@@ -12,6 +12,8 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260812-003](entries/EXP-20260812-003.md) | ACTIVE | 0.5 | repository | 2026-11-10 | ruff lint 作用域必须按 CI 定义，禁止全仓 `ruff check .`（豁免区误报） |
+| [EXP-20260812-002](entries/EXP-20260812-002.md) | ACTIVE | 0.5 | repository | 2026-11-10 | Windows PowerShell 下 git 命令写法：`;` 分隔替代 `&&`，`git commit -F` 替代 heredoc |
 | [EXP-20260812-001](entries/EXP-20260812-001.md) | ACTIVE | 0.5 | repository | 2026-11-10 | 经验库闭环端到端回归方法（失败→观察→提示→沉淀→注入） |
 
 ## 注入说明

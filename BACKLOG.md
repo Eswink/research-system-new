@@ -1,5 +1,13 @@
 # Engineering Backlog v0.4.0
 
+## M5R / P0 — Upstream Source Intelligence & Runtime Qualification
+
+- [x] OpenHands SDK v1.42.0 源码级审计（Agent/Conversation/Events、LLM/Tools/MCP、Workspace/Context/Persistence/Security，file:path:symbol 级证据）
+- [x] M5 14 Port 现实校验矩阵（5 个 adapter 承接 + 9 个 Research OS 自有；零结构性修正）
+- [x] Executable spikes S1-S6（mock credential，全 PASS）+ SWE-ReX 对照
+- [x] revision lock（机器可读）+ License Matrix 补充 + M6 三份文档（Design Notes / Risk Register / Readiness Report）
+- [x] 裁决：M5R = PASS；M6 readiness = READY（无 BLOCK 级风险）
+
 ## M0 — Repository Foundation Quality Gate
 
 - [x] Python 3.12 + uv exact lockfile
@@ -35,27 +43,36 @@
 
 ## M4 / P0 — Role / Team / Task
 
-- [ ] 26 Role fixtures
-- [ ] Lean/Standard/Rigorous templates
-- [ ] Role activation/collapsing
-- [ ] per-Agent model binding
-- [ ] heterogeneous reviewer constraints
-- [ ] TaskContract / AcceptanceCriteria
-- [ ] HandoffBundle
+- [x] 26 Role fixtures
+- [x] Lean/Standard/Rigorous templates
+- [x] Role activation/collapsing
+- [x] per-Agent model binding
+- [x] heterogeneous reviewer constraints
+- [x] TaskContract / AcceptanceCriteria
+- [x] HandoffBundle
 
 ## M2 / P0 — Protocol / Preflight
 
-- [ ] Protocol compiler
-- [ ] DAG validation
-- [ ] Role/model/tool/workspace resolution
-- [ ] BudgetReservation
-- [ ] Policy preflight
-- [ ] CompiledRunPlan / PreflightReport
-- [ ] dry-run projection
+- [x] Protocol compiler
+- [x] DAG validation
+- [x] Role/model/tool/workspace resolution
+- [x] BudgetReservation
+- [x] Policy preflight
+- [x] CompiledRunPlan / PreflightReport
+- [x] dry-run projection
+
+## M5 / P0 — Ports + Fakes
+
+- [x] Port 全集冻结于 `packages/application/ports/`（AgentRuntime / WorkflowEngine / ModelGateway / ToolProvider / WorkspaceBackend / ExecutionBackend / ArtifactStore / EventPublisher / PolicyEvaluator / CredentialResolver / MemoryStore / BudgetLedger + EndpointStore / ResourceCatalog）
+- [x] 统一错误模型 / cancellation / idempotency 语义（ports/errors.py）
+- [x] 12 个 Fake 实现（adapters/fakes/，deterministic + 错误注入 + call recording + close）
+- [x] Contract suite（tests/contracts/，注册表驱动，Fake 与真实 adapter 共用）
+- [x] PolicyEvaluator 注入式 preflight（无直接实例化）
+- [x] fakes import-linter 契约 + provider 类型泄漏架构断言
+- [x] PORTS.md 规格 + AGENT_RUNTIME sync 修正
 
 ## M7 / P0 — Reliable Runtime
 
-- [ ] WorkflowEngine port + Fake
 - [ ] PostgreSQL task queue
 - [ ] TaskLease/heartbeat
 - [ ] IdempotencyRecord
@@ -63,6 +80,7 @@
 - [ ] retry/backoff/circuit breaker
 - [ ] cancellation/compensation
 - [ ] duplicate delivery tests
+- [x] WorkflowEngine port + Fake（M5 完成语义冻结；M7 以 contract suite 验收持久化实现）
 
 ## M6 / P0 — OpenHands Adapter
 

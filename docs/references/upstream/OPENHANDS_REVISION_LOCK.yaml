@@ -1,0 +1,71 @@
+# OpenHands Software Agent SDK — Revision Lock (M5R)
+
+schema_version: 1
+project_version_source: VERSION
+research_phase: M5R
+lock_date: 2026-08-12
+status: RESEARCH_LOCKED_NOT_ADOPTED
+
+# 说明：本文件是 M5R 源码研究与 spike 的 revision 锁定证据。
+# openhands_sdk 在 UPSTREAM_COMPONENTS.yaml 中仍为 PLANNED；采用证据（resolution/
+# license/upgrade_gate）等 M6 决定 ADOPTED 时按 validator 规则登记，不在此伪造。
+
+repository:
+  name: OpenHands/software-agent-sdk
+  url: https://github.com/OpenHands/software-agent-sdk
+  kind: GITHUB
+  official: true
+
+revision:
+  tag: v1.42.0
+  commit: "391fbb8d3c9cbc71212bb302669a0fd03e3dabfc"
+  release_date: 2026-08-11
+  source_of_truth: https://api.github.com/repos/OpenHands/software-agent-sdk/releases/latest
+
+license:
+  spdx: MIT
+  evidence: "d:\\upstream\\openhands-software-agent-sdk\\LICENSE"
+  notice: "Copyright (c) 2026 OpenHands contributors"
+  no_notice_file: true
+
+pypi:
+  package: openhands-sdk
+  version: 1.42.0
+  requires_python: ">=3.12"
+  url: https://pypi.org/project/openhands-sdk/1.42.0/
+  sdist_digest:
+    algorithm: sha256
+    value: "e8be3e583eb8b031a2ba462deb910da53390d14e0319523b141f8b6fd7b243ac"  # 来源：PyPI JSON（pypi.org/pypi/openhands-sdk/1.42.0/json, release 1.42.0 sdist sha256）
+  key_dependencies:
+    - "litellm>=1.93.0"        # LLM 路由（工作区锁 litellm==1.93.0）
+    - "fastmcp>=3.0.0"         # MCP client
+    - "agent-client-protocol>=0.10.1"
+    - "fakeredis[lua]>=2.32.1"
+    - "pydantic>=2.12.5"
+    - "httpx[socks]>=0.27.0"
+    - "tenacity>=9.1.2"
+    - "websockets>=12"
+
+spike_environment:
+  location: d:\upstream\.venv-sdk
+  python: 3.12.13
+  install_mode: uv pip install -e <clone>/openhands-sdk
+  isolation: true  # 与 Research OS uv.lock 隔离；不进入主代码树
+
+clone:
+  location: d:\upstream\openhands-software-agent-sdk
+  method: git clone --depth 1 --branch v1.42.0
+  head: "391fbb8d3c9cbc71212bb302669a0fd03e3dabfc"
+  modified: false  # upstream 未修改、未 fork
+  within_repo_tree: false
+
+research_artifacts:
+  source_audit: docs/references/upstream/OPENHANDS_SOURCE_AUDIT.md
+  port_matrix: docs/references/upstream/M5_PORT_COMPATIBILITY_MATRIX.md
+  readiness: docs/references/upstream/M6_READINESS_REPORT.md
+  spikes: tools/upstream-spikes/
+
+upgrade_notes:
+  - M6 采用时按 UPSTREAM_POLICY.md Upgrade Gate 执行：release notes → 安装 →
+    adapter contract suite → security tests → vertical slice regression → 批准。
+  - sdist digest 以安装完成后的 uv/pip 输出为准回填核验。
