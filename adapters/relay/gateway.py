@@ -25,7 +25,7 @@ from adapters.relay.parsing import (
     tool_calls_from_message,
 )
 from adapters.relay.sse import parse_sse_events
-from packages.application.model_relay.ports import (
+from packages.application.ports import (
     CompletionRequest,
     CompletionResult,
     ModelsListResult,

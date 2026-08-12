@@ -6,6 +6,7 @@ from dataclasses import replace
 
 import pytest
 
+from packages.application.policy.native import NativePolicyEvaluator
 from packages.application.preflight import (
     ManifestFreezeError,
     dry_run_projection,
@@ -94,7 +95,16 @@ def test_tool_unavailable_and_policy_denied_are_structured() -> None:
         context.catalog,
         policy=replace(context.catalog.policy, allow=()),
     )
-    policy_report = run_preflight(plan, replace(context, catalog=denied))
+    denied_policy = denied.policy
+    assert denied_policy is not None
+    policy_report = run_preflight(
+        plan,
+        replace(
+            context,
+            catalog=denied,
+            policy_evaluator=NativePolicyEvaluator(denied_policy),
+        ),
+    )
     assert "POLICY_DENIED" in {finding.code for finding in policy_report.findings}
 
 

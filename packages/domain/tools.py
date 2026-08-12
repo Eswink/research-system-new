@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from packages.domain.core import Digest, Version
-from packages.domain.enums import EffectClass, ProviderType, TrustLevel
+from packages.domain.core import Digest, Timestamp, Version
+from packages.domain.enums import EffectClass, FailureCategory, ProviderType, TrustLevel
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +119,35 @@ class ToolCallRecord:
     def __post_init__(self) -> None:
         if not self.tool_id:
             raise ValueError("tool id must not be empty")
+
+
+@dataclass(frozen=True, slots=True)
+class ToolResultRecord:
+    """工具执行结果（M5 ToolProvider 输出）。
+
+    output 只保存 digest，内容经 ArtifactStore 持久化；
+    错误消息必须已 redaction（secret 永不进入记录）。
+    """
+
+    task_id: str
+    attempt: int
+    operation_key: str
+    tool_id: str
+    status: str
+    output_digest: Digest | None = None
+    failure_category: FailureCategory | None = None
+    error_message_redacted: str | None = None
+    recorded_at: Timestamp | None = None
+
+    def __post_init__(self) -> None:
+        if not self.task_id:
+            raise ValueError("task_id must not be empty")
+        if not self.operation_key:
+            raise ValueError("operation_key must not be empty")
+        if not self.tool_id:
+            raise ValueError("tool_id must not be empty")
+        if self.failure_category is not None and self.error_message_redacted is None:
+            raise ValueError("failed tool result must carry redacted error message")
 
 
 @dataclass(frozen=True, slots=True)

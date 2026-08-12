@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from packages.application.policy.native import NativePolicyEvaluator, PolicyRequest
-from packages.application.protocol_compile.ports import PreflightContext
+from packages.application.policy.native import PolicyRequest
+from packages.application.ports import PolicyEvaluator, PreflightContext
 from packages.domain.enums import GateType, PolicyDecision
 from packages.domain.protocols import (
     CompiledRunPlan,
@@ -40,7 +40,7 @@ def _policy_scope(capability: str) -> str | None:
 
 def _evaluate_requirement(
     requirement: ToolRequirement,
-    evaluator: NativePolicyEvaluator,
+    evaluator: PolicyEvaluator,
     context: PreflightContext,
 ) -> tuple[PreflightFinding | None, str | None]:
     result = evaluator.evaluate(
@@ -84,7 +84,14 @@ def check_policy(
         return [
             _finding(PreflightFindingCode.POLICY_MISSING.value, "no policy definition is available")
         ], []
-    evaluator = NativePolicyEvaluator(policy)
+    evaluator = context.policy_evaluator
+    if evaluator is None:
+        return [
+            _finding(
+                PreflightFindingCode.POLICY_MISSING.value,
+                "no policy evaluator is injected in preflight context",
+            )
+        ], []
     findings: list[PreflightFinding] = []
     risks: list[str] = []
     for requirement in plan.tool_requirements:

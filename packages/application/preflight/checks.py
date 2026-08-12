@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from packages.application.model_relay.eligibility import decide_eligibility
-from packages.application.protocol_compile.ports import PreflightContext
+from packages.application.ports import InvalidInputError, PreflightContext
 from packages.domain.core import Digest
 from packages.domain.enums import EndpointHealth, TrustLevel
 from packages.domain.models import ModelDefinition
@@ -62,7 +62,7 @@ def _credential_findings(
         ]
     try:
         context.credentials.resolve(credential_ref)
-    except (KeyError, ValueError):
+    except InvalidInputError:
         return [
             _finding(
                 PreflightFindingCode.CREDENTIAL_MISSING.value,

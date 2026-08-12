@@ -1,18 +1,20 @@
-"""Protocol Compiler / Preflight 的 application-owned ports 与请求 DTO。"""
+"""ResourceCatalog Port 与 Preflight 上下文 DTO。"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Mapping, Protocol, runtime_checkable
 
-from packages.application.model_relay.ports import CredentialResolver
-from packages.domain.budget import BudgetPolicy, BudgetReservation
+from packages.application.ports.budget_ledger import BudgetLedger
+from packages.application.ports.credential_resolver import CredentialResolver
+from packages.application.ports.policy_evaluator import PolicyEvaluator
+from packages.domain.budget import BudgetPolicy
 from packages.domain.enums import EndpointHealth
 from packages.domain.models import LLMEndpoint, ModelDefinition, ModelProfile
 from packages.domain.policy import PolicyDefinition
 from packages.domain.roles import AgentSpec, RoleDefinition, TeamTemplate
 from packages.domain.tasks import TaskContract
-from packages.domain.tools import ToolProviderSpec
+from packages.domain.tools import SkillSpec, ToolProviderSpec
 from packages.domain.workspace import Workspace
 
 
@@ -64,17 +66,13 @@ class CatalogSnapshot:
     workspaces: Mapping[str, Workspace] = field(default_factory=dict)
     tool_pack_digests: Mapping[str, str] = field(default_factory=dict)
     budget_policies: Mapping[str, BudgetPolicy] = field(default_factory=dict)
+    skills: Mapping[str, SkillSpec] = field(default_factory=dict)
     policy: PolicyDefinition | None = None
 
 
 @runtime_checkable
 class ResourceCatalog(Protocol):
     def snapshot(self) -> CatalogSnapshot: ...
-
-
-@runtime_checkable
-class BudgetReservationPort(Protocol):
-    def reserve(self, reservations: tuple[BudgetReservation, ...], policy: BudgetPolicy) -> str: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,4 +83,5 @@ class PreflightContext:
     endpoint_health: Mapping[str, EndpointHealth] = field(default_factory=dict)
     provider_health: Mapping[str, bool] = field(default_factory=dict)
     workspace_available: Mapping[str, bool] = field(default_factory=dict)
-    budget_reserver: BudgetReservationPort | None = None
+    budget_ledger: BudgetLedger | None = None
+    policy_evaluator: PolicyEvaluator | None = None

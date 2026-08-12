@@ -94,6 +94,7 @@ def test_orphan_phase_is_info_finding_not_blocking() -> None:
     assert result.valid
     compiled = compile_protocol(orphan, catalog(), context().project)
     assert compiled.plan is not None
-    assert compiled.findings == ()
+    # INFO finding 必须可观测（不再被静默丢弃），但不阻断 preflight
+    assert "DAG_ORPHAN_PHASE" in {finding.code for finding in compiled.findings}
     report = run_preflight(compiled.plan, context())
     assert report.status.value == "PASS"

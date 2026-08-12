@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from packages.application.model_relay.ports import SecretValue
+from packages.application.policy.native import NativePolicyEvaluator
+from packages.application.ports import SecretValue
 from packages.application.protocol_compile import (
     CatalogSnapshot,
     PreflightContext,
@@ -30,6 +31,7 @@ from packages.domain.models import CapabilityAssertion, LLMEndpoint, ModelDefini
 from packages.domain.policy import PolicyDefinition, PolicyRule
 from packages.domain.protocols import (
     CompiledRunPlan,
+    FindingSeverity,
     PhaseStrategy,
     ProtocolDefinition,
     ProtocolPhase,
@@ -200,6 +202,7 @@ def context(catalog_snapshot: CatalogSnapshot | None = None) -> PreflightContext
         ),
         credentials=Credentials(),
         endpoint_health={"endpoint-1": EndpointHealth.HEALTHY},
+        policy_evaluator=NativePolicyEvaluator(_policy()),
     )
 
 
@@ -207,7 +210,9 @@ def compiled() -> tuple[CompiledRunPlan, PreflightContext]:
     catalog_snapshot = catalog()
     result = compile_protocol(protocol(), catalog_snapshot, context(catalog_snapshot).project)
     assert result.plan is not None
-    assert result.findings == ()
+    assert not any(finding.severity is FindingSeverity.ERROR for finding in result.findings), (
+        result.findings
+    )
     return result.plan, context(catalog_snapshot)
 
 

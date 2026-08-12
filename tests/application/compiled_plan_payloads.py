@@ -90,6 +90,7 @@ def compiled_plan_payload(plan: CompiledRunPlan) -> dict[str, object]:
         "role_pools": plan.role_pools,
         "agent_candidates": plan.agent_candidates,
         "resolved_models": plan.resolved_models,
+        "agent_workspace_policies": dict(plan.agent_workspace_policies),
         "model_eligibility": _eligibility_payload(plan),
         **(_requirements_payload(plan)),
         "tool_pack_digests": dict(plan.tool_pack_digests),

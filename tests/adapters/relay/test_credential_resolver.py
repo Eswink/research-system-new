@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from adapters.relay.credential_resolver import EnvCredentialResolver
+from packages.application.ports import InvalidInputError
 
 
 class TestEnvCredentialResolver:
@@ -15,12 +16,12 @@ class TestEnvCredentialResolver:
 
     def test_missing_ref_raises(self) -> None:
         resolver = EnvCredentialResolver({})
-        with pytest.raises(KeyError):
+        with pytest.raises(InvalidInputError):
             resolver.resolve("missing_key")
 
     def test_empty_value_raises(self) -> None:
         resolver = EnvCredentialResolver({"llm_main_key": ""})
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidInputError):
             resolver.resolve("llm_main_key")
 
     def test_secret_repr_never_exposes_value(self) -> None:

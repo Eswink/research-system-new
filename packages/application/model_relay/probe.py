@@ -20,12 +20,6 @@ from packages.application.model_relay.endpoint_policy import (
     EndpointUrlPolicy,
     validate_endpoint_url,
 )
-from packages.application.model_relay.ports import (
-    CredentialResolver,
-    ModelRelayGateway,
-    SecretValue,
-    capability_assertion_probed,
-)
 from packages.application.model_relay.results import (
     configuration_failure,
     connectivity_error_result,
@@ -35,6 +29,13 @@ from packages.application.model_relay.suite import (
     basic_request,
     default_probe_suite,
     extended_capability_steps,
+)
+from packages.application.ports import (
+    CredentialResolver,
+    InvalidInputError,
+    ModelGateway,
+    SecretValue,
+    capability_assertion_probed,
 )
 from packages.domain.enums import FailureCategory, ModelCapability
 from packages.domain.models import (
@@ -64,12 +65,12 @@ def _resolve_credential(
 ) -> SecretValue:
     try:
         return credential_resolver.resolve(endpoint.credential_ref)
-    except (KeyError, ValueError) as exc:
+    except InvalidInputError as exc:
         raise ValueError(f"credential resolution failed: {exc}") from exc
 
 
 def _connectivity_gate(
-    gateway: ModelRelayGateway,
+    gateway: ModelGateway,
     credential: SecretValue,
     endpoint: LLMEndpoint,
 ) -> EndpointProbeSnapshot | None:
@@ -78,7 +79,7 @@ def _connectivity_gate(
 
 
 def _connectivity_and_chat(
-    gateway: ModelRelayGateway,
+    gateway: ModelGateway,
     credential: SecretValue,
     endpoint: LLMEndpoint,
     model_name: str,
@@ -104,7 +105,7 @@ def _connectivity_and_chat(
 
 def run_endpoint_test(
     *,
-    gateway: ModelRelayGateway,
+    gateway: ModelGateway,
     credential_resolver: CredentialResolver,
     endpoint: LLMEndpoint,
     model_name: str,
@@ -156,7 +157,7 @@ def _capability_failure(
 
 
 def _extended_steps(
-    gateway: ModelRelayGateway,
+    gateway: ModelGateway,
     endpoint: LLMEndpoint,
     credential: SecretValue,
     model_name: str,
@@ -200,7 +201,7 @@ def _assertions_for(
 
 
 def _collect_probe(
-    gateway: ModelRelayGateway,
+    gateway: ModelGateway,
     credential_resolver: CredentialResolver,
     endpoint: LLMEndpoint,
     model: ModelDefinition,
@@ -227,7 +228,7 @@ def _collect_probe(
 
 def run_probe(
     *,
-    gateway: ModelRelayGateway,
+    gateway: ModelGateway,
     credential_resolver: CredentialResolver,
     endpoint: LLMEndpoint,
     model: ModelDefinition,

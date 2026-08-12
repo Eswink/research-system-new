@@ -9,12 +9,14 @@ from adapters.contracts import (
     load_agents,
     load_budget_policies,
     load_collection,
+    load_handoff_bundles,
     load_llm_endpoints,
     load_model_profiles,
     load_models,
     load_policy,
     load_protocol,
     load_roles,
+    load_skills,
     load_task_contracts,
     load_team_templates,
     load_tool_providers,
@@ -24,6 +26,7 @@ from packages.domain.enums import (
     ActivationPolicy,
     ModelBindingMode,
     ModelCapability,
+    ReviewPanelRole,
     RoleCategory,
     SelectionStrategy,
     WorkspacePolicy,
@@ -57,6 +60,55 @@ def test_load_agents_binding_modes() -> None:
     assert agents["director"].model_binding.value == "research_strong"
     assert agents["scout_a"].model_binding.mode is ModelBindingMode.EXPLICIT_MODEL
     assert agents["reviewer_a"].workspace_policy is WorkspacePolicy.READ_ONLY
+
+
+def test_load_agents_extended_config_surface() -> None:
+    agents = load_agents("examples/config/agents.yaml")
+    director = agents["director"]
+    assert director.context is not None
+    assert director.context.max_context_tokens == 16000
+    assert director.context.max_iterations == 40
+    assert director.runtime_kind is not None
+    assert director.runtime_kind.value == "OPENHANDS_NATIVE"
+    assert director.budget_policy_ref == "low_cost"
+    engineer = agents["engineer"]
+    assert engineer.skill_refs == ["experiment_engineering"]
+    assert engineer.capability_refs == ["code.execute"]
+    assert engineer.context is not None
+    assert engineer.context.max_iterations == 80
+    reviewer = agents["reviewer_a"]
+    assert reviewer.skill_refs == ["scientific_review"]
+    assert reviewer.runtime_kind is None
+    assert reviewer.budget_policy_ref is None
+
+
+def test_load_roles_extended_fields() -> None:
+    roles = load_roles("examples/config/roles.yaml")
+    reviewer = roles["scientific_reviewer"]
+    assert reviewer.default_skills == ["scientific_review"]
+    assert "evidence.write" in reviewer.forbidden_capabilities
+    writer = roles["research_writer"]
+    assert "evidence.write" in writer.forbidden_capabilities
+    assert "experiment.execute" in writer.forbidden_capabilities
+    assert "deliverable.write" in writer.requested_capabilities
+    scout = roles["literature_scout"]
+    assert scout.default_skills == ["literature_scouting"]
+    assert roles["scientific_reviewer"].review_panel_role is ReviewPanelRole.REVIEWER
+    assert roles["research_writer"].review_panel_role is ReviewPanelRole.WRITER
+    assert roles["literature_scout"].review_panel_role is ReviewPanelRole.NONE
+
+
+def test_load_skills_from_fixture() -> None:
+    skills = load_skills("examples/config/skills.yaml")
+    assert len(skills) == 6
+    review = skills["scientific_review"]
+    assert review.version.text == "1.0.0"
+    assert review.capabilities == [
+        "research_state.read",
+        "evidence.read",
+        "experiment.read",
+        "review.write",
+    ]
 
 
 def test_load_team_templates_from_fixture() -> None:
@@ -110,6 +162,49 @@ def test_load_task_contracts_from_fixture() -> None:
     assert contract.retry_policy is not None
     assert contract.retry_policy.max_attempts == 3
     assert contract.idempotency_scope == "task"
+
+
+def test_load_task_contracts_carries_extended_fields() -> None:
+    contracts = load_task_contracts("examples/contracts/task_contracts.yaml")
+    discovery = contracts["domain_discovery"]
+    assert discovery.input_schema == "domain_discovery_input_v1"
+    assert discovery.budget["model_cost_usd"] is not None
+    assert discovery.budget["tool_requests"] is None
+    assert discovery.failure_policy["on_validation_failure"] == "DEAD_LETTER"
+    execution = contracts["experiment_execution"]
+    assert execution.input_schema == "experiment_run_input_v1"
+    assert execution.output_schema == "experiment_run_output_v1"
+
+
+def test_load_acceptance_criteria_structured_parameters() -> None:
+    contracts = load_task_contracts("examples/contracts/task_contracts.yaml")
+    criteria = contracts["domain_discovery"].acceptance_criteria
+    coverage = next(item for item in criteria if item.type.value == "EVIDENCE_COVERAGE")
+    assert coverage.minimum_sources == 10
+    artifact = next(item for item in criteria if item.type.value == "ARTIFACT_EXISTS")
+    assert artifact.artifact == "source_set"
+
+
+def test_load_handoff_bundle_from_fixture() -> None:
+    bundle = load_handoff_bundles("examples/contracts/handoff_bundle.yaml")
+    assert bundle.producer == "agent-domain-a"
+    assert bundle.producer_agent_id == "agent-domain-a"
+    assert bundle.producer_role_id == "domain_researcher"
+    assert bundle.task_id.value == "0e4a3f2e-9b1c-4d6a-8f2b-1c3d5e7f9a0b"
+    assert bundle.digest.hex_value == (
+        "0c8d4e6f2a1b3c5d7e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d"
+    )
+    assert bundle.artifact_refs == ["artifact-domain-map-001"]
+    assert bundle.structured_output == {"domain": "agentic research systems"}
+
+
+def test_handoff_schema_rejects_invalid_digest() -> None:
+    from adapters.contracts.base import ContractLoadError, load_json_schema, validate_instance
+
+    payload = load_yaml("examples/contracts/handoff_bundle.yaml")
+    payload["digest"] = "sha256:not-a-digest"
+    with pytest.raises(ContractLoadError):
+        validate_instance(load_json_schema("handoff-bundle.schema.json"), payload, "inline")
 
 
 def test_load_collection_generic_dispatch() -> None:

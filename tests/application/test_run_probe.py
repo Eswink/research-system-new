@@ -4,27 +4,21 @@ from __future__ import annotations
 
 import pytest
 
+from adapters.fakes import FakeCredentialResolver, FakeModelGateway, FakeModelGatewayOptions
 from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
 from packages.application.model_relay.probe import ProbeOptions, run_probe
 from packages.application.model_relay.suite import DiscoveredModels, default_probe_suite
 from packages.domain.enums import CapabilitySource, FailureCategory, ModelCapability
 
-from .relay_fakes import (
-    ENDPOINT,
-    LOCALHOST_ENDPOINT,
-    MODEL,
-    FakeCredentialResolver,
-    FakeGateway,
-    MissingCredentialResolver,
-)
+from .relay_fixtures import ENDPOINT, LOCALHOST_ENDPOINT, MODEL
 
 
 class TestRunProbe:
     def test_full_probe_detects_capabilities(self) -> None:
-        gateway = FakeGateway()
+        gateway = FakeModelGateway()
         result, assertions = run_probe(
             gateway=gateway,
-            credential_resolver=FakeCredentialResolver(),
+            credential_resolver=FakeCredentialResolver({"llm_main_key": "sk-test-token"}),
             endpoint=ENDPOINT,
             model=MODEL,
             options=ProbeOptions(suite=default_probe_suite()),
@@ -40,10 +34,10 @@ class TestRunProbe:
         assert assertions[ModelCapability.CHAT].probe_version == "probe-suite-v1"
 
     def test_streaming_failure_not_fatal_and_recorded(self) -> None:
-        gateway = FakeGateway(stream_fails=True)
+        gateway = FakeModelGateway(FakeModelGatewayOptions(stream_fails=True))
         result, assertions = run_probe(
             gateway=gateway,
-            credential_resolver=FakeCredentialResolver(),
+            credential_resolver=FakeCredentialResolver({"llm_main_key": "sk-test-token"}),
             endpoint=ENDPOINT,
             model=MODEL,
             options=ProbeOptions(suite=default_probe_suite()),
@@ -57,10 +51,10 @@ class TestRunProbe:
         )
 
     def test_tool_and_structured_failures_recorded(self) -> None:
-        gateway = FakeGateway(tool_fails=True, structured_fails=True)
+        gateway = FakeModelGateway(FakeModelGatewayOptions(tool_fails=True, structured_fails=True))
         result, _ = run_probe(
             gateway=gateway,
-            credential_resolver=FakeCredentialResolver(),
+            credential_resolver=FakeCredentialResolver({"llm_main_key": "sk-test-token"}),
             endpoint=ENDPOINT,
             model=MODEL,
             options=ProbeOptions(suite=default_probe_suite()),
@@ -75,10 +69,10 @@ class TestRunProbe:
         )
 
     def test_no_usage_reporting(self) -> None:
-        gateway = FakeGateway(no_usage=True)
+        gateway = FakeModelGateway(FakeModelGatewayOptions(no_usage=True))
         result, _ = run_probe(
             gateway=gateway,
-            credential_resolver=FakeCredentialResolver(),
+            credential_resolver=FakeCredentialResolver({"llm_main_key": "sk-test-token"}),
             endpoint=ENDPOINT,
             model=MODEL,
             options=ProbeOptions(suite=default_probe_suite()),
@@ -87,10 +81,10 @@ class TestRunProbe:
         assert ModelCapability.USAGE_REPORTING not in result.observed_capabilities
 
     def test_auth_failure_aborts_probe(self) -> None:
-        gateway = FakeGateway(auth_fails=True)
+        gateway = FakeModelGateway(FakeModelGatewayOptions(auth_fails=True))
         result, assertions = run_probe(
             gateway=gateway,
-            credential_resolver=FakeCredentialResolver(),
+            credential_resolver=FakeCredentialResolver({"llm_main_key": "sk-test-token"}),
             endpoint=ENDPOINT,
             model=MODEL,
             options=ProbeOptions(suite=default_probe_suite()),
@@ -102,8 +96,8 @@ class TestRunProbe:
 
     def test_credential_missing_aborts_probe(self) -> None:
         result, assertions = run_probe(
-            gateway=FakeGateway(),
-            credential_resolver=MissingCredentialResolver(),
+            gateway=FakeModelGateway(),
+            credential_resolver=FakeCredentialResolver({}),
             endpoint=ENDPOINT,
             model=MODEL,
             options=ProbeOptions(suite=default_probe_suite()),
@@ -114,8 +108,8 @@ class TestRunProbe:
 
     def test_url_policy_violation_aborts_probe(self) -> None:
         result, _ = run_probe(
-            gateway=FakeGateway(),
-            credential_resolver=FakeCredentialResolver(),
+            gateway=FakeModelGateway(),
+            credential_resolver=FakeCredentialResolver({"llm_main_key": "sk-test-token"}),
             endpoint=LOCALHOST_ENDPOINT,
             model=MODEL,
             options=ProbeOptions(url_policy=EndpointUrlPolicy()),

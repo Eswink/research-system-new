@@ -1,35 +1,17 @@
-"""MVP NativePolicyEvaluator：纯确定性策略决策。"""
+"""MVP NativePolicyEvaluator：纯确定性策略决策（PolicyEvaluator Port 实现）。"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Mapping
+from dataclasses import dataclass
 
+from packages.application.ports.policy_evaluator import (
+    PolicyEvaluation,
+    PolicyRequest,
+)
 from packages.domain.enums import PolicyDecision
 from packages.domain.policy import PolicyDefinition, PolicyRule
 
-
-@dataclass(frozen=True, slots=True)
-class PolicyRequest:
-    actor: str
-    capability: str
-    action: str | None = None
-    scope: str | None = None
-    resource: str | None = None
-    context: Mapping[str, object] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        if not self.actor:
-            raise ValueError("policy actor must not be empty")
-        if not self.capability:
-            raise ValueError("policy capability must not be empty")
-
-
-@dataclass(frozen=True, slots=True)
-class PolicyEvaluation:
-    decision: PolicyDecision
-    constraints: Mapping[str, object] = field(default_factory=dict)
-    reason: str = ""
+__all__ = ["NativePolicyEvaluator", "PolicyEvaluation", "PolicyRequest"]
 
 
 def _matching(rules: tuple[PolicyRule, ...], request: PolicyRequest) -> PolicyRule | None:
@@ -41,6 +23,8 @@ def _matching(rules: tuple[PolicyRule, ...], request: PolicyRequest) -> PolicyRu
 
 @dataclass(frozen=True, slots=True)
 class NativePolicyEvaluator:
+    """PolicyEvaluator Port 的 MVP 实现（ADR-0018：类型安全 native evaluator）。"""
+
     policy: PolicyDefinition
 
     def evaluate(self, request: PolicyRequest) -> PolicyEvaluation:

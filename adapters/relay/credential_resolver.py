@@ -1,13 +1,14 @@
 """env-based credential resolver。
 
 credential_ref 指向环境变量名；值以 SecretValue 密封，永不落盘/log。
+未解析或空值抛 InvalidInputError（Port 统一错误模型）。
 """
 
 from __future__ import annotations
 
 import os
 
-from packages.application.model_relay.ports import SecretValue
+from packages.application.ports import InvalidInputError, SecretValue
 
 
 class EnvCredentialResolver:
@@ -18,8 +19,8 @@ class EnvCredentialResolver:
 
     def resolve(self, credential_ref: str) -> SecretValue:
         if credential_ref not in self._environment:
-            raise KeyError(f"credential_ref not found in environment: {credential_ref!r}")
+            raise InvalidInputError(f"credential_ref not found in environment: {credential_ref!r}")
         value = self._environment[credential_ref]
         if not value:
-            raise ValueError(f"credential_ref is empty in environment: {credential_ref!r}")
+            raise InvalidInputError(f"credential_ref is empty in environment: {credential_ref!r}")
         return SecretValue(value)

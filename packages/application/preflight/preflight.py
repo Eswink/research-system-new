@@ -10,11 +10,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from packages.application.ports import PreflightContext, ProjectSettings
 from packages.application.preflight.budget import BudgetCheck, check_budget, reserve_budget
 from packages.application.preflight.checks import check_models, check_tools, check_workspaces
 from packages.application.preflight.policy_check import check_policy
+from packages.application.preflight.role_checks import check_team
 from packages.application.protocol_compile.compiler import compile_protocol
-from packages.application.protocol_compile.ports import PreflightContext, ProjectSettings
 from packages.domain.budget import BudgetReservation
 from packages.domain.core import Money, Timestamp
 from packages.domain.manifest import RunManifest
@@ -93,6 +94,7 @@ def _resource_checks(
     findings.extend(check_models(plan, context))
     findings.extend(check_tools(plan, context))
     findings.extend(check_workspaces(plan, context))
+    findings.extend(check_team(plan, context))
     policy_findings, risks = check_policy(plan, context)
     findings.extend(policy_findings)
     return findings, risks
@@ -148,7 +150,7 @@ def _budget_preflight(
     findings.extend(_budget_findings(budget_check, risks))
     if any(item.severity in {FindingSeverity.ERROR, FindingSeverity.WARNING} for item in findings):
         return None
-    return reserve_budget(reservations, budget_policy, context.budget_reserver).reservation_ref
+    return reserve_budget(reservations, budget_policy, context.budget_ledger).reservation_ref
 
 
 def run_preflight(

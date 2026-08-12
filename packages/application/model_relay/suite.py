@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from packages.application.model_relay.ports import CompletionRequest
+from packages.application.ports import CompletionRequest
 from packages.domain.enums import CapabilitySource, ModelCapability
 from packages.domain.models import ProbeSuiteSpec
 

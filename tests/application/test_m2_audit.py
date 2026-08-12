@@ -30,6 +30,7 @@ from packages.application import (
 from packages.application.preflight import preflight_report_payload
 from packages.domain.core import Version
 from packages.domain.protocols import (
+    FindingSeverity,
     PhaseStrategy,
     ProtocolDefinition,
     ProtocolPhase,
@@ -54,7 +55,9 @@ def test_minimal_protocol_compiles_and_preflights() -> None:
     context = fixtures.context(catalog)
     result = compile_protocol(protocol, catalog, context.project)
     assert result.plan is not None
-    assert result.findings == ()
+    assert not any(finding.severity is FindingSeverity.ERROR for finding in result.findings), (
+        result.findings
+    )
     report = run_preflight(result.plan, context)
     assert report.passed
 
@@ -73,7 +76,9 @@ def test_multi_phase_linear_dag_is_stable() -> None:
     context = fixtures.context(catalog)
     result = compile_protocol(protocol, catalog, context.project)
     assert result.plan is not None
-    assert result.findings == ()
+    assert not any(finding.severity is FindingSeverity.ERROR for finding in result.findings), (
+        result.findings
+    )
     # 稳定顺序：c 必须在 b 后，b 必须在 a 后
     ordered = [phase.id for phase in result.plan.phases]
     assert ordered.index("a") < ordered.index("b") < ordered.index("c")

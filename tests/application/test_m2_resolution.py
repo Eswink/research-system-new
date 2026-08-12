@@ -9,6 +9,7 @@ from packages.domain.core import Version
 from packages.domain.enums import ModelBindingMode, ModelCapability
 from packages.domain.models import ModelProfile
 from packages.domain.protocols import (
+    FindingSeverity,
     PhaseStrategy,
     ProtocolDefinition,
     ProtocolPhase,
@@ -34,7 +35,9 @@ def test_team_template_inheritance_resolves_parent_role_pool() -> None:
     project = replace(fixtures.context().project, team_template_id="child")
     result = compile_protocol(fixtures.protocol(), catalog, project)
     assert result.plan is not None
-    assert result.findings == ()
+    assert not any(finding.severity is FindingSeverity.ERROR for finding in result.findings), (
+        result.findings
+    )
     assert result.plan.role_pools == {"researcher": 1}
 
 

@@ -1,6 +1,12 @@
-"""Model Relay 内层拥有的 Ports。
+"""ModelGateway Port：provider-independent 模型网关。
 
-Port 由 application 拥有；adapter 实现这些接口。本层不依赖 adapter/httpx。
+职责：OpenAI-compatible 协议网关的最小调用面
+（complete / list_models / probe_endpoint / probe_connectivity）。
+非职责：凭据解析（CredentialResolver）、预算记账（BudgetLedger）、
+模型选择 / eligibility / fallback 编排（application use case）、
+provider 内部实现细节（adapter）。
+
+上游命名不进入 Domain（docs/integration/MODEL_GATEWAY.md §3）。
 """
 
 from __future__ import annotations
@@ -9,6 +15,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Protocol, runtime_checkable
 
+from packages.application.ports.credential_resolver import SecretValue
 from packages.domain.enums import (
     CapabilitySource,
     CapabilityStatus,
@@ -20,40 +27,6 @@ from packages.domain.models import (
     EndpointProbeSnapshot,
     LLMEndpoint,
 )
-
-
-@dataclass(frozen=True, slots=True)
-class SecretValue:
-    """密封的密钥值；repr 永不输出明文。"""
-
-    value: str
-
-    def __post_init__(self) -> None:
-        if not self.value:
-            raise ValueError("secret value must not be empty")
-
-    def __repr__(self) -> str:
-        return "<SecretValue:redacted>"
-
-
-@runtime_checkable
-class CredentialResolver(Protocol):
-    """按 credential_ref 解析密钥；未解析抛 KeyError/ValueError。"""
-
-    def resolve(self, credential_ref: str) -> SecretValue: ...
-
-
-@runtime_checkable
-class EndpointStore(Protocol):
-    """LLMEndpoint 存储；CRUD 语义由实现保证。"""
-
-    def list_endpoints(self) -> list[LLMEndpoint]: ...
-
-    def get_endpoint(self, endpoint_id: str) -> LLMEndpoint: ...
-
-    def save_endpoint(self, endpoint: LLMEndpoint) -> None: ...
-
-    def delete_endpoint(self, endpoint_id: str) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,7 +63,7 @@ class ModelsListResult:
 
 
 @runtime_checkable
-class ModelRelayGateway(Protocol):
+class ModelGateway(Protocol):
     """OpenAI-compatible 协议网关（由 adapter 实现）。"""
 
     def list_models(self, endpoint: LLMEndpoint, credential: SecretValue) -> ModelsListResult: ...

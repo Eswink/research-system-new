@@ -7,6 +7,7 @@ from dataclasses import replace
 import pytest
 
 from packages.application.policy.native import NativePolicyEvaluator, PolicyRequest
+from packages.application.ports import LedgerSnapshot
 from packages.application.preflight import (
     ManifestFreezeError,
     dry_run_projection,
@@ -15,7 +16,7 @@ from packages.application.preflight import (
 )
 from packages.application.preflight.budget import check_budget, reserve_budget
 from packages.application.protocol_compile import compile_protocol
-from packages.domain.budget import BudgetPolicy, BudgetReservation, ResourceType
+from packages.domain.budget import BudgetPolicy, BudgetReservation, ResourceType, UsageLedgerEntry
 from packages.domain.core import Version
 from packages.domain.enums import (
     EffectClass,
@@ -111,6 +112,12 @@ def test_budget_unknown_limits_are_explicit_and_reservation_uses_port() -> None:
             self.calls += 1
             return "reservation:1"
 
+        def record_usage(self, entry: UsageLedgerEntry) -> None:
+            return None
+
+        def snapshot(self) -> LedgerSnapshot:
+            return LedgerSnapshot()
+
     reserver = Reserver()
     result = reserve_budget(
         _reservations(),
@@ -169,7 +176,11 @@ def test_preflight_warn_requires_new_run_attempt() -> None:
     )
     warned = run_preflight(
         plan,
-        replace(context, catalog=replace(context.catalog, policy=policy)),
+        replace(
+            context,
+            catalog=replace(context.catalog, policy=policy),
+            policy_evaluator=NativePolicyEvaluator(policy),
+        ),
     )
     assert warned.status.value == "WARN"
     assert "POLICY_APPROVAL_REQUIRED" in {item.code for item in warned.findings}
@@ -178,7 +189,11 @@ def test_preflight_warn_requires_new_run_attempt() -> None:
             "run-1",
             plan,
             warned,
-            replace(context, catalog=replace(context.catalog, policy=policy)),
+            replace(
+                context,
+                catalog=replace(context.catalog, policy=policy),
+                policy_evaluator=NativePolicyEvaluator(policy),
+            ),
         )
 
 

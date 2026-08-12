@@ -12,18 +12,18 @@ from packages.application.model_relay.endpoint_policy import (
 from packages.application.model_relay.fallback import FallbackPlan, plan_fallback
 from packages.application.model_relay.fingerprint import build_fingerprint, endpoint_config_digest
 from packages.application.model_relay.health import evaluate_endpoint_health
-from packages.application.model_relay.ports import (
+from packages.application.model_relay.probe import ProbeOptions, run_endpoint_test, run_probe
+from packages.application.model_relay.suite import DiscoveredModels, default_probe_suite
+from packages.application.ports import (
     CompletionRequest,
     CompletionResult,
     CredentialResolver,
     EndpointStore,
-    ModelRelayGateway,
+    ModelGateway,
     ModelsListResult,
     SecretValue,
     ToolCallDraft,
 )
-from packages.application.model_relay.probe import ProbeOptions, run_endpoint_test, run_probe
-from packages.application.model_relay.suite import DiscoveredModels, default_probe_suite
 
 __all__ = [
     "CompletionRequest",
@@ -35,7 +35,7 @@ __all__ = [
     "EndpointUrlPolicy",
     "FallbackPlan",
     "ModelsListResult",
-    "ModelRelayGateway",
+    "ModelGateway",
     "ProbeOptions",
     "SecretValue",
     "ToolCallDraft",

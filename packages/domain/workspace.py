@@ -7,9 +7,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
+from typing import Mapping
 
-from packages.domain.core import Timestamp
-from packages.domain.enums import TrustProfile
+from packages.domain.core import Digest, Timestamp
+from packages.domain.enums import FailureCategory, TrustProfile
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,3 +77,42 @@ class ExecutionSpec:
             raise ValueError("backend_kind must not be empty")
         if not self.command:
             raise ValueError("command must not be empty")
+
+
+class ExecutionStatus(StrEnum):
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    TIMED_OUT = "TIMED_OUT"
+    CANCELLED = "CANCELLED"
+
+
+@dataclass(frozen=True, slots=True)
+class ExecutionRun:
+    """一次 ExecutionSpec 执行的归一化结果（M5 ExecutionBackend 输出）。"""
+
+    run_id: str
+    spec: ExecutionSpec
+    status: ExecutionStatus
+    started_at: Timestamp | None = None
+    completed_at: Timestamp | None = None
+    exit_code: int | None = None
+    failure_category: FailureCategory | None = None
+    stdout_digest: Digest | None = None
+    stderr_digest: Digest | None = None
+    compute_usage_summary: Mapping[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.run_id:
+            raise ValueError("run_id must not be empty")
+        if self.exit_code is not None and self.exit_code < 0:
+            raise ValueError("exit_code must be non-negative")
+        if (
+            self.started_at is not None
+            and self.completed_at is not None
+            and self.completed_at.value < self.started_at.value
+        ):
+            raise ValueError("completed_at must not be before started_at")
+        if self.status is ExecutionStatus.SUCCEEDED and self.completed_at is None:
+            raise ValueError("SUCCEEDED run must carry completed_at")
+        if self.status is ExecutionStatus.FAILED and self.failure_category is None:
+            raise ValueError("FAILED run must carry failure_category")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from packages.application.protocol_compile.ports import BudgetReservationPort
+from packages.application.ports import BudgetLedger
 from packages.domain.budget import BudgetPolicy, BudgetReservation, ResourceType
 from packages.domain.serialization import digest_of
 
@@ -76,7 +76,7 @@ def _reservation_ref(policy: BudgetPolicy, reservations: tuple[BudgetReservation
 def reserve_budget(
     reservations: tuple[BudgetReservation, ...],
     policy: BudgetPolicy,
-    port: BudgetReservationPort | None = None,
+    port: BudgetLedger | None = None,
 ) -> BudgetReservationResult:
     check = check_budget(reservations, policy)
     if not check.allowed:

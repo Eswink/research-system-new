@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from packages.application.model_relay.ports import (
+from packages.application.ports import (
     CompletionRequest,
     CompletionResult,
+    InvalidInputError,
     ModelsListResult,
     SecretValue,
 )
@@ -19,7 +20,7 @@ class FakeCredentialResolver:
 
 class MissingCredentialResolver:
     def resolve(self, credential_ref: str) -> SecretValue:
-        raise KeyError(f"credential_ref not found in environment: {credential_ref!r}")
+        raise InvalidInputError(f"credential_ref not found: {credential_ref!r}")
 
 
 class FakeGateway:

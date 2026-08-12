@@ -1,6 +1,11 @@
 """Research OS application 层包。"""
 
 from packages.application.policy.native import NativePolicyEvaluator
+from packages.application.ports import (
+    CatalogSnapshot,
+    PreflightContext,
+    ProjectSettings,
+)
 from packages.application.preflight.preflight import (
     DryRunProjection,
     ManifestFreezeError,
@@ -10,11 +15,6 @@ from packages.application.preflight.preflight import (
     run_preflight,
 )
 from packages.application.protocol_compile.compiler import CompileResult, compile_protocol
-from packages.application.protocol_compile.ports import (
-    CatalogSnapshot,
-    PreflightContext,
-    ProjectSettings,
-)
 
 __all__ = [
     "CatalogSnapshot",

@@ -1,0 +1,19 @@
+[importlinter]
+root_package = adapters
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:fakes-no-provider-sdk]
+name = Fakes use no vendor SDK or real relay implementation
+type = forbidden
+source_modules =
+    adapters.fakes
+forbidden_modules =
+    openai
+    litellm
+    lite_llm
+    anthropic
+    temporalio
+    openhands
+    adapters.relay
+    httpx

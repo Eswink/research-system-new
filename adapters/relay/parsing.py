@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from packages.application.model_relay.ports import CompletionResult, ToolCallDraft
+from packages.application.ports import CompletionResult, ToolCallDraft
 
 
 def tool_calls_from_message(message: dict[str, Any]) -> tuple[ToolCallDraft, ...]:

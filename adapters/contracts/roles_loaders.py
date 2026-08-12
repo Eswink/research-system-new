@@ -1,23 +1,28 @@
-"""Role / Agent / Team 契约加载器。"""
+"""Role / Agent / Team / Skill 契约加载器。"""
 
 from __future__ import annotations
 
 from adapters.contracts.base import load_flat_collection
+from packages.domain.core import Version
 from packages.domain.enums import (
     ActivationPolicy,
+    BackendKind,
     ModelBindingMode,
+    ReviewPanelRole,
     RoleCategory,
     SelectionStrategy,
     WorkspacePolicy,
 )
 from packages.domain.roles import (
     AgentBinding,
+    AgentContextConfig,
     AgentSpec,
     ModelCapabilityRequirement,
     RoleDefinition,
     RolePool,
     TeamTemplate,
 )
+from packages.domain.tools import SkillSpec
 
 
 def load_roles(relative_path: str) -> dict[str, RoleDefinition]:
@@ -38,6 +43,9 @@ def load_roles(relative_path: str) -> dict[str, RoleDefinition]:
             ),
             default_model_profile=raw.get("default_model_profile"),
             workspace_policy=WorkspacePolicy(raw["workspace_policy"]),
+            default_skills=list(raw.get("default_skills", [])),
+            forbidden_capabilities=list(raw.get("forbidden_capabilities", [])),
+            review_panel_role=ReviewPanelRole(raw.get("review_panel_role", "NONE")),
         )
     return collection
 
@@ -56,11 +64,27 @@ def load_agents(relative_path: str) -> dict[str, AgentSpec]:
             agent_binding = AgentBinding(
                 mode=ModelBindingMode.MODEL_PROFILE, value=binding["value"]
             )
+        context = raw.get("context")
+        runtime = raw.get("runtime_kind")
         collection[key] = AgentSpec(
             id=raw["id"],
             role=raw["role"],
             model_binding=agent_binding,
-            workspace_policy=WorkspacePolicy(raw.get("workspace_policy", "read_only")),
+            workspace_policy=(
+                WorkspacePolicy(raw["workspace_policy"]) if raw.get("workspace_policy") else None
+            ),
+            skill_refs=list(raw.get("skill_refs", [])),
+            capability_refs=list(raw.get("capability_refs", [])),
+            context=(
+                AgentContextConfig(
+                    max_context_tokens=context.get("max_context_tokens"),
+                    max_iterations=context.get("max_iterations"),
+                )
+                if context
+                else None
+            ),
+            runtime_kind=BackendKind(runtime) if runtime else None,
+            budget_policy_ref=raw.get("budget_policy_ref"),
         )
     return collection
 
@@ -78,12 +102,28 @@ def load_team_templates(relative_path: str) -> dict[str, TeamTemplate]:
                 concurrency=pool.get("concurrency", 1),
                 selection_strategy=SelectionStrategy(pool.get("selection_strategy", "FIXED")),
                 model_profile=pool.get("model_profile"),
-                activation_policy=ActivationPolicy(pool.get("activation_policy", "ON_DEMAND")),
+                activation_policy=(
+                    ActivationPolicy(pool["activation_policy"])
+                    if pool.get("activation_policy")
+                    else None
+                ),
             )
         collection[key] = TeamTemplate(
             id=raw["id"],
             display_name=raw["display_name"],
             roles=pools,
             extends=raw.get("extends"),
+        )
+    return collection
+
+
+def load_skills(relative_path: str) -> dict[str, SkillSpec]:
+    collection: dict[str, SkillSpec] = {}
+    for key, raw in load_flat_collection(relative_path, "skills", "skill.schema.json").items():
+        collection[key] = SkillSpec(
+            id=raw["id"],
+            version=Version(raw["version"]),
+            capabilities=list(raw["capabilities"]),
+            description=raw.get("description", ""),
         )
     return collection

@@ -8,7 +8,7 @@ from collections.abc import Callable
 import httpx
 
 from adapters.relay.gateway import OpenAIChatGateway
-from packages.application.model_relay.ports import SecretValue
+from packages.application.ports import SecretValue
 from packages.domain.models import LLMEndpoint
 
 ENDPOINT = LLMEndpoint(

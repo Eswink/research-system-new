@@ -8,7 +8,7 @@ import httpx
 import pytest
 
 from adapters.relay.gateway import RelayHTTPError
-from packages.application.model_relay.ports import CompletionRequest
+from packages.application.ports import CompletionRequest
 from packages.domain.enums import FailureCategory
 
 from .relay_fakes import (
