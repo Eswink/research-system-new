@@ -1,0 +1,50 @@
+cases:
+  - id: experience-failure-prompted
+    hook: distillation_gate.py
+    input: {hook_event_name: stop, status: completed, loop_count: 0, conversation_id: eval-exp-1}
+    seed:
+      observations:
+        - {at: "2026-08-12T00:00:00Z", tool_name: Shell, duration_ms: 10, is_interrupt: false, error_class: CURSOR_ERROR, error_signature: sig-a}
+    expect_followup: true
+
+  - id: experience-no-failure-silent
+    hook: distillation_gate.py
+    input: {hook_event_name: stop, status: completed, loop_count: 0, conversation_id: eval-exp-2}
+    seed:
+      observations: []
+    expect_followup: false
+
+  - id: experience-loop-count-silent
+    hook: distillation_gate.py
+    input: {hook_event_name: stop, status: completed, loop_count: 1, conversation_id: eval-exp-3}
+    seed:
+      observations:
+        - {at: "2026-08-12T00:00:00Z", tool_name: Shell, duration_ms: 10, is_interrupt: false, error_class: CURSOR_ERROR, error_signature: sig-b}
+    expect_followup: false
+
+  - id: experience-status-error-silent
+    hook: distillation_gate.py
+    input: {hook_event_name: stop, status: error, loop_count: 0, conversation_id: eval-exp-4}
+    seed:
+      observations:
+        - {at: "2026-08-12T00:00:00Z", tool_name: Shell, duration_ms: 10, is_interrupt: false, error_class: CURSOR_ERROR, error_signature: sig-c}
+    expect_followup: false
+
+  - id: experience-marker-dedup-silent
+    hook: distillation_gate.py
+    input: {hook_event_name: stop, status: completed, loop_count: 0, conversation_id: eval-exp-5}
+    seed:
+      observations:
+        - {at: "2026-08-12T00:00:00Z", tool_name: Shell, duration_ms: 10, is_interrupt: false, error_class: CURSOR_ERROR, error_signature: sig-d}
+      prompted: true
+    expect_followup: false
+
+  - id: experience-repeat-signature-mention
+    hook: distillation_gate.py
+    input: {hook_event_name: stop, status: completed, loop_count: 0, conversation_id: eval-exp-6}
+    seed:
+      observations:
+        - {at: "2026-08-12T00:00:00Z", tool_name: Shell, duration_ms: 10, is_interrupt: false, error_class: CURSOR_ERROR, error_signature: repeated-sig}
+      history:
+        - {at: "2026-08-11T00:00:00Z", tool_name: Shell, duration_ms: 10, is_interrupt: false, error_class: CURSOR_ERROR, error_signature: repeated-sig}
+    expect_followup: true

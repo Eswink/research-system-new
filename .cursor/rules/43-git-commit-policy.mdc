@@ -10,5 +10,5 @@ alwaysApply: true
 - 真实 `.env*`、私钥、凭据和任何检测出的 secret 永不进入提交；`.env.example` 等脱敏模板除外。
 - 禁止 `git reset --hard`、destructive `git clean` 和改写已公开历史，除非用户明确要求且已评估影响。
 - 提交前必须运行**与实际变更范围相关**的 validators/tests。只有当当前任务按风险/计划要求执行 `recheck` 时，语义提交才依赖该 recheck 的通过结果；简单、明确、无需 recheck 的任务不得被本规则反向强迫创建 recheck。
-- Stop Hook 只报告工作区状态，不执行 add/commit/push。
+- Stop Hook 只报告工作区状态，不执行 add/commit/push（行为契约见 `.cursor/knowledge/HOOKS_REFERENCE.md` stop 行）。
 - 具体暂存、Conventional Commit、验证和 rollback 流程使用显式 `semantic-commit` Skill。

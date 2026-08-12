@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -34,6 +35,45 @@ def hook(name: str, payload: dict) -> dict:
     return out
 
 
+def safe_id(value: object) -> str:
+    return hashlib.sha256(str(value or "unknown").encode("utf-8")).hexdigest()[:20]
+
+
+def seed_hook_case(case: dict) -> dict:
+    """Seed observations/distillation state for a hook eval case; returns cleanup callable."""
+    payload = dict(case.get("input") or {})
+    seed = case.get("seed") or {}
+    obs_dir = ROOT / ".cursor/runtime/observations"
+    dist_dir = ROOT / ".cursor/runtime/distillation"
+    cid = safe_id(payload.get("conversation_id"))
+    current = obs_dir / f"{cid}.jsonl"
+    marker = dist_dir / f"{cid}.prompted"
+    current.unlink(missing_ok=True)
+    marker.unlink(missing_ok=True)
+    for item in seed.get("observations") or []:
+        obs_dir.mkdir(parents=True, exist_ok=True)
+        with current.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(item, ensure_ascii=False) + "\n")
+    for idx, item in enumerate(seed.get("history") or []):
+        hist = obs_dir / f"{safe_id(payload.get('conversation_id') + '-h' + str(idx))}.jsonl"
+        hist.unlink(missing_ok=True)
+        obs_dir.mkdir(parents=True, exist_ok=True)
+        with hist.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(item, ensure_ascii=False) + "\n")
+    if seed.get("prompted"):
+        dist_dir.mkdir(parents=True, exist_ok=True)
+        marker.write_text("{}", encoding="utf-8")
+    return {"current": current, "marker": marker, "history_count": len(seed.get("history") or [])}
+
+
+def cleanup_hook_case(payload: dict, seeded: dict) -> None:
+    seeded["current"].unlink(missing_ok=True)
+    seeded["marker"].unlink(missing_ok=True)
+    for idx in range(seeded["history_count"]):
+        hist = ROOT / ".cursor/runtime/observations" / f"{safe_id(payload.get('conversation_id') + '-h' + str(idx))}.jsonl"
+        hist.unlink(missing_ok=True)
+
+
 def check(condition: bool, message: str) -> None:
     if not condition:
         FAIL.append(message)
@@ -47,7 +87,13 @@ for path in (ROOT / ".cursor/evals/cases").glob("*.yaml"):
             file_path = payload.get("file_path")
             if file_path and not Path(file_path).is_absolute():
                 payload["file_path"] = str(ROOT / file_path)
-            out = hook(case["hook"], payload)
+            seeded = seed_hook_case(case)
+            try:
+                out = hook(case["hook"], payload)
+            finally:
+                cleanup_hook_case(payload, seeded)
+            if "expect_followup" in case:
+                check(bool(out.get("followup_message")) == case["expect_followup"], f"{case['id']}: followup mismatch")
             for key, expected in (case.get("expect") or {}).items():
                 check(out.get(key) == expected, f"{case['id']}: {key} mismatch")
         elif "state" in case:

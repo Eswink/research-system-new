@@ -23,4 +23,4 @@ ORIENT → REFRESH_KB → SELECT_PROPOSALS → IMPLEMENT_CANDIDATE → REPLAY �
 - 不使用数值自评分作为 release truth。
 - 高风险变更按范围调用相关 reviewer。
 - Release truth 来自确定性 validators/evals + manifest。
-- Stop follow-up 仅在 active evolution state 使用，并受 loop limit 限制。
+- Stop continuation follow-up 仅在 active evolution state 使用；一次性脱敏报告类 stop 输出（`distillation_gate`）不自动执行动作，受 `loop_limit: 1` 与会话级 marker 去重约束。

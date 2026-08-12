@@ -24,6 +24,7 @@ Subagents  = 独立 context / 并行调查 / 独立验证
 Hooks      = 机器级观测与防御性门禁（非 Sandbox）
 Knowledge  = Cursor 官方规范、兼容性 caveat、研究证据
 Memory     = 经验证的本仓库工程经验
+Experience = 低置信度工程经验缓冲（问题→原因→解法），不直接当作事实
 ```
 
 ## Subagent
@@ -43,8 +44,10 @@ Memory     = 经验证的本仓库工程经验
 ## 自学习
 
 ```text
-Observation → Proposal → Consolidate → Replay → Deterministic Validation → Scoped Approval when needed → Promote
+Observation → Experience Entry → Proposal → Consolidate → Replay → Deterministic Validation → Scoped Approval when needed → Promote
 ```
+
+经验条目（`.cursor/experience/`）是低置信度缓冲层，单次观察 `confidence ≤ 0.5`；跨会话重复 ≥2 次才升级为 LEARN proposal。
 
 不设置固定审核轮数、固定 reviewer 人数或数值评分要求。
 

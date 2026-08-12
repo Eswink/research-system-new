@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from _hook_harness import HookHarness
@@ -235,6 +236,43 @@ if target.exists():
     expect("failure observer redacts raw error", "secret detail" not in persisted and "permission denied" not in persisted, persisted)
     expect("failure observer schema", set(rec) == {"at", "tool_name", "duration_ms", "is_interrupt", "error_class", "error_signature"}, rec)
     target.unlink(missing_ok=True)
+
+# Distillation gate: prompts once per conversation after failures; marker dedup; no raw data.
+dist_dir = ROOT / ".cursor/runtime/distillation"
+dist_dir.mkdir(parents=True, exist_ok=True)
+marker = dist_dir / f"{hashlib.sha256('conv-distill-1'.encode('utf-8')).hexdigest()[:20]}.prompted"
+obs_dir = ROOT / ".cursor/runtime/observations"
+obs_dir.mkdir(parents=True, exist_ok=True)
+obs_file = obs_dir / f"{hashlib.sha256('conv-distill-1'.encode('utf-8')).hexdigest()[:20]}.jsonl"
+obs_file.write_text(json.dumps({"error_class": "CURSOR_ERROR", "error_signature": "sig"}, ensure_ascii=False) + "\n", encoding="utf-8")
+rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-1", "status": "completed", "loop_count": 0})
+expect("distillation gate returncode", rc == 0, stderr)
+expect("distillation gate prompts on failure", bool(out.get("followup_message")), out)
+expect("distillation gate marker created", marker.exists(), str(marker))
+rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-1", "status": "completed", "loop_count": 0})
+expect("distillation gate dedup silent", out == {}, out)
+rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-2", "status": "error", "loop_count": 0})
+expect("distillation gate error silent", out == {}, out)
+rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-3", "status": "completed", "loop_count": 2})
+expect("distillation gate loop limit silent", out == {}, out)
+obs_file.unlink(missing_ok=True)
+marker.unlink(missing_ok=True)
+
+# Session cleanup: per-session runtime state removed; expired observations pruned.
+obs_dir.mkdir(parents=True, exist_ok=True)
+old_obs = obs_dir / "expired-observations.jsonl"
+new_obs = obs_dir / "recent-observations.jsonl"
+stale_at = (datetime.now(timezone.utc) - timedelta(days=31)).isoformat()
+recent_at = datetime.now(timezone.utc).isoformat()
+old_obs.write_text(json.dumps({"at": stale_at, "error_class": "CURSOR_ERROR", "error_signature": "old-sig"}, ensure_ascii=False) + "\n", encoding="utf-8")
+new_obs.write_text(json.dumps({"at": recent_at, "error_class": "CURSOR_ERROR", "error_signature": "new-sig"}, ensure_ascii=False) + "\n", encoding="utf-8")
+rc, out, stderr = run(".cursor/hooks/session_cleanup.py", {"hook_event_name": "sessionEnd", "session_id": "eval-session-cleanup", "conversation_id": "eval-cleanup"})
+expect("session cleanup returncode", rc == 0, stderr)
+expect("session cleanup emits empty output", out == {}, out)
+expect("expired observation pruned", not old_obs.exists(), "expired observation not removed")
+expect("recent observation retained", new_obs.exists(), "recent observation removed")
+old_obs.unlink(missing_ok=True)
+new_obs.unlink(missing_ok=True)
 
 # MCP policy: secret material/path denied; ordinary external call requires explicit approval.
 def mcp(payload: dict) -> dict:

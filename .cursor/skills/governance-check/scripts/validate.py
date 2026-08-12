@@ -704,6 +704,33 @@ def check_links_and_secrets() -> None:
                 add_error(f"Cursor 治理资产疑似包含 {label}: {path.relative_to(ROOT)}")
 
 
+def check_runtime_config() -> None:
+    config_path = CURSOR_ROOT / "runtime_config.json"
+    if not config_path.exists():
+        add_error("缺少 .cursor/runtime_config.json（runtime 行为配置必须显式登记）")
+        return
+    try:
+        payload = json.loads(config_path.read_text(encoding="utf-8-sig"))
+    except Exception as exc:
+        add_error(f".cursor/runtime_config.json 无法解析: {exc}")
+        return
+    if not isinstance(payload, dict):
+        add_error(".cursor/runtime_config.json 顶层必须是 JSON 对象")
+        return
+    allowed_keys = {"schema_version", "observation_retention_days"}
+    unknown = set(payload) - allowed_keys
+    if unknown:
+        add_error(f".cursor/runtime_config.json 存在未登记键: {sorted(unknown)}")
+    if payload.get("schema_version") != 1:
+        add_error(f".cursor/runtime_config.json schema_version 必须为 1: {payload.get('schema_version')!r}")
+    retention = payload.get("observation_retention_days")
+    if isinstance(retention, bool) or not isinstance(retention, int) or retention <= 0:
+        add_error(f".cursor/runtime_config.json observation_retention_days 必须为正整数: {retention!r}")
+    hooks_ref = read_text(CURSOR_ROOT / "knowledge" / "HOOKS_REFERENCE.md")
+    if "runtime_config.json" not in hooks_ref:
+        add_error(".cursor/knowledge/HOOKS_REFERENCE.md 必须引用 runtime_config.json（文档与配置漂移防护）")
+
+
 def main() -> int:
     checks = (
         check_required_structure,
@@ -714,6 +741,7 @@ def main() -> int:
         check_plans_and_rechecks,
         check_memory,
         check_git_history_preservation,
+        check_runtime_config,
         check_links_and_secrets,
     )
     for check in checks:

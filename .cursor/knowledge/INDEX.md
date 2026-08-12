@@ -35,7 +35,7 @@ Framework: **v0.4.0**
 
 ## Self-evolution
 
-受控学习流程见 `.cursor/learning/README.md`；单次观察不得直接晋升。
+受控学习流程见 `.cursor/learning/README.md`；单次观察不得直接晋升。轻量工程经验缓冲在 `.cursor/experience/`，由 `capture-experience` skill 沉淀，sessionStart 注入摘要，不作为工程事实。
 
 ## 2026-08-11 关键更新
 

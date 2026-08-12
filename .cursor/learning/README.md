@@ -5,6 +5,7 @@
 ## Lifecycle
 ```text
 Runtime Observation
+→ Experience Entry (低置信度缓冲，.cursor/experience/)
 → Learning Proposal
 → Cluster / Relation Analysis
 → Replay Before
@@ -15,7 +16,7 @@ Runtime Observation
 → Promotion / Reject
 ```
 
-Observation 不是知识，Proposal 不是事实，Promotion 不是自动批准。
+Observation 不是知识，Experience Entry 不是事实，Proposal 不是事实，Promotion 不是自动批准。
 
 ## Promotion gates
 任何 `ACCEPTED` proposal 必须：

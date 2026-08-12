@@ -14,13 +14,19 @@
 | `afterFileEdit` | 记录改动路径 | observational |
 | `preCompact` | compaction checkpoint | observational |
 | `postToolUseFailure` | 脱敏失败 observation | observational |
-| `stop` | opt-in evolution continuation / snapshot | controlled |
+
+## 观测 retention
+
+- `runtime/observations/<cid>.jsonl` 为 digest-only 观测记录（无错误原文、无敏感参数），按会话键控保留，用于 `distillation_gate` 的跨会话 `error_signature` 统计。
+- 该记录不属 AGENTS.md 第 10 节 Debug Mode 采样范畴；默认保留期为 30 天，可经 `.cursor/runtime_config.json` 的 `observation_retention_days` 调整，过期文件由 `session_cleanup` 清理（fail-open，不阻塞会话）。
+- 经验库沉淀完成后，原始签名统计只保留聚合结果，不保留完整 digest 序列。
+| `stop` | opt-in evolution continuation / snapshot / 待沉淀标记（`distillation_gate`） | controlled |
 
 ## 原则
 - Hook command 通过 stdin/stdout JSON 与 Cursor 交互；安全 Hook 以 UTF-8 bytes 读取 stdin（接受 UTF-8 BOM），并以 UTF-8 bytes 输出 JSON。
 - 安全 Hook 使用 fail-closed，但 Hook 本身不是 OS sandbox。
 - Read 凭据门禁绑定 `preToolUse` 的 `matcher: Read`；`.cursorignore` 同时保留为 Cursor 原生上下文边界。
-- `stop` 自动 follow-up 只允许在用户显式启动 evolution state 中出现。
+- `stop` 的 continuation follow-up 只允许在用户显式启动 evolution state 中出现；`distillation_gate` 的一次性蒸馏提示只报告沉淀建议，不自动执行任何动作，`loop_limit: 1` 且按会话 marker 去重。
 - Subagent 数量按**同时 active / 单 wave**限制，不做整个用户任务累计计数。
 
 ## Cursor 3.14.7 / Windows 实测

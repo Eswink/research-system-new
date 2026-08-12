@@ -9,5 +9,6 @@ alwaysApply: true
 - Cursor 行为/格式的当前事实只从 `.cursor/knowledge/SOURCES.yaml` 的 `T1_OFFICIAL` 来源晋升；社区帖子只能做 caveat。
 - 可机器检查的约束优先由 validator/Hook 辅助执行，但 Cursor Hook 不视为 OS Sandbox；高风险边界必须叠加 `.cursorignore`、Cursor 审批设置和 Research OS 产品 Sandbox/Policy。
 - 单次错误、单次用户纠正、单个外部帖子不得直接修改 Rule/Skill；必须先经过证据化学习/复检流程。
-- 自动迭代必须显式 opt-in、有 loop limit、有 deterministic release gate；默认不得自行无限修改仓库。
+- 自动迭代必须显式 opt-in、有 loop limit、有 deterministic release gate；默认不得自行无限修改仓库。stop 语义唯一权威见 `.cursor/knowledge/HOOKS_REFERENCE.md`。
+- 经用户明确批准的 Cursor Plan/任务计划可将计划变更直接落地并运行对应 validator；未经批准的观察/单次经验不得直接修改 Rule/Skill（必须走 capture-learning → promote-learning 门禁）。
 - Cursor Cloud Agent 与 IDE/local Hook 可用面不同；涉及 Secret/MCP 外部副作用时，不得假设 `sessionStart/sessionEnd/beforeMCPExecution` 在 Cloud 可用，必须依赖 Cloud/Enterprise 控制或 Research OS 产品 Sandbox/Policy。

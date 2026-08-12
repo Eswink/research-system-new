@@ -20,6 +20,8 @@ skills:
     kind: release
   capture-learning:
     kind: learning
+  capture-experience:
+    kind: learning
   consolidate-learning:
     kind: learning
   promote-learning:
@@ -36,6 +38,9 @@ relations:
   - from: recheck
     to: semantic-commit
     type: gates
+  - from: capture-experience
+    to: capture-learning
+    type: followed_by
   - from: capture-learning
     to: consolidate-learning
     type: followed_by

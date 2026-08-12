@@ -5,7 +5,7 @@ disable-model-invocation: true
 ---
 # Consolidate Learning
 
-1. 选择一组问题同源的 PROPOSED proposals。
+1. 选择一组问题同源的 PROPOSED proposals（或 `.cursor/experience/` 中同源经验条目）。
 2. 检查 `SKILL_RELATIONS.yaml`、相关 Rule/Skill 和历史 rejected proposal。
 3. 输出 cluster record：共同 failure mode、不同上下文、最小共享机制、不能泛化的例外。
 4. 优先新增 EVAL/VALIDATOR，再决定是否需要 Rule/Skill。

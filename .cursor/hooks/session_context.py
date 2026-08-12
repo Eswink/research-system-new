@@ -6,6 +6,31 @@ import json
 from common import ROOT, RUNTIME, atomic_json, emit, read_event
 
 
+def _experience_summary() -> str:
+    index_path = ROOT / ".cursor" / "experience" / "INDEX.md"
+    try:
+        lines = index_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return ""
+    rows: list[tuple[str, str]] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped.startswith("|") or "|---" in line:
+            continue
+        cells = [cell.strip() for cell in stripped[1:].split("|")]
+        if len(cells) < 7:
+            continue
+        entry_id = cells[0]
+        if entry_id.startswith("[") and "](" in entry_id:
+            entry_id = entry_id[1:].split("]")[0]
+        if entry_id.startswith("EXP-"):
+            rows.append((entry_id, f"{cells[5]}(置信度 {cells[2]})"))
+    if not rows:
+        return ""
+    recent = ", ".join(summary for _, summary in rows[-5:])
+    return f" 工程经验库 {len(rows)} 条（最近：{recent}）；遇到问题先查 .cursor/experience/INDEX.md，不把经验条目当工程事实。"
+
+
 def main() -> int:
     event = read_event()
     framework_path = ROOT / ".cursor" / "framework.json"
@@ -27,7 +52,7 @@ def main() -> int:
             "RESEARCH_OS_PROJECT_VERSION": version,
             "RESEARCH_OS_CURSOR_FRAMEWORK_VERSION": version,
         },
-        "additional_context": context + f" 当前 Cursor version={cursor_version}；未在 compatibility matrix 验证时先运行 probe。",
+        "additional_context": context + f" 当前 Cursor version={cursor_version}；未在 compatibility matrix 验证时先运行 probe。" + _experience_summary(),
     })
     return 0
 

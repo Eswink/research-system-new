@@ -55,6 +55,13 @@
         "loop_limit": 1,
         "type": "command",
         "timeout": 5
+      },
+      {
+        "command": "python -B .cursor/hooks/distillation_gate.py",
+        "failClosed": false,
+        "loop_limit": 1,
+        "type": "command",
+        "timeout": 5
       }
     ],
     "sessionEnd": [

@@ -5,9 +5,11 @@ alwaysApply: true
 
 # Learning Promotion Hard Boundaries
 - Runtime Observation 不是工程事实，不得直接写 Rule/Skill/Memory。
+- `.cursor/experience/` 经验条目是低置信度观察缓冲，不是工程事实；不得作为 Rule/Skill/Memory 或产品 MemoryRecord 的证据直接引用。
 - 普通单次失败不得直接晋升；先形成 LEARN proposal，并等待独立复现或确定性权威证据。
+- 同一 error_signature 跨会话出现 ≥2 次且已有稳定解法时，先经 `capture-experience` 沉淀，再由 `capture-learning` 生成 LEARN proposal。
 - Promotion 必须包含 before/after replay、deterministic regression validation 和显式授权。
 - Reviewer 按变更风险和范围选择，不规定固定人数、固定轮数或数值评分。
-- Stop Hook 只能在用户显式启动 evolution state 后继续；不得默认自循环。
+- Stop Hook 的 continuation follow-up 仅限用户显式启动的 evolution state；`distillation_gate` 的一次性脱敏报告不自动执行任何动作（`loop_limit: 1` + 会话级 marker 去重），不受此限；不得默认自循环。stop 语义唯一权威见 `.cursor/knowledge/HOOKS_REFERENCE.md`。
 - 自学习流程不得修改 validator 或授权规则来绕过失败门禁。
 - rejected/superseded proposal 保留历史，不静默删除失败证据。

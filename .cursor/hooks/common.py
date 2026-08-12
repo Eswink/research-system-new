@@ -14,6 +14,28 @@ ROOT = Path(
     or Path(__file__).resolve().parents[2]
 ).resolve()
 RUNTIME = ROOT / ".cursor" / "runtime"
+RUNTIME_CONFIG = ROOT / ".cursor" / "runtime_config.json"
+DEFAULT_OBSERVATION_RETENTION_DAYS = 30
+
+
+def load_runtime_config() -> dict[str, Any]:
+    try:
+        payload = json.loads(RUNTIME_CONFIG.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _int_field(payload: dict[str, Any], key: str, default: int) -> int:
+    value = payload.get(key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        return default
+    return value if value > 0 else default
+
+
+OBSERVATION_RETENTION_DAYS = _int_field(
+    load_runtime_config(), "observation_retention_days", DEFAULT_OBSERVATION_RETENTION_DAYS
+)
 SAFE_CREDENTIAL_EXAMPLE_NAMES = frozenset({".env.example", ".env.sample", ".env.template"})
 SAFE_CREDENTIAL_EXAMPLE_RE = re.compile(r"(?i)\.env\.(?:example|sample|template)\b")
 SENSITIVE_REFERENCE_RE = re.compile(
