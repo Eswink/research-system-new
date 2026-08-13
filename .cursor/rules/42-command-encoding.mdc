@@ -10,6 +10,10 @@ alwaysApply: true
   - POSIX shell：`PYTHONUTF8=1 PYTHONIOENCODING=utf-8 python -B .cursor/skills/governance-check/scripts/validate.py`
   - PowerShell：`$env:PYTHONUTF8 = "1"; $env:PYTHONIOENCODING = "utf-8"; python -B .cursor/skills/governance-check/scripts/validate.py`
 - 只有确认当前 shell 支持时才使用 `&&`、`||`、管道、变量赋值或 shell-specific quoting；跨平台工程说明优先分别给出 POSIX/PowerShell 示例，而不是混写语法。
+- Windows PowerShell 下禁止 bash 语法（LEARN-20260813-001 晋升，跨会话 5 次复现）：
+  - 多命令串联用 `;` 分隔：`git status --short; git log --oneline -8`（`&&`/`||` 报 ParserError）；
+  - 长 commit message 写临时文件后 `git commit -F <path>`，不用 `-m "$(cat <<'EOF' ...)"`；
+  - cmd 开关必须 `cmd /c "..."` 包裹：裸 `dir /b <path>` 会把 `/b` 解析为路径 `D:\b`。
 - 新建或修改的文本脚本、YAML、JSON、Markdown 和源码一律使用 UTF-8；禁止以 GBK/ANSI 写入仓库。
 - Python 读写文本文件必须显式传 `encoding="utf-8"`，不依赖平台默认编码。
 - 终端显示乱码时先修正终端/环境编码再重试，不通过转换仓库文件编码来掩盖问题。

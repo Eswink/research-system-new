@@ -1,0 +1,61 @@
+schema_version: 1
+id: LEARN-20260813-001
+status: ACCEPTED
+created_at: 2026-08-13
+summary: "Windows PowerShell 下禁止 bash 语法（&& 串联、heredoc、cmd /x 开关），改用 ; 分隔、git commit -F、cmd /c 包裹"
+severity: NORMAL
+category: reliability
+source_type: validator_failure
+source_refs:
+  - ".cursor/experience/entries/EXP-20260812-002.md（occurrences 5：M5R 会话 4 次 + M6 复审会话 1 次）"
+  - "M5R 会话 git status && git log ParserError（2026-08-12）"
+  - "M6 复审会话 git log --oneline -15 && git status ParserError（2026-08-13）"
+  - "M5R 会话 dir /b 路径解析错误 D:\\b（2026-08-13）"
+occurrences:
+  - task_ref: "PLAN-20260812-006（M5R）"
+    evidence_ref: "M5R 会话终端 ParserError + 找不到路径 D:\\b"
+  - task_ref: "PLAN-20260813-007（M6）"
+    evidence_ref: "M6 复审会话 git log --oneline -15 && git status ParserError（标记“&&”不是此版本中的有效语句分隔符）"
+  - task_ref: "LEARN-20260813-001 before replay"
+    evidence_ref: "Write-Output \"a\" && Write-Output \"b\" → ParserError（2026-08-13 本会话实测）"
+problem:
+  observed_behavior: "PowerShell 下 bash 风格命令串联报 ParserError（标记“&&”不是此版本中的有效语句分隔符）；heredoc 与 cmd /x 开关同样解析失败（dir /b 被当作路径 D:\\b）。"
+  expected_behavior: "多命令按当前 shell 语法执行：PowerShell 用 ; 分隔；长 commit message 用 -F 文件；cmd 开关用 cmd /c 包裹。"
+  reproduction: "任意 PowerShell 5.x 终端执行 `Write-Output a && Write-Output b` 即复现；跨会话累计 5 次（2026-08-12 x4、2026-08-13 x1）。"
+hypothesis:
+  root_cause: "PowerShell 不兼容 bash 的 && / heredoc / cmd /x 语法；开发者按 POSIX 习惯写命令。权威依据：PowerShell 语法规范（T1 级）+ 本地 5 次独立复现。"
+  confidence: 0.8
+proposal:
+  target_type: RULE
+  target_paths:
+    - ".cursor/rules/42-command-encoding.mdc"
+  change_summary: "在既有“确认 shell 支持才使用 &&”约束下补充 PowerShell 具体写法清单：`;` 分隔替代 `&&`/`||` 串联、`git commit -F <file>` 替代 heredoc 内嵌多行、cmd 开关用 `cmd /c \"...\"` 包裹（`dir /b` 会被解析为路径）；保留 POSIX 示例对照。"
+  blast_radius: "仅 .cursor/rules 文档约束；无代码/配置行为变化；governance validator 覆盖。"
+replay:
+  before_cases:
+    - "Write-Output \"a\" && Write-Output \"b\"（PowerShell 5.x）→ ParserError"
+    - "git log --oneline -15 && git status --short（M6 复审会话）→ ParserError"
+    - "dir /b <path>（PowerShell）→ 找不到路径 D:\\b"
+  before_result: "FAIL（3/3 复现）"
+  after_cases:
+    - "Write-Output \"a\"; Write-Output \"b\" → a b 顺序输出（2026-08-13 实测）"
+    - "git status --short; git log --oneline -3 → 正常（2026-08-13 实测）"
+    - "cmd /c \"dir /b <path>\" → 正常列举（M5R 会话实证）"
+  after_result: "PASS（3/3 成功）"
+validation:
+  commands:
+    - "governance validator：python -B .cursor/skills/governance-check/scripts/validate.py"
+  evidence_refs:
+    - "governance validate 输出：Cursor 治理验证通过（2026-08-13）"
+  result: PASS
+approvals:
+  - role: user
+    decision: APPROVE
+    ref: "用户显式授权（2026-08-13 会话消息：允许 capture-learning，并且晋升）"
+    at: "2026-08-13"
+promotion:
+  authorization_ref: "用户显式授权（2026-08-13 会话消息：允许 capture-learning，并且晋升）"
+  promoted_at: "2026-08-13"
+  promoted_digest: "sha256:35be2662d0acaa1077fa"
+  regression_digest: "governance validate PASS（2026-08-13）"
+supersedes: []
