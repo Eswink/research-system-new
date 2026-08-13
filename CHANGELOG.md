@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.4.0 — 2026-08-12（M5R 独立复审）
+
+- M5R 独立复审（非开发窗口自评）：全部 6 个 spike 重跑复现 PASS；upstream
+  provenance 独立验证（git ls-remote tag v1.42.0 → commit `391fbb8d` 与 clone
+  一致；GitHub 页面确认官方仓库；MIT LICENSE 实测；PyPI sdist 下载实测哈希）。
+- 复审修复：
+  - S5 spike 文件路径改绝对路径 + CWD 泄漏断言（原相对路径实证
+    `LocalWorkspace.file_upload/download` 以裸 Path 相对 CWD 解析，曾残留
+    `spike.txt` 于仓库根目录）。
+  - `OPENHANDS_REVISION_LOCK.yaml` sdist digest 修正为 PyPI 实测
+    `4706ae2c…`（原记录 `e8be3e58…` 与 PyPI 不符且不属于相邻版本，判定抄录
+    错误）；PyPI sdist 与 git tag 源码文本级一致（无 installed/源码漂移）。
+  - 审计 §8 补充 LocalWorkspace 文件 API 路径基准不一致（file_upload/download
+    裸 Path vs git_* working_dir 相对）；M5 matrix §4 / M6 Design Notes §5 /
+    Risk Register 增 R-17；contract 数量修正为实测 127。
+- 回归：pytest 734 passed；tests/contracts 127 passed；m0 profile 18/18 PASS。
+- 结论不变：M5R = PASS；M6 readiness = READY（新增非阻断证据差异，无 BLOCK）。
+
 ## v0.4.0 — 2026-08-12
 
 - M5R Upstream Source Intelligence & Runtime Qualification 落地：

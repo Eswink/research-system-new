@@ -7,9 +7,10 @@ Port matrix: docs/references/upstream/M5_PORT_COMPATIBILITY_MATRIX.md
 
 ## 结论
 
-**零代码修正。** M5 的 14 个 Port Contract 与 Fake Implementations 经真实
+**零 M5 Port 结构修正。** M5 的 14 个 Port Contract 与 Fake Implementations 经真实
 OpenHands SDK v1.42.0 源码与 6 个 executable spike 校验后，未发现需要修改
-Port 契约、Domain 类型或 contract suite 的证据。
+Port 契约、Domain 类型或 contract suite 的证据。（2026-08-12 独立复审复验：
+结论成立；复审仅补齐 M5R 产物证据，见文末"独立复审补充修正"。）
 
 ## 评估过的候选修正（全部驳回，附理由）
 
@@ -36,3 +37,15 @@ Port 契约、Domain 类型或 contract suite 的证据。
 3. 安全强制：execute_tool 必须包 Policy Wrapper；默认禁 LocalWorkspace
    host shell；DockerWorkspace 需叠加网络隔离；插件 commit-SHA pin 需升级为
    digest 门禁。
+
+## 独立复审补充修正（2026-08-12，复审者独立重跑/重验后追加）
+
+以下修正不改变"零 M5 Port 结构修正"结论，属 M5R 产物的证据补齐：
+
+| # | 修正 | 证据 | 类型 |
+| --- | --- | --- | --- |
+| R1 | S5 spike 文件路径改为绝对路径并新增 CWD 泄漏断言 | 首版 S5 用相对目标路径，`LocalWorkspace.file_upload/file_download`（裸 Path，CWD 相对解析）把文件写到进程 CWD（仓库根目录 `spike.txt` 残留）；重跑实证 `cwd leak check: none` | spike 修复（tools/upstream-spikes/S5_local_workspace.py） |
+| R2 | OPENHANDS_REVISION_LOCK.yaml sdist digest 修正 | 原记录 `e8be3e58…` 与 PyPI 实测 `4706ae2c…` 不符，且不属于 1.40.0/1.41.0/1.42.0 任何 sdist——抄录错误；已下载 sdist 实测修正。sdist 与 git tag v1.42.0 clone 内容文本级一致（llm.py/state.py/agent/base.py 0 diff） | revision lock 修正 |
+| R3 | 审计 §8 补充 LocalWorkspace 文件 API 路径基准不一致（file_upload/download 裸 Path vs git_* working_dir 相对）；BaseWorkspace docstring 含过期 read_file 示例 | S5 重跑实证 + `workspace/local.py`/`workspace/base.py` 源码 | 审计文档补充 |
+| R4 | M5 matrix §4 / M6 design notes §5 / risk register 增 R-17（路径解析差异） | 同上 | 文档同步 |
+| R5 | M6_READINESS_REPORT contract 数量修正为实测 127 | `pytest tests/contracts` 实测 127 passed（原记 121 为早期口径） | 报告修正 |

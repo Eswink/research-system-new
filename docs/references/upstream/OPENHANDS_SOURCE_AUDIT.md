@@ -307,6 +307,22 @@ Clone: `d:\upstream\openhands-software-agent-sdk`（仓库外隔离，detached H
 - 测试：`tests/sdk/workspace/test_local_workspace.py`、
   `tests/workspace/test_docker_workspace.py`、`test_workspace_pause_resume.py`。
 
+### 独立复审补充（2026-08-12，S5 spike 重跑实证）
+
+- **LocalWorkspace 文件 API 路径解析不一致**：`file_upload`/`file_download`
+  （`workspace/local.py`）对参数做**裸 `Path()` 解析，不基于 `working_dir`**——
+  相对路径落在进程 CWD；而 `git_changes`/`git_diff` 显式
+  `Path(self.working_dir) / path` 基于 working_dir。S5 首版 spike 用相对目标
+  路径时，文件往返实际发生在 CWD 而非 workspace（"roundtrip PASS"是假象），
+  且残留 `spike.txt` 于仓库根目录；已改为绝对路径并新增 CWD 泄漏断言
+  （`cwd leak check: none`）后重跑 PASS。
+- `BaseWorkspace` docstring 示例含 `read_file`，但接口无 read/write 文本方法
+  （`base.py` 仅 execute_command/file_upload/file_download/git_changes/git_diff），
+  属 docstring 过期文本；审计结论"无 read/write 文本接口"不受影响。
+- 含义：M6 WorkspaceBackend 适配时，文件路径必须由 adapter 显式归一化
+  （绝对化 + 工作区根校验），不得信任相对路径解析；文件 API 与命令 API
+  （cwd=working_dir）的路径基准不一致是 OpenHands 既有行为，不是 spike 错误。
+
 ### M5R 含义
 
 - WorkspaceBackend/Workspace/WorkspaceLease/WorkspaceSnapshot 映射：OpenHands 只有

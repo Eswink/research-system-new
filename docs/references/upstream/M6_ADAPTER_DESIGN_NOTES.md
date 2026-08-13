@@ -52,6 +52,10 @@ Research OS AgentRuntime Port（packages/application/ports/agent_runtime.py）
 
 - 默认 MVP：DockerWorkspace（容器生命周期 = WorkspaceBackend 创建/清理面；pause/resume 近似 Lease 冻结语义）。LocalWorkspace（host shell）默认禁用，显式配置 + Policy 允许才可用。
 - WorkspaceLease / WorkspaceSnapshot：**Research OS 拥有**（SDK 无对应面）；adapter 用容器生命周期 + git 状态（git_changes/git_diff）支撑快照语义。
+- 文件路径归一化：LocalWorkspace `file_upload/file_download` 以裸 Path（CWD
+  相对）解析、`git_*` 以 working_dir 相对解析（审计 §8 补充，S5 重跑实证）；
+  adapter 必须对全部文件路径做绝对化 + 工作区根校验，不得依赖 OpenHands
+  内部解析基准。
 - ExecutionBackend：受控测试路径经 workspace.execute_command；TIMED_OUT 由 adapter 显式实现（SDK 无命令级 timeout 语义，审计 §5 矩阵）；compute usage 需 M6 spike 验证（NEEDS_SPIKE 项）。
 
 ## 6. 安全承接清单（审计 §11 结论）

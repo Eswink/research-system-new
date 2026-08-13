@@ -26,9 +26,10 @@ ADAPTER（M6 adapter 承接）。
 | R-14 | Windows 平台差异（spike 环境 win32） | 本 M5R spike 均在 Windows 执行；LocalWorkspace 文件 API 签名与文档有出入 | L | M | M6 在 Linux CI 上补跑 spike/contract；差异记录于 spike 结论 | OPEN |
 | R-15 | 重试叠加（SDK tenacity + Research OS 重试策略双重重试） | `retry_mixin.py`（5 次 8-64s） | M | M | M6 决策：保留 SDK 重试或外层统一，二选一 | ADAPTER |
 | R-16 | `LLMCompletionLogEvent` 含 LLM 输出，遥测隐私 | `event/llm_completion_log.py` | M | M | ADR-0020 默认只记录 digest/usage | ADAPTER |
+| R-17 | LocalWorkspace 文件 API 裸 Path（CWD 相对）解析，与 git_*（working_dir 相对）不一致；相对路径文件操作可能落在 workspace 根之外（污染宿主 CWD） | `workspace/local.py`（file_upload/file_download vs git_changes/git_diff）；S5 spike 重跑实证（首版相对路径产生 CWD 残留） | M | H | adapter 对所有文件路径显式绝对化 + 工作区根校验；默认禁用 LocalWorkspace 时风险收敛（R-04 同源） | ADAPTER |
 
 ## 汇总
 
-- 高风险（H）6 项，全部有明确缓解路径且可在 adapter 层/部署层承接，无"必须改 Domain 架构才能解决"的项。
+- 高风险（H）7 项（R-01/02/03/04/05/11/17），全部有明确缓解路径且可在 adapter 层/部署层承接，无"必须改 Domain 架构才能解决"的项。
 - 唯一 OPEN 项 R-13（版本漂移）由 revision lock + Upgrade Gate 流程覆盖（UPSTREAM_POLICY.md）。
-- 无阻断性风险（BLOCK 级）。
+- 独立复审新增 R-17（LocalWorkspace 文件 API 路径基准不一致），同 R-04 由 adapter 层承接；无阻断性风险（BLOCK 级）。

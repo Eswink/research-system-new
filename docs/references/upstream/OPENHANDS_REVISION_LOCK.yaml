@@ -35,7 +35,7 @@ pypi:
   url: https://pypi.org/project/openhands-sdk/1.42.0/
   sdist_digest:
     algorithm: sha256
-    value: "e8be3e583eb8b031a2ba462deb910da53390d14e0319523b141f8b6fd7b243ac"  # 来源：PyPI JSON（pypi.org/pypi/openhands-sdk/1.42.0/json, release 1.42.0 sdist sha256）
+    value: "4706ae2cdd6c0804836336d9034ca6448c69a954c6456c43c8291dffb966f56e"  # 独立复核 2026-08-12：下载 PyPI sdist（openhands_sdk-1.42.0.tar.gz）实测 sha256；原记录值 e8be3e58… 经查不属于任何相邻版本（1.40.0/1.41.0/1.42.0），判定为抄录错误并已修正
   key_dependencies:
     - "litellm>=1.93.0"        # LLM 路由（工作区锁 litellm==1.93.0）
     - "fastmcp>=3.0.0"         # MCP client

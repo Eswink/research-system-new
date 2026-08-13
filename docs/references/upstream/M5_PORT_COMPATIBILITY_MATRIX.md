@@ -62,7 +62,7 @@ interrupt 语义为"可恢复暂停"）。
 | workspace 创建 | ADAPTER_REQUIRED | `workspace/workspace.py::Workspace.__new__`（local/remote 分流）；`openhands-workspace` DockerWorkspace | LocalWorkspace 是 host shell（无沙箱）；Research OS 默认 deny host shell 需 adapter 强制 |
 | Lease | NOT_SUPPORTED | 无 lease 概念 | WorkspaceLease 必须 Research OS 拥有（ADR-0006 成立） |
 | Snapshot | NOT_SUPPORTED | 无 snapshot 语义 | WorkspaceSnapshot 必须 Research OS 拥有 |
-| 文件/shell | ADAPTER_REQUIRED | `workspace/base.py::BaseWorkspace`（execute_command/file_upload/file_download/git_*） | 无 read/write 文本接口；文件走 upload/download |
+| 文件/shell | ADAPTER_REQUIRED | `workspace/base.py::BaseWorkspace`（execute_command/file_upload/file_download/git_*） | 无 read/write 文本接口；文件走 upload/download；**LocalWorkspace 文件 API 为裸 Path（CWD 相对）解析，与 git_*（working_dir 相对）不一致**——adapter 必须显式归一化路径（S5 重跑实证，审计 §8 补充） |
 | cleanup | DIRECT_MAPPING | DockerWorkspace.cleanup()/`__del__` | 容器生命周期 |
 
 结论：WorkspaceBackend 抽象成立但 OpenHands 侧缺失 lease/snapshot/identity；

@@ -51,7 +51,7 @@ openhands_sdk 由 PLANNED 转 ADOPTED 时补登记 resolution/license/upgrade_ga
 | S2 | LLM 三要素构造 / base_url 保留 / JSON 往返 / litellm kwargs | PASS | ModelGateway → LLM 映射直接可行（kwargs 无 api_base 字段，SDK 组装于请求层） |
 | S3 | Agent+Conversation 建/run + 自定义工具注册 + 事件流（TestLLM） | PASS | create/run/stream_events 面验证；工具需 Tool spec + create() 返回 Sequence |
 | S4 | interrupt/重复 run 语义 | PASS | interrupt 不改 FINISHED；重复 run 幂等返回同一终态——与 Fake 语义一致 |
-| S5 | LocalWorkspace 文件/命令生命周期 | PASS | 文件走 upload/download 路径；execute_command 返回 CommandResult（含 timeout_occurred） |
+| S5 | LocalWorkspace 文件/命令生命周期 | PASS | 文件走 upload/download 路径；execute_command 返回 CommandResult（含 timeout_occurred）。独立复审修正：文件路径改为绝对路径 + CWD 泄漏断言（LocalWorkspace file API 裸 Path/CWD 相对，见 M5_CORRECTIONS_LOG R1） |
 | S6 | persistence/resume 往返（显式 conversation_id） | PASS | "Resumed conversation from persistent storage"；事件与状态完整恢复；未传 id 则新建会话 |
 | — | 错误路径（真实 litellm 失败） | 观察 | ConversationRunError 包装 + ConversationErrorEvent + 持久化日志目录——双通道错误模型实证 |
 
@@ -86,6 +86,7 @@ M5 的 14 个 Port Contract 与 Fake Implementations 经受住了真实 upstream
 与最小可执行实验的双重校验：无结构性缺陷，无"为像 OpenHands 而重写架构"
 的需求；全部差异都有明确的 adapter 层承接路径。M6 可以按
 M6_ADAPTER_DESIGN_NOTES.md 启动 OpenHandsRuntimeAdapter，并以 contract suite
-（121 项 + M6 新增映射测试）为验收。
+（当前实测 127 项通过，2026-08-12 独立复审运行 tests/contracts 确认；
+报告原记 121 项为早期统计口径）为验收基线。
 
 本阶段停止在 M6 边界；不自动开始 M6。
