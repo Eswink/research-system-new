@@ -258,6 +258,36 @@ expect("distillation gate loop limit silent", out == {}, out)
 obs_file.unlink(missing_ok=True)
 marker.unlink(missing_ok=True)
 
+# Distillation signature matching: experience entries with error_signature are referenced on match.
+exp_dir = ROOT / ".cursor/experience/entries"
+exp_dir.mkdir(parents=True, exist_ok=True)
+test_entry = exp_dir / "EXP-20260812-999-test-matching.md"
+test_entry.write_text(
+    "---\nid: EXP-20260812-999\nstatus: ACTIVE\ncreated_at: 2026-08-12\nconfidence: 0.5\nscope: repository\n"
+    "review_after: 2026-11-10\noccurrences: 1\nerror_signature: 11111111111111111111\nsupersedes: []\nsource_refs: []\n---\n\n# 测试签名匹配条目\n\n## Problem\n\n测试用。\n",
+    encoding="utf-8",
+)
+match_obs = obs_dir / f"{hashlib.sha256('conv-distill-match'.encode('utf-8')).hexdigest()[:20]}.jsonl"
+match_marker = dist_dir / f"{hashlib.sha256('conv-distill-match'.encode('utf-8')).hexdigest()[:20]}.prompted"
+mismatch_marker = dist_dir / f"{hashlib.sha256('conv-distill-nomatch'.encode('utf-8')).hexdigest()[:20]}.prompted"
+match_obs.write_text(json.dumps({"error_class": "CURSOR_ERROR", "error_signature": "11111111111111111111"}, ensure_ascii=False) + "\n", encoding="utf-8")
+try:
+    rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-match", "status": "completed", "loop_count": 0})
+    expect("distillation signature match returncode", rc == 0, stderr)
+    expect("distillation signature match referenced", "EXP-20260812-999" in str(out.get("followup_message", "")), out)
+    mismatch_obs = obs_dir / f"{hashlib.sha256('conv-distill-nomatch'.encode('utf-8')).hexdigest()[:20]}.jsonl"
+    mismatch_obs.write_text(json.dumps({"error_class": "CURSOR_ERROR", "error_signature": "22222222222222222222"}, ensure_ascii=False) + "\n", encoding="utf-8")
+    try:
+        _, out, _ = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-nomatch", "status": "completed", "loop_count": 0})
+        expect("distillation signature mismatch not referenced", "EXP-20260812-999" not in str(out.get("followup_message", "")), out)
+    finally:
+        mismatch_obs.unlink(missing_ok=True)
+finally:
+    test_entry.unlink(missing_ok=True)
+    match_obs.unlink(missing_ok=True)
+    match_marker.unlink(missing_ok=True)
+    mismatch_marker.unlink(missing_ok=True)
+
 # Session cleanup: per-session runtime state removed; expired observations pruned.
 obs_dir.mkdir(parents=True, exist_ok=True)
 old_obs = obs_dir / "expired-observations.jsonl"

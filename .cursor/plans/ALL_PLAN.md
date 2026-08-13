@@ -10,6 +10,10 @@
 
 | Done | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260813-007](tasks/PLAN-20260813-007-m6-openhands-runtime-adapter.md) | DONE |
+
+| Done | Plan | Status |
+| --- | --- | --- |
 | [x] | [PLAN-20260812-006](tasks/PLAN-20260812-006-m5r-upstream-qualification.md) | DONE |
 | [x] | [PLAN-20260812-005](tasks/PLAN-20260812-005-m5-ports-fakes.md) | DONE |
 | [x] | [PLAN-20260812-004](tasks/PLAN-20260812-004-m4-role-team-task.md) | DONE |

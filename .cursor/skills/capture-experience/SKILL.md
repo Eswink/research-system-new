@@ -16,9 +16,11 @@ disable-model-invocation: true
 3. 新建 `entries/EXP-YYYYMMDD-NNN.md`（模板见 `templates/EXPERIENCE_ENTRY.md`），字段约束：
    - `confidence`：单次观察 ≤ 0.5 并标注"单次观察"；有独立复现或确定性权威证据才可 > 0.5。
    - `occurrences`：独立任务/attempt 次数；跨会话相同 `error_signature` 计为多次。
+   - `error_signature`：从本会话 `.cursor/runtime/observations/<cid>.jsonl` 提取（digest，20 位 hex）；无失败记录留空。仅用于 stop 匹配，不进入 LEARN proposal。
    - `source_refs`：必须链接仓库内可验证来源（observations 行、Plan/Recheck、测试输出）。
    - `review_after`：默认 +90 天。
    - 隐私：不记录完整 prompt、模型输入输出、敏感 Tool 参数、凭据、secret 或用户个人数据。
+   - 历史条目（无该字段）不迁移，匹配逻辑对缺省/空值跳过。
 4. 更新 `.cursor/experience/INDEX.md`（ID/Status/Confidence/Scope/Review After/Summary 一行）。
 5. 若同一 `error_signature` 已出现 ≥2 次且尚未生成 LEARN proposal，提示运行 `capture-learning`；但本 skill 不创建 LEARN proposal，也不直接修改任何 Rule/Skill/Hook。
 6. 清理 `RUNTIME/distillation/<cid>.json` 中本会话的待沉淀标记（已处理）。

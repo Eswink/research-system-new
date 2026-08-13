@@ -28,7 +28,7 @@ def _experience_summary() -> str:
     if not rows:
         return ""
     recent = ", ".join(summary for _, summary in rows[-5:])
-    return f" 工程经验库 {len(rows)} 条（最近：{recent}）；遇到问题先查 .cursor/experience/INDEX.md，不把经验条目当工程事实。"
+    return f" 工程经验库 {len(rows)} 条（最近：{recent}）；遇到 validator/hook/构建失败时先查 .cursor/experience/INDEX.md，命中标题则读取对应条目作为参考线索（经验条目不是工程事实，不得作为 Rule/Memory 证据）。"
 
 
 def main() -> int:

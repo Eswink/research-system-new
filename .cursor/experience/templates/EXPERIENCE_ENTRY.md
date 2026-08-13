@@ -6,6 +6,7 @@ confidence: 0.0
 scope: repository
 review_after: YYYY-MM-DD
 occurrences: 1
+error_signature: ""
 supersedes: []
 source_refs: []
 ---
@@ -32,3 +33,4 @@ source_refs: []
 ## 备注
 
 - 本条是经验缓冲，不是工程事实；重复 occurrence ≥2 时由 capture-learning 生成 LEARN proposal，晋升仍走既有门禁。
+- `error_signature`：取自 `.cursor/runtime/observations/<cid>.jsonl` 的 `error_signature`（digest，20 位 hex）；无失败记录时留空。仅用于 `distillation_gate` 的 stop 匹配引用，不进入 LEARN proposal 与 INDEX。

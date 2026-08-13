@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 
-from common import RUNTIME, atomic_json, emit, read_event, safe_id
+from common import ROOT, RUNTIME, atomic_json, emit, read_event, safe_id
+
+FRONTMATTER_SIGNATURE_RE = re.compile(r"error_signature:\s*([0-9a-f]{20}|)")
 
 
 def _session_failures(cid: str) -> int:
@@ -29,6 +32,50 @@ def _repeated_signatures() -> list[str]:
             if signature:
                 counts[signature] = counts.get(signature, 0) + 1
     return [signature for signature, count in counts.items() if count >= 2]
+
+
+def _session_signatures(cid: str) -> set[str]:
+    path = RUNTIME / "observations" / f"{cid}.jsonl"
+    if not path.is_file():
+        return set()
+    signatures: set[str] = set()
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return signatures
+    for line in lines:
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        signature = str(record.get("error_signature") or "")
+        if signature:
+            signatures.add(signature)
+    return signatures
+
+
+def _matching_experience(signatures: set[str]) -> list[tuple[str, str]]:
+    entries_dir = ROOT / ".cursor" / "experience" / "entries"
+    if not entries_dir.is_dir():
+        return []
+    matches: list[tuple[str, str]] = []
+    for path in sorted(entries_dir.glob("EXP-*.md")):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if not text.startswith("---"):
+            continue
+        match = FRONTMATTER_SIGNATURE_RE.search(text)
+        if match is None:
+            continue
+        signature = match.group(1)
+        if not signature or signature not in signatures:
+            continue
+        title_match = re.search(r"^#\s+(.+)$", text, re.MULTILINE)
+        title = title_match.group(1).strip() if title_match else path.stem
+        matches.append((path.stem, title))
+    return matches
 
 
 def _prompted(cid: str) -> bool:
@@ -63,6 +110,10 @@ def main() -> int:
     parts = [f"本会话有 {failures} 次工具失败；若已形成稳定解法，可运行 capture-experience 沉淀到 .cursor/experience/。"]
     if repeated:
         parts.append(f"有 {len(repeated)} 类失败签名已在 ≥2 次会话中出现，建议 capture-learning 生成 LEARN 提案。")
+    matched = _matching_experience(_session_signatures(cid))
+    if matched:
+        refs = "、".join(f"EXP-{entry_id}（{title}）" for entry_id, title in matched)
+        parts.append(f"经验库匹配条目 {refs}，可参考其解法。")
     emit({"followup_message": " ".join(parts)})
     return 0
 
