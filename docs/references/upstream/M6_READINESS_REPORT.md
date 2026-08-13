@@ -89,4 +89,30 @@ M6_ADAPTER_DESIGN_NOTES.md 启动 OpenHandsRuntimeAdapter，并以 contract suit
 （当前实测 127 项通过，2026-08-12 独立复审运行 tests/contracts 确认；
 报告原记 121 项为早期统计口径）为验收基线。
 
-本阶段停止在 M6 边界；不自动开始 M6。
+## M6 完成后基线更新（2026-08-13）
+
+- contract suite 实测：**192 passed**（tests/adapters/openhands 59 项新增 +
+  tests/contracts 133 项，其中共享套件对真实 adapter 复用 5 项）。
+- openhands_sdk 采用状态：ADOPTED（UPSTREAM_COMPONENTS.yaml + revision
+  lock status 更新 + LICENSE_MATRIX 更新；bundle validator PASS）。
+- S7 端到端 spike（mock OpenAI-compatible 端点 → LLM → Agent →
+  Conversation → safe tool → Workspace → Events → Result）PASS。
+- 本阶段未执行项：DockerWorkspace 容器链路（延后 M7 部署配置阶段，
+  探测式 smoke 记录于测试套件）；resume Manifest compatibility 检查
+  （M6 会话无 resume 入口，M7 接入时按 AGENTS.md §5 强制）；
+  MCP live 集成（M6 仅形状归一化单测）。
+
+## 独立复审后基线更新（2026-08-13，复审闭环）
+
+- 复审发现并修复：策略门禁未接入 agent loop（M6-6）、usage 未入
+  BudgetLedger（M6-7）、fork override 未实现（M6-8）、双通道错误模型
+  记录失真（M6-9）、事件消息未脱敏（M6-10）、SESSION_STARTED 缺失与
+  终端事件重复（M6-11）——全部为 adapter 层修复，M5 Port 零结构修正。
+- 复审后回归：**pytest 840 passed**（adapter 76 项：含 policy 门禁 5、
+  usage ledger 3、fork override 3、错误/取消集成 6、既有 59）；
+  mypy strict 183 files Success；ruff PASS；架构依赖边界 8 passed
+  （lint-imports domain/relay）；validate_bundle PASS；governance PASS。
+- 事件流实证：`session.created → session.started → message → … →
+  session.succeeded`（与 Fake 语义对齐；终端事件无重复）。
+
+本阶段停止在 M6 边界；不自动开始 M7。

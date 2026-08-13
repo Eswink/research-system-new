@@ -82,18 +82,19 @@
 - [ ] duplicate delivery tests
 - [x] WorkflowEngine port + Fake（M5 完成语义冻结；M7 以 contract suite 验收持久化实现）
 
-## M6 / P0 — OpenHands Adapter
+## M6 / P0 — OpenHands Adapter（M6 完成，2026-08-13）
 
-- [ ] relay mapping
-- [ ] Agent/Conversation lifecycle
-- [ ] event normalization
-- [ ] frozen Tool Set
-- [ ] PolicyWrapped direct tool execution
-- [ ] DockerWorkspace
-- [ ] stuck mapping
-- [ ] resume Manifest check
-- [ ] conversation fork mapping
-- [ ] plugin pin/digest
+- [x] relay mapping（`adapters/openhands/llm_factory.py`：三要素透传 + runtime model identifier 变换；S7 mock 端点实证）
+- [x] Agent/Conversation lifecycle（`adapters/openhands/runtime_adapter.py`：create/run/pause/cancel/stream_events/fork 全通过）
+- [x] event normalization（`adapters/openhands/event_mapping.py`：SDK 事件树 → RuntimeEvent 显式映射）
+- [x] frozen Tool Set（`AgentSessionSpec.frozen_tool_set` → Tool spec 装配；tool_mapping 单测）
+- [x] PolicyWrapped direct tool execution + agent loop 策略门禁（`policy_wrapper.py` DENY 阻断 + approval 事件；`policy_enforcing_agent.py` 在 SDK 工具执行点强制 PolicyEvaluator，复审 M6-6 修正）
+- [x] DockerWorkspace（映射代码 `workspace_adapter.build_docker_workspace` + 探测式 smoke；容器链路验证延后 M7）
+- [x] stuck mapping（`runtime_adapter.map_status_to_domain`：STUCK 收敛 FAILED，M6 无自动恢复路径）
+- [ ] resume Manifest check（Manifest compatibility 检查在 M6 范围外：M6 会话无 resume 入口，Fork 直接新会话；M7 接入时按 AGENTS.md §5 强制）
+- [x] conversation fork mapping（`runtime_adapter.fork`：新 lineage 会话；ForkSpec override 重建 LLM/工具集，复审 M6-8 修正）
+- [x] usage → BudgetLedger（run() 终态归一化写入，signal 语义，复审 M6-7 修正）
+- [ ] plugin pin/digest（M6 未引入插件；UPSTREAM_COMPONENTS controls 保持，引入时强制 digest 门禁）
 
 ## P1 — Tool Plane
 

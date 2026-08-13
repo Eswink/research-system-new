@@ -2,13 +2,15 @@
 
 schema_version: 1
 project_version_source: VERSION
-research_phase: M5R
+research_phase: M6
 lock_date: 2026-08-12
-status: RESEARCH_LOCKED_NOT_ADOPTED
+adoption_date: 2026-08-13
+status: ADOPTED
 
-# 说明：本文件是 M5R 源码研究与 spike 的 revision 锁定证据。
-# openhands_sdk 在 UPSTREAM_COMPONENTS.yaml 中仍为 PLANNED；采用证据（resolution/
-# license/upgrade_gate）等 M6 决定 ADOPTED 时按 validator 规则登记，不在此伪造。
+# 说明：本文件是 OpenHands Software Agent SDK revision 锁定与采用证据。
+# M6 实施时按 UPSTREAM_COMPONENTS.yaml 登记 resolution/license/upgrade_gate
+# （openhands_sdk = ADOPTED）；此处 status 由 M5R 的 RESEARCH_LOCKED_NOT_ADOPTED
+# 更新为 ADOPTED，反映 M6 采用事实。
 
 repository:
   name: OpenHands/software-agent-sdk
@@ -37,7 +39,7 @@ pypi:
     algorithm: sha256
     value: "4706ae2cdd6c0804836336d9034ca6448c69a954c6456c43c8291dffb966f56e"  # 独立复核 2026-08-12：下载 PyPI sdist（openhands_sdk-1.42.0.tar.gz）实测 sha256；原记录值 e8be3e58… 经查不属于任何相邻版本（1.40.0/1.41.0/1.42.0），判定为抄录错误并已修正
   key_dependencies:
-    - "litellm>=1.93.0"        # LLM 路由（工作区锁 litellm==1.93.0）
+    - "litellm>=1.93.0"        # LLM 路由（工作区 uv.lock 实测 litellm==1.96.2，2026-08-13 复审修正注释）
     - "fastmcp>=3.0.0"         # MCP client
     - "agent-client-protocol>=0.10.1"
     - "fakeredis[lua]>=2.32.1"

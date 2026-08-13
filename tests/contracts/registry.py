@@ -1,12 +1,19 @@
 """Port 实现注册表：contract suite 的单一事实源。
 
-M6/M7 真实 adapter 落地后在此注册工厂，同一套 contract suite 自动复用
-（无需修改 suite 文件）。当前注册全部 Fake 实现。
+M6 起真实 adapter（OpenHandsRuntimeAdapter）与 Fake 共享同一套 contract
+suite：Fake 保持无参工厂语义；真实 adapter 经模块级工厂注入确定性依赖
+（TestLLM 脚本化 LLM + 隔离临时目录，无网络/无真实凭据）。
 """
 
 from __future__ import annotations
 
+import tempfile
 from collections.abc import Callable
+from pathlib import Path
+
+from openhands.sdk.llm import Message, TextContent
+from openhands.sdk.testing import TestLLM
+from openhands.sdk.workspace.local import LocalWorkspace
 
 from adapters.fakes import (
     FakeAgentRuntime,
@@ -24,11 +31,36 @@ from adapters.fakes import (
     FakeWorkflowEngine,
     FakeWorkspaceBackend,
 )
+from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
+from adapters.openhands.session_types import AdapterDependencies
 
 Factory = Callable[[], object]
 
+# 真实 adapter 的确定性装配（contract 级共享；测试进程退出自动清理）
+_CONTRACT_WORKSPACE = Path(tempfile.mkdtemp(prefix="contract-openhands-ws-"))
+_CONTRACT_PERSIST = tempfile.TemporaryDirectory(prefix="contract-openhands-persist-")
+
+
+def _openhands_runtime_factory() -> OpenHandsRuntimeAdapter:
+    """无参工厂：TestLLM 脚本化响应 + Fake 依赖 + 隔离 workspace。"""
+    llm = TestLLM.from_messages([
+        Message(role="assistant", content=[TextContent(text="Done.")]),
+        Message(role="assistant", content=[TextContent(text="All set.")]),
+    ])
+    deps = AdapterDependencies(
+        credential_resolver=FakeCredentialResolver({"LLM_KEY": "sk-contract"}),
+        policy_evaluator=FakePolicyEvaluator(),
+        build_llm=lambda spec: llm,
+        build_workspace=lambda lease, session_id: LocalWorkspace(
+            working_dir=str(_CONTRACT_WORKSPACE)
+        ),
+        persistence_dir=_CONTRACT_PERSIST.name,
+    )
+    return OpenHandsRuntimeAdapter(deps)
+
+
 PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
-    "agent_runtime": [FakeAgentRuntime],
+    "agent_runtime": [FakeAgentRuntime, _openhands_runtime_factory],
     "workflow_engine": [FakeWorkflowEngine],
     "model_gateway": [FakeModelGateway],
     "tool_provider": [FakeToolProvider],

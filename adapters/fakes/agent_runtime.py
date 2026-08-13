@@ -135,5 +135,25 @@ class FakeAgentRuntime(FakeBase):
         self._events[forked.session_id] = [
             RuntimeEvent(forked.session_id, RuntimeEventKind.SESSION_CREATED)
         ]
+        # ForkSpec override 投影到新会话 spec（与真实 adapter 对齐，M6 复审 F-4）
+        source = self._specs[session_id]
+        if spec.tool_set_override is not None or spec.manifest_revision_ref is not None:
+            self._specs[forked.session_id] = AgentSessionSpec(
+                task_id=source.task_id,
+                task_contract=source.task_contract,
+                role=source.role,
+                agent=source.agent,
+                frozen_tool_set=(
+                    tuple(spec.tool_set_override)
+                    if spec.tool_set_override is not None
+                    else source.frozen_tool_set
+                ),
+                workspace_lease=source.workspace_lease,
+                context_snapshot=source.context_snapshot,
+                budget_reservation=source.budget_reservation,
+                manifest_ref=spec.manifest_revision_ref or source.manifest_ref,
+            )
+        else:
+            self._specs[forked.session_id] = source
         self._record("fork", session_id, result=forked.session_id)
         return forked

@@ -1,15 +1,20 @@
 """AgentRuntime / WorkflowEngine Port 特定契约测试。
 
 覆盖：cancellation 语义、at-least-once 幂等分发、retry 边界、
-状态机合法性、runtime event 顺序（不替代 Domain Event）。
+runtime event 顺序（不替代 Domain Event）。
+
+通用契约（create/run/cancel/pause/fork/unknown-session）按 registry
+参数化，对全部已注册实现（Fake 与真实 adapter）复用；advance() 中间态
+驱动为 FakeAgentRuntime 专属，见 test_agent_runtime_fake_advance.py。
 """
 
 from __future__ import annotations
 
 import pytest
 
-from adapters.fakes import FakeAgentRuntime, FakeWorkflowEngine
+from adapters.fakes import FakeWorkflowEngine
 from packages.application.ports.agent_runtime import (
+    AgentRuntime,
     AgentSessionSpec,
     ForkSpec,
     RuntimeEventKind,
@@ -35,9 +40,9 @@ def _spec() -> AgentSessionSpec:
     )
 
 
-def _as_runtime(factory: type[object]) -> FakeAgentRuntime:
+def _as_runtime(factory: type[object]) -> AgentRuntime:
     runtime = factory()
-    assert isinstance(runtime, FakeAgentRuntime)
+    assert isinstance(runtime, AgentRuntime)
     return runtime
 
 
@@ -71,7 +76,7 @@ def test_agent_runtime_cancel_stops_run(factory: type[object]) -> None:
 
 @pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])
 def test_agent_runtime_pause_resume_is_cooperative(factory: type[object]) -> None:
-    runtime = FakeAgentRuntime()
+    runtime = _as_runtime(factory)
     handle = runtime.create_session(_spec())
     runtime.pause(handle.session_id)
     runtime.cancel(handle.session_id)
@@ -82,7 +87,7 @@ def test_agent_runtime_pause_resume_is_cooperative(factory: type[object]) -> Non
 
 @pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])
 def test_agent_runtime_fork_creates_new_lineage(factory: type[object]) -> None:
-    runtime = FakeAgentRuntime()
+    runtime = _as_runtime(factory)
     handle = runtime.create_session(_spec())
     forked = runtime.fork(
         handle.session_id,
@@ -90,77 +95,6 @@ def test_agent_runtime_fork_creates_new_lineage(factory: type[object]) -> None:
     )
     assert forked.session_id != handle.session_id
     assert forked.status == AgentSessionState.State.CREATED
-
-
-@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])
-def test_agent_runtime_advance_drives_intermediate_states(factory: type[object]) -> None:
-    """P2-1：advance 显式驱动全部中间态（INITIALIZING/WAITING_FOR_APPROVAL/STUCK）。"""
-    runtime = FakeAgentRuntime()
-    handle = runtime.create_session(_spec())
-    session_id = handle.session_id
-    assert runtime.advance(session_id, AgentSessionState.Transition.INITIALIZE) == (
-        AgentSessionState.State.INITIALIZING
-    )
-    assert runtime.advance(session_id, AgentSessionState.Transition.START) == (
-        AgentSessionState.State.RUNNING
-    )
-    assert runtime.advance(session_id, AgentSessionState.Transition.REQUEST_APPROVAL) == (
-        AgentSessionState.State.WAITING_FOR_APPROVAL
-    )
-    assert runtime.advance(session_id, AgentSessionState.Transition.APPROVAL_GRANTED) == (
-        AgentSessionState.State.RUNNING
-    )
-    assert runtime.advance(session_id, AgentSessionState.Transition.STUCK) == (
-        AgentSessionState.State.STUCK
-    )
-    assert runtime.advance(session_id, AgentSessionState.Transition.UNSTUCK) == (
-        AgentSessionState.State.RUNNING
-    )
-    assert runtime.advance(session_id, AgentSessionState.Transition.PAUSE) == (
-        AgentSessionState.State.PAUSED
-    )
-
-
-@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])
-def test_agent_runtime_advance_appends_events_in_order(factory: type[object]) -> None:
-    runtime = FakeAgentRuntime()
-    handle = runtime.create_session(_spec())
-    session_id = handle.session_id
-    runtime.advance(session_id, AgentSessionState.Transition.INITIALIZE)
-    runtime.advance(session_id, AgentSessionState.Transition.START)
-    runtime.advance(session_id, AgentSessionState.Transition.REQUEST_APPROVAL)
-    kinds = [event.kind for event in runtime.stream_events(session_id)]
-    assert kinds == [
-        RuntimeEventKind.SESSION_CREATED,
-        RuntimeEventKind.SESSION_STARTED,
-        RuntimeEventKind.APPROVAL_REQUESTED,
-    ]
-
-
-@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])
-def test_agent_runtime_advance_rejects_illegal_transition(factory: type[object]) -> None:
-    from packages.domain.state_base import InvalidTransitionError
-
-    runtime = FakeAgentRuntime()
-    handle = runtime.create_session(_spec())
-    with pytest.raises(InvalidTransitionError):
-        # CREATED 状态不允许直接 PAUSE
-        runtime.advance(handle.session_id, AgentSessionState.Transition.PAUSE)
-
-
-@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])
-def test_agent_runtime_run_converges_from_intermediate_state(factory: type[object]) -> None:
-    """P2-1：从 WAITING_FOR_APPROVAL 中间态 run 仍收敛到 outcome 终态。"""
-    runtime = FakeAgentRuntime(outcome=AgentSessionState.State.SUCCEEDED)
-    handle = runtime.create_session(_spec())
-    session_id = handle.session_id
-    runtime.advance(session_id, AgentSessionState.Transition.INITIALIZE)
-    runtime.advance(session_id, AgentSessionState.Transition.START)
-    runtime.advance(session_id, AgentSessionState.Transition.REQUEST_APPROVAL)
-    result = runtime.run(session_id)
-    assert result.status == AgentSessionState.State.SUCCEEDED
-    kinds = [event.kind for event in runtime.stream_events(session_id)]
-    assert kinds[-1] is RuntimeEventKind.SESSION_SUCCEEDED
 
 
 @pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])

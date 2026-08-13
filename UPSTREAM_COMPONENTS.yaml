@@ -104,11 +104,27 @@ components:
       required_checks: [lock_refresh, license_review, relay_gateway_regression]
 
   - id: openhands_sdk
-    adoption_status: PLANNED
+    adoption_status: ADOPTED
     decision_status: APPROVED
     integration_mode: ADAPTER
     role: primary_generic_agent_runtime
-    source: "https://github.com/OpenHands/software-agent-sdk"
+    source:
+      kind: PYPI
+      package: openhands-sdk
+      url: "https://pypi.org/project/openhands-sdk/1.42.0/"
+    resolution:
+      version: "1.42.0"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "4706ae2cdd6c0804836336d9034ca6448c69a954c6456c43c8291dffb966f56e"
+    license:
+      spdx: MIT
+      evidence: "https://raw.githubusercontent.com/OpenHands/software-agent-sdk/v1.42.0/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, adapter_contract_suite, security_tests, vertical_slice_regression]
     controls:
       - pin_exact_version_before_adoption
       - contract_tests

@@ -1,4 +1,50 @@
-# OpenHands Adapter Plan v0.4.0
+# OpenHands Adapter v0.4.0 — M6 实现状态
+
+> 本文档原为 M5R 规划（Plan v0.4.0）；M6 已将规划落地为
+> `adapters/openhands/` 实现并通过 contract suite。本节记录实现事实，
+> 规划章节保留为设计意图与约束。
+
+## M6 实现事实（2026-08-13，含独立复审修正）
+
+- 实现位置：`adapters/openhands/`（runtime_adapter / session_builder /
+  llm_factory / tool_mapping / policy_wrapper / policy_enforcing_agent /
+  event_mapping / error_mapping / workspace_adapter / usage_mapping）。
+- 采用版本：openhands-sdk==1.42.0（PyPI，sdist sha256 见
+  UPSTREAM_COMPONENTS.yaml / OPENHANDS_REVISION_LOCK.yaml；revision lock
+  status 已由 RESEARCH_LOCKED_NOT_ADOPTED 更新为 ADOPTED）。
+- OpenHands 类型只存在于 `adapters/openhands/`；Domain/Port 零 import
+  （fault injection 负测覆盖）。
+- AgentRuntime Port 六方法全部实现并通过 M5 contract suite 复用
+  （Fake 与真实 adapter 共享同一套通用契约测试）。
+- cancel 语义（R-01）：SDK interrupt → PAUSED，adapter 显式收敛为
+  domain CANCELLED 终态；重复 cancel 幂等；终端后 cancel no-op；
+  run 进行中 cancel 真实并发测试覆盖（工具执行中取消 → CANCELLED）。
+- 错误映射（R-07 修正）：SDK 双通道错误模型——ConversationErrorEvent
+  （ErrorClassification 闭集）与 ConversationRunError（original_exception
+  保留原始异常）均被归一化；事件分类优先，其次原始异常类型
+  （LLMTimeoutError → TransientPortError 等）；SDK 异常类型不越过边界。
+- LLM Relay：base_url/api_key/model 三要素透传；非知名 model +
+  自定义 base_url 时 runtime model identifier 加 `openai/` 前缀变换
+  （R-08 实证；变换只存在于 llm_factory）。
+- Policy（R-03 修正）：PolicyEnforcingAgent 在 SDK agent loop 工具执行点
+  （_execute_action_event）强制 PolicyEvaluator——DENY/REQUIRE_APPROVAL
+  返回拒绝反馈且不触达工具 executor；REQUIRE_APPROVAL 额外投影
+  approval.requested 事件；execute_tool 直通面由 PolicyWrappedToolExecutor
+  独占门禁（adapter.execute_tool_gated）。
+- Workspace（R-04/R-17）：LocalWorkspace 默认 deny host shell；文件路径
+  绝对化 + 工作区根校验；DockerWorkspace 映射代码 + 探测式 smoke
+  （容器链路验证延后 M7 部署配置阶段）。
+- Usage（R-16 记账面）：run() 终态后 ConversationStats →
+  UsageLedgerEntry 归一化并实际写入 BudgetLedger（signal 语义，记账
+  失败不阻断结果）；BudgetLedger 仍 Research OS 拥有。
+- fork（复审 F-4 修正）：ForkSpec.model_override 经注入的
+  build_llm_for_fork 重建 LLM；tool_set_override 重建工具集；
+  manifest_revision_ref 投影到新会话 spec。
+- 事件投影（复审 F-5/F-10 修正）：run() 启动投影 SESSION_STARTED（与
+  Fake 对齐）；终端 kind 已由事件映射投影时不重复追加；RuntimeEvent
+  message 经 domain redaction 脱敏。
+- Persistence Boundary：OpenHands conversation 持久化仅 runtime 参考，
+  不替代 PostgreSQL Run/AgentRun/Manifest/Domain Event。
 
 ## 1. Decision
 

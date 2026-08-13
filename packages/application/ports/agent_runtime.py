@@ -68,10 +68,13 @@ class RuntimeEventKind(StrEnum):
     """归一化 runtime event（AGENT_RUNTIME.md §5 状态映射的流式投影）。
 
     属于 AgentRuntime 输出契约，不替代 Domain Event（EVENT_MODEL.md）。
+    MESSAGE 由 M6 增补：OpenHands MessageEvent 是会话消息投影（M5R 审计
+    确认；M6_ADAPTER_DESIGN_NOTES §2 要求 message 覆盖）。
     """
 
     SESSION_CREATED = "session.created"
     SESSION_STARTED = "session.started"
+    MESSAGE = "message"
     STEP_COMPLETED = "step.completed"
     TOOL_CALL_REQUESTED = "tool_call.requested"
     APPROVAL_REQUESTED = "approval.requested"

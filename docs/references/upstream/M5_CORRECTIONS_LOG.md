@@ -49,3 +49,36 @@ Port 契约、Domain 类型或 contract suite 的证据。（2026-08-12 独立�
 | R3 | 审计 §8 补充 LocalWorkspace 文件 API 路径基准不一致（file_upload/download 裸 Path vs git_* working_dir 相对）；BaseWorkspace docstring 含过期 read_file 示例 | S5 重跑实证 + `workspace/local.py`/`workspace/base.py` 源码 | 审计文档补充 |
 | R4 | M5 matrix §4 / M6 design notes §5 / risk register 增 R-17（路径解析差异） | 同上 | 文档同步 |
 | R5 | M6_READINESS_REPORT contract 数量修正为实测 127 | `pytest tests/contracts` 实测 127 passed（原记 121 为早期口径） | 报告修正 |
+
+## M6 实施增补（2026-08-13，M6 实现期间的 M5/M5R mismatch 记录）
+
+M6 实现确认 M5 零结构修正结论成立；以下为实现过程发现并落地的
+adapter 层承接与最小 Port 增补（不改变 Port 语义）：
+
+| # | 发现 | 证据 | 处理 |
+| --- | --- | --- | --- |
+| M6-1 | `RuntimeEventKind` 缺少 message 投影（M5R 审计要求覆盖 message 但 Port 枚举无对应值） | `packages/application/ports/agent_runtime.py` 原枚举无 MESSAGE；OpenHands MessageEvent 是会话消息事件 | Port 增补 `MESSAGE = "message"`（最小必要修正；Fake 不产生该事件，contract suite 不受影响） |
+| M6-2 | SDK 无 ConversationRunError 类；错误模型为事件驱动（ConversationErrorEvent + ErrorClassification 闭集 AUTH/QUOTA/RATE_LIMIT/CONFIG/TRANSIENT/AGENT_ACTION/INTERNAL/UNKNOWN） | PyPI 包 openhands-sdk==1.42.0 `event/conversation_error.py` + `event/error_classification.py`；run() 抛错路径为 `_emit_run_limit_error` 发事件 | error_mapping 按 ErrorClassification.kind 映射（M6_ADAPTER_DESIGN_NOTES §2 的\"ConversationRunError 双通道\"修正为事件驱动单通道 + 兜底异常） |
+| M6-3 | 非知名 model + 自定义 base_url 时 litellm 无法推断 provider（`get_llm_provider` 抛错），S2 spike 未覆盖真实请求层 | S7 mock 端点实证：`relay-model` 无前缀请求被 litellm 拒绝 | llm_factory `resolve_runtime_model_name`：探测失败加 `openai/` 前缀（MVP 唯一协议 OPENAI_COMPATIBLE；变换只存在于 adapter） |
+| M6-4 | `Agent.tools` 字段要求 `Tool` 对象（Pydantic 校验），不是字符串列表 | `agent/agent.py` `tools` 字段校验 + S7 实证 | runtime_adapter `_default_agent` 用 `tools_for_frozen_set` 装配 `Tool(name=...)` |
+| M6-5 | SDK `ToolDefinition` 实例 name 自动推导（`__init_subclass__` snake_case），构造器不接受 name 参数 | `tool/tool.py` `name: ClassVar[str]` + `__init_subclass__` | 自定义工具类命名遵循 snake_case 推导（S3 模式）；frozen set 以推导名对齐 |
+
+## 独立复审修正（2026-08-13，M6 完成后独立端到端复审）
+
+复审以当前代码 + M5 契约 + pinned v1.42.0 源码为事实来源，发现并修复以下
+缺陷（此前 RECHECK-20260813-007 判定 PASS 的依据不完整）：
+
+| # | 严重度 | 发现 | 证据 | 处理 |
+| --- | --- | --- | --- | --- |
+| M6-6 | 阻断（DoD AC-04 未落地） | `PolicyWrappedToolExecutor` 仅单测实例化，未接入 adapter 主路径；SDK agent loop 内工具执行无 PolicyEvaluator 门禁（`execute_tool` 官方文档确认可绕过 confirmation/security） | `runtime_adapter.py` 无 policy_wrapper 引用；`conversation/impl/local_conversation.py::execute_tool` docstring；agent loop 执行链 `_execute_action_event` | 新增 `policy_enforcing_agent.py`（SDK Agent 子类覆写 `_execute_action_event`，DENY/REQUIRE_APPROVAL 不触达 executor；evaluator 经序列化安全注册表传递）；`execute_tool_gated` 独占直通面；策略门禁全链路测试 5 项 |
+| M6-7 | 阻断（DoD AC-07 未落地） | `usage_entries_from_stats` 仅纯函数测试；`budget_ledger`/`usage_reporter` 只存字段从未调用，run() 后 ledger 无条目 | `runtime_adapter.py` 无 usage 引用；ledger 集成测试无 | run() 终态后经 `SessionBuilder.record_usage` 归一化写入 BudgetLedger（signal 语义，失败不阻断）；集成测试 3 项 |
+| M6-8 | MAJOR | `fork()` 调用 `conversation.fork()` 无参，ForkSpec.model_override / tool_set_override / manifest_revision_ref 全部静默忽略 | SDK `fork(agent=...)` 签名（`local_conversation.py:713`）；M6_ADAPTER_DESIGN_NOTES §2 fork 映射要求 | `build_llm_for_fork` 注入点 + agent 重建（PolicyEnforcingAgent 保留门禁）；Fake 同步投影 override；测试 3 项 |
+| M6-9 | MAJOR | 错误模型记录失真：M6-2 声称"SDK 无 ConversationRunError 类"；实测 `ConversationRunError` 存在（original_exception 保留原始异常），双通道错误模型成立 | `conversation/exceptions.py::ConversationRunError`；`run()` except 路径（`local_conversation.py:1997`） | `map_conversation_run_error`：事件分类优先，其次原始异常类型（LLMTimeoutError→TransientPortError 等）；run() 异常路径先投影事件再归一化；LLMContextWindowExceedError 等错误集成测试 4 项 |
+| M6-10 | MAJOR | RuntimeEvent.message 未脱敏：ConversationErrorEvent.detail 含 API Key 时直接进入 SESSION_FAILED 事件消息 | 实测：LLM 异常消息含 `sk-...` 出现在事件 message | event_mapping 全部 message 构造经 `redact_exception_message`（domain redaction）；secret 不进事件/错误/结果测试 |
+| M6-11 | MAJOR | 真实 adapter 从不产生 SESSION_STARTED（Fake 产生）——事件流不对称；错误事件重复风险：ConversationErrorEvent→SESSION_FAILED 与 `_finish` 追加重复 | 事件流实测 `[created, message, message, succeeded]` 无 started；`_finish` 无条件追加 | run() 首次驱动投影 SESSION_STARTED；`_finish` 对已投影终端 kind 去重（terminal_kinds_seen） |
+| M6-12 | 注意 | 共享 contract suite 未断言中间事件（SESSION_STARTED/终端去重），掩盖 M6-11 | contract 只检查 kinds[0]/kinds[-1] | adapter 级测试补齐（事件流完整性 + 错误单次 SESSION_FAILED） |
+
+复审后回归：pytest **840 passed**（含架构 8 项）；mypy strict 183 files
+Success；ruff PASS；validate_bundle PASS；governance validate PASS；
+依赖边界（lint-imports domain/relay）PASS。M5 Port 契约未发生结构性修正
+（M6-6 至 M6-12 全部为 adapter 层修复，Fake 仅同步 fork override 投影）。

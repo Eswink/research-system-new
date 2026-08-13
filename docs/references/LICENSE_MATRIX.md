@@ -17,7 +17,7 @@
 | dependency-cruiser 18.2.0 | MIT; exact package + sha512 integrity in `pnpm-lock.yaml` | ADOPTED TypeScript architecture tooling |
 | Prettier 3.9.6 | MIT; exact package + sha512 integrity in `pnpm-lock.yaml` | ADOPTED format-check tooling |
 | OpenHands Software Agent SDK | MIT | dependency + adapter |
-| OpenHands Software Agent SDK v1.42.0 (391fbb8d) | MIT; revision lock in `docs/references/upstream/OPENHANDS_REVISION_LOCK.yaml` | M5R research lock; adoption pending M6 |
+| OpenHands Software Agent SDK v1.42.0 (391fbb8d) — `openhands_sdk` | MIT; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml`; revision lock in `docs/references/upstream/OPENHANDS_REVISION_LOCK.yaml` | ADOPTED runtime adapter (M6) |
 | Temporal Server/SDK | verify exact components/version | later adapter |
 | Open Policy Agent | Apache-2.0 | optional adapter |
 | OpenTelemetry | Apache-2.0 ecosystem; verify packages | observability |
