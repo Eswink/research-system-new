@@ -59,8 +59,11 @@ Foundation / Executable Research Kernel = completed
 
 M7 是核心基础设施阶段结束的 Integration Milestone（详见
 [M7_COMPLETION_RECORD.md](M7_COMPLETION_RECORD.md)）；M7 之后仓库进入
-产品能力建设阶段（见根 `BACKLOG.md` 的 Remaining Technical Debt 与
-Next Product Capability 分区）。
+产品能力建设阶段。未来里程碑（M8-M19）的编号、名称、顺序与依赖 DAG
+以 [MILESTONES.md](MILESTONES.md) 的 Post-M7 Roadmap 节为唯一权威；
+执行映射见根 `BACKLOG.md` 的 Remaining Technical Debt 与 Next Product
+Capability 分区。本矩阵不记录 M8 及以后的完成事实，相应阶段通过独立
+复审后由后续矩阵承接。
 
 ## 证据来源与边界
 

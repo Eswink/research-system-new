@@ -168,8 +168,8 @@ Requested Capabilities
 - 内容寻址 Artifact 由 `SqliteArtifactStore`（本地 blob）提供；S3/MinIO
   对象存储为生产部署演进目标，同 ArtifactStore Port。
 - Next.js Console / FastAPI API / Secret Store / OTel 为部署演进目标
-  （`BACKLOG.md` Next Product Capability），当前以离线质量门禁与
-  `tests/e2e/` 验证内核行为。
+  （归属 M13 / M15 / M19，见 `docs/roadmap/MILESTONES.md` Post-M7
+  Roadmap），当前以离线质量门禁与 `tests/e2e/` 验证内核行为。
 
 ## 8. 数据一致性
 

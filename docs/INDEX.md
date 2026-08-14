@@ -19,7 +19,7 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 5. **哪些 Contracts 已稳定？** → [PORTS.md](architecture/PORTS.md)、`../schemas/`、`../UPSTREAM_COMPONENTS.yaml`
 6. **OpenHands 在哪里？** → [OPENHANDS_ADAPTER.md](integration/OPENHANDS_ADAPTER.md)、[AGENT_RUNTIME.md](architecture/AGENT_RUNTIME.md)
 7. **upstream 研究在哪里？** → [Open Source / Upstream](#open-source--upstream) 节
-8. **当前下一阶段是什么？** → `../BACKLOG.md` Next Product Capability 区
+8. **当前下一阶段是什么？** → `roadmap/MILESTONES.md` Post-M7 Roadmap 节（唯一权威）；执行映射见 `../BACKLOG.md`
 9. **BACKLOG 在哪里？** → `../BACKLOG.md`
 10. **如何验证当前仓库？** → `../README.md` 校验节（m0 profile 全量回归 + validators）
 
@@ -141,7 +141,7 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 - `roadmap/COMPLETION_MATRIX_M0_M7.md` — M0-M7/M5R 完成事实矩阵（阶段、证据、commit、状态）
 - `roadmap/M7_COMPLETION_RECORD.md` — M7 Integration Milestone 完成记录（E2E chain 逐项证据）
 - `roadmap/VERTICAL_SLICE_V0_4_0.md`
-- `roadmap/MILESTONES.md` — milestone index（含 M5R、真实顺序与依赖 DAG），same numbering as Bootstrap
+- `roadmap/MILESTONES.md` — M0-M7 执行索引 + Post-M7 Roadmap 唯一权威（M8-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐）
 - `versioning/VERSION_POLICY.md`
 
 ## 阶段工程记录（Plan / Recheck）

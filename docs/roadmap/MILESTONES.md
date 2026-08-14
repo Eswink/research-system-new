@@ -1,7 +1,9 @@
 # Milestones v0.4.0
 
-`CODEX_BOOTSTRAP.md` 是里程碑详细定义；本文件提供同一编号体系的执行索引
-与完成状态，不维护第二套阶段语义。
+M0-M7 里程碑详细定义保留在 `CODEX_BOOTSTRAP.md`（历史契约）；Post-M7
+未来里程碑的编号、名称、顺序与详细定义以本文件为**唯一权威来源**
+（`BACKLOG.md` 与 `CODEX_BOOTSTRAP.md` 只保留指针，不维护第二套路线）。
+本文件对 M0-M7 只提供执行索引与完成状态，不改写已完成历史。
 
 ## 当前状态
 
@@ -11,7 +13,8 @@ Foundation / Executable Research Kernel = completed（M0-M7 含 M5R，2026-08-14
 
 完成矩阵与证据见 [COMPLETION_MATRIX_M0_M7.md](COMPLETION_MATRIX_M0_M7.md)；
 M7 集成里程碑记录见 [M7_COMPLETION_RECORD.md](M7_COMPLETION_RECORD.md)。
-M7 之后进入产品能力建设阶段（根 `BACKLOG.md`）。
+M7 之后进入产品能力建设阶段；未来 Milestone 路线见本文 Post-M7 Roadmap
+节（唯一权威），执行索引见根 `BACKLOG.md`。
 
 ## 真实完成顺序
 
@@ -55,3 +58,860 @@ M0（工程门禁基线）
 M0-M7 各阶段的原始定义保留在 `CODEX_BOOTSTRAP.md`（canonical milestone
 details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 （M7 场景/故障/DoD）；本文件不重复正文。
+
+---
+
+# Post-M7 Roadmap（唯一权威）
+
+> 本节是 M8 及以后所有未来 Milestone 的**唯一权威定义**：编号、名称、
+> 顺序、依赖 DAG、分层与下一阶段建议以此为准。`BACKLOG.md` 与
+> `CODEX_BOOTSTRAP.md` 中的 Post-M7 内容均为指向本节的短指针，不维护
+> 第二套路线。M0-M7（含 M5R）已完成历史不在此改写，见上方 Milestone
+> Index 与 [COMPLETION_MATRIX_M0_M7.md](COMPLETION_MATRIX_M0_M7.md)。
+
+## 规划原则
+
+```text
+能力正确 → 可评测 → 真正科研 → 产品体验 → Durable → Distributed → Scale → Governance
+```
+
+- 先验证研究能力本身有价值，再投入 UI、Temporal、GPU 等基础设施；
+  不为未来假设制造没有当前需求的基础设施。
+- 每个 Milestone 可独立开发、独立复审，有可验证 Outcome，不只描述
+  “写什么代码”。
+- 一个阶段不同时横跨 Runtime、UI、Distributed、Governance、Research
+  Quality 等多个问题域；强相关能力合并，弱相关能力拆分。
+
+## 未来 Milestone 总览
+
+| Stage | 名称 | 分层 | Hard Deps | 状态 |
+| --- | --- | --- | --- | --- |
+| M8 | Research Capability Plane（Tool Plane + Skill Registry） | MVP | M7 | PLANNED |
+| M9 | Real Experiment Runtime | MVP | M7 | PLANNED |
+| M10 | Evidence / Memory / Provenance | MVP | M7 | PLANNED |
+| M11 | Evaluation Plane | MVP | M7 | PLANNED |
+| M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | PLANNED |
+| M13 | Research Console | Product | M12 | PLANNED |
+| M14 | Durable Workflow + PostgreSQL | Production | M12 | PLANNED |
+| M15 | Observability / Cost / Eval Operations | Production | M11 | PLANNED |
+| M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | PLANNED |
+| M17 | GPU / HPC | Scale | M16+M9 | PLANNED |
+| M18 | Multi-user / Organization / RBAC | Enterprise | M13+M14 | PLANNED |
+| M19 | Production Security / Governance + Backup/Recovery/SLO | Enterprise | M14+M15+M18 | PLANNED |
+
+## 依赖 DAG
+
+```mermaid
+graph TD
+    M7["M7 Reliable Mock Vertical Slice（DONE）"] --> M8["M8 Capability Plane"]
+    M7 --> M9["M9 Real Experiment Runtime"]
+    M7 --> M10["M10 Evidence / Memory"]
+    M7 --> M11["M11 Evaluation Plane"]
+    M8 --> M12["M12 First Real Research Workflow（MVP 判定）"]
+    M9 --> M12
+    M10 --> M12
+    M11 --> M12
+    M12 --> M13["M13 Research Console"]
+    M12 --> M14["M14 Durable Workflow + PostgreSQL"]
+    M11 --> M15["M15 Observability / Cost / Eval Ops"]
+    M12 -. soft .-> M15
+    M14 --> M16["M16 Distributed Execution + Remote Sandbox"]
+    M9 -.-> M17["M17 GPU / HPC"]
+    M16 --> M17
+    M13 --> M18["M18 Multi-user / Org / RBAC"]
+    M14 --> M18
+    M14 --> M19["M19 Security / Governance / SLO"]
+    M15 --> M19
+    M18 --> M19
+```
+
+文字版（`→` = 硬依赖，`-·` = 软依赖）：
+
+```text
+M7 → M8 → M12 → M14 → M16 → M17
+M7 → M9 → M12      M9 -· M17
+M7 → M10 → M12
+M7 → M11 → M12 → M13 → M18 → M19
+              M11 → M15 → M19
+              M12 -· M15
+              M14 → M18、M16、M19
+```
+
+### Integration Gates（汇聚门）
+
+| Gate | 位置 | 条件 |
+| --- | --- | --- |
+| IG-1 | M12 Entry | M8、M9、M10、M11 全部通过独立复审 + m0 profile 全绿 |
+| IG-2 | M14 Entry | M12 PASS（MVP 成立判定为 go） |
+| IG-3 | M16 Entry | M14 PASS |
+| IG-4 | M18 Entry | M13 + M14 PASS |
+| IG-5 | M19 Entry | M14 + M15 + M18 PASS |
+
+### 分层（MVP → Enterprise）
+
+```text
+MVP        M8-M12（M12 通过即 MVP 成立：真实任务 + 真实工具 + 真实实验 + 证据 + 评测闭环）
+Product    M13（研究控制台：配置 / dry-run / 时间线 / 审批 / 证据地图）
+Production M14-M15（PostgreSQL canonical state + durable workflow + 隐私优先观测 + 成本）
+Scale      M16-M17（分布式 worker / 远程沙盒 / GPU-HPC）
+Enterprise M18-M19（多租户 RBAC / 安全治理 / 备份恢复 / SLO）
+```
+
+### 主开发路径与并行策略
+
+- 串行主线：`M7 → M8 → M12 → M14 → M16 → M17 → M19`
+- 并行组 1（M7 之后）：M8 ∥ M9 ∥ M10 ∥ M11
+- 并行组 2（M12 之后）：M13 ∥ M14 ∥ M15
+- 并行组 3（M14/M13 之后）：M16 ∥ M18
+- 推荐主开发路径：先启动 **M8**（M12 硬依赖中体量最大），M9/M10/M11
+  并行推进，在 IG-1 汇聚；M12 通过后 M13/M14/M15 并行，M15 可提前
+  （软依赖 M12）。
+- 适合独立并行工作流：M9（实验沙盒）、M10（证据账本）、M11（评测面）
+  三者互不阻塞；M15 观测可与 M12 之后的任一组并行。
+
+### Evaluation Plane 规则
+
+M11 建立正式 Engineering Evaluation Plane。**M11 通过后**，以下变更的
+重要程度由实现团队判定为 significant 的，必须进行 before/after
+regression（以 Eval Harness + deterministic gates 为基准），不允许仅
+凭 demo 判断效果：
+
+- Model（ModelDefinition / ModelProfile / 绑定变更）
+- Prompt（角色与任务提示变更）
+- Skill（技能定义与组合变更）
+- Tool（工具接入 / 升级 / 替换）
+- Role Strategy（角色激活策略、团队模板变更）
+- Runtime（AgentRuntime adapter 升级 / 替换）
+- Research Workflow（协议、编排、门禁变更）
+
+### Upstream Qualification 时间表
+
+仅规划“何时需要进行 upstream qualification”；不批量 clone、不在本
+路线阶段内开始正式集成。每次 qualification 按 M5R 模式执行：源码审计 +
+最小可执行 spike + revision lock + 结论入 `docs/references/upstream/`。
+
+| Milestone | Upstream | 动作 |
+| --- | --- | --- |
+| M8 | MCP ecosystem（Streamable HTTP + stdio） | 协议/生态 qualification，选 adapter 形态 |
+| M9 | Docker / execution sandbox 项目 | 镜像供应链与沙盒边界 qualification |
+| M11 | evaluation 基础设施 | harness 选型 qualification |
+| M14 | Temporal | 采用/不采用决策（ADAPTER 隔离，不进 Domain；若采用需 revision lock） |
+| M15 | OpenTelemetry | collector/SDK qualification（genai 内容默认关闭） |
+| M16 | SWE-ReX | 远程并行执行 qualification |
+| M17 | GPU/HPC 厂商 API | 调度器（如 Slurm）与云 GPU API qualification |
+| M19 | OPA + Secret Manager | OPA 采用/不采用决策；Secret Manager 选型 |
+
+### 下一阶段推荐
+
+**M8 Research Capability Plane**。理由：M7 完成的是内核，真正科研
+需要真实工具能力；M8 是 M12（MVP 验证点）硬依赖中体量最大的一项，
+尽早开工可让并行组 1 按时在 IG-1 汇聚。启动 M8 前需按仓库契约从
+Plan Mode 立项，本路线不自动开工任何 Milestone。
+
+---
+
+## M8 — Research Capability Plane（Tool Plane + Skill Registry）
+
+### Purpose
+
+为 Agent 提供真实、安全、可治理的科研工具能力，落地 ADR-0005/0009/0019。
+
+### Plain-language Explanation
+
+造一个“科研工具货架”：定义哪些工具可用、谁批准、怎么安装与撤销、
+健康状态如何检查、凭证如何与 LLM 凭证隔离，让 Agent 真正能调用
+文献检索、数据计算等工具而不是空转。
+
+### Inputs
+
+M7 的 ToolProvider Port + contract suite（`tests/contracts/`）；
+M1/M4 的 `SkillSpec / Capability / CapabilityGrant / ToolSpec /
+ToolProviderSpec / ToolPackManifest` Domain 实体；`PolicyEvaluator`、
+`ArtifactStore`（大结果转储）、`CredentialResolver` Port。
+
+### Scope
+
+ToolCatalog/ToolResolver use case；MCP Streamable HTTP + stdio
+adapter；ToolPack manifest/install/update/revoke 生命周期；tool
+health/circuit breaker；tool credential separation；tool effect/risk
+classes；large result artifact indirection；Skill Registry（Skill
+生命周期、能力路由与复用）。
+
+### Non-goals
+
+不引入真实第三方工具库（仅契约 + mock provider）；不做 UI；不做
+分布式工具执行；不做 ToolPack 市场/发布平台。
+
+### Key Deliverables
+
+`adapters/mcp/`；`packages/application/tool_plane/`（ToolResolver、
+ToolPack 生命周期）；contract suite 扩展；至少 2 个 mock tool
+provider；供应链 pin（digest）验证测试。
+
+### Entry Gate
+
+M7 DONE；M8 计划经 Plan Mode 批准。
+
+### DoD / Exit Gate
+
+MCP Streamable HTTP + stdio adapter 通过 ToolProvider contract
+suite；ToolPack install/update/revoke 有单元 + 契约测试；health/
+circuit breaker 故障注入测试；tool credential 与 LLM credential
+隔离测试；供应链 pin 验证；独立复审 PASS + m0 profile 全绿。
+
+### Dependencies
+
+Hard：M7。Soft：M11（评测工具质量，但不阻塞 M8）。
+
+### Parallelism
+
+M9、M10、M11。
+
+### Risks
+
+MCP 生态多样性导致 adapter 抽象泄漏；工具风险分级不足造成安全漏洞；
+ToolPack 供应链治理复杂度被低估。
+
+### Next Readiness
+
+解锁 M12（真实科研工作流可使用真实工具）。
+
+## M9 — Real Experiment Runtime
+
+### Purpose
+
+让实验（代码执行）在隔离容器中真实运行并可复现，清偿 M7 遗留 P1 债。
+
+### Plain-language Explanation
+
+造一个“实验沙盒”：把 M7 里用 Fake 语义假装执行的实验步骤，变成在
+容器里真实跑代码、采集指标、留下可复现的审计记录。
+
+### Inputs
+
+M7 的 ExecutionBackend Port + contract suite；M6 的 DockerWorkspace
+映射代码；M1 的 `ExperimentPlan / ExperimentRun / Metric / Artifact`
+Domain 实体；`WorkspaceBackend`、`ArtifactStore` Port。
+
+### Scope
+
+ExecutionBackend 容器实现（清偿 P1 债）；DockerWorkspace 容器链路
+全量验证；ExperimentPlan → Run → Metric 执行链；
+ReproducibilityAudit；retention/export bundle。
+
+### Non-goals
+
+不做远程执行/多 worker（M16）；不做 GPU（M17）；不做通用代码沙盒
+强化（超出容器边界的系统级隔离）；不做 notebook 式交互 UI。
+
+### Key Deliverables
+
+`adapters/execution/`（容器执行）；experiment 执行 use case；
+ReproducibilityAudit 模块；容器链路 E2E 测试。
+
+### Entry Gate
+
+M7 DONE；M9 计划经 Plan Mode 批准。
+
+### DoD / Exit Gate
+
+ExecutionBackend contract suite 以真实容器实现通过；DockerWorkspace
+创建/挂载/清理全量验证；ExperimentRun 可复现（同 input 同 digest）；
+容器超时/崩溃故障注入测试；镜像 pin 与供应链登记；独立复审 PASS +
+m0 profile 全绿。
+
+### Dependencies
+
+Hard：M7。Soft：M16（远程执行是后续扩展）。
+
+### Parallelism
+
+M8、M10、M11。
+
+### Risks
+
+容器安全边界（默认 deny 清单被绕过）；宿主环境差异导致 CI 不稳定；
+镜像供应链未 pin 造成不可复现。
+
+### Next Readiness
+
+解锁 M12（真实实验步骤）、M17（GPU 执行语义基础）。
+
+## M10 — Evidence / Memory / Provenance
+
+### Purpose
+
+让研究结论有据可查、长期记忆可治理，落地 ADR-0003/0017 与 AGENTS.md §8。
+
+### Plain-language Explanation
+
+造一个“证据账本”：Agent 的每个结论都必须挂来源和置信度；写进长期
+记忆要走提案门（schema → provenance → policy → curator）；记忆可以
+删除，向量索引可以随时重建，绝不让聊天摘要自由入账。
+
+### Inputs
+
+M7 的 MemoryStore Port；M1 的 `SourceRecord / Claim / Evidence /
+EvidenceRelation / MemoryRecord / MemoryWriteProposal` Domain 实体；
+`EventPublisher`（domain events）。
+
+### Scope
+
+MemoryWriteProposal gate 全链路（schema validation → provenance
+check → policy → curator/automatic gate → commit）；Memory
+lifecycle/delete；derived vector index（可重建）；Claim/Evidence
+relations 与 contradiction handling；negative result memory。
+
+### Non-goals
+
+不绑定具体 embedding 模型（derived index 可替换）；不做 UI；不做
+多租户隔离（M18）；不把向量索引当 Canonical State（ADR-0002 边界）。
+
+### Key Deliverables
+
+`packages/application/memory/`（proposal gate pipeline）；向量索引
+adapter（可重建）；矛盾检测 use case；provenance 测试套件。
+
+### Entry Gate
+
+M7 DONE；M10 计划经 Plan Mode 批准。
+
+### DoD / Exit Gate
+
+MemoryWriteProposal 全链路测试（无 provenance 拒绝、policy deny、
+curator 通过三类路径）；删除后索引重建一致性测试；同一 Claim 冲突
+证据检测测试；negative result 记忆用例；独立复审 PASS + m0 profile
+全绿。
+
+### Dependencies
+
+Hard：M7。
+
+### Parallelism
+
+M8、M9、M11。
+
+### Risks
+
+向量索引漂移与 Canonical State 不一致；provenance 粒度不足导致记忆
+可信度低；proposal gate 过严阻碍有效记忆。
+
+### Next Readiness
+
+解锁 M12（研究结论有证据支撑、记忆可信）。
+
+## M11 — Evaluation Plane
+
+### Purpose
+
+建立正式工程评测面，让 Model/Prompt/Skill/Tool/Role/Runtime/Workflow
+的重要变更可 before/after regression，而不是只靠 demo 判断效果。
+
+### Plain-language Explanation
+
+造一把“尺子”：定义评测任务集、确定性打分器和回归面板；任何重要
+变更先用尺子量过再上线，评测结果接入 CI 门禁。
+
+### Inputs
+
+M7 的 Evaluation use case 初版；`docs/evaluation/EVAL_HARNESS.md` 与
+`QUALITY_GATES.md` 规格；`FakeAgentRuntime / FakeModelGateway`。
+
+### Scope
+
+Eval Harness（多模式：unit / integration / workflow）；deterministic
+gates；reviewer panel；human calibration samples；canary/regression
+dashboard（先以报告/CI 形式，UI 后置）；CI 门禁接入。
+
+### Non-goals
+
+不做生产观测（M15）；不做 UI dashboard（M13 之后可选）；真实付费
+LLM 评测不作为默认 CI 依赖（只允许显式手动运行）；不做评分模型
+训练。
+
+### Key Deliverables
+
+`packages/application/evaluation/` + `tests/evals/` harness；
+deterministic gates 定义；calibration samples；CI eval 门禁；
+EvalScore 报告 schema。
+
+### Entry Gate
+
+M7 DONE；M11 计划经 Plan Mode 批准。
+
+### DoD / Exit Gate
+
+harness 可复现运行（同输入同分数）；至少一个真实 before/after
+regression 案例（变更被 gate 拦截）；CI 确定性接入；评测对象在
+M8/M9 完成前可为 mock；独立复审 PASS + m0 profile 全绿。
+
+### Dependencies
+
+Hard：M7。Soft：消费 M8/M9 产物（评测工具质量、评测实验执行）。
+
+### Parallelism
+
+M8、M9、M10。
+
+### Risks
+
+评测集过拟合；确定性 gate 过严阻碍迭代；M8/M9 未完成时只能评 mock，
+评测面可能“校准”到错误对象上。
+
+### Next Readiness
+
+解锁 M12 的评测要求；此后所有重要变更必须 before/after regression
+（见上文 Evaluation Plane 规则）。
+
+## M12 — First Real Research Workflow
+
+### Purpose
+
+证明 Research OS 能端到端完成一个有价值的真实科研任务，作为 MVP
+成立判定点。
+
+### Plain-language Explanation
+
+挑一个真实的科研问题，让系统用真实模型、真实工具、真实实验、真实
+证据账本从头到尾跑完，产出可检验、可复现的结论，并复盘失败模式。
+
+### Inputs
+
+M8+M9+M10+M11 全部 PASS；M7 编排链；M3 relay adapter + M6 LLM 映射
+（真实链路）。
+
+### Scope
+
+真实 relay 链路 E2E（清偿 usage 归账 P1 债）；工具 + 实验 + 证据
+全链；目标科研任务定义（协议 + 验收标准）；失败复盘；MVP 判定报告
+（go/no-go）。
+
+### Non-goals
+
+不做 UI（M13）；不做分布式（M14）；不做多任务基准（只做单个代表性
+任务）；不对外宣称产品能力。
+
+### Key Deliverables
+
+一个 reference research protocol（真实任务，入
+`examples/protocols/`）；E2E 真实运行记录；usage 归账闭环到
+BudgetLedger；MVP 判定报告。
+
+### Entry Gate
+
+IG-1：M8、M9、M10、M11 全部通过独立复审 + m0 profile 全绿。
+
+### DoD / Exit Gate
+
+真实 relay + 真实工具 + 真实实验 + 证据账本完整闭环；usage 归账
+闭环（预算消耗与真实用量一致）；任务验收标准经 M11 harness 客观
+评测；MVP 判定报告；独立复审 PASS + m0 profile 全绿。
+
+### Dependencies
+
+Hard：M8+M9+M10+M11。
+
+### Parallelism
+
+无（MVP 汇聚点，IG-1）。
+
+### Risks
+
+真实模型成本与行为不可控；真实工具失败导致任务无法完成；MVP 判定
+为 no-go（需回退 M8-M11 补强）。
+
+### Next Readiness
+
+解锁 M13（产品 UI）、M14（durable）、M15 软依赖。
+
+## M13 — Research Console
+
+### Purpose
+
+让用户能配置、运行、监控、审批研究工作流，落地 ADR-0008（自主产品
+UI）。
+
+### Plain-language Explanation
+
+造一个“控制台”：首次打开向导式配好中转站；跑之前能 dry run；跑起来
+能看任务时间线；高风险动作能审批/干预；结论有证据地图；预算与用量
+可见，一切可审计导出。
+
+### Inputs
+
+M12 PASS（真实工作流已验证）；`docs/api/CONTROL_PLANE_API.md` 规格；
+M0 的 TS 工具链（pnpm/ESLint/dependency-cruiser）。
+
+### Scope
+
+first-run relay wizard；models/probe page；team/agent model
+assignment；protocol/preflight dry run；task/run timeline；
+approvals/interventions；workspace diff；evidence/claim map；
+budget/usage；audit/export。
+
+### Non-goals
+
+不做多租户（M18）；不做分布式集群管理（M16）；不做评测面板（M11
+已定义、M15 生产化）；UI 不复制 Canonical State（只消费 API DTO）。
+
+### Key Deliverables
+
+`apps/web/` + `services/api/`（Control Plane API）；审批流 UI；
+dry run 流程；timeline 视图。
+
+### Entry Gate
+
+IG-2：M12 PASS。
+
+### DoD / Exit Gate
+
+first-run 向导端到端可用；dry run 不触发真实副作用；审批流
+deny/approve 全链路；审计导出可用；架构测试证明 UI 只消费 API DTO；
+TS lint/typecheck/依赖边界门禁 PASS；独立复审 PASS + m0 profile
+全绿。
+
+### Dependencies
+
+Hard：M12。
+
+### Parallelism
+
+M14、M15。
+
+### Risks
+
+UI 范围膨胀；API DTO 与 Domain 泄漏；审批流与 PolicyEvaluator 语义
+不一致。
+
+### Next Readiness
+
+解锁 M18（多用户需要 UI 承载）。
+
+## M14 — Durable Workflow + PostgreSQL
+
+### Purpose
+
+让工作流跨进程、跨重启真正 durable，Canonical State 落到 PostgreSQL，
+完成 Temporal 采用/不采用决策。
+
+### Plain-language Explanation
+
+把 M7 的“单进程 SQLite 可靠内核”升级成“生产级持久化 + 可选 Temporal
+调度”：任务在机器重启后照样续跑，多进程共享同一真相源，lease 超时
+自动自愈。
+
+### Inputs
+
+M12 PASS（真实工作流验证了 durable 需求）；ADR-0002（PostgreSQL
+Canonical State）；`SqliteWorkflowEngine` 的 contract suite（验收
+基线）；ADR-0016（可靠性语义）。
+
+### Scope
+
+PostgreSQL adapter（canonical state + task queue，清偿 P1 债）；
+`recover_expired_leases` 定时自愈（清偿 P2 债）；Temporal upstream
+qualification 与采用/不采用决策；跨进程调度。
+
+### Non-goals
+
+不做多 worker 分区调度（M16）；不做 SLO 保障（M19）；不迁移
+OpenHands 自身持久化；不把 Temporal history 当 Canonical State。
+
+### Key Deliverables
+
+`adapters/postgres/`；Temporal qualification 报告（采用 → adapter +
+revision lock；不采用 → 理由与替代方案，必要时 ADR 增补）；跨进程
+E2E 测试。
+
+### Entry Gate
+
+M12 PASS；Temporal qualification 可在 M12 进行中启动（只读调查），
+adapter 实现需 IG-2 通过。
+
+### DoD / Exit Gate
+
+PostgreSQL adapter 通过 WorkflowEngine contract suite；跨进程重启
+恢复 E2E；lease 定时自愈测试；Temporal 决策有证据闭环；m0 profile
+全绿；独立复审 PASS。
+
+### Dependencies
+
+Hard：M12。
+
+### Parallelism
+
+M13、M15。
+
+### Risks
+
+Temporal 引入复杂度过高（严格评估，可拒绝）；PostgreSQL schema
+迁移策略；SQLite→PostgreSQL 语义差异（锁、事务）。
+
+### Next Readiness
+
+解锁 M16（分布式）、M18/M19（多租户与治理基础）。
+
+## M15 — Observability / Cost / Eval Operations
+
+### Purpose
+
+让系统可观测、成本可见、评测可持续运营，落地 ADR-0020（隐私优先）。
+
+### Plain-language Explanation
+
+造“仪表盘和账本”：所有运行都有 redacted 遥测；钱花在哪里看得见；
+评测分数随时间可追踪，退化可回查。
+
+### Inputs
+
+M11 PASS（评测面）；ADR-0020；`docs/architecture/OBSERVABILITY.md`
+规格；`UsageLedgerEntry` Domain 实体。
+
+### Scope
+
+OTel collector 集成（genai 内容捕获默认关闭，只记 digest/size/
+type/latency/token/status/redacted metadata）；cost 归集（UsageLedger
+→ 成本视图）；eval 趋势存储与回归面板（M11 的运营化）。
+
+### Non-goals
+
+不做完整 LLM tracing 内容采样（仅显式 Debug Mode + retention
+policy）；不做多租户成本隔离（M18）；不做 SLO 定义（M19）。
+
+### Key Deliverables
+
+`adapters/otel/`（或标准集成）；成本归集 use case；eval 趋势存储；
+隐私默认的测试（prompt/参数不落遥测）。
+
+### Entry Gate
+
+M11 PASS。
+
+### Dependencies
+
+Hard：M11。Soft：M12。
+
+### Parallelism
+
+M13、M14。
+
+### Risks
+
+OTel 供应商绑定；隐私泄露（prompt/敏感参数误入遥测）；成本归集
+粒度不足导致误导。
+
+### Next Readiness
+
+解锁 M19（SLO 需要观测基础）。
+
+## M16 — Distributed Execution + Remote Sandbox/Worker
+
+### Purpose
+
+让多任务跨机器并行执行，沙盒可远程运行，支持分区调度。
+
+### Plain-language Explanation
+
+造一个“分布式车间”：多个 worker 机器分头接任务、跑实验，统一
+调度、统一心跳、统一故障恢复，沙盒在远端机器上运行。
+
+### Inputs
+
+M14 PASS（durable + PostgreSQL）；M9 的 ExecutionBackend 语义；
+SWE-ReX qualification（`UPSTREAM_COMPONENTS.yaml` 中 PLANNED）。
+
+### Scope
+
+多 worker 注册/心跳/下线；分区调度；远程 sandbox adapter；worker
+故障转移；SWE-ReX 或等价远程执行 qualification（按 M5R 模式）。
+
+### Non-goals
+
+不做 GPU 调度（M17）；不做多租户资源配额（M18）；不做自动扩缩容；
+不做公有云多地域。
+
+### Key Deliverables
+
+worker 生命周期管理；分区调度器；远程 sandbox adapter；跨机故障
+注入测试。
+
+### Entry Gate
+
+IG-3：M14 PASS。
+
+### Dependencies
+
+Hard：M14。Soft：M9。
+
+### Parallelism
+
+M18。
+
+### Risks
+
+分布式故障模式复杂度（脑裂、时钟漂移）；远程 sandbox 安全边界；
+调度策略过早优化。
+
+### Next Readiness
+
+解锁 M17（GPU/HPC）。
+
+## M17 — GPU / HPC
+
+### Purpose
+
+支持 GPU/HPC 计算资源的接入、调度与配额，服务大规模科研计算。
+
+### Plain-language Explanation
+
+造一个“计算资源平面”：科研任务需要 GPU 大算力时，系统对接调度器
+（如 Slurm）或云 GPU，把实验发到合适的机器上并计费入账。
+
+### Inputs
+
+M16 PASS（分布式调度成熟）；M9 的 ExperimentRun 语义；
+`ComputeReservation` Domain 实体。
+
+### Scope
+
+GPU/HPC 资源平面（调度器/云 GPU provider 抽象）；ComputeReservation
+落地；资源健康与配额；GPU/HPC 厂商 API qualification。
+
+### Non-goals
+
+不做训练框架集成；不做多集群联邦；不做成本优化引擎；不做裸机
+管理。
+
+### Key Deliverables
+
+GPU/HPC adapter（provider 抽象）；调度对接；配额管理；GPU 任务
+E2E（可小规模）。
+
+### Entry Gate
+
+IG-3 之后的 M16 PASS。
+
+### Dependencies
+
+Hard：M16+M9。
+
+### Parallelism
+
+无（Scale 层串行）。
+
+### Risks
+
+厂商 API 多样性；GPU 集群权限与安全边界；成本失控（需配额与
+BudgetLedger 联动）。
+
+### Next Readiness
+
+解锁 Enterprise 级科研能力（大规模计算场景）。
+
+## M18 — Multi-user / Organization / RBAC
+
+### Purpose
+
+支持多用户、组织隔离和基于角色的访问控制。
+
+### Plain-language Explanation
+
+造一个“多租户门禁”：多个用户各自有团队、预算、数据，租户间严格
+隔离，权限按角色控制，越权访问被架构级拒绝。
+
+### Inputs
+
+M13 PASS（Console）；M14 PASS（PostgreSQL canonical state）；
+`docs/security/IDENTITY_AND_ACCESS.md` 规格；`PolicyEvaluator` Port。
+
+### Scope
+
+多租户数据模型（schema 级隔离）；组织/团队；RBAC use case；审计；
+越权测试（cross-tenant 负面测试）。
+
+### Non-goals
+
+不做 SSO/企业目录集成（M19 可选）；不做计费；不做租户间资源共享
+市场。
+
+### Key Deliverables
+
+租户边界（schema 级）；RBAC use case；越权测试套件。
+
+### Entry Gate
+
+IG-4：M13 + M14 PASS。
+
+### Dependencies
+
+Hard：M13+M14。
+
+### Parallelism
+
+M16。
+
+### Risks
+
+跨租户数据泄漏（最高风险，需负面测试 + 架构断言）；RBAC 与
+PolicyEvaluator 双轨失控；单租户数据迁移。
+
+### Next Readiness
+
+解锁 M19（企业治理）。
+
+## M19 — Production Security / Governance + Backup/Recovery/SLO
+
+### Purpose
+
+达到生产级安全、治理与可运维标准，落地 ADR-0018/0024。
+
+### Plain-language Explanation
+
+造“生产保险”：策略引擎（OPA 决策或确认 Native Policy 足够）、中心
+密钥管理、备份恢复演练、SLO 承诺与监控，使系统可以对外承诺可靠性
+和安全性。
+
+### Inputs
+
+M14+M15+M18 PASS；ADR-0018（Native Policy First, OPA Adapter
+Later）、ADR-0024（Backup Canonical Domain and Artifacts）；
+`docs/security/SECRET_MANAGEMENT.md`、
+`docs/operations/BACKUP_RECOVERY.md`、
+`docs/operations/SLO_AND_CAPACITY.md` 规格。
+
+### Scope
+
+OPA qualification 与采用/不采用决策；central Secret Manager；backup
+/restore（按 ADR-0024：Domain + Artifacts，不备份 ephemeral
+runtime）；SLO 定义与监控；发布门禁（deterministic release gate）。
+
+### Non-goals
+
+不做合规认证（SOC2 等）；不做多机房灾难恢复；不做全量内容审计
+（与 ADR-0020 隐私边界冲突）。
+
+### Key Deliverables
+
+OPA adapter（若采用）；Secret Manager adapter；backup/restore 演练
+记录；SLO dashboard 与告警；发布门禁流程。
+
+### Entry Gate
+
+IG-5：M14+M15+M18 PASS。
+
+### Dependencies
+
+Hard：M14+M15+M18。
+
+### Parallelism
+
+无（Enterprise 收敛点）。
+
+### Risks
+
+治理过度阻碍迭代；backup/restore 演练成本高；SLO 承诺过早导致
+违约。
+
+### Next Readiness
+
+Enterprise 就绪；此后进入持续运营与迭代，新方向重新立项。

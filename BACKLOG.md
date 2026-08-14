@@ -153,37 +153,37 @@ Product Capability**（M7 后的产品能力建设，非已实现事项）。
 
 | 项 | P 级 | 目标归属 | 说明 |
 | --- | --- | --- | --- |
-| PostgreSQL task queue | P1 | Temporal / 生产部署阶段 | 同 Port 契约（`SqliteWorkflowEngine` 的 contract suite 为验收基线）；跨进程分布式调度属 Temporal 阶段 |
-| `recover_expired_leases` 定时自愈 | P2 | Temporal / P2-Production | 当前为 start_run 懒触发，单进程安全；定时调度属 Temporal 范畴 |
-| 历史 Run 快照运营迁移 | P2 | 运营工具阶段 | `manifest_semantic_digest=None` 的旧快照不可 resume：需重新冻结或 fork run；无自动迁移路径 |
-| DockerWorkspace 容器链路全量验证 | P1 | 部署配置阶段 | M6 遗留；当前仅映射代码 + 探测式 smoke |
-| ModelRelay + OpenHandsRuntimeAdapter usage 归账闭环到 BudgetLedger | P1 | Next Capability（真实 relay 链路 E2E） | 前提：真实 relay 链路 E2E（当前为 mock 端点）；原文档标注 "M8" 为未定义引用，修正为 post-M7 能力 |
-| ExecutionBackend 容器执行（Sandbox） | P1 | Next Capability（Real Experiment Runtime） | M7 切片以进程内/Fake 语义执行；VERTICAL_SLICE 中 "Sandbox execution" 步骤为 Spec 目标，当前未以容器实现 |
+| PostgreSQL task queue | P1 | M14 | 同 Port 契约（`SqliteWorkflowEngine` 的 contract suite 为验收基线）；跨进程分布式调度属 M14（Durable Workflow + PostgreSQL） |
+| `recover_expired_leases` 定时自愈 | P2 | M14 | 当前为 start_run 懒触发，单进程安全；定时调度属 M14 范畴 |
+| 历史 Run 快照运营迁移 | P2 | M14 | `manifest_semantic_digest=None` 的旧快照不可 resume：需重新冻结或 fork run；无自动迁移路径 |
+| DockerWorkspace 容器链路全量验证 | P1 | M9 | M6 遗留；当前仅映射代码 + 探测式 smoke |
+| ModelRelay + OpenHandsRuntimeAdapter usage 归账闭环到 BudgetLedger | P1 | M12 | 前提：真实 relay 链路 E2E（当前为 mock 端点）；在 M12（First Real Research Workflow）清偿 |
+| ExecutionBackend 容器执行（Sandbox） | P1 | M9 | M7 切片以进程内/Fake 语义执行；VERTICAL_SLICE 中 "Sandbox execution" 步骤为 Spec 目标，当前未以容器实现 |
 
 ## Next Product Capability
 
 M7 后的产品能力建设方向。**以下均为未来设想，尚未实现**；立项时按
-`AGENTS.md` 流程从 Plan Mode 开始，先定职责归属与数据流，再写功能。
+`AGENTS.md` 流程从 Plan Mode 开始。编号、名称、顺序、依赖 DAG 与详细
+定义（Purpose / Scope / DoD / Entry Gate 等）以
+`docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为**唯一权威**；
+本表只提供“能力 → Milestone”映射。
 
-- Research Tool Plane：ToolCatalog/Resolver（P1 真实链）、Tool effect/risk
-  classes、MCP Streamable HTTP + stdio、ToolPack manifest/install/update/
-  revoke、Tool health/circuit breaker、Tool credential separation、large
-  result artifact indirection。
-- Research Skill Registry：Skill 生命周期与 Registry、能力路由与复用。
-- Evidence / Memory Enhancement：SourceRecord、MemoryWriteProposal gate、
-  Memory lifecycle/delete、derived vector index、Claim/Evidence relations、
-  contradiction handling、negative result memory。
-- Real Experiment Runtime：ExecutionBackend 真实实现、WorkspaceLease/
-  worktree、ExperimentPlan/Run/Metric、内容寻址 Artifact Store 生产化、
-  retention/export bundle、ReproducibilityAudit。
-- Evaluation Plane：Eval Harness modes、deterministic gates、reviewer
-  panel、human calibration samples、canary/regression dashboard。
-- Research Console：first-run relay wizard、models/probe page、team/agent
-  model assignment、protocol/preflight dry run、task/run timeline、
-  approvals/interventions、workspace diff、evidence/claim map、
-  budget/usage、audit/export。
-- Durable Workflow：Temporal adapter、跨进程分布式调度。
-- Distributed Execution：多 worker、分区与调度。
-- GPU / HPC：远程/加固 sandbox、计算资源平面。
-- Production Security / Governance：OPA adapter、central Secret Manager、
-  OTel collector/dashboards、backup/restore、RBAC/organization scope。
+| 能力 | Milestone | 状态 |
+| --- | --- | --- |
+| Research Tool Plane：ToolCatalog/Resolver（P1 真实链）、Tool effect/risk classes、MCP Streamable HTTP + stdio、ToolPack manifest/install/update/revoke、Tool health/circuit breaker、Tool credential separation、large result artifact indirection | M8 Research Capability Plane | PLANNED |
+| Research Skill Registry：Skill 生命周期与 Registry、能力路由与复用 | M8 Research Capability Plane | PLANNED |
+| Real Experiment Runtime：ExecutionBackend 真实实现、WorkspaceLease/worktree、ExperimentPlan/Run/Metric、内容寻址 Artifact Store 生产化、retention/export bundle、ReproducibilityAudit | M9 Real Experiment Runtime | PLANNED |
+| Evidence / Memory Enhancement：SourceRecord、MemoryWriteProposal gate、Memory lifecycle/delete、derived vector index、Claim/Evidence relations、contradiction handling、negative result memory | M10 Evidence / Memory / Provenance | PLANNED |
+| Evaluation Plane：Eval Harness modes、deterministic gates、reviewer panel、human calibration samples、canary/regression dashboard | M11 Evaluation Plane | PLANNED |
+| First Real Research Workflow：真实 relay 链路 E2E + usage 归账闭环、工具 + 实验 + 证据全链、MVP 成立判定 | M12 First Real Research Workflow | PLANNED |
+| Research Console：first-run relay wizard、models/probe page、team/agent model assignment、protocol/preflight dry run、task/run timeline、approvals/interventions、workspace diff、evidence/claim map、budget/usage、audit/export | M13 Research Console | PLANNED |
+| Durable Workflow：Temporal qualification + 采用/不采用决策、PostgreSQL canonical state + task queue、跨进程分布式调度 | M14 Durable Workflow + PostgreSQL | PLANNED |
+| Observability / Cost / Evaluation Operations：OTel collector（隐私默认）、成本归集、eval 趋势运营 | M15 Observability / Cost / Eval Operations | PLANNED |
+| Distributed Execution：多 worker、分区与调度、远程 sandbox/worker | M16 Distributed Execution + Remote Sandbox/Worker | PLANNED |
+| GPU / HPC：远程/加固 sandbox、计算资源平面 | M17 GPU / HPC | PLANNED |
+| Multi-user / Organization / RBAC：多租户数据模型、organization scope、RBAC | M18 Multi-user / Organization / RBAC | PLANNED |
+| Production Security / Governance：OPA qualification 与决策、central Secret Manager、backup/restore、SLO | M19 Production Security / Governance + Backup/Recovery/SLO | PLANNED |
+
+下一阶段推荐为 **M8 Research Capability Plane**（理由见
+`docs/roadmap/MILESTONES.md` Post-M7 Roadmap 节）；本 BACKLOG 不自动
+开工任何 Milestone。

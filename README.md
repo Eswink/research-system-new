@@ -88,10 +88,12 @@ M7 集成里程碑记录见
 - `tests/`（domain / application / adapters / contracts / e2e /
   architecture）——E2E 垂直切片含故障注入矩阵 F-01..F-12。
 
-M7 之后仓库进入**产品能力建设阶段**：已完成事项、Remaining Technical
-Debt 与 Next Product Capability 见 `BACKLOG.md`。规格目标（PostgreSQL
-Canonical State、ADR-0002）与当前实现（同 Port 契约的 SQLite）之间的
-差异作为技术债显式记录，不以文档覆盖实现。
+M7 之后仓库进入**产品能力建设阶段**：未来 Milestone 路线（M8-M19）以
+`docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为唯一权威；已完成
+事项、Remaining Technical Debt 与 Next Product Capability 的执行映射
+见 `BACKLOG.md`。规格目标（PostgreSQL Canonical State、ADR-0002）与
+当前实现（同 Port 契约的 SQLite）之间的差异作为技术债显式记录，不以
+文档覆盖实现。
 
 ## 开发入口
 

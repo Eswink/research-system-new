@@ -68,7 +68,7 @@ def build_docker_workspace(
     image: str,
     network_enabled: bool = False,
 ) -> Any:
-    """构造 DockerWorkspace（映射代码；容器链路验证延后 M7 部署配置阶段）。
+    """构造 DockerWorkspace（映射代码；容器链路验证延后至 M9 Real Experiment Runtime）。
 
     - network 默认关闭（R-05：DockerWorkspace 无默认网络隔离）；
     - 容器生命周期 = WorkspaceBackend 创建/清理面（M6_ADAPTER_DESIGN_NOTES §5）；

@@ -40,8 +40,9 @@ LLM Endpoint Test
   → Reviewer Gate）已由 `packages/application/run_orchestration/` + SQLite
   持久化实现，`tests/e2e/` 全链路验证。
 - **Sandbox execution**：M7 以进程内/Fake 语义执行（ExecutionBackend 容器
-  实现为 Remaining Technical Debt，见 `BACKLOG.md`）；该步骤的容器化属于
-  Next Product Capability（Real Experiment Runtime）。
+  实现为 Remaining Technical Debt，目标 M9，见 `BACKLOG.md`）；该步骤的
+  容器化属于 M9 Real Experiment Runtime（`docs/roadmap/MILESTONES.md`
+  Post-M7 Roadmap）。
 - Reference Scenario 为 `examples/protocols/sort_analysis_v1.yaml`
   （2-phase，`execution` + `review`(QUALITY_GATE)）。
 

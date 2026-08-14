@@ -36,12 +36,14 @@ M7 集成里程碑记录见
 
 ### 可继续演进（不视为冻结）
 
-- `adapters/sqlite/` → PostgreSQL（同 Port 契约；技术债，BACKLOG）。
-- ExecutionBackend 容器实现 / DockerWorkspace 全量验证（技术债）。
-- Tool Plane、Skill Registry、Evidence/Memory、Evaluation Plane、
-  Research Console、Durable Workflow（BACKLOG Next Product Capability）。
+- `adapters/sqlite/` → PostgreSQL（同 Port 契约；技术债，目标 M14）。
+- ExecutionBackend 容器实现 / DockerWorkspace 全量验证（技术债，
+  目标 M9）。
 - 规格目标（PostgreSQL Canonical State，ADR-0002）与当前实现的差异
   显式记录，不以文档覆盖实现。
+- Post-M7 未来里程碑（M8-M19）的编号、名称、顺序与详细定义以
+  `docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为**唯一权威**
+  （执行映射见根 `BACKLOG.md`）；本文件不维护第二套路线。
 
 ---
 

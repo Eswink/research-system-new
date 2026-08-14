@@ -33,7 +33,7 @@
   独占门禁（adapter.execute_tool_gated）。
 - Workspace（R-04/R-17）：LocalWorkspace 默认 deny host shell；文件路径
   绝对化 + 工作区根校验；DockerWorkspace 映射代码 + 探测式 smoke
-  （容器链路验证延后 M7 部署配置阶段）。
+  （容器链路验证延后至 M9 Real Experiment Runtime，见 BACKLOG 技术债）。
 - Usage（R-16 记账面）：run() 终态后 ConversationStats →
   UsageLedgerEntry 归一化并实际写入 BudgetLedger（signal 语义，记账
   失败不阻断结果）；BudgetLedger 仍 Research OS 拥有。
