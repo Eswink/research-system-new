@@ -22,7 +22,8 @@ def main() -> int:
     if error is not None:
         deny(
             f"安全门禁无法解析 Cursor Hook 输入，已按 fail-closed 拒绝读取：{error}",
-            "修复 Hook JSON 协议后重试。",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            "并告知用户检查 Cursor Hook 环境与 .cursor/hooks/ 配置。",
         )
         return 0
     assert event is not None
@@ -35,7 +36,11 @@ def main() -> int:
         )
         return 0
     if is_sensitive_path(target):
-        deny("安全策略阻止读取真实凭据/私钥文件。请使用脱敏示例或受控 credential mechanism。")
+        deny(
+            "安全策略阻止读取真实凭据/私钥文件。请使用脱敏示例或受控 credential mechanism。",
+            "该路径被安全策略阻断。不要重试或改用其他工具读取同一路径；"
+            "使用脱敏示例（如 .env.example）或受控 credential mechanism。",
+        )
         return 0
 
     allow()

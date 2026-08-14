@@ -46,13 +46,14 @@ def main() -> int:
         "复杂或高影响任务先确认适用的仓库契约；需要细节时按需查阅 AGENTS.md、.cursor/knowledge/INDEX.md 和活动计划（如存在），不重复注入整篇文档。"
         "Rule=稳定约束，Skill=按需流程，Subagent=独立上下文/并行复核，Hook=防御性观测或门禁（非 Sandbox）。"
         "Subagent 按需使用；每个并行 wave 最多3个，任务总累计不设固定上限；本项目采用比 Cursor 平台更严格的 no-nesting 策略；不得把 Cursor 工程记忆写入 Research OS 产品 Memory。"
+        "并行 wave 必须同一条消息一次性发出全部 Task 工具调用，禁止逐个启动、等待上一个完成后再启动下一个。"
     )
     emit({
         "env": {
             "RESEARCH_OS_PROJECT_VERSION": version,
             "RESEARCH_OS_CURSOR_FRAMEWORK_VERSION": version,
         },
-        "additional_context": context + f" 当前 Cursor version={cursor_version}；未在 compatibility matrix 验证时先运行 probe。" + _experience_summary(),
+        "additional_context": context + f" 当前 Cursor version={cursor_version}；未验证版本的行为结论以 .cursor/knowledge/SOURCES.yaml 的 T1 官方来源为准，版本化兼容结论以 .cursor/compatibility/CURSOR_COMPATIBILITY.yaml 为准。" + _experience_summary(),
     })
     return 0
 

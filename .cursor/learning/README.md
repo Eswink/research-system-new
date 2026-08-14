@@ -35,3 +35,13 @@ Observation 不是知识，Experience Entry 不是事实，Proposal 不是事实
 - Hook/secret/MCP/permission/supply chain → `security-governance-reviewer`
 
 Reviewer 是风险控制工具，不是每个任务强制的数量配额。
+
+## 非确定性观察分流
+
+模型采样行为（如并行 wave 是否单消息批量发出、格式遵循、工具调用策略）是非确定性观察，无法产出可复现的 before/after replay，因此不进入上述 Promotion gates，按以下路径分流：
+
+1. 记录路径：写入 `.cursor/knowledge/KNOWN_CAVEATS.md` 的 Model Behavior 小节（或其他知识文档），标注为工程观察，不晋升为 Rule/Skill。
+2. 跨会话同类观察 ≥2 次时，可先经 `capture-experience` 沉淀为 `.cursor/experience/` 条目，供 sessionStart 注入摘要。
+3. 不得用"模型行为观察"绕过确定性验证要求去修改 Rule、validator 或授权规则。
+
+该分流不改变 Promotion gates 的准入条件，也不把低置信度观察升格为工程事实。

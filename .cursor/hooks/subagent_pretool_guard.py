@@ -12,14 +12,19 @@ def main() -> int:
     if error is not None:
         deny(
             f"子代理门禁无法解析 Cursor Hook 输入，已按 fail-closed 拒绝委派：{error}",
-            "修复 Hook JSON 协议后重试。",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            "并告知用户检查 Cursor Hook 环境与 .cursor/hooks/ 配置。",
         )
         return 0
     assert event is not None
 
     conversation_raw = event.get("conversation_id") or event.get("parent_conversation_id")
     if not isinstance(conversation_raw, str) or not conversation_raw.strip():
-        deny("子代理门禁缺少 conversation_id，已按 fail-closed 拒绝委派。")
+        deny(
+            "子代理门禁缺少 conversation_id，已按 fail-closed 拒绝委派。",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            "并告知用户检查 Cursor Hook 环境。",
+        )
         return 0
 
     conversation = safe_id(conversation_raw)
@@ -28,7 +33,9 @@ def main() -> int:
     if active >= MAX_PARALLEL_SUBAGENTS:
         deny(
             f"当前并行 wave 已有 {active} 个 active 子代理；上限为 {MAX_PARALLEL_SUBAGENTS}。"
-            "请等待已有子代理结束并整合结果后再创建下一 wave。"
+            "请等待已有子代理结束并整合结果后再创建下一 wave。",
+            "当前并行 wave 已满：先等待已有子代理结束并整合结果，"
+            "再创建下一 wave；不要立即原样重试 Task。",
         )
         return 0
     allow()

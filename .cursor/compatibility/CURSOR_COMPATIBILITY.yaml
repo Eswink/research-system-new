@@ -35,3 +35,8 @@ probes:
 note: >-
   Runtime evidence distinguishes live Cursor probes from local subprocess regression.
   PASS_WITH_MITIGATION applies only while the documented preToolUse Read binding remains active.
+  subagent_parallel_wave is a live/manual probe: open a real agent session and observe whether the
+  parent agent emits multiple Task tool calls in a single message when a parallel wave is requested.
+  The runtime-tested matrix deliberately does not record a model dimension: model behavior is sampled
+  and non-deterministic, so per-model claims are recorded as caveats in .cursor/knowledge/KNOWN_CAVEATS.md
+  instead of being treated as runtime PASS evidence.

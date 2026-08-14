@@ -20,7 +20,8 @@ def main() -> int:
     if error is not None:
         deny(
             f"子代理门禁无法解析 Cursor Hook 输入，已按 fail-closed 拒绝启动：{error}",
-            "修复 Hook JSON 协议后重试。",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            "并告知用户检查 Cursor Hook 环境与 .cursor/hooks/ 配置。",
         )
         return 0
     assert event is not None
@@ -33,7 +34,11 @@ def main() -> int:
         isinstance(value, str) and value.strip()
         for value in (parent_raw, subagent_raw, subagent_type, task)
     ):
-        deny("子代理门禁缺少 parent/subagent/type/task 字段，已按 fail-closed 拒绝启动。")
+        deny(
+            "子代理门禁缺少 parent/subagent/type/task 字段，已按 fail-closed 拒绝启动。",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            "并告知用户检查 Cursor Hook 环境。",
+        )
         return 0
 
     parent = safe_id(parent_raw)
@@ -49,7 +54,9 @@ def main() -> int:
     if active >= MAX_PARALLEL_SUBAGENTS:
         deny(
             f"单个并行委派波次最多 {MAX_PARALLEL_SUBAGENTS} 个子代理。"
-            "请等待现有子代理结束并整合结果，再决定是否启动下一波。"
+            "请等待现有子代理结束并整合结果，再决定是否启动下一波。",
+            "当前并行 wave 已满：先等待现有子代理全部结束并整合结果，"
+            "再启动下一波；不要立即原样重试 Task。",
         )
         return 0
 

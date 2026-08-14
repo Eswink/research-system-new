@@ -103,6 +103,19 @@ sources:
   verified_at: '2026-08-10'
   invalidate_on:
   - plan-mode-change
+- id: cursor-models
+  tier: T1_OFFICIAL
+  title: Cursor Models and Pricing
+  url: https://cursor.com/docs/models-and-pricing
+  topics:
+  - models
+  - model-behavior
+  - model-fallback
+  verified_at: '2026-08-14'
+  invalidate_on:
+  - cursor-major-release
+  - model-behavior-change
+  - models-schema-change
 - id: config-study-2602-14690
   tier: T2_PRIMARY_RESEARCH
   title: 'Configuring Agentic AI Coding Tools: An Exploratory Study'

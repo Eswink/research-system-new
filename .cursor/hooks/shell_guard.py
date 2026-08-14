@@ -76,7 +76,8 @@ def main() -> int:
     if error is not None:
         deny(
             f"安全门禁无法解析 Cursor Hook 输入，已按 fail-closed 拒绝命令：{error}",
-            "修复 Hook JSON 协议后重试。",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该命令，"
+            "并告知用户检查 Cursor Hook 环境与 .cursor/hooks/ 配置。",
         )
         return 0
     assert event is not None
@@ -91,13 +92,20 @@ def main() -> int:
 
     if contains_sensitive_reference(command):
         deny(
-            "禁止 shell 命令访问或引用真实凭据/私钥路径。使用脱敏示例或受控 credential mechanism。"
+            "禁止 shell 命令访问或引用真实凭据/私钥路径。使用脱敏示例或受控 credential mechanism。",
+            "该命令引用了真实凭据/私钥路径，被安全策略阻断。"
+            "不要重试或改用等价路径绕过；使用脱敏示例（如 .env.example）"
+            "或受控 credential mechanism。",
         )
         return 0
 
     denied = first_match(command, DENY_RULES)
     if denied is not None:
-        deny(denied.message, "选择更小范围、可回滚且不访问凭据的命令。")
+        deny(
+            denied.message,
+            f"命中门禁规则：{denied.message} 请改用更小范围、可回滚且不访问凭据的命令；"
+            "不要改写等价变体重试。",
+        )
         return 0
 
     approval = first_match(command, ASK_RULES)

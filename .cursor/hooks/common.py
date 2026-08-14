@@ -105,7 +105,8 @@ def require_event(*required_fields: str) -> dict[str, Any] | None:
     if error is not None:
         deny(
             "安全门禁无法解析 Cursor Hook 输入，已按 fail-closed 拒绝操作。",
-            f"修复 Hook JSON 协议后重试；原因：{error}",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            f"并告知用户检查 Cursor Hook 环境。技术原因（供用户排查）：{error}",
         )
         return None
     assert event is not None
@@ -113,7 +114,8 @@ def require_event(*required_fields: str) -> dict[str, Any] | None:
     if missing:
         deny(
             "安全门禁缺少必填 Hook 字段，已按 fail-closed 拒绝操作。",
-            f"缺少字段：{', '.join(missing)}",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            f"并告知用户检查 Cursor Hook 环境。缺失字段（供用户排查）：{', '.join(missing)}",
         )
         return None
     return event

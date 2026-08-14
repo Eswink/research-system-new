@@ -84,6 +84,8 @@ is_background
 
 它们都 `readonly: true`、`model: inherit`、`is_background: false`，并遵循项目“每个并行 wave 最多 3 个子代理，禁止子代理继续委派”的额外治理约束。Cursor 平台当前支持有限嵌套；本项目 no-nesting 是更严格的项目策略。
 
+`model: inherit` 是刻意取舍：保证 reviewer 与被审变更同源、可审计，并避开部分 Cursor 版本的 model pin 兼容问题；代价是父代理切换为较弱模型时复核质量同步退化。因此 reviewer 结论只作为复核线索，不能替代 validator 与确定性证据；根代理对最终综合与决策负最终责任。
+
 ## 5. Hooks
 
 位置：`.cursor/hooks.json` + `.cursor/hooks/`。
