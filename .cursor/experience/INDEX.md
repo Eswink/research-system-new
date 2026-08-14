@@ -12,6 +12,8 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260814-005](entries/EXP-20260814-005.md) | ACTIVE | 0.5 | repository | 2026-11-12 | git diff 空但 status 显示修改 = 纯 CRLF/LF 行尾差异；用 --stat 确认，commit 注明 no content change |
+| [EXP-20260814-004](entries/EXP-20260814-004.md) | ACTIVE | 0.5 | repository | 2026-11-12 | m0 profile 入口是 run_all_checks.py --profile m0 --keep-going（无 run_m0_profile.py）；权威定义在 CI workflow |
 | [EXP-20260814-003](entries/EXP-20260814-003.md) | ACTIVE | 0.5 | repository | 2026-11-12 | learning eval 脚手架 build() 必须隔离真实资产（fixture 污染导致 registry/target 误报） |
 | [EXP-20260814-002](entries/EXP-20260814-002.md) | ACTIVE | 0.5 | repository | 2026-11-12 | 长时后台 Shell 轮询：AwaitShell 收不到事件时直接读取 terminals 文件确认状态与 exit_code |
 | [EXP-20260814-001](entries/EXP-20260814-001.md) | ACTIVE | 0.6 | repository | 2026-11-12 | validate_bundle/governance validator 全仓扫描陷阱：文档禁写旧版本号与未勾选项字面量（否定转述也会命中） |
