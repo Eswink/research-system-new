@@ -46,16 +46,17 @@ validation:
   commands:
     - "governance validator：python -B .cursor/skills/governance-check/scripts/validate.py"
   evidence_refs:
-    - "governance validate 输出：Cursor 治理验证通过（2026-08-13）"
+    - ".cursor/learning/accepted/evidence/LEARN-20260813-001-validation.md"
   result: PASS
 approvals:
   - role: user
     decision: APPROVE
-    ref: "用户显式授权（2026-08-13 会话消息：允许 capture-learning，并且晋升）"
+    hard_gate: PASS
+    ref: ".cursor/learning/accepted/evidence/LEARN-20260813-001-authorization.md"
     at: "2026-08-13"
 promotion:
-  authorization_ref: "用户显式授权（2026-08-13 会话消息：允许 capture-learning，并且晋升）"
+  authorization_ref: ".cursor/learning/accepted/evidence/LEARN-20260813-001-authorization.md"
   promoted_at: "2026-08-13"
-  promoted_digest: "sha256:35be2662d0acaa1077fa"
-  regression_digest: "governance validate PASS（2026-08-13）"
+  promoted_digest: "35be2662d0acaa1077fafa910eb2b1e59d6b9f6a455bee3565cc15d8305d0b3c"
+  regression_digest: "0d6c5e4b80da5ae589a7e391c6cf7d630c311cea576eb4c50e06980870a51c86"
 supersedes: []

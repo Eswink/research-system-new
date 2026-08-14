@@ -1,0 +1,55 @@
+schema_version: 1
+id: LEARN-20260813-002
+status: PROPOSED
+created_at: 2026-08-13
+summary: "Python 测试/探针必须在 uv 冻结环境执行（uv run --frozen --no-sync python）；裸系统 python 导致 ModuleNotFoundError（openhands/tenacity）与 lint-imports unavailable（架构边界测试 7-8 项失败）两个跨会话签名"
+severity: NORMAL
+category: reliability
+source_type: validator_failure
+source_refs:
+  - ".cursor/experience/entries/EXP-20260813-001.md（occurrences 5：M6 会话 4 次 + M7 会话 1 次）"
+  - ".cursor/experience/entries/EXP-20260813-002.md（occurrences 3：M6 会话 2 次 + M7 会话 1 次）"
+occurrences:
+  - task_ref: "M6 独立复审会话"
+    evidence_ref: "系统 python 3.11 无 openhands 模块（ModuleNotFoundError，4 次独立失败）；lint-imports executable is unavailable in the frozen uv environment（架构测试 7 项失败，2 次独立运行）"
+  - task_ref: "M7 独立复审会话"
+    evidence_ref: "python -B -m pytest tests/ → 18 collection errors（No module named 'openhands' / 'tenacity'）；python -B -m pytest tests/architecture → 8 failed（lint-imports unavailable）"
+problem:
+  observed_behavior: "裸 `python`（系统解释器 D:\\environment\\Python\\Python311）执行测试/探针时：(a) 依赖缺失——ModuleNotFoundError: No module named 'openhands' / 'tenacity'，pytest 收集 18 个 ERROR；(b) 可执行文件缺失——架构边界测试报 RuntimeError: lint-imports executable is unavailable in the frozen uv environment，7-8 项失败。两个签名在 M6、M7 两个会话均独立复现。"
+  expected_behavior: "Python 测试与探针在项目冻结的 uv 环境中执行（与 .github/workflows/m0-quality.yml 的 `uv run --frozen --no-sync python -B` 一致），依赖与可执行文件（lint-imports）完整可用，全量测试与架构门禁通过。"
+  reproduction: "Windows PowerShell 下裸执行 `python -B -m pytest tests/` 即复现签名 (a)（系统 python 无项目依赖）；裸执行 `python -B -m pytest tests/architecture` 即复现签名 (b)（pytest 子进程 PATH 无 venv Scripts）。跨会话累计 8 次失败（M6 6 次 + M7 2 次）。"
+hypothesis:
+  root_cause: "仓库依赖由 uv.lock 冻结并安装在 .venv，但会话终端 PATH 未优先 venv（python 解析到系统解释器、shutil.which('lint-imports') 返回 None）；开发者/agent 默认使用裸 python 命令。权威依据：uv 冻结工作流（.github/workflows/m0-quality.yml 的 T1 官方用法）+ 跨会话 8 次独立失败与 2 次成功路径对照。"
+  confidence: 0.8
+proposal:
+  target_type: RULE
+  target_paths:
+    - ".cursor/rules/42-command-encoding.mdc"
+  change_summary: "在既有命令与编码约束下补充执行环境约束：本仓库 Python 测试/探针一律经 `uv run --frozen --no-sync python -B <cmd>` 执行（与 CI 一致）；不得使用裸 `python`（系统解释器缺依赖）；架构边界测试（依赖 lint-imports 可执行文件）不得在未激活 venv 的裸 shell 下运行，备用方案为显式注入 .venv/Scripts 到 PATH。"
+  blast_radius: "仅 .cursor/rules 文档约束；无代码/配置行为变化；governance validator 覆盖。"
+replay:
+  before_cases:
+    - "python -B -m pytest tests/（M7 会话）→ 18 collection errors：No module named 'openhands' / 'tenacity'"
+    - "python -B -m pytest tests/architecture（M7 会话）→ 8 failed：lint-imports executable is unavailable"
+    - "python -B -c \"import openhands\"（M6 会话）→ ModuleNotFoundError"
+  before_result: "FAIL（3/3 复现，跨 M6/M7 会话）"
+  after_cases:
+    - "uv run --frozen --no-sync python -B -m pytest tests/（M7 会话）→ 988 passed"
+    - "uv run --frozen --no-sync python -B -m pytest tests/architecture/python（M7 会话）→ 9 passed"
+    - "uv run --frozen --no-sync python -B .cursor/skills/system-spec-check/scripts/validate_bundle.py（M7 会话）→ 验证通过"
+  after_result: "PASS（3/3 成功，2026-08-13 实测）"
+validation:
+  commands:
+    - "uv run --frozen --no-sync python -B -m pytest tests/ -q --tb=short"
+    - "uv run --frozen --no-sync python -B .cursor/skills/system-spec-check/scripts/validate_bundle.py"
+  evidence_refs:
+    - "M7 独立复审会话终端输出：988 passed, 1 warning（2026-08-13）"
+    - "validate_bundle.py 输出：验证通过（2026-08-13）"
+  result: PASS
+approvals: []
+promotion:
+  authorization_ref: ""
+  promoted_at: ""
+  promoted_digest: ""
+  regression_digest: ""
+supersedes: []

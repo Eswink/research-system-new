@@ -1,14 +1,26 @@
 schema_version: 1
 framework_version: 0.4.0
-next_sequence: 2
+next_sequence: 3
 statuses: [PROPOSED, CLUSTERED, REPLAYING, REVIEWING, ACCEPTED, REJECTED, SUPERSEDED]
 entries:
   - id: LEARN-20260813-001
     status: ACCEPTED
+    file: ".cursor/learning/accepted/LEARN-20260813-001.yaml"
     summary: "Windows PowerShell 下禁止 bash 语法（&& 串联、heredoc、cmd /x 开关），改用 ; 分隔、git commit -F、cmd /c 包裹"
     source_refs:
       - ".cursor/experience/entries/EXP-20260812-002.md"
       - ".cursor/learning/accepted/LEARN-20260813-001.yaml"
     promoted_at: "2026-08-13"
+    target_paths:
+      - ".cursor/rules/42-command-encoding.mdc"
+  - id: LEARN-20260813-002
+    status: PROPOSED
+    file: ".cursor/learning/inbox/LEARN-20260813-002.yaml"
+    summary: "Python 测试/探针必须在 uv 冻结环境执行（uv run --frozen --no-sync python）；裸系统 python 导致 ModuleNotFoundError 与 lint-imports unavailable 两个跨会话签名"
+    source_refs:
+      - ".cursor/experience/entries/EXP-20260813-001.md"
+      - ".cursor/experience/entries/EXP-20260813-002.md"
+      - ".cursor/learning/inbox/LEARN-20260813-002.yaml"
+    promoted_at: ""
     target_paths:
       - ".cursor/rules/42-command-encoding.mdc"
