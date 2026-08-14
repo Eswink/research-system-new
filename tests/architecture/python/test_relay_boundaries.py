@@ -64,3 +64,10 @@ def test_sqlite_adapters_have_no_vendor_or_fake_dependency() -> None:
     result = _run_linter(".importlinter.sqlite")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "0 broken" in result.stdout
+
+
+def test_mcp_sdk_is_confined_to_mcp_adapter() -> None:
+    """mcp SDK 只能被 adapters/mcp 引用（M8 边界）。"""
+    result = _run_linter(".importlinter.mcp")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "0 broken" in result.stdout

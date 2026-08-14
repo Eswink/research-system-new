@@ -5,7 +5,7 @@ from __future__ import annotations
 from packages.application.model_relay.eligibility import decide_eligibility
 from packages.application.ports import InvalidInputError, PreflightContext
 from packages.domain.core import Digest
-from packages.domain.enums import EndpointHealth, TrustLevel
+from packages.domain.enums import EndpointHealth, RiskClass, TrustLevel
 from packages.domain.models import ModelDefinition
 from packages.domain.protocols import (
     CompiledRunPlan,
@@ -14,10 +14,15 @@ from packages.domain.protocols import (
     PreflightFinding,
     PreflightFindingCode,
 )
+from packages.domain.tools import classify_risk
 
 
 def _finding(code: str, message: str, subject: str | None = None) -> PreflightFinding:
     return PreflightFinding(code, FindingSeverity.ERROR, message, subject)
+
+
+def _warning(code: str, message: str, subject: str | None = None) -> PreflightFinding:
+    return PreflightFinding(code, FindingSeverity.WARNING, message, subject)
 
 
 def _check_record_eligibility(
@@ -180,6 +185,15 @@ def check_tools(plan: CompiledRunPlan, context: PreflightContext) -> list[Prefli
             if context.provider_health.get(provider_id, True) is False:
                 continue
             available = True
+            risk = classify_risk(provider.effect_class, provider.trust_level)
+            if risk in {RiskClass.HIGH, RiskClass.CRITICAL}:
+                findings.append(
+                    _warning(
+                        PreflightFindingCode.TOOL_RISK_ELEVATED.value,
+                        f"provider {provider_id} has elevated risk class {risk.value}",
+                        f"provider:{provider_id}",
+                    )
+                )
             if provider.kind.value != "NATIVE":
                 if not _is_pinned_digest(plan.tool_pack_digests.get(provider_id)):
                     findings.append(

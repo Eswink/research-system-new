@@ -91,6 +91,18 @@ ToolPackManifest
 - idempotency
 - risk/gate
 
+四个执行面语义对齐（use case `execute_tool_call`、OpenHands agent loop
+`PolicyEnforcingAgent`、OpenHands direct `PolicyWrappedToolExecutor`、
+resolver fail-closed）：
+
+- `DENY` → 阻断（POLICY_DENIED），不触达 provider；
+- `REQUIRE_APPROVAL` → 阻断（APPROVAL_REJECTED），审批通道接通前
+  不得静默放行；
+- `ALLOW` / `ALLOW_WITH_CONSTRAINTS` → 执行（约束由调用方落实）。
+
+Resolver 面 fail-closed：无显式 per-capability 决策时按 DENY 处理，
+`default_decision=ALLOW` 不是解析面放行依据。
+
 ## 7. Large Results
 
 Tool 返回：

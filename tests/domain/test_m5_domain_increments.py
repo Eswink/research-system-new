@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import pytest
 
 from packages.domain.core import Digest, Timestamp
-from packages.domain.enums import FailureCategory
+from packages.domain.enums import FailureCategory, ToolResultStatus
 from packages.domain.events import (
     EventEnvelope,
     EventType,
@@ -48,6 +48,8 @@ DOCUMENTED_EVENT_TYPES = {
     "memory.proposed",
     "memory.committed",
     "tool_pack.installed",
+    "tool_pack.updated",
+    "tool_pack.revoked",
     "tool_call.started",
     "tool_call.completed",
     "workspace.snapshot.created",
@@ -75,9 +77,9 @@ class TestToolResultRecord:
             attempt=1,
             operation_key="op-1",
             tool_id="tool-a",
-            status="SUCCEEDED",
+            status=ToolResultStatus.SUCCEEDED,
         )
-        assert record.status == "SUCCEEDED"
+        assert record.status is ToolResultStatus.SUCCEEDED
         assert record.failure_category is None
 
     def test_requires_task_and_operation_keys(self) -> None:
@@ -87,7 +89,7 @@ class TestToolResultRecord:
                 attempt=1,
                 operation_key="op-1",
                 tool_id="tool-a",
-                status="SUCCEEDED",
+                status=ToolResultStatus.SUCCEEDED,
             )
         with pytest.raises(ValueError):
             ToolResultRecord(
@@ -95,7 +97,7 @@ class TestToolResultRecord:
                 attempt=1,
                 operation_key="",
                 tool_id="tool-a",
-                status="SUCCEEDED",
+                status=ToolResultStatus.SUCCEEDED,
             )
 
     def test_failure_requires_redacted_message(self) -> None:
@@ -105,7 +107,7 @@ class TestToolResultRecord:
                 attempt=1,
                 operation_key="op-1",
                 tool_id="tool-a",
-                status="FAILED",
+                status=ToolResultStatus.FAILED,
                 failure_category=FailureCategory.TOOL_UNAVAILABLE,
             )
 
@@ -116,7 +118,7 @@ class TestToolResultRecord:
             attempt=1,
             operation_key="op-1",
             tool_id="tool-a",
-            status="SUCCEEDED",
+            status=ToolResultStatus.SUCCEEDED,
             output_digest=digest,
         )
         assert record.output_digest == digest
@@ -250,4 +252,4 @@ class TestEventTypeInventory:
     def test_covers_documented_event_types(self) -> None:
         actual = {event.value for event in EventType}
         assert actual == DOCUMENTED_EVENT_TYPES
-        assert len(actual) == 30
+        assert len(actual) == 32

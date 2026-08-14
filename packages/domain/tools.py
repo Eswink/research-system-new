@@ -11,7 +11,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from packages.domain.core import Digest, Timestamp, Version
-from packages.domain.enums import EffectClass, FailureCategory, ProviderType, TrustLevel
+from packages.domain.enums import (
+    CredentialScope,
+    EffectClass,
+    EndpointHealth,
+    FailureCategory,
+    ProviderType,
+    RiskClass,
+    SkillStatus,
+    ToolCallStatus,
+    ToolResultStatus,
+    TrustLevel,
+)
+from packages.domain.serialization import digest_of
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,16 +38,32 @@ class Capability:
             raise ValueError("capability id must not be empty")
 
 
+def _skill_content_dict(spec: SkillSpec) -> dict[str, object]:
+    return {
+        "id": spec.id,
+        "version": spec.version.text,
+        "capabilities": sorted(spec.capabilities),
+        "description": spec.description,
+    }
+
+
 @dataclass(frozen=True, slots=True)
 class SkillSpec:
     id: str
     version: Version
     capabilities: list[str] = field(default_factory=list)
     description: str = ""
+    status: SkillStatus = SkillStatus.ACTIVE
+    digest: Digest | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
             raise ValueError("skill id must not be empty")
+
+
+def skill_content_digest(spec: SkillSpec) -> Digest:
+    """Skill 内容确定性 digest（不含 digest 字段本身）。"""
+    return digest_of(_skill_content_dict(spec))
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,6 +80,17 @@ class ToolSpec:
             raise ValueError("tool id must not be empty")
         if not self.name:
             raise ValueError("tool name must not be empty")
+
+
+def _tool_content_dict(tool: ToolSpec) -> dict[str, object]:
+    return {
+        "id": tool.id,
+        "name": tool.name,
+        "effect_class": tool.effect_class.value,
+        "provider_kind": tool.provider_kind.value,
+        "capabilities": sorted(tool.capabilities),
+        "description": tool.description,
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,10 +112,69 @@ class ToolProviderSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class ToolHealthReport:
+    """ToolProvider 健康探测结果（MCP_TOOL_PROVIDERS.md §6）。"""
+
+    provider_id: str
+    status: EndpointHealth
+    observed_schema_digest: Digest | None = None
+    detail: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.provider_id:
+            raise ValueError("provider_id must not be empty")
+
+
+def classify_risk(effect_class: EffectClass, trust_level: TrustLevel) -> RiskClass:
+    """effect/risk 分层：EffectClass 描述副作用类别，TrustLevel 描述来源可信度。
+
+    高风险组合优先；UNTRUSTED/REVOKED 一律 CRITICAL。
+    """
+    if trust_level in (TrustLevel.UNTRUSTED, TrustLevel.REVOKED):
+        return RiskClass.CRITICAL
+    if effect_class in (EffectClass.DESTRUCTIVE, EffectClass.EXTERNAL_PUBLISH):
+        return RiskClass.CRITICAL
+    if effect_class in (EffectClass.SECRET_USE, EffectClass.EXECUTE):
+        return RiskClass.HIGH
+    if effect_class in (EffectClass.WRITE, EffectClass.NETWORK):
+        return RiskClass.MEDIUM
+    if trust_level is TrustLevel.USER_APPROVED:
+        return RiskClass.MEDIUM
+    return RiskClass.LOW
+
+
+@dataclass(frozen=True, slots=True)
 class CredentialRequirement:
     name: str
-    scope: str | None = None
+    scope: CredentialScope | None = None
     required: bool = True
+
+
+def _manifest_content_dict(manifest: ToolPackManifest) -> dict[str, object]:
+    return {
+        "id": manifest.id,
+        "version": manifest.version.text,
+        "source": manifest.source,
+        "resolved_revision": manifest.resolved_revision,
+        "license": manifest.license,
+        "tools": [_tool_content_dict(tool) for tool in manifest.tools],
+        "skills": [_skill_content_dict(skill) for skill in manifest.skills],
+        "requested_capabilities": sorted(manifest.requested_capabilities),
+        "network_domains": sorted(manifest.network_domains),
+        "credentials": [
+            {
+                "name": credential.name,
+                "scope": credential.scope.value if credential.scope else None,
+                "required": credential.required,
+            }
+            for credential in manifest.credentials
+        ],
+    }
+
+
+def toolpack_content_digest(manifest: ToolPackManifest) -> Digest:
+    """ToolPack 内容确定性 digest（不含 digest/signature 字段本身）。"""
+    return digest_of(_manifest_content_dict(manifest))
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +202,10 @@ class ToolPackManifest:
         if not self.license:
             raise ValueError("tool pack license must not be empty")
 
+    def verify_content_digest(self) -> bool:
+        """manifest.digest 与内容重算一致（digest 篡改检测）。"""
+        return self.digest == toolpack_content_digest(self)
+
 
 @dataclass(frozen=True, slots=True)
 class ToolCallRecord:
@@ -113,7 +215,7 @@ class ToolCallRecord:
     tool_id: str
     capability: str
     argument_digest: Digest
-    status: str
+    status: ToolCallStatus = ToolCallStatus.REQUESTED
     recorded_at: object | None = None
 
     def __post_init__(self) -> None:
@@ -133,7 +235,7 @@ class ToolResultRecord:
     attempt: int
     operation_key: str
     tool_id: str
-    status: str
+    status: ToolResultStatus
     output_digest: Digest | None = None
     failure_category: FailureCategory | None = None
     error_message_redacted: str | None = None

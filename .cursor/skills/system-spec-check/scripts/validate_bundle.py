@@ -572,6 +572,7 @@ def check_json_schemas() -> None:
     expected_schema_files = {
         "agent-spec.schema.json",
         "budget-policy.schema.json",
+        "capability.schema.json",
         "compiled-run-plan.schema.json",
         "domain_discovery_input_v1.schema.json",
         "domain_discovery_output_v1.schema.json",
@@ -593,6 +594,7 @@ def check_json_schemas() -> None:
         "task-contract.schema.json",
         "team-template.schema.json",
         "tool-provider.schema.json",
+        "tool-spec.schema.json",
         "toolpack-manifest.schema.json",
         "workspace.schema.json",
     }

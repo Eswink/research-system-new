@@ -32,10 +32,15 @@ from packages.application.ports.model_gateway import CompletionRequest
 from packages.application.ports.policy_evaluator import PolicyRequest
 from packages.domain.budget import LedgerCostStatus, ResourceType, UsageLedgerEntry
 from packages.domain.enums import (
+    EffectClass,
+    EndpointHealth,
     FailureCategory,
     PolicyDecision,
+    ProviderType,
+    ToolResultStatus,
 )
 from packages.domain.events import EventType
+from packages.domain.tools import ToolSpec
 from tests.contracts.fixtures import (
     budget_policy,
     budget_reservation,
@@ -215,8 +220,31 @@ class TestToolProviderSemantics:
         provider = FakeToolProvider(registered_tools=("tool-a",))
         provider.fail_tool("tool-a")
         result = provider.execute(tool_provider_spec(), tool_call_record())
-        assert result.status == "FAILED"
+        assert result.status is ToolResultStatus.FAILED
         assert result.failure_category is FailureCategory.TOOL_UNAVAILABLE
+
+    def test_list_tools_returns_registered_specs(self) -> None:
+        provider = FakeToolProvider()
+        spec = ToolSpec(
+            id="tool-a",
+            name="read_workspace",
+            effect_class=EffectClass.READ_ONLY,
+            provider_kind=ProviderType.NATIVE,
+        )
+        provider.register_spec(spec)
+        assert provider.list_tools(tool_provider_spec()) == (spec,)
+
+    def test_check_health_reports_status(self) -> None:
+        provider = FakeToolProvider(registered_tools=("tool-a",))
+        report = provider.check_health(tool_provider_spec())
+        assert report.status is EndpointHealth.HEALTHY
+        assert report.provider_id == "research_mcp"
+
+    def test_check_health_failure_injection(self) -> None:
+        provider = FakeToolProvider()
+        provider.fail_health("research_mcp")
+        report = provider.check_health(tool_provider_spec())
+        assert report.status is EndpointHealth.OPEN_CIRCUIT
 
 
 class TestPolicyEvaluatorSemantics:

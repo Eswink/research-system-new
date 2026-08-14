@@ -24,6 +24,7 @@ from packages.domain.enums import (
     ModelBindingMode,
     ProviderType,
     RoleCategory,
+    ToolCallStatus,
     TrustLevel,
     TrustProfile,
     WorkspacePolicy,
@@ -120,7 +121,7 @@ def tool_call_record(
         tool_id=tool_id,
         capability="workspace.read",
         argument_digest=Digest.of_bytes(b"{}"),
-        status="REQUESTED",
+        status=ToolCallStatus.REQUESTED,
     )
 
 

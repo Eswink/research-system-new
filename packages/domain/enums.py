@@ -5,6 +5,8 @@
 - ModelCapability: docs/architecture/MODEL_COMPATIBILITY.md + schemas/model-definition.schema.json
 - PolicyDecision: docs/architecture/CAPABILITY_SECURITY.md
 - EffectClass / ProviderType: docs/architecture/TOOL_RUNTIME.md
+- ToolCallStatus / ToolResultStatus / RiskClass: packages/domain/tool_enums.py
+- CredentialScope / SkillStatus / ToolPackState: packages/domain/tool_enums.py
 - TrustProfile: docs/architecture/WORKSPACE_RUNTIME.md
 - GateType / AutonomyLevel: docs/configuration/AUTONOMY_AND_GATES.md
 - TrustLabel: docs/architecture/CAPABILITY_SECURITY.md
@@ -21,6 +23,25 @@
 from __future__ import annotations
 
 from enum import StrEnum
+
+from packages.domain.tool_enums import (
+    CredentialScope as CredentialScope,
+)
+from packages.domain.tool_enums import (
+    RiskClass as RiskClass,
+)
+from packages.domain.tool_enums import (
+    SkillStatus as SkillStatus,
+)
+from packages.domain.tool_enums import (
+    ToolCallStatus as ToolCallStatus,
+)
+from packages.domain.tool_enums import (
+    ToolPackState as ToolPackState,
+)
+from packages.domain.tool_enums import (
+    ToolResultStatus as ToolResultStatus,
+)
 
 
 class FailureCategory(StrEnum):

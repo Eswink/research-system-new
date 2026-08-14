@@ -17,7 +17,7 @@ network_domains:
   - research-tools.example.com
 credentials:
   - name: research_tool_token
-    scope: tool-provider:literature-tools-fixture
+    scope: TOOL
     required: false
 compatibility:
   research_os: 0.4.0

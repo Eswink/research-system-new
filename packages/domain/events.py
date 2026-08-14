@@ -39,6 +39,8 @@ class EventType(StrEnum):
     MEMORY_PROPOSED = "memory.proposed"
     MEMORY_COMMITTED = "memory.committed"
     TOOL_PACK_INSTALLED = "tool_pack.installed"
+    TOOL_PACK_UPDATED = "tool_pack.updated"
+    TOOL_PACK_REVOKED = "tool_pack.revoked"
     TOOL_CALL_STARTED = "tool_call.started"
     TOOL_CALL_COMPLETED = "tool_call.completed"
     WORKSPACE_SNAPSHOT_CREATED = "workspace.snapshot.created"

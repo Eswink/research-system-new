@@ -24,3 +24,4 @@ forbidden_modules =
     anyio
     starlette
     tenacity
+    mcp

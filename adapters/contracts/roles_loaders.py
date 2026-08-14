@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from adapters.contracts.base import load_flat_collection
-from packages.domain.core import Version
+from packages.domain.core import Digest, Version
 from packages.domain.enums import (
     ActivationPolicy,
     BackendKind,
@@ -11,6 +11,7 @@ from packages.domain.enums import (
     ReviewPanelRole,
     RoleCategory,
     SelectionStrategy,
+    SkillStatus,
     WorkspacePolicy,
 )
 from packages.domain.roles import (
@@ -120,10 +121,13 @@ def load_team_templates(relative_path: str) -> dict[str, TeamTemplate]:
 def load_skills(relative_path: str) -> dict[str, SkillSpec]:
     collection: dict[str, SkillSpec] = {}
     for key, raw in load_flat_collection(relative_path, "skills", "skill.schema.json").items():
+        digest_raw = raw.get("digest")
         collection[key] = SkillSpec(
             id=raw["id"],
             version=Version(raw["version"]),
             capabilities=list(raw["capabilities"]),
             description=raw.get("description", ""),
+            status=SkillStatus(raw.get("status", SkillStatus.ACTIVE.value)),
+            digest=Digest.parse(digest_raw) if digest_raw else None,
         )
     return collection

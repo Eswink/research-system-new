@@ -51,6 +51,7 @@ from packages.application.ports.resource_catalog import (
     ProjectSettings,
     ResourceCatalog,
 )
+from packages.application.ports.tool_pack_store import ToolPackRecord, ToolPackStore
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease, WorkflowEngine
 from packages.application.ports.workspace_backend import WorkspaceBackend
@@ -91,6 +92,8 @@ __all__ = [
     "TaskCompletion",
     "TaskLease",
     "ToolCallDraft",
+    "ToolPackRecord",
+    "ToolPackStore",
     "ToolProvider",
     "TransientPortError",
     "WorkflowEngine",

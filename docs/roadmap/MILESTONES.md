@@ -86,7 +86,7 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 
 | Stage | 名称 | 分层 | Hard Deps | 状态 |
 | --- | --- | --- | --- | --- |
-| M8 | Research Capability Plane（Tool Plane + Skill Registry） | MVP | M7 | PLANNED |
+| M8 | Research Capability Plane（Tool Plane + Skill Registry） | MVP | M7 | DONE（2026-08-14） |
 | M9 | Real Experiment Runtime | MVP | M7 | PLANNED |
 | M10 | Evidence / Memory / Provenance | MVP | M7 | PLANNED |
 | M11 | Evaluation Plane | MVP | M7 | PLANNED |
@@ -192,7 +192,7 @@ regression（以 Eval Harness + deterministic gates 为基准），不允许仅
 
 | Milestone | Upstream | 动作 |
 | --- | --- | --- |
-| M8 | MCP ecosystem（Streamable HTTP + stdio） | 协议/生态 qualification，选 adapter 形态 |
+| M8 | MCP ecosystem（Streamable HTTP + stdio） | 协议/生态 qualification，选 adapter 形态（已完成：`docs/references/upstream/M8_MCP_QUALIFICATION.md`） |
 | M9 | Docker / execution sandbox 项目 | 镜像供应链与沙盒边界 qualification |
 | M11 | evaluation 基础设施 | harness 选型 qualification |
 | M14 | Temporal | 采用/不采用决策（ADAPTER 隔离，不进 Domain；若采用需 revision lock） |

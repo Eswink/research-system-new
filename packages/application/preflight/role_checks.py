@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from packages.application.ports import PreflightContext
+from packages.application.preflight.skill_checks import check_role_skills, skill_issue_findings
 from packages.application.protocol_compile.workspace_policy import check_workspace_capability
 from packages.domain.enums import ReviewPanelRole, WorkspacePolicy
 from packages.domain.protocols import (
@@ -22,6 +23,10 @@ from packages.domain.protocols import (
 
 def _finding(code: str, message: str, subject: str | None = None) -> PreflightFinding:
     return PreflightFinding(code, FindingSeverity.ERROR, message, subject)
+
+
+def _warning(code: str, message: str, subject: str | None = None) -> PreflightFinding:
+    return PreflightFinding(code, FindingSeverity.WARNING, message, subject)
 
 
 def _activation_map(plan: CompiledRunPlan) -> dict[str, bool]:
@@ -100,14 +105,15 @@ def _registration_findings(agent_id: str, context: PreflightContext) -> list[Pre
     return []
 
 
-def _check_agent(
-    agent_id: str, plan: CompiledRunPlan, context: PreflightContext
-) -> list[PreflightFinding]:
-    missing = _registration_findings(agent_id, context)
-    if missing:
-        return missing
+def _skill_capability_findings(
+    agent_id: str, context: PreflightContext
+) -> tuple[set[str], list[PreflightFinding]]:
+    """agent skill 引用展开：capability 声明并入能力面 + Registry 校验。
+
+    MISSING skill 沿用 AGENT_PERMISSION_DENIED（历史兼容）；
+    digest/status 问题由 skill_issue_findings 产出 SKILL_* findings。
+    """
     agent = context.catalog.agents[agent_id]
-    role = context.catalog.roles[agent.role]
     requested = set(agent.capability_refs)
     findings: list[PreflightFinding] = []
     for skill_id in agent.skill_refs:
@@ -122,6 +128,26 @@ def _check_agent(
             )
             continue
         requested.update(skill.capabilities)
+    findings.extend(
+        skill_issue_findings(
+            context.catalog.skills,
+            tuple(agent.skill_refs),
+            f"agent:{agent_id}",
+            PreflightFindingCode.AGENT_PERMISSION_DENIED.value,
+            skip_missing=True,
+        )
+    )
+    return requested, findings
+
+
+def _check_agent(
+    agent_id: str, plan: CompiledRunPlan, context: PreflightContext
+) -> list[PreflightFinding]:
+    missing = _registration_findings(agent_id, context)
+    if missing:
+        return missing
+    role = context.catalog.roles[context.catalog.agents[agent_id].role]
+    requested, findings = _skill_capability_findings(agent_id, context)
     allowed = set(role.requested_capabilities)
     forbidden = set(role.forbidden_capabilities)
     findings.extend(
@@ -239,4 +265,5 @@ def check_team(plan: CompiledRunPlan, context: PreflightContext) -> list[Preflig
     findings.extend(check_role_activations(plan, context))
     findings.extend(check_agent_permissions(plan, context))
     findings.extend(check_heterogeneity(plan, context))
+    findings.extend(check_role_skills(plan, context))
     return findings

@@ -26,6 +26,8 @@ approval.decided
 memory.proposed
 memory.committed
 tool_pack.installed
+tool_pack.updated
+tool_pack.revoked
 tool_call.started
 tool_call.completed
 workspace.snapshot.created

@@ -26,6 +26,7 @@ from adapters.fakes import (
     FakeModelGateway,
     FakePolicyEvaluator,
     FakeResourceCatalog,
+    FakeToolPackStore,
     FakeToolProvider,
     FakeWorkflowEngine,
     FakeWorkspaceBackend,
@@ -76,6 +77,7 @@ _FAKE_FACTORIES: dict[str, Callable[[], FakeBase]] = {
     "budget_ledger": FakeBudgetLedger,
     "endpoint_store": FakeEndpointStore,
     "resource_catalog": FakeResourceCatalog,
+    "tool_pack_store": FakeToolPackStore,
 }
 
 _PORT_PROTOCOL_NAMES = {
@@ -93,6 +95,7 @@ _PORT_PROTOCOL_NAMES = {
     "budget_ledger": "BudgetLedger",
     "endpoint_store": "EndpointStore",
     "resource_catalog": "ResourceCatalog",
+    "tool_pack_store": "ToolPackStore",
 }
 
 _PORT_PROBES: dict[str, Callable[[Any], object]] = {
@@ -112,6 +115,7 @@ _PORT_PROBES: dict[str, Callable[[Any], object]] = {
     "budget_ledger": lambda fake: fake.snapshot(),
     "endpoint_store": lambda fake: fake.get_endpoint("missing-endpoint"),
     "resource_catalog": lambda fake: fake.snapshot(),
+    "tool_pack_store": lambda fake: fake.get("missing-pack"),
 }
 
 _PORT_PROBE_METHODS: dict[str, str] = {
@@ -129,6 +133,7 @@ _PORT_PROBE_METHODS: dict[str, str] = {
     "budget_ledger": "snapshot",
     "endpoint_store": "get_endpoint",
     "resource_catalog": "snapshot",
+    "tool_pack_store": "get",
 }
 
 
@@ -241,7 +246,7 @@ def test_provider_types_do_not_leak_from_ports() -> None:
 
 
 def test_port_interface_compatibility_matrix() -> None:
-    """注册表必须覆盖全部 14 个 Port 名称。"""
+    """注册表必须覆盖全部 15 个 Port 名称（M8 新增 tool_pack_store）。"""
     expected = {
         "agent_runtime",
         "workflow_engine",
@@ -257,6 +262,7 @@ def test_port_interface_compatibility_matrix() -> None:
         "budget_ledger",
         "endpoint_store",
         "resource_catalog",
+        "tool_pack_store",
     }
     assert set(PORT_IMPLEMENTATIONS) == expected
 

@@ -157,15 +157,35 @@ components:
       - genai_content_capture_off_by_default
 
   - id: mcp
-    adoption_status: PLANNED
+    adoption_status: ADOPTED
     decision_status: APPROVED
     integration_mode: PROTOCOL
     role: research_tool_integration
-    source: "https://modelcontextprotocol.io/"
+    source:
+      kind: PYPI
+      package: mcp
+      url: "https://pypi.org/project/mcp/1.29.0/"
+    resolution:
+      version: "1.29.0"
+      lockfile: uv.lock
+      spec: ">=1.28,<2"
+      note: "v1 stable line；mcp 2.0.0 与 openhands-sdk 1.42.0（fastmcp 3.x → mcp<2.0）冲突，见 docs/references/upstream/M8_MCP_QUALIFICATION.md"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "52d01f334de1868cc3bb2d6604931126a67631f99a6c5d3b82ba47290315ec36"
+    license:
+      spdx: MIT
+      evidence: "https://github.com/modelcontextprotocol/python-sdk/blob/v1.x/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, tool_provider_contract_suite, security_tests]
     controls:
       - roots_not_access_control
       - scoped_authorization
       - schema_version_tracking
+      - no_token_passthrough
+      - adapter_only_import_boundary
 
   - id: swe_rex
     adoption_status: PLANNED

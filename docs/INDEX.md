@@ -54,6 +54,7 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 - `architecture/AGENT_BACKENDS.md`
 - `architecture/MODEL_COMPATIBILITY.md`
 - `architecture/TOOL_RUNTIME.md`
+- `architecture/SKILL_REGISTRY.md`
 - `architecture/WORKSPACE_RUNTIME.md`
 - `architecture/CONTEXT_ENGINE.md`
 - `architecture/CAPABILITY_SECURITY.md`
@@ -133,6 +134,7 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 - `references/upstream/M6_ADAPTER_DESIGN_NOTES.md` — M6 Adapter 设计承接（M5R）
 - `references/upstream/M6_RISK_REGISTER.md` — M6 风险登记（M5R）
 - `references/upstream/M6_READINESS_REPORT.md` — M6 Readiness 报告（M5R；M6 完成后基线更新 2026-08-13）
+- `references/upstream/M8_MCP_QUALIFICATION.md` — MCP ecosystem qualification（M8；mcp==1.29.0 v1 stable line ADOPTED）
 
 ## Roadmap / Versioning
 

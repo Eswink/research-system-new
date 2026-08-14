@@ -17,3 +17,11 @@ source_modules =
     packages.application
 forbidden_modules =
     adapters
+
+[importlinter:contract:application-no-mcp-sdk]
+name = Application must not import the MCP SDK
+type = forbidden
+source_modules =
+    packages.application
+forbidden_modules =
+    mcp

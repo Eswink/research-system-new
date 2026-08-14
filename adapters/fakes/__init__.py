@@ -19,6 +19,7 @@ from adapters.fakes.memory_store import FakeMemoryStore
 from adapters.fakes.model_gateway import FakeModelGateway, FakeModelGatewayOptions
 from adapters.fakes.policy_evaluator import FakePolicyEvaluator
 from adapters.fakes.resource_catalog import FakeResourceCatalog
+from adapters.fakes.tool_pack_store import FakeToolPackStore
 from adapters.fakes.tool_provider import FakeToolProvider
 from adapters.fakes.workflow_engine import FakeWorkflowEngine
 from adapters.fakes.workspace_backend import FakeWorkspaceBackend
@@ -38,6 +39,7 @@ __all__ = [
     "FakeModelGatewayOptions",
     "FakePolicyEvaluator",
     "FakeResourceCatalog",
+    "FakeToolPackStore",
     "FakeToolProvider",
     "FakeWorkflowEngine",
     "FakeWorkspaceBackend",

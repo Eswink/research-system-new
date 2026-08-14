@@ -37,7 +37,7 @@
         "required": ["name", "scope"],
         "properties": {
           "name": {"type": "string", "minLength": 1},
-          "scope": {"type": "string", "minLength": 1},
+          "scope": {"enum": ["LLM", "TOOL", "WORKSPACE", "USER_OAUTH"]},
           "required": {"type": "boolean"}
         }
       }

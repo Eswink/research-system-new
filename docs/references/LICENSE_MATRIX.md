@@ -22,6 +22,7 @@
 | Open Policy Agent | Apache-2.0 | optional adapter |
 | OpenTelemetry | Apache-2.0 ecosystem; verify packages | observability |
 | MCP SDK | verify selected language SDK/version | Tool provider protocol |
+| MCP Python SDK v1.29.0 (`mcp`) — MIT; sdist sha256 `52d01f...15ec36` in `uv.lock` / `UPSTREAM_COMPONENTS.yaml`; spec `>=1.28,<2`（v1 stable line，v2 与 openhands-sdk 依赖冲突）| ADOPTED MCP client adapter（M8） |
 | SWE-ReX | MIT | optional execution adapter |
 | Cline | Apache-2.0 | reference/optional |
 | Cline Kanban | Apache-2.0 | UX donor |

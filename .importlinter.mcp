@@ -1,0 +1,16 @@
+[importlinter]
+root_package = adapters
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:mcp-sdk-adapter-only]
+name = MCP SDK is confined to adapters.mcp
+type = forbidden
+source_modules =
+    adapters.openhands
+    adapters.relay
+    adapters.sqlite
+    adapters.contracts
+    adapters.fakes
+forbidden_modules =
+    mcp
