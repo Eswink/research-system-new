@@ -101,6 +101,16 @@ class FakeWorkflowEngine(FakeBase):
         self._leases.pop(task_id, None)
         self._record("cancel", task_id)
 
+    def recover_expired_leases(self) -> int:
+        """Fake 无 lease TTL 语义（lease 随 acquire/heartbeat 刷新），恒无过期 lease。
+
+        Port 契约要求本方法存在；真实过期恢复语义由 SqliteWorkflowEngine 提供
+        （tests/e2e/test_restart_recovery.py 覆盖）。
+        """
+        self._enter("recover_expired_leases", "")
+        self._record("recover_expired_leases", "", result="0 recovered")
+        return 0
+
     @property
     def deliveries(self) -> dict[str, int]:
         return dict(self._deliveries)

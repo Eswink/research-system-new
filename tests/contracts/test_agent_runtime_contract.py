@@ -10,9 +10,10 @@ runtime event 顺序（不替代 Domain Event）。
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
-from adapters.fakes import FakeWorkflowEngine
 from packages.application.ports.agent_runtime import (
     AgentRuntime,
     AgentSessionSpec,
@@ -20,7 +21,10 @@ from packages.application.ports.agent_runtime import (
     RuntimeEventKind,
 )
 from packages.application.ports.errors import InvalidInputError
-from packages.application.ports.workflow_engine import TaskCompletion
+from packages.application.ports.workflow_engine import (
+    TaskCompletion,
+    WorkflowEngine,
+)
 from packages.domain.session_state import AgentSessionState
 from tests.contracts.fixtures import (
     agent_spec,
@@ -46,9 +50,9 @@ def _as_runtime(factory: type[object]) -> AgentRuntime:
     return runtime
 
 
-def _as_engine(factory: type[object]) -> FakeWorkflowEngine:
+def _as_engine(factory: type[object]) -> Any:
     engine = factory()
-    assert isinstance(engine, FakeWorkflowEngine)
+    assert isinstance(engine, WorkflowEngine)
     return engine
 
 

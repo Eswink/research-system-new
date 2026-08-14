@@ -32,6 +32,7 @@ class EventType(StrEnum):
     TASK_HEARTBEAT = "task.heartbeat"
     TASK_RETRY_SCHEDULED = "task.retry_scheduled"
     TASK_COMPLETED = "task.completed"
+    TASK_CANCELLED = "task.cancelled"
     HANDOFF_CREATED = "handoff.created"
     APPROVAL_REQUESTED = "approval.requested"
     APPROVAL_DECIDED = "approval.decided"
@@ -45,6 +46,8 @@ class EventType(StrEnum):
     CLAIM_VERIFIED = "claim.verified"
     RUN_FORKED = "run.forked"
     RUN_COMPLETED = "run.completed"
+    RUN_CANCELLED = "run.cancelled"
+    RUN_FAILED = "run.failed"
 
 
 @dataclass(frozen=True, slots=True)

@@ -58,3 +58,9 @@ def test_fakes_have_no_provider_or_relay_dependency() -> None:
     result = _run_linter(".importlinter.fakes")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "0 broken" in result.stdout
+
+
+def test_sqlite_adapters_have_no_vendor_or_fake_dependency() -> None:
+    result = _run_linter(".importlinter.sqlite")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "0 broken" in result.stdout

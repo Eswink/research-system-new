@@ -1,0 +1,40 @@
+id: sort_analysis_v1_0_1
+version: 0.4.0
+
+# M7 Reliable Vertical Slice Reference Scenario
+#
+# 2-phase 线性 DAG，范围受控、可重复：
+#   1. execution — experiment_engineer 在隔离 workspace 分析输入算法仓库，
+#      生成 analysis_report Artifact（bash_read_only Tool，Policy gate 允许）；
+#   2. review — scientific_reviewer 独立复核 Phase 1 输出，从 Artifact 形成
+#      Evidence → Claim，经 AcceptanceCriteria gate 产出 ReviewFinding/Decision。
+#
+# 不引入复杂真实科研问题：链路目标是区分"系统集成失败"与"研究问题本身困难"。
+
+phases:
+  - id: execution
+    name: Algorithm Analysis
+    strategy: single_agent
+    required_roles:
+      - {role: experiment_engineer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - workspace.read
+      - workspace.write.code
+      - code.execute
+      - artifact.write
+    task_contract: sort_analysis_execution
+    outputs: [analysis_report]
+    timeout_seconds: 120
+
+  - id: review
+    name: Independent Review
+    strategy: single_agent
+    depends_on: [execution]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - workspace.read
+      - evidence.read
+    task_contract: sort_analysis_review
+    outputs: [review_decision]
+    gate: QUALITY_GATE

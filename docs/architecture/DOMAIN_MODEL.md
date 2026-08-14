@@ -42,6 +42,7 @@ agent specs
 resolved models
 model runtime fingerprints
 effective tools/tool pack digests
+task contracts          # 引用契约的冻结快照（M7 补充，防契约漂移）
 policy version
 context template hashes
 workspace/execution backend
@@ -49,6 +50,13 @@ environment
 input artifact digests
 budget reservation
 ```
+
+`digest()` 覆盖全部声明字段；`semantic_digest()` 排除 `frozen_at`
+（冻结时刻元数据不参与语义比对），用于 resume 时校验 plan/catalog/契约
+未漂移（WORKFLOW_RELIABILITY.md §8）。M7 无法从 compile/preflight 上下文
+获取的字段（source_commit、model_runtime_fingerprints、context_template_hashes、
+execution_backend、environment、input_artifact_digests）保持 None/空，不伪填充
+（见 packages/domain/manifest.py 的 M7 边界声明）。
 
 ### RunManifestRevision
 
@@ -272,7 +280,7 @@ Intervention
 ```text
 SourceRecord
 Claim
-Evidence
+Evidence              # artifact_id 强引用生产 Artifact（M7 补充，弱 source_ref 之外的第二锚点）
 EvidenceRelation
 ExperimentPlan
 ExperimentRun

@@ -34,7 +34,8 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
 ### WorkflowEngine（`ports/workflow_engine.py`）
 
 - 职责：任务分发（at-least-once + idempotency 去重）、lease 获取/心跳、
-  取消传播。
+  取消传播、recover_expired_leases（过期 lease 收敛，返回恢复数量；
+  orchestration 在 start_run 前懒触发，见 WORKFLOW_RELIABILITY.md §2）。
 - 非职责：不执行 Agent 循环（AgentRuntime）；不持久化
   （M7 PostgreSQL task queue/outbox，见 BACKLOG.md M7）。
 - 幂等语义：重复 submit（同 task.id 或同 idempotency_key）静默幂等——
@@ -104,8 +105,9 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
 
 ### BudgetLedger（`ports/budget_ledger.py`，收编原 BudgetReservationPort）
 
-- 职责：reserve（预算预留，确定性引用）+ record_usage（append-only，
-  拒绝重复 entry_id）+ snapshot（只读视图）。
+- 职责：reserve（预算预留，确定性引用）+ release（幂等释放预留，
+  run 收敛到成功/失败/取消后归还配额，未知/已释放引用为 no-op）+
+  record_usage（append-only，拒绝重复 entry_id）+ snapshot（只读视图）。
 - 非职责：不做 usage 采集（ModelGateway / ExecutionBackend 上报原始用量，
   application 归账后入 ledger）；不伪造 cost（UNKNOWN 语义）。
 

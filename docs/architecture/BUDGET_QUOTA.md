@@ -27,6 +27,10 @@ compute
 
 避免多个并行 Agent 同时透支。
 
+预留生命周期：reserve（Preflight 通过后冻结）→ run 收敛到
+成功/失败/取消时 release（幂等，未知/已释放引用为 no-op）。
+usage 记录 append-only，不随 release 清除。
+
 ## 3. UsageLedger
 
 所有实际消耗进入 append-only Ledger：

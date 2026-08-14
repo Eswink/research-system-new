@@ -159,6 +159,27 @@ class TestBudgetLedgerSemantics:
         ref_b = ledger_b.reserve((budget_reservation(),), budget_policy())
         assert ref_a == ref_b
 
+    def test_release_returns_reserved_quota(self) -> None:
+        ledger = FakeBudgetLedger()
+        ref = ledger.reserve((budget_reservation(),), budget_policy())
+        assert len(ledger.snapshot().reservations) == 1
+        ledger.release(ref)
+        assert ledger.snapshot().reservations == ()
+
+    def test_release_is_idempotent(self) -> None:
+        ledger = FakeBudgetLedger()
+        ref = ledger.reserve((budget_reservation(),), budget_policy())
+        ledger.release(ref)
+        ledger.release(ref)  # 重复释放必须 no-op，不抛错、不产生残留
+        assert ledger.snapshot().reservations == ()
+        release_calls = [c for c in ledger.calls if c.method == "release"]
+        assert release_calls[-1].result_summary == "noop"
+
+    def test_release_unknown_ref_is_noop(self) -> None:
+        ledger = FakeBudgetLedger()
+        ledger.release("budget-reservation:unknown")
+        assert ledger.snapshot().reservations == ()
+
     def test_unknown_cost_not_fabricated(self) -> None:
         ledger = FakeBudgetLedger()
         entry = UsageLedgerEntry(

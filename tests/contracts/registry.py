@@ -33,6 +33,9 @@ from adapters.fakes import (
 )
 from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
 from adapters.openhands.session_types import AdapterDependencies
+from adapters.sqlite.artifact_store import SqliteArtifactStore
+from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
+from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 
 Factory = Callable[[], object]
 
@@ -61,13 +64,13 @@ def _openhands_runtime_factory() -> OpenHandsRuntimeAdapter:
 
 PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "agent_runtime": [FakeAgentRuntime, _openhands_runtime_factory],
-    "workflow_engine": [FakeWorkflowEngine],
+    "workflow_engine": [FakeWorkflowEngine, SqliteWorkflowEngine],
     "model_gateway": [FakeModelGateway],
     "tool_provider": [FakeToolProvider],
     "workspace_backend": [FakeWorkspaceBackend],
     "execution_backend": [FakeExecutionBackend],
-    "artifact_store": [FakeArtifactStore],
-    "event_publisher": [FakeEventPublisher],
+    "artifact_store": [FakeArtifactStore, SqliteArtifactStore],
+    "event_publisher": [FakeEventPublisher, SqliteOutboxEventPublisher],
     "policy_evaluator": [FakePolicyEvaluator],
     "credential_resolver": [FakeCredentialResolver],
     "memory_store": [FakeMemoryStore],

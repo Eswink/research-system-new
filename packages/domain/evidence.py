@@ -51,6 +51,7 @@ class Evidence:
     content_digest: str
     extracted_by: str | None = None
     captured_at: Timestamp | None = None
+    artifact_id: str | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -59,6 +60,8 @@ class Evidence:
             raise ValueError("evidence source_ref must not be empty")
         if not self.content_digest:
             raise ValueError("evidence content_digest must not be empty")
+        if self.artifact_id is not None and not self.artifact_id:
+            raise ValueError("evidence artifact_id must not be empty when present")
 
 
 @dataclass(frozen=True, slots=True)

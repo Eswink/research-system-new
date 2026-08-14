@@ -26,7 +26,10 @@ heartbeat_interval
 attempt
 ```
 
-超时后可重新调度。
+超时后可重新调度：`recover_expired_leases()` 将超时 lease 的任务重新置为
+QUEUED 并发布 TASK_RETRY_SCHEDULED；orchestration 在每次 start_run 前懒触发
+该收敛（进程崩溃/worker 丢失后的安全恢复路径，tests/e2e/
+test_restart_recovery.py 覆盖）。
 
 ## 3. Retry Classification
 

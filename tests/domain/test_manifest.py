@@ -127,3 +127,34 @@ def test_manifest_requires_run_and_project_ids() -> None:
         RunManifest(run_id="", project_id="p", protocol_version=Version("0.4.0"))
     with pytest.raises(ValueError):
         RunManifest(run_id="r", project_id="", protocol_version=Version("0.4.0"))
+
+
+def _revision(changes: dict[str, object]) -> RunManifestRevision:
+    base = _base_manifest()
+    return RunManifestRevision(
+        manifest_digest=Digest("cd" * 32),
+        base_digest=base.digest(),
+        revision_number=1,
+        reason="model change",
+        changes=changes,
+        approved_by="human",
+        approved_at=_frozen(),
+        audit_ref="audit-1",
+    )
+
+
+def test_revision_rejects_empty_changes() -> None:
+    """空 changes 的修订无意义：必须拒绝（M7 技术债清偿）。"""
+    with pytest.raises(ValueError, match="must not be empty"):
+        _revision({})
+
+
+def test_revision_rejects_non_string_change_keys() -> None:
+    """changes 的 key 必须为 str（可审计、可序列化）。"""
+    with pytest.raises(ValueError, match="keys must be strings"):
+        _revision({123: "value"})  # type: ignore[dict-item]
+
+
+def test_revision_accepts_structured_changes() -> None:
+    revision = _revision({"model": {"from": "alpha", "to": "beta"}})
+    assert revision.changes == {"model": {"from": "alpha", "to": "beta"}}

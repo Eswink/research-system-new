@@ -228,6 +228,11 @@ def freeze_manifest(
     if not report.passed:
         raise ManifestFreezeError("cannot freeze manifest before a passing preflight")
     policy_version = context.catalog.policy.version.text if context.catalog.policy else None
+    frozen_contracts = {
+        ref: context.catalog.task_contracts[ref]
+        for ref in plan.task_contract_refs
+        if ref in context.catalog.task_contracts
+    }
     return RunManifest(
         run_id=run_id,
         project_id=context.project.project_id,
@@ -242,6 +247,7 @@ def freeze_manifest(
             for item in plan.tool_requirements
         },
         tool_pack_digests=sorted(plan.tool_pack_digests.values()),
+        task_contracts=frozen_contracts,
         policy_version=policy_version,
         workspace_backend=context.project.workspace_backend,
         budget_reservation_ref=report.reserved_budget_ref,

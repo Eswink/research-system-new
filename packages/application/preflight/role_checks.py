@@ -39,12 +39,12 @@ def _agent_role_map(plan: CompiledRunPlan, context: PreflightContext) -> dict[st
 def check_role_activations(
     plan: CompiledRunPlan, context: PreflightContext
 ) -> list[PreflightFinding]:
-    """DISABLED role 不得出现在 phase 分配中。"""
+    """DISABLED / 未注册 role 不得出现在 phase 分配中。"""
     activated = _activation_map(plan)
     assigned_roles = {
         role_id for assignment in plan.phase_assignments for role_id in assignment.role_assignments
     }
-    return [
+    findings = [
         _finding(
             PreflightFindingCode.ROLE_DISABLED.value,
             f"role {role_id} is not activated but assigned to a phase",
@@ -53,6 +53,16 @@ def check_role_activations(
         for role_id in sorted(assigned_roles)
         if role_id in activated and not activated[role_id]
     ]
+    findings.extend(
+        _finding(
+            PreflightFindingCode.ROLE_NOT_FOUND.value,
+            f"role {role_id} is not registered in the resource catalog",
+            f"role:{role_id}",
+        )
+        for role_id in sorted(assigned_roles)
+        if role_id not in context.catalog.roles
+    )
+    return findings
 
 
 def check_agent_permissions(
@@ -65,13 +75,41 @@ def check_agent_permissions(
     return findings
 
 
+def _registration_findings(
+    agent_id: str, context: PreflightContext
+) -> list[PreflightFinding]:
+    """agent 或其引用 role 未注册必须阻断（不得静默放行）。"""
+    agent = context.catalog.agents.get(agent_id)
+    if agent is None:
+        # 防御性检查：正常解析流程中 agent 必然注册；缺失说明 catalog 被替换。
+        return [
+            _finding(
+                PreflightFindingCode.AGENT_NOT_FOUND.value,
+                f"agent {agent_id} is not registered in the resource catalog",
+                f"agent:{agent_id}",
+            )
+        ]
+    if agent.role not in context.catalog.roles:
+        # compile 层 ROLE_CAPACITY 已覆盖主路径，此处兜底 compile 与
+        # preflight 之间 catalog 漂移。
+        return [
+            _finding(
+                PreflightFindingCode.ROLE_NOT_FOUND.value,
+                f"agent {agent_id} references unregistered role {agent.role}",
+                f"agent:{agent_id}",
+            )
+        ]
+    return []
+
+
 def _check_agent(
     agent_id: str, plan: CompiledRunPlan, context: PreflightContext
 ) -> list[PreflightFinding]:
-    agent = context.catalog.agents.get(agent_id)
-    role = context.catalog.roles.get(_agent_role_map(plan, context)[agent_id])
-    if agent is None or role is None:
-        return []
+    missing = _registration_findings(agent_id, context)
+    if missing:
+        return missing
+    agent = context.catalog.agents[agent_id]
+    role = context.catalog.roles[agent.role]
     requested = set(agent.capability_refs)
     findings: list[PreflightFinding] = []
     for skill_id in agent.skill_refs:

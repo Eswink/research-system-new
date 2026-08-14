@@ -41,6 +41,7 @@ DOCUMENTED_EVENT_TYPES = {
     "task.heartbeat",
     "task.retry_scheduled",
     "task.completed",
+    "task.cancelled",
     "handoff.created",
     "approval.requested",
     "approval.decided",
@@ -54,6 +55,8 @@ DOCUMENTED_EVENT_TYPES = {
     "claim.verified",
     "run.forked",
     "run.completed",
+    "run.cancelled",
+    "run.failed",
 }
 
 
@@ -247,4 +250,4 @@ class TestEventTypeInventory:
     def test_covers_documented_event_types(self) -> None:
         actual = {event.value for event in EventType}
         assert actual == DOCUMENTED_EVENT_TYPES
-        assert len(actual) == 27
+        assert len(actual) == 30

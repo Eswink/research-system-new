@@ -4,10 +4,18 @@
 docs/architecture/DETERMINISTIC_SERIALIZATION.md（canonical digest 规则）。
 Manifest 一旦冻结不可原地修改；改变关键依赖必须 fork run 或显式
 revision + approval + audit（AGENTS.md §5）。
+
+M7 边界（诚实声明）：以下字段当前无法从 compile/preflight 上下文获取，
+保持 None/空（不做伪填充）：source_commit（无 git 元数据来源）、
+model_runtime_fingerprints（真实 model probe 在 M8 接入）、
+context_template_hashes（Context Engine 未落地）、execution_backend /
+environment（runtime 装配由 OpenHandsRuntimeAdapter 决定，adapter 不反向
+上报执行环境标识）、input_artifact_digests（M7 场景无输入 Artifact）。
 """
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 
 from packages.domain.core import Digest, Timestamp, Version
@@ -30,6 +38,7 @@ class RunManifest:
     model_runtime_fingerprints: dict[str, object] = field(default_factory=dict)
     effective_tools: dict[str, object] = field(default_factory=dict)
     tool_pack_digests: list[str] = field(default_factory=list)
+    task_contracts: dict[str, object] = field(default_factory=dict)
     policy_version: str | None = None
     context_template_hashes: list[str] = field(default_factory=list)
     workspace_backend: str | None = None
@@ -48,6 +57,17 @@ class RunManifest:
     def digest(self) -> Digest:
         """Manifest 的 sha256 确定性 digest。"""
         return digest_of(self)
+
+    def semantic_digest(self) -> Digest:
+        """语义 digest：覆盖除 frozen_at 外的全部声明字段。
+
+        frozen_at 是冻结时刻的元数据，不参与语义比对；其余任何字段漂移
+        （模型、工具、角色、契约、预算预留、策略版本）都会改变本 digest。
+        用于 resume/fork 的一致性校验（AGENTS.md §5、WORKFLOW_RELIABILITY.md §8）。
+        """
+        payload = dataclasses.asdict(self)
+        payload.pop("frozen_at", None)
+        return digest_of(payload)
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,3 +94,9 @@ class RunManifestRevision:
             raise ValueError("revision must carry an audit reference")
         if self.base_digest == self.manifest_digest:
             raise ValueError("revision must change the manifest digest")
+        # changes 结构不变量（M7 技术债清偿）：空修订与非 str key 拒绝，
+        # 防止绕过 manifest 语义的任意内容写入。
+        if not self.changes:
+            raise ValueError("revision changes must not be empty")
+        if not all(isinstance(key, str) for key in self.changes):
+            raise ValueError("revision changes keys must be strings")
