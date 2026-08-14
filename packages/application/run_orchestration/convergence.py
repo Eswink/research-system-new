@@ -37,9 +37,7 @@ def assert_semantics_frozen(
         )
 
 
-def release_reservation(
-    refs: dict[str, str], budget: BudgetLedger | None, run_id: str
-) -> None:
+def release_reservation(refs: dict[str, str], budget: BudgetLedger | None, run_id: str) -> None:
     """run 收敛（成功/失败/取消）后幂等释放预算预留（BUDGET_QUOTA.md §2）。"""
     ref = refs.pop(run_id, None)
     if ref is not None and budget is not None:

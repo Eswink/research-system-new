@@ -117,6 +117,23 @@ Product Capability**（M7 后的产品能力建设，非已实现事项）。
 - [x] resume Manifest check（`task_executor._assert_frozen_manifest` 按 AGENTS.md §5 强制）
 - [x] RunManifestRevision.changes 结构不变量（非空 + str key，M7 复审技术债清偿）
 
+### M7 收尾工程债（2026-08-14，PLAN-20260814-011）
+
+- [x] ruff lint/format 闭环：`packages/application/run_orchestration/__init__.py`
+      import 排序、`service.py` 2 个 unused imports、
+      `tests/e2e/test_orchestration_convergence.py` import 排序 + 12 files
+      `ruff format`；`ruff check packages adapters tests` 0 errors、
+      `ruff format --check` 244 files 全过。
+- [x] mypy strict 闭环（16 errors → 0，227 files Success）：
+      `preflight.py` frozen_contracts 显式 `dict[str, object]`（RunManifest
+      方差对齐）；`test_m2_policy_budget.py` Reserver 补齐 BudgetLedger
+      protocol `release`；`test_run_rejections.py` capabilities 键改用
+      `ModelCapability` 枚举；`test_fault_convergence.py` `_start` 返回
+      `RunOutcome`；`test_cancel_resume.py` `_drift_parts` 用 TypedDict
+      `DriftParts` + `RunManifest` 精确类型化。
+- 验证：m0 profile 全绿（除 learning-evals 独立 P2 项）；pytest 989
+      passed；validate_bundle + governance validate PASS。
+
 ## Remaining Technical Debt
 
 已发现、不阻断 M7 的事项；每项标注优先级（P 级）与目标归属。
@@ -129,8 +146,6 @@ Product Capability**（M7 后的产品能力建设，非已实现事项）。
 | DockerWorkspace 容器链路全量验证 | P1 | 部署配置阶段 | M6 遗留；当前仅映射代码 + 探测式 smoke |
 | ModelRelay + OpenHandsRuntimeAdapter usage 归账闭环到 BudgetLedger | P1 | Next Capability（真实 relay 链路 E2E） | 前提：真实 relay 链路 E2E（当前为 mock 端点）；原文档标注 "M8" 为未定义引用，修正为 post-M7 能力 |
 | ExecutionBackend 容器执行（Sandbox） | P1 | Next Capability（Real Experiment Runtime） | M7 切片以进程内/Fake 语义执行；VERTICAL_SLICE 中 "Sandbox execution" 步骤为 Spec 目标，当前未以容器实现 |
-| M7 代码 ruff lint/format 未闭环 | P1 | 立即（M7 收尾工程债，2026-08-14 实测） | m0 profile `python/product-lint` 4 errors（`run_orchestration/__init__.py`、`service.py` 2 unused imports、`tests/e2e/test_orchestration_convergence.py`）与 `python/format-check` 12 files（M7 代码与测试）——M7 既有状态，非本次文档对账引入；`ruff check --fix` + `ruff format` 后回归 |
-| M7 代码 mypy strict 16 errors | P1 | 立即（M7 收尾工程债，2026-08-14 实测） | `preflight.py:250` RunManifest 泛型方差、`test_m2_policy_budget.py:125`、`tests/e2e/` 4 文件类型错误——M7 既有状态，非本次引入 |
 | learning evals LEARN registry 不一致 | P2 | learning 维护流程 | `run_cursor_learning_evals` FAIL：LEARN-20260813-001/002 缺 registry 条目、promoted target 路径校验失败（`.cursor/rules/42-command-encoding.mdc` 实际存在）；按 `capture-learning` / `consolidate-learning` 流程修复 `.cursor/learning/` 资产 |
 
 ## Next Product Capability

@@ -10,6 +10,7 @@ from packages.application.run_orchestration.commands import (
     ResumeRunCommand,
     StartRunCommand,
 )
+from packages.application.run_orchestration.context import RunContext
 from packages.application.run_orchestration.evaluation_gate import (
     EvaluationInputs,
     GateOutcome,
@@ -30,7 +31,6 @@ from packages.application.run_orchestration.result_handler import (
     ResultRegistration,
     register_session_result,
 )
-from packages.application.run_orchestration.context import RunContext
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
     RunOrchestrationService,

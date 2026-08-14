@@ -75,9 +75,7 @@ def check_agent_permissions(
     return findings
 
 
-def _registration_findings(
-    agent_id: str, context: PreflightContext
-) -> list[PreflightFinding]:
+def _registration_findings(agent_id: str, context: PreflightContext) -> list[PreflightFinding]:
     """agent 或其引用 role 未注册必须阻断（不得静默放行）。"""
     agent = context.catalog.agents.get(agent_id)
     if agent is None:

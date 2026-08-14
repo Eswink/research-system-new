@@ -6,6 +6,7 @@
 
 | Done | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260814-011](tasks/PLAN-20260814-011-m7-quality-gate-closure.md) | DONE |
 | [x] | [PLAN-20260814-008](tasks/PLAN-20260814-008-m0-m7-doc-reconciliation.md) | DONE |
 | [x] | [PLAN-20260814-009](tasks/PLAN-20260814-009-m0-foundation-retrospective.md) | DONE |
 | [x] | [PLAN-20260814-010](tasks/PLAN-20260814-010-m7-vertical-slice-retrospective.md) | DONE |

@@ -228,7 +228,7 @@ def freeze_manifest(
     if not report.passed:
         raise ManifestFreezeError("cannot freeze manifest before a passing preflight")
     policy_version = context.catalog.policy.version.text if context.catalog.policy else None
-    frozen_contracts = {
+    frozen_contracts: dict[str, object] = {
         ref: context.catalog.task_contracts[ref]
         for ref in plan.task_contract_refs
         if ref in context.catalog.task_contracts

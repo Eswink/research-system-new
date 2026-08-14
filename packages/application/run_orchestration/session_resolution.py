@@ -16,7 +16,5 @@ def assigned_agents(assignment: PhaseAssignment) -> tuple[str, ...]:
 def flatten_tool_providers(plan: CompiledRunPlan) -> tuple[str, ...]:
     """冻结 Tool Set：各 phase 全部 ToolRequirement 的 provider 并集。"""
     return tuple(
-        sorted({
-            provider for tool in plan.tool_requirements for provider in tool.provider_ids
-        })
+        sorted({provider for tool in plan.tool_requirements for provider in tool.provider_ids})
     )

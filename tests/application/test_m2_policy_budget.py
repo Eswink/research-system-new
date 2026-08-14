@@ -112,6 +112,9 @@ def test_budget_unknown_limits_are_explicit_and_reservation_uses_port() -> None:
             self.calls += 1
             return "reservation:1"
 
+        def release(self, reservation_ref: str) -> None:
+            return None
+
         def record_usage(self, entry: UsageLedgerEntry) -> None:
             return None
 

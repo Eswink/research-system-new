@@ -6,17 +6,17 @@ import pytest
 
 from adapters.fakes.budget_ledger import FakeBudgetLedger
 from adapters.fakes.workflow_engine import FakeWorkflowEngine
-from packages.application.run_orchestration.convergence import (
-    assert_semantics_frozen,
-    release_reservation,
-)
 from packages.application.preflight.preflight import ManifestFreezeError
 from packages.application.run_orchestration import (
     OrchestrationDependencies,
     RunOrchestrationService,
     StartRunCommand,
 )
-from packages.domain.core import Digest, ID
+from packages.application.run_orchestration.convergence import (
+    assert_semantics_frozen,
+    release_reservation,
+)
+from packages.domain.core import ID, Digest
 from tests.e2e.scenario import M7Harness, StructuredOutputAgentRuntime, m7_protocol
 from tests.e2e.scenario_catalog import (
     m7_catalog,

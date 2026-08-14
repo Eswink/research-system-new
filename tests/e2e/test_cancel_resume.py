@@ -9,8 +9,11 @@
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 import pytest
 
+from packages.application.ports.resource_catalog import CatalogSnapshot, PreflightContext
 from packages.application.run_orchestration import (
     CancelRunCommand,
     ResumeRunCommand,
@@ -19,6 +22,8 @@ from packages.application.run_orchestration import (
 )
 from packages.domain.core import ID, Digest
 from packages.domain.events import EventType
+from packages.domain.manifest import RunManifest
+from packages.domain.protocols import CompiledRunPlan, PreflightReport
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from tests.e2e.scenario import M7Harness, StructuredOutputAgentRuntime, m7_protocol
@@ -27,6 +32,15 @@ from tests.e2e.scenario_catalog import (
     m7_preflight_context,
     m7_project,
 )
+
+
+class DriftParts(TypedDict):
+    """漂移 catalog 重新编译后的 plan/report/context 组合。"""
+
+    plan: CompiledRunPlan
+    report: PreflightReport
+    catalog: CatalogSnapshot
+    context: PreflightContext
 
 
 class TestCancel:
@@ -228,7 +242,7 @@ def _pending_sessions(harness: M7Harness, run_context: RunContext) -> tuple[Sess
     return harness.service._resolve_sessions(run_context)  # noqa: SLF001
 
 
-def _drift_parts(run_id: str) -> tuple[object, dict[str, object]]:
+def _drift_parts(run_id: str) -> tuple[RunManifest, DriftParts]:
     """冻结原始 manifest 后构造漂移 catalog（policy 版本 0.5.0）的 plan/report/context。"""
     from dataclasses import replace
 
@@ -241,9 +255,7 @@ def _drift_parts(run_id: str) -> tuple[object, dict[str, object]]:
     original_catalog = m7_catalog()
     project = m7_project()
     original_context = m7_preflight_context(original_catalog, project)
-    plan, report = compile_and_preflight(
-        m7_protocol(), original_catalog, project, original_context
-    )
+    plan, report = compile_and_preflight(m7_protocol(), original_catalog, project, original_context)
     assert plan is not None and report.passed
     manifest = freeze_manifest(run_id, plan, report, original_context)
 
@@ -260,7 +272,7 @@ def _drift_parts(run_id: str) -> tuple[object, dict[str, object]]:
         m7_protocol(), drifted_catalog, project, drifted_context
     )
     assert drifted_plan is not None and drifted_report.passed
-    parts = {
+    parts: DriftParts = {
         "plan": drifted_plan,
         "report": drifted_report,
         "catalog": drifted_catalog,

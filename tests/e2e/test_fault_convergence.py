@@ -16,6 +16,7 @@ from __future__ import annotations
 from adapters.fakes.policy_evaluator import FakePolicyEvaluator
 from packages.application.run_orchestration import (
     CancelRunCommand,
+    RunOutcome,
     StartRunCommand,
 )
 from packages.domain.core import ID
@@ -165,7 +166,7 @@ def test_scientific_negative_result_is_distinct_from_system_failure() -> None:
     # 通过 system_failure 标志区分"科学负结果"与"系统故障"。
 
 
-def _start(harness: M7Harness, trace_id: str = "trace-fault") -> object:
+def _start(harness: M7Harness, trace_id: str = "trace-fault") -> RunOutcome:
     return harness.service.start_run(
         m7_protocol(),
         m7_catalog(),

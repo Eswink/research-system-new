@@ -125,7 +125,7 @@ class TestPreflightRejections:
         """模型缺少 Role 硬能力 → MODEL_ELIGIBILITY → Run FAILED。"""
         from dataclasses import replace
 
-        from packages.domain.enums import CapabilitySource, CapabilityStatus
+        from packages.domain.enums import CapabilitySource, CapabilityStatus, ModelCapability
         from packages.domain.models import CapabilityAssertion, ModelDefinition
 
         catalog = m7_catalog()
@@ -134,7 +134,7 @@ class TestPreflightRejections:
             endpoint_id="relay-main",
             model_name="model-engineer",
             capabilities={
-                "chat": CapabilityAssertion(
+                ModelCapability.CHAT: CapabilityAssertion(
                     status=CapabilityStatus.SUPPORTED,
                     confidence=1.0,
                     source=CapabilitySource.PROBED,
@@ -183,9 +183,7 @@ class TestPreflightRejections:
         from adapters.fakes.credential_resolver import FakeCredentialResolver
 
         catalog = m7_catalog()
-        context = m7_preflight_context(
-            catalog, m7_project(), budget_ledger=harness.budget
-        )
+        context = m7_preflight_context(catalog, m7_project(), budget_ledger=harness.budget)
         from dataclasses import replace
 
         context = replace(context, credentials=FakeCredentialResolver({}))

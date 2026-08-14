@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.4.0 — 2026-08-14（M7 Quality Gate Closure）
+
+- M7 收尾工程债（PLAN-20260814-011）：m0 profile 全绿恢复。
+- ruff lint/format：`run_orchestration/__init__.py` import 排序、
+  `service.py` unused imports 清理、`tests/e2e/test_orchestration_convergence.py`
+  import 排序；12 个 M7 文件 `ruff format`。`ruff check` 0 errors、
+  `ruff format --check` 244 files 全过。
+- mypy strict：16 errors → 0（227 files Success）。`preflight.py`
+  frozen_contracts 显式 `dict[str, object]`（RunManifest 字段方差对齐）；
+  `test_m2_policy_budget.py` Reserver 补齐 BudgetLedger protocol release；
+  `test_run_rejections.py` capabilities 键改用 ModelCapability 枚举；
+  `test_fault_convergence.py` `_start` 返回 RunOutcome；
+  `test_cancel_resume.py` `_drift_parts` TypedDict 精确类型化。
+- 全量回归：pytest 989 passed；validate_bundle / governance validate
+  PASS；TypeScript 全 PASS。learning-evals 为独立 P2 项（BACKLOG）。
+
 ## v0.4.0 — 2026-08-14（M7 Reliable Mock Vertical Slice）
 
 - M7 完成（commit `782887d`）：`Foundation / Executable Research Kernel =

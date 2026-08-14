@@ -39,9 +39,7 @@ class FakeBudgetLedger(FakeBase):
             self._record("release", reservation_ref, result="noop")
             return
         released_ids = {item.id for item in released}
-        self._reservations = [
-            item for item in self._reservations if item.id not in released_ids
-        ]
+        self._reservations = [item for item in self._reservations if item.id not in released_ids]
         self._record("release", reservation_ref, result=f"released {len(released)}")
 
     def record_usage(self, entry: UsageLedgerEntry) -> None:

@@ -53,11 +53,7 @@ from packages.application.run_orchestration.session_resolution import (
 from packages.application.run_orchestration.task_executor import SessionSpecContext
 from packages.domain.core import ID, Timestamp
 from packages.domain.events import EventEnvelope, EventType, digest_of_payload
-from packages.domain.protocols import (
-    CompiledRunPlan,
-    PreflightReport,
-    ProtocolDefinition,
-)
+from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import ResearchTask, TaskContract
@@ -110,9 +106,9 @@ class RunOrchestrationService:
         run = run.transition(ResearchRunState.Transition.COMPILE_OK)
         run = run.transition(ResearchRunState.Transition.PREFLIGHT_OK)
         manifest = freeze_manifest(run.id.value, plan, report, preflight_context)
-        run = run.with_manifest(
-            manifest.digest(), manifest.semantic_digest()
-        ).transition(ResearchRunState.Transition.START)
+        run = run.with_manifest(manifest.digest(), manifest.semantic_digest()).transition(
+            ResearchRunState.Transition.START
+        )
         if manifest.budget_reservation_ref is not None:
             self._reservation_refs[run.id.value] = manifest.budget_reservation_ref
         self._publish(
