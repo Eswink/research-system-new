@@ -12,6 +12,7 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260814-003](entries/EXP-20260814-003.md) | ACTIVE | 0.5 | repository | 2026-11-12 | learning eval 脚手架 build() 必须隔离真实资产（fixture 污染导致 registry/target 误报） |
 | [EXP-20260814-002](entries/EXP-20260814-002.md) | ACTIVE | 0.5 | repository | 2026-11-12 | 长时后台 Shell 轮询：AwaitShell 收不到事件时直接读取 terminals 文件确认状态与 exit_code |
 | [EXP-20260814-001](entries/EXP-20260814-001.md) | ACTIVE | 0.6 | repository | 2026-11-12 | validate_bundle/governance validator 全仓扫描陷阱：文档禁写旧版本号与未勾选项字面量（否定转述也会命中） |
 | [EXP-20260813-008](entries/EXP-20260813-008.md) | ACTIVE | 0.5 | repository | 2026-11-11 | test_python_source_limits 300 行/50 行超限 → 拆模块与提取辅助函数，不做豁免 |

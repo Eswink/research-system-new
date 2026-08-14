@@ -134,6 +134,19 @@ Product Capability**（M7 后的产品能力建设，非已实现事项）。
 - 验证：m0 profile 全绿（除 learning-evals 独立 P2 项）；pytest 989
       passed；validate_bundle + governance validate PASS。
 
+### learning-evals fixture 污染修复（2026-08-14）
+
+- [x] `run_cursor_learning_evals.py` `build()` 不再复制真实
+      `.cursor/learning/` 资产，改为构造空 learning 骨架（REGISTRY +
+      SKILL_RELATIONS + inbox/accepted/rejected/clusters 目录）：原实现
+      复制真实 LEARN 提案后由 `install()` 覆盖 REGISTRY entries，导致
+      fixture 测试中真实提案失去 registry 条目（"proposal missing
+      registry entry"）且 target_paths 指向临时目录不存在的 rules
+      （fixture 污染）。
+- 验证：`run_cursor_learning_evals` PASS（4 模式）；
+      `validate_cursor_learning` PASS（2 proposals, 9 relations）；
+      engineering-lint（F/I）PASS；m0 profile 全绿恢复。
+
 ## Remaining Technical Debt
 
 已发现、不阻断 M7 的事项；每项标注优先级（P 级）与目标归属。
@@ -146,7 +159,6 @@ Product Capability**（M7 后的产品能力建设，非已实现事项）。
 | DockerWorkspace 容器链路全量验证 | P1 | 部署配置阶段 | M6 遗留；当前仅映射代码 + 探测式 smoke |
 | ModelRelay + OpenHandsRuntimeAdapter usage 归账闭环到 BudgetLedger | P1 | Next Capability（真实 relay 链路 E2E） | 前提：真实 relay 链路 E2E（当前为 mock 端点）；原文档标注 "M8" 为未定义引用，修正为 post-M7 能力 |
 | ExecutionBackend 容器执行（Sandbox） | P1 | Next Capability（Real Experiment Runtime） | M7 切片以进程内/Fake 语义执行；VERTICAL_SLICE 中 "Sandbox execution" 步骤为 Spec 目标，当前未以容器实现 |
-| learning evals LEARN registry 不一致 | P2 | learning 维护流程 | `run_cursor_learning_evals` FAIL：LEARN-20260813-001/002 缺 registry 条目、promoted target 路径校验失败（`.cursor/rules/42-command-encoding.mdc` 实际存在）；按 `capture-learning` / `consolidate-learning` 流程修复 `.cursor/learning/` 资产 |
 
 ## Next Product Capability
 

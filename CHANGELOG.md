@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.4.0 — 2026-08-14（learning-evals fixture 污染修复）
+
+- `run_cursor_learning_evals.py` `build()` 不再复制真实 `.cursor/learning/`
+  资产，改为构造空 learning 骨架（REGISTRY + SKILL_RELATIONS +
+  inbox/accepted/rejected/clusters 目录）：原实现把真实 LEARN 提案复制进
+  临时目录后由 `install()` 覆盖 REGISTRY entries，使 fixture 测试中出现
+  "proposal missing registry entry" 与 target_paths 不存在（fixture
+  污染）；真实 LEARN-20260813-001/002 资产本身无问题，未改动。
+- 验证：`run_cursor_learning_evals` PASS（valid/single/no-validation/cycle
+  四模式）；`validate_cursor_learning` PASS（2 proposals, 9 relations）；
+  engineering-lint（F/I）PASS。m0 profile 恢复全绿（此前唯一 FAIL 项）。
+
 ## v0.4.0 — 2026-08-14（M7 Quality Gate Closure）
 
 - M7 收尾工程债（PLAN-20260814-011）：m0 profile 全绿恢复。
