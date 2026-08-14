@@ -72,7 +72,12 @@ adapters/*
 └─ 实现 application Ports；承接外部 I/O 与副作用
 ```
 
-M0 仅在 `tests/architecture/` 中用双语言正反向夹具固化这些边界。生产目录不以 `.gitkeep`、空包或虚构实体提前占位；首个真实模块进入时，必须同时声明语言/包归属、公开入口和相应测试。
+M0 在 `tests/architecture/` 中用双语言正反向夹具固化这些边界；M1-M7 已
+按此边界落地真实实现：`packages/domain/`（29 模块）、
+`packages/application/`（protocol_compile / preflight / model_relay /
+policy / ports / run_orchestration）、`adapters/`（contracts / fakes /
+relay / openhands / sqlite）。新生产模块进入时，必须同时声明语言/包归属、
+公开入口和相应测试。
 
 编译期依赖只允许：
 
@@ -151,6 +156,20 @@ Requested Capabilities
 诊断信息。
 
 四者关联，不互相替代。
+
+### 当前实现状态（M7，2026-08-14）
+
+- Canonical State 的规格目标是 PostgreSQL Domain Entity（ADR-0002）；
+  M7 垂直切片经同一 WorkflowEngine / ArtifactStore / EventPublisher
+  Port 使用 `adapters/sqlite/` 实现（SqliteWorkflowEngine /
+  SqliteArtifactStore / SqliteOutboxEventPublisher）。SQLite 是可替换
+  实现，contract suite（`tests/contracts/`）是 PostgreSQL 生产实现的
+  验收基线；PostgreSQL 属于 Remaining Technical Debt（`BACKLOG.md`）。
+- 内容寻址 Artifact 由 `SqliteArtifactStore`（本地 blob）提供；S3/MinIO
+  对象存储为生产部署演进目标，同 ArtifactStore Port。
+- Next.js Console / FastAPI API / Secret Store / OTel 为部署演进目标
+  （`BACKLOG.md` Next Product Capability），当前以离线质量门禁与
+  `tests/e2e/` 验证内核行为。
 
 ## 8. 数据一致性
 

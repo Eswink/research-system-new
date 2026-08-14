@@ -13,6 +13,8 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |
+| [MEM-20260814-009](entries/MEM-20260814-009-m0-foundation-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-009 |
 | [MEM-20260813-007](entries/MEM-20260813-007-m6-openhands-runtime-adapter.md) | ACTIVE | repository | 0.90 | 2026-11-13 | PLAN-20260813-007 |
 | [MEM-20260812-006](entries/MEM-20260812-006-m5r-upstream-qualification.md) | ACTIVE | repository | 0.90 | 2026-11-12 | PLAN-20260812-006 |
 | [MEM-20260812-005](entries/MEM-20260812-005-m5-ports-fakes-review.md) | ACTIVE | repository | 0.95 | 2026-11-12 | PLAN-20260812-005 |

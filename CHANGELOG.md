@@ -1,5 +1,45 @@
 # Changelog
 
+## v0.4.0 — 2026-08-14（M7 Reliable Mock Vertical Slice）
+
+- M7 完成（commit `782887d`）：`Foundation / Executable Research Kernel =
+  completed`；M7 是核心基础设施阶段结束的 Integration Milestone。
+- RunOrchestrationService 端到端编排（Compile → Preflight → Freeze →
+  TeamResolve → Execute → Evidence/Claim → Gate → Complete，
+  `packages/application/run_orchestration/`）；ResearchRun 实体与 Run
+  状态机真实迁移（`packages/domain/run.py`）。
+- SQLite 持久化三件套 `adapters/sqlite/`：SqliteWorkflowEngine
+  （tasks/leases/idempotency_records/outbox_events）+ SqliteArtifactStore
+  （内容寻址 blob）+ SqliteOutboxEventPublisher（Transactional Outbox）；
+  M5 contract suite 验收持久化实现。
+- TaskLease/heartbeat + `recover_expired_leases` 重启恢复；IdempotencyRecord
+  submit 幂等去重；retry/backoff（F-01/F-02）；协作式 cancel + CANCELLED
+  事件；Pause/Resume 拒绝 manifest digest mismatch
+  （`task_executor._assert_frozen_manifest`，落实 AGENTS.md §5）。
+- Reference Scenario `examples/protocols/sort_analysis_v1.yaml`
+  （2-phase，execution + review/QUALITY_GATE）；E2E 故障注入矩阵
+  F-01..F-12（`tests/e2e/` 12 文件）。
+- 文档对账（同日）：M7 retrospective plan/recheck；Completion Matrix；
+  M7 Completion Record；BACKLOG 三区重构（M7 完成日期以 commit 为准修正
+  为 08-14；resume Manifest check 勾选修正；"M8" 引用改为 post-M7 能力）。
+
+## v0.4.0 — 2026-08-13（M6 OpenHands Runtime Adapter）
+
+- M6 完成（commit `f4b2168`）：OpenHandsRuntimeAdapter 实现 AgentRuntime
+  Protocol 全 6 方法；openhands-sdk==1.42.0 采用为 ADOPTED（uv.lock sdist
+  sha256 `4706ae2c…`；revision lock `v1.42.0@391fbb8d`）。
+- LLM Relay 三要素端到端（S7 mock 端点实证，无厂商绑定，key 不落
+  Domain/log）；非知名 model 加 `openai/` 前缀变换（仅 llm_factory）。
+- cancel 语义显式收敛 CANCELLED 终态（重复 cancel 幂等；终端后 no-op）；
+  Policy Wrapper 独占 execute_tool 直通面（DENY 阻断不触达 SDK、
+  REQUIRE_APPROVAL 发事件）；错误模型按 ErrorClassification.kind 闭集
+  映射，SDK 类型零越过边界。
+- Workspace LocalWorkspace 路径绝对化 + 根校验；host shell 默认 deny；
+  Usage 归一化入 BudgetLedger；真实 adapter 与 Fake 共享 contract suite。
+- 全量回归：pytest 840 passed；mypy strict 183 files；m0 profile PASS。
+- 文档对账（2026-08-14）：M6 计划/复检/记忆为原开发窗口记录，保留不动；
+  CHANGELOG 本条为对账补记。
+
 ## v0.4.0 — 2026-08-12（M5R 独立复审）
 
 - M5R 独立复审（非开发窗口自评）：全部 6 个 spike 重跑复现 PASS；upstream

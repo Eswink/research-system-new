@@ -1,5 +1,28 @@
 # Documentation Index — v0.4.0
 
+## 当前工程状态
+
+```text
+Foundation / Executable Research Kernel = completed（M0-M7 含 M5R，2026-08-14）
+```
+
+真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7`（M3 先于
+M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建设阶段；
+已完成事项 / 技术债 / 下一能力见 `../BACKLOG.md`。
+
+## 快速问答（新 Agent 起步）
+
+1. **Research OS 是什么？** → [PRODUCT.md](PRODUCT.md)、[架构总览](architecture/SYSTEM_ARCHITECTURE.md)
+2. **当前实现到哪里？** → `../README.md` 当前工程状态、本节状态行
+3. **M0-M7 做了什么？** → [Completion Matrix](roadmap/COMPLETION_MATRIX_M0_M7.md)
+4. **当前架构是什么？** → [SYSTEM_ARCHITECTURE.md](architecture/SYSTEM_ARCHITECTURE.md)、[PORTS.md](architecture/PORTS.md)
+5. **哪些 Contracts 已稳定？** → [PORTS.md](architecture/PORTS.md)、`../schemas/`、`../UPSTREAM_COMPONENTS.yaml`
+6. **OpenHands 在哪里？** → [OPENHANDS_ADAPTER.md](integration/OPENHANDS_ADAPTER.md)、[AGENT_RUNTIME.md](architecture/AGENT_RUNTIME.md)
+7. **upstream 研究在哪里？** → [Open Source / Upstream](#open-source--upstream) 节
+8. **当前下一阶段是什么？** → `../BACKLOG.md` Next Product Capability 区
+9. **BACKLOG 在哪里？** → `../BACKLOG.md`
+10. **如何验证当前仓库？** → `../README.md` 校验节（m0 profile 全量回归 + validators）
+
 ## Start
 
 - `../README.md`
@@ -114,7 +137,16 @@
 ## Roadmap / Versioning
 
 - `../CODEX_BOOTSTRAP.md` — canonical milestone details and M0 quality gate
-- `../BACKLOG.md` — implementation projection
+- `../BACKLOG.md` — implementation projection（Completed / Tech Debt / Next Capability）
+- `roadmap/COMPLETION_MATRIX_M0_M7.md` — M0-M7/M5R 完成事实矩阵（阶段、证据、commit、状态）
+- `roadmap/M7_COMPLETION_RECORD.md` — M7 Integration Milestone 完成记录（E2E chain 逐项证据）
 - `roadmap/VERTICAL_SLICE_V0_4_0.md`
-- `roadmap/MILESTONES.md` — milestone index, same numbering as Bootstrap
+- `roadmap/MILESTONES.md` — milestone index（含 M5R、真实顺序与依赖 DAG），same numbering as Bootstrap
 - `versioning/VERSION_POLICY.md`
+
+## 阶段工程记录（Plan / Recheck）
+
+- 活动与最近完成计划索引：`../.cursor/plans/ALL_PLAN.md`
+- M0 retrospective（2026-08-14 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260814-009-m0-foundation-retrospective.md` + `../.cursor/plans/rechecks/RECHECK-20260814-009-m0-foundation-retrospective.md`
+- M7 retrospective（2026-08-14 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260814-010-m7-vertical-slice-retrospective.md` + `../.cursor/plans/rechecks/RECHECK-20260814-010-m7-vertical-slice-retrospective.md`
+- M1-M6/M5R 原开发窗口记录（Plan + PASS Recheck + Memory）见各自 plan 文件与 `../.cursor/memory/INDEX.md`

@@ -1,5 +1,56 @@
 # CODEX_BOOTSTRAP.md — Research OS Cursor Engineering Bootstrap v0.4.0
 
+## Current Engineering State（2026-08-14）
+
+```text
+Foundation / Executable Research Kernel = completed（M0-M7 含 M5R）
+```
+
+M0-M7 核心基础设施阶段**已完成**，真实完成顺序：
+`M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7`（M3 先于 M2：M2 Preflight
+消费 M3 Model Relay 产物）。完成矩阵见
+[docs/roadmap/COMPLETION_MATRIX_M0_M7.md](docs/roadmap/COMPLETION_MATRIX_M0_M7.md)，
+M7 集成里程碑记录见
+[docs/roadmap/M7_COMPLETION_RECORD.md](docs/roadmap/M7_COMPLETION_RECORD.md)。
+
+### 新 Agent 开始工作时首先检查
+
+1. 根 `VERSION`（= 0.4.0，唯一版本源）与 `AGENTS.md`（工程契约）。
+2. `docs/INDEX.md` 与 `BACKLOG.md`（完成事项 / 技术债 / 下一能力）。
+3. `docs/roadmap/COMPLETION_MATRIX_M0_M7.md`（各阶段证据入口）。
+4. `docs/architecture/PORTS.md` 与 `DOMAIN_MODEL.md`（当前契约现状）。
+
+### 已冻结（稳定 Contract，M7 后不再日常变更）
+
+- Domain 实体/值对象/枚举/状态机（`packages/domain/`）与 JSON Schema
+  （`schemas/`）交叉引用校验（`validate_bundle.py`）。
+- Protocol Compiler → Preflight → Manifest Freeze 链与机器可读
+  CompiledRunPlan/PreflightReport。
+- 14 个 inward-owned Ports（`packages/application/ports/`）+ 统一错误模型
+  + contract suite（`tests/contracts/`，注册表驱动）。
+- 可靠性语义：at-least-once + idempotency + Transactional Outbox；
+  TaskLease/heartbeat/recover_expired_leases。
+- OpenHands adapter 边界：openhands-sdk **v1.42.0@391fbb8d**（revision
+  lock + sdist digest，见 `docs/references/upstream/OPENHANDS_REVISION_LOCK.yaml`）。
+- M0 工程门禁（m0 profile 全量回归）作为每阶段/每次变更的确定性验收。
+
+### 可继续演进（不视为冻结）
+
+- `adapters/sqlite/` → PostgreSQL（同 Port 契约；技术债，BACKLOG）。
+- ExecutionBackend 容器实现 / DockerWorkspace 全量验证（技术债）。
+- Tool Plane、Skill Registry、Evidence/Memory、Evaluation Plane、
+  Research Console、Durable Workflow（BACKLOG Next Product Capability）。
+- 规格目标（PostgreSQL Canonical State，ADR-0002）与当前实现的差异
+  显式记录，不以文档覆盖实现。
+
+---
+
+## 历史说明（Bootstrap 定义，已完成里程碑）
+
+> 以下章节是 M0-M7 开发期的里程碑定义（canonical milestone details），
+> 保留工程价值；各阶段现状与证据以
+> `docs/roadmap/COMPLETION_MATRIX_M0_M7.md` 为准。
+
 ## 目标
 
 先实现可验证的软件内核，而不是完整 Autonomous Research。
@@ -243,7 +294,7 @@ BudgetLedger
 
 提供 Fake 实现和 contract suite。
 
-## M6 — OpenHands Spike
+## M6 — OpenHands Spike（已完成 2026-08-13，commit `f4b2168`；定义保留）
 
 验证：
 
@@ -266,7 +317,7 @@ User Relay
 - plugin refs pin
 - secrets 不进入 Domain/log
 
-## M7 — Reliable Mock Vertical Slice
+## M7 — Reliable Mock Vertical Slice（已完成 2026-08-14，commit `782887d`；定义保留）
 
 ```text
 Project

@@ -63,11 +63,35 @@ child subagents < 4
 
 完整治理 profile 以 IDE/local 为主验证目标。Cloud Agent 的 Hook 支持面不同；敏感 MCP/credential 工作流必须使用等价 Cloud/Enterprise 或 Research OS 产品安全控制。
 
-## 当前阶段
+## 当前工程状态
 
-当前仍是 docs-first specification 与 Cursor engineering framework。M0 Repository Foundation Quality Gate 已落地冻结 Python/TypeScript 工具链、lint、strict typecheck、双语言依赖边界负测、测试入口和 Windows/Linux CI 定义。
+```text
+Foundation / Executable Research Kernel = completed
+```
 
-M0 不伪造 Domain、Compiler、OpenHands、数据库或 UI 业务实现。`packages/domain`、`packages/application`、`adapters`、`services`、`apps/web` 只在首个真实职责模块进入时创建；当前依赖方向由 `tests/architecture/` 中可放行、可拒绝的双语言夹具证明。
+M0-M7（含 M5R）核心基础设施阶段已全部完成，真实完成顺序为
+`M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7`（M3 先于 M2：M2 Preflight
+消费 M3 Model Relay 产物）。完整完成矩阵见
+[docs/roadmap/COMPLETION_MATRIX_M0_M7.md](docs/roadmap/COMPLETION_MATRIX_M0_M7.md)，
+M7 集成里程碑记录见
+[docs/roadmap/M7_COMPLETION_RECORD.md](docs/roadmap/M7_COMPLETION_RECORD.md)。
+
+当前已落地：
+
+- `packages/domain/`（29 模块）Domain Kernel：实体/值对象/枚举/状态机/
+  RunManifest+digest/UsageLedger；
+- `packages/application/`（protocol_compile / preflight / model_relay /
+  policy / ports / run_orchestration）use cases + 14 inward-owned Ports；
+- `adapters/`（contracts loaders / fakes / relay / openhands /
+  sqlite）——OpenHandsRuntimeAdapter（openhands-sdk v1.42.0，pin 于
+  `UPSTREAM_COMPONENTS.yaml` 与 revision lock）与 SQLite 持久化；
+- `tests/`（domain / application / adapters / contracts / e2e /
+  architecture）——E2E 垂直切片含故障注入矩阵 F-01..F-12。
+
+M7 之后仓库进入**产品能力建设阶段**：已完成事项、Remaining Technical
+Debt 与 Next Product Capability 见 `BACKLOG.md`。规格目标（PostgreSQL
+Canonical State、ADR-0002）与当前实现（同 Port 契约的 SQLite）之间的
+差异作为技术债显式记录，不以文档覆盖实现。
 
 ## 开发入口
 
@@ -75,10 +99,12 @@ M0 不伪造 Domain、Compiler、OpenHands、数据库或 UI 业务实现。`pac
 2. `.cursor/README.md`
 3. `docs/INDEX.md`
 4. `docs/PRODUCT.md`
-5. `docs/architecture/SYSTEM_ARCHITECTURE.md`
-6. `docs/architecture/DOMAIN_MODEL.md`
-7. `.cursor/knowledge/INDEX.md`
-8. `BACKLOG.md`
+5. `docs/roadmap/COMPLETION_MATRIX_M0_M7.md`
+6. `docs/roadmap/M7_COMPLETION_RECORD.md`
+7. `docs/architecture/SYSTEM_ARCHITECTURE.md`
+8. `docs/architecture/DOMAIN_MODEL.md`
+9. `.cursor/knowledge/INDEX.md`
+10. `BACKLOG.md`
 
 ## 校验
 
