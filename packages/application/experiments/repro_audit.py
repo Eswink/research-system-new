@@ -14,10 +14,11 @@ from __future__ import annotations
 
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.errors import InvalidInputError
+from packages.domain.artifacts import Artifact
 from packages.domain.core import ID, Digest
 from packages.domain.experiment_state import ExperimentRunState
 from packages.domain.experiments import ExperimentRun, ExperimentRunResult
-from packages.domain.reproducibility import ReproducibilityAudit
+from packages.domain.reproducibility import AuditFinding, ReproducibilityAudit
 from packages.domain.serialization import digest_of
 
 
@@ -41,6 +42,7 @@ def build_reproducibility_audit(
         audit_id=audit_id,
         experiment_run_id=run.id,
         input_digest=spec.input_digest,
+        command=spec.command,
         code_digest=spec.code_digest,
         environment_digest=spec.environment_digest,
         seed=spec.seed,
@@ -58,12 +60,81 @@ def verify_reproducibility_audit(audit: ReproducibilityAudit) -> bool:
     return audit.verify()
 
 
+def verify_audit_outputs(
+    audit: ReproducibilityAudit,
+    run: ExperimentRun,
+    artifacts: ArtifactStore,
+) -> tuple[AuditFinding, ...]:
+    """把审计绑定的输出 digest 与 ArtifactStore 当前内容交叉核对。
+
+    检测三类问题（均返回结构化 finding）：
+    - artifact 引用在 store 中不存在或被删除；
+    - 内容损坏（store.verify 失败）；
+    - store 中 digest 与审计绑定不一致（漂移/替换）。
+    返回空 tuple 表示全部通过。
+    """
+    result = run.result
+    if result is None:
+        return (AuditFinding("MISSING_RESULT", "FAIL", "run result not bound"),)
+    findings: list[AuditFinding] = []
+    for artifact_id in result.artifact_refs:
+        findings.extend(_check_output_artifact(artifact_id, audit, artifacts))
+    return tuple(findings)
+
+
+def _check_output_artifact(
+    artifact_id: str,
+    audit: ReproducibilityAudit,
+    artifacts: ArtifactStore,
+) -> tuple[AuditFinding, ...]:
+    declared = set(audit.output_artifact_digests)
+    try:
+        ref = _artifact_by_id(artifacts, artifact_id)
+    except InvalidInputError:
+        return (
+            AuditFinding(
+                "ARTIFACT_MISSING",
+                "FAIL",
+                f"artifact {artifact_id!r} not found in artifact store",
+            ),
+        )
+    findings: list[AuditFinding] = []
+    try:
+        intact = artifacts.verify(artifact_id)
+    except InvalidInputError:
+        intact = False
+    if not intact:
+        findings.append(
+            AuditFinding(
+                "ARTIFACT_CORRUPTED",
+                "FAIL",
+                f"artifact {artifact_id!r} content corrupted or unreadable",
+            )
+        )
+    if str(ref.digest) not in declared:
+        findings.append(
+            AuditFinding(
+                "ARTIFACT_DIGEST_DRIFT",
+                "FAIL",
+                f"artifact {artifact_id!r} digest {ref.digest} not bound by audit",
+            )
+        )
+    return tuple(findings)
+
+
 def is_auditable_state(state: str) -> bool:
     """只有科学终态（成功/负结论）进入审计；执行失败/超时/取消不审计。"""
     return state in (
         ExperimentRunState.State.SUCCEEDED,
         ExperimentRunState.State.NEGATIVE_RESULT,
     )
+
+
+def _artifact_by_id(artifacts: ArtifactStore, artifact_id: str) -> Artifact:
+    for artifact in artifacts.list_refs():
+        if artifact.id == artifact_id:
+            return artifact
+    raise InvalidInputError(f"unknown artifact id: {artifact_id}")
 
 
 def _resolve_output_digests(

@@ -10,7 +10,7 @@ from adapters.sqlite.artifact_store import SqliteArtifactStore
 from packages.application.artifacts import build_export_bundle, decode_export_bundle
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.artifacts import Artifact
-from packages.domain.core import Digest, ID
+from packages.domain.core import ID, Digest
 from packages.domain.reproducibility import ReproducibilityAudit
 
 _RUN_ID = ID("7a2b3c4d-5e6f-4a5b-9c0d-1e2f3a4b5c6d")
@@ -33,7 +33,17 @@ def _audit() -> ReproducibilityAudit:
         audit_id=ID("8b3c4d5e-6f7a-4b5c-9d0e-1f2a3b4c5d6e"),
         experiment_run_id=_RUN_ID,
         input_digest=Digest.of_bytes(b"input"),
+        command="python run.py",
+        environment_digest=Digest.of_bytes(b"env"),
         seed=42,
+        image_digest="sha256:" + "ab" * 32,
+        workspace_snapshot_before="sha256:" + "cd" * 32,
+        workspace_snapshot_after="sha256:" + "ef" * 32,
+        output_artifact_digests=(
+            str(Digest.of_bytes(b"alpha-content")),
+            str(Digest.of_bytes(b"beta-content")),
+        ),
+        metrics_digest=Digest.of_bytes(b"metrics"),
     ).with_audit_digest()
 
 
@@ -43,7 +53,11 @@ class TestExportBundle:
         _put(store, "a-1", b"alpha-content")
         _put(store, "a-2", b"beta-content")
         bundle_id = build_export_bundle(
-            _RUN_ID, _audit(), export_id="exp-1", artifacts=store
+            _RUN_ID,
+            _audit(),
+            export_id="exp-1",
+            artifacts=store,
+            artifact_ids=("a-1", "a-2"),
         )
         manifest, contents = decode_export_bundle(store, bundle_id)
         assert manifest.export_id == "exp-1"
@@ -56,14 +70,20 @@ class TestExportBundle:
     def test_bundle_is_content_addressed(self, tmp_path: Path) -> None:
         store = SqliteArtifactStore(blob_dir=tmp_path / "blobs")
         _put(store, "a-1", b"alpha-content")
-        first = build_export_bundle(_RUN_ID, _audit(), export_id="exp-1", artifacts=store)
-        second = build_export_bundle(_RUN_ID, _audit(), export_id="exp-1", artifacts=store)
+        first = build_export_bundle(
+            _RUN_ID, _audit(), export_id="exp-1", artifacts=store, artifact_ids=("a-1",)
+        )
+        second = build_export_bundle(
+            _RUN_ID, _audit(), export_id="exp-1", artifacts=store, artifact_ids=("a-1",)
+        )
         assert first == second
 
     def test_tampered_content_fails_decode(self, tmp_path: Path) -> None:
         store = SqliteArtifactStore(blob_dir=tmp_path / "blobs")
         _put(store, "a-1", b"alpha-content")
-        bundle_id = build_export_bundle(_RUN_ID, _audit(), export_id="exp-1", artifacts=store)
+        bundle_id = build_export_bundle(
+            _RUN_ID, _audit(), export_id="exp-1", artifacts=store, artifact_ids=("a-1",)
+        )
         tampered = bytearray(store.get(bundle_id))
         tampered[-1] ^= 0xFF
         store.put(
@@ -81,7 +101,9 @@ class TestExportBundle:
     def test_bad_magic_rejected(self, tmp_path: Path) -> None:
         store = SqliteArtifactStore(blob_dir=tmp_path / "blobs")
         _put(store, "a-1", b"alpha-content")
-        bundle_id = build_export_bundle(_RUN_ID, None, export_id="exp-1", artifacts=store)
+        bundle_id = build_export_bundle(
+            _RUN_ID, None, export_id="exp-1", artifacts=store, artifact_ids=("a-1",)
+        )
         corrupted = b"GARBAGE!" + store.get(bundle_id)[8:]
         store.put(
             Artifact(
@@ -98,4 +120,20 @@ class TestExportBundle:
     def test_empty_export_rejected(self, tmp_path: Path) -> None:
         store = SqliteArtifactStore(blob_dir=tmp_path / "blobs")
         with pytest.raises(InvalidInputError):
-            build_export_bundle(_RUN_ID, None, export_id="exp-1", artifacts=store)
+            build_export_bundle(_RUN_ID, None, export_id="exp-1", artifacts=store, artifact_ids=())
+
+    def test_bundle_scoped_to_run_artifacts(self, tmp_path: Path) -> None:
+        """bundle 只包含显式声明的 run 产物；store 中其它 run 的产物不入包。"""
+        store = SqliteArtifactStore(blob_dir=tmp_path / "blobs")
+        _put(store, "a-1", b"run-a-output")
+        _put(store, "b-9", b"foreign-run-output")
+        bundle_id = build_export_bundle(
+            _RUN_ID,
+            _audit(),
+            export_id="exp-scoped",
+            artifacts=store,
+            artifact_ids=("a-1",),
+        )
+        manifest, contents = decode_export_bundle(store, bundle_id)
+        assert [entry.artifact_id for entry in manifest.entries] == ["a-1"]
+        assert contents == {"a-1": b"run-a-output"}

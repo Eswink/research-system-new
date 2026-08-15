@@ -102,9 +102,49 @@
 ## 验证命令（实际执行证据）
 
 - `uv run --frozen --no-sync python -B .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going` → PASS（18/18 checks）
-- `docker build -t research-os-sandbox:latest adapters/execution/sandbox` → 成功
+- `docker build -t research-os-sandbox:m9-sandbox-v1 adapters/execution/sandbox` → 成功
 - `uv run --frozen --no-sync python -B -m pytest tests/adapters/execution tests/contracts/test_execution_backend_docker.py -m requires_docker` → 通过
 - 全量 pytest：1298 passed（含容器套件）；validate_bundle + governance validate PASS
+
+## 独立复审修正记录（2026-08-15）
+
+复审按 Roadmap 重核 M9 DoD，以下问题已修复并回归（详见独立复审报告）：
+
+1. `ReproducibilityAudit` 原 status 判定仅要求 image/snapshot/output/metrics
+   四个锚点，missing seed / environment digest / command 不触发 FAIL，
+   且无结构化 finding → 新增 `AuditFinding`（code/severity/message）与
+   `findings()`，缺失 command/seed/environment/image/前后 snapshot/输出
+   artifact/metrics digest 或未封存均 FAIL；`code_digest` 缺失为 WARNING
+   （代码由 workspace_snapshot_before 覆盖）。
+2. `ExperimentRunSpec` 未绑定原始 command → 新增 `command` 字段；audit
+   binding_payload 与 `schemas/reproducibility_audit_v1` 同步增加
+   command 属性。
+3. executor 空环境时 `environment_digest=None` → 恒计算（含空 dict）。
+4. executor 未校验 Plan 状态 → 非 PREREGISTERED 计划拒绝执行。
+5. 新增 `verify_audit_outputs`：审计绑定 digest 与 ArtifactStore 当前内容
+   交叉核对（missing/corrupted/drift 三类结构化 finding）。
+6. `build_export_bundle` 原实现打包 store 全部 artifact（跨 run 泄漏）→
+   新增 `artifact_ids` 参数按 run 产物限定范围。
+7. `DockerExecutionBackend.DEFAULT_IMAGE` 由 `research-os-sandbox:latest`
+   改为版本化 `research-os-sandbox:m9-sandbox-v1`（每次 execute 仍解析
+   实际 image digest 写入 compute_usage_summary 供审计绑定）。
+
+复审后三项收尾（2026-08-15，Plan 批准）：
+
+8. `CODE_DIGEST_NOT_PINNED` WARNING 语义精确化：code_digest = 代码出处
+   独立 provenance pin（请求方可选提供）；缺失时代码内容由
+   `workspace_snapshot_before` 覆盖，WARNING 为诚实标注（不改 PASS/
+   FAIL 判定）；`WORKSPACE_RUNTIME.md` §8 同步语义定义；新增
+   `test_code_digest_pinned_produces_no_warning`。
+9. 镜像引用分界文档化 + pinned-reference 消费路径验证：DEFAULT_IMAGE
+   仅本地开发（可变 tag）；测试/CI 用 `m9-test` 构建 tag；生产
+   composition 注入 `name@sha256:<digest>`——新增
+   `test_pinned_image_reference_is_consumed_and_recorded`（容器 E2E，
+   digest 运行时解析不硬编码）；M9_DOCKER_QUALIFICATION §2 同步。
+10. 权威 Linux 容器语义 gate 补齐：`container-quality` job（ubuntu）
+    增加 `tests/application/experiments/test_experiment_e2e.py` 路径；
+    平台边界入 qualification §5（Windows Docker Desktop = 本地 smoke，
+    ubuntu-latest = 权威容器语义）。
 
 ## 下一项任务
 

@@ -44,6 +44,7 @@ class StubApi:
         self.logs_stderr = b""
         self.image_error: Exception | None = None
         self.api_error: Exception | None = None
+        self.remove_error: Exception | None = None
 
     def inspect_image(self, image: str) -> dict[str, Any]:
         if self.image_error is not None:
@@ -76,6 +77,8 @@ class StubApi:
 
     def remove_container(self, container: str, force: bool) -> None:
         self.removed.append(container)
+        if self.remove_error is not None:
+            raise self.remove_error
 
 
 class StubClient:
@@ -190,6 +193,14 @@ class TestFailureMapping:
         with pytest.raises(TransientPortError):
             _backend(client).execute(_spec(workspace_path=str(tmp_path)))
         assert client.api.removed == []
+
+    def test_cleanup_failure_does_not_corrupt_result(self, tmp_path: Path) -> None:
+        """清理失败（remove_container 抛错）不得把成功执行变为失败。"""
+        client = StubClient()
+        client.api.remove_error = APIError("remove failed", response=None)
+        run = _backend(client).execute(_spec(workspace_path=str(tmp_path)))
+        assert run.status is ExecutionStatus.SUCCEEDED
+        assert client.api.removed == ["cid-1"]
 
     def test_mapping_covers_image_and_api_errors(self) -> None:
         permanent = _map_docker_error(ImageNotFound("missing"))

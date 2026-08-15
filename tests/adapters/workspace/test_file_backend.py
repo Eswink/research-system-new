@@ -51,6 +51,35 @@ class TestCreateAndLease:
         with pytest.raises(InvalidInputError):
             backend.acquire_lease(_workspace(), "session-1")
 
+
+class TestPathTraversalRejection:
+    """workspace_id 路径穿越攻击必须被拒绝（安全边界）。"""
+
+    @pytest.mark.parametrize(
+        "evil_id",
+        [
+            "../../evil-outside",
+            "..\\..\\evil-outside",
+            "..",
+            "a/b",
+            "a\\b",
+            "C:\\abs-outside",
+            "/abs-outside",
+        ],
+    )
+    def test_unsafe_workspace_id_rejected(self, tmp_path: Path, evil_id: str) -> None:
+        backend, _ = _backend(tmp_path)
+        with pytest.raises(InvalidInputError):
+            backend.create_workspace(Workspace(id=evil_id, name="evil"))
+
+    def test_rejected_id_creates_nothing_outside_root(self, tmp_path: Path) -> None:
+        backend, _ = _backend(tmp_path)
+        root = tmp_path / "root"
+        with pytest.raises(InvalidInputError):
+            backend.create_workspace(Workspace(id="../../evil-outside", name="evil"))
+        assert not (tmp_path / "evil-outside").exists()
+        assert list(root.iterdir()) == []
+
     def test_lease_expiry_rejects_operations(self, tmp_path: Path) -> None:
         backend, clock = _backend(tmp_path, ttl=60)
         workspace = _workspace()

@@ -10,6 +10,7 @@ from adapters.fakes import FakeArtifactStore
 from packages.application.experiments.repro_audit import (
     build_reproducibility_audit,
     is_auditable_state,
+    verify_audit_outputs,
     verify_reproducibility_audit,
 )
 from packages.application.ports.errors import InvalidInputError
@@ -32,6 +33,7 @@ _AUDIT_ID = ID("8b3c4d5e-6f7a-4b5c-9d0e-1f2a3b4c5d6e")
 def _terminal_run() -> ExperimentRun:
     spec = ExperimentRunSpec(
         input_digest=Digest.of_bytes(b"input"),
+        command="python run.py",
         code_digest=Digest.of_bytes(b"code"),
         environment_digest=Digest.of_bytes(b"env"),
         seed=42,
@@ -119,6 +121,7 @@ class TestAuditTampering:
             audit_id=audit.audit_id,
             experiment_run_id=audit.experiment_run_id,
             input_digest=audit.input_digest,
+            command=audit.command,
             code_digest=audit.code_digest,
             environment_digest=audit.environment_digest,
             seed=audit.seed,
@@ -138,3 +141,48 @@ class TestAuditTampering:
             audit_digest=tampered.audit_digest,
         )
         assert not verify_reproducibility_audit(tampered)
+
+
+class TestVerifyAuditOutputs:
+    """审计绑定 digest 与 ArtifactStore 当前内容的交叉核对。"""
+
+    def _audit_and_store(
+        self,
+    ) -> tuple[ReproducibilityAudit, FakeArtifactStore]:
+        store = _store_with_outputs()
+        audit = build_reproducibility_audit(_terminal_run(), audit_id=_AUDIT_ID, artifacts=store)
+        return audit, store
+
+    def test_intact_outputs_produce_no_findings(self) -> None:
+        audit, store = self._audit_and_store()
+        findings = verify_audit_outputs(audit, _terminal_run(), store)
+        assert findings == ()
+
+    def test_corrupted_artifact_produces_finding(self) -> None:
+        audit, store = self._audit_and_store()
+        store._content["a-1"] = b"tampered-content"
+        findings = verify_audit_outputs(audit, _terminal_run(), store)
+        assert any(f.code == "ARTIFACT_CORRUPTED" for f in findings)
+
+    def test_missing_artifact_produces_finding(self) -> None:
+        audit, store = self._audit_and_store()
+        store._content.pop("a-1")
+        store._metadata.pop("a-1")
+        findings = verify_audit_outputs(audit, _terminal_run(), store)
+        assert any(f.code == "ARTIFACT_MISSING" for f in findings)
+
+    def test_digest_drift_produces_finding(self) -> None:
+        """store 中的 artifact 被替换为不同内容（digest 合法但不被审计绑定）。"""
+        audit, store = self._audit_and_store()
+        replacement = b"replacement-content"
+        store.put(
+            Artifact(
+                id="a-1",
+                digest=Digest.of_bytes(replacement),
+                size_bytes=len(replacement),
+                media_type="application/octet-stream",
+            ),
+            replacement,
+        )
+        findings = verify_audit_outputs(audit, _terminal_run(), store)
+        assert any(f.code == "ARTIFACT_DIGEST_DRIFT" for f in findings)

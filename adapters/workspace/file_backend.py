@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -40,6 +41,10 @@ _CLOSED_ERROR = PermanentPortError(
     "workspace backend is closed",
     failure_category=FailureCategory.CONFIGURATION,
 )
+
+# workspace_id 必须是安全单段名称（禁止路径分隔符/.. /盘符等），
+# 目录在 root 下的解析与容器 bind-mount 都依赖这一约束。
+_SAFE_WORKSPACE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
 def _utc_now() -> datetime:
@@ -232,7 +237,15 @@ class FileWorkspaceBackend(WorkspaceBackend):
         return stored
 
     def _dir_for(self, workspace_id: str) -> Path:
-        return self._root / workspace_id
+        if not _SAFE_WORKSPACE_ID.fullmatch(workspace_id):
+            raise InvalidInputError(
+                f"unsafe workspace id {workspace_id!r}: must match "
+                f"[A-Za-z0-9][A-Za-z0-9._-]{{0,63}}"
+            )
+        directory = (self._root / workspace_id).resolve()
+        if not directory.is_relative_to(self._root.resolve()):
+            raise InvalidInputError(f"workspace id escapes root: {workspace_id!r}")
+        return directory
 
     def _snapshots_root(self) -> Path:
         return self._root / ".snapshots"

@@ -21,10 +21,12 @@ from packages.application.experiments import (
     ExperimentExecutionRequest,
     ExperimentExecutor,
 )
+from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import ID
 from packages.domain.enums import FailureCategory
 from packages.domain.experiment_state import ExperimentPlanState, ExperimentRunState
 from packages.domain.experiments import ExperimentPlan
+from packages.domain.serialization import digest_of
 from packages.domain.workspace import ExecutionStatus, Workspace
 
 _PLAN_ID = ID("3f1c6a8e-9b2d-4f3a-8c5e-1a2b3c4d5e6f")
@@ -181,3 +183,39 @@ class TestInputValidation:
         second = executor.execute(_request())
         assert first.run.spec is not None and second.run.spec is not None
         assert first.run.spec.input_digest == second.run.spec.input_digest
+
+
+class TestPlanGate:
+    def test_draft_plan_rejected(self, tmp_path: Path) -> None:
+        """生命周期门禁：未 PREREGISTER 的计划不得执行。"""
+        _write_result(tmp_path)
+        plan = ExperimentPlan(id=_PLAN_ID, name="sort-benchmark")
+        with pytest.raises(InvalidInputError) as exc_info:
+            _executor(tmp_path, FakeExecutionBackend()).execute(_request(plan=plan))
+        assert "PREREGISTERED" in str(exc_info.value)
+
+    def test_archived_plan_rejected(self, tmp_path: Path) -> None:
+        _write_result(tmp_path)
+        plan = _plan().transition(ExperimentPlanState.Transition.ARCHIVE)
+        with pytest.raises(InvalidInputError):
+            _executor(tmp_path, FakeExecutionBackend()).execute(_request(plan=plan))
+
+
+class TestRunSpecBindings:
+    def test_spec_binds_command_and_environment_digest(self, tmp_path: Path) -> None:
+        """run spec 绑定原始 command 与 env digest（可复现性锚点）。"""
+        _write_result(tmp_path)
+        outcome = _executor(tmp_path, FakeExecutionBackend()).execute(
+            _request(environment={"PYTHONHASHSEED": "0"})
+        )
+        spec = outcome.run.spec
+        assert spec is not None
+        assert spec.command == "python run.py"
+        assert spec.environment_digest == digest_of({"PYTHONHASHSEED": "0"})
+
+    def test_spec_binds_empty_environment_digest(self, tmp_path: Path) -> None:
+        """空环境也必须产生 digest（None 会让审计锚点缺失）。"""
+        _write_result(tmp_path)
+        outcome = _executor(tmp_path, FakeExecutionBackend()).execute(_request())
+        assert outcome.run.spec is not None
+        assert outcome.run.spec.environment_digest is not None

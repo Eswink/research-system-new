@@ -33,6 +33,12 @@ DockerExecutionBackend；M6 映射代码保持 mapping-only（docstring 已修�
 - 运行时 digest：每次 `execute` 经 `inspect_image` 解析实际 image digest，
   写入 `ExecutionRun.compute_usage_summary["image_digest"]`，由
   ReproducibilityAudit 绑定（不可靠 digest 解析 → audit FAIL）。
+- 镜像引用分界：`DockerExecutionBackend.DEFAULT_IMAGE`
+  （`research-os-sandbox:m9-sandbox-v1`）仅为本地开发默认（可变 tag）；
+  测试/CI 使用 `research-os-sandbox:m9-test` 构建 tag；生产 composition
+  必须注入 `name@sha256:<digest>` pinned reference——该消费路径由
+  `test_pinned_image_reference_is_consumed_and_recorded`（容器 E2E）
+  验证，运行时 digest 解析 + 审计绑定为 tag 漂移检测。
 - 升级门禁：镜像重建 + container E2E + reproducibility regression 全绿，
   且需显式批准（UPSTREAM_COMPONENTS.yaml upgrade_gate）。
 
@@ -74,4 +80,7 @@ DockerExecutionBackend；M6 映射代码保持 mapping-only（docstring 已修�
 | 真实容器 contract | `tests/contracts/test_execution_backend_docker.py`（`requires_docker`） |
 | 创建/挂载/执行/timeout/失败/清理/资源边界/网络禁用 | `tests/adapters/execution/test_docker_backend_e2e.py` |
 | 故障注入 | 同上（timeout kill、非零退出、OOM、镜像缺失、无残留容器） |
+| 安全边界主动攻击 | `tests/adapters/execution/test_docker_backend_security_e2e.py`（host home / socket / rootfs / pip / 提权） |
+| 实验全链容器 E2E | `tests/application/experiments/test_experiment_e2e.py`（确定性重跑 digest、NEGATIVE_RESULT、timeout、ReproducibilityAudit 全链） |
 | CI | `.github/workflows/m0-quality.yml` `container-quality` job（ubuntu，build + requires_docker 集合） |
+| 平台边界 | Windows Docker Desktop = 本地兼容性 smoke（开发机运行）；ubuntu-latest `container-quality` job = 权威 Linux 容器语义 gate（含上述全部容器套件）。不做跨平台行为一致化，Windows 侧失败只作为本地环境信号，不作为容器语义裁决 |

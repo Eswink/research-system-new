@@ -67,9 +67,7 @@ def apply_retention(
             deleted.append(artifact.id)
         else:
             skipped.append(artifact.id)
-    return RetentionReport(
-        archived=tuple(archived), deleted=tuple(deleted), skipped=tuple(skipped)
-    )
+    return RetentionReport(archived=tuple(archived), deleted=tuple(deleted), skipped=tuple(skipped))
 
 
 def _policy_action(artifact: Artifact, now: datetime) -> str:

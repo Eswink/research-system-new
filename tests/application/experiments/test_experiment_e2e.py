@@ -27,6 +27,9 @@ from adapters.workspace import FileWorkspaceBackend
 from packages.application.experiments import (
     ExperimentExecutionRequest,
     ExperimentExecutor,
+    build_reproducibility_audit,
+    verify_audit_outputs,
+    verify_reproducibility_audit,
 )
 from packages.domain.core import ID
 from packages.domain.experiment_state import ExperimentPlanState, ExperimentRunState
@@ -220,3 +223,46 @@ class TestExperimentE2E:
         payload = json.loads((workspace_dir / "experiment_result.json").read_text(encoding="utf-8"))
         assert payload["status"] == "SUCCEEDED"
         assert payload["metrics"]["n_samples"] == 5
+
+
+class TestReproducibilityAuditE2E:
+    """真实容器链上的 ReproducibilityAudit 端到端验证。"""
+
+    def test_success_run_produces_pass_audit(
+        self, harness: tuple[ExperimentExecutor, FileWorkspaceBackend, SqliteArtifactStore]
+    ) -> None:
+        executor, workspaces, artifacts = harness
+        run_id = ID("10101010-2222-4333-8444-555555555555")
+        outcome = executor.execute(_prepare(workspaces, run_id, _EXPERIMENT_SCRIPT))
+        audit = build_reproducibility_audit(
+            outcome.run,
+            audit_id=ID("20202020-2222-4333-8444-555555555555"),
+            artifacts=artifacts,
+        )
+        assert audit.status == "PASS"
+        assert verify_reproducibility_audit(audit)
+        assert verify_audit_outputs(audit, outcome.run, artifacts) == ()
+        assert audit.command == "python experiment.py"
+        assert audit.seed == 42
+        assert audit.environment_digest is not None
+        assert audit.image_digest is not None and audit.image_digest.startswith("sha256:")
+        assert audit.workspace_snapshot_before is not None
+        assert audit.workspace_snapshot_after is not None
+        assert audit.output_artifact_digests
+        assert audit.metrics_digest is not None
+
+    def test_negative_result_run_produces_pass_audit(
+        self, harness: tuple[ExperimentExecutor, FileWorkspaceBackend, SqliteArtifactStore]
+    ) -> None:
+        executor, workspaces, artifacts = harness
+        run_id = ID("30303030-2222-4333-8444-555555555555")
+        outcome = executor.execute(_prepare(workspaces, run_id, _NEGATIVE_SCRIPT))
+        assert outcome.run.state == ExperimentRunState.State.NEGATIVE_RESULT
+        audit = build_reproducibility_audit(
+            outcome.run,
+            audit_id=ID("40404040-2222-4333-8444-555555555555"),
+            artifacts=artifacts,
+        )
+        assert audit.status == "PASS"
+        assert verify_reproducibility_audit(audit)
+        assert verify_audit_outputs(audit, outcome.run, artifacts) == ()

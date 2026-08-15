@@ -59,15 +59,18 @@ class ExperimentPlan:
 
 @dataclass(frozen=True, slots=True)
 class ExperimentRunSpec:
-    """实验执行的输入绑定（可复现性锚点：input/code/env/seed/资源）。"""
+    """实验执行的输入绑定（可复现性锚点：command/input/code/env/seed/资源）。"""
 
     input_digest: Digest
+    command: str | None = None
     code_digest: Digest | None = None
     environment_digest: Digest | None = None
     seed: int | None = None
     resource_profile: str | None = None
 
     def __post_init__(self) -> None:
+        if self.command is not None and not self.command:
+            raise ValueError("command must not be empty when provided")
         if self.seed is not None and self.seed < 0:
             raise ValueError("seed must be non-negative")
 

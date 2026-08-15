@@ -34,6 +34,7 @@ def _plan() -> ExperimentPlan:
 def _spec() -> ExperimentRunSpec:
     return ExperimentRunSpec(
         input_digest=Digest.of_bytes(b"input"),
+        command="python run.py",
         code_digest=Digest.of_bytes(b"code"),
         environment_digest=Digest.of_bytes(b"env"),
         seed=42,
@@ -130,12 +131,17 @@ class TestExperimentRunSpecInvariants:
         first = _spec()
         second = ExperimentRunSpec(
             input_digest=Digest.of_bytes(b"input"),
+            command="python run.py",
             code_digest=Digest.of_bytes(b"code"),
             environment_digest=Digest.of_bytes(b"env"),
             seed=42,
             resource_profile="small",
         )
         assert digest_of(first) == digest_of(second)
+
+    def test_empty_command_rejected_when_provided(self) -> None:
+        with pytest.raises(ValueError):
+            ExperimentRunSpec(input_digest=Digest.of_bytes(b"x"), command="")
 
 
 class TestMetricValue:
@@ -174,55 +180,108 @@ class TestMetricValue:
         assert digest_of(first) == digest_of(second)
 
 
-class TestReproducibilityAudit:
-    def _audit(self, **overrides: object) -> ReproducibilityAudit:
-        fields: dict[str, object] = {
-            "audit_id": ID("8b3c4d5e-6f7a-4b5c-9d0e-1f2a3b4c5d6e"),
-            "experiment_run_id": _RUN_ID,
-            "input_digest": Digest.of_bytes(b"input"),
-            "code_digest": Digest.of_bytes(b"code"),
-            "environment_digest": Digest.of_bytes(b"env"),
-            "seed": 42,
-            "resource_profile": "small",
-            "image_digest": "sha256:" + "ab" * 32,
-            "workspace_snapshot_before": "sha256:" + "cd" * 32,
-            "workspace_snapshot_after": "sha256:" + "ef" * 32,
-            "output_artifact_digests": ("sha256:" + "12" * 32,),
-            "metrics_digest": Digest.of_bytes(b"metrics"),
-            **overrides,
-        }
-        return ReproducibilityAudit(**fields)  # type: ignore[arg-type]
+def _audit(**overrides: object) -> ReproducibilityAudit:
+    fields: dict[str, object] = {
+        "audit_id": ID("8b3c4d5e-6f7a-4b5c-9d0e-1f2a3b4c5d6e"),
+        "experiment_run_id": _RUN_ID,
+        "input_digest": Digest.of_bytes(b"input"),
+        "command": "python run.py",
+        "code_digest": Digest.of_bytes(b"code"),
+        "environment_digest": Digest.of_bytes(b"env"),
+        "seed": 42,
+        "resource_profile": "small",
+        "image_digest": "sha256:" + "ab" * 32,
+        "workspace_snapshot_before": "sha256:" + "cd" * 32,
+        "workspace_snapshot_after": "sha256:" + "ef" * 32,
+        "output_artifact_digests": ("sha256:" + "12" * 32,),
+        "metrics_digest": Digest.of_bytes(b"metrics"),
+        **overrides,
+    }
+    return ReproducibilityAudit(**fields)  # type: ignore[arg-type]
 
+
+class TestReproducibilityAudit:
     def test_full_binding_passes(self) -> None:
-        audit = self._audit().with_audit_digest()
+        audit = _audit().with_audit_digest()
         assert audit.status == "PASS"
         assert audit.verify()
 
     def test_missing_image_digest_fails(self) -> None:
-        audit = self._audit(image_digest=None).with_audit_digest()
+        audit = _audit(image_digest=None).with_audit_digest()
         assert audit.status == "FAIL"
 
     def test_missing_snapshot_fails(self) -> None:
-        audit = self._audit(workspace_snapshot_before=None).with_audit_digest()
+        audit = _audit(workspace_snapshot_before=None).with_audit_digest()
+        assert audit.status == "FAIL"
+
+    def test_missing_snapshot_after_fails(self) -> None:
+        audit = _audit(workspace_snapshot_after=None).with_audit_digest()
         assert audit.status == "FAIL"
 
     def test_empty_output_artifacts_fails(self) -> None:
-        audit = self._audit(output_artifact_digests=()).with_audit_digest()
+        audit = _audit(output_artifact_digests=()).with_audit_digest()
         assert audit.status == "FAIL"
 
     def test_missing_metrics_fails(self) -> None:
-        audit = self._audit(metrics_digest=None).with_audit_digest()
+        audit = _audit(metrics_digest=None).with_audit_digest()
         assert audit.status == "FAIL"
 
     def test_tampered_binding_fails_verify(self) -> None:
-        audit = self._audit().with_audit_digest()
-        tampered = self._audit(seed=43, audit_digest=audit.audit_digest)
+        audit = _audit().with_audit_digest()
+        tampered = _audit(seed=43, audit_digest=audit.audit_digest)
         assert not tampered.verify()
 
     def test_unsealed_audit_fails_verify(self) -> None:
-        assert not self._audit().verify()
+        assert not _audit().verify()
 
     def test_audit_digest_deterministic_across_instances(self) -> None:
-        first = self._audit().with_audit_digest()
-        second = self._audit().with_audit_digest()
+        first = _audit().with_audit_digest()
+        second = _audit().with_audit_digest()
         assert first.audit_digest == second.audit_digest
+
+
+class TestReproducibilityAuditFindings:
+    """故障注入：缺失锚点必须 FAIL 并产生结构化 finding（不是恒定 PASS）。"""
+
+    def test_missing_seed_fails_with_finding(self) -> None:
+        audit = _audit(seed=None).with_audit_digest()
+        assert audit.status == "FAIL"
+        assert any(f.code == "MISSING_SEED" for f in audit.findings())
+
+    def test_missing_environment_digest_fails_with_finding(self) -> None:
+        audit = _audit(environment_digest=None).with_audit_digest()
+        assert audit.status == "FAIL"
+        assert any(f.code == "MISSING_ENVIRONMENT_DIGEST" for f in audit.findings())
+
+    def test_missing_code_snapshot_fails_with_finding(self) -> None:
+        audit = _audit(workspace_snapshot_before=None).with_audit_digest()
+        assert audit.status == "FAIL"
+        assert any(f.code == "MISSING_CODE_SNAPSHOT" for f in audit.findings())
+
+    def test_missing_command_fails_with_finding(self) -> None:
+        audit = _audit(command=None).with_audit_digest()
+        assert audit.status == "FAIL"
+        assert any(f.code == "MISSING_COMMAND" for f in audit.findings())
+
+    def test_command_mismatch_changes_audit_digest(self) -> None:
+        """命令漂移：篡改 command 后重建 audit，verify 必须失败。"""
+        sealed = _audit().with_audit_digest()
+        drifted = _audit(command="python other.py", audit_digest=sealed.audit_digest)
+        assert not drifted.verify()
+
+    def test_code_digest_absent_is_warning_not_failure(self) -> None:
+        audit = _audit(code_digest=None).with_audit_digest()
+        assert audit.status == "PASS"
+        warnings = [f for f in audit.findings() if not f.is_blocking]
+        assert any(f.code == "CODE_DIGEST_NOT_PINNED" for f in warnings)
+
+    def test_code_digest_pinned_produces_no_warning(self) -> None:
+        """code_digest 已独立 pin 的完整绑定不得再出现 CODE_DIGEST_NOT_PINNED。"""
+        audit = _audit(code_digest=Digest.of_bytes(b"code")).with_audit_digest()
+        assert audit.status == "PASS"
+        assert not any(f.code == "CODE_DIGEST_NOT_PINNED" for f in audit.findings())
+
+    def test_unsealed_audit_fails_status(self) -> None:
+        audit = _audit()
+        assert audit.status == "FAIL"
+        assert any(f.code == "UNSEALED_AUDIT" for f in audit.findings())

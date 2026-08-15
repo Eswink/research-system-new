@@ -46,10 +46,11 @@ from packages.application.experiments.types import (
     WorkspaceDirResolver,
 )
 from packages.application.ports.artifact_store import ArtifactStore
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.execution_backend import ExecutionBackend
 from packages.application.ports.workspace_backend import WorkspaceBackend
 from packages.domain.core import Digest
-from packages.domain.experiment_state import ExperimentRunState
+from packages.domain.experiment_state import ExperimentPlanState, ExperimentRunState
 from packages.domain.experiments import (
     ExperimentRun,
     ExperimentRunResult,
@@ -97,10 +98,18 @@ class ExperimentExecutor:
         self._workspace_dir = workspace_dir
 
     def execute(self, request: ExperimentExecutionRequest) -> ExperimentExecutionOutcome:
+        self._assert_plan_preregistered(request)
         run = self._start_run(request)
         execution_run, lease, snapshot_before, workspace_path = self._run_container(request, run)
         collected = self._collect_outputs(request, workspace_path, execution_run)
         return self._finalize(run, execution_run, lease, snapshot_before, collected)
+
+    def _assert_plan_preregistered(self, request: ExperimentExecutionRequest) -> None:
+        if request.plan.state != ExperimentPlanState.State.PREREGISTERED:
+            raise InvalidInputError(
+                f"experiment plan {request.plan.id.value} is not PREREGISTERED "
+                f"(state={request.plan.state}); preregister before execution"
+            )
 
     def _start_run(self, request: ExperimentExecutionRequest) -> ExperimentRun:
         spec = self._build_run_spec(request)
@@ -236,11 +245,11 @@ class ExperimentExecutor:
             "hypothesis": request.plan.hypothesis,
             "seed": request.seed,
         }
-        environment_digest = digest_of(dict(request.environment)) if request.environment else None
         return ExperimentRunSpec(
             input_digest=digest_of(input_payload),
+            command=request.command,
             code_digest=request.code_digest,
-            environment_digest=environment_digest,
+            environment_digest=digest_of(dict(request.environment)),
             seed=request.seed,
             resource_profile=request.resource_profile,
         )

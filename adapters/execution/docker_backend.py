@@ -44,7 +44,15 @@ from packages.domain.enums import FailureCategory
 from packages.domain.workspace import ExecutionRun, ExecutionSpec, ExecutionStatus
 
 CONTAINER_NAME_PREFIX = "research-os-exec"
-DEFAULT_IMAGE = "research-os-sandbox:latest"
+# 镜像引用分界：
+# - DEFAULT_IMAGE：本地开发默认（可变 tag，仅开发工作流，`docker build -t`
+#   可覆盖）；不是生产 pin。
+# - 测试/CI：`research-os-sandbox:m9-test` 构建 tag（fixture 缺失时自动 build，
+#   CI container-quality job 显式 build）。
+# - 生产 composition（M12/M14 落地）：必须注入 `name@sha256:<digest>` 形式的
+#   pinned reference；每次 execute 仍解析实际 image digest 写入
+#   compute_usage_summary["image_digest"]，供 ReproducibilityAudit 漂移检测。
+DEFAULT_IMAGE = "research-os-sandbox:m9-sandbox-v1"
 STDOUT_LOG = "stdout.log"
 STDERR_LOG = "stderr.log"
 _WAIT_STEP_SECONDS = 0.5

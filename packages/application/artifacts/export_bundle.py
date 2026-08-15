@@ -28,7 +28,7 @@ from typing import Any
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.artifacts import Artifact
-from packages.domain.core import Digest, ID, Timestamp
+from packages.domain.core import ID, Digest, Timestamp
 from packages.domain.enums import ArtifactState
 from packages.domain.reproducibility import ReproducibilityAudit
 from packages.domain.serialization import canonical_json_bytes
@@ -60,29 +60,15 @@ def build_export_bundle(
     *,
     export_id: str,
     artifacts: ArtifactStore,
+    artifact_ids: tuple[str, ...] | None = None,
 ) -> str:
-    """打包 run 的全部输出 artifact → bundle artifact，返回 bundle id。"""
-    refs = [artifact.id for artifact in artifacts.list_refs()]
-    if not refs:
-        raise InvalidInputError("no artifacts to export")
-    entries: list[BundleEntry] = []
-    contents: dict[str, bytes] = {}
-    for artifact_id in sorted(refs):
-        artifact = _artifact_by_id(artifacts, artifact_id)
-        if artifact.state is ArtifactState.DELETED_TOMBSTONE:
-            continue
-        content = artifacts.get(artifact_id)
-        entries.append(
-            BundleEntry(
-                artifact_id=artifact_id,
-                digest_hex=artifact.digest.hex_value,
-                size_bytes=len(content),
-                media_type=artifact.media_type,
-            )
-        )
-        contents[artifact_id] = content
-    if not entries:
-        raise InvalidInputError("no readable artifacts to export")
+    """把一次 run 的输出 artifact 打包为内容寻址 bundle，返回 bundle id。
+
+    artifact_ids 显式限定打包范围（由调用方传 run.result.artifact_refs）；
+    省略时回退为 store 全部可读 artifact（兼容旧调用）。跨 run 隔离由
+    调用方 scope 控制：bundle 只应包含该 run 的产物与 provenance。
+    """
+    entries, contents = _collect_entries(artifacts, _collect_refs(artifacts, artifact_ids))
     manifest = ExportBundleManifest(
         export_id=export_id,
         experiment_run_id=str(run_id.value),
@@ -105,6 +91,42 @@ def build_export_bundle(
     return bundle_artifact.id
 
 
+def _collect_refs(
+    artifacts: ArtifactStore, artifact_ids: tuple[str, ...] | None
+) -> tuple[str, ...]:
+    if artifact_ids is not None:
+        refs = tuple(sorted(set(artifact_ids)))
+    else:
+        refs = tuple(sorted(artifact.id for artifact in artifacts.list_refs()))
+    if not refs:
+        raise InvalidInputError("no artifacts to export")
+    return refs
+
+
+def _collect_entries(
+    artifacts: ArtifactStore, refs: tuple[str, ...]
+) -> tuple[list[BundleEntry], dict[str, bytes]]:
+    entries: list[BundleEntry] = []
+    contents: dict[str, bytes] = {}
+    for artifact_id in refs:
+        artifact = _artifact_by_id(artifacts, artifact_id)
+        if artifact.state is ArtifactState.DELETED_TOMBSTONE:
+            continue
+        content = artifacts.get(artifact_id)
+        entries.append(
+            BundleEntry(
+                artifact_id=artifact_id,
+                digest_hex=artifact.digest.hex_value,
+                size_bytes=len(content),
+                media_type=artifact.media_type,
+            )
+        )
+        contents[artifact_id] = content
+    if not entries:
+        raise InvalidInputError("no readable artifacts to export")
+    return entries, contents
+
+
 def decode_export_bundle(
     artifacts: ArtifactStore, bundle_id: str
 ) -> tuple[ExportBundleManifest, dict[str, bytes]]:
@@ -120,9 +142,7 @@ def decode_export_bundle(
                 f"expected {entry.digest_hex}, got {actual}"
             )
         if len(payload) != entry.size_bytes:
-            raise InvalidInputError(
-                f"bundle entry {entry.artifact_id!r} size mismatch"
-            )
+            raise InvalidInputError(f"bundle entry {entry.artifact_id!r} size mismatch")
     return manifest, entries
 
 
@@ -133,9 +153,7 @@ def _artifact_by_id(artifacts: ArtifactStore, artifact_id: str) -> Artifact:
     raise InvalidInputError(f"unknown artifact id: {artifact_id}")
 
 
-def _encode_bundle(
-    manifest: ExportBundleManifest, contents: dict[str, bytes]
-) -> bytes:
+def _encode_bundle(manifest: ExportBundleManifest, contents: dict[str, bytes]) -> bytes:
     manifest_json = canonical_json_bytes(_manifest_payload(manifest)) + b"\n"
     parts = [MAGIC, manifest_json]
     for entry in manifest.entries:

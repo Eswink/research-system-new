@@ -116,3 +116,8 @@ seed
 resource profile
 artifacts
 ```
+
+`code digest` = 代码出处/内容的独立 provenance pin（由请求方可选提供，
+例如代码来自 repository commit 而非工作区文件的场景）。未提供时，代码
+内容由执行前 `workspace snapshot` 覆盖；ReproducibilityAudit 对此发出
+`CODE_DIGEST_NOT_PINNED` WARNING（诚实标注，不升级为 FAIL）。

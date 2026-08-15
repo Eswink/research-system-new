@@ -95,6 +95,7 @@ jobs:
           uv run --frozen --no-sync python -B -m pytest
           tests/adapters/execution
           tests/contracts/test_execution_backend_docker.py
+          tests/application/experiments/test_experiment_e2e.py
           -m requires_docker
         env:
           PYTHONUTF8: "1"

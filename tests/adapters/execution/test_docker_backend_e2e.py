@@ -111,6 +111,22 @@ class TestContainerLifecycle:
             == second.compute_usage_summary["image_digest"]
         )
 
+    def test_pinned_image_reference_is_consumed_and_recorded(
+        self, sandbox_image: str, tmp_path: Path
+    ) -> None:
+        """`name@sha256:<digest>` pinned reference 可被消费且 digest 被记录。
+
+        生产 composition 注入 pinned reference 的消费路径验证；digest 从
+        fixture 镜像运行时解析，不硬编码环境值。
+        """
+        client = docker.from_env()
+        expected = client.images.get(sandbox_image).id
+        pinned = DockerExecutionBackend(image=f"research-os-sandbox@{expected}")
+        run = pinned.execute(_spec("echo pinned-ref", tmp_path), timeout_seconds=60)
+        assert run.status is ExecutionStatus.SUCCEEDED
+        recorded = run.compute_usage_summary["image_digest"]
+        assert recorded == expected
+
 
 class TestFaultInjection:
     def test_timeout_kills_container_and_returns_timed_out(
