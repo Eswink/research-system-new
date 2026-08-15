@@ -12,6 +12,7 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260815-003](entries/EXP-20260815-003.md) | ACTIVE | 0.5 | repository | 2026-11-13 | `tools/` 下脚本直接 `uv run python tools/xxx.py` 报 ModuleNotFoundError（sys.path 为 tools/ 非仓库根）：改 `exec(open(...))` 或固化为 tests/ 正式测试 |
 | [EXP-20260815-002](entries/EXP-20260815-002.md) | ACTIVE | 0.6 | repository | 2026-11-13 | docker-py `wait(timeout=)` 超时异常跨平台不一致（Windows npipe 抛 ConnectionError 而非 ReadTimeout）：改用 inspect 轮询 Running + monotonic deadline |
 | [EXP-20260815-001](entries/EXP-20260815-001.md) | ACTIVE | 0.5 | repository | 2026-11-13 | uv add/sync/install 卡死且文件系统验证证明未完成（与 EXP-006 相反）：uv lock 拆步 + wheel 手动解压到 site-packages 应急路径 |
 | [EXP-20260814-006](entries/EXP-20260814-006.md) | ACTIVE | 0.5 | repository | 2026-11-12 | uv add/sync 前台等待返回 shell-incomplete 但命令实际完成：拆 lock 步骤 + 文件系统验证，不依赖终端流事件 |
