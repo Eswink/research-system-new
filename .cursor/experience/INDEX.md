@@ -12,6 +12,8 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260815-002](entries/EXP-20260815-002.md) | ACTIVE | 0.6 | repository | 2026-11-13 | docker-py `wait(timeout=)` 超时异常跨平台不一致（Windows npipe 抛 ConnectionError 而非 ReadTimeout）：改用 inspect 轮询 Running + monotonic deadline |
+| [EXP-20260815-001](entries/EXP-20260815-001.md) | ACTIVE | 0.5 | repository | 2026-11-13 | uv add/sync/install 卡死且文件系统验证证明未完成（与 EXP-006 相反）：uv lock 拆步 + wheel 手动解压到 site-packages 应急路径 |
 | [EXP-20260814-006](entries/EXP-20260814-006.md) | ACTIVE | 0.5 | repository | 2026-11-12 | uv add/sync 前台等待返回 shell-incomplete 但命令实际完成：拆 lock 步骤 + 文件系统验证，不依赖终端流事件 |
 | [EXP-20260814-005](entries/EXP-20260814-005.md) | ACTIVE | 0.5 | repository | 2026-11-12 | git diff 空但 status 显示修改 = 纯 CRLF/LF 行尾差异；用 --stat 确认，commit 注明 no content change |
 | [EXP-20260814-004](entries/EXP-20260814-004.md) | ACTIVE | 0.5 | repository | 2026-11-12 | m0 profile 入口是 run_all_checks.py --profile m0 --keep-going（无 run_m0_profile.py）；权威定义在 CI workflow |
@@ -27,7 +29,7 @@
 | [EXP-20260813-002](entries/EXP-20260813-002.md) | ACTIVE | 0.5 | repository | 2026-11-11 | lint-imports 不可用致架构测试失败：首选 uv run --frozen --no-sync，备选注入 venv Scripts PATH |
 | [EXP-20260813-001](entries/EXP-20260813-001.md) | ACTIVE | 0.5 | repository | 2026-11-11 | Python 测试/探针必须经 uv run --frozen --no-sync 或 .venv python 执行，不用系统 python |
 | [EXP-20260812-003](entries/EXP-20260812-003.md) | ACTIVE | 0.5 | repository | 2026-11-10 | ruff lint 作用域必须按 CI 定义，禁止全仓 `ruff check .`（豁免区误报） |
-| [EXP-20260812-002](entries/EXP-20260812-002.md) | ACTIVE | 0.5 | repository | 2026-11-10 | Windows PowerShell 下命令写法：`;` 分隔替代 `&&`、`git commit -F` 替代 heredoc、cmd 开关需 `cmd /c` 包裹（`dir /b` 会被解析为路径）；python -c 内联多语句/async 不可靠，探测代码写测试文件 |
+| [EXP-20260812-002](entries/EXP-20260812-002.md) | ACTIVE | 0.5 | repository | 2026-11-10 | Windows PowerShell 下命令写法：`;` 分隔替代 `&&`、`git commit -F` 替代 heredoc、cmd 开关需 `cmd /c` 包裹（`dir /b` 会被解析为路径）；python -c 内联多语句/async 不可靠，探测代码写测试文件；嵌套引号命令（多层 -c、长正则）落脚本文件 |
 | [EXP-20260812-001](entries/EXP-20260812-001.md) | ACTIVE | 0.5 | repository | 2026-11-10 | 经验库闭环端到端回归方法（失败→观察→提示→沉淀→注入） |
 
 ## 注入说明
