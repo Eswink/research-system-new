@@ -12,6 +12,7 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260815-004](entries/EXP-20260815-004.md) | ACTIVE | 0.4 | repository | 2026-11-13 | 长阻塞前台 Shell 返回 "MainThreadCursor disposed" 且无输出 = 命令未执行（IDE 通道瞬时故障）：同命令重跑即可，不当作命令失败诊断 |
 | [EXP-20260815-003](entries/EXP-20260815-003.md) | ACTIVE | 0.5 | repository | 2026-11-13 | `tools/` 下脚本直接 `uv run python tools/xxx.py` 报 ModuleNotFoundError（sys.path 为 tools/ 非仓库根）：改 `exec(open(...))` 或固化为 tests/ 正式测试 |
 | [EXP-20260815-002](entries/EXP-20260815-002.md) | ACTIVE | 0.6 | repository | 2026-11-13 | docker-py `wait(timeout=)` 超时异常跨平台不一致（Windows npipe 抛 ConnectionError 而非 ReadTimeout）：改用 inspect 轮询 Running + monotonic deadline |
 | [EXP-20260815-001](entries/EXP-20260815-001.md) | ACTIVE | 0.5 | repository | 2026-11-13 | uv add/sync/install 卡死且文件系统验证证明未完成（与 EXP-006 相反）：uv lock 拆步 + wheel 手动解压到 site-packages 应急路径 |
@@ -30,7 +31,7 @@
 | [EXP-20260813-002](entries/EXP-20260813-002.md) | ACTIVE | 0.5 | repository | 2026-11-11 | lint-imports 不可用致架构测试失败：首选 uv run --frozen --no-sync，备选注入 venv Scripts PATH |
 | [EXP-20260813-001](entries/EXP-20260813-001.md) | ACTIVE | 0.5 | repository | 2026-11-11 | Python 测试/探针必须经 uv run --frozen --no-sync 或 .venv python 执行，不用系统 python |
 | [EXP-20260812-003](entries/EXP-20260812-003.md) | ACTIVE | 0.5 | repository | 2026-11-10 | ruff lint 作用域必须按 CI 定义，禁止全仓 `ruff check .`（豁免区误报） |
-| [EXP-20260812-002](entries/EXP-20260812-002.md) | ACTIVE | 0.5 | repository | 2026-11-10 | Windows PowerShell 下命令写法：`;` 分隔替代 `&&`、`git commit -F` 替代 heredoc、cmd 开关需 `cmd /c` 包裹（`dir /b` 会被解析为路径）；python -c 内联多语句/async 不可靠，探测代码写测试文件；嵌套引号命令（多层 -c、长正则）落脚本文件 |
+| [EXP-20260812-002](entries/EXP-20260812-002.md) | ACTIVE | 0.5 | repository | 2026-11-10 | Windows PowerShell 下命令写法：`;` 分隔替代 `&&`、`git commit -F` 替代 heredoc、cmd 开关需 `cmd /c` 包裹（`dir /b` 会被解析为路径）；python -c 内联多语句/async 不可靠，探测代码写测试文件；嵌套引号命令（多层 -c、长正则）落脚本文件或改用 Grep 工具 |
 | [EXP-20260812-001](entries/EXP-20260812-001.md) | ACTIVE | 0.5 | repository | 2026-11-10 | 经验库闭环端到端回归方法（失败→观察→提示→沉淀→注入） |
 
 ## 注入说明
