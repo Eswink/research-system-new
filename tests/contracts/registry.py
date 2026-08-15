@@ -22,16 +22,19 @@ from adapters.fakes import (
     FakeCredentialResolver,
     FakeEndpointStore,
     FakeEventPublisher,
+    FakeEvidenceLedger,
     FakeExecutionBackend,
     FakeMemoryStore,
     FakeModelGateway,
     FakePolicyEvaluator,
     FakeResourceCatalog,
+    FakeRetrievalIndex,
     FakeToolPackStore,
     FakeToolProvider,
     FakeWorkflowEngine,
     FakeWorkspaceBackend,
 )
+from adapters.index.in_memory_index import InMemoryRetrievalIndex
 from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
 from adapters.openhands.session_types import AdapterDependencies
 from adapters.sqlite.artifact_store import SqliteArtifactStore
@@ -80,6 +83,8 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "execution_backend": [FakeExecutionBackend],
     "artifact_store": [FakeArtifactStore, SqliteArtifactStore],
     "event_publisher": [FakeEventPublisher, SqliteOutboxEventPublisher],
+    "evidence_ledger": [FakeEvidenceLedger],
+    "retrieval_index": [FakeRetrievalIndex, InMemoryRetrievalIndex],
     "policy_evaluator": [FakePolicyEvaluator],
     "credential_resolver": [FakeCredentialResolver],
     "memory_store": [FakeMemoryStore],

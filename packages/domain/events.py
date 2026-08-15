@@ -46,6 +46,8 @@ class EventType(StrEnum):
     WORKSPACE_SNAPSHOT_CREATED = "workspace.snapshot.created"
     ARTIFACT_VERIFIED = "artifact.verified"
     CLAIM_VERIFIED = "claim.verified"
+    CLAIM_DISPUTED = "claim.disputed"
+    MEMORY_DELETED = "memory.deleted"
     RUN_FORKED = "run.forked"
     RUN_COMPLETED = "run.completed"
     RUN_CANCELLED = "run.cancelled"

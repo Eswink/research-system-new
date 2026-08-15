@@ -159,6 +159,10 @@ Product Capability**（M7 后的产品能力建设，非已实现事项）。
 | ModelRelay + OpenHandsRuntimeAdapter usage 归账闭环到 BudgetLedger | P1 | M12 | 前提：真实 relay 链路 E2E（当前为 mock 端点）；在 M12（First Real Research Workflow）清偿 |
 | retention 定时调度 | P2 | M14 | M9 交付显式触发 `apply_retention` 用例；定时扫描与 `recover_expired_leases` 同属 M14 定时调度范畴 |
 | Experiment 实体持久化 | P1 | M14 | M9 交付 Domain 实体与 use case；`ExperimentPlan/ExperimentRun/ReproducibilityAudit` 落 PostgreSQL Canonical State 属 M14 |
+| EvidenceLedger 持久化 | P1 | M14 | M10 交付 `FakeEvidenceLedger`（进程内）；跨 run 持久化落 PostgreSQL Canonical State 属 M14 |
+| RetrievalIndex 持久化 / 真实 embedding | P2 | M12 前评估 | M10 交付 `InMemoryRetrievalIndex`（确定性 token 检索，可重建投影）；真实语义检索与 embedding provider 绑定属 future dependency，不实现 |
+| Memory/Evidence 内容级数据治理 | P2 | M19 | M10 gate 在 commit 前复用 `domain.redaction` 脱敏 secret 样式内容（Bearer/API key/URL 凭据）；完整 content policy、私有 CoT 识别与数据治理规则属 M19 |
+| Memory/Claim 并发写入控制 | P2 | M14 | M10 为单进程语义（Fake 内存实现 + 同 id 重复 commit 拒绝）；跨进程并发（同提案竞争 commit、delete vs update）依赖 M14 PostgreSQL 事务语义 |
 
 > M9 已清偿（2026-08-15，证据见 `docs/roadmap/M9_COMPLETION_RECORD.md`）：
 > `DockerWorkspace 容器链路全量验证`（裁决 mapping-only + 真实链路由
@@ -179,7 +183,7 @@ M7 后的产品能力建设方向。**以下均为未来设想，尚未实现**�
 | Research Tool Plane：ToolCatalog/Resolver（P1 真实链）、Tool effect/risk classes、MCP Streamable HTTP + stdio、ToolPack manifest/install/update/revoke、Tool health/circuit breaker、Tool credential separation、large result artifact indirection | M8 Research Capability Plane | PLANNED |
 | Research Skill Registry：Skill 生命周期与 Registry、能力路由与复用 | M8 Research Capability Plane | PLANNED |
 | Real Experiment Runtime：ExecutionBackend 真实实现、WorkspaceLease/worktree、ExperimentPlan/Run/Metric、内容寻址 Artifact Store 生产化、retention/export bundle、ReproducibilityAudit | M9 Real Experiment Runtime | PLANNED |
-| Evidence / Memory Enhancement：SourceRecord、MemoryWriteProposal gate、Memory lifecycle/delete、derived vector index、Claim/Evidence relations、contradiction handling、negative result memory | M10 Evidence / Memory / Provenance | PLANNED |
+| Evidence / Memory Enhancement：SourceRecord、MemoryWriteProposal gate、Memory lifecycle/delete、derived vector index、Claim/Evidence relations、contradiction handling、negative result memory | M10 Evidence / Memory / Provenance | DONE |
 | Evaluation Plane：Eval Harness modes、deterministic gates、reviewer panel、human calibration samples、canary/regression dashboard | M11 Evaluation Plane | PLANNED |
 | First Real Research Workflow：真实 relay 链路 E2E + usage 归账闭环、工具 + 实验 + 证据全链、MVP 成立判定 | M12 First Real Research Workflow | PLANNED |
 | Research Console：first-run relay wizard、models/probe page、team/agent model assignment、protocol/preflight dry run、task/run timeline、approvals/interventions、workspace diff、evidence/claim map、budget/usage、audit/export | M13 Research Console | PLANNED |

@@ -14,11 +14,13 @@ from adapters.fakes.budget_ledger import FakeBudgetLedger
 from adapters.fakes.credential_resolver import FakeCredentialResolver
 from adapters.fakes.endpoint_store import FakeEndpointStore
 from adapters.fakes.event_publisher import FakeEventPublisher
+from adapters.fakes.evidence_ledger import FakeEvidenceLedger
 from adapters.fakes.execution_backend import FakeExecutionBackend
 from adapters.fakes.memory_store import FakeMemoryStore
 from adapters.fakes.model_gateway import FakeModelGateway, FakeModelGatewayOptions
 from adapters.fakes.policy_evaluator import FakePolicyEvaluator
 from adapters.fakes.resource_catalog import FakeResourceCatalog
+from adapters.fakes.retrieval_index import FakeRetrievalIndex
 from adapters.fakes.tool_pack_store import FakeToolPackStore
 from adapters.fakes.tool_provider import FakeToolProvider
 from adapters.fakes.workflow_engine import FakeWorkflowEngine
@@ -33,12 +35,14 @@ __all__ = [
     "FakeCredentialResolver",
     "FakeEndpointStore",
     "FakeEventPublisher",
+    "FakeEvidenceLedger",
     "FakeExecutionBackend",
     "FakeMemoryStore",
     "FakeModelGateway",
     "FakeModelGatewayOptions",
     "FakePolicyEvaluator",
     "FakeResourceCatalog",
+    "FakeRetrievalIndex",
     "FakeToolPackStore",
     "FakeToolProvider",
     "FakeWorkflowEngine",

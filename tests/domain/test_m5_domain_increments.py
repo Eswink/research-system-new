@@ -55,6 +55,8 @@ DOCUMENTED_EVENT_TYPES = {
     "workspace.snapshot.created",
     "artifact.verified",
     "claim.verified",
+    "claim.disputed",
+    "memory.deleted",
     "run.forked",
     "run.completed",
     "run.cancelled",
@@ -252,4 +254,4 @@ class TestEventTypeInventory:
     def test_covers_documented_event_types(self) -> None:
         actual = {event.value for event in EventType}
         assert actual == DOCUMENTED_EVENT_TYPES
-        assert len(actual) == 32
+        assert len(actual) == 34

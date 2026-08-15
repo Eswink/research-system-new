@@ -6,6 +6,7 @@ provenance gate。
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -145,8 +146,6 @@ class TestExecutionBackendSemantics:
 
 class TestMemoryStoreSemantics:
     def test_provenance_gate_rejects_unknown_source(self) -> None:
-        from dataclasses import replace
-
         store = FakeMemoryStore(allowed_sources=("source:article-1",))
         unknown = replace(memory_proposal("mem-1"), provenance="source:untrusted")
         with pytest.raises(InvalidInputError):
@@ -157,3 +156,17 @@ class TestMemoryStoreSemantics:
         record = store.commit(memory_proposal("mem-1"))
         assert record.id == "mem-1"
         assert record.provenance == "source:article-1"
+
+    def test_empty_allowlist_denies_commit(self) -> None:
+        """deny-by-default 契约：无参构造不得放行任何 provenance。"""
+        store = FakeMemoryStore()
+        with pytest.raises(InvalidInputError, match="deny by default"):
+            store.commit(memory_proposal("mem-1"))
+
+    def test_duplicate_commit_rejected(self) -> None:
+        """同 id 重复 commit 拒绝且原记录不变（防静默覆盖）。"""
+        store = FakeMemoryStore(allowed_sources=("source:article-1",))
+        store.commit(memory_proposal("mem-1"))
+        with pytest.raises(InvalidInputError, match="already committed"):
+            store.commit(memory_proposal("mem-1"))
+        assert store.get("mem-1").content == memory_proposal("mem-1").content

@@ -18,6 +18,7 @@ from packages.application.ports.agent_runtime import AgentRuntime
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.event_publisher import EventPublisher
+from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.resource_catalog import (
     CatalogSnapshot,
     PreflightContext,
@@ -70,6 +71,7 @@ class OrchestrationDependencies:
     artifacts: ArtifactStore
     events: EventPublisher
     budget: BudgetLedger | None = None
+    ledger: EvidenceLedger | None = None
     default_actor: str = "system:orchestration"
 
 
@@ -174,6 +176,7 @@ class RunOrchestrationService:
                 runtime=self._deps.runtime,
                 artifacts=self._deps.artifacts,
                 budget=self._deps.budget,
+                ledger=self._deps.ledger,
                 publish=self._publish_phase_event,
                 fail_run=self._fail_run,
             ),

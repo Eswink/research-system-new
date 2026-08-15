@@ -21,11 +21,13 @@ from adapters.fakes import (
     FakeCredentialResolver,
     FakeEndpointStore,
     FakeEventPublisher,
+    FakeEvidenceLedger,
     FakeExecutionBackend,
     FakeMemoryStore,
     FakeModelGateway,
     FakePolicyEvaluator,
     FakeResourceCatalog,
+    FakeRetrievalIndex,
     FakeToolPackStore,
     FakeToolProvider,
     FakeWorkflowEngine,
@@ -71,6 +73,8 @@ _FAKE_FACTORIES: dict[str, Callable[[], FakeBase]] = {
     "execution_backend": FakeExecutionBackend,
     "artifact_store": FakeArtifactStore,
     "event_publisher": FakeEventPublisher,
+    "evidence_ledger": FakeEvidenceLedger,
+    "retrieval_index": FakeRetrievalIndex,
     "policy_evaluator": FakePolicyEvaluator,
     "credential_resolver": FakeCredentialResolver,
     "memory_store": FakeMemoryStore,
@@ -89,6 +93,8 @@ _PORT_PROTOCOL_NAMES = {
     "execution_backend": "ExecutionBackend",
     "artifact_store": "ArtifactStore",
     "event_publisher": "EventPublisher",
+    "evidence_ledger": "EvidenceLedger",
+    "retrieval_index": "RetrievalIndex",
     "policy_evaluator": "PolicyEvaluator",
     "credential_resolver": "CredentialResolver",
     "memory_store": "MemoryStore",
@@ -109,6 +115,8 @@ _PORT_PROBES: dict[str, Callable[[Any], object]] = {
     "execution_backend": lambda fake: fake.execute(execution_spec()),
     "artifact_store": lambda fake: fake.get("missing-artifact"),
     "event_publisher": lambda fake: fake.publish(event_envelope(event_id="probe")),
+    "evidence_ledger": lambda fake: fake.get_claim("missing-claim"),
+    "retrieval_index": lambda fake: fake.search("probe"),
     "policy_evaluator": lambda fake: fake.evaluate(PolicyRequest(actor="probe", capability="x")),
     "credential_resolver": lambda fake: fake.resolve("missing-ref"),
     "memory_store": lambda fake: fake.get("missing-memory"),
@@ -127,6 +135,8 @@ _PORT_PROBE_METHODS: dict[str, str] = {
     "execution_backend": "execute",
     "artifact_store": "get",
     "event_publisher": "publish",
+    "evidence_ledger": "get_claim",
+    "retrieval_index": "search",
     "policy_evaluator": "evaluate",
     "credential_resolver": "resolve",
     "memory_store": "get",
@@ -246,7 +256,10 @@ def test_provider_types_do_not_leak_from_ports() -> None:
 
 
 def test_port_interface_compatibility_matrix() -> None:
-    """注册表必须覆盖全部 15 个 Port 名称（M8 新增 tool_pack_store）。"""
+    """注册表必须覆盖全部 17 个 Port 名称。
+
+    M8 新增 tool_pack_store；M10 新增 evidence_ledger 与 retrieval_index。
+    """
     expected = {
         "agent_runtime",
         "workflow_engine",
@@ -256,6 +269,8 @@ def test_port_interface_compatibility_matrix() -> None:
         "execution_backend",
         "artifact_store",
         "event_publisher",
+        "evidence_ledger",
+        "retrieval_index",
         "policy_evaluator",
         "credential_resolver",
         "memory_store",

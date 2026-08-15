@@ -88,7 +88,7 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | --- | --- | --- | --- | --- |
 | M8 | Research Capability Plane（Tool Plane + Skill Registry） | MVP | M7 | DONE（2026-08-14） |
 | M9 | Real Experiment Runtime | MVP | M7 | DONE（2026-08-15） |
-| M10 | Evidence / Memory / Provenance | MVP | M7 | PLANNED |
+| M10 | Evidence / Memory / Provenance | MVP | M7 | DONE（2026-08-15） |
 | M11 | Evaluation Plane | MVP | M7 | PLANNED |
 | M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | PLANNED |
 | M13 | Research Console | Product | M12 | PLANNED |
@@ -385,6 +385,9 @@ MemoryWriteProposal 全链路测试（无 provenance 拒绝、policy deny、
 curator 通过三类路径）；删除后索引重建一致性测试；同一 Claim 冲突
 证据检测测试；negative result 记忆用例；独立复审 PASS + m0 profile
 全绿。
+
+> 完成状态（2026-08-15）：DoD 全部满足；逐项证据与 M12 readiness
+> 见 [M10_COMPLETION_RECORD.md](M10_COMPLETION_RECORD.md)。
 
 ### Dependencies
 

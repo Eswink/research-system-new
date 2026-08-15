@@ -33,6 +33,8 @@ tool_call.completed
 workspace.snapshot.created
 artifact.verified
 claim.verified
+claim.disputed
+memory.deleted
 run.forked
 run.completed
 run.cancelled

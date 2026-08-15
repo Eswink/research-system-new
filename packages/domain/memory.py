@@ -26,6 +26,7 @@ class MemoryRecord:
     expires_at: Timestamp | None = None
     supersedes: list[str] = field(default_factory=list)
     contradictions: list[str] = field(default_factory=list)
+    active: bool = True
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -48,6 +49,7 @@ class MemoryWriteProposal:
     confidence: float
     scope: str = "project"
     proposed_by: str | None = None
+    supersedes: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if not self.id:

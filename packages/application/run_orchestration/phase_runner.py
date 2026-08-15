@@ -17,7 +17,12 @@ from packages.application.ports.agent_runtime import (
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.errors import InvalidInputError
+from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.workflow_engine import WorkflowEngine
+from packages.application.run_orchestration.claim_promotion import (
+    ClaimPromotionContext,
+    promote_registered_claims,
+)
 from packages.application.run_orchestration.commands import StartRunCommand
 from packages.application.run_orchestration.evaluation_gate import (
     EvaluationInputs,
@@ -29,6 +34,7 @@ from packages.application.run_orchestration.handoff_builder import (
     build_handoff,
 )
 from packages.application.run_orchestration.result_handler import (
+    RegistrationDeps,
     ResultRegistration,
     register_session_result,
 )
@@ -37,8 +43,7 @@ from packages.application.run_orchestration.task_executor import (
     SessionSpecContext,
     execute_task,
 )
-from packages.domain.budget import LedgerCostStatus, ResourceType, UsageLedgerEntry
-from packages.domain.core import Timestamp
+from packages.application.run_orchestration.usage_recording import record_task_usage
 from packages.domain.events import EventType
 from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import ResearchTask, TaskContract
@@ -73,6 +78,7 @@ class PhaseRunnerDeps:
     runtime: AgentRuntime
     artifacts: ArtifactStore
     budget: BudgetLedger | None = None
+    ledger: EvidenceLedger | None = None
     publish: Callable[[EventType, dict[str, object], str, str, str | None], None] | None = None
     fail_run: Callable[[str, str, bool], RunOutcome] | None = None
 
@@ -203,6 +209,19 @@ def _register_and_gate(
                 tctx.ctx.run_id, f"task {task.id.value} rejected by acceptance gate", False
             )
         )
+    if deps.ledger is not None:
+        promote_registered_claims(
+            ClaimPromotionContext(
+                ledger=deps.ledger,
+                reviewer=f"gate:{tctx.spec_context.agent.id}",
+                run_id=tctx.ctx.run_id,
+                trace_id=tctx.ctx.trace_id,
+                task_id=tctx.task.id.value,
+                emit=deps.emit,
+            ),
+            registration,
+            gate,
+        )
     _record_usage(deps, task)
     return _TaskStep(
         handoff=build_handoff(
@@ -226,11 +245,14 @@ def _register_or_fail(
     """会话结果注册；malformed 返回错误消息（由调用方收敛为系统失败）。"""
     try:
         return register_session_result(
-            deps.artifacts,
+            RegistrationDeps(
+                store=deps.artifacts,
+                agent_id=tctx.spec_context.agent.id,
+                ledger=deps.ledger,
+            ),
             tctx.task,
             tctx.contract,
             session_result.structured_output,
-            agent_id=tctx.spec_context.agent.id,
         )
     except InvalidInputError as error:
         return str(error)
@@ -266,18 +288,5 @@ def _artifact_view(registration: ResultRegistration) -> dict[str, object]:
 
 
 def _record_usage(deps: PhaseRunnerDeps, task: ResearchTask) -> None:
-    """task 完成后的确定性用量记录（entry_id 幂等）。"""
-    if deps.budget is None:
-        return
-    deps.budget.record_usage(
-        UsageLedgerEntry(
-            entry_id=f"usage:{task.id.value}:turns",
-            resource_type=ResourceType.AGENT_TURNS,
-            quantity=1,
-            unit="turns",
-            cost_status=LedgerCostStatus.UNKNOWN,
-            source="run_orchestration",
-            occurred_at=Timestamp.now().value,
-            task_id=task.id.value,
-        )
-    )
+    """task 完成后的确定性用量记录（entry_id 幂等，见 usage_recording）。"""
+    record_task_usage(deps.budget, task)

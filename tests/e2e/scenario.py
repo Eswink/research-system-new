@@ -11,6 +11,7 @@ from pathlib import Path
 from adapters.contracts.protocol_loaders import load_protocol
 from adapters.fakes.agent_runtime import FakeAgentRuntime
 from adapters.fakes.budget_ledger import FakeBudgetLedger
+from adapters.fakes.evidence_ledger import FakeEvidenceLedger
 from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.db import connect
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
@@ -98,12 +99,17 @@ class StructuredOutputAgentRuntime(FakeAgentRuntime):
 class M7Harness:
     """一次 E2E 场景的完整 wiring（SQLite 共享连接保证事务语义）。"""
 
-    def __init__(self, runtime: FakeAgentRuntime | None = None) -> None:
+    def __init__(
+        self,
+        runtime: FakeAgentRuntime | None = None,
+        ledger: FakeEvidenceLedger | None = None,
+    ) -> None:
         self.connection = connect(":memory:")
         self.engine = SqliteWorkflowEngine(connection=self.connection, lease_ttl_seconds=60)
         self.artifacts = SqliteArtifactStore(connection=self.connection)
         self.events = SqliteOutboxEventPublisher(connection=self.connection)
         self.budget = FakeBudgetLedger()
+        self.ledger = ledger
         self.service = RunOrchestrationService(
             OrchestrationDependencies(
                 runtime=runtime or StructuredOutputAgentRuntime(),
@@ -111,6 +117,7 @@ class M7Harness:
                 artifacts=self.artifacts,
                 events=self.events,
                 budget=self.budget,
+                ledger=ledger,
             )
         )
 

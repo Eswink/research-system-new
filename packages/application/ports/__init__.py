@@ -29,6 +29,7 @@ from packages.application.ports.errors import (
     TransientPortError,
 )
 from packages.application.ports.event_publisher import EventPublisher
+from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.execution_backend import ExecutionBackend
 from packages.application.ports.memory_store import MemoryStore
 from packages.application.ports.model_gateway import (
@@ -51,6 +52,7 @@ from packages.application.ports.resource_catalog import (
     ProjectSettings,
     ResourceCatalog,
 )
+from packages.application.ports.retrieval_index import IndexEntry, IndexHit, RetrievalIndex
 from packages.application.ports.tool_pack_store import ToolPackRecord, ToolPackStore
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease, WorkflowEngine
@@ -69,9 +71,12 @@ __all__ = [
     "CredentialResolver",
     "EndpointStore",
     "EventPublisher",
+    "EvidenceLedger",
     "ExecutionBackend",
     "ForkSpec",
     "InvalidInputError",
+    "IndexEntry",
+    "IndexHit",
     "LedgerSnapshot",
     "MemoryStore",
     "ModelGateway",
@@ -86,6 +91,7 @@ __all__ = [
     "PreflightContext",
     "ProjectSettings",
     "ResourceCatalog",
+    "RetrievalIndex",
     "RuntimeEvent",
     "RuntimeEventKind",
     "SecretValue",
