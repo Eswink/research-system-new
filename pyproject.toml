@@ -3,6 +3,7 @@ name = "research-system"
 version = "0.4.0"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "docker==7.2.0",
     "httpx==0.28.1",
     "mcp>=1.28,<2",
     "tenacity==9.1.4",
@@ -13,6 +14,7 @@ package = false
 
 [dependency-groups]
 dev = [
+    "docker==7.2.0",
     "httpx==0.28.1",
     "mcp>=1.28,<2",
     "tenacity==9.1.4",
@@ -69,8 +71,16 @@ files = [
 ]
 exclude = ["^tests/architecture/python/fixtures/(invalid|valid)/"]
 
+[[tool.mypy.overrides]]
+# docker（docker-py）未发布 py.typed；对它的调用已收敛在 adapters/execution/。
+module = ["docker", "docker.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 pythonpath = ["."]
 addopts = ["--strict-config", "--strict-markers"]
+markers = [
+    "requires_docker: tests that need a running Docker daemon and the sandbox image",
+]

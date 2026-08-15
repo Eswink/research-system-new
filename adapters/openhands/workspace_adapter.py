@@ -3,7 +3,10 @@
 R-04/R-17 承接：LocalWorkspace 是 host shell（默认 deny，显式配置 + Policy
 允许才启用）；文件 API 为裸 Path（CWD 相对）解析，adapter 必须对全部文件
 路径显式绝对化 + 工作区根校验，不依赖 OpenHands 内部解析基准。
-DockerWorkspace 映射代码 + 环境探测 smoke（M6 计划选项 A）。
+
+DockerWorkspace 仅为 mapping-only 代码（M6 计划选项 A）：不启动容器、
+不做挂载与限额；真实容器执行链路由 M9 的 `adapters/execution/`
+DockerExecutionBackend 承担（详见 docs/references/upstream/M9_DOCKER_QUALIFICATION.md）。
 """
 
 from __future__ import annotations

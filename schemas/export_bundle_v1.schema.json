@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/export_bundle_v1.schema.json",
+  "title": "ExportBundleV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "export_id",
+    "experiment_run_id",
+    "created_at",
+    "entries"
+  ],
+  "properties": {
+    "export_id": { "type": "string", "minLength": 1 },
+    "experiment_run_id": { "type": "string", "minLength": 1 },
+    "audit_digest": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "created_at": { "type": "string", "minLength": 1 },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifact_id", "digest", "size_bytes", "media_type"],
+        "properties": {
+          "artifact_id": { "type": "string", "minLength": 1 },
+          "digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size_bytes": { "type": "integer", "minimum": 0 },
+          "media_type": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

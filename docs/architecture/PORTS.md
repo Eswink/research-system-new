@@ -66,13 +66,20 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
   ExecutionStatus.TIMED_OUT；compute usage 摘要返回。
 - 非职责：不管理文件布局（WorkspaceBackend）；不记账
   （BudgetLedger 仅收 application 归账后的数字）。
+- M9 扩展（向后兼容可选字段）：ExecutionSpec 增加 `workspace_path`
+  （容器 bind-mount 宿主路径）、`environment`（env 白名单映射，由
+  application use case 构造）、`workdir`（容器内工作目录，默认
+  `/workspace`）；ExecutionRun.compute_usage_summary 增加
+  `image_digest`/`oom_killed`/`elapsed_seconds`（真实容器实现
+  `adapters/execution/` 上报，供 ReproducibilityAudit 绑定）。
 
 ### ArtifactStore（`ports/artifact_store.py`）
 
 - 职责：内容寻址 put/get/verify/list/mark/archive/delete；digest 校验；
   状态流转 STAGED→VERIFIED/QUARANTINED→ACTIVE（合法迁移强制）；
   delete 为 tombstone（内容立即不可读，元数据保留 DELETED_TOMBSTONE；
-  ACTIVE/ARCHIVED 均可直接删除，M5 复审修正）。
+  ACTIVE/ARCHIVED 均可直接删除，M5 复审修正；M9 扩展：
+  QUARANTINED 可删除以支持 retention 清理）。
 - 非职责：不承担 Evidence/Claim truth（DATA_LIFECYCLE.md 事实源划分：
   PostgreSQL 实体为真相，对象存储只保存内容）。
 

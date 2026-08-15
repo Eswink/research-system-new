@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/reproducibility_audit_v1.schema.json",
+  "title": "ReproducibilityAuditV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "audit_id",
+    "experiment_run_id",
+    "input_digest",
+    "audit_digest",
+    "status"
+  ],
+  "properties": {
+    "audit_id": { "type": "string", "minLength": 1 },
+    "experiment_run_id": { "type": "string", "minLength": 1 },
+    "input_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "code_digest": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "environment_digest": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "seed": { "type": ["integer", "null"], "minimum": 0 },
+    "resource_profile": { "type": ["string", "null"], "minLength": 1 },
+    "image_digest": { "type": ["string", "null"], "minLength": 1 },
+    "workspace_snapshot_before": { "type": ["string", "null"], "minLength": 1 },
+    "workspace_snapshot_after": { "type": ["string", "null"], "minLength": 1 },
+    "output_artifact_digests": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    },
+    "metrics_digest": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "audit_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "created_at": { "type": "string", "minLength": 1 }
+  }
+}

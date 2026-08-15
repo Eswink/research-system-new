@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from packages.domain.artifacts import Artifact, verify_artifact_content
+from packages.domain.artifacts import (
+    Artifact,
+    ArtifactRetentionPolicy,
+    verify_artifact_content,
+)
 from packages.domain.core import Digest
 from packages.domain.enums import ArtifactState
 
@@ -23,7 +27,7 @@ def _artifact() -> Artifact:
         storage_uri="s3://bucket/artifact-1",
         created_by="agent-domain-a",
         classification="internal",
-        retention_policy="keep-30-days",
+        retention_policy=ArtifactRetentionPolicy.retain_days(30),
     )
 
 
@@ -76,3 +80,30 @@ def test_artifact_negative_size_rejected() -> None:
             size_bytes=-1,
             media_type="text/plain",
         )
+
+
+class TestArtifactRetentionPolicy:
+    def test_keep_forever_and_legal_hold_are_indefinite(self) -> None:
+        assert ArtifactRetentionPolicy.keep_forever().is_indefinite
+        assert ArtifactRetentionPolicy.legal_hold().is_indefinite
+        assert not ArtifactRetentionPolicy.retain_days(30).is_indefinite
+
+    def test_retain_days_requires_non_negative_days(self) -> None:
+        with pytest.raises(ValueError):
+            ArtifactRetentionPolicy.retain_days(-1)
+
+    def test_indefinite_kinds_reject_days(self) -> None:
+        with pytest.raises(ValueError):
+            ArtifactRetentionPolicy(kind=ArtifactRetentionPolicy.KEEP_FOREVER, days=5)
+
+    def test_roundtrip_serialization(self) -> None:
+        for policy in (
+            ArtifactRetentionPolicy.keep_forever(),
+            ArtifactRetentionPolicy.legal_hold(),
+            ArtifactRetentionPolicy.retain_days(365),
+        ):
+            assert ArtifactRetentionPolicy.parse(policy.to_str()) == policy
+
+    def test_invalid_literal_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ArtifactRetentionPolicy.parse("delete-immediately")

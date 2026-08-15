@@ -18,6 +18,8 @@
 | Prettier 3.9.6 | MIT; exact package + sha512 integrity in `pnpm-lock.yaml` | ADOPTED format-check tooling |
 | OpenHands Software Agent SDK | MIT | dependency + adapter |
 | OpenHands Software Agent SDK v1.42.0 (391fbb8d) — `openhands_sdk` | MIT; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml`; revision lock in `docs/references/upstream/OPENHANDS_REVISION_LOCK.yaml` | ADOPTED runtime adapter (M6) |
+| docker-py 7.2.0 (`docker`) — id `docker_py` | Apache-2.0; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED Docker Engine client for execution backend (M9) |
+| research-os-sandbox 镜像（`adapters/execution/sandbox/Dockerfile`）— id `research_os_sandbox_image` | 基础镜像 `python:3.12-slim`（OCI index digest pin）；构建产物运行时记录实际 digest | ADOPTED experiment sandbox image (M9) |
 | Temporal Server/SDK | verify exact components/version | later adapter |
 | Open Policy Agent | Apache-2.0 | optional adapter |
 | OpenTelemetry | Apache-2.0 ecosystem; verify packages | observability |

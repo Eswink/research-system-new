@@ -579,6 +579,7 @@ def check_json_schemas() -> None:
         "endpoint-health.schema.json",
         "experiment_run_input_v1.schema.json",
         "experiment_run_output_v1.schema.json",
+        "export_bundle_v1.schema.json",
         "fallback-audit-record.schema.json",
         "handoff-bundle.schema.json",
         "llm-endpoint.schema.json",
@@ -589,6 +590,7 @@ def check_json_schemas() -> None:
         "probe-result.schema.json",
         "policy.schema.json",
         "protocol.schema.json",
+        "reproducibility_audit_v1.schema.json",
         "role-definition.schema.json",
         "skill.schema.json",
         "task-contract.schema.json",
@@ -788,6 +790,11 @@ def check_supply_chain() -> None:
         upgrade_gate = component.get("upgrade_gate") or {}
         package_name = str(source.get("package") or "").casefold()
         locked = lock_packages.get(package_name)
+        if source.get("kind") == "DOCKERFILE":
+            _check_dockerfile_adopted(
+                component_id, source, resolution, license_record, upgrade_gate, license_matrix
+            )
+            continue
         if package_name not in direct_packages or locked is None:
             ERRORS.append(f"ADOPTED upstream 未作为直接锁定依赖: {component_id}")
             continue
@@ -812,6 +819,39 @@ def check_supply_chain() -> None:
         ERRORS.append("UPSTREAM_COMPONENTS 必须登记实际采用的 PyYAML/jsonschema")
     if (ROOT / "requirements-bootstrap.txt").exists():
         ERRORS.append("requirements-bootstrap.txt 已被 uv.lock 取代，禁止维护第二套浮动依赖源")
+
+
+def _check_dockerfile_adopted(
+    component_id: str,
+    source: dict,
+    resolution: dict,
+    license_record: dict,
+    upgrade_gate: dict,
+    license_matrix: str,
+) -> None:
+    """容器镜像来源（source.kind=DOCKERFILE）的 ADOPTED 校验。
+
+    镜像不是 PyPI 包，不参与 uv.lock 校验；但必须：
+    - source.path 指向仓库内 Dockerfile 且文件存在（可审计、可重建）；
+    - resolution.base_index_digest 为 sha256 格式 pin（镜像供应链）；
+    - license evidence 为 https 链接；
+    - upgrade_gate 与 LICENSE_MATRIX 与其他 ADOPTED 组件同等要求。
+    """
+    dockerfile_path = str(source.get("path") or "")
+    if not dockerfile_path or not (ROOT / dockerfile_path).is_file():
+        ERRORS.append(f"DOCKERFILE upstream source.path 不存在: {component_id}: {dockerfile_path!r}")
+    base_digest = str(resolution.get("base_index_digest") or "")
+    digest_hex = base_digest.removeprefix("sha256:")
+    if base_digest and re.fullmatch(r"[0-9a-f]{64}", digest_hex) is None:
+        ERRORS.append(f"DOCKERFILE upstream base_index_digest 不是 sha256 pin: {component_id}")
+    if not license_record.get("spdx") or not str(license_record.get("evidence") or "").startswith(
+        "https://"
+    ):
+        ERRORS.append(f"ADOPTED upstream 缺少 SPDX/license evidence: {component_id}")
+    if upgrade_gate.get("explicit_approval") is not True or not upgrade_gate.get("required_checks"):
+        ERRORS.append(f"ADOPTED upstream 缺少升级门禁: {component_id}")
+    if component_id.casefold() not in license_matrix.casefold():
+        ERRORS.append(f"LICENSE_MATRIX 缺少 ADOPTED upstream: {component_id}")
 
 
 def check_manifest_if_present() -> None:

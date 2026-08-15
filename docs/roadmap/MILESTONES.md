@@ -87,7 +87,7 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | Stage | 名称 | 分层 | Hard Deps | 状态 |
 | --- | --- | --- | --- | --- |
 | M8 | Research Capability Plane（Tool Plane + Skill Registry） | MVP | M7 | DONE（2026-08-14） |
-| M9 | Real Experiment Runtime | MVP | M7 | PLANNED |
+| M9 | Real Experiment Runtime | MVP | M7 | DONE（2026-08-15） |
 | M10 | Evidence / Memory / Provenance | MVP | M7 | PLANNED |
 | M11 | Evaluation Plane | MVP | M7 | PLANNED |
 | M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | PLANNED |
@@ -319,6 +319,9 @@ ExecutionBackend contract suite 以真实容器实现通过；DockerWorkspace
 创建/挂载/清理全量验证；ExperimentRun 可复现（同 input 同 digest）；
 容器超时/崩溃故障注入测试；镜像 pin 与供应链登记；独立复审 PASS +
 m0 profile 全绿。
+
+> 完成状态（2026-08-15）：DoD 全部满足；逐项证据与 M12/M17 readiness
+> 见 [M9_COMPLETION_RECORD.md](M9_COMPLETION_RECORD.md)。
 
 ### Dependencies
 

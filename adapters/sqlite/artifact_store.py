@@ -10,19 +10,29 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Callable
+from datetime import datetime, timezone
 from pathlib import Path
 
 from adapters.sqlite.base import SqliteAdapterBase
-from adapters.sqlite.db import connect, now_iso
+from adapters.sqlite.db import connect, now_iso, parse_iso
 from packages.application.ports.errors import InvalidInputError
-from packages.domain.artifacts import Artifact, verify_artifact_content
-from packages.domain.core import Digest
+from packages.domain.artifacts import (
+    Artifact,
+    ArtifactRetentionPolicy,
+    verify_artifact_content,
+)
+from packages.domain.core import Digest, Timestamp
 from packages.domain.enums import ArtifactState
 
 _VALID_TRANSITIONS: dict[ArtifactState, frozenset[ArtifactState]] = {
     ArtifactState.STAGED: frozenset({ArtifactState.VERIFIED, ArtifactState.QUARANTINED}),
     ArtifactState.VERIFIED: frozenset({ArtifactState.ACTIVE, ArtifactState.QUARANTINED}),
-    ArtifactState.QUARANTINED: frozenset({ArtifactState.ACTIVE, ArtifactState.VERIFIED}),
+    ArtifactState.QUARANTINED: frozenset({
+        ArtifactState.ACTIVE,
+        ArtifactState.VERIFIED,
+        ArtifactState.DELETED_TOMBSTONE,
+    }),
     ArtifactState.ACTIVE: frozenset({ArtifactState.ARCHIVED, ArtifactState.DELETED_TOMBSTONE}),
     ArtifactState.ARCHIVED: frozenset({ArtifactState.DELETED_TOMBSTONE}),
     ArtifactState.DELETED_TOMBSTONE: frozenset(),
@@ -40,11 +50,13 @@ class SqliteArtifactStore(SqliteAdapterBase):
         blob_dir: str | Path | None = None,
         *,
         connection: sqlite3.Connection | None = None,
+        now: Callable[[], datetime] | None = None,
     ) -> None:
         super().__init__("artifact_store")
         self._owns_connection = connection is None
         self._conn = connection if connection is not None else connect(str(db_path))
         self._blob_root = Path(blob_dir) if blob_dir else Path.cwd() / ".artifacts"
+        self._now = now
 
     def close(self) -> None:
         if self._owns_connection:
@@ -129,9 +141,18 @@ class SqliteArtifactStore(SqliteAdapterBase):
             "UPDATE artifacts SET state = ? WHERE artifact_id = ?",
             (ArtifactState.DELETED_TOMBSTONE.value, artifact_id),
         )
-        blob = self._blob_path(Digest.parse(row["digest"]))
-        blob.unlink(missing_ok=True)
+        if not self._digest_still_referenced(row["digest"], artifact_id):
+            blob = self._blob_path(Digest.parse(row["digest"]))
+            blob.unlink(missing_ok=True)
         self._record("delete", artifact_id)
+
+    def _digest_still_referenced(self, digest: str, excluding_id: str) -> bool:
+        """内容寻址去重：blob 只有在无其他非 tombstone 引用时才物理删除。"""
+        rows = self._conn.execute(
+            "SELECT 1 FROM artifacts WHERE digest = ? AND artifact_id != ? AND state != ?",
+            (digest, excluding_id, ArtifactState.DELETED_TOMBSTONE.value),
+        ).fetchall()
+        return len(rows) > 0
 
     def _insert_metadata(self, artifact: Artifact) -> None:
         self._conn.execute(
@@ -147,9 +168,9 @@ class SqliteArtifactStore(SqliteAdapterBase):
                 artifact.created_by,
                 json.dumps(artifact.source_refs),
                 artifact.classification,
-                artifact.retention_policy,
+                _policy_to_text(artifact.retention_policy),
                 artifact.state.value,
-                now_iso(None),
+                _created_at_text(artifact, self._now),
             ),
         )
 
@@ -166,7 +187,7 @@ class SqliteArtifactStore(SqliteAdapterBase):
                 artifact.created_by,
                 json.dumps(artifact.source_refs),
                 artifact.classification,
-                artifact.retention_policy,
+                _policy_to_text(artifact.retention_policy),
                 artifact.state.value,
                 artifact.id,
             ),
@@ -196,6 +217,23 @@ def _artifact_from_row(row: sqlite3.Row) -> Artifact:
         created_by=row["created_by"],
         source_refs=list(json.loads(row["source_refs_json"])),
         classification=row["classification"],
-        retention_policy=row["retention_policy"],
+        retention_policy=_policy_from_text(row["retention_policy"]),
         state=_STATE_BY_VALUE[row["state"]],
+        created_at=Timestamp(parse_iso(row["created_at"])),
     )
+
+
+def _policy_to_text(policy: ArtifactRetentionPolicy | None) -> str | None:
+    return policy.to_str() if policy is not None else None
+
+
+def _policy_from_text(text: str | None) -> ArtifactRetentionPolicy | None:
+    return ArtifactRetentionPolicy.parse(text) if text is not None else None
+
+
+def _created_at_text(artifact: Artifact, now: Callable[[], datetime] | None) -> str:
+    """created_at：优先采纳 artifact 声明的创建时间（导入/迁移场景），
+    否则用注入时钟（默认真实当前时间）。"""
+    if artifact.created_at is not None:
+        return artifact.created_at.value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    return now_iso(now)

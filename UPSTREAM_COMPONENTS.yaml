@@ -133,6 +133,59 @@ components:
       - freeze_session_tool_set
       - pin_plugin_revision
 
+  - id: docker_py
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: docker_engine_client_execution_backend
+    source:
+      kind: PYPI
+      package: docker
+      url: "https://pypi.org/project/docker/7.2.0/"
+    resolution:
+      version: "7.2.0"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "cebb93773d334f778e023a7ee352a8d6e13ab1bd3b863a4d4a59dec897df43ac"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://raw.githubusercontent.com/docker/docker-py/7.2.0/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, execution_contract_suite, container_e2e]
+    controls:
+      - adapter_only_import_boundary
+      - sandbox_host_config_default_deny
+      - image_digest_recorded_per_run
+
+  - id: research_os_sandbox_image
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: BUILD_ARTIFACT
+    role: experiment_sandbox_container_image
+    source:
+      kind: DOCKERFILE
+      path: "adapters/execution/sandbox/Dockerfile"
+      base: "docker.io/library/python:3.12-slim"
+      base_index_digest: "sha256:dd29372629eeba2dd003fd9e9d35a5b8236c44727875a0364254b5127af88e65"
+      retrieval: "Docker Hub registry API, 2026-08-15"
+    resolution:
+      version: "m9-sandbox-v1"
+      note: "构建产物 digest 每次由 DockerExecutionBackend 运行时解析并记录"
+    license:
+      spdx: "PSF-2.0 (python image base, 见 python 发行条款)"
+      evidence: "https://github.com/docker-library/python/blob/master/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [image_rebuild, container_e2e, reproducibility_regression]
+    controls:
+      - non_root_user
+      - runtime_default_deny_host_config
+      - actual_digest_recorded_per_run
+
+
   - id: temporal
     adoption_status: PLANNED
     decision_status: DEFERRED

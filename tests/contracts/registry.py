@@ -37,12 +37,19 @@ from adapters.openhands.session_types import AdapterDependencies
 from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
+from adapters.workspace.file_backend import FileWorkspaceBackend
 
 Factory = Callable[[], object]
 
 # 真实 adapter 的确定性装配（contract 级共享；测试进程退出自动清理）
 _CONTRACT_WORKSPACE = Path(tempfile.mkdtemp(prefix="contract-openhands-ws-"))
 _CONTRACT_PERSIST = tempfile.TemporaryDirectory(prefix="contract-openhands-persist-")
+
+
+def _file_workspace_factory() -> FileWorkspaceBackend:
+    """无参工厂：隔离临时根目录的 FileWorkspaceBackend。"""
+    root = Path(tempfile.mkdtemp(prefix="contract-file-workspace-"))
+    return FileWorkspaceBackend(root)
 
 
 def _openhands_runtime_factory() -> OpenHandsRuntimeAdapter:
@@ -69,7 +76,7 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "model_gateway": [FakeModelGateway],
     "tool_provider": [FakeToolProvider],
     "tool_pack_store": [FakeToolPackStore],
-    "workspace_backend": [FakeWorkspaceBackend],
+    "workspace_backend": [FakeWorkspaceBackend, _file_workspace_factory],
     "execution_backend": [FakeExecutionBackend],
     "artifact_store": [FakeArtifactStore, SqliteArtifactStore],
     "event_publisher": [FakeEventPublisher, SqliteOutboxEventPublisher],

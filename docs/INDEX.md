@@ -135,6 +135,7 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 - `references/upstream/M6_RISK_REGISTER.md` — M6 风险登记（M5R）
 - `references/upstream/M6_READINESS_REPORT.md` — M6 Readiness 报告（M5R；M6 完成后基线更新 2026-08-13）
 - `references/upstream/M8_MCP_QUALIFICATION.md` — MCP ecosystem qualification（M8；mcp==1.29.0 v1 stable line ADOPTED）
+- `references/upstream/M9_DOCKER_QUALIFICATION.md` — Docker 执行沙盒 qualification（M9；docker-py 7.2.0 + sandbox Dockerfile ADOPTED，OpenHands DockerWorkspace mapping-only 裁决）
 
 ## Roadmap / Versioning
 
@@ -142,6 +143,8 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 - `../BACKLOG.md` — implementation projection（Completed / Tech Debt / Next Capability）
 - `roadmap/COMPLETION_MATRIX_M0_M7.md` — M0-M7/M5R 完成事实矩阵（阶段、证据、commit、状态）
 - `roadmap/M7_COMPLETION_RECORD.md` — M7 Integration Milestone 完成记录（E2E chain 逐项证据）
+- `roadmap/M8_COMPLETION_RECORD.md` — M8 Research Capability Plane 完成记录
+- `roadmap/M9_COMPLETION_RECORD.md` — M9 Real Experiment Runtime 完成记录（DoD 证据 + M12/M17 readiness）
 - `roadmap/VERTICAL_SLICE_V0_4_0.md`
 - `roadmap/MILESTONES.md` — M0-M7 执行索引 + Post-M7 Roadmap 唯一权威（M8-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐）
 - `versioning/VERSION_POLICY.md`

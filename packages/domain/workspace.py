@@ -71,12 +71,17 @@ class ExecutionSpec:
     command: str
     resource_profile: str | None = None
     environment_digest: str | None = None
+    workspace_path: str | None = None
+    environment: Mapping[str, str] = field(default_factory=dict)
+    workdir: str = "/workspace"
 
     def __post_init__(self) -> None:
         if not self.backend_kind:
             raise ValueError("backend_kind must not be empty")
         if not self.command:
             raise ValueError("command must not be empty")
+        if not self.workdir.startswith("/"):
+            raise ValueError("workdir must be an absolute path")
 
 
 class ExecutionStatus(StrEnum):

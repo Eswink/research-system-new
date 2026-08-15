@@ -10,7 +10,11 @@ from packages.domain.enums import ArtifactState
 _VALID_TRANSITIONS: dict[ArtifactState, frozenset[ArtifactState]] = {
     ArtifactState.STAGED: frozenset({ArtifactState.VERIFIED, ArtifactState.QUARANTINED}),
     ArtifactState.VERIFIED: frozenset({ArtifactState.ACTIVE, ArtifactState.QUARANTINED}),
-    ArtifactState.QUARANTINED: frozenset({ArtifactState.ACTIVE, ArtifactState.VERIFIED}),
+    ArtifactState.QUARANTINED: frozenset({
+        ArtifactState.ACTIVE,
+        ArtifactState.VERIFIED,
+        ArtifactState.DELETED_TOMBSTONE,
+    }),
     ArtifactState.ACTIVE: frozenset({ArtifactState.ARCHIVED, ArtifactState.DELETED_TOMBSTONE}),
     ArtifactState.ARCHIVED: frozenset({ArtifactState.DELETED_TOMBSTONE}),
     ArtifactState.DELETED_TOMBSTONE: frozenset(),
@@ -80,6 +84,7 @@ class FakeArtifactStore(FakeBase):
             classification=current.classification,
             retention_policy=current.retention_policy,
             state=state,
+            created_at=current.created_at,
         )
         self._record("mark", f"{artifact_id}/{state.value}")
 
