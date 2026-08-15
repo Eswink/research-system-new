@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/eval-dataset.schema.json",
+  "title": "EvalDataset",
+  "description": "M11 Evaluation Plane 评测数据集契约（嵌套 map，key 即 case id）。",
+  "type": "object",
+  "required": ["version", "description", "cases", "digest"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "description": {"type": "string"},
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "cases": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/case"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "case": {
+      "type": "object",
+      "required": ["version", "scope", "input_ref", "scorer_refs"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "scope": {"enum": ["UNIT", "INTEGRATION", "WORKFLOW"]},
+        "input_ref": {"type": "string", "minLength": 1},
+        "expected": {},
+        "rubric": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "dimension", "description"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "dimension": {"type": "string", "minLength": 1},
+              "description": {"type": "string"},
+              "scale": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {"type": "integer", "minimum": 0}
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required_artifact_digests": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "scorer_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["scorer_id", "version"],
+            "properties": {
+              "scorer_id": {"type": "string", "minLength": 1},
+              "version": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "determinism": {"enum": ["DETERMINISTIC", "NON_DETERMINISTIC"]},
+        "tags": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "provenance": {"type": "string"},
+        "description": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

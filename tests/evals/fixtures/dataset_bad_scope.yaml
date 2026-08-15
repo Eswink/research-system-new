@@ -1,0 +1,12 @@
+version: 1.0.0
+description: 非法 scope 的测试 fixture（loader 必须拒绝）
+digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+cases:
+  bad_scope:
+    version: 1.0.0
+    scope: PARALLEL_UNIVERSE
+    input_ref: input://bad
+    expected: {}
+    scorer_refs:
+      - scorer_id: exact_match
+        version: 1.0.0

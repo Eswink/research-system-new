@@ -65,6 +65,44 @@ jobs:
           PYTHONUTF8: "1"
           PYTHONIOENCODING: utf-8
 
+  eval-gate:
+    name: eval-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: "0.11.18"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Validate Python lock
+        run: uv lock --check
+
+      - name: Sync frozen Python environment
+        run: uv sync --frozen --dev
+
+      - name: Run M11 deterministic eval gate
+        run: >-
+          uv run --frozen --no-sync python -B
+          adapters/cli/eval_gate.py
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: utf-8
+
+      - name: Run eval suite (no live LLM)
+        run: >-
+          uv run --frozen --no-sync python -B -m pytest tests/evals -q
+          -m "not requires_live_llm"
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: utf-8
+
   container-quality:
     name: container-quality
     runs-on: ubuntu-latest

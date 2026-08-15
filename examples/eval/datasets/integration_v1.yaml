@@ -1,0 +1,30 @@
+version: 1.0.0
+description: "M11 integration \u8BC4\u6D4B\u96C6\uFF08\u8BC1\u636E\u6765\u6E90\u72EC\
+  \u7ACB\u6027\u4E0E\u58F0\u660E\u5F0F\u4E0D\u53D8\u91CF\uFF09"
+digest: sha256:136497255aaad93d450aac69a0f1b31063949dfda6fb7a40982d5335f46d1a88
+cases:
+  evidence_001:
+    version: 1.0.0
+    scope: INTEGRATION
+    input_ref: input://integration/evidence_001
+    expected:
+      minimum: 2
+    scorer_refs:
+    - scorer_id: evidence_source_distinct
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M11 tests/evals/cases
+    description: distinct evidence source identities
+  invariant_001:
+    version: 1.0.0
+    scope: INTEGRATION
+    input_ref: input://integration/invariant_001
+    expected:
+      predicate_id: sorted_desc
+      params: {}
+    scorer_refs:
+    - scorer_id: invariant
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M11 tests/evals/cases
+    description: declarative invariant over structured output

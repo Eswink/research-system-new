@@ -1,0 +1,77 @@
+version: 1.0.0
+description: "M11 CI \u786E\u5B9A\u6027 unit \u8BC4\u6D4B\u96C6\uFF08canary \u5B50\
+  \u96C6\u7531 tags \u5217\u8868\u6807\u8BB0\uFF09"
+digest: sha256:9a047e312b40ddc3247e4bbf2c16b2f0311c2a70902958c65ca6a6a0395d0094
+cases:
+  exact_001:
+    version: 1.0.0
+    scope: UNIT
+    input_ref: input://unit/exact_001
+    expected:
+      answer: 42
+    scorer_refs:
+    - scorer_id: exact_match
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    tags:
+    - canary
+    provenance: M11 tests/evals/cases
+    description: obvious PASS case
+  fields_001:
+    version: 1.0.0
+    scope: UNIT
+    input_ref: input://unit/fields_001
+    expected:
+    - answer
+    - meta.confidence
+    scorer_refs:
+    - scorer_id: required_fields
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M11 tests/evals/cases
+    description: nested required fields
+  numeric_001:
+    version: 1.0.0
+    scope: UNIT
+    input_ref: input://unit/numeric_001
+    expected:
+      value: 100
+      tolerance: '0.01'
+    scorer_refs:
+    - scorer_id: numeric_tolerance
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M11 tests/evals/cases
+    description: Decimal tolerance boundary
+  schema_001:
+    version: 1.0.0
+    scope: UNIT
+    input_ref: input://unit/schema_001
+    expected:
+      type: object
+      required:
+      - conclusion
+      properties:
+        conclusion:
+          type: string
+    scorer_refs:
+    - scorer_id: schema_validity
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M11 tests/evals/cases
+    description: structured output schema
+  digest_001:
+    version: 1.0.0
+    scope: UNIT
+    input_ref: input://unit/digest_001
+    expected:
+      algorithm: sha256
+      hex: 8c7803677124d080ea0d162928fb4c8020beda46b1211223af4c4719d287528a
+    scorer_refs:
+    - scorer_id: digest_match
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    tags:
+    - canary
+    provenance: M11 tests/evals/cases
+    description: artifact digest match canary

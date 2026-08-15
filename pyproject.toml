@@ -83,4 +83,5 @@ pythonpath = ["."]
 addopts = ["--strict-config", "--strict-markers"]
 markers = [
     "requires_docker: tests that need a running Docker daemon and the sandbox image",
+    "requires_live_llm: tests that need a real LLM endpoint (explicit manual runs only)",
 ]

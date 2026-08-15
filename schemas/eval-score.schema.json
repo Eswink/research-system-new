@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/eval-score.schema.json",
+  "title": "EvalScoreReport",
+  "description": "M11 Evaluation Plane 评测报告（canonical JSON，UTF-8）。",
+  "type": "object",
+  "required": [
+    "format",
+    "report_id",
+    "generated_at",
+    "mode",
+    "scope",
+    "gate_verdict",
+    "frozen_conditions",
+    "results"
+  ],
+  "properties": {
+    "format": {"const": "eval_report.v1"},
+    "report_id": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "minLength": 1},
+    "mode": {"type": "string", "minLength": 1},
+    "scope": {"enum": ["UNIT", "INTEGRATION", "WORKFLOW"]},
+    "gate_verdict": {"enum": ["PASS", "PASS_WITH_WARNINGS", "REVISE", "BLOCK"]},
+    "frozen_conditions": {
+      "type": "object",
+      "required": [
+        "dataset_id",
+        "dataset_version",
+        "dataset_digest",
+        "gate_config_id",
+        "gate_config_version",
+        "gate_config_digest",
+        "system_version",
+        "scorer_versions",
+        "input_digests"
+      ],
+      "properties": {
+        "dataset_id": {"type": "string", "minLength": 1},
+        "dataset_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "dataset_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "gate_config_id": {"type": "string", "minLength": 1},
+        "gate_config_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "gate_config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "system_version": {"type": "string", "minLength": 1},
+        "scorer_versions": {"type": "object", "additionalProperties": {"type": "string"}},
+        "input_digests": {"type": "object", "additionalProperties": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "case_id",
+          "case_version",
+          "case_digest",
+          "scope",
+          "input_ref",
+          "scorer_findings",
+          "reviewer_findings",
+          "usage"
+        ],
+        "properties": {
+          "case_id": {"type": "string", "minLength": 1},
+          "case_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+          "case_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "scope": {"enum": ["UNIT", "INTEGRATION", "WORKFLOW"]},
+          "input_ref": {"type": "string", "minLength": 1},
+          "scorer_findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["scorer_id", "scorer_version", "case_id", "status", "detail"],
+              "properties": {
+                "scorer_id": {"type": "string", "minLength": 1},
+                "scorer_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+                "case_id": {"type": "string", "minLength": 1},
+                "status": {"enum": ["PASS", "FAIL", "INFRA_ERROR"]},
+                "detail": {"type": "string"},
+                "value": {}
+              },
+              "additionalProperties": false
+            }
+          },
+          "reviewer_findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "reviewer_id",
+                "model_identity",
+                "rubric_id",
+                "verdict",
+                "rationale",
+                "failure",
+                "temperature",
+                "repetitions"
+              ],
+              "properties": {
+                "reviewer_id": {"type": "string", "minLength": 1},
+                "model_identity": {"type": "string", "minLength": 1},
+                "rubric_id": {"type": "string", "minLength": 1},
+                "verdict": {"enum": ["PASS", "FAIL", "AMBIGUOUS"]},
+                "rationale": {"type": "string"},
+                "score": {"type": "string"},
+                "failure": {"type": ["string", "null"]},
+                "temperature": {"type": ["string", "null"]},
+                "repetitions": {"type": "integer", "minimum": 1}
+              },
+              "additionalProperties": false
+            }
+          },
+          "usage": {}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

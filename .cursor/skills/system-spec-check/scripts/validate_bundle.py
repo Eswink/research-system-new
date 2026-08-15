@@ -577,6 +577,8 @@ def check_json_schemas() -> None:
         "domain_discovery_input_v1.schema.json",
         "domain_discovery_output_v1.schema.json",
         "endpoint-health.schema.json",
+        "eval-dataset.schema.json",
+        "eval-score.schema.json",
         "experiment_run_input_v1.schema.json",
         "experiment_run_output_v1.schema.json",
         "export_bundle_v1.schema.json",

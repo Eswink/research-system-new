@@ -112,7 +112,10 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 
 - `evaluation/EVAL_HARNESS.md`
 - `evaluation/QUALITY_GATES.md`
-
+- `packages/domain/eval_spec.py` / `eval_result.py` / `eval_gate.py` — M11 评测域契约（EvalCase/EvalDataset freeze digest、EvalReport、版本化 GateConfig）
+- `packages/application/evaluation/` — M11 Evaluation Plane 应用层（scorers/runner/reviewer/panel/regression/canary/calibration/report）
+- `../schemas/eval-dataset.schema.json` — 评测数据集契约
+- `../schemas/eval-score.schema.json` — EvalScore 报告契约
 ## API / Storage
 
 - `api/CONTROL_PLANE_API.md`
@@ -136,6 +139,7 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 - `references/upstream/M6_READINESS_REPORT.md` — M6 Readiness 报告（M5R；M6 完成后基线更新 2026-08-13）
 - `references/upstream/M8_MCP_QUALIFICATION.md` — MCP ecosystem qualification（M8；mcp==1.29.0 v1 stable line ADOPTED）
 - `references/upstream/M9_DOCKER_QUALIFICATION.md` — Docker 执行沙盒 qualification（M9；docker-py 7.2.0 + sandbox Dockerfile ADOPTED，OpenHands DockerWorkspace mapping-only 裁决）
+- `references/upstream/M11_EVAL_HARNESS_QUALIFICATION.md` — Evaluation harness 选型 qualification（M11；native 自建，不引入外部 eval framework）
 
 ## Roadmap / Versioning
 
