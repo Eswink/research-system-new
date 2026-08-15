@@ -1,7 +1,7 @@
 """M11 CI 确定性评测门禁 CLI（entry adapter；离线、无 LLM、无网络）。
 
 用法：
-    uv run --frozen --no-sync python -B adapters/cli/eval_gate.py
+    uv run --frozen --no-sync python -B -m adapters.cli.eval_gate
 
 行为：
 - 加载 examples/eval/datasets/ 下的 unit/integration 评测集；

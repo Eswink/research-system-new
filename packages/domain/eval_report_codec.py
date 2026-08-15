@@ -109,7 +109,7 @@ def _result_to_dict(result: EvalResult) -> dict[str, object]:
                 "rubric_id": item.rubric_id,
                 "verdict": item.verdict.value,
                 "rationale": item.rationale,
-                "score": item.score,
+                "score": str(item.score) if item.score is not None else None,
                 "failure": item.failure,
                 "temperature": item.temperature,
                 "repetitions": item.repetitions,

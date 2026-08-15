@@ -99,6 +99,46 @@ def test_report_roundtrip_with_reviewer_findings() -> None:
     assert restored.digest() == with_reviewer.digest()
 
 
+def test_report_in_memory_roundtrip_with_reviewer_score() -> None:
+    # 不经过 JSON 文本的 dict 往返：score Decimal 必须编码为字符串
+    # （eval_report_codec 契约），否则 report_from_dict 拒绝自身输出。
+    report = make_report()
+    case = report.results[0]
+    with_reviewer = EvalReport(
+        report_id=report.report_id,
+        generated_at=report.generated_at,
+        mode=report.mode,
+        scope=report.scope,
+        gate_verdict=report.gate_verdict,
+        frozen_conditions=report.frozen_conditions,
+        results=(
+            EvalResult(
+                case_id=case.case_id,
+                case_version=case.case_version,
+                case_digest=case.case_digest,
+                scope=case.scope,
+                input_ref=case.input_ref,
+                scorer_findings=case.scorer_findings,
+                reviewer_findings=(
+                    ReviewerFinding(
+                        reviewer_id="scientific_reviewer",
+                        model_identity="mock-model-v1",
+                        rubric_id="soundness",
+                        verdict=ReviewerVerdict.PASS,
+                        rationale="ok",
+                        score=Decimal("0.8"),
+                        temperature="0",
+                        repetitions=3,
+                    ),
+                ),
+            ),
+        ),
+    )
+    restored = report_from_dict(report_to_dict(with_reviewer))
+    assert restored == with_reviewer
+    assert restored.digest() == with_reviewer.digest()
+
+
 def test_report_from_dict_rejects_missing_field() -> None:
     payload = json.loads(canonical_json_bytes(report_to_dict(make_report())).decode("utf-8"))
     del payload["gate_verdict"]
