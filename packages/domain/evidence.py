@@ -52,6 +52,17 @@ class Evidence:
     extracted_by: str | None = None
     captured_at: Timestamp | None = None
     artifact_id: str | None = None
+    run_id: str | None = None
+    experiment_run_id: str | None = None
+    metric_refs: tuple[str, ...] = ()
+    workspace_snapshot_before: str | None = None
+    workspace_snapshot_after: str | None = None
+    image_digest: str | None = None
+    environment_digest: str | None = None
+    tool_refs: tuple[str, ...] = ()
+    skill_refs: tuple[str, ...] = ()
+    model_refs: tuple[str, ...] = ()
+    manifest_digest: str | None = None
 
     def __post_init__(self) -> None:
         if not self.id:

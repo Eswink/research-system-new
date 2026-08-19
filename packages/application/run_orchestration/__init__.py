@@ -17,9 +17,17 @@ from packages.application.run_orchestration.evaluation_gate import (
     evaluate_task_gate,
     verify_claim_with_evidence,
 )
+from packages.application.run_orchestration.experiment_task import (
+    ExperimentTaskDeps,
+    execute_experiment_task,
+)
 from packages.application.run_orchestration.handoff_builder import (
     HandoffPayload,
     build_handoff,
+)
+from packages.application.run_orchestration.memory_promotion import (
+    MemoryPromotionContext,
+    promote_memory_from_registration,
 )
 from packages.application.run_orchestration.phase_runner import (
     PhaseRunnerDeps,
@@ -48,8 +56,10 @@ __all__ = [
     "CancelRunCommand",
     "EvaluationInputs",
     "ExecutionDeps",
+    "ExperimentTaskDeps",
     "GateOutcome",
     "HandoffPayload",
+    "MemoryPromotionContext",
     "OrchestrationDependencies",
     "PhaseRunnerDeps",
     "ResumeManifestMismatchError",
@@ -65,8 +75,10 @@ __all__ = [
     "TaskOutcome",
     "build_handoff",
     "evaluate_task_gate",
+    "execute_experiment_task",
     "execute_phases",
     "execute_task",
+    "promote_memory_from_registration",
     "register_session_result",
     "verify_claim_with_evidence",
 ]

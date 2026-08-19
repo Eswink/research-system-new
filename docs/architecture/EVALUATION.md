@@ -114,6 +114,10 @@ invariant（声明式谓词）/ evidence_source_distinct / schema_validity
 `scorers_runtime.py` 经现有 Port 的 scorer 工厂：`artifact_integrity`
 （ArtifactStore.verify）、`policy_compliance`（PolicyEvaluator）、
 `gate_outcome`（把 M7 evaluate_task_gate 作为被观测对象包装）。
+IG-1 增补 `scorers_evidence.py`：`evidence_provenance`（EvidenceLedger
+校验 Claim/Evidence/Source 完整 provenance，DISPUTED 可见）与
+`experiment_reproducibility`（ExperimentRun 的 image/snapshot/artifact
+digest 完整性）。
 Port 异常一律转换为 INFRA_ERROR。
 
 ### 8.3 Reviewer / Panel

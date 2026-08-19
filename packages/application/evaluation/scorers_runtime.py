@@ -16,6 +16,12 @@ from packages.application.evaluation.scorer_types import (
     ScorerFn,
     make_finding,
 )
+from packages.application.evaluation.scorers_evidence import (
+    _EVIDENCE_SCORER,
+    _EXPERIMENT_SCORER,
+    evidence_provenance_scorer,
+    experiment_reproducibility_scorer,
+)
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.policy_evaluator import (
     PolicyEvaluation,
@@ -186,4 +192,15 @@ RUNTIME_SCORER_VERSIONS = {
     _ARTIFACT_SCORER: V1,
     _POLICY_SCORER: V1,
     _GATE_SCORER: V1,
+    _EVIDENCE_SCORER: V1,
+    _EXPERIMENT_SCORER: V1,
 }
+
+__all__ = [
+    "RUNTIME_SCORER_VERSIONS",
+    "artifact_integrity_scorer",
+    "evidence_provenance_scorer",
+    "experiment_reproducibility_scorer",
+    "gate_outcome_scorer",
+    "policy_compliance_scorer",
+]

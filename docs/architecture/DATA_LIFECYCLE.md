@@ -74,6 +74,24 @@ trust label
 parser version
 ```
 
+## 5a. Evidence structured provenance
+
+IG-1 起，`Evidence` 可携带结构化跨阶段 provenance：
+
+```text
+run_id
+experiment_run_id
+metric_refs
+workspace_snapshot_before / after
+image_digest
+environment_digest
+tool_refs / skill_refs / model_refs
+manifest_digest
+```
+
+这些字段由 `ExperimentEvidenceAdmission` 从 `ExperimentRun + RunManifest`
+填充；不允许用自由文本 summary 替代结构化 provenance。
+
 ## 6. Derived Index
 
 全文索引、embedding、Knowledge Graph projection 都可重建。

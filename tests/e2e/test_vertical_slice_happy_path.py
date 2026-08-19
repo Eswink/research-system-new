@@ -129,7 +129,7 @@ class TestEndToEndHappyPath:
         produced_by = {artifact.created_by for artifact in artifacts}
         assert produced_by == {"engineer-1", "reviewer-1"}
         for artifact in artifacts:
-            assert artifact.state is ArtifactState.STAGED
+            assert artifact.state is ArtifactState.VERIFIED
             assert artifact.source_refs and artifact.source_refs[0].startswith("task:")
             content = harness.artifacts.get(artifact.id)
             assert len(content) > 0

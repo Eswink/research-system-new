@@ -21,7 +21,7 @@ from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.domain.artifacts import Artifact
 from packages.domain.core import Digest, Timestamp
-from packages.domain.enums import TrustLabel
+from packages.domain.enums import ArtifactState, TrustLabel
 from packages.domain.evidence import (
     Claim,
     ClaimStatus,
@@ -184,6 +184,7 @@ def register_session_result(
             continue
         artifact, content = _artifact_for_output(task, name, payload, deps.agent_id)
         deps.store.put(artifact, content)
+        deps.store.mark(artifact.id, ArtifactState.VERIFIED)
         artifacts.append(artifact)
         evidence, claim, _relation = _evidence_from_artifact(
             task, artifact, f"Task {task.id.value} produced {name}", claim_id, deps.agent_id

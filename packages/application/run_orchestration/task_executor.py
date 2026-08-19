@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
+from packages.application.experiments.evidence_admission import ExperimentEvidenceResult
+from packages.application.experiments.types import ExperimentExecutionOutcome
 from packages.application.ports.agent_runtime import (
     AgentRuntime,
     AgentSessionResult,
@@ -38,6 +40,8 @@ class TaskExecutionResult:
     task: ResearchTask
     outcome: str
     session_result: AgentSessionResult | None = None
+    experiment_outcome: ExperimentExecutionOutcome | None = None
+    experiment_admission: ExperimentEvidenceResult | None = None
     attempts: int = 1
     failure_category: FailureCategory | None = None
     message: str = ""
