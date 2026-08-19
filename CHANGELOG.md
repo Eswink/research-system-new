@@ -1,5 +1,83 @@
 # Changelog
 
+## v0.4.0 — 2026-08-15（M11 Evaluation Plane）
+
+- M11 完成（commit `0846765` + 收尾 `0cc6361`）：Evaluation Plane——
+  EvalCase/EvalDataset 冻结契约（freeze digest 防篡改）、版本化
+  deterministic scorers、EvalRunner 多模式（异常不转 PASS）、
+  Reviewer/Panel（失败语义结构化）、版本化 Quality Gate（任何确定性
+  FAIL→BLOCK）、regression/canary/calibration（真实 before/after 被
+  gate 拦截）、EvalScore 报告 schema（`schemas/eval-*.schema.json`）。
+- `adapters/cli/eval_gate.py` CLI 门禁 + `.github/workflows/m0-quality.yml`
+  eval-gate job（离线、无 LLM）；`tests/evals/` 10 模块含反作弊专项
+  （阈值篡改/case 跳过/失败样本删除/自报 score 注入）。
+- 未引入外部 eval framework（ragas/deepeval/lm-eval-harness/
+  pytest-benchmark/inspect-ai 全部否决，见
+  `docs/references/upstream/M11_EVAL_HARNESS_QUALIFICATION.md`）。
+- 验证：RECHECK-20260815-014 PASS；m0 profile 18/18；python/tests
+  1610 passed；validate_bundle + governance validate PASS。
+- 文档：`docs/roadmap/M11_COMPLETION_RECORD.md`（2026-08-16 DOC-R1 依
+  repository evidence 重建）。
+
+## v0.4.0 — 2026-08-15（M10 Evidence / Memory / Provenance）
+
+- M10 完成（commit `900c1b1`）：EvidenceLedger Port（Source/Evidence/
+  Claim 登记、promote_claim_to_verified 唯一升级入口、REFUTES→DISPUTED
+  矛盾处理）+ MemoryWriteProposal gate 全链路（schema→provenance→
+  contradiction→policy→curator→commit）+ Memory lifecycle
+  （deactivate tombstone / delete / supersede）+ RetrievalIndex
+  Port（可重建投影，5 类 drift 检测）。
+- 独立复审发现 5 项缺陷（3 BLOCKER + 2 MAJOR：supersede 绕过 gate、
+  Fake 空白名单放行、VERIFIED 直写、REFUTES 无 provenance、错误分类
+  吞没）全部修复并有 16 项对抗性回归；并发边界诚实记录（单进程语义，
+  跨进程归 M14）。
+- 验证：m0 profile 18/18；pytest 1448 passed；mypy strict 308 files。
+- 文档：M10 的 plan/recheck 原开发窗口未创建（git 历史从未存在），
+  2026-08-16 DOC-R1 重建 retrospective 记录
+  （PLAN/RECHECK-20260815-015）。
+
+## v0.4.0 — 2026-08-15（M9 Real Experiment Runtime）
+
+- M9 完成（commit `4156238` + 独立复审修复 `b8560ee`）：真实容器实验
+  执行（`adapters/execution/DockerExecutionBackend`，默认 deny
+  host_config + 资源限额）+ ExperimentPlan/Run/Metric 生命周期 +
+  ReproducibilityAudit（确定性 audit_digest）+ retention/export bundle；
+  清偿 BACKLOG P1 债（DockerWorkspace 容器链路、ExecutionBackend 容器
+  执行）。
+- 独立复审 10 项修正（AuditFinding 结构化、command 绑定、export bundle
+  run 范围限定、版本化镜像 tag 等）全部落地并有回归测试；docker-py
+  7.2.0 + research-os-sandbox 镜像（base OCI index digest pin）登记
+  `UPSTREAM_COMPONENTS.yaml`。
+- 验证：m0 profile 18/18；pytest 1298 passed（含容器套件）；
+  `container-quality` CI job 增加权威 Linux 容器语义 gate。
+
+## v0.4.0 — 2026-08-14（M8 Research Capability Plane）
+
+- M8 完成（commit `4c2c16d`）：Research Capability Plane——Tool Plane
+  （ToolCatalog/ToolResolver/ToolPack 生命周期/health 熔断/大结果
+  artifact indirection）+ Skill Registry（digest + 生命周期）+ MCP
+  adapter（stdio + Streamable HTTP 双 transport，mcp 1.29.0 ADOPTED）。
+- 独立复审（RECHECK-20260814-013）发现并修复 F-01..F-06（stdio/HTTP
+  超时不生效、resolver 静默放行改 fail-closed、REQUIRE_APPROVAL 对齐、
+  ToolPack 凭据域强制）；contract suite 21 项（双 transport）+ 垂直
+  集成安全验证（双权限/凭据域隔离/供应链 pin/frozen set）。
+- 验证：RECHECK-20260814-012 PASS；pytest 1139 passed；m0 profile 18/18。
+
+## v0.4.0 — 2026-08-16（DOC-R1 文档恢复/校正）
+
+- DOC-R1（M0-M11 Documentation Recovery & Reconciliation）：建立
+  `docs/roadmap/M0_M11_DOCUMENT_MATRIX.md` 与统一完成矩阵
+  `docs/roadmap/COMPLETION_MATRIX_M0_M11.md`；重建 M10 retrospective
+  plan/recheck（PLAN/RECHECK-20260815-015）与 M11 完成记录
+  （`Reconstructed from repository evidence`）；MILESTONES M11 状态
+  更正为 DONE；BACKLOG/INDEX/README 状态同步至 M0-M11 completed；
+  校正 PORTS.md（17 Ports）/SYSTEM_ARCHITECTURE/MODEL_PROBE/
+  DETERMINISTIC_SERIALIZATION 引用；新增
+  `tools/docs_consistency_check.py` 确定性文档一致性检查。
+- 无 RECOVERABLE_FROM_GIT 项（CODEX_BOOTSTRAP.md 未删除；M10 plan/recheck
+  与 M11 完成记录在 Git 历史中从未存在）；详情见
+  `docs/roadmap/DOCUMENT_RECOVERY_M0_M11.md`。
+
 ## v0.4.0 — 2026-08-14（learning-evals fixture 污染修复）
 
 - `run_cursor_learning_evals.py` `build()` 不再复制真实 `.cursor/learning/`

@@ -8,7 +8,7 @@ FRAMEWORK_ZIP := ../system-specification-cursor-framework-v$(VERSION).zip
 export PYTHONUTF8 := 1
 export PYTHONIOENCODING := utf-8
 
-.PHONY: bootstrap lock-check quality quality-python quality-typescript validate-spec validate-cursor validate-learning validate-all framework-release framework-package
+.PHONY: bootstrap lock-check quality quality-python quality-typescript validate-spec validate-cursor validate-learning validate-docs validate-all framework-release framework-package
 
 lock-check:
 	$(UV) lock --check
@@ -34,6 +34,9 @@ validate-cursor:
 validate-learning:
 	$(UV_PYTHON) .cursor/skills/learning-check/scripts/validate_cursor_learning.py
 	$(UV_PYTHON) .cursor/skills/learning-check/scripts/run_cursor_learning_evals.py
+
+validate-docs:
+	$(UV_PYTHON) tools/docs_consistency_check.py
 
 quality validate-all:
 	$(UV_PYTHON) $(RUNNER) --profile m0 --keep-going

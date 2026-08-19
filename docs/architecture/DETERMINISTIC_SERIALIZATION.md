@@ -35,4 +35,5 @@ Research OS 需要对 RunManifest、HandoffBundle、Artifact、Event payload 等
 
 - Decimal 尾随零会被 `normalize()` 归一化：`Decimal("0.0100")` 与 `Decimal("0.01")` 产生相同 digest。若某字段需要保留精度语义，应使用 `Money`（整数最小单位）或显式定点类型。
 - 本规则不包含浮点类型；任何新增可 digest 对象必须遵守上述类型白名单。
-- 规则变更属于契约资产变更，必须同步实现、测试与 `validate_bundle.py` 检查后发布。
+- 规则变更属于契约资产变更，必须同步实现、测试与
+  `.cursor/skills/system-spec-check/scripts/validate_bundle.py` 检查后发布。

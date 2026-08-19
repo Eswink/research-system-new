@@ -72,12 +72,15 @@ adapters/*
 └─ 实现 application Ports；承接外部 I/O 与副作用
 ```
 
-M0 在 `tests/architecture/` 中用双语言正反向夹具固化这些边界；M1-M7 已
-按此边界落地真实实现：`packages/domain/`（29 模块）、
-`packages/application/`（protocol_compile / preflight / model_relay /
-policy / ports / run_orchestration）、`adapters/`（contracts / fakes /
-relay / openhands / sqlite）。新生产模块进入时，必须同时声明语言/包归属、
-公开入口和相应测试。
+M0 在 `tests/architecture/` 中用双语言正反向夹具固化这些边界；M1-M11 已
+按此边界落地真实实现：`packages/domain/`（37 模块，含 M8-M11 增补的
+eval_spec/eval_result/eval_report_codec/eval_gate、reproducibility、
+experiments、experiment_state、tool_enums 等）、`packages/application/`
+（protocol_compile / preflight / model_relay / policy / ports /
+run_orchestration / tool_plane / skill_registry / experiments / evidence /
+memory / evaluation）、`adapters/`（contracts / fakes / relay / openhands /
+sqlite / mcp / execution / workspace / index / cli）。新生产模块进入时，
+必须同时声明语言/包归属、公开入口和相应测试。
 
 编译期依赖只允许：
 
@@ -104,6 +107,7 @@ WorkflowEngine
 AgentRuntime
 ModelGateway
 ToolProvider
+ToolPackStore          （M8 增补）
 WorkspaceBackend
 ExecutionBackend
 ArtifactStore
@@ -111,9 +115,15 @@ PolicyEvaluator
 CredentialResolver
 BudgetLedger
 MemoryStore
+EvidenceLedger         （M10 增补）
+RetrievalIndex         （M10 增补）
 EventPublisher
-Evaluator
 ```
+
+集中式规格见 `PORTS.md`（17 个 Port 模块，M5 基线 14 + M8/M10 增补 3）。
+M11 Evaluation Plane 未新建平行 Evaluator Port：Reviewer 复用
+ModelGateway Port，评测对象经 EvalRunner/deterministic scorers 评测
+（`packages/application/evaluation/`）。
 
 Domain 不依赖具体实现。
 
@@ -170,6 +180,25 @@ Requested Capabilities
 - Next.js Console / FastAPI API / Secret Store / OTel 为部署演进目标
   （归属 M13 / M15 / M19，见 `docs/roadmap/MILESTONES.md` Post-M7
   Roadmap），当前以离线质量门禁与 `tests/e2e/` 验证内核行为。
+
+### M8-M11 能力平面增补（2026-08-15）
+
+- M8 Research Capability Plane：Tool Plane（ToolCatalog/ToolResolver/
+  ToolPack 生命周期/health 熔断）+ Skill Registry + MCP adapter
+  （`adapters/mcp/`，stdio + Streamable HTTP 双 transport，mcp 1.29.0
+  ADOPTED）。
+- M9 Real Experiment Runtime：`adapters/execution/` 容器执行
+  （DockerExecutionBackend）+ `packages/application/experiments/`
+  ExperimentRun 生命周期 + ReproducibilityAudit + retention/export。
+- M10 Evidence / Memory / Provenance：EvidenceLedger / RetrievalIndex
+  Port + MemoryWriteProposal gate 全链路 + 可重建检索投影（MVP 为
+  进程内 Fake / InMemory，持久化归 M14）。
+- M11 Evaluation Plane：Eval Harness + deterministic gates +
+  reviewer/panel + regression/canary/calibration + `adapters/cli/eval_gate.py`
+  CI 门禁（离线、无 LLM）。
+- 以上四阶段状态与完成证据见
+  `docs/roadmap/COMPLETION_MATRIX_M0_M11.md` 与各阶段 completion record；
+  M8-M11 均未引入 UI / 分布式 / 多租户（分别归 M13/M16/M18）。
 
 ## 8. 数据一致性
 

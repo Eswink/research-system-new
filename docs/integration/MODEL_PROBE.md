@@ -1,6 +1,6 @@
 # Model Probe Suite v0.4.0
 
-Probe 规格与 digest 规则是 v0.4.0 明确规格；实现位于 `packages/application/model_relay/probe.py`（编排）与 `adapters/relay/gateway.py`（HTTP 执行），测试位于 `tests/application/test_probe_use_cases.py` 与 `tests/adapters/relay/test_gateway.py`。
+Probe 规格与 digest 规则是 v0.4.0 明确规格；实现位于 `packages/application/model_relay/probe.py`（编排）与 `adapters/relay/gateway.py`（HTTP 执行），测试位于 `tests/application/test_run_probe.py` 与 `tests/adapters/relay/test_gateway.py`。
 
 ## Probe 步骤（`probe-suite-v1`）
 

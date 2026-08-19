@@ -6,6 +6,13 @@ Recheck: `RECHECK-20260814-012`（PASS）；独立复审 `RECHECK-20260814-013`
 （PASS_WITH_WARNINGS：发现并修复 F-01..F-06，最终 M8 判定 PASS）
 Milestone 权威定义：`docs/roadmap/MILESTONES.md` M8 节
 
+## Git Evidence
+
+- `4c2c16d`（2026-08-14）feat(m8): research capability plane with
+  independent-recheck hardening（实现 + 独立复审修复落地）。
+- 关联复审：`RECHECK-20260814-013`（独立复审，PASS_WITH_WARNINGS →
+  M8 PASS）。
+
 ## 交付概要
 
 M8 把 M1/M4 冻结的 Tool/Skill/Capability 骨架实现为可运行、可治理、
@@ -100,6 +107,17 @@ RECHECK-20260814-013 独立复审不默认开发窗口结论，实测发现并�
 `test_slow_tool_over_http_enforces_timeout`、
 `test_invalid_timeout_spec_rejected`、`test_no_explicit_allow_is_fail_closed`、
 `TestResolverFailClosed`、`TestLifecycleCredentialGate`（2 项）。
+
+## 风险登记
+
+- MCP 生态多样性导致 adapter 抽象泄漏：以 contract suite（双 transport
+  21 项）+ 独立复审超时故障注入实测收敛（F-01..F-03）；非废弃入口
+  `streamable_http_client` 采纳，废弃入口不再使用。
+- 工具风险分级不足造成安全漏洞：execution-time 门禁 fail-closed
+  （F-04/F-05：无显式 per-capability 决策按 DENY；REQUIRE_APPROVAL
+  四面对齐）与 ToolPack 凭据域强制（F-06）双重收敛。
+- ToolPack 供应链治理复杂度：mcp==1.29.0 ADOPTED + sdist digest + 升级
+  门禁（任何 mcp 版本变更必须重跑 ToolProvider contract suite）。
 
 ## M9 / M10 / M11 Readiness
 

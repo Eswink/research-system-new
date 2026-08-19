@@ -1,5 +1,10 @@
 # M0-M7 Completion Matrix v0.4.0
 
+> 本矩阵已由 `COMPLETION_MATRIX_M0_M11.md` 取代为 M0–M11 唯一完成矩阵
+> （2026-08-16，DOC-R1）。本文件保留 M0–M7（含 M5R）原始完成事实与
+> 2026-08-14 对账时的全部历史行，不重写；M0–M11 统一索引以
+> [COMPLETION_MATRIX_M0_M11.md](COMPLETION_MATRIX_M0_M11.md) 为准。
+
 本矩阵是 M0-M7（含 M5R）各阶段的完成事实总表，由 2026-08-14 文档对账
 任务基于 git history、当前代码/测试与可执行 validator 核对建立。任何
 `DONE` 均有 commit、源码与测试三方可执行证据支撑，不依据 Markdown

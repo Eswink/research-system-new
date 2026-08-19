@@ -19,6 +19,7 @@ FRAMEWORK_SCRIPTS = (
     ".cursor/skills/cursor-framework-check/scripts/run_cursor_hook_evals.py",
     ".cursor/skills/cursor-framework-check/scripts/run_cursor_framework_evals.py",
     ".cursor/skills/learning-check/scripts/run_cursor_learning_evals.py",
+    "tools/docs_consistency_check.py",
 )
 PRODUCT_ROOTS = ("apps", "services", "packages", "adapters", "tests")
 STRICT_PYTHON_FILES = (

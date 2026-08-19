@@ -5,6 +5,12 @@
 - 前置：M7 DONE；M10 计划经 Plan Mode 批准（Cursor Plan `M10 Evidence Memory Provenance`）
 - 结论：**M10 DoD 全部满足**
 
+## Git Evidence
+
+- `900c1b1`（2026-08-15）feat(m10): evidence-backed memory with
+  independent-review hardening（45 files，+3117/-37；含 gate pipeline、
+  EvidenceLedger/RetrievalIndex Port、独立复审 5 缺陷修复）。
+
 ## 交付摘要
 
 | Work Package | 交付 | 落点 |

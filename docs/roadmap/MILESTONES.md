@@ -89,7 +89,7 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M8 | Research Capability Plane（Tool Plane + Skill Registry） | MVP | M7 | DONE（2026-08-14） |
 | M9 | Real Experiment Runtime | MVP | M7 | DONE（2026-08-15） |
 | M10 | Evidence / Memory / Provenance | MVP | M7 | DONE（2026-08-15） |
-| M11 | Evaluation Plane | MVP | M7 | PLANNED |
+| M11 | Evaluation Plane | MVP | M7 | DONE（2026-08-15） |
 | M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | PLANNED |
 | M13 | Research Console | Product | M12 | PLANNED |
 | M14 | Durable Workflow + PostgreSQL | Production | M12 | PLANNED |
@@ -203,10 +203,14 @@ regression（以 Eval Harness + deterministic gates 为基准），不允许仅
 
 ### 下一阶段推荐
 
-**M8 Research Capability Plane**。理由：M7 完成的是内核，真正科研
-需要真实工具能力；M8 是 M12（MVP 验证点）硬依赖中体量最大的一项，
-尽早开工可让并行组 1 按时在 IG-1 汇聚。启动 M8 前需按仓库契约从
-Plan Mode 立项，本路线不自动开工任何 Milestone。
+**M12 First Real Research Workflow**（IG-1 汇聚点）。M8-M11 已全部完成
+并通过独立复审（M8 2026-08-14；M9/M10/M11 2026-08-15），IG-1 前置齐备；
+M12 是 MVP 成立判定点（真实模型 + 真实工具 + 真实实验 + 证据 + 评测
+闭环）。启动 M12 前需按仓库契约从 Plan Mode 立项并经用户显式启动，
+本路线不自动开工任何 Milestone。
+
+> 历史说明：M8-M11 规划期（2026-08-14）本节推荐为 M8；M8-M11 完成后
+> （2026-08-16，DOC-R1）本节更新为 M12。历史 Milestone 定义不改写。
 
 ---
 
@@ -258,6 +262,9 @@ MCP Streamable HTTP + stdio adapter 通过 ToolProvider contract
 suite；ToolPack install/update/revoke 有单元 + 契约测试；health/
 circuit breaker 故障注入测试；tool credential 与 LLM credential
 隔离测试；供应链 pin 验证；独立复审 PASS + m0 profile 全绿。
+
+> 完成状态（2026-08-14）：DoD 全部满足；逐项证据与独立复审修复记录
+> 见 [M8_COMPLETION_RECORD.md](M8_COMPLETION_RECORD.md)。
 
 ### Dependencies
 
@@ -450,6 +457,10 @@ M7 DONE；M11 计划经 Plan Mode 批准。
 harness 可复现运行（同输入同分数）；至少一个真实 before/after
 regression 案例（变更被 gate 拦截）；CI 确定性接入；评测对象在
 M8/M9 完成前可为 mock；独立复审 PASS + m0 profile 全绿。
+
+> 完成状态（2026-08-15）：DoD 全部满足；逐项证据、反作弊专项与
+> M12 readiness 见 [M11_COMPLETION_RECORD.md](M11_COMPLETION_RECORD.md)
+> （DOC-R1 依据 repository evidence 重建）。
 
 ### Dependencies
 

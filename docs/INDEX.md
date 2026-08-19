@@ -3,18 +3,20 @@
 ## 当前工程状态
 
 ```text
-Foundation / Executable Research Kernel = completed（M0-M7 含 M5R，2026-08-14）
+Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
+MVP 能力平面（M8-M11）= completed（2026-08-15）
+IG-1（M12 entry）前置 = 齐备
 ```
 
-真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7`（M3 先于
-M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建设阶段；
-已完成事项 / 技术债 / 下一能力见 `../BACKLOG.md`。
+真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 →
+M10 → M11`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；M8-M11
+为 M7 后并行组 1）。已完成事项 / 技术债 / 下一能力见 `../BACKLOG.md`。
 
 ## 快速问答（新 Agent 起步）
 
 1. **Research OS 是什么？** → [PRODUCT.md](PRODUCT.md)、[架构总览](architecture/SYSTEM_ARCHITECTURE.md)
 2. **当前实现到哪里？** → `../README.md` 当前工程状态、本节状态行
-3. **M0-M7 做了什么？** → [Completion Matrix](roadmap/COMPLETION_MATRIX_M0_M7.md)
+3. **M0-M11 做了什么？** → [Completion Matrix](roadmap/COMPLETION_MATRIX_M0_M11.md)
 4. **当前架构是什么？** → [SYSTEM_ARCHITECTURE.md](architecture/SYSTEM_ARCHITECTURE.md)、[PORTS.md](architecture/PORTS.md)
 5. **哪些 Contracts 已稳定？** → [PORTS.md](architecture/PORTS.md)、`../schemas/`、`../UPSTREAM_COMPONENTS.yaml`
 6. **OpenHands 在哪里？** → [OPENHANDS_ADAPTER.md](integration/OPENHANDS_ADAPTER.md)、[AGENT_RUNTIME.md](architecture/AGENT_RUNTIME.md)
@@ -112,8 +114,8 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 
 - `evaluation/EVAL_HARNESS.md`
 - `evaluation/QUALITY_GATES.md`
-- `packages/domain/eval_spec.py` / `eval_result.py` / `eval_gate.py` — M11 评测域契约（EvalCase/EvalDataset freeze digest、EvalReport、版本化 GateConfig）
-- `packages/application/evaluation/` — M11 Evaluation Plane 应用层（scorers/runner/reviewer/panel/regression/canary/calibration/report）
+- `../packages/domain/eval_spec.py` / `../packages/domain/eval_result.py` / `../packages/domain/eval_gate.py` — M11 评测域契约（EvalCase/EvalDataset freeze digest、EvalReport、版本化 GateConfig）
+- `../packages/application/evaluation/` — M11 Evaluation Plane 应用层（scorers/runner/reviewer/panel/regression/canary/calibration/report）
 - `../schemas/eval-dataset.schema.json` — 评测数据集契约
 - `../schemas/eval-score.schema.json` — EvalScore 报告契约
 ## API / Storage
@@ -143,14 +145,19 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 
 ## Roadmap / Versioning
 
-- `../CODEX_BOOTSTRAP.md` — canonical milestone details and M0 quality gate
+- `../CODEX_BOOTSTRAP.md` — canonical milestone details（M0-M7）and M0 quality gate
 - `../BACKLOG.md` — implementation projection（Completed / Tech Debt / Next Capability）
-- `roadmap/COMPLETION_MATRIX_M0_M7.md` — M0-M7/M5R 完成事实矩阵（阶段、证据、commit、状态）
+- `roadmap/COMPLETION_MATRIX_M0_M11.md` — M0-M11/M5R 完成事实总表（唯一权威；阶段、证据、commit、状态）
+- `roadmap/COMPLETION_MATRIX_M0_M7.md` — M0-M7 原始完成矩阵（历史行保留，已被 M0_M11 矩阵取代为唯一权威）
 - `roadmap/M7_COMPLETION_RECORD.md` — M7 Integration Milestone 完成记录（E2E chain 逐项证据）
 - `roadmap/M8_COMPLETION_RECORD.md` — M8 Research Capability Plane 完成记录
 - `roadmap/M9_COMPLETION_RECORD.md` — M9 Real Experiment Runtime 完成记录（DoD 证据 + M12/M17 readiness）
+- `roadmap/M10_COMPLETION_RECORD.md` — M10 Evidence / Memory / Provenance 完成记录（DoD 证据 + 独立复审 5 缺陷表）
+- `roadmap/M11_COMPLETION_RECORD.md` — M11 Evaluation Plane 完成记录（DoD 证据 + 反作弊专项；DOC-R1 依据 repository evidence 重建）
 - `roadmap/VERTICAL_SLICE_V0_4_0.md`
-- `roadmap/MILESTONES.md` — M0-M7 执行索引 + Post-M7 Roadmap 唯一权威（M8-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐）
+- `roadmap/MILESTONES.md` — M0-M11 执行索引 + Post-M7 Roadmap 唯一权威（M12-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐）
+- `roadmap/M0_M11_DOCUMENT_MATRIX.md` — DOC-R1 inventory（M0-M11 文档分类与恢复判定）
+- `roadmap/DOCUMENT_RECOVERY_M0_M11.md` — DOC-R1 最终报告（inventory/重建/修正/验证结果/remaining risks）
 - `versioning/VERSION_POLICY.md`
 
 ## 阶段工程记录（Plan / Recheck）
@@ -158,4 +165,5 @@ M2：M2 Preflight 消费 M3 Model Relay 产物）。M7 后进入产品能力建�
 - 活动与最近完成计划索引：`../.cursor/plans/ALL_PLAN.md`
 - M0 retrospective（2026-08-14 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260814-009-m0-foundation-retrospective.md` + `../.cursor/plans/rechecks/RECHECK-20260814-009-m0-foundation-retrospective.md`
 - M7 retrospective（2026-08-14 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260814-010-m7-vertical-slice-retrospective.md` + `../.cursor/plans/rechecks/RECHECK-20260814-010-m7-vertical-slice-retrospective.md`
-- M1-M6/M5R 原开发窗口记录（Plan + PASS Recheck + Memory）见各自 plan 文件与 `../.cursor/memory/INDEX.md`
+- M10 retrospective（2026-08-16 重建，`RETROSPECTIVE_RECONSTRUCTION`，DOC-R1）：`../.cursor/plans/tasks/PLAN-20260815-015-m10-evidence-memory-retrospective.md` + `../.cursor/plans/rechecks/RECHECK-20260815-015-m10-evidence-memory-retrospective.md`
+- M1-M6/M5R/M8/M9/M11 原开发窗口记录（Plan + PASS Recheck + Memory 或 completion record）见各自 plan 文件与 `../.cursor/memory/INDEX.md`；M9/M10/M11 无 MEM 条目（覆盖缺口，见 `roadmap/DOCUMENT_RECOVERY_M0_M11.md`）

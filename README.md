@@ -66,30 +66,44 @@ child subagents < 4
 ## 当前工程状态
 
 ```text
-Foundation / Executable Research Kernel = completed
+Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
+MVP 能力平面（M8-M11）= completed（2026-08-15）
+IG-1（M12 entry）前置 = 齐备
 ```
 
-M0-M7（含 M5R）核心基础设施阶段已全部完成，真实完成顺序为
-`M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7`（M3 先于 M2：M2 Preflight
-消费 M3 Model Relay 产物）。完整完成矩阵见
-[docs/roadmap/COMPLETION_MATRIX_M0_M7.md](docs/roadmap/COMPLETION_MATRIX_M0_M7.md)，
-M7 集成里程碑记录见
-[docs/roadmap/M7_COMPLETION_RECORD.md](docs/roadmap/M7_COMPLETION_RECORD.md)。
+M0-M11（含 M5R）全部完成，真实完成顺序为
+`M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 → M10 → M11`
+（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；M8-M11 为 M7 后
+并行组 1）。完整完成矩阵见
+[docs/roadmap/COMPLETION_MATRIX_M0_M11.md](docs/roadmap/COMPLETION_MATRIX_M0_M11.md)
+（唯一权威），集成里程碑记录见
+[docs/roadmap/M7_COMPLETION_RECORD.md](docs/roadmap/M7_COMPLETION_RECORD.md)、
+[M8_COMPLETION_RECORD.md](docs/roadmap/M8_COMPLETION_RECORD.md)、
+[M9_COMPLETION_RECORD.md](docs/roadmap/M9_COMPLETION_RECORD.md)、
+[M10_COMPLETION_RECORD.md](docs/roadmap/M10_COMPLETION_RECORD.md)、
+[M11_COMPLETION_RECORD.md](docs/roadmap/M11_COMPLETION_RECORD.md)。
 
 当前已落地：
 
-- `packages/domain/`（29 模块）Domain Kernel：实体/值对象/枚举/状态机/
-  RunManifest+digest/UsageLedger；
+- `packages/domain/`（37 模块）Domain Kernel：实体/值对象/枚举/状态机/
+  RunManifest+digest/UsageLedger/experiments/reproducibility/eval 契约；
 - `packages/application/`（protocol_compile / preflight / model_relay /
-  policy / ports / run_orchestration）use cases + 14 inward-owned Ports；
-- `adapters/`（contracts loaders / fakes / relay / openhands /
-  sqlite）——OpenHandsRuntimeAdapter（openhands-sdk v1.42.0，pin 于
-  `UPSTREAM_COMPONENTS.yaml` 与 revision lock）与 SQLite 持久化；
+  policy / ports / run_orchestration / tool_plane / skill_registry /
+  experiments / evidence / memory / evaluation）use cases +
+  17 inward-owned Ports；
+- `adapters/`（contracts loaders / fakes / relay / openhands / sqlite /
+  mcp / execution / workspace / index / cli）——OpenHandsRuntimeAdapter
+  （openhands-sdk v1.42.0，pin 于 `UPSTREAM_COMPONENTS.yaml` 与 revision
+  lock）、SQLite 持久化、MCP ToolProvider（mcp 1.29.0）、容器实验执行
+  （docker-py 7.2.0）、EvidenceLedger/RetrievalIndex Fake+InMemory、
+  Eval Gate CLI；
 - `tests/`（domain / application / adapters / contracts / e2e /
-  architecture）——E2E 垂直切片含故障注入矩阵 F-01..F-12。
+  evals / architecture）——E2E 垂直切片含故障注入矩阵 F-01..F-12，
+  M11 Evaluation Plane deterministic gates（CI eval-gate job，离线无
+  LLM）。
 
-M7 之后仓库进入**产品能力建设阶段**：未来 Milestone 路线（M8-M19）以
-`docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为唯一权威；已完成
+M8-M11 之后，IG-1（M12 entry）前置齐备：未来 Milestone 路线（M12-M19）
+以 `docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为唯一权威；已完成
 事项、Remaining Technical Debt 与 Next Product Capability 的执行映射
 见 `BACKLOG.md`。规格目标（PostgreSQL Canonical State、ADR-0002）与
 当前实现（同 Port 契约的 SQLite）之间的差异作为技术债显式记录，不以
@@ -101,8 +115,8 @@ M7 之后仓库进入**产品能力建设阶段**：未来 Milestone 路线（M8
 2. `.cursor/README.md`
 3. `docs/INDEX.md`
 4. `docs/PRODUCT.md`
-5. `docs/roadmap/COMPLETION_MATRIX_M0_M7.md`
-6. `docs/roadmap/M7_COMPLETION_RECORD.md`
+5. `docs/roadmap/COMPLETION_MATRIX_M0_M11.md`
+6. `docs/roadmap/MILESTONES.md`（Post-M7 Roadmap）
 7. `docs/architecture/SYSTEM_ARCHITECTURE.md`
 8. `docs/architecture/DOMAIN_MODEL.md`
 9. `.cursor/knowledge/INDEX.md`

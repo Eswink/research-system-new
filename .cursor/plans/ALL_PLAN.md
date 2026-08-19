@@ -6,6 +6,7 @@
 
 | Done | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260815-015](tasks/PLAN-20260815-015-m10-evidence-memory-retrospective.md) | DONE |
 | [x] | [PLAN-20260815-014](tasks/PLAN-20260815-014-m11-evaluation-plane.md) | DONE |
 | [x] | [PLAN-20260815-013](tasks/PLAN-20260815-013-m9-real-experiment-runtime.md) | DONE |
 | [x] | [PLAN-20260814-012](tasks/PLAN-20260814-012-m8-research-capability-plane.md) | DONE |
@@ -14,9 +15,10 @@
 | [x] | [PLAN-20260814-009](tasks/PLAN-20260814-009-m0-foundation-retrospective.md) | DONE |
 | [x] | [PLAN-20260814-010](tasks/PLAN-20260814-010-m7-vertical-slice-retrospective.md) | DONE |
 
-> PLAN-20260814-009 / -010 为 M0 / M7 的 `RETROSPECTIVE_RECONSTRUCTION`
-> 记录：依据 git history、当前代码/测试与可执行 validator 于 2026-08-14
-> 事后重建，非原开发窗口文档。
+> PLAN-20260814-009 / -010 / 20260815-015 为 M0 / M7 / M10 的
+> `RETROSPECTIVE_RECONSTRUCTION` 记录：依据 git history、当前代码/测试与
+> 可执行 validator 事后重建（M10 于 2026-08-16 由 DOC-R1 重建），非原开发
+> 窗口文档。
 
 ## Recently Completed
 

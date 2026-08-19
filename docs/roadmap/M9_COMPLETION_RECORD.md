@@ -5,11 +5,18 @@
 - 前置：M7 DONE；M9 计划经 Plan Mode 批准（Cursor Plan `m9_真实实验运行时`）
 - 结论：**M9 DoD 全部满足**
 
+## Git Evidence
+
+- `4156238`（2026-08-15）feat(m9): real experiment runtime with container
+  execution and reproducibility（实现落地）。
+- `b8560ee`（2026-08-15）fix(m9): harden experiment runtime from
+  independent recheck findings（独立复审 10 项修正落地）。
+
 ## 交付摘要
 
 | Work Package | 交付 | 落点 |
 | --- | --- | --- |
-| WP1 Container Execution | `DockerExecutionBackend`（docker-py 低层 API，一次性容器，默认 deny host_config）、`profiles.py` 资源限额映射、`sandbox/Dockerfile`（base image OCI index digest pin、非 root） | `adapters/execution/` |
+| WP1 Container Execution | `DockerExecutionBackend`（位于 `adapters/execution/`，docker-py 低层 API，一次性容器，默认 deny host_config）、`profiles.py` 资源限额映射、`sandbox/Dockerfile`（base image OCI index digest pin、非 root） | `adapters/execution/` |
 | WP2 Experiment Lifecycle | `ExperimentPlan/ExperimentRun/ExperimentRunSpec/ExperimentRunResult/Metric/MetricValue` + 状态机；`FileWorkspaceBackend`（真实目录/lease/内容寻址 snapshot）；`ExperimentExecutor` use case | `packages/domain/experiments.py`、`packages/domain/experiment_state.py`、`adapters/workspace/`、`packages/application/experiments/` |
 | WP3 Reproducibility & Artifact Lifecycle | `ReproducibilityAudit`（确定性 audit_digest）+ `build_reproducibility_audit` use case；`ArtifactRetentionPolicy` 类型化 + `apply_retention`；`build/decode_export_bundle` | `packages/domain/reproducibility.py`、`packages/application/experiments/repro_audit.py`、`packages/application/artifacts/` |
 
@@ -29,7 +36,7 @@
 1. **DockerWorkspace 容器链路全量验证**：M6 遗留。清偿方式：M9 裁决
    OpenHands DockerWorkspace 保持 mapping-only（agent-server 运行模型与
    ExecutionBackend 命令执行语义不兼容，`openhands-workspace` 未 pin），
-   真实容器链路改由 `adapters/execution/DockerExecutionBackend` 承担并经
+   真实容器链路改由 `adapters/execution/` 的 `DockerExecutionBackend` 承担并经
    E2E 全量验证；M6 映射代码误导性 docstring 已修正。
 2. **ExecutionBackend 容器执行（Sandbox）**：M7 以进程内/Fake 语义执行。
    清偿方式：`DockerExecutionBackend` 通过 contract suite（Fake+Docker

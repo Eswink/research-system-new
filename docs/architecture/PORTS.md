@@ -1,10 +1,13 @@
 # Ports Contract — v0.4.0
 
-本文件是 Research OS 全部外部能力边界 Port 的集中式规格（M5 产物）。
-Port 由 Research OS 拥有（inward-owned，`packages/application/ports/`）；
-adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
-`packages.domain` 类型与本包 DTO，禁止 provider-specific 类型泄漏
-（架构测试锁定：`tests/contracts/test_common_contract.py`）。
+本文件是 Research OS 全部外部能力边界 Port 的集中式规格。基线为 M5
+产物（14 Port：12 行为 Port + EndpointStore/ResourceCatalog 收编）；
+M8 增补 `ToolPackStore`，M10 增补 `EvidenceLedger` / `RetrievalIndex`，
+当前共 **17 个 Port 模块**（`packages/application/ports/`，contract
+registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
+实现这些接口，不反向控制 Domain。Port 输入输出只使用 `packages.domain`
+类型与本包 DTO，禁止 provider-specific 类型泄漏（架构测试锁定：
+`tests/contracts/test_common_contract.py`）。
 
 ## 1. 统一语义
 
@@ -23,7 +26,7 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
 
 ## 2. Port Inventory 与职责
 
-### AgentRuntime（`ports/agent_runtime.py`）
+### AgentRuntime（`packages/application/ports/agent_runtime.py`）
 
 - 职责：AgentSession 生命周期 create/run/pause/cancel/stream_events/fork；
   输出归一化 runtime event 与终端结果；状态来自 domain `AgentSessionState`。
@@ -31,7 +34,7 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
   不记账（BudgetLedger）；runtime event 不替代 Domain Event（EventPublisher）。
 - 不预设上游 Runtime 的 Conversation/Event 类型；上游状态由 adapter 显式映射。
 
-### WorkflowEngine（`ports/workflow_engine.py`）
+### WorkflowEngine（`packages/application/ports/workflow_engine.py`）
 
 - 职责：任务分发（at-least-once + idempotency 去重）、lease 获取/心跳、
   取消传播、recover_expired_leases（过期 lease 收敛，返回恢复数量；
@@ -41,26 +44,35 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
 - 幂等语义：重复 submit（同 task.id 或同 idempotency_key）静默幂等——
   返回首次结果、不抛错、不覆盖首次契约（M5 复审修正）。
 
-### ModelGateway（`ports/model_gateway.py`，收编原 ModelRelayGateway）
+### ModelGateway（`packages/application/ports/model_gateway.py`，收编原 ModelRelayGateway）
 
 - 职责：OpenAI-compatible 网关最小调用面 complete/list_models/probe。
 - 非职责：凭据解析（CredentialResolver）；预算记账（BudgetLedger）；
   模型选择/eligibility/fallback 编排（application use case）。
 
-### ToolProvider（`ports/tool_provider.py`）
+### ToolProvider（`packages/application/ports/tool_provider.py`）
 
 - 职责：按 ToolProviderSpec 执行 ToolCallRecord，返回归一化 ToolResultRecord
   （输出只存 digest，内容经 ArtifactStore 持久化）。
 - 非职责：Skill/Capability 装配（P1 ToolResolver）；frozen tool set 约束由
   调用方执行；tool credential 独立信任域（ADR-0012）。
 
-### WorkspaceBackend（`ports/workspace_backend.py`）
+### WorkspaceBackend（`packages/application/ports/workspace_backend.py`）
 
 - 职责：工作区创建、Lease 获取/续期/释放、快照/恢复/合并；
   无 Lease 不得写入（ADR-0006）。
 - 非职责：不执行命令（ExecutionBackend）。
 
-### ExecutionBackend（`ports/execution_backend.py`）
+### ToolPackStore（`packages/application/ports/tool_pack_store.py`，M8 增补）
+
+- 职责：ToolPack manifest 生命周期（install/update/revoke/查询），
+  供应链 pin（digest）校验与 tool credential 域门禁（安装时强制
+  TOOL 域，M8 独立复审 F-06 收敛）；large result artifact indirection
+  的存储面。
+- 非职责：不执行 ToolCallRecord（ToolProvider）；不做 Skill/Capability
+  路由（Skill Registry use case）。
+
+### ExecutionBackend（`packages/application/ports/execution_backend.py`）
 
 - 职责：执行 ExecutionSpec，返回 ExecutionRun；timeout 产生
   ExecutionStatus.TIMED_OUT；compute usage 摘要返回。
@@ -73,7 +85,7 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
   `image_digest`/`oom_killed`/`elapsed_seconds`（真实容器实现
   `adapters/execution/` 上报，供 ReproducibilityAudit 绑定）。
 
-### ArtifactStore（`ports/artifact_store.py`）
+### ArtifactStore（`packages/application/ports/artifact_store.py`）
 
 - 职责：内容寻址 put/get/verify/list/mark/archive/delete；digest 校验；
   状态流转 STAGED→VERIFIED/QUARANTINED→ACTIVE（合法迁移强制）；
@@ -83,20 +95,20 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
 - 非职责：不承担 Evidence/Claim truth（DATA_LIFECYCLE.md 事实源划分：
   PostgreSQL 实体为真相，对象存储只保存内容）。
 
-### EventPublisher（`ports/event_publisher.py`）
+### EventPublisher（`packages/application/ports/event_publisher.py`）
 
 - 职责：publish(EventEnvelope)，event_id 幂等；Consumer 按 event_id 去重。
 - 非职责：不做 Outbox 持久化（M7）；不做 telemetry；
   Domain Event ≠ runtime event ≠ telemetry（OBSERVABILITY.md）。
 
-### PolicyEvaluator（`ports/policy_evaluator.py`）
+### PolicyEvaluator（`packages/application/ports/policy_evaluator.py`）
 
 - 职责：evaluate(Actor + Capability + Scope + Resource) →
   ALLOW / DENY / REQUIRE_APPROVAL / ALLOW_WITH_CONSTRAINTS；决策 deterministic；
   decision log 不记录 secret。
 - MVP 实现：`NativePolicyEvaluator`（ADR-0018）；OPA 等生产实现（P2）同契约。
 
-### CredentialResolver（`ports/credential_resolver.py`）
+### CredentialResolver（`packages/application/ports/credential_resolver.py`）
 
 - 职责：resolve(ref) → SecretValue（repr 脱敏；永不向 Agent/日志/异常/
   telemetry 暴露明文）；未解析抛 `InvalidInputError`（统一错误模型，
@@ -104,13 +116,13 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
   KeyError 不在此列）。
 - 非职责：不持久化凭据；不判断使用 scope（调用方执行授权）。
 
-### MemoryStore（`ports/memory_store.py`）
+### MemoryStore（`packages/application/ports/memory_store.py`）
 
 - 职责：commit(MemoryWriteProposal) 执行 provenance gate 后写入 MemoryRecord；
   读取/查询/删除；删除协调 derived index 重建。
 - 非职责：不做记忆语义判断（curator/gate 策略由调用方提供）。
 
-### BudgetLedger（`ports/budget_ledger.py`，收编原 BudgetReservationPort）
+### BudgetLedger（`packages/application/ports/budget_ledger.py`，收编原 BudgetReservationPort）
 
 - 职责：reserve（预算预留，确定性引用）+ release（幂等释放预留，
   run 收敛到成功/失败/取消后归还配额，未知/已释放引用为 no-op）+
@@ -118,10 +130,30 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
 - 非职责：不做 usage 采集（ModelGateway / ExecutionBackend 上报原始用量，
   application 归账后入 ledger）；不伪造 cost（UNKNOWN 语义）。
 
+### EvidenceLedger（`packages/application/ports/evidence_ledger.py`，M10 增补）
+
+- 职责：Source/Evidence/Claim 登记与关系挂接（register_source /
+  register_evidence / register_claim / update_claim / attach_relation /
+  get_* / relations_for_claim / has_source / claims）；Claim 状态升级
+  唯一入口 `promote_claim_to_verified`（PROPOSED→VERIFIED，gate PASS +
+  合法 provenance 前置）；REFUTES 争议经
+  `register_evidence_with_contradiction_check` 转 DISPUTED（旧证据保留）。
+- 非职责：不承载长期记忆（MemoryStore）；不拥有检索投影
+  （RetrievalIndex）；跨 run 持久化属 M14（MVP 为进程内 Fake）。
+
+### RetrievalIndex（`packages/application/ports/retrieval_index.py`，M10 增补）
+
+- 职责：derived index 生命周期 rebuild/upsert/remove/search/entries/clear；
+  `content_hash_of` 等价契约（重建可验证一致）；只读 drift 检测
+  （check_index_consistency，5 类）与显式修复（rebuild_index）。
+- 非职责：不是 Canonical State（ADR-0002：PostgreSQL Domain Entity 为
+  真相，index 为可重建投影）；不绑定 embedding/vector DB（MVP 为
+  确定性 token 检索）。
+
 ### 收编 Port
 
-- EndpointStore（`ports/endpoint_store.py`）：LLMEndpoint CRUD。
-- ResourceCatalog（`ports/resource_catalog.py`）：preflight 只读目录 +
+- EndpointStore（`packages/application/ports/endpoint_store.py`）：LLMEndpoint CRUD。
+- ResourceCatalog（`packages/application/ports/resource_catalog.py`）：preflight 只读目录 +
   PreflightContext DTO。
 
 ## 3. Fake 实现（`adapters/fakes/`）
@@ -140,8 +172,10 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
   供 M6 adapter 中间态映射测试对照（M5 P2 清偿）。
 - 不依赖网络、API Key、Docker、OpenHands 或外部服务
   （import-linter 契约 `.importlinter.fakes` 锁定）。
-- 覆盖 14 个 Port 全集：12 个行为 Port + EndpointStore / ResourceCatalog
-  收编 Port 均有 Fake 实现并注册进 contract registry（M5 复审补齐）。
+- 覆盖 17 个 Port 全集：15 个行为 Port + EndpointStore / ResourceCatalog
+  收编 Port 均有 Fake 实现并注册进 contract registry（M5 复审补齐 14
+  个基线；M8 增补 ToolPackStore、M10 增补 EvidenceLedger / RetrievalIndex
+  时同步补齐 Fake 与 registry）。
 
 ## 4. Contract Suite（`tests/contracts/`）
 
@@ -150,7 +184,7 @@ adapter 实现这些接口，不反向控制 Domain。Port 输入输出只使用
 - 通用矩阵（test_common_contract.py）：正常调用、invalid input、
   transient/permanent 失败注入、close 后不可用、call recording、
   deterministic replay、serialization boundary、secret 不进入记录、
-  provider 类型不泄漏、14 Port 接口兼容矩阵。
+  provider 类型不泄漏、17 Port 接口兼容矩阵。
 - Port 特定（test_agent_runtime_contract.py、test_ports_semantics.py、
   test_ports_persistence.py、test_ports_regressions.py）：cancellation、
   at-least-once 幂等分发、终端状态为最终、event 幂等保留首次 payload、
