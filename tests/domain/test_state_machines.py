@@ -189,3 +189,18 @@ def test_preflight_failure_blocks_ready_state() -> None:
     assert state == ResearchRunState.State.FAILED
     with pytest.raises(InvalidTransitionError):
         ResearchRunState.transition(state, ResearchRunState.Transition.START)
+
+
+def test_task_lease_expiry_returns_to_queued() -> None:
+    """SA-1-M002：LEASED → EXPIRE_LEASE → QUEUED 是显式合法转换。"""
+    state = ResearchTaskState.transition(
+        ResearchTaskState.State.LEASED,
+        ResearchTaskState.Transition.EXPIRE_LEASE,
+    )
+    assert state == ResearchTaskState.State.QUEUED
+    # EXPIRE_LEASE 只从 LEASED 合法出发；RUNNING 上不可用
+    with pytest.raises(InvalidTransitionError):
+        ResearchTaskState.transition(
+            ResearchTaskState.State.RUNNING,
+            ResearchTaskState.Transition.EXPIRE_LEASE,
+        )

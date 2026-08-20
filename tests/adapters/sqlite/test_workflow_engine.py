@@ -96,7 +96,8 @@ class TestLeaseLifecycle:
         with pytest.raises(InvalidInputError):
             engine.heartbeat(lease)
 
-    def test_complete_requires_matching_lease(self) -> None:
+    def test_complete_is_idempotent_after_success(self) -> None:
+        """SA-1-M001：任务已终止时重放 complete 是幂等 noop，不抛异常。"""
         engine = _engine()
         task = research_task()
         engine.submit(task, task_contract())
@@ -105,10 +106,25 @@ class TestLeaseLifecycle:
             lease,
             TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"),
         )
+        engine.complete(
+            lease,
+            TaskCompletion(task_id=task.id.value, outcome="FAILED"),
+        )
+        assert engine.calls[-1].result_summary == "deduped"
+        (row,) = engine.list_tasks(task.run_id.value)
+        assert row.task.status == ResearchTaskState.State.SUCCEEDED
+
+    def test_complete_after_cancel_raises(self) -> None:
+        """cancel/complete 竞态中 cancel 胜出后，complete 明确报错而不是静默写入。"""
+        engine = _engine()
+        task = research_task()
+        engine.submit(task, task_contract())
+        lease = engine.acquire_lease(task.id.value)
+        engine.cancel(task.id.value)
         with pytest.raises(InvalidInputError):
             engine.complete(
                 lease,
-                TaskCompletion(task_id=task.id.value, outcome="FAILED"),
+                TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"),
             )
 
     def test_lease_expires_and_recovers(self) -> None:
@@ -140,6 +156,48 @@ class TestCancel:
     def test_cancel_unknown_task_is_silent(self) -> None:
         engine = _engine()
         engine.cancel("missing")
+
+    def test_cancel_after_complete_is_terminal_noop(self) -> None:
+        """SA-1-B001：已 SUCCEEDED 的任务不可被延迟 cancel 覆盖为 CANCELLED。"""
+        engine = _engine()
+        task = research_task()
+        engine.submit(task, task_contract())
+        lease = engine.acquire_lease(task.id.value)
+        engine.complete(lease, TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"))
+        engine.cancel(task.id.value)
+        assert engine.calls[-1].result_summary == "terminal_noop"
+        (row,) = engine.list_tasks(task.run_id.value)
+        assert row.task.status == ResearchTaskState.State.SUCCEEDED
+        kinds = [envelope.event_type for envelope in engine.pending_outbox()]
+        assert EventType.TASK_CANCELLED not in kinds
+
+    def test_cancel_after_fail_is_terminal_noop(self) -> None:
+        """SA-1-B001：已 FAILED 的任务同样不可被 cancel 覆盖。"""
+        engine = _engine()
+        task = research_task()
+        engine.submit(task, task_contract())
+        lease = engine.acquire_lease(task.id.value)
+        engine.complete(lease, TaskCompletion(task_id=task.id.value, outcome="FAILED"))
+        engine.cancel(task.id.value)
+        assert engine.calls[-1].result_summary == "terminal_noop"
+        (row,) = engine.list_tasks(task.run_id.value)
+        assert row.task.status == ResearchTaskState.State.FAILED
+
+    def test_cancel_before_complete_cancels(self) -> None:
+        """竞态对照：cancel 先到时正常取消，后续 complete 明确报错。"""
+        engine = _engine()
+        task = research_task()
+        engine.submit(task, task_contract())
+        lease = engine.acquire_lease(task.id.value)
+        engine.cancel(task.id.value)
+        assert engine.calls[-1].result_summary is None
+        (row,) = engine.list_tasks(task.run_id.value)
+        assert row.task.status == ResearchTaskState.State.CANCELLED
+        with pytest.raises(InvalidInputError):
+            engine.complete(
+                lease,
+                TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"),
+            )
 
 
 class TestOutbox:

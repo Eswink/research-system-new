@@ -34,6 +34,7 @@ class ResearchTaskState:
         APPROVAL_GRANTED = "APPROVAL_GRANTED"
         APPROVAL_REJECTED = "APPROVAL_REJECTED"
         SCHEDULE_RETRY = "SCHEDULE_RETRY"
+        EXPIRE_LEASE = "EXPIRE_LEASE"
         SUCCEED = "SUCCEED"
         FAIL = "FAIL"
         DEAD_LETTER = "DEAD_LETTER"
@@ -44,6 +45,8 @@ class ResearchTaskState:
         (State.CREATED, Transition.ENQUEUE): State.QUEUED,
         (State.QUEUED, Transition.LEASE): State.LEASED,
         (State.LEASED, Transition.START): State.RUNNING,
+        # lease 超时/worker 崩溃后由 recover_expired_leases 回到 QUEUED
+        (State.LEASED, Transition.EXPIRE_LEASE): State.QUEUED,
         (State.RUNNING, Transition.WAIT_FOR_TOOL): State.WAITING_FOR_TOOL,
         (State.WAITING_FOR_TOOL, Transition.TOOL_READY): State.RUNNING,
         (State.RUNNING, Transition.REQUEST_APPROVAL): State.WAITING_FOR_APPROVAL,

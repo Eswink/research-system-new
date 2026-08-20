@@ -190,3 +190,46 @@ class TestSnapshot:
             backend.restore(lease, ghost)
         with pytest.raises(InvalidInputError):
             backend.merge(lease, ghost)
+
+
+class TestSymlinkRejection:
+    """SA-1-M005：workspace 内 symlink 必须被拒绝，防止宿主文件经 snapshot 泄露。"""
+
+    @staticmethod
+    def _make_symlink(target: Path, link: Path) -> None:
+        try:
+            link.symlink_to(target)
+        except OSError as exc:
+            # Windows 非管理员/未开开发者模式时无法创建 symlink；跳过而非掩盖
+            pytest.skip(f"symlink creation not permitted: {exc}")
+
+    def test_snapshot_rejects_symlink(self, tmp_path: Path) -> None:
+        backend, _ = _backend(tmp_path)
+        workspace = _workspace()
+        backend.create_workspace(workspace)
+        lease = backend.acquire_lease(workspace, "session-1")
+        workspace_dir = backend.workspace_dir(lease)
+        secret = tmp_path / "outside-secret.txt"
+        secret.write_text("host-content", encoding="utf-8")
+        self._make_symlink(secret, workspace_dir / "link.txt")
+        with pytest.raises(PermanentPortError):
+            backend.snapshot(lease)
+        # 拒绝后不得产生快照副本
+        assert list((tmp_path / "root" / ".snapshots").iterdir()) == []
+
+    def test_tree_digest_ignores_symlink(self, tmp_path: Path) -> None:
+        backend, _ = _backend(tmp_path)
+        workspace = _workspace()
+        backend.create_workspace(workspace)
+        lease = backend.acquire_lease(workspace, "session-1")
+        workspace_dir = backend.workspace_dir(lease)
+        (workspace_dir / "a.txt").write_text("hello", encoding="utf-8")
+        digest_before = workspace_tree_digest(workspace_dir)
+        secret = tmp_path / "outside.txt"
+        secret.write_text("host-content", encoding="utf-8")
+        self._make_symlink(secret, workspace_dir / "link.txt")
+        digest_after = workspace_tree_digest(workspace_dir)
+        assert digest_before == digest_after
+        # 真实文件变化仍改变 digest（symlink 跳过不影响正常检测）
+        (workspace_dir / "a.txt").write_text("world", encoding="utf-8")
+        assert workspace_tree_digest(workspace_dir) != digest_before

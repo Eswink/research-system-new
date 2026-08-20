@@ -65,12 +65,17 @@ class _CallRecord:
 
 
 def workspace_tree_digest(directory: Path) -> str:
-    """确定性目录内容 digest：排序 (relpath, sha256) 列表的 sha256。"""
+    """确定性目录内容 digest：排序 (relpath, sha256) 列表的 sha256。
+
+    symlink 不计入 digest（既防外部文件内容被摘要，也保证 digest 与
+    snapshot 的 symlink 拒绝策略一致）。
+    """
     entries: list[tuple[str, str]] = []
     for path in sorted(directory.rglob("*")):
-        if path.is_file():
-            rel = path.relative_to(directory).as_posix()
-            entries.append((rel, hashlib.sha256(path.read_bytes()).hexdigest()))
+        if path.is_symlink() or not path.is_file():
+            continue
+        rel = path.relative_to(directory).as_posix()
+        entries.append((rel, hashlib.sha256(path.read_bytes()).hexdigest()))
     payload = json.dumps(entries, separators=(",", ":"), sort_keys=True).encode("utf-8")
     return "sha256:" + hashlib.sha256(payload).hexdigest()
 
@@ -160,6 +165,7 @@ class FileWorkspaceBackend(WorkspaceBackend):
         self._enter("snapshot", lease.workspace_id)
         self._active_lease("snapshot", lease)
         source = self._dir_for(lease.workspace_id)
+        self._reject_symlinks("snapshot", source)
         digest = workspace_tree_digest(source)
         snapshot_dir = self._snapshots_root() / digest.split(":", 1)[1]
         if not snapshot_dir.exists():
@@ -249,6 +255,17 @@ class FileWorkspaceBackend(WorkspaceBackend):
 
     def _snapshots_root(self) -> Path:
         return self._root / ".snapshots"
+
+    def _reject_symlinks(self, method: str, directory: Path) -> None:
+        """拒绝工作区内任何 symlink：跟随链接会泄露工作区外宿主文件。"""
+        for path in directory.rglob("*"):
+            if path.is_symlink():
+                self._record(method, "symlink rejected", error="PermanentPortError")
+                raise PermanentPortError(
+                    f"symlink in workspace is not permitted: "
+                    f"{path.relative_to(directory).as_posix()!r}",
+                    failure_category=FailureCategory.POLICY_DENIED,
+                )
 
     def _require_snapshot(self, method: str, snapshot: WorkspaceSnapshot) -> Path:
         if not snapshot.digest.startswith("sha256:"):

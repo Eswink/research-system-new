@@ -1,13 +1,8 @@
 """SqliteWorkflowEngine：WorkflowEngine Port 的 SQLite 持久化实现。
 
-at-least-once + idempotency（PORTS.md §1）：
-- submit 按 task.id 或 idempotency_key 静默去重，不覆盖首次契约；
-- acquire_lease 重复投递返回已有 lease（不产生新副作用）；
-- complete/cancel 与 outbox 事件写入同一事务（Transactional Outbox，
-  EVENT_MODEL.md §3）。
-
-重启恢复：recover_expired_leases() 将超时 lease 对应的任务重新置为
-QUEUED（进程重启或 worker 崩溃后的安全收敛路径）。
+at-least-once + idempotency（PORTS.md §1）：submit/acquire 静默去重，complete
+对已终止任务幂等 noop，cancel 对终止态 noop；任务级事件与状态同事务写 outbox；
+重启恢复：recover_expired_leases() 置回 QUEUED（EXPIRE_LEASE 转换）。
 """
 
 from __future__ import annotations
@@ -115,8 +110,7 @@ class SqliteWorkflowEngine(SqliteAdapterBase):
             self._record("acquire_lease", task_id, result="deduped")
             return lease_from_row(existing)
         lease = new_lease(task_id, row["assigned_agent_id"], self._lease_ttl, self._now)
-        assert lease.expires_at is not None
-        assert lease.heartbeat_at is not None
+        assert lease.expires_at is not None and lease.heartbeat_at is not None
         with self._conn:
             self._conn.execute(
                 "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at)"
@@ -151,8 +145,7 @@ class SqliteWorkflowEngine(SqliteAdapterBase):
             self._record("heartbeat", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
         renewed = new_lease(lease.task_id, lease.agent_id, self._lease_ttl, self._now)
-        assert renewed.expires_at is not None
-        assert renewed.heartbeat_at is not None
+        assert renewed.expires_at is not None and renewed.heartbeat_at is not None
         with self._conn:
             self._conn.execute(
                 "UPDATE leases SET lease_id = ?, expires_at = ?, heartbeat_at = ?"
@@ -169,15 +162,23 @@ class SqliteWorkflowEngine(SqliteAdapterBase):
 
     def complete(self, lease: TaskLease, completion: TaskCompletion) -> None:
         self._ensure_open()
+        task_row = self._conn.execute(
+            "SELECT run_id, status FROM tasks WHERE task_id = ?", (lease.task_id,)
+        ).fetchone()
+        if task_row is None:
+            self._record("complete", lease.task_id, error="InvalidInputError")
+            raise InvalidInputError(f"unknown task: {lease.task_id}")
+        # at-least-once：已终止任务重放 complete 是幂等 noop（lease 已删）。
+        done = (ResearchTaskState.State.SUCCEEDED, ResearchTaskState.State.FAILED)
+        if task_row["status"] in done:
+            self._record("complete", lease.task_id, result="deduped")
+            return
         row = self._conn.execute(
             "SELECT * FROM leases WHERE task_id = ?", (lease.task_id,)
         ).fetchone()
         if row is None or row["lease_id"] != lease.lease_id:
             self._record("complete", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
-        task_row = self._conn.execute(
-            "SELECT run_id FROM tasks WHERE task_id = ?", (lease.task_id,)
-        ).fetchone()
         status = (
             ResearchTaskState.State.SUCCEEDED
             if completion.outcome == "SUCCEEDED"
@@ -200,13 +201,16 @@ class SqliteWorkflowEngine(SqliteAdapterBase):
     def cancel(self, task_id: str) -> None:
         self._ensure_open()
         row = self._conn.execute(
-            "SELECT run_id, cancelled FROM tasks WHERE task_id = ?", (task_id,)
+            "SELECT run_id, cancelled, status FROM tasks WHERE task_id = ?", (task_id,)
         ).fetchone()
         if row is None:
             self._record("cancel", task_id)
             return
         if row["cancelled"]:
             self._record("cancel", task_id, result="deduped")
+            return
+        if row["status"] in ResearchTaskState.terminal():
+            self._record("cancel", task_id, result="terminal_noop")
             return
         with self._conn:
             self._conn.execute(
@@ -223,7 +227,7 @@ class SqliteWorkflowEngine(SqliteAdapterBase):
         self._record("cancel", task_id)
 
     def recover_expired_leases(self) -> int:
-        """将超时 lease 的任务重新置为 QUEUED；返回恢复数量。"""
+        """超时 lease 任务置回 QUEUED（EXPIRE_LEASE 转换，非绕过状态机）；返回恢复数。"""
         self._ensure_open()
         expired = self._conn.execute(
             "SELECT leases.task_id FROM leases WHERE leases.expires_at < ?",
