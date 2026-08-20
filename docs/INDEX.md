@@ -158,6 +158,7 @@ M10 → M11`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；M8-M11
 - `roadmap/MILESTONES.md` — M0-M11 执行索引 + Post-M7 Roadmap 唯一权威（M12-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐）
 - `roadmap/M0_M11_DOCUMENT_MATRIX.md` — DOC-R1 inventory（M0-M11 文档分类与恢复判定）
 - `roadmap/DOCUMENT_RECOVERY_M0_M11.md` — DOC-R1 最终报告（inventory/重建/修正/验证结果/remaining risks）
+- `audits/SYSTEM_AUDIT_M0_M11.md` — SA-1 Pre-M12 全系统审计与加固（2026-08-20；Audit Coverage Matrix / BLOCKER+MAJOR+MINOR findings / Fault Injection evidence / 延期技术债 / PASS + M12 READY）
 - `versioning/VERSION_POLICY.md`
 
 ## 阶段工程记录（Plan / Recheck）
