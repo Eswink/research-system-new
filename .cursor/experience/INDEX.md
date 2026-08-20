@@ -12,6 +12,10 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260820-004](entries/EXP-20260820-004.md) | ACTIVE | 0.5 | repository | 2026-11-18 | 直接 uv run validator 输出 GBK 乱码：先设 `$env:PYTHONUTF8="1"; $env:PYTHONIOENCODING="utf-8"`；经 run_all_checks.py（内建 env）无需手动设 |
+| [EXP-20260820-003](entries/EXP-20260820-003.md) | ACTIVE | 0.4 | repository | 2026-11-18 | secret_guard fail-closed 拦截 terminals 文件 Read：改用 AwaitShell 轮询 exit_code footer 或 Grep 限行读取，不重试同一 Read、不改 hook |
+| [EXP-20260820-002](entries/EXP-20260820-002.md) | ACTIVE | 0.5 | repository | 2026-11-18 | 全量 pytest 在 docker 测试处长时间无输出：`taskkill /PID <pid> /T /F` 杀进程树 + `-m "not requires_docker"` 重跑 |
+| [EXP-20260820-001](entries/EXP-20260820-001.md) | ACTIVE | 0.5 | repository | 2026-11-18 | docker daemon 不可用（npipe 连接失败）：`docker version` 快速探测，pytest 用 `-m "not requires_docker"`，docker 套件留 CI container-quality |
 | [EXP-20260815-004](entries/EXP-20260815-004.md) | ACTIVE | 0.4 | repository | 2026-11-13 | 长阻塞前台 Shell 返回 "MainThreadCursor disposed" 且无输出 = 命令未执行（IDE 通道瞬时故障）：同命令重跑即可，不当作命令失败诊断 |
 | [EXP-20260815-003](entries/EXP-20260815-003.md) | ACTIVE | 0.5 | repository | 2026-11-13 | `tools/` 下脚本直接 `uv run python tools/xxx.py` 报 ModuleNotFoundError（sys.path 为 tools/ 非仓库根）：改 `exec(open(...))` 或固化为 tests/ 正式测试 |
 | [EXP-20260815-002](entries/EXP-20260815-002.md) | ACTIVE | 0.6 | repository | 2026-11-13 | docker-py `wait(timeout=)` 超时异常跨平台不一致（Windows npipe 抛 ConnectionError 而非 ReadTimeout）：改用 inspect 轮询 Running + monotonic deadline |
