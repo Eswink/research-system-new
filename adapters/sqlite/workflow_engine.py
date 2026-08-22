@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from adapters.sqlite.base import SqliteAdapterBase
+from adapters.sqlite.cancel_run import cancel_run_tasks, cancel_task
 from adapters.sqlite.db import connect, now_iso
 from adapters.sqlite.leases import iso, lease_from_row, new_lease, request_digest
 from adapters.sqlite.outbox import OutboxWriter
@@ -103,6 +104,13 @@ class SqliteWorkflowEngine(SqliteAdapterBase):
         if row is None:
             self._record("acquire_lease", task_id, error="InvalidInputError")
             raise InvalidInputError(f"unknown task: {task_id}")
+        # 终止态任务不可重新租约：cancel 后重放 / complete 后重放必须拒绝，
+        # 否则 CANCELLED/SUCCEEDED 任务会被复活（terminal 状态无出边）。
+        if row["status"] in ResearchTaskState.terminal():
+            self._record("acquire_lease", task_id, error="InvalidInputError")
+            raise InvalidInputError(
+                f"task {task_id} is terminal ({row['status']}); cannot acquire lease"
+            )
         existing = self._conn.execute(
             "SELECT * FROM leases WHERE task_id = ?", (task_id,)
         ).fetchone()
@@ -200,31 +208,15 @@ class SqliteWorkflowEngine(SqliteAdapterBase):
 
     def cancel(self, task_id: str) -> None:
         self._ensure_open()
-        row = self._conn.execute(
-            "SELECT run_id, cancelled, status FROM tasks WHERE task_id = ?", (task_id,)
-        ).fetchone()
-        if row is None:
-            self._record("cancel", task_id)
-            return
-        if row["cancelled"]:
-            self._record("cancel", task_id, result="deduped")
-            return
-        if row["status"] in ResearchTaskState.terminal():
-            self._record("cancel", task_id, result="terminal_noop")
-            return
-        with self._conn:
-            self._conn.execute(
-                "UPDATE tasks SET cancelled = 1, status = ? WHERE task_id = ?",
-                (ResearchTaskState.State.CANCELLED, task_id),
-            )
-            self._conn.execute("DELETE FROM leases WHERE task_id = ?", (task_id,))
-            self._outbox.publish(
-                EventType.TASK_CANCELLED,
-                {"task_id": task_id},
-                run_id=str(row["run_id"]),
-                task_id=task_id,
-            )
-        self._record("cancel", task_id)
+        outcome = cancel_task(self._conn, self._outbox, task_id)
+        self._record("cancel", task_id, result=outcome)
+
+    def cancel_run(self, run_id: str) -> int:
+        """取消 run 下所有未终止任务（协作式）；返回实际取消数量。"""
+        self._ensure_open()
+        cancelled_count = cancel_run_tasks(self._conn, self._outbox, run_id)
+        self._record("cancel_run", run_id, result=f"{cancelled_count} cancelled")
+        return cancelled_count
 
     def recover_expired_leases(self) -> int:
         """超时 lease 任务置回 QUEUED（EXPIRE_LEASE 转换，非绕过状态机）；返回恢复数。"""

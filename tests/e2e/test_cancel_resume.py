@@ -53,7 +53,9 @@ class TestCancel:
             harness.engine.submit(task, task_contract())
             lease = harness.engine.acquire_lease(task.id.value)
             assert lease.task_id == task.id.value
-            harness.service.cancel_run(CancelRunCommand(run_id=task.id, reason="stop"))
+            # run_id 是 run 标识，不是 task id；cancel_run 必须按 run 取消所有任务
+            assert task.run_id.value != task.id.value
+            harness.service.cancel_run(CancelRunCommand(run_id=task.run_id, reason="stop"))
             assert task.id.value in harness.engine.cancelled
             kinds = [e.event_type for e in harness.events.pending()]
             assert EventType.TASK_CANCELLED in kinds
@@ -67,10 +69,10 @@ class TestCancel:
 
             task = research_task()
             harness.engine.submit(task, task_contract())
-            command = CancelRunCommand(run_id=task.id, reason="stop")
+            command = CancelRunCommand(run_id=task.run_id, reason="stop")
             harness.service.cancel_run(command)
             harness.service.cancel_run(command)
-            assert harness.engine.calls[-1].result_summary == "deduped"
+            assert harness.engine.calls[-1].result_summary == "0 cancelled"
         finally:
             harness.close()
 

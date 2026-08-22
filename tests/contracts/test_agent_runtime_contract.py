@@ -153,3 +153,38 @@ def test_workflow_cancel_marks_task(factory: type[object]) -> None:
     engine.submit(task, task_contract())
     engine.cancel(task.id.value)
     assert task.id.value in engine.cancelled
+
+
+@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["workflow_engine"])
+def test_workflow_cancel_run_reaches_all_tasks(factory: type[object]) -> None:
+    """SA-1R-B001：run 级取消必须到达 run 下所有未终止任务（run_id != task_id）。"""
+    engine = _as_engine(factory)
+    task = research_task()
+    engine.submit(task, task_contract())
+    engine.acquire_lease(task.id.value)
+    assert engine.cancel_run(task.run_id.value) == 1
+    assert task.id.value in engine.cancelled
+
+
+@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["workflow_engine"])
+def test_workflow_acquire_after_cancel_is_rejected(factory: type[object]) -> None:
+    """SA-1R-B002：取消后的任务不可重新租约，防止 cancelled-but-completed。"""
+    engine = _as_engine(factory)
+    task = research_task()
+    engine.submit(task, task_contract())
+    engine.acquire_lease(task.id.value)
+    engine.cancel(task.id.value)
+    with pytest.raises(InvalidInputError):
+        engine.acquire_lease(task.id.value)
+
+
+@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["workflow_engine"])
+def test_workflow_acquire_after_complete_is_rejected(factory: type[object]) -> None:
+    """SA-1R-B002：已完成任务不可重新租约，防止 completed-but-retried。"""
+    engine = _as_engine(factory)
+    task = research_task()
+    engine.submit(task, task_contract())
+    lease = engine.acquire_lease(task.id.value)
+    engine.complete(lease, TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"))
+    with pytest.raises(InvalidInputError):
+        engine.acquire_lease(task.id.value)

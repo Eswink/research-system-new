@@ -70,7 +70,7 @@ class TestF09PolicyDenied:
 
 class TestF10Cancellation:
     def test_cancel_run_releases_lease(self) -> None:
-        """F-10：cancel_run → workflow.cancel → lease 移除 + CANCELLED 事件。"""
+        """F-10：cancel_run → run 级取消 → lease 移除 + CANCELLED 事件。"""
         harness = M7Harness()
         try:
             from tests.contracts.fixtures import research_task, task_contract
@@ -78,7 +78,9 @@ class TestF10Cancellation:
             task = research_task()
             harness.engine.submit(task, task_contract())
             harness.engine.acquire_lease(task.id.value)
-            harness.service.cancel_run(CancelRunCommand(run_id=task.id, reason="test cancellation"))
+            harness.service.cancel_run(
+                CancelRunCommand(run_id=task.run_id, reason="test cancellation")
+            )
             assert task.id.value in harness.engine.cancelled
             kinds = [e.event_type for e in harness.events.pending()]
             assert EventType.TASK_CANCELLED in kinds

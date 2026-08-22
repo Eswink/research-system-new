@@ -165,10 +165,10 @@ class TestCancellationIdempotency:
             task = research_task()
             harness.engine.submit(task, task_contract())
             harness.engine.acquire_lease(task.id.value)
-            command = CancelRunCommand(run_id=task.id, reason="stop")
+            command = CancelRunCommand(run_id=task.run_id, reason="stop")
             harness.service.cancel_run(command)
             harness.service.cancel_run(command)
-            assert harness.engine.calls[-1].result_summary == "deduped"
+            assert harness.engine.calls[-1].result_summary == "0 cancelled"
             assert task.id.value in harness.engine.cancelled
             rows = harness.engine.list_tasks(task.run_id.value)
             assert rows[0].task.status == "CANCELLED"

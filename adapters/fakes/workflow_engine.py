@@ -51,6 +51,10 @@ class FakeWorkflowEngine(FakeBase):
         if task_id not in self._tasks:
             self._record("acquire_lease", task_id, error="InvalidInputError")
             raise InvalidInputError(f"unknown task: {task_id}")
+        # 与 SqliteWorkflowEngine 对齐：取消/完成后的任务不可重新租约（终止态无出边）。
+        if task_id in self._cancelled or task_id in self._completed:
+            self._record("acquire_lease", task_id, error="InvalidInputError")
+            raise InvalidInputError(f"task {task_id} is terminal; cannot acquire lease")
         existing = self._leases.get(task_id)
         if existing is not None:
             # at-least-once：重复投递不产生新副作用（幂等去重）
@@ -100,6 +104,21 @@ class FakeWorkflowEngine(FakeBase):
         self._cancelled.add(task_id)
         self._leases.pop(task_id, None)
         self._record("cancel", task_id)
+
+    def cancel_run(self, run_id: str) -> int:
+        """取消 run 下所有未终止任务（协作式）；返回实际取消数量。"""
+        self._enter("cancel_run", run_id)
+        cancelled_count = 0
+        for task_id, task in self._tasks.items():
+            if task.run_id.value != run_id:
+                continue
+            if task_id in self._cancelled or task_id in self._completed:
+                continue
+            self._cancelled.add(task_id)
+            self._leases.pop(task_id, None)
+            cancelled_count += 1
+        self._record("cancel_run", run_id, result=f"{cancelled_count} cancelled")
+        return cancelled_count
 
     def recover_expired_leases(self) -> int:
         """Fake 无 lease TTL 语义（lease 随 acquire/heartbeat 刷新），恒无过期 lease。

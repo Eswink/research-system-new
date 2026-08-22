@@ -134,8 +134,8 @@ class RunOrchestrationService:
         return outcome
 
     def cancel_run(self, command: CancelRunCommand) -> None:
-        """协作式取消信号：WorkflowEngine 移除 lease，事件落 outbox，释放预算预留。"""
-        self._deps.workflow.cancel(command.run_id.value)
+        """协作式取消：按 run_id 取消 run 下所有未终止任务，事件落 outbox，释放预算预留。"""
+        self._deps.workflow.cancel_run(command.run_id.value)
         self._release_reservation(command.run_id.value)
 
     def resume_run(
