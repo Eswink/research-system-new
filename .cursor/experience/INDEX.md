@@ -12,6 +12,8 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260821-002](entries/EXP-20260821-002.md) | ACTIVE | 0.6 | repository | 2026-11-19 | 安全门禁 hook 拦截 MCP 调用根因已确证：beforeMCPExecution 参数为 tool_input JSON 字符串，mcp_guard 原按 dict 解析导致全拒；已修复（兼容 arguments/tool_input × dict/字符串），eval 与真实环境回归通过；拦截时先不重试、不绕过 hook，改用替代工具 |
+| [EXP-20260821-001](entries/EXP-20260821-001.md) | ACTIVE | 0.4 | repository | 2026-11-19 | `uv run pip show <pkg>` 报 Package not found（包实际已装）：验证安装版本用 `uv run python -c importlib.metadata` 或读 uv.lock，不把 exit 1 当依赖缺失 |
 | [EXP-20260820-004](entries/EXP-20260820-004.md) | ACTIVE | 0.5 | repository | 2026-11-18 | 直接 uv run validator 输出 GBK 乱码：先设 `$env:PYTHONUTF8="1"; $env:PYTHONIOENCODING="utf-8"`；经 run_all_checks.py（内建 env）无需手动设 |
 | [EXP-20260820-003](entries/EXP-20260820-003.md) | ACTIVE | 0.4 | repository | 2026-11-18 | secret_guard fail-closed 拦截 terminals 文件 Read：改用 AwaitShell 轮询 exit_code footer 或 Grep 限行读取，不重试同一 Read、不改 hook |
 | [EXP-20260820-002](entries/EXP-20260820-002.md) | ACTIVE | 0.5 | repository | 2026-11-18 | 全量 pytest 在 docker 测试处长时间无输出：`taskkill /PID <pid> /T /F` 杀进程树 + `-m "not requires_docker"` 重跑 |

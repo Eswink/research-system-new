@@ -106,7 +106,11 @@ for label, script, payload, expected in (
     (
         "BOM MCP approval",
         ".cursor/hooks/mcp_guard.py",
-        {"tool_name": "papers.search", "tool_input": {"query": "智能体系统"}},
+        {
+            "mcp_server_name": "papers",
+            "tool_name": "papers.search",
+            "arguments": json.dumps({"query": "智能体系统"}, ensure_ascii=False),
+        },
         "ask",
     ),
 ):
@@ -310,12 +314,48 @@ def mcp(payload: dict) -> dict:
     expect("mcp guard returncode", rc == 0, stderr)
     return out
 
-safe = mcp({"tool_name": "papers.search", "tool_input": {"query": "agent systems"}, "url": "https://example.test/mcp"})
+
+safe = mcp(
+    {
+        "mcp_server_name": "papers",
+        "tool_name": "papers.search",
+        "arguments": json.dumps({"query": "agent systems"}, ensure_ascii=False),
+        "url": "https://example.test/mcp",
+    }
+)
 expect("safe MCP input requires approval", safe.get("permission") == "ask", safe)
-denied = mcp({"tool_name": "fs.read", "tool_input": {"path": "/home/alice/.ssh/id_ed25519"}})
+denied = mcp(
+    {
+        "mcp_server_name": "fs",
+        "tool_name": "fs.read",
+        "arguments": json.dumps({"path": "/home/alice/.ssh/id_ed25519"}, ensure_ascii=False),
+    }
+)
 expect("credential path MCP input denied", denied.get("permission") == "deny", denied)
-denied_secret = mcp({"tool_name": "remote.call", "tool_input": {"token": "sk-" + ("x" * 28)}})
+denied_secret = mcp(
+    {
+        "mcp_server_name": "remote",
+        "tool_name": "remote.call",
+        "arguments": json.dumps({"token": "sk-" + ("x" * 28)}, ensure_ascii=False),
+    }
+)
 expect("credential material MCP input denied", denied_secret.get("permission") == "deny", denied_secret)
+empty_args = mcp({"mcp_server_name": "papers", "tool_name": "papers.search", "arguments": ""})
+expect("empty arguments still requires approval", empty_args.get("permission") == "ask", empty_args)
+missing_args = mcp({"mcp_server_name": "papers", "tool_name": "papers.search"})
+expect("missing arguments denied", missing_args.get("permission") == "deny", missing_args)
+bad_json_args = mcp({"mcp_server_name": "papers", "tool_name": "papers.search", "arguments": "{not json"})
+expect("invalid JSON arguments denied", bad_json_args.get("permission") == "deny", bad_json_args)
+missing_tool_name = mcp({"mcp_server_name": "papers", "arguments": "{}"})
+expect("missing tool_name denied", missing_tool_name.get("permission") == "deny", missing_tool_name)
+legacy_tool_input = mcp({"tool_name": "papers.search", "tool_input": {"query": "legacy"}})
+expect("legacy tool_input dict still accepted", legacy_tool_input.get("permission") == "ask", legacy_tool_input)
+official_tool_input = mcp(
+    {"tool_name": "papers.search", "tool_input": json.dumps({"query": "official"}, ensure_ascii=False)}
+)
+expect("Cursor 3.16.29 tool_input JSON string accepted", official_tool_input.get("permission") == "ask", official_tool_input)
+empty_tool_input = mcp({"tool_name": "papers.search", "tool_input": ""})
+expect("empty tool_input requires approval", empty_tool_input.get("permission") == "ask", empty_tool_input)
 
 # Stop audit hook must emit schema-valid JSON and persist no raw machine path.
 audit_dir = ROOT / ".cursor/runtime/git-audit"
@@ -338,7 +378,16 @@ if audit_dir.exists():
 # A few true subprocess smokes keep the Cursor command-hook JSON/stdin/stdout contract covered.
 for label, script, payload, predicate in [
     ("subprocess secret guard", ".cursor/hooks/secret_guard.py", {"file_path": str(ROOT / ".env.local")}, lambda x: x.get("permission") == "deny"),
-    ("subprocess mcp ask", ".cursor/hooks/mcp_guard.py", {"tool_name": "papers.search", "tool_input": {"query": "x"}}, lambda x: x.get("permission") == "ask"),
+    (
+        "subprocess mcp ask",
+        ".cursor/hooks/mcp_guard.py",
+        {
+            "mcp_server_name": "papers",
+            "tool_name": "papers.search",
+            "arguments": json.dumps({"query": "x"}, ensure_ascii=False),
+        },
+        lambda x: x.get("permission") == "ask",
+    ),
     ("subprocess subagentStop schema", ".cursor/hooks/subagent_stop.py", {"subagent_type": "generalPurpose", "status": "completed", "task": "none"}, lambda x: x == {}),
 ]:
     rc, out, stderr, raw_stdout = run_subprocess(script, payload)

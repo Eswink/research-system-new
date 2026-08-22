@@ -20,7 +20,7 @@
 - `subagentStart`: allow/deny，`ask` 不支持；
 - `subagentStop`: 当前只定义可选 `followup_message`；
 - `postToolUseFailure`: 当前无输出字段；
-- `beforeMCPExecution`: allow/deny/ask。
+- `beforeMCPExecution`: allow/deny/ask；实测（Cursor 3.16.29）参数字段为 `tool_input`（JSON 字符串），官方文档称 `arguments`，两者都要兼容。
 
 不得把一种 Hook 的 `permission` 输出机械复制到其他 Hook。
 

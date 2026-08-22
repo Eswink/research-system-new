@@ -94,16 +94,34 @@ cases:
   - id: ordinary-mcp-call
     hook: mcp_guard.py
     input:
+      mcp_server_name: papers
       tool_name: papers.search
-      tool_input: {query: "agent systems"}
+      arguments: '{"query": "agent systems"}'
     expect: {permission: ask}
   - id: credential-path-mcp-call
     hook: mcp_guard.py
     input:
+      mcp_server_name: fs
       tool_name: fs.read
-      tool_input: {path: "/home/alice/.ssh/id_ed25519"}
+      arguments: '{"path": "/home/alice/.ssh/id_ed25519"}'
     expect: {permission: deny}
-  - id: missing-mcp-input
+  - id: invalid-json-mcp-arguments
     hook: mcp_guard.py
-    input: {tool_name: papers.search}
+    input:
+      mcp_server_name: papers
+      tool_name: papers.search
+      arguments: "{not json"
     expect: {permission: deny}
+  - id: missing-mcp-tool-name
+    hook: mcp_guard.py
+    input:
+      mcp_server_name: papers
+      arguments: "{}"
+    expect: {permission: deny}
+  - id: official-tool-input-json-string
+    hook: mcp_guard.py
+    input:
+      mcp_server_name: papers
+      tool_name: papers.search
+      tool_input: '{"query": "agent systems"}'
+    expect: {permission: ask}

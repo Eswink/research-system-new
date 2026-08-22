@@ -38,6 +38,8 @@
 - 实测 `beforeReadFile` stdin 带 UTF-8 BOM；部分包含中文和引号的文件正文被放入 `content` 后会形成无效 JSON。`failClosed` 会正确阻断，但会把普通源码读取锁死。
 - 本项目不修复或猜测损坏的 JSON，也不对无效载荷 fail-open；Read 安全判定前移到 `preToolUse(Read)`，只检查 `tool_input.path` / 兼容 `file_path`。
 - 实测普通 Read 放行、`.envrc` 被 Hook 拒绝、惰性 PowerShell 根目录删除探测被 Shell Hook 拒绝；BOM、畸形 JSON、非对象、非法 UTF-8 和中文 stdout 由 subprocess 回归覆盖。
+- `beforeMCPExecution` 事件 payload 实测（Cursor 3.16.29，2026-08-21）：参数字段是 `tool_input`，值为 JSON 字符串（如 `"{\"action\":\"list\"}"`），`tool_name` 为工具名，另有 `mcp_server_name` 服务名；官方文档称参数字段为 `arguments`，与实测字段名不一致。
+  2026-08-21 修复前 `mcp_guard.py` 要求 `tool_input` 为 dict 且不识别 `arguments`，导致所有 MCP 调用被 fail-closed 拒绝（报"缺少有效的 tool_name/tool_input 字段"）；修复后同时接受 `arguments` / `tool_input` 两个字段名与 dict / JSON 字符串两种形态，保持 fail-closed 与敏感扫描。Hook eval 的 MCP fixture 覆盖两种字段名与两种形态。
 
 ## 兼容性 caveat
 截至 2026-08-10，Cursor 官方社区工作人员确认过：`subagentStart` deny 在部分版本可能未被执行；background subagent 可能不触发 `subagentStop`；subagent hook linkage 仍有缺口。因此采用 Rule + foreground custom reviewer + best-effort Hook 的多层策略。
