@@ -1,6 +1,6 @@
 schema_version: 1
 id: LEARN-20260815-003
-status: PROPOSED
+status: ACCEPTED
 created_at: 2026-08-15
 summary: "Windows PowerShell 下禁止在 Shell 命令中内嵌多层引号（管道 + 长正则、python -c 嵌套、内联 JSON）：命令被 ps-script 双重解析报 ParserError；模式扫描优先 Grep 工具，探测代码落脚本文件"
 severity: NORMAL
@@ -44,14 +44,18 @@ validation:
     - "uv run --frozen --no-sync python -B .cursor/skills/learning-check/scripts/validate_cursor_learning.py"
     - "uv run --frozen --no-sync python -B .cursor/skills/learning-check/scripts/run_cursor_learning_evals.py"
   evidence_refs:
-    - "M10 会话终端输出：Cursor 治理验证通过（2026-08-15）"
-    - "M10 会话终端输出：PASS: learning system validated; 2 proposal(s), 9 relation(s)（2026-08-15，本提案登记前）"
-    - "M10 会话终端输出：LEARNING GATE EVAL PASS（2026-08-15）"
+    - ".cursor/experience/entries/EXP-20260812-002.md"
+    - ".cursor/learning/accepted/evidence/LEARN-20260815-003-validation.md"
   result: PASS
-approvals: []
+approvals:
+  - role: user
+    decision: APPROVE
+    hard_gate: PASS
+    ref: ".cursor/learning/accepted/evidence/LEARN-20260815-003-authorization.md"
+    at: "2026-08-22"
 promotion:
-  authorization_ref: ""
-  promoted_at: ""
-  promoted_digest: ""
-  regression_digest: ""
+  authorization_ref: ".cursor/learning/accepted/evidence/LEARN-20260815-003-authorization.md"
+  promoted_at: "2026-08-22"
+  promoted_digest: "077b9e0b2ff71aeadbe379a110f7779d10cf14232fa739553c841a64b69fd512"
+  regression_digest: "528cd528d102962f50ed80974a26be1e721aa6fe32c8ccf3540882b13fdbc23e"
 supersedes: []

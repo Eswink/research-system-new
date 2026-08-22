@@ -1,8 +1,21 @@
 schema_version: 1
 framework_version: 0.4.0
-next_sequence: 4
+next_sequence: 5
 statuses: [PROPOSED, CLUSTERED, REPLAYING, REVIEWING, ACCEPTED, REJECTED, SUPERSEDED]
 entries:
+  - id: LEARN-20260821-004
+    status: ACCEPTED
+    file: ".cursor/learning/accepted/LEARN-20260821-004.yaml"
+    summary: "安全门禁 hook 曾拦截所有 MCP 调用：beforeMCPExecution 参数解析 bug（Cursor 3.16.29 实测 tool_input 为 JSON 字符串、无 arguments 字段）已修复并回归；拦截时 agent 不得重试/绕过 hook，先用替代工具"
+    source_refs:
+      - ".cursor/experience/entries/EXP-20260821-002.md"
+      - ".cursor/hooks/mcp_guard.py"
+      - ".cursor/skills/cursor-framework-check/scripts/run_cursor_hook_evals.py"
+      - ".cursor/learning/accepted/LEARN-20260821-004.yaml"
+    promoted_at: "2026-08-22"
+    target_paths:
+      - ".cursor/knowledge/HOOKS_REFERENCE.md"
+      - ".cursor/knowledge/KNOWN_CAVEATS.md"
   - id: LEARN-20260813-001
     status: ACCEPTED
     file: ".cursor/learning/accepted/LEARN-20260813-001.yaml"
@@ -14,23 +27,23 @@ entries:
     target_paths:
       - ".cursor/rules/42-command-encoding.mdc"
   - id: LEARN-20260813-002
-    status: PROPOSED
-    file: ".cursor/learning/inbox/LEARN-20260813-002.yaml"
+    status: ACCEPTED
+    file: ".cursor/learning/accepted/LEARN-20260813-002.yaml"
     summary: "Python 测试/探针必须在 uv 冻结环境执行（uv run --frozen --no-sync python）；裸系统 python 导致 ModuleNotFoundError 与 lint-imports unavailable 两个跨会话签名"
     source_refs:
       - ".cursor/experience/entries/EXP-20260813-001.md"
       - ".cursor/experience/entries/EXP-20260813-002.md"
-      - ".cursor/learning/inbox/LEARN-20260813-002.yaml"
-    promoted_at: ""
+      - ".cursor/learning/accepted/LEARN-20260813-002.yaml"
+    promoted_at: "2026-08-22"
     target_paths:
       - ".cursor/rules/42-command-encoding.mdc"
   - id: LEARN-20260815-003
-    status: PROPOSED
-    file: ".cursor/learning/inbox/LEARN-20260815-003.yaml"
+    status: ACCEPTED
+    file: ".cursor/learning/accepted/LEARN-20260815-003.yaml"
     summary: "Windows PowerShell 下禁止 Shell 命令内嵌多层引号（管道+长正则、python -c 嵌套）：ps-script 双重解析报 ParserError；模式扫描优先 Grep 工具，探测代码落脚本文件"
     source_refs:
       - ".cursor/experience/entries/EXP-20260812-002.md"
-      - ".cursor/learning/inbox/LEARN-20260815-003.yaml"
-    promoted_at: ""
+      - ".cursor/learning/accepted/LEARN-20260815-003.yaml"
+    promoted_at: "2026-08-22"
     target_paths:
       - ".cursor/rules/42-command-encoding.mdc"

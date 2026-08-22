@@ -1,0 +1,64 @@
+schema_version: 1
+id: LEARN-20260821-004
+status: ACCEPTED
+created_at: 2026-08-21
+summary: "安全门禁 hook 曾拦截所有 MCP 调用（beforeMCPExecution 参数解析 bug）：Cursor 3.16.29 实测 tool_input 为 JSON 字符串且无 arguments 字段，mcp_guard 原按 dict 解析导致全拒；已在仓库内修复（兼容 arguments/tool_input × dict/JSON 字符串），eval 与真实环境回归通过；拦截时 agent 不得重试/绕过 hook，先用替代工具"
+severity: NORMAL
+category: reliability
+source_type: tool_failure
+source_refs:
+  - ".cursor/experience/entries/EXP-20260821-002.md（occurrences 2：2026-08-21 会话 browser_tabs/rename_chat 两次拦截 + 后续确证源码/实测根因）"
+  - ".cursor/hooks/mcp_guard.py（根因与修复位置：_parse_tool_input）"
+  - ".cursor/skills/cursor-framework-check/scripts/run_cursor_hook_evals.py（修复后 MCP fixture 回归：HOOK EVAL PASS）"
+  - ".cursor/knowledge/HOOKS_REFERENCE.md（实测 payload 字段记录）"
+occurrences:
+  - task_ref: "2026-08-21 工具能力测试会话（cursor-ide-browser）"
+    evidence_ref: "CallMcpTool(browser_tabs, {action: list}) → permissionDenied：安全门禁缺少有效的 tool_name/tool_input 字段，已按 fail-closed 拒绝 MCP 调用"
+  - task_ref: "2026-08-21 工具能力测试会话（cursor-app-control）"
+    evidence_ref: "CallMcpTool(rename_chat, {action: list}) → 相同 permissionDenied 消息（同一 hook、同一签名）；sessionStart 提示该签名已在 ≥2 次会话出现"
+  - task_ref: "2026-08-21 修复验证会话"
+    evidence_ref: "临时 dump hook 捕获 Cursor 3.16.29 beforeMCPExecution 真实 payload（tool_input=\"{\\\"action\\\":\\\"list\\\"}\"，无 arguments 字段）→ 修复 mcp_guard → run_cursor_hook_evals.py HOOK EVAL PASS；真实环境 browser_tabs 调用成功"
+problem:
+  observed_behavior: "MCP 工具调用（cursor-ide-browser / cursor-app-control 两个服务）被仓库安全门禁 hook 以 fail-closed 方式全部拒绝，报错 '安全门禁缺少有效的 tool_name/tool_input 字段'；调用参数已按工具 JSON schema 核对仍被拒，证明拦截与参数内容无关；系统 sessionStart 提示该签名已跨 ≥2 次会话出现。"
+  expected_behavior: "agent 遇到该拦截时：不重试同一调用（同签名必败）、不修改/绕过 hook（fail-closed 是既定安全语义），先用替代工具完成同一意图；hook 属仓库代码，根因定位后可在仓库内修复（无需用户改 Settings），修复后 MCP 恢复 ask 确认流程。"
+  reproduction: "修复前调用任意 MCP 工具即复现（browser_tabs、rename_chat 已实测 2 次）；失败后改用 WebSearch/WebFetch/Read/Grep/Ls/Shell 替代路径全部成功；修复后 browser_tabs 调用成功返回。"
+hypothesis:
+  root_cause: "mcp_guard.py 对 beforeMCPExecution 事件的参数解析 bug：Cursor 3.16.29 实测参数字段为 tool_input 且值是 JSON 字符串（官方文档称 arguments，字段名不一致），原代码要求 tool_input 为 dict 且不识别 arguments → 所有 MCP 调用 fail-closed 拒绝。已用临时 dump hook 捕获真实 payload 确证，并修复（_parse_tool_input 兼容两字段名 × 两种形态）。confidence 0.7：dump 实测 + 源码核对 + 修复后回归 + 真实环境验证。"
+  confidence: 0.7
+proposal:
+  target_type: KNOWLEDGE
+  target_paths:
+    - ".cursor/knowledge/HOOKS_REFERENCE.md"
+    - ".cursor/knowledge/KNOWN_CAVEATS.md"
+  change_summary: "已在 HOOKS_REFERENCE / KNOWN_CAVEATS 记录 beforeMCPExecution 实测 payload 契约（tool_input 为 JSON 字符串、官方文档称 arguments、字段名不一致）与 2026-08-21 修复事实；hook eval（run_cursor_hook_evals.py）与 security.yaml fixtures 已覆盖两种字段名 × 两种形态并保持 fail-closed 语义；本提案作为该修复的知识沉淀记录，不新增行为变更。"
+  blast_radius: "知识文档与测试 fixtures 已同步；无代码/配置行为变化；governance validator 与 learning validator 覆盖。"
+replay:
+  before_cases:
+    - "2026-08-21 会话：CallMcpTool(browser_tabs, {action: list}) → permissionDenied（安全门禁 fail-closed）"
+    - "2026-08-21 会话：CallMcpTool(rename_chat, {action: list}) → permissionDenied（同一签名）"
+  before_result: "FAIL（2/2 复现，同一会话内两个 MCP 服务；sessionStart 提示跨会话 ≥2 次）"
+  after_cases:
+    - "2026-08-21 修复后：run_cursor_hook_evals.py → HOOK EVAL PASS（MCP fixtures 覆盖 arguments/tool_input × dict/JSON 字符串、空参数、非法 JSON、缺 tool_name）"
+    - "2026-08-21 修复后：governance validate.py 通过；validate_cursor_learning.py 通过"
+    - "2026-08-21 修复后：真实环境 CallMcpTool(browser_tabs, {action: list}) → 成功返回 open tabs（deny → ask/放行）"
+  after_result: "PASS（确定性回归：eval 全绿 + 真实环境 MCP 调用成功）"
+validation:
+  commands:
+    - "uv run --frozen --no-sync python -B .cursor/skills/learning-check/scripts/validate_cursor_learning.py"
+  evidence_refs:
+    - ".cursor/experience/entries/EXP-20260821-002.md"
+    - ".cursor/hooks/mcp_guard.py"
+    - ".cursor/learning/accepted/evidence/LEARN-20260821-004-validation.md"
+  result: PASS
+approvals:
+  - role: user
+    decision: APPROVE
+    hard_gate: PASS
+    ref: ".cursor/learning/accepted/evidence/LEARN-20260821-004-authorization.md"
+    at: "2026-08-22"
+promotion:
+  authorization_ref: ".cursor/learning/accepted/evidence/LEARN-20260821-004-authorization.md"
+  promoted_at: "2026-08-22"
+  promoted_digest: "7f9699059fcb3fef3878ba18d4a81d7f93bebf5eaeafa53897c331b933d6af23"
+  regression_digest: "526a825f2b72fdfbaf2453916ab1ee9f0e3cb64f9f7d4fc3bee6b09afc9f7ea0"
+supersedes: []

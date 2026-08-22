@@ -1,6 +1,6 @@
 schema_version: 1
 id: LEARN-20260813-002
-status: PROPOSED
+status: ACCEPTED
 created_at: 2026-08-13
 summary: "Python 测试/探针必须在 uv 冻结环境执行（uv run --frozen --no-sync python）；裸系统 python 导致 ModuleNotFoundError（openhands/tenacity）与 lint-imports unavailable（架构边界测试 7-8 项失败）两个跨会话签名"
 severity: NORMAL
@@ -43,13 +43,19 @@ validation:
     - "uv run --frozen --no-sync python -B -m pytest tests/ -q --tb=short"
     - "uv run --frozen --no-sync python -B .cursor/skills/system-spec-check/scripts/validate_bundle.py"
   evidence_refs:
-    - "M7 独立复审会话终端输出：988 passed, 1 warning（2026-08-13）"
-    - "validate_bundle.py 输出：验证通过（2026-08-13）"
+    - ".cursor/experience/entries/EXP-20260813-001.md"
+    - ".cursor/experience/entries/EXP-20260813-002.md"
+    - ".cursor/learning/accepted/evidence/LEARN-20260813-002-validation.md"
   result: PASS
-approvals: []
+approvals:
+  - role: user
+    decision: APPROVE
+    hard_gate: PASS
+    ref: ".cursor/learning/accepted/evidence/LEARN-20260813-002-authorization.md"
+    at: "2026-08-22"
 promotion:
-  authorization_ref: ""
-  promoted_at: ""
-  promoted_digest: ""
-  regression_digest: ""
+  authorization_ref: ".cursor/learning/accepted/evidence/LEARN-20260813-002-authorization.md"
+  promoted_at: "2026-08-22"
+  promoted_digest: "077b9e0b2ff71aeadbe379a110f7779d10cf14232fa739553c841a64b69fd512"
+  regression_digest: "00fd11569a5df706e95d449a7d6e8a847dc61c5edee0a198dba626fce6b5e491"
 supersedes: []

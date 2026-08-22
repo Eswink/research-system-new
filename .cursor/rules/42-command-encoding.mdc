@@ -14,6 +14,11 @@ alwaysApply: true
   - 多命令串联用 `;` 分隔：`git status --short; git log --oneline -8`（`&&`/`||` 报 ParserError）；
   - 长 commit message 写临时文件后 `git commit -F <path>`，不用 `-m "$(cat <<'EOF' ...)"`；
   - cmd 开关必须 `cmd /c "..."` 包裹：裸 `dir /b <path>` 会把 `/b` 解析为路径 `D:\b`。
+- Python 测试/探针必须在项目冻结的 uv 环境中执行（LEARN-20260813-002 晋升，跨会话 8 次失败）：
+  - 一律经 `uv run --frozen --no-sync python -B <cmd>` 执行（与 CI 一致），不得用裸 `python`（系统解释器缺项目依赖，报 ModuleNotFoundError）；
+  - 架构边界测试依赖 lint-imports 可执行文件，不得在未激活 venv 的裸 shell 下运行；备用方案显式注入 `.venv/Scripts` 到 PATH。
+- Windows PowerShell 下禁止 Shell 命令内嵌多层引号（LEARN-20260815-003 晋升，跨会话 3 次失败）：
+  - 管道 + 长正则、`python -c` 多层引号、内联 JSON 会被 ps-script 双重解析报 ParserError/SyntaxError；模式扫描优先用 Grep 工具（path + pattern 参数），探测/冒烟代码写临时脚本文件执行。
 - 新建或修改的文本脚本、YAML、JSON、Markdown 和源码一律使用 UTF-8；禁止以 GBK/ANSI 写入仓库。
 - Python 读写文本文件必须显式传 `encoding="utf-8"`，不依赖平台默认编码。
 - 终端显示乱码时先修正终端/环境编码再重试，不通过转换仓库文件编码来掩盖问题。
