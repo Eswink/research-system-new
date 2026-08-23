@@ -17,8 +17,8 @@
 ## Hook Permission
 
 不同 Hook 支持的输出 schema 不相同：
-- `subagentStart`: allow/deny，`ask` 不支持；
-- `subagentStop`: 当前只定义可选 `followup_message`；
+- `subagentStart`: allow/deny，`ask` 不支持；实测字段 `task` 与 `prompt`/`description` 别名均需兼容，缺省 `subagent_type` 回退计数
+- `subagentStop`: 当前只定义可选 `followup_message`；按任务签名与类型启发式匹配释放，无 `subagent_id` 精确删除
 - `postToolUseFailure`: 当前无输出字段；
 - `beforeMCPExecution`: allow/deny/ask；实测（Cursor 3.16.29）参数字段为 `tool_input`（JSON 字符串），官方文档称 `arguments`，两者都要兼容。
 
@@ -26,7 +26,7 @@
 
 ## Fail Closed
 
-安全关键 hook 使用 `failClosed: true`。如果特定 Cursor 版本出现 Hook 初始化问题，应先运行 compatibility probe；不得为了“让它能跑”永久关闭 secret/shell/MCP hard gate 而不记录风险。
+安全关键 hook 使用 `failClosed: true`。如果特定 Cursor 版本出现 Hook 初始化问题，应先运行 compatibility probe；不得为了“让它能跑”永久关闭 secret/shell/MCP hard gate 而不记录风险。子代理侧 2026-08-22 起对 `task` 别名与缺省 `subagent_type` 做兼容放宽，但仍保持 `parent_conversation` 缺失时的 fail-closed，不降低并行上限。
 
 ## Ignore Files
 

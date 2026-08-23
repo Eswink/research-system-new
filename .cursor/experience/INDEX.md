@@ -12,6 +12,10 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260823-003](entries/EXP-20260823-003.md) | ACTIVE | 0.5 | repository | 2026-11-21 | CURSOR_ERROR 瞬时失败跨会话（Read d42fb89b…/Shell f3eb4221… 各 2 会话）：重试一次或改替代路径，不当作命令失败；统计时过滤 tool_name=null 的 TOOL_FAILURE 空载荷哨兵（e3b0c442…=sha256("")）；跨会话以不同 observation 文件为准 |
+| [EXP-20260823-002](entries/EXP-20260823-002.md) | ACTIVE | 0.5 | repository | 2026-11-21 | 构造契约签名先行验证：测试构造前先读 domain dataclass 必填字段与 __post_init__；派生 ID 必须合法 UUID4；断言与真实派生规则（claim:{experiment_run_id}:result）冲突时先跑真实值 |
+| [EXP-20260823-001](entries/EXP-20260823-001.md) | ACTIVE | 0.5 | repository | 2026-11-21 | sqlite3 adapter 的 Timestamp 序列化：必须 .value.isoformat() + datetime.fromisoformat（str(Timestamp) 是 repr 不可逆）；fetchone 返回 Any 需 assert isinstance(row, sqlite3.Row) |
+| [EXP-20260822-001](entries/EXP-20260822-001.md) | SUPERSEDED | 0.5 | repository | 2026-11-20 | Read 被 secret_guard fail-closed 拦截：含 .cursor/hooks/* 的诊断读优先改用 Shell/Grep，.cursorignore 过滤目录改用 Shell 列举（被 EXP-20260823-003 取代） |
 | [EXP-20260821-002](entries/EXP-20260821-002.md) | ACTIVE | 0.6 | repository | 2026-11-19 | 安全门禁 hook 拦截 MCP 调用根因已确证：beforeMCPExecution 参数为 tool_input JSON 字符串，mcp_guard 原按 dict 解析导致全拒；已修复（兼容 arguments/tool_input × dict/字符串），eval 与真实环境回归通过；拦截时先不重试、不绕过 hook，改用替代工具 |
 | [EXP-20260821-001](entries/EXP-20260821-001.md) | ACTIVE | 0.4 | repository | 2026-11-19 | `uv run pip show <pkg>` 报 Package not found（包实际已装）：验证安装版本用 `uv run python -c importlib.metadata` 或读 uv.lock，不把 exit 1 当依赖缺失 |
 | [EXP-20260820-004](entries/EXP-20260820-004.md) | ACTIVE | 0.5 | repository | 2026-11-18 | 直接 uv run validator 输出 GBK 乱码：先设 `$env:PYTHONUTF8="1"; $env:PYTHONIOENCODING="utf-8"`；经 run_all_checks.py（内建 env）无需手动设 |

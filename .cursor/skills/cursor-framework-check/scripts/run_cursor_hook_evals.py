@@ -212,8 +212,53 @@ _, out, _ = run(
     },
 )
 expect("new-wave subagent allowed after slot released", out.get("permission") == "allow", out)
-if bucket.exists():
-    shutil.rmtree(bucket)
+# Alias compatibility: task via prompt/description, missing subagent_type fallback, bucket via parent_conversation_id
+_, out, _ = run(
+    ".cursor/hooks/subagent_guard.py",
+    {
+        "conversation_id": "eval-parent-alias",
+        "parent_conversation_id": "eval-parent-alias",
+        "subagent_id": "sub-alias-1",
+        "subagent_type": "generalPurpose",
+        "prompt": "alias prompt task",
+    },
+)
+expect("subagent alias prompt allowed", out.get("permission") == "allow", out)
+_, out, _ = run(
+    ".cursor/hooks/subagent_guard.py",
+    {
+        "parent_conversation_id": "eval-parent-alias",
+        "subagent_id": "sub-alias-2",
+        "description": "alias description task",
+    },
+)
+expect("subagent alias description without type allowed", out.get("permission") == "allow", out)
+_, out, _ = run(".cursor/hooks/subagent_pretool_guard.py", {"parent_conversation_id": "eval-parent-alias", "tool_name": "Task", "tool_input": {}})
+expect("preToolUse parent_conversation_id alias allowed with slot", out.get("permission") == "allow", out)
+_, out, _ = run(
+    ".cursor/hooks/subagent_stop.py",
+    {
+        "conversation_id": "eval-parent-alias",
+        "subagent_type": "generalPurpose",
+        "status": "completed",
+        "prompt": "alias prompt task",
+        "description": "eval",
+        "summary": "done",
+        "duration_ms": 10,
+        "message_count": 1,
+        "tool_call_count": 0,
+        "loop_count": 0,
+        "modified_files": [],
+        "agent_transcript_path": None,
+    },
+)
+expect("subagentStop alias prompt emits no permission", out == {}, out)
+# cleanup alias and original buckets
+for _cid in ("eval-parent", "eval-parent-alias"):
+    _hashed = __import__("hashlib").sha256(_cid.encode("utf-8")).hexdigest()[:20]
+    _p = ROOT / ".cursor/runtime/subagents" / _hashed
+    if _p.exists():
+        shutil.rmtree(_p, ignore_errors=True)
 
 # Official postToolUseFailure payload + privacy.
 conversation_id = "conv-official-failure"

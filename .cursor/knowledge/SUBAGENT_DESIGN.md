@@ -28,6 +28,12 @@ Subagent 不是默认步骤，只在可明显并行的调查、模块验证或�
 
 工程观察（非官方平台事实）：不同模型对"单条消息批量发出工具调用"的遵循程度存在差异，指令遵循较弱的模型可能把并行 wave 合法地串行化，使波次耗时成倍放大。规则与 sessionStart 注入只能提高遵循率，不构成机制保证；串行化复现时应检查父代理模型配置，并在规则约束内重新要求单消息批量启动。子代理之间存在真实数据依赖时属于 sequential 委派，应显式说明依赖关系，不伪装成并行。
 
+**诊断步骤**：若并行意图未生效且未收到 Hook deny，先确认是否单消息批量；若收到 deny，查 `.cursor/runtime/subagents/<cid>/*.active` 是否已达 3 并核验 `preToolUse(Task)`/`subagentStart` 的 `task` 字段是否走 `prompt`/`description` 别名（2026-08-22 起 Hook 已兼容两者）。
+
+### Hook 兼容性
+
+为兼容不同 Cursor 版本的载荷差异，`subagentStart` 的任务文本同时接受 `task`/`prompt`/`description`/`agent_prompt` 别名，`subagent_type` 缺省时回退为 `generalPurpose` 计数；`preToolUse(Task)` 与 `subagentStart` 统一按 `parent_conversation_id || conversation_id` 的 `safe_id` 归桶，`subagentStop` 按任务签名与类型评分释放，`sessionEnd` 额外按 `created_at` TTL 清理残留。详见 `HOOKS_REFERENCE.md` 的 Subagent cleanup 说明。
+
 ### 嵌套：本项目采用比 Cursor 更严格的策略
 
 尽管 Cursor 平台支持有限一层 child nesting，本项目 v0.4.0 **主动禁用 nested delegation**：只允许直接服务用户的 root Agent 创建 Subagent。

@@ -1,0 +1,54 @@
+schema_version: 1
+id: LEARN-20260822-001
+status: PROPOSED
+created_at: 2026-08-22
+summary: "Read 工具 CURSOR_ERROR 重复签名 9710fd0186108db67ff0 已跨 2 会话出现：诊断直读 .cursor/* 时偶发失败，改用 Shell/Grep 替代路径"
+severity: NORMAL
+category: reliability
+source_type: tool_failure
+source_refs:
+  - ".cursor/runtime/observations/0842d9bdae883e34101d.jsonl:1（Read CURSOR_ERROR 9710fd0186108db67ff0）"
+  - ".cursor/runtime/observations/b0f8831b161a0d489b79.jsonl:2（Read CURSOR_ERROR 9710fd0186108db67ff0，跨会话第2次）"
+  - ".cursor/experience/entries/EXP-20260822-001.md（本会话 3 次 Read 失败的同家族经验，含 secret_guard 拦截分支）"
+occurrences:
+  - task_ref: "2026-08-21 诊断会话 0842"
+    evidence_ref: "Read .cursor/* 失败，error_class=CURSOR_ERROR，error_signature=9710fd0186108db67ff0（0.719ms）"
+  - task_ref: "2026-08-21 准备会话 b0f883"
+    evidence_ref: "Read 失败复现，同一签名 9710fd0186108db67ff0（6.458ms），跨会话第2次；distillation_gate 统计 repeated>=2"
+problem:
+  observed_behavior: "Read 工具在读取 .cursor/* 诊断文件时偶发 CURSOR_ERROR，同一 error_signature 9710fd0186108db67ff0 已在 2 个独立会话的 observations 中出现（0842 与 b0f883），失败后需改用替代读取路径；当前未影响发布门禁但重复出现提示 Hook 文本扫描/BOM 边界的非确定性。"
+  expected_behavior: "对 .cursor/* 的诊断读应优先走 Shell Get-Content/Grep 限行路径，避免直接 Read 触发 fail-closed/BOM 解析异常；重复签名出现时按 capture-experience 先沉淀为 EXP，再经本提案评估是否晋升为 Rule/Skill/文档。"
+  reproduction: "在 2 个会话中对 .cursor/* 执行 Read 直读即复现同一签名；改用 Shell Get-Content -Encoding utf8 或 Grep 带 pattern 限行后成功。"
+hypothesis:
+  root_cause: "secret_guard / common.read_event_result 对含中文/引号或 BOM 前缀的 Read 载荷在 JSON 解析边界偶发 CURSOR_ERROR（common.py 对 BOM 与 invalid UTF-8 的兼容处理已部分覆盖，但仍有内容相关抖动）；单次 Read 失败本身非确定性，未达可直接晋升 Rule 的阈值，置信度 0.5。"
+  confidence: 0.5
+proposal:
+  target_type: KNOWLEDGE
+  target_paths:
+    - ".cursor/knowledge/HOOKS_REFERENCE.md"
+    - ".cursor/experience/entries/EXP-20260822-001.md"
+  change_summary: "若后续复现第3次或出现确定性 before/after 证据，拟在 HOOKS_REFERENCE 增补 Read 诊断的 Shell/Grep 首选路径说明，并视情况将 EXP-20260822-001 的 confidence 提升或关联 supersedes；本 PROPOSED 阶段不直接改 Hook/Rule。"
+  blast_radius: "仅知识文档与经验关联，无 Hook 行为变更；不降低 failClosed。"
+replay:
+  before_cases:
+    - "0842 会话：Read .cursor/* → CURSOR_ERROR 9710fd（失败）"
+    - "b0f883 会话：Read 同类文件 → 同一签名 9710fd（第2次）"
+  before_result: "FAIL（2/2 复现，跨会话；已满足 capture-learning ≥2 次门槛）"
+  after_cases:
+    - "Shell Get-Content 同文件 → 成功（替代路径）"
+    - "Grep pattern 限行匹配 → 成功"
+  after_result: "PASS（替代路径稳定）"
+validation:
+  commands:
+    - "uv run --frozen --no-sync python -B .cursor/skills/learning-check/scripts/validate_cursor_learning.py"
+  evidence_refs:
+    - ".cursor/runtime/observations/0842d9bdae883e34101d.jsonl"
+    - ".cursor/runtime/observations/b0f8831b161a0d489b79.jsonl"
+  result: FAIL
+approvals: []
+promotion:
+  authorization_ref: ""
+  promoted_at: ""
+  promoted_digest: ""
+  regression_digest: ""
+supersedes: []

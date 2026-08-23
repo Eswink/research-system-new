@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from common import RUNTIME, emit, read_event, safe_id
+from common import RUNTIME, emit, read_event, resolve_bucket_id, resolve_task_text, safe_id
 
 
 def task_signature(value: object) -> str:
@@ -27,7 +27,7 @@ def candidate_tokens(event: dict) -> list[Path]:
 
     # subagentStop has no hook-specific subagent_id/parent_conversation_id in the
     # current Cursor schema. The common conversation_id is only a best-effort hint.
-    conversation = safe_id(event.get("conversation_id"))
+    conversation = resolve_bucket_id(event)
     preferred = root / conversation
     candidates = list(preferred.glob("*.active")) if preferred.exists() else []
     if candidates:
@@ -38,15 +38,16 @@ def candidate_tokens(event: dict) -> list[Path]:
 def main() -> int:
     event = read_event()
     wanted_type = str(event.get("subagent_type") or "")
-    wanted_task = task_signature(event.get("task"))
+    wanted_task = task_signature(resolve_task_text(event))
 
     scored: list[tuple[int, float, Path]] = []
+    has_task = bool(resolve_task_text(event))
     for token in candidate_tokens(event):
         meta = read_token(token)
         score = 0
         if wanted_type and meta.get("subagent_type") == wanted_type:
             score += 2
-        if event.get("task") is not None and meta.get("task_signature") == wanted_task:
+        if has_task and meta.get("task_signature") == wanted_task:
             score += 4
         try:
             mtime = token.stat().st_mtime

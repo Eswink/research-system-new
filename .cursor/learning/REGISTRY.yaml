@@ -1,8 +1,33 @@
 schema_version: 1
 framework_version: 0.4.0
-next_sequence: 5
+next_sequence: 7
 statuses: [PROPOSED, CLUSTERED, REPLAYING, REVIEWING, ACCEPTED, REJECTED, SUPERSEDED]
 entries:
+  - id: LEARN-20260823-001
+    status: PROPOSED
+    file: ".cursor/learning/inbox/LEARN-20260823-001.yaml"
+    summary: "CURSOR_ERROR 瞬时失败家族跨会话 ≥2（Read d42fb89b…、Shell f3eb4221…）：重试一次或改替代路径；统计过滤空载荷 TOOL_FAILURE 哨兵"
+    source_refs:
+      - ".cursor/runtime/observations/2d2b97a92934f6463151.jsonl"
+      - ".cursor/runtime/observations/20bcb73aeefa17bb30e1.jsonl"
+      - ".cursor/runtime/observations/72ffd79f779c7bf59ec7.jsonl"
+      - ".cursor/runtime/observations/c55490e0742d3aec5a6f.jsonl"
+      - ".cursor/experience/entries/EXP-20260823-003.md"
+    promoted_at: ""
+    target_paths:
+      - ".cursor/knowledge/HOOKS_REFERENCE.md"
+      - ".cursor/knowledge/KNOWN_CAVEATS.md"
+  - id: LEARN-20260822-001
+    status: PROPOSED
+    file: ".cursor/learning/inbox/LEARN-20260822-001.yaml"
+    summary: "Read 工具 CURSOR_ERROR 重复签名 9710fd0186108db67ff0 已跨 2 会话出现：诊断直读 .cursor/* 时偶发失败，改用 Shell/Grep 替代路径"
+    source_refs:
+      - ".cursor/runtime/observations/0842d9bdae883e34101d.jsonl"
+      - ".cursor/runtime/observations/b0f8831b161a0d489b79.jsonl"
+      - ".cursor/experience/entries/EXP-20260822-001.md"
+    promoted_at: ""
+    target_paths:
+      - ".cursor/knowledge/HOOKS_REFERENCE.md"
   - id: LEARN-20260821-004
     status: ACCEPTED
     file: ".cursor/learning/accepted/LEARN-20260821-004.yaml"

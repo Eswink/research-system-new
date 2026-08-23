@@ -1,0 +1,61 @@
+schema_version: 1
+id: LEARN-20260823-001
+status: PROPOSED
+created_at: 2026-08-23
+summary: "CURSOR_ERROR 瞬时失败家族跨会话 ≥2（Read d42fb89b03dfc2000b49 ×2 会话、Shell f3eb42211d52fea83bd0 ×2 会话；本会话 84/84 失败为 CURSOR_ERROR）：重试一次或改替代路径，统计时过滤空载荷 TOOL_FAILURE 哨兵"
+severity: NORMAL
+category: reliability
+source_type: tool_failure
+source_refs:
+  - ".cursor/runtime/observations/2d2b97a92934f6463151.jsonl（2026-08-23 会话：84 次 CURSOR_ERROR，全部 Read/Shell，duration <2ms）"
+  - ".cursor/runtime/observations/20bcb73aeefa17bb30e1.jsonl（Read CURSOR_ERROR d42fb89b03dfc2000b49）"
+  - ".cursor/runtime/observations/72ffd79f779c7bf59ec7.jsonl（Read CURSOR_ERROR d42fb89b03dfc2000b49，跨会话第2次）"
+  - ".cursor/runtime/observations/c55490e0742d3aec5a6f.jsonl（Shell CURSOR_ERROR f3eb42211d52fea83bd0）"
+  - ".cursor/runtime/observations/2d2b97a92934f6463151.jsonl（Shell CURSOR_ERROR f3eb42211d52fea83bd0，跨会话第2次）"
+  - ".cursor/experience/entries/EXP-20260823-003.md（本会话沉淀经验）"
+occurrences:
+  - task_ref: "2026-08-22 会话 20bcb7 / 72ffd7（Read）"
+    evidence_ref: "Read CURSOR_ERROR d42fb89b03dfc2000b49（0.878ms / 0.762ms，2 会话复现）"
+  - task_ref: "2026-08-22 会话 c55490 / 2026-08-23 会话 2d2b97（Shell）"
+    evidence_ref: "Shell CURSOR_ERROR f3eb42211d52fea83bd0（605ms / 1612ms，2 会话复现）"
+  - task_ref: "2026-08-23 会话 2d2b97 全量失败统计"
+    evidence_ref: "84/84 失败均为 CURSOR_ERROR；另 6 次 TOOL_FAILURE e3b0c44298fc1c149afb（tool_name/duration 全 null，sha256(\"\") 空载荷哨兵，不可诊断）"
+problem:
+  observed_behavior: "Read/Shell 工具在 Windows 仓库上偶发 CURSOR_ERROR，同一签名跨 2 个会话复现（Read d42fb89b03dfc2000b49、Shell f3eb42211d52fea83bd0）；本会话 84 次工具失败全部属于该家族。duration 极短（<2ms）或 0.6-1.6s，不表现为命令超时。另有 TOOL_FAILURE 空载荷哨兵（e3b0c442… = sha256(\"\") 前缀）在统计中冒充跨会话重复。"
+  expected_behavior: "对 duration<10ms 的 CURSOR_ERROR 先重试一次，仍失败改替代路径（Shell Get-Content/Grep 限行、写临时脚本），不把瞬时失败当作命令失败进入诊断；失败签名统计必须先过滤 tool_name 为 null 的 TOOL_FAILURE 哨兵；跨会话判定以不同 observation 文件为准。"
+  reproduction: "在 3 个会话中执行 Read/Shell 即复现同一/同族签名（内容相关 hash，单会话内几乎不重复）；重试一次或改替代路径后成功。"
+hypothesis:
+  root_cause: "hook（common.read_event_result / secret_guard）对 Read/Shell 载荷的文本扫描在中文/引号/BOM 边界偶发 fail-closed 瞬时拒绝（duration<10ms）；TOOL_FAILURE e3b0c442… 是记录层的空载荷哨兵事件（无工具上下文），不应计入可诊断失败。置信度 0.5（观察统计 + 跨会话复现，无 hook 源码级定位）。"
+  confidence: 0.5
+proposal:
+  target_type: KNOWLEDGE
+  target_paths:
+    - ".cursor/knowledge/HOOKS_REFERENCE.md"
+    - ".cursor/knowledge/KNOWN_CAVEATS.md"
+  change_summary: "拟在 HOOKS_REFERENCE/KNOWN_CAVEATS 增补：CURSOR_ERROR 瞬时失败（duration<10ms）的处理路径（重试一次→替代工具），并注明 TOOL_FAILURE 空载荷哨兵（e3b0c442…）不计入失败统计；本 PROPOSED 阶段不改 Hook/Rule，等待第 3 个独立会话复现或确定性 before/after 证据。"
+  blast_radius: "仅知识文档；不降低 failClosed，不改 Hook 行为。"
+replay:
+  before_cases:
+    - "20bcb7/72ffd7 会话：Read → CURSOR_ERROR d42fb89b（2/2 复现）"
+    - "c55490/2d2b97 会话：Shell → CURSOR_ERROR f3eb4221（2/2 复现）"
+  before_result: "FAIL（2/2 跨会话复现；已满足 capture-learning ≥2 门槛）"
+  after_cases:
+    - "同命令重试一次 → 成功（本会话多次）"
+    - "改 Shell Get-Content/Grep 限行 → 成功（本会话多次）"
+  after_result: "PASS（替代路径稳定）"
+validation:
+  commands:
+    - "uv run --frozen --no-sync python -B .cursor/skills/learning-check/scripts/validate_cursor_learning.py"
+  evidence_refs:
+    - ".cursor/runtime/observations/20bcb73aeefa17bb30e1.jsonl"
+    - ".cursor/runtime/observations/72ffd79f779c7bf59ec7.jsonl"
+    - ".cursor/runtime/observations/c55490e0742d3aec5a6f.jsonl"
+    - ".cursor/runtime/observations/2d2b97a92934f6463151.jsonl"
+  result: FAIL
+approvals: []
+promotion:
+  authorization_ref: ""
+  promoted_at: ""
+  promoted_digest: ""
+  regression_digest: ""
+supersedes: []

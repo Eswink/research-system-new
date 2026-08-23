@@ -6,7 +6,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-from common import RUNTIME, allow, deny, read_event_result, safe_id
+from common import RUNTIME, allow, deny, read_event_result, resolve_bucket_id, resolve_task_text, safe_id
 
 MAX_PARALLEL_SUBAGENTS = 3
 
@@ -28,20 +28,30 @@ def main() -> int:
 
     parent_raw = event.get("parent_conversation_id") or event.get("conversation_id")
     subagent_raw = event.get("subagent_id") or event.get("tool_call_id")
-    subagent_type = event.get("subagent_type")
-    task = event.get("task")
-    if not all(
-        isinstance(value, str) and value.strip()
-        for value in (parent_raw, subagent_raw, subagent_type, task)
-    ):
+    task = resolve_task_text(event)
+    if not isinstance(parent_raw, str) or not parent_raw.strip():
         deny(
-            "子代理门禁缺少 parent/subagent/type/task 字段，已按 fail-closed 拒绝启动。",
+            "子代理门禁缺少 parent/conversation 字段，已按 fail-closed 拒绝启动。",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            "并告知用户检查 Cursor Hook 环境。",
+        )
+        return 0
+    if not isinstance(subagent_raw, str) or not subagent_raw.strip():
+        deny(
+            "子代理门禁缺少 subagent/tool_call 字段，已按 fail-closed 拒绝启动。",
+            "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
+            "并告知用户检查 Cursor Hook 环境。",
+        )
+        return 0
+    if not task.strip():
+        deny(
+            "子代理门禁缺少 task/prompt 字段，已按 fail-closed 拒绝启动。",
             "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"
             "并告知用户检查 Cursor Hook 环境。",
         )
         return 0
 
-    parent = safe_id(parent_raw)
+    parent = resolve_bucket_id(event)
     subagent = safe_id(subagent_raw)
     bucket = RUNTIME / "subagents" / parent
     bucket.mkdir(parents=True, exist_ok=True)
@@ -63,8 +73,8 @@ def main() -> int:
     metadata = {
         "parent_signature": parent,
         "subagent_signature": subagent,
-        "subagent_type": str(event.get("subagent_type") or ""),
-        "task_signature": task_signature(event.get("task")),
+        "subagent_type": str(event.get("subagent_type") or "generalPurpose"),
+        "task_signature": task_signature(task),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     try:

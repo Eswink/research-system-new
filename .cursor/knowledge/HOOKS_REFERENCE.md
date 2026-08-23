@@ -49,3 +49,5 @@
 ## Subagent cleanup 说明
 
 Cursor 当前 `subagentStart` 提供 `subagent_id` / `parent_conversation_id`，但官方 `subagentStop` 专用字段不提供这两个 ID。框架不能假造不存在的字段做精确删除，因此 start token 保存 `subagent_type + task digest`，stop 优先在 common `conversation_id` bucket 中匹配，必要时对 active token 做降级匹配；`sessionEnd` 负责最终清理 stale state。该机制是并发提示/防御，不是强一致分布式 semaphore。
+
+2026-08-22 兼容：任务文本同时接受 `task`/`prompt`/`description`/`agent_prompt` 别名，`subagent_type` 缺省回退为 `generalPurpose`，桶键统一为 `parent_conversation_id || conversation_id` 的 `safe_id`（`common.resolve_bucket_id`），`session_cleanup` 除按 `session_id` 清理外额外按 `created_at` TTL 清理 `subagents/*/*.active` 残留。

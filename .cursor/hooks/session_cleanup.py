@@ -5,7 +5,7 @@ import json
 import shutil
 from datetime import datetime, timedelta, timezone
 
-from common import OBSERVATION_RETENTION_DAYS, RUNTIME, emit, read_event, safe_id
+from common import OBSERVATION_RETENTION_DAYS, RUNTIME, emit, read_event, resolve_bucket_id, safe_id
 
 
 def cleanup_expired_observations() -> None:
@@ -30,13 +30,45 @@ def cleanup_expired_observations() -> None:
             path.unlink(missing_ok=True)
 
 
+def cleanup_expired_subagents() -> None:
+    root = RUNTIME / "subagents"
+    if not root.is_dir():
+        return
+    cutoff = datetime.now(timezone.utc) - timedelta(days=OBSERVATION_RETENTION_DAYS)
+    for token in root.glob("*/*.active"):
+        try:
+            data = json.loads(token.read_text(encoding="utf-8"))
+            created = datetime.fromisoformat(str(data.get("created_at") or ""))
+        except Exception:
+            try:
+                mtime = datetime.fromtimestamp(token.stat().st_mtime, tz=timezone.utc)
+                if mtime < cutoff:
+                    token.unlink(missing_ok=True)
+            except OSError:
+                continue
+            continue
+        if created.replace(tzinfo=timezone.utc) < cutoff:
+            token.unlink(missing_ok=True)
+        else:
+            try:
+                mtime = datetime.fromtimestamp(token.stat().st_mtime, tz=timezone.utc)
+                if mtime < cutoff:
+                    token.unlink(missing_ok=True)
+            except OSError:
+                continue
+
+
 def main() -> int:
     event = read_event()
-    sid = safe_id(event.get("session_id") or event.get("conversation_id"))
+    sid = resolve_bucket_id(event)
+    legacy = safe_id(event.get("session_id") or event.get("conversation_id"))
     for path in (
         RUNTIME / "subagents" / sid,
+        RUNTIME / "subagents" / legacy,
         RUNTIME / "changes" / f"{sid}.jsonl",
+        RUNTIME / "changes" / f"{legacy}.jsonl",
         RUNTIME / "compaction" / f"{sid}.json",
+        RUNTIME / "compaction" / f"{legacy}.json",
     ):
         try:
             if path.is_dir():
@@ -46,6 +78,7 @@ def main() -> int:
         except OSError:
             pass
     cleanup_expired_observations()
+    cleanup_expired_subagents()
     emit({})
     return 0
 

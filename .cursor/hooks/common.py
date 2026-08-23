@@ -136,6 +136,19 @@ def safe_id(value: Any) -> str:
     return hashlib.sha256(str(value or "unknown").encode("utf-8")).hexdigest()[:20]
 
 
+def resolve_bucket_id(event: dict[str, Any]) -> str:
+    raw = event.get("parent_conversation_id") or event.get("conversation_id") or event.get("session_id") or "unknown"
+    return safe_id(raw)
+
+
+def resolve_task_text(event: dict[str, Any]) -> str:
+    for key in ("task", "prompt", "description", "agent_prompt"):
+        value = event.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
 def atomic_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(path.suffix + ".tmp")

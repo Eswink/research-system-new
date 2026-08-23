@@ -4,8 +4,9 @@
 
 ## Active
 
-| Done | Plan | Status |
+|  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260822-016](tasks/PLAN-20260822-016-m12-first-real-research-workflow.md) | DONE |
 | [x] | [PLAN-20260815-015](tasks/PLAN-20260815-015-m10-evidence-memory-retrospective.md) | DONE |
 | [x] | [PLAN-20260815-014](tasks/PLAN-20260815-014-m11-evaluation-plane.md) | DONE |
 | [x] | [PLAN-20260815-013](tasks/PLAN-20260815-013-m9-real-experiment-runtime.md) | DONE |
