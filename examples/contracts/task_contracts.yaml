@@ -42,3 +42,19 @@ task_contracts:
     retry_policy:
       max_attempts: 2
       retryable_categories: [WORKER_LOST, MODEL_RATE_LIMIT]
+
+  m12_experiment_execution:
+    version: 1.0.0
+    purpose: M12 controlled experiment via DockerExecutionBackend (no ToolProvider gate, workspace via backend).
+    required_capabilities: []
+    input_schema: experiment_run_input_v1
+    output_schema: experiment_run_output_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: metrics
+      - type: TEST_PASSES
+      - type: POLICY_COMPLIANT
+    idempotency_scope: experiment_spec_digest
+    retry_policy:
+      max_attempts: 2
+      retryable_categories: [WORKER_LOST, MODEL_RATE_LIMIT]

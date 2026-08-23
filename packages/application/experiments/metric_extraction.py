@@ -25,6 +25,11 @@ from packages.domain.serialization import digest_of
 
 _DECLARED_STATUSES = frozenset({"SUCCEEDED", "FAILED", "NEGATIVE_RESULT"})
 
+# 非确定性观测字段后缀（M12-R1 WP4）：wall-clock / duration 测量不进入
+# semantic reproducibility digest（允许重跑 variance），但仍保留在 raw
+# artifact 中供审计。
+_OBSERVATIONAL_SUFFIXES = ("_time_s", "_duration_s", "_wall_clock")
+
 _OutputScalar = Decimal | str | bool | None
 
 
@@ -37,7 +42,26 @@ class ExperimentResultPayload:
     artifact_refs: tuple[str, ...]
     metric_values: tuple[MetricValue, ...]
     metrics_digest: Digest
+    semantic_metrics_digest: Digest
     failure_ref: str | None = None
+
+
+def semantic_metrics_projection(metrics: dict[str, Any]) -> dict[str, Any]:
+    """科学语义投影：剔除 wall-clock 等非确定性观测字段。
+
+    规则：键名以 _OBSERVATIONAL_SUFFIXES 结尾的字段属于运行时观测，
+    不进入 semantic reproducibility digest；其余科学指标全部保留。
+    """
+    return {
+        name: value
+        for name, value in metrics.items()
+        if not name.endswith(_OBSERVATIONAL_SUFFIXES)
+    }
+
+
+def semantic_metrics_digest(metrics: dict[str, Any]) -> Digest:
+    """scientific 子集的 canonical digest（跨重跑稳定）。"""
+    return digest_of(semantic_metrics_projection(metrics))
 
 
 def parse_experiment_result_json(
@@ -79,6 +103,7 @@ def parse_experiment_result_json(
         artifact_refs=tuple(refs),
         metric_values=metric_values,
         metrics_digest=_metrics_digest(metrics),
+        semantic_metrics_digest=semantic_metrics_digest(metrics),
         failure_ref=failure_ref,
     )
 

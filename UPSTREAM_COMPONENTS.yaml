@@ -186,6 +186,30 @@ components:
       - actual_digest_recorded_per_run
 
 
+  - id: ncbi_eutils
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: research_literature_tool
+    source:
+      kind: HTTP_API
+      url: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+      doc: "https://www.ncbi.nlm.nih.gov/books/NBK25501/"
+    resolution:
+      version: "2026-08-22-eutils-api"
+      note: "E-utilities 官方 API（无 OAuth；凭据经 api_key query 参数，TOOL 域隔离）；adapter 实现 adapters/research_tools/ncbi.py；ToolPack manifest examples/contracts/toolpack_ncbi_eutils.yaml（digest 947cbb22…）"
+    license:
+      spdx: "NLM-TOU"
+      evidence: "https://www.ncbi.nlm.nih.gov/books/NBK25497/"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [provider_contract_suite, tool_provider_contract_suite]
+    controls:
+      - tool_credential_domain_separated
+      - rate_limit_interval_enforced
+      - no_token_passthrough
+      - result_not_evidence
+
   - id: temporal
     adoption_status: PLANNED
     decision_status: DEFERRED

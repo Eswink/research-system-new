@@ -797,6 +797,11 @@ def check_supply_chain() -> None:
                 component_id, source, resolution, license_record, upgrade_gate, license_matrix
             )
             continue
+        if source.get("kind") == "HTTP_API":
+            _check_http_api_adopted(
+                component_id, source, resolution, license_record, upgrade_gate, license_matrix
+            )
+            continue
         if package_name not in direct_packages or locked is None:
             ERRORS.append(f"ADOPTED upstream 未作为直接锁定依赖: {component_id}")
             continue
@@ -846,6 +851,37 @@ def _check_dockerfile_adopted(
     digest_hex = base_digest.removeprefix("sha256:")
     if base_digest and re.fullmatch(r"[0-9a-f]{64}", digest_hex) is None:
         ERRORS.append(f"DOCKERFILE upstream base_index_digest 不是 sha256 pin: {component_id}")
+    if not license_record.get("spdx") or not str(license_record.get("evidence") or "").startswith(
+        "https://"
+    ):
+        ERRORS.append(f"ADOPTED upstream 缺少 SPDX/license evidence: {component_id}")
+    if upgrade_gate.get("explicit_approval") is not True or not upgrade_gate.get("required_checks"):
+        ERRORS.append(f"ADOPTED upstream 缺少升级门禁: {component_id}")
+    if component_id.casefold() not in license_matrix.casefold():
+        ERRORS.append(f"LICENSE_MATRIX 缺少 ADOPTED upstream: {component_id}")
+
+
+def _check_http_api_adopted(
+    component_id: str,
+    source: dict,
+    resolution: dict,
+    license_record: dict,
+    upgrade_gate: dict,
+    license_matrix: str,
+) -> None:
+    """外部 HTTP API 来源（source.kind=HTTP_API）的 ADOPTED 校验（M12）。
+
+    API 服务不是 PyPI 包，不参与 uv.lock 校验；但必须：
+    - source.url 为 https 官方端点（可审计来源）；
+    - resolution.version 为显式 revision/版本引用（API 变更门禁）；
+    - license evidence 为 https 链接；
+    - upgrade_gate 与 LICENSE_MATRIX 与其他 ADOPTED 组件同等要求。
+    """
+    source_url = str(source.get("url") or "")
+    if not source_url.startswith("https://"):
+        ERRORS.append(f"HTTP_API upstream source.url 必须是 https: {component_id}: {source_url!r}")
+    if not str(resolution.get("version") or "").strip():
+        ERRORS.append(f"HTTP_API upstream 缺少 resolution.version: {component_id}")
     if not license_record.get("spdx") or not str(license_record.get("evidence") or "").startswith(
         "https://"
     ):

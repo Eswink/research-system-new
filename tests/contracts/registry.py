@@ -39,6 +39,8 @@ from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
 from adapters.openhands.session_types import AdapterDependencies
 from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
+from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
+from adapters.sqlite.memory_store import SqliteMemoryStore
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from adapters.workspace.file_backend import FileWorkspaceBackend
 
@@ -83,11 +85,11 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "execution_backend": [FakeExecutionBackend],
     "artifact_store": [FakeArtifactStore, SqliteArtifactStore],
     "event_publisher": [FakeEventPublisher, SqliteOutboxEventPublisher],
-    "evidence_ledger": [FakeEvidenceLedger],
+    "evidence_ledger": [FakeEvidenceLedger, SqliteEvidenceLedger],
     "retrieval_index": [FakeRetrievalIndex, InMemoryRetrievalIndex],
     "policy_evaluator": [FakePolicyEvaluator],
     "credential_resolver": [FakeCredentialResolver],
-    "memory_store": [FakeMemoryStore],
+    "memory_store": [FakeMemoryStore, SqliteMemoryStore],
     "budget_ledger": [FakeBudgetLedger],
     "endpoint_store": [FakeEndpointStore],
     "resource_catalog": [FakeResourceCatalog],

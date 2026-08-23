@@ -18,7 +18,11 @@ from packages.domain.evidence import (
 
 
 class FakeEvidenceLedger(FakeBase):
-    """内存登记表；commit 语义与真实 adapter 相同（contract suite 强制）。"""
+    """内存登记表；commit 语义与真实 adapter 相同（contract suite 强制）。
+
+    冲突判定只比较业务字段：access_time / captured_at 是观测元数据，
+    幂等重登（时间漂移）不误报冲突（M12-R1 WP2 真实链修复）。
+    """
 
     def __init__(self) -> None:
         super().__init__("evidence_ledger")
@@ -30,7 +34,7 @@ class FakeEvidenceLedger(FakeBase):
     def register_source(self, source: SourceRecord) -> None:
         self._enter("register_source", source.origin)
         existing = self._sources.get(source.origin)
-        if existing is not None and existing != source:
+        if existing is not None and not self._same_source(existing, source):
             self._record("register_source", source.origin, error="InvalidInputError")
             raise InvalidInputError(f"conflicting source registration: {source.origin}")
         self._sources[source.origin] = source
@@ -39,7 +43,7 @@ class FakeEvidenceLedger(FakeBase):
     def register_evidence(self, evidence: Evidence) -> None:
         self._enter("register_evidence", evidence.id)
         existing = self._evidence.get(evidence.id)
-        if existing is not None and existing != evidence:
+        if existing is not None and not self._same_evidence(existing, evidence):
             self._record("register_evidence", evidence.id, error="InvalidInputError")
             raise InvalidInputError(f"conflicting evidence registration: {evidence.id}")
         self._evidence[evidence.id] = evidence
@@ -141,6 +145,38 @@ class FakeEvidenceLedger(FakeBase):
         found = origin in self._sources
         self._record("has_source", origin, result=str(found))
         return found
+
+    @staticmethod
+    def _same_source(existing: SourceRecord, source: SourceRecord) -> bool:
+        """业务字段一致判定；access_time 是观测元数据，不参与冲突比较。"""
+        return (
+            existing.content_digest == source.content_digest
+            and existing.trust_label == source.trust_label
+            and existing.license_terms == source.license_terms
+            and existing.authors == source.authors
+            and existing.parser_version == source.parser_version
+        )
+
+    @staticmethod
+    def _same_evidence(existing: Evidence, evidence: Evidence) -> bool:
+        """业务字段一致判定；captured_at 是观测元数据，不参与冲突比较。"""
+        return (
+            existing.source_ref == evidence.source_ref
+            and existing.content_digest == evidence.content_digest
+            and existing.extracted_by == evidence.extracted_by
+            and existing.artifact_id == evidence.artifact_id
+            and existing.run_id == evidence.run_id
+            and existing.experiment_run_id == evidence.experiment_run_id
+            and existing.metric_refs == evidence.metric_refs
+            and existing.workspace_snapshot_before == evidence.workspace_snapshot_before
+            and existing.workspace_snapshot_after == evidence.workspace_snapshot_after
+            and existing.image_digest == evidence.image_digest
+            and existing.environment_digest == evidence.environment_digest
+            and existing.tool_refs == evidence.tool_refs
+            and existing.skill_refs == evidence.skill_refs
+            and existing.model_refs == evidence.model_refs
+            and existing.manifest_digest == evidence.manifest_digest
+        )
 
     def claims(self) -> tuple[Claim, ...]:
         self._enter("claims", "*")

@@ -100,6 +100,16 @@ def _completion_body(request: CompletionRequest, *, stream: bool) -> dict[str, A
     return body
 
 
+def _usage_int(usage: Any, key: str) -> int | None:
+    """从 usage dict 提取整数 token 字段；缺失/非法返回 None（不得伪造）。"""
+    if not isinstance(usage, dict):
+        return None
+    value = usage.get(key)
+    if not isinstance(value, int):
+        return None
+    return value
+
+
 class OpenAIChatGateway:
     """httpx 实现的 OpenAI-compatible 网关。"""
 
@@ -187,6 +197,14 @@ class OpenAIChatGateway:
             system_fingerprint=fingerprint,
             usage_reported=isinstance(usage, dict) and usage.get("total_tokens") is not None,
             safe_response_metadata=select_safe_headers(response.headers.items()),
+            prompt_tokens=_usage_int(usage, "prompt_tokens"),
+            completion_tokens=_usage_int(usage, "completion_tokens"),
+            total_tokens=_usage_int(usage, "total_tokens"),
+            usage_unavailable_reason=(
+                None
+                if isinstance(usage, dict) and usage.get("total_tokens") is not None
+                else "provider did not return usage"
+            ),
         )
 
     def _complete_stream(

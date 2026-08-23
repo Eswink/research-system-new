@@ -38,6 +38,7 @@ def build_reproducibility_audit(
     if spec is None or result is None:
         raise InvalidInputError("terminal experiment run must carry spec and result")
     digest_by_id = {artifact.id: artifact.digest for artifact in artifacts.list_refs()}
+    semantic = result.semantic_metrics_digest or result.metrics_digest or _metrics_digest(result)
     return ReproducibilityAudit(
         audit_id=audit_id,
         experiment_run_id=run.id,
@@ -51,7 +52,9 @@ def build_reproducibility_audit(
         workspace_snapshot_before=result.workspace_snapshot_before,
         workspace_snapshot_after=result.workspace_snapshot_after,
         output_artifact_digests=_resolve_output_digests(result, digest_by_id),
-        metrics_digest=_metrics_digest(result),
+        metrics_digest=semantic,
+        semantic_metrics_digest=result.semantic_metrics_digest,
+        observational_metrics_digest=_observational_metrics_digest(result),
     ).with_audit_digest()
 
 
@@ -156,3 +159,16 @@ def _metrics_digest(result: ExperimentRunResult) -> Digest | None:
     if not result.metrics:
         return None
     return digest_of(result.metrics)
+
+
+def _observational_metrics_digest(result: ExperimentRunResult) -> Digest | None:
+    """观测投影 digest：raw 与 semantic 不同（存在 wall-clock 字段）时记录 raw。
+
+    raw digest 允许跨重跑漂移（观测字段非确定）；仅作审计摘要，不进入
+    复现判定（复现锚点 = semantic metrics digest）。
+    """
+    if result.metrics_digest is None:
+        return None
+    if result.metrics_digest == result.semantic_metrics_digest:
+        return None
+    return result.metrics_digest

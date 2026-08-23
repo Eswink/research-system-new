@@ -125,11 +125,11 @@ def test_load_llm_endpoints_from_fixture() -> None:
     endpoints = load_llm_endpoints("examples/config/llm_endpoints.yaml")
     endpoint = endpoints["main"]
     assert endpoint.protocol == "OPENAI_COMPATIBLE"
-    assert endpoint.credential_ref == "llm_main_key"
+    assert endpoint.credential_ref == "LLM_MAIN_KEY"
     assert endpoint.request_timeout_seconds == 120
     assert endpoint.discovery is not None
     assert endpoint.discovery.enabled is True
-    assert endpoint.discovery.allow_models == ("model-alpha",)
+    assert endpoint.discovery.allow_models == ("muse-spark-1.2-contributor",)
     assert endpoint.circuit_breaker is not None
     assert endpoint.circuit_breaker.failure_threshold == 5
 
@@ -138,7 +138,7 @@ def test_load_models_from_fixture() -> None:
     models = load_models("examples/config/models.yaml")
     model = models["research_alpha"]
     assert model.endpoint_id == "main"
-    assert model.model_name == "model-alpha"
+    assert model.model_name == "muse-spark-1.2-contributor"
     assert ModelCapability.TOOL_CALLING_NATIVE in model.capabilities
 
 

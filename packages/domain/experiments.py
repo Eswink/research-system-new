@@ -77,7 +77,11 @@ class ExperimentRunSpec:
 
 @dataclass(frozen=True, slots=True)
 class ExperimentRunResult:
-    """实验执行的产出绑定（执行/镜像/snapshot/指标/artifact 引用）。"""
+    """实验执行的产出绑定（执行/镜像/snapshot/指标/artifact 引用）。
+
+    M12-R1 WP4 扩展：metrics_digest 保留 raw digest（含 wall-clock 观测），
+    semantic_metrics_digest 只覆盖科学指标投影（同 input+seed+image 重跑稳定）。
+    """
 
     execution_run_id: str
     image_digest: str | None = None
@@ -87,6 +91,7 @@ class ExperimentRunResult:
     stderr_digest: Digest | None = None
     metrics: tuple[MetricValue, ...] = ()
     metrics_digest: Digest | None = None
+    semantic_metrics_digest: Digest | None = None
     artifact_refs: tuple[str, ...] = ()
     failure_reason: str | None = None
 

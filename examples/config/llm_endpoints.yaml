@@ -2,8 +2,8 @@ llm_endpoints:
   main:
     name: Main Relay
     protocol: OPENAI_COMPATIBLE
-    base_url: https://xxx.com/api/v1
-    credential_ref: llm_main_key
+    base_url: https://opencode.ai/zen/go/v1
+    credential_ref: LLM_MAIN_KEY
     request_timeout_seconds: 120
     max_retries: 2
     concurrency_limit: 8
@@ -11,7 +11,7 @@ llm_endpoints:
     discovery:
       enabled: true
       allow_models:
-        - model-alpha
+        - muse-spark-1.2-contributor
     circuit_breaker:
       failure_threshold: 5
       open_timeout_seconds: 60

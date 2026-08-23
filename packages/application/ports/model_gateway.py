@@ -53,6 +53,12 @@ class CompletionResult:
     system_fingerprint: str | None = None
     usage_reported: bool = False
     safe_response_metadata: dict[str, str] = field(default_factory=dict)
+    # M12-R1 WP6：usage 明细（provider 返回时填充；不返回则保持 None，
+    # 由调用方记 UNKNOWN，不得伪造数字）
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    usage_unavailable_reason: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

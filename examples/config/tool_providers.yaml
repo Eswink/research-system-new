@@ -24,3 +24,28 @@ tool_providers:
       - code.execute
       - git.diff
     effect_class: EXECUTE
+
+  m12_artifact:
+    kind: NATIVE
+    trust_level: BUILT_IN
+    capabilities:
+      - artifact.read
+      - artifact.write
+      - evidence.read
+      - evidence.write
+    effect_class: READ_ONLY
+
+  ncbi_eutils:
+    kind: REST
+    trust_level: VERIFIED
+    transport: rest
+    endpoint_env: NCBI_API_KEY
+    protocol_version: eutils-2026-08-22
+    capabilities:
+      - literature.search
+      - literature.read
+      - citation.inspect
+    effect_class: READ_ONLY
+    network_domains:
+      - eutils.ncbi.nlm.nih.gov
+    health_check: true

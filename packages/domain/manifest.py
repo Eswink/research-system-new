@@ -24,7 +24,18 @@ from packages.domain.serialization import digest_of
 
 @dataclass(frozen=True, slots=True)
 class RunManifest:
-    """不可变语义快照：digest 覆盖全部声明字段。"""
+    """不可变语义快照：digest 覆盖全部声明字段。
+
+    M12-R1 扩展（兼容新增 optional 字段，digest 自动覆盖）：
+    - model_runtime_fingerprints：真实 probe 结果或 NOT_VERIFIED 占位（AGENTS.md §4）；
+    - endpoint_config_digest / probe_suite_digest：relay 配置与 probe suite 的
+      canonical digest（不含 credential 明文）；
+    - fallback_audit：显式冻结 fallback 语义；无 fallback 时必须为
+      {"mode": "none"}，有则记录 requested → selected + trigger；
+    - image_digest：实验沙箱镜像 digest（M9 真实容器执行）；
+    - skill_versions：M8 Skill Registry 版本/digest pin；
+    - evaluation_dataset_digest：M11 评测数据集冻结 digest。
+    """
 
     run_id: str
     project_id: str
@@ -47,6 +58,13 @@ class RunManifest:
     input_artifact_digests: list[str] = field(default_factory=list)
     budget_reservation_ref: str | None = None
     frozen_at: Timestamp | None = None
+    # --- M12-R1 扩展字段（全部 optional；None/空 = 未冻结，不伪填充） ---
+    endpoint_config_digest: str | None = None
+    probe_suite_digest: str | None = None
+    fallback_audit: dict[str, object] = field(default_factory=dict)
+    image_digest: str | None = None
+    skill_versions: dict[str, str] = field(default_factory=dict)
+    evaluation_dataset_digest: str | None = None
 
     def __post_init__(self) -> None:
         if not self.run_id:

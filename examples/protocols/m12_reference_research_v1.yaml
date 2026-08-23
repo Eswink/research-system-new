@@ -1,0 +1,76 @@
+id: m12_reference_research_v1_0_0
+version: 0.4.0
+phases:
+  - id: discovery
+    name: Domain Discovery
+    strategy: parallel_agents
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+      - {role: literature_scout, min_instances: 1, max_instances: 2}
+    required_capabilities:
+      - literature.search
+      - literature.read
+    task_contract: domain_discovery
+    outputs: [domain_map, source_set]
+    timeout_seconds: 180
+
+  - id: design
+    name: Experiment Design
+    strategy: single_agent
+    depends_on: [discovery]
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    outputs: [experiment_plan]
+    timeout_seconds: 180
+    gate: QUALITY_GATE
+
+  - id: execution
+    name: Controlled Experiment
+    strategy: iterative_optimizer
+    depends_on: [design]
+    required_roles:
+      - {role: experiment_engineer, min_instances: 1, max_instances: 1}
+    task_contract: m12_experiment_execution
+    outputs: [experiment_runs]
+    timeout_seconds: 300
+    stop_conditions:
+      max_iterations: 4
+      budget_exhausted: true
+
+  - id: analysis
+    name: Result Analysis
+    strategy: single_agent
+    depends_on: [execution]
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    outputs: [validated_results]
+    timeout_seconds: 180
+
+  - id: peer_review
+    name: Peer Review
+    strategy: parallel_agents
+    depends_on: [analysis]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 2}
+    outputs: [review_findings]
+    timeout_seconds: 180
+
+  - id: deliverable
+    name: Research Deliverable
+    strategy: single_agent
+    depends_on: [peer_review]
+    required_roles:
+      - {role: research_writer, min_instances: 1, max_instances: 1}
+    outputs: [research_report]
+    timeout_seconds: 180
+    gate: QUALITY_GATE
+
+  - id: final_audit
+    name: Reproducibility Audit
+    strategy: single_agent
+    depends_on: [deliverable]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    outputs: [audit_report]
+    timeout_seconds: 180
+    gate: QUALITY_GATE

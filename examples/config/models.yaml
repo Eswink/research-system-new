@@ -2,7 +2,7 @@ models:
   research_alpha:
     endpoint: main
     display_name: Research Alpha
-    model_name: model-alpha
+    model_name: muse-spark-1.2-contributor
     capabilities:
       CHAT: &user_declared_supported
         status: SUPPORTED
@@ -18,7 +18,7 @@ models:
   coding_beta:
     endpoint: main
     display_name: Coding Beta
-    model_name: model-beta
+    model_name: muse-spark-1.2-contributor
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -28,7 +28,7 @@ models:
   reviewer_gamma:
     endpoint: main
     display_name: Reviewer Gamma
-    model_name: model-gamma
+    model_name: muse-spark-1.2-contributor
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported

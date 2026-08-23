@@ -76,6 +76,7 @@ class _Collected:
     result_artifact_id: str | None
     metric_values: tuple[MetricValue, ...]
     metrics_digest: Digest | None
+    semantic_metrics_digest: Digest | None
     referenced_ids: tuple[str, ...]
     transition_event: str
     failure_reason: str | None
@@ -152,6 +153,7 @@ class ExperimentExecutor:
         result_artifact_id: str | None = None
         metric_values: tuple[MetricValue, ...] = ()
         metrics_digest: Digest | None = None
+        semantic_metrics_digest: Digest | None = None
         referenced_ids: tuple[str, ...] = ()
         declared_status: str | None = None
         if execution_run.status is ExecutionStatus.SUCCEEDED:
@@ -159,6 +161,7 @@ class ExperimentExecutor:
                 result_artifact_id,
                 metric_values,
                 metrics_digest,
+                semantic_metrics_digest,
                 referenced_ids,
                 declared_status,
             ) = self._ingest_success_outputs(request, workspace_path)
@@ -172,6 +175,7 @@ class ExperimentExecutor:
             result_artifact_id=result_artifact_id,
             metric_values=metric_values,
             metrics_digest=metrics_digest,
+            semantic_metrics_digest=semantic_metrics_digest,
             referenced_ids=referenced_ids,
             transition_event=event,
             failure_reason=failure_reason,
@@ -179,10 +183,17 @@ class ExperimentExecutor:
 
     def _ingest_success_outputs(
         self, request: ExperimentExecutionRequest, workspace_path: Path
-    ) -> tuple[str | None, tuple[MetricValue, ...], Digest | None, tuple[str, ...], str | None]:
+    ) -> tuple[
+        str | None,
+        tuple[MetricValue, ...],
+        Digest | None,
+        Digest | None,
+        tuple[str, ...],
+        str | None,
+    ]:
         payload = read_result_payload(workspace_path, request.run_id)
         if payload is None:
-            return None, (), None, (), None
+            return None, (), None, None, (), None
         referenced_ids = store_referenced_artifacts(
             self._artifacts, request.run_id, workspace_path, payload.artifact_refs
         )
@@ -197,6 +208,7 @@ class ExperimentExecutor:
             result_artifact_id,
             payload.metric_values,
             payload.metrics_digest,
+            payload.semantic_metrics_digest,
             referenced_ids,
             payload.declared_status,
         )
@@ -219,6 +231,7 @@ class ExperimentExecutor:
             stderr_digest=execution_run.stderr_digest,
             metrics=collected.metric_values,
             metrics_digest=collected.metrics_digest,
+            semantic_metrics_digest=collected.semantic_metrics_digest,
             artifact_refs=tuple(
                 artifact_id
                 for artifact_id in (

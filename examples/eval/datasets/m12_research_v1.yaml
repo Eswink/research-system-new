@@ -1,0 +1,189 @@
+version: 1.0.0
+description: "M12 Reference Workflow \u72EC\u7ACB\u8BC4\u6D4B\u96C6\uFF0810 \u7EF4\
+  \u5EA6\uFF0Cdeterministic \u4F18\u5148\uFF1BLLM Reviewer \u4EC5\u8BED\u4E49\u7EF4\
+  \u5EA6\uFF09"
+digest: sha256:50bb58f463274af7a515361c2566720b291b8841d713a9ba2df5ab1c375f4816
+cases:
+  task_completion_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/task_completion
+    expected:
+      status: SUCCEEDED
+    scorer_refs:
+    - scorer_id: exact_match
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "\u4EFB\u52A1\u5B8C\u6210\uFF1A\u5DE5\u4F5C\u6D41\u7EC8\u6001\u5FC5\
+      \u987B\u4E3A SUCCEEDED\uFF08\u975E\u7CFB\u7EDF FAILED\uFF09"
+  evidence_support_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/evidence_support
+    expected:
+      minimum: 1
+    scorer_refs:
+    - scorer_id: evidence_source_distinct
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "\u5173\u952E Claim \u81F3\u5C11 1 \u6761\u5DF2\u767B\u8BB0 Evidence\
+      \ source\uFF08provenance \u95ED\u5408\uFF09"
+  experimental_validity_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/experimental_validity
+    expected:
+    - hypothesis
+    - seed
+    - metrics.baseline_accuracy
+    - metrics.candidate_accuracy
+    - metrics.n_test
+    scorer_refs:
+    - scorer_id: required_fields
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "\u5B9E\u9A8C\u8BBE\u8BA1\u5B57\u6BB5\u5B8C\u6574\uFF08hypothesis/seed/baseline/candidate/\u6837\
+      \u672C\u91CF\uFF09"
+  direction_improvement_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/experimental_validity
+    expected:
+      baseline_metric: metrics.baseline_accuracy
+      candidate_metric: metrics.candidate_accuracy
+      claim_direction: baseline_better
+    scorer_refs:
+    - scorer_id: direction_improvement
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "\u79D1\u5B66\u65B9\u5411\u4E0E Claim \u58F0\u660E\u4E00\u81F4\uFF08\
+      baseline \u4F18\u4E8E candidate\uFF09\uFF1B\u65B9\u5411\u53CD\u8F6C\u5FC5 FAIL"
+  result_correctness_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/result_correctness
+    expected:
+      artifact_id: 12121212-2222-4333-8444-555555555555:experiment_result.json
+      metric: metrics.baseline_accuracy
+      tolerance: '0.001'
+    scorer_refs:
+    - scorer_id: metric_correctness
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "baseline accuracy \u4E0E ArtifactStore \u771F\u5B9E\u5B9E\u9A8C\u8F93\
+      \u51FA\u72EC\u7ACB\u91CD\u7B97\u4E00\u81F4\uFF08\u4E0D\u4FE1\u62A5\u544A\u81EA\
+      \u62A5\u503C\uFF09"
+  reproducibility_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/reproducibility
+    expected:
+    - audit_status
+    - image_digest
+    - workspace_snapshot_before
+    - workspace_snapshot_after
+    - metrics_digest
+    scorer_refs:
+    - scorer_id: required_fields
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "ReproducibilityAudit \u5173\u952E\u5B57\u6BB5\u9F50\u5907\uFF08\
+      PASS \u5224\u5B9A + \u53EF\u8FFD\u6EAF\u7ED1\u5B9A\uFF09"
+  claim_calibration_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/claim_calibration
+    expected:
+      claim_id: claim:12121212-2222-4333-8444-555555555555
+    scorer_refs:
+    - scorer_id: unsupported_claim
+      version: 1.0.0
+    - scorer_id: citation_source
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "Claim \u6709 SUPPORTS \u652F\u6491\u4E14\u5F15\u7528 Evidence \u5C5E\
+      \u4E8E\u5F53\u524D run\uFF08unsupported / wrong source id \u5FC5 FAIL\uFF09"
+  citation_correctness_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/citation_correctness
+    expected:
+      algorithm: sha256
+      hex: 60e05bd1b195af2f94112fa7197a5c88289058840ce7c6df9693756bc6250f55
+    scorer_refs:
+    - scorer_id: digest_match
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "\u5F15\u6587 digest \u6821\u9A8C\uFF08\u65E0 citation hallucination\uFF1B\
+      hex \u7531\u8F93\u5165\u63D0\u4F9B\uFF09"
+  unsupported_conclusion_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/unsupported_conclusion
+    expected:
+      type: object
+      required:
+      - unsupported_claims
+      properties:
+        unsupported_claims:
+          type: array
+          items:
+            type: string
+    scorer_refs:
+    - scorer_id: schema_validity
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "\u65E0 unsupported Claim\uFF1A\u62A5\u544A\u5FC5\u987B\u663E\u5F0F\
+      \u5217\u51FA\u672A\u53D7\u8BC1\u636E\u652F\u6491\u7684\u7ED3\u8BBA\uFF08\u53EF\
+      \u4E3A\u7A7A\u6570\u7EC4\uFF09"
+  deliverable_quality_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/deliverable_quality
+    expected:
+    - claim_id
+    - evidence_ids
+    - metrics
+    scorer_refs:
+    - scorer_id: required_fields
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "Deliverable \u5F15\u7528\u6B63\u5F0F Claim/Evidence/metrics\uFF08\
+      \u975E\u81EA\u7531\u6587\u672C\u91CD\u9020\uFF09"
+  cost_efficiency_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/cost_efficiency
+    expected:
+      type: object
+      required:
+      - model_tokens
+      - tool_requests
+      - experiment_runs
+      - evaluation_runs
+      properties:
+        model_tokens:
+          type: integer
+        tool_requests:
+          type: integer
+        experiment_runs:
+          type: integer
+        evaluation_runs:
+          type: integer
+    scorer_refs:
+    - scorer_id: schema_validity
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "\u56DB\u6E90\u7528\u91CF\uFF08Model/Tool/Experiment/Eval\uFF09\u53EF\
+      \u5BF9\u8D26\u5230 BudgetLedger"

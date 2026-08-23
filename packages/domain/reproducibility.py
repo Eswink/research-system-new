@@ -63,11 +63,20 @@ class ReproducibilityAudit:
     workspace_snapshot_after: str | None = None
     output_artifact_digests: tuple[str, ...] = ()
     metrics_digest: Digest | None = None
+    semantic_metrics_digest: Digest | None = None
+    observational_metrics_digest: Digest | None = None
     audit_digest: Digest | None = None
     created_at: Timestamp = field(default_factory=Timestamp.now)
 
     def binding_payload(self) -> dict[str, Any]:
-        """确定性绑定载荷（key 由 digest_of 排序；digest 统一 str 形式）。"""
+        """确定性绑定载荷（key 由 digest_of 排序；digest 统一 str 形式）。
+
+        M12-R1 WP4：metrics_digest 是复现锚点，覆盖科学指标投影
+        （wall-clock 观测字段被剔除，跨重跑稳定）；observational_metrics_digest
+        是审计附注（允许跨重跑漂移），不参与 audit digest——否则
+        verify 会因观测 variance 误报漂移。
+        旧 audit（semantic 为 None）回退到 raw metrics digest 语义。
+        """
         return {
             "experiment_run_id": str(self.experiment_run_id.value),
             "input_digest": str(self.input_digest),
@@ -83,6 +92,9 @@ class ReproducibilityAudit:
             "workspace_snapshot_after": self.workspace_snapshot_after,
             "output_artifact_digests": list(self.output_artifact_digests),
             "metrics_digest": str(self.metrics_digest) if self.metrics_digest else None,
+            "semantic_metrics_digest": (
+                str(self.semantic_metrics_digest) if self.semantic_metrics_digest else None
+            ),
         }
 
     def compute_audit_digest(self) -> Digest:
@@ -103,6 +115,8 @@ class ReproducibilityAudit:
             workspace_snapshot_after=self.workspace_snapshot_after,
             output_artifact_digests=self.output_artifact_digests,
             metrics_digest=self.metrics_digest,
+            semantic_metrics_digest=self.semantic_metrics_digest,
+            observational_metrics_digest=self.observational_metrics_digest,
             audit_digest=self.compute_audit_digest(),
             created_at=self.created_at,
         )
@@ -152,6 +166,17 @@ class ReproducibilityAudit:
                     message=(
                         "code provenance not separately pinned; code content is "
                         "covered by workspace_snapshot_before (WORKSPACE_RUNTIME.md §8)"
+                    ),
+                )
+            )
+        if self.semantic_metrics_digest is None:
+            found.append(
+                AuditFinding(
+                    code="SEMANTIC_METRICS_DIGEST_MISSING",
+                    severity="WARNING",
+                    message=(
+                        "semantic metrics digest not separated; metrics_digest may "
+                        "include wall-clock observations (M12-R1 WP4)"
                     ),
                 )
             )

@@ -1,0 +1,27 @@
+id: ncbi_eutils_v1
+version: 1.0.0
+source: https://www.ncbi.nlm.nih.gov/books/NBK25501/
+resolved_revision: "2026-08-22-eutils-api"
+digest: sha256:947cbb2205efedc1d11728eac0bfa60f018d959702df876ce5c8d287ece80479
+signature: null
+license: NLM-TOU
+tools:
+  - literature.search
+  - literature.read
+  - citation.inspect
+skills: []
+requested_capabilities:
+  - literature.search
+  - literature.read
+  - citation.inspect
+network_domains:
+  - eutils.ncbi.nlm.nih.gov
+credentials:
+  - name: NCBI_API_KEY
+    scope: TOOL
+    required: false
+compatibility:
+  research_os: 0.4.0
+  mcp_protocol: null
+  python: null
+  node: null

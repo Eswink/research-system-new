@@ -1,0 +1,62 @@
+{
+  "budget": {
+    "entries": 5,
+    "evaluation_cases": 10,
+    "experiment_runs": 1,
+    "reservation_actual_consistent": false,
+    "tool_requests": 2,
+    "total_model_tokens": 2000
+  },
+  "evaluation": {
+    "dataset": "m12_research_v1",
+    "dataset_digest": "sha256:af6630f33aea2750d7033fa23c8d86a189b968d0360ea4fc76f12fcc531b3888",
+    "verdict": "PASS"
+  },
+  "evidence_chain": {
+    "claim_id": "claim:12121212-2222-4333-8444-555555555555",
+    "claim_status_after_contradiction": "DISPUTED",
+    "claim_status_after_verify": "VERIFIED",
+    "evidence_artifact_id": "12121212-2222-4333-8444-555555555555:experiment_result.json",
+    "evidence_id": "evidence:12121212-2222-4333-8444-555555555555:5a1c6a8e-9b2d-4f3a-8c5e-2b2c3d4e5f6a",
+    "evidence_ids": [
+      "evidence:12121212-2222-4333-8444-555555555555:5a1c6a8e-9b2d-4f3a-8c5e-2b2c3d4e5f6a",
+      "evidence:12121212-2222-4333-8444-555555555555:repro-2"
+    ],
+    "relations": [
+      "SUPPORTS",
+      "REFUTES"
+    ],
+    "source_origin": "experiment:5a1c6a8e-9b2d-4f3a-8c5e-2b2c3d4e5f6a:experiment_result.json",
+    "source_trust_label": "GENERATED"
+  },
+  "experiment": {
+    "artifact_digest": "sha256:bc01f6a055d3e7b1ea4e6ab9c8e7ace8cd05908972761288abd88ae9a385ccd9",
+    "artifact_id": "12121212-2222-4333-8444-555555555555:experiment_result.json",
+    "baseline_accuracy": "0.745",
+    "candidate_accuracy": "0.28",
+    "experiment_run_id": "5a1c6a8e-9b2d-4f3a-8c5e-2b2c3d4e5f6a",
+    "n_test": 200,
+    "n_train": 500,
+    "seed": 7
+  },
+  "memory": {
+    "kind": "NEGATIVE_RESULT",
+    "memory_id": "mem:12121212-2222-4333-8444-555555555555:negative-result",
+    "tier": "PROJECT"
+  },
+  "objective": "Compare baseline (TF-IDF + linear classifier) vs candidate (frozen hash-embedding + linear classifier) on a low-resource 20-class text classification subset",
+  "protocol": {
+    "id": "m12_reference_research_v1",
+    "phases": [
+      "discovery",
+      "design",
+      "execution",
+      "analysis",
+      "peer_review",
+      "deliverable",
+      "final_audit"
+    ],
+    "version": "0.4.0"
+  },
+  "report_id": "m12-reference-research:12121212-2222-4333-8444-555555555555"
+}
