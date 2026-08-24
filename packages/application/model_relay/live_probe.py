@@ -29,6 +29,7 @@ from packages.domain.models import (
     EndpointProbeSnapshot,
     LLMEndpoint,
     ModelDefinition,
+    ModelProbeResult,
 )
 
 
@@ -96,59 +97,93 @@ def run_live_probe(
     凭据纪律：只经 CredentialResolver.resolve（SecretValue 密封），
     本函数不接收/不回显任何 secret；失败不抛异常，返回结构化结果。
     """
-    try:
-        credentials.resolve(endpoint.credential_ref)
-    except Exception as exc:  # noqa: BLE001 - 凭据缺失 = NOT VERIFIED
+    if not _credentials_resolve(credentials, endpoint):
         return not_verified_outcome(
             endpoint,
             default_probe_suite(),
-            f"credential resolution failed: {type(exc).__name__}",
+            "credential resolution failed",
         )
     suite = default_probe_suite()
-    try:
-        result, _assertions = run_probe(
-            gateway=gateway,
-            credential_resolver=credentials,
-            endpoint=endpoint,
-            model=model,
-            options=ProbeOptions(suite=suite),
-        )
-    except Exception as exc:  # noqa: BLE001 - 探测失败 = 结构化 NOT VERIFIED
+    result = _probe_or_crash(gateway, credentials, endpoint, model, suite)
+    if result is None:
         return RelayProbeOutcome(
             verified=False,
             ok=False,
             endpoint_config_digest=str(endpoint_config_digest(endpoint)),
             probe_suite_digest=str(probe_suite_digest(suite)),
             error_category=FailureCategory.EXECUTION_FAILURE.value,
-            error_message_redacted=f"probe crashed: {type(exc).__name__}",
+            error_message_redacted="probe crashed",
         )
     if not result.ok:
-        return RelayProbeOutcome(
-            verified=False,
-            ok=False,
-            endpoint_config_digest=str(endpoint_config_digest(endpoint)),
-            probe_suite_digest=str(probe_suite_digest(suite)),
-            error_category=(
-                result.error_category.value if result.error_category else None
-            ),
-            error_message_redacted=result.error_message,
-            capability_failures=tuple(
-                f"{item.capability.value}:{item.error_category.value}"
-                for item in result.capability_failures
-            ),
+        return _failed_outcome(endpoint, suite, result)
+    return _verified_outcome(endpoint, model, suite, result)
+
+
+def _credentials_resolve(credentials: CredentialResolver, endpoint: LLMEndpoint) -> bool:
+    try:
+        credentials.resolve(endpoint.credential_ref)
+        return True
+    except Exception:  # noqa: BLE001 - 凭据缺失 = NOT VERIFIED
+        return False
+
+
+def _probe_or_crash(
+    gateway: ModelGateway,
+    credentials: CredentialResolver,
+    endpoint: LLMEndpoint,
+    model: ModelDefinition,
+    suite: object,
+) -> ModelProbeResult | None:
+    """执行 probe；崩溃返回 None（结构化 NOT VERIFIED，不抛异常）。"""
+    try:
+        result, _assertions = run_probe(
+            gateway=gateway,
+            credential_resolver=credentials,
+            endpoint=endpoint,
+            model=model,
+            options=ProbeOptions(suite=suite),  # type: ignore[arg-type]
         )
+        return result
+    except Exception:  # noqa: BLE001 - 探测失败 = 结构化 NOT VERIFIED
+        return None
+
+
+def _failed_outcome(
+    endpoint: LLMEndpoint, suite: object, result: ModelProbeResult
+) -> RelayProbeOutcome:
+    return RelayProbeOutcome(
+        verified=False,
+        ok=False,
+        endpoint_config_digest=str(endpoint_config_digest(endpoint)),
+        probe_suite_digest=str(probe_suite_digest(suite)),  # type: ignore[arg-type]
+        error_category=(result.error_category.value if result.error_category else None),
+        error_message_redacted=result.error_message,
+        capability_failures=tuple(
+            f"{item.capability.value}:{item.error_category.value}"
+            for item in result.capability_failures
+        ),
+    )
+
+
+def _verified_outcome(
+    endpoint: LLMEndpoint,
+    model: ModelDefinition,
+    suite: object,
+    result: ModelProbeResult,
+) -> RelayProbeOutcome:
+    """probe 成功 → fingerprint + sanitized outcome。"""
     snapshot = EndpointProbeSnapshot(
         ok=True,
         returned_model_name=result.returned_model_name,
         system_fingerprint=result.system_fingerprint,
         safe_response_metadata={},
-        usage_reported=result.usage_reported if hasattr(result, "usage_reported") else False,
+        usage_reported=bool(getattr(result, "usage_reported", False)),
     )
     fingerprint = build_fingerprint(
         endpoint=endpoint,
         requested_model_id=model.model_name,
         snapshot=snapshot,
-        suite_spec=suite,
+        suite_spec=suite,  # type: ignore[arg-type]
         observed_capabilities=frozenset(result.observed_capabilities),
     )
     return RelayProbeOutcome(
@@ -158,16 +193,12 @@ def run_live_probe(
         probe_suite_digest=str(fingerprint.probe_suite_digest),
         returned_model_identifier=fingerprint.returned_model_identifier,
         system_fingerprint=fingerprint.system_fingerprint,
-        observed_capabilities=tuple(
-            sorted(item.value for item in result.observed_capabilities)
-        ),
+        observed_capabilities=tuple(sorted(item.value for item in result.observed_capabilities)),
         capability_failures=tuple(
             f"{item.capability.value}:{item.error_category.value}"
             for item in result.capability_failures
         ),
-        usage_reported=bool(
-            getattr(result, "usage_reported", False)
-        ),
+        usage_reported=bool(getattr(result, "usage_reported", False)),
         prompt_tokens=None,
         completion_tokens=None,
         total_tokens=None,

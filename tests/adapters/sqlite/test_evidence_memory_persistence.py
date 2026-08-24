@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 import pytest
 
@@ -77,7 +78,7 @@ def _populate(ledger: SqliteEvidenceLedger) -> Claim:
 
 
 class TestSqliteEvidenceLedgerPersistence:
-    def test_survives_connection_reopen(self, tmp_path) -> None:
+    def test_survives_connection_reopen(self, tmp_path: Path) -> None:
         db = str(tmp_path / "evidence.sqlite")
         ledger = SqliteEvidenceLedger(db)
         _populate(ledger)
@@ -177,7 +178,7 @@ class TestSqliteEvidenceLedgerPersistence:
 
 
 class TestSqliteMemoryStorePersistence:
-    def test_survives_connection_reopen(self, tmp_path) -> None:
+    def test_survives_connection_reopen(self, tmp_path: Path) -> None:
         db = str(tmp_path / "memory.sqlite")
         store = SqliteMemoryStore(db, allowed_sources=("experiment:run-1:result.json",))
         record = store.commit(

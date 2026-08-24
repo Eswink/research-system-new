@@ -47,9 +47,7 @@ class FallbackFreeze:
             raise ValueError("fallback mode must be 'none' or 'planned'")
         if self.mode == "planned":
             if not (self.from_model and self.to_model and self.trigger):
-                raise ValueError(
-                    "planned fallback requires from_model, to_model and trigger"
-                )
+                raise ValueError("planned fallback requires from_model, to_model and trigger")
 
     def to_audit(self) -> dict[str, object]:
         if self.mode == "none":

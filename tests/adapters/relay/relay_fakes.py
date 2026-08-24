@@ -20,6 +20,16 @@ ENDPOINT = LLMEndpoint(
     max_retries=0,
 )
 
+RESPONSES_ENDPOINT = LLMEndpoint(
+    id="main",
+    name="Main Relay",
+    protocol="OPENAI_COMPATIBLE",
+    base_url="https://relay.example.com/api/v1",
+    credential_ref="llm_main_key",
+    max_retries=0,
+    api_style="responses",
+)
+
 RETRY_ENDPOINT = LLMEndpoint(
     id="main",
     name="Main Relay",

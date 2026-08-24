@@ -33,7 +33,7 @@ def consume_stream_event(
     fingerprint: list[str | None],
     usage_reported: list[bool],
 ) -> None:
-    """解析单个 SSE 事件，就地累积流式结果。"""
+    """解析单个 SSE 事件，就地累积流式结果（chat.completions chunk）。"""
     raw_choices = event.get("choices")
     if isinstance(raw_choices, list) and raw_choices:
         raw_delta = raw_choices[0].get("delta") if isinstance(raw_choices[0], dict) else None
@@ -49,6 +49,36 @@ def consume_stream_event(
     raw_fingerprint = event.get("system_fingerprint")
     if isinstance(raw_fingerprint, str):
         fingerprint[0] = raw_fingerprint
+
+
+def consume_responses_stream_event(
+    event: dict[str, object],
+    content_parts: list[str],
+    returned_model: list[str | None],
+    fingerprint: list[str | None],
+    usage_reported: list[bool],
+) -> None:
+    """解析单个 SSE 事件，就地累积流式结果（Responses API 事件）。"""
+    etype = event.get("type")
+    if etype == "response.output_text.delta":
+        piece = event.get("delta")
+        if isinstance(piece, str) and piece:
+            content_parts.append(piece)
+    elif etype == "response.completed":
+        raw_response = event.get("response")
+        if isinstance(raw_response, dict):
+            usage = raw_response.get("usage")
+            if usage is not None:
+                usage_reported[0] = True
+            raw_model = raw_response.get("model")
+            if isinstance(raw_model, str):
+                returned_model[0] = raw_model
+    elif etype == "response.created":
+        raw_response = event.get("response")
+        if isinstance(raw_response, dict):
+            raw_model = raw_response.get("model")
+            if isinstance(raw_response.get("model"), str):
+                returned_model[0] = str(raw_model)
 
 
 def stream_result(

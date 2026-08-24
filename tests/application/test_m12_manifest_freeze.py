@@ -103,7 +103,9 @@ def test_compose_anchors_report_missing_fields() -> None:
     # fallback 默认即显式 {"mode": "none"}（WP1：无 fallback 必须显式冻结），
     # fingerprints/image/dataset 未冻结必须上报缺口；endpoint digest 仅在
     # relay 已配置且 verified 时要求（此处未配置，不报缺口）
-    assert set(anchors["missing"]) == {
+    missing = anchors["missing"]
+    assert isinstance(missing, list)
+    assert set(missing) == {
         "model_runtime_fingerprints",
         "image_digest",
         "evaluation_dataset_digest",

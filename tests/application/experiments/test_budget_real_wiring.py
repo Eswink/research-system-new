@@ -30,6 +30,7 @@ from packages.domain.eval_result import (
     FrozenConditions,
     ScorerFinding,
 )
+from packages.domain.eval_spec import EvalScope
 from packages.domain.experiments import ExperimentRunResult
 from packages.domain.tools import ToolResultRecord
 
@@ -75,14 +76,14 @@ def _eval_report(report_id: str = "eval:m12") -> EvalReport:
         report_id=report_id,
         generated_at="offline",
         mode="OFFLINE_FAKE",
-        scope="WORKFLOW",
+        scope=EvalScope.WORKFLOW,
         gate_verdict=QualityGateVerdict.PASS,
         frozen_conditions=FrozenConditions(
             dataset_id="m12_research_v1",
-            dataset_version="1.0.0",
+            dataset_version=Version("1.0.0"),
             dataset_digest=Digest.of_bytes(b"ds"),
             gate_config_id="gate",
-            gate_config_version="1.0.0",
+            gate_config_version=Version("1.0.0"),
             gate_config_digest=Digest.of_bytes(b"gate"),
             system_version="0.4.0",
             scorer_versions={"exact_match": "1.0.0"},
@@ -91,9 +92,9 @@ def _eval_report(report_id: str = "eval:m12") -> EvalReport:
         results=(
             EvalResult(
                 case_id="case-1",
-                case_version="1.0.0",
+                case_version=Version("1.0.0"),
                 case_digest=Digest.of_bytes(b"case"),
-                scope="WORKFLOW",
+                scope=EvalScope.WORKFLOW,
                 input_ref="input://m12/task_completion",
                 scorer_findings=(
                     ScorerFinding(
@@ -167,11 +168,9 @@ class TestUsageCollection:
         eval_usage = closure_input.evaluation_usage[0]
         assert eval_usage.cases == 1
         assert eval_usage.scorer_calls == 1
-        # deterministic scorer：不虚构 LLM evaluation usage
-        assert not any(
-            entry.resource_type.value == "MODEL_REQUESTS" and entry.source == "m12:evaluation"
-            for entry in ()
-        )
+        # deterministic scorer：不虚构 LLM evaluation usage（无 token 入账）
+        assert summary.model_tokens == 0
+        assert summary.model_requests == 0
 
     def test_retry_does_not_double_count(self) -> None:
         ledger = FakeBudgetLedger()
@@ -187,7 +186,7 @@ class TestUsageCollection:
             record_collected_usage(ledger, collection)
         snapshot = ledger.snapshot()
         assert first.model_tokens == 2000
-        model_entries = [
+        model_entries: list[object] = [
             entry
             for entry in snapshot.entries
             if entry.entry_id.startswith(f"usage:{RUN_ID}:model:")

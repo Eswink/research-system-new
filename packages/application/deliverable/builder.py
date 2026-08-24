@@ -182,6 +182,8 @@ def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
     total_tokens = 0
     tool_requests = 0
     experiment_runs = 0
+    experiment_seconds = 0
+    experiment_unknown = False
     for entry in snapshot.entries:
         if entry.resource_type.value == "MODEL_TOKENS":
             total_tokens += entry.quantity
@@ -189,10 +191,15 @@ def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
             tool_requests += entry.quantity
         elif entry.resource_type.value == "CPU_TIME":
             experiment_runs += 1
+            experiment_seconds += entry.quantity
+            if entry.cost_status.value == "UNKNOWN":
+                experiment_unknown = True
     return {
         "total_model_tokens": total_tokens,
         "tool_requests": tool_requests,
         "experiment_runs": experiment_runs,
+        "experiment_seconds": experiment_seconds,
+        "experiment_duration_known": not experiment_unknown,
         "entries": len(snapshot.entries),
         "reservations": len(snapshot.reservations),
         "ledger_entries": [
@@ -235,9 +242,7 @@ def _reproduction_block(inputs: DeliverableInputs) -> dict[str, object]:
             str(audit.semantic_metrics_digest) if audit.semantic_metrics_digest else None
         ),
         "observational_metrics_digest": (
-            str(audit.observational_metrics_digest)
-            if audit.observational_metrics_digest
-            else None
+            str(audit.observational_metrics_digest) if audit.observational_metrics_digest else None
         ),
         "image_digest": audit.image_digest,
         "seed": audit.seed,
@@ -249,9 +254,7 @@ def _get_artifact_content(artifacts: ArtifactStore, artifact_id: str) -> bytes:
     try:
         content = artifacts.get(artifact_id)
     except Exception as exc:  # noqa: BLE001 - Port 故障 = 状态不完整
-        raise DeliverableBuildError(
-            f"artifact {artifact_id} unavailable: {exc}"
-        ) from exc
+        raise DeliverableBuildError(f"artifact {artifact_id} unavailable: {exc}") from exc
     return content
 
 

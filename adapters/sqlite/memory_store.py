@@ -95,8 +95,7 @@ class SqliteMemoryStore(SqliteAdapterBase):
         )
         with self._connection:
             self._connection.execute(
-                f"INSERT INTO m12_memory ({_MEMORY_COLS}) VALUES "
-                "(?,?,?,?,?,?,?,?,?,?,?,?)",
+                f"INSERT INTO m12_memory ({_MEMORY_COLS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                 self._values(record),
             )
         return record
@@ -113,9 +112,7 @@ class SqliteMemoryStore(SqliteAdapterBase):
         self._ensure_open()
         self._record("query", tier.value if tier else "*")
         if tier is None:
-            rows = self._connection.execute(
-                "SELECT * FROM m12_memory ORDER BY id"
-            ).fetchall()
+            rows = self._connection.execute("SELECT * FROM m12_memory ORDER BY id").fetchall()
         else:
             rows = self._connection.execute(
                 "SELECT * FROM m12_memory WHERE tier=? ORDER BY id", (tier.value,)
@@ -131,9 +128,7 @@ class SqliteMemoryStore(SqliteAdapterBase):
             raise InvalidInputError(f"unknown memory id: {memory_id}")
         tombstone = replace(self._record_from_row(current), active=False)
         with self._connection:
-            self._connection.execute(
-                "UPDATE m12_memory SET active=0 WHERE id=?", (memory_id,)
-            )
+            self._connection.execute("UPDATE m12_memory SET active=0 WHERE id=?", (memory_id,))
         return tombstone
 
     def delete(self, memory_id: str) -> None:
@@ -187,9 +182,7 @@ class SqliteMemoryStore(SqliteAdapterBase):
             provenance=row["provenance"],
             confidence=row["confidence"],
             valid_from=(
-                Timestamp(datetime.fromisoformat(row["valid_from"]))
-                if row["valid_from"]
-                else None
+                Timestamp(datetime.fromisoformat(row["valid_from"])) if row["valid_from"] else None
             ),
             review_after=(
                 Timestamp(datetime.fromisoformat(row["review_after"]))
@@ -197,9 +190,7 @@ class SqliteMemoryStore(SqliteAdapterBase):
                 else None
             ),
             expires_at=(
-                Timestamp(datetime.fromisoformat(row["expires_at"]))
-                if row["expires_at"]
-                else None
+                Timestamp(datetime.fromisoformat(row["expires_at"])) if row["expires_at"] else None
             ),
             supersedes=json.loads(row["supersedes"]),
             contradictions=json.loads(row["contradictions"]),

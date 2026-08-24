@@ -18,11 +18,13 @@ from dataclasses import dataclass
 
 from packages.application.experiments.budget_closure import (
     BudgetClosureInput,
+    close_budget,
+)
+from packages.application.experiments.budget_entries import (
     EvaluationUsage,
     ExperimentUsage,
     ModelUsage,
     ToolUsage,
-    close_budget,
 )
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.model_gateway import CompletionResult
@@ -102,12 +104,12 @@ def _experiment_usage(result: ExperimentRunResult | None) -> tuple[ExperimentUsa
 
 
 def _elapsed_seconds(result: ExperimentRunResult) -> int | None:
-    """真实时长：raw runtime observation（非确定性但真实）。
+    """真实时长：由 ExecutionBackend 观测写入 result.elapsed_seconds。
 
     ExperimentRunResult 无显式 duration 字段；调用方通过执行事件提供，
     本模块不伪造。无观测时返回 None（记 UNKNOWN）。
     """
-    return None
+    return result.elapsed_seconds
 
 
 def _evaluation_usage(report: EvalReport | None) -> tuple[EvaluationUsage, ...]:
@@ -139,8 +141,7 @@ def collect_usage(collection: UsageCollection) -> tuple[BudgetClosureInput, Coll
         eval_cases=sum(item.cases for item in evaluation_usage),
         eval_scorer_calls=sum(item.scorer_calls for item in evaluation_usage),
         model_usage_unknown=any(
-            item.usage_unavailable_reason is not None
-            for item in collection.model_completions
+            item.usage_unavailable_reason is not None for item in collection.model_completions
         ),
     )
     return (

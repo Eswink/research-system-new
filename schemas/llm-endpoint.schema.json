@@ -49,6 +49,11 @@
       "type": "integer",
       "minimum": 1
     },
+    "api_style": {
+      "type": "string",
+      "enum": ["chat_completions", "responses"],
+      "default": "chat_completions"
+    },
     "discovery": {
       "type": "object",
       "additionalProperties": false,

@@ -53,9 +53,7 @@ def semantic_metrics_projection(metrics: dict[str, Any]) -> dict[str, Any]:
     不进入 semantic reproducibility digest；其余科学指标全部保留。
     """
     return {
-        name: value
-        for name, value in metrics.items()
-        if not name.endswith(_OBSERVATIONAL_SUFFIXES)
+        name: value for name, value in metrics.items() if not name.endswith(_OBSERVATIONAL_SUFFIXES)
     }
 
 

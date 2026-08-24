@@ -11,6 +11,7 @@ llm_endpoints:
     discovery:
       enabled: true
       allow_models:
+        - deepseek-v4-flash
         - muse-spark-1.2-contributor
     circuit_breaker:
       failure_threshold: 5

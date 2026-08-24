@@ -222,11 +222,14 @@ class ExperimentExecutor:
         collected: _Collected,
     ) -> ExperimentExecutionOutcome:
         snapshot_after = self._workspaces.snapshot(lease)
+        usage_summary = execution_run.compute_usage_summary
+        elapsed = usage_summary.get("elapsed_seconds")
         result = ExperimentRunResult(
             execution_run_id=execution_run.run_id,
             image_digest=image_digest_from_run(execution_run),
             workspace_snapshot_before=snapshot_before.digest,
             workspace_snapshot_after=snapshot_after.digest,
+            elapsed_seconds=int(elapsed) if isinstance(elapsed, (int, float)) else None,
             stdout_digest=execution_run.stdout_digest,
             stderr_digest=execution_run.stderr_digest,
             metrics=collected.metric_values,

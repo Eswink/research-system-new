@@ -98,9 +98,7 @@ def _input(artifact_id: str) -> ExperimentEvidenceInput:
 class TestFailureClassification:
     def test_model_timeout_is_transient(self) -> None:
         """Model timeout/relay 瞬态 → transient（可重试分类）。"""
-        error = TransientPortError(
-            "relay timeout", failure_category=FailureCategory.MODEL_TIMEOUT
-        )
+        error = TransientPortError("relay timeout", failure_category=FailureCategory.MODEL_TIMEOUT)
         assert error.retryable is True
 
     def test_tool_rate_limit_is_transient(self) -> None:

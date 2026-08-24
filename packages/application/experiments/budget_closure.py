@@ -6,69 +6,32 @@ UsageLedgerEntry（append-only，幂等 entry_id，成本未知如实标 UNKNOWN
 - 突破硬限 → BudgetExhaustedError（budget failure，非系统 FAILED）；
 - reservation 与 actual 对账（reserve → usage → release 一致性）。
 
-本 use case 只组合 BudgetLedger Port 与 Domain 类型；usage 采集由
-各 adapter（ModelGateway / ToolProvider / ExecutionBackend）上报原始
-数据，归账在本层完成。
+Usage 数据类型与条目构造在 budget_entries.py（模块规模阈值拆分）；
+本 use case 只组合 BudgetLedger Port 与 Domain 类型。
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 
-from packages.application.ports.budget_ledger import BudgetLedger
-from packages.domain.budget import (
-    BudgetPolicy,
-    LedgerCostStatus,
-    ResourceType,
-    UsageLedgerEntry,
+from packages.application.experiments.budget_entries import (
+    EvaluationUsage,
+    ExperimentUsage,
+    ModelUsage,
+    ToolUsage,
+    evaluation_entries,
+    experiment_entries,
+    model_entries,
+    summarize,
+    tool_entries,
 )
+from packages.application.ports.budget_ledger import BudgetLedger
+from packages.domain.budget import BudgetPolicy, ResourceType, UsageLedgerEntry
 from packages.domain.core import Timestamp
 
 
 class BudgetExhaustedError(Exception):
     """预算硬限突破：budget failure，与基础设施/科学负结论分离。"""
-
-
-@dataclass(frozen=True, slots=True)
-class ModelUsage:
-    """一次模型调用的原始用量（ModelGateway 上报）。"""
-
-    model_id: str
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    calls: int = 1
-    latency_ms: int | None = None
-    estimated_cost_minor: int | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class ToolUsage:
-    """一次工具调用的原始用量（ToolProvider 上报）。"""
-
-    tool_id: str
-    requests: int = 1
-    estimated_cost_minor: int | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class ExperimentUsage:
-    """一次实验执行的原始用量（ExecutionBackend compute_usage_summary）。"""
-
-    run_id: str
-    image_digest: str | None = None
-    elapsed_seconds: int | None = None
-    oom_killed: bool = False
-    exit_code: int | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class EvaluationUsage:
-    """一次评测运行的原始用量（EvalRunner 上报）。"""
-
-    eval_id: str
-    cases: int = 0
-    scorer_calls: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,41 +60,6 @@ class BudgetClosureResult:
     reservation_actual_consistent: bool = False
 
 
-def _entry(  # noqa: PLR0913 - UsageLedgerEntry 字段映射，参数对象会降低可读性
-    *,
-    entry_id: str,
-    resource_type: ResourceType,
-    quantity: int,
-    unit: str,
-    source: str,
-    occurred_at: datetime,
-    estimated_cost_minor: int | None = None,
-    task_id: str | None = None,
-    agent_id: str | None = None,
-    tool_id: str | None = None,
-    model_id: str | None = None,
-) -> UsageLedgerEntry:
-    cost_status = (
-        LedgerCostStatus.KNOWN
-        if estimated_cost_minor is not None
-        else LedgerCostStatus.UNKNOWN
-    )
-    return UsageLedgerEntry(
-        entry_id=entry_id,
-        resource_type=resource_type,
-        quantity=quantity,
-        unit=unit,
-        cost_status=cost_status,
-        source=source,
-        occurred_at=occurred_at,
-        estimated_cost_minor=estimated_cost_minor,
-        task_id=task_id,
-        agent_id=agent_id,
-        tool_id=tool_id,
-        model_id=model_id,
-    )
-
-
 def close_budget(
     ledger: BudgetLedger,
     *,
@@ -144,99 +72,31 @@ def close_budget(
     归账粒度（M12 至少可回答）：
     - Model：token/call（MODEL_TOKENS / MODEL_REQUESTS，可带成本）；
     - Tool：请求数（TOOL_REQUESTS）；
-    - Experiment：CPU_TIME / WALL_CLOCK + 资源摘要；
-    - Evaluation：case/scorer 调用（MODEL_REQUESTS 之外独立计数）。
+    - Experiment：CPU_TIME（时长未知时如实记 UNKNOWN，不伪造秒数）；
+    - Evaluation：case/scorer 调用（独立于 MODEL_REQUESTS 之外计数）。
     """
     occurred_at = Timestamp.now().value
     run_id = input.run_id
-    entries: list[UsageLedgerEntry] = []
-    total_tokens = 0
-    for usage in input.model_usage:
-        tokens = usage.prompt_tokens + usage.completion_tokens
-        total_tokens += tokens
-        entries.append(
-            _entry(
-                entry_id=f"usage:{run_id}:model:{usage.model_id}",
-                resource_type=ResourceType.MODEL_TOKENS,
-                quantity=tokens,
-                unit="tokens",
-                source="m12:model_relay",
-                occurred_at=occurred_at,
-                estimated_cost_minor=usage.estimated_cost_minor,
-                task_id=input.task_id,
-                agent_id=input.agent_id,
-                model_id=usage.model_id,
-            )
-        )
-        entries.append(
-            _entry(
-                entry_id=f"usage:{run_id}:model:{usage.model_id}:calls",
-                resource_type=ResourceType.MODEL_REQUESTS,
-                quantity=usage.calls,
-                unit="calls",
-                source="m12:model_relay",
-                occurred_at=occurred_at,
-                task_id=input.task_id,
-                agent_id=input.agent_id,
-                model_id=usage.model_id,
-            )
-        )
-    tool_requests = 0
-    for tool_usage in input.tool_usage:
-        tool_requests += tool_usage.requests
-        entries.append(
-            _entry(
-                entry_id=f"usage:{run_id}:tool:{tool_usage.tool_id}",
-                resource_type=ResourceType.TOOL_REQUESTS,
-                quantity=tool_usage.requests,
-                unit="requests",
-                source="m12:tool_plane",
-                occurred_at=occurred_at,
-                estimated_cost_minor=tool_usage.estimated_cost_minor,
-                task_id=input.task_id,
-                tool_id=tool_usage.tool_id,
-            )
-        )
-    experiment_seconds = 0
-    for exp_usage in input.experiment_usage:
-        experiment_seconds += exp_usage.elapsed_seconds or 0
-        entries.append(
-            _entry(
-                entry_id=f"usage:{run_id}:experiment:{exp_usage.run_id}",
-                resource_type=ResourceType.CPU_TIME,
-                quantity=exp_usage.elapsed_seconds or 0,
-                unit="seconds",
-                source="m12:experiment",
-                occurred_at=occurred_at,
-                task_id=input.task_id,
-            )
-        )
-    evaluation_cases = 0
-    for eval_usage in input.evaluation_usage:
-        evaluation_cases += eval_usage.cases
-        entries.append(
-            _entry(
-                entry_id=f"usage:{run_id}:eval:{eval_usage.eval_id}",
-                resource_type=ResourceType.MODEL_REQUESTS,
-                quantity=eval_usage.scorer_calls,
-                unit="scorer_calls",
-                source="m12:evaluation",
-                occurred_at=occurred_at,
-            )
-        )
+    entries = model_entries(run_id, input.model_usage, occurred_at, input.task_id, input.agent_id)
+    entries += tool_entries(run_id, input.tool_usage, occurred_at, input.task_id)
+    entries += experiment_entries(run_id, input.experiment_usage, occurred_at, input.task_id)
+    entries += evaluation_entries(run_id, input.evaluation_usage, occurred_at)
+    summary = summarize(entries)
     if policy is not None:
-        _enforce_limits(policy, total_tokens, tool_requests, experiment_seconds)
+        _enforce_limits(
+            policy, summary.total_tokens, summary.tool_requests, summary.experiment_seconds
+        )
     for entry in entries:
         ledger.record_usage(entry)
     return BudgetClosureResult(
         entries=tuple(entries),
-        total_tokens=total_tokens,
-        tool_requests=tool_requests,
-        experiment_runs=len(input.experiment_usage),
-        evaluation_cases=evaluation_cases,
+        total_tokens=summary.total_tokens,
+        tool_requests=summary.tool_requests,
+        experiment_runs=summary.experiment_runs,
+        evaluation_cases=sum(usage.cases for usage in input.evaluation_usage),
         reservation_ref=reservation_ref,
         reservation_actual_consistent=_check_reservation(
-            ledger, reservation_ref, total_tokens, tool_requests
+            ledger, reservation_ref, summary.total_tokens, summary.tool_requests
         ),
     )
 
@@ -256,12 +116,9 @@ def _enforce_limits(
         raise BudgetExhaustedError(
             f"tool request budget exhausted: {tool_requests} > {limits['tool_requests']}"
         )
-    if "wall_clock_seconds" in limits and experiment_seconds > int(
-        limits["wall_clock_seconds"]
-    ):
+    if "wall_clock_seconds" in limits and experiment_seconds > int(limits["wall_clock_seconds"]):
         raise BudgetExhaustedError(
-            f"wall clock budget exhausted: {experiment_seconds}s > "
-            f"{limits['wall_clock_seconds']}s"
+            f"wall clock budget exhausted: {experiment_seconds}s > {limits['wall_clock_seconds']}s"
         )
 
 
@@ -277,14 +134,10 @@ def _check_reservation(
     snapshot = ledger.snapshot()
     reservations = snapshot.reservations
     reserved_tokens = sum(
-        item.quantity
-        for item in reservations
-        if item.resource_type is ResourceType.MODEL_TOKENS
+        item.quantity for item in reservations if item.resource_type is ResourceType.MODEL_TOKENS
     )
     reserved_tools = sum(
-        item.quantity
-        for item in reservations
-        if item.resource_type is ResourceType.TOOL_REQUESTS
+        item.quantity for item in reservations if item.resource_type is ResourceType.TOOL_REQUESTS
     )
     if reserved_tokens and tokens > reserved_tokens:
         return False

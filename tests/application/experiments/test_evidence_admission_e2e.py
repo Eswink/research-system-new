@@ -43,9 +43,9 @@ from packages.application.experiments.evidence_admission import ExperimentProven
 from packages.application.memory.gate import MemoryGateDeps
 from packages.domain.core import ID
 from packages.domain.enums import MemoryTier, MemoryType
-from packages.domain.evidence import ClaimStatus
+from packages.domain.evidence import Claim, ClaimStatus, Evidence
 from packages.domain.experiment_state import ExperimentPlanState, ExperimentRunState
-from packages.domain.experiments import ExperimentPlan
+from packages.domain.experiments import ExperimentPlan, ExperimentRun
 from packages.domain.workspace import Workspace
 
 pytestmark = pytest.mark.requires_docker
@@ -63,6 +63,7 @@ _PLAN_ID = ID("5a1c6a8e-9b2d-4f3a-8c5e-2b2c3d4e5f6a")
 _WORKSPACE = Workspace(id="ws-m12-admission", name="ws-m12-admission")
 RUN_ID = "12121212-2222-4333-8444-555555555555"
 EXPERIMENT_RUN_ID = "5a1c6a8e-9b2d-4f3a-8c5e-2b2c3d4e5f6a"
+ARTIFACT_ID = f"{EXPERIMENT_RUN_ID}:experiment_result.json"
 CLAIM_STATEMENT = (
     "baseline tfidf+linear_softmax (0.745) outperforms candidate "
     "hash_embedding+linear_softmax (0.28) on the low-resource subset"
@@ -136,85 +137,95 @@ class TestM12RealEvidenceChain:
         connection = sqlite3.connect(str(db_path))
         outcome = executor.execute(_prepare(workspaces, ID(EXPERIMENT_RUN_ID)))
         assert outcome.run.state == ExperimentRunState.State.SUCCEEDED
-
-        # --- 1. 真实 artifact 已在 SqliteArtifactStore ---
-        artifact_id = f"{EXPERIMENT_RUN_ID}:experiment_result.json"
-        payload = json.loads(artifacts.get(artifact_id).decode("utf-8"))
-        assert payload["status"] == "SUCCEEDED"
-        assert payload["metrics"]["baseline_accuracy"] == 0.745
-        assert artifacts.verify(artifact_id)
-
-        # --- 2. 正式准入：ExperimentRun → Source/Evidence/Claim ---
-        ledger = SqliteEvidenceLedger(connection)
-        result = register_experiment_evidence(
-            ledger,
-            outcome.run,
-            artifacts,
-            provenance=ExperimentProvenance(
-                run_id=RUN_ID,
-                manifest_digest="sha256:m12-manifest-frozen",
-                tool_refs=("literature_search",),
-            ),
-            claim_statement=CLAIM_STATEMENT,
-        )
-        claim = result.claim
-        assert claim.status is ClaimStatus.PROPOSED
-        assert len(result.evidence) >= 1
-        evidence = next(
-            item for item in result.evidence if item.artifact_id == artifact_id
-        )
-        # 全部来自真实运行事实（非合成快照）
-        assert evidence.artifact_id == artifact_id
-        assert evidence.experiment_run_id == EXPERIMENT_RUN_ID
-        assert evidence.run_id == RUN_ID
-        assert evidence.image_digest == outcome.run.result.image_digest
-        assert evidence.manifest_digest == "sha256:m12-manifest-frozen"
-        assert ledger.get_source(evidence.source_ref).content_digest == str(
-            evidence.content_digest
-        )
-
-        # --- 3. 独立 reviewer 升级 VERIFIED（agent 自证拒绝已由契约覆盖） ---
+        _assert_real_artifact(artifacts)
+        claim, evidence = _admit(connection, outcome.run, artifacts)
         verified = verify_claim(
-            ledger,
-            ledger.get_claim(claim.id),
+            ledger(connection),
+            ledger(connection).get_claim(claim.id),
             reviewer="gate:independent-acceptance",
             verdict="PASS",
         )
         assert verified.status is ClaimStatus.VERIFIED
+        _commit_memory(connection, evidence)
+        _assert_persisted(db_path, claim, evidence)
 
-        # --- 4. governed memory（真实 provenance） ---
-        store = SqliteMemoryStore(connection, allowed_sources=(evidence.source_ref,))
-        memory_deps = MemoryGateDeps(
-            store=store,
-            ledger=ledger,
-            allowed_sources=frozenset({evidence.source_ref}),
-            actor="system:m12",
-        )
-        memory_id = propose_and_commit_memory(
-            memory_deps,
-            input=MemoryProposalInput(
-                memory_id=f"mem:{RUN_ID}:negative-result",
-                content=(
-                    "hash-embedding+linear_softmax candidate (0.28) did not beat "
-                    "tfidf baseline (0.745) on low-resource 20-class subset"
-                ),
-                provenance=evidence.source_ref,
-                kind=MemoryType.NEGATIVE_RESULT,
-                tier=MemoryTier.PROJECT,
-                confidence=0.97,
-                curator_approved=True,
+
+def _assert_real_artifact(artifacts: SqliteArtifactStore) -> None:
+    """真实容器产物落 SqliteArtifactStore 且内容寻址可校验。"""
+    artifact_id = f"{EXPERIMENT_RUN_ID}:experiment_result.json"
+    payload = json.loads(artifacts.get(artifact_id).decode("utf-8"))
+    assert payload["status"] == "SUCCEEDED"
+    assert payload["metrics"]["baseline_accuracy"] == 0.745
+    assert artifacts.verify(artifact_id)
+
+
+def _admit(
+    connection: sqlite3.Connection,
+    run: ExperimentRun,
+    artifacts: SqliteArtifactStore,
+) -> tuple[Claim, Evidence]:
+    """正式准入：ExperimentRun → Source/Evidence/Claim（真实运行事实）。"""
+    ledger = SqliteEvidenceLedger(connection)
+    result = register_experiment_evidence(
+        ledger,
+        run,
+        artifacts,
+        provenance=ExperimentProvenance(
+            run_id=RUN_ID,
+            manifest_digest="sha256:m12-manifest-frozen",
+            tool_refs=("literature_search",),
+        ),
+        claim_statement=CLAIM_STATEMENT,
+    )
+    claim = result.claim
+    assert claim.status is ClaimStatus.PROPOSED
+    assert len(result.evidence) >= 1
+    evidence = next(item for item in result.evidence if item.artifact_id == ARTIFACT_ID)
+    assert evidence.experiment_run_id == EXPERIMENT_RUN_ID
+    assert evidence.run_id == RUN_ID
+    assert run.result is not None
+    assert evidence.image_digest == run.result.image_digest
+    assert ledger.get_source(evidence.source_ref).content_digest == str(evidence.content_digest)
+    return claim, evidence
+
+
+def _commit_memory(connection: sqlite3.Connection, evidence: Evidence) -> None:
+    """governed memory（provenance 来自真实 evidence source）。"""
+    store = SqliteMemoryStore(connection, allowed_sources=(evidence.source_ref,))
+    memory_deps = MemoryGateDeps(
+        store=store,
+        ledger=ledger(connection),
+        allowed_sources=frozenset({evidence.source_ref}),
+        actor="system:m12",
+    )
+    memory_id = propose_and_commit_memory(
+        memory_deps,
+        input=MemoryProposalInput(
+            memory_id=f"mem:{RUN_ID}:negative-result",
+            content=(
+                "hash-embedding+linear_softmax candidate (0.28) did not beat "
+                "tfidf baseline (0.745) on low-resource 20-class subset"
             ),
-        )
-        assert memory_id == f"mem:{RUN_ID}:negative-result"
-        assert store.get(memory_id).provenance == evidence.source_ref
+            provenance=evidence.source_ref,
+            kind=MemoryType.NEGATIVE_RESULT,
+            tier=MemoryTier.PROJECT,
+            confidence=0.97,
+            curator_approved=True,
+        ),
+    )
+    assert memory_id == f"mem:{RUN_ID}:negative-result"
+    assert store.get(memory_id).provenance == evidence.source_ref
 
-        # --- 5. 持久化不丢：重开 ledger 连接后 claim 仍 VERIFIED ---
-        ledger.close()
-        reopened = SqliteEvidenceLedger(sqlite3.connect(str(db_path)))
-        assert reopened.get_claim(claim.id).status is ClaimStatus.VERIFIED
-        relations = reopened.relations_for_claim(claim.id)
-        assert len(relations) >= 1
-        assert {relation.evidence_id for relation in relations} >= {
-            evidence.id
-        }
-        reopened.close()
+
+def _assert_persisted(db_path: Path, claim: Claim, evidence: Evidence) -> None:
+    """持久化不丢：重开 ledger 连接后 claim 仍 VERIFIED。"""
+    reopened = SqliteEvidenceLedger(sqlite3.connect(str(db_path)))
+    assert reopened.get_claim(claim.id).status is ClaimStatus.VERIFIED
+    relations = reopened.relations_for_claim(claim.id)
+    assert len(relations) >= 1
+    assert {relation.evidence_id for relation in relations} >= {evidence.id}
+    reopened.close()
+
+
+def ledger(connection: sqlite3.Connection) -> SqliteEvidenceLedger:
+    return SqliteEvidenceLedger(connection)

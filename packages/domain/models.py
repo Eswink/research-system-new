@@ -41,6 +41,7 @@ class LLMEndpoint:
     request_timeout_seconds: int = 60
     max_retries: int = 3
     concurrency_limit: int = 4
+    api_style: str = "chat_completions"
     discovery: EndpointDiscoveryConfig | None = None
     circuit_breaker: CircuitBreakerConfig | None = None
 
@@ -49,6 +50,8 @@ class LLMEndpoint:
             raise ValueError("endpoint id must not be empty")
         if self.protocol != "OPENAI_COMPATIBLE":
             raise ValueError("endpoint protocol must be OPENAI_COMPATIBLE")
+        if self.api_style not in ("chat_completions", "responses"):
+            raise ValueError("api_style must be 'chat_completions' or 'responses'")
         if not self.base_url.startswith(("https://", "http://")):
             raise ValueError("base_url must be an absolute http(s) URL")
         if not self.credential_ref:

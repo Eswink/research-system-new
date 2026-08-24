@@ -19,12 +19,19 @@ from typing import Any
 import httpx
 from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential, wait_random
 
-from adapters.relay.parsing import (
-    consume_stream_event,
-    stream_result,
-    tool_calls_from_message,
+from adapters.relay.chat_api import (
+    chat_result,
+    completion_body,
+    safe_headers_from,
 )
-from adapters.relay.sse import parse_sse_events
+from adapters.relay.responses_api import (
+    responses_body,
+    responses_result,
+)
+from adapters.relay.streaming import (
+    consume_responses_stream,
+    consume_stream_response,
+)
 from packages.application.ports import (
     CompletionRequest,
     CompletionResult,
@@ -89,29 +96,13 @@ def _decode_json(payload: Any, context: str) -> Any:
         ) from exc
 
 
-def _completion_body(request: CompletionRequest, *, stream: bool) -> dict[str, Any]:
-    body: dict[str, Any] = {"model": request.model, "messages": request.messages}
-    if request.tools is not None:
-        body["tools"] = request.tools
-    if request.response_format is not None:
-        body["response_format"] = request.response_format
-    if stream:
-        body["stream"] = True
-    return body
-
-
-def _usage_int(usage: Any, key: str) -> int | None:
-    """从 usage dict 提取整数 token 字段；缺失/非法返回 None（不得伪造）。"""
-    if not isinstance(usage, dict):
-        return None
-    value = usage.get(key)
-    if not isinstance(value, int):
-        return None
-    return value
-
-
 class OpenAIChatGateway:
-    """httpx 实现的 OpenAI-compatible 网关。"""
+    """OpenAI-compatible 网关（httpx + tenacity）。
+
+    支持 chat_completions 与 responses 两种 API 风格（LLMEndpoint.api_style），
+    共用 error classification / retry / 脱敏；请求/解析在 chat_api /
+    responses_api / streaming（规模阈值拆分）。
+    """
 
     def __init__(
         self,
@@ -173,39 +164,71 @@ class OpenAIChatGateway:
         credential: SecretValue,
         request: CompletionRequest,
     ) -> CompletionResult:
+        if endpoint.api_style == "responses":
+            if request.stream:
+                return self._complete_stream_responses(endpoint, credential, request)
+            return self._complete_responses(endpoint, credential, request)
         if request.stream:
             return self._complete_stream(endpoint, credential, request)
+        return self._complete_chat(endpoint, credential, request)
+
+    def _complete_chat(
+        self,
+        endpoint: LLMEndpoint,
+        credential: SecretValue,
+        request: CompletionRequest,
+    ) -> CompletionResult:
         response = self._request(
             "POST",
             _join_url(endpoint.base_url, "/chat/completions"),
             endpoint,
             credential,
-            json_body=_completion_body(request, stream=False),
+            json_body=completion_body(request, stream=False),
         )
         payload = _decode_json(response, "chat completion")
-        choices = payload.get("choices") or []
-        message = choices[0].get("message", {}) if choices else {}
-        usage = payload.get("usage")
-        returned = str(payload.get("model")) if payload.get("model") else None
-        fingerprint = (
-            str(payload["system_fingerprint"]) if payload.get("system_fingerprint") else None
+        return chat_result(payload, safe_headers=safe_headers_from(response))
+
+    def _complete_responses(
+        self,
+        endpoint: LLMEndpoint,
+        credential: SecretValue,
+        request: CompletionRequest,
+    ) -> CompletionResult:
+        response = self._request(
+            "POST",
+            _join_url(endpoint.base_url, "/responses"),
+            endpoint,
+            credential,
+            json_body=responses_body(request, stream=False),
         )
-        return CompletionResult(
-            content=str(message.get("content")) if message.get("content") is not None else None,
-            tool_calls=tool_calls_from_message(message),
-            returned_model_name=returned,
-            system_fingerprint=fingerprint,
-            usage_reported=isinstance(usage, dict) and usage.get("total_tokens") is not None,
-            safe_response_metadata=select_safe_headers(response.headers.items()),
-            prompt_tokens=_usage_int(usage, "prompt_tokens"),
-            completion_tokens=_usage_int(usage, "completion_tokens"),
-            total_tokens=_usage_int(usage, "total_tokens"),
-            usage_unavailable_reason=(
-                None
-                if isinstance(usage, dict) and usage.get("total_tokens") is not None
-                else "provider did not return usage"
-            ),
+        payload = _decode_json(response, "responses")
+        return responses_result(payload, safe_headers=select_safe_headers(response.headers.items()))
+
+    def _complete_stream_responses(
+        self,
+        endpoint: LLMEndpoint,
+        credential: SecretValue,
+        request: CompletionRequest,
+    ) -> CompletionResult:
+        response = self._request(
+            "POST",
+            _join_url(endpoint.base_url, "/responses"),
+            endpoint,
+            credential,
+            json_body=responses_body(request, stream=True),
         )
+        try:
+            return consume_responses_stream(response)
+        except json.JSONDecodeError as exc:
+            raise RelayHTTPError(
+                FailureCategory.MODEL_INCOMPATIBLE,
+                redact_exception_message(f"malformed stream event: {exc}"),
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise RelayHTTPError(
+                FailureCategory.EXECUTION_FAILURE,
+                redact_exception_message(f"stream interrupted: {exc}"),
+            ) from exc
 
     def _complete_stream(
         self,
@@ -218,17 +241,10 @@ class OpenAIChatGateway:
             _join_url(endpoint.base_url, "/chat/completions"),
             endpoint,
             credential,
-            json_body=_completion_body(request, stream=True),
+            json_body=completion_body(request, stream=True),
         )
-        content_parts: list[str] = []
-        returned_model: list[str | None] = [None]
-        fingerprint: list[str | None] = [None]
-        usage_reported: list[bool] = [False]
         try:
-            for event in parse_sse_events(response.iter_lines()):
-                consume_stream_event(
-                    event, content_parts, returned_model, fingerprint, usage_reported
-                )
+            return consume_stream_response(response)
         except json.JSONDecodeError as exc:
             raise RelayHTTPError(
                 FailureCategory.MODEL_INCOMPATIBLE,
@@ -239,13 +255,6 @@ class OpenAIChatGateway:
                 FailureCategory.EXECUTION_FAILURE,
                 redact_exception_message(f"stream interrupted: {exc}"),
             ) from exc
-        return stream_result(
-            content_parts,
-            returned_model,
-            fingerprint,
-            usage_reported,
-            select_safe_headers(response.headers.items()),
-        )
 
     def probe_connectivity(
         self,

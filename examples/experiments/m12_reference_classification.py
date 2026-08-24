@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import random
 import time
 from collections import Counter
@@ -210,7 +211,7 @@ def main() -> None:
     }
 
     payload = {
-        "experiment_run_id": "M12-REFERENCE-RUN",
+        "experiment_run_id": os.environ.get("EXPERIMENT_RUN_ID", "M12-REFERENCE-RUN"),
         "status": "SUCCEEDED",
         "artifact_refs": ["experiment_result.json"],
         "metrics": {

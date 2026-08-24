@@ -123,6 +123,33 @@ class ReproducibilityAudit:
 
     def findings(self) -> tuple[AuditFinding, ...]:
         """对全部可复现性锚点执行真实检查，返回结构化发现。"""
+        found = self._missing_anchor_findings()
+        if self.code_digest is None:
+            found.append(
+                AuditFinding(
+                    code="CODE_DIGEST_NOT_PINNED",
+                    severity="WARNING",
+                    message=(
+                        "code provenance not separately pinned; code content is "
+                        "covered by workspace_snapshot_before (WORKSPACE_RUNTIME.md §8)"
+                    ),
+                )
+            )
+        if self.semantic_metrics_digest is None:
+            found.append(
+                AuditFinding(
+                    code="SEMANTIC_METRICS_DIGEST_MISSING",
+                    severity="WARNING",
+                    message=(
+                        "semantic metrics digest not separated; metrics_digest may "
+                        "include wall-clock observations (M12-R1 WP4)"
+                    ),
+                )
+            )
+        return tuple(found)
+
+    def _missing_anchor_findings(self) -> list[AuditFinding]:
+        """缺失锚点检查（FAIL 阻断项）。"""
         found: list[AuditFinding] = []
 
         def require(condition: bool, code: str, message: str) -> None:
@@ -158,29 +185,7 @@ class ReproducibilityAudit:
             "metrics digest not bound",
         )
         require(self.audit_digest is not None, "UNSEALED_AUDIT", "audit digest not sealed")
-        if self.code_digest is None:
-            found.append(
-                AuditFinding(
-                    code="CODE_DIGEST_NOT_PINNED",
-                    severity="WARNING",
-                    message=(
-                        "code provenance not separately pinned; code content is "
-                        "covered by workspace_snapshot_before (WORKSPACE_RUNTIME.md §8)"
-                    ),
-                )
-            )
-        if self.semantic_metrics_digest is None:
-            found.append(
-                AuditFinding(
-                    code="SEMANTIC_METRICS_DIGEST_MISSING",
-                    severity="WARNING",
-                    message=(
-                        "semantic metrics digest not separated; metrics_digest may "
-                        "include wall-clock observations (M12-R1 WP4)"
-                    ),
-                )
-            )
-        return tuple(found)
+        return found
 
     @property
     def status(self) -> str:

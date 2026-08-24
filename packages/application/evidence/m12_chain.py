@@ -97,17 +97,37 @@ def register_experiment_evidence(
         raise InvalidInputError(
             "experiment artifact experiment_run_id mismatch with evidence input"
         )
-    source = SourceRecord(
+    source = _build_source(input, artifact_digest)
+    ledger.register_source(source)
+    evidence = _build_evidence(input, artifact_digest)
+    ledger.register_evidence(evidence)
+    claim = _build_claim(input, claim_statement, evidence.id, relation)
+    ledger.register_claim(claim)
+    ledger.attach_relation(
+        EvidenceRelation(
+            claim_id=claim.id,
+            evidence_id=evidence.id,
+            relation=relation,
+            strength=0.95,
+        )
+    )
+    return source, evidence, claim
+
+
+def _build_source(input: ExperimentEvidenceInput, artifact_digest: Digest) -> SourceRecord:
+    return SourceRecord(
         origin=input.source_origin,
         content_digest=str(artifact_digest),
         trust_label=TrustLabel.GENERATED,
         access_time=Timestamp.now(),
         parser_version="m12-evidence-v1",
     )
-    ledger.register_source(source)
-    evidence = Evidence(
+
+
+def _build_evidence(input: ExperimentEvidenceInput, artifact_digest: Digest) -> Evidence:
+    return Evidence(
         id=f"evidence:{input.run_id}:{input.experiment_run_id}",
-        source_ref=source.origin,
+        source_ref=input.source_origin,
         content_digest=str(artifact_digest),
         extracted_by="system:m12-evidence-chain",
         captured_at=Timestamp.now(),
@@ -120,24 +140,21 @@ def register_experiment_evidence(
         image_digest=input.image_digest,
         manifest_digest=input.manifest_digest,
     )
-    ledger.register_evidence(evidence)
-    claim = Claim(
+
+
+def _build_claim(
+    input: ExperimentEvidenceInput,
+    claim_statement: str,
+    evidence_id: str,
+    relation: EvidenceRelationType,
+) -> Claim:
+    return Claim(
         id=f"claim:{input.run_id}",
         statement=claim_statement,
         status=ClaimStatus.PROPOSED,
         author="system:m12-experiment",
-        evidence_relations=[(evidence.id, relation)],
+        evidence_relations=[(evidence_id, relation)],
     )
-    ledger.register_claim(claim)
-    ledger.attach_relation(
-        EvidenceRelation(
-            claim_id=claim.id,
-            evidence_id=evidence.id,
-            relation=relation,
-            strength=0.95,
-        )
-    )
-    return source, evidence, claim
 
 
 def verify_claim(
@@ -154,9 +171,7 @@ def verify_claim(
     `writer:` / `system:orchestration` 不是独立验证主体，禁止升级。
     """
     if reviewer.startswith(("agent:", "writer:", "system:")):
-        raise InvalidInputError(
-            f"reviewer {reviewer!r} is not an independent verification body"
-        )
+        raise InvalidInputError(f"reviewer {reviewer!r} is not an independent verification body")
     return promote_claim_to_verified(
         ledger,
         claim,

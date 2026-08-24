@@ -22,7 +22,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from adapters.contracts.models_loaders import load_llm_endpoints, load_models
+from adapters.contracts.models_loaders import (
+    load_llm_endpoints,
+    load_model_profiles,
+    load_models,
+)
 from adapters.contracts.protocol_loaders import load_protocol
 from adapters.contracts.resource_loaders import (
     load_budget_policies,
@@ -34,6 +38,7 @@ from adapters.contracts.resource_loaders import (
 from adapters.contracts.roles_loaders import (
     load_agents,
     load_roles,
+    load_skills,
     load_team_templates,
 )
 from adapters.contracts.tasks_loaders import load_task_contracts
@@ -46,7 +51,9 @@ from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
 from adapters.sqlite.memory_store import SqliteMemoryStore
 from adapters.workspace import FileWorkspaceBackend
 from packages.application.m12_reference.clean_run import run_clean_workflow
+from packages.application.m12_reference.clean_run_stages import experiment_run_id_of
 from packages.application.m12_reference.deps import CleanRunDeps
+from packages.application.policy.native import NativePolicyEvaluator
 from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
 from packages.domain.core import ID
 from packages.domain.enums import EndpointHealth
@@ -76,12 +83,38 @@ def _catalog_and_project() -> tuple[CatalogSnapshot, ProjectSettings]:
         task_contracts=load_task_contracts(TASKS_PATH),
         budget_policies=load_budget_policies(BUDGETS_PATH),
         workspaces=load_workspaces(WORKSPACES_PATH),
-        tool_providers=load_tool_providers(TOOLS_PATH),
+        tool_providers=_active_tool_providers(),
+        models=load_models("examples/config/models.yaml"),
+        model_profiles=load_model_profiles("examples/config/model_profiles.yaml"),
+        endpoints=load_llm_endpoints("examples/config/llm_endpoints.yaml"),
+        skills=load_skills("examples/config/skills.yaml"),
+        tool_pack_digests=_tool_pack_digests(),
         policy=load_policy(POLICY_PATH),
     )
     raw_project = load_project(PROJECT_PATH)
     project = ProjectSettings.from_mapping("project-m12", raw_project)
     return catalog, project
+
+
+def _active_tool_providers() -> dict[str, object]:
+    """只保留 M12 实际使用的 provider（过滤未配置 endpoint 的占位 provider）。
+
+    research_mcp 的 endpoint_env（RESEARCH_MCP_URL）未配置且无 toolpack pin，
+    preflight 会因 SUPPLY_CHAIN_UNPINNED 拒绝；M12 文献检索走 ncbi_eutils。
+    """
+    providers = load_tool_providers(TOOLS_PATH)
+    return {key: value for key, value in providers.items() if key != "research_mcp"}
+
+
+def _tool_pack_digests() -> dict[str, str]:
+    """从 toolpack 契约加载 pinned digest（provider_id -> digest）。"""
+    import yaml
+
+    path = Path("examples/contracts/toolpack_ncbi_eutils.yaml")
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or not isinstance(payload.get("digest"), str):
+        return {}
+    return {"ncbi_eutils": str(payload["digest"])}
 
 
 def main() -> int:
@@ -99,6 +132,7 @@ def main() -> int:
         endpoint_health={
             endpoint_id: EndpointHealth.HEALTHY for endpoint_id in catalog.endpoints
         },
+        policy_evaluator=NativePolicyEvaluator(catalog.policy),
     )
 
     tmp = tempfile.mkdtemp(prefix="m12-clean-run-")
@@ -109,7 +143,11 @@ def main() -> int:
     workspaces.create_workspace(workspace)
     artifacts = SqliteArtifactStore(blob_dir=Path(tmp) / "blobs")
     ledger = SqliteEvidenceLedger(connection)
-    memory = SqliteMemoryStore(connection)
+    experiment_run_id = experiment_run_id_of(RUN_ID)
+    memory = SqliteMemoryStore(
+        connection,
+        allowed_sources=(f"{experiment_run_id}:experiment_result.json",),
+    )
     budget = FakeBudgetLedger()
 
     deps = CleanRunDeps(
@@ -125,6 +163,7 @@ def main() -> int:
         memory=memory,
         budget=budget,
         run_id=RUN_ID,
+        experiment_script=EXPERIMENT_PATH,
     )
     if args.live_relay:
         endpoints = load_llm_endpoints("examples/config/llm_endpoints.yaml")
@@ -146,11 +185,12 @@ def main() -> int:
             endpoint=endpoints["main"],
             model=models["research_alpha"],
             run_id=RUN_ID,
+            experiment_script=EXPERIMENT_PATH,
         )
     result = run_clean_workflow(
         deps,
         experiment_plan_id=PLAN_ID,
-        experiment_command=f"python {EXPERIMENT_PATH}",
+        experiment_command="python experiment.py",
     )
     print(json.dumps(result.to_payload(), ensure_ascii=False, indent=2, sort_keys=True))
     print(f"state: {db_path}")

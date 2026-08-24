@@ -43,6 +43,7 @@ class CleanRunDeps:
     model: ModelDefinition | None = None
     run_id: str | None = None
     workspace_root: object | None = None
+    experiment_script: str | None = None
     objective: str = (
         "Compare baseline (TF-IDF + linear classifier) vs candidate "
         "(frozen hash-embedding + linear classifier) on a low-resource "

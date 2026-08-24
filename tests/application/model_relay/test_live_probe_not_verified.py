@@ -15,9 +15,15 @@ from packages.application.model_relay.live_probe import (
     run_live_probe,
 )
 from packages.application.model_relay.suite import default_probe_suite
+from packages.application.ports.credential_resolver import SecretValue
 from packages.application.ports.errors import InvalidInputError
+from packages.application.ports.model_gateway import (
+    CompletionRequest,
+    CompletionResult,
+    ModelsListResult,
+)
 from packages.domain.enums import FailureCategory
-from packages.domain.models import LLMEndpoint, ModelDefinition
+from packages.domain.models import EndpointProbeSnapshot, LLMEndpoint, ModelDefinition
 
 
 def _endpoint() -> LLMEndpoint:
@@ -39,19 +45,43 @@ def _model() -> ModelDefinition:
 
 
 class _NoCredentials:
-    def resolve(self, credential_ref: str) -> object:
+    def resolve(self, credential_ref: str) -> SecretValue:
         raise InvalidInputError("credential missing")
 
 
 class _FailingGateway:
-    def probe_connectivity(self, endpoint, credential) -> object:
-        from packages.domain.models import EndpointProbeSnapshot
-
+    def probe_connectivity(
+        self, endpoint: LLMEndpoint, credential: SecretValue
+    ) -> EndpointProbeSnapshot:
         return EndpointProbeSnapshot(
             ok=False,
             error_category=FailureCategory.MODEL_AUTH,
             error_message_redacted="HTTP 401",
         )
+
+    def probe_endpoint(
+        self,
+        endpoint: LLMEndpoint,
+        credential: SecretValue,
+        request: CompletionRequest,
+    ) -> EndpointProbeSnapshot:
+        return self.probe_connectivity(endpoint, credential)
+
+    def list_models(self, endpoint: LLMEndpoint, credential: SecretValue) -> ModelsListResult:
+        raise AssertionError("unexpected list_models call")
+
+    def complete(
+        self,
+        endpoint: LLMEndpoint,
+        credential: SecretValue,
+        request: CompletionRequest,
+    ) -> CompletionResult:
+        raise AssertionError("unexpected complete call")
+
+
+class _Credentials:
+    def resolve(self, credential_ref: str) -> SecretValue:
+        return SecretValue("fixture-secret")
 
 
 class TestLiveProbeNotVerified:
@@ -80,22 +110,16 @@ class TestLiveProbeNotVerified:
         assert payload["endpoint_config_digest"]
 
     def test_manifest_payload_is_sanitized(self) -> None:
-        outcome = not_verified_outcome(
-            _endpoint(), default_probe_suite(), "no credentials"
-        )
+        outcome = not_verified_outcome(_endpoint(), default_probe_suite(), "no credentials")
         payload = outcome.to_manifest_payload()
         assert "credential" not in str(payload).lower() or "LLM_MAIN_KEY" not in str(payload)
         assert "prompt_tokens" not in payload
         assert all(isinstance(value, (str, bool, list, type(None))) for value in payload.values())
 
     def test_probe_failure_is_not_verified(self) -> None:
-        class Credentials:
-            def resolve(self, credential_ref: str) -> object:
-                return object()
-
         outcome = run_live_probe(
             gateway=_FailingGateway(),
-            credentials=Credentials(),
+            credentials=_Credentials(),
             endpoint=_endpoint(),
             model=_model(),
         )

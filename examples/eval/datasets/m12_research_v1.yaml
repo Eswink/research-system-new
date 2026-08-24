@@ -2,7 +2,7 @@ version: 1.0.0
 description: "M12 Reference Workflow \u72EC\u7ACB\u8BC4\u6D4B\u96C6\uFF0810 \u7EF4\
   \u5EA6\uFF0Cdeterministic \u4F18\u5148\uFF1BLLM Reviewer \u4EC5\u8BED\u4E49\u7EF4\
   \u5EA6\uFF09"
-digest: sha256:50bb58f463274af7a515361c2566720b291b8841d713a9ba2df5ab1c375f4816
+digest: sha256:9214fe98b3506f6a54a8b8bd61c590114782f3e6d957f731a6a6c920e778d063
 cases:
   task_completion_001:
     version: 1.0.0
@@ -67,7 +67,7 @@ cases:
     scope: WORKFLOW
     input_ref: input://m12/result_correctness
     expected:
-      artifact_id: 12121212-2222-4333-8444-555555555555:experiment_result.json
+      artifact_id: 5a1c6a8e-9b2d-4f3a-8c5e-121212122222:experiment_result.json
       metric: metrics.baseline_accuracy
       tolerance: '0.001'
     scorer_refs:
@@ -100,7 +100,7 @@ cases:
     scope: WORKFLOW
     input_ref: input://m12/claim_calibration
     expected:
-      claim_id: claim:12121212-2222-4333-8444-555555555555
+      claim_id: claim:5a1c6a8e-9b2d-4f3a-8c5e-121212122222:result
     scorer_refs:
     - scorer_id: unsupported_claim
       version: 1.0.0
@@ -116,7 +116,7 @@ cases:
     input_ref: input://m12/citation_correctness
     expected:
       algorithm: sha256
-      hex: 60e05bd1b195af2f94112fa7197a5c88289058840ce7c6df9693756bc6250f55
+      hex: ed15f9007e2fb75431621362a4730509f8bbf7c4282e5c821f9864a98206bb4b
     scorer_refs:
     - scorer_id: digest_match
       version: 1.0.0
@@ -160,6 +160,19 @@ cases:
     provenance: M12 examples/eval/datasets/m12_research_v1.yaml
     description: "Deliverable \u5F15\u7528\u6B63\u5F0F Claim/Evidence/metrics\uFF08\
       \u975E\u81EA\u7531\u6587\u672C\u91CD\u9020\uFF09"
+  evidence_artifact_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m12/evidence_artifact
+    expected:
+      claim_id: claim:5a1c6a8e-9b2d-4f3a-8c5e-121212122222:result
+    scorer_refs:
+    - scorer_id: evidence_artifact
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M12 examples/eval/datasets/m12_research_v1.yaml
+    description: "\u8BC1\u636E\u767B\u8BB0 artifact digest \u4E0E\u5F53\u524D\u5B58\
+      \u50A8\u4E00\u81F4\uFF08\u7BE1\u6539\u5FC5 FAIL\uFF09"
   cost_efficiency_001:
     version: 1.0.0
     scope: WORKFLOW

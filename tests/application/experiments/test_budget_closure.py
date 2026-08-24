@@ -6,11 +6,13 @@ from adapters.fakes import FakeBudgetLedger
 from packages.application.experiments.budget_closure import (
     BudgetClosureInput,
     BudgetExhaustedError,
+    close_budget,
+)
+from packages.application.experiments.budget_entries import (
     EvaluationUsage,
     ExperimentUsage,
     ModelUsage,
     ToolUsage,
-    close_budget,
 )
 from packages.domain.budget import BudgetPolicy, BudgetReservation, LedgerCostStatus, ResourceType
 
@@ -37,9 +39,7 @@ def _input() -> BudgetClosureInput:
                 elapsed_seconds=45,
             ),
         ),
-        evaluation_usage=(
-            EvaluationUsage(eval_id="m12_research_v1", cases=10, scorer_calls=10),
-        ),
+        evaluation_usage=(EvaluationUsage(eval_id="m12_research_v1", cases=10, scorer_calls=10),),
     )
 
 
@@ -65,9 +65,7 @@ class TestBudgetClosure:
         ledger = FakeBudgetLedger()
         result = close_budget(ledger, input=_input())
         model_entry = next(
-            entry
-            for entry in result.entries
-            if entry.resource_type is ResourceType.MODEL_TOKENS
+            entry for entry in result.entries if entry.resource_type is ResourceType.MODEL_TOKENS
         )
         assert model_entry.cost_status is LedgerCostStatus.KNOWN
         assert model_entry.estimated_cost_minor == 42

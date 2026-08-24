@@ -31,6 +31,7 @@ def load_llm_endpoints(relative_path: str) -> dict[str, LLMEndpoint]:
             request_timeout_seconds=raw.get("request_timeout_seconds", 60),
             max_retries=raw.get("max_retries", 3),
             concurrency_limit=raw.get("concurrency_limit", 4),
+            api_style=raw.get("api_style", "chat_completions"),
             discovery=EndpointDiscoveryConfig(
                 enabled=bool(discovery_raw.get("enabled", False)),
                 allow_models=tuple(str(item) for item in (discovery_raw.get("allow_models") or [])),

@@ -87,6 +87,7 @@ class ExperimentRunResult:
     image_digest: str | None = None
     workspace_snapshot_before: str | None = None
     workspace_snapshot_after: str | None = None
+    elapsed_seconds: int | None = None
     stdout_digest: Digest | None = None
     stderr_digest: Digest | None = None
     metrics: tuple[MetricValue, ...] = ()
