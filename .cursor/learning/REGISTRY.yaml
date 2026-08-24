@@ -1,8 +1,18 @@
 schema_version: 1
 framework_version: 0.4.0
-next_sequence: 7
+next_sequence: 8
 statuses: [PROPOSED, CLUSTERED, REPLAYING, REVIEWING, ACCEPTED, REJECTED, SUPERSEDED]
 entries:
+  - id: LEARN-20260824-001
+    status: PROPOSED
+    file: ".cursor/learning/inbox/LEARN-20260824-001.yaml"
+    summary: "shell guard 对含 `.env`/凭据路径字样的命令 fail-closed 拦截跨会话 ≥2（EXP-20260822-001 Read 拦截同族 + 本会话 Shell ×3）：验证 gitignore 用全量 git status --porcelain 确认文件未出现，不引用 .env 路径；AwaitShell block_until_ms 必须传整数"
+    source_refs:
+      - ".cursor/experience/entries/EXP-20260824-001.md"
+      - ".cursor/experience/entries/EXP-20260822-001.md"
+    promoted_at: ""
+    target_paths:
+      - ".cursor/knowledge/KNOWN_CAVEATS.md"
   - id: LEARN-20260823-001
     status: PROPOSED
     file: ".cursor/learning/inbox/LEARN-20260823-001.yaml"

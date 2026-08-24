@@ -170,7 +170,8 @@ pytest tests/tooling/test_validate_bundle_http_api.py → 6 passed
 ruff check（新增面）→ All checks passed
 mypy strict（220 files）→ Success
 tools/m12_ncbi_smoke.py → SMOKE OK（754 hits）
-tools/m12_generate_deliverable.py → 生成报告
+（旧交付脚本 m12_generate_deliverable 已在 M12-R1 删除，交付路径改为
+  packages/application/deliverable/builder.py 只读聚合）
 ```
 
 ## 下一项任务
