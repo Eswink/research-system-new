@@ -210,6 +210,104 @@ components:
       - no_token_passthrough
       - result_not_evidence
 
+  - id: fastapi
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: control_plane_api_framework
+    source:
+      kind: PYPI
+      package: fastapi
+      url: "https://pypi.org/project/fastapi/0.141.1/"
+    resolution:
+      version: "0.141.1"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "e8822fc40db1e1858054d7a949a888695bc9bdce70139178e33bd2871a453ca1"
+    license:
+      spdx: MIT
+      evidence: "https://github.com/fastapi/fastapi/blob/0.141.1/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, control_plane_api_regression]
+    controls:
+      - starlette_compatibility_with_openhands_sdk
+      - api_dto_boundary
+      - adapter_only_import_boundary
+
+  - id: uvicorn
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: control_plane_http_server
+    source:
+      kind: PYPI
+      package: uvicorn
+      url: "https://pypi.org/project/uvicorn/0.52.4/"
+    resolution:
+      version: "0.52.4"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "73acfee47a0b133c5de13d219492d62d8a31e935f4fe6e41a232451a15379f86"
+    license:
+      spdx: BSD-3-Clause
+      evidence: "https://raw.githubusercontent.com/encode/uvicorn/0.52.4/LICENSE.md"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, control_plane_api_regression]
+
+  - id: starlette
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: fastapi_http_core_transitive
+    source:
+      kind: PYPI
+      package: starlette
+      url: "https://pypi.org/project/starlette/1.6.0/"
+    resolution:
+      version: "1.6.0"
+      lockfile: uv.lock
+      note: "fastapi 0.141.1 传递依赖；同时被 openhands-sdk 1.42.0 依赖（共享版本，M13_API_STACK_QUALIFICATION.md）"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "d4e3ac5e546444960c710297a3c9fc3f7ebae1b7e963f3d36173b49da535be9b"
+    license:
+      spdx: BSD-3-Clause
+      evidence: "https://raw.githubusercontent.com/encode/starlette/1.6.0/LICENSE.md"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, control_plane_api_regression, openhands_adapter_contract_suite]
+
+  - id: pydantic
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: api_dto_schema_validation
+    source:
+      kind: PYPI
+      package: pydantic
+      url: "https://pypi.org/project/pydantic/2.13.4/"
+    resolution:
+      version: "2.13.4"
+      lockfile: uv.lock
+      note: "fastapi 0.141.1 传递依赖（v2 line）"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "c40756b57adaa8b1efeeced5c196f3f3b7c435f90e84ea7f443901bec8099ef6"
+    license:
+      spdx: MIT
+      evidence: "https://github.com/pydantic/pydantic/blob/v2.13.4/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, control_plane_api_regression]
+
   - id: temporal
     adoption_status: PLANNED
     decision_status: DEFERRED

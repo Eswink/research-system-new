@@ -1,0 +1,30 @@
+[importlinter]
+root_package = services
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:api-no-adapters-outside-composition]
+name = Control plane API must not import concrete adapters outside composition root
+type = forbidden
+source_modules =
+    services.api.app
+    services.api.deps
+    services.api.errors
+    services.api.idempotency
+    services.api.mappers
+    services.api.middleware
+    services.api.settings
+    services.api.dto
+    services.api.routers
+forbidden_modules =
+    adapters
+allow_indirect_imports = True
+
+[importlinter:contract:api-dto-purity]
+name = API DTO must not import packages (domain/application) or adapters
+type = forbidden
+source_modules =
+    services.api.dto
+forbidden_modules =
+    packages
+    adapters

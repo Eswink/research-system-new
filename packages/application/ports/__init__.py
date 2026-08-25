@@ -41,6 +41,7 @@ from packages.application.ports.model_gateway import (
     capability_assertion_probed,
     failure_category_of_http_status,
 )
+from packages.application.ports.model_store import ModelStore
 from packages.application.ports.policy_evaluator import (
     PolicyEvaluation,
     PolicyEvaluator,
@@ -53,6 +54,7 @@ from packages.application.ports.resource_catalog import (
     ResourceCatalog,
 )
 from packages.application.ports.retrieval_index import IndexEntry, IndexHit, RetrievalIndex
+from packages.application.ports.run_projection import RunProjection
 from packages.application.ports.tool_pack_store import ToolPackRecord, ToolPackStore
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease, WorkflowEngine
@@ -81,6 +83,7 @@ __all__ = [
     "MemoryStore",
     "ModelGateway",
     "ModelsListResult",
+    "ModelStore",
     "PermanentPortError",
     "PolicyEvaluation",
     "PolicyEvaluator",
@@ -92,6 +95,7 @@ __all__ = [
     "ProjectSettings",
     "ResourceCatalog",
     "RetrievalIndex",
+    "RunProjection",
     "RuntimeEvent",
     "RuntimeEventKind",
     "SecretValue",

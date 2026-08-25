@@ -17,6 +17,8 @@ export default defineConfig([
       "dist/**",
       "build/**",
       "coverage/**",
+      "apps/web/dist/**",
+      "apps/web/node_modules/**",
       "tests/architecture/typescript/fixtures/invalid/**",
     ],
   },
@@ -83,6 +85,37 @@ export default defineConfig([
       ],
       "@typescript-eslint/switch-exhaustiveness-check": "error",
       "architecture/require-never-default": "error",
+    },
+  },
+  {
+    files: ["apps/web/**/*.{ts,tsx}"],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: ["./apps/web/tsconfig.json"],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    files: ["apps/web/tests/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-base-to-string": "off",
+      "@typescript-eslint/no-unnecessary-type-assertion": "off",
+      "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/consistent-type-definitions": "off",
+    },
+  },
+  {
+    // API DTO 契约文件（apps/web/src/api/types.ts）：与 schemas/openapi.m13.json
+    // 对应的单一 schema truth（生成边界）；声明式类型允许超出 300 行阈值。
+    files: ["apps/web/src/api/types.ts"],
+    rules: {
+      "max-lines": "off",
     },
   },
 ]);
