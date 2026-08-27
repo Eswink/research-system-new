@@ -7,8 +7,11 @@ state 落地后替换为本服务实现（CatalogSnapshot Port 不变）。
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 from adapters.contracts import (
     load_agents,
@@ -49,11 +52,31 @@ def load_catalog_snapshot() -> CatalogSnapshot:
         budget_policies=load_budget_policies(f"{_CONFIG_DIR}/budgets.yaml"),
         skills=load_skills(f"{_CONFIG_DIR}/skills.yaml"),
         policy=load_policy(f"{_CONFIG_DIR}/policy.yaml"),
-        # 如实：example providers 未登记 pin → preflight SUPPLY_CHAIN_UNPINNED
-        # 如实暴露（AGENTS.md §9 unpinned plugin 默认 deny）；受控 E2E 由
-        # 测试夹具显式注入 pin 后走 freeze happy path。
-        tool_pack_digests={},
+        # M13-R1: toolpack 契约目录中的已 pin digest 如实接入（与 M12 参考
+        # 流程同源逻辑，不新造校验规则）；未被 pin 的 provider 仍由 preflight
+        # SUPPLY_CHAIN_UNPINNED 如实暴露（默认 deny 语义保持）。
+        tool_pack_digests=_load_tool_pack_digests(),
     )
+
+
+def _load_tool_pack_digests() -> dict[str, str]:
+    """读取 examples/contracts/toolpack_*.yaml 的 pinned digest（provider_id -> digest）。
+
+    与 m12_reference_workflow 的 _tool_pack_digests 同源逻辑；
+    toolpack_manifest.yaml 是 schema 规格，不是真实 pack，跳过。
+    """
+    contracts_root = _ROOT / _CONTRACTS_DIR
+    result: dict[str, str] = {}
+    for path in sorted(contracts_root.glob("toolpack_*.yaml")):
+        if path.stem == "toolpack_manifest":
+            continue
+        payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        digest = payload.get("digest") if isinstance(payload, dict) else None
+        provider_id = str(payload.get("id", "")) if isinstance(payload, dict) else ""
+        provider_id = re.sub(r"_v\d+(\.\d+)*$", "", provider_id)
+        if isinstance(digest, str) and digest and provider_id:
+            result[provider_id] = digest
+    return result
 
 
 def load_project_settings() -> ProjectSettings:

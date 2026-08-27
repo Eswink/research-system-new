@@ -190,6 +190,23 @@ export interface AgentSpecDto {
   max_iterations: number | null;
   runtime_kind: string | null;
   budget_policy_ref: string | null;
+  /** resource version（ETag 值，If-Match 用） */
+  version: string;
+}
+
+export interface AgentCreateDto {
+  role: string;
+  model_binding?: { mode: string; value: string | null };
+  workspace_policy?: string | null;
+  max_context_tokens?: number | null;
+  max_iterations?: number | null;
+}
+
+export interface AgentUpdatePayload {
+  model_binding?: { mode: string; value: string | null };
+  workspace_policy?: string | null;
+  max_context_tokens?: number | null;
+  max_iterations?: number | null;
 }
 
 export interface ProjectSettingsDto {
@@ -321,6 +338,8 @@ export interface ClaimMapDto {
   claims: ClaimDto[];
   unsupported_claims: string[];
   contradictory_claims: string[];
+  /** ledger 行损坏时整图降级标记（WP-P4，未知行不整体失败） */
+  degraded: boolean;
 }
 
 export interface UsageEntryDto {
@@ -356,4 +375,18 @@ export interface ExportBundleDto {
   claims: ClaimDto[];
   usage: BudgetViewDto;
   exported_from: string;
+}
+
+export interface ExperimentRunDto {
+  experiment_run_id: string;
+  artifact_ids: string[];
+  image_digest: string | null;
+  environment_digest: string | null;
+  metrics: Record<string, unknown>;
+  reproduction_available: boolean;
+}
+
+export interface ExperimentViewDto {
+  experiments: ExperimentRunDto[];
+  reproduction_note: string;
 }

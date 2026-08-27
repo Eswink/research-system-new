@@ -58,3 +58,18 @@ task_contracts:
     retry_policy:
       max_attempts: 2
       retryable_categories: [WORKER_LOST, MODEL_RATE_LIMIT]
+
+  console_demo_deliverable:
+    version: 1.0.0
+    purpose: M13-R1 console demo phase deliverable (controlled Fake agent loop output; UI 如实披露执行体性质).
+    required_capabilities:
+      - artifact.read
+    output_schema: domain_discovery_output_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: analysis_report
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

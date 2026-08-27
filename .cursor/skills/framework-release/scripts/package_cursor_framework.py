@@ -19,7 +19,9 @@ def _discover_root() -> Path:
         return Path(explicit).resolve()
     here = Path(__file__).resolve()
     for candidate in (here.parent, *here.parents):
-        if (candidate / "VERSION").is_file() and (candidate / ".cursor" / "framework.json").is_file():
+        if (candidate / "VERSION").is_file() and (
+            candidate / ".cursor" / "framework.json"
+        ).is_file():
             return candidate
     raise RuntimeError("Cannot locate repository root (VERSION + .cursor/framework.json)")
 
@@ -28,7 +30,9 @@ ROOT = _discover_root()
 PYTHON = sys.executable
 
 
-def run_checked(script: Path, root: Path, env: dict[str, str], extra: list[str] | None = None) -> None:
+def run_checked(
+    script: Path, root: Path, env: dict[str, str], extra: list[str] | None = None
+) -> None:
     cmd = [PYTHON, "-B", str(script), *(extra or [])]
     run_env = {**env, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
     cp = subprocess.run(
@@ -42,15 +46,21 @@ def run_checked(script: Path, root: Path, env: dict[str, str], extra: list[str] 
         timeout=120,
     )
     if cp.returncode != 0:
-        raise RuntimeError(f"clean-extraction regression failed: {script.name}\n{(cp.stdout + cp.stderr)[-3000:]}")
+        raise RuntimeError(
+            f"clean-extraction regression failed: {script.name}\n{(cp.stdout + cp.stderr)[-3000:]}"
+        )
 
 
 def assert_archive_hygiene(zf: zipfile.ZipFile, archive_root: str) -> None:
     prefix = archive_root.rstrip("/") + "/"
     bad = []
     for name in zf.namelist():
-        rel = name[len(prefix):] if name.startswith(prefix) else name
-        if "__pycache__/" in rel or rel.endswith(".pyc") or NON_RELEASE_DIRS.intersection(rel.split("/")):
+        rel = name[len(prefix) :] if name.startswith(prefix) else name
+        if (
+            "__pycache__/" in rel
+            or rel.endswith(".pyc")
+            or NON_RELEASE_DIRS.intersection(rel.split("/"))
+        ):
             bad.append(rel)
         if rel.startswith(".cursor/runtime/") and rel not in RUNTIME_KEEP:
             bad.append(rel)
@@ -82,15 +92,25 @@ def main() -> int:
 
     env = os.environ.copy()
     env["CURSOR_FRAMEWORK_ROOT"] = str(ROOT)
-    verify_script = ROOT / ".cursor/skills/framework-release/scripts/verify_cursor_framework_release.py"
+    verify_script = (
+        ROOT / ".cursor/skills/framework-release/scripts/verify_cursor_framework_release.py"
+    )
     try:
         run_checked(verify_script, ROOT, env, ["--version", version])
     except RuntimeError as exc:
         print(f"ERROR: source release verification failed\n{exc}")
         return 3
 
-    requested_output = Path(args.output).expanduser() if args.output else ROOT.parent / f"system-specification-cursor-framework-v{version}.zip"
-    output = requested_output.resolve() if requested_output.is_absolute() else (ROOT / requested_output).resolve()
+    requested_output = (
+        Path(args.output).expanduser()
+        if args.output
+        else ROOT.parent / f"system-specification-cursor-framework-v{version}.zip"
+    )
+    output = (
+        requested_output.resolve()
+        if requested_output.is_absolute()
+        else (ROOT / requested_output).resolve()
+    )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.unlink(missing_ok=True)
     archive_root = f"system-specification-cursor-framework-v{version}"
@@ -120,7 +140,13 @@ def main() -> int:
                 ]
                 for rel in suite:
                     run_checked(unpacked_root / rel, unpacked_root, unpack_env)
-                run_checked(unpacked_root / ".cursor/skills/framework-release/scripts/verify_cursor_framework_release.py", unpacked_root, unpack_env, ["--version", version])
+                run_checked(
+                    unpacked_root
+                    / ".cursor/skills/framework-release/scripts/verify_cursor_framework_release.py",
+                    unpacked_root,
+                    unpack_env,
+                    ["--version", version],
+                )
     except (RuntimeError, zipfile.BadZipFile) as exc:
         output.unlink(missing_ok=True)
         print(f"ERROR: packaged artifact verification failed\n{exc}")

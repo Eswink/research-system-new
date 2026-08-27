@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from common import RUNTIME, emit, read_event, resolve_bucket_id, resolve_task_text, safe_id
+from common import RUNTIME, emit, read_event, resolve_bucket_id, resolve_task_text
 
 
 def task_signature(value: object) -> str:

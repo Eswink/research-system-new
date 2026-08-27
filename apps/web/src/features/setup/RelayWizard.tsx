@@ -7,7 +7,7 @@ import { useWizardFlow } from "./useWizardFlow";
 
 /**
  * First-run Relay Wizard（END_TO_END_USER_JOURNEY §1）：
- * Relay URL → Credential → Test Endpoint → Discover/Add Model → Probe → Defaults。
+ * Relay URL → Credential → Test Endpoint → Discover/Add Model → Probe。
  *
  * 密钥纪律：api_key 只在创建请求体内发送一次，之后 UI 只显示
  * credential 安全状态（configured/missing），页面任何状态不保存明文 Key。
@@ -48,10 +48,15 @@ export function RelayWizard({ onComplete }: { onComplete: (endpointId: string) =
         />
       )}
       {flow.step === "models" && flow.endpoint !== null && (
-        <ModelsStep busy={flow.busy} error={flow.error} onProbe={probeCurrent} />
+        <ModelsStep
+          endpoint={flow.endpoint}
+          busy={flow.busy}
+          error={flow.error}
+          onProbe={probeCurrent}
+        />
       )}
       {flow.step === "done" && flow.probeResult !== null && flow.endpoint !== null && (
-        <DoneStep probe={flow.probeResult} onFinish={finish} />
+        <DoneStep probe={flow.probeResult} onRetry={flow.goToModels} onFinish={finish} />
       )}
     </section>
   );

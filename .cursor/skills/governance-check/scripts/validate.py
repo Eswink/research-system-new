@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """离线验证 Research OS 的 Cursor 工程治理资产。"""
+
 from __future__ import annotations
 
 import datetime as dt
@@ -20,9 +21,12 @@ def _discover_root() -> Path:
         return Path(explicit).resolve()
     here = Path(__file__).resolve()
     for candidate in (here.parent, *here.parents):
-        if (candidate / "VERSION").is_file() and (candidate / ".cursor" / "framework.json").is_file():
+        if (candidate / "VERSION").is_file() and (
+            candidate / ".cursor" / "framework.json"
+        ).is_file():
             return candidate
     raise RuntimeError("Cannot locate repository root (VERSION + .cursor/framework.json)")
+
 
 ROOT = _discover_root()
 CURSOR_ROOT = ROOT / ".cursor"
@@ -193,8 +197,16 @@ def check_hooks() -> None:
     if not isinstance(hook_defs, dict):
         add_error(".cursor/hooks.json hooks 必须为对象")
         return
-    required={"sessionStart","beforeShellExecution","beforeMCPExecution","preToolUse","subagentStart","subagentStop","stop"}
-    missing=required-set(hook_defs)
+    required = {
+        "sessionStart",
+        "beforeShellExecution",
+        "beforeMCPExecution",
+        "preToolUse",
+        "subagentStart",
+        "subagentStop",
+        "stop",
+    }
+    missing = required - set(hook_defs)
     if missing:
         add_error(f".cursor/hooks.json 缺少事件: {sorted(missing)}")
     for event_name, entries in hook_defs.items():
@@ -214,19 +226,46 @@ def check_hooks() -> None:
             if not isinstance(command, str) or not command:
                 add_error(f"Hook 缺少 command: {event_name}")
                 continue
-            script = next((token for token in reversed(command.split()) if token.endswith((".py",".sh",".ts",".js"))), "")
+            script = next(
+                (
+                    token
+                    for token in reversed(command.split())
+                    if token.endswith((".py", ".sh", ".ts", ".js"))
+                ),
+                "",
+            )
             if not script or not (ROOT / script).exists():
                 add_error(f"Hook 脚本不存在: {event_name}: {script or command}")
                 continue
-            if event_name in {"beforeReadFile","beforeShellExecution","beforeMCPExecution","preToolUse","subagentStart"} and entry.get("failClosed") is not True:
+            if (
+                event_name
+                in {
+                    "beforeReadFile",
+                    "beforeShellExecution",
+                    "beforeMCPExecution",
+                    "preToolUse",
+                    "subagentStart",
+                }
+                and entry.get("failClosed") is not True
+            ):
                 add_error(f"Guard Hook 必须 failClosed: {event_name}")
-            if event_name == "preToolUse" and command.endswith("subagent_pretool_guard.py") and entry.get("matcher") != "Task":
+            if (
+                event_name == "preToolUse"
+                and command.endswith("subagent_pretool_guard.py")
+                and entry.get("matcher") != "Task"
+            ):
                 add_error("Subagent preToolUse guard 必须 matcher=Task")
-            if event_name == "preToolUse" and command.endswith("secret_guard.py") and entry.get("matcher") != "Read":
+            if (
+                event_name == "preToolUse"
+                and command.endswith("secret_guard.py")
+                and entry.get("matcher") != "Read"
+            ):
                 add_error("Secret preToolUse guard 必须 matcher=Read")
             if event_name == "stop":
                 script_text = read_text(ROOT / script)
-                code_only = re.sub(r'"""(?:.|\n)*?"""|\'\'\'(?:.|\n)*?\'\'\'|#[^\n]*', "", script_text)
+                code_only = re.sub(
+                    r'"""(?:.|\n)*?"""|\'\'\'(?:.|\n)*?\'\'\'|#[^\n]*', "", script_text
+                )
                 if re.search(r"git\s+(?:commit|push)\b", code_only):
                     add_error(f".cursor/hooks stop 脚本不得执行 git commit/push: {script}")
     read_guards = [
@@ -234,8 +273,13 @@ def check_hooks() -> None:
         for entry in hook_defs.get("preToolUse") or []
         if isinstance(entry, dict) and str(entry.get("command") or "").endswith("secret_guard.py")
     ]
-    if len(read_guards) != 1 or read_guards[0].get("matcher") != "Read" or read_guards[0].get("failClosed") is not True:
+    if (
+        len(read_guards) != 1
+        or read_guards[0].get("matcher") != "Read"
+        or read_guards[0].get("failClosed") is not True
+    ):
         add_error("Read secret guard 必须唯一绑定为 fail-closed preToolUse matcher=Read")
+
 
 def check_required_structure() -> None:
     required_files = {
@@ -284,7 +328,9 @@ def check_rules() -> None:
         expected = EXPECTED_RULE_METADATA.get(path.name)
         if expected is not None:
             if always_apply is not expected["always_apply"]:
-                add_error(f"Rule alwaysApply 与期望不符: {path.name}: {always_apply!r} != {expected['always_apply']}")
+                add_error(
+                    f"Rule alwaysApply 与期望不符: {path.name}: {always_apply!r} != {expected['always_apply']}"
+                )
             if expected["has_globs"] and not metadata.get("globs"):
                 add_error(f"Rule 缺少 globs: {path.name}")
             if not expected["has_globs"] and metadata.get("globs"):
@@ -307,7 +353,9 @@ def check_rules() -> None:
             continue
         text = read_text(path)
         if "子代理" in text and re.search(r"(?:最多|上限|少于)\s*\d+", text):
-            add_error(f"子代理数值预算只能由 10-agent-delegation.mdc 定义: {path.relative_to(ROOT)}")
+            add_error(
+                f"子代理数值预算只能由 10-agent-delegation.mdc 定义: {path.relative_to(ROOT)}"
+            )
 
     git_text = read_text(rule_root / "43-git-commit-policy.mdc")
     if "每个任务默认一个本地语义提交" in git_text:
@@ -320,7 +368,10 @@ def check_rules() -> None:
         add_error("Architecture Rule 必须限定到产品代码 globs，不得 Always Apply")
     if "调用/数据流方向为 `domain → application → adapter/infra`" in arch_body:
         add_error("Architecture Rule 混淆 runtime control flow 与 dependency direction")
-    for required_flow in ("entry adapter → application use case → domain", "application → inward-owned Port → adapter / infrastructure"):
+    for required_flow in (
+        "entry adapter → application use case → domain",
+        "application → inward-owned Port → adapter / infrastructure",
+    ):
         if required_flow not in arch_body:
             add_error(f"Architecture Rule 缺少明确控制流: {required_flow}")
 
@@ -403,9 +454,18 @@ def check_external_skill_lock() -> None:
         source = entry.get("source") or {}
         revision = source.get("revision")
         source_path = source.get("path")
-        if not source.get("repository") or not source.get("license") or not source.get("license_evidence"):
+        if (
+            not source.get("repository")
+            or not source.get("license")
+            or not source.get("license_evidence")
+        ):
             add_error(f"外部 Skill 缺少 repository/license/license_evidence: {name}")
-        if not isinstance(source_path, str) or not source_path or source_path.startswith(("/", "\\")) or ".." in Path(source_path).parts:
+        if (
+            not isinstance(source_path, str)
+            or not source_path
+            or source_path.startswith(("/", "\\"))
+            or ".." in Path(source_path).parts
+        ):
             add_error(f"外部 Skill source.path 必须是安全相对路径: {name}")
         if not isinstance(revision, str) or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
             add_error(f"外部 Skill revision 必须是完整 commit: {name}")
@@ -415,19 +475,34 @@ def check_external_skill_lock() -> None:
 
         content = entry.get("content") or {}
         digest = content.get("digest")
-        if content.get("digest_algorithm") != "sha256" or content.get("digest_scheme") != "PATH_AND_CONTENT_SHA256_V1":
+        if (
+            content.get("digest_algorithm") != "sha256"
+            or content.get("digest_scheme") != "PATH_AND_CONTENT_SHA256_V1"
+        ):
             add_error(f"外部 Skill content digest 算法/方案无效: {name}")
-        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None or digest == "0" * 64:
+        if (
+            not isinstance(digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            or digest == "0" * 64
+        ):
             add_error(f"外部 Skill content digest 必须是非占位 SHA-256: {name}")
-        if not isinstance(content.get("file_count"), int) or isinstance(content.get("file_count"), bool) or content.get("file_count", 0) <= 0:
+        if (
+            not isinstance(content.get("file_count"), int)
+            or isinstance(content.get("file_count"), bool)
+            or content.get("file_count", 0) <= 0
+        ):
             add_error(f"外部 Skill content file_count 必须为正整数: {name}")
         as_date(content.get("verified_at"), f"skills.lock.{name}.content.verified_at")
 
         item_gate = entry.get("upgrade_gate") or {}
-        if item_gate.get("explicit_user_approval") is not True or item_gate.get("required_checks") != "inherit_policy":
+        if (
+            item_gate.get("explicit_user_approval") is not True
+            or item_gate.get("required_checks") != "inherit_policy"
+        ):
             add_error(f"外部 Skill 条目必须继承显式升级门禁: {name}")
         if "installations" in entry:
             add_error(f"便携主包不得锁定用户 home 目录 installation: {name}")
+
 
 def check_version_source() -> None:
     version_path = ROOT / "VERSION"
@@ -446,6 +521,7 @@ def check_version_source() -> None:
         add_error("framework version_source 必须为 VERSION")
     if "research_os_baseline" in framework:
         add_error("不得维护独立 research_os_baseline")
+
 
 def load_task_plans() -> dict[str, tuple[Path, dict[str, Any], str]]:
     result: dict[str, tuple[Path, dict[str, Any], str]] = {}
@@ -480,7 +556,10 @@ def load_rechecks() -> dict[str, tuple[Path, dict[str, Any], str]]:
         for path in sorted(recheck_root.glob("RECHECK-*.md")):
             metadata, body = parse_frontmatter(path)
             recheck_id = metadata.get("id")
-            if not isinstance(recheck_id, str) or re.fullmatch(r"RECHECK-\d{8}-\d{3}", recheck_id) is None:
+            if (
+                not isinstance(recheck_id, str)
+                or re.fullmatch(r"RECHECK-\d{8}-\d{3}", recheck_id) is None
+            ):
                 add_error(f"复检 ID 无效: {path.relative_to(ROOT)}: {recheck_id!r}")
                 continue
             if not path.name.startswith(recheck_id + "-"):
@@ -545,7 +624,11 @@ def check_plans_and_rechecks() -> None:
                     if recheck_meta.get("result") not in {"PASS", "PASS_WITH_WARNINGS"}:
                         add_error(f"DONE 任务复检未通过: {plan_id}: {recheck_meta.get('result')!r}")
             if not memory_entries:
-                if "无可复用事实" not in body and "无可复用事实" not in (latest_recheck and read_text(resolve_repository_path(str(latest_recheck), path)) or ""):
+                if "无可复用事实" not in body and "无可复用事实" not in (
+                    latest_recheck
+                    and read_text(resolve_repository_path(str(latest_recheck), path))
+                    or ""
+                ):
                     add_error(f"DONE 任务既无工程记忆引用，也未声明无可复用事实: {plan_id}")
             if "待填写" in body or "PENDING" in body:
                 add_error(f"DONE 任务仍包含占位内容: {plan_id}")
@@ -594,7 +677,11 @@ def check_memory() -> None:
         if metadata.get("status") not in MEMORY_STATUSES:
             add_error(f"工程记忆状态无效: {memory_id}: {metadata.get('status')!r}")
         confidence = metadata.get("confidence")
-        if not isinstance(confidence, (int, float)) or isinstance(confidence, bool) or not 0 <= confidence <= 1:
+        if (
+            not isinstance(confidence, (int, float))
+            or isinstance(confidence, bool)
+            or not 0 <= confidence <= 1
+        ):
             add_error(f"工程记忆 confidence 必须在 0–1: {memory_id}: {confidence!r}")
         created_at = as_date(metadata.get("created_at"), f"{memory_id}.created_at")
         review_after = as_date(metadata.get("review_after"), f"{memory_id}.review_after")
@@ -610,7 +697,13 @@ def check_memory() -> None:
                 continue
             if not resolve_repository_path(source, path).exists():
                 add_error(f"工程记忆来源不存在: {memory_id}: {source}")
-        for heading in ("## 做了什么", "## 为什么这样做", "## 怎么做与复现", "## 适用边界", "## 来源"):
+        for heading in (
+            "## 做了什么",
+            "## 为什么这样做",
+            "## 怎么做与复现",
+            "## 适用边界",
+            "## 来源",
+        ):
             if heading not in body:
                 add_error(f"工程记忆缺少章节 {heading}: {memory_id}")
         if "待填写" in body:
@@ -722,13 +815,19 @@ def check_runtime_config() -> None:
     if unknown:
         add_error(f".cursor/runtime_config.json 存在未登记键: {sorted(unknown)}")
     if payload.get("schema_version") != 1:
-        add_error(f".cursor/runtime_config.json schema_version 必须为 1: {payload.get('schema_version')!r}")
+        add_error(
+            f".cursor/runtime_config.json schema_version 必须为 1: {payload.get('schema_version')!r}"
+        )
     retention = payload.get("observation_retention_days")
     if isinstance(retention, bool) or not isinstance(retention, int) or retention <= 0:
-        add_error(f".cursor/runtime_config.json observation_retention_days 必须为正整数: {retention!r}")
+        add_error(
+            f".cursor/runtime_config.json observation_retention_days 必须为正整数: {retention!r}"
+        )
     hooks_ref = read_text(CURSOR_ROOT / "knowledge" / "HOOKS_REFERENCE.md")
     if "runtime_config.json" not in hooks_ref:
-        add_error(".cursor/knowledge/HOOKS_REFERENCE.md 必须引用 runtime_config.json（文档与配置漂移防护）")
+        add_error(
+            ".cursor/knowledge/HOOKS_REFERENCE.md 必须引用 runtime_config.json（文档与配置漂移防护）"
+        )
 
 
 def main() -> int:
@@ -759,7 +858,9 @@ def main() -> int:
     print("- Rules / Skills frontmatter 与作用域有效")
     print("- 子代理按 wave 最多 3；无全任务累计上限；禁止嵌套")
     print("- ALL_PLAN / Task Plan / Recheck / Memory 交叉引用一致")
-    print("- 外部 Skill 使用 immutable revision + content digest + upgrade gate；主包不依赖开发者 home 目录安装")
+    print(
+        "- 外部 Skill 使用 immutable revision + content digest + upgrade gate；主包不依赖开发者 home 目录安装"
+    )
     print("- VERSION 与 Cursor framework metadata 单一版本源一致")
     print("- 未发现明显凭据材料")
     return 0

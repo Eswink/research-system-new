@@ -62,19 +62,17 @@ class TestResponsesApi:
                     "parameters": {"type": "object"},
                 }
             ]
-            return json_response(
-                {
-                    "model": "model-alpha",
-                    "output": [
-                        {
-                            "type": "function_call",
-                            "call_id": "call_1",
-                            "name": "pong",
-                            "arguments": '{"value":"x"}',
-                        }
-                    ],
-                }
-            )
+            return json_response({
+                "model": "model-alpha",
+                "output": [
+                    {
+                        "type": "function_call",
+                        "call_id": "call_1",
+                        "name": "pong",
+                        "arguments": '{"value":"x"}',
+                    }
+                ],
+            })
 
         result = gateway(handler).complete(
             RESPONSES_ENDPOINT,
@@ -146,3 +144,57 @@ class TestResponsesApi:
         assert result.content == "pong"
         assert result.returned_model_name == "model-alpha"
         assert result.usage_reported is True
+
+    def test_responses_result_preserves_system_fingerprint(self) -> None:
+        """M13-R1 WP-M6：responses payload 含 system_fingerprint 时不再丢弃。"""
+        from adapters.relay.responses_api import responses_result
+
+        result = responses_result(
+            {
+                "id": "resp_1",
+                "object": "response",
+                "model": "model-alpha",
+                "status": "completed",
+                "output": [
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": "pong"}],
+                    }
+                ],
+                "usage": {"input_tokens": 5, "output_tokens": 3, "total_tokens": 8},
+                "system_fingerprint": "fp_responses_v1",
+            },
+            safe_headers={},
+        )
+        assert result.system_fingerprint == "fp_responses_v1"
+
+    def test_responses_result_missing_fingerprint_stays_none(self) -> None:
+        """缺失/非法 fingerprint 保持 None（诚实占位，不伪造）。"""
+        from adapters.relay.responses_api import responses_result
+
+        missing = responses_result(
+            {
+                "id": "resp_2",
+                "object": "response",
+                "model": "model-alpha",
+                "status": "completed",
+                "output": [],
+                "usage": {"total_tokens": 8},
+            },
+            safe_headers={},
+        )
+        assert missing.system_fingerprint is None
+        malformed = responses_result(
+            {
+                "id": "resp_3",
+                "object": "response",
+                "model": "model-alpha",
+                "status": "completed",
+                "output": [],
+                "usage": {"total_tokens": 8},
+                "system_fingerprint": 12345,
+            },
+            safe_headers={},
+        )
+        assert malformed.system_fingerprint is None

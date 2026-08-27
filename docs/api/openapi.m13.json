@@ -2,6 +2,63 @@
   "$id": "https://research-os.local/schemas/openapi.m13.json",
   "components": {
     "schemas": {
+      "AgentCreateDto": {
+        "additionalProperties": false,
+        "description": "创建 Agent 实例（Role 的配置实例；同 Role 可多实例）。",
+        "properties": {
+          "max_context_tokens": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Context Tokens"
+          },
+          "max_iterations": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Iterations"
+          },
+          "model_binding": {
+            "additionalProperties": false,
+            "title": "Model Binding",
+            "type": "object"
+          },
+          "role": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Role",
+            "type": "string"
+          },
+          "workspace_policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Policy"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "AgentCreateDto",
+        "type": "object"
+      },
       "AgentSpecDto": {
         "additionalProperties": false,
         "description": "AgentSpec 实例（Role 的配置实例；可独立绑定模型）。",
@@ -76,6 +133,12 @@
             },
             "title": "Skill Refs",
             "type": "array"
+          },
+          "version": {
+            "default": "",
+            "description": "resource version（ETag 值，If-Match 用）",
+            "title": "Version",
+            "type": "string"
           },
           "workspace_policy": {
             "anyOf": [
@@ -378,6 +441,11 @@
             },
             "title": "Contradictory Claims",
             "type": "array"
+          },
+          "degraded": {
+            "default": false,
+            "title": "Degraded",
+            "type": "boolean"
           },
           "unsupported_claims": {
             "items": {
@@ -777,6 +845,28 @@
           "source_ref": {
             "title": "Source Ref",
             "type": "string"
+          },
+          "workspace_snapshot_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Snapshot After"
+          },
+          "workspace_snapshot_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Snapshot Before"
           }
         },
         "required": [
@@ -785,6 +875,80 @@
           "content_digest"
         ],
         "title": "EvidenceDto",
+        "type": "object"
+      },
+      "ExperimentRunDto": {
+        "additionalProperties": false,
+        "description": "单个 experiment run 的只读视图（persisted truth）。",
+        "properties": {
+          "artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Artifact Ids",
+            "type": "array"
+          },
+          "environment_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Digest"
+          },
+          "experiment_run_id": {
+            "title": "Experiment Run Id",
+            "type": "string"
+          },
+          "image_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Digest"
+          },
+          "metrics": {
+            "additionalProperties": false,
+            "title": "Metrics",
+            "type": "object"
+          },
+          "reproduction_available": {
+            "default": false,
+            "title": "Reproduction Available",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "experiment_run_id"
+        ],
+        "title": "ExperimentRunDto",
+        "type": "object"
+      },
+      "ExperimentViewDto": {
+        "additionalProperties": false,
+        "description": "run 的 experiment 聚合视图；reproduction 诚实标注 unavailable。",
+        "properties": {
+          "experiments": {
+            "items": {
+              "$ref": "#/components/schemas/ExperimentRunDto"
+            },
+            "title": "Experiments",
+            "type": "array"
+          },
+          "reproduction_note": {
+            "default": "",
+            "title": "Reproduction Note",
+            "type": "string"
+          }
+        },
+        "title": "ExperimentViewDto",
         "type": "object"
       },
       "ExportBundleDto": {
@@ -1555,6 +1719,68 @@
         "title": "ProjectSettingsDto",
         "type": "object"
       },
+      "ProjectSettingsUpdateDto": {
+        "additionalProperties": false,
+        "description": "项目设置保存（全量显式；template/workspace 引用由服务端校验）。",
+        "properties": {
+          "budget_policy_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Budget Policy Id",
+            "type": "string"
+          },
+          "compute_profile": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compute Profile"
+          },
+          "default_model_profile_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Model Profile Id"
+          },
+          "policy_id": {
+            "default": "project-policy",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "team_template_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Team Template Id",
+            "type": "string"
+          },
+          "workspace_backend": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Workspace Backend",
+            "type": "string"
+          }
+        },
+        "required": [
+          "team_template_id",
+          "budget_policy_id",
+          "workspace_backend"
+        ],
+        "title": "ProjectSettingsUpdateDto",
+        "type": "object"
+      },
       "ProtocolSourceDto": {
         "additionalProperties": false,
         "description": "协议文件路径（examples/protocols/ 内，wizard 选择）。",
@@ -1956,7 +2182,7 @@
   "paths": {
     "/agents/{agent_id}": {
       "patch": {
-        "description": "per-Agent 更新（model_binding 等）。\n\nM13 诚实边界：配置目录当前来自 examples/ 契约（只读快照）；运行中\n修改 Model/Tool/semantic 配置必须产生 Manifest Revision / Fork，\n持久化配置修改属 M14（PostgreSQL canonical state）。本端点验证\n变更合法性但不写回（返回 501 说明原因），防止伪持久化。",
+        "description": "per-Agent 更新（model_binding 等）持久化到 AgentStore。\n\n语义变更（运行中改 Model/Tool）仍须 Manifest Revision / Fork（M14）。",
         "operationId": "update_agent_agents__agent_id__patch",
         "parameters": [
           {
@@ -2653,7 +2879,7 @@
     },
     "/projects/{project_id}/agents": {
       "get": {
-        "description": "Agent 实例目录（Role 的配置实例；可独立绑定模型）。",
+        "description": "Agent 实例目录（Role 的配置实例；可独立绑定模型；合并视图）。",
         "operationId": "list_agents_projects__project_id__agents_get",
         "parameters": [
           {
@@ -2696,11 +2922,62 @@
         "tags": [
           "team-protocol"
         ]
+      },
+      "post": {
+        "description": "创建 Agent 实例（同 Role 可多实例；role/model 引用真实校验）。",
+        "operationId": "create_agent_projects__project_id__agents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSpecDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Agent",
+        "tags": [
+          "team-protocol"
+        ]
       }
     },
     "/projects/{project_id}/compile": {
       "post": {
-        "description": "compile + preflight（正式组合入口；预算预留仅发生在 preflight 内）。",
+        "description": "compile + preflight（正式组合入口；真实 health/policy 接线）。",
         "operationId": "compile_and_preflight_endpoint_projects__project_id__compile_post",
         "parameters": [
           {
@@ -2753,7 +3030,7 @@
     },
     "/projects/{project_id}/dry-run": {
       "post": {
-        "description": "Dry Run：纯只读投影，零 Research side effect。\n\n不启动 Agent、不调用 Research Tool、不执行 Experiment、不写长期\nMemory、不 reserve budget（`dry_run_projection` 是纯函数）。",
+        "description": "Dry Run：纯只读投影，零 Research side effect。\n\n不启动 Agent、不调用 Research Tool、不执行 Experiment、不写长期\nMemory、不 reserve budget（`dry_run_projection` 是纯函数；context\n不注入 budget ledger，preflight 预留仅为本地 digest 引用）。",
         "operationId": "dry_run_endpoint_projects__project_id__dry_run_post",
         "parameters": [
           {
@@ -2806,7 +3083,7 @@
     },
     "/projects/{project_id}/preflight": {
       "post": {
-        "description": "preflight 复检（编译成功后执行）。",
+        "description": "preflight 复检（编译成功后执行；真实 health/policy 接线）。",
         "operationId": "preflight_endpoint_projects__project_id__preflight_post",
         "parameters": [
           {
@@ -2858,6 +3135,51 @@
       }
     },
     "/projects/{project_id}/runs": {
+      "get": {
+        "description": "Run 列表（created_at 倒序；M13-R1 WP-M2：刷新恢复入口）。",
+        "operationId": "list_runs_projects__project_id__runs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunDetailDto"
+                  },
+                  "title": "Response List Runs Projects  Project Id  Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Runs",
+        "tags": [
+          "runs"
+        ]
+      },
       "post": {
         "description": "启动一次 Research Run（StartRunCommand → 正式编排链）。",
         "operationId": "start_run_projects__project_id__runs_post",
@@ -2912,7 +3234,7 @@
     },
     "/projects/{project_id}/settings": {
       "get": {
-        "description": "项目设置视图（wizard 默认项目；M14 后持久化）。",
+        "description": "项目设置视图（merged：ProjectSettingsStore 优先，examples 回退）。",
         "operationId": "get_project_settings_projects__project_id__settings_get",
         "parameters": [
           {
@@ -2951,11 +3273,62 @@
         "tags": [
           "team-protocol"
         ]
+      },
+      "put": {
+        "description": "项目设置持久化（ProjectSettingsStore；模板/工作区引用校验）。",
+        "operationId": "put_project_settings_projects__project_id__settings_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectSettingsUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSettingsDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Project Settings",
+        "tags": [
+          "team-protocol"
+        ]
       }
     },
     "/protocols/validate": {
       "post": {
-        "description": "协议校验：编译（不做任何副作用）。",
+        "description": "协议校验：编译（不做任何副作用；合并目录视图）。",
         "operationId": "validate_protocol_protocols_validate_post",
         "requestBody": {
           "content": {
@@ -2997,7 +3370,7 @@
     },
     "/roles": {
       "get": {
-        "description": "Role 目录（RoleDefinition 不绑定模型；ADR-0011）。",
+        "description": "Role 目录（RoleDefinition 不绑定模型；ADR-0011；合并视图）。",
         "operationId": "list_roles_roles_get",
         "responses": {
           "200": {
@@ -3109,7 +3482,7 @@
     },
     "/runs/{run_id}/claims": {
       "get": {
-        "description": "Source → Evidence → Relation → Claim 地图（persisted truth）。\n\n视觉语义：missing/deleted evidence、contradiction（同一 claim 的\nSUPPORTS 与 REFUTES 并存）、unsupported claim（无 relation）在 DTO\n中显式表达；Claim 状态改变必须经过正式 use case/gate。",
+        "description": "Source → Evidence → Relation → Claim 地图（persisted truth；run 级隔离）。\n\n视觉语义：contradiction（同一 claim 的 SUPPORTS 与 REFUTES 并存）在\nDTO 中显式表达；Claim 状态改变必须经过正式 use case/gate。\nM13-R1：claim 视图只包含 relation 命中本 run evidence 的 claim\n（跨 run 泄漏修复）；无 relation 的 claim 不归属任何 run。\n畸形 ledger 行（evidence_relations 非 JSON）不再 422 崩溃：\n整图降级标记 degraded=true（WP-P4）。",
         "operationId": "run_claim_map_runs__run_id__claims_get",
         "parameters": [
           {
@@ -3238,6 +3611,49 @@
         ]
       }
     },
+    "/runs/{run_id}/experiments": {
+      "get": {
+        "description": "Experiment 视图（persisted truth；reproduction 诚实 unavailable 标注）。",
+        "operationId": "run_experiments_runs__run_id__experiments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Experiments",
+        "tags": [
+          "inspection"
+        ]
+      }
+    },
     "/runs/{run_id}/export": {
       "get": {
         "description": "Audit/Export：来自 persisted state（canonical 重算），不导出 UI 内存。",
@@ -3283,7 +3699,7 @@
     },
     "/runs/{run_id}/interventions": {
       "post": {
-        "description": "干预：budget adjustment / future-agent replacement。\n\n运行中修改 Model/Tool/semantic 配置必须产生 Manifest Revision / Fork，\n不得 silent mutation；持久化配置修改属 M14。本端点对语义变更返回\n501（诚实边界），对纯状态类（pause/resume）走正式状态机。",
+        "description": "干预：按 kind 分支（M13-R1 WP-P2）。\n\n- pause / resume：走正式状态机迁移；\n- budget_adjust / replace_agent（语义变更）：必须产生 Manifest\n  Revision / Fork，M13 诚实返回 501，不再无条件吞掉 payload 改 PAUSE。",
         "operationId": "intervene_runs__run_id__interventions_post",
         "parameters": [
           {

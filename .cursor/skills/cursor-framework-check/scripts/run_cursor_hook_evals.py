@@ -19,7 +19,9 @@ def _discover_root() -> Path:
         return Path(explicit).resolve()
     here = Path(__file__).resolve()
     for candidate in (here.parent, *here.parents):
-        if (candidate / "VERSION").is_file() and (candidate / ".cursor" / "framework.json").is_file():
+        if (candidate / "VERSION").is_file() and (
+            candidate / ".cursor" / "framework.json"
+        ).is_file():
             return candidate
     raise RuntimeError("Cannot locate repository root (VERSION + .cursor/framework.json)")
 
@@ -57,7 +59,9 @@ def run_subprocess_raw(script: str, raw_input: bytes) -> tuple[int, dict, str, b
     return cp.returncode, out, stderr, cp.stdout
 
 
-def run_subprocess(script: str, payload: dict, *, with_bom: bool = False) -> tuple[int, dict, str, bytes]:
+def run_subprocess(
+    script: str, payload: dict, *, with_bom: bool = False
+) -> tuple[int, dict, str, bytes]:
     serialized = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     raw_input = (b"\xef\xbb\xbf" + serialized) if with_bom else serialized
     return run_subprocess_raw(script, raw_input)
@@ -85,7 +89,11 @@ for script in (
         rc, out, stderr, raw_stdout = run_subprocess_raw(script, raw_input)
         case = f"{Path(script).name} {label}"
         expect(case + " rc", rc == 0, stderr)
-        expect(case + " denied", out.get("permission") == "deny", {"out": out, "stdout_hex": raw_stdout.hex()})
+        expect(
+            case + " denied",
+            out.get("permission") == "deny",
+            {"out": out, "stdout_hex": raw_stdout.hex()},
+        )
 
 # Cursor 3.14.7 on Windows prefixes hook stdin with an UTF-8 BOM. The protocol
 # layer must consume it and always emit strict UTF-8, independent of system GBK.
@@ -116,7 +124,11 @@ for label, script, payload, expected in (
 ):
     rc, out, stderr, raw_stdout = run_subprocess(script, payload, with_bom=True)
     expect(label + " rc", rc == 0, stderr)
-    expect(label + " output", out.get("permission") == expected, {"out": out, "stdout_hex": raw_stdout.hex()})
+    expect(
+        label + " output",
+        out.get("permission") == expected,
+        {"out": out, "stdout_hex": raw_stdout.hex()},
+    )
     try:
         raw_stdout.decode("utf-8")
     except UnicodeDecodeError as exc:
@@ -142,15 +154,24 @@ for label, command, expected in [
     expect(label, out.get("permission") == expected, out)
 
 # Session context.
-_, out, _ = run(".cursor/hooks/session_context.py", {"hook_event_name": "sessionStart", "session_id": "test"})
-expected_version = json.loads((ROOT / ".cursor/framework.json").read_text(encoding="utf-8"))["framework_version"]
+_, out, _ = run(
+    ".cursor/hooks/session_context.py", {"hook_event_name": "sessionStart", "session_id": "test"}
+)
+expected_version = json.loads((ROOT / ".cursor/framework.json").read_text(encoding="utf-8"))[
+    "framework_version"
+]
 expect("session version context", expected_version in str(out.get("additional_context", "")), out)
 expect(
     "session no baseline residue",
-    "基线 unknown" not in str(out.get("additional_context", "")) and "RESEARCH_OS_BASELINE" not in str(out.get("env", {})),
+    "基线 unknown" not in str(out.get("additional_context", ""))
+    and "RESEARCH_OS_BASELINE" not in str(out.get("env", {})),
     out,
 )
-expect("session unified version env", (out.get("env") or {}).get("RESEARCH_OS_PROJECT_VERSION") == expected_version, out)
+expect(
+    "session unified version env",
+    (out.get("env") or {}).get("RESEARCH_OS_PROJECT_VERSION") == expected_version,
+    out,
+)
 
 # Subagent per-wave active limit; no cumulative task cap.
 bucket = ROOT / ".cursor/runtime/subagents"
@@ -179,7 +200,10 @@ _, out, _ = run(
     },
 )
 expect("fourth concurrent subagent denied", out.get("permission") == "deny", out)
-_, out, _ = run(".cursor/hooks/subagent_pretool_guard.py", {"conversation_id": "eval-parent", "tool_name": "Task", "tool_input": {}})
+_, out, _ = run(
+    ".cursor/hooks/subagent_pretool_guard.py",
+    {"conversation_id": "eval-parent", "tool_name": "Task", "tool_input": {}},
+)
 expect("preToolUse fourth concurrent Task denied", out.get("permission") == "deny", out)
 _, out, _ = run(
     ".cursor/hooks/subagent_stop.py",
@@ -199,7 +223,10 @@ _, out, _ = run(
     },
 )
 expect("subagentStop schema emits no permission", out == {}, out)
-_, out, _ = run(".cursor/hooks/subagent_pretool_guard.py", {"conversation_id": "eval-parent", "tool_name": "Task", "tool_input": {}})
+_, out, _ = run(
+    ".cursor/hooks/subagent_pretool_guard.py",
+    {"conversation_id": "eval-parent", "tool_name": "Task", "tool_input": {}},
+)
 expect("preToolUse Task allowed with available slot", out.get("permission") == "allow", out)
 _, out, _ = run(
     ".cursor/hooks/subagent_guard.py",
@@ -233,8 +260,15 @@ _, out, _ = run(
     },
 )
 expect("subagent alias description without type allowed", out.get("permission") == "allow", out)
-_, out, _ = run(".cursor/hooks/subagent_pretool_guard.py", {"parent_conversation_id": "eval-parent-alias", "tool_name": "Task", "tool_input": {}})
-expect("preToolUse parent_conversation_id alias allowed with slot", out.get("permission") == "allow", out)
+_, out, _ = run(
+    ".cursor/hooks/subagent_pretool_guard.py",
+    {"parent_conversation_id": "eval-parent-alias", "tool_name": "Task", "tool_input": {}},
+)
+expect(
+    "preToolUse parent_conversation_id alias allowed with slot",
+    out.get("permission") == "allow",
+    out,
+)
 _, out, _ = run(
     ".cursor/hooks/subagent_stop.py",
     {
@@ -279,11 +313,22 @@ expect("postToolUseFailure emits no output fields", out == {}, out)
 expect("official failure observation created", target.exists(), str(target))
 if target.exists():
     rec = json.loads(target.read_text(encoding="utf-8").splitlines()[-1])
-    expect("official failure_type mapped", rec.get("error_class") == "CURSOR_PERMISSION_DENIED", rec)
+    expect(
+        "official failure_type mapped", rec.get("error_class") == "CURSOR_PERMISSION_DENIED", rec
+    )
     expect("official is_interrupt mapped", rec.get("is_interrupt") is False, rec)
     persisted = json.dumps(rec, ensure_ascii=False)
-    expect("failure observer redacts raw error", "secret detail" not in persisted and "permission denied" not in persisted, persisted)
-    expect("failure observer schema", set(rec) == {"at", "tool_name", "duration_ms", "is_interrupt", "error_class", "error_signature"}, rec)
+    expect(
+        "failure observer redacts raw error",
+        "secret detail" not in persisted and "permission denied" not in persisted,
+        persisted,
+    )
+    expect(
+        "failure observer schema",
+        set(rec)
+        == {"at", "tool_name", "duration_ms", "is_interrupt", "error_class", "error_signature"},
+        rec,
+    )
     target.unlink(missing_ok=True)
 
 # Distillation gate: prompts once per conversation after failures; marker dedup; no raw data.
@@ -293,16 +338,52 @@ marker = dist_dir / f"{hashlib.sha256('conv-distill-1'.encode('utf-8')).hexdiges
 obs_dir = ROOT / ".cursor/runtime/observations"
 obs_dir.mkdir(parents=True, exist_ok=True)
 obs_file = obs_dir / f"{hashlib.sha256('conv-distill-1'.encode('utf-8')).hexdigest()[:20]}.jsonl"
-obs_file.write_text(json.dumps({"error_class": "CURSOR_ERROR", "error_signature": "sig"}, ensure_ascii=False) + "\n", encoding="utf-8")
-rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-1", "status": "completed", "loop_count": 0})
+obs_file.write_text(
+    json.dumps({"error_class": "CURSOR_ERROR", "error_signature": "sig"}, ensure_ascii=False)
+    + "\n",
+    encoding="utf-8",
+)
+rc, out, stderr = run(
+    ".cursor/hooks/distillation_gate.py",
+    {
+        "hook_event_name": "stop",
+        "conversation_id": "conv-distill-1",
+        "status": "completed",
+        "loop_count": 0,
+    },
+)
 expect("distillation gate returncode", rc == 0, stderr)
 expect("distillation gate prompts on failure", bool(out.get("followup_message")), out)
 expect("distillation gate marker created", marker.exists(), str(marker))
-rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-1", "status": "completed", "loop_count": 0})
+rc, out, stderr = run(
+    ".cursor/hooks/distillation_gate.py",
+    {
+        "hook_event_name": "stop",
+        "conversation_id": "conv-distill-1",
+        "status": "completed",
+        "loop_count": 0,
+    },
+)
 expect("distillation gate dedup silent", out == {}, out)
-rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-2", "status": "error", "loop_count": 0})
+rc, out, stderr = run(
+    ".cursor/hooks/distillation_gate.py",
+    {
+        "hook_event_name": "stop",
+        "conversation_id": "conv-distill-2",
+        "status": "error",
+        "loop_count": 0,
+    },
+)
 expect("distillation gate error silent", out == {}, out)
-rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-3", "status": "completed", "loop_count": 2})
+rc, out, stderr = run(
+    ".cursor/hooks/distillation_gate.py",
+    {
+        "hook_event_name": "stop",
+        "conversation_id": "conv-distill-3",
+        "status": "completed",
+        "loop_count": 2,
+    },
+)
 expect("distillation gate loop limit silent", out == {}, out)
 obs_file.unlink(missing_ok=True)
 marker.unlink(missing_ok=True)
@@ -316,19 +397,65 @@ test_entry.write_text(
     "review_after: 2026-11-10\noccurrences: 1\nerror_signature: 11111111111111111111\nsupersedes: []\nsource_refs: []\n---\n\n# 测试签名匹配条目\n\n## Problem\n\n测试用。\n",
     encoding="utf-8",
 )
-match_obs = obs_dir / f"{hashlib.sha256('conv-distill-match'.encode('utf-8')).hexdigest()[:20]}.jsonl"
-match_marker = dist_dir / f"{hashlib.sha256('conv-distill-match'.encode('utf-8')).hexdigest()[:20]}.prompted"
-mismatch_marker = dist_dir / f"{hashlib.sha256('conv-distill-nomatch'.encode('utf-8')).hexdigest()[:20]}.prompted"
-match_obs.write_text(json.dumps({"error_class": "CURSOR_ERROR", "error_signature": "11111111111111111111"}, ensure_ascii=False) + "\n", encoding="utf-8")
+match_obs = (
+    obs_dir / f"{hashlib.sha256('conv-distill-match'.encode('utf-8')).hexdigest()[:20]}.jsonl"
+)
+match_marker = (
+    dist_dir / f"{hashlib.sha256('conv-distill-match'.encode('utf-8')).hexdigest()[:20]}.prompted"
+)
+mismatch_marker = (
+    dist_dir / f"{hashlib.sha256('conv-distill-nomatch'.encode('utf-8')).hexdigest()[:20]}.prompted"
+)
+match_obs.write_text(
+    json.dumps(
+        {"error_class": "CURSOR_ERROR", "error_signature": "11111111111111111111"},
+        ensure_ascii=False,
+    )
+    + "\n",
+    encoding="utf-8",
+)
 try:
-    rc, out, stderr = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-match", "status": "completed", "loop_count": 0})
+    rc, out, stderr = run(
+        ".cursor/hooks/distillation_gate.py",
+        {
+            "hook_event_name": "stop",
+            "conversation_id": "conv-distill-match",
+            "status": "completed",
+            "loop_count": 0,
+        },
+    )
     expect("distillation signature match returncode", rc == 0, stderr)
-    expect("distillation signature match referenced", "EXP-20260812-999" in str(out.get("followup_message", "")), out)
-    mismatch_obs = obs_dir / f"{hashlib.sha256('conv-distill-nomatch'.encode('utf-8')).hexdigest()[:20]}.jsonl"
-    mismatch_obs.write_text(json.dumps({"error_class": "CURSOR_ERROR", "error_signature": "22222222222222222222"}, ensure_ascii=False) + "\n", encoding="utf-8")
+    expect(
+        "distillation signature match referenced",
+        "EXP-20260812-999" in str(out.get("followup_message", "")),
+        out,
+    )
+    mismatch_obs = (
+        obs_dir / f"{hashlib.sha256('conv-distill-nomatch'.encode('utf-8')).hexdigest()[:20]}.jsonl"
+    )
+    mismatch_obs.write_text(
+        json.dumps(
+            {"error_class": "CURSOR_ERROR", "error_signature": "22222222222222222222"},
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     try:
-        _, out, _ = run(".cursor/hooks/distillation_gate.py", {"hook_event_name": "stop", "conversation_id": "conv-distill-nomatch", "status": "completed", "loop_count": 0})
-        expect("distillation signature mismatch not referenced", "EXP-20260812-999" not in str(out.get("followup_message", "")), out)
+        _, out, _ = run(
+            ".cursor/hooks/distillation_gate.py",
+            {
+                "hook_event_name": "stop",
+                "conversation_id": "conv-distill-nomatch",
+                "status": "completed",
+                "loop_count": 0,
+            },
+        )
+        expect(
+            "distillation signature mismatch not referenced",
+            "EXP-20260812-999" not in str(out.get("followup_message", "")),
+            out,
+        )
     finally:
         mismatch_obs.unlink(missing_ok=True)
 finally:
@@ -343,15 +470,37 @@ old_obs = obs_dir / "expired-observations.jsonl"
 new_obs = obs_dir / "recent-observations.jsonl"
 stale_at = (datetime.now(timezone.utc) - timedelta(days=31)).isoformat()
 recent_at = datetime.now(timezone.utc).isoformat()
-old_obs.write_text(json.dumps({"at": stale_at, "error_class": "CURSOR_ERROR", "error_signature": "old-sig"}, ensure_ascii=False) + "\n", encoding="utf-8")
-new_obs.write_text(json.dumps({"at": recent_at, "error_class": "CURSOR_ERROR", "error_signature": "new-sig"}, ensure_ascii=False) + "\n", encoding="utf-8")
-rc, out, stderr = run(".cursor/hooks/session_cleanup.py", {"hook_event_name": "sessionEnd", "session_id": "eval-session-cleanup", "conversation_id": "eval-cleanup"})
+old_obs.write_text(
+    json.dumps(
+        {"at": stale_at, "error_class": "CURSOR_ERROR", "error_signature": "old-sig"},
+        ensure_ascii=False,
+    )
+    + "\n",
+    encoding="utf-8",
+)
+new_obs.write_text(
+    json.dumps(
+        {"at": recent_at, "error_class": "CURSOR_ERROR", "error_signature": "new-sig"},
+        ensure_ascii=False,
+    )
+    + "\n",
+    encoding="utf-8",
+)
+rc, out, stderr = run(
+    ".cursor/hooks/session_cleanup.py",
+    {
+        "hook_event_name": "sessionEnd",
+        "session_id": "eval-session-cleanup",
+        "conversation_id": "eval-cleanup",
+    },
+)
 expect("session cleanup returncode", rc == 0, stderr)
 expect("session cleanup emits empty output", out == {}, out)
 expect("expired observation pruned", not old_obs.exists(), "expired observation not removed")
 expect("recent observation retained", new_obs.exists(), "recent observation removed")
 old_obs.unlink(missing_ok=True)
 new_obs.unlink(missing_ok=True)
+
 
 # MCP policy: secret material/path denied; ordinary external call requires explicit approval.
 def mcp(payload: dict) -> dict:
@@ -360,47 +509,60 @@ def mcp(payload: dict) -> dict:
     return out
 
 
-safe = mcp(
-    {
-        "mcp_server_name": "papers",
-        "tool_name": "papers.search",
-        "arguments": json.dumps({"query": "agent systems"}, ensure_ascii=False),
-        "url": "https://example.test/mcp",
-    }
-)
+safe = mcp({
+    "mcp_server_name": "papers",
+    "tool_name": "papers.search",
+    "arguments": json.dumps({"query": "agent systems"}, ensure_ascii=False),
+    "url": "https://example.test/mcp",
+})
 expect("safe MCP input requires approval", safe.get("permission") == "ask", safe)
-denied = mcp(
-    {
-        "mcp_server_name": "fs",
-        "tool_name": "fs.read",
-        "arguments": json.dumps({"path": "/home/alice/.ssh/id_ed25519"}, ensure_ascii=False),
-    }
-)
+denied = mcp({
+    "mcp_server_name": "fs",
+    "tool_name": "fs.read",
+    "arguments": json.dumps({"path": "/home/alice/.ssh/id_ed25519"}, ensure_ascii=False),
+})
 expect("credential path MCP input denied", denied.get("permission") == "deny", denied)
-denied_secret = mcp(
-    {
-        "mcp_server_name": "remote",
-        "tool_name": "remote.call",
-        "arguments": json.dumps({"token": "sk-" + ("x" * 28)}, ensure_ascii=False),
-    }
+denied_secret = mcp({
+    "mcp_server_name": "remote",
+    "tool_name": "remote.call",
+    "arguments": json.dumps({"token": "sk-" + ("x" * 28)}, ensure_ascii=False),
+})
+expect(
+    "credential material MCP input denied", denied_secret.get("permission") == "deny", denied_secret
 )
-expect("credential material MCP input denied", denied_secret.get("permission") == "deny", denied_secret)
 empty_args = mcp({"mcp_server_name": "papers", "tool_name": "papers.search", "arguments": ""})
 expect("empty arguments still requires approval", empty_args.get("permission") == "ask", empty_args)
 missing_args = mcp({"mcp_server_name": "papers", "tool_name": "papers.search"})
 expect("missing arguments denied", missing_args.get("permission") == "deny", missing_args)
-bad_json_args = mcp({"mcp_server_name": "papers", "tool_name": "papers.search", "arguments": "{not json"})
+bad_json_args = mcp({
+    "mcp_server_name": "papers",
+    "tool_name": "papers.search",
+    "arguments": "{not json",
+})
 expect("invalid JSON arguments denied", bad_json_args.get("permission") == "deny", bad_json_args)
 missing_tool_name = mcp({"mcp_server_name": "papers", "arguments": "{}"})
 expect("missing tool_name denied", missing_tool_name.get("permission") == "deny", missing_tool_name)
 legacy_tool_input = mcp({"tool_name": "papers.search", "tool_input": {"query": "legacy"}})
-expect("legacy tool_input dict still accepted", legacy_tool_input.get("permission") == "ask", legacy_tool_input)
-official_tool_input = mcp(
-    {"tool_name": "papers.search", "tool_input": json.dumps({"query": "official"}, ensure_ascii=False)}
+expect(
+    "legacy tool_input dict still accepted",
+    legacy_tool_input.get("permission") == "ask",
+    legacy_tool_input,
 )
-expect("Cursor 3.16.29 tool_input JSON string accepted", official_tool_input.get("permission") == "ask", official_tool_input)
+official_tool_input = mcp({
+    "tool_name": "papers.search",
+    "tool_input": json.dumps({"query": "official"}, ensure_ascii=False),
+})
+expect(
+    "Cursor 3.16.29 tool_input JSON string accepted",
+    official_tool_input.get("permission") == "ask",
+    official_tool_input,
+)
 empty_tool_input = mcp({"tool_name": "papers.search", "tool_input": ""})
-expect("empty tool_input requires approval", empty_tool_input.get("permission") == "ask", empty_tool_input)
+expect(
+    "empty tool_input requires approval",
+    empty_tool_input.get("permission") == "ask",
+    empty_tool_input,
+)
 
 # Stop audit hook must emit schema-valid JSON and persist no raw machine path.
 audit_dir = ROOT / ".cursor/runtime/git-audit"
@@ -415,14 +577,27 @@ audits = list(audit_dir.glob("*.json")) if audit_dir.exists() else []
 expect("stop snapshot creates sanitized audit", len(audits) == 1, audits)
 if audits:
     record = json.loads(audits[0].read_text(encoding="utf-8"))
-    expect("snapshot audit schema", set(record) == {"schema_version", "conversation", "status", "counts", "path_digests"}, record)
-    expect("snapshot audit contains no repository path", str(ROOT) not in json.dumps(record, ensure_ascii=False), record)
+    expect(
+        "snapshot audit schema",
+        set(record) == {"schema_version", "conversation", "status", "counts", "path_digests"},
+        record,
+    )
+    expect(
+        "snapshot audit contains no repository path",
+        str(ROOT) not in json.dumps(record, ensure_ascii=False),
+        record,
+    )
 if audit_dir.exists():
     shutil.rmtree(audit_dir)
 
 # A few true subprocess smokes keep the Cursor command-hook JSON/stdin/stdout contract covered.
 for label, script, payload, predicate in [
-    ("subprocess secret guard", ".cursor/hooks/secret_guard.py", {"file_path": str(ROOT / ".env.local")}, lambda x: x.get("permission") == "deny"),
+    (
+        "subprocess secret guard",
+        ".cursor/hooks/secret_guard.py",
+        {"file_path": str(ROOT / ".env.local")},
+        lambda x: x.get("permission") == "deny",
+    ),
     (
         "subprocess mcp ask",
         ".cursor/hooks/mcp_guard.py",
@@ -433,7 +608,12 @@ for label, script, payload, predicate in [
         },
         lambda x: x.get("permission") == "ask",
     ),
-    ("subprocess subagentStop schema", ".cursor/hooks/subagent_stop.py", {"subagent_type": "generalPurpose", "status": "completed", "task": "none"}, lambda x: x == {}),
+    (
+        "subprocess subagentStop schema",
+        ".cursor/hooks/subagent_stop.py",
+        {"subagent_type": "generalPurpose", "status": "completed", "task": "none"},
+        lambda x: x == {},
+    ),
 ]:
     rc, out, stderr, raw_stdout = run_subprocess(script, payload)
     expect(label + " rc", rc == 0, stderr)

@@ -91,9 +91,7 @@ def build_eval_inputs(
 ) -> dict[str, object]:
     """评测输入全部来自持久状态（artifact / ledger / audit / usage）。"""
     artifact_id = f"{experiment_run_id_of(run_id)}:experiment_result.json"
-    payload = json.loads(
-        deps.artifacts.get(artifact_id).decode("utf-8"), parse_float=Decimal
-    )
+    payload = json.loads(deps.artifacts.get(artifact_id).decode("utf-8"), parse_float=Decimal)
     if not isinstance(payload, dict):
         raise RuntimeError("experiment artifact is not a JSON object")
     metrics = payload.get("metrics")

@@ -11,6 +11,7 @@ from services.api.errors import register_error_handlers
 from services.api.middleware import IdempotencyMiddleware
 from services.api.routers import (
     approvals,
+    experiments,
     inspection,
     llm_endpoints,
     models,
@@ -42,4 +43,5 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(run_events.router)
     app.include_router(approvals.router)
     app.include_router(inspection.router)
+    app.include_router(experiments.router)
     return app

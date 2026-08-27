@@ -72,8 +72,7 @@ class SqliteModelStore(SqliteAdapterBase):
         payload = _encode(model)
         with self._conn:
             self._conn.execute(
-                "INSERT OR REPLACE INTO models (model_id, model_json, created_at)"
-                " VALUES (?, ?, ?)",
+                "INSERT OR REPLACE INTO models (model_id, model_json, created_at) VALUES (?, ?, ?)",
                 (model.id, json.dumps(payload, ensure_ascii=False, sort_keys=True), now_iso(None)),
             )
         self._record("save_model", model.id)

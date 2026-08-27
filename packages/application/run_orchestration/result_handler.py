@@ -86,7 +86,11 @@ def _evidence_from_artifact(
     claim_id: str,
     agent_id: str | None,
 ) -> tuple[Evidence, Claim, EvidenceRelation]:
-    """Artifact → Evidence → Claim（VERIFIED 必须携带 EvidenceRelation）。"""
+    """Artifact → Evidence → Claim（VERIFIED 必须携带 EvidenceRelation）。
+
+    Evidence 携带 task.run_id（溯源类型化，SA-1 N003 清偿）：Inspection
+    的 run 级 evidence 视图依赖该字段做 run 隔离。
+    """
     evidence = Evidence(
         id=f"evidence:{artifact.id}",
         source_ref=artifact.storage_uri or artifact.id,
@@ -94,6 +98,7 @@ def _evidence_from_artifact(
         extracted_by=agent_id or task.id.value,
         captured_at=Timestamp.now(),
         artifact_id=artifact.id,
+        run_id=str(task.run_id.value),
     )
     claim = Claim(
         id=claim_id,

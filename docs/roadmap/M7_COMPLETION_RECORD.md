@@ -32,7 +32,7 @@ version 0.4.0）：2-phase 线性 DAG——
 | Preflight | `packages/application/preflight/`（role/budget/policy/workspace 检查） | `tests/e2e/test_run_rejections.py`（拒绝路径）；F-05/F-08 见下 |
 | Manifest Freeze | RunManifest + `manifest_semantic_digest`；frozen 语义 | `tests/e2e/test_cancel_resume.py`（digest mismatch 拒绝）；`packages/domain/manifest.py` |
 | Team Resolve | RolePool/AgentBinding 解析与 phase 分配 | `tests/e2e/test_vertical_slice_happy_path.py`（2 tasks、2 agents）；`tests/application/`（m4_*） |
-| Task/Attempt/Lease | TaskLease + heartbeat + `recover_expired_leases` | `adapters/sqlite/leases.py`；`tests/e2e/test_restart_recovery.py`；F-06 |
+| Task/Attempt/Lease | TaskLease + heartbeat + `recover_expired_leases` | `adapters/sqlite/leases.py`；`tests/e2e/test_workflow_restart_recovery.py`；F-06 |
 | OpenHands Runtime | 编排经 AgentRuntime Port；M6 adapter 复用 | `tests/e2e/test_vertical_slice_happy_path.py`（StructuredOutputAgentRuntime 注入）；`tests/adapters/openhands/` |
 | Tool | ToolProviderSpec → ToolProvider Port → Fake 注入 | `tests/e2e/scenario_catalog.py`；`tests/contracts/` |
 | Workspace | WorkspaceBackend Port + 隔离 workspace 语义 | `packages/domain/workspace.py`；`tests/e2e/` |
@@ -45,7 +45,7 @@ version 0.4.0）：2-phase 线性 DAG——
 | Cancel | 协作式 cancel + lease 释放 + CANCELLED 事件，幂等 | `tests/e2e/test_cancel_resume.py` |
 | Fault Injection | F-01..F-12 矩阵（F-01/02/05/06/07/08 在 `test_fault_injection_matrix.py`；F-09..F-12 policy denied/cancellation/malformed/evaluator rejection 在 `test_fault_injection_gates.py`） | `tests/e2e/` |
 | Idempotency | IdempotencyRecord（submit 幂等去重 + request_digest）；duplicate delivery 无重复副作用 | `tests/e2e/test_idempotency.py`；F-07 |
-| Recovery boundary | `recover_expired_leases` 重启恢复（进程重启模拟）；Pause/Resume 拒绝 manifest digest mismatch | `tests/e2e/test_restart_recovery.py`；`tests/e2e/test_cancel_resume.py` |
+| Recovery boundary | `recover_expired_leases` 重启恢复（进程重启模拟）；Pause/Resume 拒绝 manifest digest mismatch | `tests/e2e/test_workflow_restart_recovery.py`；`tests/e2e/test_cancel_resume.py` |
 
 ## 3. 关键可靠性语义（AGENTS.md §7 落地）
 

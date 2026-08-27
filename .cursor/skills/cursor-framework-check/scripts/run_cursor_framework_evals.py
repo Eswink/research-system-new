@@ -18,7 +18,9 @@ def _discover_root() -> Path:
         return Path(explicit).resolve()
     here = Path(__file__).resolve()
     for candidate in (here.parent, *here.parents):
-        if (candidate / "VERSION").is_file() and (candidate / ".cursor" / "framework.json").is_file():
+        if (candidate / "VERSION").is_file() and (
+            candidate / ".cursor" / "framework.json"
+        ).is_file():
             return candidate
     raise RuntimeError("Cannot locate repository root (VERSION + .cursor/framework.json)")
 
@@ -70,7 +72,11 @@ def cleanup_hook_case(payload: dict, seeded: dict) -> None:
     seeded["current"].unlink(missing_ok=True)
     seeded["marker"].unlink(missing_ok=True)
     for idx in range(seeded["history_count"]):
-        hist = ROOT / ".cursor/runtime/observations" / f"{safe_id(payload.get('conversation_id') + '-h' + str(idx))}.jsonl"
+        hist = (
+            ROOT
+            / ".cursor/runtime/observations"
+            / f"{safe_id(payload.get('conversation_id') + '-h' + str(idx))}.jsonl"
+        )
         hist.unlink(missing_ok=True)
 
 
@@ -93,7 +99,10 @@ for path in (ROOT / ".cursor/evals/cases").glob("*.yaml"):
             finally:
                 cleanup_hook_case(payload, seeded)
             if "expect_followup" in case:
-                check(bool(out.get("followup_message")) == case["expect_followup"], f"{case['id']}: followup mismatch")
+                check(
+                    bool(out.get("followup_message")) == case["expect_followup"],
+                    f"{case['id']}: followup mismatch",
+                )
             for key, expected in (case.get("expect") or {}).items():
                 check(out.get(key) == expected, f"{case['id']}: {key} mismatch")
         elif "state" in case:
@@ -101,9 +110,16 @@ for path in (ROOT / ".cursor/evals/cases").glob("*.yaml"):
             state_path.parent.mkdir(parents=True, exist_ok=True)
             state_path.write_text(json.dumps(case["state"]), encoding="utf-8")
             out = hook("evolution_gate.py", case.get("stop") or {})
-            check(bool(out.get("followup_message")) == case["expect_followup"], f"{case['id']}: followup mismatch")
+            check(
+                bool(out.get("followup_message")) == case["expect_followup"],
+                f"{case['id']}: followup mismatch",
+            )
             if str((case.get("stop") or {}).get("status") or "").lower() in {"error", "aborted"}:
-                check(json.loads(state_path.read_text(encoding="utf-8")).get("recovery_required") is True, f"{case['id']}: recovery_required")
+                check(
+                    json.loads(state_path.read_text(encoding="utf-8")).get("recovery_required")
+                    is True,
+                    f"{case['id']}: recovery_required",
+                )
 
 obs = ROOT / ".cursor/runtime/observations"
 if obs.exists():
@@ -124,10 +140,19 @@ files = list(obs.glob("*.jsonl")) if obs.exists() else []
 check(len(files) == 1, "failure observer file count")
 if files:
     text = files[0].read_text(encoding="utf-8")
-    check("TOPSECRET" not in text and "/home/alice" not in text and "syntax error" not in text, "failure observer persisted raw data")
+    check(
+        "TOPSECRET" not in text and "/home/alice" not in text and "syntax error" not in text,
+        "failure observer persisted raw data",
+    )
     rec = json.loads(text.splitlines()[-1])
-    check(set(rec) == {"at", "tool_name", "duration_ms", "is_interrupt", "error_class", "error_signature"}, "failure observer schema")
-    check(rec.get("error_class") == "CURSOR_ERROR", "failure observer official failure_type mapping")
+    check(
+        set(rec)
+        == {"at", "tool_name", "duration_ms", "is_interrupt", "error_class", "error_signature"},
+        "failure observer schema",
+    )
+    check(
+        rec.get("error_class") == "CURSOR_ERROR", "failure observer official failure_type mapping"
+    )
 
 state = ROOT / ".cursor/runtime/evolution_state.json"
 state.unlink(missing_ok=True)
@@ -135,7 +160,12 @@ state.unlink(missing_ok=True)
 
 def evo(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [PY, "-B", str(ROOT / ".cursor/skills/evolve-framework/scripts/framework_evolution.py"), *args],
+        [
+            PY,
+            "-B",
+            str(ROOT / ".cursor/skills/evolve-framework/scripts/framework_evolution.py"),
+            *args,
+        ],
         text=True,
         encoding="utf-8",
         errors="replace",
@@ -154,7 +184,10 @@ def evo(*args: str) -> subprocess.CompletedProcess[str]:
 check(evo("start", "--target", "9.9.9", "--goal", "eval").returncode == 0, "evolution start")
 check(evo("stage", "RELEASE", "--next-action", "gate").returncode == 0, "stage release")
 check(evo("finish").returncode != 0, "evolution passed without deterministic validation")
-check(evo("validate", "--status", "PASS", "--evidence-ref", "eval://validators-pass").returncode == 0, "validation record")
+check(
+    evo("validate", "--status", "PASS", "--evidence-ref", "eval://validators-pass").returncode == 0,
+    "validation record",
+)
 check(evo("stage", "RELEASE", "--next-action", "finish").returncode == 0, "restage release")
 check(evo("finish").returncode == 0, "evolution failed after validation")
 final = json.loads(state.read_text(encoding="utf-8"))

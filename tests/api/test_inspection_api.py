@@ -111,7 +111,8 @@ def test_evidence_from_persisted_truth(client: TestClient) -> None:
 
 
 def test_claim_map_marks_unsupported(client: TestClient) -> None:
-    """unsupported claim（无 relation）显式标记（视觉语义）。"""
+    """run 级 claim map：relation 命中本 run evidence 的 claim 可见；
+    无 relation 的 claim 不归属任何 run（不返回）。"""
     from packages.domain.core import ID
     from packages.domain.run import ResearchRun
 
@@ -122,10 +123,12 @@ def test_claim_map_marks_unsupported(client: TestClient) -> None:
     response = client.get(f"/runs/{run_id}/claims")
     assert response.status_code == 200, response.text
     payload = response.json()
-    assert len(payload["claims"]) == 2
-    assert "claim-2" in payload["unsupported_claims"]
+    assert len(payload["claims"]) == 1
+    # claim-2（无 relation）不归属任何 run，不泄漏进本 run 视图
+    assert "claim-2" not in {item["id"] for item in payload["claims"]}
     claim_1 = next(item for item in payload["claims"] if item["id"] == "claim-1")
     assert claim_1["relations"][0]["relation"] == "SUPPORTS"
+    assert payload["unsupported_claims"] == []
 
 
 def test_claim_map_detects_contradiction(client: TestClient) -> None:
@@ -153,6 +156,69 @@ def test_claim_map_detects_contradiction(client: TestClient) -> None:
     )
     response = client.get(f"/runs/{run_id}/claims")
     assert "claim-1" in response.json()["contradictory_claims"]
+
+
+def _seed_run_claim_pair(ledger: Any, run_id: str, evidence_id: str, claim_id: str) -> None:
+    """登记 run 的 source/evidence/claim/relation（claim map 隔离测试用）。"""
+    ledger.register_source(
+        SourceRecord(
+            origin=f"paper://{run_id}",
+            content_digest="sha256:" + "d" * 64,
+            trust_label=TrustLabel.GENERATED,
+        )
+    )
+    ledger.register_evidence(
+        Evidence(
+            id=evidence_id,
+            source_ref=f"paper://{run_id}",
+            content_digest="sha256:" + "e" * 64,
+            run_id=run_id,
+        )
+    )
+    ledger.register_claim(
+        Claim(id=claim_id, statement=f"claim of {run_id}", status=ClaimStatus.PROPOSED)
+    )
+    ledger.attach_relation(
+        EvidenceRelation(
+            claim_id=claim_id,
+            evidence_id=evidence_id,
+            relation=EvidenceRelationType.SUPPORTS,
+        )
+    )
+
+
+def test_claim_map_does_not_leak_other_run_claims(client: TestClient) -> None:
+    """M13-R1（WP-M3）：claim map 按 run 隔离，跨 run claim/evidence 不泄漏。
+
+    直接固化独立复审实测复现场景（注入 run B 的 claim+evidence 后，
+    run A 的 claim map 不得返回它）。
+    """
+    from packages.domain.core import ID
+    from packages.domain.run import ResearchRun
+
+    deps = cast(Any, client.app).state.deps
+    run_a = str(ID.generate().value)
+    run_b = str(ID.generate().value)
+    for run_id in (run_a, run_b):
+        deps.run_registry[run_id] = ResearchRun(id=ID(run_id), project_id="p", protocol_id="proto")
+    ledger = deps.ledger
+    _seed_run_claim_pair(ledger, run_a, "ev-a", "claim-a")
+    _seed_run_claim_pair(ledger, run_b, "ev-b", "claim-b")
+
+    payload_a = client.get(f"/runs/{run_a}/claims").json()
+    ids_a = {item["id"] for item in payload_a["claims"]}
+    assert "claim-a" in ids_a
+    assert "claim-b" not in ids_a
+    assert all(
+        relation["evidence_id"] == "ev-a"
+        for item in payload_a["claims"]
+        for relation in item["relations"]
+    )
+
+    payload_b = client.get(f"/runs/{run_b}/claims").json()
+    ids_b = {item["id"] for item in payload_b["claims"]}
+    assert "claim-b" in ids_b
+    assert "claim-a" not in ids_b
 
 
 def test_budget_usage_unknown_not_zero(client: TestClient) -> None:
@@ -191,7 +257,9 @@ def test_export_from_persisted_state(client: TestClient) -> None:
     assert payload["run_id"] == run_id
     assert payload["exported_from"] == "persisted-state"
     assert len(payload["evidence"]) == 1
-    assert len(payload["claims"]) == 2
+    # M13-R1 claim map run 级隔离：无 relation 的 claim-2 不归属本 run
+    assert len(payload["claims"]) == 1
+    assert payload["claims"][0]["id"] == "claim-1"
     assert payload["usage"]["unknown_cost_entries"] == 1
 
 

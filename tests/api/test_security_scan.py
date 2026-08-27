@@ -58,9 +58,7 @@ def test_export_never_contains_secret(client: TestClient) -> None:
 
     deps = cast(Any, client.app).state.deps
     run_id = str(ID.generate().value)
-    deps.run_registry[run_id] = ResearchRun(
-        id=ID(run_id), project_id="p", protocol_id="proto"
-    )
+    deps.run_registry[run_id] = ResearchRun(id=ID(run_id), project_id="p", protocol_id="proto")
     export = client.get(f"/runs/{run_id}/export").text
     assert _SECRET not in export
     assert "sk-" not in export

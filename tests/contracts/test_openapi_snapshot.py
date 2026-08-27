@@ -14,7 +14,7 @@ from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOT = ROOT / "docs" / "api" / "openapi.m13.json"
-GEN_SCRIPT = ROOT / "scripts" / "gen_openapi.py"
+GEN_SCRIPT = ROOT / "tools" / "gen_openapi.py"
 
 
 def _regenerate() -> dict[str, Any]:
@@ -35,7 +35,7 @@ def test_openapi_snapshot_is_current() -> None:
     committed = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))
     assert regenerated == committed, (
         "docs/api/openapi.m13.json drifted from generated OpenAPI; "
-        "run scripts/gen_openapi.py and commit the result"
+        "run tools/gen_openapi.py and commit the result"
     )
 
 

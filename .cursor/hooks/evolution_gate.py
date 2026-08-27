@@ -33,7 +33,9 @@ def main() -> int:
         return 0
 
     next_action = state.get("next_action") or "继续当前 evolution stage，并运行 replay/validators。"
-    emit({"followup_message": f"继续已授权的 Framework {state.get('target_version')} 自我迭代：{next_action}"})
+    emit({
+        "followup_message": f"继续已授权的 Framework {state.get('target_version')} 自我迭代：{next_action}"
+    })
     return 0
 
 

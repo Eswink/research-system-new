@@ -38,7 +38,7 @@ starlette 额外叠加 openhands_adapter_contract_suite（保护 M6 适配器）
 ## 边界与风险
 
 - **DTO 单一真相**：OpenAPI schema 导出 `docs/api/openapi.m13.json`
-  （`scripts/gen_openapi.py`），前端 TS 类型由此生成；
+  （`tools/gen_openapi.py`），前端 TS 类型由此生成；
   `tests/contracts/test_openapi_snapshot.py` 防漂移。
 - **测试栈**：`fastapi.testclient`（httpx 传输）用于 API contract 测试；
   真实网络（relay probe）仅 `requires_live_llm` opt-in。

@@ -19,6 +19,7 @@ from packages.domain.events import EventEnvelope
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.errors import ApiError
+from services.api.run_access import get_run_or_error
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -86,8 +87,7 @@ async def run_events(run_id: str, request: Request) -> StreamingResponse | list[
     deps: ApiDeps = get_deps(request)
     if deps.projection is None:
         raise ApiError(503, "Projection Unavailable", "run projection not configured")
-    if run_id not in deps.run_registry:
-        raise ApiError(404, "Not Found", f"run not found: {run_id}")
+    get_run_or_error(deps, run_id)
     events = events_of(deps.projection, run_id)
     cursor = request.headers.get("Last-Event-ID") or request.query_params.get("cursor")
     if request.headers.get("accept", "").startswith("text/event-stream"):

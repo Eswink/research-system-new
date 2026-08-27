@@ -13,7 +13,12 @@ def main() -> int:
     target = RUNTIME / "changes" / f"{cid}.jsonl"
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps({"file_path": path, "edit_count": len(event.get("edits") or [])}, ensure_ascii=False) + "\n")
+        fh.write(
+            json.dumps(
+                {"file_path": path, "edit_count": len(event.get("edits") or [])}, ensure_ascii=False
+            )
+            + "\n"
+        )
     emit({})
     return 0
 

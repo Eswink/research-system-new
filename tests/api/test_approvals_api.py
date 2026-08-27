@@ -161,52 +161,88 @@ def test_decide_requires_waiting_state(run_ready_client: TestClient) -> None:
 
 
 def test_pause_resume_use_state_machine(run_ready_client: TestClient) -> None:
-    """interventions：pause/resume 走正式状态机；非法迁移 409。"""
-    run = run_ready_client.post(
-        "/projects/example-project/runs",
-        json={"protocol_path": "m12_reference_research_v1.yaml"},
-        headers={"Idempotency-Key": f"run-{uuid.uuid4()}"},
-    ).json()
-    run_id = run["id"]
-    if run["state"] != "FAILED":
-        paused = run_ready_client.post(
-            f"/runs/{run_id}/pause", headers={"Idempotency-Key": f"pause-{uuid.uuid4()}"}
-        )
-        assert paused.status_code == 200, paused.text
-        assert paused.json()["state"] == "PAUSED"
-        resumed = run_ready_client.post(
-            f"/runs/{run_id}/resume", headers={"Idempotency-Key": f"resume-{uuid.uuid4()}"}
-        )
-        assert resumed.status_code == 200, resumed.text
-        assert resumed.json()["state"] == "RUNNING"
+    """interventions：pause/resume 走正式状态机；非法迁移 409。
+
+    WP-P5：不再依赖 run 偶然结果（if state != FAILED 守卫恒走终态分支），
+    显式注入 RUNNING 状态，断言始终执行。
+    """
+    from typing import Any
+    from typing import cast as cast_any
+
+    from packages.domain.core import ID
+    from packages.domain.run import ResearchRun
+    from packages.domain.run_state import ResearchRunState
+
+    deps = cast_any(Any, run_ready_client.app).state.deps
+    run_id = str(ID.generate().value)
+    running = ResearchRun(
+        id=ID(run_id),
+        project_id="example-project",
+        protocol_id="test_protocol",
+        state=ResearchRunState.State.RUNNING,
+    )
+    deps.run_registry[run_id] = running
+
+    paused = run_ready_client.post(
+        f"/runs/{run_id}/pause", headers={"Idempotency-Key": f"pause-{uuid.uuid4()}"}
+    )
+    assert paused.status_code == 200, paused.text
+    assert paused.json()["state"] == "PAUSED"
+    resumed = run_ready_client.post(
+        f"/runs/{run_id}/resume", headers={"Idempotency-Key": f"resume-{uuid.uuid4()}"}
+    )
+    assert resumed.status_code == 200, resumed.text
+    assert resumed.json()["state"] == "RUNNING"
 
 
 def test_pause_terminal_run_is_409(run_ready_client: TestClient) -> None:
-    run = run_ready_client.post(
-        "/projects/example-project/runs",
-        json={"protocol_path": "m12_reference_research_v1.yaml"},
-        headers={"Idempotency-Key": f"run-{uuid.uuid4()}"},
-    ).json()
-    if run["state"] == "FAILED":
-        paused = run_ready_client.post(
-            f"/runs/{run['id']}/pause", headers={"Idempotency-Key": f"pause-{uuid.uuid4()}"}
-        )
-        assert paused.status_code == 409
-        assert paused.json()["title"] == "Invalid Transition"
+    """终态 run pause → 409（显式注入 FAILED，不依赖 run 偶然结果，WP-P5）。"""
+    from typing import Any
+    from typing import cast as cast_any
+
+    from packages.domain.core import ID
+    from packages.domain.run import ResearchRun
+    from packages.domain.run_state import ResearchRunState
+
+    deps = cast_any(Any, run_ready_client.app).state.deps
+    run_id = str(ID.generate().value)
+    failed = ResearchRun(
+        id=ID(run_id),
+        project_id="example-project",
+        protocol_id="test_protocol",
+        state=ResearchRunState.State.FAILED,
+    )
+    deps.run_registry[run_id] = failed
+    paused = run_ready_client.post(
+        f"/runs/{run_id}/pause", headers={"Idempotency-Key": f"pause-{uuid.uuid4()}"}
+    )
+    assert paused.status_code == 409
+    assert paused.json()["title"] == "Invalid Transition"
 
 
 def test_semantic_intervention_is_501(run_ready_client: TestClient) -> None:
-    """运行中语义变更必须产生 Manifest Revision / Fork；M13 诚实 501。"""
-    run = run_ready_client.post(
-        "/projects/example-project/runs",
-        json={"protocol_path": "m12_reference_research_v1.yaml"},
-        headers={"Idempotency-Key": f"run-{uuid.uuid4()}"},
-    ).json()
+    """运行中语义变更必须产生 Manifest Revision / Fork；M13 诚实 501（WP-P2 语义按 kind 分支）。"""
+    from typing import Any
+    from typing import cast as cast_any
+
+    from packages.domain.core import ID
+    from packages.domain.run import ResearchRun
+    from packages.domain.run_state import ResearchRunState
+
+    deps = cast_any(Any, run_ready_client.app).state.deps
+    run_id = str(ID.generate().value)
+    deps.run_registry[run_id] = ResearchRun(
+        id=ID(run_id),
+        project_id="example-project",
+        protocol_id="test_protocol",
+        state=ResearchRunState.State.RUNNING,
+    )
     response = run_ready_client.post(
-        f"/runs/{run['id']}/interventions",
+        f"/runs/{run_id}/interventions",
         json={"kind": "budget_adjust"},
         headers={"Idempotency-Key": f"int-{uuid.uuid4()}"},
     )
-    assert response.status_code in (200, 501)
-    if response.status_code == 501:
-        assert response.json()["title"] == "Semantic Intervention Pending"
+    assert response.status_code == 501
+    assert response.json()["title"] == "Semantic Intervention Pending"
+    # 语义干预不得吞掉 payload 改 PAUSE（WP-P2：run 仍 RUNNING）
+    assert run_ready_client.get(f"/runs/{run_id}").json()["state"] == "RUNNING"

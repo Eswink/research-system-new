@@ -16,6 +16,8 @@ from packages.application.ports.agent_runtime import (
     RuntimeEvent,
     RuntimeEventKind,
 )
+from packages.application.ports.agent_store import AgentStore
+from packages.application.ports.approval_store import ApprovalRecord, ApprovalStore
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger, LedgerSnapshot
 from packages.application.ports.credential_resolver import CredentialResolver, SecretValue
@@ -47,6 +49,7 @@ from packages.application.ports.policy_evaluator import (
     PolicyEvaluator,
     PolicyRequest,
 )
+from packages.application.ports.project_settings_store import ProjectSettingsStore
 from packages.application.ports.resource_catalog import (
     CatalogSnapshot,
     PreflightContext,
@@ -55,6 +58,7 @@ from packages.application.ports.resource_catalog import (
 )
 from packages.application.ports.retrieval_index import IndexEntry, IndexHit, RetrievalIndex
 from packages.application.ports.run_projection import RunProjection
+from packages.application.ports.run_store import RunStore
 from packages.application.ports.tool_pack_store import ToolPackRecord, ToolPackStore
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease, WorkflowEngine
@@ -65,6 +69,9 @@ __all__ = [
     "AgentSessionHandle",
     "AgentSessionResult",
     "AgentSessionSpec",
+    "AgentStore",
+    "ApprovalRecord",
+    "ApprovalStore",
     "ArtifactStore",
     "BudgetLedger",
     "CatalogSnapshot",
@@ -88,6 +95,7 @@ __all__ = [
     "PolicyEvaluation",
     "PolicyEvaluator",
     "PolicyRequest",
+    "ProjectSettingsStore",
     "PortCancelledError",
     "PortError",
     "PortTimeoutError",
@@ -96,6 +104,7 @@ __all__ = [
     "ResourceCatalog",
     "RetrievalIndex",
     "RunProjection",
+    "RunStore",
     "RuntimeEvent",
     "RuntimeEventKind",
     "SecretValue",

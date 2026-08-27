@@ -137,7 +137,12 @@ def safe_id(value: Any) -> str:
 
 
 def resolve_bucket_id(event: dict[str, Any]) -> str:
-    raw = event.get("parent_conversation_id") or event.get("conversation_id") or event.get("session_id") or "unknown"
+    raw = (
+        event.get("parent_conversation_id")
+        or event.get("conversation_id")
+        or event.get("session_id")
+        or "unknown"
+    )
     return safe_id(raw)
 
 

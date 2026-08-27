@@ -104,3 +104,137 @@ def test_dry_run_has_zero_side_effects(client: TestClient) -> None:
     assert memory.method_calls("write") == 0
     assert tools.method_calls("execute_tool") == 0
     assert events.method_calls("publish") == 0
+
+
+def test_create_agent_persists_and_is_visible(client: TestClient) -> None:
+    """B3.5：创建 Agent（同 Role 可多实例）→ 持久化 → 合并目录可见。"""
+    response = client.post(
+        "/projects/example-project/agents",
+        json={
+            "role": "domain_researcher",
+            "model_binding": {"mode": "EXPLICIT_MODEL", "value": "research_alpha"},
+        },
+        headers={"Idempotency-Key": "agent-create-1"},
+    )
+    assert response.status_code == 201, response.text
+    agent = response.json()
+    assert agent["role"] == "domain_researcher"
+    assert agent["model_binding"]["value"] == "research_alpha"
+    assert agent["version"].startswith("sha256:")
+    assert response.headers.get("etag", "").startswith("sha256:")
+
+    agents = client.get("/projects/example-project/agents").json()
+    assert any(item["id"] == agent["id"] for item in agents)
+    # 同 Role 多实例：新 agent 与 example agent 并存
+    same_role = [item for item in agents if item["role"] == "domain_researcher"]
+    assert len(same_role) >= 2
+
+
+def test_create_agent_rejects_unknown_role_or_model(client: TestClient) -> None:
+    """B3.5：role/model 引用必须真实存在（后端校验，不依赖 UI 隐藏）。"""
+    bad_role = client.post(
+        "/projects/example-project/agents",
+        json={"role": "no_such_role", "model_binding": {"mode": "EXPLICIT_MODEL", "value": "x"}},
+        headers={"Idempotency-Key": "agent-create-bad-role"},
+    )
+    assert bad_role.status_code == 422
+    bad_model = client.post(
+        "/projects/example-project/agents",
+        json={
+            "role": "domain_researcher",
+            "model_binding": {"mode": "EXPLICIT_MODEL", "value": "no_such_model"},
+        },
+        headers={"Idempotency-Key": "agent-create-bad-model"},
+    )
+    assert bad_model.status_code == 422
+    bad_mode = client.post(
+        "/projects/example-project/agents",
+        json={"role": "domain_researcher", "model_binding": {"mode": "NOPE", "value": "x"}},
+        headers={"Idempotency-Key": "agent-create-bad-mode"},
+    )
+    assert bad_mode.status_code == 422
+
+
+def test_patch_agent_rebinds_model_with_if_match(client: TestClient) -> None:
+    """B3.5：PATCH 已有 example agent 持久化新绑定；If-Match 强制。"""
+    agents = client.get("/projects/example-project/agents").json()
+    domain_a = next(item for item in agents if item["id"] == "domain_a")
+    assert domain_a["version"].startswith("sha256:")
+
+    missing = client.patch(
+        "/agents/domain_a",
+        json={"model_binding": {"mode": "EXPLICIT_MODEL", "value": "coding_beta"}},
+        headers={"Idempotency-Key": "agent-patch-no-ifmatch"},
+    )
+    assert missing.status_code == 428
+
+    stale = client.patch(
+        "/agents/domain_a",
+        json={"model_binding": {"mode": "EXPLICIT_MODEL", "value": "coding_beta"}},
+        headers={"Idempotency-Key": "agent-patch-stale", "If-Match": "sha256:" + "0" * 64},
+    )
+    assert stale.status_code == 412
+
+    updated = client.patch(
+        "/agents/domain_a",
+        json={"model_binding": {"mode": "EXPLICIT_MODEL", "value": "coding_beta"}},
+        headers={"Idempotency-Key": "agent-patch-ok", "If-Match": domain_a["version"]},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["model_binding"]["value"] == "coding_beta"
+
+    # 用最新 ETag 更新成功
+    etag = updated.headers.get("etag", "")
+    assert etag.startswith("sha256:")
+    second = client.patch(
+        "/agents/domain_a",
+        json={"model_binding": {"mode": "EXPLICIT_MODEL", "value": "research_alpha"}},
+        headers={"Idempotency-Key": "agent-patch-ok2", "If-Match": etag},
+    )
+    assert second.status_code == 200, second.text
+    assert second.json()["model_binding"]["value"] == "research_alpha"
+
+    # 合并目录中 domain_a 的新绑定进入 dry-run 投影（用户配置真实生效）
+    projection = client.post(
+        "/projects/example-project/dry-run", json={"path": "console_demo_research_v1.yaml"}
+    ).json()
+    assert projection["agent_models"].get("domain_a") == "research_alpha"
+
+
+def test_patch_agent_unknown_is_404(client: TestClient) -> None:
+    response = client.patch(
+        "/agents/no_such_agent",
+        json={"model_binding": {"mode": "INHERIT"}},
+        headers={"Idempotency-Key": "agent-patch-404"},
+    )
+    assert response.status_code == 404
+
+
+def test_put_settings_persists_and_validates(client: TestClient) -> None:
+    """B3.5：项目设置持久化；模板/工作区引用校验。"""
+    payload = {
+        "team_template_id": "rigorous",
+        "default_model_profile_id": "research_strong",
+        "budget_policy_id": "low_cost",
+        "workspace_backend": "openhands_docker",
+        "policy_id": "project-policy",
+    }
+    headers = {"Idempotency-Key": "settings-put-1"}
+    response = client.put("/projects/example-project/settings", json=payload, headers=headers)
+    assert response.status_code == 200, response.text
+    fetched = client.get("/projects/example-project/settings").json()
+    assert fetched["team_template_id"] == "rigorous"
+    assert fetched["budget_policy_id"] == "low_cost"
+
+    bad_template = client.put(
+        "/projects/example-project/settings",
+        json={**payload, "team_template_id": "no_such_template"},
+        headers={"Idempotency-Key": "settings-put-2"},
+    )
+    assert bad_template.status_code == 422
+    bad_workspace = client.put(
+        "/projects/example-project/settings",
+        json={**payload, "workspace_backend": "no_such_backend"},
+        headers={"Idempotency-Key": "settings-put-3"},
+    )
+    assert bad_workspace.status_code == 422

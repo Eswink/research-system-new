@@ -263,7 +263,7 @@ def test_load_budget_policy_and_resource_contracts() -> None:
     policy = load_policy("examples/config/policy.yaml")
     assert policy.default_effect.value == "DENY"
     providers = load_tool_providers("examples/config/tool_providers.yaml")
-    assert providers["research_mcp"].capabilities == [
+    assert providers["ncbi_eutils"].capabilities == [
         "literature.search",
         "literature.read",
         "citation.inspect",

@@ -21,7 +21,9 @@ def _discover_root() -> Path:
         return Path(explicit).resolve()
     here = Path(__file__).resolve()
     for candidate in (here.parent, *here.parents):
-        if (candidate / "VERSION").is_file() and (candidate / ".cursor" / "framework.json").is_file():
+        if (candidate / "VERSION").is_file() and (
+            candidate / ".cursor" / "framework.json"
+        ).is_file():
             return candidate
     raise RuntimeError("Cannot locate repository root (VERSION + .cursor/framework.json)")
 
@@ -45,7 +47,9 @@ def execute_command(script: str, env: dict[str, str]) -> tuple[int | str, str]:
     print("RUN:", " ".join(normalized_command(script)), flush=True)
     with tempfile.TemporaryFile(mode="w+b") as log:
         try:
-            cp = subprocess.run(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, env=env, timeout=120)
+            cp = subprocess.run(
+                cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, env=env, timeout=120
+            )
         except subprocess.TimeoutExpired:
             log.seek(0)
             blob = log.read()
@@ -116,7 +120,9 @@ def main() -> int:
         },
         "commands": evidence,
     }
-    evidence_path.write_text(json.dumps(evidence_doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    evidence_path.write_text(
+        json.dumps(evidence_doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
     files = [
         {
@@ -140,7 +146,13 @@ def main() -> int:
     )
 
     verify = subprocess.run(
-        [PYTHON, "-B", ".cursor/skills/framework-release/scripts/verify_cursor_framework_release.py", "--version", version],
+        [
+            PYTHON,
+            "-B",
+            ".cursor/skills/framework-release/scripts/verify_cursor_framework_release.py",
+            "--version",
+            version,
+        ],
         cwd=ROOT,
         text=True,
         encoding="utf-8",
@@ -153,7 +165,9 @@ def main() -> int:
         print("ERROR: generated release failed manifest verification")
         print((verify.stdout + verify.stderr)[-3000:])
         return verify.returncode or 5
-    print(f"PASS: Cursor Framework {version} deterministic release generated and verified; {len(files)} file(s)")
+    print(
+        f"PASS: Cursor Framework {version} deterministic release generated and verified; {len(files)} file(s)"
+    )
     return 0
 
 

@@ -6,6 +6,7 @@ from packages.application.preflight.preflight import DryRunProjection
 from packages.domain.models import ModelDefinition
 from packages.domain.protocols import CompiledRunPlan, PreflightReport
 from packages.domain.roles import AgentSpec, RoleDefinition, TeamTemplate
+from packages.domain.serialization import digest_of
 from services.api.dto.team_protocol import (
     AgentSpecDto,
     DryRunProjectionDto,
@@ -65,6 +66,7 @@ def agent_dto(agent: AgentSpec) -> AgentSpecDto:
         max_iterations=context.max_iterations if context else None,
         runtime_kind=agent.runtime_kind.value if agent.runtime_kind else None,
         budget_policy_ref=agent.budget_policy_ref,
+        version=agent_version(agent),
     )
 
 
@@ -72,6 +74,29 @@ def model_version_of(model: ModelDefinition) -> str:
     from services.api.mappers.models import model_version
 
     return model_version(model)
+
+
+def agent_version(agent: AgentSpec) -> str:
+    """API resource version：全字段 canonical digest（If-Match 用）。"""
+    context = agent.context
+    binding = agent.model_binding
+    canonical: dict[str, object] = {
+        "id": agent.id,
+        "role": agent.role,
+        "model_binding": {"mode": binding.mode.value, "value": binding.value},
+        "workspace_policy": agent.workspace_policy.value if agent.workspace_policy else None,
+        "skill_refs": list(agent.skill_refs),
+        "capability_refs": list(agent.capability_refs),
+        "context": {
+            "max_context_tokens": context.max_context_tokens,
+            "max_iterations": context.max_iterations,
+        }
+        if context
+        else None,
+        "runtime_kind": agent.runtime_kind.value if agent.runtime_kind else None,
+        "budget_policy_ref": agent.budget_policy_ref,
+    }
+    return str(digest_of(canonical))
 
 
 def preflight_dto(report: PreflightReport) -> PreflightReportDto:

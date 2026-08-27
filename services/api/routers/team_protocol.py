@@ -1,34 +1,40 @@
-"""Team / Protocol / Preflight / Dry-run 控制面路由。
+"""Team / Protocol / Preflight / Dry-run 控制面路由（M13-R1）。
 
 流程：HTTP → DTO → use case（protocol_compile + preflight）→ Domain / Port。
-Dry Run 语义（M13 DoD 5）：只透传 `dry_run_projection` 纯只读投影，
-不调用 reserve / execution / memory write / tool call（零 Research side effect）。
+M13-R1 变更：
+- 目录/项目设置来自 merged 视图（SQLite 用户配置覆盖 examples，B3.1）；
+- preflight context 注入 NativePolicyEvaluator（B3.3）与实时 endpoint
+  健康（B3.4）；
+- create/patch agent 真实持久化（AgentStore，B3.5），不再 501 伪拒绝；
+- 共享辅助（context/compile/agent DTO）在 team_support.py（300 行阈值拆分）；
+- 语义类运行中变更（Manifest Revision / Fork）仍保持诚实 501 边界。
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Response
 
-from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
+from packages.application.ports import ProjectSettings
 from packages.application.preflight.preflight import (
     compile_and_preflight,
     dry_run_projection,
     run_preflight,
 )
 from packages.application.protocol_compile.compiler import compile_protocol
-from packages.domain.protocols import CompiledRunPlan
-from services.api.catalog import (
-    load_catalog_snapshot,
-    load_project_settings,
-    load_protocol_definition,
-)
+from packages.domain.core import ID
+from services.api.catalog import load_protocol_definition
+from services.api.catalog_merge import merged_project_settings
+from services.api.composition import ApiDeps
+from services.api.deps import get_deps, require_if_match
 from services.api.dto.team_protocol import (
+    AgentCreateDto,
     AgentSpecDto,
     AgentUpdateDto,
     CompileResultDto,
     DryRunProjectionDto,
     PreflightReportDto,
     ProjectSettingsDto,
+    ProjectSettingsUpdateDto,
     ProtocolSourceDto,
     RoleDefinitionDto,
     TeamTemplateDto,
@@ -36,64 +42,84 @@ from services.api.dto.team_protocol import (
 from services.api.errors import ApiError
 from services.api.mappers.team_protocol import (
     agent_dto,
+    agent_version,
     dry_run_dto,
     preflight_dto,
     role_dto,
     template_dto,
 )
+from services.api.team_support import (
+    AgentDraft,
+    agent_from_dto,
+    binding_from_dto,
+    build_preflight_context,
+    compile_plan_or_error,
+    merged_context,
+    require_agent_store,
+    validate_model_reference,
+)
 
 router = APIRouter(tags=["team-protocol"])
 
 
-def _context(catalog: CatalogSnapshot, project: ProjectSettings) -> PreflightContext:
-    return PreflightContext(
-        catalog=catalog,
-        project=project,
-        credentials=None,
-        budget_ledger=None,
-        policy_evaluator=None,
-    )
-
-
-def _compile_plan(catalog: CatalogSnapshot, project: ProjectSettings, path: str) -> CompiledRunPlan:
-    protocol = load_protocol_definition(path)
-    result = compile_protocol(protocol, catalog, project)
-    if result.plan is None:
-        raise ApiError(
-            422,
-            "Protocol Compile Failed",
-            "; ".join(finding.message for finding in result.findings),
-        )
-    return result.plan
-
-
 @router.get("/roles", response_model=list[RoleDefinitionDto])
-async def list_roles() -> list[RoleDefinitionDto]:
-    """Role 目录（RoleDefinition 不绑定模型；ADR-0011）。"""
-    catalog = load_catalog_snapshot()
+async def list_roles(request: Request) -> list[RoleDefinitionDto]:
+    """Role 目录（RoleDefinition 不绑定模型；ADR-0011；合并视图）。"""
+    deps: ApiDeps = get_deps(request)
+    catalog, _project = merged_context(deps)
     return [role_dto(role) for role in catalog.roles.values()]
 
 
 @router.get("/team-templates", response_model=list[TeamTemplateDto])
-async def list_team_templates() -> list[TeamTemplateDto]:
+async def list_team_templates(request: Request) -> list[TeamTemplateDto]:
     """Lean / Standard / Rigorous 模板目录。"""
-    catalog = load_catalog_snapshot()
+    deps: ApiDeps = get_deps(request)
+    catalog, _project = merged_context(deps)
     return [template_dto(template) for template in catalog.team_templates.values()]
 
 
 @router.get("/projects/{project_id}/agents", response_model=list[AgentSpecDto])
-async def list_agents(project_id: str) -> list[AgentSpecDto]:
-    """Agent 实例目录（Role 的配置实例；可独立绑定模型）。"""
+async def list_agents(project_id: str, request: Request) -> list[AgentSpecDto]:
+    """Agent 实例目录（Role 的配置实例；可独立绑定模型；合并视图）。"""
     del project_id
-    catalog = load_catalog_snapshot()
+    deps: ApiDeps = get_deps(request)
+    catalog, _project = merged_context(deps)
     return [agent_dto(agent) for agent in catalog.agents.values()]
 
 
-@router.get("/projects/{project_id}/settings", response_model=ProjectSettingsDto)
-async def get_project_settings(project_id: str) -> ProjectSettingsDto:
-    """项目设置视图（wizard 默认项目；M14 后持久化）。"""
+@router.post("/projects/{project_id}/agents", response_model=AgentSpecDto, status_code=201)
+async def create_agent(
+    project_id: str, payload: AgentCreateDto, request: Request, response: Response
+) -> AgentSpecDto:
+    """创建 Agent 实例（同 Role 可多实例；role/model 引用真实校验）。"""
     del project_id
-    project = load_project_settings()
+    deps: ApiDeps = get_deps(request)
+    catalog, _project = merged_context(deps)
+    if payload.role not in catalog.roles:
+        raise ApiError(422, "Invalid Role", f"role is unavailable: {payload.role!r}")
+    binding = binding_from_dto(payload.model_binding)
+    validate_model_reference(catalog, binding)
+    agent = agent_from_dto(
+        AgentDraft(
+            agent_id=ID.generate().value,
+            role=payload.role,
+            binding=binding,
+            workspace_policy=payload.workspace_policy,
+            max_context_tokens=payload.max_context_tokens,
+            max_iterations=payload.max_iterations,
+        )
+    )
+    require_agent_store(deps).save_agent(agent)
+    response.headers["ETag"] = agent_version(agent)
+    return agent_dto(agent)
+
+
+@router.get("/projects/{project_id}/settings", response_model=ProjectSettingsDto)
+async def get_project_settings(project_id: str, request: Request) -> ProjectSettingsDto:
+    """项目设置视图（merged：ProjectSettingsStore 优先，examples 回退）。"""
+    del project_id
+    deps: ApiDeps = get_deps(request)
+    project = merged_project_settings(deps)
     return ProjectSettingsDto(
         project_id=project.project_id,
         team_template_id=project.team_template_id,
@@ -105,33 +131,101 @@ async def get_project_settings(project_id: str) -> ProjectSettingsDto:
     )
 
 
-@router.patch("/agents/{agent_id}", response_model=AgentSpecDto)
-async def update_agent(agent_id: str, payload: AgentUpdateDto) -> AgentSpecDto:
-    """per-Agent 更新（model_binding 等）。
-
-    M13 诚实边界：配置目录当前来自 examples/ 契约（只读快照）；运行中
-    修改 Model/Tool/semantic 配置必须产生 Manifest Revision / Fork，
-    持久化配置修改属 M14（PostgreSQL canonical state）。本端点验证
-    变更合法性但不写回（返回 501 说明原因），防止伪持久化。
-    """
-    del payload
-    catalog = load_catalog_snapshot()
-    if agent_id not in catalog.agents:
-        raise ApiError(404, "Not Found", f"agent not found: {agent_id}")
-    raise ApiError(
-        501,
-        "Configuration Persistence Pending",
-        "agent 配置持久化属 M14（PostgreSQL canonical state）；"
-        "M13 使用 examples/config/agents.yaml 正式绑定（dry-run 投影验证），"
-        "运行中语义变更必须走 Manifest Revision / Fork",
+@router.put("/projects/{project_id}/settings", response_model=ProjectSettingsDto)
+async def put_project_settings(
+    project_id: str, payload: ProjectSettingsUpdateDto, request: Request
+) -> ProjectSettingsDto:
+    """项目设置持久化（ProjectSettingsStore；模板/工作区引用校验）。"""
+    deps: ApiDeps = get_deps(request)
+    if deps.project_settings_store is None:
+        raise ApiError(503, "Settings Store Unavailable", "project settings store not configured")
+    catalog, _project = merged_context(deps)
+    if payload.team_template_id not in catalog.team_templates:
+        raise ApiError(
+            422,
+            "Invalid Team Template",
+            f"template unavailable: {payload.team_template_id!r}",
+        )
+    if payload.workspace_backend not in catalog.workspaces:
+        raise ApiError(
+            422,
+            "Invalid Workspace",
+            f"workspace unavailable: {payload.workspace_backend!r}",
+        )
+    settings = ProjectSettings(
+        project_id=project_id,
+        team_template_id=payload.team_template_id,
+        default_model_profile_id=payload.default_model_profile_id,
+        budget_policy_id=payload.budget_policy_id,
+        workspace_backend=payload.workspace_backend,
+        compute_profile=payload.compute_profile,
+        policy_id=payload.policy_id,
+    )
+    deps.project_settings_store.save(settings)
+    return ProjectSettingsDto(
+        project_id=settings.project_id,
+        team_template_id=settings.team_template_id,
+        default_model_profile_id=settings.default_model_profile_id,
+        budget_policy_id=settings.budget_policy_id,
+        workspace_backend=settings.workspace_backend,
+        compute_profile=settings.compute_profile,
+        policy_id=settings.policy_id,
     )
 
 
+@router.patch("/agents/{agent_id}", response_model=AgentSpecDto)
+async def update_agent(
+    agent_id: str, payload: AgentUpdateDto, request: Request, response: Response
+) -> AgentSpecDto:
+    """per-Agent 更新（model_binding 等）持久化到 AgentStore。
+
+    语义变更（运行中改 Model/Tool）仍须 Manifest Revision / Fork（M14）。
+    """
+    deps: ApiDeps = get_deps(request)
+    catalog, _project = merged_context(deps)
+    base = catalog.agents.get(agent_id)
+    if base is None:
+        raise ApiError(404, "Not Found", f"agent not found: {agent_id}")
+    require_if_match(request, agent_version(base))
+    store = require_agent_store(deps)
+    try:
+        current = store.get_agent(agent_id)
+    except KeyError:
+        current = base
+    binding = (
+        binding_from_dto(payload.model_binding)
+        if payload.model_binding is not None
+        else current.model_binding
+    )
+    if payload.model_binding is not None:
+        validate_model_reference(catalog, binding)
+    agent = agent_from_dto(
+        AgentDraft(
+            agent_id=agent_id,
+            role=current.role,
+            binding=binding,
+            workspace_policy=payload.workspace_policy
+            if payload.workspace_policy is not None
+            else (current.workspace_policy.value if current.workspace_policy else None),
+            max_context_tokens=payload.max_context_tokens
+            if payload.max_context_tokens is not None
+            else (current.context.max_context_tokens if current.context else None),
+            max_iterations=payload.max_iterations
+            if payload.max_iterations is not None
+            else (current.context.max_iterations if current.context else None),
+        ),
+        base=current,
+    )
+    store.save_agent(agent)
+    response.headers["ETag"] = agent_version(agent)
+    return agent_dto(agent)
+
+
 @router.post("/protocols/validate", response_model=CompileResultDto)
-async def validate_protocol(payload: ProtocolSourceDto) -> CompileResultDto:
-    """协议校验：编译（不做任何副作用）。"""
-    catalog = load_catalog_snapshot()
-    project = load_project_settings()
+async def validate_protocol(payload: ProtocolSourceDto, request: Request) -> CompileResultDto:
+    """协议校验：编译（不做任何副作用；合并目录视图）。"""
+    deps: ApiDeps = get_deps(request)
+    catalog, project = merged_context(deps)
     try:
         protocol = load_protocol_definition(payload.path)
         result = compile_protocol(protocol, catalog, project)
@@ -150,44 +244,50 @@ async def validate_protocol(payload: ProtocolSourceDto) -> CompileResultDto:
 
 @router.post("/projects/{project_id}/compile", response_model=PreflightReportDto)
 async def compile_and_preflight_endpoint(
-    project_id: str, payload: ProtocolSourceDto
+    project_id: str, payload: ProtocolSourceDto, request: Request
 ) -> PreflightReportDto:
-    """compile + preflight（正式组合入口；预算预留仅发生在 preflight 内）。"""
+    """compile + preflight（正式组合入口；真实 health/policy 接线）。"""
     del project_id
-    catalog = load_catalog_snapshot()
-    project = load_project_settings()
+    deps: ApiDeps = get_deps(request)
+    catalog, project = merged_context(deps)
     protocol = load_protocol_definition(payload.path)
     _plan, report = compile_and_preflight(
         protocol,
         catalog,
         project,
-        _context(catalog, project),
+        build_preflight_context(deps, catalog, project),
     )
     return preflight_dto(report)
 
 
 @router.post("/projects/{project_id}/preflight", response_model=PreflightReportDto)
-async def preflight_endpoint(project_id: str, payload: ProtocolSourceDto) -> PreflightReportDto:
-    """preflight 复检（编译成功后执行）。"""
+async def preflight_endpoint(
+    project_id: str, payload: ProtocolSourceDto, request: Request
+) -> PreflightReportDto:
+    """preflight 复检（编译成功后执行；真实 health/policy 接线）。"""
     del project_id
-    catalog = load_catalog_snapshot()
-    project = load_project_settings()
-    plan = _compile_plan(catalog, project, payload.path)
-    report = run_preflight(plan, _context(catalog, project))
+    deps: ApiDeps = get_deps(request)
+    plan = compile_plan_or_error(deps, payload.path)
+    catalog, project = merged_context(deps)
+    report = run_preflight(plan, build_preflight_context(deps, catalog, project))
     return preflight_dto(report)
 
 
 @router.post("/projects/{project_id}/dry-run", response_model=DryRunProjectionDto)
-async def dry_run_endpoint(project_id: str, payload: ProtocolSourceDto) -> DryRunProjectionDto:
+async def dry_run_endpoint(
+    project_id: str, payload: ProtocolSourceDto, request: Request
+) -> DryRunProjectionDto:
     """Dry Run：纯只读投影，零 Research side effect。
 
     不启动 Agent、不调用 Research Tool、不执行 Experiment、不写长期
-    Memory、不 reserve budget（`dry_run_projection` 是纯函数）。
+    Memory、不 reserve budget（`dry_run_projection` 是纯函数；context
+    不注入 budget ledger，preflight 预留仅为本地 digest 引用）。
     """
     del project_id
-    catalog = load_catalog_snapshot()
-    project = load_project_settings()
-    plan = _compile_plan(catalog, project, payload.path)
-    report = run_preflight(plan, _context(catalog, project))
-    projection = dry_run_projection(plan, _context(catalog, project), report)
+    deps: ApiDeps = get_deps(request)
+    plan = compile_plan_or_error(deps, payload.path)
+    catalog, project = merged_context(deps)
+    context = build_preflight_context(deps, catalog, project)
+    report = run_preflight(plan, context)
+    projection = dry_run_projection(plan, context, report)
     return dry_run_dto(projection)

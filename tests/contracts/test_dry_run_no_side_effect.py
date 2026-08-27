@@ -12,10 +12,14 @@ from adapters.fakes.event_publisher import FakeEventPublisher
 from adapters.fakes.execution_backend import FakeExecutionBackend
 from adapters.fakes.memory_store import FakeMemoryStore
 from adapters.fakes.tool_provider import FakeToolProvider
-from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
+from packages.application.ports import PreflightContext
 from packages.application.preflight.preflight import dry_run_projection, run_preflight
 from packages.application.protocol_compile.compiler import compile_protocol
-from services.api.catalog import load_catalog_snapshot, load_project_settings, load_protocol_definition
+from services.api.catalog import (
+    load_catalog_snapshot,
+    load_project_settings,
+    load_protocol_definition,
+)
 
 _PROTOCOL = "m12_reference_research_v1.yaml"
 

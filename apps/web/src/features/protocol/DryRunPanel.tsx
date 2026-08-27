@@ -6,6 +6,7 @@ import { useDryRun } from "./useDryRun";
 
 const PROTOCOLS = [
   "m12_reference_research_v1.yaml",
+  "console_demo_research_v1.yaml",
   "ai_ml_research_v0_4_0.yaml",
   "sort_analysis_v1.yaml",
 ];

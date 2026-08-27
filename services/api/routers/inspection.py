@@ -25,6 +25,7 @@ from services.api.dto.inspection import (
     UsageEntryDto,
 )
 from services.api.errors import ApiError
+from services.api.run_access import get_run_or_error
 
 router = APIRouter(tags=["inspection"])
 
@@ -45,6 +46,8 @@ def _evidence_dto(evidence: Evidence) -> EvidenceDto:
         artifact_id=evidence.artifact_id,
         image_digest=evidence.image_digest,
         environment_digest=evidence.environment_digest,
+        workspace_snapshot_before=evidence.workspace_snapshot_before,
+        workspace_snapshot_after=evidence.workspace_snapshot_after,
         model_refs=list(evidence.model_refs),
         manifest_digest=evidence.manifest_digest,
     )
@@ -88,6 +91,34 @@ def _evidence_of_run(ledger: EvidenceLedger, run_id: str) -> tuple[Evidence, ...
     return tuple(found)
 
 
+def _claim_map_for_run(
+    ledger: EvidenceLedger, run_id: str
+) -> tuple[list[ClaimDto], list[str], list[str]]:
+    """run 级 claim map：只保留 relation 命中该 run evidence 的 claim。
+
+    M13-R1（WP-M3，复审实测跨 run 泄漏修复）：此前遍历全量 ledger.claims()
+    且不按 run 过滤。现在先取该 run 的 evidence id 集合，只返回 relation
+    命中该集合的 claim（relation 展示同样只保留 run 内部分，不泄漏他 run
+    evidence 引用）；无任何 relation 的 claim 无法归属 run，不返回。
+    """
+    run_evidence_ids = {item.id for item in _evidence_of_run(ledger, run_id)}
+    claims: list[ClaimDto] = []
+    unsupported: list[str] = []
+    contradictions: list[str] = []
+    for claim in ledger.claims():
+        relations = ledger.relations_for_claim(claim.id)
+        scoped = tuple(
+            relation for relation in relations if relation.evidence_id in run_evidence_ids
+        )
+        if not scoped:
+            continue
+        claims.append(_claim_dto(claim, scoped))
+        types = {relation.relation for relation in scoped}
+        if "SUPPORTS" in types and "REFUTES" in types:
+            contradictions.append(claim.id)
+    return claims, unsupported, contradictions
+
+
 @router.get("/runs/{run_id}/evidence", response_model=list[EvidenceDto])
 async def run_evidence(run_id: str, request: Request) -> list[EvidenceDto]:
     """run 的 evidence（persisted truth；页面只 render）。"""
@@ -98,29 +129,31 @@ async def run_evidence(run_id: str, request: Request) -> list[EvidenceDto]:
 
 @router.get("/runs/{run_id}/claims", response_model=ClaimMapDto)
 async def run_claim_map(run_id: str, request: Request) -> ClaimMapDto:
-    """Source → Evidence → Relation → Claim 地图（persisted truth）。
+    """Source → Evidence → Relation → Claim 地图（persisted truth；run 级隔离）。
 
-    视觉语义：missing/deleted evidence、contradiction（同一 claim 的
-    SUPPORTS 与 REFUTES 并存）、unsupported claim（无 relation）在 DTO
-    中显式表达；Claim 状态改变必须经过正式 use case/gate。
+    视觉语义：contradiction（同一 claim 的 SUPPORTS 与 REFUTES 并存）在
+    DTO 中显式表达；Claim 状态改变必须经过正式 use case/gate。
+    M13-R1：claim 视图只包含 relation 命中本 run evidence 的 claim
+    （跨 run 泄漏修复）；无 relation 的 claim 不归属任何 run。
+    畸形 ledger 行（evidence_relations 非 JSON）不再 422 崩溃：
+    整图降级标记 degraded=true（WP-P4）。
     """
     deps: ApiDeps = get_deps(request)
     ledger = _ledger_of(deps)
-    claims: list[ClaimDto] = []
-    unsupported: list[str] = []
-    contradictions: list[str] = []
-    for claim in ledger.claims():
-        relations = ledger.relations_for_claim(claim.id)
-        claims.append(_claim_dto(claim, relations))
-        if not relations:
-            unsupported.append(claim.id)
-        types = {relation.relation for relation in relations}
-        if "SUPPORTS" in types and "REFUTES" in types:
-            contradictions.append(claim.id)
+    try:
+        claims, unsupported, contradictions = _claim_map_for_run(ledger, run_id)
+    except Exception:  # noqa: BLE001 - ledger 行损坏时降级而非整体 422
+        return ClaimMapDto(
+            claims=[],
+            unsupported_claims=[],
+            contradictory_claims=[],
+            degraded=True,
+        )
     return ClaimMapDto(
         claims=claims,
         unsupported_claims=unsupported,
         contradictory_claims=contradictions,
+        degraded=False,
     )
 
 
@@ -175,9 +208,7 @@ async def run_usage(run_id: str, request: Request) -> BudgetViewDto:
 async def run_export(run_id: str, request: Request) -> ExportBundleDto:
     """Audit/Export：来自 persisted state（canonical 重算），不导出 UI 内存。"""
     deps: ApiDeps = get_deps(request)
-    run = deps.run_registry.get(run_id)
-    if run is None:
-        raise ApiError(404, "Not Found", f"run not found: {run_id}")
+    run = get_run_or_error(deps, run_id)
     ledger = _ledger_of(deps)
     usage = await run_usage(run_id, request)
     claims = await run_claim_map(run_id, request)

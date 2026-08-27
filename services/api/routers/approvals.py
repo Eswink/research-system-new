@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
+from packages.application.ports import ApprovalStore
+from packages.application.ports.approval_store import ApprovalRecord
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from services.api.approvals import (
-    ApprovalRegistry,
-    PendingApproval,
     build_approval_event,
     decide_approval,
 )
@@ -25,13 +25,14 @@ from services.api.dto.approvals import (
     InterventionDto,
 )
 from services.api.errors import ApiError
+from services.api.run_access import get_run_or_error, save_run
 
 router = APIRouter(tags=["approvals"])
 
 _ACTION_LABEL = "policy-required-action"
 
 
-def _approval_dto(approval: PendingApproval) -> ApprovalDto:
+def _approval_dto(approval: ApprovalRecord) -> ApprovalDto:
     return ApprovalDto(
         id=approval.id,
         run_id=approval.run_id,
@@ -44,17 +45,14 @@ def _approval_dto(approval: PendingApproval) -> ApprovalDto:
     )
 
 
-def _ensure_registry(deps: ApiDeps) -> ApprovalRegistry:
+def _ensure_registry(deps: ApiDeps) -> ApprovalStore:
     if deps.approvals is None:
         raise ApiError(503, "Approvals Unavailable", "approval registry not configured")
     return deps.approvals
 
 
 def _require_run(deps: ApiDeps, run_id: str) -> ResearchRun:
-    run = deps.run_registry.get(run_id)
-    if run is None:
-        raise ApiError(404, "Not Found", f"run not found: {run_id}")
-    return run
+    return get_run_or_error(deps, run_id)
 
 
 @router.get("/approvals", response_model=list[ApprovalDto])
@@ -94,7 +92,7 @@ async def decide(approval_id: str, payload: ApprovalDecideDto, request: Request)
         updated_run = run.transition(transition)
     except ValueError as exc:
         raise ApiError(409, "Invalid Transition", str(exc)) from exc
-    deps.run_registry[run_id] = updated_run
+    save_run(deps, updated_run)
     event = build_approval_event(decided, actor="user:console")
     deps.events.publish(event)
     return _approval_dto(decided)
@@ -116,7 +114,7 @@ async def pause_run(run_id: str, request: Request) -> object:
         updated = run.transition(ResearchRunState.Transition.PAUSE)
     except ValueError as exc:
         raise ApiError(409, "Invalid Transition", str(exc)) from exc
-    deps.run_registry[run_id] = updated
+    save_run(deps, updated)
     return _run_payload(updated)
 
 
@@ -129,27 +127,33 @@ async def resume_run(run_id: str, request: Request) -> object:
         updated = run.transition(ResearchRunState.Transition.RESUME)
     except ValueError as exc:
         raise ApiError(409, "Invalid Transition", str(exc)) from exc
-    deps.run_registry[run_id] = updated
+    save_run(deps, updated)
     return _run_payload(updated)
 
 
 @router.post("/runs/{run_id}/interventions", response_model=object)
 async def intervene(run_id: str, payload: InterventionDto, request: Request) -> object:
-    """干预：budget adjustment / future-agent replacement。
+    """干预：按 kind 分支（M13-R1 WP-P2）。
 
-    运行中修改 Model/Tool/semantic 配置必须产生 Manifest Revision / Fork，
-    不得 silent mutation；持久化配置修改属 M14。本端点对语义变更返回
-    501（诚实边界），对纯状态类（pause/resume）走正式状态机。
+    - pause / resume：走正式状态机迁移；
+    - budget_adjust / replace_agent（语义变更）：必须产生 Manifest
+      Revision / Fork，M13 诚实返回 501，不再无条件吞掉 payload 改 PAUSE。
     """
-    del payload
     deps: ApiDeps = get_deps(request)
     run = _require_run(deps, run_id)
-    if run.state == ResearchRunState.State.RUNNING:
+    if payload.kind == "pause":
         try:
             updated = run.transition(ResearchRunState.Transition.PAUSE)
         except ValueError as exc:
             raise ApiError(409, "Invalid Transition", str(exc)) from exc
-        deps.run_registry[run_id] = updated
+        save_run(deps, updated)
+        return _run_payload(updated)
+    if payload.kind == "resume":
+        try:
+            updated = run.transition(ResearchRunState.Transition.RESUME)
+        except ValueError as exc:
+            raise ApiError(409, "Invalid Transition", str(exc)) from exc
+        save_run(deps, updated)
         return _run_payload(updated)
     raise ApiError(
         501,

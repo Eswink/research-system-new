@@ -52,7 +52,7 @@ class StructuredOutputAgentRuntime(FakeAgentRuntime):
         outputs_by_contract: dict[str, dict[str, object]] | None = None,
     ) -> None:
         super().__init__(outcome=outcome)
-        self._structured_output = structured_output
+        self._structured_output = dict(structured_output or {})
         self._outputs_by_contract = outputs_by_contract
 
     def run(self, session_id: str) -> AgentSessionResult:

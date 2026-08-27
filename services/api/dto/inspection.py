@@ -14,6 +14,8 @@ class EvidenceDto(BaseModel):
     artifact_id: str | None = None
     image_digest: str | None = None
     environment_digest: str | None = None
+    workspace_snapshot_before: str | None = None
+    workspace_snapshot_after: str | None = None
     model_refs: list[str] = Field(default_factory=list)
     manifest_digest: str | None = None
 
@@ -37,6 +39,7 @@ class ClaimMapDto(BaseModel):
     claims: list[ClaimDto] = Field(default_factory=list)
     unsupported_claims: list[str] = Field(default_factory=list)
     contradictory_claims: list[str] = Field(default_factory=list)
+    degraded: bool = False
 
 
 class UsageEntryDto(BaseModel):
@@ -66,3 +69,21 @@ class ExportBundleDto(BaseModel):
     claims: list[ClaimDto] = Field(default_factory=list)
     usage: BudgetViewDto
     exported_from: str
+
+
+class ExperimentRunDto(BaseModel):
+    """单个 experiment run 的只读视图（persisted truth）。"""
+
+    experiment_run_id: str
+    artifact_ids: list[str] = Field(default_factory=list)
+    image_digest: str | None = None
+    environment_digest: str | None = None
+    metrics: dict[str, object] = Field(default_factory=dict)
+    reproduction_available: bool = False
+
+
+class ExperimentViewDto(BaseModel):
+    """run 的 experiment 聚合视图；reproduction 诚实标注 unavailable。"""
+
+    experiments: list[ExperimentRunDto] = Field(default_factory=list)
+    reproduction_note: str = ""

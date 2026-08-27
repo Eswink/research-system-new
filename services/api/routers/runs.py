@@ -16,25 +16,22 @@ from packages.domain.core import ID, Digest
 from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
 from packages.domain.state_base import InvalidTransitionError
-from services.api.catalog import (
-    load_catalog_snapshot,
-    load_project_settings,
-    load_protocol_definition,
-)
+from services.api.catalog import load_protocol_definition
+from services.api.catalog_merge import merged_catalog_snapshot, merged_project_settings
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.runs import RunDetailDto, RunStartDto, TaskDto
 from services.api.errors import ApiError
+from services.api.preflight_support import build_endpoint_health, build_policy_evaluator
 from services.api.routers.run_events import events_of
+from services.api.run_access import get_run_or_error, save_run
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 projects_router = APIRouter(tags=["runs"])
 
 
 def _run_state_dto(deps: ApiDeps, run_id: str) -> RunDetailDto:
-    run = deps.run_registry.get(run_id)
-    if run is None:
-        raise ApiError(404, "Not Found", f"run not found: {run_id}")
+    run = get_run_or_error(deps, run_id)
     manifest = str(run.manifest_digest) if run.manifest_digest else None
     return RunDetailDto(
         id=run.id.value,
@@ -112,14 +109,23 @@ def _execution_inputs(
 ) -> ExecutionInputs:
     """加载协议/目录/项目并构建命令（override 时 catalog/project 与 preflight 同源）。"""
     protocol = load_protocol_definition(protocol_path)
-    catalog = load_catalog_snapshot()
-    project = load_project_settings()
+    catalog = merged_catalog_snapshot(deps)
+    project = merged_project_settings(deps)
     preflight = deps.preflight_override
     if preflight is not None:
         catalog = preflight.catalog
         project = preflight.project
     else:
-        preflight = PreflightContext(catalog=catalog, project=project)
+        preflight = PreflightContext(
+            catalog=catalog,
+            project=project,
+            credentials=deps.credentials,
+            endpoint_health=build_endpoint_health(deps, catalog),
+            provider_health={provider_id: True for provider_id in catalog.tool_providers},
+            workspace_available={},
+            budget_ledger=deps.budget,
+            policy_evaluator=build_policy_evaluator(catalog),
+        )
     command = StartRunCommand(
         project_id=project.project_id,
         protocol_id=protocol.id,
@@ -137,8 +143,30 @@ async def start_run(project_id: str, payload: RunStartDto, request: Request) -> 
     run_id = ID.generate()
     inputs = _execution_inputs(deps, payload.protocol_path, run_id, payload.trace_id)
     run = _run_from_execution(deps, run_id, inputs.project.project_id, inputs.protocol.id, inputs)
-    deps.run_registry[run_id.value] = run
+    save_run(deps, run)
     return _run_state_dto(deps, run_id.value)
+
+
+@projects_router.get("/projects/{project_id}/runs", response_model=list[RunDetailDto])
+async def list_runs(project_id: str, request: Request) -> list[RunDetailDto]:
+    """Run 列表（created_at 倒序；M13-R1 WP-M2：刷新恢复入口）。"""
+    scope_project_id = project_id
+    deps: ApiDeps = get_deps(request)
+    if deps.runs_store is None:
+        return [_run_state_dto(deps, run_id) for run_id in reversed(deps.run_registry)]
+    runs = deps.runs_store.list_runs(scope_project_id)
+    return [
+        RunDetailDto(
+            id=run.id.value,
+            project_id=run.project_id,
+            protocol_id=run.protocol_id,
+            state=run.state,
+            manifest_digest=str(run.manifest_digest) if run.manifest_digest else None,
+            created_at=run.created_at.value.isoformat(),
+            updated_at=run.updated_at.value.isoformat(),
+        )
+        for run in runs
+    ]
 
 
 @router.get("/{run_id}", response_model=RunDetailDto)
@@ -154,13 +182,11 @@ async def cancel_run(run_id: str, request: Request) -> RunDetailDto:
     deps: ApiDeps = get_deps(request)
     if deps.runs is None:
         raise ApiError(503, "Run Orchestration Unavailable", "run service not configured")
-    run = deps.run_registry.get(run_id)
-    if run is None:
-        raise ApiError(404, "Not Found", f"run not found: {run_id}")
+    run = get_run_or_error(deps, run_id)
     try:
         deps.runs.cancel_run(CancelRunCommand(run_id=ID(run_id)))
         cancelled = run.transition("CANCEL")
-        deps.run_registry[run_id] = cancelled
+        save_run(deps, cancelled)
     except InvalidTransitionError as exc:
         raise ApiError(409, "Invalid Transition", str(exc)) from exc
     except ValueError as exc:
@@ -172,8 +198,7 @@ async def cancel_run(run_id: str, request: Request) -> RunDetailDto:
 async def list_run_tasks(run_id: str, request: Request) -> list[TaskDto]:
     """run 任务投影（canonical state 读取，非审计事件）。"""
     deps: ApiDeps = get_deps(request)
-    if run_id not in deps.run_registry:
-        raise ApiError(404, "Not Found", f"run not found: {run_id}")
+    get_run_or_error(deps, run_id)
     if deps.projection is None:
         raise ApiError(503, "Projection Unavailable", "run projection not configured")
     rows = deps.projection.list_tasks(run_id)

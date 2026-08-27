@@ -18,7 +18,11 @@ def main() -> int:
         return 0
     assert event is not None
 
-    if not (event.get("conversation_id") or event.get("parent_conversation_id") or event.get("session_id")):
+    if not (
+        event.get("conversation_id")
+        or event.get("parent_conversation_id")
+        or event.get("session_id")
+    ):
         deny(
             "子代理门禁缺少 conversation_id，已按 fail-closed 拒绝委派。",
             "这是项目 Hook 环境内部错误，模型侧无法修复。请停止重试该操作，"

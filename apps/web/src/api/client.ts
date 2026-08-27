@@ -10,11 +10,14 @@
 
 import type {
   AgentSpecDto,
+  AgentCreateDto,
+  AgentUpdatePayload,
   CompileResultDto,
   DiscoverModelsResultDto,
   DryRunProjectionDto,
   EndpointHealthDto,
   EndpointTestResultDto,
+  ExperimentViewDto,
   LlmEndpointCreateDto,
   LlmEndpointReadDto,
   LlmEndpointUpdateDto,
@@ -36,6 +39,7 @@ import type {
   ClaimMapDto,
   EvidenceDto,
   ExportBundleDto,
+  CompatibilityViewDto,
 } from "./types";
 
 export interface ApiErrorBody extends Error {
@@ -221,6 +225,10 @@ export const api = {
     });
   },
 
+  getCompatibility(modelId: string): Promise<CompatibilityViewDto> {
+    return request(`/models/${encodeURIComponent(modelId)}/compatibility`, { method: "GET" });
+  },
+
   listRoles(): Promise<RoleDefinitionDto[]> {
     return request("/roles", { method: "GET" });
   },
@@ -231,6 +239,24 @@ export const api = {
 
   listAgents(): Promise<AgentSpecDto[]> {
     return request("/projects/example-project/agents", { method: "GET" });
+  },
+
+  createAgent(payload: AgentCreateDto): Promise<AgentSpecDto> {
+    return request("/projects/example-project/agents", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }, { idempotencyKey: newIdempotencyKey() });
+  },
+
+  updateAgent(
+    agentId: string,
+    payload: AgentUpdatePayload,
+    ifMatch: Version,
+  ): Promise<AgentSpecDto> {
+    return request(`/agents/${encodeURIComponent(agentId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }, { idempotencyKey: newIdempotencyKey(), ifMatch });
   },
 
   getProjectSettings(): Promise<ProjectSettingsDto> {
@@ -263,6 +289,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ protocol_path: protocolPath }),
     }, { idempotencyKey: newIdempotencyKey() });
+  },
+
+  listRuns(projectId = "example-project"): Promise<RunDetailDto[]> {
+    return request(`/projects/${encodeURIComponent(projectId)}/runs`, { method: "GET" });
   },
 
   getRun(runId: string): Promise<RunDetailDto> {
@@ -308,6 +338,10 @@ export const api = {
 
   runUsage(runId: string): Promise<BudgetViewDto> {
     return request(`/runs/${encodeURIComponent(runId)}/usage`, { method: "GET" });
+  },
+
+  runExperiments(runId: string): Promise<ExperimentViewDto> {
+    return request(`/runs/${encodeURIComponent(runId)}/experiments`, { method: "GET" });
   },
 
   runExport(runId: string): Promise<ExportBundleDto> {

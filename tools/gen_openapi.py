@@ -6,7 +6,7 @@ tests/contracts/test_openapi_snapshot.py 校验 schema 未漂移。
 确定性：Pydantic 生成的 object schema 默认允许额外属性，validators 要求
 显式 `additionalProperties: false`（契约资产约束），故导出时统一补写，
 保证生成结果确定（sort_keys + 固定格式）。
-运行：uv run --frozen --no-sync python -B scripts/gen_openapi.py
+运行：uv run --frozen --no-sync python -B tools/gen_openapi.py
 """
 
 from __future__ import annotations

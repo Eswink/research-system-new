@@ -6,7 +6,15 @@ import json
 import os
 from datetime import datetime, timezone
 
-from common import RUNTIME, allow, deny, read_event_result, resolve_bucket_id, resolve_task_text, safe_id
+from common import (
+    RUNTIME,
+    allow,
+    deny,
+    read_event_result,
+    resolve_bucket_id,
+    resolve_task_text,
+    safe_id,
+)
 
 MAX_PARALLEL_SUBAGENTS = 3
 

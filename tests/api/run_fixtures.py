@@ -32,7 +32,7 @@ from services.api.catalog import load_catalog_snapshot
 from services.api.composition import ApiDeps
 from services.api.idempotency import InMemoryIdempotencyStore
 
-_PROVIDERS = ("research_mcp", "openhands_workspace", "m12_artifact", "ncbi_eutils")
+_PROVIDERS = ("openhands_workspace", "m12_artifact", "ncbi_eutils")
 
 
 def replace_catalog_with_pins(catalog: object) -> object:

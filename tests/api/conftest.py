@@ -38,17 +38,20 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     from adapters.fakes.agent_runtime import FakeAgentRuntime
     from adapters.fakes.artifact_store import FakeArtifactStore
     from adapters.fakes.budget_ledger import FakeBudgetLedger
+    from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.db import connect
     from adapters.sqlite.endpoint_store import SqliteEndpointStore
     from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
     from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
     from adapters.sqlite.model_store import SqliteModelStore
+    from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.run_projection import SqliteRunProjection
     from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
     from packages.application.run_orchestration.service import (
         OrchestrationDependencies,
         RunOrchestrationService,
     )
+    from services.api.composition import demo_session_output
 
     connection = connect(":memory:")
     events = SqliteOutboxEventPublisher(connection=connection)
@@ -57,7 +60,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     budget = FakeBudgetLedger()
     runs = RunOrchestrationService(
         OrchestrationDependencies(
-            runtime=FakeAgentRuntime(),
+            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
             workflow=workflow,
             artifacts=FakeArtifactStore(),
             events=events,
@@ -76,6 +79,8 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         runs=runs,
         ledger=ledger,
         budget=budget,
+        agent_store=SqliteAgentStore(connection=connection),
+        project_settings_store=SqliteProjectSettingsStore(connection=connection),
         _connection=connection,
     )
 

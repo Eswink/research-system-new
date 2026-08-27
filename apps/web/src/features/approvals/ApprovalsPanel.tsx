@@ -34,7 +34,9 @@ export function ApprovalListItem({
       <button
         type="button"
         onClick={() => {
-          onDecide(approval, "deny");
+          if (window.confirm(`Deny approval for ${approval.action}? The run will be rejected.`)) {
+            onDecide(approval, "deny");
+          }
         }}
         data-testid="deny-button"
       >

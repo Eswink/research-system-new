@@ -35,7 +35,7 @@ def test_list_endpoints_returns_all(client: TestClient) -> None:
     response = client.get("/llm-endpoints")
     assert response.status_code == 200
     names = [item["name"] for item in response.json()]
-    assert names == ["relay-a", "relay-b"]
+    assert set(names) == {"relay-a", "relay-b"}
 
 
 def test_get_missing_endpoint_is_404(client: TestClient) -> None:

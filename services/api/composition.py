@@ -15,15 +15,22 @@ from pathlib import Path
 
 from adapters.fakes.agent_runtime import FakeAgentRuntime
 from adapters.fakes.artifact_store import FakeArtifactStore
-from adapters.fakes.budget_ledger import FakeBudgetLedger
 from adapters.relay.gateway import OpenAIChatGateway
 from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
+from adapters.sqlite.agent_store import SqliteAgentStore
+from adapters.sqlite.approval_store import SqliteApprovalStore
+from adapters.sqlite.budget_ledger import SqliteBudgetLedger
 from adapters.sqlite.db import connect
 from adapters.sqlite.endpoint_store import SqliteEndpointStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
+from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
 from adapters.sqlite.model_store import SqliteModelStore
+from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
+from adapters.sqlite.run_store import SqliteRunStore
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
+from packages.application.ports import AgentStore, ApprovalStore, ProjectSettingsStore, RunStore
+from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.credential_resolver import CredentialResolver
 from packages.application.ports.endpoint_store import EndpointStore
@@ -39,8 +46,7 @@ from packages.application.run_orchestration.service import (
     RunOrchestrationService,
 )
 from packages.domain.run import ResearchRun
-from services.api.approvals import ApprovalRegistry
-from services.api.idempotency import IdempotencyStore, InMemoryIdempotencyStore
+from services.api.idempotency import IdempotencyStore
 from services.api.settings import ApiSettings
 
 
@@ -53,16 +59,24 @@ class FakeEventPublisherFactory:
         return FakeEventPublisher()
 
 
+def demo_session_output() -> dict[str, object]:
+    """控制面 demo 会话输出（受控 Fake agent loop；UI 如实披露执行体性质）。
+
+    只用于 console_demo 协议：使验收标准（ARTIFACT_EXISTS analysis_report +
+    EVIDENCE_COVERAGE 1）可被正式 gate 求值通过，不冒充真实研究结果；
+    其他协议照常按各自契约执行/拒绝。
+    """
+    return {
+        "analysis_report": {
+            "summary": "controlled fake session output (M13-R1 console demo)",
+            "status": "ok",
+        }
+    }
+
+
 def _default_events() -> EventPublisher:
     """ApiDeps events 字段默认值工厂（dataclass default_factory 用）。"""
     return FakeEventPublisherFactory()()
-
-
-def _default_approvals() -> ApprovalRegistry:
-    """ApiDeps approvals 默认注册表（dataclass default_factory 用）。"""
-    from services.api.approvals import ApprovalRegistry
-
-    return ApprovalRegistry()
 
 
 @dataclass
@@ -76,12 +90,16 @@ class ApiDeps:
     idempotency: IdempotencyStore
     events: EventPublisher = field(default_factory=_default_events)
     projection: RunProjection | None = field(default=None, repr=False)
-    approvals: ApprovalRegistry | None = field(default=None, repr=False)
     ledger: EvidenceLedger | None = field(default=None, repr=False)
     budget: BudgetLedger | None = field(default=None, repr=False)
     runs: RunOrchestrationService | None = None
     run_registry: dict[str, ResearchRun] = field(default_factory=dict)
+    runs_store: RunStore | None = field(default=None, repr=False)
     run_contexts: dict[str, RunContext] = field(default_factory=dict)
+    artifacts: ArtifactStore | None = field(default=None, repr=False)
+    agent_store: AgentStore | None = field(default=None, repr=False)
+    project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
+    approvals: ApprovalStore | None = field(default=None, repr=False)
     preflight_override: PreflightContext | None = field(default=None, repr=False)
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
 
@@ -106,10 +124,10 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
 
     projection = SqliteRunProjection(connection, events)
     ledger = SqliteEvidenceLedger(connection=connection)
-    budget = FakeBudgetLedger()
+    budget = SqliteBudgetLedger(connection=connection)
     orchestration = RunOrchestrationService(
         OrchestrationDependencies(
-            runtime=FakeAgentRuntime(),
+            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
             workflow=workflow,
             artifacts=FakeArtifactStore(),
             events=events,
@@ -122,12 +140,16 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
         model_store=model_store,
         credentials=RegistryCredentialResolver(),
         gateway=OpenAIChatGateway(default_timeout_seconds=effective.endpoint_timeout_seconds),
-        idempotency=InMemoryIdempotencyStore(),
+        idempotency=SqliteIdempotencyStore(connection=connection),
         events=events,
         projection=projection,
-        approvals=_default_approvals(),
+        approvals=SqliteApprovalStore(connection=connection),
         runs=orchestration,
+        runs_store=SqliteRunStore(connection=connection),
+        artifacts=FakeArtifactStore(),
         ledger=ledger,
         budget=budget,
+        agent_store=SqliteAgentStore(connection=connection),
+        project_settings_store=SqliteProjectSettingsStore(connection=connection),
         _connection=connection,
     )

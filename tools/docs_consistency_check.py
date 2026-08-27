@@ -208,6 +208,8 @@ def backtick_refs(text: str) -> list[str]:
 def is_resolvable_ref(ref: str) -> bool:
     if not ref or " " in ref or ":" in ref or "{" in ref or "}" in ref:
         return False
+    if "*" in ref or "?" in ref or "[" in ref:
+        return False
     for ignored in IGNORED_BACKTICK_REFS:
         if ref.startswith(ignored):
             return False
@@ -221,7 +223,10 @@ def resolve_ref(root: Path, ref: str) -> bool:
     for suffix in (".schema.json", ".json"):
         if (root / f"{ref}{suffix}").exists():
             return True
-    return bool(list(root.glob(f"{ref}*.md")))
+    try:
+        return bool(list(root.glob(f"{ref}*.md")))
+    except ValueError:
+        return False
 
 
 def check_backtick_code_refs(checker: Checker) -> None:

@@ -4,6 +4,7 @@
 The hook never stages, commits, pushes, or prints non-JSON text to stdout.
 Its runtime audit is ignored by Git and excluded from release artifacts.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -13,7 +14,17 @@ import sys
 
 from common import ROOT, RUNTIME, atomic_json, emit, read_event, safe_id
 
-ALLOWED_DIRS = (".cursor", "docs", "schemas", "examples", "apps", "services", "packages", "adapters", "tests")
+ALLOWED_DIRS = (
+    ".cursor",
+    "docs",
+    "schemas",
+    "examples",
+    "apps",
+    "services",
+    "packages",
+    "adapters",
+    "tests",
+)
 SENSITIVE_NAME_RE = re.compile(r"(^|/)(\\.env([.-].*)?|.*\\.(pem|key|p12))$", re.IGNORECASE)
 SENSITIVE_CONTENT_RE = re.compile(
     r"(?:api[_-]?key|access[_-]?token|password|secret)\\s*[:=]\\s*[^\\s]{8,}|"
@@ -24,8 +35,13 @@ SENSITIVE_CONTENT_RE = re.compile(
 
 def run_git(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["git", *args], cwd=ROOT, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=5,
+        ["git", *args],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=5,
     )
 
 
@@ -34,7 +50,9 @@ def is_sensitive_path(relative: str) -> bool:
         return True
     path = ROOT / relative
     try:
-        if path.is_file() and SENSITIVE_CONTENT_RE.search(path.read_text(encoding="utf-8", errors="ignore")):
+        if path.is_file() and SENSITIVE_CONTENT_RE.search(
+            path.read_text(encoding="utf-8", errors="ignore")
+        ):
             return True
     except OSError:
         pass
@@ -53,14 +71,23 @@ def classify_status() -> dict[str, list[str]]:
         if len(line) < 4:
             continue
         xy, raw_path = line[:2], line[3:]
-        path = raw_path.split(" -> ", 1)[-1] if (xy[0] in ("R", "C") or xy[1] in ("R", "C")) else raw_path
+        path = (
+            raw_path.split(" -> ", 1)[-1]
+            if (xy[0] in ("R", "C") or xy[1] in ("R", "C"))
+            else raw_path
+        )
         if xy.startswith("??"):
             parts = path.split("/", 1)
-            if is_sensitive_path(path): categories["sensitive"].append(path)
-            elif len(parts) == 2 and parts[0] in ALLOWED_DIRS: categories["allowed_untracked"].append(path)
-            else: categories["outside_whitelist"].append(path)
-        elif is_sensitive_path(path): categories["sensitive"].append(path)
-        else: categories["modified"].append(path)
+            if is_sensitive_path(path):
+                categories["sensitive"].append(path)
+            elif len(parts) == 2 and parts[0] in ALLOWED_DIRS:
+                categories["allowed_untracked"].append(path)
+            else:
+                categories["outside_whitelist"].append(path)
+        elif is_sensitive_path(path):
+            categories["sensitive"].append(path)
+        else:
+            categories["modified"].append(path)
     return categories
 
 
@@ -81,7 +108,9 @@ def main() -> int:
         "status": str(event.get("status") or "unknown"),
         "counts": {key: len(items) for key, items in categories.items()},
         # Keep the audit useful for change correlation without persisting local paths.
-        "path_digests": {key: [digest_path(item) for item in items] for key, items in categories.items()},
+        "path_digests": {
+            key: [digest_path(item) for item in items] for key, items in categories.items()
+        },
     }
     atomic_json(RUNTIME / "git-audit" / f"{payload['conversation']}.json", payload)
 

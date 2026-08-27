@@ -22,7 +22,11 @@ def _session_failures(cid: str) -> int:
 
 def _repeated_signatures() -> list[str]:
     counts: dict[str, int] = {}
-    for path in sorted((RUNTIME / "observations").glob("*.jsonl")) if (RUNTIME / "observations").is_dir() else []:
+    for path in (
+        sorted((RUNTIME / "observations").glob("*.jsonl"))
+        if (RUNTIME / "observations").is_dir()
+        else []
+    ):
         for line in path.read_text(encoding="utf-8").splitlines():
             try:
                 record = json.loads(line)
@@ -107,9 +111,13 @@ def main() -> int:
 
     _mark_prompted(cid)
     repeated = _repeated_signatures()
-    parts = [f"本会话有 {failures} 次工具失败；若已形成稳定解法，可运行 capture-experience 沉淀到 .cursor/experience/。"]
+    parts = [
+        f"本会话有 {failures} 次工具失败；若已形成稳定解法，可运行 capture-experience 沉淀到 .cursor/experience/。"
+    ]
     if repeated:
-        parts.append(f"有 {len(repeated)} 类失败签名已在 ≥2 次会话中出现，建议 capture-learning 生成 LEARN 提案。")
+        parts.append(
+            f"有 {len(repeated)} 类失败签名已在 ≥2 次会话中出现，建议 capture-learning 生成 LEARN 提案。"
+        )
     matched = _matching_experience(_session_signatures(cid))
     if matched:
         refs = "、".join(f"EXP-{entry_id}（{title}）" for entry_id, title in matched)

@@ -98,15 +98,21 @@ def _responses_format(response_format: dict[str, Any]) -> dict[str, Any]:
 
 
 def responses_result(payload: dict[str, Any], *, safe_headers: dict[str, str]) -> CompletionResult:
-    """从 responses 非流式响应构造 CompletionResult。"""
+    """从 responses 非流式响应构造 CompletionResult。
+
+    system_fingerprint：从 payload 提取（与 chat_api 对齐）；缺失/非法
+    保持 None（诚实占位，不伪造）。M13-R1 WP-M6：此前硬编码 None，
+    即使 relay 返回 fingerprint 也被丢弃。
+    """
     content, tool_calls = parse_responses_output(payload)
     prompt_tokens, completion_tokens, total_tokens = usage_tokens(payload.get("usage"))
     usage = payload.get("usage")
+    raw_fingerprint = payload.get("system_fingerprint")
     return CompletionResult(
         content=content,
         tool_calls=tool_calls,
         returned_model_name=str(payload.get("model")) if payload.get("model") else None,
-        system_fingerprint=None,
+        system_fingerprint=str(raw_fingerprint) if isinstance(raw_fingerprint, str) else None,
         usage_reported=isinstance(usage, dict) and usage.get("total_tokens") is not None,
         safe_response_metadata=safe_headers,
         prompt_tokens=prompt_tokens,

@@ -1,0 +1,36 @@
+id: console_demo_research_v1_0_1
+version: 0.4.0
+
+# M13-R1 Console Demo Protocol（M13 复审 BLOCKER-B3 修复后的可运行示例）
+#
+# 2-phase 线性 DAG，全部 phase 带 task_contract，只使用 policy 允许、
+# LOW-risk NATIVE capability（artifact.read），使 preflight 在真实接线后
+# 可 PASS、编排链可到达 SUCCEEDED（受控 Fake agent loop 快速终态；
+# 浏览器 UI 如实披露"受控 Fake Runtime"，不冒充真实研究执行）。
+# 真实研究能力边界保持 M12（Docker 实验/真实文献检索按 requires_docker
+# 与 requires_live_llm 标记，不作为默认 CI 依赖）。
+
+phases:
+  - id: discovery
+    name: Demo Discovery
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+    task_contract: console_demo_deliverable
+    outputs: [demo_report]
+    timeout_seconds: 60
+
+  - id: review
+    name: Demo Review
+    strategy: single_agent
+    depends_on: [discovery]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+    task_contract: console_demo_deliverable
+    outputs: [demo_verdict]
+    timeout_seconds: 60
+    gate: QUALITY_GATE

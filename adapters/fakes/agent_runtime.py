@@ -34,13 +34,25 @@ class FakeAgentRuntime(FakeBase):
         AgentSessionState.Transition.STUCK: RuntimeEventKind.SESSION_STUCK,
     }
 
-    def __init__(self, *, outcome: str = AgentSessionState.State.SUCCEEDED) -> None:
+    def __init__(
+        self,
+        *,
+        outcome: str = AgentSessionState.State.SUCCEEDED,
+        structured_output: dict[str, object] | None = None,
+    ) -> None:
+        """受控 Fake 会话结局；structured_output 注入会话结果（M13-R1 demo）。
+
+        默认 None → 会话结果无结构化输出（register 门禁如实拒绝，
+        与既有语义一致）；控制面 demo 装配显式注入可满足验收标准的输出，
+        并在 UI 披露"受控 Fake Runtime"。
+        """
         super().__init__("agent_runtime")
         self._specs: dict[str, AgentSessionSpec] = {}
         self._states: dict[str, str] = {}
         self._events: dict[str, list[RuntimeEvent]] = {}
         self._cancel_requested: set[str] = set()
         self._outcome = outcome
+        self._structured_output = dict(structured_output or {})
 
     def create_session(self, spec: AgentSessionSpec) -> AgentSessionHandle:
         self._enter("create_session", spec.task_id.value)
@@ -82,7 +94,11 @@ class FakeAgentRuntime(FakeBase):
             # 终端状态为最终：重复 run 返回同一结果，不追加事件（事件流单调）。
             terminal = self._states[session_id]
             self._record("run", session_id, result=terminal)
-            return AgentSessionResult(session_id=session_id, status=terminal)
+            return AgentSessionResult(
+                session_id=session_id,
+                status=terminal,
+                structured_output=dict(self._structured_output) if terminal == "SUCCEEDED" else {},
+            )
         if session_id in self._cancel_requested:
             return self._finish(session_id, AgentSessionState.State.CANCELLED)
         if self._states[session_id] == AgentSessionState.State.CREATED:
@@ -103,7 +119,11 @@ class FakeAgentRuntime(FakeBase):
         }[terminal]
         self._events[session_id].append(RuntimeEvent(session_id, kind))
         self._record("run", session_id, result=terminal)
-        return AgentSessionResult(session_id=session_id, status=terminal)
+        return AgentSessionResult(
+            session_id=session_id,
+            status=terminal,
+            structured_output=dict(self._structured_output) if terminal == "SUCCEEDED" else {},
+        )
 
     def pause(self, session_id: str) -> None:
         self._enter("pause", session_id)

@@ -156,6 +156,7 @@ M10 → M11`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；M8-M11
 - `roadmap/M11_COMPLETION_RECORD.md` — M11 Evaluation Plane 完成记录（DoD 证据 + 反作弊专项；DOC-R1 依据 repository evidence 重建）
 - `roadmap/M12_COMPLETION_RECORD.md` — M12 First Real Research Workflow 完成记录与 MVP 判定（真实工具/实验/证据/评测/预算闭环）
 - `roadmap/M12_R1_COMPLETION_RECORD.md` — M12-R1 Production Truth Closure 修复记录（独立复审 FAIL 后 13 Finding → Fix → Regression → Revalidation；M12 待重新独立复审）
+- `roadmap/M13_R1_COMPLETION_RECORD.md` — M13-R1 Research Console 修复记录（独立复审 3 BLOCKER + 7 MAJOR + 4 UI Scope + 6 MINOR → Fix → Regression → PASS）
 - `roadmap/VERTICAL_SLICE_V0_4_0.md`
 - `roadmap/MILESTONES.md` — M0-M11 执行索引 + Post-M7 Roadmap 唯一权威（M12-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐）
 - `roadmap/M0_M11_DOCUMENT_MATRIX.md` — DOC-R1 inventory（M0-M11 文档分类与恢复判定）

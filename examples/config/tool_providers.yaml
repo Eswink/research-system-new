@@ -1,19 +1,4 @@
 tool_providers:
-  research_mcp:
-    kind: MCP
-    trust_level: USER_APPROVED
-    transport: streamable_http
-    endpoint_env: RESEARCH_MCP_URL
-    protocol_version: auto_negotiate
-    capabilities:
-      - literature.search
-      - literature.read
-      - citation.inspect
-    effect_class: READ_ONLY
-    network_domains:
-      - research-tools.example.com
-    health_check: true
-
   openhands_workspace:
     kind: NATIVE
     trust_level: BUILT_IN

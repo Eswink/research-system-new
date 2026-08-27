@@ -12,8 +12,9 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260826-001](entries/EXP-20260826-001.md) | ACTIVE | 0.5 | repository | 2026-11-24 | 全套 pytest 与 pnpm run check 并行时 10%-57% 出现批量 E；同一测试集串行复跑 1381 passed/2 skipped 全绿：验证任务串行执行、不与其他长任务并行，失败先排除竞争再逐项诊断 |
 | [EXP-20260824-001](entries/EXP-20260824-001.md) | ACTIVE | 0.5 | repository | 2026-11-22 | 含 `.env` 字样命令被 shell guard fail-closed 拦截（凭据路径模式，不绕过）：验证 gitignore 用全量 `git status --porcelain` 确认文件未出现；AwaitShell `block_until_ms` 必须传整数 |
-| [EXP-20260823-003](entries/EXP-20260823-003.md) | ACTIVE | 0.5 | repository | 2026-11-21 | CURSOR_ERROR 瞬时失败跨会话（Read d42fb89b…/Shell f3eb4221… 各 2 会话）：重试一次或改替代路径，不当作命令失败；统计时过滤 tool_name=null 的 TOOL_FAILURE 空载荷哨兵（e3b0c442…=sha256("")）；跨会话以不同 observation 文件为准 |
+| [EXP-20260823-003](entries/EXP-20260823-003.md) | ACTIVE | 0.5 | repository | 2026-11-21 | CURSOR_ERROR 瞬时失败跨会话（Read d42fb89b…/Shell f3eb4221… 各 2 会话；8/26 新增 Shell 0384c5d8…，首个长时 23.8s 实例）：重试一次或改替代路径，不当作命令失败；统计时过滤 tool_name=null 的 TOOL_FAILURE 空载荷哨兵（e3b0c442…=sha256("")）；跨会话以不同 observation 文件为准 |
 | [EXP-20260823-002](entries/EXP-20260823-002.md) | ACTIVE | 0.5 | repository | 2026-11-21 | 构造契约签名先行验证：测试构造前先读 domain dataclass 必填字段与 __post_init__；派生 ID 必须合法 UUID4；断言与真实派生规则（claim:{experiment_run_id}:result）冲突时先跑真实值 |
 | [EXP-20260823-001](entries/EXP-20260823-001.md) | ACTIVE | 0.5 | repository | 2026-11-21 | sqlite3 adapter 的 Timestamp 序列化：必须 .value.isoformat() + datetime.fromisoformat（str(Timestamp) 是 repr 不可逆）；fetchone 返回 Any 需 assert isinstance(row, sqlite3.Row) |
 | [EXP-20260822-001](entries/EXP-20260822-001.md) | SUPERSEDED | 0.5 | repository | 2026-11-20 | Read 被 secret_guard fail-closed 拦截：含 .cursor/hooks/* 的诊断读优先改用 Shell/Grep，.cursorignore 过滤目录改用 Shell 列举（被 EXP-20260823-003 取代） |

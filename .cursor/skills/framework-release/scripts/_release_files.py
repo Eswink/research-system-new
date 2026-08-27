@@ -4,26 +4,25 @@ import os
 from collections.abc import Iterator
 from pathlib import Path
 
-NON_RELEASE_DIRS = frozenset(
-    {
-        ".git",
-        ".import_linter_cache",
-        ".mypy_cache",
-        ".pnpm-store",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".venv",
-        "__pycache__",
-        "build",
-        "coverage",
-        "dist",
-        "node_modules",
-    }
-)
+NON_RELEASE_DIRS = frozenset({
+    ".git",
+    ".import_linter_cache",
+    ".mypy_cache",
+    ".pnpm-store",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "coverage",
+    "dist",
+    "node_modules",
+})
 RUNTIME_KEEP = frozenset({".cursor/runtime/.gitignore", ".cursor/runtime/.gitkeep"})
-GENERATED_RELEASE_ASSETS = frozenset(
-    {"FRAMEWORK_MANIFEST.json", ".cursor/releases/RELEASE_EVIDENCE.json"}
-)
+GENERATED_RELEASE_ASSETS = frozenset({
+    "FRAMEWORK_MANIFEST.json",
+    ".cursor/releases/RELEASE_EVIDENCE.json",
+})
 
 
 def source_files(root: Path) -> Iterator[Path]:

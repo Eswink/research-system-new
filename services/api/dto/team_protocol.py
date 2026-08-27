@@ -42,6 +42,17 @@ class AgentSpecDto(BaseModel):
     max_iterations: int | None = None
     runtime_kind: str | None = None
     budget_policy_ref: str | None = None
+    version: str = Field(default="", description="resource version（ETag 值，If-Match 用）")
+
+
+class AgentCreateDto(BaseModel):
+    """创建 Agent 实例（Role 的配置实例；同 Role 可多实例）。"""
+
+    role: str = Field(min_length=1, max_length=200)
+    model_binding: dict[str, str | None] = Field(default_factory=dict)
+    workspace_policy: str | None = None
+    max_context_tokens: int | None = Field(default=None, ge=1)
+    max_iterations: int | None = Field(default=None, ge=1)
 
 
 class AgentUpdateDto(BaseModel):
@@ -51,6 +62,17 @@ class AgentUpdateDto(BaseModel):
     workspace_policy: str | None = None
     max_context_tokens: int | None = None
     max_iterations: int | None = None
+
+
+class ProjectSettingsUpdateDto(BaseModel):
+    """项目设置保存（全量显式；template/workspace 引用由服务端校验）。"""
+
+    team_template_id: str = Field(min_length=1, max_length=200)
+    default_model_profile_id: str | None = Field(default=None, max_length=200)
+    budget_policy_id: str = Field(min_length=1, max_length=200)
+    workspace_backend: str = Field(min_length=1, max_length=200)
+    compute_profile: str | None = Field(default=None, max_length=200)
+    policy_id: str = Field(default="project-policy", min_length=1, max_length=200)
 
 
 class ProjectSettingsDto(BaseModel):

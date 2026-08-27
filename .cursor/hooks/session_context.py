@@ -40,7 +40,9 @@ def main() -> int:
         framework = {}
     version = str(framework.get("framework_version") or "unknown")
     cursor_version = str(event.get("cursor_version") or "unknown")
-    atomic_json(RUNTIME / "cursor_version.json", {"observed": cursor_version, "project_version": version})
+    atomic_json(
+        RUNTIME / "cursor_version.json", {"observed": cursor_version, "project_version": version}
+    )
     context = (
         f"Research OS Cursor Engineering Framework / system specification version {version}. "
         "复杂或高影响任务先确认适用的仓库契约；需要细节时按需查阅 AGENTS.md、.cursor/knowledge/INDEX.md 和活动计划（如存在），不重复注入整篇文档。"
@@ -53,7 +55,9 @@ def main() -> int:
             "RESEARCH_OS_PROJECT_VERSION": version,
             "RESEARCH_OS_CURSOR_FRAMEWORK_VERSION": version,
         },
-        "additional_context": context + f" 当前 Cursor version={cursor_version}；未验证版本的行为结论以 .cursor/knowledge/SOURCES.yaml 的 T1 官方来源为准，版本化兼容结论以 .cursor/compatibility/CURSOR_COMPATIBILITY.yaml 为准。" + _experience_summary(),
+        "additional_context": context
+        + f" 当前 Cursor version={cursor_version}；未验证版本的行为结论以 .cursor/knowledge/SOURCES.yaml 的 T1 官方来源为准，版本化兼容结论以 .cursor/compatibility/CURSOR_COMPATIBILITY.yaml 为准。"
+        + _experience_summary(),
     })
     return 0
 

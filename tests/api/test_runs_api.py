@@ -162,3 +162,88 @@ def test_events_payload_redacted_no_secret(run_ready_client: TestClient) -> None
     body = run_ready_client.get(f"/runs/{run['id']}/events").text
     assert "sk-" not in body
     assert "Bearer" not in body
+
+
+def test_production_preflight_passes_after_real_wiring(
+    client: TestClient, credentials: Any
+) -> None:
+    """B3.2-3.4：真实接线（toolpack pin / policy evaluator / live health）后
+    console_demo 协议 preflight 达 PASS（不再恒定 FAIL）。"""
+    credentials.register("LLM_MAIN_KEY", "sk-demo-key-0001")
+    report = client.post(
+        "/projects/example-project/compile", json={"path": "console_demo_research_v1.yaml"}
+    ).json()
+    assert report["status"] == "PASS", report["findings"]
+
+
+def test_demo_run_reaches_succeeded(client: TestClient, credentials: Any) -> None:
+    """Phase-1 exit：真实接线后 console_demo run 到达 SUCCEEDED（受控 Fake loop）。
+
+    manifest 冻结 → 正式编排链执行 → run.completed 事件；结果为受控 Fake
+    会话输出（UI 如实披露），不冒充真实研究。
+    """
+    credentials.register("LLM_MAIN_KEY", "sk-demo-key-0001")
+    response = client.post(
+        "/projects/example-project/runs",
+        json={"protocol_path": "console_demo_research_v1.yaml"},
+        headers={"Idempotency-Key": "run-demo-1"},
+    )
+    assert response.status_code == 200, response.text
+    run = response.json()
+    assert run["state"] == "SUCCEEDED"
+    assert run["manifest_digest"].startswith("sha256:")
+    events = client.get(f"/runs/{run['id']}/events").json()
+    types = {item["type"] for item in events}
+    assert "manifest.frozen" in types
+    assert "run.completed" in types
+    tasks = client.get(f"/runs/{run['id']}/tasks").json()
+    assert len(tasks) == 2
+    assert all(task["status"] == "SUCCEEDED" for task in tasks)
+    # 真实登记链：证据/claim 进 ledger（Inspection 面板由此有真实数据）
+    evidence = client.get(f"/runs/{run['id']}/evidence").json()
+    assert len(evidence) >= 1
+
+
+def test_policy_approval_required_through_real_evaluator(client: TestClient) -> None:
+    """B3.3：真实 NativePolicyEvaluator 对 require_approval capability 产生 finding。"""
+    from typing import Any as AnyType
+
+    from packages.application.ports import PreflightContext
+    from packages.application.preflight.preflight import compile_and_preflight
+    from packages.domain.core import Version
+    from packages.domain.protocols import (
+        PhaseStrategy,
+        ProtocolDefinition,
+        ProtocolPhase,
+        RoleRequirement,
+    )
+    from services.api.catalog_merge import merged_catalog_snapshot, merged_project_settings
+    from services.api.preflight_support import build_endpoint_health, build_policy_evaluator
+
+    deps = cast(AnyType, client.app).state.deps
+    catalog = merged_catalog_snapshot(deps)
+    project = merged_project_settings(deps)
+    protocol = ProtocolDefinition(
+        id="approval_demo_v0_4_0",
+        version=Version("0.4.0"),
+        phases=[
+            ProtocolPhase(
+                id="p1",
+                strategy=PhaseStrategy.SINGLE_AGENT,
+                required_roles=[RoleRequirement("domain_researcher", 1, 1)],
+                required_capabilities=["package.install"],
+                task_contract="console_demo_deliverable",
+                timeout_seconds=10,
+            )
+        ],
+    )
+    context = PreflightContext(
+        catalog=catalog,
+        project=project,
+        credentials=deps.credentials,
+        endpoint_health=build_endpoint_health(deps, catalog),
+        policy_evaluator=build_policy_evaluator(catalog),
+    )
+    _plan, report = compile_and_preflight(protocol, catalog, project, context)
+    codes = {finding.code for finding in report.findings}
+    assert "POLICY_APPROVAL_REQUIRED" in codes

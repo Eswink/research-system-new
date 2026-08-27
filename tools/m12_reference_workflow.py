@@ -97,11 +97,7 @@ def _catalog_and_project() -> tuple[CatalogSnapshot, ProjectSettings]:
 
 
 def _active_tool_providers() -> dict[str, object]:
-    """只保留 M12 实际使用的 provider（过滤未配置 endpoint 的占位 provider）。
-
-    research_mcp 的 endpoint_env（RESEARCH_MCP_URL）未配置且无 toolpack pin，
-    preflight 会因 SUPPLY_CHAIN_UNPINNED 拒绝；M12 文献检索走 ncbi_eutils。
-    """
+    """M13-R1 后 examples 已移除 research_mcp 占位；保留过滤为防御性 no-op。"""
     providers = load_tool_providers(TOOLS_PATH)
     return {key: value for key, value in providers.items() if key != "research_mcp"}
 
