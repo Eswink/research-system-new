@@ -68,7 +68,9 @@ child subagents < 4
 ```text
 Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
 MVP 能力平面（M8-M11）= completed（2026-08-15）
-IG-1（M12 entry）前置 = 齐备
+M12 First Real Research Workflow = completed（R1 修复完成，待重新独立复审重判）
+M13 Research Console = completed（R1 修复 + 独立复审 PASS，2026-08-27）
+M14 Durable Workflow + PostgreSQL = 立项（IN PROGRESS；Temporal DEFERRED，见 ADR-0025）
 ```
 
 M0-M11（含 M5R）全部完成，真实完成顺序为
@@ -81,7 +83,9 @@ M0-M11（含 M5R）全部完成，真实完成顺序为
 [M8_COMPLETION_RECORD.md](docs/roadmap/M8_COMPLETION_RECORD.md)、
 [M9_COMPLETION_RECORD.md](docs/roadmap/M9_COMPLETION_RECORD.md)、
 [M10_COMPLETION_RECORD.md](docs/roadmap/M10_COMPLETION_RECORD.md)、
-[M11_COMPLETION_RECORD.md](docs/roadmap/M11_COMPLETION_RECORD.md)。
+[M11_COMPLETION_RECORD.md](docs/roadmap/M11_COMPLETION_RECORD.md)、
+[M12_R1_COMPLETION_RECORD.md](docs/roadmap/M12_R1_COMPLETION_RECORD.md)、
+[M13_R1_COMPLETION_RECORD.md](docs/roadmap/M13_R1_COMPLETION_RECORD.md)。
 
 当前已落地：
 
@@ -102,12 +106,13 @@ M0-M11（含 M5R）全部完成，真实完成顺序为
   M11 Evaluation Plane deterministic gates（CI eval-gate job，离线无
   LLM）。
 
-M8-M11 之后，IG-1（M12 entry）前置齐备：未来 Milestone 路线（M12-M19）
-以 `docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为唯一权威；已完成
-事项、Remaining Technical Debt 与 Next Product Capability 的执行映射
-见 `BACKLOG.md`。规格目标（PostgreSQL Canonical State、ADR-0002）与
-当前实现（同 Port 契约的 SQLite）之间的差异作为技术债显式记录，不以
-文档覆盖实现。
+M8-M13 之后：M12 已完成（R1 修复后**待重新独立复审重判**），M13 已通过
+独立复审（2026-08-27），M14 已立项（IN PROGRESS，Temporal DEFERRED 见
+ADR-0025）。未来 Milestone 路线（M12-M19）以 `docs/roadmap/MILESTONES.md`
+的 Post-M7 Roadmap 节为唯一权威；已完成事项、Remaining Technical Debt
+与 Next Product Capability 的执行映射见 `BACKLOG.md`。规格目标
+（PostgreSQL Canonical State、ADR-0002）与当前实现（同 Port 契约的
+SQLite）之间的差异作为技术债显式记录，不以文档覆盖实现。
 
 ## 开发入口
 

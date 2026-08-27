@@ -1112,8 +1112,11 @@
             "type": "string"
           },
           "protocol": {
-            "const": "OPENAI_COMPATIBLE",
             "default": "OPENAI_COMPATIBLE",
+            "enum": [
+              "OPENAI_COMPATIBLE",
+              "ANTHROPIC"
+            ],
             "title": "Protocol",
             "type": "string"
           },

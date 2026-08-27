@@ -90,9 +90,9 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M9 | Real Experiment Runtime | MVP | M7 | DONE（2026-08-15） |
 | M10 | Evidence / Memory / Provenance | MVP | M7 | DONE（2026-08-15） |
 | M11 | Evaluation Plane | MVP | M7 | DONE（2026-08-15） |
-| M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | PLANNED |
-| M13 | Research Console | Product | M12 | PLANNED |
-| M14 | Durable Workflow + PostgreSQL | Production | M12 | PLANNED |
+| M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | DONE（2026-08-22；R1 修复完成 2026-08-23，**待重新独立复审重判**） |
+| M13 | Research Console | Product | M12 | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
+| M14 | Durable Workflow + PostgreSQL | Production | M12 | IN_PROGRESS（2026-08-28 立项；Temporal DEFERRED，ADR-0025） |
 | M15 | Observability / Cost / Eval Operations | Production | M11 | PLANNED |
 | M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | PLANNED |
 | M17 | GPU / HPC | Scale | M16+M9 | PLANNED |
@@ -203,14 +203,17 @@ regression（以 Eval Harness + deterministic gates 为基准），不允许仅
 
 ### 下一阶段推荐
 
-**M12 First Real Research Workflow**（IG-1 汇聚点）。M8-M11 已全部完成
-并通过独立复审（M8 2026-08-14；M9/M10/M11 2026-08-15），IG-1 前置齐备；
-M12 是 MVP 成立判定点（真实模型 + 真实工具 + 真实实验 + 证据 + 评测
-闭环）。启动 M12 前需按仓库契约从 Plan Mode 立项并经用户显式启动，
-本路线不自动开工任何 Milestone。
+**M14 Durable Workflow + PostgreSQL**（已立项，2026-08-28）。M12 已完成
+（R1 修复后待重新独立复审重判）；M13 已通过独立复审（2026-08-27）。
+M14 工作树已有 PostgreSQL adapter 初版与 Temporal qualification
+（16Q：DEFER，ADR-0025）；DoD 验证（contract suite parity、跨进程 E2E、
+lease 自愈、m0 全绿、独立复审）未完成，不宣称 DONE。M15（Observability /
+Cost / Eval Operations）可与 M14 并行启动（软依赖 M12）。M14 通过后
+按 DAG 进入 M16/M18。
 
 > 历史说明：M8-M11 规划期（2026-08-14）本节推荐为 M8；M8-M11 完成后
-> （2026-08-16，DOC-R1）本节更新为 M12。历史 Milestone 定义不改写。
+> （2026-08-16，DOC-R1）本节更新为 M12；M12/M13 完成后（2026-08-28）
+> 本节更新为 M14。历史 Milestone 定义不改写。
 
 ---
 
@@ -541,6 +544,13 @@ Hard：M8+M9+M10+M11。
 
 解锁 M13（产品 UI）、M14（durable）、M15 软依赖。
 
+> 完成状态（2026-08-22）：DoD 14 项逐项 PASS（原记录）。原 PASS 判定经
+> M12-R1 独立复审证伪（13 Finding），修复完成于 2026-08-23（见
+> [M12_R1_COMPLETION_RECORD.md](M12_R1_COMPLETION_RECORD.md)）；M12
+> **待重新独立复审重判**。正式计划见
+> `../../.cursor/plans/tasks/PLAN-20260828-017-m12-first-real-research-workflow.md`
+> 与 `PLAN-20260828-019-m12-r1-production-truth-closure.md`。
+
 ## M13 — Research Console
 
 ### Purpose
@@ -603,6 +613,13 @@ UI 范围膨胀；API DTO 与 Domain 泄漏；审批流与 PolicyEvaluator 语�
 ### Next Readiness
 
 解锁 M18（多用户需要 UI 承载）。
+
+> 完成状态（2026-08-27）：独立复审 FAIL（3 BLOCKER + 7 MAJOR + 4 UI Scope
+> + 6 MINOR）后经 R1 修复轮闭环，adversarial re-audit 重判 PASS（m0 19
+> checks、pytest 2054 passed；commit `b3f60a7`/`d5eb660`），见
+> [M13_R1_COMPLETION_RECORD.md](M13_R1_COMPLETION_RECORD.md)。正式计划见
+> `../../.cursor/plans/tasks/PLAN-20260828-018-m13-research-console.md`
+> 与 `PLAN-20260828-020-m13-r1-console-remediation.md`。
 
 ## M14 — Durable Workflow + PostgreSQL
 
@@ -667,6 +684,14 @@ Temporal 引入复杂度过高（严格评估，可拒绝）；PostgreSQL schema
 ### Next Readiness
 
 解锁 M16（分布式）、M18/M19（多租户与治理基础）。
+
+> 状态（2026-08-28）：**IN_PROGRESS（已立项）**。Temporal qualification
+> 完成（16Q：PASS 12/NEUTRAL 2/FAIL 2）并裁决 **DEFER**（ADR-0025）；
+> PostgreSQL adapter 初版与 `tests/postgres/` 已在工作树，DoD 验证
+> （contract suite parity、跨进程 E2E、lease 自愈、m0 全绿、独立复审）
+> 未完成。正式计划见
+> `../../.cursor/plans/tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md`；
+> qualification 见 `../references/upstream/M14_TEMPORAL_QUALIFICATION.md`。
 
 ## M15 — Observability / Cost / Eval Operations
 

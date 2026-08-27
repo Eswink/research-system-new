@@ -6,6 +6,11 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260828-021](tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md) | APPROVED |
+| [x] | [PLAN-20260828-020](tasks/PLAN-20260828-020-m13-r1-console-remediation.md) | DONE |
+| [x] | [PLAN-20260828-019](tasks/PLAN-20260828-019-m12-r1-production-truth-closure.md) | DONE |
+| [x] | [PLAN-20260828-018](tasks/PLAN-20260828-018-m13-research-console.md) | DONE |
+| [x] | [PLAN-20260828-017](tasks/PLAN-20260828-017-m12-first-real-research-workflow.md) | DONE |
 | [x] | [PLAN-20260822-016](tasks/PLAN-20260822-016-m12-first-real-research-workflow.md) | DONE |
 | [x] | [PLAN-20260815-015](tasks/PLAN-20260815-015-m10-evidence-memory-retrospective.md) | DONE |
 | [x] | [PLAN-20260815-014](tasks/PLAN-20260815-014-m11-evaluation-plane.md) | DONE |
@@ -19,7 +24,10 @@
 > PLAN-20260814-009 / -010 / 20260815-015 为 M0 / M7 / M10 的
 > `RETROSPECTIVE_RECONSTRUCTION` 记录：依据 git history、当前代码/测试与
 > 可执行 validator 事后重建（M10 于 2026-08-16 由 DOC-R1 重建），非原开发
-> 窗口文档。
+> 窗口文档。PLAN-20260828-017 / -018 为 M12 / M13 的
+> `RETROSPECTIVE_RECONSTRUCTION` 记录（2026-08-28 补齐正式流程记录）；
+> PLAN-20260828-019 / -020 为 M12-R1 / M13-R1 修复轮正式记录；
+> PLAN-20260828-021 为 M14 立项（APPROVED，DoD 验证未完成，不宣称 DONE）。
 
 ## Recently Completed
 

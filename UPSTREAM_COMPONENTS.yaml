@@ -308,6 +308,29 @@ components:
       explicit_approval: true
       required_checks: [lock_refresh, license_review, control_plane_api_regression]
 
+  - id: psycopg
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: ADAPTER
+    role: postgres_canonical_state_driver
+    source:
+      kind: PYPI
+      package: psycopg
+      url: "https://pypi.org/project/psycopg/3.2.13/"
+    resolution:
+      version: "3.2.13"
+      lockfile: uv.lock
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "309adaeda61d44556046ec9a83a93f42bbe5310120b1995f3af49ab6d9f13c1d"
+    license:
+      spdx: LGPL-3.0-only
+      evidence: "https://github.com/psycopg/psycopg/blob/master/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, adapter_contract_suite, postgres_integration]
+
   - id: temporal
     adoption_status: PLANNED
     decision_status: DEFERRED

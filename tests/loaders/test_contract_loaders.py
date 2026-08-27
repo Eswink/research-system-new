@@ -129,10 +129,8 @@ def test_load_llm_endpoints_from_fixture() -> None:
     assert endpoint.request_timeout_seconds == 120
     assert endpoint.discovery is not None
     assert endpoint.discovery.enabled is True
-    assert endpoint.discovery.allow_models == (
-        "deepseek-v4-flash",
-        "muse-spark-1.2-contributor",
-    )
+    # M13 agnes migration: allow_models now single agnes entry
+    assert endpoint.discovery.allow_models == ("agnes-2.5-flash",)
     assert endpoint.circuit_breaker is not None
     assert endpoint.circuit_breaker.failure_threshold == 5
 
@@ -141,7 +139,7 @@ def test_load_models_from_fixture() -> None:
     models = load_models("examples/config/models.yaml")
     model = models["research_alpha"]
     assert model.endpoint_id == "main"
-    assert model.model_name == "deepseek-v4-flash"
+    assert model.model_name == "agnes-2.5-flash"
     assert ModelCapability.TOOL_CALLING_NATIVE in model.capabilities
 
 

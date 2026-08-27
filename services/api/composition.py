@@ -4,6 +4,8 @@
 → packages/domain；具体实现只由此处注入，routers 只消费 Port）。
 SQLite 配置存储与 outbox 共享连接；凭据注册表永不落盘。
 Run 编排使用 Fake Port 全链（无真实付费 LLM；E2E 与 CI 一致）。
+M14: 当 settings/database_url 指向 `postgresql://` 时自动选用
+PostgresWorkflowEngine（同一 Port 契约）；否则 SQLite。
 """
 
 from __future__ import annotations
@@ -12,6 +14,7 @@ import os
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from adapters.fakes.agent_runtime import FakeAgentRuntime
 from adapters.fakes.artifact_store import FakeArtifactStore
@@ -104,27 +107,102 @@ class ApiDeps:
     preflight_override: PreflightContext | None = field(default=None, repr=False)
     endpoint_url_policy: EndpointUrlPolicy | None = field(default=None, repr=False)
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
+    _pg_connection: Any | None = field(default=None, repr=False)
 
     def close(self) -> None:
         """关闭自持连接（app shutdown 钩子；注入连接不关闭）。"""
         if self._connection is not None:
             self._connection.close()
+        if self._pg_connection is not None:
+            try:
+                self._pg_connection.close()
+            except Exception:
+                pass
 
 
-def assemble(settings: ApiSettings | None = None) -> ApiDeps:
-    """装配控制面（生产路径：SQLite 配置持久化 + Fake run 编排全链）。"""
-    effective = settings if settings is not None else ApiSettings.from_env()
-    db_path = Path(effective.db_path)
-    if str(db_path) != ":memory:":
-        os.makedirs(db_path.parent, exist_ok=True)
-    connection = connect(effective.db_path)
-    endpoint_store = SqliteEndpointStore(connection=connection)
-    model_store = SqliteModelStore(connection=connection)
-    events = SqliteOutboxEventPublisher(connection=connection)
-    workflow = SqliteWorkflowEngine(connection=connection)
+def _is_postgres_dsn(dsn: str | None) -> bool:
+    return bool(dsn and dsn.strip().startswith("postgresql"))
+
+
+def _open_sqlite(db_path: str) -> sqlite3.Connection:
+    path = Path(db_path)
+    if str(path) != ":memory:":
+        os.makedirs(path.parent, exist_ok=True)
+    return connect(db_path)
+
+
+def _ensure_pg_schema(pg_dsn: str) -> None:
+    from adapters.postgres.db import migrate as pg_migrate
+
+    try:
+        pg_migrate(pg_dsn)
+    except Exception:
+        pass
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresAssembly:
+    """Postgres 路径装配所需依赖聚合（避免超参数阈值）。"""
+
+    effective: ApiSettings
+    connection: sqlite3.Connection
+    endpoint_store: EndpointStore
+    model_store: ModelStore
+    pg_conn: Any
+    workflow: Any
+    events: Any
+    projection: Any
+    ledger: Any
+    budget: Any
+    orchestration: RunOrchestrationService
+
+
+def _build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
+    return ApiDeps(
+        endpoint_store=assembly.endpoint_store,
+        model_store=assembly.model_store,
+        credentials=RegistryCredentialResolver(),
+        gateway=OpenAIChatGateway(
+            default_timeout_seconds=assembly.effective.endpoint_timeout_seconds
+        ),
+        idempotency=SqliteIdempotencyStore(connection=assembly.connection),
+        events=assembly.events,
+        projection=assembly.projection,
+        approvals=SqliteApprovalStore(connection=assembly.connection),
+        runs=assembly.orchestration,
+        runs_store=SqliteRunStore(connection=assembly.connection),
+        artifacts=FakeArtifactStore(),
+        ledger=assembly.ledger,
+        budget=assembly.budget,
+        agent_store=SqliteAgentStore(connection=assembly.connection),
+        project_settings_store=SqliteProjectSettingsStore(connection=assembly.connection),
+        endpoint_url_policy=EndpointUrlPolicy(
+            allow_localhost=assembly.effective.allow_localhost_endpoints,
+            allow_private=assembly.effective.allow_localhost_endpoints,
+            allow_link_local=assembly.effective.allow_localhost_endpoints,
+        ),
+        _connection=assembly.connection,
+        _pg_connection=assembly.pg_conn,
+    )
+
+
+def _assemble_postgres(
+    effective: ApiSettings,
+    connection: sqlite3.Connection,
+    endpoint_store: EndpointStore,
+    model_store: ModelStore,
+    pg_dsn: str,
+) -> ApiDeps:
+    _ensure_pg_schema(pg_dsn)
+    from adapters.postgres.db import connect as pg_connect
+    from adapters.postgres.workflow_engine import PostgresWorkflowEngine
+
+    pg_conn = pg_connect(pg_dsn)
+    workflow: Any = PostgresWorkflowEngine(connection=pg_conn)
+    events: Any = SqliteOutboxEventPublisher(connection=connection)
     from adapters.sqlite.run_projection import SqliteRunProjection
 
-    projection = SqliteRunProjection(connection, events)
+    projection: Any = SqliteRunProjection(connection, events)
     ledger = SqliteEvidenceLedger(connection=connection)
     budget = SqliteBudgetLedger(connection=connection)
     orchestration = RunOrchestrationService(
@@ -137,20 +215,59 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
             ledger=ledger,
         )
     )
+    assembly = PostgresAssembly(
+        effective=effective,
+        connection=connection,
+        endpoint_store=endpoint_store,
+        model_store=model_store,
+        pg_conn=pg_conn,
+        workflow=workflow,
+        events=events,
+        projection=projection,
+        ledger=ledger,
+        budget=budget,
+        orchestration=orchestration,
+    )
+    return _build_postgres_apideps(assembly)
+
+
+def _assemble_sqlite(
+    effective: ApiSettings,
+    connection: sqlite3.Connection,
+    endpoint_store: EndpointStore,
+    model_store: ModelStore,
+) -> ApiDeps:
+    events_sqlite = SqliteOutboxEventPublisher(connection=connection)
+    workflow_sqlite = SqliteWorkflowEngine(connection=connection)
+    from adapters.sqlite.run_projection import SqliteRunProjection
+
+    projection_sqlite = SqliteRunProjection(connection, events_sqlite)
+    ledger_sqlite = SqliteEvidenceLedger(connection=connection)
+    budget_sqlite = SqliteBudgetLedger(connection=connection)
+    orchestration_sqlite = RunOrchestrationService(
+        OrchestrationDependencies(
+            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
+            workflow=workflow_sqlite,
+            artifacts=FakeArtifactStore(),
+            events=events_sqlite,
+            budget=budget_sqlite,
+            ledger=ledger_sqlite,
+        )
+    )
     return ApiDeps(
         endpoint_store=endpoint_store,
         model_store=model_store,
         credentials=RegistryCredentialResolver(),
         gateway=OpenAIChatGateway(default_timeout_seconds=effective.endpoint_timeout_seconds),
         idempotency=SqliteIdempotencyStore(connection=connection),
-        events=events,
-        projection=projection,
+        events=events_sqlite,
+        projection=projection_sqlite,
         approvals=SqliteApprovalStore(connection=connection),
-        runs=orchestration,
+        runs=orchestration_sqlite,
         runs_store=SqliteRunStore(connection=connection),
         artifacts=FakeArtifactStore(),
-        ledger=ledger,
-        budget=budget,
+        ledger=ledger_sqlite,
+        budget=budget_sqlite,
         agent_store=SqliteAgentStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
         endpoint_url_policy=EndpointUrlPolicy(
@@ -160,3 +277,21 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
         ),
         _connection=connection,
     )
+
+
+def assemble(settings: ApiSettings | None = None) -> ApiDeps:
+    """装配控制面（生产路径：SQLite 配置持久化 + Fake run 编排全链）。
+
+    M14: 若 settings/database_url 为 postgresql://，workflow 使用 Postgres；
+    配置存储仍为 SQLite（Postgres canonical state 仅 workflow 队列/lease/outbox）。
+    """
+    effective = settings if settings is not None else ApiSettings.from_env()
+    pg_dsn = effective.effective_database_url()
+    use_pg = _is_postgres_dsn(pg_dsn)
+    connection = _open_sqlite(effective.db_path)
+    endpoint_store = SqliteEndpointStore(connection=connection)
+    model_store = SqliteModelStore(connection=connection)
+    if use_pg:
+        assert pg_dsn is not None
+        return _assemble_postgres(effective, connection, endpoint_store, model_store, pg_dsn)
+    return _assemble_sqlite(effective, connection, endpoint_store, model_store)

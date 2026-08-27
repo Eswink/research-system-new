@@ -5,12 +5,16 @@
 ```text
 Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
 MVP 能力平面（M8-M11）= completed（2026-08-15）
-IG-1（M12 entry）前置 = 齐备
+M12 First Real Research Workflow = completed（R1 修复完成，待重新独立复审重判）
+M13 Research Console = completed（R1 修复 + 独立复审 PASS，2026-08-27）
+M14 Durable Workflow + PostgreSQL = 立项（IN PROGRESS；Temporal DEFERRED，见 ADR-0025）
 ```
 
 真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 →
-M10 → M11`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；M8-M11
-为 M7 后并行组 1）。已完成事项 / 技术债 / 下一能力见 `../BACKLOG.md`。
+M10 → M11 → M12 → M13`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；
+M8-M11 为 M7 后并行组 1；M12/M13 完成状态见各自 COMPLETION_RECORD，M12
+PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。已完成事项 /
+技术债 / 下一能力见 `../BACKLOG.md`。
 
 ## 快速问答（新 Agent 起步）
 
@@ -142,6 +146,8 @@ M10 → M11`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；M8-M11
 - `references/upstream/M8_MCP_QUALIFICATION.md` — MCP ecosystem qualification（M8；mcp==1.29.0 v1 stable line ADOPTED）
 - `references/upstream/M9_DOCKER_QUALIFICATION.md` — Docker 执行沙盒 qualification（M9；docker-py 7.2.0 + sandbox Dockerfile ADOPTED，OpenHands DockerWorkspace mapping-only 裁决）
 - `references/upstream/M11_EVAL_HARNESS_QUALIFICATION.md` — Evaluation harness 选型 qualification（M11；native 自建，不引入外部 eval framework）
+- `references/upstream/M14_TEMPORAL_QUALIFICATION.md` — Temporal qualification 16Q matrix（M14；DEFERRED）
+- `adr/ADR-0025-temporal-defer.md` — Temporal deferral ADR（M14；DEFER 决策，M16 重评）
 
 ## Roadmap / Versioning
 
@@ -154,9 +160,9 @@ M10 → M11`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；M8-M11
 - `roadmap/M9_COMPLETION_RECORD.md` — M9 Real Experiment Runtime 完成记录（DoD 证据 + M12/M17 readiness）
 - `roadmap/M10_COMPLETION_RECORD.md` — M10 Evidence / Memory / Provenance 完成记录（DoD 证据 + 独立复审 5 缺陷表）
 - `roadmap/M11_COMPLETION_RECORD.md` — M11 Evaluation Plane 完成记录（DoD 证据 + 反作弊专项；DOC-R1 依据 repository evidence 重建）
-- `roadmap/M12_COMPLETION_RECORD.md` — M12 First Real Research Workflow 完成记录与 MVP 判定（真实工具/实验/证据/评测/预算闭环）
-- `roadmap/M12_R1_COMPLETION_RECORD.md` — M12-R1 Production Truth Closure 修复记录（独立复审 FAIL 后 13 Finding → Fix → Regression → Revalidation；M12 待重新独立复审）
-- `roadmap/M13_R1_COMPLETION_RECORD.md` — M13-R1 Research Console 修复记录（独立复审 3 BLOCKER + 7 MAJOR + 4 UI Scope + 6 MINOR → Fix → Regression → PASS）
+- `roadmap/M12_COMPLETION_RECORD.md` — M12 First Real Research Workflow 完成记录与 MVP 判定（真实工具/实验/证据/评测/预算闭环；原 PASS 判定经 M12-R1 独立复审证伪，见下行）
+- `roadmap/M12_R1_COMPLETION_RECORD.md` — M12-R1 Production Truth Closure 修复记录（独立复审 FAIL 后 13 Finding → Fix → Regression → Revalidation；M12 待重新独立复审重判）
+- `roadmap/M13_R1_COMPLETION_RECORD.md` — M13-R1 Research Console 修复记录（独立复审 3 BLOCKER + 7 MAJOR + 4 UI Scope + 6 MINOR → Fix → Regression → 独立复审重判 PASS）
 - `roadmap/VERTICAL_SLICE_V0_4_0.md`
 - `roadmap/MILESTONES.md` — M0-M11 执行索引 + Post-M7 Roadmap 唯一权威（M12-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐）
 - `roadmap/M0_M11_DOCUMENT_MATRIX.md` — DOC-R1 inventory（M0-M11 文档分类与恢复判定）
@@ -170,4 +176,9 @@ M10 → M11`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；M8-M11
 - M0 retrospective（2026-08-14 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260814-009-m0-foundation-retrospective.md` + `../.cursor/plans/rechecks/RECHECK-20260814-009-m0-foundation-retrospective.md`
 - M7 retrospective（2026-08-14 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260814-010-m7-vertical-slice-retrospective.md` + `../.cursor/plans/rechecks/RECHECK-20260814-010-m7-vertical-slice-retrospective.md`
 - M10 retrospective（2026-08-16 重建，`RETROSPECTIVE_RECONSTRUCTION`，DOC-R1）：`../.cursor/plans/tasks/PLAN-20260815-015-m10-evidence-memory-retrospective.md` + `../.cursor/plans/rechecks/RECHECK-20260815-015-m10-evidence-memory-retrospective.md`
+- M12 retrospective（2026-08-28 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260828-017-m12-first-real-research-workflow.md` + `../.cursor/plans/rechecks/RECHECK-20260828-017-m12-first-real-research-workflow.md`
+- M13 retrospective（2026-08-28 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260828-018-m13-research-console.md` + `../.cursor/plans/rechecks/RECHECK-20260828-018-m13-research-console.md`
+- M12-R1 修复轮（2026-08-28 固化）：`../.cursor/plans/tasks/PLAN-20260828-019-m12-r1-production-truth-closure.md` + `../.cursor/plans/rechecks/RECHECK-20260828-019-m12-r1-production-truth-closure.md`
+- M13-R1 修复轮（2026-08-28 固化）：`../.cursor/plans/tasks/PLAN-20260828-020-m13-r1-console-remediation.md` + `../.cursor/plans/rechecks/RECHECK-20260828-020-m13-r1-console-remediation.md`
+- M14 立项（2026-08-28，APPROVED）：`../.cursor/plans/tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md`（DoD 验证未完成）
 - M1-M6/M5R/M8/M9/M11 原开发窗口记录（Plan + PASS Recheck + Memory 或 completion record）见各自 plan 文件与 `../.cursor/memory/INDEX.md`；M9/M10/M11 无 MEM 条目（覆盖缺口，见 `roadmap/DOCUMENT_RECOVERY_M0_M11.md`）

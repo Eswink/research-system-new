@@ -25,6 +25,7 @@
 | uvicorn 0.52.4 | BSD-3-Clause; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED Control Plane HTTP server (M13) |
 | starlette 1.6.0 | BSD-3-Clause; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED fastapi HTTP core (M13, shared with openhands-sdk) |
 | pydantic 2.13.4 | MIT; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED API DTO schema validation (M13) |
+| psycopg 3.2.13 (`psycopg[binary]`) — id `psycopg` | LGPL-3.0-only; exact sdist hash `309adaeda61d44556046ec9a83a93f42bbe5310120b1995f3af49ab6d9f13c1d` in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED PostgreSQL canonical state driver (M14) |
 | Temporal Server/SDK | verify exact components/version | later adapter |
 | Open Policy Agent | Apache-2.0 | optional adapter |
 | OpenTelemetry | Apache-2.0 ecosystem; verify packages | observability |

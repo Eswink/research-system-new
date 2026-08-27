@@ -5,15 +5,20 @@
 ```text
 Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
 MVP 能力平面（M8-M11）= completed（2026-08-15）
-IG-1（M12 entry）前置 = 齐备
+M12 First Real Research Workflow = completed（R1 修复完成，待重新独立复审重判）
+M13 Research Console = completed（R1 修复 + 独立复审 PASS，2026-08-27）
+M14 Durable Workflow + PostgreSQL = 立项（IN PROGRESS；Temporal DEFERRED，见 ADR-0025）
 ```
 
 M0-M11（含 M5R）全部完成（真实完成顺序：M0 → M1 → M3 → M2 → M4 → M5 →
-M5R → M6 → M7 → M8 → M9 → M10 → M11）。完成矩阵见
+M5R → M6 → M7 → M8 → M9 → M10 → M11 → M12 → M13）。完成矩阵见
 `docs/roadmap/COMPLETION_MATRIX_M0_M11.md`（唯一权威），M7/M8/M9/M10/M11
-集成里程碑见 `docs/roadmap/*_COMPLETION_RECORD.md`。本文件按三类组织：
+集成里程碑见 `docs/roadmap/*_COMPLETION_RECORD.md`。M12/M13 完成事实与
+R1 修复记录见 `docs/roadmap/M12_COMPLETION_RECORD.md` /
+`M12_R1_COMPLETION_RECORD.md` / `M13_R1_COMPLETION_RECORD.md`；M12 原
+PASS 判定经独立复审证伪并修复，**待重新独立复审重判**。本文件按三类组织：
 **Completed**（已交付）、**Remaining Technical Debt**（已发现但不阻断）、
-**Next Product Capability**（M12 及以后的未来能力，非已实现事项）。
+**Next Product Capability**（未来能力，非已实现事项）。
 
 ## Completed
 
@@ -175,11 +180,12 @@ M5R → M6 → M7 → M8 → M9 → M10 → M11）。完成矩阵见
 
 ## Next Product Capability
 
-M7 后的产品能力建设方向。**M8-M11 已完成（见各 completion record）；
-M12 及以后为未来设想，尚未实现**；立项时按 `AGENTS.md` 流程从 Plan
-Mode 开始。编号、名称、顺序、依赖 DAG 与详细定义（Purpose / Scope /
-DoD / Entry Gate 等）以 `docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap
-节为**唯一权威**；本表只提供“能力 → Milestone”映射。
+M7 后的产品能力建设方向。**M8-M13 已完成（见各 completion record）；
+M14 已立项（IN PROGRESS，DoD 验证未完成）；M15 及以后为未来设想，尚未
+实现**；立项时按 `AGENTS.md` 流程从 Plan Mode 开始。编号、名称、顺序、
+依赖 DAG 与详细定义（Purpose / Scope / DoD / Entry Gate 等）以
+`docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为**唯一权威**；本表
+只提供“能力 → Milestone”映射。
 
 | 能力 | Milestone | 状态 |
 | --- | --- | --- |
@@ -188,9 +194,9 @@ DoD / Entry Gate 等）以 `docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap
 | Real Experiment Runtime：ExecutionBackend 真实实现、WorkspaceLease/worktree、ExperimentPlan/Run/Metric、内容寻址 Artifact Store 生产化、retention/export bundle、ReproducibilityAudit | M9 Real Experiment Runtime | DONE（2026-08-15，`4156238`/`b8560ee`） |
 | Evidence / Memory Enhancement：SourceRecord、MemoryWriteProposal gate、Memory lifecycle/delete、derived vector index、Claim/Evidence relations、contradiction handling、negative result memory | M10 Evidence / Memory / Provenance | DONE（2026-08-15，`900c1b1`） |
 | Evaluation Plane：Eval Harness modes、deterministic gates、reviewer panel、human calibration samples、canary/regression dashboard | M11 Evaluation Plane | DONE（2026-08-15，`0846765`/`0cc6361`） |
-| First Real Research Workflow：真实 relay 链路 E2E + usage 归账闭环、工具 + 实验 + 证据全链、MVP 成立判定 | M12 First Real Research Workflow | PLANNED |
-| Research Console：first-run relay wizard、models/probe page、team/agent model assignment、protocol/preflight dry run、task/run timeline、approvals/interventions、workspace diff、evidence/claim map、budget/usage、audit/export | M13 Research Console | PLANNED |
-| Durable Workflow：Temporal qualification + 采用/不采用决策、PostgreSQL canonical state + task queue、跨进程分布式调度 | M14 Durable Workflow + PostgreSQL | PLANNED |
+| First Real Research Workflow：真实 relay 链路 E2E + usage 归账闭环、工具 + 实验 + 证据全链、MVP 成立判定 | M12 First Real Research Workflow | DONE（2026-08-22；R1 修复完成 2026-08-23，**待重新独立复审重判**） |
+| Research Console：first-run relay wizard、models/probe page、team/agent model assignment、protocol/preflight dry run、task/run timeline、approvals/interventions、workspace diff、evidence/claim map、budget/usage、audit/export | M13 Research Console | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
+| Durable Workflow：Temporal qualification + 采用/不采用决策（DEFERRED，ADR-0025）、PostgreSQL canonical state + task queue、跨进程分布式调度 | M14 Durable Workflow + PostgreSQL | IN_PROGRESS（2026-08-28 立项） |
 | Observability / Cost / Evaluation Operations：OTel collector（隐私默认）、成本归集、eval 趋势运营 | M15 Observability / Cost / Eval Operations | PLANNED |
 | Distributed Execution：多 worker、分区与调度、远程 sandbox/worker | M16 Distributed Execution + Remote Sandbox/Worker | PLANNED |
 | GPU / HPC：远程/加固 sandbox、计算资源平面 | M17 GPU / HPC | PLANNED |
@@ -198,6 +204,8 @@ DoD / Entry Gate 等）以 `docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap
 | Production Security / Governance：OPA qualification 与决策、central Secret Manager、backup/restore、SLO | M19 Production Security / Governance + Backup/Recovery/SLO | PLANNED |
 
 > M8-M11 完成事实与逐项证据见 `docs/roadmap/COMPLETION_MATRIX_M0_M11.md`
-> 与各阶段 completion record；IG-1（M12 entry）前置四项均已通过独立复审。
-> 下一阶段为 **M12 First Real Research Workflow**（IG-1 汇聚点，立项需用户
-> 显式启动）；本 BACKLOG 不自动开工任何 Milestone。
+> 与各阶段 completion record；M12/M13 完成事实见各自 COMPLETION_RECORD
+> 与 M12-R1/M13-R1 修复记录。M12 经 M12-R1 修复后**待重新独立复审**；
+> M13 于 2026-08-27 独立复审重判 PASS。M14 已立项（`PLAN-20260828-021`，
+> Temporal DEFERRED 见 ADR-0025）；DoD 验证与独立复审未完成，不宣称
+> DONE。本 BACKLOG 不自动开工任何未立项 Milestone。

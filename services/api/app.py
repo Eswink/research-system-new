@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 
@@ -19,7 +21,25 @@ from services.api.routers import (
     runs,
     team_protocol,
 )
+from services.api.scheduler import LeaseRecoveryScheduler
 from services.api.settings import ApiSettings
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Start/stop lease recovery scheduler if workflow available."""
+    scheduler: LeaseRecoveryScheduler | None = None
+    deps: ApiDeps | None = getattr(app.state, "deps", None)
+    if deps is not None and deps.runs is not None:
+        try:
+            workflow = deps.runs._deps.workflow
+            scheduler = LeaseRecoveryScheduler(workflow, interval_seconds=30.0)
+            scheduler.start()
+        except Exception:
+            scheduler = None
+    yield
+    if scheduler is not None:
+        scheduler.stop()
 
 
 def create_app(deps: ApiDeps | None = None) -> FastAPI:
@@ -31,6 +51,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
         title="Research OS Control Plane API",
         description="Research Console 控制面：配置 / 探测 / 运行 / 审批 / 审计",
         version=version,
+        lifespan=_lifespan,
     )
     app.state.deps = deps if deps is not None else assemble(ApiSettings.from_env())
     register_error_handlers(app)
