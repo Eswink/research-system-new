@@ -1,8 +1,8 @@
 models:
-  research_alpha:
+  agnes_flash:
     endpoint: main
-    display_name: Research Alpha
-    model_name: deepseek-v4-flash
+    display_name: Agnes Flash
+    model_name: agnes-2.5-flash
     capabilities:
       CHAT: &user_declared_supported
         status: SUPPORTED
@@ -15,10 +15,21 @@ models:
       STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
       USAGE_REPORTING: *user_declared_supported
 
+  research_alpha:
+    endpoint: main
+    display_name: Research Alpha
+    model_name: agnes-2.5-flash
+    capabilities:
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported
+      STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
+      USAGE_REPORTING: *user_declared_supported
+
   coding_beta:
     endpoint: main
     display_name: Coding Beta
-    model_name: deepseek-v4-flash
+    model_name: agnes-2.5-flash
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -28,7 +39,7 @@ models:
   reviewer_gamma:
     endpoint: main
     display_name: Reviewer Gamma
-    model_name: deepseek-v4-flash
+    model_name: agnes-2.5-flash
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported

@@ -48,8 +48,8 @@ class LLMEndpoint:
     def __post_init__(self) -> None:
         if not self.id:
             raise ValueError("endpoint id must not be empty")
-        if self.protocol != "OPENAI_COMPATIBLE":
-            raise ValueError("endpoint protocol must be OPENAI_COMPATIBLE")
+        if self.protocol not in ("OPENAI_COMPATIBLE", "ANTHROPIC"):
+            raise ValueError("endpoint protocol must be OPENAI_COMPATIBLE or ANTHROPIC")
         if self.api_style not in ("chat_completions", "responses"):
             raise ValueError("api_style must be 'chat_completions' or 'responses'")
         if not self.base_url.startswith(("https://", "http://")):

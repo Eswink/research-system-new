@@ -62,8 +62,12 @@ def _seed_evidence_truth(client: TestClient, run_id: str) -> None:
     )
 
 
-def _seed_usage_truth(client: TestClient, run_id: str) -> None:
-    """受控注入正式 UsageLedger 条目（KNOWN 与 UNKNOWN 并存）。"""
+def _seed_usage_truth(client: TestClient, run_id: str, task_id: str | None = None) -> None:
+    """受控注入正式 UsageLedger 条目（KNOWN 与 UNKNOWN 并存）。
+
+    仅被 export 测试复用；usage 隔离语义测试见
+    tests/api/test_inspection_usage_api.py。
+    """
     deps = cast(Any, client.app).state.deps
     assert deps.budget is not None
     now = Timestamp.now()
@@ -78,6 +82,7 @@ def _seed_usage_truth(client: TestClient, run_id: str) -> None:
             occurred_at=now.value,
             estimated_cost_minor=10,
             model_id="model-alpha",
+            task_id=task_id,
         )
     )
     deps.budget.record_usage(
@@ -89,6 +94,7 @@ def _seed_usage_truth(client: TestClient, run_id: str) -> None:
             cost_status=LedgerCostStatus.UNKNOWN,
             source="tool_provider",
             occurred_at=now.value,
+            task_id=task_id,
         )
     )
 
@@ -221,28 +227,11 @@ def test_claim_map_does_not_leak_other_run_claims(client: TestClient) -> None:
     assert "claim-a" not in ids_b
 
 
-def test_budget_usage_unknown_not_zero(client: TestClient) -> None:
-    """Budget/Usage：UNKNOWN 成本显式计数，禁止显示 0。"""
-    from packages.domain.core import ID
-    from packages.domain.run import ResearchRun
-
-    deps = cast(Any, client.app).state.deps
-    run_id = str(ID.generate().value)
-    deps.run_registry[run_id] = ResearchRun(id=ID(run_id), project_id="p", protocol_id="proto")
-    _seed_usage_truth(client, run_id)
-    response = client.get(f"/runs/{run_id}/usage")
-    assert response.status_code == 200, response.text
-    payload = response.json()
-    assert payload["unknown_cost_entries"] == 1
-    assert payload["total_estimated_cost_minor"] == 10
-    unknown = next(item for item in payload["entries"] if item["cost_status"] == "UNKNOWN")
-    assert unknown["estimated_cost_minor"] is None
-
-
 def test_export_from_persisted_state(client: TestClient) -> None:
     """Audit/Export：来自 persisted state，不导出 UI 内存。"""
     from packages.domain.core import ID
     from packages.domain.run import ResearchRun
+    from tests.api.test_inspection_usage_api import _seed_task_for_run
 
     deps = cast(Any, client.app).state.deps
     run_id = str(ID.generate().value)
@@ -250,7 +239,8 @@ def test_export_from_persisted_state(client: TestClient) -> None:
         id=ID(run_id), project_id="p", protocol_id="proto", state="SUCCEEDED"
     )
     _seed_evidence_truth(client, run_id)
-    _seed_usage_truth(client, run_id)
+    task_id = _seed_task_for_run(client, run_id)
+    _seed_usage_truth(client, run_id, task_id=task_id)
     response = client.get(f"/runs/{run_id}/export")
     assert response.status_code == 200, response.text
     payload = response.json()

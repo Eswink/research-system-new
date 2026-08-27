@@ -33,6 +33,7 @@ const NAV_ITEMS: { id: ConsoleView; label: string }[] = [
 export function App() {
   const { endpoints, loading, error, refresh } = useEndpoints();
   const [activeView, setActiveView] = useState<ConsoleView>("console");
+  const [showWizard, setShowWizard] = useState(false);
 
   if (loading) {
     return <div data-testid="app-loading">Loading console…</div>;
@@ -53,10 +54,21 @@ export function App() {
         hasEndpoints={endpoints.length > 0}
       />
       <main>
-        {endpoints.length === 0 ? (
-          <RelayWizard onComplete={refresh} />
+        {endpoints.length === 0 || showWizard ? (
+          <RelayWizard
+            onComplete={() => {
+              setShowWizard(false);
+              refresh();
+            }}
+          />
         ) : (
-          <ConsoleBody activeView={activeView} endpoints={endpoints} onAddRelay={refresh} />
+          <ConsoleBody
+            activeView={activeView}
+            endpoints={endpoints}
+            onAddRelay={() => {
+              setShowWizard(true);
+            }}
+          />
         )}
       </main>
     </div>

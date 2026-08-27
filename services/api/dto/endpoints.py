@@ -23,7 +23,7 @@ class LlmEndpointCreateDto(BaseModel):
 
     name: str = Field(min_length=1, max_length=200)
     base_url: str = Field(min_length=1, max_length=2000)
-    protocol: Literal["OPENAI_COMPATIBLE"] = "OPENAI_COMPATIBLE"
+    protocol: Literal["OPENAI_COMPATIBLE", "ANTHROPIC"] = "OPENAI_COMPATIBLE"
     api_style: Literal["chat_completions", "responses"] = "chat_completions"
     api_key: str | None = Field(default=None, min_length=1, max_length=4000)
     enabled: bool = True

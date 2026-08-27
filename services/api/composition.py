@@ -29,6 +29,7 @@ from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
 from adapters.sqlite.run_store import SqliteRunStore
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
+from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
 from packages.application.ports import AgentStore, ApprovalStore, ProjectSettingsStore, RunStore
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
@@ -101,6 +102,7 @@ class ApiDeps:
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
     approvals: ApprovalStore | None = field(default=None, repr=False)
     preflight_override: PreflightContext | None = field(default=None, repr=False)
+    endpoint_url_policy: EndpointUrlPolicy | None = field(default=None, repr=False)
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
 
     def close(self) -> None:
@@ -151,5 +153,10 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
         budget=budget,
         agent_store=SqliteAgentStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
+        endpoint_url_policy=EndpointUrlPolicy(
+            allow_localhost=effective.allow_localhost_endpoints,
+            allow_private=effective.allow_localhost_endpoints,
+            allow_link_local=effective.allow_localhost_endpoints,
+        ),
         _connection=connection,
     )

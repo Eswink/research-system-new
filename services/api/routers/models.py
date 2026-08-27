@@ -197,7 +197,7 @@ async def probe_model(model_id: str, request: Request) -> ProbeResultDto:
         credential_resolver=deps.credentials,
         endpoint=endpoint,
         model=model,
-        options=ProbeOptions(suite=suite),
+        options=ProbeOptions(suite=suite, url_policy=deps.endpoint_url_policy),
     )
     fingerprint = _probe_fingerprint(endpoint, model, suite, result)
     merged = _merge_probed(model, assertions)

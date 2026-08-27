@@ -2,7 +2,7 @@ llm_endpoints:
   main:
     name: Main Relay
     protocol: OPENAI_COMPATIBLE
-    base_url: https://opencode.ai/zen/go/v1
+    base_url: https://apihub.agnes-ai.com/v1
     credential_ref: LLM_MAIN_KEY
     request_timeout_seconds: 120
     max_retries: 2
@@ -11,9 +11,20 @@ llm_endpoints:
     discovery:
       enabled: true
       allow_models:
-        - deepseek-v4-flash
-        - muse-spark-1.2-contributor
+        - agnes-2.5-flash
     circuit_breaker:
       failure_threshold: 5
       open_timeout_seconds: 60
       half_open_max_probes: 1
+
+  agnes-anthropic:
+    name: Agnes Anthropic
+    protocol: ANTHROPIC
+    base_url: https://apihub.agnes-ai.com/v1
+    credential_ref: LLM_MAIN_KEY
+    request_timeout_seconds: 120
+    max_retries: 2
+    concurrency_limit: 4
+    enabled: true
+    discovery:
+      enabled: false

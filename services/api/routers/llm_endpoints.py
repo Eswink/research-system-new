@@ -190,6 +190,7 @@ async def test_endpoint(
         credential_resolver=deps.credentials,
         endpoint=endpoint,
         model_name=model.model_name,
+        url_policy=deps.endpoint_url_policy,
     )
     return EndpointTestResultDto(
         ok=result.ok,

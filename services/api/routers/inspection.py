@@ -159,16 +159,24 @@ async def run_claim_map(run_id: str, request: Request) -> ClaimMapDto:
 
 @router.get("/runs/{run_id}/usage", response_model=BudgetViewDto)
 async def run_usage(run_id: str, request: Request) -> BudgetViewDto:
-    """Budget/Usage 视图：正式 UsageLedger truth。
+    """Budget/Usage 视图：正式 UsageLedger truth（run 级隔离）。
 
+    - run 不存在 → 404（与 experiments 端点一致；M13 复审发现 usage 曾
+      对任意 run_id 返回全局 ledger，跨 run 泄漏）；
+    - entries 只包含归属本 run task 的用量（task_id ∈ run 的 task 投影）；
+      无 task_id 的条目（无法归属）不返回，避免泄漏到任意 run；
     - UNKNOWN 成本显式标记（禁止显示 0）；
     - estimated/actual 区分（KNOWN 时 estimated_cost_minor 必有）；
-    - reservations 来自正式 ledger snapshot。
+    - reservations 来自正式 ledger snapshot（预留无 run 归属，保持全局
+      视图并在 UI 按需展示）。
     """
     deps: ApiDeps = get_deps(request)
     if deps.budget is None:
         raise ApiError(503, "Budget Ledger Unavailable", "budget ledger not configured")
+    get_run_or_error(deps, run_id)
+    run_task_ids = _run_task_ids(deps, run_id)
     snapshot = deps.budget.snapshot()
+    scoped = tuple(entry for entry in snapshot.entries if entry.task_id in run_task_ids)
     entries = [
         UsageEntryDto(
             entry_id=entry.entry_id,
@@ -181,12 +189,10 @@ async def run_usage(run_id: str, request: Request) -> BudgetViewDto:
             model_id=entry.model_id,
             task_id=entry.task_id,
         )
-        for entry in snapshot.entries
+        for entry in scoped
     ]
-    known = sum(entry.estimated_cost_minor or 0 for entry in snapshot.entries)
-    unknown_count = sum(
-        1 for entry in snapshot.entries if entry.cost_status is LedgerCostStatus.UNKNOWN
-    )
+    known = sum(entry.estimated_cost_minor or 0 for entry in scoped)
+    unknown_count = sum(1 for entry in scoped if entry.cost_status is LedgerCostStatus.UNKNOWN)
     return BudgetViewDto(
         entries=entries,
         total_estimated_cost_minor=known,
@@ -202,6 +208,13 @@ async def run_usage(run_id: str, request: Request) -> BudgetViewDto:
             for item in snapshot.reservations
         ],
     )
+
+
+def _run_task_ids(deps: ApiDeps, run_id: str) -> frozenset[str]:
+    """run 的 task 投影 id 集合（usage entry task_id 归属判定）。"""
+    if deps.projection is None:
+        return frozenset()
+    return frozenset(task.id.value for task, _contract in deps.projection.list_tasks(run_id))
 
 
 @router.get("/runs/{run_id}/export", response_model=ExportBundleDto)

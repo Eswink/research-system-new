@@ -21,7 +21,10 @@
       "minLength": 1
     },
     "protocol": {
-      "const": "OPENAI_COMPATIBLE"
+      "enum": [
+        "OPENAI_COMPATIBLE",
+        "ANTHROPIC"
+      ]
     },
     "base_url": {
       "type": "string",
@@ -51,7 +54,10 @@
     },
     "api_style": {
       "type": "string",
-      "enum": ["chat_completions", "responses"],
+      "enum": [
+        "chat_completions",
+        "responses"
+      ],
       "default": "chat_completions"
     },
     "discovery": {

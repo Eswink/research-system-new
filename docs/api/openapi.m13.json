@@ -3885,7 +3885,7 @@
     },
     "/runs/{run_id}/usage": {
       "get": {
-        "description": "Budget/Usage 视图：正式 UsageLedger truth。\n\n- UNKNOWN 成本显式标记（禁止显示 0）；\n- estimated/actual 区分（KNOWN 时 estimated_cost_minor 必有）；\n- reservations 来自正式 ledger snapshot。",
+        "description": "Budget/Usage 视图：正式 UsageLedger truth（run 级隔离）。\n\n- run 不存在 → 404（与 experiments 端点一致；M13 复审发现 usage 曾\n  对任意 run_id 返回全局 ledger，跨 run 泄漏）；\n- entries 只包含归属本 run task 的用量（task_id ∈ run 的 task 投影）；\n  无 task_id 的条目（无法归属）不返回，避免泄漏到任意 run；\n- UNKNOWN 成本显式标记（禁止显示 0）；\n- estimated/actual 区分（KNOWN 时 estimated_cost_minor 必有）；\n- reservations 来自正式 ledger snapshot（预留无 run 归属，保持全局\n  视图并在 UI 按需展示）。",
         "operationId": "run_usage_runs__run_id__usage_get",
         "parameters": [
           {

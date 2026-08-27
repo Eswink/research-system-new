@@ -78,11 +78,19 @@ def test_llm_endpoint_invariants() -> None:
         credential_ref="cred:relay-1",
     )
     assert endpoint.protocol == "OPENAI_COMPATIBLE"
+    anthropic = LLMEndpoint(
+        id="relay-2",
+        name="anthropic-relay",
+        protocol="ANTHROPIC",
+        base_url="https://relay.example.com/v1",
+        credential_ref="cred:relay-2",
+    )
+    assert anthropic.protocol == "ANTHROPIC"
     with pytest.raises(ValueError):
         LLMEndpoint(
             id="bad",
             name="bad",
-            protocol="ANTHROPIC",
+            protocol="INVALID",
             base_url="https://x.example.com",
             credential_ref="c",
         )
