@@ -31,3 +31,9 @@ secrets/
 .idea/
 .vscode/
 artifacts/
+# local scratch space: ad-hoc debug scripts and throwaway databases.
+# Audit probes cited by rechecks live in tools/probes/ and are tracked.
+scratch/
+# other agent tools' local state (not Research OS engineering assets)
+.freebuff/
+.workbuddy/

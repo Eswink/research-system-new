@@ -23,7 +23,7 @@ checked_head: 本会话第二轮对抗性复审 + 修复轮（migrate 事务修�
 ## 复审方法（对抗性，非文档自证）
 
 - 环境：docker `research-system-postgres-1`（healthy，端口 15432）、`uv run --frozen --no-sync`、Python 3.12.13、psycopg 3.2.13
-- 独立探针（保留于 `scratch/probe_*.py`，可复跑）：stale worker fencing、scheduled recovery（真实
+- 独立探针（保留于 `tools/probes/probe_*.py`，可复跑）：stale worker fencing、scheduled recovery（真实
   `LeaseRecoveryScheduler`）、outbox crash 语义（B/C/D）、DB failure 分类、cancel/complete/expiry 竞争、
   canonical state 纯 PG 重建、migration 失败注入、perf/EXPLAIN
 - 真实跨进程：`tests/postgres/test_cross_process_real.py`（subprocess worker + 真实 TTL 5s + `os._exit(9)` 硬杀）
