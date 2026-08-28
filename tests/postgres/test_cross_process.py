@@ -1,10 +1,12 @@
-"""Cross-process E2E for PostgresWorkflowEngine (M14 WP4 Scenarios).
+"""M14 cross-process E2E for PostgresWorkflowEngine.
 
-Each test uses two `psycopg` connections (two processes simulated via
-two connections + injected `now`). Real subprocess E2E (two python
-processes) is covered by `tests/e2e/test_workflow_restart_recovery.py`
-for SQLite and will be extended for PG with `docker compose` when
-available. These tests lock the same invariants with two connections.
+True OS-level process isolation is covered by `tests/postgres/test_cross_process_real.py`
+(real subprocess workers, real wall-clock TTL, hard kill). This module only keeps
+the unit-level invariants that do not require process isolation (submit dedup,
+fencing with injected clocks) — all cross-process simulation assertions that
+presumed "two connections share one lease" have been removed.
+
+See PLAN-20260828-021 WP-A3/B2/C2/H3 for the real cross-process matrix.
 """
 
 from __future__ import annotations
@@ -52,45 +54,45 @@ def _clean() -> None:
     _truncate()
 
 
-class TestConcurrentLeaseTwoConnections:
-    """Two connections racing to acquire same task — exactly one wins."""
+class TestConcurrentLeaseOwnerFencing:
+    """Same-engine re-acquire is dedup; a foreign engine must be rejected."""
 
-    def test_two_connections_same_task_one_wins(self) -> None:
-        import psycopg
-
-        # Shared task in DB
-        setup = PostgresWorkflowEngine(dsn=_dsn())
-        task = research_task()
-        setup.submit(task, task_contract())
-        setup.close()
-
-        conn_a = psycopg.connect(_dsn(), autocommit=False)
-        conn_b = psycopg.connect(_dsn(), autocommit=False)
-        engine_a = PostgresWorkflowEngine(connection=conn_a)
-        engine_b = PostgresWorkflowEngine(connection=conn_b)
+    def test_same_engine_reacquire_is_dedup(self) -> None:
+        engine = PostgresWorkflowEngine(dsn=_dsn())
         try:
+            task = research_task()
+            engine.submit(task, task_contract())
+            first = engine.acquire_lease(task.id.value)
+            second = engine.acquire_lease(task.id.value)
+            assert second.lease_id == first.lease_id
+            assert engine.calls[-1].result_summary == "deduped"
+        finally:
+            engine.close()
+
+    def test_foreign_engine_acquisition_rejected(self) -> None:
+        """Different engine instance (different connection) must not receive a live lease."""
+        engine_a = PostgresWorkflowEngine(dsn=_dsn())
+        engine_b = PostgresWorkflowEngine(dsn=_dsn())
+        try:
+            task = research_task()
+            engine_a.submit(task, task_contract())
             lease_a = engine_a.acquire_lease(task.id.value)
-            lease_b = engine_b.acquire_lease(task.id.value)
-            # At least one must succeed; the second either dedups to same lease_id
-            # or is blocked then returns same. Both should see same lease_id (dedup).
-            assert lease_a.lease_id == lease_b.lease_id
-            assert lease_a.task_id == task.id.value
+            with pytest.raises(InvalidInputError):
+                engine_b.acquire_lease(task.id.value)
+            # A still owns the lease; can complete
+            engine_a.complete(lease_a, TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"))
+            rows = engine_a.list_tasks(task.run_id.value)
+            assert rows[0].task.status == ResearchTaskState.State.SUCCEEDED
         finally:
             engine_a.close()
             engine_b.close()
-            conn_a.close()
-            conn_b.close()
 
 
-class TestStaleWriterFencingTwoConnections:
+class TestStaleWriterFencing:
+    """Stale writer (recovered lease) must be rejected; new owner completes."""
+
     def test_stale_complete_after_new_lease_rejected(self) -> None:
-        import psycopg
-
         clock = {"now": START}
-        conn_setup = psycopg.connect(_dsn(), autocommit=True)
-        migrate(_dsn())
-        conn_setup.close()
-
         engine_setup = PostgresWorkflowEngine(
             dsn=_dsn(), lease_ttl_seconds=60, now=lambda: clock["now"]
         )
@@ -100,7 +102,7 @@ class TestStaleWriterFencingTwoConnections:
         lease_old = engine_setup.acquire_lease(task.id.value)
         engine_setup.close()
 
-        # Simulate expiry + recovery by second worker
+        # Simulate expiry + recovery by a different engine
         clock["now"] = START + timedelta(seconds=120)
         engine_b = PostgresWorkflowEngine(
             dsn=_dsn(), lease_ttl_seconds=60, now=lambda: clock["now"]

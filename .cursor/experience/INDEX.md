@@ -12,7 +12,9 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
-| [EXP-20260827-001](entries/EXP-20260827-001.md) | ACTIVE | 0.5 | repository | 2026-11-25 | Read 工具读取 `.cursor/runtime/observations/*.jsonl` 被 fail-closed 拒绝（本会话 3 次，duration <2ms）；改用 Shell Get-Content 读取同一文件成功：提取 error_signature/统计失败时直接用 Shell 读，不重试 Read、不改 hook |
+| [EXP-20260828-002](entries/EXP-20260828-002.md) | ACTIVE | 0.5 | repository | 2026-11-26 | live relay E2E 必须用环境变量（RESEARCHOS_LIVE_E2E_ENDPOINT/KEY）构造真实 LLMEndpoint + 真实模型名，不能复用假 URL fixture（relay.example.com 致 SSL EOF 误报）；请求模型名参数化；503 model_not_found = 模型名与契约不符 |
+| [EXP-20260828-001](entries/EXP-20260828-001.md) | ACTIVE | 0.5 | repository | 2026-11-26 | 前台 uv run 长时命令（>60s）通道超时返回 CURSOR_ERROR 但命令仍在跑（67s×5 + 103.5s 全量回归同族）：预期长命令一律后台化 + 读 terminals 确认；PG 锁/互等探针必须自带释放与超时，已挂起用 Stop-Process + pg_terminate_backend 双层清理（262s 死锁实例） |
+| [EXP-20260827-001](entries/EXP-20260827-001.md) | ACTIVE | 0.5 | repository | 2026-11-25 | Read/Delete 工具读取或删除 `.cursor/runtime/**`（observations/distillation）被 fail-closed 拒绝（Read ×4 + Delete ×1，duration <4ms）；改用 Shell Get-Content / Remove-Item -Force 成功：提取 error_signature/清理标记时直接用 Shell，不重试 Read/Delete、不改 hook |
 | [EXP-20260826-001](entries/EXP-20260826-001.md) | ACTIVE | 0.5 | repository | 2026-11-24 | 全套 pytest 与 pnpm run check 并行时 10%-57% 出现批量 E；同一测试集串行复跑 1381 passed/2 skipped 全绿：验证任务串行执行、不与其他长任务并行，失败先排除竞争再逐项诊断 |
 | [EXP-20260824-001](entries/EXP-20260824-001.md) | ACTIVE | 0.5 | repository | 2026-11-22 | 含 `.env` 字样命令被 shell guard fail-closed 拦截（凭据路径模式，不绕过）：验证 gitignore 用全量 `git status --porcelain` 确认文件未出现；AwaitShell `block_until_ms` 必须传整数 |
 | [EXP-20260823-003](entries/EXP-20260823-003.md) | ACTIVE | 0.5 | repository | 2026-11-21 | CURSOR_ERROR 瞬时失败跨会话（Read d42fb89b…/Shell f3eb4221… 各 2 会话；8/26 新增 Shell 0384c5d8…，首个长时 23.8s 实例；8/27 新增 Read 523ede9c… 2.9ms）：重试一次或改替代路径，不当作命令失败；统计时过滤 tool_name=null 的 TOOL_FAILURE 空载荷哨兵（e3b0c442…=sha256("")）；跨会话以不同 observation 文件为准 |

@@ -28,6 +28,18 @@ def _postgres_available(dsn: str) -> bool:
         return False
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _pg_schema_ready() -> None:
+    """Ensure PG schema exists before postgres-marked tests run (idempotent migrate)."""
+    dsn = _postgres_dsn()
+    if not _postgres_available(dsn):
+        return
+    from adapters.postgres.db import migrate as pg_migrate
+
+    pg_migrate(dsn)
+
+
+@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config: object, items: list[pytest.Item]) -> None:
     del config
     dsn = _postgres_dsn()

@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260828-021](tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md) | APPROVED |
+| [x] | [PLAN-20260828-021](tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md) | DONE |
 | [x] | [PLAN-20260828-020](tasks/PLAN-20260828-020-m13-r1-console-remediation.md) | DONE |
 | [x] | [PLAN-20260828-019](tasks/PLAN-20260828-019-m12-r1-production-truth-closure.md) | DONE |
 | [x] | [PLAN-20260828-018](tasks/PLAN-20260828-018-m13-research-console.md) | DONE |
@@ -27,7 +27,8 @@
 > 窗口文档。PLAN-20260828-017 / -018 为 M12 / M13 的
 > `RETROSPECTIVE_RECONSTRUCTION` 记录（2026-08-28 补齐正式流程记录）；
 > PLAN-20260828-019 / -020 为 M12-R1 / M13-R1 修复轮正式记录；
-> PLAN-20260828-021 为 M14 立项（APPROVED，DoD 验证未完成，不宣称 DONE）。
+> PLAN-20260828-021 为 M14 正式记录（2026-08-28 WP-J2 重判 PASS →
+> DONE，RECHECK-20260828-022）。
 
 ## Recently Completed
 

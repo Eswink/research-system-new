@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timezone
 
 import pytest
@@ -66,9 +67,25 @@ def task_contract(contract_id: str = "research") -> TaskContract:
     )
 
 
-def research_task(task_id: str = "task-1") -> ResearchTask:
+_DEFAULT_TASK_ID = "6f8f56a0-5c2a-4b3e-9f1d-2c7a4e8b6d90"
+
+
+def research_task(task_id: str = _DEFAULT_TASK_ID) -> ResearchTask:
+    """构造 ResearchTask。
+
+    `task_id` 参数现在生效：传入合法 UUID4 时使用之（此前被忽略，始终
+    返回硬编码 ID，导致跨测试碰撞）；传入非 UUID4 字符串时回退到默认
+    ID（保持既有调用兼容，例如 `research_task("task-1")`）。
+    """
+    resolved = task_id
+    try:
+        parsed = uuid.UUID(task_id)
+        if parsed.version != 4:
+            resolved = _DEFAULT_TASK_ID
+    except (ValueError, AttributeError):
+        resolved = _DEFAULT_TASK_ID
     return ResearchTask(
-        id=ID("6f8f56a0-5c2a-4b3e-9f1d-2c7a4e8b6d90"),
+        id=ID(resolved),
         run_id=ID("a1b2c3d4-0000-4000-8000-000000000001"),
         phase_run_id=ID("a1b2c3d4-0000-4000-8000-000000000002"),
         contract_id="research",

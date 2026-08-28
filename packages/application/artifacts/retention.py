@@ -9,6 +9,9 @@ retention 决策在 application 层编排，ArtifactStore 只暴露原子原语
 - created_at 缺失（旧数据）→ 保守跳过，不误删。
 
 定时调度属 M14（与 recover_expired_leases 同列），M9 只提供确定性函数。
+DS-2 并发健壮性：单 artifact 的 archive/delete 抛 InvalidInputError（如
+并发下已被他方删除/状态漂移）按 skipped 处理继续扫描，不让一轮扫描
+半途而废。
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from packages.application.ports.artifact_store import ArtifactStore
+from packages.application.ports.errors import InvalidInputError
 from packages.domain.artifacts import Artifact, ArtifactRetentionPolicy
 from packages.domain.enums import ArtifactState
 
@@ -60,10 +64,18 @@ def apply_retention(
         else:
             action = _policy_action(artifact, current)
         if action == "archive":
-            store.archive(artifact.id)
+            try:
+                store.archive(artifact.id)
+            except InvalidInputError:
+                skipped.append(artifact.id)
+                continue
             archived.append(artifact.id)
         elif action == "delete":
-            store.delete(artifact.id)
+            try:
+                store.delete(artifact.id)
+            except InvalidInputError:
+                skipped.append(artifact.id)
+                continue
             deleted.append(artifact.id)
         else:
             skipped.append(artifact.id)

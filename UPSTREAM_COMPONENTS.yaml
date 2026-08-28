@@ -336,7 +336,26 @@ components:
     decision_status: DEFERRED
     integration_mode: ADAPTER
     role: durable_workflow
-    source: "https://github.com/temporalio/temporal"
+    source:
+      kind: GITHUB
+      package: temporal
+      url: "https://github.com/temporalio/temporal"
+    qualification:
+      date: "2026-08-27"
+      revalidated: "2026-08-28"
+      result: DEFER
+      report: "docs/references/upstream/M14_TEMPORAL_QUALIFICATION.md"
+      digest_status: VERIFIED
+      server_commit: "bc2433d037b163568ed4420f70023dde1a4ae5b5"
+      server_tag: "v1.28.1"
+      sdk_version: "1.13.0"
+      sdk_sdist_sha256: "5a979eee5433da6ab5d8a2bcde25a1e7d454e91920acb0bf7ca93d415750828b"
+      sdk_commit: "84be9861acb90d58705bab03213d6d3570912eeb"
+      note: "2026-08-28 复核：server tag v1.28.1 → bc2433d0…；sdk-python 1.13.0 → 84be9861…；PyPI 当前最新 1.32.0（M16 重评须以当时最新重新评估）。DEFER 结论（Q12/Q13 运维成本）不因 pin 真实化改变。"
+    controls:
+      - domain_import_ban
+      - canonical_state_in_postgres
+      - spike_isolation_scratch
 
   - id: opa
     adoption_status: PLANNED

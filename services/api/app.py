@@ -21,25 +21,75 @@ from services.api.routers import (
     runs,
     team_protocol,
 )
-from services.api.scheduler import LeaseRecoveryScheduler
+from services.api.scheduler import (
+    LeaseRecoveryScheduler,
+    OutboxRelayScheduler,
+    RetentionScheduler,
+)
 from services.api.settings import ApiSettings
+
+
+def _start_lease_scheduler(deps: ApiDeps) -> LeaseRecoveryScheduler | None:
+    try:
+        workflow = deps.runs._deps.workflow  # type: ignore[union-attr]
+        sched = LeaseRecoveryScheduler(workflow, interval_seconds=30.0)
+        sched.start()
+        return sched
+    except Exception:
+        return None
+
+
+def _start_outbox_scheduler(deps: ApiDeps) -> "OutboxRelayScheduler | None":
+    try:
+        if not getattr(deps, "outbox_relay_enabled", False):
+            return None
+
+        sched = OutboxRelayScheduler(
+            deps.runs._deps.workflow,  # type: ignore[union-attr]
+            deps.events,
+            interval_seconds=5.0,
+        )
+        sched.start()
+        return sched
+    except Exception:
+        return None
+
+
+def _start_retention_scheduler(deps: ApiDeps) -> "RetentionScheduler | None":
+    if deps.artifacts is None:
+        return None
+    try:
+        sched = RetentionScheduler(deps.artifacts, interval_seconds=3600.0)
+        sched.start()
+        return sched
+    except Exception:
+        return None
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Start/stop lease recovery scheduler if workflow available."""
-    scheduler: LeaseRecoveryScheduler | None = None
+    """Start/stop schedulers if workflow available (WP-E: lease recovery + PG outbox relay)."""
     deps: ApiDeps | None = getattr(app.state, "deps", None)
+    lease_sched: LeaseRecoveryScheduler | None = None
+    outbox_sched: OutboxRelayScheduler | None = None
+    retention_sched: RetentionScheduler | None = None
     if deps is not None and deps.runs is not None:
-        try:
-            workflow = deps.runs._deps.workflow
-            scheduler = LeaseRecoveryScheduler(workflow, interval_seconds=30.0)
-            scheduler.start()
-        except Exception:
-            scheduler = None
+        lease_sched = _start_lease_scheduler(deps)
+        outbox_sched = _start_outbox_scheduler(deps)
+        retention_sched = _start_retention_scheduler(deps)
     yield
-    if scheduler is not None:
-        scheduler.stop()
+    if retention_sched is not None:
+        try:
+            retention_sched.stop()
+        except Exception:
+            pass
+    if outbox_sched is not None:
+        try:
+            outbox_sched.stop()
+        except Exception:
+            pass
+    if lease_sched is not None:
+        lease_sched.stop()
 
 
 def create_app(deps: ApiDeps | None = None) -> FastAPI:

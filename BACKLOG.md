@@ -5,9 +5,9 @@
 ```text
 Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
 MVP 能力平面（M8-M11）= completed（2026-08-15）
-M12 First Real Research Workflow = completed（R1 修复完成，待重新独立复审重判）
+M12 First Real Research Workflow = completed（R1 修复 + 2026-08-28 重判 PASS，RECHECK-20260828-023；DoD-3 live relay 凭据闭环）
 M13 Research Console = completed（R1 修复 + 独立复审 PASS，2026-08-27）
-M14 Durable Workflow + PostgreSQL = 立项（IN PROGRESS；Temporal DEFERRED，见 ADR-0025）
+M14 Durable Workflow + PostgreSQL = DONE（2026-08-28；WP-J2 重判 PASS，RECHECK-20260828-022）
 ```
 
 M0-M11（含 M5R）全部完成（真实完成顺序：M0 → M1 → M3 → M2 → M4 → M5 →
@@ -16,7 +16,7 @@ M5R → M6 → M7 → M8 → M9 → M10 → M11 → M12 → M13）。完成矩�
 集成里程碑见 `docs/roadmap/*_COMPLETION_RECORD.md`。M12/M13 完成事实与
 R1 修复记录见 `docs/roadmap/M12_COMPLETION_RECORD.md` /
 `M12_R1_COMPLETION_RECORD.md` / `M13_R1_COMPLETION_RECORD.md`；M12 原
-PASS 判定经独立复审证伪并修复，**待重新独立复审重判**。本文件按三类组织：
+PASS 判定经独立复审证伪并修复，2026-08-28 重新独立复审重判 **PASS**（RECHECK-20260828-023；DoD-3 live relay 凭据闭环后升 PASS）。本文件按三类组织：
 **Completed**（已交付）、**Remaining Technical Debt**（已发现但不阻断）、
 **Next Product Capability**（未来能力，非已实现事项）。
 
@@ -161,16 +161,16 @@ PASS 判定经独立复审证伪并修复，**待重新独立复审重判**。�
 
 | 项 | P 级 | 目标归属 | 说明 |
 | --- | --- | --- | --- |
-| PostgreSQL task queue | P1 | M14 | 同 Port 契约（`SqliteWorkflowEngine` 的 contract suite 为验收基线）；跨进程分布式调度属 M14（Durable Workflow + PostgreSQL） |
-| `recover_expired_leases` 定时自愈 | P2 | M14 | 当前为 start_run 懒触发，单进程安全；定时调度属 M14 范畴 |
-| 历史 Run 快照运营迁移 | P2 | M14 | `manifest_semantic_digest=None` 的旧快照不可 resume：需重新冻结或 fork run；无自动迁移路径 |
-| ModelRelay + OpenHandsRuntimeAdapter usage 归账闭环到 BudgetLedger | P1 | M12 | 前提：真实 relay 链路 E2E（当前为 mock 端点）；在 M12（First Real Research Workflow）清偿 |
-| retention 定时调度 | P2 | M14 | M9 交付显式触发 `apply_retention` 用例；定时扫描与 `recover_expired_leases` 同属 M14 定时调度范畴 |
-| Experiment 实体持久化 | P1 | M14 | M9 交付 Domain 实体与 use case；`ExperimentPlan/ExperimentRun/ReproducibilityAudit` 落 PostgreSQL Canonical State 属 M14 |
-| EvidenceLedger 持久化 | P1 | M14 | M10 交付 `FakeEvidenceLedger`（进程内）；跨 run 持久化落 PostgreSQL Canonical State 属 M14 |
-| RetrievalIndex 持久化 / 真实 embedding | P2 | M12 前评估 | M10 交付 `InMemoryRetrievalIndex`（确定性 token 检索，可重建投影）；真实语义检索与 embedding provider 绑定属 future dependency，不实现 |
-| Memory/Evidence 内容级数据治理 | P2 | M19 | M10 gate 在 commit 前复用 `domain.redaction` 脱敏 secret 样式内容（Bearer/API key/URL 凭据）；完整 content policy、私有 CoT 识别与数据治理规则属 M19 |
-| Memory/Claim 并发写入控制 | P2 | M14 | M10 为单进程语义（Fake 内存实现 + 同 id 重复 commit 拒绝）；跨进程并发（同提案竞争 commit、delete vs update）依赖 M14 PostgreSQL 事务语义 |
+| PostgreSQL task queue | P1 | M14 | 同 Port 契约（`SqliteWorkflowEngine` 的 contract suite 为验收基线）；跨进程分布式调度属 M14（Durable Workflow + PostgreSQL）。**清偿（2026-08-28 修复轮）：** `adapters/postgres/workflow_engine.py` 等 + `test_workflow_engine_parity.py`（SQLite/PG parity）+ `test_cross_process_real.py`（真实 subprocess） |
+| `recover_expired_leases` 定时自愈 | P2 | M14 | 当前为 start_run 懒触发，单进程安全；定时调度属 M14 范畴。**清偿（2026-08-28 修复轮）：** `services/api/scheduler.py` `LeaseRecoveryScheduler` 已在 `_lifespan` 启动（30s 周期）；`test_*` 验证自动恢复 |
+| 历史 Run 快照运营迁移 | P2 | M14 | `manifest_semantic_digest=None` 的旧快照不可 resume：需重新冻结或 fork run；无自动迁移路径。**清偿（2026-08-28 债务收口轮）：** `packages/application/run_orchestration/snapshot_migration.py`（plan/apply use case：re-freeze 重算 digest 对写回 / fork 创建新 run 原 run 保持只读 / terminal 与未冻结 keep）+ `tools/snapshot_migrate.py` CLI（`--dry-run`/`--apply`，SQLite 或 PG RunStore）；默认行为不变（未迁移旧快照仍被 `convergence.assert_semantics_frozen` 安全拒绝） |
+| ModelRelay + OpenHandsRuntimeAdapter usage 归账闭环到 BudgetLedger | P1 | M12 | 前提：真实 relay 链路 E2E（当前为 mock 端点）；M12 遗留。**清偿（2026-08-28 债务收口轮）：** `tests/e2e/test_m12_usage_real_relay.py`——离线 httpx.MockTransport 脚本化 relay 响应驱动 `OpenAIChatGateway.complete` → `UsageCollection/record_collected_usage` → BudgetLedger（默认 CI 可跑，证明真实代码路径完整）；`requires_live_llm` 手动 E2E（`RESEARCHOS_LIVE_E2E_ENDPOINT`/`RESEARCHOS_LIVE_E2E_KEY` 环境变量门控，真实凭据永不硬编码/落盘，非默认 CI） |
+| retention 定时调度 | P2 | M14 | M9 交付显式触发 `apply_retention` 用例；定时扫描与 `recover_expired_leases` 同属 M14 定时调度范畴。**清偿（2026-08-28 收口轮）：** `packages/application/artifacts/retention.py` 并发健壮性（InvalidInputError → skipped）；`services/api/scheduler.py::RetentionScheduler`；`services/api/app.py::_lifespan` 接线（interval ≥ 1h）；`tests/application/artifacts/test_retention_schedule.py` 覆盖归档/删除/跳过/scheduler 冒烟 |
+| Experiment 实体持久化 | P1 | M14 | M9 交付 Domain 实体与 use case；`ExperimentPlan/ExperimentRun/ReproducibilityAudit` 落 PostgreSQL Canonical State。**清偿（2026-08-28 收口轮）：** `packages/application/ports/experiment_store.py` Port；`adapters/postgres/migrations/003_experiment_state.sql`；`adapters/postgres/experiment_store.py`；`services/api/pg_composition.py` 接线；`tests/postgres/test_experiment_store_pg.py`（5 tests PASS） |
+| EvidenceLedger 持久化 | P1 | M14 | M10 交付 `FakeEvidenceLedger`（进程内）；跨 run 持久化落 PostgreSQL Canonical State。**清偿（2026-08-28 修复轮）：** `adapters/postgres/evidence_ledger.py` + `002_domain_state.sql`（m12_* 表）+ `test_domain_stores_pg.py` |
+| RetrievalIndex 持久化 / 真实 embedding | P2 | M12 前评估 | M10 交付 `InMemoryRetrievalIndex`（确定性 token 检索，可重建投影）；真实语义检索与 embedding provider 绑定属 future dependency，不实现（**保留**） |
+| Memory/Evidence 内容级数据治理 | P2 | M19 | M10 gate 在 commit 前复用 `domain.redaction` 脱敏 secret 样式内容（Bearer/API key/URL 凭据）；完整 content policy、私有 CoT 识别与数据治理规则属 M19（**保留**） |
+| Memory/Claim 并发写入控制 | P2 | M14 | M10 为单进程语义（Fake 内存实现 + 同 id 重复 commit 拒绝）；跨进程并发依赖 M14 PostgreSQL 事务语义。**清偿（2026-08-28 收口轮）：** `adapters/postgres/evidence_ledger.py` register_claim/source/evidence ON CONFLICT DO NOTHING + rowcount 校验 + update_claim rowcount 校验 + _require_verifiable 同事务 FOR SHARE；`adapters/postgres/migrations/004_memory_state.sql`；`adapters/postgres/memory_store.py::PostgresMemoryStore`（原子 commit ON CONFLICT DO NOTHING + rowcount；deactivate/delete 条件写 + rowcount）；`services/api/composition.py` ApiDeps.memory 槽位 + PG 装配注入；`tests/postgres/test_memory_claim_concurrency.py`（5 tests PASS：同提案竞争 commit 恰一赢；delete 0 行抛错；deactivate 幂等；claim 竞争检测；claim update unknown 拒绝）；`tests/contracts/registry.py` memory_store 加入 PG 实现 |
 
 > M9 已清偿（2026-08-15，证据见 `docs/roadmap/M9_COMPLETION_RECORD.md`）：
 > `DockerWorkspace 容器链路全量验证`（裁决 mapping-only + 真实链路由
@@ -194,7 +194,7 @@ M14 已立项（IN PROGRESS，DoD 验证未完成）；M15 及以后为未来设
 | Real Experiment Runtime：ExecutionBackend 真实实现、WorkspaceLease/worktree、ExperimentPlan/Run/Metric、内容寻址 Artifact Store 生产化、retention/export bundle、ReproducibilityAudit | M9 Real Experiment Runtime | DONE（2026-08-15，`4156238`/`b8560ee`） |
 | Evidence / Memory Enhancement：SourceRecord、MemoryWriteProposal gate、Memory lifecycle/delete、derived vector index、Claim/Evidence relations、contradiction handling、negative result memory | M10 Evidence / Memory / Provenance | DONE（2026-08-15，`900c1b1`） |
 | Evaluation Plane：Eval Harness modes、deterministic gates、reviewer panel、human calibration samples、canary/regression dashboard | M11 Evaluation Plane | DONE（2026-08-15，`0846765`/`0cc6361`） |
-| First Real Research Workflow：真实 relay 链路 E2E + usage 归账闭环、工具 + 实验 + 证据全链、MVP 成立判定 | M12 First Real Research Workflow | DONE（2026-08-22；R1 修复完成 2026-08-23，**待重新独立复审重判**） |
+| First Real Research Workflow：真实 relay 链路 E2E + usage 归账闭环、工具 + 实验 + 证据全链、MVP 成立判定 | M12 First Real Research Workflow | DONE（2026-08-22；R1 修复完成 2026-08-23；重判 PASS 2026-08-28，RECHECK-20260828-023；DoD-3 live relay 凭据闭环） |
 | Research Console：first-run relay wizard、models/probe page、team/agent model assignment、protocol/preflight dry run、task/run timeline、approvals/interventions、workspace diff、evidence/claim map、budget/usage、audit/export | M13 Research Console | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
 | Durable Workflow：Temporal qualification + 采用/不采用决策（DEFERRED，ADR-0025）、PostgreSQL canonical state + task queue、跨进程分布式调度 | M14 Durable Workflow + PostgreSQL | IN_PROGRESS（2026-08-28 立项） |
 | Observability / Cost / Evaluation Operations：OTel collector（隐私默认）、成本归集、eval 趋势运营 | M15 Observability / Cost / Eval Operations | PLANNED |
@@ -205,7 +205,8 @@ M14 已立项（IN PROGRESS，DoD 验证未完成）；M15 及以后为未来设
 
 > M8-M11 完成事实与逐项证据见 `docs/roadmap/COMPLETION_MATRIX_M0_M11.md`
 > 与各阶段 completion record；M12/M13 完成事实见各自 COMPLETION_RECORD
-> 与 M12-R1/M13-R1 修复记录。M12 经 M12-R1 修复后**待重新独立复审**；
-> M13 于 2026-08-27 独立复审重判 PASS。M14 已立项（`PLAN-20260828-021`，
-> Temporal DEFERRED 见 ADR-0025）；DoD 验证与独立复审未完成，不宣称
-> DONE。本 BACKLOG 不自动开工任何未立项 Milestone。
+> 与 M12-R1/M13-R1 修复记录。M12 于 2026-08-28 重新独立复审重判 PASS
+> （RECHECK-20260828-023，DoD-3 live relay 凭据闭环后升 PASS）；M13 于
+> 2026-08-27 独立复审重判 PASS。M14 于 2026-08-28 WP-J2 重判 PASS
+> （RECHECK-20260828-022），状态 DONE（Temporal DEFERRED 见 ADR-0025）。
+> 本 BACKLOG 不自动开工任何未立项 Milestone。

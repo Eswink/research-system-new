@@ -104,8 +104,10 @@ class ApiDeps:
     agent_store: AgentStore | None = field(default=None, repr=False)
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
     approvals: ApprovalStore | None = field(default=None, repr=False)
+    memory: Any | None = field(default=None, repr=False)
     preflight_override: PreflightContext | None = field(default=None, repr=False)
     endpoint_url_policy: EndpointUrlPolicy | None = field(default=None, repr=False)
+    outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)
 
@@ -134,10 +136,7 @@ def _open_sqlite(db_path: str) -> sqlite3.Connection:
 def _ensure_pg_schema(pg_dsn: str) -> None:
     from adapters.postgres.db import migrate as pg_migrate
 
-    try:
-        pg_migrate(pg_dsn)
-    except Exception:
-        pass
+    pg_migrate(pg_dsn)
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,23 +154,30 @@ class PostgresAssembly:
     ledger: Any
     budget: Any
     orchestration: RunOrchestrationService
+    approvals_store: Any = None
+    runs_store_pg: Any = None
+    artifacts_pg: Any = None
+    experiment_store: Any = None
+    memory_store: Any = None
+    gateway_override: Any = None
+    credentials_override: Any = None
+    preflight_override: Any = None
 
 
 def _build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
     return ApiDeps(
         endpoint_store=assembly.endpoint_store,
         model_store=assembly.model_store,
-        credentials=RegistryCredentialResolver(),
-        gateway=OpenAIChatGateway(
-            default_timeout_seconds=assembly.effective.endpoint_timeout_seconds
-        ),
+        credentials=assembly.credentials_override or RegistryCredentialResolver(),
+        gateway=assembly.gateway_override
+        or OpenAIChatGateway(default_timeout_seconds=assembly.effective.endpoint_timeout_seconds),
         idempotency=SqliteIdempotencyStore(connection=assembly.connection),
         events=assembly.events,
         projection=assembly.projection,
-        approvals=SqliteApprovalStore(connection=assembly.connection),
+        approvals=assembly.approvals_store or SqliteApprovalStore(connection=assembly.connection),
         runs=assembly.orchestration,
-        runs_store=SqliteRunStore(connection=assembly.connection),
-        artifacts=FakeArtifactStore(),
+        runs_store=assembly.runs_store_pg or SqliteRunStore(connection=assembly.connection),
+        artifacts=assembly.artifacts_pg or FakeArtifactStore(),
         ledger=assembly.ledger,
         budget=assembly.budget,
         agent_store=SqliteAgentStore(connection=assembly.connection),
@@ -181,6 +187,8 @@ def _build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
             allow_private=assembly.effective.allow_localhost_endpoints,
             allow_link_local=assembly.effective.allow_localhost_endpoints,
         ),
+        memory=assembly.memory_store,
+        preflight_override=assembly.preflight_override,
         _connection=assembly.connection,
         _pg_connection=assembly.pg_conn,
     )
@@ -193,42 +201,23 @@ def _assemble_postgres(
     model_store: ModelStore,
     pg_dsn: str,
 ) -> ApiDeps:
-    _ensure_pg_schema(pg_dsn)
-    from adapters.postgres.db import connect as pg_connect
-    from adapters.postgres.workflow_engine import PostgresWorkflowEngine
+    from services.api.pg_composition import (
+        PgAssemblyConfig,
+        build_postgres_apideps,
+        build_postgres_assembly,
+    )
 
-    pg_conn = pg_connect(pg_dsn)
-    workflow: Any = PostgresWorkflowEngine(connection=pg_conn)
-    events: Any = SqliteOutboxEventPublisher(connection=connection)
-    from adapters.sqlite.run_projection import SqliteRunProjection
-
-    projection: Any = SqliteRunProjection(connection, events)
-    ledger = SqliteEvidenceLedger(connection=connection)
-    budget = SqliteBudgetLedger(connection=connection)
-    orchestration = RunOrchestrationService(
-        OrchestrationDependencies(
-            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
-            workflow=workflow,
-            artifacts=FakeArtifactStore(),
-            events=events,
-            budget=budget,
-            ledger=ledger,
+    assembly = build_postgres_assembly(
+        PgAssemblyConfig(
+            effective=effective,
+            connection=connection,
+            endpoint_store=endpoint_store,
+            model_store=model_store,
+            pg_dsn=pg_dsn,
+            ensure_schema=True,
         )
     )
-    assembly = PostgresAssembly(
-        effective=effective,
-        connection=connection,
-        endpoint_store=endpoint_store,
-        model_store=model_store,
-        pg_conn=pg_conn,
-        workflow=workflow,
-        events=events,
-        projection=projection,
-        ledger=ledger,
-        budget=budget,
-        orchestration=orchestration,
-    )
-    return _build_postgres_apideps(assembly)
+    return build_postgres_apideps(assembly)
 
 
 def _assemble_sqlite(

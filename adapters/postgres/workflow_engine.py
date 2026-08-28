@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Any, cast
+from typing import Any
 
 import psycopg
 import psycopg.errors
@@ -14,7 +14,6 @@ from psycopg.rows import dict_row
 from adapters.postgres.base import PostgresAdapterBase
 from adapters.postgres.db import connect as pg_connect
 from adapters.postgres.db import dsn_from_env
-from adapters.postgres.leases import lease_from_row
 from adapters.postgres.outbox import PgOutboxWriter
 from adapters.postgres.projections import (
     cancelled as proj_cancelled,
@@ -68,6 +67,7 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         super().__init__("workflow_engine")
         self._lease_ttl = timedelta(seconds=lease_ttl_seconds)
         self._now = now
+        self._owned_lease_ids: set[str] = set()
         if connection is not None:
             self._conn: Any = connection
             self._owns_connection = False
@@ -118,22 +118,22 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
     def acquire_lease(self, task_id: str) -> TaskLease:
         self._ensure_open()
         try:
-            return acquire_lease_impl(
+            lease = acquire_lease_impl(
                 self._conn,
                 self._record,
                 self._outbox,
-                AcquirePayload(task_id, self._lease_ttl),
+                AcquirePayload(task_id, self._lease_ttl, frozenset(self._owned_lease_ids)),
                 self._now,
             )
+            self._owned_lease_ids.add(lease.lease_id)
+            return lease
         except InvalidInputError:
             raise
         except psycopg.errors.UniqueViolation:
-            row2: Any = self._conn.execute(
-                "SELECT * FROM leases WHERE task_id = %s", (task_id,)
-            ).fetchone()
-            if row2 is not None:
-                self._record("acquire_lease", task_id, result="deduped")
-                return lease_from_row(cast(dict[str, object], row2))
+            # Note: with autocommit=True + explicit transactions, UniqueViolation
+            # should not reach here — the Impl now handles reclaim atomically and
+            # the rest is covered by the top-level transaction rollback. Keep as
+            # a safety fallback; the failing transaction has already rolled back.
             raise
         except psycopg.OperationalError as exc:
             raise self._wrap_operational(exc) from exc
@@ -141,7 +141,9 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
     def heartbeat(self, lease: TaskLease) -> TaskLease:
         self._ensure_open()
         try:
-            return heartbeat_impl(self._conn, self._record, lease, self._lease_ttl, self._now)
+            renewed = heartbeat_impl(self._conn, self._record, lease, self._lease_ttl, self._now)
+            self._owned_lease_ids.add(renewed.lease_id)
+            return renewed
         except InvalidInputError:
             raise
         except psycopg.OperationalError as exc:
@@ -150,7 +152,14 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
     def complete(self, lease: TaskLease, completion: TaskCompletion) -> None:
         self._ensure_open()
         try:
-            complete_impl(self._conn, self._record, self._outbox, lease, completion)
+            from adapters.postgres.workflow_ops import CompletePayload
+
+            complete_impl(
+                self._conn,
+                self._record,
+                self._outbox,
+                CompletePayload(lease, completion, self._now),
+            )
         except InvalidInputError:
             raise
         except psycopg.OperationalError as exc:

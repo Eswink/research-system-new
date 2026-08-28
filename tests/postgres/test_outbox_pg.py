@@ -5,9 +5,8 @@ Verifies:
 - duplicate publish (same event_id) is idempotent (matches event_publisher semantics)
 - marked published is idempotent; pending reflects state
 
-These are unit-level checks inside a single transaction; cross-process crash
-(Skipped in offline: Scenario E) is covered by WP4 E2E `tests/e2e/test_outbox_crash.py`
-style but with Postgres DSN.
+True cross-process crash semantics are covered by
+tests/postgres/test_cross_process_real.py (real subprocess workers).
 """
 
 from __future__ import annotations
@@ -33,8 +32,7 @@ def _dsn() -> str:
     )
 
 
-def test_outbox_atomic_with_task_transition() -> None:
-    """TASK_LEASED event must be present iff task reached LEASED."""
+def _truncate() -> None:
     import psycopg
 
     migrate(_dsn())
@@ -43,6 +41,14 @@ def test_outbox_atomic_with_task_transition() -> None:
     conn.commit()
     conn.close()
 
+
+@pytest.fixture(autouse=True)
+def _clean() -> None:
+    _truncate()
+
+
+def test_outbox_atomic_with_task_transition() -> None:
+    """TASK_LEASED event must be present iff task reached LEASED."""
     engine = PostgresWorkflowEngine(dsn=_dsn())
     try:
         task = research_task()

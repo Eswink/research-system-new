@@ -90,9 +90,9 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M9 | Real Experiment Runtime | MVP | M7 | DONE（2026-08-15） |
 | M10 | Evidence / Memory / Provenance | MVP | M7 | DONE（2026-08-15） |
 | M11 | Evaluation Plane | MVP | M7 | DONE（2026-08-15） |
-| M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | DONE（2026-08-22；R1 修复完成 2026-08-23，**待重新独立复审重判**） |
+| M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | DONE（2026-08-22；R1 修复完成 2026-08-23；**2026-08-28 重新独立复审重判 PASS**（DoD-3 live relay 凭据闭环后由 PASS_WITH_WARNINGS 升 PASS）：RECHECK-20260828-023） |
 | M13 | Research Console | Product | M12 | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
-| M14 | Durable Workflow + PostgreSQL | Production | M12 | IN_PROGRESS（2026-08-28 立项；Temporal DEFERRED，ADR-0025） |
+| M14 | Durable Workflow + PostgreSQL | Production | M12 | DONE（2026-08-28 立项；WP-J2 重判 PASS：RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
 | M15 | Observability / Cost / Eval Operations | Production | M11 | PLANNED |
 | M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | PLANNED |
 | M17 | GPU / HPC | Scale | M16+M9 | PLANNED |
@@ -685,13 +685,33 @@ Temporal 引入复杂度过高（严格评估，可拒绝）；PostgreSQL schema
 
 解锁 M16（分布式）、M18/M19（多租户与治理基础）。
 
-> 状态（2026-08-28）：**IN_PROGRESS（已立项）**。Temporal qualification
+> 状态（2026-08-28）：**DONE（WP-J2 重判 PASS，RECHECK-20260828-022）**。
+> Temporal qualification
 > 完成（16Q：PASS 12/NEUTRAL 2/FAIL 2）并裁决 **DEFER**（ADR-0025）；
-> PostgreSQL adapter 初版与 `tests/postgres/` 已在工作树，DoD 验证
-> （contract suite parity、跨进程 E2E、lease 自愈、m0 全绿、独立复审）
-> 未完成。正式计划见
+> PostgreSQL adapter 已实现并修复独立复审 BLOCKER-1/2/3 + MAJOR-1/2；
+> Canonical State 域状态（runs/evidence/budget/approvals/artifacts/experiments/memory）
+> 已迁移至 PG（`001-004_domain_state.sql` + `adapters/postgres/*store*.py`）；
+> 真实跨进程套件（`tests/postgres/test_cross_process_real.py`）、parity 套件
+> （`test_workflow_engine_parity.py`）、PG crash/restart E2E
+> （`tests/e2e/test_pg_crash_restart.py`）、迁移幂等测试、M13 PG run E2E
+> （`test_m13_pg_run_e2e.py`）、Experiment roundtrip、Memory/Claim 并发测试
+> 已落地。**NV-A 已消除**（ruff 9 处修复、mypy 8 处测试类型修复）；
+> **NV-B 已消除**（PG stores 下 console_demo run E2E 达 SUCCEEDED 有测试，
+> 诚实标注：真实凭据/网络路径仍非默认 CI）。DS-1/DS-2/DS-3 债务全部清偿：
+> Experiment Plan/Run/Audit PG 持久化 roundtrip 通过；retention 定时调度
+> 自动触发 + 并发健壮 + 测试覆盖；Claim 注册/更新 rowcount 校验 +
+> Memory PG 载体 + 同提案竞争 commit / delete vs update 真实 subprocess
+> 测试通过。**独立复审复验（2026-08-28）**：m0 profile 19/19 确定性 checks
+> PASS（`python/tests` 2154 passed / 2 skipped；ruff 0 errors；mypy 535 files
+> 0 errors；TS 5 项 + framework 8 项全绿）。复审修复 3 项 gate 失败：
+> format-check 2 文件、mypy 4 处、source-limit 3 文件（拆
+> `experiment_rows.py`/`worker_memory_scripts.py`）。正式计划见
 > `../../.cursor/plans/tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md`；
+> 收口计划见 `.cursor/plans/m14_债务与_not-verified_收口计划_8f4a7bc8.plan.md`；
 > qualification 见 `../references/upstream/M14_TEMPORAL_QUALIFICATION.md`。
+> **WP-J2 独立复审重判 PASS（2026-08-28）：RECHECK-20260828-022**——DoD 19 条
+> 逐项实测复核（真实 PG/subprocess/TTL 取证）；m0 19/19 单次聚合；
+> `python/tests` 2162 passed/2 skipped。**M14 = DONE**；M16/M18/M19 不自动开工。
 
 ## M15 — Observability / Cost / Eval Operations
 

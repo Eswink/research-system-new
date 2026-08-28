@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, cast
 
 from adapters.postgres.db import now_iso
 from adapters.postgres.leases import new_lease
+from adapters.postgres.serialization import decode_timestamp_pg
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
 from packages.domain.events import EventType
 from packages.domain.task_state import ResearchTaskState
+
+
+@dataclass(frozen=True, slots=True)
+class CompletePayload:
+    lease: TaskLease
+    completion: TaskCompletion
+    now: Any = None
 
 
 def heartbeat_impl(conn: Any, record: Any, lease: TaskLease, ttl: timedelta, now: Any) -> TaskLease:
@@ -35,16 +44,21 @@ def heartbeat_impl(conn: Any, record: Any, lease: TaskLease, ttl: timedelta, now
     return renewed
 
 
-def complete_impl(
-    conn: Any, record: Any, outbox: Any, lease: TaskLease, completion: TaskCompletion
-) -> None:
+def complete_impl(conn: Any, record: Any, outbox: Any, payload: CompletePayload) -> None:
+    lease: Any = payload.lease
+    completion: Any = payload.completion
+    now = payload.now
     with conn.transaction():
         task_row: Any = conn.execute(
-            "SELECT run_id, status FROM tasks WHERE task_id = %s FOR UPDATE", (lease.task_id,)
+            "SELECT run_id, status, cancelled FROM tasks WHERE task_id = %s FOR UPDATE",
+            (lease.task_id,),
         ).fetchone()
         if task_row is None:
             record("complete", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"unknown task: {lease.task_id}")
+        if task_row["cancelled"]:
+            record("complete", lease.task_id, error="InvalidInputError")
+            raise InvalidInputError(f"task {lease.task_id} is cancelled; cannot complete")
         if task_row["status"] in (
             ResearchTaskState.State.SUCCEEDED,
             ResearchTaskState.State.FAILED,
@@ -52,11 +66,18 @@ def complete_impl(
             record("complete", lease.task_id, result="deduped")
             return
         lease_row: Any = conn.execute(
-            "SELECT * FROM leases WHERE task_id = %s FOR UPDATE", (lease.task_id,)
+            "SELECT lease_id, expires_at FROM leases WHERE task_id = %s FOR UPDATE",
+            (lease.task_id,),
         ).fetchone()
         if lease_row is None or lease_row["lease_id"] != lease.lease_id:
             record("complete", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
+        expires_at: Any = decode_timestamp_pg(lease_row["expires_at"]).value
+        now_value: Any = now_iso(now)
+        # fencing: expired lease cannot complete — stale worker (BLOCKER-3)
+        if expires_at <= now_value:
+            record("complete", lease.task_id, error="InvalidInputError")
+            raise InvalidInputError(f"lease for task {lease.task_id} has expired")
         status = (
             ResearchTaskState.State.SUCCEEDED
             if completion.outcome == "SUCCEEDED"
@@ -83,9 +104,14 @@ def recover_impl(conn: Any, record: Any, outbox: Any, now: Any) -> int:
         for row in expired:
             task_id = cast(str, row["task_id"])
             task_row: Any = conn.execute(
-                "SELECT run_id FROM tasks WHERE task_id = %s", (task_id,)
+                "SELECT run_id, cancelled, status FROM tasks WHERE task_id = %s FOR UPDATE",
+                (task_id,),
             ).fetchone()
             if task_row is None:
+                continue
+            if task_row["cancelled"] or task_row["status"] in ResearchTaskState.terminal():
+                # stale lease on terminal/cancelled task: just drop the lease
+                conn.execute("DELETE FROM leases WHERE task_id = %s", (task_id,))
                 continue
             conn.execute("DELETE FROM leases WHERE task_id = %s", (task_id,))
             conn.execute(

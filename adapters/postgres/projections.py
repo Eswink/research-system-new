@@ -91,9 +91,9 @@ def mark_outbox_published(
     from adapters.postgres.db import now_iso
 
     ts = now_iso(now)
-    for event_id in event_ids:
-        conn.execute(
-            "UPDATE outbox_events SET published_at = %s WHERE event_id = %s",
-            (ts, event_id),
-        )
-    conn.commit()
+    with conn.transaction():
+        for event_id in event_ids:
+            conn.execute(
+                "UPDATE outbox_events SET published_at = %s WHERE event_id = %s",
+                (ts, event_id),
+            )

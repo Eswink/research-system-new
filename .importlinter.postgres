@@ -1,0 +1,18 @@
+[importlinter]
+root_package = adapters
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:postgres-uses-driver]
+name = Postgres adapters use psycopg only, no unapproved SDKs
+type = forbidden
+source_modules =
+    adapters.postgres
+forbidden_modules =
+    openai
+    litellm
+    lite_llm
+    anthropic
+    temporalio
+    openhands
+    adapters.fakes

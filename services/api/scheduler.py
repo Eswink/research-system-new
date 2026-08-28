@@ -3,7 +3,7 @@
 WP2 requirement: `recover_expired_leases` must run periodically, not only
 lazily in `RunOrchestrationService.start_run`.
 
-This module provides a lightweight background-thread scheduler that starts
+This module provides lightweight background-thread schedulers that start
 in the composition root's lifespan. No APScheduler dependency — stdlib only.
 
 Idempotent, `FOR UPDATE SKIP LOCKED` in engine, concurrent-safe.
@@ -48,11 +48,106 @@ class LeaseRecoveryScheduler:
             self._thread = None
 
     def _run(self) -> None:
-        # Jitter not needed for single-thread; keep simple
         while not self._stop.wait(self._interval):
             try:
                 self._workflow.recover_expired_leases()
             except Exception:
-                # Never crash scheduler on transient DB failure; engine maps to
-                # TransientPortError or InvalidInputError — both non-fatal here.
+                continue
+
+
+class OutboxRelayScheduler:
+    """Background daemon that drains PG outbox via PgOutboxRelay (WP-E).
+
+    Periodically calls `PgOutboxRelay.run_once()` to forward PG workflow
+    events to the control-plane publisher. At-least-once semantics: partial
+    passes are safe, consumer deduplicates by event_id.
+    """
+
+    def __init__(
+        self,
+        engine: Any,
+        sink: Any,
+        *,
+        interval_seconds: float = 5.0,
+    ) -> None:
+        if interval_seconds <= 0:
+            raise ValueError("interval_seconds must be > 0")
+        self._engine = engine
+        self._sink = sink
+        self._interval = interval_seconds
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        if self._thread is not None:
+            return
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._run, name="outbox-relay", daemon=True)
+        self._thread.start()
+
+    def stop(self, *, timeout: float = 2.0) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=timeout)
+            self._thread = None
+
+    def _run(self) -> None:
+        from adapters.postgres.outbox_relay import PgOutboxRelay
+
+        relay = PgOutboxRelay(self._engine, self._sink)
+        while not self._stop.wait(self._interval):
+            try:
+                relay.run_once()
+            except Exception:
+                continue
+
+
+class RetentionScheduler:
+    """Background daemon that applies artifact retention on interval (M14 DS-2).
+
+    Calls `apply_retention(store)` periodically. No new Port — it operates on
+    the existing ArtifactStore port. Single-artifact failures are already
+    skipped inside apply_retention (InvalidInputError → skipped), so a pass
+    never aborts mid-scan.
+    """
+
+    def __init__(
+        self,
+        store: Any,
+        *,
+        interval_seconds: float = 3600.0,
+    ) -> None:
+        if interval_seconds <= 0:
+            raise ValueError("interval_seconds must be > 0")
+        self._store = store
+        self._interval = interval_seconds
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self.last_report: Any = None
+
+    def start(self) -> None:
+        if self._thread is not None:
+            return
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._run, name="retention", daemon=True)
+        self._thread.start()
+
+    def stop(self, *, timeout: float = 2.0) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=timeout)
+            self._thread = None
+
+    def run_once(self) -> Any:
+        from packages.application.artifacts.retention import apply_retention
+
+        report = apply_retention(self._store)
+        self.last_report = report
+        return report
+
+    def _run(self) -> None:
+        while not self._stop.wait(self._interval):
+            try:
+                self.run_once()
+            except Exception:
                 continue

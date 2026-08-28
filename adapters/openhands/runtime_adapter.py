@@ -192,7 +192,13 @@ class OpenHandsRuntimeAdapter:
                     RuntimeEvent(entry.session_id, RuntimeEventKind.SESSION_STARTED)
                 )
                 started = True
-            entry.conversation.run()
+            # SDK 侧：LocalConversation.run() 运行时签名 (self) -> None
+            # （inspect 实测 laminar.py），但 mypy 2.3.0 将 observability
+            # 装饰器包装解析为 def run(*Never, **Never) -> Never，导致
+            # Invalid self argument 误报。用 getattr 取 Any 化可调用对象
+            # 调用，不改 SDK、不绕过真实执行（M6 边界原因）。
+            run_callable = getattr(entry.conversation, "run")
+            run_callable()
             status = entry.conversation.state.execution_status
             if status.value in _SDK_TERMINAL_TO_DOMAIN:
                 return _SDK_TERMINAL_TO_DOMAIN[status.value]

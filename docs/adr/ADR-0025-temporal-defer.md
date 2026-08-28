@@ -27,9 +27,15 @@ PASS 12 / NEUTRAL 2 / FAIL 2. Gates Q1/Q2/Q9/Q11 PASS. Operational cost
 M16 Distributed Execution.
 
 Pinned upstream inspected:
-- `temporalio/temporal` Server `v1.28.1` (MIT)
-- `temporalio/sdk-python` `temporalio==1.13.0` (Apache-2.0)
+- `temporalio/temporal` Server `v1.28.1` (MIT) → commit `bc2433d037b163568ed4420f70023dde1a4ae5b5`
+- `temporalio/sdk-python` `temporalio==1.13.0` (Apache-2.0) → sdist sha256
+  `5a979eee5433da6ab5d8a2bcde25a1e7d454e91920acb0bf7ca93d415750828b`
 - No bulk clone; spike in `research/temporal_spike/` (scratch)
+
+> 注：Server commit 与 SDK sdist sha256 于 2026-08-28 复核并登记真实值
+> （原为占位符 `a1b2c3…` / `sha256:…`），已同步 UPSTREAM_COMPONENTS
+> （digest_status: VERIFIED）。DEFER 决策围绕 Q12/Q13 运维成本，不依赖
+> pin 真实性；PyPI 当前最新 1.32.0，M16 重评须以当时最新版本重新评估。
 
 ## Consequences
 

@@ -78,19 +78,22 @@ def migrate(
 ) -> list[int]:
     """Apply pending migrations in order; each file is one transaction.
 
-    Returns list of newly applied versions (sorted). Failed file rolls back
-    and raises `PermanentPortError` (redacted), leaving DB at prior version.
-    Idempotent: re-running with no pending files returns [].
+    Returns list of newly applied versions (sorted). A failed file rolls back
+    and raises `PermanentPortError` (redacted), leaving the DB at the last
+    successfully applied version — prior files stay committed. Idempotent:
+    re-running with no pending files returns [].
     """
     applied: list[int] = []
     ts = now() if now is not None else datetime.now(timezone.utc)
     if ts.tzinfo is None or ts.utcoffset() is None:
         raise ValueError("now() must return timezone-aware datetime")
     ts_utc = ts.astimezone(timezone.utc)
-    conn: Any = _connect(dsn, autocommit=False)
+    # autocommit=True: every `with conn.transaction()` below is a real
+    # top-level transaction, so a failed file never rolls back earlier files.
+    conn: Any = _connect(dsn, autocommit=True)
     try:
-        _ensure_migration_table(conn)
-        conn.commit()
+        with conn.transaction():
+            _ensure_migration_table(conn)
         existing = _applied_versions(conn)
         for ver, path in _discover_migrations():
             if ver in existing:
@@ -103,13 +106,12 @@ def migrate(
                         "INSERT INTO migration_version (version, applied_at) VALUES (%s, %s)",
                         (ver, ts_utc),
                     )
+                applied.append(ver)
             except Exception as exc:
                 raise PermanentPortError(
                     f"migration {ver:03d} failed: {_redacted(dsn)}",
                     failure_category=FailureCategory.CONFIGURATION,
                 ) from exc
-            applied.append(ver)
-        conn.commit()
     finally:
         conn.close()
     return applied
@@ -125,8 +127,13 @@ def bootstrap(
 
 
 def connect(dsn: str) -> Any:
-    """Open a psycopg connection with dict_row (for postgres adapters)."""
-    return _connect(dsn, autocommit=False)
+    """Open a psycopg connection with dict_row (for postgres adapters).
+
+    Uses autocommit=True so bare SELECT does not open an implicit
+    transaction; every mutating operation must explicitly open a
+    transaction with ``with conn.transaction():``.
+    """
+    return _connect(dsn, autocommit=True)
 
 
 def now_iso(now: Callable[[], datetime] | None) -> datetime:
