@@ -65,7 +65,7 @@ def _restore_schema_after_dropping() -> Iterator[None]:
 def test_bootstrap_from_empty_creates_all_tables() -> None:
     _drop_schema()
     applied = bootstrap(_dsn())
-    assert applied == [1, 2, 3, 4], f"expected [1, 2, 3, 4], got {applied}"
+    assert applied == [1, 2, 3, 4, 5], f"expected [1, 2, 3, 4, 5], got {applied}"
     import psycopg
 
     conn = psycopg.connect(_dsn(), autocommit=True)
@@ -98,7 +98,7 @@ def test_migrate_idempotent_rerun() -> None:
     _drop_schema()
     first = migrate(_dsn())
     second = migrate(_dsn())
-    assert first == [1, 2, 3, 4]
+    assert first == [1, 2, 3, 4, 5]
     assert second == []
 
 
@@ -128,26 +128,26 @@ def test_late_migration_failure_keeps_prior_files_committed() -> None:
     independently; a failed file leaves the DB at the last applied version.
     """
     _drop_schema()
-    scratch, broken, original = _scratch_with_broken_005()
+    scratch, broken, original = _scratch_with_broken_migration(6)
     try:
         with pytest.raises(PermanentPortError):
             migrate(_dsn())
         versions, tables = _versions_and_tables()
-        assert versions == {1, 2, 3, 4}, f"prior files must stay committed: {versions}"
+        assert versions == {1, 2, 3, 4, 5}, f"prior files must stay committed: {versions}"
         assert "t_partial" not in tables, "failed file must be fully rolled back"
-        assert 5 not in versions
+        assert 6 not in versions
         # Fix the file; re-run must apply only the missing version.
-        _fix_broken_005(broken)
+        _fix_broken_migration(broken)
         applied = migrate(_dsn())
-        assert applied == [5], f"expected only [5], got {applied}"
+        assert applied == [6], f"expected only [6], got {applied}"
     finally:
         _restore_migrations_dir(original)
     _drop_schema()
     migrate(_dsn())
 
 
-def _scratch_with_broken_005() -> tuple[Path, Path, Path]:
-    """Copy real migrations + inject a 005 file that fails mid-transaction."""
+def _scratch_with_broken_migration(version: int) -> tuple[Path, Path, Path]:
+    """Copy real migrations + inject a failing migration file (given version)."""
     import tempfile
 
     import adapters.postgres.db as dbmod
@@ -156,7 +156,7 @@ def _scratch_with_broken_005() -> tuple[Path, Path, Path]:
     real_dir = Path("adapters/postgres/migrations")
     for f in sorted(real_dir.glob("*.sql")):
         (scratch / f.name).write_bytes(f.read_bytes())
-    broken = scratch / "005_broken.sql"
+    broken = scratch / f"{version:03d}_broken.sql"
     broken.write_text(
         "CREATE TABLE IF NOT EXISTS t_partial (id TEXT);\n"
         "INSERT INTO t_partial VALUES ('x');\n"
@@ -183,7 +183,7 @@ def _versions_and_tables() -> tuple[set[int], set[str]]:
     return {int(r[0]) for r in rows}, tables
 
 
-def _fix_broken_005(broken: Path) -> None:
+def _fix_broken_migration(broken: Path) -> None:
     broken.write_text(
         "CREATE TABLE IF NOT EXISTS t_partial (id TEXT);\nINSERT INTO t_partial VALUES ('x');\n",
         encoding="utf-8",

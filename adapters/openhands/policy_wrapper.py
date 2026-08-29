@@ -8,12 +8,21 @@ Research OS 只允许经由本包装执行 direct tool execution（AGENTS.md §5
 - REQUIRE_APPROVAL → 阻塞该次调用 + approval.requested 事件（M6 无
   交互式审批循环，审批通道 M7）；
 - ALLOW_WITH_CONSTRAINTS → 放行（约束由调用方策略执行）。
+
+M15 观测:`telemetry` 可选注入;TOOL_CALL span 记录 tool_id/outcome,
+DENY/审批阻塞可见,无内容通道(ADR-0026)。
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from packages.application.observability.scope import operation
+from packages.application.observability.signals import (
+    CorrelationRef,
+    OperationOutcome,
+    OperationScope,
+)
 from packages.application.ports.agent_runtime import RuntimeEvent, RuntimeEventKind
 from packages.application.ports.errors import PermanentPortError
 from packages.application.ports.policy_evaluator import (
@@ -21,6 +30,7 @@ from packages.application.ports.policy_evaluator import (
     PolicyEvaluator,
     PolicyRequest,
 )
+from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.domain.enums import FailureCategory, PolicyDecision
 
 # SDK execute_tool 签名：execute_tool(self, tool_name: str, action: Action) -> Observation
@@ -51,11 +61,13 @@ class PolicyWrappedToolExecutor:
         actor: str,
         scope: str,
         emit: Any = None,
+        telemetry: TelemetrySink | None = None,
     ) -> None:
         self._policy_evaluator = policy_evaluator
         self._actor = actor
         self._scope = scope
         self._emit = emit or (lambda event: None)
+        self._telemetry = telemetry
 
     def evaluate_tool_call(self, tool_name: str) -> PolicyEvaluation:
         """策略裁决；ALLOW/ALLOW_WITH_CONSTRAINTS 放行，否则抛错。"""
@@ -92,8 +104,25 @@ class PolicyWrappedToolExecutor:
         action: Any,
     ) -> Any:
         """经策略门禁后执行 SDK execute_tool；DENY/REQUIRE_APPROVAL 不触达 SDK。"""
-        self.evaluate_tool_call(tool_name)
-        return execute_tool(tool_name, action)
+        with operation(
+            self._telemetry,
+            scope=OperationScope.TOOL_CALL,
+            name="tool.execute_direct",
+            correlation=CorrelationRef(agent_session_id=self._scope),
+            attributes={"tool_id": tool_name},
+        ) as op:
+            try:
+                self.evaluate_tool_call(tool_name)
+                return execute_tool(tool_name, action)
+            except PolicyDeniedError:
+                op.set_outcome(OperationOutcome.DENIED, FailureCategory.POLICY_DENIED.value)
+                raise
+            except PolicyApprovalRequiredError:
+                op.set_outcome(OperationOutcome.DENIED, FailureCategory.APPROVAL_REJECTED.value)
+                raise
+            except Exception:
+                op.set_outcome(OperationOutcome.FAILED, FailureCategory.EXECUTION_FAILURE.value)
+                raise
 
 
 __all__ = [

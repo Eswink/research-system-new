@@ -108,9 +108,7 @@ def main() -> int:
     task_id = task.id.value
 
     run_store = PostgresRunStore(dsn=DSN)
-    run = ResearchRun(
-        id=ID(run_id), project_id="p-1", protocol_id="proto", state="RUNNING"
-    )
+    run = ResearchRun(id=ID(run_id), project_id="p-1", protocol_id="proto", state="RUNNING")
     run_store.save_run(run)
     run_store.close()
 
@@ -134,16 +132,23 @@ def main() -> int:
     budget.reserve(
         (
             BudgetReservation(
-                id="r1", scope="run", resource_type=ResourceType.TOOL_REQUESTS,
-                quantity=1, unit="n",
+                id="r1",
+                scope="run",
+                resource_type=ResourceType.TOOL_REQUESTS,
+                quantity=1,
+                unit="n",
             ),
         ),
         BudgetPolicy(id="pol", hard_limits={"tool_requests": 10}),
     )
     budget.record_usage(
         UsageLedgerEntry(
-            entry_id="u-1", resource_type=ResourceType.MODEL_TOKENS, quantity=5,
-            unit="tokens", cost_status=LedgerCostStatus.UNKNOWN, source="x",
+            entry_id="u-1",
+            resource_type=ResourceType.MODEL_TOKENS,
+            quantity=5,
+            unit="tokens",
+            cost_status=LedgerCostStatus.UNKNOWN,
+            source="x",
             occurred_at=datetime.now(timezone.utc),
         )
     )
@@ -151,15 +156,23 @@ def main() -> int:
 
     approvals = PostgresApprovalStore(dsn=DSN)
     approvals.register(
-        ApprovalSpec(run_id=run_id, action="high-risk", risk="HIGH", context="c",
-                     policy_source="p", requested_event_id="e")
+        ApprovalSpec(
+            run_id=run_id,
+            action="high-risk",
+            risk="HIGH",
+            context="c",
+            policy_source="p",
+            requested_event_id="e",
+        )
     )
     approvals.close()
 
     artifacts = PostgresArtifactStore(dsn=DSN, blob_dir=blob_dir)
     art = Artifact(
-        id="a-1", digest=Digest.of_bytes(b"data"),
-        size_bytes=4, media_type="text/plain",
+        id="a-1",
+        digest=Digest.of_bytes(b"data"),
+        size_bytes=4,
+        media_type="text/plain",
         retention_policy=ArtifactRetentionPolicy.keep_forever(),
         state=ArtifactState.ACTIVE,
     )
@@ -188,8 +201,7 @@ def main() -> int:
         run_row is not None and run_row["run_json"].get("state") == "RUNNING",
         str(run_row["run_json"] if run_row else None),
     )
-    check("task rebuilt from PG",
-          task_row is not None and task_row["status"] == "SUCCEEDED")
+    check("task rebuilt from PG", task_row is not None and task_row["status"] == "SUCCEEDED")
     check("lease cleaned (terminal)", len(lease_rows) == 0, f"leases={len(lease_rows)}")
     check("evidence rebuilt from PG", ev_row is not None and ev_row["content_digest"] == "c-1")
     check("claim rebuilt from PG", cl_row is not None and cl_row["status"] == "PROPOSED")
@@ -200,8 +212,10 @@ def main() -> int:
     check("approval rebuilt", len(ap_row) == 1)
     check("artifact rebuilt", art_row is not None and art_row["state"] == "ACTIVE")
     check("events in outbox (execution trail, not truth)", len(evt_row) >= 2)
-    check("manifest digest frozen in run_json",
-          run_row is not None and run_row["run_json"] is not None)
+    check(
+        "manifest digest frozen in run_json",
+        run_row is not None and run_row["run_json"] is not None,
+    )
 
     print("\n".join(results))
     return 0 if all(r.startswith("PASS") for r in results) else 1

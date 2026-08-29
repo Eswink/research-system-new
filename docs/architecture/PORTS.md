@@ -217,3 +217,22 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
 - D4 Evaluator 不入 M5（无使用场景，P1 Evaluation）。
 - D5 不新增 JSON schema（Port 规范以 Python 类型为权威）。
 - D6 Fake 位置 adapters/fakes/（test-double adapter，同一依赖方向）。
+
+## 7. M15 新增 Port
+
+### TelemetrySink（`packages/application/ports/telemetry_sink.py`）
+
+- `begin_operation / end_operation / record_metric`;fail-open——实现不得抛出;
+  不是 Audit Store(可 sampled/delayed/dropped),业务决策绝不回读。
+- 实现:`NullTelemetrySink`(默认 off)/`FakeTelemetrySink`(contract suite)/
+  `OtelTelemetrySink`(经 `FailSafeTelemetrySink` 兜底,adapters/otel)。
+- 消费者(自 M15 起为真实使用,非形式化):relay gateway、tool_plane 执行用例、
+  PolicyWrappedToolExecutor、sqlite/pg workflow 引擎、outbox relay、schedulers、
+  docker execution backend、eval runner、run orchestration。
+
+### EvalReportStore（`packages/application/ports/eval_report_store.py`）
+
+- `put(StoredEvalReport) / get(report_digest) / query(EvalReportQuery)`;
+  verbatim 报告字节为 canonical truth,索引列可重建;
+  put 幂等(UPSERT by report_digest),query 确定性排序。
+- 实现:Fake / SQLite / Postgres(005_eval_state.sql),contract suite 覆盖。

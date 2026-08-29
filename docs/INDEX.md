@@ -8,6 +8,7 @@ MVP 能力平面（M8-M11）= completed（2026-08-15）
 M12 First Real Research Workflow = completed（R1 修复完成，待重新独立复审重判）
 M13 Research Console = completed（R1 修复 + 独立复审 PASS，2026-08-27）
 M14 Durable Workflow + PostgreSQL = 立项（IN PROGRESS；Temporal DEFERRED，见 ADR-0025）
+M15 Observability / Cost / Eval Operations = completed（2026-08-29；ADR-0026 无内容通道观测；五状态成本投影；EvalReportStore/趋势）
 ```
 
 真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 →
@@ -147,6 +148,9 @@ PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。�
 - `references/upstream/M9_DOCKER_QUALIFICATION.md` — Docker 执行沙盒 qualification（M9；docker-py 7.2.0 + sandbox Dockerfile ADOPTED，OpenHands DockerWorkspace mapping-only 裁决）
 - `references/upstream/M11_EVAL_HARNESS_QUALIFICATION.md` — Evaluation harness 选型 qualification（M11；native 自建，不引入外部 eval framework）
 - `references/upstream/M14_TEMPORAL_QUALIFICATION.md` — Temporal qualification 16Q matrix（M14；DEFERRED）
+- `references/upstream/M15_OTEL_QUALIFICATION.md` — OpenTelemetry qualification（M15；ADOPT：OTLP/HTTP，无内容通道）
+- `adr/ADR-0026-otel-adapter-boundary.md` — OTel adapter 边界 + 无内容 Debug Mode 决策（M15）
+- `roadmap/M15_COMPLETION_RECORD.md` — M15 完成记录（DoD 21/21 PASS）
 - `adr/ADR-0025-temporal-defer.md` — Temporal deferral ADR（M14；DEFER 决策，M16 重评）
 
 ## Roadmap / Versioning

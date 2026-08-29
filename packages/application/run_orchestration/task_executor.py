@@ -20,6 +20,7 @@ from packages.application.ports.agent_runtime import (
     AgentSessionResult,
     AgentSessionSpec,
 )
+from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.errors import (
     PermanentPortError,
     PortError,
@@ -63,6 +64,9 @@ class SessionSpecContext:
     agent: AgentSpec
     frozen_manifest_digest: str
     frozen_tool_set: tuple[str, ...] = field(default_factory=tuple)
+    # M15 债务清偿:phase 归属(观测 PHASE span 分组/父子链接用);缺省 "" 表示
+    # 来源不携带 phase 信息(如 resume 重建路径)——此时 TASK 落回 RUN 父
+    phase_id: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +75,8 @@ class ExecutionDeps:
 
     engine: WorkflowEngine
     runtime: AgentRuntime
+    # M15:失败路径记账需要 BudgetLedger;None 时失败不落账(既有行为)
+    budget: BudgetLedger | None = None
 
 
 def _retry_policy(contract: TaskContract) -> RetryPolicy:
@@ -118,6 +124,7 @@ def execute_task(
         if result is not None:
             return result
         if attempts >= policy.max_attempts:
+            _record_attempt_usage(deps.budget, current, attempts, "retry budget exhausted")
             return _task_failed(current, attempts, None, "retry budget exhausted")
 
 
@@ -152,10 +159,12 @@ def _attempt_once(
             attempts=task.attempt,
         )
     except TransientPortError as error:
+        _record_attempt_usage(inputs.deps.budget, task, task.attempt, str(error.failure_category))
         if not _retryable(error, _retry_policy(inputs.contract)):
             return _task_failed(task, task.attempt, error.failure_category, str(error))
         return None
     except PermanentPortError as error:
+        _record_attempt_usage(inputs.deps.budget, task, task.attempt, str(error.failure_category))
         return _task_failed(task, task.attempt, error.failure_category, str(error))
 
 
@@ -167,6 +176,18 @@ def _acquire_or_fail(
         return engine.acquire_lease(task.id.value), None
     except PermanentPortError as error:
         return None, str(error)
+
+
+def _record_attempt_usage(
+    budget: BudgetLedger | None,
+    task: ResearchTask,
+    attempt: int,
+    reason: str | None,
+) -> None:
+    """失败/重试耗尽路径记账(M15,attempt 作用域)。"""
+    from packages.application.run_orchestration.usage_recording import record_attempt_usage
+
+    record_attempt_usage(budget, task, attempt, reason)
 
 
 def _task_failed(

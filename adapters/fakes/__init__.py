@@ -13,6 +13,7 @@ from adapters.fakes.base import CallRecord, FakeBase
 from adapters.fakes.budget_ledger import FakeBudgetLedger
 from adapters.fakes.credential_resolver import FakeCredentialResolver
 from adapters.fakes.endpoint_store import FakeEndpointStore
+from adapters.fakes.eval_report_store import FakeEvalReportStore
 from adapters.fakes.event_publisher import FakeEventPublisher
 from adapters.fakes.evidence_ledger import FakeEvidenceLedger
 from adapters.fakes.execution_backend import FakeExecutionBackend
@@ -21,6 +22,7 @@ from adapters.fakes.model_gateway import FakeModelGateway, FakeModelGatewayOptio
 from adapters.fakes.policy_evaluator import FakePolicyEvaluator
 from adapters.fakes.resource_catalog import FakeResourceCatalog
 from adapters.fakes.retrieval_index import FakeRetrievalIndex
+from adapters.fakes.telemetry_sink import FakeTelemetrySink, NullTelemetrySink
 from adapters.fakes.tool_pack_store import FakeToolPackStore
 from adapters.fakes.tool_provider import FakeToolProvider
 from adapters.fakes.workflow_engine import FakeWorkflowEngine
@@ -35,6 +37,7 @@ __all__ = [
     "FakeCredentialResolver",
     "FakeEndpointStore",
     "FakeEventPublisher",
+    "FakeEvalReportStore",
     "FakeEvidenceLedger",
     "FakeExecutionBackend",
     "FakeMemoryStore",
@@ -43,8 +46,10 @@ __all__ = [
     "FakePolicyEvaluator",
     "FakeResourceCatalog",
     "FakeRetrievalIndex",
+    "FakeTelemetrySink",
     "FakeToolPackStore",
     "FakeToolProvider",
     "FakeWorkflowEngine",
     "FakeWorkspaceBackend",
+    "NullTelemetrySink",
 ]

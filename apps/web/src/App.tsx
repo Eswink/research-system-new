@@ -4,6 +4,7 @@ import { ApprovalsPanel } from "./features/approvals/ApprovalsPanel";
 import { EndpointsHome } from "./features/endpoints/EndpointsHome";
 import { InspectionPanel } from "./features/inspection/InspectionPanel";
 import { ModelsPage } from "./features/models/ModelsPage";
+import { OperationsPanel } from "./features/operations/OperationsPanel";
 import { DryRunPanel } from "./features/protocol/DryRunPanel";
 import { RunPanel } from "./features/runs/RunPanel";
 import { RelayWizard } from "./features/setup/RelayWizard";
@@ -12,13 +13,20 @@ import { WorkspaceView } from "./features/workspace/WorkspaceView";
 import { useEndpoints } from "./hooks/useEndpoints";
 import type { LlmEndpointReadDto } from "./api/types";
 
-export type ConsoleView = "console" | "models" | "team" | "workspace" | "experiments";
+export type ConsoleView =
+  | "console"
+  | "models"
+  | "team"
+  | "workspace"
+  | "operations"
+  | "experiments";
 
 const NAV_ITEMS: { id: ConsoleView; label: string }[] = [
   { id: "console", label: "Console" },
   { id: "models", label: "Models" },
   { id: "team", label: "Team" },
   { id: "workspace", label: "Workspace & Experiments" },
+  { id: "operations", label: "Operations" },
 ];
 
 /**
@@ -125,6 +133,9 @@ function ConsoleBody({
   }
   if (activeView === "workspace" || activeView === "experiments") {
     return <WorkspaceView />;
+  }
+  if (activeView === "operations") {
+    return <OperationsPanel />;
   }
   return (
     <>

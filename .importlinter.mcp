@@ -14,3 +14,4 @@ source_modules =
     adapters.fakes
 forbidden_modules =
     mcp
+    opentelemetry

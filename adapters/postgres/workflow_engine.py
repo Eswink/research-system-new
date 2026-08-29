@@ -34,13 +34,21 @@ from adapters.postgres.projections import (
     pending_outbox as proj_pending_outbox,
 )
 from adapters.postgres.serialization import TaskRow, encode_task
+from adapters.postgres.telemetry_notes import note_queue_lag, note_task_duration
 from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_impl
 from adapters.postgres.workflow_ops import complete_impl, heartbeat_impl, recover_impl
 from adapters.postgres.workflow_submit import SubmitPayload, submit_task
+from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
+from packages.application.observability.scope import operation
+from packages.application.observability.signals import (
+    CorrelationRef,
+    OperationScope,
+)
 from packages.application.ports.errors import (
     InvalidInputError,
     TransientPortError,
 )
+from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
 from packages.domain.enums import FailureCategory
 from packages.domain.events import EventEnvelope
@@ -63,10 +71,12 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         connection: Any | None = None,
         lease_ttl_seconds: int = 300,
         now: Callable[[], datetime] | None = None,
+        telemetry: TelemetrySink | None = None,
     ) -> None:
         super().__init__("workflow_engine")
         self._lease_ttl = timedelta(seconds=lease_ttl_seconds)
         self._now = now
+        self._telemetry = telemetry
         self._owned_lease_ids: set[str] = set()
         if connection is not None:
             self._conn: Any = connection
@@ -98,6 +108,15 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         )
 
     def submit(self, task: ResearchTask, contract: TaskContract) -> None:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="workflow.submit",
+            correlation=CorrelationRef(task_id=task.id.value, run_id=task.run_id.value),
+        ):
+            self._submit_impl(task, contract)
+
+    def _submit_impl(self, task: ResearchTask, contract: TaskContract) -> None:
         self._ensure_open()
         task_json, contract_json = encode_task(task, contract)
         try:
@@ -116,6 +135,15 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             raise self._wrap_operational(exc) from exc
 
     def acquire_lease(self, task_id: str) -> TaskLease:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="workflow.acquire_lease",
+            correlation=CorrelationRef(task_id=task_id),
+        ):
+            return self._acquire_impl(task_id)
+
+    def _acquire_impl(self, task_id: str) -> TaskLease:
         self._ensure_open()
         try:
             lease = acquire_lease_impl(
@@ -126,6 +154,7 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
                 self._now,
             )
             self._owned_lease_ids.add(lease.lease_id)
+            note_queue_lag(self._telemetry, self._conn, task_id)
             return lease
         except InvalidInputError:
             raise
@@ -139,6 +168,15 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             raise self._wrap_operational(exc) from exc
 
     def heartbeat(self, lease: TaskLease) -> TaskLease:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="workflow.heartbeat",
+            correlation=CorrelationRef(task_id=lease.task_id),
+        ):
+            return self._heartbeat_impl(lease)
+
+    def _heartbeat_impl(self, lease: TaskLease) -> TaskLease:
         self._ensure_open()
         try:
             renewed = heartbeat_impl(self._conn, self._record, lease, self._lease_ttl, self._now)
@@ -150,6 +188,15 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             raise self._wrap_operational(exc) from exc
 
     def complete(self, lease: TaskLease, completion: TaskCompletion) -> None:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="workflow.complete",
+            correlation=CorrelationRef(task_id=lease.task_id),
+        ):
+            return self._complete_impl(lease, completion)
+
+    def _complete_impl(self, lease: TaskLease, completion: TaskCompletion) -> None:
         self._ensure_open()
         try:
             from adapters.postgres.workflow_ops import CompletePayload
@@ -160,12 +207,22 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
                 self._outbox,
                 CompletePayload(lease, completion, self._now),
             )
+            note_task_duration(self._telemetry, self._conn, lease.task_id)
         except InvalidInputError:
             raise
         except psycopg.OperationalError as exc:
             raise self._wrap_operational(exc) from exc
 
     def cancel(self, task_id: str) -> None:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="workflow.cancel",
+            correlation=CorrelationRef(task_id=task_id),
+        ):
+            self._cancel_impl(task_id)
+
+    def _cancel_impl(self, task_id: str) -> None:
         self._ensure_open()
         try:
             from adapters.postgres.cancel_run import cancel_task
@@ -176,6 +233,15 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             raise self._wrap_operational(exc) from exc
 
     def cancel_run(self, run_id: str) -> int:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="workflow.cancel_run",
+            correlation=CorrelationRef(run_id=run_id),
+        ):
+            return self._cancel_run_impl(run_id)
+
+    def _cancel_run_impl(self, run_id: str) -> int:
         self._ensure_open()
         try:
             from adapters.postgres.cancel_run import cancel_run_tasks
@@ -187,9 +253,26 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             raise self._wrap_operational(exc) from exc
 
     def recover_expired_leases(self) -> int:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.LEASE_RECOVERY,
+            name="lease_recovery.recover",
+        ):
+            return self._recover_impl()
+
+    def _recover_impl(self) -> int:
         self._ensure_open()
         try:
-            return recover_impl(self._conn, self._record, self._outbox, self._now)
+            recovered = recover_impl(self._conn, self._record, self._outbox, self._now)
+            if recovered and self._telemetry is not None:
+                self._telemetry.record_metric(
+                    MetricSample(
+                        name=MetricName.WORKFLOW_LEASE_EXPIRED,
+                        kind=MetricKind.COUNTER,
+                        value=recovered,
+                    )
+                )
+            return recovered
         except psycopg.OperationalError as exc:
             raise self._wrap_operational(exc) from exc
 

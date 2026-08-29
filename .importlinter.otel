@@ -1,0 +1,25 @@
+[importlinter]
+root_package = adapters
+include_external_packages = True
+exclude_type_checking_imports = False
+
+# M15:OpenTelemetry SDK 只允许 adapters.otel 使用(WP4 架构门禁);
+# packages/services 的禁止由 .importlinter.domain / .application / .api 承担。
+[importlinter:contract:otel-adapter-only]
+name = OpenTelemetry SDK is confined to adapters.otel
+type = forbidden
+source_modules =
+    adapters.openhands
+    adapters.relay
+    adapters.sqlite
+    adapters.postgres
+    adapters.mcp
+    adapters.execution
+    adapters.research_tools
+    adapters.index
+    adapters.workspace
+    adapters.cli
+    adapters.contracts
+    adapters.fakes
+forbidden_modules =
+    opentelemetry

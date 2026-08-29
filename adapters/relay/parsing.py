@@ -88,11 +88,17 @@ def stream_result(
     usage_reported: list[bool],
     safe_response_metadata: dict[str, str],
 ) -> CompletionResult:
-    """将累积的流式状态装配为 CompletionResult。"""
+    """将累积的流式状态装配为 CompletionResult。
+
+    M15:流式响应未携带 usage 时显式记 `usage_unavailable_reason`,
+    下游据此记 quantity_status=UNKNOWN,不得伪造测量零。
+    """
+    reported = usage_reported[0]
     return CompletionResult(
         content="".join(content_parts) or None,
         returned_model_name=returned_model[0],
         system_fingerprint=fingerprint[0],
-        usage_reported=usage_reported[0],
+        usage_reported=reported,
+        usage_unavailable_reason=None if reported else "streaming response carried no usage chunk",
         safe_response_metadata=safe_response_metadata,
     )

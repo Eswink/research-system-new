@@ -56,7 +56,21 @@ POST   /runs/{id}/cancel
 POST   /runs/{id}/fork
 GET    /runs/{id}/events
 GET    /runs/{id}/usage
+GET    /runs/{id}/telemetry
+GET    /runs/{id}/cost
+GET    /evaluations/trend
 ```
+
+M15 Operations（只读投影）：
+
+- `GET /runs/{id}/telemetry` — canonical state + sink 计数器组成的
+  telemetry summary(任务状态计数、outbox pending、exporter drop/last_error);
+  不含任何 telemetry vendor 数据。
+- `GET /runs/{id}/cost` — UsageLedger × 版本化定价快照的五状态成本视图
+  (ACTUAL/ESTIMATED/MONETARY_UNAVAILABLE/USAGE_UNKNOWN/ZERO +
+  pricing_version/digest 盖章)。
+- `GET /evaluations/trend` — 分段可比趋势 + 回归标记(判定来自
+  `compare_reports`)+ 缺失评测第三态;可选 `dataset_id` 过滤。
 
 ## Tasks / Approvals
 

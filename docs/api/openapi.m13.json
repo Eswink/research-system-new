@@ -539,6 +539,99 @@
         "title": "CompileResultDto",
         "type": "object"
       },
+      "CostAmountDto": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "minor_units": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minor Units"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "currency"
+        ],
+        "title": "CostAmountDto",
+        "type": "object"
+      },
+      "CostDimensionDto": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/CostAmountDto"
+          },
+          "dimension": {
+            "title": "Dimension",
+            "type": "string"
+          },
+          "entry_count": {
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "resource_key": {
+            "title": "Resource Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dimension",
+          "resource_key",
+          "amount",
+          "entry_count"
+        ],
+        "title": "CostDimensionDto",
+        "type": "object"
+      },
+      "CostViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/CostDimensionDto"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "pricing_digest": {
+            "title": "Pricing Digest",
+            "type": "string"
+          },
+          "pricing_version": {
+            "title": "Pricing Version",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "total": {
+            "$ref": "#/components/schemas/CostAmountDto"
+          }
+        },
+        "required": [
+          "run_id",
+          "pricing_version",
+          "pricing_digest",
+          "total"
+        ],
+        "title": "CostViewDto",
+        "type": "object"
+      },
       "DiscoverModelsResultDto": {
         "additionalProperties": false,
         "properties": {
@@ -1801,6 +1894,44 @@
         "title": "ProtocolSourceDto",
         "type": "object"
       },
+      "RegressionMarkerDto": {
+        "additionalProperties": false,
+        "properties": {
+          "baseline_digest": {
+            "title": "Baseline Digest",
+            "type": "string"
+          },
+          "candidate_digest": {
+            "title": "Candidate Digest",
+            "type": "string"
+          },
+          "newly_fixed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Newly Fixed",
+            "type": "array"
+          },
+          "newly_regressed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Newly Regressed",
+            "type": "array"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseline_digest",
+          "candidate_digest",
+          "verdict"
+        ],
+        "title": "RegressionMarkerDto",
+        "type": "object"
+      },
       "RelationDto": {
         "additionalProperties": false,
         "properties": {
@@ -1978,6 +2109,38 @@
         "title": "RunStartDto",
         "type": "object"
       },
+      "RunTelemetryDto": {
+        "additionalProperties": false,
+        "description": "telemetry summary:canonical state + sink 计数器;不含任何 vendor 数据。",
+        "properties": {
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "outbox": {
+            "$ref": "#/components/schemas/TelemetryOutboxDto"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sink": {
+            "$ref": "#/components/schemas/TelemetrySinkDto"
+          },
+          "tasks": {
+            "$ref": "#/components/schemas/TelemetryTaskCountsDto"
+          }
+        },
+        "required": [
+          "run_id",
+          "generated_at",
+          "tasks",
+          "outbox",
+          "sink"
+        ],
+        "title": "RunTelemetryDto",
+        "type": "object"
+      },
       "TaskDto": {
         "additionalProperties": false,
         "properties": {
@@ -2052,6 +2215,223 @@
           "display_name"
         ],
         "title": "TeamTemplateDto",
+        "type": "object"
+      },
+      "TelemetryOutboxDto": {
+        "additionalProperties": false,
+        "properties": {
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pending"
+        ],
+        "title": "TelemetryOutboxDto",
+        "type": "object"
+      },
+      "TelemetrySinkDto": {
+        "additionalProperties": false,
+        "properties": {
+          "dropped": {
+            "title": "Dropped",
+            "type": "integer"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          }
+        },
+        "required": [
+          "enabled",
+          "dropped"
+        ],
+        "title": "TelemetrySinkDto",
+        "type": "object"
+      },
+      "TelemetryTaskCountsDto": {
+        "additionalProperties": false,
+        "properties": {
+          "cancelled": {
+            "title": "Cancelled",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "leased": {
+            "title": "Leased",
+            "type": "integer"
+          },
+          "other": {
+            "default": 0,
+            "title": "Other",
+            "type": "integer"
+          },
+          "queued": {
+            "title": "Queued",
+            "type": "integer"
+          },
+          "succeeded": {
+            "title": "Succeeded",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "queued",
+          "leased"
+        ],
+        "title": "TelemetryTaskCountsDto",
+        "type": "object"
+      },
+      "TrendDivergenceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "verdict",
+          "reason"
+        ],
+        "title": "TrendDivergenceDto",
+        "type": "object"
+      },
+      "TrendPointDto": {
+        "additionalProperties": false,
+        "properties": {
+          "fail_count": {
+            "default": 0,
+            "title": "Fail Count",
+            "type": "integer"
+          },
+          "infra_error_count": {
+            "default": 0,
+            "title": "Infra Error Count",
+            "type": "integer"
+          },
+          "missing": {
+            "default": false,
+            "title": "Missing",
+            "type": "boolean"
+          },
+          "pass_count": {
+            "default": 0,
+            "title": "Pass Count",
+            "type": "integer"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "report_digest": {
+            "title": "Report Digest",
+            "type": "string"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_digest",
+          "verdict"
+        ],
+        "title": "TrendPointDto",
+        "type": "object"
+      },
+      "TrendSegmentDto": {
+        "additionalProperties": false,
+        "properties": {
+          "comparisons": {
+            "items": {
+              "$ref": "#/components/schemas/RegressionMarkerDto"
+            },
+            "title": "Comparisons",
+            "type": "array"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPointDto"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "title": "TrendSegmentDto",
+        "type": "object"
+      },
+      "TrendViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "divergences": {
+            "items": {
+              "$ref": "#/components/schemas/TrendDivergenceDto"
+            },
+            "title": "Divergences",
+            "type": "array"
+          },
+          "missing": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPointDto"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/TrendSegmentDto"
+            },
+            "title": "Segments",
+            "type": "array"
+          }
+        },
+        "title": "TrendViewDto",
         "type": "object"
       },
       "UsageEntryDto": {
@@ -2312,6 +2692,56 @@
         "summary": "Decide",
         "tags": [
           "approvals"
+        ]
+      }
+    },
+    "/evaluations/trend": {
+      "get": {
+        "description": "评测趋势:分段可比序列 + 回归标记 + 缺失评测第三态。",
+        "operationId": "evaluations_trend_evaluations_trend_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dataset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dataset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrendViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluations Trend",
+        "tags": [
+          "operations"
         ]
       }
     },
@@ -3526,6 +3956,49 @@
         ]
       }
     },
+    "/runs/{run_id}/cost": {
+      "get": {
+        "description": "run 级成本视图:UsageLedger × 版本化定价快照(五状态,不伪造 0)。",
+        "operationId": "run_cost_runs__run_id__cost_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Cost",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
     "/runs/{run_id}/events": {
       "get": {
         "description": "Run Timeline 端点（双模式）：\n\n- `Accept: application/json`（默认 replay）：一次性返回全量事件\n  （初始加载 / 刷新恢复，来自 outbox 持久事件投影）；\n- `Accept: text/event-stream`（SSE）：Last-Event-ID / ?cursor= 续传\n  增量事件，客户端按 event_id 去重（重连安全）。",
@@ -3883,6 +4356,49 @@
         "summary": "List Run Tasks",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/telemetry": {
+      "get": {
+        "description": "run 级 telemetry summary:canonical 投影 + sink 健康计数(只读)。",
+        "operationId": "run_telemetry_runs__run_id__telemetry_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunTelemetryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Telemetry",
+        "tags": [
+          "operations"
         ]
       }
     },

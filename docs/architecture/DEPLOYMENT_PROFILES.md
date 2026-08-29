@@ -24,7 +24,10 @@ MinIO/S3
 Redis cache
 OpenHands Agent Server pool
 secret manager
-OTel collector
+OTel collector（`docker-compose.m15.yml`：
+`otel/opentelemetry-collector-contrib@sha256:faf125d…`，OTLP/HTTP :4318，
+batch + debug/file exporter，无 vendor 后端；应用侧经
+`RESEARCHOS_OTEL_ENABLED=1` + `RESEARCHOS_OTEL_ENDPOINT` 接入）
 role-based access
 ```
 
@@ -40,7 +43,7 @@ OPA adapter
 central secret manager
 egress proxy
 Kubernetes/HPC scheduler
-central OTel
+central OTel（同 M15 collector 拓扑，可替换 remote endpoint）
 backup/restore
 ```
 

@@ -1,0 +1,16 @@
+# M15 telemetry 证据管线(与 docker-compose.m14.yml 的 postgres 服务可叠加)。
+# 启动: docker compose -f docker-compose.m14.yml -f docker-compose.m15.yml up -d
+services:
+  otel-collector:
+    build:
+      context: ./adapters/otel/collector
+    image: research-os/otel-collector:0.139.0
+    ports:
+      - "4318:4318"
+    volumes:
+      - ./data/otel:/var/lib/otelcol
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "validate", "--config", "/etc/otelcol-contrib/config.yaml"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

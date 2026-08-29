@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/pricing-table.schema.json",
+  "title": "PricingTable",
+  "description": "M15 版本化定价快照;不内置任何厂商价格。additionalProperties: false 全域。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "currency",
+    "effective_from",
+    "calculation_method",
+    "prices"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "effective_from": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "calculation_method": {
+      "type": "string",
+      "enum": [
+        "unit_price_minor_per_unit"
+      ]
+    },
+    "prices": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/priceEntry"
+      }
+    }
+  },
+  "$defs": {
+    "priceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dimension",
+        "resource_key",
+        "unit",
+        "unit_price_minor"
+      ],
+      "properties": {
+        "dimension": {
+          "type": "string",
+          "enum": [
+            "model",
+            "tool",
+            "experiment",
+            "evaluation"
+          ]
+        },
+        "resource_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unit_price_minor": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

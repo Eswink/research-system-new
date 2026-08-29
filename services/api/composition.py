@@ -2,10 +2,8 @@
 
 仅本模块装配具体 adapter（依赖方向：services/api → packages/application
 → packages/domain；具体实现只由此处注入，routers 只消费 Port）。
-SQLite 配置存储与 outbox 共享连接；凭据注册表永不落盘。
-Run 编排使用 Fake Port 全链（无真实付费 LLM；E2E 与 CI 一致）。
-M14: 当 settings/database_url 指向 `postgresql://` 时自动选用
-PostgresWorkflowEngine（同一 Port 契约）；否则 SQLite。
+SQLite 配置存储与 outbox 共享连接；凭据永不落盘；Run 编排用 Fake 全链（CI 一致）。
+M14: database_url 指向 PostgreSQL 时自动选用 Postgres 引擎（同 Port）。
 """
 
 from __future__ import annotations
@@ -25,6 +23,7 @@ from adapters.sqlite.approval_store import SqliteApprovalStore
 from adapters.sqlite.budget_ledger import SqliteBudgetLedger
 from adapters.sqlite.db import connect
 from adapters.sqlite.endpoint_store import SqliteEndpointStore
+from adapters.sqlite.eval_report_store import SqliteEvalReportStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
 from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
@@ -44,43 +43,18 @@ from packages.application.ports.model_gateway import ModelGateway
 from packages.application.ports.model_store import ModelStore
 from packages.application.ports.resource_catalog import PreflightContext
 from packages.application.ports.run_projection import RunProjection
+from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
 from packages.application.run_orchestration.context import RunContext
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
     RunOrchestrationService,
 )
 from packages.domain.run import ResearchRun
+from services.api.demo import _default_events
+from services.api.demo import demo_session_output as demo_session_output
 from services.api.idempotency import IdempotencyStore
 from services.api.settings import ApiSettings
-
-
-class FakeEventPublisherFactory:
-    """占位（dataclass default 惰性构造用）；真实装配走 assemble()。"""
-
-    def __call__(self) -> EventPublisher:
-        from adapters.fakes.event_publisher import FakeEventPublisher
-
-        return FakeEventPublisher()
-
-
-def demo_session_output() -> dict[str, object]:
-    """控制面 demo 会话输出（受控 Fake agent loop；UI 如实披露执行体性质）。
-
-    只用于 console_demo 协议：使验收标准（ARTIFACT_EXISTS analysis_report +
-    EVIDENCE_COVERAGE 1）可被正式 gate 求值通过，不冒充真实研究结果；
-    其他协议照常按各自契约执行/拒绝。
-    """
-    return {
-        "analysis_report": {
-            "summary": "controlled fake session output (M13-R1 console demo)",
-            "status": "ok",
-        }
-    }
-
-
-def _default_events() -> EventPublisher:
-    """ApiDeps events 字段默认值工厂（dataclass default_factory 用）。"""
-    return FakeEventPublisherFactory()()
+from services.api.telemetry import build_api_telemetry
 
 
 @dataclass
@@ -107,6 +81,9 @@ class ApiDeps:
     memory: Any | None = field(default=None, repr=False)
     preflight_override: PreflightContext | None = field(default=None, repr=False)
     endpoint_url_policy: EndpointUrlPolicy | None = field(default=None, repr=False)
+    telemetry: TelemetrySink = field(default_factory=NullTelemetrySink, repr=False)
+    eval_report_store: Any | None = field(default=None, repr=False)
+    pricing: Any | None = field(default=None, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)
@@ -159,9 +136,11 @@ class PostgresAssembly:
     artifacts_pg: Any = None
     experiment_store: Any = None
     memory_store: Any = None
+    eval_report_store: Any = None
     gateway_override: Any = None
     credentials_override: Any = None
     preflight_override: Any = None
+    telemetry: Any = None
 
 
 def _build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
@@ -170,7 +149,10 @@ def _build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         model_store=assembly.model_store,
         credentials=assembly.credentials_override or RegistryCredentialResolver(),
         gateway=assembly.gateway_override
-        or OpenAIChatGateway(default_timeout_seconds=assembly.effective.endpoint_timeout_seconds),
+        or OpenAIChatGateway(
+            default_timeout_seconds=assembly.effective.endpoint_timeout_seconds,
+            telemetry=assembly.telemetry,
+        ),
         idempotency=SqliteIdempotencyStore(connection=assembly.connection),
         events=assembly.events,
         projection=assembly.projection,
@@ -182,24 +164,23 @@ def _build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         budget=assembly.budget,
         agent_store=SqliteAgentStore(connection=assembly.connection),
         project_settings_store=SqliteProjectSettingsStore(connection=assembly.connection),
-        endpoint_url_policy=EndpointUrlPolicy(
-            allow_localhost=assembly.effective.allow_localhost_endpoints,
-            allow_private=assembly.effective.allow_localhost_endpoints,
-            allow_link_local=assembly.effective.allow_localhost_endpoints,
-        ),
+        endpoint_url_policy=_endpoint_url_policy(assembly.effective),
         memory=assembly.memory_store,
         preflight_override=assembly.preflight_override,
+        telemetry=assembly.telemetry,
+        eval_report_store=assembly.eval_report_store,
         _connection=assembly.connection,
         _pg_connection=assembly.pg_conn,
     )
 
 
-def _assemble_postgres(
+def _assemble_postgres(  # noqa: PLR0913 - composition root 装配参数
     effective: ApiSettings,
     connection: sqlite3.Connection,
     endpoint_store: EndpointStore,
     model_store: ModelStore,
     pg_dsn: str,
+    telemetry: TelemetrySink,
 ) -> ApiDeps:
     from services.api.pg_composition import (
         PgAssemblyConfig,
@@ -215,9 +196,31 @@ def _assemble_postgres(
             model_store=model_store,
             pg_dsn=pg_dsn,
             ensure_schema=True,
+            telemetry=telemetry,
         )
     )
     return build_postgres_apideps(assembly)
+
+
+def _load_pricing() -> Any:
+    """版本化定价表(composition root;缺失/损坏 → unpriced fail-open)。"""
+    try:
+        from adapters.contracts.pricing_loaders import load_pricing_table
+
+        return load_pricing_table("examples/config/pricing.yaml")
+    except Exception:
+        from packages.application.cost.pricing import unpriced_table
+
+        return unpriced_table()
+
+
+def _endpoint_url_policy(effective: ApiSettings) -> EndpointUrlPolicy:
+    """localhost/private/link-local 同开关(显式开发放行,默认 fail-closed)。"""
+    return EndpointUrlPolicy(
+        allow_localhost=effective.allow_localhost_endpoints,
+        allow_private=effective.allow_localhost_endpoints,
+        allow_link_local=effective.allow_localhost_endpoints,
+    )
 
 
 def _assemble_sqlite(
@@ -225,9 +228,10 @@ def _assemble_sqlite(
     connection: sqlite3.Connection,
     endpoint_store: EndpointStore,
     model_store: ModelStore,
+    telemetry: TelemetrySink,
 ) -> ApiDeps:
     events_sqlite = SqliteOutboxEventPublisher(connection=connection)
-    workflow_sqlite = SqliteWorkflowEngine(connection=connection)
+    workflow_sqlite = SqliteWorkflowEngine(connection=connection, telemetry=telemetry)
     from adapters.sqlite.run_projection import SqliteRunProjection
 
     projection_sqlite = SqliteRunProjection(connection, events_sqlite)
@@ -241,13 +245,19 @@ def _assemble_sqlite(
             events=events_sqlite,
             budget=budget_sqlite,
             ledger=ledger_sqlite,
+            telemetry=telemetry,
         )
     )
+    eval_store = SqliteEvalReportStore(connection=connection)
     return ApiDeps(
         endpoint_store=endpoint_store,
         model_store=model_store,
         credentials=RegistryCredentialResolver(),
-        gateway=OpenAIChatGateway(default_timeout_seconds=effective.endpoint_timeout_seconds),
+        eval_report_store=eval_store,
+        gateway=OpenAIChatGateway(
+            default_timeout_seconds=effective.endpoint_timeout_seconds,
+            telemetry=telemetry,
+        ),
         idempotency=SqliteIdempotencyStore(connection=connection),
         events=events_sqlite,
         projection=projection_sqlite,
@@ -259,11 +269,8 @@ def _assemble_sqlite(
         budget=budget_sqlite,
         agent_store=SqliteAgentStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
-        endpoint_url_policy=EndpointUrlPolicy(
-            allow_localhost=effective.allow_localhost_endpoints,
-            allow_private=effective.allow_localhost_endpoints,
-            allow_link_local=effective.allow_localhost_endpoints,
-        ),
+        endpoint_url_policy=_endpoint_url_policy(effective),
+        telemetry=telemetry,
         _connection=connection,
     )
 
@@ -280,7 +287,14 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
     connection = _open_sqlite(effective.db_path)
     endpoint_store = SqliteEndpointStore(connection=connection)
     model_store = SqliteModelStore(connection=connection)
+    # M15: telemetry 默认 off(Null);RESEARCHOS_OTEL_ENABLED=1 时为 OTel 组合
+    telemetry = build_api_telemetry(effective)
     if use_pg:
         assert pg_dsn is not None
-        return _assemble_postgres(effective, connection, endpoint_store, model_store, pg_dsn)
-    return _assemble_sqlite(effective, connection, endpoint_store, model_store)
+        deps = _assemble_postgres(
+            effective, connection, endpoint_store, model_store, pg_dsn, telemetry
+        )
+    else:
+        deps = _assemble_sqlite(effective, connection, endpoint_store, model_store, telemetry)
+    deps.pricing = _load_pricing()
+    return deps

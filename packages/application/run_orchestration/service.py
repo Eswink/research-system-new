@@ -14,6 +14,12 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, replace
 
+from packages.application.observability.scope import operation
+from packages.application.observability.signals import (
+    CorrelationRef,
+    OperationOutcome,
+    OperationScope,
+)
 from packages.application.ports.agent_runtime import AgentRuntime
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
@@ -24,6 +30,7 @@ from packages.application.ports.resource_catalog import (
     PreflightContext,
     ProjectSettings,
 )
+from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import WorkflowEngine
 from packages.application.preflight.preflight import (
     ManifestFreezeError,
@@ -47,12 +54,9 @@ from packages.application.run_orchestration.phase_runner import (
     TaskOutcome,
     execute_phases,
 )
-from packages.application.run_orchestration.session_resolution import (
-    assigned_agents,
-    flatten_tool_providers,
-)
+from packages.application.run_orchestration.session_resolution import resolve_sessions
 from packages.application.run_orchestration.task_executor import SessionSpecContext
-from packages.domain.core import ID, Timestamp
+from packages.domain.core import Timestamp
 from packages.domain.events import EventEnvelope, EventType, digest_of_payload
 from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
@@ -72,6 +76,7 @@ class OrchestrationDependencies:
     events: EventPublisher
     budget: BudgetLedger | None = None
     ledger: EvidenceLedger | None = None
+    telemetry: TelemetrySink | None = None
     default_actor: str = "system:orchestration"
 
 
@@ -93,6 +98,29 @@ class RunOrchestrationService:
         command: StartRunCommand,
     ) -> RunOutcome:
         """执行整条链路；任何阶段失败都收敛到确定的 Run 终态。"""
+        with operation(
+            self._deps.telemetry,
+            scope=OperationScope.RUN,
+            name="run",
+            correlation=CorrelationRef(
+                project_id=command.project_id,
+                run_id=command.run_id.value,
+                trace_id=command.trace_id,
+            ),
+        ) as op:
+            outcome = self._start_run_impl(protocol, catalog, project, preflight_context, command)
+            if outcome.state == ResearchRunState.State.FAILED:
+                op.set_outcome(OperationOutcome.FAILED, "run_failed")
+            return outcome
+
+    def _start_run_impl(
+        self,
+        protocol: ProtocolDefinition,
+        catalog: CatalogSnapshot,
+        project: ProjectSettings,
+        preflight_context: PreflightContext,
+        command: StartRunCommand,
+    ) -> RunOutcome:
         # 懒触发 lease 恢复：上次进程崩溃遗留的过期 lease 先收敛再调度新 run
         # （SqliteWorkflowEngine.recover_expired_leases；Fake 恒返回 0）。
         self._deps.workflow.recover_expired_leases()
@@ -179,6 +207,7 @@ class RunOrchestrationService:
                 ledger=self._deps.ledger,
                 publish=self._publish_phase_event,
                 fail_run=self._fail_run,
+                telemetry=self._deps.telemetry,
             ),
             PhaseContext(
                 command=command,
@@ -192,35 +221,7 @@ class RunOrchestrationService:
 
     def _resolve_sessions(self, context: RunContext) -> tuple[SessionSpec, ...]:
         """M4 team resolution：phase assignments → ResearchTask + session spec。"""
-        resolved: list[SessionSpec] = []
-        assignments = {item.phase_id: item for item in context.plan.phase_assignments}
-        for phase in context.plan.phases:
-            assignment = assignments.get(phase.id)
-            if assignment is None:
-                continue
-            for agent_id in assigned_agents(assignment):
-                agent = context.catalog.agents[agent_id]
-                role = context.catalog.roles[agent.role]
-                contract = self._contract_for(context, phase.task_contract_refs)
-                task = ResearchTask(
-                    id=ID.generate(),
-                    run_id=context.run.id,
-                    contract_id=contract.id,
-                    assigned_agent_id=agent_id,
-                    status="CREATED",
-                    idempotency_key=f"{context.run.id.value}:{phase.id}:{agent_id}",
-                )
-                resolved.append((
-                    task,
-                    contract,
-                    SessionSpecContext(
-                        role=role,
-                        agent=agent,
-                        frozen_manifest_digest=context.frozen_manifest_digest,
-                        frozen_tool_set=flatten_tool_providers(context.plan),
-                    ),
-                ))
-        return tuple(resolved)
+        return resolve_sessions(context, contract_for=self._contract_for)
 
     def _contract_for(self, context: RunContext, refs: tuple[str, ...]) -> TaskContract:
         if not refs:

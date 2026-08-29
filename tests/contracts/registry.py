@@ -23,6 +23,7 @@ from adapters.fakes import (
     FakeBudgetLedger,
     FakeCredentialResolver,
     FakeEndpointStore,
+    FakeEvalReportStore,
     FakeEventPublisher,
     FakeEvidenceLedger,
     FakeExecutionBackend,
@@ -31,10 +32,12 @@ from adapters.fakes import (
     FakePolicyEvaluator,
     FakeResourceCatalog,
     FakeRetrievalIndex,
+    FakeTelemetrySink,
     FakeToolPackStore,
     FakeToolProvider,
     FakeWorkflowEngine,
     FakeWorkspaceBackend,
+    NullTelemetrySink,
 )
 from adapters.index.in_memory_index import InMemoryRetrievalIndex
 from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
@@ -203,6 +206,7 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
         _postgres_artifact_factory,
     ],
     "event_publisher": [FakeEventPublisher, SqliteOutboxEventPublisher],
+    "eval_report_store": [FakeEvalReportStore],
     "evidence_ledger": [
         FakeEvidenceLedger,
         SqliteEvidenceLedger,
@@ -215,4 +219,5 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "budget_ledger": [FakeBudgetLedger, _postgres_budget_factory],
     "endpoint_store": [FakeEndpointStore],
     "resource_catalog": [FakeResourceCatalog],
+    "telemetry_sink": [FakeTelemetrySink, NullTelemetrySink],
 }

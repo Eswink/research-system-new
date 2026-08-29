@@ -44,9 +44,11 @@ class PostgresAssembly:
     artifacts_pg: Any = None
     experiment_store: Any = None
     memory_store: Any = None
+    eval_report_store: Any = None
     gateway_override: Any = None
     credentials_override: Any = None
     preflight_override: Any = None
+    telemetry: Any = None
 
 
 def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any) -> dict[str, Any]:
@@ -55,6 +57,7 @@ def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any
     from adapters.postgres.artifact_store import PostgresArtifactStore
     from adapters.postgres.budget_ledger import PostgresBudgetLedger
     from adapters.postgres.db import connect as pg_connect
+    from adapters.postgres.eval_report_store import PostgresEvalReportStore
     from adapters.postgres.evidence_ledger import PostgresEvidenceLedger
     from adapters.postgres.experiment_store import PostgresExperimentStore
     from adapters.postgres.memory_store import PostgresMemoryStore
@@ -80,6 +83,7 @@ def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any
         "artifacts": PostgresArtifactStore(connection=pg_conn),
         "experiment_store": PostgresExperimentStore(connection=pg_conn),
         "memory": PostgresMemoryStore(connection=pg_conn),
+        "eval_store": PostgresEvalReportStore(connection=pg_conn),
     }
 
 
@@ -97,6 +101,7 @@ class PgAssemblyConfig:
     gateway_override: Any = None
     credentials_override: Any = None
     preflight_override: Any = None
+    telemetry: Any = None
 
 
 def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
@@ -120,6 +125,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
             events=c["events"],
             budget=c["budget"],
             ledger=c["ledger"],
+            telemetry=config.telemetry,
         )
     )
     return PostgresAssembly(
@@ -139,6 +145,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         artifacts_pg=c["artifacts"],
         experiment_store=c["experiment_store"],
         memory_store=c["memory"],
+        eval_report_store=c["eval_store"],
         gateway_override=getattr(config, "gateway_override", None),
         credentials_override=getattr(config, "credentials_override", None),
         preflight_override=getattr(config, "preflight_override", None),
@@ -166,9 +173,11 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         runs_store_pg=assembly.runs_store_pg,
         artifacts_pg=assembly.artifacts_pg,
         memory_store=assembly.memory_store,
+        eval_report_store=assembly.eval_report_store,
         gateway_override=assembly.gateway_override,
         credentials_override=assembly.credentials_override,
         preflight_override=assembly.preflight_override,
+        telemetry=assembly.telemetry,
     )
     deps = _build_postgres_apideps(base)
     deps.outbox_relay_enabled = True

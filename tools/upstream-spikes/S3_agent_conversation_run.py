@@ -10,13 +10,13 @@ import tempfile
 from pathlib import Path
 
 from openhands.sdk.agent.agent import Agent
+from openhands.sdk.conversation.conversation import Conversation
+from openhands.sdk.llm import Message, TextContent
 from openhands.sdk.testing import TestLLM
-from openhands.sdk.llm import Message, TextContent, MessageToolCall
 from openhands.sdk.tool.registry import register_tool
 from openhands.sdk.tool.spec import Tool
 from openhands.sdk.tool.tool import Action, Observation, ToolDefinition, ToolExecutor
 from openhands.sdk.workspace.local import LocalWorkspace
-from openhands.sdk.conversation.conversation import Conversation
 
 
 class MockEchoAction(Action):
@@ -55,12 +55,10 @@ def main() -> int:
     print(f"tool registered: {MockEchoTool.name}")
 
     # 2) Agent 构造（TestLLM 脚本化响应，无网络）
-    llm = TestLLM.from_messages(
-        [
-            Message(role="assistant", content=[TextContent(text="Done.")]),
-            Message(role="assistant", content=[TextContent(text="All set.")]),
-        ]
-    )
+    llm = TestLLM.from_messages([
+        Message(role="assistant", content=[TextContent(text="Done.")]),
+        Message(role="assistant", content=[TextContent(text="All set.")]),
+    ])
     try:
         agent = Agent(llm=llm, tools=[Tool(name="mock_echo")])
         print(f"agent constructed: {type(agent).__name__} (tools_map 需 init_state 后访问)")
@@ -72,7 +70,9 @@ def main() -> int:
     tmpdir = Path(tempfile.mkdtemp(prefix="s3-conv-"))
     try:
         workspace = LocalWorkspace(working_dir=str(tmpdir))
-        conv = Conversation(agent=agent, workspace=workspace, persistence_dir=str(tmpdir / "persist"))
+        conv = Conversation(
+            agent=agent, workspace=workspace, persistence_dir=str(tmpdir / "persist")
+        )
         print(f"conversation created: {type(conv).__name__}")
         conv.send_message("Hello from spike (mock).")
         result = conv.run()

@@ -70,18 +70,14 @@ def _make_task(task_id: str) -> tuple[ResearchTask, TaskContract]:
         version="1.0",
         purpose="audit scheduled recovery probe",
         required_capabilities=["workspace.read"],
-        acceptance_criteria=[
-            AcceptanceCriterion(type=AcceptanceCriterionType.ARTIFACT_EXISTS)
-        ],
+        acceptance_criteria=[AcceptanceCriterion(type=AcceptanceCriterionType.ARTIFACT_EXISTS)],
     )
     return task, contract
 
 
 def _state(task_id: str) -> dict[str, object]:
     conn = psycopg.connect(DSN, autocommit=True, row_factory=dict_row)
-    row = conn.execute(
-        "SELECT status FROM tasks WHERE task_id=%s", (task_id,)
-    ).fetchone()
+    row = conn.execute("SELECT status FROM tasks WHERE task_id=%s", (task_id,)).fetchone()
     n_leases = conn.execute(
         "SELECT count(*) AS n FROM leases WHERE task_id=%s", (task_id,)
     ).fetchone()["n"]
@@ -123,11 +119,16 @@ def scenario_single_scheduler() -> None:
     sched.stop()
     sched_engine.close()
 
-    check("scheduler auto-recovers expired lease",
-          st.get("status") == "QUEUED" and st.get("leases") == 0,
-          f"state={st}")
-    check("recovery emits retry_scheduled event", st.get("retry_events", 0) >= 1,
-          f"retry_events={st.get('retry_events')}")
+    check(
+        "scheduler auto-recovers expired lease",
+        st.get("status") == "QUEUED" and st.get("leases") == 0,
+        f"state={st}",
+    )
+    check(
+        "recovery emits retry_scheduled event",
+        st.get("retry_events", 0) >= 1,
+        f"retry_events={st.get('retry_events')}",
+    )
     # Task is now claimable by a worker again
     w = PostgresWorkflowEngine(dsn=DSN, lease_ttl_seconds=TTL)
     lease = w.acquire_lease(task_id)
@@ -166,9 +167,11 @@ def scenario_two_schedulers_no_double_recover() -> None:
     e1.close()
     e2.close()
 
-    check("two concurrent schedulers recover exactly once",
-          st["status"] == "QUEUED" and st["leases"] == 0 and st["retry_events"] == 1,
-          f"state={st}")
+    check(
+        "two concurrent schedulers recover exactly once",
+        st["status"] == "QUEUED" and st["leases"] == 0 and st["retry_events"] == 1,
+        f"state={st}",
+    )
 
 
 def main() -> int:

@@ -138,3 +138,43 @@ jobs:
         env:
           PYTHONUTF8: "1"
           PYTHONIOENCODING: utf-8
+
+  collector-quality:
+    name: collector-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: "0.11.18"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Validate Python lock
+        run: uv lock --check
+
+      - name: Sync frozen Python environment
+        run: uv sync --frozen --dev
+
+      - name: Start postgres + pinned OTel collector
+        run: >-
+          docker compose
+          -f docker-compose.m14.yml
+          -f docker-compose.m15.yml
+          up -d --build --wait
+
+      - name: Run collector + postgres observability evidence suite
+        run: >-
+          uv run --frozen --no-sync python -B -m pytest
+          tests/observability
+          -m "requires_collector or postgres"
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: utf-8
+          RESEARCHOS_POSTGRES_DSN: postgresql://research_os:research_os_m14_test@localhost:15432/research_os
+          RESEARCHOS_OTEL_COLLECTOR_ENDPOINT: http://localhost:4318

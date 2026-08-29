@@ -7,14 +7,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from typing import Callable
 
 from packages.application.memory.gate import MemoryGateDeps
+from packages.application.observability.scope import operation
+from packages.application.observability.signals import (
+    CorrelationRef,
+    OperationOutcome,
+    OperationScope,
+)
 from packages.application.ports.agent_runtime import AgentRuntime
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.evidence_ledger import EvidenceLedger
+from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import WorkflowEngine
 from packages.application.run_orchestration.commands import StartRunCommand
 from packages.application.run_orchestration.task_executor import (
@@ -69,6 +76,7 @@ class PhaseRunnerDeps:
     memory_gate: MemoryGateDeps | None = None
     publish: Callable[[EventType, dict[str, object], str, str, str | None], None] | None = None
     fail_run: Callable[[str, str, bool], RunOutcome] | None = None
+    telemetry: TelemetrySink | None = None
 
     def emit(
         self,
@@ -119,14 +127,10 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
     outcomes: list[TaskOutcome] = []
     handoffs: dict[str, object] = {}
     specs = ctx.pending or ctx.resolve_sessions()
-    for task, contract, spec_context in specs:
-        step = _execute_one_task(
-            deps, TaskContext(task=task, contract=contract, spec_context=spec_context, ctx=ctx)
-        )
-        if step.failure is not None:
-            return step.failure  # type: ignore[no-any-return]
-        handoffs[task.id.value] = step.handoff
-        outcomes.append(TaskOutcome(task=task, outcome="SUCCEEDED", verdict=step.verdict))
+    for group in _phase_groups(specs):
+        failure = _execute_phase_group(deps, ctx, group, outcomes, handoffs)
+        if failure is not None:
+            return failure
     deps.emit(EventType.RUN_COMPLETED, {"run_id": ctx.run_id}, ctx.run_id, ctx.trace_id, None)
     return RunOutcome(
         run_id=ctx.run_id,
@@ -137,6 +141,69 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
         handoff_digests=tuple(sorted(handoffs)),
         system_failure=False,
     )
+
+
+def _phase_groups(
+    specs: tuple[SessionSpec, ...],
+) -> "Iterator[tuple[SessionSpec, ...]]":
+    """按连续相同 phase_id 分组(resolve_sessions 按 DAG 序产出,同 phase 连续)。"""
+    index = 0
+    while index < len(specs):
+        phase_id = specs[index][2].phase_id
+        end = index
+        while end < len(specs) and specs[end][2].phase_id == phase_id:
+            end += 1
+        yield specs[index:end]
+        index = end
+
+
+def _execute_phase_group(
+    deps: PhaseRunnerDeps,
+    ctx: PhaseContext,
+    group: "tuple[SessionSpec, ...]",
+    outcomes: "list[TaskOutcome]",
+    handoffs: "dict[str, object]",
+) -> RunOutcome | None:
+    """执行一个 phase 分组(外包 PHASE span);返回失败 RunOutcome 或 None。
+
+    M15 债务清偿:phase_id 为空(resume 重建路径)时不发 PHASE correlation,
+    TASK 落回 RUN 父。
+    """
+    phase_id = group[0][2].phase_id
+    phase_correlation = CorrelationRef(
+        run_id=ctx.run_id,
+        phase_run_id=phase_id if phase_id else None,
+        trace_id=ctx.trace_id or None,
+    )
+    with operation(
+        deps.telemetry,
+        scope=OperationScope.PHASE,
+        name="phase",
+        correlation=phase_correlation,
+    ) as phase_op:
+        for task, contract, spec_context in group:
+            task_correlation = CorrelationRef(
+                run_id=ctx.run_id,
+                task_id=task.id.value,
+                phase_run_id=phase_id if phase_id else None,
+                trace_id=ctx.trace_id or None,
+            )
+            with operation(
+                deps.telemetry,
+                scope=OperationScope.TASK,
+                name="task",
+                correlation=task_correlation,
+            ):
+                step = _execute_one_task(
+                    deps,
+                    TaskContext(task=task, contract=contract, spec_context=spec_context, ctx=ctx),
+                )
+            if step.failure is not None:
+                phase_op.set_outcome(OperationOutcome.FAILED, "task_failed")
+                return step.failure  # type: ignore[no-any-return]
+            handoffs[task.id.value] = step.handoff
+            outcomes.append(TaskOutcome(task=task, outcome="SUCCEEDED", verdict=step.verdict))
+    return None
 
 
 def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:

@@ -23,6 +23,14 @@ from packages.application.evaluation.scorer_types import (
     make_finding,
 )
 from packages.application.evaluation.scorers import resolve_scorer
+from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
+from packages.application.observability.scope import operation
+from packages.application.observability.signals import (
+    CorrelationRef,
+    OperationOutcome,
+    OperationScope,
+)
+from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.domain.eval_gate import GateConfig, compute_verdict
 from packages.domain.eval_result import (
     EvalFindingStatus,
@@ -60,9 +68,58 @@ class RunnerOutcome:
     missing_inputs: tuple[str, ...]
 
 
-def run_evaluation(request: RunRequest) -> RunnerOutcome:
-    """执行一次评测并产出完整 EvalReport。"""
+def run_evaluation(
+    request: RunRequest,
+    *,
+    telemetry: TelemetrySink | None = None,
+) -> RunnerOutcome:
+    """执行一次评测并产出完整 EvalReport。
 
+    M15:可选 telemetry——EVAL_RUN span + INFRA_ERROR/missing 计数 metric;
+    纯函数语义不变(报告 digest 与 telemetry 无关)。
+    """
+    with operation(
+        telemetry,
+        scope=OperationScope.EVAL_RUN,
+        name="eval.run",
+        correlation=CorrelationRef(
+            eval_run_id=request.report_id or f"eval:{request.dataset.id}:{request.mode}"
+        ),
+    ) as op:
+        outcome = _run_evaluation_impl(request)
+        verdict = outcome.report.gate_verdict
+        infra_errors = sum(
+            1
+            for result in outcome.report.results
+            for finding in result.scorer_findings
+            if finding.status is EvalFindingStatus.INFRA_ERROR
+        )
+        extras: dict[str, object] = {
+            "verdict": verdict.value,
+            "dataset_digest": outcome.report.frozen_conditions.dataset_digest,
+            "scorer_count": len(outcome.report.frozen_conditions.scorer_versions),
+        }
+        if infra_errors and telemetry is not None:
+            telemetry.record_metric(
+                MetricSample(
+                    name=MetricName.EVAL_INFRA_ERRORS,
+                    kind=MetricKind.COUNTER,
+                    value=infra_errors,
+                )
+            )
+        if outcome.missing_inputs and telemetry is not None:
+            telemetry.record_metric(
+                MetricSample(
+                    name=MetricName.EVAL_MISSING_EVALUATIONS,
+                    kind=MetricKind.COUNTER,
+                    value=len(outcome.missing_inputs),
+                )
+            )
+        op.set_outcome(OperationOutcome.OK, extra=extras)
+        return outcome
+
+
+def _run_evaluation_impl(request: RunRequest) -> RunnerOutcome:
     dataset = request.dataset
     results: list[EvalResult] = []
     accounting: dict[str, int] = {}

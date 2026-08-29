@@ -7,12 +7,20 @@ This module provides lightweight background-thread schedulers that start
 in the composition root's lifespan. No APScheduler dependency — stdlib only.
 
 Idempotent, `FOR UPDATE SKIP LOCKED` in engine, concurrent-safe.
+
+M15 观测:per-pass `operation()` span(LEASE_RECOVERY / OUTBOX_RELAY),
+异常不再静默吞掉——outcome=FAILED 可见(ADR-0026)。
 """
 
 from __future__ import annotations
 
 import threading
 from typing import Any
+
+from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
+from packages.application.observability.scope import operation
+from packages.application.observability.signals import OperationOutcome, OperationScope
+from packages.application.ports.telemetry_sink import TelemetrySink
 
 
 class LeaseRecoveryScheduler:
@@ -26,11 +34,13 @@ class LeaseRecoveryScheduler:
         workflow: Any,
         *,
         interval_seconds: float = 30.0,
+        telemetry: TelemetrySink | None = None,
     ) -> None:
         if interval_seconds <= 0:
             raise ValueError("interval_seconds must be > 0")
         self._workflow = workflow
         self._interval = interval_seconds
+        self._telemetry = telemetry
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -49,10 +59,24 @@ class LeaseRecoveryScheduler:
 
     def _run(self) -> None:
         while not self._stop.wait(self._interval):
-            try:
-                self._workflow.recover_expired_leases()
-            except Exception:
-                continue
+            with operation(
+                self._telemetry,
+                scope=OperationScope.LEASE_RECOVERY,
+                name="lease_recovery.pass",
+            ) as op:
+                try:
+                    recovered = self._workflow.recover_expired_leases()
+                except Exception:
+                    op.set_outcome(OperationOutcome.FAILED, "lease_recovery_failed")
+                    continue
+                if recovered and self._telemetry is not None:
+                    self._telemetry.record_metric(
+                        MetricSample(
+                            name=MetricName.WORKFLOW_LEASE_EXPIRED,
+                            kind=MetricKind.COUNTER,
+                            value=recovered,
+                        )
+                    )
 
 
 class OutboxRelayScheduler:
@@ -69,12 +93,14 @@ class OutboxRelayScheduler:
         sink: Any,
         *,
         interval_seconds: float = 5.0,
+        telemetry: TelemetrySink | None = None,
     ) -> None:
         if interval_seconds <= 0:
             raise ValueError("interval_seconds must be > 0")
         self._engine = engine
         self._sink = sink
         self._interval = interval_seconds
+        self._telemetry = telemetry
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -94,12 +120,18 @@ class OutboxRelayScheduler:
     def _run(self) -> None:
         from adapters.postgres.outbox_relay import PgOutboxRelay
 
-        relay = PgOutboxRelay(self._engine, self._sink)
+        relay = PgOutboxRelay(self._engine, self._sink, telemetry=self._telemetry)
         while not self._stop.wait(self._interval):
-            try:
-                relay.run_once()
-            except Exception:
-                continue
+            with operation(
+                self._telemetry,
+                scope=OperationScope.OUTBOX_RELAY,
+                name="outbox.relay_pass",
+            ) as op:
+                try:
+                    relay.run_once()
+                except Exception:
+                    op.set_outcome(OperationOutcome.FAILED, "outbox_relay_failed")
+                    continue
 
 
 class RetentionScheduler:

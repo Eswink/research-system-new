@@ -76,14 +76,22 @@ def scenario_connection_refused() -> None:
     except PermanentPortError as exc:
         msg = str(exc)
         check("connection refused raises PermanentPortError", True)
-        check("refused error is redacted (no password)",
-              _LEAK_CANARY not in msg and "***REDACTED***" in msg, msg)
-        check("refused error category CONFIGURATION",
-              exc.failure_category is not None and exc.failure_category.value == "CONFIGURATION",
-              str(exc.failure_category))
+        check(
+            "refused error is redacted (no password)",
+            _LEAK_CANARY not in msg and "***REDACTED***" in msg,
+            msg,
+        )
+        check(
+            "refused error category CONFIGURATION",
+            exc.failure_category is not None and exc.failure_category.value == "CONFIGURATION",
+            str(exc.failure_category),
+        )
     except Exception as exc:  # noqa: BLE001
-        check("connection refused raises PermanentPortError", False,
-              f"got {type(exc).__name__}: {exc}")
+        check(
+            "connection refused raises PermanentPortError",
+            False,
+            f"got {type(exc).__name__}: {exc}",
+        )
 
 
 def scenario_transient_after_connection_drop() -> None:
@@ -157,9 +165,11 @@ def scenario_transaction_rollback_no_partial_state() -> None:
         (task.id.value,),
     ).fetchone()["n"]
     conn.close()
-    check("failed txn leaves no partial state",
-          row["status"] == "LEASED" and n_leases == 1 and n_completed == 0,
-          f"status={row['status']} leases={n_leases} completed={n_completed}")
+    check(
+        "failed txn leaves no partial state",
+        row["status"] == "LEASED" and n_leases == 1 and n_completed == 0,
+        f"status={row['status']} leases={n_leases} completed={n_completed}",
+    )
     engine.close()
 
 

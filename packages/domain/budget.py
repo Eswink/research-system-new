@@ -22,6 +22,13 @@ class LedgerCostStatus(StrEnum):
     UNKNOWN = "UNKNOWN"
 
 
+class LedgerQuantityStatus(StrEnum):
+    """M15:quantity 本身的可信度;UNKNOWN 表示"无法计量",绝不解释为 0。"""
+
+    KNOWN = "KNOWN"
+    UNKNOWN = "UNKNOWN"
+
+
 class ResourceType(StrEnum):
     MODEL_TOKENS = "MODEL_TOKENS"
     MODEL_REQUESTS = "MODEL_REQUESTS"
@@ -90,6 +97,10 @@ class UsageLedgerEntry:
     agent_id: str | None = None
     tool_id: str | None = None
     model_id: str | None = None
+    # M15 加性字段(默认保持既有构造与不变量有效;历史行解码为 KNOWN)
+    quantity_status: LedgerQuantityStatus = LedgerQuantityStatus.KNOWN
+    unavailable_reason: str | None = None
+    attempt: int = 1
 
     def __post_init__(self) -> None:
         if not self.entry_id:
@@ -103,6 +114,10 @@ class UsageLedgerEntry:
         Timestamp(self.occurred_at)
         if self.cost_status is LedgerCostStatus.KNOWN and self.estimated_cost_minor is None:
             raise ValueError("KNOWN cost entry must carry estimated_cost_minor")
+        if self.quantity_status is LedgerQuantityStatus.UNKNOWN and not self.unavailable_reason:
+            raise ValueError("UNKNOWN quantity entry must carry unavailable_reason")
+        if self.attempt < 1:
+            raise ValueError("ledger attempt must be >= 1")
 
 
 class UsageLedger:

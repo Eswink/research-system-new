@@ -1,0 +1,10 @@
+# M15 定价快照(默认出货:零价格条目)。
+#
+# `unpriced_v1` 是唯一出厂版本:未配置任何价格 → 成本投影对每个维度
+# 返回 MONETARY_UNAVAILABLE(显式不可计价,不伪造 0 成本)。
+# 厂商价格永远不进 Domain、不进本仓库默认配置(AGENTS.md §1 / BUDGET_QUOTA.md)。
+version: unpriced_v1
+currency: USD
+effective_from: "2026-08-29"
+calculation_method: unit_price_minor_per_unit
+prices: []

@@ -125,9 +125,7 @@ def main() -> int:
         catalog=catalog,
         project=project,
         credentials=EnvCredentialResolver(),
-        endpoint_health={
-            endpoint_id: EndpointHealth.HEALTHY for endpoint_id in catalog.endpoints
-        },
+        endpoint_health={endpoint_id: EndpointHealth.HEALTHY for endpoint_id in catalog.endpoints},
         policy_evaluator=NativePolicyEvaluator(catalog.policy),
     )
 

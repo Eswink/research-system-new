@@ -12,14 +12,24 @@ from datetime import datetime
 
 from packages.domain.budget import (
     LedgerCostStatus,
+    LedgerQuantityStatus,
     ResourceType,
     UsageLedgerEntry,
 )
 
 
+def _attempt_scope(entry_id: str, attempt: int) -> str:
+    """attempt > 1 时为 entry id 追加 attempt 后缀(retry 追加而非碰撞)。"""
+    return entry_id if attempt <= 1 else f"{entry_id}:attempt-{attempt}"
+
+
 @dataclass(frozen=True, slots=True)
 class ModelUsage:
-    """一次模型调用的原始用量（ModelGateway 上报）。"""
+    """一次模型调用的原始用量（ModelGateway 上报）。
+
+    M15:`usage_unavailable_reason` 非空 → quantity_status=UNKNOWN
+    (token 计数不可信,绝不解释为 0);`attempt` 用于 attempt-scoped entry id。
+    """
 
     model_id: str
     prompt_tokens: int = 0
@@ -27,6 +37,8 @@ class ModelUsage:
     calls: int = 1
     latency_ms: int | None = None
     estimated_cost_minor: int | None = None
+    usage_unavailable_reason: str | None = None
+    attempt: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +48,7 @@ class ToolUsage:
     tool_id: str
     requests: int = 1
     estimated_cost_minor: int | None = None
+    attempt: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +60,7 @@ class ExperimentUsage:
     elapsed_seconds: int | None = None
     oom_killed: bool = False
     exit_code: int | None = None
+    attempt: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +70,7 @@ class EvaluationUsage:
     eval_id: str
     cases: int = 0
     scorer_calls: int = 0
+    attempt: int = 1
 
 
 def _entry(  # noqa: PLR0913 - UsageLedgerEntry 字段映射，参数对象会降低可读性
@@ -71,6 +86,9 @@ def _entry(  # noqa: PLR0913 - UsageLedgerEntry 字段映射，参数对象会�
     agent_id: str | None = None,
     tool_id: str | None = None,
     model_id: str | None = None,
+    quantity_status: LedgerQuantityStatus = LedgerQuantityStatus.KNOWN,
+    unavailable_reason: str | None = None,
+    attempt: int = 1,
 ) -> UsageLedgerEntry:
     cost_status = (
         LedgerCostStatus.KNOWN if estimated_cost_minor is not None else LedgerCostStatus.UNKNOWN
@@ -88,6 +106,9 @@ def _entry(  # noqa: PLR0913 - UsageLedgerEntry 字段映射，参数对象会�
         agent_id=agent_id,
         tool_id=tool_id,
         model_id=model_id,
+        quantity_status=quantity_status,
+        unavailable_reason=unavailable_reason,
+        attempt=attempt,
     )
 
 
@@ -101,11 +122,12 @@ def model_entries(
     entries: list[UsageLedgerEntry] = []
     for usage in model_usage:
         tokens = usage.prompt_tokens + usage.completion_tokens
+        unknown = usage.usage_unavailable_reason is not None
         entries.append(
             _entry(
-                entry_id=f"usage:{run_id}:model:{usage.model_id}",
+                entry_id=_attempt_scope(f"usage:{run_id}:model:{usage.model_id}", usage.attempt),
                 resource_type=ResourceType.MODEL_TOKENS,
-                quantity=tokens,
+                quantity=0 if unknown else tokens,
                 unit="tokens",
                 source="m12:model_relay",
                 occurred_at=occurred_at,
@@ -113,11 +135,18 @@ def model_entries(
                 task_id=task_id,
                 agent_id=agent_id,
                 model_id=usage.model_id,
+                quantity_status=(
+                    LedgerQuantityStatus.UNKNOWN if unknown else LedgerQuantityStatus.KNOWN
+                ),
+                unavailable_reason=usage.usage_unavailable_reason,
+                attempt=usage.attempt,
             )
         )
         entries.append(
             _entry(
-                entry_id=f"usage:{run_id}:model:{usage.model_id}:calls",
+                entry_id=_attempt_scope(
+                    f"usage:{run_id}:model:{usage.model_id}:calls", usage.attempt
+                ),
                 resource_type=ResourceType.MODEL_REQUESTS,
                 quantity=usage.calls,
                 unit="calls",
@@ -126,6 +155,7 @@ def model_entries(
                 task_id=task_id,
                 agent_id=agent_id,
                 model_id=usage.model_id,
+                attempt=usage.attempt,
             )
         )
     return entries
@@ -139,7 +169,7 @@ def tool_entries(
 ) -> list[UsageLedgerEntry]:
     return [
         _entry(
-            entry_id=f"usage:{run_id}:tool:{usage.tool_id}",
+            entry_id=_attempt_scope(f"usage:{run_id}:tool:{usage.tool_id}", usage.attempt),
             resource_type=ResourceType.TOOL_REQUESTS,
             quantity=usage.requests,
             unit="requests",
@@ -148,6 +178,7 @@ def tool_entries(
             estimated_cost_minor=usage.estimated_cost_minor,
             task_id=task_id,
             tool_id=usage.tool_id,
+            attempt=usage.attempt,
         )
         for usage in tool_usage
     ]
@@ -159,16 +190,25 @@ def experiment_entries(
     occurred_at: datetime,
     task_id: str | None,
 ) -> list[UsageLedgerEntry]:
-    """CPU_TIME 入账：时长未知（None）时 quantity 记 0 + cost UNKNOWN。"""
+    """CPU_TIME 入账：时长未知（None）→ quantity_status=UNKNOWN,绝不假测量零。"""
     return [
         _entry(
-            entry_id=f"usage:{run_id}:experiment:{usage.run_id}",
+            entry_id=_attempt_scope(f"usage:{run_id}:experiment:{usage.run_id}", usage.attempt),
             resource_type=ResourceType.CPU_TIME,
             quantity=usage.elapsed_seconds or 0,
             unit="seconds",
             source="m12:experiment",
             occurred_at=occurred_at,
             task_id=task_id,
+            quantity_status=(
+                LedgerQuantityStatus.UNKNOWN
+                if usage.elapsed_seconds is None
+                else LedgerQuantityStatus.KNOWN
+            ),
+            unavailable_reason=None
+            if usage.elapsed_seconds is not None
+            else "elapsed_seconds not observed",
+            attempt=usage.attempt,
         )
         for usage in experiment_usage
     ]
@@ -181,12 +221,13 @@ def evaluation_entries(
 ) -> list[UsageLedgerEntry]:
     return [
         _entry(
-            entry_id=f"usage:{run_id}:eval:{usage.eval_id}",
+            entry_id=_attempt_scope(f"usage:{run_id}:eval:{usage.eval_id}", usage.attempt),
             resource_type=ResourceType.MODEL_REQUESTS,
             quantity=usage.scorer_calls,
             unit="scorer_calls",
             source="m12:evaluation",
             occurred_at=occurred_at,
+            attempt=usage.attempt,
         )
         for usage in evaluation_usage
     ]

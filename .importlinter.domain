@@ -25,3 +25,4 @@ forbidden_modules =
     starlette
     tenacity
     mcp
+    opentelemetry

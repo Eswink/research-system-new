@@ -10,25 +10,24 @@ import tempfile
 from pathlib import Path
 
 from openhands.sdk.agent.agent import Agent
-from openhands.sdk.testing import TestLLM
-from openhands.sdk.llm import Message, TextContent
-from openhands.sdk.workspace.local import LocalWorkspace
 from openhands.sdk.conversation.conversation import Conversation
-from openhands.sdk.conversation.state import ConversationExecutionStatus
+from openhands.sdk.llm import Message, TextContent
+from openhands.sdk.testing import TestLLM
+from openhands.sdk.workspace.local import LocalWorkspace
 
 
 def main() -> int:
     tmpdir = Path(tempfile.mkdtemp(prefix="s4-conv-"))
-    llm = TestLLM.from_messages(
-        [
-            Message(role="assistant", content=[TextContent(text="Done.")]),
-            Message(role="assistant", content=[TextContent(text="Again.")]),
-        ]
-    )
+    llm = TestLLM.from_messages([
+        Message(role="assistant", content=[TextContent(text="Done.")]),
+        Message(role="assistant", content=[TextContent(text="Again.")]),
+    ])
     try:
         workspace = LocalWorkspace(working_dir=str(tmpdir))
         agent = Agent(llm=llm)
-        conv = Conversation(agent=agent, workspace=workspace, persistence_dir=str(tmpdir / "persist"))
+        conv = Conversation(
+            agent=agent, workspace=workspace, persistence_dir=str(tmpdir / "persist")
+        )
 
         conv.send_message("run once (mock).")
         conv.run()

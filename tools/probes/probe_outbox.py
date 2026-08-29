@@ -109,10 +109,16 @@ def scenario_b_committed_then_crash() -> None:
     conn = psycopg.connect(DSN, autocommit=True)
     pending_after = _pending_count(conn)
     conn.close()
-    check("B committed-before-publish: pending events exist", pending_before >= 1,
-          f"pending={pending_before}")
-    check("B restart publishes committed events", published >= 1 and len(sink._delivered) >= 1,
-          f"published={published} delivered={len(sink._delivered)}")
+    check(
+        "B committed-before-publish: pending events exist",
+        pending_before >= 1,
+        f"pending={pending_before}",
+    )
+    check(
+        "B restart publishes committed events",
+        published >= 1 and len(sink._delivered) >= 1,
+        f"published={published} delivered={len(sink._delivered)}",
+    )
     check("B marks published after delivery", pending_after == 0, f"pending={pending_after}")
 
 
@@ -158,11 +164,16 @@ def scenario_c_duplicate_publisher() -> None:
     all_delivered_ids = {e.event_id for e in sink1._delivered} | {
         e.event_id for e in sink2._delivered
     }
-    check("D concurrent publishers drain everything",
-          pending == 0 and len(all_delivered_ids) == total,
-          f"pending={pending} delivered={len(all_delivered_ids)} total={total}")
-    check("D consumers idempotent (dupe deliveries handled)",
-          (len(sink1._dupes) + len(sink2._dupes)) >= 0, "dupes handled by event_id dedup")
+    check(
+        "D concurrent publishers drain everything",
+        pending == 0 and len(all_delivered_ids) == total,
+        f"pending={pending} delivered={len(all_delivered_ids)} total={total}",
+    )
+    check(
+        "D consumers idempotent (dupe deliveries handled)",
+        (len(sink1._dupes) + len(sink2._dupes)) >= 0,
+        "dupes handled by event_id dedup",
+    )
 
 
 def main() -> int:

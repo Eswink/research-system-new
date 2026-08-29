@@ -17,6 +17,7 @@ from services.api.routers import (
     inspection,
     llm_endpoints,
     models,
+    operations,
     run_events,
     runs,
     team_protocol,
@@ -32,7 +33,9 @@ from services.api.settings import ApiSettings
 def _start_lease_scheduler(deps: ApiDeps) -> LeaseRecoveryScheduler | None:
     try:
         workflow = deps.runs._deps.workflow  # type: ignore[union-attr]
-        sched = LeaseRecoveryScheduler(workflow, interval_seconds=30.0)
+        sched = LeaseRecoveryScheduler(
+            workflow, interval_seconds=30.0, telemetry=getattr(deps, "telemetry", None)
+        )
         sched.start()
         return sched
     except Exception:
@@ -48,6 +51,7 @@ def _start_outbox_scheduler(deps: ApiDeps) -> "OutboxRelayScheduler | None":
             deps.runs._deps.workflow,  # type: ignore[union-attr]
             deps.events,
             interval_seconds=5.0,
+            telemetry=getattr(deps, "telemetry", None),
         )
         sched.start()
         return sched
@@ -68,11 +72,15 @@ def _start_retention_scheduler(deps: ApiDeps) -> "RetentionScheduler | None":
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Start/stop schedulers if workflow available (WP-E: lease recovery + PG outbox relay)."""
+    """Start/stop schedulers if workflow available (WP-E: lease recovery + PG outbox relay).
+
+    M15: shutdown 时有界 flush/停 telemetry provider(FailSafe 吞错,不阻断停机)。
+    """
     deps: ApiDeps | None = getattr(app.state, "deps", None)
     lease_sched: LeaseRecoveryScheduler | None = None
     outbox_sched: OutboxRelayScheduler | None = None
     retention_sched: RetentionScheduler | None = None
+    telemetry = getattr(deps, "telemetry", None) if deps is not None else None
     if deps is not None and deps.runs is not None:
         lease_sched = _start_lease_scheduler(deps)
         outbox_sched = _start_outbox_scheduler(deps)
@@ -90,6 +98,13 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             pass
     if lease_sched is not None:
         lease_sched.stop()
+    if telemetry is not None:
+        shutdown = getattr(telemetry, "shutdown", None)
+        if callable(shutdown):
+            try:
+                shutdown()
+            except Exception:
+                pass
 
 
 def create_app(deps: ApiDeps | None = None) -> FastAPI:
@@ -114,5 +129,6 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(run_events.router)
     app.include_router(approvals.router)
     app.include_router(inspection.router)
+    app.include_router(operations.router)
     app.include_router(experiments.router)
     return app

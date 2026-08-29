@@ -14,9 +14,7 @@ ExecutionStatus.TIMED_OUT 而不是异常；compute usage 以摘要返回，不�
   调用方（application use case）白名单构造后经 spec.environment 传入。
 
 非职责：不管理文件布局与 Lease（WorkspaceBackend）；不记账（BudgetLedger）。
-
-image 供应链：构造参数 image 必须可 pin（tag@digest 或本地构建镜像名）；
-每次 execute 通过 inspect_image 解析实际 image digest，并写入
+image 供应链：image 必须可 pin；每次 execute 解析实际 digest 写入
 ExecutionRun.compute_usage_summary["image_digest"] 供 ReproducibilityAudit。
 """
 
@@ -32,6 +30,8 @@ import docker
 from docker.errors import APIError, DockerException, ImageNotFound
 
 from adapters.execution.profiles import ResourceLimits, resolve_resource_profile
+from packages.application.observability.scope import operation
+from packages.application.observability.signals import OperationOutcome, OperationScope
 from packages.application.ports.errors import (
     InvalidInputError,
     PermanentPortError,
@@ -39,6 +39,7 @@ from packages.application.ports.errors import (
     TransientPortError,
 )
 from packages.application.ports.execution_backend import ExecutionBackend
+from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.domain.core import Digest, Timestamp
 from packages.domain.enums import FailureCategory
 from packages.domain.workspace import ExecutionRun, ExecutionSpec, ExecutionStatus
@@ -106,29 +107,58 @@ def _map_docker_error(exc: Exception) -> PortError:
 
 
 class DockerExecutionBackend(ExecutionBackend):
-    """一次性容器执行后端；线程不安全（同步语义，M5 D2）。"""
+    """一次性容器执行后端;线程不安全(同步语义,M5 D2)。"""
 
     def __init__(
         self,
         *,
         image: str = DEFAULT_IMAGE,
         client: docker.DockerClient | None = None,
+        telemetry: TelemetrySink | None = None,
     ) -> None:
         self._image = image
         self._owns_client = client is None
         self._client = client or docker.from_env()
         self._closed = False
         self._image_digest: str | None = None
+        self._telemetry = telemetry
 
     @property
     def image_digest(self) -> str | None:
-        """最近一次 execute 解析到的实际 image digest（供审计使用）。"""
+        """最近一次 execute 解析到的 image digest(供审计)。"""
         return self._image_digest
 
     def execute(
         self,
         spec: ExecutionSpec,
         timeout_seconds: int | None = None,
+    ) -> ExecutionRun:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.EXPERIMENT_RUN,
+            name="experiment.execute",
+            attributes={"resource_type": spec.backend_kind},
+        ) as op:
+            try:
+                run = self._execute_impl(spec, timeout_seconds)
+            except PortError as exc:
+                category = exc.failure_category or FailureCategory.EXECUTION_FAILURE
+                op.set_outcome(OperationOutcome.FAILED, category.value)
+                raise
+            extras: dict[str, object] = {"resource_type": spec.backend_kind}
+            if run.exit_code is not None:
+                extras["exit_code"] = run.exit_code
+            if self._image_digest:
+                extras["image_digest"] = self._image_digest
+            if run.compute_usage_summary.get("oom_killed"):
+                extras["oom_killed"] = True
+            op.set_outcome(OperationOutcome.OK, extra=extras)
+            return run
+
+    def _execute_impl(
+        self,
+        spec: ExecutionSpec,
+        timeout_seconds: int | None,
     ) -> ExecutionRun:
         self._ensure_open()
         if not spec.command:

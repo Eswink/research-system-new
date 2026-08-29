@@ -16,3 +16,4 @@ forbidden_modules =
     temporalio
     openhands
     adapters.fakes
+    opentelemetry

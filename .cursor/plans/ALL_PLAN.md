@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260828-024](tasks/PLAN-20260828-024-m15-observability-cost-eval-operations.md) | APPROVED |
 | [x] | [PLAN-20260828-021](tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md) | DONE |
 | [x] | [PLAN-20260828-020](tasks/PLAN-20260828-020-m13-r1-console-remediation.md) | DONE |
 | [x] | [PLAN-20260828-019](tasks/PLAN-20260828-019-m12-r1-production-truth-closure.md) | DONE |

@@ -364,14 +364,190 @@ components:
     role: centralized_policy_engine
     source: "https://github.com/open-policy-agent/opa"
 
-  - id: opentelemetry
-    adoption_status: PLANNED
+  - id: opentelemetry_api
+    adoption_status: ADOPTED
     decision_status: APPROVED
     integration_mode: STANDARD
-    role: telemetry
-    source: "https://opentelemetry.io/"
+    role: telemetry_api
+    source:
+      kind: PYPI
+      package: opentelemetry-api
+      url: "https://pypi.org/project/opentelemetry-api/1.39.1/"
+    resolution:
+      version: "1.39.1"
+      lockfile: uv.lock
+      spec: "==1.39.1"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "fbde8c80e1b937a2c61f20347e91c0c18a1940cecf012d62e65a7caf08967c9c"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://github.com/open-telemetry/opentelemetry-python/blob/v1.39.1/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, otel_boundaries, privacy_canary]
     controls:
+      - otel_adapter_only_import_boundary
       - genai_content_capture_off_by_default
+
+  - id: opentelemetry_sdk
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: STANDARD
+    role: telemetry_sdk
+    source:
+      kind: PYPI
+      package: opentelemetry-sdk
+      url: "https://pypi.org/project/opentelemetry-sdk/1.39.1/"
+    resolution:
+      version: "1.39.1"
+      lockfile: uv.lock
+      spec: "==1.39.1"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "cf4d4563caf7bff906c9f7967e2be22d0d6b349b908be0d90fb21c8e9c995cc6"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://github.com/open-telemetry/opentelemetry-python/blob/v1.39.1/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, otel_boundaries, privacy_canary]
+    controls:
+      - otel_adapter_only_import_boundary
+      - bounded_export_queue
+      - genai_content_capture_off_by_default
+
+  - id: opentelemetry_exporter_otlp_proto_http
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: STANDARD
+    role: telemetry_otlp_http_exporter
+    source:
+      kind: PYPI
+      package: opentelemetry-exporter-otlp-proto-http
+      url: "https://pypi.org/project/opentelemetry-exporter-otlp-proto-http/1.39.1/"
+    resolution:
+      version: "1.39.1"
+      lockfile: uv.lock
+      spec: "==1.39.1"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "31bdab9745c709ce90a49a0624c2bd445d31a28ba34275951a6a362d16a0b9cb"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://github.com/open-telemetry/opentelemetry-python/blob/v1.39.1/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, otel_boundaries, privacy_canary]
+    controls:
+      - otel_adapter_only_import_boundary
+      - grpc_exporter_rejected
+
+  - id: opentelemetry_exporter_otlp_proto_common
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: STANDARD
+    role: telemetry_otlp_common
+    source:
+      kind: PYPI
+      package: opentelemetry-exporter-otlp-proto-common
+      url: "https://pypi.org/project/opentelemetry-exporter-otlp-proto-common/1.39.1/"
+    resolution:
+      version: "1.39.1"
+      lockfile: uv.lock
+      spec: "==1.39.1"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "763370d4737a59741c89a67b50f9e39271639ee4afc999dadfe768541c027464"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://github.com/open-telemetry/opentelemetry-python/blob/v1.39.1/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, otel_boundaries, privacy_canary]
+    controls:
+      - otel_adapter_only_import_boundary
+
+  - id: opentelemetry_proto
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: STANDARD
+    role: telemetry_wire_protobuf
+    source:
+      kind: PYPI
+      package: opentelemetry-proto
+      url: "https://pypi.org/project/opentelemetry-proto/1.39.1/"
+    resolution:
+      version: "1.39.1"
+      lockfile: uv.lock
+      spec: "==1.39.1"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "6c8e05144fc0d3ed4d22c2289c6b126e03bcd0e6a7da0f16cedd2e1c2772e2c8"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://github.com/open-telemetry/opentelemetry-python/blob/v1.39.1/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, otel_boundaries, privacy_canary]
+    controls:
+      - otel_adapter_only_import_boundary
+
+  - id: opentelemetry_semantic_conventions
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: STANDARD
+    role: telemetry_semconv_constants
+    source:
+      kind: PYPI
+      package: opentelemetry-semantic-conventions
+      url: "https://pypi.org/project/opentelemetry-semantic-conventions/0.60b1/"
+    resolution:
+      version: "0.60b1"
+      lockfile: uv.lock
+      spec: "==0.60b1"
+      digest:
+        algorithm: sha256
+        artifact: sdist
+        value: "87c228b5a0669b748c76d76df6c364c369c28f1c465e50f661e39737e84bc953"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://github.com/open-telemetry/opentelemetry-python/blob/v1.39.1/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, otel_boundaries, privacy_canary, semconv_stability_review]
+    controls:
+      - pre_release_stability_risk_acknowledged
+      - otel_adapter_only_import_boundary
+
+  - id: otel_collector_image
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: BUILD_ARTIFACT
+    role: telemetry_collector_container_image
+    source:
+      kind: DOCKERFILE
+      path: "adapters/otel/collector/Dockerfile"
+      base: "docker.io/otel/opentelemetry-collector-contrib:0.139.0"
+      base_index_digest: "sha256:faf125d656fa47cea568b2f3b4494efd2525083bc75c1e96038bc23f05cd68fd"
+      retrieval: "Docker Hub registry API, 2026-08-29"
+    resolution:
+      version: "0.139.0"
+      note: "测试/证据管线专用 pipeline(OTLP receiver + batch + debug/file exporter);无 vendor 后端"
+    license:
+      spdx: Apache-2.0
+      evidence: "https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [image_rebuild, collector_evidence_suite, privacy_canary]
+    controls:
+      - no_vendor_backend_by_default
+      - loopback_only_default_endpoint
 
   - id: mcp
     adoption_status: ADOPTED

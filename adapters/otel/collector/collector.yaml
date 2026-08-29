@@ -1,0 +1,35 @@
+# M15 Research OS OTel Collector 配置(测试/证据管线)。
+#
+# 只含 OTLP receiver + batch + debug/file exporter——任何 vendor 后端
+# 均不进入默认仓库(UPSTREAM_COMPONENTS / ADR-0026)。本管线不配置任何
+# 内容采集 transform;span/metric attributes 为闭集词汇(sanitize 白名单)。
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 512
+
+exporters:
+  debug:
+    verbosity: basic
+  file:
+    path: /var/lib/otelcol/research_os_signals.json
+    rotation:
+      max_megabytes: 32
+      max_backups: 3
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, file]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, file]

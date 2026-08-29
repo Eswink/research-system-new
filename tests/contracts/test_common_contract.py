@@ -1,8 +1,6 @@
 """通用 Port Contract suite：对注册表内每个实现强制共同语义。
 
-覆盖：正常调用、invalid input、transient/permanent 失败注入、
-close 后不可用、call recording、deterministic replay、
-serialization boundary。实现无关（Fake 与未来真实 adapter 共用）。
+覆盖：正常/invalid input/失败注入/close 语义/call recording/replay/serialization。
 """
 
 from __future__ import annotations
@@ -20,6 +18,7 @@ from adapters.fakes import (
     FakeBudgetLedger,
     FakeCredentialResolver,
     FakeEndpointStore,
+    FakeEvalReportStore,
     FakeEventPublisher,
     FakeEvidenceLedger,
     FakeExecutionBackend,
@@ -73,6 +72,7 @@ _FAKE_FACTORIES: dict[str, Callable[[], FakeBase]] = {
     "execution_backend": FakeExecutionBackend,
     "artifact_store": FakeArtifactStore,
     "event_publisher": FakeEventPublisher,
+    "eval_report_store": FakeEvalReportStore,
     "evidence_ledger": FakeEvidenceLedger,
     "retrieval_index": FakeRetrievalIndex,
     "policy_evaluator": FakePolicyEvaluator,
@@ -93,6 +93,7 @@ _PORT_PROTOCOL_NAMES = {
     "execution_backend": "ExecutionBackend",
     "artifact_store": "ArtifactStore",
     "event_publisher": "EventPublisher",
+    "eval_report_store": "EvalReportStore",
     "evidence_ledger": "EvidenceLedger",
     "retrieval_index": "RetrievalIndex",
     "policy_evaluator": "PolicyEvaluator",
@@ -102,6 +103,7 @@ _PORT_PROTOCOL_NAMES = {
     "endpoint_store": "EndpointStore",
     "resource_catalog": "ResourceCatalog",
     "tool_pack_store": "ToolPackStore",
+    "telemetry_sink": "TelemetrySink",
 }
 
 _PORT_PROBES: dict[str, Callable[[Any], object]] = {
@@ -115,6 +117,7 @@ _PORT_PROBES: dict[str, Callable[[Any], object]] = {
     "execution_backend": lambda fake: fake.execute(execution_spec()),
     "artifact_store": lambda fake: fake.get("missing-artifact"),
     "event_publisher": lambda fake: fake.publish(event_envelope(event_id="probe")),
+    "eval_report_store": lambda fake: fake.get("missing-digest"),
     "evidence_ledger": lambda fake: fake.get_claim("missing-claim"),
     "retrieval_index": lambda fake: fake.search("probe"),
     "policy_evaluator": lambda fake: fake.evaluate(PolicyRequest(actor="probe", capability="x")),
@@ -135,6 +138,7 @@ _PORT_PROBE_METHODS: dict[str, str] = {
     "execution_backend": "execute",
     "artifact_store": "get",
     "event_publisher": "publish",
+    "eval_report_store": "get",
     "evidence_ledger": "get_claim",
     "retrieval_index": "search",
     "policy_evaluator": "evaluate",
@@ -168,7 +172,9 @@ def test_interface_compatibility(port: str) -> None:
 
 @pytest.mark.parametrize("port", PORT_NAMES)
 def test_close_then_calls_are_rejected(port: str) -> None:
-    """close 后调用必须抛 PermanentPortError（resource cleanup 语义）。"""
+    """close 后调用必须抛 PermanentPortError(resource cleanup 语义)。"""
+    if port not in _FAKE_FACTORIES:
+        pytest.skip("dedicated fail-open contract suite")
     instance = _FAKE_FACTORIES[port]()
     instance.close()
     with pytest.raises(PermanentPortError):
@@ -178,6 +184,8 @@ def test_close_then_calls_are_rejected(port: str) -> None:
 @pytest.mark.parametrize("port", PORT_NAMES)
 def test_failure_injection_records_and_raises(port: str) -> None:
     """脚本注入的 PortError 必须被抛出并记录到 call log。"""
+    if port not in _FAKE_FACTORIES:
+        pytest.skip("dedicated fail-open contract suite")
     instance = _FAKE_FACTORIES[port]()
     probe = _PORT_PROBES[port]
     method = _PORT_PROBE_METHODS[port]
@@ -256,10 +264,7 @@ def test_provider_types_do_not_leak_from_ports() -> None:
 
 
 def test_port_interface_compatibility_matrix() -> None:
-    """注册表必须覆盖全部 17 个 Port 名称。
-
-    M8 新增 tool_pack_store；M10 新增 evidence_ledger 与 retrieval_index。
-    """
+    """注册表必须覆盖全部 19 个 Port 名称（M8/M10/M15 增量）。"""
     expected = {
         "agent_runtime",
         "workflow_engine",
@@ -270,6 +275,7 @@ def test_port_interface_compatibility_matrix() -> None:
         "artifact_store",
         "event_publisher",
         "evidence_ledger",
+        "eval_report_store",
         "retrieval_index",
         "policy_evaluator",
         "credential_resolver",
@@ -278,6 +284,7 @@ def test_port_interface_compatibility_matrix() -> None:
         "endpoint_store",
         "resource_catalog",
         "tool_pack_store",
+        "telemetry_sink",
     }
     assert set(PORT_IMPLEMENTATIONS) == expected
 

@@ -25,3 +25,4 @@ source_modules =
     packages.application
 forbidden_modules =
     mcp
+    opentelemetry

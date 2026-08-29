@@ -177,3 +177,21 @@ M7 编排的 `phase_runner → evaluation_gate` 链路中，gate 输入事实
 `TrustLabel.GENERATED` 登记；M11 的 `gate_outcome` scorer 把该 gate
 作为被观测对象，其输入真实性与 M12 真实工作流的 Evidence 治理挂钩。
 M11 平面自身的评测输入全部经 digest 校验后消费。
+
+## 9. M15 评测运营(EvalReportStore + Trend)
+
+- **存储**:`EvalReportStore` Port(`put/get/query`);verbatim 报告字节是
+  canonical truth(`report_digest` 可校验),索引列(dataset/gate/scorer/
+  evaluator/verdict/pass-fail-infra counts/case_ids/run_id)为可重建投影
+  ——rebuild-from-bodies 测试保证。SQLite/Postgres(005_eval_state.sql)/Fake
+  三实现,contract suite 覆盖。
+- **可比性**:`ComparabilityVerdict` 闭集(CASE_SET/DATASET/GATE_CONFIG/
+  SCORER/EVALUATOR/SYSTEM_VERSION/SEGMENTED/INCOMPATIBLE_GENERATION),
+  由索引字段级 diff 派生;COMPARABLE ⇔ `compare_reports` 同判定。
+  已知限制:rubric 文本折叠进 dataset_digest → rubric-only 变化表现为
+  DATASET_CHANGED。
+- **趋势**:`trend.py` 仅在相邻两点 COMPARABLE 时产出回归 marker;
+  回归判定唯一来源是 M11 `compare_reports`(本层不发明阈值);
+  INFRA_ERROR 独立计数(不折算、不 PASS、不丢弃);missing evaluation
+  是与 quality failure 不同的第三态。
+- **API**:`GET /evaluations/trend` 只读投影。

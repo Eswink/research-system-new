@@ -93,7 +93,7 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | DONE（2026-08-22；R1 修复完成 2026-08-23；**2026-08-28 重新独立复审重判 PASS**（DoD-3 live relay 凭据闭环后由 PASS_WITH_WARNINGS 升 PASS）：RECHECK-20260828-023） |
 | M13 | Research Console | Product | M12 | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
 | M14 | Durable Workflow + PostgreSQL | Production | M12 | DONE（2026-08-28 立项；WP-J2 重判 PASS：RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
-| M15 | Observability / Cost / Eval Operations | Production | M11 | PLANNED |
+| M15 | Observability / Cost / Eval Operations | Production | M11 | DONE（2026-08-29 立项实施：OTel adapter 边界 ADR-0026、隐私 canary、五状态成本投影、EvalReportStore/趋势、operations API/Console；无内容 Debug Mode） |
 | M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | PLANNED |
 | M17 | GPU / HPC | Scale | M16+M9 | PLANNED |
 | M18 | Multi-user / Organization / RBAC | Enterprise | M13+M14 | PLANNED |
@@ -203,13 +203,11 @@ regression（以 Eval Harness + deterministic gates 为基准），不允许仅
 
 ### 下一阶段推荐
 
-**M14 Durable Workflow + PostgreSQL**（已立项，2026-08-28）。M12 已完成
-（R1 修复后待重新独立复审重判）；M13 已通过独立复审（2026-08-27）。
-M14 工作树已有 PostgreSQL adapter 初版与 Temporal qualification
-（16Q：DEFER，ADR-0025）；DoD 验证（contract suite parity、跨进程 E2E、
-lease 自愈、m0 全绿、独立复审）未完成，不宣称 DONE。M15（Observability /
-Cost / Eval Operations）可与 M14 并行启动（软依赖 M12）。M14 通过后
-按 DAG 进入 M16/M18。
+**M16 Distributed Execution + Remote Sandbox/Worker**（M14 已 DONE：
+WP-J2 重判 PASS，RECHECK-20260828-022；Temporal DEFERRED，ADR-0025）。
+M12 重判 PASS（RECHECK-20260828-023）；M13 独立复审 PASS（2026-08-27）；
+M15 Observability / Cost / Eval Operations 完成（2026-08-29）。M14/M15
+通过后按 DAG 进入 M16/M18。
 
 > 历史说明：M8-M11 规划期（2026-08-14）本节推荐为 M8；M8-M11 完成后
 > （2026-08-16，DOC-R1）本节更新为 M12；M12/M13 完成后（2026-08-28）
@@ -546,8 +544,9 @@ Hard：M8+M9+M10+M11。
 
 > 完成状态（2026-08-22）：DoD 14 项逐项 PASS（原记录）。原 PASS 判定经
 > M12-R1 独立复审证伪（13 Finding），修复完成于 2026-08-23（见
-> [M12_R1_COMPLETION_RECORD.md](M12_R1_COMPLETION_RECORD.md)）；M12
-> **待重新独立复审重判**。正式计划见
+> [M12_R1_COMPLETION_RECORD.md](M12_R1_COMPLETION_RECORD.md)）；2026-08-28
+> 重新独立复审**重判 PASS**（RECHECK-20260828-023；DoD-3 live relay 凭据
+> 闭环）。正式计划见
 > `../../.cursor/plans/tasks/PLAN-20260828-017-m12-first-real-research-workflow.md`
 > 与 `PLAN-20260828-019-m12-r1-production-truth-closure.md`。
 

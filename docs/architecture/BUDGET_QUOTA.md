@@ -76,3 +76,23 @@ HARD_STOP
 - 保留必须 Reviewer。
 
 降级必须记录 Decision。
+
+## 7. M15 成本运营实现
+
+- **quantity 三态**:`UsageLedgerEntry.quantity_status ∈ {KNOWN, UNKNOWN}` +
+  `unavailable_reason`;UNKNOWN 绝不解释为 0(域不变量强制 reason)。
+  历史行解码为 KNOWN/attempt=1,不重解释既有数字。
+- **attempt 作用域**:`attempt` 字段进入 entry id(retry 追加而非碰撞);
+  失败/重试耗尽/取消路径由 `record_attempt_usage` / `record_cancelled_usage`
+  记账(quantity=0 + UNKNOWN,不伪造 turn 消耗)。
+- **定价快照**:`examples/config/pricing.yaml`(出厂 `unpriced_v1`,零条目)
+  → `PricingTable`(版本 + currency + effective_from + calculation_method +
+  sha256 `pricing_digest()`);厂商价格不进 Domain、不进仓库默认配置。
+- **成本投影**:`packages/application/cost/projection.py` 五状态
+  `CostAmountStatus{ACTUAL, ESTIMATED, MONETARY_UNAVAILABLE, USAGE_UNKNOWN, ZERO}`,
+  完备判定:UNKNOWN→USAGE_UNKNOWN;未定价/单位不匹配→MONETARY_UNAVAILABLE;
+  quantity=0→ZERO;实测→ACTUAL;其余→ESTIMATED(表价计算)。每个金额盖
+  pricing_version+digest 章,改价不改写历史投影。
+- **唯一 usage 输入**:`BudgetLedger.snapshot()`(telemetry 绝不是成本输入,
+  tests/application/test_cost_projection.py 断言)。
+- **API**:`GET /runs/{id}/cost` 只读投影;usage 端点契约不变(M13 绿)。

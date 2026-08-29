@@ -16,7 +16,9 @@ from openhands.sdk.llm.llm import LLM
 
 def main() -> int:
     # 1) 三要素构造
-    llm = LLM(model="test-relay-model", base_url="https://relay.example.test/v1", api_key="sk-test-mock")
+    llm = LLM(
+        model="test-relay-model", base_url="https://relay.example.test/v1", api_key="sk-test-mock"
+    )
     print(f"model={llm.model!r} base_url={llm.base_url!r} api_key_set={bool(llm.api_key)}")
     assert llm.model == "test-relay-model"
     assert llm.base_url == "https://relay.example.test/v1"
@@ -35,7 +37,9 @@ def main() -> int:
 
         provider = LLMProvider.from_model(model=llm.model, api_base=llm.base_url)
         kwargs = provider.as_litellm_call_kwargs(api_key="sk-test-mock")
-        print(f"litellm kwargs: model={kwargs.get('model')!r} api_base={kwargs.get('api_base')!r} custom_provider={kwargs.get('custom_llm_provider')!r}")
+        print(
+            f"litellm kwargs: model={kwargs.get('model')!r} api_base={kwargs.get('api_base')!r} custom_provider={kwargs.get('custom_llm_provider')!r}"
+        )
         print("S2-3 litellm kwargs 转换: PASS")
     except Exception as exc:  # noqa: BLE001
         print(f"S2-3 litellm kwargs 转换: FAILED ({type(exc).__name__}: {exc})")

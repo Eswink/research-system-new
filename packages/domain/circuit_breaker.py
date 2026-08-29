@@ -90,12 +90,18 @@ def apply_success(state: CircuitBreakerState, config: CircuitBreakerConfig) -> C
     raise CircuitBreakerTransitionError(state.state, SUCCESS)
 
 
-def apply_failure(state: CircuitBreakerState, config: CircuitBreakerConfig) -> CircuitBreakerState:
+def apply_failure(
+    state: CircuitBreakerState,
+    config: CircuitBreakerConfig,
+    now: datetime | None = None,
+) -> CircuitBreakerState:
+    """失败迁移;`now` 用于打开发断路器的 opened_at(缺失则继承旧值,保持
+    既有行为——调用方不传 now 时 OPEN 无 opened_at,apply_tick 不会半开)。"""
     if state.state == "HALF_OPEN":
         return CircuitBreakerState(
             state="OPEN",
             consecutive_failures=state.consecutive_failures + 1,
-            opened_at=state.opened_at,
+            opened_at=now if now is not None else state.opened_at,
             probes_in_half_open=0,
         )
     if state.state == "CLOSED":
@@ -104,7 +110,7 @@ def apply_failure(state: CircuitBreakerState, config: CircuitBreakerConfig) -> C
             return CircuitBreakerState(
                 state="OPEN",
                 consecutive_failures=failures,
-                opened_at=state.opened_at,
+                opened_at=now if now is not None else state.opened_at,
                 probes_in_half_open=0,
             )
         return CircuitBreakerState(

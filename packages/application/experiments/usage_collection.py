@@ -45,6 +45,8 @@ class UsageCollection:
     eval_report: EvalReport | None = None
     task_id: str | None = None
     agent_id: str | None = None
+    # M15:attempt 作用于 entry id 作用域(retry 追加而非碰撞)与条目元数据
+    attempt: int = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,28 +71,36 @@ def _model_usage(
     calls = len(collection.model_completions)
     prompt = sum(item.prompt_tokens or 0 for item in collection.model_completions)
     completion = sum(item.completion_tokens or 0 for item in collection.model_completions)
-    unknown = any(
-        item.usage_unavailable_reason is not None for item in collection.model_completions
-    )
+    unavailable = [
+        item.usage_unavailable_reason
+        for item in collection.model_completions
+        if item.usage_unavailable_reason is not None
+    ]
+    unknown = bool(unavailable)
     usage = ModelUsage(
         model_id=collection.model_id or "unknown",
         prompt_tokens=prompt if not unknown else 0,
         completion_tokens=completion if not unknown else 0,
         calls=calls,
+        usage_unavailable_reason=("; ".join(sorted(set(unavailable))) if unknown else None),
+        attempt=collection.attempt,
     )
     return (usage,)
 
 
-def _tool_usage(results: tuple[ToolResultRecord, ...]) -> tuple[ToolUsage, ...]:
+def _tool_usage(results: tuple[ToolResultRecord, ...], attempt: int = 1) -> tuple[ToolUsage, ...]:
     from collections import Counter
 
     counts = Counter(item.tool_id for item in results)
     return tuple(
-        ToolUsage(tool_id=tool_id, requests=count) for tool_id, count in sorted(counts.items())
+        ToolUsage(tool_id=tool_id, requests=count, attempt=attempt)
+        for tool_id, count in sorted(counts.items())
     )
 
 
-def _experiment_usage(result: ExperimentRunResult | None) -> tuple[ExperimentUsage, ...]:
+def _experiment_usage(
+    result: ExperimentRunResult | None, attempt: int = 1
+) -> tuple[ExperimentUsage, ...]:
     if result is None:
         return ()
     return (
@@ -99,6 +109,7 @@ def _experiment_usage(result: ExperimentRunResult | None) -> tuple[ExperimentUsa
             image_digest=result.image_digest,
             elapsed_seconds=_elapsed_seconds(result),
             exit_code=0,
+            attempt=attempt,
         ),
     )
 
@@ -130,8 +141,8 @@ def _evaluation_usage(report: EvalReport | None) -> tuple[EvaluationUsage, ...]:
 def collect_usage(collection: UsageCollection) -> tuple[BudgetClosureInput, CollectedUsage]:
     """把真实事件转为 BudgetClosureInput 并附摘要（只读计算，不落账）。"""
     model_usage = _model_usage(collection)
-    tool_usage = _tool_usage(collection.tool_results)
-    experiment_usage = _experiment_usage(collection.experiment_result)
+    tool_usage = _tool_usage(collection.tool_results, collection.attempt)
+    experiment_usage = _experiment_usage(collection.experiment_result, collection.attempt)
     evaluation_usage = _evaluation_usage(collection.eval_report)
     summary = CollectedUsage(
         model_tokens=sum(item.prompt_tokens + item.completion_tokens for item in model_usage),

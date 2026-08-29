@@ -1,5 +1,59 @@
 # Changelog
 
+## v0.5.1 — 2026-08-29（M15 债务清偿轮）
+
+- **PHASE 级 span**：`SessionSpecContext.phase_id` + `execute_phases` 连续
+  分组包 PHASE span，TASK 自动父链接（层级字段集投影）。
+- **span_ref 并发唯一性**：确定性 scope 只摘要层级字段集 + trace_id（修复
+  父子投影不一致）；叶子 scope 加 per-invocation nonce（修复 llm.call 空
+  correlation 全进程共享引用导致的 SpanMapper 覆盖/幻影 drop）。
+- **断路器接线（opt-in）**：gateway per-endpoint 内存态断路器——OPEN 短路
+  （DENIED + circuit_state 属性）、half-open 探测恢复；`apply_failure(now)`
+  修复自然开路 opened_at=None 缺陷。
+- **RSS 精确测量**：stdlib-only 跨平台 `_rss_mib()`（psapi/proc/resource）
+  进 overhead 测试与 soak 探针；无新增依赖。
+- **CI**：新增 `collector-quality` job（compose 起 m14+m15，
+  `requires_collector or postgres` 套件常驻）。
+- **文档对齐**：BACKLOG/MILESTONES 中 M12/M14 过期状态表述与重判结果一致。
+
+## v0.5.0 — 2026-08-29（M15 Observability / Cost / Eval Operations）
+
+- **M15 完成**：四个 work package 全部落地，无第二 canonical state，
+  M0–M14 语义不变（m0 门禁 19/19 保持）。
+- **WP1 观测平面**：自营观测词汇（`packages/application/observability/`：
+  OperationScope/Outcome、CorrelationRef、闭集 AttributeKey/MetricName/
+  MetricLabel、sanitize、`operation()` 上下文管理器）；`TelemetrySink` Port
+  （fail-open，非 Audit Store）；`adapters/otel/`（config/resource/
+  span_mapping/metric_mapping/sink/provider/failsafe——OTel SDK 仅此包）；
+  六个 OTel Python 包 1.39.1/0.60b1 升级为直接锁定依赖（UPSTREAM_COMPONENTS
+  ADOPTED + sdist digest）；digest-pinned collector（0.139.0）+
+  `docker-compose.m15.yml` 证据管线；in-repo OTLP/HTTP receiver；
+  九类信号站点（relay gateway 含内部重试、tool 执行、workflow 引擎、
+  outbox relay、schedulers、docker backend、eval runner、orchestration）；
+  八种 collector 故障注入下 canonical state 与 telemetry-off baseline 相等；
+  隐私 canary（真实 OTLP 字节零标记）+ metric label cardinality 审计；
+  ADR-0026（adapter 边界、无内容通道、无内容 Debug Mode）。
+- **WP2 成本运营**：UsageLedger 加性修正（quantity_status/unavailable_reason/
+  attempt，UNKNOWN≠0 域不变量；SQLite/Postgres 全保真编解码；streaming
+  unknown-vs-zero 修复；失败/取消路径 attempt 作用域记账）；版本化定价快照
+  （`unpriced_v1` 出厂，厂商价格不进仓库）；五状态成本投影
+  （ACTUAL/ESTIMATED/MONETARY_UNAVAILABLE/USAGE_UNKNOWN/ZERO）+ 对账测试。
+- **WP3 评测运营**：`EvalReportStore` Port（verbatim 字节 + 可重建索引，
+  SQLite/Postgres/False 三实现 + 005 迁移）；`ComparabilityVerdict` 闭集 +
+  分段趋势（回归判定唯一来源 `compare_reports`；INFRA_ERROR 独立计数；
+  missing evaluation 第三态）。
+- **API/Console**：`GET /runs/{id}/telemetry`、`GET /runs/{id}/cost`、
+  `GET /evaluations/trend`（只读投影；OpenAPI 快照再生）；Console
+  Operations 视图 + client 方法 + 手镜像类型。
+- **WP4 验证**：privacy canary、`.importlinter.otel` + 全层 forbidden 列表 +
+  AST 边界测试（OTel SDK 仅 adapters.otel）；`.importlinter.postgres` 纳入
+  门禁执行；tautological OpenAPI 快照测试修复（提交前字节对比）；
+  production-boundaries.test.mjs 接入根 test 脚本；telemetry off/on 开销对比
+  + `tools/probes/probe_telemetry_soak.py`；M14 postgres/crash-restart/probe
+  套件 off/on 双跑通过。
+
+## v0.4.0 — 2026-08-15（M11 Evaluation Plane）
+
 ## v0.4.0 — 2026-08-15（M11 Evaluation Plane）
 
 - M11 完成（commit `0846765` + 收尾 `0cc6361`）：Evaluation Plane——

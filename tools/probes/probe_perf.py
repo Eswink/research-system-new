@@ -62,8 +62,7 @@ for r in rows5:
 
 print("\n=== EXPLAIN: outbox pending scan ===")
 rows6 = conn.execute(
-    "EXPLAIN SELECT envelope_json FROM outbox_events WHERE published_at IS NULL"
-    " ORDER BY created_at"
+    "EXPLAIN SELECT envelope_json FROM outbox_events WHERE published_at IS NULL ORDER BY created_at"
 ).fetchall()
 for r in rows6:
     print(r[0])

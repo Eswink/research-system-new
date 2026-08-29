@@ -87,3 +87,41 @@ secret leakage incidents = 0
 - tool permission denial spike；
 - artifact digest mismatch；
 - outbox backlog。
+
+## 6. Implementation Map (M15)
+
+M15 落地了自营观测词汇 + OpenTelemetry 适配器（ADR-0026）：
+
+```text
+packages/application/observability/   OperationScope/Outcome, CorrelationRef,
+                                      闭集 AttributeKey/MetricName/MetricLabel,
+                                      sanitize_attributes, operation()
+packages/application/ports/telemetry_sink.py   TelemetrySink Port + Null 默认
+adapters/otel/                        config/resource/span_mapping/metric_mapping/
+                                      sink/provider/failsafe（OTel SDK 只在此包）
+adapters/otel/collector/              digest-pinned collector(Dockerfile+config)
+adapters/fakes/telemetry_sink.py      FakeTelemetrySink
+tests/observability/                  roundtrip/canary/fault-injection/overhead
+tools/probes/probe_telemetry_soak.py  手工 soak 探针
+docker-compose.m15.yml                collector 证据管线
+```
+
+关键实现事实（均有测试支撑）：
+
+- 无内容通道：prompt/response/tool args/artifact body 在词汇层结构性不可表达
+  （`AttributeKey`/`MetricLabel` 闭集 + sanitize）；不存在 `capture_content` 开关，
+  M15 无内容 Debug Mode。
+- fail-open：`FailSafeTelemetrySink` 吞掉一切 inner 异常并计 drop；
+  collector down/timeout/500/slow/restart/hangup/queue-full/malformed-endpoint
+  八种注入下 canonical state 与 telemetry-off baseline 逐项相等
+  （tests/observability/test_failure_isolation.py；PG 变体 postgres 标记）。
+- 信号站点：relay gateway（含内部重试 metric）、tool_plane 执行用例与
+  PolicyWrappedToolExecutor、sqlite/pg workflow 引擎（queue lag / task duration /
+  lease expired）、outbox relay（backlog/drained）、schedulers（per-pass span）、
+  docker execution backend、eval runner、run orchestration（run/task span）。
+- duration metric 由 sink 在 end_operation 自动派生（scope→MetricName 映射）；
+  TASK 的 duration 由 workflow engine 按 created_at 计，避免二次计数。
+- 真实 OTLP wire bytes 由 in-repo receiver（tests/observability/otlp_receiver.py）
+  接收并解码；隐私 canary 对原始字节零标记出现。
+- 架构边界：`.importlinter.otel` + 各层 forbidden 列表 + AST 扫描测试强制
+  OTel SDK 只存在于 adapters/otel。

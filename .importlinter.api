@@ -28,3 +28,4 @@ source_modules =
 forbidden_modules =
     packages
     adapters
+    opentelemetry

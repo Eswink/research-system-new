@@ -22,6 +22,7 @@ from packages.domain.budget import (
     BudgetPolicy,
     BudgetReservation,
     LedgerCostStatus,
+    LedgerQuantityStatus,
     ResourceType,
     UsageLedgerEntry,
 )
@@ -161,6 +162,7 @@ def _encode_policy(policy: BudgetPolicy) -> dict[str, Any]:
 
 
 def _encode_entry(entry: UsageLedgerEntry) -> dict[str, Any]:
+    """全保真编码:M15 起不再丢弃 currency/agent_id/tool_id/source 等字段。"""
     return {
         "entry_id": entry.entry_id,
         "resource_type": entry.resource_type.value,
@@ -173,10 +175,17 @@ def _encode_entry(entry: UsageLedgerEntry) -> dict[str, Any]:
         "actual_cost_minor": entry.actual_cost_minor,
         "model_id": entry.model_id,
         "task_id": entry.task_id,
+        "currency": entry.currency,
+        "agent_id": entry.agent_id,
+        "tool_id": entry.tool_id,
+        "quantity_status": entry.quantity_status.value,
+        "unavailable_reason": entry.unavailable_reason,
+        "attempt": entry.attempt,
     }
 
 
 def _decode_entry(record: dict[str, Any]) -> UsageLedgerEntry:
+    """全保真解码;历史行缺新字段时解码为 KNOWN/attempt=1(不重解释历史数字)。"""
     return UsageLedgerEntry(
         entry_id=record["entry_id"],
         resource_type=ResourceType(record["resource_type"]),
@@ -189,4 +198,18 @@ def _decode_entry(record: dict[str, Any]) -> UsageLedgerEntry:
         actual_cost_minor=record.get("actual_cost_minor"),
         model_id=record.get("model_id"),
         task_id=record.get("task_id"),
+        currency=record.get("currency", "USD"),
+        agent_id=record.get("agent_id"),
+        tool_id=record.get("tool_id"),
+        quantity_status=_quantity_status(record),
+        unavailable_reason=record.get("unavailable_reason"),
+        attempt=record.get("attempt", 1),
     )
+
+
+def _quantity_status(record: dict[str, Any]) -> LedgerQuantityStatus:
+    """历史行无 quantity_status 字段 → KNOWN(不重解释历史数字)。"""
+    value = record.get("quantity_status")
+    if value is None:
+        return LedgerQuantityStatus.KNOWN
+    return LedgerQuantityStatus(value)

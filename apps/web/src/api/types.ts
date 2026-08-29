@@ -390,3 +390,86 @@ export interface ExperimentViewDto {
   experiments: ExperimentRunDto[];
   reproduction_note: string;
 }
+export interface TelemetryTaskCountsDto {
+  total: number;
+  succeeded: number;
+  failed: number;
+  cancelled: number;
+  queued: number;
+  leased: number;
+  other: number;
+}
+
+export interface TelemetryOutboxDto {
+  pending: number;
+}
+
+export interface TelemetrySinkDto {
+  enabled: boolean;
+  dropped: number;
+  last_error: string | null;
+}
+
+export interface RunTelemetryDto {
+  run_id: string;
+  generated_at: string;
+  tasks: TelemetryTaskCountsDto;
+  outbox: TelemetryOutboxDto;
+  sink: TelemetrySinkDto;
+}
+
+export interface CostAmountDto {
+  status: string;
+  minor_units: number | null;
+  currency: string;
+}
+
+export interface CostDimensionDto {
+  dimension: string;
+  resource_key: string;
+  amount: CostAmountDto;
+  entry_count: number;
+}
+
+export interface CostViewDto {
+  run_id: string;
+  pricing_version: string;
+  pricing_digest: string;
+  dimensions: CostDimensionDto[];
+  total: CostAmountDto;
+}
+
+export interface TrendPointDto {
+  report_digest: string;
+  recorded_at: string | null;
+  verdict: string;
+  pass_count: number;
+  fail_count: number;
+  infra_error_count: number;
+  missing: boolean;
+}
+
+export interface RegressionMarkerDto {
+  baseline_digest: string;
+  candidate_digest: string;
+  verdict: string;
+  newly_regressed: string[];
+  newly_fixed: string[];
+}
+
+export interface TrendSegmentDto {
+  points: TrendPointDto[];
+  comparisons: RegressionMarkerDto[];
+}
+
+export interface TrendDivergenceDto {
+  verdict: string;
+  reason: string;
+}
+
+export interface TrendViewDto {
+  dataset_id: string | null;
+  segments: TrendSegmentDto[];
+  divergences: TrendDivergenceDto[];
+  missing: TrendPointDto[];
+}

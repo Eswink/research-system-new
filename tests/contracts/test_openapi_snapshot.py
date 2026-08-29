@@ -31,8 +31,11 @@ def _regenerate() -> dict[str, Any]:
 
 
 def test_openapi_snapshot_is_current() -> None:
+    # 修复自恰快照缺陷:先取已提交字节,再再生成(_regenerate 会覆写文件),
+    # 比较对象是"再生成结果 vs 提交前快照"——漂移可被发现。
+    committed_bytes = SNAPSHOT.read_text(encoding="utf-8")
+    committed = cast(dict[str, Any], json.loads(committed_bytes))
     regenerated = _regenerate()
-    committed = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))
     assert regenerated == committed, (
         "docs/api/openapi.m13.json drifted from generated OpenAPI; "
         "run tools/gen_openapi.py and commit the result"

@@ -11,17 +11,15 @@ import tempfile
 from pathlib import Path
 
 from openhands.sdk.agent.agent import Agent
-from openhands.sdk.testing import TestLLM
-from openhands.sdk.llm import Message, TextContent
-from openhands.sdk.workspace.local import LocalWorkspace
 from openhands.sdk.conversation.conversation import Conversation
+from openhands.sdk.llm import Message, TextContent
+from openhands.sdk.testing import TestLLM
+from openhands.sdk.workspace.local import LocalWorkspace
 
 
 def main() -> int:
     tmpdir = Path(tempfile.mkdtemp(prefix="s6-persist-"))
-    llm = TestLLM.from_messages(
-        [Message(role="assistant", content=[TextContent(text="Done.")])]
-    )
+    llm = TestLLM.from_messages([Message(role="assistant", content=[TextContent(text="Done.")])])
     persist = tmpdir / "persist"
     try:
         # 1) 创建并 run，观察持久化产物
@@ -37,7 +35,9 @@ def main() -> int:
         base_state = persist / conv_id.hex / "base_state.json"
         events_dir = persist / conv_id.hex / "events"
         print(f"base_state exists: {base_state.exists()}")
-        print(f"events dir exists: {events_dir.exists()} files={len(list(events_dir.glob('*.json')))}")
+        print(
+            f"events dir exists: {events_dir.exists()} files={len(list(events_dir.glob('*.json')))}"
+        )
         if base_state.exists():
             state = json.loads(base_state.read_text(encoding="utf-8"))
             print(f"base_state keys: {sorted(state.keys())}")

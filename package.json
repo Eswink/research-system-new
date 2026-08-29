@@ -11,7 +11,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "boundaries": "depcruise --config dependency-cruiser.config.mjs --output-type err tests/architecture/typescript/fixtures/valid apps/web/src",
-    "test": "node --test tests/architecture/typescript/dependency-boundaries.test.mjs tests/tooling/eslint-rule.test.mjs",
+    "test": "node --test tests/architecture/typescript/dependency-boundaries.test.mjs tests/architecture/typescript/production-boundaries.test.mjs tests/tooling/eslint-rule.test.mjs",
     "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run boundaries && pnpm run test"
   },
   "devDependencies": {

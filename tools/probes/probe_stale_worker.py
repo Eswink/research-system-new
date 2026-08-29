@@ -73,9 +73,7 @@ def _make_task(task_id: str) -> tuple[ResearchTask, TaskContract]:
         version="1",
         purpose="audit stale worker fencing probe",
         acceptance_criteria=[
-            AcceptanceCriterion(
-                type=AcceptanceCriterionType.ARTIFACT_EXISTS, description="probe"
-            )
+            AcceptanceCriterion(type=AcceptanceCriterionType.ARTIFACT_EXISTS, description="probe")
         ],
     )
     return task, contract
@@ -123,9 +121,11 @@ def scenario_b_completed_first() -> None:
     engine_a2.close()
 
     st = _state(task_id)
-    check("S1 stale complete no-op or reject (never overwrite)",
-          stale_outcome in ("deduped-noop", "rejected") and st["status"] == "SUCCEEDED",
-          f"stale={stale_outcome} state={st}")
+    check(
+        "S1 stale complete no-op or reject (never overwrite)",
+        stale_outcome in ("deduped-noop", "rejected") and st["status"] == "SUCCEEDED",
+        f"stale={stale_outcome} state={st}",
+    )
 
 
 def scenario_b_holds_new_lease() -> None:
@@ -152,15 +152,19 @@ def scenario_b_holds_new_lease() -> None:
     engine_a2.close()
 
     st = _state(task_id)
-    check("S2 stale complete rejected while B works",
-          stale_outcome == "rejected" and st["status"] == "LEASED" and st["leases"] == 1,
-          f"stale={stale_outcome} state={st}")
+    check(
+        "S2 stale complete rejected while B works",
+        stale_outcome == "rejected" and st["status"] == "LEASED" and st["leases"] == 1,
+        f"stale={stale_outcome} state={st}",
+    )
     # B still owns the lease and can finish
     engine_b.complete(lease_b, TaskCompletion(task_id=task_id, outcome="SUCCEEDED"))
     st = _state(task_id)
-    check("S2 B completes after rejecting stale write",
-          st["status"] == "SUCCEEDED" and st["completed"] == 1 and st["leases"] == 0,
-          f"state={st}")
+    check(
+        "S2 B completes after rejecting stale write",
+        st["status"] == "SUCCEEDED" and st["completed"] == 1 and st["leases"] == 0,
+        f"state={st}",
+    )
     engine_b.close()
 
 

@@ -46,9 +46,7 @@ def check(label: str, cond: bool, detail: str = "") -> None:
 
 def _tables() -> set[str]:
     conn = psycopg.connect(DSN, autocommit=True)
-    rows = conn.execute(
-        "SELECT tablename FROM pg_tables WHERE schemaname='public'"
-    ).fetchall()
+    rows = conn.execute("SELECT tablename FROM pg_tables WHERE schemaname='public'").fetchall()
     conn.close()
     return {r[0] for r in rows}
 
@@ -70,15 +68,27 @@ def _drop_schema() -> None:
 def scenario_empty_bootstrap() -> None:
     _drop_schema()
     applied = bootstrap(DSN)
-    check("bootstrap from empty applies [1,2,3,4] in order", applied == [1, 2, 3, 4],
-          str(applied))
+    check("bootstrap from empty applies [1,2,3,4] in order", applied == [1, 2, 3, 4], str(applied))
     tables = _tables()
     for expected in (
-        "tasks", "leases", "idempotency_records", "outbox_events", "artifacts",
-        "runs", "m12_sources", "m12_evidence", "m12_claims", "m12_relations",
-        "budget_reservations", "budget_usage_entries", "approvals",
-        "m12_memory", "experiment_plans", "experiment_runs",
-        "reproducibility_audits", "migration_version",
+        "tasks",
+        "leases",
+        "idempotency_records",
+        "outbox_events",
+        "artifacts",
+        "runs",
+        "m12_sources",
+        "m12_evidence",
+        "m12_claims",
+        "m12_relations",
+        "budget_reservations",
+        "budget_usage_entries",
+        "approvals",
+        "m12_memory",
+        "experiment_plans",
+        "experiment_runs",
+        "reproducibility_audits",
+        "migration_version",
     ):
         check(f"table {expected} exists", expected in tables)
     second = migrate(DSN)
@@ -93,7 +103,7 @@ def scenario_interrupted_migration_rolls_back() -> None:
     # copy real files
     for f in sorted(_REAL_MIGRATIONS_DIR.glob("*.sql")):
         (staging / f.name).write_bytes(f.read_bytes())
-    broken = staging / "005_broken.sql"
+    broken = staging / "006_broken.sql"
     broken.write_text(
         "CREATE TABLE IF NOT EXISTS t_partial (id TEXT);\n"
         "INSERT INTO t_partial VALUES ('x');\n"
@@ -111,26 +121,28 @@ def scenario_interrupted_migration_rolls_back() -> None:
             check("interrupted migration raises", True)
             captured = repr(exc)
         tables = _tables()
-        check("no partial table t_partial (rolled back)", "t_partial" not in tables,
-              f"tables has t_partial={'t_partial' in tables}")
+        check(
+            "no partial table t_partial (rolled back)",
+            "t_partial" not in tables,
+            f"tables has t_partial={'t_partial' in tables}",
+        )
         check("no partial table t_partial_2", "t_partial_2" not in tables)
-        check("version 005 not recorded", 5 not in _versions(), str(_versions()))
-        # Prior migrations must still have been applied (fail-fast AFTER 001-004)
-        check("prior versions 1-4 applied", _versions() == {1, 2, 3, 4}, str(_versions()))
+        check("version 006 not recorded", 6 not in _versions(), str(_versions()))
+        # Prior migrations must still have been applied (fail-fast AFTER 001-005)
+        check("prior versions 1-5 applied", _versions() == {1, 2, 3, 4, 5}, str(_versions()))
         if captured:
             results.append(f"INFO interrupted migration exception: {captured}")
     finally:
         dbmod._MIGRATIONS_DIR = original
     # After fixing the file, re-running must apply cleanly (no manual SQL).
     broken.write_text(
-        "CREATE TABLE IF NOT EXISTS t_partial (id TEXT);\n"
-        "INSERT INTO t_partial VALUES ('x');\n",
+        "CREATE TABLE IF NOT EXISTS t_partial (id TEXT);\nINSERT INTO t_partial VALUES ('x');\n",
         encoding="utf-8",
     )
     dbmod._MIGRATIONS_DIR = staging
     try:
         applied = migrate(DSN)
-        check("fixed migration re-run applies only [5]", applied == [5], str(applied))
+        check("fixed migration re-run applies only [6]", applied == [6], str(applied))
         check("re-run no-op again", migrate(DSN) == [])
     finally:
         dbmod._MIGRATIONS_DIR = original

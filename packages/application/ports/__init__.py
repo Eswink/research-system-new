@@ -30,6 +30,12 @@ from packages.application.ports.errors import (
     PortTimeoutError,
     TransientPortError,
 )
+from packages.application.ports.eval_report_store import (
+    EvalReportIndexEntry,
+    EvalReportQuery,
+    EvalReportStore,
+    StoredEvalReport,
+)
 from packages.application.ports.event_publisher import EventPublisher
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.execution_backend import ExecutionBackend
@@ -59,6 +65,7 @@ from packages.application.ports.resource_catalog import (
 from packages.application.ports.retrieval_index import IndexEntry, IndexHit, RetrievalIndex
 from packages.application.ports.run_projection import RunProjection
 from packages.application.ports.run_store import RunStore
+from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
 from packages.application.ports.tool_pack_store import ToolPackRecord, ToolPackStore
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease, WorkflowEngine
@@ -79,7 +86,11 @@ __all__ = [
     "CompletionResult",
     "CredentialResolver",
     "EndpointStore",
+    "EvalReportIndexEntry",
+    "EvalReportQuery",
+    "EvalReportStore",
     "EventPublisher",
+    "StoredEvalReport",
     "EvidenceLedger",
     "ExecutionBackend",
     "ForkSpec",
@@ -110,6 +121,8 @@ __all__ = [
     "SecretValue",
     "TaskCompletion",
     "TaskLease",
+    "TelemetrySink",
+    "NullTelemetrySink",
     "ToolCallDraft",
     "ToolPackRecord",
     "ToolPackStore",
