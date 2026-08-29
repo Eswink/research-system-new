@@ -37,3 +37,6 @@ scratch/
 # other agent tools' local state (not Research OS engineering assets)
 .freebuff/
 .workbuddy/
+# local agent-tool state (security scans / CLI sessions) — not engineering assets
+.mimosa/
+.zcode/
