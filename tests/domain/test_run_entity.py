@@ -48,6 +48,17 @@ class TestResearchRunInvariants:
     def test_manifest_digest_defaults_none(self) -> None:
         assert _run().manifest_digest is None
 
+    def test_pricing_freeze_refs_survive_manifest_and_state_transitions(self) -> None:
+        run = _run().with_manifest(
+            Digest.parse("sha256:" + "a" * 64),
+            Digest.parse("sha256:" + "b" * 64),
+            pricing_version="pricing-v1",
+            pricing_digest="c" * 64,
+        )
+        compiling = run.transition(ResearchRunState.Transition.START_COMPILE)
+        assert compiling.pricing_version == "pricing-v1"
+        assert compiling.pricing_digest == "c" * 64
+
 
 class TestResearchRunTransitions:
     def test_happy_path_lifecycle(self) -> None:

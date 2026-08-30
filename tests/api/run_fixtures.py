@@ -15,11 +15,13 @@ from adapters.fakes.credential_resolver import FakeCredentialResolver
 from adapters.fakes.evidence_ledger import FakeEvidenceLedger
 from adapters.fakes.model_gateway import FakeModelGateway
 from adapters.fakes.policy_evaluator import FakePolicyEvaluator
+from adapters.fakes.pricing_snapshot_store import FakePricingSnapshotStore
 from adapters.sqlite.endpoint_store import SqliteEndpointStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.run_projection import SqliteRunProjection
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
+from packages.application.cost.pricing import unpriced_table
 from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
@@ -92,7 +94,8 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     credentials.register("LLM_MAIN_KEY", "sk-test-e2e-secret")
     connection = connect(":memory:")
     events = SqliteOutboxEventPublisher(connection=connection)
-    runs = _build_orchestration(connection, events)
+    pricing_store = FakePricingSnapshotStore()
+    runs = _build_orchestration(connection, events, pricing_store)
     preflight = _build_preflight(credentials)
     return ApiDeps(
         endpoint_store=SqliteEndpointStore(connection=connection),
@@ -104,12 +107,18 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         projection=SqliteRunProjection(connection, events),
         approvals=ApprovalRegistry(),
         runs=runs,
+        workflow=runs._deps.workflow,
+        pricing_snapshot_store=pricing_store,
         preflight_override=preflight,
         _connection=connection,
     )
 
 
-def _build_orchestration(connection: object, events: object) -> RunOrchestrationService:
+def _build_orchestration(
+    connection: object,
+    events: object,
+    pricing_store: FakePricingSnapshotStore,
+) -> RunOrchestrationService:
     """装配正式编排链（Fake runtime + SQLite workflow/outbox，共享连接）。"""
     from sqlite3 import Connection
 
@@ -118,6 +127,7 @@ def _build_orchestration(connection: object, events: object) -> RunOrchestration
     assert isinstance(connection, Connection)
     assert isinstance(events, EventPublisher)
     workflow = SqliteWorkflowEngine(connection=connection)
+    pricing = unpriced_table()
     return RunOrchestrationService(
         OrchestrationDependencies(
             runtime=FakeAgentRuntime(),
@@ -126,6 +136,8 @@ def _build_orchestration(connection: object, events: object) -> RunOrchestration
             events=events,
             budget=FakeBudgetLedger(),
             ledger=FakeEvidenceLedger(),
+            pricing=pricing,
+            pricing_store=pricing_store,
         )
     )
 

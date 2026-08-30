@@ -290,8 +290,22 @@ export const api = {
     return request(`/runs/${encodeURIComponent(runId)}/cost`, { method: "GET" });
   },
 
-  evaluationsTrend(datasetId?: string): Promise<TrendViewDto> {
-    const suffix = datasetId ? `?dataset_id=${encodeURIComponent(datasetId)}` : "";
+  evaluationsTrend(
+    datasetId?: string,
+    expectedDigests: string[] = [],
+    limit?: number,
+  ): Promise<TrendViewDto> {
+    const params = new URLSearchParams();
+    if (datasetId) {
+      params.set("dataset_id", datasetId);
+    }
+    for (const digest of expectedDigests) {
+      params.append("expected_digests", digest);
+    }
+    if (limit !== undefined) {
+      params.set("limit", String(limit));
+    }
+    const suffix = params.size > 0 ? `?${params.toString()}` : "";
     return request(`/evaluations/trend${suffix}`, { method: "GET" });
   },
 

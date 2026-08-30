@@ -102,6 +102,7 @@ class PreflightReportDto(BaseModel):
     status: str
     findings: list[dict[str, object]] = Field(default_factory=list)
     estimated_cost: float | None = None
+    estimated_cost_currency: str | None = None
     reserved_budget_ref: str | None = None
     unresolved_risks: list[str] = Field(default_factory=list)
 
@@ -114,4 +115,5 @@ class DryRunProjectionDto(BaseModel):
     compute_profiles: dict[str, str | None] = Field(default_factory=dict)
     budget_reservations: list[dict[str, object]] = Field(default_factory=list)
     estimated_cost_minor: int | None = None
+    estimated_cost_currency: str | None = None
     approval_actions: list[str] = Field(default_factory=list)

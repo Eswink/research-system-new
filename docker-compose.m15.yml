@@ -6,7 +6,12 @@ services:
       context: ./adapters/otel/collector
     image: research-os/otel-collector:0.139.0
     ports:
-      - "4318:4318"
+      # loopback-only: the collector receiver has no auth extension and no TLS,
+      # and every accepted signal is written verbatim to the evidence file sink.
+      # Publishing on all interfaces would let anyone on the host network post
+      # arbitrary OTLP into the evidence pipeline (M15 re-audit finding; the
+      # declared control in UPSTREAM_COMPONENTS.yaml is loopback-only).
+      - "127.0.0.1:4318:4318"
     volumes:
       - ./data/otel:/var/lib/otelcol
     healthcheck:

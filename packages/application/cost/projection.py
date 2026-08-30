@@ -8,35 +8,30 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import StrEnum
+from dataclasses import dataclass, replace
 from typing import Iterable
 
-from packages.application.cost.pricing import PriceDimension, PricingTable
+from packages.application.cost.amount import (
+    CostAmount,
+    CostAmountStatus,
+    _amount,
+    _stamp_of,
+)
+from packages.application.cost.pricing import (
+    PriceDimension,
+    PricingTable,
+    unpriced_table,
+)
+from packages.application.cost.pricing_resolution import (
+    UNFROZEN_PRICING_VERSION,
+    RunPricingResolution,
+    resolve_run_pricing,
+)
 from packages.domain.budget import (
     LedgerQuantityStatus,
     ResourceType,
     UsageLedgerEntry,
 )
-
-
-class CostAmountStatus(StrEnum):
-    ACTUAL = "ACTUAL"  # 实测金额(entry.actual_cost_minor)
-    ESTIMATED = "ESTIMATED"  # 估计金额(entry.estimated_cost_minor 或 定价表计算)
-    MONETARY_UNAVAILABLE = "MONETARY_UNAVAILABLE"  # 未配置价格/单位不匹配 → 不可计价
-    USAGE_UNKNOWN = "USAGE_UNKNOWN"  # quantity_status=UNKNOWN → 绝不解释为 0
-    ZERO = "ZERO"  # quantity 已知为 0 → 显式零
-
-
-@dataclass(frozen=True, slots=True)
-class CostAmount:
-    """一次投影金额;status 完备,不可变,盖章 pricing 快照。"""
-
-    status: CostAmountStatus
-    minor_units: int | None
-    currency: str
-    pricing_version: str
-    pricing_digest: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,11 +49,15 @@ def _dimension_of(entry: UsageLedgerEntry) -> tuple[PriceDimension, str] | None:
     resource_type = entry.resource_type
     if resource_type in (ResourceType.MODEL_TOKENS, ResourceType.MODEL_REQUESTS):
         return (PriceDimension.MODEL, entry.model_id or "unknown")
+    if resource_type is ResourceType.MODEL_COST:
+        # Relay 上报的 provider monetary amount 是模型成本，不是 evaluation；
+        # key 必须是 model_id，不能按 task_id 把可达价格变成不可达。
+        return (PriceDimension.MODEL, entry.model_id or "unknown")
     if resource_type in (ResourceType.TOOL_REQUESTS, ResourceType.TOOL_COST):
         return (PriceDimension.TOOL, entry.tool_id or "unknown")
     if resource_type is ResourceType.CPU_TIME:
         return (PriceDimension.EXPERIMENT, entry.task_id or "unknown")
-    if resource_type is ResourceType.MODEL_COST:
+    if resource_type is ResourceType.EVALUATION_SCORER:
         return (PriceDimension.EVALUATION, entry.task_id or "unknown")
     return None
 
@@ -67,42 +66,47 @@ def project_entry_cost(
     entry: UsageLedgerEntry,
     pricing: PricingTable | None,
 ) -> CostAmount:
-    """单条 ledger entry → CostAmount(五状态判定树,见模块 docstring)。"""
-    version = pricing.version if pricing else "unpriced_v1"
-    digest = pricing.pricing_digest() if pricing else unpriced_digest()
-    currency = pricing.currency if pricing else "USD"
+    """单条 ledger entry → CostAmount(状态判定树,见模块 docstring)。"""
+    stamp = _stamp_of(pricing)
 
     if entry.quantity_status is LedgerQuantityStatus.UNKNOWN:
-        return CostAmount(CostAmountStatus.USAGE_UNKNOWN, None, currency, version, digest)
+        return _amount(CostAmountStatus.USAGE_UNKNOWN, None, stamp)
     if entry.quantity == 0:
-        return CostAmount(CostAmountStatus.ZERO, 0, currency, version, digest)
+        return _amount(CostAmountStatus.ZERO, 0, stamp)
     if entry.actual_cost_minor is not None:
-        return CostAmount(
-            CostAmountStatus.ACTUAL, entry.actual_cost_minor, currency, version, digest
+        # entry 自带币种时以它为准:金额与币种必须同源,否则聚合会把不同币种
+        # 的数字相加(复审实测 [300 USD, 3000 JPY] 得 3300 USD,换序得 3300 JPY)。
+        return _amount(
+            CostAmountStatus.ACTUAL, entry.actual_cost_minor, stamp, currency=entry.currency
+        )
+    if entry.resource_type is ResourceType.MODEL_COST and entry.estimated_cost_minor is not None:
+        # Relay 已上报的模型金额是可直接展示的上游货币事实；它不应再被
+        # pricing table 的 unit 查找挡住，更不能被错误路由到 evaluation/task。
+        return _amount(
+            CostAmountStatus.ESTIMATED,
+            entry.estimated_cost_minor,
+            stamp,
+            currency=entry.currency,
         )
     dimension_key = _dimension_of(entry)
     if dimension_key is None or pricing is None:
-        return CostAmount(CostAmountStatus.MONETARY_UNAVAILABLE, None, currency, version, digest)
-    price = pricing.price_for(*dimension_key)
-    if price is None or price.unit != entry.unit:
-        return CostAmount(CostAmountStatus.MONETARY_UNAVAILABLE, None, currency, version, digest)
+        return _amount(CostAmountStatus.MONETARY_UNAVAILABLE, None, stamp)
+    price = pricing.price_for(dimension_key[0], dimension_key[1], entry.unit)
+    if price is None:
+        return _amount(CostAmountStatus.MONETARY_UNAVAILABLE, None, stamp)
     if entry.estimated_cost_minor is not None:
-        return CostAmount(
-            CostAmountStatus.ESTIMATED, entry.estimated_cost_minor, currency, version, digest
+        return _amount(
+            CostAmountStatus.ESTIMATED, entry.estimated_cost_minor, stamp, currency=entry.currency
         )
-    return CostAmount(
+    return _amount(
         CostAmountStatus.ESTIMATED,
         entry.quantity * price.unit_price_minor,
-        currency,
-        version,
-        digest,
+        stamp,
     )
 
 
 def unpriced_digest() -> str:
     """出厂 unpriced_v1 的固定 digest(与 unpriced_table().pricing_digest() 一致)。"""
-    from packages.application.cost.pricing import unpriced_table
-
     return unpriced_table().pricing_digest()
 
 
@@ -127,41 +131,103 @@ def project_dimensions(
             DimensionCost(
                 dimension=dimension,
                 resource_key=resource_key,
-                amount=aggregate_costs(amounts),
+                amount=aggregate_costs(amounts, pricing),
                 entry_count=len(group),
             )
         )
     return tuple(results)
 
 
-def aggregate_costs(amounts: Iterable[CostAmount]) -> CostAmount:
-    """聚合规则:UNKNOWN > 不可计价 > 实测/估计求和 > 显式零(顺序即优先级)。"""
+def aggregate_costs(
+    amounts: Iterable[CostAmount],
+    pricing: PricingTable | None = None,
+) -> CostAmount:
+    """聚合规则:NO_DATA > 币种冲突 > 部分不可计量 > 求和 > 显式零。
+
+    空集返回 `NO_DATA` 而不是 `ZERO 0`:"没有任何 usage 记录"与"已测量为零"
+    是不同事实,复审实测前者被当作 `ZERO 0 USD` 报给 `/runs/{id}/cost`——一个
+    刚启动、还没产生用量的 run 会显示确定的零成本。空集也不再硬编码
+    `"USD"` / `"unpriced_v1"`:传入 `pricing` 时用真实上下文盖章。
+
+    跨币种不做隐式换算:混合币种直接落 `CURRENCY_CONFLICT`,而不是取首项币种
+    再无条件求和(那使结果依赖列表顺序)。存在已定价项目与不可计量项目时
+    返回 `PARTIALLY_METERED` 和已知小计，避免单条 UNKNOWN 永久抹掉 run 的
+    全部已知成本。"""
     items = list(amounts)
     if not items:
-        first = CostAmount(CostAmountStatus.ZERO, 0, "USD", "unpriced_v1", unpriced_digest())
-        return first
-    version = items[0].pricing_version
-    digest = items[0].pricing_digest
-    currency = items[0].currency
-    if any(item.status is CostAmountStatus.USAGE_UNKNOWN for item in items):
-        return CostAmount(CostAmountStatus.USAGE_UNKNOWN, None, currency, version, digest)
-    if any(item.status is CostAmountStatus.MONETARY_UNAVAILABLE for item in items):
-        return CostAmount(CostAmountStatus.MONETARY_UNAVAILABLE, None, currency, version, digest)
+        stamp = _stamp_of(pricing)
+        return _amount(CostAmountStatus.NO_DATA, None, stamp)
+    head = items[0]
+    if len({item.currency for item in items}) > 1:
+        return replace(head, status=CostAmountStatus.CURRENCY_CONFLICT, minor_units=None)
+    blocked = _blocking_status(items)
+    if blocked is not None:
+        return replace(head, status=blocked, minor_units=None)
+    monetary = _monetary_amounts(items)
+    if monetary and _has_unmeasured(items):
+        total = sum(item.minor_units or 0 for item in monetary)
+        return replace(head, status=CostAmountStatus.PARTIALLY_METERED, minor_units=total)
+    unmeasurable = _unmeasurable_status(items)
+    if unmeasurable is not None:
+        return replace(head, status=unmeasurable, minor_units=None)
     if all(item.status is CostAmountStatus.ZERO for item in items):
-        return CostAmount(CostAmountStatus.ZERO, 0, currency, version, digest)
+        return replace(head, status=CostAmountStatus.ZERO, minor_units=0)
     total = sum(
         (item.minor_units or 0)
         for item in items
         if item.status in (CostAmountStatus.ACTUAL, CostAmountStatus.ESTIMATED)
     )
-    all_actual = all(item.status is CostAmountStatus.ACTUAL for item in items)
-    return CostAmount(
-        CostAmountStatus.ACTUAL if all_actual else CostAmountStatus.ESTIMATED,
-        total,
-        currency,
-        version,
-        digest,
+    all_actual = all(
+        item.status in (CostAmountStatus.ACTUAL, CostAmountStatus.ZERO) for item in items
     )
+    return replace(
+        head,
+        status=CostAmountStatus.ACTUAL if all_actual else CostAmountStatus.ESTIMATED,
+        minor_units=total,
+    )
+
+
+def _monetary_amounts(items: list[CostAmount]) -> list[CostAmount]:
+    return [
+        item
+        for item in items
+        if item.status
+        in (
+            CostAmountStatus.ACTUAL,
+            CostAmountStatus.ESTIMATED,
+            CostAmountStatus.ZERO,
+            CostAmountStatus.PARTIALLY_METERED,
+        )
+    ]
+
+
+def _blocking_status(items: list[CostAmount]) -> CostAmountStatus | None:
+    """立即阻断的聚合状态(NO_DATA / CURRENCY_CONFLICT 传播)。"""
+    if any(item.status is CostAmountStatus.NO_DATA for item in items):
+        return CostAmountStatus.NO_DATA
+    if any(item.status is CostAmountStatus.CURRENCY_CONFLICT for item in items):
+        return CostAmountStatus.CURRENCY_CONFLICT
+    return None
+
+
+def _has_unmeasured(items: list[CostAmount]) -> bool:
+    return any(
+        item.status
+        in (
+            CostAmountStatus.USAGE_UNKNOWN,
+            CostAmountStatus.MONETARY_UNAVAILABLE,
+            CostAmountStatus.PARTIALLY_METERED,
+        )
+        for item in items
+    )
+
+
+def _unmeasurable_status(items: list[CostAmount]) -> CostAmountStatus | None:
+    if any(item.status is CostAmountStatus.USAGE_UNKNOWN for item in items):
+        return CostAmountStatus.USAGE_UNKNOWN
+    if any(item.status is CostAmountStatus.MONETARY_UNAVAILABLE for item in items):
+        return CostAmountStatus.MONETARY_UNAVAILABLE
+    return None
 
 
 __all__ = [
@@ -171,4 +237,8 @@ __all__ = [
     "aggregate_costs",
     "project_dimensions",
     "project_entry_cost",
+    # re-export（解析实现位于 cost/pricing_resolution.py 以控制文件长度）
+    "RunPricingResolution",
+    "UNFROZEN_PRICING_VERSION",
+    "resolve_run_pricing",
 ]

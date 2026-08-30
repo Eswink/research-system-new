@@ -93,7 +93,7 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M12 | First Real Research Workflow | MVP | M8+M9+M10+M11 | DONE（2026-08-22；R1 修复完成 2026-08-23；**2026-08-28 重新独立复审重判 PASS**（DoD-3 live relay 凭据闭环后由 PASS_WITH_WARNINGS 升 PASS）：RECHECK-20260828-023） |
 | M13 | Research Console | Product | M12 | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
 | M14 | Durable Workflow + PostgreSQL | Production | M12 | DONE（2026-08-28 立项；WP-J2 重判 PASS：RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
-| M15 | Observability / Cost / Eval Operations | Production | M11 | DONE（2026-08-29 立项实施：OTel adapter 边界 ADR-0026、隐私 canary、五状态成本投影、EvalReportStore/趋势、operations API/Console；无内容 Debug Mode） |
+| M15 | Observability / Cost / Eval Operations | Production | M11 | DONE（2026-08-29 首轮实施；2026-08-30 独立复审判定 FAIL 后修复轮 WP0–WP8 完成，6 BLOCKER 独立探针复现修复，m0 23/23 全绿；recheck PASS 见 `RECHECK-20260830-024`） |
 | M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | PLANNED |
 | M17 | GPU / HPC | Scale | M16+M9 | PLANNED |
 | M18 | Multi-user / Organization / RBAC | Enterprise | M13+M14 | PLANNED |
@@ -710,7 +710,8 @@ Temporal 引入复杂度过高（严格评估，可拒绝）；PostgreSQL schema
 > qualification 见 `../references/upstream/M14_TEMPORAL_QUALIFICATION.md`。
 > **WP-J2 独立复审重判 PASS（2026-08-28）：RECHECK-20260828-022**——DoD 19 条
 > 逐项实测复核（真实 PG/subprocess/TTL 取证）；m0 19/19 单次聚合；
-> `python/tests` 2162 passed/2 skipped。**M14 = DONE**；M16/M18/M19 不自动开工。
+> `python/tests` 2162 passed/2 skipped。**完成状态（2026-08-28）：M14 = DONE**；
+> M16/M18/M19 不自动开工。
 
 ## M15 — Observability / Cost / Eval Operations
 
@@ -764,6 +765,14 @@ OTel 供应商绑定；隐私泄露（prompt/敏感参数误入遥测）；成�
 ### Next Readiness
 
 解锁 M19（SLO 需要观测基础）。
+
+> 完成状态（2026-08-30 修复轮完成更新）：2026-08-29 首轮实施落地（OTel adapter
+> 边界 ADR-0026、隐私 canary、五状态成本投影、EvalReportStore/趋势、
+> operations API/Console）。2026-08-30 独立复审判定 FAIL（6 BLOCKER + ~24 MAJOR +
+> ~25 MINOR）后，修复轮 `.cursor/plans/m15_fail_remediation_98df6116.plan.md`
+> WP0–WP8 全部完成：6 个 BLOCKER 均以独立探针复现原始路径并确认修复，全量门禁
+> m0 profile 23/23 deterministic checks PASS（2420 passed/5 skipped）。
+> recheck PASS 见 `RECHECK-20260830-024`；**M15 DONE**。
 
 ## M16 — Distributed Execution + Remote Sandbox/Worker
 

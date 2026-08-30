@@ -286,6 +286,18 @@
             "title": "Entries",
             "type": "array"
           },
+          "known_cost_subtotal_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Known Cost Subtotal Minor"
+          },
           "reservations": {
             "items": {
               "additionalProperties": false,
@@ -294,9 +306,27 @@
             "title": "Reservations",
             "type": "array"
           },
+          "total_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Currency"
+          },
           "total_estimated_cost_minor": {
-            "title": "Total Estimated Cost Minor",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Estimated Cost Minor"
           },
           "unknown_cost_entries": {
             "title": "Unknown Cost Entries",
@@ -304,7 +334,6 @@
           }
         },
         "required": [
-          "total_estimated_cost_minor",
           "unknown_cost_entries"
         ],
         "title": "BudgetViewDto",
@@ -542,9 +571,31 @@
       "CostAmountDto": {
         "additionalProperties": false,
         "properties": {
+          "calculation_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculation Method"
+          },
           "currency": {
             "title": "Currency",
             "type": "string"
+          },
+          "effective_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective From"
           },
           "minor_units": {
             "anyOf": [
@@ -558,6 +609,16 @@
             "title": "Minor Units"
           },
           "status": {
+            "enum": [
+              "ACTUAL",
+              "ESTIMATED",
+              "MONETARY_UNAVAILABLE",
+              "USAGE_UNKNOWN",
+              "ZERO",
+              "NO_DATA",
+              "CURRENCY_CONFLICT",
+              "PARTIALLY_METERED"
+            ],
             "title": "Status",
             "type": "string"
           }
@@ -576,6 +637,12 @@
             "$ref": "#/components/schemas/CostAmountDto"
           },
           "dimension": {
+            "enum": [
+              "model",
+              "tool",
+              "experiment",
+              "evaluation"
+            ],
             "title": "Dimension",
             "type": "string"
           },
@@ -607,9 +674,24 @@
             "title": "Dimensions",
             "type": "array"
           },
+          "pricing_degraded_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Degraded Reason"
+          },
           "pricing_digest": {
             "title": "Pricing Digest",
             "type": "string"
+          },
+          "pricing_frozen": {
+            "title": "Pricing Frozen",
+            "type": "boolean"
           },
           "pricing_version": {
             "title": "Pricing Version",
@@ -627,6 +709,7 @@
           "run_id",
           "pricing_version",
           "pricing_digest",
+          "pricing_frozen",
           "total"
         ],
         "title": "CostViewDto",
@@ -692,6 +775,17 @@
             "additionalProperties": false,
             "title": "Compute Profiles",
             "type": "object"
+          },
+          "estimated_cost_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Cost Currency"
           },
           "estimated_cost_minor": {
             "anyOf": [
@@ -1618,6 +1712,17 @@
             ],
             "title": "Estimated Cost"
           },
+          "estimated_cost_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Cost Currency"
+          },
           "findings": {
             "items": {
               "additionalProperties": false,
@@ -1920,6 +2025,13 @@
             "type": "array"
           },
           "verdict": {
+            "enum": [
+              "PASS",
+              "PASS_WITH_WARNINGS",
+              "REVISE",
+              "BLOCK",
+              "INDETERMINATE"
+            ],
             "title": "Verdict",
             "type": "string"
           }
@@ -2113,9 +2225,31 @@
         "additionalProperties": false,
         "description": "telemetry summary:canonical state + sink 计数器;不含任何 vendor 数据。",
         "properties": {
+          "exporter_config_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exporter Config Digest"
+          },
           "generated_at": {
             "title": "Generated At",
             "type": "string"
+          },
+          "manifest_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Digest"
           },
           "outbox": {
             "$ref": "#/components/schemas/TelemetryOutboxDto"
@@ -2221,18 +2355,43 @@
         "additionalProperties": false,
         "properties": {
           "pending": {
-            "title": "Pending",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending"
+          },
+          "status": {
+            "default": "KNOWN",
+            "enum": [
+              "KNOWN",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
           }
         },
-        "required": [
-          "pending"
-        ],
         "title": "TelemetryOutboxDto",
         "type": "object"
       },
       "TelemetrySinkDto": {
         "additionalProperties": false,
+        "description": "exporter 健康:dropped 是真实丢弃,unlinked 是 trace 链接降级(信号未丢)。",
         "properties": {
           "dropped": {
             "title": "Dropped",
@@ -2252,6 +2411,11 @@
               }
             ],
             "title": "Last Error"
+          },
+          "unlinked": {
+            "default": 0,
+            "title": "Unlinked",
+            "type": "integer"
           }
         },
         "required": [
@@ -2313,6 +2477,18 @@
             "type": "string"
           },
           "verdict": {
+            "enum": [
+              "COMPARABLE",
+              "CASE_SET_CHANGED",
+              "RUBRIC_CHANGED",
+              "DATASET_CHANGED",
+              "GATE_CONFIG_CHANGED",
+              "SCORER_CHANGED",
+              "EVALUATOR_CHANGED",
+              "SYSTEM_VERSION_CHANGED",
+              "SEGMENTED",
+              "INCOMPATIBLE_GENERATION"
+            ],
             "title": "Verdict",
             "type": "string"
           }
@@ -2327,15 +2503,103 @@
       "TrendPointDto": {
         "additionalProperties": false,
         "properties": {
+          "comparison_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Digest"
+          },
+          "dataset_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Digest"
+          },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "dataset_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version"
+          },
           "fail_count": {
             "default": 0,
             "title": "Fail Count",
             "type": "integer"
           },
+          "gate_config_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Config Digest"
+          },
+          "gate_config_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Config Id"
+          },
+          "gate_config_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Config Version"
+          },
           "infra_error_count": {
             "default": 0,
             "title": "Infra Error Count",
             "type": "integer"
+          },
+          "integrity_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Integrity Error"
           },
           "missing": {
             "default": false,
@@ -2362,7 +2626,42 @@
             "title": "Report Digest",
             "type": "string"
           },
+          "reviewer_failure_count": {
+            "default": 0,
+            "title": "Reviewer Failure Count",
+            "type": "integer"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "system_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Version"
+          },
           "verdict": {
+            "enum": [
+              "PASS",
+              "PASS_WITH_WARNINGS",
+              "REVISE",
+              "BLOCK",
+              "INDETERMINATE",
+              "MISSING_EVALUATION"
+            ],
             "title": "Verdict",
             "type": "string"
           }
@@ -2429,6 +2728,11 @@
             },
             "title": "Segments",
             "type": "array"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
           }
         },
         "title": "TrendViewDto",
@@ -2448,8 +2752,20 @@
             ],
             "title": "Actual Cost Minor"
           },
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
           "cost_status": {
+            "enum": [
+              "KNOWN",
+              "UNKNOWN"
+            ],
             "title": "Cost Status",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
             "type": "string"
           },
           "entry_id": {
@@ -2482,9 +2798,44 @@
             "title": "Quantity",
             "type": "integer"
           },
+          "quantity_status": {
+            "enum": [
+              "KNOWN",
+              "UNKNOWN"
+            ],
+            "title": "Quantity Status",
+            "type": "string"
+          },
           "resource_type": {
+            "enum": [
+              "MODEL_TOKENS",
+              "MODEL_REQUESTS",
+              "MODEL_COST",
+              "EVALUATION_SCORER",
+              "TOOL_REQUESTS",
+              "TOOL_COST",
+              "CPU_TIME",
+              "GPU_TIME",
+              "MEMORY",
+              "STORAGE",
+              "NETWORK",
+              "WALL_CLOCK",
+              "AGENT_TURNS",
+              "PARALLELISM"
+            ],
             "title": "Resource Type",
             "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
           },
           "task_id": {
             "anyOf": [
@@ -2497,6 +2848,17 @@
             ],
             "title": "Task Id"
           },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
           "unit": {
             "title": "Unit",
             "type": "string"
@@ -2507,7 +2869,10 @@
           "resource_type",
           "quantity",
           "unit",
-          "cost_status"
+          "cost_status",
+          "currency",
+          "quantity_status",
+          "attempt"
         ],
         "title": "UsageEntryDto",
         "type": "object"
@@ -2714,6 +3079,37 @@
                 }
               ],
               "title": "Dataset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expected_digests",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expected Digests"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
             }
           }
         ],

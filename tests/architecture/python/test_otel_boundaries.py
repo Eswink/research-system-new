@@ -55,7 +55,7 @@ def test_postgres_boundary_contract_executes_and_passes() -> None:
 def test_no_opentelemetry_import_outside_otel_adapter() -> None:
     """AST 级静态扫描:packages/services/adapters(otel 外)无 opentelemetry。"""
     offenders: list[str] = []
-    for top in ("packages", "services", "adapters"):
+    for top in ("packages", "services", "adapters", "tools"):
         for path in (ROOT / top).rglob("*.py"):
             relative = path.relative_to(ROOT)
             if relative.as_posix().startswith("adapters/otel/"):
@@ -67,6 +67,23 @@ def test_no_opentelemetry_import_outside_otel_adapter() -> None:
                 )
             )
     assert not offenders, f"opentelemetry imports outside adapters.otel: {offenders}"
+
+
+def test_otel_linter_config_covers_every_adapter_subpackage() -> None:
+    """`.importlinter.otel` 的 source_modules 必须覆盖 adapters/ 全部子包。
+
+    新增 adapter 子包而忘记登记会让 OTel 边界失去 import-linter 保护——
+    此断言使缺口成为测试失败而非静默放行。
+    """
+    config = (ROOT / ".importlinter.otel").read_text(encoding="utf-8")
+    declared = {line.strip() for line in config.splitlines() if line.startswith("    adapters.")}
+    actual = {
+        "adapters." + path.name
+        for path in (ROOT / "adapters").iterdir()
+        if path.is_dir() and not path.name.startswith("_") and path.name != "otel"
+    }
+    missing = actual - declared
+    assert not missing, f".importlinter.otel 缺少 source_modules 登记: {sorted(missing)}"
 
 
 def _otel_imports(tree: ast.AST) -> list[str]:

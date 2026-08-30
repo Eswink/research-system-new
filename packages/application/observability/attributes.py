@@ -1,11 +1,15 @@
 """闭集 attribute / metric 词汇与 sanitize 守卫。
 
 - `AttributeKey`:span attributes 的闭集 allow-list(新增键必须显式审计隐私与
-  cardinality)。`sanitize_attributes` 只保留白名单键、强制为稳定标量、对指定
-  键做 `redact_text` 并截断到 256 字符。
+  cardinality)。`sanitize_attributes` 只保留白名单键、强制为稳定标量、对**全部**
+  字符串键先 `redact_text` 再截断到 256 字符。
+  顺序很重要:先截断后脱敏会把凭据切断,使 redaction 正则失配并泄漏残片
+  (M15 复审实测 24 位 DSN 密码泄漏 20 位)。
 - `MetricName` / `MetricKind` / `MetricLabel`:metrics 的闭集;metric label 绝不
   含高基数业务 id(run/task/trace/phase/experiment/eval id 或任意原文/path/body)。
-  业务 id 只通过 span attributes (correlation) 传递。
+  业务 id 只通过 span attributes (correlation) 传递。label **值**同样有界:
+  脱敏 + 64 字符上限,`scope`/`outcome` 强制落在对应枚举内(越界折叠为 `other`),
+  避免 metric backend 因无界标签值失控。
 """
 
 from __future__ import annotations
@@ -14,9 +18,16 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from packages.application.observability.signals import (
+    OperationOutcome,
+    OperationScope,
+    is_allowed_failure_category,
+)
 from packages.domain.redaction import redact_text
 
 _MAX_ATTRIBUTE_LENGTH = 256
+_MAX_LABEL_LENGTH = 64
+_LABEL_OVERFLOW_SENTINEL = "other"
 
 
 class AttributeKey(StrEnum):
@@ -51,19 +62,20 @@ class AttributeKey(StrEnum):
 
 _ALL_ATTR_KEYS = frozenset(AttributeKey)
 
-# 字符串型键经 redaction 的集合(provider/model/tool identity 不进原文)
-_REDACTED_ATTRS = frozenset({AttributeKey.provider, AttributeKey.model_id, AttributeKey.tool_id})
-
 
 def sanitize_attributes(attributes: dict[str, Any]) -> dict[str, str | int | bool]:
     """闭集 allow-list + 标量强制 + redaction/截断;未知键与一切非标量被丢弃。
 
-    `_REDACTED_ATTRS` 中的字符串值需先经 `redact_text` 再截断;其余字符串只截断。
+    **全部**字符串值先经 `redact_text` 再截断——顺序反了会把凭据切成正则失配的
+    残片（M15 复审实测）。原先只有 provider/model_id/tool_id 三键脱敏，其余九个
+    字符串键（endpoint_id / status_code_class / circuit_state / verdict /
+    payload_digest / dataset_digest / image_digest / failure_category /
+    resource_type）明文导出。
     """
     sanitized: dict[str, str | int | bool] = {}
     for key, value in attributes.items():
         try:
-            attr_key = AttributeKey(key)
+            AttributeKey(key)
         except ValueError:
             continue
         if isinstance(value, bool):
@@ -71,12 +83,7 @@ def sanitize_attributes(attributes: dict[str, Any]) -> dict[str, str | int | boo
         elif isinstance(value, int) and not isinstance(value, bool):
             sanitized[key] = value
         elif isinstance(value, str):
-            text = value
-            if len(text) > _MAX_ATTRIBUTE_LENGTH:
-                text = text[:_MAX_ATTRIBUTE_LENGTH]
-            if attr_key in _REDACTED_ATTRS:
-                text = redact_text(text)
-            sanitized[key] = text
+            sanitized[key] = redact_text(value)[:_MAX_ATTRIBUTE_LENGTH]
     return sanitized
 
 
@@ -98,6 +105,32 @@ class MetricLabel(StrEnum):
 
 
 _ALL_METRIC_LABELS = frozenset(MetricLabel)
+_ENUM_LABEL_DOMAINS: dict[str, frozenset[str]] = {
+    MetricLabel.scope.value: frozenset(member.value for member in OperationScope),
+    MetricLabel.outcome.value: frozenset(member.value for member in OperationOutcome),
+}
+
+
+def sanitize_metric_labels(labels: dict[str, str]) -> dict[str, str]:
+    """metric label 值定界:脱敏 + 64 字符上限 + 枚举域折叠。
+
+    键的闭集由 `MetricSample.__post_init__` 强制;本函数只处理**值**——
+    M15 复审实测 `record_metric` 对值零校验,完整 `Bearer …` / `sk-…` / DSN
+    可作为 label 导出,且 `scope`/`outcome` 可为任意自由文本(无界基数)。
+    越界枚举值折叠为 `other` 而非抛错:label 由业务路径构造,抛错会在
+    fail-open 外壳**之外**制造新的崩溃面。
+    """
+    sanitized: dict[str, str] = {}
+    for key, value in labels.items():
+        domain = _ENUM_LABEL_DOMAINS.get(key)
+        if domain is not None:
+            sanitized[key] = value if value in domain else _LABEL_OVERFLOW_SENTINEL
+            continue
+        if key == MetricLabel.failure_category.value and not is_allowed_failure_category(value):
+            sanitized[key] = _LABEL_OVERFLOW_SENTINEL
+            continue
+        sanitized[key] = redact_text(value)[:_MAX_LABEL_LENGTH]
+    return sanitized
 
 
 class MetricName(StrEnum):
@@ -120,7 +153,7 @@ class MetricName(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class MetricSample:
-    """一次 metric 采样;label 必须全部属于 `MetricLabel`。"""
+    """一次 metric 采样;label 键必须属于 `MetricLabel`,值经 sanitize 定界。"""
 
     name: MetricName
     kind: MetricKind
@@ -133,3 +166,5 @@ class MetricSample:
             raise ValueError(f"metric labels must be from MetricLabel: {unknown}")
         if self.kind is MetricKind.COUNTER and isinstance(self.value, float):
             raise ValueError("COUNTER metrics must have int values")
+        if self.labels:
+            object.__setattr__(self, "labels", sanitize_metric_labels(self.labels))

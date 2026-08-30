@@ -65,6 +65,11 @@ class RunManifest:
     image_digest: str | None = None
     skill_versions: dict[str, str] = field(default_factory=dict)
     evaluation_dataset_digest: str | None = None
+    # --- M15 扩展：定价冻结引用（BLOCKER-6） ---
+    # None/空 = 本 manifest 未冻结 pricing 引用（遗留 run 显式表达
+    # "pricing 未冻结"，绝不静默回落读时当期表）。digest() 自动覆盖。
+    pricing_version: str | None = None
+    pricing_digest: str | None = None
 
     def __post_init__(self) -> None:
         if not self.run_id:

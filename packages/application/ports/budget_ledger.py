@@ -38,4 +38,11 @@ class BudgetLedger(Protocol):
 
     def record_usage(self, entry: UsageLedgerEntry) -> None: ...
 
+    def record_usage_batch(self, entries: tuple[UsageLedgerEntry, ...]) -> tuple[str, ...]:
+        """原子追加一批 usage；已存在 entry_id 是 at-least-once 重放 no-op。
+
+        返回本次实际新写入的 entry ids。单条 `record_usage` 仍保留重复 id
+        拒绝契约，便于调用方发现不应重试的单事实冲突。
+        """
+
     def snapshot(self) -> LedgerSnapshot: ...

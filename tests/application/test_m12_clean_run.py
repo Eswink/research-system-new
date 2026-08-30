@@ -115,7 +115,10 @@ class TestCleanRunHarness:
         entries = deps.budget.snapshot().entries
         types = {entry.resource_type.value for entry in entries}
         assert "CPU_TIME" in types
-        assert "MODEL_REQUESTS" in types
+        # 确定性 scorer 不再被记为 model usage（M15 WP3c）；评测归账走独立
+        # EVALUATION_SCORER 资源类型，实验时长走 CPU_TIME。
+        assert "EVALUATION_SCORER" in types
+        assert "MODEL_REQUESTS" not in types
         experiment = [e for e in entries if e.resource_type.value == "CPU_TIME"][0]
         assert experiment.quantity == 12
         assert experiment.cost_status.value == "UNKNOWN"

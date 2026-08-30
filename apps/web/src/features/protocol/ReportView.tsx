@@ -4,7 +4,10 @@ export function ReportView({ report }: { report: PreflightReportDto }) {
   const costText =
     report.estimated_cost === null
       ? "not estimated"
-      : `${String(report.estimated_cost)} USD`;
+      : [
+          String(report.estimated_cost),
+          report.estimated_cost_currency ?? "currency unavailable",
+        ].join(" ");
   return (
     <div data-testid="dry-run-report">
       <p>

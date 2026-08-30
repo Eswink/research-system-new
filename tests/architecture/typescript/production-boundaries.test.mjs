@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const cli = path.join(root, "node_modules", "dependency-cruiser", "bin", "dependency-cruise.mjs");
@@ -20,6 +20,12 @@ function listSourceFiles(dir) {
     }
   }
   return out;
+}
+
+function sourceFor(relative) {
+  return listSourceFiles(path.join(root, relative))
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 }
 
 test("apps/web 生产源码通过全部生产架构边界", () => {
@@ -45,15 +51,29 @@ test("apps/web 源码不 import packages/domain 或 adapters（静态扫描）",
   }
 });
 
-test("services/api 生产源码通过全部生产架构边界", () => {
+test("console features do not invent currency math or quality thresholds", () => {
+  const source = sourceFor("apps/web/src/features");
+  assert.doesNotMatch(source, /(?:minor_units|estimated_cost_minor)\s*\/\s*\d+/);
+  assert.doesNotMatch(source, /\b(?:USD|EUR|JPY|CNY)\b/);
+  assert.doesNotMatch(source, /\b(?:PASS|FAIL|BLOCK|REVISE)\b/);
+  assert.doesNotMatch(source, /(?:threshold|pass_ratio|error_rate)\s*(?:>=|<=|>|<|=)\s*\d/);
+});
+
+test("console features do not depend on model-vendor SDKs", () => {
+  const source = sourceFor("apps/web/src/features");
+  assert.doesNotMatch(
+    source,
+    /(?:from|import)\s+(?:type\s+)?["'][^"']*(?:@anthropic-ai|openai|litellm|openhands)[^"']*["']/i,
+  );
+});
+
+test("services/api production architecture check cannot silently skip", () => {
   const result = spawnSync(
     process.execPath,
     [cli, "--config", config, "--output-type", "json", "services"],
     { cwd: root, encoding: "utf8", env: { ...process.env, FORCE_COLOR: "0" } },
   );
-  // services 是 Python 包（无 TS 文件）；depcruise 对空目录应无违规或跳过
-  if (result.status === 0) {
-    const report = JSON.parse(result.stdout);
-    assert.deepEqual(report.summary.violations, []);
-  }
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const report = JSON.parse(result.stdout);
+  assert.deepEqual(report.summary.violations, []);
 });

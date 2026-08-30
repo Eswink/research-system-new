@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
@@ -39,7 +38,7 @@ from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_imp
 from adapters.postgres.workflow_ops import complete_impl, heartbeat_impl, recover_impl
 from adapters.postgres.workflow_submit import SubmitPayload, submit_task
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
-from packages.application.observability.scope import operation
+from packages.application.observability.scope import operation, record_metric_safely
 from packages.application.observability.signals import (
     CorrelationRef,
     OperationScope,
@@ -55,10 +54,21 @@ from packages.domain.events import EventEnvelope
 from packages.domain.tasks import ResearchTask, TaskContract
 
 
-def _redacted(dsn: str) -> str:
-    text = re.sub(r"(password\s*=\s*)\S+", r"\1***REDACTED***", dsn, flags=re.IGNORECASE)
-    text = re.sub(r"://[^@]*@", "://***REDACTED***@", text)
-    return text
+def _resolve_connection(dsn: str | None, connection: Any | None) -> tuple[Any, bool]:
+    """Return (connection, owns_connection) with dict_row factory applied."""
+    if connection is not None:
+        conn = connection
+        owns = False
+    else:
+        resolved = dsn or dsn_from_env()
+        if not resolved:
+            raise ValueError("PostgresWorkflowEngine requires dsn or connection")
+        conn, owns = pg_connect(resolved), True
+    try:
+        conn.row_factory = dict_row
+    except Exception:
+        pass
+    return conn, owns
 
 
 class PostgresWorkflowEngine(PostgresAdapterBase):
@@ -78,19 +88,7 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         self._now = now
         self._telemetry = telemetry
         self._owned_lease_ids: set[str] = set()
-        if connection is not None:
-            self._conn: Any = connection
-            self._owns_connection = False
-        else:
-            resolved = dsn or dsn_from_env()
-            if not resolved:
-                raise ValueError("PostgresWorkflowEngine requires dsn or connection")
-            self._conn = pg_connect(resolved)
-            self._owns_connection = True
-        try:
-            self._conn.row_factory = dict_row
-        except Exception:
-            pass
+        self._conn, self._owns_connection = _resolve_connection(dsn, connection)
         self._outbox = PgOutboxWriter(self._conn, self._now)
 
     def close(self) -> None:
@@ -252,6 +250,18 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         except psycopg.OperationalError as exc:
             raise self._wrap_operational(exc) from exc
 
+    def cancelled_task_ids(self, run_id: str) -> tuple[str, ...]:
+        """该 run 的取消任务 id（canonical task projection，只读）。"""
+        self._ensure_open()
+        cancelled_ids = self.cancelled
+        ids = tuple(
+            row.task.id.value
+            for row in self.list_tasks(run_id)
+            if row.task.id.value in cancelled_ids
+        )
+        self._record("cancelled_task_ids", run_id, result=str(len(ids)))
+        return ids
+
     def recover_expired_leases(self) -> int:
         with operation(
             self._telemetry,
@@ -264,13 +274,14 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         self._ensure_open()
         try:
             recovered = recover_impl(self._conn, self._record, self._outbox, self._now)
-            if recovered and self._telemetry is not None:
-                self._telemetry.record_metric(
-                    MetricSample(
+            if recovered:
+                record_metric_safely(
+                    self._telemetry,
+                    lambda: MetricSample(
                         name=MetricName.WORKFLOW_LEASE_EXPIRED,
                         kind=MetricKind.COUNTER,
                         value=recovered,
-                    )
+                    ),
                 )
             return recovered
         except psycopg.OperationalError as exc:

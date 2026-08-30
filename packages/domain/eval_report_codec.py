@@ -81,6 +81,7 @@ def _frozen_to_dict(frozen: FrozenConditions) -> dict[str, object]:
         "system_version": frozen.system_version,
         "scorer_versions": dict(frozen.scorer_versions),
         "input_digests": dict(frozen.input_digests),
+        "rubric_digest": str(frozen.rubric_digest) if frozen.rubric_digest else None,
     }
 
 
@@ -123,6 +124,9 @@ def _result_to_dict(result: EvalResult) -> dict[str, object]:
 def _frozen_from_dict(data: Mapping[str, object]) -> FrozenConditions:
     scorer_versions = _require_mapping(data, "scorer_versions")
     input_digests = _require_mapping(data, "input_digests")
+    rubric_digest = data.get("rubric_digest")
+    if rubric_digest is not None and not isinstance(rubric_digest, str):
+        raise ValueError("eval report field 'rubric_digest' must be a string or null")
     return FrozenConditions(
         dataset_id=_require_str(data, "dataset_id"),
         dataset_version=Version(_require_str(data, "dataset_version")),
@@ -133,6 +137,7 @@ def _frozen_from_dict(data: Mapping[str, object]) -> FrozenConditions:
         system_version=_require_str(data, "system_version"),
         scorer_versions={key: str(value) for key, value in scorer_versions.items()},
         input_digests={key: str(value) for key, value in input_digests.items()},
+        rubric_digest=Digest.parse(rubric_digest) if rubric_digest else None,
     )
 
 

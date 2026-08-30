@@ -21,9 +21,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from typing import Any, Mapping
 
+from packages.application.cost.pricing import PricingTable
 from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
+from packages.application.ports.pricing_snapshot_store import PricingSnapshotStore
 from packages.application.preflight.preflight import (
     ManifestFreezeError,
+    PricingFreeze,
     compile_and_preflight,
     freeze_manifest,
 )
@@ -97,6 +100,10 @@ class M12CompositionRequest:
     project: ProjectSettings
     context: PreflightContext
     extras: M12ManifestExtras | None = None
+    # M15 定价冻结(BLOCKER-6):成对注入,冻结时写入引用并落快照;
+    # 缺省 = manifest 不携带定价引用(投影侧显式"pricing 未冻结")。
+    pricing: PricingTable | None = None
+    pricing_store: PricingSnapshotStore | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,7 +131,16 @@ def compose_m12_run(request: M12CompositionRequest) -> M12CompositionResult:
         raise ManifestFreezeError(
             f"cannot freeze M12 manifest: preflight failed ({', '.join(codes)})"
         )
-    base = freeze_manifest(request.run_id, plan, report, request.context)
+    base = freeze_manifest(
+        request.run_id,
+        plan,
+        report,
+        request.context,
+        pricing_freeze=PricingFreeze(
+            table=request.pricing,
+            store=request.pricing_store,
+        ),
+    )
     manifest = request.extras.bind(base) if request.extras else base
     return M12CompositionResult(
         plan=plan,

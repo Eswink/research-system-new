@@ -15,15 +15,20 @@
 | sdist digest (api) | sha256 `fbde8c80e1b937a2c61f20347e91c0c18a1940cecf012d62e65a7caf08967c9c`(`uv.lock:1323`) |
 | sdist digest (sdk) | sha256 `cf4d4563caf7bff906c9f7967e2be22d0d6b349b908be0d90fb21c8e9c995cc6`(`uv.lock:1426`) |
 | Repository (semantic conventions) | `https://github.com/open-telemetry/semantic-conventions` |
-| Pinned revision (semconv) | `opentelemetry-semantic-conventions==0.60b1`(pyproject;pre-release 标记) |
-| sdist digest (semconv) | sha256 `87c228b5a0669b748c76d76df6c364c369c28f1c465e50f661e39737e84bc953`(`uv.lock:1439`) |
+| Pinned revision (semconv) | `opentelemetry-semantic-conventions==0.60b1`(仅作为 `opentelemetry-api`/`-sdk` 的**传递依赖**保持解析;Research OS 代码零 import、0.60b1 为 pre-release,M15 复审后**移除了直接依赖声明**) |
+| sdist digest (semconv) | sha256 `87c228b5a0669b748c76d76df6c364c369c28f1c465e50f661e39737e84bc953`(传递解析锁定;`uv.lock`) |
 | Repository (Collector contrib) | `https://github.com/open-telemetry/opentelemetry-collector-contrib`(官方发行:opentelemetry-collector-releases) |
 | Collector pin | `otel/opentelemetry-collector-contrib` 镜像,经 `adapters/otel/collector/Dockerfile` 以 sha256 digest 固定(见 `UPSTREAM_COMPONENTS.yaml`) |
 | License | SDK/API/Collector:Apache-2.0(官方仓库 LICENSE;evidence 见 `UPSTREAM_COMPONENTS.yaml` 与 `docs/references/LICENSE_MATRIX.md`) |
 | Qualification date | 2026-08-28 |
 | Compatibility facts | Python 3.12 (Research OS);`opentelemetry-*` 已在 `uv.lock` 中作为 `openhands-sdk → lmnr` 与 `fastmcp-slim` extra 的传递依赖存在,版本对齐为兼容性约束;OTLP/HTTP 仅依赖 `httpx`/`requests` 已现成,无新增二进制原生依赖 |
 
-> 稳定性风险:0.60b1 为 pre-release。为避免滚入破坏性变更,M15 仅消费 `opentelemetry-api`/`-sdk`/`-exporter-otlp-proto-http` 的稳定 API 面 与 `opentelemetry-semantic-conventions` 的常量;Research OS 自有 vocabulary 不经由 semconv 扩展点(不写自定义 GenAI 语义属性),semconv 变更仅影响常量值,不改变内部信号语义。
+> 稳定性风险:0.60b1 为 pre-release。为避免滚入破坏性变更,M15 仅消费
+> `opentelemetry-api`/`-sdk`/`-exporter-otlp-proto-http` 的稳定 API 面;
+> Research OS 自有 vocabulary 不经由 semconv 扩展点(不写自定义 GenAI 语义
+> 属性),全仓代码对 `opentelemetry-semantic-conventions` **零 import**——
+> 它只作为 SDK 的传递依赖被解析,M15 复审后已移除直接依赖声明并同步
+> `UPSTREAM_COMPONENTS.yaml`/`LICENSE_MATRIX.md`。
 
 ## Adopted Surfaces
 

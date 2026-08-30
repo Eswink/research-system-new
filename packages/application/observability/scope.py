@@ -17,11 +17,12 @@ from __future__ import annotations
 import hashlib
 import time
 import uuid
+from collections.abc import Callable
 from contextlib import AbstractContextManager
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Literal
 
-from packages.application.observability.attributes import sanitize_attributes
+from packages.application.observability.attributes import MetricSample, sanitize_attributes
 from packages.application.observability.signals import (
     CorrelationRef,
     OperationBegin,
@@ -197,7 +198,13 @@ class _Operation(AbstractContextManager["_Operation"]):
 
     def __enter__(self) -> "_Operation":
         if self._sink is not None:
-            self._sink.begin_operation(self._begin)
+            try:
+                self._sink.begin_operation(self._begin)
+            except Exception:
+                # fail-open 对称性:`__exit__` 一直有兜底,而 `__enter__` 原先裸调用,
+                # 注入型 sink 抛错会让业务代码块**整个不执行**(M15 复审实测
+                # submit 抛错但任务未持久化)。telemetry 故障不得改变业务控制流。
+                pass
         return self
 
     def __exit__(self, exc_type: object, exc: object, tb: object) -> Literal[False]:
@@ -254,3 +261,23 @@ def operation(
         begin=begin,
         attributes=attributes or {},
     )
+
+
+def record_metric_safely(
+    sink: TelemetrySink | None,
+    build: Callable[[], MetricSample],
+) -> None:
+    """fail-open metric 记录:**构造与投递都在保护内**。
+
+    `MetricSample.__post_init__` 会对非法 label 键与 COUNTER 浮点值抛错,而构造
+    发生在业务路径上、位于 `FailSafeTelemetrySink` 外壳之外——M15 复审把它列为
+    潜在崩溃面(exporter 一切正常,却因为一个错误 label 让业务调用抛出)。
+    所有站点统一走本函数,而不是各自 try/except 或裸调用。
+    """
+    if sink is None:
+        return
+    try:
+        sink.record_metric(build())
+    except Exception:
+        # telemetry 故障绝不改变业务控制流(ADR-0026)
+        pass

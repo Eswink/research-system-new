@@ -7,7 +7,6 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .import_linter_cache/
-.importlinter.sqlite
 .ruff_cache/
 .coverage
 htmlcov/

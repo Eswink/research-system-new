@@ -9,6 +9,7 @@ span 名可在导出文件中检索到。collector 不可达时整组跳过(离�
 from __future__ import annotations
 
 import time
+import uuid
 from pathlib import Path
 
 import pytest
@@ -17,7 +18,11 @@ from adapters.otel.config import OtelConfig
 from adapters.otel.provider import build_telemetry_sink
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import CorrelationRef, OperationScope
-from tests.observability.conftest import collector_available, collector_endpoint
+from tests.observability.conftest import (
+    collector_available,
+    collector_endpoint,
+    collector_required,
+)
 
 pytestmark = pytest.mark.requires_collector
 
@@ -27,15 +32,17 @@ _COLLECTOR_FILE = _REPO_ROOT / "data" / "otel" / "research_os_signals.json"
 
 @pytest.fixture(scope="module", autouse=True)
 def _require_collector() -> None:
-    if not collector_available():
-        pytest.skip("OTel collector not reachable (docker compose -f docker-compose.m15.yml up)")
+    if collector_available():
+        return
+    message = "OTel collector not reachable (docker compose -f docker-compose.m15.yml up)"
+    if collector_required():
+        pytest.fail(message)
+    pytest.skip(message)
 
 
 def test_collector_persists_research_os_spans() -> None:
     """唯一 marker span 导出后,轮询 file exporter 落盘内容(避免
     Windows bind mount 删除-重建竞态:不删文件,以 marker 增量断言)。"""
-    import uuid
-
     marker = f"collector-evidence-{uuid.uuid4().hex}"
     before = ""
     if _COLLECTOR_FILE.exists():

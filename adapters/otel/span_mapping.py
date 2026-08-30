@@ -59,13 +59,19 @@ def _to_nanoseconds(moment: datetime | None) -> int | None:
 
 
 class SpanMapper:
-    """begin/end 信号到真实 OTel Span 的一对一映射。"""
+    """begin/end 信号到真实 OTel Span 的一对一映射。
+
+    两个计数器语义不同,不可合并(M15 复审:原先合并导致健康 run 报幻影 drop):
+    - `dropped`:信号**真的丢了**(映射抛错、乱序 end 无对应 begin、in-flight 淘汰);
+    - `unlinked`:父引用存在但不可解析,span 仍按 root 正常导出,只是链接降级。
+    """
 
     def __init__(self, tracer: otel_trace.Tracer) -> None:
         self._tracer = tracer
         self._spans: dict[str, Span] = {}
         self._contexts: dict[str, SpanContext] = {}
         self.dropped = 0
+        self.unlinked = 0
 
     def begin(self, begin: OperationBegin) -> None:
         span_ref = begin.span_ref.value
@@ -97,12 +103,16 @@ class SpanMapper:
         return True
 
     def _parent_context(self, parent_ref: str | None) -> otel_context.Context:
-        """父 span 引用 → 显式 parent context;未知父按 root 处理。"""
+        """父 span 引用 → 显式 parent context;未知父按 root 处理。
+
+        未知父只计 `unlinked`:span 本身照常导出,是链接降级而不是信号丢失。
+        典型来源是层级中缺失的祖先(例如未创建 PROJECT span 时的 `run` span)。
+        """
         if parent_ref is None:
             return _EMPTY_CONTEXT
         parent_span_context = self._contexts.get(parent_ref)
         if parent_span_context is None:
-            self.dropped += 1
+            self.unlinked += 1
             return _EMPTY_CONTEXT
         return otel_trace.set_span_in_context(
             otel_trace.NonRecordingSpan(parent_span_context),

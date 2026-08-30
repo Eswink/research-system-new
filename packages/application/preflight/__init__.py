@@ -3,6 +3,7 @@
 from packages.application.preflight.preflight import (
     DryRunProjection,
     ManifestFreezeError,
+    PricingFreeze,
     compile_and_preflight,
     dry_run_projection,
     freeze_manifest,
@@ -13,6 +14,7 @@ from packages.application.preflight.preflight import (
 __all__ = [
     "DryRunProjection",
     "ManifestFreezeError",
+    "PricingFreeze",
     "compile_and_preflight",
     "dry_run_projection",
     "freeze_manifest",

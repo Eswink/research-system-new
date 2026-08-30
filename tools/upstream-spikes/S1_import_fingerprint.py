@@ -29,9 +29,10 @@ def main() -> int:
     from openhands.sdk.event.base import Event
     from openhands.sdk.llm.llm import LLM
 
-    print(
-        f"ConversationExecutionStatus: {[s for s in dir(ConversationExecutionStatus) if not s.startswith('_')]}"
-    )
+    statuses = [
+        s for s in dir(ConversationExecutionStatus) if not s.startswith("_")
+    ]
+    print(f"ConversationExecutionStatus: {statuses}")
     print(f"Event bases: {[c.__name__ for c in Event.__mro__]}")
     print(f"LLM fields: {list(LLM.model_fields.keys())}")
 

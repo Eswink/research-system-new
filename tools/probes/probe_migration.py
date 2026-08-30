@@ -3,7 +3,9 @@
 - interrupted migration: a migration file that fails mid-way must roll back
   completely (no partial tables) and leave migration_version at prior state.
 - repeat behavior: re-running migrate() after success returns [] and is a no-op.
-- bootstrap from empty yields deterministic order [1,2,3,4].
+- bootstrap from empty yields the deterministic ordered version list discovered
+  from the real migrations directory (never a hardcoded list — a hardcoded list
+  silently rots every time a milestone adds a migration).
 - failure must not be silently repaired by hand SQL — the failed file must
   remain un-applied so the operator fixes the file and re-runs.
 
@@ -58,6 +60,22 @@ def _versions() -> set[int]:
     return {int(r[0]) for r in rows}
 
 
+def _real_versions() -> list[int]:
+    """Ordered migration versions discovered from the real migrations directory.
+
+    Derived, never hardcoded: the probe must keep asserting the true set as
+    milestones add migrations (a frozen literal is how this probe started
+    failing after 005 landed).
+    """
+    versions: list[int] = []
+    for path in sorted(_REAL_MIGRATIONS_DIR.glob("*.sql")):
+        try:
+            versions.append(int(path.stem.split("_", 1)[0]))
+        except (ValueError, IndexError):
+            continue
+    return sorted(versions)
+
+
 def _drop_schema() -> None:
     conn = psycopg.connect(DSN, autocommit=True)
     conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public")
@@ -67,8 +85,13 @@ def _drop_schema() -> None:
 
 def scenario_empty_bootstrap() -> None:
     _drop_schema()
+    expected = _real_versions()
     applied = bootstrap(DSN)
-    check("bootstrap from empty applies [1,2,3,4] in order", applied == [1, 2, 3, 4], str(applied))
+    check(
+        f"bootstrap from empty applies {expected} in order",
+        applied == expected,
+        str(applied),
+    )
     tables = _tables()
     for expected in (
         "tasks",
@@ -103,7 +126,9 @@ def scenario_interrupted_migration_rolls_back() -> None:
     # copy real files
     for f in sorted(_REAL_MIGRATIONS_DIR.glob("*.sql")):
         (staging / f.name).write_bytes(f.read_bytes())
-    broken = staging / "006_broken.sql"
+    prior = _real_versions()
+    broken_version = (max(prior) if prior else 0) + 1
+    broken = staging / f"{broken_version:03d}_broken.sql"
     broken.write_text(
         "CREATE TABLE IF NOT EXISTS t_partial (id TEXT);\n"
         "INSERT INTO t_partial VALUES ('x');\n"
@@ -127,9 +152,17 @@ def scenario_interrupted_migration_rolls_back() -> None:
             f"tables has t_partial={'t_partial' in tables}",
         )
         check("no partial table t_partial_2", "t_partial_2" not in tables)
-        check("version 006 not recorded", 6 not in _versions(), str(_versions()))
-        # Prior migrations must still have been applied (fail-fast AFTER 001-005)
-        check("prior versions 1-5 applied", _versions() == {1, 2, 3, 4, 5}, str(_versions()))
+        check(
+            f"version {broken_version:03d} not recorded",
+            broken_version not in _versions(),
+            str(_versions()),
+        )
+        # Prior migrations must still have been applied (fail-fast AFTER them)
+        check(
+            f"prior versions {prior} applied",
+            _versions() == set(prior),
+            str(_versions()),
+        )
         if captured:
             results.append(f"INFO interrupted migration exception: {captured}")
     finally:
@@ -142,7 +175,11 @@ def scenario_interrupted_migration_rolls_back() -> None:
     dbmod._MIGRATIONS_DIR = staging
     try:
         applied = migrate(DSN)
-        check("fixed migration re-run applies only [6]", applied == [6], str(applied))
+        check(
+            f"fixed migration re-run applies only [{broken_version}]",
+            applied == [broken_version],
+            str(applied),
+        )
         check("re-run no-op again", migrate(DSN) == [])
     finally:
         dbmod._MIGRATIONS_DIR = original

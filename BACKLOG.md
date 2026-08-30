@@ -181,6 +181,8 @@ PASS 判定经独立复审证伪并修复，2026-08-28 重新独立复审重判 
 ## Next Product Capability
 
 M7 后的产品能力建设方向。**M8-M15 已完成（见各 completion record）；
+M15 修复轮完成（2026-08-30 独立复审判定 FAIL 后 WP0–WP8 修复，6 BLOCKER 独立
+探针复现修复，m0 23/23 全绿，recheck PASS 见 `RECHECK-20260830-024`）；
 M16 及以后为未来设想，尚未实现**；立项时按 `AGENTS.md` 流程从 Plan Mode
 开始。编号、名称、顺序、
 依赖 DAG 与详细定义（Purpose / Scope / DoD / Entry Gate 等）以
@@ -197,7 +199,7 @@ M16 及以后为未来设想，尚未实现**；立项时按 `AGENTS.md` 流程�
 | First Real Research Workflow：真实 relay 链路 E2E + usage 归账闭环、工具 + 实验 + 证据全链、MVP 成立判定 | M12 First Real Research Workflow | DONE（2026-08-22；R1 修复完成 2026-08-23；重判 PASS 2026-08-28，RECHECK-20260828-023；DoD-3 live relay 凭据闭环） |
 | Research Console：first-run relay wizard、models/probe page、team/agent model assignment、protocol/preflight dry run、task/run timeline、approvals/interventions、workspace diff、evidence/claim map、budget/usage、audit/export | M13 Research Console | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
 | Durable Workflow：Temporal qualification + 采用/不采用决策（DEFERRED，ADR-0025）、PostgreSQL canonical state + task queue、跨进程分布式调度 | M14 Durable Workflow + PostgreSQL | DONE（2026-08-28；WP-J2 重判 PASS，RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
-| Observability / Cost / Evaluation Operations：OTel collector（隐私默认）、成本归集、eval 趋势运营 | M15 Observability / Cost / Eval Operations | DONE（2026-08-29） |
+| Observability / Cost / Evaluation Operations：OTel collector（隐私默认）、成本归集、eval 趋势运营 | M15 Observability / Cost / Eval Operations | DONE（2026-08-29 首轮；2026-08-30 修复轮 WP0–WP8 完成，recheck PASS 见 RECHECK-20260830-024） |
 | Distributed Execution：多 worker、分区与调度、远程 sandbox/worker | M16 Distributed Execution + Remote Sandbox/Worker | PLANNED |
 | GPU / HPC：远程/加固 sandbox、计算资源平面 | M17 GPU / HPC | PLANNED |
 | Multi-user / Organization / RBAC：多租户数据模型、organization scope、RBAC | M18 Multi-user / Organization / RBAC | PLANNED |

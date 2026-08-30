@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import socket
 from collections.abc import Iterator
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -38,10 +39,13 @@ def collector_endpoint() -> str:
     return os.environ.get("RESEARCHOS_OTEL_COLLECTOR_ENDPOINT", _DEFAULT_COLLECTOR)
 
 
+def collector_required() -> bool:
+    """Whether a selected live-evidence job must fail rather than skip."""
+    return os.environ.get("RESEARCHOS_REQUIRE_COLLECTOR") == "1"
+
+
 def collector_available() -> bool:
     """pinned collector 证据套件的可达性探测(仅 loopback/本机端口)。"""
-    from urllib.parse import urlsplit
-
     parsed = urlsplit(collector_endpoint())
     host = parsed.hostname or "localhost"
     port = parsed.port or 4318

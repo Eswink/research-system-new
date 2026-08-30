@@ -75,7 +75,7 @@ def main() -> int:
         )
         print(f"conversation created: {type(conv).__name__}")
         conv.send_message("Hello from spike (mock).")
-        result = conv.run()
+        conv.run()
         print(f"run returned: status={conv.state.execution_status}")
         events = list(conv.state.events)
         kinds = sorted({e.__class__.__name__ for e in events})

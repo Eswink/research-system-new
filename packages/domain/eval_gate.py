@@ -105,6 +105,8 @@ def compute_verdict(config: GateConfig, results: tuple[EvalResult, ...]) -> Qual
         return QualityGateVerdict.BLOCK
     if _has_infra(results):
         return QualityGateVerdict.REVISE
+    if _has_reviewer_failure(results):
+        return QualityGateVerdict.REVISE
     statuses_by_scorer = _collect_statuses(results)
     for rule in config.rules:
         if rule.scorer_id not in statuses_by_scorer:
@@ -138,4 +140,10 @@ def _has_infra(results: tuple[EvalResult, ...]) -> bool:
         finding.status is EvalFindingStatus.INFRA_ERROR
         for result in results
         for finding in result.scorer_findings
+    )
+
+
+def _has_reviewer_failure(results: tuple[EvalResult, ...]) -> bool:
+    return any(
+        finding.failure is not None for result in results for finding in result.reviewer_findings
     )

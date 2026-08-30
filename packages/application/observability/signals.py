@@ -2,6 +2,11 @@
 
 M15 观测是自营稳定词汇(ADR-0026);`capture_content` 结构性不存在。
 本模块只定义 begin/end 信号与标识符,不含任何内容字段。
+
+定界原则(M15 复审修复):自由文本字段在**结构上**不可承载凭据或原文——
+`failure_category` 收敛到闭集、`name` 与 correlation id 经脱敏并有长度上限。
+越界值折叠为哨兵而非抛错:这些对象在 `_Operation.__exit__` 里构造,位于
+fail-open 外壳之外,抛错会直接打断业务路径。
 """
 
 from __future__ import annotations
@@ -9,6 +14,54 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
+
+from packages.domain.enums import FailureCategory
+from packages.domain.redaction import redact_text
+
+_MAX_NAME_LENGTH = 96
+_MAX_CORRELATION_LENGTH = 128
+
+
+class OperationFailureReason(StrEnum):
+    """编排层失败原因;与 Port `FailureCategory` 并列构成 failure 闭集。
+
+    `OTHER` 是越界折叠哨兵:任何不在闭集内的值(例如误传的异常消息)落到这里,
+    使 span attribute / metric label 结构上无法承载自由文本。
+    """
+
+    RUN_FAILED = "run_failed"
+    TASK_FAILED = "task_failed"
+    PHASE_FAILED = "phase_failed"
+    TOOL_EXECUTION = "tool_execution"
+    LEASE_RECOVERY_FAILED = "lease_recovery_failed"
+    OUTBOX_RELAY_FAILED = "outbox_relay_failed"
+    EVAL_RUN_FAILED = "eval_run_failed"
+    EXPERIMENT_FAILED = "experiment_failed"
+    TELEMETRY_LIFECYCLE_TIMEOUT = "telemetry_lifecycle_timeout"
+    OTHER = "other"
+
+
+_ALLOWED_FAILURE_CATEGORIES = frozenset(
+    {member.value for member in FailureCategory}
+    | {member.value for member in OperationFailureReason}
+)
+
+
+def is_allowed_failure_category(value: str) -> bool:
+    """failure_category 闭集判定(Port 分类 + 编排层原因)。"""
+    return value in _ALLOWED_FAILURE_CATEGORIES
+
+
+def coerce_failure_category(value: str | None) -> str | None:
+    """越界 failure_category 折叠为 `other`;None 透传。"""
+    if value is None:
+        return None
+    return value if is_allowed_failure_category(value) else OperationFailureReason.OTHER.value
+
+
+def _bounded_identifier(value: str, limit: int) -> str:
+    """脱敏后截断(顺序固定:先脱敏,截断不得切断凭据使正则失配)。"""
+    return redact_text(value)[:limit]
 
 
 class OperationScope(StrEnum):
@@ -74,6 +127,10 @@ class CorrelationRef:
                 raise ValueError(f"{name} must be a string")
             if value is not None and not value:
                 raise ValueError(f"{name} must be non-empty when present")
+            if value is not None:
+                # correlation id 是业务标识(UUID/digest),不是内容通道:脱敏 + 定长
+                # 上限,避免调用方把凭据或原文塞进 id 位（M15 复审实测可行）。
+                object.__setattr__(self, name, _bounded_identifier(value, _MAX_CORRELATION_LENGTH))
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,11 +172,19 @@ class OperationBegin:
             raise ValueError("operation name must not be empty")
         if self.started_at is not None and self.started_at.tzinfo is None:
             raise ValueError("started_at must be timezone-aware")
+        # span name 由站点以字面量提供(llm.call / tool.execute / phase / …);
+        # 脱敏 + 上限使它在结构上无法承载 prompt/凭据（M15 复审实测可行）。
+        object.__setattr__(self, "name", _bounded_identifier(self.name, _MAX_NAME_LENGTH))
 
 
 @dataclass(frozen=True, slots=True)
 class OperationEnd:
-    """一次观测操作结束信号。"""
+    """一次观测操作结束信号。
+
+    `failure_category` 是闭集(Port `FailureCategory` + `OperationFailureReason`);
+    越界值折叠为 `other`。M15 复审前它是自由文本,且被同时写成 span attribute
+    与 OTel `Status.description`——实测可导出 8105 字符含 DSN 密码的载荷两次。
+    """
 
     span_ref: SpanRef
     outcome: OperationOutcome
@@ -133,3 +198,4 @@ class OperationEnd:
             raise ValueError("duration_ms must be non-negative")
         if self.ended_at is not None and self.ended_at.tzinfo is None:
             raise ValueError("ended_at must be timezone-aware")
+        object.__setattr__(self, "failure_category", coerce_failure_category(self.failure_category))

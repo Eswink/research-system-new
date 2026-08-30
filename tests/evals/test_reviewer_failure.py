@@ -148,10 +148,15 @@ def test_reviewer_failure_never_maps_to_subject_pass_or_fail() -> None:
 
 
 def test_reviewer_material_carries_no_secrets() -> None:
-    material = _material()
-    serialized = str(material)
-    assert "secret" not in serialized.lower()
-    assert "authorization" not in serialized.lower()
+    # 结构断言：ReviewMaterial 只有引用/rubric 字段，没有凭据或内容通道。
+    # （字符串自比型断言对固定字面量恒真，无判别力——改用字段级检查。）
+    from dataclasses import fields
+
+    names = {field.name for field in fields(ReviewMaterial)}
+    allowed = {"case_id", "rubric", "material_ref", "system_version"}
+    assert names <= allowed, f"ReviewMaterial 出现未审计字段: {names - allowed}"
+    assert "credential" not in names and "secret" not in names
+    assert "expected" not in names and "score" not in names
 
 
 def test_reviewer_judgment_does_not_mutate_material() -> None:
@@ -162,7 +167,16 @@ def test_reviewer_judgment_does_not_mutate_material() -> None:
     assert str(material) == before
 
 
-def test_reviewer_does_not_reward_self_reported_success() -> None:
-    # Reviewer 输入不含被评对象自述，仅 rubric + material reference
-    assignment = _assignment()
-    assert "self-reported" not in assignment.material.material_ref
+def test_reviewer_cannot_receive_self_reported_score() -> None:
+    # 被评对象自报分数不进入评审输入：ReviewMaterial 结构上没有该字段，
+    # 传入未知关键字必须构造失败（结构上不可表达，非文档约定）。
+    import pytest
+
+    with pytest.raises(TypeError):
+        ReviewMaterial(  # type: ignore[call-arg]
+            case_id="case-1",
+            rubric=_RUBRIC,
+            material_ref="artifact://case-1/main",
+            system_version="0.4.0",
+            self_reported_score=1.0,
+        )

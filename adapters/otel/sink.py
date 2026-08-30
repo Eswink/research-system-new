@@ -7,11 +7,18 @@
 duration metric 由 sink 在 `end_operation` 自动派生(scope→MetricName 映射),
 站点无需重复计时;metric label 只取 `MetricLabel` 闭集内、且出现在 end
 attributes 中的键——业务 id(run/task/trace)绝不进入 metric。
+
+生命周期上界(M15 复审修复):`flush`/`shutdown` 在 daemon watchdog 线程里执行
+并硬性 `join(timeout)`。pinned OTLP/HTTP exporter 自算 deadline 并重试 6 次
+指数退避、SDK 又丢弃 export timeout,所以 `force_flush(timeout_millis=…)`
+**不受该参数约束**——实测请求 1s 实际 10.8s(flush) / 20.0s(shutdown),API 停机
+因此阻塞约 20s。watchdog 让上界由构造保证,与上游重试行为无关。
 """
 
 from __future__ import annotations
 
 import threading
+from collections.abc import Callable
 
 from opentelemetry.metrics import Meter
 from opentelemetry.sdk.metrics import MeterProvider
@@ -31,7 +38,11 @@ from packages.application.observability.signals import (
     OperationScope,
 )
 
-_DEFAULT_LIFECYCLE_TIMEOUT_SECONDS = 5.0
+_DEFAULT_LIFECYCLE_TIMEOUT_SECONDS = 3.0
+# `_scopes` 与 SpanMapper in-flight 表同界:原先只在 end_operation 弹出,
+# 未配对 begin 会让它无界增长(M15 复审实测 6 万次后达 60000,而 in-flight
+# 正确停在 4096——上层反而抵消了下层的驱逐上界)。
+_MAX_TRACKED_SCOPES = 4096
 
 # scope → duration metric;EXPERIMENT 名义单位为秒(词汇定义),其余毫秒
 # TASK 不在此列:WORKFLOW_TASK_DURATION_MS 由 workflow engine 按
@@ -72,19 +83,29 @@ class OtelTelemetrySink:
     def begin_operation(self, begin: OperationBegin) -> None:
         try:
             self._span_mapper.begin(begin)
-            self._scopes[begin.span_ref.value] = begin.scope
+            self._track_scope(begin.span_ref.value, begin.scope)
         except Exception:
             self._count_drop()
 
     def end_operation(self, end: OperationEnd) -> None:
         try:
-            scope = self._scopes.pop(end.span_ref.value, None)
+            with self._lock:
+                scope = self._scopes.pop(end.span_ref.value, None)
             # 乱序 end 的丢弃由 span mapper 计数(见 dropped 聚合)
             self._span_mapper.end(end)
             if end.duration_ms is not None and scope is not None:
                 self._emit_duration_metric(scope, end)
         except Exception:
             self._count_drop()
+
+    def _track_scope(self, span_ref: str, scope: OperationScope) -> None:
+        """记录 span_ref→scope,并与 in-flight 表同界(最旧先淘汰)。"""
+        with self._lock:
+            while len(self._scopes) >= _MAX_TRACKED_SCOPES:
+                oldest = next(iter(self._scopes))
+                self._scopes.pop(oldest, None)
+                self._dropped += 1
+            self._scopes[span_ref] = scope
 
     def record_metric(self, sample: MetricSample) -> None:
         try:
@@ -94,20 +115,62 @@ class OtelTelemetrySink:
 
     @property
     def dropped(self) -> int:
-        """sink 内部丢弃计数:映射失败 + 乱序 end + in-flight 淘汰。"""
-        return self._dropped + self._span_mapper.dropped
+        """真实丢弃计数(不含链接降级)。
+
+        聚合:映射失败 + 乱序 end + in-flight 淘汰 + scope 表淘汰 +
+        生命周期超时/失败。父引用不可解析**不**计入——那是链接降级,
+        span 照常导出,合并会让健康 run 报幻影 drop(M15 复审实测每 run 3 次)。
+        """
+        with self._lock:
+            own = self._dropped
+        return own + self._span_mapper.dropped
+
+    @property
+    def unlinked(self) -> int:
+        """父引用不可解析的次数(trace 层级不完整,信号未丢)。"""
+        return self._span_mapper.unlinked
 
     def flush(self, timeout_seconds: float = _DEFAULT_LIFECYCLE_TIMEOUT_SECONDS) -> None:
-        """有界 flush;失败只计 drop,不抛出。"""
-        try:
-            self._tracer_provider.force_flush(timeout_millis=int(timeout_seconds * 1000))
-            self._meter_provider.force_flush(timeout_millis=int(timeout_seconds * 1000))
-        except Exception:
-            self._count_drop()
+        """硬性有界 flush:watchdog 线程 + join(timeout);失败只计 drop,不抛出。"""
+        self._run_bounded(lambda: self._flush_providers(timeout_seconds), timeout_seconds)
 
     def shutdown(self, timeout_seconds: float = _DEFAULT_LIFECYCLE_TIMEOUT_SECONDS) -> None:
-        """有界 shutdown:先 flush 再停 provider;失败只计 drop,不抛出。"""
-        self.flush(timeout_seconds)
+        """硬性有界 shutdown:flush + 停 provider 共享同一预算,整体不超 timeout。"""
+        self._run_bounded(lambda: self._shutdown_providers(timeout_seconds), timeout_seconds)
+
+    def _run_bounded(self, action: Callable[[], None], timeout_seconds: float) -> bool:
+        """在 daemon 线程执行 action 并硬性 join;超时放弃线程并计 drop。
+
+        放弃的线程是 daemon:进程退出不会被它阻塞。上游 exporter 的重试循环
+        可能仍在后台跑完,但业务停机路径不再等它。
+        """
+        finished = threading.Event()
+
+        def _target() -> None:
+            try:
+                action()
+            except Exception:
+                self._count_drop()
+            finally:
+                finished.set()
+
+        worker = threading.Thread(target=_target, name="otel-lifecycle", daemon=True)
+        worker.start()
+        if not finished.wait(max(0.0, timeout_seconds)):
+            self._count_drop()
+            return False
+        return True
+
+    def _flush_providers(self, timeout_seconds: float) -> None:
+        timeout_millis = int(max(0.0, timeout_seconds) * 1000)
+        for provider in (self._tracer_provider, self._meter_provider):
+            try:
+                provider.force_flush(timeout_millis=timeout_millis)
+            except Exception:
+                self._count_drop()
+
+    def _shutdown_providers(self, timeout_seconds: float) -> None:
+        self._flush_providers(timeout_seconds)
         for provider in (self._meter_provider, self._tracer_provider):
             try:
                 provider.shutdown()

@@ -18,10 +18,8 @@ from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
     RunOrchestrationService,
 )
-from services.api.composition import (
-    ApiDeps,
-    demo_session_output,
-)
+from services.api.assembly import _endpoint_url_policy, _load_pricing
+from services.api.composition import ApiDeps, demo_session_output
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +43,7 @@ class PostgresAssembly:
     experiment_store: Any = None
     memory_store: Any = None
     eval_report_store: Any = None
+    pricing_snapshot_store: Any = None
     gateway_override: Any = None
     credentials_override: Any = None
     preflight_override: Any = None
@@ -61,6 +60,7 @@ def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any
     from adapters.postgres.evidence_ledger import PostgresEvidenceLedger
     from adapters.postgres.experiment_store import PostgresExperimentStore
     from adapters.postgres.memory_store import PostgresMemoryStore
+    from adapters.postgres.pricing_snapshot_store import PostgresPricingSnapshotStore
     from adapters.postgres.run_projection import PostgresRunProjection
     from adapters.postgres.run_store import PostgresRunStore
     from adapters.postgres.workflow_engine import PostgresWorkflowEngine
@@ -84,6 +84,7 @@ def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any
         "experiment_store": PostgresExperimentStore(connection=pg_conn),
         "memory": PostgresMemoryStore(connection=pg_conn),
         "eval_store": PostgresEvalReportStore(connection=pg_conn),
+        "pricing_store": PostgresPricingSnapshotStore(connection=pg_conn),
     }
 
 
@@ -126,6 +127,8 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
             budget=c["budget"],
             ledger=c["ledger"],
             telemetry=config.telemetry,
+            pricing=_load_pricing(),
+            pricing_store=c["pricing_store"],
         )
     )
     return PostgresAssembly(
@@ -146,6 +149,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         experiment_store=c["experiment_store"],
         memory_store=c["memory"],
         eval_report_store=c["eval_store"],
+        pricing_snapshot_store=c["pricing_store"],
         gateway_override=getattr(config, "gateway_override", None),
         credentials_override=getattr(config, "credentials_override", None),
         preflight_override=getattr(config, "preflight_override", None),
@@ -153,32 +157,45 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
 
 
 def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
-    """PG assembly -> ApiDeps (mirrors _build_postgres_apideps)."""
-    from services.api.composition import PostgresAssembly as BaseAssembly
-    from services.api.composition import _build_postgres_apideps
+    """PG assembly -> ApiDeps（composition root 装配点唯一）。"""
+    from adapters.fakes.artifact_store import FakeArtifactStore
+    from adapters.relay.gateway import OpenAIChatGateway
+    from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
+    from adapters.sqlite.agent_store import SqliteAgentStore
+    from adapters.sqlite.approval_store import SqliteApprovalStore
+    from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
+    from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
+    from adapters.sqlite.run_store import SqliteRunStore
 
-    base = BaseAssembly(
-        effective=assembly.effective,
-        connection=assembly.connection,
+    deps = ApiDeps(
         endpoint_store=assembly.endpoint_store,
         model_store=assembly.model_store,
-        pg_conn=assembly.pg_conn,
-        workflow=assembly.workflow,
+        credentials=assembly.credentials_override or RegistryCredentialResolver(),
+        gateway=assembly.gateway_override
+        or OpenAIChatGateway(
+            default_timeout_seconds=assembly.effective.endpoint_timeout_seconds,
+            telemetry=assembly.telemetry,
+        ),
+        idempotency=SqliteIdempotencyStore(connection=assembly.connection),
         events=assembly.events,
         projection=assembly.projection,
+        approvals=assembly.approvals_store or SqliteApprovalStore(connection=assembly.connection),
+        runs=assembly.orchestration,
+        workflow=assembly.workflow,
+        runs_store=assembly.runs_store_pg or SqliteRunStore(connection=assembly.connection),
+        artifacts=assembly.artifacts_pg or FakeArtifactStore(),
         ledger=assembly.ledger,
         budget=assembly.budget,
-        orchestration=assembly.orchestration,
-        approvals_store=assembly.approvals_store,
-        runs_store_pg=assembly.runs_store_pg,
-        artifacts_pg=assembly.artifacts_pg,
-        memory_store=assembly.memory_store,
-        eval_report_store=assembly.eval_report_store,
-        gateway_override=assembly.gateway_override,
-        credentials_override=assembly.credentials_override,
+        agent_store=SqliteAgentStore(connection=assembly.connection),
+        project_settings_store=SqliteProjectSettingsStore(connection=assembly.connection),
+        endpoint_url_policy=_endpoint_url_policy(assembly.effective),
+        memory=assembly.memory_store,
         preflight_override=assembly.preflight_override,
         telemetry=assembly.telemetry,
+        eval_report_store=assembly.eval_report_store,
+        pricing_snapshot_store=assembly.pricing_snapshot_store,
+        _connection=assembly.connection,
+        _pg_connection=assembly.pg_conn,
     )
-    deps = _build_postgres_apideps(base)
     deps.outbox_relay_enabled = True
     return deps

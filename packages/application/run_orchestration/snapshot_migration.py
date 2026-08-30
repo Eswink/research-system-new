@@ -35,6 +35,9 @@ class RunMigrationDecision:
     reason: str
     new_digest: str | None = None
     new_semantic_digest: str | None = None
+    # M15 定价冻结(BLOCKER-6):run 是否携带冻结定价引用。False 的 run 其
+    # 成本投影显式表达"pricing 未冻结"(不回落当期表)。
+    pricing_frozen: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +62,17 @@ class RefreezeCallback(Protocol):
     def __call__(self, run: ResearchRun) -> tuple[str, str]: ...
 
 
+class PricingFreezeCallback(Protocol):
+    """调用方注入的定价冻结闭包(M15 BLOCKER-6)。
+
+    输入已重冻结的 run,输出冻结的 (pricing_version, pricing_digest) 引用;
+    返回 None 表示调用方无法冻结定价(例如价表不可用)。apply_migration
+    在 re-freeze 后调用它把引用回填到迁移产物。
+    """
+
+    def __call__(self, run: ResearchRun) -> tuple[str, str] | None: ...
+
+
 def _needs_migration(run: ResearchRun) -> bool:
     return run.manifest_digest is None or run.manifest_semantic_digest is None
 
@@ -76,26 +90,41 @@ def _classify(run: ResearchRun) -> RunMigrationDecision:
       原因"终态 run 不可 resume，无需迁移（保留只读历史）"。
     """
     run_id = run.id.value
+    pricing_frozen = bool(run.pricing_version and run.pricing_digest)
+    pricing_note = "" if pricing_frozen else "; pricing not frozen (M15)"
     if not _needs_migration(run):
-        return RunMigrationDecision(run_id=run_id, action="keep", reason="already migrated")
+        return RunMigrationDecision(
+            run_id=run_id,
+            action="keep",
+            reason="already migrated" + pricing_note,
+            pricing_frozen=pricing_frozen,
+        )
     if run.state in ("DRAFT", "COMPILING", "PREFLIGHT", "READY"):
         return RunMigrationDecision(
-            run_id=run_id, action="keep", reason="unfrozen run; re-run start_run to freeze"
+            run_id=run_id,
+            action="keep",
+            reason="unfrozen run; re-run start_run to freeze" + pricing_note,
+            pricing_frozen=pricing_frozen,
         )
     if run.state in ("SUCCEEDED", "FAILED", "CANCELLED"):
         return RunMigrationDecision(
-            run_id=run_id, action="keep", reason="terminal run is read-only; no resume needed"
+            run_id=run_id,
+            action="keep",
+            reason="terminal run is read-only; no resume needed" + pricing_note,
+            pricing_frozen=pricing_frozen,
         )
     if run.manifest_digest is not None and run.manifest_semantic_digest is None:
         return RunMigrationDecision(
             run_id=run_id,
             action="re-freeze",
-            reason="legacy frozen snapshot; recompute semantic digest",
+            reason="legacy frozen snapshot; recompute semantic digest" + pricing_note,
+            pricing_frozen=pricing_frozen,
         )
     return RunMigrationDecision(
         run_id=run_id,
         action="fork",
-        reason="missing frozen manifest; fork-run required to continue",
+        reason="missing frozen manifest; fork-run required to continue" + pricing_note,
+        pricing_frozen=pricing_frozen,
     )
 
 
@@ -108,6 +137,7 @@ def apply_migration(
     plan: LegacyMigrationPlan,
     store: RunStore,
     refreeze: RefreezeCallback,
+    pricing_freezer: PricingFreezeCallback | None = None,
 ) -> LegacyMigrationPlan:
     """执行迁移计划（幂等）。
 
@@ -115,10 +145,13 @@ def apply_migration(
     - fork：refreeze 后创建新 run（新 id、新 digest 对、state=READY），
       原 run 保持不动（只读历史）。
     - keep：跳过。
+    - pricing_freezer（可选）：re-freeze/fork 后调用，把冻结定价引用
+      回填迁移产物；None 时迁移产物保持"pricing 未冻结"（投影侧显式
+      表达，不回落当期表）。
     重复 apply 同一 plan：already migrated 的 run 不在 plan 中（plan 由
     plan_legacy_migration 重新扫描生成），因此天然幂等。
     """
-    migrated = [_apply_one(decision, store, refreeze) for decision in plan.runs]
+    migrated = [_apply_one(decision, store, refreeze, pricing_freezer) for decision in plan.runs]
     return LegacyMigrationPlan(
         runs=tuple(migrated),
         migrated_count=sum(1 for item in migrated if item.action in ("re-freeze", "fork")),
@@ -129,6 +162,7 @@ def _apply_one(
     decision: RunMigrationDecision,
     store: RunStore,
     refreeze: RefreezeCallback,
+    pricing_freezer: PricingFreezeCallback | None = None,
 ) -> RunMigrationDecision:
     """执行单个迁移决策（apply_migration 的辅助；幂等）。"""
     if decision.action == "keep":
@@ -138,8 +172,9 @@ def _apply_one(
         # 并发/重复执行：已被其他调用迁移，视为已处理
         return RunMigrationDecision(run_id=run.id.value, action="keep", reason="already migrated")
     digest, semantic_digest = refreeze(run)
+    pricing_refs = pricing_freezer(run) if pricing_freezer is not None else None
     if decision.action == "re-freeze":
-        store.save_run(_with_digests(run, digest, semantic_digest))
+        store.save_run(_with_digests(run, digest, semantic_digest, pricing_refs))
         return RunMigrationDecision(
             run_id=run.id.value,
             action="re-freeze",
@@ -147,7 +182,7 @@ def _apply_one(
             new_digest=digest,
             new_semantic_digest=semantic_digest,
         )
-    forked = _fork_run(run, digest, semantic_digest)
+    forked = _fork_run(run, digest, semantic_digest, pricing_refs)
     store.save_run(forked)
     return RunMigrationDecision(
         run_id=forked.id.value,
@@ -158,9 +193,17 @@ def _apply_one(
     )
 
 
-def _with_digests(run: ResearchRun, digest: str, semantic_digest: str) -> ResearchRun:
+def _with_digests(
+    run: ResearchRun,
+    digest: str,
+    semantic_digest: str,
+    pricing_refs: tuple[str, str] | None = None,
+) -> ResearchRun:
     from packages.domain.core import Digest
 
+    # 逐字段复制必须保留既有定价冻结引用(M15):迁移产物丢引用等于把
+    # "pricing 未冻结"伪装成迁移成功。
+    pricing_version, pricing_digest = pricing_refs if pricing_refs else (None, None)
     return ResearchRun(
         id=run.id,
         project_id=run.project_id,
@@ -168,14 +211,22 @@ def _with_digests(run: ResearchRun, digest: str, semantic_digest: str) -> Resear
         state=run.state,
         manifest_digest=Digest.parse(digest),
         manifest_semantic_digest=Digest.parse(semantic_digest),
+        pricing_version=pricing_version if pricing_version else run.pricing_version,
+        pricing_digest=pricing_digest if pricing_digest else run.pricing_digest,
         created_at=run.created_at,
         updated_at=run.updated_at,
     )
 
 
-def _fork_run(run: ResearchRun, digest: str, semantic_digest: str) -> ResearchRun:
+def _fork_run(
+    run: ResearchRun,
+    digest: str,
+    semantic_digest: str,
+    pricing_refs: tuple[str, str] | None = None,
+) -> ResearchRun:
     from packages.domain.core import ID, Digest, Timestamp
 
+    pricing_version, pricing_digest = pricing_refs if pricing_refs else (None, None)
     return ResearchRun(
         id=ID.generate(),
         project_id=run.project_id,
@@ -183,6 +234,8 @@ def _fork_run(run: ResearchRun, digest: str, semantic_digest: str) -> ResearchRu
         state="READY",
         manifest_digest=Digest.parse(digest),
         manifest_semantic_digest=Digest.parse(semantic_digest),
+        pricing_version=pricing_version if pricing_version else run.pricing_version,
+        pricing_digest=pricing_digest if pricing_digest else run.pricing_digest,
         created_at=Timestamp.now(),
         updated_at=Timestamp.now(),
     )

@@ -3,10 +3,6 @@ import { useState } from "react";
 import { api } from "../../api/client";
 import type { CostViewDto, RunTelemetryDto, TrendViewDto } from "../../api/types";
 
-const handleError = (err: unknown): string => {
-  return err instanceof Error ? err.message : "operations failed";
-};
-
 export interface OperationsState {
   telemetry: RunTelemetryDto | null;
   cost: CostViewDto | null;
@@ -14,7 +10,36 @@ export interface OperationsState {
   error: string | null;
   busy: boolean;
   loadRun: (runId: string) => Promise<void>;
-  loadTrend: (datasetId?: string) => Promise<void>;
+  loadTrend: (
+    datasetId?: string,
+    expectedDigests?: string[],
+    limit?: number,
+  ) => Promise<void>;
+}
+
+export interface OperationsRunSnapshot {
+  telemetry: RunTelemetryDto;
+  cost: CostViewDto;
+}
+
+/** 一次 run 的 telemetry + cost 联合读取（Promise.all，任一失败即整体失败）。 */
+export function fetchOperationsRun(runId: string): Promise<OperationsRunSnapshot> {
+  return Promise.all([api.runTelemetry(runId), api.runCost(runId)]).then(
+    ([telemetry, cost]) => ({ telemetry, cost }),
+  );
+}
+
+/** 评测趋势读取（dataset / expected digests / limit 透传）。 */
+export function fetchOperationsTrend(
+  datasetId?: string,
+  expectedDigests: string[] = [],
+  limit?: number,
+): Promise<TrendViewDto> {
+  return api.evaluationsTrend(datasetId, expectedDigests, limit);
+}
+
+export function operationsErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : "operations failed";
 }
 
 /** Operations 状态（server-state cache；只 render 投影，无本地 truth） */
@@ -29,26 +54,27 @@ export function useOperations(): OperationsState {
     setBusy(true);
     setError(null);
     try {
-      const [telemetryView, costView] = await Promise.all([
-        api.runTelemetry(runId),
-        api.runCost(runId),
-      ]);
-      setTelemetry(telemetryView);
-      setCost(costView);
+      const snapshot = await fetchOperationsRun(runId);
+      setTelemetry(snapshot.telemetry);
+      setCost(snapshot.cost);
     } catch (err) {
-      setError(handleError(err));
+      setError(operationsErrorMessage(err));
     } finally {
       setBusy(false);
     }
   };
 
-  const loadTrend = async (datasetId?: string) => {
+  const loadTrend = async (
+    datasetId?: string,
+    expectedDigests: string[] = [],
+    limit?: number,
+  ) => {
     setBusy(true);
     setError(null);
     try {
-      setTrend(await api.evaluationsTrend(datasetId));
+      setTrend(await fetchOperationsTrend(datasetId, expectedDigests, limit));
     } catch (err) {
-      setError(handleError(err));
+      setError(operationsErrorMessage(err));
     } finally {
       setBusy(false);
     }

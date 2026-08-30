@@ -168,7 +168,11 @@ class TestCancellationIdempotency:
             command = CancelRunCommand(run_id=task.run_id, reason="stop")
             harness.service.cancel_run(command)
             harness.service.cancel_run(command)
-            assert harness.engine.calls[-1].result_summary == "0 cancelled"
+            # 取消记账接线后每次 cancel_run 都跟随一次 cancelled_task_ids，
+            # 故按方法名定位最后一次 cancel_run：第二次必须取消 0 个（幂等）。
+            cancel_calls = [c for c in harness.engine.calls if c.method == "cancel_run"]
+            assert len(cancel_calls) == 2
+            assert cancel_calls[-1].result_summary == "0 cancelled"
             assert task.id.value in harness.engine.cancelled
             rows = harness.engine.list_tasks(task.run_id.value)
             assert rows[0].task.status == "CANCELLED"

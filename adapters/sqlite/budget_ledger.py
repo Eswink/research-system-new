@@ -115,6 +115,31 @@ class SqliteBudgetLedger(SqliteAdapterBase):
                 raise InvalidInputError(f"duplicate usage entry: {entry.entry_id}") from error
         self._record("record_usage", entry.entry_id, result="appended")
 
+    def record_usage_batch(self, entries: tuple[UsageLedgerEntry, ...]) -> tuple[str, ...]:
+        """原子追加一批 usage；已存在 id 是重放 no-op。"""
+        self._ensure_open()
+        self._record("record_usage_batch", str(len(entries)))
+        ids = [entry.entry_id for entry in entries]
+        if len(ids) != len(set(ids)):
+            raise InvalidInputError("duplicate usage entry within batch")
+        inserted: list[str] = []
+        with self._conn:
+            for entry in entries:
+                cursor = self._conn.execute(
+                    "INSERT OR IGNORE INTO budget_usage_entries (entry_id, entry_json, recorded_at)"
+                    " VALUES (?, ?, ?)",
+                    (
+                        entry.entry_id,
+                        json.dumps(_encode_entry(entry), ensure_ascii=False, sort_keys=True),
+                        now_iso(None),
+                    ),
+                )
+                if cursor.rowcount:
+                    inserted.append(entry.entry_id)
+        result = tuple(inserted)
+        self._record("record_usage_batch", str(len(entries)), result=str(len(result)))
+        return result
+
     def snapshot(self) -> LedgerSnapshot:
         self._record("snapshot", "")
         with self._conn:
@@ -174,6 +199,7 @@ def _encode_entry(entry: UsageLedgerEntry) -> dict[str, Any]:
         "estimated_cost_minor": entry.estimated_cost_minor,
         "actual_cost_minor": entry.actual_cost_minor,
         "model_id": entry.model_id,
+        "run_id": entry.run_id,
         "task_id": entry.task_id,
         "currency": entry.currency,
         "agent_id": entry.agent_id,
@@ -197,6 +223,7 @@ def _decode_entry(record: dict[str, Any]) -> UsageLedgerEntry:
         estimated_cost_minor=record.get("estimated_cost_minor"),
         actual_cost_minor=record.get("actual_cost_minor"),
         model_id=record.get("model_id"),
+        run_id=record.get("run_id"),
         task_id=record.get("task_id"),
         currency=record.get("currency", "USD"),
         agent_id=record.get("agent_id"),

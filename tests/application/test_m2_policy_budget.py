@@ -118,6 +118,9 @@ def test_budget_unknown_limits_are_explicit_and_reservation_uses_port() -> None:
         def record_usage(self, entry: UsageLedgerEntry) -> None:
             return None
 
+        def record_usage_batch(self, entries: tuple[UsageLedgerEntry, ...]) -> tuple[str, ...]:
+            return tuple(entry.entry_id for entry in entries)
+
         def snapshot(self) -> LedgerSnapshot:
             return LedgerSnapshot()
 

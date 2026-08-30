@@ -2,18 +2,27 @@
 
 from __future__ import annotations
 
+import sqlite3
 import uuid
 from collections.abc import Iterator
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
 
+from adapters.fakes.budget_ledger import FakeBudgetLedger
 from adapters.fakes.credential_resolver import FakeCredentialResolver
 from adapters.fakes.model_gateway import FakeModelGateway
 from services.api.app import create_app
 from services.api.composition import ApiDeps
 from services.api.idempotency import InMemoryIdempotencyStore
+
+if TYPE_CHECKING:
+    from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
+    from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
+    from adapters.sqlite.run_projection import SqliteRunProjection
+    from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
+    from packages.application.run_orchestration.service import RunOrchestrationService
 
 
 def make_app_deps(
@@ -33,18 +42,21 @@ def make_app_deps(
     return make_base_deps(gateway=gateway)
 
 
-def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
-    """基础装配（endpoint/model CRUD + probe + run 测试用）。"""
+def _base_sqlite_parts(
+    connection: sqlite3.Connection,
+) -> tuple[
+    SqliteOutboxEventPublisher,
+    SqliteWorkflowEngine,
+    SqliteEvidenceLedger,
+    FakeBudgetLedger,
+    RunOrchestrationService,
+    SqliteRunProjection,
+]:
+    """Build shared SQLite stores + orchestration for base test deps."""
     from adapters.fakes.agent_runtime import FakeAgentRuntime
     from adapters.fakes.artifact_store import FakeArtifactStore
-    from adapters.fakes.budget_ledger import FakeBudgetLedger
-    from adapters.sqlite.agent_store import SqliteAgentStore
-    from adapters.sqlite.db import connect
-    from adapters.sqlite.endpoint_store import SqliteEndpointStore
     from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
     from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
-    from adapters.sqlite.model_store import SqliteModelStore
-    from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.run_projection import SqliteRunProjection
     from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
     from packages.application.run_orchestration.service import (
@@ -53,7 +65,6 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     )
     from services.api.composition import demo_session_output
 
-    connection = connect(":memory:")
     events = SqliteOutboxEventPublisher(connection=connection)
     workflow = SqliteWorkflowEngine(connection=connection)
     ledger = SqliteEvidenceLedger(connection=connection)
@@ -68,6 +79,20 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
             ledger=ledger,
         )
     )
+    projection = SqliteRunProjection(connection, events)
+    return events, workflow, ledger, budget, runs, projection
+
+
+def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
+    """基础装配（endpoint/model CRUD + probe + run 测试用）。"""
+    from adapters.sqlite.agent_store import SqliteAgentStore
+    from adapters.sqlite.db import connect
+    from adapters.sqlite.endpoint_store import SqliteEndpointStore
+    from adapters.sqlite.model_store import SqliteModelStore
+    from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
+
+    connection = connect(":memory:")
+    events, workflow, ledger, budget, runs, projection = _base_sqlite_parts(connection)
     return ApiDeps(
         endpoint_store=SqliteEndpointStore(connection=connection),
         model_store=SqliteModelStore(connection=connection),
@@ -75,8 +100,9 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         gateway=gateway if gateway is not None else FakeModelGateway(),
         idempotency=InMemoryIdempotencyStore(),
         events=events,
-        projection=SqliteRunProjection(connection, events),
+        projection=projection,
         runs=runs,
+        workflow=workflow,
         ledger=ledger,
         budget=budget,
         agent_store=SqliteAgentStore(connection=connection),

@@ -43,7 +43,12 @@
         "gate_config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
         "system_version": {"type": "string", "minLength": 1},
         "scorer_versions": {"type": "object", "additionalProperties": {"type": "string"}},
-        "input_digests": {"type": "object", "additionalProperties": {"type": "string"}}
+        "input_digests": {"type": "object", "additionalProperties": {"type": "string"}},
+        "rubric_digest": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "rubric 内容 digest;null = 无 rubric（codec 输出,schema 事实同步）"
+        }
       },
       "additionalProperties": false
     },

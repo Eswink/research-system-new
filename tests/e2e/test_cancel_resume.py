@@ -72,7 +72,8 @@ class TestCancel:
             command = CancelRunCommand(run_id=task.run_id, reason="stop")
             harness.service.cancel_run(command)
             harness.service.cancel_run(command)
-            assert harness.engine.calls[-1].result_summary == "0 cancelled"
+            cancel_calls = [call for call in harness.engine.calls if call.method == "cancel_run"]
+            assert cancel_calls[-1].result_summary == "0 cancelled"
         finally:
             harness.close()
 

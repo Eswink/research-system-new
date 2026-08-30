@@ -8,12 +8,14 @@ OTLP header 凭据经 RegistryCredentialResolver 按引用解析,永不落盘。
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from adapters.otel.config import OtelConfig
 from adapters.otel.failsafe import FailSafeTelemetrySink
 from adapters.otel.provider import build_telemetry_sink
 from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
 from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
+from packages.domain.serialization import digest_of
 from services.api.settings import ApiSettings
 
 
@@ -31,6 +33,35 @@ def build_api_telemetry(effective: ApiSettings) -> TelemetrySink:
     except Exception:
         return FailSafeTelemetrySink(NullTelemetrySink())
     return build_telemetry_sink(config, RegistryCredentialResolver())
+
+
+def exporter_config_digest(effective: ApiSettings) -> str:
+    """Return a stable, non-secret digest of the configured exporter surface."""
+    otel = effective.otel
+    endpoint = _endpoint_identity(otel.endpoint)
+    payload = {
+        "enabled": otel.enabled,
+        "endpoint": endpoint,
+        "timeout_seconds": repr(otel.timeout_seconds),
+        "sample_ratio": repr(otel.sample_ratio),
+        "header_names": ["authorization"] if otel.header_credential_ref is not None else [],
+        "service_name": "research-os",
+        "service_version": _service_version(),
+    }
+    return str(digest_of(payload))
+
+
+def _endpoint_identity(endpoint: str) -> str:
+    """Keep exporter config provenance free of URL userinfo and query secrets."""
+    try:
+        parsed = urlsplit(endpoint)
+        port = parsed.port
+    except ValueError:
+        return "invalid-endpoint"
+    value = f"{parsed.scheme}://{parsed.hostname or ''}"
+    if port is not None:
+        value += f":{port}"
+    return value + parsed.path
 
 
 def _header_refs(effective: ApiSettings) -> tuple[tuple[str, str], ...]:

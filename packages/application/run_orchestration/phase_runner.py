@@ -57,6 +57,11 @@ class RunOutcome:
     message: str = ""
     tasks: tuple[TaskOutcome, ...] = ()
     manifest_digest: str | None = None
+    # M15 定价冻结引用(BLOCKER-6):service 在 Manifest freeze 后把这两个
+    # 字段回填执行结果，API 再持久化到 ResearchRun；不能只存 manifest digest
+    # 否则 run 行会在 HTTP 边界静默丢失冻结价格引用。
+    pricing_version: str | None = None
+    pricing_digest: str | None = None
     handoff_digests: tuple[str, ...] = ()
     system_failure: bool = False
 
@@ -225,7 +230,11 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
         )
     else:
         execution = execute_task(
-            ExecutionDeps(deps.workflow, deps.runtime),
+            # budget 必须接进来:失败/重试路径的 attempt 记账在
+            # `record_attempt_usage` 里以 `budget is None` 提前返回,原先这里
+            # 漏传导致生产 run 的失败尝试**从不落账**——"失败消耗不丢失"无从成立
+            # (M15 复审 BLOCKER-5 的第二半)。
+            ExecutionDeps(deps.workflow, deps.runtime, budget=deps.budget),
             task,
             tctx.contract,
             tctx.spec_context,

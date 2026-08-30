@@ -100,6 +100,8 @@ def _encode(run: ResearchRun) -> dict[str, Any]:
         "manifest_semantic_digest": (
             str(run.manifest_semantic_digest) if run.manifest_semantic_digest else None
         ),
+        "pricing_version": run.pricing_version,
+        "pricing_digest": run.pricing_digest,
         "created_at": run.created_at.value.isoformat(),
         "updated_at": run.updated_at.value.isoformat(),
     }
@@ -117,6 +119,8 @@ def _decode(record: dict[str, Any]) -> ResearchRun:
         manifest_semantic_digest=Digest.parse(record["manifest_semantic_digest"])
         if record.get("manifest_semantic_digest")
         else None,
+        pricing_version=record.get("pricing_version"),
+        pricing_digest=record.get("pricing_digest"),
         created_at=Timestamp(datetime.fromisoformat(record["created_at"])),
         updated_at=Timestamp(datetime.fromisoformat(record["updated_at"])),
     )

@@ -9,6 +9,7 @@ from packages.application.ports import (
 from packages.application.preflight.preflight import (
     DryRunProjection,
     ManifestFreezeError,
+    PricingFreeze,
     compile_and_preflight,
     dry_run_projection,
     freeze_manifest,
@@ -21,6 +22,7 @@ __all__ = [
     "CompileResult",
     "DryRunProjection",
     "ManifestFreezeError",
+    "PricingFreeze",
     "NativePolicyEvaluator",
     "PreflightContext",
     "ProjectSettings",

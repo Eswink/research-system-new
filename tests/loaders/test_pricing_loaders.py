@@ -61,6 +61,23 @@ def test_pricing_digest_is_deterministic_and_content_sensitive() -> None:
     assert priced.price_for(PriceDimension.MODEL, "relay-model") is not None
 
 
+def test_pricing_supports_distinct_units_for_the_same_model() -> None:
+    table = PricingTable(
+        version="v3",
+        currency="USD",
+        effective_from="2026-08-30",
+        prices=(
+            PriceEntry(PriceDimension.MODEL, "relay-model", "tokens", 3),
+            PriceEntry(PriceDimension.MODEL, "relay-model", "calls", 11),
+        ),
+    )
+    tokens_price = table.price_for(PriceDimension.MODEL, "relay-model", "tokens")
+    calls_price = table.price_for(PriceDimension.MODEL, "relay-model", "calls")
+    assert tokens_price is not None and tokens_price.unit_price_minor == 3
+    assert calls_price is not None and calls_price.unit_price_minor == 11
+    assert table.price_for(PriceDimension.MODEL, "relay-model") is None
+
+
 def test_duplicate_price_entries_rejected() -> None:
     with pytest.raises(ValueError, match="duplicate price entry"):
         PricingTable(

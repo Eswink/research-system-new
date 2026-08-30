@@ -26,7 +26,7 @@ const assertNever = (value: never): never => {
 
 - 行长 ≤ 100（Prettier/Biome `printWidth = 100`）。
 - 函数体 ≤ 50 行。
-- 单文件 ≤ 300 行。
+- 单文件行数渐进式门禁（按原始行计数，含空行与注释）：≤ 300 行通过；301–450 行警告（CI 不失败，应优先评估拆分）；> 450 行硬性失败，必须拆分。
 - 圈复杂度 ≤ 15（ESLint `complexity`）。
 - `max-depth ≤ 4`、`max-params ≤ 3`、`max-nested-callbacks ≤ 10`。
 

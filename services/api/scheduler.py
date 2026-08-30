@@ -18,7 +18,7 @@ import threading
 from typing import Any
 
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
-from packages.application.observability.scope import operation
+from packages.application.observability.scope import operation, record_metric_safely
 from packages.application.observability.signals import OperationOutcome, OperationScope
 from packages.application.ports.telemetry_sink import TelemetrySink
 
@@ -58,6 +58,12 @@ class LeaseRecoveryScheduler:
             self._thread = None
 
     def _run(self) -> None:
+        """守护线程主循环:任何 telemetry 故障都不得杀掉这个线程。
+
+        M15 复审:此处的 `record_metric` 原先裸调用,抛错会穿出 `_run` 并让
+        lease-recovery 守护线程在进程余生内消失——正是 M14 引入该 scheduler
+        要防的失败模式。现在经 `record_metric_safely`(构造 + 投递都受保护)。
+        """
         while not self._stop.wait(self._interval):
             with operation(
                 self._telemetry,
@@ -69,13 +75,14 @@ class LeaseRecoveryScheduler:
                 except Exception:
                     op.set_outcome(OperationOutcome.FAILED, "lease_recovery_failed")
                     continue
-                if recovered and self._telemetry is not None:
-                    self._telemetry.record_metric(
-                        MetricSample(
+                if recovered:
+                    record_metric_safely(
+                        self._telemetry,
+                        lambda: MetricSample(
                             name=MetricName.WORKFLOW_LEASE_EXPIRED,
                             kind=MetricKind.COUNTER,
                             value=recovered,
-                        )
+                        ),
                     )
 
 

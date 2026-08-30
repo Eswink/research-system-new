@@ -16,6 +16,7 @@ from typing import Any
 
 from adapters.postgres.workflow_engine import PostgresWorkflowEngine
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
+from packages.application.observability.scope import record_metric_safely
 from packages.application.ports.telemetry_sink import TelemetrySink
 
 
@@ -46,24 +47,32 @@ class PgOutboxRelay:
 
         Returns the number of events published in this pass (0 when none).
         Per-event marking keeps incomplete passes safe on crash (scenario C).
+
+        Telemetry ordering matters: the backlog metric is recorded **after** the
+        drain loop. Recording it first meant a raising sink skipped delivery for
+        the whole pass — telemetry silently becoming an outbox availability
+        dependency (M15 re-audit finding).
         """
         pending = self._engine.pending_outbox()
-        if self._telemetry is not None:
-            self._telemetry.record_metric(
-                MetricSample(
-                    name=MetricName.OUTBOX_BACKLOG,
-                    kind=MetricKind.HISTOGRAM,
-                    value=len(pending),
-                )
-            )
         count = 0
         for envelope in pending:
             # Sink must be idempotent on event_id (EventPublisher contract).
             self._sink.publish(envelope)
             self._engine.mark_outbox_published((envelope.event_id,))
             count += 1
-        if count and self._telemetry is not None:
-            self._telemetry.record_metric(
-                MetricSample(name=MetricName.OUTBOX_DRAINED, kind=MetricKind.COUNTER, value=count)
+        record_metric_safely(
+            self._telemetry,
+            lambda: MetricSample(
+                name=MetricName.OUTBOX_BACKLOG,
+                kind=MetricKind.HISTOGRAM,
+                value=len(pending),
+            ),
+        )
+        if count:
+            record_metric_safely(
+                self._telemetry,
+                lambda: MetricSample(
+                    name=MetricName.OUTBOX_DRAINED, kind=MetricKind.COUNTER, value=count
+                ),
             )
         return count

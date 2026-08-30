@@ -29,7 +29,11 @@ from packages.domain.run import ResearchRun
 from services.api.idempotency import StoredResponse
 
 
-def _run(state: str = "RUNNING", with_manifest: bool = False) -> ResearchRun:
+def _run(
+    state: str = "RUNNING",
+    with_manifest: bool = False,
+    with_pricing: bool = False,
+) -> ResearchRun:
     return ResearchRun(
         id=ID.generate(),
         project_id="project-1",
@@ -37,12 +41,14 @@ def _run(state: str = "RUNNING", with_manifest: bool = False) -> ResearchRun:
         state=state,
         manifest_digest=Digest.parse("sha256:" + "a" * 64) if with_manifest else None,
         manifest_semantic_digest=Digest.parse("sha256:" + "b" * 64) if with_manifest else None,
+        pricing_version="pricing-v1" if with_pricing else None,
+        pricing_digest="c" * 64 if with_pricing else None,
     )
 
 
 def test_run_store_roundtrip_and_reopen(tmp_path: Path) -> None:
     db_path = tmp_path / "runs.db"
-    run = _run(state="SUCCEEDED", with_manifest=True)
+    run = _run(state="SUCCEEDED", with_manifest=True, with_pricing=True)
     store = SqliteRunStore(db_path)
     store.save_run(run)
     assert store.get_run(run.id.value).state == "SUCCEEDED"
@@ -54,6 +60,8 @@ def test_run_store_roundtrip_and_reopen(tmp_path: Path) -> None:
     restored = reopened.get_run(run.id.value)
     assert restored.state == "SUCCEEDED"
     assert restored.manifest_semantic_digest == run.manifest_semantic_digest
+    assert restored.pricing_version == "pricing-v1"
+    assert restored.pricing_digest == "c" * 64
     assert restored.created_at == run.created_at
     assert [item.id.value for item in reopened.list_runs()] == [run.id.value]
     try:

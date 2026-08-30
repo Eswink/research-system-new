@@ -33,6 +33,9 @@ class ResourceType(StrEnum):
     MODEL_TOKENS = "MODEL_TOKENS"
     MODEL_REQUESTS = "MODEL_REQUESTS"
     MODEL_COST = "MODEL_COST"
+    # deterministic scorer / evaluation runner 的使用量不属于模型调用；
+    # 分离后不会把无 LLM 的 scorer 伪装为 MODEL_REQUESTS。
+    EVALUATION_SCORER = "EVALUATION_SCORER"
     TOOL_REQUESTS = "TOOL_REQUESTS"
     TOOL_COST = "TOOL_COST"
     CPU_TIME = "CPU_TIME"
@@ -93,6 +96,9 @@ class UsageLedgerEntry:
     estimated_cost_minor: int | None = None
     actual_cost_minor: int | None = None
     currency: str = "USD"
+    # 直接 run 归属用于独立评测/实验等没有 task 投影的用量；task_id 仍保留
+    # 细粒度归属。run 级读取以 `run_id OR task_id∈run_task_ids` 过滤。
+    run_id: str | None = None
     task_id: str | None = None
     agent_id: str | None = None
     tool_id: str | None = None

@@ -122,6 +122,17 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
             self._record("cancel_run", run_id, result=f"{cancelled_count} cancelled")
             return cancelled_count
 
+    def cancelled_task_ids(self, run_id: str) -> tuple[str, ...]:
+        """该 run 的取消任务 id（canonical task projection，只读）。"""
+        self._ensure_open()
+        ids = tuple(
+            row.task.id.value
+            for row in self.list_tasks(run_id)
+            if row.task.id.value in self.cancelled
+        )
+        self._record("cancelled_task_ids", run_id, result=str(len(ids)))
+        return ids
+
     def recover_expired_leases(self) -> int:
         """超时 lease 任务置回 QUEUED（EXPIRE_LEASE 转换，非绕过状态机）；返回恢复数。"""
         with operation(

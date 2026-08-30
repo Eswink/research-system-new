@@ -63,4 +63,7 @@ class WorkflowEngine(Protocol):
     def cancel_run(self, run_id: str) -> int:
         """取消 run 下所有未终止任务；返回实际取消数量（协作式，幂等）。"""
 
+    def cancelled_task_ids(self, run_id: str) -> tuple[str, ...]:
+        """读取该 run 当前处于 CANCELLED 的 canonical task ids（确定性排序）。"""
+
     def recover_expired_leases(self) -> int: ...

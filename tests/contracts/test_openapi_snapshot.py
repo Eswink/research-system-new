@@ -56,3 +56,6 @@ def test_openapi_contains_control_plane_paths() -> None:
     assert "/approvals/{approval_id}/decide" in paths
     assert "/runs/{run_id}/claims" in paths
     assert "/runs/{run_id}/export" in paths
+    assert "/runs/{run_id}/telemetry" in paths
+    assert "/runs/{run_id}/cost" in paths
+    assert "/evaluations/trend" in paths

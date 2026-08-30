@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from decimal import Decimal
 
 import pytest
@@ -19,6 +20,7 @@ from packages.domain.eval_result import (
     EvalResult,
     ReviewerFinding,
     ReviewerVerdict,
+    eval_score_of,
 )
 from packages.domain.serialization import canonical_json_bytes
 from tests.domain.eval_contracts_support import make_report
@@ -50,6 +52,25 @@ def test_report_digest_detects_verdict_change() -> None:
     a = make_report(verdict=QualityGateVerdict.PASS)
     b = make_report(verdict=QualityGateVerdict.REVISE)
     assert report_digest(a) != report_digest(b)
+
+
+def test_eval_score_excludes_infra_cases_from_pass_ratio_denominator() -> None:
+    base = make_report(status=EvalFindingStatus.PASS)
+    result = base.results[0]
+    failed = replace(
+        result,
+        scorer_findings=(replace(result.scorer_findings[0], status=EvalFindingStatus.FAIL),),
+    )
+    infra = replace(
+        result,
+        scorer_findings=(replace(result.scorer_findings[0], status=EvalFindingStatus.INFRA_ERROR),),
+    )
+    score = eval_score_of((result, failed, infra))
+    assert score.passed_cases == 1
+    assert score.failed_cases == 1
+    assert score.infra_error_cases == 1
+    assert score.total_cases == 2
+    assert score.pass_ratio == Decimal("0.5")
 
 
 def test_report_json_roundtrip() -> None:

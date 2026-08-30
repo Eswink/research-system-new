@@ -164,11 +164,13 @@ def test_retry_appends_without_double_counting_success() -> None:
     assert dimensions[0].amount.minor_units == 25 * 2
 
 
-def test_failure_and_cancellation_never_undercount_to_zero() -> None:
+def test_failure_and_cancellation_preserve_known_subtotal_with_partial_status() -> None:
     entries = (
         _entry(
             entry_id="e-known",
             quantity=50,
+            estimated_cost_minor=None,
+            cost_status=LedgerCostStatus.UNKNOWN,
         ),
         _entry(
             entry_id="e-failed",
@@ -179,8 +181,8 @@ def test_failure_and_cancellation_never_undercount_to_zero() -> None:
         ),
     )
     total = total_cost(entries, _priced_table())
-    assert total.status is CostAmountStatus.USAGE_UNKNOWN
-    assert total.minor_units is None
+    assert total.status is CostAmountStatus.PARTIALLY_METERED
+    assert total.minor_units == 100
 
 
 def test_re_evaluation_appends_scoped_entry() -> None:

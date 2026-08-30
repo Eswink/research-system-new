@@ -65,7 +65,12 @@ class ExperimentUsage:
 
 @dataclass(frozen=True, slots=True)
 class EvaluationUsage:
-    """一次评测运行的原始用量（EvalRunner 上报）。"""
+    """一次评测运行的原始用量（EvalRunner 上报）。
+
+    deterministic scorer 与模型调用是不同资源：写入专用
+    `EVALUATION_SCORER`，而不是伪装为 `MODEL_REQUESTS`。评测与其触发
+    task 的归属由 close_budget 的 task_id 统一传递，保证 run 级视图可达。
+    """
 
     eval_id: str
     cases: int = 0
@@ -82,6 +87,7 @@ def _entry(  # noqa: PLR0913 - UsageLedgerEntry 字段映射，参数对象会�
     source: str,
     occurred_at: datetime,
     estimated_cost_minor: int | None = None,
+    run_id: str | None = None,
     task_id: str | None = None,
     agent_id: str | None = None,
     tool_id: str | None = None,
@@ -102,6 +108,7 @@ def _entry(  # noqa: PLR0913 - UsageLedgerEntry 字段映射，参数对象会�
         source=source,
         occurred_at=occurred_at,
         estimated_cost_minor=estimated_cost_minor,
+        run_id=run_id,
         task_id=task_id,
         agent_id=agent_id,
         tool_id=tool_id,
@@ -132,6 +139,7 @@ def model_entries(
                 source="m12:model_relay",
                 occurred_at=occurred_at,
                 estimated_cost_minor=usage.estimated_cost_minor,
+                run_id=run_id,
                 task_id=task_id,
                 agent_id=agent_id,
                 model_id=usage.model_id,
@@ -152,6 +160,7 @@ def model_entries(
                 unit="calls",
                 source="m12:model_relay",
                 occurred_at=occurred_at,
+                run_id=run_id,
                 task_id=task_id,
                 agent_id=agent_id,
                 model_id=usage.model_id,
@@ -176,6 +185,7 @@ def tool_entries(
             source="m12:tool_plane",
             occurred_at=occurred_at,
             estimated_cost_minor=usage.estimated_cost_minor,
+            run_id=run_id,
             task_id=task_id,
             tool_id=usage.tool_id,
             attempt=usage.attempt,
@@ -199,6 +209,7 @@ def experiment_entries(
             unit="seconds",
             source="m12:experiment",
             occurred_at=occurred_at,
+            run_id=run_id,
             task_id=task_id,
             quantity_status=(
                 LedgerQuantityStatus.UNKNOWN
@@ -218,15 +229,21 @@ def evaluation_entries(
     run_id: str,
     evaluation_usage: tuple[EvaluationUsage, ...],
     occurred_at: datetime,
+    task_id: str | None,
+    agent_id: str | None,
 ) -> list[UsageLedgerEntry]:
+    """评测用量有 run task 归属，deterministic scorer 不是模型调用。"""
     return [
         _entry(
             entry_id=_attempt_scope(f"usage:{run_id}:eval:{usage.eval_id}", usage.attempt),
-            resource_type=ResourceType.MODEL_REQUESTS,
+            resource_type=ResourceType.EVALUATION_SCORER,
             quantity=usage.scorer_calls,
             unit="scorer_calls",
             source="m12:evaluation",
             occurred_at=occurred_at,
+            run_id=run_id,
+            task_id=task_id,
+            agent_id=agent_id,
             attempt=usage.attempt,
         )
         for usage in evaluation_usage

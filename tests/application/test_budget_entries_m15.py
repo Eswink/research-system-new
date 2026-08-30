@@ -15,6 +15,11 @@ from packages.application.experiments.budget_entries import (
     experiment_entries,
     model_entries,
 )
+from packages.application.run_orchestration.usage_recording import (
+    record_attempt_usage,
+    record_cancelled_usage,
+    record_task_usage,
+)
 from packages.domain.budget import (
     LedgerCostStatus,
     LedgerQuantityStatus,
@@ -144,27 +149,47 @@ def test_experiment_unknown_elapsed_gets_quantity_unknown() -> None:
 
 
 def test_failure_path_records_attempt_scoped_unknown_entry() -> None:
-    """失败/重试耗尽 → attempt 作用域 UNKNOWN 条目(不伪造 turn 消耗)。"""
+    """失败/重试 → attempt 作用域 UNKNOWN 条目(不伪造 turn 消耗)。
 
-    from packages.application.run_orchestration.usage_recording import record_attempt_usage
-
+    entry_id 基名是 `usage:{task}:attempt-{n}`,**不**与完成记录的
+    `usage:{task}:turns` 共享命名空间:两者是不同事实,共用基名会在
+    "重试后成功" 路径上碰撞(M15 复审修复期实测 F-01 用例因此失败)。
+    """
     ledger = SqliteBudgetLedger(":memory:")
     research = research_task()
     record_attempt_usage(ledger, research, 2, "retry budget exhausted")
     (entry,) = ledger.snapshot().entries
-    assert entry.entry_id == f"usage:{research.id.value}:turns:attempt-2"
+    assert entry.entry_id == f"usage:{research.id.value}:attempt-2"
+    assert ":turns" not in entry.entry_id, (
+        "attempt records must not share the completion record's id namespace"
+    )
     assert entry.quantity == 0
     assert entry.quantity_status is LedgerQuantityStatus.UNKNOWN
     assert entry.unavailable_reason == "retry budget exhausted"
     assert entry.attempt == 2
 
 
-def test_cancellation_records_unknown_run_entry() -> None:
-    from packages.application.run_orchestration.usage_recording import record_cancelled_usage
-
+def test_attempt_and_completion_records_coexist_for_the_same_task() -> None:
+    """同一 task 的失败尝试记录与完成记录必须能共存(重试后成功路径)。"""
     ledger = SqliteBudgetLedger(":memory:")
-    record_cancelled_usage(ledger, "run-1", 3)
-    (entry,) = ledger.snapshot().entries
-    assert entry.entry_id == "usage:run-1:cancelled:3"
-    assert entry.quantity == 3
-    assert entry.quantity_status is LedgerQuantityStatus.UNKNOWN
+    research = research_task()
+    record_attempt_usage(ledger, research, 1, "attempt 1 failed")
+    record_task_usage(ledger, research)
+    entries = ledger.snapshot().entries
+    assert len({entry.entry_id for entry in entries}) == 2, [e.entry_id for e in entries]
+    assert sorted(entry.quantity for entry in entries) == [0, 1]
+
+
+def test_cancellation_records_unknown_task_entries_and_replays_noop() -> None:
+    ledger = SqliteBudgetLedger(":memory:")
+    record_cancelled_usage(ledger, "run-1", ("task-2", "task-1"))
+    # 同一取消事件 at-least-once 重放：不新增条目、不碰撞。
+    record_cancelled_usage(ledger, "run-1", ("task-1", "task-2"))
+    entries = ledger.snapshot().entries
+    assert [entry.entry_id for entry in entries] == [
+        "usage:run-1:task:task-1:cancelled",
+        "usage:run-1:task:task-2:cancelled",
+    ]
+    assert {entry.task_id for entry in entries} == {"task-1", "task-2"}
+    assert all(entry.quantity == 0 for entry in entries)
+    assert all(entry.quantity_status is LedgerQuantityStatus.UNKNOWN for entry in entries)

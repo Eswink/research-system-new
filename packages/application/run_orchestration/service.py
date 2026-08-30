@@ -11,8 +11,7 @@ session_resolution。
 
 from __future__ import annotations
 
-import uuid
-from dataclasses import dataclass, replace
+from dataclasses import replace
 
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import (
@@ -20,20 +19,14 @@ from packages.application.observability.signals import (
     OperationOutcome,
     OperationScope,
 )
-from packages.application.ports.agent_runtime import AgentRuntime
-from packages.application.ports.artifact_store import ArtifactStore
-from packages.application.ports.budget_ledger import BudgetLedger
-from packages.application.ports.event_publisher import EventPublisher
-from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.resource_catalog import (
     CatalogSnapshot,
     PreflightContext,
     ProjectSettings,
 )
-from packages.application.ports.telemetry_sink import TelemetrySink
-from packages.application.ports.workflow_engine import WorkflowEngine
 from packages.application.preflight.preflight import (
     ManifestFreezeError,
+    PricingFreeze,
     compile_and_preflight,
     freeze_manifest,
 )
@@ -47,6 +40,13 @@ from packages.application.run_orchestration.convergence import (
     assert_semantics_frozen,
     release_reservation,
 )
+from packages.application.run_orchestration.dependencies import OrchestrationDependencies
+from packages.application.run_orchestration.eventing import (
+    EventSink,
+    EventTarget,
+    frozen_payload,
+    publish_event,
+)
 from packages.application.run_orchestration.phase_runner import (
     PhaseContext,
     PhaseRunnerDeps,
@@ -56,8 +56,9 @@ from packages.application.run_orchestration.phase_runner import (
 )
 from packages.application.run_orchestration.session_resolution import resolve_sessions
 from packages.application.run_orchestration.task_executor import SessionSpecContext
-from packages.domain.core import Timestamp
-from packages.domain.events import EventEnvelope, EventType, digest_of_payload
+from packages.application.run_orchestration.usage_recording import record_cancelled_usage
+from packages.domain.events import EventType
+from packages.domain.manifest import RunManifest
 from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
@@ -66,27 +67,13 @@ from packages.domain.tasks import ResearchTask, TaskContract
 SessionSpec = tuple[ResearchTask, TaskContract, SessionSpecContext]
 
 
-@dataclass(frozen=True, slots=True)
-class OrchestrationDependencies:
-    """composition root：全部 Port 显式注入，不直接实例化 adapter。"""
-
-    runtime: AgentRuntime
-    workflow: WorkflowEngine
-    artifacts: ArtifactStore
-    events: EventPublisher
-    budget: BudgetLedger | None = None
-    ledger: EvidenceLedger | None = None
-    telemetry: TelemetrySink | None = None
-    default_actor: str = "system:orchestration"
-
-
 class RunOrchestrationService:
     """端到端 ResearchRun 编排 Use Case。"""
 
     def __init__(self, deps: OrchestrationDependencies) -> None:
         self._deps = deps
-        # run_id → reservation_ref：进程内记账（M7 同步边界内 run 收敛时释放预算；
-        # 跨进程恢复依赖 BudgetLedger 的持久化实现，见 M7 恢复边界声明）。
+        self._event_sink = EventSink(deps.events, deps.default_actor)
+        # run_id → reservation_ref：进程内记账（M7 同步边界内 run 收敛时释放预算）。
         self._reservation_refs: dict[str, str] = {}
 
     def start_run(
@@ -121,13 +108,10 @@ class RunOrchestrationService:
         preflight_context: PreflightContext,
         command: StartRunCommand,
     ) -> RunOutcome:
-        # 懒触发 lease 恢复：上次进程崩溃遗留的过期 lease 先收敛再调度新 run
-        # （SqliteWorkflowEngine.recover_expired_leases；Fake 恒返回 0）。
+        # 懒触发 lease 恢复：上次进程崩溃遗留的过期 lease 先收敛再调度新 run。
         self._deps.workflow.recover_expired_leases()
         run = ResearchRun(
-            id=command.run_id,
-            project_id=command.project_id,
-            protocol_id=command.protocol_id,
+            id=command.run_id, project_id=command.project_id, protocol_id=command.protocol_id
         )
         run = run.transition(ResearchRunState.Transition.START_COMPILE)
         plan, report = compile_and_preflight(protocol, catalog, project, preflight_context)
@@ -135,15 +119,19 @@ class RunOrchestrationService:
             return self._fail_run(run.id.value, "preflight failed", False)
         run = run.transition(ResearchRunState.Transition.COMPILE_OK)
         run = run.transition(ResearchRunState.Transition.PREFLIGHT_OK)
-        manifest = freeze_manifest(run.id.value, plan, report, preflight_context)
-        run = run.with_manifest(manifest.digest(), manifest.semantic_digest()).transition(
-            ResearchRunState.Transition.START
+        manifest = freeze_manifest(
+            run.id.value,
+            plan,
+            report,
+            preflight_context,
+            pricing_freeze=PricingFreeze(table=self._deps.pricing, store=self._deps.pricing_store),
         )
+        run = self._started_run(run, manifest)
         if manifest.budget_reservation_ref is not None:
             self._reservation_refs[run.id.value] = manifest.budget_reservation_ref
         self._publish(
             EventType.MANIFEST_FROZEN,
-            {"run_id": run.id.value, "digest": str(manifest.digest())},
+            frozen_payload(run, manifest),
             run_id=run.id.value,
             trace_id=command.trace_id,
         )
@@ -157,14 +145,27 @@ class RunOrchestrationService:
             preflight=preflight_context,
             trace_id=command.trace_id,
         )
-        outcome = self._execute(context, command)
-        self._release_if_terminal(run.id.value, outcome.state)
-        return outcome
+        return self._execute_with_context(context, command)
+
+    def _started_run(self, run: ResearchRun, manifest: RunManifest) -> ResearchRun:
+        """回填冻结引用并进入 START（逐字段保留定价引用，见 ResearchRun）。"""
+        return run.with_manifest(
+            manifest.digest(),
+            manifest.semantic_digest(),
+            pricing_version=manifest.pricing_version,
+            pricing_digest=manifest.pricing_digest,
+        ).transition(ResearchRunState.Transition.START)
 
     def cancel_run(self, command: CancelRunCommand) -> None:
-        """协作式取消：按 run_id 取消 run 下所有未终止任务，事件落 outbox，释放预算预留。"""
-        self._deps.workflow.cancel_run(command.run_id.value)
-        self._release_reservation(command.run_id.value)
+        """协作式取消并按 canonical task 归属记录不可计量用量。"""
+        run_id = command.run_id.value
+        self._deps.workflow.cancel_run(run_id)
+        record_cancelled_usage(
+            self._deps.budget,
+            run_id,
+            self._deps.workflow.cancelled_task_ids(run_id),
+        )
+        release_reservation(self._reservation_refs, self._deps.budget, run_id)
 
     def resume_run(
         self,
@@ -178,16 +179,28 @@ class RunOrchestrationService:
         if context.run.state != ResearchRunState.State.PAUSED:
             raise ValueError(f"cannot resume run in state {context.run.state}")
         assert_semantics_frozen(
-            context.run.id.value,
-            context.run.manifest_semantic_digest,
-            context.plan,
-            context.report,
-            context.preflight,
+            context,
+            pricing_version=context.run.pricing_version,
+            pricing_digest=context.run.pricing_digest,
         )
         resumed = context.run.transition(ResearchRunState.Transition.RESUME)
         context = replace(context, run=resumed)
-        outcome = self._execute(context, None, pending=pending)
-        self._release_if_terminal(resumed.id.value, outcome.state)
+        return self._execute_with_context(context, None, pending=pending)
+
+    def _execute_with_context(
+        self,
+        context: RunContext,
+        command: StartRunCommand | None,
+        *,
+        pending: tuple[SessionSpec, ...] = (),
+    ) -> RunOutcome:
+        outcome = self._execute(context, command, pending=pending)
+        outcome = replace(
+            outcome,
+            pricing_version=context.run.pricing_version,
+            pricing_digest=context.run.pricing_digest,
+        )
+        self._release_if_terminal(context.run.id.value, outcome.state)
         return outcome
 
     def _execute(
@@ -232,7 +245,7 @@ class RunOrchestrationService:
         return contract
 
     def _fail_run(self, run_id: str, message: str, system_failure: bool) -> RunOutcome:
-        self._release_reservation(run_id)
+        release_reservation(self._reservation_refs, self._deps.budget, run_id)
         self._publish(
             EventType.RUN_FAILED,
             {"run_id": run_id, "message": message},
@@ -246,13 +259,9 @@ class RunOrchestrationService:
             system_failure=system_failure,
         )
 
-    def _release_reservation(self, run_id: str) -> None:
-        """幂等释放预算预留（BUDGET_QUOTA.md §2）。"""
-        release_reservation(self._reservation_refs, self._deps.budget, run_id)
-
     def _release_if_terminal(self, run_id: str, state: str) -> None:
         if state in ResearchRunState.terminal():
-            self._release_reservation(run_id)
+            release_reservation(self._reservation_refs, self._deps.budget, run_id)
 
     def _publish_phase_event(
         self,
@@ -273,20 +282,12 @@ class RunOrchestrationService:
         trace_id: str,
         task_id: str | None = None,
     ) -> None:
-        envelope = EventEnvelope(
-            event_id=str(uuid.uuid4()),
-            event_type=event_type,
-            schema_version="1",
-            occurred_at=Timestamp.now(),
-            actor=self._deps.default_actor,
-            scope=f"run:{run_id}" + (f" task:{task_id}" if task_id else ""),
-            payload=payload,
-            payload_digest=digest_of_payload(payload),
-            run_id=run_id,
-            task_id=task_id,
-            trace_id=trace_id,
+        publish_event(
+            self._event_sink,
+            event_type,
+            payload,
+            EventTarget(run_id=run_id, trace_id=trace_id, task_id=task_id),
         )
-        self._deps.events.publish(envelope)
 
 
 __all__ = [

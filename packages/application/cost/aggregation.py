@@ -17,8 +17,11 @@ def total_cost(
     entries: tuple[UsageLedgerEntry, ...],
     pricing: PricingTable | None,
 ) -> CostAmount:
-    """run 级总额:先按维度投影,再聚合(UNKNOWN/不可计价优先暴露)。"""
-    return aggregate_costs([dimension.amount for dimension in project_dimensions(entries, pricing)])
+    """run 级总额:先按维度投影,再聚合(NO_DATA/币种冲突/UNKNOWN 优先暴露)。"""
+    return aggregate_costs(
+        [dimension.amount for dimension in project_dimensions(entries, pricing)],
+        pricing,
+    )
 
 
 def summary_lines(

@@ -30,6 +30,10 @@ def _dsn() -> str:
     return _DEFAULT_DSN
 
 
+def _pg_required() -> bool:
+    return os.environ.get("RESEARCHOS_REQUIRE_POSTGRES") == "1"
+
+
 @pytest.fixture(scope="module", autouse=True)
 def _pg_available() -> None:
     try:
@@ -38,7 +42,10 @@ def _pg_available() -> None:
         conn = psycopg.connect(_dsn(), autocommit=True, connect_timeout=2)
         conn.close()
     except Exception:
-        pytest.skip("PostgreSQL not reachable")
+        message = "PostgreSQL not reachable"
+        if _pg_required():
+            pytest.fail(message)
+        pytest.skip(message)
 
 
 def _fresh_engine(dsn: str, telemetry: object = None) -> object:

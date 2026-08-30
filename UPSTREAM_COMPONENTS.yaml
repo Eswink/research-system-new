@@ -498,33 +498,6 @@ components:
     controls:
       - otel_adapter_only_import_boundary
 
-  - id: opentelemetry_semantic_conventions
-    adoption_status: ADOPTED
-    decision_status: APPROVED
-    integration_mode: STANDARD
-    role: telemetry_semconv_constants
-    source:
-      kind: PYPI
-      package: opentelemetry-semantic-conventions
-      url: "https://pypi.org/project/opentelemetry-semantic-conventions/0.60b1/"
-    resolution:
-      version: "0.60b1"
-      lockfile: uv.lock
-      spec: "==0.60b1"
-      digest:
-        algorithm: sha256
-        artifact: sdist
-        value: "87c228b5a0669b748c76d76df6c364c369c28f1c465e50f661e39737e84bc953"
-    license:
-      spdx: Apache-2.0
-      evidence: "https://github.com/open-telemetry/opentelemetry-python/blob/v1.39.1/LICENSE"
-    upgrade_gate:
-      explicit_approval: true
-      required_checks: [lock_refresh, license_review, otel_boundaries, privacy_canary, semconv_stability_review]
-    controls:
-      - pre_release_stability_risk_acknowledged
-      - otel_adapter_only_import_boundary
-
   - id: otel_collector_image
     adoption_status: ADOPTED
     decision_status: APPROVED

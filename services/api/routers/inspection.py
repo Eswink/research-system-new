@@ -11,7 +11,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 
 from packages.application.ports import EvidenceLedger
-from packages.domain.budget import LedgerCostStatus
+from packages.application.ports.budget_ledger import LedgerSnapshot
+from packages.domain.budget import LedgerCostStatus, LedgerQuantityStatus, UsageLedgerEntry
 from packages.domain.evidence import Claim, Evidence, EvidenceRelation
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
@@ -176,38 +177,93 @@ async def run_usage(run_id: str, request: Request) -> BudgetViewDto:
     get_run_or_error(deps, run_id)
     run_task_ids = _run_task_ids(deps, run_id)
     snapshot = deps.budget.snapshot()
-    scoped = tuple(entry for entry in snapshot.entries if entry.task_id in run_task_ids)
-    entries = [
-        UsageEntryDto(
-            entry_id=entry.entry_id,
-            resource_type=entry.resource_type.value,
-            quantity=entry.quantity,
-            unit=entry.unit,
-            cost_status=entry.cost_status.value,
-            estimated_cost_minor=entry.estimated_cost_minor,
-            actual_cost_minor=entry.actual_cost_minor,
-            model_id=entry.model_id,
-            task_id=entry.task_id,
-        )
-        for entry in scoped
-    ]
-    known = sum(entry.estimated_cost_minor or 0 for entry in scoped)
-    unknown_count = sum(1 for entry in scoped if entry.cost_status is LedgerCostStatus.UNKNOWN)
+    scoped = tuple(
+        entry
+        for entry in snapshot.entries
+        if entry.run_id == run_id or entry.task_id in run_task_ids
+    )
+    entries = [_usage_entry_dto(entry) for entry in scoped]
+    unknown_count = _unknown_entry_count(scoped)
+    total, currency, known_subtotal = _usage_summary(scoped)
     return BudgetViewDto(
         entries=entries,
-        total_estimated_cost_minor=known,
+        total_estimated_cost_minor=total,
+        total_currency=currency,
+        known_cost_subtotal_minor=known_subtotal,
         unknown_cost_entries=unknown_count,
-        reservations=[
-            {
-                "id": item.id,
-                "scope": item.scope,
-                "resource_type": item.resource_type.value,
-                "quantity": item.quantity,
-                "unit": item.unit,
-            }
-            for item in snapshot.reservations
-        ],
+        reservations=_reservation_dtos(snapshot),
     )
+
+
+def _usage_entry_dto(entry: UsageLedgerEntry) -> UsageEntryDto:
+    return UsageEntryDto(
+        entry_id=entry.entry_id,
+        resource_type=entry.resource_type.value,
+        quantity=entry.quantity,
+        unit=entry.unit,
+        cost_status=entry.cost_status.value,
+        estimated_cost_minor=entry.estimated_cost_minor,
+        actual_cost_minor=entry.actual_cost_minor,
+        currency=entry.currency,
+        quantity_status=entry.quantity_status.value,
+        unavailable_reason=entry.unavailable_reason,
+        attempt=entry.attempt,
+        run_id=entry.run_id,
+        model_id=entry.model_id,
+        task_id=entry.task_id,
+    )
+
+
+def _unknown_entry_count(entries: tuple[UsageLedgerEntry, ...]) -> int:
+    return sum(
+        1
+        for entry in entries
+        if entry.cost_status is LedgerCostStatus.UNKNOWN
+        or entry.quantity_status is LedgerQuantityStatus.UNKNOWN
+        or (entry.actual_cost_minor is None and entry.estimated_cost_minor is None)
+    )
+
+
+def _reservation_dtos(snapshot: LedgerSnapshot) -> list[dict[str, object]]:
+    return [
+        {
+            "id": item.id,
+            "scope": item.scope,
+            "resource_type": item.resource_type.value,
+            "quantity": item.quantity,
+            "unit": item.unit,
+        }
+        for item in snapshot.reservations
+    ]
+
+
+def _usage_summary(
+    entries: tuple[UsageLedgerEntry, ...],
+) -> tuple[int | None, str | None, int | None]:
+    """Return complete total, currency, and known subtotal without cross-currency math."""
+    amounts = [
+        entry.actual_cost_minor
+        if entry.actual_cost_minor is not None
+        else entry.estimated_cost_minor
+        for entry in entries
+    ]
+    known_amounts = [amount for amount in amounts if amount is not None]
+    if not known_amounts:
+        return None, None, 0
+    currencies = {
+        entry.currency for entry, amount in zip(entries, amounts, strict=True) if amount is not None
+    }
+    if len(currencies) != 1:
+        return None, None, None
+    subtotal = sum(known_amounts)
+    unknown = any(
+        entry.cost_status is LedgerCostStatus.UNKNOWN
+        or entry.quantity_status is LedgerQuantityStatus.UNKNOWN
+        or amount is None
+        for entry, amount in zip(entries, amounts, strict=True)
+    )
+    currency = next(iter(currencies))
+    return (None if unknown else subtotal), currency, subtotal
 
 
 def _run_task_ids(deps: ApiDeps, run_id: str) -> frozenset[str]:

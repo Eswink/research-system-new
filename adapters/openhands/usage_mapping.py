@@ -68,7 +68,7 @@ def _cost_entry(usage_id: str, cost_cents: int, context: UsageContext) -> UsageL
         resource_type=ResourceType.MODEL_COST,
         quantity=1,
         unit="usd-cents",
-        cost_status=LedgerCostStatus.UNKNOWN,
+        cost_status=LedgerCostStatus.KNOWN,
         source=context.source,
         occurred_at=context.now or _utc_now(),
         task_id=context.task_id,

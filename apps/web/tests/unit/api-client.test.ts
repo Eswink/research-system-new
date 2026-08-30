@@ -152,3 +152,12 @@ test("probe 结果透传 provider_fingerprint_available", async () => {
   assert.equal(result.provider_fingerprint_available, false);
   assert.equal(result.system_fingerprint, null);
 });
+
+test("evaluationsTrend 传递 dataset、expected digests 与 limit", async () => {
+  responses.push(jsonResponse({ dataset_id: "ds-1", truncated: true }));
+  await api.evaluationsTrend("ds-1", ["sha256:a", "sha256:b"], 25);
+  const expected =
+    "/api/evaluations/trend?dataset_id=ds-1" +
+    "&expected_digests=sha256%3Aa&expected_digests=sha256%3Ab&limit=25";
+  assert.equal(calls[0]?.url, expected);
+});

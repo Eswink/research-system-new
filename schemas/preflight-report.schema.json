@@ -22,6 +22,7 @@
       }
     },
     "estimated_cost": {"type": ["number", "null"], "minimum": 0},
+    "estimated_cost_currency": {"type": ["string", "null"], "pattern": "^[A-Z]{3}$"},
     "reserved_budget_ref": {"type": ["string", "null"]},
     "unresolved_risks": {
       "type": "array",

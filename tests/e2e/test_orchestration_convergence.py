@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from adapters.fakes.budget_ledger import FakeBudgetLedger
@@ -23,6 +25,11 @@ from tests.e2e.scenario_catalog import (
     m7_preflight_context,
     m7_project,
 )
+
+if TYPE_CHECKING:
+    from packages.application.ports.resource_catalog import PreflightContext
+    from packages.application.run_orchestration.context import RunContext
+    from packages.domain.protocols import CompiledRunPlan, PreflightReport
 
 
 class TestBudgetReleaseConvergence:
@@ -80,6 +87,34 @@ class TestLeaseRecoveryTrigger:
 
 
 class TestSemanticGuard:
+    @staticmethod
+    def _guard_context(
+        semantic_digest: Digest | None,
+        plan: CompiledRunPlan,
+        report: PreflightReport,
+        preflight: PreflightContext,
+    ) -> RunContext:
+        """构造仅用于语义守卫的 RunContext（run 携带冻结语义 digest）。"""
+        from packages.application.run_orchestration.context import RunContext
+        from packages.domain.run import ResearchRun
+
+        run = ResearchRun(
+            id=ID("11111111-2222-4333-8444-555555555555"),
+            project_id="m7-project",
+            protocol_id="sort_analysis_v1",
+            manifest_semantic_digest=semantic_digest,
+        )
+        return RunContext(
+            protocol=m7_protocol(),
+            plan=plan,
+            report=report,
+            run=run,
+            catalog=m7_catalog(),
+            project=m7_project(),
+            preflight=preflight,
+            trace_id="",
+        )
+
     def test_missing_semantic_digest_rejected(self) -> None:
         """旧快照（无语义 digest）恢复必须拒绝，不能静默放行。"""
         from packages.application import compile_and_preflight
@@ -90,7 +125,7 @@ class TestSemanticGuard:
         plan, report = compile_and_preflight(m7_protocol(), catalog, project, context)
         assert plan is not None and report.passed
         with pytest.raises(ManifestFreezeError, match="semantic digest"):
-            assert_semantics_frozen("run-x", None, plan, report, context)
+            assert_semantics_frozen(self._guard_context(None, plan, report, context))
 
     def test_non_passing_report_rejected(self) -> None:
         """非 PASS 的 preflight report 不得用于 resume 语义校验。"""
@@ -107,9 +142,10 @@ class TestSemanticGuard:
         digest = Digest.of_bytes(b"frozen")
         with pytest.raises(ManifestFreezeError, match="non-passing"):
             assert_semantics_frozen(
-                "run-x",
-                digest,
-                plan,
-                replace(report, status=PreflightStatus.WARN),
-                context,
+                self._guard_context(
+                    digest,
+                    plan,
+                    replace(report, status=PreflightStatus.WARN),
+                    context,
+                )
             )

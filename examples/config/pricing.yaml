@@ -3,8 +3,13 @@
 # `unpriced_v1` 是唯一出厂版本:未配置任何价格 → 成本投影对每个维度
 # 返回 MONETARY_UNAVAILABLE(显式不可计价,不伪造 0 成本)。
 # 厂商价格永远不进 Domain、不进本仓库默认配置(AGENTS.md §1 / BUDGET_QUOTA.md)。
+#
+# `effective_from` 必须与 `packages/application/cost/pricing.py::unpriced_table()`
+# 完全一致:同一 version 必须只有一个 content digest。两处不一致会让
+# `unpriced_v1` 产生两个摘要,`pricing_version` 从此不再是稳定快照标识
+# (M15 复审实测 file digest 5203bfc4… vs code digest 1924e7af…)。
 version: unpriced_v1
 currency: USD
-effective_from: "2026-08-29"
+effective_from: "1970-01-01"
 calculation_method: unit_price_minor_per_unit
 prices: []

@@ -109,38 +109,12 @@ def _bind_preflight(deps: Any, credentials: Any) -> None:
 
 
 def _to_apideps(assembly: Any, connection: Any) -> Any:
-    """pg_composition.PostgresAssembly -> composition.PostgresAssembly -> ApiDeps."""
+    """pg_composition.PostgresAssembly -> ApiDeps（endpoint/model 覆盖为测试 Sqlite 存储）。"""
     from adapters.sqlite.endpoint_store import SqliteEndpointStore
     from adapters.sqlite.model_store import SqliteModelStore
-    from services.api.composition import (
-        PostgresAssembly as CompositionPostgresAssembly,
-    )
-    from services.api.composition import (
-        _build_postgres_apideps,
-    )
+    from services.api.pg_composition import build_postgres_apideps
 
-    base_assembly = CompositionPostgresAssembly(
-        effective=assembly.effective,
-        connection=assembly.connection,
-        endpoint_store=assembly.endpoint_store,
-        model_store=assembly.model_store,
-        pg_conn=assembly.pg_conn,
-        workflow=assembly.workflow,
-        events=assembly.events,
-        projection=assembly.projection,
-        ledger=assembly.ledger,
-        budget=assembly.budget,
-        orchestration=assembly.orchestration,
-        approvals_store=assembly.approvals_store,
-        runs_store_pg=assembly.runs_store_pg,
-        artifacts_pg=assembly.artifacts_pg,
-        experiment_store=assembly.experiment_store,
-        memory_store=assembly.memory_store,
-        gateway_override=assembly.gateway_override,
-        credentials_override=assembly.credentials_override,
-        preflight_override=assembly.preflight_override,
-    )
-    deps = _build_postgres_apideps(base_assembly)
+    deps = build_postgres_apideps(assembly)
     deps.endpoint_store = SqliteEndpointStore(connection=connection)
     deps.model_store = SqliteModelStore(connection=connection)
     deps._connection = connection

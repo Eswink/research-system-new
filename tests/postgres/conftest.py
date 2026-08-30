@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import os
 
+import psycopg
 import pytest
+
+from adapters.postgres.db import migrate as pg_migrate
 
 
 def _postgres_dsn() -> str:
@@ -17,10 +20,12 @@ def _postgres_dsn() -> str:
     )
 
 
+def _postgres_required() -> bool:
+    return os.environ.get("RESEARCHOS_REQUIRE_POSTGRES") == "1"
+
+
 def _postgres_available(dsn: str) -> bool:
     try:
-        import psycopg
-
         conn = psycopg.connect(dsn, autocommit=True, connect_timeout=2)
         conn.close()
         return True
@@ -33,9 +38,9 @@ def _pg_schema_ready() -> None:
     """Ensure PG schema exists before postgres-marked tests run (idempotent migrate)."""
     dsn = _postgres_dsn()
     if not _postgres_available(dsn):
+        if _postgres_required():
+            pytest.fail(f"PostgreSQL not reachable at {dsn}")
         return
-    from adapters.postgres.db import migrate as pg_migrate
-
     pg_migrate(dsn)
 
 
@@ -43,7 +48,7 @@ def _pg_schema_ready() -> None:
 def pytest_collection_modifyitems(config: object, items: list[pytest.Item]) -> None:
     del config
     dsn = _postgres_dsn()
-    if _postgres_available(dsn):
+    if _postgres_available(dsn) or _postgres_required():
         return
     reason = (
         f"PostgreSQL not reachable at {_postgres_dsn()} — "

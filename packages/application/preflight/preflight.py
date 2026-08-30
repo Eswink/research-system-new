@@ -10,14 +10,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from packages.application.cost.pricing import PricingTable
 from packages.application.ports import PreflightContext, ProjectSettings
+from packages.application.ports.pricing_snapshot_store import PricingSnapshotStore
 from packages.application.preflight.budget import BudgetCheck, check_budget, reserve_budget
 from packages.application.preflight.checks import check_models, check_tools, check_workspaces
+from packages.application.preflight.dry_run import (
+    DryRunProjection as DryRunProjection,
+)
+from packages.application.preflight.dry_run import (
+    dry_run_projection as dry_run_projection,
+)
 from packages.application.preflight.policy_check import check_policy
 from packages.application.preflight.role_checks import check_team
 from packages.application.protocol_compile.compiler import compile_protocol
-from packages.domain.budget import BudgetReservation
-from packages.domain.core import Money, Timestamp
+from packages.domain.core import Timestamp
 from packages.domain.manifest import RunManifest
 from packages.domain.protocols import (
     CompiledRunPlan,
@@ -34,38 +41,11 @@ class ManifestFreezeError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
-class DryRunProjection:
-    role_counts: dict[str, int]
-    agent_models: dict[str, str]
-    tools: dict[str, tuple[str, ...]]
-    workspaces: dict[str, str]
-    compute_profiles: dict[str, str | None]
-    estimated_cost: Money | None = None
-    approval_actions: tuple[str, ...] = ()
-    budget_reservations: tuple[BudgetReservation, ...] = ()
+class PricingFreeze:
+    """Optional pricing snapshot pair carried into Manifest freezing."""
 
-    def to_payload(self) -> dict[str, object]:
-        return {
-            "role_counts": dict(sorted(self.role_counts.items())),
-            "agent_models": dict(sorted(self.agent_models.items())),
-            "tools": {key: list(value) for key, value in sorted(self.tools.items())},
-            "workspaces": dict(sorted(self.workspaces.items())),
-            "compute_profiles": dict(sorted(self.compute_profiles.items())),
-            "budget_reservations": [
-                {
-                    "id": item.id,
-                    "scope": item.scope,
-                    "resource_type": item.resource_type.value,
-                    "quantity": item.quantity,
-                    "unit": item.unit,
-                }
-                for item in self.budget_reservations
-            ],
-            "estimated_cost_minor": (
-                self.estimated_cost.minor_units if self.estimated_cost else None
-            ),
-            "approval_actions": list(self.approval_actions),
-        }
+    table: PricingTable | None = None
+    store: PricingSnapshotStore | None = None
 
 
 def _status(findings: list[PreflightFinding]) -> PreflightStatus:
@@ -190,43 +170,58 @@ def compile_and_preflight(
     return compile_result.plan, report
 
 
-def dry_run_projection(
-    plan: CompiledRunPlan,
-    context: PreflightContext,
-    report: PreflightReport | None = None,
-) -> DryRunProjection:
-    source_findings = report.findings if report else check_policy(plan, context)[0]
-    approval_codes = {
-        PreflightFindingCode.POLICY_APPROVAL_REQUIRED.value,
-        PreflightFindingCode.HUMAN_GATE_REQUIRED.value,
-    }
-    approval_actions = tuple(
-        sorted(finding.message for finding in source_findings if finding.code in approval_codes)
-    )
-    return DryRunProjection(
-        role_counts=dict(plan.role_pools),
-        agent_models=dict(plan.resolved_models),
-        tools={
-            f"{item.phase_id}:{item.capability}": item.provider_ids
-            for item in plan.tool_requirements
-        },
-        workspaces={item.phase_id: item.workspace_backend for item in plan.workspace_requirements},
-        compute_profiles={
-            item.phase_id: item.compute_profile for item in plan.workspace_requirements
-        },
-        budget_reservations=tuple(plan.budget_reservations),
-        approval_actions=approval_actions,
-    )
-
-
 def freeze_manifest(
     run_id: str,
     plan: CompiledRunPlan,
     report: PreflightReport,
     context: PreflightContext,
+    *,
+    pricing_freeze: PricingFreeze | None = None,
 ) -> RunManifest:
+    """Freeze a manifest and, when configured, persist its pricing snapshot.
+
+    A non-empty pricing pair is fail-closed: the pricing reference and the
+    snapshot must be written together so later projections never fall back to
+    the table loaded at read time.
+    """
     if not report.passed:
         raise ManifestFreezeError("cannot freeze manifest before a passing preflight")
+    return _manifest_of(
+        run_id,
+        plan,
+        report,
+        context,
+        _release_pricing(pricing_freeze),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class _PricingRefs:
+    version: str | None
+    digest: str | None
+
+
+def _release_pricing(pricing_freeze: PricingFreeze | None) -> _PricingRefs:
+    table = pricing_freeze.table if pricing_freeze is not None else None
+    store = pricing_freeze.store if pricing_freeze is not None else None
+    if table is None:
+        return _PricingRefs(None, None)
+    if store is None:
+        raise ManifestFreezeError(
+            "cannot freeze a pricing reference without a pricing snapshot store;"
+            " the projection would address a snapshot that was never persisted"
+        )
+    store.put(table)
+    return _PricingRefs(table.version, table.pricing_digest())
+
+
+def _manifest_of(
+    run_id: str,
+    plan: CompiledRunPlan,
+    report: PreflightReport,
+    context: PreflightContext,
+    pricing: _PricingRefs,
+) -> RunManifest:
     policy_version = context.catalog.policy.version.text if context.catalog.policy else None
     frozen_contracts: dict[str, object] = {
         ref: context.catalog.task_contracts[ref]
@@ -252,6 +247,8 @@ def freeze_manifest(
         workspace_backend=context.project.workspace_backend,
         budget_reservation_ref=report.reserved_budget_ref,
         frozen_at=Timestamp.now(),
+        pricing_version=pricing.version,
+        pricing_digest=pricing.digest,
     )
 
 
@@ -259,6 +256,9 @@ def preflight_report_payload(report: PreflightReport) -> dict[str, Any]:
     estimated_cost = None
     if report.estimated_cost is not None:
         estimated_cost = report.estimated_cost.minor_units / 100
+    estimated_cost_currency = (
+        report.estimated_cost.currency if report.estimated_cost is not None else None
+    )
     return {
         "status": report.status.value,
         "findings": [
@@ -271,6 +271,7 @@ def preflight_report_payload(report: PreflightReport) -> dict[str, Any]:
             for finding in report.findings
         ],
         "estimated_cost": estimated_cost,
+        "estimated_cost_currency": estimated_cost_currency,
         "reserved_budget_ref": report.reserved_budget_ref,
         "unresolved_risks": list(report.unresolved_risks),
     }

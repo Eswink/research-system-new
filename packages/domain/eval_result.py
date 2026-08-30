@@ -88,6 +88,7 @@ class FrozenConditions:
     system_version: str
     scorer_versions: Mapping[str, str]
     input_digests: Mapping[str, str]
+    rubric_digest: Digest | None = None
 
     def digest(self) -> Digest:
         payload = {
@@ -100,6 +101,7 @@ class FrozenConditions:
             "system_version": self.system_version,
             "scorer_versions": dict(self.scorer_versions),
             "input_digests": dict(self.input_digests),
+            "rubric_digest": str(self.rubric_digest) if self.rubric_digest else None,
         }
         return digest_of(payload)
 
@@ -119,6 +121,7 @@ class FrozenConditions:
             "gate_config_digest": str(self.gate_config_digest),
             "system_version": self.system_version,
             "scorer_versions": dict(self.scorer_versions),
+            "rubric_digest": str(self.rubric_digest) if self.rubric_digest else None,
         }
         return digest_of(payload)
 
@@ -181,7 +184,7 @@ def eval_score_of(results: tuple[EvalResult, ...] | list[EvalResult]) -> EvalSco
         passed_cases=passed,
         failed_cases=failed,
         infra_error_cases=infra,
-        total_cases=passed + failed + infra,
+        total_cases=passed + failed,
     )
 
 

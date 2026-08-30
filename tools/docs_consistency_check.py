@@ -24,7 +24,10 @@ INDEX_FILE = "docs/INDEX.md"
 BACKLOG_FILE = "BACKLOG.md"
 MILESTONES_FILE = "docs/roadmap/MILESTONES.md"
 UNIFIED_MATRIX = "docs/roadmap/COMPLETION_MATRIX_M0_M11.md"
-MILESTONE_IDS = ("M8", "M9", "M10", "M11")
+MILESTONE_IDS = ("M8", "M9", "M10", "M11", "M12", "M13", "M14", "M15")
+# COMPLETION_MATRIX_M0_M11 只覆盖 M0-M11；M12+ 的状态由各自 completion record /
+# recheck 记录与 BACKLOG 承载。
+MATRIX_SCOPE_IDS = ("M8", "M9", "M10", "M11")
 KNOWN_PREFIXES = (
     "packages/",
     "adapters/",
@@ -130,16 +133,26 @@ def _check_done_milestone(
     milestone_id: str,
 ) -> None:
     record = f"{ROADMAP_DIR}/{milestone_id}_COMPLETION_RECORD.md"
-    if not (checker.root / record).is_file():
-        checker.add(f"[milestone-status] {milestone_id} DONE 但 {record} 不存在")
+    has_record = (checker.root / record).is_file()
+    recheck = _has_recheck_record(checker.root, milestone_id)
+    if not (has_record or recheck):
+        checker.add(f"[milestone-status] {milestone_id} DONE 但既无 {record} 也无 recheck 记录")
     if not _has_completion_note(milestones, milestone_id):
         checker.add(f"[milestone-status] {milestone_id} DONE 但 MILESTONES 节内缺完成状态段")
     if not any(f"| {milestone_id} " in line and "DONE" in line for line in backlog.splitlines()):
         checker.add(f"[milestone-status] {milestone_id} DONE 但 BACKLOG 行状态不一致")
-    if not any(
+    if milestone_id in MATRIX_SCOPE_IDS and not any(
         line.startswith(f"| {milestone_id} ") and "DONE" in line for line in matrix.splitlines()
     ):
         checker.add(f"[milestone-status] {milestone_id} DONE 但 COMPLETION_MATRIX_M0_M11 行不一致")
+
+
+def _has_recheck_record(root: Path, milestone_id: str) -> bool:
+    rechecks = root / ".cursor" / "plans" / "rechecks"
+    if not rechecks.is_dir():
+        return False
+    milestone_token = milestone_id.lower().replace("m", "m")
+    return any(f"-{milestone_token}-" in path.name for path in rechecks.glob("*M*.md"))
 
 
 def _check_planned_milestone(checker: Checker, matrix: str, milestone_id: str) -> None:
@@ -152,7 +165,7 @@ def _check_planned_milestone(checker: Checker, matrix: str, milestone_id: str) -
 
 def _has_completion_note(milestones: str, milestone_id: str) -> bool:
     section_start = f"## {milestone_id} —"
-    section_end = re.compile(r"^## M(?:8|9|10|11|12) —")
+    section_end = re.compile(r"^## M(?:[0-9]+) —")
     in_section = False
     for line in milestones.splitlines():
         if line.startswith(section_start):

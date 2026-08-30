@@ -33,6 +33,7 @@ class _Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802 - http.server 命名约定
         length = int(self.headers.get("Content-Length") or 0)
         payload = self.rfile.read(length)
+        self.server.request_headers.append({k.lower(): v for k, v in self.headers.items()})
         if self.path == "/v1/traces":
             request = ExportTraceServiceRequest.FromString(payload)
             self.server.traces.append(request)
@@ -64,6 +65,7 @@ class _OtlpServer(ThreadingHTTPServer):
         self.traces: list[ExportTraceServiceRequest] = []
         self.metrics: list[ExportMetricsServiceRequest] = []
         self.payloads: list[bytes] = []
+        self.request_headers: list[dict[str, str]] = []
 
 
 class OtlpHttpReceiver:
@@ -90,6 +92,11 @@ class OtlpHttpReceiver:
     def payloads(self) -> tuple[bytes, ...]:
         """全部原始请求字节(隐私 canary 扫描用)。"""
         return tuple(self._server.payloads)
+
+    @property
+    def request_headers(self) -> tuple[dict[str, str], ...]:
+        """全部请求头(小写键);canary 用来证明凭据只走 header、不进 body。"""
+        return tuple(self._server.request_headers)
 
     @property
     def span_names(self) -> tuple[str, ...]:

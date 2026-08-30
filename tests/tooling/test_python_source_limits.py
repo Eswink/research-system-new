@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import warnings
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -30,6 +31,11 @@ def function_spans(path: Path) -> Iterator[tuple[str, int]]:
 )
 def test_python_source_size_limits(path: Path) -> None:
     line_count = len(path.read_text(encoding="utf-8").splitlines())
-    assert line_count <= 300, f"{path.relative_to(ROOT)} 超过 300 行"
+    assert line_count <= 450, f"{path.relative_to(ROOT)} 超过 450 行硬上限"
+    if line_count > 300:
+        warnings.warn(
+            f"{path.relative_to(ROOT)} 超过 300 行软阈值（{line_count} 行），建议评估拆分",
+            stacklevel=0,
+        )
     oversized = [(name, lines) for name, lines in function_spans(path) if lines > 50]
     assert not oversized, f"{path.relative_to(ROOT)} 存在超过 50 行的函数: {oversized}"

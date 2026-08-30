@@ -1,0 +1,60 @@
+schema_version: 1
+id: LEARN-20260830-002
+status: PROPOSED
+created_at: 2026-08-30
+summary: "distillation_gate 的失败统计与文案强于其实现：`_session_failures` 是未过滤原始行数、`_repeated_signatures` 按总命中数（无会话维度、未过滤空载荷哨兵、未与本会话求交）却文案写「≥2 次会话」，本次实测把哨兵 e3b0c442… 报成第二个跨会话失败类；另 FRONTMATTER_SIGNATURE_RE 只捕获首个 20-hex，多签名经验条目漏匹配"
+severity: NORMAL
+category: observability
+source_type: hook_behavior
+source_refs:
+  - ".cursor/experience/entries/EXP-20260830-002.md（本轮沉淀：源码定位 + 实测命中分布）"
+  - ".cursor/hooks/distillation_gate.py:13-21（_session_failures = len(splitlines())，不解析 JSON、不过滤哨兵）"
+  - ".cursor/hooks/distillation_gate.py:24-38（_repeated_signatures：counts[sig]+=1 后取 count>=2，无会话维度、无哨兵过滤）"
+  - ".cursor/hooks/distillation_gate.py:104-119（main：repeated 未与 _session_signatures 求交，文案写「≥2 次会话中出现」）"
+  - ".cursor/hooks/distillation_gate.py:10（FRONTMATTER_SIGNATURE_RE 只捕获首个 20-hex）"
+  - ".cursor/hooks/failure_observer.py:39-42（safe_signature 对含路径的完整错误文本取摘要）"
+  - ".cursor/experience/entries/EXP-20260823-003.md（已确立：统计须过滤 tool_name=null 的空载荷哨兵 e3b0c442…）"
+  - ".cursor/experience/entries/EXP-20260827-001.md（多签名条目：第 2–6 个签名不可被 _matching_experience 命中）"
+occurrences:
+  - task_ref: "2026-08-30 会话 33615373a5b2a3f071e5（M15 复审后续：capture-experience/capture-learning 执行）"
+    evidence_ref: "stop 提示「3 次工具失败 / 2 类签名 ≥2 会话」；实测该会话文件最终 7 行且 7 个签名全部 count==1，被报的 2 类均不在本会话；2 类中 e3b0c44298fc1c149afb = sha256(\"\") 空载荷哨兵，2 命中同属 1 个会话文件（b23a6a8439c0dde55158，tool_name=null、duration 0.0ms）"
+  - task_ref: "2026-08-30 同会话：源码级复核"
+    evidence_ref: "distillation_gate.py 13-21 / 24-38 / 104-119 / 10 四处实现与文案不一致，逐行确认；唯一真实跨会话类为 784a8b47c701b4ee2656（4 文件 14 命中）"
+problem:
+  observed_behavior: "stop followup 报「本会话有 N 次工具失败」（原始行数，含空载荷哨兵与畸形行，且随会话推进漂移：本例报 3、最终 7）与「有 M 类失败签名已在 ≥2 次会话中出现」（实际判据是全语料总命中数 >= 2，无会话维度，且不与本会话签名求交）。本例 M=2 中 1 个是空载荷哨兵、且其 2 次命中同属单一会话文件。"
+  expected_behavior: "失败计数应解析 JSON 并过滤 `tool_name is None` 哨兵；跨会话判据应按 distinct observation 文件数计；提示的签名类应与本会话签名求交后再建议 capture-learning；文案须与实际计算的属性一致（若判据是总命中数就不要写「会话」）。`_matching_experience` 应支持多签名条目（pipe 拼接）全量匹配。"
+  reproduction: "确定性：读取 .cursor/runtime/observations/*.jsonl，按 tool_name is None 过滤后统计 distinct 文件数——得到唯一跨会话签名 784a8b47c701b4ee2656；不过滤则额外得到 e3b0c44298fc1c149afb（单文件 2 命中）。脚本 scratch/obs_signature_report.py 与 scratch/obs_signature_trace.py 可复现两种口径的差异。"
+hypothesis:
+  root_cause: "统计口径缺两个已在经验库确立的约束（哨兵过滤、按 observation 文件计跨会话），而 followup 文案按更强语义书写；FRONTMATTER_SIGNATURE_RE 的 `([0-9a-f]{20}|)` 单捕获组无法覆盖 pipe 拼接的多签名。置信度 0.6（源码逐行定位 + 两种口径实测差异双向确证；属确定性权威证据而非单次偶发观察）。"
+  confidence: 0.6
+proposal:
+  target_type: HOOK
+  target_paths:
+    - ".cursor/hooks/distillation_gate.py"
+    - ".cursor/knowledge/KNOWN_CAVEATS.md"
+  change_summary: "拟修正统计口径与文案：_session_failures 解析 JSON 并过滤 tool_name is None；_repeated_signatures 过滤哨兵、按 distinct observation 文件计会话数、并与 _session_signatures 求交后再提示；文案与判据对齐；FRONTMATTER_SIGNATURE_RE 改为可匹配 pipe 拼接的全部签名。本 PROPOSED 阶段**不修改任何 Hook**，等待显式授权 + before/after hook eval replay。"
+  blast_radius: "仅影响 stop followup 提示准确度与经验库匹配召回。不改变任何 failClosed 语义、不放宽任何门禁、不触碰 loop_limit 与会话级去重标记；提示更保守（求交后类数只会减少）。"
+replay:
+  before_cases:
+    - "当前实现 + 现有语料 → 报「3 次工具失败 / 2 类签名 ≥2 会话」；其中 1 类为哨兵、2 类均不在本会话"
+    - "EXP-20260827-001（6 个 pipe 拼接签名）+ 本会话签名 ed9549d338c536bdf1c0 → _matching_experience 不命中（该签名非首个）"
+  before_result: "FAIL（提示的 2 类中 1 类为伪、跨会话属性不成立；多签名条目匹配漏报）"
+  after_cases:
+    - "过滤哨兵 + 按 distinct 文件计 + 与本会话求交 → 应报 0 类（本会话 7 个签名全部 count==1）"
+    - "全量签名匹配 → EXP-20260827-001 应被命中并在提示中引用其解法"
+  after_result: "NOT RUN（需 hook 变更授权后经 run_cursor_hook_evals.py 回放）"
+validation:
+  commands:
+    - "uv run --frozen --no-sync python -B .cursor/skills/learning-check/scripts/validate_cursor_learning.py"
+    - "uv run --frozen --no-sync python -B scratch/obs_signature_report.py"
+    - "uv run --frozen --no-sync python -B scratch/obs_signature_trace.py e3b0c44298fc1c149afb"
+  evidence_refs:
+    - ".cursor/experience/entries/EXP-20260830-002.md"
+  result: FAIL
+approvals: []
+promotion:
+  authorization_ref: ""
+  promoted_at: ""
+  promoted_digest: ""
+  regression_digest: ""
+supersedes: []

@@ -19,6 +19,7 @@ import httpx
 from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential, wait_random
 
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
+from packages.application.observability.scope import record_metric_safely
 from packages.application.ports import SecretValue, failure_category_of_http_status
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.domain.enums import FailureCategory
@@ -80,10 +81,11 @@ def decode_json(payload: Any, context: str) -> Any:
 
 def _note_internal_retry(telemetry: TelemetrySink | None) -> None:
     """内部重试可见性(每次额外 HTTP 尝试计 1);telemetry 为 None 时零开销。"""
-    if telemetry is None:
-        return
-    telemetry.record_metric(
-        MetricSample(name=MetricName.LLM_CALL_RETRY_ATTEMPTS, kind=MetricKind.COUNTER, value=1)
+    record_metric_safely(
+        telemetry,
+        lambda: MetricSample(
+            name=MetricName.LLM_CALL_RETRY_ATTEMPTS, kind=MetricKind.COUNTER, value=1
+        ),
     )
 
 

@@ -7,8 +7,8 @@ Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
 MVP 能力平面（M8-M11）= completed（2026-08-15）
 M12 First Real Research Workflow = completed（R1 修复完成，待重新独立复审重判）
 M13 Research Console = completed（R1 修复 + 独立复审 PASS，2026-08-27）
-M14 Durable Workflow + PostgreSQL = 立项（IN PROGRESS；Temporal DEFERRED，见 ADR-0025）
-M15 Observability / Cost / Eval Operations = completed（2026-08-29；ADR-0026 无内容通道观测；五状态成本投影；EvalReportStore/趋势）
+M14 Durable Workflow + PostgreSQL = completed（2026-08-28；WP-J2 重判 PASS，见 `RECHECK-20260828-022`；Temporal DEFERRED，见 ADR-0025）
+M15 Observability / Cost / Eval Operations = completed（2026-08-29 首轮；2026-08-30 独立复审判定 FAIL 后修复轮 WP0–WP8 完成，6 BLOCKER 独立探针复现修复，m0 23/23 全绿；recheck PASS 见 `RECHECK-20260830-024`；ADR-0026 无内容通道观测、五状态成本投影、EvalReportStore/趋势已落地）
 ```
 
 真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 →
@@ -48,6 +48,7 @@ PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。�
 
 - `product/END_TO_END_USER_JOURNEY.md`
 - `product/CONSOLE_INFORMATION_ARCHITECTURE.md`
+- `frontend/UI_DESIGN_PROMPTS.md` — Console 页面/组件设计约束（M13；含 UI 验收条件）
 
 ## Architecture
 
@@ -184,5 +185,5 @@ PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。�
 - M13 retrospective（2026-08-28 重建，`RETROSPECTIVE_RECONSTRUCTION`）：`../.cursor/plans/tasks/PLAN-20260828-018-m13-research-console.md` + `../.cursor/plans/rechecks/RECHECK-20260828-018-m13-research-console.md`
 - M12-R1 修复轮（2026-08-28 固化）：`../.cursor/plans/tasks/PLAN-20260828-019-m12-r1-production-truth-closure.md` + `../.cursor/plans/rechecks/RECHECK-20260828-019-m12-r1-production-truth-closure.md`
 - M13-R1 修复轮（2026-08-28 固化）：`../.cursor/plans/tasks/PLAN-20260828-020-m13-r1-console-remediation.md` + `../.cursor/plans/rechecks/RECHECK-20260828-020-m13-r1-console-remediation.md`
-- M14 立项（2026-08-28，APPROVED）：`../.cursor/plans/tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md`（DoD 验证未完成）
+- M14 完成（2026-08-28，重判 PASS）：`../.cursor/plans/tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md` + `../.cursor/plans/rechecks/RECHECK-20260828-022-m14-durable-workflow-postgresql.md`
 - M1-M6/M5R/M8/M9/M11 原开发窗口记录（Plan + PASS Recheck + Memory 或 completion record）见各自 plan 文件与 `../.cursor/memory/INDEX.md`；M9/M10/M11 无 MEM 条目（覆盖缺口，见 `roadmap/DOCUMENT_RECOVERY_M0_M11.md`）

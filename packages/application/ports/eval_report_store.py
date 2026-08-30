@@ -1,20 +1,25 @@
-"""EvalReportStore Port:verbatim report bytes + derived index(M15 WP3)。
+"""M15 EvalReportStore port: canonical report bytes plus derived index.
 
-Canonical truth 是报告原文字节(`report_digest` 可校验);index 列是可重建的
-derived projection(有 rebuild-from-bodies 测试保证)。评测 verdict 的唯一
-权威仍是 M11 `compute_verdict` / `compare_reports`——本 store 不产生判断。
+The report body is canonical truth.  Every index value is a derived projection,
+not an alternative verdict source.  A report is immutable after its first
+successful write: duplicate ``report_digest`` writes are idempotent no-ops so
+``recorded_at`` cannot be used to rewrite trend direction.
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
+from packages.domain.enums import QualityGateVerdict
+from packages.domain.eval_report_codec import report_from_dict
+
 
 @dataclass(frozen=True, slots=True)
 class EvalReportIndexEntry:
-    """从报告正文派生的索引(不含正文);body 可由 report_digest 反查。"""
+    """Body-derived report index with immutable ingestion ordering metadata."""
 
     report_digest: str
     comparison_digest: str
@@ -26,35 +31,67 @@ class EvalReportIndexEntry:
     gate_config_digest: str
     scorer_versions: tuple[tuple[str, str], ...]
     system_version: str
+    verdict: QualityGateVerdict
+    recorded_at: datetime
+    rubric_digest: str | None = None
     case_ids: tuple[str, ...] = field(default_factory=tuple)
     evaluator_identities: tuple[str, ...] = field(default_factory=tuple)
-    verdict: str = ""
     pass_count: int = 0
     fail_count: int = 0
     infra_error_count: int = 0
+    reviewer_failure_count: int = 0
     usage_ref: str | None = None
     cost_ref: str | None = None
     run_id: str | None = None
-    recorded_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        if not self.report_digest:
+            raise ValueError("eval report index requires report_digest")
+        if not isinstance(self.verdict, QualityGateVerdict):
+            raise ValueError("eval report index verdict must be a QualityGateVerdict")
+        if self.recorded_at.tzinfo is None or self.recorded_at.utcoffset() is None:
+            raise ValueError("eval report index recorded_at must be timezone-aware")
+        counts = (
+            self.pass_count,
+            self.fail_count,
+            self.infra_error_count,
+            self.reviewer_failure_count,
+        )
+        if any(value < 0 for value in counts):
+            raise ValueError("eval report index counts must not be negative")
 
 
 @dataclass(frozen=True, slots=True)
 class StoredEvalReport:
-    """存储记录:verbatim 正文 + 派生索引。"""
+    """Verbatim report body and its derived projection.
+
+    Construction validates the canonical body before any adapter persists it.
+    This stops an arbitrary index digest or verdict from being used to publish
+    a result different from the report that was actually evaluated.
+    """
 
     index: EvalReportIndexEntry
     body: bytes
 
     def __post_init__(self) -> None:
-        if not self.body:
-            raise ValueError("stored eval report body must not be empty")
-        if not self.index.report_digest:
-            raise ValueError("stored eval report must carry report_digest")
+        if not isinstance(self.body, bytes) or not self.body:
+            raise ValueError("stored eval report body must be non-empty bytes")
+        try:
+            decoded = json.loads(self.body.decode("utf-8"))
+            if not isinstance(decoded, dict):
+                raise ValueError("report body must be a JSON object")
+            report = report_from_dict(decoded)
+        except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as error:
+            raise ValueError("stored eval report body is not a valid EvalReport") from error
+        if str(report.digest()) != self.index.report_digest:
+            raise ValueError("stored eval report digest does not match its body")
+        if report.gate_verdict is not self.index.verdict:
+            raise ValueError("stored eval report verdict does not match its body")
 
 
 @dataclass(frozen=True, slots=True)
 class EvalReportQuery:
-    """索引查询;全部条件可选,确定性排序。"""
+    """Derived-index query.  Results are newest-first and bounded by ``limit``."""
 
     comparison_digest: str | None = None
     dataset_id: str | None = None
@@ -66,12 +103,22 @@ class EvalReportQuery:
             raise ValueError("query limit must be >= 1")
 
 
+@dataclass(frozen=True, slots=True)
+class EvalReportQueryPage:
+    """Bounded report query plus an explicit indication that rows were omitted."""
+
+    entries: tuple[EvalReportIndexEntry, ...]
+    truncated: bool = False
+
+
 @runtime_checkable
 class EvalReportStore(Protocol):
-    """报告存储;put 幂等(同 report_digest 覆盖同内容),查询确定性排序。"""
+    """Immutable report store with deterministic newest-first queries."""
 
     def put(self, report: StoredEvalReport) -> None: ...
 
     def get(self, report_digest: str) -> StoredEvalReport | None: ...
 
     def query(self, query: EvalReportQuery) -> tuple[EvalReportIndexEntry, ...]: ...
+
+    def query_page(self, query: EvalReportQuery) -> EvalReportQueryPage: ...

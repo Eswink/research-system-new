@@ -3,6 +3,11 @@
 包装任意 TelemetrySink:inner 的任何异常都被吞掉并计数;`shutdown`/`flush`
 透传给支持生命周期的 inner(如 OtelTelemetrySink),同样吞错。
 Canonical state 与 telemetry 故障完全隔离(ADR-0026 / DoD-7)。
+
+`drop_count` 聚合自身与 inner 的计数(M15 复审修复):本外壳只数 inner **抛出**
+的异常,而 `OtelTelemetrySink` 把自己的全部错误内部吞掉并记在自有计数器上,
+所以在出厂组装下该字段结构性恒 0——`GET /runs/{id}/telemetry` 的 exporter
+健康信号因此永远报告"零丢弃",即使每一次导出都失败。
 """
 
 from __future__ import annotations
@@ -13,7 +18,7 @@ from packages.application.observability.attributes import MetricSample
 from packages.application.observability.signals import OperationBegin, OperationEnd
 from packages.application.ports.telemetry_sink import TelemetrySink
 
-_DEFAULT_LIFECYCLE_TIMEOUT_SECONDS = 5.0
+_DEFAULT_LIFECYCLE_TIMEOUT_SECONDS = 3.0
 
 
 class FailSafeTelemetrySink:
@@ -45,7 +50,17 @@ class FailSafeTelemetrySink:
 
     @property
     def drop_count(self) -> int:
-        """inner 抛错的累计次数(诊断/exporter 健康可见性)。"""
+        """外壳捕获的 inner 抛错 + inner 自报的丢弃(exporter 健康可见性)。
+
+        必须聚合 inner:`OtelTelemetrySink` 自吞全部错误,只加自有计数器,
+        单看外壳计数会得到结构性恒 0 的健康信号(M15 复审实测)。
+        """
+        inner_dropped = getattr(self._inner, "dropped", 0)
+        return self._dropped + (inner_dropped if isinstance(inner_dropped, int) else 0)
+
+    @property
+    def wrapper_drop_count(self) -> int:
+        """仅外壳自身捕获的 inner 抛错次数(契约测试用)。"""
         return self._dropped
 
     @property

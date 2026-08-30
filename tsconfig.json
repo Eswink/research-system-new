@@ -1,5 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
+  "references": [{ "path": "./apps/web" }],
   "include": [
     "tests/architecture/typescript/fixtures/valid/**/*.ts",
     "tests/tooling/typescript/**/*.ts"

@@ -8,19 +8,24 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
+from adapters.fakes.budget_ledger import FakeBudgetLedger
 from adapters.fakes.eval_report_store import FakeEvalReportStore
 from packages.application.evaluation.eval_index import stored_from_report
 from packages.application.evaluation.runner import RunRequest, run_evaluation
 from packages.domain.budget import LedgerCostStatus, ResourceType, UsageLedgerEntry
-from packages.domain.core import Version
+from packages.domain.core import ID, Version
 from packages.domain.eval_gate import GateConfig
 from packages.domain.eval_result import EvalReport
 from packages.domain.eval_spec import EvalCase, EvalDataset, EvalScope, ScorerRef
+from packages.domain.tasks import ResearchTask
+from services.api.mappers.operations import run_telemetry_dto
+from tests.contracts.fixtures import research_task, task_contract
 
 _PROTOCOL = "m12_reference_research_v1.yaml"
 
@@ -37,12 +42,6 @@ def _start_run(run_ready_client: TestClient) -> str:
 
 def _seed_task(run_ready_client: TestClient, run_id: str) -> str:
     """向 workflow 提交确定性任务并返回 task_id(projection 可读)。"""
-    from dataclasses import replace
-
-    from packages.domain.core import ID
-    from packages.domain.tasks import ResearchTask
-    from tests.contracts.fixtures import research_task, task_contract
-
     deps = cast(Any, run_ready_client.app).state.deps
     base = research_task()
     task_id = f"6f8f56a0-5c2a-4b3e-9f1d-{uuid.uuid4().hex[:12]}"
@@ -53,7 +52,7 @@ def _seed_task(run_ready_client: TestClient, run_id: str) -> str:
         assigned_agent_id="agent-1",
         idempotency_key=f"ops-{task_id}",
     )
-    _ = ResearchTask
+    assert isinstance(task, ResearchTask)
     deps.runs._deps.workflow.submit(task, task_contract())
     return task_id
 
@@ -81,6 +80,8 @@ def test_telemetry_endpoint_returns_canonical_projection(run_ready_client: TestC
     assert response.status_code == 200
     body = response.json()
     assert body["run_id"] == run_id
+    assert body["manifest_digest"]
+    assert "exporter_config_digest" in body
     tasks = body["tasks"]
     counted = sum(
         tasks[key] for key in ("succeeded", "failed", "cancelled", "queued", "leased", "other")
@@ -92,8 +93,22 @@ def test_telemetry_endpoint_returns_canonical_projection(run_ready_client: TestC
     assert "prompt" not in response.text
 
 
-def test_telemetry_endpoint_unknown_run_404(client: TestClient) -> None:
-    assert client.get("/runs/nope/telemetry").status_code == 404
+def test_telemetry_outbox_read_failure_is_unknown(run_ready_client: TestClient) -> None:
+    run_id = _start_run(run_ready_client)
+    deps = cast(Any, run_ready_client.app).state.deps
+
+    class BrokenWorkflow:
+        def list_tasks(self, _run_id: str) -> list[object]:
+            return []
+
+        def pending_outbox(self) -> object:
+            raise RuntimeError("outbox unavailable")
+
+    deps.workflow = BrokenWorkflow()
+    dto = run_telemetry_dto(deps, run_id, frozenset())
+    assert dto.outbox.pending is None
+    assert dto.outbox.status == "UNKNOWN"
+    assert dto.outbox.unavailable_reason is not None
 
 
 def test_cost_endpoint_reports_unpriced_as_unavailable(run_ready_client: TestClient) -> None:
@@ -101,8 +116,6 @@ def test_cost_endpoint_reports_unpriced_as_unavailable(run_ready_client: TestCli
     task_id = _seed_task(run_ready_client, run_id)
     deps = cast(Any, run_ready_client.app).state.deps
     if deps.budget is None:
-        from adapters.fakes.budget_ledger import FakeBudgetLedger
-
         deps.budget = FakeBudgetLedger()
     deps.budget.record_usage(_entry(task_id, 500, estimated_cost_minor=12))
     response = run_ready_client.get(f"/runs/{run_id}/cost")
@@ -133,8 +146,48 @@ def test_trend_endpoint_reports_segments(run_ready_client: TestClient) -> None:
     assert body["segments"], "comparable series must produce a segment"
     point = body["segments"][0]["points"][0]
     assert point["report_digest"] == stored.index.report_digest
+    assert point["dataset_id"] == stored.index.dataset_id
+    assert point["dataset_version"] == stored.index.dataset_version
+    assert point["dataset_digest"] == stored.index.dataset_digest
+    assert point["gate_config_id"] == stored.index.gate_config_id
+    assert point["gate_config_version"] == stored.index.gate_config_version
+    assert point["gate_config_digest"] == stored.index.gate_config_digest
+    assert point["system_version"] == stored.index.system_version
+    assert point["comparison_digest"] == stored.index.comparison_digest
+    assert point["run_id"] is None
     assert point["missing"] is False
     assert point["infra_error_count"] >= 0
+
+
+def test_trend_endpoint_wires_missing_digests_and_truncation(
+    run_ready_client: TestClient,
+) -> None:
+    _start_run(run_ready_client)
+    deps = cast(Any, run_ready_client.app).state.deps
+    store = FakeEvalReportStore()
+    deps.eval_report_store = store
+    first = stored_from_report(
+        _report(42),
+        recorded_at=datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc),
+    )
+    second = stored_from_report(
+        _report(43),
+        recorded_at=datetime(2026, 8, 29, 12, 1, tzinfo=timezone.utc),
+    )
+    store.put(first)
+    store.put(second)
+    response = run_ready_client.get(
+        "/evaluations/trend",
+        params={
+            "dataset_id": "m15-ds",
+            "limit": 1,
+            "expected_digests": [first.index.report_digest, "sha256:" + "a" * 64],
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["truncated"] is True
+    assert [point["report_digest"] for point in body["missing"]] == ["sha256:" + "a" * 64]
 
 
 def test_trend_endpoint_503_without_store(client: TestClient) -> None:
@@ -143,7 +196,7 @@ def test_trend_endpoint_503_without_store(client: TestClient) -> None:
     assert client.get("/evaluations/trend").status_code == 503
 
 
-def _report() -> EvalReport:
+def _report(case_answer: int = 42) -> EvalReport:
     dataset = EvalDataset(
         id="m15-ds",
         version=Version("1.0.0"),
@@ -153,7 +206,7 @@ def _report() -> EvalReport:
                 version=Version("1.0.0"),
                 scope=EvalScope.UNIT,
                 input_ref="input://c1",
-                expected={"answer": 42},
+                expected={"answer": case_answer},
                 scorer_refs=(ScorerRef("exact_match", Version("1.0.0")),),
             ),
         ),
@@ -164,6 +217,6 @@ def _report() -> EvalReport:
             config=GateConfig(id="gate", version=Version("1.0.0")),
             mode="OFFLINE_FAKE",
             system_version="0.4.0",
-            inputs={"input://c1": {"answer": 42}},
+            inputs={"input://c1": {"answer": case_answer}},
         )
     ).report

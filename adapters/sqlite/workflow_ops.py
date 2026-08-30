@@ -17,6 +17,7 @@ from adapters.sqlite.leases import iso, lease_from_row, new_lease, request_diges
 from adapters.sqlite.outbox import OutboxWriter
 from adapters.sqlite.serialization import encode_task
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
+from packages.application.observability.scope import record_metric_safely
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
@@ -28,13 +29,18 @@ _HostCalls = Callable[..., None]
 _Predicate = Callable[[ResearchTask], bool]
 
 
-def _lag_ms_since(created_at: object, now: Callable[[], datetime] | None) -> float | None:
-    """created_at → 现在的毫秒时延;解析失败返回 None(telemetry 不阻断)。"""
+def _lag_ms_since(created_at: object) -> float | None:
+    """created_at → 现在的毫秒时延;解析失败返回 None(telemetry 不阻断)。
+
+    **不使用注入的业务时钟**:telemetry 计时读 `self._now` 会消费确定性测试时钟的
+    tick,从而改变持久化的 domain event 时间戳(M15 复审实测每次 run 偏移 14 个
+    时间戳)。观测必须旁观业务时间,不参与推进它。PG 侧
+    (`adapters/postgres/telemetry_notes.py`)一直用挂钟,这里与之对齐。
+    """
     try:
         text = str(created_at).replace("Z", "+00:00")
         created = datetime.fromisoformat(text)
-        current = now() if now is not None else datetime.now(created.tzinfo)
-        return max(0.0, (current - created).total_seconds() * 1000.0)
+        return max(0.0, (datetime.now(created.tzinfo) - created).total_seconds() * 1000.0)
     except (TypeError, ValueError):
         return None
 
@@ -224,41 +230,44 @@ class SqliteWorkflowOps:
                     task_id=task_id,
                 )
             recovered += 1
-        if recovered and self._telemetry is not None:
-            self._telemetry.record_metric(
-                MetricSample(
+        if recovered:
+            record_metric_safely(
+                self._telemetry,
+                lambda: MetricSample(
                     name=MetricName.WORKFLOW_LEASE_EXPIRED,
                     kind=MetricKind.COUNTER,
                     value=recovered,
-                )
+                ),
             )
         self._record("recover_expired_leases", f"{recovered} recovered")
         return recovered
 
     def _note_queue_lag(self, row: Any) -> None:
-        """claim 时的排队时延(created_at → now);telemetry off 时零开销。"""
+        """claim 时的排队时延(created_at → 挂钟);telemetry off 时零开销。"""
         if self._telemetry is None:
             return
-        lag = _lag_ms_since(row["created_at"], self._now)
+        lag = _lag_ms_since(row["created_at"])
         if lag is None:
             return
-        self._telemetry.record_metric(
-            MetricSample(
+        record_metric_safely(
+            self._telemetry,
+            lambda: MetricSample(
                 name=MetricName.WORKFLOW_QUEUE_LAG_MS, kind=MetricKind.HISTOGRAM, value=lag
-            )
+            ),
         )
 
     def _note_task_duration(self, created_at: str) -> None:
         """任务总时长(created_at → complete);telemetry off 时零开销。"""
         if self._telemetry is None:
             return
-        duration = _lag_ms_since(created_at, self._now)
+        duration = _lag_ms_since(created_at)
         if duration is None:
             return
-        self._telemetry.record_metric(
-            MetricSample(
+        record_metric_safely(
+            self._telemetry,
+            lambda: MetricSample(
                 name=MetricName.WORKFLOW_TASK_DURATION_MS,
                 kind=MetricKind.HISTOGRAM,
                 value=duration,
-            )
+            ),
         )

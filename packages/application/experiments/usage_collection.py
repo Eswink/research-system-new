@@ -123,7 +123,10 @@ def _elapsed_seconds(result: ExperimentRunResult) -> int | None:
     return result.elapsed_seconds
 
 
-def _evaluation_usage(report: EvalReport | None) -> tuple[EvaluationUsage, ...]:
+def _evaluation_usage(
+    report: EvalReport | None,
+    attempt: int,
+) -> tuple[EvaluationUsage, ...]:
     if report is None:
         return ()
     scorer_calls = sum(len(result.scorer_findings) for result in report.results)
@@ -134,6 +137,7 @@ def _evaluation_usage(report: EvalReport | None) -> tuple[EvaluationUsage, ...]:
             eval_id=report.report_id,
             cases=len(report.results),
             scorer_calls=scorer_calls,
+            attempt=attempt,
         ),
     )
 
@@ -143,7 +147,7 @@ def collect_usage(collection: UsageCollection) -> tuple[BudgetClosureInput, Coll
     model_usage = _model_usage(collection)
     tool_usage = _tool_usage(collection.tool_results, collection.attempt)
     experiment_usage = _experiment_usage(collection.experiment_result, collection.attempt)
-    evaluation_usage = _evaluation_usage(collection.eval_report)
+    evaluation_usage = _evaluation_usage(collection.eval_report, collection.attempt)
     summary = CollectedUsage(
         model_tokens=sum(item.prompt_tokens + item.completion_tokens for item in model_usage),
         model_requests=sum(item.calls for item in model_usage),

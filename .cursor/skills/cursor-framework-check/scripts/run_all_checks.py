@@ -36,6 +36,7 @@ RELEASE_ASSETS = (
     ".cursor/releases/RELEASE_EVIDENCE.json",
 )
 PROFILE_NAMES = ("framework", "python", "typescript", "m0")
+WEB_SCRIPTS = ("lint", "test", "typecheck", "build")
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,10 +120,18 @@ def python_checks(root: Path) -> tuple[Check, ...]:
 
 
 def typescript_checks() -> tuple[Check, ...]:
-    return tuple(
+    root_checks = tuple(
         Check(name=f"typescript/{script}", command=pnpm_command("run", script))
         for script in ("format:check", "lint", "typecheck", "boundaries", "test")
     )
+    web_checks = tuple(
+        Check(
+            name=f"typescript/web-{script}",
+            command=pnpm_command("--dir", "apps/web", "run", script),
+        )
+        for script in WEB_SCRIPTS
+    )
+    return root_checks + web_checks
 
 
 def checks_for(profile: str, root: Path) -> tuple[Check, ...]:

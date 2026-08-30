@@ -38,7 +38,9 @@ def main() -> int:
         provider = LLMProvider.from_model(model=llm.model, api_base=llm.base_url)
         kwargs = provider.as_litellm_call_kwargs(api_key="sk-test-mock")
         print(
-            f"litellm kwargs: model={kwargs.get('model')!r} api_base={kwargs.get('api_base')!r} custom_provider={kwargs.get('custom_llm_provider')!r}"
+            f"litellm kwargs: model={kwargs.get('model')!r} "
+            f"api_base={kwargs.get('api_base')!r} "
+            f"custom_provider={kwargs.get('custom_llm_provider')!r}"
         )
         print("S2-3 litellm kwargs 转换: PASS")
     except Exception as exc:  # noqa: BLE001

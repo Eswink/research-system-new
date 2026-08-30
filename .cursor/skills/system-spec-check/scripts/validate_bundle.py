@@ -207,6 +207,33 @@ def check_index_links() -> None:
             ERRORS.append(f"INDEX 引用不存在: {target}")
 
 
+def _check_changelog_version_consistency(
+    changelog_path: Path,
+    version: str,
+    errors: list[str],
+) -> None:
+    """CHANGELOG 不得出现超前于 VERSION 的已发布标题。
+
+    `## vX.Y.Z` 表示一次已发布版本；未发布内容必须置于 `## Unreleased`
+    （当前 VERSION 是唯一项目版本源，M15 复审发现 v0.5.0/v0.5.1 超前标题）。
+    """
+    text = changelog_path.read_text(encoding="utf-8") if changelog_path.exists() else ""
+    published = {
+        match.group(1)
+        for match in re.finditer(r"^## v([0-9]+\.[0-9]+\.[0-9]+)", text, flags=re.MULTILINE)
+    }
+    for published_version in sorted(published):
+        if _version_tuple(published_version) > _version_tuple(version):
+            errors.append(
+                f"CHANGELOG 出现超前于 VERSION 的已发布标题: v{published_version} > v{version}"
+            )
+
+
+def _version_tuple(version: str) -> tuple[int, int, int]:
+    parts = version.split(".")
+    return tuple(int(part) for part in parts)
+
+
 def check_versions() -> None:
     version_path = ROOT / "VERSION"
     version = version_path.read_text(encoding="utf-8").strip() if version_path.exists() else ""
@@ -244,6 +271,8 @@ def check_versions() -> None:
     for rel in ["README.md", "AGENTS.md", "CODEX_BOOTSTRAP.md", "docs/PRODUCT.md", "CHANGELOG.md"]:
         if f"v{version}" not in (ROOT / rel).read_text(encoding="utf-8"):
             ERRORS.append(f"主文档缺少 v{version}: {rel}")
+
+    _check_changelog_version_consistency(ROOT / "CHANGELOG.md", version, ERRORS)
 
     old_version = re.compile(r"(?<![0-9])v?(?:0\.2\.[0-9]+|0\.3\.0)(?![0-9])", re.IGNORECASE)
     scan_suffixes = {".md", ".mdc", ".yaml", ".yml", ".json", ".py", ".txt"}

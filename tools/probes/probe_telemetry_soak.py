@@ -81,15 +81,19 @@ def main() -> int:
     print(f"threads before={threads_before} after={threads_after}")
     print(f"rss before={rss_before:.1f}MiB after={_rss_mib():.1f}MiB")
     print(f"receiver spans captured: {len(receiver.span_names)}")
+    pg_ok = True
     if args.pg:
-        _pg_soak(args.iterations, config)
-    ok = drops == 0 and threads_after <= threads_before + 2
+        pg_ok, pg_message = _pg_soak(args.iterations, config)
+        print(pg_message)
+    ok = drops == 0 and threads_after <= threads_before + 2 and pg_ok
     print("SOAK PASS" if ok else "SOAK FAIL")
     return 0 if ok else 1
 
 
-def _pg_soak(iterations: int, config: OtelConfig) -> None:
+def _pg_soak(iterations: int, config: OtelConfig) -> tuple[bool, str]:
+    """Soak the PG workflow engine under telemetry with unique per-iteration tasks."""
     import os
+    from dataclasses import replace
 
     dsn = os.environ.get(
         "RESEARCHOS_POSTGRES_DSN",
@@ -98,25 +102,41 @@ def _pg_soak(iterations: int, config: OtelConfig) -> None:
     from adapters.postgres.db import connect as pg_connect
     from adapters.postgres.db import migrate as pg_migrate
     from adapters.postgres.workflow_engine import PostgresWorkflowEngine
-
-    pg_migrate(dsn)
-    conn = pg_connect(dsn)
-    conn.autocommit = True
-    engine = PostgresWorkflowEngine(connection=conn, telemetry=build_telemetry_sink(config))
+    from packages.application.ports.workflow_engine import TaskCompletion
+    from packages.domain.core import ID
     from tests.contracts.fixtures import research_task, task_contract
 
-    for index in range(min(iterations, 50)):
-        engine.submit(research_task(), task_contract())
-        lease = engine.acquire_lease(research_task().id.value)
-        engine.complete(
-            lease,
-            __import__(
-                "packages.application.ports.workflow_engine", fromlist=["TaskCompletion"]
-            ).TaskCompletion(task_id=research_task().id.value, outcome="SUCCEEDED"),
-        )
-        _ = index
-    engine.close()
-    print("pg soak done")
+    try:
+        import psycopg
+
+        probe_conn = psycopg.connect(dsn, autocommit=True, connect_timeout=3.0)
+        probe_conn.close()
+    except Exception as error:  # noqa: BLE001 - 不可达是明确的失败报告
+        return False, f"PG SOAK FAIL: PostgreSQL unreachable: {type(error).__name__}: {error}"
+
+    try:
+        pg_migrate(dsn)
+        conn = pg_connect(dsn)
+        conn.autocommit = True
+        engine = PostgresWorkflowEngine(connection=conn, telemetry=build_telemetry_sink(config))
+        for index in range(min(iterations, 50)):
+            # task id 必须是合法 UUID4（ID 契约）；每轮唯一标识只放在自由
+            # 格式的 idempotency_key 上，避免固定 id 重复提交崩溃。
+            task = replace(
+                research_task(),
+                id=ID.generate(),
+                idempotency_key=f"soak-{index}-{ID.generate().value}",
+            )
+            engine.submit(task, task_contract())
+            lease = engine.acquire_lease(task.id.value)
+            engine.complete(
+                lease,
+                TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"),
+            )
+        engine.close()
+        return True, f"pg soak done ({min(iterations, 50)} iterations)"
+    except Exception as error:  # noqa: BLE001 - probe 必须报告 PG 失败而非崩溃
+        return False, f"PG SOAK FAIL: {type(error).__name__}: {error}"
 
 
 if __name__ == "__main__":

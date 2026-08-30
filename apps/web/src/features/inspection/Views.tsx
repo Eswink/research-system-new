@@ -7,6 +7,17 @@ const costStatusLabel = (status: string): string => {
   return "known";
 };
 
+const usageTotalText = (usage: BudgetViewDto): string => {
+  if (usage.total_estimated_cost_minor === null) {
+    return "not available";
+  }
+  return [
+    String(usage.total_estimated_cost_minor),
+    usage.total_currency ?? "currency unavailable",
+    "minor units",
+  ].join(" ");
+};
+
 export function ClaimMapView({ claims }: { claims: ClaimMapDto }) {
   return (
     <div data-testid="claim-map">
@@ -44,8 +55,8 @@ export function UsageView({ usage }: { usage: BudgetViewDto }) {
     <div data-testid="usage-view">
       <h3>Budget & Usage</h3>
       <p>
-        Total estimated cost: {String(usage.total_estimated_cost_minor / 100)} USD ·
-        unknown entries: {String(usage.unknown_cost_entries)}（unknown ≠ 0）
+        Total estimated cost: {usageTotalText(usage)} · unknown entries:{" "}
+        {String(usage.unknown_cost_entries)}（unknown ≠ 0）
       </p>
       <ul>
         {usage.entries.map((entry) => (

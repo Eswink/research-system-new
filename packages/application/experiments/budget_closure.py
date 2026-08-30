@@ -80,14 +80,19 @@ def close_budget(
     entries = model_entries(run_id, input.model_usage, occurred_at, input.task_id, input.agent_id)
     entries += tool_entries(run_id, input.tool_usage, occurred_at, input.task_id)
     entries += experiment_entries(run_id, input.experiment_usage, occurred_at, input.task_id)
-    entries += evaluation_entries(run_id, input.evaluation_usage, occurred_at)
+    entries += evaluation_entries(
+        run_id,
+        input.evaluation_usage,
+        occurred_at,
+        input.task_id,
+        input.agent_id,
+    )
     summary = summarize(entries)
     if policy is not None:
         _enforce_limits(
             policy, summary.total_tokens, summary.tool_requests, summary.experiment_seconds
         )
-    for entry in entries:
-        ledger.record_usage(entry)
+    _record_entries_idempotently(ledger, entries)
     return BudgetClosureResult(
         entries=tuple(entries),
         total_tokens=summary.total_tokens,
@@ -99,6 +104,11 @@ def close_budget(
             ledger, reservation_ref, summary.total_tokens, summary.tool_requests
         ),
     )
+
+
+def _record_entries_idempotently(ledger: BudgetLedger, entries: list[UsageLedgerEntry]) -> None:
+    """原子批量追加；重复 entry id 是 at-least-once 重放 no-op。"""
+    ledger.record_usage_batch(tuple(entries))
 
 
 def _enforce_limits(

@@ -1,0 +1,20 @@
+[importlinter]
+root_package = adapters
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:sqlite-no-vendor-sdk]
+name = SQLite adapters use stdlib only, no vendor SDK or test doubles
+type = forbidden
+source_modules =
+    adapters.sqlite
+forbidden_modules =
+    openai
+    litellm
+    lite_llm
+    anthropic
+    temporalio
+    openhands
+    httpx
+    adapters.fakes
+    opentelemetry

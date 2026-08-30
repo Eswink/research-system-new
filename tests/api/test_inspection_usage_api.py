@@ -101,9 +101,12 @@ def test_budget_usage_unknown_not_zero(client: TestClient) -> None:
     assert response.status_code == 200, response.text
     payload = response.json()
     assert payload["unknown_cost_entries"] == 1
-    assert payload["total_estimated_cost_minor"] == 10
+    assert payload["total_estimated_cost_minor"] is None
+    assert payload["known_cost_subtotal_minor"] == 10
     unknown = next(item for item in payload["entries"] if item["cost_status"] == "UNKNOWN")
     assert unknown["estimated_cost_minor"] is None
+    assert unknown["quantity_status"] == "KNOWN"
+    assert unknown["currency"] == "USD"
 
 
 def test_usage_isolated_per_run(client: TestClient) -> None:
@@ -132,10 +135,73 @@ def test_usage_isolated_per_run(client: TestClient) -> None:
     assert all(entry["task_id"] != task_a for entry in payload_b["entries"])
 
 
-def test_usage_unknown_run_is_404(client: TestClient) -> None:
+def test_direct_run_usage_is_visible_only_to_its_run(client: TestClient) -> None:
+    """无 task 的独立评测/实验 usage 用直接 run_id 归属，仍严格隔离。"""
+    from packages.domain.core import ID
+    from packages.domain.run import ResearchRun
+
+    deps = cast(Any, client.app).state.deps
+    run_a = str(ID.generate().value)
+    run_b = str(ID.generate().value)
+    deps.run_registry[run_a] = ResearchRun(id=ID(run_a), project_id="p", protocol_id="proto")
+    deps.run_registry[run_b] = ResearchRun(id=ID(run_b), project_id="p", protocol_id="proto")
+    assert deps.budget is not None
+    deps.budget.record_usage(
+        UsageLedgerEntry(
+            entry_id=f"u-eval-{uuid.uuid4().hex}",
+            resource_type=ResourceType.EVALUATION_SCORER,
+            quantity=3,
+            unit="scorer_calls",
+            cost_status=LedgerCostStatus.UNKNOWN,
+            source="evaluation",
+            occurred_at=Timestamp.now().value,
+            run_id=run_a,
+        )
+    )
+
+    entries_a = client.get(f"/runs/{run_a}/usage").json()["entries"]
+    entries_b = client.get(f"/runs/{run_b}/usage").json()["entries"]
+    assert len(entries_a) == 1
+    assert entries_a[0]["run_id"] == run_a
+    assert entries_b == []
+
     """Budget/Usage：不存在的 run → 404（与 experiments 一致，M13 复审修复）。"""
     response = client.get("/runs/does-not-exist/usage")
     assert response.status_code == 404, response.text
+
+
+def test_usage_does_not_sum_mixed_currencies(client: TestClient) -> None:
+    """不同币种的最小货币单位不得被无条件相加。"""
+    from packages.domain.core import ID
+    from packages.domain.run import ResearchRun
+
+    deps = cast(Any, client.app).state.deps
+    run_id = str(ID.generate().value)
+    deps.run_registry[run_id] = ResearchRun(id=ID(run_id), project_id="p", protocol_id="proto")
+    assert deps.budget is not None
+    for entry_id, currency, amount in (
+        ("u-usd", "USD", 300),
+        ("u-jpy", "JPY", 3000),
+    ):
+        deps.budget.record_usage(
+            UsageLedgerEntry(
+                entry_id=entry_id,
+                resource_type=ResourceType.MODEL_COST,
+                quantity=1,
+                unit="requests",
+                cost_status=LedgerCostStatus.KNOWN,
+                source="model_gateway",
+                occurred_at=Timestamp.now().value,
+                estimated_cost_minor=amount,
+                currency=currency,
+                run_id=run_id,
+                model_id="model-alpha",
+            )
+        )
+    payload = client.get(f"/runs/{run_id}/usage").json()
+    assert payload["total_estimated_cost_minor"] is None
+    assert payload["total_currency"] is None
+    assert payload["known_cost_subtotal_minor"] is None
 
 
 def test_usage_untracked_entry_not_leaked(client: TestClient) -> None:
@@ -165,4 +231,5 @@ def test_usage_untracked_entry_not_leaked(client: TestClient) -> None:
     )
     payload = client.get(f"/runs/{run_id}/usage").json()
     assert all(entry["task_id"] == task_id for entry in payload["entries"])
-    assert payload["total_estimated_cost_minor"] == 10, "global entry must not leak"
+    assert payload["total_estimated_cost_minor"] is None
+    assert payload["known_cost_subtotal_minor"] == 10, "global entry must not leak"

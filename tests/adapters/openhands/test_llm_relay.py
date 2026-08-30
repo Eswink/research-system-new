@@ -95,7 +95,11 @@ class TestUsageMapping:
         assert by_resource[ResourceType.MODEL_TOKENS].unit == "tokens"
         assert by_resource[ResourceType.MODEL_REQUESTS].quantity == 3
         assert by_resource[ResourceType.MODEL_COST].estimated_cost_minor == 2
-        assert all(entry.cost_status is LedgerCostStatus.UNKNOWN for entry in entries)
+        # token/request 条目在映射期不套价（UNKNOWN）；中转站上报的真实金额
+        # 走 MODEL_COST 条目，携带 KNOWN 状态（M15 WP3c 维度映射修正）。
+        assert by_resource[ResourceType.MODEL_TOKENS].cost_status is LedgerCostStatus.UNKNOWN
+        assert by_resource[ResourceType.MODEL_REQUESTS].cost_status is LedgerCostStatus.UNKNOWN
+        assert by_resource[ResourceType.MODEL_COST].cost_status is LedgerCostStatus.KNOWN
         assert all(entry.source == "openhands" for entry in entries)
 
     def test_zero_usage_produces_no_entries(self) -> None:

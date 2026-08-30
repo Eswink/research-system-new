@@ -58,6 +58,7 @@ class TestBudgetClosure:
         by_type = {entry.resource_type for entry in entries}
         assert ResourceType.MODEL_TOKENS in by_type
         assert ResourceType.MODEL_REQUESTS in by_type
+        assert ResourceType.EVALUATION_SCORER in by_type
         assert ResourceType.TOOL_REQUESTS in by_type
         assert ResourceType.CPU_TIME in by_type
 
@@ -121,11 +122,30 @@ class TestBudgetClosure:
         result = close_budget(ledger, input=_input(), policy=policy, reservation_ref=ref)
         assert result.reservation_actual_consistent is False
 
-    def test_duplicate_entry_id_rejected(self) -> None:
+    def test_replay_is_noop_and_mixed_batch_still_writes_new_entries(self) -> None:
         ledger = FakeBudgetLedger()
         close_budget(ledger, input=_input())
+        replay = close_budget(ledger, input=_input())
+        assert len(ledger.snapshot().entries) == 5
+        assert len(replay.entries) == 5
+
+        retry = BudgetClosureInput(
+            run_id=RUN_ID,
+            model_usage=(ModelUsage(model_id="research_alpha", calls=1, attempt=2),),
+        )
+        close_budget(ledger, input=retry)
+        ids = {entry.entry_id for entry in ledger.snapshot().entries}
+        assert "usage:12121212-2222-4333-8444-555555555555:model:research_alpha:attempt-2" in ids
+        assert (
+            "usage:12121212-2222-4333-8444-555555555555:model:research_alpha:calls:attempt-2" in ids
+        )
+
+    def test_single_entry_duplicate_is_still_rejected_by_ledger_contract(self) -> None:
+        ledger = FakeBudgetLedger()
+        close_budget(ledger, input=_input())
+        entry = ledger.snapshot().entries[0]
         try:
-            close_budget(ledger, input=_input())
+            ledger.record_usage(entry)
             raise AssertionError("expected duplicate entry rejection")
         except Exception:
             pass

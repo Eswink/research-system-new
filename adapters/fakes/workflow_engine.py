@@ -120,6 +120,18 @@ class FakeWorkflowEngine(FakeBase):
         self._record("cancel_run", run_id, result=f"{cancelled_count} cancelled")
         return cancelled_count
 
+    def cancelled_task_ids(self, run_id: str) -> tuple[str, ...]:
+        self._enter("cancelled_task_ids", run_id)
+        ids = tuple(
+            sorted(
+                task_id
+                for task_id, task in self._tasks.items()
+                if task.run_id.value == run_id and task_id in self._cancelled
+            )
+        )
+        self._record("cancelled_task_ids", run_id, result=str(len(ids)))
+        return ids
+
     def recover_expired_leases(self) -> int:
         """Fake 无 lease TTL 语义（lease 随 acquire/heartbeat 刷新），恒无过期 lease。
 

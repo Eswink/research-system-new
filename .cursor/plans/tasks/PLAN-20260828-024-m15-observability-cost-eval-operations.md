@@ -2,9 +2,9 @@
 id: PLAN-20260828-024
 slug: m15-observability-cost-eval-operations
 title: M15 Observability / Cost / Eval Operations
-status: APPROVED
+status: DONE
 created_at: 2026-08-28
-updated_at: 2026-08-28
+updated_at: 2026-08-30
 cursor_plan_uri: .cursor/plans/m15_observability_cost_eval_26abd45a.plan.md
 owners:
   - root-agent
@@ -12,7 +12,7 @@ authorization:
   source: cursor-plan
   ref: "用户已审阅并批准 M15 计划(m15_observability_cost_eval_26abd45a.plan.md)"
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260830-024-m15-fail-remediation.md
 memory_entries: []
 ---
 
@@ -68,48 +68,48 @@ Evidence/Evaluation 核心语义。DoD 21 条 + m0 profile 全绿 + 独立复审
 
 ## 验收条件
 
-- [ ] AC-01 OTel qualification 有完整 evidence(M15_OTEL_QUALIFICATION.md + ADR-0026)
-- [ ] AC-02 OTel 位于 Adapter boundary(.importlinter.otel 生效;禁止列表含 opentelemetry)
-- [ ] AC-03 trace hierarchy 与真实 Research Run 对齐(project/run/phase/task/agent_session/llm/tool/experiment/eval)
-- [ ] AC-04 Model/Tool/Workflow/Experiment/Evaluation 关键 signals 可观察
-- [ ] AC-05 默认不采集 Prompt/Response/Secret/敏感 Tool 内容(词汇无内容通道 + canary)
-- [ ] AC-06 实际 OTLP/Collector payload canary 通过(真实 wire bytes,非仅 unit test)
-- [ ] AC-07 Collector outage 不破坏 Research canonical state(failure-isolation 全场景)
-- [ ] AC-08 Audit Truth 与 Telemetry 分离(测试证明 telemetry 不回读)
-- [ ] AC-09 Cost 只基于正式 UsageLedger(BudgetLedger.snapshot() 唯一输入)
-- [ ] AC-10 actual/estimated/unknown/unavailable/zero 语义正确
-- [ ] AC-11 pricing version 不重写历史成本
-- [ ] AC-12 retry/failure usage 不漏记、不重复
-- [ ] AC-13 Eval Trend 基于 M11 EvalResult(EvalReportStore 保留原文 + digest 可验证)
-- [ ] AC-14 不可比较 Evaluation 不被伪装成 regression(ComparabilityVerdict 分支全覆盖)
-- [ ] AC-15 Regression verdict 不由 Dashboard 创建(pass/fail/regression 来自 M11)
-- [ ] AC-16 INFRA_ERROR 与 quality failure 正确区分
-- [ ] AC-17 M13 Console 只消费正式 projection
-- [ ] AC-18 telemetry 不造成明显资源泄漏或运行不稳定(soak + telemetry on/off 对比)
-- [ ] AC-19 security/architecture tests PASS(otl boundaries + 生产边界 + openapi snapshot 修复)
-- [ ] AC-20 M0–M14 critical regressions + m0 profile 全绿(19/19)
-- [ ] AC-21 独立复审 PASS(recheck skill 按原始验收条件复核)
+- [x] AC-01 OTel qualification 有完整 evidence(M15_OTEL_QUALIFICATION.md + ADR-0026)
+- [x] AC-02 OTel 位于 Adapter boundary(.importlinter.otel 生效;禁止列表含 opentelemetry)
+- [x] AC-03 trace hierarchy 与真实 Research Run 对齐(project/run/phase/task/agent_session/llm/tool/experiment/eval)
+- [x] AC-04 Model/Tool/Workflow/Experiment/Evaluation 关键 signals 可观察
+- [x] AC-05 默认不采集 Prompt/Response/Secret/敏感 Tool 内容(词汇无内容通道 + canary)
+- [x] AC-06 实际 OTLP/Collector payload canary 通过(真实 wire bytes,非仅 unit test)
+- [x] AC-07 Collector outage 不破坏 Research canonical state(failure-isolation 全场景)
+- [x] AC-08 Audit Truth 与 Telemetry 分离(测试证明 telemetry 不回读)
+- [x] AC-09 Cost 只基于正式 UsageLedger(BudgetLedger.snapshot() 唯一输入)
+- [x] AC-10 actual/estimated/unknown/unavailable/zero 语义正确
+- [x] AC-11 pricing version 不重写历史成本
+- [x] AC-12 retry/failure usage 不漏记、不重复
+- [x] AC-13 Eval Trend 基于 M11 EvalResult(EvalReportStore 保留原文 + digest 可验证)
+- [x] AC-14 不可比较 Evaluation 不被伪装成 regression(ComparabilityVerdict 分支全覆盖)
+- [x] AC-15 Regression verdict 不由 Dashboard 创建(pass/fail/regression 来自 M11)
+- [x] AC-16 INFRA_ERROR 与 quality failure 正确区分
+- [x] AC-17 M13 Console 只消费正式 projection
+- [x] AC-18 telemetry 不造成明显资源泄漏或运行不稳定(soak + telemetry on/off 对比)
+- [x] AC-19 security/architecture tests PASS(otl boundaries + 生产边界 + openapi snapshot 修复)
+- [x] AC-20 M0–M14 critical regressions + m0 profile 全绿(19/19)
+- [x] AC-21 独立复审 PASS(recheck skill 按原始验收条件复核)
 
 ## 实施清单
 
-- [ ] STEP-01 持久化本计划(PLAN-20260828-024 + ALL_PLAN 索引)
-- [ ] STEP-02 WP1 OTel qualification + ADR-0026
-- [ ] STEP-03 WP1 observability vocabulary + TelemetrySink Port(闭集 enum + sanitize)
-- [ ] STEP-04 WP1 adapters/otel/ + fakes + contract registry + composition/settings/lifespan
-- [ ] STEP-05 WP1 instrument sites(relay/tool/workflow/outbox/scheduler/execution/eval/orchestration)
-- [ ] STEP-06 WP1 collector topology + otlp_receiver + requires_collector + DEPLOYMENT_PROFILES
-- [ ] STEP-07 WP1 failure-isolation 故障注入 + canonical-state equality
-- [ ] STEP-08 WP2 additive ledger corrections(quantity_status/unavailable_reason/attempt 等)
-- [ ] STEP-09 WP2 pricing schema + 空 pricing.yaml + loaders + cost/pricing.py
-- [ ] STEP-10 WP2 cost projection + aggregation + reconciliation 测试
-- [ ] STEP-11 WP3 EvalReportStore port + migration 005 + 三 adapter + rebuild 测试
-- [ ] STEP-12 WP3 comparability + trend(INFRA_ERROR/missing evaluation 隔离)
-- [ ] STEP-13 API/Console:operations router/DTO/mapper + OpenAPI regen + Console view
-- [ ] STEP-14 WP4 privacy canary + metric cardinality 审计
-- [ ] STEP-15 WP4 architecture gates(.importlinter.otel、禁止列表、postgres 契约执行等)
-- [ ] STEP-16 供应链 pin(pyproject + UPSTREAM_COMPONENTS + LICENSE_MATRIX)
-- [ ] STEP-17 WP4 soak + telemetry on/off 对比 + M14 regression + m0 19/19
-- [ ] STEP-18 文档收口(OBSERVABILITY/BUDGET_QUOTA/EVALUATION/PORTS/CONTROL_PLANE_API/INDEX/MILESTONES/BACKLOG/CHANGELOG + M15_COMPLETION_RECORD)+ recheck
+- [x] STEP-01 持久化本计划(PLAN-20260828-024 + ALL_PLAN 索引)
+- [x] STEP-02 WP1 OTel qualification + ADR-0026
+- [x] STEP-03 WP1 observability vocabulary + TelemetrySink Port(闭集 enum + sanitize)
+- [x] STEP-04 WP1 adapters/otel/ + fakes + contract registry + composition/settings/lifespan
+- [x] STEP-05 WP1 instrument sites(relay/tool/workflow/outbox/scheduler/execution/eval/orchestration)
+- [x] STEP-06 WP1 collector topology + otlp_receiver + requires_collector + DEPLOYMENT_PROFILES
+- [x] STEP-07 WP1 failure-isolation 故障注入 + canonical-state equality
+- [x] STEP-08 WP2 additive ledger corrections(quantity_status/unavailable_reason/attempt 等)
+- [x] STEP-09 WP2 pricing schema + 空 pricing.yaml + loaders + cost/pricing.py
+- [x] STEP-10 WP2 cost projection + aggregation + reconciliation 测试
+- [x] STEP-11 WP3 EvalReportStore port + migration 005 + 三 adapter + rebuild 测试
+- [x] STEP-12 WP3 comparability + trend(INFRA_ERROR/missing evaluation 隔离)
+- [x] STEP-13 API/Console:operations router/DTO/mapper + OpenAPI regen + Console view
+- [x] STEP-14 WP4 privacy canary + metric cardinality 审计
+- [x] STEP-15 WP4 architecture gates(.importlinter.otel、禁止列表、postgres 契约执行等)
+- [x] STEP-16 供应链 pin(pyproject + UPSTREAM_COMPONENTS + LICENSE_MATRIX)
+- [x] STEP-17 WP4 soak + telemetry on/off 对比 + M14 regression + m0 19/19
+- [x] STEP-18 文档收口(OBSERVABILITY/BUDGET_QUOTA/EVALUATION/PORTS/CONTROL_PLANE_API/INDEX/MILESTONES/BACKLOG/CHANGELOG + M15_COMPLETION_RECORD)+ recheck
 
 ## 子代理使用
 
@@ -123,15 +123,15 @@ Subagent 默认不启用。需要并行时,每个 wave 最多 3 个;多 wave 必
 
 | ID | 对应项 | 类型 | 引用或命令 | 结果 |
 | --- | --- | --- | --- | --- |
-| EV-01 | AC-01 | file | `docs/references/upstream/M15_OTEL_QUALIFICATION.md` + `docs/adr/ADR-0026-otel-adapter-boundary.md` | 待填写 |
-| EV-02 | AC-06 | check | `pytest tests/observability`(otlp_receiver 真实 wire bytes canary) | 待填写 |
-| EV-03 | AC-07 | check | failure-isolation 故障注入全场景 | 待填写 |
-| EV-04 | AC-10/11/12 | check | `pytest tests/application/cost tests/application/experiments` | 待填写 |
-| EV-05 | AC-13/14/16 | check | `pytest tests/evals tests/application/evaluation` | 待填写 |
-| EV-06 | AC-17 | check | OpenAPI snapshot + Console operations view 测试 | 待填写 |
-| EV-07 | AC-19 | check | import-linter otel 契约 + 生产边界 + snapshot 修复 | 待填写 |
-| EV-08 | AC-20 | check | m0 profile 19/19 deterministic checks | 待填写 |
-| EV-09 | AC-21 | file | `RECHECK-20260828-024-*.md` recheck 结果 | 待填写 |
+| EV-01 | AC-01 | file | `docs/references/upstream/M15_OTEL_QUALIFICATION.md` + `docs/adr/ADR-0026-otel-adapter-boundary.md` | PASS（qualification + ADR-0026 在位；semconv 直接依赖已移除）
+| EV-02 | AC-06 | check | `pytest tests/observability`(otlp_receiver 真实 wire bytes canary) | PASS（tests/observability 39 passed；canary 真实注入扫描 OTLP wire bytes）
+| EV-03 | AC-07 | check | failure-isolation 故障注入全场景 | PASS（failure-isolation 8 注入 × canonical state 相等；BLOCKER-4 flush/shutdown <1.5s）
+| EV-04 | AC-10/11/12 | check | `pytest tests/application/cost tests/application/experiments` | PASS（cost/experiments 套件全绿；BLOCKER-5/6 独立复现：重试无崩溃、改价后重读 Run A 不变）
+| EV-05 | AC-13/14/16 | check | `pytest tests/evals tests/application/evaluation` | PASS（evals/evaluation 套件全绿；comparability 4 分支补齐、INFRA/reviewer 隔离）
+| EV-06 | AC-17 | check | OpenAPI snapshot + Console operations view 测试 | PASS（OpenAPI 三端点守卫 + web 27 tests + typecheck + build 全绿）
+| EV-07 | AC-19 | check | import-linter otel 契约 + 生产边界 + snapshot 修复 | PASS（.importlinter.sqlite 纳入跟踪 + otel/postgres/api 契约 KEPT + AST 含 tools/）
+| EV-08 | AC-20 | check | m0 profile 19/19 deterministic checks | PASS（m0 profile 23/23 deterministic checks；2420 passed/5 skipped；mypy 615 files 0）
+| EV-09 | AC-21 | file | `RECHECK-20260830-024-m15-fail-remediation.md` recheck 结果 | PASS（2026-08-30，6 BLOCKER 独立探针复现 + 21 DoD 重判全 PASS + m0 23/23） |
 
 ## 决策与偏差
 
@@ -150,6 +150,9 @@ Subagent 默认不启用。需要并行时,每个 wave 最多 3 个;多 wave 必
 | 2026-08-28 | — | DRAFT | 建立任务计划 | Cursor Plan 批准前 |
 | 2026-08-28 | DRAFT | APPROVED | 用户批准 Cursor Plan | `m15_observability_cost_eval_26abd45a.plan.md` |
 | 2026-08-28 | APPROVED | IN_PROGRESS | 计划确认,进入 Build 实施 | 本会话 |
+| 2026-08-30 | IN_PROGRESS | REOPENED | 独立复审判定 FAIL（6 BLOCKER + ~24 MAJOR + ~25 MINOR） | 首轮复审记录 |
+| 2026-08-30 | REOPENED | VERIFYING | 修复轮 WP0–WP8 完成，全量门禁 + 6 BLOCKER 独立探针复现 | `m15_fail_remediation_98df6116.plan.md` |
+| 2026-08-30 | VERIFYING | DONE | recheck 从原始验收条件重判 21/21 PASS，m0 23/23 | `RECHECK-20260830-024` |
 
 ## 影响报告
 

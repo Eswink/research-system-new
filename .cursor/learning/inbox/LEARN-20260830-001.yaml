@@ -1,0 +1,64 @@
+schema_version: 1
+id: LEARN-20260830-001
+status: PROPOSED
+created_at: 2026-08-30
+summary: "Grep 的 `path` / Glob 的 `target_directory` 传工作区根绝对路径确定性失败（rg os error 3，空路径参数），跨 4 个会话文件 14 次同签名 784a8b47c701b4ee2656：检索全仓省略该参数，限定范围只传根之下的子路径；该失败不属于 CURSOR_ERROR 瞬时族，不得按「重试一次」处理"
+severity: NORMAL
+category: reliability
+source_type: tool_failure
+source_refs:
+  - ".cursor/experience/entries/EXP-20260830-001.md（本轮沉淀：根因、14 次命中分布、已验证替代路径）"
+  - ".cursor/runtime/observations/5ce15d1e7bd4ebc876f4.jsonl（3 hits 2026-08-29T09:26–09:31Z，Grep）"
+  - ".cursor/runtime/observations/10d3ca596e7a007eab6c.jsonl（4 hits 15:43–15:44Z，Grep）"
+  - ".cursor/runtime/observations/70c0baa3aab9902e08bc.jsonl（5 hits 15:43–16:08Z，Grep）"
+  - ".cursor/runtime/observations/02fe68d59b00b0ec5145.jsonl（2 hits 16:00Z，Grep）"
+  - ".cursor/experience/entries/EXP-20260823-003.md（CURSOR_ERROR 瞬时族——本签名明确不属于该族，重试无效）"
+  - ".cursor/rules/42-command-encoding.mdc（现有条文「模式扫描优先用 Grep 工具（path + pattern 参数）」在传根路径时反向诱发本失败）"
+occurrences:
+  - task_ref: "2026-08-29 会话 5ce15d1e7bd4ebc876f4（M15 独立复审根代理）"
+    evidence_ref: "Grep path=D:\\research-system 与 Glob target_directory=D:\\research-system / D:/research-system 共 3 次，全部返回 rg: : IO error for operation on : (os error 3)，75–82ms；省略参数后同一 pattern 立即成功"
+  - task_ref: "2026-08-29 会话 10d3ca596e7a007eab6c"
+    evidence_ref: "同签名 784a8b47c701b4ee2656 命中 4 次，43–97ms"
+  - task_ref: "2026-08-29 会话 70c0baa3aab9902e08bc"
+    evidence_ref: "同签名命中 5 次，84–116ms"
+  - task_ref: "2026-08-29 会话 02fe68d59b00b0ec5145"
+    evidence_ref: "同签名命中 2 次，40–54ms"
+problem:
+  observed_behavior: "Grep 的 `path` 或 Glob 的 `target_directory` 传入工作区根绝对路径（D:\\research-system 或 D:/research-system）时，确定性返回 `rg: : IO error for operation on : 系统找不到指定的路径。 (os error 3)` 并给出零结果。全语料 14 次命中、duration 40–116ms 全落在正常执行区间，无一次成功。"
+  expected_behavior: "要么根路径被正常接受（等价于默认行为），要么返回可识别的参数错误。当前行为是静默零结果，可被误读为「仓库内无匹配」并据此得出错误结论——对架构边界扫描、调用点定位这类审计任务尤其危险。"
+  reproduction: "确定性：对同一 pattern 发两次 Grep，一次带 `path=<工作区根绝对路径>`、一次省略 `path`。前者恒失败（os error 3），后者恒成功。传根之下的子路径（目录或单文件，如 D:/research-system/.cursor/hooks、D:/research-system/adapters/sqlite/eval_report_store.py）同样成功。"
+hypothesis:
+  root_cause: "错误文本中冒号之间的路径为空（`IO error for operation on :`），表明工具将传入路径相对化到工作区根后得到空字符串，并以空路径参数调用 rg；子路径相对化后非空故正常。旁证：省略 path 时结果前缀为 `.\\...`，传 .cursor/hooks 时前缀为 `.cursor/hooks/...`，两者均为相对根路径。置信度 0.6（14/14 确定性复现 + 错误文本空路径直证；未读工具实现源码）。"
+  confidence: 0.6
+proposal:
+  target_type: RULE
+  target_paths:
+    - ".cursor/rules/42-command-encoding.mdc"
+    - ".cursor/knowledge/KNOWN_CAVEATS.md"
+  change_summary: "拟增补：Grep/Glob 检索全仓时省略 `path`/`target_directory`（默认即工作区根），需要限定范围时只传工作区根**之下**的子路径；传根路径本身会静默返回零结果。同时修订 42-command-encoding.mdc 中「Grep 工具（path + pattern 参数）」的表述，避免诱导传根路径。本 PROPOSED 阶段不改 Rule/Knowledge，等待显式授权与 before/after replay。"
+  blast_radius: "仅规则/知识文档表述；不改变任何工具行为、不放宽任何门禁、不触碰 failClosed 语义。"
+replay:
+  before_cases:
+    - "Grep pattern=failure_category path=D:\\research-system → os error 3，零结果（2026-08-29 会话 5ce15d1e）"
+    - "Glob glob_pattern=docs/roadmap/** target_directory=D:\\research-system → os error 3"
+    - "Glob glob_pattern=docs/roadmap/* target_directory=D:/research-system → os error 3（换正斜杠无效）"
+  before_result: "FAIL（跨 4 个 observation 文件 14 次同签名确定性复现，已满足 capture-learning ≥2 门槛）"
+  after_cases:
+    - "Grep pattern=failure_category= 省略 path → 成功，返回多文件命中（前缀 .\\）"
+    - "Grep pattern=error_signature path=D:/research-system/.cursor/hooks → 成功（前缀 .cursor/hooks/）"
+    - "Grep pattern=ORDER BY path=D:/research-system/adapters/sqlite/eval_report_store.py → 成功"
+  after_result: "PASS（替代路径在本会话 3/3 稳定）"
+validation:
+  commands:
+    - "uv run --frozen --no-sync python -B .cursor/skills/learning-check/scripts/validate_cursor_learning.py"
+    - "uv run --frozen --no-sync python -B scratch/obs_signature_trace.py 784a8b47c701b4ee2656"
+  evidence_refs:
+    - ".cursor/experience/entries/EXP-20260830-001.md"
+  result: FAIL
+approvals: []
+promotion:
+  authorization_ref: ""
+  promoted_at: ""
+  promoted_digest: ""
+  regression_digest: ""
+supersedes: []

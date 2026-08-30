@@ -44,16 +44,29 @@ def _run_state_dto(deps: ApiDeps, run_id: str) -> RunDetailDto:
     )
 
 
-def _frozen_manifest_digest_of(deps: ApiDeps, run_id: str) -> str | None:
-    """从事件投影恢复 MANIFEST_FROZEN digest（execution 失败时用）。"""
+def _frozen_manifest_refs_of(
+    deps: ApiDeps,
+    run_id: str,
+) -> tuple[str | None, str | None, str | None]:
+    """从冻结事件恢复 manifest 与 pricing 引用（失败收敛路径）。"""
     if deps.projection is None:
-        return None
+        return None, None, None
     for envelope in events_of(deps.projection, run_id):
         if envelope.event_type.value == "manifest.frozen":
             digest = envelope.payload.get("digest")
-            if isinstance(digest, str):
-                return digest
-    return None
+            pricing_version = envelope.payload.get("pricing_version")
+            pricing_digest = envelope.payload.get("pricing_digest")
+            return (
+                digest if isinstance(digest, str) else None,
+                pricing_version if isinstance(pricing_version, str) else None,
+                pricing_digest if isinstance(pricing_digest, str) else None,
+            )
+    return None, None, None
+
+
+def _frozen_manifest_digest_of(deps: ApiDeps, run_id: str) -> str | None:
+    """兼容读取冻结事件的 manifest digest。"""
+    return _frozen_manifest_refs_of(deps, run_id)[0]
 
 
 def _run_from_execution(
@@ -78,15 +91,21 @@ def _run_from_execution(
             manifest_digest=Digest.parse(outcome.manifest_digest)
             if outcome.manifest_digest
             else None,
+            pricing_version=outcome.pricing_version,
+            pricing_digest=outcome.pricing_digest,
         )
     except ValueError:
-        frozen_digest = _frozen_manifest_digest_of(deps, run_id.value)
+        frozen_digest, pricing_version, pricing_digest = _frozen_manifest_refs_of(
+            deps, run_id.value
+        )
         return ResearchRun(
             id=run_id,
             project_id=project_id,
             protocol_id=protocol_id,
             state="FAILED",
             manifest_digest=Digest.parse(frozen_digest) if frozen_digest else None,
+            pricing_version=pricing_version,
+            pricing_digest=pricing_digest,
         )
 
 

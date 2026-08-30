@@ -24,7 +24,7 @@ from packages.application.evaluation.scorer_types import (
 )
 from packages.application.evaluation.scorers import resolve_scorer
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
-from packages.application.observability.scope import operation
+from packages.application.observability.scope import operation, record_metric_safely
 from packages.application.observability.signals import (
     CorrelationRef,
     OperationOutcome,
@@ -87,36 +87,50 @@ def run_evaluation(
         ),
     ) as op:
         outcome = _run_evaluation_impl(request)
-        verdict = outcome.report.gate_verdict
-        infra_errors = sum(
-            1
-            for result in outcome.report.results
-            for finding in result.scorer_findings
-            if finding.status is EvalFindingStatus.INFRA_ERROR
-        )
-        extras: dict[str, object] = {
-            "verdict": verdict.value,
-            "dataset_digest": outcome.report.frozen_conditions.dataset_digest,
-            "scorer_count": len(outcome.report.frozen_conditions.scorer_versions),
-        }
-        if infra_errors and telemetry is not None:
-            telemetry.record_metric(
-                MetricSample(
-                    name=MetricName.EVAL_INFRA_ERRORS,
-                    kind=MetricKind.COUNTER,
-                    value=infra_errors,
-                )
-            )
-        if outcome.missing_inputs and telemetry is not None:
-            telemetry.record_metric(
-                MetricSample(
-                    name=MetricName.EVAL_MISSING_EVALUATIONS,
-                    kind=MetricKind.COUNTER,
-                    value=len(outcome.missing_inputs),
-                )
-            )
-        op.set_outcome(OperationOutcome.OK, extra=extras)
+        _note_eval_counters(telemetry, outcome)
+        op.set_outcome(OperationOutcome.OK, extra=_eval_span_extras(outcome))
         return outcome
+
+
+def _infra_error_count(outcome: RunnerOutcome) -> int:
+    return sum(
+        1
+        for result in outcome.report.results
+        for finding in result.scorer_findings
+        if finding.status is EvalFindingStatus.INFRA_ERROR
+    )
+
+
+def _eval_span_extras(outcome: RunnerOutcome) -> dict[str, object]:
+    return {
+        "verdict": outcome.report.gate_verdict.value,
+        "dataset_digest": outcome.report.frozen_conditions.dataset_digest,
+        "scorer_count": len(outcome.report.frozen_conditions.scorer_versions),
+    }
+
+
+def _note_eval_counters(telemetry: TelemetrySink | None, outcome: RunnerOutcome) -> None:
+    """INFRA_ERROR 与 missing-evaluation 独立计数(绝不折算进正常趋势)。"""
+    infra_errors = _infra_error_count(outcome)
+    if infra_errors:
+        record_metric_safely(
+            telemetry,
+            lambda: MetricSample(
+                name=MetricName.EVAL_INFRA_ERRORS,
+                kind=MetricKind.COUNTER,
+                value=infra_errors,
+            ),
+        )
+    missing = len(outcome.missing_inputs)
+    if missing:
+        record_metric_safely(
+            telemetry,
+            lambda: MetricSample(
+                name=MetricName.EVAL_MISSING_EVALUATIONS,
+                kind=MetricKind.COUNTER,
+                value=missing,
+            ),
+        )
 
 
 def _run_evaluation_impl(request: RunRequest) -> RunnerOutcome:
@@ -231,6 +245,21 @@ def _build_frozen(request: RunRequest, accounting: Mapping[str, int]) -> FrozenC
         system_version=request.system_version,
         scorer_versions=_collect_scorer_versions(dataset),
         input_digests=input_digests,
+        rubric_digest=digest_of([
+            {
+                "case_id": case.id,
+                "rubric": [
+                    {
+                        "id": rubric.id,
+                        "dimension": rubric.dimension,
+                        "description": rubric.description,
+                        "scale": rubric.scale,
+                    }
+                    for rubric in case.rubric
+                ],
+            }
+            for case in dataset.sorted_cases()
+        ]),
     )
 
 

@@ -13,7 +13,13 @@ export function ProjectionTable({
 }) {
   const costMinor = projection.estimated_cost_minor ?? null;
   const costText =
-    costMinor === null ? "not estimated（禁止显示 0）" : `${String(costMinor / 100)} USD`;
+    costMinor === null
+      ? "not estimated"
+      : [
+          String(costMinor),
+          projection.estimated_cost_currency ?? "currency unavailable",
+          "minor units",
+        ].join(" ");
   return (
     <div data-testid="dry-run-projection">
       <h3>Projected Team</h3>

@@ -51,6 +51,19 @@ class FakeBudgetLedger(FakeBase):
             raise InvalidInputError(str(error)) from error
         self._record("record_usage", entry.entry_id, result="appended")
 
+    def record_usage_batch(self, entries: tuple[UsageLedgerEntry, ...]) -> tuple[str, ...]:
+        """批量重放幂等：预先校验整批，避免部分写入。"""
+        self._enter("record_usage_batch", str(len(entries)))
+        existing = {item.entry_id for item in self._ledger.entries()}
+        candidates = [entry for entry in entries if entry.entry_id not in existing]
+        candidate_ids = [entry.entry_id for entry in candidates]
+        if len(candidate_ids) != len(set(candidate_ids)):
+            raise InvalidInputError("duplicate usage entry within batch")
+        for entry in candidates:
+            self._ledger.append(entry)
+        self._record("record_usage_batch", str(len(entries)), result=str(len(candidates)))
+        return tuple(candidate_ids)
+
     def snapshot(self) -> LedgerSnapshot:
         self._enter("snapshot", "")
         self._record("snapshot", "")

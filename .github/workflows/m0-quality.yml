@@ -128,12 +128,9 @@ jobs:
       - name: Build sandbox image
         run: docker build -t research-os-sandbox:m9-test adapters/execution/sandbox
 
-      - name: Run container tests
+      - name: Run every Docker-marked test
         run: >-
           uv run --frozen --no-sync python -B -m pytest
-          tests/adapters/execution
-          tests/contracts/test_execution_backend_docker.py
-          tests/application/experiments/test_experiment_e2e.py
           -m requires_docker
         env:
           PYTHONUTF8: "1"
@@ -168,13 +165,17 @@ jobs:
           -f docker-compose.m15.yml
           up -d --build --wait
 
-      - name: Run collector + postgres observability evidence suite
+      - name: Run collector + PostgreSQL evidence and restart suites
         run: >-
           uv run --frozen --no-sync python -B -m pytest
           tests/observability
+          tests/postgres
+          tests/e2e/test_pg_crash_restart.py
           -m "requires_collector or postgres"
         env:
           PYTHONUTF8: "1"
           PYTHONIOENCODING: utf-8
           RESEARCHOS_POSTGRES_DSN: postgresql://research_os:research_os_m14_test@localhost:15432/research_os
           RESEARCHOS_OTEL_COLLECTOR_ENDPOINT: http://localhost:4318
+          RESEARCHOS_REQUIRE_COLLECTOR: "1"
+          RESEARCHOS_REQUIRE_POSTGRES: "1"

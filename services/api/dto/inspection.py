@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.enums import (
+    LedgerCostStatusValue,
+    LedgerQuantityStatusValue,
+    ResourceTypeValue,
+)
+
 
 class EvidenceDto(BaseModel):
     id: str
@@ -44,19 +50,27 @@ class ClaimMapDto(BaseModel):
 
 class UsageEntryDto(BaseModel):
     entry_id: str
-    resource_type: str
+    resource_type: ResourceTypeValue
     quantity: int
     unit: str
-    cost_status: str
+    cost_status: LedgerCostStatusValue
     estimated_cost_minor: int | None = None
     actual_cost_minor: int | None = None
+    currency: str
+    quantity_status: LedgerQuantityStatusValue
+    unavailable_reason: str | None = None
+    attempt: int
+    run_id: str | None = None
     model_id: str | None = None
     task_id: str | None = None
 
 
 class BudgetViewDto(BaseModel):
     entries: list[UsageEntryDto] = Field(default_factory=list)
-    total_estimated_cost_minor: int
+    # None 表示总额不完整（UNKNOWN / 未定价），绝不以 0 补齐。
+    total_estimated_cost_minor: int | None = None
+    total_currency: str | None = None
+    known_cost_subtotal_minor: int | None = 0
     unknown_cost_entries: int
     reservations: list[dict[str, object]] = Field(default_factory=list)
 

@@ -11,15 +11,12 @@
 
 from __future__ import annotations
 
-import pytest
-
 from adapters.fakes import FakeBudgetLedger
 from packages.application.experiments.usage_collection import (
     UsageCollection,
     collect_usage,
     record_collected_usage,
 )
-from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.model_gateway import CompletionResult
 from packages.domain.core import Digest, Timestamp, Version
 from packages.domain.enums import QualityGateVerdict, ToolResultStatus
@@ -181,10 +178,10 @@ class TestUsageCollection:
             tool_results=(_tool_result(),),
         )
         first = record_collected_usage(ledger, collection)
-        # retry 重放同一事件：重复 entry_id → 拒绝（at-least-once 语义不漏不重）
-        with pytest.raises(InvalidInputError, match="duplicate"):
-            record_collected_usage(ledger, collection)
+        # at-least-once 重放是 no-op：同一事件不得抛错、不得新增 entry。
+        replay = record_collected_usage(ledger, collection)
         snapshot = ledger.snapshot()
+        assert first == replay
         assert first.model_tokens == 2000
         model_entries: list[object] = [
             entry

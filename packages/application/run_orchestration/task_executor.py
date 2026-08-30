@@ -31,6 +31,7 @@ from packages.application.ports.workflow_engine import (
     TaskLease,
     WorkflowEngine,
 )
+from packages.application.run_orchestration.usage_recording import record_attempt_usage
 from packages.domain.enums import FailureCategory
 from packages.domain.roles import AgentSpec, RoleDefinition
 from packages.domain.tasks import ResearchTask, RetryPolicy, TaskContract
@@ -124,7 +125,12 @@ def execute_task(
         if result is not None:
             return result
         if attempts >= policy.max_attempts:
-            _record_attempt_usage(deps.budget, current, attempts, "retry budget exhausted")
+            # 不在此处记账:`_attempt_once` 已经为**这一次** attempt 记过账
+            # (同 attempt 号 → 同 entry_id)。原先这里再记一次,导致
+            # `InvalidInputError: duplicate usage entry` 穿出 use case,把一次
+            # 干净的 task FAILED 变成未处理异常(M15 复审 BLOCKER-5,实测
+            # transient/timeout 两条路径必现)。耗尽这一事实由返回值的
+            # message 表达,不需要第二条 ledger entry。
             return _task_failed(current, attempts, None, "retry budget exhausted")
 
 
@@ -159,13 +165,28 @@ def _attempt_once(
             attempts=task.attempt,
         )
     except TransientPortError as error:
-        _record_attempt_usage(inputs.deps.budget, task, task.attempt, str(error.failure_category))
+        record_attempt_usage(
+            inputs.deps.budget, task, task.attempt, _failure_reason(error.failure_category)
+        )
         if not _retryable(error, _retry_policy(inputs.contract)):
             return _task_failed(task, task.attempt, error.failure_category, str(error))
         return None
     except PermanentPortError as error:
-        _record_attempt_usage(inputs.deps.budget, task, task.attempt, str(error.failure_category))
+        record_attempt_usage(
+            inputs.deps.budget, task, task.attempt, _failure_reason(error.failure_category)
+        )
         return _task_failed(task, task.attempt, error.failure_category, str(error))
+
+
+def _failure_reason(category: FailureCategory | None) -> str | None:
+    """failure category → ledger `unavailable_reason`;None 保持 None。
+
+    原先是 `str(error.failure_category)`。诚实边界:`TransientPortError` /
+    `PermanentPortError` 的构造签名要求非空分类,所以这两条路径上 None 实际
+    不可达——"写入字面量 'None'" 是理论隐患,不是已发生的缺陷。基类字段仍是
+    `FailureCategory | None`,因此保留显式全函数转换而不是依赖 `str()`。
+    """
+    return category.value if category is not None else None
 
 
 def _acquire_or_fail(
@@ -176,18 +197,6 @@ def _acquire_or_fail(
         return engine.acquire_lease(task.id.value), None
     except PermanentPortError as error:
         return None, str(error)
-
-
-def _record_attempt_usage(
-    budget: BudgetLedger | None,
-    task: ResearchTask,
-    attempt: int,
-    reason: str | None,
-) -> None:
-    """失败/重试耗尽路径记账(M15,attempt 作用域)。"""
-    from packages.application.run_orchestration.usage_recording import record_attempt_usage
-
-    record_attempt_usage(budget, task, attempt, reason)
 
 
 def _task_failed(

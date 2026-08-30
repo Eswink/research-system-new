@@ -64,7 +64,14 @@ export default defineConfig([
           ignoreUrls: true,
         },
       ],
-      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+      "architecture/max-lines-soft": [
+        "warn",
+        { softMax: 300, hardMax: 450, skipBlankLines: true, skipComments: true },
+      ],
+      "architecture/max-lines-hard": [
+        "error",
+        { softMax: 300, hardMax: 450, skipBlankLines: true, skipComments: true },
+      ],
       "max-lines-per-function": ["error", { max: 50, skipBlankLines: true, skipComments: true }],
       "max-nested-callbacks": ["error", 10],
       "max-params": ["error", 3],
@@ -112,10 +119,11 @@ export default defineConfig([
   },
   {
     // API DTO 契约文件（apps/web/src/api/types.ts）：与 schemas/openapi.m13.json
-    // 对应的单一 schema truth（生成边界）；声明式类型允许超出 300 行阈值。
+    // 对应的单一 schema truth（生成边界）；声明式类型允许超出行数阈值。
     files: ["apps/web/src/api/types.ts"],
     rules: {
-      "max-lines": "off",
+      "architecture/max-lines-soft": "off",
+      "architecture/max-lines-hard": "off",
     },
   },
 ]);

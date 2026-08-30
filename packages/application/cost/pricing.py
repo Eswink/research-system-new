@@ -62,9 +62,12 @@ class PricingTable:
             raise ValueError("pricing currency must be an ISO-4217 alpha-3 code")
         if self.calculation_method != CALCULATION_METHOD:
             raise ValueError(f"unsupported calculation_method: {self.calculation_method}")
-        seen: set[tuple[PriceDimension, str]] = set()
+        seen: set[tuple[PriceDimension, str, str]] = set()
         for entry in self.prices:
-            key = (entry.dimension, entry.resource_key)
+            # 同一 resource 可以分别配置 token / request 等不同计量单位；
+            # 复审发现旧的 (dimension, resource_key) 唯一性使模型 token
+            # 与 call 两条 ledger entry 结构上必有一条 MONETARY_UNAVAILABLE。
+            key = (entry.dimension, entry.resource_key, entry.unit)
             if key in seen:
                 raise ValueError(f"duplicate price entry for {key}")
             seen.add(key)
@@ -88,12 +91,25 @@ class PricingTable:
         }
         return hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
 
-    def price_for(self, dimension: PriceDimension, resource_key: str) -> PriceEntry | None:
-        """未配置价格 → None(调用方必须落到 MONETARY_UNAVAILABLE,不得记 0)。"""
-        for entry in self.prices:
-            if entry.dimension is dimension and entry.resource_key == resource_key:
-                return entry
-        return None
+    def price_for(
+        self,
+        dimension: PriceDimension,
+        resource_key: str,
+        unit: str | None = None,
+    ) -> PriceEntry | None:
+        """按 dimension/resource/unit 寻找价格。
+
+        `unit=None` 仅为读取端兼容：键无歧义时返回唯一条目；同资源存在
+        多单位价格时拒绝猜测（None）。投影必须传入实际 ledger unit。
+        """
+        matches = [
+            entry
+            for entry in self.prices
+            if entry.dimension is dimension
+            and entry.resource_key == resource_key
+            and (unit is None or entry.unit == unit)
+        ]
+        return matches[0] if len(matches) == 1 else None
 
     def unit_ratio(self, entry: PriceEntry) -> Decimal:
         return Decimal(entry.unit_price_minor)

@@ -1,6 +1,21 @@
 # Changelog
 
-## v0.5.1 — 2026-08-29（M15 债务清偿轮）
+## Unreleased
+
+> VERSION 仍为 0.4.0；本节为 M15 Observability / Cost / Eval Operations 及其
+> 后续债务清偿轮的未发布变更（版本在发布时经显式流程统一提升）。
+
+## 工程约束变更（2026-08-30）
+
+- **单文件行数阈值放宽为渐进式门禁**（Python/TypeScript 一致）：≤300 行通过、
+  301–450 行警告（CI 不失败）、>450 行硬性失败必须拆分；函数体 ≤50 行、行长
+  ≤100、CCN、参数/深度等其余阈值不变。落点：`40-python.mdc`/`41-typescript.mdc`
+  规则文本、`tests/tooling/test_python_source_limits.py`（原始行口径）、
+  `eslint.config.mjs` 新增自定义规则 `architecture/max-lines-soft`（warn 档）与
+  `architecture/max-lines-hard`（error 档，净行口径，替代原生 `max-lines`）、
+  `package.json` lint 脚本移除 `--max-warnings 0` 以允许警告带。
+
+## M15 债务清偿轮（2026-08-29）
 
 - **PHASE 级 span**：`SessionSpecContext.phase_id` + `execute_phases` 连续
   分组包 PHASE span，TASK 自动父链接（层级字段集投影）。
@@ -16,7 +31,7 @@
   `requires_collector or postgres` 套件常驻）。
 - **文档对齐**：BACKLOG/MILESTONES 中 M12/M14 过期状态表述与重判结果一致。
 
-## v0.5.0 — 2026-08-29（M15 Observability / Cost / Eval Operations）
+## M15 Observability / Cost / Eval Operations（2026-08-29）
 
 - **M15 完成**：四个 work package 全部落地，无第二 canonical state，
   M0–M14 语义不变（m0 门禁 19/19 保持）。
@@ -51,8 +66,6 @@
   production-boundaries.test.mjs 接入根 test 脚本；telemetry off/on 开销对比
   + `tools/probes/probe_telemetry_soak.py`；M14 postgres/crash-restart/probe
   套件 off/on 双跑通过。
-
-## v0.4.0 — 2026-08-15（M11 Evaluation Plane）
 
 ## v0.4.0 — 2026-08-15（M11 Evaluation Plane）
 

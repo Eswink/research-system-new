@@ -8,10 +8,8 @@ M14: database_url 指向 PostgreSQL 时自动选用 Postgres 引擎（同 Port�
 
 from __future__ import annotations
 
-import os
 import sqlite3
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 from adapters.fakes.agent_runtime import FakeAgentRuntime
@@ -21,18 +19,24 @@ from adapters.relay.registry_credential_resolver import RegistryCredentialResolv
 from adapters.sqlite.agent_store import SqliteAgentStore
 from adapters.sqlite.approval_store import SqliteApprovalStore
 from adapters.sqlite.budget_ledger import SqliteBudgetLedger
-from adapters.sqlite.db import connect
 from adapters.sqlite.endpoint_store import SqliteEndpointStore
 from adapters.sqlite.eval_report_store import SqliteEvalReportStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
 from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
 from adapters.sqlite.model_store import SqliteModelStore
+from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
 from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
 from adapters.sqlite.run_store import SqliteRunStore
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
-from packages.application.ports import AgentStore, ApprovalStore, ProjectSettingsStore, RunStore
+from packages.application.ports import (
+    AgentStore,
+    ApprovalStore,
+    ProjectSettingsStore,
+    RunStore,
+    WorkflowEngine,
+)
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.credential_resolver import CredentialResolver
@@ -50,11 +54,17 @@ from packages.application.run_orchestration.service import (
     RunOrchestrationService,
 )
 from packages.domain.run import ResearchRun
+from services.api.assembly import (
+    _endpoint_url_policy,
+    _is_postgres_dsn,
+    _load_pricing,
+    _open_sqlite,
+)
 from services.api.demo import _default_events
 from services.api.demo import demo_session_output as demo_session_output
 from services.api.idempotency import IdempotencyStore
 from services.api.settings import ApiSettings
-from services.api.telemetry import build_api_telemetry
+from services.api.telemetry import build_api_telemetry, exporter_config_digest
 
 
 @dataclass
@@ -71,6 +81,7 @@ class ApiDeps:
     ledger: EvidenceLedger | None = field(default=None, repr=False)
     budget: BudgetLedger | None = field(default=None, repr=False)
     runs: RunOrchestrationService | None = None
+    workflow: WorkflowEngine | None = field(default=None, repr=False)
     run_registry: dict[str, ResearchRun] = field(default_factory=dict)
     runs_store: RunStore | None = field(default=None, repr=False)
     run_contexts: dict[str, RunContext] = field(default_factory=dict)
@@ -82,7 +93,9 @@ class ApiDeps:
     preflight_override: PreflightContext | None = field(default=None, repr=False)
     endpoint_url_policy: EndpointUrlPolicy | None = field(default=None, repr=False)
     telemetry: TelemetrySink = field(default_factory=NullTelemetrySink, repr=False)
+    exporter_config_digest: str | None = field(default=None, repr=False)
     eval_report_store: Any | None = field(default=None, repr=False)
+    pricing_snapshot_store: Any | None = field(default=None, repr=False)
     pricing: Any | None = field(default=None, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
@@ -97,81 +110,6 @@ class ApiDeps:
                 self._pg_connection.close()
             except Exception:
                 pass
-
-
-def _is_postgres_dsn(dsn: str | None) -> bool:
-    return bool(dsn and dsn.strip().startswith("postgresql"))
-
-
-def _open_sqlite(db_path: str) -> sqlite3.Connection:
-    path = Path(db_path)
-    if str(path) != ":memory:":
-        os.makedirs(path.parent, exist_ok=True)
-    return connect(db_path)
-
-
-def _ensure_pg_schema(pg_dsn: str) -> None:
-    from adapters.postgres.db import migrate as pg_migrate
-
-    pg_migrate(pg_dsn)
-
-
-@dataclass(frozen=True, slots=True)
-class PostgresAssembly:
-    """Postgres 路径装配所需依赖聚合（避免超参数阈值）。"""
-
-    effective: ApiSettings
-    connection: sqlite3.Connection
-    endpoint_store: EndpointStore
-    model_store: ModelStore
-    pg_conn: Any
-    workflow: Any
-    events: Any
-    projection: Any
-    ledger: Any
-    budget: Any
-    orchestration: RunOrchestrationService
-    approvals_store: Any = None
-    runs_store_pg: Any = None
-    artifacts_pg: Any = None
-    experiment_store: Any = None
-    memory_store: Any = None
-    eval_report_store: Any = None
-    gateway_override: Any = None
-    credentials_override: Any = None
-    preflight_override: Any = None
-    telemetry: Any = None
-
-
-def _build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
-    return ApiDeps(
-        endpoint_store=assembly.endpoint_store,
-        model_store=assembly.model_store,
-        credentials=assembly.credentials_override or RegistryCredentialResolver(),
-        gateway=assembly.gateway_override
-        or OpenAIChatGateway(
-            default_timeout_seconds=assembly.effective.endpoint_timeout_seconds,
-            telemetry=assembly.telemetry,
-        ),
-        idempotency=SqliteIdempotencyStore(connection=assembly.connection),
-        events=assembly.events,
-        projection=assembly.projection,
-        approvals=assembly.approvals_store or SqliteApprovalStore(connection=assembly.connection),
-        runs=assembly.orchestration,
-        runs_store=assembly.runs_store_pg or SqliteRunStore(connection=assembly.connection),
-        artifacts=assembly.artifacts_pg or FakeArtifactStore(),
-        ledger=assembly.ledger,
-        budget=assembly.budget,
-        agent_store=SqliteAgentStore(connection=assembly.connection),
-        project_settings_store=SqliteProjectSettingsStore(connection=assembly.connection),
-        endpoint_url_policy=_endpoint_url_policy(assembly.effective),
-        memory=assembly.memory_store,
-        preflight_override=assembly.preflight_override,
-        telemetry=assembly.telemetry,
-        eval_report_store=assembly.eval_report_store,
-        _connection=assembly.connection,
-        _pg_connection=assembly.pg_conn,
-    )
 
 
 def _assemble_postgres(  # noqa: PLR0913 - composition root 装配参数
@@ -202,24 +140,56 @@ def _assemble_postgres(  # noqa: PLR0913 - composition root 装配参数
     return build_postgres_apideps(assembly)
 
 
-def _load_pricing() -> Any:
-    """版本化定价表(composition root;缺失/损坏 → unpriced fail-open)。"""
-    try:
-        from adapters.contracts.pricing_loaders import load_pricing_table
+@dataclass(frozen=True, slots=True)
+class _SqliteStoreParts:
+    """SQLite 共享连接的 store/orchestration 部分（类型化装配产物）。"""
 
-        return load_pricing_table("examples/config/pricing.yaml")
-    except Exception:
-        from packages.application.cost.pricing import unpriced_table
+    events: SqliteOutboxEventPublisher
+    workflow: SqliteWorkflowEngine
+    projection: RunProjection
+    ledger: EvidenceLedger
+    budget: BudgetLedger
+    pricing: Any
+    pricing_store: SqlitePricingSnapshotStore
+    orchestration: RunOrchestrationService
 
-        return unpriced_table()
 
+def _sqlite_store_parts(
+    connection: sqlite3.Connection,
+    telemetry: TelemetrySink,
+) -> _SqliteStoreParts:
+    """SQLite 共享连接的 store/orchestration 部分（helper 控制函数长度）。"""
+    events = SqliteOutboxEventPublisher(connection=connection)
+    workflow = SqliteWorkflowEngine(connection=connection, telemetry=telemetry)
+    from adapters.sqlite.run_projection import SqliteRunProjection
 
-def _endpoint_url_policy(effective: ApiSettings) -> EndpointUrlPolicy:
-    """localhost/private/link-local 同开关(显式开发放行,默认 fail-closed)。"""
-    return EndpointUrlPolicy(
-        allow_localhost=effective.allow_localhost_endpoints,
-        allow_private=effective.allow_localhost_endpoints,
-        allow_link_local=effective.allow_localhost_endpoints,
+    projection = SqliteRunProjection(connection, events)
+    ledger = SqliteEvidenceLedger(connection=connection)
+    budget = SqliteBudgetLedger(connection=connection)
+    pricing = _load_pricing()
+    pricing_store = SqlitePricingSnapshotStore(connection=connection)
+    orchestration = RunOrchestrationService(
+        OrchestrationDependencies(
+            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
+            workflow=workflow,
+            artifacts=FakeArtifactStore(),
+            events=events,
+            budget=budget,
+            ledger=ledger,
+            telemetry=telemetry,
+            pricing=pricing,
+            pricing_store=pricing_store,
+        )
+    )
+    return _SqliteStoreParts(
+        events=events,
+        workflow=workflow,
+        projection=projection,
+        ledger=ledger,
+        budget=budget,
+        pricing=pricing,
+        pricing_store=pricing_store,
+        orchestration=orchestration,
     )
 
 
@@ -230,30 +200,23 @@ def _assemble_sqlite(
     model_store: ModelStore,
     telemetry: TelemetrySink,
 ) -> ApiDeps:
-    events_sqlite = SqliteOutboxEventPublisher(connection=connection)
-    workflow_sqlite = SqliteWorkflowEngine(connection=connection, telemetry=telemetry)
-    from adapters.sqlite.run_projection import SqliteRunProjection
-
-    projection_sqlite = SqliteRunProjection(connection, events_sqlite)
-    ledger_sqlite = SqliteEvidenceLedger(connection=connection)
-    budget_sqlite = SqliteBudgetLedger(connection=connection)
-    orchestration_sqlite = RunOrchestrationService(
-        OrchestrationDependencies(
-            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
-            workflow=workflow_sqlite,
-            artifacts=FakeArtifactStore(),
-            events=events_sqlite,
-            budget=budget_sqlite,
-            ledger=ledger_sqlite,
-            telemetry=telemetry,
-        )
-    )
+    parts = _sqlite_store_parts(connection, telemetry)
+    events_sqlite = parts.events
+    workflow_sqlite = parts.workflow
+    projection_sqlite = parts.projection
+    ledger_sqlite = parts.ledger
+    budget_sqlite = parts.budget
+    pricing_sqlite = parts.pricing
+    pricing_store_sqlite = parts.pricing_store
+    orchestration_sqlite = parts.orchestration
     eval_store = SqliteEvalReportStore(connection=connection)
     return ApiDeps(
         endpoint_store=endpoint_store,
         model_store=model_store,
         credentials=RegistryCredentialResolver(),
         eval_report_store=eval_store,
+        pricing_snapshot_store=pricing_store_sqlite,
+        pricing=pricing_sqlite,
         gateway=OpenAIChatGateway(
             default_timeout_seconds=effective.endpoint_timeout_seconds,
             telemetry=telemetry,
@@ -263,6 +226,7 @@ def _assemble_sqlite(
         projection=projection_sqlite,
         approvals=SqliteApprovalStore(connection=connection),
         runs=orchestration_sqlite,
+        workflow=workflow_sqlite,
         runs_store=SqliteRunStore(connection=connection),
         artifacts=FakeArtifactStore(),
         ledger=ledger_sqlite,
@@ -297,4 +261,5 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
     else:
         deps = _assemble_sqlite(effective, connection, endpoint_store, model_store, telemetry)
     deps.pricing = _load_pricing()
+    deps.exporter_config_digest = exporter_config_digest(effective)
     return deps

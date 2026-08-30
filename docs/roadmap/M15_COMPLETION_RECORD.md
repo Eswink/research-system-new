@@ -1,11 +1,20 @@
 # M15 Completion Record — Observability / Cost / Eval Operations
 
-- Date: 2026-08-29
+> **状态头注（2026-08-30 修复轮完成）**：本记录首轮（2026-08-29）自证草稿经
+> **2026-08-30 独立复审判定 FAIL**（6 BLOCKER + ~24 MAJOR + ~25 MINOR）。
+> 修复轮 `../../.cursor/plans/m15_fail_remediation_98df6116.plan.md` 的 WP0–WP8
+> 已全部完成：6 个 BLOCKER 均以独立探针复现原始路径并确认修复；全量门禁
+> m0 profile **23/23 deterministic checks PASS**（2420 passed / 5 skipped），
+> collector-quality / requires_docker / e2e / probes / validators 全绿。
+> recheck 见 `../plans/rechecks/RECHECK-20260830-024-m15-fail-remediation.md`
+> （result=PASS）。以下内容按本轮实际执行证据重写。
+
+- Date: 2026-08-29（首轮）/ 2026-08-30（修复轮完成）
 - Plan: `PLAN-20260828-024-m15-observability-cost-eval-operations`
+- Remediation plan: `.cursor/plans/m15_fail_remediation_98df6116.plan.md`（WP0–WP8 全部 completed）
 - Roadmap authority: [MILESTONES.md](MILESTONES.md) §M15（Entry Gate M11 PASS ✅）
-- Verification baseline: `run_all_checks.py --profile m0` = **19/19 PASS**（多轮复跑，
-  含 PostgreSQL live 套件；typescript 5 项门禁全绿；web console build/lint/test 全绿）
-- 结论：**M15 DONE（PASS）**；停在里程碑边界，M16 未动。
+- Verification baseline（本轮实测）：`run_all_checks.py --profile m0` = **23/23 deterministic checks PASS**，`python/tests` 2420 passed / 5 skipped；mypy 615 files 0 error；ruff check/format 全绿；web 27 tests + typecheck + build 全绿
+- 结论：**M15 DONE（2026-08-30 修复轮完成 + recheck PASS）**；M16 未动。
 
 ## 1. 交付物
 
@@ -23,34 +32,42 @@
 | WP3 | ComparabilityVerdict + 分段趋势 | `packages/application/evaluation/{comparability,trend}.py` |
 | API/Console | 三个只读 operations 端点 + Console 视图 | `services/api/{routers,dto,mappers}/operations.*`, `apps/web/src/features/operations/` |
 | WP4 | 隐私 canary / 架构门禁 / supply-chain / soak | `tests/observability/test_privacy_canary.py`, `.importlinter.otel`, `UPSTREAM_COMPONENTS.yaml`, `tools/probes/probe_telemetry_soak.py` |
+| WP1/2/3（未申报） | relay/workflow 适配器重构（`adapters/relay/completions.py`、`transport.py`；`adapters/sqlite/workflow_ops.py`、`workflow_engine.py` 扩展；`adapters/postgres/workflow_engine.py`、`telemetry_notes.py`） | 首轮完成记录未登记，本行补记 |
 
-## 2. DoD PASS/FAIL 矩阵（21 条退出标准）
+> 既存条件（记录不修复）：`services/api/composition.py` 与
+> `services/api/pg_composition.py` 的 composition root 在生产路径注入
+> `FakeAgentRuntime`（M13 遗留），M15 telemetry/cost 视图因此投影 fake
+> agent loop，不代表真实执行；`LMNR_PROJECT_API_KEY` 存在时 OpenHands
+> 会话 trace 会经进程内厂商 shim 外发（仓库无 env allow-list）——"Vendor
+> SDK 不采用"仅限定 Research OS 自有代码。
 
-| # | 退出标准 | 证据 | 判定 |
+## 2. DoD PASS/FAIL 矩阵（21 条退出标准，2026-08-30 修复轮证据重写）
+
+| # | 退出标准 | 证据（本轮实际执行） | 判定 |
 |---|---|---|---|
-| 1 | OTel qualification 报告 | `docs/references/upstream/M15_OTEL_QUALIFICATION.md`（16 项问题矩阵、adopted/rejected 面、collector 故障行为、semconv 0.60b1 风险） | PASS |
-| 2 | import-linter 契约 + 边界测试 | `.importlinter.otel` KEPT；domain/application/fakes/sqlite/postgres/relay/mcp/api 的 forbidden 列表 + opentelemetry 全 0 broken；`tests/architecture/python/test_otel_boundaries.py`（含 AST 扫描 + postgres 契约开始执行） | PASS |
-| 3 | trace hierarchy（真实 run） | `tests/observability/test_otel_adapter.py::test_parent_linkage_follows_correlation_hierarchy`（真实 OTel SDK,run→task 父子链 + 同 trace_id） | PASS |
-| 4 | 每信号站点测试 | gateway（test_gateway_telemetry）、tool（contract+capability plane）、workflow（queue lag/duration/lease metric 断言）、docker（execution telemetry 包装）、eval（runner metric）、orchestration（RUN/TASK span） | PASS |
-| 5 | 词汇无内容通道 + canary | 闭集 `AttributeKey`/`MetricLabel` + `sanitize_attributes`（结构上不可表达 prompt/response/args/body）;`test_privacy_canary.py` 七类唯一 marker 零出现 | PASS |
-| 6 | 真实 OTLP 字节 + pinned collector canary | `tests/observability/otlp_receiver.py`（真实 socket + opentelemetry-proto 解码）;collector 文件输出断言（requires_collector 标记,本机 docker compose 验证） | PASS |
-| 7 | collector 故障下 canonical state 相等 | `test_failure_isolation.py` 八种注入（down/timeout/500/slow/queue-full/malformed/restart/hangup）× workflow/outbox/budget/evidence 投影逐项相等;PG 变体（postgres 标记）事务/lease/outbox 相等 | PASS |
-| 8 | audit vs telemetry 分离 | telemetry 不回读（port 契约 + FailSafe 计数只用于展示）;domain events 仍是唯一审计 truth（PORTS.md §7） | PASS |
-| 9 | 成本唯一 usage 输入 | `project_dimensions` 只接受 `UsageLedgerEntry`（telemetry 类型不可达）;`test_cost_projection.py` | PASS |
-| 10 | 五状态成本 | ACTUAL/ESTIMATED/MONETARY_UNAVAILABLE/USAGE_UNKNOWN/ZERO 各自测试;UNKNOWN 永不折叠为 0 | PASS |
-| 11 | pricing 版本/摘要历史稳定 | `test_price_change_cannot_mutate_historical_projection`（v1 投影不可被 v2 改写） | PASS |
-| 12 | retry/failure/cancel 记账 | attempt 作用域 entry id 追加不碰撞;duplicate entry_id 被 ledger 拒绝（不 double-count）;失败/取消 = UNKNOWN（不伪造） | PASS |
-| 13 | trend store provenance | `build_trend` 唯一输入 `EvalReportStore`;`missing_evaluations` 第三态 | PASS |
-| 14 | comparability 分支 | CASE_SET/DATASET/GATE_CONFIG/SCORER/EVALUATOR/SYSTEM_VERSION/SEGMENTED/INCOMPATIBLE 各分支测试 | PASS |
-| 15 | verdict provenance | 回归 marker 全部来自 `compare_reports`（trend 不发明阈值）;FrozenConditions 未修改（M11 digest 全绿） | PASS |
-| 16 | INFRA_ERROR 隔离 | 独立计数贯穿 index→store→trend→API;不折算/不 PASS/不丢弃 | PASS |
-| 17 | Console projection-only | 浏览器零成本计算/零阈值/零 vendor 依赖（production-boundaries.test.mjs 接入根 test 脚本） | PASS |
-| 18 | soak 与资源对比 | `test_telemetry_overhead.py`（off/on 延迟 ≤8×、线程稳定、干净 shutdown、drop=0）;`probe_telemetry_soak.py` 手工运行 PASS（60+ 迭代 0 drop,420 spans） | PASS |
-| 19 | 全量回归 | m0 profile 19/19（含 2320+ tests;M14 postgres/crash-restart/probes off 与 on-故障注入双跑 123 passed） | PASS |
-| 20 | 供应链 | 6 包 ADOPTED（sdist sha256 = uv.lock 实测值）+ collector DOCKERFILE 组件（manifest digest pin）+ LICENSE_MATRIX 7 行;validate_bundle 0 错误 | PASS |
-| 21 | recheck（原始验收条件） | 计划 DoD 21 条逐项映射本文档矩阵;M15 acceptance recheck 由本记录 + m0 19/19 承接 | PASS |
+| 1 | OTel qualification 报告 | `docs/references/upstream/M15_OTEL_QUALIFICATION.md`（adopted/rejected 面、collector 故障行为；semconv 0.60b1 为 SDK 传递依赖、代码零 import，直接依赖声明已移除并同步 UPSTREAM_COMPONENTS/LICENSE_MATRIX） | PASS |
+| 2 | import-linter 契约 + 边界测试 | `.importlinter.otel`/`.postgres`/`.api` KEPT；`tests/architecture/python/test_otel_boundaries.py`（AST 扫描含 tools/ + source_modules 元测试 + postgres 契约执行）；`.importlinter.sqlite` 已纳入版本控制（BLOCKER-1 修复，`git ls-files` 确认）；`tests/architecture` 66 passed | PASS |
+| 3 | trace hierarchy（真实 run） | `test_otel_adapter.py::test_parent_linkage_follows_correlation_hierarchy`（真实 OTel SDK，run→task 父子链 + 同 trace_id；PROJECT span 脱链已修） | PASS |
+| 4 | 每信号站点测试 | gateway/tool/workflow/docker/eval/orchestration 站点测试；fail-open 对称性补齐（scope.__enter__/scheduler/outbox_relay） | PASS |
+| 5 | 词汇无内容通道 + canary | 闭集 `AttributeKey`（27 键）/`MetricLabel` + `sanitize_attributes`（**先 redact 后截断**，全字符串键脱敏）；`test_privacy_canary.py` 重写为真实注入 9 类 marker 并扫描真实 OTLP wire bytes/caplog/capsys/telemetry 端点（7 passed）；独立复现：marker 经 operation 属性通道注入后 OTLP wire bytes 零出现 | PASS |
+| 6 | 真实 OTLP 字节 + pinned collector canary | `otlp_receiver.py`（真实 socket + opentelemetry-proto 解码）；collector 文件输出断言；collector-quality 套件 44 passed（RESEARCHOS_REQUIRE_COLLECTOR=1 fail-closed） | PASS |
+| 7 | collector 故障下 canonical state 相等 | `test_failure_isolation.py` 八种注入 × canonical state 逐项相等；PG 变体事务/lease/outbox 相等；**BLOCKER-4 独立复现**：blackhole collector 下 flush=0.000s/shutdown=0.000s（< 1.5s 硬上界，watchdog 生效） | PASS |
+| 8 | audit vs telemetry 分离 | telemetry 不回读；domain events 仍是唯一审计 truth（PORTS.md §7） | PASS |
+| 9 | 成本唯一 usage 输入 | `project_dimensions` 只接受 `UsageLedgerEntry`；`test_cost_projection.py` 14 passed | PASS |
+| 10 | 五状态成本 | ACTUAL/ESTIMATED/MONETARY_UNAVAILABLE/USAGE_UNKNOWN/ZERO + PARTIALLY_METERED/CURRENCY_CONFLICT/NO_DATA；UNKNOWN 永不折叠为 0；currency 参与算术（跨币种拒绝） | PASS |
+| 11 | pricing 版本/摘要历史稳定 | **BLOCKER-6 独立复现**：`test_pricing_snapshot_freeze.py::test_price_change_cannot_mutate_persisted_run_a_projection`（Run A 冻结 v1 → 当期表改 v2 → `resolve_run_pricing` 从快照存储解析 v1，金额 200/版本 v1 不变）+ 遗留 run 显式未冻结 + 快照缺失显式降级；migration 006 定价快照存储 | PASS |
+| 12 | retry/failure/cancel 记账 | **BLOCKER-5 独立复现**：`test_execute_task_accounting.py` 10 passed（重试耗尽收敛 FAILED 无 duplicate entry_id 崩溃；attempt 作用域 entry 唯一；phase_runner 接线 budget）；cancellation 记账经 `cancelled_task_ids` 去碰撞 | PASS |
+| 13 | trend store provenance | `build_trend` 唯一输入 `EvalReportStore`；`missing_evaluations` 经 `expected_digests` 路由接线（第三态非恒空）；query_page 最新优先 + truncation 标记 | PASS |
+| 14 | comparability 分支 | CASE_SET/RUBRIC/DATASET/GATE_CONFIG/SCORER/EVALUATOR/SYSTEM_VERSION/SEGMENTED/INCOMPATIBLE 各分支测试（`test_eval_trend_m15.py` 补齐 4 个零覆盖分支）；标签错位修复（rubric/scorer 先于 dataset） | PASS |
+| 15 | verdict provenance | 回归 marker 全部来自 `compare_reports`；`StoredEvalReport` 强制 `report_digest==digest(body)` + verdict 闭集；trend `_point_of` 用 verbatim body 交叉校验 index，冲突降级 INDETERMINATE | PASS |
+| 16 | INFRA_ERROR 隔离 | 独立计数贯穿 index→store→trend→API；`reviewer_failure_count` 投影列（reviewer 设施故障不再呈现干净 PASS）；pass_ratio 分母排除 INFRA | PASS |
+| 17 | Console projection-only | 浏览器零成本计算/零阈值/零 vendor 依赖（去 /100 与硬编码 USD，渲染服务端金额+币种）；`production-boundaries.test.mjs` 5 断言（成本算术/币种/verdict 字面量/阈值/厂商 SDK）+ web 27 tests + typecheck + build 全绿 | PASS |
+| 18 | soak 与资源对比 | `test_telemetry_overhead.py`（drop_count 聚合 inner 计数，非恒真）；`probe_telemetry_soak.py --pg` SOAK PASS（200 迭代 0 drop、1400 spans、50 PG 任务唯一 id）；telemetry 不消耗业务时钟 | PASS |
+| 19 | 全量回归 | m0 profile **23/23 deterministic checks PASS**（2420 passed/5 skipped；mypy 615 files 0；ruff 0；TS 5 + web 4 + framework 8 全绿）；requires_docker 39 passed；e2e 73 passed/1 skipped；9 probes PASS；validate_bundle/governance/learning/docs-consistency 全绿 | PASS |
+| 20 | 供应链 | 5 包 ADOPTED（semconv 移除直接依赖）+ collector DOCKERFILE 组件 digest pin；validate_bundle 0 错误；collector 端口绑 loopback（127.0.0.1:4318） | PASS |
+| 21 | recheck（原始验收条件） | `RECHECK-20260830-024-m15-fail-remediation.md`（result=PASS）：6 BLOCKER 独立探针复现 + 21 条 DoD 从原始验收条件重核 + 全量门禁实测 | PASS |
 
-**判定：21/21 PASS — M15 DONE。**
+**判定：M15 修复轮完成，21/21 DoD PASS，recheck PASS（2026-08-30）；M15 DONE。**
 
 ## 3. 信号矩阵（实现面）
 
@@ -67,7 +84,7 @@
 
 ## 4. 隐私与韧性证据
 
-- **无内容通道**：`AttributeKey` 闭集（29 键）+ `sanitize_attributes`（白名单 +
+- **无内容通道**：`AttributeKey` 闭集（**27 键**，2026-08-30 修正）+ `sanitize_attributes`（白名单 +
   redact_text + 截断）;`MetricLabel` 7 键不含任何业务 id;correlation 业务 id
   只以 `research_os.correlation.*` 落 span,不进 metric。
 - **Canary**：七类唯一标记（API key/Authorization/DSN 密码/prompt/tool arg/
@@ -80,10 +97,15 @@
 
 - `UsageLedgerEntry` 新字段全部带默认值;历史行解码为 KNOWN/attempt=1
   （不重解释既有数字）;M13 budget 契约与 `/runs/{id}/usage` 契约保持不变。
-- PG 迁移 005 纯新增表（eval_reports）,幂等可重放;migration 测试更新至
-  5 版本（broken 注入改用 006 保持回归意图）。
-- OTel 1.39.1 / semconv 0.60b1 早已是 uv.lock 传递依赖（openhands-sdk→lmnr）,
-  版本零漂移;仅新增直接依赖声明（uv.lock 26 行插入,无版本变更）。
+- PG 迁移 005（eval_reports 表）、006（pricing_snapshot 表，BLOCKER-6 定价冻结）、
+  007（eval report 完整性加固：verdict 闭集 CHECK、reviewer_failure_count、
+  recorded_at 不可变触发器）均为纯新增/加性，幂等可重放；migration 测试从真实
+  迁移目录动态推导版本（WP0 起 broken 注入用下一版本号，当前为 007）。
+- OTel 1.39.1 各包早已是 uv.lock 传递依赖（openhands-sdk→lmnr）,
+  版本零漂移;M15 将其提升为直接依赖声明（含 sdist digest 登记）。
+  **2026-08-30 修正**：`opentelemetry-semantic-conventions==0.60b1`
+  （pre-release）全仓零 import，直接依赖声明已移除（保留为 SDK 传递依赖），
+  `UPSTREAM_COMPONENTS.yaml`/`LICENSE_MATRIX.md`/qualification 同步更新。
 - Console：client.ts 拆出 `http.ts` 保持规模阈值;OpenAPI 快照再生
   （+516 行,三端点）;tautological 快照测试已修复（漂移可被发现）。
 

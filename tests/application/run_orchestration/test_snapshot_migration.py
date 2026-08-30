@@ -125,15 +125,20 @@ class TestApplyRefreeze:
         run = _run("old", ResearchRunState.State.PAUSED, manifest_digest=Digest.parse(D1))
         # Guard contract: semantic_digest=None raises ManifestFreezeError.
         from packages.application.preflight.preflight import ManifestFreezeError
+        from packages.application.run_orchestration.context import RunContext
 
+        guard_context = RunContext(
+            protocol=None,  # type: ignore[arg-type]
+            plan=None,  # type: ignore[arg-type]
+            report=None,  # type: ignore[arg-type]
+            run=run,
+            catalog=None,  # type: ignore[arg-type]
+            project=None,  # type: ignore[arg-type]
+            preflight=None,  # type: ignore[arg-type]
+            trace_id="",
+        )
         with pytest.raises(ManifestFreezeError):
-            assert_semantics_frozen(
-                run.id.value,
-                run.manifest_semantic_digest,
-                plan=None,  # type: ignore[arg-type]
-                report=None,  # type: ignore[arg-type]
-                preflight=None,  # type: ignore[arg-type]
-            )
+            assert_semantics_frozen(guard_context)
 
     def test_refreeze_idempotent_second_apply_noop(self) -> None:
         run = _run("legacy2", ResearchRunState.State.PAUSED, manifest_digest=Digest.parse(D1))

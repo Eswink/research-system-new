@@ -10,6 +10,59 @@
 /** 资源版本（ETag 值；If-Match 用） */
 export type Version = string;
 
+export type CostAmountStatus =
+  | "ACTUAL"
+  | "ESTIMATED"
+  | "MONETARY_UNAVAILABLE"
+  | "USAGE_UNKNOWN"
+  | "ZERO"
+  | "NO_DATA"
+  | "CURRENCY_CONFLICT"
+  | "PARTIALLY_METERED";
+export type PriceDimension = "model" | "tool" | "experiment" | "evaluation";
+export type ResourceType =
+  | "MODEL_TOKENS"
+  | "MODEL_REQUESTS"
+  | "MODEL_COST"
+  | "EVALUATION_SCORER"
+  | "TOOL_REQUESTS"
+  | "TOOL_COST"
+  | "CPU_TIME"
+  | "GPU_TIME"
+  | "MEMORY"
+  | "STORAGE"
+  | "NETWORK"
+  | "WALL_CLOCK"
+  | "AGENT_TURNS"
+  | "PARALLELISM";
+export type LedgerCostStatus = "KNOWN" | "UNKNOWN";
+export type LedgerQuantityStatus = "KNOWN" | "UNKNOWN";
+export type OutboxPendingStatus = "KNOWN" | "UNKNOWN";
+export type TrendPointVerdict =
+  | "PASS"
+  | "PASS_WITH_WARNINGS"
+  | "REVISE"
+  | "BLOCK"
+  | "INDETERMINATE"
+  | "MISSING_EVALUATION";
+export type RegressionVerdict =
+  | "PASS"
+  | "PASS_WITH_WARNINGS"
+  | "REVISE"
+  | "BLOCK"
+  | "INDETERMINATE";
+export type ComparabilityVerdict =
+  | "COMPARABLE"
+  | "CASE_SET_CHANGED"
+  | "RUBRIC_CHANGED"
+  | "DATASET_CHANGED"
+  | "GATE_CONFIG_CHANGED"
+  | "SCORER_CHANGED"
+  | "EVALUATOR_CHANGED"
+  | "SYSTEM_VERSION_CHANGED"
+  | "SEGMENTED"
+  | "INCOMPATIBLE_GENERATION";
+
 export interface ProblemDto {
   type: string;
   title: string;
@@ -239,6 +292,7 @@ export interface PreflightReportDto {
     subject_ref: string | null;
   }[];
   estimated_cost: number | null;
+  estimated_cost_currency: string | null;
   reserved_budget_ref: string | null;
   unresolved_risks: string[];
 }
@@ -252,11 +306,12 @@ export interface DryRunProjectionDto {
   budget_reservations: {
     id: string;
     scope: string;
-    resource_type: string;
+    resource_type: ResourceType;
     quantity: number;
     unit: string;
   }[];
   estimated_cost_minor: number | null;
+  estimated_cost_currency: string | null;
   approval_actions: string[];
 }
 
@@ -344,24 +399,31 @@ export interface ClaimMapDto {
 
 export interface UsageEntryDto {
   entry_id: string;
-  resource_type: string;
+  resource_type: ResourceType;
   quantity: number;
   unit: string;
-  cost_status: string;
+  cost_status: LedgerCostStatus;
   estimated_cost_minor: number | null;
   actual_cost_minor: number | null;
+  currency: string;
+  quantity_status: LedgerQuantityStatus;
+  unavailable_reason: string | null;
+  attempt: number;
+  run_id: string | null;
   model_id: string | null;
   task_id: string | null;
 }
 
 export interface BudgetViewDto {
   entries: UsageEntryDto[];
-  total_estimated_cost_minor: number;
+  total_estimated_cost_minor: number | null;
+  total_currency: string | null;
+  known_cost_subtotal_minor: number | null;
   unknown_cost_entries: number;
   reservations: {
     id: string;
     scope: string;
-    resource_type: string;
+    resource_type: ResourceType;
     quantity: number;
     unit: string;
   }[];
@@ -401,17 +463,22 @@ export interface TelemetryTaskCountsDto {
 }
 
 export interface TelemetryOutboxDto {
-  pending: number;
+  pending: number | null;
+  status: OutboxPendingStatus;
+  unavailable_reason: string | null;
 }
 
 export interface TelemetrySinkDto {
   enabled: boolean;
   dropped: number;
+  unlinked: number;
   last_error: string | null;
 }
 
 export interface RunTelemetryDto {
   run_id: string;
+  manifest_digest: string | null;
+  exporter_config_digest: string | null;
   generated_at: string;
   tasks: TelemetryTaskCountsDto;
   outbox: TelemetryOutboxDto;
@@ -419,13 +486,15 @@ export interface RunTelemetryDto {
 }
 
 export interface CostAmountDto {
-  status: string;
+  status: CostAmountStatus;
   minor_units: number | null;
   currency: string;
+  effective_from: string | null;
+  calculation_method: string | null;
 }
 
 export interface CostDimensionDto {
-  dimension: string;
+  dimension: PriceDimension;
   resource_key: string;
   amount: CostAmountDto;
   entry_count: number;
@@ -435,6 +504,8 @@ export interface CostViewDto {
   run_id: string;
   pricing_version: string;
   pricing_digest: string;
+  pricing_frozen: boolean;
+  pricing_degraded_reason: string | null;
   dimensions: CostDimensionDto[];
   total: CostAmountDto;
 }
@@ -442,17 +513,28 @@ export interface CostViewDto {
 export interface TrendPointDto {
   report_digest: string;
   recorded_at: string | null;
-  verdict: string;
+  verdict: TrendPointVerdict;
+  dataset_id: string | null;
+  dataset_version: string | null;
+  dataset_digest: string | null;
+  gate_config_id: string | null;
+  gate_config_version: string | null;
+  gate_config_digest: string | null;
+  system_version: string | null;
+  comparison_digest: string | null;
+  run_id: string | null;
   pass_count: number;
   fail_count: number;
   infra_error_count: number;
+  reviewer_failure_count: number;
   missing: boolean;
+  integrity_error: string | null;
 }
 
 export interface RegressionMarkerDto {
   baseline_digest: string;
   candidate_digest: string;
-  verdict: string;
+  verdict: RegressionVerdict;
   newly_regressed: string[];
   newly_fixed: string[];
 }
@@ -463,12 +545,13 @@ export interface TrendSegmentDto {
 }
 
 export interface TrendDivergenceDto {
-  verdict: string;
+  verdict: ComparabilityVerdict;
   reason: string;
 }
 
 export interface TrendViewDto {
   dataset_id: string | null;
+  truncated: boolean;
   segments: TrendSegmentDto[];
   divergences: TrendDivergenceDto[];
   missing: TrendPointDto[];

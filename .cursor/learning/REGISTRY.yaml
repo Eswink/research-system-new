@@ -1,8 +1,33 @@
 schema_version: 1
 framework_version: 0.4.0
-next_sequence: 8
+next_sequence: 10
 statuses: [PROPOSED, CLUSTERED, REPLAYING, REVIEWING, ACCEPTED, REJECTED, SUPERSEDED]
 entries:
+  - id: LEARN-20260830-002
+    status: PROPOSED
+    file: ".cursor/learning/inbox/LEARN-20260830-002.yaml"
+    summary: "distillation_gate 失败统计与文案强于实现：原始行数计失败、总命中数当跨会话、未过滤空载荷哨兵、未与本会话签名求交，实测把哨兵 e3b0c442… 报成第二个跨会话失败类；FRONTMATTER_SIGNATURE_RE 只捕获首个签名导致多签名条目漏匹配"
+    source_refs:
+      - ".cursor/experience/entries/EXP-20260830-002.md"
+      - ".cursor/hooks/distillation_gate.py"
+      - ".cursor/experience/entries/EXP-20260823-003.md"
+      - ".cursor/experience/entries/EXP-20260827-001.md"
+    promoted_at: ""
+    target_paths:
+      - ".cursor/hooks/distillation_gate.py"
+      - ".cursor/knowledge/KNOWN_CAVEATS.md"
+  - id: LEARN-20260830-001
+    status: PROPOSED
+    file: ".cursor/learning/inbox/LEARN-20260830-001.yaml"
+    summary: "Grep `path` / Glob `target_directory` 传工作区根绝对路径确定性失败（rg os error 3，空路径参数），跨 4 个会话文件 14 次签名 784a8b47c701b4ee2656：全仓检索省略该参数、限定范围只传根之下子路径；非 CURSOR_ERROR 瞬时族，重试无效"
+    source_refs:
+      - ".cursor/experience/entries/EXP-20260830-001.md"
+      - ".cursor/experience/entries/EXP-20260823-003.md"
+      - ".cursor/rules/42-command-encoding.mdc"
+    promoted_at: ""
+    target_paths:
+      - ".cursor/rules/42-command-encoding.mdc"
+      - ".cursor/knowledge/KNOWN_CAVEATS.md"
   - id: LEARN-20260824-001
     status: PROPOSED
     file: ".cursor/learning/inbox/LEARN-20260824-001.yaml"
