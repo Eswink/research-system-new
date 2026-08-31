@@ -18,6 +18,7 @@
 - RoleCategory / ActivationPolicy / WorkspacePolicy: schemas/role-definition.schema.json
 - SelectionStrategy: docs/architecture/ROLE_MODEL.md
 - ComparisonOperator: schemas/task-contract.schema.json
+- TaskKind: docs/adr/ADR-0027-distributed-execution-plane.md（M16）
 """
 
 from __future__ import annotations
@@ -281,3 +282,11 @@ class ReviewPanelRole(StrEnum):
     WRITER = "WRITER"
     REVIEWER = "REVIEWER"
     NONE = "NONE"
+
+
+class TaskKind(StrEnum):
+    """任务类型（M16）：默认 AGENT_SESSION 保持既有语义向后兼容；
+    EXECUTION 为远程 worker 可 claim 的一次性执行作业（ADR-0027）。"""
+
+    AGENT_SESSION = "AGENT_SESSION"
+    EXECUTION = "EXECUTION"

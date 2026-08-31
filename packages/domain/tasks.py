@@ -11,7 +11,12 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from packages.domain.core import ID, Digest, Timestamp
-from packages.domain.enums import AcceptanceCriterionType, ComparisonOperator, FailureCategory
+from packages.domain.enums import (
+    AcceptanceCriterionType,
+    ComparisonOperator,
+    FailureCategory,
+    TaskKind,
+)
 from packages.domain.state_machines import ResearchTaskState
 
 
@@ -89,6 +94,12 @@ class ResearchTask:
     attempt: int = 1
     idempotency_key: str | None = None
     lease_id: str | None = None
+    # M16（ADR-0027）：默认 AGENT_SESSION 向后兼容；EXECUTION 为远程 worker
+    # 可 claim 的一次性执行作业。partition/required_capability 是 claim 过滤
+    # 投影（所有权权威仍是 leases 行），非分区权威。
+    kind: TaskKind = TaskKind.AGENT_SESSION
+    partition: int | None = None
+    required_capability: str | None = None
 
     def __post_init__(self) -> None:
         if self.priority < 0:
@@ -97,6 +108,12 @@ class ResearchTask:
             raise ValueError("attempt must be >= 1")
         if self.attempt > 1 and self.lease_id is None:
             raise ValueError("retried task must carry a lease_id")
+        if not isinstance(self.kind, TaskKind):
+            object.__setattr__(self, "kind", TaskKind(self.kind))
+        if self.partition is not None and self.partition < 0:
+            raise ValueError("partition must be non-negative")
+        if self.required_capability is not None and not self.required_capability.strip():
+            raise ValueError("required_capability must be non-empty when present")
 
 
 @dataclass(frozen=True, slots=True)

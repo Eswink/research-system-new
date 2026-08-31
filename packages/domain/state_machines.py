@@ -11,6 +11,7 @@ from packages.domain.run_state import ResearchRunState
 from packages.domain.session_state import AgentSessionState, CancellationState
 from packages.domain.state_base import InvalidTransitionError, is_terminal
 from packages.domain.task_state import ResearchTaskState
+from packages.domain.workers import WorkerState
 
 __all__ = [
     "AgentSessionState",
@@ -19,5 +20,6 @@ __all__ = [
     "PhaseRunState",
     "ResearchRunState",
     "ResearchTaskState",
+    "WorkerState",
     "is_terminal",
 ]

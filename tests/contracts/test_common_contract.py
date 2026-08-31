@@ -29,6 +29,7 @@ from adapters.fakes import (
     FakeRetrievalIndex,
     FakeToolPackStore,
     FakeToolProvider,
+    FakeWorkerRegistry,
     FakeWorkflowEngine,
     FakeWorkspaceBackend,
 )
@@ -82,6 +83,7 @@ _FAKE_FACTORIES: dict[str, Callable[[], FakeBase]] = {
     "endpoint_store": FakeEndpointStore,
     "resource_catalog": FakeResourceCatalog,
     "tool_pack_store": FakeToolPackStore,
+    "worker_registry": FakeWorkerRegistry,
 }
 
 _PORT_PROTOCOL_NAMES = {
@@ -104,6 +106,7 @@ _PORT_PROTOCOL_NAMES = {
     "resource_catalog": "ResourceCatalog",
     "tool_pack_store": "ToolPackStore",
     "telemetry_sink": "TelemetrySink",
+    "worker_registry": "WorkerRegistry",
 }
 
 _PORT_PROBES: dict[str, Callable[[Any], object]] = {
@@ -127,6 +130,7 @@ _PORT_PROBES: dict[str, Callable[[Any], object]] = {
     "endpoint_store": lambda fake: fake.get_endpoint("missing-endpoint"),
     "resource_catalog": lambda fake: fake.snapshot(),
     "tool_pack_store": lambda fake: fake.get("missing-pack"),
+    "worker_registry": lambda fake: fake.get("missing-worker"),
 }
 
 _PORT_PROBE_METHODS: dict[str, str] = {
@@ -148,6 +152,7 @@ _PORT_PROBE_METHODS: dict[str, str] = {
     "endpoint_store": "get_endpoint",
     "resource_catalog": "snapshot",
     "tool_pack_store": "get",
+    "worker_registry": "get",
 }
 
 
@@ -264,7 +269,7 @@ def test_provider_types_do_not_leak_from_ports() -> None:
 
 
 def test_port_interface_compatibility_matrix() -> None:
-    """注册表必须覆盖全部 19 个 Port 名称（M8/M10/M15 增量）。"""
+    """注册表必须覆盖全部 20 个 Port 名称（M8/M10/M15/M16 增量）。"""
     expected = {
         "agent_runtime",
         "workflow_engine",
@@ -285,6 +290,7 @@ def test_port_interface_compatibility_matrix() -> None:
         "resource_catalog",
         "tool_pack_store",
         "telemetry_sink",
+        "worker_registry",
     }
     assert set(PORT_IMPLEMENTATIONS) == expected
 

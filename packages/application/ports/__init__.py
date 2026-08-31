@@ -71,6 +71,7 @@ from packages.application.ports.telemetry_sink import NullTelemetrySink, Telemet
 from packages.application.ports.tool_pack_store import ToolPackRecord, ToolPackStore
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease, WorkflowEngine
+from packages.application.ports.worker_registry import WorkerRegistry
 from packages.application.ports.workspace_backend import WorkspaceBackend
 
 __all__ = [
@@ -133,6 +134,7 @@ __all__ = [
     "ToolProvider",
     "TransientPortError",
     "WorkflowEngine",
+    "WorkerRegistry",
     "WorkspaceBackend",
     "capability_assertion_probed",
     "failure_category_of_http_status",

@@ -26,6 +26,7 @@ from adapters.fakes.telemetry_sink import FakeTelemetrySink, NullTelemetrySink
 from adapters.fakes.tool_pack_store import FakeToolPackStore
 from adapters.fakes.tool_provider import FakeToolProvider
 from adapters.fakes.workflow_engine import FakeWorkflowEngine
+from adapters.fakes.worker_registry import FakeWorkerRegistry
 from adapters.fakes.workspace_backend import FakeWorkspaceBackend
 
 __all__ = [
@@ -50,6 +51,7 @@ __all__ = [
     "FakeToolPackStore",
     "FakeToolProvider",
     "FakeWorkflowEngine",
+    "FakeWorkerRegistry",
     "FakeWorkspaceBackend",
     "NullTelemetrySink",
 ]

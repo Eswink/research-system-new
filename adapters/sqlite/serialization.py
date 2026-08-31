@@ -14,7 +14,12 @@ from decimal import Decimal
 from typing import Any
 
 from packages.domain.core import ID, Timestamp
-from packages.domain.enums import AcceptanceCriterionType, ComparisonOperator, FailureCategory
+from packages.domain.enums import (
+    AcceptanceCriterionType,
+    ComparisonOperator,
+    FailureCategory,
+    TaskKind,
+)
 from packages.domain.events import EventEnvelope, EventType
 from packages.domain.serialization import canonical_json_bytes, digest_of
 from packages.domain.tasks import (
@@ -60,6 +65,9 @@ def _decode_research_task(payload: dict[str, Any]) -> ResearchTask:
         attempt=payload["attempt"],
         idempotency_key=payload.get("idempotency_key"),
         lease_id=payload.get("lease_id"),
+        kind=TaskKind(payload.get("kind", TaskKind.AGENT_SESSION.value)),
+        partition=payload.get("partition"),
+        required_capability=payload.get("required_capability"),
     )
 
 

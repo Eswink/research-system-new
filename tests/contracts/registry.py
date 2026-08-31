@@ -35,6 +35,7 @@ from adapters.fakes import (
     FakeTelemetrySink,
     FakeToolPackStore,
     FakeToolProvider,
+    FakeWorkerRegistry,
     FakeWorkflowEngine,
     FakeWorkspaceBackend,
     NullTelemetrySink,
@@ -46,6 +47,7 @@ from adapters.postgres.artifact_store import PostgresArtifactStore
 from adapters.postgres.budget_ledger import PostgresBudgetLedger
 from adapters.postgres.evidence_ledger import PostgresEvidenceLedger
 from adapters.postgres.memory_store import PostgresMemoryStore
+from adapters.postgres.worker_registry import PostgresWorkerRegistry
 from adapters.postgres.workflow_engine import PostgresWorkflowEngine
 from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
@@ -163,6 +165,12 @@ def _postgres_budget_factory() -> PostgresBudgetLedger:
     return PostgresBudgetLedger(dsn=dsn)
 
 
+def _postgres_worker_registry_factory() -> PostgresWorkerRegistry:
+    dsn = _pg_dsn_or_skip()
+    _pg_truncate("workers")
+    return PostgresWorkerRegistry(dsn=dsn)
+
+
 def _postgres_artifact_factory() -> PostgresArtifactStore:
     dsn = _pg_dsn_or_skip()
     _pg_truncate("artifacts")
@@ -220,4 +228,5 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "endpoint_store": [FakeEndpointStore],
     "resource_catalog": [FakeResourceCatalog],
     "telemetry_sink": [FakeTelemetrySink, NullTelemetrySink],
+    "worker_registry": [FakeWorkerRegistry, _postgres_worker_registry_factory],
 }

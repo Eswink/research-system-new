@@ -151,6 +151,7 @@ PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。�
 - `references/upstream/M14_TEMPORAL_QUALIFICATION.md` — Temporal qualification 16Q matrix（M14；DEFERRED）
 - `references/upstream/M15_OTEL_QUALIFICATION.md` — OpenTelemetry qualification（M15；ADOPT：OTLP/HTTP，无内容通道）
 - `adr/ADR-0026-otel-adapter-boundary.md` — OTel adapter 边界 + 无内容 Debug Mode 决策（M15）
+- `adr/ADR-0027-distributed-execution-plane.md` — Distributed Execution Plane 决策（M16；Worker untrusted、Control Plane 独占授权、HTTP worker gateway、不建第二队列/租约/Artifact 真相）
 - `roadmap/M15_COMPLETION_RECORD.md` — M15 完成记录（DoD 21/21 PASS）
 - `adr/ADR-0025-temporal-defer.md` — Temporal deferral ADR（M14；DEFER 决策，M16 重评）
 
