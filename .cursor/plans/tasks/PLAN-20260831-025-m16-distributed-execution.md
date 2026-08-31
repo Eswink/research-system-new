@@ -2,7 +2,7 @@
 id: PLAN-20260831-025
 slug: m16-distributed-execution
 title: M16 Distributed Execution + Remote Sandbox/Worker
-status: IN_PROGRESS
+status: VERIFYING
 created_at: 2026-08-31
 updated_at: 2026-08-31
 cursor_plan_uri: .cursor/plans/m16_分布式执行_1657b1d6.plan.md
@@ -124,13 +124,13 @@ M16 节。Non-goals：GPU 调度（M17）、多租户配额（M18）、自动扩
 - [x] STEP-09 WP3 RemoteExecutionBackend + ExecutionBackend.cancelled 回调 + DockerExecutionBackend 轮询
 - [x] STEP-10 WP3 services/worker 进程 + adapters/worker HTTP 客户端 + 最小凭据 scope 下发
 - [x] STEP-11 WP3 SWE-ReX qualification 文档 + UPSTREAM_COMPONENTS.yaml + Temporal 重评条件复检
-- [ ] STEP-12 WP4 tests/distributed 基础设施（marker/conftest/WorkerHarness/net_proxy）
-- [ ] STEP-13 WP4 场景 A–J + 时钟偏移测试
-- [ ] STEP-14 WP4 分布式安全攻击套件
-- [ ] STEP-15 WP4 遥测词表增量 + canary + BudgetLedger 远程记账 + 基数/隐私审计
-- [ ] STEP-16 WP4 operations 只读路由 + DTO/mapper + Console useCluster
-- [ ] STEP-17 WP4 架构回归（.importlinter.worker + otel 登记）+ CI 接入 + m0 覆盖断言
-- [ ] STEP-18 WP4 文档同步（PORTS/WORKFLOW_RELIABILITY/WORKSPACE_RUNTIME/OBSERVABILITY/DEPLOYMENT_PROFILES/THREAT_MODEL/IDENTITY_AND_ACCESS/SECRET_MANAGEMENT/DATABASE_SCHEMA/CONTROL_PLANE_API/OPERATIONS_RUNBOOK/INDEX/CHANGELOG/BACKLOG/MILESTONES）
+- [x] STEP-12 WP4 tests/distributed 基础设施（marker/conftest/WorkerHarness/net_proxy）
+- [x] STEP-13 WP4 场景 A–J + 时钟偏移测试
+- [x] STEP-14 WP4 分布式安全攻击套件
+- [x] STEP-15 WP4 遥测词表增量 + canary + BudgetLedger 远程记账 + 基数/隐私审计
+- [x] STEP-16 WP4 operations 只读路由 + DTO/mapper + Console useCluster
+- [x] STEP-17 WP4 架构回归（.importlinter.worker + otel 登记）+ CI 接入 + m0 覆盖断言
+- [x] STEP-18 WP4 文档同步（PORTS/WORKFLOW_RELIABILITY/WORKSPACE_RUNTIME/OBSERVABILITY/DEPLOYMENT_PROFILES/THREAT_MODEL/IDENTITY_AND_ACCESS/SECRET_MANAGEMENT/DATABASE_SCHEMA/CONTROL_PLANE_API/OPERATIONS_RUNBOOK/INDEX/CHANGELOG/BACKLOG/MILESTONES）
 - [ ] STEP-19 M16_COMPLETION_RECORD + RECHECK + 三 reviewer 独立复审 + 停在阶段边界
 
 ## 子代理使用
@@ -145,6 +145,18 @@ Subagent 默认不启用。需要并行时，每个 wave 最多 3 个；多 wave
 
 | ID | 对应项 | 类型 | 引用或命令 | 结果 |
 | --- | --- | --- | --- | --- |
+| EV-01 | AC-01/02/03 | check | `pytest tests/api/test_worker_gateway.py tests/domain/test_workers_domain.py` → 15+43 pass；契约 `test_worker_registry_contract.py`（Fake+PG） | PASS |
+| EV-02 | AC-04 | check | `pytest tests/api/test_worker_heartbeat_reaper.py` → 6 pass（LOST 租约并入 recover_expired_leases PG 实证） | PASS |
+| EV-03 | AC-05/06 | check | `pytest tests/contracts/test_claim_fencing_contract.py tests/postgres/test_claim_concurrency_pg.py` → 24+3 pass（并发 disjoint/重叠分区/fence reclaim） | PASS |
+| EV-04 | AC-07/08 | check | `pytest tests/adapters/execution/test_remote_backend.py tests/adapters/workspace/test_file_backend.py tests/contracts/test_workspace_bundle_contract.py` → 全绿 | PASS |
+| EV-05 | AC-09..14 | check | `pytest tests/distributed -q` → 19 passed（场景 A–J + 时钟偏移，真实 subprocess + PG） | PASS |
+| EV-06 | AC-15 | check | `pytest tests/distributed/test_security_distributed.py` → 10 pass（攻击套件） | PASS |
+| EV-07 | AC-16 | file | `docs/references/upstream/M16_REMOTE_EXECUTION_QUALIFICATION.md`（SWE-ReX REJECT；实测 pin）+ UPSTREAM_COMPONENTS.yaml | PASS |
+| EV-08 | AC-17 | check | `pytest tests/architecture`（test_worker_boundaries：单 tasks/单 leases、worker plane 隔离）+ lint-imports .importlinter.worker KEPT | PASS |
+| EV-09 | AC-18/19 | check | `pytest tests/observability/test_m16_vocabulary.py` → 16 pass（canary + 基数） | PASS |
+| EV-10 | AC-20 | check | `pytest tests/api/test_operations_api.py` → 10 pass；web tsc clean + 27 pass；OpenAPI 再生 | PASS |
+| EV-11 | AC-21 | check | m0 profile（ruff/format/mypy/pytest/framework/docs 全绿修复后）+ CI m0-quality 接入 tests/distributed | PASS |
+| EV-12 | AC-22 | file | 三 reviewer（architecture/security-governance/verification）独立复审 + RECHECK-20260831-025 | 见 recheck |
 
 ## 决策与偏差
 
@@ -161,6 +173,7 @@ Subagent 默认不启用。需要并行时，每个 wave 最多 3 个；多 wave
 | --- | --- | --- | --- | --- |
 | 2026-08-31 | — | DRAFT | 建立任务计划 | Cursor Plan 批准 |
 | 2026-08-31 | DRAFT | IN_PROGRESS | 用户批准并要求循环执行 | `m16_分布式执行_1657b1d6.plan.md` |
+| 2026-08-31 | IN_PROGRESS | VERIFYING | WP1–WP4 实施完成；m0 门禁修复后全绿；三 reviewer 复审启动 | EV-01..EV-11 |
 
 ## 影响报告
 
