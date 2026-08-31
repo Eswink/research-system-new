@@ -10,6 +10,7 @@ transaction, so a stale worker's result can never be persisted.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
@@ -20,6 +21,7 @@ from adapters.postgres.base import PostgresAdapterBase
 from adapters.postgres.db import connect as pg_connect
 from adapters.postgres.db import dsn_from_env, now_iso
 from packages.application.ports.execution_job_queue import (
+    ExecutionJobDescriptor,
     ExecutionJobOutcome,
     ExecutionJobRequest,
     ExecutionJobResult,
@@ -143,6 +145,27 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
         self._record("enqueue", request.idempotency_key, result=task_id)
         return task_id
 
+    def describe(self, task_id: str) -> ExecutionJobDescriptor | None:
+        self._ensure_open()
+        row: Any = self._conn.execute(
+            "SELECT spec_json, input_bundle_ref, input_bundle_digest FROM execution_jobs"
+            " WHERE task_id = %s",
+            (task_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        spec_json = row["spec_json"]
+        if not isinstance(spec_json, str):
+            spec_json = json.dumps(spec_json, separators=(",", ":"), sort_keys=True)
+        return ExecutionJobDescriptor(
+            task_id=task_id,
+            spec_json=spec_json,
+            input_bundle_ref=str(row["input_bundle_ref"]) if row["input_bundle_ref"] else None,
+            input_bundle_digest=(
+                str(row["input_bundle_digest"]) if row["input_bundle_digest"] else None
+            ),
+        )
+
     def poll(self, task_id: str) -> ExecutionJobOutcome | None:
         self._ensure_open()
         row: Any = self._conn.execute(
@@ -176,12 +199,26 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
         )
 
     def record_result(self, result: ExecutionJobResult) -> None:
-        """Persist a settled result. Fencing is enforced by the caller (the
-        worker gateway validates `(task_id, lease_id, fence)` against the
-        active lease before invoking this), so this write is unconditional."""
+        """Persist a settled result, gated on the active lease.
+
+        Validates `(task_id, lease_id, fence)` against the live `leases` row
+        inside the same transaction: a stale worker whose claim generation was
+        superseded (or whose lease expired) cannot write a result (M16 §8).
+        """
         self._ensure_open()
         task_id = result.task_id
         with self._conn.transaction():
+            lease_row: Any = self._conn.execute(
+                "SELECT lease_id, fence FROM leases WHERE task_id = %s FOR UPDATE", (task_id,)
+            ).fetchone()
+            if (
+                lease_row is None
+                or lease_row["lease_id"] != result.lease_id
+                or int(lease_row["fence"]) != result.fence
+            ):
+                raise InvalidInputError(
+                    f"stale or missing lease for task {task_id}: result rejected"
+                )
             self._conn.execute(
                 "UPDATE execution_jobs SET worker_id = (SELECT worker_id FROM leases"
                 " WHERE task_id = %s), exit_code = %s, stdout_digest = %s, stderr_digest = %s,"

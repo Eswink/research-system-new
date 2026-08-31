@@ -6,11 +6,14 @@ from dataclasses import dataclass, field
 from uuid import uuid4
 
 from adapters.fakes.base import FakeBase
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.execution_job_queue import (
+    ExecutionJobDescriptor,
     ExecutionJobOutcome,
     ExecutionJobRequest,
     ExecutionJobResult,
 )
+from packages.domain.serialization import canonical_json_bytes
 from packages.domain.task_state import ResearchTaskState
 from packages.domain.workspace import ExecutionSpec
 
@@ -24,7 +27,10 @@ class _Job:
     partition: int | None
     status: str = ResearchTaskState.State.QUEUED
     fence: int = 0
+    lease_id: str | None = None
     worker_id: str | None = None
+    input_bundle_ref: str | None = None
+    input_bundle_digest: str | None = None
     cancel: bool = False
     outcome: ExecutionJobOutcome | None = None
     idempotency_key: str = ""
@@ -62,11 +68,25 @@ class FakeExecutionJobQueue(FakeBase):
             run_id=request.run_id,
             capability=request.capability,
             partition=request.partition,
+            input_bundle_ref=request.input_bundle_ref,
+            input_bundle_digest=request.input_bundle_digest,
             idempotency_key=request.idempotency_key,
         )
         self._state.by_idem[request.idempotency_key] = task_id
         self._record("enqueue", request.idempotency_key, result=task_id)
         return task_id
+
+    def describe(self, task_id: str) -> ExecutionJobDescriptor | None:
+        self._enter("describe", task_id)
+        job = self._state.jobs.get(task_id)
+        if job is None:
+            return None
+        return ExecutionJobDescriptor(
+            task_id=task_id,
+            spec_json=canonical_json_bytes(job.spec).decode("utf-8"),
+            input_bundle_ref=job.input_bundle_ref,
+            input_bundle_digest=job.input_bundle_digest,
+        )
 
     def poll(self, task_id: str) -> ExecutionJobOutcome | None:
         self._enter("poll", task_id)
@@ -87,9 +107,13 @@ class FakeExecutionJobQueue(FakeBase):
         self._enter("record_result", result.task_id)
         job = self._state.jobs.get(result.task_id)
         if job is None:
+            raise InvalidInputError(f"unknown job: {result.task_id}")
+        # fencing: mirror the PostgreSQL lease gate (M16 §8)
+        if job.lease_id != result.lease_id or job.fence != result.fence:
             self._record("record_result", result.task_id, error="InvalidInputError")
-            return
-        job.fence = result.fence
+            raise InvalidInputError(
+                f"stale or missing lease for task {result.task_id}: result rejected"
+            )
         job.status = result.status
         job.outcome = ExecutionJobOutcome(
             task_id=result.task_id,
@@ -103,6 +127,7 @@ class FakeExecutionJobQueue(FakeBase):
             output_bundle_digest=result.output_bundle_digest,
             failure_category=result.failure_category,
         )
+        job.lease_id = None  # lease released on settle
         self._record("record_result", result.task_id, result=result.status)
 
     def request_cancel(self, task_id: str) -> None:
@@ -118,9 +143,22 @@ class FakeExecutionJobQueue(FakeBase):
         return bool(job and job.cancel)
 
     # --- test helpers (not part of the Port) ---
-    def assign(self, task_id: str, *, worker_id: str, fence: int) -> None:
+    def seed(self, task_id: str, spec: ExecutionSpec, *, capability: str = "docker") -> None:
+        """Register a job under an existing task_id (mirrors PG enqueue writing
+        the shared `tasks` row that claim_next reads)."""
+        self._state.jobs[task_id] = _Job(
+            task_id=task_id,
+            spec=spec,
+            run_id=task_id,
+            capability=capability,
+            partition=None,
+            idempotency_key=f"seed-{task_id}",
+        )
+
+    def assign(self, task_id: str, *, worker_id: str, lease_id: str, fence: int) -> None:
         job = self._state.jobs.get(task_id)
         if job is not None:
             job.worker_id = worker_id
+            job.lease_id = lease_id
             job.fence = fence
             job.status = ResearchTaskState.State.LEASED

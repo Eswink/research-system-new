@@ -70,6 +70,17 @@ class ExecutionJobOutcome:
     failure_category: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class ExecutionJobDescriptor:
+    """Read-only view of a claimed job's inputs for the worker."""
+
+    task_id: str
+    spec_json: str
+    input_bundle_ref: str | None = None
+    input_bundle_digest: str | None = None
+    timeout_seconds: int | None = None
+
+
 @runtime_checkable
 class ExecutionJobQueue(Protocol):
     """Remote execution job lifecycle on the single canonical queue."""
@@ -80,6 +91,10 @@ class ExecutionJobQueue(Protocol):
         Idempotent on `request.idempotency_key`: re-enqueue returns the
         existing id.
         """
+        ...
+
+    def describe(self, task_id: str) -> ExecutionJobDescriptor | None:
+        """Inputs for a claimed job (spec + input bundle), or None if unknown."""
         ...
 
     def poll(self, task_id: str) -> ExecutionJobOutcome | None:

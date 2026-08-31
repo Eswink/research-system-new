@@ -87,6 +87,39 @@ def _final_status(timed_out: bool, exit_code: int, cancelled: bool = False) -> E
     return ExecutionStatus.FAILED
 
 
+def _build_run(
+    spec: ExecutionSpec,
+    started: Timestamp,
+    started_mono: float,
+    *,
+    status: ExecutionStatus,
+    exit_code: int,
+    oom_killed: bool,
+    stdout: bytes,
+    stderr: bytes,
+    image_digest: str | None,
+) -> ExecutionRun:
+    return ExecutionRun(
+        run_id=f"exec-{uuid.uuid4().hex}",
+        spec=spec,
+        status=status,
+        started_at=started,
+        completed_at=Timestamp.now(),
+        exit_code=exit_code,
+        failure_category=(
+            FailureCategory.EXECUTION_FAILURE if status is ExecutionStatus.FAILED else None
+        ),
+        stdout_digest=Digest.of_bytes(stdout),
+        stderr_digest=Digest.of_bytes(stderr),
+        compute_usage_summary={
+            "exit_code": exit_code,
+            "oom_killed": oom_killed,
+            "elapsed_seconds": round(time.monotonic() - started_mono, 3),
+            "image_digest": image_digest,
+        },
+    )
+
+
 def _map_docker_error(exc: Exception) -> PortError:
     if isinstance(exc, ImageNotFound):
         return PermanentPortError(
@@ -187,24 +220,16 @@ class DockerExecutionBackend(ExecutionBackend):
             stdout, stderr = self._collect_logs(container_id)
             self._write_workspace_logs(workspace, stdout, stderr)
             status = _final_status(timed_out, exit_code, was_cancelled)
-            return ExecutionRun(
-                run_id=f"exec-{uuid.uuid4().hex}",
-                spec=spec,
+            return _build_run(
+                spec,
+                started,
+                started_mono,
                 status=status,
-                started_at=started,
-                completed_at=Timestamp.now(),
                 exit_code=exit_code,
-                failure_category=(
-                    FailureCategory.EXECUTION_FAILURE if status is ExecutionStatus.FAILED else None
-                ),
-                stdout_digest=Digest.of_bytes(stdout),
-                stderr_digest=Digest.of_bytes(stderr),
-                compute_usage_summary={
-                    "exit_code": exit_code,
-                    "oom_killed": oom_killed,
-                    "elapsed_seconds": round(time.monotonic() - started_mono, 3),
-                    "image_digest": self._image_digest,
-                },
+                oom_killed=oom_killed,
+                stdout=stdout,
+                stderr=stderr,
+                image_digest=self._image_digest,
             )
         except (APIError, DockerException) as exc:
             raise _map_docker_error(exc) from exc

@@ -21,5 +21,6 @@ source_modules =
     adapters.cli
     adapters.contracts
     adapters.fakes
+    adapters.worker
 forbidden_modules =
     opentelemetry

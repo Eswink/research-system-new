@@ -1,0 +1,162 @@
+"""Worker-side HTTP client for the Control Plane worker gateway (M16 WP3).
+
+The only place a worker process talks to the Control Plane. It never touches
+PostgreSQL or ArtifactStore directly — every authoritative interaction goes
+through the authenticated `/worker/v1` gateway. `httpx` is the pinned client
+(already an ADOPTED dependency; no new upstream).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import cast
+
+import httpx
+
+
+def _json(resp: httpx.Response) -> dict[str, object]:
+    return cast(dict[str, object], resp.json())
+
+
+@dataclass(frozen=True, slots=True)
+class WorkerClientConfig:
+    base_url: str
+    enrollment_secret: str
+    worker_id: str
+    protocol_version: str = "1"
+    runtime_version: str = "0.1.0"
+    platform: str = "unknown/unknown"
+    capabilities: tuple[str, ...] = ()
+    backend_kinds: tuple[str, ...] = ()
+    partition_slots: tuple[int, ...] = ()
+    max_concurrency: int = 1
+    request_timeout_seconds: float = 30.0
+
+
+@dataclass(frozen=True, slots=True)
+class WorkerResultPayload:
+    """A worker's execution result for one claimed job (typed, not a dict)."""
+
+    lease_id: str
+    fence: int
+    status: str
+    exit_code: int | None = None
+    stdout_digest: str | None = None
+    stderr_digest: str | None = None
+    output_bundle_ref: str | None = None
+    output_bundle_digest: str | None = None
+    failure_category: str | None = None
+
+    def to_body(self, worker_id: str, generation: int) -> dict[str, object]:
+        return {
+            "worker_id": worker_id,
+            "registration_generation": generation,
+            "lease_id": self.lease_id,
+            "fence": self.fence,
+            "status": self.status,
+            "exit_code": self.exit_code,
+            "stdout_digest": self.stdout_digest,
+            "stderr_digest": self.stderr_digest,
+            "output_bundle_ref": self.output_bundle_ref,
+            "output_bundle_digest": self.output_bundle_digest,
+            "failure_category": self.failure_category,
+        }
+
+
+class WorkerClient:
+    """Thin, testable gateway client (session token held in-memory only)."""
+
+    def __init__(self, config: WorkerClientConfig, transport: httpx.BaseTransport | None = None):
+        self._config = config
+        self._token: str | None = None
+        self._generation: int = 0
+        self._http = httpx.Client(
+            base_url=config.base_url, timeout=config.request_timeout_seconds, transport=transport
+        )
+
+    def close(self) -> None:
+        self._http.close()
+
+    def __enter__(self) -> "WorkerClient":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
+
+    @property
+    def generation(self) -> int:
+        return self._generation
+
+    def _auth_headers(self) -> dict[str, str]:
+        if self._token is None:
+            raise RuntimeError("worker not registered; no session token")
+        return {"Authorization": f"Bearer {self._token}"}
+
+    def register(self) -> dict[str, object]:
+        resp = self._http.post(
+            "/worker/v1/register",
+            headers={"X-Worker-Enrollment": self._config.enrollment_secret},
+            json={
+                "worker_id": self._config.worker_id,
+                "protocol_version": self._config.protocol_version,
+                "runtime_version": self._config.runtime_version,
+                "capabilities": list(self._config.capabilities),
+                "backend_kinds": list(self._config.backend_kinds),
+                "platform": self._config.platform,
+                "partition_slots": list(self._config.partition_slots),
+                "max_concurrency": self._config.max_concurrency,
+            },
+        )
+        resp.raise_for_status()
+        body = _json(resp)
+        self._token = str(body["session_token"])
+        self._generation = int(str(body["registration_generation"]))
+        return body
+
+    def heartbeat(self) -> dict[str, object]:
+        resp = self._http.post(
+            "/worker/v1/heartbeat",
+            headers=self._auth_headers(),
+            json={"worker_id": self._config.worker_id, "registration_generation": self._generation},
+        )
+        resp.raise_for_status()
+        return _json(resp)
+
+    def claim(self) -> dict[str, object] | None:
+        resp = self._http.post(
+            "/worker/v1/claim",
+            headers=self._auth_headers(),
+            json={
+                "worker_id": self._config.worker_id,
+                "registration_generation": self._generation,
+                "capabilities": list(self._config.capabilities),
+                "partitions": list(self._config.partition_slots),
+            },
+        )
+        if resp.status_code == 204:
+            return None
+        resp.raise_for_status()
+        return _json(resp)
+
+    def submit_result(self, task_id: str, payload: WorkerResultPayload) -> dict[str, object]:
+        resp = self._http.post(
+            f"/worker/v1/tasks/{task_id}/result",
+            headers=self._auth_headers(),
+            json=payload.to_body(self._config.worker_id, self._generation),
+        )
+        resp.raise_for_status()
+        return _json(resp)
+
+    def download_bundle(self, artifact_id: str) -> bytes:
+        resp = self._http.get(f"/worker/v1/artifacts/{artifact_id}", headers=self._auth_headers())
+        resp.raise_for_status()
+        return resp.content
+
+    def upload_bundle(self, bundle: bytes) -> dict[str, object]:
+        resp = self._http.post(
+            "/worker/v1/artifacts",
+            headers=self._auth_headers(),
+            content=bundle,
+        )
+        resp.raise_for_status()
+        return _json(resp)
