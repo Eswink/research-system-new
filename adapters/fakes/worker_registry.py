@@ -31,6 +31,7 @@ class FakeWorkerRegistry(FakeBase):
         super().__init__("worker_registry")
         self._workers: dict[str, WorkerRegistration] = {}
         self._generations: dict[str, int] = {}
+        self._tokens: dict[str, str] = {}  # worker_id -> session token sha256
         self._now = now
 
     def _stamp(self) -> Timestamp:
@@ -55,6 +56,7 @@ class FakeWorkerRegistry(FakeBase):
             drain_requested=False,
         )
         self._workers[registration.worker_id] = stored
+        self._tokens.pop(registration.worker_id, None)  # re-register voids old token
         self._record("register", registration.worker_id, result=f"gen={next_gen}")
         return stored
 
@@ -107,6 +109,23 @@ class FakeWorkerRegistry(FakeBase):
         self._workers[worker_id] = updated
         self._record("mark_lost", worker_id, result=new_state)
         return updated
+
+    def set_session_token(self, worker_id: str, generation: int, token_sha256: str) -> bool:
+        self._enter("set_session_token", worker_id)
+        stored = self._workers.get(worker_id)
+        if stored is None or stored.registration_generation != generation:
+            self._record("set_session_token", worker_id, result="rejected")
+            return False
+        self._tokens[worker_id] = token_sha256
+        self._record("set_session_token", worker_id, result="ok")
+        return True
+
+    def authenticate(self, token_sha256: str) -> WorkerRegistration | None:
+        self._enter("authenticate", "<sha256>")
+        for worker_id, bound in self._tokens.items():
+            if bound == token_sha256:
+                return self._workers.get(worker_id)
+        return None
 
     def list_stale(self, stale_seconds: float) -> tuple[str, ...]:
         self._enter("list_stale", f"{stale_seconds}")

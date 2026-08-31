@@ -133,6 +133,33 @@ def test_list_stale_fresh_worker_not_returned(factory: Callable[[], object]) -> 
 
 
 @pytest.mark.parametrize("factory", _FACTORIES)
+def test_session_token_binds_and_authenticates(factory: Callable[[], object]) -> None:
+    registry: WorkerRegistry = factory()  # type: ignore[assignment]
+    stored = registry.register(_registration())
+    assert registry.set_session_token("worker-a", stored.registration_generation, "hash-abc")
+    resolved = registry.authenticate("hash-abc")
+    assert resolved is not None
+    assert resolved.worker_id == "worker-a"
+    assert registry.authenticate("hash-nope") is None
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_session_token_rejects_stale_generation(factory: Callable[[], object]) -> None:
+    registry: WorkerRegistry = factory()  # type: ignore[assignment]
+    stored = registry.register(_registration())
+    assert not registry.set_session_token("worker-a", stored.registration_generation - 1, "x")
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_reregister_voids_old_session_token(factory: Callable[[], object]) -> None:
+    registry: WorkerRegistry = factory()  # type: ignore[assignment]
+    first = registry.register(_registration())
+    registry.set_session_token("worker-a", first.registration_generation, "hash-old")
+    registry.register(_registration())  # new generation, old token cleared
+    assert registry.authenticate("hash-old") is None
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
 def test_get_unknown_returns_none_and_list_is_sorted(factory: Callable[[], object]) -> None:
     registry: WorkerRegistry = factory()  # type: ignore[assignment]
     assert registry.get("ghost") is None

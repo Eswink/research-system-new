@@ -247,6 +247,27 @@ class PostgresWorkerRegistry(PostgresAdapterBase):
         assert stored is not None
         return stored
 
+    def set_session_token(self, worker_id: str, generation: int, token_sha256: str) -> bool:
+        self._ensure_open()
+        time_sql, time_params = self._time_expr()
+        cur: Any = self._conn.execute(
+            f"UPDATE workers SET session_token_sha256 = %s, updated_at = {time_sql} "
+            "WHERE worker_id = %s AND registration_generation = %s",
+            (token_sha256, *time_params, worker_id, generation),
+        )
+        bound = int(cur.rowcount) > 0
+        self._record("set_session_token", worker_id, result="ok" if bound else "rejected")
+        return bound
+
+    def authenticate(self, token_sha256: str) -> WorkerRegistration | None:
+        self._ensure_open()
+        row: Any = self._conn.execute(
+            f"SELECT {_COLUMNS} FROM workers WHERE session_token_sha256 = %s", (token_sha256,)
+        ).fetchone()
+        if row is None:
+            return None
+        return _row_to_registration(dict(row))
+
     def list_stale(self, stale_seconds: float) -> tuple[str, ...]:
         self._ensure_open()
         time_sql, time_params = self._time_expr()

@@ -61,6 +61,22 @@ class WorkerRegistry(Protocol):
         """
         ...
 
+    def set_session_token(self, worker_id: str, generation: int, token_sha256: str) -> bool:
+        """绑定 session token 的 sha256（仅存哈希，绝不存明文）。
+
+        仅当 `generation` 等于库中当前世代才写入（旧世代 fail closed）。
+        重新注册会清空旧 token（register 置 session_token_sha256=NULL）。
+        """
+        ...
+
+    def authenticate(self, token_sha256: str) -> WorkerRegistration | None:
+        """按 token sha256 解析当前有效世代的 worker；无匹配返回 None。
+
+        只匹配当前 `registration_generation` 绑定的 token，因此旧世代
+        token 一经重新注册即失效（反重放）。
+        """
+        ...
+
     def list_stale(self, stale_seconds: float) -> tuple[str, ...]:
         """返回服务端时间下 last_heartbeat 落后超过 stale_seconds 的非终态
         worker id（确定性排序）；供 WorkerReaperScheduler 判定 LOST。"""
