@@ -233,3 +233,111 @@ class TestSymlinkRejection:
         # 真实文件变化仍改变 digest（symlink 跳过不影响正常检测）
         (workspace_dir / "a.txt").write_text("world", encoding="utf-8")
         assert workspace_tree_digest(workspace_dir) != digest_before
+
+
+class TestBundleTransfer:
+    """M16 WP3: workspace bundle export/import with dual digest verification."""
+
+    def _snapshotted(self, tmp_path: Path) -> tuple[FileWorkspaceBackend, object, str]:
+        backend, _ = _backend(tmp_path)
+        workspace = _workspace()
+        backend.create_workspace(workspace)
+        lease = backend.acquire_lease(workspace, "session-1")
+        workspace_dir = backend.workspace_dir(lease)
+        (workspace_dir / "a.txt").write_text("hello", encoding="utf-8")
+        (workspace_dir / "sub" / "b.txt").parent.mkdir(parents=True, exist_ok=True)
+        (workspace_dir / "sub" / "b.txt").write_text("nested", encoding="utf-8")
+        snapshot = backend.snapshot(lease)
+        return backend, lease, snapshot.digest
+
+    def test_export_import_roundtrip_preserves_tree(self, tmp_path: Path) -> None:
+        backend, _, digest = self._snapshotted(tmp_path)
+        workspace = _workspace()
+        lease = backend.acquire_lease(workspace, "session-1")
+        bundle = backend.export_bundle(lease, backend.snapshot(lease))
+        assert isinstance(bundle, bytes) and bundle
+        # import into a fresh workspace id and verify tree digest
+        backend.create_workspace(Workspace(id="ws-import", name="ws-import"))
+        restored = backend.import_bundle("ws-import", bundle, digest)
+        assert restored.digest == digest
+        imported_dir = tmp_path / "root" / "ws-import"
+        assert (imported_dir / "a.txt").read_text(encoding="utf-8") == "hello"
+        assert (imported_dir / "sub" / "b.txt").read_text(encoding="utf-8") == "nested"
+
+    def test_import_wrong_digest_rejected(self, tmp_path: Path) -> None:
+        backend, _, digest = self._snapshotted(tmp_path)
+        lease = backend.acquire_lease(_workspace(), "session-1")
+        bundle = backend.export_bundle(lease, backend.snapshot(lease))
+        backend.create_workspace(Workspace(id="ws-import", name="x"))
+        with pytest.raises(InvalidInputError):
+            backend.import_bundle("ws-import", bundle, "sha256:" + "11" * 32)
+        # rejected import must not leave a materialized workspace behind
+        assert not (tmp_path / "root" / "ws-import" / "a.txt").exists()
+
+    def test_import_truncated_bundle_rejected(self, tmp_path: Path) -> None:
+        backend, _, digest = self._snapshotted(tmp_path)
+        lease = backend.acquire_lease(_workspace(), "session-1")
+        bundle = backend.export_bundle(lease, backend.snapshot(lease))
+        backend.create_workspace(Workspace(id="ws-import", name="x"))
+        with pytest.raises(InvalidInputError):
+            backend.import_bundle("ws-import", bundle[: len(bundle) // 2], digest)
+
+    def test_import_malicious_traversal_bundle_rejected(self, tmp_path: Path) -> None:
+        import base64
+        import json
+
+        from adapters.workspace.bundle import BundleError
+
+        backend, _ = _backend(tmp_path)
+        backend.create_workspace(Workspace(id="ws-import", name="x"))
+        # hand-craft a bundle that encode_bundle would never emit
+        evil = json.dumps(
+            {
+                "version": 1,
+                "entries": [
+                    {
+                        "path": "../../escape.txt",
+                        "sha256": "0" * 64,
+                        "data_b64": base64.b64encode(b"pwned").decode(),
+                    }
+                ],
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+        with pytest.raises((InvalidInputError, BundleError)):
+            backend.import_bundle("ws-import", evil, "sha256:" + "22" * 32)
+        assert not (tmp_path / "escape.txt").exists()
+
+
+class TestBundleCodec:
+    def test_encode_decode_roundtrip(self) -> None:
+        from adapters.workspace.bundle import decode_bundle, encode_bundle
+
+        entries = {"a.txt": b"one", "dir/b.txt": b"two"}
+        decoded = decode_bundle(encode_bundle(entries))
+        assert decoded == entries
+
+    def test_decode_rejects_entry_digest_mismatch(self) -> None:
+        import json
+
+        from adapters.workspace.bundle import BundleError, decode_bundle
+
+        bundle = json.dumps(
+            {
+                "version": 1,
+                "entries": [
+                    {"path": "a.txt", "sha256": "0" * 64, "data_b64": "aGk="}
+                ],
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+        with pytest.raises(BundleError):
+            decode_bundle(bundle)
+
+    def test_decode_rejects_non_canonical_json(self) -> None:
+        from adapters.workspace.bundle import BundleError, decode_bundle
+
+        with pytest.raises(BundleError):
+            decode_bundle(b"not json")

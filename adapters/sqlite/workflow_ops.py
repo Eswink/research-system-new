@@ -70,6 +70,41 @@ def _first_matching_candidate(candidates: Any, request: ClaimRequest) -> Any:
     return None
 
 
+def _persist_new_lease(
+    conn: sqlite3.Connection,
+    outbox: OutboxWriter,
+    lease: TaskLease,
+    *,
+    run_id: str,
+) -> None:
+    """Insert a fresh lease row, mark the task LEASED, publish TASK_LEASED."""
+    task_id = lease.task_id
+    assert lease.expires_at is not None and lease.heartbeat_at is not None
+    conn.execute(
+        "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at,"
+        " worker_id, fence) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            task_id,
+            lease.lease_id,
+            lease.agent_id,
+            iso(lease.expires_at),
+            iso(lease.heartbeat_at),
+            lease.worker_id,
+            lease.fence,
+        ),
+    )
+    conn.execute(
+        "UPDATE tasks SET status = ?, fence_seq = ? WHERE task_id = ?",
+        (ResearchTaskState.State.LEASED, lease.fence, task_id),
+    )
+    outbox.publish(
+        EventType.TASK_LEASED,
+        {"task_id": task_id, "lease_id": lease.lease_id, "fence": lease.fence},
+        run_id=run_id,
+        task_id=task_id,
+    )
+
+
 class SqliteWorkflowOps:
     """SQLite workflow 的写路径 impl 与 telemetry note(供 engine 继承)。"""
 
@@ -147,31 +182,8 @@ class SqliteWorkflowOps:
             task_id, row["assigned_agent_id"], self._lease_ttl, self._now,
             fence=int(row["fence_seq"] or 0) + 1,
         )
-        assert lease.expires_at is not None and lease.heartbeat_at is not None
         with self._conn:
-            self._conn.execute(
-                "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at,"
-                " worker_id, fence) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (
-                    task_id,
-                    lease.lease_id,
-                    lease.agent_id,
-                    iso(lease.expires_at),
-                    iso(lease.heartbeat_at),
-                    lease.worker_id,
-                    lease.fence,
-                ),
-            )
-            self._conn.execute(
-                "UPDATE tasks SET status = ?, fence_seq = ? WHERE task_id = ?",
-                (ResearchTaskState.State.LEASED, lease.fence, task_id),
-            )
-            self._outbox.publish(
-                EventType.TASK_LEASED,
-                {"task_id": task_id, "lease_id": lease.lease_id, "fence": lease.fence},
-                run_id=row["run_id"],
-                task_id=task_id,
-            )
+            _persist_new_lease(self._conn, self._outbox, lease, run_id=str(row["run_id"]))
         self._note_queue_lag(row)
         self._record("acquire_lease", task_id, result=lease.lease_id)
         return lease
@@ -209,7 +221,6 @@ class SqliteWorkflowOps:
             worker_id=request.worker_id,
             fence=new_fence,
         )
-        assert lease.expires_at is not None and lease.heartbeat_at is not None
         with self._conn:
             fresh = self._conn.execute(
                 "SELECT status FROM tasks WHERE task_id = ?", (task_id,)
@@ -217,29 +228,7 @@ class SqliteWorkflowOps:
             if fresh is None or fresh["status"] != ResearchTaskState.State.QUEUED:
                 self._record("claim_next", request.worker_id, result="contended")
                 return None
-            self._conn.execute(
-                "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at,"
-                " worker_id, fence) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (
-                    task_id,
-                    lease.lease_id,
-                    lease.agent_id,
-                    iso(lease.expires_at),
-                    iso(lease.heartbeat_at),
-                    lease.worker_id,
-                    lease.fence,
-                ),
-            )
-            self._conn.execute(
-                "UPDATE tasks SET status = ?, fence_seq = ? WHERE task_id = ?",
-                (ResearchTaskState.State.LEASED, new_fence, task_id),
-            )
-            self._outbox.publish(
-                EventType.TASK_LEASED,
-                {"task_id": task_id, "lease_id": lease.lease_id, "fence": new_fence},
-                run_id=str(chosen["run_id"]),
-                task_id=task_id,
-            )
+            _persist_new_lease(self._conn, self._outbox, lease, run_id=str(chosen["run_id"]))
         self._record("claim_next", request.worker_id, result=f"{task_id}@fence={new_fence}")
         return lease
 

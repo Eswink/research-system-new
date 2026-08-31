@@ -37,4 +37,26 @@ class WorkspaceBackend(Protocol):
 
     def merge(self, lease: WorkspaceLease, snapshot: WorkspaceSnapshot) -> None: ...
 
+    def export_bundle(self, lease: WorkspaceLease, snapshot: WorkspaceSnapshot) -> bytes:
+        """Serialize a snapshot's tree into a portable, canonical bundle (M16).
+
+        The bundle carries only regular files (symlinks rejected) and is
+        content-addressed by the caller through ArtifactStore. Remote workers
+        materialize it via `import_bundle`; the workspace tree digest is
+        re-verified there, so a corrupt/truncated bundle cannot masquerade as
+        a valid snapshot.
+        """
+        ...
+
+    def import_bundle(
+        self, workspace_id: str, bundle: bytes, expected_digest: str
+    ) -> WorkspaceSnapshot:
+        """Materialize a bundle into a workspace and verify its tree digest.
+
+        Rejects traversal / absolute / symlink paths and a tree digest that
+        does not equal `expected_digest` (the snapshot digest). Returns the
+        verified WorkspaceSnapshot.
+        """
+        ...
+
     def close(self) -> None: ...

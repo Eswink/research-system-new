@@ -51,47 +51,58 @@ def heartbeat_impl(conn: Any, record: Any, lease: TaskLease, ttl: timedelta, now
     return renewed
 
 
+def _validate_completion_lease(conn: Any, record: Any, lease: Any, now: Any) -> bool:
+    """Return True if completion may proceed; False if it is an idempotent noop.
+
+    Raises InvalidInputError for unknown/cancelled task, lease mismatch, stale
+    fence, or expired lease (M16 §8 fencing).
+    """
+    task_row: Any = conn.execute(
+        "SELECT run_id, status, cancelled FROM tasks WHERE task_id = %s FOR UPDATE",
+        (lease.task_id,),
+    ).fetchone()
+    if task_row is None:
+        record("complete", lease.task_id, error="InvalidInputError")
+        raise InvalidInputError(f"unknown task: {lease.task_id}")
+    if task_row["cancelled"]:
+        record("complete", lease.task_id, error="InvalidInputError")
+        raise InvalidInputError(f"task {lease.task_id} is cancelled; cannot complete")
+    if task_row["status"] in (
+        ResearchTaskState.State.SUCCEEDED,
+        ResearchTaskState.State.FAILED,
+    ):
+        return False
+    lease_row: Any = conn.execute(
+        "SELECT lease_id, expires_at, fence FROM leases WHERE task_id = %s FOR UPDATE",
+        (lease.task_id,),
+    ).fetchone()
+    if lease_row is None or lease_row["lease_id"] != lease.lease_id:
+        record("complete", lease.task_id, error="InvalidInputError")
+        raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
+    # fencing: a stale worker whose claim generation was superseded carries an
+    # old fence and cannot write authoritative completion (M16 §8).
+    if int(lease_row["fence"]) != lease.fence:
+        record("complete", lease.task_id, error="InvalidInputError")
+        raise InvalidInputError(
+            f"stale fence for task {lease.task_id}: lease generation superseded"
+        )
+    expires_at: Any = decode_timestamp_pg(lease_row["expires_at"]).value
+    if expires_at <= server_now(conn, now):
+        record("complete", lease.task_id, error="InvalidInputError")
+        raise InvalidInputError(f"lease for task {lease.task_id} has expired")
+    return True
+
+
 def complete_impl(conn: Any, record: Any, outbox: Any, payload: CompletePayload) -> None:
     lease: Any = payload.lease
     completion: Any = payload.completion
-    now = payload.now
     with conn.transaction():
-        task_row: Any = conn.execute(
-            "SELECT run_id, status, cancelled FROM tasks WHERE task_id = %s FOR UPDATE",
-            (lease.task_id,),
-        ).fetchone()
-        if task_row is None:
-            record("complete", lease.task_id, error="InvalidInputError")
-            raise InvalidInputError(f"unknown task: {lease.task_id}")
-        if task_row["cancelled"]:
-            record("complete", lease.task_id, error="InvalidInputError")
-            raise InvalidInputError(f"task {lease.task_id} is cancelled; cannot complete")
-        if task_row["status"] in (
-            ResearchTaskState.State.SUCCEEDED,
-            ResearchTaskState.State.FAILED,
-        ):
+        if not _validate_completion_lease(conn, record, lease, payload.now):
             record("complete", lease.task_id, result="deduped")
             return
-        lease_row: Any = conn.execute(
-            "SELECT lease_id, expires_at, fence FROM leases WHERE task_id = %s FOR UPDATE",
-            (lease.task_id,),
+        task_row: Any = conn.execute(
+            "SELECT run_id FROM tasks WHERE task_id = %s", (lease.task_id,)
         ).fetchone()
-        if lease_row is None or lease_row["lease_id"] != lease.lease_id:
-            record("complete", lease.task_id, error="InvalidInputError")
-            raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
-        # fencing: a stale worker whose claim generation was superseded carries
-        # an old fence and cannot write authoritative completion (M16 §8).
-        if int(lease_row["fence"]) != lease.fence:
-            record("complete", lease.task_id, error="InvalidInputError")
-            raise InvalidInputError(
-                f"stale fence for task {lease.task_id}: lease generation superseded"
-            )
-        expires_at: Any = decode_timestamp_pg(lease_row["expires_at"]).value
-        now_value: Any = server_now(conn, now)
-        # fencing: expired lease cannot complete — stale worker (BLOCKER-3)
-        if expires_at <= now_value:
-            record("complete", lease.task_id, error="InvalidInputError")
-            raise InvalidInputError(f"lease for task {lease.task_id} has expired")
         status = (
             ResearchTaskState.State.SUCCEEDED
             if completion.outcome == "SUCCEEDED"

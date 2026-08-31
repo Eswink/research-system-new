@@ -34,6 +34,8 @@ class FakeWorkspaceBackend(FakeBase):
         self._workspaces: dict[str, Workspace] = {}
         self._leases: dict[str, WorkspaceLease] = {}
         self._snapshots: dict[str, WorkspaceSnapshot] = {}
+        self._bundles: dict[str, bytes] = {}
+        self._bundle_contents: dict[str, dict[str, bytes]] = {}
         self._snapshot_counter = 0
 
     def create_workspace(self, workspace: Workspace) -> None:
@@ -122,3 +124,39 @@ class FakeWorkspaceBackend(FakeBase):
             self._record("merge", snapshot.digest, error="InvalidInputError")
             raise InvalidInputError(f"unknown snapshot digest: {snapshot.digest}")
         self._record("merge", snapshot.digest)
+
+    def export_bundle(self, lease: WorkspaceLease, snapshot: WorkspaceSnapshot) -> bytes:
+        from adapters.workspace.bundle import encode_bundle
+
+        self._enter("export_bundle", snapshot.digest)
+        self._active_lease("export_bundle", lease)
+        if snapshot.digest not in self._snapshots:
+            self._record("export_bundle", snapshot.digest, error="InvalidInputError")
+            raise InvalidInputError(f"unknown snapshot digest: {snapshot.digest}")
+        # Fake snapshots carry no real tree; export a canonical empty bundle
+        # so the roundtrip contract (import verifies the digest) still holds.
+        bundle = encode_bundle(self._bundle_contents.get(snapshot.digest, {}))
+        self._bundles[snapshot.digest] = bundle
+        self._record("export_bundle", snapshot.digest, result=f"{len(bundle)}B")
+        return bundle
+
+    def import_bundle(
+        self, workspace_id: str, bundle: bytes, expected_digest: str
+    ) -> WorkspaceSnapshot:
+        from adapters.workspace.bundle import BundleError, decode_bundle
+
+        self._enter("import_bundle", expected_digest)
+        try:
+            decode_bundle(bundle)  # validates paths + per-entry digests
+        except BundleError as exc:
+            self._record("import_bundle", expected_digest, error="BundleError")
+            raise InvalidInputError(str(exc)) from exc
+        if expected_digest not in self._snapshots:
+            self._record("import_bundle", expected_digest, error="InvalidInputError")
+            raise InvalidInputError(f"unknown snapshot digest: {expected_digest}")
+        snapshot = WorkspaceSnapshot(
+            workspace_id=workspace_id, digest=expected_digest, created_at=Timestamp(self._now())
+        )
+        self._snapshots[expected_digest] = snapshot
+        self._record("import_bundle", expected_digest, result="verified")
+        return snapshot

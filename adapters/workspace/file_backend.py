@@ -208,6 +208,55 @@ class FileWorkspaceBackend(WorkspaceBackend):
     def close(self) -> None:
         self._closed = True
 
+    def export_bundle(self, lease: WorkspaceLease, snapshot: WorkspaceSnapshot) -> bytes:
+        from adapters.workspace.bundle import encode_bundle
+
+        self._enter("export_bundle", snapshot.digest)
+        snapshot_dir = self._require_snapshot("export_bundle", snapshot)
+        self._reject_symlinks("export_bundle", snapshot_dir)
+        entries: dict[str, bytes] = {}
+        for path in sorted(snapshot_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            entries[path.relative_to(snapshot_dir).as_posix()] = path.read_bytes()
+        bundle = encode_bundle(entries)
+        self._record("export_bundle", snapshot.digest, result=f"{len(bundle)}B")
+        return bundle
+
+    def import_bundle(
+        self, workspace_id: str, bundle: bytes, expected_digest: str
+    ) -> WorkspaceSnapshot:
+        from adapters.workspace.bundle import BundleError, decode_bundle
+
+        self._enter("import_bundle", expected_digest)
+        try:
+            entries = decode_bundle(bundle)
+        except BundleError as exc:
+            self._record("import_bundle", expected_digest, error="BundleError")
+            raise InvalidInputError(str(exc)) from exc
+        target = self._dir_for(workspace_id)
+        if target.exists():
+            shutil.rmtree(target)
+        target.mkdir(parents=True, exist_ok=True)
+        for rel, data in entries.items():
+            destination = (target / rel).resolve()
+            if not destination.is_relative_to(target.resolve()):
+                raise InvalidInputError(f"bundle path escapes workspace: {rel!r}")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(data)
+        actual = workspace_tree_digest(target)
+        if actual != expected_digest:
+            shutil.rmtree(target)
+            self._record("import_bundle", expected_digest, error="digest mismatch")
+            raise InvalidInputError(
+                f"imported tree digest {actual} != expected {expected_digest}"
+            )
+        snapshot = WorkspaceSnapshot(
+            workspace_id=workspace_id, digest=actual, created_at=Timestamp(self._now())
+        )
+        self._record("import_bundle", expected_digest, result="verified")
+        return snapshot
+
     def _enter(self, method: str, args_summary: str) -> None:
         if self._closed:
             self._record(method, args_summary, error="PermanentPortError")
