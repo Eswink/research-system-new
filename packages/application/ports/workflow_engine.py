@@ -25,12 +25,42 @@ class TaskLease:
     agent_id: str | None = None
     expires_at: Timestamp | None = None
     heartbeat_at: Timestamp | None = None
+    # M16: worker identity + auditable fencing generation. Defaults keep the
+    # frozen M5/M14 construction sites and contract suites intact.
+    worker_id: str | None = None
+    fence: int = 0
 
     def __post_init__(self) -> None:
         if not self.lease_id:
             raise ValueError("lease_id must not be empty")
         if not self.task_id:
             raise ValueError("task_id must not be empty")
+        if self.fence < 0:
+            raise ValueError("fence must be non-negative")
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimRequest:
+    """A worker's claim filter (M16 §7).
+
+    `capabilities`/`partitions` are claim *filters*, not ownership: the sole
+    ownership authority remains the `leases` row (task_id PK + lease_id +
+    fence). `relax_partitions` is the starvation fallback — when a partition
+    has no worker coverage past a threshold, the scheduler may claim by
+    capability only.
+    """
+
+    worker_id: str
+    capabilities: frozenset[str]
+    partitions: frozenset[int]
+    lease_ttl_seconds: int = 300
+    relax_partitions: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.worker_id:
+            raise ValueError("worker_id must not be empty")
+        if self.lease_ttl_seconds < 1:
+            raise ValueError("lease_ttl_seconds must be >= 1")
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +83,18 @@ class WorkflowEngine(Protocol):
     def submit(self, task: ResearchTask, contract: TaskContract) -> None: ...
 
     def acquire_lease(self, task_id: str) -> TaskLease: ...
+
+    def claim_next(self, request: ClaimRequest) -> TaskLease | None:
+        """Pull the next QUEUED EXECUTION task matching the worker's capability
+        /partition filter, atomically leasing it to that worker (M16 §7).
+
+        Returns None when nothing claimable matches. Increments the task's
+        `fence_seq` and records it on the lease so a stale worker's late
+        result is rejected by `(task_id, lease_id, fence)`. Implementations
+        must serialize concurrent claims (PostgreSQL `FOR UPDATE SKIP LOCKED`);
+        the SQLite/Fake implementations are single-process and say so.
+        """
+        ...
 
     def heartbeat(self, lease: TaskLease) -> TaskLease: ...
 

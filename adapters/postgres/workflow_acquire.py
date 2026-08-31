@@ -42,17 +42,27 @@ def _get_existing_lease(conn: Any, task_id: str) -> Any:
 
 def _insert_lease(conn: Any, task_id: str, lease: Any, outbox: Any, row: Any) -> None:
     conn.execute(
-        "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at) "
-        "VALUES (%s, %s, %s, %s, %s)",
-        (task_id, lease.lease_id, lease.agent_id, lease.expires_at.value, lease.heartbeat_at.value),
+        "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at, "
+        "worker_id, fence) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        (
+            task_id,
+            lease.lease_id,
+            lease.agent_id,
+            lease.expires_at.value,
+            lease.heartbeat_at.value,
+            lease.worker_id,
+            lease.fence,
+        ),
     )
+    # fence_seq advances in lockstep with each (re)claim; the lease carries the
+    # new value so a stale worker's late write is rejected on (lease_id, fence).
     conn.execute(
-        "UPDATE tasks SET status = %s WHERE task_id = %s",
-        (ResearchTaskState.State.LEASED, task_id),
+        "UPDATE tasks SET status = %s, fence_seq = %s WHERE task_id = %s",
+        (ResearchTaskState.State.LEASED, lease.fence, task_id),
     )
     outbox.publish(
         EventType.TASK_LEASED,
-        {"task_id": task_id, "lease_id": lease.lease_id},
+        {"task_id": task_id, "lease_id": lease.lease_id, "fence": lease.fence},
         run_id=str(row["run_id"]),
         task_id=task_id,
     )
@@ -78,7 +88,7 @@ def acquire_lease_impl(
                 # Expired: reclaim — delete old, insert new, do not return old
                 conn.execute("DELETE FROM leases WHERE task_id = %s", (task_id,))
                 agent_id = cast(str | None, row["assigned_agent_id"])
-                lease = new_lease(task_id, agent_id, ttl, now)
+                lease = new_lease(task_id, agent_id, ttl, now, fence=int(row["fence_seq"]) + 1)
                 assert lease.expires_at is not None and lease.heartbeat_at is not None
                 _insert_lease(conn, task_id, lease, outbox, row)
                 record("acquire_lease", task_id, result=lease.lease_id)
@@ -93,7 +103,7 @@ def acquire_lease_impl(
             record("acquire_lease", task_id, result="deduped")
             return lease_from_row(cast(dict[str, object], existing))
         agent_id = cast(str | None, row["assigned_agent_id"])
-        lease = new_lease(task_id, agent_id, ttl, now)
+        lease = new_lease(task_id, agent_id, ttl, now, fence=int(row["fence_seq"]) + 1)
         assert lease.expires_at is not None and lease.heartbeat_at is not None
         _insert_lease(conn, task_id, lease, outbox, row)
         record("acquire_lease", task_id, result=lease.lease_id)

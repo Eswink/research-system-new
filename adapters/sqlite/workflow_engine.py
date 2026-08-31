@@ -32,7 +32,7 @@ from adapters.sqlite.workflow_ops import SqliteWorkflowOps
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import CorrelationRef, OperationScope
 from packages.application.ports.telemetry_sink import TelemetrySink
-from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
+from packages.application.ports.workflow_engine import ClaimRequest, TaskCompletion, TaskLease
 from packages.domain.events import EventEnvelope
 from packages.domain.tasks import ResearchTask, TaskContract
 
@@ -79,6 +79,15 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
             correlation=CorrelationRef(task_id=task_id),
         ):
             return self._acquire_lease_impl(task_id)
+
+    def claim_next(self, request: ClaimRequest) -> TaskLease | None:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKER_DISPATCH,
+            name="workflow.claim_next",
+            correlation=CorrelationRef(),
+        ):
+            return self._claim_next_impl(request)
 
     def heartbeat(self, lease: TaskLease) -> TaskLease:
         with operation(

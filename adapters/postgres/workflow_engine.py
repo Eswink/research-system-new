@@ -35,6 +35,7 @@ from adapters.postgres.projections import (
 from adapters.postgres.serialization import TaskRow, encode_task
 from adapters.postgres.telemetry_notes import note_queue_lag, note_task_duration
 from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_impl
+from adapters.postgres.workflow_claim import ClaimPayload, claim_next_impl
 from adapters.postgres.workflow_ops import complete_impl, heartbeat_impl, recover_impl
 from adapters.postgres.workflow_submit import SubmitPayload, submit_task
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
@@ -48,7 +49,7 @@ from packages.application.ports.errors import (
     TransientPortError,
 )
 from packages.application.ports.telemetry_sink import TelemetrySink
-from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
+from packages.application.ports.workflow_engine import ClaimRequest, TaskCompletion, TaskLease
 from packages.domain.enums import FailureCategory
 from packages.domain.events import EventEnvelope
 from packages.domain.tasks import ResearchTask, TaskContract
@@ -162,6 +163,28 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             # the rest is covered by the top-level transaction rollback. Keep as
             # a safety fallback; the failing transaction has already rolled back.
             raise
+        except psycopg.OperationalError as exc:
+            raise self._wrap_operational(exc) from exc
+
+    def claim_next(self, request: ClaimRequest) -> TaskLease | None:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKER_DISPATCH,
+            name="workflow.claim_next",
+            correlation=CorrelationRef(),
+        ):
+            return self._claim_next_impl(request)
+
+    def _claim_next_impl(self, request: ClaimRequest) -> TaskLease | None:
+        self._ensure_open()
+        try:
+            return claim_next_impl(
+                self._conn,
+                self._record,
+                self._outbox,
+                ClaimPayload(request, self._lease_ttl),
+                self._now,
+            )
         except psycopg.OperationalError as exc:
             raise self._wrap_operational(exc) from exc
 

@@ -7,10 +7,13 @@ from uuid import uuid4
 from adapters.fakes.base import FakeBase
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import (
+    ClaimRequest,
     TaskCompletion,
     TaskLease,
 )
 from packages.domain.core import Timestamp
+from packages.domain.enums import TaskKind
+from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
 
 
@@ -30,6 +33,7 @@ class FakeWorkflowEngine(FakeBase):
         self._completed: dict[str, TaskCompletion] = {}
         self._cancelled: set[str] = set()
         self._deliveries: dict[str, int] = {}
+        self._fences: dict[str, int] = {}
 
     def submit(self, task: ResearchTask, contract: TaskContract) -> None:
         self._enter("submit", task.id.value)
@@ -74,6 +78,47 @@ class FakeWorkflowEngine(FakeBase):
         self._record("acquire_lease", task_id)
         return lease
 
+    def claim_next(self, request: ClaimRequest) -> TaskLease | None:
+        """Single-process claim_next (Fake): first QUEUED EXECUTION task whose
+        capability/partition match the claim; advances the fence.
+
+        Fake has no cross-process serialization (that is the PostgreSQL
+        adapter's guarantee); it models the same claim/fence semantics for
+        contract tests.
+        """
+        self._enter("claim_next", request.worker_id)
+        for task_id, task in self._tasks.items():
+            if task.kind != TaskKind.EXECUTION:
+                continue
+            if task.status != ResearchTaskState.State.QUEUED:
+                continue
+            if task_id in self._leases or task_id in self._completed or task_id in self._cancelled:
+                continue
+            if (
+                task.required_capability is not None
+                and task.required_capability not in request.capabilities
+            ):
+                continue
+            if not request.relax_partitions and task.partition is not None:
+                if task.partition not in request.partitions:
+                    continue
+            fence = self._fences.get(task_id, 0) + 1
+            self._fences[task_id] = fence
+            lease = TaskLease(
+                lease_id=str(uuid4()),
+                task_id=task_id,
+                agent_id=task.assigned_agent_id,
+                expires_at=Timestamp.now(),
+                heartbeat_at=Timestamp.now(),
+                worker_id=request.worker_id,
+                fence=fence,
+            )
+            self._leases[task_id] = lease
+            self._record("claim_next", request.worker_id, result=f"{task_id}@fence={fence}")
+            return lease
+        self._record("claim_next", request.worker_id, result="none")
+        return None
+
     def heartbeat(self, lease: TaskLease) -> TaskLease:
         self._enter("heartbeat", lease.task_id)
         if lease.task_id not in self._leases:
@@ -85,6 +130,8 @@ class FakeWorkflowEngine(FakeBase):
             agent_id=lease.agent_id,
             expires_at=Timestamp.now(),
             heartbeat_at=Timestamp.now(),
+            worker_id=lease.worker_id,
+            fence=lease.fence,
         )
         self._leases[lease.task_id] = renewed
         self._record("heartbeat", lease.task_id)
@@ -92,9 +139,14 @@ class FakeWorkflowEngine(FakeBase):
 
     def complete(self, lease: TaskLease, completion: TaskCompletion) -> None:
         self._enter("complete", lease.task_id)
-        if lease.task_id not in self._leases:
+        stored = self._leases.get(lease.task_id)
+        if stored is None:
             self._record("complete", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"no lease for task: {lease.task_id}")
+        # fencing: only the current lease generation may write completion (M16 §8)
+        if stored.lease_id != lease.lease_id or stored.fence != lease.fence:
+            self._record("complete", lease.task_id, error="InvalidInputError")
+            raise InvalidInputError(f"stale lease/fence for task: {lease.task_id}")
         self._completed[lease.task_id] = completion
         self._leases.pop(lease.task_id, None)
         self._record("complete", lease.task_id, result=completion.outcome)

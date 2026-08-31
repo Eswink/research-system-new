@@ -34,18 +34,55 @@ CREATE TABLE IF NOT EXISTS tasks (
     task_json TEXT NOT NULL,
     contract_json TEXT NOT NULL,
     cancelled INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'AGENT_SESSION',
+    partition INTEGER,
+    required_capability TEXT,
+    fence_seq INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_run ON tasks(run_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_idem ON tasks(idempotency_key)
     WHERE idempotency_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tasks_claim ON tasks(kind, status, partition);
 
 CREATE TABLE IF NOT EXISTS leases (
     task_id TEXT PRIMARY KEY REFERENCES tasks(task_id),
     lease_id TEXT NOT NULL,
     agent_id TEXT,
     expires_at TEXT NOT NULL,
-    heartbeat_at TEXT NOT NULL
+    heartbeat_at TEXT NOT NULL,
+    worker_id TEXT,
+    fence INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS workers (
+    worker_id TEXT PRIMARY KEY,
+    protocol_version TEXT NOT NULL,
+    runtime_version TEXT NOT NULL,
+    platform TEXT NOT NULL,
+    capabilities_json TEXT NOT NULL DEFAULT '[]',
+    backend_kinds_json TEXT NOT NULL DEFAULT '[]',
+    partition_slots_json TEXT NOT NULL DEFAULT '[]',
+    max_concurrency INTEGER NOT NULL DEFAULT 1,
+    registration_generation INTEGER NOT NULL DEFAULT 0,
+    state TEXT NOT NULL DEFAULT 'REGISTERING',
+    last_heartbeat TEXT,
+    drain_requested INTEGER NOT NULL DEFAULT 0,
+    session_token_sha256 TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS execution_jobs (
+    task_id TEXT PRIMARY KEY REFERENCES tasks(task_id),
+    spec_json TEXT NOT NULL,
+    input_bundle_ref TEXT,
+    input_bundle_digest TEXT,
+    policy_fingerprint TEXT,
+    output_bundle_ref TEXT,
+    output_bundle_digest TEXT,
+    worker_id TEXT,
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS idempotency_records (

@@ -114,10 +114,10 @@ M16 节。Non-goals：GPU 调度（M17）、多租户配额（M18）、自动扩
 ## 实施清单
 
 - [x] STEP-01 WP0 基线固化：本任务文件 + ALL_PLAN 索引 + ADR-0027 + Current Local Execution Contract / Distributed Responsibility Boundary 记录
-- [ ] STEP-02 WP1 domain/workers.py + TaskKind + WorkerRegistry Port + Fake + 契约套件注册
-- [ ] STEP-03 WP1 迁移 008_worker_plane.sql + PG WorkerRegistry
-- [ ] STEP-04 WP1 worker_gateway ASGI app + 认证（enrollment/session token/generation/TLS fail-closed/大小上限）
-- [ ] STEP-05 WP1 WorkerReaperScheduler + 数据库侧时间源抽象 + 心跳幂等/乱序规则 + LOST 并入 recover_expired_leases
+- [x] STEP-02 WP1 domain/workers.py + TaskKind + WorkerRegistry Port + Fake + 契约套件注册
+- [x] STEP-03 WP1 迁移 008_worker_plane.sql + PG WorkerRegistry
+- [x] STEP-04 WP1 worker_gateway ASGI app + 认证（enrollment/session token/generation/TLS fail-closed/大小上限）
+- [x] STEP-05 WP1 WorkerReaperScheduler + 数据库侧时间源抽象 + 心跳幂等/乱序规则 + LOST 并入 recover_expired_leases
 - [ ] STEP-06 WP2 claim_next（Fake/SQLite/PG 三实现）+ TaskLease.worker_id/fence + fence_seq 递增
 - [ ] STEP-07 WP2 分区键 + 饥饿兜底 + fence 校验覆盖全部 authoritative 写 + 并发/重叠分区测试
 - [ ] STEP-08 WP3 WorkspaceBackend export/import_bundle（File+Fake）+ 双 digest 校验 + 穿越/符号链接拒绝

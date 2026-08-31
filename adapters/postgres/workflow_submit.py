@@ -48,8 +48,9 @@ def submit_task(conn: Any, record: Any, payload: SubmitPayload, now: Any) -> str
             return "deduped"
         conn.execute(
             "INSERT INTO tasks (task_id, run_id, idempotency_key, attempt, status, "
-            "assigned_agent_id, task_json, contract_json, cancelled, created_at) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, FALSE, %s)",
+            "assigned_agent_id, task_json, contract_json, cancelled, created_at, "
+            "kind, partition, required_capability) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, FALSE, %s, %s, %s, %s)",
             (
                 task.id.value,
                 task.run_id.value,
@@ -60,6 +61,9 @@ def submit_task(conn: Any, record: Any, payload: SubmitPayload, now: Any) -> str
                 payload.task_json,
                 payload.contract_json,
                 now_iso(now),
+                task.kind.value,
+                task.partition,
+                task.required_capability,
             ),
         )
         if task.idempotency_key is not None:

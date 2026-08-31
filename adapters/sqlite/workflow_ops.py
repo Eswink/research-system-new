@@ -20,7 +20,12 @@ from packages.application.observability.attributes import MetricKind, MetricName
 from packages.application.observability.scope import record_metric_safely
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.telemetry_sink import TelemetrySink
-from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
+from packages.application.ports.workflow_engine import (
+    ClaimRequest,
+    TaskCompletion,
+    TaskLease,
+)
+from packages.domain.enums import TaskKind
 from packages.domain.events import EventType
 from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
@@ -43,6 +48,26 @@ def _lag_ms_since(created_at: object) -> float | None:
         return max(0.0, (datetime.now(created.tzinfo) - created).total_seconds() * 1000.0)
     except (TypeError, ValueError):
         return None
+
+
+def _first_matching_candidate(candidates: Any, request: ClaimRequest) -> Any:
+    """First QUEUED EXECUTION row whose capability/partition match the claim.
+
+    Python-side filter over a static-SQL scan (M16 §7): a task with NULL
+    required_capability matches any worker; partition is a filter, not
+    ownership. `relax_partitions` (starvation fallback) ignores the partition
+    filter and matches by capability only.
+    """
+    for row in candidates:
+        required = row["required_capability"]
+        if required is not None and required not in request.capabilities:
+            continue
+        if not request.relax_partitions:
+            part = row["partition"]
+            if part is not None and part not in request.partitions:
+                continue
+        return row
+    return None
 
 
 class SqliteWorkflowOps:
@@ -68,8 +93,9 @@ class SqliteWorkflowOps:
             task_json, contract_json = encode_task(task, contract)
             self._conn.execute(
                 "INSERT INTO tasks (task_id, run_id, idempotency_key, attempt, status,"
-                " assigned_agent_id, task_json, contract_json, cancelled, created_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)",
+                " assigned_agent_id, task_json, contract_json, cancelled, created_at,"
+                " kind, partition, required_capability)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)",
                 (
                     task.id.value,
                     task.run_id.value,
@@ -80,6 +106,9 @@ class SqliteWorkflowOps:
                     task_json,
                     contract_json,
                     now_iso(self._now),
+                    task.kind.value,
+                    task.partition,
+                    task.required_capability,
                 ),
             )
             if task.idempotency_key is not None:
@@ -114,32 +143,104 @@ class SqliteWorkflowOps:
         if existing is not None:
             self._record("acquire_lease", task_id, result="deduped")
             return lease_from_row(existing)
-        lease = new_lease(task_id, row["assigned_agent_id"], self._lease_ttl, self._now)
+        lease = new_lease(
+            task_id, row["assigned_agent_id"], self._lease_ttl, self._now,
+            fence=int(row["fence_seq"] or 0) + 1,
+        )
         assert lease.expires_at is not None and lease.heartbeat_at is not None
         with self._conn:
             self._conn.execute(
-                "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at)"
-                " VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at,"
+                " worker_id, fence) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     task_id,
                     lease.lease_id,
                     lease.agent_id,
                     iso(lease.expires_at),
                     iso(lease.heartbeat_at),
+                    lease.worker_id,
+                    lease.fence,
                 ),
             )
             self._conn.execute(
-                "UPDATE tasks SET status = ? WHERE task_id = ?",
-                (ResearchTaskState.State.LEASED, task_id),
+                "UPDATE tasks SET status = ?, fence_seq = ? WHERE task_id = ?",
+                (ResearchTaskState.State.LEASED, lease.fence, task_id),
             )
             self._outbox.publish(
                 EventType.TASK_LEASED,
-                {"task_id": task_id, "lease_id": lease.lease_id},
+                {"task_id": task_id, "lease_id": lease.lease_id, "fence": lease.fence},
                 run_id=row["run_id"],
                 task_id=task_id,
             )
         self._note_queue_lag(row)
         self._record("acquire_lease", task_id, result=lease.lease_id)
+        return lease
+
+    def _claim_next_impl(self, request: ClaimRequest) -> TaskLease | None:
+        """Single-process claim_next (honest limitation, M16 §7).
+
+        SQLite has no `FOR UPDATE SKIP LOCKED`, so this serializes claims via
+        the per-connection write lock and is correct only within one process.
+        Cross-process distributed claims are the PostgreSQL adapter's job; the
+        contract suite exercises claim semantics on both.
+
+        Capability/partition filtering happens in Python over a static-SQL
+        candidate scan (no dynamic query string is ever assembled), then the
+        chosen task is re-verified QUEUED inside the write transaction.
+        """
+        self._ensure_open()
+        candidates = self._conn.execute(
+            "SELECT task_id, run_id, assigned_agent_id, fence_seq, required_capability,"
+            " partition FROM tasks WHERE kind = ? AND status = ? AND cancelled = 0"
+            " ORDER BY created_at",
+            (TaskKind.EXECUTION.value, ResearchTaskState.State.QUEUED),
+        ).fetchall()
+        chosen = _first_matching_candidate(candidates, request)
+        if chosen is None:
+            self._record("claim_next", request.worker_id, result="none")
+            return None
+        task_id = chosen["task_id"]
+        new_fence = int(chosen["fence_seq"] or 0) + 1
+        lease = new_lease(
+            task_id,
+            chosen["assigned_agent_id"],
+            self._lease_ttl,
+            self._now,
+            worker_id=request.worker_id,
+            fence=new_fence,
+        )
+        assert lease.expires_at is not None and lease.heartbeat_at is not None
+        with self._conn:
+            fresh = self._conn.execute(
+                "SELECT status FROM tasks WHERE task_id = ?", (task_id,)
+            ).fetchone()
+            if fresh is None or fresh["status"] != ResearchTaskState.State.QUEUED:
+                self._record("claim_next", request.worker_id, result="contended")
+                return None
+            self._conn.execute(
+                "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at,"
+                " worker_id, fence) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    task_id,
+                    lease.lease_id,
+                    lease.agent_id,
+                    iso(lease.expires_at),
+                    iso(lease.heartbeat_at),
+                    lease.worker_id,
+                    lease.fence,
+                ),
+            )
+            self._conn.execute(
+                "UPDATE tasks SET status = ?, fence_seq = ? WHERE task_id = ?",
+                (ResearchTaskState.State.LEASED, new_fence, task_id),
+            )
+            self._outbox.publish(
+                EventType.TASK_LEASED,
+                {"task_id": task_id, "lease_id": lease.lease_id, "fence": new_fence},
+                run_id=str(chosen["run_id"]),
+                task_id=task_id,
+            )
+        self._record("claim_next", request.worker_id, result=f"{task_id}@fence={new_fence}")
         return lease
 
     def _heartbeat_impl(self, lease: TaskLease) -> TaskLease:
@@ -150,16 +251,21 @@ class SqliteWorkflowOps:
         if row is None or row["lease_id"] != lease.lease_id:
             self._record("heartbeat", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
-        renewed = new_lease(lease.task_id, lease.agent_id, self._lease_ttl, self._now)
+        renewed = new_lease(
+            lease.task_id, lease.agent_id, self._lease_ttl, self._now,
+            worker_id=lease.worker_id, fence=lease.fence,
+        )
         assert renewed.expires_at is not None and renewed.heartbeat_at is not None
         with self._conn:
             self._conn.execute(
-                "UPDATE leases SET lease_id = ?, expires_at = ?, heartbeat_at = ?"
-                " WHERE task_id = ?",
+                "UPDATE leases SET lease_id = ?, expires_at = ?, heartbeat_at = ?,"
+                " worker_id = ?, fence = ? WHERE task_id = ?",
                 (
                     renewed.lease_id,
                     iso(renewed.expires_at),
                     iso(renewed.heartbeat_at),
+                    renewed.worker_id,
+                    renewed.fence,
                     lease.task_id,
                 ),
             )
@@ -185,6 +291,11 @@ class SqliteWorkflowOps:
         if row is None or row["lease_id"] != lease.lease_id:
             self._record("complete", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
+        if int(row["fence"] or 0) != lease.fence:
+            self._record("complete", lease.task_id, error="InvalidInputError")
+            raise InvalidInputError(
+                f"stale fence for task {lease.task_id}: lease generation superseded"
+            )
         status = (
             ResearchTaskState.State.SUCCEEDED
             if completion.outcome == "SUCCEEDED"
@@ -207,8 +318,11 @@ class SqliteWorkflowOps:
 
     def _recover_impl(self) -> int:
         self._ensure_open()
+        # Single lease authority (M16 §5): expired OR owned-by-a-LOST-worker.
         expired = self._conn.execute(
-            "SELECT leases.task_id FROM leases WHERE leases.expires_at < ?",
+            "SELECT leases.task_id FROM leases "
+            "WHERE leases.expires_at < ? "
+            "OR leases.worker_id IN (SELECT worker_id FROM workers WHERE state = 'LOST')",
             (now_iso(self._now),),
         ).fetchall()
         recovered = 0

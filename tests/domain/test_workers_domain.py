@@ -12,6 +12,7 @@ from packages.domain.workers import (
     PARTITION_COUNT,
     WorkerRegistration,
     WorkerState,
+    compute_partition,
 )
 
 
@@ -147,3 +148,21 @@ def test_research_task_rejects_blank_required_capability() -> None:
         ResearchTask(
             id=ID.generate(), run_id=ID.generate(), required_capability="   "
         )
+
+
+def test_compute_partition_is_stable_and_bounded() -> None:
+    first = compute_partition("run-abc")
+    second = compute_partition("run-abc")
+    assert first == second
+    assert 0 <= first < PARTITION_COUNT
+
+
+def test_compute_partition_distributes_distinct_runs() -> None:
+    buckets = {compute_partition(f"run-{i}") for i in range(200)}
+    # a stable hash over 200 distinct runs should touch more than one bucket
+    assert len(buckets) > 1
+
+
+def test_compute_partition_rejects_empty_run_id() -> None:
+    with pytest.raises(ValueError):
+        compute_partition("")

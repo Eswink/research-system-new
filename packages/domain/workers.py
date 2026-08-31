@@ -11,6 +11,7 @@ GPU/内存/拓扑等资源平面属 M17，M16 不表达。所有边界 fail clos
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 from packages.domain.core import Timestamp
@@ -89,6 +90,20 @@ class WorkerState:
             return WorkerState._TRANSITIONS[(current, event)]
         except KeyError:
             raise InvalidTransitionError(current, event) from None
+
+
+def compute_partition(run_id: str, partition_count: int = PARTITION_COUNT) -> int:
+    """Stable partition bucket for run affinity (M16 §7).
+
+    `sha256(run_id)` first 4 bytes mod partition_count. This is a routing hint
+    only — never an ownership authority (that stays the `leases` row).
+    """
+    if not run_id:
+        raise ValueError("run_id must not be empty")
+    if partition_count < 1:
+        raise ValueError("partition_count must be >= 1")
+    digest = hashlib.sha256(run_id.encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], "big") % partition_count
 
 
 def _check_bounded_text(value: str, *, field: str, max_length: int) -> None:
