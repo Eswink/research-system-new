@@ -555,10 +555,21 @@ components:
 
   - id: swe_rex
     adoption_status: PLANNED
-    decision_status: OPTIONAL
+    decision_status: REJECTED
     integration_mode: ADAPTER
     role: remote_parallel_execution
     source: "https://github.com/SWE-agent/SWE-ReX"
+    qualification:
+      date: "2026-08-31"
+      result: REJECT
+      report: "docs/references/upstream/M16_REMOTE_EXECUTION_QUALIFICATION.md"
+      digest_status: VERIFIED
+      tag: "v1.4.0"
+      commit: "f802b3e14d82aa4c13291d2fda5bd4fd48f36f91"
+      pypi_version: "1.4.0"
+      sdist_sha256: "14f8a24c49a63f9e251340b1109ac75a4aacbaece410f8599209de9bfca843c0"
+      license: "MIT"
+      note: "2026-08-31 实测（git ls-remote + PyPI JSON）。REJECT 理由：交互式 shell session 模型与 Research OS 一次性 ExecutionSpec→ExecutionRun + digest bundle + fencing 契约结构性错配（Q5/Q8/Q10/Q11 FAIL）；M16 由原生 HTTP worker 平面满足 DoD，零新上游。Temporal M16 重评条件（worker>50 / cross-run saga / queue bottleneck）经复核未触发，维持 DEFER。PLANNED 不声称 resolution。"
 
   - id: cline_kanban
     adoption_status: PLANNED
