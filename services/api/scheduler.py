@@ -19,8 +19,12 @@ from typing import Any
 
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
 from packages.application.observability.scope import operation, record_metric_safely
-from packages.application.observability.signals import OperationOutcome, OperationScope
+from packages.application.observability.signals import (
+    OperationOutcome,
+    OperationScope,
+)
 from packages.application.ports.telemetry_sink import TelemetrySink
+from packages.application.ports.worker_registry import WorkerRegistry
 
 
 class LeaseRecoveryScheduler:
@@ -190,3 +194,73 @@ class RetentionScheduler:
                 self.run_once()
             except Exception:
                 continue
+
+
+class WorkerReaperScheduler:
+    """Background daemon that marks heartbeat-expired workers LOST (M16 WP1).
+
+    Server time is the sole authority: `registry.list_stale()` compares each
+    worker's `last_heartbeat` against the database clock. The reaper only
+    flips worker state to LOST; releasing the lost worker's leases stays the
+    job of `recover_expired_leases` (single lease authority, M16 §5).
+
+    Shape mirrors `LeaseRecoveryScheduler`: stdlib daemon thread, telemetry
+    fail-open (a metric error must never kill the reaper loop).
+    """
+
+    def __init__(
+        self,
+        registry: WorkerRegistry,
+        *,
+        stale_threshold_seconds: float = 30.0,
+        interval_seconds: float = 15.0,
+        telemetry: TelemetrySink | None = None,
+    ) -> None:
+        if interval_seconds <= 0:
+            raise ValueError("interval_seconds must be > 0")
+        if stale_threshold_seconds <= 0:
+            raise ValueError("stale_threshold_seconds must be > 0")
+        self._registry = registry
+        self._stale = stale_threshold_seconds
+        self._interval = interval_seconds
+        self._telemetry = telemetry
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        if self._thread is not None:
+            return
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._run, name="worker-reaper", daemon=True)
+        self._thread.start()
+
+    def stop(self, *, timeout: float = 2.0) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=timeout)
+            self._thread = None
+
+    def run_once(self) -> int:
+        """One reap pass: mark every stale worker LOST; return the count."""
+        lost = self._registry.list_stale(self._stale)
+        for worker_id in lost:
+            try:
+                self._registry.mark_lost(worker_id)
+            except Exception:
+                # A concurrent transition (e.g. worker re-registered) is not a
+                # reaper failure; the next pass re-evaluates from server time.
+                continue
+        return len(lost)
+
+    def _run(self) -> None:
+        while not self._stop.wait(self._interval):
+            with operation(
+                self._telemetry,
+                scope=OperationScope.WORKER_SESSION,
+                name="worker.reaper_pass",
+            ) as op:
+                try:
+                    self.run_once()
+                except Exception:
+                    op.set_outcome(OperationOutcome.FAILED, "worker_reap_failed")
+                    continue

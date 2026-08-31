@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, cast
 
-from adapters.postgres.db import now_iso
+from adapters.postgres.db import server_now
 from adapters.postgres.leases import lease_from_row, new_lease
 from adapters.postgres.serialization import decode_timestamp_pg
 from packages.application.ports.errors import InvalidInputError
@@ -74,7 +74,7 @@ def acquire_lease_impl(
             # Check whether the existing lease has expired.
             # If it has, lazy-reclaim inside this transaction (atomic with the checks above).
             expires_at: Any = decode_timestamp_pg(existing["expires_at"]).value
-            if expires_at <= now_iso(now):
+            if expires_at <= server_now(conn, now):
                 # Expired: reclaim — delete old, insert new, do not return old
                 conn.execute("DELETE FROM leases WHERE task_id = %s", (task_id,))
                 agent_id = cast(str | None, row["assigned_agent_id"])

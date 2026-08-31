@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, cast
 
-from adapters.postgres.db import now_iso
+from adapters.postgres.db import db_time_expr, server_now
 from adapters.postgres.leases import new_lease
 from adapters.postgres.serialization import decode_timestamp_pg
 from packages.application.ports.errors import InvalidInputError
@@ -73,7 +73,7 @@ def complete_impl(conn: Any, record: Any, outbox: Any, payload: CompletePayload)
             record("complete", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
         expires_at: Any = decode_timestamp_pg(lease_row["expires_at"]).value
-        now_value: Any = now_iso(now)
+        now_value: Any = server_now(conn, now)
         # fencing: expired lease cannot complete — stale worker (BLOCKER-3)
         if expires_at <= now_value:
             record("complete", lease.task_id, error="InvalidInputError")
@@ -95,10 +95,18 @@ def complete_impl(conn: Any, record: Any, outbox: Any, payload: CompletePayload)
 
 
 def recover_impl(conn: Any, record: Any, outbox: Any, now: Any) -> int:
+    # Single lease authority (M16 §5): a lease is recoverable when it has
+    # expired on the database clock OR its owning worker is already LOST.
+    # Both are decided here, in one determination, so lost-worker leases are
+    # never released through a second path.
+    time_sql, time_params = db_time_expr(now)
     with conn.transaction():
         expired: Any = conn.execute(
-            "SELECT leases.task_id FROM leases WHERE leases.expires_at < %s FOR UPDATE SKIP LOCKED",
-            (now_iso(now),),
+            "SELECT leases.task_id FROM leases "
+            f"WHERE leases.expires_at < {time_sql} "
+            "OR leases.worker_id IN (SELECT worker_id FROM workers WHERE state = 'LOST') "
+            "FOR UPDATE SKIP LOCKED",
+            (*time_params,),
         ).fetchall()
         recovered = 0
         for row in expired:

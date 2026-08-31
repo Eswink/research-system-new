@@ -144,6 +144,36 @@ def now_iso(now: Callable[[], datetime] | None) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def db_time_expr(
+    now: Callable[[], datetime] | None,
+) -> tuple[str, list[Any]]:
+    """SQL time-source abstraction for lease/expiry comparisons (M16 §5).
+
+    Production (`now is None`) uses PostgreSQL `now()` so the database clock is
+    the single authority — consistent with `outbox_events.created_at`. When a
+    deterministic test clock is injected, it is bound as a parameter instead.
+    Returns `(sql_fragment, params)` to splice into a query.
+    """
+    if now is None:
+        return "now()", []
+    return "%s", [now_iso(now)]
+
+
+def server_now(conn: Any, now: Callable[[], datetime] | None) -> datetime:
+    """Resolve the authoritative 'now' for a Python-side comparison.
+
+    Production reads the database clock (`SELECT now()`); tests use the
+    injected clock. Keeps lease-expiry/fencing decisions on the same time
+    source as the durable writes they guard.
+    """
+    if now is not None:
+        return now_iso(now)
+    value: Any = conn.execute("SELECT now() AS now").fetchone()["now"]
+    if value.tzinfo is None:  # defensive: treat naive DB result as UTC
+        value = value.replace(tzinfo=timezone.utc)
+    return cast(datetime, value.astimezone(timezone.utc))
+
+
 def dsn_from_env() -> str | None:
     for key in ("DATABASE_URL", "RESEARCHOS_DATABASE_URL", "POSTGRES_DSN"):
         val = os.environ.get(key)

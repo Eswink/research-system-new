@@ -77,6 +77,10 @@ class OperationScope(StrEnum):
     WORKFLOW_QUEUE = "workflow_queue"
     OUTBOX_RELAY = "outbox_relay"
     LEASE_RECOVERY = "lease_recovery"
+    # M16 distributed execution plane
+    WORKER_SESSION = "worker_session"
+    WORKER_DISPATCH = "worker_dispatch"
+    REMOTE_EXECUTION = "remote_execution"
 
 
 class OperationOutcome(StrEnum):
