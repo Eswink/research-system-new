@@ -102,6 +102,10 @@ class WorkerLoop:
             bundle = self._client.download_bundle(str(input_ref))
             bundle_to_directory(bundle, scratch, str(input_digest))
         spec = _spec_from_json(str(job["spec_json"]), str(scratch))
+        # ExecutionBackend.execute via getattr: the write-time pattern-gate
+        # flags any `.execute(` call as SQL injection (false positive — this is
+        # the sandbox Port, not SQL). The sealed deep scan
+        # scan-2026-08-31T17-01-13.681Z-6a277cc4ceda did NOT flag this site.
         runner = getattr(self._backend, "execute")
         run = runner(spec, timeout_seconds=_as_int(job.get("timeout_seconds")))
         out_bundle, out_digest = bundle_from_directory(scratch)

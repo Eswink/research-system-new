@@ -122,11 +122,34 @@ CREATE TABLE IF NOT EXISTS artifacts (
 """
 
 
+def _apply_journal_mode(connection: sqlite3.Connection, journal_mode: str) -> None:
+    """Set the journal mode via a literal PRAGMA per allowed value.
+
+    journal_mode is an internal, fixed vocabulary (never external input), but
+    dispatching to a literal statement per value keeps the SQL text static and
+    fails closed on an unknown mode (deep-scan baseline flagged the f-string).
+    """
+    if journal_mode == "WAL":
+        connection.execute("PRAGMA journal_mode=WAL")
+    elif journal_mode == "DELETE":
+        connection.execute("PRAGMA journal_mode=DELETE")
+    elif journal_mode == "TRUNCATE":
+        connection.execute("PRAGMA journal_mode=TRUNCATE")
+    elif journal_mode == "PERSIST":
+        connection.execute("PRAGMA journal_mode=PERSIST")
+    elif journal_mode == "MEMORY":
+        connection.execute("PRAGMA journal_mode=MEMORY")
+    elif journal_mode == "OFF":
+        connection.execute("PRAGMA journal_mode=OFF")
+    else:
+        raise ValueError(f"unsupported journal_mode: {journal_mode!r}")
+
+
 def connect(db_path: str | Path, *, journal_mode: str = "WAL") -> sqlite3.Connection:
     """创建带 schema 的连接；`:memory:` 与文件路径均支持。"""
     connection = sqlite3.connect(str(db_path), check_same_thread=False)
     connection.row_factory = sqlite3.Row
-    connection.execute(f"PRAGMA journal_mode={journal_mode}")
+    _apply_journal_mode(connection, journal_mode)
     connection.execute("PRAGMA foreign_keys=ON")
     connection.executescript(SCHEMA_SQL)
     return connection
