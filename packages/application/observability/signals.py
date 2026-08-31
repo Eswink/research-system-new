@@ -38,6 +38,11 @@ class OperationFailureReason(StrEnum):
     EVAL_RUN_FAILED = "eval_run_failed"
     EXPERIMENT_FAILED = "experiment_failed"
     TELEMETRY_LIFECYCLE_TIMEOUT = "telemetry_lifecycle_timeout"
+    # M16 distributed execution plane
+    WORKER_LOST = "worker_lost"
+    STALE_RESULT_REJECTED = "stale_result_rejected"
+    PROTOCOL_MISMATCH = "protocol_mismatch"
+    ARTIFACT_INTEGRITY_FAILED = "artifact_integrity_failed"
     OTHER = "other"
 
 

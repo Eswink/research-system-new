@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
@@ -24,10 +25,22 @@ from packages.application.observability.signals import (
     is_allowed_failure_category,
 )
 from packages.domain.redaction import redact_text
+from packages.domain.workers import WorkerState
 
 _MAX_ATTRIBUTE_LENGTH = 256
 _MAX_LABEL_LENGTH = 64
 _LABEL_OVERFLOW_SENTINEL = "other"
+
+
+def worker_ref(worker_id: str) -> str:
+    """Stable short digest of a worker_id for span attributes (M16 §15).
+
+    The raw worker_id never enters telemetry; a fixed-length hex prefix is
+    enough to correlate one worker's spans without leaking the identifier.
+    """
+    if not worker_id:
+        raise ValueError("worker_id must not be empty")
+    return hashlib.sha256(worker_id.encode("utf-8")).hexdigest()[:12]
 
 
 class AttributeKey(StrEnum):
@@ -58,6 +71,13 @@ class AttributeKey(StrEnum):
     scheduled_retry = "scheduled_retry"
     dropped = "dropped"
     drained = "drained"
+    # M16 distributed execution plane
+    worker_ref = "worker_ref"  # stable short digest of worker_id; raw id never exported
+    worker_state = "worker_state"
+    protocol_version = "protocol_version"
+    partition = "partition"  # type: ignore[assignment]  # shadows str.partition (StrEnum member)
+    fence = "fence"
+    rejection_reason = "rejection_reason"
 
 
 _ALL_ATTR_KEYS = frozenset(AttributeKey)
@@ -102,12 +122,31 @@ class MetricLabel(StrEnum):
     outcome = "outcome"
     failure_category = "failure_category"
     resource_type = "resource_type"
+    # M16: bounded, low-cardinality labels only. `worker_ref` is deliberately
+    # NOT a label (per-worker cardinality); it stays a span attribute.
+    worker_state = "worker_state"
+    partition = "partition"  # type: ignore[assignment]  # shadows str.partition (StrEnum member)
+    rejection_reason = "rejection_reason"
 
 
 _ALL_METRIC_LABELS = frozenset(MetricLabel)
+# partition is a bounded 0..15 domain (M16 default PARTITION_COUNT); worker_state
+# and rejection_reason fold to `other` outside their closed sets.
+_PARTITION_DOMAIN = frozenset(str(i) for i in range(16))
+_WORKER_STATE_DOMAIN = frozenset(
+    getattr(WorkerState.State, n)
+    for n in dir(WorkerState.State)
+    if not n.startswith("_")
+)
+_REJECTION_REASON_DOMAIN = frozenset(
+    {"stale_fence", "expired_lease", "protocol_mismatch", "artifact_integrity", "auth"}
+)
 _ENUM_LABEL_DOMAINS: dict[str, frozenset[str]] = {
     MetricLabel.scope.value: frozenset(member.value for member in OperationScope),
     MetricLabel.outcome.value: frozenset(member.value for member in OperationOutcome),
+    MetricLabel.partition.value: _PARTITION_DOMAIN,
+    MetricLabel.worker_state.value: _WORKER_STATE_DOMAIN,
+    MetricLabel.rejection_reason.value: _REJECTION_REASON_DOMAIN,
 }
 
 
@@ -149,6 +188,22 @@ class MetricName(StrEnum):
     SCHEDULER_PASS = "research_os.scheduler.pass_total"
     TELEMETRY_DROPPED = "research_os.telemetry.dropped_total"
     TELEMETRY_EXPORT_QUEUE_DEPTH = "research_os.telemetry.export_queue_depth"
+    # M16 distributed execution plane
+    WORKER_COUNT = "research_os.worker.count"
+    WORKER_REGISTERED_TOTAL = "research_os.worker.registered_total"
+    WORKER_HEARTBEAT_LOST_TOTAL = "research_os.worker.heartbeat_lost_total"
+    WORKER_DRAIN_TOTAL = "research_os.worker.drain_total"
+    WORKER_PROTOCOL_MISMATCH_TOTAL = "research_os.worker.protocol_mismatch_total"
+    SCHEDULER_CLAIM_LATENCY_MS = "research_os.scheduler.claim_latency_ms"
+    SCHEDULER_PARTITION_LAG = "research_os.scheduler.partition_lag"
+    REMOTE_EXECUTION_DURATION_MS = "research_os.remote_execution.duration_ms"
+    REMOTE_EXECUTION_FAILOVER_TOTAL = "research_os.remote_execution.failover_total"
+    REMOTE_EXECUTION_STALE_RESULT_REJECTED_TOTAL = (
+        "research_os.remote_execution.stale_result_rejected_total"
+    )
+    REMOTE_EXECUTION_ARTIFACT_TRANSFER_FAILED_TOTAL = (
+        "research_os.remote_execution.artifact_transfer_failed_total"
+    )
 
 
 @dataclass(frozen=True, slots=True)
