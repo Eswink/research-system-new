@@ -13,6 +13,9 @@ import { afterEach, beforeEach, test } from "node:test";
 
 import { ApiError, api } from "../../src/api/client";
 
+/** 合成测试值（非真实凭据）：验证 api_key 原样进入请求 body 的透传语义。 */
+const SYNTHETIC_TEST_KEY = "test-fixture-value-not-a-secret";
+
 type FetchCall = {
   url: string;
   init: RequestInit;
@@ -71,14 +74,14 @@ test("createEndpoint 发送 Idempotency-Key 与 JSON body", async () => {
     base_url: "https://relay.example.com/v1",
     protocol: "OPENAI_COMPATIBLE",
     api_style: "chat_completions",
-    api_key: "sk-secret",
+    api_key: SYNTHETIC_TEST_KEY,
   });
   assert.equal(calls.length, 1);
   const headers = new Headers(calls[0]?.init.headers);
   assert.ok(headers.get("Idempotency-Key"), "mutating 请求必须带 Idempotency-Key");
   assert.equal(headers.get("Content-Type"), "application/json");
   const body = JSON.parse(String(calls[0]?.init.body));
-  assert.equal(body.api_key, "sk-secret");
+  assert.equal(body.api_key, SYNTHETIC_TEST_KEY);
   assert.equal(result.etag, "sha256:abc");
   assert.equal(result.dto.credential, "configured");
 });

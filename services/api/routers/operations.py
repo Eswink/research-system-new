@@ -12,12 +12,20 @@ from fastapi import APIRouter, Query, Request
 
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
-from services.api.dto.operations import CostViewDto, RunTelemetryDto, TrendViewDto
+from services.api.dto.operations import (
+    ClusterViewDto,
+    CostViewDto,
+    RunPlacementDto,
+    RunTelemetryDto,
+    TrendViewDto,
+)
 from services.api.errors import ApiError
 from services.api.mappers.operations import (
     cost_view_dto,
+    run_placement_dto,
     run_telemetry_dto,
     trend_view_dto,
+    worker_cluster_dto,
 )
 from services.api.run_access import get_run_or_error
 
@@ -69,3 +77,27 @@ def _run_task_ids(deps: ApiDeps, run_id: str) -> frozenset[str]:
     if deps.projection is None:
         return frozenset()
     return frozenset(task.id.value for task, _contract in deps.projection.list_tasks(run_id))
+
+
+@router.get("/cluster/workers", response_model=ClusterViewDto)
+async def cluster_workers(request: Request) -> ClusterViewDto:
+    """Worker 集群只读视图(worker_ref 短 digest;不暴露原始 id/凭据)。"""
+    deps: ApiDeps = get_deps(request)
+    if deps.worker_registry is None:
+        raise ApiError(503, "Worker Registry Unavailable", "worker registry not configured")
+    return worker_cluster_dto(deps.worker_registry.list_workers())
+
+
+@router.get("/runs/{run_id}/placement", response_model=RunPlacementDto)
+async def run_placement(run_id: str, request: Request) -> RunPlacementDto:
+    """run 的远程执行 placement(只读投影;Console 不直连 Worker)。"""
+    deps: ApiDeps = get_deps(request)
+    get_run_or_error(deps, run_id)
+    registry = deps.worker_registry
+    workers = registry.list_workers() if registry is not None else ()
+    task_ids = tuple(
+        task.id.value
+        for task, _contract in (deps.projection.list_tasks(run_id) if deps.projection else ())
+        if str(task.kind.value) == "EXECUTION"
+    )
+    return run_placement_dto(run_id, workers, task_ids)

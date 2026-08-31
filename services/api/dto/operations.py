@@ -123,3 +123,27 @@ class TrendViewDto(BaseModel):
     segments: list[TrendSegmentDto] = Field(default_factory=list)
     divergences: list[TrendDivergenceDto] = Field(default_factory=list)
     missing: list[TrendPointDto] = Field(default_factory=list)
+
+
+class ClusterWorkerDto(BaseModel):
+    """Worker cluster read view (Control Plane 只读投影;非调度真相)。"""
+
+    worker_ref: str
+    state: str
+    protocol_version: str
+    runtime_version: str
+    platform: str
+    registration_generation: int
+    max_concurrency: int
+    drain_requested: bool
+    last_heartbeat: str | None = None
+
+
+class ClusterViewDto(BaseModel):
+    workers: list[ClusterWorkerDto] = Field(default_factory=list)
+
+
+class RunPlacementDto(BaseModel):
+    run_id: str
+    placements: list[ClusterWorkerDto] = Field(default_factory=list)
+    execution_tasks: list[str] = Field(default_factory=list)

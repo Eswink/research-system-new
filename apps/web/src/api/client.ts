@@ -40,7 +40,9 @@ import type {
   EvidenceDto,
   ExportBundleDto,
   CompatibilityViewDto,
+  ClusterViewDto,
   CostViewDto,
+  RunPlacementDto,
   RunTelemetryDto,
   TrendViewDto,
 } from "./types";
@@ -288,6 +290,14 @@ export const api = {
 
   runCost(runId: string): Promise<CostViewDto> {
     return request(`/runs/${encodeURIComponent(runId)}/cost`, { method: "GET" });
+  },
+
+  clusterWorkers(): Promise<ClusterViewDto> {
+    return request("/cluster/workers", { method: "GET" });
+  },
+
+  runPlacement(runId: string): Promise<RunPlacementDto> {
+    return request(`/runs/${encodeURIComponent(runId)}/placement`, { method: "GET" });
   },
 
   evaluationsTrend(

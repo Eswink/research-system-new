@@ -556,3 +556,25 @@ export interface TrendViewDto {
   divergences: TrendDivergenceDto[];
   missing: TrendPointDto[];
 }
+
+export interface ClusterWorkerDto {
+  worker_ref: string;
+  state: string;
+  protocol_version: string;
+  runtime_version: string;
+  platform: string;
+  registration_generation: number;
+  max_concurrency: number;
+  drain_requested: boolean;
+  last_heartbeat: string | null;
+}
+
+export interface ClusterViewDto {
+  workers: ClusterWorkerDto[];
+}
+
+export interface RunPlacementDto {
+  run_id: string;
+  placements: ClusterWorkerDto[];
+  execution_tasks: string[];
+}

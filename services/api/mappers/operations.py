@@ -31,10 +31,12 @@ from services.api.dto.enums import (
     TrendPointVerdictValue,
 )
 from services.api.dto.operations import (
+    ClusterViewDto,
     CostAmountDto,
     CostDimensionDto,
     CostViewDto,
     RegressionMarkerDto,
+    RunPlacementDto,
     RunTelemetryDto,
     TelemetryOutboxDto,
     TelemetrySinkDto,
@@ -43,6 +45,7 @@ from services.api.dto.operations import (
     TrendPointDto,
     TrendSegmentDto,
     TrendViewDto,
+    ClusterWorkerDto,
 )
 from services.api.errors import ApiError
 
@@ -295,4 +298,38 @@ def _segment_dto(segment: TrendSegment) -> TrendSegmentDto:
     return TrendSegmentDto(
         points=[_point_dto(point) for point in segment.points],
         comparisons=[_marker_dto(marker) for marker in segment.comparisons],
+    )
+
+
+def _cluster_worker_dto(reg: Any) -> "ClusterWorkerDto":
+    from packages.application.observability.attributes import worker_ref
+
+    return ClusterWorkerDto(
+        worker_ref=worker_ref(str(reg.worker_id)),
+        state=str(reg.state),
+        protocol_version=str(reg.protocol_version),
+        runtime_version=str(reg.runtime_version),
+        platform=str(reg.platform),
+        registration_generation=int(reg.registration_generation),
+        max_concurrency=int(reg.max_concurrency),
+        drain_requested=bool(reg.drain_requested),
+        last_heartbeat=reg.last_heartbeat.value.isoformat() if reg.last_heartbeat else None,
+    )
+
+
+def worker_cluster_dto(worker_registrations: tuple[Any, ...]) -> ClusterViewDto:
+    """WorkerRegistry.list_workers() → 只读 cluster 视图(worker_ref 不含原始 id)。"""
+    return ClusterViewDto(workers=[_cluster_worker_dto(reg) for reg in worker_registrations])
+
+
+def run_placement_dto(
+    run_id: str,
+    worker_registrations: tuple[Any, ...],
+    execution_task_ids: tuple[str, ...],
+) -> RunPlacementDto:
+    """run 的执行 placement:该 run 的 execution tasks 与参与 worker(只读)。"""
+    return RunPlacementDto(
+        run_id=run_id,
+        placements=[_cluster_worker_dto(reg) for reg in worker_registrations],
+        execution_tasks=list(execution_task_ids),
     )

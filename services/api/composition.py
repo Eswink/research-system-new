@@ -48,6 +48,7 @@ from packages.application.ports.model_store import ModelStore
 from packages.application.ports.resource_catalog import PreflightContext
 from packages.application.ports.run_projection import RunProjection
 from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
+from packages.application.ports.worker_registry import WorkerRegistry
 from packages.application.run_orchestration.context import RunContext
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
@@ -97,6 +98,7 @@ class ApiDeps:
     eval_report_store: Any | None = field(default=None, repr=False)
     pricing_snapshot_store: Any | None = field(default=None, repr=False)
     pricing: Any | None = field(default=None, repr=False)
+    worker_registry: WorkerRegistry | None = field(default=None, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)

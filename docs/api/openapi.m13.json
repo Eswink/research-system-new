@@ -487,6 +487,81 @@
         "title": "ClaimMapDto",
         "type": "object"
       },
+      "ClusterViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "workers": {
+            "items": {
+              "$ref": "#/components/schemas/ClusterWorkerDto"
+            },
+            "title": "Workers",
+            "type": "array"
+          }
+        },
+        "title": "ClusterViewDto",
+        "type": "object"
+      },
+      "ClusterWorkerDto": {
+        "additionalProperties": false,
+        "description": "Worker cluster read view (Control Plane 只读投影;非调度真相)。",
+        "properties": {
+          "drain_requested": {
+            "title": "Drain Requested",
+            "type": "boolean"
+          },
+          "last_heartbeat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Heartbeat"
+          },
+          "max_concurrency": {
+            "title": "Max Concurrency",
+            "type": "integer"
+          },
+          "platform": {
+            "title": "Platform",
+            "type": "string"
+          },
+          "protocol_version": {
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "registration_generation": {
+            "title": "Registration Generation",
+            "type": "integer"
+          },
+          "runtime_version": {
+            "title": "Runtime Version",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "worker_ref": {
+            "title": "Worker Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "worker_ref",
+          "state",
+          "protocol_version",
+          "runtime_version",
+          "platform",
+          "registration_generation",
+          "max_concurrency",
+          "drain_requested"
+        ],
+        "title": "ClusterWorkerDto",
+        "type": "object"
+      },
       "CompatibilityViewDto": {
         "additionalProperties": false,
         "description": "模型兼容性视图：声明能力 + endpoint 摘要（不含未探测的推断）。",
@@ -2193,6 +2268,34 @@
         "title": "RunDetailDto",
         "type": "object"
       },
+      "RunPlacementDto": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_tasks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Execution Tasks",
+            "type": "array"
+          },
+          "placements": {
+            "items": {
+              "$ref": "#/components/schemas/ClusterWorkerDto"
+            },
+            "title": "Placements",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "RunPlacementDto",
+        "type": "object"
+      },
       "RunStartDto": {
         "additionalProperties": false,
         "properties": {
@@ -3057,6 +3160,28 @@
         "summary": "Decide",
         "tags": [
           "approvals"
+        ]
+      }
+    },
+    "/cluster/workers": {
+      "get": {
+        "description": "Worker 集群只读视图(worker_ref 短 digest;不暴露原始 id/凭据)。",
+        "operationId": "cluster_workers_cluster_workers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClusterViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Cluster Workers",
+        "tags": [
+          "operations"
         ]
       }
     },
@@ -4662,6 +4787,49 @@
         "summary": "Pause Run",
         "tags": [
           "approvals"
+        ]
+      }
+    },
+    "/runs/{run_id}/placement": {
+      "get": {
+        "description": "run 的远程执行 placement(只读投影;Console 不直连 Worker)。",
+        "operationId": "run_placement_runs__run_id__placement_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunPlacementDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Placement",
+        "tags": [
+          "operations"
         ]
       }
     },

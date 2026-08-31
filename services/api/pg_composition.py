@@ -44,6 +44,7 @@ class PostgresAssembly:
     memory_store: Any = None
     eval_report_store: Any = None
     pricing_snapshot_store: Any = None
+    worker_registry: Any = None
     gateway_override: Any = None
     credentials_override: Any = None
     preflight_override: Any = None
@@ -63,6 +64,7 @@ def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any
     from adapters.postgres.pricing_snapshot_store import PostgresPricingSnapshotStore
     from adapters.postgres.run_projection import PostgresRunProjection
     from adapters.postgres.run_store import PostgresRunStore
+    from adapters.postgres.worker_registry import PostgresWorkerRegistry
     from adapters.postgres.workflow_engine import PostgresWorkflowEngine
 
     pg_conn = pg_connect(pg_dsn)
@@ -85,6 +87,7 @@ def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any
         "memory": PostgresMemoryStore(connection=pg_conn),
         "eval_store": PostgresEvalReportStore(connection=pg_conn),
         "pricing_store": PostgresPricingSnapshotStore(connection=pg_conn),
+        "worker_registry": PostgresWorkerRegistry(connection=pg_conn),
     }
 
 
@@ -150,6 +153,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         memory_store=c["memory"],
         eval_report_store=c["eval_store"],
         pricing_snapshot_store=c["pricing_store"],
+        worker_registry=c["worker_registry"],
         gateway_override=getattr(config, "gateway_override", None),
         credentials_override=getattr(config, "credentials_override", None),
         preflight_override=getattr(config, "preflight_override", None),
@@ -194,6 +198,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         telemetry=assembly.telemetry,
         eval_report_store=assembly.eval_report_store,
         pricing_snapshot_store=assembly.pricing_snapshot_store,
+        worker_registry=assembly.worker_registry,
         _connection=assembly.connection,
         _pg_connection=assembly.pg_conn,
     )

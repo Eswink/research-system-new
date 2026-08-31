@@ -220,3 +220,65 @@ def _report(case_answer: int = 42) -> EvalReport:
             inputs={"input://c1": {"answer": case_answer}},
         )
     ).report
+
+
+def _worker_registry(client: TestClient) -> Any:
+    deps = cast(Any, client.app).state.deps
+    if getattr(deps, "worker_registry", None) is None:
+        from adapters.fakes.worker_registry import FakeWorkerRegistry
+
+        deps.worker_registry = FakeWorkerRegistry()
+    return deps.worker_registry
+
+
+def test_cluster_workers_readonly_view(run_ready_client: TestClient) -> None:
+    """M16: /cluster/workers 只读投影;worker_ref 不含原始 id。"""
+    from packages.domain.workers import WorkerRegistration
+
+    registry = _worker_registry(run_ready_client)
+    registry.register(
+        WorkerRegistration(
+            worker_id="worker-secret-id-xyz",
+            protocol_version="1",
+            runtime_version="0.1.0",
+            capabilities=frozenset({"docker"}),
+            backend_kinds=frozenset({"DOCKER"}),
+            platform="linux/amd64",
+            partition_slots=frozenset({0}),
+            max_concurrency=2,
+        )
+    )
+    response = run_ready_client.get("/cluster/workers")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body["workers"]) == 1
+    ref = body["workers"][0]["worker_ref"]
+    assert "worker-secret-id-xyz" not in ref  # raw id never leaves the control plane
+
+
+def test_run_placement_readonly_view(run_ready_client: TestClient) -> None:
+    run_id = _start_run(run_ready_client)
+    _worker_registry(run_ready_client)
+    response = run_ready_client.get(f"/runs/{run_id}/placement")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["run_id"] == run_id
+    assert isinstance(body["execution_tasks"], list)
+
+
+def test_cluster_workers_unavailable_without_registry() -> None:
+    """未配置 registry → 503(不伪装空集群)。"""
+    from adapters.fakes.credential_resolver import FakeCredentialResolver
+    from services.api.app import create_app
+    from services.api.composition import ApiDeps
+
+    deps = ApiDeps(
+        endpoint_store=cast(Any, None),
+        model_store=cast(Any, None),
+        credentials=FakeCredentialResolver({}),
+        gateway=cast(Any, None),
+        idempotency=cast(Any, None),
+    )
+    client = TestClient(create_app(deps))
+    response = client.get("/cluster/workers")
+    assert response.status_code == 503
