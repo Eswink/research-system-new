@@ -35,7 +35,11 @@ class WorkerClientConfig:
 
 @dataclass(frozen=True, slots=True)
 class WorkerResultPayload:
-    """A worker's execution result for one claimed job (typed, not a dict)."""
+    """A worker's execution result for one claimed job (typed, not a dict).
+
+    The gateway derives worker identity from the authenticated session (not
+    from this payload), so no identity field is carried here.
+    """
 
     lease_id: str
     fence: int

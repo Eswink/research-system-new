@@ -69,7 +69,29 @@ def test_fake_record_result_requires_matching_lease() -> None:
         )
     queue.assign(task_id, worker_id="w1", lease_id="l1", fence=1)
     queue.record_result(
-        ExecutionJobResult(task_id=task_id, lease_id="l1", fence=1, status="SUCCEEDED", exit_code=0)
+        ExecutionJobResult(
+            task_id=task_id, lease_id="l1", fence=1, status="SUCCEEDED", worker_id="w1", exit_code=0
+        )
     )
     outcome = queue.poll(task_id)
     assert outcome is not None and outcome.status == "SUCCEEDED"
+
+
+def test_fake_record_result_rejects_non_terminal_status() -> None:
+    """Untrusted worker status cannot resurrect a job as QUEUED (reviewer major)."""
+    from adapters.fakes.execution_job_queue import FakeExecutionJobQueue
+
+    queue = FakeExecutionJobQueue()
+    task_id = queue.enqueue(_request("fake-status"))
+    queue.assign(task_id, worker_id="w1", lease_id="l1", fence=1)
+    with pytest.raises(InvalidInputError):
+        queue.record_result(
+            ExecutionJobResult(
+                task_id=task_id,
+                lease_id="l1",
+                fence=1,
+                status="QUEUED",
+                worker_id="w1",
+                exit_code=0,
+            )
+        )

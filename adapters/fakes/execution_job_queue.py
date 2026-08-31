@@ -105,11 +105,21 @@ class FakeExecutionJobQueue(FakeBase):
 
     def record_result(self, result: ExecutionJobResult) -> None:
         self._enter("record_result", result.task_id)
+        if result.status not in ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED"):
+            raise InvalidInputError(
+                f"invalid result status {result.status!r}: not a terminal execution state"
+            )
         job = self._state.jobs.get(result.task_id)
         if job is None:
             raise InvalidInputError(f"unknown job: {result.task_id}")
-        # fencing: mirror the PostgreSQL lease gate (M16 §8)
-        if job.lease_id != result.lease_id or job.fence != result.fence:
+        # fencing: mirror the PostgreSQL lease gate (M16 §8), including the
+        # identity binding (the caller must BE the claim holder).
+        if (
+            result.worker_id is None
+            or job.worker_id != result.worker_id
+            or job.lease_id != result.lease_id
+            or job.fence != result.fence
+        ):
             self._record("record_result", result.task_id, error="InvalidInputError")
             raise InvalidInputError(
                 f"stale or missing lease for task {result.task_id}: result rejected"

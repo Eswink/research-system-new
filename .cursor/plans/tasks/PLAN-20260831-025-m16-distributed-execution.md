@@ -2,7 +2,7 @@
 id: PLAN-20260831-025
 slug: m16-distributed-execution
 title: M16 Distributed Execution + Remote Sandbox/Worker
-status: VERIFYING
+status: DONE
 created_at: 2026-08-31
 updated_at: 2026-08-31
 cursor_plan_uri: .cursor/plans/m16_分布式执行_1657b1d6.plan.md
@@ -12,7 +12,7 @@ authorization:
   source: cursor-plan
   ref: "用户已批准 M16 计划(m16_分布式执行_1657b1d6.plan.md)并要求循环执行至完成"
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260831-025-m16.md
 memory_entries: []
 ---
 
@@ -88,28 +88,28 @@ M16 节。Non-goals：GPU 调度（M17）、多租户配额（M18）、自动扩
 
 ## 验收条件
 
-- [ ] AC-01 Worker 生命周期状态机（REGISTERING/READY/BUSY/DRAINING/OFFLINE/LOST）有契约测试与转移表穷尽检查
-- [ ] AC-02 Worker 认证：enrollment secret 常量时间比较、session token 仅存 sha256、generation 作废旧 token、反冒充 401、非 loopback 无 TLS 拒绝启动
-- [ ] AC-03 协议握手 fail closed：protocol/capability/backend_kinds 不兼容即注册拒绝并计数，不「连上就算兼容」
-- [ ] AC-04 心跳与时钟权威：服务端 PG now() 判 LOST；租约到期比较改数据库侧时间源；worker 自报时间不参与 expiry/fence/ordering（时钟偏移 +3600s 测试）
-- [ ] AC-05 claim_next 跨进程合法分配：多进程并发 claim 无 split-brain；重叠分区仍单一所有权（partition 非权威）
-- [ ] AC-06 fencing 覆盖 completion/result/artifact/final status/retry；stale result 被拒并计数（BLOCKER 级场景 C）
-- [ ] AC-07 RemoteExecutionBackend 过 ExecutionBackend 契约；Application 零 local/remote 分支；超时下发 cancel
-- [ ] AC-08 Workspace/Artifact 传输完整性：bundle digest + 工作区树 digest 双校验；符号链接/路径穿越/错 digest/截断/跨 task artifact 全部拒绝且有测试
-- [ ] AC-09 崩溃 failover：worker 执行中硬崩溃 → 心跳/租约检测 → requeue → 接管完成 → 无 stuck/孤儿/重复 authoritative completion
-- [ ] AC-10 网络分区后旧权威不复活：session 被拒必须重新注册新 generation；迟到结果被 fence 拒绝
-- [ ] AC-11 重复物理执行不产生重复业务事实（幂等键 + idempotency_records + content-addressed artifact）
-- [ ] AC-12 Scheduler 重启不丢 authoritative state（状态全在 PG）
-- [ ] AC-13 Cancellation 语义：cancel 传播、worker ack、迟到结果不污染 canonical
-- [ ] AC-14 drain：DRAINING 不再分配、既有作业正常收尾、安全 OFFLINE
-- [ ] AC-15 远程路径下安全默认不变：host shell 拒绝、Docker host_config 默认拒绝、NetworkMode=none、secret 枚举面为零、凭据不入 payload/artifact/遥测
-- [ ] AC-16 上游 qualification：SWE-ReX 逐项评估 + 原生 HTTP worker 与 Docker-over-TCP 基线对照 + Temporal M16 重评条件复检 + ADOPT/REJECT/DEFER 裁决 + UPSTREAM_COMPONENTS.yaml 同步（PLANNED 不声称 resolution）
-- [ ] AC-17 PostgreSQL 仍唯一 canonical；迁移集仍单队列表 + 单租约表；Domain/Application 无 worker/RPC/上游类型（import-linter）
-- [ ] AC-18 遥测闭集增量过基数与隐私审计；canary 扩展 worker token 与 bundle 标记；telemetry 故障不破坏正确性
-- [ ] AC-19 Usage/Budget：远程执行经现有 BudgetLedger 记账（usage:{task}:remote-exec 命名空间），无第二 counter
-- [ ] AC-20 Console 只读面：GET /cluster/workers + /runs/{run_id}/placement + useCluster 面板；不直连 Worker
-- [ ] AC-21 M0–M15 关键回归 + m0 profile 全绿；CI 接入 tests/distributed；450/300/50 行门槛
-- [ ] AC-22 独立复审 PASS（architecture / security-governance / verification 三 reviewer 并行 + 根代理交叉裁决）
+- [x] AC-01 Worker 生命周期状态机（REGISTERING/READY/BUSY/DRAINING/OFFLINE/LOST）有契约测试与转移表穷尽检查
+- [x] AC-02 Worker 认证：enrollment secret 常量时间比较、session token 仅存 sha256、generation 作废旧 token、反冒充 401、非 loopback 无 TLS 拒绝启动
+- [x] AC-03 协议握手 fail closed：protocol/capability/backend_kinds 不兼容即注册拒绝并计数，不「连上就算兼容」
+- [x] AC-04 心跳与时钟权威：服务端 PG now() 判 LOST；租约到期比较改数据库侧时间源；worker 自报时间不参与 expiry/fence/ordering（时钟偏移 +3600s 测试）
+- [x] AC-05 claim_next 跨进程合法分配：多进程并发 claim 无 split-brain；重叠分区仍单一所有权（partition 非权威）
+- [x] AC-06 fencing 覆盖 completion/result/artifact/final status/retry；stale result 被拒并计数（BLOCKER 级场景 C）
+- [x] AC-07 RemoteExecutionBackend 过 ExecutionBackend 契约；Application 零 local/remote 分支；超时下发 cancel
+- [x] AC-08 Workspace/Artifact 传输完整性：bundle digest + 工作区树 digest 双校验；符号链接/路径穿越/错 digest/截断/跨 task artifact 全部拒绝且有测试
+- [x] AC-09 崩溃 failover：worker 执行中硬崩溃 → 心跳/租约检测 → requeue → 接管完成 → 无 stuck/孤儿/重复 authoritative completion
+- [x] AC-10 网络分区后旧权威不复活：session 被拒必须重新注册新 generation；迟到结果被 fence 拒绝
+- [x] AC-11 重复物理执行不产生重复业务事实（幂等键 + idempotency_records + content-addressed artifact）
+- [x] AC-12 Scheduler 重启不丢 authoritative state（状态全在 PG）
+- [x] AC-13 Cancellation 语义：cancel 传播、worker ack、迟到结果不污染 canonical
+- [x] AC-14 drain：DRAINING 不再分配、既有作业正常收尾、安全 OFFLINE
+- [x] AC-15 远程路径下安全默认不变：host shell 拒绝、Docker host_config 默认拒绝、NetworkMode=none、secret 枚举面为零、凭据不入 payload/artifact/遥测
+- [x] AC-16 上游 qualification：SWE-ReX 逐项评估 + 原生 HTTP worker 与 Docker-over-TCP 基线对照 + Temporal M16 重评条件复检 + ADOPT/REJECT/DEFER 裁决 + UPSTREAM_COMPONENTS.yaml 同步（PLANNED 不声称 resolution）
+- [x] AC-17 PostgreSQL 仍唯一 canonical；迁移集仍单队列表 + 单租约表；Domain/Application 无 worker/RPC/上游类型（import-linter）
+- [x] AC-18 遥测闭集增量过基数与隐私审计；canary 扩展 worker token 与 bundle 标记；telemetry 故障不破坏正确性
+- [x] AC-19 Usage/Budget：远程执行经现有 BudgetLedger 记账（usage:{task}:remote-exec 命名空间），无第二 counter
+- [x] AC-20 Console 只读面：GET /cluster/workers + /runs/{run_id}/placement + useCluster 面板；不直连 Worker
+- [x] AC-21 M0–M15 关键回归 + m0 profile 全绿；CI 接入 tests/distributed；450/300/50 行门槛
+- [x] AC-22 独立复审 PASS（architecture / security-governance / verification 三 reviewer 并行 + 根代理交叉裁决）
 
 ## 实施清单
 
@@ -131,7 +131,7 @@ M16 节。Non-goals：GPU 调度（M17）、多租户配额（M18）、自动扩
 - [x] STEP-16 WP4 operations 只读路由 + DTO/mapper + Console useCluster
 - [x] STEP-17 WP4 架构回归（.importlinter.worker + otel 登记）+ CI 接入 + m0 覆盖断言
 - [x] STEP-18 WP4 文档同步（PORTS/WORKFLOW_RELIABILITY/WORKSPACE_RUNTIME/OBSERVABILITY/DEPLOYMENT_PROFILES/THREAT_MODEL/IDENTITY_AND_ACCESS/SECRET_MANAGEMENT/DATABASE_SCHEMA/CONTROL_PLANE_API/OPERATIONS_RUNBOOK/INDEX/CHANGELOG/BACKLOG/MILESTONES）
-- [ ] STEP-19 M16_COMPLETION_RECORD + RECHECK + 三 reviewer 独立复审 + 停在阶段边界
+- [x] STEP-19 M16_COMPLETION_RECORD + RECHECK + 三 reviewer 独立复审 + 停在阶段边界
 
 ## 子代理使用
 
@@ -174,6 +174,7 @@ Subagent 默认不启用。需要并行时，每个 wave 最多 3 个；多 wave
 | 2026-08-31 | — | DRAFT | 建立任务计划 | Cursor Plan 批准 |
 | 2026-08-31 | DRAFT | IN_PROGRESS | 用户批准并要求循环执行 | `m16_分布式执行_1657b1d6.plan.md` |
 | 2026-08-31 | IN_PROGRESS | VERIFYING | WP1–WP4 实施完成；m0 门禁修复后全绿；三 reviewer 复审启动 | EV-01..EV-11 |
+| 2026-08-31 | VERIFYING | DONE | 三 reviewer 结论：arch PASS(1 major)、security FAIL(1 blocker+2 major)、verif PASS(1 major)；全部修复（ALL_PLAN 投影、status 闭集、身份绑定）+ 回归固化；全门禁重跑全绿 | `RECHECK-20260831-025-m16` |
 
 ## 影响报告
 
@@ -181,4 +182,9 @@ Subagent 默认不启用。需要并行时，每个 wave 最多 3 个；多 wave
 - 安全/凭据：新增 WORKER 凭据域（enrollment secret + session token sha256）；非 loopback 无 TLS 拒绝启动；作业级最小凭据 scope。
 - 兼容性/迁移：全部 additive；`TaskKind` 默认 `AGENT_SESSION` 向后兼容；现有 agent-session 任务永不被远程 worker claim。
 - 上游版本：预期零新直接依赖（复用 fastapi/uvicorn/httpx）；SWE-ReX qualification 若 DEFER/REJECT 则不 pin。
-- 下一项任务：按 STEP-02 起顺序实施 WP1。
+- 下一项任务：停在阶段边界；M17/M18 不自动开工。
+
+- 无可复用事实：本计划运行事实全部记录于 `RECHECK-20260831-025-m16` 与
+  `M16_COMPLETION_RECORD.md`；跨会话可复用工程事实（fencing 语义、
+  worker 边界、Docker 默认不变式）已由代码/契约/架构测试固化，无需额外
+  工程记忆条目。

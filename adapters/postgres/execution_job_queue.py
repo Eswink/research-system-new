@@ -200,26 +200,42 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
         )
 
     def record_result(self, result: ExecutionJobResult) -> None:
-        """Persist a settled result, gated on the active lease.
+        """Persist a settled result, gated on the active lease AND a closed-set
+        terminal status.
 
         Validates `(task_id, lease_id, fence)` against the live `leases` row
         inside the same transaction: a stale worker whose claim generation was
         superseded (or whose lease expired) cannot write a result (M16 §8).
+        `status` is worker-supplied and therefore untrusted (ADR-0027 §1) —
+        only SUCCEEDED/FAILED/TIMED_OUT/CANCELLED may be persisted, so a
+        fence-holding worker cannot resurrect a settled job as QUEUED or
+        strand it in an unknown state.
         """
         self._ensure_open()
+        if result.status not in ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED"):
+            raise InvalidInputError(
+                f"invalid result status {result.status!r}: not a terminal execution state"
+            )
         task_id = result.task_id
+        if result.worker_id is None:
+            raise InvalidInputError("result worker_id is required (identity binding)")
         with self._conn.transaction():
             lease_row: Any = self._conn.execute(
-                "SELECT lease_id, fence FROM leases WHERE task_id = %s FOR UPDATE", (task_id,)
+                "SELECT lease_id, fence, worker_id FROM leases WHERE task_id = %s FOR UPDATE",
+                (task_id,),
             ).fetchone()
             if (
                 lease_row is None
                 or lease_row["lease_id"] != result.lease_id
                 or int(lease_row["fence"]) != result.fence
+                # identity binding: the caller must BE the claim holder
+                or lease_row["worker_id"] != result.worker_id
             ):
                 raise InvalidInputError(
                     f"stale or missing lease for task {task_id}: result rejected"
                 )
+            # canonical terminal task state (ExecutionStatus -> ResearchTaskState)
+            task_status = "SUCCEEDED" if result.status == "SUCCEEDED" else "FAILED"
             self._conn.execute(
                 "UPDATE execution_jobs SET worker_id = (SELECT worker_id FROM leases"
                 " WHERE task_id = %s), exit_code = %s, stdout_digest = %s, stderr_digest = %s,"
@@ -237,7 +253,7 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
                 ),
             )
             self._conn.execute(
-                "UPDATE tasks SET status = %s WHERE task_id = %s", (result.status, task_id)
+                "UPDATE tasks SET status = %s WHERE task_id = %s", (task_status, task_id)
             )
             self._conn.execute("DELETE FROM leases WHERE task_id = %s", (task_id,))
         self._record("record_result", task_id, result=result.status)

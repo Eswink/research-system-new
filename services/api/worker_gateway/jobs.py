@@ -84,7 +84,9 @@ async def submit_result(
     authorization: str | None = Header(default=None),
 ) -> ResultAckDto:
     _require_job_plane(request)
-    _authorized_identity(request, authorization, payload.worker_id, payload.registration_generation)
+    identity = _authorized_identity(
+        request, authorization, payload.worker_id, payload.registration_generation
+    )
     deps = security.deps_of(request)
     job_queue = deps.job_queue
     assert job_queue is not None  # guarded by _require_job_plane
@@ -95,6 +97,9 @@ async def submit_result(
                 lease_id=payload.lease_id,
                 fence=payload.fence,
                 status=payload.status,
+                # identity binding: the authenticated session identity (not a
+                # client-asserted field) must equal leases.worker_id
+                worker_id=identity.worker_id,
                 exit_code=payload.exit_code,
                 stdout_digest=payload.stdout_digest,
                 stderr_digest=payload.stderr_digest,

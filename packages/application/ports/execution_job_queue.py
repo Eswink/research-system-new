@@ -42,12 +42,17 @@ class ExecutionJobRequest:
 
 @dataclass(frozen=True, slots=True)
 class ExecutionJobResult:
-    """A worker's settled execution result (gateway writes after fence check)."""
+    """A worker's settled execution result (gateway writes after fence check).
+
+    `worker_id` is the authenticated session identity — the write is rejected
+    unless it equals `leases.worker_id` (identity binding, ADR-0027 §1).
+    """
 
     task_id: str
     lease_id: str
     fence: int
     status: str
+    worker_id: str | None = None
     exit_code: int | None = None
     stdout_digest: str | None = None
     stderr_digest: str | None = None

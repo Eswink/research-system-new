@@ -270,11 +270,19 @@ class PostgresWorkerRegistry(PostgresAdapterBase):
     def list_stale(self, stale_seconds: float) -> tuple[str, ...]:
         self._ensure_open()
         time_sql, time_params = self._time_expr()
+        # Schedulable-but-not-reaped states only: OFFLINE is terminal (never
+        # reaped) and LOST is already reaped (no per-pass no-op re-listing).
+        active_states = (
+            WorkerState.State.REGISTERING,
+            WorkerState.State.READY,
+            WorkerState.State.BUSY,
+            WorkerState.State.DRAINING,
+        )
         rows: Any = self._conn.execute(
             f"SELECT worker_id FROM workers "
-            f"WHERE state <> %s AND last_heartbeat < {time_sql} - make_interval(secs => %s) "
+            f"WHERE state = ANY(%s) AND last_heartbeat < {time_sql} - make_interval(secs => %s) "
             "ORDER BY worker_id",
-            (WorkerState.State.OFFLINE, *time_params, stale_seconds),
+            (list(active_states), *time_params, stale_seconds),
         ).fetchall()
         ids = tuple(str(r["worker_id"]) for r in rows)
         self._record("list_stale", f"{stale_seconds}", result=str(len(ids)))

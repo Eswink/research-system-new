@@ -57,6 +57,9 @@ uv run --frozen --no-sync python -B .cursor/skills/governance-check/scripts/vali
 
 ## 独立复审
 
-三 reviewer（architecture / security-governance / verification）独立复审结论
-记录于 `.cursor/plans/rechecks/`（RECHECK-20260831-025-m16）；根代理交叉核对
-后给出最终矩阵。M16 PASS 后停在阶段边界，不自动进入 M17/M18。
+三 reviewer（architecture / security-governance / verification）独立复审：
+arch PASS（1 major）、security FAIL（1 blocker + 2 major）、verification PASS
+（1 major）。全部修复（ALL_PLAN 投影一致性、worker 自报 status 闭集校验、
+结果写路径绑定认证身份）并以回归测试固化；全门禁重跑全绿。逐项记录见
+`.cursor/plans/rechecks/RECHECK-20260831-025-m16.md`。最终裁决 M16 = PASS，
+停在阶段边界，不自动进入 M17/M18。

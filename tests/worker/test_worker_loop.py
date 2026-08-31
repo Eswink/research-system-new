@@ -23,6 +23,7 @@ class _FakeClient:
 
     def __init__(self, job: dict[str, object] | None) -> None:
         self._job = job
+        self.generation = 1
         self.registered = False
         self.heartbeats = 0
         self.results: list[tuple[str, WorkerResultPayload]] = []

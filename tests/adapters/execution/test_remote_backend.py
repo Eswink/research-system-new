@@ -95,6 +95,7 @@ class _CompletingQueue(FakeExecutionJobQueue):
                     lease_id="lease-1",
                     fence=job.fence or 1,
                     status="SUCCEEDED",
+                    worker_id="w1",
                     exit_code=0,
                     stdout_digest=_STDOUT_DIGEST,
                     stderr_digest=_EMPTY_DIGEST,

@@ -130,12 +130,19 @@ class FakeWorkerRegistry(FakeBase):
     def list_stale(self, stale_seconds: float) -> tuple[str, ...]:
         self._enter("list_stale", f"{stale_seconds}")
         cutoff = _server_now(self._now) - timedelta(seconds=stale_seconds)
-        terminal = WorkerState.terminal()
+        # Match the PG filter: terminal (OFFLINE) and already-reaped (LOST)
+        # workers are never re-listed.
+        reapable = (
+            WorkerState.State.REGISTERING,
+            WorkerState.State.READY,
+            WorkerState.State.BUSY,
+            WorkerState.State.DRAINING,
+        )
         stale = tuple(
             sorted(
                 worker_id
                 for worker_id, reg in self._workers.items()
-                if reg.state not in terminal
+                if reg.state in reapable
                 and reg.last_heartbeat is not None
                 and reg.last_heartbeat.value < cutoff
             )

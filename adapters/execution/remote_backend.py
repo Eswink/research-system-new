@@ -21,6 +21,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from adapters.workspace.bundle import BundleError, bundle_from_directory, bundle_to_directory
+from packages.application.observability.attributes import worker_ref
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.execution_job_queue import (
@@ -149,7 +150,7 @@ class RemoteExecutionBackend:
             stdout_digest=Digest.parse(outcome.stdout_digest) if outcome.stdout_digest else None,
             stderr_digest=Digest.parse(outcome.stderr_digest) if outcome.stderr_digest else None,
             compute_usage_summary={
-                "worker_ref": outcome.worker_id,
+                "worker_ref": worker_ref(outcome.worker_id) if outcome.worker_id else None,
                 "fence": outcome.fence,
                 "remote": True,
             },
