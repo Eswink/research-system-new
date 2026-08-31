@@ -45,6 +45,7 @@ def test_collector_job_fails_closed_and_runs_pg_regressions() -> None:
     commands = _commands(collector)
     environment = _environment(collector)
     assert "tests/postgres" in commands
+    assert "tests/distributed" in commands  # M16: cross-process evidence runs in CI
     assert "tests/e2e/test_pg_crash_restart.py" in commands
     assert environment["RESEARCHOS_REQUIRE_COLLECTOR"] == "1"
     assert environment["RESEARCHOS_REQUIRE_POSTGRES"] == "1"

@@ -1,0 +1,19 @@
+[importlinter]
+root_package = services
+include_external_packages = True
+exclude_type_checking_imports = False
+
+# M16: the worker process must never import vendor SDKs directly (AST gate in
+# tests/architecture covers the business-truth adapter ban, which cannot be
+# expressed here because adapters.* are external to this root, ADR-0027).
+[importlinter:contract:worker-plane-vendor-free]
+name = Worker process imports no vendor SDKs
+type = forbidden
+source_modules =
+    services.worker
+forbidden_modules =
+    openai
+    litellm
+    anthropic
+    temporalio
+    opentelemetry

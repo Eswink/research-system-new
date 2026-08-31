@@ -170,8 +170,9 @@ jobs:
           uv run --frozen --no-sync python -B -m pytest
           tests/observability
           tests/postgres
+          tests/distributed
           tests/e2e/test_pg_crash_restart.py
-          -m "requires_collector or postgres"
+          -m "requires_collector or postgres or distributed"
         env:
           PYTHONUTF8: "1"
           PYTHONIOENCODING: utf-8
