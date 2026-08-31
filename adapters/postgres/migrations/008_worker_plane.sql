@@ -58,5 +58,12 @@ CREATE TABLE IF NOT EXISTS execution_jobs (
     output_bundle_ref TEXT,
     output_bundle_digest TEXT,
     worker_id TEXT,
+    required_capability TEXT,
+    partition SMALLINT,
+    exit_code INTEGER,
+    stdout_digest TEXT,
+    stderr_digest TEXT,
+    failure_category TEXT,
+    cancel_requested BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

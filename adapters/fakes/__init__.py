@@ -17,6 +17,7 @@ from adapters.fakes.eval_report_store import FakeEvalReportStore
 from adapters.fakes.event_publisher import FakeEventPublisher
 from adapters.fakes.evidence_ledger import FakeEvidenceLedger
 from adapters.fakes.execution_backend import FakeExecutionBackend
+from adapters.fakes.execution_job_queue import FakeExecutionJobQueue
 from adapters.fakes.memory_store import FakeMemoryStore
 from adapters.fakes.model_gateway import FakeModelGateway, FakeModelGatewayOptions
 from adapters.fakes.policy_evaluator import FakePolicyEvaluator
@@ -41,6 +42,7 @@ __all__ = [
     "FakeEvalReportStore",
     "FakeEvidenceLedger",
     "FakeExecutionBackend",
+    "FakeExecutionJobQueue",
     "FakeMemoryStore",
     "FakeModelGateway",
     "FakeModelGatewayOptions",

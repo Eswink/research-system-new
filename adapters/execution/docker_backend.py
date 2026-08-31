@@ -23,6 +23,7 @@ from __future__ import annotations
 import tempfile
 import time
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -76,7 +77,9 @@ def _resolve_workspace_dir(workspace_path: str | None) -> Path:
     return path
 
 
-def _final_status(timed_out: bool, exit_code: int) -> ExecutionStatus:
+def _final_status(timed_out: bool, exit_code: int, cancelled: bool = False) -> ExecutionStatus:
+    if cancelled:
+        return ExecutionStatus.CANCELLED
     if timed_out:
         return ExecutionStatus.TIMED_OUT
     if exit_code == 0:
@@ -132,6 +135,8 @@ class DockerExecutionBackend(ExecutionBackend):
         self,
         spec: ExecutionSpec,
         timeout_seconds: int | None = None,
+        *,
+        cancelled: Callable[[], bool] | None = None,
     ) -> ExecutionRun:
         with operation(
             self._telemetry,
@@ -140,7 +145,7 @@ class DockerExecutionBackend(ExecutionBackend):
             attributes={"resource_type": spec.backend_kind},
         ) as op:
             try:
-                run = self._execute_impl(spec, timeout_seconds)
+                run = self._execute_impl(spec, timeout_seconds, cancelled)
             except PortError as exc:
                 category = exc.failure_category or FailureCategory.EXECUTION_FAILURE
                 op.set_outcome(OperationOutcome.FAILED, category.value)
@@ -159,6 +164,7 @@ class DockerExecutionBackend(ExecutionBackend):
         self,
         spec: ExecutionSpec,
         timeout_seconds: int | None,
+        cancelled: Callable[[], bool] | None = None,
     ) -> ExecutionRun:
         self._ensure_open()
         if not spec.command:
@@ -172,15 +178,15 @@ class DockerExecutionBackend(ExecutionBackend):
             self._image_digest = self._resolve_image_digest()
             container_id = self._create_container(spec, limits, workspace)
             self._api.start(container_id)
-            timed_out = self._wait(container_id, timeout_seconds)
-            if timed_out:
+            timed_out, was_cancelled = self._wait(container_id, timeout_seconds, cancelled)
+            if timed_out or was_cancelled:
                 self._api.kill(container_id)
             state = self._api.inspect_container(container_id)
             exit_code = int((state.get("State") or {}).get("ExitCode") or 0)
             oom_killed = bool((state.get("State") or {}).get("OOMKilled"))
             stdout, stderr = self._collect_logs(container_id)
             self._write_workspace_logs(workspace, stdout, stderr)
-            status = _final_status(timed_out, exit_code)
+            status = _final_status(timed_out, exit_code, was_cancelled)
             return ExecutionRun(
                 run_id=f"exec-{uuid.uuid4().hex}",
                 spec=spec,
@@ -257,24 +263,31 @@ class DockerExecutionBackend(ExecutionBackend):
         )
         return str(container.get("Id") or "")
 
-    def _wait(self, container_id: str, timeout_seconds: int | None) -> bool:
-        """轮询容器 Running 状态直到退出；越过 deadline 返回 True（timed_out）。
+    def _wait(
+        self,
+        container_id: str,
+        timeout_seconds: int | None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> tuple[bool, bool]:
+        """轮询容器 Running 状态直到退出；返回 (timed_out, cancelled)。
 
         不用 docker-py `wait(timeout=)`：其超时异常在 Windows npipe 与 Linux
         unix socket 上类型不一致（ConnectionError vs ReadTimeout），轮询
-        inspect 跨平台确定。
+        inspect 跨平台确定。`cancelled` 探针每轮调用一次（协作式取消，M16）。
         """
         deadline = time.monotonic() + timeout_seconds if timeout_seconds is not None else None
         while True:
             state = self._api.inspect_container(container_id)
             if not bool((state.get("State") or {}).get("Running")):
-                return False
+                return False, False
+            if cancelled is not None and cancelled():
+                return False, True
             if deadline is None:
                 time.sleep(_WAIT_STEP_SECONDS)
                 continue
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                return True
+                return True, False
             time.sleep(min(remaining, _WAIT_STEP_SECONDS))
 
     def _collect_logs(self, container_id: str) -> tuple[bytes, bytes]:

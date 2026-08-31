@@ -10,6 +10,7 @@ M5 决策 D2：同步语义；timeout 产生 ExecutionStatus.TIMED_OUT 而不是
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
 from packages.domain.workspace import ExecutionRun, ExecutionSpec
@@ -23,6 +24,15 @@ class ExecutionBackend(Protocol):
         self,
         spec: ExecutionSpec,
         timeout_seconds: int | None = None,
-    ) -> ExecutionRun: ...
+        *,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> ExecutionRun:
+        """执行 spec；`cancelled` 是可选协作式取消探针（M16）。
+
+        默认 None = 既有行为不变。提供时，实现应在轮询/等待期间周期性调用它，
+        返回 True 则停止执行并产出 `ExecutionStatus.CANCELLED`。与
+        `GovernedExperimentExecutor` 的取消回调模式一致，避免为取消再造机制。
+        """
+        ...
 
     def close(self) -> None: ...

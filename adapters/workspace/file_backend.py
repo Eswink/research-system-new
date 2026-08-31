@@ -18,8 +18,6 @@ digest），可支撑容器挂载与 ReproducibilityAudit；Fake 的 `snap-N` �
 
 from __future__ import annotations
 
-import hashlib
-import json
 import re
 import shutil
 from collections.abc import Callable
@@ -65,19 +63,10 @@ class _CallRecord:
 
 
 def workspace_tree_digest(directory: Path) -> str:
-    """确定性目录内容 digest：排序 (relpath, sha256) 列表的 sha256。
+    """Deterministic directory content digest (delegates to the bundle codec)."""
+    from adapters.workspace.bundle import tree_digest
 
-    symlink 不计入 digest（既防外部文件内容被摘要，也保证 digest 与
-    snapshot 的 symlink 拒绝策略一致）。
-    """
-    entries: list[tuple[str, str]] = []
-    for path in sorted(directory.rglob("*")):
-        if path.is_symlink() or not path.is_file():
-            continue
-        rel = path.relative_to(directory).as_posix()
-        entries.append((rel, hashlib.sha256(path.read_bytes()).hexdigest()))
-    payload = json.dumps(entries, separators=(",", ":"), sort_keys=True).encode("utf-8")
-    return "sha256:" + hashlib.sha256(payload).hexdigest()
+    return tree_digest(directory)
 
 
 class FileWorkspaceBackend(WorkspaceBackend):
@@ -209,50 +198,32 @@ class FileWorkspaceBackend(WorkspaceBackend):
         self._closed = True
 
     def export_bundle(self, lease: WorkspaceLease, snapshot: WorkspaceSnapshot) -> bytes:
-        from adapters.workspace.bundle import encode_bundle
+        from adapters.workspace.bundle import BundleError, bundle_from_directory
 
         self._enter("export_bundle", snapshot.digest)
-        snapshot_dir = self._require_snapshot("export_bundle", snapshot)
-        self._reject_symlinks("export_bundle", snapshot_dir)
-        entries: dict[str, bytes] = {}
-        for path in sorted(snapshot_dir.rglob("*")):
-            if not path.is_file():
-                continue
-            entries[path.relative_to(snapshot_dir).as_posix()] = path.read_bytes()
-        bundle = encode_bundle(entries)
+        try:
+            snapshot_dir = self._require_snapshot("export_bundle", snapshot)
+            bundle, _digest = bundle_from_directory(snapshot_dir)
+        except BundleError as exc:
+            self._record("export_bundle", snapshot.digest, error="BundleError")
+            raise InvalidInputError(str(exc)) from exc
         self._record("export_bundle", snapshot.digest, result=f"{len(bundle)}B")
         return bundle
 
     def import_bundle(
         self, workspace_id: str, bundle: bytes, expected_digest: str
     ) -> WorkspaceSnapshot:
-        from adapters.workspace.bundle import BundleError, decode_bundle
+        from adapters.workspace.bundle import BundleError, bundle_to_directory
 
         self._enter("import_bundle", expected_digest)
+        target = self._dir_for(workspace_id)
         try:
-            entries = decode_bundle(bundle)
+            bundle_to_directory(bundle, target, expected_digest)
         except BundleError as exc:
             self._record("import_bundle", expected_digest, error="BundleError")
             raise InvalidInputError(str(exc)) from exc
-        target = self._dir_for(workspace_id)
-        if target.exists():
-            shutil.rmtree(target)
-        target.mkdir(parents=True, exist_ok=True)
-        for rel, data in entries.items():
-            destination = (target / rel).resolve()
-            if not destination.is_relative_to(target.resolve()):
-                raise InvalidInputError(f"bundle path escapes workspace: {rel!r}")
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_bytes(data)
-        actual = workspace_tree_digest(target)
-        if actual != expected_digest:
-            shutil.rmtree(target)
-            self._record("import_bundle", expected_digest, error="digest mismatch")
-            raise InvalidInputError(
-                f"imported tree digest {actual} != expected {expected_digest}"
-            )
         snapshot = WorkspaceSnapshot(
-            workspace_id=workspace_id, digest=actual, created_at=Timestamp(self._now())
+            workspace_id=workspace_id, digest=expected_digest, created_at=Timestamp(self._now())
         )
         self._record("import_bundle", expected_digest, result="verified")
         return snapshot

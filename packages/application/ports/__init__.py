@@ -40,6 +40,10 @@ from packages.application.ports.eval_report_store import (
 from packages.application.ports.event_publisher import EventPublisher
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.execution_backend import ExecutionBackend
+from packages.application.ports.execution_job_queue import (
+    ExecutionJobOutcome,
+    ExecutionJobQueue,
+)
 from packages.application.ports.memory_store import MemoryStore
 from packages.application.ports.model_gateway import (
     CompletionRequest,
@@ -97,6 +101,8 @@ __all__ = [
     "StoredEvalReport",
     "EvidenceLedger",
     "ExecutionBackend",
+    "ExecutionJobOutcome",
+    "ExecutionJobQueue",
     "ForkSpec",
     "InvalidInputError",
     "IndexEntry",

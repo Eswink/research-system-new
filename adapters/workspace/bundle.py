@@ -13,7 +13,8 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-from pathlib import PurePosixPath
+import shutil
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 _BUNDLE_VERSION = 1
@@ -83,3 +84,57 @@ def decode_bundle(bundle: bytes) -> dict[str, bytes]:
             raise BundleError(f"duplicate bundle path: {path!r}")
         result[path] = data
     return result
+
+
+def tree_digest(directory: Path) -> str:
+    """Deterministic content digest of a directory tree (regular files only).
+
+    Symlinks are excluded (matching the snapshot rejection policy), so a tree
+    with an added symlink digests identically to one without it.
+    """
+    entries: list[tuple[str, str]] = []
+    for path in sorted(directory.rglob("*")):
+        if path.is_symlink() or not path.is_file():
+            continue
+        rel = path.relative_to(directory).as_posix()
+        entries.append((rel, hashlib.sha256(path.read_bytes()).hexdigest()))
+    payload = json.dumps(entries, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
+
+
+def bundle_from_directory(directory: Path) -> tuple[bytes, str]:
+    """Serialize a directory into (bundle_bytes, tree_digest). Symlinks rejected."""
+    for path in directory.rglob("*"):
+        if path.is_symlink():
+            raise BundleError(
+                f"symlink in workspace is not permitted: "
+                f"{path.relative_to(directory).as_posix()!r}"
+            )
+    entries = {
+        path.relative_to(directory).as_posix(): path.read_bytes()
+        for path in sorted(directory.rglob("*"))
+        if path.is_file()
+    }
+    return encode_bundle(entries), tree_digest(directory)
+
+
+def bundle_to_directory(bundle: bytes, target: Path, expected_digest: str) -> None:
+    """Materialize a bundle into `target`, verifying the tree digest.
+
+    Wipes any existing target, rejects traversal/absolute paths, and removes
+    the partially-written tree if the digest does not match.
+    """
+    entries = decode_bundle(bundle)
+    if target.exists():
+        shutil.rmtree(target)
+    target.mkdir(parents=True, exist_ok=True)
+    for rel, data in entries.items():
+        destination = (target / rel).resolve()
+        if not destination.is_relative_to(target.resolve()):
+            raise BundleError(f"bundle path escapes workspace: {rel!r}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
+    actual = tree_digest(target)
+    if actual != expected_digest:
+        shutil.rmtree(target)
+        raise BundleError(f"imported tree digest {actual} != expected {expected_digest}")

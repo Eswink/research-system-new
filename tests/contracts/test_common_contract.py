@@ -22,6 +22,7 @@ from adapters.fakes import (
     FakeEventPublisher,
     FakeEvidenceLedger,
     FakeExecutionBackend,
+    FakeExecutionJobQueue,
     FakeMemoryStore,
     FakeModelGateway,
     FakePolicyEvaluator,
@@ -84,6 +85,7 @@ _FAKE_FACTORIES: dict[str, Callable[[], FakeBase]] = {
     "resource_catalog": FakeResourceCatalog,
     "tool_pack_store": FakeToolPackStore,
     "worker_registry": FakeWorkerRegistry,
+    "execution_job_queue": FakeExecutionJobQueue,
 }
 
 _PORT_PROTOCOL_NAMES = {
@@ -107,6 +109,7 @@ _PORT_PROTOCOL_NAMES = {
     "tool_pack_store": "ToolPackStore",
     "telemetry_sink": "TelemetrySink",
     "worker_registry": "WorkerRegistry",
+    "execution_job_queue": "ExecutionJobQueue",
 }
 
 _PORT_PROBES: dict[str, Callable[[Any], object]] = {
@@ -131,6 +134,7 @@ _PORT_PROBES: dict[str, Callable[[Any], object]] = {
     "resource_catalog": lambda fake: fake.snapshot(),
     "tool_pack_store": lambda fake: fake.get("missing-pack"),
     "worker_registry": lambda fake: fake.get("missing-worker"),
+    "execution_job_queue": lambda fake: fake.poll("missing-task"),
 }
 
 _PORT_PROBE_METHODS: dict[str, str] = {
@@ -153,6 +157,7 @@ _PORT_PROBE_METHODS: dict[str, str] = {
     "resource_catalog": "snapshot",
     "tool_pack_store": "get",
     "worker_registry": "get",
+    "execution_job_queue": "poll",
 }
 
 
@@ -269,7 +274,7 @@ def test_provider_types_do_not_leak_from_ports() -> None:
 
 
 def test_port_interface_compatibility_matrix() -> None:
-    """注册表必须覆盖全部 20 个 Port 名称（M8/M10/M15/M16 增量）。"""
+    """注册表必须覆盖全部 21 个 Port 名称（M8/M10/M15/M16 增量）。"""
     expected = {
         "agent_runtime",
         "workflow_engine",
@@ -291,6 +296,7 @@ def test_port_interface_compatibility_matrix() -> None:
         "tool_pack_store",
         "telemetry_sink",
         "worker_registry",
+        "execution_job_queue",
     }
     assert set(PORT_IMPLEMENTATIONS) == expected
 

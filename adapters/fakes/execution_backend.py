@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from adapters.fakes.base import FakeBase
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import Timestamp
@@ -33,17 +35,23 @@ class FakeExecutionBackend(FakeBase):
         self,
         spec: ExecutionSpec,
         timeout_seconds: int | None = None,
+        *,
+        cancelled: Callable[[], bool] | None = None,
     ) -> ExecutionRun:
         self._enter("execute", spec.command)
         if not spec.command:
             self._record("execute", "", error="InvalidInputError")
             raise InvalidInputError("execution command must not be empty")
         self._counter += 1
-        timed_out = timeout_seconds is not None and self._duration > timeout_seconds
-        status = ExecutionStatus.TIMED_OUT if timed_out else self._status
-        category = self._failure_category
-        if status is ExecutionStatus.FAILED and category is None:
-            category = FailureCategory.EXECUTION_FAILURE
+        if cancelled is not None and cancelled():
+            status = ExecutionStatus.CANCELLED
+            category = None
+        else:
+            timed_out = timeout_seconds is not None and self._duration > timeout_seconds
+            status = ExecutionStatus.TIMED_OUT if timed_out else self._status
+            category = self._failure_category
+            if status is ExecutionStatus.FAILED and category is None:
+                category = FailureCategory.EXECUTION_FAILURE
         started = Timestamp.now()
         completed = Timestamp.now()
         run = ExecutionRun(

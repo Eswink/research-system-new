@@ -27,6 +27,7 @@ from adapters.fakes import (
     FakeEventPublisher,
     FakeEvidenceLedger,
     FakeExecutionBackend,
+    FakeExecutionJobQueue,
     FakeMemoryStore,
     FakeModelGateway,
     FakePolicyEvaluator,
@@ -46,6 +47,7 @@ from adapters.openhands.session_types import AdapterDependencies
 from adapters.postgres.artifact_store import PostgresArtifactStore
 from adapters.postgres.budget_ledger import PostgresBudgetLedger
 from adapters.postgres.evidence_ledger import PostgresEvidenceLedger
+from adapters.postgres.execution_job_queue import PostgresExecutionJobQueue
 from adapters.postgres.memory_store import PostgresMemoryStore
 from adapters.postgres.worker_registry import PostgresWorkerRegistry
 from adapters.postgres.workflow_engine import PostgresWorkflowEngine
@@ -171,6 +173,12 @@ def _postgres_worker_registry_factory() -> PostgresWorkerRegistry:
     return PostgresWorkerRegistry(dsn=dsn)
 
 
+def _postgres_execution_job_queue_factory() -> PostgresExecutionJobQueue:
+    dsn = _pg_dsn_or_skip()
+    _pg_truncate("tasks, leases, idempotency_records, outbox_events, execution_jobs")
+    return PostgresExecutionJobQueue(dsn=dsn)
+
+
 def _postgres_artifact_factory() -> PostgresArtifactStore:
     dsn = _pg_dsn_or_skip()
     _pg_truncate("artifacts")
@@ -229,4 +237,8 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "resource_catalog": [FakeResourceCatalog],
     "telemetry_sink": [FakeTelemetrySink, NullTelemetrySink],
     "worker_registry": [FakeWorkerRegistry, _postgres_worker_registry_factory],
+    "execution_job_queue": [
+        FakeExecutionJobQueue,
+        _postgres_execution_job_queue_factory,
+    ],
 }
