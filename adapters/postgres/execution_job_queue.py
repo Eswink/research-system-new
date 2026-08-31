@@ -20,6 +20,7 @@ from psycopg.rows import dict_row
 from adapters.postgres.base import PostgresAdapterBase
 from adapters.postgres.db import connect as pg_connect
 from adapters.postgres.db import dsn_from_env, now_iso
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.execution_job_queue import (
     ExecutionJobDescriptor,
     ExecutionJobOutcome,

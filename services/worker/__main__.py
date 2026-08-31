@@ -15,6 +15,7 @@ import sys
 
 from adapters.execution.docker_backend import DockerExecutionBackend
 from adapters.worker.client import WorkerClient, WorkerClientConfig
+from services.worker.deterministic_backend import DeterministicExecutionBackend
 from services.worker.loop import WorkerLoop, WorkerLoopConfig
 
 _STOP = {"flag": False}
@@ -35,11 +36,11 @@ def _build_config(worker_id: str) -> WorkerClientConfig:
     backends = tuple(
         x for x in os.environ.get("RESEARCHOS_WORKER_BACKEND_KINDS", "DOCKER").split(",") if x
     )
-    slots = tuple(
-        int(x)
-        for x in os.environ.get("RESEARCHOS_WORKER_PARTITION_SLOTS", "").split(",")
-        if x.strip().isdigit()
-    )
+    raw_slots = os.environ.get("RESEARCHOS_WORKER_PARTITION_SLOTS", "").strip()
+    if raw_slots:
+        slots = tuple(int(x) for x in raw_slots.split(",") if x.strip().isdigit())
+    else:
+        slots = tuple(range(16))  # default: cover every partition bucket
     return WorkerClientConfig(
         base_url=os.environ["RESEARCHOS_WORKER_GATEWAY_URL"],
         enrollment_secret=os.environ["RESEARCHOS_WORKER_ENROLLMENT_SECRET"],
@@ -62,10 +63,19 @@ def main(argv: list[str] | None = None) -> int:
     _install_drain_handler()
     config = _build_config(args.worker_id)
     loop_config = WorkerLoopConfig(max_iterations=args.max_iterations)
-    backend = DockerExecutionBackend()
+    # Deterministic no-shell backend unless RESEARCHOS_WORKER_EXECUTION_BACKEND
+    # explicitly selects the real Docker sandbox (E2E gate default = deterministic;
+    # the real-Docker remote E2E is requires_docker-marked).
+    execution_backend = os.environ.get("RESEARCHOS_WORKER_EXECUTION_BACKEND", "deterministic")
+    if execution_backend == "docker":
+        backend: object = DockerExecutionBackend()
+    elif execution_backend == "deterministic":
+        backend = DeterministicExecutionBackend()
+    else:
+        raise ValueError(f"unknown RESEARCHOS_WORKER_EXECUTION_BACKEND: {execution_backend}")
     print(f"worker: starting id={args.worker_id}", flush=True)  # noqa: T201
     with WorkerClient(config) as client:
-        loop = WorkerLoop(client, backend, config=loop_config, should_stop=lambda: _STOP["flag"])
+        loop = WorkerLoop(client, backend, config=loop_config, should_stop=lambda: _STOP["flag"])  # type: ignore[arg-type]
         completed = loop.run()
     print(f"worker: stopped completed={completed}", flush=True)  # noqa: T201
     return 0

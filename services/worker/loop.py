@@ -69,6 +69,7 @@ class WorkerLoop:
     def run(self) -> int:
         """Register and process jobs until drain/stop; return jobs completed."""
         self._client.register()
+        print(f"worker-loop: registered gen={self._client.generation}", flush=True)  # noqa: T201
         iterations = 0
         while not self._should_stop() and not self._draining:
             if (
@@ -85,8 +86,10 @@ class WorkerLoop:
             if job is None:
                 self._sleep(self._config.heartbeat_interval_seconds)
                 continue
+            print(f"worker-loop: claimed job task_id={job.get('task_id')}", flush=True)  # noqa: T201
             self._process(job)
             self.completed_jobs += 1
+        print(f"worker-loop: exiting completed={self.completed_jobs}", flush=True)  # noqa: T201
         return self.completed_jobs
 
     def _process(self, job: dict[str, object]) -> None:
