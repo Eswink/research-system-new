@@ -107,6 +107,8 @@ class FakeWorkerRegistry(FakeBase):
         new_state = WorkerState.transition(stored.state, WorkerState.Transition.HEARTBEAT_EXPIRED)
         updated = stored.with_state(new_state)
         self._workers[worker_id] = updated
+        # a LOST worker's session dies: it must re-register (new generation)
+        self._tokens.pop(worker_id, None)
         self._record("mark_lost", worker_id, result=new_state)
         return updated
 

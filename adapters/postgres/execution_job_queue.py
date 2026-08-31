@@ -67,6 +67,42 @@ def _synthetic_task(
     )
 
 
+_TERMINAL_STATUSES = ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED")
+
+
+def _canonical_task_status(status: str) -> str:
+    """Closed-set terminal validation (untrusted worker input, ADR-0027 §1).
+
+    Only terminal execution statuses may be persisted; a fence-holding worker
+    cannot resurrect a settled job as QUEUED or strand it in an unknown state.
+    """
+    if status not in _TERMINAL_STATUSES:
+        raise InvalidInputError(f"invalid result status {status!r}: not a terminal execution state")
+    return "SUCCEEDED" if status == "SUCCEEDED" else "FAILED"
+
+
+def _require_active_lease(conn: Any, result: ExecutionJobResult) -> None:
+    """Validate (task_id, lease_id, fence) AND identity binding in-transaction.
+
+    The caller must be the claim holder: `leases.worker_id` must equal the
+    authenticated worker_id (ADR-0027 §1), so a different enrolled worker that
+    learned another claim's triple cannot write that task's result.
+    """
+    lease_row: Any = conn.execute(
+        "SELECT lease_id, fence, worker_id FROM leases WHERE task_id = %s FOR UPDATE",
+        (result.task_id,),
+    ).fetchone()
+    if (
+        lease_row is None
+        or lease_row["lease_id"] != result.lease_id
+        or int(lease_row["fence"]) != result.fence
+        or lease_row["worker_id"] != result.worker_id
+    ):
+        raise InvalidInputError(
+            f"stale or missing lease for task {result.task_id}: result rejected"
+        )
+
+
 class PostgresExecutionJobQueue(PostgresAdapterBase):
     """ExecutionJobQueue on PostgreSQL; `now` injectable for deterministic tests."""
 
@@ -201,41 +237,21 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
 
     def record_result(self, result: ExecutionJobResult) -> None:
         """Persist a settled result, gated on the active lease AND a closed-set
-        terminal status.
+        terminal status (moves into a shared helper with the Fake).
 
-        Validates `(task_id, lease_id, fence)` against the live `leases` row
-        inside the same transaction: a stale worker whose claim generation was
-        superseded (or whose lease expired) cannot write a result (M16 §8).
         `status` is worker-supplied and therefore untrusted (ADR-0027 §1) —
         only SUCCEEDED/FAILED/TIMED_OUT/CANCELLED may be persisted, so a
         fence-holding worker cannot resurrect a settled job as QUEUED or
         strand it in an unknown state.
         """
         self._ensure_open()
-        if result.status not in ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED"):
-            raise InvalidInputError(
-                f"invalid result status {result.status!r}: not a terminal execution state"
-            )
+        task_status = _canonical_task_status(result.status)
         task_id = result.task_id
         if result.worker_id is None:
             raise InvalidInputError("result worker_id is required (identity binding)")
         with self._conn.transaction():
-            lease_row: Any = self._conn.execute(
-                "SELECT lease_id, fence, worker_id FROM leases WHERE task_id = %s FOR UPDATE",
-                (task_id,),
-            ).fetchone()
-            if (
-                lease_row is None
-                or lease_row["lease_id"] != result.lease_id
-                or int(lease_row["fence"]) != result.fence
-                # identity binding: the caller must BE the claim holder
-                or lease_row["worker_id"] != result.worker_id
-            ):
-                raise InvalidInputError(
-                    f"stale or missing lease for task {task_id}: result rejected"
-                )
-            # canonical terminal task state (ExecutionStatus -> ResearchTaskState)
-            task_status = "SUCCEEDED" if result.status == "SUCCEEDED" else "FAILED"
+            _require_active_lease(self._conn, result)
+            # canonical terminal task state (already validated above)
             self._conn.execute(
                 "UPDATE execution_jobs SET worker_id = (SELECT worker_id FROM leases"
                 " WHERE task_id = %s), exit_code = %s, stdout_digest = %s, stderr_digest = %s,"

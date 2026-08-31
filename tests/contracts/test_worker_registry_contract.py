@@ -166,3 +166,14 @@ def test_get_unknown_returns_none_and_list_is_sorted(factory: Callable[[], objec
     ids = [w.worker_id for w in registry.list_workers()]
     assert ids == sorted(ids)
     assert {"worker-a", "worker-b"}.issubset(set(ids))
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_mark_lost_revokes_session_token(factory: Callable[[], object]) -> None:
+    """A LOST worker's session dies; it must re-register (new generation)."""
+    registry: WorkerRegistry = factory()  # type: ignore[assignment]
+    stored = registry.register(_registration())
+    registry.set_session_token("worker-a", stored.registration_generation, "hash-live")
+    registry.transition("worker-a", WorkerState.Transition.HANDSHAKE_OK)
+    registry.mark_lost("worker-a")
+    assert registry.authenticate("hash-live") is None

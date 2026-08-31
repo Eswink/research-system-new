@@ -236,7 +236,8 @@ class PostgresWorkerRegistry(PostgresAdapterBase):
                 new_state = current.state
             if illegal is None:
                 self._conn.execute(
-                    f"UPDATE workers SET state = %s, updated_at = {time_sql} WHERE worker_id = %s",
+                    f"UPDATE workers SET state = %s, session_token_sha256 = NULL, "
+                    f"updated_at = {time_sql} WHERE worker_id = %s",
                     (*time_params, new_state, worker_id),
                 )
         if illegal is not None:

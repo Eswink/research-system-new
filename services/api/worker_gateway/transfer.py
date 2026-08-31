@@ -38,6 +38,16 @@ async def upload_bundle(
     deps = security.deps_of(request)
     if deps.artifacts is None:
         raise ApiError(503, "Artifact Store Unavailable", "artifact store not configured")
+    # Reject by Content-Length BEFORE buffering the body (memory DoS mitigation;
+    # chunked requests without a length still get the post-buffer 413 below).
+    declared = request.headers.get("content-length")
+    if declared is not None:
+        try:
+            length = int(declared)
+        except ValueError:
+            length = -1
+        if length > deps.settings.max_result_bytes:
+            raise ApiError(413, "Payload Too Large", "result bundle exceeds size limit")
     body = await request.body()
     if len(body) > deps.settings.max_result_bytes:
         raise ApiError(413, "Payload Too Large", "result bundle exceeds size limit")
