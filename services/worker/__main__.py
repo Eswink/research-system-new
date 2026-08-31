@@ -1,9 +1,16 @@
 """Worker CLI entrypoint (M16): `python -m services.worker`.
 
-Reads gateway connection + identity from the environment, builds a
-DockerExecutionBackend (the worker's local sandbox), installs a SIGTERM drain
-handler, and runs the worker loop. Machine-readable stdout lines support the
-cross-process E2E harness (WP4).
+Reads gateway connection + identity from the environment, installs a SIGTERM
+drain handler, and runs the worker loop. Machine-readable stdout lines support
+the cross-process E2E harness (WP4).
+
+Execution backend selection (`RESEARCHOS_WORKER_EXECUTION_BACKEND`):
+- `deterministic` (DEFAULT): a bounded no-shell test double that fabricates
+  deterministic outputs — used by the offline distributed E2E gate ONLY. It
+  must not be considered a real execution plane (see
+  services/worker/deterministic_backend.py).
+- `docker`: the real DockerExecutionBackend sandbox; production composition
+  must set this explicitly.
 """
 
 from __future__ import annotations
