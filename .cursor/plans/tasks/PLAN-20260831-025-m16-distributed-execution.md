@@ -118,12 +118,12 @@ M16 节。Non-goals：GPU 调度（M17）、多租户配额（M18）、自动扩
 - [x] STEP-03 WP1 迁移 008_worker_plane.sql + PG WorkerRegistry
 - [x] STEP-04 WP1 worker_gateway ASGI app + 认证（enrollment/session token/generation/TLS fail-closed/大小上限）
 - [x] STEP-05 WP1 WorkerReaperScheduler + 数据库侧时间源抽象 + 心跳幂等/乱序规则 + LOST 并入 recover_expired_leases
-- [ ] STEP-06 WP2 claim_next（Fake/SQLite/PG 三实现）+ TaskLease.worker_id/fence + fence_seq 递增
-- [ ] STEP-07 WP2 分区键 + 饥饿兜底 + fence 校验覆盖全部 authoritative 写 + 并发/重叠分区测试
-- [ ] STEP-08 WP3 WorkspaceBackend export/import_bundle（File+Fake）+ 双 digest 校验 + 穿越/符号链接拒绝
-- [ ] STEP-09 WP3 RemoteExecutionBackend + ExecutionBackend.cancelled 回调 + DockerExecutionBackend 轮询
-- [ ] STEP-10 WP3 services/worker 进程 + adapters/worker HTTP 客户端 + 最小凭据 scope 下发
-- [ ] STEP-11 WP3 SWE-ReX qualification 文档 + UPSTREAM_COMPONENTS.yaml + Temporal 重评条件复检
+- [x] STEP-06 WP2 claim_next（Fake/SQLite/PG 三实现）+ TaskLease.worker_id/fence + fence_seq 递增
+- [x] STEP-07 WP2 分区键 + 饥饿兜底 + fence 校验覆盖全部 authoritative 写 + 并发/重叠分区测试
+- [x] STEP-08 WP3 WorkspaceBackend export/import_bundle（File+Fake）+ 双 digest 校验 + 穿越/符号链接拒绝
+- [x] STEP-09 WP3 RemoteExecutionBackend + ExecutionBackend.cancelled 回调 + DockerExecutionBackend 轮询
+- [x] STEP-10 WP3 services/worker 进程 + adapters/worker HTTP 客户端 + 最小凭据 scope 下发
+- [x] STEP-11 WP3 SWE-ReX qualification 文档 + UPSTREAM_COMPONENTS.yaml + Temporal 重评条件复检
 - [ ] STEP-12 WP4 tests/distributed 基础设施（marker/conftest/WorkerHarness/net_proxy）
 - [ ] STEP-13 WP4 场景 A–J + 时钟偏移测试
 - [ ] STEP-14 WP4 分布式安全攻击套件

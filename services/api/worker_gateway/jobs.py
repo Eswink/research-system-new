@@ -48,9 +48,7 @@ async def claim_job(
     authorization: str | None = Header(default=None),
 ) -> Response:
     _require_job_plane(request)
-    _authorized_identity(
-        request, authorization, payload.worker_id, payload.registration_generation
-    )
+    _authorized_identity(request, authorization, payload.worker_id, payload.registration_generation)
     deps = security.deps_of(request)
     workflow = deps.workflow
     job_queue = deps.job_queue
@@ -86,9 +84,7 @@ async def submit_result(
     authorization: str | None = Header(default=None),
 ) -> ResultAckDto:
     _require_job_plane(request)
-    _authorized_identity(
-        request, authorization, payload.worker_id, payload.registration_generation
-    )
+    _authorized_identity(request, authorization, payload.worker_id, payload.registration_generation)
     deps = security.deps_of(request)
     job_queue = deps.job_queue
     assert job_queue is not None  # guarded by _require_job_plane

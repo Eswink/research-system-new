@@ -74,8 +74,8 @@ from packages.application.ports.run_store import RunStore
 from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
 from packages.application.ports.tool_pack_store import ToolPackRecord, ToolPackStore
 from packages.application.ports.tool_provider import ToolProvider
-from packages.application.ports.workflow_engine import TaskCompletion, TaskLease, WorkflowEngine
 from packages.application.ports.worker_registry import WorkerRegistry
+from packages.application.ports.workflow_engine import TaskCompletion, TaskLease, WorkflowEngine
 from packages.application.ports.workspace_backend import WorkspaceBackend
 
 __all__ = [

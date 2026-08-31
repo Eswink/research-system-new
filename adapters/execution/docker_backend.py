@@ -87,7 +87,7 @@ def _final_status(timed_out: bool, exit_code: int, cancelled: bool = False) -> E
     return ExecutionStatus.FAILED
 
 
-def _build_run(
+def _build_run(  # noqa: PLR0913 - ExecutionRun 字段映射，参数对象会降低可读性
     spec: ExecutionSpec,
     started: Timestamp,
     started_mono: float,

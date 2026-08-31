@@ -267,9 +267,7 @@ def remote_execution_entries(  # noqa: PLR0913 - 账目输入聚合，参数对�
     """
     entries = [
         _entry(
-            entry_id=_attempt_scope(
-                f"usage:{run_id}:remote-exec:{task_id}", attempt
-            ),
+            entry_id=_attempt_scope(f"usage:{run_id}:remote-exec:{task_id}", attempt),
             resource_type=ResourceType.WALL_CLOCK,
             quantity=elapsed_seconds or 0,
             unit="seconds",
@@ -289,9 +287,7 @@ def remote_execution_entries(  # noqa: PLR0913 - 账目输入聚合，参数对�
     if cpu_seconds is not None:
         entries.append(
             _entry(
-                entry_id=_attempt_scope(
-                    f"usage:{run_id}:remote-exec:{task_id}:cpu", attempt
-                ),
+                entry_id=_attempt_scope(f"usage:{run_id}:remote-exec:{task_id}:cpu", attempt),
                 resource_type=ResourceType.CPU_TIME,
                 quantity=cpu_seconds,
                 unit="seconds",

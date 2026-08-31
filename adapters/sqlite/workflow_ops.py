@@ -179,7 +179,10 @@ class SqliteWorkflowOps:
             self._record("acquire_lease", task_id, result="deduped")
             return lease_from_row(existing)
         lease = new_lease(
-            task_id, row["assigned_agent_id"], self._lease_ttl, self._now,
+            task_id,
+            row["assigned_agent_id"],
+            self._lease_ttl,
+            self._now,
             fence=int(row["fence_seq"] or 0) + 1,
         )
         with self._conn:
@@ -241,8 +244,12 @@ class SqliteWorkflowOps:
             self._record("heartbeat", lease.task_id, error="InvalidInputError")
             raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
         renewed = new_lease(
-            lease.task_id, lease.agent_id, self._lease_ttl, self._now,
-            worker_id=lease.worker_id, fence=lease.fence,
+            lease.task_id,
+            lease.agent_id,
+            self._lease_ttl,
+            self._now,
+            worker_id=lease.worker_id,
+            fence=lease.fence,
         )
         assert renewed.expires_at is not None and renewed.heartbeat_at is not None
         with self._conn:

@@ -32,6 +32,7 @@ from services.api.dto.enums import (
 )
 from services.api.dto.operations import (
     ClusterViewDto,
+    ClusterWorkerDto,
     CostAmountDto,
     CostDimensionDto,
     CostViewDto,
@@ -45,7 +46,6 @@ from services.api.dto.operations import (
     TrendPointDto,
     TrendSegmentDto,
     TrendViewDto,
-    ClusterWorkerDto,
 )
 from services.api.errors import ApiError
 

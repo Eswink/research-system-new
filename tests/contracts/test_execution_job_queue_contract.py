@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 import pytest
 
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.execution_job_queue import (
     ExecutionJobQueue,
     ExecutionJobRequest,
@@ -46,29 +47,29 @@ def test_enqueue_is_idempotent_on_key(factory: Callable[[], object]) -> None:
 
 
 @pytest.mark.parametrize("factory", _FACTORIES)
-def test_record_result_settles_job(factory: Callable[[], object]) -> None:
-    queue: ExecutionJobQueue = factory()  # type: ignore[assignment]
-    task_id = queue.enqueue(_request("settle-1"))
-    queue.record_result(
-        ExecutionJobResult(
-            task_id=task_id,
-            lease_id="lease-1",
-            fence=1,
-            status="SUCCEEDED",
-            exit_code=0,
-            stdout_digest="sha256:out",
-        )
-    )
-    outcome = queue.poll(task_id)
-    assert outcome is not None
-    assert outcome.status == "SUCCEEDED"
-    assert outcome.exit_code == 0
-
-
-@pytest.mark.parametrize("factory", _FACTORIES)
 def test_cancel_flag_roundtrip(factory: Callable[[], object]) -> None:
     queue: ExecutionJobQueue = factory()  # type: ignore[assignment]
     task_id = queue.enqueue(_request("cancel-1"))
     assert queue.cancel_requested(task_id) is False
     queue.request_cancel(task_id)
     assert queue.cancel_requested(task_id) is True
+
+
+def test_fake_record_result_requires_matching_lease() -> None:
+    from adapters.fakes.execution_job_queue import FakeExecutionJobQueue
+
+    queue = FakeExecutionJobQueue()
+    task_id = queue.enqueue(_request("fake-lease"))
+    # no lease assigned yet -> rejected
+    with pytest.raises(InvalidInputError):
+        queue.record_result(
+            ExecutionJobResult(
+                task_id=task_id, lease_id="l1", fence=1, status="SUCCEEDED", exit_code=0
+            )
+        )
+    queue.assign(task_id, worker_id="w1", lease_id="l1", fence=1)
+    queue.record_result(
+        ExecutionJobResult(task_id=task_id, lease_id="l1", fence=1, status="SUCCEEDED", exit_code=0)
+    )
+    outcome = queue.poll(task_id)
+    assert outcome is not None and outcome.status == "SUCCEEDED"

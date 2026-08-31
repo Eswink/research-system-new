@@ -50,8 +50,9 @@ def test_reaper_marks_stale_worker_lost() -> None:
     assert reaper.run_once() == 0
     clock.advance(31)
     assert reaper.run_once() == 1
-    assert registry.get("w1") is not None
-    assert registry.get("w1").state == WorkerState.State.LOST
+    lost = registry.get("w1")
+    assert lost is not None
+    assert lost.state == WorkerState.State.LOST
 
 
 def test_reaper_ignores_offline_workers() -> None:
@@ -72,10 +73,15 @@ def test_heartbeat_idempotent_does_not_roll_back_clock() -> None:
     stored = registry.register(_reg())
     gen = stored.registration_generation
     assert registry.heartbeat("w1", gen) is True
-    first = registry.get("w1").last_heartbeat
+    first_hb = registry.get("w1")
+    assert first_hb is not None
+    first = first_hb.last_heartbeat
     clock.advance(10)
     assert registry.heartbeat("w1", gen) is True
-    second = registry.get("w1").last_heartbeat
+    second_hb = registry.get("w1")
+    assert second_hb is not None
+    second = second_hb.last_heartbeat
+    assert first is not None and second is not None
     assert second.value >= first.value  # never rolls back
 
 
@@ -85,9 +91,13 @@ def test_out_of_order_heartbeat_rejected_after_reregister() -> None:
     first = registry.register(_reg())
     registry.register(_reg())  # generation 2
     # old-generation heartbeat fails closed and does not touch last_heartbeat
-    before = registry.get("w1").last_heartbeat
+    before_hb = registry.get("w1")
+    assert before_hb is not None
+    before = before_hb.last_heartbeat
     assert registry.heartbeat("w1", first.registration_generation) is False
-    assert registry.get("w1").last_heartbeat == before
+    after_hb = registry.get("w1")
+    assert after_hb is not None
+    assert after_hb.last_heartbeat == before
 
 
 def test_reaper_rejects_bad_intervals() -> None:

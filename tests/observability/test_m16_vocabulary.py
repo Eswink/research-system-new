@@ -60,16 +60,14 @@ def test_worker_ref_rejects_empty() -> None:
 
 
 def test_sanitize_attributes_allows_new_keys_and_redacts_values() -> None:
-    sanitized = sanitize_attributes(
-        {
-            "worker_ref": worker_ref("worker-abc"),
-            "worker_state": "BUSY",
-            "protocol_version": "1",
-            "partition": 3,
-            "fence": 7,
-            "rejection_reason": "stale_fence",
-        }
-    )
+    sanitized = sanitize_attributes({
+        "worker_ref": worker_ref("worker-abc"),
+        "worker_state": "BUSY",
+        "protocol_version": "1",
+        "partition": 3,
+        "fence": 7,
+        "rejection_reason": "stale_fence",
+    })
     assert sanitized["partition"] == 3
     assert sanitized["fence"] == 7
     assert sanitized["worker_state"] == "BUSY"
@@ -77,12 +75,10 @@ def test_sanitize_attributes_allows_new_keys_and_redacts_values() -> None:
 
 
 def test_sanitize_attributes_drops_unknown_and_redacts_token() -> None:
-    sanitized = sanitize_attributes(
-        {
-            "worker_token": _TOKEN,  # not in the closed set
-            "rejection_reason": _TOKEN,  # in-set key, secret value
-        }
-    )
+    sanitized = sanitize_attributes({
+        "worker_token": _TOKEN,  # not in the closed set
+        "rejection_reason": _TOKEN,  # in-set key, secret value
+    })
     assert "worker_token" not in sanitized
     assert "sk-super-secret-worker-token" not in str(sanitized.get("rejection_reason"))
 

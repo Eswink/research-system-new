@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 
 import pytest
 
+from packages.application.ports.workflow_engine import ClaimRequest
 from packages.domain.workers import WorkerState
 from tests.distributed.conftest import _postgres_dsn
 from tests.distributed.net_proxy import NetProxy
@@ -26,9 +27,7 @@ _WAIT_SECONDS = 45
 
 
 def _harness() -> WorkerHarness:
-    return WorkerHarness(
-        _postgres_dsn(), lease_ttl_seconds=2, stale_seconds=3.0
-    )
+    return WorkerHarness(_postgres_dsn(), lease_ttl_seconds=2, stale_seconds=3.0)
 
 
 def _wait_until(check: Callable[[], bool], timeout: float = _WAIT_SECONDS) -> bool:
@@ -41,11 +40,11 @@ def _wait_until(check: Callable[[], bool], timeout: float = _WAIT_SECONDS) -> bo
 
 
 @pytest.fixture()
-def harness(clean_worker_plane: str) -> WorkerHarness:
+def harness(clean_worker_plane: str) -> Generator[WorkerHarness, None, None]:
     h = _harness()
     h.start_gateway()
     h.start_schedulers()
-    yield h  # type: ignore[misc]
+    yield h
     h.close()
 
 
@@ -54,9 +53,7 @@ def test_scenario_a_multi_worker_parallel_disjoint(harness: WorkerHarness) -> No
     task_ids = [harness.seed_job(idem=f"a-{i}") for i in range(4)]
     harness.spawn_worker("a-w1")
     harness.spawn_worker("a-w2")
-    assert _wait_until(lambda: all(
-        harness.job_queue.poll(t) is not None for t in task_ids
-    ))
+    assert _wait_until(lambda: all(harness.job_queue.poll(t) is not None for t in task_ids))
     owners = set()
     for task_id in task_ids:
         outcome = harness.job_queue.poll(task_id)
@@ -190,7 +187,9 @@ def test_scenario_e_duplicate_delivery_single_completion(harness: WorkerHarness)
     assert duplicate == task_id  # idempotent enqueue
     harness.spawn_worker("e-w1")
     assert _wait_until(lambda: harness.job_queue.poll(task_id) is not None)
-    assert harness.job_queue.poll(task_id).status == "SUCCEEDED"  # type: ignore[union-attr]
+    outcome = harness.job_queue.poll(task_id)
+    assert outcome is not None
+    assert outcome.status == "SUCCEEDED"
     # a second worker finds nothing to claim
     assert harness.workflow.claim_next(_claim("e-w2")) is None
 
@@ -255,9 +254,7 @@ def test_worker_clock_skew_does_not_affect_authority(harness: WorkerHarness) -> 
     assert outcome.worker_id == "skew-w1"
 
 
-def _claim(worker_id: str) -> object:
-    from packages.application.ports.workflow_engine import ClaimRequest
-
+def _claim(worker_id: str) -> ClaimRequest:
     return ClaimRequest(
         worker_id=worker_id,
         capabilities=frozenset({"docker"}),
@@ -296,9 +293,7 @@ def _lease_count(harness: WorkerHarness, task_id: str) -> int:
 
     conn = psycopg.connect(harness.dsn, autocommit=True)
     try:
-        row = conn.execute(
-            "SELECT count(*) FROM leases WHERE task_id = %s", (task_id,)
-        ).fetchone()
+        row = conn.execute("SELECT count(*) FROM leases WHERE task_id = %s", (task_id,)).fetchone()
         return int(row[0]) if row else 0
     finally:
         conn.close()

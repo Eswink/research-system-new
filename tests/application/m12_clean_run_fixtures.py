@@ -80,7 +80,13 @@ class ResultWritingExecution:
         self._root = workspace_root
         self._counter = 0
 
-    def execute(self, spec: object, timeout_seconds: int | None = None) -> ExecutionRun:
+    def execute(
+        self,
+        spec: object,
+        timeout_seconds: int | None = None,
+        *,
+        cancelled: object = None,
+    ) -> ExecutionRun:
         from packages.domain.core import Timestamp
 
         self._counter += 1

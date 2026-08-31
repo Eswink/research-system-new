@@ -7,6 +7,8 @@ fail-closed, anti-impersonation, anti-replay, and the non-loopback TLS guard.
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -19,6 +21,10 @@ from services.api.worker_gateway.deps import WorkerGatewayDeps
 from services.api.worker_gateway.settings import WorkerGatewaySettings
 
 _ENROLLMENT = "enroll-secret-xyz"
+
+
+def _as_dict(body: Any) -> dict[str, object]:
+    return cast(dict[str, object], body)
 
 
 def _deps(**overrides: object) -> WorkerGatewayDeps:
@@ -53,7 +59,7 @@ def _register(client: TestClient, worker_id: str = "worker-a") -> dict[str, obje
         },
     )
     assert resp.status_code == 200, resp.text
-    return resp.json()
+    return _as_dict(resp.json())
 
 
 def test_health_is_open() -> None:

@@ -26,8 +26,8 @@ from adapters.fakes.retrieval_index import FakeRetrievalIndex
 from adapters.fakes.telemetry_sink import FakeTelemetrySink, NullTelemetrySink
 from adapters.fakes.tool_pack_store import FakeToolPackStore
 from adapters.fakes.tool_provider import FakeToolProvider
-from adapters.fakes.workflow_engine import FakeWorkflowEngine
 from adapters.fakes.worker_registry import FakeWorkerRegistry
+from adapters.fakes.workflow_engine import FakeWorkflowEngine
 from adapters.fakes.workspace_backend import FakeWorkspaceBackend
 
 __all__ = [

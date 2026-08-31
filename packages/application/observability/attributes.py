@@ -134,13 +134,15 @@ _ALL_METRIC_LABELS = frozenset(MetricLabel)
 # and rejection_reason fold to `other` outside their closed sets.
 _PARTITION_DOMAIN = frozenset(str(i) for i in range(16))
 _WORKER_STATE_DOMAIN = frozenset(
-    getattr(WorkerState.State, n)
-    for n in dir(WorkerState.State)
-    if not n.startswith("_")
+    getattr(WorkerState.State, n) for n in dir(WorkerState.State) if not n.startswith("_")
 )
-_REJECTION_REASON_DOMAIN = frozenset(
-    {"stale_fence", "expired_lease", "protocol_mismatch", "artifact_integrity", "auth"}
-)
+_REJECTION_REASON_DOMAIN = frozenset({
+    "stale_fence",
+    "expired_lease",
+    "protocol_mismatch",
+    "artifact_integrity",
+    "auth",
+})
 _ENUM_LABEL_DOMAINS: dict[str, frozenset[str]] = {
     MetricLabel.scope.value: frozenset(member.value for member in OperationScope),
     MetricLabel.outcome.value: frozenset(member.value for member in OperationOutcome),

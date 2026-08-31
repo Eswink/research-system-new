@@ -37,9 +37,7 @@ class DeterministicExecutionBackend:
         cancelled: object = None,
     ) -> ExecutionRun:
         started = Timestamp.now()
-        delay = float(
-            os.environ.get("RESEARCHOS_WORKER_EXECUTE_DELAY_SECONDS", "0").strip() or 0
-        )
+        delay = float(os.environ.get("RESEARCHOS_WORKER_EXECUTE_DELAY_SECONDS", "0").strip() or 0)
         if delay > 0:
             time.sleep(min(delay, 120))
         workspace = Path(spec.workspace_path) if spec.workspace_path else Path(".")

@@ -18,7 +18,10 @@ from adapters.workspace.bundle import (
     tree_digest,
 )
 from packages.application.ports.errors import InvalidInputError
-from packages.application.ports.execution_job_queue import ExecutionJobResult
+from packages.application.ports.execution_job_queue import (
+    ExecutionJobOutcome,
+    ExecutionJobResult,
+)
 from packages.domain.artifacts import Artifact
 from packages.domain.core import Digest
 from packages.domain.workspace import ExecutionSpec, ExecutionStatus
@@ -81,10 +84,11 @@ class _CompletingQueue(FakeExecutionJobQueue):
         self._output_digest = output_digest
         self._settled = False
 
-    def poll(self, task_id: str):  # type: ignore[override]
+    def poll(self, task_id: str) -> ExecutionJobOutcome | None:
         if not self._settled:
             self._settled = True
             job = self.state.jobs[task_id]
+            self.assign(task_id, worker_id="w1", lease_id="lease-1", fence=job.fence or 1)
             self.record_result(
                 ExecutionJobResult(
                     task_id=task_id,
@@ -112,7 +116,7 @@ def test_remote_execute_happy_path_materializes_output(tmp_path: Path) -> None:
     assert run.status is ExecutionStatus.SUCCEEDED
     assert run.exit_code == 0
     assert run.compute_usage_summary["remote"] is True
-    materialized = Path(spec.workspace_path).joinpath("result.txt")
+    materialized = Path(str(spec.workspace_path)).joinpath("result.txt")
     assert materialized.read_text(encoding="utf-8") == "done"
 
 

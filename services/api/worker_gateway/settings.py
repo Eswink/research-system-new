@@ -31,9 +31,7 @@ class WorkerGatewaySettings:
     stale_threshold_seconds: float = _DEFAULT_STALE_THRESHOLD
     max_result_bytes: int = _DEFAULT_MAX_RESULT_BYTES
     supported_protocol_versions: frozenset[str] = field(default_factory=lambda: frozenset({"1"}))
-    supported_backend_kinds: frozenset[str] = field(
-        default_factory=lambda: frozenset({"DOCKER"})
-    )
+    supported_backend_kinds: frozenset[str] = field(default_factory=lambda: frozenset({"DOCKER"}))
 
     def __post_init__(self) -> None:
         if not self.enrollment_credential_ref:
@@ -68,7 +66,5 @@ class WorkerGatewaySettings:
             supported_protocol_versions=frozenset(
                 p.strip() for p in protocols.split(",") if p.strip()
             ),
-            supported_backend_kinds=frozenset(
-                b.strip() for b in backends.split(",") if b.strip()
-            ),
+            supported_backend_kinds=frozenset(b.strip() for b in backends.split(",") if b.strip()),
         )

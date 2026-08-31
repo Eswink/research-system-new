@@ -326,9 +326,7 @@ class TestBundleCodec:
         bundle = json.dumps(
             {
                 "version": 1,
-                "entries": [
-                    {"path": "a.txt", "sha256": "0" * 64, "data_b64": "aGk="}
-                ],
+                "entries": [{"path": "a.txt", "sha256": "0" * 64, "data_b64": "aGk="}],
             },
             separators=(",", ":"),
             sort_keys=True,

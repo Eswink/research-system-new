@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from fastapi.testclient import TestClient
 
 from adapters.fakes.artifact_store import FakeArtifactStore
@@ -20,6 +22,10 @@ from services.api.worker_gateway.settings import WorkerGatewaySettings
 from tests.contracts.fixtures import task_contract
 
 _ENROLLMENT = "enroll-secret-xyz"
+
+
+def _as_dict(body: Any) -> dict[str, object]:
+    return cast(dict[str, object], body)
 
 
 def _deps() -> WorkerGatewayDeps:
@@ -49,11 +55,12 @@ def _register(client: TestClient) -> dict[str, object]:
         },
     )
     assert resp.status_code == 200
-    return resp.json()
+    return _as_dict(resp.json())
 
 
 def _seed_execution_job(deps: WorkerGatewayDeps) -> str:
     engine = deps.workflow
+    assert engine is not None
     task = ResearchTask(
         id=ID.generate(),
         run_id=ID.generate(),

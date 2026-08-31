@@ -17,6 +17,7 @@ import threading
 import time
 from pathlib import Path
 from types import TracebackType
+from typing import Any
 
 import uvicorn
 
@@ -75,8 +76,8 @@ class WorkerHarness:
         )
         self._server: uvicorn.Server | None = None
         self._thread: threading.Thread | None = None
-        self._lease_sched: object | None = None
-        self._reaper_sched: object | None = None
+        self._lease_sched: Any | None = None
+        self._reaper_sched: Any | None = None
         self._sched_workflow: PostgresWorkflowEngine | None = None
         self._sched_registry: PostgresWorkerRegistry | None = None
         self._lease_ttl = lease_ttl_seconds
@@ -149,17 +150,15 @@ class WorkerHarness:
         self, worker_id: str, *, env_extra: dict[str, str] | None = None, clock_skew: int = 0
     ) -> subprocess.Popen[bytes]:
         env = dict(os.environ)
-        env.update(
-            {
-                "PYTHONUTF8": "1",
-                "PYTHONIOENCODING": "utf-8",
-                "RESEARCHOS_WORKER_GATEWAY_URL": self.gateway_url,
-                "RESEARCHOS_WORKER_ENROLLMENT_SECRET": _ENROLLMENT,
-                "RESEARCHOS_WORKER_ID": worker_id,
-                "RESEARCHOS_POSTGRES_DSN": self.dsn,
-                "RESEARCHOS_WORKER_CLOCK_SKEW_SECONDS": str(clock_skew),
-            }
-        )
+        env.update({
+            "PYTHONUTF8": "1",
+            "PYTHONIOENCODING": "utf-8",
+            "RESEARCHOS_WORKER_GATEWAY_URL": self.gateway_url,
+            "RESEARCHOS_WORKER_ENROLLMENT_SECRET": _ENROLLMENT,
+            "RESEARCHOS_WORKER_ID": worker_id,
+            "RESEARCHOS_POSTGRES_DSN": self.dsn,
+            "RESEARCHOS_WORKER_CLOCK_SKEW_SECONDS": str(clock_skew),
+        })
         if env_extra:
             env.update(env_extra)
         proc = subprocess.Popen(

@@ -130,7 +130,7 @@ def test_research_task_accepts_execution_kind_and_coerces_string() -> None:
     task = ResearchTask(
         id=ID.generate(),
         run_id=ID.generate(),
-        kind="EXECUTION",
+        kind=TaskKind.EXECUTION,
         partition=3,
         required_capability="docker",
     )
@@ -145,9 +145,7 @@ def test_research_task_rejects_negative_partition() -> None:
 
 def test_research_task_rejects_blank_required_capability() -> None:
     with pytest.raises(ValueError):
-        ResearchTask(
-            id=ID.generate(), run_id=ID.generate(), required_capability="   "
-        )
+        ResearchTask(id=ID.generate(), run_id=ID.generate(), required_capability="   ")
 
 
 def test_compute_partition_is_stable_and_bounded() -> None:

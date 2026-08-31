@@ -43,13 +43,11 @@ def encode_bundle(entries: dict[str, bytes]) -> bytes:
     for rel in sorted(entries):
         safe = _safe_relpath(rel)
         data = entries[rel]
-        payload.append(
-            {
-                "path": safe,
-                "sha256": hashlib.sha256(data).hexdigest(),
-                "data_b64": base64.b64encode(data).decode("ascii"),
-            }
-        )
+        payload.append({
+            "path": safe,
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "data_b64": base64.b64encode(data).decode("ascii"),
+        })
     document = {"version": _BUNDLE_VERSION, "entries": payload}
     return json.dumps(document, separators=(",", ":"), sort_keys=True).encode("utf-8")
 
@@ -107,8 +105,7 @@ def bundle_from_directory(directory: Path) -> tuple[bytes, str]:
     for path in directory.rglob("*"):
         if path.is_symlink():
             raise BundleError(
-                f"symlink in workspace is not permitted: "
-                f"{path.relative_to(directory).as_posix()!r}"
+                f"symlink in workspace is not permitted: {path.relative_to(directory).as_posix()!r}"
             )
     entries = {
         path.relative_to(directory).as_posix(): path.read_bytes()

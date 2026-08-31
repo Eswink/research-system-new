@@ -110,17 +110,13 @@ def test_client_registers_and_stores_token() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         captured.append(request)
         if request.url.path.endswith("/register"):
-            return httpx.Response(
-                200, json={"session_token": "tok", "registration_generation": 3}
-            )
+            return httpx.Response(200, json={"session_token": "tok", "registration_generation": 3})
         if request.url.path.endswith("/heartbeat"):
             assert request.headers["Authorization"] == "Bearer tok"
             return httpx.Response(200, json={"accepted": True, "state": "READY"})
         return httpx.Response(404)
 
-    config = WorkerClientConfig(
-        base_url="http://gateway", enrollment_secret="s", worker_id="w1"
-    )
+    config = WorkerClientConfig(base_url="http://gateway", enrollment_secret="s", worker_id="w1")
     client = WorkerClient(config, transport=httpx.MockTransport(handler))
     client.register()
     assert client.generation == 3

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import base64
 import json
+from collections.abc import Generator
 
 import httpx
 import pytest
@@ -23,10 +24,10 @@ pytestmark = [pytest.mark.distributed, pytest.mark.postgres]
 
 
 @pytest.fixture()
-def harness(clean_worker_plane: str) -> WorkerHarness:
+def harness(clean_worker_plane: str) -> Generator[WorkerHarness, None, None]:
     h = WorkerHarness(_postgres_dsn())
     h.start_gateway()
-    yield h  # type: ignore[misc]
+    yield h
     h.close()
 
 

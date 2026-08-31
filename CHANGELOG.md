@@ -2,8 +2,29 @@
 
 ## Unreleased
 
-> VERSION 仍为 0.4.0；本节为 M15 Observability / Cost / Eval Operations 及其
-> 后续债务清偿轮的未发布变更（版本在发布时经显式流程统一提升）。
+> VERSION 仍为 0.4.0；本节为 M15 Observability / Cost / Eval Operations、
+> M16 Distributed Execution 及其后续债务清偿轮的未发布变更（版本在发布时经
+> 显式流程统一提升）。
+
+## M16 Distributed Execution（2026-08-31）
+
+- Worker 生命周期：`WorkerState` 状态机 + `WorkerRegistry` Port（Fake/PG）+
+  migration 008（additive）；`services/api/worker_gateway` 独立 ASGI app
+  （enrollment 常量时间比较、session token 仅存 sha256 + generation 作废、
+  非 loopback 无 TLS 拒启、协议握手 fail closed）。
+- 调度：`WorkflowEngine.claim_next`（capability/partition 过滤 +
+  `FOR UPDATE SKIP LOCKED`）；`tasks.fence_seq`/`leases.fence` 单调 fencing
+  覆盖 completion/result；分区仅 claim 过滤（无双重所有权）。
+- 远程执行：`RemoteExecutionBackend`（bundle 双 digest 传输 + cancelled 协作
+  取消）+ `python -m services.worker` 真实子进程 E2E（场景 A–J + 攻击套件 +
+  时钟偏移）；`WorkspaceBackend.export/import_bundle`。
+- 上游：SWE-ReX qualification REJECT（M16_REMOTE_EXECUTION_QUALIFICATION.md）；
+  Temporal M16 重评条件未触发，维持 DEFERRED。
+- 遥测/记账：闭集词表 M16 增量（基数/隐私审计 + canary）；
+  BudgetLedger `remote-exec` 记账（无第二 counter）；Console 只读 cluster
+  视图（useCluster/ClusterPanel + GET /cluster/workers、/runs/{id}/placement）。
+- 门禁：`.importlinter.worker` + 架构测试；tests/distributed 进入 CI
+  （REQUIRE_POSTGRES fail-closed）。
 
 ## 工程约束变更（2026-08-30）
 

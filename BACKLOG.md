@@ -200,7 +200,7 @@ M16 及以后为未来设想，尚未实现**；立项时按 `AGENTS.md` 流程�
 | Research Console：first-run relay wizard、models/probe page、team/agent model assignment、protocol/preflight dry run、task/run timeline、approvals/interventions、workspace diff、evidence/claim map、budget/usage、audit/export | M13 Research Console | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
 | Durable Workflow：Temporal qualification + 采用/不采用决策（DEFERRED，ADR-0025）、PostgreSQL canonical state + task queue、跨进程分布式调度 | M14 Durable Workflow + PostgreSQL | DONE（2026-08-28；WP-J2 重判 PASS，RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
 | Observability / Cost / Evaluation Operations：OTel collector（隐私默认）、成本归集、eval 趋势运营 | M15 Observability / Cost / Eval Operations | DONE（2026-08-29 首轮；2026-08-30 修复轮 WP0–WP8 完成，recheck PASS 见 RECHECK-20260830-024） |
-| Distributed Execution：多 worker、分区与调度、远程 sandbox/worker | M16 Distributed Execution + Remote Sandbox/Worker | PLANNED |
+| Distributed Execution：多 worker、分区与调度、远程 sandbox/worker | M16 Distributed Execution + Remote Sandbox/Worker | DONE（2026-08-31） |
 | GPU / HPC：远程/加固 sandbox、计算资源平面 | M17 GPU / HPC | PLANNED |
 | Multi-user / Organization / RBAC：多租户数据模型、organization scope、RBAC | M18 Multi-user / Organization / RBAC | PLANNED |
 | Production Security / Governance：OPA qualification 与决策、central Secret Manager、backup/restore、SLO | M19 Production Security / Governance + Backup/Recovery/SLO | PLANNED |

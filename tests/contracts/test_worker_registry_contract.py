@@ -55,9 +55,7 @@ def test_reregister_increments_generation_and_resets(factory: Callable[[], objec
 
 
 @pytest.mark.parametrize("factory", _FACTORIES)
-def test_heartbeat_accepts_current_generation_rejects_stale(
-    factory: Callable[[], object]
-) -> None:
+def test_heartbeat_accepts_current_generation_rejects_stale(factory: Callable[[], object]) -> None:
     registry: WorkerRegistry = factory()  # type: ignore[assignment]
     stored = registry.register(_registration())
     assert registry.heartbeat("worker-a", stored.registration_generation) is True
@@ -69,7 +67,7 @@ def test_heartbeat_accepts_current_generation_rejects_stale(
 
 @pytest.mark.parametrize("factory", _FACTORIES)
 def test_stale_generation_heartbeat_rejected_after_reregister(
-    factory: Callable[[], object]
+    factory: Callable[[], object],
 ) -> None:
     registry: WorkerRegistry = factory()  # type: ignore[assignment]
     first = registry.register(_registration())

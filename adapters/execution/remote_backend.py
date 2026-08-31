@@ -93,13 +93,11 @@ class RemoteExecutionBackend:
         run_id = str(uuid4())
         capability = spec.backend_kind.lower()
         idempotency_key = str(
-            digest_of(
-                {
-                    "spec": spec.command,
-                    "input_bundle_digest": tree_digest,
-                    "workspace": str(workspace),
-                }
-            )
+            digest_of({
+                "spec": spec.command,
+                "input_bundle_digest": tree_digest,
+                "workspace": str(workspace),
+            })
         )
         request = ExecutionJobRequest(
             spec=spec,
