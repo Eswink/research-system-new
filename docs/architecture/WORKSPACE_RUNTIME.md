@@ -121,3 +121,14 @@ artifacts
 例如代码来自 repository commit 而非工作区文件的场景）。未提供时，代码
 内容由执行前 `workspace snapshot` 覆盖；ReproducibilityAudit 对此发出
 `CODE_DIGEST_NOT_PINNED` WARNING（诚实标注，不升级为 FAIL）。
+
+## 9. Remote Workspace Transfer (M16)
+
+- `WorkspaceBackend.export_bundle/import_bundle`：canonical bundle（sorted
+  path/sha256/base64，`adapters/workspace/bundle.py`）+ 双重完整性校验
+  （bundle 字节经 ArtifactStore 内容寻址 + 物化后工作区树 digest vs
+  snapshot digest）。
+- 输入 immutable：远程执行只接受 snapshot digest + artifact ref；符号链接与
+  路径穿越在导出/导入两侧均被拒绝；物化失败回滚工作区目录。
+- `ExecutionBackend.execute` 增可选 `cancelled` 协作取消回调（Docker 轮询 ->
+  kill -> CANCELLED）；`RemoteExecutionBackend` 超时下发 cancel。

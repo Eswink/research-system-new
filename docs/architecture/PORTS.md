@@ -236,3 +236,44 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
   verbatim 报告字节为 canonical truth,索引列可重建;
   put 幂等(UPSERT by report_digest),query 确定性排序。
 - 实现:Fake / SQLite / Postgres(005_eval_state.sql),contract suite 覆盖。
+
+## 8. M16 新增 Port
+
+### WorkerRegistry（`packages/application/ports/worker_registry.py`）
+
+- `register / heartbeat / transition / drain / mark_lost / set_session_token /
+  authenticate / list_stale / get / list_workers`;
+  服务端时间是唯一权威（`last_heartbeat` 幂等取 `greatest(stored, now)`，
+  绝不回拨；worker 自报时间不参与 expiry/fence/ordering）。
+- 状态机：`packages/domain/workers.py` `WorkerState`
+  （REGISTERING/READY/BUSY/DRAINING/OFFLINE/LOST，转移表穷尽测试）。
+- 实现：FakeWorkerRegistry / PostgresWorkerRegistry（008_worker_plane.sql），
+  contract suite 覆盖（tests/contracts/test_worker_registry_contract.py）。
+- session token 仅存 sha256（`set_session_token` 按 generation 绑定，
+  `authenticate` 只匹配当前世代）；重注册作废旧 token。
+
+### WorkflowEngine 增量（M16）
+
+- 新增 `claim_next(ClaimRequest) -> TaskLease | None`：kind=EXECUTION +
+  capability/partition 过滤 + `FOR UPDATE SKIP LOCKED`（PG）；
+  SQLite 为单进程诚实实现；Fake 同语义。
+- `TaskLease` 增补 `worker_id` / `fence`（默认值兼容既有构造）；
+  `tasks.fence_seq` 单调递增，每次 (re)claim 写入 `leases.fence`，
+  completion 校验 `(task_id, lease_id, fence)`（stale generation 拒绝）。
+
+### ExecutionJobQueue（`packages/application/ports/execution_job_queue.py`）
+
+- `enqueue / describe / poll / record_result / request_cancel /
+  cancel_requested`：EXECUTION 作业的 payload 投影与 settle 写入路径；
+  **不是第二队列**（tasks.kind='EXECUTION' + execution_jobs 行，
+  与 experiment_plans 同型）。`record_result` 在同一事务内校验活跃租约
+  `(task_id, lease_id, fence)`，stale result 被拒绝。
+
+### ExecutionBackend / WorkspaceBackend 增量（M16）
+
+- `ExecutionBackend.execute` 增可选 `cancelled` 回调（默认 None，行为不变；
+  DockerExecutionBackend 轮询 -> CANCELLED）。
+- `WorkspaceBackend` 新增 `export_bundle(lease, snapshot) -> bytes` /
+  `import_bundle(workspace_id, bundle, expected_digest) -> WorkspaceSnapshot`；
+  bundle 为 canonical 编码（adapters/workspace/bundle.py），导入重验工作区树
+  digest，拒绝路径穿越/符号链接/截断。

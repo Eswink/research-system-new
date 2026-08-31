@@ -122,3 +122,20 @@ Resume 前验证：
 ## 9. Fork
 
 当模型、Tool、Prompt、策略需要实质改变时，优先 Fork Run/Task，而不是污染原轨迹。
+
+## 9. Distributed Execution (M16)
+
+- 单队列/单租约不变：EXECUTION 作业是 `tasks.kind='EXECUTION'` +
+  `execution_jobs` payload 投影（不是第二队列）；所有权权威仍是 `leases` 行。
+- claim-next：`WorkflowEngine.claim_next(ClaimRequest)`，capability/partition
+  过滤 + `FOR UPDATE SKIP LOCKED`；分区 = `sha256(run_id) mod 16` 仅为路由
+  过滤（非所有权权威），重叠分区不可能双重所有权（leases PK 保证）。
+- fencing：`tasks.fence_seq` 每次 (re)claim 递增并写入 `leases.fence`；
+  completion / result 写入校验 `(task_id, lease_id, fence)`，旧世代迟到的
+  结果被拒绝（`stale_result_rejected_total`）。
+- 心跳与 LOST：`WorkerReaperScheduler` 用服务端时间判定 stale -> LOST；
+  LOST owner 的租约释放并入 `recover_expired_leases` 同一判定（单一租约
+  权威）。worker 自报时钟偏移不影响 expiry/fence/ordering。
+- 恢复链：心跳过期 -> LOST -> recover_expired_leases -> QUEUED -> 其他
+  worker claim（fence 递增）-> 旧 worker 迟到结果被 fence 拒绝；重连不恢复
+  旧权威（session 作废，必须新 generation 重注册）。

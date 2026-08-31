@@ -144,3 +144,14 @@ consumer_offsets
 - Outbox/Event ID 唯一；
 - Artifact digest/size 验证；
 - Endpoint 不存明文 Secret。
+
+## 008_worker_plane.sql (M16, additive)
+
+- `workers`：worker 注册事实（有界字段；`session_token_sha256` 仅哈希；
+  `state` = WorkerState；`last_heartbeat` 服务端时间权威）。
+- `tasks` 增列：`kind`（默认 'AGENT_SESSION'，向后兼容）/ `partition` /
+  `required_capability` / `fence_seq`（单调，claim 时递增）。
+- `leases` 增列：`worker_id` / `fence`（默认值保持 M14 语义）。
+- `execution_jobs`：EXECUTION 作业 payload 投影（task_id PK REFERENCES
+  tasks；spec/输入输出 bundle ref/digest/exit_code/failure_category/
+  cancel_requested）——类型化投影，不是第二队列。

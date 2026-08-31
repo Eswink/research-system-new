@@ -39,6 +39,23 @@ External Web/PDF/Data
 
 控制：CredentialBinding、audience/scope、禁止把 LLM key 给 Tool、禁止通用 bearer token 透传。
 
+### Rogue / Stolen Worker（M16）
+
+来源：被入侵的 worker 主机、被盗 session token、伪造注册。
+
+控制（ADR-0027）：enrollment secret 常量时间比较 + session token 仅存
+sha256（generation 单调，重注册作废旧 token）；worker_id 与 token 身份一致性
+校验；`fence` 单调拒绝迟到结果；worker 不持有 PostgreSQL/ArtifactStore
+凭据；非 loopback 绑定无 TLS 拒绝启动；作业级最小凭据 scope；秘密枚举面为零。
+
+### Partition / Split-brain（M16）
+
+来源：网络分区、重复投递、scheduler 重启。
+
+控制：分区仅为 claim 过滤（所有权权威是 leases 行，结构上无双重所有权）；
+服务端时间判定 LOST；`recover_expired_leases` 单一恢复权威；迟到结果被
+fence 拒绝；重连不恢复旧权威。
+
 ### SSRF / Data Exfiltration
 
 控制：egress proxy、domain allowlist、DNS/IP 检查、下载大小上限、private-network deny。

@@ -59,6 +59,8 @@ GET    /runs/{id}/usage
 GET    /runs/{id}/telemetry
 GET    /runs/{id}/cost
 GET    /evaluations/trend
+GET    /cluster/workers
+GET    /runs/{id}/placement
 ```
 
 M15 Operations（只读投影）：
@@ -127,3 +129,12 @@ POST /projects/{id}/delete-request
 ```
 
 所有资源查询必须按 principal/scope 授权，不依赖前端隐藏按钮。
+
+### M16 Cluster（只读投影）
+
+- `GET /cluster/workers` — worker 集群视图：`worker_ref`（worker_id 的
+  sha256 短 digest，原始 id/凭据不出控制面）、state（WorkerState）、
+  protocol/runtime 版本、generation、drain 标记、服务端时间的心跳。
+- `GET /runs/{id}/placement` — run 的 EXECUTION 任务与其 worker placement。
+- registry 未配置 → 503（不伪装空集群）。Console（useCluster/ClusterPanel）
+  只消费这两个端点，不直连 Worker。

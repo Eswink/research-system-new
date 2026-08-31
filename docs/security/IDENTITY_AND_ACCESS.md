@@ -83,3 +83,15 @@ trace
 - cross-tenant test。
 
 在这些完成前，不宣称支持不可信多租户。
+
+## Worker Identity (M16)
+
+- 入网：预共享 enrollment secret 经 `CredentialResolver`（WORKER 凭据域，
+  与 TOOL/MODEL 隔离），`hmac.compare_digest` 常量时间比较。
+- 会话：注册成功签发 256-bit session token（仅返回一次；服务端只存
+  sha256 + `registration_generation`）；`Authorization: Bearer` 按 hash 查表。
+- 反冒充/反重放：请求体 worker_id 必须与 token 身份一致；generation 单调，
+  重新注册作废旧 token，旧 session fail closed。
+- 传输：默认要求 TLS（`RESEARCHOS_WORKER_GATEWAY_REQUIRE_TLS=1`）；
+  绑定非 loopback 且未启用 TLS 拒绝启动。
+- Worker 不持有 Control Plane 数据库凭据；Console 只经只读 API 观察集群。

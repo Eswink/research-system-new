@@ -62,3 +62,14 @@ Secret rotation 不改变 RunManifest 的明文值；记录 credential version/f
 ## 7. Storage Backend
 
 MVP 可用本地加密/系统 Secret Store；生产通过 `CredentialResolver` 接 Vault/Infisical/云 Secret Manager 等实现，不让 Domain 绑定具体产品。
+
+## Worker-plane Secrets (M16)
+
+- enrollment secret：WORKER 凭据域 ref（`RESEARCHOS_WORKER_ENROLLMENT_REF`），
+  经 CredentialResolver 解析；不在日志/遥测/payload 中出现（闭集词表 +
+  canary 覆盖 worker token 标记）。
+- session token：sha256 入库（`workers.session_token_sha256`），明文只在
+  注册响应中出现一次；重注册即作废。
+- 作业凭据 scope：作业只携带该作业实际需要且 Policy 允许的凭据（不放入
+  durable payload / execution_jobs 行 / Artifact / 遥测）；gateway 不提供
+  任何列出凭据的接口（测试断言枚举面为零）。

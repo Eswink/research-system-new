@@ -94,7 +94,7 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M13 | Research Console | Product | M12 | DONE（R1 修复 + 独立复审 PASS，2026-08-27） |
 | M14 | Durable Workflow + PostgreSQL | Production | M12 | DONE（2026-08-28 立项；WP-J2 重判 PASS：RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
 | M15 | Observability / Cost / Eval Operations | Production | M11 | DONE（2026-08-29 首轮实施；2026-08-30 独立复审判定 FAIL 后修复轮 WP0–WP8 完成，6 BLOCKER 独立探针复现修复，m0 23/23 全绿；recheck PASS 见 `RECHECK-20260830-024`） |
-| M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | PLANNED |
+| M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | DONE（2026-08-31） |
 | M17 | GPU / HPC | Scale | M16+M9 | PLANNED |
 | M18 | Multi-user / Organization / RBAC | Enterprise | M13+M14 | PLANNED |
 | M19 | Production Security / Governance + Backup/Recovery/SLO | Enterprise | M14+M15+M18 | PLANNED |
@@ -985,3 +985,16 @@ Hard：M14+M15+M18。
 ### Next Readiness
 
 Enterprise 就绪；此后进入持续运营与迭代，新方向重新立项。
+### M16 完成注记（2026-08-31）
+
+M16 已交付（计划 `.cursor/plans/m16_分布式执行_1657b1d6.plan.md`，任务记录
+`PLAN-20260831-025`）：Worker 生命周期（WorkerState 状态机 + WorkerRegistry
+Port + gateway 认证，session token 仅存 sha256 + generation 作废）、
+claim_next 分区调度（单队列 + fence 单调 + SKIP LOCKED 跨进程并发证据）、
+RemoteExecutionBackend（bundle 双 digest 传输 + cancelled 协作取消）、
+`python -m services.worker` 真实子进程跨进程 E2E（场景 A–J + 安全攻击套件 +
+时钟偏移）、SWE-ReX qualification REJECT（对照原生 HTTP worker /
+Docker-over-TCP，Temporal 重评条件未触发）、遥测闭集增量 + BudgetLedger
+`remote-exec` 记账、Console 只读 cluster 视图、`.importlinter.worker` 门禁。
+PostgreSQL 仍是唯一 canonical；迁移 008 全部 additive；agent-session 任务
+默认 kind 不受影响。证据见 `docs/roadmap/M16_COMPLETION_RECORD.md`。

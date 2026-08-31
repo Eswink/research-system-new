@@ -125,3 +125,16 @@ docker-compose.m15.yml                collector 证据管线
   接收并解码；隐私 canary 对原始字节零标记出现。
 - 架构边界：`.importlinter.otel` + 各层 forbidden 列表 + AST 扫描测试强制
   OTel SDK 只存在于 adapters/otel。
+
+## M16 Distributed Execution Signals
+
+- 新增闭集词表：OperationScope（worker_session / worker_dispatch /
+  remote_execution）；MetricName（worker.count / registered_total /
+  heartbeat_lost_total / drain_total / protocol_mismatch_total、
+  scheduler.claim_latency_ms / partition_lag、remote_execution.duration_ms /
+  failover_total / stale_result_rejected_total /
+  artifact_transfer_failed_total）；OperationFailureReason（worker_lost /
+  stale_result_rejected / protocol_mismatch / artifact_integrity_failed）。
+- `worker_ref`（worker_id 的 sha256 短 digest）只作为 span attribute；
+  原始 worker id、session token、bundle 内容不进遥测（canary 断言）。
+- partition label 有界 0..15；worker_state / rejection_reason 闭集折叠。

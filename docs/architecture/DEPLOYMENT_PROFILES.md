@@ -36,9 +36,9 @@ role-based access
 ## C. Distributed/Hardened
 
 ```text
-Temporal
-worker pools
-remote/hardened sandbox
+worker gateway（/worker/v1，RESEARCHOS_WORKER_GATEWAY_REQUIRE_TLS=1）
+python -m services.worker pools（M16；Postgres 队列 + fence，非 Temporal）
+remote/hardened sandbox（DockerExecutionBackend on worker host）
 OPA adapter
 central secret manager
 egress proxy
@@ -46,6 +46,11 @@ Kubernetes/HPC scheduler
 central OTel（同 M15 collector 拓扑，可替换 remote endpoint）
 backup/restore
 ```
+
+> M16 注记：M16 交付的分布式执行面（HTTP worker gateway + services.worker
+> 子进程 + PostgreSQL 队列/lease/fencing）落在 Profile B（loopback/内网明文）
+> 与 Profile C（非 loopback 强制 TLS，生产 TLS 终结在上游）。Temporal 仍为
+> DEFERRED（ADR-0025/0027；M16 重评条件未触发）。
 
 ## D. HPC / Research Cluster
 
