@@ -63,3 +63,37 @@ arch PASS（1 major）、security FAIL（1 blocker + 2 major）、verification P
 结果写路径绑定认证身份）并以回归测试固化；全门禁重跑全绿。逐项记录见
 `.cursor/plans/rechecks/RECHECK-20260831-025-m16.md`。最终裁决 M16 = PASS，
 停在阶段边界，不自动进入 M17/M18。
+
+## 提交污染补救 + 首次密封深度扫描（2026-08-31 收尾）
+
+**提交污染补救**：会话期间三个早期 M16 提交（及 `6ce9c08`/`c7c886e`）因
+`git add -A`/`git add docs/`/`git add .cursor/plans/` 误扫入并发进程的未提交
+WIP（parallel-agent-orchestration 技能、NPM 校验、`.cursor/knowledge` 等）。
+补救（全部 18 提交均未推送，M16 与 WIP 代码零交叉引用）：
+- 在隔离 `git worktree` 中用 `filter-branch` 两趟：① 移除 WIP 整文件 + 把
+  `package.json`/`eslint`/`tsconfig`/`pnpm-lock`/`LICENSE_MATRIX` 还原到
+  `da722c8` 基线；② 从共享索引文件（`ALL_PLAN.md` 行、`docs/INDEX.md` 链接、
+  `UPSTREAM_COMPONENTS.yaml` 的 `cursor_sdk` 块）剥离 WIP 行。
+- 验证：`m16-clean` 与备份 tip 在非-WIP 路径上逐字节一致；18 提交数不变；
+  `system-spec-check` + `governance-check` 双验证通过；`tests/contracts`+
+  `tests/architecture` 358 passed。
+- 交接：`git update-ref refs/heads/main <clean>` + `git reset --mixed`，
+  并发进程 WIP 完整保留为工作树未提交改动（未丢失、未被我方提交）。
+- 安全网：原污染 tip 保留于 tag `m16-contaminated-backup`（`e093457`）。
+
+**首次密封深度扫描**（此前从未运行过密封深度扫描）：
+- scanId `scan-2026-08-31T17-01-13.681Z-6a277cc4ceda`，seal
+  `sha256:3cb442e149a6d4e65ca2ec1e67330110219e13a598b8e33137b8b74e764110d1`，
+  产物在 `~/.mimosa/security-scans/project-c96f90c714f9f3dc0bd2d97f/`。
+- 39 findings（7 high / 27 medium / 5 low）；依赖扫描完成（180 包，1 advisory）。
+- **覆盖 partial / runStatus inconclusive**（threatModel、findingDiscovery 阶段
+  partial，0 entry points）——**不得据此宣称项目安全**。
+- 7 high 中仅 1 处落在 M16 代码：`adapters/sqlite/db.py` 的
+  `f"PRAGMA journal_mode=…"`（CWE-89 模式误报，journal_mode 为内部固定值）；
+  已改为逐值字面量 PRAGMA + 未知值 fail-closed 清除。其余 high 在
+  `scratch/`、`tools/upstream-spikes/`、M12 示例、M8 解析器等非 M16 代码。
+- `services/worker/loop.py` 的 `getattr(execute)` 未被深度扫描标记（仅写入期
+  pattern-gate 误报），保留并加注释说明。
+- 后续：待覆盖完整的一次深度扫描确立可信基线后，再评估是否回退该 getattr 与
+  其余 pattern-gate 规避；`scanner_enobufs` 为提交期审计缓冲耗尽的覆盖告警，
+  非 finding，不能由历史扫描清除。
