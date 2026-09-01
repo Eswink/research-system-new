@@ -971,6 +971,19 @@ def check_supply_chain() -> None:
                 component_id, source, resolution, license_record, upgrade_gate, license_matrix
             )
             continue
+        if source.get("kind") == "NPM":
+            _check_npm_adopted(
+                component_id,
+                source,
+                resolution,
+                digest,
+                license_record,
+                upgrade_gate,
+                license_matrix,
+                node_dev,
+                set((pnpm_lock.get("packages") or {}).keys()),
+            )
+            continue
         if source.get("kind") == "HTTP_API":
             _check_http_api_adopted(
                 component_id, source, resolution, license_record, upgrade_gate, license_matrix
@@ -1066,6 +1079,50 @@ def _check_http_api_adopted(
         ERRORS.append(f"HTTP_API upstream source.url 必须是 https: {component_id}: {source_url!r}")
     if not str(resolution.get("version") or "").strip():
         ERRORS.append(f"HTTP_API upstream 缺少 resolution.version: {component_id}")
+    if not license_record.get("spdx") or not str(license_record.get("evidence") or "").startswith(
+        "https://"
+    ):
+        ERRORS.append(f"ADOPTED upstream 缺少 SPDX/license evidence: {component_id}")
+    if upgrade_gate.get("explicit_approval") is not True or not upgrade_gate.get("required_checks"):
+        ERRORS.append(f"ADOPTED upstream 缺少升级门禁: {component_id}")
+    if component_id.casefold() not in license_matrix.casefold():
+        ERRORS.append(f"LICENSE_MATRIX 缺少 ADOPTED upstream: {component_id}")
+
+
+def _check_npm_adopted(
+    component_id: str,
+    source: dict,
+    resolution: dict,
+    digest: dict,
+    license_record: dict,
+    upgrade_gate: dict,
+    license_matrix: str,
+    node_dev: dict,
+    lockfile_package_keys: set[str],
+) -> None:
+    """npm 来源（source.kind=NPM）的 ADOPTED 校验。
+
+    npm 包不在 uv.lock；与 PyPI 分支同等强度的要求是：
+    - package.json devDependencies 以 exact 版本（无 ^/~ 前缀）声明；
+    - pnpm-lock.yaml 的 packages 段包含 `包@版本` 条目（immutable resolution）；
+    - digest 为 tarball 的 sha256（64 hex，与 UPSTREAM 登记一致）；
+    - license spdx/evidence、upgrade_gate、LICENSE_MATRIX 与其他 ADOPTED 组件同等。
+    """
+    package_name = str(source.get("package") or "")
+    version = str(resolution.get("version") or "")
+    spec = str((node_dev or {}).get(package_name) or "")
+    if not version or spec != version or re.match(r"^[~^]", spec) is not None:
+        ERRORS.append(
+            f"NPM upstream devDependencies 必须精确锁定 {version!r}: {component_id}: {spec!r}"
+        )
+    if f"{package_name}@{version}" not in lockfile_package_keys:
+        ERRORS.append(f"NPM upstream 未进入 pnpm-lock: {component_id}: {package_name}@{version}")
+    if (
+        digest.get("algorithm") != "sha256"
+        or digest.get("artifact") != "tarball"
+        or re.fullmatch(r"[0-9a-f]{64}", str(digest.get("value") or "")) is None
+    ):
+        ERRORS.append(f"ADOPTED upstream tarball sha256 digest 无效: {component_id}")
     if not license_record.get("spdx") or not str(license_record.get("evidence") or "").startswith(
         "https://"
     ):
