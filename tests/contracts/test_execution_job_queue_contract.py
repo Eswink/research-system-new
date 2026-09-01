@@ -55,6 +55,26 @@ def test_cancel_flag_roundtrip(factory: Callable[[], object]) -> None:
     assert queue.cancel_requested(task_id) is True
 
 
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_assert_active_lease_rejects_without_lease(factory: Callable[[], object]) -> None:
+    """F-4: artifact-transfer gate fails closed when no lease matches (Fake+PG)."""
+    queue: ExecutionJobQueue = factory()  # type: ignore[assignment]
+    task_id = queue.enqueue(_request("gate-1"))
+    with pytest.raises(InvalidInputError):
+        queue.assert_active_lease(task_id, "never-issued", 1, "w1")
+
+
+def test_fake_assert_active_lease_accepts_matching() -> None:
+    from adapters.fakes.execution_job_queue import FakeExecutionJobQueue
+
+    queue = FakeExecutionJobQueue()
+    task_id = queue.enqueue(_request("gate-2"))
+    queue.assign(task_id, worker_id="w1", lease_id="l1", fence=1)
+    queue.assert_active_lease(task_id, "l1", 1, "w1")  # no raise
+    with pytest.raises(InvalidInputError):
+        queue.assert_active_lease(task_id, "l1", 1, "other-worker")  # identity binding
+
+
 def test_fake_record_result_requires_matching_lease() -> None:
     from adapters.fakes.execution_job_queue import FakeExecutionJobQueue
 

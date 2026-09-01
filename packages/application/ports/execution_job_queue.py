@@ -110,6 +110,16 @@ class ExecutionJobQueue(Protocol):
         """Persist a worker's execution result (gateway calls after fence check)."""
         ...
 
+    def assert_active_lease(self, task_id: str, lease_id: str, fence: int, worker_id: str) -> None:
+        """Raise InvalidInputError unless (task_id, lease_id, fence) is the
+        active lease AND `leases.worker_id == worker_id`.
+
+        The gateway gates artifact transfer on the same fencing identity as
+        result writes (M16 re-audit F-4), so a bundle can only be uploaded or
+        fetched by the worker that currently holds the job's lease.
+        """
+        ...
+
     def request_cancel(self, task_id: str) -> None:
         """Cooperative cancel flag for an in-flight job."""
         ...

@@ -139,12 +139,13 @@ class RemoteExecutionBackend:
         status = self._map_status(outcome.status)
         if outcome.output_bundle_ref and outcome.output_bundle_digest:
             self._materialize(workspace, outcome)
+        completed = Timestamp.now()
         return ExecutionRun(
             run_id=f"remote-{outcome.task_id}",
             spec=spec,
             status=status,
             started_at=started,
-            completed_at=Timestamp.now(),
+            completed_at=completed,
             exit_code=outcome.exit_code,
             failure_category=self._map_failure(status, outcome),
             stdout_digest=Digest.parse(outcome.stdout_digest) if outcome.stdout_digest else None,
@@ -153,6 +154,9 @@ class RemoteExecutionBackend:
                 "worker_ref": worker_ref(outcome.worker_id) if outcome.worker_id else None,
                 "fence": outcome.fence,
                 "remote": True,
+                # server-measured wall clock (started→completed); consumed by the
+                # single experiment usage path (M16 re-audit F-5: no second truth)
+                "elapsed_seconds": max(0, int((completed.value - started.value).total_seconds())),
             },
         )
 

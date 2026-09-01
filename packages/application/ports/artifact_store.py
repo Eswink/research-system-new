@@ -25,6 +25,14 @@ class ArtifactStore(Protocol):
 
     def get(self, artifact_id: str) -> bytes: ...
 
+    def meta(self, artifact_id: str) -> Artifact | None:
+        """Read the Artifact record (digest/created_by/state) without the blob.
+
+        Returns None for unknown ids. Server-side provenance checks (M16
+        re-audit F-4) use this instead of trusting worker self-reports.
+        """
+        ...
+
     def verify(self, artifact_id: str) -> bool: ...
 
     def mark(self, artifact_id: str, state: ArtifactState) -> None: ...

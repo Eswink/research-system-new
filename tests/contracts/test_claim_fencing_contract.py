@@ -132,3 +132,20 @@ def test_valid_fence_completion_succeeds(factory: Callable[[], object]) -> None:
     lease = engine.claim_next(_request())
     assert lease is not None
     engine.complete(lease, TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"))
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_renew_lease_preserves_identity_and_rejects_stale(factory: Callable[[], object]) -> None:
+    """F-7: renew extends the SAME (lease_id, fence); a superseded triple fails."""
+    engine: WorkflowEngine = factory()  # type: ignore[assignment]
+    task = _execution_task()
+    engine.submit(task, task_contract())
+    lease = engine.claim_next(_request(worker_id="w1"))
+    assert lease is not None
+    # matching triple renews cleanly (no rotation of lease_id/fence)
+    engine.renew_lease(task.id.value, lease.lease_id, lease.fence, "w1")
+    # wrong worker / wrong fence cannot renew someone else's lease
+    with pytest.raises(InvalidInputError):
+        engine.renew_lease(task.id.value, lease.lease_id, lease.fence, "intruder")
+    with pytest.raises(InvalidInputError):
+        engine.renew_lease(task.id.value, lease.lease_id, lease.fence + 5, "w1")

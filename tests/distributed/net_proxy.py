@@ -75,8 +75,13 @@ class NetProxy:
                 if self._blackholed.is_set():
                     self._stall(client)
                     return
-                if not self._pump(client, upstream) and not self._pump(upstream, client):
-                    self._sleep()
+                # Pump BOTH directions every iteration. A recv timeout is not
+                # "closed" — short-circuiting on the client direction would
+                # strand the upstream response and hang the client.
+                alive_in = self._pump(client, upstream)
+                alive_out = self._pump(upstream, client)
+                if not alive_in or not alive_out:
+                    return
         except OSError:
             pass
         finally:

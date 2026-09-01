@@ -51,6 +51,22 @@ def _register(harness: WorkerHarness, worker_id: str = "sec-w1") -> tuple[str, i
     return str(body["session_token"]), int(body["registration_generation"])
 
 
+def test_worker_child_env_holds_zero_db_credentials() -> None:
+    """F-2: the worker subprocess environment is stripped of every DB credential."""
+    from tests.distributed.worker_harness import worker_child_env
+
+    base = {
+        "RESEARCHOS_POSTGRES_DSN": "postgresql://u:p@h:5432/db",
+        "DATABASE_URL": "postgresql://u:p@h:5432/db",
+        "PATH": "/usr/bin",
+    }
+    env = worker_child_env("http://127.0.0.1:1", "w1", base_env=base)
+    assert "RESEARCHOS_POSTGRES_DSN" not in env
+    assert "DATABASE_URL" not in env
+    assert env["RESEARCHOS_WORKER_GATEWAY_URL"] == "http://127.0.0.1:1"
+    assert env["PATH"] == "/usr/bin"  # non-secret env preserved
+
+
 def test_forged_worker_registration_rejected(harness: WorkerHarness) -> None:
     resp = httpx.post(
         f"{harness.gateway_url}/worker/v1/register",
@@ -109,31 +125,140 @@ def test_impersonation_worker_id_mismatch_rejected(harness: WorkerHarness) -> No
     assert resp.status_code == 401
 
 
+def test_draining_worker_cannot_claim_new_work(harness: WorkerHarness) -> None:
+    """F-1: drain is server-enforced authority, not worker cooperation."""
+    token, gen = _register(harness, "drain-w1")
+    harness.registry.drain("drain-w1")
+    harness.seed_job(idem="drain-job", partition=0)
+    resp = httpx.post(
+        f"{harness.gateway_url}/worker/v1/claim",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "worker_id": "drain-w1",
+            "registration_generation": gen,
+            "capabilities": ["docker"],
+            "partitions": [0],
+        },
+    )
+    assert resp.status_code == 409  # DRAINING session refused, work stays queued
+
+
+def test_claim_beyond_registered_capabilities_rejected(harness: WorkerHarness) -> None:
+    """F-1: claim cannot assert capabilities/partitions never registered."""
+    token, gen = _register(harness, "cap-w1")  # registers ["docker"], slots [0]
+    harness.seed_job(idem="cap-job", partition=0)
+    resp = httpx.post(
+        f"{harness.gateway_url}/worker/v1/claim",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "worker_id": "cap-w1",
+            "registration_generation": gen,
+            "capabilities": ["docker", "gpu"],
+            "partitions": [0],
+        },
+    )
+    assert resp.status_code == 409
+
+
+def _claim_lease(
+    harness: WorkerHarness, token: str, gen: int, worker_id: str, idem: str
+) -> tuple[str, str, int]:
+    """Seed + claim one job through the gateway; return (task_id, lease_id, fence)."""
+    harness.seed_job(idem=idem, partition=0)
+    resp = httpx.post(
+        f"{harness.gateway_url}/worker/v1/claim",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "worker_id": worker_id,
+            "registration_generation": gen,
+            "capabilities": ["docker"],
+            "partitions": [0],
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    return str(body["task_id"]), str(body["lease_id"]), int(body["fence"])
+
+
+def _lease_headers(token: str, task_id: str, lease_id: str, fence: int) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}",
+        "X-Task-Id": task_id,
+        "X-Lease-Id": lease_id,
+        "X-Fence": str(fence),
+    }
+
+
 def test_secret_enumeration_surface_is_zero(harness: WorkerHarness) -> None:
-    token, _gen = _register(harness)
+    token, gen = _register(harness)
     # no endpoint lists credentials or resolves arbitrary refs
     for path in ("/worker/v1/credentials", "/worker/v1/secrets", "/worker/v1/credentials/LLM_KEY"):
         resp = httpx.get(
             f"{harness.gateway_url}{path}", headers={"Authorization": f"Bearer {token}"}
         )
         assert resp.status_code in (401, 404, 405, 503)
-    # artifact download is namespaced by artifact id, not by reference guessing
+    # F-4/F-10: even with a valid lease, an arbitrary artifact id is refused —
+    # download is authorized only for the leased task's input or own uploads
+    task_id, lease_id, fence = _claim_lease(harness, token, gen, "sec-w1", "enum-job")
     resp = httpx.get(
         f"{harness.gateway_url}/worker/v1/artifacts/LLM_KEY",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=_lease_headers(token, task_id, lease_id, fence),
     )
-    assert resp.status_code in (404, 503)
+    assert resp.status_code == 403
 
 
 def test_oversized_result_rejected(harness: WorkerHarness) -> None:
-    token, _gen = _register(harness)
+    token, gen = _register(harness)
+    task_id, lease_id, fence = _claim_lease(harness, token, gen, "sec-w1", "big-job")
     limit = harness.settings.max_result_bytes
     resp = httpx.post(
         f"{harness.gateway_url}/worker/v1/artifacts",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=_lease_headers(token, task_id, lease_id, fence),
         content=b"x" * (limit + 1),
     )
     assert resp.status_code == 413
+
+
+def test_upload_without_lease_context_rejected(harness: WorkerHarness) -> None:
+    """F-4: artifact transfer requires the fencing identity — no bare uploads."""
+    token, _gen = _register(harness)
+    resp = httpx.post(
+        f"{harness.gateway_url}/worker/v1/artifacts",
+        headers={"Authorization": f"Bearer {token}"},
+        content=b"small-bundle",
+    )
+    assert resp.status_code == 422
+
+
+def test_cross_task_output_substitution_rejected(harness: WorkerHarness) -> None:
+    """F-4 BLOCKER-class attack: present another task's bundle as this task's output."""
+    token, gen = _register(harness, "sub-w1")
+    # worker legitimately uploads a bundle while holding lease on task A
+    task_a, lease_a, fence_a = _claim_lease(harness, token, gen, "sub-w1", "sub-a")
+    upload = httpx.post(
+        f"{harness.gateway_url}/worker/v1/artifacts",
+        headers=_lease_headers(token, task_a, lease_a, fence_a),
+        content=b"bundle-for-task-a",
+    )
+    assert upload.status_code == 200
+    bundle_ref = upload.json()["artifact_id"]
+    # now claim task B and try to submit task A's bundle as B's output
+    task_b, lease_b, fence_b = _claim_lease(harness, token, gen, "sub-w1", "sub-b")
+    resp = httpx.post(
+        f"{harness.gateway_url}/worker/v1/tasks/{task_b}/result",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "worker_id": "sub-w1",
+            "registration_generation": gen,
+            "lease_id": lease_b,
+            "fence": fence_b,
+            "status": "SUCCEEDED",
+            "exit_code": 0,
+            "output_bundle_ref": bundle_ref,
+            "output_bundle_digest": "sha256:" + "0" * 64,
+        },
+    )
+    assert resp.status_code == 409  # provenance: bundle was uploaded for task A, not B
 
 
 def test_malformed_result_rejected(harness: WorkerHarness) -> None:

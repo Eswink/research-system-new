@@ -36,7 +36,12 @@ from adapters.postgres.serialization import TaskRow, encode_task
 from adapters.postgres.telemetry_notes import note_queue_lag, note_task_duration
 from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_impl
 from adapters.postgres.workflow_claim import ClaimPayload, claim_next_impl
-from adapters.postgres.workflow_ops import complete_impl, heartbeat_impl, recover_impl
+from adapters.postgres.workflow_ops import (
+    complete_impl,
+    heartbeat_impl,
+    recover_impl,
+    renew_lease_impl,
+)
 from adapters.postgres.workflow_submit import SubmitPayload, submit_task
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
 from packages.application.observability.scope import operation, record_metric_safely
@@ -207,6 +212,30 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             raise
         except psycopg.OperationalError as exc:
             raise self._wrap_operational(exc) from exc
+
+    def renew_lease(self, task_id: str, lease_id: str, fence: int, worker_id: str) -> None:
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="workflow.renew_lease",
+            correlation=CorrelationRef(task_id=task_id),
+        ):
+            self._ensure_open()
+            try:
+                renew_lease_impl(
+                    self._conn,
+                    self._record,
+                    task_id,
+                    lease_id,
+                    fence,
+                    worker_id,
+                    self._lease_ttl,
+                    self._now,
+                )
+            except InvalidInputError:
+                raise
+            except psycopg.OperationalError as exc:
+                raise self._wrap_operational(exc) from exc
 
     def complete(self, lease: TaskLease, completion: TaskCompletion) -> None:
         with operation(

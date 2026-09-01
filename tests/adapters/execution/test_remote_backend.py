@@ -117,6 +117,9 @@ def test_remote_execute_happy_path_materializes_output(tmp_path: Path) -> None:
     assert run.status is ExecutionStatus.SUCCEEDED
     assert run.exit_code == 0
     assert run.compute_usage_summary["remote"] is True
+    # F-5: server-measured wall clock is present (not fabricated, not omitted)
+    elapsed = run.compute_usage_summary["elapsed_seconds"]
+    assert isinstance(elapsed, int) and elapsed >= 0
     materialized = Path(str(spec.workspace_path)).joinpath("result.txt")
     assert materialized.read_text(encoding="utf-8") == "done"
 

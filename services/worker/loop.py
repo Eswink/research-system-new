@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -94,12 +95,16 @@ class WorkerLoop:
 
     def _process(self, job: dict[str, object]) -> None:
         task_id = str(job["task_id"])
+        lease_id = str(job["lease_id"])
+        fence = int(str(job["fence"]))
         scratch = Path(self._config.scratch_root or tempfile.mkdtemp(prefix="worker-job-"))
         scratch.mkdir(parents=True, exist_ok=True)
         input_ref = job.get("input_bundle_ref")
         input_digest = job.get("input_bundle_digest")
         if input_ref and input_digest:
-            bundle = self._client.download_bundle(str(input_ref))
+            bundle = self._client.download_bundle(
+                str(input_ref), task_id=task_id, lease_id=lease_id, fence=fence
+            )
             bundle_to_directory(bundle, scratch, str(input_digest))
         spec = _spec_from_json(str(job["spec_json"]), str(scratch))
         # ExecutionBackend.execute via getattr: the write-time pattern-gate
@@ -107,12 +112,25 @@ class WorkerLoop:
         # the sandbox Port, not SQL). The sealed deep scan
         # scan-2026-08-31T17-01-13.681Z-6a277cc4ceda did NOT flag this site.
         runner = getattr(self._backend, "execute")
-        run = runner(spec, timeout_seconds=_as_int(job.get("timeout_seconds")))
+        # F-7: keep the lease alive while a long job runs, so it is neither
+        # expired/reclaimed nor is the busy worker mis-marked LOST.
+        stop_renew = threading.Event()
+        renewer = threading.Thread(
+            target=self._renew_loop, args=(task_id, lease_id, fence, stop_renew), daemon=True
+        )
+        renewer.start()
+        try:
+            run = runner(spec, timeout_seconds=_as_int(job.get("timeout_seconds")))
+        finally:
+            stop_renew.set()
+            renewer.join(timeout=5.0)
         out_bundle, out_digest = bundle_from_directory(scratch)
-        ack = self._client.upload_bundle(out_bundle)
+        ack = self._client.upload_bundle(
+            out_bundle, task_id=task_id, lease_id=lease_id, fence=fence
+        )
         payload = WorkerResultPayload(
-            lease_id=str(job["lease_id"]),
-            fence=int(str(job["fence"])),
+            lease_id=lease_id,
+            fence=fence,
             status=_map_status(run.status),
             exit_code=run.exit_code,
             stdout_digest=str(run.stdout_digest) if run.stdout_digest else None,
@@ -122,6 +140,25 @@ class WorkerLoop:
             failure_category=run.failure_category.value if run.failure_category else None,
         )
         self._client.submit_result(task_id, payload)
+
+    def _renew_loop(self, task_id: str, lease_id: str, fence: int, stop: threading.Event) -> None:
+        """Renew the held lease until the job settles (M16 re-audit F-7).
+
+        Cadence is half the Control-Plane heartbeat interval so both the lease
+        and the worker's liveness stay fresh well inside their server-side
+        thresholds. A renew failure means the lease was superseded/expired; we
+        stop quietly — the authoritative submit is fenced out regardless.
+        """
+        interval = max(0.25, self._client.heartbeat_interval_seconds / 3)
+        # renew once immediately, then on cadence, so a job that starts right
+        # after claim is never left un-renewed during the first interval.
+        while True:
+            try:
+                self._client.renew(task_id, lease_id, fence)
+            except Exception:  # noqa: BLE001 - lease lost; submit path handles authority
+                return
+            if stop.wait(interval):
+                return
 
 
 def _as_int(value: object) -> int | None:

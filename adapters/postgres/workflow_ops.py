@@ -11,6 +11,7 @@ from adapters.postgres.leases import new_lease
 from adapters.postgres.serialization import decode_timestamp_pg
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
+from packages.domain.core import Timestamp
 from packages.domain.events import EventType
 from packages.domain.task_state import ResearchTaskState
 
@@ -49,6 +50,36 @@ def heartbeat_impl(conn: Any, record: Any, lease: TaskLease, ttl: timedelta, now
             raise InvalidInputError(f"no matching lease for task: {lease.task_id}")
     record("heartbeat", lease.task_id)
     return renewed
+
+
+def renew_lease_impl(  # noqa: PLR0913 - lease identity + ttl/clock are complete
+    conn: Any,
+    record: Any,
+    task_id: str,
+    lease_id: str,
+    fence: int,
+    worker_id: str,
+    ttl: timedelta,
+    now: Any,
+) -> None:
+    """Extend an active EXECUTION lease's expiry in place (M16 re-audit F-7).
+
+    Preserves lease_id + fence (unlike heartbeat's rotation) so the worker's
+    held fencing triple keeps validating its eventual result. Server clock is
+    the sole authority for the new expiry.
+    """
+    base = server_now(conn, now)
+    new_expiry = Timestamp(base + ttl)
+    with conn.transaction():
+        cur: Any = conn.execute(
+            "UPDATE leases SET expires_at = %s, heartbeat_at = %s "
+            "WHERE task_id = %s AND lease_id = %s AND fence = %s AND worker_id = %s",
+            (new_expiry.value, new_expiry.value, task_id, lease_id, fence, worker_id),
+        )
+        if cur.rowcount == 0:
+            record("renew_lease", task_id, error="InvalidInputError")
+            raise InvalidInputError(f"no active lease to renew for task: {task_id}")
+    record("renew_lease", task_id, result="extended")
 
 
 def _validate_completion_lease(conn: Any, record: Any, lease: Any, now: Any) -> bool:

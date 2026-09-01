@@ -205,9 +205,56 @@ def emit_canary_signals(receiver: OtlpHttpReceiver, *, with_credential: bool = T
             labels=_cycled(markers, tuple(MetricLabel)),
         )
     )
+    _emit_worker_channel(sink, markers)
     sink.flush(timeout_seconds=5.0)
     sink.shutdown(timeout_seconds=5.0)
     return sink
+
+
+def _emit_worker_channel(sink: Any, markers: tuple[str, ...]) -> None:
+    """M16 re-audit F-9: worker/remote-execution channels must not carry markers.
+
+    Every M16 span scope (WORKER_SESSION / WORKER_DISPATCH / REMOTE_EXECUTION)
+    and the worker/remote metrics are stuffed with the same canary markers in
+    attributes, correlation ids and labels; the byte-scan then proves none of
+    them reach the exported OTLP wire.
+    """
+    for scope in (
+        OperationScope.WORKER_SESSION,
+        OperationScope.WORKER_DISPATCH,
+        OperationScope.REMOTE_EXECUTION,
+    ):
+        with operation(
+            sink,
+            scope=scope,
+            name=f"{scope.value}.canary",
+            correlation=CorrelationRef(
+                run_id=f"run-{API_KEY.value}",
+                task_id=f"task-{BEARER.value}",
+                agent_session_id=f"sess-{PG_PASSWORD.value}",
+            ),
+            attributes={
+                **_cycled(markers, STRING_ATTRIBUTE_KEYS),
+                # raw worker id / bundle content must never be exported
+                "worker_ref": PG_PASSWORD.value,
+                **{key: PROMPT.value for key in CONTENT_KEY_CANDIDATES},
+            },
+        ):
+            pass
+    for metric in (
+        MetricName.WORKER_REGISTERED_TOTAL,
+        MetricName.WORKER_HEARTBEAT_LOST_TOTAL,
+        MetricName.REMOTE_EXECUTION_DURATION_MS,
+        MetricName.SCHEDULER_PARTITION_LAG,
+    ):
+        sink.record_metric(
+            MetricSample(
+                name=metric,
+                kind=MetricKind.COUNTER if "total" in metric.value else MetricKind.HISTOGRAM,
+                value=1,
+                labels=_cycled(markers, tuple(MetricLabel)),
+            )
+        )
 
 
 def iter_spans(receiver: OtlpHttpReceiver) -> Iterator[Any]:

@@ -26,6 +26,7 @@ from services.api.scheduler import (
     LeaseRecoveryScheduler,
     OutboxRelayScheduler,
     RetentionScheduler,
+    WorkerReaperScheduler,
 )
 from services.api.settings import ApiSettings
 
@@ -70,34 +71,66 @@ def _start_retention_scheduler(deps: ApiDeps) -> "RetentionScheduler | None":
         return None
 
 
+def _start_worker_reaper(deps: ApiDeps) -> "WorkerReaperScheduler | None":
+    """M16 re-audit F-3: LOST detection must run in the production Control Plane.
+
+    Gated on `deps.worker_registry` (present only in the PG composition); the
+    reaper flips heartbeat-expired workers to LOST from server time — it does
+    not release leases (that stays `recover_expired_leases`, single authority).
+    """
+    registry = getattr(deps, "worker_registry", None)
+    if registry is None:
+        return None
+    try:
+        sched = WorkerReaperScheduler(
+            registry,
+            stale_threshold_seconds=30.0,
+            interval_seconds=15.0,
+            telemetry=getattr(deps, "telemetry", None),
+        )
+        sched.start()
+        return sched
+    except Exception:
+        return None
+
+
+def _stop_schedulers(
+    reaper: "WorkerReaperScheduler | None",
+    retention: "RetentionScheduler | None",
+    outbox: "OutboxRelayScheduler | None",
+    lease: "LeaseRecoveryScheduler | None",
+) -> None:
+    """Reverse-order daemon shutdown; a failing stop must not block the rest."""
+    for sched in (reaper, retention, outbox):
+        if sched is not None:
+            try:
+                sched.stop()
+            except Exception:
+                pass
+    if lease is not None:
+        lease.stop()
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Start/stop schedulers if workflow available (WP-E: lease recovery + PG outbox relay).
 
     M15: shutdown 时有界 flush/停 telemetry provider(FailSafe 吞错,不阻断停机)。
+    M16 re-audit F-3: the worker reaper daemon joins the production lifecycle.
     """
     deps: ApiDeps | None = getattr(app.state, "deps", None)
     lease_sched: LeaseRecoveryScheduler | None = None
     outbox_sched: OutboxRelayScheduler | None = None
     retention_sched: RetentionScheduler | None = None
+    reaper_sched: WorkerReaperScheduler | None = None
     telemetry = getattr(deps, "telemetry", None) if deps is not None else None
     if deps is not None and deps.runs is not None:
         lease_sched = _start_lease_scheduler(deps)
         outbox_sched = _start_outbox_scheduler(deps)
         retention_sched = _start_retention_scheduler(deps)
+        reaper_sched = _start_worker_reaper(deps)
     yield
-    if retention_sched is not None:
-        try:
-            retention_sched.stop()
-        except Exception:
-            pass
-    if outbox_sched is not None:
-        try:
-            outbox_sched.stop()
-        except Exception:
-            pass
-    if lease_sched is not None:
-        lease_sched.stop()
+    _stop_schedulers(reaper_sched, retention_sched, outbox_sched, lease_sched)
     if telemetry is not None:
         shutdown = getattr(telemetry, "shutdown", None)
         if callable(shutdown):

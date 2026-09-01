@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from uuid import uuid4
 
 from adapters.fakes.base import FakeBase
@@ -136,6 +137,23 @@ class FakeWorkflowEngine(FakeBase):
         self._leases[lease.task_id] = renewed
         self._record("heartbeat", lease.task_id)
         return renewed
+
+    def renew_lease(self, task_id: str, lease_id: str, fence: int, worker_id: str) -> None:
+        """Extend an active EXECUTION lease in place (M16 re-audit F-7); Fake mirror."""
+        self._enter("renew_lease", task_id)
+        current = self._leases.get(task_id)
+        if (
+            current is None
+            or current.lease_id != lease_id
+            or current.fence != fence
+            or current.worker_id != worker_id
+        ):
+            self._record("renew_lease", task_id, error="InvalidInputError")
+            raise InvalidInputError(f"no active lease to renew for task: {task_id}")
+        self._leases[task_id] = replace(
+            current, expires_at=Timestamp.now(), heartbeat_at=Timestamp.now()
+        )
+        self._record("renew_lease", task_id, result="extended")
 
     def complete(self, lease: TaskLease, completion: TaskCompletion) -> None:
         self._enter("complete", lease.task_id)

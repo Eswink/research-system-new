@@ -53,6 +53,12 @@ class FakeArtifactStore(FakeBase):
         self._record("verify", artifact_id, result=str(ok))
         return ok
 
+    def meta(self, artifact_id: str) -> Artifact | None:
+        self._enter("meta", artifact_id)
+        artifact = self._metadata.get(artifact_id)
+        self._record("meta", artifact_id, result="found" if artifact is not None else "none")
+        return artifact
+
     def _require_readable(self, method: str, artifact_id: str) -> None:
         if artifact_id not in self._content:
             self._record(method, artifact_id, error="InvalidInputError")

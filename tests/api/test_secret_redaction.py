@@ -83,3 +83,23 @@ def test_error_message_redaction_never_contains_secret(client: TestClient) -> No
     result = response.json()
     assert result["ok"] is False
     assert "sk-" not in response.text
+
+
+def test_generic_handler_redacts_dsn_in_exception_message() -> None:
+    """M16 re-audit F-10: an uncaught adapter error embedding a DSN is redacted."""
+    from fastapi import FastAPI
+
+    from services.api.errors import register_error_handlers
+
+    dsn = "postgresql://user:sup3rs3cret@db.internal:5432/prod"
+    app = FastAPI()
+    register_error_handlers(app)
+
+    @app.get("/boom")
+    def _boom() -> None:
+        raise ValueError(f"connection failed for {dsn}")
+
+    response = TestClient(app).get("/boom")
+    assert response.status_code == 422
+    assert "sup3rs3cret" not in response.text
+    assert "REDACTED" in response.text

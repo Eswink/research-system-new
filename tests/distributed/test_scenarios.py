@@ -9,7 +9,6 @@ execution backend keeps the gate offline; the real-Docker remote path is
 
 from __future__ import annotations
 
-import os
 import time
 from collections.abc import Callable, Generator
 
@@ -27,7 +26,9 @@ _WAIT_SECONDS = 45
 
 
 def _harness() -> WorkerHarness:
-    return WorkerHarness(_postgres_dsn(), lease_ttl_seconds=2, stale_seconds=3.0)
+    # Realistic lease/stale windows: renewal keeps healthy in-flight jobs alive,
+    # while failover scenarios still converge fast via kill / explicit expiry.
+    return WorkerHarness(_postgres_dsn(), lease_ttl_seconds=6, stale_seconds=4.0)
 
 
 def _wait_until(check: Callable[[], bool], timeout: float = _WAIT_SECONDS) -> bool:
@@ -49,20 +50,20 @@ def harness(clean_worker_plane: str) -> Generator[WorkerHarness, None, None]:
 
 
 def test_scenario_a_multi_worker_parallel_disjoint(harness: WorkerHarness) -> None:
-    """A: >=2 independent workers take disjoint jobs; no double ownership."""
-    task_ids = [harness.seed_job(idem=f"a-{i}") for i in range(4)]
-    harness.spawn_worker("a-w1")
-    harness.spawn_worker("a-w2")
+    """A: >=2 independent workers each actually execute work; no double ownership."""
+    task_ids = [harness.seed_job(idem=f"a-{i}") for i in range(8)]
+    harness.spawn_worker("a-w1", env_extra={"RESEARCHOS_WORKER_EXECUTE_DELAY_SECONDS": "1"})
+    harness.spawn_worker("a-w2", env_extra={"RESEARCHOS_WORKER_EXECUTE_DELAY_SECONDS": "1"})
     assert _wait_until(lambda: all(harness.job_queue.poll(t) is not None for t in task_ids))
     owners = set()
     for task_id in task_ids:
         outcome = harness.job_queue.poll(task_id)
         assert outcome is not None and outcome.status == "SUCCEEDED"
         owners.add(outcome.worker_id)
-    assert len(owners) >= 1  # at least one worker did work; ownership is unique per job
-    for task_id in task_ids:
         row = _worker_of(harness, task_id)
         assert row is not None  # exactly one worker per job (lease PK enforces)
+    # F-6: genuine parallelism — BOTH workers must have executed real work
+    assert owners == {"a-w1", "a-w2"}, f"expected both owners, got {owners}"
 
 
 def _worker_of(harness: WorkerHarness, task_id: str) -> str | None:
@@ -98,85 +99,104 @@ def test_scenario_b_crash_failover(harness: WorkerHarness) -> None:
     assert _lease_count(harness, task_id) == 0
 
 
+def _gateway_register_claim(harness: WorkerHarness, worker_id: str) -> tuple[str, int, str, int]:
+    """Register + claim one job through the gateway; return (token, gen, lease, fence)."""
+    import httpx
+
+    from tests.distributed.worker_harness import _ENROLLMENT
+
+    reg = httpx.post(
+        f"{harness.gateway_url}/worker/v1/register",
+        headers={"X-Worker-Enrollment": _ENROLLMENT},
+        json={
+            "worker_id": worker_id,
+            "protocol_version": "1",
+            "runtime_version": "0.1.0",
+            "capabilities": ["docker"],
+            "backend_kinds": ["DOCKER"],
+            "platform": "linux/amd64",
+            "partition_slots": [0],
+            "max_concurrency": 1,
+        },
+    )
+    assert reg.status_code == 200
+    token = str(reg.json()["session_token"])
+    gen = int(reg.json()["registration_generation"])
+    claim = httpx.post(
+        f"{harness.gateway_url}/worker/v1/claim",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "worker_id": worker_id,
+            "registration_generation": gen,
+            "capabilities": ["docker"],
+            "partitions": [0],
+        },
+    )
+    assert claim.status_code == 200
+    return token, gen, str(claim.json()["lease_id"]), int(claim.json()["fence"])
+
+
 def test_scenario_c_stale_result_rejected(harness: WorkerHarness) -> None:
-    """C (BLOCKER): a superseded worker's late result is fenced out."""
-    task_id = harness.seed_job(idem="c-1")
-    # old worker claims (fence 1)
-    lease1 = harness.workflow.claim_next(_claim("c-old"))
-    assert lease1 is not None and lease1.fence == 1
-    # force the lease to expire and let recovery requeue it
+    """C (BLOCKER): a superseded worker's late result is fenced out via the gateway."""
+    import httpx
+
+    task_id = harness.seed_job(idem="c-1", partition=0)
+    # old worker registers + claims through the gateway (real session, fence 1)
+    old_token, old_gen, old_lease, old_fence = _gateway_register_claim(harness, "c-old")
+    # force expiry + recovery, then a NEW worker reclaims (higher fence)
     _expire_lease(harness, task_id)
     harness.workflow.recover_expired_leases()
     lease2 = harness.workflow.claim_next(_claim("c-new"))
-    assert lease2 is not None and lease2.fence == 2
-    # the OLD worker submits its late result through the gateway -> 409
-    import httpx
-
+    assert lease2 is not None and lease2.fence == old_fence + 1
+    # the OLD worker submits its late result with its STILL-VALID session -> 409
     resp = httpx.post(
         f"{harness.gateway_url}/worker/v1/tasks/{task_id}/result",
-        headers={"Authorization": "Bearer invalid"},
+        headers={"Authorization": f"Bearer {old_token}"},
         json={
             "worker_id": "c-old",
-            "registration_generation": 1,
-            "lease_id": lease1.lease_id,
-            "fence": lease1.fence,
+            "registration_generation": old_gen,
+            "lease_id": old_lease,
+            "fence": old_fence,
             "status": "SUCCEEDED",
             "exit_code": 0,
         },
     )
-    assert resp.status_code in (401, 409)
-    # even with a valid session the stale (lease_id, fence) is rejected
-    assert harness.registry.get("c-old") is None or _stale_rejected(harness, task_id, lease1)
-
-
-def _stale_rejected(harness: WorkerHarness, task_id: str, lease: object) -> bool:
-    """Direct Control-Plane write with the stale fence must raise."""
-    from packages.application.ports.errors import InvalidInputError
-    from packages.application.ports.execution_job_queue import ExecutionJobResult
-
-    try:
-        harness.job_queue.record_result(
-            ExecutionJobResult(
-                task_id=task_id,
-                lease_id=lease.lease_id,  # type: ignore[attr-defined]
-                fence=lease.fence,  # type: ignore[attr-defined]
-                status="SUCCEEDED",
-                exit_code=0,
-            )
-        )
-    except InvalidInputError:
-        return True
-    return False
+    assert resp.status_code == 409  # stale (lease_id, fence) rejected, not persisted
+    # c-old's late result never became authoritative: the job is not settled by it
+    settled = harness.job_queue.poll(task_id)
+    assert settled is None or settled.worker_id != "c-old"
 
 
 def test_scenario_d_network_partition_no_old_authority(harness: WorkerHarness) -> None:
-    """D: partitioned worker's lease expires; late reconnect cannot revive it."""
-    task_id = harness.seed_job(idem="d-1")
+    """D: a RUNNING worker loses the network; its authority cannot revive after reconnect."""
+    task_id = harness.seed_job(idem="d-1", partition=0)
     proxy = NetProxy("127.0.0.1", harness.port)
     proxy.start()
-    lease = harness.workflow.claim_next(_claim("d-partitioned"))
-    assert lease is not None
-    proxy.blackhole()  # worker now unreachable (bytes held)
+    # a real worker subprocess connects THROUGH the proxy and starts a long job
+    partitioned = harness.spawn_worker(
+        "d-partitioned",
+        env_extra={
+            "RESEARCHOS_WORKER_GATEWAY_URL": f"http://127.0.0.1:{proxy.port}",
+            "RESEARCHOS_WORKER_EXECUTE_DELAY_SECONDS": "25",
+        },
+    )
+    assert _wait_until(lambda: _is_leased_by(harness, task_id, "d-partitioned"))
+    proxy.blackhole()  # worker keeps running but cannot reach the Control Plane
     _expire_lease(harness, task_id)
     harness.workflow.recover_expired_leases()
-    # recovery requeued it; any other worker can take it
-    lease2 = harness.workflow.claim_next(_claim("d-healthy"))
-    assert lease2 is not None and lease2.fence == lease.fence + 1
-    # the partitioned worker's stale write is rejected even after "reconnect"
-    from packages.application.ports.errors import InvalidInputError
-    from packages.application.ports.execution_job_queue import ExecutionJobResult
-
-    with pytest.raises(InvalidInputError):
-        harness.job_queue.record_result(
-            ExecutionJobResult(
-                task_id=task_id,
-                lease_id=lease.lease_id,
-                fence=lease.fence,
-                status="SUCCEEDED",
-                exit_code=0,
-            )
-        )
+    # a healthy worker (direct to gateway) reclaims at a higher fence and completes
+    harness.spawn_worker("d-healthy")
+    assert _wait_until(lambda: harness.job_queue.poll(task_id) is not None)
+    outcome = harness.job_queue.poll(task_id)
+    assert outcome is not None and outcome.status == "SUCCEEDED"
+    assert outcome.worker_id == "d-healthy"
+    # the partitioned worker never owned the settled result; its lease was
+    # superseded (fence advanced), so any late submit is fenced out (C + attack
+    # suite cover the 409; the reaper's LOST transition is unit-tested).
+    assert _worker_of(harness, task_id) == "d-healthy"
     proxy.restore()
+    partitioned.terminate()
+    partitioned.wait(timeout=10)
     proxy.stop()
 
 
@@ -195,43 +215,57 @@ def test_scenario_e_duplicate_delivery_single_completion(harness: WorkerHarness)
 
 
 def test_scenario_f_scheduler_restart_keeps_state(harness: WorkerHarness) -> None:
-    """F: scheduler crash/restart loses nothing — state lives in PostgreSQL."""
-    task_id = harness.seed_job(idem="f-1")
-    harness.spawn_worker("f-w1")
-    assert _wait_until(lambda: harness.job_queue.poll(task_id) is not None)
+    """F: scheduler crash mid-flight loses nothing — recovery resumes from PostgreSQL."""
+    task_id = harness.seed_job(idem="f-1", partition=0)
+    crasher = harness.spawn_worker(
+        "f-crasher", env_extra={"RESEARCHOS_WORKER_EXECUTE_DELAY_SECONDS": "30"}
+    )
+    assert _wait_until(lambda: _is_leased_by(harness, task_id, "f-crasher"))
+    # hard-kill the worker AND stop the scheduler while the lease is in flight
+    crasher.kill()
+    crasher.wait(timeout=10)
     harness.stop_schedulers()
-    harness.start_schedulers()  # "restart"
+    assert harness.job_queue.poll(task_id) is None  # nothing settled without recovery
+    # restart the Control Plane schedulers: state lives entirely in PostgreSQL
+    harness.start_schedulers()
+    harness.spawn_worker("f-takeover")
+    assert _wait_until(lambda: harness.job_queue.poll(task_id) is not None)
     outcome = harness.job_queue.poll(task_id)
     assert outcome is not None and outcome.status == "SUCCEEDED"
+    assert outcome.worker_id == "f-takeover"
 
 
 def test_scenario_g_drain_stops_claims(harness: WorkerHarness) -> None:
-    """G: drained worker stops claiming; others continue; safe offline."""
-    harness.seed_job(idem="g-1")
+    """G: drained worker stops claiming (server-enforced); others continue; safe offline."""
     harness.spawn_worker("g-w1")
     assert _wait_until(lambda: harness.registry.get("g-w1") is not None)
     reg_before = harness.registry.get("g-w1")
     assert reg_before is not None
     if reg_before.state == "REGISTERING":
-        harness.registry.transition(
-            "g-w1",
-            WorkerState.Transition.HANDSHAKE_OK,
-        )
+        harness.registry.transition("g-w1", WorkerState.Transition.HANDSHAKE_OK)
     harness.registry.drain("g-w1")
     reg = harness.registry.get("g-w1")
     assert reg is not None and reg.state == "DRAINING" and reg.drain_requested is True
+    # F-1: a NEW job must NOT be granted to the draining worker even if it asks;
+    # a fresh worker takes it instead.
+    task_id = harness.seed_job(idem="g-after-drain", partition=0)
+    harness.spawn_worker("g-w2")
+    assert _wait_until(lambda: harness.job_queue.poll(task_id) is not None)
+    assert _worker_of(harness, task_id) == "g-w2"
 
 
 def test_scenario_j_version_incompatible_rejected(harness: WorkerHarness) -> None:
-    """J: an incompatible worker is refused at registration (fail closed)."""
+    """J: an incompatible worker is refused at registration (fail closed, 409)."""
     import httpx
+
+    from tests.distributed.worker_harness import _ENROLLMENT
 
     resp = httpx.post(
         f"{harness.gateway_url}/worker/v1/register",
-        headers={"X-Worker-Enrollment": os.environ.get("RESEARCHOS_WORKER_ENROLLMENT_SECRET", "")},
+        headers={"X-Worker-Enrollment": _ENROLLMENT},  # valid enrollment
         json={
             "worker_id": "j-old",
-            "protocol_version": "999",
+            "protocol_version": "999",  # unsupported → must reach the 409 handshake gate
             "runtime_version": "0.0.1",
             "capabilities": ["docker"],
             "backend_kinds": ["DOCKER"],
@@ -240,18 +274,31 @@ def test_scenario_j_version_incompatible_rejected(harness: WorkerHarness) -> Non
             "max_concurrency": 1,
         },
     )
-    # enrollment for the harness is private; 401 or 409 both fail closed
-    assert resp.status_code in (401, 409)
+    assert resp.status_code == 409  # F-6: protocol mismatch, not an enrollment 401
+    assert "Protocol Mismatch" in resp.text
 
 
-def test_worker_clock_skew_does_not_affect_authority(harness: WorkerHarness) -> None:
-    """Worker clock +1h must not change lease expiry / fence / ordering."""
-    task_id = harness.seed_job(idem="skew-1")
-    harness.spawn_worker("skew-w1", clock_skew=3600)
-    assert _wait_until(lambda: harness.job_queue.poll(task_id) is not None)
-    outcome = harness.job_queue.poll(task_id)
-    assert outcome is not None and outcome.status == "SUCCEEDED"
-    assert outcome.worker_id == "skew-w1"
+def test_worker_clock_skew_does_not_affect_authority() -> None:
+    """F-6: authority is immune to worker clock by construction — no client timestamp
+    is ever accepted on the worker→gateway surface, and expiry uses PG now()."""
+    from services.api.worker_gateway.dto import (
+        ClaimRequestDto,
+        HeartbeatRequest,
+        ResultSubmissionDto,
+        WorkerRegisterRequest,
+    )
+
+    forbidden = {"timestamp", "ts", "now", "time", "client_time", "sent_at", "at"}
+    for dto in (WorkerRegisterRequest, HeartbeatRequest, ClaimRequestDto, ResultSubmissionDto):
+        fields = {name.lower() for name in dto.model_fields}
+        assert not (fields & forbidden), f"{dto.__name__} must not carry a client clock field"
+    # the reaper decides LOST purely from the database clock (server-time authority)
+    import inspect
+
+    from adapters.postgres.worker_registry import PostgresWorkerRegistry
+
+    source = inspect.getsource(PostgresWorkerRegistry.list_stale)
+    assert "_time_expr" in source and "last_heartbeat <" in source
 
 
 def _claim(worker_id: str) -> ClaimRequest:

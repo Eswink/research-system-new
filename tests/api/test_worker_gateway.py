@@ -13,7 +13,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from adapters.fakes.credential_resolver import FakeCredentialResolver
+from adapters.fakes.execution_job_queue import FakeExecutionJobQueue
 from adapters.fakes.worker_registry import FakeWorkerRegistry
+from adapters.fakes.workflow_engine import FakeWorkflowEngine
 from packages.application.ports.credential_resolver import SecretValue
 from services.api.worker_gateway import auth
 from services.api.worker_gateway.app import create_worker_app
@@ -244,3 +246,140 @@ def test_auth_helpers_constant_time_and_hashing() -> None:
 def test_secret_value_repr_never_leaks_enrollment() -> None:
     secret = SecretValue(_ENROLLMENT)
     assert _ENROLLMENT not in repr(secret)
+
+
+# --- claim scheduling authority (M16 re-audit F-1) ---
+
+
+def _job_client() -> tuple[TestClient, FakeWorkerRegistry]:
+    registry = FakeWorkerRegistry()
+    deps = _deps(
+        registry=registry,
+        workflow=FakeWorkflowEngine(),
+        job_queue=FakeExecutionJobQueue(),
+    )
+    return _client(deps), registry
+
+
+def _claim(
+    client: TestClient,
+    token: str,
+    gen: int,
+    *,
+    capabilities: list[str] | None = None,
+    partitions: list[int] | None = None,
+) -> Any:
+    return client.post(
+        "/worker/v1/claim",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "worker_id": "worker-a",
+            "registration_generation": gen,
+            "capabilities": capabilities if capabilities is not None else ["docker"],
+            "partitions": partitions if partitions is not None else [0, 1],
+        },
+    )
+
+
+def test_claim_with_registered_identity_passes_gate() -> None:
+    client, _registry = _job_client()
+    body = _register(client)
+    resp = _claim(client, str(body["session_token"]), int(str(body["registration_generation"])))
+    assert resp.status_code == 204  # gate passed; queue simply has no work
+
+
+def test_claim_by_draining_worker_rejected() -> None:
+    client, registry = _job_client()
+    body = _register(client)
+    registry.drain("worker-a")
+    resp = _claim(client, str(body["session_token"]), int(str(body["registration_generation"])))
+    assert resp.status_code == 409
+    assert "Not Schedulable" in resp.text
+
+
+def test_claim_unregistered_capability_rejected() -> None:
+    client, _registry = _job_client()
+    body = _register(client)
+    resp = _claim(
+        client,
+        str(body["session_token"]),
+        int(str(body["registration_generation"])),
+        capabilities=["docker", "gpu"],  # 'gpu' never registered at handshake
+    )
+    assert resp.status_code == 409
+    assert "Capability Mismatch" in resp.text
+
+
+def test_claim_unregistered_partition_rejected() -> None:
+    client, _registry = _job_client()
+    body = _register(client)
+    resp = _claim(
+        client,
+        str(body["session_token"]),
+        int(str(body["registration_generation"])),
+        partitions=[0, 5],  # slot 5 never registered (registration: [0, 1])
+    )
+    assert resp.status_code == 409
+    assert "Partition Mismatch" in resp.text
+
+
+# --- lease renewal during execution (M16 re-audit F-7) ---
+
+
+def _seed_and_claim(client: TestClient, body: dict[str, object]) -> tuple[str, str, int]:
+    from packages.application.ports.workflow_engine import ClaimRequest
+    from packages.domain.core import ID
+    from packages.domain.enums import TaskKind
+    from packages.domain.task_state import ResearchTaskState
+    from packages.domain.tasks import ResearchTask
+    from tests.contracts.fixtures import task_contract
+
+    deps = client.app.state.worker_deps  # type: ignore[attr-defined]
+    task = ResearchTask(
+        id=ID.generate(),
+        run_id=ID.generate(),
+        status=ResearchTaskState.State.QUEUED,
+        kind=TaskKind.EXECUTION,
+        required_capability="docker",
+        partition=0,
+    )
+    deps.workflow.submit(task, task_contract())
+    lease = deps.workflow.claim_next(
+        ClaimRequest(
+            worker_id="worker-a",
+            capabilities=frozenset({"docker"}),
+            partitions=frozenset({0, 1}),
+        )
+    )
+    assert lease is not None
+    return lease.task_id, lease.lease_id, lease.fence
+
+
+def test_renew_active_lease_succeeds() -> None:
+    client, _registry = _job_client()
+    body = _register(client)
+    task_id, lease_id, fence = _seed_and_claim(client, body)
+    resp = client.post(
+        f"/worker/v1/tasks/{task_id}/renew",
+        headers={
+            "Authorization": f"Bearer {body['session_token']}",
+            "X-Lease-Id": lease_id,
+            "X-Fence": str(fence),
+        },
+    )
+    assert resp.status_code == 204
+
+
+def test_renew_stale_fence_rejected() -> None:
+    client, _registry = _job_client()
+    body = _register(client)
+    task_id, lease_id, _fence = _seed_and_claim(client, body)
+    resp = client.post(
+        f"/worker/v1/tasks/{task_id}/renew",
+        headers={
+            "Authorization": f"Bearer {body['session_token']}",
+            "X-Lease-Id": lease_id,
+            "X-Fence": "999",  # superseded generation
+        },
+    )
+    assert resp.status_code == 409

@@ -22,6 +22,7 @@ from packages.application.ports.errors import (
     PortError,
     TransientPortError,
 )
+from packages.domain.redaction import redact_text
 
 ExceptionHandler: TypeAlias = Callable[[Request, Exception], Awaitable[JSONResponse]]
 
@@ -47,12 +48,17 @@ def _problem(status_code: int, title: str, detail: str, instance: str) -> dict[s
 
 
 def _handler(status_code: int, title: str) -> ExceptionHandler:
-    """构造统一 ProblemDetail handler（detail 来自异常消息，已 redacted）。"""
+    """Construct a ProblemDetail handler whose detail is genuinely redacted.
+
+    M16 re-audit F-10: an uncaught adapter error can embed a DSN/secret in its
+    message; `redact_text` strips bearer/api-key/URL-credential shapes before
+    the text reaches the client, so the docstring guarantee actually holds.
+    """
 
     async def handle(request: Request, exc: Exception) -> JSONResponse:
         return JSONResponse(
             status_code=status_code,
-            content=_problem(status_code, title, str(exc), request.url.path),
+            content=_problem(status_code, title, redact_text(str(exc)), request.url.path),
         )
 
     return handle

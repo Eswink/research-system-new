@@ -29,6 +29,12 @@ class _FakeClient:
         self.results: list[tuple[str, WorkerResultPayload]] = []
         self.uploads: list[bytes] = []
         self.downloads: list[str] = []
+        self.upload_context: tuple[str, str, int] | None = None
+        self.renews = 0
+        self.heartbeat_interval_seconds = 0.2
+
+    def renew(self, task_id: str, lease_id: str, fence: int) -> None:
+        self.renews += 1
 
     def register(self) -> dict[str, object]:
         self.registered = True
@@ -42,12 +48,17 @@ class _FakeClient:
         job, self._job = self._job, None
         return job
 
-    def download_bundle(self, artifact_id: str) -> bytes:
+    def download_bundle(
+        self, artifact_id: str, *, task_id: str, lease_id: str, fence: int
+    ) -> bytes:
         self.downloads.append(artifact_id)
         return b""
 
-    def upload_bundle(self, bundle: bytes) -> dict[str, object]:
+    def upload_bundle(
+        self, bundle: bytes, *, task_id: str, lease_id: str, fence: int
+    ) -> dict[str, object]:
         self.uploads.append(bundle)
+        self.upload_context = (task_id, lease_id, fence)
         return {"artifact_id": "out-1", "digest": "sha256:x"}
 
     def submit_result(self, task_id: str, payload: WorkerResultPayload) -> dict[str, object]:
@@ -80,6 +91,8 @@ def test_loop_processes_one_job(tmp_path: Path) -> None:
     assert payload.status == "SUCCEEDED"
     assert payload.fence == 1
     assert payload.output_bundle_ref == "out-1"
+    # F-4: the loop binds artifact transfer to the job's fencing identity
+    assert client.upload_context == ("task-1", "lease-1", 1)
 
 
 def test_loop_stops_when_no_jobs(tmp_path: Path) -> None:

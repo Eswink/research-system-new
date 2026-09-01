@@ -250,55 +250,11 @@ def evaluation_entries(
     ]
 
 
-def remote_execution_entries(  # noqa: PLR0913 - 账目输入聚合，参数对象会降低可读性
-    run_id: str,
-    task_id: str,
-    elapsed_seconds: int | None,
-    occurred_at: datetime,
-    attempt: int = 1,
-    cpu_seconds: int | None = None,
-) -> list[UsageLedgerEntry]:
-    """远程执行经现有 BudgetLedger 记账（M16 §15）：无第二 usage counter。
-
-    WALL_CLOCK 为必记账轴（UNKNOWN 当时长不可得，绝不伪造 0）；
-    CPU_TIME 仅在 worker 实际上报时追加。entry_id 命名空间
-    `usage:{run_id}:remote-exec:{task_id}`（retry 追加 attempt 后缀），
-    幂等去重由 ledger 契约强制。
-    """
-    entries = [
-        _entry(
-            entry_id=_attempt_scope(f"usage:{run_id}:remote-exec:{task_id}", attempt),
-            resource_type=ResourceType.WALL_CLOCK,
-            quantity=elapsed_seconds or 0,
-            unit="seconds",
-            source="m16:remote-execution",
-            occurred_at=occurred_at,
-            run_id=run_id,
-            task_id=task_id,
-            quantity_status=(
-                LedgerQuantityStatus.UNKNOWN
-                if elapsed_seconds is None
-                else LedgerQuantityStatus.KNOWN
-            ),
-            unavailable_reason=None if elapsed_seconds is not None else "elapsed not reported",
-            attempt=attempt,
-        )
-    ]
-    if cpu_seconds is not None:
-        entries.append(
-            _entry(
-                entry_id=_attempt_scope(f"usage:{run_id}:remote-exec:{task_id}:cpu", attempt),
-                resource_type=ResourceType.CPU_TIME,
-                quantity=cpu_seconds,
-                unit="seconds",
-                source="m16:remote-execution",
-                occurred_at=occurred_at,
-                run_id=run_id,
-                task_id=task_id,
-                attempt=attempt,
-            )
-        )
-    return entries
+# M16 re-audit F-5: remote execution has NO separate usage namespace. Its wall
+# clock is server-measured (RemoteExecutionBackend.compute_usage_summary
+# ["elapsed_seconds"]) and flows through the single experiment path
+# (usage_collection → close_budget → experiment_entries). A second
+# `usage:{run}:remote-exec:{task}` counter would be a second usage truth.
 
 
 def summarize(entries: list[UsageLedgerEntry]) -> Summary:
@@ -340,7 +296,6 @@ __all__ = [
     "evaluation_entries",
     "experiment_entries",
     "model_entries",
-    "remote_execution_entries",
     "summarize",
     "tool_entries",
 ]

@@ -140,6 +140,21 @@ class FakeExecutionJobQueue(FakeBase):
         job.lease_id = None  # lease released on settle
         self._record("record_result", result.task_id, result=result.status)
 
+    def assert_active_lease(self, task_id: str, lease_id: str, fence: int, worker_id: str) -> None:
+        """Artifact-transfer gate mirroring the PostgreSQL fencing check (F-4)."""
+        self._enter("assert_active_lease", task_id)
+        job = self._state.jobs.get(task_id)
+        if (
+            job is None
+            or job.lease_id is None
+            or job.lease_id != lease_id
+            or job.fence != fence
+            or job.worker_id != worker_id
+        ):
+            self._record("assert_active_lease", task_id, error="InvalidInputError")
+            raise InvalidInputError(f"stale or missing lease for task {task_id}: result rejected")
+        self._record("assert_active_lease", task_id, result="ok")
+
     def request_cancel(self, task_id: str) -> None:
         self._enter("request_cancel", task_id)
         job = self._state.jobs.get(task_id)

@@ -98,6 +98,18 @@ class WorkflowEngine(Protocol):
 
     def heartbeat(self, lease: TaskLease) -> TaskLease: ...
 
+    def renew_lease(self, task_id: str, lease_id: str, fence: int, worker_id: str) -> None:
+        """Extend an active lease's expiry WITHOUT rotating lease_id or fence.
+
+        Used by a worker to keep a long-running EXECUTION job alive during
+        execution (M16 re-audit F-7). Unlike `heartbeat` (which rotates the
+        lease id for agent sessions), this preserves the exact fencing triple
+        the worker holds, so its later result still validates. Raises
+        InvalidInputError if the triple/identity no longer matches an active
+        lease (superseded, expired, or reclaimed).
+        """
+        ...
+
     def complete(self, lease: TaskLease, completion: TaskCompletion) -> None: ...
 
     def cancel(self, task_id: str) -> None: ...

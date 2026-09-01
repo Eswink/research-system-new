@@ -31,6 +31,7 @@ class WorkerClientConfig:
     partition_slots: tuple[int, ...] = ()
     max_concurrency: int = 1
     request_timeout_seconds: float = 30.0
+    heartbeat_interval_seconds: float = 10.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,9 +75,14 @@ class WorkerClient:
         self._config = config
         self._token: str | None = None
         self._generation: int = 0
+        self._heartbeat_interval: float = config.heartbeat_interval_seconds
         self._http = httpx.Client(
             base_url=config.base_url, timeout=config.request_timeout_seconds, transport=transport
         )
+
+    @property
+    def heartbeat_interval_seconds(self) -> float:
+        return self._heartbeat_interval
 
     def close(self) -> None:
         self._http.close()
@@ -115,6 +121,9 @@ class WorkerClient:
         body = _json(resp)
         self._token = str(body["session_token"])
         self._generation = int(str(body["registration_generation"]))
+        interval = body.get("heartbeat_interval_seconds")
+        if interval is not None:
+            self._heartbeat_interval = float(str(interval))
         return body
 
     def heartbeat(self) -> dict[str, object]:
@@ -151,15 +160,43 @@ class WorkerClient:
         resp.raise_for_status()
         return _json(resp)
 
-    def download_bundle(self, artifact_id: str) -> bytes:
-        resp = self._http.get(f"/worker/v1/artifacts/{artifact_id}", headers=self._auth_headers())
+    def renew(self, task_id: str, lease_id: str, fence: int) -> None:
+        """Extend the in-flight lease (M16 re-audit F-7); raises on stale lease."""
+        resp = self._http.post(
+            f"/worker/v1/tasks/{task_id}/renew",
+            headers=self._lease_headers(task_id, lease_id, fence),
+        )
+        resp.raise_for_status()
+
+    def _lease_headers(self, task_id: str, lease_id: str, fence: int) -> dict[str, str]:
+        """Fencing identity for artifact transfer (M16 re-audit F-4).
+
+        Uploads/downloads are gated server-side on the same
+        `(task_id, lease_id, fence)` triple as result writes.
+        """
+        return {
+            **self._auth_headers(),
+            "X-Task-Id": task_id,
+            "X-Lease-Id": lease_id,
+            "X-Fence": str(fence),
+        }
+
+    def download_bundle(
+        self, artifact_id: str, *, task_id: str, lease_id: str, fence: int
+    ) -> bytes:
+        resp = self._http.get(
+            f"/worker/v1/artifacts/{artifact_id}",
+            headers=self._lease_headers(task_id, lease_id, fence),
+        )
         resp.raise_for_status()
         return resp.content
 
-    def upload_bundle(self, bundle: bytes) -> dict[str, object]:
+    def upload_bundle(
+        self, bundle: bytes, *, task_id: str, lease_id: str, fence: int
+    ) -> dict[str, object]:
         resp = self._http.post(
             "/worker/v1/artifacts",
-            headers=self._auth_headers(),
+            headers=self._lease_headers(task_id, lease_id, fence),
             content=bundle,
         )
         resp.raise_for_status()

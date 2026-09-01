@@ -81,26 +81,34 @@ def _canonical_task_status(status: str) -> str:
     return "SUCCEEDED" if status == "SUCCEEDED" else "FAILED"
 
 
-def _require_active_lease(conn: Any, result: ExecutionJobResult) -> None:
-    """Validate (task_id, lease_id, fence) AND identity binding in-transaction.
+def _require_active_lease(  # noqa: PLR0913 - fencing identity is a complete tuple
+    conn: Any,
+    task_id: str,
+    lease_id: str,
+    fence: int,
+    worker_id: str | None,
+    *,
+    for_update: bool = False,
+) -> None:
+    """Validate (task_id, lease_id, fence) AND identity binding.
 
     The caller must be the claim holder: `leases.worker_id` must equal the
     authenticated worker_id (ADR-0027 §1), so a different enrolled worker that
-    learned another claim's triple cannot write that task's result.
+    learned another claim's triple cannot write that task's result or move its
+    artifacts. `for_update` locks the lease row for the authoritative settle
+    path; the artifact-transfer gate uses a plain read (the settle re-checks).
     """
-    lease_row: Any = conn.execute(
-        "SELECT lease_id, fence, worker_id FROM leases WHERE task_id = %s FOR UPDATE",
-        (result.task_id,),
-    ).fetchone()
+    sql = "SELECT lease_id, fence, worker_id FROM leases WHERE task_id = %s"
+    if for_update:
+        sql += " FOR UPDATE"
+    lease_row: Any = conn.execute(sql, (task_id,)).fetchone()
     if (
         lease_row is None
-        or lease_row["lease_id"] != result.lease_id
-        or int(lease_row["fence"]) != result.fence
-        or lease_row["worker_id"] != result.worker_id
+        or lease_row["lease_id"] != lease_id
+        or int(lease_row["fence"]) != fence
+        or lease_row["worker_id"] != worker_id
     ):
-        raise InvalidInputError(
-            f"stale or missing lease for task {result.task_id}: result rejected"
-        )
+        raise InvalidInputError(f"stale or missing lease for task {task_id}: result rejected")
 
 
 class PostgresExecutionJobQueue(PostgresAdapterBase):
@@ -250,7 +258,14 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
         if result.worker_id is None:
             raise InvalidInputError("result worker_id is required (identity binding)")
         with self._conn.transaction():
-            _require_active_lease(self._conn, result)
+            _require_active_lease(
+                self._conn,
+                task_id,
+                result.lease_id,
+                result.fence,
+                result.worker_id,
+                for_update=True,
+            )
             # canonical terminal task state (already validated above)
             self._conn.execute(
                 "UPDATE execution_jobs SET worker_id = (SELECT worker_id FROM leases"
@@ -273,6 +288,11 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
             )
             self._conn.execute("DELETE FROM leases WHERE task_id = %s", (task_id,))
         self._record("record_result", task_id, result=result.status)
+
+    def assert_active_lease(self, task_id: str, lease_id: str, fence: int, worker_id: str) -> None:
+        """Artifact-transfer gate: same fencing identity check as record_result."""
+        self._ensure_open()
+        _require_active_lease(self._conn, task_id, lease_id, fence, worker_id)
 
     def request_cancel(self, task_id: str) -> None:
         self._ensure_open()

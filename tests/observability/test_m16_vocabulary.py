@@ -7,11 +7,8 @@ values (mirrors the M15 canary approach at the vocabulary level).
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 import pytest
 
-from packages.application.experiments.budget_entries import remote_execution_entries
 from packages.application.observability.attributes import (
     AttributeKey,
     MetricKind,
@@ -23,9 +20,6 @@ from packages.application.observability.attributes import (
     worker_ref,
 )
 from packages.application.observability.signals import OperationScope
-from packages.domain.budget import LedgerQuantityStatus, ResourceType
-
-_EPOCH = datetime(2026, 8, 31, tzinfo=timezone.utc)
 
 _TOKEN = "Bearer sk-super-secret-worker-token-123456"
 _BUNDLE_MARK = "workspace-bundle-content-marker-98765"
@@ -83,6 +77,21 @@ def test_sanitize_attributes_drops_unknown_and_redacts_token() -> None:
     assert "sk-super-secret-worker-token" not in str(sanitized.get("rejection_reason"))
 
 
+def test_bundle_content_never_survives_attribute_sanitization() -> None:
+    """F-9: workspace-bundle content cannot ride the closed attribute vocabulary.
+
+    sanitize_attributes keeps only closed-set keys, so an arbitrary content key
+    is dropped outright; metric labels additionally fold out-of-domain values.
+    Value-level secret redaction for the surviving keys is proven end-to-end by
+    the OTLP byte-scan canary (test_privacy_canary), which now covers the M16
+    worker/remote-execution channels too.
+    """
+    sanitized = sanitize_attributes({"bundle_content": _BUNDLE_MARK})
+    assert "bundle_content" not in sanitized  # non-vocabulary key dropped
+    folded = sanitize_metric_labels({"rejection_reason": _BUNDLE_MARK})
+    assert folded["rejection_reason"] == "other"  # out-of-domain value folded
+
+
 def test_metric_labels_partition_is_bounded() -> None:
     ok = sanitize_metric_labels({"partition": "15"})
     assert ok["partition"] == "15"
@@ -138,38 +147,17 @@ def test_new_attribute_keys_are_closed_set_members() -> None:
         assert key in {member.value for member in AttributeKey}
 
 
-def test_remote_execution_entries_wall_clock_and_cpu() -> None:
-    entries = remote_execution_entries(
-        run_id="run-1", task_id="task-9", elapsed_seconds=12, occurred_at=_EPOCH, attempt=1
-    )
-    assert entries[0].resource_type is ResourceType.WALL_CLOCK
-    assert entries[0].entry_id == "usage:run-1:remote-exec:task-9"
-    assert entries[0].quantity == 12
-    assert len(entries) == 1  # no CPU_TIME when not reported
+def test_no_second_remote_exec_usage_namespace() -> None:
+    """M16 re-audit F-5: remote execution has no dedicated usage namespace.
 
+    Its wall clock is server-measured (RemoteExecutionBackend.compute_usage_summary
+    ["elapsed_seconds"], asserted in tests/adapters/execution/test_remote_backend.py)
+    and flows through the single experiment path; a
+    `usage:{run}:remote-exec:{task}` counter would be a second truth.
+    """
+    import packages.application.experiments.budget_entries as budget_entries
 
-def test_remote_execution_entries_unknown_elapsed_never_zero() -> None:
-    entries = remote_execution_entries(
-        run_id="run-1",
-        task_id="task-9",
-        elapsed_seconds=None,
-        occurred_at=_EPOCH,
-    )
-    assert entries[0].quantity_status is LedgerQuantityStatus.UNKNOWN
-    assert entries[0].unavailable_reason is not None
-
-
-def test_remote_execution_entries_attempt_scoped() -> None:
-    entries = remote_execution_entries(
-        run_id="run-1", task_id="task-9", elapsed_seconds=5, occurred_at=_EPOCH, attempt=2
-    )
-    assert entries[0].entry_id == "usage:run-1:remote-exec:task-9:attempt-2"
-
-
-def test_remote_execution_entries_with_cpu_time() -> None:
-    entries = remote_execution_entries(
-        run_id="run-1", task_id="task-9", elapsed_seconds=5, occurred_at=_EPOCH, cpu_seconds=3
-    )
-    assert len(entries) == 2
-    assert entries[1].resource_type is ResourceType.CPU_TIME
-    assert entries[1].quantity == 3
+    assert not hasattr(budget_entries, "remote_execution_entries")
+    assert "remote_execution_entries" not in budget_entries.__all__
+    # the experiment path is the sole WALL_CLOCK producer for executions
+    assert "experiment_entries" in budget_entries.__all__

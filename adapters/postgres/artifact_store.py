@@ -97,6 +97,15 @@ class PostgresArtifactStore(PostgresAdapterBase):
         self._record("verify", artifact_id, result=str(ok))
         return ok
 
+    def meta(self, artifact_id: str) -> Artifact | None:
+        self._ensure_open()
+        row: Any = self._conn.execute(
+            "SELECT * FROM artifacts WHERE artifact_id = %s", (artifact_id,)
+        ).fetchone()
+        artifact = _artifact_from_row(row) if row is not None else None
+        self._record("meta", artifact_id, result="found" if artifact is not None else "none")
+        return artifact
+
     def mark(self, artifact_id: str, state: ArtifactState) -> None:
         self._ensure_open()
         row = self._require_metadata("mark", artifact_id)

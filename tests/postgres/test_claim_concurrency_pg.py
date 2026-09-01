@@ -84,37 +84,56 @@ def _drain(engine: PostgresWorkflowEngine, worker_id: str) -> list[str]:
         claimed.append(lease.task_id)
 
 
-def test_concurrent_schedulers_claim_disjoint_work() -> None:
-    """Two engines (separate connections) drain a shared queue with no overlap."""
-    total = 12
-    _submit_execution_tasks(total)
-    a = PostgresWorkflowEngine(dsn=_dsn(), now=lambda: START + timedelta(seconds=1))
-    b = PostgresWorkflowEngine(dsn=_dsn(), now=lambda: START + timedelta(seconds=1))
+def _concurrent_drain(worker_ids: list[str]) -> dict[str, list[str]]:
+    """F-6: genuinely concurrent claim drain — one engine (own connection) per
+    worker thread, all released together by a barrier to force SKIP LOCKED races."""
+    import threading
+
+    clock = lambda: START + timedelta(seconds=1)  # noqa: E731
+    engines = {w: PostgresWorkflowEngine(dsn=_dsn(), now=clock) for w in worker_ids}
+    barrier = threading.Barrier(len(worker_ids))
+    results: dict[str, list[str]] = {}
+    lock = threading.Lock()
+
+    def _run(worker_id: str) -> None:
+        barrier.wait()
+        claimed = _drain(engines[worker_id], worker_id)
+        with lock:
+            results[worker_id] = claimed
+
+    threads = [threading.Thread(target=_run, args=(w,)) for w in worker_ids]
     try:
-        claimed_a = _drain(a, "w-a")
-        claimed_b = _drain(b, "w-b")
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=60)
     finally:
-        a.close()
-        b.close()
-    assert set(claimed_a).isdisjoint(claimed_b)
-    assert len(claimed_a) + len(claimed_b) == total
+        for engine in engines.values():
+            engine.close()
+    return results
+
+
+def test_concurrent_schedulers_claim_disjoint_work() -> None:
+    """N engines claiming SIMULTANEOUSLY never split-brain (SKIP LOCKED disjoint)."""
+    total = 24
+    _submit_execution_tasks(total)
+    workers = [f"w-{i}" for i in range(4)]
+    results = _concurrent_drain(workers)
+    all_claimed = [t for claimed in results.values() for t in claimed]
+    assert len(all_claimed) == len(set(all_claimed))  # no task claimed twice
+    assert len(all_claimed) == total  # every task claimed exactly once
+    # concurrency was real: at least two workers pulled work (not one draining all)
+    assert sum(1 for claimed in results.values() if claimed) >= 2
 
 
 def test_overlapping_partitions_single_owner() -> None:
-    """Both workers claim partition 0; each task still has exactly one owner."""
-    total = 6
+    """All workers claim the SAME partition concurrently; each task still has one owner."""
+    total = 12
     _submit_execution_tasks(total, partition=0)
-    a = PostgresWorkflowEngine(dsn=_dsn(), now=lambda: START + timedelta(seconds=1))
-    b = PostgresWorkflowEngine(dsn=_dsn(), now=lambda: START + timedelta(seconds=1))
-    try:
-        # identical partition slots — the overlap must not double-own anything
-        claimed_a = _drain(a, "w-a")
-        claimed_b = _drain(b, "w-b")
-    finally:
-        a.close()
-        b.close()
-    assert set(claimed_a).isdisjoint(claimed_b)
-    assert len(claimed_a) + len(claimed_b) == total
+    workers = [f"w-{i}" for i in range(3)]
+    results = _concurrent_drain(workers)
+    all_claimed = [t for claimed in results.values() for t in claimed]
+    assert len(all_claimed) == len(set(all_claimed)) == total
 
 
 def test_fence_advances_on_reclaim_after_recovery() -> None:

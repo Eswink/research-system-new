@@ -34,6 +34,34 @@ from services.api.worker_gateway.settings import WorkerGatewaySettings
 
 _ENROLLMENT = "distributed-e2e-enrollment"
 
+# M16 re-audit F-2: the worker process must hold ZERO database credentials.
+# These keys are stripped from the inherited environment so the cross-process
+# E2E is genuine boundary evidence (the worker code never reads them anyway).
+_DB_CREDENTIAL_KEYS = ("RESEARCHOS_POSTGRES_DSN", "DATABASE_URL")
+
+
+def worker_child_env(
+    gateway_url: str,
+    worker_id: str,
+    *,
+    base_env: dict[str, str] | None = None,
+    env_extra: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """Build the worker subprocess environment: gateway identity only, no DB."""
+    env = dict(base_env if base_env is not None else os.environ)
+    for key in _DB_CREDENTIAL_KEYS:
+        env.pop(key, None)
+    env.update({
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+        "RESEARCHOS_WORKER_GATEWAY_URL": gateway_url,
+        "RESEARCHOS_WORKER_ENROLLMENT_SECRET": _ENROLLMENT,
+        "RESEARCHOS_WORKER_ID": worker_id,
+    })
+    if env_extra:
+        env.update(env_extra)
+    return env
+
 
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -147,20 +175,9 @@ class WorkerHarness:
         self._sched_registry = None
 
     def spawn_worker(
-        self, worker_id: str, *, env_extra: dict[str, str] | None = None, clock_skew: int = 0
+        self, worker_id: str, *, env_extra: dict[str, str] | None = None
     ) -> subprocess.Popen[bytes]:
-        env = dict(os.environ)
-        env.update({
-            "PYTHONUTF8": "1",
-            "PYTHONIOENCODING": "utf-8",
-            "RESEARCHOS_WORKER_GATEWAY_URL": self.gateway_url,
-            "RESEARCHOS_WORKER_ENROLLMENT_SECRET": _ENROLLMENT,
-            "RESEARCHOS_WORKER_ID": worker_id,
-            "RESEARCHOS_POSTGRES_DSN": self.dsn,
-            "RESEARCHOS_WORKER_CLOCK_SKEW_SECONDS": str(clock_skew),
-        })
-        if env_extra:
-            env.update(env_extra)
+        env = worker_child_env(self.gateway_url, worker_id, env_extra=env_extra)
         proc = subprocess.Popen(
             [sys.executable, "-B", "-m", "services.worker", "--worker-id", worker_id],
             env=env,

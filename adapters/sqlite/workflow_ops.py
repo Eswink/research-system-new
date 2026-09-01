@@ -268,6 +268,24 @@ class SqliteWorkflowOps:
         self._record("heartbeat", lease.task_id)
         return renewed
 
+    def renew_lease(self, task_id: str, lease_id: str, fence: int, worker_id: str) -> None:
+        """Extend an active EXECUTION lease in place (M16 re-audit F-7); SQLite mirror."""
+        self._ensure_open()
+        probe = new_lease(
+            task_id, None, self._lease_ttl, self._now, worker_id=worker_id, fence=fence
+        )
+        assert probe.expires_at is not None
+        with self._conn:
+            cur = self._conn.execute(
+                "UPDATE leases SET expires_at = ?, heartbeat_at = ?"
+                " WHERE task_id = ? AND lease_id = ? AND fence = ? AND worker_id = ?",
+                (iso(probe.expires_at), iso(probe.expires_at), task_id, lease_id, fence, worker_id),
+            )
+            if cur.rowcount == 0:
+                self._record("renew_lease", task_id, error="InvalidInputError")
+                raise InvalidInputError(f"no active lease to renew for task: {task_id}")
+        self._record("renew_lease", task_id, result="extended")
+
     def _complete_impl(self, lease: TaskLease, completion: TaskCompletion) -> None:
         self._ensure_open()
         task_row = self._conn.execute(

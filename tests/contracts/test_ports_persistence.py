@@ -53,6 +53,24 @@ class TestArtifactStoreSemantics:
         with pytest.raises(InvalidInputError):
             store.put(artifact, b"tampered")
 
+    def test_meta_reads_provenance_without_blob(self) -> None:
+        """F-4: server-side provenance gate reads created_by without the blob."""
+        store = FakeArtifactStore()
+        content = b"bundle"
+        store.put(
+            Artifact(
+                id="a-1",
+                digest=Digest.of_bytes(content),
+                size_bytes=len(content),
+                media_type="application/octet-stream",
+                created_by="worker:w1:task-9",
+            ),
+            content,
+        )
+        meta = store.meta("a-1")
+        assert meta is not None and meta.created_by == "worker:w1:task-9"
+        assert store.meta("missing") is None
+
     def test_state_transitions_are_legal(self) -> None:
         store = FakeArtifactStore()
         content = b"data"
