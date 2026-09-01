@@ -7,15 +7,19 @@
     "node": ">=22.18.0 <23"
   },
   "scripts": {
-    "format:check": "prettier --check package.json pnpm-workspace.yaml tsconfig.base.json tsconfig.json eslint.config.mjs dependency-cruiser.config.mjs tools/**/*.mjs tests/**/*.mjs tests/**/*.ts",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml tsconfig.base.json tsconfig.json eslint.config.mjs dependency-cruiser.config.mjs tools/**/*.mjs tests/**/*.mjs tests/**/*.ts \".cursor/skills/parallel-agent-orchestration/**/*.ts\"",
     "lint": "eslint .",
     "typecheck": "tsc --project tsconfig.json && pnpm --dir apps/web typecheck",
     "boundaries": "depcruise --config dependency-cruiser.config.mjs --output-type err tests/architecture/typescript/fixtures/valid apps/web/src",
     "test": "node --test tests/architecture/typescript/dependency-boundaries.test.mjs tests/architecture/typescript/production-boundaries.test.mjs tests/tooling/eslint-rule.test.mjs",
+    "agents:parallel": "node --experimental-strip-types .cursor/skills/parallel-agent-orchestration/scripts/cli.ts",
+    "agents:parallel:test": "node --experimental-strip-types --test \".cursor/skills/parallel-agent-orchestration/scripts/*.test.ts\"",
     "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run boundaries && pnpm run test"
   },
   "devDependencies": {
+    "@cursor/sdk": "1.0.30",
     "@eslint/js": "10.0.1",
+    "@types/node": "22.20.1",
     "dependency-cruiser": "18.2.0",
     "eslint": "10.8.1",
     "prettier": "3.9.6",

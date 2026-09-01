@@ -39,6 +39,7 @@ export default defineConfig([
       "adapters/**/*.{ts,tsx,mts,cts}",
       "tests/architecture/typescript/fixtures/valid/**/*.ts",
       "tests/tooling/typescript/**/*.ts",
+      ".cursor/skills/parallel-agent-orchestration/scripts/**/*.ts",
     ],
     extends: [tseslint.configs.strictTypeChecked, tseslint.configs.stylisticTypeChecked],
     languageOptions: {
@@ -115,6 +116,13 @@ export default defineConfig([
       "@typescript-eslint/no-unnecessary-type-assertion": "off",
       "@typescript-eslint/require-await": "off",
       "@typescript-eslint/consistent-type-definitions": "off",
+    },
+  },
+  {
+    // node:test 回调返回 promise 由 runner 消费；与 apps/web/tests 同一先例。
+    files: ["tests/tooling/typescript/**/*.ts", ".cursor/skills/**/scripts/*.test.ts"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": "off",
     },
   },
   {

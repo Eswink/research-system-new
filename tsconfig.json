@@ -1,9 +1,16 @@
 {
   "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "lib": ["ES2023", "ESNext.Disposable"],
+    "types": ["node"],
+    "skipLibCheck": true
+  },
   "references": [{ "path": "./apps/web" }],
   "include": [
     "tests/architecture/typescript/fixtures/valid/**/*.ts",
-    "tests/tooling/typescript/**/*.ts"
+    "tests/tooling/typescript/**/*.ts",
+    ".cursor/skills/parallel-agent-orchestration/scripts/**/*.ts"
   ],
   "exclude": ["node_modules", "tests/architecture/typescript/fixtures/invalid"]
 }
