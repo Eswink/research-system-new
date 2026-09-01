@@ -7,6 +7,7 @@
 |  | Plan | Status |
 | --- | --- | --- |
 | [x] | [PLAN-20260831-025](tasks/PLAN-20260831-025-m16-distributed-execution.md) | DONE |
+| [x] | [PLAN-20260831-026](tasks/PLAN-20260831-026-deterministic-parallel-orchestration.md) | DONE |
 | [x] | [PLAN-20260828-024](tasks/PLAN-20260828-024-m15-observability-cost-eval-operations.md) | DONE |
 | [x] | [PLAN-20260828-021](tasks/PLAN-20260828-021-m14-durable-workflow-postgresql.md) | DONE |
 | [x] | [PLAN-20260828-020](tasks/PLAN-20260828-020-m13-r1-console-remediation.md) | DONE |
