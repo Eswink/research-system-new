@@ -151,6 +151,7 @@ PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。�
 - `references/upstream/M11_EVAL_HARNESS_QUALIFICATION.md` — Evaluation harness 选型 qualification（M11；native 自建，不引入外部 eval framework）
 - `references/upstream/M14_TEMPORAL_QUALIFICATION.md` — Temporal qualification 16Q matrix（M14；DEFERRED）
 - `references/upstream/M15_OTEL_QUALIFICATION.md` — OpenTelemetry qualification（M15；ADOPT：OTLP/HTTP，无内容通道）
+- `references/upstream/CURSOR_SDK_QUALIFICATION.md` — Cursor SDK qualification（并行编排工具；ADOPT：BUILD_TOOLING，read-only 编排器）
 - `adr/ADR-0026-otel-adapter-boundary.md` — OTel adapter 边界 + 无内容 Debug Mode 决策（M15）
 - `references/upstream/M16_REMOTE_EXECUTION_QUALIFICATION.md` — 远程执行 qualification（M16；SWE-ReX REJECT，原生 HTTP worker 交付）
 - `adr/ADR-0027-distributed-execution-plane.md` — Distributed Execution Plane 决策（M16；Worker untrusted、Control Plane 独占授权、HTTP worker gateway、不建第二队列/租约/Artifact 真相）

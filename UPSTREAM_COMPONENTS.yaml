@@ -498,6 +498,39 @@ components:
     controls:
       - otel_adapter_only_import_boundary
 
+  - id: cursor_sdk
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: BUILD_TOOLING
+    role: cursor_engineering_parallel_agent_orchestrator
+    source:
+      kind: NPM
+      package: "@cursor/sdk"
+      url: "https://www.npmjs.com/package/@cursor/sdk"
+    resolution:
+      version: "1.0.30"
+      lockfile: pnpm-lock.yaml
+      spec: "==1.0.30"
+      digest:
+        algorithm: sha256
+        artifact: tarball
+        value: "b26bf8bd73859b3eac50d209e60953f70470d7a9e5182add9e37dd63398884c1"
+      note: "平台可选依赖 @cursor/sdk-<os>-<arch> 均锁 1.0.30；qualification 见 docs/references/upstream/CURSOR_SDK_QUALIFICATION.md"
+    license:
+      spdx: "LicenseRef-Anysphere-Proprietary"
+      evidence: "https://cursor.com/terms-of-service（包内 LICENSE.md：© Anysphere Inc. All rights reserved）"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [lock_refresh, license_review, orchestration_contract_tests, framework_profile]
+    controls:
+      - sdk_types_confined_to_skill_adapter
+      - read_only_tool_allowlist_no_shell_no_mcp_no_task
+      - sandbox_options_enabled
+      - setting_sources_inline_only
+      - api_key_env_only_never_logged
+      - redacted_summaries_only
+      - max_parallel_per_wave_3_no_nesting
+
   - id: otel_collector_image
     adoption_status: ADOPTED
     decision_status: APPROVED

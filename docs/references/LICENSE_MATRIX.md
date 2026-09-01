@@ -36,6 +36,7 @@
 | OTel Collector Contrib image 0.139.0 (`otel/opentelemetry-collector-contrib@sha256:faf125d…`) — id `otel_collector_image` | Apache-2.0; manifest digest pinned in `adapters/otel/collector/Dockerfile` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED telemetry collector evidence pipeline (M15; debug/file exporters only) |
 | MCP SDK | verify selected language SDK/version | Tool provider protocol |
 | MCP Python SDK v1.29.0 (`mcp`) — MIT; sdist sha256 `52d01f...15ec36` in `uv.lock` / `UPSTREAM_COMPONENTS.yaml`; spec `>=1.28,<2`（v1 stable line，v2 与 openhands-sdk 依赖冲突）| ADOPTED MCP client adapter（M8） |
+| @cursor/sdk 1.0.30 — id `cursor_sdk` | LicenseRef-Anysphere-Proprietary（包内 LICENSE.md：© Anysphere Inc. All rights reserved；条款 https://cursor.com/terms-of-service ）；tarball sha256 `b26bf8...884c1` in `pnpm-lock.yaml` / `UPSTREAM_COMPONENTS.yaml`；qualification `docs/references/upstream/CURSOR_SDK_QUALIFICATION.md` | ADOPTED Cursor 工程 parallel-agent-orchestration 专用（非产品依赖） |
 | SWE-ReX | MIT | optional execution adapter |
 | Cline | Apache-2.0 | reference/optional |
 | Cline Kanban | Apache-2.0 | UX donor |
