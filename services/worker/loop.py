@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import tempfile
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -44,6 +45,8 @@ class WorkerLoopConfig:
     scratch_root: str | None = None
     # M17: re-probe GPU every N consecutive idle heartbeats (~1min at 10s cadence)
     gpu_reprobe_every_idle_heartbeats: int = 6
+    # M17 WP4c: in-flight cancel flag poll interval (throttled HTTP probe)
+    cancel_poll_interval_seconds: float = 2.0
 
 
 def _spec_from_json(spec_json: str, workspace_path: str) -> ExecutionSpec:
@@ -190,7 +193,11 @@ class WorkerLoop:
         )
         renewer.start()
         try:
-            run = runner(spec, timeout_seconds=_as_int(job.get("timeout_seconds")))
+            run = runner(
+                spec,
+                timeout_seconds=_as_int(job.get("timeout_seconds")),
+                cancelled=self._cancel_probe(task_id),
+            )
         finally:
             stop_renew.set()
             renewer.join(timeout=5.0)
@@ -210,6 +217,29 @@ class WorkerLoop:
             failure_category=run.failure_category.value if run.failure_category else None,
         )
         self._client.submit_result(task_id, payload)
+
+    def _cancel_probe(self, task_id: str) -> Callable[[], bool]:
+        """M17 WP4c cooperative cancel probe (throttled).
+
+        The execution backend calls this between wait steps; the HTTP poll is
+        throttled to at most one request per `cancel_poll_interval_seconds`
+        so a long container job doesn't hammer the gateway. A poll failure
+        NEVER cancels the job (fail-safe: keep running, renewal path reports).
+        """
+        interval = max(0.5, self._config.cancel_poll_interval_seconds)
+        state = {"last": -interval}
+
+        def _probe() -> bool:
+            now = time.monotonic()
+            if now - state["last"] < interval:
+                return False
+            state["last"] = now
+            try:
+                return self._client.cancel_requested(task_id)
+            except Exception:  # noqa: BLE001 - cancel probe must never kill a job
+                return False
+
+        return _probe
 
     def _renew_loop(self, task_id: str, lease_id: str, fence: int, stop: threading.Event) -> None:
         """Renew the held lease until the job settles (M16 re-audit F-7).

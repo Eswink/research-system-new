@@ -34,6 +34,10 @@ PARTITION_COUNT = 16
 
 # M17 GPU 观测有界字段（观测事实，非硬件清单）
 GPU_CAPABILITY = "gpu"  # 调度键唯一 token（ADR-0029：单 token，无数值匹配）
+# M17: GPU resource_profile 名称集合（单一事实源）。adapters/execution/
+# profiles.py 的 GPU 限额/契约表以本集合为键（漂移由契约测试锁定）；
+# application 证据门禁（无静默 CPU fallback 第 4 层）同样引用。
+GPU_RESOURCE_PROFILES = frozenset({"gpu-small", "gpu-oom-probe"})
 MAX_GPU_DEVICE_NAME_LENGTH = 128
 MAX_GPU_VERSION_LENGTH = 64
 MAX_GPU_FRAMEWORK_LENGTH = 64
@@ -132,6 +136,11 @@ def compute_partition(run_id: str, partition_count: int = PARTITION_COUNT) -> in
 def _check_bounded_text(value: str, *, field: str, max_length: int) -> None:
     if not value or len(value) > max_length:
         raise ValueError(f"{field} must be non-empty and <= {max_length} chars")
+
+
+def is_gpu_resource_profile(name: str | None) -> bool:
+    """该 resource_profile 是否要求 GPU 执行平面（M17 调度/证据共用判定）。"""
+    return (name or "") in GPU_RESOURCE_PROFILES
 
 
 def gpu_probe_digest(  # noqa: PLR0913 - 观测字段是封闭集合，参数对象反而失真

@@ -34,8 +34,10 @@ from packages.application.experiments.artifact_ingest import (
 from packages.application.experiments.classification import (
     classify_outcome,
     execution_failure_reason,
+    gpu_failure_reason,
     image_digest_from_run,
 )
+from packages.application.experiments.metric_extraction import ExperimentResultPayload
 from packages.application.experiments.types import (
     MEDIA_JSON,
     RESULT_FILE,
@@ -58,6 +60,7 @@ from packages.domain.experiments import (
     MetricValue,
 )
 from packages.domain.serialization import digest_of
+from packages.domain.workers import is_gpu_resource_profile
 from packages.domain.workspace import (
     ExecutionRun,
     ExecutionSpec,
@@ -80,6 +83,29 @@ class _Collected:
     referenced_ids: tuple[str, ...]
     transition_event: str
     failure_reason: str | None
+
+
+def _gpu_no_fallback_violation(
+    resource_profile: str | None, payload: ExperimentResultPayload
+) -> str | None:
+    """M17 第 4 层（证据层）违约判定：GPU profile 结果必须自报 cuda 设备。
+
+    返回 None = 通过；返回字符串 = 违约原因（run → FAILED）。
+    """
+    if not is_gpu_resource_profile(resource_profile):
+        return None
+    if payload.compute_device_kind is None:
+        return (
+            "GPU profile experiment_result.json missing compute_device"
+            " (no silent CPU fallback: evidence admission refused)"
+        )
+    if payload.compute_device_kind != "cuda":
+        return (
+            "GPU profile experiment declared compute_device.kind="
+            f"{payload.compute_device_kind!r} (no silent CPU fallback:"
+            " evidence admission refused)"
+        )
+    return None
 
 
 class ExperimentExecutor:
@@ -156,6 +182,7 @@ class ExperimentExecutor:
         semantic_metrics_digest: Digest | None = None
         referenced_ids: tuple[str, ...] = ()
         declared_status: str | None = None
+        gpu_violation_reason: str | None = None
         if execution_run.status is ExecutionStatus.SUCCEEDED:
             (
                 result_artifact_id,
@@ -164,11 +191,20 @@ class ExperimentExecutor:
                 semantic_metrics_digest,
                 referenced_ids,
                 declared_status,
+                gpu_violation_reason,
             ) = self._ingest_success_outputs(request, workspace_path)
         event, reason = classify_outcome(execution_run.status, declared_status)
         failure_reason = execution_failure_reason(execution_run.status)
+        # M17 WP4a：GPU 分类原因优先于 generic "execution failed"（可读性）
+        if failure_reason == "execution failed":
+            failure_reason = (
+                gpu_failure_reason(execution_run.failure_category) or failure_reason
+            )
         if reason is not None:
             failure_reason = failure_reason or reason
+        if gpu_violation_reason is not None:
+            event = ExperimentRunState.Transition.COMPLETE_FAILED
+            failure_reason = gpu_violation_reason
         return _Collected(
             stdout_id=stdout_id,
             stderr_id=stderr_id,
@@ -190,10 +226,16 @@ class ExperimentExecutor:
         Digest | None,
         tuple[str, ...],
         str | None,
+        str | None,
     ]:
         payload = read_result_payload(workspace_path, request.run_id)
         if payload is None:
-            return None, (), None, None, (), None
+            return None, (), None, None, (), None, None
+        gpu_violation = _gpu_no_fallback_violation(request.resource_profile, payload)
+        if gpu_violation is not None:
+            # M17 第 4 层（证据层）：GPU profile 声明成功但自报设备缺失或为
+            # cpu —— 结果不进入证据链，run 走 FAILED（绝不静默接受 CPU 数字）。
+            return None, (), None, None, (), None, gpu_violation
         referenced_ids = store_referenced_artifacts(
             self._artifacts, request.run_id, workspace_path, payload.artifact_refs
         )
@@ -211,6 +253,7 @@ class ExperimentExecutor:
             payload.semantic_metrics_digest,
             referenced_ids,
             payload.declared_status,
+            None,
         )
 
     def _finalize(

@@ -12,6 +12,7 @@ from packages.application.ports.execution_job_queue import (
     ExecutionJobOutcome,
     ExecutionJobRequest,
     ExecutionJobResult,
+    canonical_task_status,
 )
 from packages.domain.serialization import canonical_json_bytes
 from packages.domain.task_state import ResearchTaskState
@@ -105,10 +106,9 @@ class FakeExecutionJobQueue(FakeBase):
 
     def record_result(self, result: ExecutionJobResult) -> None:
         self._enter("record_result", result.task_id)
-        if result.status not in ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED"):
-            raise InvalidInputError(
-                f"invalid result status {result.status!r}: not a terminal execution state"
-            )
+        # shared closed-set terminal validation + canonicalization (Fake must
+        # mirror the PostgreSQL adapter: CANCELLED stays CANCELLED, M17 WP4c)
+        canonical_task_status(result.status)
         job = self._state.jobs.get(result.task_id)
         if job is None:
             raise InvalidInputError(f"unknown job: {result.task_id}")
@@ -124,7 +124,7 @@ class FakeExecutionJobQueue(FakeBase):
             raise InvalidInputError(
                 f"stale or missing lease for task {result.task_id}: result rejected"
             )
-        job.status = result.status
+        job.status = canonical_task_status(result.status)
         job.outcome = ExecutionJobOutcome(
             task_id=result.task_id,
             status=result.status,

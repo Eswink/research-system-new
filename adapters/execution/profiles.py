@@ -19,7 +19,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from packages.application.ports.errors import InvalidInputError
-from packages.domain.workers import GPU_CAPABILITY
+from packages.domain.workers import (
+    GPU_CAPABILITY,
+    GPU_RESOURCE_PROFILES,
+    is_gpu_resource_profile,
+)
 from packages.domain.workspace import ExecutionSpec
 
 DEFAULT_PROFILE = "default"
@@ -119,6 +123,13 @@ _GPU_PROFILES: dict[str, GpuProfile] = {
 }
 # fmt: on
 
+# 与 domain 单一事实源同步：adapter GPU 表的键必须等于域内声明的集合
+# （漂移由 test_gpu_dispatch 契约测试锁定）。
+assert set(_GPU_PROFILES) == set(GPU_RESOURCE_PROFILES), (
+    "GPU profile drift: adapters/execution/profiles.py keys must equal "
+    "packages.domain.workers.GPU_RESOURCE_PROFILES"
+)
+
 
 def resolve_resource_profile(name: str | None) -> ResourceLimits:
     """解析 profile 名称；未知名称是调用方 bug（InvalidInputError）。"""
@@ -135,8 +146,11 @@ def resolve_resource_profile(name: str | None) -> ResourceLimits:
 
 
 def is_gpu_profile(name: str | None) -> bool:
-    """该 profile 是否要求 GPU（决定 DeviceRequests 与调度 token）。"""
-    return (name or DEFAULT_PROFILE) in _GPU_PROFILES
+    """该 profile 是否要求 GPU（决定 DeviceRequests 与调度 token）。
+
+    委托 domain 单一事实源（application 证据门禁使用同一判定）。
+    """
+    return is_gpu_resource_profile(name)
 
 
 def resolve_gpu_requirements(name: str) -> GpuRequirements:

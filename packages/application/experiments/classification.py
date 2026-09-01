@@ -10,6 +10,7 @@ NEGATIVE_RESULT 语义（DoD）：科学负结论 ≠ 执行失败。
 from __future__ import annotations
 
 from packages.application.experiments.types import RESULT_FILE
+from packages.domain.enums import FailureCategory
 from packages.domain.experiment_state import ExperimentRunState
 from packages.domain.workspace import ExecutionRun, ExecutionStatus
 
@@ -25,6 +26,19 @@ def execution_failure_reason(status: ExecutionStatus) -> str | None:
         return "execution timed out"
     if status is ExecutionStatus.FAILED:
         return "execution failed"
+    return None
+
+
+def gpu_failure_reason(category: FailureCategory | None) -> str | None:
+    """M17 WP4a 映射点：GPU 执行失败分类 → 可读 failure_reason。
+
+    只处理新增的 GPU_UNAVAILABLE / GPU_OOM；其他分类返回 None（沿用
+    既有 generic 原因），保持 M9/M16 语义不变。
+    """
+    if category is FailureCategory.GPU_OOM:
+        return "execution failed: gpu out of memory (GPU_OOM)"
+    if category is FailureCategory.GPU_UNAVAILABLE:
+        return "execution failed: gpu device unavailable (GPU_UNAVAILABLE)"
     return None
 
 

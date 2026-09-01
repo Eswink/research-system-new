@@ -26,6 +26,7 @@ from packages.application.ports.execution_job_queue import (
     ExecutionJobOutcome,
     ExecutionJobRequest,
     ExecutionJobResult,
+    canonical_task_status,
 )
 from packages.domain.core import ID
 from packages.domain.enums import AcceptanceCriterionType, TaskKind
@@ -68,17 +69,6 @@ def _synthetic_task(
 
 
 _TERMINAL_STATUSES = ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED")
-
-
-def _canonical_task_status(status: str) -> str:
-    """Closed-set terminal validation (untrusted worker input, ADR-0027 §1).
-
-    Only terminal execution statuses may be persisted; a fence-holding worker
-    cannot resurrect a settled job as QUEUED or strand it in an unknown state.
-    """
-    if status not in _TERMINAL_STATUSES:
-        raise InvalidInputError(f"invalid result status {status!r}: not a terminal execution state")
-    return "SUCCEEDED" if status == "SUCCEEDED" else "FAILED"
 
 
 def _require_active_lease(  # noqa: PLR0913 - fencing identity is a complete tuple
@@ -253,7 +243,7 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
         strand it in an unknown state.
         """
         self._ensure_open()
-        task_status = _canonical_task_status(result.status)
+        task_status = canonical_task_status(result.status)
         task_id = result.task_id
         if result.worker_id is None:
             raise InvalidInputError("result worker_id is required (identity binding)")

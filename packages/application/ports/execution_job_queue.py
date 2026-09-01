@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
+from packages.application.ports.errors import InvalidInputError
 from packages.domain.workspace import ExecutionSpec
 
 
@@ -73,6 +74,29 @@ class ExecutionJobOutcome:
     output_bundle_ref: str | None = None
     output_bundle_digest: str | None = None
     failure_category: str | None = None
+
+
+_TERMINAL_STATUSES = ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED")
+
+
+def canonical_task_status(status: str) -> str:
+    """Closed-set terminal validation shared by every ExecutionJobQueue impl.
+
+    `status` is worker-supplied and therefore untrusted (ADR-0027 §1): only
+    terminal execution statuses may be persisted, so a fence-holding worker
+    cannot resurrect a settled job as QUEUED or strand it in an unknown state.
+    M17 WP4c: a worker-reported CANCELLED (cooperative cancel convergence) is
+    preserved as CANCELLED — collapsing it into FAILED lost the cancellation
+    semantic. TIMED_OUT records as FAILED (worker-side timeout, not a
+    Control-Plane cancel).
+    """
+    if status not in _TERMINAL_STATUSES:
+        raise InvalidInputError(f"invalid result status {status!r}: not a terminal execution state")
+    if status == "SUCCEEDED":
+        return "SUCCEEDED"
+    if status == "CANCELLED":
+        return "CANCELLED"
+    return "FAILED"
 
 
 @dataclass(frozen=True, slots=True)

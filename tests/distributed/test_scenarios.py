@@ -99,6 +99,30 @@ def test_scenario_b_crash_failover(harness: WorkerHarness) -> None:
     assert _lease_count(harness, task_id) == 0
 
 
+def _gateway_register(harness: WorkerHarness, worker_id: str) -> tuple[str, int]:
+    """Register a session through the gateway; return (token, generation)."""
+    import httpx
+
+    from tests.distributed.worker_harness import _ENROLLMENT
+
+    reg = httpx.post(
+        f"{harness.gateway_url}/worker/v1/register",
+        headers={"X-Worker-Enrollment": _ENROLLMENT},
+        json={
+            "worker_id": worker_id,
+            "protocol_version": "1",
+            "runtime_version": "0.1.0",
+            "capabilities": ["docker"],
+            "backend_kinds": ["DOCKER"],
+            "platform": "linux/amd64",
+            "partition_slots": [0],
+            "max_concurrency": 1,
+        },
+    )
+    assert reg.status_code == 200
+    return str(reg.json()["session_token"]), int(reg.json()["registration_generation"])
+
+
 def _gateway_register_claim(harness: WorkerHarness, worker_id: str) -> tuple[str, int, str, int]:
     """Register + claim one job through the gateway; return (token, gen, lease, fence)."""
     import httpx
@@ -276,6 +300,55 @@ def test_scenario_j_version_incompatible_rejected(harness: WorkerHarness) -> Non
     )
     assert resp.status_code == 409  # F-6: protocol mismatch, not an enrollment 401
     assert "Protocol Mismatch" in resp.text
+
+
+def test_scenario_h_cooperative_cancel_propagates(harness: WorkerHarness) -> None:
+    """H (M17 WP4c): Control-Plane cancel reaches an in-flight job.
+
+    cancel flag (PG) → worker cancel probe (authenticated, lease-holder-only
+    gateway route) → backend aborts → CANCELLED result settles the lease.
+    A late result replaying the captured fencing identity is fenced out (409).
+    """
+    import httpx
+
+    task_id = harness.seed_job(idem="h-cancel", partition=0)
+    worker = harness.spawn_worker(
+        "h-w1", env_extra={"RESEARCHOS_WORKER_EXECUTE_DELAY_SECONDS": "30"}
+    )
+    assert _wait_until(lambda: _is_leased_by(harness, task_id, "h-w1"))
+    identity = harness.lease_identity(task_id)
+    assert identity is not None
+    lease_id, fence = identity
+
+    # Control Plane cancels the in-flight job.
+    harness.job_queue.request_cancel(task_id)
+    assert _wait_until(lambda: harness.job_queue.poll(task_id) is not None, timeout=30)
+    outcome = harness.job_queue.poll(task_id)
+    assert outcome is not None and outcome.status == "CANCELLED"
+    assert outcome.worker_id == "h-w1"
+    # the lease is released (single-ownership authority is empty again)
+    assert harness.lease_identity(task_id) is None
+
+    # A late result replaying the released fencing identity is fenced out:
+    # the injector holds a VALID session of its own, but the captured
+    # (lease_id, fence) no longer matches any lease row → 409, not persisted.
+    late_token, late_gen = _gateway_register(harness, "h-late-holder")
+    resp = httpx.post(
+        f"{harness.gateway_url}/worker/v1/tasks/{task_id}/result",
+        headers={"Authorization": f"Bearer {late_token}"},
+        json={
+            "worker_id": "h-late-holder",
+            "registration_generation": late_gen,
+            "lease_id": lease_id,
+            "fence": fence,
+            "status": "SUCCEEDED",
+            "exit_code": 0,
+        },
+    )
+    assert resp.status_code == 409
+    settled = harness.job_queue.poll(task_id)
+    assert settled is not None and settled.status == "CANCELLED"
+    worker.terminate()
 
 
 def test_worker_clock_skew_does_not_affect_authority() -> None:

@@ -190,6 +190,9 @@ def create_worker_app(deps: WorkerGatewayDeps) -> FastAPI:
             response_model=ResultAckDto,
         )
         app.add_api_route("/worker/v1/tasks/{task_id}/renew", jobs.renew_job, methods=["POST"])
+        app.add_api_route(
+            "/worker/v1/tasks/{task_id}/cancel", jobs.cancel_status, methods=["GET"]
+        )
     if deps.artifacts is not None:
         app.add_api_route(
             "/worker/v1/artifacts/{artifact_id}", transfer.download_bundle, methods=["GET"]

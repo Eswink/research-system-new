@@ -227,6 +227,30 @@ async def renew_job(
     return Response(status_code=204)
 
 
+async def cancel_status(
+    request: Request,
+    task_id: str,
+    authorization: str | None = Header(default=None),
+) -> Response:
+    """M17 WP4c: cooperative cancel flag for an in-flight claimed job.
+
+    Authenticated + identity-bound: only the worker currently holding the
+    task's lease may observe the flag (fail closed — 403 otherwise). The
+    worker polls this during long jobs and kills its container when set.
+    """
+    _require_job_plane(request)
+    identity = security.authenticate(request, authorization)
+    job_queue = security.deps_of(request).job_queue
+    assert job_queue is not None  # guarded by _require_job_plane
+    holder = job_queue.claimed_by(task_id)
+    if holder is None or holder != identity.worker_id:
+        raise ApiError(403, "Forbidden", "cancel status is only visible to the lease holder")
+    body = {"task_id": task_id, "cancel_requested": job_queue.cancel_requested(task_id)}
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=200, content=body)
+
+
 def _json_response(body: JobDescriptorDto) -> Response:
     from fastapi.responses import JSONResponse
 

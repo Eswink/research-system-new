@@ -188,19 +188,48 @@ class WorkerHarness:
         self.workers.append(proc)
         return proc
 
-    def seed_job(self, *, command: str = "echo hi", idem: str, partition: int | None = 0) -> str:
+    def seed_job(
+        self,
+        *,
+        command: str = "echo hi",
+        idem: str,
+        partition: int | None = 0,
+        capability: str = "docker",
+        resource_profile: str | None = None,
+    ) -> str:
         """Enqueue one EXECUTION job on the canonical queue; return task_id."""
         from uuid import uuid4
 
         return self.job_queue.enqueue(
             ExecutionJobRequest(
-                spec=ExecutionSpec(backend_kind="DOCKER", command=command),
+                spec=ExecutionSpec(
+                    backend_kind="DOCKER", command=command, resource_profile=resource_profile
+                ),
                 run_id=str(uuid4()),
-                capability="docker",
+                capability=capability,
                 idempotency_key=idem,
                 partition=partition,
             )
         )
+
+    def lease_identity(self, task_id: str) -> tuple[str, int] | None:
+        """Read the live fencing identity (lease_id, fence) straight from PG.
+
+        Ownership authority is the `leases` row (M16 §7) — the test reads the
+        same row the gateway's fence checks will compare against.
+        """
+        import psycopg
+
+        conn = psycopg.connect(self.dsn, autocommit=True)
+        try:
+            row = conn.execute(
+                "SELECT lease_id, fence FROM leases WHERE task_id = %s", (task_id,)
+            ).fetchone()
+        finally:
+            conn.close()
+        if row is None:
+            return None
+        return str(row[0]), int(row[1])
 
     def stop_workers(self) -> None:
         for proc in self.workers:

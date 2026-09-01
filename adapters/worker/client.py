@@ -79,9 +79,17 @@ class WorkerClient:
         self._token: str | None = None
         self._generation: int = 0
         self._heartbeat_interval: float = config.heartbeat_interval_seconds
+        # effective capabilities of the CURRENT registration (register() may
+        # derive 'gpu' from the probe observation; claims must advertise the
+        # same set that was registered, or the engine will never match).
+        self._capabilities: tuple[str, ...] = tuple(config.capabilities)
         self._http = httpx.Client(
             base_url=config.base_url, timeout=config.request_timeout_seconds, transport=transport
         )
+
+    @property
+    def capabilities(self) -> tuple[str, ...]:
+        return self._capabilities
 
     @property
     def heartbeat_interval_seconds(self) -> float:
@@ -135,6 +143,7 @@ class WorkerClient:
                 caps.append("gpu")
             body["capabilities"] = caps
             body["gpu_observation"] = gpu_observation.to_json_dict()
+        self._capabilities = tuple(caps)
         resp = self._http.post(
             "/worker/v1/register",
             headers={"X-Worker-Enrollment": self._config.enrollment_secret},
@@ -165,7 +174,9 @@ class WorkerClient:
             json={
                 "worker_id": self._config.worker_id,
                 "registration_generation": self._generation,
-                "capabilities": list(self._config.capabilities),
+                # current registration's effective capabilities (M17: register
+                # may have derived 'gpu' from the probe observation)
+                "capabilities": list(self._capabilities),
                 "partitions": list(self._config.partition_slots),
             },
         )
@@ -190,6 +201,21 @@ class WorkerClient:
             headers=self._lease_headers(task_id, lease_id, fence),
         )
         resp.raise_for_status()
+
+    def cancel_requested(self, task_id: str) -> bool:
+        """M17 WP4c: poll the cooperative cancel flag for an in-flight job.
+
+        Only the lease holder is authorized (403 otherwise); a 404 (lease
+        already released) maps to False — the job is over either way.
+        """
+        resp = self._http.get(
+            f"/worker/v1/tasks/{task_id}/cancel",
+            headers=self._auth_headers(),
+        )
+        if resp.status_code == 404:
+            return False
+        resp.raise_for_status()
+        return bool(_json(resp).get("cancel_requested"))
 
     def _lease_headers(self, task_id: str, lease_id: str, fence: int) -> dict[str, str]:
         """Fencing identity for artifact transfer (M16 re-audit F-4).

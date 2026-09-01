@@ -24,6 +24,10 @@ from packages.domain.experiments import MetricValue, metric_values_from_mapping
 from packages.domain.serialization import digest_of
 
 _DECLARED_STATUSES = frozenset({"SUCCEEDED", "FAILED", "NEGATIVE_RESULT"})
+# M17 WP3c 第 4 层（证据层）：compute_device.kind 的闭集
+_COMPUTE_DEVICE_KINDS = frozenset({"cuda", "cpu"})
+_MAX_COMPUTE_DEVICE_NAME = 128
+_MAX_CUDA_VERSION_LENGTH = 32
 
 # 非确定性观测字段后缀（M12-R1 WP4）：wall-clock / duration 测量不进入
 # semantic reproducibility digest（允许重跑 variance），但仍保留在 raw
@@ -44,6 +48,32 @@ class ExperimentResultPayload:
     metrics_digest: Digest
     semantic_metrics_digest: Digest
     failure_ref: str | None = None
+    # M17：实验自报的执行设备（可选；GPU profile 下缺失/非 cuda 即违约）
+    compute_device_kind: str | None = None
+    compute_device_name: str | None = None
+
+
+def _parse_compute_device(data: dict[str, Any]) -> tuple[str | None, str | None]:
+    """解析可选 compute_device 对象；越界/类型错 fail-closed 抛违约。"""
+    device = data.get("compute_device")
+    if device is None:
+        return None, None
+    if not isinstance(device, dict):
+        raise InvalidInputError("compute_device must be an object")
+    kind = device.get("kind")
+    if kind not in _COMPUTE_DEVICE_KINDS:
+        raise InvalidInputError(
+            f"compute_device.kind must be one of {sorted(_COMPUTE_DEVICE_KINDS)}"
+        )
+    name = device.get("name")
+    if name is not None and (not isinstance(name, str) or len(name) > _MAX_COMPUTE_DEVICE_NAME):
+        raise InvalidInputError("compute_device.name must be a string <= 128 chars")
+    version = device.get("cuda_runtime_version")
+    if version is not None and (
+        not isinstance(version, str) or len(version) > _MAX_CUDA_VERSION_LENGTH
+    ):
+        raise InvalidInputError("compute_device.cuda_runtime_version must be a short string")
+    return str(kind), str(name) if isinstance(name, str) else None
 
 
 def semantic_metrics_projection(metrics: dict[str, Any]) -> dict[str, Any]:
@@ -95,6 +125,7 @@ def parse_experiment_result_json(
     failure_ref = data.get("failure_ref")
     if failure_ref is not None and not isinstance(failure_ref, str):
         raise InvalidInputError("failure_ref must be a string or null")
+    device_kind, device_name = _parse_compute_device(data)
     return ExperimentResultPayload(
         experiment_run_id=run_id,
         declared_status=str(status),
@@ -103,6 +134,8 @@ def parse_experiment_result_json(
         metrics_digest=_metrics_digest(metrics),
         semantic_metrics_digest=semantic_metrics_digest(metrics),
         failure_ref=failure_ref,
+        compute_device_kind=device_kind,
+        compute_device_name=device_name,
     )
 
 
