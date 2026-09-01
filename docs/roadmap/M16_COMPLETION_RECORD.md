@@ -127,3 +127,16 @@ WIP（parallel-agent-orchestration 技能、NPM 校验、`.cursor/knowledge` 等
 整改后复验：m0 profile 23 检查全绿；`tests/distributed` 24 passed（真实子进程+PG）；
 contracts+architecture+api+worker+observability+tooling 合并 1318 passed / 2 skipped；
 ruff/format/mypy 干净；5 个独立对抗探针全过。**M16 = PASS**（attempt-2 证据）。
+
+## RM-P2 注记（2026-09-02）
+
+RM-P2 Post-M16 Personal Roadmap Rebaseline（`PLAN-20260902-027`，
+ADR-0028）确认：本记录所载 M16 全部已实现并验证的能力——包括超出当前
+个人规模需求的部分（multi-worker 并行、partition scheduling、
+lease/fencing、stale-result rejection、worker failover、远程
+workspace/artifact 完整性、分布式观测、安全攻击套件）——全部保持
+**Implemented and validated**，不删除、不弱化，原 M16 DoD 不降低；
+M16 = DONE / 独立复审 PASS 状态不变（`RECHECK-20260901-025-m16-attempt2`）。
+路线收缩仅作用于 M17 及以后的 Active Scope（M17 收缩为 Remote GPU
+Execution / Personal Scale Baseline；M18/M19 DEFERRED），不追溯修改
+本记录正文与 M0–M15 任何历史记录。

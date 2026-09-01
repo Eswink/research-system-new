@@ -9,6 +9,8 @@ M0-M7 里程碑详细定义保留在 `CODEX_BOOTSTRAP.md`（历史契约）；Po
 
 ```text
 Foundation / Executable Research Kernel = completed（M0-M7 含 M5R，2026-08-14）
+Post-M7 产品能力 M8-M16 = completed（M16 Distributed Execution，2026-08-31；attempt-2 独立复审 PASS 2026-09-01）
+RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R
 ```
 
 完成矩阵与证据见 [COMPLETION_MATRIX_M0_M7.md](COMPLETION_MATRIX_M0_M7.md)；
@@ -69,6 +71,20 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 > 第二套路线。M0-M7（含 M5R）已完成历史不在此改写，见上方 Milestone
 > Index 与 [COMPLETION_MATRIX_M0_M7.md](COMPLETION_MATRIX_M0_M7.md)。
 
+## 产品现实（RM-P2 Rebaseline，2026-09-02）
+
+- Research OS 当前服务于**单用户、个人长期使用的 Autonomous Research
+  / R&D System**；暂无 multi-user / organization 产品需求，无
+  Enterprise SaaS 部署目标。
+- 真实资源：一台真实远程计算服务器；可真实验证的 GPU 资源仅为该
+  服务器上的**单卡 GPU**；没有可真实测试的 multi-GPU / multi-node /
+  Slurm / HPC 环境。
+- 因此：**只把能够真实使用、真实验证、当前有产品价值的能力作为
+  Active Roadmap**；不为编号完整性建设无法验证的基础设施。原
+  M17 GPU/HPC 扩展面与 M18/M19 Enterprise 轨道据此收缩/推迟
+  （ADR-0028），保留定义与依赖，待真实环境或需求出现时经新 ADR
+  重新激活。
+
 ## 规划原则
 
 ```text
@@ -95,9 +111,12 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M14 | Durable Workflow + PostgreSQL | Production | M12 | DONE（2026-08-28 立项；WP-J2 重判 PASS：RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
 | M15 | Observability / Cost / Eval Operations | Production | M11 | DONE（2026-08-29 首轮实施；2026-08-30 独立复审判定 FAIL 后修复轮 WP0–WP8 完成，6 BLOCKER 独立探针复现修复，m0 23/23 全绿；recheck PASS 见 `RECHECK-20260830-024`） |
 | M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | DONE（2026-08-31） |
-| M17 | GPU / HPC | Scale | M16+M9 | PLANNED |
-| M18 | Multi-user / Organization / RBAC | Enterprise | M13+M14 | PLANNED |
-| M19 | Production Security / Governance + Backup/Recovery/SLO | Enterprise | M14+M15+M18 | PLANNED |
+| M17 | Remote GPU Execution / Personal Scale Baseline（RM-P2 收缩，原 GPU / HPC） | Scale | M16+M9 | PLANNED |
+| M18 | Multi-user / Organization / RBAC | Enterprise | M13+M14 | DEFERRED（RM-P2，2026-09-02；激活条件见 M18 节） |
+| M19 | Production Security / Governance + Backup/Recovery/SLO | Enterprise | M14+M15+M18 | DEFERRED（RM-P2，2026-09-02；激活条件见 M19 节） |
+| SI-1 | Personal Scale Integration Review（非产品 Gate） | Gate | M17 | PLANNED |
+| PA-1 | Personal Production Acceptance（非产品 Gate） | Gate | SI-1 | PLANNED |
+| PA-1R | Independent Personal Production Re-audit（非产品 Gate） | Gate | PA-1 | PLANNED |
 
 ## 依赖 DAG
 
@@ -115,12 +134,15 @@ graph TD
     M12 --> M14["M14 Durable Workflow + PostgreSQL"]
     M11 --> M15["M15 Observability / Cost / Eval Ops"]
     M12 -. soft .-> M15
-    M14 --> M16["M16 Distributed Execution + Remote Sandbox"]
-    M9 -.-> M17["M17 GPU / HPC"]
+    M14 --> M16["M16 Distributed Execution + Remote Sandbox（DONE）"]
+    M9 -.-> M17["M17 Remote GPU Execution / Personal Scale Baseline"]
     M16 --> M17
-    M13 --> M18["M18 Multi-user / Org / RBAC"]
+    M17 --> SI1["SI-1 Personal Scale Integration Review"]
+    SI1 --> PA1["PA-1 Personal Production Acceptance"]
+    PA1 --> PA1R["PA-1R Independent Personal Production Re-audit"]
+    M13 --> M18["M18 Multi-user / Org / RBAC（DEFERRED）"]
     M14 --> M18
-    M14 --> M19["M19 Security / Governance / SLO"]
+    M14 --> M19["M19 Security / Governance / SLO（DEFERRED）"]
     M15 --> M19
     M18 --> M19
 ```
@@ -128,10 +150,10 @@ graph TD
 文字版（`→` = 硬依赖，`-·` = 软依赖）：
 
 ```text
-M7 → M8 → M12 → M14 → M16 → M17
+M7 → M8 → M12 → M14 → M16 → M17 → SI-1 → PA-1 → PA-1R
 M7 → M9 → M12      M9 -· M17
 M7 → M10 → M12
-M7 → M11 → M12 → M13 → M18 → M19
+M7 → M11 → M12 → M13 → M18 → M19（M18/M19 DEFERRED：依赖保留，重新激活前不排期）
               M11 → M15 → M19
               M12 -· M15
               M14 → M18、M16、M19
@@ -144,8 +166,11 @@ M7 → M11 → M12 → M13 → M18 → M19
 | IG-1 | M12 Entry | M8、M9、M10、M11 全部通过独立复审 + m0 profile 全绿 |
 | IG-2 | M14 Entry | M12 PASS（MVP 成立判定为 go） |
 | IG-3 | M16 Entry | M14 PASS |
-| IG-4 | M18 Entry | M13 + M14 PASS |
-| IG-5 | M19 Entry | M14 + M15 + M18 PASS |
+| IG-4 | M18 Entry | M13 + M14 PASS（M18 DEFERRED 期间门保留、不触发） |
+| IG-5 | M19 Entry | M14 + M15 + M18 PASS（M19 DEFERRED 期间门保留、不触发） |
+| SI-1 | M17 独立复审 PASS 后 | M17 PASS + 全链集成验证（Control Plane → Distributed Scheduler → Remote Worker → Real GPU → Experiment → Artifact → Evidence → Claim → Evaluation → Usage/Cost）+ 故障面（network failure / stale Worker / cancellation / GPU OOM / Artifact corruption / recovery） |
+| PA-1 | SI-1 PASS 后 | Personal Production Acceptance 清单全部满足（见 Personal Scale Baseline 节） |
+| PA-1R | PA-1 完成后 | 独立个人生产复审 PASS → 宣布 Research OS Personal Production Baseline = COMPLETE |
 
 ### 分层（MVP → Enterprise）
 
@@ -153,16 +178,16 @@ M7 → M11 → M12 → M13 → M18 → M19
 MVP        M8-M12（M12 通过即 MVP 成立：真实任务 + 真实工具 + 真实实验 + 证据 + 评测闭环）
 Product    M13（研究控制台：配置 / dry-run / 时间线 / 审批 / 证据地图）
 Production M14-M15（PostgreSQL canonical state + durable workflow + 隐私优先观测 + 成本）
-Scale      M16-M17（分布式 worker / 远程沙盒 / GPU-HPC）
-Enterprise M18-M19（多租户 RBAC / 安全治理 / 备份恢复 / SLO）
+Scale      M16-M17（分布式 worker / 远程沙盒 / 远程 GPU 个人规模基线；M17 经 RM-P2 收缩）
+Enterprise M18-M19（多租户 RBAC / 安全治理 / 备份恢复 / SLO；RM-P2 起 DEFERRED，激活条件见各节）
 ```
 
 ### 主开发路径与并行策略
 
-- 串行主线：`M7 → M8 → M12 → M14 → M16 → M17 → M19`
+- 串行主线：`M7 → M8 → M12 → M14 → M16 → M17 → SI-1 → PA-1 → PA-1R`（M18/M19 DEFERRED，见各节激活条件）
 - 并行组 1（M7 之后）：M8 ∥ M9 ∥ M10 ∥ M11
 - 并行组 2（M12 之后）：M13 ∥ M14 ∥ M15
-- 并行组 3（M14/M13 之后）：M16 ∥ M18
+- 并行组 3（M14/M13 之后）：M16 ∥ M18（M18 DEFERRED，RM-P2 起不并行推进）
 - 推荐主开发路径：先启动 **M8**（M12 硬依赖中体量最大），M9/M10/M11
   并行推进，在 IG-1 汇聚；M12 通过后 M13/M14/M15 并行，M15 可提前
   （软依赖 M12）。
@@ -198,20 +223,23 @@ regression（以 Eval Harness + deterministic gates 为基准），不允许仅
 | M14 | Temporal | 采用/不采用决策（ADAPTER 隔离，不进 Domain；若采用需 revision lock） |
 | M15 | OpenTelemetry | collector/SDK qualification（genai 内容默认关闭） |
 | M16 | SWE-ReX | 远程并行执行 qualification |
-| M17 | GPU/HPC 厂商 API | 调度器（如 Slurm）与云 GPU API qualification |
-| M19 | OPA + Secret Manager | OPA 采用/不采用决策；Secret Manager 选型 |
+| M17 | GPU 运行时（单机单卡） | 真实远程 GPU Worker 上的 GPU container/runtime qualification（如 NVIDIA Container Toolkit）；原 Slurm/云 GPU API qualification 随 M17 Deferred Scope 移出（RM-P2） |
+| M19 | OPA + Secret Manager | OPA 采用/不采用决策；Secret Manager 选型（M19 DEFERRED：暂不排期） |
 
 ### 下一阶段推荐
 
-**M16 Distributed Execution + Remote Sandbox/Worker**（M14 已 DONE：
-WP-J2 重判 PASS，RECHECK-20260828-022；Temporal DEFERRED，ADR-0025）。
-M12 重判 PASS（RECHECK-20260828-023）；M13 独立复审 PASS（2026-08-27）；
-M15 Observability / Cost / Eval Operations 完成（2026-08-29）。M14/M15
-通过后按 DAG 进入 M16/M18。
+**M17 — Remote GPU Execution / Personal Scale Baseline**（M16 已 DONE：
+2026-08-31；attempt-2 独立对抗复审 PASS 2026-09-01，
+RECHECK-20260901-025-m16-attempt2。M17 Entry Gate「M16 PASS」已满足）。
+M17 经 RM-P2（ADR-0028）收缩为个人规模：在真实远程单卡 GPU Worker 上
+完成真实 GPU Research Slice；原 GPU/HPC 扩展面（multi-GPU/Slurm/
+cluster 等）进入 Deferred Scope。M18/M19 DEFERRED（激活条件见各节）；
+M17 PASS 后依次进入 SI-1 → PA-1 → PA-1R。
 
 > 历史说明：M8-M11 规划期（2026-08-14）本节推荐为 M8；M8-M11 完成后
 > （2026-08-16，DOC-R1）本节更新为 M12；M12/M13 完成后（2026-08-28）
-> 本节更新为 M14。历史 Milestone 定义不改写。
+> 本节更新为 M14；M16 完成后（2026-09-02，RM-P2）本节更新为 M17。
+> 历史 Milestone 定义不改写。
 
 ---
 
@@ -826,40 +854,77 @@ M18。
 
 解锁 M17（GPU/HPC）。
 
-## M17 — GPU / HPC
+## M17 — Remote GPU Execution / Personal Scale Baseline
+
+> RM-P2 Rebaseline（2026-09-02，ADR-0028）：原「GPU / HPC」定义面向
+> Slurm/云 GPU/配额的资源平面，其可验证环境当前不存在。本节收缩 M17
+> 的 Active Scope 为个人规模远程 GPU 执行；原扩展面移入下方 Deferred
+> Scope（不删除、不标记完成）。
 
 ### Purpose
 
-支持 GPU/HPC 计算资源的接入、调度与配额，服务大规模科研计算。
+让已完成的 M16 Distributed Execution Plane 在当前真实远程 GPU Worker
+（单机单卡）上跑通真实 GPU 研究计算：发现 GPU capability、调度
+GPU-required task、建立真实 GPU container/runtime、运行真实计算实验，
+并完成一条真实 GPU Research Slice。
 
 ### Plain-language Explanation
 
-造一个“计算资源平面”：科研任务需要 GPU 大算力时，系统对接调度器
-（如 Slurm）或云 GPU，把实验发到合适的机器上并计费入账。
+给 M16 的远程 Worker 加上"真 GPU"：任务声明需要 GPU 时，调度到那台
+真实远程服务器上的 GPU worker；容器里能用上 CUDA；实验真的跑、真的
+产生 Artifact/Metric/Usage；OOM、CUDA 错误、超时、取消都能被正确
+处理并记录。不建通用 HPC 平台。
 
 ### Inputs
 
-M16 PASS（分布式调度成熟）；M9 的 ExperimentRun 语义；
-`ComputeReservation` Domain 实体。
+M16 PASS（分布式调度 / RemoteExecutionBackend / worker gateway /
+fencing 已验证）；M9 的 ExperimentRun 语义与 `resource_profile` 映射；
+真实远程服务器（单卡 GPU）访问凭据（仅经环境变量/密钥服务，不入
+源码）。
 
-### Scope
+### Active Scope
 
-GPU/HPC 资源平面（调度器/云 GPU provider 抽象）；ComputeReservation
-落地；资源健康与配额；GPU/HPC 厂商 API qualification。
+- GPU capability 发现与注册（runtime 探测进入 worker capability
+  模型）；
+- GPU-required task 调度（capability 匹配门禁：无可用 GPU worker
+  时任务不误派）；
+- 真实 GPU container/runtime（GPU 运行时 qualification 先行，见
+  Upstream Qualification 时间表）；
+- 真实计算实验执行（实验代码在 GPU 容器内真实运行并产出结果）；
+- OOM / CUDA error / timeout / cancellation 的检测、处理与状态归一；
+- Artifact / Metric / Usage 记录（含 GPU `remote-exec` 记账联动
+  BudgetLedger）；
+- 结果进入 Evidence / Evaluation（可评测闭环）；
+- 完成一条真实 GPU Research Slice（E2E，非 mock）。
+
+### Deferred Scope（RM-P2 正式移出 Active）
+
+multi-GPU scheduling；multi-GPU training；NCCL；distributed
+training；multi-node execution；Slurm；PBS；MPI；HPC scheduler；
+RDMA；InfiniBand；heterogeneous accelerator fleet；GPU autoscaling；
+cluster federation；HPC quota system。
+
+规则：以上能力不删除未来路线、不标记完成、不作为 M17 PASS 条件；
+禁止以 Fake/Mock 测试宣称 supported；只有获得真实环境或真实需求时，
+经新 ADR + Plan Mode 立项重新激活。
 
 ### Non-goals
 
-不做训练框架集成；不做多集群联邦；不做成本优化引擎；不做裸机
-管理。
+不建通用 HPC 平台；不做训练框架集成；不做多集群联邦；不做成本
+优化引擎；不删除/弱化 M16 已验证能力（multi-worker、fencing、
+failover、partition scheduling 保持 `Implemented and validated`）。
 
 ### Key Deliverables
 
-GPU/HPC adapter（provider 抽象）；调度对接；配额管理；GPU 任务
-E2E（可小规模）。
+GPU capability probe/registration；GPU scheduling 门禁与测试；GPU
+runtime qualification 报告（`docs/references/upstream/`）；GPU 任务
+E2E 场景（真实 GPU + 故障注入：OOM/timeout/cancel/断网）；M17
+Completion Record（DoD 逐条证据）。
 
 ### Entry Gate
 
-IG-3 之后的 M16 PASS。
+M16 PASS（已满足：RECHECK-20260901-025-m16-attempt2）+ M17 计划经
+Plan Mode 批准。
 
 ### Dependencies
 
@@ -867,18 +932,28 @@ Hard：M16+M9。
 
 ### Parallelism
 
-无（Scale 层串行）。
+无（Scale 层串行；M18/M19 DEFERRED）。
 
 ### Risks
 
-厂商 API 多样性；GPU 集群权限与安全边界；成本失控（需配额与
-BudgetLedger 联动）。
+单卡资源争用与排队；OOM/驱动级故障模式复杂；GPU 环境漂移（驱动/
+CUDA 版本需记录 fingerprint）；远程 GPU 使用成本失控（BudgetLedger
+联动 + 预算上限）。
 
 ### Next Readiness
 
-解锁 Enterprise 级科研能力（大规模计算场景）。
+解锁 SI-1（Personal Scale Integration Review）。
 
 ## M18 — Multi-user / Organization / RBAC
+
+> 状态（RM-P2，2026-09-02）：**DEFERRED — no current multi-user /
+> organization requirement**。以下原定义原样保留为重新激活基线；当前
+> 不实现 Tenant / Organization / cross-tenant data isolation /
+> multi-user RBAC / tenant quota / tenant billing 的任何能力，不标记
+> 部分完成。重新激活条件（满足其一）：出现第二个真实用户；团队共同
+> 使用 Research OS；Organization/Project ownership 需求；共享服务器
+> 部署；对外提供服务；tenant isolation 成为真实需求；商业化或多人
+> 协作。重新激活需新 ADR + Plan Mode 立项。
 
 ### Purpose
 
@@ -930,6 +1005,14 @@ PolicyEvaluator 双轨失控；单租户数据迁移。
 解锁 M19（企业治理）。
 
 ## M19 — Production Security / Governance + Backup/Recovery/SLO
+
+> 状态（RM-P2，2026-09-02）：**DEFERRED — Enterprise track not
+> activated**。以下原定义原样保留；不得标记为部分完成或 PASS。其中对
+> 单用户同样有实际价值的能力（backup、restore、secret hygiene、
+> PostgreSQL/Artifact recovery、release/version truth、operational
+> recovery）不通过"提前做 M19"处理，纳入 PA-1 — Personal Production
+> Acceptance（见 Personal Scale Baseline 节）。重新激活条件：企业/
+> 多用户需求出现（随 M18 激活或独立立项），需新 ADR。
 
 ### Purpose
 
@@ -1006,3 +1089,67 @@ PostgreSQL 仍是唯一 canonical；迁移 008 全部 additive；agent-session �
 > 未真正移除）。已全部整改（claim 强制 + provenance/ACL + 续租 + composition
 > 入口 + 真实断言 + 端到端 canary），m0 23 检查全绿、distributed 24、5 对抗
 > 探针全过。详见 `RECHECK-20260901-025-m16-attempt2.md`。M16 维持 DONE。
+
+---
+
+# Personal Scale Baseline（RM-P2 新增，2026-09-02）
+
+本节由 RM-P2（PLAN-20260902-027，ADR-0028）建立，定义 M17 之后的非产品
+Gate 与个人生产基线。以下均为 Gate/验收活动，不增加新产品功能。
+
+## SI-1 — Personal Scale Integration Review
+
+在 M17 独立复审 PASS 后执行的非产品 Milestone Gate。验证完整链路：
+
+```text
+Research Objective → Control Plane → Distributed Scheduler →
+Remote Worker → Real GPU → Experiment → Artifact → Evidence →
+Claim → Evaluation → Usage / Cost
+```
+
+并覆盖故障面：network failure；stale Worker；cancellation；GPU OOM；
+Artifact corruption；recovery。SI-1 不增加新产品功能；结论为
+PASS / FAIL（FAIL 时修复后重跑）。
+
+## PA-1 — Personal Production Acceptance
+
+SI-1 PASS 后执行。回答一个问题：**当前 Research OS 是否已经达到可以
+长期作为个人 Autonomous R&D System 使用的生产基线？**
+
+范围（逐项验收，均需真实证据）：
+
+- reproducible deployment；
+- PostgreSQL backup + actual restore；
+- Artifact backup + actual restore；
+- Secret hygiene；
+- Remote Worker recovery；
+- GPU Worker recovery；
+- component restart；
+- real Research Acceptance Run（真实研究验收运行）；
+- Observability；
+- Cost；
+- Evaluation；
+- release/version identity；
+- operational documentation。
+
+PA-1 不属于 Enterprise Milestone；以上各项不是"提前做 M19"，验收深度
+以个人生产基线为准。
+
+## PA-1R — Independent Personal Production Re-audit
+
+PA-1 完成后执行独立复审（独立于 PA-1 执行者的复审，模式同 M16
+attempt-2 对抗复审）。只有 PA-1R PASS 后才宣布：
+
+**Research OS Personal Production Baseline = COMPLETE**
+
+## Post-baseline Operating Model — Usage-driven Development
+
+PA-1R PASS 后：
+
+- 不自动恢复 M18/M19（仍需真实需求 + 新 ADR 立项）。
+- Research OS 进入 **Usage-driven Development**：后续开发优先级必须
+  来自真实使用中暴露的 Research Capability gap、Tool gap、Skill gap、
+  Protocol gap、Evaluation weakness、Runtime bottleneck、reliability
+  issue、UX friction、cost problem。
+- 路线从 `roadmap-driven infrastructure` 转为
+  `real-usage-driven improvement`。

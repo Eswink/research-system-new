@@ -5,17 +5,18 @@
 ```text
 Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
 MVP 能力平面（M8-M11）= completed（2026-08-15）
-M12 First Real Research Workflow = completed（R1 修复完成，待重新独立复审重判）
+M12 First Real Research Workflow = completed（R1 修复 + 2026-08-28 重判 PASS，RECHECK-20260828-023；DoD-3 live relay 凭据闭环）
 M13 Research Console = completed（R1 修复 + 独立复审 PASS，2026-08-27）
 M14 Durable Workflow + PostgreSQL = completed（2026-08-28；WP-J2 重判 PASS，见 `RECHECK-20260828-022`；Temporal DEFERRED，见 ADR-0025）
 M15 Observability / Cost / Eval Operations = completed（2026-08-29 首轮；2026-08-30 独立复审判定 FAIL 后修复轮 WP0–WP8 完成，6 BLOCKER 独立探针复现修复，m0 23/23 全绿；recheck PASS 见 `RECHECK-20260830-024`；ADR-0026 无内容通道观测、五状态成本投影、EvalReportStore/趋势已落地）
-M16 Distributed Execution + Remote Sandbox/Worker = completed（2026-08-31；Worker 生命周期/认证、claim_next 分区 + fence、RemoteExecutionBackend + worker 子进程 E2E 场景 A–J、SWE-ReX REJECT、遥测/记账/Console cluster 视图；ADR-0027；证据见 `roadmap/M16_COMPLETION_RECORD.md`）
+M16 Distributed Execution + Remote Sandbox/Worker = completed（2026-08-31；Worker 生命周期/认证、claim_next 分区 + fence、RemoteExecutionBackend + worker 子进程 E2E 场景 A–J、SWE-ReX REJECT、遥测/记账/Console cluster 视图；ADR-0027；attempt-2 独立对抗复审 PASS 2026-09-01，RECHECK-20260901-025-m16-attempt2；证据见 `roadmap/M16_COMPLETION_RECORD.md`）
+RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R 与 Usage-driven Development；权威见 `roadmap/MILESTONES.md`
 ```
 
 真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 →
-M10 → M11 → M12 → M13`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；
-M8-M11 为 M7 后并行组 1；M12/M13 完成状态见各自 COMPLETION_RECORD，M12
-PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。已完成事项 /
+M10 → M11 → M12 → M13 → M14 → M15 → M16`（M3 先于 M2：M2 Preflight 消费 M3 Model Relay 产物；
+M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪并修复，
+2026-08-28 重新独立复审重判 PASS（RECHECK-20260828-023））。已完成事项 /
 技术债 / 下一能力见 `../BACKLOG.md`。
 
 ## 快速问答（新 Agent 起步）
@@ -155,6 +156,7 @@ PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。�
 - `adr/ADR-0026-otel-adapter-boundary.md` — OTel adapter 边界 + 无内容 Debug Mode 决策（M15）
 - `references/upstream/M16_REMOTE_EXECUTION_QUALIFICATION.md` — 远程执行 qualification（M16；SWE-ReX REJECT，原生 HTTP worker 交付）
 - `adr/ADR-0027-distributed-execution-plane.md` — Distributed Execution Plane 决策（M16；Worker untrusted、Control Plane 独占授权、HTTP worker gateway、不建第二队列/租约/Artifact 真相）
+- `adr/ADR-0028-personal-scale-rebaseline.md` — Personal Scale Rebaseline 决策（RM-P2；M17 收缩为 Remote GPU Execution / Personal Scale Baseline、M18/M19 DEFERRED、SI-1/PA-1/PA-1R、Usage-driven Development）
 - `roadmap/M15_COMPLETION_RECORD.md` — M15 完成记录（DoD 21/21 PASS）
 - `adr/ADR-0025-temporal-defer.md` — Temporal deferral ADR（M14；DEFER 决策，M16 重评）
 
@@ -173,7 +175,7 @@ PASS 判定经 M12-R1 独立复审证伪并修复，待重新独立复审）。�
 - `roadmap/M12_R1_COMPLETION_RECORD.md` — M12-R1 Production Truth Closure 修复记录（独立复审 FAIL 后 13 Finding → Fix → Regression → Revalidation；M12 待重新独立复审重判）
 - `roadmap/M13_R1_COMPLETION_RECORD.md` — M13-R1 Research Console 修复记录（独立复审 3 BLOCKER + 7 MAJOR + 4 UI Scope + 6 MINOR → Fix → Regression → 独立复审重判 PASS）
 - `roadmap/VERTICAL_SLICE_V0_4_0.md`
-- `roadmap/MILESTONES.md` — M0-M11 执行索引 + Post-M7 Roadmap 唯一权威（M12-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐）
+- `roadmap/MILESTONES.md` — M0-M11 执行索引 + Post-M7 Roadmap 唯一权威（M12-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐；RM-P2 2026-09-02 起：M17 = Remote GPU Execution / Personal Scale Baseline，M18/M19 DEFERRED，含 SI-1/PA-1/PA-1R 与 Personal Scale Baseline 节）
 - `roadmap/M0_M11_DOCUMENT_MATRIX.md` — DOC-R1 inventory（M0-M11 文档分类与恢复判定）
 - `roadmap/DOCUMENT_RECOVERY_M0_M11.md` — DOC-R1 最终报告（inventory/重建/修正/验证结果/remaining risks）
 - `audits/SYSTEM_AUDIT_M0_M11.md` — SA-1 Pre-M12 全系统审计与加固（2026-08-20；Audit Coverage Matrix / BLOCKER+MAJOR+MINOR findings / Fault Injection evidence / 延期技术债 / PASS + M12 READY）
