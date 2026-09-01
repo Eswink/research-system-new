@@ -193,9 +193,13 @@ def test_gpu_profile_keeps_network_none(
 ) -> None:
     workspace = tmp_path.joinpath("ws")
     workspace.mkdir(exist_ok=True)
+    command = (
+        "python -c \"import os; assert os.listdir('/sys/class/net') == ['lo'];"
+        " print('net none ok')\""
+    )
     spec = ExecutionSpec(
         backend_kind="DOCKER",
-        command="python -c \"import os; assert os.listdir('/sys/class/net') == ['lo']; print('net none ok')\"",
+        command=command,
         resource_profile="gpu-small",
         workspace_path=str(workspace),
     )
