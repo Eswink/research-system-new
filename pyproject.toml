@@ -102,6 +102,7 @@ pythonpath = ["."]
 addopts = ["--strict-config", "--strict-markers"]
 markers = [
     "requires_docker: tests that need a running Docker daemon and the sandbox image",
+    "requires_gpu: tests that need a real NVIDIA GPU + the pinned GPU sandbox image (M17)",
     "requires_live_llm: tests that need a real LLM endpoint (explicit manual runs only)",
     "postgres: tests that need a running PostgreSQL (docker-compose postgres service)",
     "requires_collector: tests that need the pinned OTel collector (docker-compose.m15.yml)",

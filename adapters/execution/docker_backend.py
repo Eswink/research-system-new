@@ -20,6 +20,7 @@ ExecutionRun.compute_usage_summary["image_digest"] 供 ReproducibilityAudit。
 
 from __future__ import annotations
 
+import json
 import tempfile
 import time
 import uuid
@@ -30,7 +31,12 @@ from typing import Any
 import docker
 from docker.errors import APIError, DockerException, ImageNotFound
 
-from adapters.execution.profiles import ResourceLimits, resolve_resource_profile
+from adapters.execution.profiles import (
+    ResourceLimits,
+    is_gpu_profile,
+    resolve_gpu_requirements,
+    resolve_resource_profile,
+)
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import OperationOutcome, OperationScope
 from packages.application.ports.errors import (
@@ -57,6 +63,19 @@ CONTAINER_NAME_PREFIX = "research-os-exec"
 DEFAULT_IMAGE = "research-os-sandbox:m9-sandbox-v1"
 STDOUT_LOG = "stdout.log"
 STDERR_LOG = "stderr.log"
+# M17 GPU 契约文件：GPU profile 执行时，容器内实验入口把自己的设备事实
+# （设备名/驱动/CUDA/框架/峰值显存/是否 OOM）写入 workspace 根目录的该文件；
+# 执行后端解析其中有界子集并入 compute_usage_summary（不新增第二真相源，
+# 仍走 ExecutionRun → compute_usage_summary 单一通道）。
+GPU_FACTS_FILE = "gpu_runtime_facts.json"
+_GPU_FACT_KEYS = {
+    "gpu_device_name": str,
+    "driver_version": str,
+    "cuda_runtime_version": str,
+    "framework_version": str,
+    "peak_gpu_memory_bytes": int,
+    "gpu_elapsed_seconds": int,
+}
 _WAIT_STEP_SECONDS = 0.5
 _TMPFS_MOUNT = "/tmp"
 _TMPFS_OPTS = "rw,noexec,nosuid,size=64m,mode=1777"
@@ -98,7 +117,19 @@ def _build_run(  # noqa: PLR0913 - ExecutionRun 字段映射，参数对象会�
     stdout: bytes,
     stderr: bytes,
     image_digest: str | None,
+    extra_summary: dict[str, object] | None = None,
+    failure_category: FailureCategory | None = None,
 ) -> ExecutionRun:
+    summary: dict[str, object] = {
+        "exit_code": exit_code,
+        "oom_killed": oom_killed,
+        "elapsed_seconds": round(time.monotonic() - started_mono, 3),
+        "image_digest": image_digest,
+    }
+    if extra_summary:
+        summary.update(extra_summary)
+    if failure_category is None and status is ExecutionStatus.FAILED:
+        failure_category = FailureCategory.EXECUTION_FAILURE
     return ExecutionRun(
         run_id=f"exec-{uuid.uuid4().hex}",
         spec=spec,
@@ -106,21 +137,66 @@ def _build_run(  # noqa: PLR0913 - ExecutionRun 字段映射，参数对象会�
         started_at=started,
         completed_at=Timestamp.now(),
         exit_code=exit_code,
-        failure_category=(
-            FailureCategory.EXECUTION_FAILURE if status is ExecutionStatus.FAILED else None
-        ),
+        failure_category=failure_category,
         stdout_digest=Digest.of_bytes(stdout),
         stderr_digest=Digest.of_bytes(stderr),
-        compute_usage_summary={
-            "exit_code": exit_code,
-            "oom_killed": oom_killed,
-            "elapsed_seconds": round(time.monotonic() - started_mono, 3),
-            "image_digest": image_digest,
-        },
+        compute_usage_summary=summary,
     )
 
 
-def _map_docker_error(exc: Exception) -> PortError:
+def _gpu_failure_category(spec: ExecutionSpec, facts: dict[str, object]) -> FailureCategory | None:
+    """GPU profile 失败的细分类（WP4a）：OOM 优先于设备不可用。
+
+    依据只来自容器内实验自己报告的 gpu_runtime_facts.json（受控字段），
+    不猜 stderr 文本。非 GPU profile 永远返回 None。
+    """
+    if not is_gpu_profile(spec.resource_profile):
+        return None
+    if facts.get("gpu_oom") is True:
+        return FailureCategory.GPU_OOM
+    if facts.get("cuda_available") is False or facts.get("gpu_device_name") is None:
+        return FailureCategory.GPU_UNAVAILABLE
+    return None
+
+
+def _parse_gpu_facts(workspace: Path) -> dict[str, object]:
+    """读取容器内报告的 GPU 事实（有界白名单子集；缺失/畸形 → 空 dict）。"""
+    try:
+        raw = json.loads((workspace / GPU_FACTS_FILE).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    facts: dict[str, object] = {}
+    for key, expected in _GPU_FACT_KEYS.items():
+        value = raw.get(key)
+        if isinstance(value, expected) and not isinstance(value, bool):
+            facts[key] = value
+    # 显式布尔：只有容器内确实报告了才携带
+    for key in ("gpu_oom", "cuda_available"):
+        if isinstance(raw.get(key), bool):
+            facts[key] = raw[key]
+    return facts
+
+
+def _gpu_assert_environment(spec: ExecutionSpec) -> dict[str, str]:
+    """把 GPU profile 的执行期契约注入容器环境（WP3c 第 3 层断言输入）。"""
+    requirements = resolve_gpu_requirements(spec.resource_profile or "")
+    return {
+        "RESEARCHOS_GPU_ASSERT_DEVICE_COUNT": str(requirements.device_count),
+        "RESEARCHOS_GPU_ASSERT_MIN_VRAM_BYTES": str(requirements.min_total_vram_bytes),
+        "RESEARCHOS_GPU_ASSERT_MIN_CUDA": requirements.min_cuda_runtime_version,
+        "RESEARCHOS_GPU_ASSERT_FRAMEWORK": requirements.framework,
+    }
+
+
+def _map_docker_error(exc: Exception, *, gpu_profile: bool = False) -> PortError:
+    """Docker 异常 → PortError；GPU profile 下创建期失败分类为 GPU_UNAVAILABLE。
+
+    M17 第 2 层无静默 CPU fallback 防线：DeviceRequests 无法满足（无 nvidia
+    runtime / 设备不可见）是 GPU 基础设施失败，绝不降级为 CPU 重试。
+    """
+    category = None
     if isinstance(exc, ImageNotFound):
         return PermanentPortError(
             "execution image not found",
@@ -132,14 +208,14 @@ def _map_docker_error(exc: Exception) -> PortError:
                 "docker API rejected request",
                 failure_category=FailureCategory.CONFIGURATION,
             )
-        return TransientPortError(
-            "docker API unavailable",
-            failure_category=FailureCategory.WORKSPACE_FAILURE,
+        category = (
+            FailureCategory.GPU_UNAVAILABLE if gpu_profile else FailureCategory.WORKSPACE_FAILURE
         )
-    return TransientPortError(
-        "docker daemon unavailable",
-        failure_category=FailureCategory.WORKSPACE_FAILURE,
+        return TransientPortError("docker API unavailable", failure_category=category)
+    category = (
+        FailureCategory.GPU_UNAVAILABLE if gpu_profile else FailureCategory.WORKSPACE_FAILURE
     )
+    return TransientPortError("docker daemon unavailable", failure_category=category)
 
 
 class DockerExecutionBackend(ExecutionBackend):
@@ -220,6 +296,7 @@ class DockerExecutionBackend(ExecutionBackend):
             stdout, stderr = self._collect_logs(container_id)
             self._write_workspace_logs(workspace, stdout, stderr)
             status = _final_status(timed_out, exit_code, was_cancelled)
+            gpu_facts = _parse_gpu_facts(workspace) if is_gpu_profile(spec.resource_profile) else {}
             return _build_run(
                 spec,
                 started,
@@ -230,9 +307,17 @@ class DockerExecutionBackend(ExecutionBackend):
                 stdout=stdout,
                 stderr=stderr,
                 image_digest=self._image_digest,
+                extra_summary=gpu_facts or None,
+                failure_category=(
+                    _gpu_failure_category(spec, gpu_facts)
+                    if status is ExecutionStatus.FAILED
+                    else None
+                ),
             )
         except (APIError, DockerException) as exc:
-            raise _map_docker_error(exc) from exc
+            raise _map_docker_error(
+                exc, gpu_profile=is_gpu_profile(spec.resource_profile)
+            ) from exc
         finally:
             if container_id is not None:
                 self._remove_container(container_id)
@@ -277,11 +362,22 @@ class DockerExecutionBackend(ExecutionBackend):
             "Memory": limits.memory_bytes,
             "PidsLimit": limits.pids_limit,
         }
+        # M17 WP3b: DeviceRequests is the ONLY GPU delta (WP0 T2/T4 evidence).
+        # Everything else — network none, CapDrop ALL, readonly rootfs,
+        # no-new-privileges, tmpfs, limits — stays identical to CPU profiles
+        # (asserted by the WP7b security suite).
+        if is_gpu_profile(spec.resource_profile):
+            host_config["DeviceRequests"] = [
+                {"Driver": "nvidia", "Count": 1, "Capabilities": [["gpu", "compute", "utility"]]}
+            ]
+        environment = dict(spec.environment)
+        if is_gpu_profile(spec.resource_profile):
+            environment.update(_gpu_assert_environment(spec))
         container = self._api.create_container(
             image=self._image,
             command=["/bin/sh", "-c", spec.command],
             host_config=host_config,
-            environment=dict(spec.environment),
+            environment=environment,
             working_dir=spec.workdir,
             name=f"{CONTAINER_NAME_PREFIX}-{uuid.uuid4().hex[:12]}",
             detach=True,

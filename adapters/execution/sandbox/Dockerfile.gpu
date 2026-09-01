@@ -1,0 +1,26 @@
+# Research OS M17 GPU 实验沙盒镜像（WP3a）。
+#
+# 供应链 pin（见 UPSTREAM_COMPONENTS.yaml research_os_gpu_base_image 与
+# docs/references/upstream/M17_GPU_RUNTIME_QUALIFICATION.md）：
+# - 基座 pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime 按 OCI index digest
+#   pin（docker pull 实测 RepoDigest，2026-09-02）；torch 2.9.1+cu128 预装，
+#   构建期零联网安装；sm_89 已实测验证（真实 GEMM）。
+# - 每次 execute 由 DockerExecutionBackend 解析实际 image digest 写入
+#   ExecutionRun.compute_usage_summary["image_digest"]，供 ReproducibilityAudit。
+#
+# 镜像内安全基线：非 root 用户（uid 1000）、/workspace 工作目录。
+# 容器级隔离由运行时 host_config 施加（network none / cap drop ALL /
+# no-new-privileges / readonly rootfs / tmpfs /tmp / CPU-mem-pids 限额 /
+# DeviceRequests——唯一 GPU delta），不在此镜像内重复声明。
+# WP0 T2 实测：readonly rootfs 与 nvidia hook 无冲突，基线全保留。
+FROM pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime@sha256:7b324d212a4450795b49edba9949b7cdc72429148a64e974334bfe5774d51385
+
+RUN useradd --create-home --uid 1000 --shell /bin/bash researcher \
+    && mkdir -p /workspace \
+    && chown researcher:researcher /workspace
+
+USER researcher
+WORKDIR /workspace
+
+ENTRYPOINT []
+CMD ["/bin/sh"]

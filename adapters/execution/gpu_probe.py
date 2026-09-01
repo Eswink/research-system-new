@@ -198,8 +198,13 @@ def _run_probe_container(
     deadline = monotonic() + config.probe_timeout_seconds
     while monotonic() < deadline:
         state = client.api.inspect_container(cid).get("State") or {}
-        if not bool(state.get("Running")):
-            return cid if int(state.get("ExitCode") or 1) == 0 else None
+        running = bool(state.get("Running"))
+        exit_code = state.get("ExitCode")
+        # ExitCode 0 is falsy: never fold it through `or` (0 != unknown here).
+        if not running and exit_code is not None and int(exit_code) == 0:
+            return cid
+        if not running and exit_code is not None:
+            return None
         sleep(0.5)
     client.api.kill(cid)
     return None
