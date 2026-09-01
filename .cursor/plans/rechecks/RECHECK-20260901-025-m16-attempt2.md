@@ -128,3 +128,18 @@ AC-01..AC-22 经 attempt-2 重判：attempt-1 曾据以判 PASS 的 AC-02/03/08/
   故障注入 / 遥测 / 确定性回归为证据）。
 - 停在阶段边界：不自动进入 M17/M18。剩余债务见 BACKLOG（M17：BUSY/max_concurrency
   接线、phase 内并行分发、远程分发 composition 选择；非 M16 扫描 high 另立计划）。
+
+## 密封深度扫描（attempt-2 收尾，2026-09-01）
+
+- scanId `scan-2026-09-01T10-27-41.877Z-9e050066064d`，seal
+  `sha256:399b1c6a7f595f93f0282e281bd452f152df190a573611a39b2ded96ae182549`。
+- 38 findings（6 high / 27 medium / 5 low）；依赖扫描完成（180 包，1 advisory）。
+- **6 个 high 全部落在非 M16 代码**：`scratch/audit_*`（本地审计脚本）、
+  `tools/upstream-spikes/S2_llm_construction.py`、`examples/experiments/m12_reference_classification.py`、
+  `adapters/research_tools/parsing.py`（M8 解析器）。M16 整改面零 high；上一轮
+  `adapters/sqlite/db.py` PRAGMA high 已清。
+- **覆盖仍 partial / runStatus inconclusive**（threatModel 0 entry points、
+  findingDiscovery businessLogicCandidates 0）——扫描器未解析出本应用以工厂函数
+  （`create_app`/`create_worker_app`）装配的 FastAPI 入口，属扫描器能力边界，
+  非本轮可闭合。**不得据此宣称项目安全**；完整覆盖基线待扫描器入口解析改进后重建。
+- 非 M16 的 6 个 high 已登记 BACKLOG，另立计划处置。
