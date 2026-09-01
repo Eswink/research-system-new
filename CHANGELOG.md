@@ -26,6 +26,26 @@
 - 门禁：`.importlinter.worker` + 架构测试；tests/distributed 进入 CI
   （REQUIRE_POSTGRES fail-closed）。
 
+### M16 attempt-2 独立对抗复审整改（2026-09-01）
+
+- 调度权威：`claim` 服务端强制 worker 状态（READY）+ 已注册 capabilities/
+  partitions 子集校验（fail closed）；drain 不再纯协作。
+- Artifact 信任边界：`ArtifactStore.meta` + `ExecutionJobQueue.assert_active_lease`
+  新端口；上传/下载按租约三元组门控 + task-scoped artifact id（修内容寻址跨任务
+  碰撞）+ `record_result` provenance 校验 + download per-lease ACL。
+- 生产 composition：`worker_gateway/composition.py` + `__main__.py` 入口；
+  API lifespan 启动 `WorkerReaperScheduler`（gate 在 worker_registry）。
+- 执行期续租：`WorkflowEngine.renew_lease`（PG/SQLite/Fake，不轮换 lease_id/fence）
+  + 网关 `/tasks/{id}/renew` + worker 续租守护线程。
+- Usage 诚实化：删除死代码 `remote_execution_entries`；远程时长服务端实测
+  `elapsed_seconds` 经单一 experiment 路径入账。
+- 证据完整性：场景 A/C/D/F/J + 时钟偏移改为真实断言；修复 NetProxy 双向泵送
+  短路 bug；并发 claim 测试改真并发；harness worker 子进程零 DB 凭据 + 单测。
+- 遥测/脱敏：M16 worker/remote 通道纳入端到端 OTLP 字节扫描 canary；通用错误
+  handler `str(exc)` 过 `redact_text`。
+- 治理：attempt-1 recheck 一处不实声明（harness DSN"已移除"）更正；
+  `RECHECK-20260901-025-m16-attempt2.md`。
+
 ## 工程约束变更（2026-08-30）
 
 - **单文件行数阈值放宽为渐进式门禁**（Python/TypeScript 一致）：≤300 行通过、

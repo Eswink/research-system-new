@@ -171,6 +171,9 @@ PASS 判定经独立复审证伪并修复，2026-08-28 重新独立复审重判 
 | RetrievalIndex 持久化 / 真实 embedding | P2 | M12 前评估 | M10 交付 `InMemoryRetrievalIndex`（确定性 token 检索，可重建投影）；真实语义检索与 embedding provider 绑定属 future dependency，不实现（**保留**） |
 | Memory/Evidence 内容级数据治理 | P2 | M19 | M10 gate 在 commit 前复用 `domain.redaction` 脱敏 secret 样式内容（Bearer/API key/URL 凭据）；完整 content policy、私有 CoT 识别与数据治理规则属 M19（**保留**） |
 | Memory/Claim 并发写入控制 | P2 | M14 | M10 为单进程语义（Fake 内存实现 + 同 id 重复 commit 拒绝）；跨进程并发依赖 M14 PostgreSQL 事务语义。**清偿（2026-08-28 收口轮）：** `adapters/postgres/evidence_ledger.py` register_claim/source/evidence ON CONFLICT DO NOTHING + rowcount 校验 + update_claim rowcount 校验 + _require_verifiable 同事务 FOR SHARE；`adapters/postgres/migrations/004_memory_state.sql`；`adapters/postgres/memory_store.py::PostgresMemoryStore`（原子 commit ON CONFLICT DO NOTHING + rowcount；deactivate/delete 条件写 + rowcount）；`services/api/composition.py` ApiDeps.memory 槽位 + PG 装配注入；`tests/postgres/test_memory_claim_concurrency.py`（5 tests PASS：同提案竞争 commit 恰一赢；delete 0 行抛错；deactivate 幂等；claim 竞争检测；claim update unknown 拒绝）；`tests/contracts/registry.py` memory_store 加入 PG 实现 |
+| Worker BUSY/max_concurrency 接线 | P2 | M17 | M16 attempt-2 后 claim 强制 state ∈ READY，但 CLAIM/JOB_SETTLED 转换与 `max_concurrency` 并行度未接线（worker loop 单线程，BUSY 从不进入）。多任务/worker 并行分发属 M17（**保留**） |
+| Phase 内并行分发 + 远程分发 composition 选择 | P2 | M17 | M16 交付跨 run 并行；run 内 phase/session 仍顺序执行，且 Control Plane 实验编排当前走 FakeAgentRuntime，`RemoteExecutionBackend` 尚无生产选择点（gateway/reaper 已有入口）。远程分发接线属 M17（**保留**） |
+| 非 M16 深度扫描 high（scratch/、tools/upstream-spikes/、M12 示例、M8 解析器） | P2 | 另立计划 | 首次密封深度扫描 7 high 中 6 个落在非 M16 代码；M16 项已清。需一次覆盖完整的深度扫描建立基线后另立计划处置（**保留**） |
 
 > M9 已清偿（2026-08-15，证据见 `docs/roadmap/M9_COMPLETION_RECORD.md`）：
 > `DockerWorkspace 容器链路全量验证`（裁决 mapping-only + 真实链路由

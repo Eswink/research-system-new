@@ -998,3 +998,11 @@ Docker-over-TCP，Temporal 重评条件未触发）、遥测闭集增量 + Budge
 `remote-exec` 记账、Console 只读 cluster 视图、`.importlinter.worker` 门禁。
 PostgreSQL 仍是唯一 canonical；迁移 008 全部 additive；agent-session 任务
 默认 kind 不受影响。证据见 `docs/roadmap/M16_COMPLETION_RECORD.md`。
+
+> **attempt-2 独立对抗复审（2026-09-01）**：第二次对抗复审发现上述交付中
+> claim 未服务端强制 worker 状态/能力、跨任务 artifact provenance 缺失、
+> `remote-exec` 记账为死代码、gateway/reaper/RemoteBackend 无生产组装点、
+> 多个 E2E 场景弱证/空转，以及 attempt-1 记录一处不实声明（harness DSN 注入
+> 未真正移除）。已全部整改（claim 强制 + provenance/ACL + 续租 + composition
+> 入口 + 真实断言 + 端到端 canary），m0 23 检查全绿、distributed 24、5 对抗
+> 探针全过。详见 `RECHECK-20260901-025-m16-attempt2.md`。M16 维持 DONE。

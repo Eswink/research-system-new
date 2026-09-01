@@ -97,3 +97,33 @@ WIP（parallel-agent-orchestration 技能、NPM 校验、`.cursor/knowledge` 等
 - 后续：待覆盖完整的一次深度扫描确立可信基线后，再评估是否回退该 getattr 与
   其余 pattern-gate 规避；`scanner_enobufs` 为提交期审计缓冲耗尽的覆盖告警，
   非 finding，不能由历史扫描清除。
+
+## attempt-2 独立对抗复审更正（2026-09-01）
+
+第二次独立对抗复审（不采信 attempt-1 结论，以代码 / PostgreSQL canonical /
+真实 OS 子进程 / 真实网络 / 实际远程执行 / 故障注入 / 遥测 / 确定性回归为事实
+来源）发现本记录若干声明过度，已回退 M16 至 VERIFYING 并整改，现更正如下
+（详见 `.cursor/plans/rechecks/RECHECK-20260901-025-m16-attempt2.md`）：
+
+- **DoD 2（认证）/ DoD 14（drain）**：claim 路径此前不强制 worker 状态与已注册
+  能力（客户端自报即放行，drain 纯协作）。已补服务端 `_require_schedulable`
+  （state ∈ READY + capabilities/partitions ⊆ 注册事实），fail closed。
+- **DoD 8/15（Artifact 完整性）**：AC-08 声称"跨任务 artifact 拒绝且有测试"不实
+  ——上传无 provenance、内容寻址 id 跨任务碰撞。已加 `assert_active_lease` 租约
+  门控 + task-scoped artifact id + `record_result` provenance 校验 + download ACL，
+  并补攻击用例与探针。
+- **DoD 19（Usage）**：`remote_execution_entries` 实为无生产调用点的死代码；
+  已删除，远程执行时长改由 `RemoteExecutionBackend` 服务端实测 `elapsed_seconds`
+  经单一 experiment 路径入账（无第二真相）。
+- **DoD 21（E2E 证据）**：场景 A/C/D/F/J 与时钟偏移测试存在弱证/空转（顺序 drain
+  冒充并发、代理未真正路由 worker、死旋钮等）。已全部改为真实断言，并修复
+  NetProxy 双向泵送短路 bug；新增执行期租约续期（renew_lease）使 failover 场景确定化。
+- **生产 composition**：gateway/reaper/RemoteBackend 此前无生产组装点。已补
+  `worker_gateway/composition.py` + `__main__.py` 入口 + lifespan 启动 reaper；
+  诚实声明 Control Plane 实验编排当前仍走 FakeAgentRuntime，远程分发选择属 M17。
+- **attempt-1 记录不实**：worker_harness DSN 注入"已移除"为假，已真正移除并加
+  零凭据单测；attempt-1 recheck 正文保留为历史并加更正行。
+
+整改后复验：m0 profile 23 检查全绿；`tests/distributed` 24 passed（真实子进程+PG）；
+contracts+architecture+api+worker+observability+tooling 合并 1318 passed / 2 skipped；
+ruff/format/mypy 干净；5 个独立对抗探针全过。**M16 = PASS**（attempt-2 证据）。

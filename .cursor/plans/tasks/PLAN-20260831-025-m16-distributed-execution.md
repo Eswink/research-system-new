@@ -4,7 +4,7 @@ slug: m16-distributed-execution
 title: M16 Distributed Execution + Remote Sandbox/Worker
 status: DONE
 created_at: 2026-08-31
-updated_at: 2026-08-31
+updated_at: 2026-09-01
 cursor_plan_uri: .cursor/plans/m16_分布式执行_1657b1d6.plan.md
 owners:
   - root-agent
@@ -12,7 +12,7 @@ authorization:
   source: cursor-plan
   ref: "用户已批准 M16 计划(m16_分布式执行_1657b1d6.plan.md)并要求循环执行至完成"
 subagent_parallel_limit: 3
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260831-025-m16.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260901-025-m16-attempt2.md
 memory_entries: []
 ---
 
@@ -175,6 +175,8 @@ Subagent 默认不启用。需要并行时，每个 wave 最多 3 个；多 wave
 | 2026-08-31 | DRAFT | IN_PROGRESS | 用户批准并要求循环执行 | `m16_分布式执行_1657b1d6.plan.md` |
 | 2026-08-31 | IN_PROGRESS | VERIFYING | WP1–WP4 实施完成；m0 门禁修复后全绿；三 reviewer 复审启动 | EV-01..EV-11 |
 | 2026-08-31 | VERIFYING | DONE | 三 reviewer 结论：arch PASS(1 major)、security FAIL(1 blocker+2 major)、verif PASS(1 major)；全部修复（ALL_PLAN 投影、status 闭集、身份绑定）+ 回归固化；全门禁重跑全绿 | `RECHECK-20260831-025-m16` |
+| 2026-09-01 | DONE | VERIFYING | 独立对抗复审（attempt 2）发现 5 MAJOR + 5 MINOR：claim 无服务端状态/能力强制、harness DSN 注入未移除（attempt-1 记录不实）、分布式面无生产 composition、跨任务 artifact 不拒绝不测试、remote-exec usage 死代码；回退整改 | 本会话复审报告；`RECHECK-20260901-025-m16-attempt2`（待建） |
+| 2026-09-01 | VERIFYING | DONE | attempt-2 整改完成：F-1..F-10 全关闭（claim 强制/provenance+ACL+碰撞/生产 composition/usage 诚实/证据完整性/续租/契约对齐/canary/脱敏）；m0 23 检查全绿、distributed 24、合并 1318 passed/2 skip、5 对抗探针全过；attempt-1 不实声明已更正 | `RECHECK-20260901-025-m16-attempt2` |
 
 ## 影响报告
 
