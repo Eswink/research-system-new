@@ -167,6 +167,12 @@ class FakeExecutionJobQueue(FakeBase):
         job = self._state.jobs.get(task_id)
         return bool(job and job.cancel)
 
+    def claimed_by(self, task_id: str) -> str | None:
+        """M17 timeout classification input: worker holding/that held the job."""
+        self._enter("claimed_by", task_id)
+        job = self._state.jobs.get(task_id)
+        return job.worker_id if job is not None else None
+
     # --- test helpers (not part of the Port) ---
     def seed(self, task_id: str, spec: ExecutionSpec, *, capability: str = "docker") -> None:
         """Register a job under an existing task_id (mirrors PG enqueue writing

@@ -8,7 +8,10 @@ resource_profile 是 Domain 层弱类型字符串（ExecutionSpec.resource_profi
 安全边界（AGENTS.md §9 / WORKSPACE_RUNTIME.md §6 Trust Profiles）：
 - 所有 profile 均默认 deny 网络（容器 network none）、非 privileged、
   capability 全 drop、no-new-privileges；
-- 本表只控制 CPU/memory/pids 数值，不开放任何宿主资源。
+- 本表只控制 CPU/memory/pids 数值与 GPU 需求契约，不开放任何宿主资源。
+  GPU profile 与 CPU profile 的 host_config 差异**只有** DeviceRequests
+  （WP0 T2/T4 实测 readonly rootfs 与 nvidia hook 无冲突，见
+  docs/references/upstream/M17_GPU_RUNTIME_QUALIFICATION.md）。
 """
 
 from __future__ import annotations
@@ -16,11 +19,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from packages.application.ports.errors import InvalidInputError
+from packages.domain.workers import GPU_CAPABILITY
+from packages.domain.workspace import ExecutionSpec
 
 DEFAULT_PROFILE = "default"
+# 非 GPU 执行平面的调度 token：与 worker 默认声明（services/worker
+# __main__ RESEARCHOS_WORKER_CAPABILITIES 默认 "docker"）一致。
+# M17 修复：原 `spec.backend_kind.lower()` 派生出 "sandbox"，真实实验的
+# 远程分发永远匹配不到 worker —— 见 RemoteExecutionBackend._submit。
+DOCKER_CAPABILITY = "docker"
 
 _SECOND_NANOS = 1_000_000_000
 _MIB = 1024 * 1024
+_GIB = 1024 * _MIB
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +41,29 @@ class ResourceLimits:
     cpu_nanos: int
     memory_bytes: int
     pids_limit: int
+
+
+@dataclass(frozen=True, slots=True)
+class GpuRequirements:
+    """GPU profile 的执行期显式契约（WP3c 第 3 层断言依据）。
+
+    调度键只有单 token `gpu`（ADR-0029）：单 worker 环境为 VRAM/CUDA
+    版本发明第二套数值调度谓词属于 theater。这些需求由
+    DockerExecutionBackend 注入容器环境，实验入口在设备上强制断言。
+    """
+
+    device_count: int
+    min_total_vram_bytes: int
+    min_cuda_runtime_version: str
+    framework: str
+
+
+@dataclass(frozen=True, slots=True)
+class GpuProfile:
+    """GPU profile = 容器限额（含 DeviceRequests 语义）+ 执行期契约。"""
+
+    limits: ResourceLimits
+    requirements: GpuRequirements
 
 
 # fmt: off
@@ -50,16 +84,80 @@ _RESOURCE_PROFILES: dict[str, ResourceLimits] = {
         pids_limit=1024,
     ),
 }
+
+# GPU profile 限额：CPU/RAM 是宿主侧容器限额；显存契约由 requirements 表达
+# （DeviceRequests 与计数由 DockerExecutionBackend 按 GPU profile 注入）。
+_GPU_PROFILES: dict[str, GpuProfile] = {
+    "gpu-small": GpuProfile(
+        limits=ResourceLimits(
+            cpu_nanos=4 * _SECOND_NANOS,          # 4 vCPU
+            memory_bytes=8 * _GIB,                # 8 GiB host RAM
+            pids_limit=512,
+        ),
+        requirements=GpuRequirements(
+            device_count=1,
+            min_total_vram_bytes=6 * _GIB,        # 契约按设备总量断言
+            min_cuda_runtime_version="12.8",
+            framework="torch",
+        ),
+    ),
+    # 受控 OOM 探针（WP4b）：同 gpu-small 限额；分块分配上限在容器内按
+    # 实测 free VRAM 动态计算，这里只表达最低入场契约。
+    "gpu-oom-probe": GpuProfile(
+        limits=ResourceLimits(
+            cpu_nanos=2 * _SECOND_NANOS,
+            memory_bytes=8 * _GIB,
+            pids_limit=512,
+        ),
+        requirements=GpuRequirements(
+            device_count=1,
+            min_total_vram_bytes=6 * _GIB,
+            min_cuda_runtime_version="12.8",
+            framework="torch",
+        ),
+    ),
+}
 # fmt: on
 
 
 def resolve_resource_profile(name: str | None) -> ResourceLimits:
     """解析 profile 名称；未知名称是调用方 bug（InvalidInputError）。"""
-    profile_name = name or DEFAULT_PROFILE
+    gpu = _GPU_PROFILES.get(name or DEFAULT_PROFILE)
+    if gpu is not None:
+        return gpu.limits
     try:
-        return _RESOURCE_PROFILES[profile_name]
+        return _RESOURCE_PROFILES[name or DEFAULT_PROFILE]
     except KeyError:
         raise InvalidInputError(
-            f"unknown resource profile {profile_name!r}; "
-            f"known profiles: {sorted(_RESOURCE_PROFILES)}"
+            f"unknown resource profile {name!r}; "
+            f"known profiles: {sorted(set(_RESOURCE_PROFILES) | set(_GPU_PROFILES))}"
         ) from None
+
+
+def is_gpu_profile(name: str | None) -> bool:
+    """该 profile 是否要求 GPU（决定 DeviceRequests 与调度 token）。"""
+    return (name or DEFAULT_PROFILE) in _GPU_PROFILES
+
+
+def resolve_gpu_requirements(name: str) -> GpuRequirements:
+    """GPU profile 的执行期契约；非 GPU profile 是调用方 bug。"""
+    try:
+        return _GPU_PROFILES[name].requirements
+    except KeyError:
+        raise InvalidInputError(
+            f"resource profile {name!r} is not a GPU profile; "
+            f"known GPU profiles: {sorted(_GPU_PROFILES)}"
+        ) from None
+
+
+def derive_required_capability(spec: ExecutionSpec) -> str:
+    """spec → 调度 token（M17 WP2，修复 backend_kind.lower() 缺陷）。
+
+    GPU profile → `gpu`；其余 → `docker`（worker 默认声明的执行平面
+    token）。未知 profile fail-closed（与 resolve_resource_profile 一致）。
+    """
+    if is_gpu_profile(spec.resource_profile):
+        return GPU_CAPABILITY
+    if spec.resource_profile is None or spec.resource_profile in _RESOURCE_PROFILES:
+        return DOCKER_CAPABILITY
+    raise InvalidInputError(f"unknown resource profile {spec.resource_profile!r}")

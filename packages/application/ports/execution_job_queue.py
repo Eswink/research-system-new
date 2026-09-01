@@ -106,6 +106,16 @@ class ExecutionJobQueue(Protocol):
         """Current settled outcome, or None while the job is still in flight."""
         ...
 
+    def claimed_by(self, task_id: str) -> str | None:
+        """The worker currently holding (or that held) the job's lease.
+
+        M17 timeout classification: a GPU job that times out while NEVER
+        claimed is GPU_UNAVAILABLE (no worker could run it), while a
+        claimed-then-slow job is a plain timeout. `None` means unclaimed
+        or unknown.
+        """
+        ...
+
     def record_result(self, result: ExecutionJobResult) -> None:
         """Persist a worker's execution result (gateway calls after fence check)."""
         ...

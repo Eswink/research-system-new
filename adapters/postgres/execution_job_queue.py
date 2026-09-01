@@ -307,3 +307,13 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
             "SELECT cancel_requested FROM execution_jobs WHERE task_id = %s", (task_id,)
         ).fetchone()
         return bool(row and row["cancel_requested"])
+
+    def claimed_by(self, task_id: str) -> str | None:
+        """M17: the `leases` row is the ownership authority — read it."""
+        self._ensure_open()
+        row: Any = self._conn.execute(
+            "SELECT worker_id FROM leases WHERE task_id = %s", (task_id,)
+        ).fetchone()
+        if row is None or row["worker_id"] is None:
+            return None
+        return str(row["worker_id"])

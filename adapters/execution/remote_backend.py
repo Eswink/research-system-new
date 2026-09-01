@@ -7,10 +7,12 @@ single canonical queue, polls to a deadline, verifies the worker's output
 bundle through ArtifactStore, materializes it back into the local workspace,
 and normalizes an `ExecutionRun`. On timeout it requests cooperative cancel.
 
-Honest scope note (M16 §9): `ExecutionSpec` carries no run/capability context,
-so the job is enqueued under a generated job-scoped run id with capability
-derived from `backend_kind` and partition from that run id. Phase-internal
-parallel dispatch is M17; cross-run parallelism is what this enables.
+M17: the scheduling capability is derived from the spec's resource profile
+(`derive_required_capability`), never from `backend_kind` — the old
+`backend_kind.lower()` derivation produced `"sandbox"`, which no real worker
+declares, so remote dispatch could never be claimed. A GPU-profile job that
+times out while never claimed is classified GPU_UNAVAILABLE (GPU
+infrastructure failure — never a silent CPU fallback).
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ from collections.abc import Callable
 from pathlib import Path
 from uuid import uuid4
 
+from adapters.execution.profiles import derive_required_capability, is_gpu_profile
 from adapters.workspace.bundle import BundleError, bundle_from_directory, bundle_to_directory
 from packages.application.observability.attributes import worker_ref
 from packages.application.ports.artifact_store import ArtifactStore
@@ -77,7 +80,7 @@ class RemoteExecutionBackend:
         workspace = Path(spec.workspace_path) if spec.workspace_path else Path(".")
         started = Timestamp.now()
         task_id = self._submit(spec, workspace)
-        outcome = self._await(task_id, timeout_seconds, cancelled)
+        outcome = self._await(spec, task_id, timeout_seconds, cancelled)
         return self._normalize(spec, workspace, started, outcome)
 
     # --- submit ---
@@ -92,7 +95,10 @@ class RemoteExecutionBackend:
         )
         self._artifacts.put(artifact, bundle)
         run_id = str(uuid4())
-        capability = spec.backend_kind.lower()
+        # M17 fix: capability from the resource profile ("gpu" / "docker"),
+        # matching what real workers declare. The previous
+        # `spec.backend_kind.lower()` produced "sandbox" — unclaimable.
+        capability = derive_required_capability(spec)
         idempotency_key = str(
             digest_of({
                 "spec": spec.command,
@@ -113,7 +119,11 @@ class RemoteExecutionBackend:
 
     # --- poll ---
     def _await(
-        self, task_id: str, timeout_seconds: int | None, cancelled: Callable[[], bool] | None
+        self,
+        spec: ExecutionSpec,
+        task_id: str,
+        timeout_seconds: int | None,
+        cancelled: Callable[[], bool] | None,
     ) -> ExecutionJobOutcome:
         deadline = self._monotonic() + timeout_seconds if timeout_seconds is not None else None
         while True:
@@ -125,7 +135,18 @@ class RemoteExecutionBackend:
                 return ExecutionJobOutcome(task_id=task_id, status="CANCELLED")
             if deadline is not None and self._monotonic() >= deadline:
                 self._jobs.request_cancel(task_id)
-                return ExecutionJobOutcome(task_id=task_id, status="TIMED_OUT")
+                # M17: a GPU job that timed out while never claimed is a GPU
+                # infrastructure failure (no worker could run it) — never a
+                # silent CPU fallback.
+                timeout_failure = (
+                    FailureCategory.GPU_UNAVAILABLE.value
+                    if is_gpu_profile(spec.resource_profile)
+                    and getattr(self._jobs, "claimed_by", lambda _t: None)(task_id) is None
+                    else None
+                )
+                return ExecutionJobOutcome(
+                    task_id=task_id, status="TIMED_OUT", failure_category=timeout_failure
+                )
             self._sleep(self._poll_step)
 
     # --- normalize ---
@@ -183,11 +204,13 @@ class RemoteExecutionBackend:
     def _map_failure(
         status: ExecutionStatus, outcome: ExecutionJobOutcome
     ) -> FailureCategory | None:
-        if status is not ExecutionStatus.FAILED:
+        if status is ExecutionStatus.SUCCEEDED:
             return None
         if outcome.failure_category:
             try:
                 return FailureCategory(outcome.failure_category)
             except ValueError:
                 return FailureCategory.EXECUTION_FAILURE
-        return FailureCategory.EXECUTION_FAILURE
+        if status is ExecutionStatus.FAILED:
+            return FailureCategory.EXECUTION_FAILURE
+        return None
