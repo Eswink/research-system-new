@@ -103,6 +103,19 @@ sources:
   verified_at: '2026-08-10'
   invalidate_on:
   - plan-mode-change
+- id: cursor-sdk-typescript
+  tier: T1_OFFICIAL
+  title: Cursor TypeScript SDK
+  url: https://cursor.com/docs/sdk/typescript
+  topics:
+  - sdk
+  - orchestration
+  - parallel-agents
+  - model-catalog
+  verified_at: '2026-08-31'
+  invalidate_on:
+  - cursor-major-release
+  - sdk-api-change
 - id: cursor-models
   tier: T1_OFFICIAL
   title: Cursor Models and Pricing

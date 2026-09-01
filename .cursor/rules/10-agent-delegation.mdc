@@ -18,3 +18,4 @@ alwaysApply: true
 - **并行 wave 必须单消息批量启动**：同一 wave 的全部子代理必须在同一个 assistant 回合、同一条消息中一次性发出全部 Task 工具调用块，不得逐个启动、等待上一个完成后才启动下一个（串行化会成倍放大波次耗时）。
 - 子代理之间存在真实数据依赖时属于 sequential 委派，须在回复中说明依赖关系，不得伪装成并行 wave。
 - 委派前先在回复中列出该 wave 的完整清单（每个子代理的职责与输入），再在同一条消息中同时发出全部 Task 工具调用。
+- 需要确定性并发保证时使用显式 `parallel-agent-orchestration` Skill（TypeScript Cursor SDK 编排器）：多个独立顶层 Agent 会话由 Node 进程并发启动，每波同样最多 3 个，`tools` 不含 `task`/`mcp`/`shell`，只读任务专用，且不放宽本条任何 Hook 门禁或上限。该路径不产生会话内子代理，`subagentStart` 计数不适用。

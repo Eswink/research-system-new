@@ -31,12 +31,20 @@ probes:
   - pretool_secret_read_denied
   - dangerous_shell_denied
   - subagent_parallel_wave
+  - sdk_parallel_wave
+  - sdk_model_catalog
   - stop_loop_opt_in
 note: >-
   Runtime evidence distinguishes live Cursor probes from local subprocess regression.
   PASS_WITH_MITIGATION applies only while the documented preToolUse Read binding remains active.
   subagent_parallel_wave is a live/manual probe: open a real agent session and observe whether the
   parent agent emits multiple Task tool calls in a single message when a parallel wave is requested.
+  sdk_parallel_wave and sdk_model_catalog are live/manual probes for the parallel-agent-orchestration
+  Skill (TypeScript @cursor/sdk 1.0.30): sdk_parallel_wave verifies overlapping run intervals across
+  2-3 read-only tasks; sdk_model_catalog verifies Cursor.models.list() availability of the requested
+  model. Both require a real CURSOR_API_KEY supplied out-of-band, are never part of default CI, and
+  their per-account/model results are recorded as qualification/caveat evidence, never as a
+  per-model PASS dimension in this matrix (see docs/references/upstream/CURSOR_SDK_QUALIFICATION.md).
   The runtime-tested matrix deliberately does not record a model dimension: model behavior is sampled
   and non-deterministic, so per-model claims are recorded as caveats in .cursor/knowledge/KNOWN_CAVEATS.md
   instead of being treated as runtime PASS evidence.

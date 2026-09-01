@@ -10,7 +10,7 @@ Framework: **v0.4.0**
 1. `CURSOR_PRIMITIVES.md` — Rule / Skill / Subagent / Hook / MCP / Plugin / Plan Mode 的职责边界。
 2. `HOOKS_REFERENCE.md` — 本项目实际使用的 Hook 事件、输入输出和 fail-open/fail-closed 选择。
 3. `RULES_SKILLS_DESIGN.md` — 什么时候写 Rule，什么时候写 Skill。
-4. `SUBAGENT_DESIGN.md` — 独立复核 Agent 与本项目单 wave 最多 3 个子代理约束。
+4. `SUBAGENT_DESIGN.md` — 独立复核 Agent、单 wave 最多 3 个子代理约束与确定性 SDK 并行编排路径。
 5. `SECURITY_BOUNDARIES.md` — Hooks、MCP、文件和 shell 的安全边界。
 6. `CLOUD_AGENT_COMPATIBILITY.md` — IDE/local 与 Cloud Agent 的 Hook 支持差异。
 7. `KNOWN_CAVEATS.md` — 社区报告的兼容性问题；仅作为风险提示，不视为规范。

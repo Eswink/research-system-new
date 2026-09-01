@@ -40,7 +40,8 @@
 
 以下为父代理模型行为差异观察（非 Cursor 版本/平台事实，不改变官方规范地位）：
 
-- **并行单消息批量遵循差异**：并行子代理要求父代理在同一条消息中发出多个 Task 工具调用；不同模型对此遵循程度不同，弱遵循模型可能把并行 wave 串行化。规则与 sessionStart 注入只能提高遵循率，不构成机制保证。详见 [SUBAGENT_DESIGN.md](SUBAGENT_DESIGN.md) 的"并行启动语义"。
+- **并行单消息批量遵循差异**：并行子代理要求父代理在同一条消息中发出多个 Task 工具调用；不同模型对此遵循程度不同，弱遵循模型可能把并行 wave 串行化。规则与 sessionStart 注入只能提高遵循率，不构成机制保证。需要确定性并发时改用显式 `parallel-agent-orchestration` Skill（SDK 编排器，`docs/references/upstream/CURSOR_SDK_QUALIFICATION.md`）。详见 [SUBAGENT_DESIGN.md](SUBAGENT_DESIGN.md) 的"并行启动语义"与"确定性替代路径"。
+- **SDK 模型目录与账号差异**：`Cursor.models.list()` 返回的目录、模型可用性与 fallback 行为依赖账号/套餐/团队策略（含 Legacy Max Mode），不可作为跨账号工程事实；编排器对此 fail closed（目录校验失败拒绝运行，解析模型漂移按 run_failed 处理），真实结果只写入 qualification/caveat。
 - **deny 后的重试倾向**：fail-closed Hook 拒绝后，弱模型可能无差别重试同一动作形成拒绝循环。本框架在 fail-closed deny 中携带 `agent_message` 说明原因与下一步；若仍出现循环，优先由用户介入，不通过关闭 guard 缓解。
 - **智能路由激活依赖**：仅 `alwaysApply` 规则保证全模型恒注入；带 `globs` 的规则（40/41/44/50）依赖 Cursor 智能路由按文件范围激活，不同模型触发质量可能不同。仓库级硬边界因此全部放在 alwaysApply 规则。
 - **Custom reviewer 继承退化**：三个治理 reviewer 使用 `model: inherit`，父代理切换为较弱模型时复核质量同步退化；框架保留该取舍以保证可审计性，根代理仍对最终综合负责。

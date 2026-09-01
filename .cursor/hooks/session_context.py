@@ -48,7 +48,8 @@ def main() -> int:
         "复杂或高影响任务先确认适用的仓库契约；需要细节时按需查阅 AGENTS.md、.cursor/knowledge/INDEX.md 和活动计划（如存在），不重复注入整篇文档。"
         "Rule=稳定约束，Skill=按需流程，Subagent=独立上下文/并行复核，Hook=防御性观测或门禁（非 Sandbox）。"
         "Subagent 按需使用；每个并行 wave 最多3个，任务总累计不设固定上限；本项目采用比 Cursor 平台更严格的 no-nesting 策略；不得把 Cursor 工程记忆写入 Research OS 产品 Memory。"
-        "并行 wave 必须同一条消息一次性发出全部 Task 工具调用，禁止逐个启动、等待上一个完成后再启动下一个。"
+        "并行 wave 必须同一条消息一次性发出全部 Task 工具调用，禁止逐个启动、等待上一个完成后再启动下一个；"
+        "需要确定性并发时可用显式 parallel-agent-orchestration Skill（SDK 编排，只读任务，每波同样最多3个）。"
     )
     emit({
         "env": {
