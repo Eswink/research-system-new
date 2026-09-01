@@ -14,7 +14,8 @@ from fastapi import Header, Request, Response
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.execution_job_queue import ExecutionJobResult
 from packages.application.ports.workflow_engine import ClaimRequest
-from packages.domain.workers import WorkerRegistration, WorkerState
+from packages.domain.core import Timestamp
+from packages.domain.workers import GPU_CAPABILITY, WorkerRegistration, WorkerState
 from services.api.errors import ApiError
 from services.api.worker_gateway import security
 from services.api.worker_gateway.dto import (
@@ -42,24 +43,55 @@ def _authorized_identity(
     return identity
 
 
-def _require_schedulable(identity: WorkerRegistration, payload: ClaimRequestDto) -> None:
+def _require_fresh_gpu_observation(
+    identity: WorkerRegistration, claimed_capabilities: frozenset[str], ttl_seconds: float
+) -> None:
+    """M17 freshness layer 2 (fail-closed; ADR-0029).
+
+    A claim asserting the `gpu` capability is only honored while the stored
+    probe observation is fresh by SERVER clock (`gpu_observed_at`, set at
+    registration). Expired → 409; the worker must re-probe and re-register.
+    CPU-only claims are never blocked by a stale GPU observation. The
+    worker-reported `probed_at` never participates (M16 server-time authority).
+    """
+    if GPU_CAPABILITY not in claimed_capabilities:
+        return
+    if identity.gpu_observation is None or identity.gpu_observed_at is None:
+        raise ApiError(
+            409, "GPU Capability Stale", "gpu capability has no probe observation"
+        )
+    age = (Timestamp.now().value - identity.gpu_observed_at.value).total_seconds()
+    if age > ttl_seconds:
+        raise ApiError(
+            409,
+            "GPU Capability Stale",
+            f"gpu observation is {int(age)}s old (TTL {int(ttl_seconds)}s); re-probe required",
+        )
+
+
+def _require_schedulable(
+    identity: WorkerRegistration, payload: ClaimRequestDto, gpu_ttl_seconds: float
+) -> None:
     """Server-side scheduling authority (M16 re-audit F-1 / ADR-0027 §2).
 
     The Control Plane — not the worker — decides who may claim: a non-READY
     (DRAINING/LOST/OFFLINE/REGISTERING) session is refused, and a claim may
     never assert capabilities or partition slots beyond what the worker
-    registered at handshake (fail closed, no silent clamping).
+    registered at handshake (fail closed, no silent clamping). M17 adds the
+    GPU observation freshness gate (layer 2).
     """
     if identity.state not in WorkerState.schedulable():
         raise ApiError(
             409, "Worker Not Schedulable", f"worker state {identity.state!r} cannot claim work"
         )
-    if not frozenset(payload.capabilities) <= identity.capabilities:
+    claimed = frozenset(payload.capabilities)
+    if not claimed <= identity.capabilities:
         raise ApiError(
             409, "Capability Mismatch", "claimed capabilities exceed worker registration"
         )
     if not frozenset(payload.partitions) <= identity.partition_slots:
         raise ApiError(409, "Partition Mismatch", "claimed partitions exceed worker registration")
+    _require_fresh_gpu_observation(identity, claimed, gpu_ttl_seconds)
 
 
 def _require_output_provenance(
@@ -94,8 +126,8 @@ async def claim_job(
     identity = _authorized_identity(
         request, authorization, payload.worker_id, payload.registration_generation
     )
-    _require_schedulable(identity, payload)
     deps = security.deps_of(request)
+    _require_schedulable(identity, payload, deps.settings.gpu_observation_ttl_seconds)
     workflow = deps.workflow
     job_queue = deps.job_queue
     assert workflow is not None and job_queue is not None  # guarded by _require_job_plane

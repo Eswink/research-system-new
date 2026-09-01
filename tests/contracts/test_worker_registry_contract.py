@@ -14,8 +14,14 @@ import pytest
 
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.worker_registry import WorkerRegistry
+from packages.domain.core import Timestamp
 from packages.domain.state_base import InvalidTransitionError
-from packages.domain.workers import WorkerRegistration, WorkerState
+from packages.domain.workers import (
+    GPU_CAPABILITY,
+    WorkerGpuObservation,
+    WorkerRegistration,
+    WorkerState,
+)
 from tests.contracts.registry import PORT_IMPLEMENTATIONS
 
 _FACTORIES: list[Callable[[], object]] = list(PORT_IMPLEMENTATIONS["worker_registry"])
@@ -177,3 +183,74 @@ def test_mark_lost_revokes_session_token(factory: Callable[[], object]) -> None:
     registry.transition("worker-a", WorkerState.Transition.HANDSHAKE_OK)
     registry.mark_lost("worker-a")
     assert registry.authenticate("hash-live") is None
+
+
+# --- M17 GPU observation contract (WP1) --------------------------------------
+
+
+def _gpu_observation(digest: str = "aa11bb22cc33dd44") -> WorkerGpuObservation:
+    return WorkerGpuObservation(
+        device_name="NVIDIA GeForce RTX 4060 Laptop GPU",
+        device_count=1,
+        driver_version="581.80",
+        cuda_runtime_version="12.8",
+        total_vram_bytes=8_585_216_000,
+        framework="torch-2.9.1+cu128",
+        probed_at=Timestamp.now(),
+        probe_digest=digest,
+    )
+
+
+def _gpu_registration(
+    worker_id: str = "worker-a", digest: str = "aa11bb22cc33dd44"
+) -> WorkerRegistration:
+    return WorkerRegistration(
+        worker_id=worker_id,
+        protocol_version="1",
+        runtime_version="0.1.0",
+        capabilities=frozenset({"docker", GPU_CAPABILITY}),
+        backend_kinds=frozenset({"DOCKER"}),
+        platform="linux/amd64",
+        partition_slots=frozenset({0, 1}),
+        max_concurrency=2,
+        gpu_observation=_gpu_observation(digest),
+    )
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_register_stores_observation_with_server_stamp(factory: Callable[[], object]) -> None:
+    registry: WorkerRegistry = factory()  # type: ignore[assignment]
+    stored = registry.register(_gpu_registration())
+    assert stored.gpu_observation is not None
+    assert stored.gpu_observation.probe_digest == "aa11bb22cc33dd44"
+    # server clock stamps receipt (freshness authority); worker probed_at is
+    # informational only and must never be the TTL basis.
+    assert stored.gpu_observed_at is not None
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_restart_without_observation_clears_gpu_truth(factory: Callable[[], object]) -> None:
+    """Freshness layer 1: registration is the truth — restart/re-register
+    (e.g. probe failed at startup) replaces the observation wholesale."""
+    registry: WorkerRegistry = factory()  # type: ignore[assignment]
+    registry.register(_gpu_registration())
+    registry.transition("worker-a", WorkerState.Transition.HANDSHAKE_OK)
+    second = registry.register(_registration())
+    assert second.registration_generation == 2
+    assert second.gpu_observation is None
+    assert second.gpu_observed_at is None
+    assert GPU_CAPABILITY not in second.capabilities
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_reregister_with_changed_digest_replaces_observation(
+    factory: Callable[[], object],
+) -> None:
+    """Freshness layer 3 input: a changed probe_digest reaches the registry
+    as a new generation with the new observation (never patched in place)."""
+    registry: WorkerRegistry = factory()  # type: ignore[assignment]
+    registry.register(_gpu_registration(digest="1111111111111111"))
+    second = registry.register(_gpu_registration(digest="2222222222222222"))
+    assert second.registration_generation == 2
+    assert second.gpu_observation is not None
+    assert second.gpu_observation.probe_digest == "2222222222222222"

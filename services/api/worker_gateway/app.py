@@ -13,9 +13,17 @@ The lifecycle routes record facts into the `WorkerRegistry`; the job routes
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import FastAPI, Header, Request
 
-from packages.domain.workers import WorkerRegistration, WorkerState
+from packages.domain.core import Timestamp
+from packages.domain.workers import (
+    GPU_CAPABILITY,
+    WorkerGpuObservation,
+    WorkerRegistration,
+    WorkerState,
+)
 from services.api.errors import ApiError, register_error_handlers
 from services.api.worker_gateway import auth, jobs, security, transfer
 from services.api.worker_gateway.deps import WorkerGatewayDeps
@@ -29,6 +37,43 @@ from services.api.worker_gateway.dto import (
     WorkerRegisterResponse,
 )
 from services.api.worker_gateway.settings import WorkerGatewaySettings
+
+
+def _gpu_observation_of(payload: WorkerRegisterRequest) -> WorkerGpuObservation | None:
+    """M17 fail-closed handshake: declaring `gpu` REQUIRES a probe observation.
+
+    An observation without the `gpu` capability is also refused — the worker
+    either publishes its probe as a schedulable capability, or registers
+    CPU-only without any observation (probe failed → never guessed).
+    """
+    if payload.gpu_observation is None:
+        if GPU_CAPABILITY in set(payload.capabilities):
+            raise ApiError(
+                409,
+                "GPU Observation Required",
+                f"capability {GPU_CAPABILITY!r} requires a gpu_observation probe result",
+            )
+        return None
+    if GPU_CAPABILITY not in set(payload.capabilities):
+        raise ApiError(
+            409,
+            "GPU Capability Mismatch",
+            "gpu_observation requires the 'gpu' capability in this registration",
+        )
+    try:
+        dto = payload.gpu_observation
+        return WorkerGpuObservation(
+            device_name=dto.device_name,
+            device_count=dto.device_count,
+            driver_version=dto.driver_version,
+            cuda_runtime_version=dto.cuda_runtime_version,
+            total_vram_bytes=dto.total_vram_bytes,
+            framework=dto.framework,
+            probed_at=Timestamp(datetime.fromisoformat(dto.probed_at)),
+            probe_digest=dto.probe_digest,
+        )
+    except (TypeError, ValueError) as exc:
+        raise ApiError(422, "Unprocessable Entity", f"invalid gpu_observation: {exc}") from exc
 
 
 def _handshake_and_build(
@@ -58,6 +103,7 @@ def _handshake_and_build(
             platform=payload.platform,
             partition_slots=frozenset(payload.partition_slots),
             max_concurrency=payload.max_concurrency,
+            gpu_observation=_gpu_observation_of(payload),
         )
     except ValueError as exc:  # bounded-field violation → 422
         raise ApiError(422, "Unprocessable Entity", str(exc)) from exc

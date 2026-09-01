@@ -12,8 +12,31 @@ from pydantic import BaseModel, Field
 from packages.domain.workers import (
     MAX_BACKEND_KINDS,
     MAX_CAPABILITIES,
+    MAX_GPU_DEVICE_COUNT,
+    MAX_GPU_DEVICE_NAME_LENGTH,
+    MAX_GPU_FRAMEWORK_LENGTH,
+    MAX_GPU_VRAM_BYTES,
+    MAX_PROBE_DIGEST_LENGTH,
+    MAX_VERSION_LENGTH,
     PARTITION_COUNT,
 )
+
+
+class GpuObservationDto(BaseModel):
+    """Worker-supplied GPU probe facts (bounded, observed; not an inventory).
+
+    Untrusted input: every field is bounded here and re-validated fail-closed
+    by the domain value object at the handshake boundary.
+    """
+
+    device_name: str = Field(min_length=1, max_length=MAX_GPU_DEVICE_NAME_LENGTH)
+    device_count: int = Field(ge=1, le=MAX_GPU_DEVICE_COUNT)
+    driver_version: str = Field(min_length=1, max_length=MAX_VERSION_LENGTH)
+    cuda_runtime_version: str = Field(min_length=1, max_length=MAX_VERSION_LENGTH)
+    total_vram_bytes: int = Field(ge=1, le=MAX_GPU_VRAM_BYTES)
+    framework: str = Field(min_length=1, max_length=MAX_GPU_FRAMEWORK_LENGTH)
+    probed_at: str = Field(min_length=20, max_length=64)  # worker clock, informational only
+    probe_digest: str = Field(min_length=8, max_length=MAX_PROBE_DIGEST_LENGTH)
 
 
 class WorkerRegisterRequest(BaseModel):
@@ -27,6 +50,7 @@ class WorkerRegisterRequest(BaseModel):
     platform: str = Field(min_length=1, max_length=64)
     partition_slots: list[int] = Field(default_factory=list, max_length=PARTITION_COUNT)
     max_concurrency: int = Field(default=1, ge=1, le=64)
+    gpu_observation: GpuObservationDto | None = None
 
 
 class WorkerRegisterResponse(BaseModel):

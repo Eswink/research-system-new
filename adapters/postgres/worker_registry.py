@@ -20,12 +20,12 @@ from adapters.postgres.db import dsn_from_env
 from adapters.postgres.serialization import decode_timestamp_pg
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.state_base import InvalidTransitionError
-from packages.domain.workers import WorkerRegistration, WorkerState
+from packages.domain.workers import WorkerGpuObservation, WorkerRegistration, WorkerState
 
 _COLUMNS = (
     "worker_id, protocol_version, runtime_version, platform, capabilities_json, "
     "backend_kinds_json, partition_slots_json, max_concurrency, registration_generation, "
-    "state, last_heartbeat, drain_requested"
+    "state, last_heartbeat, drain_requested, gpu_observation_json, gpu_observed_at"
 )
 
 
@@ -36,8 +36,20 @@ def _as_list(value: Any) -> list[Any]:
     return list(value)
 
 
+def _decode_observation(value: Any) -> WorkerGpuObservation | None:
+    """fail-closed 解码：畸形观测行拒绝读取（InvalidInputError）。"""
+    if value is None:
+        return None
+    data = json.loads(value) if isinstance(value, str) else value
+    try:
+        return WorkerGpuObservation.from_json_dict(data)
+    except ValueError as exc:
+        raise InvalidInputError(f"corrupted gpu observation row: {exc}") from exc
+
+
 def _row_to_registration(row: dict[str, Any]) -> WorkerRegistration:
     heartbeat = row["last_heartbeat"]
+    observed_at = row.get("gpu_observed_at")
     return WorkerRegistration(
         worker_id=str(row["worker_id"]),
         protocol_version=str(row["protocol_version"]),
@@ -51,6 +63,8 @@ def _row_to_registration(row: dict[str, Any]) -> WorkerRegistration:
         state=str(row["state"]),
         last_heartbeat=decode_timestamp_pg(heartbeat) if heartbeat is not None else None,
         drain_requested=bool(row["drain_requested"]),
+        gpu_observation=_decode_observation(row.get("gpu_observation_json")),
+        gpu_observed_at=decode_timestamp_pg(observed_at) if observed_at is not None else None,
     )
 
 
@@ -96,6 +110,8 @@ class PostgresWorkerRegistry(PostgresAdapterBase):
     def register(self, registration: WorkerRegistration) -> WorkerRegistration:
         self._ensure_open()
         time_sql, time_params = self._time_expr()
+        observation = registration.gpu_observation
+        obs_json = json.dumps(observation.to_json_dict()) if observation is not None else None
         with self._conn.transaction():
             existing: Any = self._conn.execute(
                 "SELECT registration_generation FROM workers WHERE worker_id = %s FOR UPDATE",
@@ -105,7 +121,8 @@ class PostgresWorkerRegistry(PostgresAdapterBase):
             self._conn.execute(
                 f"INSERT INTO workers ({_COLUMNS}, created_at, updated_at) "
                 f"VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s, %s, "
-                f"{time_sql}, %s, {time_sql}, {time_sql}) "
+                f"{time_sql}, %s, %s::jsonb, "
+                f"CASE WHEN %s THEN {time_sql} ELSE NULL END, {time_sql}, {time_sql}) "
                 "ON CONFLICT (worker_id) DO UPDATE SET "
                 "protocol_version = EXCLUDED.protocol_version, "
                 "runtime_version = EXCLUDED.runtime_version, "
@@ -118,6 +135,10 @@ class PostgresWorkerRegistry(PostgresAdapterBase):
                 "state = EXCLUDED.state, "
                 "last_heartbeat = EXCLUDED.last_heartbeat, "
                 "drain_requested = FALSE, "
+                # M17 freshness layer 1: registration is the truth — the GPU
+                # observation is replaced wholesale on every (re)register.
+                "gpu_observation_json = EXCLUDED.gpu_observation_json, "
+                "gpu_observed_at = EXCLUDED.gpu_observed_at, "
                 "session_token_sha256 = NULL, "
                 "updated_at = " + time_sql,
                 (
@@ -133,6 +154,9 @@ class PostgresWorkerRegistry(PostgresAdapterBase):
                     WorkerState.State.REGISTERING,
                     *time_params,
                     False,
+                    obs_json,
+                    obs_json is not None,
+                    *time_params,
                     *time_params,
                     *time_params,
                 ),

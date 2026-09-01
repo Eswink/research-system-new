@@ -9,9 +9,12 @@ through the authenticated `/worker/v1` gateway. `httpx` is the pinned client
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import httpx
+
+if TYPE_CHECKING:
+    from packages.domain.workers import WorkerGpuObservation
 
 
 def _json(resp: httpx.Response) -> dict[str, object]:
@@ -102,29 +105,49 @@ class WorkerClient:
             raise RuntimeError("worker not registered; no session token")
         return {"Authorization": f"Bearer {self._token}"}
 
-    def register(self) -> dict[str, object]:
+    def register(
+        self,
+        gpu_observation: WorkerGpuObservation | None = None,
+        *,
+        capabilities: tuple[str, ...] | None = None,
+    ) -> dict[str, object]:
+        """Registration handshake; `gpu_observation` present ⇔ `gpu` capability.
+
+        M17: when a probe observation is supplied, the `gpu` capability is
+        added automatically; without one it is never declared (probe failure
+        ⇒ CPU-only registration, never a guess).
+        """
+        caps = list(capabilities) if capabilities is not None else list(
+            self._config.capabilities
+        )
+        body: dict[str, object] = {
+            "worker_id": self._config.worker_id,
+            "protocol_version": self._config.protocol_version,
+            "runtime_version": self._config.runtime_version,
+            "capabilities": caps,
+            "backend_kinds": list(self._config.backend_kinds),
+            "platform": self._config.platform,
+            "partition_slots": list(self._config.partition_slots),
+            "max_concurrency": self._config.max_concurrency,
+        }
+        if gpu_observation is not None:
+            if "gpu" not in caps:
+                caps.append("gpu")
+            body["capabilities"] = caps
+            body["gpu_observation"] = gpu_observation.to_json_dict()
         resp = self._http.post(
             "/worker/v1/register",
             headers={"X-Worker-Enrollment": self._config.enrollment_secret},
-            json={
-                "worker_id": self._config.worker_id,
-                "protocol_version": self._config.protocol_version,
-                "runtime_version": self._config.runtime_version,
-                "capabilities": list(self._config.capabilities),
-                "backend_kinds": list(self._config.backend_kinds),
-                "platform": self._config.platform,
-                "partition_slots": list(self._config.partition_slots),
-                "max_concurrency": self._config.max_concurrency,
-            },
+            json=body,
         )
         resp.raise_for_status()
-        body = _json(resp)
-        self._token = str(body["session_token"])
-        self._generation = int(str(body["registration_generation"]))
-        interval = body.get("heartbeat_interval_seconds")
+        response_body = _json(resp)
+        self._token = str(response_body["session_token"])
+        self._generation = int(str(response_body["registration_generation"]))
+        interval = response_body.get("heartbeat_interval_seconds")
         if interval is not None:
             self._heartbeat_interval = float(str(interval))
-        return body
+        return response_body
 
     def heartbeat(self) -> dict[str, object]:
         resp = self._http.post(

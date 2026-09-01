@@ -1,10 +1,17 @@
-"""Worker run loop (M16 WP3).
+"""Worker run loop (M16 WP3; M17 GPU probe freshness).
 
 A worker registers, then loops: heartbeat, claim a job, materialize its input
 bundle into a scratch workspace, execute via the injected `ExecutionBackend`
 (Docker in production, a deterministic fake in tests), upload the output
 bundle, and submit the fenced result. It never holds DB/ArtifactStore
 credentials — all authoritative interaction is through the gateway client.
+
+M17 (freshness layer 3): when a `gpu_prober` is wired, the worker probes at
+startup and re-probes every N idle heartbeats; a probe-digest change (or a
+probe that starts failing) triggers re-registration with a new generation,
+wholesale-replacing the capability set and observation. A 409 from claim
+(stale observation gate) self-heals the same way. Probing only happens while
+idle — never mid-job.
 
 Drain: when the Control Plane marks the worker DRAINING (surfaced via the
 heartbeat response), the loop stops claiming and exits after settling in-flight
@@ -21,9 +28,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 from adapters.worker.client import WorkerClient, WorkerResultPayload
 from adapters.workspace.bundle import bundle_from_directory, bundle_to_directory
 from packages.application.ports.execution_backend import ExecutionBackend
+from packages.domain.workers import WorkerGpuObservation
 from packages.domain.workspace import ExecutionSpec, ExecutionStatus
 
 
@@ -32,6 +42,8 @@ class WorkerLoopConfig:
     heartbeat_interval_seconds: float = 10.0
     max_iterations: int | None = None  # None = run until drain/stop
     scratch_root: str | None = None
+    # M17: re-probe GPU every N consecutive idle heartbeats (~1min at 10s cadence)
+    gpu_reprobe_every_idle_heartbeats: int = 6
 
 
 def _spec_from_json(spec_json: str, workspace_path: str) -> ExecutionSpec:
@@ -50,7 +62,7 @@ def _spec_from_json(spec_json: str, workspace_path: str) -> ExecutionSpec:
 class WorkerLoop:
     """Drives one worker's register → claim/execute/complete → heartbeat cycle."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - 注入面：client/backend/config/stop/sleep/prober
         self,
         client: WorkerClient,
         backend: ExecutionBackend,
@@ -58,20 +70,24 @@ class WorkerLoop:
         config: WorkerLoopConfig | None = None,
         should_stop: Callable[[], bool] | None = None,
         sleep: Callable[[float], None] = lambda _s: None,
+        gpu_prober: Callable[[], WorkerGpuObservation | None] | None = None,
     ) -> None:
         self._client = client
         self._backend = backend
         self._config = config or WorkerLoopConfig()
         self._should_stop = should_stop or (lambda: False)
         self._sleep = sleep
+        self._gpu_prober = gpu_prober
+        self._last_gpu_digest: str | None = None
         self._draining = False
         self.completed_jobs = 0
 
     def run(self) -> int:
         """Register and process jobs until drain/stop; return jobs completed."""
-        self._client.register()
+        self._register_with_gpu_truth()
         print(f"worker-loop: registered gen={self._client.generation}", flush=True)  # noqa: T201
         iterations = 0
+        idle_heartbeats = 0
         while not self._should_stop() and not self._draining:
             if (
                 self._config.max_iterations is not None
@@ -83,8 +99,16 @@ class WorkerLoop:
             if hb.get("drain_requested"):
                 self._draining = True
                 break
-            job = self._client.claim()
+            job = self._claim_or_selfheal()
             if job is None:
+                idle_heartbeats += 1
+                if (
+                    self._gpu_prober is not None
+                    and idle_heartbeats
+                    >= self._config.gpu_reprobe_every_idle_heartbeats
+                ):
+                    idle_heartbeats = 0
+                    self._reprobe_and_reregister()
                 self._sleep(self._config.heartbeat_interval_seconds)
                 continue
             print(f"worker-loop: claimed job task_id={job.get('task_id')}", flush=True)  # noqa: T201
@@ -92,6 +116,52 @@ class WorkerLoop:
             self.completed_jobs += 1
         print(f"worker-loop: exiting completed={self.completed_jobs}", flush=True)  # noqa: T201
         return self.completed_jobs
+
+    def _register_with_gpu_truth(self) -> None:
+        """Startup probe (freshness layer 1): probe → register with the facts."""
+        observation = self._gpu_prober() if self._gpu_prober is not None else None
+        self._last_gpu_digest = observation.probe_digest if observation is not None else None
+        self._client.register(gpu_observation=observation)
+
+    def _claim_or_selfheal(self) -> dict[str, object] | None:
+        """Claim; a 409 (e.g. stale gpu observation) triggers re-register.
+
+        Unlike the periodic idle re-probe (digest-change detection), the 409
+        path ALWAYS re-registers: a fresh probe + new generation re-stamps the
+        server-side observation clock, clearing the TTL gate. Re-probing
+        without registering could leave a same-digest observation stale
+        forever (liveness bug).
+        """
+        try:
+            return self._client.claim()
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code != 409 or self._gpu_prober is None:
+                raise
+            print("worker-loop: claim rejected; re-probing GPU", flush=True)  # noqa: T201
+            self._reprobe_and_reregister(force=True)
+            return None
+
+    def _reprobe_and_reregister(self, *, force: bool = False) -> bool:
+        """Re-probe; register when facts changed (or `force`, e.g. after 409).
+
+        Registration is the truth (freshness layer 1): the new generation
+        wholesale-replaces the capability set and observation, so scheduling
+        stops (or resumes) without any TTL-based residue.
+        """
+        if self._gpu_prober is None:
+            return False
+        observation = self._gpu_prober()
+        digest = observation.probe_digest if observation is not None else None
+        if not force and digest == self._last_gpu_digest:
+            return False
+        self._client.register(gpu_observation=observation)
+        self._last_gpu_digest = digest
+        print(  # noqa: T201
+            f"worker-loop: re-registered gen={self._client.generation} "
+            f"gpu={'yes' if observation is not None else 'no'}",
+            flush=True,
+        )
+        return True
 
     def _process(self, job: dict[str, object]) -> None:
         task_id = str(job["task_id"])

@@ -21,6 +21,7 @@ import signal
 import sys
 
 from adapters.execution.docker_backend import DockerExecutionBackend
+from adapters.execution.gpu_probe import GPU_SANDBOX_IMAGE_DEFAULT, GpuProbeConfig, probe_gpu
 from adapters.worker.client import WorkerClient, WorkerClientConfig
 from services.worker.deterministic_backend import DeterministicExecutionBackend
 from services.worker.loop import WorkerLoop, WorkerLoopConfig
@@ -61,6 +62,23 @@ def _build_config(worker_id: str) -> WorkerClientConfig:
     )
 
 
+def _gpu_prober_for(backend_kind: str) -> object | None:
+    """M17: the real Docker worker probes its GPU through the real image.
+
+    The prober runs the pinned GPU sandbox image with DeviceRequests (the
+    exact path a GPU job takes); a failed probe yields None and the worker
+    registers CPU-only. The deterministic test backend never probes.
+    """
+    if backend_kind != "docker":
+        return None
+    image = os.environ.get("RESEARCHOS_WORKER_GPU_IMAGE", GPU_SANDBOX_IMAGE_DEFAULT)
+
+    def _prober() -> object:
+        return probe_gpu(GpuProbeConfig(image=image))
+
+    return _prober
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="services.worker")
     parser.add_argument("--worker-id", default=os.environ.get("RESEARCHOS_WORKER_ID", "worker-1"))
@@ -82,7 +100,13 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError(f"unknown RESEARCHOS_WORKER_EXECUTION_BACKEND: {execution_backend}")
     print(f"worker: starting id={args.worker_id}", flush=True)  # noqa: T201
     with WorkerClient(config) as client:
-        loop = WorkerLoop(client, backend, config=loop_config, should_stop=lambda: _STOP["flag"])  # type: ignore[arg-type]
+        loop = WorkerLoop(
+            client,
+            backend,  # type: ignore[arg-type]  # deterministic/docker backends are duck-typed
+            config=loop_config,
+            should_stop=lambda: _STOP["flag"],
+            gpu_prober=_gpu_prober_for(execution_backend),  # type: ignore[arg-type]
+        )
         completed = loop.run()
     print(f"worker: stopped completed={completed}", flush=True)  # noqa: T201
     return 0

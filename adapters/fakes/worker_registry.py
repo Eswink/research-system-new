@@ -54,6 +54,9 @@ class FakeWorkerRegistry(FakeBase):
             state=WorkerState.State.REGISTERING,
             last_heartbeat=self._stamp(),
             drain_requested=False,
+            gpu_observation=registration.gpu_observation,
+            # 服务端收到观测即打服务端时钟（freshness 权威；M16 时钟规则）
+            gpu_observed_at=self._stamp() if registration.gpu_observation is not None else None,
         )
         self._workers[registration.worker_id] = stored
         self._tokens.pop(registration.worker_id, None)  # re-register voids old token

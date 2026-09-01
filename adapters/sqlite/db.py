@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS workers (
     last_heartbeat TEXT,
     drain_requested INTEGER NOT NULL DEFAULT 0,
     session_token_sha256 TEXT,
+    gpu_observation_json TEXT,
+    gpu_observed_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
