@@ -80,3 +80,15 @@ M17 为 SI-1（Personal Scale Integration Review）提供：真实 GPU 执行 + 
 ## 验证命令与结果（2026-09-02）
 
 见 `RECHECK-20260902-028`（全量门禁实测计数）。
+
+## 密封深度安全扫描（M17 面）
+
+- scanId：`scan-2026-09-02T06-14-50.920Z-01730a5138ce`
+- seal：`sha256:538e5cea905f0235da17f13a1a889a533314918c4d99247883d748d3d51ad3d3`
+- 覆盖：180 包，38 findings（6 high / 27 medium / 5 low），1 条 advisory 匹配
+- **M17 代码面零命中**：全部 finding 落在 `scratch/`、`tools/probes/`、
+  `tools/upstream-spikes/`、`examples/experiments/m12_reference_classification.py`、
+  `adapters/research_tools/parsing.py` —— 即 BACKLOG 既有「非 M16/M17 深度扫描
+  high」债务项，与 M16 attempt-2 同形（M17 surface clean；coverage 仍 partial）。
+- 证据边界：`static_only_no_runtime_execution`；扫描器 verdict 不改变 M17 判定，
+  完整密封审计在独立复审窗口（PART B）复核。

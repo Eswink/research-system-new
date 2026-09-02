@@ -48,9 +48,11 @@ checked_head: working-tree（M17 实施，基线 359e9ba RM-P2 rebaseline 之后
   NOT VERIFIED/DEFERRED，SI-1 不得据此宣称多机 GPU 集群。
 - W-02：WSL2/WDDM 下 NVML per-process 显存/utilization 不可靠 → 相关量一律不记账，
   只记框架级可靠量（`torch.cuda.max_memory_allocated`）；诚实标注测量局限。
-- W-03：Mimosa 密封深度扫描在本会话多次 commit 时返回 `scanner_enobufs`（扫描器
-  资源限制，非代码结论）；M17 代码面经 ruff/mypy/import-linter/安全测试/过度宣称
-  门禁覆盖，但**完整密封深度审计需在独立复审窗口重跑**（见下）。
+- W-03：M17 密封深度扫描已重跑完成（scanId `scan-2026-09-02T06-14-50.920Z-01730a5138ce`，
+  seal `sha256:538e5cea…`，38 findings）——**M17 代码面零命中**，全部落在
+  `scratch/`/`tools/probes/`/`tools/upstream-spikes/`/M12 示例/M8 解析器（BACKLOG
+  既有非 M16/M17 债务，与 M16 attempt-2 同形：surface clean，coverage partial）。
+  证据边界 static_only；完整密封审计在独立复审窗口（PART B）复核。
 
 ## 结论
 
