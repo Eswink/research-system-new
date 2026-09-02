@@ -18,8 +18,10 @@ import pytest
 
 from tests.distributed.conftest import _postgres_dsn
 from tests.distributed.test_scenarios import (
+    _expire_lease,
     _gateway_register,
     _is_leased_by,
+    _lease_count,
     _wait_until,
 )
 from tests.distributed.worker_harness import WorkerHarness
@@ -141,3 +143,118 @@ def test_gpu_job_cancel_kills_container_and_fences_late_result(
     settled = harness.job_queue.poll(task_id)
     assert settled is not None and settled.status == "CANCELLED"
     worker.terminate()
+
+
+def _gateway_register_gpu(harness: WorkerHarness, worker_id: str) -> tuple[str, int]:
+    """Register a gpu-capable session (probe observation attached) via gateway."""
+    import httpx
+
+    from tests.distributed.worker_harness import _ENROLLMENT
+
+    reg = httpx.post(
+        f"{harness.gateway_url}/worker/v1/register",
+        headers={"X-Worker-Enrollment": _ENROLLMENT},
+        json={
+            "worker_id": worker_id,
+            "protocol_version": "1",
+            "runtime_version": "0.1.0",
+            "capabilities": ["docker", "gpu"],
+            "backend_kinds": ["DOCKER"],
+            "platform": "linux/amd64",
+            "partition_slots": list(range(16)),
+            "max_concurrency": 1,
+            "gpu_observation": {
+                "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+                "device_count": 1,
+                "driver_version": "581.80",
+                "cuda_runtime_version": "12.8",
+                "total_vram_bytes": 8_585_216_000,
+                "framework": "torch-2.9.1+cu128",
+                "probed_at": "2026-09-02T00:00:00+00:00",
+                "probe_digest": "aa11bb22cc33dd44",
+            },
+        },
+    )
+    assert reg.status_code == 200
+    return str(reg.json()["session_token"]), int(reg.json()["registration_generation"])
+
+
+def test_gpu_long_job_survives_lease_renewal(gpu_harness: WorkerHarness) -> None:
+    """A GPU job longer than the lease TTL completes ONCE by the same worker.
+
+    The renewal loop keeps the lease alive (M16 F-7); without it the lease
+    would expire mid-job and the job would be requeued (duplicate execution).
+    Longer GPU jobs widen the race window — this is the fencing regression
+    variant the M17 plan calls out.
+    """
+    harness = gpu_harness
+    task_id = harness.seed_job(
+        idem="gpu-renew-1", command="sleep 15", capability="gpu", resource_profile="gpu-small"
+    )
+    worker = harness.spawn_worker(
+        "gpu-renew-w1",
+        env_extra={
+            "RESEARCHOS_WORKER_EXECUTION_BACKEND": "docker",
+            "RESEARCHOS_WORKER_GPU_IMAGE": _IMAGE_TAG,
+            "RESEARCHOS_WORKER_DOCKER_IMAGE": _IMAGE_TAG,
+        },
+    )
+    assert _wait_until(lambda: _is_leased_by(harness, task_id, "gpu-renew-w1"), timeout=120)
+    # the job runs ~15s; the lease TTL is 8s — renewal must carry it across
+    assert _wait_until(lambda: harness.job_queue.poll(task_id) is not None, timeout=90)
+    outcome = harness.job_queue.poll(task_id)
+    assert outcome is not None and outcome.status == "SUCCEEDED"
+    # exactly one settle by the original worker; no requeue/duplicate
+    assert outcome.worker_id == "gpu-renew-w1"
+    assert _lease_count(harness, task_id) == 0
+    worker.terminate()
+
+
+def test_gpu_stale_fence_artifact_upload_rejected(gpu_harness: WorkerHarness) -> None:
+    """A superseded GPU worker cannot upload its output bundle (fence gate)."""
+    import httpx
+
+    harness = gpu_harness
+    task_id = harness.seed_job(
+        idem="gpu-fence-1", command="echo hi", capability="gpu", resource_profile="gpu-small"
+    )
+    old_token, old_gen = _gateway_register_gpu(harness, "gpu-fence-old")
+    claim = httpx.post(
+        f"{harness.gateway_url}/worker/v1/claim",
+        headers={"Authorization": f"Bearer {old_token}"},
+        json={
+            "worker_id": "gpu-fence-old",
+            "registration_generation": old_gen,
+            "capabilities": ["docker", "gpu"],
+            "partitions": list(range(16)),
+        },
+    )
+    assert claim.status_code == 200
+    lease_id = str(claim.json()["lease_id"])
+    fence = int(claim.json()["fence"])
+    # supersede: expire + recover + a new claim advances the fence
+    _expire_lease(harness, task_id)
+    harness.workflow.recover_expired_leases()
+    new_token, new_gen = _gateway_register_gpu(harness, "gpu-fence-new")
+    httpx.post(
+        f"{harness.gateway_url}/worker/v1/claim",
+        headers={"Authorization": f"Bearer {new_token}"},
+        json={
+            "worker_id": "gpu-fence-new",
+            "registration_generation": new_gen,
+            "capabilities": ["docker", "gpu"],
+            "partitions": list(range(16)),
+        },
+    )
+    # the OLD worker's artifact upload with its stale fence must be rejected
+    resp = httpx.post(
+        f"{harness.gateway_url}/worker/v1/artifacts",
+        headers={
+            "Authorization": f"Bearer {old_token}",
+            "X-Task-Id": task_id,
+            "X-Lease-Id": lease_id,
+            "X-Fence": str(fence),
+        },
+        content=b"bundle-bytes",
+    )
+    assert resp.status_code == 409
