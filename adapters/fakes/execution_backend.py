@@ -14,7 +14,7 @@ from packages.domain.workspace import ExecutionRun, ExecutionSpec, ExecutionStat
 class FakeExecutionBackend(FakeBase):
     """execute 按配置返回 ExecutionRun；timeout_seconds 生效时返回 TIMED_OUT。"""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - 可配置执行结果注入面（status/exit/category/summary）
         self,
         *,
         status: ExecutionStatus = ExecutionStatus.SUCCEEDED,

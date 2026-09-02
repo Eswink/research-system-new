@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -28,7 +29,7 @@ IMAGE_TAG = "research-os-gpu-sandbox:m17-v1"
 # OOM 探针：分块分配直至越过 free+margin（必然 OOM）；fraction 上限是
 # 第二道保护。OOM 捕获后释放全部块并验证 free 显存回升，然后如实写
 # gpu_oom=true 退出 1（执行失败语义，绝不假装成功）。
-_OOM_SCRIPT = '''
+_OOM_SCRIPT = """
 import json, sys
 from pathlib import Path
 import torch
@@ -64,9 +65,9 @@ facts = {
 }
 Path("gpu_runtime_facts.json").write_text(json.dumps(facts), encoding="utf-8")
 sys.exit(1 if oom else 0)
-'''
+"""
 
-_HEALTHY_SCRIPT = '''
+_HEALTHY_SCRIPT = """
 import json
 from pathlib import Path
 import torch
@@ -85,7 +86,7 @@ Path("gpu_runtime_facts.json").write_text(json.dumps(facts), encoding="utf-8")
 Path("experiment_result.json").write_text(
     json.dumps({"status": "SUCCEEDED", "metrics": {"ok": 1}}), encoding="utf-8")
 print("healthy ok")
-'''
+"""
 
 
 @pytest.fixture(scope="module")
@@ -105,12 +106,14 @@ def _spec(tmp_path: Path, script: str, name: str) -> ExecutionSpec:
     )
 
 
-def _run(backend: DockerExecutionBackend, spec: ExecutionSpec, **kw: object) -> object:
+def _run(backend: DockerExecutionBackend, spec: ExecutionSpec, **kw: object) -> Any:
     runner = getattr(backend, "execute")
     return runner(spec, **kw)
 
 
-def test_controlled_oom_fails_cleans_and_recovers(tmp_path: Path, gpu_backend: DockerExecutionBackend) -> None:
+def test_controlled_oom_fails_cleans_and_recovers(
+    tmp_path: Path, gpu_backend: DockerExecutionBackend
+) -> None:
     oom_spec = _spec(tmp_path, _OOM_SCRIPT, "oom")
     run = _run(gpu_backend, oom_spec, timeout_seconds=600)
     assert run.status is ExecutionStatus.FAILED

@@ -133,8 +133,7 @@ class WorkerLoop:
                 idle_heartbeats += 1
                 if (
                     self._gpu_prober is not None
-                    and idle_heartbeats
-                    >= self._config.gpu_reprobe_every_idle_heartbeats
+                    and idle_heartbeats >= self._config.gpu_reprobe_every_idle_heartbeats
                 ):
                     idle_heartbeats = 0
                     self._reprobe_and_reregister()
@@ -150,9 +149,7 @@ class WorkerLoop:
         """Startup probe (freshness layer 1): probe → register with the facts."""
         observation = self._gpu_prober() if self._gpu_prober is not None else None
         self._last_gpu_digest = observation.probe_digest if observation is not None else None
-        self._last_gpu_device_name = (
-            observation.device_name if observation is not None else None
-        )
+        self._last_gpu_device_name = observation.device_name if observation is not None else None
         self._client.register(gpu_observation=observation)
 
     def _claim_or_selfheal(self) -> dict[str, object] | None:
@@ -188,9 +185,7 @@ class WorkerLoop:
             return False
         self._client.register(gpu_observation=observation)
         self._last_gpu_digest = digest
-        self._last_gpu_device_name = (
-            observation.device_name if observation is not None else None
-        )
+        self._last_gpu_device_name = observation.device_name if observation is not None else None
         print(  # noqa: T201
             f"worker-loop: re-registered gen={self._client.generation} "
             f"gpu={'yes' if observation is not None else 'no'}",
@@ -212,10 +207,24 @@ class WorkerLoop:
             )
             bundle_to_directory(bundle, scratch, str(input_digest))
         spec = _spec_from_json(str(job["spec_json"]), str(scratch))
-        # ExecutionBackend.execute via getattr: the write-time pattern-gate
-        # flags any `.execute(` call as SQL injection (false positive — this is
-        # the sandbox Port, not SQL). The sealed deep scan
-        # scan-2026-08-31T17-01-13.681Z-6a277cc4ceda did NOT flag this site.
+        run = self._execute_with_lease(spec, task_id, lease_id, fence, job)
+        self._upload_and_submit(run, task_id, lease_id, fence, scratch)
+
+    def _execute_with_lease(
+        self,
+        spec: ExecutionSpec,
+        task_id: str,
+        lease_id: str,
+        fence: int,
+        job: dict[str, object],
+    ) -> ExecutionRun:
+        """Run the backend job while renewing the lease + emitting the span.
+
+        ExecutionBackend.execute via getattr: the write-time pattern-gate flags
+        any `.execute(` call as SQL injection (false positive — this is the
+        sandbox Port, not SQL). The sealed deep scan
+        scan-2026-08-31T17-01-13.681Z-6a277cc4ceda did NOT flag this site.
+        """
         runner = getattr(self._backend, "execute")
         # F-7: keep the lease alive while a long job runs, so it is neither
         # expired/reclaimed nor is the busy worker mis-marked LOST.
@@ -227,16 +236,26 @@ class WorkerLoop:
         try:
             started = time.monotonic()
             with self._remote_execution_span(spec, task_id) as op:
-                run = runner(
+                run: ExecutionRun = runner(
                     spec,
                     timeout_seconds=_as_int(job.get("timeout_seconds")),
                     cancelled=self._cancel_probe(task_id),
                 )
                 self._set_span_outcome(op, run)
             self._record_remote_metrics(run, time.monotonic() - started)
+            return run
         finally:
             stop_renew.set()
             renewer.join(timeout=5.0)
+
+    def _upload_and_submit(
+        self,
+        run: ExecutionRun,
+        task_id: str,
+        lease_id: str,
+        fence: int,
+        scratch: Path,
+    ) -> None:
         out_bundle, out_digest = bundle_from_directory(scratch)
         ack = self._client.upload_bundle(
             out_bundle, task_id=task_id, lease_id=lease_id, fence=fence

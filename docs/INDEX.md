@@ -11,6 +11,7 @@ M14 Durable Workflow + PostgreSQL = completed（2026-08-28；WP-J2 重判 PASS�
 M15 Observability / Cost / Eval Operations = completed（2026-08-29 首轮；2026-08-30 独立复审判定 FAIL 后修复轮 WP0–WP8 完成，6 BLOCKER 独立探针复现修复，m0 23/23 全绿；recheck PASS 见 `RECHECK-20260830-024`；ADR-0026 无内容通道观测、五状态成本投影、EvalReportStore/趋势已落地）
 M16 Distributed Execution + Remote Sandbox/Worker = completed（2026-08-31；Worker 生命周期/认证、claim_next 分区 + fence、RemoteExecutionBackend + worker 子进程 E2E 场景 A–J、SWE-ReX REJECT、遥测/记账/Console cluster 视图；ADR-0027；attempt-2 独立对抗复审 PASS 2026-09-01，RECHECK-20260901-025-m16-attempt2；证据见 `roadmap/M16_COMPLETION_RECORD.md`）
 RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R 与 Usage-driven Development；权威见 `roadmap/MILESTONES.md`
+M17 Remote GPU Execution = completed（2026-09-02，ADR-0029）：真实单卡 GPU 全链 VERIFIED（capability 发现/GPU 调度/真实 CUDA 执行/无静默 CPU fallback/OOM·取消/Artifact·Evidence·Evaluation·Usage/可复现性）；physically-remote GPU host = NOT VERIFIED/DEFERRED；证据见 `roadmap/M17_COMPLETION_RECORD.md`
 ```
 
 真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 →
@@ -157,6 +158,8 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `references/upstream/M16_REMOTE_EXECUTION_QUALIFICATION.md` — 远程执行 qualification（M16；SWE-ReX REJECT，原生 HTTP worker 交付）
 - `adr/ADR-0027-distributed-execution-plane.md` — Distributed Execution Plane 决策（M16；Worker untrusted、Control Plane 独占授权、HTTP worker gateway、不建第二队列/租约/Artifact 真相）
 - `adr/ADR-0028-personal-scale-rebaseline.md` — Personal Scale Rebaseline 决策（RM-P2；M17 收缩为 Remote GPU Execution / Personal Scale Baseline、M18/M19 DEFERRED、SI-1/PA-1/PA-1R、Usage-driven Development）
+- `references/upstream/M17_GPU_RUNTIME_QUALIFICATION.md` — GPU runtime qualification（M17；pytorch/pytorch 2.9.1-cuda12.8 digest pin、sm_89 实测、readonly-rootfs×nvidia-hook 无冲突、实际硬件事实块）
+- `adr/ADR-0029-gpu-execution-boundary.md` — GPU Execution Boundary 决策（M17；单 token 调度键 vs 观测分离、freshness 四层、rootfs 不放开、无静默 CPU fallback 四层、physically-remote NOT VERIFIED）
 - `roadmap/M15_COMPLETION_RECORD.md` — M15 完成记录（DoD 21/21 PASS）
 - `adr/ADR-0025-temporal-defer.md` — Temporal deferral ADR（M14；DEFER 决策，M16 重评）
 

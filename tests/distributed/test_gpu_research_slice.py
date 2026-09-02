@@ -22,21 +22,18 @@ import pytest
 from docker.errors import ImageNotFound
 
 from adapters.execution.remote_backend import RemoteExecutionBackend
-from adapters.postgres.artifact_store import PostgresArtifactStore
+from adapters.fakes import FakeBudgetLedger, FakeEvidenceLedger, FakeMemoryStore
 from adapters.workspace import FileWorkspaceBackend
 from packages.application.m12_reference.clean_run import run_clean_workflow
-from packages.application.m12_reference.deps import CleanRunDeps
-from tests.application.m12_clean_run_fixtures import PLAN_ID, catalog, protocol
 from packages.application.m12_reference.clean_run_stages import experiment_run_id_of
-from tests.distributed.conftest import _postgres_dsn
-from tests.distributed.worker_harness import WorkerHarness
+from packages.application.m12_reference.deps import CleanRunDeps
 from packages.application.policy.native import NativePolicyEvaluator
 from packages.application.ports import PreflightContext, ProjectSettings
 from packages.application.ports.credential_resolver import SecretValue
-from packages.domain.budget import BudgetPolicy
 from packages.domain.enums import EndpointHealth
 from packages.domain.workspace import Workspace
-from adapters.fakes import FakeBudgetLedger, FakeEvidenceLedger, FakeMemoryStore
+from tests.application.m12_clean_run_fixtures import PLAN_ID, catalog, protocol
+from tests.distributed.worker_harness import WorkerHarness
 
 pytestmark = [
     pytest.mark.distributed,
@@ -68,9 +65,7 @@ def gpu_image() -> str:
     try:
         client.images.get(_IMAGE_TAG)
     except ImageNotFound:
-        client.images.build(
-            path=str(_SANDBOX_DIR), dockerfile="Dockerfile.gpu", tag=_IMAGE_TAG
-        )
+        client.images.build(path=str(_SANDBOX_DIR), dockerfile="Dockerfile.gpu", tag=_IMAGE_TAG)
     return _IMAGE_TAG
 
 
@@ -94,8 +89,12 @@ def gpu_slice_harness(
     harness.close()
 
 
-def _slice_deps(harness: WorkerHarness, tmp_path: Path) -> CleanRunDeps:
+def _preflight_context() -> PreflightContext:
+    from packages.application.ports import CatalogSnapshot
+
     cat = catalog()
+    assert isinstance(cat, CatalogSnapshot)
+    assert cat.policy is not None
     project = ProjectSettings(
         project_id="project-m17",
         team_template_id="team",
@@ -103,13 +102,22 @@ def _slice_deps(harness: WorkerHarness, tmp_path: Path) -> CleanRunDeps:
         budget_policy_id="budget",
         workspace_backend="workspace",
     )
-    context = PreflightContext(
+    return PreflightContext(
         catalog=cat,
         project=project,
         credentials=_Credentials(),
         endpoint_health={"endpoint-1": EndpointHealth.HEALTHY},
-        policy_evaluator=NativePolicyEvaluator(cat.policy),  # type: ignore[arg-type]
+        policy_evaluator=NativePolicyEvaluator(cat.policy),
     )
+
+
+def _slice_deps(harness: WorkerHarness, tmp_path: Path) -> CleanRunDeps:
+    from packages.application.ports import CatalogSnapshot
+
+    cat = catalog()
+    assert isinstance(cat, CatalogSnapshot)
+    context = _preflight_context()
+    project = context.project
     workspace_root = tmp_path / "ws-root"
     workspace_root.mkdir(parents=True, exist_ok=True)
     workspaces = FileWorkspaceBackend(tmp_path / "workspaces")
@@ -117,9 +125,7 @@ def _slice_deps(harness: WorkerHarness, tmp_path: Path) -> CleanRunDeps:
     # The RemoteExecutionBackend shares the gateway's PG artifact store + job
     # queue — the worker uploads its result bundle there; the backend reads it
     # back. No second truth source.
-    execution = RemoteExecutionBackend(
-        job_queue=harness.job_queue, artifacts=harness.gw_artifacts
-    )
+    execution = RemoteExecutionBackend(job_queue=harness.job_queue, artifacts=harness.gw_artifacts)
     return CleanRunDeps(
         protocol=protocol(),
         catalog=cat,
@@ -148,7 +154,9 @@ def _slice_deps(harness: WorkerHarness, tmp_path: Path) -> CleanRunDeps:
     )
 
 
-def test_gpu_research_slice_full_chain(gpu_slice_harness: tuple[WorkerHarness, CleanRunDeps]) -> None:
+def test_gpu_research_slice_full_chain(
+    gpu_slice_harness: tuple[WorkerHarness, CleanRunDeps],
+) -> None:
     _harness, deps = gpu_slice_harness
     result = run_clean_workflow(
         deps,

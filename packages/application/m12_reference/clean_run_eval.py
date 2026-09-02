@@ -151,6 +151,17 @@ def _inputs(  # noqa: PLR0913 - 评测输入聚合（参数对象会降低可读
             "evaluation_runs": ctx.usage_summary["evaluation_runs"],
         },
         # M17 GPU slice reuses this harness — the m17 dataset reads these keys.
+        **_m17_inputs(payload, metrics, ctx, distinct_sources),
+    }
+
+
+def _m17_inputs(
+    payload: dict[str, object],
+    metrics: dict[str, object],
+    ctx: EvalStageCtx,
+    distinct_sources: int,
+) -> dict[str, object]:
+    return {
         "input://m17/task_completion": {"status": payload.get("status")},
         "input://m17/experiment_result": payload,
         "input://m17/experimental_validity": {

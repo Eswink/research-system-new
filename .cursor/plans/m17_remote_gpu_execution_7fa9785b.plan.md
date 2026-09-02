@@ -46,19 +46,19 @@ todos:
     status: completed
   - id: wp6-slice
     content: WP6a 真实 GPU Research Slice：FP32 vs 混合精度双分支 + GPU/CPU 计时对照实验代码、m17_gpu_research_v1 协议、m17_gpu_v1 评测集，复用 clean_run.py 走完 Objective→Deliverable 全链
-    status: pending
+    status: completed
   - id: wp6-repro
     content: WP6b 可复现性：关键实验重复≥2 次，记录 image/code/seed/device/CUDA/framework fingerprint 与语义结果；ReproducibilityAudit 增 GPU fingerprint + allowed_variance；如实记录浮点非确定性
-    status: pending
+    status: completed
   - id: wp7-regression
     content: WP7a M16 fencing 回归：tests/distributed 全套 + GPU 长任务变体（lease renewal 竞态、worker kill、网络分区迟到结果、stale-fence 上传拒绝）
-    status: pending
+    status: completed
   - id: wp7-security
     content: WP7b GPU 安全测试套件（host home/docker socket/network none/非 root/CapDrop/device 范围/secret 面为零）+ 过度宣称 grep 审计门禁
-    status: pending
+    status: completed
   - id: wp8
     content: WP8 M17_COMPLETION_RECORD（19 条 Exit Criteria 逐条证据 + 实际硬件 + physically-remote NOT VERIFIED + Deferred 清单 + SI-1 readiness）、ADR-0029、文档同步、全量门禁、RECHECK-20260902-028，完成后停止交独立复审
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -83,14 +83,14 @@ isProject: false
 
 ## M16 现状映射（实测代码）
 
-- Worker capability 是自由字符串集合：`[packages/domain/workers.py](packages/domain/workers.py)` `WorkerRegistration.capabilities: frozenset[str]`（`MAX_CAPABILITIES=32` / `MAX_CAPABILITY_LENGTH=64`），模块 docstring 明确写「GPU/内存/拓扑等资源平面属 M17」——这是被预留的扩展点
-- 任务侧需求是**单字符串** `tasks.required_capability`，匹配为精确相等：`[adapters/postgres/workflow_claim.py](adapters/postgres/workflow_claim.py)` `required_capability = ANY(%s)`；SQLite 等价实现在 `[adapters/sqlite/workflow_ops.py](adapters/sqlite/workflow_ops.py)`
-- 服务端 claim 门禁已存在且 fail-closed：`[services/api/worker_gateway/jobs.py](services/api/worker_gateway/jobs.py)` `_require_schedulable`（state ∈ READY + capabilities/partitions ⊆ 注册事实）
-- 注册是 upsert + generation+1，capability 整体替换（`[adapters/postgres/worker_registry.py](adapters/postgres/worker_registry.py)`），**但没有任何 capability freshness/TTL 概念**
-- 容器执行安全基线在 `[adapters/execution/docker_backend.py](adapters/execution/docker_backend.py)` `_create_container`：`NetworkMode=none` / `CapDrop=ALL` / `ReadonlyRootfs=True` / `no-new-privileges` / 非 root uid 1000 / 仅挂载 workspace；**无 `DeviceRequests`、无 `Runtime`、无 GPU 字段**
-- 资源需求载体是字符串 `resource_profile`，adapter 侧解析：`[adapters/execution/profiles.py](adapters/execution/profiles.py)` `resolve_resource_profile`（`default/small/large`，未知值 fail-closed）
-- **已存在的真实缺陷（M17 必修）**：`[adapters/execution/remote_backend.py](adapters/execution/remote_backend.py)` `_submit` 用 `capability = spec.backend_kind.lower()` → `"sandbox"`，而 worker 默认 capability 是 `"docker"`（`[services/worker/__main__.py](services/worker/__main__.py)`），真实实验的远程分发**永远匹配不到 worker**
-- Domain 已有 `ResourceType.GPU_TIME`（`[packages/domain/budget.py](packages/domain/budget.py)`）与 `max_gpu_hours` schema 字段，**零消费方**
+- Worker capability 是自由字符串集合：`[packages/domain/workers.py](../../packages/domain/workers.py)` `WorkerRegistration.capabilities: frozenset[str]`（`MAX_CAPABILITIES=32` / `MAX_CAPABILITY_LENGTH=64`），模块 docstring 明确写「GPU/内存/拓扑等资源平面属 M17」——这是被预留的扩展点
+- 任务侧需求是**单字符串** `tasks.required_capability`，匹配为精确相等：`[adapters/postgres/workflow_claim.py](../../adapters/postgres/workflow_claim.py)` `required_capability = ANY(%s)`；SQLite 等价实现在 `[adapters/sqlite/workflow_ops.py](../../adapters/sqlite/workflow_ops.py)`
+- 服务端 claim 门禁已存在且 fail-closed：`[services/api/worker_gateway/jobs.py](../../services/api/worker_gateway/jobs.py)` `_require_schedulable`（state ∈ READY + capabilities/partitions ⊆ 注册事实）
+- 注册是 upsert + generation+1，capability 整体替换（`[adapters/postgres/worker_registry.py](../../adapters/postgres/worker_registry.py)`），**但没有任何 capability freshness/TTL 概念**
+- 容器执行安全基线在 `[adapters/execution/docker_backend.py](../../adapters/execution/docker_backend.py)` `_create_container`：`NetworkMode=none` / `CapDrop=ALL` / `ReadonlyRootfs=True` / `no-new-privileges` / 非 root uid 1000 / 仅挂载 workspace；**无 `DeviceRequests`、无 `Runtime`、无 GPU 字段**
+- 资源需求载体是字符串 `resource_profile`，adapter 侧解析：`[adapters/execution/profiles.py](../../adapters/execution/profiles.py)` `resolve_resource_profile`（`default/small/large`，未知值 fail-closed）
+- **已存在的真实缺陷（M17 必修）**：`[adapters/execution/remote_backend.py](../../adapters/execution/remote_backend.py)` `_submit` 用 `capability = spec.backend_kind.lower()` → `"sandbox"`，而 worker 默认 capability 是 `"docker"`（`[services/worker/__main__.py](../../services/worker/__main__.py)`），真实实验的远程分发**永远匹配不到 worker**
+- Domain 已有 `ResourceType.GPU_TIME`（`[packages/domain/budget.py](../../packages/domain/budget.py)`）与 `max_gpu_hours` schema 字段，**零消费方**
 - `MetricName.REMOTE_EXECUTION_*` 与 `OperationScope.REMOTE_EXECUTION` 已注册但**从未发射**
 
 ## 数据流（M17 目标态）
@@ -209,9 +209,9 @@ Telemetry（闭集词汇最小增量）：
 - 研究问题：固定训练预算下，混合精度能否在保持准确率的同时提升吞吐
 - metrics：baseline/candidate test accuracy、每 epoch 墙钟、samples/sec、peak GPU memory、device identity
 - 准确率下降 → 合法 Negative Result；吞吐无提升 → 合法结论。不下载任何模型/数据集，容器保持 `network=none`
-- 形状对齐现有 `[examples/experiments/m12_reference_classification.py](examples/experiments/m12_reference_classification.py)`（确定性种子、代码内造数据、输出 `experiment_result.json`）
+- 形状对齐现有 `[examples/experiments/m12_reference_classification.py](../../examples/experiments/m12_reference_classification.py)`（确定性种子、代码内造数据、输出 `experiment_result.json`）
 
-链路**复用** `[packages/application/m12_reference/clean_run.py](packages/application/m12_reference/clean_run.py)`，注入 GPU 依赖（RemoteExecutionBackend over 真实 worker + GPU profile），**不新建第二套 Experiment Domain、不新建 `GpuExperimentRun`**：
+链路**复用** `[packages/application/m12_reference/clean_run.py](../../packages/application/m12_reference/clean_run.py)`，注入 GPU 依赖（RemoteExecutionBackend over 真实 worker + GPU profile），**不新建第二套 Experiment Domain、不新建 `GpuExperimentRun`**：
 
 `Research Objective` → 新 `examples/protocols/m17_gpu_research_v1.yaml` → Manifest 冻结 → Task → Scheduler → Remote GPU Worker → ExecutionBackend → ExperimentRun → Artifact → Metric → Evidence → Claim → 新 `examples/eval/datasets/m17_gpu_v1.yaml`（复用 M12 scorers + 新增 GPU device / no-fallback scorer）→ UsageLedger → Deliverable
 

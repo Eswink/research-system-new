@@ -122,9 +122,7 @@ def test_parse_gpu_facts_missing_or_malformed_yields_empty(tmp_path: Path) -> No
 def test_gpu_failure_category_oom_beats_unavailable() -> None:
     spec = _spec("gpu-small")
     assert _gpu_failure_category(spec, {"gpu_oom": True}) is FailureCategory.GPU_OOM
-    assert (
-        _gpu_failure_category(spec, {"cuda_available": False}) is FailureCategory.GPU_UNAVAILABLE
-    )
+    assert _gpu_failure_category(spec, {"cuda_available": False}) is FailureCategory.GPU_UNAVAILABLE
     # 设备在、非 OOM → 不加 GPU 分类（保持 EXECUTION_FAILURE 兜底）
     assert _gpu_failure_category(spec, {"gpu_device_name": "RTX"}) is None
 

@@ -53,7 +53,9 @@ def _write_facts(facts: dict[str, object]) -> None:
 def _driver_version() -> str:
     sm = subprocess.run(
         ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     return sm.stdout.strip() if sm.returncode == 0 else "unknown"
 

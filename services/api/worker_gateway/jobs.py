@@ -57,9 +57,7 @@ def _require_fresh_gpu_observation(
     if GPU_CAPABILITY not in claimed_capabilities:
         return
     if identity.gpu_observation is None or identity.gpu_observed_at is None:
-        raise ApiError(
-            409, "GPU Capability Stale", "gpu capability has no probe observation"
-        )
+        raise ApiError(409, "GPU Capability Stale", "gpu capability has no probe observation")
     age = (Timestamp.now().value - identity.gpu_observed_at.value).total_seconds()
     if age > ttl_seconds:
         raise ApiError(

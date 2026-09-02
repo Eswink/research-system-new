@@ -90,7 +90,7 @@ class AttributeKey(StrEnum):
     fence = "fence"
     rejection_reason = "rejection_reason"
     # M17 GPU execution plane
-    gpu_device_ref = "gpu_device_ref"  # stable short digest of device identity; raw name never exported
+    gpu_device_ref = "gpu_device_ref"  # digest of device identity; raw name never exported
 
 
 _ALL_ATTR_KEYS = frozenset(AttributeKey)

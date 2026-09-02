@@ -3,8 +3,42 @@
 ## Unreleased
 
 > VERSION 仍为 0.4.0；本节为 M15 Observability / Cost / Eval Operations、
-> M16 Distributed Execution 及其后续债务清偿轮的未发布变更（版本在发布时经
-> 显式流程统一提升）。
+> M16 Distributed Execution、M17 Remote GPU Execution 及其后续债务清偿轮的
+> 未发布变更（版本在发布时经显式流程统一提升）。
+
+## M17 Remote GPU Execution（2026-09-02）
+
+- GPU capability：`WorkerGpuObservation` 有界观测值对象 + 单 token `gpu` 调度键
+  （观测 vs 调度分离，ADR-0029）；worker 启动期真实探测（GPU 容器内 torch 设备
+  属性 + 确定性 GEMM，失败不声明 gpu）；freshness 四层（注册即真相 / gateway
+  服务端 TTL 门禁 / 重探 re-register / 执行期断言）；migration 009（additive）。
+- 调度：`derive_required_capability`（修复 `backend_kind.lower()` 缺陷，真实实验
+  远程分发可被 claim）；gpu-small/gpu-oom-probe profile + `GpuRequirements`
+  执行期契约；三实现（Fake/SQLite/PG）GPU claim 契约套件。
+- 执行：`DockerExecutionBackend` 仅 GPU profile 增 `DeviceRequests`（其余安全
+  基线与 CPU 完全一致，单维度差异由测试锁定）；`gpu_runtime_facts.json` 白名单
+  并入 compute_usage_summary；pinned GPU sandbox 镜像（pytorch 2.9.1-cuda12.8
+  digest pin，sm_89 实测）。
+- 无静默 CPU fallback 四层：调度层 / 容器层（GPU_UNAVAILABLE 不降级）/ 容器内
+  契约断言 + cuda-else-cpu 静态检查 / 证据层 compute_device 判别（声明 GPU 记录
+  CPU → 准入拒绝 FAILED）。
+- 失败/取消/OOM：`FailureCategory` 增 GPU_UNAVAILABLE/GPU_OOM（映射点穷尽 +
+  FAILURE_MODEL 矩阵 + OOM≠NEGATIVE_RESULT 边界测试）；协作式取消（gateway
+  cancel 路由 lease-holder-only + worker 探针 kill 容器 + CANCELLED 结算 +
+  stale-fence 迟到结果 409）；受控真实 OOM E2E。
+- Usage/Telemetry：`ResourceType.GPU_TIME` 首个真实消费方（成本 UNKNOWN 不写 0）；
+  3 个 GPU MetricName + `gpu_device_ref` digest + 补发 REMOTE_EXECUTION span +
+  隐私 canary 覆盖 GPU 路径；worker 解析的 image_digest/GPU 观测沿结果路径回传
+  （远程喂同一条用量/复现链，无第二真相）。
+- Research Slice：`m17_gpu_research.py`（FP32 vs bf16 + GPU/CPU 对照）+
+  `m17_gpu_research_v1` 协议 + `m17_gpu_v1` 评测集（含 gpu_compute_device
+  判别器）；clean_run 参数化复用走 RemoteExecutionBackend over 真实 worker 全链
+  Objective→Deliverable；可复现性 ≥2 次真实重复 + ReproducibilityAudit GPU
+  fingerprint + 实测 allowed_variance（不声称 bit-for-bit）。
+- 诚实边界（ADR-0029）：real GPU execution + process/network-remote worker
+  boundary = VERIFIED；physically-remote GPU host = NOT VERIFIED/DEFERRED。
+- 资格记录 `M17_GPU_RUNTIME_QUALIFICATION.md`；`UPSTREAM_COMPONENTS.yaml`
+  `research_os_gpu_base_image` digest pin；过度宣称 grep 门禁。
 
 ## M16 Distributed Execution（2026-08-31）
 

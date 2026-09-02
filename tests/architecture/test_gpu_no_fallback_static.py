@@ -14,9 +14,7 @@ from pathlib import Path
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-_GPU_EXPERIMENTS = tuple(
-    (_REPO_ROOT / "examples" / "experiments").glob("m17_*gpu*.py")
-)
+_GPU_EXPERIMENTS = tuple((_REPO_ROOT / "examples" / "experiments").glob("m17_*gpu*.py"))
 
 # 禁止模式：主计算设备由「cuda 可用否则 cpu」条件表达式决定。
 _FORBIDDEN_PATTERNS = (

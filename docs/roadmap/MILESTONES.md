@@ -11,6 +11,7 @@ M0-M7 里程碑详细定义保留在 `CODEX_BOOTSTRAP.md`（历史契约）；Po
 Foundation / Executable Research Kernel = completed（M0-M7 含 M5R，2026-08-14）
 Post-M7 产品能力 M8-M16 = completed（M16 Distributed Execution，2026-08-31；attempt-2 独立复审 PASS 2026-09-01）
 RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R
+M17 Remote GPU Execution = completed（2026-09-02，ADR-0029）：真实单卡 GPU 全链 VERIFIED；physically-remote GPU host = NOT VERIFIED/DEFERRED；下一站 SI-1
 ```
 
 完成矩阵与证据见 [COMPLETION_MATRIX_M0_M7.md](COMPLETION_MATRIX_M0_M7.md)；
@@ -111,7 +112,7 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M14 | Durable Workflow + PostgreSQL | Production | M12 | DONE（2026-08-28 立项；WP-J2 重判 PASS：RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
 | M15 | Observability / Cost / Eval Operations | Production | M11 | DONE（2026-08-29 首轮实施；2026-08-30 独立复审判定 FAIL 后修复轮 WP0–WP8 完成，6 BLOCKER 独立探针复现修复，m0 23/23 全绿；recheck PASS 见 `RECHECK-20260830-024`） |
 | M16 | Distributed Execution + Remote Sandbox/Worker | Scale | M14 | DONE（2026-08-31） |
-| M17 | Remote GPU Execution / Personal Scale Baseline（RM-P2 收缩，原 GPU / HPC） | Scale | M16+M9 | PLANNED |
+| M17 | Remote GPU Execution / Personal Scale Baseline（RM-P2 收缩，原 GPU / HPC） | Scale | M16+M9 | DONE（2026-09-02；真实单卡 GPU 全链 VERIFIED，physically-remote GPU host = NOT VERIFIED/DEFERRED，见 M17_COMPLETION_RECORD + ADR-0029） |
 | M18 | Multi-user / Organization / RBAC | Enterprise | M13+M14 | DEFERRED（RM-P2，2026-09-02；激活条件见 M18 节） |
 | M19 | Production Security / Governance + Backup/Recovery/SLO | Enterprise | M14+M15+M18 | DEFERRED（RM-P2，2026-09-02；激活条件见 M19 节） |
 | SI-1 | Personal Scale Integration Review（非产品 Gate） | Gate | M17 | PLANNED |
@@ -223,23 +224,23 @@ regression（以 Eval Harness + deterministic gates 为基准），不允许仅
 | M14 | Temporal | 采用/不采用决策（ADAPTER 隔离，不进 Domain；若采用需 revision lock） |
 | M15 | OpenTelemetry | collector/SDK qualification（genai 内容默认关闭） |
 | M16 | SWE-ReX | 远程并行执行 qualification |
-| M17 | GPU 运行时（单机单卡） | 真实远程 GPU Worker 上的 GPU container/runtime qualification（如 NVIDIA Container Toolkit）；原 Slurm/云 GPU API qualification 随 M17 Deferred Scope 移出（RM-P2） |
+| M17 | GPU 运行时（单机单卡） | **DONE（2026-09-02）**：`M17_GPU_RUNTIME_QUALIFICATION.md`（pytorch/pytorch 2.9.1-cuda12.8 按 digest pin，sm_89 实测，readonly-rootfs×nvidia-hook 无冲突）+ `UPSTREAM_COMPONENTS.yaml` `research_os_gpu_base_image`；physically-remote GPU host = NOT VERIFIED/DEFERRED；原 Slurm/云 GPU API qualification 随 M17 Deferred Scope 移出（RM-P2） |
 | M19 | OPA + Secret Manager | OPA 采用/不采用决策；Secret Manager 选型（M19 DEFERRED：暂不排期） |
 
 ### 下一阶段推荐
 
-**M17 — Remote GPU Execution / Personal Scale Baseline**（M16 已 DONE：
-2026-08-31；attempt-2 独立对抗复审 PASS 2026-09-01，
-RECHECK-20260901-025-m16-attempt2。M17 Entry Gate「M16 PASS」已满足）。
-M17 经 RM-P2（ADR-0028）收缩为个人规模：在真实远程单卡 GPU Worker 上
-完成真实 GPU Research Slice；原 GPU/HPC 扩展面（multi-GPU/Slurm/
-cluster 等）进入 Deferred Scope。M18/M19 DEFERRED（激活条件见各节）；
-M17 PASS 后依次进入 SI-1 → PA-1 → PA-1R。
+**SI-1 — Personal Scale Integration Review**（M17 已 DONE：2026-09-02，
+真实单卡 GPU 全链 VERIFIED；`M17_COMPLETION_RECORD.md` + ADR-0029。
+M17 诚实边界：`physically-remote GPU host`（GPU 主机 ≠ Control Plane 主机）
+= NOT VERIFIED / DEFERRED——本环境 GPU 与 Control Plane 同一物理机，M17 证明
+的是跨进程/跨网络 untrusted worker 边界 + 真实 GPU，不是多机 GPU 集群）。
+SI-1 Entry Gate「M17 PASS」已满足。SI-1 后依次进入 PA-1 → PA-1R。
+M18/M19 仍 DEFERRED（激活条件见各节）。
 
 > 历史说明：M8-M11 规划期（2026-08-14）本节推荐为 M8；M8-M11 完成后
 > （2026-08-16，DOC-R1）本节更新为 M12；M12/M13 完成后（2026-08-28）
-> 本节更新为 M14；M16 完成后（2026-09-02，RM-P2）本节更新为 M17。
-> 历史 Milestone 定义不改写。
+> 本节更新为 M14；M16 完成后（2026-09-02，RM-P2）本节更新为 M17；
+> M17 完成后（2026-09-02）本节更新为 SI-1。历史 Milestone 定义不改写。
 
 ---
 
@@ -855,6 +856,15 @@ M18。
 解锁 M17（GPU/HPC）。
 
 ## M17 — Remote GPU Execution / Personal Scale Baseline
+
+> **M17 完成状态（2026-09-02）**：DONE。真实单卡 GPU 全链 VERIFIED
+> （capability 发现 / GPU-required 调度 / 真实 CUDA 容器执行 / 无静默 CPU
+> fallback / OOM·取消·故障语义 / Artifact·Evidence·Evaluation·Usage 闭环 /
+> 可复现性），见 `M17_COMPLETION_RECORD.md` + ADR-0029。
+> **诚实边界**：本节"真实远程 GPU Worker"在当前环境为**本机 GPU**（GPU 主机
+> = Control Plane 主机）；`physically-remote GPU host`（GPU 主机 ≠ Control
+> Plane 主机）= **NOT VERIFIED / DEFERRED**。M17 证明的是跨进程 + 跨网络
+> untrusted worker 边界 + 真实 GPU，不得据此宣称多机 GPU 集群。
 
 > RM-P2 Rebaseline（2026-09-02，ADR-0028）：原「GPU / HPC」定义面向
 > Slurm/云 GPU/配额的资源平面，其可验证环境当前不存在。本节收缩 M17

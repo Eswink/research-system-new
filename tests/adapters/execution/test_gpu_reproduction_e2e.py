@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 import docker
 import pytest
@@ -57,9 +58,7 @@ def gpu_image() -> str:
     try:
         client.images.get(_IMAGE_TAG)
     except ImageNotFound:
-        client.images.build(
-            path=str(_SANDBOX_DIR), dockerfile="Dockerfile.gpu", tag=_IMAGE_TAG
-        )
+        client.images.build(path=str(_SANDBOX_DIR), dockerfile="Dockerfile.gpu", tag=_IMAGE_TAG)
     return _IMAGE_TAG
 
 
@@ -73,7 +72,7 @@ def _plan() -> ExperimentPlan:
 
 def _run_once(
     tmp_path: Path, image: str, run_tag: str
-) -> tuple[object, SqliteArtifactStore, dict[str, object]]:
+) -> tuple[Any, SqliteArtifactStore, dict[str, object]]:
     workspaces = FileWorkspaceBackend(tmp_path / f"ws-{run_tag}")
     workspaces.create_workspace(_WORKSPACE)
     artifacts = SqliteArtifactStore(blob_dir=tmp_path / f"blobs-{run_tag}")
@@ -102,9 +101,7 @@ def _run_once(
             timeout_seconds=600,
         )
     )
-    payload = json.loads(
-        artifacts.get(f"{run_id.value}:experiment_result.json").decode("utf-8")
-    )
+    payload = json.loads(artifacts.get(f"{run_id.value}:experiment_result.json").decode("utf-8"))
     return outcome, artifacts, payload
 
 
@@ -131,6 +128,7 @@ def test_gpu_repeated_runs_semantic_reproducibility(tmp_path: Path, gpu_image: s
     # 语义指标在实测容差内一致（不声称 bit-for-bit）
     fm = first_payload["metrics"]
     sm = second_payload["metrics"]
+    assert isinstance(fm, dict) and isinstance(sm, dict)
     for metric in _SEMANTIC_METRICS:
         assert abs(Decimal(str(fm[metric])) - Decimal(str(sm[metric]))) <= Decimal("0.02")
     # 观测指标（吞吐/墙钟）允许漂移：如实记录，不作语义失败

@@ -205,9 +205,7 @@ class WorkerGpuObservation:
         )
         if not 1 <= self.total_vram_bytes <= MAX_GPU_VRAM_BYTES:
             raise ValueError(f"total_vram_bytes must be in [1, {MAX_GPU_VRAM_BYTES}]")
-        _check_bounded_text(
-            self.framework, field="framework", max_length=MAX_GPU_FRAMEWORK_LENGTH
-        )
+        _check_bounded_text(self.framework, field="framework", max_length=MAX_GPU_FRAMEWORK_LENGTH)
         _check_bounded_text(
             self.probe_digest, field="probe_digest", max_length=MAX_PROBE_DIGEST_LENGTH
         )

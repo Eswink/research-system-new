@@ -220,8 +220,9 @@ def test_versioned_scorer_ids_are_stable() -> None:
     ids = versioned_scorer_ids()
     assert "exact_match@1.0.0" in ids
     assert "schema_validity@1.0.0" in ids
+    assert "gpu_compute_device@1.0.0" in ids  # M17 no-fallback discriminator
     assert len(ids) == len(set(ids))
-    assert len(ids) == 7
+    assert len(ids) == 8
 
 
 def test_scorer_does_not_mutate_expected() -> None:

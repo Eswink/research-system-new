@@ -56,6 +56,7 @@ from packages.domain.workers import GPU_RESOURCE_PROFILES
 DATASET_PATH = "examples/eval/datasets/m12_research_v1.yaml"
 HYPOTHESIS = "hash-embedding+linear classifier beats tfidf on low-resource subset"
 
+
 @dataclass(frozen=True, slots=True)
 class CleanRunResult:
     """一次 clean-run 的完整可审计输出（全链标识）。"""

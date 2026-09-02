@@ -192,18 +192,19 @@ components:
     integration_mode: BUILD_ARTIFACT
     role: gpu_experiment_sandbox_base_image
     source:
-      kind: DOCKER_IMAGE
-      repository: "docker.io/pytorch/pytorch"
-      tag: "2.9.1-cuda12.8-cudnn9-runtime"
-      index_digest: "sha256:7b324d212a4450795b49edba9949b7cdc72429148a64e974334bfe5774d51385"
+      kind: DOCKERFILE
+      path: "adapters/execution/sandbox/Dockerfile.gpu"
+      base: "docker.io/pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime"
+      base_index_digest: "sha256:7b324d212a4450795b49edba9949b7cdc72429148a64e974334bfe5774d51385"
       retrieval: "docker pull + docker image inspect RepoDigests, 2026-09-02"
       qualification: "docs/references/upstream/M17_GPU_RUNTIME_QUALIFICATION.md"
     resolution:
-      version: "torch 2.9.1+cu128 / CUDA 12.8 / cuDNN 9.10.02"
-      note: "GPU sandbox 镜像（adapters/execution/sandbox/Dockerfile.gpu）按此 index digest pin 基座；sm_89 实测验证；执行期保持 NetworkMode=none"
+      version: "m17-v1"
+      base_index_digest: "sha256:7b324d212a4450795b49edba9949b7cdc72429148a64e974334bfe5774d51385"
+      note: "torch 2.9.1+cu128 / CUDA 12.8 / cuDNN 9.10.02；GPU sandbox 镜像按基座 index digest pin；sm_89 实测；构建产物 digest 每次由 DockerExecutionBackend 运行时解析并记录；执行期保持 NetworkMode=none"
     license:
       spdx: "BSD-3-Clause (PyTorch); CUDA Toolkit / cuDNN runtime 库为 NVIDIA 专有运行时条款"
-      evidence: "https://github.com/pytorch/pytorch/blob/main/LICENSE; https://docs.nvidia.com/cuda/eula/"
+      evidence: "https://github.com/pytorch/pytorch/blob/main/LICENSE"
     upgrade_gate:
       explicit_approval: true
       required_checks: [image_rebuild, gpu_runtime_requalification, gpu_security_suite, gpu_e2e]
@@ -212,6 +213,7 @@ components:
       - runtime_default_deny_host_config
       - device_requests_only_gpu_delta
       - execution_network_none
+      - actual_digest_recorded_per_run
 
   - id: ncbi_eutils
     adoption_status: ADOPTED

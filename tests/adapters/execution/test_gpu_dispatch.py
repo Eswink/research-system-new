@@ -49,10 +49,14 @@ def _spec(tmp_path: Path, *, profile: str | None, backend_kind: str = "sandbox")
     )
 
 
-def _enqueue(tmp_path: Path, **kw: str) -> tuple[FakeExecutionJobQueue, str]:
+def _enqueue(
+    tmp_path: Path, *, profile: str | None, backend_kind: str = "sandbox"
+) -> tuple[FakeExecutionJobQueue, str]:
     queue = FakeExecutionJobQueue()
     backend = _make_backend(queue, FakeArtifactStore())
-    task_id = backend._submit(_spec(tmp_path, **kw), Path(tmp_path))
+    task_id = backend._submit(
+        _spec(tmp_path, profile=profile, backend_kind=backend_kind), Path(tmp_path)
+    )
     return queue, task_id
 
 

@@ -116,6 +116,10 @@ M0–M16 历史记录零改写。
 | 2026-09-02 | IN_PROGRESS | VERIFYING | 全部编辑 + 一致性验证完成 | EV-01..EV-03 |
 | 2026-09-02 | VERIFYING | DONE | RECHECK-20260902-027 = PASS，AC-01..AC-10 全满足 | EV-04 |
 
+工程记忆：无可复用事实——本计划为 docs-only rebaseline，路线收缩决策与
+Deferred 清单已由 ADR-0028 + MILESTONES.md 权威记录，无跨会话可复用的
+工程教训需要单独入账。
+
 ## 影响报告
 
 - 改动：`docs/roadmap/MILESTONES.md`（rebaseline 核心 13 处）、

@@ -70,9 +70,7 @@ class WorkerGatewaySettings:
                 os.environ.get("RESEARCHOS_WORKER_MAX_RESULT_BYTES", _DEFAULT_MAX_RESULT_BYTES)
             ),
             gpu_observation_ttl_seconds=float(
-                os.environ.get(
-                    "RESEARCHOS_WORKER_GPU_OBSERVATION_TTL", _DEFAULT_GPU_TTL_SECONDS
-                )
+                os.environ.get("RESEARCHOS_WORKER_GPU_OBSERVATION_TTL", _DEFAULT_GPU_TTL_SECONDS)
             ),
             supported_protocol_versions=frozenset(
                 p.strip() for p in protocols.split(",") if p.strip()

@@ -204,6 +204,47 @@ def tool_entries(
     ]
 
 
+def _cpu_time_entry(
+    run_id: str, usage: ExperimentUsage, occurred_at: datetime, task_id: str | None
+) -> UsageLedgerEntry:
+    return _entry(
+        entry_id=_attempt_scope(f"usage:{run_id}:experiment:{usage.run_id}", usage.attempt),
+        resource_type=ResourceType.CPU_TIME,
+        quantity=usage.elapsed_seconds or 0,
+        unit="seconds",
+        source="m12:experiment",
+        occurred_at=occurred_at,
+        run_id=run_id,
+        task_id=task_id,
+        quantity_status=(
+            LedgerQuantityStatus.UNKNOWN
+            if usage.elapsed_seconds is None
+            else LedgerQuantityStatus.KNOWN
+        ),
+        unavailable_reason=None
+        if usage.elapsed_seconds is not None
+        else "elapsed_seconds not observed",
+        attempt=usage.attempt,
+    )
+
+
+def _gpu_time_entry(
+    run_id: str, usage: ExperimentUsage, occurred_at: datetime, task_id: str | None
+) -> UsageLedgerEntry:
+    return _entry(
+        entry_id=_attempt_scope(f"usage:{run_id}:experiment:{usage.run_id}:gpu", usage.attempt),
+        resource_type=ResourceType.GPU_TIME,
+        quantity=usage.gpu_elapsed_seconds or 0,
+        unit="seconds",
+        source="m17:experiment-gpu",
+        occurred_at=occurred_at,
+        run_id=run_id,
+        task_id=task_id,
+        unavailable_reason=ExperimentUsage.GPU_COST_UNAVAILABLE_REASON,
+        attempt=usage.attempt,
+    )
+
+
 def experiment_entries(
     run_id: str,
     experiment_usage: tuple[ExperimentUsage, ...],
@@ -217,44 +258,9 @@ def experiment_entries(
     """
     entries: list[UsageLedgerEntry] = []
     for usage in experiment_usage:
-        entries.append(
-            _entry(
-                entry_id=_attempt_scope(f"usage:{run_id}:experiment:{usage.run_id}", usage.attempt),
-                resource_type=ResourceType.CPU_TIME,
-                quantity=usage.elapsed_seconds or 0,
-                unit="seconds",
-                source="m12:experiment",
-                occurred_at=occurred_at,
-                run_id=run_id,
-                task_id=task_id,
-                quantity_status=(
-                    LedgerQuantityStatus.UNKNOWN
-                    if usage.elapsed_seconds is None
-                    else LedgerQuantityStatus.KNOWN
-                ),
-                unavailable_reason=None
-                if usage.elapsed_seconds is not None
-                else "elapsed_seconds not observed",
-                attempt=usage.attempt,
-            )
-        )
+        entries.append(_cpu_time_entry(run_id, usage, occurred_at, task_id))
         if usage.gpu_elapsed_seconds is not None:
-            entries.append(
-                _entry(
-                    entry_id=_attempt_scope(
-                        f"usage:{run_id}:experiment:{usage.run_id}:gpu", usage.attempt
-                    ),
-                    resource_type=ResourceType.GPU_TIME,
-                    quantity=usage.gpu_elapsed_seconds,
-                    unit="seconds",
-                    source="m17:experiment-gpu",
-                    occurred_at=occurred_at,
-                    run_id=run_id,
-                    task_id=task_id,
-                    unavailable_reason=ExperimentUsage.GPU_COST_UNAVAILABLE_REASON,
-                    attempt=usage.attempt,
-                )
-            )
+            entries.append(_gpu_time_entry(run_id, usage, occurred_at, task_id))
     return entries
 
 

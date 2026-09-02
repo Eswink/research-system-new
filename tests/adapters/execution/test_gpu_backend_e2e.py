@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import docker
 import pytest
@@ -40,11 +41,12 @@ def _repo_root() -> Path:
 def _sandbox_dir() -> Path:
     return _repo_root().joinpath("adapters", "execution", "sandbox")
 
+
 # GPU 实验入口的公共形状（WP6a 研究实验同款断言/记账逻辑）：
 # 强制设备断言 → 只在 cuda:0 上真实计算 → 写 gpu_runtime_facts.json +
 # experiment_result.json（compute_device 进证据链）。任何断言失败 = FAIL，
 # 绝不降级 CPU。
-_GPU_SMOKE_SCRIPT = '''
+_GPU_SMOKE_SCRIPT = """
 import json, os, subprocess, sys
 from pathlib import Path
 
@@ -94,7 +96,7 @@ def main():
     print("gpu smoke ok")
 
 main()
-'''
+"""
 
 
 @pytest.fixture(scope="module")
@@ -107,9 +109,7 @@ def gpu_image() -> str:
     try:
         client.images.get(IMAGE_TAG)
     except ImageNotFound:
-        client.images.build(
-            path=str(_sandbox_dir()), dockerfile="Dockerfile.gpu", tag=IMAGE_TAG
-        )
+        client.images.build(path=str(_sandbox_dir()), dockerfile="Dockerfile.gpu", tag=IMAGE_TAG)
     return IMAGE_TAG
 
 
@@ -131,7 +131,7 @@ def _gpu_spec(tmp_path: Path, script: str, **env: str) -> ExecutionSpec:
     )
 
 
-def _run(backend: DockerExecutionBackend, spec: ExecutionSpec, **kw: object) -> object:
+def _run(backend: DockerExecutionBackend, spec: ExecutionSpec, **kw: object) -> Any:
     runner = getattr(backend, "execute")
     return runner(spec, **kw)
 

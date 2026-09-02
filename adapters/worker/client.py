@@ -131,9 +131,7 @@ class WorkerClient:
         added automatically; without one it is never declared (probe failure
         ⇒ CPU-only registration, never a guess).
         """
-        caps = list(capabilities) if capabilities is not None else list(
-            self._config.capabilities
-        )
+        caps = list(capabilities) if capabilities is not None else list(self._config.capabilities)
         body: dict[str, object] = {
             "worker_id": self._config.worker_id,
             "protocol_version": self._config.protocol_version,

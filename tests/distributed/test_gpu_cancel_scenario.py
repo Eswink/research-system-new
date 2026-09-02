@@ -84,7 +84,6 @@ def gpu_harness(clean_worker_plane: str) -> Generator[WorkerHarness, None, None]
 def test_gpu_job_cancel_kills_container_and_fences_late_result(
     gpu_harness: WorkerHarness,
 ) -> None:
-    import httpx
 
     harness = gpu_harness
     baseline_ids = {str(c["Id"]) for c in _exec_containers()}
@@ -126,6 +125,17 @@ def test_gpu_job_cancel_kills_container_and_fences_late_result(
 
     # stale-fence injection: a valid session replaying the released lease
     # identity must be rejected (409), and nothing may overwrite CANCELLED.
+    status_code = _submit_stale_result(harness, task_id, lease_id, fence)
+    assert status_code == 409
+    settled = harness.job_queue.poll(task_id)
+    assert settled is not None and settled.status == "CANCELLED"
+    worker.terminate()
+
+
+def _submit_stale_result(harness: WorkerHarness, task_id: str, lease_id: str, fence: int) -> int:
+    """A fresh valid session replaying a released (lease_id, fence) → status."""
+    import httpx
+
     late_token, late_gen = _gateway_register(harness, "gpu-late-holder")
     resp = httpx.post(
         f"{harness.gateway_url}/worker/v1/tasks/{task_id}/result",
@@ -139,10 +149,7 @@ def test_gpu_job_cancel_kills_container_and_fences_late_result(
             "exit_code": 0,
         },
     )
-    assert resp.status_code == 409
-    settled = harness.job_queue.poll(task_id)
-    assert settled is not None and settled.status == "CANCELLED"
-    worker.terminate()
+    return int(resp.status_code)
 
 
 def _gateway_register_gpu(harness: WorkerHarness, worker_id: str) -> tuple[str, int]:

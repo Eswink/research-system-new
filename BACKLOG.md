@@ -11,6 +11,7 @@ M14 Durable Workflow + PostgreSQL = DONE（2026-08-28；WP-J2 重判 PASS，RECH
 M15 Observability / Cost / Eval Operations = DONE（2026-08-30 修复轮完成，recheck PASS 见 RECHECK-20260830-024）
 M16 Distributed Execution + Remote Sandbox/Worker = DONE（2026-08-31；attempt-2 独立对抗复审 PASS 2026-09-01，RECHECK-20260901-025-m16-attempt2）
 RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R
+M17 Remote GPU Execution = DONE（2026-09-02，ADR-0029；真实单卡 GPU 全链 VERIFIED，physically-remote GPU host = NOT VERIFIED/DEFERRED；证据见 docs/roadmap/M17_COMPLETION_RECORD.md）
 ```
 
 M0-M11（含 M5R）全部完成（真实完成顺序：M0 → M1 → M3 → M2 → M4 → M5 →
@@ -174,8 +175,8 @@ PASS 判定经独立复审证伪并修复，2026-08-28 重新独立复审重判 
 | RetrievalIndex 持久化 / 真实 embedding | P2 | M12 前评估 | M10 交付 `InMemoryRetrievalIndex`（确定性 token 检索，可重建投影）；真实语义检索与 embedding provider 绑定属 future dependency，不实现（**保留**） |
 | Memory/Evidence 内容级数据治理 | P2 | M19（DEFERRED） | M10 gate 在 commit 前复用 `domain.redaction` 脱敏 secret 样式内容（Bearer/API key/URL 凭据）；完整 content policy、私有 CoT 识别与数据治理规则属 M19（DEFERRED，重新激活时清偿）（**保留**） |
 | Memory/Claim 并发写入控制 | P2 | M14 | M10 为单进程语义（Fake 内存实现 + 同 id 重复 commit 拒绝）；跨进程并发依赖 M14 PostgreSQL 事务语义。**清偿（2026-08-28 收口轮）：** `adapters/postgres/evidence_ledger.py` register_claim/source/evidence ON CONFLICT DO NOTHING + rowcount 校验 + update_claim rowcount 校验 + _require_verifiable 同事务 FOR SHARE；`adapters/postgres/migrations/004_memory_state.sql`；`adapters/postgres/memory_store.py::PostgresMemoryStore`（原子 commit ON CONFLICT DO NOTHING + rowcount；deactivate/delete 条件写 + rowcount）；`services/api/composition.py` ApiDeps.memory 槽位 + PG 装配注入；`tests/postgres/test_memory_claim_concurrency.py`（5 tests PASS：同提案竞争 commit 恰一赢；delete 0 行抛错；deactivate 幂等；claim 竞争检测；claim update unknown 拒绝）；`tests/contracts/registry.py` memory_store 加入 PG 实现 |
-| Worker BUSY/max_concurrency 接线 | P2 | M17 | M16 attempt-2 后 claim 强制 state ∈ READY，但 CLAIM/JOB_SETTLED 转换与 `max_concurrency` 并行度未接线（worker loop 单线程，BUSY 从不进入）。多任务/worker 并行分发属 M17（**保留**） |
-| Phase 内并行分发 + 远程分发 composition 选择 | P2 | M17 | M16 交付跨 run 并行；run 内 phase/session 仍顺序执行，且 Control Plane 实验编排当前走 FakeAgentRuntime，`RemoteExecutionBackend` 尚无生产选择点（gateway/reaper 已有入口）。远程分发接线属 M17（**保留**） |
+| Worker BUSY/max_concurrency 接线 | P2 | M17 Deferred | M16 attempt-2 后 claim 强制 state ∈ READY，但 CLAIM/JOB_SETTLED 转换与 `max_concurrency` 并行度未接线（worker loop 单线程，BUSY 从不进入）。M17 聚焦单卡 GPU 全链，未做 worker 内多任务并行（个人规模单 worker 无此需求）；**保留至真实并发需求出现** |
+| Phase 内并行分发 + 远程分发 composition 选择 | P2 | M17 部分清偿 | M16 交付跨 run 并行；M17 修复 `derive_required_capability`（backend_kind 缺陷）使真实实验远程分发可被 claim，并在 GPU Research Slice E2E 中把 `RemoteExecutionBackend` 作为真实执行后端跑通全链（生产选择点已实证）。run 内 phase/session 仍顺序执行、Control Plane Agent 编排仍走 FakeAgentRuntime；**phase 内并行保留** |
 | 非 M16 深度扫描 high（scratch/、tools/upstream-spikes/、M12 示例、M8 解析器） | P2 | 另立计划 | 首次密封深度扫描 7 high 中 6 个落在非 M16 代码；M16 项已清。需一次覆盖完整的深度扫描建立基线后另立计划处置（**保留**） |
 
 > M9 已清偿（2026-08-15，证据见 `docs/roadmap/M9_COMPLETION_RECORD.md`）：
@@ -190,9 +191,11 @@ M7 后的产品能力建设方向。**M8-M15 已完成（见各 completion recor
 M15 修复轮完成（2026-08-30 独立复审判定 FAIL 后 WP0–WP8 修复，6 BLOCKER 独立
 探针复现修复，m0 23/23 全绿，recheck PASS 见 `RECHECK-20260830-024`）。
 M16 Distributed Execution 已完成（2026-08-31；attempt-2 独立对抗复审
-PASS 2026-09-01，`RECHECK-20260901-025-m16-attempt2`）。**M17 为下一
-Active Milestone（RM-P2 收缩后，尚未实现、未开工）；M18/M19 DEFERRED
-（RM-P2，2026-09-02，激活条件见 MILESTONES.md 各节）；SI-1 / PA-1 /
+PASS 2026-09-01，`RECHECK-20260901-025-m16-attempt2`）。M17 Remote GPU
+Execution 已完成（2026-09-02，ADR-0029；真实单卡 GPU 全链 VERIFIED，
+physically-remote GPU host = NOT VERIFIED/DEFERRED）。**SI-1 为下一
+Active Gate（M17 PASS 后，尚未执行）；M18/M19 DEFERRED
+（RM-P2，2026-09-02，激活条件见 MILESTONES.md 各节）；PA-1 /
 PA-1R 为后续非产品 Gate，均未执行**；立项时按 `AGENTS.md` 流程从 Plan Mode
 开始。编号、名称、顺序、
 依赖 DAG 与详细定义（Purpose / Scope / DoD / Entry Gate 等）以
@@ -211,7 +214,7 @@ PA-1R 为后续非产品 Gate，均未执行**；立项时按 `AGENTS.md` 流程
 | Durable Workflow：Temporal qualification + 采用/不采用决策（DEFERRED，ADR-0025）、PostgreSQL canonical state + task queue、跨进程分布式调度 | M14 Durable Workflow + PostgreSQL | DONE（2026-08-28；WP-J2 重判 PASS，RECHECK-20260828-022；Temporal DEFERRED，ADR-0025） |
 | Observability / Cost / Evaluation Operations：OTel collector（隐私默认）、成本归集、eval 趋势运营 | M15 Observability / Cost / Eval Operations | DONE（2026-08-29 首轮；2026-08-30 修复轮 WP0–WP8 完成，recheck PASS 见 RECHECK-20260830-024） |
 | Distributed Execution：多 worker、分区与调度、远程 sandbox/worker | M16 Distributed Execution + Remote Sandbox/Worker | DONE（2026-08-31） |
-| Remote GPU Execution：GPU capability 发现与注册、GPU-required task 调度门禁、真实 GPU container/runtime、真实计算实验、OOM/CUDA error/timeout/cancellation 处理、Artifact/Metric/Usage 记录、Evidence/Evaluation 接入、真实 GPU Research Slice | M17 Remote GPU Execution / Personal Scale Baseline | PLANNED |
+| Remote GPU Execution：GPU capability 发现与注册、GPU-required task 调度门禁、真实 GPU container/runtime、真实计算实验、OOM/CUDA error/timeout/cancellation 处理、Artifact/Metric/Usage 记录、Evidence/Evaluation 接入、真实 GPU Research Slice | M17 Remote GPU Execution / Personal Scale Baseline | DONE（2026-09-02；真实单卡 GPU 全链 VERIFIED，physically-remote GPU host = NOT VERIFIED/DEFERRED，ADR-0029 + `M17_COMPLETION_RECORD.md`） |
 | Multi-user / Organization / RBAC：多租户数据模型、organization scope、RBAC | M18 Multi-user / Organization / RBAC | DEFERRED（RM-P2，2026-09-02；激活条件见 MILESTONES.md M18 节） |
 | Production Security / Governance：OPA qualification 与决策、central Secret Manager、backup/restore、SLO | M19 Production Security / Governance + Backup/Recovery/SLO | DEFERRED（RM-P2，2026-09-02；单用户有价值的 backup/recovery 项归 PA-1） |
 | 全链集成评审：Research Objective → Control Plane → Distributed Scheduler → Remote Worker → Real GPU → Experiment → Artifact → Evidence → Claim → Evaluation → Usage/Cost + 六类故障面 | SI-1 Personal Scale Integration Review（非产品 Gate） | PLANNED |

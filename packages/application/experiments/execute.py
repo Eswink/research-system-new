@@ -208,18 +208,7 @@ class ExperimentExecutor:
                 declared_status,
                 gpu_violation_reason,
             ) = self._ingest_success_outputs(request, workspace_path)
-        event, reason = classify_outcome(execution_run.status, declared_status)
-        failure_reason = execution_failure_reason(execution_run.status)
-        # M17 WP4a：GPU 分类原因优先于 generic "execution failed"（可读性）
-        if failure_reason == "execution failed":
-            failure_reason = (
-                gpu_failure_reason(execution_run.failure_category) or failure_reason
-            )
-        if reason is not None:
-            failure_reason = failure_reason or reason
-        if gpu_violation_reason is not None:
-            event = ExperimentRunState.Transition.COMPLETE_FAILED
-            failure_reason = gpu_violation_reason
+        event, failure_reason = self._classify(execution_run, declared_status, gpu_violation_reason)
         return _Collected(
             stdout_id=stdout_id,
             stderr_id=stderr_id,
@@ -231,6 +220,25 @@ class ExperimentExecutor:
             transition_event=event,
             failure_reason=failure_reason,
         )
+
+    def _classify(
+        self,
+        execution_run: ExecutionRun,
+        declared_status: str | None,
+        gpu_violation_reason: str | None,
+    ) -> tuple[str, str | None]:
+        """execution 终态 + 声明结论 + GPU 违约 → (transition event, reason)。"""
+        event, reason = classify_outcome(execution_run.status, declared_status)
+        failure_reason = execution_failure_reason(execution_run.status)
+        # M17 WP4a：GPU 分类原因优先于 generic "execution failed"（可读性）
+        if failure_reason == "execution failed":
+            failure_reason = gpu_failure_reason(execution_run.failure_category) or failure_reason
+        if reason is not None:
+            failure_reason = failure_reason or reason
+        if gpu_violation_reason is not None:
+            event = ExperimentRunState.Transition.COMPLETE_FAILED
+            failure_reason = gpu_violation_reason
+        return event, failure_reason
 
     def _ingest_success_outputs(
         self, request: ExperimentExecutionRequest, workspace_path: Path

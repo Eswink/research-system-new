@@ -212,9 +212,7 @@ def _map_docker_error(exc: Exception, *, gpu_profile: bool = False) -> PortError
             FailureCategory.GPU_UNAVAILABLE if gpu_profile else FailureCategory.WORKSPACE_FAILURE
         )
         return TransientPortError("docker API unavailable", failure_category=category)
-    category = (
-        FailureCategory.GPU_UNAVAILABLE if gpu_profile else FailureCategory.WORKSPACE_FAILURE
-    )
+    category = FailureCategory.GPU_UNAVAILABLE if gpu_profile else FailureCategory.WORKSPACE_FAILURE
     return TransientPortError("docker daemon unavailable", failure_category=category)
 
 
@@ -315,9 +313,7 @@ class DockerExecutionBackend(ExecutionBackend):
                 ),
             )
         except (APIError, DockerException) as exc:
-            raise _map_docker_error(
-                exc, gpu_profile=is_gpu_profile(spec.resource_profile)
-            ) from exc
+            raise _map_docker_error(exc, gpu_profile=is_gpu_profile(spec.resource_profile)) from exc
         finally:
             if container_id is not None:
                 self._remove_container(container_id)

@@ -39,15 +39,11 @@ def gpu_backend() -> DockerExecutionBackend:
     try:
         client.images.get(_IMAGE_TAG)
     except ImageNotFound:
-        client.images.build(
-            path=str(_SANDBOX_DIR), dockerfile="Dockerfile.gpu", tag=_IMAGE_TAG
-        )
+        client.images.build(path=str(_SANDBOX_DIR), dockerfile="Dockerfile.gpu", tag=_IMAGE_TAG)
     return DockerExecutionBackend(image=_IMAGE_TAG)
 
 
-def _run_gpu(
-    backend: DockerExecutionBackend, tmp_path: Path, command: str
-) -> tuple[str, str]:
+def _run_gpu(backend: DockerExecutionBackend, tmp_path: Path, command: str) -> tuple[str, str]:
     run = backend.execute(
         ExecutionSpec(
             backend_kind="DOCKER",
@@ -57,9 +53,7 @@ def _run_gpu(
         ),
         timeout_seconds=120,
     )
-    return run.status.value, (tmp_path / "stdout.log").read_text(
-        encoding="utf-8", errors="replace"
-    )
+    return run.status.value, (tmp_path / "stdout.log").read_text(encoding="utf-8", errors="replace")
 
 
 class TestGpuContainerSecurityBoundaries:
@@ -134,9 +128,7 @@ class TestGpuProfileSingleDelta:
 
     def _host_config(self, profile: str | None) -> dict[str, object]:
         client = StubClient()
-        spec = ExecutionSpec(
-            backend_kind="DOCKER", command="echo hi", resource_profile=profile
-        )
+        spec = ExecutionSpec(backend_kind="DOCKER", command="echo hi", resource_profile=profile)
         runner = getattr(_backend(client), "execute")
         runner(spec, timeout_seconds=30)
         return dict(client.api.created[0]["host_config"])
@@ -148,8 +140,14 @@ class TestGpuProfileSingleDelta:
         gpu.pop("DeviceRequests", None)
         # after removing the single GPU delta, every other control is identical
         # except the numeric limits (cpu/mem/pids), which are profile-scoped.
-        for key in ("NetworkMode", "Privileged", "CapDrop", "SecurityOpt",
-                    "ReadonlyRootfs", "Tmpfs"):
+        for key in (
+            "NetworkMode",
+            "Privileged",
+            "CapDrop",
+            "SecurityOpt",
+            "ReadonlyRootfs",
+            "Tmpfs",
+        ):
             assert cpu[key] == gpu[key], f"{key} must not differ between profiles"
 
     def test_gpu_adds_device_requests_cpu_does_not(self) -> None:

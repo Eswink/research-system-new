@@ -36,9 +36,7 @@ def _execution_task(capability: str | None) -> ResearchTask:
 
 
 def _request(capabilities: frozenset[str]) -> ClaimRequest:
-    return ClaimRequest(
-        worker_id="w1", capabilities=capabilities, partitions=frozenset({0})
-    )
+    return ClaimRequest(worker_id="w1", capabilities=capabilities, partitions=frozenset({0}))
 
 
 @pytest.mark.parametrize("factory", _FACTORIES)

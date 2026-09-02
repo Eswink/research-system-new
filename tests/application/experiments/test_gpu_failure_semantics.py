@@ -74,7 +74,7 @@ def _write_result(tmp_path: Path, *, status: str, compute_device: dict[str, obje
     (tmp_path / "experiment_result.json").write_text(json.dumps(payload), encoding="utf-8")
 
 
-_CUDA = {"kind": "cuda", "name": "NVIDIA GeForce RTX 4060 Laptop GPU"}
+_CUDA: dict[str, object] = {"kind": "cuda", "name": "NVIDIA GeForce RTX 4060 Laptop GPU"}
 
 
 def test_cuda_oom_is_execution_failure_not_negative_result(tmp_path: Path) -> None:

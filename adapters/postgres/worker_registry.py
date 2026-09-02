@@ -28,6 +28,33 @@ _COLUMNS = (
     "state, last_heartbeat, drain_requested, gpu_observation_json, gpu_observed_at"
 )
 
+# Static upsert SQL (values bound as parameters; {time_sql} is the only
+# interpolation — server-time expression or a bound test-clock placeholder).
+# M17 freshness layer 1: registration is the truth — the GPU observation is
+# replaced wholesale on every (re)register.
+_REGISTER_SQL = (
+    "INSERT INTO workers (" + _COLUMNS + ", created_at, updated_at) "
+    "VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s, %s, "
+    "{time_sql}, %s, %s::jsonb, CASE WHEN %s THEN {time_sql} ELSE NULL END, "
+    "{time_sql}, {time_sql}) "
+    "ON CONFLICT (worker_id) DO UPDATE SET "
+    "protocol_version = EXCLUDED.protocol_version, "
+    "runtime_version = EXCLUDED.runtime_version, "
+    "platform = EXCLUDED.platform, "
+    "capabilities_json = EXCLUDED.capabilities_json, "
+    "backend_kinds_json = EXCLUDED.backend_kinds_json, "
+    "partition_slots_json = EXCLUDED.partition_slots_json, "
+    "max_concurrency = EXCLUDED.max_concurrency, "
+    "registration_generation = EXCLUDED.registration_generation, "
+    "state = EXCLUDED.state, "
+    "last_heartbeat = EXCLUDED.last_heartbeat, "
+    "drain_requested = FALSE, "
+    "gpu_observation_json = EXCLUDED.gpu_observation_json, "
+    "gpu_observed_at = EXCLUDED.gpu_observed_at, "
+    "session_token_sha256 = NULL, "
+    "updated_at = {time_sql}"
+)
+
 
 def _as_list(value: Any) -> list[Any]:
     """JSONB arrives pre-decoded as a list via psycopg; tolerate raw text too."""
@@ -119,28 +146,7 @@ class PostgresWorkerRegistry(PostgresAdapterBase):
             ).fetchone()
             next_gen = (int(existing["registration_generation"]) if existing else 0) + 1
             self._conn.execute(
-                f"INSERT INTO workers ({_COLUMNS}, created_at, updated_at) "
-                f"VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s, %s, "
-                f"{time_sql}, %s, %s::jsonb, "
-                f"CASE WHEN %s THEN {time_sql} ELSE NULL END, {time_sql}, {time_sql}) "
-                "ON CONFLICT (worker_id) DO UPDATE SET "
-                "protocol_version = EXCLUDED.protocol_version, "
-                "runtime_version = EXCLUDED.runtime_version, "
-                "platform = EXCLUDED.platform, "
-                "capabilities_json = EXCLUDED.capabilities_json, "
-                "backend_kinds_json = EXCLUDED.backend_kinds_json, "
-                "partition_slots_json = EXCLUDED.partition_slots_json, "
-                "max_concurrency = EXCLUDED.max_concurrency, "
-                "registration_generation = EXCLUDED.registration_generation, "
-                "state = EXCLUDED.state, "
-                "last_heartbeat = EXCLUDED.last_heartbeat, "
-                "drain_requested = FALSE, "
-                # M17 freshness layer 1: registration is the truth — the GPU
-                # observation is replaced wholesale on every (re)register.
-                "gpu_observation_json = EXCLUDED.gpu_observation_json, "
-                "gpu_observed_at = EXCLUDED.gpu_observed_at, "
-                "session_token_sha256 = NULL, "
-                "updated_at = " + time_sql,
+                _REGISTER_SQL.format(time_sql=time_sql),
                 (
                     registration.worker_id,
                     registration.protocol_version,

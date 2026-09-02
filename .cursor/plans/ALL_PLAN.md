@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260902-028](tasks/PLAN-20260902-028-m17-remote-gpu-execution.md) | IN_PROGRESS |
+| [x] | [PLAN-20260902-028](tasks/PLAN-20260902-028-m17-remote-gpu-execution.md) | DONE |
 | [x] | [PLAN-20260902-027](tasks/PLAN-20260902-027-rm-p2-personal-roadmap-rebaseline.md) | DONE |
 | [x] | [PLAN-20260831-025](tasks/PLAN-20260831-025-m16-distributed-execution.md) | DONE |
 | [x] | [PLAN-20260831-026](tasks/PLAN-20260831-026-deterministic-parallel-orchestration.md) | DONE |

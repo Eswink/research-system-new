@@ -20,6 +20,7 @@
 | OpenHands Software Agent SDK v1.42.0 (391fbb8d) — `openhands_sdk` | MIT; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml`; revision lock in `docs/references/upstream/OPENHANDS_REVISION_LOCK.yaml` | ADOPTED runtime adapter (M6) |
 | docker-py 7.2.0 (`docker`) — id `docker_py` | Apache-2.0; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED Docker Engine client for execution backend (M9) |
 | research-os-sandbox 镜像（`adapters/execution/sandbox/Dockerfile`）— id `research_os_sandbox_image` | 基础镜像 `python:3.12-slim`（OCI index digest pin）；构建产物运行时记录实际 digest | ADOPTED experiment sandbox image (M9) |
+| research-os-gpu-sandbox 镜像（`adapters/execution/sandbox/Dockerfile.gpu`）— id `research_os_gpu_base_image` | 基座 `pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime`（OCI index digest pin `sha256:7b324d21…`）；PyTorch BSD-3-Clause + CUDA/cuDNN NVIDIA 运行时条款；构建产物运行时记录实际 digest | ADOPTED GPU experiment sandbox image (M17) |
 | NCBI E-utilities API（`eutils.ncbi.nlm.nih.gov`）— id `ncbi_eutils` | NLM Terms of Use（`https://www.ncbi.nlm.nih.gov/books/NBK25497/`）；resolution `2026-08-22-eutils-api`；ToolPack manifest `examples/contracts/toolpack_ncbi_eutils.yaml`（digest `947cbb22…`）；adapter `adapters/research_tools/ncbi.py` | ADOPTED research literature tool (M12) |
 | fastapi 0.141.1 | MIT; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED Control Plane API framework (M13) |
 | uvicorn 0.52.4 | BSD-3-Clause; exact sdist hash in `uv.lock` / `UPSTREAM_COMPONENTS.yaml` | ADOPTED Control Plane HTTP server (M13) |

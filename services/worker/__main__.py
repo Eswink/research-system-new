@@ -97,9 +97,7 @@ def main(argv: list[str] | None = None) -> int:
         # sandbox (a python+torch superset that also serves CPU jobs); unset
         # keeps the M9 default sandbox image.
         image = os.environ.get("RESEARCHOS_WORKER_DOCKER_IMAGE")
-        backend: object = (
-            DockerExecutionBackend(image=image) if image else DockerExecutionBackend()
-        )
+        backend: object = DockerExecutionBackend(image=image) if image else DockerExecutionBackend()
     elif execution_backend == "deterministic":
         backend = DeterministicExecutionBackend()
     else:
