@@ -33,9 +33,24 @@ import httpx
 
 from adapters.worker.client import WorkerClient, WorkerResultPayload
 from adapters.workspace.bundle import bundle_from_directory, bundle_to_directory
+from packages.application.observability.attributes import (
+    MetricKind,
+    MetricLabel,
+    MetricName,
+    MetricSample,
+    gpu_device_ref,
+)
+from packages.application.observability.scope import operation, record_metric_safely
+from packages.application.observability.signals import (
+    CorrelationRef,
+    OperationOutcome,
+    OperationScope,
+)
 from packages.application.ports.execution_backend import ExecutionBackend
+from packages.application.ports.telemetry_sink import TelemetrySink
+from packages.domain.enums import FailureCategory
 from packages.domain.workers import WorkerGpuObservation
-from packages.domain.workspace import ExecutionSpec, ExecutionStatus
+from packages.domain.workspace import ExecutionRun, ExecutionSpec, ExecutionStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,10 +77,18 @@ def _spec_from_json(spec_json: str, workspace_path: str) -> ExecutionSpec:
     )
 
 
+_OUTCOME_BY_STATUS = {
+    ExecutionStatus.SUCCEEDED: OperationOutcome.OK,
+    ExecutionStatus.FAILED: OperationOutcome.FAILED,
+    ExecutionStatus.TIMED_OUT: OperationOutcome.TIMEOUT,
+    ExecutionStatus.CANCELLED: OperationOutcome.CANCELLED,
+}
+
+
 class WorkerLoop:
     """Drives one worker's register → claim/execute/complete → heartbeat cycle."""
 
-    def __init__(  # noqa: PLR0913 - 注入面：client/backend/config/stop/sleep/prober
+    def __init__(  # noqa: PLR0913 - 注入面：client/backend/config/stop/sleep/prober/telemetry
         self,
         client: WorkerClient,
         backend: ExecutionBackend,
@@ -74,6 +97,7 @@ class WorkerLoop:
         should_stop: Callable[[], bool] | None = None,
         sleep: Callable[[float], None] = lambda _s: None,
         gpu_prober: Callable[[], WorkerGpuObservation | None] | None = None,
+        telemetry: TelemetrySink | None = None,
     ) -> None:
         self._client = client
         self._backend = backend
@@ -81,7 +105,9 @@ class WorkerLoop:
         self._should_stop = should_stop or (lambda: False)
         self._sleep = sleep
         self._gpu_prober = gpu_prober
+        self._telemetry = telemetry
         self._last_gpu_digest: str | None = None
+        self._last_gpu_device_name: str | None = None
         self._draining = False
         self.completed_jobs = 0
 
@@ -124,6 +150,9 @@ class WorkerLoop:
         """Startup probe (freshness layer 1): probe → register with the facts."""
         observation = self._gpu_prober() if self._gpu_prober is not None else None
         self._last_gpu_digest = observation.probe_digest if observation is not None else None
+        self._last_gpu_device_name = (
+            observation.device_name if observation is not None else None
+        )
         self._client.register(gpu_observation=observation)
 
     def _claim_or_selfheal(self) -> dict[str, object] | None:
@@ -159,6 +188,9 @@ class WorkerLoop:
             return False
         self._client.register(gpu_observation=observation)
         self._last_gpu_digest = digest
+        self._last_gpu_device_name = (
+            observation.device_name if observation is not None else None
+        )
         print(  # noqa: T201
             f"worker-loop: re-registered gen={self._client.generation} "
             f"gpu={'yes' if observation is not None else 'no'}",
@@ -193,11 +225,15 @@ class WorkerLoop:
         )
         renewer.start()
         try:
-            run = runner(
-                spec,
-                timeout_seconds=_as_int(job.get("timeout_seconds")),
-                cancelled=self._cancel_probe(task_id),
-            )
+            started = time.monotonic()
+            with self._remote_execution_span(spec, task_id) as op:
+                run = runner(
+                    spec,
+                    timeout_seconds=_as_int(job.get("timeout_seconds")),
+                    cancelled=self._cancel_probe(task_id),
+                )
+                self._set_span_outcome(op, run)
+            self._record_remote_metrics(run, time.monotonic() - started)
         finally:
             stop_renew.set()
             renewer.join(timeout=5.0)
@@ -217,6 +253,73 @@ class WorkerLoop:
             failure_category=run.failure_category.value if run.failure_category else None,
         )
         self._client.submit_result(task_id, payload)
+
+    def _remote_execution_span(self, spec: ExecutionSpec, task_id: str) -> Any:
+        """M17 WP5b: emit the REMOTE_EXECUTION span (worker-side segment).
+
+        The scope has existed since M16 but was never emitted; this is the
+        emission site. `gpu_device_ref` (digest) is added only when the
+        worker's own probe knows the device — the raw device name never
+        enters telemetry.
+        """
+        attributes: dict[str, object] = {"resource_type": spec.backend_kind}
+        if self._last_gpu_device_name:
+            attributes["gpu_device_ref"] = gpu_device_ref(self._last_gpu_device_name)
+        return operation(
+            self._telemetry,
+            scope=OperationScope.REMOTE_EXECUTION,
+            name="remote_worker.execute",
+            correlation=CorrelationRef(task_id=task_id),
+            attributes=attributes,
+        )
+
+    def _set_span_outcome(self, op: Any, run: ExecutionRun) -> None:
+        """Close the span with a faithful outcome (no duration fabrication:
+        OperationEnd derives duration_ms from the operation clock)."""
+        outcome = _OUTCOME_BY_STATUS.get(run.status, OperationOutcome.FAILED)
+        extras: dict[str, object] = {}
+        if run.exit_code is not None:
+            extras["exit_code"] = run.exit_code
+        if run.failure_category is not None:
+            op.set_outcome(outcome, run.failure_category.value, extra=extras)
+            return
+        op.set_outcome(outcome, extra=extras)
+
+    def _record_remote_metrics(self, run: ExecutionRun, elapsed: float) -> None:
+        """Closed-vocabulary metrics for the remote/GPU execution segment."""
+        record_metric_safely(
+            self._telemetry,
+            lambda: MetricSample(
+                name=MetricName.REMOTE_EXECUTION_DURATION_MS,
+                kind=MetricKind.HISTOGRAM,
+                value=int(elapsed * 1000),
+                labels={MetricLabel.scope.value: OperationScope.REMOTE_EXECUTION.value},
+            ),
+        )
+        gpu_seconds = run.compute_usage_summary.get("gpu_elapsed_seconds")
+        if isinstance(gpu_seconds, int) and not isinstance(gpu_seconds, bool):
+            record_metric_safely(
+                self._telemetry,
+                lambda: MetricSample(
+                    name=MetricName.GPU_EXECUTION_DURATION_MS,
+                    kind=MetricKind.HISTOGRAM,
+                    value=int(gpu_seconds * 1000),
+                ),
+            )
+        if run.failure_category is FailureCategory.GPU_OOM:
+            record_metric_safely(
+                self._telemetry,
+                lambda: MetricSample(
+                    name=MetricName.GPU_OOM_TOTAL, kind=MetricKind.COUNTER, value=1
+                ),
+            )
+        elif run.failure_category is FailureCategory.GPU_UNAVAILABLE:
+            record_metric_safely(
+                self._telemetry,
+                lambda: MetricSample(
+                    name=MetricName.GPU_UNAVAILABLE_TOTAL, kind=MetricKind.COUNTER, value=1
+                ),
+            )
 
     def _cancel_probe(self, task_id: str) -> Callable[[], bool]:
         """M17 WP4c cooperative cancel probe (throttled).

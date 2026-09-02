@@ -22,6 +22,7 @@ class FakeExecutionBackend(FakeBase):
         exit_code: int = 0,
         failure_category: FailureCategory | None = None,
         run_id_prefix: str = "run",
+        compute_usage_summary: dict[str, object] | None = None,
     ) -> None:
         super().__init__("execution_backend")
         self._status = status
@@ -29,6 +30,7 @@ class FakeExecutionBackend(FakeBase):
         self._exit_code = exit_code
         self._failure_category = failure_category
         self._run_id_prefix = run_id_prefix
+        self._compute_usage_summary = dict(compute_usage_summary or {})
         self._counter = 0
 
     def execute(
@@ -62,6 +64,7 @@ class FakeExecutionBackend(FakeBase):
             completed_at=completed,
             exit_code=self._exit_code,
             failure_category=category,
+            compute_usage_summary=dict(self._compute_usage_summary),
         )
         self._record("execute", spec.command, result=status.value)
         return run

@@ -95,6 +95,11 @@ class ExperimentRunResult:
     semantic_metrics_digest: Digest | None = None
     artifact_refs: tuple[str, ...] = ()
     failure_reason: str | None = None
+    # M17 GPU 观测（additive；来自容器内 gpu_runtime_facts 白名单）：
+    # GPU_TIME 记账只信任 gpu_elapsed_seconds；peak 显存供 ReproducibilityAudit
+    # 与诚实性报告，不是预算数量。未运行 GPU profile 时为 None。
+    gpu_elapsed_seconds: int | None = None
+    peak_gpu_memory_bytes: int | None = None
 
     def __post_init__(self) -> None:
         if not self.execution_run_id:

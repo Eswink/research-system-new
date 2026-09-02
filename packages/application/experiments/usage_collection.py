@@ -57,6 +57,7 @@ class CollectedUsage:
     model_requests: int = 0
     tool_requests: int = 0
     experiment_seconds: int = 0
+    gpu_seconds: int = 0
     eval_cases: int = 0
     eval_scorer_calls: int = 0
     model_usage_unknown: bool = False
@@ -110,6 +111,8 @@ def _experiment_usage(
             elapsed_seconds=_elapsed_seconds(result),
             exit_code=0,
             attempt=attempt,
+            gpu_elapsed_seconds=result.gpu_elapsed_seconds,
+            peak_gpu_memory_bytes=result.peak_gpu_memory_bytes,
         ),
     )
 
@@ -153,6 +156,7 @@ def collect_usage(collection: UsageCollection) -> tuple[BudgetClosureInput, Coll
         model_requests=sum(item.calls for item in model_usage),
         tool_requests=sum(item.requests for item in tool_usage),
         experiment_seconds=sum(item.elapsed_seconds or 0 for item in experiment_usage),
+        gpu_seconds=sum(item.gpu_elapsed_seconds or 0 for item in experiment_usage),
         eval_cases=sum(item.cases for item in evaluation_usage),
         eval_scorer_calls=sum(item.scorer_calls for item in evaluation_usage),
         model_usage_unknown=any(

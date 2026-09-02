@@ -43,6 +43,17 @@ def worker_ref(worker_id: str) -> str:
     return hashlib.sha256(worker_id.encode("utf-8")).hexdigest()[:12]
 
 
+def gpu_device_ref(device_name: str) -> str:
+    """Stable short digest of a GPU device identity (M17 WP5b).
+
+    The raw device name never enters telemetry — the digest correlates one
+    device's spans without exporting host hardware inventory.
+    """
+    if not device_name:
+        raise ValueError("device_name must not be empty")
+    return hashlib.sha256(device_name.encode("utf-8")).hexdigest()[:12]
+
+
 class AttributeKey(StrEnum):
     provider = "provider"
     endpoint_id = "endpoint_id"
@@ -78,6 +89,8 @@ class AttributeKey(StrEnum):
     partition = "partition"  # type: ignore[assignment]  # shadows str.partition (StrEnum member)
     fence = "fence"
     rejection_reason = "rejection_reason"
+    # M17 GPU execution plane
+    gpu_device_ref = "gpu_device_ref"  # stable short digest of device identity; raw name never exported
 
 
 _ALL_ATTR_KEYS = frozenset(AttributeKey)
@@ -206,6 +219,10 @@ class MetricName(StrEnum):
     REMOTE_EXECUTION_ARTIFACT_TRANSFER_FAILED_TOTAL = (
         "research_os.remote_execution.artifact_transfer_failed_total"
     )
+    # M17 GPU execution plane (closed vocabulary, minimal increment)
+    GPU_EXECUTION_DURATION_MS = "research_os.gpu_execution.duration_ms"
+    GPU_OOM_TOTAL = "research_os.gpu_execution.oom_total"
+    GPU_UNAVAILABLE_TOTAL = "research_os.gpu_execution.unavailable_total"
 
 
 @dataclass(frozen=True, slots=True)

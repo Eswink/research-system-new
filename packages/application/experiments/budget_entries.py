@@ -53,7 +53,12 @@ class ToolUsage:
 
 @dataclass(frozen=True, slots=True)
 class ExperimentUsage:
-    """一次实验执行的原始用量（ExecutionBackend compute_usage_summary）。"""
+    """一次实验执行的原始用量（ExecutionBackend compute_usage_summary）。
+
+    M17：`gpu_elapsed_seconds` 是框架级可靠的 GPU 计时（容器内报告），
+    非空时建立 ResourceType.GPU_TIME 条目（首个真实消费方）；
+    `peak_gpu_memory_bytes` 是观测值，走 ReproducibilityAudit，不记账。
+    """
 
     run_id: str
     image_digest: str | None = None
@@ -61,6 +66,11 @@ class ExperimentUsage:
     oom_killed: bool = False
     exit_code: int | None = None
     attempt: int = 1
+    gpu_elapsed_seconds: int | None = None
+    peak_gpu_memory_bytes: int | None = None
+
+    # M17：GPU 货币成本无定价源 —— 常量原因，绝不写 0。
+    GPU_COST_UNAVAILABLE_REASON = "no GPU price source configured"
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,29 +210,52 @@ def experiment_entries(
     occurred_at: datetime,
     task_id: str | None,
 ) -> list[UsageLedgerEntry]:
-    """CPU_TIME 入账：时长未知（None）→ quantity_status=UNKNOWN,绝不假测量零。"""
-    return [
-        _entry(
-            entry_id=_attempt_scope(f"usage:{run_id}:experiment:{usage.run_id}", usage.attempt),
-            resource_type=ResourceType.CPU_TIME,
-            quantity=usage.elapsed_seconds or 0,
-            unit="seconds",
-            source="m12:experiment",
-            occurred_at=occurred_at,
-            run_id=run_id,
-            task_id=task_id,
-            quantity_status=(
-                LedgerQuantityStatus.UNKNOWN
-                if usage.elapsed_seconds is None
-                else LedgerQuantityStatus.KNOWN
-            ),
-            unavailable_reason=None
-            if usage.elapsed_seconds is not None
-            else "elapsed_seconds not observed",
-            attempt=usage.attempt,
+    """CPU_TIME + GPU_TIME 入账：时长未知（None）→ UNKNOWN，绝不假测量零。
+
+    M17：GPU_TIME 条目只在容器内实测计时存在时建立（首个真实消费方）；
+    货币成本无定价源 → cost UNKNOWN + 原因，绝不写 0。
+    """
+    entries: list[UsageLedgerEntry] = []
+    for usage in experiment_usage:
+        entries.append(
+            _entry(
+                entry_id=_attempt_scope(f"usage:{run_id}:experiment:{usage.run_id}", usage.attempt),
+                resource_type=ResourceType.CPU_TIME,
+                quantity=usage.elapsed_seconds or 0,
+                unit="seconds",
+                source="m12:experiment",
+                occurred_at=occurred_at,
+                run_id=run_id,
+                task_id=task_id,
+                quantity_status=(
+                    LedgerQuantityStatus.UNKNOWN
+                    if usage.elapsed_seconds is None
+                    else LedgerQuantityStatus.KNOWN
+                ),
+                unavailable_reason=None
+                if usage.elapsed_seconds is not None
+                else "elapsed_seconds not observed",
+                attempt=usage.attempt,
+            )
         )
-        for usage in experiment_usage
-    ]
+        if usage.gpu_elapsed_seconds is not None:
+            entries.append(
+                _entry(
+                    entry_id=_attempt_scope(
+                        f"usage:{run_id}:experiment:{usage.run_id}:gpu", usage.attempt
+                    ),
+                    resource_type=ResourceType.GPU_TIME,
+                    quantity=usage.gpu_elapsed_seconds,
+                    unit="seconds",
+                    source="m17:experiment-gpu",
+                    occurred_at=occurred_at,
+                    run_id=run_id,
+                    task_id=task_id,
+                    unavailable_reason=ExperimentUsage.GPU_COST_UNAVAILABLE_REASON,
+                    attempt=usage.attempt,
+                )
+            )
+    return entries
 
 
 def evaluation_entries(
@@ -263,6 +296,7 @@ def summarize(entries: list[UsageLedgerEntry]) -> Summary:
     tool_requests = 0
     experiment_runs = 0
     experiment_seconds = 0
+    gpu_seconds = 0
     for entry in entries:
         if entry.resource_type is ResourceType.MODEL_TOKENS:
             total_tokens += entry.quantity
@@ -271,11 +305,14 @@ def summarize(entries: list[UsageLedgerEntry]) -> Summary:
         elif entry.resource_type is ResourceType.CPU_TIME:
             experiment_runs += 1
             experiment_seconds += entry.quantity
+        elif entry.resource_type is ResourceType.GPU_TIME:
+            gpu_seconds += entry.quantity
     return Summary(
         total_tokens=total_tokens,
         tool_requests=tool_requests,
         experiment_runs=experiment_runs,
         experiment_seconds=experiment_seconds,
+        gpu_seconds=gpu_seconds,
     )
 
 
@@ -285,6 +322,7 @@ class Summary:
     tool_requests: int
     experiment_runs: int
     experiment_seconds: int
+    gpu_seconds: int = 0
 
 
 __all__ = [
