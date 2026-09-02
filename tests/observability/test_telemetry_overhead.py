@@ -21,6 +21,8 @@ import threading
 import time
 import tracemalloc
 
+import pytest
+
 from adapters.otel.config import OtelConfig
 from adapters.otel.provider import build_telemetry_sink
 from tests.observability.isolation_scenario import _state_with
@@ -91,15 +93,25 @@ def _config(endpoint: str) -> OtelConfig:
     )
 
 
+@pytest.mark.timing_sensitive
 def test_telemetry_off_baseline_performance() -> None:
-    """telemetry off:不起后台线程,分配峰值在有证据的量级内。"""
+    """telemetry off:不起后台线程,分配峰值在有证据的量级内。
+
+    PART B W-04: 线程断言从「相等」改为「不增长」——同进程内前一个 on 路径
+    exporter 线程回收晚于本测试取基线时会出现 after < before（实测 17→14，
+    文件内 line ~126 注释已承认该 teardown 噪声）；off 路径的判别语义是
+    「不新增线程」，增长判据不会削弱它。
+    """
     threads_before = _baseline_thread_count()
     tracemalloc.start()
     for _ in range(_ITERATIONS):
         _state_with(None)
     _, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    assert _baseline_thread_count() == threads_before, "off path must not spawn threads"
+    after = _baseline_thread_count()
+    assert after <= threads_before, (
+        f"off path must not spawn threads: before={threads_before} after={after}"
+    )
     assert peak < _PEAK_ALLOC_LIMIT_BYTES, f"off-path peak allocation regressed: {peak} bytes"
 
 
@@ -133,21 +145,34 @@ def test_telemetry_on_overhead_is_bounded_and_shutdown_clean(
     assert rss_growth < _MAX_RSS_GROWTH_MIB, f"RSS grew {rss_growth:.1f} MiB (leak suspected)"
 
 
+@pytest.mark.timing_sensitive
 def test_telemetry_on_latency_overhead_bounded(receiver: OtlpHttpReceiver) -> None:
-    """on 路径每场景均耗不超过 off 的 8 倍(导出异步,业务路径近零开销)。"""
-    start = time.perf_counter()
-    for _ in range(_ITERATIONS):
-        _state_with(None)
-    off_seconds = time.perf_counter() - start
+    """on 路径每场景均耗不超过 off 的 8 倍(导出异步,业务路径近零开销)。
 
-    failsafe = build_telemetry_sink(_config(receiver.endpoint))
-    try:
+    PART B W-04: off/on 各测 3 轮取中位数——单轮在并发负载下会放大比例
+    噪声(负载偏高时 off_seconds 本身膨胀)，中位数保留判别比不引入恒真。
+    """
+
+    def _measure(enabled: bool) -> float:
+        sink = build_telemetry_sink(_config(receiver.endpoint)) if enabled else None
         start = time.perf_counter()
-        for _ in range(_ITERATIONS):
-            _state_with(failsafe)
-        on_seconds = time.perf_counter() - start
-    finally:
-        failsafe.shutdown(timeout_seconds=5.0)
+        try:
+            for _ in range(_ITERATIONS):
+                _state_with(sink)
+            return time.perf_counter() - start
+        finally:
+            if sink is not None:
+                sink.shutdown(timeout_seconds=5.0)
+
+    def _median(values: list[float]) -> float:
+        ordered = sorted(values)
+        mid = len(ordered) // 2
+        if len(ordered) % 2 == 1:
+            return ordered[mid]
+        return (ordered[mid - 1] + ordered[mid]) / 2.0
+
+    off_seconds = _median([_measure(False) for _ in range(3)])
+    on_seconds = _median([_measure(True) for _ in range(3)])
     assert on_seconds < max(off_seconds * 8.0, off_seconds + 1.0), (
         f"telemetry overhead too high: off={off_seconds:.3f}s on={on_seconds:.3f}s"
     )

@@ -8,6 +8,11 @@ Covers:
 - WP-B2: concurrent claim exclusivity — exactly one worker owns the lease
 - WP-C2: expiry-window fencing — stale writer is rejected after real TTL
 - WP-A3/H4: crash/restart recovery — hard kill then recover+claim+complete
+
+PART B W-04: the expiry/recovery waits are bounded POLLS, not fixed
+`sleep(ttl+3)` — the fixed pattern raced under concurrent load (recovery once
+saw n=0). Polling keeps the contract (expiry is eventually reached) without
+clock coupling.
 """
 
 from __future__ import annotations
@@ -22,7 +27,7 @@ import pytest
 
 from adapters.postgres.db import migrate
 
-pytestmark = pytest.mark.postgres
+pytestmark = [pytest.mark.postgres, pytest.mark.timing_sensitive]
 
 _HELPER = str(Path(__file__).parent / "worker_cross_process.py")
 _ENV = os.environ.copy()
@@ -45,6 +50,37 @@ def _run_worker(*args: str, timeout: int = 90) -> subprocess.CompletedProcess[st
         timeout=timeout,
         env=_ENV,
     )
+
+
+def _poll_reclaim(task_id: str, ttl: int, lease_a: str, timeout: float = 40.0) -> str:
+    """Wait for the lease to expire server-side, then reclaim (lazy, W-04)."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        attempt = _run_worker("acquire", task_id, str(ttl))
+        if attempt.returncode == 0 and "lease=" in attempt.stdout:
+            lease_b = attempt.stdout.strip().split("lease=")[1]
+            if lease_b != lease_a:
+                return lease_b
+        time.sleep(2.0)
+    raise AssertionError("lease must have expired so worker B can reclaim it")
+
+
+def _poll_recover(timeout: float = 40.0) -> int:
+    """Run the recover worker until it reports >= 1 expired lease (W-04)."""
+    last = ""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        rec = _run_worker("recover")
+        last = rec.stdout.strip()
+        if rec.returncode == 0:
+            try:
+                n = int(last.split("n=")[1])
+            except (IndexError, ValueError):
+                n = 0
+            if n >= 1:
+                return n
+        time.sleep(2.0)
+    raise AssertionError(f"expected recovery of 1: {last!r}")
 
 
 def _clean() -> None:
@@ -111,26 +147,15 @@ def test_stale_fenced_after_expiry_window() -> None:
     assert a.returncode == 0, a.stderr
     lease_a = a.stdout.strip().split("lease=")[1]
 
-    # wait for real expiry
-    time.sleep(ttl + 3)
-    # B reclaims via acquire (lazy reclaim) — same worker pattern
-    b = _run_worker("acquire", task_id, str(ttl))
-    assert b.returncode == 0, b.stderr
-    lease_b = b.stdout.strip().split("lease=")[1]
-    assert lease_a != lease_b, "reclaim must produce a new lease generation"
+    # wait for real expiry, then B reclaims (lazy reclaim) — poll (W-04);
+    # _poll_reclaim only returns a lease id different from lease_a.
+    _poll_reclaim(task_id, ttl, lease_a)
 
-    # A's stale lease must be fenced: complete with lease_a in a subprocess using
-    # the stale lease id. The helper 'claim-complete' acquires fresh, so we test
-    # fencing via a direct engine call in-process with the stale lease object.
-    import psycopg
-
+    # A's stale lease must be fenced: complete with lease_a via the engine must
+    # raise InvalidInputError; canonical state must not be overwritten.
     from adapters.postgres.workflow_engine import PostgresWorkflowEngine
     from packages.application.ports.errors import InvalidInputError
     from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
-
-    conn = psycopg.connect(_dsn(), autocommit=True)
-    conn.close()
-    # build A's stale lease object from its known lease_id (initial acquire)
 
     stale = TaskLease(lease_id=lease_a, task_id=task_id, agent_id=None)
     engine = PostgresWorkflowEngine(dsn=_dsn())
@@ -143,9 +168,8 @@ def test_stale_fenced_after_expiry_window() -> None:
 
 
 def test_crash_recovery_real_subprocess() -> None:
-    """WP-A3: seed+claim in one process, hard kill via os._exit in the helper's
-    claim-complete? We perform kill by running a worker that acquires then exits;
-    then separate worker recovers (real clock TTL), reclaims, completes."""
+    """WP-A3: worker A acquires then hard-kills (os._exit); after real TTL a
+    recover worker reclaims and a third completes the task."""
     _clean()
     ttl = 5
     seed = _run_worker("seed")
@@ -169,10 +193,8 @@ def test_crash_recovery_real_subprocess() -> None:
     assert "KILLED" in proc.stdout, proc.stderr
     assert proc.returncode == 9, "hard-kill expected"
 
-    # wait for expiry + recovery
-    time.sleep(ttl + 3)
-    rec = _run_worker("recover")
-    assert "n=1" in rec.stdout, f"expected recovery of 1: {rec.stdout}"
+    # wait for expiry + recovery — poll (W-04)
+    assert _poll_recover() >= 1
 
     # verify queued + no orphan lease
     assert _status(task_id) == "QUEUED"

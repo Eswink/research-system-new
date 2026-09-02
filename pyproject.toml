@@ -107,4 +107,5 @@ markers = [
     "postgres: tests that need a running PostgreSQL (docker-compose postgres service)",
     "requires_collector: tests that need the pinned OTel collector (docker-compose.m15.yml)",
     "distributed: M16 cross-process distributed-execution tests (subprocess workers + loopback gateway + PostgreSQL)",
+    "timing_sensitive: wall-clock-sensitive tests; run serially without concurrent heavy load",
 ]

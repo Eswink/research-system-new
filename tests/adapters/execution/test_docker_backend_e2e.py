@@ -25,7 +25,7 @@ from packages.application.ports.errors import PermanentPortError
 from packages.domain.enums import FailureCategory
 from packages.domain.workspace import ExecutionRun, ExecutionSpec, ExecutionStatus
 
-pytestmark = pytest.mark.requires_docker
+pytestmark = [pytest.mark.requires_docker, pytest.mark.timing_sensitive]
 
 IMAGE_TAG = "research-os-sandbox:m9-test"
 CONTAINER_FILTER = {"name": "research-os-exec"}
@@ -34,12 +34,22 @@ _SANDBOX_DIR = Path(__file__).resolve().parents[3] / "adapters" / "execution" / 
 _SMALL_MEMORY = 512 * 1024 * 1024
 
 
+def _ping_with_retry(client: docker.DockerClient, attempts: int = 3) -> bool:
+    """Transient daemon unresponsiveness (PART B W-04) — bounded ping retry
+    before skipping; a genuinely down daemon still skips after the attempts."""
+    for _ in range(attempts):
+        try:
+            client.ping()
+            return True
+        except Exception:  # noqa: BLE001 - daemon may still be starting
+            time.sleep(0.5)
+    return False
+
+
 @pytest.fixture(scope="module")
 def sandbox_image() -> str:
     client = docker.from_env()
-    try:
-        client.ping()
-    except Exception:
+    if not _ping_with_retry(client):
         pytest.skip("docker daemon unavailable")
     try:
         client.images.get(IMAGE_TAG)

@@ -85,7 +85,10 @@ M17 为 SI-1（Personal Scale Integration Review）提供：真实 GPU 执行 + 
 
 - scanId：`scan-2026-09-02T06-14-50.920Z-01730a5138ce`
 - seal：`sha256:538e5cea905f0235da17f13a1a889a533314918c4d99247883d748d3d51ad3d3`
-- 覆盖：180 包，38 findings（6 high / 27 medium / 5 low），1 条 advisory 匹配
+- 覆盖：843 个源文件（completeness partial / threatModel partial，static_only），
+  38 findings（6 high / 27 medium / 5 low）；27 条 medium 均为静态 advisory
+  （cross-file 污点类，均带「需人工确认真实数据流和可利用性」proof-gap；
+  verdict 不影响 M17 判定）。
 - **M17 代码面零命中**：全部 finding 落在 `scratch/`、`tools/probes/`、
   `tools/upstream-spikes/`、`examples/experiments/m12_reference_classification.py`、
   `adapters/research_tools/parsing.py` —— 即 BACKLOG 既有「非 M16/M17 深度扫描

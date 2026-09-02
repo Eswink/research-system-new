@@ -49,7 +49,8 @@ checked_head: working-tree（M17 实施，基线 359e9ba RM-P2 rebaseline 之后
 - W-02：WSL2/WDDM 下 NVML per-process 显存/utilization 不可靠 → 相关量一律不记账，
   只记框架级可靠量（`torch.cuda.max_memory_allocated`）；诚实标注测量局限。
 - W-03：M17 密封深度扫描已重跑完成（scanId `scan-2026-09-02T06-14-50.920Z-01730a5138ce`，
-  seal `sha256:538e5cea…`，38 findings）——**M17 代码面零命中**，全部落在
+  seal `sha256:538e5cea…`，38 findings；其中 27 条 medium 均为静态 advisory、
+  带「需人工确认真实数据流和可利用性」proof-gap）——**M17 代码面零命中**，全部落在
   `scratch/`/`tools/probes/`/`tools/upstream-spikes/`/M12 示例/M8 解析器（BACKLOG
   既有非 M16/M17 债务，与 M16 attempt-2 同形：surface clean，coverage partial）。
   证据边界 static_only；完整密封审计在独立复审窗口（PART B）复核。

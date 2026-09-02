@@ -173,5 +173,17 @@ def test_gpu_research_slice_full_chain(
     assert result.audit_status == "PASS"
     assert result.eval_verdict == "PASS"
     assert result.deliverable_digest
-    # GPU_TIME budget entry was written (first real consumer of the enum)
+    # GPU_TIME budget entry was written (first real consumer of the enum), and
+    # its quantity is the real full-workload GPU duration — PART B W-01: the
+    # experiment now records the whole training loop (base+candidate), so the
+    # ledger quantity must be >= 1s, not the single-batch wall clock (~0s).
     assert result.budget_entries >= 1
+    from packages.domain.budget import ResourceType
+
+    entries = deps.budget.snapshot().entries
+    gpu_time = [e for e in entries if e.resource_type is ResourceType.GPU_TIME]
+    assert gpu_time, "GPU_TIME ledger entry must exist for a real GPU experiment"
+    assert any(e.quantity >= 1 for e in gpu_time), (
+        f"GPU_TIME quantity must be real full-workload seconds, got "
+        f"{[e.quantity for e in gpu_time]}"
+    )

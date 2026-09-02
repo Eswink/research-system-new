@@ -155,4 +155,6 @@ uv run --frozen --no-sync python -B .cursor/skills/cursor-framework-check/script
 
 可用 `--profile framework`、`--profile python` 或 `--profile typescript` 单独定位失败。聚合入口只执行确定性校验与 eval，不安装依赖，也不生成或刷新 `FRAMEWORK_MANIFEST.json` / Release Evidence。
 
+**运行约束**：`m0`/`python` 全量门禁（含 Docker 容器 E2E、PostgreSQL、GPU、遥测时间对比）必须**串行执行且不与其它重负载并行**——同一窗口不要并发跑多个全量 pytest/mypy。标记为 `timing_sensitive` 的测试在并发负载下可能因时钟/容器竞态偶发失败；隔离复跑即通过，不代表产品回归。
+
 本仓库不内置会话级自审次数、固定 reviewer 人数或数值自评分阈值。是否需要独立 reviewer，由变更风险和任务范围决定。

@@ -40,6 +40,25 @@
 - 资格记录 `M17_GPU_RUNTIME_QUALIFICATION.md`；`UPSTREAM_COMPONENTS.yaml`
   `research_os_gpu_base_image` digest pin；过度宣称 grep 门禁。
 
+### M17 PART B 复审修复（2026-09-02）
+
+- GPU_TIME 时长保真（W-01）：`m17_gpu_research.py` `_train` 返回完整训练循环
+  elapsed，facts 的 `gpu_elapsed_seconds` 改为 baseline+candidate 全 workload
+  真实 GPU 时长（此前取单 batch 墙钟，取整后恒为 0，导致 GPU_TIME 入账约 0s）；
+  切片与复现 E2E 新增 quantity ≥ 1s 断言。
+- 密封扫描记录措辞修正（W-02）：M17_COMPLETION_RECORD 按 findings.json 复核
+  （843 源文件 / 38 findings 6 high·27 medium·5 low，27 条 medium 均为静态
+  advisory，附 proof-gap 需人工确认；无「180 包/1 advisory」——该表述系自
+  M16 依赖扫描记录误抄）。
+- 评测判别力（W-03）：新增 `tests/evals/test_m17_gpu_discrimination.py` 显式
+  覆盖 `gpu_compute_device` 的 device_name 匹配/不匹配/缺失/kind 非 cuda 四路，
+  含此前零覆盖的 name-binding FAIL 分支（数据集保持硬件无关，身份绑定仍由
+  ReproducibilityAudit fingerprint 承担）。
+- 测试稳健性（W-04）：postgres 过期窗口/崩溃恢复测试由固定 `sleep(ttl+3)`
+  改为有界轮询（复现到负载下 recover n=0）；telemetry 延迟比取 3 轮中位数；
+  docker E2E fixture 加 ping 重试；注册 `timing_sensitive` marker 并在
+  README/检查脚本注明「全量门禁须串行、不与重负载并行」。
+
 ## M16 Distributed Execution（2026-08-31）
 
 - Worker 生命周期：`WorkerState` 状态机 + `WorkerRegistry` Port（Fake/PG）+

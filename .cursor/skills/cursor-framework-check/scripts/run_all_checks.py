@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""Deterministic quality gates (m0/framework/python/typescript profiles).
+
+Run checks serially and never alongside another heavy workload: the
+python/tests gate includes real Docker/PostgreSQL/GPU E2Es and wall-clock
+comparisons. Tests marked `timing_sensitive` can flake under concurrent CPU
+or container load and are not product regressions (see README 校验).
+"""
+
 from __future__ import annotations
 
 import argparse

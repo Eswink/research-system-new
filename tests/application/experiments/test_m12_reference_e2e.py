@@ -33,7 +33,7 @@ from packages.domain.experiment_state import ExperimentPlanState, ExperimentRunS
 from packages.domain.experiments import ExperimentPlan
 from packages.domain.workspace import Workspace
 
-pytestmark = pytest.mark.requires_docker
+pytestmark = [pytest.mark.requires_docker, pytest.mark.timing_sensitive]
 
 IMAGE_TAG = "research-os-sandbox:m9-test"
 _SANDBOX_DIR = Path(__file__).resolve().parents[3] / "adapters" / "execution" / "sandbox"

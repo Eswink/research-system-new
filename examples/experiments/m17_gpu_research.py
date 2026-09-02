@@ -81,11 +81,13 @@ def _train(  # noqa: PLR0913 - 实验内部训练函数，数据/设备/精度�
     *,
     mixed_precision: bool,
     seed: int,
-) -> tuple[float, float, int]:
-    """训练小 MLP；返回 (test_accuracy, samples_per_sec, peak_memory_bytes)。
+) -> tuple[float, float, int, float]:
+    """训练小 MLP；返回 (test_accuracy, samples_per_sec, peak_memory_bytes, elapsed)。
 
     mixed_precision=True 用 bf16 autocast（candidate），False 用 FP32（baseline）。
-    两者共用同一确定性数据与同一初始化种子，唯一差异是精度模式。
+    两者共用同一确定性数据与同一初始化种子，唯一差异是精度模式。`elapsed`
+    是本次完整训练循环的墙钟（W-01: GPU_TIME 记账的全 workload 时长——此前
+    只记单 batch 墙钟导致 real GPU 时长取整为 0）。
     """
     torch.manual_seed(seed)
     model = torch.nn.Sequential(
@@ -117,7 +119,7 @@ def _train(  # noqa: PLR0913 - 实验内部训练函数，数据/设备/精度�
     with torch.no_grad():
         preds = model(xte).argmax(dim=1)
         accuracy = float((preds == yte).float().mean().item())
-    return accuracy, n / elapsed, peak
+    return accuracy, n / elapsed, peak, elapsed
 
 
 def main() -> None:
@@ -133,11 +135,11 @@ def main() -> None:
     x_train, y_train, x_test, y_test = _make_dataset(seed, 8000, 2000, 64, 4)
 
     # baseline: FP32 on GPU
-    base_acc, base_sps, base_peak = _train(
+    base_acc, base_sps, base_peak, base_elapsed = _train(
         x_train, y_train, x_test, y_test, device, epochs, mixed_precision=False, seed=seed
     )
     # candidate: mixed precision (bf16 autocast) on GPU
-    cand_acc, cand_sps, cand_peak = _train(
+    cand_acc, cand_sps, cand_peak, cand_elapsed = _train(
         x_train, y_train, x_test, y_test, device, epochs, mixed_precision=True, seed=seed
     )
     # GPU vs CPU 同 workload 计时对照（显式独立分支，不参与准确率指标）
@@ -153,7 +155,9 @@ def main() -> None:
         "cuda_runtime_version": torch.version.cuda or "",
         "framework_version": torch.__version__,
         "peak_gpu_memory_bytes": peak,
-        "gpu_elapsed_seconds": int(round(gpu_seconds)),
+        # 全 workload 真实 GPU 时长（baseline+candidate 完整训练循环墙钟；预算
+        # 记账与遥测消费此值——单 batch 墙钟会取整为 0，不可作 GPU_TIME 量）。
+        "gpu_elapsed_seconds": int(round(base_elapsed + cand_elapsed)),
         "gpu_oom": False,
     })
     result = {

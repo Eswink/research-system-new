@@ -72,7 +72,7 @@ def _plan() -> ExperimentPlan:
 
 def _run_once(
     tmp_path: Path, image: str, run_tag: str
-) -> tuple[Any, SqliteArtifactStore, dict[str, object]]:
+) -> tuple[Any, SqliteArtifactStore, dict[str, object], dict[str, object]]:
     workspaces = FileWorkspaceBackend(tmp_path / f"ws-{run_tag}")
     workspaces.create_workspace(_WORKSPACE)
     artifacts = SqliteArtifactStore(blob_dir=tmp_path / f"blobs-{run_tag}")
@@ -102,14 +102,24 @@ def _run_once(
         )
     )
     payload = json.loads(artifacts.get(f"{run_id.value}:experiment_result.json").decode("utf-8"))
-    return outcome, artifacts, payload
+    # PART B W-01: the facts must record the full-workload GPU duration
+    # (base+candidate training loops), i.e. >= 1s — the pre-fix single-batch
+    # wall clock rounded to 0 and made the GPU_TIME ledger quantity 0.
+    facts = json.loads((workspace_dir / "gpu_runtime_facts.json").read_text(encoding="utf-8"))
+    return outcome, artifacts, payload, facts
 
 
 def test_gpu_repeated_runs_semantic_reproducibility(tmp_path: Path, gpu_image: str) -> None:
-    first, first_artifacts, first_payload = _run_once(tmp_path, gpu_image, "a1")
-    second, second_artifacts, second_payload = _run_once(tmp_path, gpu_image, "a2")
+    first, first_artifacts, first_payload, first_facts = _run_once(tmp_path, gpu_image, "a1")
+    second, second_artifacts, second_payload, second_facts = _run_once(tmp_path, gpu_image, "a2")
     assert first.run.state == ExperimentRunState.State.SUCCEEDED
     assert second.run.state == ExperimentRunState.State.SUCCEEDED
+
+    # PART B W-01: both real runs report the full-workload GPU duration (>= 1s).
+    assert isinstance(first_facts["gpu_elapsed_seconds"], int)
+    assert isinstance(second_facts["gpu_elapsed_seconds"], int)
+    assert first_facts["gpu_elapsed_seconds"] >= 1
+    assert second_facts["gpu_elapsed_seconds"] >= 1
 
     # GPU fingerprint bound into the audit + identical across runs (same device)
     audit_a = build_reproducibility_audit(
