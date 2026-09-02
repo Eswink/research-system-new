@@ -18,7 +18,7 @@ ExperimentRun 相同（M14 PostgreSQL），不放入 ArtifactStore。
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Mapping
 
 from packages.domain.core import ID, Digest, Timestamp
 from packages.domain.serialization import digest_of
@@ -65,6 +65,11 @@ class ReproducibilityAudit:
     metrics_digest: Digest | None = None
     semantic_metrics_digest: Digest | None = None
     observational_metrics_digest: Digest | None = None
+    # M17: GPU 执行指纹（设备/驱动/CUDA/framework 版本）参与 audit digest
+    # （绑定真实设备）；allowed_variance 是复现契约（语义结果在声明容差内
+    # 一致，不声称 bit-for-bit），如实记录实测到的浮点非确定性。
+    gpu_fingerprint: Mapping[str, str] | None = None
+    allowed_variance: Mapping[str, str] | None = None
     audit_digest: Digest | None = None
     created_at: Timestamp = field(default_factory=Timestamp.now)
 
@@ -95,6 +100,9 @@ class ReproducibilityAudit:
             "semantic_metrics_digest": (
                 str(self.semantic_metrics_digest) if self.semantic_metrics_digest else None
             ),
+            # M17: bind the GPU device fingerprint into the audit digest so a
+            # different physical device is a detectable reproducibility change.
+            "gpu_fingerprint": dict(self.gpu_fingerprint) if self.gpu_fingerprint else None,
         }
 
     def compute_audit_digest(self) -> Digest:
@@ -117,6 +125,8 @@ class ReproducibilityAudit:
             metrics_digest=self.metrics_digest,
             semantic_metrics_digest=self.semantic_metrics_digest,
             observational_metrics_digest=self.observational_metrics_digest,
+            gpu_fingerprint=self.gpu_fingerprint,
+            allowed_variance=self.allowed_variance,
             audit_digest=self.compute_audit_digest(),
             created_at=self.created_at,
         )

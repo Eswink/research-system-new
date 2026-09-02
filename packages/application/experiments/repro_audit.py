@@ -12,6 +12,8 @@ ExperimentRun 一致，M14 PostgreSQL 持久化）；这里只产出领域对象
 
 from __future__ import annotations
 
+from typing import Mapping
+
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.artifacts import Artifact
@@ -27,6 +29,7 @@ def build_reproducibility_audit(
     *,
     audit_id: ID,
     artifacts: ArtifactStore,
+    allowed_variance: Mapping[str, str] | None = None,
 ) -> ReproducibilityAudit:
     """从终态 ExperimentRun 构建并封存（audit_digest）复现性审计。"""
     if not run.is_terminal:
@@ -55,6 +58,8 @@ def build_reproducibility_audit(
         metrics_digest=semantic,
         semantic_metrics_digest=result.semantic_metrics_digest,
         observational_metrics_digest=_observational_metrics_digest(result),
+        gpu_fingerprint=dict(result.gpu_fingerprint) if result.gpu_fingerprint else None,
+        allowed_variance=dict(allowed_variance) if allowed_variance else None,
     ).with_audit_digest()
 
 

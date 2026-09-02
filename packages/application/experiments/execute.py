@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Mapping
 
 from packages.application.experiments.artifact_ingest import (
     read_result_payload,
@@ -83,6 +84,20 @@ class _Collected:
     referenced_ids: tuple[str, ...]
     transition_event: str
     failure_reason: str | None
+
+
+def _gpu_fingerprint(summary: Mapping[str, object]) -> dict[str, str] | None:
+    """从 compute_usage_summary 提取设备/驱动/CUDA/framework 版本指纹（M17）。"""
+    keys = {
+        "device_name": "gpu_device_name",
+        "driver_version": "driver_version",
+        "cuda_runtime_version": "cuda_runtime_version",
+        "framework_version": "framework_version",
+    }
+    fingerprint = {
+        name: str(summary[src]) for name, src in keys.items() if isinstance(summary.get(src), str)
+    }
+    return fingerprint or None
 
 
 def _gpu_no_fallback_violation(
@@ -269,6 +284,7 @@ class ExperimentExecutor:
         elapsed = usage_summary.get("elapsed_seconds")
         gpu_elapsed = usage_summary.get("gpu_elapsed_seconds")
         gpu_peak = usage_summary.get("peak_gpu_memory_bytes")
+        gpu_fingerprint = _gpu_fingerprint(usage_summary)
         result = ExperimentRunResult(
             execution_run_id=execution_run.run_id,
             image_digest=image_digest_from_run(execution_run),
@@ -277,6 +293,7 @@ class ExperimentExecutor:
             elapsed_seconds=int(elapsed) if isinstance(elapsed, (int, float)) else None,
             gpu_elapsed_seconds=int(gpu_elapsed) if isinstance(gpu_elapsed, int) else None,
             peak_gpu_memory_bytes=int(gpu_peak) if isinstance(gpu_peak, int) else None,
+            gpu_fingerprint=gpu_fingerprint,
             stdout_digest=execution_run.stdout_digest,
             stderr_digest=execution_run.stderr_digest,
             metrics=collected.metric_values,

@@ -100,6 +100,9 @@ class ExperimentRunResult:
     # 与诚实性报告，不是预算数量。未运行 GPU profile 时为 None。
     gpu_elapsed_seconds: int | None = None
     peak_gpu_memory_bytes: int | None = None
+    # M17: 设备/驱动/CUDA/framework 版本指纹（走 compute_usage_summary →
+    # ReproducibilityAudit → Deliverable，不作为预算数量）。
+    gpu_fingerprint: Mapping[str, str] | None = None
 
     def __post_init__(self) -> None:
         if not self.execution_run_id:
