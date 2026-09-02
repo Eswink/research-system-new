@@ -251,6 +251,11 @@ class WorkerLoop:
             output_bundle_ref=str(ack["artifact_id"]),
             output_bundle_digest=out_digest,
             failure_category=run.failure_category.value if run.failure_category else None,
+            # M17: propagate the worker-resolved image digest for remote
+            # reproducibility binding (local backend already carries it).
+            image_digest=_image_digest(run),
+            gpu_elapsed_seconds=_int_observation(run, "gpu_elapsed_seconds"),
+            peak_gpu_memory_bytes=_int_observation(run, "peak_gpu_memory_bytes"),
         )
         self._client.submit_result(task_id, payload)
 
@@ -366,6 +371,16 @@ class WorkerLoop:
 
 def _as_int(value: object) -> int | None:
     return None if value is None else int(str(value))
+
+
+def _image_digest(run: ExecutionRun) -> str | None:
+    digest = run.compute_usage_summary.get("image_digest")
+    return str(digest) if isinstance(digest, str) and digest else None
+
+
+def _int_observation(run: ExecutionRun, key: str) -> int | None:
+    value = run.compute_usage_summary.get(key)
+    return int(value) if isinstance(value, int) and not isinstance(value, bool) else None
 
 
 def _map_status(status: ExecutionStatus) -> str:

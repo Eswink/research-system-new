@@ -116,6 +116,9 @@ class ResultSubmissionDto(BaseModel):
     output_bundle_ref: str | None = Field(default=None, max_length=256)
     output_bundle_digest: str | None = Field(default=None, max_length=128)
     failure_category: str | None = Field(default=None, max_length=64)
+    image_digest: str | None = Field(default=None, max_length=128)
+    gpu_elapsed_seconds: int | None = Field(default=None, ge=0)
+    peak_gpu_memory_bytes: int | None = Field(default=None, ge=0)
 
 
 class ResultAckDto(BaseModel):

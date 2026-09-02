@@ -175,6 +175,13 @@ class RemoteExecutionBackend:
                 "worker_ref": worker_ref(outcome.worker_id) if outcome.worker_id else None,
                 "fence": outcome.fence,
                 "remote": True,
+                # M17: the worker resolved and reported the actual image digest
+                # it ran — bind remote reproducibility to it.
+                "image_digest": outcome.image_digest,
+                # M17: GPU observations flow back so the remote path feeds the
+                # same single experiment usage ledger (GPU_TIME) as local.
+                "gpu_elapsed_seconds": outcome.gpu_elapsed_seconds,
+                "peak_gpu_memory_bytes": outcome.peak_gpu_memory_bytes,
                 # server-measured wall clock (started→completed); consumed by the
                 # single experiment usage path (M16 re-audit F-5: no second truth)
                 "elapsed_seconds": max(0, int((completed.value - started.value).total_seconds())),

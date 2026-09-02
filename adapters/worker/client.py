@@ -54,6 +54,9 @@ class WorkerResultPayload:
     output_bundle_ref: str | None = None
     output_bundle_digest: str | None = None
     failure_category: str | None = None
+    image_digest: str | None = None
+    gpu_elapsed_seconds: int | None = None
+    peak_gpu_memory_bytes: int | None = None
 
     def to_body(self, worker_id: str, generation: int) -> dict[str, object]:
         return {
@@ -68,6 +71,9 @@ class WorkerResultPayload:
             "output_bundle_ref": self.output_bundle_ref,
             "output_bundle_digest": self.output_bundle_digest,
             "failure_category": self.failure_category,
+            "image_digest": self.image_digest,
+            "gpu_elapsed_seconds": self.gpu_elapsed_seconds,
+            "peak_gpu_memory_bytes": self.peak_gpu_memory_bytes,
         }
 
 

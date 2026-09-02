@@ -8,3 +8,10 @@
 
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS gpu_observation_json JSONB;
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS gpu_observed_at TIMESTAMPTZ;
+
+-- M17: the worker's DockerExecutionBackend resolves the actual image digest it
+-- ran; propagating it back through the result binds remote reproducibility
+-- (the local backend already carries it in compute_usage_summary).
+ALTER TABLE execution_jobs ADD COLUMN IF NOT EXISTS image_digest TEXT;
+ALTER TABLE execution_jobs ADD COLUMN IF NOT EXISTS gpu_elapsed_seconds INTEGER;
+ALTER TABLE execution_jobs ADD COLUMN IF NOT EXISTS peak_gpu_memory_bytes INTEGER;

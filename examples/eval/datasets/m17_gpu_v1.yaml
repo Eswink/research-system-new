@@ -1,0 +1,110 @@
+version: 1.0.0
+description: "M17 GPU Research Slice 独立评测集（deterministic 优先；GPU 设备/无-fallback 判别）"
+digest: sha256:ccf8faad5570c6d302a34bae23880000a6a0790d080d700bec4e56ea6bb6ac9d
+cases:
+  task_completion_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m17/task_completion
+    expected:
+      status: SUCCEEDED
+    scorer_refs:
+    - scorer_id: exact_match
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M17 examples/eval/datasets/m17_gpu_v1.yaml
+    description: "GPU 工作流终态必须为 SUCCEEDED（非系统 FAILED）"
+  gpu_compute_device_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m17/experiment_result
+    expected: {}
+    scorer_refs:
+    - scorer_id: gpu_compute_device
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M17 examples/eval/datasets/m17_gpu_v1.yaml
+    description: "实验结果自报 compute_device.kind=cuda（无静默 CPU fallback 判别器；缺失或 cpu 必 FAIL）"
+  experimental_validity_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m17/experimental_validity
+    expected:
+    - hypothesis
+    - seed
+    - metrics.baseline_accuracy
+    - metrics.candidate_accuracy
+    - metrics.baseline_samples_per_sec
+    - metrics.candidate_samples_per_sec
+    - metrics.n_test
+    scorer_refs:
+    - scorer_id: required_fields
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M17 examples/eval/datasets/m17_gpu_v1.yaml
+    description: "GPU 实验设计字段完整（hypothesis/seed/baseline/candidate 精度双分支/样本量）"
+  direction_improvement_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m17/experimental_validity
+    expected:
+      baseline_metric: metrics.baseline_accuracy
+      candidate_metric: metrics.candidate_accuracy
+      claim_direction: candidate_better
+    scorer_refs:
+    - scorer_id: direction_improvement
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M17 examples/eval/datasets/m17_gpu_v1.yaml
+    description: "科学方向与 Claim 声明一致（混合精度准确率不劣于 FP32；显著下降必 FAIL）"
+  reproducibility_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m17/reproducibility
+    expected:
+    - audit_status
+    - image_digest
+    - workspace_snapshot_before
+    - workspace_snapshot_after
+    - metrics_digest
+    scorer_refs:
+    - scorer_id: required_fields
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M17 examples/eval/datasets/m17_gpu_v1.yaml
+    description: "ReproducibilityAudit 关键字段齐备（含 GPU fingerprint 绑定）"
+  evidence_support_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m17/evidence_support
+    expected:
+      minimum: 1
+    scorer_refs:
+    - scorer_id: evidence_source_distinct
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M17 examples/eval/datasets/m17_gpu_v1.yaml
+    description: "关键 Claim 至少 1 条已登记 Evidence source（provenance 闭合）"
+  cost_efficiency_001:
+    version: 1.0.0
+    scope: WORKFLOW
+    input_ref: input://m17/cost_efficiency
+    expected:
+      type: object
+      required:
+      - model_tokens
+      - experiment_runs
+      - gpu_seconds
+      properties:
+        model_tokens:
+          type: integer
+        experiment_runs:
+          type: integer
+        gpu_seconds:
+          type: integer
+    scorer_refs:
+    - scorer_id: schema_validity
+      version: 1.0.0
+    determinism: DETERMINISTIC
+    provenance: M17 examples/eval/datasets/m17_gpu_v1.yaml
+    description: "用量可对账到 BudgetLedger（含 GPU_TIME 条目）"

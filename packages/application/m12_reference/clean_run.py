@@ -51,10 +51,10 @@ from packages.domain.core import ID, Digest
 from packages.domain.experiment_state import ExperimentPlanState, ExperimentRunState
 from packages.domain.experiments import ExperimentPlan, ExperimentRun
 from packages.domain.manifest import RunManifest
+from packages.domain.workers import GPU_RESOURCE_PROFILES
 
 DATASET_PATH = "examples/eval/datasets/m12_research_v1.yaml"
 HYPOTHESIS = "hash-embedding+linear classifier beats tfidf on low-resource subset"
-
 
 @dataclass(frozen=True, slots=True)
 class CleanRunResult:
@@ -180,7 +180,7 @@ def _manifest_extras(deps: CleanRunDeps) -> M12ManifestExtras:
         endpoint_config_digest=_endpoint_digest(deps),
         probe_suite_digest=None,
         fallback=FallbackFreeze(),
-        evaluation_dataset_digest=_dataset_digest(),
+        evaluation_dataset_digest=_dataset_digest(deps),
     )
 
 
@@ -188,10 +188,10 @@ def _endpoint_digest(deps: CleanRunDeps) -> str | None:
     return str(endpoint_config_digest(deps.endpoint)) if deps.endpoint else None
 
 
-def _dataset_digest() -> str:
+def _dataset_digest(deps: CleanRunDeps) -> str:
     from adapters.contracts.eval_loaders import load_eval_dataset
 
-    return str(load_eval_dataset(DATASET_PATH).digest())
+    return str(load_eval_dataset(deps.dataset_path).digest())
 
 
 def _relay_fingerprints(deps: CleanRunDeps) -> dict[str, object]:
@@ -221,10 +221,15 @@ def _run_experiment(
     lease = deps.workspaces.acquire_lease(deps.workspace, session_id)
     plan = ExperimentPlan(
         id=experiment_plan_id,
-        name="m12-reference-classification",
-        hypothesis=HYPOTHESIS,
+        name=deps.plan_name,
+        hypothesis=deps.hypothesis,
     ).transition(ExperimentPlanState.Transition.PREREGISTER)
     effective_command = _provision_experiment(deps, command, lease)
+    environment = {"EXPERIMENT_RUN_ID": experiment_run_id}
+    if deps.resource_profile in GPU_RESOURCE_PROFILES:
+        # M17 determinism control for cuBLAS on the GPU slice (set BEFORE torch
+        # import inside the container; the experiment reads it from env).
+        environment["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
     executor = ExperimentExecutor(
         execution=deps.execution,
         workspaces=deps.workspaces,
@@ -239,8 +244,8 @@ def _run_experiment(
             workspace=deps.workspace,
             agent_session_id=session_id,
             seed=7,
-            resource_profile="small",
-            environment={"EXPERIMENT_RUN_ID": experiment_run_id},
+            resource_profile=deps.resource_profile,
+            environment=environment,
             timeout_seconds=timeout_seconds,
         )
     )
@@ -249,7 +254,7 @@ def _run_experiment(
         ExperimentRunState.State.NEGATIVE_RESULT,
     ):
         raise RuntimeError(f"experiment failed: {outcome.run.state}")
-    return outcome.run, experiment_run_id, HYPOTHESIS
+    return outcome.run, experiment_run_id, deps.hypothesis
 
 
 def _provision_experiment(deps: CleanRunDeps, command: str, lease: object) -> str:

@@ -49,6 +49,17 @@ class CleanRunDeps:
         "(frozen hash-embedding + linear classifier) on a low-resource "
         "20-class text classification subset"
     )
+    # M17: GPU slice reuses this harness — resource_profile/hypothesis/
+    # plan_name/dataset_path are injectable so no second Experiment Domain
+    # is created. Defaults preserve the M12 reference behavior exactly.
+    resource_profile: str = "small"
+    hypothesis: str = "hash-embedding+linear classifier beats tfidf on low-resource subset"
+    plan_name: str = "m12-reference-classification"
+    dataset_path: str = "examples/eval/datasets/m12_research_v1.yaml"
+    memory_content: str = (
+        "hash-embedding+linear_softmax candidate did not beat "
+        "tfidf baseline on low-resource 20-class subset"
+    )
 
 
 __all__ = ["CleanRunDeps"]

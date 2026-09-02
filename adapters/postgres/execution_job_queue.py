@@ -206,7 +206,8 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
         row: Any = self._conn.execute(
             "SELECT t.status, t.fence_seq, j.worker_id, j.exit_code, j.stdout_digest,"
             " j.stderr_digest, j.output_bundle_ref, j.output_bundle_digest,"
-            " j.failure_category FROM tasks t LEFT JOIN execution_jobs j"
+            " j.failure_category, j.image_digest, j.gpu_elapsed_seconds,"
+            " j.peak_gpu_memory_bytes FROM tasks t LEFT JOIN execution_jobs j"
             " ON j.task_id = t.task_id WHERE t.task_id = %s",
             (task_id,),
         ).fetchone()
@@ -231,6 +232,15 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
                 str(row["output_bundle_digest"]) if row["output_bundle_digest"] else None
             ),
             failure_category=str(row["failure_category"]) if row["failure_category"] else None,
+            image_digest=str(row["image_digest"]) if row["image_digest"] else None,
+            gpu_elapsed_seconds=(
+                int(row["gpu_elapsed_seconds"]) if row["gpu_elapsed_seconds"] is not None else None
+            ),
+            peak_gpu_memory_bytes=(
+                int(row["peak_gpu_memory_bytes"])
+                if row["peak_gpu_memory_bytes"] is not None
+                else None
+            ),
         )
 
     def record_result(self, result: ExecutionJobResult) -> None:
@@ -260,7 +270,8 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
             self._conn.execute(
                 "UPDATE execution_jobs SET worker_id = (SELECT worker_id FROM leases"
                 " WHERE task_id = %s), exit_code = %s, stdout_digest = %s, stderr_digest = %s,"
-                " output_bundle_ref = %s, output_bundle_digest = %s, failure_category = %s"
+                " output_bundle_ref = %s, output_bundle_digest = %s, failure_category = %s,"
+                " image_digest = %s, gpu_elapsed_seconds = %s, peak_gpu_memory_bytes = %s"
                 " WHERE task_id = %s",
                 (
                     task_id,
@@ -270,6 +281,9 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
                     result.output_bundle_ref,
                     result.output_bundle_digest,
                     result.failure_category,
+                    result.image_digest,
+                    result.gpu_elapsed_seconds,
+                    result.peak_gpu_memory_bytes,
                     task_id,
                 ),
             )

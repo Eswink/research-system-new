@@ -26,6 +26,7 @@ from packages.application.evaluation.scorer_types import (
     ScorerRegistration,
     make_finding,
 )
+from packages.application.evaluation.scorers_m17_gpu import _gpu_compute_device
 from packages.domain.eval_result import EvalFindingStatus, ScorerFinding
 
 
@@ -250,6 +251,8 @@ REGISTRY: tuple[ScorerRegistration, ...] = (
     ScorerRegistration("invariant", V1, _invariant),
     ScorerRegistration("evidence_source_distinct", V1, _evidence_source_distinct),
     ScorerRegistration("schema_validity", V1, _schema_validity),
+    # M17: GPU evidence-layer no-fallback discriminator
+    ScorerRegistration("gpu_compute_device", V1, _gpu_compute_device),
 )
 
 _SCORERS: dict[tuple[str, str], ScorerFn] = {

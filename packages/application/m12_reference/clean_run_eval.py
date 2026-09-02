@@ -54,7 +54,7 @@ def run_evaluation_stage(
     ctx: EvalStageCtx,
 ) -> EvalReport:
     """从持久状态构造评测输入并执行；verdict 非 PASS 即失败（fail-closed）。"""
-    dataset = load_eval_dataset(DATASET_PATH)
+    dataset = load_eval_dataset(deps.dataset_path)
     inputs = build_eval_inputs(deps, run_id, ctx)
     outcome = run_evaluation(
         RunRequest(
@@ -150,6 +150,22 @@ def _inputs(  # noqa: PLR0913 - 评测输入聚合（参数对象会降低可读
             "experiment_runs": ctx.usage_summary["experiment_runs"],
             "evaluation_runs": ctx.usage_summary["evaluation_runs"],
         },
+        # M17 GPU slice reuses this harness — the m17 dataset reads these keys.
+        "input://m17/task_completion": {"status": payload.get("status")},
+        "input://m17/experiment_result": payload,
+        "input://m17/experimental_validity": {
+            "status": payload.get("status"),
+            "hypothesis": ctx.hypothesis,
+            "metrics": metrics,
+            "seed": payload.get("seed"),
+        },
+        "input://m17/reproducibility": _repro_input(ctx.audit),
+        "input://m17/evidence_support": {"sources": distinct_sources},
+        "input://m17/cost_efficiency": {
+            "model_tokens": ctx.usage_summary["model_tokens"],
+            "experiment_runs": ctx.usage_summary["experiment_runs"],
+            "gpu_seconds": ctx.usage_summary.get("gpu_seconds", 0),
+        },
     }
 
 
@@ -169,7 +185,11 @@ def _evidence_map(deps: CleanRunDeps, claim_id: str) -> dict[str, dict[str, str]
     for relation in relations:
         evidence = deps.ledger.get_evidence(relation.evidence_id)
         sources[evidence.source_ref] = evidence.content_digest
-    return {"input://m12/evidence_support": sources}
+    return {
+        "input://m12/evidence_support": sources,
+        # M17 GPU slice reuses this harness — the m17 dataset reads this key.
+        "input://m17/evidence_support": sources,
+    }
 
 
 def _runtime_scorers(deps: CleanRunDeps, run_id: str) -> dict[tuple[str, str], ScorerFn]:

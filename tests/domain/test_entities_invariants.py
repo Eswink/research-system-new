@@ -47,6 +47,8 @@ def test_failure_categories_cover_document() -> None:
         "APPROVAL_REJECTED",
         "WORKSPACE_FAILURE",
         "EXECUTION_FAILURE",
+        "GPU_UNAVAILABLE",
+        "GPU_OOM",
         "ARTIFACT_CORRUPTION",
         "VALIDATION_FAILURE",
         "BUDGET_EXHAUSTED",

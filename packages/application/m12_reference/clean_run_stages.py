@@ -91,10 +91,7 @@ def commit_memory(deps: CleanRunDeps, run_id: str, claim_id: str) -> None:
         memory_deps,
         input=MemoryProposalInput(
             memory_id=f"mem:{run_id}:negative-result",
-            content=(
-                "hash-embedding+linear_softmax candidate did not beat "
-                "tfidf baseline on low-resource 20-class subset"
-            ),
+            content=deps.memory_content,
             provenance=evidence.source_ref,
             kind=MemoryType.NEGATIVE_RESULT,
             tier=MemoryTier.PROJECT,
@@ -130,6 +127,7 @@ def collect_usage_summary(deps: CleanRunDeps, run_id: str, run: ExperimentRun) -
         "tool_requests": summary.tool_requests,
         "experiment_runs": 1 if run.result is not None else 0,
         "evaluation_runs": 0,
+        "gpu_seconds": summary.gpu_seconds,
     }
 
 

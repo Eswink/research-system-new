@@ -60,6 +60,14 @@ class ExecutionJobResult:
     output_bundle_ref: str | None = None
     output_bundle_digest: str | None = None
     failure_category: str | None = None
+    # M17: the worker's DockerExecutionBackend resolves the actual image digest
+    # it ran; propagating it back binds remote reproducibility (the local
+    # DockerExecutionBackend already carries it in compute_usage_summary).
+    image_digest: str | None = None
+    # M17: GPU observations (framework-reliable quantities only) flow back so
+    # the remote path feeds the same single experiment usage ledger as local.
+    gpu_elapsed_seconds: int | None = None
+    peak_gpu_memory_bytes: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +82,9 @@ class ExecutionJobOutcome:
     output_bundle_ref: str | None = None
     output_bundle_digest: str | None = None
     failure_category: str | None = None
+    image_digest: str | None = None
+    gpu_elapsed_seconds: int | None = None
+    peak_gpu_memory_bytes: int | None = None
 
 
 _TERMINAL_STATUSES = ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED")

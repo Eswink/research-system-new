@@ -90,6 +90,9 @@ CREATE TABLE IF NOT EXISTS execution_jobs (
     stdout_digest TEXT,
     stderr_digest TEXT,
     failure_category TEXT,
+    image_digest TEXT,
+    gpu_elapsed_seconds INTEGER,
+    peak_gpu_memory_bytes INTEGER,
     cancel_requested INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
 );

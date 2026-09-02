@@ -186,6 +186,9 @@ async def submit_result(
                 output_bundle_ref=payload.output_bundle_ref,
                 output_bundle_digest=payload.output_bundle_digest,
                 failure_category=payload.failure_category,
+                image_digest=payload.image_digest,
+                gpu_elapsed_seconds=payload.gpu_elapsed_seconds,
+                peak_gpu_memory_bytes=payload.peak_gpu_memory_bytes,
             )
         )
     except InvalidInputError as exc:

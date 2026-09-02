@@ -136,6 +136,9 @@ class FakeExecutionJobQueue(FakeBase):
             output_bundle_ref=result.output_bundle_ref,
             output_bundle_digest=result.output_bundle_digest,
             failure_category=result.failure_category,
+            image_digest=result.image_digest,
+            gpu_elapsed_seconds=result.gpu_elapsed_seconds,
+            peak_gpu_memory_bytes=result.peak_gpu_memory_bytes,
         )
         job.lease_id = None  # lease released on settle
         self._record("record_result", result.task_id, result=result.status)

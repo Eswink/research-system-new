@@ -93,7 +93,13 @@ def main(argv: list[str] | None = None) -> int:
     # the real-Docker remote E2E is requires_docker-marked).
     execution_backend = os.environ.get("RESEARCHOS_WORKER_EXECUTION_BACKEND", "deterministic")
     if execution_backend == "docker":
-        backend: object = DockerExecutionBackend()
+        # RESEARCHOS_WORKER_DOCKER_IMAGE lets a GPU worker run the pinned GPU
+        # sandbox (a python+torch superset that also serves CPU jobs); unset
+        # keeps the M9 default sandbox image.
+        image = os.environ.get("RESEARCHOS_WORKER_DOCKER_IMAGE")
+        backend: object = (
+            DockerExecutionBackend(image=image) if image else DockerExecutionBackend()
+        )
     elif execution_backend == "deterministic":
         backend = DeterministicExecutionBackend()
     else:
