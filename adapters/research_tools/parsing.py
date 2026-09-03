@@ -11,8 +11,20 @@ from packages.application.ports.errors import InvalidInputError
 
 
 def parse_efetch_xml(content: bytes) -> dict[str, object]:
-    """efetch XML → {"articles": [normalized article, ...]}。"""
-    root = ET.fromstring(content)
+    """efetch XML → {"articles": [normalized article, ...]}。
+
+    PA-1 扫描处置：输入是不可信 HTTP 字节。std ET 展开内部实体
+    （entity-expansion DoS）——输入拒绝 DOCTYPE/ENTITY 声明，并设 5MB 上限。
+    """
+    if len(content) > 5 * 1024 * 1024:
+        raise InvalidInputError("efetch response exceeds 5MB limit")
+    head = content.lstrip()[:256].upper()
+    if b"<!DOCTYPE" in head or b"<!ENTITY" in head:
+        raise InvalidInputError("efetch response must not declare DOCTYPE/ENTITY")
+    try:
+        root = ET.fromstring(content)
+    except ET.ParseError as exc:
+        raise InvalidInputError(f"efetch response is not well-formed XML: {exc}") from exc
     articles = []
     for citation in root.findall(".//PubmedArticle"):
         medline = citation.find("MedlineCitation")

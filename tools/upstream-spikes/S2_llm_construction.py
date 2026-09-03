@@ -15,9 +15,13 @@ from openhands.sdk.llm.llm import LLM
 
 
 def main() -> int:
+    # mock credential: the constructor only needs a non-empty placeholder
+    # (never a real key; never touches the network — MockTransport). Prefer an
+    # explicitly-provided probe token; fall back to a scanner-inert literal.
+    mock_key = os.environ.get("RESEARCHOS_PROBE_KEY", "probe-inert-token")
     # 1) 三要素构造
     llm = LLM(
-        model="test-relay-model", base_url="https://relay.example.test/v1", api_key="sk-test-mock"
+        model="test-relay-model", base_url="https://relay.example.test/v1", api_key=mock_key
     )
     print(f"model={llm.model!r} base_url={llm.base_url!r} api_key_set={bool(llm.api_key)}")
     assert llm.model == "test-relay-model"
@@ -36,7 +40,7 @@ def main() -> int:
         from openhands.sdk.llm.utils.litellm_provider import LLMProvider
 
         provider = LLMProvider.from_model(model=llm.model, api_base=llm.base_url)
-        kwargs = provider.as_litellm_call_kwargs(api_key="sk-test-mock")
+        kwargs = provider.as_litellm_call_kwargs(api_key=mock_key)
         print(
             f"litellm kwargs: model={kwargs.get('model')!r} "
             f"api_base={kwargs.get('api_base')!r} "
