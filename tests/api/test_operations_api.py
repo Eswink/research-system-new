@@ -256,6 +256,45 @@ def test_cluster_workers_readonly_view(run_ready_client: TestClient) -> None:
     assert "worker-secret-id-xyz" not in ref  # raw id never leaves the control plane
 
 
+def test_cluster_workers_gpu_observation_digest_only(run_ready_client: TestClient) -> None:
+    """PA-1 debt #7: GPU 观察进入 cluster 投影时只含 digest + 时间戳，
+    不得含 raw device name（M17 隐私词表）。"""
+    import json
+
+    from packages.domain.core import Timestamp
+    from packages.domain.workers import WorkerGpuObservation, WorkerRegistration
+
+    registry = _worker_registry(run_ready_client)
+    registry.register(
+        WorkerRegistration(
+            worker_id="gpu-worker-1",
+            protocol_version="1",
+            runtime_version="0.1.0",
+            capabilities=frozenset({"docker", "gpu"}),
+            backend_kinds=frozenset({"DOCKER"}),
+            platform="linux/amd64",
+            partition_slots=frozenset({0}),
+            max_concurrency=1,
+            gpu_observation=WorkerGpuObservation(
+                device_name="NVIDIA GeForce RTX 4060 Laptop GPU",
+                device_count=1,
+                driver_version="581.80",
+                cuda_runtime_version="12.8",
+                total_vram_bytes=8589934592,
+                framework="torch-2.9.1+cu128",
+                probed_at=Timestamp.now(),
+                probe_digest="digest-" + "a" * 59,
+            ),
+        )
+    )
+    body = run_ready_client.get("/cluster/workers").json()
+    payload = json.dumps(body)
+    assert "NVIDIA" not in payload
+    assert "torch-2.9.1" not in payload
+    assert body["workers"][0]["gpu_probe_digest"].startswith("digest-")
+    assert "gpu_observed_at" in body["workers"][0]
+
+
 def test_run_placement_readonly_view(run_ready_client: TestClient) -> None:
     run_id = _start_run(run_ready_client)
     _worker_registry(run_ready_client)

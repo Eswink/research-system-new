@@ -126,7 +126,12 @@ class TrendViewDto(BaseModel):
 
 
 class ClusterWorkerDto(BaseModel):
-    """Worker cluster read view (Control Plane 只读投影;非调度真相)。"""
+    """Worker cluster read view (Control Plane 只读投影;非调度真相)。
+
+    PA-1 debt #7: exposes the GPU *observation digest + stamp* so operators
+    can see GPU capability without any raw device identity (the digest is a
+    hash; device names never enter telemetry/DTOs — M17 privacy precedent).
+    """
 
     worker_ref: str
     state: str
@@ -137,6 +142,8 @@ class ClusterWorkerDto(BaseModel):
     max_concurrency: int
     drain_requested: bool
     last_heartbeat: str | None = None
+    gpu_probe_digest: str | None = None
+    gpu_observed_at: str | None = None
 
 
 class ClusterViewDto(BaseModel):

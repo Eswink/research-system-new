@@ -25,6 +25,7 @@ from adapters.execution.gpu_probe import GPU_SANDBOX_IMAGE_DEFAULT, GpuProbeConf
 from adapters.worker.client import WorkerClient, WorkerClientConfig
 from services.worker.deterministic_backend import DeterministicExecutionBackend
 from services.worker.loop import WorkerLoop, WorkerLoopConfig
+from services.worker.telemetry import build_worker_telemetry
 
 _STOP = {"flag": False}
 
@@ -104,12 +105,16 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError(f"unknown RESEARCHOS_WORKER_EXECUTION_BACKEND: {execution_backend}")
     print(f"worker: starting id={args.worker_id}", flush=True)  # noqa: T201
     with WorkerClient(config) as client:
+        # PA-1 debt #6: production workers now emit telemetry (REMOTE_EXECUTION
+        # span + remote metrics); fail-open — sink construction never blocks jobs.
+        telemetry = build_worker_telemetry(args.worker_id)
         loop = WorkerLoop(
             client,
             backend,  # type: ignore[arg-type]  # deterministic/docker backends are duck-typed
             config=loop_config,
             should_stop=lambda: _STOP["flag"],
             gpu_prober=_gpu_prober_for(execution_backend),  # type: ignore[arg-type]
+            telemetry=telemetry,
         )
         completed = loop.run()
     print(f"worker: stopped completed={completed}", flush=True)  # noqa: T201

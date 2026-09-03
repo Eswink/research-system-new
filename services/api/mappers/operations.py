@@ -304,6 +304,8 @@ def _segment_dto(segment: TrendSegment) -> TrendSegmentDto:
 def _cluster_worker_dto(reg: Any) -> "ClusterWorkerDto":
     from packages.application.observability.attributes import worker_ref
 
+    observation = getattr(reg, "gpu_observation", None)
+    observed_at = getattr(reg, "gpu_observed_at", None)
     return ClusterWorkerDto(
         worker_ref=worker_ref(str(reg.worker_id)),
         state=str(reg.state),
@@ -314,6 +316,8 @@ def _cluster_worker_dto(reg: Any) -> "ClusterWorkerDto":
         max_concurrency=int(reg.max_concurrency),
         drain_requested=bool(reg.drain_requested),
         last_heartbeat=reg.last_heartbeat.value.isoformat() if reg.last_heartbeat else None,
+        gpu_probe_digest=getattr(observation, "probe_digest", None),
+        gpu_observed_at=observed_at.value.isoformat() if observed_at else None,
     )
 
 
