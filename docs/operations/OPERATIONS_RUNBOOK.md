@@ -35,9 +35,9 @@ SELECT status, count(*) FROM tasks GROUP BY status;    # queue 深度
 - DB/object-store capacity；
 - secret expiration。
 
-> PA-1 实测补充（2026-09-03）：PostgreSQL 重启后既有 psycopg 连接不自动
-> 重连 —— 操作先停 API/gateway/worker → 重启 PG → 重启控制面；见
-> PERSONAL_DEPLOYMENT.md §10 与 PA-1 记录 F2。
+> PA-1 实测补充（2026-09-03）：PostgreSQL 重启后 adapter 连接已自动重连
+> （F2 修复，`ReconnectableConnection`；事务中失败不重试）——重启 PG 后
+> 控制面进程无需重启，过期租约自动收敛；见 PERSONAL_DEPLOYMENT.md §10。
 
 ## Incident Classes
 

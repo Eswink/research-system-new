@@ -116,7 +116,12 @@ class RunOrchestrationService:
         run = run.transition(ResearchRunState.Transition.START_COMPILE)
         plan, report = compile_and_preflight(protocol, catalog, project, preflight_context)
         if plan is None or report.status.value == "FAIL":
-            return self._fail_run(run.id.value, "preflight failed", False)
+            # PA-1 F5: carry the failing check codes so an unprovisioned
+            # control plane is actionable ("which check failed") instead of a
+            # bare "preflight failed". Honest FAILED semantics unchanged.
+            codes = ", ".join(sorted({finding.code for finding in report.findings}))
+            message = f"preflight failed: {codes}" if codes else "preflight failed"
+            return self._fail_run(run.id.value, message, False)
         run = run.transition(ResearchRunState.Transition.COMPILE_OK)
         run = run.transition(ResearchRunState.Transition.PREFLIGHT_OK)
         manifest = freeze_manifest(

@@ -39,6 +39,11 @@ uv run python -m services.worker --worker-id personal-w1
 pnpm --dir apps/web dev
 ```
 
+**首次使用前必须 provisioning（PA-1 F5）**：未配置 LLM endpoint/model 的控制面
+启动 run 会诚实收敛 FAILED（`run.failed` 事件携带具体 preflight codes，如
+`ENDPOINT_*`/`MODEL_*` 缺失项）。先经 Console wizard 或
+`POST /llm-endpoints` + `POST /models` 注册 relay 端点与模型，再启动 run。
+
 ## 3. 停止
 
 ```bash
@@ -141,11 +146,10 @@ sha256:b0a03d7c5047b476ae950d878a42df85ffe7dfd3a3c9d280bfdcd4874a085bfe，
 ## 10. Common failure recovery
 
 - **进程偶发退出**：重启进程即可（所有状态在 PG；[P7]）。
-- **PostgreSQL 重启后 API/gateway 报 "connection is closed"**：PG 重启
-  会作废既有连接的进程内连接，adapter 不自动重连（PA-1 发现 F2）——
-  操作流程：先停 API/gateway/worker → 重启 PG → 重启控制面进程
-  （worker 无需 DB 凭据，依赖 gateway，重启网关即可）→ 租约自动恢复
-  （[P7] B 实跑）。
+- **PostgreSQL 重启**：PG adapter 连接现已自动重连（PA-1 F2 修复：
+  `ReconnectableConnection` 在空闲连接损坏时换用新连接；事务中失败不重试）。
+  重启 PG 后控制面进程无需重启即可继续服务；过期租约由 LeaseRecoveryScheduler
+  自动收敛（[P7] B 实跑 + tests/postgres/test_reconnect.py）。
 - **worker LOST / 迟到结果**：服务端自动处理（reaper + fence）；不要手工
   改 PG（[P5b]）。
 - **孤留 GPU 容器**：worker 启动探测会清扫已停止的 GPU 镜像容器

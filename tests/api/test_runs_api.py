@@ -247,3 +247,36 @@ def test_policy_approval_required_through_real_evaluator(client: TestClient) -> 
     _plan, report = compile_and_preflight(protocol, catalog, project, context)
     codes = {finding.code for finding in report.findings}
     assert "POLICY_APPROVAL_REQUIRED" in codes
+
+
+def test_start_run_unprovisioned_control_plane_reports_actionable_failure(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """PA-1 F5: 未配置 endpoint/model 的真实组合路径仍诚实收敛 FAILED
+    （M13 语义不变），但 run.failed 事件必须携带具体失败 codes，
+    让运维知道缺什么（provisioning 可操作），而不是裸 "preflight failed"。"""
+    from services.api.app import create_app
+    from services.api.composition import assemble
+    from services.api.settings import ApiSettings
+
+    # hermetic: this test exercises the SQLite composition path
+    for key in ("DATABASE_URL", "RESEARCHOS_DATABASE_URL", "POSTGRES_DSN"):
+        monkeypatch.delenv(key, raising=False)
+
+    settings = ApiSettings(db_path=str(tmp_path / "unprovisioned.db"))
+    app = create_app(assemble(settings))
+    with TestClient(app) as client:
+        response = client.post(
+            "/projects/example-project/runs",
+            json={"protocol_path": _PROTOCOL},
+            headers={"Idempotency-Key": f"f5-{uuid.uuid4()}"},
+        )
+        assert response.status_code == 200, response.text
+        run = response.json()
+        assert run["state"] == "FAILED"
+        events = client.get(f"/runs/{run['id']}/events").json()
+        failed = [e for e in events if e["type"] == "run.failed"]
+        assert failed, events
+        message = failed[0]["payload"]["message"]
+        assert message.startswith("preflight failed:")
+        assert len(message) > len("preflight failed:")  # codes present
