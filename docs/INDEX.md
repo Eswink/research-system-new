@@ -12,6 +12,7 @@ M15 Observability / Cost / Eval Operations = completed（2026-08-29 首轮；202
 M16 Distributed Execution + Remote Sandbox/Worker = completed（2026-08-31；Worker 生命周期/认证、claim_next 分区 + fence、RemoteExecutionBackend + worker 子进程 E2E 场景 A–J、SWE-ReX REJECT、遥测/记账/Console cluster 视图；ADR-0027；attempt-2 独立对抗复审 PASS 2026-09-01，RECHECK-20260901-025-m16-attempt2；证据见 `roadmap/M16_COMPLETION_RECORD.md`）
 RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R 与 Usage-driven Development；权威见 `roadmap/MILESTONES.md`
 M17 Remote GPU Execution = completed（2026-09-02，ADR-0029）：真实单卡 GPU 全链 VERIFIED（capability 发现/GPU 调度/真实 CUDA 执行/无静默 CPU fallback/OOM·取消/Artifact·Evidence·Evaluation·Usage/可复现性）；physically-remote GPU host = NOT VERIFIED/DEFERRED；证据见 `roadmap/M17_COMPLETION_RECORD.md`
+PA-1 Personal Production Acceptance = PASS（2026-09-03）：reproducible deployment / PostgreSQL+Artifact 实际 backup+restore / secret hygiene / Remote+GPU worker recovery / restart durability / 真实 GPU Research Acceptance Run / version identity / operational docs；发现 F1/F2/F3/F5/W3 已记录，F3 修复（dc6676c）；PA-1R = READY；证据见 `roadmap/PA1_COMPLETION_RECORD.md`
 ```
 
 真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 →

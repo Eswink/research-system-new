@@ -1145,6 +1145,12 @@ SI-1 PASS 后执行。回答一个问题：**当前 Research OS 是否已经达�
 PA-1 不属于 Enterprise Milestone；以上各项不是"提前做 M19"，验收深度
 以个人生产基线为准。
 
+PA-1 结果（2026-09-03）：**PASS** — 11 项逐项真实证据齐全
+（`docs/roadmap/PA1_COMPLETION_RECORD.md` + `scratch/pa1-20260903/`）；
+发现 F1（内存来源白名单装配缺失）/ F2（PG 重启后连接不自动重建）/
+F3（PG EvalReportStore 读取路径，已修复 dc6676c）/ F5（未配置控制面
+demo run 路径）/ W3（GPU_TIME 整数秒）；无 BLOCKER；PA-1R READY。
+
 ## PA-1R — Independent Personal Production Re-audit
 
 PA-1 完成后执行独立复审（独立于 PA-1 执行者的复审，模式同 M16
