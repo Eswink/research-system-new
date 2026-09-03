@@ -78,14 +78,16 @@ class ApiSettings:
         return effective is not None and effective.startswith("postgresql")
 
     def effective_database_url(self) -> str | None:
-        """Resolved DSN: explicit database_url > env DATABASE_URL > None (use SQLite)."""
-        if self.database_url is not None:
-            return self.database_url
-        for key in ("DATABASE_URL", "RESEARCHOS_DATABASE_URL", "POSTGRES_DSN"):
-            val = os.environ.get(key)
-            if val and val.strip():
-                return val.strip()
-        return None
+        """Resolved DSN: the explicit `database_url` only.
+
+        PA-1 F6a: the former env fallback (DATABASE_URL/RESEARCHOS_DATABASE_URL/
+        POSTGRES_DSN) made explicitly-constructed SQLite settings silently
+        switch to the PostgreSQL composition whenever the ambient shell had a
+        DSN — non-hermetic tests and surprising behavior. `from_env()` already
+        resolves those keys into `database_url`, so the live path is unchanged;
+        explicit construction is now explicit config.
+        """
+        return self.database_url
 
     @classmethod
     def from_env(cls) -> ApiSettings:
