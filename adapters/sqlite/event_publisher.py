@@ -44,11 +44,22 @@ class SqliteOutboxEventPublisher(SqliteAdapterBase):
         if not envelope.event_id:
             self._record("publish", "", error="InvalidInputError")
             raise InvalidInputError("event_id must not be empty")
-        cursor = self._conn.execute(
-            "INSERT OR IGNORE INTO outbox_events (event_id, envelope_json, created_at)"
-            " VALUES (?, ?, ?)",
-            (envelope.event_id, encode_envelope(envelope), now_iso(None)),
-        )
+        # PA-1 F7: durability + cross-connection visibility. Without this the
+        # event INSERT rode the shared connection's implicit transaction until
+        # some unrelated store happened to commit — a crash lost the event, and
+        # a second connection (API restart) could not read it. Every sibling
+        # sqlite store self-commits on each write (`with self._conn:` across
+        # the whole tree), so self-commit here matches the established
+        # semantics — including rolling back together with other writes when a
+        # LATER operation in the same caller-managed `with conn:` block fails
+        # (conn-level rollback is all-or-nothing; nothing in the tree relies
+        # on deferred visibility of outbox events).
+        with self._conn:
+            cursor = self._conn.execute(
+                "INSERT OR IGNORE INTO outbox_events (event_id, envelope_json, created_at)"
+                " VALUES (?, ?, ?)",
+                (envelope.event_id, encode_envelope(envelope), now_iso(None)),
+            )
         result = "published" if cursor.rowcount > 0 else "deduped"
         self._record("publish", envelope.event_id, result=result)
 
