@@ -56,8 +56,8 @@ class CollectedUsage:
     model_tokens: int = 0
     model_requests: int = 0
     tool_requests: int = 0
-    experiment_seconds: int = 0
-    gpu_seconds: int = 0
+    experiment_seconds: int | float = 0
+    gpu_seconds: int | float = 0
     eval_cases: int = 0
     eval_scorer_calls: int = 0
     model_usage_unknown: bool = False

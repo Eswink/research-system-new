@@ -62,11 +62,12 @@ class ExperimentUsage:
 
     run_id: str
     image_digest: str | None = None
-    elapsed_seconds: int | None = None
+    elapsed_seconds: int | float | None = None
     oom_killed: bool = False
     exit_code: int | None = None
     attempt: int = 1
-    gpu_elapsed_seconds: int | None = None
+    # PA-1 W3: fractional seconds allowed; rounded to 0.1s at _gpu_time_entry.
+    gpu_elapsed_seconds: int | float | None = None
     peak_gpu_memory_bytes: int | None = None
 
     # M17：GPU 货币成本无定价源 —— 常量原因，绝不写 0。
@@ -92,7 +93,7 @@ def _entry(  # noqa: PLR0913 - UsageLedgerEntry 字段映射，参数对象会�
     *,
     entry_id: str,
     resource_type: ResourceType,
-    quantity: int,
+    quantity: int | float,
     unit: str,
     source: str,
     occurred_at: datetime,
@@ -234,7 +235,13 @@ def _gpu_time_entry(
     return _entry(
         entry_id=_attempt_scope(f"usage:{run_id}:experiment:{usage.run_id}:gpu", usage.attempt),
         resource_type=ResourceType.GPU_TIME,
-        quantity=usage.gpu_elapsed_seconds or 0,
+        # PA-1 W3: one-decimal seconds (0.4s stays 0.4 — honest, not floor(0)).
+        quantity=(
+            round(float(usage.gpu_elapsed_seconds), 1)
+            if isinstance(usage.gpu_elapsed_seconds, (int, float))
+            and not isinstance(usage.gpu_elapsed_seconds, bool)
+            else 0
+        ),
         unit="seconds",
         source="m17:experiment-gpu",
         occurred_at=occurred_at,
@@ -298,16 +305,17 @@ def evaluation_entries(
 
 def summarize(entries: list[UsageLedgerEntry]) -> Summary:
     """条目总量摘要（不落账，只读）。"""
-    total_tokens = 0
-    tool_requests = 0
+    # PA-1 W3: token/call counts stay ints; duration totals may be fractional.
+    total_tokens: int = 0
+    tool_requests: int = 0
     experiment_runs = 0
-    experiment_seconds = 0
-    gpu_seconds = 0
+    experiment_seconds: int | float = 0
+    gpu_seconds: int | float = 0
     for entry in entries:
         if entry.resource_type is ResourceType.MODEL_TOKENS:
-            total_tokens += entry.quantity
+            total_tokens = total_tokens + int(entry.quantity)
         elif entry.resource_type is ResourceType.TOOL_REQUESTS:
-            tool_requests += entry.quantity
+            tool_requests = tool_requests + int(entry.quantity)
         elif entry.resource_type is ResourceType.CPU_TIME:
             experiment_runs += 1
             experiment_seconds += entry.quantity
@@ -327,8 +335,9 @@ class Summary:
     total_tokens: int
     tool_requests: int
     experiment_runs: int
-    experiment_seconds: int
-    gpu_seconds: int = 0
+    # PA-1 W3: duration totals may be fractional (match ExperimentUsage).
+    experiment_seconds: int | float
+    gpu_seconds: int | float = 0
 
 
 __all__ = [

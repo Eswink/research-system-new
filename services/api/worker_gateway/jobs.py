@@ -138,6 +138,11 @@ async def claim_job(
     )
     if lease is None:
         return Response(status_code=204)
+    # BACKLOG-178 wiring: a successful claim moves the worker READY→BUSY
+    # (state machine `schedulable()` is READY-only, so a second concurrent
+    # claim is refused — max_concurrency as an admission upper bound; the
+    # worker pool stays single-thread until real concurrency demand).
+    deps.registry.transition(payload.worker_id, WorkerState.Transition.CLAIM)
     descriptor = job_queue.describe(lease.task_id)
     if descriptor is None:
         raise ApiError(500, "Job Descriptor Missing", "claimed task has no execution payload")
@@ -192,6 +197,13 @@ async def submit_result(
     except InvalidInputError as exc:
         # stale fence / lease: reject the late result (scenario C)
         raise ApiError(409, "Stale Result Rejected", str(exc)) from exc
+    # BACKLOG-178 wiring: the worker settles BUSY→READY. Stale-fence
+    # rejections return above and never settle — a possibly-still-running
+    # superseded lease must not free the BUSY slot.
+    try:
+        deps.registry.transition(payload.worker_id, WorkerState.Transition.JOB_SETTLED)
+    except Exception:  # noqa: BLE001 — settle must not fail an accepted result
+        pass
     return ResultAckDto(accepted=True, task_id=task_id)
 
 

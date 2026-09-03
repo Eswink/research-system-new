@@ -116,8 +116,11 @@ def test_gpu_repeated_runs_semantic_reproducibility(tmp_path: Path, gpu_image: s
     assert second.run.state == ExperimentRunState.State.SUCCEEDED
 
     # PART B W-01: both real runs report the full-workload GPU duration (>= 1s).
-    assert isinstance(first_facts["gpu_elapsed_seconds"], int)
-    assert isinstance(second_facts["gpu_elapsed_seconds"], int)
+    # PA-1 W3: fractional seconds allowed (int or float, bool rejected).
+    assert isinstance(first_facts["gpu_elapsed_seconds"], (int, float))
+    assert isinstance(second_facts["gpu_elapsed_seconds"], (int, float))
+    assert not isinstance(first_facts["gpu_elapsed_seconds"], bool)
+    assert not isinstance(second_facts["gpu_elapsed_seconds"], bool)
     assert first_facts["gpu_elapsed_seconds"] >= 1
     assert second_facts["gpu_elapsed_seconds"] >= 1
 

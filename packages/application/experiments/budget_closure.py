@@ -115,7 +115,8 @@ def _enforce_limits(
     policy: BudgetPolicy,
     tokens: int,
     tool_requests: int,
-    experiment_seconds: int,
+    # PA-1 W3: duration totals follow the fractional-allowed convention.
+    experiment_seconds: int | float,
 ) -> None:
     limits = policy.hard_limits
     if "model_tokens" in limits and tokens > int(limits["model_tokens"]):

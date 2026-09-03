@@ -74,8 +74,11 @@ _GPU_FACT_KEYS = {
     "cuda_runtime_version": str,
     "framework_version": str,
     "peak_gpu_memory_bytes": int,
-    "gpu_elapsed_seconds": int,
+    # PA-1 W3: allow fractional seconds from the in-container timer
+    # (measured below in _SECONDS_FACT_KEYS; contract still rejects bool).
+    "gpu_elapsed_seconds": (int, float),
 }
+_SECONDS_FACT_KEYS = frozenset({"gpu_elapsed_seconds"})
 _WAIT_STEP_SECONDS = 0.5
 _TMPFS_MOUNT = "/tmp"
 _TMPFS_OPTS = "rw,noexec,nosuid,size=64m,mode=1777"
@@ -170,8 +173,10 @@ def _parse_gpu_facts(workspace: Path) -> dict[str, object]:
     facts: dict[str, object] = {}
     for key, expected in _GPU_FACT_KEYS.items():
         value = raw.get(key)
-        if isinstance(value, expected) and not isinstance(value, bool):
-            facts[key] = value
+        kinds = expected if isinstance(expected, tuple) else (expected,)
+        if isinstance(value, kinds) and not isinstance(value, bool):
+            # PA-1 W3: keep one decimal for sub-second honesty; bools stay out.
+            facts[key] = round(value, 1) if key in _SECONDS_FACT_KEYS else value
     # 显式布尔：只有容器内确实报告了才携带
     for key in ("gpu_oom", "cuda_available"):
         if isinstance(raw.get(key), bool):

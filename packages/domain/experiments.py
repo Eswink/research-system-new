@@ -98,7 +98,8 @@ class ExperimentRunResult:
     # M17 GPU 观测（additive；来自容器内 gpu_runtime_facts 白名单）：
     # GPU_TIME 记账只信任 gpu_elapsed_seconds；peak 显存供 ReproducibilityAudit
     # 与诚实性报告，不是预算数量。未运行 GPU profile 时为 None。
-    gpu_elapsed_seconds: int | None = None
+    # PA-1 W3: fractional seconds allowed (round at the entry boundary).
+    gpu_elapsed_seconds: int | float | None = None
     peak_gpu_memory_bytes: int | None = None
     # M17: 设备/驱动/CUDA/framework 版本指纹（走 compute_usage_summary →
     # ReproducibilityAudit → Deliverable，不作为预算数量）。

@@ -171,6 +171,68 @@ def test_result_submission_settles_job() -> None:
     assert resp.json()["accepted"] is True
 
 
+def _submit_headers(token: object) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}
+
+
+def _claim_payload(worker: str, gen: int = 1) -> dict[str, object]:
+    return {
+        "worker_id": worker,
+        "registration_generation": gen,
+        "capabilities": ["docker"],
+        "partitions": [0],
+    }
+
+
+def test_busy_worker_refuses_second_claim_until_settled() -> None:
+    """BACKLOG-178: claim moves READY→BUSY (max_concurrency=1 admission bound);
+    the worker settles BUSY→READY through the result path; stale-fence
+    rejections do not settle."""
+    from packages.domain.workers import WorkerState
+
+    deps = _deps()
+    assert deps.registry is not None
+    client = TestClient(create_worker_app(deps))
+    token = _register(client)["session_token"]
+    first = _seed_execution_job(deps)
+    headers = _submit_headers(token)
+    payload = _claim_payload("worker-a")
+
+    first_claim = client.post("/worker/v1/claim", headers=headers, json=payload)
+    assert first_claim.status_code == 200
+    lease = first_claim.json()
+    assert deps.registry.get("worker-a") is not None
+    assert deps.registry.get("worker-a").state == WorkerState.State.BUSY  # type: ignore[union-attr]
+
+    # second job seeded but BUSY must refuse it (unschedulable → 409)
+    _seed_execution_job(deps)
+    second_claim = client.post("/worker/v1/claim", headers=headers, json=payload)
+    assert second_claim.status_code == 409
+
+    # settle through the real submit path (Fake queue needs the lease assigned)
+    deps.job_queue.assign(  # type: ignore[union-attr]
+        first, worker_id="worker-a", lease_id=lease["lease_id"], fence=lease["fence"]
+    )
+    submit = client.post(
+        f"/worker/v1/tasks/{first}/result",
+        headers=headers,
+        json={
+            "worker_id": "worker-a",
+            "registration_generation": 1,
+            "lease_id": lease["lease_id"],
+            "fence": lease["fence"],
+            "status": "SUCCEEDED",
+            "exit_code": 0,
+        },
+    )
+    assert submit.status_code == 200
+    assert deps.registry.get("worker-a").state == WorkerState.State.READY  # type: ignore[union-attr]
+
+    # a claim is admitted again
+    third_claim = client.post("/worker/v1/claim", headers=headers, json=payload)
+    assert third_claim.status_code == 200
+
+
 def test_stale_fence_result_rejected() -> None:
     deps = _deps()
     client = TestClient(create_worker_app(deps))

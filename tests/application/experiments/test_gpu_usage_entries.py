@@ -50,6 +50,28 @@ def test_gpu_time_entry_created_from_measured_seconds() -> None:
     assert entry.task_id == "task-1"
 
 
+def test_gpu_time_entry_keeps_fractional_seconds() -> None:
+    """PA-1 W3: 0.4s stays 0.4 (one decimal) — honest, not floor(0)."""
+    entries = experiment_entries(
+        "run-1",
+        (
+            ExperimentUsage(
+                run_id="exec-1",
+                elapsed_seconds=1,
+                gpu_elapsed_seconds=0.37,
+                peak_gpu_memory_bytes=123_456,
+            ),
+        ),
+        _NOW,
+        None,
+    )
+    gpu = [e for e in entries if e.resource_type is ResourceType.GPU_TIME]
+    assert len(gpu) == 1
+    assert gpu[0].quantity == 0.4
+    assert gpu[0].unit == "seconds"
+    assert gpu[0].quantity_status is LedgerQuantityStatus.KNOWN
+
+
 def test_no_gpu_measurement_creates_no_gpu_time_entry() -> None:
     entries = experiment_entries(
         "run-1",

@@ -299,7 +299,13 @@ class ExperimentExecutor:
             workspace_snapshot_before=snapshot_before.digest,
             workspace_snapshot_after=snapshot_after.digest,
             elapsed_seconds=int(elapsed) if isinstance(elapsed, (int, float)) else None,
-            gpu_elapsed_seconds=int(gpu_elapsed) if isinstance(gpu_elapsed, int) else None,
+            # PA-1 W3: keep one decimal for sub-second honesty (bool rejected
+            # to avoid True/False sneaking in as 1/0 seconds).
+            gpu_elapsed_seconds=(
+                round(float(gpu_elapsed), 1)
+                if isinstance(gpu_elapsed, (int, float)) and not isinstance(gpu_elapsed, bool)
+                else None
+            ),
             peak_gpu_memory_bytes=int(gpu_peak) if isinstance(gpu_peak, int) else None,
             gpu_fingerprint=gpu_fingerprint,
             stdout_digest=execution_run.stdout_digest,

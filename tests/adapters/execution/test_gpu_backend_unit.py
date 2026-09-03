@@ -105,10 +105,17 @@ def test_parse_gpu_facts_whitelists_bounded_keys(tmp_path: Path) -> None:
     assert facts["peak_gpu_memory_bytes"] == 123456
     assert facts["cuda_available"] is True
     assert "prompt_text" not in facts
-    # 非整数的 gpu_elapsed_seconds 被丢弃（gpu_elapsed_seconds 仍是合法 int）
-    malformed = dict(payload, gpu_elapsed_seconds="not-an-int")
+    # PA-1 W3: fractional seconds are now kept (one decimal); strings and
+    # bools are still rejected.
+    malformed = dict(payload, gpu_elapsed_seconds="not-a-number")
     (tmp_path / GPU_FACTS_FILE).write_text(json.dumps(malformed), encoding="utf-8")
     assert "gpu_elapsed_seconds" not in _parse_gpu_facts(tmp_path)
+    as_bool = dict(payload, gpu_elapsed_seconds=True)
+    (tmp_path / GPU_FACTS_FILE).write_text(json.dumps(as_bool), encoding="utf-8")
+    assert "gpu_elapsed_seconds" not in _parse_gpu_facts(tmp_path)
+    fractional = dict(payload, gpu_elapsed_seconds=0.37)
+    (tmp_path / GPU_FACTS_FILE).write_text(json.dumps(fractional), encoding="utf-8")
+    assert _parse_gpu_facts(tmp_path)["gpu_elapsed_seconds"] == 0.4
 
 
 def test_parse_gpu_facts_missing_or_malformed_yields_empty(tmp_path: Path) -> None:
