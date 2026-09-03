@@ -171,8 +171,14 @@ def _sweep_stale_containers(client: docker.DockerClient, image: str) -> None:
     hard-killed worker (probe + exec leftovers). Running containers are never
     touched, so no live compute is lost; a stopped container holds nothing."""
     try:
-        for cont in client.api.list_containers(all=True, filters={"image": image}):
-            if not bool((cont.get("State") or {}).get("Running")):
+        for cont in client.api.containers(all=True, filters={"image": image}):
+            state = cont.get("State") or {}
+            running = (
+                bool(state.get("Running"))
+                if isinstance(state, dict)
+                else str(state).strip().lower() == "running"
+            )
+            if not running:
                 try:
                     client.api.remove_container(cont["Id"], force=True)
                 except (DockerException, OSError):
