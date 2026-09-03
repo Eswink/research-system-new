@@ -39,3 +39,4 @@ scratch/
 # local agent-tool state (security scans / CLI sessions) — not engineering assets
 .mimosa/
 .zcode/
+docs/history-session

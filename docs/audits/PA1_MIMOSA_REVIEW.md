@@ -39,8 +39,19 @@ examples/experiments/m12_reference_classification.py 的 `random.seed` 确定性
 completion=completed，影响包 0；1 个包命中 1 条已知 advisory（离线库匹配，
 需人工/联网复核；未定 0）。PA-1R 前建议联网复核 uv.lock 相关包。
 
-## 与产品改动的交集
+## 复扫对比（Final 门禁，2026-09-03）
 
-本次扫描后本批修复引入的产品改动（memory gate、PG 重连、event publisher 提交、
-NCBI 解析、BUSY 接线等）将以新的密封深扫（Final 门禁）重新覆盖；目标：
-除上述记录性/静态 advice 外无新增 high。
+复扫 sealed scan：`scan-2026-09-03T18-19-27.013Z-5db69b4cad60`
+（seal `sha256:e12fc0f3b7abfd4e13cbdafa7fc963588b38daf7f36eb91ebb78b42612a4704d`），
+36 findings（high 3 / medium 28 / low 5），与修复前 40 findings（high 7）对比：
+
+| 严重度 | 修复前 | 复扫 | 变化 |
+| --- | --- | --- | --- |
+| HIGH | 7 | 3 | -4：全部为已修项消失（audit_c_redaction PASSWORD、S2 sk-test-mock、pg_acceptance_run argv、parsing.py DTD/实体）；残留 3 项均为**记录性保留**（m12_reference_classification.py:228 固定容器内文件名、scratch/audit_b_docker*.py 固定命令+文件名） |
+| MEDIUM | 28 | 28 | 同口径不变：env → DSN → operator probe 工具参数化查询（scratch 14 + tools/probes 13 + services/worker/__main__.py 1），静态 advice + proof-gap |
+| LOW | 5 | 5 | m12 example `random.seed` 确定性种子（复现设计，非密码学） |
+| 依赖 advisory | 1（离线 context-only） | 1 | 不变（需联网复核 uv.lock 相关包） |
+
+**结论：产品代码面零命中；high 从 7 降至 3（残留全部为记录性保留项），
+无新增。** coverage 仍为 partial/static_only（threatModel 0 入口——scanner
+看不见 FastAPI 组合），不宣称"安全"；PA-1R 前建议联网复核依赖 advisory。

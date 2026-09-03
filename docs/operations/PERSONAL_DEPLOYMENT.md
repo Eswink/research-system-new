@@ -148,8 +148,9 @@ uv run python -m services.worker --worker-id personal-gpu1
 
 启动时以 DeviceRequests 真实探测（不支持则注册 CPU-only，fail-closed，
 不会“连上就宣称 GPU”）；每 ~1 分钟空闲重探。GPU 观察在
-`workers.gpu_observation_json` / `gpu_observed_at`（cluster DTO 不含 GPU
-状态 — PA-1 记录的小缺口，ops 以 psql 查询）。GPU 镜像 digest：
+`workers.gpu_observation_json` / `gpu_observed_at`；cluster DTO 现含
+`gpu_probe_digest` / `gpu_observed_at`（无 raw device name，PA-1 修复轮
+交付）。GPU 镜像 digest：
 sha256:b0a03d7c5047b476ae950d878a42df85ffe7dfd3a3c9d280bfdcd4874a085bfe，
 默认 `research-os-gpu-sandbox:m17-v1`。
 

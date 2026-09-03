@@ -88,28 +88,29 @@ boundary"）。
   格源）；Mimosa 扫描在本会话部分 enobufs（commit 前结论不完整——按 hook
   说明未宣称安全，建议 PA-1R 前重跑完整扫描）。
 
-## Remaining personal-use debt
+## Remaining personal-use debt（PA-1 后债务修复轮 2026-09-03 逐项关闭）
 
-1. F1 内存白名单装配（生产内存写入被拒）。
-2. F2 PG 重启自动重连（当前需按 §10 手动流程）。
-3. F5 未配置控制面的 run 路径（需 console provisioning 步骤或预检）。
-4. W3 GPU_TIME 精度（int floor）。
-5. API blob 目录缺 env 配置面（默认 cwd/.artifacts；gateway 侧已有
-   RESEARCHOS_WORKER_ARTIFACT_BLOB_DIR）。
-6. worker 进程未装配 telemetry sink（REMOTE_EXECUTION span 只在测试注入
-   组合发射；生产 worker 无遥测——运维可见性缺口）。
-7. cluster DTO 不含 GPU 观察（ops 用 psql）。
-8. 每小时自动化 backup 未设置（RPO 由部署方定；文档命令就绪）。
-9. 无升级机制（升级 = 文档 §11 手动流程）。
-10. RetrievalIndex 持久化 / Memory 内容治理（M19 DEFERRED，不变）。
-11. M17 的 W-01..W-04（异地 GPU 未验、WDDM NVML 不可靠、静态 27 medium
-    advice 证明缺口、timing flaky——PART B 已缓解）。
-12. F6a 测试环境非封闭（effective_database_url 回退 env）：测试/CI 需
-    清洗环境或 settings 拒绝 env 回退。
-13. F6b harness worker_child_env 应白名单必要键（防会话 RESEARCHOS_WORKER_*
-    泄漏）。
-14. F7 event publisher 显式提交 + timeline/scenario_h 测试加固（timing
-    robustness）。
+| # | 债务项 | 状态 | 关闭证据 |
+| --- | --- | --- | --- |
+| 1 | F1 内存白名单装配 | 已关闭 | `MemoryStore.allow_source` + gate 接线（commit 630b834）；test_gate 新断言 + PG 组合实测可写入 |
+| 2 | F2 PG 重启自动重连 | 已关闭 | `ReconnectableConnection` 委托包装（含 dsn_from_env 对齐）；test_reconnect 8 绿；PERSONAL_DEPLOYMENT §10 改为自动重连 |
+| 3 | F5 未配置控制面 run 路径 | 已关闭 | run.failed 事件携带 preflight codes（`_preflight_failure_message`，commit 94b271d）+ provisioning 文档步骤；200+FAILED 诚实语义不变 |
+| 4 | W3 GPU_TIME 精度 | 已关闭 | `gpu_elapsed_seconds`/`UsageLedgerEntry.quantity` → `int \| Decimal` 全链（commit ab5ffc8）；canonical-safe、无 DB 迁移 |
+| 5 | API blob 目录 env 配置面 | 已关闭 | `ApiSettings.artifact_blob_dir` + `RESEARCHOS_ARTIFACT_BLOB_DIR` → PostgresArtifactStore（commit db91977） |
+| 6 | worker 进程无 telemetry sink | 已关闭 | `services/worker/telemetry.py::build_worker_telemetry` + `__main__` 装配（commit fbca94c）；Null 默认 / FailSafe |
+| 7 | cluster DTO 不含 GPU 观察 | 已关闭 | `ClusterWorkerDto` +gpu_probe_digest/gpu_observed_at（无 raw device name；commit fbca94c） |
+| 8 | 每小时自动化 backup 未设置 | 保留（运维决策） | `tools/backup.py` CLI（pg_dump + blob tar + --verify + --keep）已交付（commit 95ed21d）；RPO 由部署方定 |
+| 9 | 无升级机制 | 保留（PA-1 non-goal） | 文档 §11 手动流程不变 |
+| 10 | RetrievalIndex 持久化 / Memory 内容治理 | 保留（M18/M19 DEFERRED） | RM-P2/ADR-0028；见 PLAN-20260903-029 §保留项 |
+| 11 | M17 W-01..W-04 | 保留（PART B 已缓解） | 不变 |
+| 12 | F6a 测试环境非封闭 | 已关闭 | `effective_database_url()` 仅返回显式 database_url（commit 9cd572d）；清洗 env 下 api 套件全绿 |
+| 13 | F6b harness worker_child_env 泄漏 | 已关闭 | worker_child_env 白名单 `_INHERIT_KEYS`（commit f76b783）+ 安全测试断言零泄漏 |
+| 14 | F7 event publisher 显式提交 | 已关闭 | `SqliteOutboxEventPublisher.publish` 自提交（`with self._conn:`，commit bc7bd92）+ 3 新测试；timeline 全绿 |
+
+另关闭：NCBI efetch XML DTD/实体 defuse + 5MB 上限（commit 4c754b3）、
+mock 凭据字面量惰性默认（4c754b3）、worker BUSY/max_concurrency 接线
+（BACKLOG-178，commit ab5ffc8，含跨任务替换测试修复）、Mimosa 处置记录
+（`docs/audits/PA1_MIMOSA_REVIEW.md`，commit db17e12）。
 
 ## 结论
 
