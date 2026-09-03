@@ -75,7 +75,17 @@ docker exec research-system-postgres-1 psql -U research_os -d research_os \
 
 ## 5. Backup
 
+工具（推荐，PA-1 实测）：
+
 ```bash
+uv run python tools/backup.py [--container research-system-postgres-1] \
+  [--blob-root ./data/artifacts-blobs] [--out data/backups] [--keep 7] [--verify]
+```
+
+（pg_dump + blob tar + manifest.json + `--keep` 保留策略；`--verify` 以只读
+方式抽查 live blob 与 PG canonical 行的 digest 一致性。）
+
+手工等价命令：
 # PostgreSQL（custom 格式；同 major 版本兼容）
 docker exec research-system-postgres-1 pg_dump -U research_os -d research_os \
   -Fc > data/backups/research-os-$(date +%Y%m%d-%H%M%S).dump
