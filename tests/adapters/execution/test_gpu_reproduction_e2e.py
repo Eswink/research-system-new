@@ -109,27 +109,22 @@ def _run_once(
     return outcome, artifacts, payload, facts
 
 
-def test_gpu_repeated_runs_semantic_reproducibility(tmp_path: Path, gpu_image: str) -> None:
-    first, first_artifacts, first_payload, first_facts = _run_once(tmp_path, gpu_image, "a1")
-    second, second_artifacts, second_payload, second_facts = _run_once(tmp_path, gpu_image, "a2")
-    assert first.run.state == ExperimentRunState.State.SUCCEEDED
-    assert second.run.state == ExperimentRunState.State.SUCCEEDED
-
-    # PART B W-01: both real runs report the full-workload GPU duration (>= 1s).
-    # PA-1 W3: fractional seconds allowed (int or float, bool rejected).
-    assert isinstance(first_facts["gpu_elapsed_seconds"], (int, float))
-    assert isinstance(second_facts["gpu_elapsed_seconds"], (int, float))
-    assert not isinstance(first_facts["gpu_elapsed_seconds"], bool)
-    assert not isinstance(second_facts["gpu_elapsed_seconds"], bool)
-    assert first_facts["gpu_elapsed_seconds"] >= 1
-    assert second_facts["gpu_elapsed_seconds"] >= 1
-
-    # GPU fingerprint bound into the audit + identical across runs (same device)
+def _assert_semantic_reproducibility(
+    first: tuple[Any, SqliteArtifactStore, dict[str, object], dict[str, object]],
+    second: tuple[Any, SqliteArtifactStore, dict[str, object], dict[str, object]],
+) -> None:
+    """Cross-run audit assertions (PASS, fingerprint binding, tolerance)."""
+    first_run, first_artifacts, first_payload, _ = first
+    _second_run, second_artifacts, second_payload, _ = second
     audit_a = build_reproducibility_audit(
-        first.run, audit_id=ID("aaaa1111-2222-4333-8444-555555555555"), artifacts=first_artifacts
+        first_run.run,
+        audit_id=ID("aaaa1111-2222-4333-8444-555555555555"),
+        artifacts=first_artifacts,
     )
     audit_b = build_reproducibility_audit(
-        second.run, audit_id=ID("bbbb1111-2222-4333-8444-555555555555"), artifacts=second_artifacts
+        _second_run.run,
+        audit_id=ID("bbbb1111-2222-4333-8444-555555555555"),
+        artifacts=second_artifacts,
     )
     assert audit_a.status == "PASS"
     assert verify_reproducibility_audit(audit_a)
@@ -154,10 +149,30 @@ def test_gpu_repeated_runs_semantic_reproducibility(tmp_path: Path, gpu_image: s
         "note": "GPU float non-determinism observed; semantic metrics within tolerance",
     }
     audit_v = build_reproducibility_audit(
-        first.run,
+        first_run.run,
         audit_id=ID("cccc1111-2222-4333-8444-555555555555"),
         artifacts=first_artifacts,
         allowed_variance=measured,
     )
     assert audit_v.allowed_variance == measured
     assert verify_reproducibility_audit(audit_v)
+
+
+def test_gpu_repeated_runs_semantic_reproducibility(tmp_path: Path, gpu_image: str) -> None:
+    first = _run_once(tmp_path, gpu_image, "a1")
+    second = _run_once(tmp_path, gpu_image, "a2")
+    assert first[0].run.state == ExperimentRunState.State.SUCCEEDED
+    assert second[0].run.state == ExperimentRunState.State.SUCCEEDED
+
+    # PART B W-01: both real runs report the full-workload GPU duration (>= 1s).
+    # PA-1 W3: fractional seconds allowed (int or float, bool rejected).
+    first_facts = first[3]
+    second_facts = second[3]
+    assert isinstance(first_facts["gpu_elapsed_seconds"], (int, float))
+    assert isinstance(second_facts["gpu_elapsed_seconds"], (int, float))
+    assert not isinstance(first_facts["gpu_elapsed_seconds"], bool)
+    assert not isinstance(second_facts["gpu_elapsed_seconds"], bool)
+    assert first_facts["gpu_elapsed_seconds"] >= 1
+    assert second_facts["gpu_elapsed_seconds"] >= 1
+
+    _assert_semantic_reproducibility(first, second)

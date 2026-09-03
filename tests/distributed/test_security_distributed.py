@@ -263,6 +263,22 @@ def test_cross_task_output_substitution_rejected(harness: WorkerHarness) -> None
     )
     assert upload.status_code == 200
     bundle_ref = upload.json()["artifact_id"]
+    # BACKLOG-178: settle task A legitimately first (BUSY→READY) — a worker
+    # can only hold one in-flight lease, so the substitution attempt happens
+    # on the next claim, still carrying task A's bundle as B's output.
+    settled = httpx.post(
+        f"{harness.gateway_url}/worker/v1/tasks/{task_a}/result",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "worker_id": "sub-w1",
+            "registration_generation": gen,
+            "lease_id": lease_a,
+            "fence": fence_a,
+            "status": "SUCCEEDED",
+            "exit_code": 0,
+        },
+    )
+    assert settled.status_code == 200, settled.text
     # now claim task B and try to submit task A's bundle as B's output
     task_b, lease_b, fence_b = _claim_lease(harness, token, gen, "sub-w1", "sub-b")
     resp = httpx.post(
