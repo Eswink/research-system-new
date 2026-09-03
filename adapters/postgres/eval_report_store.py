@@ -141,7 +141,22 @@ def _query_parts(query: EvalReportQuery) -> tuple[list[str], list[object]]:
 
 
 def _stored_from_row(row: Any) -> StoredEvalReport:
-    return StoredEvalReport(index=_index_from_row(row), body=str(row["body"]).encode("utf-8"))
+    body_value = row["body"]
+    if isinstance(body_value, (dict, list)):
+        body_bytes = json.dumps(body_value, ensure_ascii=False).encode("utf-8")
+    else:
+        body_bytes = str(body_value).encode("utf-8")
+    return StoredEvalReport(index=_index_from_row(row), body=body_bytes)
+
+
+def _as_json_list(value: Any) -> list[Any]:
+    """JSON column to list: psycopg3 already decodes jsonb (list), SQLite rows
+    deliver a JSON text — handle both (PA-1 finding: the read path broke under
+    PostgreSQL because json.loads() ran on an already-decoded object)."""
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    parsed = json.loads(str(value))
+    return list(parsed)
 
 
 def _index_from_row(row: Any) -> EvalReportIndexEntry:
@@ -156,14 +171,14 @@ def _index_from_row(row: Any) -> EvalReportIndexEntry:
         gate_config_version=str(row["gate_config_version"]),
         gate_config_digest=str(row["gate_config_digest"]),
         scorer_versions=tuple(
-            (pair[0], pair[1]) for pair in json.loads(str(row["scorer_versions"]))
+            (str(pair[0]), str(pair[1])) for pair in _as_json_list(row["scorer_versions"])
         ),
         system_version=str(row["system_version"]),
         verdict=QualityGateVerdict(str(row["verdict"])),
         recorded_at=recorded if isinstance(recorded, datetime) else _EPOCH,
         rubric_digest=str(row["rubric_digest"]) if row["rubric_digest"] is not None else None,
-        case_ids=tuple(json.loads(str(row["case_ids"]))),
-        evaluator_identities=tuple(json.loads(str(row["evaluator_identities"]))),
+        case_ids=tuple(_as_json_list(row["case_ids"])),
+        evaluator_identities=tuple(_as_json_list(row["evaluator_identities"])),
         pass_count=int(row["pass_count"]),
         fail_count=int(row["fail_count"]),
         infra_error_count=int(row["infra_error_count"]),
