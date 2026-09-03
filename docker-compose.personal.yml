@@ -1,0 +1,51 @@
+# PA-1 personal production profile: self-contained stack for one user.
+#
+# 与 docker-compose.m14.yml 的区别：m14 的 postgres 数据目录是 tmpfs
+# （CI/开发按设计即用完即弃）；个人生产基线必须持久化。本文件单独提供
+# postgres + otel-collector；API / gateway / worker / console 按
+# docs/operations/PERSONAL_DEPLOYMENT.md 用 uv / pnpm 在本机启动。
+#
+# 密码不写在文件里：从同目录 gitignored 的 .env 取
+# RESEARCHOS_POSTGRES_PASSWORD（compose 自动加载 .env）。
+# 启动: docker compose -f docker-compose.personal.yml up -d --build
+# 停止: docker compose -f docker-compose.personal.yml down          (保留卷)
+# 清库: docker compose -f docker-compose.personal.yml down -v       (删除卷)
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: research_os
+      POSTGRES_USER: research_os
+      POSTGRES_PASSWORD: ${RESEARCHOS_POSTGRES_PASSWORD:?set in .env}
+    ports:
+      - "15432:5432"
+    volumes:
+      # 命名卷而非 bind mount：数据在 Docker Desktop 内部卷中，避免 WSL2
+      # bind-mount 损坏风险（D: 挂载损坏需重启 Desktop 的历史教训）。
+      - research_os_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U research_os -d research_os"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  otel-collector:
+    build:
+      context: ./adapters/otel/collector
+    image: research-os/otel-collector:0.139.0
+    ports:
+      # loopback-only: the collector receiver has no auth extension and no TLS,
+      # and every accepted signal is written verbatim to the evidence file sink.
+      # Publishing on all interfaces would let anyone on the host network post
+      # arbitrary OTLP into the evidence pipeline (M15 re-audit control).
+      - "127.0.0.1:4318:4318"
+    volumes:
+      - ./data/otel:/var/lib/otelcol
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "validate", "--config", "/etc/otelcol-contrib/config.yaml"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  research_os_pgdata:

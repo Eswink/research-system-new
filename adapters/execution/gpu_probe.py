@@ -13,6 +13,7 @@ layer 2 is the gateway TTL gate, layer 4 the in-container contract assert.
 from __future__ import annotations
 
 import json
+import shutil
 import tempfile
 import time
 from collections.abc import Callable
@@ -158,8 +159,26 @@ def probe_gpu(
                 docker_client.api.remove_container(cid, force=True)
             except (DockerException, OSError):
                 pass
+        # SI-1 W1: probe scratch was never removed — a long-lived worker
+        # accumulated one temp dir per probe. Safe after container removal.
+        shutil.rmtree(scratch, ignore_errors=True)
         if owns:
             docker_client.close()
+
+
+def _sweep_stale_containers(client: docker.DockerClient, image: str) -> None:
+    """SI-1 W2: remove stopped containers of the pinned image left behind by a
+    hard-killed worker (probe + exec leftovers). Running containers are never
+    touched, so no live compute is lost; a stopped container holds nothing."""
+    try:
+        for cont in client.api.list_containers(all=True, filters={"image": image}):
+            if not bool((cont.get("State") or {}).get("Running")):
+                try:
+                    client.api.remove_container(cont["Id"], force=True)
+                except (DockerException, OSError):
+                    pass
+    except (DockerException, OSError):
+        pass
 
 
 def _collect(client: docker.DockerClient, cid: str) -> dict[str, Any] | None:
@@ -174,6 +193,7 @@ def _run_probe_container(
     monotonic: Callable[[], float],
 ) -> str | None:
     """与执行路径同构的容器：完整安全基线 + DeviceRequests（WP0 T4 形式）。"""
+    _sweep_stale_containers(client, config.image)
     host_config = {
         "Binds": [f"{scratch}:{_PROBE_MOUNT}:ro"],
         "NetworkMode": "none",

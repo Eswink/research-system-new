@@ -21,6 +21,7 @@ work. SIGTERM requests the same graceful drain.
 from __future__ import annotations
 
 import json
+import shutil
 import tempfile
 import threading
 import time
@@ -197,18 +198,30 @@ class WorkerLoop:
         task_id = str(job["task_id"])
         lease_id = str(job["lease_id"])
         fence = int(str(job["fence"]))
-        scratch = Path(self._config.scratch_root or tempfile.mkdtemp(prefix="worker-job-"))
-        scratch.mkdir(parents=True, exist_ok=True)
-        input_ref = job.get("input_bundle_ref")
-        input_digest = job.get("input_bundle_digest")
-        if input_ref and input_digest:
-            bundle = self._client.download_bundle(
-                str(input_ref), task_id=task_id, lease_id=lease_id, fence=fence
-            )
-            bundle_to_directory(bundle, scratch, str(input_digest))
-        spec = _spec_from_json(str(job["spec_json"]), str(scratch))
-        run = self._execute_with_lease(spec, task_id, lease_id, fence, job)
-        self._upload_and_submit(run, task_id, lease_id, fence, scratch)
+        owned_scratch = self._config.scratch_root is None
+        scratch = (
+            Path(tempfile.mkdtemp(prefix="worker-job-"))
+            if owned_scratch
+            else Path(self._config.scratch_root or ".")
+        )
+        try:
+            scratch.mkdir(parents=True, exist_ok=True)
+            input_ref = job.get("input_bundle_ref")
+            input_digest = job.get("input_bundle_digest")
+            if input_ref and input_digest:
+                bundle = self._client.download_bundle(
+                    str(input_ref), task_id=task_id, lease_id=lease_id, fence=fence
+                )
+                bundle_to_directory(bundle, scratch, str(input_digest))
+            spec = _spec_from_json(str(job["spec_json"]), str(scratch))
+            run = self._execute_with_lease(spec, task_id, lease_id, fence, job)
+            self._upload_and_submit(run, task_id, lease_id, fence, scratch)
+        finally:
+            # SI-1 W1: a self-created scratch was never removed, so a long-lived
+            # worker accumulated one temp dir per job. Harness-provided scratch
+            # roots are owned by the driver and kept.
+            if owned_scratch:
+                shutil.rmtree(scratch, ignore_errors=True)
 
     def _execute_with_lease(
         self,
