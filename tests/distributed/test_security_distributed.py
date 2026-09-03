@@ -52,19 +52,40 @@ def _register(harness: WorkerHarness, worker_id: str = "sec-w1") -> tuple[str, i
 
 
 def test_worker_child_env_holds_zero_db_credentials() -> None:
-    """F-2: the worker subprocess environment is stripped of every DB credential."""
+    """F-2: the worker subprocess environment is stripped of every DB credential.
+
+    PA-1 F6b: the child env is a whitelist — ambient session variables (worker
+    backend/image overrides, OTel) must NOT leak into scenario workers.
+    """
     from tests.distributed.worker_harness import worker_child_env
 
     base = {
         "RESEARCHOS_POSTGRES_DSN": "postgresql://u:p@h:5432/db",
         "DATABASE_URL": "postgresql://u:p@h:5432/db",
         "PATH": "/usr/bin",
+        "RESEARCHOS_WORKER_EXECUTION_BACKEND": "docker",
+        "RESEARCHOS_WORKER_GPU_IMAGE": "ambient-image:tag",
+        "RESEARCHOS_OTEL_ENABLED": "1",
+        "RESEARCHOS_WORKER_PLATFORM": "ambient/platform",
     }
     env = worker_child_env("http://127.0.0.1:1", "w1", base_env=base)
     assert "RESEARCHOS_POSTGRES_DSN" not in env
     assert "DATABASE_URL" not in env
     assert env["RESEARCHOS_WORKER_GATEWAY_URL"] == "http://127.0.0.1:1"
     assert env["PATH"] == "/usr/bin"  # non-secret env preserved
+    # F6b: ambient deployment/session variables are not inherited
+    assert "RESEARCHOS_WORKER_EXECUTION_BACKEND" not in env
+    assert "RESEARCHOS_WORKER_GPU_IMAGE" not in env
+    assert "RESEARCHOS_OTEL_ENABLED" not in env
+    assert "RESEARCHOS_WORKER_PLATFORM" not in env
+    # explicit env_extra still wins
+    env2 = worker_child_env(
+        "http://127.0.0.1:1",
+        "w2",
+        base_env=base,
+        env_extra={"RESEARCHOS_WORKER_EXECUTION_BACKEND": "deterministic"},
+    )
+    assert env2["RESEARCHOS_WORKER_EXECUTION_BACKEND"] == "deterministic"
 
 
 def test_forged_worker_registration_rejected(harness: WorkerHarness) -> None:

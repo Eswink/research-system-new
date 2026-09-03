@@ -35,9 +35,38 @@ from services.api.worker_gateway.settings import WorkerGatewaySettings
 _ENROLLMENT = "distributed-e2e-enrollment"
 
 # M16 re-audit F-2: the worker process must hold ZERO database credentials.
-# These keys are stripped from the inherited environment so the cross-process
-# E2E is genuine boundary evidence (the worker code never reads them anyway).
+# PA-1 F6b: the child env is now a WHITELIST built from the base env — the
+# session's RESEARCHOS_WORKER_* / relay / OTel variables can no longer leak
+# into scenario workers (they silently changed backend/timing when the test
+# shell had a deployment .env sourced). DB credential keys are absent by
+# construction; the explicit strip below is kept as belt-and-braces evidence.
 _DB_CREDENTIAL_KEYS = ("RESEARCHOS_POSTGRES_DSN", "DATABASE_URL")
+
+# OS/locale + docker SDK discovery needs (docker.from_env reads these).
+_INHERIT_KEYS = (
+    "PATH",
+    "PATHEXT",
+    "SystemRoot",
+    "SYSTEMROOT",
+    "WINDIR",
+    "COMSPEC",
+    "HOME",
+    "USERPROFILE",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "TEMP",
+    "TMP",
+    "TMPDIR",
+    "LANG",
+    "LC_ALL",
+    "TZ",
+    "DOCKER_HOST",
+    "DOCKER_TLS_VERIFY",
+    "DOCKER_CERT_PATH",
+    "DOCKER_CONTEXT",
+)
 
 
 def worker_child_env(
@@ -47,8 +76,10 @@ def worker_child_env(
     base_env: dict[str, str] | None = None,
     env_extra: dict[str, str] | None = None,
 ) -> dict[str, str]:
-    """Build the worker subprocess environment: gateway identity only, no DB."""
-    env = dict(base_env if base_env is not None else os.environ)
+    """Build the worker subprocess environment: gateway identity only, no DB,
+    no ambient session leakage (PA-1 F6b whitelist)."""
+    source = base_env if base_env is not None else dict(os.environ)
+    env = {key: source[key] for key in _INHERIT_KEYS if key in source}
     for key in _DB_CREDENTIAL_KEYS:
         env.pop(key, None)
     env.update({
