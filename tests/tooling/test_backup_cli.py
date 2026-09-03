@@ -10,6 +10,8 @@ import hashlib
 import tarfile
 from pathlib import Path
 
+import pytest
+
 import tools.backup as backup
 
 
@@ -41,20 +43,21 @@ def test_prune_keeps_newest(tmp_path: Path) -> None:
     ]
 
 
-def test_cli_parsing_defaults(monkeypatch: object, tmp_path: Path) -> None:
-
+def test_cli_parsing_defaults(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     calls: list[list[str]] = []
 
     def fake_run(cmd: list[str], **kwargs: object) -> object:
         calls.append(cmd)
         raise AssertionError("docker must not be invoked in this test")
 
-    monkeypatch.setattr(backup, "_run", fake_run)  # type: ignore[attr-defined]
+    monkeypatch.setattr(backup, "_run", fake_run)
     monkeypatch.setattr(
-        backup, "artifacts_tar", lambda root, dest: dest.write_bytes(b"")  # noqa: ARG005
+        backup,
+        "artifacts_tar",
+        lambda root, dest: dest.write_bytes(b""),  # noqa: ARG005
     )
     monkeypatch.chdir(tmp_path)
-    with __import__("pytest").raises(AssertionError, match="docker must not"):
+    with pytest.raises(AssertionError, match="docker must not"):
         backup.main(["--out", str(tmp_path)])
     # pg_dump path was attempted first with the default container name
     assert calls[0][:3] == ["docker", "exec", "research-system-postgres-1"]

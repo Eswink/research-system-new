@@ -13,6 +13,7 @@ Usage 数据类型与条目构造在 budget_entries.py（模块规模阈值拆�
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 from packages.application.experiments.budget_entries import (
     EvaluationUsage,
@@ -116,7 +117,7 @@ def _enforce_limits(
     tokens: int,
     tool_requests: int,
     # PA-1 W3: duration totals follow the fractional-allowed convention.
-    experiment_seconds: int | float,
+    experiment_seconds: int | Decimal,
 ) -> None:
     limits = policy.hard_limits
     if "model_tokens" in limits and tokens > int(limits["model_tokens"]):

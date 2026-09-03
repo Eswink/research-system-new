@@ -14,6 +14,7 @@ Report builder 只能 render truth，不能创造 scientific truth：
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Mapping
 
 from packages.application.ports.artifact_store import ArtifactStore
@@ -44,6 +45,13 @@ class DeliverableInputs:
 
 class DeliverableBuildError(RuntimeError):
     """Deliverable 无法从正式状态构造（输入缺失/不一致），不是可静默降级的情况。"""
+
+
+def _json_seconds(value: int | Decimal) -> int | float:
+    """PA-1 W3: Decimal → plain JSON (int when integral, else one-decimal float)."""
+    if isinstance(value, Decimal):
+        return int(value) if value == value.to_integral_value() else float(value)
+    return value
 
 
 def build_deliverable(inputs: DeliverableInputs) -> dict[str, object]:
@@ -179,16 +187,17 @@ def _memory_block(inputs: DeliverableInputs) -> dict[str, object]:
 
 def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
     snapshot = inputs.budget.snapshot()
-    total_tokens = 0
-    tool_requests = 0
+    # PA-1 W3: token/call counts stay ints; duration totals may be fractional.
+    total_tokens: int = 0
+    tool_requests: int = 0
     experiment_runs = 0
-    experiment_seconds = 0
+    experiment_seconds: int | Decimal = Decimal(0)
     experiment_unknown = False
     for entry in snapshot.entries:
         if entry.resource_type.value == "MODEL_TOKENS":
-            total_tokens += entry.quantity
+            total_tokens = total_tokens + int(entry.quantity)
         elif entry.resource_type.value == "TOOL_REQUESTS":
-            tool_requests += entry.quantity
+            tool_requests = tool_requests + int(entry.quantity)
         elif entry.resource_type.value == "CPU_TIME":
             experiment_runs += 1
             experiment_seconds += entry.quantity
@@ -198,7 +207,9 @@ def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
         "total_model_tokens": total_tokens,
         "tool_requests": tool_requests,
         "experiment_runs": experiment_runs,
-        "experiment_seconds": experiment_seconds,
+        # PA-1 W3: Decimal is canonical-safe but not json.dumps-safe;
+        # deliverables serialize plain JSON (int when integral).
+        "experiment_seconds": _json_seconds(experiment_seconds),
         "experiment_duration_known": not experiment_unknown,
         "entries": len(snapshot.entries),
         "reservations": len(snapshot.reservations),
@@ -206,7 +217,11 @@ def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
             {
                 "entry_id": entry.entry_id,
                 "resource_type": entry.resource_type.value,
-                "quantity": entry.quantity,
+                "quantity": (
+                    _json_seconds(entry.quantity)
+                    if isinstance(entry.quantity, Decimal)
+                    else entry.quantity
+                ),
                 "unit": entry.unit,
                 "cost_status": entry.cost_status.value,
             }

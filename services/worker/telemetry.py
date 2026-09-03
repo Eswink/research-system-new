@@ -22,7 +22,12 @@ from services.api.settings import OtelSettings
 def _service_version() -> str:
     try:
         return (
-            Path(__file__).resolve().parents[2].joinpath("VERSION").read_text(encoding="utf-8").strip()
+            Path(__file__)
+            .resolve()
+            .parents[2]
+            .joinpath("VERSION")
+            .read_text(encoding="utf-8")
+            .strip()
         )
     except OSError:
         return "unknown"

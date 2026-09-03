@@ -12,6 +12,7 @@ session_resolution。
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import Any
 
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import (
@@ -67,6 +68,14 @@ from packages.domain.tasks import ResearchTask, TaskContract
 SessionSpec = tuple[ResearchTask, TaskContract, SessionSpecContext]
 
 
+def _preflight_failure_message(report: Any) -> str:
+    """PA-1 F5: carry failing check codes so an unprovisioned control plane
+    is actionable (which check failed) instead of a bare "preflight failed".
+    Honest FAILED semantics unchanged."""
+    codes = ", ".join(sorted({finding.code for finding in report.findings}))
+    return f"preflight failed: {codes}" if codes else "preflight failed"
+
+
 class RunOrchestrationService:
     """端到端 ResearchRun 编排 Use Case。"""
 
@@ -116,12 +125,7 @@ class RunOrchestrationService:
         run = run.transition(ResearchRunState.Transition.START_COMPILE)
         plan, report = compile_and_preflight(protocol, catalog, project, preflight_context)
         if plan is None or report.status.value == "FAIL":
-            # PA-1 F5: carry the failing check codes so an unprovisioned
-            # control plane is actionable ("which check failed") instead of a
-            # bare "preflight failed". Honest FAILED semantics unchanged.
-            codes = ", ".join(sorted({finding.code for finding in report.findings}))
-            message = f"preflight failed: {codes}" if codes else "preflight failed"
-            return self._fail_run(run.id.value, message, False)
+            return self._fail_run(run.id.value, _preflight_failure_message(report), False)
         run = run.transition(ResearchRunState.Transition.COMPILE_OK)
         run = run.transition(ResearchRunState.Transition.PREFLIGHT_OK)
         manifest = freeze_manifest(

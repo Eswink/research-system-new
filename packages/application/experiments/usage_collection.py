@@ -15,6 +15,7 @@ idempotency：entry_id 派生自真实事件标识，retry/failure 不 double-co
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 from packages.application.experiments.budget_closure import (
     BudgetClosureInput,
@@ -56,8 +57,8 @@ class CollectedUsage:
     model_tokens: int = 0
     model_requests: int = 0
     tool_requests: int = 0
-    experiment_seconds: int | float = 0
-    gpu_seconds: int | float = 0
+    experiment_seconds: int | Decimal = 0
+    gpu_seconds: int | Decimal = 0
     eval_cases: int = 0
     eval_scorer_calls: int = 0
     model_usage_unknown: bool = False

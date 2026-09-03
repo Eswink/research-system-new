@@ -51,14 +51,25 @@ def test_gpu_time_entry_created_from_measured_seconds() -> None:
 
 
 def test_gpu_time_entry_keeps_fractional_seconds() -> None:
-    """PA-1 W3: 0.4s stays 0.4 (one decimal) — honest, not floor(0)."""
+    """PA-1 W3: 0.4s stays Decimal("0.4") — honest, not floor(0);
+    integral values stay ints; canonical serialization accepts both."""
+    from decimal import Decimal
+
+    from packages.domain.serialization import digest_of
+
     entries = experiment_entries(
         "run-1",
         (
             ExperimentUsage(
                 run_id="exec-1",
                 elapsed_seconds=1,
-                gpu_elapsed_seconds=0.37,
+                gpu_elapsed_seconds=Decimal("0.37"),
+                peak_gpu_memory_bytes=123_456,
+            ),
+            ExperimentUsage(
+                run_id="exec-2",
+                elapsed_seconds=2,
+                gpu_elapsed_seconds=2,
                 peak_gpu_memory_bytes=123_456,
             ),
         ),
@@ -66,10 +77,13 @@ def test_gpu_time_entry_keeps_fractional_seconds() -> None:
         None,
     )
     gpu = [e for e in entries if e.resource_type is ResourceType.GPU_TIME]
-    assert len(gpu) == 1
-    assert gpu[0].quantity == 0.4
+    assert len(gpu) == 2
+    assert gpu[0].quantity == Decimal("0.37")
     assert gpu[0].unit == "seconds"
     assert gpu[0].quantity_status is LedgerQuantityStatus.KNOWN
+    assert gpu[1].quantity == 2 and isinstance(gpu[1].quantity, int)
+    digest_of(gpu[0])
+    digest_of(gpu[1])
 
 
 def test_no_gpu_measurement_creates_no_gpu_time_entry() -> None:

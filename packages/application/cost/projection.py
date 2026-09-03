@@ -100,7 +100,8 @@ def project_entry_cost(
         )
     return _amount(
         CostAmountStatus.ESTIMATED,
-        entry.quantity * price.unit_price_minor,
+        # PA-1 W3: duration quantities may be fractional; money stays ints.
+        int(entry.quantity * price.unit_price_minor),
         stamp,
     )
 

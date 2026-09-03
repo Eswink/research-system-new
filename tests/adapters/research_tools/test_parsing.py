@@ -46,9 +46,12 @@ _EXTERNAL_ENTITY = b"""<?xml version="1.0"?>
 
 
 def test_normal_sample_parses() -> None:
+    from typing import Any
+
     result = parse_efetch_xml(_SAMPLE)
-    assert len(result["articles"]) == 1
-    article = result["articles"][0]
+    articles: list[dict[str, Any]] = result["articles"]  # type: ignore[assignment]
+    assert len(articles) == 1
+    article = articles[0]
     assert article["pmid"] == "123"
     assert article["title"] == "Example findings"
     assert article["authors"] == ["Jane Doe"]

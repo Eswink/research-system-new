@@ -115,7 +115,9 @@ def test_parse_gpu_facts_whitelists_bounded_keys(tmp_path: Path) -> None:
     assert "gpu_elapsed_seconds" not in _parse_gpu_facts(tmp_path)
     fractional = dict(payload, gpu_elapsed_seconds=0.37)
     (tmp_path / GPU_FACTS_FILE).write_text(json.dumps(fractional), encoding="utf-8")
-    assert _parse_gpu_facts(tmp_path)["gpu_elapsed_seconds"] == 0.4
+    from decimal import Decimal
+
+    assert _parse_gpu_facts(tmp_path)["gpu_elapsed_seconds"] == Decimal("0.4")
 
 
 def test_parse_gpu_facts_missing_or_malformed_yields_empty(tmp_path: Path) -> None:

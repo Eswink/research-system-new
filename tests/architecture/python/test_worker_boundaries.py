@@ -19,10 +19,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 
 _WORKER_PLANE_PREFIXES = ("adapters/worker/", "services/worker/")
+# PA-1 debt #6: adapters.otel is observability export, not business truth —
+# the worker plane may assemble its telemetry sink from it (the M17
+# REMOTE_EXECUTION span path already consumes the TelemetrySink Port).
+# postgres/sqlite (canonical state) and openhands (vendor runtime) stay
+# banned; the vendor-free importlinter contract separately bans direct
+# `opentelemetry` imports in services.worker.
 _FORBIDDEN_FOR_WORKERS = (
     "adapters.postgres",
     "adapters.sqlite",
-    "adapters.otel",
     "adapters.openhands",
 )
 _DOMAIN_APP_ROOTS = ("packages/domain/", "packages/application/")

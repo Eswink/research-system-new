@@ -188,10 +188,18 @@ def _encode_policy(policy: BudgetPolicy) -> dict[str, Any]:
 
 def _encode_entry(entry: UsageLedgerEntry) -> dict[str, Any]:
     """全保真编码:M15 起不再丢弃 currency/agent_id/tool_id/source 等字段。"""
+    # PA-1 W3: Decimal quantities (fractional duration seconds) serialize
+    # canonical-safe as strings; integral Decimals stay ints.
+    from decimal import Decimal
+
+    raw_quantity: object = entry.quantity
+    quantity: object = raw_quantity
+    if isinstance(quantity, Decimal):
+        quantity = str(quantity) if quantity != quantity.to_integral_value() else int(quantity)
     return {
         "entry_id": entry.entry_id,
         "resource_type": entry.resource_type.value,
-        "quantity": entry.quantity,
+        "quantity": quantity,
         "unit": entry.unit,
         "cost_status": entry.cost_status.value,
         "source": entry.source,
@@ -212,11 +220,15 @@ def _encode_entry(entry: UsageLedgerEntry) -> dict[str, Any]:
 
 def _decode_entry(record: dict[str, Any]) -> UsageLedgerEntry:
     from datetime import datetime
+    from decimal import Decimal
 
+    quantity = record["quantity"]
+    if isinstance(quantity, str):
+        quantity = Decimal(quantity)
     return UsageLedgerEntry(
         entry_id=record["entry_id"],
         resource_type=ResourceType(record["resource_type"]),
-        quantity=record["quantity"],
+        quantity=quantity,
         unit=record["unit"],
         cost_status=LedgerCostStatus(record["cost_status"]),
         source=record.get("source", "unknown"),

@@ -15,6 +15,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from packages.application.deliverable.builder import DeliverableInputs, build_deliverable
 from packages.application.evidence.m12_chain import (
     MemoryProposalInput,
@@ -114,7 +116,9 @@ def build_audit(deps: CleanRunDeps, run_id: str, run: ExperimentRun) -> Reproduc
     )
 
 
-def collect_usage_summary(deps: CleanRunDeps, run_id: str, run: ExperimentRun) -> dict[str, int]:
+def collect_usage_summary(
+    deps: CleanRunDeps, run_id: str, run: ExperimentRun
+) -> dict[str, int | Decimal]:
     """真实事件 → 用量摘要（只读，不落账；供评测 cost 输入）。"""
     _closure, summary = collect_usage(
         UsageCollection(
@@ -149,8 +153,9 @@ def close_budget(
     entries = deps.budget.snapshot().entries
     return {
         "entries": len(entries),
+        # PA-1 W3: token counts stay ints even though quantities may be floats.
         "tokens": sum(
-            entry.quantity for entry in entries if entry.resource_type.value == "MODEL_TOKENS"
+            int(entry.quantity) for entry in entries if entry.resource_type.value == "MODEL_TOKENS"
         ),
     }
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 
 from packages.domain.budget import (
     LedgerCostStatus,
@@ -62,12 +63,13 @@ class ExperimentUsage:
 
     run_id: str
     image_digest: str | None = None
-    elapsed_seconds: int | float | None = None
+    # PA-1 W3: fractional seconds via Decimal (canonical-safe).
+    elapsed_seconds: int | Decimal | None = None
     oom_killed: bool = False
     exit_code: int | None = None
     attempt: int = 1
-    # PA-1 W3: fractional seconds allowed; rounded to 0.1s at _gpu_time_entry.
-    gpu_elapsed_seconds: int | float | None = None
+    # PA-1 W3: fractional seconds via Decimal (canonical-safe).
+    gpu_elapsed_seconds: int | Decimal | None = None
     peak_gpu_memory_bytes: int | None = None
 
     # M17：GPU 货币成本无定价源 —— 常量原因，绝不写 0。
@@ -93,7 +95,7 @@ def _entry(  # noqa: PLR0913 - UsageLedgerEntry 字段映射，参数对象会�
     *,
     entry_id: str,
     resource_type: ResourceType,
-    quantity: int | float,
+    quantity: int | Decimal,
     unit: str,
     source: str,
     occurred_at: datetime,
@@ -235,10 +237,11 @@ def _gpu_time_entry(
     return _entry(
         entry_id=_attempt_scope(f"usage:{run_id}:experiment:{usage.run_id}:gpu", usage.attempt),
         resource_type=ResourceType.GPU_TIME,
-        # PA-1 W3: one-decimal seconds (0.4s stays 0.4 — honest, not floor(0)).
+        # PA-1 W3: one-decimal seconds (0.4s stays Decimal("0.4") — honest,
+        # not floor(0)); integral values stay ints.
         quantity=(
-            round(float(usage.gpu_elapsed_seconds), 1)
-            if isinstance(usage.gpu_elapsed_seconds, (int, float))
+            usage.gpu_elapsed_seconds
+            if isinstance(usage.gpu_elapsed_seconds, (int, Decimal))
             and not isinstance(usage.gpu_elapsed_seconds, bool)
             else 0
         ),
@@ -309,8 +312,10 @@ def summarize(entries: list[UsageLedgerEntry]) -> Summary:
     total_tokens: int = 0
     tool_requests: int = 0
     experiment_runs = 0
-    experiment_seconds: int | float = 0
-    gpu_seconds: int | float = 0
+    from decimal import Decimal as _D
+
+    experiment_seconds: int | Decimal = _D(0)
+    gpu_seconds: int | Decimal = _D(0)
     for entry in entries:
         if entry.resource_type is ResourceType.MODEL_TOKENS:
             total_tokens = total_tokens + int(entry.quantity)
@@ -336,8 +341,8 @@ class Summary:
     tool_requests: int
     experiment_runs: int
     # PA-1 W3: duration totals may be fractional (match ExperimentUsage).
-    experiment_seconds: int | float
-    gpu_seconds: int | float = 0
+    experiment_seconds: int | Decimal
+    gpu_seconds: int | Decimal = 0
 
 
 __all__ = [

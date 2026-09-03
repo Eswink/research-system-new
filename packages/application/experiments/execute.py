@@ -23,6 +23,7 @@ stdout/stderr 全文写入挂载工作区根目录的 stdout.log / stderr.log；
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 from typing import Mapping
 
@@ -98,6 +99,15 @@ def _gpu_fingerprint(summary: Mapping[str, object]) -> dict[str, str] | None:
         name: str(summary[src]) for name, src in keys.items() if isinstance(summary.get(src), str)
     }
     return fingerprint or None
+
+
+def _gpu_seconds_or_none(value: object) -> int | Decimal | None:
+    """PA-1 W3: one-decimal sub-second honesty as Decimal (canonical-safe;
+    bool rejected so True/False never sneaks in as 1/0 seconds)."""
+    if isinstance(value, bool) or not isinstance(value, (int, float, Decimal)):
+        return None
+    rounded = round(Decimal(str(value)), 1)
+    return int(rounded) if rounded == rounded.to_integral_value() else rounded
 
 
 def _gpu_no_fallback_violation(
@@ -299,13 +309,7 @@ class ExperimentExecutor:
             workspace_snapshot_before=snapshot_before.digest,
             workspace_snapshot_after=snapshot_after.digest,
             elapsed_seconds=int(elapsed) if isinstance(elapsed, (int, float)) else None,
-            # PA-1 W3: keep one decimal for sub-second honesty (bool rejected
-            # to avoid True/False sneaking in as 1/0 seconds).
-            gpu_elapsed_seconds=(
-                round(float(gpu_elapsed), 1)
-                if isinstance(gpu_elapsed, (int, float)) and not isinstance(gpu_elapsed, bool)
-                else None
-            ),
+            gpu_elapsed_seconds=_gpu_seconds_or_none(gpu_elapsed),
             peak_gpu_memory_bytes=int(gpu_peak) if isinstance(gpu_peak, int) else None,
             gpu_fingerprint=gpu_fingerprint,
             stdout_digest=execution_run.stdout_digest,

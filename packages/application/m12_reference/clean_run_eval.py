@@ -44,7 +44,7 @@ class EvalStageCtx:
 
     audit: ReproducibilityAudit
     claim_id: str
-    usage_summary: dict[str, int]
+    usage_summary: dict[str, int | Decimal]
     hypothesis: str
 
 

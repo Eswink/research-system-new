@@ -88,9 +88,9 @@ class UsageLedgerEntry:
 
     entry_id: str
     resource_type: ResourceType
-    # PA-1 W3: duration resources (seconds) may be fractional; token/call
-    # counts stay integers by convention (documented at ResourceType).
-    quantity: int | float
+    # PA-1 W3: duration resources (seconds) may be fractional via Decimal
+    # (canonical serialization forbids float; token/call counts stay ints).
+    quantity: int | Decimal
     unit: str
     cost_status: LedgerCostStatus
     source: str

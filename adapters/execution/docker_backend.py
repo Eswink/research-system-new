@@ -25,6 +25,7 @@ import tempfile
 import time
 import uuid
 from collections.abc import Callable
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -175,8 +176,13 @@ def _parse_gpu_facts(workspace: Path) -> dict[str, object]:
         value = raw.get(key)
         kinds = expected if isinstance(expected, tuple) else (expected,)
         if isinstance(value, kinds) and not isinstance(value, bool):
-            # PA-1 W3: keep one decimal for sub-second honesty; bools stay out.
-            facts[key] = round(value, 1) if key in _SECONDS_FACT_KEYS else value
+            # PA-1 W3: one-decimal sub-second honesty as Decimal (canonical-
+            # safe); integral values stay ints; bools stay out.
+            if key in _SECONDS_FACT_KEYS:
+                rounded = round(Decimal(str(value)), 1)
+                facts[key] = int(rounded) if rounded == rounded.to_integral_value() else rounded
+            else:
+                facts[key] = value
     # 显式布尔：只有容器内确实报告了才携带
     for key in ("gpu_oom", "cuda_available"):
         if isinstance(raw.get(key), bool):

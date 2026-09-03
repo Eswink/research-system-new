@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from pydantic import BaseModel, Field
 
 from services.api.dto.enums import (
@@ -51,7 +53,8 @@ class ClaimMapDto(BaseModel):
 class UsageEntryDto(BaseModel):
     entry_id: str
     resource_type: ResourceTypeValue
-    quantity: int
+    # PA-1 W3: duration resources (seconds) may be fractional Decimals.
+    quantity: int | Decimal
     unit: str
     cost_status: LedgerCostStatusValue
     estimated_cost_minor: int | None = None
