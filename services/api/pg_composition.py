@@ -51,7 +51,12 @@ class PostgresAssembly:
     telemetry: Any = None
 
 
-def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any) -> dict[str, Any]:
+def _pg_components(
+    pg_dsn: str,
+    connection: sqlite3.Connection,
+    events_sink: Any,
+    artifact_blob_dir: str | None = None,
+) -> dict[str, Any]:
     """Instantiate PG connection + workflow + domain stores (helper, <50 lines)."""
     from adapters.postgres.approval_store import PostgresApprovalStore
     from adapters.postgres.artifact_store import PostgresArtifactStore
@@ -82,7 +87,7 @@ def _pg_components(pg_dsn: str, connection: sqlite3.Connection, events_sink: Any
         "budget": PostgresBudgetLedger(connection=pg_conn),
         "approvals": PostgresApprovalStore(connection=pg_conn),
         "runs_store": PostgresRunStore(connection=pg_conn),
-        "artifacts": PostgresArtifactStore(connection=pg_conn),
+        "artifacts": PostgresArtifactStore(connection=pg_conn, blob_dir=artifact_blob_dir),
         "experiment_store": PostgresExperimentStore(connection=pg_conn),
         "memory": PostgresMemoryStore(connection=pg_conn),
         "eval_store": PostgresEvalReportStore(connection=pg_conn),
@@ -106,6 +111,7 @@ class PgAssemblyConfig:
     credentials_override: Any = None
     preflight_override: Any = None
     telemetry: Any = None
+    artifact_blob_dir: str | None = None
 
 
 def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
@@ -120,7 +126,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
 
         pg_migrate(pg_dsn)
 
-    c = _pg_components(pg_dsn, connection, config.events_sink)
+    c = _pg_components(pg_dsn, connection, config.events_sink, config.artifact_blob_dir)
     orchestration = RunOrchestrationService(
         OrchestrationDependencies(
             runtime=FakeAgentRuntime(structured_output=demo_session_output()),

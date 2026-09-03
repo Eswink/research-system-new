@@ -85,3 +85,24 @@ def test_gateway_composition_reads_blob_dir_env(monkeypatch: pytest.MonkeyPatch)
     assert str(deps.artifacts._blob_root) == blob  # noqa: SLF001 - composition assertion
     for adapter in (deps.registry, deps.workflow, deps.job_queue, deps.artifacts):
         adapter.close()
+
+
+@pytest.mark.postgres
+def test_api_assembly_reads_artifact_blob_dir_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """PA-1: the control-plane ArtifactStore blob root is configurable via
+    RESEARCHOS_ARTIFACT_BLOB_DIR (settings → PgAssemblyConfig → store)."""
+    import tempfile
+
+    from services.api.composition import assemble
+    from services.api.settings import ApiSettings
+
+    blob = os.path.join(tempfile.mkdtemp(prefix="api-blobs-"), "blobs")
+    monkeypatch.setenv("RESEARCHOS_ARTIFACT_BLOB_DIR", blob)
+    monkeypatch.setenv("RESEARCHOS_DATABASE_URL", _dsn())
+    settings = ApiSettings.from_env()
+    assert settings.artifact_blob_dir == blob
+    deps: Any = assemble(settings)
+    try:
+        assert str(deps.artifacts._blob_root) == blob  # noqa: SLF001 - composition assertion
+    finally:
+        deps.close()

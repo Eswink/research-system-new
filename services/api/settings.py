@@ -45,13 +45,14 @@ class ApiSettings:
     （endpoint_policy.py 默认拒绝，生产不暴露 loopback SSRF 面）。
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - settings surface (explicit env/ctor config)
         self,
         *,
         db_path: str = _DEFAULT_DB_PATH,
         endpoint_timeout_seconds: float = 120.0,
         allow_localhost_endpoints: bool = False,
         database_url: str | None = None,
+        artifact_blob_dir: str | None = None,
         otel: OtelSettings | None = None,
     ) -> None:
         if not db_path:
@@ -63,6 +64,10 @@ class ApiSettings:
         self.database_url = database_url
         if self.database_url is not None and not self.database_url.strip():
             raise ValueError("database_url must not be empty string")
+        # PA-1: ArtifactStore blob root (None → adapter default cwd/.artifacts)
+        self.artifact_blob_dir = artifact_blob_dir
+        if artifact_blob_dir is not None and not artifact_blob_dir.strip():
+            raise ValueError("artifact_blob_dir must not be empty string")
         # M15: telemetry（默认 off；配置错误在装配时回退 Null，不阻断启动）
         self.otel = otel if otel is not None else OtelSettings()
 
@@ -98,5 +103,6 @@ class ApiSettings:
                 in ("1", "true", "yes", "on")
             ),
             database_url=database_url,
+            artifact_blob_dir=os.environ.get("RESEARCHOS_ARTIFACT_BLOB_DIR") or None,
             otel=OtelSettings.from_env(),
         )

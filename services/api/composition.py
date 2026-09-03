@@ -137,6 +137,7 @@ def _assemble_postgres(  # noqa: PLR0913 - composition root 装配参数
             pg_dsn=pg_dsn,
             ensure_schema=True,
             telemetry=telemetry,
+            artifact_blob_dir=effective.artifact_blob_dir,
         )
     )
     return build_postgres_apideps(assembly)
