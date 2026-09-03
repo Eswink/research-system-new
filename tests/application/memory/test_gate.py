@@ -96,6 +96,26 @@ class TestProvenanceRejection:
         )
         assert result.accepted is True
 
+    def test_ledger_verified_provenance_commits_without_store_whitelist(self) -> None:
+        """PA-1 F1: gate 经 ledger 验证来源后，store 白名单自动打开；
+        组合根无需预置 allowed_sources 也能提交受控内存。"""
+        store = FakeMemoryStore()  # 空白名单 = deny-by-default
+        ledger = FakeEvidenceLedger()
+        ledger.register_source(
+            SourceRecord(
+                origin="source:article-2",
+                content_digest="sha256:aa",
+                trust_label=TrustLabel.VERIFIED_SOURCE,
+            )
+        )
+        result = commit_memory(
+            _proposal("mem-ledger", provenance="source:article-2"),
+            _deps(store, ledger=ledger),
+        )
+        assert result.accepted is True
+        assert result.record is not None
+        assert store.get("mem-ledger").provenance == "source:article-2"
+
 
 class TestSchemaRejection:
     def test_blank_content_rejected_at_schema_stage(self) -> None:

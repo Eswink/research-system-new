@@ -15,6 +15,11 @@ M10 复审强化（实现必须一致遵守，contract suite 强制）：
 - 未授权 provenance 的 commit 必须拒绝；
 - 同 id 重复 commit 必须拒绝（防静默覆盖与重复事件），
   幂等由上层 proposal idempotency 管理。
+
+PA-1 F1：`allow_source` 是 store 级 provenance 白名单的登记入口；
+application 层 memory gate 在 ledger 验证 provenance 后调用它，
+使组合根无需预置白名单也能提交受控内存（deny-by-default 语义不变：
+未经 gate 验证的来源仍被拒绝）。
 """
 
 from __future__ import annotations
@@ -38,5 +43,7 @@ class MemoryStore(Protocol):
     def deactivate(self, memory_id: str) -> MemoryRecord: ...
 
     def delete(self, memory_id: str) -> None: ...
+
+    def allow_source(self, source: str) -> None: ...
 
     def close(self) -> None: ...

@@ -158,6 +158,11 @@ def commit_memory(
     if not result.accepted:
         return result
     _publish(deps, EventType.MEMORY_PROPOSED, proposal.id, {"memory_id": proposal.id})
+    # PA-1 F1: the gate has verified provenance (allowed_sources or ledger);
+    # open the store-level whitelist for exactly this verified source so the
+    # composition root does not have to pre-provision it. Deny-by-default is
+    # preserved: unverified provenance returns above and never reaches here.
+    deps.store.allow_source(proposal.provenance)
     record = deps.store.commit(proposal)
     _verify_committed_record(proposal, record)
     _publish(deps, EventType.MEMORY_COMMITTED, proposal.id, {"memory_id": proposal.id})
