@@ -15,9 +15,26 @@
 # WP0 T2 实测：readonly rootfs 与 nvidia hook 无冲突，基线全保留。
 FROM pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime@sha256:7b324d212a4450795b49edba9949b7cdc72429148a64e974334bfe5774d51385
 
+# useradd stamps account databases, login accounting files, and home directories
+# with wall-clock time. Normalize every generated path so two clean BuildKit
+# builds of this recipe produce the same application-image digest.
+ARG SOURCE_DATE_EPOCH=0
 RUN useradd --create-home --uid 1000 --shell /bin/bash researcher \
     && mkdir -p /workspace \
-    && chown researcher:researcher /workspace
+    && chown researcher:researcher /workspace \
+    && touch --date="@${SOURCE_DATE_EPOCH}" \
+        /etc/passwd \
+        /etc/group \
+        /etc/shadow \
+        /etc/gshadow \
+        /etc/subuid \
+        /etc/subgid \
+        /var/log/faillog \
+        /var/log/lastlog \
+        /home/researcher \
+        /home \
+        /var/log \
+        /etc
 
 USER researcher
 WORKDIR /workspace

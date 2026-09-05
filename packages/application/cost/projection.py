@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Iterable
+from typing import Iterable, assert_never
 
 from packages.application.cost.amount import (
     CostAmount,
@@ -44,22 +44,37 @@ class DimensionCost:
     entry_count: int
 
 
-def _dimension_of(entry: UsageLedgerEntry) -> tuple[PriceDimension, str] | None:
-    """entry → 定价维度与 resource key;不可定价维度返回 None。"""
+def _dimension_of(entry: UsageLedgerEntry) -> tuple[PriceDimension, str]:
+    """Map every ResourceType to the closed pricing dimension vocabulary."""
     resource_type = entry.resource_type
-    if resource_type in (ResourceType.MODEL_TOKENS, ResourceType.MODEL_REQUESTS):
-        return (PriceDimension.MODEL, entry.model_id or "unknown")
-    if resource_type is ResourceType.MODEL_COST:
-        # Relay 上报的 provider monetary amount 是模型成本，不是 evaluation；
-        # key 必须是 model_id，不能按 task_id 把可达价格变成不可达。
-        return (PriceDimension.MODEL, entry.model_id or "unknown")
-    if resource_type in (ResourceType.TOOL_REQUESTS, ResourceType.TOOL_COST):
-        return (PriceDimension.TOOL, entry.tool_id or "unknown")
-    if resource_type is ResourceType.CPU_TIME:
-        return (PriceDimension.EXPERIMENT, entry.task_id or "unknown")
-    if resource_type is ResourceType.EVALUATION_SCORER:
-        return (PriceDimension.EVALUATION, entry.task_id or "unknown")
-    return None
+    match resource_type:
+        case ResourceType.MODEL_TOKENS | ResourceType.MODEL_REQUESTS:
+            return (PriceDimension.MODEL, entry.model_id or "unknown")
+        case ResourceType.MODEL_COST:
+            # Provider monetary usage remains model cost, keyed by model_id.
+            return (PriceDimension.MODEL, entry.model_id or "unknown")
+        case ResourceType.TOOL_REQUESTS | ResourceType.TOOL_COST:
+            return (PriceDimension.TOOL, entry.tool_id or "unknown")
+        case ResourceType.CPU_TIME:
+            return (PriceDimension.EXPERIMENT, entry.task_id or "unknown")
+        case ResourceType.GPU_TIME:
+            return (PriceDimension.EXPERIMENT, entry.task_id or "gpu")
+        case ResourceType.EVALUATION_SCORER:
+            return (PriceDimension.EVALUATION, entry.task_id or "unknown")
+        case (
+            ResourceType.MEMORY
+            | ResourceType.STORAGE
+            | ResourceType.NETWORK
+            | ResourceType.WALL_CLOCK
+            | ResourceType.AGENT_TURNS
+            | ResourceType.PARALLELISM
+        ):
+            return (
+                PriceDimension.EXPERIMENT,
+                entry.task_id or resource_type.value.lower(),
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 def project_entry_cost(
@@ -89,7 +104,7 @@ def project_entry_cost(
             currency=entry.currency,
         )
     dimension_key = _dimension_of(entry)
-    if dimension_key is None or pricing is None:
+    if pricing is None:
         return _amount(CostAmountStatus.MONETARY_UNAVAILABLE, None, stamp)
     price = pricing.price_for(dimension_key[0], dimension_key[1], entry.unit)
     if price is None:
@@ -118,12 +133,8 @@ def project_dimensions(
     """按 (dimension, resource_key) 分组投影并聚合(确定性排序)。"""
     grouped: dict[tuple[str, str], list[UsageLedgerEntry]] = {}
     for entry in entries:
-        dimension_key = _dimension_of(entry)
-        key = (
-            (dimension_key[0].value, dimension_key[1])
-            if dimension_key is not None
-            else ("unpriced", entry.resource_type.value)
-        )
+        dimension_enum, resource_key = _dimension_of(entry)
+        key = (dimension_enum.value, resource_key)
         grouped.setdefault(key, []).append(entry)
     results: list[DimensionCost] = []
     for (dimension, resource_key), group in sorted(grouped.items()):

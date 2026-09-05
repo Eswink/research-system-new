@@ -36,3 +36,14 @@ class ExecutionBackend(Protocol):
         ...
 
     def close(self) -> None: ...
+
+
+@runtime_checkable
+class SessionOwnedExecutionBackend(Protocol):
+    """Optional runtime housekeeping after an authoritative session handshake.
+
+    A newer generation may reclaim only resources positively owned by the same
+    authority and owner. Implementations must leave unrelated resources intact.
+    """
+
+    def bind_owner(self, owner_id: str, generation: int, authority_ref: str) -> None: ...

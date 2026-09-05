@@ -14,6 +14,7 @@ carries the execution-specific payload and the settle transition.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Protocol, runtime_checkable
 
 from packages.application.ports.errors import InvalidInputError
@@ -66,8 +67,9 @@ class ExecutionJobResult:
     image_digest: str | None = None
     # M17: GPU observations (framework-reliable quantities only) flow back so
     # the remote path feeds the same single experiment usage ledger as local.
-    gpu_elapsed_seconds: int | None = None
+    gpu_elapsed_seconds: int | Decimal | None = None
     peak_gpu_memory_bytes: int | None = None
+    execution_elapsed_seconds: int | Decimal | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,8 +85,9 @@ class ExecutionJobOutcome:
     output_bundle_digest: str | None = None
     failure_category: str | None = None
     image_digest: str | None = None
-    gpu_elapsed_seconds: int | None = None
+    gpu_elapsed_seconds: int | Decimal | None = None
     peak_gpu_memory_bytes: int | None = None
+    execution_elapsed_seconds: int | Decimal | None = None
 
 
 _TERMINAL_STATUSES = ("SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELLED")

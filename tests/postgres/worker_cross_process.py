@@ -16,8 +16,9 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, r"d:\research-system")
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from adapters.postgres.db import migrate  # noqa: E402
 from adapters.postgres.workflow_engine import PostgresWorkflowEngine  # noqa: E402

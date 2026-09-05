@@ -201,7 +201,10 @@ components:
     resolution:
       version: "m17-v1"
       base_index_digest: "sha256:7b324d212a4450795b49edba9949b7cdc72429148a64e974334bfe5774d51385"
-      note: "torch 2.9.1+cu128 / CUDA 12.8 / cuDNN 9.10.02；GPU sandbox 镜像按基座 index digest pin；sm_89 实测；构建产物 digest 每次由 DockerExecutionBackend 运行时解析并记录；执行期保持 NetworkMode=none"
+      application_image_digest: "sha256:3d306d299abcb7c5384151ee15b6b7f5819e70203e5da50b47341710720c9d5c"
+      application_image_platform: "linux/amd64"
+      build_parameters: "buildx --provenance=false --platform linux/amd64 --build-arg SOURCE_DATE_EPOCH=0"
+      note: "torch 2.9.1+cu128 / CUDA 12.8 / cuDNN 9.10.02；GPU sandbox 基座按 index digest pin；Dockerfile 归一化 useradd 生成路径时间戳；PA-1R 两次 --no-cache 构建得到同一应用镜像 digest；sm_89 实测；每次执行仍解析实际 digest 写入 Run；NetworkMode=none"
     license:
       spdx: "BSD-3-Clause (PyTorch); CUDA Toolkit / cuDNN runtime 库为 NVIDIA 专有运行时条款"
       evidence: "https://github.com/pytorch/pytorch/blob/main/LICENSE"
@@ -210,6 +213,8 @@ components:
       required_checks: [image_rebuild, gpu_runtime_requalification, gpu_security_suite, gpu_e2e]
     controls:
       - index_digest_pin
+      - application_image_digest_pin
+      - reproducible_build_timestamps
       - runtime_default_deny_host_config
       - device_requests_only_gpu_delta
       - execution_network_none

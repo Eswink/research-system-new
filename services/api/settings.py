@@ -92,7 +92,7 @@ class ApiSettings:
     @classmethod
     def from_env(cls) -> ApiSettings:
         database_url: str | None = None
-        for key in ("DATABASE_URL", "RESEARCHOS_DATABASE_URL", "POSTGRES_DSN"):
+        for key in ("RESEARCHOS_DATABASE_URL", "DATABASE_URL", "POSTGRES_DSN"):
             val = os.environ.get(key)
             if val and val.strip():
                 database_url = val.strip()

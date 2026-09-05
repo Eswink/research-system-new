@@ -19,15 +19,26 @@ import argparse
 import os
 import signal
 import sys
+import time
+from pathlib import Path
 
 from adapters.execution.docker_backend import DockerExecutionBackend
 from adapters.execution.gpu_probe import GPU_SANDBOX_IMAGE_DEFAULT, GpuProbeConfig, probe_gpu
 from adapters.worker.client import WorkerClient, WorkerClientConfig
 from services.worker.deterministic_backend import DeterministicExecutionBackend
 from services.worker.loop import WorkerLoop, WorkerLoopConfig
+from services.worker.reconnect import run_with_reconnect
 from services.worker.telemetry import build_worker_telemetry
 
 _STOP = {"flag": False}
+_PROJECT_VERSION_PATH = Path(__file__).resolve().parents[2] / "VERSION"
+
+
+def _project_version() -> str:
+    version = _PROJECT_VERSION_PATH.read_text(encoding="utf-8").strip()
+    if not version:
+        raise RuntimeError("VERSION must not be empty")
+    return version
 
 
 def _install_drain_handler() -> None:
@@ -55,6 +66,9 @@ def _build_config(worker_id: str) -> WorkerClientConfig:
         enrollment_secret=os.environ["RESEARCHOS_WORKER_ENROLLMENT_SECRET"],
         worker_id=worker_id,
         protocol_version=os.environ.get("RESEARCHOS_WORKER_PROTOCOL_VERSION", "1"),
+        runtime_version=(
+            os.environ.get("RESEARCHOS_WORKER_RUNTIME_VERSION", "").strip() or _project_version()
+        ),
         platform=os.environ.get("RESEARCHOS_WORKER_PLATFORM", "unknown/unknown"),
         capabilities=caps,
         backend_kinds=backends,
@@ -80,6 +94,35 @@ def _gpu_prober_for(backend_kind: str) -> object | None:
     return _prober
 
 
+def _build_backend(execution_backend: str) -> object:
+    if execution_backend == "docker":
+        image = os.environ.get("RESEARCHOS_WORKER_DOCKER_IMAGE")
+        return DockerExecutionBackend(image=image) if image else DockerExecutionBackend()
+    if execution_backend == "deterministic":
+        return DeterministicExecutionBackend()
+    raise ValueError(f"unknown RESEARCHOS_WORKER_EXECUTION_BACKEND: {execution_backend}")
+
+
+def _run_attempt(
+    config: WorkerClientConfig,
+    backend: object,
+    loop_config: WorkerLoopConfig,
+    telemetry: object,
+    gpu_prober: object | None,
+) -> int:
+    with WorkerClient(config) as client:
+        loop = WorkerLoop(
+            client,
+            backend,  # type: ignore[arg-type]  # concrete backend implements the Port
+            config=loop_config,
+            should_stop=lambda: _STOP["flag"],
+            sleep=time.sleep,
+            gpu_prober=gpu_prober,  # type: ignore[arg-type]
+            telemetry=telemetry,  # type: ignore[arg-type]
+        )
+        return loop.run()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="services.worker")
     parser.add_argument("--worker-id", default=os.environ.get("RESEARCHOS_WORKER_ID", "worker-1"))
@@ -89,34 +132,15 @@ def main(argv: list[str] | None = None) -> int:
     _install_drain_handler()
     config = _build_config(args.worker_id)
     loop_config = WorkerLoopConfig(max_iterations=args.max_iterations)
-    # Deterministic no-shell backend unless RESEARCHOS_WORKER_EXECUTION_BACKEND
-    # explicitly selects the real Docker sandbox (E2E gate default = deterministic;
-    # the real-Docker remote E2E is requires_docker-marked).
     execution_backend = os.environ.get("RESEARCHOS_WORKER_EXECUTION_BACKEND", "deterministic")
-    if execution_backend == "docker":
-        # RESEARCHOS_WORKER_DOCKER_IMAGE lets a GPU worker run the pinned GPU
-        # sandbox (a python+torch superset that also serves CPU jobs); unset
-        # keeps the M9 default sandbox image.
-        image = os.environ.get("RESEARCHOS_WORKER_DOCKER_IMAGE")
-        backend: object = DockerExecutionBackend(image=image) if image else DockerExecutionBackend()
-    elif execution_backend == "deterministic":
-        backend = DeterministicExecutionBackend()
-    else:
-        raise ValueError(f"unknown RESEARCHOS_WORKER_EXECUTION_BACKEND: {execution_backend}")
+    backend = _build_backend(execution_backend)
+    telemetry = build_worker_telemetry(args.worker_id)
+    gpu_prober = _gpu_prober_for(execution_backend)
     print(f"worker: starting id={args.worker_id}", flush=True)  # noqa: T201
-    with WorkerClient(config) as client:
-        # PA-1 debt #6: production workers now emit telemetry (REMOTE_EXECUTION
-        # span + remote metrics); fail-open — sink construction never blocks jobs.
-        telemetry = build_worker_telemetry(args.worker_id)
-        loop = WorkerLoop(
-            client,
-            backend,  # type: ignore[arg-type]  # deterministic/docker backends are duck-typed
-            config=loop_config,
-            should_stop=lambda: _STOP["flag"],
-            gpu_prober=_gpu_prober_for(execution_backend),  # type: ignore[arg-type]
-            telemetry=telemetry,
-        )
-        completed = loop.run()
+    completed = run_with_reconnect(
+        lambda: _run_attempt(config, backend, loop_config, telemetry, gpu_prober),
+        should_stop=lambda: _STOP["flag"],
+    )
     print(f"worker: stopped completed={completed}", flush=True)  # noqa: T201
     return 0
 

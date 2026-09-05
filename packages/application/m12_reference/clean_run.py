@@ -15,10 +15,12 @@ from __future__ import annotations
 
 import json
 import shutil
+import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from adapters.contracts.eval_loaders import load_eval_dataset
 from packages.application.experiments import (
     ExperimentExecutionRequest,
     ExperimentExecutor,
@@ -38,6 +40,17 @@ from packages.application.m12_reference.clean_run_stages import (
     run_artifacts,
 )
 from packages.application.m12_reference.deps import CleanRunDeps
+from packages.application.m12_reference.persistence import (
+    CompletionTruth,
+    persist_completion,
+    persist_experiment_plan,
+    persist_experiment_run,
+)
+from packages.application.m12_reference.恢复生命周期v1 import (
+    admit_or_resume,
+    fail_admitted_run,
+    restored_experiment,
+)
 from packages.application.model_relay.fingerprint import endpoint_config_digest
 from packages.application.model_relay.live_probe import run_live_probe
 from packages.application.run_orchestration.m12_composition import (
@@ -120,12 +133,16 @@ def run_clean_workflow(
             extras=_manifest_extras(deps),
         )
     )
-    manifest = composed.manifest
-    run, experiment_run_id, hypothesis = _run_experiment(
-        deps, run_id, experiment_plan_id, experiment_command, experiment_timeout_seconds
-    )
-    manifest = _with_image_digest(deps, manifest, run)
-    return _complete_run(deps, run_id, manifest, run, hypothesis)
+    manifest = admit_or_resume(deps, composed.manifest, experiment_plan_id, experiment_command)
+    try:
+        run, experiment_run_id, hypothesis = _run_experiment(
+            deps, run_id, experiment_plan_id, experiment_command, experiment_timeout_seconds
+        )
+        manifest = _with_image_digest(deps, manifest, run)
+        return _complete_run(deps, run_id, manifest, run, hypothesis)
+    except Exception:
+        fail_admitted_run(deps, run_id)
+        raise
 
 
 def _complete_run(
@@ -135,24 +152,26 @@ def _complete_run(
     run: ExperimentRun,
     hypothesis: str,
 ) -> CleanRunResult:
-    """manifest 冻结后阶段：evidence→memory→audit→eval→budget→deliverable。"""
+    """manifest 冻结后阶段：evidence→audit→eval→memory→budget→deliverable。"""
     experiment_run_id = str(run.id.value)
     anchors = manifest_anchors(manifest)
     if not anchors["ok"]:
         raise RuntimeError(f"manifest anchors missing: {anchors['missing']}")
     claim_id, evidence_ids, claim_status = admit_evidence(deps, run_id, manifest, run)
-    commit_memory(deps, run_id, claim_id)
     audit = build_audit(deps, run_id, run)
     usage_summary = collect_usage_summary(deps, run_id, run)
     eval_ctx = EvalStageCtx(
         audit=audit, claim_id=claim_id, usage_summary=usage_summary, hypothesis=hypothesis
     )
     eval_report = run_evaluation_stage(deps, run_id, eval_ctx)
+    commit_memory(deps, run_id, claim_id)
     budget_summary = close_budget(deps, run_id, run, eval_report)
     deliverable = build_deliverable_payload(deps, run_id, manifest, eval_report, audit)
     deliverable_digest = Digest.of_bytes(
         json.dumps(deliverable, ensure_ascii=False, sort_keys=True).encode("utf-8")
     )
+    truth = CompletionTruth(run_id, manifest, audit, eval_report, deliverable, claim_id)
+    persist_completion(deps, truth)
     artifact_ids, artifact_digests = run_artifacts(deps, run_id)
     return CleanRunResult(
         run_id=run_id,
@@ -182,6 +201,7 @@ def _manifest_extras(deps: CleanRunDeps) -> M12ManifestExtras:
         probe_suite_digest=None,
         fallback=FallbackFreeze(),
         evaluation_dataset_digest=_dataset_digest(deps),
+        image_digest=deps.expected_image_digest,
     )
 
 
@@ -190,8 +210,6 @@ def _endpoint_digest(deps: CleanRunDeps) -> str | None:
 
 
 def _dataset_digest(deps: CleanRunDeps) -> str:
-    from adapters.contracts.eval_loaders import load_eval_dataset
-
     return str(load_eval_dataset(deps.dataset_path).digest())
 
 
@@ -218,19 +236,14 @@ def _run_experiment(
 ) -> tuple[ExperimentRun, str, str]:
     """执行真实实验；实验脚本（如提供）先复制进工作区（容器内无仓库）。"""
     experiment_run_id = experiment_run_id_of(run_id)
-    session_id = f"session-{run_id[:8]}"
+    restored = restored_experiment(deps, experiment_run_id)
+    if restored is not None:
+        return restored, experiment_run_id, deps.hypothesis
+    session_id = f"session-{run_id}"
     lease = deps.workspaces.acquire_lease(deps.workspace, session_id)
-    plan = ExperimentPlan(
-        id=experiment_plan_id,
-        name=deps.plan_name,
-        hypothesis=deps.hypothesis,
-    ).transition(ExperimentPlanState.Transition.PREREGISTER)
+    plan = _prepared_plan(deps, experiment_plan_id)
     effective_command = _provision_experiment(deps, command, lease)
-    environment = {"EXPERIMENT_RUN_ID": experiment_run_id}
-    if deps.resource_profile in GPU_RESOURCE_PROFILES:
-        # M17 determinism control for cuBLAS on the GPU slice (set BEFORE torch
-        # import inside the container; the experiment reads it from env).
-        environment["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    environment = _experiment_environment(experiment_run_id, deps.resource_profile)
     executor = ExperimentExecutor(
         execution=deps.execution,
         workspaces=deps.workspaces,
@@ -250,12 +263,27 @@ def _run_experiment(
             timeout_seconds=timeout_seconds,
         )
     )
+    persist_experiment_run(deps, outcome.run)
     if outcome.run.state not in (
         ExperimentRunState.State.SUCCEEDED,
         ExperimentRunState.State.NEGATIVE_RESULT,
     ):
         raise RuntimeError(f"experiment failed: {outcome.run.state}")
     return outcome.run, experiment_run_id, deps.hypothesis
+
+
+def _prepared_plan(deps: CleanRunDeps, plan_id: ID) -> ExperimentPlan:
+    plan = ExperimentPlan(id=plan_id, name=deps.plan_name, hypothesis=deps.hypothesis)
+    plan = plan.transition(ExperimentPlanState.Transition.PREREGISTER)
+    persist_experiment_plan(deps, plan)
+    return plan
+
+
+def _experiment_environment(experiment_id: str, profile: str | None) -> dict[str, str]:
+    environment = {"EXPERIMENT_RUN_ID": experiment_id}
+    if profile in GPU_RESOURCE_PROFILES:
+        environment["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    return environment
 
 
 def _provision_experiment(deps: CleanRunDeps, command: str, lease: object) -> str:
@@ -281,6 +309,10 @@ def _with_image_digest(
         image_digest = payload.get("image_digest")
     if not isinstance(image_digest, str) or not image_digest:
         raise RuntimeError("experiment artifact/image missing image_digest")
+    if manifest.image_digest is not None:
+        if image_digest != manifest.image_digest:
+            raise RuntimeError("worker image drift from the frozen manifest")
+        return manifest
     return replace(manifest, image_digest=image_digest)
 
 
@@ -292,8 +324,6 @@ def _workspace_dir_resolver(deps: CleanRunDeps) -> Callable[[object], Path]:
     resolver = getattr(deps.workspaces, "workspace_dir", None)
     if callable(resolver):
         return resolver  # type: ignore[no-any-return]
-    import tempfile
-
     root = Path(tempfile.mkdtemp(prefix="m12-clean-run-"))
     return lambda lease: root
 

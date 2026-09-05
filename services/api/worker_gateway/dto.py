@@ -7,6 +7,8 @@ registry write.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from pydantic import BaseModel, Field
 
 from packages.domain.workers import (
@@ -119,6 +121,22 @@ class ResultSubmissionDto(BaseModel):
     image_digest: str | None = Field(default=None, max_length=128)
     gpu_elapsed_seconds: int | None = Field(default=None, ge=0)
     peak_gpu_memory_bytes: int | None = Field(default=None, ge=0)
+    gpu_elapsed_seconds_exact: Decimal | None = Field(
+        default=None,
+        ge=0,
+        le=31536000,
+        max_digits=15,
+        decimal_places=6,
+        allow_inf_nan=False,
+    )
+    execution_elapsed_seconds: Decimal | None = Field(
+        default=None,
+        ge=0,
+        le=31536000,
+        max_digits=15,
+        decimal_places=6,
+        allow_inf_nan=False,
+    )
 
 
 class ResultAckDto(BaseModel):

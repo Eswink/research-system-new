@@ -15,7 +15,10 @@ fixtures：tests/application/m12_clean_run_fixtures.py（与生产标识一致�
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
+
+import pytest
 
 from packages.application.m12_reference.clean_run import run_clean_workflow
 from tests.application.m12_clean_run_fixtures import (
@@ -122,3 +125,17 @@ class TestCleanRunHarness:
         experiment = [e for e in entries if e.resource_type.value == "CPU_TIME"][0]
         assert experiment.quantity == 12
         assert experiment.cost_status.value == "UNKNOWN"
+
+    def test_claim_statement_comes_from_reference_run_configuration(self, tmp_path: Path) -> None:
+        statement = "mixed precision preserves accuracy under the fixed GPU budget"
+        deps = replace(make_deps(tmp_path), claim_statement=statement)
+
+        with pytest.raises(RuntimeError, match="evaluation gate not passed"):
+            run_clean_workflow(
+                deps,
+                experiment_plan_id=PLAN_ID,
+                experiment_command=COMMAND,
+            )
+
+        claim_id = f"claim:{EXPERIMENT_RUN_ID}:result"
+        assert deps.ledger.get_claim(claim_id).statement == statement

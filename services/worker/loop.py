@@ -47,15 +47,21 @@ from packages.application.observability.signals import (
     OperationOutcome,
     OperationScope,
 )
-from packages.application.ports.execution_backend import ExecutionBackend
+from packages.application.ports.execution_backend import (
+    ExecutionBackend,
+    SessionOwnedExecutionBackend,
+)
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.domain.enums import FailureCategory
 from packages.domain.workers import WorkerGpuObservation
 from packages.domain.workspace import ExecutionRun, ExecutionSpec, ExecutionStatus
+from services.worker.计量观测v1 import seconds_observation
 
 
 @dataclass(frozen=True, slots=True)
 class WorkerLoopConfig:
+    # Maximum idle cadence. Registration may negotiate a shorter interval,
+    # which must win so the server cannot reap a healthy worker as stale.
     heartbeat_interval_seconds: float = 10.0
     max_iterations: int | None = None  # None = run until drain/stop
     scratch_root: str | None = None
@@ -138,7 +144,12 @@ class WorkerLoop:
                 ):
                     idle_heartbeats = 0
                     self._reprobe_and_reregister()
-                self._sleep(self._config.heartbeat_interval_seconds)
+                self._sleep(
+                    min(
+                        self._config.heartbeat_interval_seconds,
+                        self._client.heartbeat_interval_seconds,
+                    )
+                )
                 continue
             print(f"worker-loop: claimed job task_id={job.get('task_id')}", flush=True)  # noqa: T201
             self._process(job)
@@ -152,6 +163,13 @@ class WorkerLoop:
         self._last_gpu_digest = observation.probe_digest if observation is not None else None
         self._last_gpu_device_name = observation.device_name if observation is not None else None
         self._client.register(gpu_observation=observation)
+        self._bind_execution_owner()
+
+    def _bind_execution_owner(self) -> None:
+        if isinstance(self._backend, SessionOwnedExecutionBackend):
+            self._backend.bind_owner(
+                self._client.worker_id, self._client.generation, self._client.authority_ref
+            )
 
     def _claim_or_selfheal(self) -> dict[str, object] | None:
         """Claim; a 409 (e.g. stale gpu observation) triggers re-register.
@@ -185,6 +203,7 @@ class WorkerLoop:
         if not force and digest == self._last_gpu_digest:
             return False
         self._client.register(gpu_observation=observation)
+        self._bind_execution_owner()
         self._last_gpu_digest = digest
         self._last_gpu_device_name = observation.device_name if observation is not None else None
         print(  # noqa: T201
@@ -288,6 +307,8 @@ class WorkerLoop:
             image_digest=_image_digest(run),
             gpu_elapsed_seconds=_int_observation(run, "gpu_elapsed_seconds"),
             peak_gpu_memory_bytes=_int_observation(run, "peak_gpu_memory_bytes"),
+            gpu_elapsed_seconds_exact=seconds_observation(run),
+            execution_elapsed_seconds=seconds_observation(run, "elapsed_seconds"),
         )
         self._client.submit_result(task_id, payload)
 

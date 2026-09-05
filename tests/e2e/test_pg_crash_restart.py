@@ -23,7 +23,7 @@ pytestmark = pytest.mark.postgres
 
 _DB = "postgresql://research_os:research_os_m14_test@localhost:15432/research_os"
 _ENV = os.environ.copy()
-_ENV["PYTHONPATH"] = r"d:\research-system"
+_ENV["PYTHONPATH"] = str(Path(__file__).resolve().parents[2])
 _ENV["RESEARCHOS_POSTGRES_DSN"] = os.environ.get("RESEARCHOS_POSTGRES_DSN", _DB)
 _HELPER = str(Path(__file__).resolve().parents[1] / "postgres" / "worker_cross_process.py")
 
@@ -78,10 +78,10 @@ def _count(column: str, task_id: str | None = None) -> int:
 
 def _script_a() -> str:
     return (
-        "import sys, os; sys.path.insert(0, r'd:\\research-system');"
+        "import os;"
         "from adapters.postgres.workflow_engine import PostgresWorkflowEngine;"
         "from tests.contracts.fixtures import research_task, task_contract;"
-        f"e=PostgresWorkflowEngine(dsn=r'{_ENV['RESEARCHOS_POSTGRES_DSN']}', lease_ttl_seconds=5);"
+        "e=PostgresWorkflowEngine(dsn=os.environ['RESEARCHOS_POSTGRES_DSN'], lease_ttl_seconds=5);"
         "t=research_task(); e.submit(t, task_contract());"
         "lease=e.acquire_lease(t.id.value);"
         "print(f'TASK={t.id.value}', flush=True);"

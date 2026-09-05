@@ -160,6 +160,25 @@ def test_client_claim_204_returns_none() -> None:
     client.close()
 
 
+def test_idle_loop_uses_gateway_heartbeat_interval(tmp_path: Path) -> None:
+    client = _FakeClient(None)
+    sleeps: list[float] = []
+    loop = WorkerLoop(
+        client,  # type: ignore[arg-type]
+        FakeExecutionBackend(),
+        config=WorkerLoopConfig(
+            heartbeat_interval_seconds=10.0,
+            max_iterations=2,
+            scratch_root=str(tmp_path / "scratch"),
+        ),
+        sleep=sleeps.append,
+    )
+
+    loop.run()
+
+    assert sleeps == [0.2, 0.2]
+
+
 def test_client_requires_registration_for_auth() -> None:
     config = WorkerClientConfig(base_url="http://g", enrollment_secret="s", worker_id="w")
     client = WorkerClient(config, transport=httpx.MockTransport(lambda r: httpx.Response(200)))

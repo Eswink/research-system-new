@@ -57,6 +57,9 @@ class WorkerResultPayload:
     image_digest: str | None = None
     gpu_elapsed_seconds: int | None = None
     peak_gpu_memory_bytes: int | None = None
+    # Additive protocol-1 extension; legacy gateways ignore unknown fields.
+    gpu_elapsed_seconds_exact: str | None = None
+    execution_elapsed_seconds: str | None = None
 
     def to_body(self, worker_id: str, generation: int) -> dict[str, object]:
         return {
@@ -74,6 +77,8 @@ class WorkerResultPayload:
             "image_digest": self.image_digest,
             "gpu_elapsed_seconds": self.gpu_elapsed_seconds,
             "peak_gpu_memory_bytes": self.peak_gpu_memory_bytes,
+            "gpu_elapsed_seconds_exact": self.gpu_elapsed_seconds_exact,
+            "execution_elapsed_seconds": self.execution_elapsed_seconds,
         }
 
 
@@ -96,6 +101,14 @@ class WorkerClient:
     @property
     def capabilities(self) -> tuple[str, ...]:
         return self._capabilities
+
+    @property
+    def worker_id(self) -> str:
+        return self._config.worker_id
+
+    @property
+    def authority_ref(self) -> str:
+        return self._config.base_url.rstrip("/")
 
     @property
     def heartbeat_interval_seconds(self) -> float:

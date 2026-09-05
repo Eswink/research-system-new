@@ -18,7 +18,10 @@ services:
       POSTGRES_USER: research_os
       POSTGRES_PASSWORD: ${RESEARCHOS_POSTGRES_PASSWORD:?set in .env}
     ports:
-      - "${RESEARCHOS_POSTGRES_HOST_PORT:-15432}:5432"
+      # Personal production is host-local by default.  Do not expose the
+      # canonical database on LAN/public interfaces just because Docker
+      # publishes a host port for API/Gateway access.
+      - "127.0.0.1:${RESEARCHOS_POSTGRES_HOST_PORT:-15432}:5432"
     volumes:
       # 命名卷而非 bind mount：数据在 Docker Desktop 内部卷中，避免 WSL2
       # bind-mount 损坏风险（D: 挂载损坏需重启 Desktop 的历史教训）。

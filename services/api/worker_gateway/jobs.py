@@ -158,6 +158,35 @@ async def claim_job(
     return _json_response(body)
 
 
+def _execution_result(
+    task_id: str, payload: ResultSubmissionDto, worker_id: str
+) -> ExecutionJobResult:
+    """Map bounded transport values using authenticated ownership, never user identity."""
+    return ExecutionJobResult(
+        task_id=task_id,
+        lease_id=payload.lease_id,
+        fence=payload.fence,
+        status=payload.status,
+        # identity binding: the authenticated session identity (not a
+        # client-asserted field) must equal leases.worker_id
+        worker_id=worker_id,
+        exit_code=payload.exit_code,
+        stdout_digest=payload.stdout_digest,
+        stderr_digest=payload.stderr_digest,
+        output_bundle_ref=payload.output_bundle_ref,
+        output_bundle_digest=payload.output_bundle_digest,
+        failure_category=payload.failure_category,
+        image_digest=payload.image_digest,
+        gpu_elapsed_seconds=(
+            payload.gpu_elapsed_seconds_exact
+            if payload.gpu_elapsed_seconds_exact is not None
+            else payload.gpu_elapsed_seconds
+        ),
+        peak_gpu_memory_bytes=payload.peak_gpu_memory_bytes,
+        execution_elapsed_seconds=payload.execution_elapsed_seconds,
+    )
+
+
 async def submit_result(
     request: Request,
     task_id: str,
@@ -174,26 +203,7 @@ async def submit_result(
     if payload.output_bundle_ref:
         _require_output_provenance(request, identity.worker_id, task_id, payload.output_bundle_ref)
     try:
-        job_queue.record_result(
-            ExecutionJobResult(
-                task_id=task_id,
-                lease_id=payload.lease_id,
-                fence=payload.fence,
-                status=payload.status,
-                # identity binding: the authenticated session identity (not a
-                # client-asserted field) must equal leases.worker_id
-                worker_id=identity.worker_id,
-                exit_code=payload.exit_code,
-                stdout_digest=payload.stdout_digest,
-                stderr_digest=payload.stderr_digest,
-                output_bundle_ref=payload.output_bundle_ref,
-                output_bundle_digest=payload.output_bundle_digest,
-                failure_category=payload.failure_category,
-                image_digest=payload.image_digest,
-                gpu_elapsed_seconds=payload.gpu_elapsed_seconds,
-                peak_gpu_memory_bytes=payload.peak_gpu_memory_bytes,
-            )
-        )
+        job_queue.record_result(_execution_result(task_id, payload, identity.worker_id))
     except InvalidInputError as exc:
         # stale fence / lease: reject the late result (scenario C)
         raise ApiError(409, "Stale Result Rejected", str(exc)) from exc

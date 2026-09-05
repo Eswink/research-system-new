@@ -13,6 +13,7 @@ Report builder 只能 render truth，不能创造 scientific truth：
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Mapping
@@ -21,6 +22,7 @@ from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.memory_store import MemoryStore
+from packages.domain.budget import LedgerQuantityStatus
 from packages.domain.core import Digest
 from packages.domain.eval_result import EvalReport
 from packages.domain.evidence import Claim, ClaimStatus
@@ -41,6 +43,7 @@ class DeliverableInputs:
     audit: ReproducibilityAudit | None = None
     eval_report: EvalReport | None = None
     objective: str | None = None
+    memory_id: str | None = None
 
 
 class DeliverableBuildError(RuntimeError):
@@ -97,8 +100,6 @@ def _experiment_block(inputs: DeliverableInputs) -> dict[str, object]:
     """实验块：artifact 引用来自 Claim 的真实 evidence（内容寻址校验）。"""
     artifact_id = _experiment_artifact_id(inputs)
     content = _get_artifact_content(inputs.artifacts, artifact_id)
-    import json
-
     payload = json.loads(content.decode("utf-8"))
     if not isinstance(payload, dict):
         raise DeliverableBuildError("experiment artifact is not a JSON object")
@@ -170,7 +171,7 @@ def _evidence_block(inputs: DeliverableInputs) -> dict[str, object]:
 
 
 def _memory_block(inputs: DeliverableInputs) -> dict[str, object]:
-    memory_id = f"mem:{inputs.run_id}:negative-result"
+    memory_id = inputs.memory_id or f"mem:{inputs.run_id}:negative-result"
     try:
         record = inputs.memory.get(memory_id)
     except Exception as exc:  # noqa: BLE001 - Port 故障 = 状态不完整
@@ -187,13 +188,14 @@ def _memory_block(inputs: DeliverableInputs) -> dict[str, object]:
 
 def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
     snapshot = inputs.budget.snapshot()
+    entries = tuple(entry for entry in snapshot.entries if entry.run_id == inputs.run_id)
     # PA-1 W3: token/call counts stay ints; duration totals may be fractional.
     total_tokens: int = 0
     tool_requests: int = 0
     experiment_runs = 0
     experiment_seconds: int | Decimal = Decimal(0)
     experiment_unknown = False
-    for entry in snapshot.entries:
+    for entry in entries:
         if entry.resource_type.value == "MODEL_TOKENS":
             total_tokens = total_tokens + int(entry.quantity)
         elif entry.resource_type.value == "TOOL_REQUESTS":
@@ -201,7 +203,7 @@ def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
         elif entry.resource_type.value == "CPU_TIME":
             experiment_runs += 1
             experiment_seconds += entry.quantity
-            if entry.cost_status.value == "UNKNOWN":
+            if entry.quantity_status is LedgerQuantityStatus.UNKNOWN:
                 experiment_unknown = True
     return {
         "total_model_tokens": total_tokens,
@@ -211,8 +213,8 @@ def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
         # deliverables serialize plain JSON (int when integral).
         "experiment_seconds": _json_seconds(experiment_seconds),
         "experiment_duration_known": not experiment_unknown,
-        "entries": len(snapshot.entries),
-        "reservations": len(snapshot.reservations),
+        "entries": len(entries),
+        "reservations": sum(item.scope == f"run:{inputs.run_id}" for item in snapshot.reservations),
         "ledger_entries": [
             {
                 "entry_id": entry.entry_id,
@@ -225,7 +227,7 @@ def _budget_block(inputs: DeliverableInputs) -> dict[str, object]:
                 "unit": entry.unit,
                 "cost_status": entry.cost_status.value,
             }
-            for entry in snapshot.entries
+            for entry in entries
         ],
     }
 
@@ -270,6 +272,9 @@ def _get_artifact_content(artifacts: ArtifactStore, artifact_id: str) -> bytes:
         content = artifacts.get(artifact_id)
     except Exception as exc:  # noqa: BLE001 - Port 故障 = 状态不完整
         raise DeliverableBuildError(f"artifact {artifact_id} unavailable: {exc}") from exc
+    metadata = artifacts.meta(artifact_id)
+    if metadata is None or metadata.digest != Digest.of_bytes(content):
+        raise DeliverableBuildError(f"artifact {artifact_id} content digest mismatch")
     return content
 
 

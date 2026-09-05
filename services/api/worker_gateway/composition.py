@@ -13,6 +13,12 @@ import os
 from pathlib import Path
 from typing import Any
 
+from adapters.postgres.artifact_store import PostgresArtifactStore
+from adapters.postgres.db import dsn_from_env
+from adapters.postgres.execution_job_queue import PostgresExecutionJobQueue
+from adapters.postgres.worker_registry import PostgresWorkerRegistry
+from adapters.postgres.workflow_engine import PostgresWorkflowEngine
+from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
 from packages.application.ports.credential_resolver import CredentialResolver
 from services.api.worker_gateway.app import create_worker_app
 from services.api.worker_gateway.deps import WorkerGatewayDeps
@@ -29,12 +35,11 @@ def build_worker_gateway_deps(  # noqa: PLR0913 - keyword-only composition input
     lease_ttl_seconds: int = 60,
 ) -> WorkerGatewayDeps:
     """Build the full job-plane gateway deps from a PG DSN (per-adapter conns)."""
-    from adapters.postgres.artifact_store import PostgresArtifactStore
-    from adapters.postgres.execution_job_queue import PostgresExecutionJobQueue
-    from adapters.postgres.worker_registry import PostgresWorkerRegistry
-    from adapters.postgres.workflow_engine import PostgresWorkflowEngine
-
-    resolved_blob = blob_dir or os.environ.get("RESEARCHOS_WORKER_ARTIFACT_BLOB_DIR")
+    resolved_blob = (
+        blob_dir
+        or os.environ.get("RESEARCHOS_ARTIFACT_BLOB_DIR")
+        or os.environ.get("RESEARCHOS_WORKER_ARTIFACT_BLOB_DIR")
+    )
     return WorkerGatewayDeps(
         registry=PostgresWorkerRegistry(dsn=dsn),
         credentials=credentials,
@@ -48,9 +53,6 @@ def build_worker_gateway_deps(  # noqa: PLR0913 - keyword-only composition input
 
 def build_gateway_from_env() -> tuple[Any, str, int]:
     """Resolve (asgi_app, host, port) from the environment for `python -m`."""
-    from adapters.postgres.db import dsn_from_env
-    from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
-
     dsn = dsn_from_env()
     if not dsn:
         raise RuntimeError("worker gateway requires RESEARCHOS_POSTGRES_DSN / DATABASE_URL")

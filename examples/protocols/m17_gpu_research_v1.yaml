@@ -16,7 +16,7 @@ phases:
     depends_on: [design]
     required_roles:
       - {role: experiment_engineer, min_instances: 1, max_instances: 1}
-    task_contract: m17_gpu_experiment_execution
+    task_contract: m12_experiment_execution
     outputs: [experiment_runs]
     timeout_seconds: 600
     stop_conditions:

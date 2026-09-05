@@ -173,6 +173,7 @@ def _budget(with_budget: bool) -> FakeBudgetLedger:
         return budget
     budget.record_usage(
         UsageLedgerEntry(
+            run_id=RUN_ID,
             entry_id=f"usage:{RUN_ID}:model:research_alpha",
             resource_type=ResourceType.MODEL_TOKENS,
             quantity=2000,
@@ -184,6 +185,7 @@ def _budget(with_budget: bool) -> FakeBudgetLedger:
     )
     budget.record_usage(
         UsageLedgerEntry(
+            run_id=RUN_ID,
             entry_id=f"usage:{RUN_ID}:tool:literature_search",
             resource_type=ResourceType.TOOL_REQUESTS,
             quantity=2,

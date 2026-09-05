@@ -38,6 +38,7 @@ from adapters.execution.profiles import (
     resolve_gpu_requirements,
     resolve_resource_profile,
 )
+from adapters.execution.容器归属v1 import ContainerOwnership, reclaim_superseded
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import OperationOutcome, OperationScope
 from packages.application.ports.errors import (
@@ -243,6 +244,14 @@ class DockerExecutionBackend(ExecutionBackend):
         self._closed = False
         self._image_digest: str | None = None
         self._telemetry = telemetry
+        self._ownership: ContainerOwnership | None = None
+
+    def bind_owner(self, owner_id: str, generation: int, authority_ref: str) -> None:
+        """Bind only after the gateway has accepted the worker generation."""
+        self._ensure_open()
+        owner = ContainerOwnership(owner_id, generation, authority_ref)
+        reclaim_superseded(self._api, owner, self._resolve_image_digest())
+        self._ownership = owner
 
     @property
     def image_digest(self) -> str | None:
@@ -387,6 +396,7 @@ class DockerExecutionBackend(ExecutionBackend):
             environment=environment,
             working_dir=spec.workdir,
             name=f"{CONTAINER_NAME_PREFIX}-{uuid.uuid4().hex[:12]}",
+            labels=self._ownership.labels() if self._ownership is not None else None,
             detach=True,
         )
         return str(container.get("Id") or "")

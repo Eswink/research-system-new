@@ -16,6 +16,7 @@ import json
 import shutil
 import tempfile
 import time
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,8 +32,13 @@ from packages.domain.workers import (
     gpu_probe_digest,
 )
 
-GPU_SANDBOX_IMAGE_DEFAULT = "research-os-gpu-sandbox:m17-v1"
+GPU_SANDBOX_IMAGE_DEFAULT = (
+    "research-os-gpu-sandbox@"
+    "sha256:3d306d299abcb7c5384151ee15b6b7f5819e70203e5da50b47341710720c9d5c"
+)
 _PROBE_MOUNT = "/researchos-probe"
+_PROBE_NAME_PREFIX = "research-os-gpu-probe-"
+_OWNED_CONTAINER_PREFIXES = ("research-os-exec-", _PROBE_NAME_PREFIX)
 # 真实 CUDA kernel 校验和：ones(64,64) @ ones(64,64) 总和 = 64**3。
 _GEMM_EXPECTED = 64.0**3
 
@@ -166,21 +172,50 @@ def probe_gpu(
             docker_client.close()
 
 
+def _owned_container(container: dict[str, Any]) -> bool:
+    names = container.get("Names") or ()
+    return any(
+        str(name).lstrip("/").startswith(prefix)
+        for name in names
+        for prefix in _OWNED_CONTAINER_PREFIXES
+    )
+
+
+def _container_image_id(client: docker.DockerClient, container: dict[str, Any]) -> str:
+    summary_id = container.get("ImageID")
+    if summary_id:
+        return str(summary_id)
+    details = client.api.inspect_container(str(container.get("Id") or ""))
+    return str(details.get("Image") or "")
+
+
+def _container_running(container: dict[str, Any]) -> bool:
+    state = container.get("State") or {}
+    if isinstance(state, dict):
+        return bool(state.get("Running"))
+    return str(state).strip().lower() == "running"
+
+
 def _sweep_stale_containers(client: docker.DockerClient, image: str) -> None:
-    """SI-1 W2: remove stopped containers of the pinned image left behind by a
-    hard-killed worker (probe + exec leftovers). Running containers are never
-    touched, so no live compute is lost; a stopped container holds nothing."""
+    """Remove stopped Research OS containers for the selected image.
+
+    Docker Engine API v1.53 rejects the historical ``image`` containers-list
+    filter. Enumerate summaries, then apply both ownership-name and image-ID
+    checks locally so cleanup remains narrow and works across Engine versions.
+    Running containers are never touched.
+    """
     try:
-        for cont in client.api.containers(all=True, filters={"image": image}):
-            state = cont.get("State") or {}
-            running = (
-                bool(state.get("Running"))
-                if isinstance(state, dict)
-                else str(state).strip().lower() == "running"
-            )
-            if not running:
+        target_id = str(client.api.inspect_image(image).get("Id") or "")
+        if not target_id:
+            return
+        for container in client.api.containers(all=True):
+            if not _owned_container(container):
+                continue
+            if _container_image_id(client, container) != target_id:
+                continue
+            if not _container_running(container):
                 try:
-                    client.api.remove_container(cont["Id"], force=True)
+                    client.api.remove_container(str(container["Id"]), force=True)
                 except (DockerException, OSError):
                     pass
     except (DockerException, OSError):
@@ -217,6 +252,7 @@ def _run_probe_container(
         image=config.image,
         command=["python", f"{_PROBE_MOUNT}/gpu_probe.py"],
         host_config=host_config,
+        name=f"{_PROBE_NAME_PREFIX}{uuid.uuid4().hex[:12]}",
         detach=True,
     )
     cid = str(container.get("Id") or "")

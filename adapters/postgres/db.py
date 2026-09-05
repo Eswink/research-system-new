@@ -62,6 +62,7 @@ class ReconnectableConnection:
     def __init__(self, dsn: str, *, autocommit: bool = True) -> None:
         self._dsn = dsn
         self._autocommit = autocommit
+        self._transaction_depth = 0
         self._inner: Any = _connect(dsn, autocommit=autocommit)
 
     def _reconnect(self) -> None:
@@ -83,6 +84,10 @@ class ReconnectableConnection:
         return type(exc).__name__ == "AdminShutdown" or "terminating connection" in text
 
     def _idle(self) -> bool:
+        # A server-disconnected connection forgets its transaction status, but
+        # the caller's explicit transaction is still active and cannot replay.
+        if self._transaction_depth:
+            return False
         inner = self._inner
         try:
             # A closed/BAD connection carries no live transaction: the server
@@ -147,17 +152,22 @@ class _ReconnectTransaction:
     def __enter__(self) -> Any:
         try:
             self._cm = self._wrapper._inner.transaction()
-            return self._cm.__enter__()
+            entered = self._cm.__enter__()
         except psycopg.Error as exc:
             broken = self._wrapper._is_recoverable(exc) or self._wrapper._inner.closed
             if not broken or not self._wrapper._idle():
                 raise
             self._wrapper._reconnect()
             self._cm = self._wrapper._inner.transaction()
-            return self._cm.__enter__()
+            entered = self._cm.__enter__()
+        self._wrapper._transaction_depth += 1
+        return entered
 
     def __exit__(self, *exc_info: Any) -> Any:
-        return self._cm.__exit__(*exc_info)
+        try:
+            return self._cm.__exit__(*exc_info)
+        finally:
+            self._wrapper._transaction_depth -= 1
 
 
 def _ensure_migration_table(conn: Any) -> None:
@@ -303,9 +313,9 @@ def dsn_from_env() -> str | None:
     .env.example document it; the adapters must resolve the same key).
     """
     for key in (
-        "DATABASE_URL",
-        "RESEARCHOS_DATABASE_URL",
         "RESEARCHOS_POSTGRES_DSN",
+        "RESEARCHOS_DATABASE_URL",
+        "DATABASE_URL",
         "POSTGRES_DSN",
     ):
         val = os.environ.get(key)

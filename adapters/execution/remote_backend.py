@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from uuid import uuid4
 
@@ -33,7 +34,7 @@ from packages.application.ports.execution_job_queue import (
     ExecutionJobRequest,
 )
 from packages.domain.artifacts import Artifact
-from packages.domain.core import Digest, Timestamp
+from packages.domain.core import ID, Digest, Timestamp
 from packages.domain.enums import FailureCategory
 from packages.domain.serialization import digest_of
 from packages.domain.task_state import ResearchTaskState
@@ -62,6 +63,20 @@ class RemoteExecutionBackend:
         self._sleep = sleeper
         self._monotonic = monotonic
         self._closed = False
+        self._run_id: str | None = None
+
+    @classmethod
+    def for_run(
+        cls,
+        run_id: str,
+        *,
+        job_queue: ExecutionJobQueue,
+        artifacts: ArtifactStore,
+    ) -> RemoteExecutionBackend:
+        """Bind production dispatch to its owning ResearchRun at composition."""
+        backend = cls(job_queue=job_queue, artifacts=artifacts)
+        backend._run_id = ID(run_id).value
+        return backend
 
     def close(self) -> None:
         self._closed = True
@@ -94,20 +109,22 @@ class RemoteExecutionBackend:
             created_by="remote-execution-backend",
         )
         self._artifacts.put(artifact, bundle)
-        run_id = str(uuid4())
+        run_id = self._run_id or str(uuid4())
+        job_spec = replace(spec, workspace_path=None) if self._run_id is not None else spec
         # M17 fix: capability from the resource profile ("gpu" / "docker"),
         # matching what real workers declare. The previous
         # `spec.backend_kind.lower()` produced "sandbox" — unclaimable.
         capability = derive_required_capability(spec)
         idempotency_key = str(
             digest_of({
-                "spec": spec.command,
+                "run_id": self._run_id,
+                "spec": job_spec,
                 "input_bundle_digest": tree_digest,
-                "workspace": str(workspace),
+                "workspace": str(workspace) if self._run_id is None else None,
             })
         )
         request = ExecutionJobRequest(
-            spec=spec,
+            spec=job_spec,
             run_id=run_id,
             capability=capability,
             idempotency_key=idempotency_key,
@@ -184,7 +201,11 @@ class RemoteExecutionBackend:
                 "peak_gpu_memory_bytes": outcome.peak_gpu_memory_bytes,
                 # server-measured wall clock (started→completed); consumed by the
                 # single experiment usage path (M16 re-audit F-5: no second truth)
-                "elapsed_seconds": max(0, int((completed.value - started.value).total_seconds())),
+                "elapsed_seconds": (
+                    float(outcome.execution_elapsed_seconds)
+                    if outcome.execution_elapsed_seconds is not None
+                    else max(0, int((completed.value - started.value).total_seconds()))
+                ),
             },
         )
 

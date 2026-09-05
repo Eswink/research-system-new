@@ -31,7 +31,7 @@ pytestmark = [pytest.mark.postgres, pytest.mark.timing_sensitive]
 
 _HELPER = str(Path(__file__).parent / "worker_cross_process.py")
 _ENV = os.environ.copy()
-_ENV["PYTHONPATH"] = r"d:\research-system"
+_ENV["PYTHONPATH"] = str(Path(__file__).resolve().parents[2])
 _ENV["RESEARCHOS_POSTGRES_DSN"] = os.environ.get(
     "RESEARCHOS_POSTGRES_DSN",
     "postgresql://research_os:research_os_m14_test@localhost:15432/research_os",
@@ -176,7 +176,7 @@ def test_crash_recovery_real_subprocess() -> None:
     task_id = seed.stdout.strip().split("task=")[1]
     # Worker A: acquire then immediately os._exit(9) — hard kill, no cleanup
     script = (
-        "import sys, os; sys.path.insert(0, r'd:\\research-system');"
+        "import os;"
         "from adapters.postgres.workflow_engine import PostgresWorkflowEngine;"
         "from tests.contracts.fixtures import research_task, task_contract;"
         f"e=PostgresWorkflowEngine(dsn=r'{_dsn()}', lease_ttl_seconds={ttl});"

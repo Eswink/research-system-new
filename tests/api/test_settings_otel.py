@@ -40,6 +40,18 @@ def test_otel_settings_from_env_disabled_by_default(monkeypatch: Any) -> None:
     assert ApiSettings.from_env().otel.enabled is False
 
 
+def test_product_database_url_overrides_ambient_generic_url(monkeypatch: Any) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql://ambient.invalid/other")
+    monkeypatch.setenv(
+        "RESEARCHOS_DATABASE_URL",
+        "postgresql://research-os.invalid/canonical",
+    )
+
+    settings = ApiSettings.from_env()
+
+    assert settings.database_url == "postgresql://research-os.invalid/canonical"
+
+
 def test_apideps_default_telemetry_is_null() -> None:
     deps = ApiDeps(
         endpoint_store=None,  # type: ignore[arg-type]

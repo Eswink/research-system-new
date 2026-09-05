@@ -12,6 +12,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, cast
 
+import pytest
 from fastapi.testclient import TestClient
 
 from adapters.fakes.budget_ledger import FakeBudgetLedger
@@ -127,6 +128,79 @@ def test_cost_endpoint_reports_unpriced_as_unavailable(run_ready_client: TestCli
     assert model_dimensions, "model usage must appear as a dimension"
     assert model_dimensions[0]["amount"]["status"] == "MONETARY_UNAVAILABLE"
     assert model_dimensions[0]["amount"]["minor_units"] is None
+
+
+def test_cost_endpoint_gpu_time_is_unpriced_experiment_usage(
+    run_ready_client: TestClient,
+) -> None:
+    run_id = _start_run(run_ready_client)
+    task_id = _seed_task(run_ready_client, run_id)
+    deps = cast(Any, run_ready_client.app).state.deps
+    if deps.budget is None:
+        deps.budget = FakeBudgetLedger()
+    deps.budget.record_usage(
+        _entry(
+            task_id,
+            2,
+            resource_type=ResourceType.GPU_TIME,
+            unit="seconds",
+            model_id=None,
+            source="remote_worker",
+        )
+    )
+
+    response = run_ready_client.get(f"/runs/{run_id}/cost")
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body["dimensions"]) == 1
+    gpu_dimension = body["dimensions"][0]
+    assert gpu_dimension["dimension"] == "experiment"
+    assert gpu_dimension["resource_key"] == task_id
+    assert gpu_dimension["entry_count"] == 1
+    assert gpu_dimension["amount"]["status"] == "MONETARY_UNAVAILABLE"
+    assert gpu_dimension["amount"]["minor_units"] is None
+    assert body["total"]["status"] == "MONETARY_UNAVAILABLE"
+
+
+@pytest.mark.parametrize(
+    "resource_type",
+    [
+        ResourceType.MEMORY,
+        ResourceType.STORAGE,
+        ResourceType.NETWORK,
+        ResourceType.WALL_CLOCK,
+        ResourceType.AGENT_TURNS,
+        ResourceType.PARALLELISM,
+    ],
+)
+def test_cost_endpoint_maps_every_runtime_resource_to_closed_dimension(
+    run_ready_client: TestClient,
+    resource_type: ResourceType,
+) -> None:
+    run_id = _start_run(run_ready_client)
+    task_id = _seed_task(run_ready_client, run_id)
+    deps = cast(Any, run_ready_client.app).state.deps
+    if deps.budget is None:
+        deps.budget = FakeBudgetLedger()
+    deps.budget.record_usage(
+        _entry(
+            task_id,
+            1,
+            resource_type=resource_type,
+            unit="units",
+            model_id=None,
+            source="runtime",
+        )
+    )
+
+    response = run_ready_client.get(f"/runs/{run_id}/cost")
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body["dimensions"]) == 1
+    assert body["dimensions"][0]["dimension"] == "experiment"
+    assert body["dimensions"][0]["amount"]["status"] == "MONETARY_UNAVAILABLE"
 
 
 def test_cost_endpoint_unknown_run_404(client: TestClient) -> None:

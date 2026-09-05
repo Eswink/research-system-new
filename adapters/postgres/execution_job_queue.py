@@ -207,7 +207,8 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
             "SELECT t.status, t.fence_seq, j.worker_id, j.exit_code, j.stdout_digest,"
             " j.stderr_digest, j.output_bundle_ref, j.output_bundle_digest,"
             " j.failure_category, j.image_digest, j.gpu_elapsed_seconds,"
-            " j.peak_gpu_memory_bytes FROM tasks t LEFT JOIN execution_jobs j"
+            " j.peak_gpu_memory_bytes, j.execution_elapsed_seconds"
+            " FROM tasks t LEFT JOIN execution_jobs j"
             " ON j.task_id = t.task_id WHERE t.task_id = %s",
             (task_id,),
         ).fetchone()
@@ -233,8 +234,9 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
             ),
             failure_category=str(row["failure_category"]) if row["failure_category"] else None,
             image_digest=str(row["image_digest"]) if row["image_digest"] else None,
+            execution_elapsed_seconds=row["execution_elapsed_seconds"],
             gpu_elapsed_seconds=(
-                int(row["gpu_elapsed_seconds"]) if row["gpu_elapsed_seconds"] is not None else None
+                row["gpu_elapsed_seconds"] if row["gpu_elapsed_seconds"] is not None else None
             ),
             peak_gpu_memory_bytes=(
                 int(row["peak_gpu_memory_bytes"])
@@ -271,21 +273,10 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
                 "UPDATE execution_jobs SET worker_id = (SELECT worker_id FROM leases"
                 " WHERE task_id = %s), exit_code = %s, stdout_digest = %s, stderr_digest = %s,"
                 " output_bundle_ref = %s, output_bundle_digest = %s, failure_category = %s,"
-                " image_digest = %s, gpu_elapsed_seconds = %s, peak_gpu_memory_bytes = %s"
+                " image_digest = %s, gpu_elapsed_seconds = %s, peak_gpu_memory_bytes = %s,"
+                " execution_elapsed_seconds = %s"
                 " WHERE task_id = %s",
-                (
-                    task_id,
-                    result.exit_code,
-                    result.stdout_digest,
-                    result.stderr_digest,
-                    result.output_bundle_ref,
-                    result.output_bundle_digest,
-                    result.failure_category,
-                    result.image_digest,
-                    result.gpu_elapsed_seconds,
-                    result.peak_gpu_memory_bytes,
-                    task_id,
-                ),
+                _result_values(result),
             )
             self._conn.execute(
                 "UPDATE tasks SET status = %s WHERE task_id = %s", (task_status, task_id)
@@ -321,3 +312,21 @@ class PostgresExecutionJobQueue(PostgresAdapterBase):
         if row is None or row["worker_id"] is None:
             return None
         return str(row["worker_id"])
+
+
+def _result_values(result: ExecutionJobResult) -> tuple[Any, ...]:
+    """SQL values are bound parameters from the fenced result."""
+    return (
+        result.task_id,
+        result.exit_code,
+        result.stdout_digest,
+        result.stderr_digest,
+        result.output_bundle_ref,
+        result.output_bundle_digest,
+        result.failure_category,
+        result.image_digest,
+        result.gpu_elapsed_seconds,
+        result.peak_gpu_memory_bytes,
+        result.execution_elapsed_seconds,
+        result.task_id,
+    )

@@ -15,7 +15,9 @@
 
 from __future__ import annotations
 
+import hashlib
 from decimal import Decimal
+from uuid import UUID
 
 from packages.application.deliverable.builder import DeliverableInputs, build_deliverable
 from packages.application.evidence.m12_chain import (
@@ -25,6 +27,7 @@ from packages.application.evidence.m12_chain import (
 )
 from packages.application.experiments import (
     ExperimentProvenance,
+    build_reproducibility_audit,
     register_experiment_evidence,
 )
 from packages.application.experiments.usage_collection import (
@@ -33,9 +36,10 @@ from packages.application.experiments.usage_collection import (
     record_collected_usage,
 )
 from packages.application.m12_reference.deps import CleanRunDeps
+from packages.application.m12_reference.证据重放v1 import replay_claim, replay_memory
 from packages.application.memory.gate import MemoryGateDeps
 from packages.domain.core import ID
-from packages.domain.enums import MemoryTier, MemoryType
+from packages.domain.enums import MemoryTier
 from packages.domain.eval_result import EvalReport
 from packages.domain.experiments import ExperimentRun
 from packages.domain.manifest import RunManifest
@@ -48,8 +52,23 @@ CLAIM_STATEMENT = (
 
 
 def experiment_run_id_of(run_id: str) -> str:
-    """实验 run id 派生（与 run_id 同源、确定性、合法 UUID4，可审计可重放）。"""
-    return f"5a1c6a8e-9b2d-4f3a-8c5e-{run_id.replace('-', '')[:12]}"
+    """Bijective UUID namespace: preserve the frozen M12 reference identity.
+
+    The XOR mask preserves UUID version/variant bits and maps the entire UUID,
+    not a prefix. It maps the historical M12 reference Run to its existing
+    Experiment ID; it is an identity transform, never a random-ID claim.
+    """
+    value = UUID(ID(run_id).value).int ^ 0x480E789CB90F0C09081A474747477777
+    return str(UUID(int=value))
+
+
+def _derived_id(kind: str, run_id: str) -> str:
+    """Stable namespaced hash in the UUID4 layout required by Domain.ID.
+
+    This is deterministic, not random; no randomness or secrecy is claimed.
+    """
+    value = hashlib.sha256(f"research-os:{kind}:{run_id}".encode("utf-8")).digest()[:16]
+    return str(UUID(bytes=value, version=4))
 
 
 def admit_evidence(
@@ -59,6 +78,9 @@ def admit_evidence(
     run: ExperimentRun,
 ) -> tuple[str, tuple[str, ...], str]:
     """真实 ExperimentRun → Evidence/Claim → VERIFIED（唯一升级入口）。"""
+    replayed = replay_claim(deps, run_id, manifest, run)
+    if replayed is not None:
+        return replayed
     result = register_experiment_evidence(
         deps.ledger,
         run,
@@ -67,7 +89,7 @@ def admit_evidence(
             run_id=run_id,
             manifest_digest=str(manifest.digest()),
         ),
-        claim_statement=CLAIM_STATEMENT,
+        claim_statement=deps.claim_statement,
     )
     verified = verify_claim(
         deps.ledger,
@@ -89,13 +111,15 @@ def commit_memory(deps: CleanRunDeps, run_id: str, claim_id: str) -> None:
     if not relations:
         raise RuntimeError("claim has no evidence relations for memory provenance")
     evidence = deps.ledger.get_evidence(relations[0].evidence_id)
+    if replay_memory(deps, memory_id_of(deps, run_id), evidence.source_ref):
+        return
     memory_id = propose_and_commit_memory(
         memory_deps,
         input=MemoryProposalInput(
-            memory_id=f"mem:{run_id}:negative-result",
+            memory_id=memory_id_of(deps, run_id),
             content=deps.memory_content,
             provenance=evidence.source_ref,
-            kind=MemoryType.NEGATIVE_RESULT,
+            kind=deps.memory_kind,
             tier=MemoryTier.PROJECT,
             confidence=0.97,
             curator_approved=True,
@@ -105,13 +129,16 @@ def commit_memory(deps: CleanRunDeps, run_id: str, claim_id: str) -> None:
         raise RuntimeError("governed memory commit rejected")
 
 
+def memory_id_of(deps: CleanRunDeps, run_id: str) -> str:
+    """Keep legacy negative-result IDs while giving other memory kinds honest IDs."""
+    return f"mem:{run_id}:{deps.memory_kind.value.lower().replace('_', '-')}"
+
+
 def build_audit(deps: CleanRunDeps, run_id: str, run: ExperimentRun) -> ReproducibilityAudit:
     """从真实运行事实构建并封存 ReproducibilityAudit（无合成绑定常量）。"""
-    from packages.application.experiments import build_reproducibility_audit
-
     return build_reproducibility_audit(
         run,
-        audit_id=ID(f"a1b2c3d4-5e6f-4a5b-9c0d-{run_id.replace('-', '')[:12]}"),
+        audit_id=ID(_derived_id("audit", run_id)),
         artifacts=deps.artifacts,
     )
 
@@ -150,7 +177,7 @@ def close_budget(
             eval_report=eval_report,
         ),
     )
-    entries = deps.budget.snapshot().entries
+    entries = tuple(entry for entry in deps.budget.snapshot().entries if entry.run_id == run_id)
     return {
         "entries": len(entries),
         # PA-1 W3: token counts stay ints even though quantities may be floats.
@@ -188,6 +215,7 @@ def build_deliverable_payload(
             audit=audit,
             eval_report=eval_report,
             objective=deps.objective,
+            memory_id=memory_id_of(deps, run_id),
         )
     )
 
