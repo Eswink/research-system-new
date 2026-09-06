@@ -175,9 +175,9 @@ PASS 判定经独立复审证伪并修复，2026-08-28 重新独立复审重判 
 | RetrievalIndex 持久化 / 真实 embedding | P2 | M12 前评估 | M10 交付 `InMemoryRetrievalIndex`（确定性 token 检索，可重建投影）；真实语义检索与 embedding provider 绑定属 future dependency，不实现（**保留**） |
 | Memory/Evidence 内容级数据治理 | P2 | M19（DEFERRED） | M10 gate 在 commit 前复用 `domain.redaction` 脱敏 secret 样式内容（Bearer/API key/URL 凭据）；完整 content policy、私有 CoT 识别与数据治理规则属 M19（DEFERRED，重新激活时清偿）（**保留**） |
 | Memory/Claim 并发写入控制 | P2 | M14 | M10 为单进程语义（Fake 内存实现 + 同 id 重复 commit 拒绝）；跨进程并发依赖 M14 PostgreSQL 事务语义。**清偿（2026-08-28 收口轮）：** `adapters/postgres/evidence_ledger.py` register_claim/source/evidence ON CONFLICT DO NOTHING + rowcount 校验 + update_claim rowcount 校验 + _require_verifiable 同事务 FOR SHARE；`adapters/postgres/migrations/004_memory_state.sql`；`adapters/postgres/memory_store.py::PostgresMemoryStore`（原子 commit ON CONFLICT DO NOTHING + rowcount；deactivate/delete 条件写 + rowcount）；`services/api/composition.py` ApiDeps.memory 槽位 + PG 装配注入；`tests/postgres/test_memory_claim_concurrency.py`（5 tests PASS：同提案竞争 commit 恰一赢；delete 0 行抛错；deactivate 幂等；claim 竞争检测；claim update unknown 拒绝）；`tests/contracts/registry.py` memory_store 加入 PG 实现 |
-| Worker BUSY/max_concurrency 接线 | P2 | M17 Deferred | M16 attempt-2 后 claim 强制 state ∈ READY，但 CLAIM/JOB_SETTLED 转换与 `max_concurrency` 并行度未接线（worker loop 单线程，BUSY 从不进入）。M17 聚焦单卡 GPU 全链，未做 worker 内多任务并行（个人规模单 worker 无此需求）；**保留至真实并发需求出现** |
+| Worker BUSY/max_concurrency 接线 | P2 | M17 Deferred | M16 attempt-2 后 claim 强制 state ∈ READY，但 CLAIM/JOB_SETTLED 转换与 `max_concurrency` 并行度未接线（worker loop 单线程，BUSY 从不进入）。M17 聚焦单卡 GPU 全链，未做 worker 内多任务并行（个人规模单 worker 无此需求）；**保留至真实并发需求出现**。**清偿（2026-09-03 PA-1 修复轮）：** BUSY/concurrency 接线由 `ab5ffc8` 交付——claim→CLAIM / submit→JOB_SETTLED 转换 + `max_concurrency` 并行度（第二 claim 进入 BUSY 直至 settle）；`tests/application/run_orchestration/test_busy_worker_refuses_second_claim_until_settled` 绿；`RECHECK-20260903-029` G-15 独立核验。worker 内多任务并行本身仍归 row 179 保留项 |
 | Phase 内并行分发 + 远程分发 composition 选择 | P2 | M17 部分清偿 | M16 交付跨 run 并行；M17 修复 `derive_required_capability`（backend_kind 缺陷）使真实实验远程分发可被 claim，并在 GPU Research Slice E2E 中把 `RemoteExecutionBackend` 作为真实执行后端跑通全链（生产选择点已实证）。run 内 phase/session 仍顺序执行、Control Plane Agent 编排仍走 FakeAgentRuntime；**phase 内并行保留** |
-| 非 M16 深度扫描 high（scratch/、tools/upstream-spikes/、M12 示例、M8 解析器） | P2 | 另立计划 | 首次密封深度扫描 7 high 中 6 个落在非 M16 代码；M16 项已清。需一次覆盖完整的深度扫描建立基线后另立计划处置（**保留**） |
+| 非 M16 深度扫描 high（scratch/、tools/upstream-spikes/、M12 示例、M8 解析器） | P2 | 另立计划 | 首次密封深度扫描 7 high 中 6 个落在非 M16 代码；M16 项已清。需一次覆盖完整的深度扫描建立基线后另立计划处置（**保留**）。**清偿（2026-09-06 PA-1R 遗留债务轮，PLAN-20260906-031）：** PA-1R 全量复审（`RECHECK-20260906-032`）+ 本计划清偿——主树 tracked 误报模式全部规范化（`f630b6d`/`f8205e8`），陈旧封存 checkout 副本清除；新密封扫描 `scan-2026-09-06T11-34-43.682Z-6a9b17a9dc0a`（seal `sha256:a4813342…`）：主树 16 findings = **high 0** / medium 11（probes 跨文件污点误报，处置记录不改码）/ low 5（examples 确定性 seed，保留）；处置见 `docs/audits/PA1_MIMOSA_REVIEW.md` PA-1R 轮节 |
 
 > M9 已清偿（2026-08-15，证据见 `docs/roadmap/M9_COMPLETION_RECORD.md`）：
 > `DockerWorkspace 容器链路全量验证`（裁决 mapping-only + 真实链路由
@@ -193,10 +193,10 @@ M15 修复轮完成（2026-08-30 独立复审判定 FAIL 后 WP0–WP8 修复，
 M16 Distributed Execution 已完成（2026-08-31；attempt-2 独立对抗复审
 PASS 2026-09-01，`RECHECK-20260901-025-m16-attempt2`）。M17 Remote GPU
 Execution 已完成（2026-09-02，ADR-0029；真实单卡 GPU 全链 VERIFIED，
-physically-remote GPU host = NOT VERIFIED/DEFERRED）。**SI-1 为下一
-Active Gate（M17 PASS 后，尚未执行）；M18/M19 DEFERRED
-（RM-P2，2026-09-02，激活条件见 MILESTONES.md 各节）；PA-1 /
-PA-1R 为后续非产品 Gate，均未执行**；立项时按 `AGENTS.md` 流程从 Plan Mode
+physically-remote GPU host = NOT VERIFIED/DEFERRED）。**SI-1 已执行
+（2026-09-02 PASS，`scratch/si1-20260902/SI1_REVIEW_RECORD.md`）；M18/M19 DEFERRED
+（RM-P2，2026-09-02，激活条件见 MILESTONES.md 各节）；PA-1（2026-09-03 PASS）
+与 PA-1R（2026-09-06 PASS，Personal Production Baseline = COMPLETE）均已执行**；立项时按 `AGENTS.md` 流程从 Plan Mode
 开始。编号、名称、顺序、
 依赖 DAG 与详细定义（Purpose / Scope / DoD / Entry Gate 等）以
 `docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为**唯一权威**；本表
@@ -217,9 +217,9 @@ PA-1R 为后续非产品 Gate，均未执行**；立项时按 `AGENTS.md` 流程
 | Remote GPU Execution：GPU capability 发现与注册、GPU-required task 调度门禁、真实 GPU container/runtime、真实计算实验、OOM/CUDA error/timeout/cancellation 处理、Artifact/Metric/Usage 记录、Evidence/Evaluation 接入、真实 GPU Research Slice | M17 Remote GPU Execution / Personal Scale Baseline | DONE（2026-09-02；真实单卡 GPU 全链 VERIFIED，physically-remote GPU host = NOT VERIFIED/DEFERRED，ADR-0029 + `M17_COMPLETION_RECORD.md`） |
 | Multi-user / Organization / RBAC：多租户数据模型、organization scope、RBAC | M18 Multi-user / Organization / RBAC | DEFERRED（RM-P2，2026-09-02；激活条件见 MILESTONES.md M18 节） |
 | Production Security / Governance：OPA qualification 与决策、central Secret Manager、backup/restore、SLO | M19 Production Security / Governance + Backup/Recovery/SLO | DEFERRED（RM-P2，2026-09-02；单用户有价值的 backup/recovery 项归 PA-1） |
-| 全链集成评审：Research Objective → Control Plane → Distributed Scheduler → Remote Worker → Real GPU → Experiment → Artifact → Evidence → Claim → Evaluation → Usage/Cost + 六类故障面 | SI-1 Personal Scale Integration Review（非产品 Gate） | PLANNED |
-| 个人生产验收：reproducible deployment、PostgreSQL/Artifact backup+actual restore、secret hygiene、Remote/GPU Worker recovery、component restart、真实 Research Acceptance Run、Observability、Cost、Evaluation、release/version identity、operational documentation | PA-1 Personal Production Acceptance（非产品 Gate） | PLANNED |
-| 独立个人生产复审；PASS 后宣布 Research OS Personal Production Baseline = COMPLETE | PA-1R Independent Personal Production Re-audit（非产品 Gate） | PLANNED |
+| 全链集成评审：Research Objective → Control Plane → Distributed Scheduler → Remote Worker → Real GPU → Experiment → Artifact → Evidence → Claim → Evaluation → Usage/Cost + 六类故障面 | SI-1 Personal Scale Integration Review（非产品 Gate） | DONE（2026-09-02，PASS；`scratch/si1-20260902/SI1_REVIEW_RECORD.md`） |
+| 个人生产验收：reproducible deployment、PostgreSQL/Artifact backup+actual restore、secret hygiene、Remote/GPU Worker recovery、component restart、真实 Research Acceptance Run、Observability、Cost、Evaluation、release/version identity、operational documentation | PA-1 Personal Production Acceptance（非产品 Gate） | DONE（2026-09-03，PASS + 债务表清偿，`docs/roadmap/PA1_COMPLETION_RECORD.md` + `RECHECK-20260903-029`） |
+| 独立个人生产复审；PASS 后宣布 Research OS Personal Production Baseline = COMPLETE | PA-1R Independent Personal Production Re-audit（非产品 Gate） | DONE（2026-09-06，PASS；`RECHECK-20260906-032` + `docs/operations/PA1R发布记录v1.json`，基线 821e581 / 后继 f630b6d） |
 
 > M8-M11 完成事实与逐项证据见 `docs/roadmap/COMPLETION_MATRIX_M0_M11.md`
 > 与各阶段 completion record；M12/M13 完成事实见各自 COMPLETION_RECORD

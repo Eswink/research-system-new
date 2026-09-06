@@ -55,3 +55,31 @@ completion=completed，影响包 0；1 个包命中 1 条已知 advisory（离�
 **结论：产品代码面零命中；high 从 7 降至 3（残留全部为记录性保留项），
 无新增。** coverage 仍为 partial/static_only（threatModel 0 入口——scanner
 看不见 FastAPI 组合），不宣称"安全"；PA-1R 前建议联网复核依赖 advisory。
+
+---
+
+## PA-1R 轮处置（2026-09-06，PLAN-20260906-031）
+
+密封扫描 `scan-2026-09-06T11-34-43.682Z-6a9b17a9dc0a`（seal `sha256:a4813342330d645c161c89a3abe7276554f1bac46365632225f9e3bd8b242b00`，
+180 packages，dependency advisory 1 条离线 context-only 不变）。
+与 09-03 扫描（40 findings）相比总量 616→37 的差值主体为此前封存审计
+checkout 副本（已按 RECHECK-20260906-032 迁移/清除，非代码变化）。
+
+### 主树 tracked（16 findings）：HIGH = 0
+
+| 严重度 | 数量 | 处置 |
+| --- | --- | --- |
+| HIGH | **0** | 3 项全部已修（commit `f8205e8`/待提交轮）：`tools/PA1R密钥审计v1.py` 常量库名改字面 SQL；`tools/PA1R运行演练v1.py:333` 与 `tools/PA1R恢复闭包v1.py:107` 的 `sql.SQL(...).format(sql.Identifier(...))`（psycopg 正确参数化用法，属误报）改为**纯字面 SQL 创建会话级 `pg_temp` 参数化函数 + `%s` 调用**（动态标识符由库内 `quote_ident` 保证安全；对真实恢复库验证与旧模式产出逐字节等价） |
+| MEDIUM | 11 | **记录；无代码变更**：`tools/probes/probe_*.py`（10）与 `services/worker/__main__.py:92`（1）的"疑似跨文件污点"——env DSN → 本地连接 → 参数化查询的操作员自用链路，静态 advice + proof-gap，人工核验无污点汇（沿用本文件 PA-1 轮同类处置） |
+| LOW | 5 | **记录；保留**：`examples/experiments/m12_reference_classification.py` `random.seed=7` 确定性可复现设计（非密码学用途） |
+
+### 本轮已修（对应上轮 3 个 open high）
+
+1. `examples/experiments/m12_reference_classification.py:228`（前轮"保留"项）：`open("experiment_result.json","w")` → `Path(...).write_text(json.dumps(..., ensure_ascii=False, sort_keys=True), encoding="utf-8")`，**输出字节等价**（M12 参考实验 artifact digest 契约依赖的确定性字节不变）；`test_m12_reference_e2e.py` + `test_evidence_admission_e2e.py` 全绿（0.745 绝对断言 + 相对可复现）。前轮保留理由（避免扰动）已被字节等价验证取代，处置更新为 已修。
+2. `tools/PA1R运行演练v1.py`、`tools/PA1R恢复闭包v1.py`：见上表 HIGH 行。
+
+### 结论
+
+主树 tracked（产品 + 测试 + 工具 + 示例）**high = 0**；无产品代码命中。
+coverage 仍为 partial/static_only（threatModel 0 入口——scanner 看不见
+FastAPI 组合），不宣称"安全"。commit 门禁对主树既有项不再有 high 可采样。
