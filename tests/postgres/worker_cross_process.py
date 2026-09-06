@@ -15,6 +15,7 @@ Every worker opens its own psycopg connection (independent process/DSN).
 from __future__ import annotations
 
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -24,6 +25,18 @@ from adapters.postgres.db import migrate  # noqa: E402
 from adapters.postgres.workflow_engine import PostgresWorkflowEngine  # noqa: E402
 from packages.application.ports.workflow_engine import TaskCompletion  # noqa: E402
 from tests.contracts.fixtures import research_task, task_contract  # noqa: E402
+
+_TASK_ID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+
+def _argv_task_id(raw: str) -> str:
+    # argv values reach the workflow engine's lease path; enforce the ID shape
+    # before use (defense in depth for a cross-process test helper).
+    if not _TASK_ID_RE.fullmatch(raw):
+        raise SystemExit(f"invalid task id: {raw!r}")
+    return raw
 
 
 def dsn() -> str:
@@ -45,19 +58,19 @@ def main() -> None:
             engine.submit(task, task_contract())
             print(f"SEED pid={pid} task={task.id.value}", flush=True)
         elif action == "acquire":
-            task_id = sys.argv[2]
+            task_id = _argv_task_id(sys.argv[2])
             lease = engine.acquire_lease(task_id)
             print(f"ACQUIRE pid={pid} lease={lease.lease_id}", flush=True)
         elif action == "recover":
             n = engine.recover_expired_leases()
             print(f"RECOVER pid={pid} n={n}", flush=True)
         elif action == "claim-complete":
-            task_id = sys.argv[2]
+            task_id = _argv_task_id(sys.argv[2])
             lease = engine.acquire_lease(task_id)
             engine.complete(lease, TaskCompletion(task_id=task_id, outcome="SUCCEEDED"))
             print(f"COMPLETE pid={pid} lease={lease.lease_id}", flush=True)
         elif action == "status":
-            task_id = sys.argv[2]
+            task_id = _argv_task_id(sys.argv[2])
             import psycopg
             from psycopg.rows import dict_row
 
