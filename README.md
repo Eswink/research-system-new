@@ -68,9 +68,12 @@ child subagents < 4
 ```text
 Foundation / Executable Research Kernel（M0-M7 含 M5R）= completed
 MVP 能力平面（M8-M11）= completed（2026-08-15）
-M12 First Real Research Workflow = completed（R1 修复完成，待重新独立复审重判）
-M13 Research Console = completed（R1 修复 + 独立复审 PASS，2026-08-27）
-M14 Durable Workflow + PostgreSQL = 立项（IN PROGRESS；Temporal DEFERRED，见 ADR-0025）
+Post-M7 产品能力（M12-M17）= completed（M17 真实单卡 GPU 全链 VERIFIED，2026-09-02）
+SI-1 Personal Scale Integration Review = PASS（2026-09-02）
+PA-1 Personal Production Acceptance = PASS（2026-09-03）
+PA-1R Independent Personal Production Re-audit = PASS（2026-09-06）
+Personal Production Baseline = COMPLETE；固定 Milestone 主线暂停
+M18/M19 = DEFERRED；HPC Track 未激活，当前无真实 multi-GPU/multi-node/Slurm/HPC 环境
 ```
 
 M0-M11（含 M5R）全部完成，真实完成顺序为
@@ -106,13 +109,15 @@ M0-M11（含 M5R）全部完成，真实完成顺序为
   M11 Evaluation Plane deterministic gates（CI eval-gate job，离线无
   LLM）。
 
-M8-M13 之后：M12 已完成（R1 修复后**待重新独立复审重判**），M13 已通过
-独立复审（2026-08-27），M14 已立项（IN PROGRESS，Temporal DEFERRED 见
-ADR-0025）。未来 Milestone 路线（M12-M19）以 `docs/roadmap/MILESTONES.md`
-的 Post-M7 Roadmap 节为唯一权威；已完成事项、Remaining Technical Debt
-与 Next Product Capability 的执行映射见 `BACKLOG.md`。规格目标
-（PostgreSQL Canonical State、ADR-0002）与当前实现（同 Port 契约的
-SQLite）之间的差异作为技术债显式记录，不以文档覆盖实现。
+M8-M17、SI-1、PA-1 与 PA-1R 已完成；PA-1R 的既有独立复审于
+2026-09-06 判定 PASS。Research OS 现进入
+[Usage-driven Development](docs/roadmap/USAGE_DRIVEN_IMPROVEMENT_TEMPLATE.md)：
+等待真实使用问题或机会，先进入 Plan Mode，再执行一次最小范围改进。固定
+Milestone 主线保持暂停；M18/M19 与 HPC Track 仅在
+[权威路线](docs/roadmap/MILESTONES.md)定义的正式条件满足后发起重新立项评估，
+不会自动开工。当前单卡 GPU 证据不得外推为 physically-remote、multi-GPU、
+multi-node、Slurm 或 HPC 支持。已完成事项、Remaining Technical Debt 与候选能力
+映射见 `BACKLOG.md`。
 
 ## 开发入口
 

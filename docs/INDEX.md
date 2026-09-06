@@ -12,7 +12,9 @@ M15 Observability / Cost / Eval Operations = completed（2026-08-29 首轮；202
 M16 Distributed Execution + Remote Sandbox/Worker = completed（2026-08-31；Worker 生命周期/认证、claim_next 分区 + fence、RemoteExecutionBackend + worker 子进程 E2E 场景 A–J、SWE-ReX REJECT、遥测/记账/Console cluster 视图；ADR-0027；attempt-2 独立对抗复审 PASS 2026-09-01，RECHECK-20260901-025-m16-attempt2；证据见 `roadmap/M16_COMPLETION_RECORD.md`）
 RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R 与 Usage-driven Development；权威见 `roadmap/MILESTONES.md`
 M17 Remote GPU Execution = completed（2026-09-02，ADR-0029）：真实单卡 GPU 全链 VERIFIED（capability 发现/GPU 调度/真实 CUDA 执行/无静默 CPU fallback/OOM·取消/Artifact·Evidence·Evaluation·Usage/可复现性）；physically-remote GPU host = NOT VERIFIED/DEFERRED；证据见 `roadmap/M17_COMPLETION_RECORD.md`
-PA-1 Personal Production Acceptance = PASS（2026-09-03）：reproducible deployment / PostgreSQL+Artifact 实际 backup+restore / secret hygiene / Remote+GPU worker recovery / restart durability / 真实 GPU Research Acceptance Run / version identity / operational docs；发现 F1/F2/F3/F5/W3 已记录，F3 修复（dc6676c）；PA-1R = READY；证据见 `roadmap/PA1_COMPLETION_RECORD.md`
+SI-1 Personal Scale Integration Review = PASS（2026-09-02）：真实 GPU Research Run、跨阶段回归与六类故障面均有证据
+PA-1 Personal Production Acceptance = PASS（2026-09-03）：reproducible deployment / PostgreSQL+Artifact 实际 backup+restore / secret hygiene / Remote+GPU worker recovery / restart durability / 真实 GPU Research Acceptance Run / version identity / operational docs；证据见 `roadmap/PA1_COMPLETION_RECORD.md`
+PA-1R Independent Personal Production Re-audit = PASS（2026-09-06）：Personal Production Baseline = COMPLETE；固定 Milestone 主线暂停，进入 Usage-driven Development；M18/M19 继续 DEFERRED
 ```
 
 真实完成顺序 `M0 → M1 → M3 → M2 → M4 → M5 → M5R → M6 → M7 → M8 → M9 →
@@ -30,7 +32,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 5. **哪些 Contracts 已稳定？** → [PORTS.md](architecture/PORTS.md)、`../schemas/`、`../UPSTREAM_COMPONENTS.yaml`
 6. **OpenHands 在哪里？** → [OPENHANDS_ADAPTER.md](integration/OPENHANDS_ADAPTER.md)、[AGENT_RUNTIME.md](architecture/AGENT_RUNTIME.md)
 7. **upstream 研究在哪里？** → [Open Source / Upstream](#open-source--upstream) 节
-8. **当前下一阶段是什么？** → `roadmap/MILESTONES.md` Post-M7 Roadmap 节（唯一权威）；执行映射见 `../BACKLOG.md`
+8. **当前如何发起改进？** → [UD 使用驱动改进模板](roadmap/USAGE_DRIVEN_IMPROVEMENT_TEMPLATE.md)；固定 Milestone 主线暂停，重新激活条件见 `roadmap/MILESTONES.md`
 9. **BACKLOG 在哪里？** → `../BACKLOG.md`
 10. **如何验证当前仓库？** → `../README.md` 校验节（m0 profile 全量回归 + validators）
 
@@ -178,10 +180,11 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `roadmap/M10_COMPLETION_RECORD.md` — M10 Evidence / Memory / Provenance 完成记录（DoD 证据 + 独立复审 5 缺陷表）
 - `roadmap/M11_COMPLETION_RECORD.md` — M11 Evaluation Plane 完成记录（DoD 证据 + 反作弊专项；DOC-R1 依据 repository evidence 重建）
 - `roadmap/M12_COMPLETION_RECORD.md` — M12 First Real Research Workflow 完成记录与 MVP 判定（真实工具/实验/证据/评测/预算闭环；原 PASS 判定经 M12-R1 独立复审证伪，见下行）
-- `roadmap/M12_R1_COMPLETION_RECORD.md` — M12-R1 Production Truth Closure 修复记录（独立复审 FAIL 后 13 Finding → Fix → Regression → Revalidation；M12 待重新独立复审重判）
+- `roadmap/M12_R1_COMPLETION_RECORD.md` — M12-R1 Production Truth Closure 修复记录（独立复审 FAIL 后 13 Finding → Fix → Regression → Revalidation；记录保留当时“待重判”结论，后续已于 2026-08-28 独立复审重判 PASS）
 - `roadmap/M13_R1_COMPLETION_RECORD.md` — M13-R1 Research Console 修复记录（独立复审 3 BLOCKER + 7 MAJOR + 4 UI Scope + 6 MINOR → Fix → Regression → 独立复审重判 PASS）
 - `roadmap/VERTICAL_SLICE_V0_4_0.md`
-- `roadmap/MILESTONES.md` — M0-M11 执行索引 + Post-M7 Roadmap 唯一权威（M12-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表/下一阶段推荐；RM-P2 2026-09-02 起：M17 = Remote GPU Execution / Personal Scale Baseline，M18/M19 DEFERRED，含 SI-1/PA-1/PA-1R 与 Personal Scale Baseline 节）
+- `roadmap/MILESTONES.md` — M0-M11 执行索引 + Post-M7 Roadmap 唯一权威（M12-M19 编号/名称/顺序/依赖 DAG/分层/Evaluation 规则/upstream 时间表；RM-P2 2026-09-02 起：M17 = Remote GPU Execution / Personal Scale Baseline，M18/M19 DEFERRED；SI-1/PA-1/PA-1R 已完成，PA-1R 2026-09-06 PASS 后固定 Milestone 主线暂停）
+- `roadmap/USAGE_DRIVEN_IMPROVEMENT_TEMPLATE.md` — Post-baseline 的 UD 使用驱动改进入口（真实使用证据、问题分类、最小范围、regression/Evaluation/真实 Research re-run/文档完成门禁，以及 M18/M19/HPC 重新激活条件）
 - `roadmap/M0_M11_DOCUMENT_MATRIX.md` — DOC-R1 inventory（M0-M11 文档分类与恢复判定）
 - `roadmap/DOCUMENT_RECOVERY_M0_M11.md` — DOC-R1 最终报告（inventory/重建/修正/验证结果/remaining risks）
 - `audits/SYSTEM_AUDIT_M0_M11.md` — SA-1 Pre-M12 全系统审计与加固（2026-08-20；Audit Coverage Matrix / BLOCKER+MAJOR+MINOR findings / Fault Injection evidence / 延期技术债 / PASS + M12 READY）

@@ -12,6 +12,10 @@ M15 Observability / Cost / Eval Operations = DONE（2026-08-30 修复轮完成�
 M16 Distributed Execution + Remote Sandbox/Worker = DONE（2026-08-31；attempt-2 独立对抗复审 PASS 2026-09-01，RECHECK-20260901-025-m16-attempt2）
 RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R
 M17 Remote GPU Execution = DONE（2026-09-02，ADR-0029；真实单卡 GPU 全链 VERIFIED，physically-remote GPU host = NOT VERIFIED/DEFERRED；证据见 docs/roadmap/M17_COMPLETION_RECORD.md）
+SI-1 Personal Scale Integration Review = PASS（2026-09-02）
+PA-1 Personal Production Acceptance = PASS（2026-09-03）
+PA-1R Independent Personal Production Re-audit = PASS（2026-09-06）：Personal Production Baseline = COMPLETE
+Post-baseline = 固定 Milestone 主线暂停；进入 Usage-driven Development；M18/M19 继续 DEFERRED
 ```
 
 M0-M11（含 M5R）全部完成（真实完成顺序：M0 → M1 → M3 → M2 → M4 → M5 →
@@ -196,9 +200,12 @@ Execution 已完成（2026-09-02，ADR-0029；真实单卡 GPU 全链 VERIFIED�
 physically-remote GPU host = NOT VERIFIED/DEFERRED）。**SI-1 已执行
 （2026-09-02 PASS，`scratch/si1-20260902/SI1_REVIEW_RECORD.md`）；M18/M19 DEFERRED
 （RM-P2，2026-09-02，激活条件见 MILESTONES.md 各节）；PA-1（2026-09-03 PASS）
-与 PA-1R（2026-09-06 PASS，Personal Production Baseline = COMPLETE）均已执行**；立项时按 `AGENTS.md` 流程从 Plan Mode
-开始。编号、名称、顺序、
-依赖 DAG 与详细定义（Purpose / Scope / DoD / Entry Gate 等）以
+与 PA-1R（2026-09-06 PASS，Personal Production Baseline = COMPLETE）均已执行**。
+固定 Milestone 主线现已暂停；下一项工作只能来自真实 Research OS 使用问题或机会，
+立项时先进入 Plan Mode，并按
+`docs/roadmap/USAGE_DRIVEN_IMPROVEMENT_TEMPLATE.md` 执行 scoped improvement。
+本节既有技术债只作历史与候选输入，不因进入 post-baseline 而批量启动清偿。
+编号、名称、顺序、依赖 DAG 与详细定义（Purpose / Scope / DoD / Entry Gate 等）以
 `docs/roadmap/MILESTONES.md` 的 Post-M7 Roadmap 节为**唯一权威**；本表
 只提供“能力 → Milestone”映射。
 

@@ -11,7 +11,11 @@ M0-M7 里程碑详细定义保留在 `CODEX_BOOTSTRAP.md`（历史契约）；Po
 Foundation / Executable Research Kernel = completed（M0-M7 含 M5R，2026-08-14）
 Post-M7 产品能力 M8-M16 = completed（M16 Distributed Execution，2026-08-31；attempt-2 独立复审 PASS 2026-09-01）
 RM-P2 Personal Roadmap Rebaseline = completed（2026-09-02，ADR-0028）：M17 收缩为 Remote GPU Execution / Personal Scale Baseline；M18/M19 DEFERRED；新增 SI-1 / PA-1 / PA-1R
-M17 Remote GPU Execution = completed（2026-09-02，ADR-0029）：真实单卡 GPU 全链 VERIFIED；physically-remote GPU host = NOT VERIFIED/DEFERRED；下一站 SI-1
+M17 Remote GPU Execution = completed（2026-09-02，ADR-0029）：真实单卡 GPU 全链 VERIFIED；physically-remote GPU host = NOT VERIFIED/DEFERRED
+SI-1 Personal Scale Integration Review = PASS（2026-09-02）
+PA-1 Personal Production Acceptance = PASS（2026-09-03）
+PA-1R Independent Personal Production Re-audit = PASS（2026-09-06）：Research OS Personal Production Baseline = COMPLETE
+Post-baseline = 固定 Milestone 主线暂停；进入 Usage-driven Development；M18/M19 继续 DEFERRED
 ```
 
 完成矩阵与证据见 [COMPLETION_MATRIX_M0_M7.md](COMPLETION_MATRIX_M0_M7.md)；
@@ -83,8 +87,9 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 - 因此：**只把能够真实使用、真实验证、当前有产品价值的能力作为
   Active Roadmap**；不为编号完整性建设无法验证的基础设施。原
   M17 GPU/HPC 扩展面与 M18/M19 Enterprise 轨道据此收缩/推迟
-  （ADR-0028），保留定义与依赖，待真实环境或需求出现时经新 ADR
-  重新激活。
+  （ADR-0028），保留定义与依赖。M18/M19 仅在各节正式需求条件出现后
+  评估重新激活；HPC Track 还必须先获得可实际执行和验证的真实环境。
+  任何重新激活均需新 ADR + Plan Mode。
 
 ## 规划原则
 
@@ -115,9 +120,9 @@ details）与 [VERTICAL_SLICE_V0_4_0.md](VERTICAL_SLICE_V0_4_0.md)
 | M17 | Remote GPU Execution / Personal Scale Baseline（RM-P2 收缩，原 GPU / HPC） | Scale | M16+M9 | DONE（2026-09-02；真实单卡 GPU 全链 VERIFIED，physically-remote GPU host = NOT VERIFIED/DEFERRED，见 M17_COMPLETION_RECORD + ADR-0029） |
 | M18 | Multi-user / Organization / RBAC | Enterprise | M13+M14 | DEFERRED（RM-P2，2026-09-02；激活条件见 M18 节） |
 | M19 | Production Security / Governance + Backup/Recovery/SLO | Enterprise | M14+M15+M18 | DEFERRED（RM-P2，2026-09-02；激活条件见 M19 节） |
-| SI-1 | Personal Scale Integration Review（非产品 Gate） | Gate | M17 | PLANNED |
-| PA-1 | Personal Production Acceptance（非产品 Gate） | Gate | SI-1 | PLANNED |
-| PA-1R | Independent Personal Production Re-audit（非产品 Gate） | Gate | PA-1 | PLANNED |
+| SI-1 | Personal Scale Integration Review（非产品 Gate） | Gate | M17 | DONE（2026-09-02，PASS） |
+| PA-1 | Personal Production Acceptance（非产品 Gate） | Gate | SI-1 | DONE（2026-09-03，PASS） |
+| PA-1R | Independent Personal Production Re-audit（非产品 Gate） | Gate | PA-1 | DONE（2026-09-06，PASS；Personal Production Baseline = COMPLETE） |
 
 ## 依赖 DAG
 
@@ -138,9 +143,9 @@ graph TD
     M14 --> M16["M16 Distributed Execution + Remote Sandbox（DONE）"]
     M9 -.-> M17["M17 Remote GPU Execution / Personal Scale Baseline"]
     M16 --> M17
-    M17 --> SI1["SI-1 Personal Scale Integration Review"]
-    SI1 --> PA1["PA-1 Personal Production Acceptance"]
-    PA1 --> PA1R["PA-1R Independent Personal Production Re-audit"]
+    M17 --> SI1["SI-1 Personal Scale Integration Review（DONE）"]
+    SI1 --> PA1["PA-1 Personal Production Acceptance（DONE）"]
+    PA1 --> PA1R["PA-1R Independent Personal Production Re-audit（DONE）"]
     M13 --> M18["M18 Multi-user / Org / RBAC（DEFERRED）"]
     M14 --> M18
     M14 --> M19["M19 Security / Governance / SLO（DEFERRED）"]
@@ -183,17 +188,19 @@ Scale      M16-M17（分布式 worker / 远程沙盒 / 远程 GPU 个人规模�
 Enterprise M18-M19（多租户 RBAC / 安全治理 / 备份恢复 / SLO；RM-P2 起 DEFERRED，激活条件见各节）
 ```
 
-### 主开发路径与并行策略
+### 已完成主开发路径与历史并行策略
 
-- 串行主线：`M7 → M8 → M12 → M14 → M16 → M17 → SI-1 → PA-1 → PA-1R`（M18/M19 DEFERRED，见各节激活条件）
-- 并行组 1（M7 之后）：M8 ∥ M9 ∥ M10 ∥ M11
-- 并行组 2（M12 之后）：M13 ∥ M14 ∥ M15
-- 并行组 3（M14/M13 之后）：M16 ∥ M18（M18 DEFERRED，RM-P2 起不并行推进）
-- 推荐主开发路径：先启动 **M8**（M12 硬依赖中体量最大），M9/M10/M11
-  并行推进，在 IG-1 汇聚；M12 通过后 M13/M14/M15 并行，M15 可提前
-  （软依赖 M12）。
-- 适合独立并行工作流：M9（实验沙盒）、M10（证据账本）、M11（评测面）
-  三者互不阻塞；M15 观测可与 M12 之后的任一组并行。
+- 已完成串行主线：`M7 → M8 → M12 → M14 → M16 → M17 → SI-1 → PA-1 → PA-1R`。
+- 历史并行组 1（M7 之后）：M8 ∥ M9 ∥ M10 ∥ M11。
+- 历史并行组 2（M12 之后）：M13 ∥ M14 ∥ M15。
+- 历史并行组 3（M14/M13 之后）：M16 ∥ M18；M18 经 RM-P2 延期，未随
+  M16 推进。
+- 历史推荐先推进 M8，在 IG-1 汇聚 M9/M10/M11，再于 M12 后推进
+  M13/M14/M15；这些顺序只描述已完成路线，不是当前待办。
+- PA-1R PASS 后固定 Milestone 主线暂停。当前只从真实 Research OS 使用问题
+  发起 scoped improvement，并使用
+  [UD 模板](USAGE_DRIVEN_IMPROVEMENT_TEMPLATE.md)；M18、M19 与 HPC Track
+  只有满足各自正式触发条件后才能发起重新立项评估。
 
 ### Evaluation Plane 规则
 
@@ -227,20 +234,24 @@ regression（以 Eval Harness + deterministic gates 为基准），不允许仅
 | M17 | GPU 运行时（单机单卡） | **DONE（2026-09-02）**：`M17_GPU_RUNTIME_QUALIFICATION.md`（pytorch/pytorch 2.9.1-cuda12.8 按 digest pin，sm_89 实测，readonly-rootfs×nvidia-hook 无冲突）+ `UPSTREAM_COMPONENTS.yaml` `research_os_gpu_base_image`；physically-remote GPU host = NOT VERIFIED/DEFERRED；原 Slurm/云 GPU API qualification 随 M17 Deferred Scope 移出（RM-P2） |
 | M19 | OPA + Secret Manager | OPA 采用/不采用决策；Secret Manager 选型（M19 DEFERRED：暂不排期） |
 
-### 下一阶段推荐
+### 当前开发方式
 
-**SI-1 — Personal Scale Integration Review**（M17 已 DONE：2026-09-02，
-真实单卡 GPU 全链 VERIFIED；`M17_COMPLETION_RECORD.md` + ADR-0029。
-M17 诚实边界：`physically-remote GPU host`（GPU 主机 ≠ Control Plane 主机）
-= NOT VERIFIED / DEFERRED——本环境 GPU 与 Control Plane 同一物理机，M17 证明
-的是跨进程/跨网络 untrusted worker 边界 + 真实 GPU，不是多机 GPU 集群）。
-SI-1 Entry Gate「M17 PASS」已满足。SI-1 后依次进入 PA-1 → PA-1R。
-M18/M19 仍 DEFERRED（激活条件见各节）。
+**固定 Milestone 主线暂停。** SI-1 已于 2026-09-02 PASS，PA-1 已于
+2026-09-03 PASS，PA-1R 已于 2026-09-06 独立复审 PASS；既有记录据此宣布
+Research OS Personal Production Baseline = COMPLETE。本节只同步该既有验收事实，
+不把本次文档更新表述为重新执行验收。
+
+后续等待真实 Research OS 使用中观察到的问题或机会，首先进入 Plan Mode，并按
+[UD — Research OS Usage-driven Improvement 模板](USAGE_DRIVEN_IMPROVEMENT_TEMPLATE.md)
+执行一次最小范围改进。M18/M19 仍为 DEFERRED；当前单卡 GPU 证据不构成
+multi-GPU、multi-node、Slurm、HPC 或 physically-remote GPU host 支持。
 
 > 历史说明：M8-M11 规划期（2026-08-14）本节推荐为 M8；M8-M11 完成后
 > （2026-08-16，DOC-R1）本节更新为 M12；M12/M13 完成后（2026-08-28）
 > 本节更新为 M14；M16 完成后（2026-09-02，RM-P2）本节更新为 M17；
-> M17 完成后（2026-09-02）本节更新为 SI-1。历史 Milestone 定义不改写。
+> M17 完成后（2026-09-02）本节更新为 SI-1；随后 SI-1、PA-1、PA-1R
+> 依次完成，2026-09-06 起转为 Usage-driven Development。历史 Milestone
+> 定义不改写。
 
 ---
 
@@ -915,8 +926,10 @@ RDMA；InfiniBand；heterogeneous accelerator fleet；GPU autoscaling；
 cluster federation；HPC quota system。
 
 规则：以上能力不删除未来路线、不标记完成、不作为 M17 PASS 条件；
-禁止以 Fake/Mock 测试宣称 supported；只有获得真实环境或真实需求时，
-经新 ADR + Plan Mode 立项重新激活。
+禁止以 Fake/Mock 测试宣称 supported。HPC Track 只有在已经获得可实际执行和
+验证的 multi-GPU、multi-node、Slurm 或 HPC 环境后，才能经新 ADR + Plan Mode
+发起重新立项评估；只有需求或模拟环境时可以记录机会，但不得启动支持声明。
+没有真实环境，不得宣布支持。
 
 ### Non-goals
 
@@ -952,7 +965,8 @@ CUDA 版本需记录 fingerprint）；远程 GPU 使用成本失控（BudgetLedg
 
 ### Next Readiness
 
-解锁 SI-1（Personal Scale Integration Review）。
+历史 readiness：解锁 SI-1（Personal Scale Integration Review）；SI-1 已于
+2026-09-02 PASS，后续 PA-1/PA-1R 也已完成。
 
 ## M18 — Multi-user / Organization / RBAC
 
@@ -960,10 +974,10 @@ CUDA 版本需记录 fingerprint）；远程 GPU 使用成本失控（BudgetLedg
 > organization requirement**。以下原定义原样保留为重新激活基线；当前
 > 不实现 Tenant / Organization / cross-tenant data isolation /
 > multi-user RBAC / tenant quota / tenant billing 的任何能力，不标记
-> 部分完成。重新激活条件（满足其一）：出现第二个真实用户；团队共同
-> 使用 Research OS；Organization/Project ownership 需求；共享服务器
-> 部署；对外提供服务；tenant isolation 成为真实需求；商业化或多人
-> 协作。重新激活需新 ADR + Plan Mode 立项。
+> 部分完成。正式触发条件（满足其一）：出现真实第二用户、team、
+> organization、shared service、RBAC 或 tenant isolation 需求。触发只允许
+> 发起重新立项评估，不等于自动开工或部分完成；重新激活仍需新 ADR、
+> Plan Mode 批准及原有依赖门槛。
 
 ### Purpose
 
@@ -1021,8 +1035,11 @@ PolicyEvaluator 双轨失控；单租户数据迁移。
 > 单用户同样有实际价值的能力（backup、restore、secret hygiene、
 > PostgreSQL/Artifact recovery、release/version truth、operational
 > recovery）不通过"提前做 M19"处理，纳入 PA-1 — Personal Production
-> Acceptance（见 Personal Scale Baseline 节）。重新激活条件：企业/
-> 多用户需求出现（随 M18 激活或独立立项），需新 ADR。
+> Acceptance（见 Personal Scale Baseline 节）。正式触发条件（满足其一）：
+> 出现真实 Enterprise deployment、formal SLO、compliance、incident
+> governance 或 enterprise secrets 需求。触发只允许发起重新立项评估，
+> 不等于自动开工或部分完成；重新激活仍需新 ADR、Plan Mode 批准及原有
+> 依赖门槛。
 
 ### Purpose
 
@@ -1121,6 +1138,10 @@ Claim → Evaluation → Usage / Cost
 Artifact corruption；recovery。SI-1 不增加新产品功能；结论为
 PASS / FAIL（FAIL 时修复后重跑）。
 
+SI-1 结果（2026-09-02）：**PASS** — 真实 GPU Research Run、跨阶段回归与
+六类故障面均有证据，记录见
+[SI-1 Review Record](../../scratch/si1-20260902/SI1_REVIEW_RECORD.md)。
+
 ## PA-1 — Personal Production Acceptance
 
 SI-1 PASS 后执行。回答一个问题：**当前 Research OS 是否已经达到可以
@@ -1149,7 +1170,8 @@ PA-1 结果（2026-09-03）：**PASS** — 11 项逐项真实证据齐全
 （`docs/roadmap/PA1_COMPLETION_RECORD.md` + `scratch/pa1-20260903/`）；
 发现 F1（内存来源白名单装配缺失）/ F2（PG 重启后连接不自动重建）/
 F3（PG EvalReportStore 读取路径，已修复 dc6676c）/ F5（未配置控制面
-demo run 路径）/ W3（GPU_TIME 整数秒）；无 BLOCKER；PA-1R READY。
+demo run 路径）/ W3（GPU_TIME 整数秒）；无 BLOCKER；当时判定 PA-1R
+READY，后续已于 2026-09-06 PASS（见下节）。
 
 ## PA-1R — Independent Personal Production Re-audit
 
@@ -1158,14 +1180,34 @@ attempt-2 对抗复审）。只有 PA-1R PASS 后才宣布：
 
 **Research OS Personal Production Baseline = COMPLETE**
 
+PA-1R 结果（2026-09-06）：**PASS** — deployment、PostgreSQL/Artifact
+实际恢复、Secret hygiene、Remote/GPU Worker、durable recovery、
+Observability/Cost/Evaluation、完整 Research Workflow 与 release/version truth
+均有独立证据，无未关闭 BLOCKER；正式复检见
+[PA-1R 最终复检](../../.cursor/plans/rechecks/RECHECK-20260906-032-个人生产最终复审v1.md)，
+发布身份见 [PA-1R 发布记录](../operations/PA1R发布记录v1.json)。本段同步既有
+记录，不代表本次文档更新重新执行了验收。
+
 ## Post-baseline Operating Model — Usage-driven Development
 
 PA-1R PASS 后：
 
-- 不自动恢复 M18/M19（仍需真实需求 + 新 ADR 立项）。
-- Research OS 进入 **Usage-driven Development**：后续开发优先级必须
-  来自真实使用中暴露的 Research Capability gap、Tool gap、Skill gap、
-  Protocol gap、Evaluation weakness、Runtime bottleneck、reliability
-  issue、UX friction、cost problem。
-- 路线从 `roadmap-driven infrastructure` 转为
+- 固定 Milestone 主线暂停，不自动恢复 M18/M19，也不自动启动 HPC Track。
+- Research OS 进入 **Usage-driven Development**：每个后续改进必须来自一次
+  真实使用中观察到的问题或机会，首先进入 Plan Mode，并按
+  [UD 模板](USAGE_DRIVEN_IMPROVEMENT_TEMPLATE.md)记录 reproduction、expected
+  outcome、current evidence、affected Contract 与 regression target。
+- 问题分类覆盖 Research Capability、Tool、Skill、Protocol、Evaluation、
+  Runtime、Reliability、Performance、Cost 与 UX；每次只实施解决真实问题所需的
+  最小范围。
+- 完成必须包含 regression、适用时受影响 Evaluation 的 before/after 对照、
+  real Research re-run 与 documentation update；缺少真实重跑条件时不得宣称完成。
+- M18 只在出现真实第二用户、team、organization、shared service、RBAC 或
+  tenant isolation 需求时触发重新立项评估。
+- M19 只在出现真实 Enterprise deployment、formal SLO、compliance、incident
+  governance 或 enterprise secrets 需求时触发重新立项评估。
+- HPC Track 只在已经获得可实际执行和验证的 multi-GPU、multi-node、Slurm 或
+  HPC 环境时触发重新立项评估；没有真实环境，不得宣布支持。
+- 上述触发均不等于自动开工或部分完成；仍需新 ADR、Plan Mode 批准及原有依赖
+  门槛。路线从 `roadmap-driven infrastructure` 转为
   `real-usage-driven improvement`。
