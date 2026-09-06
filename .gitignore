@@ -20,7 +20,9 @@ dist/
 build/
 data/
 .artifacts/
-runs/
+# runtime output dirs — root-anchored so nested source dirs named the same
+# (e.g. apps/web/src/features/runs/) stay tracked (PA-1R recheck 032 blocker).
+/runs/
 mlruns/
 *.log
 *.pem
@@ -29,7 +31,7 @@ secrets/
 .DS_Store
 .idea/
 .vscode/
-artifacts/
+/artifacts/
 # local scratch space: ad-hoc debug scripts and throwaway databases.
 # Audit probes cited by rechecks live in tools/probes/ and are tracked.
 scratch/
