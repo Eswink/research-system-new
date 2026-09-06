@@ -1,0 +1,131 @@
+{
+  "record_kind": "PERSONAL_PRODUCTION_RELEASE",
+  "version": "0.4.0",
+  "validated_at_utc": "2026-09-06T08:40:21.799423+00:00",
+  "code_revision": "821e58151262095ac309704e132632a66f845ac0",
+  "code_tree": "f5239773e0338b0fc06c74a510e9f5f73039bbf0",
+  "source_checkout_clean": true,
+  "restore_checkout_clean": true,
+  "database": {
+    "runtime": "16.14",
+    "migrations": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "public_tables": 22,
+    "schema_sha256": "c14097a40c394b67198b98ff8d7d20b49436aac68acc07c71338e91f2d460b35",
+    "worker_protocol": "1",
+    "worker_runtime": "0.4.0",
+    "workers_checked": 2,
+    "active_leases": 0
+  },
+  "runtime": {
+    "python": "3.12.13",
+    "packages": {
+      "openhands-sdk": "1.42.0",
+      "fastapi": "0.141.1",
+      "psycopg": "3.2.13",
+      "docker": "7.2.0",
+      "opentelemetry-api": "1.39.1",
+      "mcp": "1.29.0"
+    }
+  },
+  "docker_engine": "29.2.1",
+  "oci_images": {
+    "postgres": "sha256:d845e7f0ac8517b9d9868b6d20379f9688ba3676595e50ca7c0b664964b2a760",
+    "collector": "sha256:f336897265005845777f03abb61b7417384a2827de704636935c9a69c1f35865",
+    "gpu": "sha256:3d306d299abcb7c5384151ee15b6b7f5819e70203e5da50b47341710720c9d5c"
+  },
+  "gpu_base": "sha256:7b324d212a4450795b49edba9949b7cdc72429148a64e974334bfe5774d51385",
+  "lockfiles": {
+    "uv.lock": "22e2ff57384f4450ea842332e3be11667d64a68f6358a9bb5f7d9c276a6d72fc",
+    "pnpm-lock.yaml": "699b41ebc07e2c3079c753bc54ec80242df12240f0f9770257dfd6abb4191f4d",
+    "UPSTREAM_COMPONENTS.yaml": "840a3065fc23180cbaa9134bfbf4f672404596f3bb9247a4a5db1ca5e73e41da"
+  },
+  "migration_files": {
+    "001_initial.sql": "561c27d48a779875070d8f4583825b9fee537fccd48f50ddc2404fe543f3fb45",
+    "002_domain_state.sql": "635beacd52df296d3906e7342cf777649ed871c28e4bd845d42ff986c75012c2",
+    "003_experiment_state.sql": "8a148af76590729c4e857eb014d724d2a2eacb7c76cc614d2b9fba76dc475509",
+    "004_memory_state.sql": "91b2fbedbaa51088b2fa487e7b3d149bad081945342d92db9db50c928196eacc",
+    "005_eval_state.sql": "30d8578603bca9bdf0742c574215202b4cbba6a4c9edfb9d1e142af049b8c44b",
+    "006_pricing_snapshot.sql": "6c8028ba08353f7c381b29c25670d32c585068fbeb94aefeabf89370576adcc7",
+    "007_eval_report_hardening.sql": "08756d7e86d7d5cefb7e8c64f57951080bdc735b19c8114da8d7e53b93a44254",
+    "008_worker_plane.sql": "9f37b28342c8234140aa2a13c7b2ceb7228abd73ae6c27d4975927400eb722b1",
+    "009_worker_gpu.sql": "ea7000362ae9d2d521bf1e8255d7686e61a1b5a709362b09f6a2ddf4282eab7f",
+    "010_GPU显存计量宽度v1.sql": "96ab63c7c5101fdeb07d0243364e99493b324fe33d3179518141824d7773194e",
+    "011_GPU时间精度v1.sql": "4e8952213d3577cfb74483f21a1002dbd26aeb3510b3ba251ccad827d494b574",
+    "012_执行用量重放v1.sql": "1c5cf5752b349b98af1fbea343992f2de628ced188495bf6be696bd320dc87e3"
+  },
+  "evidence": {
+    "scratch\\PA1R闭环v1\\续审release-v2\\重建恢复演练结果v2.json": "26af2d6aeac3d064e1b6e1370749a405666acf1b6ebe731c79a5fc67840cde4c",
+    "scratch\\PA1R闭环v1\\续审release-v2\\实际恢复闭包v2.json": "6e85024c6e329d975b1051b334cd9852399f88efe9e9a4d7698e9ba3b819ad3f",
+    "scratch\\PA1R闭环v1\\续审release-v2\\故障续验证据v2.json": "2a2e91c56ad76b3f25db653b965ceb9ce70dbc235fcdc1cb62d83bb5435a76db",
+    "scratch\\PA1R闭环v1\\续审release-v2\\密钥六面审计v1.json": "af9d2015b99fad0272d71b85740786feb932a281586c3631bbd4cdec2ed933b5",
+    "scratch\\PA1R闭环v1\\质量门禁_m0v1.json": "d5fdd262ae07b14a412b408f921e75290477310ec218aa0db29825d06778f65b"
+  },
+  "audit_runs": {
+    "result": "PASS_FOR_RESTORE_AND_INTERRUPTED_REPLAY",
+    "source_runs": [
+      "ab873509-c737-4b5f-aa63-da05afeb0c8e",
+      "71766604-97e9-4e9a-9bcc-8dc8562f62a5"
+    ],
+    "restored_runs": [
+      "913e556b-07f3-4ef1-a3ac-2a2a9b08fde3",
+      "8840b2cf-d57d-4648-a79c-7a98c407ab73"
+    ],
+    "interrupted_replay": {
+      "run_id": "913e556b-07f3-4ef1-a3ac-2a2a9b08fde3",
+      "state": "SUCCEEDED",
+      "artifacts_checked": 25,
+      "manifest_digest": "sha256:9764954968a70d3507a7cbe2543f4f10971bc64e497aa7fdc7eb0eab11c01821",
+      "deliverable_digest": "sha256:978b25e0c6fee98e0d87d7275b1b65addf6272b32ddcc792314dc87ae8ddb3fb",
+      "image_digest": "sha256:3d306d299abcb7c5384151ee15b6b7f5819e70203e5da50b47341710720c9d5c",
+      "evidence_count": 3,
+      "claim": "claim:d9302df7-befc-42f8-abb6-6d6ddc4f8a94:result",
+      "tasks": [
+        [
+          "ed89c936-48cf-4f68-b99d-dc158ee1c149",
+          "SUCCEEDED",
+          1
+        ]
+      ],
+      "evaluation": [
+        [
+          "sha256:12f87a0a32832c41cb37b13d0a44083c208305501b7b9c7e9794e78d6c5903d4",
+          "PASS",
+          7,
+          0
+        ]
+      ],
+      "budget": {
+        "entries": 3,
+        "types": [
+          "CPU_TIME",
+          "EVALUATION_SCORER",
+          "GPU_TIME"
+        ],
+        "duration_known": true
+      },
+      "memory_kind": "FACT"
+    },
+    "note": "Not a release or complete PA-1R verdict"
+  },
+  "pa1r": "PASS",
+  "personal_production_baseline": "COMPLETE",
+  "boundaries": [
+    "single-user, local GPU across process/network gateway",
+    "live paid LLM not exercised",
+    "unconfigured monetary cost remains unavailable",
+    "no external publish; M18/M19 remain deferred"
+  ]
+}

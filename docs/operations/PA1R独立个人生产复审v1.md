@@ -4,6 +4,8 @@
 范围：Research OS Personal Production Baseline 独立复审
 方法：不继承 PA-1 PASS 结论；以实际部署、实际 PostgreSQL/Artifact restore、真实 Remote Worker/GPU、故障注入、restored full Research Run 和 release/version truth 为准。
 
+> **2026-09-06 更新**：本记录的第 11 节 release/version truth blocker 已关闭（gitignore 源码修复后形成正式 release revision `821e58151262095ac309704e132632a66f845ac0`，并从该 revision 全链重跑 deployment/restore/GPU/Research Workflow/m0 门禁/密钥审计）。最终判定 **PA-1R PASS / Personal Production Baseline = COMPLETE**，见 `.cursor/plans/rechecks/RECHECK-20260906-032-个人生产最终复审v1.md` 与 `docs/operations/PA1R发布记录v1.json`。本文其余内容保留为 2026-09-05 轮独立复审的历史证据。
+
 ## 0. 最终结论
 
 ```text
