@@ -44,24 +44,26 @@ _SANDBOX_DIR = Path(__file__).resolve().parents[3] / "adapters" / "execution" / 
 _PLAN_ID = ID("3f1c6a8e-9b2d-4f3a-8c5e-1a2b3c4d5e6f")
 _WORKSPACE = Workspace(id="ws-exp", name="ws-exp")
 
-# 确定性实验脚本：固定 seed 生成可复现输出
+# 确定性实验脚本：固定 seed 生成可复现输出（沙箱工作区内相对路径写入）
 _EXPERIMENT_SCRIPT = """import json, random
+from pathlib import Path
 rng = random.Random(42)
 samples = [rng.random() for _ in range(5)]
 mean = sum(samples) / len(samples)
 payload = {'experiment_run_id': 'RUN_ID', 'status': 'SUCCEEDED',
            'artifact_refs': ['samples.json'],
            'metrics': {'mean': mean, 'n_samples': len(samples)}}
-open('samples.json', 'w').write(json.dumps(samples))
-open('experiment_result.json', 'w').write(json.dumps(payload))
+Path('samples.json').write_text(json.dumps(samples), encoding='utf-8')
+Path('experiment_result.json').write_text(json.dumps(payload), encoding='utf-8')
 print('mean=', mean)
 """
 
 _NEGATIVE_SCRIPT = """import json
+from pathlib import Path
 payload = {'experiment_run_id': 'RUN_ID', 'status': 'NEGATIVE_RESULT',
            'artifact_refs': [], 'metrics': {'effect_size': 0.03},
            'failure_ref': 'no significant effect'}
-open('experiment_result.json', 'w').write(json.dumps(payload))
+Path('experiment_result.json').write_text(json.dumps(payload), encoding='utf-8')
 print('negative result recorded')
 """
 

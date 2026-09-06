@@ -48,14 +48,15 @@ _RUN_ID = ID("aaaaaaaa-2222-4333-8444-555555555555")
 _WORKSPACE = Workspace(id="ws-ig1", name="ws-ig1")
 
 _SCRIPT = """import json, random
+from pathlib import Path
 rng = random.Random(42)
 samples = [rng.random() for _ in range(5)]
 mean = sum(samples) / len(samples)
 payload = {'experiment_run_id': 'RUN_ID', 'status': 'SUCCEEDED',
            'artifact_refs': ['samples.json'],
            'metrics': {'mean': mean, 'n_samples': len(samples)}}
-open('samples.json', 'w').write(json.dumps(samples))
-open('experiment_result.json', 'w').write(json.dumps(payload))
+Path('samples.json').write_text(json.dumps(samples), encoding='utf-8')
+Path('experiment_result.json').write_text(json.dumps(payload), encoding='utf-8')
 print('mean=', mean)
 """
 

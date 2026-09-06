@@ -84,7 +84,8 @@ def _write_result_python(metrics: dict[str, object], status: str = "SUCCEEDED") 
     encoded = base64.b64encode(payload.encode("utf-8")).decode("ascii")
     return (
         f'python -c "import base64; '
-        f"open('result.json','w').write(base64.b64decode('{encoded}').decode())\""
+        f"from pathlib import Path; "
+        f"Path('result.json').write_text(base64.b64decode('{encoded}').decode())\""
     )
 
 

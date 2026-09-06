@@ -238,10 +238,11 @@ class TestM12ReferenceNegativeResult:
         workspace_dir = workspaces.workspace_dir(lease)
         script = (
             "import json\n"
+            "from pathlib import Path\n"
             "payload = {'experiment_run_id': 'RUN', 'status': 'NEGATIVE_RESULT',\n"
             "           'artifact_refs': [], 'metrics': {'effect_size': 0.02},\n"
             "           'failure_ref': 'no significant improvement'}\n"
-            "open('experiment_result.json', 'w').write(json.dumps(payload))\n"
+            "Path('experiment_result.json').write_text(json.dumps(payload), encoding='utf-8')\n"
         ).replace("'RUN'", repr(str(run_id.value)))
         (workspace_dir / "experiment.py").write_text(script, encoding="utf-8")
         outcome = executor.execute(

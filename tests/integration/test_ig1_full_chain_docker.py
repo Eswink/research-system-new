@@ -127,11 +127,11 @@ def _run_tool_and_prepare_workspace(
 def _experiment_script() -> str:
     return """import json, pathlib
 data = pathlib.Path('samples.txt').read_bytes()
-open('result.json', 'w').write(json.dumps({'bytes': len(data)}))
+pathlib.Path('result.json').write_text(json.dumps({'bytes': len(data)}), encoding='utf-8')
 payload = {'experiment_run_id': 'RUN_ID', 'status': 'SUCCEEDED',
            'artifact_refs': ['result.json'],
            'metrics': {'bytes': len(data)}}
-open('experiment_result.json', 'w').write(json.dumps(payload))
+pathlib.Path('experiment_result.json').write_text(json.dumps(payload), encoding='utf-8')
 print('bytes=', len(data))
 """
 
