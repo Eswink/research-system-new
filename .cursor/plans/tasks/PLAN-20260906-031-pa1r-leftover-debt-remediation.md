@@ -2,7 +2,7 @@
 id: PLAN-20260906-031
 slug: pa1r-leftover-debt-remediation
 title: PA-1R 遗留债务清偿（扫描器 high 清零 + 封闭性加固 + 登记对齐）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-06
 updated_at: 2026-09-06
 cursor_plan_uri: null
@@ -12,7 +12,7 @@ authorization:
   source: user-request
   ref: "2026-09-06 计划解决遗留债务和问题（批准计划含 W1-W6）"
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260906-033-pa1r-leftover-debt-remediation.md
 memory_entries: [pa1r-pass-baseline-complete, mimosa-scanner-false-positives]
 ---
 
@@ -30,17 +30,18 @@ memory_entries: [pa1r-pass-baseline-complete, mimosa-scanner-false-positives]
 
 ## 验收条件
 
-- [ ] AC-1 新密封扫描主树（非 scratch）high = 0，seal 被 recheck 引用
-- [ ] AC-2 DSN 对齐后 settings 链测试 + 全量 m0 门禁（attempt-7）在最终 revision 全绿
-- [ ] AC-3 gen_openapi 无 DB 可生成且 docs/api/openapi.m13.json 字节不变
-- [ ] AC-4 pytest 输出无 Starlette 弃用告警
-- [ ] AC-5 examples 两个 e2e 测试文件全绿（0.745 与相对可复现断言不变）
-- [ ] AC-6 BACKLOG 行 178/180 清偿注记 + 能力表 PA-1/PA-1R 状态更新；PA1_MIMOSA_REVIEW 含 PA-1R 轮处置节
-- [ ] AC-7 全部工作提交、工作树干净、recheck PASS
+- [x] AC-1 新密封扫描主树（非 scratch）high = 0，seal 被 recheck 引用
+- [x] AC-2 DSN 对齐后 settings 链测试 + 全量 m0 门禁（attempt-7）在最终 revision 全绿
+- [x] AC-3 gen_openapi 无 DB 可生成且 docs/api/openapi.m13.json 字节不变
+- [x] AC-4 pytest 输出无 Starlette 弃用告警
+- [x] AC-5 examples 两个 e2e 测试文件全绿（0.745 与相对可复现断言不变）
+- [x] AC-6 BACKLOG 行 178/180 清偿注记 + 能力表 PA-1/PA-1R 状态更新；PA1_MIMOSA_REVIEW 含 PA-1R 轮处置节
+- [x] AC-7 全部工作提交、工作树干净、recheck PASS
 
 ## 状态历史
 
 - 2026-09-06 IN_PROGRESS：计划批准，开始 W1。
+- 2026-09-06 DONE：W1-W6 全部完成；attempt-10 全量 m0 门禁 59/59 job、2961 测试全绿（`质量门禁_m0_postdebt_6f19564.json`）；密封扫描主树 high=0（seal `a4813342…`）；recheck `RECHECK-20260906-033` PASS。
 
 ## 实施清单
 
@@ -49,7 +50,7 @@ memory_entries: [pa1r-pass-baseline-complete, mimosa-scanner-false-positives]
 - [x] W3：`pyproject.toml` filterwarnings 过滤 starlette 导入期弃用告警（输出零告警实测）。
 - [x] W4：三项主树 high 清零——`tools/PA1R运行演练v1.py` / `tools/PA1R恢复闭包v1.py` 改用字面 SQL 创建会话级 `pg_temp` 参数化函数（对真实恢复库验证与旧 `sql.SQL().format` 模式产出逐字节等价）；`examples/experiments/m12_reference_classification.py` 改 `Path.write_text`（字节等价；两个 e2e 套件 9/9 绿）。
 - [x] W5：新密封扫描 `scan-2026-09-06T11-34-43.682Z-6a9b17a9dc0a`（seal `sha256:a4813342…`）主树 **high=0**；`PA1_MIMOSA_REVIEW.md` 增补 PA-1R 轮处置；BACKLOG 行 178/180 清偿注记 + SI-1/PA-1/PA-1R 能力表状态更新。
-- [ ] W6：全量 m0 门禁 attempt-7/8（最终 revision）+ recheck 033 + 记录提交。
+- [x] W6：全量 m0 门禁 attempt-10（最终 revision 6f19564）59/59 job、2961 测试全绿 + recheck 033 + 记录提交。
 
 ## 证据
 
@@ -60,7 +61,7 @@ memory_entries: [pa1r-pass-baseline-complete, mimosa-scanner-false-positives]
 | W3 | `pytest tests/api/test_settings_otel.py` 输出无 StarletteDeprecationWarning |
 | W4 | 对恢复库实测 `pg_temp.pa1r_count`/`pa1r_row_json`（22 表；与旧模式哈希逐字节等价）；`test_m12_reference_e2e` + `test_evidence_admission_e2e` + `test_openapi_snapshot` 9/9 |
 | W5 | 密封扫描 seal `sha256:a4813342330d645c161c89a3abe7276554f1bac46365632225f9e3bd8b242b00`（主树 16 findings：high 0 / medium 11 / low 5） |
-| W6 | `质量门禁_m0_postdebt_b11b55e.json`（attempt-7 汇总，见 recheck 033 终态） |
+| W6 | `质量门禁_m0_postdebt_6f19564.json`（attempt-10：59/59 job、2961 测试全绿，钉住 6f19564） |
 
 ## 影响报告
 
