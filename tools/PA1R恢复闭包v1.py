@@ -104,5 +104,24 @@ def table_counts(conn: psycopg.Connection[Any]) -> dict[str, int]:
     names = conn.execute(
         "SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY 1"
     ).fetchall()
-    return {name: conn.execute(psycopg.sql.SQL("SELECT count(*) FROM {}").format(
-        psycopg.sql.Identifier(name))).fetchone()[0] for (name,) in names}
+    # Session-local helper so the per-table count stays fully literal +
+    # parameterized on the Python side; quote_ident inside plpgsql keeps the
+    # dynamic identifier injection-safe. pg_temp objects vanish with the
+    # session — no business data is written. (pg_temp functions must be
+    # schema-qualified at call sites: temp schemas are not searched for
+    # function names.)
+    conn.execute(
+        "CREATE OR REPLACE FUNCTION pg_temp.pa1r_count(p_table text)\n"
+        "RETURNS bigint LANGUAGE plpgsql AS $fn$\n"
+        "DECLARE\n"
+        "    n bigint;\n"
+        "BEGIN\n"
+        "    EXECUTE 'SELECT count(*) FROM ' || quote_ident(p_table) INTO n;\n"
+        "    RETURN n;\n"
+        "END;\n"
+        "$fn$;"
+    )
+    return {
+        name: conn.execute("SELECT pg_temp.pa1r_count(%s)", (name,)).fetchone()[0]
+        for (name,) in names
+    }

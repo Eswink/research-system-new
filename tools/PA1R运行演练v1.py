@@ -327,12 +327,34 @@ def clean_restore(config: dict[str, Any], client: Any) -> dict[str, Any]:
     with conn_for(config) as source_conn, conn_for(config, True) as target_conn:
         source_counts, target_counts = table_counts(source_conn), table_counts(target_conn)
         assert source_counts == target_counts
-        from psycopg import sql
         table_hashes = {}
+
+        def _ensure_row_json_fn(connection) -> None:
+            # Session-local helper so the per-table row export stays fully
+            # literal + parameterized on the Python side; quote_ident inside
+            # plpgsql keeps the dynamic identifier injection-safe. pg_temp
+            # objects vanish with the session — no business data is written.
+            connection.execute(
+                "CREATE OR REPLACE FUNCTION pg_temp.pa1r_row_json(p_table text)\n"
+                "RETURNS SETOF json LANGUAGE plpgsql AS $fn$\n"
+                "BEGIN\n"
+                "    RETURN QUERY EXECUTE 'SELECT row_to_json(t) FROM '\n"
+                "        || quote_ident(p_table) || ' t';\n"
+                "END;\n"
+                "$fn$;"
+            )
+
+        _ensure_row_json_fn(source_conn)
+        _ensure_row_json_fn(target_conn)
         for table in source_counts:
-            query = sql.SQL("SELECT row_to_json(t) FROM {} t").format(sql.Identifier(table))
+
             def table_digest(connection):
-                rows = [json.dumps(row[0], sort_keys=True, default=str) for row in connection.execute(query)]
+                rows = [
+                    json.dumps(row[0], sort_keys=True, default=str)
+                    for row in connection.execute(
+                        "SELECT * FROM pg_temp.pa1r_row_json(%s)", (table,)
+                    )
+                ]
                 return hashlib.sha256("\n".join(sorted(rows)).encode()).hexdigest()
             left, right = table_digest(source_conn), table_digest(target_conn)
             assert left == right, f"restore row mismatch: {table}"

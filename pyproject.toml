@@ -100,6 +100,9 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 pythonpath = ["."]
 addopts = ["--strict-config", "--strict-markers"]
+# starlette==1.6.0 emits an import-time UserWarning when the optional
+# `httpx2` package is absent; the fallback to httpx is our pinned intent.
+filterwarnings = ["ignore::starlette.exceptions.StarletteDeprecationWarning"]
 markers = [
     "requires_docker: tests that need a running Docker daemon and the sandbox image",
     "requires_gpu: tests that need a real NVIDIA GPU + the pinned GPU sandbox image (M17)",

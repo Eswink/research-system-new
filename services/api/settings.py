@@ -92,7 +92,16 @@ class ApiSettings:
     @classmethod
     def from_env(cls) -> ApiSettings:
         database_url: str | None = None
-        for key in ("RESEARCHOS_DATABASE_URL", "DATABASE_URL", "POSTGRES_DSN"):
+        # Same key order as adapters.postgres.db.dsn_from_env (PA-1 intent: the
+        # gateway/workflow key leads the canonical chain everywhere, so the
+        # control plane can never resolve a different database than the
+        # worker/adapters when both keys are present).
+        for key in (
+            "RESEARCHOS_POSTGRES_DSN",
+            "RESEARCHOS_DATABASE_URL",
+            "DATABASE_URL",
+            "POSTGRES_DSN",
+        ):
             val = os.environ.get(key)
             if val and val.strip():
                 database_url = val.strip()

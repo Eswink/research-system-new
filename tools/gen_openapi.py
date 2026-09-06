@@ -18,6 +18,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from services.api.app import create_app
+from services.api.composition import assemble
+from services.api.settings import ApiSettings
 
 _TARGET = Path(__file__).resolve().parents[1] / "docs" / "api" / "openapi.m13.json"
 
@@ -50,7 +52,10 @@ def _close_object_schemas(node: object) -> None:
 
 
 def main() -> int:
-    app = create_app()
+    # Schema generation is DB-independent: compose explicitly against an
+    # in-memory SQLite config store so the generator can never touch (or
+    # migrate) whatever database the ambient environment points at.
+    app = create_app(assemble(ApiSettings(db_path=":memory:")))
     schema = _finalize(app.openapi())
     schema["$id"] = "https://research-os.local/schemas/openapi.m13.json"
     _TARGET.write_text(

@@ -41,6 +41,7 @@ def test_otel_settings_from_env_disabled_by_default(monkeypatch: Any) -> None:
 
 
 def test_product_database_url_overrides_ambient_generic_url(monkeypatch: Any) -> None:
+    monkeypatch.delenv("RESEARCHOS_POSTGRES_DSN", raising=False)
     monkeypatch.setenv("DATABASE_URL", "postgresql://ambient.invalid/other")
     monkeypatch.setenv(
         "RESEARCHOS_DATABASE_URL",
@@ -50,6 +51,20 @@ def test_product_database_url_overrides_ambient_generic_url(monkeypatch: Any) ->
     settings = ApiSettings.from_env()
 
     assert settings.database_url == "postgresql://research-os.invalid/canonical"
+
+
+def test_gateway_dsn_key_leads_canonical_chain(monkeypatch: Any) -> None:
+    """PA-1 链统一：RESEARCHOS_POSTGRES_DSN 在控制面与 adapters 链同为首位。"""
+    monkeypatch.setenv(
+        "RESEARCHOS_POSTGRES_DSN",
+        "postgresql://research-os.invalid/gateway-first",
+    )
+    monkeypatch.setenv(
+        "RESEARCHOS_DATABASE_URL",
+        "postgresql://research-os.invalid/second",
+    )
+
+    assert ApiSettings.from_env().database_url == "postgresql://research-os.invalid/gateway-first"
 
 
 def test_apideps_default_telemetry_is_null() -> None:

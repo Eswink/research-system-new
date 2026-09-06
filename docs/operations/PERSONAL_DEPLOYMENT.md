@@ -95,9 +95,10 @@ Get-Content .env | Where-Object { $_ -match '^\s*[^#].*=' } | ForEach-Object {
 }
 ```
 
-`RESEARCHOS_DATABASE_URL` 是 API 的首选 DSN；它优先于宿主机可能存在的通用
-`DATABASE_URL`。`RESEARCHOS_POSTGRES_DSN` 是 Gateway 和生产工作流的 DSN。
-二者必须指向同一 PostgreSQL 实例。
+`RESEARCHOS_POSTGRES_DSN` 是全链首选 DSN（PA-1 链统一：API 控制面、Gateway 与
+生产工作流按同一键序解析），它优先于 `RESEARCHOS_DATABASE_URL`，后者又优先于
+宿主机可能存在的通用 `DATABASE_URL` / `POSTGRES_DSN`。
+四键必须指向同一 PostgreSQL 实例。
 
 API、Gateway 与 Reference Workflow 同时读取 `RESEARCHOS_ARTIFACT_BLOB_DIR`，
 必须指向同一内容寻址 blob root。Gateway 显式 `blob_dir` 优先，其次为该变量；

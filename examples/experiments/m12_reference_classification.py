@@ -22,6 +22,7 @@ import os
 import random
 import time
 from collections import Counter
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # 1. 数据：确定性生成的低资源文本分类语料（20 类子集，每类 25 训练 + 10 测试）
@@ -225,8 +226,12 @@ def main() -> None:
         "results": results,
         "seed": seed,
     }
-    with open("experiment_result.json", "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, sort_keys=True)
+    # Byte-identical to the former json.dump(...) form (compact separators,
+    # ensure_ascii=False, sort_keys=True) — the artifact digest contract of the
+    # M12 reference experiment depends on these exact bytes.
+    Path("experiment_result.json").write_text(
+        json.dumps(payload, ensure_ascii=False, sort_keys=True), encoding="utf-8"
+    )
     print("baseline_accuracy=", results["baseline"]["metrics"]["accuracy"])
     print("candidate_accuracy=", results["candidate"]["metrics"]["accuracy"])
 
