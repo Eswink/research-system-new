@@ -169,6 +169,15 @@ def _pg_truncate(tables: str) -> None:
         )
     elif tables == "budget_reservations, budget_usage_entries":
         conn.execute("TRUNCATE budget_reservations, budget_usage_entries CASCADE")
+    elif tables == (
+        "m12_sources, m12_evidence, m12_claims, m12_relations,"
+        " m12_memory, approvals, budget_reservations, budget_usage_entries"
+    ):
+        conn.execute(
+            "TRUNCATE m12_sources, m12_evidence, m12_claims, m12_relations,"
+            " m12_memory, approvals, budget_reservations, budget_usage_entries"
+            " CASCADE"
+        )
     elif tables == "workers":
         conn.execute("TRUNCATE workers CASCADE")
     elif tables == "tasks, leases, idempotency_records, outbox_events, execution_jobs":
