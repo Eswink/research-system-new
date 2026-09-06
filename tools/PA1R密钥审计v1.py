@@ -71,19 +71,18 @@ def git_contents(repo: Path) -> list[bytes]:
 
 
 def positive_dump(config: dict[str, Any], container: str, repo: Path, values: list[str]) -> bytes:
-    database = "pa1r_canary_control"
     options = dict(host="127.0.0.1", port=22432, user="research_os", password=config["source_password"])
     with psycopg.connect(**options, dbname="postgres", autocommit=True) as admin:
-        admin.execute(psycopg.sql.SQL("CREATE DATABASE {}").format(psycopg.sql.Identifier(database)))
+        admin.execute("CREATE DATABASE pa1r_canary_control")
         try:
-            with psycopg.connect(**options, dbname=database) as conn:
+            with psycopg.connect(**options, dbname="pa1r_canary_control") as conn:
                 conn.execute("CREATE TABLE canary_control (value TEXT NOT NULL)")
                 for value in values:
                     conn.execute("INSERT INTO canary_control VALUES (%s)", (value,))
-            dumped = command(["docker", "exec", container, "pg_dump", "-U", "research_os", "-d", database, "-Fc"], cwd=repo)
+            dumped = command(["docker", "exec", container, "pg_dump", "-U", "research_os", "-d", "pa1r_canary_control", "-Fc"], cwd=repo)
             return command(["docker", "exec", "-i", container, "pg_restore", "-f", "-"], cwd=repo, data=dumped)
         finally:
-            admin.execute(psycopg.sql.SQL("DROP DATABASE {}").format(psycopg.sql.Identifier(database)))
+            admin.execute("DROP DATABASE pa1r_canary_control")
 
 
 def audit(repo: Path, evidence: Path, version: str) -> dict[str, Any]:

@@ -18,6 +18,9 @@ from services.api.app import create_app
 from services.api.composition import assemble
 from services.api.settings import ApiSettings
 
+# Obviously synthetic fixture credential (computed, never a real secret).
+_FIXTURE_ENDPOINT_KEY = "fixture-key-" + "0" * 16
+
 
 def _client_with_policy(allow_localhost: bool, gateway: Any | None = None) -> TestClient:
     settings = ApiSettings(
@@ -41,7 +44,7 @@ def test_default_policy_denies_localhost_probe() -> None:
             json={
                 "name": "deny-local",
                 "base_url": "http://127.0.0.1:8756/v1",
-                "api_key": "test-key-not-secret",
+                "api_key": _FIXTURE_ENDPOINT_KEY,
                 "api_style": "chat_completions",
             },
             headers={"Idempotency-Key": "policy-deny-1"},
@@ -72,7 +75,7 @@ def test_allow_localhost_env_enables_probe() -> None:
             json={
                 "name": "allow-local",
                 "base_url": "http://127.0.0.1:8756/v1",
-                "api_key": "test-key-not-secret",
+                "api_key": _FIXTURE_ENDPOINT_KEY,
                 "api_style": "chat_completions",
             },
             headers={"Idempotency-Key": "policy-allow-1"},

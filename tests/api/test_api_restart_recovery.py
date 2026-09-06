@@ -16,6 +16,9 @@ from fastapi.testclient import TestClient
 
 from services.api.settings import ApiSettings
 
+# Obviously synthetic fixture credential (computed, never a real secret).
+_FIXTURE_ENDPOINT_KEY = "fixture-key-" + "0" * 16
+
 
 def _create_app(settings: ApiSettings) -> tuple[TestClient, Any]:
     from services.api.app import create_app
@@ -72,7 +75,7 @@ def _create_seed_environment(tmp_path: Any) -> tuple[Any, str, Any]:
         json={
             "name": "main",
             "base_url": "http://localtest.me:9999",
-            "api_key": "sk-restart-key-0001",
+            "api_key": _FIXTURE_ENDPOINT_KEY,
             "api_style": "chat_completions",
         },
         headers={"Idempotency-Key": "restart-ep-1"},
@@ -156,7 +159,7 @@ def test_api_restart_replays_idempotency_key(tmp_path: Any) -> None:
         json={
             "name": "main",
             "base_url": "http://localtest.me:9999",
-            "api_key": "sk-restart-key-0001",
+            "api_key": _FIXTURE_ENDPOINT_KEY,
             "api_style": "chat_completions",
         },
         headers={"Idempotency-Key": "restart-ep-1"},
