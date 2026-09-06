@@ -220,6 +220,93 @@ components:
       - execution_network_none
       - actual_digest_recorded_per_run
 
+  - id: research_os_python_service_image
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: BUILD_ARTIFACT
+    role: compose_python_services_and_host_proxy_runtime
+    source:
+      kind: DOCKERFILE
+      path: "infra/docker/research/Dockerfile.python"
+      base: "docker.io/library/python:3.12-slim"
+      builder: "ghcr.io/astral-sh/uv:0.11.18"
+      retrieval: "docker pull + docker image ls --digests, 2026-09-06"
+    resolution:
+      version: "compose-python-runtime"
+      base_index_digest: "sha256:dd29372629eeba2dd003fd9e9d35a5b8236c44727875a0364254b5127af88e65"
+      builder_index_digest: "sha256:78bc42400d77b0678ba95765305c826652ed5431f399257271dda681d0318f03"
+      dependency_lock: uv.lock
+      note: "Python 与 uv stages 均按 OCI index digest pin；uv sync --frozen --no-dev；本地产物 digest 每次构建后核对，不伪造发布身份"
+    license:
+      spdx: "PSF-2.0 AND (Apache-2.0 OR MIT)"
+      evidence: "https://github.com/python/cpython/blob/v3.12.14/LICENSE"
+      additional_evidence:
+        - "https://github.com/astral-sh/uv/blob/0.11.18/LICENSE-APACHE"
+        - "https://github.com/astral-sh/uv/blob/0.11.18/LICENSE-MIT"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [digest_refresh, license_review, frozen_sync, compose_build, compose_smoke, m0_regression]
+    controls:
+      - immutable_builder_and_runtime_stages
+      - frozen_python_dependencies
+      - non_root_runtime
+      - readonly_rootfs_in_compose
+
+  - id: research_os_console_image
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: BUILD_ARTIFACT
+    role: compose_research_console_runtime
+    source:
+      kind: DOCKERFILE
+      path: "infra/docker/research/Dockerfile.console"
+      base: "docker.io/library/node:22.18.0-bookworm-slim"
+      retrieval: "docker pull + docker image ls --digests, 2026-09-06"
+    resolution:
+      version: "node-22.18.0-pnpm-9.15.1"
+      base_index_digest: "sha256:752ea8a2f758c34002a0461bd9f1cee4f9a3c36d48494586f60ffce1fc708e0e"
+      dependency_lock: pnpm-lock.yaml
+      note: "Node base 按 OCI index digest pin；Corepack 激活 packageManager 固定的 pnpm 9.15.1；pnpm frozen install"
+    license:
+      spdx: "MIT"
+      evidence: "https://github.com/nodejs/node/blob/v22.18.0/LICENSE"
+      additional_evidence:
+        - "https://github.com/pnpm/pnpm/blob/v9.15.1/LICENSE"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [digest_refresh, license_review, frozen_install, console_build, compose_smoke, m0_regression]
+    controls:
+      - immutable_runtime_stage
+      - frozen_node_dependencies
+      - non_root_runtime
+      - readonly_rootfs_in_compose
+
+  - id: research_os_postgres_image
+    adoption_status: ADOPTED
+    decision_status: APPROVED
+    integration_mode: BUILD_ARTIFACT
+    role: compose_postgresql_canonical_state
+    source:
+      kind: DOCKERFILE
+      path: "infra/docker/research/Dockerfile.postgres"
+      base: "docker.io/library/postgres:16-alpine"
+      retrieval: "docker pull + docker image ls --digests, 2026-09-06"
+    resolution:
+      version: "16.15-alpine"
+      base_index_digest: "sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685"
+      note: "Compose builds the one-line pinned wrapper; named volume holds Canonical State; major-version restore policy remains PostgreSQL 16"
+    license:
+      spdx: PostgreSQL
+      evidence: "https://www.postgresql.org/about/licence/"
+    upgrade_gate:
+      explicit_approval: true
+      required_checks: [digest_refresh, license_review, migration_regression, postgres_integration, backup_restore_review]
+    controls:
+      - immutable_base_index
+      - loopback_only_host_publish
+      - persistent_named_volume
+      - canonical_state_single_authority
+
   - id: ncbi_eutils
     adoption_status: ADOPTED
     decision_status: APPROVED

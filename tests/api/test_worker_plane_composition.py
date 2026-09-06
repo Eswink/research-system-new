@@ -12,14 +12,12 @@ from typing import Any, cast
 
 import pytest
 
+import services.api.worker_gateway.composition as gateway_composition
 from adapters.fakes.worker_registry import FakeWorkerRegistry
 from packages.application.ports.credential_resolver import CredentialResolver
 from services.api.app import _start_worker_reaper
 from services.api.scheduler import WorkerReaperScheduler
-from services.api.worker_gateway.composition import (
-    build_gateway_from_env,
-    build_worker_gateway_deps,
-)
+from services.api.worker_gateway.composition import build_worker_gateway_deps
 from services.api.worker_gateway.settings import WorkerGatewaySettings
 
 
@@ -46,13 +44,16 @@ def test_reaper_started_when_registry_present() -> None:
 
 
 def test_gateway_from_env_requires_dsn(monkeypatch: pytest.MonkeyPatch) -> None:
-    import adapters.postgres.db as pgdb
-
-    monkeypatch.setattr(pgdb, "dsn_from_env", lambda: None)
-    monkeypatch.delenv("RESEARCHOS_POSTGRES_DSN", raising=False)
-    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setattr(gateway_composition, "dsn_from_env", lambda: None)
+    for key in (
+        "RESEARCHOS_POSTGRES_DSN",
+        "RESEARCHOS_DATABASE_URL",
+        "DATABASE_URL",
+        "POSTGRES_DSN",
+    ):
+        monkeypatch.delenv(key, raising=False)
     with pytest.raises(RuntimeError, match="RESEARCHOS_POSTGRES_DSN"):
-        build_gateway_from_env()
+        gateway_composition.build_gateway_from_env()
 
 
 @pytest.mark.postgres

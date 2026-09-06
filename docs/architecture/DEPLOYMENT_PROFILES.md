@@ -5,13 +5,17 @@
 用途：单机 PoC/开发。
 
 ```text
-Next.js/FastAPI
+React/Vite Console + FastAPI
 PostgreSQL via Docker Compose
-Local S3-compatible store
-LocalWorkflowEngine
-OpenHands DockerWorkspace
-single worker
+Content-addressed local Artifact Store
+PostgreSQL WorkflowEngine
+validation worker（deterministic，非真实 execution plane）
 ```
+
+`docker-compose.research.yml` 实现该本地集成/验证 profile：六个研究服务只连接 internal
+network，由无凭据、固定目标的 host proxy 发布 loopback 端口；边缘 bridge 关闭 IP
+masquerade。默认不挂 Docker Socket、不开放公共网络，也不传入 LLM 凭据。真实 Docker/GPU Worker 仍按个人部署指南在显式授权的 Worker host 上运行；
+不得把 validation worker 的注册成功描述为真实实验执行验证。
 
 不用于不可信多租户。
 

@@ -58,6 +58,7 @@ EXPECTED_RULES = {
     "42-command-encoding.mdc",
     "43-git-commit-policy.mdc",
     "44-code-architecture.mdc",
+    "45-module-file-naming.mdc",
     "50-contract-assets.mdc",
 }
 EXPECTED_RULE_METADATA = {
@@ -69,6 +70,7 @@ EXPECTED_RULE_METADATA = {
     "42-command-encoding.mdc": {"always_apply": True, "has_globs": False},
     "43-git-commit-policy.mdc": {"always_apply": True, "has_globs": False},
     "44-code-architecture.mdc": {"always_apply": False, "has_globs": True},
+    "45-module-file-naming.mdc": {"always_apply": False, "has_globs": True},
     "50-contract-assets.mdc": {"always_apply": False, "has_globs": True},
 }
 EXPECTED_SKILLS = {

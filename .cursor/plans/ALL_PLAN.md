@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260906-032](tasks/PLAN-20260906-032-research-compose-stack.md) | DONE |
 | [x] | [PLAN-20260905-030](tasks/PLAN-20260905-030-pa1r-independent-production-reaudit.md) | DONE |
 | [x] | [PLAN-20260906-031](tasks/PLAN-20260906-031-pa1r-leftover-debt-remediation.md) | DONE |
 | [x] | [PLAN-20260903-029](tasks/PLAN-20260903-029-pa1-debt-remediation.md) | DONE |

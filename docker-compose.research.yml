@@ -1,0 +1,221 @@
+# Research OS local integration and validation stack.
+#
+# This stack is default-safe: internal-only container network, loopback host
+# publishes, no privileged containers, and no Docker socket. The worker uses
+# the deterministic validation backend and capability `compose_validation`;
+# it proves gateway registration but is not a real experiment execution plane.
+# See docs/operations/RESEARCH_COMPOSE.md before use.
+
+name: research-os
+
+x-python-service: &python-service
+  image: research-os/python:${RESEARCHOS_IMAGE_TAG:-local}
+  restart: unless-stopped
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=64m
+
+services:
+  postgres:
+    image: research-os/postgres:16-alpine-pinned
+    build:
+      context: .
+      dockerfile: infra/docker/research/Dockerfile.postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: research_os
+      POSTGRES_USER: research_os
+      POSTGRES_PASSWORD: ${RESEARCHOS_POSTGRES_PASSWORD:?set RESEARCHOS_POSTGRES_PASSWORD in .env}
+    volumes:
+      - research_os_postgres:/var/lib/postgresql/data
+    networks:
+      - research_internal
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U research_os -d research_os]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+
+  otel-collector:
+    image: research-os/otel-collector:0.139.0
+    build:
+      context: ./adapters/otel/collector
+    restart: unless-stopped
+    volumes:
+      - ./data/otel:/var/lib/otelcol
+    networks:
+      - research_internal
+    healthcheck:
+      test: [CMD, /otelcol-contrib, validate, --config, /etc/otelcol-contrib/config.yaml]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: infra/docker/research/Dockerfile.python
+    command:
+      - -m
+      - uvicorn
+      - --factory
+      - services.api.app:create_app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    environment:
+      RESEARCHOS_POSTGRES_DSN: postgresql://research_os:${RESEARCHOS_POSTGRES_PASSWORD}@postgres:5432/research_os
+      RESEARCHOS_DB_PATH: /var/lib/research-os/control/control.db
+      RESEARCHOS_ARTIFACT_BLOB_DIR: /var/lib/research-os/artifacts
+      RESEARCHOS_OTEL_ENABLED: ${RESEARCHOS_OTEL_ENABLED:-false}
+      RESEARCHOS_OTEL_ENDPOINT: http://otel-collector:4318
+      RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS: "0"
+    volumes:
+      - research_os_control_data:/var/lib/research-os/control
+      - research_os_artifacts:/var/lib/research-os/artifacts
+    networks:
+      - research_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -B
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/openapi.json', timeout=2).read()"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  worker-gateway:
+    <<: *python-service
+    command: [-m, services.api.worker_gateway]
+    environment:
+      RESEARCHOS_POSTGRES_DSN: postgresql://research_os:${RESEARCHOS_POSTGRES_PASSWORD}@postgres:5432/research_os
+      RESEARCHOS_ARTIFACT_BLOB_DIR: /var/lib/research-os/artifacts
+      RESEARCHOS_WORKER_GATEWAY_HOST: 127.0.0.1
+      RESEARCHOS_WORKER_GATEWAY_PORT: "8081"
+      RESEARCHOS_WORKER_GATEWAY_REQUIRE_TLS: "0"
+      WORKER_ENROLLMENT_SECRET: ${WORKER_ENROLLMENT_SECRET:?set WORKER_ENROLLMENT_SECRET in .env}
+    volumes:
+      - research_os_artifacts:/var/lib/research-os/artifacts
+    networks:
+      - research_internal
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -B
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8081/worker/v1/health', timeout=2).read()"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  worker:
+    <<: *python-service
+    command: [-m, services.worker, --worker-id, compose-validation-worker]
+    network_mode: service:worker-gateway
+    environment:
+      RESEARCHOS_WORKER_GATEWAY_URL: http://127.0.0.1:8081
+      RESEARCHOS_WORKER_ENROLLMENT_SECRET: ${WORKER_ENROLLMENT_SECRET:?set WORKER_ENROLLMENT_SECRET in .env}
+      RESEARCHOS_WORKER_EXECUTION_BACKEND: deterministic
+      RESEARCHOS_WORKER_BACKEND_KINDS: DOCKER
+      RESEARCHOS_WORKER_CAPABILITIES: compose_validation
+      RESEARCHOS_WORKER_ID: compose-validation-worker
+      RESEARCHOS_OTEL_ENABLED: ${RESEARCHOS_OTEL_ENABLED:-false}
+      RESEARCHOS_OTEL_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      worker-gateway:
+        condition: service_healthy
+
+  console:
+    image: research-os/console:${RESEARCHOS_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/research/Dockerfile.console
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+      - /app/apps/web/node_modules/.vite-temp:rw,noexec,nosuid,size=16m,uid=1000,gid=1000,mode=0700
+    environment:
+      RESEARCHOS_API_PROXY_TARGET: http://api:8000
+    networks:
+      - research_internal
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:5173').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  host-proxy:
+    <<: *python-service
+    command:
+      - /app/infra/docker/research/loopback_proxy.py
+      - --listen
+      - 8000=api:8000
+      - --listen
+      - 5173=console:5173
+      - --listen
+      - 5432=postgres:5432
+      - --listen
+      - 4318=otel-collector:4318
+    ports:
+      - "127.0.0.1:${RESEARCHOS_API_HOST_PORT:-8000}:8000"
+      - "127.0.0.1:${RESEARCHOS_CONSOLE_HOST_PORT:-5173}:5173"
+      - "127.0.0.1:${RESEARCHOS_POSTGRES_HOST_PORT:-15432}:5432"
+      - "127.0.0.1:${RESEARCHOS_OTEL_HOST_PORT:-4318}:4318"
+    networks:
+      - research_internal
+      - research_edge
+    depends_on:
+      api:
+        condition: service_healthy
+      console:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_healthy
+
+networks:
+  research_internal:
+    internal: true
+  research_edge:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+
+volumes:
+  research_os_postgres:
+  research_os_control_data:
+  research_os_artifacts:

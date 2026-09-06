@@ -8,6 +8,10 @@ PA-1R 在 Windows 11 + PowerShell、Docker Desktop 29.2.1、PostgreSQL 16.14、
 单张 NVIDIA GPU 上重放了本指南的关键步骤。物理异地 GPU、多用户、Enterprise、
 multi-GPU/HPC 不在本基线内。
 
+本指南继续以宿主机 API/Gateway/真实 Docker-GPU Worker 为个人生产路径。若只需要默认
+无外网、无 Docker Socket 的六个研究服务加无凭据 loopback 代理集成栈与完整门禁环境，使用
+[RESEARCH_COMPOSE.md](RESEARCH_COMPOSE.md)；其中 deterministic Worker 不是生产执行平面。
+
 ## 1. 前置与冻结安装
 
 必需组件：Git、uv、pnpm、Docker Desktop + Buildx。GPU 部署还需要 NVIDIA

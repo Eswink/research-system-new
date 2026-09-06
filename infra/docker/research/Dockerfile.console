@@ -1,0 +1,20 @@
+# Research Console image for the local Compose validation stack.
+# The exact Node OCI index digest and pnpm version are supply-chain registered.
+FROM node:22.18.0-bookworm-slim@sha256:752ea8a2f758c34002a0461bd9f1cee4f9a3c36d48494586f60ffce1fc708e0e
+
+ENV PNPM_HOME=/pnpm \
+    PATH=/pnpm:${PATH}
+
+RUN corepack enable \
+    && corepack prepare pnpm@9.15.1 --activate
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json ./
+COPY apps/web ./apps/web
+RUN pnpm install --frozen-lockfile --filter @research-os/web...
+RUN pnpm --dir apps/web run build
+
+USER node
+WORKDIR /app/apps/web
+EXPOSE 5173
+CMD ["node", "/app/apps/web/node_modules/vite/bin/vite.js", "preview", "--host", "0.0.0.0", "--port", "5173", "--strictPort"]

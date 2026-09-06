@@ -100,6 +100,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 
 ## Operations
 
+- `operations/RESEARCH_COMPOSE.md` — 默认无外网/无 Docker Socket 的六个研究服务加无凭据 loopback 代理
 - `operations/PERSONAL_DEPLOYMENT.md`
 - `operations/OPERATIONS_RUNBOOK.md`
 - `operations/BACKUP_RECOVERY.md`

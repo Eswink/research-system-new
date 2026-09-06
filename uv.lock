@@ -1902,6 +1902,7 @@ dependencies = [
     { name = "docker" },
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "jsonschema" },
     { name = "mcp" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-exporter-otlp-proto-common" },
@@ -1909,6 +1910,8 @@ dependencies = [
     { name = "opentelemetry-proto" },
     { name = "opentelemetry-sdk" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyyaml" },
     { name = "tenacity" },
     { name = "uvicorn" },
 ]
@@ -1944,6 +1947,7 @@ requires-dist = [
     { name = "docker", specifier = "==7.2.0" },
     { name = "fastapi", specifier = "==0.141.1" },
     { name = "httpx", specifier = "==0.28.1" },
+    { name = "jsonschema", specifier = "==4.26.0" },
     { name = "mcp", specifier = ">=1.28,<2" },
     { name = "opentelemetry-api", specifier = "==1.39.1" },
     { name = "opentelemetry-exporter-otlp-proto-common", specifier = "==1.39.1" },
@@ -1951,6 +1955,8 @@ requires-dist = [
     { name = "opentelemetry-proto", specifier = "==1.39.1" },
     { name = "opentelemetry-sdk", specifier = "==1.39.1" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.2.13" },
+    { name = "pydantic", specifier = "==2.13.4" },
+    { name = "pyyaml", specifier = "==6.0.3" },
     { name = "tenacity", specifier = "==9.1.4" },
     { name = "uvicorn", specifier = "==0.52.4" },
 ]
