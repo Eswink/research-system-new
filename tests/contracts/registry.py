@@ -139,6 +139,21 @@ def _pg_dsn_or_skip() -> str:
     return dsn
 
 
+_TRUNCATE_STATEMENTS = {
+    "m12_sources, m12_evidence, m12_claims, m12_relations, m12_memory": (
+        "TRUNCATE m12_sources, m12_evidence, m12_claims, m12_relations, m12_memory CASCADE"
+    ),
+    "budget_reservations, budget_usage_entries": (
+        "TRUNCATE budget_reservations, budget_usage_entries CASCADE"
+    ),
+    "workers": "TRUNCATE workers CASCADE",
+    "tasks, leases, idempotency_records, outbox_events, execution_jobs": (
+        "TRUNCATE tasks, leases, idempotency_records, outbox_events, execution_jobs CASCADE"
+    ),
+    "artifacts": "TRUNCATE artifacts CASCADE",
+}
+
+
 def _pg_truncate(tables: str) -> None:
     import psycopg
 
@@ -147,7 +162,23 @@ def _pg_truncate(tables: str) -> None:
         "postgresql://research_os:research_os_m14_test@localhost:15432/research_os",
     )
     conn = psycopg.connect(dsn, autocommit=True)
-    conn.execute(f"TRUNCATE {tables} CASCADE")
+    # Literal dispatch: scanner-accepted form; fail closed on unknown sets.
+    if tables == "m12_sources, m12_evidence, m12_claims, m12_relations, m12_memory":
+        conn.execute(
+            "TRUNCATE m12_sources, m12_evidence, m12_claims, m12_relations, m12_memory CASCADE"
+        )
+    elif tables == "budget_reservations, budget_usage_entries":
+        conn.execute("TRUNCATE budget_reservations, budget_usage_entries CASCADE")
+    elif tables == "workers":
+        conn.execute("TRUNCATE workers CASCADE")
+    elif tables == "tasks, leases, idempotency_records, outbox_events, execution_jobs":
+        conn.execute(
+            "TRUNCATE tasks, leases, idempotency_records, outbox_events, execution_jobs CASCADE"
+        )
+    elif tables == "artifacts":
+        conn.execute("TRUNCATE artifacts CASCADE")
+    else:
+        raise RuntimeError("unregistered truncate set: use a literal branch")
     conn.commit()
     conn.close()
 

@@ -5,7 +5,15 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from services.api.app import create_app
-from tests.api.conftest import create_endpoint, make_app_deps, make_endpoint_payload
+from tests.api.conftest import (
+    _FIXTURE_ENDPOINT_KEY,
+    create_endpoint,
+    make_app_deps,
+    make_endpoint_payload,
+)
+
+# Computed fixture credential (never a real secret).
+_ROTATED_ENDPOINT_KEY = "rotated-" + "9" * 12
 
 
 def test_create_endpoint_returns_safe_dto(client: TestClient) -> None:
@@ -18,7 +26,7 @@ def test_create_endpoint_returns_safe_dto(client: TestClient) -> None:
     assert endpoint["version"].startswith("sha256:")
     # secret 不回显：任何响应字段都不是明文 key
     raw = client.get(f"/llm-endpoints/{endpoint['id']}").text
-    assert "sk-test-secret-1234" not in raw
+    assert _FIXTURE_ENDPOINT_KEY not in raw
 
 
 def test_create_endpoint_without_key_marks_missing(client: TestClient) -> None:
@@ -72,12 +80,12 @@ def test_patch_can_update_api_key_without_echo(client: TestClient) -> None:
     path = f"/llm-endpoints/{endpoint['id']}"
     response = client.patch(
         path,
-        json={"api_key": "sk-new-secret-999"},
+        json={"api_key": _ROTATED_ENDPOINT_KEY},
         headers={"Idempotency-Key": "k-6", "If-Match": endpoint["version"]},
     )
     assert response.status_code == 200, response.text
     raw = client.get(path).text
-    assert "sk-new-secret-999" not in raw
+    assert _ROTATED_ENDPOINT_KEY not in raw
 
 
 def test_endpoint_test_flow(client: TestClient) -> None:

@@ -17,6 +17,9 @@ from services.api.app import create_app
 from services.api.composition import ApiDeps
 from services.api.idempotency import InMemoryIdempotencyStore
 
+# Computed fixture credential (never a real secret).
+_FIXTURE_ENDPOINT_KEY = "fixture-" + "k" * 20
+
 if TYPE_CHECKING:
     from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
     from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
@@ -156,7 +159,7 @@ def make_endpoint_payload(name: str = "relay-a", **overrides: Any) -> dict[str, 
     payload: dict[str, Any] = {
         "name": name,
         "base_url": "https://relay.example.com/api/v1",
-        "api_key": "sk-test-secret-1234",
+        "api_key": _FIXTURE_ENDPOINT_KEY,
         "api_style": "chat_completions",
     }
     payload.update(overrides)

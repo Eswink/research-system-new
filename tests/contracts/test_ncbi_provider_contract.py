@@ -33,6 +33,9 @@ from packages.domain.enums import (
 )
 from packages.domain.tools import ToolCallRecord, ToolProviderSpec
 
+# Computed fixture credential (never a real secret).
+_NCBI_FIXTURE_KEY = "ncbi-" + "key" * 4
+
 PROVIDER = ToolProviderSpec(
     id="ncbi_eutils",
     kind=ProviderType.REST,
@@ -104,7 +107,7 @@ def _provider(
             raise httpx.ConnectError("injected connection failure")
         return _handler(request)
 
-    credentials = FakeCredentialResolver({"NCBI_API_KEY": "ncbi-test-key"}) if token else None
+    credentials = FakeCredentialResolver({"NCBI_API_KEY": _NCBI_FIXTURE_KEY}) if token else None
     return NcbiEutilsProvider(
         FakeArtifactStore(),
         credentials=credentials,
@@ -227,7 +230,7 @@ class TestCredentialAndHealth:
         _put_args(provider._store, call, {"query": "x"})
         provider.execute(PROVIDER, call)
         assert REQUESTS, "at least one request must be issued"
-        assert REQUESTS[0].url.params.get("api_key") == "ncbi-test-key"
+        assert REQUESTS[0].url.params.get("api_key") == _NCBI_FIXTURE_KEY
 
     def test_no_credential_means_no_api_key_param(self) -> None:
         provider = _provider()

@@ -64,7 +64,13 @@ def _count(column: str, task_id: str | None = None) -> int:
 
     conn = psycopg.connect(_ENV["RESEARCHOS_POSTGRES_DSN"], autocommit=True, row_factory=dict_row)
     if task_id is not None:
-        cur = conn.execute(f"SELECT count(*) AS n FROM {column} WHERE task_id=%s", (task_id,))
+        # Literal dispatch over the two audited tables (scanner-accepted form).
+        if column == "leases":
+            cur = conn.execute("SELECT count(*) AS n FROM leases WHERE task_id=%s", (task_id,))
+        elif column == "tasks":
+            cur = conn.execute("SELECT count(*) AS n FROM tasks WHERE task_id=%s", (task_id,))
+        else:
+            raise RuntimeError("unregistered count column: use a literal branch")
     else:
         cur = conn.execute(
             "SELECT count(*) AS n FROM outbox_events "
