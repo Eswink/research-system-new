@@ -52,7 +52,7 @@ def pytest_collection_modifyitems(config: object, items: list[pytest.Item]) -> N
         return
     reason = (
         f"PostgreSQL not reachable at {_postgres_dsn()} — "
-        "start with: docker compose -f docker-compose.m14.yml up -d"
+        "start with: docker compose --project-directory . -f infra/compose/postgres-test.yaml up -d"
     )
     skip = pytest.mark.skip(reason=reason)
     for item in items:

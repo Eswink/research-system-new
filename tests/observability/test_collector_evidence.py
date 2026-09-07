@@ -1,6 +1,6 @@
 """Pinned OTel Collector 证据套件(requires_collector)。
 
-前置:`docker compose -f docker-compose.m15.yml up -d --build` 启动
+前置:`docker compose --project-directory . -f infra/compose/otel-evidence.yaml up -d --build` 启动
 `otel/opentelemetry-collector-contrib@sha256:faf125d...`(0.139.0)。
 断言:Research OS sink 导出的 span 经真实 collector file exporter 落盘,
 span 名可在导出文件中检索到。collector 不可达时整组跳过(离线 m0 不受影响)。
@@ -34,7 +34,10 @@ _COLLECTOR_FILE = _REPO_ROOT / "data" / "otel" / "research_os_signals.json"
 def _require_collector() -> None:
     if collector_available():
         return
-    message = "OTel collector not reachable (docker compose -f docker-compose.m15.yml up)"
+    message = (
+        "OTel collector not reachable "
+        "(docker compose --project-directory . -f infra/compose/otel-evidence.yaml up)"
+    )
     if collector_required():
         pytest.fail(message)
     pytest.skip(message)

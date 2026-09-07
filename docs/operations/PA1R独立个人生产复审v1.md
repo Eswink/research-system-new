@@ -327,3 +327,10 @@ Domain/API/schema：本轮没有新增 Domain/API/schema；验证既有 migratio
 兼容性/迁移：runtime/schema identities 一致；唯一阻断为源码尚未形成正式 release revision。
 上游：OpenHands 1.42.0、OTel Collector 0.139.0、PostgreSQL 16.x、GPU OCI identities 已复核。
 下一项任务：仅关闭 Release/version truth blocker 并从正式 revision 重跑 PA-1R；在 PA-1R PASS 前不得进入 M18/M19。
+
+
+## 路径迁移说明（2026-09-07 根目录分类归档）
+
+正文中的 `docker-compose.personal.yml` 为复审当时路径；该文件现已迁至
+`infra/compose/personal-production.yaml`（调用统一为 `docker compose --project-directory . -f infra/compose/personal-production.yaml`）。
+原复审事实不变，完整映射见 `docs/operations/REPOSITORY_HYGIENE.md`。

@@ -161,8 +161,9 @@ jobs:
       - name: Start postgres + pinned OTel collector
         run: >-
           docker compose
-          -f docker-compose.m14.yml
-          -f docker-compose.m15.yml
+          --project-directory .
+          -f infra/compose/postgres-test.yaml
+          -f infra/compose/otel-evidence.yaml
           up -d --build --wait
 
       - name: Run collector + PostgreSQL evidence and restart suites

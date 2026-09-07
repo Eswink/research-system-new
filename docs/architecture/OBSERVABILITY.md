@@ -103,7 +103,7 @@ adapters/otel/collector/              digest-pinned collector(Dockerfile+config)
 adapters/fakes/telemetry_sink.py      FakeTelemetrySink
 tests/observability/                  roundtrip/canary/fault-injection/overhead
 tools/probes/probe_telemetry_soak.py  手工 soak 探针
-docker-compose.m15.yml                collector 证据管线
+infra/compose/otel-evidence.yaml      collector 证据管线
 ```
 
 关键实现事实（均有测试支撑）：

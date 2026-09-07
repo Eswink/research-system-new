@@ -19,7 +19,7 @@ multi-GPU/HPC 不在本基线内。
 
 ```text
 VERSION                 唯一项目版本源
-docker-compose.personal.yml  PostgreSQL + OTel Collector
+infra/compose/personal-production.yaml  PostgreSQL + OTel Collector
 .env                    gitignored 的操作员配置
 ```
 
@@ -80,7 +80,7 @@ digest-qualified 引用。若 inspect 不同，
 
 ## 3. 加载操作员环境
 
-Compose 会自动读取同目录 `.env`。本机 Python 进程不会自动读取它。
+Compose（配合 `--project-directory .`）会自动读取仓库根 `.env`。本机 Python 进程不会自动读取它。
 
 POSIX（仅在 API 或 Gateway 专用 shell 中）：
 
@@ -116,8 +116,8 @@ Gateway 传输 bundle，不需要共享 blob 目录或数据库凭据。
 ## 4. 启动 PostgreSQL 与 Collector
 
 ```text
-docker compose -f docker-compose.personal.yml up -d --build
-docker compose -f docker-compose.personal.yml ps
+docker compose --project-directory . -f infra/compose/personal-production.yaml up -d --build
+docker compose --project-directory . -f infra/compose/personal-production.yaml ps
 ```
 
 两个服务都应为 healthy。PostgreSQL 使用命名卷，普通 `down` 保留数据；
@@ -241,7 +241,7 @@ Reference CLI 写入进程；只保留 PostgreSQL/Collector。完成备份后方
 POSIX：
 
 ```bash
-PG_CONTAINER=$(docker compose -f docker-compose.personal.yml ps -q postgres)
+PG_CONTAINER=$(docker compose --project-directory . -f infra/compose/personal-production.yaml ps -q postgres)
 uv run --frozen --no-sync python -B tools/backup.py \
   --container "$PG_CONTAINER" \
   --blob-root ./data/artifacts-blobs \
@@ -251,7 +251,7 @@ uv run --frozen --no-sync python -B tools/backup.py \
 PowerShell：
 
 ```powershell
-$pgContainer = docker compose -f docker-compose.personal.yml ps -q postgres
+$pgContainer = docker compose --project-directory . -f infra/compose/personal-production.yaml ps -q postgres
 uv run --frozen --no-sync python -B tools/backup.py `
   --container $pgContainer `
   --blob-root ./data/artifacts-blobs `
@@ -367,7 +367,7 @@ Telemetry 与日志也不得写入 endpoint key、enrollment secret 或 DSN。
 主机进程使用 Ctrl-C 优雅停止。基础服务：
 
 ```text
-docker compose -f docker-compose.personal.yml down
+docker compose --project-directory . -f infra/compose/personal-production.yaml down
 ```
 
 该命令保留 PostgreSQL 卷。删除卷、restore 容器或备份必须另行确认。

@@ -377,7 +377,8 @@ def drill() -> None:
     project = config["project"]
     client = docker.from_env()
     try:
-        run(["docker", "compose", "-p", project, "-f", "docker-compose.personal.yml", "up", "-d",
+        run(["docker", "compose", "--project-directory", ".", "-p", project,
+             "-f", "infra/compose/personal-production.yaml", "up", "-d",
              "--build", "--wait", "--wait-timeout", "60"], SOURCE, "正式部署v2", environment(config))
         start_services(config)
         research_run(config, "干净研究运行v2")

@@ -12,7 +12,7 @@ PostgreSQL WorkflowEngine
 validation worker（deterministic，非真实 execution plane）
 ```
 
-`docker-compose.research.yml` 实现该本地集成/验证 profile：六个研究服务只连接 internal
+`infra/compose/research-validation.yaml` 实现该本地集成/验证 profile：六个研究服务只连接 internal
 network，由无凭据、固定目标的 host proxy 发布 loopback 端口；边缘 bridge 关闭 IP
 masquerade。默认不挂 Docker Socket、不开放公共网络，也不传入 LLM 凭据。真实 Docker/GPU Worker 仍按个人部署指南在显式授权的 Worker host 上运行；
 不得把 validation worker 的注册成功描述为真实实验执行验证。
@@ -28,7 +28,7 @@ MinIO/S3
 Redis cache
 OpenHands Agent Server pool
 secret manager
-OTel collector（`docker-compose.m15.yml`：
+OTel collector（`infra/compose/otel-evidence.yaml`：
 `otel/opentelemetry-collector-contrib@sha256:faf125d…`，OTLP/HTTP :4318，
 batch + debug/file exporter，无 vendor 后端；应用侧经
 `RESEARCHOS_OTEL_ENABLED=1` + `RESEARCHOS_OTEL_ENDPOINT` 接入）

@@ -57,6 +57,8 @@ _DEFERRAL_MARKERS = (
     "not verified",
     "不实现",
     "推迟",
+    "延期",
+    "暂停",
     "移出",
     "不做",
     "不建",

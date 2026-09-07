@@ -110,8 +110,8 @@ markers = [
     "requires_docker: tests that need a running Docker daemon and the sandbox image",
     "requires_gpu: tests that need a real NVIDIA GPU + the pinned GPU sandbox image (M17)",
     "requires_live_llm: tests that need a real LLM endpoint (explicit manual runs only)",
-    "postgres: tests that need a running PostgreSQL (docker-compose postgres service)",
-    "requires_collector: tests that need the pinned OTel collector (docker-compose.m15.yml)",
+    "postgres: tests that need a running PostgreSQL (infra/compose/postgres-test.yaml)",
+    "requires_collector: tests that need the pinned OTel collector (infra/compose/otel-evidence.yaml)",
     "distributed: M16 cross-process distributed-execution tests (subprocess workers + loopback gateway + PostgreSQL)",
     "timing_sensitive: wall-clock-sensitive tests; run serially without concurrent heavy load",
 ]

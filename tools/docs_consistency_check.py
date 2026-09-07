@@ -35,6 +35,7 @@ KNOWN_PREFIXES = (
     "schemas/",
     "examples/",
     "tools/",
+    "infra/",
     ".cursor/",
     "docs/",
     ".github/",

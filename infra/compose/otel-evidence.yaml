@@ -1,5 +1,5 @@
-# M15 telemetry 证据管线(与 docker-compose.m14.yml 的 postgres 服务可叠加)。
-# 启动: docker compose -f docker-compose.m14.yml -f docker-compose.m15.yml up -d
+# M15 telemetry 证据管线(与 infra/compose/postgres-test.yaml 的 postgres 服务可叠加)。
+# 启动(仓库根): docker compose --project-directory . -f infra/compose/postgres-test.yaml -f infra/compose/otel-evidence.yaml up -d
 services:
   otel-collector:
     build:

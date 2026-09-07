@@ -1,9 +1,9 @@
 # Research Compose — 本地完整集成与验证栈
 
-`docker-compose.research.yml` 把 Research OS 的本地集成面放入一个默认安全的 Compose
+`infra/compose/research-validation.yaml` 把 Research OS 的本地集成面放入一个默认安全的 Compose
 项目：PostgreSQL、OpenTelemetry Collector、Control Plane API、Worker Gateway、验证
 Worker 与 Research Console 六个研究服务，以及一个无凭据的固定目标 loopback 代理。它用于开发、
-集成测试和完整质量门禁，不替代 `docker-compose.personal.yml` 的已验收个人生产流程。
+集成测试和完整质量门禁，不替代 `infra/compose/personal-production.yaml` 的已验收个人生产流程。
 
 ## 1. 诚实边界
 
@@ -79,7 +79,7 @@ RESEARCHOS_CONSOLE_HOST_PORT=5173
 RESEARCHOS_IMAGE_TAG=local
 ```
 
-同一主机已有 personal/M14/M15 栈时，为 research 项目选择不同端口，并用 `-p` 指定独立项目名。
+同一主机已有 personal-production/postgres-test/otel-evidence 栈时，为 research 项目选择不同端口，并用 `-p` 指定独立项目名。
 
 ## 4. 构建和启动
 
@@ -88,9 +88,9 @@ RESEARCHOS_IMAGE_TAG=local
 ```bash
 export RESEARCHOS_POSTGRES_PASSWORD='replace-with-url-safe-secret'
 export WORKER_ENROLLMENT_SECRET='replace-with-worker-secret'
-docker compose -p research-os-validation -f docker-compose.research.yml config --quiet
-docker compose -p research-os-validation -f docker-compose.research.yml up -d --build --wait
-docker compose -p research-os-validation -f docker-compose.research.yml ps
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml config --quiet
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml up -d --build --wait
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml ps
 ```
 
 ### PowerShell
@@ -98,9 +98,9 @@ docker compose -p research-os-validation -f docker-compose.research.yml ps
 ```powershell
 $env:RESEARCHOS_POSTGRES_PASSWORD = "replace-with-url-safe-secret"
 $env:WORKER_ENROLLMENT_SECRET = "replace-with-worker-secret"
-docker compose -p research-os-validation -f docker-compose.research.yml config --quiet
-docker compose -p research-os-validation -f docker-compose.research.yml up -d --build --wait
-docker compose -p research-os-validation -f docker-compose.research.yml ps
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml config --quiet
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml up -d --build --wait
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml ps
 ```
 
 成功条件：PostgreSQL、Collector、API、Gateway、Console 为 `healthy`，Worker 与
@@ -169,8 +169,8 @@ system specification、Cursor governance、Hook/learning eval 和文档一致性
 Collector 是派生观测面，可单独停止并验证 API 仍可读取 Canonical State：
 
 ```text
-docker compose -p research-os-validation -f docker-compose.research.yml stop otel-collector
-docker compose -p research-os-validation -f docker-compose.research.yml start otel-collector
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml stop otel-collector
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml start otel-collector
 ```
 
 重启 Gateway 后 Worker 会按现有重连策略重新注册。重启 PostgreSQL 后，API/Gateway 的
@@ -179,7 +179,7 @@ docker compose -p research-os-validation -f docker-compose.research.yml start ot
 普通停止和移除容器会保留命名卷：
 
 ```text
-docker compose -p research-os-validation -f docker-compose.research.yml down
+docker compose --project-directory . -p research-os-validation -f infra/compose/research-validation.yaml down
 ```
 
 `down -v` 会删除 PostgreSQL、Artifact 与控制面命名卷，但不会删除 bind-mounted

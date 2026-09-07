@@ -18,7 +18,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT = _ROOT / "tools" / "personal_reference_workflow.py"
 _GPU_DOCKERFILE = _ROOT / "adapters" / "execution" / "sandbox" / "Dockerfile.gpu"
 _ENV_EXAMPLE = _ROOT / ".env.example"
-_PERSONAL_COMPOSE = _ROOT / "docker-compose.personal.yml"
+_PERSONAL_COMPOSE = _ROOT / "infra" / "compose" / "personal-production.yaml"
 _DEPLOYMENT_DOC = _ROOT / "docs" / "operations" / "PERSONAL_DEPLOYMENT.md"
 
 

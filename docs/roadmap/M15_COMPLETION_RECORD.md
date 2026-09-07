@@ -146,3 +146,10 @@ M15 收尾时记录的债务已全部清偿；各证据项如下：
   入口条件满足。
 - **M19（Security/Governance/SLO）**：telemetry 隐私面（无内容通道、
   canary、cardinality 审计）已就绪;SLO 定义可直接消费现有 metric 词汇。
+
+
+## 路径迁移说明（2026-09-07 根目录分类归档）
+
+上表中的 `docker-compose.m15.yml` 为验收当时路径；该文件现已迁至
+`infra/compose/otel-evidence.yaml`（调用统一为 `docker compose --project-directory . -f infra/compose/otel-evidence.yaml`）。
+原验收事实不变，完整映射见 `docs/operations/REPOSITORY_HYGIENE.md`。

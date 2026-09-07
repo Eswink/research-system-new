@@ -66,7 +66,7 @@ isProject: false
 - operation `name` 与 correlation id 加长度上限；`MeterProvider` 增加 `views=` 做 cardinality 兜底（[adapters/otel/provider.py](../../adapters/otel/provider.py)）。
 - 收紧 resource 逃逸：[adapters/otel/resource.py](../../adapters/otel/resource.py) 不用 `Resource.create`（会并入 `OTEL_RESOURCE_ATTRIBUTES`），改显式构造；`_resolve_headers` 在无 credential ref 时显式传空 dict，阻断 `OTEL_EXPORTER_OTLP_HEADERS` 回落。
 - 删除 [.env.example](../../.env.example) 第 16-17 行两个无读取者的死键（`OTEL_CAPTURE_GENAI_CONTENT`、`OTEL_EXPORTER_OTLP_ENDPOINT`），或改为真实 `RESEARCHOS_OTEL_*` 键名。
-- collector 证据管线只绑 loopback：[docker-compose.m15.yml](../../docker-compose.m15.yml) 端口映射加 `127.0.0.1:` 前缀，与 `UPSTREAM_COMPONENTS.yaml` 声明的 `loopback_only_default_endpoint` 对齐。
+- collector 证据管线只绑 loopback：[docker-compose.m15.yml](../../infra/compose/otel-evidence.yaml) 端口映射加 `127.0.0.1:` 前缀，与 `UPSTREAM_COMPONENTS.yaml` 声明的 `loopback_only_default_endpoint` 对齐。
 
 ## WP2 Telemetry 生命周期、fail-open 与资源（BLOCKER-4 + 相关 MAJOR）
 

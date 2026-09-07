@@ -102,6 +102,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 
 ## Operations
 
+- `operations/REPOSITORY_HYGIENE.md` — 根目录分类归档规则：固定根锚点、专责目录、可再生垃圾与受保护本地状态
 - `operations/RESEARCH_COMPOSE.md` — 默认无外网/无 Docker Socket 的六个研究服务加无凭据 loopback 代理
 - `operations/PERSONAL_DEPLOYMENT.md`
 - `operations/OPERATIONS_RUNBOOK.md`

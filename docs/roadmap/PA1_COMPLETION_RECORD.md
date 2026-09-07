@@ -122,3 +122,10 @@ Exit Criteria（发现项作为 WARN 记录，无 BLOCKER）。
 **PA-1 = PASS**
 
 **PA-1R = READY**（下一步：独立对抗复审；见 MILESTONES.md PA-1R 节）。
+
+
+## 路径迁移说明（2026-09-07 根目录分类归档）
+
+上文环境说明中的 `docker-compose.personal.yml` 为验收当时路径；该文件现已迁至
+`infra/compose/personal-production.yaml`（调用统一为 `docker compose --project-directory . -f infra/compose/personal-production.yaml`）。
+原验收事实不变，完整映射见 `docs/operations/REPOSITORY_HYGIENE.md`。

@@ -1,15 +1,15 @@
 # PA-1 personal production profile: self-contained stack for one user.
 #
-# 与 docker-compose.m14.yml 的区别：m14 的 postgres 数据目录是 tmpfs
-# （CI/开发按设计即用完即弃）；个人生产基线必须持久化。本文件单独提供
+# 与 infra/compose/postgres-test.yaml 的区别：postgres-test 的 postgres 数据目录是
+# tmpfs（CI/开发按设计即用完即弃）；个人生产基线必须持久化。本文件单独提供
 # postgres + otel-collector；API / gateway / worker / console 按
 # docs/operations/PERSONAL_DEPLOYMENT.md 用 uv / pnpm 在本机启动。
 #
-# 密码不写在文件里：从同目录 gitignored 的 .env 取
-# RESEARCHOS_POSTGRES_PASSWORD（compose 自动加载 .env）。
-# 启动: docker compose -f docker-compose.personal.yml up -d --build
-# 停止: docker compose -f docker-compose.personal.yml down          (保留卷)
-# 清库: docker compose -f docker-compose.personal.yml down -v       (删除卷)
+# 密码不写在文件里：从仓库根 gitignored 的 .env 取
+# RESEARCHOS_POSTGRES_PASSWORD（--project-directory . 让 compose 以仓库根解析 .env）。
+# 启动(仓库根): docker compose --project-directory . -f infra/compose/personal-production.yaml up -d --build
+# 停止: docker compose --project-directory . -f infra/compose/personal-production.yaml down   (保留卷)
+# 清库: docker compose --project-directory . -f infra/compose/personal-production.yaml down -v (删除卷)
 services:
   postgres:
     image: postgres:16-alpine

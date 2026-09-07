@@ -109,6 +109,24 @@ def test_broken_backtick_ref_reported(tmp_path: Path) -> None:
     assert any("backtick-ref" in finding and "packages/nope.py" in finding for finding in findings)
 
 
+def test_broken_infra_backtick_ref_reported(tmp_path: Path) -> None:
+    build_consistent_fixture(tmp_path)
+    write(tmp_path, "docs/INDEX.md", "M8-M11 完成\n引用 `infra/compose/nope.yaml`\n")
+    findings = load_runner()(tmp_path)
+    assert any(
+        "backtick-ref" in finding and "infra/compose/nope.yaml" in finding for finding in findings
+    )
+
+
+def test_existing_infra_backtick_ref_resolves(tmp_path: Path) -> None:
+    build_consistent_fixture(tmp_path)
+    write(tmp_path, "infra/compose/postgres-test.yaml", "services: {}\n")
+    index = (tmp_path / "docs/INDEX.md").read_text(encoding="utf-8")
+    write(tmp_path, "docs/INDEX.md", index + "引用 `infra/compose/postgres-test.yaml`\n")
+    findings = load_runner()(tmp_path)
+    assert not any("infra/compose/postgres-test.yaml" in finding for finding in findings)
+
+
 def test_duplicate_milestone_reported(tmp_path: Path) -> None:
     build_consistent_fixture(tmp_path)
     milestones = (tmp_path / "docs/roadmap/MILESTONES.md").read_text(encoding="utf-8")

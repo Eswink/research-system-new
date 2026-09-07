@@ -73,3 +73,9 @@ OpenTelemetry SDK/API (OTLP/HTTP) + Collector 定位为 ADAPTER 层依赖。不�
 2. `packages/application/observability/` 内部 vocabulary(闭集 `AttributeKey`/`MetricName`/`MetricLabel`,无内容通道)。
 3. `tests/observability/otlp_receiver.py` + `tests/observability/*`(trace hierarchy, privacy canary, fault injection)。
 4. `docker-compose.m15.yml` + collector config + `UPSTREAM_COMPONENTS.yaml` ADOPTED 更新。
+
+## 路径迁移说明（2026-09-07 根目录分类归档）
+
+上文 Next Steps 中的 `docker-compose.m15.yml` 为资格化当时路径；该文件现已迁至
+`infra/compose/otel-evidence.yaml`。原资格化事实不变，完整映射见
+`docs/operations/REPOSITORY_HYGIENE.md`。

@@ -9,7 +9,7 @@ from typing import Any, cast
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-COMPOSE = ROOT / "docker-compose.research.yml"
+COMPOSE = ROOT / "infra" / "compose" / "research-validation.yaml"
 PYTHON_DOCKERFILE = ROOT / "infra" / "docker" / "research" / "Dockerfile.python"
 CONSOLE_DOCKERFILE = ROOT / "infra" / "docker" / "research" / "Dockerfile.console"
 POSTGRES_DOCKERFILE = ROOT / "infra" / "docker" / "research" / "Dockerfile.postgres"
