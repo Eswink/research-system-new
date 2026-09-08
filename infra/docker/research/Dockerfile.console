@@ -9,7 +9,7 @@ RUN corepack enable \
     && corepack prepare pnpm@9.15.1 --activate
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json VERSION ./
 COPY apps/web ./apps/web
 RUN pnpm install --frozen-lockfile --filter @research-os/web...
 RUN pnpm --dir apps/web run build
