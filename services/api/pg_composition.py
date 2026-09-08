@@ -205,8 +205,20 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         eval_report_store=assembly.eval_report_store,
         pricing_snapshot_store=assembly.pricing_snapshot_store,
         worker_registry=assembly.worker_registry,
+        protocol_draft_service=_build_pg_draft_service(assembly.pg_conn),
         _connection=assembly.connection,
         _pg_connection=assembly.pg_conn,
     )
     deps.outbox_relay_enabled = True
     return deps
+
+
+def _build_pg_draft_service(pg_conn: Any) -> Any:
+    """构建协议草稿服务（PostgreSQL 生产路径；同一 Port/服务契约）。"""
+    from adapters.contracts.protocol_text_loader import load_protocol_from_text
+    from adapters.postgres.protocol_draft_store import PgProtocolDraftStore
+    from packages.application.protocol_authoring.service import DraftService
+    from services.api.routers.protocol_drafts import default_templates
+
+    store = PgProtocolDraftStore(connection=pg_conn)
+    return DraftService(store, default_templates(), text_loader=load_protocol_from_text)

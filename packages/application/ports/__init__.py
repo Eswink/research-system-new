@@ -62,6 +62,20 @@ from packages.application.ports.policy_evaluator import (
 )
 from packages.application.ports.pricing_snapshot_store import PricingSnapshotStore
 from packages.application.ports.project_settings_store import ProjectSettingsStore
+from packages.application.ports.protocol_draft_store import (
+    DraftQuery,
+    DraftRevisionRef,
+    DraftSaveInput,
+    DraftSaveResult,
+    DraftStoreConflictError,
+    DraftStoreNotFoundError,
+    DraftTemplate,
+    DraftValidationIssue,
+    DraftValidationResult,
+    ProtocolDraftRecord,
+    ProtocolDraftRevision,
+    ProtocolDraftStore,
+)
 from packages.application.ports.resource_catalog import (
     CatalogSnapshot,
     PreflightContext,
@@ -117,6 +131,18 @@ __all__ = [
     "PolicyEvaluator",
     "PolicyRequest",
     "ProjectSettingsStore",
+    "ProtocolDraftStore",
+    "ProtocolDraftRecord",
+    "ProtocolDraftRevision",
+    "DraftQuery",
+    "DraftSaveInput",
+    "DraftSaveResult",
+    "DraftRevisionRef",
+    "DraftTemplate",
+    "DraftValidationIssue",
+    "DraftValidationResult",
+    "DraftStoreConflictError",
+    "DraftStoreNotFoundError",
     "PricingSnapshotStore",
     "PortCancelledError",
     "PortError",

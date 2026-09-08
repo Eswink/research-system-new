@@ -18,6 +18,7 @@ from services.api.routers import (
     llm_endpoints,
     models,
     operations,
+    protocol_drafts,
     run_events,
     runs,
     team_protocol,
@@ -164,4 +165,5 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(inspection.router)
     app.include_router(operations.router)
     app.include_router(experiments.router)
+    app.include_router(protocol_drafts.router)
     return app

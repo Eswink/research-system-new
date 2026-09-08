@@ -2079,6 +2079,314 @@
         "title": "ProjectSettingsUpdateDto",
         "type": "object"
       },
+      "ProtocolDraftCreateDto": {
+        "additionalProperties": false,
+        "description": "创建草稿（正文必须通过服务端校验）。",
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "yaml_text": {
+            "maxLength": 131072,
+            "minLength": 1,
+            "title": "Yaml Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "yaml_text"
+        ],
+        "title": "ProtocolDraftCreateDto",
+        "type": "object"
+      },
+      "ProtocolDraftIssueDto": {
+        "additionalProperties": false,
+        "description": "校验问题（可定位路径 + 稳定错误码）。",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "severity": {
+            "default": "error",
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "code",
+          "message"
+        ],
+        "title": "ProtocolDraftIssueDto",
+        "type": "object"
+      },
+      "ProtocolDraftRevisionDto": {
+        "additionalProperties": false,
+        "description": "不可变修订视图。",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "source_digest": {
+            "title": "Source Digest",
+            "type": "string"
+          },
+          "yaml_text": {
+            "title": "Yaml Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id",
+          "revision",
+          "yaml_text",
+          "source_digest",
+          "created_at"
+        ],
+        "title": "ProtocolDraftRevisionDto",
+        "type": "object"
+      },
+      "ProtocolDraftSaveDto": {
+        "additionalProperties": false,
+        "description": "保存新修订（expected_revision 乐观并发；配合 If-Match）。",
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "yaml_text": {
+            "maxLength": 131072,
+            "minLength": 1,
+            "title": "Yaml Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "yaml_text",
+          "expected_revision"
+        ],
+        "title": "ProtocolDraftSaveDto",
+        "type": "object"
+      },
+      "ProtocolDraftSummaryDto": {
+        "additionalProperties": false,
+        "description": "草稿列表项（不含正文）。",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "source_digest": {
+            "title": "Source Digest",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id",
+          "project_id",
+          "name",
+          "revision",
+          "source_digest",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProtocolDraftSummaryDto",
+        "type": "object"
+      },
+      "ProtocolDraftTemplateDto": {
+        "additionalProperties": false,
+        "description": "模板目录条目。",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "yaml_text": {
+            "title": "Yaml Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "display_name",
+          "description",
+          "yaml_text",
+          "source"
+        ],
+        "title": "ProtocolDraftTemplateDto",
+        "type": "object"
+      },
+      "ProtocolDraftValidateDto": {
+        "additionalProperties": false,
+        "description": "未保存 YAML 的服务端校验请求。",
+        "properties": {
+          "yaml_text": {
+            "maxLength": 131072,
+            "minLength": 1,
+            "title": "Yaml Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "yaml_text"
+        ],
+        "title": "ProtocolDraftValidateDto",
+        "type": "object"
+      },
+      "ProtocolDraftValidateResultDto": {
+        "additionalProperties": false,
+        "description": "校验结果（ok=false 时 issues 非空）。",
+        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ProtocolDraftIssueDto"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "phase_count": {
+            "default": 0,
+            "title": "Phase Count",
+            "type": "integer"
+          },
+          "protocol_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Digest"
+          },
+          "protocol_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Id"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "title": "ProtocolDraftValidateResultDto",
+        "type": "object"
+      },
+      "ProtocolDraftViewDto": {
+        "additionalProperties": false,
+        "description": "草稿当前状态视图。",
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "source_digest": {
+            "title": "Source Digest",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "yaml_text": {
+            "title": "Yaml Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id",
+          "project_id",
+          "name",
+          "revision",
+          "yaml_text",
+          "source_digest",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProtocolDraftViewDto",
+        "type": "object"
+      },
       "ProtocolSourceDto": {
         "additionalProperties": false,
         "description": "协议文件路径（examples/protocols/ 内，wizard 选择）。",
@@ -2320,12 +2628,45 @@
       },
       "RunStartDto": {
         "additionalProperties": false,
+        "description": "启动运行：旧 `protocol_path` 与新草稿修订引用二选一。\n\n草稿修订引用（PLAN-20260908-033）：服务端加载不可变修订正文后走\n与 path 完全相同的 Compile → Preflight → Freeze 链；草稿后续变化\n不改写已冻结运行。",
         "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "draft_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Revision"
+          },
           "protocol_path": {
-            "maxLength": 500,
-            "minLength": 1,
-            "title": "Protocol Path",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Path"
           },
           "trace_id": {
             "anyOf": [
@@ -2340,9 +2681,6 @@
             "title": "Trace Id"
           }
         },
-        "required": [
-          "protocol_path"
-        ],
         "title": "RunStartDto",
         "type": "object"
       },
@@ -4118,6 +4456,103 @@
         ]
       }
     },
+    "/projects/{project_id}/protocol-drafts": {
+      "get": {
+        "operationId": "list_drafts_projects__project_id__protocol_drafts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProtocolDraftSummaryDto"
+                  },
+                  "title": "Response List Drafts Projects  Project Id  Protocol Drafts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Drafts",
+        "tags": [
+          "protocol-drafts"
+        ]
+      },
+      "post": {
+        "description": "创建草稿（正文必须通过校验；幂等键重放返回原记录）。",
+        "operationId": "create_draft_projects__project_id__protocol_drafts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolDraftCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolDraftViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Draft",
+        "tags": [
+          "protocol-drafts"
+        ]
+      }
+    },
     "/projects/{project_id}/runs": {
       "get": {
         "description": "Run 列表（created_at 倒序；M13-R1 WP-M2：刷新恢复入口）。",
@@ -4165,7 +4600,7 @@
         ]
       },
       "post": {
-        "description": "启动一次 Research Run（StartRunCommand → 正式编排链）。",
+        "description": "启动一次 Research Run（StartRunCommand → 正式编排链；path 或草稿修订引用）。",
         "operationId": "start_run_projects__project_id__runs_post",
         "parameters": [
           {
@@ -4307,6 +4742,306 @@
         "summary": "Put Project Settings",
         "tags": [
           "team-protocol"
+        ]
+      }
+    },
+    "/protocol-drafts/validate": {
+      "post": {
+        "description": "未保存 YAML 的服务端校验（零副作用；分析类 POST，无业务写入）。",
+        "operationId": "validate_draft_protocol_drafts_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolDraftValidateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolDraftValidateResultDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Draft",
+        "tags": [
+          "protocol-drafts"
+        ]
+      }
+    },
+    "/protocol-drafts/{draft_id}": {
+      "get": {
+        "operationId": "get_draft_protocol_drafts__draft_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolDraftViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Draft",
+        "tags": [
+          "protocol-drafts"
+        ]
+      },
+      "put": {
+        "description": "保存新修订（expected_revision 乐观并发；冲突 → 412，附当前修订号）。",
+        "operationId": "save_draft_protocol_drafts__draft_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolDraftSaveDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolDraftViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Draft",
+        "tags": [
+          "protocol-drafts"
+        ]
+      }
+    },
+    "/protocol-drafts/{draft_id}/revisions": {
+      "get": {
+        "operationId": "list_draft_revisions_protocol_drafts__draft_id__revisions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProtocolDraftRevisionDto"
+                  },
+                  "title": "Response List Draft Revisions Protocol Drafts  Draft Id  Revisions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Draft Revisions",
+        "tags": [
+          "protocol-drafts"
+        ]
+      }
+    },
+    "/protocol-drafts/{draft_id}/revisions/{revision}": {
+      "get": {
+        "operationId": "get_draft_revision_protocol_drafts__draft_id__revisions__revision__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revision",
+            "required": true,
+            "schema": {
+              "title": "Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolDraftRevisionDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Draft Revision",
+        "tags": [
+          "protocol-drafts"
+        ]
+      }
+    },
+    "/protocol-templates": {
+      "get": {
+        "description": "受控模板目录（只读；正文来自 examples/protocols 注册源）。",
+        "operationId": "list_templates_protocol_templates_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProtocolDraftTemplateDto"
+                  },
+                  "title": "Response List Templates Protocol Templates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Templates",
+        "tags": [
+          "protocol-drafts"
+        ]
+      }
+    },
+    "/protocol-templates/{template_id}": {
+      "get": {
+        "operationId": "get_template_protocol_templates__template_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "title": "Template Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolDraftTemplateDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Template",
+        "tags": [
+          "protocol-drafts"
         ]
       }
     },

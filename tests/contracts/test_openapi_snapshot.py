@@ -59,3 +59,9 @@ def test_openapi_contains_control_plane_paths() -> None:
     assert "/runs/{run_id}/telemetry" in paths
     assert "/runs/{run_id}/cost" in paths
     assert "/evaluations/trend" in paths
+    # Protocol drafts（PLAN-20260908-033）
+    assert "/protocol-templates" in paths
+    assert "/protocol-drafts/validate" in paths
+    assert "/projects/{project_id}/protocol-drafts" in paths
+    assert "/protocol-drafts/{draft_id}" in paths
+    assert "/protocol-drafts/{draft_id}/revisions/{revision}" in paths

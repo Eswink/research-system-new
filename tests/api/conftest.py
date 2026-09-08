@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from adapters.fakes.budget_ledger import FakeBudgetLedger
 from adapters.fakes.credential_resolver import FakeCredentialResolver
 from adapters.fakes.model_gateway import FakeModelGateway
+from packages.application.protocol_authoring.service import DraftService
 from services.api.app import create_app
 from services.api.composition import ApiDeps
 from services.api.idempotency import InMemoryIdempotencyStore
@@ -110,8 +111,20 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         budget=budget,
         agent_store=SqliteAgentStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
+        protocol_draft_service=_make_draft_service(connection),
         _connection=connection,
     )
+
+
+def _make_draft_service(
+    connection: sqlite3.Connection,
+) -> "DraftService":
+    """测试装配的草稿服务（与生产 SQLite 路径同构造）。"""
+    from adapters.sqlite.protocol_draft_store import SqliteProtocolDraftStore
+    from packages.application.protocol_authoring.service import DraftService
+    from services.api.routers.protocol_drafts import default_templates
+
+    return DraftService(SqliteProtocolDraftStore(connection=connection), default_templates())
 
 
 @pytest.fixture

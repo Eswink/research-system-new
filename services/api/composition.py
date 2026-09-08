@@ -99,6 +99,7 @@ class ApiDeps:
     pricing_snapshot_store: Any | None = field(default=None, repr=False)
     pricing: Any | None = field(default=None, repr=False)
     worker_registry: WorkerRegistry | None = field(default=None, repr=False)
+    protocol_draft_service: Any | None = field(default=None, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)
@@ -236,10 +237,23 @@ def _assemble_sqlite(
         budget=budget_sqlite,
         agent_store=SqliteAgentStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
+        protocol_draft_service=_build_draft_service(connection),
         endpoint_url_policy=_endpoint_url_policy(effective),
         telemetry=telemetry,
         _connection=connection,
     )
+
+
+def _build_draft_service(connection: sqlite3.Connection) -> Any:
+    """构建协议草稿服务（SQLite 开发路径；PG 路径见 pg_composition）。"""
+    from adapters.contracts.protocol_text_loader import load_protocol_from_text
+    from adapters.sqlite.protocol_draft_store import SqliteProtocolDraftStore
+    from packages.application.protocol_authoring.service import DraftService, DraftTemplates
+    from services.api.routers.protocol_drafts import default_templates
+
+    store = SqliteProtocolDraftStore(connection=connection)
+    templates: DraftTemplates = default_templates()
+    return DraftService(store, templates, text_loader=load_protocol_from_text)
 
 
 def assemble(settings: ApiSettings | None = None) -> ApiDeps:

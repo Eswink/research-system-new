@@ -45,6 +45,26 @@ GET    /compiled-plans/{id}
 POST   /compiled-plans/{id}/preflight
 ```
 
+## Protocol Drafts（PLAN-20260908-033）
+
+```text
+GET    /protocol-templates
+GET    /protocol-templates/{template_id}
+POST   /protocol-drafts/validate          （零副作用；分析类 POST）
+POST   /projects/{id}/protocol-drafts     （创建草稿；Idempotency-Key）
+GET    /projects/{id}/protocol-drafts
+GET    /protocol-drafts/{draft_id}
+PUT    /protocol-drafts/{draft_id}        （保存新修订；If-Match + expected_revision；冲突 412）
+GET    /protocol-drafts/{draft_id}/revisions
+GET    /protocol-drafts/{draft_id}/revisions/{revision}
+POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision} 引用，与 path 二选一）
+```
+
+- 修订 append-only、不可变；修订号是草稿内部版本（非工程版本、非 RunManifest Revision）。
+- 启动使用已保存修订时，服务端加载该不可变修订并重新 Compile → Preflight → Freeze；
+  草稿后续变化不改写已冻结运行。
+- 旧 `protocol_path` 请求保持兼容。
+
 ## Runs
 
 ```text

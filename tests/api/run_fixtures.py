@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Iterator
 from dataclasses import replace
 
@@ -23,6 +24,7 @@ from adapters.sqlite.run_projection import SqliteRunProjection
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from packages.application.cost.pricing import unpriced_table
 from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
+from packages.application.protocol_authoring.service import DraftService
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
     RunOrchestrationService,
@@ -110,7 +112,23 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         workflow=runs._deps.workflow,
         pricing_snapshot_store=pricing_store,
         preflight_override=preflight,
+        protocol_draft_service=_make_draft_service(connection),
         _connection=connection,
+    )
+
+
+def _make_draft_service(
+    connection: sqlite3.Connection,
+) -> DraftService:
+    """run 装配的草稿服务（与 base deps 同构造）。"""
+    from adapters.contracts.protocol_text_loader import load_protocol_from_text
+    from adapters.sqlite.protocol_draft_store import SqliteProtocolDraftStore
+    from services.api.routers.protocol_drafts import default_templates
+
+    return DraftService(
+        SqliteProtocolDraftStore(connection=connection),
+        default_templates(),
+        text_loader=load_protocol_from_text,
     )
 
 
