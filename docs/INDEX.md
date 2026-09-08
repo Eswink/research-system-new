@@ -55,6 +55,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `product/END_TO_END_USER_JOURNEY.md`
 - `product/CONSOLE_INFORMATION_ARCHITECTURE.md`
 - `frontend/UI_DESIGN_PROMPTS.md` — Console 页面/组件设计约束（M13；含 UI 验收条件）
+- `frontend/CONSOLE_REBUILD.md` — Console 全站重建设计说明（PLAN-20260908-033；页面清单、设计控件→真实契约映射、主题/布局/状态/验收基准）
 
 ## Architecture
 
@@ -158,6 +159,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `references/upstream/M9_DOCKER_QUALIFICATION.md` — Docker 执行沙盒 qualification（M9；docker-py 7.2.0 + sandbox Dockerfile ADOPTED，OpenHands DockerWorkspace mapping-only 裁决）
 - `references/upstream/M11_EVAL_HARNESS_QUALIFICATION.md` — Evaluation harness 选型 qualification（M11；native 自建，不引入外部 eval framework）
 - `references/upstream/M14_TEMPORAL_QUALIFICATION.md` — Temporal qualification 16Q matrix（M14；DEFERRED）
+- `references/design/protocol-visual-editor/ARCHIVE_NOTE.md` — 协议可视化编辑器设计参考归档（PLAN-20260908-033；设计参考非产品契约）
 - `references/upstream/M15_OTEL_QUALIFICATION.md` — OpenTelemetry qualification（M15；ADOPT：OTLP/HTTP，无内容通道）
 - `references/upstream/CURSOR_SDK_QUALIFICATION.md` — Cursor SDK qualification（并行编排工具；ADOPT：BUILD_TOOLING，read-only 编排器）
 - `adr/ADR-0026-otel-adapter-boundary.md` — OTel adapter 边界 + 无内容 Debug Mode 决策（M15）
