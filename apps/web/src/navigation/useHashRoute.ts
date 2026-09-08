@@ -1,14 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { hashToRoute, routeToHash, type Route } from "./routes";
+import { DEFAULT_ROUTE, hashToRoute, routeToHash, type Route } from "./registry";
+import {
+  EMPTY_CONTEXT,
+  parseContext,
+  stripContext,
+  withContext,
+  type UrlContext,
+} from "./urlContext";
 
-/** hash 路由状态钩子：hashchange 驱动，导航写回 location.hash */
-export function useHashRoute(): [Route, (route: Route) => void] {
-  const [route, setRoute] = useState<Route>(() => hashToRoute(window.location.hash));
+export interface ResolvedRoute {
+  route: Route;
+  found: boolean;
+  context: UrlContext;
+}
+
+/** hash 路由状态钩子：hashchange 驱动；未知地址进入 not-found（found=false）。 */
+export function useHashRoute(): [ResolvedRoute, (route: Route, ctx?: UrlContext) => void] {
+  const [resolved, setResolved] = useState<ResolvedRoute>(() => resolve(window.location.hash));
 
   useEffect(() => {
-    const onHashChange = () => {
-      setRoute(hashToRoute(window.location.hash));
+    const onHashChange = (): void => {
+      setResolved(resolve(window.location.hash));
     };
     window.addEventListener("hashchange", onHashChange);
     return () => {
@@ -16,14 +29,26 @@ export function useHashRoute(): [Route, (route: Route) => void] {
     };
   }, []);
 
-  const navigate = useCallback((next: Route) => {
-    const hash = routeToHash(next);
+  const navigate = useCallback((next: Route, ctx: UrlContext = EMPTY_CONTEXT) => {
+    const hash = withContext(routeToHash(next), ctx);
     if (window.location.hash === hash) {
-      setRoute(next);
+      setResolved({ route: next, found: true, context: ctx });
       return;
     }
     window.location.hash = hash;
   }, []);
 
-  return [route, navigate];
+  return [resolved, navigate];
+}
+
+function resolve(hash: string): ResolvedRoute {
+  const context = parseContext(hash);
+  const bare = stripContext(hash);
+  if (bare === "" || bare === "#" || bare === "#/") {
+    return { route: DEFAULT_ROUTE, found: true, context };
+  }
+  const route = hashToRoute(bare);
+  return route === null
+    ? { route: DEFAULT_ROUTE, found: false, context }
+    : { route, found: true, context };
 }

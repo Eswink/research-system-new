@@ -20,6 +20,8 @@ export default defineConfig([
       "apps/web/dist/**",
       "apps/web/node_modules/**",
       "tests/architecture/typescript/fixtures/invalid/**",
+      // 冻结设计交付包与参考预览工具：视觉依据/独立预览，不进入产品构建与门禁。
+      "docs/references/**",
     ],
   },
   {

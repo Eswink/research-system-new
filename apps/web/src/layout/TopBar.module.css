@@ -3,55 +3,98 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 0 16px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
 }
 
-.runContext {
+.crumb {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 12px;
   min-width: 0;
 }
 
-.runLabel {
-  font-size: 11px;
+.crumbFaint {
   color: var(--fg-faint);
-  white-space: nowrap;
 }
 
-.controls {
+.crumbCurrent {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.right {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.control {
+.searchBtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  padding: 0 10px;
+  height: 26px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctrl);
+  font-size: 11px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.controlLabel {
+.searchBtn:hover {
+  border-color: var(--border-strong);
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctrl);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  background: var(--bg-hover);
+  color: var(--fg);
+}
+
+.langBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 0 6px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctrl);
+  font-family: var(--font-mono);
   font-size: 10px;
   color: var(--fg-faint);
-  white-space: nowrap;
+  cursor: pointer;
 }
 
-.control select {
-  height: 22px;
-  font-size: 11px;
-  background: var(--bg-sunken);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: var(--r-chip);
+.langActive {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
-  .runLabel {
+  .searchBtn span {
     display: none;
   }
 }

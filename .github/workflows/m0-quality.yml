@@ -140,7 +140,6 @@ jobs:
     name: collector-quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -181,3 +180,57 @@ jobs:
           RESEARCHOS_OTEL_COLLECTOR_ENDPOINT: http://localhost:4318
           RESEARCHOS_REQUIRE_COLLECTOR: "1"
           RESEARCHOS_REQUIRE_POSTGRES: "1"
+
+  console-frontend:
+    name: console-frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: "0.11.18"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 9.15.1
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Sync frozen environments
+        run: |
+          uv sync --frozen --dev
+          pnpm install --frozen-lockfile
+
+      - name: Web lint / typecheck / unit / build
+        run: |
+          pnpm --dir apps/web lint
+          pnpm --dir apps/web typecheck
+          pnpm --dir apps/web test
+          pnpm --dir apps/web build
+
+      - name: Install Playwright browsers (pinned)
+        run: pnpm --dir apps/web exec playwright install --with-deps chromium
+
+      - name: Console e2e (deterministic stubs)
+        run: pnpm --dir apps/web test:e2e
+
+      - name: Console live API e2e (Fake Ports)
+        run: pnpm --dir apps/web test:e2e:live
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: utf-8
+          RESEARCHOS_POSTGRES_DSN: ""

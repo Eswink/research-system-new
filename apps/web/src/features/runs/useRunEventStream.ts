@@ -8,10 +8,22 @@ export interface EventStreamState {
   reconnecting: boolean;
 }
 
-export function mergeEvents(
-  replay: RunEventDto[],
-  live: RunEventDto[],
-): RunEventDto[] {
+/** 服务端 run_events.py 实际发出的具名 event: 帧（带 run_id 且有发布点）。 */
+export const NAMED_SSE_EVENTS = [
+  "manifest.frozen",
+  "task.created",
+  "task.leased",
+  "task.completed",
+  "task.retry_scheduled",
+  "task.cancelled",
+  "run.completed",
+  "run.failed",
+  "claim.verified",
+  "claim.disputed",
+  "approval.decided",
+] as const;
+
+export function mergeEvents(replay: RunEventDto[], live: RunEventDto[]): RunEventDto[] {
   /** replay + SSE 增量合并：按 event_id 去重；live 中 ≤ 最后 replay
    * event_id 的迟到事件丢弃（cursor 语义，与服务端 Last-Event-ID 一致）。 */
   const lastReplayId = replay.length > 0 ? replay[replay.length - 1]?.event_id ?? "" : "";
@@ -31,13 +43,13 @@ export function mergeEvents(
 }
 
 /**
- * Run 事件流（M13-R1 WP-M4）：浏览器 EventSource 消费后端 SSE。
+ * Run 事件流（T18）：浏览器 EventSource 消费后端具名 SSE 帧。
  *
- * - 后端契约：`GET /runs/{id}/events`（Accept: text/event-stream），
- *   帧带 `id:`（event_id）；浏览器原生重连自动发送 Last-Event-ID，
- *   后端按 cursor 续传（重复事件由服务端按 event_id 去重过滤）。
+ * - 后端契约：`GET /runs/{id}/events`（Accept: text/event-stream），帧带
+ *   `id:`（event_id）与具名 `event:`；onmessage 只收默认 message，因此必须
+ *   按事件名 addEventListener（原生 EventSource 行为）。
+ * - 浏览器原生重连自动发送 Last-Event-ID，后端按 cursor 续传。
  * - 客户端去重：按 event_id 维护已见集合，迟到/越界事件丢弃。
- * - 首屏由 JSON replay 提供（useRunPanel）；本 hook 接管增量。
  */
 export function useRunEventStream(runId: string | null): EventStreamState {
   const [events, setEvents] = useState<RunEventDto[]>([]);
@@ -54,7 +66,7 @@ export function useRunEventStream(runId: string | null): EventStreamState {
     source.onopen = () => {
       setConnected(true);
     };
-    source.onmessage = (message) => {
+    const handle = (message: MessageEvent<string>): void => {
       const event = parseEventFrame(message);
       if (event === null || seen.has(event.event_id)) {
         return;
@@ -62,6 +74,9 @@ export function useRunEventStream(runId: string | null): EventStreamState {
       seen.add(event.event_id);
       setEvents((current) => [...current, event]);
     };
+    for (const name of NAMED_SSE_EVENTS) {
+      source.addEventListener(name, handle as EventListener);
+    }
     source.onerror = () => {
       setConnected(false);
     };
@@ -73,9 +88,9 @@ export function useRunEventStream(runId: string | null): EventStreamState {
   return { events, connected, reconnecting: !connected };
 }
 
-function parseEventFrame(message: MessageEvent<unknown>): RunEventDto | null {
+function parseEventFrame(message: MessageEvent<string>): RunEventDto | null {
   try {
-    const parsed = JSON.parse(String(message.data)) as Partial<RunEventDto> | null;
+    const parsed = JSON.parse(message.data) as Partial<RunEventDto> | null;
     if (parsed === null || typeof parsed.event_id !== "string" || typeof parsed.type !== "string") {
       return null;
     }

@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-density="compact">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Research OS · Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"/>
+<link rel="stylesheet" href="styles/tokens.css"/>
+<style>
+  html, body { height: 100%; background: #05070A; overflow: hidden; }
+  .stage-wrapper {
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, #0B0F16 0%, #05070A 90%);
+  }
+  .stage {
+    width: 2560px; height: 1440px;
+    transform-origin: center center;
+    position: relative;
+    background: var(--bg-app);
+    box-shadow: 0 0 80px rgba(76, 141, 255, 0.08);
+  }
+  .grid-bg::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(76, 141, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(76, 141, 255, 0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+  .cc-panel {
+    background: linear-gradient(180deg, #0F131A 0%, #0B0F16 100%);
+    border: 1px solid #1E252F;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cc-panel::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(76, 141, 255, 0.4) 20%, rgba(76, 141, 255, 0.4) 80%, transparent 100%);
+  }
+  .cc-panel-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid #1A2028;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .cc-panel-header .kicker {
+    color: var(--accent);
+  }
+  .cc-panel-body { padding: 16px 18px; }
+
+  @keyframes cc-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  .pulse-dot { animation: cc-pulse 2s ease-in-out infinite; }
+
+  @keyframes cc-scan {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .scan-line::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(180deg, transparent, var(--accent), transparent);
+    animation: cc-scan 4s linear infinite;
+  }
+
+  @keyframes ticker-slide {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+  }
+</style>
+</head>
+<body>
+<div class="stage-wrapper" id="stage-wrapper">
+  <div class="stage grid-bg" id="stage">
+    <div id="root"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="data/fixtures.js"></script>
+<script src="data/fixtures_ext.js"></script>
+
+<script type="text/babel" src="components/atoms.jsx"></script>
+<script type="text/babel" src="components/charts.jsx"></script>
+
+<script type="text/babel">
+  const { useState, useEffect, useMemo } = React;
+
+  // Auto-scale 2560×1440 to viewport
+  const applyScale = () => {
+    const w = window.innerWidth, h = window.innerHeight;
+    const s = Math.min(w / 2560, h / 1440);
+    const stage = document.getElementById("stage");
+    if (stage) stage.style.transform = `scale(${s})`;
+  };
+  window.addEventListener("resize", applyScale);
+  setTimeout(applyScale, 0);
+
+  const Panel = ({ kicker, title, right, children, style }) => (
+    <div className="cc-panel" style={style}>
+      <div className="cc-panel-header">
+        <span className="kicker">■</span>
+        <span style={{ color: "var(--fg-faint)" }}>{kicker}</span>
+        <span style={{ color: "var(--fg)", letterSpacing: "0.06em" }}>· {title}</span>
+        {right && <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>{right}</div>}
+      </div>
+      <div className="cc-panel-body">{children}</div>
+    </div>
+  );
+
+  const CommandCenter = () => {
+    const [clock, setClock] = useState(new Date());
+    useEffect(() => {
+      const t = setInterval(() => setClock(new Date()), 1000);
+      return () => clearInterval(t);
+    }, []);
+
+    // ─── Header data ───
+    const runningProjects = FIX_PROJECTS.filter(p => p.status === "RUNNING").length;
+    const totalSpent = FIX_PROJECTS.reduce((a, p) => a + p.spent_minor, 0);
+    const totalBudget = FIX_PROJECTS.reduce((a, p) => a + p.budget_minor, 0);
+    const firingAlerts = FIX_ALERT_INBOX.filter(a => a.state === "firing").length;
+
+    return (
+      <div style={{ padding: 32, height: "100%", display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* ── TOP MASTHEAD ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 24, paddingBottom: 20, borderBottom: "1px solid #1E252F" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 8,
+              background: "linear-gradient(135deg, var(--accent), #6BA1FF)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, color: "#fff",
+              boxShadow: "0 0 24px rgba(76, 141, 255, 0.4)",
+            }}>◇</div>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: "-0.01em" }}>Research OS</div>
+              <div style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--fg-faint)", letterSpacing: "0.16em" }}>COMMAND CENTER · MISSION CONTROL</div>
+            </div>
+          </div>
+
+          <div style={{ width: 1, height: 32, background: "#1E252F" }}/>
+
+          <div style={{ display: "flex", gap: 40 }}>
+            <StatBlock label="ACTIVE PROJECTS" value={runningProjects} sub={`of ${FIX_PROJECTS.length}`}/>
+            <StatBlock label="RUNNING AGENTS" value={FIX_AGENTS.length} sub="across all runs"/>
+            <StatBlock label="SPEND · 30D" value={`$${(totalSpent/100000).toFixed(0)}`} sub={`of $${(totalBudget/100000).toFixed(0)} cap`} color="var(--warn)"/>
+            <StatBlock label="FIRING" value={firingAlerts} sub="alerts unacked" color={firingAlerts > 0 ? "var(--danger)" : "var(--success)"}/>
+          </div>
+
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 24 }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 34, fontFamily: "var(--font-mono)", fontWeight: 500, letterSpacing: "0.02em", color: "var(--fg)" }}>
+                {clock.toISOString().slice(11, 19)}
+              </div>
+              <div style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--fg-faint)", letterSpacing: "0.16em" }}>
+                UTC · {clock.toISOString().slice(0, 10)}
+              </div>
+            </div>
+            <div style={{
+              padding: "6px 14px", background: "var(--success-dim)", border: "1px solid var(--success-line)",
+              borderRadius: 6, display: "flex", alignItems: "center", gap: 8,
+              fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--success)", letterSpacing: "0.1em",
+            }}>
+              <div className="pulse-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--success)" }}/>
+              ALL SYSTEMS · NOMINAL
+            </div>
+          </div>
+        </div>
+
+        {/* ── MAIN GRID: 12 columns × 3 rows ── */}
+        <div style={{
+          flex: 1,
+          display: "grid",
+          gridTemplateColumns: "repeat(12, 1fr)",
+          gridTemplateRows: "1fr 1fr 1fr",
+          gap: 16,
+        }}>
+          {/* ROW 1 */}
+          <PanelActiveRuns/>
+          <PanelWorldMap/>
+          <PanelHealth/>
+
+          {/* ROW 2 */}
+          <PanelClaimsFlow/>
+          <PanelCostBurn/>
+          <PanelAlertsFeed/>
+
+          {/* ROW 3 */}
+          <PanelExperimentPipeline/>
+          <PanelModelActivity/>
+          <PanelEventTicker/>
+        </div>
+
+        {/* ── FOOTER TICKER ── */}
+        <FooterBar/>
+      </div>
+    );
+  };
+
+  // ─── Header stat block ───
+  const StatBlock = ({ label, value, sub, color = "var(--fg)" }) => (
+    <div>
+      <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--fg-faint)", letterSpacing: "0.16em", marginBottom: 4 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontSize: 28, fontFamily: "var(--font-mono)", fontWeight: 500, color, letterSpacing: "-0.01em" }}>{value}</span>
+        <span style={{ fontSize: 11, color: "var(--fg-faint)" }}>{sub}</span>
+      </div>
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════
+  // PANELS
+  // ═══════════════════════════════════════════════════════════
+
+  const PanelActiveRuns = () => (
+    <Panel kicker="OPERATIONS" title="Active Runs"
+      right={<><span className="chip" style={{ background: "var(--accent-dim)", color: "var(--accent)", borderColor: "var(--accent-line)" }}>{FIX_RUNS_HISTORY.filter(r => r.live).length} LIVE</span></>}
+      style={{ gridColumn: "span 5", gridRow: "span 1" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {FIX_RUNS_HISTORY.filter(r => r.live || r.state === "RUNNING").slice(0, 3).map(r => (
+          <div key={r.id} style={{
+            padding: 12, background: "#0B0F16", border: "1px solid #1E252F",
+            borderRadius: 6, display: "flex", flexDirection: "column", gap: 8,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div className="pulse-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }}/>
+              <span style={{ fontSize: 13, fontFamily: "var(--font-mono)", fontWeight: 500 }}>{r.label}</span>
+              <DigestText value={r.id} length={12} prefix={false}/>
+              <span style={{ marginLeft: "auto", fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--fg-faint)" }}>
+                elapsed {Math.round(r.duration_s / 60)}m
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ flex: 1, height: 4, background: "#1A2028", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ width: `${r.tasks_done/r.tasks_total*100}%`, height: "100%", background: "linear-gradient(90deg, var(--accent), #6BA1FF)" }}/>
+              </div>
+              <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--fg-muted)", minWidth: 60 }}>
+                {r.tasks_done}/{r.tasks_total}
+              </span>
+              <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: r.tasks_failed > 0 ? "var(--danger)" : "var(--fg-faint)" }}>
+                {r.tasks_failed > 0 ? `${r.tasks_failed} fail` : "ok"}
+              </span>
+              <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--fg-muted)" }}>
+                ${(r.spent_minor/100000).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+
+  const PanelWorldMap = () => {
+    // Fake datacenter positions
+    const dcs = [
+      { name: "Tokyo · relay.lab", x: 82, y: 40, health: "ok", latency: 89 },
+      { name: "us-east · OpenAI", x: 22, y: 45, health: "ok", latency: 214 },
+      { name: "us-central · Vertex", x: 20, y: 52, health: "warn", latency: null },
+      { name: "eu-west · Anthropic", x: 48, y: 40, health: "ok", latency: 302 },
+      { name: "ap-northeast · S3", x: 84, y: 44, health: "ok", latency: 12 },
+    ];
+    return (
+      <Panel kicker="INFRASTRUCTURE" title="Endpoint Health · Global"
+        right={<span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--fg-faint)" }}>{dcs.filter(d => d.health === "ok").length}/{dcs.length} nominal</span>}
+        style={{ gridColumn: "span 4", gridRow: "span 1" }}>
+        <div style={{ position: "relative", height: 220, borderRadius: 6, background: "#0B0F16", border: "1px solid #1E252F", overflow: "hidden" }}>
+          {/* Simplified world silhouette */}
+          <svg width="100%" height="100%" viewBox="0 0 400 220" style={{ position: "absolute", inset: 0 }}>
+            {/* Dot-based world map (very abstract) */}
+            {Array.from({length: 32}).map((_, i) =>
+              Array.from({length: 18}).map((_, j) => {
+                const x = i * 12 + 8, y = j * 12 + 8;
+                // land probability (crude)
+                const land = (Math.sin(x * 0.03) + Math.cos(y * 0.05 + x * 0.02)) > 0.1 && y > 30 && y < 200;
+                return land ? <circle key={`${i}-${j}`} cx={x} cy={y} r="0.9" fill="rgba(76, 141, 255, 0.28)"/> : null;
+              })
+            )}
+            {/* connections between DCs */}
+            {dcs.slice(0, dcs.length - 1).map((d, i) => (
+              <line key={i}
+                x1={d.x/100 * 400} y1={d.y/100 * 220}
+                x2={dcs[i+1].x/100 * 400} y2={dcs[i+1].y/100 * 220}
+                stroke="rgba(76, 141, 255, 0.2)" strokeWidth="1" strokeDasharray="2 3"/>
+            ))}
+            {/* DC markers */}
+            {dcs.map((d, i) => {
+              const cx = d.x/100 * 400, cy = d.y/100 * 220;
+              const color = d.health === "ok" ? "#35A56F" : d.health === "warn" ? "#D9962A" : "#E0524C";
+              return (
+                <g key={i}>
+                  <circle cx={cx} cy={cy} r="8" fill={color} fillOpacity="0.2"/>
+                  <circle cx={cx} cy={cy} r="3" fill={color}>
+                    <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite"/>
+                  </circle>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 10, fontSize: 10, fontFamily: "var(--font-mono)" }}>
+          {dcs.map(d => (
+            <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--fg-muted)" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: d.health === "ok" ? "var(--success)" : d.health === "warn" ? "var(--warn)" : "var(--danger)" }}/>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
+              <span style={{ color: "var(--fg-faint)" }}>{d.latency != null ? `${d.latency}ms` : "—"}</span>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    );
+  };
+
+  const PanelHealth = () => (
+    <Panel kicker="MISSION" title="Overall Health"
+      style={{ gridColumn: "span 3", gridRow: "span 1" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+        <HealthGauge value={82} size={140} label="MISSION SCORE"/>
+        <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {[
+            ["INFRASTRUCTURE", 94, "var(--success)"],
+            ["MODELS", 88, "var(--success)"],
+            ["BUDGET", 62, "var(--warn)"],
+            ["EVIDENCE", 78, "var(--warn)"],
+          ].map(([k, v, c]) => (
+            <div key={k} style={{ padding: "6px 10px", background: "#0B0F16", border: "1px solid #1E252F", borderRadius: 4 }}>
+              <div style={{ fontSize: 8, fontFamily: "var(--font-mono)", color: "var(--fg-faint)", letterSpacing: "0.1em", marginBottom: 3 }}>{k}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ flex: 1, height: 3, background: "#1A2028", borderRadius: 2 }}>
+                  <div style={{ width: `${v}%`, height: "100%", background: c, borderRadius: 2 }}/>
+                </div>
+                <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: c }}>{v}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Panel>
+  );
+
+  const PanelClaimsFlow = () => {
+    const counts = { PROPOSED: 0, VERIFIED: 0, DISPUTED: 0, REFUTED: 0 };
+    FIX_CLAIMS.forEach(c => counts[c.status]++);
+    return (
+      <Panel kicker="EVIDENCE" title="Claims Pipeline · Real-time"
+        right={<span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--fg-faint)" }}>{FIX_CLAIMS.length} tracked</span>}
+        style={{ gridColumn: "span 4", gridRow: "span 1" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+          {[
+            ["PROPOSED", counts.PROPOSED, "var(--fg-muted)"],
+            ["VERIFIED", counts.VERIFIED, "var(--success)"],
+            ["DISPUTED", counts.DISPUTED, "var(--warn)"],
+            ["REFUTED", counts.REFUTED, "var(--danger)"],
+          ].map(([k, v, c]) => (
+            <div key={k} style={{ padding: 10, background: "#0B0F16", border: `1px solid ${c}22`, borderRadius: 6, textAlign: "center" }}>
+              <div style={{ fontSize: 24, fontFamily: "var(--font-mono)", fontWeight: 500, color: c }}>{v}</div>
+              <div style={{ fontSize: 8, fontFamily: "var(--font-mono)", color: "var(--fg-faint)", letterSpacing: "0.12em", marginTop: 2 }}>{k}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ background: "#0B0F16", border: "1px solid #1E252F", borderRadius: 6, padding: 10 }}>
+          <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--fg-faint)", letterSpacing: "0.1em", marginBottom: 6 }}>PIPELINE FLOW · LAST 24H</div>
+          <BarSeries
+            data={Array.from({length: 12}, (_, i) => ({
+              label: `${(i * 2).toString().padStart(2, "0")}h`,
+              values: [Math.round(Math.sin(i * 0.5) * 3 + 4), Math.round(Math.cos(i * 0.4) * 2 + 3), Math.abs(Math.sin(i)) * 2 | 0],
+            }))}
+            series={[
+              { key: "proposed", color: "var(--fg-muted)" },
+              { key: "verified", color: "var(--success)" },
+              { key: "disputed", color: "var(--warn)" },
+            ]}
+            width={480} height={110}
+          />
+        </div>
+      </Panel>
+    );
+  };
+
+  const PanelCostBurn = () => (
+    <Panel kicker="BUDGET" title="Burn Rate · 30d"
+      right={<span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--warn)" }}>62% USED</span>}
+      style={{ gridColumn: "span 4", gridRow: "span 1" }}>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <span style={{ fontSize: 32, fontFamily: "var(--font-mono)", fontWeight: 500 }}>$3,120</span>
+          <span style={{ fontSize: 12, color: "var(--fg-muted)" }}>/ $5,000 cap</span>
+          <span style={{ marginLeft: "auto", fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--warn)" }}>
+            ▲ +$492/hr · breach in ~29m
+          </span>
+        </div>
+      </div>
+      <LineSeries
+        data={["gpt-4o", "opus-4.1", "gemini-2.5"].map(m => ({
+          label: m, values: FIX_COST_DAILY.slice(-14).map(d => Math.round(d[m] / 100)),
+        }))}
+        colors={["var(--accent)", "var(--warn)", "var(--unknown)"]}
+        xLabels={FIX_COST_DAILY.slice(-14).map((d, i) => i % 3 === 0 ? d.date.slice(5) : "")}
+        width={480} height={140}
+      />
+    </Panel>
+  );
+
+  const PanelAlertsFeed = () => (
+    <Panel kicker="ALERTS" title="Active · Firing"
+      right={<span className="chip" style={{ background: "var(--danger-dim)", color: "var(--danger)", borderColor: "var(--danger-line)" }}>{FIX_ALERT_INBOX.filter(a => a.state === "firing").length} FIRING</span>}
+      style={{ gridColumn: "span 4", gridRow: "span 1" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {FIX_ALERT_INBOX.slice(0, 5).map(a => (
+          <div key={a.id} style={{
+            padding: 10, background: "#0B0F16",
+            border: `1px solid ${a.state === "firing" ? "#5A2A2A" : "#1E252F"}`,
+            borderLeft: `3px solid ${a.severity === "high" ? "var(--danger)" : a.severity === "medium" ? "var(--warn)" : "var(--fg-faint)"}`,
+            borderRadius: 4,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+              <StatusBadge tone={a.state === "firing" ? "danger" : a.state === "acknowledged" ? "warn" : "success"} label={a.state.toUpperCase()} size="sm" filled/>
+              <span style={{ marginLeft: "auto", fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--fg-faint)" }}>
+                {new Date(a.fired_at).toISOString().slice(11, 16)} UTC
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--fg)", lineHeight: 1.45 }}>{a.subject}</div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+
+  const PanelExperimentPipeline = () => (
+    <Panel kicker="EXPERIMENTS" title="Queue Pipeline"
+      right={<><span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--fg-faint)" }}>{FIX_EXPERIMENT_QUEUE.filter(e => e.status === "RUNNING").length} running · {FIX_EXPERIMENT_QUEUE.filter(e => e.status === "QUEUED").length} queued</span></>}
+      style={{ gridColumn: "span 5", gridRow: "span 1" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {FIX_EXPERIMENT_QUEUE.slice(0, 5).map(e => (
+          <div key={e.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr 100px 120px", alignItems: "center", gap: 12, padding: "8px 12px", background: "#0B0F16", border: "1px solid #1E252F", borderRadius: 4 }}>
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: e.status === "RUNNING" ? "var(--accent)" : e.status === "FAILED" ? "var(--danger)" : e.status === "SUCCEEDED" ? "var(--success)" : "var(--fg-faint)" }}>
+              {e.status}
+            </span>
+            <span style={{ fontSize: 11, fontFamily: "var(--font-mono)" }}>{e.label}</span>
+            <div style={{ height: 4, background: "#1A2028", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ width: `${e.progress * 100}%`, height: "100%", background: e.status === "FAILED" ? "var(--danger)" : "var(--accent)" }}/>
+            </div>
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--fg-muted)", textAlign: "right" }}>
+              {e.status === "SUCCEEDED" ? `${Math.round(e.duration_s/60)}m done` : e.eta_min ? `~${e.eta_min}m ETA` : "queued"}
+            </span>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+
+  const PanelModelActivity = () => {
+    // Deterministic hourly heatmap 24h × 6 hours grouping
+    const grid = Array.from({length: 5}, (_, y) => Array.from({length: 24}, (_, x) =>
+      Math.max(0, Math.min(1, (Math.sin(x * 0.4 + y) + Math.cos(x * 0.2 + y * 1.4)) * 0.4 + 0.5))
+    ));
+    const labels = ["gpt-4o", "sonnet-4", "opus-4.1", "gemini-2.5", "qwen3-235b"];
+    return (
+      <Panel kicker="MODELS" title="Activity Heatmap · 24h × Model"
+        style={{ gridColumn: "span 4", gridRow: "span 1" }}>
+        <Heatmap
+          data={grid}
+          yLabels={labels}
+          xLabels={Array.from({length: 24}, (_, i) => i % 4 === 0 ? String(i).padStart(2, "0") : "")}
+          cell={14} gap={2}
+        />
+        <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--fg-faint)" }}>
+          <span>less</span>
+          {[0.1, 0.3, 0.5, 0.7, 0.9].map(v => (
+            <div key={v} style={{ width: 14, height: 8, background: "var(--accent)", opacity: v, borderRadius: 2 }}/>
+          ))}
+          <span>more</span>
+          <span style={{ marginLeft: "auto" }}>peak: 09:00-11:00 JST</span>
+        </div>
+      </Panel>
+    );
+  };
+
+  const PanelEventTicker = () => (
+    <Panel kicker="STREAM" title="Live SSE · Events"
+      right={<><div className="pulse-dot" style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--success)" }}/><span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--success)", letterSpacing: "0.1em" }}>LIVE</span></>}
+      style={{ gridColumn: "span 3", gridRow: "span 1" }}>
+      <div style={{ height: 220, overflow: "hidden", position: "relative" }}>
+        <div style={{ animation: "ticker-slide 40s linear infinite" }}>
+          {[...FIX_EVENTS, ...FIX_EVENTS].map((ev, i) => (
+            <div key={i} style={{
+              padding: "6px 10px", marginBottom: 4,
+              background: "#0B0F16", border: "1px solid #1E252F",
+              borderLeft: `2px solid ${ev.type.includes("failed") ? "var(--danger)" : ev.type.includes("gate") ? "var(--warn)" : "var(--accent)"}`,
+              borderRadius: 3,
+              fontSize: 10, fontFamily: "var(--font-mono)",
+              color: "var(--fg-muted)", lineHeight: 1.5,
+            }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                <span style={{ color: "var(--fg-faint)" }}>{new Date(ev.occurred_at).toISOString().slice(11, 19)}</span>
+                <span style={{ color: "var(--accent)" }}>{ev.type}</span>
+              </div>
+              <div style={{ fontSize: 9, color: "var(--fg-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {ev.task_id || ev.scope}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Panel>
+  );
+
+  const FooterBar = () => (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 16,
+      padding: "10px 20px",
+      background: "#0B0F16", border: "1px solid #1E252F",
+      borderRadius: 6,
+      fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--fg-faint)", letterSpacing: "0.08em",
+    }}>
+      <span style={{ color: "var(--accent)" }}>■</span>
+      <span>SESSION</span> <span style={{ color: "var(--fg)" }}>l.tanaka@research.io</span>
+      <span style={{ color: "#1E252F" }}>│</span>
+      <span>WORKSPACE</span> <span style={{ color: "var(--fg)" }}>Research.io Lab</span>
+      <span style={{ color: "#1E252F" }}>│</span>
+      <span>REGION</span> <span style={{ color: "var(--fg)" }}>ap-northeast-1</span>
+      <span style={{ color: "#1E252F" }}>│</span>
+      <span>MANIFEST</span> <span style={{ color: "var(--fg)" }}>sha256:a9c4e21f</span>
+      <span style={{ marginLeft: "auto", color: "var(--fg-muted)" }}>
+        v3.14.2 · build 2026.08.27-a9c4e21f · uptime 42d 07:12
+      </span>
+    </div>
+  );
+
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(<><GlobalKeyframes/><CommandCenter/></>);
+</script>
+
+</body>
+</html>

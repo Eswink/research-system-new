@@ -9,6 +9,13 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
   switch (action.type) {
     case "edit":
       return applyEdit(state, action.text);
+    case "loadTemplate":
+      return {
+        ...initialEditorState(action.text),
+        sourcePath: action.sourcePath,
+        sourceText: action.text,
+        mode: state.mode,
+      };
     case "mode":
       return { ...state, mode: action.mode };
     case "saved":
@@ -46,6 +53,9 @@ function applyEdit(state: EditorState, text: string): EditorState {
   const next: EditorState = {
     ...state,
     working: text,
+    // 编辑即脱离受控模板来源（自定义草稿：预检/启动禁用）
+    sourcePath: text === state.working ? state.sourcePath : null,
+    sourceText: text === state.working ? state.sourceText : null,
     saveStatus: state.saveStatus === "saving" ? state.saveStatus : "dirty",
     error: null,
   };

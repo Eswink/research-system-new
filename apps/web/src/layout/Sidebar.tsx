@@ -1,28 +1,49 @@
 import { cx } from "../components/cx";
+import { Icon } from "../components/Icon";
 import { useI18n } from "../i18n/useI18n";
-import { DOMAIN_PAGES, routeToHash } from "../navigation/routes";
+import { DOMAINS, routeToHash, type DomainId, type PageId } from "../navigation/registry";
 import styles from "./Sidebar.module.css";
 
-const DOMAINS = ["plan", "run", "evidence", "assets", "govern"] as const;
+/** 域标签 i18n key。 */
+function domainLabelKey(id: DomainId): string {
+  return `dom.${id}`;
+}
 
-type Domain = (typeof DOMAINS)[number];
-
-const DOMAIN_KEY: Record<
-  Domain,
-  "domain.plan" | "domain.run" | "domain.evidence" | "domain.assets" | "domain.govern"
-> = {
-  plan: "domain.plan",
-  run: "domain.run",
-  evidence: "domain.evidence",
-  assets: "domain.assets",
-  govern: "domain.govern",
-};
-
-function pageKey(domain: Domain, page: string): `page.${Domain}.${string}` {
+function pageLabelKey(domain: DomainId, page: PageId): string {
   return `page.${domain}.${page}`;
 }
 
-function NavItem({
+function DomainButton({
+  id,
+  icon,
+  label,
+  active,
+  collapsed,
+  onClick,
+}: {
+  id: DomainId;
+  icon: Parameters<typeof Icon>[0]["name"];
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={cx(styles.domainBtn, active && styles.domainActive)}
+      aria-current={active ? "page" : undefined}
+      data-testid={`nav-domain-${id}`}
+      onClick={onClick}
+      style={collapsed ? { justifyContent: "center", padding: 10 } : undefined}
+    >
+      <Icon name={icon} size={13} />
+      {!collapsed && <span>{label}</span>}
+    </button>
+  );
+}
+
+function PageButton({
   hash,
   label,
   active,
@@ -38,62 +59,111 @@ function NavItem({
   return (
     <button
       type="button"
-      className={cx(styles.item, active ? styles.active : null)}
+      className={cx(styles.pageBtn, active && styles.pageActive)}
       aria-current={active ? "page" : undefined}
       data-testid={testId}
-      onClick={() => {
-        onNavigate(hash);
-      }}
+      onClick={() => { onNavigate(hash); }}
     >
       {label}
     </button>
   );
 }
 
-/** 左侧信息域导航：只渲染真实可用页面（不为规划中功能造空页） */
-export function Sidebar({
-  route,
-  onNavigate,
-  onOpenSetup,
-}: {
+/** 左侧八域导航：域展开子页；折叠态只显图标。 */
+export interface SidebarProps {
   route: string;
   onNavigate: (hash: string) => void;
-  onOpenSetup: () => void;
-}) {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  onOpenSettings: () => void;
+}
+
+export function Sidebar(props: SidebarProps) {
+  const { route, onNavigate, collapsed, onToggleCollapse, onOpenSettings } = props;
   const { t } = useI18n();
   const active = route.replace(/^#\//, "");
+  const activeDomain = active.split("/")[0];
   return (
     <nav className={styles.sidebar} aria-label="console navigation">
+      <button
+        type="button"
+        className={styles.logo}
+        onClick={onToggleCollapse}
+        aria-label="toggle sidebar"
+      >
+        <span className={styles.logoMark}>◇</span>
+        {!collapsed && (
+          <span className={styles.logoText}>
+            <span className={styles.logoName}>{t("app.name")}</span>
+            <span className={styles.logoPlane}>{t("app.plane")}</span>
+          </span>
+        )}
+      </button>
+      <DomainList
+        active={active}
+        activeDomain={activeDomain}
+        collapsed={collapsed}
+        onNavigate={onNavigate}
+      />
+      <button
+        type="button"
+        className={styles.user}
+        data-testid="nav-open-settings"
+        onClick={onOpenSettings}
+        title={t("settings.title")}
+      >
+        <span className={styles.avatar}>LT</span>
+        {!collapsed && <span className={styles.userName}>{t("app.user")}</span>}
+      </button>
+    </nav>
+  );
+}
+
+function DomainList({
+  active,
+  activeDomain,
+  collapsed,
+  onNavigate,
+}: {
+  active: string;
+  activeDomain: string | undefined;
+  collapsed: boolean;
+  onNavigate: (hash: string) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className={styles.domains}>
       {DOMAINS.map((domain) => (
-        <div key={domain} className={styles.domain}>
-          <div className={styles.domainLabel}>{t(DOMAIN_KEY[domain])}</div>
-          {DOMAIN_PAGES[domain].map((page) => {
-            const hash = routeToHash({ domain, page });
-            const target = hash.slice(2);
-            const label = t(pageKey(domain, page) as Parameters<typeof t>[0]);
-            return (
-              <NavItem
-                key={page}
-                hash={hash}
-                label={label}
-                active={active === target}
-                testId={`nav-${domain}-${page}`}
-                onNavigate={onNavigate}
-              />
-            );
-          })}
+        <div key={domain.id}>
+          <DomainButton
+            id={domain.id}
+            icon={domain.icon}
+            label={t(domainLabelKey(domain.id) as Parameters<typeof t>[0])}
+            active={activeDomain === domain.id}
+            collapsed={collapsed}
+            onClick={() => {
+              const first = domain.pages[0];
+              if (first !== undefined) {
+                onNavigate(routeToHash({ domain: domain.id, page: first }));
+              }
+            }}
+          />
+          {activeDomain === domain.id && !collapsed && (
+            <div className={styles.pages}>
+              {domain.pages.map((page) => (
+                <PageButton
+                  key={page}
+                  hash={routeToHash({ domain: domain.id, page })}
+                  label={t(pageLabelKey(domain.id, page) as Parameters<typeof t>[0])}
+                  active={active === `${domain.id}/${page}`}
+                  testId={`nav-${domain.id}-${page}`}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ))}
-      <div className={styles.footer}>
-        <button
-          type="button"
-          className={styles.item}
-          data-testid="nav-open-setup"
-          onClick={onOpenSetup}
-        >
-          {t("app.openSetup")}
-        </button>
-      </div>
-    </nav>
+    </div>
   );
 }

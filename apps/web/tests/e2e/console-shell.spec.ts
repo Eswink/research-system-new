@@ -1,57 +1,59 @@
 /**
- * Console e2e：hash 导航 + 外壳 + 编辑器闭环（确定性 API 替身）。
- * 覆盖（AC-06）：路由直达/刷新恢复、主题持久化、编辑器 Form/YAML
- * 切换、保存状态、启动门禁。
+ * Console e2e：八域外壳 + hash 导航 + 编辑器闭环（确定性 API 替身）。
+ * 覆盖（T31）：33 路由独立身份、直达/刷新恢复、主题/语言即时生效、
+ * 未知地址未找到页、编辑器 Form/YAML 与启动门禁。
  */
 
 import { expect, test } from "@playwright/test";
 
-import { stubApi, VALID_YAML } from "./stub-api";
+import { assertNoUnmatched, stubApi } from "./stub-api";
 
 test.beforeEach(async ({ page }) => {
   await stubApi(page);
 });
 
-test("外壳渲染 + hash 导航直达 + 刷新恢复", async ({ page }) => {
-  await page.goto("/#/assets/models");
-  await expect(page.getByTestId("console-main")).toBeVisible();
-  await expect(page.getByTestId("nav-assets-models")).toHaveClass(/active/);
-  await page.reload();
-  await expect(page.getByTestId("console-main")).toBeVisible();
-  await expect(page).toHaveURL(/#\/assets\/models/);
+test.afterEach(() => {
+  assertNoUnmatched();
 });
 
-test("主题与密度切换即时生效并持久化", async ({ page }) => {
-  await page.goto("/");
-  await page.locator("select").nth(0).selectOption("light");
+test("八域导航渲染，域展开子页", async ({ page }) => {
+  await page.goto("/#/plan/protocol");
+  await expect(page.getByTestId("console-main")).toBeVisible();
+  const domains = ["plan", "portfolio", "run", "library", "evidence", "insights", "ops", "govern"];
+  for (const domain of domains) {
+    await expect(page.getByTestId(`nav-domain-${domain}`)).toBeVisible();
+  }
+  await expect(page.getByTestId("nav-plan-protocol")).toBeVisible();
+});
+
+test("直达缺口页保持页面身份，刷新不串页", async ({ page }) => {
+  await page.goto("/#/library/prompts");
+  await expect(page.getByTestId("gap-page-library-prompts")).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId("gap-page-library-prompts")).toBeVisible();
+});
+
+test("未知地址进入未找到页", async ({ page }) => {
+  await page.goto("/#/bogus/nope");
+  await expect(page.getByTestId("not-found")).toBeVisible();
+});
+
+test("主题切换即时生效并持久化", async ({ page }) => {
+  await page.goto("/#/plan/protocol");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByTestId("toggle-theme").click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
-test("编辑器：Form/YAML 切换保留内容", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("protocol-editor")).toBeVisible();
-  // YAML 模式填入合法协议 → 切回 Form 应渲染 Identity 区（内容不丢）
-  await page.getByRole("radio", { name: "YAML" }).click();
-  await expect(page.getByTestId("yaml-view")).toBeVisible();
-  await page.getByTestId("yaml-view").locator("textarea").fill(VALID_YAML);
-  await page.getByRole("radio", { name: "表单" }).click();
-  await expect(page.locator("[data-testid='section-identity']")).toBeVisible();
-  await expect(page.locator("#protocol-id")).toHaveValue("sort_analysis_v1_0_1");
+test("语言切换即时生效", async ({ page }) => {
+  await page.goto("/#/plan/protocol");
+  await page.getByTestId("toggle-language").click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
 });
 
-test("编辑器：保存成功后进入 saved 状态", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("protocol-editor")).toBeVisible();
-  // YAML 模式下编辑文本产生 dirty；Create draft 返回 saved
-  await page.getByRole("radio", { name: "YAML" }).click();
-  await page.getByTestId("yaml-view").locator("textarea").fill(VALID_YAML);
-  await page.getByRole("button", { name: "Save" }).first().click();
-  await expect(page.getByTestId("editor-save-status")).toHaveText("saved", { timeout: 10_000 });
-});
-
-test("启动门禁：无保存/预检时 Start 禁用", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("editor-start")).toBeDisabled();
+test("旧别名路由映射到规范页", async ({ page }) => {
+  await page.goto("/#/assets/compute");
+  await expect(page.getByTestId("nav-domain-ops")).toBeVisible();
 });

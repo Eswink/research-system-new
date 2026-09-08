@@ -9,3 +9,41 @@
 .error {
   color: var(--danger);
 }
+
+.forbidden {
+  color: var(--warn);
+  border-color: var(--warn-line);
+  background: var(--warn-dim);
+}
+
+.unavailable {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-card);
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+}
+
+.unavailableHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-meta);
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.unavailableReason {
+  margin: 0;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-body);
+  color: var(--fg-muted);
+}
+
+.stale {
+  color: var(--warn);
+  border-color: var(--warn-line);
+}

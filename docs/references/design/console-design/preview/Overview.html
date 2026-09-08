@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Research OS · Overview Canvas</title>
+
+
+<link rel="stylesheet" href="fonts/fonts.css"/>
+<link rel="stylesheet" href="styles/tokens.css"/>
+<style>
+  /* Vanilla-JS language toggle in the canvas header */
+  .lang-toggle {
+    display: inline-flex; height: 22px; padding: 2px;
+    background: var(--bg-raised); border: 1px solid var(--border);
+    border-radius: 5px; gap: 2px; margin-left: 8px;
+  }
+  .lang-toggle button {
+    min-width: 24px; height: 16px; padding: 0 8px;
+    border: none; background: transparent;
+    color: var(--fg-muted); font-family: var(--font-mono);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    border-radius: 3px; cursor: pointer; transition: all 140ms;
+  }
+  .lang-toggle button.on { background: var(--accent-dim); color: var(--accent); }
+
+  /* Boot overlay */
+  #ros-boot {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(11,13,16,0.86) 0%, rgba(11,13,16,0.98) 60%);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    transition: opacity 260ms cubic-bezier(0.2,0,0,1);
+  }
+  #ros-boot::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(76,141,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(76,141,255,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.9), transparent 70%);
+            mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.9), transparent 70%);
+  }
+  #ros-boot::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 140px;
+    transform: translateY(-50%);
+    background: linear-gradient(180deg, transparent, rgba(76,141,255,0.10) 45%, rgba(76,141,255,0.22) 50%, rgba(76,141,255,0.10) 55%, transparent);
+    animation: ros-scan 2.4s linear infinite; pointer-events: none;
+  }
+  #ros-boot.gone { opacity: 0; pointer-events: none; }
+  .ros-boot-card {
+    position: relative; width: 420px;
+    padding: 28px 30px 24px;
+    background: linear-gradient(180deg, rgba(23,27,33,0.92), rgba(18,21,26,0.92));
+    border: 1px solid rgba(76,141,255,0.28);
+    border-radius: 12px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+    font-family: var(--font-sans);
+    animation: ros-card-in 340ms cubic-bezier(0.2,0,0,1);
+  }
+  .ros-boot-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .ros-boot-logo {
+    position: relative; width: 40px; height: 40px;
+  }
+  .ros-boot-logo .ring { position: absolute; inset: 0; animation: ros-spin 3.6s linear infinite; }
+  .ros-boot-logo .diamond {
+    position: absolute; inset: 8px; border-radius: 6px;
+    background: linear-gradient(135deg, #4C8DFF, #6BA1FF);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-family: var(--font-mono); font-size: 14px; font-weight: 600;
+    box-shadow: 0 0 24px rgba(76,141,255,0.55);
+    animation: ros-pulse 1.8s ease-in-out infinite;
+  }
+  .ros-boot-kicker { font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.16em; color: #4C8DFF; text-transform: uppercase; margin-bottom: 3px; }
+  .ros-boot-title { font-size: 16px; font-weight: 500; color: #E6EAF0; }
+  .ros-boot-bar { position: relative; height: 3px; background: rgba(35,42,51,0.9); border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
+  .ros-boot-bar > div { position: absolute; inset: 0; width: 0%; background: linear-gradient(90deg, #4C8DFF, #6BA1FF); box-shadow: 0 0 12px rgba(76,141,255,0.6); transition: width 260ms cubic-bezier(0.2,0,0,1); }
+  .ros-boot-log { display: flex; flex-direction: column; gap: 4px; font-family: var(--font-mono); font-size: 11px; color: #6B7684; }
+  .ros-boot-log .line { display: flex; align-items: center; gap: 8px; opacity: 0.55; transition: color 200ms, opacity 200ms; }
+  .ros-boot-log .line .dot { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(107,118,132,0.35); font-size: 9px; }
+  .ros-boot-log .line.active { color: #E6EAF0; opacity: 1; }
+  .ros-boot-log .line.active .dot { color: #4C8DFF; border-color: rgba(76,141,255,0.4); background: rgba(76,141,255,0.18); }
+  .ros-boot-log .line.done { color: #35A56F; opacity: 1; }
+  .ros-boot-log .line.done .dot { color: #35A56F; border-color: rgba(53,165,111,0.4); background: rgba(53,165,111,0.18); }
+
+  @keyframes ros-spin { to { transform: rotate(360deg); } }
+  @keyframes ros-pulse {
+    0%,100% { box-shadow: 0 0 18px rgba(76,141,255,0.45); }
+    50%     { box-shadow: 0 0 32px rgba(76,141,255,0.75); }
+  }
+  @keyframes ros-scan {
+    0%   { transform: translateY(-260px); }
+    100% { transform: translateY(260px); }
+  }
+  @keyframes ros-card-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.985); }
+    to   { opacity: 1; }
+  }
+</style>
+<style>
+  body { padding: 0; }
+
+  .canvas-header {
+    padding: 40px 48px 32px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, var(--bg-panel), var(--bg-app));
+  }
+  .canvas-title { font-size: 28px; font-weight: 500; letter-spacing: -0.015em; margin-bottom: 6px; }
+  .canvas-sub { font-size: 13px; color: var(--fg-muted); max-width: 720px; line-height: 1.65; }
+  .canvas-meta { display: flex; gap: 18px; margin-top: 14px; font-size: 11px; color: var(--fg-faint); font-family: var(--font-mono); flex-wrap: wrap; }
+
+  .canvas-body { padding: 32px 48px 80px; }
+
+  .section-title {
+    display: flex; align-items: center; gap: 12px;
+    margin: 40px 0 16px;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); font-family: var(--font-mono);
+  }
+  .section-title:first-of-type { margin-top: 0; }
+  .section-title::after {
+    content: ""; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--accent-line), transparent);
+  }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  .grid.wide { grid-template-columns: 1fr; }
+
+  .artboard {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: var(--shadow-2);
+  }
+  .artboard-head {
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-raised);
+  }
+  .artboard-tag {
+    font-size: 10px; font-family: var(--font-mono);
+    padding: 2px 8px; border-radius: 3px;
+    background: var(--accent-dim); color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .artboard-title { font-size: 13px; font-weight: 500; }
+  .artboard-sub { font-size: 11px; color: var(--fg-muted); margin-left: auto; }
+
+  .artboard-frame {
+    position: relative;
+    height: 620px;
+    background: var(--bg-sunken);
+    overflow: hidden;
+  }
+  .artboard.tall .artboard-frame { height: 720px; }
+  .artboard.short .artboard-frame { height: 440px; }
+  .artboard-frame iframe {
+    position: absolute; top: 0; left: 0;
+    width: 1440px; height: 900px;
+    border: none;
+    transform-origin: top left;
+    pointer-events: auto;
+  }
+
+  .open-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; height: 22px;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 11px; color: var(--fg-muted);
+    text-decoration: none;
+    transition: all 120ms;
+  }
+  .open-link:hover { background: var(--bg-hover); color: var(--fg); border-color: var(--accent); }
+
+  /* System refs */
+  .principles {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+    margin-bottom: 24px;
+  }
+  .principle {
+    padding: 16px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .principle-num {
+    display: inline-block; padding: 1px 6px;
+    background: var(--accent-dim); color: var(--accent);
+    border-radius: 3px;
+    font-size: 10px; font-family: var(--font-mono); font-weight: 500;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .principle-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .principle-desc { font-size: 11px; color: var(--fg-muted); line-height: 1.55; }
+
+  .tokens {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  .token {
+    padding: 10px 12px; background: var(--bg-panel);
+    border: 1px solid var(--border); border-radius: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .token-swatch { width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
+  .token-info { min-width: 0; }
+  .token-name { font-size: 11px; font-family: var(--font-mono); }
+  .token-hex { font-size: 10px; color: var(--fg-faint); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<div class="canvas-header">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+    <div style="width:26px;height:26px;border-radius:5px;background:linear-gradient(135deg,var(--accent),#6BA1FF);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-mono);font-size:14px;font-weight:600">◇</div>
+    <span style="font-size:11px;font-family:var(--font-mono);color:var(--accent);letter-spacing:0.14em;text-transform:uppercase">Research OS · Control Plane · v0.1</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+    <div style="flex:1;min-width:0">
+      <div class="canvas-title" data-i18n="canvas.title">Research Agent OS · UI Design Canvas</div>
+      <div class="canvas-sub" data-i18n="canvas.sub">
+        Control room for auditable science runs. Not a chat interface.
+        Five information domains × ten canonical screens. Every artboard enforces the five non-negotiable rules
+        (Preflight before execute · Evidence-native · Model drift visible · UNKNOWN ≠ zero · Deny by default).
+        Screens are live and interactive — click any artboard to open it in the full app shell.
+      </div>
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button data-lang="en" class="on">EN</button>
+      <button data-lang="zh-CN">中</button>
+    </div>
+  </div>
+  <div class="canvas-meta">
+    <span><span style="color:var(--fg-muted)">stack</span> React 18 · IBM Plex Sans · JetBrains Mono</span>
+    <span><span style="color:var(--fg-muted)">theme</span> dark-first · single accent #4C8DFF</span>
+    <span><span style="color:var(--fg-muted)">density</span> 13px body · row-height 34px</span>
+    <span><span style="color:var(--fg-muted)">state channels</span> shape + icon + text + color (colorblind safe)</span>
+    <span><a class="open-link" href="App.html" style="margin-left:8px" target="_top">→ Open full app</a></span>
+  </div>
+</div>
+
+<div class="canvas-body">
+
+  <!-- 5 Principles -->
+  <div class="section-title">Design principles · non-negotiable</div>
+  <div class="principles">
+    <div class="principle">
+      <span class="principle-num">P1</span>
+      <div class="principle-title">Preflight before execute</div>
+      <div class="principle-desc">Start disabled when Preflight ≠ PASS. Findings translate machine codes into human fixes.</div>
+    </div>
+    <div class="principle">
+      <span class="principle-num">P2</span>
+      <div class="principle-title">Evidence-native</div>
+      <div class="principle-desc">Every claim carries status. PROPOSED renders as dashed/faded — never same weight as VERIFIED.</div>
+    </div>
+    <div class="principle">
+      <span class="principle-num">P3</span>
+      <div class="principle-title">Model drift visible</div>
+      <div class="principle-desc">Request vs returned model name shown. If provider hides fingerprint, we say "Configuration reproducible".</div>
+    </div>
+    <div class="principle">
+      <span class="principle-num">P4</span>
+      <div class="principle-title">UNKNOWN ≠ zero</div>
+      <div class="principle-desc">Null cost, missing probes, absent fingerprints render as UNKNOWN. Never faked as 0 or a placeholder.</div>
+    </div>
+    <div class="principle">
+      <span class="principle-num">P5</span>
+      <div class="principle-title">Deny by default</div>
+      <div class="principle-desc">Every high-risk approval shows consequence preview. No "approve all", no "skip preflight".</div>
+    </div>
+  </div>
+
+  <!-- Color tokens -->
+  <div class="section-title">Semantic palette</div>
+  <div class="tokens">
+    <div class="token"><div class="token-swatch" style="background:#4C8DFF"></div><div><div class="token-name">accent</div><div class="token-hex">#4C8DFF</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#35A56F"></div><div><div class="token-name">success</div><div class="token-hex">#35A56F · VERIFIED</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#D9962A"></div><div><div class="token-name">warn</div><div class="token-hex">#D9962A · DISPUTED</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#E0524C"></div><div><div class="token-name">danger</div><div class="token-hex">#E0524C · FAIL/REFUTED</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#8B7BD8"></div><div><div class="token-name">unknown</div><div class="token-hex">#8B7BD8 · UNKNOWN</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#12151A"></div><div><div class="token-name">bg-panel</div><div class="token-hex">#12151A</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#0B0D10"></div><div><div class="token-name">bg-app</div><div class="token-hex">#0B0D10</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#232A33"></div><div><div class="token-name">border</div><div class="token-hex">#232A33</div></div></div>
+  </div>
+
+  <!-- Plan domain -->
+  <div class="section-title">Plan domain · setup → team → protocol</div>
+  <div class="grid">
+    <div class="artboard tall">
+      <div class="artboard-head">
+        <span class="artboard-tag">04 · SIGNATURE</span>
+        <span class="artboard-title">Protocol & Dry Run Gate</span>
+        <span class="artboard-sub">P1 · P4 enforcement</span>
+        <a class="open-link" href="App.html#/plan/protocol" target="_top" onclick="jumpTo('plan','protocol')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=plan/protocol" data-target="plan/protocol"></iframe>
+      </div>
+    </div>
+    <div class="artboard tall">
+      <div class="artboard-head">
+        <span class="artboard-tag">03</span>
+        <span class="artboard-title">Team & Model Binding</span>
+        <span class="artboard-sub">heterogeneity visualized</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('plan','team')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=plan/team" data-target="plan/team"></iframe>
+      </div>
+    </div>
+    <div class="artboard">
+      <div class="artboard-head">
+        <span class="artboard-tag">01</span>
+        <span class="artboard-title">Setup Wizard</span>
+        <span class="artboard-sub">endpoint onboarding · 5 steps</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('assets','setup')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=assets/setup" data-target="assets/setup"></iframe>
+      </div>
+    </div>
+    <div class="artboard">
+      <div class="artboard-head">
+        <span class="artboard-tag">02</span>
+        <span class="artboard-title">Endpoints & Models</span>
+        <span class="artboard-sub">P3 · reproducibility chips</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('assets','endpoints')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=assets/endpoints" data-target="assets/endpoints"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Run domain -->
+  <div class="section-title">Run domain · live execution + human-in-loop</div>
+  <div class="grid wide">
+    <div class="artboard tall">
+      <div class="artboard-head">
+        <span class="artboard-tag">05 · SIGNATURE</span>
+        <span class="artboard-title">Run Timeline</span>
+        <span class="artboard-sub">SSE stream · phase swimlanes · event drawer</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('run','timeline')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=run/timeline" data-target="run/timeline"></iframe>
+      </div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="artboard tall">
+      <div class="artboard-head">
+        <span class="artboard-tag">06</span>
+        <span class="artboard-title">Approvals & Interventions</span>
+        <span class="artboard-sub">P5 · consequence preview</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('run','approvals')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=run/approvals" data-target="run/approvals"></iframe>
+      </div>
+    </div>
+    <div class="artboard tall">
+      <div class="artboard-head">
+        <span class="artboard-tag">08</span>
+        <span class="artboard-title">Workspace & Experiments</span>
+        <span class="artboard-sub">reproducibility · image + env digest</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('run','workspace')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=run/workspace" data-target="run/workspace"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evidence -->
+  <div class="section-title">Evidence domain · claims are hypotheses, not conclusions</div>
+  <div class="grid wide">
+    <div class="artboard tall">
+      <div class="artboard-head">
+        <span class="artboard-tag">07 · SIGNATURE</span>
+        <span class="artboard-title">Claims & Evidence Map</span>
+        <span class="artboard-sub">P2 · graph ↔ table · PROPOSED renders dashed</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('evidence','claims')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=evidence/claims" data-target="evidence/claims"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Govern -->
+  <div class="section-title">Govern domain · budget · audit · memory</div>
+  <div class="grid">
+    <div class="artboard tall">
+      <div class="artboard-head">
+        <span class="artboard-tag">09</span>
+        <span class="artboard-title">Budget & Usage</span>
+        <span class="artboard-sub">P4 · UNKNOWN entries never merged into total</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('govern','budget')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=govern/budget" data-target="govern/budget"></iframe>
+      </div>
+    </div>
+    <div class="artboard tall">
+      <div class="artboard-head">
+        <span class="artboard-tag">10</span>
+        <span class="artboard-title">Audit / Export / Memory</span>
+        <span class="artboard-sub">append-only · sealed bundle · provenance-gated memory</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('govern','audit')">Open →</a>
+      </div>
+      <div class="artboard-frame">
+        <iframe src="App.html?_screen=govern/audit" data-target="govern/audit"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- State matrix -->
+  <div class="section-title">Contract · state matrix required on every view</div>
+  <div class="grid wide">
+    <div class="artboard short">
+      <div class="artboard-head">
+        <span class="artboard-tag">11 · CONTRACT</span>
+        <span class="artboard-title">State Matrix</span>
+        <span class="artboard-sub">empty / loading / error / partial / forbidden / stale / live</span>
+        <a class="open-link" href="App.html" target="_top" onclick="jumpTo('states','matrix')">Open →</a>
+      </div>
+      <div class="artboard-frame" style="height:520px">
+        <iframe src="App.html?_screen=states/matrix" data-target="states/matrix"></iframe>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Boot overlay -->
+<div id="ros-boot">
+  <div class="ros-boot-card">
+    <div class="ros-boot-head">
+      <div class="ros-boot-logo">
+        <svg class="ring" width="40" height="40" viewBox="0 0 40 40" aria-hidden>
+          <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(76,141,255,0.24)" stroke-width="1" stroke-dasharray="4 6"/>
+          <circle cx="20" cy="20" r="17" fill="none" stroke="#4C8DFF" stroke-width="1.4" stroke-dasharray="18 90" stroke-linecap="round"/>
+        </svg>
+        <div class="diamond">◇</div>
+      </div>
+      <div>
+        <div class="ros-boot-kicker">Research OS · v0.1</div>
+        <div class="ros-boot-title" id="ros-boot-title">Booting Canvas</div>
+      </div>
+    </div>
+    <div class="ros-boot-bar"><div id="ros-boot-fill"></div></div>
+    <div class="ros-boot-log" id="ros-boot-log"></div>
+  </div>
+</div>
+
+<script>
+  // ── i18n for Overview.html (vanilla) ───────────────────────
+  const OV_I18N = {
+    en: {
+      "canvas.title": "Research Agent OS · UI Design Canvas",
+      "canvas.sub": "Control room for auditable science runs. Not a chat interface. Five information domains × ten canonical screens. Every artboard enforces the five non-negotiable rules (Preflight before execute · Evidence-native · Model drift visible · UNKNOWN ≠ zero · Deny by default). Screens are live and interactive — click any artboard to open it in the full app shell.",
+      "boot.title": "Booting Canvas",
+      "boot.step.tokens": "Loading design tokens",
+      "boot.step.frames": "Mounting artboards",
+      "boot.step.iframes": "Wiring live previews",
+      "boot.step.ready": "Ready",
+    },
+    "zh-CN": {
+      "canvas.title": "Research Agent OS · UI 设计画布",
+      "canvas.sub": "面向可审计科学研究的控制室，不是一个聊天界面。五大信息域 × 十幅规范屏。每一张画板都遵守五项不可妥协的原则（执行前预检 · 证据原生 · 模型漂移可见 · UNKNOWN ≠ 0 · 默认拒绝）。所有屏均为实时交互 — 点击任一画板可在完整 App 中打开。",
+      "boot.title": "正在启动画布",
+      "boot.step.tokens": "加载设计令牌",
+      "boot.step.frames": "挂载画板",
+      "boot.step.iframes": "接入实时预览",
+      "boot.step.ready": "就绪",
+    },
+  };
+  let __lang = localStorage.getItem("ros.lang") || "en";
+  if (!OV_I18N[__lang]) __lang = "en";
+  function __t(key) { return (OV_I18N[__lang] && OV_I18N[__lang][key]) || OV_I18N.en[key] || key; }
+  function applyLang(lang) {
+    __lang = lang;
+    localStorage.setItem("ros.lang", lang);
+    document.documentElement.lang = lang === "zh-CN" ? "zh-CN" : "en";
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = __t(el.getAttribute("data-i18n")); });
+    document.querySelectorAll(".lang-toggle button").forEach(b => b.classList.toggle("on", b.dataset.lang === lang));
+  }
+  applyLang(__lang);
+  document.querySelectorAll(".lang-toggle button").forEach(b => {
+    b.addEventListener("click", () => applyLang(b.dataset.lang));
+  });
+
+  // ── Boot overlay animation ───────────────────────────────────
+  (function runBoot() {
+    const steps = [__t("boot.step.tokens"), __t("boot.step.frames"), __t("boot.step.iframes"), __t("boot.step.ready")];
+    const log = document.getElementById("ros-boot-log");
+    const fill = document.getElementById("ros-boot-fill");
+    const titleEl = document.getElementById("ros-boot-title");
+    titleEl.textContent = __t("boot.title");
+    steps.forEach((s, i) => {
+      const line = document.createElement("div");
+      line.className = "line";
+      line.innerHTML = `<span class="dot">·</span><span class="txt">${s}</span>`;
+      log.appendChild(line);
+    });
+    const lines = log.querySelectorAll(".line");
+    const total = 1400;
+    const per = total / steps.length;
+    steps.forEach((_, i) => {
+      setTimeout(() => {
+        for (let j = 0; j < i; j++) { lines[j].classList.remove("active"); lines[j].classList.add("done"); lines[j].querySelector(".dot").textContent = "✓"; }
+        lines[i].classList.add("active");
+        lines[i].querySelector(".dot").textContent = "▸";
+        fill.style.width = ((i + 1) / steps.length * 100) + "%";
+      }, i * per);
+    });
+    setTimeout(() => {
+      lines.forEach(l => { l.classList.remove("active"); l.classList.add("done"); l.querySelector(".dot").textContent = "✓"; });
+      document.getElementById("ros-boot").classList.add("gone");
+      setTimeout(() => document.getElementById("ros-boot").remove(), 300);
+    }, total);
+  })();
+
+  // Set localStorage BEFORE loading iframes based on their data-target
+  const iframes = document.querySelectorAll('iframe[data-target]');
+  iframes.forEach(f => {
+    f.addEventListener('load', () => {
+      try {
+        const [d, t] = f.dataset.target.split('/');
+        f.contentWindow.localStorage.setItem('ros.domain', d);
+        f.contentWindow.localStorage.setItem('ros.tab', t);
+        // Trigger update by reloading only if not already showing correct screen
+        if (!f.dataset.loaded) {
+          f.dataset.loaded = '1';
+          f.contentWindow.location.reload();
+        }
+      } catch(e) {}
+    });
+  });
+
+  // scale iframes to fit their frames
+  function fitFrames() {
+    document.querySelectorAll('.artboard-frame').forEach(frame => {
+      const iframe = frame.querySelector('iframe');
+      if (!iframe) return;
+      const scale = Math.min(frame.clientWidth / 1440, frame.clientHeight / 900);
+      iframe.style.transform = `scale(${scale})`;
+      iframe.style.width = (frame.clientWidth / scale) + 'px';
+      iframe.style.height = (frame.clientHeight / scale) + 'px';
+    });
+  }
+  fitFrames();
+  window.addEventListener('resize', fitFrames);
+  // refit after iframes load (content sometimes shifts)
+  setTimeout(fitFrames, 500);
+  setTimeout(fitFrames, 1500);
+
+  function jumpTo(domain, tab) {
+    localStorage.setItem('ros.domain', domain);
+    localStorage.setItem('ros.tab', tab);
+  }
+</script>
+
+</body>
+</html>

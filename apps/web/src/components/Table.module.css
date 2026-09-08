@@ -1,0 +1,102 @@
+.scroller {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--bg-panel);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 30px;
+  padding: var(--pad-cell);
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--fg-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 400;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table tbody td {
+  height: var(--row-h);
+  padding: var(--pad-cell);
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 360px;
+}
+
+.row {
+  cursor: default;
+}
+
+.row:focus-visible {
+  outline: none;
+  box-shadow: inset var(--focus-ring);
+}
+
+.selected {
+  background: var(--accent-dim);
+}
+
+.selected td {
+  color: var(--fg);
+}
+
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sortBtn:hover {
+  color: var(--fg);
+}
+
+.sortIdle {
+  opacity: 0.35;
+}
+
+.sortActive {
+  color: var(--accent);
+}
+
+.checkCol {
+  width: 28px;
+  text-align: center;
+}
+
+.emptyCell {
+  height: auto;
+  padding: 0;
+  border-bottom: none;
+}
+
+.rowLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.rowLink:hover {
+  text-decoration: underline;
+}

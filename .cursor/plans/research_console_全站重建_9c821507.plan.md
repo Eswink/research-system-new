@@ -32,7 +32,7 @@ isProject: false
 - 本次包含协议编辑所需的**最小后端补齐**，交付真实可用的界面，而非仅有演示数据的原型。
 - 本阶段只制定计划；批准后才修改代码、安装依赖或执行测试。
 
-设计依据为[设计交付说明](C:/Users/googl/Desktop/design_handoff_protocol_visual_editor/README.md)和[样式令牌](C:/Users/googl/Desktop/design_handoff_protocol_visual_editor/source/styles/tokens.css)。包内只有 6 个文件，缺少说明中引用的应用外壳、翻译、图标及其他页面；这些部分需要依据现有产品能力延展设计，不能宣称是在逐页复刻完整原稿。
+设计依据为[设计交付说明](d:/research-system/docs/references/design/protocol-visual-editor/README.md)和[样式令牌](d:/research-system/docs/references/design/protocol-visual-editor/source/styles/tokens.css)。包内只有 6 个文件，缺少说明中引用的应用外壳、翻译、图标及其他页面；这些部分需要依据现有产品能力延展设计，不能宣称是在逐页复刻完整原稿。
 
 **交付边界：全站界面重建 + 运行前协议编辑；保持现有运行引擎和业务真相来源不变。** 本次不增加多项目管理、账户权限体系、运行中 Manifest 修改、自动发布或新的科研评估领域模型。
 

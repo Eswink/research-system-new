@@ -129,7 +129,7 @@ function useEditorController(): EditorController {
     void draftApi
       .getTemplate(templateId)
       .then((template) => {
-        dispatch({ type: "edit", text: template.yaml_text });
+        dispatch({ type: "loadTemplate", text: template.yaml_text, sourcePath: template.source });
       })
       .catch(() => undefined);
     templateControls.close();

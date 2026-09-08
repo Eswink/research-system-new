@@ -10,6 +10,8 @@ export interface EditorActions {
   saveDraft: () => void;
   runPreflight: () => void;
   startRun: () => void;
+  canPreflight: boolean;
+  canStartRun: boolean;
 }
 
 export function useEditorActions(
@@ -23,5 +25,7 @@ export function useEditorActions(
     saveDraft,
     runPreflight: preflightAndStart.runPreflight,
     startRun: preflightAndStart.startRun,
+    canPreflight: preflightAndStart.canPreflight,
+    canStartRun: preflightAndStart.canStartRun,
   };
 }
