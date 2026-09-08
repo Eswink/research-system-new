@@ -13,4 +13,4 @@ alwaysApply: true
 - 不把真实 LLM 厂商、OpenHands 类型、Cursor 工程记录或上游 Runtime 类型泄漏进 Domain。
 - 不回退、覆盖或格式化与当前任务无关的用户改动。遇到无法在当前授权范围内安全解决的直接冲突时，停止冲突部分并请求用户决策；其余独立工作可继续。
 - Plan、Recheck、Engineering Memory 按 `20-plan-memory-recheck.mdc` 的任务规模/风险条件使用；不得为了形式创建计划、复检或伪记忆。
-- 完成任务时按 `AGENTS.md` 第 13 节报告，并给出实际执行过的验证证据。
+- 完成任务时按 `AGENTS.md` 第 14 节报告，并给出实际执行过的验证证据。

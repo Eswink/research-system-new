@@ -262,7 +262,28 @@ dependency
 
 Fork 必须 ADR、patch surface、同步策略和退出计划。
 
-## 13. 完成任务时
+## 13. Repository Path Naming
+
+- 所有新建或重命名的仓库文件、目录和其他路径段必须使用有意义的英文语义名；
+  不得使用中文、日文、韩文或其他非 ASCII 自由文本，也不得用拼音替代本可直接表达的英文概念。
+- 自由命名路径必须以跨平台可移植性为默认：仅使用 ASCII 字母、数字以及按语境需要的
+  `-`、`_`、`.`；不含空白，不以 `-` 开头，不以空格或 `.` 结尾，不使用 Windows
+  保留字符或设备名，也不得创建仅大小写不同的并列路径。
+- 生态或工具规定的 canonical filename 优先于通用 casing 规则，例如 `README.md`、
+  `CHANGELOG.md`、`Dockerfile`、`Makefile`、`package.json`、`pyproject.toml`、
+  `__init__.py`；这类例外不允许扩展为任意非英文命名。
+- 产品代码、测试和 migration 继续遵守 `.cursor/rules/45-module-file-naming.mdc` 的
+  Python、TypeScript/React、SQL 细化规则。没有更具体约定时，目录和普通文档使用
+  descriptive `kebab-case`。
+- Cursor 工程记录保持既有注册格式，并让描述部分使用英文 `kebab-case`，例如
+  `PLAN-YYYYMMDD-NNN-topic.md`、`RECHECK-YYYYMMDD-NNN-topic.md`、
+  `MEM-YYYYMMDD-NNN-topic.md`、`EXP-YYYYMMDD-NNN.md`、`LEARN-YYYYMMDD-NNN.yaml`。
+- 不用 `final`、`new`、`old`、`tmp`、`copy` 或尾随 `vN` 表示生命周期/伪版本；
+  若外部规范、不可变历史资产或明确 schema 要求特定名称，则保留该名称并记录原因。
+- 既有历史路径不会仅为满足本规则而批量重命名；一旦任务本身要求重命名该路径，新的名称
+  必须满足本节，除非兼容性或不可变历史约束禁止。
+
+## 14. 完成任务时
 
 至少报告：
 

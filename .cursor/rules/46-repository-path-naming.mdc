@@ -1,0 +1,54 @@
+---
+description: 仓库级英文文件与目录命名、跨平台可移植性和工程记录命名约束
+alwaysApply: true
+---
+
+# Repository Path Naming
+
+本规则约束所有后续新建或重命名的仓库路径；内容语言不受此规则限制。
+
+## Repository-wide baseline
+
+- 文件名和目录名必须使用有意义的 English semantic names。自由文本路径段只使用 ASCII；
+  不使用中文或其他非 ASCII 自由文本，也不以拼音替代正常英文术语。
+- 路径只使用 ASCII letters、digits，以及语境所需的 `-`、`_`、`.`。禁止空白、控制字符、
+  Windows 保留字符 `< > : " / \\ | ? *`、尾随空格或尾随 `.`。
+- 不创建 Windows 设备保留名（例如 `CON`、`PRN`、`AUX`、`NUL`、`COM1`、`LPT1`，
+  以及对应带扩展名形式），也不创建只在大小写上不同的兄弟路径。
+- 自由命名的文件或目录不以 `-` 开头。句点主要用于扩展名、标准 dotfile 或生态规定的
+  multi-part filename。
+- 名称必须简洁、描述职责或领域概念；避免含糊缩写和 `utils`、`misc`、`manager` 一类
+  无边界杂物桶。
+
+## Convention precedence
+
+命名约束按以下优先级组合，而不是用一个 casing 覆盖所有生态：
+
+1. 外部标准、工具或运行时要求的 canonical filename；
+2. 仓库已有的正式注册格式（Plan/Recheck/Memory/Experience/Learning 等）；
+3. `.cursor/rules/45-module-file-naming.mdc` 的语言/产品路径规则；
+4. 当前目录已经稳定采用的英文命名约定；
+5. 无其他约定时，目录与普通文档使用 descriptive `kebab-case`。
+
+Canonical filename 示例包括 `README.md`、`CHANGELOG.md`、`Dockerfile`、`Makefile`、
+`package.json`、`pyproject.toml`、`__init__.py`。这些例外只允许偏离通用 casing，
+不允许引入任意非英文自由命名。
+
+## Project record names
+
+- Plan: `PLAN-YYYYMMDD-NNN-english-topic.md`
+- Recheck: `RECHECK-YYYYMMDD-NNN-english-topic.md`
+- Engineering Memory: `MEM-YYYYMMDD-NNN-english-topic.md`
+- Experience: `EXP-YYYYMMDD-NNN.md`
+- Learning: `LEARN-YYYYMMDD-NNN.yaml`
+
+描述部分使用英文 `kebab-case`。禁止把 `final`、`new`、`old`、`tmp`、`copy` 或尾随
+`vN` 当作生命周期或伪版本；版本真相来自项目正式 version/revision 机制。
+
+## Legacy paths
+
+- 已存在的历史路径不因本规则自动批量重命名，避免无关 churn、引用断裂和 migration/history
+  破坏。
+- 如果当前任务本身需要重命名某历史路径，新名称必须符合本规则，并同步所有引用。
+- 已应用 migration、外部协议固定路径、不可变归档或工具硬编码 canonical path 可以保留原名；
+  例外必须有可验证原因，不能作为新增非英文路径的兜底。
