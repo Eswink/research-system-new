@@ -94,6 +94,7 @@ async function requestWithEtag(
   return { dto: body, etag };
 }
 
+
 export const api = {
   listEndpoints(): Promise<LlmEndpointReadDto[]> {
     return request("/llm-endpoints", { method: "GET" });
@@ -228,10 +229,16 @@ export const api = {
     });
   },
 
-  startRun(protocolPath: string): Promise<RunDetailDto> {
+  startRun(
+    source: string | { draft_id: string; draft_revision: number },
+  ): Promise<RunDetailDto> {
+    const body =
+      typeof source === "string"
+        ? { protocol_path: source }
+        : { draft_id: source.draft_id, draft_revision: source.draft_revision };
     return request("/projects/example-project/runs", {
       method: "POST",
-      body: JSON.stringify({ protocol_path: protocolPath }),
+      body: JSON.stringify(body),
     }, { idempotencyKey: newIdempotencyKey() });
   },
 
@@ -326,4 +333,5 @@ export const api = {
   runExport(runId: string): Promise<ExportBundleDto> {
     return request(`/runs/${encodeURIComponent(runId)}/export`, { method: "GET" });
   },
+
 };

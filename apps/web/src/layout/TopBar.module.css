@@ -1,0 +1,57 @@
+.topbar {
+  height: var(--shell-topbar-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.runContext {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.runLabel {
+  font-size: 11px;
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.controlLabel {
+  font-size: 10px;
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.control select {
+  height: 22px;
+  font-size: 11px;
+  background: var(--bg-sunken);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-chip);
+}
+
+@media (max-width: 768px) {
+  .runLabel {
+    display: none;
+  }
+}

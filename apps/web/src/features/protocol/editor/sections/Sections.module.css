@@ -1,0 +1,83 @@
+.input {
+  background: var(--bg-sunken);
+}
+
+.monoInput {
+  font-family: var(--font-mono);
+}
+
+.accentChip {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.phaseCard {
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--bg-raised);
+  overflow: hidden;
+}
+
+.phaseCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+}
+
+.removeBtn {
+  margin-left: auto;
+  height: 20px;
+  padding: 0 6px;
+  color: var(--danger);
+}
+
+.phaseCardBody {
+  padding: 12px;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.addPhaseBtn {
+  width: 100%;
+  justify-content: center;
+  border-style: dashed;
+}
+
+.toneWarn {
+  background: var(--warn-dim);
+  border-color: var(--warn-line);
+  color: var(--warn);
+}
+
+.toneAccent {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.toneUnknown {
+  background: var(--unknown-dim);
+  border-color: var(--unknown-line);
+  color: var(--unknown);
+}
+
+.toneDanger {
+  background: var(--danger-dim);
+  border-color: var(--danger-line);
+  color: var(--danger);
+}
+
+.toneSuccess {
+  background: var(--success-dim);
+  border-color: var(--success-line);
+  color: var(--success);
+}

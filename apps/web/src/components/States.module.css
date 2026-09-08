@@ -1,0 +1,11 @@
+.state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 12px;
+  color: var(--fg-muted);
+}
+
+.error {
+  color: var(--danger);
+}

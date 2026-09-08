@@ -569,6 +569,66 @@ export interface ClusterWorkerDto {
   last_heartbeat: string | null;
 }
 
+export interface ProtocolDraftIssueDto {
+  path: string;
+  code: string;
+  message: string;
+  severity: string;
+}
+
+export interface ProtocolDraftValidateResultDto {
+  ok: boolean;
+  issues: ProtocolDraftIssueDto[];
+  protocol_id: string | null;
+  protocol_digest: string | null;
+  phase_count: number;
+}
+
+export interface ProtocolDraftTemplateDto {
+  template_id: string;
+  display_name: string;
+  description: string;
+  yaml_text: string;
+  source: string;
+}
+
+export interface ProtocolDraftViewDto {
+  draft_id: string;
+  project_id: string;
+  name: string;
+  revision: number;
+  yaml_text: string;
+  source_digest: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProtocolDraftSummaryDto {
+  draft_id: string;
+  project_id: string;
+  name: string;
+  revision: number;
+  source_digest: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProtocolDraftRevisionDto {
+  draft_id: string;
+  revision: number;
+  yaml_text: string;
+  source_digest: string;
+  created_at: string;
+}
+
+export interface RunStartPayloadDto {
+  /** 旧路径引用（examples/protocols/ 内）与新草稿修订引用二选一 */
+  protocol_path?: string;
+  draft_id?: string;
+  draft_revision?: number;
+  trace_id?: string;
+}
+
 export interface ClusterViewDto {
   workers: ClusterWorkerDto[];
 }

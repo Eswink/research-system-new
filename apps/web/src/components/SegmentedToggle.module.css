@@ -1,0 +1,27 @@
+.group {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctrl);
+}
+
+.item {
+  height: 22px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-chip);
+  color: var(--fg-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.active {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+  color: var(--fg);
+  font-weight: 500;
+  box-shadow: var(--shadow-1);
+}

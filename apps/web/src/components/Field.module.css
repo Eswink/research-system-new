@@ -1,0 +1,77 @@
+.field {
+  margin-bottom: 14px;
+  min-width: 0;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  letter-spacing: 0.02em;
+}
+
+.lockIcon {
+  color: var(--fg-faint);
+}
+
+.errorRow {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--danger);
+  font-family: var(--font-mono);
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.errorIcon {
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.errorCode {
+  opacity: 0.75;
+}
+
+.hintRow {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--fg-faint);
+  line-height: 1.4;
+}
+
+.tooltipHost {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltipTrigger {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--fg-faint);
+  cursor: help;
+  display: flex;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: -8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-ctrl);
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  width: 260px;
+  box-shadow: var(--shadow-2);
+  z-index: 100;
+  line-height: 1.5;
+}

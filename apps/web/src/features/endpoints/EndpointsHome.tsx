@@ -8,8 +8,13 @@ export function EndpointsHome({
   onAddRelay: () => void;
 }) {
   return (
-    <section>
+    <section data-testid="endpoints-home">
       <h2>Configured Endpoints</h2>
+      {endpoints.length === 0 && (
+        <p className="empty-mark" data-testid="endpoints-empty">
+          no endpoints configured
+        </p>
+      )}
       {endpoints.map((endpoint) => (
         <article key={endpoint.id} data-testid="endpoint-card">
           <h3>{endpoint.name}</h3>

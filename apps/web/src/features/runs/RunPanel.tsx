@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { RunActions } from "./RunActions";
 import { TimelineView } from "./TimelineView";
@@ -101,12 +101,30 @@ function RunTaskList({ tasks }: { tasks: TaskDto[] }) {
  * M13-R1 WP-M2/M4：刷新后自动恢复最近 run；SSE 实时增量、断线重连
  * 由 EventSource 原生 Last-Event-ID 续传 + 客户端 event_id 去重。
  * 执行体为受控 Fake Runtime（UI 如实披露，不冒充真实研究执行）。
+ * 重建（PLAN-20260908-033）：可选上下文 props 与全局 Run 上下文联动。
  */
-export function RunPanel() {
+export function RunPanel(props?: {
+  onRunSelected?: (runId: string) => void;
+  initialRunId?: string;
+}) {
   const flow = useRunPanel();
   const [protocolPath, setProtocolPath] = useState(PROTOCOLS[0] ?? "");
   const stream = useRunEventStream(flow.run?.id ?? null);
   const events = mergeEvents(flow.events, stream.events);
+  const onRunSelected = props?.onRunSelected;
+  const initialRunId = props?.initialRunId;
+
+  useEffect(() => {
+    if (initialRunId !== undefined && initialRunId.length > 0) {
+      void flow.loadRun(initialRunId);
+    }
+  }, [initialRunId]);
+
+  useEffect(() => {
+    if (flow.run !== null && onRunSelected !== undefined) {
+      onRunSelected(flow.run.id);
+    }
+  }, [flow.run === null ? null : flow.run.id, onRunSelected]);
 
   const submit = () => {
     void flow.start(protocolPath);
@@ -116,6 +134,36 @@ export function RunPanel() {
     void flow.cancel();
   };
 
+  return (
+    <RunPanelView
+      flow={flow}
+      streamConnected={stream.connected}
+      events={events}
+      protocolPath={protocolPath}
+      onProtocolPathChange={setProtocolPath}
+      onStart={submit}
+      onCancel={cancel}
+    />
+  );
+}
+
+function RunPanelView({
+  flow,
+  streamConnected,
+  events,
+  protocolPath,
+  onProtocolPathChange,
+  onStart,
+  onCancel,
+}: {
+  flow: ReturnType<typeof useRunPanel>;
+  streamConnected: boolean;
+  events: ReturnType<typeof mergeEvents>;
+  protocolPath: string;
+  onProtocolPathChange: (value: string) => void;
+  onStart: () => void;
+  onCancel: () => void;
+}) {
   const manifestLabel = flow.run?.manifest_digest?.slice(0, 16) ?? "not frozen";
 
   return (
@@ -125,18 +173,46 @@ export function RunPanel() {
         Agent 研究执行体为受控 Fake Runtime（非真实 LLM 推理）；真实研究执行
         走 M12 参考流程（Docker 实验 / live relay 为 opt-in 能力）。
       </p>
-      <ProtocolSelect value={protocolPath} onChange={setProtocolPath} />
-      <RunActions run={flow.run} busy={flow.busy} onStart={submit} onCancel={cancel} />
+      <ProtocolSelect value={protocolPath} onChange={onProtocolPathChange} />
+      {flow.runs.length === 0 && !flow.busy && (
+        <p className="empty-mark" data-testid="runs-empty">
+          no runs yet — start one from a saved protocol draft
+        </p>
+      )}
+      <RunActions run={flow.run} busy={flow.busy} onStart={onStart} onCancel={onCancel} />
       {flow.error !== null && (
         <p className="error" role="alert">
           {flow.error}
         </p>
       )}
+      <RunStatusArea
+        flow={flow}
+        manifestLabel={manifestLabel}
+        streamConnected={streamConnected}
+        events={events}
+      />
+    </section>
+  );
+}
+
+function RunStatusArea({
+  flow,
+  manifestLabel,
+  streamConnected,
+  events,
+}: {
+  flow: ReturnType<typeof useRunPanel>;
+  manifestLabel: string;
+  streamConnected: boolean;
+  events: ReturnType<typeof mergeEvents>;
+}): React.JSX.Element {
+  return (
+    <>
       {flow.run !== null && (
         <RunStatus
           run={flow.run}
           manifest={manifestLabel}
-          connected={stream.connected}
+          connected={streamConnected}
           runs={flow.runs}
           onChange={(runId) => {
             void flow.loadRun(runId);
@@ -145,6 +221,6 @@ export function RunPanel() {
       )}
       {events.length > 0 && <TimelineView events={events} />}
       {flow.tasks.length > 0 && <RunTaskList tasks={flow.tasks} />}
-    </section>
+    </>
   );
 }

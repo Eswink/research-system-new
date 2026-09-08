@@ -1,0 +1,96 @@
+.editorPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 480px;
+  height: calc(100vh - var(--shell-topbar-h) - 32px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+}
+
+.yamlView {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  background: var(--bg-sunken);
+  min-height: 0;
+}
+
+.yamlEditor {
+  width: 100%;
+  min-height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+  resize: none;
+  outline: none;
+}
+
+.formFallback {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--danger);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.formGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.formBody {
+  overflow: auto;
+  padding: 16px 18px 80px;
+  min-height: 0;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
+  flex-shrink: 0;
+}
+
+.statusText {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+}
+
+.ackLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.statusSpacer {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .editorPanel {
+    height: auto;
+    min-height: 360px;
+  }
+}

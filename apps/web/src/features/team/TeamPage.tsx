@@ -177,6 +177,11 @@ export function TeamPage() {
       )}
       <p>Roles available: {state.roles.map((role) => role.id).join(", ")}</p>
       <h3>Agents</h3>
+      {state.agents.length === 0 && !state.busy && (
+        <p className="empty-mark" data-testid="agents-empty">
+          no agents configured
+        </p>
+      )}
       <AgentList
         agents={state.agents}
         models={state.models}
