@@ -44,3 +44,4 @@ scratch/
 docs/history-session
 # Playwright e2e transient artifacts (baselines live in *-snapshots dirs)
 apps/web/test-results/
+.venv_ppocr/
