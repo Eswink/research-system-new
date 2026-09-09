@@ -1,0 +1,29 @@
+.control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.badge {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--accent-line);
+  border-radius: 4px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+}
+.badge[data-source="example"] {
+  color: var(--warn);
+  background: var(--warn-dim);
+  border-color: var(--warn-line);
+}
+@media (max-width: 800px) {
+  .badge {
+    max-width: 105px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

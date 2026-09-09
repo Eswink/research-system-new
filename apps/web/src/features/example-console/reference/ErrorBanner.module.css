@@ -1,0 +1,68 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  background: var(--danger-dim);
+  border-bottom: 1px solid var(--danger-line);
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 11px;
+  color: var(--danger);
+}
+
+:global([data-design-surface]) .surface2 {
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .surface3 {
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .action {
+  margin-left: auto;
+  color: var(--danger);
+  height: 20px;
+  padding: 0 6px;
+}
+
+:global([data-design-surface]) .column {
+  padding: 6px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+:global([data-design-surface]) .action2 {
+  justify-content: flex-start;
+  height: auto;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--danger-line);
+  color: var(--fg);
+  font-size: 11px;
+  white-space: normal;
+  text-align: left;
+}
+
+:global([data-design-surface]) .surface4 {
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .caption {
+  color: var(--fg-faint);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .surface6 {
+  color: var(--fg-muted);
+}

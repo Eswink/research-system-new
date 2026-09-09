@@ -39,18 +39,9 @@ export type LedgerCostStatus = "KNOWN" | "UNKNOWN";
 export type LedgerQuantityStatus = "KNOWN" | "UNKNOWN";
 export type OutboxPendingStatus = "KNOWN" | "UNKNOWN";
 export type TrendPointVerdict =
-  | "PASS"
-  | "PASS_WITH_WARNINGS"
-  | "REVISE"
-  | "BLOCK"
-  | "INDETERMINATE"
-  | "MISSING_EVALUATION";
+  "PASS" | "PASS_WITH_WARNINGS" | "REVISE" | "BLOCK" | "INDETERMINATE" | "MISSING_EVALUATION";
 export type RegressionVerdict =
-  | "PASS"
-  | "PASS_WITH_WARNINGS"
-  | "REVISE"
-  | "BLOCK"
-  | "INDETERMINATE";
+  "PASS" | "PASS_WITH_WARNINGS" | "REVISE" | "BLOCK" | "INDETERMINATE";
 export type ComparabilityVerdict =
   | "COMPARABLE"
   | "CASE_SET_CHANGED"

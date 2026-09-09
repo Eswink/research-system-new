@@ -1,0 +1,16 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--fg-faint);
+}

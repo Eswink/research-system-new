@@ -28,10 +28,14 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(appVersion),
   },
   server: {
+    // 0.0.0.0：TUN 严格路由模式下 loopback 地址被隧道接管，前端需绑定
+    // 全接口以便通过本机实际网卡/TUN 虚拟地址访问。
+    host: "0.0.0.0",
     port: 5173,
     proxy: apiProxy,
   },
   preview: {
+    host: "0.0.0.0",
     port: 5173,
     proxy: apiProxy,
   },

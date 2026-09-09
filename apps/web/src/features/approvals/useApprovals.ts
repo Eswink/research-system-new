@@ -1,42 +1,47 @@
-import { useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
+import { ApiError } from "../../api/http";
 import type { ApprovalDto } from "../../api/types";
+import { useResource } from "../../hooks/useResource";
 
-const handleError = (err: unknown): string => {
-  return err instanceof Error ? err.message : "approval operation failed";
-};
-
-export interface ApprovalFlow {
-  approvals: ApprovalDto[];
-  error: string | null;
-  refresh: () => Promise<void>;
-  decide: (approval: ApprovalDto, decision: "approve" | "deny") => Promise<void>;
-}
-
-/** 审批状态（事件投影；刷新后从 API 恢复，不持 Canonical State） */
-export function useApprovals(): ApprovalFlow {
-  const [approvals, setApprovals] = useState<ApprovalDto[]>([]);
+/** Read-only pending projection plus explicit, versioned decisions.
+ * No optimistic policy changes.
+ */
+export function useApprovals() {
+  const query = useResource("pending-approvals", () => api.listApprovals());
   const [error, setError] = useState<string | null>(null);
-
-  const refresh = async () => {
-    try {
-      const items = await api.listApprovals();
-      setApprovals(items);
-    } catch (err) {
-      setError(handleError(err));
-    }
-  };
-
-  const decide = async (approval: ApprovalDto, decision: "approve" | "deny") => {
+  const [decision, setDecision] = useState<ApprovalDto | null>(null);
+  const [deciding, setDeciding] = useState(false);
+  const active = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const decide = async (approval: ApprovalDto, action: "approve" | "deny") => {
+    if (active.current || query.phase !== "ready") return;
+    active.current = true;
+    setDeciding(true);
     setError(null);
+    setDecision(null);
     try {
-      await api.decideApproval(approval.id, decision, approval.version);
-      await refresh();
-    } catch (err) {
-      setError(handleError(err));
+      const result = await api.decideApproval(approval.id, action, approval.version);
+      if (mounted.current) {
+        setDecision(result);
+        query.reload();
+      }
+    } catch (cause) {
+      if (mounted.current) {
+        setError(cause instanceof Error ? cause.message : "Approval decision failed");
+        if (cause instanceof ApiError && (cause.status === 412 || cause.status === 409))
+          query.reload();
+      }
+    } finally {
+      active.current = false;
+      if (mounted.current) setDeciding(false);
     }
   };
-
-  return { approvals, error, refresh, decide };
+  return { query, error, decision, deciding, decide };
 }

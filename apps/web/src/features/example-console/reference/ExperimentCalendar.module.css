@@ -1,0 +1,71 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  padding: 16px;
+  flex: 1;
+  overflow: auto;
+}
+
+:global([data-design-surface]) .surface {
+  margin-bottom: 14px;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  gap: 2px;
+}
+
+:global([data-design-surface]) .caption2 {
+  padding: 4px 6px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+  text-align: center;
+  background: var(--bg-raised);
+  border-radius: 4px;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  color: var(--fg);
+}
+
+:global([data-design-surface]) .caption3 {
+  padding: 6px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  text-align: right;
+}
+
+:global([data-design-surface]) .surface2 {
+  min-height: 44px;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+:global([data-design-surface]) .caption4 {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+:global([data-design-surface]) .caption5 {
+  font-size: 8px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}

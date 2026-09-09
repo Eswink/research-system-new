@@ -1,0 +1,116 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .column {
+  padding: 32px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--cc-border);
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+:global([data-design-surface]) .row3 {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), #6ba1ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 0 24px rgba(76, 141, 255, 0.4);
+}
+
+:global([data-design-surface]) .label {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.16em;
+}
+
+:global([data-design-surface]) .indicator {
+  width: 1px;
+  height: 32px;
+  background: var(--cc-border);
+}
+
+:global([data-design-surface]) .row4 {
+  display: flex;
+  gap: 40px;
+}
+
+:global([data-design-surface]) .row5 {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+:global([data-design-surface]) .surface {
+  text-align: right;
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 34px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+}
+
+:global([data-design-surface]) .label4 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.16em;
+}
+
+:global([data-design-surface]) .row6 {
+  padding: 6px 14px;
+  background: var(--success-dim);
+  border: 1px solid var(--success-line);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--success);
+  letter-spacing: 0.1em;
+}
+
+:global([data-design-surface]) .indicator2 {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+:global([data-design-surface]) .grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 16px;
+}

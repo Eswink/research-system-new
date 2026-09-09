@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { I18nProvider } from "../../src/i18n/I18nProvider";
 
 import type { CostViewDto, RunTelemetryDto, TrendViewDto } from "../../src/api/types";
 import { OperationsPanel } from "../../src/features/operations/OperationsPanel";
@@ -84,8 +85,14 @@ const trend: TrendViewDto = {
   ],
 };
 
+function renderEnglish(children: ReactNode): string {
+  return renderToStaticMarkup(createElement(I18nProvider, {
+    language: "en", onLanguageChange: () => undefined, children,
+  }));
+}
+
 test("operations views render server-provided provenance, amounts, and unknown state", () => {
-  const html = renderToStaticMarkup(
+  const html = renderEnglish(
     createElement(
       "main",
       undefined,
@@ -101,9 +108,29 @@ test("operations views render server-provided provenance, amounts, and unknown s
   assert.match(html, /showing a bounded recent window/);
 });
 
+test("default Chinese view retains the bounded-window warning and exact raw currency", () => {
+  const html = renderToStaticMarkup(createElement("main", null,
+    createElement(CostView, { cost }), createElement(TrendView, { trend })));
+  assert.match(html, /有界的近期窗口/);
+  assert.match(html, /125 JPY minor units/);
+  assert.doesNotMatch(html, /\$1\.25/);
+});
+
+test("missing evaluation is visible but excluded from numeric chart and counts", () => {
+  const point = trend.segments[0]?.points[0];
+  assert.ok(point);
+  const missing: TrendViewDto = { ...trend, segments: [], missing: [{ ...point, missing: true }] };
+  const html = renderEnglish(createElement(TrendView, { trend: missing }));
+  assert.match(html, /sha256:report/);
+  assert.match(html, /counts are not rendered as zero/);
+  assert.doesNotMatch(html, /<svg/);
+  assert.doesNotMatch(html, /reviewer failures 1/);
+});
+
 test("operations panel renders controls through its server-state hook", () => {
-  const html = renderToStaticMarkup(createElement(OperationsPanel));
+  const html = renderEnglish(createElement(OperationsPanel));
   assert.match(html, /data-testid="operations-panel"/);
-  assert.match(html, /Load Telemetry &amp; Cost/);
+  assert.match(html, /Run ID/);
+  assert.match(html, /Load run/);
   assert.match(html, /Load Evaluation Trend/);
 });

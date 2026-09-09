@@ -32,7 +32,13 @@ test("apps/web 生产源码通过全部生产架构边界", () => {
   const result = spawnSync(
     process.execPath,
     [cli, "--config", config, "--output-type", "json", "apps/web/src"],
-    { cwd: root, encoding: "utf8", env: { ...process.env, FORCE_COLOR: "0" } },
+    // Full JSON of the grown web tree exceeds the 1 MB spawnSync default.
+    {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, FORCE_COLOR: "0" },
+      maxBuffer: 64 * 1024 * 1024,
+    },
   );
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const report = JSON.parse(result.stdout);

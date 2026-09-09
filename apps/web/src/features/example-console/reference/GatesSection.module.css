@@ -1,0 +1,37 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr) 20px;
+  gap: 8px;
+  align-items: center;
+}
+
+:global([data-design-surface]) .action {
+  height: 20px;
+  padding: 0;
+  width: 20px;
+  justify-content: center;
+  color: var(--danger);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  color: var(--fg-faint);
+  margin-top: 6px;
+  line-height: 1.4;
+  padding-left: 2px;
+}
+
+:global([data-design-surface]) .action2 {
+  width: 100%;
+  justify-content: center;
+  border-style: dashed;
+}

@@ -1,0 +1,55 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .row {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .caption {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 22px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.45;
+}
+
+:global([data-design-surface]) .indicator {
+  height: 3px;
+  background: var(--bg-sunken);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+:global([data-design-surface]) .surface {
+  height: 100%;
+}

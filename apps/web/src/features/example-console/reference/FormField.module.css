@@ -1,0 +1,11 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  margin-bottom: 12px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}

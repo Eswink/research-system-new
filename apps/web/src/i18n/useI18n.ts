@@ -3,8 +3,8 @@
 import { useContext } from "react";
 
 import { I18nContext, type I18nContextValue } from "./context";
-import { zh } from "./zh";
 import type { TranslationKey } from "./zh";
+import { zh } from "./zh";
 
 const ZH: Partial<Record<TranslationKey, string>> = zh;
 

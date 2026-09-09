@@ -1,0 +1,104 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+:global([data-design-surface]) .panel {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+:global([data-design-surface]) .row2 {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+:global([data-design-surface]) .surface {
+  flex: 1;
+  min-width: 0;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 9px;
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+}
+
+:global([data-design-surface]) .row3 {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .caption3 {
+  font-size: 10px;
+  color: var(--warn);
+}
+
+:global([data-design-surface]) .caption4 {
+  font-size: 10px;
+  color: var(--danger);
+}
+
+:global([data-design-surface]) .row4 {
+  margin-top: auto;
+  padding-top: 6px;
+  display: flex;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .action {
+  width: 100%;
+}
+
+:global([data-design-surface]) .action2 {
+  width: 100%;
+}

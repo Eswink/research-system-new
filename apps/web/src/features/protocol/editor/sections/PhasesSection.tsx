@@ -10,7 +10,7 @@ import {
 } from "../protocolDocument";
 import { formToYaml } from "../protocolSerialize";
 import styles from "./Sections.module.css";
-import { TextField, SelectField, CommaList } from "./fieldPrimitives";
+import { CommaList, SelectField, TextField } from "./fieldPrimitives";
 
 const GATE_TONE: Record<GateType, string | undefined> = {
   BUDGET_GATE: styles.toneWarn,

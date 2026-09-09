@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 
-import { Icon } from "./Icon";
 import styles from "./Field.module.css";
+import { Icon } from "./Icon";
 
 function TooltipIcon({ text }: { text: string }) {
   const [open, setOpen] = useState(false);

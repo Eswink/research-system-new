@@ -1,0 +1,35 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  background: var(--warn-dim);
+  border: 1px solid var(--warn-line);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--warn);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+:global([data-design-surface]) .surface {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .surface2 {
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .action {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}

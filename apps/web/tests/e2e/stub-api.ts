@@ -1,8 +1,9 @@
 /**
- * e2e 共享确定性 API 替身（PLAN-20260908-033 AC-06）。
+ * e2e 严格 API 替身（PLAN-20260908-034 T10）。
  *
- * page.route 拦截全部 /api 请求并返回固定数据：无真实后端、无付费 LLM、
- * 无凭据；页面渲染完全确定（截图基准依赖此确定性）。
+ * 替换旧空数组兜底：未注册的 /api 请求立即使测试失败（route.abort + 记录违规），
+ * 已支持 API 的样例遵循真实 DTO 形状。无后端页面的填充数据只进入隔离的视觉
+ * 测试组合入口（见 visualFixtures），不加入生产路由/生产 API 客户端。
  */
 
 import type { Page, Route } from "@playwright/test";
@@ -44,13 +45,105 @@ export const DRAFT = {
   updated_at: "2026-09-08T00:00:00Z",
 };
 
-function fulfillJson(route: Route, body: unknown, status = 200): void {
+type Handler = (url: URL, body: unknown) => { status: number; body: unknown };
+
+/** 收集未匹配请求，测试结束断言为空。 */
+export const unmatchedRequests: string[] = [];
+
+const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] = [
+  {
+    method: "GET",
+    pattern: /^\/llm-endpoints$/,
+    handler: () => ({ status: 200, body: [ENDPOINT] }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/protocol-templates$/,
+    handler: () => ({
+      status: 200,
+      body: [
+        {
+          template_id: "sort-analysis",
+          display_name: "Sort 分析（2-phase）",
+          description: "执行 + 独立复核的参考场景",
+          yaml_text: VALID_YAML,
+          source: "examples/protocols/sort_analysis_v1.yaml",
+        },
+      ],
+    }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/protocol-drafts\/[^/]+$/,
+    handler: () => ({ status: 200, body: DRAFT }),
+  },
+  {
+    method: "POST",
+    pattern: /^\/projects\/example-project\/protocol-drafts$/,
+    handler: () => ({ status: 201, body: DRAFT }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/projects\/example-project\/protocol-drafts$/,
+    handler: () => ({ status: 200, body: [] }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/projects\/example-project\/runs$/,
+    handler: () => ({ status: 200, body: [] }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/cluster\/workers$/,
+    handler: () => ({ status: 200, body: { workers: [] } }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/roles$|^\/team-templates$/,
+    handler: () => ({ status: 200, body: [] }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/projects\/example-project\/agents$/,
+    handler: () => ({ status: 200, body: [] }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/projects\/example-project\/settings$/,
+    handler: () => ({
+      status: 200,
+      body: {
+        project_id: "example-project",
+        team_template_id: "standard",
+        budget_policy_id: "low_cost",
+        workspace_backend: "openhands_docker",
+      },
+    }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/approvals$/,
+    handler: () => ({ status: 200, body: [] }),
+  },
+];
+
+function match(path: string, method: string): Handler | null {
+  for (const route of ROUTES) {
+    if (route.method === method && route.pattern.test(path)) {
+      return route.handler;
+    }
+  }
+  return null;
+}
+
+function fulfill(route: Route, status: number, body: unknown): void {
   void route
     .fulfill({ status, contentType: "application/json", body: JSON.stringify(body) })
     .catch(() => undefined);
 }
 
 export async function stubApi(page: Page): Promise<void> {
+  unmatchedRequests.length = 0;
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     if (!url.pathname.startsWith("/api/")) {
@@ -59,26 +152,35 @@ export async function stubApi(page: Page): Promise<void> {
     }
     const path = url.pathname.replace(/^\/api/, "");
     const method = route.request().method();
-    if (path === "/llm-endpoints" && method === "GET") {
-      fulfillJson(route, [ENDPOINT]);
+    const handler = match(path, method);
+    if (handler === null) {
+      unmatchedRequests.push(`${method} ${url.pathname}`);
+      fulfill(route, 500, {
+        type: "about:blank",
+        title: "Unstubbed Request",
+        status: 500,
+        detail: `No stub for ${method} ${path}`,
+        instance: path,
+      });
       return;
     }
-    if (path === "/protocol-templates" && method === "GET") {
-      fulfillJson(route, [
-        {
-          template_id: "sort-analysis",
-          display_name: "Sort 分析（2-phase）",
-          description: "执行 + 独立复核的参考场景",
-          yaml_text: VALID_YAML,
-          source: "examples/protocols/sort_analysis_v1.yaml",
-        },
-      ]);
-      return;
+    const post = route.request().postData();
+    let body: unknown;
+    try {
+      body = post ? JSON.parse(post) : undefined;
+    } catch {
+      body = undefined;
     }
-    if (path === "/projects/example-project/protocol-drafts" && method === "POST") {
-      fulfillJson(route, DRAFT, 201);
-      return;
-    }
-    fulfillJson(route, []);
+    const result = handler(url, body);
+    fulfill(route, result.status, result.body);
   });
+}
+
+/** 测试内断言：无未匹配请求。 */
+export function assertNoUnmatched(): void {
+  if (unmatchedRequests.length > 0) {
+    const list = unmatchedRequests.join(", ");
+    unmatchedRequests.length = 0;
+    throw new Error(`Unstubbed API requests: ${list}`);
+  }
 }

@@ -1,0 +1,30 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border: 1px dashed var(--unknown-line);
+  background: var(--unknown-dim);
+  color: var(--unknown);
+  white-space: nowrap;
+}
+
+:global([data-design-surface]) .row2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border: 1px solid var(--success-line);
+  background: var(--success-dim);
+  color: var(--success);
+  white-space: nowrap;
+}

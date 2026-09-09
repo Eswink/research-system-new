@@ -1,0 +1,138 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 11px;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .action {
+  border-color: var(--warn-line);
+  color: var(--warn);
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--success);
+  border-color: var(--success-line);
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .action2 {
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+:global([data-design-surface]) .surface2 {
+  margin-top: 6px;
+}
+
+:global([data-design-surface]) .row3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  color: var(--danger);
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 10px;
+  color: var(--warn);
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px;
+  gap: 12px;
+}
+
+:global([data-design-surface]) .surface3 {
+  background: var(--bg-sunken);
+  border-radius: 6px;
+}
+
+:global([data-design-surface]) .grid2 {
+  display: grid;
+  grid-template-columns: 6px minmax(0, 1fr) 90px 32px 20px;
+  gap: 6px;
+  padding: 6px 8px 6px 0;
+  align-items: center;
+}
+
+:global([data-design-surface]) .surface4 {
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+  margin-left: 6px;
+}
+
+:global([data-design-surface]) .caption3 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  text-align: right;
+}
+
+:global([data-design-surface]) .action3 {
+  height: 20px;
+  padding: 0;
+  width: 20px;
+  justify-content: center;
+  color: var(--danger);
+}
+
+:global([data-design-surface]) .action4 {
+  width: 100%;
+  justify-content: center;
+  height: 28px;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
+}
+
+:global([data-design-surface]) .column {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .caption4 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 14px;
+  font-weight: 500;
+}

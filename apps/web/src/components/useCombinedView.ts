@@ -7,13 +7,12 @@ export function useCombinedView(): {
   ready: boolean;
 } {
   return {
-    combine: <T,>(views: DataView<T>[]): DataView<T[]> => {
+    combine: <T>(views: DataView<T>[]): DataView<T[]> => {
       const loading = views.some((view) => view.loading);
       const error = views.find((view) => view.error !== null)?.error ?? null;
-      const data =
-        views.every((view) => view.data !== null)
-          ? views.map((view) => view.data as T)
-          : null;
+      const data = views.every((view) => view.data !== null)
+        ? views.map((view) => view.data as T)
+        : null;
       return { data, loading, error };
     },
     ready: true,

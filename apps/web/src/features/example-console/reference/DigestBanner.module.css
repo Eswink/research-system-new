@@ -1,0 +1,37 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--warn-dim);
+  border-bottom: 1px solid var(--warn-line);
+  font-size: 11px;
+  color: var(--warn);
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .surface {
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .surface2 {
+  line-height: 1.45;
+}
+
+:global([data-design-surface]) .surface3 {
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .surface4 {
+  opacity: 0.85;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--warn);
+}

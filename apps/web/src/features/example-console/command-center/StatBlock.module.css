@@ -1,0 +1,26 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .caption {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.16em;
+  margin-bottom: 4px;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 28px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  color: var(--fg-faint);
+}

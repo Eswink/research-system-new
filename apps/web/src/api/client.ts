@@ -1,337 +1,111 @@
 /**
- * Control Plane API client（apps/web 唯一网络入口）。
+ * Control Plane API 门面（apps/web 唯一网络入口）。
  *
- * 约束（M13 DoD 12/13）：
- * - 只消费 src/api/types.ts 的 DTO；不接触 Python Domain；
- * - mutating 请求必须带 Idempotency-Key（重复提交/重试安全）；
- * - 带资源版本（ETag）的变更带 If-Match（陈旧版本 → 412 → UI 刷新）；
- * - Key 永不写入 localStorage / URL / logs（浏览器持久存储零 secret）。
+ * 实现按职责拆分到 endpointsClient/modelsClient/teamClient/protocolClient/
+ * runClient/inspectionClient/operationsClient/draftClient；本文件只组合它们，
+ * 保持既有 `api.*` 调用面与 ETag 结果形状（`.dto`/`.etag`）向后兼容。
+ *
+ * 约束：只消费 src/api/types.ts 的 DTO；mutating 带 Idempotency-Key；
+ * 带版本资源带 If-Match；Key 永不写入 localStorage/URL/logs。
  */
 
+import { endpointsClient } from "./endpointsClient";
+import { ApiError } from "./http";
+import { inspectionClient } from "./inspectionClient";
+import type { EndpointWithEtag } from "./legacyShapes";
+import { modelsClient } from "./modelsClient";
+import { operationsClient } from "./operationsClient";
+import { protocolClient } from "./protocolClient";
+import { runClient } from "./runClient";
+import { teamClient } from "./teamClient";
 import type {
-  AgentSpecDto,
   AgentCreateDto,
+  AgentSpecDto,
   AgentUpdatePayload,
-  CompileResultDto,
-  DiscoverModelsResultDto,
-  DryRunProjectionDto,
-  EndpointHealthDto,
-  EndpointTestResultDto,
-  ExperimentViewDto,
   LlmEndpointCreateDto,
   LlmEndpointReadDto,
   LlmEndpointUpdateDto,
   ModelCreateDto,
   ModelReadDto,
   ModelUpdateDto,
-  PreflightReportDto,
-  ProblemDto,
-  ProbeResultDto,
   ProjectSettingsDto,
-  RoleDefinitionDto,
-  RunDetailDto,
-  RunEventDto,
-  TaskDto,
-  TeamTemplateDto,
   Version,
-  ApprovalDto,
-  BudgetViewDto,
-  ClaimMapDto,
-  EvidenceDto,
-  ExportBundleDto,
-  CompatibilityViewDto,
-  ClusterViewDto,
-  CostViewDto,
-  RunPlacementDto,
-  RunTelemetryDto,
-  TrendViewDto,
 } from "./types";
-import { API_BASE, ApiError, newIdempotencyKey, request } from "./http";
 
-export { ApiError } from "./http";
+export { ApiError };
+export type { EndpointWithEtag };
 
-
-export interface EndpointWithEtag {
-  dto: LlmEndpointReadDto;
-  etag: Version;
+function withDto(r: { data: LlmEndpointReadDto; etag: Version }): EndpointWithEtag {
+  return { dto: r.data, etag: r.etag };
 }
-
-async function requestWithEtag(
-  path: string,
-  init: RequestInit,
-  options?: { idempotencyKey?: string; ifMatch?: Version },
-): Promise<EndpointWithEtag> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: new Headers({
-      ...Object.fromEntries(new Headers(init.headers).entries()),
-      Accept: "application/json",
-      ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}),
-      ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
-      ...(options?.ifMatch ? { "If-Match": options.ifMatch } : {}),
-    }),
-  });
-  if (!response.ok) {
-    let problem: ProblemDto | undefined;
-    try {
-      problem = (await response.json()) as ProblemDto;
-    } catch {
-      problem = undefined;
-    }
-    throw new ApiError(
-      response.status,
-      problem ?? {
-        type: "about:blank",
-        title: "Request Failed",
-        status: response.status,
-        detail: `HTTP ${String(response.status)}`,
-        instance: path,
-      },
-    );
-  }
-  const body = (await response.json()) as LlmEndpointReadDto;
-  const etag = response.headers.get("etag") ?? "";
-  return { dto: body, etag };
-}
-
 
 export const api = {
-  listEndpoints(): Promise<LlmEndpointReadDto[]> {
-    return request("/llm-endpoints", { method: "GET" });
-  },
-
-  createEndpoint(payload: LlmEndpointCreateDto): Promise<EndpointWithEtag> {
-    return requestWithEtag("/llm-endpoints", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }, { idempotencyKey: newIdempotencyKey() });
-  },
-
-  getEndpoint(id: string): Promise<EndpointWithEtag> {
-    return requestWithEtag(`/llm-endpoints/${encodeURIComponent(id)}`, { method: "GET" });
-  },
-
-  updateEndpoint(
+  // ── endpoints ─
+  listEndpoints: () => endpointsClient.list(),
+  createEndpoint: (payload: LlmEndpointCreateDto): Promise<EndpointWithEtag> =>
+    endpointsClient.create(payload).then(withDto),
+  getEndpoint: (id: string): Promise<EndpointWithEtag> => endpointsClient.get(id).then(withDto),
+  updateEndpoint: (
     id: string,
     payload: LlmEndpointUpdateDto,
     ifMatch: Version,
-  ): Promise<EndpointWithEtag> {
-    return requestWithEtag(`/llm-endpoints/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    }, { idempotencyKey: newIdempotencyKey(), ifMatch });
-  },
+  ): Promise<EndpointWithEtag> => endpointsClient.update(id, payload, ifMatch).then(withDto),
+  testEndpoint: (endpointId: string, modelId: string) => endpointsClient.test(endpointId, modelId),
+  discoverModels: (endpointId: string) => endpointsClient.discoverModels(endpointId),
+  endpointHealth: (endpointId: string) => endpointsClient.health(endpointId),
 
-  testEndpoint(endpointId: string, modelId: string): Promise<EndpointTestResultDto> {
-    return request(`/llm-endpoints/${encodeURIComponent(endpointId)}/test`, {
-      method: "POST",
-      body: JSON.stringify({ model_id: modelId }),
-    }, { idempotencyKey: newIdempotencyKey() });
-  },
+  // ── models ──
+  listModels: (endpointId?: string): Promise<ModelReadDto[]> => modelsClient.list(endpointId),
+  createModel: (payload: ModelCreateDto): Promise<ModelReadDto> =>
+    modelsClient.create(payload).then((r) => r.data),
+  getModel: (id: string) => modelsClient.get(id),
+  updateModel: (id: string, payload: ModelUpdateDto, ifMatch: Version) =>
+    modelsClient.update(id, payload, ifMatch),
+  probeModel: (id: string) => modelsClient.probe(id),
+  getCompatibility: (modelId: string) => modelsClient.compatibility(modelId),
 
-  discoverModels(endpointId: string): Promise<DiscoverModelsResultDto> {
-    return request(`/llm-endpoints/${encodeURIComponent(endpointId)}/discover-models`, {
-      method: "POST",
-    }, { idempotencyKey: newIdempotencyKey() });
-  },
+  // ── team ──
+  listRoles: () => teamClient.listRoles(),
+  listTeamTemplates: () => teamClient.listTeamTemplates(),
+  listAgents: (): Promise<AgentSpecDto[]> => teamClient.listAgents(),
+  createAgent: (payload: AgentCreateDto) => teamClient.createAgent(payload),
+  updateAgent: (agentId: string, payload: AgentUpdatePayload, ifMatch: Version) =>
+    teamClient.updateAgent(agentId, payload, ifMatch),
+  getProjectSettings: (): Promise<ProjectSettingsDto> => teamClient.getProjectSettings(),
+  saveProjectSettings: (payload: ProjectSettingsDto) => teamClient.saveProjectSettings(payload),
 
-  endpointHealth(endpointId: string): Promise<EndpointHealthDto> {
-    return request(`/llm-endpoints/${encodeURIComponent(endpointId)}/health`, {
-      method: "GET",
-    });
-  },
+  // ── protocol ──
+  validateProtocol: (path: string) => protocolClient.validate(path),
+  compileAndPreflight: (path: string) => protocolClient.compileAndPreflight(path),
+  preflight: (path: string) => protocolClient.preflight(path),
+  dryRun: (path: string) => protocolClient.dryRun(path),
 
-  listModels(endpointId?: string): Promise<ModelReadDto[]> {
-    const query = endpointId ? `?endpoint_id=${encodeURIComponent(endpointId)}` : "";
-    return request(`/models${query}`, { method: "GET" });
-  },
+  // ── runs & approvals ──
+  startRun: (source: string | { draft_id: string; draft_revision: number }) =>
+    runClient.start(source),
+  listRuns: (projectId?: string) => runClient.list(projectId),
+  getRun: (runId: string) => runClient.get(runId),
+  cancelRun: (runId: string) => runClient.cancel(runId),
+  pauseRun: (runId: string) => runClient.pause(runId),
+  resumeRun: (runId: string) => runClient.resume(runId),
+  runTasks: (runId: string) => runClient.tasks(runId),
+  runEvents: (runId: string) => runClient.events(runId),
+  listApprovals: () => runClient.listApprovals(),
+  decideApproval: (approvalId: string, decision: "approve" | "deny", version: Version) =>
+    runClient.decideApproval(approvalId, decision, version),
 
-  createModel(payload: ModelCreateDto): Promise<ModelReadDto> {
-    return request("/models", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }, { idempotencyKey: newIdempotencyKey() });
-  },
+  // ── inspection ─
+  runEvidence: (runId: string) => inspectionClient.evidence(runId),
+  runClaimMap: (runId: string) => inspectionClient.claimMap(runId),
+  runUsage: (runId: string) => inspectionClient.usage(runId),
+  runExperiments: (runId: string) => inspectionClient.experiments(runId),
+  runExport: (runId: string) => inspectionClient.export(runId),
 
-  getModel(id: string): Promise<ModelReadDto> {
-    return request(`/models/${encodeURIComponent(id)}`, { method: "GET" });
-  },
-
-  updateModel(id: string, payload: ModelUpdateDto, ifMatch: Version): Promise<ModelReadDto> {
-    return request(`/models/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    }, { idempotencyKey: newIdempotencyKey(), ifMatch });
-  },
-
-  probeModel(id: string): Promise<ProbeResultDto> {
-    return request(`/models/${encodeURIComponent(id)}/probe`, {
-      method: "POST",
-    });
-  },
-
-  getCompatibility(modelId: string): Promise<CompatibilityViewDto> {
-    return request(`/models/${encodeURIComponent(modelId)}/compatibility`, { method: "GET" });
-  },
-
-  listRoles(): Promise<RoleDefinitionDto[]> {
-    return request("/roles", { method: "GET" });
-  },
-
-  listTeamTemplates(): Promise<TeamTemplateDto[]> {
-    return request("/team-templates", { method: "GET" });
-  },
-
-  listAgents(): Promise<AgentSpecDto[]> {
-    return request("/projects/example-project/agents", { method: "GET" });
-  },
-
-  createAgent(payload: AgentCreateDto): Promise<AgentSpecDto> {
-    return request("/projects/example-project/agents", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }, { idempotencyKey: newIdempotencyKey() });
-  },
-
-  updateAgent(
-    agentId: string,
-    payload: AgentUpdatePayload,
-    ifMatch: Version,
-  ): Promise<AgentSpecDto> {
-    return request(`/agents/${encodeURIComponent(agentId)}`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    }, { idempotencyKey: newIdempotencyKey(), ifMatch });
-  },
-
-  getProjectSettings(): Promise<ProjectSettingsDto> {
-    return request("/projects/example-project/settings", { method: "GET" });
-  },
-
-  validateProtocol(path: string): Promise<CompileResultDto> {
-    return request("/protocols/validate", {
-      method: "POST",
-      body: JSON.stringify({ path }),
-    });
-  },
-
-  compileAndPreflight(path: string): Promise<PreflightReportDto> {
-    return request("/projects/example-project/compile", {
-      method: "POST",
-      body: JSON.stringify({ path }),
-    });
-  },
-
-  dryRun(path: string): Promise<DryRunProjectionDto> {
-    return request("/projects/example-project/dry-run", {
-      method: "POST",
-      body: JSON.stringify({ path }),
-    });
-  },
-
-  startRun(
-    source: string | { draft_id: string; draft_revision: number },
-  ): Promise<RunDetailDto> {
-    const body =
-      typeof source === "string"
-        ? { protocol_path: source }
-        : { draft_id: source.draft_id, draft_revision: source.draft_revision };
-    return request("/projects/example-project/runs", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }, { idempotencyKey: newIdempotencyKey() });
-  },
-
-  listRuns(projectId = "example-project"): Promise<RunDetailDto[]> {
-    return request(`/projects/${encodeURIComponent(projectId)}/runs`, { method: "GET" });
-  },
-
-  getRun(runId: string): Promise<RunDetailDto> {
-    return request(`/runs/${encodeURIComponent(runId)}`, { method: "GET" });
-  },
-
-  cancelRun(runId: string): Promise<RunDetailDto> {
-    return request(`/runs/${encodeURIComponent(runId)}/cancel`, {
-      method: "POST",
-    }, { idempotencyKey: newIdempotencyKey() });
-  },
-
-  runTasks(runId: string): Promise<TaskDto[]> {
-    return request(`/runs/${encodeURIComponent(runId)}/tasks`, { method: "GET" });
-  },
-
-  runEvents(runId: string): Promise<RunEventDto[]> {
-    return request(`/runs/${encodeURIComponent(runId)}/events`, { method: "GET" });
-  },
-
-  listApprovals(): Promise<ApprovalDto[]> {
-    return request("/approvals", { method: "GET" });
-  },
-
-  decideApproval(
-    approvalId: string,
-    decision: "approve" | "deny",
-    version: Version,
-  ): Promise<ApprovalDto> {
-    return request(`/approvals/${encodeURIComponent(approvalId)}/decide`, {
-      method: "POST",
-      body: JSON.stringify({ decision }),
-    }, { idempotencyKey: newIdempotencyKey(), ifMatch: version });
-  },
-
-  runEvidence(runId: string): Promise<EvidenceDto[]> {
-    return request(`/runs/${encodeURIComponent(runId)}/evidence`, { method: "GET" });
-  },
-
-  runClaimMap(runId: string): Promise<ClaimMapDto> {
-    return request(`/runs/${encodeURIComponent(runId)}/claims`, { method: "GET" });
-  },
-
-  runUsage(runId: string): Promise<BudgetViewDto> {
-    return request(`/runs/${encodeURIComponent(runId)}/usage`, { method: "GET" });
-  },
-
-  runTelemetry(runId: string): Promise<RunTelemetryDto> {
-    return request(`/runs/${encodeURIComponent(runId)}/telemetry`, { method: "GET" });
-  },
-
-  runCost(runId: string): Promise<CostViewDto> {
-    return request(`/runs/${encodeURIComponent(runId)}/cost`, { method: "GET" });
-  },
-
-  clusterWorkers(): Promise<ClusterViewDto> {
-    return request("/cluster/workers", { method: "GET" });
-  },
-
-  runPlacement(runId: string): Promise<RunPlacementDto> {
-    return request(`/runs/${encodeURIComponent(runId)}/placement`, { method: "GET" });
-  },
-
-  evaluationsTrend(
-    datasetId?: string,
-    expectedDigests: string[] = [],
-    limit?: number,
-  ): Promise<TrendViewDto> {
-    const params = new URLSearchParams();
-    if (datasetId) {
-      params.set("dataset_id", datasetId);
-    }
-    for (const digest of expectedDigests) {
-      params.append("expected_digests", digest);
-    }
-    if (limit !== undefined) {
-      params.set("limit", String(limit));
-    }
-    const suffix = params.size > 0 ? `?${params.toString()}` : "";
-    return request(`/evaluations/trend${suffix}`, { method: "GET" });
-  },
-
-  runExperiments(runId: string): Promise<ExperimentViewDto> {
-    return request(`/runs/${encodeURIComponent(runId)}/experiments`, { method: "GET" });
-  },
-
-  runExport(runId: string): Promise<ExportBundleDto> {
-    return request(`/runs/${encodeURIComponent(runId)}/export`, { method: "GET" });
-  },
-
+  // ── operations ─
+  runTelemetry: (runId: string) => operationsClient.telemetry(runId),
+  runCost: (runId: string) => operationsClient.cost(runId),
+  evaluationsTrend: (datasetId?: string, expectedDigests: string[] = [], limit?: number) =>
+    operationsClient.trend(datasetId, expectedDigests, limit),
+  clusterWorkers: () => operationsClient.clusterWorkers(),
+  runPlacement: (runId: string) => operationsClient.placement(runId),
 };

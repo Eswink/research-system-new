@@ -1,0 +1,25 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+:global([data-design-surface]) .surface {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .action {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+}

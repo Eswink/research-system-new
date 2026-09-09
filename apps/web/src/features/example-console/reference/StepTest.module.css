@@ -1,0 +1,76 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  padding: 20px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+:global([data-design-surface]) .label2 {
+  background: var(--bg-sunken);
+  padding: 14px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--accent);
+}
+
+:global([data-design-surface]) .surface3 {
+  margin-top: 8px;
+}
+
+:global([data-design-surface]) .surface4 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--success);
+}
+
+:global([data-design-surface]) .surface6 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .surface7 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .surface8 {
+  color: var(--unknown);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+}
+
+:global([data-design-surface]) .surface9 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .row {
+  margin-top: 12px;
+  padding: 10px;
+  background: var(--unknown-dim);
+  border: 1px dashed var(--unknown-line);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--unknown);
+  display: flex;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface10 {
+  flex-shrink: 0;
+  margin-top: 2px;
+}

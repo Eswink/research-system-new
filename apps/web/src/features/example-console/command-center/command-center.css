@@ -1,0 +1,106 @@
+.stage-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, var(--cc-sunken) 0%, var(--cc-background) 90%);
+}
+.stage {
+  width: 2560px;
+  height: 1440px;
+  transform-origin: center center;
+  position: relative;
+  background: var(--bg-app);
+  box-shadow: 0 0 80px rgba(76, 141, 255, 0.08);
+}
+.grid-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(76, 141, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(76, 141, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+.cc-panel {
+  background: linear-gradient(180deg, var(--cc-raised) 0%, var(--cc-sunken) 100%);
+  border: 1px solid var(--cc-border);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.cc-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(76, 141, 255, 0.4) 20%,
+    rgba(76, 141, 255, 0.4) 80%,
+    transparent 100%
+  );
+}
+.cc-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--cc-divider);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.cc-panel-header .kicker {
+  color: var(--accent);
+}
+.cc-panel-body {
+  padding: 16px 18px;
+}
+
+@keyframes cc-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.pulse-dot {
+  animation: cc-pulse 2s ease-in-out infinite;
+}
+
+@keyframes cc-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+.scan-line::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--accent), transparent);
+  animation: cc-scan 4s linear infinite;
+}
+
+@keyframes ticker-slide {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}

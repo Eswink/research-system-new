@@ -1,0 +1,26 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  grid-column: span 4;
+  grid-row: span 1;
+}
+
+:global([data-design-surface]) .row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .indicator {
+  width: 14px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+:global([data-design-surface]) .surface2 {
+  margin-left: auto;
+}

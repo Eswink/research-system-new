@@ -1,0 +1,68 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  position: relative;
+  flex-shrink: 0;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border);
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+:global([data-design-surface]) .action {
+  height: 18px;
+  padding: 0 6px;
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px;
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--fg);
+  text-align: left;
+  font-family: inherit;
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--fg-muted);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .surface3 {
+  min-width: 0;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  color: var(--fg-faint);
+  line-height: 1.45;
+}

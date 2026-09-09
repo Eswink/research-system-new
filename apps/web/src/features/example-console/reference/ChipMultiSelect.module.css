@@ -1,0 +1,73 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .row2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px 3px 8px;
+  height: 22px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .row3 {
+  background: transparent;
+  border: none;
+  color: var(--fg-faint);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+:global([data-design-surface]) .row4 {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
+:global([data-design-surface]) .surface {
+  position: relative;
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .overlay {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 4px;
+  min-width: 200px;
+  box-shadow: var(--shadow-2);
+  z-index: 50;
+}
+
+:global([data-design-surface]) .action {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--fg);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-align: left;
+  border-radius: 3px;
+}
+
+:global([data-design-surface]) .surface2 {
+  margin-right: 6px;
+  color: var(--fg-faint);
+}

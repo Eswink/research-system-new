@@ -1,9 +1,27 @@
 # Research Console 全站重建设计说明（CONSOLE_REBUILD）
 
-> 状态：v1（2026-09-08）。授权计划：[PLAN-20260908-033](../../.cursor/plans/tasks/PLAN-20260908-033-research-console-rebuild.md)；
-> 设计来源：[protocol-visual-editor 归档](../references/design/protocol-visual-editor/ARCHIVE_NOTE.md)。
-> 本文档固定页面清单、设计控件 → 真实契约映射、主题/布局/状态规范与验收基准，
-> 是全站重建期间的单一 UI 规范真相；与 [UI_DESIGN_PROMPTS.md](UI_DESIGN_PROMPTS.md) 冲突时以本文档 + DTO 为准。
+> 状态：v2（2026-09-08）。当前八域设计授权计划：
+> [PLAN-20260908-034](../../.cursor/plans/tasks/PLAN-20260908-034-console-design-reconstruction.md)；
+> 设计来源：[console-design 完整交付包归档](../references/design/console-design/ARCHIVE_NOTE.md)
+> （八域、33 规范路由、Command Center 大屏）。
+> 历史：v1（PLAN-20260908-033，五域 + protocol-visual-editor 子包）保留于 git 历史，
+> 其结论与证据不被覆写；逐页/逐操作映射与缺口见
+> [CONSOLE_PAGE_MAP.md](CONSOLE_PAGE_MAP.md)，交付清单见 [CONSOLE_DELIVERY.md](CONSOLE_DELIVERY.md)。
+> 本文档是全站重建期间的单一 UI 规范真相；与 [UI_DESIGN_PROMPTS.md](UI_DESIGN_PROMPTS.md)
+> 冲突时以本文档 + DTO 为准。
+
+## 0. v2 八域外壳（2026-09-08）
+
+- 侧栏 220px（折叠 56px）、顶栏 48px、工作区间距 16px；八域展开子导航 + 面包屑 +
+  命令面板（⌘K）+ 独立大屏入口。
+- 33 条规范路由各有独立页面身份（`navigation/registry.ts` + `PageRenderer.tsx`）；
+  旧别名（assets/*、govern/approvals、run/runs、evidence/inspection、setup、
+  govern/operations）经 `LEGACY_ALIASES` 映射；未知地址进入未找到页。
+- 页面/操作支持等级登记于 `navigation/pageSupport.ts`（与 CONSOLE_PAGE_MAP.md 同源）；
+  缺口页用 GapPage 脚手架呈现结构 + 禁用操作 + 原因，不替换为统一"即将推出"卡片。
+- 字体自托管（[CONSOLE_FONTS.md](CONSOLE_FONTS.md)），生产不加载 Google Fonts/CDN/Babel。
+- 协议编辑器：YAML 文档树定点编辑无损往返；模板同源预检/启动；自定义草稿预检禁用（G1）。
+- 实时事件：消费服务端具名 SSE 帧（`NAMED_SSE_EVENTS`），去重/重连/Run 切换。
 
 ## 1. 不变量（与 AGENTS.md / UI_DESIGN_PROMPTS 对齐）
 

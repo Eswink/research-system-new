@@ -1,69 +1,192 @@
-/** 12px 内联 SVG 图标（currentColor；状态四重编码中的"图标"通道）。 */
+/** 12px 内联 SVG 图标（currentColor；状态四重编码中的"图标"通道）。
+ *  图标集与路径逐一对齐 docs/references/design/console-design/components/atoms.jsx。 */
+
+import type { CSSProperties, ReactNode } from "react";
 
 export type IconName =
-  | "book"
   | "check"
   | "x"
   | "warn-tri"
   | "hex"
   | "diamond"
   | "circle-o"
-  | "dot"
+  | "circle"
+  | "circle-dash"
+  | "square"
   | "q"
   | "play"
-  | "plus"
-  | "lock"
-  | "ban"
-  | "shield"
-  | "flask"
-  | "graph"
+  | "pause"
+  | "stop"
+  | "fork"
   | "copy"
+  | "external"
   | "chevron-r"
   | "chevron-d"
-  | "external"
-  | "fork"
+  | "search"
+  | "plus"
+  | "lock"
+  | "dot"
+  | "ban"
+  | "clock"
+  | "spin"
+  | "wifi"
+  | "wifi-off"
+  | "shield"
+  | "eye-off"
+  | "flask"
+  | "book"
+  | "graph"
+  | "menu"
   | "edit"
-  | "code"
-  | "menu";
+  | "code";
 
-const PATHS: Record<IconName, string> = {
-  book: "M2 2.5h4a2 2 0 0 1 2 2v7a1.5 1.5 0 0 0-1.5-1.5H2zM10 2.5H8.5A2 2 0 0 0 7 3.5M10 2.5v8.5H7",
-  check: "M2.5 6.5 4.5 8.5 9.5 3",
-  x: "M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5",
-  "warn-tri": "M6 1.5 11 10H1zM6 4.5v3M6 8.6v.4",
-  hex: "M6 1 10.5 3.5v5L6 11 1.5 8.5v-5zM6 4v4M4 5l4 2M8 5 4 7",
-  diamond: "M6 1 11 6 6 11 1 6z",
-  "circle-o":
-    "M6 1.5A4.5 4.5 0 1 1 6 10.5 4.5 4.5 0 0 1 6 1.5zM6 4A2 2 0 1 1 6 8 2 2 0 0 1 6 4z",
-  dot: "M6 4.5A1.5 1.5 0 1 1 6 7.5 1.5 1.5 0 0 1 6 4.5z",
-  q: "M4 3.5A2 2 0 1 1 6 6v1.2M6 9.4v.3",
-  play: "M3 2.5 9.5 6 3 9.5z",
-  plus: "M6 2v8M2 6h8",
-  lock: "M3.5 5V3.8A2.5 2.5 0 0 1 8.5 3.8V5M2.5 5h7v5h-7z",
-  ban: "M6 1.5A4.5 4.5 0 1 1 6 10.5 4.5 4.5 0 0 1 6 1.5zM3 9 9 3",
-  shield: "M6 1 10 2.5v3.5c0 2.2-1.7 3.7-4 4.5-2.3-.8-4-2.3-4-4.5V2.5zM4 5.5l1.5 1.5L8.5 4",
-  flask:
-    "M4.5 1.5h3M5 1.5v3L2.5 9a1.6 1.6 0 0 0 1.4 2.5h4.2A1.6 1.6 0 0 0 9.5 9L7 4.5v-3M3.6 7.5h4.8",
-  graph: "M1.5 10.5h9M3 10V6.5M6 10V3.5M9 10V5",
-  copy: "M3.5 3.5h5v5h-5zM5.5 1.5h5v5",
-  "chevron-r": "M4 2.5 7.5 6 4 9.5",
-  "chevron-d": "M2.5 4 6 7.5 9.5 4",
-  external: "M6.5 2.5H9.5V5.5M9.5 2.5 5 7M7.5 8.5v1.5h-6v-6H3",
-  fork: "M3 1.5v3a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-3M6 6.5v4M3.5 10.5h5",
-  edit: "M6 2 8 4 4 8 1.5 8.5 2 6z",
-  code: "M4 2.5 1.5 5 4 7.5M6 2.5 8.5 5 6 7.5",
-  menu: "M2 3.5h8M2 6h8M2 8.5h8",
+const SHAPES: Record<IconName, ReactNode> = {
+  check: <path d="M2.5 6.5 L5 9 L9.5 3.5" />,
+  x: <path d="M3 3 L9 9 M9 3 L3 9" />,
+  "warn-tri": (
+    <>
+      <path d="M6 1.5 L11 10.5 L1 10.5 Z" />
+      <path d="M6 5 V7.5" strokeWidth="1.6" />
+      <circle cx="6" cy="9" r="0.4" fill="currentColor" stroke="none" />
+    </>
+  ),
+  hex: <path d="M6 1.2 L10.2 3.6 V8.4 L6 10.8 L1.8 8.4 V3.6 Z" />,
+  diamond: <path d="M6 1.5 L10.5 6 L6 10.5 L1.5 6 Z" />,
+  "circle-o": <circle cx="6" cy="6" r="4" />,
+  circle: <circle cx="6" cy="6" r="4" fill="currentColor" stroke="none" />,
+  "circle-dash": <circle cx="6" cy="6" r="4" strokeDasharray="1.5 1.5" />,
+  square: <rect x="2" y="2" width="8" height="8" rx="1" />,
+  q: (
+    <>
+      <circle cx="6" cy="6" r="4" />
+      <path d="M4.6 5 A1.4 1.4 0 1 1 6 6.6 V7.4" />
+      <circle cx="6" cy="9.2" r="0.35" fill="currentColor" stroke="none" />
+    </>
+  ),
+  play: <path d="M3.5 2.5 L9.5 6 L3.5 9.5 Z" fill="currentColor" stroke="none" />,
+  pause: (
+    <>
+      <rect x="3.2" y="2.8" width="1.8" height="6.4" fill="currentColor" stroke="none" />
+      <rect x="7" y="2.8" width="1.8" height="6.4" fill="currentColor" stroke="none" />
+    </>
+  ),
+  stop: <rect x="3" y="3" width="6" height="6" fill="currentColor" stroke="none" />,
+  fork: (
+    <>
+      <circle cx="3" cy="2.5" r="1" />
+      <circle cx="9" cy="2.5" r="1" />
+      <circle cx="6" cy="10" r="1" />
+      <path d="M3 3.5 V6.5 A1.5 1.5 0 0 0 4.5 8 H7.5 A1.5 1.5 0 0 0 9 6.5 V3.5" />
+      <path d="M6 8 V9" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <path d="M2 8 V3 A1 1 0 0 1 3 2 H8" />
+    </>
+  ),
+  external: (
+    <>
+      <path d="M7 2 H10 V5" />
+      <path d="M10 2 L5.5 6.5" />
+      <path d="M9 7.5 V9.5 A0.5 0.5 0 0 1 8.5 10 H2.5 A0.5 0.5 0 0 1 2 9.5 V3.5" />
+      <path d="M2 3.5 A0.5 0.5 0 0 1 2.5 3 H4.5" />
+    </>
+  ),
+  "chevron-r": <path d="M4.5 2.5 L8 6 L4.5 9.5" />,
+  "chevron-d": <path d="M2.5 4.5 L6 8 L9.5 4.5" />,
+  search: (
+    <>
+      <circle cx="5" cy="5" r="3" />
+      <path d="M7.2 7.2 L10 10" />
+    </>
+  ),
+  plus: <path d="M6 2.5 V9.5 M2.5 6 H9.5" />,
+  lock: (
+    <>
+      <rect x="2.5" y="5.5" width="7" height="5" rx="0.6" />
+      <path d="M4 5.5 V4 A2 2 0 0 1 8 4 V5.5" />
+    </>
+  ),
+  dot: <circle cx="6" cy="6" r="2" fill="currentColor" stroke="none" />,
+  ban: (
+    <>
+      <circle cx="6" cy="6" r="4" />
+      <path d="M3.2 3.2 L8.8 8.8" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="6" cy="6" r="4" />
+      <path d="M6 3.5 V6 L7.6 7.6" />
+    </>
+  ),
+  spin: <path d="M6 2 A4 4 0 1 1 2 6" />,
+  wifi: (
+    <>
+      <path d="M1.5 4.5 A6 6 0 0 1 10.5 4.5" />
+      <path d="M3 6.3 A4 4 0 0 1 9 6.3" />
+      <path d="M4.5 8 A2 2 0 0 1 7.5 8" />
+      <circle cx="6" cy="9.5" r="0.5" fill="currentColor" stroke="none" />
+    </>
+  ),
+  "wifi-off": (
+    <>
+      <path d="M1.5 4.5 A6 6 0 0 1 3.5 3.2" />
+      <path d="M8.5 3.2 A6 6 0 0 1 10.5 4.5" />
+      <path d="M4.5 8 A2 2 0 0 1 7.5 8" />
+      <path d="M1.5 1.5 L10.5 10.5" />
+    </>
+  ),
+  shield: <path d="M6 1.5 L10 3 V6.5 C10 8.5 8 10 6 10.5 C4 10 2 8.5 2 6.5 V3 Z" />,
+  "eye-off": (
+    <>
+      <path d="M2 2 L10 10" />
+      <path d="M2.5 6.5 C4 4.5 4 4.5 6 4.5 C7 4.5 8 5 9.5 6.5" />
+      <circle cx="6" cy="6.5" r="1.2" />
+    </>
+  ),
+  flask: (
+    <>
+      <path d="M4.5 2 V4.5 L2.5 9 A1 1 0 0 0 3.5 10.5 H8.5 A1 1 0 0 0 9.5 9 L7.5 4.5 V2" />
+      <path d="M4 2 H8" />
+      <path d="M3.5 7 H8.5" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M2 2.5 H5.5 A1 1 0 0 1 6 3 V9.5 A0.5 0.5 0 0 1 5.5 10 H2 Z" />
+      <path d="M6 3 A1 1 0 0 1 6.5 2.5 H10 V9.5 A0.5 0.5 0 0 1 9.5 10 H6" />
+    </>
+  ),
+  graph: (
+    <>
+      <circle cx="3" cy="3" r="1.2" />
+      <circle cx="9" cy="4" r="1.2" />
+      <circle cx="6" cy="9" r="1.2" />
+      <path d="M4 3.4 L8 3.8" />
+      <path d="M3.4 4 L5.4 8" />
+      <path d="M8.4 5 L6.6 8" />
+    </>
+  ),
+  menu: <path d="M2 3.5 H10 M2 6 H10 M2 8.5 H10" />,
+  edit: <path d="M6 2 L8 4 L4 8 L1.5 8.5 L2 6 Z" />,
+  code: <path d="M4 2.5 L1.5 5 L4 7.5 M6 2.5 L8.5 5 L6 7.5" />,
 };
 
 export function Icon({
   name,
   size = 12,
   className,
+  style,
 }: {
   name: IconName;
   size?: number;
   className?: string | undefined;
+  style?: CSSProperties | undefined;
 }) {
+  const merged = name === "spin" ? { animation: "spin 1s linear infinite", ...style } : style;
   return (
     <svg
       width={size}
@@ -76,8 +199,9 @@ export function Icon({
       strokeLinejoin="round"
       aria-hidden="true"
       className={className}
+      style={merged}
     >
-      <path d={PATHS[name]} />
+      {SHAPES[name]}
     </svg>
   );
 }

@@ -55,7 +55,10 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `product/END_TO_END_USER_JOURNEY.md`
 - `product/CONSOLE_INFORMATION_ARCHITECTURE.md`
 - `frontend/UI_DESIGN_PROMPTS.md` — Console 页面/组件设计约束（M13；含 UI 验收条件）
-- `frontend/CONSOLE_REBUILD.md` — Console 全站重建设计说明（PLAN-20260908-033；页面清单、设计控件→真实契约映射、主题/布局/状态/验收基准）
+- `frontend/CONSOLE_REBUILD.md` — Console 全站重建设计说明 v2（八域；PLAN-20260908-034；页面清单、设计控件→真实契约映射、主题/布局/状态/验收基准；v1 历史保留）
+- `frontend/CONSOLE_PAGE_MAP.md` — 33 规范路由逐页/逐操作 API-DTO 映射与后端能力缺口 G1–G14（PLAN-20260908-034 T02）
+- `frontend/CONSOLE_DELIVERY.md` — 高保真重建交付清单：完成度、行为保证、测试命令、旧路由兼容、回退、视觉对照（PLAN-20260908-034 T32）
+- `frontend/CONSOLE_FONTS.md` — 自托管字体来源、许可证（OFL-1.1）、版本与内容摘要（PLAN-20260908-034 T04）
 
 ## Architecture
 

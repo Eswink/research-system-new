@@ -1,0 +1,24 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+:global([data-design-surface]) .row2 {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+}

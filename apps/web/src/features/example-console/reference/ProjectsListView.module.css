@@ -1,0 +1,102 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .surface {
+  grid-template-columns: 24px minmax(220px, 1.8fr) 110px 130px 130px 70px 110px 90px;
+}
+
+:global([data-design-surface]) .surface2 {
+  grid-template-columns: 24px minmax(220px, 1.8fr) 110px 130px 130px 70px 110px 90px;
+  cursor: pointer;
+}
+
+:global([data-design-surface]) .surface3 {
+  min-width: 0;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+:global([data-design-surface]) .surface4 {
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .caption {
+  height: 15px;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .indicator {
+  flex: 1;
+  height: 3px;
+  background: var(--bg-sunken);
+  border-radius: 2px;
+  min-width: 40px;
+}
+
+:global([data-design-surface]) .surface5 {
+  height: 100%;
+  border-radius: 2px;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label4 {
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .label5 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label6 {
+  font-size: 11px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

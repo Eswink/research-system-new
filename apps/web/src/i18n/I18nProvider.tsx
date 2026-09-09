@@ -1,10 +1,10 @@
 import { useCallback, useMemo, type ReactNode } from "react";
 
-import { en } from "./en";
 import { I18nContext, type I18nContextValue, type Language } from "./context";
+import { en } from "./en";
 import { zh, type TranslationKey } from "./zh";
 
-export type { Language, I18nContextValue } from "./context";
+export type { I18nContextValue, Language } from "./context";
 
 const DICTS: Record<Language, Partial<Record<TranslationKey, string>>> = { zh, en };
 

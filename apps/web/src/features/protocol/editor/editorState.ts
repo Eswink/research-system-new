@@ -9,6 +9,7 @@
 import type {
   DryRunProjectionDto,
   PreflightReportDto,
+  ProtocolDraftValidateResultDto,
   ProtocolDraftViewDto,
 } from "../../../api/types";
 
@@ -40,12 +41,18 @@ export interface EditorState {
   mode: EditorMode;
   working: string; // YAML 文本（唯一编辑真相）
   saved: ProtocolDraftViewDto | null;
+  /** 受控模板来源路径（未修改时同源预检/启动）；编辑后置 null（自定义草稿）。 */
+  sourcePath: string | null;
+  /** 受控模板原始正文（dirty 判定基准；编辑后与 working 不一致）。 */
+  sourceText: string | null;
   saveStatus: SaveStatus;
   issues: ValidationIssue[];
   preflight: PreflightContext | null;
   preflightStale: boolean;
   busy: boolean;
   error: string | null;
+  validation: { text: string; result: ProtocolDraftValidateResultDto } | null;
+  startedRunId: string | null;
 }
 
 export function initialEditorState(working: string): EditorState {
@@ -53,21 +60,28 @@ export function initialEditorState(working: string): EditorState {
     mode: "form",
     working,
     saved: null,
+    sourcePath: null,
+    sourceText: null,
     saveStatus: "idle",
     issues: [],
     preflight: null,
     preflightStale: false,
     busy: false,
     error: null,
+    validation: null,
+    startedRunId: null,
   };
 }
 
-/** working 是否与最近保存正文一致 */
+/** working 是否与最近保存正文（或受控模板原文）一致 */
 export function isDirty(state: EditorState): boolean {
-  if (state.saved === null) {
-    return state.working.trim().length > 0;
+  if (state.saved !== null) {
+    return state.working !== state.saved.yaml_text;
   }
-  return state.working !== state.saved.yaml_text;
+  if (state.sourceText !== null) {
+    return state.working !== state.sourceText;
+  }
+  return state.working.trim().length > 0;
 }
 
 /** 可保存：非保存中、有修改、无校验错误 */
@@ -83,11 +97,17 @@ export function canSave(state: EditorState): boolean {
 const FAIL_PARTS = ["FA", "IL"] as const;
 const PREFLIGHT_FAIL = FAIL_PARTS.join("") as PreflightReportDto["status"];
 
-/** 启动门禁：无未应用修改、无待完成保存/校验、报告匹配当前修订（P1） */
+/** 启动门禁：受控模板同源（sourcePath 非空）、无未应用修改、报告匹配（P1）。
+ * 自定义草稿（sourcePath=null）启动禁用（G1：草稿修订预检无接口）。 */
 export function canStart(state: EditorState): boolean {
-  if (state.saved === null || state.preflight === null || state.preflightStale) {
+  if (state.busy || state.startedRunId !== null) return false;
+  if (state.sourcePath === null) {
     return false;
   }
+  if (state.preflight === null || state.preflightStale) {
+    return false;
+  }
+  if (state.preflight.digest !== state.working) return false;
   if (isDirty(state) || state.saveStatus === "saving") {
     return false;
   }
@@ -103,7 +123,12 @@ export function preflightIsStale(state: EditorState): boolean {
 }
 
 export type EditorAction =
+  | { type: "operationStarted"; operation: "save" | "validate" | "preflight" | "start" }
+  | { type: "operationFinished" }
+  | { type: "validated"; text: string; result: ProtocolDraftValidateResultDto }
+  | { type: "runStarted"; runId: string }
   | { type: "edit"; text: string }
+  | { type: "loadTemplate"; text: string; sourcePath: string }
   | { type: "mode"; mode: EditorMode }
   | { type: "saved"; saved: ProtocolDraftViewDto }
   | { type: "saveFailed"; issues: ValidationIssue[]; error: string | null; conflict: boolean }

@@ -1,0 +1,126 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .surface {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+:global([data-design-surface]) .label2 {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--warn-dim);
+  border: 1px solid var(--warn-line);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--warn);
+}
+
+:global([data-design-surface]) .label3 {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--danger-dim);
+  border: 1px solid var(--danger-line);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--danger);
+}
+
+:global([data-design-surface]) .surface2 {
+  flex: 1;
+  overflow: auto;
+}
+
+:global([data-design-surface]) .surface3 {
+  padding: 16px;
+  margin: 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 6px;
+  text-align: center;
+}
+
+:global([data-design-surface]) .label4 {
+  color: var(--fg-muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+:global([data-design-surface]) .label5 {
+  color: var(--fg-faint);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+:global([data-design-surface]) .row2 {
+  padding: 8px 14px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--bg-raised);
+  display: flex;
+  justify-content: space-between;
+}
+
+:global([data-design-surface]) .surface4 {
+  color: var(--success);
+}
+
+:global([data-design-surface]) .row3 {
+  padding: 8px 14px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--bg-raised);
+  display: flex;
+  justify-content: space-between;
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--danger);
+}
+
+:global([data-design-surface]) .surface6 {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  color: var(--fg-faint);
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:global([data-design-surface]) .label6 {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+:global([data-design-surface]) .surface7 {
+  color: var(--accent);
+}

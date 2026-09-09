@@ -1,0 +1,37 @@
+.accent {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-dim);
+}
+
+.success {
+  color: var(--success);
+  border-color: var(--success-line);
+  background: var(--success-dim);
+}
+
+.warn {
+  color: var(--warn);
+  border-color: var(--warn-line);
+  background: var(--warn-dim);
+}
+
+.danger {
+  color: var(--danger);
+  border-color: var(--danger-line);
+  background: var(--danger-dim);
+}
+
+.unknown {
+  color: var(--unknown);
+  border-color: var(--unknown-line);
+  background: var(--unknown-dim);
+}
+
+.neutral {
+  color: var(--fg-muted);
+}
+
+.dashed {
+  border-style: dashed;
+}

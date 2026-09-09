@@ -1,0 +1,22 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+:global([data-design-surface]) .row2 {
+  position: relative;
+  display: inline-flex;
+}
+
+:global([data-design-surface]) .overlay {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  opacity: 0.35;
+  animation: pulse 1.6s ease-out infinite;
+}

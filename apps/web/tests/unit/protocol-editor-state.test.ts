@@ -69,8 +69,12 @@ test("canSave: dirty 且无 error issues 才可保存；保存中禁用", () => 
   assert.equal(canSave(invalid), false);
 });
 
-test("canStart: FAIL 阻断、dirty 阻断、缺 saved/报告阻断（P1）", () => {
-  const base = editorReducer(initialEditorState(YAML_V1), { type: "saved", saved: SAVED });
+test("canStart: 模板同源 + 报告匹配才可启动；dirty/FAIL/自定义草稿阻断（P1/T14）", () => {
+  const base = editorReducer(initialEditorState(YAML_V1), {
+    type: "loadTemplate",
+    text: YAML_V1,
+    sourcePath: "examples/protocols/sort_analysis_v1.yaml",
+  });
   const passing = withPreflight(base, YAML_V1);
   assert.equal(canStart(passing), true);
 
@@ -82,6 +86,13 @@ test("canStart: FAIL 阻断、dirty 阻断、缺 saved/报告阻断（P1）", ()
   assert.equal(canStart(failing), false);
 
   assert.equal(canStart(base), false); // 无预检报告
+
+  // 自定义草稿（无受控模板来源）：即使有报告也不得启动（G1）
+  const custom = withPreflight(
+    editorReducer(initialEditorState(YAML_V1), { type: "edit", text: YAML_V1 }),
+    YAML_V1,
+  );
+  assert.equal(canStart(custom), false);
 });
 
 test("preflightIsStale: working 变化后报告过期", () => {

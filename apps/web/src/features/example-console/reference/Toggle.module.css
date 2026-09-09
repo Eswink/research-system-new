@@ -1,0 +1,19 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .action {
+  width: 28px;
+  height: 14px;
+  border-radius: 7px;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+}
+
+:global([data-design-surface]) .overlay {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 1px;
+  transition: left 140ms;
+}

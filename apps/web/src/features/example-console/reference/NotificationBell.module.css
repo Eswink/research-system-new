@@ -1,0 +1,98 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  position: relative;
+}
+
+:global([data-design-surface]) .overlay {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px var(--bg-panel);
+}
+
+:global([data-design-surface]) .overlay2 {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+:global([data-design-surface]) .overlay3 {
+  position: absolute;
+  right: 0;
+  top: 30px;
+  z-index: 51;
+  width: 380px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+  animation: fadeIn 140ms;
+}
+
+:global([data-design-surface]) .row {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .surface2 {
+  max-height: 380px;
+  overflow: auto;
+}
+
+:global([data-design-surface]) .row2 {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 10px;
+}
+
+:global([data-design-surface]) .surface3 {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+:global([data-design-surface]) .surface4 {
+  flex: 1;
+  min-width: 0;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  color: var(--fg);
+  line-height: 1.45;
+  margin-bottom: 3px;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .label3 {
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
+  font-size: 11px;
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--accent);
+  cursor: pointer;
+}

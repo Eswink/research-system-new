@@ -27,20 +27,10 @@ export function TestStep({
           {health.error_category ?? "no error category"}
         </p>
       )}
-      <button
-        type="button"
-        onClick={onContinue}
-        disabled={busy}
-        data-testid="wizard-continue"
-      >
+      <button type="button" onClick={onContinue} disabled={busy} data-testid="wizard-continue">
         Continue to Models
       </button>
-      <button
-        type="button"
-        onClick={onProbe}
-        disabled={busy}
-        data-testid="wizard-probe"
-      >
+      <button type="button" onClick={onProbe} disabled={busy} data-testid="wizard-probe">
         {busy ? "Probing…" : "Probe First Model"}
       </button>
     </div>

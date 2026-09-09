@@ -5,7 +5,7 @@
  * 403 由 ErrorState 单独标识（P5 默认拒绝要可见）。
  */
 
-import type { ReactNode, ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 export interface DataView<T> {
   data: T | null;

@@ -19,9 +19,7 @@ export function IdentitySection({
       <SectionHeader
         title="Identity"
         subtitle="Protocol identity and version (read-only; from the draft YAML)"
-        extra={
-          <span className={cx("chip", styles.accentChip)}>{phaseSummary}</span>
-        }
+        extra={<span className={cx("chip", styles.accentChip)}>{phaseSummary}</span>}
       />
       <IdField value={form.id} />
       <VersionField value={form.version} />

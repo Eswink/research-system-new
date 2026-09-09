@@ -1,0 +1,69 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  padding: 0;
+  max-height: 280px;
+  overflow: auto;
+  animation: fadeIn 200ms ease-out;
+}
+
+:global([data-design-surface]) .row {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .action {
+  margin-left: auto;
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+}
+
+:global([data-design-surface]) .surface {
+  border-top: 1px solid var(--border);
+}
+
+:global([data-design-surface]) .row2 {
+  padding: 6px 16px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface2 {
+  margin-left: auto;
+  color: var(--warn);
+}
+
+:global([data-design-surface]) .label3 {
+  margin: 0;
+  padding: 8px 16px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  background: var(--bg-sunken);
+  overflow: auto;
+  max-height: 140px;
+}

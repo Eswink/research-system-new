@@ -1,0 +1,62 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  grid-column: span 3;
+  grid-row: span 1;
+}
+
+:global([data-design-surface]) .indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--success);
+  letter-spacing: 0.1em;
+}
+
+:global([data-design-surface]) .surface2 {
+  height: 220px;
+  overflow: hidden;
+  position: relative;
+}
+
+:global([data-design-surface]) .surface3 {
+  animation: ticker-slide 40s linear infinite;
+}
+
+:global([data-design-surface]) .caption2 {
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  background: var(--cc-sunken);
+  border: 1px solid var(--cc-border);
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .surface4 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--accent);
+}
+
+:global([data-design-surface]) .caption3 {
+  font-size: 9px;
+  color: var(--fg-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

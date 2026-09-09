@@ -1,0 +1,16 @@
+.figure {
+  margin: 0 0 12px;
+  padding: 12px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctrl);
+  overflow: auto;
+}
+.figure svg {
+  max-width: 100%;
+  height: auto;
+}
+.figure figcaption {
+  color: var(--fg-faint);
+  font-size: var(--fs-meta);
+}

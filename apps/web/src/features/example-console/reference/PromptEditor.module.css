@@ -1,0 +1,208 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .surface {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+:global([data-design-surface]) .surface2 {
+  flex: 1;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .row3 {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .row4 {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+:global([data-design-surface]) .surface3 {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+:global([data-design-surface]) .row5 {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:global([data-design-surface]) .caption3 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .label2 {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--fg);
+  margin: 0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+:global([data-design-surface]) .surface4 {
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+:global([data-design-surface]) .caption4 {
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--fg-muted);
+  padding: 10px;
+  background: var(--bg-raised);
+  border-radius: 6px;
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+:global([data-design-surface]) .caption5 {
+  margin-left: 4px;
+  font-size: 9px;
+}
+
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+:global([data-design-surface]) .surface6 {
+  padding: 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+:global([data-design-surface]) .row6 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .label3 {
+  color: var(--accent);
+  font-size: 12px;
+}
+
+:global([data-design-surface]) .caption6 {
+  font-size: 9px;
+}
+
+:global([data-design-surface]) .column2 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .row7 {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+:global([data-design-surface]) .label4 {
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 40px;
+}
+
+:global([data-design-surface]) .label5 {
+  flex: 1;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .surface7 {
+  margin-bottom: 3px;
+  color: var(--fg);
+}
+
+:global([data-design-surface]) .caption7 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .caption8 {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  font-size: 9px;
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+:global([data-design-surface]) .surface8 {
+  color: var(--success);
+}
+
+:global([data-design-surface]) .surface9 {
+  color: var(--danger);
+}

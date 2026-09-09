@@ -1,0 +1,212 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: 1fr 40px 1fr;
+  gap: 0;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:global([data-design-surface]) .surface {
+  padding: 6px;
+  background: var(--bg-raised);
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .panel {
+  padding: 14px;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 11px;
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+}
+
+:global([data-design-surface]) .surface3 {
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .caption3 {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+}
+
+:global([data-design-surface]) .surface4 {
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .caption4 {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+}
+
+:global([data-design-surface]) .surface5 {
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .panel2 {
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .row3 {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .caption5 {
+  margin-left: auto;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .grid3 {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+  gap: 12px;
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 12px;
+}
+
+:global([data-design-surface]) .label4 {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+:global([data-design-surface]) .surface6 {
+  text-align: center;
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .label5 {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+:global([data-design-surface]) .surface7 {
+  text-align: right;
+}
+
+:global([data-design-surface]) .panel3 {
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .row4 {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .label6 {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .grid4 {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 40px 1fr 1.4fr;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+  gap: 12px;
+}
+
+:global([data-design-surface]) .label7 {
+  font-size: 11px;
+}
+
+:global([data-design-surface]) .label8 {
+  font-size: 11px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global([data-design-surface]) .surface8 {
+  text-align: center;
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .label9 {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global([data-design-surface]) .caption6 {
+  font-size: 10px;
+  color: var(--fg-faint);
+}

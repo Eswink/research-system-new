@@ -1,0 +1,45 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  border-radius: 8px 8px 0 0;
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+}
+
+:global([data-design-surface]) .action {
+  margin-left: auto;
+  height: 20px;
+  padding: 0 6px;
+  color: var(--danger);
+}
+
+:global([data-design-surface]) .surface3 {
+  padding: 12px;
+}
+
+:global([data-design-surface]) .action2 {
+  width: 100%;
+  justify-content: center;
+  border-style: dashed;
+}

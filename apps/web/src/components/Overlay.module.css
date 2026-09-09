@@ -1,0 +1,129 @@
+.scrimHost {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  transition: opacity 220ms;
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-3);
+  display: flex;
+  flex-direction: column;
+  transition: transform 260ms cubic-bezier(0.2, 0, 0, 1);
+  outline: none;
+}
+
+.head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+}
+
+.subtitle {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: var(--fs-title-sm);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Modal / ConfirmDialog */
+.modalScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 160ms ease-out;
+}
+
+.modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-3);
+  max-width: 94vw;
+  outline: none;
+}
+
+.modalHead {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modalTitle {
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.modalBody {
+  padding: 18px;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg-muted);
+}
+
+.modalFooter {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  background: var(--bg-raised);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

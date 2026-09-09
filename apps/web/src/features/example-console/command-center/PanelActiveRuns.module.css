@@ -1,0 +1,90 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  grid-column: span 5;
+  grid-row: span 1;
+}
+
+:global([data-design-surface]) .surface2 {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .column2 {
+  padding: 12px;
+  background: var(--cc-sunken);
+  border: 1px solid var(--cc-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+:global([data-design-surface]) .indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+:global([data-design-surface]) .label {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .caption {
+  margin-left: auto;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+:global([data-design-surface]) .indicator2 {
+  flex: 1;
+  height: 4px;
+  background: var(--cc-divider);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .indicator3 {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #6ba1ff);
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+  min-width: 60px;
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .label4 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+}

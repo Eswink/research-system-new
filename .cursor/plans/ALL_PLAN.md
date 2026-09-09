@@ -6,6 +6,8 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260909-035](tasks/PLAN-20260909-035-console-reference-reconstruction.md) | DONE |
+| [x] | [PLAN-20260908-034](tasks/PLAN-20260908-034-console-design-reconstruction.md) | DONE |
 | [x] | [PLAN-20260908-033](tasks/PLAN-20260908-033-research-console-rebuild.md) | DONE |
 | [x] | [PLAN-20260906-032](tasks/PLAN-20260906-032-research-compose-stack.md) | DONE |
 | [x] | [PLAN-20260905-030](tasks/PLAN-20260905-030-pa1r-independent-production-reaudit.md) | DONE |

@@ -1,7 +1,7 @@
+import { DoneStep } from "./steps/DoneStep";
+import { ModelsStep } from "./steps/ModelsStep";
 import { RelayStepForm } from "./steps/RelayStepForm";
 import { TestStep } from "./steps/TestStep";
-import { ModelsStep } from "./steps/ModelsStep";
-import { DoneStep } from "./steps/DoneStep";
 import { WizardSteps } from "./steps/WizardSteps";
 import { useWizardFlow } from "./useWizardFlow";
 

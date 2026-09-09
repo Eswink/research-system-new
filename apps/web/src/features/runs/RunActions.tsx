@@ -1,57 +1,131 @@
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { api } from "../../api/client";
 import type { RunDetailDto } from "../../api/types";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { ErrorState } from "../../components/States";
+import { useI18n } from "../../i18n/useI18n";
 
-const TERMINAL_STATES = new Set(["SUCCEEDED", "FAILED", "CANCELLED"]);
+export function canRequestCancellation(state: string): boolean {
+  return !new Set(["SUCCEEDED", "FAILED", "CANCELLED", "REJECTED"]).has(state);
+}
 
-/**
- * Run 动作（M13-R1 WP-P3）：
- * - 终态 run 不再可点击 Cancel（后端已守卫 409，前端不再提供误导按钮）；
- * - Cancel 破坏性操作需二次确认（window.confirm）。
- */
+/** No start shortcut bypasses the editor's compile/preflight flow. Cancellation is explicit. */
 export function RunActions({
   run,
   busy,
-  onStart,
-  onCancel,
+  onChanged,
 }: {
-  run: RunDetailDto | null;
+  run: RunDetailDto;
   busy: boolean;
-  onStart: () => void;
-  onCancel: () => void;
+  onChanged: () => void;
 }) {
-  const requestCancel = () => {
-    if (run === null) {
-      return;
-    }
-    if (
-      window.confirm(
-        `Cancel run ${run.id.slice(0, 8)}? This may be irreversible for running work.`,
-      )
-    ) {
-      onCancel();
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const [confirm, setConfirm] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const active = useRef(false);
+  const cancel = async () => {
+    if (active.current || busy || !canRequestCancellation(run.state)) return;
+    active.current = true;
+    setPending(true);
+    setError(null);
+    try {
+      await api.cancelRun(run.id);
+      onChanged();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Cancellation failed");
+    } finally {
+      active.current = false;
+      setPending(false);
+      setConfirm(false);
     }
   };
+  return <RunActionsSection {...{ busy, pending, run, setConfirm, zh, error, confirm, cancel }} />;
+}
 
-  const cancellable = run !== null && !TERMINAL_STATES.has(run.state);
+interface RunActionsSectionProps {
+  busy: boolean;
+  pending: boolean;
+  run: RunDetailDto;
+  setConfirm: Dispatch<SetStateAction<boolean>>;
+  zh: boolean;
+  error: string | null;
+  confirm: boolean;
+  cancel: () => Promise<void>;
+}
+
+function RunActionsSection({
+  busy,
+  pending,
+  run,
+  setConfirm,
+  zh,
+  error,
+  confirm,
+  cancel,
+}: RunActionsSectionProps) {
   return (
-    <>
+    <div>
       <button
         type="button"
-        onClick={onStart}
-        disabled={busy || run !== null}
-        data-testid="run-start"
+        className="btn sm"
+        data-testid="run-cancel"
+        disabled={busy || pending || !canRequestCancellation(run.state)}
+        onClick={() => {
+          setConfirm(true);
+        }}
       >
-        {busy ? "Starting…" : "Start Research Run"}
+        {zh ? "取消运行" : "Cancel run"}
       </button>
-      {cancellable && (
-        <button
-          type="button"
-          onClick={requestCancel}
-          disabled={busy}
-          data-testid="run-cancel"
-        >
-          {busy ? "Working…" : "Cancel"}
-        </button>
-      )}
-    </>
+      {error !== null && <ErrorState message={error} />}
+      <RunActionsConfirmDialog {...{ confirm, pending, zh, run, setConfirm, cancel }} />
+    </div>
+  );
+}
+
+interface RunActionsConfirmDialogProps {
+  confirm: boolean;
+  pending: boolean;
+  zh: boolean;
+  run: RunDetailDto;
+  setConfirm: Dispatch<SetStateAction<boolean>>;
+  cancel: () => Promise<void>;
+}
+
+function RunActionsConfirmDialog({
+  confirm,
+  pending,
+  zh,
+  run,
+  setConfirm,
+  cancel,
+}: RunActionsConfirmDialogProps) {
+  return (
+    <ConfirmDialog
+      open={confirm}
+      danger
+      busy={pending}
+      title={zh ? "确认取消运行" : "Confirm cancellation"}
+      consequence={
+        <p>
+          {run.id} ·{" "}
+          {zh
+            ? "向后端请求取消。已经产生的副作用可能无法撤销；界面等待后端状态，不假定任务立即停止。"
+            : [
+                "Request backend cancellation. Existing side effects may be irreversible; ",
+                "tasks are not assumed to stop immediately.",
+              ].join("")}
+        </p>
+      }
+      confirmLabel={zh ? "请求取消" : "Request cancellation"}
+      cancelLabel={zh ? "继续运行" : "Keep running"}
+      onCancel={() => {
+        setConfirm(false);
+      }}
+      onConfirm={() => {
+        void cancel();
+      }}
+    />
   );
 }

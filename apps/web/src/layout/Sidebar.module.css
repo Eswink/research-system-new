@@ -5,85 +5,195 @@
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 8px 0;
-  gap: 4px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
-.domain {
+.logo {
+  height: var(--shell-topbar-h);
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.logoMark {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--accent), #6ba1ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.logoText {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-.domainLabel {
+.logoName {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.logoPlane {
   font-size: 9px;
   font-family: var(--font-mono);
   color: var(--fg-faint);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 10px 12px 4px;
+  letter-spacing: 0.06em;
 }
 
-.item {
-  display: block;
+.domains {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.domainBtn {
   width: 100%;
-  text-align: left;
-  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
   background: transparent;
   border: none;
   border-left: 2px solid transparent;
   color: var(--fg-muted);
   font-size: 12px;
   cursor: pointer;
+  text-align: left;
 }
 
-.item:hover {
+.domainBtn:hover {
   background: var(--bg-hover);
   color: var(--fg);
 }
 
-.active {
+.domainActive {
   background: var(--bg-hover);
   border-left-color: var(--accent);
   color: var(--fg);
   font-weight: 500;
 }
 
-.footer {
-  margin-top: auto;
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 4px;
+.pages {
+  padding: 2px 8px 6px;
+}
+
+.pageBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 32px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pageBtn:hover {
+  color: var(--fg);
+  background: var(--bg-hover);
+}
+
+.pageActive {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.user {
+  padding: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border-left: 2px solid transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.user:hover {
+  background: var(--bg-hover);
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: hsl(180deg 40% 40%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: #fff;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.userName {
+  font-size: 11px;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
   .sidebar {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+    width: var(--shell-sidebar-collapsed-w);
   }
 
-  .domainLabel {
+  .pages,
+  .logoText,
+  .userName {
     display: none;
   }
+}
 
-  .domain {
-    flex-direction: row;
+@media (max-width: 768px) {
+  .domainBtn > span {
+    display: none;
   }
+}
 
-  .item {
-    width: auto;
-    border-left: none;
-    border-bottom: 2px solid transparent;
-  }
-
-  .active {
-    border-bottom-color: var(--accent);
-  }
-
-  .footer {
-    margin-top: 0;
-    border-top: none;
+.user {
+  border: none;
+  border-left: 2px solid transparent;
+}
+.userText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.userMeta {
+  font-size: 9px;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .userText {
+    display: none;
   }
 }

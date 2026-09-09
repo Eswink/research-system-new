@@ -1,7 +1,7 @@
 /** 编辑器状态条（拆分自主组件）：保存状态 + 预检状态 + 启动门禁。 */
 
-import { canStart, type EditorState } from "./editorState";
 import styles from "./EditorShell.module.css";
+import { canStart, type EditorState } from "./editorState";
 
 export function EditorStatusBar(props: {
   state: EditorState;
@@ -16,7 +16,8 @@ export function EditorStatusBar(props: {
 }): React.JSX.Element {
   const report = props.state.preflight?.report ?? null;
   const warnCount = countWarnings(report?.findings);
-  const startable = canStart(props.state) && (!props.stale || props.ackWarnings);
+  const startable =
+    canStart(props.state) && !props.stale && (report?.status !== "WARN" || props.ackWarnings);
   const needsAck = report !== null && report.status === "WARN" && !props.ackWarnings;
   return (
     <div className={styles.statusBar} data-testid="editor-status-bar">
@@ -93,18 +94,28 @@ function ActionBarButtons(props: {
 }): React.JSX.Element {
   return (
     <>
-      <button type="button" className="btn sm" disabled={!props.dirty} onClick={props.onDiscard}>
+      <button
+        type="button"
+        className="btn sm"
+        disabled={!props.dirty || props.state.busy}
+        onClick={props.onDiscard}
+      >
         Discard
       </button>
       <button
         type="button"
         className="btn sm"
-        disabled={props.state.saveStatus === "saving" || !props.dirty}
+        disabled={props.state.busy || props.state.saveStatus === "saving" || !props.dirty}
         onClick={props.onSave}
       >
         Save
       </button>
-      <button type="button" className="btn sm" onClick={props.onPreflight}>
+      <button
+        type="button"
+        className="btn sm"
+        onClick={props.onPreflight}
+        disabled={props.state.busy || props.state.sourcePath === null}
+      >
         Preflight
       </button>
       <button
@@ -128,6 +139,7 @@ function countWarnings(findings: { severity: string }[] | undefined): number {
 }
 
 function saveStatusText(status: EditorState["saveStatus"], dirty: boolean, saved: boolean): string {
+  if (status === "saving") return "saving…";
   if (status === "conflict") {
     return "conflict";
   }
