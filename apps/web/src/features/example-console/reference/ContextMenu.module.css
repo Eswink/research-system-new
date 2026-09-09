@@ -1,0 +1,36 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .overlay {
+  position: fixed;
+  z-index: 90;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-2);
+  padding: 4px;
+  min-width: 200px;
+  animation: fadeIn 120ms;
+}
+
+:global([data-design-surface]) .indicator {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+:global([data-design-surface]) .surface {
+  flex: 1;
+}

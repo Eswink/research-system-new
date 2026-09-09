@@ -1,197 +1,290 @@
-import { useEffect, useState } from "react";
-
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { api } from "../../api/client";
 import type {
   AgentSpecDto,
   ModelReadDto,
   PreflightReportDto,
   RoleDefinitionDto,
+  TeamTemplateDto,
 } from "../../api/types";
+import { Drawer } from "../../components/Drawer";
+import { PanelSection } from "../../components/PanelSection";
+import { ResourceBoundary } from "../../components/ResourceBoundary";
+import { useCommand } from "../../hooks/useCommand";
+import { useResource, type ResourceState } from "../../hooks/useResource";
+import { useI18n } from "../../i18n/useI18n";
+import styles from "../shared/LivePage.module.css";
+import { PageHeader } from "../shared/PageHeader";
+import { AgentBindingEditor } from "./AgentBindingEditor";
+import { AgentCards } from "./TeamAgentCards";
+import { RoleDefinitions, TeamTemplates } from "./TeamDefinitions";
+import { TEAM_REFERENCE_PROTOCOL, TeamPreflight } from "./TeamPreflight";
 
-interface TeamState {
-  agents: AgentSpecDto[];
-  roles: RoleDefinitionDto[];
-  models: ModelReadDto[];
-  report: PreflightReportDto | null;
-  busy: boolean;
-  error: string | null;
-}
-
-function ModelBindingSelect({
-  agent,
-  models,
-  busy,
-  onSave,
-}: {
-  agent: AgentSpecDto;
-  models: ModelReadDto[];
-  busy: boolean;
-  onSave: (modelId: string | null) => void;
-}) {
-  const current = agent.model_binding.value ?? "";
-  const modelIds = new Set(models.map((model) => model.id));
-  const isModelBinding = current === "" || modelIds.has(current);
+export function TeamPage() {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const agents = useResource("team-agents", () => api.listAgents());
+  const models = useResource("team-models", () => api.listModels());
+  const roles = useResource("team-roles", () => api.listRoles());
+  const templates = useResource("team-templates", () => api.listTeamTemplates());
+  const preflight = useCommand((path: string) => api.compileAndPreflight(path));
+  const checkReference = () => {
+    void preflight.run(TEAM_REFERENCE_PROTOCOL);
+  };
+  const afterSave = () => {
+    agents.reload();
+    checkReference();
+  };
+  const refresh = () => {
+    agents.reload();
+    models.reload();
+    roles.reload();
+    templates.reload();
+  };
   return (
-    <span>
-      {!isModelBinding && (
-        <span data-testid="binding-display">
-          current: {agent.model_binding.mode}:{current} ·{" "}
-        </span>
-      )}
-      <select
-        value={isModelBinding ? current : ""}
-        disabled={busy}
-        onChange={(event) => {
-          onSave(event.target.value === "" ? null : event.target.value);
-        }}
-        aria-label={`model binding for ${agent.id}`}
-      >
-        <option value="">inherit</option>
-        {models.map((model) => (
-          <option key={model.id} value={model.id}>
-            {model.model_name}
-          </option>
-        ))}
-      </select>
-    </span>
+    <TeamPagesection
+      {...{ zh, refresh, agents, models, afterSave, roles, templates, preflight, checkReference }}
+    />
   );
 }
 
-function FindingList({ report }: { report: PreflightReportDto }) {
-  if (report.findings.length === 0) {
-    return <p data-testid="team-preflight-ok">preflight clear — no findings</p>;
-  }
-  return (
-    <ul data-testid="team-preflight-findings">
-      {report.findings.map((finding, index) => (
-        <li key={`${finding.code}-${String(index)}`}>
-          [{finding.severity}] {finding.message}
-        </li>
-      ))}
-    </ul>
-  );
+interface TeamPagesectionProps {
+  zh: boolean;
+  refresh: () => void;
+  agents: ResourceState<AgentSpecDto[]>;
+  models: ResourceState<ModelReadDto[]>;
+  afterSave: () => void;
+  roles: ResourceState<RoleDefinitionDto[]>;
+  templates: ResourceState<TeamTemplateDto[]>;
+  preflight: {
+    run: (argument: string) => Promise<void>;
+    pending: boolean;
+    result: PreflightReportDto | null;
+    error: string | null;
+  };
+  checkReference: () => void;
 }
 
-function AgentList({
+function TeamPagesection({
+  zh,
+  refresh,
   agents,
   models,
-  busy,
-  onSave,
-}: {
-  agents: AgentSpecDto[];
-  models: ModelReadDto[];
-  busy: boolean;
-  onSave: (agent: AgentSpecDto, modelId: string | null) => void;
-}) {
+  afterSave,
+  roles,
+  templates,
+  preflight,
+  checkReference,
+}: TeamPagesectionProps) {
   return (
-    <ul>
-      {agents.map((agent) => (
-        <li key={agent.id} data-testid="agent-row">
-          <strong>{agent.id}</strong> · {agent.role} ·{" "}
-          <ModelBindingSelect
-            agent={agent}
-            models={models}
-            busy={busy}
-            onSave={(modelId) => {
-              onSave(agent, modelId);
-            }}
+    <section className={styles.page} data-testid="team-page">
+      <TeamPagePageHeader {...{ zh, refresh }} />
+      <ResourceBoundary state={agents}>
+        {agents.data !== null && (
+          <AgentCatalog
+            agents={agents.data}
+            models={models.phase === "ready" ? models.data : null}
+            onSaved={afterSave}
           />
-        </li>
-      ))}
-    </ul>
+        )}
+      </ResourceBoundary>
+      <ResourceBoundary state={models}>{null}</ResourceBoundary>
+      <div className={styles.split}>
+        <ResourceBoundary state={roles}>
+          {roles.data !== null && <RoleDefinitions roles={roles.data} />}
+        </ResourceBoundary>
+        <ResourceBoundary state={templates}>
+          {templates.data !== null && <TeamTemplates templates={templates.data} />}
+        </ResourceBoundary>
+      </div>
+      <TeamPreflight
+        report={preflight.result}
+        error={preflight.error}
+        pending={preflight.pending}
+        onCheck={checkReference}
+      />
+      <TeamWorkflowFooter zh={zh} />
+    </section>
   );
 }
 
-type TeamDispatch = (updater: (current: TeamState) => TeamState) => void;
-
-const errorText = (err: unknown, fallback: string): string => {
-  return err instanceof Error ? err.message : fallback;
-};
-
-async function loadTeam(dispatch: TeamDispatch) {
-  try {
-    const [agents, roles, models] = await Promise.all([
-      api.listAgents(),
-      api.listRoles(),
-      api.listModels(),
-    ]);
-    dispatch((current) => ({ ...current, agents, roles, models, error: null }));
-  } catch (err) {
-    dispatch((current) => ({ ...current, error: errorText(err, "team load failed") }));
-  }
-}
-
-async function refreshFindings(dispatch: TeamDispatch) {
-  try {
-    const report = await api.compileAndPreflight("console_demo_research_v1.yaml");
-    dispatch((current) => ({ ...current, report, error: null }));
-  } catch (err) {
-    dispatch((current) => ({ ...current, error: errorText(err, "dry-run failed") }));
-  }
-}
-
-async function saveBinding(agent: AgentSpecDto, modelId: string | null, dispatch: TeamDispatch) {
-  dispatch((current) => ({ ...current, busy: true, error: null }));
-  try {
-    await api.updateAgent(
-      agent.id,
-      { model_binding: { mode: "EXPLICIT_MODEL", value: modelId } },
-      agent.version,
-    );
-    await loadTeam(dispatch);
-    await refreshFindings(dispatch);
-  } catch (err) {
-    dispatch((current) => ({ ...current, error: errorText(err, "save failed") }));
-  } finally {
-    dispatch((current) => ({ ...current, busy: false }));
-  }
-}
-
-/**
- * Team / Agent 页面（WP-S2）：roles/templates + agents 列表，
- * per-Agent 模型绑定编辑（PATCH 持久化）；变更后触发 dry-run 展示后端
- * findings（AGENT_PERMISSION_DENIED / HETEROGENEITY / MODEL_ELIGIBILITY
- * 直接来自后端，客户端不做二次判定）。
- */
-export function TeamPage() {
-  const [state, setState] = useState<TeamState>({
-    agents: [],
-    roles: [],
-    models: [],
-    report: null,
-    busy: false,
-    error: null,
-  });
-
-  useEffect(() => {
-    void loadTeam(setState);
-  }, []);
-
+function TeamWorkflowFooter({ zh }: { zh: boolean }) {
   return (
-    <section data-testid="team-page">
-      <h2>Team &amp; Agent Assignment</h2>
-      {state.error !== null && (
-        <p className="error" role="alert">
-          {state.error}
+    <>
+      <p className={styles.notice}>
+        {zh
+          ? "保存绑定不会重写冻结 Manifest，也不代表预检通过。后续运行请在协议编辑器重新编译和预检。"
+          : [
+              "Saving bindings does not rewrite frozen manifests or imply preflight ",
+              "success. Compile and preflight again in the protocol editor.",
+            ].join("")}
+      </p>
+      <a href="#/plan/protocol" className="btn">
+        {zh ? "进入协议与预检" : "Open protocol and preflight"} →
+      </a>
+    </>
+  );
+}
+
+interface TeamPagePageHeaderProps {
+  zh: boolean;
+  refresh: () => void;
+}
+
+function TeamPagePageHeader({ zh, refresh }: TeamPagePageHeaderProps) {
+  return (
+    <PageHeader
+      title={zh ? "研究团队与 Agent" : "Research team and agents"}
+      kicker="PLAN / TEAM"
+      description={
+        zh
+          ? "职责、配置实例与模型绑定分开管理；所有状态来自实际项目接口。"
+          : [
+              "Responsibilities, agent instances and model bindings remain distinct, ",
+              "using actual project APIs.",
+            ].join("")
+      }
+      actions={
+        <button type="button" className="btn" onClick={refresh}>
+          {zh ? "刷新配置" : "Refresh configuration"}
+        </button>
+      }
+    />
+  );
+}
+
+function AgentCatalog({
+  agents,
+  models,
+  onSaved,
+}: {
+  agents: AgentSpecDto[];
+  models: ModelReadDto[] | null;
+  onSaved: () => void;
+}) {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState("");
+  const editing = agents.find((agent) => agent.id === editingId);
+  const filtered = agents.filter((agent) =>
+    `${agent.id} ${agent.role}`.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase()),
+  );
+  const acknowledge = () => {
+    setSavedId(editingId);
+    setEditingId(null);
+    onSaved();
+  };
+  return (
+    <TeamPageContent
+      {...{
+        zh,
+        agents,
+        filter,
+        setFilter,
+        filtered,
+        setEditingId,
+        savedId,
+        editing,
+        models,
+        acknowledge,
+      }}
+    />
+  );
+}
+
+interface TeamPageContentProps {
+  zh: boolean;
+  agents: AgentSpecDto[];
+  filter: string;
+  setFilter: Dispatch<SetStateAction<string>>;
+  filtered: AgentSpecDto[];
+  setEditingId: Dispatch<SetStateAction<string | null>>;
+  savedId: string | null;
+  editing: AgentSpecDto | undefined;
+  models: ModelReadDto[] | null;
+  acknowledge: () => void;
+}
+
+function TeamPageContent({
+  zh,
+  agents,
+  filter,
+  setFilter,
+  filtered,
+  setEditingId,
+  savedId,
+  editing,
+  models,
+  acknowledge,
+}: TeamPageContentProps) {
+  return (
+    <>
+      <TeamPagePanelSection {...{ zh, agents, filter, setFilter, filtered, setEditingId }} />
+      {savedId !== null && (
+        <p role="status" className={styles.notice}>
+          {savedId} ·
+          {zh
+            ? "后端已确认保存配置；预检状态尚未确定。"
+            : "Backend confirmed configuration saved; preflight remains undetermined."}
         </p>
       )}
-      <p>Roles available: {state.roles.map((role) => role.id).join(", ")}</p>
-      <h3>Agents</h3>
-      {state.agents.length === 0 && !state.busy && (
-        <p className="empty-mark" data-testid="agents-empty">
-          no agents configured
-        </p>
-      )}
-      <AgentList
-        agents={state.agents}
-        models={state.models}
-        busy={state.busy}
-        onSave={(agent, modelId) => {
-          void saveBinding(agent, modelId, setState);
+      <Drawer
+        open={editing !== undefined}
+        onClose={() => {
+          setEditingId(null);
         }}
-      />
-      <h3>Preflight findings（保存后刷新，来自后端）</h3>
-      {state.report !== null && <FindingList report={state.report} />}
-    </section>
+        title={zh ? "编辑模型绑定" : "Edit model binding"}
+      >
+        {editing !== undefined && (
+          <AgentBindingEditor
+            key={`${editing.id}:${editing.version}`}
+            agent={editing}
+            models={models}
+            onSaved={acknowledge}
+          />
+        )}
+      </Drawer>
+    </>
+  );
+}
+
+interface TeamPagePanelSectionProps {
+  zh: boolean;
+  agents: AgentSpecDto[];
+  filter: string;
+  setFilter: Dispatch<SetStateAction<string>>;
+  filtered: AgentSpecDto[];
+  setEditingId: Dispatch<SetStateAction<string | null>>;
+}
+
+function TeamPagePanelSection({
+  zh,
+  agents,
+  filter,
+  setFilter,
+  filtered,
+  setEditingId,
+}: TeamPagePanelSectionProps) {
+  return (
+    <PanelSection
+      title={zh ? "Agent 配置实例" : "Configured agent instances"}
+      count={agents.length}
+      extra={
+        <input
+          type="search"
+          className="input"
+          value={filter}
+          aria-label={zh ? "筛选 Agent" : "Filter agents"}
+          placeholder={zh ? "按 ID 或职责筛选" : "Filter ID or role"}
+          onChange={(event) => {
+            setFilter(event.target.value);
+          }}
+        />
+      }
+    >
+      <AgentCards agents={filtered} onEdit={setEditingId} />
+    </PanelSection>
   );
 }

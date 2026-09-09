@@ -1,0 +1,23 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+:global([data-design-surface]) .label {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  margin-bottom: 2px;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}

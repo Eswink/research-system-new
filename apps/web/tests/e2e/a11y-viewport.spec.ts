@@ -61,6 +61,35 @@ for (const width of [1440, 1280, 1024, 768, 390]) {
   }
 }
 
+test("1280x800 浅主题/英文/紧凑密度矩阵：属性切换生效且无横向溢出", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/#/plan/protocol");
+  await expect(page.getByTestId("console-main")).toBeVisible();
+  await page.getByTestId("toggle-theme").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.getByTestId("toggle-language").click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.getByTestId("toggle-density").click();
+  const density = page.locator("html").getAttribute("data-density");
+  expect(["compact", "normal"]).toContain(await density);
+  const overflow = await page.evaluate(() => {
+    const doc = document.documentElement;
+    return doc.scrollWidth - doc.clientWidth;
+  });
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
+test("自托管字体在 reduced-motion 上下文完成加载", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#/plan/overview");
+  await expect(page.getByTestId("console-main")).toBeVisible();
+  const loaded = await page.evaluate(async () => {
+    await document.fonts.ready;
+    return [...document.fonts].filter((font) => font.status === "loaded").length;
+  });
+  expect(loaded).toBeGreaterThan(0);
+});
+
 function activeTestId(): string | undefined {
   return document.activeElement instanceof HTMLElement
     ? document.activeElement.dataset.testid

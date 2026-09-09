@@ -127,9 +127,10 @@ function asGate(value: unknown): GateType | null {
 /** 文档树 → Form 派生视图（只读；编辑走定点修改）。 */
 export function documentToForm(doc: Document): ProtocolForm {
   const body: unknown = doc.toJS();
-  const record = typeof body === "object" && body !== null && !Array.isArray(body)
-    ? (body as Record<string, unknown>)
-    : {};
+  const record =
+    typeof body === "object" && body !== null && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : {};
   const phasesRaw = Array.isArray(record.phases) ? record.phases : [];
   const phases: PhaseForm[] = phasesRaw.map((item) => {
     const record = (item ?? {}) as Record<string, unknown>;

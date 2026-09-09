@@ -1,0 +1,9 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}

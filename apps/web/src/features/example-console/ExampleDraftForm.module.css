@@ -1,0 +1,25 @@
+.receipt {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--accent-dim);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+}
+.receipt p {
+  margin: 0 0 8px;
+}
+.receipt dl {
+  margin: 0;
+}
+.receipt dl > div {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 12px;
+}
+.receipt dt {
+  color: var(--fg-muted);
+}
+.receipt dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

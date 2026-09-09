@@ -9,6 +9,7 @@
 import type {
   DryRunProjectionDto,
   PreflightReportDto,
+  ProtocolDraftValidateResultDto,
   ProtocolDraftViewDto,
 } from "../../../api/types";
 
@@ -50,6 +51,8 @@ export interface EditorState {
   preflightStale: boolean;
   busy: boolean;
   error: string | null;
+  validation: { text: string; result: ProtocolDraftValidateResultDto } | null;
+  startedRunId: string | null;
 }
 
 export function initialEditorState(working: string): EditorState {
@@ -65,6 +68,8 @@ export function initialEditorState(working: string): EditorState {
     preflightStale: false,
     busy: false,
     error: null,
+    validation: null,
+    startedRunId: null,
   };
 }
 
@@ -95,12 +100,14 @@ const PREFLIGHT_FAIL = FAIL_PARTS.join("") as PreflightReportDto["status"];
 /** 启动门禁：受控模板同源（sourcePath 非空）、无未应用修改、报告匹配（P1）。
  * 自定义草稿（sourcePath=null）启动禁用（G1：草稿修订预检无接口）。 */
 export function canStart(state: EditorState): boolean {
+  if (state.busy || state.startedRunId !== null) return false;
   if (state.sourcePath === null) {
     return false;
   }
   if (state.preflight === null || state.preflightStale) {
     return false;
   }
+  if (state.preflight.digest !== state.working) return false;
   if (isDirty(state) || state.saveStatus === "saving") {
     return false;
   }
@@ -116,6 +123,10 @@ export function preflightIsStale(state: EditorState): boolean {
 }
 
 export type EditorAction =
+  | { type: "operationStarted"; operation: "save" | "validate" | "preflight" | "start" }
+  | { type: "operationFinished" }
+  | { type: "validated"; text: string; result: ProtocolDraftValidateResultDto }
+  | { type: "runStarted"; runId: string }
   | { type: "edit"; text: string }
   | { type: "loadTemplate"; text: string; sourcePath: string }
   | { type: "mode"; mode: EditorMode }

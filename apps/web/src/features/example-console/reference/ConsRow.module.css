@@ -1,0 +1,10 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--fg);
+}

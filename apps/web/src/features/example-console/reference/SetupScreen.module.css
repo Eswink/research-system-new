@@ -1,0 +1,163 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+  padding: 24px 8px;
+}
+
+:global([data-design-surface]) .panel {
+  padding: 20px;
+  position: sticky;
+  top: 0;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  letter-spacing: -0.005em;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--success);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--fg);
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface3 {
+  color: var(--success);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+:global([data-design-surface]) .surface4 {
+  color: var(--fg);
+}
+
+:global([data-design-surface]) .row3 {
+  display: flex;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--success);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+:global([data-design-surface]) .surface6 {
+  color: var(--fg);
+}
+
+:global([data-design-surface]) .indicator {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+
+:global([data-design-surface]) .row4 {
+  display: flex;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface7 {
+  color: var(--fg-faint);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+:global([data-design-surface]) .row5 {
+  display: flex;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface8 {
+  color: var(--fg-faint);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+:global([data-design-surface]) .column2 {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+:global([data-design-surface]) .row6 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+:global([data-design-surface]) .row7 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:global([data-design-surface]) .surface9 {
+  width: 12px;
+  height: 1px;
+}
+
+:global([data-design-surface]) .row8 {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 11px;
+  color: var(--fg-faint);
+  align-self: center;
+}

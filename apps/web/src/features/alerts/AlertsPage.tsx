@@ -1,6 +1,6 @@
-import { GapLayout } from "../shared/GapLayout";
-import { pageSupport } from "../../navigation/pageSupport";
 import { useI18n } from "../../i18n/useI18n";
+import { pageSupport } from "../../navigation/pageSupport";
+import { GapLayout } from "../shared/GapLayout";
 
 /** 告警（T26）：规则 + 收件箱结构；配置与处理禁用。 */
 export function AlertsPage() {

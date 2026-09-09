@@ -1,0 +1,827 @@
+[
+  {
+    "name": "Icon",
+    "file": "Icon",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "StatusBadge",
+    "file": "StatusBadge",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "ClaimStatusBadge",
+    "file": "ClaimStatusBadge",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "RunStateBadge",
+    "file": "RunStateBadge",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "PreflightBadge",
+    "file": "PreflightBadge",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "ReproducibilityChip",
+    "file": "ReproducibilityChip",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "DigestText",
+    "file": "DigestText",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "LiveIndicator",
+    "file": "LiveIndicator",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "GateChip",
+    "file": "GateChip",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "UnknownValue",
+    "file": "UnknownValue",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "GlobalKeyframes",
+    "file": "GlobalKeyframes",
+    "source": "components/atoms.jsx"
+  },
+  {
+    "name": "Sparkline",
+    "file": "Sparkline",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "BarSeries",
+    "file": "BarSeries",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "Donut",
+    "file": "Donut",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "HealthGauge",
+    "file": "HealthGauge",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "Heatmap",
+    "file": "Heatmap",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "Sankey",
+    "file": "Sankey",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "LineSeries",
+    "file": "LineSeries",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "ForceGraph",
+    "file": "ForceGraph",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "MetricCard",
+    "file": "MetricCard",
+    "source": "components/charts.jsx"
+  },
+  {
+    "name": "Drawer",
+    "file": "Drawer",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "Modal",
+    "file": "Modal",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "EmptyState",
+    "file": "EmptyState",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "CommandPalette",
+    "file": "CommandPalette",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "ContextMenu",
+    "file": "ContextMenu",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "ViewSwitcher",
+    "file": "ViewSwitcher",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "NotificationBell",
+    "file": "NotificationBell",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "WorkspaceSwitcher",
+    "file": "WorkspaceSwitcher",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "QuickCreate",
+    "file": "QuickCreate",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "FormRow",
+    "file": "FormRow",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "TextInput",
+    "file": "TextInput",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "TextArea",
+    "file": "TextArea",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "Select",
+    "file": "Select",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "TagInput",
+    "file": "TagInput",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "PageToolbar",
+    "file": "PageToolbar",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "SearchInput",
+    "file": "SearchInput",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "TrendBadge",
+    "file": "TrendBadge",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "FilterChips",
+    "file": "FilterChips",
+    "source": "components/patterns.jsx"
+  },
+  {
+    "name": "PlanOverview",
+    "file": "PlanOverview",
+    "source": "components/AppShell.jsx"
+  },
+  {
+    "name": "ObjectiveRow",
+    "file": "ObjectiveRow",
+    "source": "components/AppShell.jsx"
+  },
+  {
+    "name": "ApprovalsScreen",
+    "file": "ApprovalsScreen",
+    "source": "screens/Approvals.jsx"
+  },
+  {
+    "name": "ApprovalCard",
+    "file": "ApprovalCard",
+    "source": "screens/Approvals.jsx"
+  },
+  {
+    "name": "ConsRow",
+    "file": "ConsRow",
+    "source": "screens/Approvals.jsx"
+  },
+  {
+    "name": "BudgetScreen",
+    "file": "BudgetScreen",
+    "source": "screens/Budget.jsx"
+  },
+  {
+    "name": "MetricCard",
+    "file": "BudgetMetricCard",
+    "source": "screens/Budget.jsx"
+  },
+  {
+    "name": "ClaimsScreen",
+    "file": "ClaimsScreen",
+    "source": "screens/Claims.jsx"
+  },
+  {
+    "name": "ClaimsGraph",
+    "file": "ClaimsGraph",
+    "source": "screens/Claims.jsx"
+  },
+  {
+    "name": "ClaimsTable",
+    "file": "ClaimsTable",
+    "source": "screens/Claims.jsx"
+  },
+  {
+    "name": "ClaimDetail",
+    "file": "ClaimDetail",
+    "source": "screens/Claims.jsx"
+  },
+  {
+    "name": "EvidenceRow",
+    "file": "EvidenceRow",
+    "source": "screens/Claims.jsx"
+  },
+  {
+    "name": "CompareScreen",
+    "file": "CompareScreen",
+    "source": "screens/Compare.jsx"
+  },
+  {
+    "name": "CostAnalyticsScreen",
+    "file": "CostAnalyticsScreen",
+    "source": "screens/CostAnalytics.jsx"
+  },
+  {
+    "name": "DH_METRICS",
+    "file": "dhMetrics",
+    "source": "screens/DataHealth.jsx"
+  },
+  {
+    "name": "DataHealthScreen",
+    "file": "DataHealthScreen",
+    "source": "screens/DataHealth.jsx"
+  },
+  {
+    "name": "DatasetsScreen",
+    "file": "DatasetsScreen",
+    "source": "screens/Datasets.jsx"
+  },
+  {
+    "name": "DryRunScreen",
+    "file": "DryRunScreen",
+    "source": "screens/DryRun.jsx"
+  },
+  {
+    "name": "ZoneHeader",
+    "file": "ZoneHeader",
+    "source": "screens/DryRun.jsx"
+  },
+  {
+    "name": "FindingRow",
+    "file": "FindingRow",
+    "source": "screens/DryRun.jsx"
+  },
+  {
+    "name": "fmtMinor",
+    "file": "fmtMinor",
+    "source": "screens/DryRun.jsx"
+  },
+  {
+    "name": "EndpointsScreen",
+    "file": "EndpointsScreen",
+    "source": "screens/Endpoints.jsx"
+  },
+  {
+    "name": "ExperimentsScreen",
+    "file": "ExperimentsScreen",
+    "source": "screens/Experiments.jsx"
+  },
+  {
+    "name": "ExpStatusBadge",
+    "file": "ExpStatusBadge",
+    "source": "screens/Experiments.jsx"
+  },
+  {
+    "name": "PriorityChip",
+    "file": "PriorityChip",
+    "source": "screens/Experiments.jsx"
+  },
+  {
+    "name": "ExperimentQueue",
+    "file": "ExperimentQueue",
+    "source": "screens/Experiments.jsx"
+  },
+  {
+    "name": "ExperimentDetail",
+    "file": "ExperimentDetail",
+    "source": "screens/Experiments.jsx"
+  },
+  {
+    "name": "ExperimentMatrix",
+    "file": "ExperimentMatrix",
+    "source": "screens/Experiments.jsx"
+  },
+  {
+    "name": "ExperimentCalendar",
+    "file": "ExperimentCalendar",
+    "source": "screens/Experiments.jsx"
+  },
+  {
+    "name": "ExperimentForm",
+    "file": "ExperimentForm",
+    "source": "screens/Experiments.jsx"
+  },
+  {
+    "name": "GovernScreen",
+    "file": "GovernScreen",
+    "source": "screens/Govern.jsx"
+  },
+  {
+    "name": "AuditTab",
+    "file": "AuditTab",
+    "source": "screens/Govern.jsx"
+  },
+  {
+    "name": "ExportTab",
+    "file": "ExportTab",
+    "source": "screens/Govern.jsx"
+  },
+  {
+    "name": "BundleStat",
+    "file": "BundleStat",
+    "source": "screens/Govern.jsx"
+  },
+  {
+    "name": "MemoryTab",
+    "file": "MemoryTab",
+    "source": "screens/Govern.jsx"
+  },
+  {
+    "name": "INCIDENTS",
+    "file": "incidents",
+    "source": "screens/Incidents.jsx"
+  },
+  {
+    "name": "IncidentsScreen",
+    "file": "IncidentsScreen",
+    "source": "screens/Incidents.jsx"
+  },
+  {
+    "name": "Section",
+    "file": "Section",
+    "source": "screens/Incidents.jsx"
+  },
+  {
+    "name": "LineageScreen",
+    "file": "LineageScreen",
+    "source": "screens/Lineage.jsx"
+  },
+  {
+    "name": "NotebooksScreen",
+    "file": "NotebooksScreen",
+    "source": "screens/Notebooks.jsx"
+  },
+  {
+    "name": "NotificationsScreen",
+    "file": "NotificationsScreen",
+    "source": "screens/Notifications.jsx"
+  },
+  {
+    "name": "AlertsScreen",
+    "file": "AlertsScreen",
+    "source": "screens/OpsScreens.jsx"
+  },
+  {
+    "name": "Toggle",
+    "file": "Toggle",
+    "source": "screens/OpsScreens.jsx"
+  },
+  {
+    "name": "SchedulesScreen",
+    "file": "SchedulesScreen",
+    "source": "screens/OpsScreens.jsx"
+  },
+  {
+    "name": "IntegrationsScreen",
+    "file": "IntegrationsScreen",
+    "source": "screens/OpsScreens.jsx"
+  },
+  {
+    "name": "ModelRegistryScreen",
+    "file": "ModelRegistryScreen",
+    "source": "screens/OpsScreens.jsx"
+  },
+  {
+    "name": "ProjectsScreen",
+    "file": "ProjectsScreen",
+    "source": "screens/Projects.jsx"
+  },
+  {
+    "name": "ProjectStatusBadge",
+    "file": "ProjectStatusBadge",
+    "source": "screens/Projects.jsx"
+  },
+  {
+    "name": "ProjectsListView",
+    "file": "ProjectsListView",
+    "source": "screens/Projects.jsx"
+  },
+  {
+    "name": "ProjectsBoardView",
+    "file": "ProjectsBoardView",
+    "source": "screens/Projects.jsx"
+  },
+  {
+    "name": "ProjectsGridView",
+    "file": "ProjectsGridView",
+    "source": "screens/Projects.jsx"
+  },
+  {
+    "name": "ProjectDetail",
+    "file": "ProjectDetail",
+    "source": "screens/Projects.jsx"
+  },
+  {
+    "name": "ProjectForm",
+    "file": "ProjectForm",
+    "source": "screens/Projects.jsx"
+  },
+  {
+    "name": "PromptsScreen",
+    "file": "PromptsScreen",
+    "source": "screens/Prompts.jsx"
+  },
+  {
+    "name": "PromptStatusBadge",
+    "file": "PromptStatusBadge",
+    "source": "screens/Prompts.jsx"
+  },
+  {
+    "name": "PromptEditor",
+    "file": "PromptEditor",
+    "source": "screens/Prompts.jsx"
+  },
+  {
+    "name": "PromptAB",
+    "file": "PromptAB",
+    "source": "screens/Prompts.jsx"
+  },
+  {
+    "name": "DEFAULT_PROTOCOL",
+    "file": "defaultProtocol",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "AVAILABLE_LANGUAGES",
+    "file": "availableLanguages",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "AVAILABLE_BENCHMARKS",
+    "file": "availableBenchmarks",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "RESOURCE_TYPES",
+    "file": "resourceTypes",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "GATE_KINDS",
+    "file": "gateKinds",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "TEMPLATES",
+    "file": "templates",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "validate",
+    "file": "validateProtocol",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "serialize",
+    "file": "serializeProtocol",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "ProtocolEditor",
+    "file": "ProtocolEditor",
+    "source": "screens/ProtocolEditor.jsx"
+  },
+  {
+    "name": "EditorChrome",
+    "file": "EditorChrome",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "SegmentedToggle",
+    "file": "SegmentedToggle",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "PECustomIcon",
+    "file": "PECustomIcon",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "DigestBanner",
+    "file": "DigestBanner",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "ErrorBanner",
+    "file": "ErrorBanner",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "SectionNav",
+    "file": "SectionNav",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "ErrCount",
+    "file": "ErrCount",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "ActionBar",
+    "file": "ActionBar",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "TemplatePicker",
+    "file": "TemplatePicker",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "YamlView",
+    "file": "YamlView",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "Field",
+    "file": "Field",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "TooltipIcon",
+    "file": "TooltipIcon",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "SectionHeader",
+    "file": "SectionHeader",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "INPUT",
+    "file": "protocolInput",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "INPUT_ERR",
+    "file": "inputErr",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "INPUT_MONO",
+    "file": "inputMono",
+    "source": "screens/ProtocolEditor.parts.jsx"
+  },
+  {
+    "name": "findErr",
+    "file": "findErr",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "ManifestSection",
+    "file": "ManifestSection",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "ObjectivesSection",
+    "file": "ObjectivesSection",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "TeamSection",
+    "file": "TeamSection",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "EvaluationSection",
+    "file": "EvaluationSection",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "ChipMultiSelect",
+    "file": "ChipMultiSelect",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "TemperatureGrid",
+    "file": "TemperatureGrid",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "BudgetSection",
+    "file": "BudgetSection",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "BudgetDonut",
+    "file": "BudgetDonut",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "GatesSection",
+    "file": "GatesSection",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "PolicySection",
+    "file": "PolicySection",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "SegmentedField",
+    "file": "SegmentedField",
+    "source": "screens/ProtocolEditor.sections.jsx"
+  },
+  {
+    "name": "ReportsScreen",
+    "file": "ReportsScreen",
+    "source": "screens/Reports.jsx"
+  },
+  {
+    "name": "ReportStatusBadge",
+    "file": "ReportStatusBadge",
+    "source": "screens/Reports.jsx"
+  },
+  {
+    "name": "ReportPreview",
+    "file": "ReportPreview",
+    "source": "screens/Reports.jsx"
+  },
+  {
+    "name": "SectionStatusChip",
+    "file": "SectionStatusChip",
+    "source": "screens/Reports.jsx"
+  },
+  {
+    "name": "sectionText",
+    "file": "sectionText",
+    "source": "screens/Reports.jsx"
+  },
+  {
+    "name": "ReportForm",
+    "file": "ReportForm",
+    "source": "screens/Reports.jsx"
+  },
+  {
+    "name": "RunsHistoryScreen",
+    "file": "RunsHistoryScreen",
+    "source": "screens/RunsHistory.jsx"
+  },
+  {
+    "name": "fmtDuration",
+    "file": "fmtDuration",
+    "source": "screens/RunsHistory.jsx"
+  },
+  {
+    "name": "RunDiffView",
+    "file": "RunDiffView",
+    "source": "screens/RunsHistory.jsx"
+  },
+  {
+    "name": "fmtVal",
+    "file": "fmtVal",
+    "source": "screens/RunsHistory.jsx"
+  },
+  {
+    "name": "SettingsScreen",
+    "file": "SettingsScreen",
+    "source": "screens/Settings.jsx"
+  },
+  {
+    "name": "SettingsPage",
+    "file": "SettingsPage",
+    "source": "screens/Settings.jsx"
+  },
+  {
+    "name": "NotifRow",
+    "file": "NotifRow",
+    "source": "screens/Settings.jsx"
+  },
+  {
+    "name": "SetupScreen",
+    "file": "SetupScreen",
+    "source": "screens/Setup.jsx"
+  },
+  {
+    "name": "StepRelay",
+    "file": "StepRelay",
+    "source": "screens/Setup.jsx"
+  },
+  {
+    "name": "StepTest",
+    "file": "StepTest",
+    "source": "screens/Setup.jsx"
+  },
+  {
+    "name": "StepModels",
+    "file": "StepModels",
+    "source": "screens/Setup.jsx"
+  },
+  {
+    "name": "StepProbe",
+    "file": "StepProbe",
+    "source": "screens/Setup.jsx"
+  },
+  {
+    "name": "StepDefaults",
+    "file": "StepDefaults",
+    "source": "screens/Setup.jsx"
+  },
+  {
+    "name": "INPUT",
+    "file": "setupInput",
+    "source": "screens/Setup.jsx"
+  },
+  {
+    "name": "FormField",
+    "file": "FormField",
+    "source": "screens/Setup.jsx"
+  },
+  {
+    "name": "StatesScreen",
+    "file": "StatesScreen",
+    "source": "screens/States.jsx"
+  },
+  {
+    "name": "StateDemo",
+    "file": "StateDemo",
+    "source": "screens/States.jsx"
+  },
+  {
+    "name": "TeamScreen",
+    "file": "TeamScreen",
+    "source": "screens/Team.jsx"
+  },
+  {
+    "name": "TimelineScreen",
+    "file": "TimelineScreen",
+    "source": "screens/Timeline.jsx"
+  },
+  {
+    "name": "EventRow",
+    "file": "EventRow",
+    "source": "screens/Timeline.jsx"
+  },
+  {
+    "name": "getEventTypeStyle",
+    "file": "getEventTypeStyle",
+    "source": "screens/Timeline.jsx"
+  },
+  {
+    "name": "getEventSummary",
+    "file": "getEventSummary",
+    "source": "screens/Timeline.jsx"
+  },
+  {
+    "name": "EventDrawer",
+    "file": "EventDrawer",
+    "source": "screens/Timeline.jsx"
+  },
+  {
+    "name": "DrawerSection",
+    "file": "DrawerSection",
+    "source": "screens/Timeline.jsx"
+  },
+  {
+    "name": "KV",
+    "file": "kv",
+    "source": "screens/Timeline.jsx"
+  },
+  {
+    "name": "WorkspaceScreen",
+    "file": "WorkspaceScreen",
+    "source": "screens/Workspace.jsx"
+  },
+  {
+    "name": "FileNode",
+    "file": "FileNode",
+    "source": "screens/Workspace.jsx"
+  }
+]

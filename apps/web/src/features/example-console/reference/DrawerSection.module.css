@@ -1,0 +1,20 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  padding: 10px 16px;
+  border-right: 1px solid var(--border);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

@@ -167,3 +167,33 @@
     display: none;
   }
 }
+
+@media (max-width: 768px) {
+  .domainBtn > span {
+    display: none;
+  }
+}
+
+.user {
+  border: none;
+  border-left: 2px solid transparent;
+}
+.userText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.userMeta {
+  font-size: 9px;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .userText {
+    display: none;
+  }
+}

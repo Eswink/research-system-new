@@ -1,6 +1,6 @@
-import { GapLayout } from "../shared/GapLayout";
-import { pageSupport } from "../../navigation/pageSupport";
 import { useI18n } from "../../i18n/useI18n";
+import { pageSupport } from "../../navigation/pageSupport";
+import { GapLayout } from "../shared/GapLayout";
 
 /** 项目集（T24）：列表/看板/卡片 + 详情结构；诚实限制为当前单项目上下文。 */
 export function ProjectsPage() {

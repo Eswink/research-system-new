@@ -9,6 +9,15 @@
  * 带版本资源带 If-Match；Key 永不写入 localStorage/URL/logs。
  */
 
+import { endpointsClient } from "./endpointsClient";
+import { ApiError } from "./http";
+import { inspectionClient } from "./inspectionClient";
+import type { EndpointWithEtag } from "./legacyShapes";
+import { modelsClient } from "./modelsClient";
+import { operationsClient } from "./operationsClient";
+import { protocolClient } from "./protocolClient";
+import { runClient } from "./runClient";
+import { teamClient } from "./teamClient";
 import type {
   AgentCreateDto,
   AgentSpecDto,
@@ -22,15 +31,6 @@ import type {
   ProjectSettingsDto,
   Version,
 } from "./types";
-import { endpointsClient } from "./endpointsClient";
-import { modelsClient } from "./modelsClient";
-import { teamClient } from "./teamClient";
-import { protocolClient } from "./protocolClient";
-import { runClient } from "./runClient";
-import { inspectionClient } from "./inspectionClient";
-import { operationsClient } from "./operationsClient";
-import { ApiError } from "./http";
-import type { EndpointWithEtag } from "./legacyShapes";
 
 export { ApiError };
 export type { EndpointWithEtag };
@@ -44,8 +44,7 @@ export const api = {
   listEndpoints: () => endpointsClient.list(),
   createEndpoint: (payload: LlmEndpointCreateDto): Promise<EndpointWithEtag> =>
     endpointsClient.create(payload).then(withDto),
-  getEndpoint: (id: string): Promise<EndpointWithEtag> =>
-    endpointsClient.get(id).then(withDto),
+  getEndpoint: (id: string): Promise<EndpointWithEtag> => endpointsClient.get(id).then(withDto),
   updateEndpoint: (
     id: string,
     payload: LlmEndpointUpdateDto,

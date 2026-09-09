@@ -39,6 +39,7 @@ function classify(err: unknown): { message: string; forbidden: boolean; unavaila
 }
 
 interface Internal<T> {
+  key: string | null;
   data: T | null;
   phase: ResourcePhase;
   error: string | null;
@@ -48,6 +49,7 @@ interface Internal<T> {
 }
 
 const INITIAL: Internal<never> = {
+  key: null,
   data: null,
   phase: "idle",
   error: null,
@@ -68,39 +70,54 @@ export function useResource<T>(
 
   useEffect(() => {
     if (key === null) {
-      setInternal((prev) => ({ ...prev, data: null, phase: "idle", error: null }));
+      generation.current += 1;
+      setInternal(INITIAL);
       return;
     }
-    return runFetch(generation, fetcherRef, setInternal);
+    return runFetch({ key, generation, fetcherRef, setInternal });
   }, [key, nonce]);
 
   const reload = useCallback(() => {
     setNonce((n) => n + 1);
   }, []);
 
-  return { ...internal, reload };
+  // Never expose the previous object's data during the render before an effect runs.
+  const visible =
+    internal.key === key
+      ? internal
+      : {
+          ...INITIAL,
+          key,
+          phase: key === null ? ("idle" as const) : ("loading" as const),
+        };
+  return { ...visible, reload };
 }
 
-function runFetch<T>(
-  generation: { current: number },
-  fetcherRef: { current: (signal: AbortSignal) => Promise<T> },
-  setInternal: (fn: (prev: Internal<T>) => Internal<T>) => void,
-): () => void {
+interface FetchContext<T> {
+  key: string;
+  generation: { current: number };
+  fetcherRef: { current: (signal: AbortSignal) => Promise<T> };
+  setInternal: (fn: (prev: Internal<T>) => Internal<T>) => void;
+}
+
+function runFetch<T>({ key, generation, fetcherRef, setInternal }: FetchContext<T>): () => void {
   const gen = ++generation.current;
   const controller = new AbortController();
   setInternal((prev) => ({
-    ...prev,
+    ...(prev.key === key ? prev : INITIAL),
+    key,
     phase: "loading",
     error: null,
     forbidden: false,
     unavailable: false,
-    stale: prev.data !== null,
+    stale: prev.key === key && prev.data !== null,
   }));
   fetcherRef
     .current(controller.signal)
     .then((data) => {
-      if (generation.current === gen) {
+      if (generation.current === gen && !controller.signal.aborted) {
         setInternal(() => ({
+          key,
           data,
           phase: "ready",
           error: null,

@@ -86,11 +86,12 @@ test("baseline: roundtrip preserves explicit false (T11)", () => {
 
 test("baseline: preflight hook has no fixed example source (T14)", () => {
   const source = readFileSync(
-    path.join(SRC, "features/protocol/editor/usePreflightAndStart.ts"),
+    path.join(SRC, "features/protocol/editor/editorCommands.ts"),
     "utf8",
   );
   assert.doesNotMatch(source, /PREFLIGHT_SOURCE\s*=\s*["']m12_reference_research_v1/);
   assert.doesNotMatch(source, /m12_reference_research_v1\.yaml/);
+  assert.match(source, /controlledSource\(state\)/);
 });
 
 // ── T18：SSE 必须消费具名事件帧 ───────────────────────────────────────────

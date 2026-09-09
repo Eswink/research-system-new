@@ -1,0 +1,286 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+:global([data-design-surface]) .grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+:global([data-design-surface]) .grid2 {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+:global([data-design-surface]) .panel {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+:global([data-design-surface]) .label {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .surface {
+  overflow: auto;
+}
+
+:global([data-design-surface]) .surface2 {
+  grid-template-columns: minmax(180px, 1.6fr) 70px 60px 60px 50px 60px 100px;
+}
+
+:global([data-design-surface]) .surface3 {
+  grid-template-columns: minmax(180px, 1.6fr) 70px 60px 60px 50px 60px 100px;
+  cursor: pointer;
+}
+
+:global([data-design-surface]) .surface4 {
+  min-width: 0;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:global([data-design-surface]) .row {
+  font-size: 10px;
+  color: var(--danger);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label4 {
+  font-size: 11px;
+}
+
+:global([data-design-surface]) .label5 {
+  font-size: 11px;
+}
+
+:global([data-design-surface]) .label6 {
+  font-size: 11px;
+}
+
+:global([data-design-surface]) .label7 {
+  font-size: 11px;
+}
+
+:global([data-design-surface]) .panel2 {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+:global([data-design-surface]) .surface5 {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+:global([data-design-surface]) .label8 {
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .column2 {
+  flex: 1;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+:global([data-design-surface]) .surface6 {
+  padding: 12px;
+  background: var(--bg-raised);
+  border-radius: 6px;
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .label9 {
+  font-size: 22px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .label10 {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .caption3 {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .caption4 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+:global([data-design-surface]) .column3 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+:global([data-design-surface]) .grid3 {
+  display: grid;
+  grid-template-columns: 80px 1fr 50px;
+  gap: 8px;
+  align-items: center;
+}
+
+:global([data-design-surface]) .caption5 {
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .indicator {
+  height: 8px;
+  background: var(--bg-sunken);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .indicator2 {
+  height: 100%;
+  background: var(--accent);
+}
+
+:global([data-design-surface]) .caption6 {
+  font-size: 10px;
+  text-align: right;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .caption7 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+:global([data-design-surface]) .row3 {
+  padding: 12px;
+  background: var(--danger-dim);
+  border: 1px solid var(--danger-line);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--danger);
+  display: flex;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface7 {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+:global([data-design-surface]) .caption8 {
+  color: var(--fg-muted);
+  font-size: 10px;
+}
+
+:global([data-design-surface]) .caption9 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+:global([data-design-surface]) .label11 {
+  padding: 12px;
+  background: var(--warn-dim);
+  border: 1px solid var(--warn-line);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+:global([data-design-surface]) .surface8 {
+  color: var(--warn);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .caption10 {
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .caption11 {
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .row4 {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .action {
+  margin-left: auto;
+}

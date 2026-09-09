@@ -1,0 +1,101 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+:global([data-design-surface]) .panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+:global([data-design-surface]) .surface {
+  grid-template-columns: 24px 1.4fr 120px 90px 100px 100px 100px 130px;
+}
+
+:global([data-design-surface]) .surface2 {
+  flex: 1;
+  overflow: auto;
+}
+
+:global([data-design-surface]) .surface3 {
+  grid-template-columns: 24px 1.4fr 120px 90px 100px 100px 100px 130px;
+  cursor: pointer;
+}
+
+:global([data-design-surface]) .field {
+  accent-color: var(--accent);
+}
+
+:global([data-design-surface]) .surface4 {
+  min-width: 0;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .surface5 {
+  color: var(--success);
+}
+
+:global([data-design-surface]) .surface6 {
+  color: var(--danger);
+}
+
+:global([data-design-surface]) .label4 {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 9px;
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .row2 {
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
+  font-size: 11px;
+  color: var(--fg-muted);
+  display: flex;
+  justify-content: space-between;
+}

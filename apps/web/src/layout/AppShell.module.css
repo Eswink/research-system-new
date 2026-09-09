@@ -1,6 +1,7 @@
 .shell {
   display: flex;
-  min-height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   background: var(--bg-app);
 }
 
@@ -12,6 +13,8 @@
 }
 
 .content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   padding: 16px;
@@ -20,10 +23,14 @@
 
 @media (max-width: 768px) {
   .shell {
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .content {
     padding: 8px;
   }
+}
+
+.shell[data-collapsed] {
+  --shell-sidebar-w: 56px;
 }

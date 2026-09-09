@@ -1,6 +1,6 @@
-import { GapLayout } from "../shared/GapLayout";
-import { pageSupport } from "../../navigation/pageSupport";
 import { useI18n } from "../../i18n/useI18n";
+import { pageSupport } from "../../navigation/pageSupport";
+import { GapLayout } from "../shared/GapLayout";
 
 /** 集成（T26）：集成目录 + 配置结构；无 Tool Provider 管理 API。 */
 export function IntegrationsPage() {

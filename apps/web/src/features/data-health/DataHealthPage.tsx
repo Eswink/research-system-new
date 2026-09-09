@@ -1,6 +1,6 @@
-import { GapLayout } from "../shared/GapLayout";
-import { pageSupport } from "../../navigation/pageSupport";
 import { useI18n } from "../../i18n/useI18n";
+import { pageSupport } from "../../navigation/pageSupport";
+import { GapLayout } from "../shared/GapLayout";
 
 /** 数据健康（T26）：质量指标 + 数据详情布局；无后端质量报告时明确不可用。 */
 export function DataHealthPage() {

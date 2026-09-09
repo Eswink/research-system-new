@@ -14,9 +14,7 @@ export function NotFoundPage({ onHome }: { onHome: () => void }) {
       <h2 style={{ fontSize: "var(--fs-title)", fontWeight: 500, margin: "8px 0" }}>
         {t("notfound.title")}
       </h2>
-      <p style={{ color: "var(--fg-muted)", fontSize: "var(--fs-meta)" }}>
-        {t("notfound.hint")}
-      </p>
+      <p style={{ color: "var(--fg-muted)", fontSize: "var(--fs-meta)" }}>{t("notfound.hint")}</p>
       <button type="button" className="btn primary" onClick={onHome} style={{ marginTop: 16 }}>
         {t("notfound.home")}
       </button>

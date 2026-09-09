@@ -8,6 +8,8 @@ export interface PageContext {
   onAddRelay: () => void;
   selectedRunId: string;
   onSelectedRunIdChange: (runId: string) => void;
+  selectedDraftId?: string;
+  onDraftIdChange?: (draftId: string) => void;
   onOpenSetup: () => void;
   preferences: ConsolePreferences;
   onPreferencesChange: (next: ConsolePreferences) => void;

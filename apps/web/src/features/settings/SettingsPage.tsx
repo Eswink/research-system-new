@@ -1,16 +1,14 @@
-import { useState } from "react";
-
-import { api } from "../../api/client";
-import { Button } from "../../components/Button";
-import { Chip } from "../../components/Chip";
-import { Field } from "../../components/Field";
-import { SegmentedToggle } from "../../components/SegmentedToggle";
-import { ErrorState, LoadingState, UnavailableState } from "../../components/States";
-import type { ConsolePreferences } from "../../layout/preferences";
+import type { TranslationKey } from "../../i18n/zh";
+import { useState, type Dispatch, type SetStateAction } from "react";
+import { UnavailableState } from "../../components/States";
 import { useI18n } from "../../i18n/useI18n";
-import { useResource } from "../../hooks/useResource";
+import type { ConsolePreferences } from "../../layout/preferences";
 import { GAPS } from "../../navigation/pageSupport";
-import styles from "../shared/FeaturePage.module.css";
+import shared from "../shared/LivePage.module.css";
+import { PageHeader } from "../shared/PageHeader";
+import { PreferencesSection } from "./PreferencesSection";
+import styles from "./SettingsPage.module.css";
+import { WorkspaceSection } from "./WorkspaceSection";
 
 const SECTIONS = [
   { id: "preferences", labelKey: "settings.preferences" },
@@ -20,12 +18,6 @@ const SECTIONS = [
   { id: "billing", labelKey: "settings.billing" },
 ] as const;
 
-type SectionId = (typeof SECTIONS)[number]["id"];
-
-/**
- * 设置（T27）：主题/密度/语言为真实本地偏好；Workspace 走项目设置 API；
- * 账户/平台 API Keys/双因素/Billing 无 API——锁定并说明。
- */
 export function SettingsPage({
   preferences,
   onPreferencesChange,
@@ -33,96 +25,103 @@ export function SettingsPage({
   preferences: ConsolePreferences;
   onPreferencesChange: (next: ConsolePreferences) => void;
 }) {
-  const { t } = useI18n();
-  const [section, setSection] = useState<SectionId>("preferences");
+  const { language, t } = useI18n();
+  const [section, setSection] = useState<(typeof SECTIONS)[number]["id"]>("preferences");
   return (
-    <div className={styles.page}>
-      <h2 className={styles.heading}>{t("settings.title")}</h2>
-      <div className={styles.head}>
-        {SECTIONS.map((s) => (
-          <Button
-            key={s.id}
-            variant={section === s.id ? "primary" : "ghost"}
-            size="sm"
-            onClick={() => { setSection(s.id); }}
-          >
-            {t(s.labelKey as never)}
-          </Button>
-        ))}
-      </div>
-      {section === "preferences" && (
-        <PreferencesSection preferences={preferences} onChange={onPreferencesChange} />
-      )}
-      {section === "workspace" && <WorkspaceSection />}
-      {section !== "preferences" && section !== "workspace" && (
-        <UnavailableState title={t("settings.locked")} reason={GAPS.account} />
-      )}
-    </div>
+    <SettingsPageTitle
+      {...{ t, language, section, setSection, preferences, onPreferencesChange }}
+    />
   );
 }
 
-function PreferencesSection({
-  preferences,
-  onChange,
-}: {
+interface SettingsPageTitleProps {
+  t: (key: TranslationKey) => string;
+  language: string;
+  section: string;
+  setSection: Dispatch<
+    SetStateAction<"preferences" | "workspace" | "account" | "security" | "billing">
+  >;
   preferences: ConsolePreferences;
-  onChange: (next: ConsolePreferences) => void;
-}) {
-  const { t } = useI18n();
+  onPreferencesChange: (next: ConsolePreferences) => void;
+}
+
+function SettingsPageTitle({
+  t,
+  language,
+  section,
+  setSection,
+  preferences,
+  onPreferencesChange,
+}: SettingsPageTitleProps) {
   return (
-    <div className={styles.panel}>
-      <div className={styles.panelTitle}>{t("settings.preferences")}</div>
-      <Field label={t("app.theme")}>
-        <SegmentedToggle
-          ariaLabel={t("app.theme")}
-          value={preferences.theme}
-          options={[
-            { value: "dark", label: t("app.theme.dark") },
-            { value: "light", label: t("app.theme.light") },
-          ]}
-          onChange={(v) => {
-            onChange({ ...preferences, theme: v === "light" ? "light" : "dark" });
-          }}
-        />
-      </Field>
-      <Field label={t("app.density")}>
-        <SegmentedToggle
-          ariaLabel={t("app.density")}
-          value={preferences.density}
-          options={[
-            { value: "normal", label: t("app.density.normal") },
-            { value: "compact", label: t("app.density.compact") },
-          ]}
-          onChange={(v) => {
-            onChange({ ...preferences, density: v === "compact" ? "compact" : "normal" });
-          }}
-        />
-      </Field>
-    </div>
+    <section className={shared.page} data-testid="settings-page">
+      <PageHeader
+        title={t("settings.title")}
+        kicker="SETTINGS / CONSOLE"
+        description={
+          language === "zh"
+            ? "本机偏好、项目配置与尚未接入的账户能力分别标明。"
+            : [
+                "Local preferences, project configuration and unavailable account ",
+                "capabilities are labeled separately.",
+              ].join("")
+        }
+      />
+      <SettingsPageLocked
+        {...{ language, section, setSection, t, preferences, onPreferencesChange }}
+      />
+    </section>
   );
 }
 
-function WorkspaceSection() {
-  const { t } = useI18n();
-  const settings = useResource("project-settings", () => api.getProjectSettings());
-  if (settings.phase === "loading") {
-    return <LoadingState message={t("state.loading")} />;
-  }
-  if (settings.phase === "error") {
-    return <ErrorState message={settings.error ?? t("state.error")} />;
-  }
-  const s = settings.data;
+interface SettingsPageLockedProps {
+  language: string;
+  section: string;
+  setSection: Dispatch<
+    SetStateAction<"preferences" | "workspace" | "account" | "security" | "billing">
+  >;
+  t: (key: TranslationKey) => string;
+  preferences: ConsolePreferences;
+  onPreferencesChange: (next: ConsolePreferences) => void;
+}
+
+function SettingsPageLocked({
+  language,
+  section,
+  setSection,
+  t,
+  preferences,
+  onPreferencesChange,
+}: SettingsPageLockedProps) {
   return (
-    <div className={styles.panel}>
-      <div className={styles.panelTitle}>{t("settings.workspace")}</div>
-      <div className={styles.head}>
-        <Chip tone="neutral">{`team: ${s?.team_template_id ?? "—"}`}</Chip>
-        <Chip tone="neutral">{`workspace: ${s?.workspace_backend ?? "—"}`}</Chip>
-        <Chip tone="neutral">{`budget: ${s?.budget_policy_id ?? "—"}`}</Chip>
+    <div className={styles.layout}>
+      <nav
+        className={styles.navigation}
+        aria-label={language === "zh" ? "设置分区" : "Settings sections"}
+      >
+        {SECTIONS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={styles.section}
+            aria-current={section === item.id ? "page" : undefined}
+            onClick={() => {
+              setSection(item.id);
+            }}
+          >
+            {t(item.labelKey)}
+          </button>
+        ))}
+      </nav>
+      <div className={styles.content}>
+        {section === "preferences" && (
+          <PreferencesSection preferences={preferences} onChange={onPreferencesChange} />
+        )}
+        {section === "workspace" && <WorkspaceSection />}
+        {section !== "preferences" && section !== "workspace" && (
+          <UnavailableState title={t("settings.locked")} reason={GAPS.account} />
+        )}
       </div>
-      <p style={{ margin: "8px 0 0", fontSize: "var(--fs-caption)", color: "var(--fg-muted)" }}>
-        {t("settings.lastWrite")}
-      </p>
     </div>
   );
 }

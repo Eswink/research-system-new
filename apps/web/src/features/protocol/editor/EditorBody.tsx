@@ -1,10 +1,10 @@
 /** 编辑器主体（拆分）：YAML 编辑 / 解析错误兜底 / Form 区块布局。 */
 
 import { SectionNav, type SectionId } from "./EditorLayout";
+import styles from "./EditorShell.module.css";
 import { parseProtocolYaml } from "./protocolDocument";
 import { IdentitySection } from "./sections/IdentitySection";
 import { PhasesSection } from "./sections/PhasesSection";
-import styles from "./EditorShell.module.css";
 
 export function EditorBody(props: {
   mode: "form" | "yaml";

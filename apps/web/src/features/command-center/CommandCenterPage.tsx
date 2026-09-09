@@ -1,125 +1,177 @@
-import { api } from "../../api/client";
-import { Chip } from "../../components/Chip";
-import { MetricCard } from "../../components/charts/MetricCard";
-import { ErrorState, LoadingState } from "../../components/States";
 import { useI18n } from "../../i18n/useI18n";
-import { useResource } from "../../hooks/useResource";
+import { SourceControl } from "../../layout/SourceControl";
+import { RunQueryBar } from "../shared/RunQueryBar";
 import styles from "./CommandCenterPage.module.css";
+import { CommandCenterGap, CommandCenterPanel } from "./CommandCenterPanel";
+import {
+  ClaimsSnapshot,
+  EventsSnapshot,
+  ExperimentsSnapshot,
+  RunsSnapshot,
+  TelemetrySnapshot,
+  UsageSnapshot,
+  WorkerTopologySnapshot,
+} from "./CommandCenterSnapshots";
+import { useCommandCenterQueries } from "./useCommandCenterQueries";
 
-/**
- * Command Center（T28）：独立大屏，复用已验证的运行/任务/证据/成本/观测查询。
- * 不建立第二套运行状态；缺指标区域保留版式并说明；刷新时间与连接状态分别展示。
- */
-export function CommandCenterPage() {
-  const { t } = useI18n();
-  const runs = useResource("cc-runs", () => api.listRuns());
-  const cluster = useResource("cc-cluster", () => api.clusterWorkers());
-
-  if (runs.phase === "loading") {
-    return <LoadingState message={t("state.loading")} />;
-  }
-  if (runs.phase === "error") {
-    return <ErrorState message={runs.error ?? t("state.error")} />;
-  }
-  const runList = runs.data ?? [];
-  const workers = cluster.data?.workers ?? [];
+export function CommandCenterPage({
+  onExit,
+  runId,
+  onRunSelected,
+}: {
+  onExit: () => void;
+  runId: string;
+  onRunSelected: (id: string) => void;
+}) {
+  const { language } = useI18n();
+  const queries = useCommandCenterQueries(runId);
   return (
-    <div className={styles.screen} data-testid="command-center">
-      <header className={styles.header}>
-        <div className={styles.title}>{t("page.command-center.command-center")}</div>
-        <div className={styles.meta}>
-          <Chip tone="accent">{`${t("cc.runs")}: ${String(runList.length)}`}</Chip>
-          <span className={styles.stamp}>{t("cc.refreshNote")}</span>
-        </div>
-      </header>
-      <MetricsGrid
-        runs={runList}
-        workerTotal={workers.length}
-        workerOnline={countOnline(workers)}
-        clusterUnknown={cluster.data === null}
-      />
-      <RecentRuns runs={runList} />
-      <p className={styles.note}>{t("cc.gapNote")}</p>
-    </div>
+    <main className={styles.screen} data-testid="command-center" data-command-center="true">
+      <CommandCenterMasthead queries={queries} onExit={onExit} />
+      <div className={styles.selection}>
+        <RunQueryBar
+          runId={runId}
+          onSelect={(id) => {
+            if (id === runId) queries.refresh();
+            else onRunSelected(id);
+          }}
+        />
+        <p className={styles.note}>
+          {language === "zh"
+            ? "真实查询快照；未读取/失败均不归零。缺少后端能力的面板明确保留缺口，不混入示例指标。"
+            : [
+                "Actual query snapshots. Missing/failed data never becomes zero; API gaps ",
+                "remain explicit rather than mixing in example metrics.",
+              ].join("")}
+        </p>
+      </div>
+      <CommandCenterGrid queries={queries} onRunSelected={onRunSelected} />
+      <footer className={styles.footer}>
+        CANONICAL STATE · USAGE LEDGER · READ ONLY <span>HTTP SNAPSHOT ≠ LIVE TELEMETRY</span>
+      </footer>
+    </main>
   );
 }
 
-function countOnline(workers: readonly { state: string }[]): number {
-  return workers.filter((w) => w.state === "ONLINE" || w.state === "IDLE").length;
+function CommandCenterMasthead({
+  queries,
+  onExit,
+}: {
+  queries: ReturnType<typeof useCommandCenterQueries>;
+  onExit: () => void;
+}) {
+  const { language } = useI18n();
+  const runs = queries.runs.phase === "ready" ? queries.runs.data : null;
+  const workers = queries.cluster.phase === "ready" ? queries.cluster.data?.workers : undefined;
+  return (
+    <header className={styles.header}>
+      <div className={styles.brand}>
+        <div className={styles.mark}>◇</div>
+        <div>
+          <h1>Research OS</h1>
+          <span>COMMAND CENTER · MISSION CONTROL</span>
+        </div>
+      </div>
+      <div className={styles.headerStats}>
+        <div>
+          <strong>
+            {runs === null ? "—" : runs.filter((run) => run.state === "RUNNING").length}
+          </strong>
+          <small>RUNNING RUNS</small>
+        </div>
+        <div>
+          <strong>{workers?.length ?? "—"}</strong>
+          <small>REGISTERED WORKERS</small>
+        </div>
+      </div>
+      <div className={styles.meta}>
+        <SourceControl />
+        <button type="button" className="btn sm" onClick={queries.refresh}>
+          {language === "zh" ? "刷新快照" : "Refresh snapshots"}
+        </button>
+        <button type="button" className="btn sm" onClick={onExit}>
+          ← {language === "zh" ? "返回控制台" : "Back to console"}
+        </button>
+      </div>
+    </header>
+  );
 }
 
-function MetricsGrid({
-  runs,
-  workerTotal,
-  workerOnline,
-  clusterUnknown,
+function CommandCenterGrid({
+  queries: q,
+  onRunSelected,
 }: {
-  runs: readonly { state: string }[];
-  workerTotal: number;
-  workerOnline: number;
-  clusterUnknown: boolean;
+  queries: ReturnType<typeof useCommandCenterQueries>;
+  onRunSelected: (id: string) => void;
 }) {
-  const { t } = useI18n();
-  const count = (s: string) => runs.filter((r) => r.state === s).length;
+  const { language } = useI18n();
+  const zh = language === "zh";
+  return <CommandCenterPageGrid {...{ zh, q, onRunSelected }} />;
+}
+
+interface CommandCenterPageGridProps {
+  zh: boolean;
+  q: ReturnType<typeof useCommandCenterQueries>;
+  onRunSelected: (id: string) => void;
+}
+
+function CommandCenterPageGrid({ zh, q, onRunSelected }: CommandCenterPageGridProps) {
   return (
     <div className={styles.grid}>
-      <MetricCard
-        label={t("cc.running")}
-        value={String(count("RUNNING"))}
-        sub={t("cc.runningSub")}
-      />
-      <MetricCard
-        label={t("cc.succeeded")}
-        value={String(count("SUCCEEDED"))}
-        sub={t("cc.succeededSub")}
-      />
-      <MetricCard label={t("cc.failed")} value={String(count("FAILED"))} sub={t("cc.failedSub")} />
-      <MetricCard
-        label={t("cc.workers")}
-        value={`${String(workerOnline)} / ${String(workerTotal)}`}
-        sub={t("cc.workersSub")}
-        unknownWarn={clusterUnknown}
-      />
+      <CommandCenterPanel title={zh ? "运行登记" : "REGISTERED RUNS"} state={q.runs}>
+        {(runs) => <RunsSnapshot runs={runs} onSelect={onRunSelected} />}
+      </CommandCenterPanel>
+      <CommandCenterPanel
+        title={zh ? "节点拓扑 · 无地理位置" : "WORKER REGISTRY · NO GEOLOCATION"}
+        state={q.cluster}
+      >
+        {(cluster) => <WorkerTopologySnapshot cluster={cluster} />}
+      </CommandCenterPanel>
+      <CommandCenterPanel title={zh ? "运行遥测" : "RUN TELEMETRY"} state={q.telemetry}>
+        {(telemetry) => <TelemetrySnapshot telemetry={telemetry} />}
+      </CommandCenterPanel>
+      <CommandCenterPanel title={zh ? "论断分布" : "CLAIM DISTRIBUTION"} state={q.claims}>
+        {(claims) => <ClaimsSnapshot claims={claims} />}
+      </CommandCenterPanel>
+      <CommandCenterPanel title={zh ? "使用与费用" : "USAGE AND COST"} state={q.usage}>
+        {(usage) => <UsageSnapshot usage={usage} />}
+      </CommandCenterPanel>
+      <CommandCenterSecondaryPanels {...{ zh, q }} />
     </div>
   );
 }
 
-interface RunSummary {
-  id: string;
-  state: string;
-  protocol_id: string;
-}
-
-function RecentRuns({ runs }: { runs: readonly RunSummary[] }) {
-  const { t } = useI18n();
+function CommandCenterSecondaryPanels({ zh, q }: Pick<CommandCenterPageGridProps, "zh" | "q">) {
   return (
-    <div className={styles.runs}>
-      <div className={styles.panelTitle}>{t("cc.recentRuns")}</div>
-      {runs.slice(0, 8).map((r) => (
-        <a
-          key={r.id}
-          href={`#/run/timeline?run=${encodeURIComponent(r.id)}`}
-          className={styles.runRow}
-        >
-          <span className="mono">{r.id.slice(0, 20)}</span>
-          <Chip tone={stateTone(r.state)}>{r.state}</Chip>
-          <span className="mono" style={{ color: "var(--fg-faint)" }}>{r.protocol_id}</span>
-        </a>
-      ))}
-      {runs.length === 0 && <div className={styles.empty}>{t("state.empty")}</div>}
-    </div>
+    <>
+      <CommandCenterGap
+        title={zh ? "告警信息流" : "ALERTS FEED"}
+        reason={
+          zh
+            ? "告警登记与订阅接口尚未提供，不把审批或失败运行冒充告警。"
+            : [
+                "No alert registry/subscription API. Approvals and failed runs are not ",
+                "substituted as alerts.",
+              ].join("")
+        }
+      />
+      <CommandCenterPanel title={zh ? "实验记录" : "EXPERIMENT RECORDS"} state={q.experiments}>
+        {(view) => <ExperimentsSnapshot view={view} />}
+      </CommandCenterPanel>
+      <CommandCenterGap
+        title={zh ? "模型活动" : "MODEL ACTIVITY"}
+        reason={
+          zh
+            ? "没有模型活动、延迟或健康时序接口；不把端点启用状态当作实时模型健康。"
+            : [
+                "No model activity, latency or health time-series API. Endpoint ",
+                "enablement is not real-time model health.",
+              ].join("")
+        }
+      />
+      <CommandCenterPanel title={zh ? "正式事件" : "PERSISTED EVENTS"} state={q.events}>
+        {(events) => <EventsSnapshot events={events} />}
+      </CommandCenterPanel>
+    </>
   );
-}
-
-function stateTone(state: string): "success" | "danger" | "accent" | "neutral" {
-  if (state === "SUCCEEDED") {
-    return "success";
-  }
-  if (state === "FAILED") {
-    return "danger";
-  }
-  if (state === "RUNNING") {
-    return "accent";
-  }
-  return "neutral";
 }

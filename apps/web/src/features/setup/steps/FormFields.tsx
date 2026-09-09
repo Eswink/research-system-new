@@ -25,6 +25,34 @@ export function FormFields({
   setApiKey: (value: string) => void;
 }) {
   return (
+    <FormFieldsContent
+      {...{ name, setName, baseUrl, setBaseUrl, apiStyle, setApiStyle, apiKey, setApiKey }}
+    />
+  );
+}
+
+interface FormFieldsContentProps {
+  name: string;
+  setName: (value: string) => void;
+  baseUrl: string;
+  setBaseUrl: (value: string) => void;
+  apiStyle: string;
+  setApiStyle: (value: string) => void;
+  apiKey: string;
+  setApiKey: (value: string) => void;
+}
+
+function FormFieldsContent({
+  name,
+  setName,
+  baseUrl,
+  setBaseUrl,
+  apiStyle,
+  setApiStyle,
+  apiKey,
+  setApiKey,
+}: FormFieldsContentProps) {
+  return (
     <>
       <TextField
         label="Name"

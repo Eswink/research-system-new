@@ -95,13 +95,16 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "ops/observability": { level: "full" },
   "govern/budget": { level: "partial", reason: GAPS.budgetAdjust, disabledOperations: ["adjust"] },
   "govern/audit": { level: "partial", reason: GAPS.memory, disabledOperations: ["memory-manage"] },
-  settings: {
+  "settings/settings": {
     level: "partial",
     reason: GAPS.account,
     disabledOperations: ["account", "platform-keys", "2fa", "billing"],
   },
-  notifications: { level: "gap", reason: GAPS.notifications },
-  "command-center": { level: "partial", reason: "复用真实查询；跨项目/预测/全球节点不可用" },
+  "notifications/notifications": { level: "gap", reason: GAPS.notifications },
+  "command-center/command-center": {
+    level: "partial",
+    reason: "复用真实查询；跨项目/预测/全球节点不可用",
+  },
 };
 
 export function pageSupport(route: Route): PageSupport {

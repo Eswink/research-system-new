@@ -10,11 +10,7 @@ export interface OperationsState {
   error: string | null;
   busy: boolean;
   loadRun: (runId: string) => Promise<void>;
-  loadTrend: (
-    datasetId?: string,
-    expectedDigests?: string[],
-    limit?: number,
-  ) => Promise<void>;
+  loadTrend: (datasetId?: string, expectedDigests?: string[], limit?: number) => Promise<void>;
 }
 
 export interface OperationsRunSnapshot {
@@ -24,9 +20,10 @@ export interface OperationsRunSnapshot {
 
 /** 一次 run 的 telemetry + cost 联合读取（Promise.all，任一失败即整体失败）。 */
 export function fetchOperationsRun(runId: string): Promise<OperationsRunSnapshot> {
-  return Promise.all([api.runTelemetry(runId), api.runCost(runId)]).then(
-    ([telemetry, cost]) => ({ telemetry, cost }),
-  );
+  return Promise.all([api.runTelemetry(runId), api.runCost(runId)]).then(([telemetry, cost]) => ({
+    telemetry,
+    cost,
+  }));
 }
 
 /** 评测趋势读取（dataset / expected digests / limit 透传）。 */
@@ -64,11 +61,7 @@ export function useOperations(): OperationsState {
     }
   };
 
-  const loadTrend = async (
-    datasetId?: string,
-    expectedDigests: string[] = [],
-    limit?: number,
-  ) => {
+  const loadTrend = async (datasetId?: string, expectedDigests: string[] = [], limit?: number) => {
     setBusy(true);
     setError(null);
     try {

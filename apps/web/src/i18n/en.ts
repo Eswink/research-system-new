@@ -163,8 +163,10 @@ export const en: Record<TranslationKey, string> = {
   "compare.created": "Created",
   "compare.selected": "selected",
   "compare.metrics": "Metric comparison",
-  "compare.hint":
-    "Parallel-display returned metrics only; no uplift or ranking when comparability is unclear.",
+  "compare.hint": [
+    "Parallel-display returned metrics only; no uplift or ranking when ",
+    "comparability is unclear.",
+  ].join(""),
   "exp.artifacts": "Artifacts",
   "exp.image": "Image digest",
   "exp.metrics": "Metrics",
@@ -194,8 +196,7 @@ export const en: Record<TranslationKey, string> = {
   "cc.workers": "Workers",
   "cc.workersSub": "online / total",
   "cc.recentRuns": "Recent runs",
-  "cc.gapNote":
-    "Cross-project stats, global node locations and forecasts have no backend data.",
+  "cc.gapNote": "Cross-project stats, global node locations and forecasts have no backend data.",
 
   "settings.preferences": "Preferences",
   "settings.workspace": "Workspace",
@@ -237,8 +238,10 @@ export const en: Record<TranslationKey, string> = {
   "matrix.state": "State",
   "matrix.appearance": "Appearance",
   "matrix.legend": "Legend",
-  "matrix.hint":
-    "This page documents UI states (loading/empty/error/forbidden/unknown); not live ops status.",
+  "matrix.hint": [
+    "This page documents UI states (loading/empty/error/forbidden/unknown); ",
+    "not live ops status.",
+  ].join(""),
   "projects.name": "Name",
   "projects.lifecycle": "Lifecycle",
   "projects.detail": "Project detail",

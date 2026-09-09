@@ -19,25 +19,21 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case "mode":
       return { ...state, mode: action.mode };
     case "saved":
-      return { ...state, saved: action.saved, saveStatus: "idle", issues: [], error: null };
+      return applySaved(state, action);
+    case "operationStarted":
+      return beginOperation(state, action.operation);
+    case "operationFinished":
+      return { ...state, busy: false };
+    case "validated":
+      return { ...state, validation: { text: action.text, result: action.result } };
+    case "runStarted":
+      return { ...state, startedRunId: action.runId, error: null };
     case "saveFailed":
-      return {
-        ...state,
-        saveStatus: action.conflict ? "conflict" : "invalid",
-        issues: action.issues,
-        error: action.error,
-      };
-    case "preflight": {
-      // 竞态保护：仅接受最新请求的响应
-      if (action.requestSeq !== action.currentSeq) {
-        return state;
-      }
-      const next = { ...state, preflight: action.context, preflightStale: false };
-      next.preflightStale = preflightIsStale(next);
-      return next;
-    }
+      return applySaveFailure(state, action);
+    case "preflight":
+      return applyPreflight(state, action);
     case "preflightFailed":
-      return { ...state, error: action.error };
+      return { ...state, error: action.error, preflightStale: true };
     case "reset":
       return { ...initialEditorState(action.working), saved: action.saved };
     default: {
@@ -47,6 +43,48 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return state;
     }
   }
+}
+
+function applySaved(state: EditorState, action: Extract<EditorAction, { type: "saved" }>) {
+  return {
+    ...state,
+    saved: action.saved,
+    saveStatus: state.working === action.saved.yaml_text ? ("idle" as const) : ("dirty" as const),
+    issues: [],
+    error: null,
+  };
+}
+
+function applySaveFailure(
+  state: EditorState,
+  action: Extract<EditorAction, { type: "saveFailed" }>,
+) {
+  return {
+    ...state,
+    saveStatus: action.conflict ? ("conflict" as const) : ("invalid" as const),
+    issues: action.issues,
+    error: action.error,
+  };
+}
+
+function applyPreflight(state: EditorState, action: Extract<EditorAction, { type: "preflight" }>) {
+  if (action.requestSeq !== action.currentSeq) return state;
+  const next = { ...state, preflight: action.context, preflightStale: false };
+  return { ...next, preflightStale: preflightIsStale(next) };
+}
+
+function beginOperation(
+  state: EditorState,
+  operation: "save" | "validate" | "preflight" | "start",
+) {
+  return {
+    ...state,
+    busy: true,
+    error: null,
+    saveStatus: operation === "save" ? ("saving" as const) : state.saveStatus,
+    preflight: operation === "preflight" ? null : state.preflight,
+    validation: operation === "validate" ? null : state.validation,
+  };
 }
 
 function applyEdit(state: EditorState, text: string): EditorState {

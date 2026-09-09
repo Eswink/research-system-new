@@ -1,0 +1,110 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .row {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--success);
+  border-color: var(--success-line);
+}
+
+:global([data-design-surface]) .caption {
+  margin-left: auto;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .surface3 {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .grid {
+  flex: 1;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+:global([data-design-surface]) .column {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .row3 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .surface4 {
+  color: var(--success);
+  border-color: var(--success-line);
+}
+
+:global([data-design-surface]) .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .label3 {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}

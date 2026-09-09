@@ -1,0 +1,26 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+:global([data-design-surface]) .panel {
+  padding: 4px 4px;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  gap: 2px;
+}
+
+:global([data-design-surface]) .surface {
+  margin-left: 4px;
+}
+
+:global([data-design-surface]) .surface2 {
+  flex: 1;
+  min-height: 0;
+}

@@ -1,157 +1,69 @@
-import { useEffect, useState } from "react";
-
-import type { LlmEndpointReadDto } from "./api/types";
-import { RelayWizard } from "./features/setup/RelayWizard";
-import { useEndpoints } from "./hooks/useEndpoints";
+import { Suspense } from "react";
+import { LiveConsole } from "./LiveConsole";
+import { ExampleConsole } from "./features/example-console/ExampleConsole";
 import { I18nProvider } from "./i18n/I18nProvider";
-import { AppShell } from "./layout/AppShell";
-import {
-  applyPreferences,
-  loadPreferences,
-  savePreferences,
-  type ConsolePreferences,
-} from "./layout/preferences";
+import { ConsoleFrame } from "./layout/ConsoleFrame";
+import { ConsoleLoading } from "./layout/ConsoleLoading";
+import type { ConsoleProps } from "./layout/consoleProps";
+import { useConsolePreferences } from "./layout/useConsolePreferences";
 import { NotFoundPage } from "./navigation/NotFoundPage";
-import { PageRenderer, type PageContext } from "./navigation/PageRenderer";
-import { DEFAULT_ROUTE, routeToHash, type Route } from "./navigation/registry";
-import type { UrlContext } from "./navigation/urlContext";
+import { pageSupport } from "./navigation/pageSupport";
+import { PresentationContext } from "./navigation/presentationContext";
+import { resolveDataSource } from "./navigation/presentationPolicy";
+import { DEFAULT_ROUTE } from "./navigation/registry";
 import { useHashRoute } from "./navigation/useHashRoute";
+import { useSourceSelection } from "./navigation/useSourceSelection";
 
-/**
- * Research OS Console 入口（PLAN-20260908-034 高保真重建）。
- * App.tsx 只组合 Provider、外壳与路由页面；页面分派经 PageRenderer 注册表，
- * 未知地址进入明确未找到页。业务数据从 API 获取；浏览器持久化仅限界面偏好。
- */
+/** One URL/preference owner, separately loaded data-source trees and separately loaded routes. */
 export function App() {
-  const { endpoints, loading, error, refresh } = useEndpoints();
-  const [preferences, setPreferences] = useState<ConsolePreferences>(() => loadPreferences());
+  const [preferences, setPreferences] = useConsolePreferences();
   const [resolved, navigate] = useHashRoute();
-  const [showWizard, setShowWizard] = useState(false);
-
-  useEffect(() => {
-    applyPreferences(preferences);
-    savePreferences(preferences);
-  }, [preferences]);
-
-  if (loading) {
-    return (
-      <div data-testid="app-loading" style={{ padding: 24 }}>
-        Loading console…
-      </div>
-    );
-  }
-  if (error !== null) {
-    return (
-      <div data-testid="app-error" role="alert" style={{ padding: 24 }}>
-        Backend unavailable: {error}
-      </div>
-    );
-  }
+  const [selection, setSource] = useSourceSelection();
+  const source = resolveDataSource(resolved.route, selection);
+  const props = { resolved, navigate, preferences, onPreferencesChange: setPreferences };
   return (
     <I18nProvider
       language={preferences.language}
-      onLanguageChange={(lang) => { setPreferences((prev) => ({ ...prev, language: lang })); }}
+      onLanguageChange={(language) => {
+        setPreferences((previous) => ({ ...previous, language }));
+      }}
     >
-      <ConsoleRoot
-        endpoints={endpoints}
-        refresh={refresh}
-        preferences={preferences}
-        onPreferencesChange={setPreferences}
-        route={resolved.route}
-        found={resolved.found}
-        navigate={navigate}
-        context={resolved.context}
-        showWizard={showWizard}
-        onShowWizardChange={setShowWizard}
-      />
+      <PresentationContext.Provider
+        value={{ source, selection, setSource, reason: pageSupport(resolved.route).reason ?? "" }}
+      >
+        <ConsoleContent props={props} source={source} />
+      </PresentationContext.Provider>
     </I18nProvider>
   );
 }
 
-interface ConsoleRootProps {
-  endpoints: LlmEndpointReadDto[];
-  refresh: () => void;
-  preferences: ConsolePreferences;
-  onPreferencesChange: (next: ConsolePreferences) => void;
-  route: Route;
-  found: boolean;
-  navigate: (route: Route, ctx?: UrlContext) => void;
-  context: UrlContext;
-  showWizard: boolean;
-  onShowWizardChange: (show: boolean) => void;
-}
-
-function ConsoleRoot(props: ConsoleRootProps) {
-  const { endpoints, route, found, navigate, context, showWizard, onShowWizardChange } = props;
-  const isSetupRoute = route.domain === "library" && route.page === "setup";
-  const wizardVisible = isSetupRoute || endpoints.length === 0 || showWizard;
-
-  if (wizardVisible) {
-    const closeWizard = (): void => {
-      onShowWizardChange(false);
-      if (isSetupRoute) {
-        navigate(DEFAULT_ROUTE);
-      }
-    };
-    return (
-      <WizardSurface
-        endpointsCount={endpoints.length}
-        onComplete={props.refresh}
-        {...(endpoints.length === 0 ? {} : { onCancel: closeWizard })}
-      />
-    );
-  }
-  const ctx: PageContext = {
-    endpoints,
-    onAddRelay: () => { onShowWizardChange(true); },
-    selectedRunId: context.runId,
-    onSelectedRunIdChange: (runId) => { navigate(route, { ...context, runId }); },
-    onOpenSetup: () => { onShowWizardChange(true); },
-    preferences: props.preferences,
-    onPreferencesChange: props.onPreferencesChange,
-  };
-  return (
-    <AppShell
-      route={route}
-      onNavigate={(hash) => { window.location.hash = hash; }}
-      preferences={props.preferences}
-      onPreferencesChange={props.onPreferencesChange}
-      onOpenCommandCenter={() => {
-        navigate({ domain: "command-center", page: "command-center" });
-      }}
-      onOpenNotifications={() => {
-        navigate({ domain: "notifications", page: "notifications" });
-      }}
-    >
-      {found ? (
-        <PageRenderer route={route} ctx={ctx} />
-      ) : (
-        <NotFoundPage onHome={() => { navigate(DEFAULT_ROUTE); }} />
-      )}
-    </AppShell>
-  );
-}
-
-/** 首次接入向导保留为独立全屏流程 */
-function WizardSurface({
-  endpointsCount,
-  onComplete,
-  onCancel,
+function ConsoleContent({
+  props,
+  source,
 }: {
-  endpointsCount: number;
-  onComplete: () => void;
-  onCancel?: (() => void) | undefined;
+  props: ConsoleProps;
+  source: ReturnType<typeof resolveDataSource>;
 }) {
+  if (!props.resolved.found)
+    return (
+      <ConsoleFrame {...props}>
+        <NotFoundPage
+          onHome={() => {
+            props.navigate(DEFAULT_ROUTE);
+          }}
+        />
+      </ConsoleFrame>
+    );
+  const routeKey = `${props.resolved.route.domain}/${props.resolved.route.page}`;
   return (
-    <div style={{ minHeight: "100vh", padding: 24 }}>
-      {endpointsCount > 0 && onCancel !== undefined && (
-        <button type="button" className="btn sm" onClick={onCancel} data-testid="wizard-cancel">
-          ← Console
-        </button>
+    <Suspense fallback={<ConsoleLoading {...props} />}>
+      {source === "example" ? (
+        <ExampleConsole key={`example:${routeKey}`} {...props} />
+      ) : (
+        <LiveConsole {...props} />
       )}
-      <RelayWizard onComplete={onComplete} />
-    </div>
+    </Suspense>
   );
 }
 
-export { routeToHash };
+export { routeToHash } from "./navigation/registry";

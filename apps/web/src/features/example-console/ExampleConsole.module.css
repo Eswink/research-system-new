@@ -1,0 +1,28 @@
+/* Keep the reference viewport, not a second application inside a mockup or iframe. */
+.surface {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.surface > * {
+  min-width: 0;
+}
+.loaded {
+  display: contents;
+}
+.loaded > * {
+  min-width: 0;
+}
+.surface {
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.surface button {
+  font-family: inherit;
+}
+@media (max-width: 1000px) {
+  .surface {
+    overflow: auto;
+  }
+}

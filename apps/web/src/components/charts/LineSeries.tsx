@@ -18,7 +18,15 @@ interface Geo {
   range: number;
 }
 
-function LineGrid({ padL, padT, h, min, range, yFormat, w }: Geo & {
+function LineGrid({
+  padL,
+  padT,
+  h,
+  min,
+  range,
+  yFormat,
+  w,
+}: Geo & {
   w: number;
   yFormat: (v: number) => string;
 }) {
@@ -49,15 +57,7 @@ function LineGrid({ padL, padT, h, min, range, yFormat, w }: Geo & {
   );
 }
 
-function LinePath({
-  values,
-  color,
-  geo,
-}: {
-  values: readonly number[];
-  color: string;
-  geo: Geo;
-}) {
+function LinePath({ values, color, geo }: { values: readonly number[]; color: string; geo: Geo }) {
   const { padL, padT, step, h, min, range } = geo;
   const pts = values.map((v, i) => [padL + i * step, padT + h - ((v - min) / range) * h]);
   const dPath = "M " + pts.map((p) => p.join(" ")).join(" L ");

@@ -138,8 +138,7 @@ export function ErrorBanner({
               onJump(error.section);
             }}
           >
-            <span className="mono">{error.code}</span> · {error.message} ·{" "}
-            {t("editor.jumpTo")}
+            <span className="mono">{error.code}</span> · {error.message} · {t("editor.jumpTo")}
           </button>
         ))}
       </div>

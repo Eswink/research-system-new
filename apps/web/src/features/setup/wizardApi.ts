@@ -28,9 +28,7 @@ export async function discoverOrFallback(endpointId: string): Promise<DiscoverOu
   }
 }
 
-export type ProbeOutcome =
-  | { kind: "no-models" }
-  | { kind: "result"; result: ProbeResultDto };
+export type ProbeOutcome = { kind: "no-models" } | { kind: "result"; result: ProbeResultDto };
 
 export async function probeFirstModel(endpointId: string): Promise<ProbeOutcome> {
   const models = await api.listModels(endpointId);

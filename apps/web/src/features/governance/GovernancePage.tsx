@@ -1,29 +1,35 @@
+import type { ExportBundleDto, RunEventDto } from "../../api/types";
+import type { TranslationKey } from "../../i18n/zh";
 import { useState } from "react";
-
 import { api } from "../../api/client";
-import { Button } from "../../components/Button";
-import { EmptyState, ErrorState, LoadingState, UnavailableState } from "../../components/States";
+import { ResourceBoundary } from "../../components/ResourceBoundary";
+import { EmptyState, UnavailableState } from "../../components/States";
 import { Tabs } from "../../components/Tabs";
-import { useResource } from "../../hooks/useResource";
+import { useResource, type ResourceState } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import type { PageContext } from "../../navigation/pageContext";
 import { GAPS } from "../../navigation/pageSupport";
-import styles from "../shared/FeaturePage.module.css";
+import { TimelineView } from "../runs/TimelineView";
+import styles from "../shared/LivePage.module.css";
+import { PageHeader } from "../shared/PageHeader";
+import { RunQueryBar } from "../shared/RunQueryBar";
+import { ExportView } from "./ExportView";
 
 type TabId = "audit" | "export" | "memory";
 
-/** 治理（T27）：运行事件 / 真实导出 / Memory（禁用）三分区。 */
 export function GovernancePage({ ctx }: { ctx: PageContext }) {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const [tab, setTab] = useState<TabId>("audit");
   const runId = ctx.selectedRunId;
-  const events = useResource(runId === "" ? null : runId, () => api.runEvents(runId));
-  const exportKey = runId === "" ? null : `export:${runId}`;
-  const exportBundle = useResource(exportKey, () => api.runExport(runId));
-
+  const events = useResource(runId === "" || tab !== "audit" ? null : runId, () =>
+    api.runEvents(runId),
+  );
+  const bundle = useResource(runId === "" || tab !== "export" ? null : runId, () =>
+    api.runExport(runId),
+  );
   return (
-    <div className={styles.page} data-testid="governance-page">
-      <h2 className={styles.heading}>{t("page.govern.audit")}</h2>
+    <section className={styles.page} data-testid="governance-page">
+      <GovernancePageGovernAudit {...{ t, language, runId, events, bundle, ctx }} />
       <Tabs
         ariaLabel={t("page.govern.audit")}
         value={tab}
@@ -34,71 +40,62 @@ export function GovernancePage({ ctx }: { ctx: PageContext }) {
           { id: "memory", label: "Memory" },
         ]}
       />
-      {runId === "" && <EmptyState message={t("overview.noRun")} />}
-      {runId !== "" && tab === "audit" && <AuditTab events={events} />}
-      {runId !== "" && tab === "export" && <ExportTab bundle={exportBundle} runId={runId} />}
-      {tab === "memory" && <UnavailableState title="Memory" reason={GAPS.memory} />}
-    </div>
-  );
-}
-
-function AuditTab({ events }: { events: ReturnType<typeof useResource<unknown[]>> }) {
-  const { t } = useI18n();
-  if (events.phase === "loading") {
-    return <LoadingState message={t("state.loading")} />;
-  }
-  if (events.phase === "error") {
-    return <ErrorState message={events.error ?? t("state.error")} />;
-  }
-  const list = (events.data ?? []) as { event_id: string; type: string; occurred_at: string }[];
-  return (
-    <div className={styles.panel}>
-      <div className={styles.panelTitle}>{t("audit.runEvents")}</div>
-      {list.length === 0 ? (
-        <EmptyState message={t("state.empty")} />
-      ) : (
-        list.map((e) => (
-          <div key={e.event_id} className="row">
-            <span className="mono">{e.type}</span>
-            <span className="mono" style={{ color: "var(--fg-faint)" }}>
-              {e.occurred_at.slice(0, 19)}
-            </span>
-          </div>
-        ))
+      {runId === "" && tab !== "memory" && <EmptyState message={t("overview.noRun")} />}
+      {tab === "audit" && (
+        <ResourceBoundary state={events}>
+          {events.data !== null && <TimelineView key={runId} events={events.data} />}
+        </ResourceBoundary>
       )}
-    </div>
+      {tab === "export" && (
+        <ResourceBoundary state={bundle}>
+          {bundle.data !== null && <ExportView bundle={bundle.data} runId={runId} />}
+        </ResourceBoundary>
+      )}
+      {tab === "memory" && <UnavailableState title="Memory" reason={GAPS.memory} />}
+    </section>
   );
 }
 
-interface ExportTabProps {
-  bundle: ReturnType<typeof useResource<unknown>>;
+interface GovernancePageGovernAuditProps {
+  t: (key: TranslationKey) => string;
+  language: string;
   runId: string;
+  events: ResourceState<RunEventDto[]>;
+  bundle: ResourceState<ExportBundleDto>;
+  ctx: PageContext;
 }
 
-function ExportTab({ bundle, runId }: ExportTabProps) {
-  const { t } = useI18n();
-  if (bundle.phase === "loading") {
-    return <LoadingState message={t("state.loading")} />;
-  }
-  if (bundle.phase === "error") {
-    return <ErrorState message={bundle.error ?? t("state.error")} />;
-  }
-  const download = (): void => {
-    const blob = new Blob([JSON.stringify(bundle.data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${runId}-export.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+function GovernancePageGovernAudit({
+  t,
+  language,
+  runId,
+  events,
+  bundle,
+  ctx,
+}: GovernancePageGovernAuditProps) {
   return (
-    <div className={styles.panel}>
-      <div className={styles.panelTitle}>{t("audit.export")}</div>
-      <p style={{ margin: "0 0 10px", fontSize: "var(--fs-caption)", color: "var(--fg-muted)" }}>
-        {t("audit.exportNote")}
-      </p>
-      <Button variant="primary" icon="external" onClick={download}>{t("audit.download")}</Button>
-    </div>
+    <PageHeader
+      title={t("page.govern.audit")}
+      kicker="GOVERNANCE / AUDIT & EXPORT"
+      description={
+        language === "zh"
+          ? "正式运行事件与 JSON 导出。工程会话档案和示例数据不属于产品 Memory 或科研证据。"
+          : [
+              "Persisted run events and JSON export. Engineering sessions and examples ",
+              "are not product memory or research evidence.",
+            ].join("")
+      }
+      actions={
+        <RunQueryBar
+          runId={runId}
+          onSelect={(id) => {
+            if (id === runId) {
+              events.reload();
+              bundle.reload();
+            } else ctx.onSelectedRunIdChange(id);
+          }}
+        />
+      }
+    />
   );
 }

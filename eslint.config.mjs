@@ -7,6 +7,7 @@ import architecture from "./tools/eslint-rules/architecture.mjs";
 const nodeGlobals = {
   console: "readonly",
   process: "readonly",
+  URL: "readonly",
 };
 
 export default defineConfig([

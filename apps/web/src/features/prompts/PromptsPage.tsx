@@ -1,6 +1,6 @@
-import { GapLayout } from "../shared/GapLayout";
-import { pageSupport } from "../../navigation/pageSupport";
 import { useI18n } from "../../i18n/useI18n";
+import { pageSupport } from "../../navigation/pageSupport";
+import { GapLayout } from "../shared/GapLayout";
 
 /** 提示词库（T25）：列表 + 编辑/版本/A-B 结构；无后端 API，业务修改禁用。 */
 export function PromptsPage() {

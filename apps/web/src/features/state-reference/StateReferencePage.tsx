@@ -1,6 +1,6 @@
-import { GapLayout } from "../shared/GapLayout";
-import { pageSupport } from "../../navigation/pageSupport";
 import { useI18n } from "../../i18n/useI18n";
+import { pageSupport } from "../../navigation/pageSupport";
+import { GapLayout } from "../shared/GapLayout";
 
 /** 状态矩阵（T26）：明确标注的"界面状态说明"页；呈现组件状态，不冒充实时运维。 */
 export function StateReferencePage() {

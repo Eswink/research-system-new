@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
+import styles from "./Chip.module.css";
 import { cx } from "./cx";
 import { Icon, type IconName } from "./Icon";
-import styles from "./Chip.module.css";
 
 /** 轻量 chip：等宽小标签（mono）。tone 仅影响颜色，文字始终在场。 */
 export function Chip({
@@ -21,10 +21,7 @@ export function Chip({
   title?: string | undefined;
 }) {
   return (
-    <span
-      className={cx("chip", styles[tone], dashed && styles.dashed, className)}
-      title={title}
-    >
+    <span className={cx("chip", styles[tone], dashed && styles.dashed, className)} title={title}>
       {icon !== undefined && <Icon name={icon} size={10} />}
       {children}
     </span>

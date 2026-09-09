@@ -26,11 +26,13 @@ test("八域导航渲染，域展开子页", async ({ page }) => {
   await expect(page.getByTestId("nav-plan-protocol")).toBeVisible();
 });
 
-test("直达缺口页保持页面身份，刷新不串页", async ({ page }) => {
+test("直达 example 路由保持页面身份与来源，刷新不串页", async ({ page }) => {
   await page.goto("/#/library/prompts");
-  await expect(page.getByTestId("gap-page-library-prompts")).toBeVisible();
+  await expect(page.getByTestId("example-page-library-prompts")).toBeVisible();
+  await expect(page.getByTestId("data-source-badge")).toHaveAttribute("data-source", "example");
   await page.reload();
-  await expect(page.getByTestId("gap-page-library-prompts")).toBeVisible();
+  await expect(page.getByTestId("example-page-library-prompts")).toBeVisible();
+  await expect(page.getByTestId("data-source-badge")).toHaveAttribute("data-source", "example");
 });
 
 test("未知地址进入未找到页", async ({ page }) => {

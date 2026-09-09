@@ -203,8 +203,8 @@ export function ModelsStep({
   return (
     <div data-testid="wizard-models-step">
       <p>
-        Configure models on endpoint <strong>{endpoint.name}</strong> — discover from the
-        relay or enter a model id manually.
+        Configure models on endpoint <strong>{endpoint.name}</strong> — discover from the relay or
+        enter a model id manually.
       </p>
       <DiscoveryControls endpointId={endpoint.id} disabled={busy} onAdded={onAdded} />
       <ManualAdd endpointId={endpoint.id} disabled={busy} onAdded={onAdded} />

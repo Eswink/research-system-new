@@ -1,7 +1,7 @@
 /** 协议编译/预检/试运行客户端（受控模板路径）。 */
 
-import type { CompileResultDto, DryRunProjectionDto, PreflightReportDto } from "./types";
 import { request } from "./http";
+import type { CompileResultDto, DryRunProjectionDto, PreflightReportDto } from "./types";
 
 const PROJECT = "example-project";
 

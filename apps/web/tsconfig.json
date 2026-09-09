@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
+    "resolveJsonModule": true,
     "composite": true,
     "declaration": true,
     "emitDeclarationOnly": true,
@@ -19,6 +20,7 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "src/**/*.json",
     "vite.config.ts",
     "playwright.config.ts",
     "playwrightLive.config.ts",

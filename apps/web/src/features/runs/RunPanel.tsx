@@ -1,226 +1,197 @@
-import { useEffect, useState } from "react";
-
+import type { RunDetailDto, TaskDto } from "../../api/types";
+import { Chip } from "../../components/Chip";
+import { PanelSection } from "../../components/PanelSection";
+import { ResourceBoundary } from "../../components/ResourceBoundary";
+import { EmptyState } from "../../components/States";
+import { useI18n } from "../../i18n/useI18n";
+import { KeyValueList } from "../shared/KeyValueList";
+import styles from "../shared/LivePage.module.css";
+import { PageHeader } from "../shared/PageHeader";
+import { RunQueryBar } from "../shared/RunQueryBar";
+import type { RunSelectionProps } from "../shared/useSelectedRun";
 import { RunActions } from "./RunActions";
 import { TimelineView } from "./TimelineView";
-import { mergeEvents, useRunEventStream } from "./useRunEventStream";
-import { useRunPanel } from "./useRunPanel";
-import type { RunDetailDto, TaskDto } from "../../api/types";
+import { useRunTimeline } from "./useRunTimeline";
 
-const PROTOCOLS = [
-  "console_demo_research_v1.yaml",
-  "m12_reference_research_v1.yaml",
-  "ai_ml_research_v0_4_0.yaml",
-];
-
-function ProtocolSelect({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label>
-      Protocol
-      <select
-        value={value}
-        onChange={(event) => {
-          onChange(event.target.value);
-        }}
-      >
-        {PROTOCOLS.map((protocol) => (
-          <option key={protocol} value={protocol}>
-            {protocol}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
+export function RunPanel(props: RunSelectionProps = {}) {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const flow = useRunTimeline(props);
+  return <RunPanelsection {...{ zh, flow }} />;
 }
 
-function RunStatus({
-  run,
-  manifest,
-  connected,
-  runs,
-  onChange,
-}: {
-  run: RunDetailDto;
-  manifest: string;
-  connected: boolean;
-  runs: RunDetailDto[];
-  onChange: (runId: string) => void;
-}) {
-  const selector =
-    runs.length > 1 ? (
-      <label>
-        Recent runs
-        <select
-          value={run.id}
-          onChange={(event) => {
-            onChange(event.target.value);
-          }}
-        >
-          {runs.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.state} · {item.id.slice(0, 8)}
-            </option>
-          ))}
-        </select>
-      </label>
-    ) : null;
-  return (
-    <>
-      <p data-testid="run-state">
-        state: <strong>{run.state}</strong> · manifest: {manifest} ·{" "}
-        <span data-testid="run-live-state">{connected ? "live" : "reconnecting"}</span>
-      </p>
-      {selector}
-    </>
-  );
+interface RunPanelsectionProps {
+  zh: boolean;
+  flow: ReturnType<typeof useRunTimeline>;
 }
 
-function RunTaskList({ tasks }: { tasks: TaskDto[] }) {
+function RunPanelsection({ zh, flow }: RunPanelsectionProps) {
   return (
-    <div data-testid="run-tasks">
-      <h3>Tasks</h3>
-      <ul>
-        {tasks.map((task) => (
-          <li key={task.task_id}>
-            {task.task_id.slice(0, 8)} · {task.contract_id} · {task.status} · attempt{" "}
-            {String(task.attempt)}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/**
- * Run 控制面板：启动 / 状态 / Timeline（JSON replay + SSE live）/ Tasks。
- * M13-R1 WP-M2/M4：刷新后自动恢复最近 run；SSE 实时增量、断线重连
- * 由 EventSource 原生 Last-Event-ID 续传 + 客户端 event_id 去重。
- * 执行体为受控 Fake Runtime（UI 如实披露，不冒充真实研究执行）。
- * 重建（PLAN-20260908-033）：可选上下文 props 与全局 Run 上下文联动。
- */
-export function RunPanel(props?: {
-  onRunSelected?: (runId: string) => void;
-  initialRunId?: string;
-}) {
-  const flow = useRunPanel();
-  const [protocolPath, setProtocolPath] = useState(PROTOCOLS[0] ?? "");
-  const stream = useRunEventStream(flow.run?.id ?? null);
-  const events = mergeEvents(flow.events, stream.events);
-  const onRunSelected = props?.onRunSelected;
-  const initialRunId = props?.initialRunId;
-
-  useEffect(() => {
-    if (initialRunId !== undefined && initialRunId.length > 0) {
-      void flow.loadRun(initialRunId);
-    }
-  }, [initialRunId]);
-
-  useEffect(() => {
-    if (flow.run !== null && onRunSelected !== undefined) {
-      onRunSelected(flow.run.id);
-    }
-  }, [flow.run === null ? null : flow.run.id, onRunSelected]);
-
-  const submit = () => {
-    void flow.start(protocolPath);
-  };
-
-  const cancel = () => {
-    void flow.cancel();
-  };
-
-  return (
-    <RunPanelView
-      flow={flow}
-      streamConnected={stream.connected}
-      events={events}
-      protocolPath={protocolPath}
-      onProtocolPathChange={setProtocolPath}
-      onStart={submit}
-      onCancel={cancel}
-    />
-  );
-}
-
-function RunPanelView({
-  flow,
-  streamConnected,
-  events,
-  protocolPath,
-  onProtocolPathChange,
-  onStart,
-  onCancel,
-}: {
-  flow: ReturnType<typeof useRunPanel>;
-  streamConnected: boolean;
-  events: ReturnType<typeof mergeEvents>;
-  protocolPath: string;
-  onProtocolPathChange: (value: string) => void;
-  onStart: () => void;
-  onCancel: () => void;
-}) {
-  const manifestLabel = flow.run?.manifest_digest?.slice(0, 16) ?? "not frozen";
-
-  return (
-    <section className="run-panel" data-testid="run-panel">
-      <h2>Run Control</h2>
-      <p className="note" data-testid="run-runtime-note">
-        Agent 研究执行体为受控 Fake Runtime（非真实 LLM 推理）；真实研究执行
-        走 M12 参考流程（Docker 实验 / live relay 为 opt-in 能力）。
-      </p>
-      <ProtocolSelect value={protocolPath} onChange={onProtocolPathChange} />
-      {flow.runs.length === 0 && !flow.busy && (
-        <p className="empty-mark" data-testid="runs-empty">
-          no runs yet — start one from a saved protocol draft
+    <section className={styles.page} data-testid="run-panel">
+      <RunPanelPageHeader {...{ zh, flow }} />
+      <RunNavigation />
+      <ResourceBoundary state={flow.run}>
+        {flow.run.data !== null && <RunIdentity run={flow.run.data} flow={flow} />}
+      </ResourceBoundary>
+      {flow.runId === "" ? (
+        <div data-testid="runs-empty">
+          <EmptyState
+            message={
+              zh
+                ? "选择历史运行，或先在协议编辑器完成编译与预检。"
+                : "Select a historical run, or compile and preflight a protocol first."
+            }
+          />
+        </div>
+      ) : (
+        <div className={styles.split}>
+          <ResourceBoundary state={flow.tasks}>
+            <TaskList tasks={flow.tasks.data ?? []} />
+          </ResourceBoundary>
+          <ResourceBoundary state={flow.replay}>
+            <TimelineView events={flow.events} />
+          </ResourceBoundary>
+        </div>
+      )}
+      {flow.stream.invalidFrames > 0 && (
+        <p className={styles.notice} role="status">
+          {zh
+            ? "忽略了格式无效或 Run 不匹配的事件帧："
+            : "Ignored invalid or mismatched event frames: "}
+          {flow.stream.invalidFrames}
         </p>
       )}
-      <RunActions run={flow.run} busy={flow.busy} onStart={onStart} onCancel={onCancel} />
-      {flow.error !== null && (
-        <p className="error" role="alert">
-          {flow.error}
-        </p>
-      )}
-      <RunStatusArea
-        flow={flow}
-        manifestLabel={manifestLabel}
-        streamConnected={streamConnected}
-        events={events}
-      />
     </section>
   );
 }
 
-function RunStatusArea({
-  flow,
-  manifestLabel,
-  streamConnected,
-  events,
-}: {
-  flow: ReturnType<typeof useRunPanel>;
-  manifestLabel: string;
-  streamConnected: boolean;
-  events: ReturnType<typeof mergeEvents>;
-}): React.JSX.Element {
+interface RunPanelPageHeaderProps {
+  zh: boolean;
+  flow: ReturnType<typeof useRunTimeline>;
+}
+
+function RunPanelPageHeader({ zh, flow }: RunPanelPageHeaderProps) {
   return (
-    <>
-      {flow.run !== null && (
-        <RunStatus
-          run={flow.run}
-          manifest={manifestLabel}
-          connected={streamConnected}
-          runs={flow.runs}
-          onChange={(runId) => {
-            void flow.loadRun(runId);
+    <PageHeader
+      title={zh ? "运行时间线" : "Run timeline"}
+      kicker="RUN / EXECUTION"
+      description={
+        zh
+          ? "正式事件回放 + SSE 增量；运行状态来自后端，模型推理身份以 Manifest 为准。"
+          : [
+              "Persisted event replay plus SSE updates. Run state is backend-owned; ",
+              "inference identity comes from the manifest.",
+            ].join("")
+      }
+      actions={
+        <RunQueryBar
+          runId={flow.runId}
+          busy={flow.run.phase === "loading"}
+          onSelect={(id) => {
+            if (id === flow.runId) flow.refresh();
+            else flow.selectRun(id);
           }}
         />
-      )}
-      {events.length > 0 && <TimelineView events={events} />}
-      {flow.tasks.length > 0 && <RunTaskList tasks={flow.tasks} />}
-    </>
+      }
+    />
+  );
+}
+
+function RunNavigation() {
+  const { language } = useI18n();
+  return (
+    <div className={styles.toolbar}>
+      <a href="#/plan/protocol" className="btn primary sm" data-testid="run-start">
+        {language === "zh" ? "协议 · 编译 · 预检" : "Protocol · compile · preflight"}
+      </a>
+      <a href="#/portfolio/runs-history" className="btn sm">
+        {language === "zh" ? "选择历史运行" : "Select historical run"}
+      </a>
+      <span className="muted" data-testid="run-runtime-note">
+        {language === "zh"
+          ? "此页不会直接启动未预检运行。"
+          : "This page cannot start an un-preflighted run."}
+      </span>
+    </div>
+  );
+}
+
+function RunIdentity({
+  run,
+  flow,
+}: {
+  run: RunDetailDto;
+  flow: ReturnType<typeof useRunTimeline>;
+}) {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const connection = flow.stream.connected
+    ? "CONNECTED"
+    : flow.stream.reconnecting
+      ? "RECONNECTING"
+      : "CONNECTING";
+  return (
+    <PanelSection
+      title={zh ? "运行身份与连接" : "Run identity and connection"}
+      extra={
+        <RunActions
+          key={run.id}
+          run={run}
+          busy={flow.run.phase !== "ready"}
+          onChanged={flow.refresh}
+        />
+      }
+    >
+      <div className={styles.toolbar}>
+        <span data-testid="run-state">
+          <Chip tone="accent">{run.state}</Chip>
+        </span>
+        <span data-testid="run-live-state">
+          <Chip>{`SSE · ${connection}`}</Chip>
+        </span>
+        <span className="muted">
+          {zh ? "连接状态不等于执行进度" : "Connection state is not execution progress"}
+        </span>
+      </div>
+      <KeyValueList
+        fields={[
+          { label: "Run", value: run.id },
+          { label: "Protocol", value: run.protocol_id },
+          { label: "Manifest", value: run.manifest_digest ?? "NOT FROZEN" },
+        ]}
+      />
+    </PanelSection>
+  );
+}
+
+function TaskList({ tasks }: { tasks: TaskDto[] }) {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  return (
+    <div data-testid="run-tasks">
+      <PanelSection title={zh ? "任务" : "Tasks"} count={tasks.length}>
+        {tasks.length === 0 ? (
+          <EmptyState message={zh ? "没有已记录任务" : "No recorded tasks"} />
+        ) : (
+          <ul className={styles.list}>
+            {tasks.map((task) => (
+              <li key={task.task_id} className={styles.card}>
+                <div className={styles.cardHead}>
+                  <strong>{task.contract_id}</strong>
+                  <Chip>{task.status}</Chip>
+                </div>
+                <KeyValueList
+                  fields={[
+                    { label: "Task", value: task.task_id },
+                    { label: "Agent", value: task.agent_id ?? "UNASSIGNED" },
+                    { label: "Attempt", value: task.attempt },
+                  ]}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </PanelSection>
+    </div>
   );
 }

@@ -1,89 +1,138 @@
-import { useState } from "react";
-
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { api } from "../../api/client";
-import type { ExperimentViewDto } from "../../api/types";
+import type { ExperimentRunDto, ExperimentViewDto } from "../../api/types";
+import { Chip } from "../../components/Chip";
+import { PanelSection } from "../../components/PanelSection";
+import { ResourceBoundary } from "../../components/ResourceBoundary";
+import { EmptyState, UnavailableState } from "../../components/States";
+import { useResource } from "../../hooks/useResource";
+import { useI18n } from "../../i18n/useI18n";
+import { ExperimentMetadata } from "../experiments/ExperimentMetadata";
+import styles from "../shared/LivePage.module.css";
+import { PageHeader } from "../shared/PageHeader";
+import { RunQueryBar } from "../shared/RunQueryBar";
+import { useSelectedRun, type RunSelectionProps } from "../shared/useSelectedRun";
+
+/** Artifact IDs identify persisted records; they are not file-content or download URLs. */
+export function WorkspaceView(props: RunSelectionProps = {}) {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const { runId, selectRun } = useSelectedRun(props);
+  const view = useResource(runId === "" ? null : runId, () => api.runExperiments(runId));
+  return (
+    <section className={styles.page} data-testid="workspace-page">
+      <PageHeader
+        title={zh ? "运行工作区" : "Run workspace"}
+        kicker="RUN / WORKSPACE"
+        description={
+          zh
+            ? "已持久化的实验、制品引用与环境指纹；不伪造文件内容或 Diff。"
+            : [
+                "Persisted experiments, artifact references and environment fingerprints; ",
+                "no invented files or diffs.",
+              ].join("")
+        }
+        actions={
+          <RunQueryBar
+            runId={runId}
+            onSelect={(id) => {
+              if (id === runId) view.reload();
+              else selectRun(id);
+            }}
+            busy={view.phase === "loading"}
+          />
+        }
+      />
+      <ResourceBoundary state={view}>
+        {view.data === null ? (
+          <EmptyState message={zh ? "选择运行以读取工作区" : "Select a run to inspect"} />
+        ) : (
+          <ExperimentsBody key={runId} view={view.data} />
+        )}
+      </ResourceBoundary>
+    </section>
+  );
+}
 
 function ExperimentsBody({ view }: { view: ExperimentViewDto }) {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected =
+    view.experiments.find((item) => item.experiment_run_id === selectedId) ?? view.experiments[0];
+  return <WorkspaceViewPage {...{ zh, view, selected, setSelectedId }} />;
+}
+
+interface WorkspaceViewPageProps {
+  zh: boolean;
+  view: ExperimentViewDto;
+  selected: ExperimentRunDto | undefined;
+  setSelectedId: Dispatch<SetStateAction<string | null>>;
+}
+
+function WorkspaceViewPage({ zh, view, selected, setSelectedId }: WorkspaceViewPageProps) {
   return (
-    <div data-testid="experiments-view">
-      {view.experiments.length === 0 ? (
-        <p>No experiment runs associated with this run.</p>
-      ) : (
-        <ul>
-          {view.experiments.map((experiment) => (
-            <li key={experiment.experiment_run_id} data-testid="experiment-row">
-              <strong>{experiment.experiment_run_id}</strong> · artifacts:{" "}
-              {experiment.artifact_ids.join(", ") || "none"} · image:{" "}
-              {experiment.image_digest ?? "n/a"} · env:{" "}
-              {experiment.environment_digest ?? "n/a"}
-              <ul>
-                {Object.entries(experiment.metrics).map(([name, value]) => (
-                  <li key={name}>
-                    {name}: {String(value)}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="note">{view.reproduction_note}</p>
+    <div className={styles.page} data-testid="experiments-view">
+      <WorkspaceViewSplit {...{ zh, view, selected, setSelectedId }} />
+      <p className={styles.notice}>{view.reproduction_note}</p>
+      <UnavailableState
+        title={zh ? "文件预览与 Diff 未接入" : "File preview and diff unavailable"}
+        reason={
+          zh
+            ? "当前接口没有文件内容或下载描述符；下列引用只用于核对持久化制品身份。"
+            : [
+                "The current API provides no file contents or download descriptors. ",
+                "References identify persisted artifacts only.",
+              ].join("")
+        }
+      />
     </div>
   );
 }
 
-/**
- * Workspace / Experiment 只读视图（WP-S3/WP-S4，诚实降级）。
- * - Experiment：persisted evidence 聚合（experiment_run_id / artifact /
- *   image / environment digest / metrics）；reproduction 标注 unavailable
- *   （M12 参考链审计不在控制面板存储边界内）。
- * - Workspace：evidence 携带 workspace snapshot digest；
- *   file-level diff 为 M6/M9 前置能力，UI 明确标注 unavailable（不伪造 diff）。
- */
-export function WorkspaceView() {
-  const [runId, setRunId] = useState("");
-  const [view, setView] = useState<ExperimentViewDto | null>(null);
-  const [error, setError] = useState<string | null>(null);
+interface WorkspaceViewSplitProps {
+  zh: boolean;
+  view: ExperimentViewDto;
+  selected: ExperimentRunDto | undefined;
+  setSelectedId: Dispatch<SetStateAction<string | null>>;
+}
 
-  const load = async () => {
-    if (runId.length === 0) {
-      return;
-    }
-    setError(null);
-    try {
-      setView(await api.runExperiments(runId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "experiment load failed");
-    }
-  };
-
+function WorkspaceViewSplit({ zh, view, selected, setSelectedId }: WorkspaceViewSplitProps) {
   return (
-    <section data-testid="workspace-page">
-      <h2>Workspace &amp; Experiments</h2>
-      <p className="note">
-        file-level workspace diff unavailable — WorkspaceSnapshot 仅持久化树级 digest
-        （M6/M9 文件级 manifest 为前置能力）；ReproducibilityAudit 由 M12 参考链产出，
-        不在控制面板边界内（均为诚实标注，不伪造）。
-      </p>
-      <label>
-        Run ID
-        <input
-          value={runId}
-          onChange={(event) => {
-            setRunId(event.target.value);
-          }}
-          placeholder="run id from Run Control"
-        />
-      </label>
-      <button type="button" onClick={() => void load()} disabled={runId.length === 0}>
-        Load Experiments
-      </button>
-      {error !== null && (
-        <p className="error" role="alert">
-          {error}
-        </p>
+    <div className={styles.split}>
+      <PanelSection
+        title={zh ? "实验与制品目录" : "Experiments and artifacts"}
+        count={view.experiments.length}
+      >
+        <ul className={styles.list}>
+          {view.experiments.map((experiment) => (
+            <li key={experiment.experiment_run_id} data-testid="experiment-row">
+              <button
+                type="button"
+                className={styles.listButton}
+                aria-pressed={selected?.experiment_run_id === experiment.experiment_run_id}
+                onClick={() => {
+                  setSelectedId(experiment.experiment_run_id);
+                }}
+              >
+                <span className="mono">{experiment.experiment_run_id}</span>
+                <br />
+                <Chip>{`${String(experiment.artifact_ids.length)} artifacts`}</Chip>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {view.experiments.length === 0 && (
+          <EmptyState
+            message={zh ? "此运行没有实验记录" : "No experiments associated with this run"}
+          />
+        )}
+      </PanelSection>
+      {selected === undefined ? (
+        <EmptyState message={zh ? "没有可预览的元数据" : "No metadata to inspect"} />
+      ) : (
+        <ExperimentMetadata experiment={selected} />
       )}
-      {view !== null && <ExperimentsBody view={view} />}
-    </section>
+    </div>
   );
 }

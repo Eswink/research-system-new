@@ -385,8 +385,8 @@ flowchart TD
 
 - [x] **T11 修复协议文档模型。** 修改 [protocolDocument.ts](d:/research-system/apps/web/src/features/protocol/editor/protocolDocument.ts)、[protocolSerialize.ts](d:/research-system/apps/web/src/features/protocol/editor/protocolSerialize.ts)。覆盖空/非对象 YAML、注释、字段顺序、非法枚举、单复数任务契约字段、显式 false、切换模式保留正文；无法无损表示的文档留在 YAML 并解释原因。
 - [x] **T12 按设计重写编辑器与报告。** 重写 [editor 目录](d:/research-system/apps/web/src/features/protocol/editor/)，将七个设计区块按第 5 节映射到真实能力；新增独立 `ProtocolReportPanel.tsx`，展示状态、发现项、解析资源、预算、审批与风险六区。错误可跳转字段，右侧报告不会被隐藏或缩成一个状态标签。
-- [x] **T13 接通真正的校验、保存、修订和 Diff。** 修正 [useSaveDraft.ts](d:/research-system/apps/web/src/features/protocol/editor/useSaveDraft.ts) 与编辑器动作。实现模板选择、草稿打开/恢复、Validate 零写入、Apply 保存、Discard 回退、修订查看、差异抽屉和 412 冲突保留；离开未保存页面有确认，旧请求结果不覆盖新输入。
-- [x] **T14 修正预检来源与启动闭环。** 重写 [usePreflightAndStart.ts](d:/research-system/apps/web/src/features/protocol/editor/usePreflightAndStart.ts)，删除固定示例代检；实现未修改模板同源预检/启动、FAIL 阻断、WARN 确认失效、启动失败反馈和成功后的 Run 导航。自定义草稿缺预检契约时，测试确认相关按钮禁用且不发请求。
+- [x] **T13 接通真正的校验、保存、修订和 Diff。** 修正 `useSaveDraft.ts`（后续会话并入 `useProtocolDocument.ts`） 与编辑器动作。实现模板选择、草稿打开/恢复、Validate 零写入、Apply 保存、Discard 回退、修订查看、差异抽屉和 412 冲突保留；离开未保存页面有确认，旧请求结果不覆盖新输入。
+- [x] **T14 修正预检来源与启动闭环。** 重写 `usePreflightAndStart.ts`（后续会话并入 `useProtocolDocument.ts`/`useEditorActions.ts`），删除固定示例代检；实现未修改模板同源预检/启动、FAIL 阻断、WARN 确认失效、启动失败反馈和成功后的 Run 导航。自定义草稿缺预检契约时，测试确认相关按钮禁用且不发请求。
 
 ### 阶段 E：真实能力页面逐组重建
 

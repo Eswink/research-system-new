@@ -24,7 +24,9 @@ export function NotificationsPage() {
         </div>
       </div>
       <UnavailableState title={t("notifications.persistence")} reason={support.reason ?? ""} />
-      <p className={styles.panelTitle} style={{ marginTop: 8 }}>{GAPS.notifications}</p>
+      <p className={styles.panelTitle} style={{ marginTop: 8 }}>
+        {GAPS.notifications}
+      </p>
     </div>
   );
 }

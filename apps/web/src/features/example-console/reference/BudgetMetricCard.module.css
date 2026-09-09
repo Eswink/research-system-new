@@ -1,0 +1,36 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  padding: 14px;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 22px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .indicator {
+  height: 4px;
+  background: var(--bg-sunken);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .surface {
+  height: 100%;
+}

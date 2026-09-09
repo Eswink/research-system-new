@@ -1,0 +1,10 @@
+.identity {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  height: 43px;
+}
+@media (max-width: 768px) {
+  .identity {
+    display: none;
+  }
+}

@@ -7,57 +7,42 @@ export interface TabItem<T extends string> {
   badge?: number | string;
 }
 
-function nextTab<T extends string>(
-  items: readonly TabItem<T>[],
-  value: T,
-  delta: number,
-): T | null {
-  const idx = items.findIndex((item) => item.id === value);
-  const next = items[(idx + delta + items.length) % items.length];
-  return next === undefined ? null : next.id;
-}
-
-/** 页内二级标签（视图切换、Tab 区）。键盘：左右箭头移动焦点。 */
-export function Tabs<T extends string>({
-  items,
-  value,
-  onChange,
-  ariaLabel,
-  className,
-}: {
+interface Props<T extends string> {
   items: readonly TabItem<T>[];
   value: T;
   onChange: (id: T) => void;
   ariaLabel: string;
   className?: string | undefined;
-}) {
-  const onKeyDown = (event: React.KeyboardEvent): void => {
-    const delta = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-    if (delta === 0) {
-      return;
-    }
-    event.preventDefault();
-    const target = nextTab(items, value, delta);
-    if (target !== null) {
-      onChange(target);
-    }
-  };
+}
+
+/** Roving focus and selected state move together for arrow, Home and End navigation. */
+export function Tabs<T extends string>(props: Props<T>) {
   return (
     <div
       role="tablist"
-      aria-label={ariaLabel}
-      className={cx(styles.tabs, className)}
-      onKeyDown={onKeyDown}
+      aria-label={props.ariaLabel}
+      className={cx(styles.tabs, props.className)}
+      onKeyDown={(event) => {
+        const target = tabTarget(props.items, props.value, event.key);
+        if (target === undefined) return;
+        event.preventDefault();
+        props.onChange(target);
+        const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+        [...buttons].find((button) => button.dataset.tabId === target)?.focus();
+      }}
     >
-      {items.map((item) => (
+      {props.items.map((item) => (
         <button
           key={item.id}
           type="button"
           role="tab"
-          aria-selected={item.id === value}
-          tabIndex={item.id === value ? 0 : -1}
-          className={cx(styles.tab, item.id === value && styles.active)}
-          onClick={() => { onChange(item.id); }}
+          data-tab-id={item.id}
+          aria-selected={item.id === props.value}
+          tabIndex={item.id === props.value ? 0 : -1}
+          className={cx(styles.tab, item.id === props.value && styles.active)}
+          onClick={() => {
+            props.onChange(item.id);
+          }}
         >
           {item.label}
           {item.badge !== undefined && <span className={styles.badge}>{item.badge}</span>}
@@ -65,4 +50,13 @@ export function Tabs<T extends string>({
       ))}
     </div>
   );
+}
+
+function tabTarget<T extends string>(items: readonly TabItem<T>[], current: T, key: string) {
+  if (key === "Home") return items[0]?.id;
+  if (key === "End") return items.at(-1)?.id;
+  const delta = key === "ArrowRight" ? 1 : key === "ArrowLeft" ? -1 : 0;
+  if (delta === 0 || items.length === 0) return undefined;
+  const index = items.findIndex((item) => item.id === current);
+  return items[(index + delta + items.length) % items.length]?.id;
 }

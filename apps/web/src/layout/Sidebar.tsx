@@ -3,6 +3,8 @@ import { Icon } from "../components/Icon";
 import { useI18n } from "../i18n/useI18n";
 import { DOMAINS, routeToHash, type DomainId, type PageId } from "../navigation/registry";
 import styles from "./Sidebar.module.css";
+import { SidebarIdentity } from "./SidebarIdentity";
+import { WorkspaceIdentity } from "./WorkspaceIdentity";
 
 /** 域标签 i18n key。 */
 function domainLabelKey(id: DomainId): string {
@@ -33,6 +35,8 @@ function DomainButton({
       type="button"
       className={cx(styles.domainBtn, active && styles.domainActive)}
       aria-current={active ? "page" : undefined}
+      aria-label={label}
+      title={label}
       data-testid={`nav-domain-${id}`}
       onClick={onClick}
       style={collapsed ? { justifyContent: "center", padding: 10 } : undefined}
@@ -62,7 +66,9 @@ function PageButton({
       className={cx(styles.pageBtn, active && styles.pageActive)}
       aria-current={active ? "page" : undefined}
       data-testid={testId}
-      onClick={() => { onNavigate(hash); }}
+      onClick={() => {
+        onNavigate(hash);
+      }}
     >
       {label}
     </button>
@@ -99,22 +105,14 @@ export function Sidebar(props: SidebarProps) {
           </span>
         )}
       </button>
+      {!collapsed && <WorkspaceIdentity />}
       <DomainList
         active={active}
         activeDomain={activeDomain}
         collapsed={collapsed}
         onNavigate={onNavigate}
       />
-      <button
-        type="button"
-        className={styles.user}
-        data-testid="nav-open-settings"
-        onClick={onOpenSettings}
-        title={t("settings.title")}
-      >
-        <span className={styles.avatar}>LT</span>
-        {!collapsed && <span className={styles.userName}>{t("app.user")}</span>}
-      </button>
+      <SidebarIdentity collapsed={collapsed} onOpen={onOpenSettings} />
     </nav>
   );
 }

@@ -37,7 +37,9 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
         tabIndex={-1}
         className={styles.modal}
         style={{ width: 440 }}
-        onClick={(event) => { event.stopPropagation(); }}
+        onClick={(event) => {
+          event.stopPropagation();
+        }}
       >
         <div className={styles.modalHead}>
           <Icon name={danger ? "warn-tri" : "q"} size={13} />
@@ -63,7 +65,9 @@ function ConfirmFooter({
 }: ConfirmDialogProps) {
   return (
     <div className={styles.modalFooter}>
-      <Button variant="ghost" onClick={onCancel} disabled={busy}>{cancelLabel}</Button>
+      <Button variant="ghost" onClick={onCancel} disabled={busy}>
+        {cancelLabel}
+      </Button>
       <Button
         variant={danger ? "danger" : "primary"}
         onClick={onConfirm}

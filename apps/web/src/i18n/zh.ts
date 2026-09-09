@@ -161,7 +161,8 @@ export const zh = {
   "compare.created": "创建时间",
   "compare.selected": "已选",
   "compare.metrics": "指标比较",
-  "compare.hint": "仅并列显示各 Run 已返回的指标；单位/来源/可比条件不明时不计算提升率、置信区间或排名。",
+  "compare.hint":
+    "仅并列显示各 Run 已返回的指标；单位/来源/可比条件不明时不计算提升率、置信区间或排名。",
   "exp.artifacts": "Artifact",
   "exp.image": "镜像摘要",
   "exp.metrics": "指标数",

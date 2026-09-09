@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
+import { Chip } from "../../components/Chip";
+import { Icon } from "../../components/Icon";
 import { useI18n } from "../../i18n/useI18n";
 import type { PageSupport } from "../../navigation/pageSupport";
 import type { Route } from "../../navigation/registry";
-import { Chip } from "../../components/Chip";
-import { Icon } from "../../components/Icon";
 import styles from "./GapPage.module.css";
 
 /**

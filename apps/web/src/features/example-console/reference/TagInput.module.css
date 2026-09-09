@@ -1,0 +1,39 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  min-height: 32px;
+  padding: 4px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+:global([data-design-surface]) .surface {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+:global([data-design-surface]) .action {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+}
+
+:global([data-design-surface]) .field {
+  flex: 1;
+  min-width: 60px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--fg);
+  font-size: 12px;
+  padding: 0 4px;
+  height: 22px;
+}

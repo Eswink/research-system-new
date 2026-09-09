@@ -9,14 +9,7 @@
 import type { IconName } from "../components/Icon";
 
 export type DomainId =
-  | "plan"
-  | "portfolio"
-  | "run"
-  | "library"
-  | "evidence"
-  | "insights"
-  | "ops"
-  | "govern";
+  "plan" | "portfolio" | "run" | "library" | "evidence" | "insights" | "ops" | "govern";
 
 export type PageId =
   | "overview"
@@ -147,8 +140,11 @@ export function routeToHash(route: Route): string {
 
 /** 解析 hash：规范路由直达；旧别名映射；未知进入 not-found 标记。 */
 export function hashToRoute(hash: string): Route | null {
-  const segments = hash.replace(/^#\/?/, "").split("/").filter((s) => s.length > 0);
-  if (segments.length === 0) {
+  const segments = hash
+    .replace(/^#\/?/, "")
+    .split("/")
+    .filter((s) => s.length > 0);
+  if (segments.length !== 2) {
     return null;
   }
   const key = `${segments[0] ?? ""}/${segments[1] ?? ""}`;

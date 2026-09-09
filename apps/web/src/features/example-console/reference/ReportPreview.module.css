@@ -1,0 +1,206 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .row {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+:global([data-design-surface]) .surface {
+  flex: 1;
+}
+
+:global([data-design-surface]) .caption {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .row3 {
+  display: flex;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .surface2 {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  background: var(--bg-sunken);
+}
+
+:global([data-design-surface]) .surface3 {
+  max-width: 760px;
+  margin: 0 auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 36px 48px;
+  box-shadow: var(--shadow-2);
+  min-height: 600px;
+}
+
+:global([data-design-surface]) .surface4 {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+  margin-bottom: 14px;
+  color: var(--fg);
+}
+
+:global([data-design-surface]) .label3 {
+  font-size: 11px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+}
+
+:global([data-design-surface]) .caption2 {
+  font-size: 10px;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  margin-top: 4px;
+}
+
+:global([data-design-surface]) .column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+:global([data-design-surface]) .row4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+:global([data-design-surface]) .label4 {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .caption3 {
+  font-size: 9px;
+}
+
+:global([data-design-surface]) .label5 {
+  padding: 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--fg-faint);
+  font-style: italic;
+}
+
+:global([data-design-surface]) .label6 {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--fg-muted);
+  margin: 0 0 8px;
+}
+
+:global([data-design-surface]) .surface5 {
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+:global([data-design-surface]) .caption4 {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .column2 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+:global([data-design-surface]) .row5 {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+:global([data-design-surface]) .label7 {
+  flex: 1;
+  font-size: 11px;
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+:global([data-design-surface]) .caption5 {
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+  font-size: 10px;
+}
+
+:global([data-design-surface]) .column3 {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+:global([data-design-surface]) .label8 {
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .surface6 {
+  color: var(--fg);
+}
+
+:global([data-design-surface]) .label9 {
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label10 {
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label11 {
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--fg-muted);
+}

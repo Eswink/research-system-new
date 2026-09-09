@@ -1,0 +1,5 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  background: var(--bg-sunken);
+  min-height: 140px;
+}

@@ -73,7 +73,10 @@ export function CommandPalette(props: CommandPaletteProps) {
       onClose={onClose}
       inputRef={inputRef}
       query={query}
-      onQuery={(value) => { setQuery(value); setIndex(0); }}
+      onQuery={(value) => {
+        setQuery(value);
+        setIndex(0);
+      }}
       filtered={filtered}
       index={index}
       onMove={(delta) => {
@@ -110,7 +113,9 @@ function PaletteDialog(props: PaletteDialogProps) {
         aria-modal="true"
         aria-label={t("app.search")}
         className={styles.panel}
-        onClick={(event) => { event.stopPropagation(); }}
+        onClick={(event) => {
+          event.stopPropagation();
+        }}
       >
         <PaletteInput
           inputRef={inputRef}
@@ -118,7 +123,9 @@ function PaletteDialog(props: PaletteDialogProps) {
           placeholder={t("palette.placeholder")}
           onQuery={onQuery}
           onMove={onMove}
-          onEnter={() => { onSelect(filtered[index]); }}
+          onEnter={() => {
+            onSelect(filtered[index]);
+          }}
           onEscape={onClose}
         />
         <PaletteResults
@@ -155,7 +162,9 @@ function PaletteInput({
       className={styles.input}
       placeholder={placeholder}
       value={query}
-      onChange={(event) => { onQuery(event.target.value); }}
+      onChange={(event) => {
+        onQuery(event.target.value);
+      }}
       onKeyDown={(event) => {
         if (event.key === "ArrowDown") {
           event.preventDefault();
@@ -191,7 +200,9 @@ function PaletteResults({
           key={item.hash}
           type="button"
           className={i === index ? styles.rowActive : styles.row}
-          onClick={() => { onSelect(item); }}
+          onClick={() => {
+            onSelect(item);
+          }}
         >
           <Icon name={item.icon} size={12} />
           <span className={styles.rowLabel}>{item.label}</span>

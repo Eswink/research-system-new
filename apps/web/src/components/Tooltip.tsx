@@ -20,10 +20,18 @@ export function Tooltip({
   return (
     <span
       className={cx(styles.host, className)}
-      onMouseEnter={() => { setOpen(true); }}
-      onMouseLeave={() => { setOpen(false); }}
-      onFocus={() => { setOpen(true); }}
-      onBlur={() => { setOpen(false); }}
+      onMouseEnter={() => {
+        setOpen(true);
+      }}
+      onMouseLeave={() => {
+        setOpen(false);
+      }}
+      onFocus={() => {
+        setOpen(true);
+      }}
+      onBlur={() => {
+        setOpen(false);
+      }}
     >
       <span aria-describedby={open ? id : undefined}>{children}</span>
       {open && (

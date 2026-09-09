@@ -1,11 +1,4 @@
-import {
-  isMap,
-  isSeq,
-  parseDocument,
-  stringify,
-  type Document,
-  type YAMLMap,
-} from "yaml";
+import { isMap, isSeq, parseDocument, stringify, type Document, type YAMLMap } from "yaml";
 
 import type { PhaseForm, ProtocolForm, StopConditions } from "./protocolDocument";
 

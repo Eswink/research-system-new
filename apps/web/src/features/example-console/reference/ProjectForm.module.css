@@ -1,0 +1,20 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .row {
+  padding: 10px;
+  background: var(--bg-raised);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-size: 10px;
+  color: var(--fg-muted);
+  display: flex;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--fg-faint);
+  margin-top: 2px;
+}
+
+:global([data-design-surface]) .surface2 {
+  line-height: 1.5;
+}

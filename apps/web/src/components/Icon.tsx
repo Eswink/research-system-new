@@ -186,8 +186,7 @@ export function Icon({
   className?: string | undefined;
   style?: CSSProperties | undefined;
 }) {
-  const merged =
-    name === "spin" ? { animation: "spin 1s linear infinite", ...style } : style;
+  const merged = name === "spin" ? { animation: "spin 1s linear infinite", ...style } : style;
   return (
     <svg
       width={size}

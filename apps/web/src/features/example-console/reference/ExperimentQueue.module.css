@@ -1,0 +1,88 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:global([data-design-surface]) .row {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global([data-design-surface]) .surface {
+  color: var(--fg-muted);
+}
+
+:global([data-design-surface]) .label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .caption {
+  margin-left: auto;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .surface2 {
+  flex: 1;
+  overflow: auto;
+}
+
+:global([data-design-surface]) .surface3 {
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+:global([data-design-surface]) .row2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .label2 {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+:global([data-design-surface]) .caption2 {
+  margin-left: auto;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .row3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+:global([data-design-surface]) .caption3 {
+  font-size: 9px;
+  height: 15px;
+}
+
+:global([data-design-surface]) .surface4 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .indicator {
+  height: 3px;
+  background: var(--bg-sunken);
+  border-radius: 2px;
+}
+
+:global([data-design-surface]) .surface5 {
+  height: 100%;
+  border-radius: 2px;
+}

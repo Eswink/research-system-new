@@ -42,13 +42,7 @@ export function ForbiddenState({ message }: { message: string }) {
 }
 
 /** 能力不可用态：后端缺口/未实现——结构保留，操作禁用，原因明示（T02 pageSupport） */
-export function UnavailableState({
-  title,
-  reason,
-}: {
-  title: string;
-  reason: string;
-}) {
+export function UnavailableState({ title, reason }: { title: string; reason: string }) {
   return (
     <div className={styles.unavailable} data-testid="unavailable-state" role="status">
       <div className={styles.unavailableHead}>

@@ -1,0 +1,46 @@
+/* Scoped styles migrated from the supplied design; dynamic state remains in TSX. */
+:global([data-design-surface]) .surface {
+  margin-bottom: 14px;
+}
+
+:global([data-design-surface]) .row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+:global([data-design-surface]) .label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  letter-spacing: 0.02em;
+}
+
+:global([data-design-surface]) .surface2 {
+  color: var(--fg-faint);
+}
+
+:global([data-design-surface]) .row2 {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--danger);
+  font-family: var(--font-mono);
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+:global([data-design-surface]) .surface3 {
+  margin-top: 1px;
+}
+
+:global([data-design-surface]) .surface4 {
+  opacity: 0.75;
+}
+
+:global([data-design-surface]) .caption {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--fg-faint);
+  line-height: 1.4;
+}

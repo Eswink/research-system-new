@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 import { Icon } from "../Icon";
 import { num } from "./fmt";
-import { Sparkline } from "./Sparkline";
 import styles from "./MetricCard.module.css";
+import { Sparkline } from "./Sparkline";
 
 /** 指标卡：标签 + 大数值 + 可选 sparkline/进度条/趋势；unknown 有独立通道。 */
 export function MetricCard({
