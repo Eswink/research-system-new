@@ -1319,6 +1319,113 @@
         "title": "EvidenceDto",
         "type": "object"
       },
+      "ExperimentPlanCreateDto": {
+        "additionalProperties": false,
+        "properties": {
+          "hypothesis": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothesis"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "task_contract_ref": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Contract Ref"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ExperimentPlanCreateDto",
+        "type": "object"
+      },
+      "ExperimentPlanDto": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "hypothesis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothesis"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_spec_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Spec Digest"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "task_contract_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Contract Ref"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "state",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ExperimentPlanDto",
+        "type": "object"
+      },
       "ExperimentRunDto": {
         "additionalProperties": false,
         "description": "单个 experiment run 的只读视图（persisted truth）。",
@@ -1371,6 +1478,65 @@
           "experiment_run_id"
         ],
         "title": "ExperimentRunDto",
+        "type": "object"
+      },
+      "ExperimentRunRowDto": {
+        "additionalProperties": false,
+        "description": "项目级 experiment run 行（evidence 聚合 + run 归属）。",
+        "properties": {
+          "artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Artifact Ids",
+            "type": "array"
+          },
+          "environment_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Digest"
+          },
+          "experiment_run_id": {
+            "title": "Experiment Run Id",
+            "type": "string"
+          },
+          "image_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Digest"
+          },
+          "metrics": {
+            "additionalProperties": false,
+            "title": "Metrics",
+            "type": "object"
+          },
+          "reproduction_available": {
+            "default": false,
+            "title": "Reproduction Available",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "experiment_run_id"
+        ],
+        "title": "ExperimentRunRowDto",
         "type": "object"
       },
       "ExperimentViewDto": {
@@ -2151,6 +2317,25 @@
           "provider_fingerprint_available"
         ],
         "title": "ProbeResultDto",
+        "type": "object"
+      },
+      "ProjectExperimentsViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "experiments": {
+            "items": {
+              "$ref": "#/components/schemas/ExperimentRunRowDto"
+            },
+            "title": "Experiments",
+            "type": "array"
+          },
+          "reproduction_note": {
+            "default": "",
+            "title": "Reproduction Note",
+            "type": "string"
+          }
+        },
+        "title": "ProjectExperimentsViewDto",
         "type": "object"
       },
       "ProjectSettingsDto": {
@@ -4007,6 +4192,49 @@
         ]
       }
     },
+    "/experiments/{plan_id}/archive": {
+      "post": {
+        "description": "归档计划（域状态机权威：已归档/非法迁移 → 409；未知 → 404）。",
+        "operationId": "archive_experiment_plan_experiments__plan_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentPlanDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Archive Experiment Plan",
+        "tags": [
+          "inspection"
+        ]
+      }
+    },
     "/llm-endpoints": {
       "get": {
         "operationId": "list_endpoints_llm_endpoints_get",
@@ -4773,6 +5001,100 @@
         "summary": "Dry Run Endpoint",
         "tags": [
           "team-protocol"
+        ]
+      }
+    },
+    "/projects/{project_id}/experiments": {
+      "get": {
+        "description": "项目级 experiment run 视图（跨 run 的 evidence 聚合；WP-E）。",
+        "operationId": "project_experiments_projects__project_id__experiments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectExperimentsViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Project Experiments",
+        "tags": [
+          "inspection"
+        ]
+      },
+      "post": {
+        "description": "预注册实验计划（DRAFT→PREREGISTERED 持久化；无队列语义，不伪装 queued）。",
+        "operationId": "create_experiment_plan_projects__project_id__experiments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentPlanCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentPlanDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Experiment Plan",
+        "tags": [
+          "inspection"
         ]
       }
     },

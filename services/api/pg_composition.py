@@ -194,6 +194,9 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         workflow=assembly.workflow,
         runs_store=assembly.runs_store_pg or SqliteRunStore(connection=assembly.connection),
         artifacts=assembly.artifacts_pg or FakeArtifactStore(),
+        # WP-E：实验计划存储仅 PG canonical state；SQLite 开发路径保持 None，
+        # create/archive 端点据此诚实返回 503（worker_registry 先例）。
+        experiment_store=assembly.experiment_store,
         ledger=assembly.ledger,
         budget=assembly.budget,
         agent_store=SqliteAgentStore(connection=assembly.connection),

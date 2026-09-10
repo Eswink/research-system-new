@@ -71,3 +71,6 @@ def test_openapi_contains_control_plane_paths() -> None:
     assert "/artifacts/{artifact_id}/content" in paths
     # 成本日序列（PLAN-20260910-037 WP-D）
     assert "/cost/daily" in paths
+    # 实验项目视图与计划（PLAN-20260910-037 WP-E）
+    assert "/projects/{project_id}/experiments" in paths
+    assert "/experiments/{plan_id}/archive" in paths

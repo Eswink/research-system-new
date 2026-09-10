@@ -13,6 +13,7 @@ import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
 import { ExperimentMetadata } from "./ExperimentMetadata";
+import { ExperimentPlanPanel } from "./ExperimentPlanPanel";
 
 export function ExperimentsPage({ ctx }: { ctx: PageContext }) {
   const { language, t } = useI18n();
@@ -46,6 +47,7 @@ export function ExperimentsPage({ ctx }: { ctx: PageContext }) {
       <ResourceBoundary state={resource}>
         {resource.data !== null && <ExperimentCatalog key={runId} view={resource.data} />}
       </ResourceBoundary>
+      <ExperimentPlanPanel />
     </section>
   );
 }

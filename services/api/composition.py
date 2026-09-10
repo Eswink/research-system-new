@@ -92,6 +92,8 @@ class ApiDeps:
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
     approvals: ApprovalStore | None = field(default=None, repr=False)
     memory: Any | None = field(default=None, repr=False)
+    # WP-E：ExperimentStore（PG canonical state；SQLite 开发路径 None）。
+    experiment_store: Any | None = field(default=None, repr=False)
     # WP-D：provider_id → ToolProvider port 实例注册表（生产未注册时空 dict，
     # build_provider_health 对非 NATIVE provider 诚实返回 UNKNOWN）。
     tool_providers: Mapping[str, Any] = field(default_factory=dict, repr=False)

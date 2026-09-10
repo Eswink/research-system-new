@@ -543,6 +543,33 @@ export interface CostDailyViewDto {
   attribution_note: string | null;
 }
 
+/** WP-E 实验平面 DTO。 */
+export interface ExperimentRunRowDto extends ExperimentRunDto {
+  run_id: string;
+}
+
+export interface ProjectExperimentsViewDto {
+  experiments: ExperimentRunRowDto[];
+  reproduction_note: string;
+}
+
+export interface ExperimentPlanCreateDto {
+  name: string;
+  hypothesis?: string | null;
+  task_contract_ref?: string | null;
+}
+
+export interface ExperimentPlanDto {
+  id: string;
+  name: string;
+  hypothesis: string | null;
+  task_contract_ref: string | null;
+  input_spec_digest: string | null;
+  state: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TrendPointDto {
   report_digest: string;
   recorded_at: string | null;

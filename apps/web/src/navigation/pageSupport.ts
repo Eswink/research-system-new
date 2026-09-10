@@ -32,7 +32,9 @@ export const GAPS = {
   costSeries:
     "成本日序列已接入（GET /cost/daily）；预测/前瞻无 API，不绘制",
   memory: "产品 Memory 管理无 API",
-  experimentCreate: "实验创建/排队/调度无 API",
+  experimentCreate:
+    "计划预注册/归档已接入（仅 PG canonical state；SQLite 开发路径 503）；" +
+    "域内无队列状态，排队/调度无 API，不伪装",
   prompts: "无 prompts API",
   datasets: "无 datasets API",
   notebooks: "无 notebooks API",
@@ -60,7 +62,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "portfolio/experiments": {
     level: "partial",
     reason: GAPS.experimentCreate,
-    disabledOperations: ["create", "queue", "schedule"],
+    disabledOperations: ["queue", "schedule"],
   },
   "portfolio/runs-history": { level: "full" },
   "portfolio/compare": { level: "partial", reason: "仅比较已返回指标；不可比语义保留" },

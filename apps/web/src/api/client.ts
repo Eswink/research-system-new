@@ -11,6 +11,7 @@
 
 import { endpointsClient } from "./endpointsClient";
 import { artifactClient } from "./artifactClient";
+import { experimentClient } from "./experimentClient";
 import { ApiError } from "./http";
 import { inspectionClient } from "./inspectionClient";
 import type { EndpointWithEtag } from "./legacyShapes";
@@ -117,4 +118,13 @@ export const api = {
   getArtifact: (artifactId: string) => artifactClient.get(artifactId),
   artifactContentUrl: (artifactId: string) => artifactClient.contentUrl(artifactId),
   artifactPreviewText: (artifactId: string) => artifactClient.contentText(artifactId),
+
+  // ── experiments（WP-E）──
+  projectExperiments: () => experimentClient.listForProject(),
+  createExperimentPlan: (payload: {
+    name: string;
+    hypothesis?: string | null;
+    task_contract_ref?: string | null;
+  }) => experimentClient.createPlan(payload),
+  archiveExperimentPlan: (planId: string) => experimentClient.archivePlan(planId),
 };

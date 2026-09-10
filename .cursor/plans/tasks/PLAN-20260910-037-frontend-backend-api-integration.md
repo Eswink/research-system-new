@@ -67,8 +67,19 @@ memory_entries: []
   ruff/mypy/tsc/eslint/unit 70/70/stub-e2e 11/11 全绿。
   注：探测超时预算由 adapter 自有（Port 无 timeout 参数；控制面当前未注册外部
   provider 实例，非 NATIVE 探测收敛 UNKNOWN，符合三态设计）。
-- [ ] AC-05（WP-E）：`GET/POST /projects/{pid}/experiments` + cancel；ExperimentStore
+- [x] AC-05（WP-E）：`GET/POST /projects/{pid}/experiments` + cancel；ExperimentStore
   支撑；SQLite 无 store → 503；schedule 保持禁用。
+  证据（语义修正记录）：域内实验计划状态机为 DRAFT/PREREGISTERED/ARCHIVED，
+  无 QUEUED/RUNNING（experiment_state.py:17-49），POST /experiments/{id}/cancel
+  会操作无人读取的行（executor 不落 store、worker 仅 claim EXECUTION）——
+  诚实替代为 `POST /experiments/{plan_id}/archive`（域迁移 + 409/404）；
+  列表以跨 run evidence 聚合（GET /projects/{pid}/experiments，SQLite/PG 双可用）；
+  计划创建仅 PG canonical state（ApiDeps.experiment_store 槽位 +
+  pg_composition 接线；SQLite 503 有 FakeExperimentStore 测试双路径）；
+  tests/api/test_experiments_api.py 6 passed（项目聚合、503、幂等 422、
+  预注册+归档+409+404）；前端 ExperimentPlanPanel + pageSupport
+  experimentCreate 更新（queue/schedule 保持禁用）。注：本计划文案中的
+  “排队”按域事实修正为“预注册”，未发明队列语义。
 - [ ] AC-06（WP-F）：Memory REST 四端点按 CONTROL_PLANE_API.md §Memory；提案走
   MemoryWriteProposal → schema → provenance → policy → curator gate（AGENTS.md §8）；
   provenance 拒绝与 commit 恰一赢用例过；audit Memory tab 接真实数据。

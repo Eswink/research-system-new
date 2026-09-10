@@ -160,6 +160,14 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
   },
   {
     method: "GET",
+    pattern: /^\/projects\/example-project\/experiments$/,
+    handler: () => ({
+      status: 200,
+      body: { experiments: [], reproduction_note: "stub fixture" },
+    }),
+  },
+  {
+    method: "GET",
     pattern: /^\/runs\/[^/]+\/artifacts$/,
     handler: () => ({
       status: 503,
