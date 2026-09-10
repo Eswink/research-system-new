@@ -9,6 +9,7 @@ from __future__ import annotations
 import sqlite3
 
 from adapters.sqlite.projections import list_tasks as sqlite_list_tasks
+from adapters.sqlite.serialization import decode_envelope
 from packages.application.ports.event_publisher import EventPublisher
 from packages.domain.events import EventEnvelope
 from packages.domain.tasks import ResearchTask, TaskContract
@@ -37,3 +38,11 @@ class SqliteRunProjection:
                 key=lambda item: item.event_id,
             )
         )
+
+    def recent_events(self, limit: int) -> tuple[EventEnvelope, ...]:
+        rows = self._conn.execute(
+            "SELECT envelope_json FROM outbox_events"
+            " ORDER BY created_at DESC, event_id DESC LIMIT ?",
+            (int(limit),),
+        ).fetchall()
+        return tuple(decode_envelope(str(row[0])) for row in rows)

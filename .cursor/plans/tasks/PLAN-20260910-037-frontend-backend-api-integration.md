@@ -80,11 +80,29 @@ memory_entries: []
   预注册+归档+409+404）；前端 ExperimentPlanPanel + pageSupport
   experimentCreate 更新（queue/schedule 保持禁用）。注：本计划文案中的
   “排队”按域事实修正为“预注册”，未发明队列语义。
-- [ ] AC-06（WP-F）：Memory REST 四端点按 CONTROL_PLANE_API.md §Memory；提案走
+- [x] AC-06（WP-F）：Memory REST 按 CONTROL_PLANE_API.md §Memory；提案走
   MemoryWriteProposal → schema → provenance → policy → curator gate（AGENTS.md §8）；
   provenance 拒绝与 commit 恰一赢用例过；audit Memory tab 接真实数据。
-- [ ] AC-07（WP-G）：`GET /notifications` + read 投影自 outbox 事件；已读持久化；
+  证据（语义修正记录）：域内无持久化 pending 提案 → `POST /memory/proposals`
+  实现为完整 §8 门链直提交（拒绝按 stage+reasons 分类 422），两阶段 `decide`
+  不实现（无 pending 对象可裁决）；capability policy 面受 `_CAPABILITY_SCOPE`
+  镜像契约约束记为 follow-up（router policy 槽位显式 None + docstring 说明）。
+  GET 带 store-missing 503 + scope_note；DELETE 经 lifecycle（索引同步 +
+  MEMORY_DELETED + 幂等键 + 404/204）。tests/api/test_memory_api.py 6 passed；
+  PG 恰一赢由既有 test_memory_claim_concurrency 锁定；前端 MemoryPanel；
+  openapi 再生 + 契约断言；三门 + e2e 10/10 绿。提交 3d4efc2。
+- [x] AC-07（WP-G）：`GET /notifications` + read 投影自 outbox 事件；已读持久化；
   无事件显示真实空态，绝不虚构。
+  证据：RunProjection.recent_events（port + Sqlite SQL 顶序 + PG sink 尾部
+  反转，两路径同源经 relay-consolidated publisher）；NotificationReadStore
+  port + SqliteNotificationReadStore（view-state 存控制面 SQLite，与配置
+  存储同侧先例；两 composition 接线）；路由白名单过滤（task.* 执行噪音不
+  呈现、无 payload 内容=观测隐私）、GET/POST read 204+幂等键+422；
+  tests/api/test_notifications_api.py 4 passed（503、白名单、read 持久化
+  幂等、真实 run 事件投影）；前端 NotificationsPage 从 gap 脚手架升级为
+  live（pageSupport level partial：无实时推送；design-fidelity notifications
+  基线按新 live 页重录）；契约断言 + openapi 再生；stub e2e 29/29、
+  contracts 330、三门全绿。
 - [ ] AC-08（WP-H）：run_orchestration 在策略审批门注册 ApprovalRecord 并置
   WAITING_FOR_APPROVAL；新带审批门 reference protocol；decide 链恢复 run/失败分支
   与 restart 恢复用例过；approvalsEmpty gap 解除。

@@ -54,7 +54,7 @@ const ALL_ROUTES: readonly { name: string; hash: string; testid: string }[] = [
   {
     name: "notifications",
     hash: "#/notifications/notifications",
-    testid: "example-page-notifications-notifications",
+    testid: "notifications-page",
   },
   { name: "command-center", hash: "#/command-center/command-center", testid: "command-center" },
 ];

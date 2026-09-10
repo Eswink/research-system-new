@@ -78,3 +78,6 @@ def test_openapi_contains_control_plane_paths() -> None:
     assert "/projects/{project_id}/memory" in paths
     assert "/memory/proposals" in paths
     assert "/memory/{memory_id}" in paths
+    # 通知投影（PLAN-20260910-037 WP-G）
+    assert "/notifications" in paths
+    assert "/notifications/{event_id}/read" in paths

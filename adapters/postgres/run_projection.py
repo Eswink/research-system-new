@@ -55,3 +55,14 @@ class PostgresRunProjection:
                 key=lambda item: item.event_id,
             )
         )
+
+    def recent_events(self, limit: int) -> Any:
+        """跨 run 最近事件（newest-first）；sink published 已按 created_at 排序。"""
+        if self._events is None:
+            return ()
+        published = getattr(self._events, "published", ())
+        if callable(published):
+            published = published()
+        capped = max(0, int(limit))
+        tail = list(published)[-capped:] if capped else []
+        return tuple(reversed(tail))

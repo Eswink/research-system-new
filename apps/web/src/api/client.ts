@@ -13,6 +13,7 @@ import { endpointsClient } from "./endpointsClient";
 import { artifactClient } from "./artifactClient";
 import { experimentClient } from "./experimentClient";
 import { memoryClient } from "./memoryClient";
+import { notificationsClient } from "./notificationClient";
 import { ApiError } from "./http";
 import { inspectionClient } from "./inspectionClient";
 import type { EndpointWithEtag } from "./legacyShapes";
@@ -140,4 +141,8 @@ export const api = {
     curator_approved: boolean;
   }) => memoryClient.propose(payload),
   deleteMemory: (memoryId: string) => memoryClient.remove(memoryId),
+
+  // ── notifications（WP-G）──
+  notifications: () => notificationsClient.list(),
+  markNotificationRead: (eventId: string) => notificationsClient.markRead(eventId),
 };

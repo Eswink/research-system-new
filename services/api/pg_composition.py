@@ -174,6 +174,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
     from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.approval_store import SqliteApprovalStore
     from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
+    from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.run_store import SqliteRunStore
 
@@ -201,6 +202,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         budget=assembly.budget,
         agent_store=SqliteAgentStore(connection=assembly.connection),
         project_settings_store=SqliteProjectSettingsStore(connection=assembly.connection),
+        notification_reads=SqliteNotificationReadStore(connection=assembly.connection),
         endpoint_url_policy=_endpoint_url_policy(assembly.effective),
         memory=assembly.memory_store,
         preflight_override=assembly.preflight_override,

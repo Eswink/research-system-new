@@ -168,6 +168,26 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
   },
   {
     method: "GET",
+    pattern: /^\/notifications$/,
+    handler: () => ({
+      status: 200,
+      body: {
+        notifications: [
+          {
+            id: "evt-notify-1",
+            type: "manifest.frozen",
+            run_id: "run-notify-1",
+            task_id: null,
+            occurred_at: "2026-09-10T00:00:00Z",
+            read: false,
+          },
+        ],
+        note: "stub projection",
+      },
+    }),
+  },
+  {
+    method: "GET",
     pattern: /^\/projects\/example-project\/memory$/,
     handler: () => ({
       status: 503,

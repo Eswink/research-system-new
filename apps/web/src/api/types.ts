@@ -606,6 +606,21 @@ export interface MemoryCommittedDto {
   decision: string;
 }
 
+/** WP-G 通知投影（outbox 事件白名单；不含 payload 内容）。 */
+export interface NotificationDto {
+  id: string;
+  type: string;
+  run_id: string | null;
+  task_id: string | null;
+  occurred_at: string;
+  read: boolean;
+}
+
+export interface NotificationsViewDto {
+  notifications: NotificationDto[];
+  note: string;
+}
+
 export interface TrendPointDto {
   report_digest: string;
   recorded_at: string | null;

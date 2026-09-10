@@ -26,6 +26,7 @@ from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
 from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
 from adapters.sqlite.model_store import SqliteModelStore
+from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
 from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
 from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
 from adapters.sqlite.run_store import SqliteRunStore
@@ -94,6 +95,8 @@ class ApiDeps:
     memory: Any | None = field(default=None, repr=False)
     # WP-E：ExperimentStore（PG canonical state；SQLite 开发路径 None）。
     experiment_store: Any | None = field(default=None, repr=False)
+    # WP-G：通知已读 view-state（控制面 SQLite；两路径同侧）。
+    notification_reads: Any | None = field(default=None, repr=False)
     # WP-D：provider_id → ToolProvider port 实例注册表（生产未注册时空 dict，
     # build_provider_health 对非 NATIVE provider 诚实返回 UNKNOWN）。
     tool_providers: Mapping[str, Any] = field(default_factory=dict, repr=False)
@@ -248,6 +251,7 @@ def _assemble_sqlite(
         budget=budget_sqlite,
         agent_store=SqliteAgentStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
+        notification_reads=SqliteNotificationReadStore(connection=connection),
         protocol_draft_service=_build_draft_service(connection),
         endpoint_url_policy=_endpoint_url_policy(effective),
         telemetry=telemetry,

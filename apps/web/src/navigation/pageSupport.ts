@@ -21,7 +21,8 @@ export interface PageSupport {
 /** 后端能力缺口登记（cursor plan §3 / CONSOLE_PAGE_MAP.md）。 */
 export const GAPS = {
   multiProject: "无多项目管理 API：仅当前单项目上下文",
-  notifications: "无通知持久化 API：不显示虚构通知/未读数",
+  notifications:
+    "通知已接入事件投影（GET /notifications + 已读持久化）；无实时推送，数量只来自当前页",
   account: "无账户/身份/Billing/平台 API Keys API",
   budgetAdjust: "预算调整无契约（interventions budget_adjust 恒 501）",
   pauseResume: "pause/resume 仅状态迁移，不证明实际暂停/恢复执行",
@@ -100,7 +101,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
     reason: GAPS.account,
     disabledOperations: ["account", "platform-keys", "2fa", "billing"],
   },
-  "notifications/notifications": { level: "gap", reason: GAPS.notifications },
+  "notifications/notifications": { level: "partial", reason: GAPS.notifications },
   "command-center/command-center": {
     level: "partial",
     reason: "复用真实查询；跨项目/预测/全球节点不可用",

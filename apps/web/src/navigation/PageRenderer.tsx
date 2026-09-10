@@ -99,8 +99,7 @@ const REAL_PAGES: Readonly<Record<string, PageFactory>> = {
   "ops/data-health": () => <DataHealthPage />,
   "ops/matrix": () => <StateReferencePage />,
   "govern/audit": (_r, ctx) => <GovernancePage ctx={ctx} />,
-  "notifications/notifications": () => <NotificationsPage />,
-  "ops/observability": (_r, ctx) => (
+  "notifications/notifications": () => <NotificationsPage />,  "ops/observability": (_r, ctx) => (
     <OperationsPanel initialRunId={ctx.selectedRunId} onRunSelected={ctx.onSelectedRunIdChange} />
   ),
   "ops/compute": (_r, ctx) => <ComputePage runId={ctx.selectedRunId} />,
