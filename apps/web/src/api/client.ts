@@ -15,7 +15,7 @@ import { inspectionClient } from "./inspectionClient";
 import type { EndpointWithEtag } from "./legacyShapes";
 import { modelsClient } from "./modelsClient";
 import { operationsClient } from "./operationsClient";
-import { protocolClient } from "./protocolClient";
+import { protocolClient, type ProtocolSource } from "./protocolClient";
 import { runClient } from "./runClient";
 import { teamClient } from "./teamClient";
 import type {
@@ -75,10 +75,10 @@ export const api = {
   saveProjectSettings: (payload: ProjectSettingsDto) => teamClient.saveProjectSettings(payload),
 
   // ── protocol ──
-  validateProtocol: (path: string) => protocolClient.validate(path),
-  compileAndPreflight: (path: string) => protocolClient.compileAndPreflight(path),
-  preflight: (path: string) => protocolClient.preflight(path),
-  dryRun: (path: string) => protocolClient.dryRun(path),
+  validateProtocol: (source: ProtocolSource) => protocolClient.validate(source),
+  compileAndPreflight: (source: ProtocolSource) => protocolClient.compileAndPreflight(source),
+  preflight: (source: ProtocolSource) => protocolClient.preflight(source),
+  dryRun: (source: ProtocolSource) => protocolClient.dryRun(source),
 
   // ── runs & approvals ──
   startRun: (source: string | { draft_id: string; draft_revision: number }) =>

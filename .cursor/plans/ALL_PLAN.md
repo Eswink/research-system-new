@@ -7,6 +7,7 @@
 |  | Plan | Status |
 | --- | --- | --- |
 | [x] | [PLAN-20260910-036](tasks/PLAN-20260910-036-frontend-legacy-rewrite.md) | DONE |
+| [ ] | [PLAN-20260910-037](tasks/PLAN-20260910-037-frontend-backend-api-integration.md) | IN_PROGRESS |
 | [x] | [PLAN-20260909-035](tasks/PLAN-20260909-035-console-reference-reconstruction.md) | DONE |
 | [x] | [PLAN-20260908-034](tasks/PLAN-20260908-034-console-design-reconstruction.md) | DONE |
 | [x] | [PLAN-20260908-033](tasks/PLAN-20260908-033-research-console-rebuild.md) | DONE |

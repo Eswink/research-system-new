@@ -6,6 +6,8 @@ import type { ConsolePreferences } from "../layout/preferences";
 export interface PageContext {
   endpoints: LlmEndpointReadDto[];
   onAddRelay: () => void;
+  /** 端点列表 server-state 刷新（编辑/写操作后调用）。 */
+  refreshEndpoints: () => void;
   selectedRunId: string;
   onSelectedRunIdChange: (runId: string) => void;
   selectedDraftId?: string;

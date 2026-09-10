@@ -7,6 +7,7 @@
  */
 
 import type {
+  CompileResultDto,
   DryRunProjectionDto,
   PreflightReportDto,
   ProtocolDraftValidateResultDto,
@@ -14,6 +15,8 @@ import type {
 } from "../../../api/types";
 
 export type EditorMode = "form" | "yaml";
+
+export type EditorOperation = "save" | "validate" | "preflight" | "start" | "compile" | "recheck";
 
 export type SaveStatus =
   | "idle" // 无未保存修改
@@ -52,6 +55,8 @@ export interface EditorState {
   busy: boolean;
   error: string | null;
   validation: { text: string; result: ProtocolDraftValidateResultDto } | null;
+  /** 协议编译器校验结果（POST /protocols/validate；零副作用编译检查） */
+  compiled: { source: string; result: CompileResultDto } | null;
   startedRunId: string | null;
 }
 
@@ -69,6 +74,7 @@ export function initialEditorState(working: string): EditorState {
     busy: false,
     error: null,
     validation: null,
+    compiled: null,
     startedRunId: null,
   };
 }
@@ -123,9 +129,10 @@ export function preflightIsStale(state: EditorState): boolean {
 }
 
 export type EditorAction =
-  | { type: "operationStarted"; operation: "save" | "validate" | "preflight" | "start" }
+  | { type: "operationStarted"; operation: EditorOperation }
   | { type: "operationFinished" }
   | { type: "validated"; text: string; result: ProtocolDraftValidateResultDto }
+  | { type: "compiled"; source: string; result: CompileResultDto }
   | { type: "runStarted"; runId: string }
   | { type: "edit"; text: string }
   | { type: "loadTemplate"; text: string; sourcePath: string }
@@ -133,5 +140,6 @@ export type EditorAction =
   | { type: "saved"; saved: ProtocolDraftViewDto }
   | { type: "saveFailed"; issues: ValidationIssue[]; error: string | null; conflict: boolean }
   | { type: "preflight"; context: PreflightContext; requestSeq: number; currentSeq: number }
-  | { type: "preflightFailed"; error: string }
+  | { type: "preflightRechecked"; text: string; report: PreflightReportDto }
+  | { type: "analysisFailed"; target: "compile" | "preflight"; error: string }
   | { type: "reset"; working: string; saved: ProtocolDraftViewDto | null };

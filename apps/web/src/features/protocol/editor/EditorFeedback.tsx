@@ -15,6 +15,7 @@ export function EditorFeedback({ state }: { state: EditorState }) {
       )}
       {state.error !== null && <ErrorState message={state.error} />}
       {state.validation !== null && <ValidationResult state={state} />}
+      {state.compiled !== null && <CompiledResult state={state} />}
       {state.preflight !== null && <PreflightResult state={state} />}
       {state.startedRunId !== null && (
         <p role="status" className={styles.notice}>
@@ -51,6 +52,35 @@ function ValidationResult({ state }: { state: EditorState }) {
         {validation.result.issues.map((issue, index) => (
           <li key={index} className={styles.notice}>
             {issue.path} · {issue.code} · {issue.message}
+          </li>
+        ))}
+      </ul>
+    </PanelSection>
+  );
+}
+
+function CompiledResult({ state }: { state: EditorState }) {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const compiled = state.compiled;
+  if (compiled === null) return null;
+  const stale = compiled.source !== state.working;
+  return (
+    <PanelSection
+      title={zh ? "协议编译器校验（零副作用）" : "Protocol compiler validation (no side effects)"}
+      extra={
+        <Chip tone={stale ? "warn" : compiled.result.successful ? "success" : "danger"}>
+          {stale ? "STALE" : compiled.result.successful ? "COMPILE OK" : "COMPILE FAIL"}
+        </Chip>
+      }
+    >
+      <p className="mono">
+        {compiled.result.protocol_digest ?? "UNKNOWN"} · {compiled.source}
+      </p>
+      <ul className={styles.list}>
+        {compiled.result.findings.map((finding, index) => (
+          <li key={index} className={styles.notice}>
+            {finding.severity} · {finding.code} · {finding.message}
           </li>
         ))}
       </ul>

@@ -1,18 +1,21 @@
 import { api } from "../../../api/client";
 import { draftApi } from "../../../api/draftClient";
 import type {
+  CompileResultDto,
   DryRunProjectionDto,
   PreflightReportDto,
   ProtocolDraftValidateResultDto,
   ProtocolDraftViewDto,
 } from "../../../api/types";
-import { canStart, type EditorAction, type EditorState } from "./editorState";
+import { canStart, type EditorAction, type EditorOperation, type EditorState } from "./editorState";
 
-export type EditorOperation = "save" | "validate" | "preflight" | "start";
+export type { EditorOperation } from "./editorState";
 export type EditorCommandResult =
   | { kind: "saved"; saved: ProtocolDraftViewDto }
   | { kind: "validated"; text: string; result: ProtocolDraftValidateResultDto }
+  | { kind: "compiled"; source: string; result: CompileResultDto }
   | { kind: "preflight"; text: string; report: PreflightReportDto; projection: DryRunProjectionDto }
+  | { kind: "rechecked"; text: string; report: PreflightReportDto }
   | { kind: "started"; runId: string };
 
 export function permitsEditorOperation(
@@ -25,6 +28,15 @@ export function permitsEditorOperation(
     return canStart(state) && (state.preflight?.report.status !== "WARN" || ackWarnings);
   if (operation === "preflight")
     return state.sourcePath !== null && state.working === state.sourceText;
+  if (operation === "compile")
+    return state.sourcePath !== null && state.working === state.sourceText;
+  if (operation === "recheck")
+    return (
+      state.sourcePath !== null &&
+      state.working === state.sourceText &&
+      state.preflight !== null &&
+      state.preflight.digest === state.working
+    );
   return state.working.trim() !== "";
 }
 
@@ -58,6 +70,14 @@ export async function performEditorOperation(
       ]);
       return { kind: "preflight", text: state.working, report, projection };
     }
+    case "compile": {
+      const source = controlledSource(state);
+      return { kind: "compiled", source, result: await api.validateProtocol(source) };
+    }
+    case "recheck": {
+      const source = controlledSource(state);
+      return { kind: "rechecked", text: state.working, report: await api.preflight(source) };
+    }
     case "start":
       return { kind: "started", runId: (await api.startRun(controlledSource(state))).id };
     default: {
@@ -86,6 +106,10 @@ export function editorResultAction(
       return { type: "saved", saved: result.saved };
     case "validated":
       return { type: "validated", text: result.text, result: result.result };
+    case "compiled":
+      return { type: "compiled", source: result.source, result: result.result };
+    case "rechecked":
+      return { type: "preflightRechecked", text: result.text, report: result.report };
     case "started":
       return { type: "runStarted", runId: result.runId };
     case "preflight":

@@ -12,6 +12,8 @@ import { EditorFeedback } from "./EditorFeedback";
 import type { SectionId } from "./EditorLayout";
 import styles from "./EditorShell.module.css";
 import { EditorStatusBar } from "./EditorStatusBar";
+import { DraftLibrary } from "./DraftLibrary";
+import { RevisionHistory } from "./RevisionHistory";
 import { useProtocolDocument, type ProtocolEditorProps } from "./useProtocolDocument";
 import { useProtocolTemplates } from "./useProtocolTemplates";
 import { useUnsavedProtocolGuard } from "./useUnsavedProtocolGuard";
@@ -31,6 +33,14 @@ export function ProtocolDraftEditor(props: ProtocolEditorProps = {}) {
         {...{ editor, templates, busy, setDiffOpen, section, setSection }}
       />
       <EditorFeedback state={editor.state} />
+      <DraftLibrary
+        activeDraftId={editor.state.saved?.draft_id ?? null}
+        dirty={editor.dirty}
+        onOpenDraft={(draftId) => {
+          props.onDraftIdChange?.(draftId);
+        }}
+      />
+      <RevisionHistory draftId={editor.state.saved?.draft_id ?? null} />
       <EditorDiff
         open={diffOpen}
         onClose={() => {
@@ -87,18 +97,36 @@ function ProtocolDraftEditorsection({
         section={section}
         setSection={setSection}
       />
-      <EditorStatusBar
-        state={{ ...editor.state, busy }}
-        dirty={editor.dirty}
-        stale={editor.stale}
-        ackWarnings={editor.ackWarnings}
-        onAckWarnings={editor.setAckWarnings}
-        onSave={editor.actions.saveDraft}
-        onDiscard={templates.discard}
-        onStart={editor.actions.startRun}
-        onPreflight={editor.actions.runPreflight}
-      />
+      <EditorActionBar {...{ editor, templates, busy }} />
     </section>
+  );
+}
+
+function EditorActionBar({
+  editor,
+  templates,
+  busy,
+}: {
+  editor: ReturnType<typeof useProtocolDocument>;
+  templates: ReturnType<typeof useProtocolTemplates>;
+  busy: boolean;
+}) {
+  return (
+    <EditorStatusBar
+      state={{ ...editor.state, busy }}
+      dirty={editor.dirty}
+      stale={editor.stale}
+      canCompile={editor.actions.canCompile && !busy}
+      canRecheck={editor.actions.canRecheck && !busy}
+      ackWarnings={editor.ackWarnings}
+      onAckWarnings={editor.setAckWarnings}
+      onSave={editor.actions.saveDraft}
+      onDiscard={templates.discard}
+      onStart={editor.actions.startRun}
+      onPreflight={editor.actions.runPreflight}
+      onCompile={editor.actions.compileCheck}
+      onRecheck={editor.actions.recheckPreflight}
+    />
   );
 }
 

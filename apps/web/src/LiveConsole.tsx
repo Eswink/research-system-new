@@ -22,7 +22,12 @@ export function LiveConsole(props: ConsoleProps) {
   const openSetup = () => {
     navigate({ domain: "library", page: "setup" }, urlContext);
   };
-  const context = createPageContext({ props, endpoints: endpoints.endpoints, openSetup });
+  const context = createPageContext({
+    props,
+    endpoints: endpoints.endpoints,
+    refreshEndpoints: endpoints.refresh,
+    openSetup,
+  });
   if (route.domain === "command-center") {
     return (
       <CommandCenterPage
@@ -53,14 +58,21 @@ export function LiveConsole(props: ConsoleProps) {
 interface PageContextInput {
   props: ConsoleProps;
   endpoints: PageContext["endpoints"];
+  refreshEndpoints: () => void;
   openSetup: () => void;
 }
 
-function createPageContext({ props, endpoints, openSetup }: PageContextInput): PageContext {
+function createPageContext({
+  props,
+  endpoints,
+  refreshEndpoints,
+  openSetup,
+}: PageContextInput): PageContext {
   const { resolved, navigate, preferences, onPreferencesChange } = props;
   const { route, context } = resolved;
   return {
     endpoints,
+    refreshEndpoints,
     preferences,
     onPreferencesChange,
     selectedRunId: context.runId,

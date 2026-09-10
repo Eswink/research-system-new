@@ -9,6 +9,8 @@ export interface ProtocolEditorProps {
   draftId?: string | undefined;
   onDraftSaved?: ((id: string) => void) | undefined;
   onRunStarted?: ((id: string) => void) | undefined;
+  /** 草稿库切换当前草稿（更新 URL context 的 draftId）。 */
+  onDraftIdChange?: ((id: string) => void) | undefined;
 }
 
 /** The editor alone owns working text. URL restoration never reclassifies a draft

@@ -55,12 +55,17 @@ const REAL_PAGES: Readonly<Record<string, PageFactory>> = {
     <ProtocolDraftEditor
       draftId={ctx.selectedDraftId}
       onDraftSaved={ctx.onDraftIdChange}
+      onDraftIdChange={ctx.onDraftIdChange}
       onRunStarted={ctx.onSelectedRunIdChange}
     />
   ),
   "plan/team": () => <TeamPage />,
   "library/endpoints": (_r, ctx) => (
-    <EndpointsHome endpoints={ctx.endpoints} onAddRelay={ctx.onAddRelay} />
+    <EndpointsHome
+      endpoints={ctx.endpoints}
+      onAddRelay={ctx.onAddRelay}
+      onChanged={ctx.refreshEndpoints}
+    />
   ),
   "library/model-registry": () => <ModelsPage />,
   "run/timeline": (_r, ctx) => (

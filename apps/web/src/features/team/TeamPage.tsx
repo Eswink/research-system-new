@@ -14,11 +14,12 @@ import { useCommand } from "../../hooks/useCommand";
 import { useResource, type ResourceState } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import styles from "../shared/LivePage.module.css";
-import { PageHeader } from "../shared/PageHeader";
 import { AgentBindingEditor } from "./AgentBindingEditor";
+import { AgentCreateDialog } from "./AgentCreateDialog";
 import { AgentCards } from "./TeamAgentCards";
 import { RoleDefinitions, TeamTemplates } from "./TeamDefinitions";
 import { TEAM_REFERENCE_PROTOCOL, TeamPreflight } from "./TeamPreflight";
+import { TeamPageHeader } from "./TeamPageHeader";
 
 export function TeamPage() {
   const { language } = useI18n();
@@ -28,6 +29,7 @@ export function TeamPage() {
   const roles = useResource("team-roles", () => api.listRoles());
   const templates = useResource("team-templates", () => api.listTeamTemplates());
   const preflight = useCommand((path: string) => api.compileAndPreflight(path));
+  const [creating, setCreating] = useState(false);
   const checkReference = () => {
     void preflight.run(TEAM_REFERENCE_PROTOCOL);
   };
@@ -43,7 +45,19 @@ export function TeamPage() {
   };
   return (
     <TeamPagesection
-      {...{ zh, refresh, agents, models, afterSave, roles, templates, preflight, checkReference }}
+      {...{
+        zh,
+        refresh,
+        agents,
+        models,
+        afterSave,
+        roles,
+        templates,
+        preflight,
+        checkReference,
+        creating,
+        setCreating,
+      }}
     />
   );
 }
@@ -63,6 +77,8 @@ interface TeamPagesectionProps {
     error: string | null;
   };
   checkReference: () => void;
+  creating: boolean;
+  setCreating: Dispatch<SetStateAction<boolean>>;
 }
 
 function TeamPagesection({
@@ -75,10 +91,12 @@ function TeamPagesection({
   templates,
   preflight,
   checkReference,
+  creating,
+  setCreating,
 }: TeamPagesectionProps) {
   return (
     <section className={styles.page} data-testid="team-page">
-      <TeamPagePageHeader {...{ zh, refresh }} />
+      <TeamPageHeader {...{ zh, refresh, setCreating }} />
       <ResourceBoundary state={agents}>
         {agents.data !== null && (
           <AgentCatalog
@@ -89,14 +107,7 @@ function TeamPagesection({
         )}
       </ResourceBoundary>
       <ResourceBoundary state={models}>{null}</ResourceBoundary>
-      <div className={styles.split}>
-        <ResourceBoundary state={roles}>
-          {roles.data !== null && <RoleDefinitions roles={roles.data} />}
-        </ResourceBoundary>
-        <ResourceBoundary state={templates}>
-          {templates.data !== null && <TeamTemplates templates={templates.data} />}
-        </ResourceBoundary>
-      </div>
+      <DefinitionsSplit roles={roles} templates={templates} />
       <TeamPreflight
         report={preflight.result}
         error={preflight.error}
@@ -104,7 +115,35 @@ function TeamPagesection({
         onCheck={checkReference}
       />
       <TeamWorkflowFooter zh={zh} />
+      <AgentCreateDialog
+        open={creating}
+        onClose={() => {
+          setCreating(false);
+        }}
+        roles={roles.data}
+        models={models.data}
+        onCreated={afterSave}
+      />
     </section>
+  );
+}
+
+function DefinitionsSplit({
+  roles,
+  templates,
+}: {
+  roles: ResourceState<RoleDefinitionDto[]>;
+  templates: ResourceState<TeamTemplateDto[]>;
+}) {
+  return (
+    <div className={styles.split}>
+      <ResourceBoundary state={roles}>
+        {roles.data !== null && <RoleDefinitions roles={roles.data} />}
+      </ResourceBoundary>
+      <ResourceBoundary state={templates}>
+        {templates.data !== null && <TeamTemplates templates={templates.data} />}
+      </ResourceBoundary>
+    </div>
   );
 }
 
@@ -123,33 +162,6 @@ function TeamWorkflowFooter({ zh }: { zh: boolean }) {
         {zh ? "进入协议与预检" : "Open protocol and preflight"} →
       </a>
     </>
-  );
-}
-
-interface TeamPagePageHeaderProps {
-  zh: boolean;
-  refresh: () => void;
-}
-
-function TeamPagePageHeader({ zh, refresh }: TeamPagePageHeaderProps) {
-  return (
-    <PageHeader
-      title={zh ? "研究团队与 Agent" : "Research team and agents"}
-      kicker="PLAN / TEAM"
-      description={
-        zh
-          ? "职责、配置实例与模型绑定分开管理；所有状态来自实际项目接口。"
-          : [
-              "Responsibilities, agent instances and model bindings remain distinct, ",
-              "using actual project APIs.",
-            ].join("")
-      }
-      actions={
-        <button type="button" className="btn" onClick={refresh}>
-          {zh ? "刷新配置" : "Refresh configuration"}
-        </button>
-      }
-    />
   );
 }
 

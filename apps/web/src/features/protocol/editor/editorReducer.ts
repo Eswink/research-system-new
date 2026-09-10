@@ -1,7 +1,9 @@
+import type { PreflightReportDto } from "../../../api/types";
 import {
   initialEditorState,
   preflightIsStale,
   type EditorAction,
+  type EditorOperation,
   type EditorState,
 } from "./editorState";
 
@@ -25,15 +27,18 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case "operationFinished":
       return { ...state, busy: false };
     case "validated":
-      return { ...state, validation: { text: action.text, result: action.result } };
+    case "compiled":
+      return applyServerCheck(state, action);
     case "runStarted":
       return { ...state, startedRunId: action.runId, error: null };
     case "saveFailed":
       return applySaveFailure(state, action);
     case "preflight":
       return applyPreflight(state, action);
-    case "preflightFailed":
-      return { ...state, error: action.error, preflightStale: true };
+    case "preflightRechecked":
+      return applyPreflightRecheck(state, action.text, action.report);
+    case "analysisFailed":
+      return applyAnalysisFailure(state, action);
     case "reset":
       return { ...initialEditorState(action.working), saved: action.saved };
     default: {
@@ -43,6 +48,28 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return state;
     }
   }
+}
+
+/** 服务端 schema/编译反馈：两个动作仅字段名不同，共享分支。 */
+function applyServerCheck(
+  state: EditorState,
+  action: Extract<EditorAction, { type: "validated" } | { type: "compiled" }>,
+): EditorState {
+  if (action.type === "validated") {
+    return { ...state, validation: { text: action.text, result: action.result } };
+  }
+  return { ...state, compiled: { source: action.source, result: action.result } };
+}
+
+/** 分析类失败：compile 失败不标记预检过期；preflight 失败标记 stale。 */
+function applyAnalysisFailure(
+  state: EditorState,
+  action: Extract<EditorAction, { type: "analysisFailed" }>,
+): EditorState {
+  if (action.target === "compile") {
+    return { ...state, error: action.error, compiled: null };
+  }
+  return { ...state, error: action.error, preflightStale: true };
 }
 
 function applySaved(state: EditorState, action: Extract<EditorAction, { type: "saved" }>) {
@@ -73,10 +100,18 @@ function applyPreflight(state: EditorState, action: Extract<EditorAction, { type
   return { ...next, preflightStale: preflightIsStale(next) };
 }
 
-function beginOperation(
-  state: EditorState,
-  operation: "save" | "validate" | "preflight" | "start",
-) {
+/** 复检查预检：只刷新报告，保留原 dry-run 投影；无既有上下文时以空投影建档。 */
+function applyPreflightRecheck(state: EditorState, text: string, report: PreflightReportDto) {
+  const context = {
+    revision: state.preflight?.revision ?? 0,
+    digest: text,
+    report,
+    projection: state.preflight?.projection ?? null,
+  };
+  return { ...state, preflight: context, preflightStale: false };
+}
+
+function beginOperation(state: EditorState, operation: EditorOperation) {
   return {
     ...state,
     busy: true,
@@ -84,6 +119,7 @@ function beginOperation(
     saveStatus: operation === "save" ? ("saving" as const) : state.saveStatus,
     preflight: operation === "preflight" ? null : state.preflight,
     validation: operation === "validate" ? null : state.validation,
+    compiled: operation === "compile" ? null : state.compiled,
   };
 }
 

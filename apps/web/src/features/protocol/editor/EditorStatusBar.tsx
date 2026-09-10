@@ -7,12 +7,16 @@ export function EditorStatusBar(props: {
   state: EditorState;
   dirty: boolean;
   stale: boolean;
+  canCompile: boolean;
+  canRecheck: boolean;
   ackWarnings: boolean;
   onAckWarnings: (next: boolean) => void;
   onSave: () => void;
   onDiscard: () => void;
   onStart: () => void;
   onPreflight: () => void;
+  onCompile: () => void;
+  onRecheck: () => void;
 }): React.JSX.Element {
   const report = props.state.preflight?.report ?? null;
   const warnCount = countWarnings(report?.findings);
@@ -30,15 +34,7 @@ export function EditorStatusBar(props: {
         />
       )}
       <span className={styles.statusSpacer} />
-      <ActionBarButtons
-        state={props.state}
-        dirty={props.dirty}
-        startable={startable}
-        onDiscard={props.onDiscard}
-        onSave={props.onSave}
-        onPreflight={props.onPreflight}
-        onStart={props.onStart}
-      />
+      <ActionBarButtons {...{ ...props, startable }} />
     </div>
   );
 }
@@ -86,11 +82,29 @@ function AckLabel(props: {
 function ActionBarButtons(props: {
   state: EditorState;
   dirty: boolean;
+  canCompile: boolean;
+  canRecheck: boolean;
   startable: boolean;
   onDiscard: () => void;
   onSave: () => void;
   onPreflight: () => void;
+  onCompile: () => void;
+  onRecheck: () => void;
   onStart: () => void;
+}): React.JSX.Element {
+  return (
+    <>
+      <DraftSaveButtons {...props} />
+      <VerificationButtons {...props} />
+    </>
+  );
+}
+
+function DraftSaveButtons(props: {
+  state: EditorState;
+  dirty: boolean;
+  onDiscard: () => void;
+  onSave: () => void;
 }): React.JSX.Element {
   return (
     <>
@@ -110,6 +124,32 @@ function ActionBarButtons(props: {
       >
         Save
       </button>
+    </>
+  );
+}
+
+function VerificationButtons(props: {
+  state: EditorState;
+  dirty: boolean;
+  canRecheck: boolean;
+  startable: boolean;
+  onPreflight: () => void;
+  onCompile: () => void;
+  onRecheck: () => void;
+  onStart: () => void;
+}): React.JSX.Element {
+  const controlled = props.state.sourcePath !== null && !props.dirty;
+  return (
+    <>
+      <button
+        type="button"
+        className="btn sm"
+        disabled={props.state.busy || !controlled}
+        onClick={props.onCompile}
+        data-testid="editor-compile"
+      >
+        Compile
+      </button>
       <button
         type="button"
         className="btn sm"
@@ -120,14 +160,29 @@ function ActionBarButtons(props: {
       </button>
       <button
         type="button"
-        className="btn sm primary"
-        disabled={!props.startable}
-        data-testid="editor-start"
-        onClick={props.onStart}
+        className="btn sm"
+        disabled={!props.canRecheck}
+        onClick={props.onRecheck}
+        data-testid="editor-recheck"
       >
-        Start
+        Recheck
       </button>
+      <StartRunButton startable={props.startable} onStart={props.onStart} />
     </>
+  );
+}
+
+function StartRunButton({ startable, onStart }: { startable: boolean; onStart: () => void }) {
+  return (
+    <button
+      type="button"
+      className="btn sm primary"
+      disabled={!startable}
+      data-testid="editor-start"
+      onClick={onStart}
+    >
+      Start
+    </button>
   );
 }
 

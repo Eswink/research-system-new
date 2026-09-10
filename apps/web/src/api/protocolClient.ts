@@ -1,33 +1,40 @@
-/** 协议编译/预检/试运行客户端（受控模板路径）。 */
+/** 协议编译/预检/试运行客户端（受控模板路径或草稿修订引用）。 */
 
 import { request } from "./http";
 import type { CompileResultDto, DryRunProjectionDto, PreflightReportDto } from "./types";
 
 const PROJECT = "example-project";
 
+/** 编译/预检来源：受控模板路径（旧协议）或已保存草稿的不可变修订（WP-B）。 */
+export type ProtocolSource = string | { draft_id: string; draft_revision: number };
+
+export function protocolSourceBody(source: ProtocolSource): Record<string, unknown> {
+  return typeof source === "string" ? { path: source } : { ...source };
+}
+
 export const protocolClient = {
-  validate(path: string): Promise<CompileResultDto> {
+  validate(source: ProtocolSource): Promise<CompileResultDto> {
     return request("/protocols/validate", {
       method: "POST",
-      body: JSON.stringify({ path }),
+      body: JSON.stringify(protocolSourceBody(source)),
     });
   },
-  compileAndPreflight(path: string): Promise<PreflightReportDto> {
+  compileAndPreflight(source: ProtocolSource): Promise<PreflightReportDto> {
     return request(`/projects/${PROJECT}/compile`, {
       method: "POST",
-      body: JSON.stringify({ path }),
+      body: JSON.stringify(protocolSourceBody(source)),
     });
   },
-  preflight(path: string): Promise<PreflightReportDto> {
+  preflight(source: ProtocolSource): Promise<PreflightReportDto> {
     return request(`/projects/${PROJECT}/preflight`, {
       method: "POST",
-      body: JSON.stringify({ path }),
+      body: JSON.stringify(protocolSourceBody(source)),
     });
   },
-  dryRun(path: string): Promise<DryRunProjectionDto> {
+  dryRun(source: ProtocolSource): Promise<DryRunProjectionDto> {
     return request(`/projects/${PROJECT}/dry-run`, {
       method: "POST",
-      body: JSON.stringify({ path }),
+      body: JSON.stringify(protocolSourceBody(source)),
     });
   },
 };

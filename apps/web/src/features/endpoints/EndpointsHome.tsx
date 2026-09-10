@@ -1,20 +1,27 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
+
+import { api } from "../../api/client";
 import type { LlmEndpointReadDto } from "../../api/types";
 import { Chip } from "../../components/Chip";
 import { Drawer } from "../../components/Drawer";
 import { EmptyState } from "../../components/States";
+import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
+import { EndpointEditForm } from "./EndpointEditForm";
+import { ConnectionTest } from "./ConnectionTest";
 import { KeyValueList } from "../shared/KeyValueList";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 
-/** Endpoint configuration is not a health check. Credentials are never returned by this view. */
+/** Endpoint configuration and credential status live here; keys are never returned or echoed. */
 export function EndpointsHome({
   endpoints,
   onAddRelay,
+  onChanged,
 }: {
   endpoints: LlmEndpointReadDto[];
   onAddRelay: () => void;
+  onChanged: () => void;
 }) {
   const { language } = useI18n();
   const zh = language === "zh";
@@ -29,7 +36,17 @@ export function EndpointsHome({
   );
   return (
     <EndpointsHomesection
-      {...{ zh, onAddRelay, query, setQuery, filtered, endpoints, setSelectedId, selected }}
+      {...{
+        zh,
+        onAddRelay,
+        query,
+        setQuery,
+        filtered,
+        endpoints,
+        setSelectedId,
+        selected,
+        onChanged,
+      }}
     />
   );
 }
@@ -43,6 +60,7 @@ interface EndpointsHomesectionProps {
   endpoints: LlmEndpointReadDto[];
   setSelectedId: Dispatch<SetStateAction<string | null>>;
   selected: LlmEndpointReadDto | undefined;
+  onChanged: () => void;
 }
 
 function EndpointsHomesection({
@@ -54,6 +72,7 @@ function EndpointsHomesection({
   endpoints,
   setSelectedId,
   selected,
+  onChanged,
 }: EndpointsHomesectionProps) {
   return (
     <section className={styles.page} data-testid="endpoints-home">
@@ -72,16 +91,37 @@ function EndpointsHomesection({
         <Chip>{`${String(filtered.length)} / ${String(endpoints.length)}`}</Chip>
       </div>
       <EndpointCards endpoints={filtered} onSelect={setSelectedId} />
-      <Drawer
-        open={selected !== undefined}
+      <EndpointDetailDrawer
+        selected={selected}
+        onChanged={onChanged}
+        zh={zh}
         onClose={() => {
           setSelectedId(null);
         }}
-        title={selected?.name ?? (zh ? "端点详情" : "Endpoint details")}
-      >
-        {selected !== undefined && <EndpointDetails endpoint={selected} />}
-      </Drawer>
+      />
     </section>
+  );
+}
+
+function EndpointDetailDrawer({
+  selected,
+  onChanged,
+  zh,
+  onClose,
+}: {
+  selected: LlmEndpointReadDto | undefined;
+  onChanged: () => void;
+  zh: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Drawer open={selected !== undefined} onClose={onClose}
+      title={selected?.name ?? (zh ? "端点详情" : "Endpoint details")}
+    >
+      {selected !== undefined && (
+        <EndpointDetails key={selected.id} endpoint={selected} onChanged={onChanged} />
+      )}
+    </Drawer>
   );
 }
 
@@ -121,12 +161,13 @@ function EndpointCards({
 }) {
   const { language } = useI18n();
   const zh = language === "zh";
-  if (endpoints.length === 0)
+  if (endpoints.length === 0) {
     return (
       <div data-testid="endpoints-empty">
         <EmptyState message={zh ? "没有匹配的已配置端点" : "No matching configured endpoints"} />
       </div>
     );
+  }
   return (
     <div className={styles.cards}>
       {endpoints.map((endpoint) => (
@@ -159,32 +200,108 @@ function EndpointCards({
   );
 }
 
-function EndpointDetails({ endpoint }: { endpoint: LlmEndpointReadDto }) {
+/** 详情抽屉：GET /llm-endpoints/{id} 取最新视图与 ETag；失败回退列表快照。 */
+function EndpointDetails({
+  endpoint,
+  onChanged,
+}: {
+  endpoint: LlmEndpointReadDto;
+  onChanged: () => void;
+}) {
   const { language } = useI18n();
   const zh = language === "zh";
+  const fresh = useResource(`llm-endpoint:${endpoint.id}`, () => api.getEndpoint(endpoint.id));
+  const [editing, setEditing] = useState(false);
+  const view = fresh.data?.dto ?? endpoint;
+  const etag = fresh.data !== null && fresh.data.etag.length > 0 ? fresh.data.etag : view.version;
   return (
     <div className={styles.page}>
-      <KeyValueList
-        fields={[
-          { label: "ID", value: endpoint.id },
-          { label: "Base URL", value: endpoint.base_url },
-          { label: zh ? "协议族" : "Protocol", value: endpoint.protocol },
-          { label: "API", value: endpoint.api_style },
-          { label: zh ? "凭据" : "Credential", value: endpoint.credential },
-          { label: zh ? "超时（秒）" : "Timeout (s)", value: endpoint.request_timeout_seconds },
-          { label: zh ? "重试次数" : "Retries", value: endpoint.max_retries },
-          { label: zh ? "并发上限" : "Concurrency", value: endpoint.concurrency_limit },
-          { label: zh ? "版本" : "Version", value: endpoint.version },
-        ]}
-      />
+      {fresh.error !== null && <FetchFallbackNotice zh={zh} />}
+      {editing ? (
+        <EndpointEditForm
+          endpoint={view}
+          etag={etag}
+          zh={zh}
+          onCancel={() => {
+            setEditing(false);
+          }}
+          onDone={() => {
+            setEditing(false);
+            onChanged();
+            fresh.reload();
+          }}
+        />
+      ) : (
+        <EndpointReadOnly
+          view={view}
+          zh={zh}
+          onEdit={() => {
+            setEditing(true);
+          }}
+        />
+      )}
+      <hr className="hr" />
+      <ConnectionTest endpoint={view} zh={zh} />
+    </div>
+  );
+}
+
+function FetchFallbackNotice({ zh }: { zh: boolean }) {
+  return (
+    <p className={styles.notice}>
+      {zh
+        ? "最新详情获取失败，显示列表快照；保存时以版本冲突检查兜底。"
+        : [
+            "Latest detail fetch failed; showing list snapshot. ",
+            "Version conflicts are caught on save.",
+          ].join("")}
+    </p>
+  );
+}
+
+function EndpointReadOnly({
+  view,
+  zh,
+  onEdit,
+}: {
+  view: LlmEndpointReadDto;
+  zh: boolean;
+  onEdit: () => void;
+}) {
+  return (
+    <>
+      <EndpointReadOnlyFields view={view} zh={zh} />
+      <div className={styles.toolbar}>
+        <button className="btn sm" type="button" onClick={onEdit} data-testid="endpoint-edit">
+          {zh ? "编辑配置" : "Edit configuration"}
+        </button>
+      </div>
       <p className={styles.notice}>
         {zh
-          ? "此处只读，不自动发送模型探测请求。连接测试与模型发现位于接入向导。"
+          ? "编辑仅改变配置，不自动发送模型探测请求；连接测试需显式点击。"
           : [
-              "Read only. No automatic model probe is sent. Connection ",
-              "tests and discovery are in setup.",
+              "Editing changes configuration only; no automatic model probe is sent. ",
+              "Connection tests require an explicit click.",
             ].join("")}
       </p>
-    </div>
+    </>
+  );
+}
+
+function EndpointReadOnlyFields({ view, zh }: { view: LlmEndpointReadDto; zh: boolean }) {
+  return (
+    <KeyValueList
+      fields={[
+        { label: "ID", value: view.id },
+        { label: "Base URL", value: view.base_url },
+        { label: zh ? "协议族" : "Protocol", value: view.protocol },
+        { label: "API", value: view.api_style },
+        { label: zh ? "凭据" : "Credential", value: view.credential },
+        { label: zh ? "超时（秒）" : "Timeout (s)", value: view.request_timeout_seconds },
+        { label: zh ? "重试次数" : "Retries", value: view.max_retries },
+        { label: zh ? "并发上限" : "Concurrency", value: view.concurrency_limit },
+        { label: zh ? "版本" : "Version", value: view.version },
+      ]}
+    />
   );
 }

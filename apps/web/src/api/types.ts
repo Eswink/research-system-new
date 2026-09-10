@@ -162,7 +162,8 @@ export interface ModelCreateDto {
 }
 
 export interface ModelUpdateDto {
-  display_name?: string;
+  /** 后端语义：显式 null 清除显示名（str | None） */
+  display_name?: string | null;
   enabled?: boolean;
   capabilities?: Record<string, CapabilityAssertionDto>;
 }

@@ -58,6 +58,31 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
   },
   {
     method: "GET",
+    pattern: /^\/llm-endpoints\/[^/]+$/,
+    handler: () => ({ status: 200, body: ENDPOINT }),
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/llm-endpoints\/[^/]+$/,
+    handler: () => ({ status: 200, body: ENDPOINT }),
+  },
+  {
+    method: "POST",
+    pattern: /^\/llm-endpoints\/[^/]+\/test$/,
+    handler: () => ({
+      status: 200,
+      body: {
+        ok: false,
+        returned_model_name: null,
+        system_fingerprint: null,
+        error_category: "MODEL_UNAVAILABLE",
+        error_message_redacted: null,
+        probed_at: "2026-09-10T00:00:00Z",
+      },
+    }),
+  },
+  {
+    method: "GET",
     pattern: /^\/protocol-templates$/,
     handler: () => ({
       status: 200,

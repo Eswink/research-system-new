@@ -10,7 +10,8 @@ import { useI18n } from "../../i18n/useI18n";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { ModelCatalogTable } from "./ModelCatalogTable";
-import { ModelDetails, ProbeSummary } from "./ModelDetails";
+import { ProbeSummary } from "./ModelDetails";
+import { ModelInspector } from "./ModelInspector";
 import { useModelProbe } from "./useModelProbe";
 
 export function ModelsPage() {
@@ -74,6 +75,7 @@ function ModelCatalog({ models, onRefresh }: { models: ModelReadDto[]; onRefresh
         setConfirm,
         probe,
         confirm,
+        onRefresh,
       }}
     />
   );
@@ -95,6 +97,7 @@ interface ModelsPagePageProps {
     probe: (modelId: string) => Promise<void>;
   };
   confirm: ModelReadDto | null;
+  onRefresh: () => void;
 }
 
 function ModelsPagePage({
@@ -108,6 +111,7 @@ function ModelsPagePage({
   setConfirm,
   probe,
   confirm,
+  onRefresh,
 }: ModelsPagePageProps) {
   return (
     <div className={styles.page}>
@@ -118,6 +122,7 @@ function ModelsPagePage({
         onSelect={setSelectedId}
         onProbe={setConfirm}
         busy={probe.probingId !== null}
+        onChanged={onRefresh}
       />
       {probe.error !== null && <ErrorState message={probe.error} />}
       {probe.result !== null && <ProbeSummary probe={probe.result} />}
@@ -168,16 +173,18 @@ function ModelCatalogBody({
   onSelect,
   onProbe,
   busy,
+  onChanged,
 }: {
   models: ModelReadDto[];
   selected: ModelReadDto | undefined;
   onSelect: (id: string) => void;
   onProbe: (model: ModelReadDto) => void;
   busy: boolean;
+  onChanged: () => void;
 }) {
   const { language } = useI18n();
   const zh = language === "zh";
-  return <ModelsPageContent {...{ zh, models, selected, onSelect, busy, onProbe }} />;
+  return <ModelsPageContent {...{ zh, models, selected, onSelect, busy, onProbe, onChanged }} />;
 }
 
 interface ModelsPageContentProps {
@@ -187,6 +194,7 @@ interface ModelsPageContentProps {
   onSelect: (id: string) => void;
   busy: boolean;
   onProbe: (model: ModelReadDto) => void;
+  onChanged: () => void;
 }
 
 function ModelsPageContent({
@@ -196,13 +204,14 @@ function ModelsPageContent({
   onSelect,
   busy,
   onProbe,
+  onChanged,
 }: ModelsPageContentProps) {
   return (
     <>
       <ModelCatalogTable {...{ zh, models, selected, onSelect }} />
       {selected !== undefined && (
         <div className={styles.split}>
-          <ModelDetails model={selected} />
+          <ModelInspector key={selected.id} model={selected} onChanged={onChanged} />
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>{zh ? "能力探测" : "Capability probe"}</h2>
             <p>
