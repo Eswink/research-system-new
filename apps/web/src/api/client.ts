@@ -12,6 +12,7 @@
 import { endpointsClient } from "./endpointsClient";
 import { artifactClient } from "./artifactClient";
 import { experimentClient } from "./experimentClient";
+import { memoryClient } from "./memoryClient";
 import { ApiError } from "./http";
 import { inspectionClient } from "./inspectionClient";
 import type { EndpointWithEtag } from "./legacyShapes";
@@ -127,4 +128,16 @@ export const api = {
     task_contract_ref?: string | null;
   }) => experimentClient.createPlan(payload),
   archiveExperimentPlan: (planId: string) => experimentClient.archivePlan(planId),
+
+  // ── memory（WP-F）──
+  projectMemory: () => memoryClient.list(),
+  proposeMemory: (payload: {
+    tier: string;
+    kind: string;
+    content: string;
+    provenance: string;
+    confidence: number;
+    curator_approved: boolean;
+  }) => memoryClient.propose(payload),
+  deleteMemory: (memoryId: string) => memoryClient.remove(memoryId),
 };

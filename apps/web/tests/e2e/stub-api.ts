@@ -168,6 +168,20 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
   },
   {
     method: "GET",
+    pattern: /^\/projects\/example-project\/memory$/,
+    handler: () => ({
+      status: 503,
+      body: {
+        type: "about:blank",
+        title: "Memory Store Unavailable",
+        status: 503,
+        detail: "memory store requires the PostgreSQL control plane",
+        instance: "/memory",
+      },
+    }),
+  },
+  {
+    method: "GET",
     pattern: /^\/runs\/[^/]+\/artifacts$/,
     handler: () => ({
       status: 503,

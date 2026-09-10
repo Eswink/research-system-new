@@ -570,6 +570,42 @@ export interface ExperimentPlanDto {
   updated_at: string;
 }
 
+/** WP-F 产品 Memory DTO（committed records；无 pending 状态）。 */
+export interface MemoryRecordDto {
+  id: string;
+  tier: string;
+  kind: string;
+  content: string;
+  provenance: string;
+  confidence: number;
+  valid_from: string | null;
+  review_after: string | null;
+  expires_at: string | null;
+  supersedes: string[];
+  active: boolean;
+}
+
+export interface MemoryViewDto {
+  records: MemoryRecordDto[];
+  scope_note: string;
+}
+
+export interface MemoryProposalCreateDto {
+  tier: string;
+  kind: string;
+  content: string;
+  provenance: string;
+  confidence: number;
+  supersedes?: string[];
+  proposed_by?: string | null;
+  curator_approved: boolean;
+}
+
+export interface MemoryCommittedDto {
+  record: MemoryRecordDto;
+  decision: string;
+}
+
 export interface TrendPointDto {
   report_digest: string;
   recorded_at: string | null;

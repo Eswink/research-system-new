@@ -74,3 +74,7 @@ def test_openapi_contains_control_plane_paths() -> None:
     # 实验项目视图与计划（PLAN-20260910-037 WP-E）
     assert "/projects/{project_id}/experiments" in paths
     assert "/experiments/{plan_id}/archive" in paths
+    # 产品 Memory 门链（PLAN-20260910-037 WP-F；无两阶段 decide，见 CONTROL_PLANE_API.md 注记）
+    assert "/projects/{project_id}/memory" in paths
+    assert "/memory/proposals" in paths
+    assert "/memory/{memory_id}" in paths

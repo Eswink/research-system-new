@@ -17,6 +17,7 @@ from services.api.routers import (
     experiments,
     inspection,
     llm_endpoints,
+    memory,
     models,
     operations,
     protocol_drafts,
@@ -168,4 +169,5 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(experiments.router)
     app.include_router(protocol_drafts.router)
     app.include_router(artifacts.router)
+    app.include_router(memory.router)
     return app

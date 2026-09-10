@@ -1924,6 +1924,197 @@
         "title": "LlmEndpointUpdateDto",
         "type": "object"
       },
+      "MemoryCommittedDto": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "title": "Decision",
+            "type": "string"
+          },
+          "record": {
+            "$ref": "#/components/schemas/MemoryRecordDto"
+          }
+        },
+        "required": [
+          "record",
+          "decision"
+        ],
+        "title": "MemoryCommittedDto",
+        "type": "object"
+      },
+      "MemoryListViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryRecordDto"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "scope_note": {
+            "title": "Scope Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope_note"
+        ],
+        "title": "MemoryListViewDto",
+        "type": "object"
+      },
+      "MemoryProposalDto": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "content": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "curator_approved": {
+            "default": false,
+            "title": "Curator Approved",
+            "type": "boolean"
+          },
+          "kind": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Kind",
+            "type": "string"
+          },
+          "proposed_by": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed By"
+          },
+          "provenance": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Provenance",
+            "type": "string"
+          },
+          "supersedes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supersedes",
+            "type": "array"
+          },
+          "tier": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tier",
+          "kind",
+          "content",
+          "provenance",
+          "confidence"
+        ],
+        "title": "MemoryProposalDto",
+        "type": "object"
+      },
+      "MemoryRecordDto": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "review_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review After"
+          },
+          "supersedes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supersedes",
+            "type": "array"
+          },
+          "tier": {
+            "title": "Tier",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          }
+        },
+        "required": [
+          "id",
+          "tier",
+          "kind",
+          "content",
+          "provenance",
+          "confidence",
+          "active"
+        ],
+        "title": "MemoryRecordDto",
+        "type": "object"
+      },
       "ModelCreateDto": {
         "additionalProperties": false,
         "properties": {
@@ -4530,6 +4721,84 @@
         ]
       }
     },
+    "/memory/proposals": {
+      "post": {
+        "description": "提案即走完整 §8 门链提交；拒绝以 stage+reasons 分类为 422。",
+        "operationId": "propose_memory_memory_proposals_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemoryProposalDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryCommittedDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Propose Memory",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/memory/{memory_id}": {
+      "delete": {
+        "description": "物理删除 canonical 记录（lifecycle 用例：索引同步 + MEMORY_DELETED 事件）。",
+        "operationId": "remove_memory_memory__memory_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "memory_id",
+            "required": true,
+            "schema": {
+              "title": "Memory Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Memory",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
     "/models": {
       "get": {
         "operationId": "list_models_models_get",
@@ -5095,6 +5364,48 @@
         "summary": "Create Experiment Plan",
         "tags": [
           "inspection"
+        ]
+      }
+    },
+    "/projects/{project_id}/memory": {
+      "get": {
+        "operationId": "list_project_memory_projects__project_id__memory_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryListViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Project Memory",
+        "tags": [
+          "memory"
         ]
       }
     },

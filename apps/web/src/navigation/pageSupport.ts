@@ -31,7 +31,9 @@ export const GAPS = {
   approvalsEmpty: "生产路径审批列表恒空（ApprovalStore 无注册点）",
   costSeries:
     "成本日序列已接入（GET /cost/daily）；预测/前瞻无 API，不绘制",
-  memory: "产品 Memory 管理无 API",
+  memory:
+    "产品 Memory 已接入（PG canonical state；SQLite 开发路径 503）；" +
+    "无持久化 pending 提案，门链直提交；capability policy 面扩展为 follow-up",
   experimentCreate:
     "计划预注册/归档已接入（仅 PG canonical state；SQLite 开发路径 503）；" +
     "域内无队列状态，排队/调度无 API，不伪装",
@@ -92,7 +94,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "ops/compute": { level: "full" },
   "ops/observability": { level: "full" },
   "govern/budget": { level: "partial", reason: GAPS.budgetAdjust, disabledOperations: ["adjust"] },
-  "govern/audit": { level: "partial", reason: GAPS.memory, disabledOperations: ["memory-manage"] },
+  "govern/audit": { level: "partial", reason: GAPS.memory },
   "settings/settings": {
     level: "partial",
     reason: GAPS.account,

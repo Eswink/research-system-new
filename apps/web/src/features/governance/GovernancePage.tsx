@@ -3,17 +3,17 @@ import type { TranslationKey } from "../../i18n/zh";
 import { useState } from "react";
 import { api } from "../../api/client";
 import { ResourceBoundary } from "../../components/ResourceBoundary";
-import { EmptyState, UnavailableState } from "../../components/States";
+import { EmptyState } from "../../components/States";
 import { Tabs } from "../../components/Tabs";
 import { useResource, type ResourceState } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import type { PageContext } from "../../navigation/pageContext";
-import { GAPS } from "../../navigation/pageSupport";
 import { TimelineView } from "../runs/TimelineView";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
 import { ExportView } from "./ExportView";
+import { MemoryPanel } from "./MemoryPanel";
 
 type TabId = "audit" | "export" | "memory";
 
@@ -51,7 +51,7 @@ export function GovernancePage({ ctx }: { ctx: PageContext }) {
           {bundle.data !== null && <ExportView bundle={bundle.data} runId={runId} />}
         </ResourceBoundary>
       )}
-      {tab === "memory" && <UnavailableState title="Memory" reason={GAPS.memory} />}
+      {tab === "memory" && <MemoryPanel />}
     </section>
   );
 }
