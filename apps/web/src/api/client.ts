@@ -10,6 +10,7 @@
  */
 
 import { endpointsClient } from "./endpointsClient";
+import { artifactClient } from "./artifactClient";
 import { ApiError } from "./http";
 import { inspectionClient } from "./inspectionClient";
 import type { EndpointWithEtag } from "./legacyShapes";
@@ -108,4 +109,10 @@ export const api = {
     operationsClient.trend(datasetId, expectedDigests, limit),
   clusterWorkers: () => operationsClient.clusterWorkers(),
   runPlacement: (runId: string) => operationsClient.placement(runId),
+
+  // ── artifacts（WP-C 只读）──
+  listRunArtifacts: (runId: string) => artifactClient.listForRun(runId),
+  getArtifact: (artifactId: string) => artifactClient.get(artifactId),
+  artifactContentUrl: (artifactId: string) => artifactClient.contentUrl(artifactId),
+  artifactPreviewText: (artifactId: string) => artifactClient.contentText(artifactId),
 };

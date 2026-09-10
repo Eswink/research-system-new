@@ -8,6 +8,7 @@ import { EmptyState, UnavailableState } from "../../components/States";
 import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { ExperimentMetadata } from "../experiments/ExperimentMetadata";
+import { ArtifactBrowser } from "./ArtifactBrowser";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
@@ -50,6 +51,7 @@ export function WorkspaceView(props: RunSelectionProps = {}) {
           <ExperimentsBody key={runId} view={view.data} />
         )}
       </ResourceBoundary>
+      {runId !== "" && <ArtifactBrowser runId={runId} />}
     </section>
   );
 }
@@ -76,13 +78,13 @@ function WorkspaceViewPage({ zh, view, selected, setSelectedId }: WorkspaceViewP
       <WorkspaceViewSplit {...{ zh, view, selected, setSelectedId }} />
       <p className={styles.notice}>{view.reproduction_note}</p>
       <UnavailableState
-        title={zh ? "文件预览与 Diff 未接入" : "File preview and diff unavailable"}
+        title={zh ? "文件 Diff 未接入" : "File diff unavailable"}
         reason={
           zh
-            ? "当前接口没有文件内容或下载描述符；下列引用只用于核对持久化制品身份。"
+            ? "产物预览与下载已接入（GET /artifacts/{id}/content）；两个版本间的 Diff 尚无后端接口。"
             : [
-                "The current API provides no file contents or download descriptors. ",
-                "References identify persisted artifacts only.",
+                "Artifact preview and download are wired (GET /artifacts/{id}/content); ",
+                "cross-version diff has no backend endpoint yet.",
               ].join("")
         }
       />

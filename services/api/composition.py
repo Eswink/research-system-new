@@ -156,6 +156,7 @@ class _SqliteStoreParts:
     pricing: Any
     pricing_store: SqlitePricingSnapshotStore
     orchestration: RunOrchestrationService
+    artifacts: Any
 
 
 def _sqlite_store_parts(
@@ -172,11 +173,14 @@ def _sqlite_store_parts(
     budget = SqliteBudgetLedger(connection=connection)
     pricing = _load_pricing()
     pricing_store = SqlitePricingSnapshotStore(connection=connection)
+    # 单一 FakeArtifactStore 实例共享给 orchestration 与控制面读取端点
+    # （WP-C：两个独立实例会让 run 产出的 artifact 对读取端永远为空）。
+    artifacts = FakeArtifactStore()
     orchestration = RunOrchestrationService(
         OrchestrationDependencies(
             runtime=FakeAgentRuntime(structured_output=demo_session_output()),
             workflow=workflow,
-            artifacts=FakeArtifactStore(),
+            artifacts=artifacts,
             events=events,
             budget=budget,
             ledger=ledger,
@@ -194,6 +198,7 @@ def _sqlite_store_parts(
         pricing=pricing,
         pricing_store=pricing_store,
         orchestration=orchestration,
+        artifacts=artifacts,
     )
 
 
@@ -232,7 +237,7 @@ def _assemble_sqlite(
         runs=orchestration_sqlite,
         workflow=workflow_sqlite,
         runs_store=SqliteRunStore(connection=connection),
-        artifacts=FakeArtifactStore(),
+        artifacts=parts.artifacts,
         ledger=ledger_sqlite,
         budget=budget_sqlite,
         agent_store=SqliteAgentStore(connection=connection),

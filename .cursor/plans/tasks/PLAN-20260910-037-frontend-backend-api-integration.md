@@ -47,9 +47,14 @@ memory_entries: []
   前端 protocolSourceOf 门禁 + canStart 新语义用例 + T14 baseline 更新；
   tsc/eslint/unit 70/70；tests/api 全量 192 passed + 3 个 @pytest.mark.postgres
   失败确认为测试 PG 未运行（启动 compose-postgres 后 6/6 passed，与本改动无关）。
-- [ ] AC-03（WP-C）：`GET /runs/{id}/artifacts`、`GET /artifacts/{id}`、
+- [x] AC-03（WP-C）：`GET /runs/{id}/artifacts`、`GET /artifacts/{id}`、
   `GET /artifacts/{id}/content`（digest 校验、类型白名单预览、Content-Disposition）；
   store 未配置 → 503 不伪装；workspace 页预览/下载可用；file-diff 保持禁用。
+  证据：tests/api/test_artifacts_api.py 7 passed（503/404/410 tombstone/413/
+  inline+attachment/nosniff/ETag/列表不伪装 verified）；composition SQLite 路径
+  双 FakeArtifactStore 实例修复（run 产物对读取端可见的根因）；
+  前端 artifactClient + ArtifactBrowser（下载 + 白名单预览 + 元数据 verified）；
+  openapi 快照再生 contract 2 passed；tsc/eslint/unit 70/70。
 - [ ] AC-04（WP-D）：preflight provider health 经 ToolProvider port 真实探测，
   探测不可达 = UNKNOWN 第三态（不得伪装 True/False），超时预算 ≤2s/provider 并行；
   `GET /cost/daily` 五状态语义按日聚合、定价版本盖章；不做预测。

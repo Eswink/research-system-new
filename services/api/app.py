@@ -13,6 +13,7 @@ from services.api.errors import register_error_handlers
 from services.api.middleware import IdempotencyMiddleware
 from services.api.routers import (
     approvals,
+    artifacts,
     experiments,
     inspection,
     llm_endpoints,
@@ -166,4 +167,5 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(operations.router)
     app.include_router(experiments.router)
     app.include_router(protocol_drafts.router)
+    app.include_router(artifacts.router)
     return app

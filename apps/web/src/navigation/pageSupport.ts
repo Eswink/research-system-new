@@ -25,7 +25,7 @@ export const GAPS = {
   account: "无账户/身份/Billing/平台 API Keys API",
   budgetAdjust: "预算调整无契约（interventions budget_adjust 恒 501）",
   pauseResume: "pause/resume 仅状态迁移，不证明实际暂停/恢复执行",
-  fileBrowse: "文件浏览/预览/Diff 无接口；Artifact ID 不是下载地址",
+  fileBrowse: "文件 Diff 无接口；预览与下载已接入（GET /artifacts/{id}/content）",
   globalLineage: "全局数据集/提示词血缘无 API：仅 Run 级引用",
   delete: "控制面无 DELETE 端点：不提供删除操作",
   approvalsEmpty: "生产路径审批列表恒空（ApprovalStore 无注册点）",

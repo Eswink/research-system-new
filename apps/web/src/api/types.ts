@@ -62,6 +62,21 @@ export interface ProblemDto {
   instance: string;
 }
 
+/** Artifact 只读视图（WP-C；内容级 verified 仅单资源查询返回）。 */
+export interface ArtifactDto {
+  id: string;
+  digest: string;
+  size_bytes: number;
+  media_type: string;
+  state: string;
+  created_by: string | null;
+  source_refs: string[];
+  classification: string | null;
+  retention_policy: string | null;
+  created_at: string | null;
+  verified: boolean | null;
+}
+
 export type CredentialState = "configured" | "missing";
 
 export interface DiscoveryConfigDto {

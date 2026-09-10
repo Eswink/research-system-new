@@ -276,6 +276,103 @@
         "title": "ApprovalDto",
         "type": "object"
       },
+      "ArtifactDto": {
+        "additionalProperties": false,
+        "properties": {
+          "classification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "retention_policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Policy"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "source_refs": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified"
+          }
+        },
+        "required": [
+          "id",
+          "digest",
+          "size_bytes",
+          "media_type",
+          "state"
+        ],
+        "title": "ArtifactDto",
+        "type": "object"
+      },
       "BudgetViewDto": {
         "additionalProperties": false,
         "properties": {
@@ -2389,18 +2486,47 @@
       },
       "ProtocolSourceDto": {
         "additionalProperties": false,
-        "description": "协议文件路径（examples/protocols/ 内，wizard 选择）。",
+        "description": "协议来源（WP-B）：受控模板路径（examples/protocols/ 内，wizard 选择）\n或已保存草稿的不可变修订引用；二者互斥（loader 统一裁决 422）。",
         "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "draft_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Revision"
+          },
           "path": {
-            "maxLength": 500,
-            "minLength": 1,
-            "title": "Path",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
           }
         },
-        "required": [
-          "path"
-        ],
         "title": "ProtocolSourceDto",
         "type": "object"
       },
@@ -3528,6 +3654,90 @@
         "summary": "Decide",
         "tags": [
           "approvals"
+        ]
+      }
+    },
+    "/artifacts/{artifact_id}": {
+      "get": {
+        "description": "单 artifact 元数据（含内容级 digest 校验结果）。",
+        "operationId": "get_artifact_artifacts__artifact_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "title": "Artifact Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Artifact",
+        "tags": [
+          "artifacts"
+        ]
+      }
+    },
+    "/artifacts/{artifact_id}/content": {
+      "get": {
+        "description": "内容下载/白名单内联预览（tombstone/缺 blob → 410；超限 → 413）。",
+        "operationId": "get_artifact_content_artifacts__artifact_id__content_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "title": "Artifact Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Artifact Content",
+        "tags": [
+          "artifacts"
         ]
       }
     },
@@ -5047,7 +5257,7 @@
     },
     "/protocols/validate": {
       "post": {
-        "description": "协议校验：编译（不做任何副作用；合并目录视图）。",
+        "description": "协议校验：编译（不做任何副作用；合并目录视图；path 或草稿修订同源）。",
         "operationId": "validate_protocol_protocols_validate_post",
         "requestBody": {
           "content": {
@@ -5153,6 +5363,53 @@
         "summary": "Get Run",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/artifacts": {
+      "get": {
+        "description": "Run 产物列表（存在 run 才查询；store 缺失 503）。",
+        "operationId": "list_run_artifacts_runs__run_id__artifacts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ArtifactDto"
+                  },
+                  "title": "Response List Run Artifacts Runs  Run Id  Artifacts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Run Artifacts",
+        "tags": [
+          "artifacts"
         ]
       }
     },
