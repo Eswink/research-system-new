@@ -69,7 +69,7 @@ test("canSave: dirty 且无 error issues 才可保存；保存中禁用", () => 
   assert.equal(canSave(invalid), false);
 });
 
-test("canStart: 模板同源 + 报告匹配才可启动；dirty/FAIL/自定义草稿阻断（P1/T14）", () => {
+test("canStart: 模板或已保存修订同源 + 报告匹配才可启动；dirty/FAIL/未保存阻断（P1/WP-B）", () => {
   const base = editorReducer(initialEditorState(YAML_V1), {
     type: "loadTemplate",
     text: YAML_V1,
@@ -87,12 +87,20 @@ test("canStart: 模板同源 + 报告匹配才可启动；dirty/FAIL/自定义�
 
   assert.equal(canStart(base), false); // 无预检报告
 
-  // 自定义草稿（无受控模板来源）：即使有报告也不得启动（G1）
+  // 未保存自定义草稿（无受控来源也无已保存修订）：即使有报告也不得启动（WP-B）。
   const custom = withPreflight(
     editorReducer(initialEditorState(YAML_V1), { type: "edit", text: YAML_V1 }),
     YAML_V1,
   );
   assert.equal(canStart(custom), false);
+
+  // WP-B：已保存草稿修订同源 + 报告匹配 → 可启动（以 {draft_id, revision} 引用）。
+  const savedBase = editorReducer(initialEditorState(YAML_V1), {
+    type: "reset",
+    working: SAVED.yaml_text,
+    saved: SAVED,
+  });
+  assert.equal(canStart(withPreflight(savedBase, SAVED.yaml_text)), true);
 });
 
 test("preflightIsStale: working 变化后报告过期", () => {

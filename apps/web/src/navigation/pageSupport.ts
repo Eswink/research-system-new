@@ -20,7 +20,6 @@ export interface PageSupport {
 
 /** 后端能力缺口登记（cursor plan §3 / CONSOLE_PAGE_MAP.md）。 */
 export const GAPS = {
-  draftPreflight: "草稿修订预检无接口：自定义草稿的预检与启动禁用",
   multiProject: "无多项目管理 API：仅当前单项目上下文",
   notifications: "无通知持久化 API：不显示虚构通知/未读数",
   account: "无账户/身份/Billing/平台 API Keys API",
@@ -50,11 +49,7 @@ function routeKey(route: Route): string {
 
 const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "plan/overview": { level: "partial", reason: "聚合已加载数据；无独立 overview API" },
-  "plan/protocol": {
-    level: "partial",
-    reason: GAPS.draftPreflight,
-    disabledOperations: ["draft-preflight", "draft-start"],
-  },
+  "plan/protocol": { level: "full" },
   "plan/team": { level: "full" },
   "portfolio/projects": {
     level: "partial",

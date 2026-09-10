@@ -22,7 +22,7 @@ from packages.application.preflight.preflight import (
 )
 from packages.application.protocol_compile.compiler import compile_protocol
 from packages.domain.core import ID
-from services.api.catalog import load_protocol_definition
+from packages.domain.protocols import ProtocolDefinition
 from services.api.catalog_merge import merged_project_settings
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps, require_if_match
@@ -48,12 +48,13 @@ from services.api.mappers.team_protocol import (
     role_dto,
     template_dto,
 )
+from services.api.protocol_source import draft_ref_of, load_protocol_for_source
 from services.api.team_support import (
     AgentDraft,
     agent_from_dto,
     binding_from_dto,
     build_preflight_context,
-    compile_plan_or_error,
+    compile_plan_for_protocol,
     merged_context,
     require_agent_store,
     validate_model_reference,
@@ -223,11 +224,11 @@ async def update_agent(
 
 @router.post("/protocols/validate", response_model=CompileResultDto)
 async def validate_protocol(payload: ProtocolSourceDto, request: Request) -> CompileResultDto:
-    """协议校验：编译（不做任何副作用；合并目录视图）。"""
+    """协议校验：编译（不做任何副作用；合并目录视图；path 或草稿修订同源）。"""
     deps: ApiDeps = get_deps(request)
     catalog, project = merged_context(deps)
     try:
-        protocol = load_protocol_definition(payload.path)
+        protocol = _protocol_of(deps, payload)
         result = compile_protocol(protocol, catalog, project)
     except ValueError as exc:
         raise ApiError(422, "Protocol Invalid", str(exc)) from exc
@@ -242,6 +243,13 @@ async def validate_protocol(payload: ProtocolSourceDto, request: Request) -> Com
     )
 
 
+def _protocol_of(deps: ApiDeps, payload: ProtocolSourceDto) -> ProtocolDefinition:
+    """DTO → ProtocolDefinition（WP-B：受控 path 或不可变草稿修订引用二选一）。"""
+    return load_protocol_for_source(
+        deps, payload.path, draft_ref_of(payload.draft_id, payload.draft_revision)
+    )
+
+
 @router.post("/projects/{project_id}/compile", response_model=PreflightReportDto)
 async def compile_and_preflight_endpoint(
     project_id: str, payload: ProtocolSourceDto, request: Request
@@ -250,7 +258,7 @@ async def compile_and_preflight_endpoint(
     del project_id
     deps: ApiDeps = get_deps(request)
     catalog, project = merged_context(deps)
-    protocol = load_protocol_definition(payload.path)
+    protocol = _protocol_of(deps, payload)
     _plan, report = compile_and_preflight(
         protocol,
         catalog,
@@ -267,7 +275,7 @@ async def preflight_endpoint(
     """preflight 复检（编译成功后执行；真实 health/policy 接线）。"""
     del project_id
     deps: ApiDeps = get_deps(request)
-    plan = compile_plan_or_error(deps, payload.path)
+    plan = compile_plan_for_protocol(deps, _protocol_of(deps, payload))
     catalog, project = merged_context(deps)
     report = run_preflight(plan, build_preflight_context(deps, catalog, project))
     return preflight_dto(report)
@@ -285,7 +293,7 @@ async def dry_run_endpoint(
     """
     del project_id
     deps: ApiDeps = get_deps(request)
-    plan = compile_plan_or_error(deps, payload.path)
+    plan = compile_plan_for_protocol(deps, _protocol_of(deps, payload))
     catalog, project = merged_context(deps)
     context = build_preflight_context(deps, catalog, project)
     report = run_preflight(plan, context)

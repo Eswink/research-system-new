@@ -39,9 +39,14 @@ memory_entries: []
   证据：tsc 无错；eslint --max-warnings 0 过；unit 70/70；playwright
   console-shell/rebuild-baseline/example-isolation/a11y-viewport 29/29；
   design-fidelity 通过（plan-team 基线因新增“新建 Agent”按钮按批准重录）。
-- [ ] AC-02（WP-B）：`ProtocolSourceDto` 支持 `path | {draft_id, draft_revision}`
+- [x] AC-02（WP-B）：`ProtocolSourceDto` 支持 `path | {draft_id, draft_revision}`
   二选一，compile/preflight/dry-run 三端点加载不可变草稿修订走同一编译链；
   旧 path 请求兼容；draft-preflight/draft-start 禁用解除。
+  证据：tests/api/test_protocol_source_draft.py 6 passed（含修订不可变、422/404 语义）；
+  conftest DraftService 补齐 text_loader（与生产构造对齐，测试装配偏差修复）；
+  前端 protocolSourceOf 门禁 + canStart 新语义用例 + T14 baseline 更新；
+  tsc/eslint/unit 70/70；tests/api 全量 192 passed + 3 个 @pytest.mark.postgres
+  失败确认为测试 PG 未运行（启动 compose-postgres 后 6/6 passed，与本改动无关）。
 - [ ] AC-03（WP-C）：`GET /runs/{id}/artifacts`、`GET /artifacts/{id}`、
   `GET /artifacts/{id}/content`（digest 校验、类型白名单预览、Content-Disposition）；
   store 未配置 → 503 不伪装；workspace 页预览/下载可用；file-diff 保持禁用。

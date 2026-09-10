@@ -6,6 +6,7 @@
  * 不能覆盖新草稿。预检结果校验其修订引用，过期报告标记 stale。
  */
 
+import type { ProtocolSource } from "../../../api/protocolClient";
 import type {
   CompileResultDto,
   DryRunProjectionDto,
@@ -103,11 +104,19 @@ export function canSave(state: EditorState): boolean {
 const FAIL_PARTS = ["FA", "IL"] as const;
 const PREFLIGHT_FAIL = FAIL_PARTS.join("") as PreflightReportDto["status"];
 
-/** 启动门禁：受控模板同源（sourcePath 非空）、无未应用修改、报告匹配（P1）。
- * 自定义草稿（sourcePath=null）启动禁用（G1：草稿修订预检无接口）。 */
+/** 预检/启动的协议来源：受控模板（未改）或已保存草稿的当前修订（未改；WP-B）。 */
+export function protocolSourceOf(state: EditorState): ProtocolSource | null {
+  if (state.sourcePath !== null && state.working === state.sourceText) return state.sourcePath;
+  if (state.saved !== null && state.working === state.saved.yaml_text) {
+    return { draft_id: state.saved.draft_id, draft_revision: state.saved.revision };
+  }
+  return null;
+}
+
+/** 启动门禁：协议来源同源（受控模板或已保存修订）、无未应用修改、报告匹配（P1）。 */
 export function canStart(state: EditorState): boolean {
   if (state.busy || state.startedRunId !== null) return false;
-  if (state.sourcePath === null) {
+  if (protocolSourceOf(state) === null) {
     return false;
   }
   if (state.preflight === null || state.preflightStale) {

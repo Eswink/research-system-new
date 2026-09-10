@@ -86,9 +86,12 @@ class ProjectSettingsDto(BaseModel):
 
 
 class ProtocolSourceDto(BaseModel):
-    """协议文件路径（examples/protocols/ 内，wizard 选择）。"""
+    """协议来源（WP-B）：受控模板路径（examples/protocols/ 内，wizard 选择）
+    或已保存草稿的不可变修订引用；二者互斥（loader 统一裁决 422）。"""
 
-    path: str = Field(min_length=1, max_length=500)
+    path: str | None = Field(default=None, min_length=1, max_length=500)
+    draft_id: str | None = Field(default=None, min_length=1, max_length=120)
+    draft_revision: int | None = Field(default=None, ge=1)
 
 
 class CompileResultDto(BaseModel):

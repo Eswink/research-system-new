@@ -91,7 +91,9 @@ test("baseline: preflight hook has no fixed example source (T14)", () => {
   );
   assert.doesNotMatch(source, /PREFLIGHT_SOURCE\s*=\s*["']m12_reference_research_v1/);
   assert.doesNotMatch(source, /m12_reference_research_v1\.yaml/);
-  assert.match(source, /controlledSource\(state\)/);
+  // WP-B：来源门 protocolSourceOf → 未保存草稿一律阻断（无固定示例代检）。
+  assert.match(source, /protocolSourceOrThrow\(state\)/);
+  assert.doesNotMatch(source, /controlledSource/);
 });
 
 // ── T18：SSE 必须消费具名事件帧 ───────────────────────────────────────────

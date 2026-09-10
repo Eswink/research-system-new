@@ -17,9 +17,8 @@ from packages.application.ports import (
 )
 from packages.application.protocol_compile.compiler import compile_protocol
 from packages.domain.enums import BackendKind, ModelBindingMode, WorkspacePolicy
-from packages.domain.protocols import CompiledRunPlan
+from packages.domain.protocols import CompiledRunPlan, ProtocolDefinition
 from packages.domain.roles import AgentBinding, AgentContextConfig, AgentSpec
-from services.api.catalog import load_protocol_definition
 from services.api.catalog_merge import merged_catalog_snapshot, merged_project_settings
 from services.api.composition import ApiDeps
 from services.api.errors import ApiError
@@ -44,11 +43,10 @@ def build_preflight_context(
     )
 
 
-def compile_plan_or_error(deps: ApiDeps, path: str) -> CompiledRunPlan:
-    """编译协议；失败时收敛为 422（合并目录视图）。"""
+def compile_plan_for_protocol(deps: ApiDeps, protocol: ProtocolDefinition) -> CompiledRunPlan:
+    """编译已加载的 ProtocolDefinition（path 或草稿修订同源；WP-B）。"""
     catalog = merged_catalog_snapshot(deps)
     project = merged_project_settings(deps)
-    protocol = load_protocol_definition(path)
     result = compile_protocol(protocol, catalog, project)
     if result.plan is None:
         raise ApiError(

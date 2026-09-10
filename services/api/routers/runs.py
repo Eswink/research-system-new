@@ -16,13 +16,13 @@ from packages.domain.core import ID, Digest
 from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
 from packages.domain.state_base import InvalidTransitionError
-from services.api.catalog import load_protocol_definition
 from services.api.catalog_merge import merged_catalog_snapshot, merged_project_settings
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.runs import RunDetailDto, RunStartDto, TaskDto
 from services.api.errors import ApiError
 from services.api.preflight_support import build_endpoint_health, build_policy_evaluator
+from services.api.protocol_source import draft_ref_of, load_protocol_for_source
 from services.api.routers.run_events import events_of
 from services.api.run_access import get_run_or_error, save_run
 
@@ -164,29 +164,8 @@ def _load_protocol_for_run(
     protocol_path: str | None,
     draft_ref: "tuple[str, int] | None",
 ) -> ProtocolDefinition:
-    """协议解析：草稿修订引用优先；二者互斥；缺一报 422。"""
-    if draft_ref is not None and protocol_path:
-        raise ApiError(422, "Ambiguous Protocol Source", "provide either path or draft revision")
-    if draft_ref is not None:
-        draft_id, revision = draft_ref
-        if deps.protocol_draft_service is None:
-            raise ApiError(
-                503, "Draft Service Unavailable", "protocol draft service not configured"
-            )
-        revision_view = deps.protocol_draft_service.get_revision(draft_id, revision)
-        if revision_view is None:
-            raise ApiError(404, "Draft Revision Not Found", f"{draft_id}@{revision}")
-        text = revision_view.yaml_text
-        try:
-            built = deps.protocol_draft_service.load_protocol(text)
-        except ValueError as exc:
-            raise ApiError(422, "Protocol Invalid", str(exc)) from exc
-        protocol: ProtocolDefinition = built
-        return protocol
-    if not protocol_path:
-        raise ApiError(422, "Protocol Source Required", "protocol_path or draft ref required")
-    loaded: ProtocolDefinition = load_protocol_definition(protocol_path)
-    return loaded
+    """协议解析委托 protocol_source 共享实现（path 与草稿修订互斥）。"""
+    return load_protocol_for_source(deps, protocol_path, draft_ref)
 
 
 @projects_router.post("/projects/{project_id}/runs", response_model=RunDetailDto)
@@ -195,13 +174,7 @@ async def start_run(project_id: str, payload: RunStartDto, request: Request) -> 
     del project_id
     deps: ApiDeps = get_deps(request)
     run_id = ID.generate()
-    draft_ref = None
-    if payload.draft_id is not None or payload.draft_revision is not None:
-        if payload.draft_id is None or payload.draft_revision is None:
-            raise ApiError(
-                422, "Incomplete Draft Reference", "draft_id and draft_revision are both required"
-            )
-        draft_ref = (payload.draft_id, payload.draft_revision)
+    draft_ref = draft_ref_of(payload.draft_id, payload.draft_revision)
     inputs = _execution_inputs(deps, payload.protocol_path, run_id, payload.trace_id, draft_ref)
     run = _run_from_execution(deps, run_id, inputs.project.project_id, inputs.protocol.id, inputs)
     save_run(deps, run)

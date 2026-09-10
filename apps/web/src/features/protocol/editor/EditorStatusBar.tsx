@@ -7,6 +7,7 @@ export function EditorStatusBar(props: {
   state: EditorState;
   dirty: boolean;
   stale: boolean;
+  canPreflight: boolean;
   canCompile: boolean;
   canRecheck: boolean;
   ackWarnings: boolean;
@@ -82,6 +83,7 @@ function AckLabel(props: {
 function ActionBarButtons(props: {
   state: EditorState;
   dirty: boolean;
+  canPreflight: boolean;
   canCompile: boolean;
   canRecheck: boolean;
   startable: boolean;
@@ -99,7 +101,6 @@ function ActionBarButtons(props: {
     </>
   );
 }
-
 function DraftSaveButtons(props: {
   state: EditorState;
   dirty: boolean;
@@ -130,21 +131,21 @@ function DraftSaveButtons(props: {
 
 function VerificationButtons(props: {
   state: EditorState;
-  dirty: boolean;
+  canPreflight: boolean;
   canRecheck: boolean;
+  canCompile: boolean;
   startable: boolean;
   onPreflight: () => void;
   onCompile: () => void;
   onRecheck: () => void;
   onStart: () => void;
 }): React.JSX.Element {
-  const controlled = props.state.sourcePath !== null && !props.dirty;
   return (
     <>
       <button
         type="button"
         className="btn sm"
-        disabled={props.state.busy || !controlled}
+        disabled={!props.canCompile}
         onClick={props.onCompile}
         data-testid="editor-compile"
       >
@@ -154,7 +155,8 @@ function VerificationButtons(props: {
         type="button"
         className="btn sm"
         onClick={props.onPreflight}
-        disabled={props.state.busy || props.state.sourcePath === null}
+        disabled={!props.canPreflight}
+        data-testid="editor-preflight"
       >
         Preflight
       </button>

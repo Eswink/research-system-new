@@ -119,12 +119,17 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
 def _make_draft_service(
     connection: sqlite3.Connection,
 ) -> "DraftService":
-    """测试装配的草稿服务（与生产 SQLite 路径同构造）。"""
+    """测试装配的草稿服务（与生产 SQLite 路径同构造，含 text_loader）。"""
+    from adapters.contracts.protocol_text_loader import load_protocol_from_text
     from adapters.sqlite.protocol_draft_store import SqliteProtocolDraftStore
     from packages.application.protocol_authoring.service import DraftService
     from services.api.routers.protocol_drafts import default_templates
 
-    return DraftService(SqliteProtocolDraftStore(connection=connection), default_templates())
+    return DraftService(
+        SqliteProtocolDraftStore(connection=connection),
+        default_templates(),
+        text_loader=load_protocol_from_text,
+    )
 
 
 @pytest.fixture

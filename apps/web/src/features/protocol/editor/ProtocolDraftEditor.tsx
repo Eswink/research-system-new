@@ -116,6 +116,7 @@ function EditorActionBar({
       state={{ ...editor.state, busy }}
       dirty={editor.dirty}
       stale={editor.stale}
+      canPreflight={editor.actions.canPreflight && !busy}
       canCompile={editor.actions.canCompile && !busy}
       canRecheck={editor.actions.canRecheck && !busy}
       ackWarnings={editor.ackWarnings}

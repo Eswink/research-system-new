@@ -94,7 +94,11 @@ function PreflightResult({ state }: { state: EditorState }) {
   if (preflight === null) return null;
   return (
     <PanelSection
-      title={language === "zh" ? "受控模板预检报告" : "Controlled-template preflight report"}
+      title={
+        language === "zh"
+          ? "预检报告（受控模板或已保存修订）"
+          : "Preflight report (controlled template or saved revision)"
+      }
       extra={
         <Chip tone={state.preflightStale ? "warn" : "neutral"}>
           {preflight.report.status}

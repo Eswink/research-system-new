@@ -1,5 +1,6 @@
 import { api } from "../../../api/client";
 import { draftApi } from "../../../api/draftClient";
+import type { ProtocolSource } from "../../../api/protocolClient";
 import type {
   CompileResultDto,
   DryRunProjectionDto,
@@ -7,7 +8,13 @@ import type {
   ProtocolDraftValidateResultDto,
   ProtocolDraftViewDto,
 } from "../../../api/types";
-import { canStart, type EditorAction, type EditorOperation, type EditorState } from "./editorState";
+import {
+  canStart,
+  protocolSourceOf,
+  type EditorAction,
+  type EditorOperation,
+  type EditorState,
+} from "./editorState";
 
 export type { EditorOperation } from "./editorState";
 export type EditorCommandResult =
@@ -26,17 +33,12 @@ export function permitsEditorOperation(
   if (state.busy) return false;
   if (operation === "start")
     return canStart(state) && (state.preflight?.report.status !== "WARN" || ackWarnings);
-  if (operation === "preflight")
-    return state.sourcePath !== null && state.working === state.sourceText;
-  if (operation === "compile")
-    return state.sourcePath !== null && state.working === state.sourceText;
-  if (operation === "recheck")
-    return (
-      state.sourcePath !== null &&
-      state.working === state.sourceText &&
-      state.preflight !== null &&
-      state.preflight.digest === state.working
-    );
+  if (operation === "preflight" || operation === "compile") {
+    return protocolSourceOf(state) !== null;
+  }
+  if (operation === "recheck") {
+    return protocolSourceOf(state) !== null && state.preflight?.digest === state.working;
+  }
   return state.working.trim() !== "";
 }
 
@@ -63,7 +65,7 @@ export async function performEditorOperation(
         result: await draftApi.validateYaml(state.working),
       };
     case "preflight": {
-      const source = controlledSource(state);
+      const source = protocolSourceOrThrow(state);
       const [report, projection] = await Promise.all([
         api.compileAndPreflight(source),
         api.dryRun(source),
@@ -71,15 +73,16 @@ export async function performEditorOperation(
       return { kind: "preflight", text: state.working, report, projection };
     }
     case "compile": {
-      const source = controlledSource(state);
-      return { kind: "compiled", source, result: await api.validateProtocol(source) };
+      const source = protocolSourceOrThrow(state);
+      const result = await api.validateProtocol(source);
+      return { kind: "compiled", source: state.working, result };
     }
     case "recheck": {
-      const source = controlledSource(state);
+      const source = protocolSourceOrThrow(state);
       return { kind: "rechecked", text: state.working, report: await api.preflight(source) };
     }
     case "start":
-      return { kind: "started", runId: (await api.startRun(controlledSource(state))).id };
+      return { kind: "started", runId: (await api.startRun(protocolSourceOrThrow(state))).id };
     default: {
       const exhaustive: never = operation;
       throw new Error(String(exhaustive));
@@ -87,13 +90,13 @@ export async function performEditorOperation(
   }
 }
 
-function controlledSource(state: EditorState): string {
-  if (state.sourcePath === null || state.sourceText !== state.working) {
-    throw new Error(
-      "No draft-revision preflight/start API: an unchanged controlled template is required",
-    );
+/** 预检/启动的协议来源封装（定义在 editorState，共享给 canStart）。 */
+function protocolSourceOrThrow(state: EditorState): ProtocolSource {
+  const source = protocolSourceOf(state);
+  if (source === null) {
+    throw new Error("Unsaved changes: save the draft (or use an unmodified template) first");
   }
-  return state.sourcePath;
+  return source;
 }
 
 export function editorResultAction(

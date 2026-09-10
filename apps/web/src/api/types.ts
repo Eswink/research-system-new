@@ -265,7 +265,10 @@ export interface ProjectSettingsDto {
 }
 
 export interface ProtocolSourceDto {
-  path: string;
+  /** 受控模板路径与草稿修订引用二选一（WP-B；loader 统一裁决 422）。 */
+  path?: string;
+  draft_id?: string;
+  draft_revision?: number;
 }
 
 export interface CompileResultDto {
