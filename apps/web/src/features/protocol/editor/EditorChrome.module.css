@@ -53,13 +53,13 @@
   padding: 0 10px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--r-chip);
+  border-radius: var(--r-ctrl);
   color: var(--fg-muted);
   font-size: 11px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .segmentActive {
@@ -72,6 +72,12 @@
 
 .iconBtn {
   padding: 0 6px;
+}
+
+/* 参考规格：工具条分隔竖线固定 16px，不随内容拉伸。 */
+.vrShort {
+  height: 16px;
+  align-self: center;
 }
 
 @media (max-width: 768px) {

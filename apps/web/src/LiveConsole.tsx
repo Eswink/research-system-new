@@ -1,3 +1,4 @@
+import { Button } from "./components/Button";
 import { CommandCenterPage } from "./features/command-center/CommandCenterPage";
 import { RelayWizard } from "./features/setup/RelayWizard";
 import { useEndpoints } from "./hooks/useEndpoints";
@@ -76,18 +77,13 @@ function createPageContext({ props, endpoints, openSetup }: PageContextInput): P
 }
 
 function LiveWizard(props: { canCancel: boolean; onComplete: () => void; onCancel: () => void }) {
-  const { language } = useI18n();
+  const { t } = useI18n();
   return (
     <div>
       {props.canCancel && (
-        <button
-          type="button"
-          className="btn sm"
-          data-testid="wizard-cancel"
-          onClick={props.onCancel}
-        >
-          {language === "zh" ? "← 返回控制台" : "← Back to console"}
-        </button>
+        <Button variant="ghost" size="sm" data-testid="wizard-cancel" onClick={props.onCancel}>
+          {t("setup.cancel")}
+        </Button>
       )}
       <RelayWizard onComplete={props.onComplete} />
     </div>

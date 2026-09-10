@@ -1,5 +1,14 @@
+/* 控件规格对齐 base.css 全局 .input（28px/sunken/12px）：v1 轮遗漏的输入框样式。 */
 .input {
+  width: 100%;
+  height: 28px;
+  padding: 0 10px;
   background: var(--bg-sunken);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctrl);
+  font-size: 12px;
+  outline: none;
 }
 
 .monoInput {

@@ -32,7 +32,8 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  /* RECHECK-037: 1440 宽度下来源徽章与语言切换钮间距偏紧（chrome 级）。 */
+  gap: 14px;
 }
 
 .searchBtn {

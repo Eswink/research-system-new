@@ -1,28 +1,17 @@
+import { Button } from "../../../components/Button";
+import { cx } from "../../../components/cx";
+import { StatusBadge } from "../../../components/StatusBadge";
+import { useI18n } from "../../../i18n/useI18n";
 import type { ProbeResultDto } from "../../../api/types";
-
-function ProbeDetail({ probe }: { probe: ProbeResultDto }) {
-  return (
-    <dl>
-      <dt>ok</dt>
-      <dd>{String(probe.ok)}</dd>
-      <dt>model</dt>
-      <dd>{probe.returned_model_name ?? "n/a"}</dd>
-      <dt>observed capabilities</dt>
-      <dd>{probe.observed_capabilities.join(", ") || "none"}</dd>
-      <dt>reproducibility</dt>
-      <dd data-testid="probe-reproducibility">
-        {probe.provider_fingerprint_available
-          ? "Configuration reproducible / provider fingerprint available"
-          : "Configuration reproducible / provider fingerprint unavailable"}
-      </dd>
-    </dl>
-  );
-}
+import { ErrorRow } from "./ErrorRow";
+import { ProbeFacts } from "./ProbeFacts";
+import styles from "./steps.module.css";
 
 /**
  * Done 步骤（M13-R1 WP-B2）：probe 失败态如实分支渲染——
  * ok=false 时显示失败 banner（error_category + redacted message），
  * CTA 变为 Retry Probe / Finish Anyway，不伪装成功外观。
+ * 可复现性只声明"配置可重复"；供应商指纹不可用时明说（AGENTS.md §4）。
  */
 export function DoneStep({
   probe,
@@ -33,33 +22,43 @@ export function DoneStep({
   onRetry: () => void;
   onFinish: () => void;
 }) {
+  const { t } = useI18n();
   const failed = !probe.ok;
   return (
-    <div data-testid="wizard-done">
-      <h3>Probe Result</h3>
+    <div className={cx("panel", styles.panel)} data-testid="wizard-done">
+      <div className={styles.head}>
+        <div className={styles.title}>{t("setup.done.title")}</div>
+        <StatusBadge
+          tone={failed ? "danger" : "success"}
+          label={failed ? t("setup.done.failed") : t("setup.done.passed")}
+        />
+      </div>
       {failed && (
-        <div data-testid="probe-failure" className="warning" role="alert">
-          <p>
-            Probe did not pass · {probe.error_category ?? "unknown category"} ·{" "}
-            {probe.error_message_redacted ?? "no redacted detail"}
-          </p>
-        </div>
+        <ErrorRow
+          testid="probe-failure"
+          message={t("setup.done.failed")}
+          detail={`${probe.error_category ?? "unknown category"} · ${
+            probe.error_message_redacted ?? t("setup.done.none")
+          }`}
+        />
       )}
-      <ProbeDetail probe={probe} />
-      {failed ? (
-        <>
-          <button type="button" onClick={onRetry}>
-            Retry Probe
-          </button>
-          <button type="button" onClick={onFinish}>
-            Finish Anyway
-          </button>
-        </>
-      ) : (
-        <button type="button" onClick={onFinish}>
-          Finish Setup
-        </button>
-      )}
+      <ProbeFacts probe={probe} />
+      <div className={styles.actions}>
+        {failed ? (
+          <>
+            <Button icon="spin" onClick={onRetry}>
+              {t("setup.done.retry")}
+            </Button>
+            <Button variant="danger" onClick={onFinish}>
+              {t("setup.done.finishAnyway")}
+            </Button>
+          </>
+        ) : (
+          <Button variant="primary" icon="check" onClick={onFinish}>
+            {t("setup.done.finish")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

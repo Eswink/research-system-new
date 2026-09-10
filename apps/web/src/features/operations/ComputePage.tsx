@@ -47,7 +47,7 @@ function ComputePagesection({ zh, cluster, query, setQuery, runId }: ComputePage
             type="button"
             disabled={cluster.busy}
             onClick={() => {
-              void cluster.loadCluster();
+              cluster.loadCluster();
             }}
           >
             {zh ? "刷新节点" : "Refresh workers"}

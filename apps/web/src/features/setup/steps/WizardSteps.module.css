@@ -1,0 +1,54 @@
+/* 步骤指示器：移植 reference SetupScreen 的 01·中继 pill + 连接线段设计。 */
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--r-ctrl);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.pill[data-state="active"] {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.pill[data-state="done"] {
+  color: var(--success);
+}
+
+.pill[data-state="todo"] {
+  color: var(--fg-faint);
+}
+
+.connector {
+  width: 12px;
+  height: 1px;
+  background: var(--border);
+}
+
+.connector[data-done="true"] {
+  background: var(--success);
+}

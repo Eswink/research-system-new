@@ -54,11 +54,12 @@ export function ChromeActions({
   const { t } = useI18n();
   return (
     <>
-      <span className="vr" />
+      <span className={cx("vr", styles.vrShort)} />
       <button
         type="button"
         id="templates-toggle"
         className={cx("btn", "sm", "ghost", styles.iconBtn)}
+        title={t("editor.templates.tip")}
         aria-expanded={templateOpen}
         data-testid="templates-toggle"
         onClick={onToggleTemplates}
@@ -69,6 +70,7 @@ export function ChromeActions({
         type="button"
         className={cx("btn", "sm", "ghost", styles.iconBtn)}
         aria-label={t("editor.diff")}
+        title={t("editor.diff.tip")}
         onClick={onDiff}
       >
         <Icon name="fork" size={10} />
@@ -77,6 +79,7 @@ export function ChromeActions({
         type="button"
         className={cx("btn", "sm", "ghost", styles.iconBtn)}
         aria-label={t("editor.validate")}
+        title={t("editor.validate.tip")}
         onClick={onValidate}
         disabled={validateBusy}
       >

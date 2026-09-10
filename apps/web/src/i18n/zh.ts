@@ -1,5 +1,7 @@
 /** 中文文案（默认语言）。键按域分组；缺失键回退英文由 I18nProvider 处理。 */
 
+import { zhSetup } from "./setupZh";
+
 export const zh = {
   "app.name": "Research OS",
   "app.plane": "控制面",
@@ -111,8 +113,11 @@ export const zh = {
   "editor.mode.form": "表单",
   "editor.mode.yaml": "YAML",
   "editor.templates": "模板",
+  "editor.templates.tip": "从预设复制 —— Prior study / STAT-heavy / Minimal …",
   "editor.diff": "差异对比",
+  "editor.diff.tip": "与上一保存版本对比",
   "editor.validate": "服务端校验",
+  "editor.validate.tip": "重新运行服务端校验",
   "editor.dirty": "编辑将使运行不可复现。应用后会生成新的版本与摘要。",
   "editor.errorsBlock": "个错误阻止保存",
   "editor.jumpTo": "定位到字段",
@@ -246,6 +251,7 @@ export const zh = {
   "notifications.list": "通知列表",
   "notifications.none": "无持久化通知",
   "notifications.persistence": "通知持久化",
+  ...zhSetup,
 } as const;
 
 export type TranslationKey = keyof typeof zh;

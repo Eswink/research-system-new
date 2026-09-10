@@ -46,6 +46,11 @@
   color: var(--fg);
 }
 
+/* 参考规格：活动项不响应 hover 高亮。 */
+.sectionItemActive:hover {
+  background: var(--bg-panel);
+}
+
 .sectionLabel {
   overflow: hidden;
   text-overflow: ellipsis;

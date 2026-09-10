@@ -1,8 +1,27 @@
 import { useState } from "react";
 
 import { api } from "../../../api/client";
+import { cx } from "../../../components/cx";
+import { Button } from "../../../components/Button";
+import { Field } from "../../../components/Field";
+import { useI18n } from "../../../i18n/useI18n";
 import type { LlmEndpointReadDto } from "../../../api/types";
 import { discoverOrFallback } from "../wizardApi";
+import { ErrorRow } from "./ErrorRow";
+import styles from "./steps.module.css";
+
+interface Issue {
+  message: string;
+  detail: string | null;
+}
+
+function IssueRow({ issue }: { issue: Issue }) {
+  return issue.detail === null ? (
+    <ErrorRow message={issue.message} />
+  ) : (
+    <ErrorRow message={issue.message} detail={issue.detail} />
+  );
+}
 
 async function addModels(endpointId: string, modelIds: string[]) {
   for (const modelId of modelIds) {
@@ -14,19 +33,15 @@ function DiscoveredList({
   models,
   selected,
   onToggle,
-  onAdd,
-  busy,
 }: {
   models: string[];
   selected: string[];
   onToggle: (modelId: string) => void;
-  onAdd: () => void;
-  busy: boolean;
 }) {
   return (
-    <div>
+    <div className={styles.list}>
       {models.map((modelId) => (
-        <label key={modelId}>
+        <label key={modelId} className={styles.item}>
           <input
             type="checkbox"
             checked={selected.includes(modelId)}
@@ -34,28 +49,26 @@ function DiscoveredList({
               onToggle(modelId);
             }}
           />
-          {modelId}
+          <span className="mono">{modelId}</span>
         </label>
       ))}
-      <button type="button" onClick={onAdd} disabled={busy || selected.length === 0}>
-        {busy ? "Adding…" : "Add Selected"}
-      </button>
     </div>
   );
 }
 
-function useDiscovery(endpointId: string, onAdded: () => void) {
+function useDiscovery(endpointId: string) {
+  const { t } = useI18n();
   const [discovered, setDiscovered] = useState<string[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [issue, setIssue] = useState<Issue | null>(null);
 
   const discover = async () => {
-    setMessage(null);
+    setIssue(null);
     const outcome = await discoverOrFallback(endpointId);
     setDiscovered(outcome.ids);
     if (outcome.error !== null) {
-      setMessage(outcome.error);
+      setIssue({ message: t("setup.err.discover"), detail: outcome.error });
     }
   };
 
@@ -69,117 +82,110 @@ function useDiscovery(endpointId: string, onAdded: () => void) {
 
   const addSelected = async () => {
     setBusy(true);
-    setMessage(null);
+    setIssue(null);
     try {
       await addModels(endpointId, selected);
       setSelected([]);
       setDiscovered(null);
-      onAdded();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "add failed");
+      setIssue({
+        message: t("setup.err.add"),
+        detail: err instanceof Error ? err.message : null,
+      });
     } finally {
       setBusy(false);
     }
   };
 
-  return { discovered, selected, busy, message, discover, toggle, addSelected };
+  return { discovered, selected, busy, issue, discover, toggle, addSelected };
 }
 
-function DiscoveryControls({
-  endpointId,
-  disabled,
-  onAdded,
-}: {
-  endpointId: string;
-  disabled: boolean;
-  onAdded: () => void;
-}) {
-  const state = useDiscovery(endpointId, onAdded);
+function DiscoveryControls({ endpointId, disabled }: { endpointId: string; disabled: boolean }) {
+  const { t } = useI18n();
+  const state = useDiscovery(endpointId);
   return (
-    <fieldset>
-      <legend>Discover from relay</legend>
-      <button type="button" onClick={() => void state.discover()} disabled={disabled || state.busy}>
-        Discover Models
-      </button>
+    <div className={styles.subgroup}>
+      <div className={styles.actions}>
+        <Button icon="search" onClick={() => void state.discover()} disabled={disabled}>
+          {t("setup.models.discover")}
+        </Button>
+      </div>
       {state.discovered !== null && state.discovered.length > 0 && (
-        <DiscoveredList
-          models={state.discovered}
-          selected={state.selected}
-          onToggle={state.toggle}
-          onAdd={() => void state.addSelected()}
-          busy={state.busy}
-        />
+        <>
+          <DiscoveredList
+            models={state.discovered}
+            selected={state.selected}
+            onToggle={state.toggle}
+          />
+          <div className={styles.actions}>
+            <Button
+              variant="primary"
+              onClick={() => void state.addSelected()}
+              disabled={disabled || state.busy || state.selected.length === 0}
+            >
+              {state.busy ? t("setup.adding") : t("setup.models.addSelected")}
+            </Button>
+          </div>
+        </>
       )}
-      {state.message !== null && (
-        <p className="error" role="alert">
-          {state.message}
-        </p>
-      )}
-    </fieldset>
+      {state.issue !== null && <IssueRow issue={state.issue} />}
+    </div>
   );
 }
 
-async function addManualModel(endpointId: string, modelId: string) {
-  await api.createModel({ endpoint_id: endpointId, model_name: modelId, enabled: true });
-}
-
-function useManualAdd(endpointId: string, onAdded: () => void) {
+function useManualAdd(endpointId: string) {
+  const { t } = useI18n();
   const [modelId, setModelId] = useState("");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [issue, setIssue] = useState<Issue | null>(null);
 
   const add = async () => {
     const trimmed = modelId.trim();
     if (trimmed.length === 0) {
-      setMessage("model id must not be empty");
+      setIssue({ message: t("setup.err.emptyModelId"), detail: null });
       return;
     }
     setBusy(true);
-    setMessage(null);
+    setIssue(null);
     try {
-      await addManualModel(endpointId, trimmed);
+      await api.createModel({ endpoint_id: endpointId, model_name: trimmed, enabled: true });
       setModelId("");
-      onAdded();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "add failed");
+      setIssue({
+        message: t("setup.err.add"),
+        detail: err instanceof Error ? err.message : null,
+      });
     } finally {
       setBusy(false);
     }
   };
 
-  return { modelId, setModelId, busy, message, add };
+  return { modelId, setModelId, busy, issue, add };
 }
 
-function ManualAdd({
-  endpointId,
-  disabled,
-  onAdded,
-}: {
-  endpointId: string;
-  disabled: boolean;
-  onAdded: () => void;
-}) {
-  const state = useManualAdd(endpointId, onAdded);
+function ManualAdd({ endpointId, disabled }: { endpointId: string; disabled: boolean }) {
+  const { t } = useI18n();
+  const state = useManualAdd(endpointId);
+  const id = "manual-model-id";
   return (
-    <div>
-      <label>
-        Manual Model ID
+    <div className={styles.subgroup}>
+      <Field label={t("setup.models.manual")} htmlFor={id}>
         <input
+          id={id}
+          className="input mono"
           value={state.modelId}
           onChange={(event) => {
             state.setModelId(event.target.value);
           }}
-          placeholder="e.g. gpt-4o-mini"
+          placeholder="gpt-4o-mini"
         />
-      </label>
-      <button type="button" onClick={() => void state.add()} disabled={disabled || state.busy}>
-        {state.busy ? "Adding…" : "Add Model"}
-      </button>
-      {state.message !== null && (
-        <p className="error" role="alert">
-          {state.message}
-        </p>
-      )}
+      </Field>
+      <div className={styles.actions}>
+        <Button onClick={() => void state.add()} disabled={disabled || state.busy}>
+          {state.busy ? t("setup.adding") : t("setup.models.add")}
+        </Button>
+      </div>
+      {state.issue !== null && <IssueRow issue={state.issue} />}
     </div>
   );
 }
@@ -199,23 +205,24 @@ export function ModelsStep({
   error: string | null;
   onProbe: () => void;
 }) {
-  const onAdded = () => undefined;
+  const { t } = useI18n();
   return (
-    <div data-testid="wizard-models-step">
-      <p>
-        Configure models on endpoint <strong>{endpoint.name}</strong> — discover from the relay or
-        enter a model id manually.
-      </p>
-      <DiscoveryControls endpointId={endpoint.id} disabled={busy} onAdded={onAdded} />
-      <ManualAdd endpointId={endpoint.id} disabled={busy} onAdded={onAdded} />
-      {error !== null && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
-      <button type="button" onClick={onProbe} disabled={busy}>
-        {busy ? "Probing…" : "Probe First Model"}
-      </button>
+    <div className={cx("panel", styles.panel)} data-testid="wizard-models-step">
+      <div className={styles.head}>
+        <div className={styles.title}>{t("setup.models.title")}</div>
+        <div className={styles.desc}>
+          {t("setup.models.desc")} <span className="mono">{endpoint.name}</span>
+        </div>
+      </div>
+      <DiscoveryControls endpointId={endpoint.id} disabled={busy} />
+      <hr className="hr" />
+      <ManualAdd endpointId={endpoint.id} disabled={busy} />
+      {error !== null && <ErrorRow message={error} />}
+      <div className={styles.actions}>
+        <Button variant="primary" icon="flask" onClick={onProbe} disabled={busy}>
+          {busy ? t("setup.probing") : t("setup.test.probe")}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 /** 英文文案。键集合与 zh.ts 相同（缺键回退中文由 I18nProvider 处理）。 */
 
 import type { TranslationKey } from "./zh";
+import { enSetup } from "./setupEn";
 
 export const en: Record<TranslationKey, string> = {
   "app.name": "Research OS",
@@ -113,8 +114,11 @@ export const en: Record<TranslationKey, string> = {
   "editor.mode.form": "Form",
   "editor.mode.yaml": "YAML",
   "editor.templates": "Templates",
+  "editor.templates.tip": "Copy from a preset — Prior study, STAT-heavy, Minimal…",
   "editor.diff": "Diff",
+  "editor.diff.tip": "Compare with previous saved revision",
   "editor.validate": "Validate",
+  "editor.validate.tip": "Re-run server-side checks",
   "editor.dirty": "Editing makes the run non-reproducible. Applying creates a new revision.",
   "editor.errorsBlock": "errors block saving",
   "editor.jumpTo": "Jump to field",
@@ -253,4 +257,5 @@ export const en: Record<TranslationKey, string> = {
   "notifications.list": "Notification list",
   "notifications.none": "No persisted notifications",
   "notifications.persistence": "Notification persistence",
+  ...enSetup,
 };

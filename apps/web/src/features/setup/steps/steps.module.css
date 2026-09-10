@@ -1,0 +1,157 @@
+/* 向导步骤面板共用版式：panel + 标题区 + key-value + 行动区；视觉参数只引用 tokens。 */
+
+.panel {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.desc {
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.errorRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--danger-dim);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--r-ctrl);
+  padding: 8px 10px;
+}
+
+.errorIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.kv {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.kvRow {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+  min-width: 0;
+}
+
+.kvKey {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-faint);
+  letter-spacing: 0.02em;
+}
+
+.kvValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--fg-muted);
+  min-width: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item input[type="checkbox"] {
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--fg-faint);
+}
+
+.muted {
+  color: var(--fg-faint);
+  font-weight: 400;
+}
+
+.chipOk {
+  background: var(--success-dim);
+  border-color: var(--success-line);
+  color: var(--success);
+}
+
+.subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.inputLock {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-faint);
+  pointer-events: none;
+}
+
+.inputWrap input {
+  padding-left: 30px;
+  font-family: var(--font-mono);
+}

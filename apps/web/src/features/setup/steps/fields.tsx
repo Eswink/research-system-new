@@ -1,4 +1,8 @@
-import type { ChangeEvent } from "react";
+import { useId, type ChangeEvent } from "react";
+
+import { Field } from "../../../components/Field";
+import { Icon } from "../../../components/Icon";
+import styles from "./steps.module.css";
 
 export function TextField({
   label,
@@ -7,6 +11,8 @@ export function TextField({
   placeholder,
   autoComplete,
   required = false,
+  mono = false,
+  hint,
 }: {
   label: string;
   value: string;
@@ -14,21 +20,24 @@ export function TextField({
   placeholder?: string;
   autoComplete?: string;
   required?: boolean;
+  mono?: boolean;
+  hint?: string;
 }) {
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange(event.target.value);
-  };
+  const id = useId();
   return (
-    <label>
-      {label}
+    <Field label={label} htmlFor={id} hint={hint}>
       <input
+        id={id}
+        className={mono ? "input mono" : "input"}
         required={required}
         value={value}
-        onChange={handleChange}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+          onChange(event.target.value);
+        }}
         placeholder={placeholder}
         autoComplete={autoComplete}
       />
-    </label>
+    </Field>
   );
 }
 
@@ -36,19 +45,30 @@ export function PasswordField({
   label,
   value,
   onChange,
+  hint,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  hint?: string;
 }) {
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange(event.target.value);
-  };
+  const id = useId();
   return (
-    <label>
-      {label}
-      <input type="password" value={value} onChange={handleChange} autoComplete="off" />
-    </label>
+    <Field label={label} htmlFor={id} hint={hint}>
+      <div className={styles.inputWrap}>
+        <input
+          id={id}
+          className="input"
+          type="password"
+          value={value}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            onChange(event.target.value);
+          }}
+          autoComplete="off"
+        />
+        <Icon name="lock" size={12} className={styles.inputLock} />
+      </div>
+    </Field>
   );
 }
 
@@ -63,19 +83,23 @@ export function SelectField({
   onChange: (value: string) => void;
   options: readonly { value: string; label: string }[];
 }) {
-  const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    onChange(event.target.value);
-  };
+  const id = useId();
   return (
-    <label>
-      {label}
-      <select value={value} onChange={handleChange}>
+    <Field label={label} htmlFor={id}>
+      <select
+        id={id}
+        className="input mono"
+        value={value}
+        onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+          onChange(event.target.value);
+        }}
+      >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
       </select>
-    </label>
+    </Field>
   );
 }

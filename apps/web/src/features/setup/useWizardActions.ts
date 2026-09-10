@@ -1,4 +1,5 @@
 import { api } from "../../api/client";
+import { useI18n } from "../../i18n/useI18n";
 import type {
   EndpointHealthDto,
   LlmEndpointCreateDto,
@@ -27,13 +28,26 @@ export interface WizardSetters {
   setStep: (value: WizardStep) => void;
 }
 
-async function runProbeStep(endpointId: string, setters: WizardSetters) {
+export interface WizardStrings {
+  noModels: string;
+  probe: string;
+  health: string;
+  create: string;
+}
+
+interface ProbeInput {
+  endpointId: string;
+  setters: WizardSetters;
+  strings: WizardStrings;
+}
+
+async function runProbeStep({ endpointId, setters, strings }: ProbeInput) {
   setters.setBusy(true);
   setters.setError(null);
   try {
     const outcome = await probeFirstModel(endpointId);
     if (outcome.kind === "no-models") {
-      setters.setError("no model configured on this endpoint; add one first");
+      setters.setError(strings.noModels);
       setters.setStep("models");
       return;
     }
@@ -42,48 +56,58 @@ async function runProbeStep(endpointId: string, setters: WizardSetters) {
     setters.setProbeResult(outcome.result);
     setters.setStep("done");
   } catch (err) {
-    setters.setError(handleError(err, "probe failed"));
+    setters.setError(handleError(err, strings.probe));
   } finally {
     setters.setBusy(false);
   }
 }
 
-/** Wizard 动作：API 调用 + 状态转移（server-state cache） */
+async function runTest(endpointId: string, setters: WizardSetters, strings: WizardStrings) {
+  try {
+    setters.setHealth(await api.endpointHealth(endpointId));
+  } catch (err) {
+    setters.setHealth({
+      ok: false,
+      error_category: null,
+      error_message_redacted: handleError(err, strings.health),
+      checked_at: new Date().toISOString(),
+    });
+  }
+}
+
+async function createEndpointStep(
+  payload: LlmEndpointCreateDto,
+  setters: WizardSetters,
+  strings: WizardStrings,
+) {
+  setters.setBusy(true);
+  setters.setError(null);
+  try {
+    const created = await api.createEndpoint(payload);
+    setters.setEndpoint(created.dto);
+    setters.setStep("test");
+    await runTest(created.dto.id, setters, strings);
+  } catch (err) {
+    setters.setError(handleError(err, strings.create));
+  } finally {
+    setters.setBusy(false);
+  }
+}
+
+/** Wizard 动作：API 调用 + 状态转移（server-state cache）。固定文案 i18n 化。 */
 export function useWizardActions(setters: WizardSetters): WizardActions {
-  const runTest = async (endpointId: string) => {
-    try {
-      const result = await api.endpointHealth(endpointId);
-      setters.setHealth(result);
-    } catch (err) {
-      setters.setHealth({
-        ok: false,
-        error_category: null,
-        error_message_redacted: handleError(err, "health check failed"),
-        checked_at: new Date().toISOString(),
-      });
-    }
+  const { t } = useI18n();
+  const strings: WizardStrings = {
+    noModels: t("setup.err.noModels"),
+    probe: t("setup.err.probe"),
+    health: t("setup.err.health"),
+    create: t("setup.err.create"),
   };
-
-  const createEndpoint = async (payload: LlmEndpointCreateDto) => {
-    setters.setBusy(true);
-    setters.setError(null);
-    try {
-      const created = await api.createEndpoint(payload);
-      setters.setEndpoint(created.dto);
-      setters.setStep("test");
-      await runTest(created.dto.id);
-    } catch (err) {
-      setters.setError(handleError(err, "create failed"));
-    } finally {
-      setters.setBusy(false);
-    }
+  return {
+    createEndpoint: (payload) => createEndpointStep(payload, setters, strings),
+    runProbe: (endpointId) => runProbeStep({ endpointId, setters, strings }),
+    goToModels: () => {
+      setters.setStep("models");
+    },
   };
-
-  const runProbe = (endpointId: string) => runProbeStep(endpointId, setters);
-
-  const goToModels = () => {
-    setters.setStep("models");
-  };
-
-  return { createEndpoint, runProbe, goToModels };
 }
