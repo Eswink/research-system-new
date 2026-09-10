@@ -182,9 +182,11 @@ def check_tools(plan: CompiledRunPlan, context: PreflightContext) -> list[Prefli
                 TrustLevel.UNTRUSTED,
             }:
                 continue
-            if context.provider_health.get(provider_id, True) is False:
+            health = context.provider_health.get(provider_id, EndpointHealth.HEALTHY)
+            if health in {EndpointHealth.OPEN_CIRCUIT, EndpointHealth.DISABLED}:
                 continue
             available = True
+            findings.extend(_provider_health_findings(provider_id, health))
             risk = classify_risk(provider.effect_class, provider.trust_level)
             if risk in {RiskClass.HIGH, RiskClass.CRITICAL}:
                 findings.append(
@@ -212,6 +214,29 @@ def check_tools(plan: CompiledRunPlan, context: PreflightContext) -> list[Prefli
                 )
             )
     return findings
+
+
+def _provider_health_findings(
+    provider_id: str, health: EndpointHealth
+) -> list[PreflightFinding]:
+    """WP-D 三态健康语义：UNKNOWN/DEGRADED 警示不阻断（不伪装健康）。"""
+    if health is EndpointHealth.UNKNOWN:
+        return [
+            _warning(
+                PreflightFindingCode.TOOL_HEALTH_UNPROVEN.value,
+                f"provider {provider_id} health is not proven (no runnable probe)",
+                f"provider:{provider_id}",
+            )
+        ]
+    if health is EndpointHealth.DEGRADED:
+        return [
+            _warning(
+                PreflightFindingCode.TOOL_HEALTH_DEGRADED.value,
+                f"provider {provider_id} probe reported degraded health",
+                f"provider:{provider_id}",
+            )
+        ]
+    return []
 
 
 def check_workspaces(plan: CompiledRunPlan, context: PreflightContext) -> list[PreflightFinding]:

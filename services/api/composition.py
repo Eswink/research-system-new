@@ -9,6 +9,7 @@ M14: database_url 指向 PostgreSQL 时自动选用 Postgres 引擎（同 Port�
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -91,6 +92,9 @@ class ApiDeps:
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
     approvals: ApprovalStore | None = field(default=None, repr=False)
     memory: Any | None = field(default=None, repr=False)
+    # WP-D：provider_id → ToolProvider port 实例注册表（生产未注册时空 dict，
+    # build_provider_health 对非 NATIVE provider 诚实返回 UNKNOWN）。
+    tool_providers: Mapping[str, Any] = field(default_factory=dict, repr=False)
     preflight_override: PreflightContext | None = field(default=None, repr=False)
     endpoint_url_policy: EndpointUrlPolicy | None = field(default=None, repr=False)
     telemetry: TelemetrySink = field(default_factory=NullTelemetrySink, repr=False)

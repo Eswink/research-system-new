@@ -81,7 +81,10 @@ class PreflightContext:
     project: ProjectSettings
     credentials: CredentialResolver | None = None
     endpoint_health: Mapping[str, EndpointHealth] = field(default_factory=dict)
-    provider_health: Mapping[str, bool] = field(default_factory=dict)
+    # WP-D：provider 健康为三态枚举（HEALTHY/DEGRADED/UNKNOWN/OPEN_CIRCUIT/DISABLED）。
+    # 控制面 builder 总是对目录内 provider 注入显式值；未注入 key 视为
+    # 注入方（单测/fixture）未声明健康面，按 HEALTHY 处理。
+    provider_health: Mapping[str, EndpointHealth] = field(default_factory=dict)
     workspace_available: Mapping[str, bool] = field(default_factory=dict)
     budget_ledger: BudgetLedger | None = None
     policy_evaluator: PolicyEvaluator | None = None

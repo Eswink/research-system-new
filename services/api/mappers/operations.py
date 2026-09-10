@@ -168,6 +168,10 @@ def _cost_amount_dto(amount: CostAmount) -> CostAmountDto:
     )
 
 
+# 公共别名：cost_daily mapper 复用同一五状态金额转换（单一实现）。
+cost_amount_dto = _cost_amount_dto
+
+
 def trend_view_dto(
     store: EvalReportStore,
     dataset_id: str | None,

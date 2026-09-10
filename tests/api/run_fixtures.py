@@ -178,7 +178,7 @@ def _build_preflight(credentials: FakeCredentialResolver) -> PreflightContext:
         project=project,
         credentials=credentials,
         endpoint_health={key: EndpointHealth.HEALTHY for key in pinned.endpoints},
-        provider_health={key: True for key in pinned.tool_providers},
+        provider_health={key: EndpointHealth.HEALTHY for key in pinned.tool_providers},
         workspace_available={key: True for key in pinned.workspaces},
         budget_ledger=FakeBudgetLedger(),
         policy_evaluator=FakePolicyEvaluator(),

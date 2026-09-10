@@ -109,6 +109,8 @@ export const api = {
     operationsClient.trend(datasetId, expectedDigests, limit),
   clusterWorkers: () => operationsClient.clusterWorkers(),
   runPlacement: (runId: string) => operationsClient.placement(runId),
+  dailyCost: (dateFrom?: string, dateTo?: string) =>
+    operationsClient.dailyCost(dateFrom, dateTo),
 
   // ── artifacts（WP-C 只读）──
   listRunArtifacts: (runId: string) => artifactClient.listForRun(runId),

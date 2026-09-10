@@ -14,12 +14,14 @@ from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.operations import (
     ClusterViewDto,
+    CostDailyViewDto,
     CostViewDto,
     RunPlacementDto,
     RunTelemetryDto,
     TrendViewDto,
 )
 from services.api.errors import ApiError
+from services.api.mappers.cost_daily import cost_daily_view_dto
 from services.api.mappers.operations import (
     cost_view_dto,
     run_placement_dto,
@@ -30,6 +32,17 @@ from services.api.mappers.operations import (
 from services.api.run_access import get_run_or_error
 
 router = APIRouter(tags=["operations"])
+
+
+@router.get("/cost/daily", response_model=CostDailyViewDto)
+async def cost_daily(
+    request: Request,
+    date_from: str | None = Query(default=None, max_length=10),
+    date_to: str | None = Query(default=None, max_length=10),
+) -> CostDailyViewDto:
+    """跨 run 成本日序列（WP-D 只读；五状态语义，无预测无插值）。"""
+    deps: ApiDeps = get_deps(request)
+    return cost_daily_view_dto(deps, date_from, date_to)
 
 
 @router.get("/runs/{run_id}/telemetry", response_model=RunTelemetryDto)

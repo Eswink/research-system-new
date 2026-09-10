@@ -1,10 +1,10 @@
 import { api } from "../../api/client";
 import { ResourceBoundary } from "../../components/ResourceBoundary";
-import { EmptyState, UnavailableState } from "../../components/States";
+import { EmptyState } from "../../components/States";
 import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import type { PageContext } from "../../navigation/pageContext";
-import { GAPS } from "../../navigation/pageSupport";
+import { DailyCostPanel } from "./DailyCostPanel";
 import { CostView } from "../operations/CostView";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
@@ -42,7 +42,7 @@ export function CostAnalyticsPage({ ctx }: { ctx: PageContext }) {
       <ResourceBoundary state={cost}>
         {cost.data !== null && <CostView cost={cost.data} />}
       </ResourceBoundary>
-      <UnavailableState title={t("cost.trend")} reason={GAPS.costSeries} />
+      <DailyCostPanel />
     </section>
   );
 }

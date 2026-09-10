@@ -101,7 +101,7 @@ def _bind_preflight(deps: Any, credentials: Any) -> None:
         project=project,
         credentials=credentials,
         endpoint_health={eid: EndpointHealth.HEALTHY for eid in catalog.endpoints},
-        provider_health={pid: True for pid in catalog.tool_providers},
+        provider_health={pid: EndpointHealth.HEALTHY for pid in catalog.tool_providers},
         workspace_available={wid: True for wid in catalog.workspaces},
         budget_ledger=deps.budget,
         policy_evaluator=FakePolicyEvaluator(),

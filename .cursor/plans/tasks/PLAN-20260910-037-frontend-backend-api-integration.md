@@ -55,9 +55,18 @@ memory_entries: []
   双 FakeArtifactStore 实例修复（run 产物对读取端可见的根因）；
   前端 artifactClient + ArtifactBrowser（下载 + 白名单预览 + 元数据 verified）；
   openapi 快照再生 contract 2 passed；tsc/eslint/unit 70/70。
-- [ ] AC-04（WP-D）：preflight provider health 经 ToolProvider port 真实探测，
+- [x] AC-04（WP-D）：preflight provider health 经 ToolProvider port 真实探测，
   探测不可达 = UNKNOWN 第三态（不得伪装 True/False），超时预算 ≤2s/provider 并行；
   `GET /cost/daily` 五状态语义按日聚合、定价版本盖章；不做预测。
+  证据：provider_health 升为 Mapping[str, EndpointHealth]（checks.py 三态：
+  UNKNOWN→TOOL_HEALTH_UNPROVEN WARN 不阻断、OPEN_CIRCUIT/DISABLED→不可用、
+  NATIVE→HEALTHY 结构性豁免有文档）；tests/application/test_provider_preflight_health.py
+  8 passed；daily.py 纯函数（混合定价天不求和 PARTIALLY_METERED、UNKNOWN≠0、
+  窗口、truncated）6 passed + API 3 passed；前端 DailyCostPanel（真实日序列，
+  无数据日不插值）；openapi 再生 + contract 路径断言过；
+  ruff/mypy/tsc/eslint/unit 70/70/stub-e2e 11/11 全绿。
+  注：探测超时预算由 adapter 自有（Port 无 timeout 参数；控制面当前未注册外部
+  provider 实例，非 NATIVE 探测收敛 UNKNOWN，符合三态设计）。
 - [ ] AC-05（WP-E）：`GET/POST /projects/{pid}/experiments` + cancel；ExperimentStore
   支撑；SQLite 无 store → 503；schedule 保持禁用。
 - [ ] AC-06（WP-F）：Memory REST 四端点按 CONTROL_PLANE_API.md §Memory；提案走

@@ -824,6 +824,67 @@
         "title": "CostAmountDto",
         "type": "object"
       },
+      "CostDailyViewDto": {
+        "additionalProperties": false,
+        "description": "跨 run 成本日序列（WP-D；只含有数据的日期，无预测、无插值）。",
+        "properties": {
+          "attribution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution Note"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/CostDayPointDto"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "title": "CostDailyViewDto",
+        "type": "object"
+      },
+      "CostDayPointDto": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/PricingGroupDto"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "mixed_pricing": {
+            "default": false,
+            "title": "Mixed Pricing",
+            "type": "boolean"
+          },
+          "total": {
+            "$ref": "#/components/schemas/CostAmountDto"
+          }
+        },
+        "required": [
+          "date",
+          "total"
+        ],
+        "title": "CostDayPointDto",
+        "type": "object"
+      },
       "CostDimensionDto": {
         "additionalProperties": false,
         "properties": {
@@ -1952,6 +2013,40 @@
           "status"
         ],
         "title": "PreflightReportDto",
+        "type": "object"
+      },
+      "PricingGroupDto": {
+        "additionalProperties": false,
+        "description": "一个定价表分组（同 (version, digest) 的 entries 小计；WP-D）。",
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/CostAmountDto"
+          },
+          "entry_count": {
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "pricing_digest": {
+            "title": "Pricing Digest",
+            "type": "string"
+          },
+          "pricing_frozen": {
+            "title": "Pricing Frozen",
+            "type": "boolean"
+          },
+          "pricing_version": {
+            "title": "Pricing Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pricing_version",
+          "pricing_digest",
+          "pricing_frozen",
+          "amount",
+          "entry_count"
+        ],
+        "title": "PricingGroupDto",
         "type": "object"
       },
       "ProbeResultDto": {
@@ -3758,6 +3853,74 @@
           }
         },
         "summary": "Cluster Workers",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/cost/daily": {
+      "get": {
+        "description": "跨 run 成本日序列（WP-D 只读；五状态语义，无预测无插值）。",
+        "operationId": "cost_daily_cost_daily_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 10,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 10,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostDailyViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cost Daily",
         "tags": [
           "operations"
         ]

@@ -78,6 +78,32 @@ class CostViewDto(BaseModel):
     total: CostAmountDto
 
 
+class PricingGroupDto(BaseModel):
+    """一个定价表分组（同 (version, digest) 的 entries 小计；WP-D）。"""
+
+    pricing_version: str
+    pricing_digest: str
+    pricing_frozen: bool
+    amount: CostAmountDto
+    entry_count: int
+
+
+class CostDayPointDto(BaseModel):
+    date: str
+    total: CostAmountDto
+    # 一天内跨多个定价表：total 不求和（PARTIALLY_METERED），分组小计如实列出。
+    mixed_pricing: bool = False
+    groups: list[PricingGroupDto] = Field(default_factory=list)
+
+
+class CostDailyViewDto(BaseModel):
+    """跨 run 成本日序列（WP-D；只含有数据的日期，无预测、无插值）。"""
+
+    truncated: bool = False
+    days: list[CostDayPointDto] = Field(default_factory=list)
+    attribution_note: str | None = None
+
+
 class TrendPointDto(BaseModel):
     report_digest: str
     recorded_at: str | None = None

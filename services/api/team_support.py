@@ -22,7 +22,11 @@ from packages.domain.roles import AgentBinding, AgentContextConfig, AgentSpec
 from services.api.catalog_merge import merged_catalog_snapshot, merged_project_settings
 from services.api.composition import ApiDeps
 from services.api.errors import ApiError
-from services.api.preflight_support import build_endpoint_health, build_policy_evaluator
+from services.api.preflight_support import (
+    build_endpoint_health,
+    build_policy_evaluator,
+    build_provider_health,
+)
 
 
 def build_preflight_context(
@@ -36,7 +40,7 @@ def build_preflight_context(
         project=project,
         credentials=deps.credentials,
         endpoint_health=build_endpoint_health(deps, catalog),
-        provider_health={provider_id: True for provider_id in catalog.tool_providers},
+        provider_health=build_provider_health(deps, catalog),
         workspace_available={},
         budget_ledger=None,
         policy_evaluator=build_policy_evaluator(catalog),

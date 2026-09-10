@@ -21,7 +21,11 @@ from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.runs import RunDetailDto, RunStartDto, TaskDto
 from services.api.errors import ApiError
-from services.api.preflight_support import build_endpoint_health, build_policy_evaluator
+from services.api.preflight_support import (
+    build_endpoint_health,
+    build_policy_evaluator,
+    build_provider_health,
+)
 from services.api.protocol_source import draft_ref_of, load_protocol_for_source
 from services.api.routers.run_events import events_of
 from services.api.run_access import get_run_or_error, save_run
@@ -145,7 +149,7 @@ def _execution_inputs(
             project=project,
             credentials=deps.credentials,
             endpoint_health=build_endpoint_health(deps, catalog),
-            provider_health={provider_id: True for provider_id in catalog.tool_providers},
+            provider_health=build_provider_health(deps, catalog),
             workspace_available={},
             budget_ledger=deps.budget,
             policy_evaluator=build_policy_evaluator(catalog),

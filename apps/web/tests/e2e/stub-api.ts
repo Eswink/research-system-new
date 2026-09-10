@@ -150,6 +150,28 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
     pattern: /^\/approvals$/,
     handler: () => ({ status: 200, body: [] }),
   },
+  {
+    method: "GET",
+    pattern: /^\/cost\/daily$/,
+    handler: () => ({
+      status: 200,
+      body: { truncated: false, days: [], attribution_note: null },
+    }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/runs\/[^/]+\/artifacts$/,
+    handler: () => ({
+      status: 503,
+      body: {
+        type: "about:blank",
+        title: "Artifact Store Unavailable",
+        status: 503,
+        detail: "artifact store not configured",
+        instance: "/artifacts",
+      },
+    }),
+  },
 ];
 
 function match(path: string, method: string): Handler | null {

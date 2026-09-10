@@ -29,7 +29,8 @@ export const GAPS = {
   globalLineage: "全局数据集/提示词血缘无 API：仅 Run 级引用",
   delete: "控制面无 DELETE 端点：不提供删除操作",
   approvalsEmpty: "生产路径审批列表恒空（ApprovalStore 无注册点）",
-  costSeries: "无成本日序列/预测：折线显示不可用",
+  costSeries:
+    "成本日序列已接入（GET /cost/daily）；预测/前瞻无 API，不绘制",
   memory: "产品 Memory 管理无 API",
   experimentCreate: "实验创建/排队/调度无 API",
   prompts: "无 prompts API",

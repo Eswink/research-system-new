@@ -3,6 +3,7 @@
 import { request } from "./http";
 import type {
   ClusterViewDto,
+  CostDailyViewDto,
   CostViewDto,
   RunPlacementDto,
   RunTelemetryDto,
@@ -35,5 +36,13 @@ export const operationsClient = {
   },
   placement(runId: string): Promise<RunPlacementDto> {
     return request(`/runs/${encodeURIComponent(runId)}/placement`, { method: "GET" });
+  },
+  /** 跨 run 成本日序列（WP-D；只含有数据的日期）。 */
+  dailyCost(dateFrom?: string, dateTo?: string): Promise<CostDailyViewDto> {
+    const params = new URLSearchParams();
+    if (dateFrom !== undefined && dateFrom !== "") params.set("date_from", dateFrom);
+    if (dateTo !== undefined && dateTo !== "") params.set("date_to", dateTo);
+    const suffix = params.size > 0 ? `?${params.toString()}` : "";
+    return request(`/cost/daily${suffix}`, { method: "GET" });
   },
 };

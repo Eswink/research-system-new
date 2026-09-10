@@ -65,3 +65,9 @@ def test_openapi_contains_control_plane_paths() -> None:
     assert "/projects/{project_id}/protocol-drafts" in paths
     assert "/protocol-drafts/{draft_id}" in paths
     assert "/protocol-drafts/{draft_id}/revisions/{revision}" in paths
+    # Artifact 只读端点（PLAN-20260910-037 WP-C）
+    assert "/runs/{run_id}/artifacts" in paths
+    assert "/artifacts/{artifact_id}" in paths
+    assert "/artifacts/{artifact_id}/content" in paths
+    # 成本日序列（PLAN-20260910-037 WP-D）
+    assert "/cost/daily" in paths

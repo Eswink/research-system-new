@@ -520,6 +520,29 @@ export interface CostViewDto {
   total: CostAmountDto;
 }
 
+/** 定价表分组（同 (version,digest) 的 entries 小计；WP-D）。 */
+export interface PricingGroupDto {
+  pricing_version: string;
+  pricing_digest: string;
+  pricing_frozen: boolean;
+  amount: CostAmountDto;
+  entry_count: number;
+}
+
+export interface CostDayPointDto {
+  date: string;
+  total: CostAmountDto;
+  mixed_pricing: boolean;
+  groups: PricingGroupDto[];
+}
+
+/** 跨 run 成本日序列（WP-D；只含有数据的日期，无预测无插值）。 */
+export interface CostDailyViewDto {
+  truncated: boolean;
+  days: CostDayPointDto[];
+  attribution_note: string | null;
+}
+
 export interface TrendPointDto {
   report_digest: string;
   recorded_at: string | null;
