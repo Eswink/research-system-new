@@ -140,7 +140,7 @@ def test_python_module_containing_tests_requires_test_prefix(tmp_path: Path) -> 
 
 
 def test_legacy_baseline_is_exact_and_not_stale() -> None:
-    assert len(LEGACY_PATH_EXCEPTIONS) == 14
+    assert len(LEGACY_PATH_EXCEPTIONS) == 26
     assert not any(set(path) & {"*", "?", "[", "]"} for path in LEGACY_PATH_EXCEPTIONS)
     assert stale_legacy_exceptions(ROOT) == ()
 

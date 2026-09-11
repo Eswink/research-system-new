@@ -14,7 +14,7 @@ from packages.domain.protocols import (
     PreflightFinding,
     PreflightFindingCode,
 )
-from packages.domain.tools import classify_risk
+from packages.domain.tools import ToolProviderSpec, classify_risk
 
 
 def _finding(code: str, message: str, subject: str | None = None) -> PreflightFinding:
@@ -187,24 +187,7 @@ def check_tools(plan: CompiledRunPlan, context: PreflightContext) -> list[Prefli
                 continue
             available = True
             findings.extend(_provider_health_findings(provider_id, health))
-            risk = classify_risk(provider.effect_class, provider.trust_level)
-            if risk in {RiskClass.HIGH, RiskClass.CRITICAL}:
-                findings.append(
-                    _warning(
-                        PreflightFindingCode.TOOL_RISK_ELEVATED.value,
-                        f"provider {provider_id} has elevated risk class {risk.value}",
-                        f"provider:{provider_id}",
-                    )
-                )
-            if provider.kind.value != "NATIVE":
-                if not _is_pinned_digest(plan.tool_pack_digests.get(provider_id)):
-                    findings.append(
-                        _finding(
-                            PreflightFindingCode.SUPPLY_CHAIN_UNPINNED.value,
-                            f"provider {provider_id} has no pinned ToolPack digest",
-                            f"provider:{provider_id}",
-                        )
-                    )
+            findings.extend(_provider_trust_findings(plan, provider_id, provider))
         if not available:
             findings.append(
                 _finding(
@@ -216,9 +199,33 @@ def check_tools(plan: CompiledRunPlan, context: PreflightContext) -> list[Prefli
     return findings
 
 
-def _provider_health_findings(
-    provider_id: str, health: EndpointHealth
+def _provider_trust_findings(
+    plan: CompiledRunPlan, provider_id: str, provider: ToolProviderSpec
 ) -> list[PreflightFinding]:
+    """effect/trust 风险分层与 ToolPack pin 检查（M8 供应链面）。"""
+    findings: list[PreflightFinding] = []
+    risk = classify_risk(provider.effect_class, provider.trust_level)
+    if risk in {RiskClass.HIGH, RiskClass.CRITICAL}:
+        findings.append(
+            _warning(
+                PreflightFindingCode.TOOL_RISK_ELEVATED.value,
+                f"provider {provider_id} has elevated risk class {risk.value}",
+                f"provider:{provider_id}",
+            )
+        )
+    if provider.kind.value != "NATIVE":
+        if not _is_pinned_digest(plan.tool_pack_digests.get(provider_id)):
+            findings.append(
+                _finding(
+                    PreflightFindingCode.SUPPLY_CHAIN_UNPINNED.value,
+                    f"provider {provider_id} has no pinned ToolPack digest",
+                    f"provider:{provider_id}",
+                )
+            )
+    return findings
+
+
+def _provider_health_findings(provider_id: str, health: EndpointHealth) -> list[PreflightFinding]:
     """WP-D 三态健康语义：UNKNOWN/DEGRADED 警示不阻断（不伪装健康）。"""
     if health is EndpointHealth.UNKNOWN:
         return [

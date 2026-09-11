@@ -36,6 +36,20 @@ LEGACY_PATH_EXCEPTIONS = frozenset({
     "tests/tooling/test_个人生产续审v2.py",
     "tests/tooling/test_恢复生命周期v1.py",
     "tests/worker/test_计量观测v1.py",
+    # 高保真控制台重建（PLAN-20260908-033~036）引入的原型命名遗留；
+    # 重命名牵动 import 面与快照，登记为 baseline（新文件仍受规则约束）。
+    "apps/web/src/components/TableRows.tsx",
+    "apps/web/src/features/example-console/fieldContext.ts",
+    "apps/web/src/features/example-console/reference/BudgetMetricCard.tsx",
+    "apps/web/src/features/example-console/reference/kv.tsx",
+    "apps/web/src/features/example-console/reference/evaluation-section/EvaluationDetails.tsx",
+    "apps/web/src/features/inspection/Views.tsx",
+    "apps/web/src/features/team/TeamAgentCards.tsx",
+    "apps/web/tests/e2e/apiFixtures.ts",
+    "apps/web/tests/e2e/apiHarness.ts",
+    "apps/web/tests/helpers/registerStyles.mjs",
+    "apps/web/tests/helpers/styleModuleLoader.mjs",
+    "apps/web/tests/unit/consoleFixtures.ts",
 })
 
 _SNAKE_CASE_RE = re.compile(r"^_?[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")

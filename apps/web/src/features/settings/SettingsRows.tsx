@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 
-import { api } from "../../api/client";
-import { problemText } from "../../api/problemText";
 import type { ProjectSettingsDto, TeamTemplateDto } from "../../api/types";
 import { Chip } from "../../components/Chip";
 import { ErrorState } from "../../components/States";
 import { useI18n } from "../../i18n/useI18n";
 import styles from "../shared/LivePage.module.css";
+import { useSettingsSave } from "./useSettingsSave";
 
 const FIELD_LABEL: Record<string, { zh: string; en: string }> = {
   default_model_profile_id: { zh: "默认模型 Profile", en: "Default model profile" },
@@ -22,24 +21,6 @@ const FIELD_LABEL: Record<string, { zh: string; en: string }> = {
 function fieldLabel(field: string, zh: boolean): string {
   const entry = FIELD_LABEL[field];
   return entry === undefined ? field : zh ? entry.zh : entry.en;
-}
-
-export function useSettingsSave(onSaved: () => void) {
-  const [busy, setBusy] = useState(false);
-  const [issue, setIssue] = useState<string | null>(null);
-  const save = async (payload: ProjectSettingsDto): Promise<void> => {
-    setBusy(true);
-    setIssue(null);
-    try {
-      await api.saveProjectSettings(payload);
-      onSaved();
-    } catch (err) {
-      setIssue(problemText(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-  return { busy, issue, save };
 }
 
 interface SaveRowProps {

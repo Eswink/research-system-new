@@ -4,7 +4,7 @@ import { api } from "../../api/client";
 import type { RunDetailDto } from "../../api/types";
 import { useI18n } from "../../i18n/useI18n";
 import { canRequestCancellation } from "./runTransitions";
-import { RunActionButtonRow } from "./RunActionButtons";
+import { RunActionButtonRow } from "./RunActionButtonRow";
 import { useRunControlPlane } from "./useRunControlPlane";
 
 /** No start shortcut bypasses the editor's compile/preflight flow. Cancellation is explicit. */

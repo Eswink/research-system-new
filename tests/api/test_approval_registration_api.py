@@ -30,15 +30,13 @@ def _start(run_ready_client: TestClient) -> dict[str, Any]:
 
 
 def _pending_approval(run_ready_client: TestClient, run_id: str) -> dict[str, Any]:
-    approvals = run_ready_client.get("/approvals").json()
+    approvals = cast(list[dict[str, Any]], run_ready_client.get("/approvals").json())
     mine = [item for item in approvals if item["run_id"] == run_id]
     assert mine, f"no approval registered for {run_id}: {approvals}"
     return mine[0]
 
 
-def _decide(
-    run_ready_client: TestClient, approval: dict[str, Any], decision: str
-) -> Any:
+def _decide(run_ready_client: TestClient, approval: dict[str, Any], decision: str) -> Any:
     return run_ready_client.post(
         f"/approvals/{approval['id']}/decide",
         json={"decision": decision},

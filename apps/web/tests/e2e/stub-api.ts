@@ -214,6 +214,39 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
       },
     }),
   },
+  {
+    method: "POST",
+    pattern: /^\/memory\/proposals$/,
+    handler: () => ({
+      status: 503,
+      body: {
+        type: "about:blank",
+        title: "Memory Store Unavailable",
+        status: 503,
+        detail: "memory store requires the PostgreSQL control plane",
+        instance: "/memory/proposals",
+      },
+    }),
+  },
+  {
+    method: "POST",
+    pattern: /^\/notifications\/[^/]+\/read$/,
+    handler: () => ({ status: 204, body: null }),
+  },
+  {
+    method: "POST",
+    pattern: /^\/projects\/example-project\/experiments$/,
+    handler: () => ({
+      status: 503,
+      body: {
+        type: "about:blank",
+        title: "Experiment Store Unavailable",
+        status: 503,
+        detail: "experiment store requires the PostgreSQL control plane",
+        instance: "/projects/example-project/experiments",
+      },
+    }),
+  },
 ];
 
 function match(path: string, method: string): Handler | null {

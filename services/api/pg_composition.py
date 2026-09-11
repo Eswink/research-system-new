@@ -127,21 +127,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         pg_migrate(pg_dsn)
 
     c = _pg_components(pg_dsn, connection, config.events_sink, config.artifact_blob_dir)
-    orchestration = RunOrchestrationService(
-        OrchestrationDependencies(
-            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
-            workflow=c["workflow"],
-            artifacts=c["artifacts"],
-            events=c["events"],
-            budget=c["budget"],
-            ledger=c["ledger"],
-            telemetry=config.telemetry,
-            pricing=_load_pricing(),
-            pricing_store=c["pricing_store"],
-            # WP-H：与 ApiDeps.approvals 同一实例（decide 读、执行循环写）。
-            approvals=c["approvals"],
-        )
-    )
+    orchestration = _build_pg_orchestration(c, config)
     return PostgresAssembly(
         effective=effective,
         connection=connection,
@@ -165,6 +151,24 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         gateway_override=getattr(config, "gateway_override", None),
         credentials_override=getattr(config, "credentials_override", None),
         preflight_override=getattr(config, "preflight_override", None),
+    )
+
+
+def _build_pg_orchestration(c: dict[str, Any], config: PgAssemblyConfig) -> RunOrchestrationService:
+    """PG 编排服务装配；与 ApiDeps 共享同一 approvals 实例（decide 读、执行循环写）。"""
+    return RunOrchestrationService(
+        OrchestrationDependencies(
+            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
+            workflow=c["workflow"],
+            artifacts=c["artifacts"],
+            events=c["events"],
+            budget=c["budget"],
+            ledger=c["ledger"],
+            telemetry=config.telemetry,
+            pricing=_load_pricing(),
+            pricing_store=c["pricing_store"],
+            approvals=c["approvals"],
+        )
     )
 
 

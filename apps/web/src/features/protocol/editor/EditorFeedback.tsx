@@ -70,7 +70,7 @@ function CompiledResult({ state }: { state: EditorState }) {
       title={zh ? "协议编译器校验（零副作用）" : "Protocol compiler validation (no side effects)"}
       extra={
         <Chip tone={stale ? "warn" : compiled.result.successful ? "success" : "danger"}>
-          {stale ? "STALE" : compiled.result.successful ? "COMPILE OK" : "COMPILE FAIL"}
+          {stale ? "STALE" : compiled.result.successful ? "COMPILED" : "COMPILE ERROR"}
         </Chip>
       }
     >

@@ -34,12 +34,15 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - 子视图：工具条、Form/YAML 切换、DIRTY、错误汇总、左侧七区块、粘性操作栏、右侧六区报告。
 - API：`GET /protocol-templates`、`GET /protocol-templates/{id}`、
   `POST /protocol-drafts/validate`、`POST/GET/PUT /protocol-drafts*`（修订/ETag/412）、
-  `POST /projects/{id}/compile|preflight|dry-run`（`ProtocolSourceDto{path}`）、
+  `GET /projects/{id}/protocol-drafts`（草稿库）、
+  `GET /protocol-drafts/{id}/revisions[/{rev}]`（不可变修订只读）、
+  `POST /protocols/validate`（编译器校验）、
+  `POST /projects/{id}/compile|preflight|dry-run`（`ProtocolSourceDto{path |
+  draft_id+draft_revision}`，WP-B）、
   `POST /projects/{id}/runs`（`protocol_path` 或 `{draft_id,draft_revision}`）。
-- 等级：PARTIAL。
-- 缺口（登记）：**草稿修订预检无接口**——自定义草稿的预检与启动入口禁用；
-  受控模板路径保留真实同源预检/启动。Schema 真实顶层 `id/version/phases`，
-  原型虚构对象不写入。
+- 等级：FULL（WP-B：草稿修订预检/启动已接入，与受控模板同源编译链；
+  编辑器另接线 Compile/Recheck 动作）。
+- Schema 真实顶层 `id/version/phases`，原型虚构对象不写入。
 
 ### `#/plan/team` — 团队
 - 设计：`screens/Team.jsx`。
@@ -59,11 +62,14 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 
 ### `#/portfolio/experiments` — 实验
 - 设计：`screens/Experiments.jsx`（队列/矩阵/日历视图）。
-- API：`GET /runs/{run_id}/experiments` → `ExperimentViewDto`
-  （`experiments[]`: experiment_run_id/artifact_ids/image_digest/environment_digest/
-  metrics/reproduction_available；`reproduction_note`）。
-- 等级：PARTIAL。明确当前 Run 范围；`reproduction_available` 恒 false，如实呈现。
-- 缺口（登记）：实验创建/排队/调度/日历日期数据无 API；无 mutating 通道。
+- API：`GET /runs/{run_id}/experiments` → `ExperimentViewDto`、
+  `GET /projects/{id}/experiments`（项目级跨 run evidence 视图，WP-E）、
+  `POST /projects/{id}/experiments`（计划预注册 DRAFT→PREREGISTERED；
+  仅 PG canonical store，SQLite 开发路径 503 如实呈现）、
+  `POST /experiments/{plan_id}/archive`。
+- 等级：PARTIAL。域内无 queued/running 计划状态，不伪造队列；
+  `reproduction_available` 恒 false，如实呈现。
+- 缺口（登记）：排队/调度/日历无 API（保持禁用）；队列视图属 example 演示。
 
 ### `#/portfolio/runs-history` — 运行历史
 - 设计：`screens/RunsHistory.jsx`。
@@ -90,17 +96,19 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ### `#/run/approvals` — 审批
 - 设计：`screens/Approvals.jsx`。
 - API：`GET /approvals`、`POST /approvals/{id}/decide`（approve|deny；
-  409 Already Decided/Run Mismatch/Invalid Transition；428/412 版本）。
-- 等级：PARTIAL。
-- 缺口（登记）：生产路径 `GET /approvals` 恒空（ApprovalStore.register 无调用点）——
-  空态如实呈现，不伪造待决数量；无"一键全部同意"。
+  409 Already Decided/Run Mismatch/Invalid Transition；428/412 版本；
+  执行上下文丢失 503 且审批不被消费，WP-H）。
+- 等级：FULL（WP-H：human-gate 协议暂停时真实注册 ApprovalRecord 并置
+  WAITING_FOR_APPROVAL；approve 续跑、deny→FAILED）。
+- 语义：无审批门的 run 列表为空是正确状态；不伪造待决数量；无"一键全部同意"。
 
 ### `#/run/workspace` — 工作区
 - 设计：`screens/Workspace.jsx`。
-- API：`GET /runs/{id}/experiments`、`/evidence`、`/export`。
-- 等级：PARTIAL。文件树/预览分栏保留结构。
-- 缺口（登记）：文件浏览/内容预览/文件级 Diff 无接口（ArtifactStore 未暴露 HTTP；
-  Worker Gateway 下载端点属独立进程）；Artifact ID 不是文件下载地址。
+- API：`GET /runs/{id}/experiments`、`/evidence`、`/export`、
+  `GET /runs/{id}/artifacts` + `GET /artifacts/{id}` + `GET /artifacts/{id}/content`
+  （列表/元数据 verified/下载与白名单内联预览，WP-C）。
+- 等级：PARTIAL。产物浏览器已接入（store 缺失 503 如实呈现）。
+- 缺口（登记）：文件级 Diff 仍无接口；非白名单 media 一律下载（不内联执行）。
 
 ## Library（7 页）
 
@@ -170,9 +178,9 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - API：`GET /runs/{id}/cost`（`CostViewDto`：dimensions[].amount.status 闭集
   ACTUAL/ESTIMATED/MONETARY_UNAVAILABLE/USAGE_UNKNOWN/ZERO/NO_DATA/
   CURRENCY_CONFLICT/PARTIALLY_METERED；pricing_frozen/degraded_reason）、
-  `GET /runs/{id}/usage`。
-- 等级：PARTIAL。成本分布/明细/比较结构保留。
-- 缺口（登记）：无日序列/预测/完整维度——相应图表显示数据不可用，不画虚构折线。
+  `GET /runs/{id}/usage`、`GET /cost/daily`（跨 run 日序列，WP-D）。
+- 等级：PARTIAL。日序列只含有数据的日期（无插值）；混合定价日不求和。
+- 缺口（登记）：预测/前瞻无 API——不画预测曲线。
 
 ## Ops（6 设计页 + 2 兼容页）
 
@@ -226,10 +234,11 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ### `#/govern/audit` — 审计与导出
 - 设计：`screens/Govern.jsx`（Audit/Export/Memory 三 Tab）。
 - API：`GET /runs/{run_id}/events`（JSON replay）标作**运行事件记录**；
-  `GET /runs/{id}/export` 真实导出（JSON bundle 本地下载）。
+  `GET /runs/{id}/export` 真实导出（JSON bundle 本地下载）；
+  Memory Tab：`GET /projects/{id}/memory`、`POST /memory/proposals`、
+  `DELETE /memory/{id}`（WP-F 完整 §8 门链直提交；store 缺失 503）。
 - 等级：PARTIAL。
-- 缺口（登记）：无全平台审计 API；产品 Memory 管理无 API——禁用，
-  绝不读取 `.cursor/memory` 补充。
+- 缺口（登记）：无全平台审计 API；绝不读取 `.cursor/memory` 补充。
 
 ## 全局（3 页）
 
@@ -240,9 +249,10 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - 等级：PARTIAL。账户、平台 API Key、双因素、Billing 无 API——锁定并说明。
 
 ### `#/notifications` — 通知中心
-- 设计：`screens/Notifications.jsx`。等级：GAP。
-- 缺口（登记）：无通知持久化 API——不显示虚构通知/未读数/"已读保存成功"；
-  待审批数量只出现在明确标作待审批的入口。
+- 设计：`screens/Notifications.jsx`。等级：PARTIAL。
+- API：`GET /notifications?limit=`（outbox 事件白名单投影，WP-G；不含 payload
+  内容）、`POST /notifications/{id}/read`（已读 view-state 持久化）。
+- 缺口（登记）：无实时推送通道；数量只来自当前页投影，不虚构未读总数。
 
 ### `#/command-center` — 指挥中心
 - 设计：`Command Center.html`（独立 2560×1440 大屏）。
@@ -254,20 +264,22 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 
 | # | 缺口 | 影响页面 | 处置 |
 | --- | --- | --- | --- |
-| G1 | 草稿修订预检/启动接口 | plan/protocol | 按钮禁用+说明；另行立项 |
-| G2 | 多项目管理 | portfolio/projects | 单项目上下文，管理动作锁定 |
-| G3 | 通知持久化 | notifications、TopBar 铃铛 | 无虚构通知/未读数 |
-| G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明 |
+| G1 | ~~草稿修订预检/启动接口~~ | plan/protocol | **已交付**（WP-B：双来源编译链，等级 FULL） |
+| G2 | 多项目管理 | portfolio/projects | 单项目上下文，管理动作锁定（M18 deferred） |
+| G3 | ~~通知持久化~~ | notifications、TopBar 铃铛 | **已交付**（WP-G：事件投影+已读；无推送通道） |
+| G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
 | G5 | 预算调整契约 | govern/budget | 禁用（501 语义） |
-| G6 | pause/resume 真实执行效果 | run/timeline 操作 | 仅状态迁移，按钮按能力限制标注 |
-| G7 | prompts/datasets/notebooks/reports/alerts/incidents/schedules/integrations/data-health | 对应 9 页 | GAP 结构还原+禁用 |
-| G8 | 文件浏览/预览/Diff | run/workspace | 禁用；Artifact ID≠下载地址 |
+| G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已接线**（A5：按钮按能力标注；仍属控制面状态迁移） |
+| G7 | prompts/datasets/notebooks/reports/alerts/incidents/schedules/integrations/data-health | 对应 9 页 | GAP 结构还原+禁用（无 Domain 支撑） |
+| G8 | 文件浏览/预览；~~下载~~ | run/workspace | **预览/下载已交付**（WP-C）；文件级 Diff 仍无接口 |
 | G9 | 全局血缘 | library/lineage | 仅 Run 级引用 |
-| G10 | 删除端点（endpoint/model/agent/draft） | library/endpoints 等 | 不提供删除 |
-| G11 | 审批生产接线（ApprovalStore 无注册点） | run/approvals | 空态如实呈现 |
-| G12 | 成本日序列/预测 | insights/cost-analytics | 折线显示不可用 |
-| G13 | Memory 管理 API | govern/audit Memory Tab | 禁用 |
-| G14 | 实验创建/排队/调度 | portfolio/experiments | 结构保留，操作禁用 |
+| G10 | 删除端点（endpoint/model/agent/draft） | library/endpoints 等 | 不提供删除（memory 记录删除除外，WP-F） |
+| G11 | ~~审批生产接线~~ | run/approvals | **已交付**（WP-H：human-gate 注册点+续跑；空列表为正确状态） |
+| G12 | 成本日序列~~/预测~~ | insights/cost-analytics | **日序列已交付**（WP-D）；预测仍无 API |
+| G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |
+| G14 | 实验~~创建~~/排队/调度 | portfolio/experiments | **预注册/归档已交付**（WP-E）；queue/schedule 无域支撑保持禁用 |
+| G15 | Tool Provider 管理面（install/approve/revoke） | ops/integrations | 未提供（供应链治理）；provider 三态健康已进 preflight（WP-D） |
+| G16 | Memory capability policy（memory.write 入 policy.yaml 镜像契约） | govern/audit | follow-up（_CAPABILITY_SCOPE 单值映射限制） |
 
 ## 旧路由别名映射（T32 交付兼容）
 
