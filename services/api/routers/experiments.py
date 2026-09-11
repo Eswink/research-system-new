@@ -127,9 +127,7 @@ def _project_runs(deps: ApiDeps, project_id: str) -> list[ResearchRun]:
 
 
 @router.get("/projects/{project_id}/experiments", response_model=ProjectExperimentsViewDto)
-async def project_experiments(
-    project_id: str, request: Request
-) -> ProjectExperimentsViewDto:
+async def project_experiments(project_id: str, request: Request) -> ProjectExperimentsViewDto:
     """项目级 experiment run 视图（跨 run 的 evidence 聚合；WP-E）。"""
     deps: ApiDeps = get_deps(request)
     if deps.ledger is None:

@@ -34,9 +34,7 @@ def _seed_run(client: TestClient) -> str:
     """注册一个存在的 run（ID 为合法 UUID，与域不变量一致）。"""
     run_id = str(ID.generate().value)
     deps = _deps(client)
-    deps.run_registry[run_id] = ResearchRun(
-        id=ID(run_id), project_id="p", protocol_id="proto"
-    )
+    deps.run_registry[run_id] = ResearchRun(id=ID(run_id), project_id="p", protocol_id="proto")
     return run_id
 
 
@@ -65,12 +63,15 @@ def _seed_evidence(client: TestClient, run_id: str, artifact_id: str) -> None:
         )
     )
     deps.ledger.register_evidence(
-        Evidence(id="ev-wpc", source_ref="paper://wp-c",
-                 content_digest="sha256:" + "b" * 64, run_id=run_id, artifact_id=artifact_id)
+        Evidence(
+            id="ev-wpc",
+            source_ref="paper://wp-c",
+            content_digest="sha256:" + "b" * 64,
+            run_id=run_id,
+            artifact_id=artifact_id,
+        )
     )
-    deps.ledger.register_claim(
-        Claim(id="claim-wpc", statement="x", status=ClaimStatus.PROPOSED)
-    )
+    deps.ledger.register_claim(Claim(id="claim-wpc", statement="x", status=ClaimStatus.PROPOSED))
     deps.ledger.attach_relation(
         EvidenceRelation(
             claim_id="claim-wpc", evidence_id="ev-wpc", relation=EvidenceRelationType.SUPPORTS
@@ -148,7 +149,9 @@ def test_binary_media_downloads_not_inline(client: TestClient) -> None:
     store = FakeArtifactStore()
     payload = b"\x89PNG fake"
     artifact = Artifact(
-        id="t-4:blob", digest=Digest.of_bytes(payload), size_bytes=len(payload),
+        id="t-4:blob",
+        digest=Digest.of_bytes(payload),
+        size_bytes=len(payload),
         media_type="application/octet-stream",
     )
     store.put(artifact, payload)

@@ -47,9 +47,7 @@ def _proposal(**overrides: object) -> dict[str, object]:
 
 
 def _post(client: TestClient, key: str, body: dict[str, object]) -> Any:
-    return client.post(
-        "/memory/proposals", json=body, headers={"Idempotency-Key": f"mem-{key}"}
-    )
+    return client.post("/memory/proposals", json=body, headers={"Idempotency-Key": f"mem-{key}"})
 
 
 def test_sqlite_dev_path_memory_store_missing_is_503(client: TestClient) -> None:
@@ -72,9 +70,7 @@ def test_proposal_commits_through_full_gate(client: TestClient) -> None:
 
 def test_unregistered_provenance_rejected_422(client: TestClient) -> None:
     _wire(client)
-    rejected = _post(
-        client, "badprov", _proposal(provenance="paper://not-registered")
-    )
+    rejected = _post(client, "badprov", _proposal(provenance="paper://not-registered"))
     assert rejected.status_code == 422
     assert "provenance" in rejected.text
 
@@ -91,7 +87,9 @@ def test_project_tier_requires_curator(client: TestClient) -> None:
     denied = _post(client, "curator-0", _proposal(tier="PROJECT", content="team decision"))
     assert denied.status_code == 422
     granted = _post(
-        client, "curator-1", _proposal(tier="PROJECT", content="team decision", curator_approved=True)
+        client,
+        "curator-1",
+        _proposal(tier="PROJECT", content="team decision", curator_approved=True),
     )
     assert granted.status_code == 201, granted.text
 

@@ -17,20 +17,18 @@ from services.api.errors import ApiError
 
 router = APIRouter(tags=["notifications"])
 
-_USER_RELEVANT = frozenset(
-    {
-        EventType.MANIFEST_FROZEN,
-        EventType.RUN_COMPLETED,
-        EventType.RUN_FAILED,
-        EventType.RUN_CANCELLED,
-        EventType.APPROVAL_REQUESTED,
-        EventType.APPROVAL_DECIDED,
-        EventType.CLAIM_VERIFIED,
-        EventType.CLAIM_DISPUTED,
-        EventType.MEMORY_COMMITTED,
-        EventType.MEMORY_DELETED,
-    }
-)
+_USER_RELEVANT = frozenset({
+    EventType.MANIFEST_FROZEN,
+    EventType.RUN_COMPLETED,
+    EventType.RUN_FAILED,
+    EventType.RUN_CANCELLED,
+    EventType.APPROVAL_REQUESTED,
+    EventType.APPROVAL_DECIDED,
+    EventType.CLAIM_VERIFIED,
+    EventType.CLAIM_DISPUTED,
+    EventType.MEMORY_COMMITTED,
+    EventType.MEMORY_DELETED,
+})
 
 NOTE = (
     "通知来自 outbox 事件投影（事件流是真相；已读是 view-state）。"
@@ -42,9 +40,7 @@ SCAN_CAP = 500
 
 def _projection(deps: ApiDeps) -> object:
     if deps.projection is None or deps.notification_reads is None:
-        raise ApiError(
-            503, "Notifications Unavailable", "projection/read store not configured"
-        )
+        raise ApiError(503, "Notifications Unavailable", "projection/read store not configured")
     return deps.projection
 
 
@@ -68,9 +64,7 @@ async def list_notifications(
     read_ids = deps.notification_reads.read_event_ids()  # type: ignore[union-attr]
     events = projection.recent_events(min(limit * 10, SCAN_CAP))  # type: ignore[attr-defined]
     items = [
-        _dto(envelope, read_ids)
-        for envelope in events
-        if envelope.event_type in _USER_RELEVANT
+        _dto(envelope, read_ids) for envelope in events if envelope.event_type in _USER_RELEVANT
     ]
     return NotificationsViewDto(notifications=items[:limit], note=NOTE)
 

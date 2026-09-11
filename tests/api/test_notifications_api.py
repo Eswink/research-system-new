@@ -66,16 +66,12 @@ def test_read_marks_persist_and_count(client: TestClient) -> None:
     event_id = _publish(client, EventType.RUN_FAILED, "run-r")
     missing_key = client.post(f"/notifications/{event_id}/read")
     assert missing_key.status_code == 422  # Idempotency-Key required
-    marked = client.post(
-        f"/notifications/{event_id}/read", headers={"Idempotency-Key": "read-1"}
-    )
+    marked = client.post(f"/notifications/{event_id}/read", headers={"Idempotency-Key": "read-1"})
     assert marked.status_code == 204, marked.text
     items = client.get("/notifications").json()["notifications"]
     assert [item["read"] for item in items if item["id"] == event_id] == [True]
     # 重复标记幂等
-    again = client.post(
-        f"/notifications/{event_id}/read", headers={"Idempotency-Key": "read-2"}
-    )
+    again = client.post(f"/notifications/{event_id}/read", headers={"Idempotency-Key": "read-2"})
     assert again.status_code == 204
 
 

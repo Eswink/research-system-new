@@ -25,6 +25,7 @@ from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from packages.application.cost.pricing import unpriced_table
 from packages.application.ports import (
     ApprovalStore,
+    ArtifactStore,
     CatalogSnapshot,
     PreflightContext,
     ProjectSettings,
@@ -94,7 +95,9 @@ def replace_catalog_with_pins(catalog: object) -> object:
 
 def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     """可冻结 Manifest 的 run 测试装配（受控 pin + 完整 preflight context）。"""
+    from adapters.fakes.memory_store import FakeMemoryStore
     from adapters.sqlite.db import connect
+    from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
     from services.api.approvals import ApprovalRegistry
 
     credentials = FakeCredentialResolver()
@@ -102,9 +105,13 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     connection = connect(":memory:")
     events = SqliteOutboxEventPublisher(connection=connection)
     pricing_store = FakePricingSnapshotStore()
+    # WP-C：编排产出与控制面读取共享同一 artifact store。
+    artifacts = FakeArtifactStore()
     # WP-H：编排链与 ApiDeps 共享同一审批 registry（注册与裁决同实例）。
     registry = ApprovalRegistry()
-    runs = _build_orchestration(connection, events, pricing_store, approvals=registry)
+    runs = _build_orchestration(
+        connection, events, pricing_store, approvals=registry, artifacts=artifacts
+    )
     preflight = _build_preflight(credentials)
     return ApiDeps(
         endpoint_store=SqliteEndpointStore(connection=connection),
@@ -120,6 +127,11 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         pricing_snapshot_store=pricing_store,
         preflight_override=preflight,
         protocol_draft_service=_make_draft_service(connection),
+        # WP-Z live e2e 只读链装配：ledger/通知读状态/memory/artifact 均为受控 Fake。
+        budget=FakeBudgetLedger(),
+        notification_reads=SqliteNotificationReadStore(connection=connection),
+        memory=FakeMemoryStore(),
+        artifacts=artifacts,
         _connection=connection,
     )
 
@@ -144,6 +156,7 @@ def _build_orchestration(
     events: object,
     pricing_store: FakePricingSnapshotStore,
     approvals: ApprovalStore | None = None,
+    artifacts: ArtifactStore | None = None,
 ) -> RunOrchestrationService:
     """装配正式编排链（Fake runtime + SQLite workflow/outbox，共享连接）。"""
     from sqlite3 import Connection
@@ -158,7 +171,7 @@ def _build_orchestration(
         OrchestrationDependencies(
             runtime=FakeAgentRuntime(),
             workflow=workflow,
-            artifacts=FakeArtifactStore(),
+            artifacts=artifacts if artifacts is not None else FakeArtifactStore(),
             events=events,
             budget=FakeBudgetLedger(),
             ledger=FakeEvidenceLedger(),
