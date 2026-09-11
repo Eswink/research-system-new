@@ -69,3 +69,30 @@ configured 或 missing、UNKNOWN 不以零渲染。
 - wizardApi 的 discovery 诊断串保持英文原样（单元测试契约），UI 以本地化 framing + mono 技术细节呈现。
 - DIRTY pill 保留英文 mono 设计令牌（与参考设计一致，同 DUE/PAID 先例）。
 - 视觉走查用一次性脚本 scratch/frontend-legacy-rewrite-20260910/wizard-steps.mjs（不入产品树）。
+
+## 证据
+
+（补记：2026-09-11 由 PLAN-20260910-037 收口轮按 governance-check 要求补齐本计划
+缺失章节；事实来源为 RECHECK-20260910-038 与提交 9c3e34d，不新增判定。）
+
+- 提交：9c3e34d（feat(web): rewrite legacy setup wizard and align v1 editor chrome）。
+- 复检：RECHECK-20260910-038 PASS（独立复检代理逐文件核查 + 根级门禁实跑：
+  typecheck/lint/单测 70/70/backend-clean/build/e2e 30/30/live 3/3/根 eslint/
+  typecheck/depcruise 0 violations；library-setup 基线一张按批准重录）。
+- AC-01~AC-06 证据表见 RECHECK-20260910-038 ## 检查结果。
+
+## 状态历史
+
+- 2026-09-10 计划创建并获批准（用户指定重写范围）；实施与复检同日完成，
+  DONE（RECHECK-038 PASS）。
+- 2026-09-11 治理补记：按 governance-check 要求补齐 证据/状态历史/影响报告
+  章节与无可复用事实声明（追加式，不改动既有判定与记录）。
+
+## 影响报告
+
+- Domain/API/schema/migration：零改动（git status --porcelain 于复检确认）。
+- 安全/凭据：零改动；向导不触网、不导出凭据。
+- 兼容性：wizard-flow/protocol-editor-state 等既有测试契约保持；testid 全保留。
+- 上游版本影响：无新依赖。
+- 下一项任务：PLAN-20260910-037 前端预留接口 ↔ 后端对接。
+- 工程记忆：无可复用事实新增（重写模式已由 033~035 记录覆盖）。

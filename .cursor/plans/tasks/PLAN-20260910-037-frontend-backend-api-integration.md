@@ -2,7 +2,7 @@
 id: PLAN-20260910-037
 slug: frontend-backend-api-integration
 title: 前端预留接口与后端对接及缺失 API 补充开发
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-10
 updated_at: 2026-09-11
 cursor_plan_uri: null
@@ -12,7 +12,7 @@ authorization:
   source: user-request
   ref: "2026-09-10 用户要求按前端页面预留接口对接后端，缺少的 API 由后端补充开发；Plan Mode 计划（①+②全量、③保持诚实 gap 标注、后端测试+live e2e 双绿验收）已获批准"
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260911-039-frontend-backend-api-integration.md
 memory_entries: []
 ---
 
@@ -129,9 +129,14 @@ truth，contract 测试防漂移。
   语义修正记录：原计划“策略判定注册”落地为协议声明的 HUMAN_GATE（与
   M2 状态机白名单一致；PolicyEvaluator 的 REQUIRE_APPROVAL 属执行期工具门，
   不伪造注入点）。approvalsEmpty gap 文案更新，run/approvals → full。
-- [ ] AC-09（WP-Z）：openapi 快照再生 + `src/api/types.ts` 同步；stub-api/apiHarness
+- [x] AC-09（WP-Z）：openapi 快照再生 + `src/api/types.ts` 同步；stub-api/apiHarness
   注册全部新路由；live-api-workflow 扩展主链；m0 profile 全绿；pageSupport/GAPS 与
   docs/api/CONTROL_PLANE_API.md、docs/frontend/CONSOLE_PAGE_MAP.md 同步；RECHECK PASS。
+  证据：复检代理独立跑 AC-01~09 定向套件全 PASS（RECHECK-20260911-039
+  PASS_WITH_WARNINGS）；收口修复 50 行 limit×2、FAIL 词×1、命名基线登记 12；
+  gen_openapi 再生产零漂移；m0 job 分组复跑（python 6/6、typescript 9/9、
+  framework 8/8、分批 pytest 全目录、stub 30/30、live 7/7）在 DSN gating 环境
+  下全绿；Docker/PG 依赖测试的环境性 flake 定性见影响报告遗留项。
 
 ## 实施清单
 
@@ -151,7 +156,7 @@ truth，contract 测试防漂移。
   提交 4358b5c。
 - [x] STEP-08 WP-H human-gate 注册/暂停/续跑 + demo 协议 + 审批页语义更新。
   提交 3e0db85。
-- [ ] STEP-09 WP-Z 收口：全部门禁复跑、文档同步、recheck、命名基线登记。
+- [x] STEP-09 WP-Z 收口：全部门禁复跑、文档同步、recheck、命名基线登记。
 
 ## 证据
 
@@ -201,9 +206,14 @@ truth，contract 测试防漂移。
 - 2026-09-10 WP-F 完成（memory 门链 + MemoryPanel），提交 3d4efc2。
 - 2026-09-11 WP-G 完成（通知投影 + NotificationsPage live 化），提交 4358b5c。
 - 2026-09-11 WP-H 完成（human-gate 审批链 + demo 协议），提交 3e0db85。
-- 2026-09-11 WP-Z 进行中：live e2e 主链扩展 7/7、root 门禁复跑发现并修复
+- 2026-09-11 WP-Z 收口：live e2e 主链扩展 7/7、root 门禁复跑发现并修复
   50 行函数 limit 2 处 + 生产边界 FAIL 词 1 处 + 命名门禁新违规 2 处与存量
   登记 12 处；分批 pytest 复跑确认（见证据）。
+- 2026-09-11 独立复检 RECHECK-20260911-039 PASS_WITH_WARNINGS（AC-01~09 全
+  PASS；警告 4 项均为环境/流程定性，不改变判定）。计划 DONE。
+- 工程记忆：无可复用事实新增（DSN gating 配方与 dotenv 污染模式已由既有记忆
+  覆盖；本计划新增事实如 hgate 注册点、三态 provider health 均可从代码/
+  文档直接推导，不重复入库）。
 
 ## 影响报告
 
