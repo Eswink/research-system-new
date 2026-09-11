@@ -166,6 +166,7 @@ class _SqliteStoreParts:
     pricing_store: SqlitePricingSnapshotStore
     orchestration: RunOrchestrationService
     artifacts: Any
+    approvals: Any
 
 
 def _sqlite_store_parts(
@@ -185,6 +186,8 @@ def _sqlite_store_parts(
     # 单一 FakeArtifactStore 实例共享给 orchestration 与控制面读取端点
     # （WP-C：两个独立实例会让 run 产出的 artifact 对读取端永远为空）。
     artifacts = FakeArtifactStore()
+    # WP-H：同一审批存储实例（执行循环 register、decide/GET 读取）。
+    approvals = SqliteApprovalStore(connection=connection)
     orchestration = RunOrchestrationService(
         OrchestrationDependencies(
             runtime=FakeAgentRuntime(structured_output=demo_session_output()),
@@ -196,6 +199,7 @@ def _sqlite_store_parts(
             telemetry=telemetry,
             pricing=pricing,
             pricing_store=pricing_store,
+            approvals=approvals,
         )
     )
     return _SqliteStoreParts(
@@ -208,6 +212,7 @@ def _sqlite_store_parts(
         pricing_store=pricing_store,
         orchestration=orchestration,
         artifacts=artifacts,
+        approvals=approvals,
     )
 
 
@@ -242,7 +247,7 @@ def _assemble_sqlite(
         idempotency=SqliteIdempotencyStore(connection=connection),
         events=events_sqlite,
         projection=projection_sqlite,
-        approvals=SqliteApprovalStore(connection=connection),
+        approvals=parts.approvals,
         runs=orchestration_sqlite,
         workflow=workflow_sqlite,
         runs_store=SqliteRunStore(connection=connection),

@@ -20,6 +20,7 @@ from packages.application.observability.signals import (
     OperationOutcome,
     OperationScope,
 )
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.resource_catalog import (
     CatalogSnapshot,
     PreflightContext,
@@ -58,6 +59,7 @@ from packages.application.run_orchestration.phase_runner import (
 from packages.application.run_orchestration.session_resolution import resolve_sessions
 from packages.application.run_orchestration.task_executor import SessionSpecContext
 from packages.application.run_orchestration.usage_recording import record_cancelled_usage
+from packages.domain.enums import GateType
 from packages.domain.events import EventType
 from packages.domain.manifest import RunManifest
 from packages.domain.protocols import ProtocolDefinition
@@ -84,6 +86,9 @@ class RunOrchestrationService:
         self._event_sink = EventSink(deps.events, deps.default_actor)
         # run_id → reservation_ref：进程内记账（M7 同步边界内 run 收敛时释放预算）。
         self._reservation_refs: dict[str, str] = {}
+        # WP-H：human gate 暂停暂存（run_id → 上下文与剩余 specs）。in-process 面：
+        # 重启后丢失，decide 端点据此诚实 503，绝不伪装恢复了执行。
+        self._waiting: dict[str, tuple[RunContext, tuple[SessionSpec, ...]]] = {}
 
     def start_run(
         self,
@@ -219,8 +224,9 @@ class RunOrchestrationService:
         *,
         pending: tuple[SessionSpec, ...] = (),
     ) -> RunOutcome:
-        """委托 phase_runner 执行；service 负责事件发布与失败收敛。"""
-        return execute_phases(
+        """委托 phase_runner 执行；service 负责事件发布、失败收敛与 human-gate 暂存。"""
+        paused: list[tuple[SessionSpec, ...]] = []
+        outcome = execute_phases(
             PhaseRunnerDeps(
                 workflow=self._deps.workflow,
                 runtime=self._deps.runtime,
@@ -230,6 +236,9 @@ class RunOrchestrationService:
                 publish=self._publish_phase_event,
                 fail_run=self._fail_run,
                 telemetry=self._deps.telemetry,
+                approvals=self._deps.approvals,
+                human_gated=self._pending_human_gates(context),
+                on_pause=paused.append,
             ),
             PhaseContext(
                 command=command,
@@ -240,6 +249,36 @@ class RunOrchestrationService:
                 pending=pending,
             ),
         )
+        if outcome.state == ResearchRunState.State.WAITING_FOR_APPROVAL and paused:
+            self._waiting[context.run.id.value] = (context, paused[0])
+        return outcome
+
+    def _pending_human_gates(self, context: RunContext) -> frozenset[str]:
+        """声明的 HUMAN_GATE phase − 本 run 已裁决审批（无 store 则不暂停）。"""
+        approvals = self._deps.approvals
+        if approvals is None:
+            return frozenset()
+        declared = {
+            gate.phase_id for gate in context.plan.gates if gate.gate is GateType.HUMAN_GATE
+        }
+        decided = {
+            approval.context
+            for approval in approvals.list_for_run(context.run.id.value)
+            if approval.status != "PENDING"
+        }
+        return frozenset(declared - decided)
+
+    def has_waiting_context(self, run_id: str) -> bool:
+        """approve 前置探测：无暂存上下文（如进程重启后）不得伪装恢复执行。"""
+        return run_id in self._waiting
+
+    def resume_after_approval(self, run_id: str) -> RunOutcome:
+        """审批通过后续跑剩余 specs；再次遇 human gate 会重新暂存 WAITING。"""
+        stashed = self._waiting.pop(run_id, None)
+        if stashed is None:
+            raise InvalidInputError(f"no waiting execution context for run {run_id}")
+        context, remaining = stashed
+        return self._execute_with_context(context, None, pending=remaining)
 
     def _resolve_sessions(self, context: RunContext) -> tuple[SessionSpec, ...]:
         """M4 team resolution：phase assignments → ResearchTask + session spec。"""

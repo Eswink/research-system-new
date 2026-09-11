@@ -1,0 +1,20 @@
+# Human-gate 演示协议（PLAN-20260910-037 WP-H）。
+# 单一 discovery 阶段声明 HUMAN_GATE：执行循环在该 phase 前注册审批并进入
+# WAITING_FOR_APPROVAL；decide approve 后续跑收敛。与 m12_reference_research_v1
+# 同源（roles/capabilities/contract 均在受控 catalog 中）。
+id: human_gate_demo_v1_0_0
+version: 0.4.0
+phases:
+  - id: discovery
+    name: Domain Discovery (human-gated)
+    strategy: parallel_agents
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+      - {role: literature_scout, min_instances: 1, max_instances: 2}
+    required_capabilities:
+      - literature.search
+      - literature.read
+    task_contract: domain_discovery
+    outputs: [domain_map, source_set]
+    timeout_seconds: 180
+    gate: HUMAN_GATE

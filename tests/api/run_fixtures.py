@@ -23,7 +23,12 @@ from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.run_projection import SqliteRunProjection
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from packages.application.cost.pricing import unpriced_table
-from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
+from packages.application.ports import (
+    ApprovalStore,
+    CatalogSnapshot,
+    PreflightContext,
+    ProjectSettings,
+)
 from packages.application.protocol_authoring.service import DraftService
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
@@ -97,7 +102,9 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     connection = connect(":memory:")
     events = SqliteOutboxEventPublisher(connection=connection)
     pricing_store = FakePricingSnapshotStore()
-    runs = _build_orchestration(connection, events, pricing_store)
+    # WP-H：编排链与 ApiDeps 共享同一审批 registry（注册与裁决同实例）。
+    registry = ApprovalRegistry()
+    runs = _build_orchestration(connection, events, pricing_store, approvals=registry)
     preflight = _build_preflight(credentials)
     return ApiDeps(
         endpoint_store=SqliteEndpointStore(connection=connection),
@@ -107,7 +114,7 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         idempotency=InMemoryIdempotencyStore(),
         events=events,
         projection=SqliteRunProjection(connection, events),
-        approvals=ApprovalRegistry(),
+        approvals=registry,
         runs=runs,
         workflow=runs._deps.workflow,
         pricing_snapshot_store=pricing_store,
@@ -136,6 +143,7 @@ def _build_orchestration(
     connection: object,
     events: object,
     pricing_store: FakePricingSnapshotStore,
+    approvals: ApprovalStore | None = None,
 ) -> RunOrchestrationService:
     """装配正式编排链（Fake runtime + SQLite workflow/outbox，共享连接）。"""
     from sqlite3 import Connection
@@ -156,6 +164,7 @@ def _build_orchestration(
             ledger=FakeEvidenceLedger(),
             pricing=pricing,
             pricing_store=pricing_store,
+            approvals=approvals,
         )
     )
 

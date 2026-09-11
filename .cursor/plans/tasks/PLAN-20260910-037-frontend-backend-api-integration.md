@@ -103,9 +103,23 @@ memory_entries: []
   live（pageSupport level partial：无实时推送；design-fidelity notifications
   基线按新 live 页重录）；契约断言 + openapi 再生；stub e2e 29/29、
   contracts 330、三门全绿。
-- [ ] AC-08（WP-H）：run_orchestration 在策略审批门注册 ApprovalRecord 并置
+- [x] AC-08（WP-H）：run_orchestration 在策略审批门注册 ApprovalRecord 并置
   WAITING_FOR_APPROVAL；新带审批门 reference protocol；decide 链恢复 run/失败分支
   与 restart 恢复用例过；approvalsEmpty gap 解除。
+  证据：HUMAN_GATE finding WARNING→INFO（声明性控制门；否则 WARN 阻断 freeze，
+  审批点永不可达——test_m2 已按新语义更新并断言 INFO + unresolved_risks +
+  dry_run approval_actions 保留）；phase_runner 在 gated phase 前 register +
+  APPROVAL_REQUESTED + WAITING outcome + service._waiting 暂存（进程内，重启
+  丢失诚实 503 且审批不被消费）；OrchestrationDependencies.approvals 与
+  ApiDeps 同实例（两条 composition + run_fixtures 共享）；decide approve 后
+  续跑并持久化终态；demo 协议 examples/protocols/human_gate_demo_v1.yaml；
+  tests/api/test_approval_registration_api.py 4 passed（暂停+注册+事件、
+  approve 续跑收敛、deny FAILED、重启 503 不消费）。
+  语义修正记录：原计划“策略判定注册”落地为协议声明的 HUMAN_GATE（与
+  M2 状态机白名单一致；PolicyEvaluator 的 REQUIRE_APPROVAL 属执行期工具门，
+  不伪造注入点）。approvalsEmpty gap 文案更新，run/approvals → full。
+  已知无关 flake：混合跑 tests/api+application+contracts 时 worker-plane
+  postgres 用例因 env DSN 污染失败（见记忆 m0-gating-dsn-pinning；单跑全绿）。
 - [ ] AC-09（WP-Z）：openapi 快照再生 + `src/api/types.ts` 同步；stub-api/apiHarness
   注册全部新路由；live-api-workflow 扩展主链；m0 profile 全绿；pageSupport/GAPS 与
   docs/api/CONTROL_PLANE_API.md 同步更新；RECHECK PASS。

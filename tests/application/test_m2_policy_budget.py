@@ -26,6 +26,7 @@ from packages.domain.enums import (
     TrustLevel,
 )
 from packages.domain.policy import PolicyDefinition, PolicyRule
+from packages.domain.protocols import FindingSeverity
 from packages.domain.tools import ToolProviderSpec
 from tests.application import protocol_fixtures as fixtures
 
@@ -241,7 +242,9 @@ def test_external_tool_provider_requires_pinned_digest() -> None:
     assert run_preflight(pinned_result.plan, pinned_context).passed
 
 
-def test_human_gate_is_warn_and_requires_approval() -> None:
+def test_human_gate_is_declaration_and_requires_approval() -> None:
+    """WP-H 语义：HUMAN_GATE 为声明性控制门（INFO finding，不阻断 freeze；
+    unresolved_risks 与 dry-run approval_actions 保留声明）。"""
     base = fixtures.protocol()
     gated = replace(
         base,
@@ -251,7 +254,9 @@ def test_human_gate_is_warn_and_requires_approval() -> None:
     result = compile_protocol(gated, context.catalog, context.project)
     assert result.plan is not None
     report = run_preflight(result.plan, context)
-    assert report.status.value == "WARN"
-    assert "HUMAN_GATE_REQUIRED" in {item.code for item in report.findings}
+    assert report.status.value == "PASS"
+    gate_findings = [item for item in report.findings if item.code == "HUMAN_GATE_REQUIRED"]
+    assert gate_findings and all(item.severity is FindingSeverity.INFO for item in gate_findings)
+    assert any("human gate required" in risk for risk in report.unresolved_risks)
     projection = dry_run_projection(result.plan, context, report)
     assert projection.approval_actions

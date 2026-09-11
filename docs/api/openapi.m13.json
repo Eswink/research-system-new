@@ -4149,7 +4149,7 @@
     },
     "/approvals/{approval_id}/decide": {
       "post": {
-        "description": "后端裁决（hidden button != authorization）：\n\n- duplicate decide → 409；approve-vs-deny race → 后者 409；\n- stale If-Match → 412；run 非 WAITING_FOR_APPROVAL → 409；\n- deny → Run APPROVAL_REJECTED（FAILED）；approve → APPROVAL_GRANTED（RUNNING）；\n- 决策事件（approval.decided）落 outbox 审计。",
+        "description": "后端裁决（hidden button != authorization）：\n\n- duplicate decide → 409；approve-vs-deny race → 后者 409；\n- stale If-Match → 412；run 非 WAITING_FOR_APPROVAL → 409；\n- deny → Run APPROVAL_REJECTED（FAILED）；approve → APPROVAL_GRANTED（RUNNING）\n  并续跑 human gate 暂停的剩余执行（WP-H）；\n- 执行上下文不可恢复（如进程重启后）→ 503，decision 不写入、不伪装恢复；\n- 决策事件（approval.decided）落 outbox 审计。",
         "operationId": "decide_approvals__approval_id__decide_post",
         "parameters": [
           {

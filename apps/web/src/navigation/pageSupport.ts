@@ -29,7 +29,9 @@ export const GAPS = {
   fileBrowse: "文件 Diff 无接口；预览与下载已接入（GET /artifacts/{id}/content）",
   globalLineage: "全局数据集/提示词血缘无 API：仅 Run 级引用",
   delete: "控制面无 DELETE 端点：不提供删除操作",
-  approvalsEmpty: "生产路径审批列表恒空（ApprovalStore 无注册点）",
+  approvalsEmpty:
+    "审批注册点已接入（human-gate 协议暂停时注册，见 human_gate_demo_v1）；" +
+    "无审批门的 run 列表为空是正确状态",
   costSeries:
     "成本日序列已接入（GET /cost/daily）；预测/前瞻无 API，不绘制",
   memory:
@@ -70,7 +72,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "portfolio/runs-history": { level: "full" },
   "portfolio/compare": { level: "partial", reason: "仅比较已返回指标；不可比语义保留" },
   "run/timeline": { level: "full" },
-  "run/approvals": { level: "partial", reason: GAPS.approvalsEmpty },
+  "run/approvals": { level: "full" },
   "run/workspace": {
     level: "partial",
     reason: GAPS.fileBrowse,

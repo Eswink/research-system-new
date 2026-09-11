@@ -22,6 +22,12 @@ def _warning(code: str, message: str, subject: str | None = None) -> PreflightFi
     return PreflightFinding(code, FindingSeverity.WARNING, message, subject)
 
 
+def _info(code: str, message: str, subject: str | None = None) -> PreflightFinding:
+    """声明性控制门（HUMAN_GATE，WP-H）：INFO 呈现 + unresolved_risks 登记，
+    不阻断 freeze；执行循环在该 phase 前注册审批并进入 WAITING_FOR_APPROVAL。"""
+    return PreflightFinding(code, FindingSeverity.INFO, message, subject)
+
+
 # capability → policy scope 映射。单一事实源：examples/config/policy.yaml 中
 # 显式带 scope 的规则；新增带 scope 的规则时必须同步更新本常量（有测试锁死一致性）。
 _CAPABILITY_SCOPE: dict[str, str] = {
@@ -103,7 +109,7 @@ def check_policy(
     for gate in plan.gates:
         if gate.gate is GateType.HUMAN_GATE:
             findings.append(
-                _warning(
+                _info(
                     PreflightFindingCode.HUMAN_GATE_REQUIRED.value,
                     f"human gate required for phase {gate.phase_id}",
                     f"phase:{gate.phase_id}",

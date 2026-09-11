@@ -7,10 +7,13 @@ If-Match）。deny → Run APPROVAL_REJECTED → FAILED；approve → APPROVAL_G
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from fastapi import APIRouter, Request
 
 from packages.application.ports import ApprovalStore
 from packages.application.ports.approval_store import ApprovalRecord
+from packages.application.ports.errors import InvalidInputError
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from services.api.approvals import (
@@ -69,13 +72,17 @@ async def decide(approval_id: str, payload: ApprovalDecideDto, request: Request)
 
     - duplicate decide → 409；approve-vs-deny race → 后者 409；
     - stale If-Match → 412；run 非 WAITING_FOR_APPROVAL → 409；
-    - deny → Run APPROVAL_REJECTED（FAILED）；approve → APPROVAL_GRANTED（RUNNING）；
+    - deny → Run APPROVAL_REJECTED（FAILED）；approve → APPROVAL_GRANTED（RUNNING）
+      并续跑 human gate 暂停的剩余执行（WP-H）；
+    - 执行上下文不可恢复（如进程重启后）→ 503，decision 不写入、不伪装恢复；
     - 决策事件（approval.decided）落 outbox 审计。
     """
     deps: ApiDeps = get_deps(request)
     registry = _ensure_registry(deps)
-    run_id = _run_id_of(deps, approval_id)
+    approval = _approval_or_404(deps, approval_id)
+    run_id = approval.run_id
     run = _require_run(deps, run_id)
+    _require_resumable(deps, payload, run, approval)
     decided = decide_approval(
         registry=registry,
         approval_id=approval_id,
@@ -95,14 +102,48 @@ async def decide(approval_id: str, payload: ApprovalDecideDto, request: Request)
     save_run(deps, updated_run)
     event = build_approval_event(decided, actor="user:console")
     deps.events.publish(event)
+    if payload.decision == "approve":
+        _resume_after_approval(deps, run_id, updated_run)
     return _approval_dto(decided)
 
 
-def _run_id_of(deps: ApiDeps, approval_id: str) -> str:
+def _approval_or_404(deps: ApiDeps, approval_id: str) -> ApprovalRecord:
     approval = deps.approvals.get(approval_id) if deps.approvals is not None else None
     if approval is None:
         raise ApiError(404, "Not Found", f"approval not found: {approval_id}")
-    return approval.run_id
+    return approval
+
+
+def _require_resumable(
+    deps: ApiDeps, payload: ApprovalDecideDto, run: ResearchRun, approval: ApprovalRecord
+) -> None:
+    """orchestration 的 human-gate 暂停在 approve 前要求可恢复执行上下文；
+    非 orchestration 审批（action 无 human-gate 前缀）只记录裁决、无续跑语义。"""
+    if payload.decision != "approve" or deps.runs is None:
+        return
+    if not approval.action.startswith("human-gate:"):
+        return
+    if run.state == ResearchRunState.State.WAITING_FOR_APPROVAL and not (
+        deps.runs.has_waiting_context(run.id.value)
+    ):
+        raise ApiError(
+            503,
+            "Execution Context Lost",
+            "the run's paused execution context is unavailable in this process "
+            "(e.g. after restart); the approval is not consumed and no fake resume occurs",
+        )
+
+
+def _resume_after_approval(deps: ApiDeps, run_id: str, granted: ResearchRun) -> None:
+    """续跑 human-gate 暂停；无暂存上下文（非 orchestration 审批竞态/重启）为
+    no-op：decision 已按 canonical 状态机落库，绝不伪造续跑。"""
+    if deps.runs is None:
+        return
+    try:
+        outcome = deps.runs.resume_after_approval(run_id)
+    except InvalidInputError:
+        return
+    save_run(deps, replace(granted, state=outcome.state))
 
 
 @router.post("/runs/{run_id}/pause", response_model=object)

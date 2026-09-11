@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from typing import Any
 
 from packages.application.memory.gate import MemoryGateDeps
 from packages.application.observability.scope import operation
@@ -18,6 +19,7 @@ from packages.application.observability.signals import (
     OperationScope,
 )
 from packages.application.ports.agent_runtime import AgentRuntime
+from packages.application.ports.approval_store import ApprovalSpec
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.evidence_ledger import EvidenceLedger
@@ -82,6 +84,11 @@ class PhaseRunnerDeps:
     publish: Callable[[EventType, dict[str, object], str, str, str | None], None] | None = None
     fail_run: Callable[[str, str, bool], RunOutcome] | None = None
     telemetry: TelemetrySink | None = None
+    # WP-H：human gate 注册面。approvals 与 human_gated 同源注入（service 仅在
+    # store 存在时给出非空 gate 集）；on_pause 把未执行 specs 交回 service 暂存。
+    approvals: Any | None = None
+    human_gated: frozenset[str] = frozenset()
+    on_pause: Callable[[tuple[SessionSpec, ...]], None] | None = None
 
     def emit(
         self,
@@ -128,11 +135,15 @@ class TaskContext:
 
 
 def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
-    """按 phase DAG 拓扑序执行任务；每个任务经独立 Evaluation gate。"""
+    """按 phase DAG 拓扑序执行任务；human gate 前注册审批并进入 WAITING。"""
     outcomes: list[TaskOutcome] = []
     handoffs: dict[str, object] = {}
     specs = ctx.pending or ctx.resolve_sessions()
-    for group in _phase_groups(specs):
+    groups = list(_phase_groups(specs))
+    for index, group in enumerate(groups):
+        paused = _pause_for_human_gate(deps, ctx, group, groups[index:], outcomes)
+        if paused is not None:
+            return paused
         failure = _execute_phase_group(deps, ctx, group, outcomes, handoffs)
         if failure is not None:
             return failure
@@ -145,6 +156,49 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
         manifest_digest=ctx.frozen_manifest_digest,
         handoff_digests=tuple(sorted(handoffs)),
         system_failure=False,
+    )
+
+
+def _pause_for_human_gate(
+    deps: PhaseRunnerDeps,
+    ctx: PhaseContext,
+    group: "tuple[SessionSpec, ...]",
+    remaining: "list[tuple[SessionSpec, ...]]",
+    outcomes: "list[TaskOutcome]",
+) -> RunOutcome | None:
+    """声明的 human gate：注册 ApprovalRecord + APPROVAL_REQUESTED 事件 +
+    WAITING_FOR_APPROVAL outcome（剩余 specs 经 on_pause 交回 service 暂存）。
+    没有 approvals store 时 service 不会给出 human_gated 集（fail-closed）。"""
+    phase_id = group[0][2].phase_id
+    if not phase_id or phase_id not in deps.human_gated or deps.approvals is None:
+        return None
+    approval = deps.approvals.register(
+        ApprovalSpec(
+            run_id=ctx.run_id,
+            action=f"human-gate:{phase_id}",
+            risk="HUMAN_GATE",
+            context=phase_id,
+            policy_source="protocol-gate",
+            # requested_event_id 关联本应指向 approval.requested 事件，但发布在
+            # register 之后且 publish 不回传 id；留空（审批记录本身即真相源）。
+            requested_event_id="",
+        )
+    )
+    deps.emit(
+        EventType.APPROVAL_REQUESTED,
+        {"run_id": ctx.run_id, "phase_id": phase_id, "approval_id": approval.id},
+        ctx.run_id,
+        ctx.trace_id,
+        None,
+    )
+    if deps.on_pause is not None:
+        deps.on_pause(tuple(spec for chunk in remaining for spec in chunk))
+    return RunOutcome(
+        run_id=ctx.run_id,
+        state=ResearchRunState.State.WAITING_FOR_APPROVAL,
+        message=f"awaiting human approval for phase {phase_id} (approval {approval.id})",
+        tasks=tuple(outcomes),
+        manifest_digest=ctx.frozen_manifest_digest,
     )
 
 

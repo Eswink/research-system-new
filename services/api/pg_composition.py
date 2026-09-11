@@ -138,6 +138,8 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
             telemetry=config.telemetry,
             pricing=_load_pricing(),
             pricing_store=c["pricing_store"],
+            # WP-H：与 ApiDeps.approvals 同一实例（decide 读、执行循环写）。
+            approvals=c["approvals"],
         )
     )
     return PostgresAssembly(

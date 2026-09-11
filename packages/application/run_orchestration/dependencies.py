@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from packages.application.cost.pricing import PricingTable
 from packages.application.ports.agent_runtime import AgentRuntime
+from packages.application.ports.approval_store import ApprovalStore
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.event_publisher import EventPublisher
@@ -30,6 +31,9 @@ class OrchestrationDependencies:
     # 定价引用(遗留行为,投影侧显式表达"pricing 未冻结")。
     pricing: PricingTable | None = None
     pricing_store: PricingSnapshotStore | None = None
+    # WP-H：human gate 审批注册面（与 ApiDeps.approvals 同一实例，由 composition
+    # root 保证；None 时 human gate 不注入执行循环 → 不会静默暂停）。
+    approvals: ApprovalStore | None = None
     default_actor: str = "system:orchestration"
 
 
