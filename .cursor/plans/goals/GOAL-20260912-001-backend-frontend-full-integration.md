@@ -96,6 +96,14 @@ RECHECK-20260912-040 = PASS_WITH_WARNINGS；密封扫描 scan-2026-09-12 已处�
 PLAN-20260912-041）**。工作树实况：main HEAD 含 040 全部收口 commit；041/042
 文件不存在（cycle 1 创建）。
 
+## 驱动
+
+本 GOAL 驱动无关（README「驱动适配」）：默认**会话驱动**（用户指令进入下一 cycle）；
+需要无人值守时挂**定时自动化**（指令模板见 README，仅当 status=ACTIVE 时推进）；
+若运行环境提供客户端 goal/auto 持续模式，其每轮触发等价为一次入口协议进入，
+限额与停止条件以本文件 frontmatter 为准。进入 cycle 时在迭代日志声明 driver 与
+owner；同一时刻仅一个驱动推进。
+
 ## 单 cycle SOP
 
 按 README ①~⑦ 执行。本实例附加约定：
@@ -132,3 +140,7 @@ m0 全量单跑截断（分组复跑）。工作流文件 `.github/workflows/m0-
 
 - 2026-09-12 创建（ACTIVE）：GOAL 格式定稿（README），PLAN-040 作为前置输入；
   授权含 push-to-main-for-CI；等待「执行 GOAL-001 下一 cycle」指令进入 cycle 1。
+- 2026-09-13 驱动适配定稿：GOAL 契约驱动无关（会话/cron/客户端 goal 模式三选一，
+  限额以 frontmatter 为准，单驱动推进）；经查证当前 ZCode 安装无 agent 侧 goal
+  模式工具面（可见能力为 plan mode、定时自动化、子代理），故不绑定客户端模式，
+  无人值守路径由定时自动化承担。
