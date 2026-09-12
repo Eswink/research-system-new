@@ -20,6 +20,7 @@ from packages.application.ports.agent_store import AgentStore
 from packages.application.ports.approval_store import ApprovalRecord, ApprovalStore
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger, LedgerSnapshot
+from packages.application.ports.catalog_override_store import CatalogOverrideStore
 from packages.application.ports.credential_resolver import CredentialResolver, SecretValue
 from packages.application.ports.endpoint_store import EndpointStore
 from packages.application.ports.errors import (
@@ -102,6 +103,7 @@ __all__ = [
     "ApprovalStore",
     "ArtifactStore",
     "BudgetLedger",
+    "CatalogOverrideStore",
     "CatalogSnapshot",
     "CompletionRequest",
     "CompletionResult",

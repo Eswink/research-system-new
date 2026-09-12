@@ -175,6 +175,29 @@ async def update_endpoint(
     return dto
 
 
+@router.delete("/{endpoint_id}", status_code=204)
+async def delete_endpoint(endpoint_id: str, request: Request) -> None:
+    """删除用户 relay（G10，WP-B）。
+
+    引用完整性：任何用户 model 的 endpoint_id 指向该 relay 的 id 或 name
+    （catalog_merge 的 relay-name alias 语义）→ 409，不静默悬空。
+    credential 条目为进程内注册表（永不落盘），重启即散，无泄漏面。
+    """
+    deps: ApiDeps = get_deps(request)
+    endpoint = endpoint_or_404(deps, endpoint_id)
+    bound = {endpoint_id, endpoint.name}
+    referencing = sorted(
+        model.id for model in deps.model_store.list_models() if model.endpoint_id in bound
+    )
+    if referencing:
+        raise ApiError(
+            409,
+            "Endpoint In Use",
+            f"referenced by models: {', '.join(referencing)}",
+        )
+    deps.endpoint_store.delete_endpoint(endpoint.id)
+
+
 @router.post("/{endpoint_id}/test", response_model=EndpointTestResultDto)
 async def test_endpoint(
     endpoint_id: str,

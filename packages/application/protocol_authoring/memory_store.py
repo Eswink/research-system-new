@@ -131,6 +131,15 @@ class InMemoryProtocolDraftStore:
             return None
         return next((r for r in state.revisions if r.revision == revision), None)
 
+    def delete(self, draft_id: str) -> bool:
+        removed = self._drafts.pop(draft_id, None) is not None
+        self._idempotency = {
+            key: result
+            for key, result in self._idempotency.items()
+            if result.record.draft_id != draft_id
+        }
+        return removed
+
     # ── 内部 ──
     def _now_iso(self) -> str:
         value = datetime.now(timezone.utc) if self._clock is None else self._clock()

@@ -14,7 +14,12 @@ from packages.application.model_relay.fingerprint import build_fingerprint
 from packages.application.model_relay.probe import ProbeOptions, run_probe
 from packages.application.model_relay.suite import default_probe_suite
 from packages.domain.core import ID
-from packages.domain.enums import CapabilitySource, CapabilityStatus, ModelCapability
+from packages.domain.enums import (
+    CapabilitySource,
+    CapabilityStatus,
+    ModelBindingMode,
+    ModelCapability,
+)
 from packages.domain.models import (
     CapabilityAssertion,
     EndpointProbeSnapshot,
@@ -23,6 +28,7 @@ from packages.domain.models import (
     ModelProbeResult,
     ProbeSuiteSpec,
 )
+from services.api.catalog_merge import merged_catalog_snapshot
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps, require_if_match
 from services.api.dto.models import (
@@ -57,6 +63,29 @@ def _endpoint_for(deps: ApiDeps, endpoint_id: str) -> LLMEndpoint:
         return deps.endpoint_store.get_endpoint(endpoint_id)
     except KeyError as exc:
         raise ApiError(404, "Not Found", f"endpoint not found: {endpoint_id}") from exc
+
+
+def _hard_capability_requirements(deps: ApiDeps, model_id: str) -> list[str]:
+    """合并目录视图中引用本模型的硬能力要求（WP-B：compatibility 投影非恒空）。
+
+    事实源 = merged catalog：agent 显式绑定 → 其 Role 的
+    `hard_model_capabilities`（all_of + any_of）；ModelProfile primary/fallback
+    含本模型 → profile.hard_capabilities。无任何声明返回 []（UI 显示
+    "none declared"，不推断）。
+    """
+    catalog = merged_catalog_snapshot(deps)
+    required: set[str] = set()
+    for agent in catalog.agents.values():
+        binding = agent.model_binding
+        if binding.mode is ModelBindingMode.EXPLICIT_MODEL and binding.value == model_id:
+            role = catalog.roles.get(agent.role)
+            if role is not None:
+                required.update(role.hard_model_capabilities.all_of)
+                required.update(role.hard_model_capabilities.any_of)
+    for profile in catalog.model_profiles.values():
+        if model_id in (profile.primary, *profile.fallback):
+            required.update(str(capability) for capability in profile.hard_capabilities)
+    return sorted(required)
 
 
 def _capabilities_from_payload(
@@ -233,11 +262,35 @@ def _probe_fingerprint(
 
 @router.get("/{model_id}/compatibility", response_model=CompatibilityViewDto)
 async def model_compatibility(model_id: str, request: Request) -> CompatibilityViewDto:
-    """兼容性视图：声明能力（含来源标注）+ endpoint 摘要；不含未探测推断。"""
+    """兼容性视图：声明能力（含来源标注）+ endpoint 摘要；不含未探测推断。
+
+    WP-B：`hard_capability_requirements` 为合并目录视图中引用本模型的硬能力
+    要求投影（见 `_hard_capability_requirements`），不再是恒空预留字段。
+    """
     deps: ApiDeps = get_deps(request)
     model = _get_or_404(deps, model_id)
     return CompatibilityViewDto(
         model=model_read_dto(model),
         endpoint_id=model.endpoint_id,
-        hard_capability_requirements=[],
+        hard_capability_requirements=_hard_capability_requirements(deps, model.id),
     )
+
+
+@router.delete("/{model_id}", status_code=204)
+async def delete_model(model_id: str, request: Request) -> None:
+    """删除用户 model（G10，WP-B）：合并目录中 agent 显式绑定本模型 → 409。"""
+    deps: ApiDeps = get_deps(request)
+    model = _get_or_404(deps, model_id)
+    referencing = sorted(
+        agent.id
+        for agent in merged_catalog_snapshot(deps).agents.values()
+        if agent.model_binding.mode is ModelBindingMode.EXPLICIT_MODEL
+        and agent.model_binding.value == model.id
+    )
+    if referencing:
+        raise ApiError(
+            409,
+            "Model In Use",
+            f"bound by agents: {', '.join(referencing)}",
+        )
+    deps.model_store.delete_model(model.id)

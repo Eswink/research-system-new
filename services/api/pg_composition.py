@@ -179,6 +179,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
     from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
     from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.approval_store import SqliteApprovalStore
+    from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
     from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
     from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
@@ -207,6 +208,8 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         ledger=assembly.ledger,
         budget=assembly.budget,
         agent_store=SqliteAgentStore(connection=assembly.connection),
+        # WP-B（PLAN-040）：配置面（含自定义 Role/Template 覆盖）SQLite 同侧。
+        catalog_overrides=SqliteCatalogOverrideStore(connection=assembly.connection),
         project_settings_store=SqliteProjectSettingsStore(connection=assembly.connection),
         notification_reads=SqliteNotificationReadStore(connection=assembly.connection),
         endpoint_url_policy=_endpoint_url_policy(assembly.effective),

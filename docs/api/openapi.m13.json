@@ -2,6 +2,27 @@
   "$id": "https://research-os.local/schemas/openapi.m13.json",
   "components": {
     "schemas": {
+      "AgentCloneDto": {
+        "additionalProperties": false,
+        "description": "克隆 Agent（WP-B，G10 配套）：new_id 缺省由服务端生成。",
+        "properties": {
+          "new_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Id"
+          }
+        },
+        "title": "AgentCloneDto",
+        "type": "object"
+      },
       "AgentCreateDto": {
         "additionalProperties": false,
         "description": "创建 Agent 实例（Role 的配置实例；同 Role 可多实例）。",
@@ -4069,6 +4090,40 @@
   "openapi": "3.1.0",
   "paths": {
     "/agents/{agent_id}": {
+      "delete": {
+        "description": "删除用户 Agent 记录（G10；examples 契约基线不在 store 中 → 404）。",
+        "operationId": "delete_agent_agents__agent_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Agent",
+        "tags": [
+          "team-protocol"
+        ]
+      },
       "patch": {
         "description": "per-Agent 更新（model_binding 等）持久化到 AgentStore。\n\n语义变更（运行中改 Model/Tool）仍须 Manifest Revision / Fork（M14）。",
         "operationId": "update_agent_agents__agent_id__patch",
@@ -4116,6 +4171,59 @@
           }
         },
         "summary": "Update Agent",
+        "tags": [
+          "team-protocol"
+        ]
+      }
+    },
+    "/agents/{agent_id}/clone": {
+      "post": {
+        "description": "克隆 Agent 配置实例（同 Role/绑定/上下文，新 id；契约基线项亦可克隆为用户记录）。",
+        "operationId": "clone_agent_agents__agent_id__clone_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCloneDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSpecDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clone Agent",
         "tags": [
           "team-protocol"
         ]
@@ -4595,6 +4703,40 @@
       }
     },
     "/llm-endpoints/{endpoint_id}": {
+      "delete": {
+        "description": "删除用户 relay（G10，WP-B）。\n\n引用完整性：任何用户 model 的 endpoint_id 指向该 relay 的 id 或 name\n（catalog_merge 的 relay-name alias 语义）→ 409，不静默悬空。\ncredential 条目为进程内注册表（永不落盘），重启即散，无泄漏面。",
+        "operationId": "delete_endpoint_llm_endpoints__endpoint_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "endpoint_id",
+            "required": true,
+            "schema": {
+              "title": "Endpoint Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Endpoint",
+        "tags": [
+          "llm-endpoints"
+        ]
+      },
       "get": {
         "operationId": "get_endpoint_llm_endpoints__endpoint_id__get",
         "parameters": [
@@ -4996,6 +5138,40 @@
       }
     },
     "/models/{model_id}": {
+      "delete": {
+        "description": "删除用户 model（G10，WP-B）：合并目录中 agent 显式绑定本模型 → 409。",
+        "operationId": "delete_model_models__model_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "title": "Model Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Model",
+        "tags": [
+          "models"
+        ]
+      },
       "get": {
         "operationId": "get_model_models__model_id__get",
         "parameters": [
@@ -5089,7 +5265,7 @@
     },
     "/models/{model_id}/compatibility": {
       "get": {
-        "description": "兼容性视图：声明能力（含来源标注）+ endpoint 摘要；不含未探测推断。",
+        "description": "兼容性视图：声明能力（含来源标注）+ endpoint 摘要；不含未探测推断。\n\nWP-B：`hard_capability_requirements` 为合并目录视图中引用本模型的硬能力\n要求投影（见 `_hard_capability_requirements`），不再是恒空预留字段。",
         "operationId": "model_compatibility_models__model_id__compatibility_get",
         "parameters": [
           {
@@ -5978,6 +6154,40 @@
       }
     },
     "/protocol-drafts/{draft_id}": {
+      "delete": {
+        "description": "物理删除草稿与全部修订（G10，WP-B）。\n\n运行链不受影响：draft 启动 run 冻结的是启动时刻修订正文，Manifest 不\n依赖草稿存续；删除后 draft 深链 404 是正确态。",
+        "operationId": "delete_draft_protocol_drafts__draft_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Draft",
+        "tags": [
+          "protocol-drafts"
+        ]
+      },
       "get": {
         "operationId": "get_draft_protocol_drafts__draft_id__get",
         "parameters": [
@@ -6303,6 +6513,50 @@
         ]
       }
     },
+    "/roles/custom": {
+      "post": {
+        "description": "创建用户自定义 RoleDefinition（role-definition.schema.json 校验）。",
+        "operationId": "create_custom_role_roles_custom_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDefinitionDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Custom Role",
+        "tags": [
+          "team-protocol"
+        ]
+      }
+    },
     "/runs/{run_id}": {
       "get": {
         "description": "Run 状态视图（canonical state；刷新后从 API 恢复）。",
@@ -6343,6 +6597,53 @@
         "summary": "Get Run",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/runs/{run_id}/approvals": {
+      "get": {
+        "description": "run 审批历史（WP-B：ApprovalStore.list_for_run 已有权威面）。\n\n含已裁决记录（status 区分 PENDING/GRANTED/DENIED）；未知 run → 404。",
+        "operationId": "list_run_approvals_runs__run_id__approvals_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApprovalDto"
+                  },
+                  "title": "Response List Run Approvals Runs  Run Id  Approvals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Run Approvals",
+        "tags": [
+          "approvals"
         ]
       }
     },
@@ -7032,6 +7333,50 @@
           }
         },
         "summary": "List Team Templates",
+        "tags": [
+          "team-protocol"
+        ]
+      }
+    },
+    "/team-templates/custom": {
+      "post": {
+        "description": "创建用户自定义 TeamTemplate（team-template.schema.json 校验）。",
+        "operationId": "create_custom_team_template_team_templates_custom_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamTemplateDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Custom Team Template",
         "tags": [
           "team-protocol"
         ]

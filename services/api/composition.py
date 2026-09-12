@@ -21,6 +21,7 @@ from adapters.sqlite.agent_store import SqliteAgentStore
 from adapters.sqlite.approval_store import SqliteApprovalStore
 from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.budget_ledger import SqliteBudgetLedger
+from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
 from adapters.sqlite.endpoint_store import SqliteEndpointStore
 from adapters.sqlite.eval_report_store import SqliteEvalReportStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
@@ -39,6 +40,7 @@ from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
 from packages.application.ports import (
     AgentStore,
     ApprovalStore,
+    CatalogOverrideStore,
     ProjectSettingsStore,
     RunStore,
     WorkflowEngine,
@@ -94,6 +96,9 @@ class ApiDeps:
     run_contexts: dict[str, RunContext] = field(default_factory=dict)
     artifacts: ArtifactStore | None = field(default=None, repr=False)
     agent_store: AgentStore | None = field(default=None, repr=False)
+    # WP-B（PLAN-040）：用户自定义 Role/TeamTemplate 覆盖（SQLite 配置面；
+    # 未配置时 merged_catalog 无 overrides、custom POST 诚实 503）。
+    catalog_overrides: CatalogOverrideStore | None = field(default=None, repr=False)
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
     approvals: ApprovalStore | None = field(default=None, repr=False)
     memory: Any | None = field(default=None, repr=False)
@@ -273,6 +278,7 @@ def _assemble_sqlite(
         ledger=ledger_sqlite,
         budget=budget_sqlite,
         agent_store=SqliteAgentStore(connection=connection),
+        catalog_overrides=SqliteCatalogOverrideStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
         notification_reads=SqliteNotificationReadStore(connection=connection),
         # WP-A（PLAN-040）：dev 路径 memory/实验/worker 注册表接 SQLite 同 Port

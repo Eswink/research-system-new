@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from adapters.contracts.base import load_flat_collection
 from packages.domain.core import Digest, Version
 from packages.domain.enums import (
@@ -26,28 +28,37 @@ from packages.domain.roles import (
 from packages.domain.tools import SkillSpec
 
 
+def role_from_mapping(raw: Any) -> RoleDefinition:
+    """从契约映射（examples/config/roles.yaml 子项同形）构造 RoleDefinition。
+
+    schema 校验由调用方负责（`load_roles` 经 `load_flat_collection`；控制面
+    自定义创建经 `validate_instance` + 本构造，失败抛 ValueError 族）。
+    """
+    hard = raw["hard_model_capabilities"]
+    return RoleDefinition(
+        id=raw["id"],
+        role_type=raw["role_type"],
+        category=RoleCategory(raw["category"]),
+        activation_default=ActivationPolicy(raw["activation_default"]),
+        requested_capabilities=list(raw["requested_capabilities"]),
+        hard_model_capabilities=ModelCapabilityRequirement(
+            all_of=list(hard.get("all_of", [])),
+            any_of=list(hard.get("any_of", [])),
+        ),
+        default_model_profile=raw.get("default_model_profile"),
+        workspace_policy=WorkspacePolicy(raw["workspace_policy"]),
+        default_skills=list(raw.get("default_skills", [])),
+        forbidden_capabilities=list(raw.get("forbidden_capabilities", [])),
+        review_panel_role=ReviewPanelRole(raw.get("review_panel_role", "NONE")),
+    )
+
+
 def load_roles(relative_path: str) -> dict[str, RoleDefinition]:
     collection: dict[str, RoleDefinition] = {}
     for key, raw in load_flat_collection(
         relative_path, "roles", "role-definition.schema.json"
     ).items():
-        hard = raw["hard_model_capabilities"]
-        collection[key] = RoleDefinition(
-            id=raw["id"],
-            role_type=raw["role_type"],
-            category=RoleCategory(raw["category"]),
-            activation_default=ActivationPolicy(raw["activation_default"]),
-            requested_capabilities=list(raw["requested_capabilities"]),
-            hard_model_capabilities=ModelCapabilityRequirement(
-                all_of=list(hard.get("all_of", [])),
-                any_of=list(hard.get("any_of", [])),
-            ),
-            default_model_profile=raw.get("default_model_profile"),
-            workspace_policy=WorkspacePolicy(raw["workspace_policy"]),
-            default_skills=list(raw.get("default_skills", [])),
-            forbidden_capabilities=list(raw.get("forbidden_capabilities", [])),
-            review_panel_role=ReviewPanelRole(raw.get("review_panel_role", "NONE")),
-        )
+        collection[key] = role_from_mapping(raw)
     return collection
 
 
@@ -90,31 +101,36 @@ def load_agents(relative_path: str) -> dict[str, AgentSpec]:
     return collection
 
 
+def team_template_from_mapping(raw: Any) -> TeamTemplate:
+    """从契约映射（examples/config/team_templates.yaml 子项同形）构造 TeamTemplate。"""
+    pools: dict[str, RolePool] = {}
+    for role_name, pool in raw["roles"].items():
+        pools[role_name] = RolePool(
+            min_instances=pool["min_instances"],
+            max_instances=pool["max_instances"],
+            concurrency=pool.get("concurrency", 1),
+            selection_strategy=SelectionStrategy(pool.get("selection_strategy", "FIXED")),
+            model_profile=pool.get("model_profile"),
+            activation_policy=(
+                ActivationPolicy(pool["activation_policy"])
+                if pool.get("activation_policy")
+                else None
+            ),
+        )
+    return TeamTemplate(
+        id=raw["id"],
+        display_name=raw["display_name"],
+        roles=pools,
+        extends=raw.get("extends"),
+    )
+
+
 def load_team_templates(relative_path: str) -> dict[str, TeamTemplate]:
     collection: dict[str, TeamTemplate] = {}
     for key, raw in load_flat_collection(
         relative_path, "team_templates", "team-template.schema.json"
     ).items():
-        pools: dict[str, RolePool] = {}
-        for role_name, pool in raw["roles"].items():
-            pools[role_name] = RolePool(
-                min_instances=pool["min_instances"],
-                max_instances=pool["max_instances"],
-                concurrency=pool.get("concurrency", 1),
-                selection_strategy=SelectionStrategy(pool.get("selection_strategy", "FIXED")),
-                model_profile=pool.get("model_profile"),
-                activation_policy=(
-                    ActivationPolicy(pool["activation_policy"])
-                    if pool.get("activation_policy")
-                    else None
-                ),
-            )
-        collection[key] = TeamTemplate(
-            id=raw["id"],
-            display_name=raw["display_name"],
-            roles=pools,
-            extends=raw.get("extends"),
-        )
+        collection[key] = team_template_from_mapping(raw)
     return collection
 
 

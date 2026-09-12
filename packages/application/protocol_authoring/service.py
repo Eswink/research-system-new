@@ -275,6 +275,10 @@ class DraftService:
             raise KeyError(f"draft revision not found: {draft_id}@{revision}")
         return DraftRevisionRef(draft_id=draft_id, revision=revision)
 
+    def delete(self, draft_id: str) -> bool:
+        """物理删除草稿（Port delete 透传；不存在返回 False）。"""
+        return self._store.delete(draft_id)
+
 
 def conflict_revision(exc: DraftStoreConflictError) -> int:
     """冲突错误的当前修订号（API 层 412 响应体使用）。"""

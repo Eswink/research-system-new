@@ -64,6 +64,12 @@ class AgentUpdateDto(BaseModel):
     max_iterations: int | None = None
 
 
+class AgentCloneDto(BaseModel):
+    """克隆 Agent（WP-B，G10 配套）：new_id 缺省由服务端生成。"""
+
+    new_id: str | None = Field(default=None, min_length=1, max_length=200)
+
+
 class ProjectSettingsUpdateDto(BaseModel):
     """项目设置保存（全量显式；template/workspace 引用由服务端校验）。"""
 

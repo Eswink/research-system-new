@@ -13,11 +13,43 @@ state 落地后本服务由持久化实现替换（CatalogSnapshot Port 不变�
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import replace
+from typing import Protocol, TypeVar
 
+from adapters.contracts.roles_loaders import role_from_mapping, team_template_from_mapping
 from packages.application.ports import CatalogSnapshot, ProjectSettings
 from services.api.catalog import load_catalog_snapshot, load_project_settings
 from services.api.composition import ApiDeps
+from services.api.custom_catalog import KIND_ROLES, KIND_TEAM_TEMPLATES
+
+
+class _Identifiable(Protocol):
+    """合并覆盖所需的结构面：实体携带 str id。"""
+
+    @property
+    def id(self) -> str: ...
+
+
+_T = TypeVar("_T", bound=_Identifiable)
+
+
+def _merge_overrides(
+    items: Mapping[str, _T], store: object, kind: str, build: Callable[[object], _T]
+) -> dict[str, _T]:
+    """合并用户自定义契约覆盖（WP-B）。
+
+    行隔离：读取只接受创建时已校验的 document；手工改库导致的坏行跳过
+    （不阻断整个目录面），与 artifact missing-reference 同一降级哲学。
+    """
+    merged: dict[str, _T] = dict(items)
+    for raw in store.list(kind):  # type: ignore[attr-defined]
+        try:
+            entity = build(raw)
+        except Exception:  # noqa: BLE001 - 坏行跳过，不伪造
+            continue
+        merged[entity.id] = entity
+    return merged
 
 
 def merged_catalog_snapshot(deps: ApiDeps) -> CatalogSnapshot:
@@ -26,6 +58,7 @@ def merged_catalog_snapshot(deps: ApiDeps) -> CatalogSnapshot:
     Relay 身份覆盖：用户 endpoint 的 name 与 example endpoint id 相同时
     按名称覆盖（控制面单一 relay 语义——example 协议内模型绑定经该 id
     解析到用户 relay，使向导配置真实进入 preflight/run 链）。
+    WP-B：Role/TeamTemplate 经 CatalogOverrideStore 用户覆盖（同 id 语义）。
     """
     base = load_catalog_snapshot()
     endpoints = dict(base.endpoints)
@@ -40,7 +73,21 @@ def merged_catalog_snapshot(deps: ApiDeps) -> CatalogSnapshot:
     if deps.agent_store is not None:
         for agent in deps.agent_store.list_agents():
             agents[agent.id] = agent
-    return replace(base, endpoints=endpoints, models=models, agents=agents)
+    roles = base.roles
+    team_templates = base.team_templates
+    if deps.catalog_overrides is not None:
+        roles = _merge_overrides(roles, deps.catalog_overrides, KIND_ROLES, role_from_mapping)
+        team_templates = _merge_overrides(
+            team_templates, deps.catalog_overrides, KIND_TEAM_TEMPLATES, team_template_from_mapping
+        )
+    return replace(
+        base,
+        endpoints=endpoints,
+        models=models,
+        agents=agents,
+        roles=roles,
+        team_templates=team_templates,
+    )
 
 
 def merged_project_settings(deps: ApiDeps) -> ProjectSettings:

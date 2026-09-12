@@ -86,6 +86,9 @@ SELECT draft_id, revision, yaml_text, source_digest, created_at
 FROM protocol_draft_revisions WHERE draft_id = %s AND revision = %s
 """
 
+_DELETE_REVISIONS = "DELETE FROM protocol_draft_revisions WHERE draft_id = %s"
+_DELETE_DRAFT = "DELETE FROM protocol_drafts WHERE draft_id = %s"
+
 
 class PgProtocolDraftStore(PostgresAdapterBase):
     """PostgreSQL ProtocolDraftStore（同一 Port 契约；生产路径）。"""
@@ -209,6 +212,15 @@ class PgProtocolDraftStore(PostgresAdapterBase):
         self._ensure_open()
         row: Any = self._sql(_SELECT_ONE_REVISION, (draft_id, revision)).fetchone()
         return None if row is None else _revision_from_row(row)
+
+    def delete(self, draft_id: str) -> bool:
+        self._ensure_open()
+        with self._conn.transaction():
+            self._sql(_DELETE_REVISIONS, (draft_id,))
+            cursor = self._sql(_DELETE_DRAFT, (draft_id,))
+        removed = int(cursor.rowcount) > 0
+        self._record("delete", draft_id, result=str(removed))
+        return removed
 
     # ── 内部 ──
     def _current_revision(self, draft_id: str) -> int:

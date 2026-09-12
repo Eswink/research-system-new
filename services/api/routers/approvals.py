@@ -66,6 +66,18 @@ async def list_approvals(request: Request) -> list[ApprovalDto]:
     return [_approval_dto(approval) for approval in registry.list_pending()]
 
 
+@router.get("/runs/{run_id}/approvals", response_model=list[ApprovalDto])
+async def list_run_approvals(run_id: str, request: Request) -> list[ApprovalDto]:
+    """run 审批历史（WP-B：ApprovalStore.list_for_run 已有权威面）。
+
+    含已裁决记录（status 区分 PENDING/GRANTED/DENIED）；未知 run → 404。
+    """
+    deps: ApiDeps = get_deps(request)
+    registry = _ensure_registry(deps)
+    _require_run(deps, run_id)
+    return [_approval_dto(approval) for approval in registry.list_for_run(run_id)]
+
+
 @router.post("/approvals/{approval_id}/decide", response_model=ApprovalDto)
 async def decide(approval_id: str, payload: ApprovalDecideDto, request: Request) -> ApprovalDto:
     """后端裁决（hidden button != authorization）：

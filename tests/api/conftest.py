@@ -90,6 +90,7 @@ def _base_sqlite_parts(
 def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     """基础装配（endpoint/model CRUD + probe + run 测试用）。"""
     from adapters.sqlite.agent_store import SqliteAgentStore
+    from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
     from adapters.sqlite.db import connect
     from adapters.sqlite.endpoint_store import SqliteEndpointStore
     from adapters.sqlite.model_store import SqliteModelStore
@@ -110,6 +111,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         ledger=ledger,
         budget=budget,
         agent_store=SqliteAgentStore(connection=connection),
+        catalog_overrides=SqliteCatalogOverrideStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
         protocol_draft_service=_make_draft_service(connection),
         _connection=connection,

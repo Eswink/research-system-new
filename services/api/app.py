@@ -24,6 +24,7 @@ from services.api.routers import (
     protocol_drafts,
     run_events,
     runs,
+    team_custom,
     team_protocol,
 )
 from services.api.scheduler import (
@@ -183,6 +184,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(llm_endpoints.router)
     app.include_router(models.router)
     app.include_router(team_protocol.router)
+    app.include_router(team_custom.router)
     app.include_router(runs.router)
     app.include_router(runs.projects_router)
     app.include_router(run_events.router)

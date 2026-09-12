@@ -253,6 +253,18 @@ async def save_draft(
     return _view_dto(result.record)
 
 
+@router.delete("/protocol-drafts/{draft_id}", status_code=204)
+async def delete_draft(draft_id: str, request: Request) -> None:
+    """物理删除草稿与全部修订（G10，WP-B）。
+
+    运行链不受影响：draft 启动 run 冻结的是启动时刻修订正文，Manifest 不
+    依赖草稿存续；删除后 draft 深链 404 是正确态。
+    """
+    service = draft_service_of(request)
+    if not service.delete(draft_id):
+        raise ApiError(404, "Draft Not Found", f"protocol draft not found: {draft_id}")
+
+
 def resolve_draft_revision(service: DraftService, ref: ProtocolDraftRunRefDto) -> str:
     """运行入口使用的精确修订解析：返回该修订的 YAML 文本。
 

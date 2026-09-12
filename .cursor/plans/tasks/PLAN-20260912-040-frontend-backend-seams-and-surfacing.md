@@ -92,3 +92,14 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
   `experiment_rows` codec 移至 `adapters/contracts/`（双 store 共享）。
   tests/api 221 项通过（2 项 worker_plane 为既有 PG 环境依赖，按 DSN 固化配方
   复跑通过）；契约套件 333 passed；openapi 快照待 WP-B 后统一再生。
+- 2026-09-12 WP-B 完成：`GET /runs/{run_id}/approvals`（list_for_run 历史面）；
+  `POST /roles/custom` + `POST /team-templates/custom`（新 CatalogOverrideStore
+  Port + Sqlite 实现，schema/domain 双校验、id 冲突 409、缺 store 503，合并视图
+  与 examples 项同构）；`POST /agents/{id}/clone` + `DELETE /agents/{id}`；
+  `DELETE /llm-endpoints/{id}`（被 model id/name 引用 → 409）、
+  `DELETE /models/{id}`（agent 显式绑定 → 409）、`DELETE /protocol-drafts/{id}`
+  （Port delete 扩到 InMemory/SQLite/PG 三实现 + 契约套件用例）；
+  `/models/{id}/compatibility` 的 hard_capability_requirements 改为合并目录
+  投影（roles.all_of/any_of + profiles.hard_capabilities）。
+  conftest base deps 注入 catalog_overrides；mypy/ruff 干净；
+  openapi 再生后 tests/api 241 passed + snapshot/boundaries 通过。

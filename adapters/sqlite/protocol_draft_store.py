@@ -108,6 +108,9 @@ SELECT draft_id, revision, yaml_text, source_digest, created_at
 FROM protocol_draft_revisions WHERE draft_id = ? AND revision = ?
 """
 
+_DELETE_REVISIONS = "DELETE FROM protocol_draft_revisions WHERE draft_id = ?"
+_DELETE_DRAFT = "DELETE FROM protocol_drafts WHERE draft_id = ?"
+
 
 class SqliteProtocolDraftStore(SqliteAdapterBase):
     """SQLite 持久化 ProtocolDraftStore（事务化乐观并发）。"""
@@ -234,6 +237,15 @@ class SqliteProtocolDraftStore(SqliteAdapterBase):
         self._ensure_open()
         row = self._sql(_SELECT_ONE_REVISION, (draft_id, revision)).fetchone()
         return None if row is None else _revision_from_row(row)
+
+    def delete(self, draft_id: str) -> bool:
+        self._ensure_open()
+        with self._conn:
+            self._sql(_DELETE_REVISIONS, (draft_id,))
+            cursor = self._sql(_DELETE_DRAFT, (draft_id,))
+        removed = int(cursor.rowcount) > 0
+        self._record("delete", draft_id, result=str(removed))
+        return removed
 
     # ── 内部 ──
     def _current_revision(self, draft_id: str) -> int:

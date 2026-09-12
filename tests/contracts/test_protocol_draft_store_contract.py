@@ -183,3 +183,27 @@ def test_sqlite_revision_persists_across_reopen(tmp_path: Path) -> None:
     assert first is not None
     assert first.yaml_text == _YAML_A
     reopened.close()
+
+
+def test_delete_removes_draft_and_revisions_returns_false_when_unknown() -> None:
+    """WP-B（G10）：delete 物理删除草稿与修订；未知 id 返回 False。"""
+    for store in _stores():
+        record = store.create("example-project", "demo", _YAML_A, _DIGEST_A, "key-d1")
+        draft_id = record.draft_id
+        store.save(
+            draft_id,
+            yaml_text=_YAML_B,
+            source_digest=_DIGEST_B,
+            expected_revision=1,
+            idempotency_key="key-d2",
+        )
+        assert store.delete(draft_id) is True
+        assert store.get(draft_id) is None
+        assert len(store.list(DraftQuery(project_id="example-project"))) == 0
+        # 重复删除 → False（不抛错；路由映射 404）
+        assert store.delete(draft_id) is False
+        # 同 idempotency key 的 create 在删除后按新草稿处理（不重放已删除记录）
+        replayed = store.create("example-project", "demo", _YAML_A, _DIGEST_A, "key-d1")
+        assert replayed.draft_id != draft_id
+        if hasattr(store, "close"):
+            store.close()

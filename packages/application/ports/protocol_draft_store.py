@@ -157,3 +157,11 @@ class ProtocolDraftStore(Protocol):
     def list_revisions(self, draft_id: str) -> tuple[ProtocolDraftRevision, ...]: ...
 
     def get_revision(self, draft_id: str, revision: int) -> ProtocolDraftRevision | None: ...
+
+    def delete(self, draft_id: str) -> bool:
+        """物理删除草稿与其全部修订；不存在返回 False（WP-B，G10）。
+
+        运行链不受影响：draft 启动 run 走的是启动时刻冻结的修订正文，
+        Manifest 不依赖草稿存续；已冻结 run 的复现不因此断链。
+        """
+        ...
