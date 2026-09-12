@@ -2660,6 +2660,17 @@
             "title": "Project Id",
             "type": "string"
           },
+          "reference_protocol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Protocol"
+          },
           "team_template_id": {
             "title": "Team Template Id",
             "type": "string"
@@ -2718,6 +2729,18 @@
             "minLength": 1,
             "title": "Policy Id",
             "type": "string"
+          },
+          "reference_protocol": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Protocol"
           },
           "team_template_id": {
             "maxLength": 200,

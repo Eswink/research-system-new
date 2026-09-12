@@ -4,7 +4,9 @@
  * 前端经 vite dev（/api 代理到 8011）加载，后端为 tests/api/console_api_app
  * （Fake Ports：run 执行体受控、无真实凭据/付费 LLM）。覆盖：模板同源预检、
  * 草稿校验/保存/修订预检与启动、Run 启动与事件 replay、artifact 只读链、
- * 成本日序列、通知投影、human-gate 审批暂停与续跑、memory 门链 422。
+ * 成本日序列、通知投影、human-gate 审批暂停与续跑、memory 门链 422，
+ * 以及 PLAN-040 WP-D 控制面（health / custom role / clone / DELETE 链 /
+ * run 审批历史 / 实验双支持）。
  */
 
 import { expect, test } from "@playwright/test";
@@ -173,4 +175,109 @@ test("live: memory 门链——未知 provenance 422 且不入账（WP-F）", as
     await page.request.get("/api/projects/example-project/memory")
   ).json()) as { records: unknown[] };
   expect(after.records.length).toBe(0);
+});
+
+const CUSTOM_ROLE = (id: string): Record<string, unknown> => ({
+  id,
+  role_type: "analysis",
+  category: "evaluation",
+  default_model_profile: "research_strong",
+  activation_default: "ON_DEMAND",
+  requested_capabilities: ["analysis.read"],
+  hard_model_capabilities: { all_of: ["function_calling"], any_of: [] },
+  workspace_policy: "read_only",
+});
+
+function idem(prefix: string): Record<string, string> {
+  return { "Idempotency-Key": `${prefix}-${String(Date.now())}-${String(Math.random())}` };
+}
+
+test("live: health 组成摘要（WP-A）", async ({ page }) => {
+  const response = await page.request.get("/api/health");
+  expect(response.ok()).toBeTruthy();
+  const health = (await response.json()) as Record<string, unknown>;
+  expect(health.status).toBe("ok");
+  expect(health.composition).toBe("sqlite");
+  expect(typeof health.pricing_degraded).toBe("boolean");
+});
+
+test("live: custom role → clone → agent 删除链（WP-B）", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const roleId = `live_role_${String(Date.now())}`;
+  const created = await page.request.post("/api/roles/custom", {
+    headers: idem("live-role"),
+    data: CUSTOM_ROLE(roleId),
+  });
+  expect(created.status()).toBe(201);
+  const roleIds = ((await (await page.request.get("/api/roles")).json()) as {
+    id: string;
+  }[]).map((role) => role.id);
+  expect(roleIds).toContain(roleId);
+  const conflict = await page.request.post("/api/roles/custom", {
+    headers: idem("live-role-2"),
+    data: CUSTOM_ROLE(roleId),
+  });
+  expect(conflict.status()).toBe(409);
+
+  const cloneId = `live_clone_${String(Date.now())}`;
+  const clone = await page.request.post("/api/agents/director/clone", {
+    headers: idem("live-clone"),
+    data: { new_id: cloneId },
+  });
+  expect(clone.status()).toBe(201);
+  const removed = await page.request.delete(`/api/agents/${cloneId}`, {
+    headers: idem("live-del"),
+  });
+  expect(removed.status()).toBe(204);
+  expect(
+    (
+      (await (await page.request.get("/api/projects/example-project/agents")).json()) as {
+        id: string;
+      }[]
+    ).map((agent) => agent.id),
+  ).not.toContain(cloneId);
+});
+
+test("live: 项目设置参考协议 + 实验双支持 + 审批历史 404 gate（WP-A/B/C）", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const settings = (await (
+    await page.request.get("/api/projects/example-project/settings")
+  ).json()) as Record<string, unknown>;
+  // 参考协议字段存在且为字符串（来源 project.yaml 的加载链由后端单测锁定；
+  // 此处不硬编码具体值，避免与同进程内先前 PUT 的持久化顺序耦合）。
+  expect(typeof settings.reference_protocol).toBe("string");
+
+  const saved = await page.request.put("/api/projects/example-project/settings", {
+    headers: idem("live-settings"),
+    data: { ...settings, reference_protocol: "sort_analysis_v1.yaml" },
+  });
+  expect(saved.ok()).toBeTruthy();
+  expect(((await saved.json()) as Record<string, unknown>).reference_protocol).toBe(
+    "sort_analysis_v1.yaml",
+  );
+  // 恢复原值，避免同进程后续用例读到被本测试改写的持久设置。
+  const restore = await page.request.put("/api/projects/example-project/settings", {
+    headers: idem("live-settings-restore"),
+    data: settings,
+  });
+  expect(restore.ok()).toBeTruthy();
+
+  const plan = await page.request.post("/api/projects/example-project/experiments", {
+    headers: idem("live-exp"),
+    data: { name: "live pre-registration", hypothesis: "policy improves p50" },
+  });
+  expect(plan.status()).toBe(201);
+  const planId = ((await plan.json()) as { id: string }).id;
+  const archived = await page.request.post(`/api/experiments/${planId}/archive`, {
+    headers: idem("live-exp-archive"),
+    data: {},
+  });
+  expect(archived.ok()).toBeTruthy();
+
+  const history = await page.request.get("/api/runs/no-such-run/approvals");
+  expect(history.status()).toBe(404);
+  const workers = (await (await page.request.get("/api/cluster/workers")).json()) as {
+    workers: unknown[];
+  };
+  expect(Array.isArray(workers.workers)).toBe(true);
 });

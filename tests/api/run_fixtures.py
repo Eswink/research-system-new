@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Iterator
-from dataclasses import replace
+from dataclasses import dataclass, replace
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,6 +28,7 @@ from packages.application.ports import (
     ApprovalStore,
     ArtifactStore,
     CatalogSnapshot,
+    EvidenceLedger,
     PreflightContext,
     ProjectSettings,
 )
@@ -94,7 +96,13 @@ def replace_catalog_with_pins(catalog: object) -> object:
 
 
 def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
-    """可冻结 Manifest 的 run 测试装配（受控 pin + 完整 preflight context）。"""
+    """可冻结 Manifest 的 run 测试装配（受控 pin + 完整 preflight context）。
+
+    WP-D（PLAN-040）：与生产 SQLite 开发组成对齐——agent/settings/override/
+    worker-registry/experiment store 用同连接 SQLite 实现，evidence ledger 为
+    编排与读取端共享的受控 Fake（修正旧注释漂移：ledger 此前未注入 ApiDeps，
+    导致 live e2e 从未走过 evidence/claims/experiments 真实读链）。
+    """
     from adapters.fakes.memory_store import FakeMemoryStore
     from adapters.sqlite.db import connect
     from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
@@ -106,12 +114,14 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     events = SqliteOutboxEventPublisher(connection=connection)
     pricing_store = FakePricingSnapshotStore()
     # WP-C：编排产出与控制面读取共享同一 artifact store。
-    artifacts = FakeArtifactStore()
     # WP-H：编排链与 ApiDeps 共享同一审批 registry（注册与裁决同实例）。
-    registry = ApprovalRegistry()
-    runs = _build_orchestration(
-        connection, events, pricing_store, approvals=registry, artifacts=artifacts
+    # WP-D：同一 evidence ledger（编排写、inspection 读）。
+    shared = _RunReadyStores(
+        registry=ApprovalRegistry(),
+        artifacts=FakeArtifactStore(),
+        ledger=FakeEvidenceLedger(),
     )
+    runs = _build_orchestration(connection, events, pricing_store, shared)
     preflight = _build_preflight(credentials)
     return ApiDeps(
         endpoint_store=SqliteEndpointStore(connection=connection),
@@ -121,7 +131,7 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         idempotency=InMemoryIdempotencyStore(),
         events=events,
         projection=SqliteRunProjection(connection, events),
-        approvals=registry,
+        approvals=shared.registry,
         runs=runs,
         workflow=runs._deps.workflow,
         pricing_snapshot_store=pricing_store,
@@ -131,9 +141,28 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         budget=FakeBudgetLedger(),
         notification_reads=SqliteNotificationReadStore(connection=connection),
         memory=FakeMemoryStore(),
-        artifacts=artifacts,
+        artifacts=shared.artifacts,
+        ledger=shared.ledger,
+        **_run_ready_sqlite_stores(connection),
         _connection=connection,
     )
+
+
+def _run_ready_sqlite_stores(connection: sqlite3.Connection) -> dict[str, Any]:
+    """live e2e 与生产 SQLite 组成同侧的配置/注册/实验存储（共享连接）。"""
+    from adapters.sqlite.agent_store import SqliteAgentStore
+    from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
+    from adapters.sqlite.experiment_store import SqliteExperimentStore
+    from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
+    from adapters.sqlite.worker_registry import SqliteWorkerRegistry
+
+    return {
+        "agent_store": SqliteAgentStore(connection=connection),
+        "project_settings_store": SqliteProjectSettingsStore(connection=connection),
+        "catalog_overrides": SqliteCatalogOverrideStore(connection=connection),
+        "worker_registry": SqliteWorkerRegistry(connection=connection),
+        "experiment_store": SqliteExperimentStore(connection=connection),
+    }
 
 
 def _make_draft_service(
@@ -151,12 +180,20 @@ def _make_draft_service(
     )
 
 
+@dataclass(frozen=True)
+class _RunReadyStores:
+    """编排链与控制面共享的 store 实例（registry/artifacts/ledger 同对象）。"""
+
+    registry: ApprovalStore
+    artifacts: ArtifactStore
+    ledger: EvidenceLedger
+
+
 def _build_orchestration(
     connection: object,
     events: object,
     pricing_store: FakePricingSnapshotStore,
-    approvals: ApprovalStore | None = None,
-    artifacts: ArtifactStore | None = None,
+    shared: _RunReadyStores,
 ) -> RunOrchestrationService:
     """装配正式编排链（Fake runtime + SQLite workflow/outbox，共享连接）。"""
     from sqlite3 import Connection
@@ -171,13 +208,13 @@ def _build_orchestration(
         OrchestrationDependencies(
             runtime=FakeAgentRuntime(),
             workflow=workflow,
-            artifacts=artifacts if artifacts is not None else FakeArtifactStore(),
+            artifacts=shared.artifacts,
             events=events,
             budget=FakeBudgetLedger(),
-            ledger=FakeEvidenceLedger(),
+            ledger=shared.ledger,
             pricing=pricing,
             pricing_store=pricing_store,
-            approvals=approvals,
+            approvals=shared.registry,
         )
     )
 

@@ -12,14 +12,22 @@ If-Match / resource version
 ```text
 POST   /llm-endpoints
 GET    /llm-endpoints
+GET    /llm-endpoints/{id}
+PATCH  /llm-endpoints/{id}
+DELETE /llm-endpoints/{id}               （WP-B G10；被用户模型引用 → 409）
 POST   /llm-endpoints/{id}/test
 POST   /llm-endpoints/{id}/discover-models
 GET    /llm-endpoints/{id}/health
 
 POST   /models
+GET    /models
+GET    /models/{id}
 PATCH  /models/{id}
+DELETE /models/{id}                      （WP-B G10；被 agent 显式绑定 → 409）
 POST   /models/{id}/probe
-GET    /models/{id}/compatibility
+GET    /models/{id}/compatibility        （hard_capability_requirements 为
+                                          合并目录投影：role all_of/any_of +
+                                          profile hard_capabilities；WP-B）
 ```
 
 不返回明文 Key。
@@ -27,13 +35,15 @@ GET    /models/{id}/compatibility
 ## Roles / Teams / Agents
 
 ```text
-GET    /roles
-POST   /roles/custom
+GET    /roles                            （合并视图：examples 基底 + SQLite 用户覆盖）
+POST   /roles/custom                     （WP-B：examples 同 schema/domain 校验；id 冲突 409）
 GET    /team-templates
-POST   /team-templates/custom
+POST   /team-templates/custom            （WP-B：同上）
+GET    /projects/{id}/agents
 POST   /projects/{id}/agents
 PATCH  /agents/{id}
-POST   /agents/{id}/clone
+POST   /agents/{id}/clone                （WP-B；new_id 缺省服务端生成）
+DELETE /agents/{id}                      （WP-B G10；仅用户 store 记录，契约基线 404）
 ```
 
 ## Protocol / Preflight
@@ -57,6 +67,7 @@ POST   /projects/{id}/protocol-drafts     （创建草稿；Idempotency-Key）
 GET    /projects/{id}/protocol-drafts
 GET    /protocol-drafts/{draft_id}
 PUT    /protocol-drafts/{draft_id}        （保存新修订；If-Match + expected_revision；冲突 412）
+DELETE /protocol-drafts/{draft_id}        （WP-B G10；物理删除草稿与修订；未知 404）
 GET    /protocol-drafts/{draft_id}/revisions
 GET    /protocol-drafts/{draft_id}/revisions/{revision}
 POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision} 引用，与 path 二选一）
@@ -107,6 +118,22 @@ M15 Operations（只读投影）：
 - `GET /artifacts/*`（WP-C）— store 缺失 503；未知 404；tombstone/缺 blob
   410；超限 413；非白名单 media 一律 attachment + nosniff。
 
+## Inspection（只读投影；WP-A 对齐 run gate）
+
+```text
+GET    /runs/{id}/evidence                 （未知 run 404；ledger 缺失 503）
+GET    /runs/{id}/claims                   （同上；degraded 标志显式）
+GET    /runs/{id}/usage                    （run 级隔离；UNKNOWN ≠ 0）
+GET    /runs/{id}/export                   （persisted-state 重算，非 UI 内存）
+```
+
+## Health（WP-A）
+
+```text
+GET    /health                             （status/version/composition/pricing_degraded；
+                                           无秘密、无内容采样）
+```
+
 ## Tasks / Approvals
 
 ```text
@@ -116,7 +143,9 @@ POST   /tasks/{id}/retry                   （未提供：retry 属 WorkflowEngi
 POST   /tasks/{id}/fork                    （未提供：同 runs fork）
 GET    /approvals
 POST   /approvals/{id}/decide
-POST   /runs/{id}/interventions
+GET    /runs/{id}/approvals               （WP-B：run 审批历史，含已裁决；未知 run 404）
+POST   /runs/{id}/interventions           （pause/resume 状态迁移已接线 WP-H；
+                                          budget_adjust/replace_agent 恒 501）
 ```
 
 WP-H（PLAN-20260910-037）审批注册点：协议 phase 声明
@@ -137,12 +166,12 @@ POST   /tool-packs/{id}/approve-update     （未提供）
 POST   /tool-packs/{id}/revoke             （未提供）
 ```
 
-## Experiments（WP-E）
+## Experiments（WP-E；WP-A 起 SQLite 开发路径与 PG 双支持）
 
 ```text
 GET    /runs/{id}/experiments              （run 级 evidence 聚合视图）
 GET    /projects/{id}/experiments          （项目级跨 run 视图；双路径可用）
-POST   /projects/{id}/experiments          （计划预注册 DRAFT→PREREGISTERED；仅 PG store，SQLite 503）
+POST   /projects/{id}/experiments          （计划预注册 DRAFT→PREREGISTERED）
 POST   /experiments/{plan_id}/archive      （归档裁决 409/404；无 queued 状态，不伪造队列）
 ```
 
@@ -155,7 +184,7 @@ POST   /notifications/{event_id}/read      （已读 view-state 持久化；幂�
 
 - 事件流是真相；已读是 per-event view-state（控制面 SQLite，非 canonical 研究事实）。
 
-## Memory
+## Memory（WP-A 起 SQLite 开发路径与 PG canonical 双支持）
 
 ```text
 GET    /projects/{id}/memory               （WP-F；store 缺失 503 + scope_note）
@@ -177,23 +206,23 @@ DELETE /memory/{id}                        （WP-F；lifecycle 用例 + 幂等�
 ## Event Stream
 
 ```text
-GET /runs/{id}/stream       # SSE
-WS  /runs/{id}/ws           # optional interactive channel
+GET /runs/{id}/stream       # 未提供：SSE 实为 GET /runs/{id}/events
+WS  /runs/{id}/ws           # 未提供：无交互通道；投影轮询即 events SSE
 ```
 
-事件支持 cursor/resume，客户端按 event_id 去重。
+事件支持 cursor/resume，客户端按 event_id 去重。SSE 与 JSON replay 共用
+`GET /runs/{id}/events`（Accept 分流；Last-Event-ID / ?cursor= 续传）。
 
-
-## Identity / Governance
+## Identity / Governance（未提供；M18 deferred）
 
 ```text
-GET  /me
-GET  /organizations/{id}/members
-POST /projects/{id}/memberships
-GET  /projects/{id}/data-policy
-PUT  /projects/{id}/data-policy
-POST /projects/{id}/export
-POST /projects/{id}/delete-request
+GET  /me                                   （未提供：单用户控制面无 principal 概念）
+GET  /organizations/{id}/members           （未提供）
+POST /projects/{id}/memberships            （未提供）
+GET  /projects/{id}/data-policy            （未提供）
+PUT  /projects/{id}/data-policy            （未提供）
+POST /projects/{id}/export                 （未提供：run 级走 GET /runs/{id}/export）
+POST /projects/{id}/delete-request         （未提供）
 ```
 
 所有资源查询必须按 principal/scope 授权，不依赖前端隐藏按钮。

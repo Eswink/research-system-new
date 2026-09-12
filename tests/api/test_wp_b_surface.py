@@ -46,7 +46,7 @@ def _role_payload(role_id: str, **overrides: Any) -> dict[str, Any]:
 
 
 def test_run_approvals_history_and_404(client: TestClient) -> None:
-    deps = cast(ApiDeps, client.app.state.deps)
+    deps = cast(Any, client.app).state.deps
     deps.approvals = ApprovalRegistry()
     run_id = ID.generate().value
     deps.run_registry[run_id] = ResearchRun(
@@ -113,7 +113,7 @@ def test_custom_team_template_created_and_visible(client: TestClient) -> None:
 
 
 def test_custom_contract_without_store_is_503(client: TestClient) -> None:
-    deps = cast(ApiDeps, client.app.state.deps)
+    deps: ApiDeps = cast(Any, client.app).state.deps
     deps.catalog_overrides = None
     response = client.post("/roles/custom", json=_role_payload("orphan"), headers=_idem())
     assert response.status_code == 503

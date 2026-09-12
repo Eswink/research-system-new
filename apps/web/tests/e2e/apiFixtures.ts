@@ -42,7 +42,8 @@ export const APPROVAL: ApprovalDto = {
 export const SETTINGS: ProjectSettingsDto = {
   project_id: "example-project", team_template_id: "standard", default_model_profile_id: null,
   budget_policy_id: "low_cost", workspace_backend: "openhands_docker",
-  compute_profile: null, policy_id: "default-deny", reference_protocol: "ai_ml_research_v0_4_0.yaml",
+  compute_profile: null, policy_id: "default-deny",
+  reference_protocol: "ai_ml_research_v0_4_0.yaml",
 };
 
 export const PREFLIGHT: PreflightReportDto = {

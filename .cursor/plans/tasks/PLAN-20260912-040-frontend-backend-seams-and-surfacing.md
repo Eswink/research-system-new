@@ -80,7 +80,33 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
   stub e2e + live e2e + m0（python 6 / typescript 9 / framework 8）全绿；
   RECHECK-040 独立复审完成并回填本文件。
 
-## 进度记录
+## 实施清单
+
+- [x] WP-A 后端组成浮现：`SqliteArtifactStore`/`SqliteMemoryStore` 接入
+  `_assemble_sqlite`；新增 `adapters/sqlite/experiment_store.py`、
+  `adapters/sqlite/worker_registry.py`（contract suite 注册）；
+  `/runs/{id}/evidence|claims` 未知 run 404；`GET /health` + compose 改用；
+  `SqliteArtifactStore` 写路径补 commit。
+- [x] WP-B API 面补齐：`GET /runs/{id}/approvals`；`POST /roles/custom`、
+  `POST /team-templates/custom`、`POST /agents/{id}/clone`（CatalogOverrideStore
+  新 Port + SQLite 实现 + catalog_merge 合并视图）；DELETE
+  `/llm-endpoints/{id}`、`/models/{id}`、`/protocol-drafts/{id}`、
+  `/agents/{id}`（引用完整性 409；draft delete 扩 InMemory/SQLite/PG 三实现
+  + Port + 契约用例）；compatibility `hard_capability_requirements` 投影。
+- [x] WP-C 前端契约与 fixture 隔离：4 个请求 DTO 接入调用点；facade 增
+  remove/clone/custom/runApprovals；endpoints 抽屉与 models inspector 删除
+  UI（确认 + 409 呈现）；审批历史面板；TeamPreflight 改读
+  `ProjectSettings.reference_protocol`（新字段贯通 catalog/store/DTO/settings
+  UI）；`isOperationDisabled` 成为 SettingsPage 禁用判定来源；GAPS 过期文案
+  修正；layout 不再直接 import `example-console/data/`（exampleChrome 桥 +
+  production-boundaries 静态测试）；死代码清理（Tooltip、DataViewFrame/
+  useCombinedView、Donut、Heatmap、useOperations hook）。
+- [ ] WP-D 收口：openapi 再生零漂移；CONTROL_PLANE_API.md（高估路由
+  stream/ws/identity 标注未提供、custom/clone/DELETE/health 落地）与
+  CONSOLE_PAGE_MAP.md（G10、memory/experiments 双路、settings/team 节）同步；
+  live e2e 扩展；m0 分组全绿；RECHECK-040。
+
+## 状态历史
 
 - 2026-09-12 立项，Plan Mode 批准 PLAN-040/041/042 系列。
 - 2026-09-12 WP-A 完成：`SqliteArtifactStore`（内容寻址、blob 目录默认
@@ -126,3 +152,49 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
     project.json/provenance.json 死 fixture。
   - 门禁：tsc/eslint(0 warn)/unit 70/70/build、boundaries 6/6、
     stub e2e 受影响 spec 11/11、live e2e 7/7。
+
+## 证据
+
+- WP-A：commit `6d844e3`；`tests/adapters/sqlite/test_experiment_store_sqlite.py`
+  5 passed；`tests/contracts/test_worker_registry_contract.py` 36 passed
+  （SqliteWorkerRegistry 注册后）；`tests/api/test_composition_sqlite_persistence.py`
+  （durable store 类型 + artifact 重启往返 + /health）；inspection 404 两用例；
+  tests/api 全量 + contracts 333 passed。
+- WP-B：commit `2022b02`；`tests/api/test_wp_b_surface.py` 8 passed
+  （custom role 201/409/422/503、template、clone/delete roundtrip、引用 409、
+  compatibility 投影非空/空、draft delete roundtrip）；draft store 契约新增
+  delete 用例（InMemory+SQLite）；mypy/ruff 0；openapi 再生 drift 测试过。
+- WP-C：commit `d5abf18`；web typecheck/lint(0 warn)/unit 70/70/build 全绿；
+  `tests/architecture/typescript/production-boundaries.test.mjs` 6/6
+  （含新 data-import 隔离测试）；stub e2e 受影响 11/11、live e2e 7/7、
+  tests/api 48 passed（team/llm/models/settings/wp_b 子集）。
+- 计划文件命名：governance validate（framework profile）在补齐规范章节后通过。
+
+## 已知风险与偏差记录
+
+- `GET /cluster/workers` 在开发路径返回 `[]`（无 worker 注册）——诚实空态，
+  reaper daemon 随 SQLite registry 一并启动。
+- 删除 relay 后 credential 注册表条目保留至进程退出（进程内、永不落盘）；
+  未做显式 forget（Port 无该面），已在端点删除文案中如实说明。
+- draft delete 采用物理删除（append-only 修订史随之移除）；已冻结 run 不受
+  影响（正文在启动时刻冻结）。
+- `exampleChrome.ts` 仍被 live layout 静态引用（chrome 异常豁免）：
+  data JSON 本就被根 gitignore 排除于仓库外，隔离规则守卫的是「业务 fixture
+  import 面」而非 bundle 体积；bundle 级隔离（lazy）留作后续。
+- `hard_capability_requirements` 投影源 = 合并目录 role/profile 声明；
+  `endpoint_healthy_hint` 仍为 None（健康探测属显式动作，不隐式发起）。
+
+## 影响报告
+
+- Domain/API/schema：新增 `CatalogOverrideStore` Port、`ProtocolDraftStore.delete`
+  扩展、`ProjectSettings.reference_protocol`、`GET /health`、4×DELETE、
+  3×custom/clone、run approvals 历史；openapi.m13.json 再生（+operations，
+  0 removed）。M5 冻结 Port 语义只增不改（delete 为新能力非重定义）。
+- 安全/凭据：无新秘密面；删除端点幂等键强制；health 无内容采样；
+  SSRF/凭据纪律不变。
+- 兼容性/迁移：`workers`/`artifacts` 表已在共享 SCHEMA_SQL（无 migration）；
+  experiment/catalog_overrides 表由 adapter 自建（IF NOT EXISTS）；旧项目设置
+  JSON 行缺 `reference_protocol` → `.get()` 回落 None，向后兼容。
+- 上游版本影响：无（不触 OpenHands/依赖 pin）。
+- 下一项任务：PLAN-041 `gap-domains-and-page-flips`（9 GAP 页新域 + 项目注册表
+  + 页面翻 live）。

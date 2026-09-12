@@ -50,7 +50,7 @@ def _store_of(deps: ApiDeps) -> object:
         raise ApiError(
             503,
             "Memory Store Unavailable",
-            "memory store requires the PostgreSQL control plane",
+            "memory store not configured",
         )
     return deps.memory
 

@@ -17,7 +17,10 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
   `PUT /protocol-drafts/{id}`、`POST /approvals/{id}/decide` 需 `If-Match`
   （缺失 428，不匹配 412）。ETag＝canonical digest。
 - 错误统一 RFC7807 `ProblemDto{type,title,status,detail,instance}`，detail 脱敏。
-- 控制面无任何 DELETE 端点。
+- 控制面 DELETE（WP-B G10）：`/llm-endpoints/{id}`、`/models/{id}`、
+  `/agents/{id}`、`/protocol-drafts/{id}` 已提供（被引用 → 409；未知 → 404；
+  均带 Idempotency-Key）；`/memory/{id}` 由 WP-F 提供。契约基线
+  （examples role/template/agent）与其余资源仍不提供删除。
 
 ## Plan（3 页）
 
@@ -47,9 +50,13 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ### `#/plan/team` — 团队
 - 设计：`screens/Team.jsx`。
 - 子视图：Role 目录、团队模板、Agent 列表/绑定编辑、项目设置。
-- API：`GET /roles`、`GET /team-templates`、`GET/POST /projects/{id}/agents`、
-  `PATCH /agents/{id}`（If-Match）、`GET/PUT /projects/{id}/settings`。
+- API：`GET /roles`、`GET /team-templates`、`POST /roles/custom`、
+  `POST /team-templates/custom`、`GET/POST /projects/{id}/agents`、
+  `PATCH /agents/{id}`（If-Match）、`POST /agents/{id}/clone`、
+  `DELETE /agents/{id}`、`GET/PUT /projects/{id}/settings`。
 - 等级：FULL（项目设置 PUT 无版本契约：last-write-wins，保存前展示变更并说明）。
+- 参考协议预检：来源为项目设置 `reference_protocol`（WP-C，未配置诚实空态）；
+  不再硬编码 demo 模板；不冒充运行预检，不改写已冻结 Manifest。
 - 缺口：运行中冻结模型/工具集不可被"编辑团队"改写；policy 引用只读。
 
 ## Portfolio（4 页）
@@ -65,7 +72,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - API：`GET /runs/{run_id}/experiments` → `ExperimentViewDto`、
   `GET /projects/{id}/experiments`（项目级跨 run evidence 视图，WP-E）、
   `POST /projects/{id}/experiments`（计划预注册 DRAFT→PREREGISTERED；
-  仅 PG canonical store，SQLite 开发路径 503 如实呈现）、
+  WP-A 起 SQLite 开发路径与 PG canonical 双支持，store 缺失仍如实 503）、
   `POST /experiments/{plan_id}/archive`。
 - 等级：PARTIAL。域内无 queued/running 计划状态，不伪造队列；
   `reproduction_available` 恒 false，如实呈现。
@@ -95,7 +102,8 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 
 ### `#/run/approvals` — 审批
 - 设计：`screens/Approvals.jsx`。
-- API：`GET /approvals`、`POST /approvals/{id}/decide`（approve|deny；
+- API：`GET /approvals`、`GET /runs/{id}/approvals`（WP-B：选中审批所属 run
+  的完整历史，含已裁决）、`POST /approvals/{id}/decide`（approve|deny；
   409 Already Decided/Run Mismatch/Invalid Transition；428/412 版本；
   执行上下文丢失 503 且审批不被消费，WP-H）。
 - 等级：FULL（WP-H：human-gate 协议暂停时真实注册 ApprovalRecord 并置
@@ -131,8 +139,10 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
   provider_fingerprint_available、capability_failures）、
   `GET /models/{id}/compatibility` → `CompatibilityViewDto`。
 - 等级：FULL（capability 闭集 12 项、status 4 态、source 5 态如实呈现）。
-- 缺口：`hard_capability_requirements` 恒 `[]`、`endpoint_healthy_hint` 恒 null——
-  不渲染"已验证兼容性"；无训练制品仓库/部署/晋升；无删除。
+- WP-B：`DELETE /models/{id}` 已接入（被 agent 显式绑定 → 409，UI 呈现错误）；
+  `hard_capability_requirements` 为合并目录投影（role/profile 声明，非恒空）。
+- 缺口：`endpoint_healthy_hint` 恒 null——不渲染"已验证兼容性"；
+  无训练制品仓库/部署/晋升。
 
 ### `#/library/lineage` — 血缘
 - 设计：`screens/Lineage.jsx`。
@@ -145,11 +155,11 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 
 ### `#/library/endpoints` — 中转站
 - 设计：`screens/Endpoints.jsx`。
-- API：`GET/POST /llm-endpoints`、`GET/PATCH /llm-endpoints/{id}`（If-Match；
-  protocol 不可改）、`POST .../test`（真实 chat，需本 endpoint 模型）、
-  `POST .../discover-models`、`GET .../health`。
+- API：`GET/POST /llm-endpoints`、`GET/PATCH/DELETE /llm-endpoints/{id}`（If-Match；
+  protocol 不可改；被用户模型引用 → DELETE 409）、`POST .../test`（真实 chat，
+  需本 endpoint 模型）、`POST .../discover-models`、`GET .../health`。
 - 等级：FULL。凭据不回显（ReadDto 无 api_key；`credential: configured|missing`）。
-- 缺口（登记）：无删除端点——不提供删除操作。
+- WP-B（G10）：详情抽屉提供删除动作（确认 + 409 文案；凭据进程内，随重启消散）。
 
 ### `#/library/setup` — 首次接入向导
 - 设计：`screens/Setup.jsx`。
@@ -236,7 +246,8 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - API：`GET /runs/{run_id}/events`（JSON replay）标作**运行事件记录**；
   `GET /runs/{id}/export` 真实导出（JSON bundle 本地下载）；
   Memory Tab：`GET /projects/{id}/memory`、`POST /memory/proposals`、
-  `DELETE /memory/{id}`（WP-F 完整 §8 门链直提交；store 缺失 503）。
+  `DELETE /memory/{id}`（WP-F 完整 §8 门链直提交；WP-A 起 SQLite 开发路径
+  与 PG canonical 双支持）。
 - 等级：PARTIAL。
 - 缺口（登记）：无全平台审计 API；绝不读取 `.cursor/memory` 补充。
 
@@ -245,8 +256,10 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ### `#/settings` — 设置
 - 设计：`screens/Settings.jsx`（Profile/Notifications/API Keys/Security/
   Workspace/Preferences/Billing 七分区）。
-- 真实：主题/语言/密度＝本地偏好；Workspace 分区走 `GET/PUT /projects/{id}/settings`。
-- 等级：PARTIAL。账户、平台 API Key、双因素、Billing 无 API——锁定并说明。
+- 真实：主题/语言/密度＝本地偏好；Workspace 分区走 `GET/PUT /projects/{id}/settings`
+  （team_template/model profile/budget policy/workspace/参考协议/compute/policy）。
+- 等级：PARTIAL。账户、平台 API Key、双因素、Billing 无 API——锁定并说明
+  （禁用判定唯一来源 `pageSupport.disabledOperations`）。
 
 ### `#/notifications` — 通知中心
 - 设计：`screens/Notifications.jsx`。等级：PARTIAL。
@@ -273,7 +286,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G7 | prompts/datasets/notebooks/reports/alerts/incidents/schedules/integrations/data-health | 对应 9 页 | GAP 结构还原+禁用（无 Domain 支撑） |
 | G8 | 文件浏览/预览；~~下载~~ | run/workspace | **预览/下载已交付**（WP-C）；文件级 Diff 仍无接口 |
 | G9 | 全局血缘 | library/lineage | 仅 Run 级引用 |
-| G10 | 删除端点（endpoint/model/agent/draft） | library/endpoints 等 | 不提供删除（memory 记录删除除外，WP-F） |
+| G10 | ~~删除端点（endpoint/model/agent/draft）~~ | library/endpoints、model-registry、run/approvals、plan/protocol | **已交付**（WP-B：四类 DELETE，被引用 409；契约基线不可删；memory 记录删除见 WP-F） |
 | G11 | ~~审批生产接线~~ | run/approvals | **已交付**（WP-H：human-gate 注册点+续跑；空列表为正确状态） |
 | G12 | 成本日序列~~/预测~~ | insights/cost-analytics | **日序列已交付**（WP-D）；预测仍无 API |
 | G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |

@@ -4,8 +4,8 @@
 `examples/config/roles.yaml` / `team_templates.yaml` 子项同形的映射），供
 `catalog_merge` 在合并视图里覆盖 examples 基底（与 EndpointStore/ModelStore/
 AgentStore 同一配置面语义；SQLite 配置存储，两组成同侧）。
-非职责：不做契约 schema 校验（调用方经 `adapters.contracts.base.validate_instance`
-+ domain 构造完成）；不定义 kind 词表（调用方封闭集合）。
+非职责：不做契约 schema 校验（调用方经 contracts base 的 schema 验证 +
+domain 构造完成）；不定义 kind 词表（调用方封闭集合）。
 """
 
 from __future__ import annotations

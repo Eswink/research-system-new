@@ -152,7 +152,7 @@ def _store_of(deps: ApiDeps) -> object:
         raise ApiError(
             503,
             "Experiment Store Unavailable",
-            "experiment store requires the PostgreSQL control plane",
+            "experiment store not configured",
         )
     return deps.experiment_store
 
