@@ -1,13 +1,21 @@
 /** 运行与审批客户端。 */
 
 import { newIdempotencyKey, request } from "./http";
-import type { ApprovalDto, RunDetailDto, RunEventDto, TaskDto, Version } from "./types";
+import type {
+  ApprovalDecideDto,
+  ApprovalDto,
+  RunDetailDto,
+  RunEventDto,
+  RunStartPayloadDto,
+  TaskDto,
+  Version,
+} from "./types";
 
 const PROJECT = "example-project";
 
 export const runClient = {
   start(source: string | { draft_id: string; draft_revision: number }): Promise<RunDetailDto> {
-    const body =
+    const body: RunStartPayloadDto =
       typeof source === "string"
         ? { protocol_path: source }
         : { draft_id: source.draft_id, draft_revision: source.draft_revision };
@@ -63,16 +71,21 @@ export const runClient = {
   listApprovals(): Promise<ApprovalDto[]> {
     return request("/approvals", { method: "GET" });
   },
+  /** run 审批历史（含已裁决；WP-B list_for_run 面）。 */
+  runApprovals(runId: string): Promise<ApprovalDto[]> {
+    return request(`/runs/${encodeURIComponent(runId)}/approvals`, { method: "GET" });
+  },
   decideApproval(
     approvalId: string,
     decision: "approve" | "deny",
     version: Version,
   ): Promise<ApprovalDto> {
+    const body: ApprovalDecideDto = { decision };
     return request(
       `/approvals/${encodeURIComponent(approvalId)}/decide`,
       {
         method: "POST",
-        body: JSON.stringify({ decision }),
+        body: JSON.stringify(body),
       },
       { idempotencyKey: newIdempotencyKey(), ifMatch: version },
     );

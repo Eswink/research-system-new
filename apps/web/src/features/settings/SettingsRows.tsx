@@ -15,6 +15,7 @@ const FIELD_LABEL: Record<string, { zh: string; en: string }> = {
   workspace_backend: { zh: "Workspace 后端", en: "Workspace backend" },
   compute_profile: { zh: "计算 Profile", en: "Compute profile" },
   policy_id: { zh: "策略", en: "Policy" },
+  reference_protocol: { zh: "参考协议", en: "Reference protocol" },
   team_template_id: { zh: "团队模板", en: "Team template" },
 };
 
@@ -52,7 +53,8 @@ export type TextFieldKey =
   | "budget_policy_id"
   | "workspace_backend"
   | "compute_profile"
-  | "policy_id";
+  | "policy_id"
+  | "reference_protocol";
 
 export function TextFieldRow({
   current,

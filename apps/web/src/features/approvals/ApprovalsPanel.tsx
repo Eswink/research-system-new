@@ -10,6 +10,7 @@ import { useI18n } from "../../i18n/useI18n";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { ApprovalConfirmation, ApprovalDetail, type PendingDecision } from "./ApprovalDetail";
+import { RunApprovalHistory } from "./RunApprovalHistory";
 import { useApprovals } from "./useApprovals";
 
 export function ApprovalsPanel() {
@@ -210,7 +211,9 @@ function ApprovalsPanelPage({
         />
         <Chip>{zh ? "待决" : "Pending"}</Chip>
         <span className="muted">
-          {zh ? "历史审批 API 未接入" : "Approval history API unavailable"}
+          {zh
+            ? "选中审批后展示该运行的完整审批历史"
+            : "Select an approval to view its run's full approval history"}
         </span>
       </div>
       <div className={styles.split}>
@@ -223,6 +226,7 @@ function ApprovalsPanelPage({
           <ApprovalDetail approval={selected} busy={busy} onRequest={onRequest} />
         )}
       </div>
+      {selected !== undefined && <RunApprovalHistory runId={selected.run_id} />}
     </div>
   );
 }

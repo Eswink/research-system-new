@@ -92,7 +92,19 @@ def load_project_settings() -> ProjectSettings:
         workspace_backend=str(body["workspace_backend"]),
         compute_profile=None,
         policy_id=str(body.get("policy", "project-policy")),
+        reference_protocol=_reference_protocol(body.get("protocol")),
     )
+
+
+def _reference_protocol(raw_protocol: object) -> str | None:
+    """project.yaml protocol → examples/protocols 文件名（WP-C）。
+
+    存储形态统一为带 `.yaml` 后缀的文件名；未配置返回 None（诚实空态）。
+    """
+    if raw_protocol is None or not str(raw_protocol).strip():
+        return None
+    name = str(raw_protocol).strip()
+    return name if name.endswith(".yaml") else f"{name}.yaml"
 
 
 def load_protocol_definition(path: str) -> Any:

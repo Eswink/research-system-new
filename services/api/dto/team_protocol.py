@@ -79,6 +79,8 @@ class ProjectSettingsUpdateDto(BaseModel):
     workspace_backend: str = Field(min_length=1, max_length=200)
     compute_profile: str | None = Field(default=None, max_length=200)
     policy_id: str = Field(default="project-policy", min_length=1, max_length=200)
+    # WP-C：项目参考协议（受控 examples/protocols 文件名）；None = 未配置。
+    reference_protocol: str | None = Field(default=None, max_length=200)
 
 
 class ProjectSettingsDto(BaseModel):
@@ -89,6 +91,7 @@ class ProjectSettingsDto(BaseModel):
     workspace_backend: str
     compute_profile: str | None = None
     policy_id: str = "project-policy"
+    reference_protocol: str | None = None
 
 
 class ProtocolSourceDto(BaseModel):

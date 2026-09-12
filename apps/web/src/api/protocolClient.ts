@@ -1,14 +1,19 @@
 /** 协议编译/预检/试运行客户端（受控模板路径或草稿修订引用）。 */
 
 import { request } from "./http";
-import type { CompileResultDto, DryRunProjectionDto, PreflightReportDto } from "./types";
+import type {
+  CompileResultDto,
+  DryRunProjectionDto,
+  PreflightReportDto,
+  ProtocolSourceDto,
+} from "./types";
 
 const PROJECT = "example-project";
 
 /** 编译/预检来源：受控模板路径（旧协议）或已保存草稿的不可变修订（WP-B）。 */
 export type ProtocolSource = string | { draft_id: string; draft_revision: number };
 
-export function protocolSourceBody(source: ProtocolSource): Record<string, unknown> {
+export function protocolSourceBody(source: ProtocolSource): ProtocolSourceDto {
   return typeof source === "string" ? { path: source } : { ...source };
 }
 

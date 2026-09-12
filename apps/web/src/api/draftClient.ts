@@ -72,4 +72,13 @@ export const draftApi = {
       { idempotencyKey: newIdempotencyKey(), ifMatch: String(expectedRevision) },
     );
   },
+
+  /** 物理删除草稿与全部修订（WP-B G10；深链随后 404 是正确态）。 */
+  remove(draftId: string): Promise<void> {
+    return request(
+      `/protocol-drafts/${encodeURIComponent(draftId)}`,
+      { method: "DELETE" },
+      { idempotencyKey: newIdempotencyKey() },
+    );
+  },
 };

@@ -27,6 +27,9 @@ class ProjectSettings:
     workspace_backend: str
     compute_profile: str | None = None
     policy_id: str = "project-policy"
+    # WP-C（PLAN-040）：项目参考协议（examples/protocols 内文件名的受控模板
+    # 引用；Team 页预检用它，不再由前端硬编码 demo 协议）。None = 未配置。
+    reference_protocol: str | None = None
 
     def __post_init__(self) -> None:
         if not self.project_id:
@@ -50,6 +53,7 @@ class ProjectSettings:
             workspace_backend=str(raw["workspace_backend"]),
             compute_profile=(str(raw["compute_profile"]) if raw.get("compute_profile") else None),
             policy_id=str(raw.get("policy", "project-policy")),
+            reference_protocol=(str(raw["protocol"]) if raw.get("protocol") else None),
         )
 
 

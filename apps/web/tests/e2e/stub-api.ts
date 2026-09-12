@@ -140,8 +140,12 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
       body: {
         project_id: "example-project",
         team_template_id: "standard",
+        default_model_profile_id: null,
         budget_policy_id: "low_cost",
         workspace_backend: "openhands_docker",
+        compute_profile: null,
+        policy_id: "project-policy",
+        reference_protocol: "ai_ml_research_v0_4_0.yaml",
       },
     }),
   },
@@ -246,6 +250,34 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
         instance: "/projects/example-project/experiments",
       },
     }),
+  },
+  // WP-B/WP-C control-plane surface: run approval history, DELETE (G10),
+  // custom contracts and agent clone. Registered so interaction specs never hit
+  // the "Unstubbed Request" failure; responses are honest empty/success shapes.
+  {
+    method: "GET",
+    pattern: /^\/runs\/[^/]+\/approvals$/,
+    handler: () => ({ status: 200, body: [] }),
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/llm-endpoints\/[^/]+$/,
+    handler: () => ({ status: 204, body: null }),
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/models\/[^/]+$/,
+    handler: () => ({ status: 204, body: null }),
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/protocol-drafts\/[^/]+$/,
+    handler: () => ({ status: 204, body: null }),
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/agents\/[^/]+$/,
+    handler: () => ({ status: 204, body: null }),
   },
 ];
 

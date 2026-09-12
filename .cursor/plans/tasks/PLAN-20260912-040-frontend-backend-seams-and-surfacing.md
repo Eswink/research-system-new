@@ -103,3 +103,26 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
   投影（roles.all_of/any_of + profiles.hard_capabilities）。
   conftest base deps 注入 catalog_overrides；mypy/ruff 干净；
   openapi 再生后 tests/api 241 passed + snapshot/boundaries 通过。
+- 2026-09-12 WP-C 完成（前端契约与 fixture 隔离）：
+  - DTO 接线：`EndpointTestRequestDto`/`ProtocolSourceDto`/`ApprovalDecideDto`/
+    `RunStartPayloadDto` 接入 client 调用点；facade 增
+    removeEndpoint/removeModel/removeAgent/removeDraft/cloneAgent/
+    createCustomRole/createCustomTeamTemplate/runApprovals。
+  - 删除 UI 接线：endpoints 详情抽屉与 models inspector 增删除动作
+    （EndpointDelete.tsx / ModelDelete.tsx，含确认与 409 错误呈现）；
+    approvals 页接入 run 审批历史（RunApprovalHistory.tsx，WP-B 面）；
+    stub-api 注册 DELETE/history 桩。
+  - TeamPreflight：改用项目设置 `reference_protocol`（ProjectSettings 新字段，
+    经 project.yaml `protocol` 加载、store/DTO/PUT 贯通、settings 页可编辑），
+    删除硬编码 `TEAM_REFERENCE_PROTOCOL`；未配置诚实空态。
+  - isOperationDisabled 消费：SettingsPage locked 分区判定改读注册表
+    （disabledOperations = account/security/billing）；GAPS.delete 过期文案
+    修正；endpoints 删除解锁；memory/experiments 文案同步 WP-A 双路支持。
+  - fixture 隔离：layout 不再直接 import `example-console/data/*.json`
+    （经 `exampleChrome.ts` 桥接）；production-boundaries 新静态测试强制
+    data/ 仅 example 树可 import。
+  - 死代码清理：Tooltip、DataViewFrame/useCombinedView、charts/Donut、
+    charts/Heatmap、useOperations hook（保留被测纯 helpers）、
+    project.json/provenance.json 死 fixture。
+  - 门禁：tsc/eslint(0 warn)/unit 70/70/build、boundaries 6/6、
+    stub e2e 受影响 spec 11/11、live e2e 7/7。

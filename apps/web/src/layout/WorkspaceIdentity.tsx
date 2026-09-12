@@ -1,4 +1,4 @@
-import workspaces from "../features/example-console/data/workspaces.json";
+import { EXAMPLE_WORKSPACES } from "../features/example-console/exampleChrome";
 import { WorkspaceSwitcher } from "../features/example-console/reference/WorkspaceSwitcher";
 import { useI18n } from "../i18n/useI18n";
 import { usePresentation } from "../navigation/usePresentation";
@@ -10,7 +10,7 @@ export function WorkspaceIdentity() {
   return (
     <div className={styles.identity}>
       {source === "example" ? (
-        <WorkspaceSwitcher workspaces={workspaces} />
+        <WorkspaceSwitcher workspaces={EXAMPLE_WORKSPACES} />
       ) : (
         <span className="chip">{language === "zh" ? "个人工作区" : "Personal workspace"}</span>
       )}

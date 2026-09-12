@@ -18,7 +18,7 @@ import { AgentBindingEditor } from "./AgentBindingEditor";
 import { AgentCreateDialog } from "./AgentCreateDialog";
 import { AgentCards } from "./TeamAgentCards";
 import { RoleDefinitions, TeamTemplates } from "./TeamDefinitions";
-import { TEAM_REFERENCE_PROTOCOL, TeamPreflight } from "./TeamPreflight";
+import { TeamPreflight } from "./TeamPreflight";
 import { TeamPageHeader } from "./TeamPageHeader";
 
 export function TeamPage() {
@@ -29,9 +29,12 @@ export function TeamPage() {
   const roles = useResource("team-roles", () => api.listRoles());
   const templates = useResource("team-templates", () => api.listTeamTemplates());
   const preflight = useCommand((path: string) => api.compileAndPreflight(path));
+  const settings = useResource("team-project-settings", () => api.getProjectSettings());
+  const referenceProtocol = settings.data?.reference_protocol ?? null;
   const [creating, setCreating] = useState(false);
   const checkReference = () => {
-    void preflight.run(TEAM_REFERENCE_PROTOCOL);
+    if (referenceProtocol === null) return;
+    void preflight.run(referenceProtocol);
   };
   const afterSave = () => {
     agents.reload();
@@ -42,6 +45,7 @@ export function TeamPage() {
     models.reload();
     roles.reload();
     templates.reload();
+    settings.reload();
   };
   return (
     <TeamPagesection
@@ -57,6 +61,7 @@ export function TeamPage() {
         checkReference,
         creating,
         setCreating,
+        referenceProtocol,
       }}
     />
   );
@@ -79,6 +84,7 @@ interface TeamPagesectionProps {
   checkReference: () => void;
   creating: boolean;
   setCreating: Dispatch<SetStateAction<boolean>>;
+  referenceProtocol: string | null;
 }
 
 function TeamPagesection({
@@ -93,6 +99,7 @@ function TeamPagesection({
   checkReference,
   creating,
   setCreating,
+  referenceProtocol,
 }: TeamPagesectionProps) {
   return (
     <section className={styles.page} data-testid="team-page">
@@ -109,6 +116,7 @@ function TeamPagesection({
       <ResourceBoundary state={models}>{null}</ResourceBoundary>
       <DefinitionsSplit roles={roles} templates={templates} />
       <TeamPreflight
+        protocol={referenceProtocol}
         report={preflight.result}
         error={preflight.error}
         pending={preflight.pending}

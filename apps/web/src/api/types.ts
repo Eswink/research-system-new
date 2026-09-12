@@ -277,6 +277,8 @@ export interface ProjectSettingsDto {
   workspace_backend: string;
   compute_profile: string | null;
   policy_id: string;
+  /** WP-C：项目参考协议（Team 页预检使用；null = 未配置，诚实空态）。 */
+  reference_protocol: string | null;
 }
 
 export interface ProtocolSourceDto {

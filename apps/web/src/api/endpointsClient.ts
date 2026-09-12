@@ -4,6 +4,7 @@ import { newIdempotencyKey, request, requestWithEtag, type ResponseWithEtag } fr
 import type {
   DiscoverModelsResultDto,
   EndpointHealthDto,
+  EndpointTestRequestDto,
   EndpointTestResultDto,
   LlmEndpointCreateDto,
   LlmEndpointReadDto,
@@ -43,10 +44,19 @@ export const endpointsClient = {
     );
   },
   test(endpointId: string, modelId: string): Promise<EndpointTestResultDto> {
+    const payload: EndpointTestRequestDto = { model_id: modelId };
     return request(`/llm-endpoints/${encodeURIComponent(endpointId)}/test`, {
       method: "POST",
-      body: JSON.stringify({ model_id: modelId }),
+      body: JSON.stringify(payload),
     });
+  },
+  /** 删除用户 relay（WP-B G10）：被用户 model 引用 → 409。 */
+  remove(endpointId: string): Promise<void> {
+    return request(
+      `/llm-endpoints/${encodeURIComponent(endpointId)}`,
+      { method: "DELETE" },
+      { idempotencyKey: newIdempotencyKey() },
+    );
   },
   discoverModels(endpointId: string): Promise<DiscoverModelsResultDto> {
     return request(`/llm-endpoints/${encodeURIComponent(endpointId)}/discover-models`, {

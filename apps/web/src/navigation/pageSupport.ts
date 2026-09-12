@@ -28,17 +28,19 @@ export const GAPS = {
   pauseResume: "pause/resume 仅状态迁移，不证明实际暂停/恢复执行",
   fileBrowse: "文件 Diff 无接口；预览与下载已接入（GET /artifacts/{id}/content）",
   globalLineage: "全局数据集/提示词血缘无 API：仅 Run 级引用",
-  delete: "控制面无 DELETE 端点：不提供删除操作",
+  delete:
+    "端点/模型/草稿/用户 Agent 已接入 DELETE（被引用 → 409）；" +
+    "memory 记录与契约基线（example role/template/agent）不提供删除",
   approvalsEmpty:
     "审批注册点已接入（human-gate 协议暂停时注册，见 human_gate_demo_v1）；" +
     "无审批门的 run 列表为空是正确状态",
   costSeries:
     "成本日序列已接入（GET /cost/daily）；预测/前瞻无 API，不绘制",
   memory:
-    "产品 Memory 已接入（PG canonical state；SQLite 开发路径 503）；" +
+    "产品 Memory 已接入（WP-A 起 SQLite 开发路径与 PG canonical 双支持）；" +
     "无持久化 pending 提案，门链直提交；capability policy 面扩展为 follow-up",
   experimentCreate:
-    "计划预注册/归档已接入（仅 PG canonical state；SQLite 开发路径 503）；" +
+    "计划预注册/归档已接入（WP-A 起 SQLite 开发路径与 PG 双支持）；" +
     "域内无队列状态，排队/调度无 API，不伪装",
   prompts: "无 prompts API",
   datasets: "无 datasets API",
@@ -83,7 +85,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "library/notebooks": { level: "gap", reason: GAPS.notebooks },
   "library/model-registry": { level: "full" },
   "library/lineage": { level: "partial", reason: GAPS.globalLineage },
-  "library/endpoints": { level: "full", disabledOperations: ["delete"] },
+  "library/endpoints": { level: "full" },
   "library/setup": { level: "full" },
   "evidence/claims": { level: "full" },
   "insights/reports": { level: "gap", reason: GAPS.reports },
@@ -101,7 +103,8 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "settings/settings": {
     level: "partial",
     reason: GAPS.account,
-    disabledOperations: ["account", "platform-keys", "2fa", "billing"],
+    // SettingsPage 分区渲染判定唯一来源（WP-C：isOperationDisabled 消费）。
+    disabledOperations: ["account", "security", "billing"],
   },
   "notifications/notifications": { level: "partial", reason: GAPS.notifications },
   "command-center/command-center": {

@@ -7,16 +7,19 @@ import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { KeyValueList } from "../shared/KeyValueList";
 import styles from "../shared/LivePage.module.css";
+import { ModelDeleteAction } from "./ModelDelete";
 import { ModelDetails } from "./ModelDetails";
 import { ModelEditForm } from "./ModelEditForm";
 
-/** 选中模型的详情刷新（GET /models/{id}）、编辑（PATCH + If-Match）与兼容性视图。 */
+/** 选中模型的详情刷新（GET /models/{id}）、编辑（PATCH + If-Match）、删除与兼容性视图。 */
 export function ModelInspector({
   model,
   onChanged,
+  onDeleted,
 }: {
   model: ModelReadDto;
   onChanged: () => void;
+  onDeleted: () => void;
 }) {
   const fresh = useResource(`model:${model.id}`, () => api.getModel(model.id));
   const view = fresh.data ?? model;
@@ -28,6 +31,13 @@ export function ModelInspector({
         onSaved={() => {
           onChanged();
           fresh.reload();
+        }}
+      />
+      <ModelDeleteAction
+        model={view}
+        onDeleted={() => {
+          onChanged();
+          onDeleted();
         }}
       />
       <CompatibilityPanel modelId={view.id} />
@@ -88,8 +98,8 @@ function CompatView({ view, zh }: { view: CompatibilityViewDto; zh: boolean }) {
     view.hard_capability_requirements.length > 0
       ? view.hard_capability_requirements.join(", ")
       : zh
-        ? "当前版本后端未声明硬要求（接口保留字段）"
-        : "none declared by current backend (reserved field)";
+        ? "引用本模型的 role/profile 未声明硬要求"
+        : "no role/profile referencing this model declares hard requirements";
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>

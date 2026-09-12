@@ -41,6 +41,14 @@ export const modelsClient = {
   probe(id: string): Promise<ProbeResultDto> {
     return request(`/models/${encodeURIComponent(id)}/probe`, { method: "POST" });
   },
+  /** 删除用户 model（WP-B G10）：被 agent 显式绑定 → 409。 */
+  remove(modelId: string): Promise<void> {
+    return request(
+      `/models/${encodeURIComponent(modelId)}`,
+      { method: "DELETE" },
+      { idempotencyKey: newIdempotencyKey() },
+    );
+  },
   compatibility(modelId: string): Promise<CompatibilityViewDto> {
     return request(`/models/${encodeURIComponent(modelId)}/compatibility`, { method: "GET" });
   },

@@ -4,9 +4,10 @@ import { api } from "../../api/client";
 import type { LlmEndpointReadDto } from "../../api/types";
 import { Chip } from "../../components/Chip";
 import { Drawer } from "../../components/Drawer";
-import { EmptyState } from "../../components/States";
 import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
+import { EndpointCards } from "./EndpointCards";
+import { EndpointDeleteAction } from "./EndpointDelete";
 import { EndpointEditForm } from "./EndpointEditForm";
 import { ConnectionTest } from "./ConnectionTest";
 import { KeyValueList } from "../shared/KeyValueList";
@@ -119,7 +120,12 @@ function EndpointDetailDrawer({
       title={selected?.name ?? (zh ? "端点详情" : "Endpoint details")}
     >
       {selected !== undefined && (
-        <EndpointDetails key={selected.id} endpoint={selected} onChanged={onChanged} />
+        <EndpointDetails
+          key={selected.id}
+          endpoint={selected}
+          onChanged={onChanged}
+          onDeleted={onClose}
+        />
       )}
     </Drawer>
   );
@@ -152,61 +158,15 @@ function EndpointsHomePageHeader({ zh, onAddRelay }: EndpointsHomePageHeaderProp
   );
 }
 
-function EndpointCards({
-  endpoints,
-  onSelect,
-}: {
-  endpoints: LlmEndpointReadDto[];
-  onSelect: (id: string) => void;
-}) {
-  const { language } = useI18n();
-  const zh = language === "zh";
-  if (endpoints.length === 0) {
-    return (
-      <div data-testid="endpoints-empty">
-        <EmptyState message={zh ? "没有匹配的已配置端点" : "No matching configured endpoints"} />
-      </div>
-    );
-  }
-  return (
-    <div className={styles.cards}>
-      {endpoints.map((endpoint) => (
-        <article key={endpoint.id} className={styles.card} data-testid="endpoint-card">
-          <div className={styles.cardHead}>
-            <h2 className={styles.cardTitle}>{endpoint.name}</h2>
-            <Chip tone={endpoint.enabled ? "accent" : "neutral"}>
-              {endpoint.enabled ? (zh ? "已启用" : "Enabled") : zh ? "已停用" : "Disabled"}
-            </Chip>
-          </div>
-          <KeyValueList
-            fields={[
-              { label: "Base URL", value: endpoint.base_url },
-              { label: zh ? "协议" : "Protocol", value: endpoint.api_style },
-              { label: zh ? "凭据状态" : "Credential", value: endpoint.credential },
-            ]}
-          />
-          <button
-            type="button"
-            className="btn sm"
-            onClick={() => {
-              onSelect(endpoint.id);
-            }}
-          >
-            {zh ? "查看配置" : "View configuration"}
-          </button>
-        </article>
-      ))}
-    </div>
-  );
-}
-
 /** 详情抽屉：GET /llm-endpoints/{id} 取最新视图与 ETag；失败回退列表快照。 */
 function EndpointDetails({
   endpoint,
   onChanged,
+  onDeleted,
 }: {
   endpoint: LlmEndpointReadDto;
   onChanged: () => void;
+  onDeleted: () => void;
 }) {
   const { language } = useI18n();
   const zh = language === "zh";
@@ -238,6 +198,10 @@ function EndpointDetails({
           onEdit={() => {
             setEditing(true);
           }}
+          onDelete={() => {
+            onChanged();
+            onDeleted();
+          }}
         />
       )}
       <hr className="hr" />
@@ -263,10 +227,12 @@ function EndpointReadOnly({
   view,
   zh,
   onEdit,
+  onDelete,
 }: {
   view: LlmEndpointReadDto;
   zh: boolean;
   onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
     <>
@@ -275,6 +241,7 @@ function EndpointReadOnly({
         <button className="btn sm" type="button" onClick={onEdit} data-testid="endpoint-edit">
           {zh ? "编辑配置" : "Edit configuration"}
         </button>
+        <EndpointDeleteAction endpoint={view} zh={zh} onDeleted={onDelete} />
       </div>
       <p className={styles.notice}>
         {zh

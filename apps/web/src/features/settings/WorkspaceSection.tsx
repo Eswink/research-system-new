@@ -56,12 +56,22 @@ function SettingsRows({
   const wsHint = zh
     ? "必须引用已注册 workspace backend，否则后端以 422 拒绝。"
     : "Must reference a registered workspace backend; others are rejected with 422.";
+  const protocolHint = zh
+    ? "examples/protocols 内协议文件名；Team 页参考协议预检与未选运行时的运行入口使用它。"
+    : "A filename under examples/protocols; drives the team-page preflight and the run entry.";
   return (
     <div className={styles.page} data-testid="workspace-settings-form">
       <TemplateRow current={current} options={options} onSaved={onSaved} />
       <TextFieldRow current={current} field="default_model_profile_id" nullable onSaved={onSaved} />
       <TextFieldRow current={current} field="budget_policy_id" onSaved={onSaved} />
       <TextFieldRow current={current} field="workspace_backend" hint={wsHint} onSaved={onSaved} />
+      <TextFieldRow
+        current={current}
+        field="reference_protocol"
+        nullable
+        hint={protocolHint}
+        onSaved={onSaved}
+      />
       <TextFieldRow current={current} field="compute_profile" nullable onSaved={onSaved} />
       <TextFieldRow current={current} field="policy_id" onSaved={onSaved} />
     </div>

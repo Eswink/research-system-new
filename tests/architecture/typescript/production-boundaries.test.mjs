@@ -57,6 +57,20 @@ test("apps/web 源码不 import packages/domain 或 adapters（静态扫描）",
   }
 });
 
+test("example-console 业务 fixture JSON 只能被 example 树内 import（WP-C 隔离）", () => {
+  const files = listSourceFiles(path.join(root, "apps/web/src"));
+  const pattern = /from\s+["'][^"']*example-console\/data\/[^"']+["']/;
+  for (const file of files) {
+    const relative = path.relative(root, file).replace(/\\/g, "/");
+    if (relative.includes("/features/example-console/")) continue;
+    const source = readFileSync(file, "utf8");
+    assert.ok(
+      !pattern.test(source),
+      `${relative} 不得直接 import example-console/data fixture（经 exampleChrome 桥接）`,
+    );
+  }
+});
+
 test("console features do not invent currency math or quality thresholds", () => {
   const source = sourceFor("apps/web/src/features");
   assert.doesNotMatch(source, /(?:minor_units|estimated_cost_minor)\s*\/\s*\d+/);

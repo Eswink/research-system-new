@@ -129,6 +129,7 @@ async def get_project_settings(project_id: str, request: Request) -> ProjectSett
         workspace_backend=project.workspace_backend,
         compute_profile=project.compute_profile,
         policy_id=project.policy_id,
+        reference_protocol=project.reference_protocol,
     )
 
 
@@ -161,6 +162,7 @@ async def put_project_settings(
         workspace_backend=payload.workspace_backend,
         compute_profile=payload.compute_profile,
         policy_id=payload.policy_id,
+        reference_protocol=payload.reference_protocol,
     )
     deps.project_settings_store.save(settings)
     return ProjectSettingsDto(
@@ -171,6 +173,7 @@ async def put_project_settings(
         workspace_backend=settings.workspace_backend,
         compute_profile=settings.compute_profile,
         policy_id=settings.policy_id,
+        reference_protocol=settings.reference_protocol,
     )
 
 

@@ -3,12 +3,15 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import { UnavailableState } from "../../components/States";
 import { useI18n } from "../../i18n/useI18n";
 import type { ConsolePreferences } from "../../layout/preferences";
-import { GAPS } from "../../navigation/pageSupport";
+import { pageSupport, isOperationDisabled } from "../../navigation/pageSupport";
+import type { Route } from "../../navigation/registry";
 import shared from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { PreferencesSection } from "./PreferencesSection";
 import styles from "./SettingsPage.module.css";
 import { WorkspaceSection } from "./WorkspaceSection";
+
+const SETTINGS_ROUTE: Route = { domain: "settings", page: "settings" };
 
 const SECTIONS = [
   { id: "preferences", labelKey: "settings.preferences" },
@@ -118,8 +121,11 @@ function SettingsPageLocked({
           <PreferencesSection preferences={preferences} onChange={onPreferencesChange} />
         )}
         {section === "workspace" && <WorkspaceSection />}
-        {section !== "preferences" && section !== "workspace" && (
-          <UnavailableState title={t("settings.locked")} reason={GAPS.account} />
+        {isOperationDisabled(SETTINGS_ROUTE, section) && (
+          <UnavailableState
+            title={t("settings.locked")}
+            reason={pageSupport(SETTINGS_ROUTE).reason ?? ""}
+          />
         )}
       </div>
     </div>

@@ -57,6 +57,7 @@ export const api = {
   testEndpoint: (endpointId: string, modelId: string) => endpointsClient.test(endpointId, modelId),
   discoverModels: (endpointId: string) => endpointsClient.discoverModels(endpointId),
   endpointHealth: (endpointId: string) => endpointsClient.health(endpointId),
+  removeEndpoint: (endpointId: string) => endpointsClient.remove(endpointId),
 
   // ── models ──
   listModels: (endpointId?: string): Promise<ModelReadDto[]> => modelsClient.list(endpointId),
@@ -66,6 +67,7 @@ export const api = {
   updateModel: (id: string, payload: ModelUpdateDto, ifMatch: Version) =>
     modelsClient.update(id, payload, ifMatch),
   probeModel: (id: string) => modelsClient.probe(id),
+  removeModel: (modelId: string) => modelsClient.remove(modelId),
   getCompatibility: (modelId: string) => modelsClient.compatibility(modelId),
 
   // ── team ──
@@ -75,6 +77,11 @@ export const api = {
   createAgent: (payload: AgentCreateDto) => teamClient.createAgent(payload),
   updateAgent: (agentId: string, payload: AgentUpdatePayload, ifMatch: Version) =>
     teamClient.updateAgent(agentId, payload, ifMatch),
+  cloneAgent: (agentId: string, newId?: string) => teamClient.cloneAgent(agentId, newId),
+  removeAgent: (agentId: string) => teamClient.removeAgent(agentId),
+  createCustomRole: (document: Record<string, unknown>) => teamClient.createCustomRole(document),
+  createCustomTeamTemplate: (document: Record<string, unknown>) =>
+    teamClient.createCustomTeamTemplate(document),
   getProjectSettings: (): Promise<ProjectSettingsDto> => teamClient.getProjectSettings(),
   saveProjectSettings: (payload: ProjectSettingsDto) => teamClient.saveProjectSettings(payload),
 
@@ -95,6 +102,7 @@ export const api = {
   runTasks: (runId: string) => runClient.tasks(runId),
   runEvents: (runId: string) => runClient.events(runId),
   listApprovals: () => runClient.listApprovals(),
+  runApprovals: (runId: string) => runClient.runApprovals(runId),
   decideApproval: (approvalId: string, decision: "approve" | "deny", version: Version) =>
     runClient.decideApproval(approvalId, decision, version),
 

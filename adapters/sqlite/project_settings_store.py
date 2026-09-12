@@ -61,6 +61,7 @@ class SqliteProjectSettingsStore(SqliteAdapterBase):
                 "workspace_backend": decoded["workspace_backend"],
                 "compute_profile": decoded.get("compute_profile"),
                 "policy": decoded.get("policy_id", "project-policy"),
+                "protocol": decoded.get("reference_protocol"),
             },
         )
 
@@ -74,6 +75,7 @@ class SqliteProjectSettingsStore(SqliteAdapterBase):
             "workspace_backend": settings.workspace_backend,
             "compute_profile": settings.compute_profile,
             "policy_id": settings.policy_id,
+            "reference_protocol": settings.reference_protocol,
         }
         with self._conn:
             self._conn.execute(

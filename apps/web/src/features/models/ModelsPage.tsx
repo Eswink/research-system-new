@@ -211,7 +211,12 @@ function ModelsPageContent({
       <ModelCatalogTable {...{ zh, models, selected, onSelect }} />
       {selected !== undefined && (
         <div className={styles.split}>
-          <ModelInspector key={selected.id} model={selected} onChanged={onChanged} />
+          <ModelInspector
+            key={selected.id}
+            model={selected}
+            onChanged={onChanged}
+            onDeleted={onChanged}
+          />
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>{zh ? "能力探测" : "Capability probe"}</h2>
             <p>
