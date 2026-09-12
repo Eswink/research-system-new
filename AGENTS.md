@@ -278,6 +278,8 @@ Fork 必须 ADR、patch surface、同步策略和退出计划。
 - Cursor 工程记录保持既有注册格式，并让描述部分使用英文 `kebab-case`，例如
   `PLAN-YYYYMMDD-NNN-topic.md`、`RECHECK-YYYYMMDD-NNN-topic.md`、
   `MEM-YYYYMMDD-NNN-topic.md`、`EXP-YYYYMMDD-NNN.md`、`LEARN-YYYYMMDD-NNN.yaml`。
+  目标级自迭代循环记录使用 `GOAL-YYYYMMDD-NNN-topic.md`（位于 `.cursor/plans/goals/`，
+  格式规范见该目录 `README.md`；GOAL 派生的子计划仍是普通 `PLAN-*`）。
 - 不用 `final`、`new`、`old`、`tmp`、`copy` 或尾随 `vN` 表示生命周期/伪版本；
   若外部规范、不可变历史资产或明确 schema 要求特定名称，则保留该名称并记录原因。
 - 既有历史路径不会仅为满足本规则而批量重命名；一旦任务本身要求重命名该路径，新的名称

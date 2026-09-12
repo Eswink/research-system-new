@@ -45,6 +45,16 @@ PLAN_STATUSES = {
 }
 RECHECK_RESULTS = {"PASS", "PASS_WITH_WARNINGS", "REVISE", "BLOCK"}
 RECHECK_STATUSES = {"VERIFYING", "COMPLETED"}
+GOAL_STATUSES = {"DRAFT", "ACTIVE", "PAUSED", "BLOCKED", "ABORTED", "ACHIEVED"}
+GOAL_HEADINGS = (
+    "## 目标与退出标准",
+    "## 循环入口协议",
+    "## 单 cycle SOP",
+    "## CI 失败分类与纠错",
+    "## 终止与收口",
+    "## 迭代日志",
+    "## 状态历史",
+)
 MEMORY_STATUSES = {"ACTIVE", "SUPERSEDED", "RETIRED"}
 EXPECTED_RULES = {
     "00-repository-contract.mdc",
@@ -572,6 +582,66 @@ def load_rechecks() -> dict[str, tuple[Path, dict[str, Any], str]]:
     return result
 
 
+def load_goals() -> dict[str, tuple[Path, dict[str, Any], str]]:
+    result: dict[str, tuple[Path, dict[str, Any], str]] = {}
+    goals_root = CURSOR_ROOT / "plans" / "goals"
+    if not goals_root.is_dir():
+        return result
+    for path in sorted(goals_root.glob("GOAL-*.md")):
+        metadata, body = parse_frontmatter(path)
+        goal_id = metadata.get("id")
+        if not isinstance(goal_id, str) or re.fullmatch(r"GOAL-\d{8}-\d{3}", goal_id) is None:
+            add_error(f"GOAL ID 无效: {path.relative_to(ROOT)}: {goal_id!r}")
+            continue
+        if not path.name.startswith(goal_id + "-"):
+            add_error(f"GOAL 文件名必须以 ID 开头: {path.relative_to(ROOT)}")
+        if goal_id in result:
+            add_error(f"GOAL ID 重复: {goal_id}")
+        result[goal_id] = (path, metadata, body)
+    return result
+
+
+def check_goals() -> None:
+    """GOAL 记录（plans/goals/）结构合规；语义格式见 goals/README.md。"""
+    for goal_id, (path, metadata, body) in load_goals().items():
+        status = metadata.get("status")
+        if status not in GOAL_STATUSES:
+            add_error(f"GOAL 状态无效: {goal_id}: {status!r}")
+        for heading in GOAL_HEADINGS:
+            if heading not in body:
+                add_error(f"GOAL 缺少章节 {heading}: {goal_id}")
+        for field in ("created_at", "updated_at"):
+            as_date(metadata.get(field), f"{goal_id}.{field}")
+        criteria = as_list(metadata.get("exit_criteria"))
+        if not criteria:
+            add_error(f"GOAL 必须有 exit_criteria: {goal_id}")
+        budget = metadata.get("budget")
+        if not isinstance(budget, dict) or not isinstance(budget.get("max_cycles"), int):
+            add_error(f"GOAL budget.max_cycles 必须为整数: {goal_id}")
+        elif budget["max_cycles"] < 1:
+            add_error(f"GOAL budget.max_cycles 必须 >= 1: {goal_id}")
+        if not metadata.get("authorization"):
+            add_error(f"GOAL 缺少 authorization（目标与 push 授权必须显式记录）: {goal_id}")
+        if status == "ACHIEVED":
+            unmet = [
+                str(item.get("id"))
+                for item in criteria
+                if isinstance(item, dict) and item.get("status") != "PASS"
+            ]
+            if unmet:
+                add_error(f"ACHIEVED GOAL 仍有未通过退出标准: {goal_id}: {unmet}")
+            latest = metadata.get("latest_recheck")
+            recheck_path = resolve_repository_path(str(latest), path) if latest else None
+            if not recheck_path or not recheck_path.exists():
+                add_error(f"ACHIEVED GOAL 缺少存在的 latest_recheck: {goal_id}")
+            else:
+                recheck_meta, _ = parse_frontmatter(recheck_path)
+                if recheck_meta.get("result") not in {"PASS", "PASS_WITH_WARNINGS"}:
+                    add_error(
+                        f"ACHIEVED GOAL 复检未通过: {goal_id}: {recheck_meta.get('result')!r}"
+                    )
+
+
 def check_plans_and_rechecks() -> None:
     plans = load_task_plans()
     rechecks = load_rechecks()
@@ -840,6 +910,7 @@ def main() -> int:
         check_external_skill_lock,
         check_version_source,
         check_plans_and_rechecks,
+        check_goals,
         check_memory,
         check_git_history_preservation,
         check_runtime_config,
@@ -860,6 +931,7 @@ def main() -> int:
     print("- Rules / Skills frontmatter 与作用域有效")
     print("- 子代理按 wave 最多 3；无全任务累计上限；禁止嵌套")
     print("- ALL_PLAN / Task Plan / Recheck / Memory 交叉引用一致")
+    print("- GOAL 循环记录（plans/goals/）结构合规；push 授权显式登记")
     print(
         "- 外部 Skill 使用 immutable revision + content digest + upgrade gate；主包不依赖开发者 home 目录安装"
     )

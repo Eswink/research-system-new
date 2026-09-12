@@ -8,6 +8,7 @@ alwaysApply: true
 - 用户当前请求若已经明确授权实现，不得仅因为“复杂”再次索要同一层批准；需要持久计划时可直接将当前授权记录为计划来源。
 - 如果实现将超出用户原始授权范围、引入破坏性/外部副作用，或改变 Accepted ADR、核心安全策略、Canonical State 边界，必须回到 Plan Mode 并获得新的明确授权。
 - 对长时程、多阶段或需要跨会话恢复的任务，使用 `all-plan` Skill 将执行计划固化到 `.cursor/plans/tasks/`，并在 `.cursor/plans/ALL_PLAN.md` 建立唯一活动索引。
+- 对需要自主反复迭代的终极目标，使用 `.cursor/plans/goals/` 的 GOAL 记录（格式与循环 SOP 见 `plans/goals/README.md`，结构由 governance `check_goals()` 强制）：每 cycle 派生标准子 PLAN → 执行 → 本地验证 → commit → push main → GitHub Actions 检查 → 纠错 → 回写迭代日志；GOAL 只做编排与记账，验收/复检仍走 PLAN/RECHECK/MEM 单一体系，push 授权必须在 frontmatter 显式登记。
 - 项目计划是执行投影，不替代 Cursor Plan Mode，也不能扩大用户授权范围。
 - `all-plan`、`recheck`、`engineering-memory` 为显式工程流程；是否使用取决于任务规模和风险，不作为所有简单任务的形式化前置。
 - 每个 checklist 项只有在计划文件中存在对应证据后才能勾选；计划任务只有关联 `PASS` 或 `PASS_WITH_WARNINGS` 复检时才能标记 `DONE`。
