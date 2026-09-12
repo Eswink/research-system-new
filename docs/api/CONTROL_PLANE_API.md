@@ -83,7 +83,10 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
 ## Runs
 
 ```text
+GET    /projects/{id}/runs
 POST   /projects/{id}/runs
+GET    /projects/{id}/settings
+PUT    /projects/{id}/settings
 GET    /runs/{id}
 POST   /runs/{id}/pause
 POST   /runs/{id}/resume

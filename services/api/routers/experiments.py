@@ -8,8 +8,9 @@
   为 M6/M9 前置能力属性，同样诚实标注。
 
 WP-E 新增：项目级 run 视图（跨 run evidence 聚合）、ExperimentPlan 预注册
-创建与归档（仅 PG canonical state；SQLite 开发路径诚实 503）。域内不存在
-queued/running 计划状态，因此不伪装队列；执行归属由 run 证据呈现。
+创建与归档。PLAN-040 WP-A 起 SQLite 开发路径与 PG canonical 双支持；store
+未配置仍诚实 503。域内不存在 queued/running 计划状态，因此不伪装队列；
+执行归属由 run 证据呈现。
 """
 
 from __future__ import annotations

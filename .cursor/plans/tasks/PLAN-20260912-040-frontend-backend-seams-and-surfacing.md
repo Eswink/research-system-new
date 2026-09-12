@@ -2,7 +2,7 @@
 id: PLAN-20260912-040
 slug: frontend-backend-seams-and-surfacing
 title: 后端组成浮现与前后端接缝闭合（040/041/042 系列第一轮）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-12
 updated_at: 2026-09-12
 cursor_plan_uri: null
@@ -12,8 +12,9 @@ authorization:
   source: user-request
   ref: "2026-09-12 用户要求补充后端（前端预留接口或数据）并完整对接；Plan Mode 批准 PLAN-040/041/042 系列（040 接缝与既有能力浮现 → 041 GAP 新域与页面翻 live → 042 语义深水区）；本轮 040 按批准计划执行"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260912-040-frontend-backend-seams-and-surfacing.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260912-019-sqlite-composition-surfacing-facts.md
 ---
 
 # PLAN-20260912-040 — 后端组成浮现与前后端接缝闭合
@@ -41,7 +42,7 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
     SQLite override 链）；`DELETE /llm-endpoints/{id}`、`/models/{id}`、
     `/protocol-drafts/{id}`、`/agents/{id}`（Port 增删除语义 + SQLite/PG 实现，
     被引用 → 409）；`/models/{id}/compatibility` 的
-    `hard_capability_requirements` 从 probe capability assertions 投影。
+    `hard_capability_requirements` 从合并目录 role/profile 声明投影（非 probe assertions）。
   - WP-C 前端契约与 fixture 隔离：4 个被绕开的请求 DTO 接入 client 调用点；
     `isOperationDisabled` 统一禁用面；`pageSupport.ts` 过期文案修正；
     dependency-cruiser 禁止 example-console 被 live 树 import + 四处 layout
@@ -65,18 +66,18 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
 
 ## 验收条件
 
-- [ ] AC-01（WP-A）：dev 路径 artifacts 重启后仍可下载（SqliteArtifactStore）；
+- [x] AC-01（WP-A）：dev 路径 artifacts 重启后仍可下载（SqliteArtifactStore）；
   memory GET/POST/DELETE 在 SQLite 组成可用；`/cluster/workers` 与项目实验
   GET/POST/archive 在 SQLite 组成不再 503；`/runs/{unknown}/evidence|claims`
   返回 404；`GET /health` 返回组成摘要且 compose 用之。
-- [ ] AC-02（WP-B）：删除四端点在 SQLite/PG 双组成有测试（含引用中 409 与
+- [x] AC-02（WP-B）：删除四端点在 SQLite/PG 双组成有测试（含引用中 409 与
   If-Match）；custom role/team-template 写入 override 并被 catalog_merge 读出；
   agent clone 产生新 agent；`GET /runs/{id}/approvals` 有数据；compatibility
   投影在有 probe 断言时非空。
-- [ ] AC-03（WP-C）：tsc/eslint/unit/build 全绿；dependency-cruiser 新增规则生效
+- [x] AC-03（WP-C）：tsc/eslint/unit/build 全绿；dependency-cruiser 新增规则生效
   （live 树 import example-console 即 fail）；live 模式 layout 不再渲染虚构用户/
   workspace fixture；`isOperationDisabled` 成为禁用判定单一来源。
-- [ ] AC-04（WP-D）：openapi 再生零漂移；CONTROL_PLANE_API.md 无高估路由；
+- [x] AC-04（WP-D）：openapi 再生零漂移；CONTROL_PLANE_API.md 无高估路由；
   stub e2e + live e2e + m0（python 6 / typescript 9 / framework 8）全绿；
   RECHECK-040 独立复审完成并回填本文件。
 
@@ -101,7 +102,7 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
   修正；layout 不再直接 import `example-console/data/`（exampleChrome 桥 +
   production-boundaries 静态测试）；死代码清理（Tooltip、DataViewFrame/
   useCombinedView、Donut、Heatmap、useOperations hook）。
-- [ ] WP-D 收口：openapi 再生零漂移；CONTROL_PLANE_API.md（高估路由
+- [x] WP-D 收口：openapi 再生零漂移；CONTROL_PLANE_API.md（高估路由
   stream/ws/identity 标注未提供、custom/clone/DELETE/health 落地）与
   CONSOLE_PAGE_MAP.md（G10、memory/experiments 双路、settings/team 节）同步；
   live e2e 扩展；m0 分组全绿；RECHECK-040。
@@ -128,7 +129,8 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
   `/models/{id}/compatibility` 的 hard_capability_requirements 改为合并目录
   投影（roles.all_of/any_of + profiles.hard_capabilities）。
   conftest base deps 注入 catalog_overrides；mypy/ruff 干净；
-  openapi 再生后 tests/api 241 passed + snapshot/boundaries 通过。
+  openapi 再生后 tests/api 全绿 + snapshot/boundaries 通过（当时计数 241；
+  WP-C 后 test_wp_b_surface 合并 orphan 用例，DSN 固化复跑为 237 passed）。
 - 2026-09-12 WP-C 完成（前端契约与 fixture 隔离）：
   - DTO 接线：`EndpointTestRequestDto`/`ProtocolSourceDto`/`ApprovalDecideDto`/
     `RunStartPayloadDto` 接入 client 调用点；facade 增
@@ -148,10 +150,20 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
     （经 `exampleChrome.ts` 桥接）；production-boundaries 新静态测试强制
     data/ 仅 example 树可 import。
   - 死代码清理：Tooltip、DataViewFrame/useCombinedView、charts/Donut、
-    charts/Heatmap、useOperations hook（保留被测纯 helpers）、
-    project.json/provenance.json 死 fixture。
+    charts/Heatmap、useOperations hook（保留被测纯 helpers）；
+    project.json/provenance.json 死 fixture（注：`example-console/data/*.json`
+    整体被根 `data/` gitignore，属工作树清理，不产生 git 变更）。
   - 门禁：tsc/eslint(0 warn)/unit 70/70/build、boundaries 6/6、
     stub e2e 受影响 spec 11/11、live e2e 7/7。
+- 2026-09-12 WP-D 完成 + 独立复检收口：openapi 再生零漂移（快照含 9 新路由）；
+  CONTROL_PLANE_API.md 逐路由 0 高估、22 未提供标注核真、补 3 条既存在路由
+  （F-2）；CONSOLE_PAGE_MAP G 表同步（G10 已交付、memory/experiments 双支持）；
+  live e2e run_fixtures 补齐 ledger/agent/settings/override/worker/experiment
+  store（10/10）；m0 python 6 / typescript 9 / framework 8 全绿、stub 30/30；
+  密封深度扫描 scan-2026-09-12T13-05-21 补跑并处置（本批新文件零命中，
+  唯一产品树 HIGH 为既有 SafeLoader 误报，RECHECK-039 警告 3 闭环）。
+  独立复检 RECHECK-20260912-040 判定 PASS_WITH_WARNINGS（F-1/F-3/F-5 已在收口
+  commit 修正，F-2 补记路由，F-4/F-6 登记）；PLAN-040 关闭，下一项 PLAN-041。
 
 ## 证据
 
@@ -183,6 +195,10 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
   import 面」而非 bundle 体积；bundle 级隔离（lazy）留作后续。
 - `hard_capability_requirements` 投影源 = 合并目录 role/profile 声明；
   `endpoint_healthy_hint` 仍为 None（健康探测属显式动作，不隐式发起）。
+- `services/api/custom_catalog.py` 在 composition root 之外 import
+  `adapters.contracts.*`（与既有 catalog_merge 同模式：schema/domain loader，
+  非 Port 旁路；`.importlinter.api` 受限源不含此模块，team 路由自身零 adapter
+  import）；若未来收紧契约需将 catalog_merge/custom_catalog 一并显式豁免登记。
 
 ## 影响报告
 
