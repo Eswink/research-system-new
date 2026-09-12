@@ -266,3 +266,15 @@ def test_claim_status_not_mutable_via_api(client: TestClient) -> None:
     # 不存在任何 mutating claim 端点
     response = client.post("/runs/x/claims/claim-1/verify", headers={"Idempotency-Key": "verify"})
     assert response.status_code == 404
+
+
+def test_evidence_unknown_run_returns_404(client: TestClient) -> None:
+    """WP-A（PLAN-040）：未知 run 的 evidence 404（对齐 /usage），不再 200 []。"""
+    response = client.get("/runs/no-such-run/evidence")
+    assert response.status_code == 404
+
+
+def test_claims_unknown_run_returns_404(client: TestClient) -> None:
+    """WP-A（PLAN-040）：未知 run 的 claim map 404（先 run gate 后 ledger 查询）。"""
+    response = client.get("/runs/no-such-run/claims")
+    assert response.status_code == 404

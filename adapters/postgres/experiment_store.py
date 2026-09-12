@@ -5,10 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, cast
 
-from adapters.postgres.base import PostgresAdapterBase
-from adapters.postgres.db import connect as pg_connect
-from adapters.postgres.db import dsn_from_env, now_iso
-from adapters.postgres.experiment_rows import (
+from adapters.contracts.experiment_rows import (
     decode_audit,
     decode_plan,
     decode_run,
@@ -16,6 +13,9 @@ from adapters.postgres.experiment_rows import (
     encode_plan,
     encode_run,
 )
+from adapters.postgres.base import PostgresAdapterBase
+from adapters.postgres.db import connect as pg_connect
+from adapters.postgres.db import dsn_from_env, now_iso
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.experiments import ExperimentPlan, ExperimentRun
 from packages.domain.reproducibility import ReproducibilityAudit

@@ -72,13 +72,14 @@ class SqliteArtifactStore(SqliteAdapterBase):
         if not blob_path.exists():
             blob_path.parent.mkdir(parents=True, exist_ok=True)
             blob_path.write_bytes(content)
-        existing = self._conn.execute(
-            "SELECT 1 FROM artifacts WHERE artifact_id = ?", (artifact.id,)
-        ).fetchone()
-        if existing is None:
-            self._insert_metadata(artifact)
-        else:
-            self._update_metadata(artifact)
+        with self._conn:
+            existing = self._conn.execute(
+                "SELECT 1 FROM artifacts WHERE artifact_id = ?", (artifact.id,)
+            ).fetchone()
+            if existing is None:
+                self._insert_metadata(artifact)
+            else:
+                self._update_metadata(artifact)
         self._record("put", f"{artifact.id}/{len(content)}", result="stored")
 
     def get(self, artifact_id: str) -> bytes:
@@ -121,10 +122,11 @@ class SqliteArtifactStore(SqliteAdapterBase):
             raise InvalidInputError(
                 f"illegal artifact state transition {current.value} -> {state.value}",
             )
-        self._conn.execute(
-            "UPDATE artifacts SET state = ? WHERE artifact_id = ?",
-            (state.value, artifact_id),
-        )
+        with self._conn:
+            self._conn.execute(
+                "UPDATE artifacts SET state = ? WHERE artifact_id = ?",
+                (state.value, artifact_id),
+            )
         self._record("mark", f"{artifact_id}/{state.value}")
 
     def list_refs(self) -> tuple[Artifact, ...]:
@@ -146,10 +148,11 @@ class SqliteArtifactStore(SqliteAdapterBase):
                 f"illegal artifact state transition {current.value} -> "
                 f"{ArtifactState.DELETED_TOMBSTONE.value}",
             )
-        self._conn.execute(
-            "UPDATE artifacts SET state = ? WHERE artifact_id = ?",
-            (ArtifactState.DELETED_TOMBSTONE.value, artifact_id),
-        )
+        with self._conn:
+            self._conn.execute(
+                "UPDATE artifacts SET state = ? WHERE artifact_id = ?",
+                (ArtifactState.DELETED_TOMBSTONE.value, artifact_id),
+            )
         if not self._digest_still_referenced(row["digest"], artifact_id):
             blob = self._blob_path(Digest.parse(row["digest"]))
             blob.unlink(missing_ok=True)

@@ -11,25 +11,29 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from adapters.fakes.agent_runtime import FakeAgentRuntime
-from adapters.fakes.artifact_store import FakeArtifactStore
 from adapters.relay.gateway import OpenAIChatGateway
 from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
 from adapters.sqlite.agent_store import SqliteAgentStore
 from adapters.sqlite.approval_store import SqliteApprovalStore
+from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.budget_ledger import SqliteBudgetLedger
 from adapters.sqlite.endpoint_store import SqliteEndpointStore
 from adapters.sqlite.eval_report_store import SqliteEvalReportStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
+from adapters.sqlite.experiment_store import SqliteExperimentStore
 from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
+from adapters.sqlite.memory_store import SqliteMemoryStore
 from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
 from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
 from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
 from adapters.sqlite.run_store import SqliteRunStore
+from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
 from packages.application.ports import (
@@ -93,7 +97,8 @@ class ApiDeps:
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
     approvals: ApprovalStore | None = field(default=None, repr=False)
     memory: Any | None = field(default=None, repr=False)
-    # WP-E：ExperimentStore（PG canonical state；SQLite 开发路径 None）。
+    # WP-E（PLAN-037）：ExperimentStore（PG canonical state；PLAN-040 WP-A 起
+    # SQLite 开发路径同 Port 实现，消灭 dev 路径诚实 503）。
     experiment_store: Any | None = field(default=None, repr=False)
     # WP-G：通知已读 view-state（控制面 SQLite；两路径同侧）。
     notification_reads: Any | None = field(default=None, repr=False)
@@ -169,9 +174,21 @@ class _SqliteStoreParts:
     approvals: Any
 
 
+def _sqlite_artifact_blob_dir(effective: ApiSettings) -> str:
+    """内容寻址 blob 目录：显式配置优先；默认落在 dev DB 同级的
+    `artifact-blobs/`（`data/research-os-control.db` → `data/artifact-blobs`），
+    与 DB 文件同级意味着重启后 artifact 内容仍可下载（PLAN-040 WP-A）。"""
+    if effective.artifact_blob_dir:
+        return effective.artifact_blob_dir
+    db = Path(effective.db_path)
+    base = db.parent if str(db) != ":memory:" else Path(".")
+    return str(base / "artifact-blobs")
+
+
 def _sqlite_store_parts(
     connection: sqlite3.Connection,
     telemetry: TelemetrySink,
+    blob_dir: str,
 ) -> _SqliteStoreParts:
     """SQLite 共享连接的 store/orchestration 部分（helper 控制函数长度）。"""
     events = SqliteOutboxEventPublisher(connection=connection)
@@ -183,9 +200,10 @@ def _sqlite_store_parts(
     budget = SqliteBudgetLedger(connection=connection)
     pricing = _load_pricing()
     pricing_store = SqlitePricingSnapshotStore(connection=connection)
-    # 单一 FakeArtifactStore 实例共享给 orchestration 与控制面读取端点
-    # （WP-C：两个独立实例会让 run 产出的 artifact 对读取端永远为空）。
-    artifacts = FakeArtifactStore()
+    # WP-A（PLAN-040）：内容寻址持久存储替换进程内 FakeArtifactStore；
+    # 单一实例共享给 orchestration 与控制面读取端点（两个独立实例会让 run
+    # 产出的 artifact 对读取端永远为空）。
+    artifacts = SqliteArtifactStore(connection=connection, blob_dir=blob_dir)
     # WP-H：同一审批存储实例（执行循环 register、decide/GET 读取）。
     approvals = SqliteApprovalStore(connection=connection)
     orchestration = RunOrchestrationService(
@@ -223,7 +241,7 @@ def _assemble_sqlite(
     model_store: ModelStore,
     telemetry: TelemetrySink,
 ) -> ApiDeps:
-    parts = _sqlite_store_parts(connection, telemetry)
+    parts = _sqlite_store_parts(connection, telemetry, _sqlite_artifact_blob_dir(effective))
     events_sqlite = parts.events
     workflow_sqlite = parts.workflow
     projection_sqlite = parts.projection
@@ -257,6 +275,11 @@ def _assemble_sqlite(
         agent_store=SqliteAgentStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
         notification_reads=SqliteNotificationReadStore(connection=connection),
+        # WP-A（PLAN-040）：dev 路径 memory/实验/worker 注册表接 SQLite 同 Port
+        # 实现（PG 仍是 canonical state；store=None → 诚实 503 的边界保持）。
+        memory=SqliteMemoryStore(connection=connection),
+        experiment_store=SqliteExperimentStore(connection=connection),
+        worker_registry=SqliteWorkerRegistry(connection=connection),
         protocol_draft_service=_build_draft_service(connection),
         endpoint_url_policy=_endpoint_url_policy(effective),
         telemetry=telemetry,

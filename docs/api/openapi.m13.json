@@ -4498,6 +4498,38 @@
         ]
       }
     },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  },
+                  "title": "Response Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
     "/llm-endpoints": {
       "get": {
         "operationId": "list_endpoints_llm_endpoints_get",
@@ -6406,7 +6438,7 @@
     },
     "/runs/{run_id}/claims": {
       "get": {
-        "description": "Source → Evidence → Relation → Claim 地图（persisted truth；run 级隔离）。\n\n视觉语义：contradiction（同一 claim 的 SUPPORTS 与 REFUTES 并存）在\nDTO 中显式表达；Claim 状态改变必须经过正式 use case/gate。\nM13-R1：claim 视图只包含 relation 命中本 run evidence 的 claim\n（跨 run 泄漏修复）；无 relation 的 claim 不归属任何 run。\n畸形 ledger 行（evidence_relations 非 JSON）不再 422 崩溃：\n整图降级标记 degraded=true（WP-P4）。",
+        "description": "Source → Evidence → Relation → Claim 地图（persisted truth；run 级隔离）。\n\n视觉语义：contradiction（同一 claim 的 SUPPORTS 与 REFUTES 并存）在\nDTO 中显式表达；Claim 状态改变必须经过正式 use case/gate。\nM13-R1：claim 视图只包含 relation 命中本 run evidence 的 claim\n（跨 run 泄漏修复）；无 relation 的 claim 不归属任何 run。\nWP-A（PLAN-040）：未知 run → 404（对齐 /usage/export），先 gate 后查询。\n畸形 ledger 行（evidence_relations 非 JSON）不再 422 崩溃：\n整图降级标记 degraded=true（WP-P4）。",
         "operationId": "run_claim_map_runs__run_id__claims_get",
         "parameters": [
           {
@@ -6533,7 +6565,7 @@
     },
     "/runs/{run_id}/evidence": {
       "get": {
-        "description": "run 的 evidence（persisted truth；页面只 render）。",
+        "description": "run 的 evidence（persisted truth；页面只 render）。\n\nWP-A（PLAN-040）：先 run gate 再读 ledger——未知 run 404（对齐 /usage/\n/export），不再对任意 run_id 返回 200 []。",
         "operationId": "run_evidence_runs__run_id__evidence_get",
         "parameters": [
           {

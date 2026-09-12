@@ -83,3 +83,12 @@ runs approvals 列表、compatibility 投影）；前端接回被绕开的请求
 ## 进度记录
 
 - 2026-09-12 立项，Plan Mode 批准 PLAN-040/041/042 系列。
+- 2026-09-12 WP-A 完成：`SqliteArtifactStore`（内容寻址、blob 目录默认
+  `data/artifact-blobs`、写路径补 commit——原实现跨连接不可见，属既有缺陷）与
+  `SqliteMemoryStore` 接入 `_assemble_sqlite`；新增
+  `adapters/sqlite/experiment_store.py`、`adapters/sqlite/worker_registry.py`
+  （后者注册进 WorkerRegistry contract suite，36 passed）；`/runs/{id}/evidence|
+  claims` 未知 run → 404；`GET /health` 组成摘要 + compose healthcheck 改用；
+  `experiment_rows` codec 移至 `adapters/contracts/`（双 store 共享）。
+  tests/api 221 项通过（2 项 worker_plane 为既有 PG 环境依赖，按 DSN 固化配方
+  复跑通过）；契约套件 333 passed；openapi 快照待 WP-B 后统一再生。

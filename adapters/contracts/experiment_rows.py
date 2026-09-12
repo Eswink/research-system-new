@@ -1,7 +1,7 @@
-"""PostgreSQL ExperimentPlan/ExperimentRun/ReproducibilityAudit row mapping.
+"""ExperimentPlan/ExperimentRun/ReproducibilityAudit row mapping（store 共享 codec）.
 
-Split from `adapters/postgres/experiment_store.py` to keep the store module
-under the 300-line source limit (Python rule: single file <= 300 lines).
+纯 domain ↔ dict 映射，无数据库依赖；由 `adapters/postgres/experiment_store.py`
+与 `adapters/sqlite/experiment_store.py` 共享（whole-object JSON 行）。
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ def encode_plan(plan: ExperimentPlan) -> dict[str, Any]:
         "name": plan.name,
         "hypothesis": plan.hypothesis,
         "task_contract_ref": plan.task_contract_ref,
-        "input_spec_digest": str(plan.input_spec_digest) if plan.input_spec_digest else None,
+        "input_spec_digest": (str(plan.input_spec_digest) if plan.input_spec_digest else None),
         "state": plan.state,
         "created_at": plan.created_at.value.isoformat(),
         "updated_at": plan.updated_at.value.isoformat(),

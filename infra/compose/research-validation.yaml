@@ -93,7 +93,7 @@ services:
         - python
         - -B
         - -c
-        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/openapi.json', timeout=2).read()"
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=2).read()"
       interval: 5s
       timeout: 3s
       retries: 20

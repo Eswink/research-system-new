@@ -55,6 +55,7 @@ from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
 from adapters.sqlite.memory_store import SqliteMemoryStore
+from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from adapters.workspace.file_backend import FileWorkspaceBackend
 
@@ -276,7 +277,11 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "endpoint_store": [FakeEndpointStore],
     "resource_catalog": [FakeResourceCatalog],
     "telemetry_sink": [FakeTelemetrySink, NullTelemetrySink],
-    "worker_registry": [FakeWorkerRegistry, _postgres_worker_registry_factory],
+    "worker_registry": [
+        FakeWorkerRegistry,
+        SqliteWorkerRegistry,
+        _postgres_worker_registry_factory,
+    ],
     "execution_job_queue": [
         FakeExecutionJobQueue,
         _postgres_execution_job_queue_factory,

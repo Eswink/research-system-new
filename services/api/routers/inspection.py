@@ -122,9 +122,14 @@ def _claim_map_for_run(
 
 @router.get("/runs/{run_id}/evidence", response_model=list[EvidenceDto])
 async def run_evidence(run_id: str, request: Request) -> list[EvidenceDto]:
-    """run 的 evidence（persisted truth；页面只 render）。"""
+    """run 的 evidence（persisted truth；页面只 render）。
+
+    WP-A（PLAN-040）：先 run gate 再读 ledger——未知 run 404（对齐 /usage/
+    /export），不再对任意 run_id 返回 200 []。
+    """
     deps: ApiDeps = get_deps(request)
     ledger = _ledger_of(deps)
+    get_run_or_error(deps, run_id)
     return [_evidence_dto(item) for item in _evidence_of_run(ledger, run_id)]
 
 
@@ -136,11 +141,13 @@ async def run_claim_map(run_id: str, request: Request) -> ClaimMapDto:
     DTO 中显式表达；Claim 状态改变必须经过正式 use case/gate。
     M13-R1：claim 视图只包含 relation 命中本 run evidence 的 claim
     （跨 run 泄漏修复）；无 relation 的 claim 不归属任何 run。
+    WP-A（PLAN-040）：未知 run → 404（对齐 /usage/export），先 gate 后查询。
     畸形 ledger 行（evidence_relations 非 JSON）不再 422 崩溃：
     整图降级标记 degraded=true（WP-P4）。
     """
     deps: ApiDeps = get_deps(request)
     ledger = _ledger_of(deps)
+    get_run_or_error(deps, run_id)
     try:
         claims, unsupported, contradictions = _claim_map_for_run(ledger, run_id)
     except Exception:  # noqa: BLE001 - ledger 行损坏时降级而非整体 422

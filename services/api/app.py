@@ -35,6 +35,25 @@ from services.api.scheduler import (
 from services.api.settings import ApiSettings
 
 
+def _register_health_route(app: FastAPI, deps: ApiDeps, version: str) -> None:
+    """WP-A（PLAN-040）：`GET /health` 组成摘要（无秘密、无内容采样）。
+
+    composition: canonical state 落点（postgres=PG 组成 / sqlite=开发组成）；
+    pricing_degraded: 定价表加载降级可见（M15 可观测原则：配置损坏不得零信号）。
+    """
+
+    @app.get("/health", tags=["health"], include_in_schema=True)
+    async def health() -> dict[str, str | bool]:
+        from services.api.assembly import last_pricing_error
+
+        return {
+            "status": "ok",
+            "version": version,
+            "composition": "postgres" if getattr(deps, "_pg_connection", None) else "sqlite",
+            "pricing_degraded": last_pricing_error() is not None,
+        }
+
+
 def _start_lease_scheduler(deps: ApiDeps) -> LeaseRecoveryScheduler | None:
     try:
         workflow = deps.runs._deps.workflow  # type: ignore[union-attr]
@@ -78,9 +97,10 @@ def _start_retention_scheduler(deps: ApiDeps) -> "RetentionScheduler | None":
 def _start_worker_reaper(deps: ApiDeps) -> "WorkerReaperScheduler | None":
     """M16 re-audit F-3: LOST detection must run in the production Control Plane.
 
-    Gated on `deps.worker_registry` (present only in the PG composition); the
-    reaper flips heartbeat-expired workers to LOST from server time — it does
-    not release leases (that stays `recover_expired_leases`, single authority).
+    Gated on `deps.worker_registry`（PLAN-040 WP-A 起两条组成都提供：PG 与
+    SQLite 开发路径）；the reaper flips heartbeat-expired workers to LOST from
+    server time — it does not release leases (that stays
+    `recover_expired_leases`, single authority).
     """
     registry = getattr(deps, "worker_registry", None)
     if registry is None:
@@ -155,7 +175,9 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
         version=version,
         lifespan=_lifespan,
     )
-    app.state.deps = deps if deps is not None else assemble(ApiSettings.from_env())
+    resolved = deps if deps is not None else assemble(ApiSettings.from_env())
+    app.state.deps = resolved
+    _register_health_route(app, resolved, version)
     register_error_handlers(app)
     app.add_middleware(IdempotencyMiddleware)
     app.include_router(llm_endpoints.router)
