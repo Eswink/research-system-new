@@ -83,3 +83,21 @@ checkout 副本（已按 RECHECK-20260906-032 迁移/清除，非代码变化）
 主树 tracked（产品 + 测试 + 工具 + 示例）**high = 0**；无产品代码命中。
 coverage 仍为 partial/static_only（threatModel 0 入口——scanner 看不见
 FastAPI 组合），不宣称"安全"。commit 门禁对主树既有项不再有 high 可采样。
+
+## 2026-09-12 · PLAN-040 封箱扫描处置（scan-2026-09-12T13-05-21.167Z-5b0cbe4fb16e）
+
+- seal: `sha256:d01ee46bc02ab175e730fb3244ca470df5ff5d498e3e9b0728357fc92a8e0bfe`
+- 36 findings / 182 packages；coverage 口径不变（static_only，threatModel 无
+  FastAPI 组合入口）。RECHECK-039 警告 3 遗留的深度扫描 follow-up 至此闭环。
+
+| 类别 | 数量 | 处置 |
+| --- | --- | --- |
+| HIGH · 路径穿越（`artifacts/钻孔官方API_v12/` ×2） | 2 | **记录；范围外**：untracked 外部参考工件（`.gitignore:/artifacts/`），非 Research OS 产品/测试/工具代码，不在 git 树内。 |
+| HIGH · 不安全反序列化（`packages/application/protocol_authoring/service.py:103`） | 1 | **判定为误报；保留**：`yaml.load(text, Loader=_StrictLoader)` 的 `_StrictLoader` 是 `yaml.SafeLoader` 子类（无任意对象构造能力，与 `safe_load` 同级），`# noqa: S506` 注释已给出理由；重复键拒绝正是 SafeLoader 钩子。扫描器按 `yaml.load` 文本匹配。属 PLAN-20260908-033 既有代码，非 PLAN-040 引入；与 2026-09-06 轮"主树 high=0"的差异为采样/规则覆盖漂移（commit-gate 与封箱扫描本就不等价）。 |
+| MEDIUM · 疑似跨文件污点（`scratch/probe_*` ×17、`tools/probes/probe_*` ×10、`services/worker/__main__.py:92`） | 28 | **记录；沿用既有口径**：operator env DSN → 本地连接 → 参数化查询；worker main 为组合根 env 读取（无污点汇）。 |
+| LOW · 不安全随机数（`examples/experiments/m12_reference_classification.py` ×5） | 5 | **记录；保留**：确定性可复现实验设计（seed=7），非密码学用途。 |
+
+- **PLAN-040 全部新增/修改文件零命中**（新 SQLite stores、catalog override
+  Port/adapter、team_custom/inspection/memory/experiments 路由、apps/web 全套）。
+- 结论：主树产品代码新增 high = 0；唯一产品树 HIGH 为既有 SafeLoader 误报。
+  coverage partial 不变，不宣称"安全"。
