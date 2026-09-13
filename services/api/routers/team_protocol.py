@@ -23,7 +23,7 @@ from packages.application.preflight.preflight import (
 from packages.application.protocol_compile.compiler import compile_protocol
 from packages.domain.core import ID
 from packages.domain.protocols import ProtocolDefinition
-from services.api.catalog_merge import merged_project_settings
+from services.api.catalog_merge import merged_project_settings, require_registered_project
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps, require_if_match
 from services.api.dto.team_protocol import (
@@ -117,10 +117,10 @@ async def create_agent(
 
 @router.get("/projects/{project_id}/settings", response_model=ProjectSettingsDto)
 async def get_project_settings(project_id: str, request: Request) -> ProjectSettingsDto:
-    """项目设置视图（merged：ProjectSettingsStore 优先，examples 回退）。"""
-    del project_id
+    """项目设置视图（WP-B/PLAN-041：ProjectSettingsStore 按 project_id 精确，
+    仅默认 example-project 允许 examples 回退；未注册/未配置 404）。"""
     deps: ApiDeps = get_deps(request)
-    project = merged_project_settings(deps)
+    project = merged_project_settings(deps, project_id)
     return ProjectSettingsDto(
         project_id=project.project_id,
         team_template_id=project.team_template_id,
@@ -137,10 +137,11 @@ async def get_project_settings(project_id: str, request: Request) -> ProjectSett
 async def put_project_settings(
     project_id: str, payload: ProjectSettingsUpdateDto, request: Request
 ) -> ProjectSettingsDto:
-    """项目设置持久化（ProjectSettingsStore；模板/工作区引用校验）。"""
+    """项目设置持久化（ProjectSettingsStore；模板/工作区引用校验 + 项目注册校验）。"""
     deps: ApiDeps = get_deps(request)
     if deps.project_settings_store is None:
         raise ApiError(503, "Settings Store Unavailable", "project settings store not configured")
+    require_registered_project(deps, project_id)
     catalog, _project = merged_context(deps)
     if payload.team_template_id not in catalog.team_templates:
         raise ApiError(
@@ -257,10 +258,9 @@ def _protocol_of(deps: ApiDeps, payload: ProtocolSourceDto) -> ProtocolDefinitio
 async def compile_and_preflight_endpoint(
     project_id: str, payload: ProtocolSourceDto, request: Request
 ) -> PreflightReportDto:
-    """compile + preflight（正式组合入口；真实 health/policy 接线）。"""
-    del project_id
+    """compile + preflight（正式组合入口；真实 health/policy 接线；WP-B 项目归属）。"""
     deps: ApiDeps = get_deps(request)
-    catalog, project = merged_context(deps)
+    catalog, project = merged_context(deps, project_id)
     protocol = _protocol_of(deps, payload)
     _plan, report = compile_and_preflight(
         protocol,
@@ -275,11 +275,10 @@ async def compile_and_preflight_endpoint(
 async def preflight_endpoint(
     project_id: str, payload: ProtocolSourceDto, request: Request
 ) -> PreflightReportDto:
-    """preflight 复检（编译成功后执行；真实 health/policy 接线）。"""
-    del project_id
+    """preflight 复检（编译成功后执行；真实 health/policy 接线；WP-B 项目归属）。"""
     deps: ApiDeps = get_deps(request)
-    plan = compile_plan_for_protocol(deps, _protocol_of(deps, payload))
-    catalog, project = merged_context(deps)
+    plan = compile_plan_for_protocol(deps, _protocol_of(deps, payload), project_id)
+    catalog, project = merged_context(deps, project_id)
     report = run_preflight(plan, build_preflight_context(deps, catalog, project))
     return preflight_dto(report)
 
@@ -293,11 +292,11 @@ async def dry_run_endpoint(
     不启动 Agent、不调用 Research Tool、不执行 Experiment、不写长期
     Memory、不 reserve budget（`dry_run_projection` 是纯函数；context
     不注入 budget ledger，preflight 预留仅为本地 digest 引用）。
+    WP-B：按路径项目解析设置（未注册项目 404）。
     """
-    del project_id
     deps: ApiDeps = get_deps(request)
-    plan = compile_plan_for_protocol(deps, _protocol_of(deps, payload))
-    catalog, project = merged_context(deps)
+    plan = compile_plan_for_protocol(deps, _protocol_of(deps, payload), project_id)
+    catalog, project = merged_context(deps, project_id)
     context = build_preflight_context(deps, catalog, project)
     report = run_preflight(plan, context)
     projection = dry_run_projection(plan, context, report)

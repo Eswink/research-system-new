@@ -33,6 +33,7 @@ from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
 from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
 from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
+from adapters.sqlite.project_store import SqliteProjectStore
 from adapters.sqlite.run_store import SqliteRunStore
 from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
@@ -42,6 +43,7 @@ from packages.application.ports import (
     ApprovalStore,
     CatalogOverrideStore,
     ProjectSettingsStore,
+    ProjectStore,
     RunStore,
     WorkflowEngine,
 )
@@ -100,6 +102,8 @@ class ApiDeps:
     # 未配置时 merged_catalog 无 overrides、custom POST 诚实 503）。
     catalog_overrides: CatalogOverrideStore | None = field(default=None, repr=False)
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
+    # WP-A（PLAN-041）：项目注册表（单用户；SQLite 配置面，两组成同侧）。
+    project_store: ProjectStore | None = field(default=None, repr=False)
     approvals: ApprovalStore | None = field(default=None, repr=False)
     memory: Any | None = field(default=None, repr=False)
     # WP-E（PLAN-037）：ExperimentStore（PG canonical state；PLAN-040 WP-A 起
@@ -280,6 +284,7 @@ def _assemble_sqlite(
         agent_store=SqliteAgentStore(connection=connection),
         catalog_overrides=SqliteCatalogOverrideStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
+        project_store=SqliteProjectStore(connection=connection),
         notification_reads=SqliteNotificationReadStore(connection=connection),
         # WP-A（PLAN-040）：dev 路径 memory/实验/worker 注册表接 SQLite 同 Port
         # 实现（PG 仍是 canonical state；store=None → 诚实 503 的边界保持）。

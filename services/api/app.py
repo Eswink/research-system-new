@@ -21,6 +21,7 @@ from services.api.routers import (
     models,
     notifications,
     operations,
+    projects,
     protocol_drafts,
     run_events,
     runs,
@@ -187,6 +188,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(team_custom.router)
     app.include_router(runs.router)
     app.include_router(runs.projects_router)
+    app.include_router(projects.router)
     app.include_router(run_events.router)
     app.include_router(approvals.router)
     app.include_router(inspection.router)

@@ -42,16 +42,16 @@ class SqliteProjectSettingsStore(SqliteAdapterBase):
             self._conn.close()
         super().close()
 
-    def get(self) -> ProjectSettings | None:
+    def get(self, project_id: str) -> ProjectSettings | None:
         self._ensure_open()
         row = self._conn.execute(
-            "SELECT settings_json FROM project_settings ORDER BY saved_at DESC LIMIT 1"
+            "SELECT settings_json FROM project_settings WHERE project_id = ?", (project_id,)
         ).fetchone()
         if row is None:
-            self._record("get", "", result="None")
+            self._record("get", project_id, result="None")
             return None
         decoded = json.loads(row["settings_json"])
-        self._record("get", "", result=decoded.get("project_id", ""))
+        self._record("get", project_id, result=decoded.get("project_id", ""))
         return ProjectSettings.from_mapping(
             decoded["project_id"],
             {

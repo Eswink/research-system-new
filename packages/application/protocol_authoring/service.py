@@ -222,7 +222,14 @@ class DraftService:
         return self._templates.get(template_id)
 
     # ── 草稿 CRUD ──
-    def create(self, *, name: str, yaml_text: str, idempotency_key: str) -> ProtocolDraftRecord:
+    def create(
+        self,
+        *,
+        name: str,
+        yaml_text: str,
+        idempotency_key: str,
+        project_id: str | None = None,
+    ) -> ProtocolDraftRecord:
         result = validate_yaml_document(yaml_text)
         if not result.ok:
             raise ProtocolDraftValidationError(result.issues)
@@ -231,13 +238,23 @@ class DraftService:
             raise ProtocolDraftValidationError((
                 DraftValidationIssue(path="$", code="DIGEST_MISSING", message="no digest"),
             ))
-        return self._store.create(self._project_id, name, yaml_text, digest, idempotency_key)
+        return self._store.create(
+            project_id or self._project_id, name, yaml_text, digest, idempotency_key
+        )
 
     def get(self, draft_id: str) -> ProtocolDraftRecord | None:
         return self._store.get(draft_id)
 
-    def list(self, *, limit: int = 50, offset: int = 0) -> tuple[ProtocolDraftRecord, ...]:
-        return self._store.list(DraftQuery(project_id=self._project_id, limit=limit, offset=offset))
+    def list(
+        self, *, limit: int = 50, offset: int = 0, project_id: str | None = None
+    ) -> tuple[ProtocolDraftRecord, ...]:
+        return self._store.list(
+            DraftQuery(
+                project_id=project_id or self._project_id,
+                limit=limit,
+                offset=offset,
+            )
+        )
 
     def save(
         self,

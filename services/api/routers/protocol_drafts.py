@@ -25,6 +25,8 @@ from packages.application.protocol_authoring.service import (
     DraftTemplateSource,
     validate_yaml_document,
 )
+from services.api.catalog_merge import require_registered_project
+from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.protocol_drafts import (
     ProtocolDraftCreateDto,
@@ -142,12 +144,16 @@ async def create_draft(
     request: Request,
     response: Response,
 ) -> ProtocolDraftViewDto:
-    """创建草稿（正文必须通过校验；幂等键重放返回原记录）。"""
-    del project_id
+    """创建草稿（正文必须通过校验；幂等键重放返回原记录；归属路径项目，WP-B）。"""
+    deps: ApiDeps = get_deps(request)
+    require_registered_project(deps, project_id)
     service = draft_service_of(request)
     try:
         record = service.create(
-            name=payload.name, yaml_text=payload.yaml_text, idempotency_key=_idem_key(request)
+            name=payload.name,
+            yaml_text=payload.yaml_text,
+            idempotency_key=_idem_key(request),
+            project_id=project_id,
         )
     except ProtocolDraftValidationError as exc:
         raise _unprocessable(exc.issues) from exc
@@ -157,7 +163,6 @@ async def create_draft(
 
 @router.get("/projects/{project_id}/protocol-drafts", response_model=list[ProtocolDraftSummaryDto])
 async def list_drafts(project_id: str, request: Request) -> list[ProtocolDraftSummaryDto]:
-    del project_id
     service = draft_service_of(request)
     return [
         ProtocolDraftSummaryDto(
@@ -169,7 +174,7 @@ async def list_drafts(project_id: str, request: Request) -> list[ProtocolDraftSu
             created_at=record.created_at,
             updated_at=record.updated_at,
         )
-        for record in service.list()
+        for record in service.list(project_id=project_id)
     ]
 
 

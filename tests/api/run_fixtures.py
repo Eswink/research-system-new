@@ -154,11 +154,13 @@ def _run_ready_sqlite_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
     from adapters.sqlite.experiment_store import SqliteExperimentStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
+    from adapters.sqlite.project_store import SqliteProjectStore
     from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 
     return {
         "agent_store": SqliteAgentStore(connection=connection),
         "project_settings_store": SqliteProjectSettingsStore(connection=connection),
+        "project_store": SqliteProjectStore(connection=connection),
         "catalog_overrides": SqliteCatalogOverrideStore(connection=connection),
         "worker_registry": SqliteWorkerRegistry(connection=connection),
         "experiment_store": SqliteExperimentStore(connection=connection),

@@ -124,21 +124,30 @@ class ExecutionInputs:
     command: StartRunCommand
 
 
-def _execution_inputs(
-    deps: ApiDeps,
-    protocol_path: str | None,
-    run_id: ID,
-    trace_id: str | None,
-    draft_ref: "tuple[str, int] | None" = None,
-) -> ExecutionInputs:
+@dataclass(frozen=True, slots=True)
+class ExecutionRequest:
+    """start_run 输入参数对象（规避参数爆发）。"""
+
+    deps: ApiDeps
+    protocol_path: str | None
+    run_id: ID
+    trace_id: str | None
+    draft_ref: "tuple[str, int] | None"
+    project_id: str
+
+
+def _execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
     """加载协议/目录/项目并构建命令（override 时 catalog/project 与 preflight 同源）。
 
     协议来源二选一：旧 `protocol_path`（examples/protocols/ 内）或新
     `draft_ref=(draft_id, revision)`（不可变修订正文；同链 Compile→Preflight→Freeze）。
+    WP-B（PLAN-041）：project 设置按路径 project_id 解析（注册项目自动带默认
+    设置行；未注册 404——不回退他项目设置，不伪装归属）。
     """
-    protocol = _load_protocol_for_run(deps, protocol_path, draft_ref)
+    deps = req.deps
+    protocol = _load_protocol_for_run(deps, req.protocol_path, req.draft_ref)
     catalog = merged_catalog_snapshot(deps)
-    project = merged_project_settings(deps)
+    project = merged_project_settings(deps, req.project_id)
     preflight = deps.preflight_override
     if preflight is not None:
         catalog = preflight.catalog
@@ -157,8 +166,8 @@ def _execution_inputs(
     command = StartRunCommand(
         project_id=project.project_id,
         protocol_id=protocol.id,
-        run_id=run_id,
-        trace_id=trace_id or f"api-{run_id.value}",
+        run_id=req.run_id,
+        trace_id=req.trace_id or f"api-{req.run_id.value}",
     )
     return ExecutionInputs(protocol, catalog, project, preflight, command)
 
@@ -174,12 +183,18 @@ def _load_protocol_for_run(
 
 @projects_router.post("/projects/{project_id}/runs", response_model=RunDetailDto)
 async def start_run(project_id: str, payload: RunStartDto, request: Request) -> RunDetailDto:
-    """启动一次 Research Run（StartRunCommand → 正式编排链；path 或草稿修订引用）。"""
-    del project_id
+    """启动一次 Research Run（StartRunCommand → 正式编排链；path 或草稿修订引用）。
+
+    运行归属路径 project_id（WP-B）：preflight 夹具覆盖场景下 settings 仍为
+    夹具项目（受控测试态），注册项目行的 project_id 与路径一致。
+    """
     deps: ApiDeps = get_deps(request)
     run_id = ID.generate()
     draft_ref = draft_ref_of(payload.draft_id, payload.draft_revision)
-    inputs = _execution_inputs(deps, payload.protocol_path, run_id, payload.trace_id, draft_ref)
+    req = ExecutionRequest(
+        deps, payload.protocol_path, run_id, payload.trace_id, draft_ref, project_id
+    )
+    inputs = _execution_inputs(req)
     run = _run_from_execution(deps, run_id, inputs.project.project_id, inputs.protocol.id, inputs)
     save_run(deps, run)
     return _run_state_dto(deps, run_id.value)
@@ -191,7 +206,12 @@ async def list_runs(project_id: str, request: Request) -> list[RunDetailDto]:
     scope_project_id = project_id
     deps: ApiDeps = get_deps(request)
     if deps.runs_store is None:
-        return [_run_state_dto(deps, run_id) for run_id in reversed(deps.run_registry)]
+        # 注册表回退（测试注入）同样按项目过滤（WP-B：不跨项目泄漏）。
+        return [
+            _run_state_dto(deps, run.id.value)
+            for run in reversed(list(deps.run_registry.values()))
+            if run.project_id == scope_project_id
+        ]
     runs = deps.runs_store.list_runs(scope_project_id)
     return [
         RunDetailDto(

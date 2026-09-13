@@ -22,6 +22,7 @@ from packages.application.ports import CatalogSnapshot, ProjectSettings
 from services.api.catalog import load_catalog_snapshot, load_project_settings
 from services.api.composition import ApiDeps
 from services.api.custom_catalog import KIND_ROLES, KIND_TEAM_TEMPLATES
+from services.api.errors import ApiError
 
 
 class _Identifiable(Protocol):
@@ -90,10 +91,44 @@ def merged_catalog_snapshot(deps: ApiDeps) -> CatalogSnapshot:
     )
 
 
-def merged_project_settings(deps: ApiDeps) -> ProjectSettings:
-    """项目设置：ProjectSettingsStore 优先，空时回退 examples/project.yaml。"""
+DEFAULT_PROJECT_ID = "example-project"
+
+
+def require_registered_project(deps: ApiDeps, project_id: str) -> None:
+    """项目注册校验（WP-B）：未注册项目 404，不接收幽灵写入。
+
+    默认 example-project 恒注册（examples 契约合成条目）；其余以
+    ProjectStore（注册表）为准。store 未配置时仅默认项目可通过。
+    """
+    if project_id == DEFAULT_PROJECT_ID:
+        return
+    store = deps.project_store
+    if store is None:
+        raise ApiError(404, "Project Not Found", f"project not registered: {project_id}")
+    try:
+        store.get_project(project_id)
+    except KeyError as exc:
+        raise ApiError(404, "Project Not Found", f"project not registered: {project_id}") from exc
+
+
+def merged_project_settings(deps: ApiDeps, project_id: str = DEFAULT_PROJECT_ID) -> ProjectSettings:
+    """项目设置：ProjectSettingsStore 按 project_id 精确优先（WP-A/PLAN-041）。
+
+    - 默认 example-project：store 无记录时回退 examples/config/project.yaml
+      （wizard 前即有项目上下文，语义与 M13-R1 一致）；
+    - 其它注册项目：由 POST /projects 自动创建默认设置行；仍缺失说明数据面
+      被旁路修改——诚实 404，不回退默认项目的设置（不伪装归属）。
+    """
     if deps.project_settings_store is not None:
-        saved = deps.project_settings_store.get()
+        saved = deps.project_settings_store.get(project_id)
         if saved is not None:
             return saved
-    return load_project_settings()
+    if project_id == DEFAULT_PROJECT_ID:
+        return load_project_settings()
+    if deps.project_settings_store is None:
+        raise ApiError(
+            503,
+            "Settings Store Unavailable",
+            "project settings store not configured",
+        )
+    raise ApiError(404, "Project Settings Not Found", f"project not registered: {project_id}")

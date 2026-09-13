@@ -96,6 +96,13 @@ def load_project_settings() -> ProjectSettings:
     )
 
 
+def load_project_name(project_id: str = "example-project") -> str:
+    """项目显示名（examples 契约 project.name；PLAN-041 注册表默认条目用）。"""
+    body = load_project(f"{_CONFIG_DIR}/project.yaml")
+    name = str(body.get("name") or "").strip()
+    return name or project_id
+
+
 def _reference_protocol(raw_protocol: object) -> str | None:
     """project.yaml protocol → examples/protocols 文件名（WP-C）。
 

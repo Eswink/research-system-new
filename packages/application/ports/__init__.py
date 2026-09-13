@@ -63,6 +63,7 @@ from packages.application.ports.policy_evaluator import (
 )
 from packages.application.ports.pricing_snapshot_store import PricingSnapshotStore
 from packages.application.ports.project_settings_store import ProjectSettingsStore
+from packages.application.ports.project_store import ProjectStore
 from packages.application.ports.protocol_draft_store import (
     DraftQuery,
     DraftRevisionRef,
@@ -133,6 +134,7 @@ __all__ = [
     "PolicyEvaluator",
     "PolicyRequest",
     "ProjectSettingsStore",
+    "ProjectStore",
     "ProtocolDraftStore",
     "ProtocolDraftRecord",
     "ProtocolDraftRevision",

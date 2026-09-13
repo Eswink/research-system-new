@@ -47,10 +47,12 @@ def build_preflight_context(
     )
 
 
-def compile_plan_for_protocol(deps: ApiDeps, protocol: ProtocolDefinition) -> CompiledRunPlan:
+def compile_plan_for_protocol(
+    deps: ApiDeps, protocol: ProtocolDefinition, project_id: str = "example-project"
+) -> CompiledRunPlan:
     """编译已加载的 ProtocolDefinition（path 或草稿修订同源；WP-B）。"""
     catalog = merged_catalog_snapshot(deps)
-    project = merged_project_settings(deps)
+    project = merged_project_settings(deps, project_id)
     result = compile_protocol(protocol, catalog, project)
     if result.plan is None:
         raise ApiError(
@@ -61,9 +63,11 @@ def compile_plan_for_protocol(deps: ApiDeps, protocol: ProtocolDefinition) -> Co
     return result.plan
 
 
-def merged_context(deps: ApiDeps) -> tuple[CatalogSnapshot, ProjectSettings]:
-    """合并目录 + 合并项目设置的便捷二元组。"""
-    return merged_catalog_snapshot(deps), merged_project_settings(deps)
+def merged_context(
+    deps: ApiDeps, project_id: str = "example-project"
+) -> tuple[CatalogSnapshot, ProjectSettings]:
+    """合并目录 + 合并项目设置的便捷二元组（WP-B：project 归属贯通）。"""
+    return merged_catalog_snapshot(deps), merged_project_settings(deps, project_id)
 
 
 @dataclass(frozen=True, slots=True)

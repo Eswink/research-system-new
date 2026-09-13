@@ -183,6 +183,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
     from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
     from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
+    from adapters.sqlite.project_store import SqliteProjectStore
     from adapters.sqlite.run_store import SqliteRunStore
 
     deps = ApiDeps(
@@ -211,6 +212,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         # WP-B（PLAN-040）：配置面（含自定义 Role/Template 覆盖）SQLite 同侧。
         catalog_overrides=SqliteCatalogOverrideStore(connection=assembly.connection),
         project_settings_store=SqliteProjectSettingsStore(connection=assembly.connection),
+        project_store=SqliteProjectStore(connection=assembly.connection),
         notification_reads=SqliteNotificationReadStore(connection=assembly.connection),
         endpoint_url_policy=_endpoint_url_policy(assembly.effective),
         memory=assembly.memory_store,
