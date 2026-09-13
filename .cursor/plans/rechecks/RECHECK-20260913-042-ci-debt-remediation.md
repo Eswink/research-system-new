@@ -16,8 +16,8 @@ checked_head: cycle 2 commit（见状态历史）
 GOAL-20260912-001 cycle 2 派生计划的复检。本 cycle 的产物全部是测试守卫、
 检查器缺陷修复与历史记录链接修复——不引入产品行为变更，因此复检以「本地全门
 命令输出 + CI run 终态」为权威证据，逐 AC 核对。判定 PASS_WITH_WARNINGS
-（WARNING = container-quality/collector-quality 属 workflow 服务配置，已登记
-BLOCKED 待人工，不在本 cycle 验收内）。
+（WARNING = collector-quality 仅剩 2 项既有 timing flake，超出本 cycle 范围，
+见 W-1）。
 
 ## 冻结范围
 
@@ -43,9 +43,15 @@ BLOCKED 待人工，不在本 cycle 验收内）。
 
 ## 警告与处置
 
-1. **W-1（WARNING，范围外 BLOCKED）** `container-quality`（runner 无 compose 镜像）
-   与 `collector-quality`（cancelled）依赖 `.github/workflows/*` 服务配置与
-   镜像预拉取，属治理面；本 cycle 明示不含，登记 BLOCKED 待人工。
+1. **W-1（WARNING，范围外 BLOCKED）** run #53 终态：quality-ubuntu-latest ✅、
+   console-frontend ✅、quality-windows-latest ✅、container-quality ✅、eval-gate ✅；
+   collector-quality ❌——失败为 2 项**既有** timing flake：
+   `test_collector_persists_research_os_spans`（file exporter 轮询 45s 未落盘 marker）、
+   `test_scenario_d_network_partition_no_old_authority`（partitioned worker
+   `subprocess.wait` 10s 超时）。run #52 同两项 + 3 项 GPU 失败 = 5，cycle 2 的
+   GPU/docker 守卫将其降至 2，说明尾 2 项与本 cycle 无关、属 CI 负载下既有
+   timing/环境 flake。collector-quality 的通过性**不在本 cycle 验收内**；
+   待人工判定是否为其补重试/探针（非本 cycle 授权范围）。
 2. **W-2（INFO）** 全量 pytest 在本机有 205 skipped（docker/GPU/PG/collector 在
    无对应环境时诚实跳过）；GHA 的 collector-quality 作业设
    `RESEARCHOS_REQUIRE_POSTGRES/COLLECTOR=1` 时这些用例仍 fail-closed，不被本

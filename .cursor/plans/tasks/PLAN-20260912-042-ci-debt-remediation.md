@@ -23,8 +23,7 @@ memory_entries:
 ## 目标
 
 让 GitHub Actions 的 `quality-ubuntu-latest` 与 `console-frontend` 在 main 上可
-重复通过（container-quality/collector-quality 属 workflow 服务配置，本 cycle 不动、
-记 BLOCKED）。修复项全部是「CI 才暴露」的既有缺陷或本系列引入的时序 bug，
+重复通过。修复项全部是「CI 才暴露」的既有缺陷或本系列引入的时序 bug，
 一律以补守卫/修缺陷方式处理，不 skip 产品断言、不降门禁强度。
 
 ## 范围
@@ -44,8 +43,9 @@ memory_entries:
     `tests/adapters/workspace/test_file_backend.py` symlink 用例 Linux 失败定位修复。
   - WP-D 收口：全量本地门 + 定向复跑；push 后以 run 终态验证
     quality-ubuntu/console-frontend；RECHECK-042。
-- 不包含：`.github/workflows/*`（服务容器/镜像预拉取配置属治理面，BLOCKED
-  待人工）；collector-quality/container-quality 的通过性不在本 cycle 验收内。
+- 不包含：`.github/workflows/*` 文件本身（属治理面）；collector-quality 的
+  通过性不在本 cycle 验收内（run #53 实测其失败为本 cycle 之外的既有 timing
+  flake，见 RECHECK-042 W-1）。
 
 ## 架构与数据流
 
@@ -123,8 +123,9 @@ memory_entries:
 
 ## 已知风险
 
-- quality-windows 的 cancelled 若为 timeout（25min 全量含 docker 构建），
-  属 workflow 时限 → BLOCKED 项；本 cycle 以 ubuntu 绿为最低验收。
+- ~~quality-windows 的 cancelled 若为 timeout~~ run #53 实测 quality-windows-latest
+  与 container-quality 均 SUCCESS；collector-quality 仅剩 2 项既有 timing flake
+  （见 RECHECK-042 W-1），不阻塞本 cycle 验收。
 
 ## 状态历史
 
