@@ -66,13 +66,18 @@ def _rss_mib() -> float:
 
 
 def _rss_mib_windows() -> float:
-    psapi = ctypes.WinDLL("psapi.dll")
+    # Windows-only 路径（仅 sys.platform == "win32" 时调用）。typeshed 在非
+    # Windows 平台不提供 WinDLL/windll 成员，故用 getattr 取属性：既让 Linux
+    # CI 的 mypy 通过，也避免在 Windows 上产生 unused-ignore 报错。
+    win_dll = getattr(ctypes, "WinDLL")
+    psapi = win_dll("psapi.dll")
     psapi.GetProcessMemoryInfo.argtypes = [
         ctypes.c_void_p,
         ctypes.POINTER(_ProcessMemoryCounters),
         ctypes.c_ulong,
     ]
-    kernel32 = ctypes.windll.kernel32
+    windll = getattr(ctypes, "windll")
+    kernel32 = windll.kernel32
     kernel32.GetCurrentProcess.restype = ctypes.c_void_p
     counters = _ProcessMemoryCounters()
     counters.cb = ctypes.sizeof(_ProcessMemoryCounters)

@@ -131,23 +131,23 @@ Research Console 指 Research OS 的前端控制台。本次采用“**界面层
 
 ### 2.1 设计来源的优先级
 
-- 整站导航与页面组成：以 [AppShell.jsx](d:/research-system/docs/references/design/console-design/components/AppShell.jsx) 和 [App.html](d:/research-system/docs/references/design/console-design/App.html) 实际加载的顶层组件为准。
-- 颜色、字号、间距、圆角与密度：以 [styles/tokens.css](d:/research-system/docs/references/design/console-design/styles/tokens.css) 为准。
-- 协议编辑器细节：结合 [交付说明](d:/research-system/docs/references/design/console-design/subpackage_protocol_visual_editor/README.md) 与顶层 [ProtocolEditor.jsx](d:/research-system/docs/references/design/console-design/screens/ProtocolEditor.jsx)、[DryRun.jsx](d:/research-system/docs/references/design/console-design/screens/DryRun.jsx)。子包与顶层文件先比较内容摘要，重复只登记一次，差异逐项记录。
-- [Overview.html](d:/research-system/docs/references/design/console-design/Overview.html) 是设计画板总览，仍包含旧的五域说明和旧入口，作为辅助设计材料，不替代最新八域导航，也不增加一个重复产品页面。
+- 整站导航与页面组成：以 [AppShell.jsx](../../docs/references/design/console-design/components/AppShell.jsx) 和 [App.html](../../docs/references/design/console-design/App.html) 实际加载的顶层组件为准。
+- 颜色、字号、间距、圆角与密度：以 [styles/tokens.css](../../docs/references/design/console-design/styles/tokens.css) 为准。
+- 协议编辑器细节：结合 [交付说明](../../docs/references/design/console-design/subpackage_protocol_visual_editor/README.md) 与顶层 [ProtocolEditor.jsx](../../docs/references/design/console-design/screens/ProtocolEditor.jsx)、[DryRun.jsx](../../docs/references/design/console-design/screens/DryRun.jsx)。子包与顶层文件先比较内容摘要，重复只登记一次，差异逐项记录。
+- [Overview.html](../../docs/references/design/console-design/Overview.html) 是设计画板总览，仍包含旧的五域说明和旧入口，作为辅助设计材料，不替代最新八域导航，也不增加一个重复产品页面。
 - Command Center.html 是独立的 2560×1440 大屏设计，单独实现（归档于 `docs/references/design/console-design/`）。
 - 产品字段、状态、权限与执行语义：始终以仓库 Schema、API 路由和应用用例为准。原型中的 `protocol.yaml` 不是冻结的产品 `RunManifest`。
 
-确认后更新 [CONSOLE_REBUILD.md](d:/research-system/docs/frontend/CONSOLE_REBUILD.md)，使其成为本次八域设计的当前说明；上一轮计划和复检保留历史，不覆写其结论或证据。
+确认后更新 [CONSOLE_REBUILD.md](../../docs/frontend/CONSOLE_REBUILD.md)，使其成为本次八域设计的当前说明；上一轮计划和复检保留历史，不覆写其结论或证据。
 
 ### 2.2 已由源码与现存图片确认的问题
 
-- [App.tsx](d:/research-system/apps/web/src/App.tsx) 没有处理 `assets/compute`，页面会落入默认协议编辑器。
-- [ProtocolDraftEditor.tsx](d:/research-system/apps/web/src/features/protocol/editor/ProtocolDraftEditor.tsx) 的 Validate 调用了保存，Diff 只切换到阶段区块。
-- [protocolDocument.ts](d:/research-system/apps/web/src/features/protocol/editor/protocolDocument.ts) 对空文档直接读取 `phases`；现有协议页截图已经包含空值错误提示。
-- [protocolSerialize.ts](d:/research-system/apps/web/src/features/protocol/editor/protocolSerialize.ts) 从简化对象重新生成 YAML，不能作为注释、未知字段及单数 `task_contract` 无损保留的证据。
-- [stub-api.ts](d:/research-system/apps/web/tests/e2e/stub-api.ts) 对未匹配请求统一返回空数组；旧 `screenshots.spec.ts` 部分页面只等待外壳出现，可能把缺页或错误态录为正常基准（重建中由 design-fidelity.spec.ts 取代并加页面身份断言）。
-- [useRunEventStream.ts](d:/research-system/apps/web/src/features/runs/useRunEventStream.ts) 监听默认 `message`，而 [run_events.py](d:/research-system/services/api/routers/run_events.py) 发出具名 `event:` 帧；需要按真实浏览器事件行为验证与修正。
+- [App.tsx](../../apps/web/src/App.tsx) 没有处理 `assets/compute`，页面会落入默认协议编辑器。
+- [ProtocolDraftEditor.tsx](../../apps/web/src/features/protocol/editor/ProtocolDraftEditor.tsx) 的 Validate 调用了保存，Diff 只切换到阶段区块。
+- [protocolDocument.ts](../../apps/web/src/features/protocol/editor/protocolDocument.ts) 对空文档直接读取 `phases`；现有协议页截图已经包含空值错误提示。
+- [protocolSerialize.ts](../../apps/web/src/features/protocol/editor/protocolSerialize.ts) 从简化对象重新生成 YAML，不能作为注释、未知字段及单数 `task_contract` 无损保留的证据。
+- [stub-api.ts](../../apps/web/tests/e2e/stub-api.ts) 对未匹配请求统一返回空数组；旧 `screenshots.spec.ts` 部分页面只等待外壳出现，可能把缺页或错误态录为正常基准（重建中由 design-fidelity.spec.ts 取代并加页面身份断言）。
+- [useRunEventStream.ts](../../apps/web/src/features/runs/useRunEventStream.ts) 监听默认 `message`，而 [run_events.py](../../services/api/routers/run_events.py) 发出具名 `event:` 帧；需要按真实浏览器事件行为验证与修正。
 
 最重要的数据一致性问题是：编辑器当前预检固定示例，而不是正在编辑的草稿。
 
@@ -162,7 +162,7 @@ const PREFLIGHT_SOURCE = "m12_reference_research_v1.yaml";
       ]);
 ```
 
-当前 [ProtocolSourceDto](d:/research-system/services/api/dto/team_protocol.py) 只接受路径；[草稿路由](d:/research-system/services/api/routers/protocol_drafts.py) 没有草稿修订预检接口。虽然 [运行路由](d:/research-system/services/api/routers/runs.py) 支持草稿引用并在服务端重新预检，前端仍不能将示例报告标成草稿的预检结果。
+当前 [ProtocolSourceDto](../../services/api/dto/team_protocol.py) 只接受路径；[草稿路由](../../services/api/routers/protocol_drafts.py) 没有草稿修订预检接口。虽然 [运行路由](../../services/api/routers/runs.py) 支持草稿引用并在服务端重新预检，前端仍不能将示例报告标成草稿的预检结果。
 
 本次处置：**受控模板路径保留真实预检和启动；自定义草稿支持编辑、契约校验、保存和差异查看，匹配修订的预检与启动入口明确禁用。** 补齐该后端契约另行立项，不用前端绕过。
 
@@ -236,16 +236,16 @@ const PREFLIGHT_SOURCE = "m12_reference_research_v1.yaml";
 
 ### 4.1 技术路线与模块边界
 
-沿用 [apps/web/package.json](d:/research-system/apps/web/package.json) 的 React 19、TypeScript、Vite，以及现有 CSS 自定义属性/CSS Modules、`yaml` 和 Playwright。保留根锁定的 pnpm/Node 版本，不引入 Next.js、全局状态框架或大型图编辑框架。
+沿用 [apps/web/package.json](../../apps/web/package.json) 的 React 19、TypeScript、Vite，以及现有 CSS 自定义属性/CSS Modules、`yaml` 和 Playwright。保留根锁定的 pnpm/Node 版本，不引入 Next.js、全局状态框架或大型图编辑框架。
 
-- [App.tsx](d:/research-system/apps/web/src/App.tsx)：只负责组合 Provider、外壳与路由页面；移除按字符串逐项判断后静默回退的页面分派。
-- [navigation](d:/research-system/apps/web/src/navigation)：类型化路由、参数、别名与渲染注册。导航和页面完整性测试消费同一注册表。
-- [layout](d:/research-system/apps/web/src/layout)：重写 Sidebar、TopBar、AppShell；新增命令面板和上下文选择组件。只持有界面状态。
-- [components](d:/research-system/apps/web/src/components)：领域中立的按钮、字段、表格、对话框、抽屉、状态和布局；图表基础放到职责明确的 `components/charts/`，无网络请求。
-- [api/http.ts](d:/research-system/apps/web/src/api/http.ts)：集中请求、错误、版本头、幂等键和取消。领域客户端按 endpoint、model、team、protocol、run、inspection、operations 职责拆分，不扩大一个万能 `client.ts`。
-- [api/types.ts](d:/research-system/apps/web/src/api/types.ts)：只镜像现有 API DTO；新增页面专用展示模型放在各功能的 `viewModel.ts`，不加入 DTO 文件。
-- [features](d:/research-system/apps/web/src/features)：每个业务区域由 `Page/Panel + use… Hook + 纯展示转换` 组成。保留旧 Hook 中已测试的逻辑，但针对本次发现的问题重新验证，不原封不动信任。
-- 新增 [navigation/pageSupport.ts](d:/research-system/apps/web/src/navigation/pageSupport.ts)：记录页面/操作的已支持、部分支持、不可用及原因。这是前端接入清单，不是产品 Tool Capability，也不是授权判定。
+- [App.tsx](../../apps/web/src/App.tsx)：只负责组合 Provider、外壳与路由页面；移除按字符串逐项判断后静默回退的页面分派。
+- [navigation](../../apps/web/src/navigation)：类型化路由、参数、别名与渲染注册。导航和页面完整性测试消费同一注册表。
+- [layout](../../apps/web/src/layout)：重写 Sidebar、TopBar、AppShell；新增命令面板和上下文选择组件。只持有界面状态。
+- [components](../../apps/web/src/components)：领域中立的按钮、字段、表格、对话框、抽屉、状态和布局；图表基础放到职责明确的 `components/charts/`，无网络请求。
+- [api/http.ts](../../apps/web/src/api/http.ts)：集中请求、错误、版本头、幂等键和取消。领域客户端按 endpoint、model、team、protocol、run、inspection、operations 职责拆分，不扩大一个万能 `client.ts`。
+- [api/types.ts](../../apps/web/src/api/types.ts)：只镜像现有 API DTO；新增页面专用展示模型放在各功能的 `viewModel.ts`，不加入 DTO 文件。
+- [features](../../apps/web/src/features)：每个业务区域由 `Page/Panel + use… Hook + 纯展示转换` 组成。保留旧 Hook 中已测试的逻辑，但针对本次发现的问题重新验证，不原封不动信任。
+- 新增 [navigation/pageSupport.ts](../../apps/web/src/navigation/pageSupport.ts)：记录页面/操作的已支持、部分支持、不可用及原因。这是前端接入清单，不是产品 Tool Capability，也不是授权判定。
 
 新增文件使用项目命名约定。源码目标不超过 300 行，超过 450 行必须拆分；函数、参数、复杂度继续受既有门禁约束。所有 import 在顶部，不通过动态 import 或关闭 lint 绕过边界。
 
@@ -307,7 +307,7 @@ flowchart LR
 
 保留设计稿的工具条、Form/YAML 切换、DIRTY 提示、错误汇总、左侧区块导航、粘性操作栏与右侧六区报告。
 
-[protocol.schema.json](d:/research-system/schemas/protocol.schema.json) 的真实顶层是 `id/version/phases`，不写入原型的虚构 `manifest/objectives/evaluation/budget/policy` 对象：
+[protocol.schema.json](../../schemas/protocol.schema.json) 的真实顶层是 `id/version/phases`，不写入原型的虚构 `manifest/objectives/evaluation/budget/policy` 对象：
 
 - Manifest 区映射协议身份和真实草稿元数据；工程版本仅来自根 `VERSION`，协议自身版本原样读取，不采用原型的 `1.4`，也不强制改成项目版本。
 - Objectives 的卡片交互映射阶段及阶段名称、输入输出、依赖；阶段依赖使用可测试的选择控件，必要时增加只读 DAG（有向无环图）预览，不扩为拖拽流程引擎。
@@ -360,63 +360,63 @@ flowchart TD
 
 ### 阶段 A：冻结来源与验收范围
 
-- [x] **T01 归档完整设计来源。** 在拟新增的 [console-design 参考目录](d:/research-system/docs/references/design/console-design/) 登记原始路径、文件摘要、入口关系与子包差异；保留源文件，不把原型加入产品构建。建立独立、依赖已 pin 的参考预览，生成逐页与关键状态参考图，避免以仓库旧截图为设计来源。
-- [x] **T02 固定逐页与逐操作映射。** 新增 [CONSOLE_PAGE_MAP.md](d:/research-system/docs/frontend/CONSOLE_PAGE_MAP.md)，逐项记录设计位置、规范路由、子视图、API/DTO 字段、可用等级和差异原因；列明草稿预检、单项目、通知/账户、预算单位及暂停执行效果等缺口。导航和操作无未分类项才进入扩面实施。
+- [x] **T01 归档完整设计来源。** 在拟新增的 [console-design 参考目录](../../docs/references/design/console-design/) 登记原始路径、文件摘要、入口关系与子包差异；保留源文件，不把原型加入产品构建。建立独立、依赖已 pin 的参考预览，生成逐页与关键状态参考图，避免以仓库旧截图为设计来源。
+- [x] **T02 固定逐页与逐操作映射。** 新增 [CONSOLE_PAGE_MAP.md](../../docs/frontend/CONSOLE_PAGE_MAP.md)，逐项记录设计位置、规范路由、子视图、API/DTO 字段、可用等级和差异原因；列明草稿预检、单项目、通知/账户、预算单位及暂停执行效果等缺口。导航和操作无未分类项才进入扩面实施。
 - [x] **T03 建立针对已知问题的失败基线。** 为缺失路由、空 YAML、Validate 副作用、Diff 行为、YAML 丢字段、固定示例预检、具名 SSE 事件和宽松 API 替身编写定向回归测试；保存旧界面截图为问题证据，不覆盖旧历史记录。
 
 阶段交付：来源记录、33 页清单、能力缺口、基线失败证据。参考图尚未完成时，不能宣称高保真验收已具备。
 
 ### 阶段 B：设计系统与完整应用外壳
 
-- [x] **T04 重建视觉令牌与字体。** 重写 [tokens.css](d:/research-system/apps/web/src/styles/tokens.css)、[base.css](d:/research-system/apps/web/src/styles/base.css)。落实设计中的深浅主题、4/8/12/16/24/32/48 间距、字体层级及 normal/compact 行高；原型 README 提及 comfortable，但当前令牌与控件没有完整实现，本次不额外发明第三密度。IBM Plex Sans/JetBrains Mono 如需补齐，必须先固定来源、版本/commit、digest、许可证，再自托管；生产不加载 Google Fonts/CDN/Babel。
-- [x] **T05 重建共用控件与交互模式。** 在 [components](d:/research-system/apps/web/src/components/) 实现 Button、Field、Panel、Table、Chip、StatusBadge、Tabs、Tooltip、Drawer、ConfirmDialog、Empty/Error/Unavailable 状态及必要图表基础。表格选择、排序、焦点、Escape 关闭、关闭后焦点返回都有测试；状态同时使用文字、图标/形状与颜色。
-- [x] **T06 重建八域外壳与路由。** 重写 [AppShell.tsx](d:/research-system/apps/web/src/layout/AppShell.tsx)、[Sidebar.tsx](d:/research-system/apps/web/src/layout/Sidebar.tsx)、[TopBar.tsx](d:/research-system/apps/web/src/layout/TopBar.tsx)、[registry.ts](d:/research-system/apps/web/src/navigation/registry.ts)。还原 220px/56px 侧栏、48px 顶栏、16px 工作区间距、域展开子导航、面包屑、命令入口与独立大屏入口。每条规范路由必须有独立页面身份，未知地址进入明确的未找到页。
-- [x] **T07 统一界面上下文与国际化。** 扩展 [preferences.ts](d:/research-system/apps/web/src/layout/preferences.ts)、[useHashRoute.ts](d:/research-system/apps/web/src/navigation/useHashRoute.ts) 和 [i18n](d:/research-system/apps/web/src/i18n/)。中文默认、英文完整覆盖正文/错误/图表/无障碍文案；主题与密度即时生效。Run/草稿选择通过 URL 恢复；无端点时提供向导入口，避免用全局请求失败遮住全部页面。命令面板只搜索已加载真实对象与已注册页面，创建菜单按支持情况禁用。
+- [x] **T04 重建视觉令牌与字体。** 重写 [tokens.css](../../apps/web/src/styles/tokens.css)、[base.css](../../apps/web/src/styles/base.css)。落实设计中的深浅主题、4/8/12/16/24/32/48 间距、字体层级及 normal/compact 行高；原型 README 提及 comfortable，但当前令牌与控件没有完整实现，本次不额外发明第三密度。IBM Plex Sans/JetBrains Mono 如需补齐，必须先固定来源、版本/commit、digest、许可证，再自托管；生产不加载 Google Fonts/CDN/Babel。
+- [x] **T05 重建共用控件与交互模式。** 在 [components](../../apps/web/src/components/) 实现 Button、Field、Panel、Table、Chip、StatusBadge、Tabs、Tooltip、Drawer、ConfirmDialog、Empty/Error/Unavailable 状态及必要图表基础。表格选择、排序、焦点、Escape 关闭、关闭后焦点返回都有测试；状态同时使用文字、图标/形状与颜色。
+- [x] **T06 重建八域外壳与路由。** 重写 [AppShell.tsx](../../apps/web/src/layout/AppShell.tsx)、[Sidebar.tsx](../../apps/web/src/layout/Sidebar.tsx)、[TopBar.tsx](../../apps/web/src/layout/TopBar.tsx)、[registry.ts](../../apps/web/src/navigation/registry.ts)。还原 220px/56px 侧栏、48px 顶栏、16px 工作区间距、域展开子导航、面包屑、命令入口与独立大屏入口。每条规范路由必须有独立页面身份，未知地址进入明确的未找到页。
+- [x] **T07 统一界面上下文与国际化。** 扩展 [preferences.ts](../../apps/web/src/layout/preferences.ts)、[useHashRoute.ts](../../apps/web/src/navigation/useHashRoute.ts) 和 [i18n](../../apps/web/src/i18n/)。中文默认、英文完整覆盖正文/错误/图表/无障碍文案；主题与密度即时生效。Run/草稿选择通过 URL 恢复；无端点时提供向导入口，避免用全局请求失败遮住全部页面。命令面板只搜索已加载真实对象与已注册页面，创建菜单按支持情况禁用。
 
 阶段交付：可导航的完整外壳、组件状态样例与“外壳 + 协议双栏 + 端点列表详情”三种样板。样板须完成对稿记录后才扩展业务页面。
 
 ### 阶段 C：数据接入基础
 
-- [x] **T08 收拢 API 请求与写入语义。** 重构 [http.ts](d:/research-system/apps/web/src/api/http.ts)、[client.ts](d:/research-system/apps/web/src/api/client.ts)、[draftClient.ts](d:/research-system/apps/web/src/api/draftClient.ts)，抽取重复请求处理并按职责拆客户端；补已有端点的前端封装，不新增服务器端点。测试分类错误、空响应、资源版本、取消与同一意图的幂等重试。
+- [x] **T08 收拢 API 请求与写入语义。** 重构 [http.ts](../../apps/web/src/api/http.ts)、[client.ts](../../apps/web/src/api/client.ts)、[draftClient.ts](../../apps/web/src/api/draftClient.ts)，抽取重复请求处理并按职责拆客户端；补已有端点的前端封装，不新增服务器端点。测试分类错误、空响应、资源版本、取消与同一意图的幂等重试。
 - [x] **T09 建立按对象隔离的页面资源状态。** 各功能 Hook 组合 DTO 与纯 `viewModel.ts`；支持 loading/empty/error/partial/forbidden/unavailable/stale/unknown，资源切换防串、迟到请求丢弃、写后按范围刷新。查询缓存不充当业务真相，不为 33 页建立一个巨型全局业务 Store。
-- [x] **T10 重建严格测试数据入口。** 替换 [stub-api.ts](d:/research-system/apps/web/tests/e2e/stub-api.ts) 的空数组兜底：未匹配请求立即使测试失败；已支持 API 的样例遵循真实 DTO。无后端页面的填充数据只进入隔离的视觉测试组合入口，不加入生产路由、生产 API 客户端或可切换 demo 模式。
+- [x] **T10 重建严格测试数据入口。** 替换 [stub-api.ts](../../apps/web/tests/e2e/stub-api.ts) 的空数组兜底：未匹配请求立即使测试失败；已支持 API 的样例遵循真实 DTO。无后端页面的填充数据只进入隔离的视觉测试组合入口，不加入生产路由、生产 API 客户端或可切换 demo 模式。
 
 ### 阶段 D：协议编辑与安全启动
 
-- [x] **T11 修复协议文档模型。** 修改 [protocolDocument.ts](d:/research-system/apps/web/src/features/protocol/editor/protocolDocument.ts)、[protocolSerialize.ts](d:/research-system/apps/web/src/features/protocol/editor/protocolSerialize.ts)。覆盖空/非对象 YAML、注释、字段顺序、非法枚举、单复数任务契约字段、显式 false、切换模式保留正文；无法无损表示的文档留在 YAML 并解释原因。
-- [x] **T12 按设计重写编辑器与报告。** 重写 [editor 目录](d:/research-system/apps/web/src/features/protocol/editor/)，将七个设计区块按第 5 节映射到真实能力；新增独立 `ProtocolReportPanel.tsx`，展示状态、发现项、解析资源、预算、审批与风险六区。错误可跳转字段，右侧报告不会被隐藏或缩成一个状态标签。
+- [x] **T11 修复协议文档模型。** 修改 [protocolDocument.ts](../../apps/web/src/features/protocol/editor/protocolDocument.ts)、[protocolSerialize.ts](../../apps/web/src/features/protocol/editor/protocolSerialize.ts)。覆盖空/非对象 YAML、注释、字段顺序、非法枚举、单复数任务契约字段、显式 false、切换模式保留正文；无法无损表示的文档留在 YAML 并解释原因。
+- [x] **T12 按设计重写编辑器与报告。** 重写 [editor 目录](../../apps/web/src/features/protocol/editor/)，将七个设计区块按第 5 节映射到真实能力；新增独立 `ProtocolReportPanel.tsx`，展示状态、发现项、解析资源、预算、审批与风险六区。错误可跳转字段，右侧报告不会被隐藏或缩成一个状态标签。
 - [x] **T13 接通真正的校验、保存、修订和 Diff。** 修正 `useSaveDraft.ts`（后续会话并入 `useProtocolDocument.ts`） 与编辑器动作。实现模板选择、草稿打开/恢复、Validate 零写入、Apply 保存、Discard 回退、修订查看、差异抽屉和 412 冲突保留；离开未保存页面有确认，旧请求结果不覆盖新输入。
 - [x] **T14 修正预检来源与启动闭环。** 重写 `usePreflightAndStart.ts`（后续会话并入 `useProtocolDocument.ts`/`useEditorActions.ts`），删除固定示例代检；实现未修改模板同源预检/启动、FAIL 阻断、WARN 确认失效、启动失败反馈和成功后的 Run 导航。自定义草稿缺预检契约时，测试确认相关按钮禁用且不发请求。
 
 ### 阶段 E：真实能力页面逐组重建
 
-- [x] **T15 重建接入向导、端点与模型目录。** 修改 [setup](d:/research-system/apps/web/src/features/setup/)、[endpoints](d:/research-system/apps/web/src/features/endpoints/)、[models](d:/research-system/apps/web/src/features/models/)。完成端点列表/详情/编辑、测试、发现、手动模型、Probe、兼容性与指纹缺失说明；失败可恢复，凭据不回显，已有配置不会因重新进入向导被覆盖。
-- [x] **T16 重建团队与项目设置。** 修改 [team](d:/research-system/apps/web/src/features/team/)，实现真实模板选择、Agent 创建/模型绑定、Role 能力检查和有接口支持的项目设置。运行中的冻结模型/工具集合不能被“编辑团队”改写；政策引用等无安全选择依据的字段只读，不增加管理员演示模式。
-- [x] **T17 重建概览、运行历史与比较。** 新增 [overview](d:/research-system/apps/web/src/features/overview/)、[run-history](d:/research-system/apps/web/src/features/run-history/)、[run-comparison](d:/research-system/apps/web/src/features/run-comparison/)。共享真实 Run 查询，完成筛选、选择、详情导航、比较对象恢复与不可比原因展示；不循环无上限拉取所有运行详情。
-- [x] **T18 重建时间线与真实事件消费。** 修改 [runs](d:/research-system/apps/web/src/features/runs/)，抽离事件传输与合并职责，消费服务端具名 SSE 帧。还原任务区、事件筛选、自动滚动控制、详情抽屉、断线和落后状态；切换 Run、重复事件、重连及卸载都有浏览器验证。
-- [x] **T19 重建审批与运行操作。** 修改 [approvals](d:/research-system/apps/web/src/features/approvals/) 和 [RunActions.tsx](d:/research-system/apps/web/src/features/runs/RunActions.tsx)。审批展示真实后果与版本，冲突刷新；取消要求确认并显示后端结果；暂停/恢复按实际执行语义通过验收后启用；Fork、运行中换模型/调预算保持禁用。
-- [x] **T20 重建工作区与实验页面。** 修改 [workspace](d:/research-system/apps/web/src/features/workspace/)，新增 [experiments](d:/research-system/apps/web/src/features/experiments/)。实现 Run 级实验列表、已有指标、Artifact/镜像/环境摘要和复现可用性说明；保留文件区布局但不给无接口按钮假成功，实验创建/排队/日历缺口清晰。
-- [x] **T21 重建 Claims 与来源关系视图。** 改造 [inspection](d:/research-system/apps/web/src/features/inspection/)，新增 [lineage](d:/research-system/apps/web/src/features/lineage/)。图谱与表格共用同一 DTO 投影，真实关系选中联动、证据详情、unsupported/contradictory/degraded 状态可验证；不存在的引用显示断开的关系，而非自动补节点事实。
-- [x] **T22 重建预算、成本与评估趋势。** 从 [operations](d:/research-system/apps/web/src/features/operations/) 和 inspection 中提取相应展示逻辑到 [cost-analysis](d:/research-system/apps/web/src/features/cost-analysis/)、[budget](d:/research-system/apps/web/src/features/budget/)。使用服务端金额/币种/价格摘要；单位比例未获契约证据前显示原始 minor units，不照抄原型互相矛盾的除数。保留未知、部分计量、币种冲突和趋势分段；没有时间序列就不画虚构折线。
-- [x] **T23 保留并重建计算与观测能力。** 将 [ClusterPanel.tsx](d:/research-system/apps/web/src/features/operations/ClusterPanel.tsx) 接入 `ops/compute`，将遥测/趋势接入 `ops/observability`。展示真实心跳、worker 状态、placement 与 GPU 观察摘要；不外推为跨地域、多卡或 HPC 能力。
+- [x] **T15 重建接入向导、端点与模型目录。** 修改 [setup](../../apps/web/src/features/setup/)、[endpoints](../../apps/web/src/features/endpoints/)、[models](../../apps/web/src/features/models/)。完成端点列表/详情/编辑、测试、发现、手动模型、Probe、兼容性与指纹缺失说明；失败可恢复，凭据不回显，已有配置不会因重新进入向导被覆盖。
+- [x] **T16 重建团队与项目设置。** 修改 [team](../../apps/web/src/features/team/)，实现真实模板选择、Agent 创建/模型绑定、Role 能力检查和有接口支持的项目设置。运行中的冻结模型/工具集合不能被“编辑团队”改写；政策引用等无安全选择依据的字段只读，不增加管理员演示模式。
+- [x] **T17 重建概览、运行历史与比较。** 新增 [overview](../../apps/web/src/features/overview/)、[run-history](../../apps/web/src/features/run-history/)、[run-comparison](../../apps/web/src/features/run-comparison/)。共享真实 Run 查询，完成筛选、选择、详情导航、比较对象恢复与不可比原因展示；不循环无上限拉取所有运行详情。
+- [x] **T18 重建时间线与真实事件消费。** 修改 [runs](../../apps/web/src/features/runs/)，抽离事件传输与合并职责，消费服务端具名 SSE 帧。还原任务区、事件筛选、自动滚动控制、详情抽屉、断线和落后状态；切换 Run、重复事件、重连及卸载都有浏览器验证。
+- [x] **T19 重建审批与运行操作。** 修改 [approvals](../../apps/web/src/features/approvals/) 和 [RunActions.tsx](../../apps/web/src/features/runs/RunActions.tsx)。审批展示真实后果与版本，冲突刷新；取消要求确认并显示后端结果；暂停/恢复按实际执行语义通过验收后启用；Fork、运行中换模型/调预算保持禁用。
+- [x] **T20 重建工作区与实验页面。** 修改 [workspace](../../apps/web/src/features/workspace/)，新增 [experiments](../../apps/web/src/features/experiments/)。实现 Run 级实验列表、已有指标、Artifact/镜像/环境摘要和复现可用性说明；保留文件区布局但不给无接口按钮假成功，实验创建/排队/日历缺口清晰。
+- [x] **T21 重建 Claims 与来源关系视图。** 改造 [inspection](../../apps/web/src/features/inspection/)，新增 [lineage](../../apps/web/src/features/lineage/)。图谱与表格共用同一 DTO 投影，真实关系选中联动、证据详情、unsupported/contradictory/degraded 状态可验证；不存在的引用显示断开的关系，而非自动补节点事实。
+- [x] **T22 重建预算、成本与评估趋势。** 从 [operations](../../apps/web/src/features/operations/) 和 inspection 中提取相应展示逻辑到 [cost-analysis](../../apps/web/src/features/cost-analysis/)、[budget](../../apps/web/src/features/budget/)。使用服务端金额/币种/价格摘要；单位比例未获契约证据前显示原始 minor units，不照抄原型互相矛盾的除数。保留未知、部分计量、币种冲突和趋势分段；没有时间序列就不画虚构折线。
+- [x] **T23 保留并重建计算与观测能力。** 将 [ClusterPanel.tsx](../../apps/web/src/features/operations/ClusterPanel.tsx) 接入 `ops/compute`，将遥测/趋势接入 `ops/observability`。展示真实心跳、worker 状态、placement 与 GPU 观察摘要；不外推为跨地域、多卡或 HPC 能力。
 
 ### 阶段 F：全量设计页面与缺失能力的诚实呈现
 
-- [x] **T24 完成项目集合页。** 新增 [projects](d:/research-system/apps/web/src/features/projects/)，还原三种视图、筛选、详情及创建/编辑结构。生产只展示服务端确认的当前项目上下文；缺字段有说明，多项目和管理动作锁定。测试断言无创建/删除伪请求、无前端持久化项目列表。
-- [x] **T25 完成提示词、数据集与笔记页。** 新增 [prompts](d:/research-system/apps/web/src/features/prompts/)、[datasets](d:/research-system/apps/web/src/features/datasets/)、[notebooks](d:/research-system/apps/web/src/features/notebooks/)。逐页还原各自列表、详情与子视图，支持不涉及业务写入的切换/展开；后端缺口按操作解释，隔离视觉样例不得打进生产。
-- [x] **T26 完成报告和运维缺口页。** 新增 [reports](d:/research-system/apps/web/src/features/reports/)、[alerts](d:/research-system/apps/web/src/features/alerts/)、[incidents](d:/research-system/apps/web/src/features/incidents/)、[schedules](d:/research-system/apps/web/src/features/schedules/)、[integrations](d:/research-system/apps/web/src/features/integrations/)、[data-health](d:/research-system/apps/web/src/features/data-health/)、[state-reference](d:/research-system/apps/web/src/features/state-reference/)。保留每页独特布局与内层 Tab，禁用未实现业务；状态说明页标注其说明性质。
-- [x] **T27 完成治理、设置与通知中心。** 新增 [governance](d:/research-system/apps/web/src/features/governance/)、[settings](d:/research-system/apps/web/src/features/settings/)、[notifications](d:/research-system/apps/web/src/features/notifications/)。运行事件与全局审计清楚区分；Export 为真实本地下载；Memory、账户、平台凭据、通知已读与 Billing 无接口动作禁用；偏好设置和已有项目设置真正保存到各自所有者。
+- [x] **T24 完成项目集合页。** 新增 [projects](../../apps/web/src/features/projects/)，还原三种视图、筛选、详情及创建/编辑结构。生产只展示服务端确认的当前项目上下文；缺字段有说明，多项目和管理动作锁定。测试断言无创建/删除伪请求、无前端持久化项目列表。
+- [x] **T25 完成提示词、数据集与笔记页。** 新增 [prompts](../../apps/web/src/features/prompts/)、[datasets](../../apps/web/src/features/datasets/)、[notebooks](../../apps/web/src/features/notebooks/)。逐页还原各自列表、详情与子视图，支持不涉及业务写入的切换/展开；后端缺口按操作解释，隔离视觉样例不得打进生产。
+- [x] **T26 完成报告和运维缺口页。** 新增 [reports](../../apps/web/src/features/reports/)、[alerts](../../apps/web/src/features/alerts/)、[incidents](../../apps/web/src/features/incidents/)、[schedules](../../apps/web/src/features/schedules/)、[integrations](../../apps/web/src/features/integrations/)、[data-health](../../apps/web/src/features/data-health/)、[state-reference](../../apps/web/src/features/state-reference/)。保留每页独特布局与内层 Tab，禁用未实现业务；状态说明页标注其说明性质。
+- [x] **T27 完成治理、设置与通知中心。** 新增 [governance](../../apps/web/src/features/governance/)、[settings](../../apps/web/src/features/settings/)、[notifications](../../apps/web/src/features/notifications/)。运行事件与全局审计清楚区分；Export 为真实本地下载；Memory、账户、平台凭据、通知已读与 Billing 无接口动作禁用；偏好设置和已有项目设置真正保存到各自所有者。
 
 ### 阶段 G：大屏与全站视觉收口
 
-- [x] **T28 实现 Command Center。** 新增 [command-center](d:/research-system/apps/web/src/features/command-center/)，按独立大屏设计重建运行、健康、证据、成本、告警、实验、模型活动与事件区。复用查询，不建立第二套运行状态；缺指标区域保留版式并说明；只有大屏使用设计所需适配，普通页面不整页缩放。
+- [x] **T28 实现 Command Center。** 新增 [command-center](../../apps/web/src/features/command-center/)，按独立大屏设计重建运行、健康、证据、成本、告警、实验、模型活动与事件区。复用查询，不建立第二套运行状态；缺指标区域保留版式并说明；只有大屏使用设计所需适配，普通页面不整页缩放。
 - [x] **T29 完成响应式、国际化、可访问性与性能检查。** 普通控制台检查 1440/1280/1024/768/390 宽度，大屏增加 2560×1440 与 1920×1080。窄屏收拢侧栏，双栏按需要堆叠，表格在自身容器滚动；键盘、可见焦点、标签、对话框焦点约束及减少动画偏好可用。检查全部中英文与双主题/双密度组合，长文本和空态不裁切，长事件流有明确显示窗口而不是无限 DOM 增长。
 
 ### 阶段 H：验证、迁移与正式交付
 
-- [x] **T30 建立真实 API 浏览器集成测试。** 新增 [live-api-workflow.spec.ts](d:/research-system/apps/web/tests/e2e/live-api-workflow.spec.ts) 和测试专用 [console_api_app.py](d:/research-system/tests/api/console_api_app.py)，复用 [run_fixtures.py](d:/research-system/tests/api/run_fixtures.py) 的 Fake Port 装配，通过真实 FastAPI HTTP 与浏览器验证。API 层真实、外部模型/工具为确定性替身；覆盖模板预检/启动、草稿校验保存与禁用边界、Run 查询/SSE、审批冲突、证据和导出，不依赖真实凭据或付费 LLM。
-- [x] **T31 建立严格视觉与持续集成门禁。** 修改 [playwright.config.ts](d:/research-system/apps/web/playwright.config.ts)，新增 [design-fidelity.spec.ts](d:/research-system/apps/web/tests/e2e/design-fidelity.spec.ts)、[console-shell.spec.ts](d:/research-system/apps/web/tests/e2e/console-shell.spec.ts)（严格路由身份/别名/未找到页）、[rebuild-baseline.spec.ts](d:/research-system/apps/web/tests/e2e/rebuild-baseline.spec.ts)（严格替身兜底失败），在 [.github/workflows/m0-quality.yml](d:/research-system/.github/workflows/m0-quality.yml) 新增 console-frontend job 接入。使用已 pin 的动作和 Playwright 浏览器版本，测试服务端口受控、不复用不明运行进程；截图前必须断言页面身份、关键控件、预期数据和无意外错误。
-- [x] **T32 完成旧路由兼容与文档交付。** 更新 [CONSOLE_REBUILD.md](d:/research-system/docs/frontend/CONSOLE_REBUILD.md)、[CONSOLE_INFORMATION_ARCHITECTURE.md](d:/research-system/docs/product/CONSOLE_INFORMATION_ARCHITECTURE.md)、[docs/INDEX.md](d:/research-system/docs/INDEX.md)，新增 [CONSOLE_DELIVERY.md](d:/research-system/docs/frontend/CONSOLE_DELIVERY.md)。交付逐页完成表、操作支持清单、缺口、设计差异、参考/实现截图、测试命令与结果、回退方法；清理确定无引用的旧呈现模块，保留用户无关改动。
+- [x] **T30 建立真实 API 浏览器集成测试。** 新增 [live-api-workflow.spec.ts](../../apps/web/tests/e2e/live-api-workflow.spec.ts) 和测试专用 [console_api_app.py](../../tests/api/console_api_app.py)，复用 [run_fixtures.py](../../tests/api/run_fixtures.py) 的 Fake Port 装配，通过真实 FastAPI HTTP 与浏览器验证。API 层真实、外部模型/工具为确定性替身；覆盖模板预检/启动、草稿校验保存与禁用边界、Run 查询/SSE、审批冲突、证据和导出，不依赖真实凭据或付费 LLM。
+- [x] **T31 建立严格视觉与持续集成门禁。** 修改 [playwright.config.ts](../../apps/web/playwright.config.ts)，新增 [design-fidelity.spec.ts](../../apps/web/tests/e2e/design-fidelity.spec.ts)、[console-shell.spec.ts](../../apps/web/tests/e2e/console-shell.spec.ts)（严格路由身份/别名/未找到页）、[rebuild-baseline.spec.ts](../../apps/web/tests/e2e/rebuild-baseline.spec.ts)（严格替身兜底失败），在 [.github/workflows/m0-quality.yml](../../.github/workflows/m0-quality.yml) 新增 console-frontend job 接入。使用已 pin 的动作和 Playwright 浏览器版本，测试服务端口受控、不复用不明运行进程；截图前必须断言页面身份、关键控件、预期数据和无意外错误。
+- [x] **T32 完成旧路由兼容与文档交付。** 更新 [CONSOLE_REBUILD.md](../../docs/frontend/CONSOLE_REBUILD.md)、[CONSOLE_INFORMATION_ARCHITECTURE.md](../../docs/product/CONSOLE_INFORMATION_ARCHITECTURE.md)、[docs/INDEX.md](../../docs/INDEX.md)，新增 [CONSOLE_DELIVERY.md](../../docs/frontend/CONSOLE_DELIVERY.md)。交付逐页完成表、操作支持清单、缺口、设计差异、参考/实现截图、测试命令与结果、回退方法；清理确定无引用的旧呈现模块，保留用户无关改动。
 - [x] **T33 执行完整验收与证据化复检。** 按原始目标重新检查第 7 节，执行范围相关 validators/tests；通过后关联新 Recheck，更新工程计划为 DONE。出现核心契约/后端缺口超出本计划时保持明确受限状态，或将相关项标为 BLOCKED，不修改 validator 让其通过。
 
 实施依赖：A → B/C → D → E/F → G → H。各阶段完成后应用保持可启动；公共组件、路由和 DTO 变更由主实施者统一整合。同一波确有独立价值的委派最多 3 项，禁止嵌套委派，不并行重负载全量测试。
@@ -477,11 +477,11 @@ flowchart TD
 - `#/setup` → 共用 `library/setup` 向导，保留首次配置/返回来源流程。
 - 既有 Plan 和 Workspace 路由保持可达。
 
-沿用 [vite.config.ts](d:/research-system/apps/web/vite.config.ts) 的 `/api` 代理和 [Dockerfile.console](d:/research-system/infra/docker/research/Dockerfile.console) 的构建入口，不替换部署架构。以实际响应检查安全头，不将旧文档里“保持 CSP”的表述当作已验证的运行事实。
+沿用 [vite.config.ts](../../apps/web/vite.config.ts) 的 `/api` 代理和 [Dockerfile.console](../../infra/docker/research/Dockerfile.console) 的构建入口，不替换部署架构。以实际响应检查安全头，不将旧文档里“保持 CSP”的表述当作已验证的运行事实。
 
 ### 计划记录与回退
 
-- 用户确认后用 `all-plan` 建立新任务，按当时索引计算编号；当前预计路径为 [PLAN-20260908-034-console-design-reconstruction.md](d:/research-system/.cursor/plans/tasks/PLAN-20260908-034-console-design-reconstruction.md)，并更新 [ALL_PLAN.md](d:/research-system/.cursor/plans/ALL_PLAN.md)。本轮不写入这些仓库文件。
+- 用户确认后用 `all-plan` 建立新任务，按当时索引计算编号；当前预计路径为 [PLAN-20260908-034-console-design-reconstruction.md](../../.cursor/plans/tasks/PLAN-20260908-034-console-design-reconstruction.md)，并更新 [ALL_PLAN.md](../../.cursor/plans/ALL_PLAN.md)。本轮不写入这些仓库文件。
 - 保留上一轮计划、复检与错误截图的历史来源，新发现与本次修正记入新计划。
 - 按功能组逐步替换并记录变更白名单；回退只涉及本次前端实现及相应静态构建，不删除草稿/数据库数据，不执行 destructive clean/reset。
 - 不自动提交、推送、创建发布或更新 `FRAMEWORK_MANIFEST.json`；根 `VERSION` 不因本次 UI 重建新增并行版本。

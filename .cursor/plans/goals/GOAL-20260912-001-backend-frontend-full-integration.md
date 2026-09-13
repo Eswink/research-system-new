@@ -79,7 +79,7 @@ memory_entries: []
 
 | EC | 标准（摘要） | 验证 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 项目注册表 + 前端去硬编码 + projects 页 live | rg + live e2e | PENDING |
+| EC-01 | 项目注册表 + 前端去硬编码 + projects 页 live | rg + live e2e | PASS |
 | EC-02 | reports/integrations/全局血缘 复用既有域 + live | API/e2e/基线 | PENDING |
 | EC-03 | 9 GAP 域中 prompts/datasets/notebooks/alerts/incidents/schedules/data-health 最小域 + live | API/e2e/policy | PENDING |
 | EC-04 | 深水区语义（budget_adjust/预测/真 pause-resume/队列/Diff/memory policy），未落地保持诚实标注 | API + G 表一致性 | PENDING |
@@ -93,7 +93,7 @@ RECHECK-20260912-040 = PASS_WITH_WARNINGS；密封扫描 scan-2026-09-12 已处�
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 1 进行中（driver=session-goal，owner=root-agent，PLAN-20260912-041 已派生，处于 ② 执行段）**。
+按 README 的 7 步判定执行；当前续点：**cycle 2 已 push 待 CI 盖章（driver=session-goal，owner=root-agent，PLAN-20260912-042 处于 ⑤/⑥ 段）；下一 cycle = 3（EC-02）**。
 
 ## 驱动
 
@@ -135,10 +135,12 @@ m0 全量单跑截断（分组复跑）。工作流文件 `.github/workflows/m0-
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | (0) | PLAN-20260912-040（cycle 前完成） | 6d844e3, 2022b02, d5abf18, af5df14, b86c693, 54a6360 | m0 分组全绿；stub 30/30；live 10/10 | 未 push（cycle 1 ⑤ 一并推） | — | EC-01~06 | cycle 1 = PLAN-041（EC-01） |
 | 1 | PLAN-20260912-041 | b55df92, 9ba606e, 57feb37 + 收口批 | 全量 pytest exit 0/0 failed；ts 9/9；fw 8/8；stub 30/30；live 11/11；RECHECK-041 PASS_WITH_WARNINGS | run #50/收口 run（见状态历史） | F-2 AC 文案、F-3 docstring、F-1 收口时序 | EC-02~06 | cycle 2 = PLAN-042（EC-02：reports/integrations/lineage 经既有域 HTTP 面） |
+| 2 | PLAN-20260912-042 | 见状态历史（cycle 2 commit） | 全量 pytest 2997 passed/205 skipped/0 failed；m0 23/23 PASS；typescript 9/9；framework 8/8；mypy 767 files（默认+linux）Success；docs_consistency 6 PASS | cycle 2 push → run 终态见状态历史 | project_store 时序、symlink 惰性目录、pinned 镜像引用、docs 检查器大小写 | EC-02~06 | cycle 3 = EC-02（reports/integrations/lineage 经既有域 HTTP 面 + 页面翻 live） |
 
 ## 状态历史
 
 - 2026-09-13 cycle 1 收口：EC-01 → PASS（本地全绿 + RECHECK-20260912-041 PASS_WITH_WARNINGS）；收口 commit（openapi/docs/PLAN/GOAL/MEM）与代码同 push，CI 终态以收口 run 为准。
+- 2026-09-13 cycle 2 = PLAN-20260912-042（CI 既有债修复）：WP-A 类型/链接、WP-B docs 检查器大小写 bug、WP-C 环境守卫 + 3 处测试缺陷、WP-D 本地全门全绿并 push。本地证据：m0 23/23 PASS；全量 pytest 2997 passed/205 skipped/0 failed；mypy（默认 + linux）767 files Success。CI 终态以 cycle 2 run 为准。
 - 2026-09-13 cycle 1 CI 纠错循环：run #50 failure = openapi 快照未同批（F-1 时序，收口批 899c1fb 已修）；run #51 failure 暴露两层既有 CI 债——(a) example-console 设计 fixture 被根 data/ 规则误忽略致 fresh-checkout 类型解析失败（899c1fb 已修并验证 web lint/build 过）；(b) design-fidelity 基线仅 win32 33 张，console-frontend job 在 ubuntu runner 上必然缺 linux 基线。处置（不 skip、不降断言、不动 workflow）：playwright 官方 noble 容器（与 ubuntu-24.04 runner 同发行版）生成 linux 基线 33 张，目检 projects/run-timeline 两张抽检通过后入库。
 - 2026-09-13 cycle 1 CI 债清单（run #51 quality-ubuntu 等暴露，全部既有、非本 cycle 引入）：(1) `.cursor/plans/*.plan.md` 历史散装文件含 `d:/research-system/...` 绝对链接 → Linux 上 validate_bundle/validate 失败，修：改 repo 相对链接；(2) `docs/roadmap/MILESTONES.md` 链接指向 gitignored scratch 记录，修：去链接化；(3) docs_consistency 报 M13/M14 无 COMPLETION_RECORD（本地靠 gitignored 文件通过），修：补记录或对齐检查；(4) tests/postgres 若干用例在 CI 无 15432 时直接失败而非 skip（skip guard 缺失）+ python/typecheck 仅 CI 失败，修：skip 守卫 + 定位 mypy 差异；(5) container-quality（runner 无 compose 镜像）与 collector-quality（cancelled）涉 workflow/服务配置，属治理面 → BLOCKED 待人工决策。(1)-(4) 为 cycle 2 修复范围。
 

@@ -214,8 +214,9 @@ class TestSymlinkRejection:
         self._make_symlink(secret, workspace_dir / "link.txt")
         with pytest.raises(PermanentPortError):
             backend.snapshot(lease)
-        # 拒绝后不得产生快照副本
-        assert list((tmp_path / "root" / ".snapshots").iterdir()) == []
+        # 拒绝后不得产生快照副本；.snapshots 是惰性目录，被拒绝时可能尚未创建。
+        snapshots_root = tmp_path / "root" / ".snapshots"
+        assert not snapshots_root.exists() or list(snapshots_root.iterdir()) == []
 
     def test_tree_digest_ignores_symlink(self, tmp_path: Path) -> None:
         backend, _ = _backend(tmp_path)

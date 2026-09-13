@@ -5,19 +5,24 @@ status 非法拒绝）。"""
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 
 from adapters.sqlite.project_store import SqliteProjectStore
 from packages.domain.core import Timestamp
 from packages.domain.projects import ProjectDefinition, ProjectStatus
 
+_EPOCH = Timestamp(datetime(2020, 1, 1, tzinfo=timezone.utc))
+
 
 def _project(
     pid: str,
     name: str = "p",
     status: ProjectStatus = ProjectStatus.ACTIVE,
+    at: Timestamp | None = None,
 ) -> ProjectDefinition:
-    now = Timestamp.now()
+    now = at or Timestamp.now()
     return ProjectDefinition(id=pid, name=name, status=status, created_at=now, updated_at=now)
 
 
@@ -31,9 +36,10 @@ class TestStore:
         assert loaded.status is ProjectStatus.ACTIVE
 
     def test_list_is_deterministic(self) -> None:
+        # 同一 created_at 时排序回退到 project_id（避免 now() 时序依赖）。
         store = SqliteProjectStore(":memory:")
-        store.save_project(_project("b"))
-        store.save_project(_project("a"))
+        store.save_project(_project("b", at=_EPOCH))
+        store.save_project(_project("a", at=_EPOCH))
         assert [item.id for item in store.list_projects()] == ["a", "b"]
 
     def test_save_upserts_and_advances_only_via_entity(self) -> None:

@@ -1140,7 +1140,7 @@ PASS / FAIL（FAIL 时修复后重跑）。
 
 SI-1 结果（2026-09-02）：**PASS** — 真实 GPU Research Run、跨阶段回归与
 六类故障面均有证据，记录见
-[SI-1 Review Record](../../scratch/si1-20260902/SI1_REVIEW_RECORD.md)。
+SI-1 Review Record（`scratch/si1-20260902/SI1_REVIEW_RECORD.md`，本地工作树记录，不入库）。
 
 ## PA-1 — Personal Production Acceptance
 

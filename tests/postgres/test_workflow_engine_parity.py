@@ -24,6 +24,10 @@ from tests.contracts.fixtures import research_task, task_contract
 
 START = datetime(2026, 8, 13, 9, 0, 0, tzinfo=timezone.utc)
 
+# 该套件真实连接 PostgreSQL 运行 parity；标记 postgres 以便无 PG 环境诚实 skip
+# （RESEARCHOS_REQUIRE_POSTGRES=1 时 conftest 仍 fail-closed）。
+pytestmark = pytest.mark.postgres
+
 
 def _dsn() -> str:
     return os.environ.get(

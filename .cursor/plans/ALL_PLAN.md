@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260912-042](tasks/PLAN-20260912-042-ci-debt-remediation.md) | DONE |
 | [x] | [PLAN-20260912-041](tasks/PLAN-20260912-041-project-registry-and-switcher.md) | DONE |
 | [x] | [PLAN-20260912-040](tasks/PLAN-20260912-040-frontend-backend-seams-and-surfacing.md) | DONE |
 | [x] | [PLAN-20260910-037](tasks/PLAN-20260910-037-frontend-backend-api-integration.md) | DONE |

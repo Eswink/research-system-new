@@ -152,8 +152,10 @@ def _has_recheck_record(root: Path, milestone_id: str) -> bool:
     rechecks = root / ".cursor" / "plans" / "rechecks"
     if not rechecks.is_dir():
         return False
-    milestone_token = milestone_id.lower().replace("m", "m")
-    return any(f"-{milestone_token}-" in path.name for path in rechecks.glob("*M*.md"))
+    # 文件名 token 为小写（-m13-）；glob 必须按实际 RECHECK- 前缀匹配——
+    # 旧 `*M*.md` 在大小写敏感的 Linux 上匹配不到（CI-only 假阳性，cycle 2 修复）。
+    milestone_token = milestone_id.lower()
+    return any(f"-{milestone_token}-" in path.name for path in rechecks.glob("RECHECK-*.md"))
 
 
 def _check_planned_milestone(checker: Checker, matrix: str, milestone_id: str) -> None:

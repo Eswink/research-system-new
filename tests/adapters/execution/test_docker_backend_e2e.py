@@ -125,18 +125,23 @@ class TestContainerLifecycle:
     def test_pinned_image_reference_is_consumed_and_recorded(
         self, sandbox_image: str, tmp_path: Path
     ) -> None:
-        """`name@sha256:<digest>` pinned reference 可被消费且 digest 被记录。
+        """pinned 镜像引用可被消费且 digest 被记录。
 
         生产 composition 注入 pinned reference 的消费路径验证；digest 从
-        fixture 镜像运行时解析，不硬编码环境值。
+        fixture 镜像运行时解析，不硬编码环境值。本地 `docker build` 出的
+        镜像没有 RepoDigests，`name@sha256:<config-id>` 不是 daemon 可解析的
+        引用（会被 404 拒绝）；因此优先用 registry repo digest，无 digest 时
+        退回同一消费路径的 image-id 引用。
         """
         client = docker.from_env()
-        expected = client.images.get(sandbox_image).id
-        pinned = DockerExecutionBackend(image=f"research-os-sandbox@{expected}")
-        run = pinned.execute(_spec("echo pinned-ref", tmp_path), timeout_seconds=60)
+        image = client.images.get(sandbox_image)
+        repo_digests = image.attrs.get("RepoDigests") or []
+        pinned = DockerExecutionBackend(image=repo_digests[0] if repo_digests else image.id)
+        runner = getattr(pinned, "execute")
+        run = runner(_spec("echo pinned-ref", tmp_path), timeout_seconds=60)
         assert run.status is ExecutionStatus.SUCCEEDED
         recorded = run.compute_usage_summary["image_digest"]
-        assert recorded == expected
+        assert recorded == image.id
 
 
 class TestFaultInjection:
