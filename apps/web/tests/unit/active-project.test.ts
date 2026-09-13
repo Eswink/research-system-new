@@ -32,7 +32,8 @@ function withWindow(body: () => void, events: string[] = []): void {
     dispatchEvent: () => true,
   };
   const hadWindow = "window" in globalThis;
-  Object.defineProperty(globalThis, "window", { value: fake, configurable: true });  try {
+  Object.defineProperty(globalThis, "window", { value: fake, configurable: true });
+  try {
     body();
   } finally {
     if (!hadWindow) {

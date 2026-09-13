@@ -7,7 +7,7 @@ import { Drawer } from "../../components/Drawer";
 import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { EndpointCards } from "./EndpointCards";
-import { EndpointDeleteAction } from "./EndpointDelete";
+import { EndpointDeleteAction } from "./EndpointDeleteAction";
 import { EndpointEditForm } from "./EndpointEditForm";
 import { ConnectionTest } from "./ConnectionTest";
 import { KeyValueList } from "../shared/KeyValueList";

@@ -7,8 +7,8 @@ import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { KeyValueList } from "../shared/KeyValueList";
 import styles from "../shared/LivePage.module.css";
-import { ModelDeleteAction } from "./ModelDelete";
 import { ModelDetails } from "./ModelDetails";
+import { ModelDeleteAction } from "./ModelDeleteAction";
 import { ModelEditForm } from "./ModelEditForm";
 
 /** 选中模型的详情刷新（GET /models/{id}）、编辑（PATCH + If-Match）、删除与兼容性视图。 */

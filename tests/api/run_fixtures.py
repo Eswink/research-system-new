@@ -95,17 +95,21 @@ def replace_catalog_with_pins(catalog: object) -> object:
     )
 
 
-def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
-    """可冻结 Manifest 的 run 测试装配（受控 pin + 完整 preflight context）。
+@dataclass(frozen=True)
+class _RunReadyContext:
+    """make_run_ready_deps 的构建中间态（规避单函数超行数阈值）。"""
 
-    WP-D（PLAN-040）：与生产 SQLite 开发组成对齐——agent/settings/override/
-    worker-registry/experiment store 用同连接 SQLite 实现，evidence ledger 为
-    编排与读取端共享的受控 Fake（修正旧注释漂移：ledger 此前未注入 ApiDeps，
-    导致 live e2e 从未走过 evidence/claims/experiments 真实读链）。
-    """
-    from adapters.fakes.memory_store import FakeMemoryStore
+    credentials: FakeCredentialResolver
+    connection: sqlite3.Connection
+    events: SqliteOutboxEventPublisher
+    pricing_store: FakePricingSnapshotStore
+    shared: _RunReadyStores
+    runs: RunOrchestrationService
+    preflight: PreflightContext
+
+
+def _run_ready_context() -> _RunReadyContext:
     from adapters.sqlite.db import connect
-    from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
     from services.api.approvals import ApprovalRegistry
 
     credentials = FakeCredentialResolver()
@@ -122,29 +126,51 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         ledger=FakeEvidenceLedger(),
     )
     runs = _build_orchestration(connection, events, pricing_store, shared)
-    preflight = _build_preflight(credentials)
-    return ApiDeps(
-        endpoint_store=SqliteEndpointStore(connection=connection),
-        model_store=SqliteModelStore(connection=connection),
+    return _RunReadyContext(
         credentials=credentials,
+        connection=connection,
+        events=events,
+        pricing_store=pricing_store,
+        shared=shared,
+        runs=runs,
+        preflight=_build_preflight(credentials),
+    )
+
+
+def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
+    """可冻结 Manifest 的 run 测试装配（受控 pin + 完整 preflight context）。
+
+    WP-D（PLAN-040）：与生产 SQLite 开发组成对齐——agent/settings/override/
+    project/worker-registry/experiment store 用同连接 SQLite 实现，evidence
+    ledger 为编排与读取端共享的受控 Fake（修正旧注释漂移：ledger 此前未注入
+    ApiDeps，导致 live e2e 从未走过 evidence/claims/experiments 真实读链）。
+    """
+    from adapters.fakes.memory_store import FakeMemoryStore
+    from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
+
+    ctx = _run_ready_context()
+    return ApiDeps(
+        endpoint_store=SqliteEndpointStore(connection=ctx.connection),
+        model_store=SqliteModelStore(connection=ctx.connection),
+        credentials=ctx.credentials,
         gateway=gateway if gateway is not None else FakeModelGateway(),
         idempotency=InMemoryIdempotencyStore(),
-        events=events,
-        projection=SqliteRunProjection(connection, events),
-        approvals=shared.registry,
-        runs=runs,
-        workflow=runs._deps.workflow,
-        pricing_snapshot_store=pricing_store,
-        preflight_override=preflight,
-        protocol_draft_service=_make_draft_service(connection),
+        events=ctx.events,
+        projection=SqliteRunProjection(ctx.connection, ctx.events),
+        approvals=ctx.shared.registry,
+        runs=ctx.runs,
+        workflow=ctx.runs._deps.workflow,
+        pricing_snapshot_store=ctx.pricing_store,
+        preflight_override=ctx.preflight,
+        protocol_draft_service=_make_draft_service(ctx.connection),
         # WP-Z live e2e 只读链装配：ledger/通知读状态/memory/artifact 均为受控 Fake。
         budget=FakeBudgetLedger(),
-        notification_reads=SqliteNotificationReadStore(connection=connection),
+        notification_reads=SqliteNotificationReadStore(connection=ctx.connection),
         memory=FakeMemoryStore(),
-        artifacts=shared.artifacts,
-        ledger=shared.ledger,
-        **_run_ready_sqlite_stores(connection),
-        _connection=connection,
+        artifacts=ctx.shared.artifacts,
+        ledger=ctx.shared.ledger,
+        **_run_ready_sqlite_stores(ctx.connection),
+        _connection=ctx.connection,
     )
 
 

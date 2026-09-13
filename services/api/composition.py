@@ -243,6 +243,21 @@ def _sqlite_store_parts(
     )
 
 
+def _sqlite_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
+    """dev 路径配置/注册面 store（PLAN-040 WP-A / PLAN-041 WP-A；PG canonical
+    仍是研究数据真相；store=None → 诚实 503 的边界保持）。"""
+    return {
+        "agent_store": SqliteAgentStore(connection=connection),
+        "catalog_overrides": SqliteCatalogOverrideStore(connection=connection),
+        "project_settings_store": SqliteProjectSettingsStore(connection=connection),
+        "project_store": SqliteProjectStore(connection=connection),
+        "notification_reads": SqliteNotificationReadStore(connection=connection),
+        "memory": SqliteMemoryStore(connection=connection),
+        "experiment_store": SqliteExperimentStore(connection=connection),
+        "worker_registry": SqliteWorkerRegistry(connection=connection),
+    }
+
+
 def _assemble_sqlite(
     effective: ApiSettings,
     connection: sqlite3.Connection,
@@ -281,16 +296,7 @@ def _assemble_sqlite(
         artifacts=parts.artifacts,
         ledger=ledger_sqlite,
         budget=budget_sqlite,
-        agent_store=SqliteAgentStore(connection=connection),
-        catalog_overrides=SqliteCatalogOverrideStore(connection=connection),
-        project_settings_store=SqliteProjectSettingsStore(connection=connection),
-        project_store=SqliteProjectStore(connection=connection),
-        notification_reads=SqliteNotificationReadStore(connection=connection),
-        # WP-A（PLAN-040）：dev 路径 memory/实验/worker 注册表接 SQLite 同 Port
-        # 实现（PG 仍是 canonical state；store=None → 诚实 503 的边界保持）。
-        memory=SqliteMemoryStore(connection=connection),
-        experiment_store=SqliteExperimentStore(connection=connection),
-        worker_registry=SqliteWorkerRegistry(connection=connection),
+        **_sqlite_config_stores(connection),
         protocol_draft_service=_build_draft_service(connection),
         endpoint_url_policy=_endpoint_url_policy(effective),
         telemetry=telemetry,

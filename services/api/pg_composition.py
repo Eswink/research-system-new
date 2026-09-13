@@ -172,18 +172,30 @@ def _build_pg_orchestration(c: dict[str, Any], config: PgAssemblyConfig) -> RunO
     )
 
 
+def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
+    """配置面 store（WP-B PLAN-040 / WP-A PLAN-041：SQLite 两组成同侧）。"""
+    from adapters.sqlite.agent_store import SqliteAgentStore
+    from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
+    from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
+    from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
+    from adapters.sqlite.project_store import SqliteProjectStore
+
+    return {
+        "agent_store": SqliteAgentStore(connection=connection),
+        "catalog_overrides": SqliteCatalogOverrideStore(connection=connection),
+        "project_settings_store": SqliteProjectSettingsStore(connection=connection),
+        "project_store": SqliteProjectStore(connection=connection),
+        "notification_reads": SqliteNotificationReadStore(connection=connection),
+    }
+
+
 def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
     """PG assembly -> ApiDeps（composition root 装配点唯一）。"""
     from adapters.fakes.artifact_store import FakeArtifactStore
     from adapters.relay.gateway import OpenAIChatGateway
     from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
-    from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.approval_store import SqliteApprovalStore
-    from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
     from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
-    from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
-    from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
-    from adapters.sqlite.project_store import SqliteProjectStore
     from adapters.sqlite.run_store import SqliteRunStore
 
     deps = ApiDeps(
@@ -208,12 +220,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         experiment_store=assembly.experiment_store,
         ledger=assembly.ledger,
         budget=assembly.budget,
-        agent_store=SqliteAgentStore(connection=assembly.connection),
-        # WP-B（PLAN-040）：配置面（含自定义 Role/Template 覆盖）SQLite 同侧。
-        catalog_overrides=SqliteCatalogOverrideStore(connection=assembly.connection),
-        project_settings_store=SqliteProjectSettingsStore(connection=assembly.connection),
-        project_store=SqliteProjectStore(connection=assembly.connection),
-        notification_reads=SqliteNotificationReadStore(connection=assembly.connection),
+        **_pg_config_stores(assembly.connection),
         endpoint_url_policy=_endpoint_url_policy(assembly.effective),
         memory=assembly.memory_store,
         preflight_override=assembly.preflight_override,
