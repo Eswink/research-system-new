@@ -17,6 +17,7 @@
 | [MEM-20260908-017](entries/MEM-20260908-017-litellm-dotenv-gating.md) | ACTIVE | repository | 0.95 | 2026-12-08 | PLAN-20260908-033 |
 | [MEM-20260910-018](entries/MEM-20260910-018-quality-gate-mechanics.md) | ACTIVE | repository | 0.90 | 2026-12-10 | PLAN-20260909-035 |
 | [MEM-20260912-019](entries/MEM-20260912-019-sqlite-composition-surfacing-facts.md) | ACTIVE | repository | 0.90 | 2026-12-12 | PLAN-20260912-040 |
+| [MEM-20260913-020](entries/MEM-20260913-020-goal-cycle-gate-mechanics.md) | ACTIVE | repository | 0.90 | 2026-12-13 | PLAN-20260912-041 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

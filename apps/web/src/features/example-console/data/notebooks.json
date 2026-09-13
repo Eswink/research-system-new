@@ -1,0 +1,60 @@
+[
+  {
+    "id": "nb_01",
+    "title": "Field notes — es-dose findings",
+    "author": "l.tanaka@research.io",
+    "updated_at": "2026-08-27T14:30:00Z",
+    "word_count": 1240,
+    "linked_claims": [
+      "clm_h1_es_dose"
+    ],
+    "linked_runs": [
+      "run_01K5FZ8G3X2QN4M"
+    ],
+    "excerpt": "Observed a 12.3% hallucination rate on Spanish dosage QA. The pattern strongly favors generic-name substitution — I need to check whether …"
+  },
+  {
+    "id": "nb_02",
+    "title": "Why CoT hurt us — post-mortem",
+    "author": "ag_rev_methods",
+    "updated_at": "2026-08-27T09:00:00Z",
+    "word_count": 820,
+    "linked_claims": [
+      "clm_h6_refuted"
+    ],
+    "linked_runs": [],
+    "excerpt": "Chain-of-thought did not eliminate hallucinations. In fact, the model's confidence went UP while accuracy stayed flat. Two mechanisms …"
+  },
+  {
+    "id": "nb_03",
+    "title": "Manifest pinning strategy",
+    "author": "y.chen@research.io",
+    "updated_at": "2026-08-26T22:00:00Z",
+    "word_count": 1620,
+    "linked_claims": [],
+    "linked_runs": [],
+    "excerpt": "Gemini silently upgraded to a preview tag. We need a policy for floating vs pinned model refs. Proposal: …"
+  },
+  {
+    "id": "nb_04",
+    "title": "Reviewer disagreements log",
+    "author": "l.tanaka@research.io",
+    "updated_at": "2026-08-27T13:52:00Z",
+    "word_count": 480,
+    "linked_claims": [
+      "clm_h3_opus_stable"
+    ],
+    "linked_runs": [],
+    "excerpt": "Stats reviewer flagged the Arabic subset (n=48) as underpowered for the variance claim. Methods reviewer says …"
+  },
+  {
+    "id": "nb_05",
+    "title": "RAG grounding — architecture sketch",
+    "author": "y.chen@research.io",
+    "updated_at": "2026-08-25T18:00:00Z",
+    "word_count": 2140,
+    "linked_claims": [],
+    "linked_runs": [],
+    "excerpt": "Three retrieval regimes we're comparing: dense (E5-Mistral), sparse (BM25), hybrid (Cohere v3 with re-rank). Key questions …"
+  }
+]

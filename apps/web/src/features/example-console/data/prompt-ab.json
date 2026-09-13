@@ -1,0 +1,21 @@
+{
+  "prompt_id": "pr_01K5FZ8Q3",
+  "a": {
+    "version": "v11",
+    "accuracy": 0.842,
+    "latency_ms": 987,
+    "cost_per_1k": 0.42,
+    "sample_output": "{ hallucinated: true, span: '20mg', reason: 'gold specifies 200mg dosage — 10x off' }"
+  },
+  "b": {
+    "version": "v12-beta",
+    "accuracy": 0.891,
+    "latency_ms": 1204,
+    "cost_per_1k": 0.51,
+    "sample_output": "{ hallucinated: true, span: '20 mg (candidate)', reason: 'gold: 200 mg; candidate is 10× under-dose — clinically dangerous, high-severity hallucination' }"
+  },
+  "n_samples": 480,
+  "winner": "b",
+  "significant": true,
+  "p_value": 0.008
+}

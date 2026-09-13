@@ -65,7 +65,8 @@ escalation_triggers:
   - 破坏性数据迁移或不可逆动作
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260912-041-project-registry-and-switcher.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -92,9 +93,7 @@ RECHECK-20260912-040 = PASS_WITH_WARNINGS；密封扫描 scan-2026-09-12 已处�
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 1 未开始 → 执行 ①（派生
-PLAN-20260912-041）**。工作树实况：main HEAD 含 040 全部收口 commit；041/042
-文件不存在（cycle 1 创建）。
+按 README 的 7 步判定执行；当前续点：**cycle 1 进行中（driver=session-goal，owner=root-agent，PLAN-20260912-041 已派生，处于 ② 执行段）**。
 
 ## 驱动
 
@@ -134,9 +133,12 @@ m0 全量单跑截断（分组复跑）。工作流文件 `.github/workflows/m0-
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| (0) | PLAN-20260912-040（cycle 前完成） | 6d844e3, 2022b02, d5abf18, af5df14, b86c693, 54a6360 | m0 分组全绿；stub 30/30；live 10/10 | 本批未 push（收口时按 SOP ⑤ 补推或并入 cycle 1） | — | EC-01~06 | cycle 1 = PLAN-041（EC-01/EC-02 起步） |
+| (0) | PLAN-20260912-040（cycle 前完成） | 6d844e3, 2022b02, d5abf18, af5df14, b86c693, 54a6360 | m0 分组全绿；stub 30/30；live 10/10 | 未 push（cycle 1 ⑤ 一并推） | — | EC-01~06 | cycle 1 = PLAN-041（EC-01） |
+| 1 | PLAN-20260912-041 | b55df92, 9ba606e, 57feb37 + 收口批 | 全量 pytest exit 0/0 failed；ts 9/9；fw 8/8；stub 30/30；live 11/11；RECHECK-041 PASS_WITH_WARNINGS | run #50/收口 run（见状态历史） | F-2 AC 文案、F-3 docstring、F-1 收口时序 | EC-02~06 | cycle 2 = PLAN-042（EC-02：reports/integrations/lineage 经既有域 HTTP 面） |
 
 ## 状态历史
+
+- 2026-09-13 cycle 1 收口：EC-01 → PASS（本地全绿 + RECHECK-20260912-041 PASS_WITH_WARNINGS）；收口 commit（openapi/docs/PLAN/GOAL/MEM）与代码同 push，CI 终态以收口 run 为准。
 
 - 2026-09-12 创建（ACTIVE）：GOAL 格式定稿（README），PLAN-040 作为前置输入；
   授权含 push-to-main-for-CI；等待「执行 GOAL-001 下一 cycle」指令进入 cycle 1。

@@ -19,6 +19,8 @@ coverage/
 dist/
 build/
 data/
+# Exception: web design fixtures are source code for the example tree (CI build)
+!apps/web/src/features/example-console/data/
 .artifacts/
 # runtime output dirs — root-anchored so nested source dirs named the same
 # (e.g. apps/web/src/features/runs/) stay tracked (PA-1R recheck 032 blocker).

@@ -1,0 +1,93 @@
+[
+  {
+    "id": "aud_01K5FZ8N01",
+    "occurred_at": "2026-08-27T14:42:11Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_lit_lead_01"
+    },
+    "scope": "evidence",
+    "verb": "evidence.proposed",
+    "subject_ref": "ev_006",
+    "digest": "sha256:audit_042"
+  },
+  {
+    "id": "aud_01K5FZ8N02",
+    "occurred_at": "2026-08-27T14:36:11Z",
+    "actor": {
+      "kind": "policy"
+    },
+    "scope": "run",
+    "verb": "approval.requested",
+    "subject_ref": "apr_01K5FZ8K",
+    "digest": "sha256:audit_041"
+  },
+  {
+    "id": "aud_01K5FZ8N03",
+    "occurred_at": "2026-08-27T14:33:50Z",
+    "actor": {
+      "kind": "policy"
+    },
+    "scope": "run",
+    "verb": "gate.opened",
+    "subject_ref": "BUDGET_GATE",
+    "digest": "sha256:audit_040"
+  },
+  {
+    "id": "aud_01K5FZ8N04",
+    "occurred_at": "2026-08-27T14:31:02Z",
+    "actor": {
+      "kind": "user",
+      "id": "l.tanaka@research.io"
+    },
+    "scope": "claim",
+    "verb": "claim.promoted",
+    "subject_ref": "clm_h1_es_dose",
+    "digest": "sha256:audit_039"
+  },
+  {
+    "id": "aud_01K5FZ8N05",
+    "occurred_at": "2026-08-27T14:22:14Z",
+    "actor": {
+      "kind": "system"
+    },
+    "scope": "task",
+    "verb": "task.retry",
+    "subject_ref": "task_exp_zh_generic",
+    "digest": "sha256:audit_038"
+  },
+  {
+    "id": "aud_01K5FZ8N06",
+    "occurred_at": "2026-08-27T14:15:00Z",
+    "actor": {
+      "kind": "system"
+    },
+    "scope": "budget",
+    "verb": "budget.reserved",
+    "subject_ref": "res_compute",
+    "digest": "sha256:audit_037"
+  },
+  {
+    "id": "aud_01K5FZ8N07",
+    "occurred_at": "2026-08-27T14:03:22Z",
+    "actor": {
+      "kind": "user",
+      "id": "l.tanaka@research.io"
+    },
+    "scope": "run",
+    "verb": "run.started",
+    "subject_ref": "run_01K5FZ8G3X2QN4M",
+    "digest": "sha256:audit_036"
+  },
+  {
+    "id": "aud_01K5FZ8N08",
+    "occurred_at": "2026-08-27T14:02:18Z",
+    "actor": {
+      "kind": "system"
+    },
+    "scope": "compile",
+    "verb": "preflight.passed",
+    "subject_ref": "sha256:a9c4e21f0b8d47bf12e6c3a9d1e0f4b8c5a7e2d0f6b1c9a3e7d4b8f2c1a5e9d0",
+    "digest": "sha256:audit_035"
+  }
+]

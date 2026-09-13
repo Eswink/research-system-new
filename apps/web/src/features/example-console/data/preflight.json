@@ -1,0 +1,94 @@
+{
+  "PASS": {
+    "status": "PASS",
+    "estimated_cost_minor": 4820000,
+    "reserved_budget_ref": "budget_res_01K5FZ8G",
+    "findings": [],
+    "unresolved_risks": []
+  },
+  "WARN": {
+    "status": "WARN",
+    "estimated_cost_minor": 4820000,
+    "reserved_budget_ref": "budget_res_01K5FZ8G",
+    "findings": [
+      {
+        "code": "MODEL_FINGERPRINT_MISSING",
+        "severity": "warning",
+        "message": "Claude Sonnet 4 provider does not expose system_fingerprint. Configuration is reproducible but not fully verifiable.",
+        "subject_ref": {
+          "kind": "model",
+          "id": "mdl_claude_sonnet_4"
+        }
+      },
+      {
+        "code": "HETEROGENEITY_ADVISORY",
+        "severity": "warning",
+        "message": "PI Agent and Reviewer (Methods) share model claude-opus-4-1-20250805. Consider assigning different models to preserve heterogeneous review.",
+        "subject_ref": {
+          "kind": "agent",
+          "id": "ag_ethics_01"
+        }
+      },
+      {
+        "code": "COST_ESTIMATE_PARTIAL",
+        "severity": "info",
+        "message": "3 usage entries have unknown cost (endpoint does not report tokens for embedding calls). Actual cost may exceed estimate.",
+        "subject_ref": {
+          "kind": "endpoint",
+          "id": "ep_internal_relay"
+        }
+      }
+    ],
+    "unresolved_risks": [
+      "3 unknown-cost entries in projection"
+    ]
+  },
+  "FAIL": {
+    "status": "FAIL",
+    "estimated_cost_minor": null,
+    "reserved_budget_ref": null,
+    "findings": [
+      {
+        "code": "ENDPOINT_UNHEALTHY",
+        "severity": "error",
+        "message": "Endpoint ep_google_vertex failed last health check (2026-08-27T09:12:03Z). Cannot bind agents until connectivity is restored.",
+        "subject_ref": {
+          "kind": "endpoint",
+          "id": "ep_google_vertex"
+        }
+      },
+      {
+        "code": "MODEL_CAPABILITY_MISSING",
+        "severity": "error",
+        "message": "Agent ag_exp_eng_02 requires 'tool_calls' but bound model gemini-2.5-pro returned degraded state on last probe.",
+        "subject_ref": {
+          "kind": "agent",
+          "id": "ag_exp_eng_02"
+        }
+      },
+      {
+        "code": "BUDGET_UNRESOLVED",
+        "severity": "error",
+        "message": "Budget projection cannot be computed: 12 entries in usage plan report cost_status=UNKNOWN (embedding + rerank calls via internal relay).",
+        "subject_ref": {
+          "kind": "budget",
+          "id": "budget_res_01K5FZ8G"
+        }
+      },
+      {
+        "code": "HETEROGENEITY_VIOLATION",
+        "severity": "warning",
+        "message": "Ethics Auditor and PI share claude-opus-4-1-20250805, violating team template rigor policy.",
+        "subject_ref": {
+          "kind": "agent",
+          "id": "ag_ethics_01"
+        }
+      }
+    ],
+    "unresolved_risks": [
+      "endpoint offline",
+      "budget unresolvable",
+      "capability mismatch"
+    ]
+  }
+}

@@ -1,0 +1,129 @@
+[
+  {
+    "id": "ag_pi_01",
+    "role_id": "role_pi",
+    "name": "PI · Nakamura",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_claude_opus_41"
+    },
+    "temperature": 0.2
+  },
+  {
+    "id": "ag_lit_lead_01",
+    "role_id": "role_lit_lead",
+    "name": "Lit-Lead · A",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_claude_sonnet_4"
+    },
+    "temperature": 0.3
+  },
+  {
+    "id": "ag_lit_scout_01",
+    "role_id": "role_lit_scout",
+    "name": "Lit-Scout · α",
+    "model_binding": {
+      "kind": "MODEL_PROFILE",
+      "profile": "fast_retrieval"
+    },
+    "resolved_model_id": "mdl_gpt4o_1120",
+    "temperature": 0.4
+  },
+  {
+    "id": "ag_lit_scout_02",
+    "role_id": "role_lit_scout",
+    "name": "Lit-Scout · β",
+    "model_binding": {
+      "kind": "MODEL_PROFILE",
+      "profile": "fast_retrieval"
+    },
+    "resolved_model_id": "mdl_gpt4o_1120",
+    "temperature": 0.4
+  },
+  {
+    "id": "ag_lit_scout_03",
+    "role_id": "role_lit_scout",
+    "name": "Lit-Scout · γ",
+    "model_binding": {
+      "kind": "MODEL_PROFILE",
+      "profile": "fast_retrieval"
+    },
+    "resolved_model_id": "mdl_qwen3_235b",
+    "temperature": 0.4
+  },
+  {
+    "id": "ag_data_eng_01",
+    "role_id": "role_data_eng",
+    "name": "Data-Eng · 01",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_claude_sonnet_4"
+    },
+    "temperature": 0.1
+  },
+  {
+    "id": "ag_data_eng_02",
+    "role_id": "role_data_eng",
+    "name": "Data-Eng · 02",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_gpt4o_1120"
+    },
+    "temperature": 0.1
+  },
+  {
+    "id": "ag_exp_eng_01",
+    "role_id": "role_exp_eng",
+    "name": "Exp-Eng · 01",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_gpt4o_1120"
+    },
+    "temperature": 0.2
+  },
+  {
+    "id": "ag_exp_eng_02",
+    "role_id": "role_exp_eng",
+    "name": "Exp-Eng · 02",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_gemini_25_pro"
+    },
+    "temperature": 0.2
+  },
+  {
+    "id": "ag_rev_methods",
+    "role_id": "role_reviewer_a",
+    "name": "Reviewer · Methods",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_claude_opus_41"
+    },
+    "temperature": 0.1
+  },
+  {
+    "id": "ag_rev_stats",
+    "role_id": "role_reviewer_b",
+    "name": "Reviewer · Stats",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_gemini_25_pro"
+    },
+    "temperature": 0.1
+  },
+  {
+    "id": "ag_ethics_01",
+    "role_id": "role_ethics",
+    "name": "Ethics Auditor",
+    "model_binding": {
+      "kind": "EXPLICIT_MODEL",
+      "model_id": "mdl_claude_opus_41"
+    },
+    "temperature": 0.1,
+    "heterogeneity_conflict": [
+      "ag_pi_01",
+      "ag_rev_methods"
+    ]
+  }
+]

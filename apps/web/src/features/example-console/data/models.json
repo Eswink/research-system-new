@@ -1,0 +1,235 @@
+[
+  {
+    "id": "mdl_gpt4o_1120",
+    "display_name": "GPT-4o (2024-11-20)",
+    "model_id": "gpt-4o-2024-11-20",
+    "endpoint_id": "ep_openai_direct",
+    "enabled": true,
+    "returned_model_name": "gpt-4o-2024-11-20",
+    "system_fingerprint": "fp_b8c5d0e6a4",
+    "provider_fingerprint_available": true,
+    "context_window": 128000,
+    "max_output": 16384,
+    "capabilities": [
+      {
+        "name": "chat",
+        "status": "ok",
+        "confidence": 0.99,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "json_mode",
+        "status": "ok",
+        "confidence": 0.98,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "tool_calls",
+        "status": "ok",
+        "confidence": 0.97,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "vision",
+        "status": "ok",
+        "confidence": 0.95,
+        "source": "probe",
+        "probe_version": "v3.1"
+      }
+    ],
+    "last_probe": "2026-08-27T13:58:41Z",
+    "cost_per_1k_input_minor": 250,
+    "cost_per_1k_output_minor": 1000
+  },
+  {
+    "id": "mdl_claude_sonnet_4",
+    "display_name": "Claude Sonnet 4",
+    "model_id": "claude-sonnet-4-20250514",
+    "endpoint_id": "ep_anthropic_direct",
+    "enabled": true,
+    "returned_model_name": "claude-sonnet-4-20250514",
+    "system_fingerprint": null,
+    "provider_fingerprint_available": false,
+    "context_window": 200000,
+    "max_output": 64000,
+    "capabilities": [
+      {
+        "name": "chat",
+        "status": "ok",
+        "confidence": 0.99,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "tool_calls",
+        "status": "ok",
+        "confidence": 0.97,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "json_mode",
+        "status": "degraded",
+        "confidence": 0.62,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "vision",
+        "status": "ok",
+        "confidence": 0.94,
+        "source": "probe",
+        "probe_version": "v3.1"
+      }
+    ],
+    "last_probe": "2026-08-27T13:58:52Z",
+    "cost_per_1k_input_minor": 300,
+    "cost_per_1k_output_minor": 1500
+  },
+  {
+    "id": "mdl_claude_opus_41",
+    "display_name": "Claude Opus 4.1",
+    "model_id": "claude-opus-4-1-20250805",
+    "endpoint_id": "ep_anthropic_direct",
+    "enabled": true,
+    "returned_model_name": "claude-opus-4-1-20250805",
+    "system_fingerprint": null,
+    "provider_fingerprint_available": false,
+    "context_window": 200000,
+    "max_output": 32000,
+    "capabilities": [
+      {
+        "name": "chat",
+        "status": "ok",
+        "confidence": 0.99,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "tool_calls",
+        "status": "ok",
+        "confidence": 0.98,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "extended_thinking",
+        "status": "ok",
+        "confidence": 0.9,
+        "source": "manual",
+        "probe_version": null
+      }
+    ],
+    "last_probe": "2026-08-27T13:59:11Z",
+    "cost_per_1k_input_minor": 1500,
+    "cost_per_1k_output_minor": 7500
+  },
+  {
+    "id": "mdl_gemini_25_pro",
+    "display_name": "Gemini 2.5 Pro",
+    "model_id": "gemini-2.5-pro",
+    "endpoint_id": "ep_google_vertex",
+    "enabled": true,
+    "returned_model_name": "gemini-2.5-pro-preview-05-06",
+    "system_fingerprint": "fp_gvx_1e0f4b",
+    "provider_fingerprint_available": true,
+    "context_window": 1000000,
+    "max_output": 65536,
+    "capabilities": [
+      {
+        "name": "chat",
+        "status": "ok",
+        "confidence": 0.98,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "tool_calls",
+        "status": "ok",
+        "confidence": 0.94,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "long_context",
+        "status": "ok",
+        "confidence": 0.99,
+        "source": "probe",
+        "probe_version": "v3.1"
+      }
+    ],
+    "last_probe": "2026-08-27T09:12:03Z",
+    "drift_alert": {
+      "requested": "gemini-2.5-pro",
+      "returned": "gemini-2.5-pro-preview-05-06",
+      "first_seen": "2026-08-26T18:44:11Z"
+    },
+    "cost_per_1k_input_minor": 125,
+    "cost_per_1k_output_minor": 500
+  },
+  {
+    "id": "mdl_qwen3_235b",
+    "display_name": "Qwen3-235B-A22B",
+    "model_id": "qwen3-235b-a22b",
+    "endpoint_id": "ep_internal_relay",
+    "enabled": true,
+    "returned_model_name": "qwen3-235b-a22b",
+    "system_fingerprint": "fp_relay_2c1a5e",
+    "provider_fingerprint_available": true,
+    "context_window": 131072,
+    "max_output": 8192,
+    "capabilities": [
+      {
+        "name": "chat",
+        "status": "ok",
+        "confidence": 0.98,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "tool_calls",
+        "status": "ok",
+        "confidence": 0.91,
+        "source": "probe",
+        "probe_version": "v3.1"
+      },
+      {
+        "name": "multilingual",
+        "status": "ok",
+        "confidence": 0.96,
+        "source": "probe",
+        "probe_version": "v3.1"
+      }
+    ],
+    "last_probe": "2026-08-27T14:01:11Z",
+    "cost_per_1k_input_minor": 60,
+    "cost_per_1k_output_minor": 240
+  },
+  {
+    "id": "mdl_ds_r1",
+    "display_name": "DeepSeek-R1",
+    "model_id": "deepseek-r1-0528",
+    "endpoint_id": "ep_internal_relay",
+    "enabled": false,
+    "returned_model_name": null,
+    "system_fingerprint": null,
+    "provider_fingerprint_available": null,
+    "context_window": 128000,
+    "max_output": 32768,
+    "capabilities": [
+      {
+        "name": "chat",
+        "status": "unknown",
+        "confidence": null,
+        "source": "manual",
+        "probe_version": null
+      }
+    ],
+    "last_probe": null,
+    "cost_per_1k_input_minor": 55,
+    "cost_per_1k_output_minor": 220
+  }
+]

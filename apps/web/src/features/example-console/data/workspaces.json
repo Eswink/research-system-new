@@ -1,0 +1,26 @@
+[
+  {
+    "id": "ws_research_io",
+    "name": "Research.io Lab",
+    "role": "admin",
+    "members": 24,
+    "plan": "Enterprise",
+    "current": true
+  },
+  {
+    "id": "ws_med_school",
+    "name": "Tokyo Med School",
+    "role": "collaborator",
+    "members": 8,
+    "plan": "Team",
+    "current": false
+  },
+  {
+    "id": "ws_personal",
+    "name": "Personal Sandbox",
+    "role": "owner",
+    "members": 1,
+    "plan": "Free",
+    "current": false
+  }
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "alrt_i_01",
+    "rule_id": "alrt_r_01",
+    "fired_at": "2026-08-27T14:33:50Z",
+    "severity": "high",
+    "subject": "budget · med-qa-hallucination reached 62% of cap · projected breach in 29 min",
+    "state": "firing",
+    "ack_by": null
+  },
+  {
+    "id": "alrt_i_02",
+    "rule_id": "alrt_r_04",
+    "fired_at": "2026-08-27T13:52:44Z",
+    "severity": "medium",
+    "subject": "claim clm_h3_opus_stable disputed by stats reviewer",
+    "state": "acknowledged",
+    "ack_by": "l.tanaka@research.io"
+  },
+  {
+    "id": "alrt_i_03",
+    "rule_id": "alrt_r_05",
+    "fired_at": "2026-08-27T14:36:08Z",
+    "severity": "medium",
+    "subject": "task_exp_ar_dose failed on attempt 2 · TOOL_TIMEOUT",
+    "state": "firing",
+    "ack_by": null
+  },
+  {
+    "id": "alrt_i_04",
+    "rule_id": "alrt_r_03",
+    "fired_at": "2026-08-26T18:44:11Z",
+    "severity": "medium",
+    "subject": "gemini-2.5-pro returned preview tag · manifest not pinned",
+    "state": "resolved",
+    "ack_by": "y.chen@research.io"
+  },
+  {
+    "id": "alrt_i_05",
+    "rule_id": "alrt_r_02",
+    "fired_at": "2026-08-27T09:12:03Z",
+    "severity": "high",
+    "subject": "ep_google_vertex health check failed",
+    "state": "resolved",
+    "ack_by": "m.rios@research.io"
+  }
+]

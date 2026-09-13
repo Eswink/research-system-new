@@ -1,0 +1,121 @@
+[
+  {
+    "id": "pr_01K5FZ8Q1",
+    "name": "medqa/dosage-extraction",
+    "latest_version": "v7",
+    "status": "PRODUCTION",
+    "tags": [
+      "medqa",
+      "extraction",
+      "production"
+    ],
+    "usage_7d": 12480,
+    "avg_latency_ms": 892,
+    "updated_at": "2026-08-27T09:14:00Z",
+    "updated_by": "ag_lit_lead_01",
+    "template": "You are a clinical assistant. Extract dosage from the following medical text:\n\n{text}\n\nRespond in JSON: { drug, dose_mg, route, frequency, evidence_span }.",
+    "variables": [
+      "text"
+    ],
+    "versions": 7
+  },
+  {
+    "id": "pr_01K5FZ8Q2",
+    "name": "medqa/language-detect",
+    "latest_version": "v3",
+    "status": "PRODUCTION",
+    "tags": [
+      "medqa",
+      "routing"
+    ],
+    "usage_7d": 24012,
+    "avg_latency_ms": 214,
+    "updated_at": "2026-08-24T18:30:00Z",
+    "updated_by": "ag_data_eng_02",
+    "template": "Detect language of the following medical text (ISO 639-1):\n\n{text}",
+    "variables": [
+      "text"
+    ],
+    "versions": 3
+  },
+  {
+    "id": "pr_01K5FZ8Q3",
+    "name": "medqa/hallucination-detect",
+    "latest_version": "v12-beta",
+    "status": "STAGING",
+    "tags": [
+      "medqa",
+      "eval",
+      "adversarial"
+    ],
+    "usage_7d": 3120,
+    "avg_latency_ms": 1204,
+    "updated_at": "2026-08-27T13:22:00Z",
+    "updated_by": "ag_rev_methods",
+    "template": "Compare candidate answer to gold and flag hallucination:\n\nQUESTION: {q}\nGOLD: {gold}\nCANDIDATE: {candidate}\n\nReturn: { hallucinated: bool, span, reason }.",
+    "variables": [
+      "q",
+      "gold",
+      "candidate"
+    ],
+    "versions": 12
+  },
+  {
+    "id": "pr_01K5FZ8Q4",
+    "name": "review/methods-critique",
+    "latest_version": "v2",
+    "status": "STAGING",
+    "tags": [
+      "review",
+      "methods"
+    ],
+    "usage_7d": 812,
+    "avg_latency_ms": 3020,
+    "updated_at": "2026-08-26T22:00:00Z",
+    "updated_by": "ag_rev_methods",
+    "template": "You are a rigorous methods reviewer. Read this experiment report and identify methodological weaknesses:\n\n{report}",
+    "variables": [
+      "report"
+    ],
+    "versions": 2
+  },
+  {
+    "id": "pr_01K5FZ8Q5",
+    "name": "rag/grounding-check",
+    "latest_version": "v4",
+    "status": "PRODUCTION",
+    "tags": [
+      "rag",
+      "grounding"
+    ],
+    "usage_7d": 44821,
+    "avg_latency_ms": 622,
+    "updated_at": "2026-08-25T11:04:00Z",
+    "updated_by": "y.chen@research.io",
+    "template": "Given retrieved passages and an answer, decide whether every claim in the answer is grounded:\n\nPASSAGES:\n{passages}\n\nANSWER: {answer}",
+    "variables": [
+      "passages",
+      "answer"
+    ],
+    "versions": 4
+  },
+  {
+    "id": "pr_01K5FZ8Q6",
+    "name": "sandbox/refusal-probe",
+    "latest_version": "v1",
+    "status": "DRAFT",
+    "tags": [
+      "safety",
+      "sandbox"
+    ],
+    "usage_7d": 0,
+    "avg_latency_ms": null,
+    "updated_at": "2026-08-27T10:12:00Z",
+    "updated_by": "k.osei@research.io",
+    "template": "Probe: {payload}",
+    "variables": [
+      "payload"
+    ],
+    "versions": 1
+  }
+]

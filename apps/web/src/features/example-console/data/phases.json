@@ -1,0 +1,195 @@
+[
+  {
+    "id": "ph_bootstrap",
+    "name": "Bootstrap",
+    "start": 0,
+    "end": 6,
+    "tasks": [
+      {
+        "id": "task_bootstrap",
+        "name": "Initialize manifest & agents",
+        "agent_id": "ag_pi_01",
+        "status": "SUCCEEDED",
+        "start": 0,
+        "end": 3,
+        "attempt": 1
+      },
+      {
+        "id": "task_endpoint_verify",
+        "name": "Verify endpoints",
+        "agent_id": "ag_data_eng_01",
+        "status": "SUCCEEDED",
+        "start": 3,
+        "end": 6,
+        "attempt": 1
+      }
+    ]
+  },
+  {
+    "id": "ph_literature",
+    "name": "Literature Review",
+    "start": 6,
+    "end": 34,
+    "tasks": [
+      {
+        "id": "task_lit_search_en",
+        "name": "Search: English",
+        "agent_id": "ag_lit_scout_01",
+        "status": "SUCCEEDED",
+        "start": 6,
+        "end": 14,
+        "attempt": 1
+      },
+      {
+        "id": "task_lit_search_es",
+        "name": "Search: Spanish",
+        "agent_id": "ag_lit_scout_01",
+        "status": "SUCCEEDED",
+        "start": 8,
+        "end": 18,
+        "attempt": 1
+      },
+      {
+        "id": "task_lit_search_zh",
+        "name": "Search: Chinese",
+        "agent_id": "ag_lit_scout_02",
+        "status": "SUCCEEDED",
+        "start": 10,
+        "end": 20,
+        "attempt": 1
+      },
+      {
+        "id": "task_lit_search_ar",
+        "name": "Search: Arabic",
+        "agent_id": "ag_lit_scout_03",
+        "status": "SUCCEEDED",
+        "start": 12,
+        "end": 24,
+        "attempt": 2
+      },
+      {
+        "id": "task_lit_synthesize",
+        "name": "Synthesize corpus",
+        "agent_id": "ag_lit_lead_01",
+        "status": "SUCCEEDED",
+        "start": 24,
+        "end": 34,
+        "attempt": 1
+      }
+    ]
+  },
+  {
+    "id": "ph_experiment",
+    "name": "Experiments",
+    "start": 34,
+    "end": 72,
+    "tasks": [
+      {
+        "id": "task_exp_en_dose",
+        "name": "Dosage QA · English",
+        "agent_id": "ag_exp_eng_01",
+        "status": "SUCCEEDED",
+        "start": 34,
+        "end": 44,
+        "attempt": 1
+      },
+      {
+        "id": "task_exp_es_dose",
+        "name": "Dosage QA · Spanish",
+        "agent_id": "ag_exp_eng_01",
+        "status": "SUCCEEDED",
+        "start": 36,
+        "end": 48,
+        "attempt": 1
+      },
+      {
+        "id": "task_exp_zh_generic",
+        "name": "Generic-name QA · Chinese",
+        "agent_id": "ag_exp_eng_02",
+        "status": "SUCCEEDED",
+        "start": 38,
+        "end": 52,
+        "attempt": 2
+      },
+      {
+        "id": "task_exp_ar_dose",
+        "name": "Dosage QA · Arabic",
+        "agent_id": "ag_exp_eng_02",
+        "status": "FAILED",
+        "start": 52,
+        "end": 58,
+        "attempt": 2
+      },
+      {
+        "id": "task_exp_pt_dose",
+        "name": "Dosage QA · Portuguese",
+        "agent_id": "ag_exp_eng_01",
+        "status": "RUNNING",
+        "start": 58,
+        "end": 68,
+        "attempt": 1
+      },
+      {
+        "id": "task_exp_fr_dose",
+        "name": "Dosage QA · French",
+        "agent_id": "ag_exp_eng_02",
+        "status": "RUNNING",
+        "start": 62,
+        "end": 72,
+        "attempt": 1
+      }
+    ]
+  },
+  {
+    "id": "ph_review",
+    "name": "Review & Verify",
+    "start": 72,
+    "end": 88,
+    "tasks": [
+      {
+        "id": "task_review_es",
+        "name": "Review: ES results",
+        "agent_id": "ag_rev_methods",
+        "status": "SUCCEEDED",
+        "start": 72,
+        "end": 78,
+        "attempt": 1
+      },
+      {
+        "id": "task_review_stats",
+        "name": "Statistical review",
+        "agent_id": "ag_rev_stats",
+        "status": "RUNNING",
+        "start": 78,
+        "end": 88,
+        "attempt": 1
+      },
+      {
+        "id": "task_ethics_audit",
+        "name": "Bias & ethics audit",
+        "agent_id": "ag_ethics_01",
+        "status": "PENDING",
+        "start": 82,
+        "end": 88,
+        "attempt": 0
+      }
+    ]
+  },
+  {
+    "id": "ph_deliver",
+    "name": "Deliverable",
+    "start": 88,
+    "end": 100,
+    "tasks": [
+      {
+        "id": "task_writeup",
+        "name": "Preprint draft",
+        "agent_id": "ag_pi_01",
+        "status": "PENDING",
+        "start": 88,
+        "end": 100,
+        "attempt": 0
+      }
+    ]
+  }
+]

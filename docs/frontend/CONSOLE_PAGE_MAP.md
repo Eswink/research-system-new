@@ -63,9 +63,13 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 
 ### `#/portfolio/projects` — 项目集
 - 设计：`screens/Projects.jsx`（列表/看板/卡片三视图 + 详情）。
-- API：仅 `GET/PUT /projects/{id}/settings` 确认当前单项目上下文。
-- 等级：PARTIAL→GAP 混合。项目名称/生命周期等缺失字段显示未提供。
-- 缺口（登记）：无 `GET/POST/DELETE /projects`；创建/归档/删除/多工作区切换禁用。
+- API：`GET /projects`（真实注册表）、`POST /projects`（创建即带默认设置）、
+  `PATCH /projects/{id}`（重命名/归档）；`GET/PUT /projects/{id}/settings`
+  按项目精确（WP-B）。侧边栏项目切换器（WorkspaceIdentity live）驱动
+  `activeProject` 上下文，runs/drafts/settings 路径即时生效。
+- 等级：PARTIAL（真实注册表与归属；看板/日历视图与逐资源全量隔离未交付）。
+- 缺口（登记，G2）：不提供项目删除（归档即终态）；agents/memory/experiments
+  数据面暂单项目共享；成员/RBAC/租户隔离属 M18 deferred。
 
 ### `#/portfolio/experiments` — 实验
 - 设计：`screens/Experiments.jsx`（队列/矩阵/日历视图）。
@@ -278,7 +282,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | # | 缺口 | 影响页面 | 处置 |
 | --- | --- | --- | --- |
 | G1 | ~~草稿修订预检/启动接口~~ | plan/protocol | **已交付**（WP-B：双来源编译链，等级 FULL） |
-| G2 | 多项目管理 | portfolio/projects | 单项目上下文，管理动作锁定（M18 deferred） |
+| G2 | 多项目管理 | portfolio/projects | **注册表已交付**（WP-A：GET/POST/PATCH /projects + 活动项目上下文 + runs/settings/drafts 真实归属）；项目删除不提供（归档终态），成员/RBAC 属 M18 deferred |
 | G3 | ~~通知持久化~~ | notifications、TopBar 铃铛 | **已交付**（WP-G：事件投影+已读；无推送通道） |
 | G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
 | G5 | 预算调整契约 | govern/budget | 禁用（501 语义） |

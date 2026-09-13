@@ -32,6 +32,19 @@ GET    /models/{id}/compatibility        （hard_capability_requirements 为
 
 不返回明文 Key。
 
+## Projects（注册表，PLAN-20260912-041 WP-A）
+
+```text
+GET    /projects                                 （默认 example-project 恒在首位；用户项目按 store 合并）
+POST   /projects                                 （name 必填；id 服务端生成；自动落默认设置行）
+PATCH  /projects/{id}                            （rename 和/或 status: ACTIVE|ARCHIVED；无 DELETE，归档即终态）
+```
+
+- 单用户项目注册表；不表达租户/授权（M18 deferred）。数据面归属真实生效：
+  runs 列表按项目过滤、`GET /projects/{id}/settings` 按项目精确（仅默认项目
+  允许 examples 回退）、协议草稿按路径项目创建/列表；agents/memory/experiments
+  数据面暂为单项目共享（G2 标注，不伪装隔离）。未注册项目访问项目面 → 404。
+
 ## Roles / Teams / Agents
 
 ```text

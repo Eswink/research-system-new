@@ -1,0 +1,69 @@
+[
+  {
+    "id": "sch_01",
+    "name": "Nightly · cross-lingual drift canary",
+    "cron": "0 3 * * *",
+    "tz": "Asia/Tokyo",
+    "target": "experiment",
+    "target_ref": "exp_q_01K5FZ8P5M6N",
+    "enabled": true,
+    "last_run": "2026-08-27T03:00:00Z",
+    "next_run": "2026-08-28T03:00:00Z",
+    "success_streak": 12,
+    "depends_on": []
+  },
+  {
+    "id": "sch_02",
+    "name": "Hourly · endpoint health probe",
+    "cron": "0 * * * *",
+    "tz": "Asia/Tokyo",
+    "target": "probe",
+    "target_ref": "probe_v3.1",
+    "enabled": true,
+    "last_run": "2026-08-27T14:00:00Z",
+    "next_run": "2026-08-27T15:00:00Z",
+    "success_streak": 320,
+    "depends_on": []
+  },
+  {
+    "id": "sch_03",
+    "name": "Weekly · report auto-compile",
+    "cron": "0 9 * * 1",
+    "tz": "Asia/Tokyo",
+    "target": "report",
+    "target_ref": "rep_01K5FZ8R1",
+    "enabled": true,
+    "last_run": "2026-08-26T00:00:00Z",
+    "next_run": "2026-09-02T00:00:00Z",
+    "success_streak": 4,
+    "depends_on": [
+      "sch_04"
+    ]
+  },
+  {
+    "id": "sch_04",
+    "name": "Weekly · claims graph rebuild",
+    "cron": "0 8 * * 1",
+    "tz": "Asia/Tokyo",
+    "target": "graph",
+    "target_ref": "claims-graph",
+    "enabled": true,
+    "last_run": "2026-08-26T00:00:00Z",
+    "next_run": "2026-09-02T00:00:00Z",
+    "success_streak": 4,
+    "depends_on": []
+  },
+  {
+    "id": "sch_05",
+    "name": "Ad-hoc · vendor drift sweep",
+    "cron": "@manual",
+    "tz": "Asia/Tokyo",
+    "target": "experiment",
+    "target_ref": "exp_q_vendor_sweep",
+    "enabled": false,
+    "last_run": "2026-08-26T18:44:11Z",
+    "next_run": null,
+    "success_streak": 0,
+    "depends_on": []
+  }
+]

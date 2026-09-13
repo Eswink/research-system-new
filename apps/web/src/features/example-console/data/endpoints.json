@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ep_openai_direct",
+    "name": "OpenAI Direct",
+    "base_url": "https://api.openai.com/v1",
+    "protocol": "OPENAI_COMPATIBLE",
+    "api_style": "chat_completions",
+    "enabled": true,
+    "credential": "configured",
+    "health": "ok",
+    "latency_ms": 214,
+    "concurrency_limit": 24,
+    "models_count": 5,
+    "last_test": "2026-08-27T13:58:41Z"
+  },
+  {
+    "id": "ep_anthropic_direct",
+    "name": "Anthropic Direct",
+    "base_url": "https://api.anthropic.com",
+    "protocol": "OPENAI_COMPATIBLE",
+    "api_style": "chat_completions",
+    "enabled": true,
+    "credential": "configured",
+    "health": "ok",
+    "latency_ms": 302,
+    "concurrency_limit": 16,
+    "models_count": 4,
+    "last_test": "2026-08-27T13:58:52Z"
+  },
+  {
+    "id": "ep_google_vertex",
+    "name": "Google Vertex AI",
+    "base_url": "https://us-central1-aiplatform.googleapis.com",
+    "protocol": "OPENAI_COMPATIBLE",
+    "api_style": "chat_completions",
+    "enabled": true,
+    "credential": "configured",
+    "health": "unknown",
+    "latency_ms": null,
+    "concurrency_limit": 12,
+    "models_count": 3,
+    "last_test": "2026-08-27T09:12:03Z"
+  },
+  {
+    "id": "ep_internal_relay",
+    "name": "Internal Relay (Lab)",
+    "base_url": "https://relay.lab.internal.tokyo/v1",
+    "protocol": "OPENAI_COMPATIBLE",
+    "api_style": "responses",
+    "enabled": true,
+    "credential": "configured",
+    "health": "ok",
+    "latency_ms": 89,
+    "concurrency_limit": 32,
+    "models_count": 6,
+    "last_test": "2026-08-27T14:01:11Z"
+  },
+  {
+    "id": "ep_deprecated_azure",
+    "name": "Azure (2024)",
+    "base_url": "https://med-qa.openai.azure.com",
+    "protocol": "OPENAI_COMPATIBLE",
+    "api_style": "chat_completions",
+    "enabled": false,
+    "credential": "missing",
+    "health": "fail",
+    "latency_ms": null,
+    "concurrency_limit": 8,
+    "models_count": 2,
+    "last_test": "2026-08-26T02:14:00Z"
+  }
+]

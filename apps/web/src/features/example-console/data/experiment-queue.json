@@ -1,0 +1,161 @@
+[
+  {
+    "id": "exp_q_01K5FZ8P1M2N",
+    "label": "es-dose-sweep-01",
+    "project_id": "proj_01K5FZ8G3X2QN4M",
+    "status": "RUNNING",
+    "progress": 0.62,
+    "priority": "high",
+    "eta_min": 14,
+    "variables": {
+      "language": [
+        "es"
+      ],
+      "temperature": [
+        0,
+        0.2,
+        0.4,
+        0.6
+      ],
+      "model": [
+        "gpt-4o",
+        "sonnet-4",
+        "opus-4.1"
+      ],
+      "n_samples": 400
+    },
+    "submitted_at": "2026-08-27T14:15:22Z",
+    "submitted_by": "ag_exp_eng_01"
+  },
+  {
+    "id": "exp_q_01K5FZ8P2M3N",
+    "label": "cross-lingual-variance-v2",
+    "project_id": "proj_01K5FZ8G3X2QN4M",
+    "status": "QUEUED",
+    "progress": 0,
+    "priority": "high",
+    "eta_min": 78,
+    "variables": {
+      "language": [
+        "en",
+        "es",
+        "zh",
+        "ar",
+        "pt",
+        "fr",
+        "de"
+      ],
+      "temperature": [
+        0.2
+      ],
+      "model": [
+        "gpt-4o",
+        "sonnet-4",
+        "opus-4.1",
+        "gemini-2.5"
+      ],
+      "n_samples": 200
+    },
+    "submitted_at": "2026-08-27T14:22:00Z",
+    "submitted_by": "ag_lit_lead_01"
+  },
+  {
+    "id": "exp_q_01K5FZ8P3M4N",
+    "label": "rag-grounding-adversarial",
+    "project_id": "proj_01K5FTC7Y1N83Z",
+    "status": "QUEUED",
+    "progress": 0,
+    "priority": "medium",
+    "eta_min": 122,
+    "variables": {
+      "retriever": [
+        "bm25",
+        "e5-mistral",
+        "cohere-v3"
+      ],
+      "top_k": [
+        3,
+        5,
+        10
+      ],
+      "noise_ratio": [
+        0,
+        0.2,
+        0.5
+      ],
+      "model": [
+        "opus-4.1"
+      ],
+      "n_samples": 300
+    },
+    "submitted_at": "2026-08-27T13:50:00Z",
+    "submitted_by": "y.chen@research.io"
+  },
+  {
+    "id": "exp_q_01K5FZ8P4M5N",
+    "label": "cot-vs-baseline-replication",
+    "project_id": "proj_01K5FZ8G3X2QN4M",
+    "status": "SUCCEEDED",
+    "progress": 1,
+    "priority": "medium",
+    "eta_min": 0,
+    "variables": {
+      "prompt_style": [
+        "cot",
+        "baseline"
+      ],
+      "model": [
+        "gpt-4o",
+        "sonnet-4"
+      ],
+      "n_samples": 480
+    },
+    "submitted_at": "2026-08-27T12:04:11Z",
+    "submitted_by": "ag_exp_eng_01",
+    "duration_s": 1204
+  },
+  {
+    "id": "exp_q_01K5FZ8P5M6N",
+    "label": "vendor-drift-canary",
+    "project_id": "proj_01K5FZ8G3X2QN4M",
+    "status": "FAILED",
+    "progress": 0.18,
+    "priority": "low",
+    "eta_min": 0,
+    "variables": {
+      "model": [
+        "gemini-2.5-pro"
+      ],
+      "n_samples": 100
+    },
+    "submitted_at": "2026-08-26T18:44:11Z",
+    "submitted_by": "ag_data_eng_01",
+    "failure_reason": "provider drift detected · manifest not pinned"
+  },
+  {
+    "id": "exp_q_01K5FZ8P6M7N",
+    "label": "tool-timeout-repro",
+    "project_id": "proj_01K5DXH9L2M4RT",
+    "status": "PAUSED",
+    "progress": 0.44,
+    "priority": "low",
+    "eta_min": null,
+    "variables": {
+      "tool": [
+        "vertex.completion"
+      ],
+      "timeout_s": [
+        30,
+        60,
+        120
+      ],
+      "model": [
+        "gemini-2.5-pro"
+      ],
+      "n_samples": 200
+    },
+    "submitted_at": "2026-08-26T14:22:00Z",
+    "submitted_by": "m.rios@research.io",
+    "paused_reason": "waiting on endpoint restoration"
+  }
+]

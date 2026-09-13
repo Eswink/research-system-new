@@ -1,0 +1,107 @@
+[
+  {
+    "id": "apr_01K5FZ8J",
+    "run_id": "run_01K5FZ8G3X2QN4M",
+    "action": {
+      "verb": "expand_budget",
+      "target": "budget_res_01K5FZ8G",
+      "delta_minor": 200000,
+      "reason": "Arabic subset expansion (n=48 → n=200)"
+    },
+    "risk": "medium",
+    "policy_source": "BUDGET_GATE",
+    "context": {
+      "current_spent_minor": 3120000,
+      "projected_minor": 5040000,
+      "budget_cap_minor": 5000000
+    },
+    "consequence": {
+      "affected_tasks": 4,
+      "produces_manifest_revision": false,
+      "produces_fork": false,
+      "external_side_effects": false
+    },
+    "status": "pending",
+    "version": 1,
+    "created_at": "2026-08-27T14:33:50Z"
+  },
+  {
+    "id": "apr_01K5FZ8K",
+    "run_id": "run_01K5FZ8G3X2QN4M",
+    "action": {
+      "verb": "replace_model",
+      "target": "ag_exp_eng_02",
+      "from": "mdl_gemini_25_pro",
+      "to": "mdl_gpt4o_1120",
+      "reason": "gemini endpoint unhealthy — proposed failover"
+    },
+    "risk": "high",
+    "policy_source": "POLICY_GATE",
+    "context": {
+      "manifest_impact": "Replacing this model will create a Manifest Revision.",
+      "provider_drift": "gemini-2.5-pro → gpt-4o-2024-11-20 (different provider)"
+    },
+    "consequence": {
+      "affected_tasks": 8,
+      "produces_manifest_revision": true,
+      "produces_fork": false,
+      "external_side_effects": false
+    },
+    "status": "pending",
+    "version": 1,
+    "created_at": "2026-08-27T14:36:11Z"
+  },
+  {
+    "id": "apr_01K5FZ8L",
+    "run_id": "run_01K5FZ8G3X2QN4M",
+    "action": {
+      "verb": "publish_deliverable",
+      "target": "draft_preprint_v1",
+      "channel": "arxiv-cs.CL",
+      "reason": "PI requested pre-publication review packet"
+    },
+    "risk": "high",
+    "policy_source": "PUBLISH_GATE",
+    "context": {
+      "open_disputes": 1,
+      "unverified_claims": 2,
+      "external_side_effects": "Uploads a preprint to arxiv.org (external)."
+    },
+    "consequence": {
+      "affected_tasks": 0,
+      "produces_manifest_revision": false,
+      "produces_fork": false,
+      "external_side_effects": true
+    },
+    "status": "pending",
+    "version": 1,
+    "created_at": "2026-08-27T14:42:11Z"
+  },
+  {
+    "id": "apr_01K5FZ8M",
+    "run_id": "run_01K5FZ8G3X2QN4M",
+    "action": {
+      "verb": "human_review_dispute",
+      "target": "clm_h3_opus_stable",
+      "reason": "stats reviewer disputed sample size"
+    },
+    "risk": "low",
+    "policy_source": "HUMAN_GATE",
+    "context": {
+      "disputed_by": "ag_rev_stats",
+      "evidence_ids": [
+        "ev_005",
+        "ev_006"
+      ]
+    },
+    "consequence": {
+      "affected_tasks": 1,
+      "produces_manifest_revision": false,
+      "produces_fork": false,
+      "external_side_effects": false
+    },
+    "status": "pending",
+    "version": 1,
+    "created_at": "2026-08-27T13:53:00Z"
+  }
+]

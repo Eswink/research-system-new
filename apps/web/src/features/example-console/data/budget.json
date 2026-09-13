@@ -1,0 +1,64 @@
+{
+  "total_estimated_cost_minor": 4820000,
+  "actual_cost_minor": 3120000,
+  "unknown_cost_entries": 12,
+  "budget_cap_minor": 5000000,
+  "reservations": [
+    {
+      "id": "res_llm",
+      "label": "LLM tokens",
+      "reserved_minor": 2200000,
+      "used_minor": 1720000
+    },
+    {
+      "id": "res_compute",
+      "label": "GPU compute (A100·hr)",
+      "reserved_minor": 1800000,
+      "used_minor": 980000
+    },
+    {
+      "id": "res_tools",
+      "label": "External tools (PubMed, S2)",
+      "reserved_minor": 320000,
+      "used_minor": 180000
+    },
+    {
+      "id": "res_embedding",
+      "label": "Embeddings (internal)",
+      "reserved_minor": 500000,
+      "used_minor": 240000
+    }
+  ],
+  "entries_by_model": [
+    {
+      "model_id": "mdl_gpt4o_1120",
+      "label": "GPT-4o",
+      "cost_minor": 892000,
+      "tokens": 3480000
+    },
+    {
+      "model_id": "mdl_claude_sonnet_4",
+      "label": "Sonnet 4",
+      "cost_minor": 621000,
+      "tokens": 2140000
+    },
+    {
+      "model_id": "mdl_claude_opus_41",
+      "label": "Opus 4.1",
+      "cost_minor": 1104000,
+      "tokens": 640000
+    },
+    {
+      "model_id": "mdl_gemini_25_pro",
+      "label": "Gemini 2.5 Pro",
+      "cost_minor": 273000,
+      "tokens": 4200000
+    },
+    {
+      "model_id": "mdl_qwen3_235b",
+      "label": "Qwen3-235B",
+      "cost_minor": 230000,
+      "tokens": 8900000
+    }
+  ]
+}

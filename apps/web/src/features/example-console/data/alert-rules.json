@@ -1,0 +1,89 @@
+[
+  {
+    "id": "alrt_r_01",
+    "name": "Budget breach ≥ 90%",
+    "severity": "high",
+    "scope": "budget",
+    "condition": "actual_cost / budget_cap >= 0.9",
+    "channels": [
+      "slack:#research-ops",
+      "email:pi@research.io"
+    ],
+    "suppress_min": 30,
+    "enabled": true,
+    "last_fired": "2026-08-27T14:33:50Z",
+    "fire_count_7d": 3
+  },
+  {
+    "id": "alrt_r_02",
+    "name": "Endpoint unhealthy",
+    "severity": "high",
+    "scope": "endpoint",
+    "condition": "health != 'ok' for >= 60s",
+    "channels": [
+      "slack:#platform",
+      "pagerduty:oncall-a"
+    ],
+    "suppress_min": 15,
+    "enabled": true,
+    "last_fired": "2026-08-27T09:12:03Z",
+    "fire_count_7d": 2
+  },
+  {
+    "id": "alrt_r_03",
+    "name": "Provider drift detected",
+    "severity": "medium",
+    "scope": "model",
+    "condition": "returned_model_name != requested",
+    "channels": [
+      "slack:#research-ops"
+    ],
+    "suppress_min": 120,
+    "enabled": true,
+    "last_fired": "2026-08-26T18:44:11Z",
+    "fire_count_7d": 1
+  },
+  {
+    "id": "alrt_r_04",
+    "name": "Claim disputed",
+    "severity": "medium",
+    "scope": "claim",
+    "condition": "status changes to DISPUTED",
+    "channels": [
+      "slack:#research-ops",
+      "webhook:audit-bus"
+    ],
+    "suppress_min": 5,
+    "enabled": true,
+    "last_fired": "2026-08-27T13:52:44Z",
+    "fire_count_7d": 4
+  },
+  {
+    "id": "alrt_r_05",
+    "name": "Task failed after retries",
+    "severity": "medium",
+    "scope": "run",
+    "condition": "task.attempt >= 3 && status == FAILED",
+    "channels": [
+      "slack:#research-ops"
+    ],
+    "suppress_min": 10,
+    "enabled": true,
+    "last_fired": "2026-08-27T14:36:08Z",
+    "fire_count_7d": 6
+  },
+  {
+    "id": "alrt_r_06",
+    "name": "Unknown-cost entries > 20",
+    "severity": "low",
+    "scope": "budget",
+    "condition": "unknown_cost_entries > 20",
+    "channels": [
+      "slack:#research-ops"
+    ],
+    "suppress_min": 60,
+    "enabled": false,
+    "last_fired": null,
+    "fire_count_7d": 0
+  }
+]

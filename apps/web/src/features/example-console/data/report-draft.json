@@ -1,0 +1,51 @@
+{
+  "id": "rep_01K5FZ8R1",
+  "sections": [
+    {
+      "id": "abstract",
+      "title": "Abstract",
+      "status": "complete",
+      "claims": [
+        "clm_h1_es_dose"
+      ]
+    },
+    {
+      "id": "intro",
+      "title": "1. Introduction",
+      "status": "complete",
+      "claims": []
+    },
+    {
+      "id": "methods",
+      "title": "2. Methods",
+      "status": "complete",
+      "claims": [
+        "clm_h3_opus_stable"
+      ]
+    },
+    {
+      "id": "results",
+      "title": "3. Results",
+      "status": "in-progress",
+      "claims": [
+        "clm_h1_es_dose",
+        "clm_h2_zh_generic",
+        "clm_h3_opus_stable"
+      ]
+    },
+    {
+      "id": "discussion",
+      "title": "4. Discussion",
+      "status": "draft",
+      "claims": [
+        "clm_h6_refuted"
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "5. Conclusion",
+      "status": "todo",
+      "claims": []
+    }
+  ]
+}

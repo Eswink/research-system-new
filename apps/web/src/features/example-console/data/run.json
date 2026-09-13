@@ -1,0 +1,15 @@
+{
+  "id": "run_01K5FZ8G3X2QN4M",
+  "project_id": "proj_01K5FZ8G3X2QN4M",
+  "state": "RUNNING",
+  "autonomy_level": "GUARDED_AUTONOMOUS",
+  "manifest_digest": "sha256:a9c4e21f0b8d47bf12e6c3a9d1e0f4b8c5a7e2d0f6b1c9a3e7d4b8f2c1a5e9d0",
+  "protocol_digest": "sha256:37b2c94a1e8d5f0c6a2b4d7e9f3a1c8b5d0e6a4f7c2b9d1a5e8c3f0b6d4a2e9",
+  "started_at": "2026-08-27T14:03:22Z",
+  "progress": {
+    "tasks_total": 42,
+    "tasks_done": 24,
+    "tasks_running": 3,
+    "tasks_failed": 1
+  }
+}

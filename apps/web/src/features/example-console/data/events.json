@@ -1,0 +1,260 @@
+[
+  {
+    "event_id": "evt_01K5FZ8H001",
+    "type": "task.started",
+    "occurred_at": "2026-08-27T14:03:22Z",
+    "actor": {
+      "kind": "system"
+    },
+    "scope": "run",
+    "task_id": "task_bootstrap",
+    "trace_id": "tr_a9c4e21f",
+    "payload": {
+      "phase": "Bootstrap"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H002",
+    "type": "agent.spawned",
+    "occurred_at": "2026-08-27T14:03:24Z",
+    "actor": {
+      "kind": "system"
+    },
+    "scope": "run",
+    "task_id": "task_bootstrap",
+    "trace_id": "tr_a9c4e21f",
+    "payload": {
+      "agent_id": "ag_pi_01",
+      "model_id": "mdl_claude_opus_41"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H003",
+    "type": "task.started",
+    "occurred_at": "2026-08-27T14:03:41Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_pi_01"
+    },
+    "scope": "task",
+    "task_id": "task_lit_review",
+    "trace_id": "tr_b8c5d0e6",
+    "payload": {
+      "phase": "Literature Review",
+      "subtasks": 6
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H004",
+    "type": "tool.called",
+    "occurred_at": "2026-08-27T14:04:02Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_lit_scout_01"
+    },
+    "scope": "task",
+    "task_id": "task_lit_search_es",
+    "trace_id": "tr_c9d1e0f4",
+    "payload": {
+      "tool": "pubmed.search",
+      "args_redacted": {
+        "query": "***",
+        "filters": {
+          "language": "es",
+          "year": ">=2023"
+        }
+      },
+      "model_id": "mdl_gpt4o_1120"
+    },
+    "cost_minor": 320,
+    "latency_ms": 1244
+  },
+  {
+    "event_id": "evt_01K5FZ8H005",
+    "type": "tool.returned",
+    "occurred_at": "2026-08-27T14:04:04Z",
+    "actor": {
+      "kind": "tool",
+      "id": "pubmed.search"
+    },
+    "scope": "task",
+    "task_id": "task_lit_search_es",
+    "trace_id": "tr_c9d1e0f4",
+    "payload": {
+      "results": 47,
+      "artifact_id": "art_lit_es_47"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H006",
+    "type": "evidence.proposed",
+    "occurred_at": "2026-08-27T14:11:44Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_lit_lead_01"
+    },
+    "scope": "task",
+    "task_id": "task_lit_synthesize",
+    "trace_id": "tr_d4b8f2c1",
+    "payload": {
+      "evidence_id": "ev_001",
+      "claim_id": "clm_h1_es_dose",
+      "relation": "SUPPORTS",
+      "strength": 0.92
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H007",
+    "type": "policy.decision",
+    "occurred_at": "2026-08-27T14:12:11Z",
+    "actor": {
+      "kind": "policy"
+    },
+    "scope": "task",
+    "task_id": "task_lit_synthesize",
+    "trace_id": "tr_d4b8f2c1",
+    "payload": {
+      "decision": "ALLOW",
+      "policy_id": "pol_evidence_propose",
+      "rationale": "agent has evidence.propose capability"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H008",
+    "type": "budget.reserved",
+    "occurred_at": "2026-08-27T14:15:00Z",
+    "actor": {
+      "kind": "system"
+    },
+    "scope": "run",
+    "trace_id": "tr_e2d0f6b1",
+    "payload": {
+      "amount_minor": 240000,
+      "resource": "compute_gpu_a100_hr"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H009",
+    "type": "experiment.started",
+    "occurred_at": "2026-08-27T14:15:22Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_exp_eng_01"
+    },
+    "scope": "experiment",
+    "task_id": "task_exp_es_dose",
+    "trace_id": "tr_f7c2b9d1",
+    "payload": {
+      "experiment_run_id": "experiment_run_01K5FZ8G3X2H",
+      "image_digest": "sha256:img_med_qa_v3_a5e9d0b6c",
+      "environment_digest": "sha256:env_torch230_cu122_e9d0b6"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H010",
+    "type": "task.attempt",
+    "occurred_at": "2026-08-27T14:22:14Z",
+    "actor": {
+      "kind": "system"
+    },
+    "scope": "task",
+    "task_id": "task_exp_zh_generic",
+    "trace_id": "tr_a5e8c3f0",
+    "payload": {
+      "attempt": 2,
+      "previous_error_class": "RATE_LIMIT",
+      "backoff_ms": 4000
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H011",
+    "type": "claim.upgraded",
+    "occurred_at": "2026-08-27T14:31:02Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_rev_methods"
+    },
+    "scope": "task",
+    "task_id": "task_review_es",
+    "trace_id": "tr_b6d4a2e9",
+    "payload": {
+      "claim_id": "clm_h1_es_dose",
+      "from_status": "PROPOSED",
+      "to_status": "VERIFIED"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H012",
+    "type": "gate.opened",
+    "occurred_at": "2026-08-27T14:33:50Z",
+    "actor": {
+      "kind": "policy"
+    },
+    "scope": "run",
+    "trace_id": "tr_c1a5e9d0",
+    "payload": {
+      "gate_type": "BUDGET_GATE",
+      "approval_id": "apr_01K5FZ8J",
+      "reason": "projected cost exceeds 60% of budget"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H013",
+    "type": "task.failed",
+    "occurred_at": "2026-08-27T14:36:08Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_exp_eng_02"
+    },
+    "scope": "task",
+    "task_id": "task_exp_ar_dose",
+    "trace_id": "tr_d6b4a2e",
+    "payload": {
+      "error_class": "TOOL_TIMEOUT",
+      "error_message_redacted": "tool 'vertex.completion' timed out after 60s (retryable=true)"
+    }
+  },
+  {
+    "event_id": "evt_01K5FZ8H014",
+    "type": "tool.called",
+    "occurred_at": "2026-08-27T14:40:22Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_lit_scout_02"
+    },
+    "scope": "task",
+    "task_id": "task_lit_search_zh",
+    "trace_id": "tr_e7d4b8f2",
+    "payload": {
+      "tool": "pubmed.search",
+      "args_redacted": {
+        "query": "***",
+        "filters": {
+          "language": "zh",
+          "year": ">=2023"
+        }
+      },
+      "model_id": "mdl_gpt4o_1120"
+    },
+    "cost_minor": 280,
+    "latency_ms": 987
+  },
+  {
+    "event_id": "evt_01K5FZ8H015",
+    "type": "evidence.proposed",
+    "occurred_at": "2026-08-27T14:42:11Z",
+    "actor": {
+      "kind": "agent",
+      "id": "ag_lit_lead_01"
+    },
+    "scope": "task",
+    "task_id": "task_lit_synthesize",
+    "trace_id": "tr_f2c1a5e9",
+    "payload": {
+      "evidence_id": "ev_006",
+      "claim_id": "clm_h3_opus_stable",
+      "relation": "REFUTES",
+      "strength": 0.71
+    }
+  }
+]

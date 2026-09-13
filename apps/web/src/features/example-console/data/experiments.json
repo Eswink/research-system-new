@@ -1,0 +1,62 @@
+[
+  {
+    "experiment_run_id": "experiment_run_01K5FZ8G3X2H",
+    "label": "Dosage QA · en/es/zh",
+    "metrics": {
+      "hallucination_rate_en": 0.041,
+      "hallucination_rate_es": 0.123,
+      "hallucination_rate_zh": 0.087,
+      "chi2": 27.4,
+      "p_value": 0.0004,
+      "n": 1200
+    },
+    "image_digest": "sha256:img_med_qa_v3_a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2",
+    "environment_digest": "sha256:env_torch230_cu122_e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f",
+    "reproduction_available": true,
+    "started_at": "2026-08-27T14:15:22Z",
+    "duration_s": 1842
+  },
+  {
+    "experiment_run_id": "experiment_run_01K5FZ8G3X2P",
+    "label": "Cross-lingual variance · 7 langs",
+    "metrics": {
+      "variance_opus": 0.031,
+      "variance_sonnet": 0.088,
+      "variance_gpt4o": 0.104,
+      "n_per_lang": 200
+    },
+    "image_digest": "sha256:img_multilang_v1_b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9",
+    "environment_digest": "sha256:env_torch230_cu122_e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f",
+    "reproduction_available": true,
+    "started_at": "2026-08-27T13:22:19Z",
+    "duration_s": 2401
+  },
+  {
+    "experiment_run_id": "experiment_run_01K5FZ8G3X2R",
+    "label": "CoT vs baseline · dosage",
+    "metrics": {
+      "cot_hall_rate": 0.156,
+      "baseline_hall_rate": 0.041,
+      "overconfidence_delta": 0.22,
+      "n": 480
+    },
+    "image_digest": "sha256:img_cot_probe_v2_c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0",
+    "environment_digest": "sha256:env_torch230_cu122_e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f",
+    "reproduction_available": true,
+    "started_at": "2026-08-27T12:04:11Z",
+    "duration_s": 1204
+  },
+  {
+    "experiment_run_id": "experiment_run_01K5FZ8G3X2Q",
+    "label": "Ad-hoc dosage probe · vendor sweep",
+    "metrics": {
+      "note": "vendor endpoint pinned to unknown version"
+    },
+    "image_digest": null,
+    "environment_digest": "sha256:env_torch230_cu122_e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f",
+    "reproduction_available": false,
+    "reproduction_note": "Container image was not pinned; the endpoint used a floating vendor tag (gemini-2.5-pro), which the provider silently updated between runs. Re-running is not guaranteed to reproduce the observed 8% shift.",
+    "started_at": "2026-08-26T18:44:11Z",
+    "duration_s": 812
+  }
+]

@@ -1,0 +1,167 @@
+[
+  {
+    "id": "mdl_gpt4o_1120",
+    "family": "gpt-4o",
+    "provider": "OpenAI",
+    "released": "2024-11-20",
+    "context": 128000,
+    "license": "proprietary",
+    "tags": [
+      "general",
+      "vision",
+      "tool-use"
+    ],
+    "evals": {
+      "mmlu": 0.887,
+      "gsm8k": 0.929,
+      "humaneval": 0.902
+    },
+    "cost_1k_in": 0.0025,
+    "cost_1k_out": 0.01,
+    "our_usage_30d": 3480000
+  },
+  {
+    "id": "mdl_claude_sonnet_4",
+    "family": "claude-sonnet",
+    "provider": "Anthropic",
+    "released": "2025-05-14",
+    "context": 200000,
+    "license": "proprietary",
+    "tags": [
+      "general",
+      "long-context"
+    ],
+    "evals": {
+      "mmlu": null,
+      "gsm8k": null,
+      "humaneval": 0.921
+    },
+    "cost_1k_in": 0.003,
+    "cost_1k_out": 0.015,
+    "our_usage_30d": 2140000
+  },
+  {
+    "id": "mdl_claude_opus_41",
+    "family": "claude-opus",
+    "provider": "Anthropic",
+    "released": "2025-08-05",
+    "context": 200000,
+    "license": "proprietary",
+    "tags": [
+      "reasoning",
+      "safety",
+      "flagship"
+    ],
+    "evals": {
+      "mmlu": null,
+      "gsm8k": null,
+      "humaneval": null
+    },
+    "cost_1k_in": 0.015,
+    "cost_1k_out": 0.075,
+    "our_usage_30d": 640000
+  },
+  {
+    "id": "mdl_gemini_25_pro",
+    "family": "gemini-2.5",
+    "provider": "Google",
+    "released": "2025-05-06",
+    "context": 1000000,
+    "license": "proprietary",
+    "tags": [
+      "long-context",
+      "vision",
+      "drift-risk"
+    ],
+    "evals": {
+      "mmlu": 0.858,
+      "gsm8k": 0.917,
+      "humaneval": 0.874
+    },
+    "cost_1k_in": 0.00125,
+    "cost_1k_out": 0.005,
+    "our_usage_30d": 4200000,
+    "warning": "provider issues silent preview tags"
+  },
+  {
+    "id": "mdl_qwen3_235b",
+    "family": "qwen3",
+    "provider": "Alibaba",
+    "released": "2025-04-28",
+    "context": 131072,
+    "license": "apache-2.0",
+    "tags": [
+      "open-weights",
+      "multilingual"
+    ],
+    "evals": {
+      "mmlu": 0.842,
+      "gsm8k": 0.912,
+      "humaneval": 0.862
+    },
+    "cost_1k_in": 0.0006,
+    "cost_1k_out": 0.0024,
+    "our_usage_30d": 8900000
+  },
+  {
+    "id": "mdl_ds_r1",
+    "family": "deepseek-r1",
+    "provider": "DeepSeek",
+    "released": "2025-05-28",
+    "context": 128000,
+    "license": "MIT",
+    "tags": [
+      "reasoning",
+      "open-weights"
+    ],
+    "evals": {
+      "mmlu": 0.847,
+      "gsm8k": 0.965,
+      "humaneval": 0.883
+    },
+    "cost_1k_in": 0.00055,
+    "cost_1k_out": 0.0022,
+    "our_usage_30d": 0,
+    "warning": "disabled · manual verification required"
+  },
+  {
+    "id": "mdl_llama33_70b",
+    "family": "llama-3.3",
+    "provider": "Meta",
+    "released": "2024-12-06",
+    "context": 128000,
+    "license": "llama-3-community",
+    "tags": [
+      "open-weights"
+    ],
+    "evals": {
+      "mmlu": 0.812,
+      "gsm8k": 0.902,
+      "humaneval": 0.812
+    },
+    "cost_1k_in": null,
+    "cost_1k_out": null,
+    "our_usage_30d": 0
+  },
+  {
+    "id": "mdl_medgemma_27b",
+    "family": "medgemma",
+    "provider": "Google",
+    "released": "2025-05-01",
+    "context": 128000,
+    "license": "gemma-tos",
+    "tags": [
+      "medical",
+      "domain"
+    ],
+    "evals": {
+      "mmlu": null,
+      "gsm8k": null,
+      "humaneval": null,
+      "medqa": 0.842
+    },
+    "cost_1k_in": null,
+    "cost_1k_out": null,
+    "our_usage_30d": 0
+  }
+]

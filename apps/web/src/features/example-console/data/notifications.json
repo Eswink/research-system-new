@@ -1,0 +1,47 @@
+[
+  {
+    "id": "ntf_01",
+    "kind": "alert",
+    "severity": "high",
+    "subject": "Budget · med-qa reached 62% · projected breach in 29 min",
+    "at": "2026-08-27T14:33:50Z",
+    "read": false,
+    "ref": "alrt_i_01"
+  },
+  {
+    "id": "ntf_02",
+    "kind": "approval",
+    "severity": "medium",
+    "subject": "Approval requested · replace_model gemini → gpt-4o",
+    "at": "2026-08-27T14:36:11Z",
+    "read": false,
+    "ref": "apr_01K5FZ8K"
+  },
+  {
+    "id": "ntf_03",
+    "kind": "claim",
+    "severity": "medium",
+    "subject": "Claim clm_h3_opus_stable disputed by stats reviewer",
+    "at": "2026-08-27T13:52:44Z",
+    "read": false,
+    "ref": "clm_h3_opus_stable"
+  },
+  {
+    "id": "ntf_04",
+    "kind": "run",
+    "severity": "low",
+    "subject": "Run week-4 · task_exp_pt_dose entered RUNNING",
+    "at": "2026-08-27T14:40:00Z",
+    "read": true,
+    "ref": "run_01K5FZ8G3X2QN4M"
+  },
+  {
+    "id": "ntf_05",
+    "kind": "report",
+    "severity": "low",
+    "subject": "Report auto-compile scheduled for 2026-09-02 09:00 JST",
+    "at": "2026-08-26T00:00:00Z",
+    "read": true,
+    "ref": "rep_01K5FZ8R1"
+  }
+]

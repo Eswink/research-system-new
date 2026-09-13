@@ -1,0 +1,125 @@
+[
+  {
+    "id": "int_slack",
+    "name": "Slack",
+    "category": "notification",
+    "status": "connected",
+    "installed_at": "2026-06-01T09:00:00Z",
+    "meta": {
+      "workspace": "research-io",
+      "channels": 3
+    },
+    "health": "ok"
+  },
+  {
+    "id": "int_github",
+    "name": "GitHub",
+    "category": "vcs",
+    "status": "connected",
+    "installed_at": "2026-06-05T14:00:00Z",
+    "meta": {
+      "repos": 4,
+      "org": "research-io"
+    },
+    "health": "ok"
+  },
+  {
+    "id": "int_s3",
+    "name": "AWS S3",
+    "category": "storage",
+    "status": "connected",
+    "installed_at": "2026-06-10T09:00:00Z",
+    "meta": {
+      "bucket": "research-io-artifacts",
+      "region": "ap-northeast-1"
+    },
+    "health": "ok"
+  },
+  {
+    "id": "int_webhook",
+    "name": "Webhook · Audit Bus",
+    "category": "audit",
+    "status": "connected",
+    "installed_at": "2026-07-14T10:00:00Z",
+    "meta": {
+      "endpoint": "https://audit.research.io/bus/v1",
+      "events_24h": 4820
+    },
+    "health": "ok"
+  },
+  {
+    "id": "int_pagerduty",
+    "name": "PagerDuty",
+    "category": "notification",
+    "status": "connected",
+    "installed_at": "2026-06-12T11:00:00Z",
+    "meta": {
+      "service": "oncall-a"
+    },
+    "health": "degraded",
+    "issue": "on-call rotation not configured for weekends"
+  },
+  {
+    "id": "int_pubmed",
+    "name": "PubMed API",
+    "category": "data-source",
+    "status": "connected",
+    "installed_at": "2026-06-14T09:00:00Z",
+    "meta": {
+      "rate_limit": "10 req/s"
+    },
+    "health": "ok"
+  },
+  {
+    "id": "int_arxiv",
+    "name": "arXiv",
+    "category": "publish",
+    "status": "connected",
+    "installed_at": "2026-07-01T09:00:00Z",
+    "meta": {
+      "account": "l.tanaka"
+    },
+    "health": "ok"
+  },
+  {
+    "id": "int_wandb",
+    "name": "Weights & Biases",
+    "category": "tracking",
+    "status": "available",
+    "meta": {},
+    "health": null
+  },
+  {
+    "id": "int_hf",
+    "name": "Hugging Face Hub",
+    "category": "registry",
+    "status": "available",
+    "meta": {},
+    "health": null
+  },
+  {
+    "id": "int_neptune",
+    "name": "Neptune.ai",
+    "category": "tracking",
+    "status": "available",
+    "meta": {},
+    "health": null
+  },
+  {
+    "id": "int_datadog",
+    "name": "Datadog",
+    "category": "observability",
+    "status": "available",
+    "meta": {},
+    "health": null
+  },
+  {
+    "id": "int_azure",
+    "name": "Azure Blob",
+    "category": "storage",
+    "status": "disconnected",
+    "meta": {},
+    "health": null,
+    "disconnect_reason": "credentials rotated · needs re-auth"
+  }
+]

@@ -1,0 +1,72 @@
+{
+  "a": {
+    "id": "run_01K5FZ8G3X2QN4M",
+    "label": "week-4 · main"
+  },
+  "b": {
+    "id": "run_01K5FZ8G2X1QN3L",
+    "label": "week-3 · rerun"
+  },
+  "metrics": [
+    {
+      "key": "hallucination_rate_es",
+      "a": 0.123,
+      "b": 0.141,
+      "delta": -0.018,
+      "better": true,
+      "unit": "rate"
+    },
+    {
+      "key": "hallucination_rate_zh",
+      "a": 0.087,
+      "b": 0.104,
+      "delta": -0.017,
+      "better": true,
+      "unit": "rate"
+    },
+    {
+      "key": "avg_latency_ms",
+      "a": 892,
+      "b": 780,
+      "delta": 112,
+      "better": false,
+      "unit": "ms"
+    },
+    {
+      "key": "cost_per_1k_samples",
+      "a": 24.2,
+      "b": 22.1,
+      "delta": 2.1,
+      "better": false,
+      "unit": "$"
+    },
+    {
+      "key": "tasks_failed",
+      "a": 1,
+      "b": 0,
+      "delta": 1,
+      "better": false,
+      "unit": "count"
+    }
+  ],
+  "manifest_diff": [
+    {
+      "field": "models.exp_eng_02.model_id",
+      "a": "mdl_gemini_25_pro",
+      "b": "mdl_gpt4o_1120",
+      "note": "failover applied"
+    },
+    {
+      "field": "team_template",
+      "a": "STANDARD",
+      "b": "STANDARD",
+      "note": "unchanged"
+    },
+    {
+      "field": "budget_cap_minor",
+      "a": 5000000,
+      "b": 4500000,
+      "note": "cap raised for arabic subset"
+    }
+  ]
+}

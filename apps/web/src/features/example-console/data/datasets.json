@@ -1,0 +1,150 @@
+[
+  {
+    "id": "ds_medqa_multi_v3",
+    "name": "medqa-multilingual",
+    "version": "v3.2.1",
+    "rows": 8420,
+    "size_mb": 142,
+    "format": "parquet",
+    "schema_valid": true,
+    "updated_at": "2026-08-20T14:00:00Z",
+    "owner": "ag_data_eng_01",
+    "checksum": "sha256:d5f9a3e7d4b8f2c1a5e9d0b6c1a4e",
+    "tags": [
+      "gold",
+      "multilingual"
+    ],
+    "columns": 12,
+    "lineage": {
+      "parents": [
+        "ds_pubmed_raw",
+        "ds_who_dosage"
+      ],
+      "children": [
+        "ds_medqa_multi_v3_es_slice"
+      ]
+    }
+  },
+  {
+    "id": "ds_medqa_multi_v3_es_slice",
+    "name": "medqa-multilingual [es]",
+    "version": "v3.2.1-es",
+    "rows": 1200,
+    "size_mb": 21,
+    "format": "parquet",
+    "schema_valid": true,
+    "updated_at": "2026-08-20T14:12:00Z",
+    "owner": "ag_data_eng_01",
+    "checksum": "sha256:e6a4b8f2c1a5e9d0b6c1a4e7d2b8f2",
+    "tags": [
+      "derived",
+      "spanish"
+    ],
+    "columns": 12,
+    "lineage": {
+      "parents": [
+        "ds_medqa_multi_v3"
+      ],
+      "children": []
+    }
+  },
+  {
+    "id": "ds_pubmed_raw",
+    "name": "pubmed-abstracts-2023",
+    "version": "v1.0.0",
+    "rows": 340120,
+    "size_mb": 4212,
+    "format": "jsonl",
+    "schema_valid": true,
+    "updated_at": "2026-06-14T10:00:00Z",
+    "owner": "ag_lit_scout_01",
+    "checksum": "sha256:f7c2b9d1a5e8c3f0b6d4a2e9d0b6c1a",
+    "tags": [
+      "raw",
+      "corpus"
+    ],
+    "columns": 8,
+    "lineage": {
+      "parents": [],
+      "children": [
+        "ds_medqa_multi_v3",
+        "ds_pubmed_zh_slice"
+      ]
+    }
+  },
+  {
+    "id": "ds_who_dosage",
+    "name": "who-dosage-guidelines",
+    "version": "v2024",
+    "rows": 12040,
+    "size_mb": 34,
+    "format": "parquet",
+    "schema_valid": true,
+    "updated_at": "2026-05-10T09:00:00Z",
+    "owner": "l.tanaka@research.io",
+    "checksum": "sha256:a8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e",
+    "tags": [
+      "gold",
+      "authoritative"
+    ],
+    "columns": 6,
+    "lineage": {
+      "parents": [],
+      "children": [
+        "ds_medqa_multi_v3"
+      ]
+    }
+  },
+  {
+    "id": "ds_rag_adversarial",
+    "name": "rag-adversarial-suite",
+    "version": "v0.7-beta",
+    "rows": 3200,
+    "size_mb": 82,
+    "format": "parquet",
+    "schema_valid": false,
+    "schema_errors": [
+      {
+        "column": "gold_span",
+        "issue": "12 rows contain null in required field"
+      },
+      {
+        "column": "noise_ratio",
+        "issue": "3 rows out of [0,1] bounds"
+      }
+    ],
+    "updated_at": "2026-08-27T13:00:00Z",
+    "owner": "y.chen@research.io",
+    "checksum": "sha256:b9d1a5e8c3f0b6d4a2e9d0b6c1a4e7d",
+    "tags": [
+      "draft",
+      "rag"
+    ],
+    "columns": 14,
+    "lineage": {
+      "parents": [],
+      "children": []
+    }
+  },
+  {
+    "id": "ds_uploads_pending",
+    "name": "med-notes-en-2025.zip",
+    "version": "pending",
+    "rows": null,
+    "size_mb": 214,
+    "format": "zip",
+    "schema_valid": null,
+    "updated_at": "2026-08-27T14:31:00Z",
+    "owner": "l.tanaka@research.io",
+    "checksum": null,
+    "tags": [
+      "upload",
+      "unvalidated"
+    ],
+    "columns": null,
+    "lineage": {
+      "parents": [],
+      "children": []
+    }
+  }
+]

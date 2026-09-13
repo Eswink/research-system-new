@@ -1,0 +1,78 @@
+[
+  {
+    "id": "rep_01K5FZ8R1",
+    "title": "Interim: Multilingual Dosage Hallucination — Week 4",
+    "project_id": "proj_01K5FZ8G3X2QN4M",
+    "status": "DRAFT",
+    "authors": [
+      "l.tanaka@research.io",
+      "ag_lit_lead_01"
+    ],
+    "sections": 6,
+    "cited_claims": 4,
+    "figures": 3,
+    "word_count": 3820,
+    "updated_at": "2026-08-27T14:00:00Z",
+    "format": "preprint",
+    "pdf_pages": 14,
+    "digest": "sha256:rep_a9c4e21f0b8d47bf"
+  },
+  {
+    "id": "rep_01K5FZ8R2",
+    "title": "Cross-Lingual Variance in Frontier LLMs — Extended Abstract",
+    "project_id": "proj_01K5FZ8G3X2QN4M",
+    "status": "IN_REVIEW",
+    "authors": [
+      "ag_pi_01",
+      "ag_rev_methods"
+    ],
+    "sections": 4,
+    "cited_claims": 3,
+    "figures": 2,
+    "word_count": 1620,
+    "updated_at": "2026-08-26T18:00:00Z",
+    "format": "abstract",
+    "pdf_pages": 4,
+    "digest": "sha256:rep_b8c5d0e6a4f7c2b9"
+  },
+  {
+    "id": "rep_01K5FZ8R3",
+    "title": "RAG Grounding — Failure Mode Taxonomy",
+    "project_id": "proj_01K5FTC7Y1N83Z",
+    "status": "PUBLISHED",
+    "authors": [
+      "y.chen@research.io",
+      "ag_rev_stats"
+    ],
+    "sections": 8,
+    "cited_claims": 12,
+    "figures": 6,
+    "word_count": 6420,
+    "updated_at": "2026-08-20T10:00:00Z",
+    "published_at": "2026-08-22T09:00:00Z",
+    "format": "preprint",
+    "pdf_pages": 28,
+    "digest": "sha256:rep_c9d1e0f4b8c5a7e2",
+    "venue": "arxiv-cs.CL",
+    "doi": "10.48550/arXiv.2608.14212"
+  },
+  {
+    "id": "rep_01K5FZ8R4",
+    "title": "Steering Vectors for Refusal — Final",
+    "project_id": "proj_01K5A2L4M8V1Q3",
+    "status": "PUBLISHED",
+    "authors": [
+      "l.tanaka@research.io"
+    ],
+    "sections": 5,
+    "cited_claims": 6,
+    "figures": 4,
+    "word_count": 4820,
+    "updated_at": "2026-08-18T22:00:00Z",
+    "published_at": "2026-08-19T10:00:00Z",
+    "format": "workshop",
+    "pdf_pages": 12,
+    "digest": "sha256:rep_d4b8f2c1a5e9d0b6",
+    "venue": "NeurIPS-SafeAI-W"
+  }
+]

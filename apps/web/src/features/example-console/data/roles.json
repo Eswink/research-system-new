@@ -1,0 +1,145 @@
+[
+  {
+    "id": "role_pi",
+    "name": "Principal Investigator",
+    "min": 1,
+    "max": 1,
+    "active": 1,
+    "capabilities": [
+      "protocol.propose",
+      "protocol.approve",
+      "budget.read",
+      "evidence.read"
+    ],
+    "forbidden": [
+      "evidence.write.truth"
+    ]
+  },
+  {
+    "id": "role_lit_lead",
+    "name": "Literature Lead",
+    "min": 1,
+    "max": 2,
+    "active": 1,
+    "capabilities": [
+      "literature.search",
+      "literature.summarize",
+      "evidence.write",
+      "workspace.write.notes"
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "role_lit_scout",
+    "name": "Literature Scout",
+    "min": 1,
+    "max": 4,
+    "active": 3,
+    "capabilities": [
+      "literature.search",
+      "evidence.propose"
+    ],
+    "forbidden": [
+      "evidence.write.truth"
+    ]
+  },
+  {
+    "id": "role_data_eng",
+    "name": "Data Engineer",
+    "min": 1,
+    "max": 2,
+    "active": 2,
+    "capabilities": [
+      "workspace.write",
+      "compute.exec",
+      "evidence.write"
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "role_exp_eng",
+    "name": "Experiment Engineer",
+    "min": 1,
+    "max": 3,
+    "active": 2,
+    "capabilities": [
+      "experiment.design",
+      "experiment.run",
+      "compute.exec"
+    ],
+    "forbidden": [
+      "publish.external"
+    ]
+  },
+  {
+    "id": "role_reviewer_a",
+    "name": "Reviewer (Methods)",
+    "min": 1,
+    "max": 2,
+    "active": 1,
+    "capabilities": [
+      "review.evidence",
+      "review.methodology"
+    ],
+    "forbidden": [
+      "evidence.write",
+      "workspace.write"
+    ]
+  },
+  {
+    "id": "role_reviewer_b",
+    "name": "Reviewer (Stats)",
+    "min": 1,
+    "max": 2,
+    "active": 1,
+    "capabilities": [
+      "review.evidence",
+      "review.statistics"
+    ],
+    "forbidden": [
+      "evidence.write",
+      "workspace.write"
+    ]
+  },
+  {
+    "id": "role_ethics",
+    "name": "Ethics & Bias Auditor",
+    "min": 0,
+    "max": 1,
+    "active": 1,
+    "capabilities": [
+      "review.bias",
+      "review.ethics",
+      "audit.read"
+    ],
+    "forbidden": [
+      "evidence.write"
+    ]
+  },
+  {
+    "id": "role_writer",
+    "name": "Writer (Deliverable)",
+    "min": 0,
+    "max": 1,
+    "active": 0,
+    "collapsed_reason": "no publish gate reached",
+    "capabilities": [
+      "deliverable.write"
+    ],
+    "forbidden": [
+      "evidence.write.truth"
+    ]
+  },
+  {
+    "id": "role_replicator",
+    "name": "Replicator",
+    "min": 0,
+    "max": 2,
+    "active": 0,
+    "collapsed_reason": "reproduction phase not yet triggered",
+    "capabilities": [
+      "experiment.replicate"
+    ],
+    "forbidden": []
+  }
+]

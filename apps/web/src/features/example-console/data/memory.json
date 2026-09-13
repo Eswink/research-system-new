@@ -1,0 +1,49 @@
+[
+  {
+    "id": "mem_01",
+    "statement": "Spanish medical QA reliably produces higher dosage hallucination than English across evaluated models.",
+    "scope": "project",
+    "confidence": 0.91,
+    "provenance": [
+      "clm_h1_es_dose",
+      "ev_002",
+      "ev_003"
+    ],
+    "expires_at": "2027-08-27T00:00:00Z",
+    "status": "pending"
+  },
+  {
+    "id": "mem_02",
+    "statement": "Internal relay does not report token counts for embedding calls — plan for UNKNOWN cost entries.",
+    "scope": "org",
+    "confidence": 0.95,
+    "provenance": [
+      "ep_internal_relay/probe_v3.1"
+    ],
+    "expires_at": null,
+    "status": "pending"
+  },
+  {
+    "id": "mem_03",
+    "statement": "Gemini 2.5 Pro silently upgrades to preview tags — pin manifest to freeze fingerprint.",
+    "scope": "org",
+    "confidence": 0.88,
+    "provenance": [
+      "mdl_gemini_25_pro/drift_alert"
+    ],
+    "expires_at": null,
+    "status": "pending"
+  },
+  {
+    "id": "mem_04",
+    "statement": "CoT prompting increases over-confidence in medical dosage QA (do not use as safety mitigation).",
+    "scope": "project",
+    "confidence": 0.87,
+    "provenance": [
+      "clm_h6_refuted",
+      "ev_007"
+    ],
+    "expires_at": "2027-08-27T00:00:00Z",
+    "status": "approved"
+  }
+]

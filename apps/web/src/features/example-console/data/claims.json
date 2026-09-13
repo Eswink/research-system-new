@@ -1,0 +1,53 @@
+[
+  {
+    "id": "clm_h1_es_dose",
+    "statement": "GPT-4o exhibits a 12.3% dosage hallucination rate on Spanish-language medical QA — significantly higher than the English baseline of 4.1% (χ²=27.4, p<0.001, n=1,200).",
+    "status": "VERIFIED",
+    "evidence_count": 4,
+    "source_count": 3,
+    "updated_at": "2026-08-27T13:41:02Z",
+    "owner": "ag_lit_lead_01"
+  },
+  {
+    "id": "clm_h2_zh_generic",
+    "statement": "Chinese-language medical QA produces 2.8× more generic-name substitution errors compared to English across all evaluated models.",
+    "status": "VERIFIED",
+    "evidence_count": 3,
+    "source_count": 2,
+    "updated_at": "2026-08-27T13:22:19Z"
+  },
+  {
+    "id": "clm_h3_opus_stable",
+    "statement": "Claude Opus 4.1 shows the lowest cross-lingual hallucination variance (σ=0.031) across 7 evaluated languages.",
+    "status": "DISPUTED",
+    "evidence_count": 5,
+    "source_count": 4,
+    "dispute_note": "Stats reviewer flagged the Arabic subset (n=48) as underpowered.",
+    "updated_at": "2026-08-27T13:52:44Z"
+  },
+  {
+    "id": "clm_h4_temp_effect",
+    "statement": "Sampling temperature > 0.3 correlates with hallucination rate elevation across all models (ρ=0.71).",
+    "status": "PROPOSED",
+    "evidence_count": 1,
+    "source_count": 1,
+    "updated_at": "2026-08-27T13:55:01Z"
+  },
+  {
+    "id": "clm_h5_rag_helps",
+    "statement": "Retrieval-augmented generation reduces dosage hallucinations by ≥40% in Spanish and Portuguese.",
+    "status": "PROPOSED",
+    "evidence_count": 0,
+    "source_count": 0,
+    "updated_at": "2026-08-27T14:01:33Z"
+  },
+  {
+    "id": "clm_h6_refuted",
+    "statement": "Chain-of-thought prompting eliminates dosage hallucinations in medical QA.",
+    "status": "REFUTED",
+    "evidence_count": 3,
+    "source_count": 3,
+    "refutation_note": "Contradicted by experiment_run_01K5FZ8H — CoT increased over-confidence on wrong dosages.",
+    "updated_at": "2026-08-27T12:14:00Z"
+  }
+]

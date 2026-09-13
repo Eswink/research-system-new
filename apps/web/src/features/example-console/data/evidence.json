@@ -1,0 +1,84 @@
+[
+  {
+    "id": "ev_001",
+    "claim_id": "clm_h1_es_dose",
+    "relation": "SUPPORTS",
+    "strength": 0.92,
+    "kind": "literature",
+    "source_ref": "Ji et al. 2023 · Survey of Hallucination in NLG",
+    "content_digest": "sha256:1f9a3e7d4b8f2c1a5e9d0b8c5a7e2d0f6b1c9a3e7d4b8f2c1a5e9d0b6c1a4e",
+    "run_id": "run_01K5FZ8G3X2QN4M",
+    "model_refs": []
+  },
+  {
+    "id": "ev_002",
+    "claim_id": "clm_h1_es_dose",
+    "relation": "SUPPORTS",
+    "strength": 0.97,
+    "kind": "experiment",
+    "source_ref": "experiment_run_01K5FZ8G3X2H",
+    "content_digest": "sha256:2a4b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c",
+    "image_digest": "sha256:img_med_qa_v3_a5e9d0b6c",
+    "environment_digest": "sha256:env_torch230_cu122_e9d0b6",
+    "model_refs": [
+      "mdl_gpt4o_1120"
+    ]
+  },
+  {
+    "id": "ev_003",
+    "claim_id": "clm_h1_es_dose",
+    "relation": "SUPPORTS",
+    "strength": 0.88,
+    "kind": "artifact",
+    "source_ref": "artifact://analysis/es_dose_chi2.csv",
+    "content_digest": "sha256:3c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d",
+    "model_refs": []
+  },
+  {
+    "id": "ev_004",
+    "claim_id": "clm_h1_es_dose",
+    "relation": "SUPPORTS",
+    "strength": 0.79,
+    "kind": "literature",
+    "source_ref": "Pal et al. 2024 · MedHalt Benchmark",
+    "content_digest": "sha256:4b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a",
+    "model_refs": []
+  },
+  {
+    "id": "ev_005",
+    "claim_id": "clm_h3_opus_stable",
+    "relation": "SUPPORTS",
+    "strength": 0.85,
+    "kind": "experiment",
+    "source_ref": "experiment_run_01K5FZ8G3X2P",
+    "content_digest": "sha256:5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f",
+    "image_digest": "sha256:img_multilang_v1_b6c1a4",
+    "environment_digest": "sha256:env_torch230_cu122_e9d0b6",
+    "model_refs": [
+      "mdl_claude_opus_41"
+    ]
+  },
+  {
+    "id": "ev_006",
+    "claim_id": "clm_h3_opus_stable",
+    "relation": "REFUTES",
+    "strength": 0.71,
+    "kind": "experiment",
+    "source_ref": "reviewer_note_stats_r1",
+    "content_digest": "sha256:6b1c9a3e7d4b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2c1a",
+    "model_refs": []
+  },
+  {
+    "id": "ev_007",
+    "claim_id": "clm_h6_refuted",
+    "relation": "REFUTES",
+    "strength": 0.94,
+    "kind": "experiment",
+    "source_ref": "experiment_run_01K5FZ8G3X2R",
+    "content_digest": "sha256:7d4b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c1a4e7d2b8f2c1a5e9d0b6c",
+    "model_refs": [
+      "mdl_gpt4o_1120",
+      "mdl_claude_sonnet_4"
+    ]
+  }
+]

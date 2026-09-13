@@ -1,7 +1,8 @@
-"""SqliteProjectSettingsStore：项目设置单条记录的 SQLite 持久化（M13-R1）。
+"""SqliteProjectSettingsStore：项目设置记录的 SQLite 持久化（M13-R1；PLAN-041 项目化）。
 
-单条记录（settings）语义：覆盖 wizard 默认项目之后的设置；
-M13 控制面只有 example-project 一个项目（多项目为 M14/M18 范围）。
+按 project_id 精确读取（get(project_id)）；保存按项目 upsert。examples 回退
+只属于控制面合并层（catalog_merge，且仅默认 example-project 允许），store
+本身不隐式播种。项目删除不提供（归档即终态，M18 deferred 不含租户语义）。
 """
 
 from __future__ import annotations

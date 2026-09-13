@@ -1,0 +1,166 @@
+{
+  "nodes": [
+    {
+      "id": "src_project_medqa",
+      "label": "medqa-hallucination",
+      "type": "project"
+    },
+    {
+      "id": "src_project_rag",
+      "label": "rag-grounding",
+      "type": "project"
+    },
+    {
+      "id": "src_project_tool",
+      "label": "tool-reliability",
+      "type": "project"
+    },
+    {
+      "id": "mid_gpt4o",
+      "label": "gpt-4o",
+      "type": "model"
+    },
+    {
+      "id": "mid_sonnet",
+      "label": "sonnet-4",
+      "type": "model"
+    },
+    {
+      "id": "mid_opus",
+      "label": "opus-4.1",
+      "type": "model"
+    },
+    {
+      "id": "mid_gemini",
+      "label": "gemini-2.5",
+      "type": "model"
+    },
+    {
+      "id": "mid_qwen",
+      "label": "qwen3-235b",
+      "type": "model"
+    },
+    {
+      "id": "tgt_litreview",
+      "label": "literature",
+      "type": "task"
+    },
+    {
+      "id": "tgt_experiment",
+      "label": "experiments",
+      "type": "task"
+    },
+    {
+      "id": "tgt_review",
+      "label": "review",
+      "type": "task"
+    },
+    {
+      "id": "tgt_writeup",
+      "label": "writeup",
+      "type": "task"
+    }
+  ],
+  "flows": [
+    {
+      "from": "src_project_medqa",
+      "to": "mid_gpt4o",
+      "value": 892
+    },
+    {
+      "from": "src_project_medqa",
+      "to": "mid_sonnet",
+      "value": 421
+    },
+    {
+      "from": "src_project_medqa",
+      "to": "mid_opus",
+      "value": 704
+    },
+    {
+      "from": "src_project_medqa",
+      "to": "mid_gemini",
+      "value": 273
+    },
+    {
+      "from": "src_project_medqa",
+      "to": "mid_qwen",
+      "value": 230
+    },
+    {
+      "from": "src_project_rag",
+      "to": "mid_gpt4o",
+      "value": 340
+    },
+    {
+      "from": "src_project_rag",
+      "to": "mid_opus",
+      "value": 400
+    },
+    {
+      "from": "src_project_rag",
+      "to": "mid_qwen",
+      "value": 120
+    },
+    {
+      "from": "src_project_tool",
+      "to": "mid_gpt4o",
+      "value": 210
+    },
+    {
+      "from": "src_project_tool",
+      "to": "mid_gemini",
+      "value": 190
+    },
+    {
+      "from": "mid_gpt4o",
+      "to": "tgt_litreview",
+      "value": 620
+    },
+    {
+      "from": "mid_gpt4o",
+      "to": "tgt_experiment",
+      "value": 640
+    },
+    {
+      "from": "mid_gpt4o",
+      "to": "tgt_review",
+      "value": 182
+    },
+    {
+      "from": "mid_sonnet",
+      "to": "tgt_litreview",
+      "value": 291
+    },
+    {
+      "from": "mid_sonnet",
+      "to": "tgt_experiment",
+      "value": 130
+    },
+    {
+      "from": "mid_opus",
+      "to": "tgt_review",
+      "value": 520
+    },
+    {
+      "from": "mid_opus",
+      "to": "tgt_experiment",
+      "value": 340
+    },
+    {
+      "from": "mid_opus",
+      "to": "tgt_writeup",
+      "value": 244
+    },
+    {
+      "from": "mid_gemini",
+      "to": "tgt_experiment",
+      "value": 460
+    },
+    {
+      "from": "mid_qwen",
+      "to": "tgt_litreview",
+      "value": 350
+    }
+  ]
+}

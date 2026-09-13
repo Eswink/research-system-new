@@ -2603,6 +2603,61 @@
         "title": "ProbeResultDto",
         "type": "object"
       },
+      "ProjectCreateDto": {
+        "additionalProperties": false,
+        "description": "创建项目：仅命名；id 服务端生成，默认设置自动落行（可随后编辑）。",
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ProjectCreateDto",
+        "type": "object"
+      },
+      "ProjectDto": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProjectDto",
+        "type": "object"
+      },
       "ProjectExperimentsViewDto": {
         "additionalProperties": false,
         "properties": {
@@ -2761,6 +2816,42 @@
           "workspace_backend"
         ],
         "title": "ProjectSettingsUpdateDto",
+        "type": "object"
+      },
+      "ProjectUpdateDto": {
+        "additionalProperties": false,
+        "description": "重命名与/或归档（ACTIVE ⇄ ARCHIVED；不提供删除）。",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ACTIVE",
+                  "ARCHIVED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "ProjectUpdateDto",
         "type": "object"
       },
       "ProtocolDraftCreateDto": {
@@ -5452,6 +5543,125 @@
         ]
       }
     },
+    "/projects": {
+      "get": {
+        "description": "注册表视图（确定性排序：created_at, id；默认项目恒在首位）。",
+        "operationId": "list_projects_projects_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectDto"
+                  },
+                  "title": "Response List Projects Projects Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Projects",
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "description": "创建项目：服务端生成 id + 自动落默认设置行（examples 模板副本）。",
+        "operationId": "create_project_projects_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Project",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/projects/{project_id}": {
+      "patch": {
+        "description": "重命名与/或归档（ACTIVE ⇄ ARCHIVED）；未知 id 404；空载荷 422。",
+        "operationId": "update_project_projects__project_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Project",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
     "/projects/{project_id}/agents": {
       "get": {
         "description": "Agent 实例目录（Role 的配置实例；可独立绑定模型；合并视图）。",
@@ -5552,7 +5762,7 @@
     },
     "/projects/{project_id}/compile": {
       "post": {
-        "description": "compile + preflight（正式组合入口；真实 health/policy 接线）。",
+        "description": "compile + preflight（正式组合入口；真实 health/policy 接线；WP-B 项目归属）。",
         "operationId": "compile_and_preflight_endpoint_projects__project_id__compile_post",
         "parameters": [
           {
@@ -5605,7 +5815,7 @@
     },
     "/projects/{project_id}/dry-run": {
       "post": {
-        "description": "Dry Run：纯只读投影，零 Research side effect。\n\n不启动 Agent、不调用 Research Tool、不执行 Experiment、不写长期\nMemory、不 reserve budget（`dry_run_projection` 是纯函数；context\n不注入 budget ledger，preflight 预留仅为本地 digest 引用）。",
+        "description": "Dry Run：纯只读投影，零 Research side effect。\n\n不启动 Agent、不调用 Research Tool、不执行 Experiment、不写长期\nMemory、不 reserve budget（`dry_run_projection` 是纯函数；context\n不注入 budget ledger，preflight 预留仅为本地 digest 引用）。\nWP-B：按路径项目解析设置（未注册项目 404）。",
         "operationId": "dry_run_endpoint_projects__project_id__dry_run_post",
         "parameters": [
           {
@@ -5794,7 +6004,7 @@
     },
     "/projects/{project_id}/preflight": {
       "post": {
-        "description": "preflight 复检（编译成功后执行；真实 health/policy 接线）。",
+        "description": "preflight 复检（编译成功后执行；真实 health/policy 接线；WP-B 项目归属）。",
         "operationId": "preflight_endpoint_projects__project_id__preflight_post",
         "parameters": [
           {
@@ -5891,7 +6101,7 @@
         ]
       },
       "post": {
-        "description": "创建草稿（正文必须通过校验；幂等键重放返回原记录）。",
+        "description": "创建草稿（正文必须通过校验；幂等键重放返回原记录；归属路径项目，WP-B）。",
         "operationId": "create_draft_projects__project_id__protocol_drafts_post",
         "parameters": [
           {
@@ -5989,7 +6199,7 @@
         ]
       },
       "post": {
-        "description": "启动一次 Research Run（StartRunCommand → 正式编排链；path 或草稿修订引用）。",
+        "description": "启动一次 Research Run（StartRunCommand → 正式编排链；path 或草稿修订引用）。\n\n运行归属路径 project_id（WP-B）：preflight 夹具覆盖场景下 settings 仍为\n夹具项目（受控测试态），注册项目行的 project_id 与路径一致。",
         "operationId": "start_run_projects__project_id__runs_post",
         "parameters": [
           {
@@ -6042,7 +6252,7 @@
     },
     "/projects/{project_id}/settings": {
       "get": {
-        "description": "项目设置视图（merged：ProjectSettingsStore 优先，examples 回退）。",
+        "description": "项目设置视图（WP-B/PLAN-041：ProjectSettingsStore 按 project_id 精确，\n仅默认 example-project 允许 examples 回退；未注册/未配置 404）。",
         "operationId": "get_project_settings_projects__project_id__settings_get",
         "parameters": [
           {
@@ -6083,7 +6293,7 @@
         ]
       },
       "put": {
-        "description": "项目设置持久化（ProjectSettingsStore；模板/工作区引用校验）。",
+        "description": "项目设置持久化（ProjectSettingsStore；模板/工作区引用校验 + 项目注册校验）。",
         "operationId": "put_project_settings_projects__project_id__settings_put",
         "parameters": [
           {
