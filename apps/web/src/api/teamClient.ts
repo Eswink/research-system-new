@@ -1,5 +1,6 @@
 /** 团队与项目设置客户端（Role/Agent/模板/项目设置）。 */
 
+import { getActiveProjectId } from "./activeProject";
 import { newIdempotencyKey, request } from "./http";
 import type {
   AgentCreateDto,
@@ -11,8 +12,6 @@ import type {
   Version,
 } from "./types";
 
-const PROJECT = "example-project";
-
 export const teamClient = {
   listRoles(): Promise<RoleDefinitionDto[]> {
     return request("/roles", { method: "GET" });
@@ -21,11 +20,11 @@ export const teamClient = {
     return request("/team-templates", { method: "GET" });
   },
   listAgents(): Promise<AgentSpecDto[]> {
-    return request(`/projects/${PROJECT}/agents`, { method: "GET" });
+    return request(`/projects/${getActiveProjectId()}/agents`, { method: "GET" });
   },
   createAgent(payload: AgentCreateDto): Promise<AgentSpecDto> {
     return request(
-      `/projects/${PROJECT}/agents`,
+      `/projects/${getActiveProjectId()}/agents`,
       {
         method: "POST",
         body: JSON.stringify(payload),
@@ -83,12 +82,12 @@ export const teamClient = {
     );
   },
   getProjectSettings(): Promise<ProjectSettingsDto> {
-    return request(`/projects/${PROJECT}/settings`, { method: "GET" });
+    return request(`/projects/${getActiveProjectId()}/settings`, { method: "GET" });
   },
   /** 项目设置 PUT 无版本契约（last-write-wins）；仍需幂等键。 */
   saveProjectSettings(payload: ProjectSettingsDto): Promise<ProjectSettingsDto> {
     return request(
-      `/projects/${PROJECT}/settings`,
+      `/projects/${getActiveProjectId()}/settings`,
       {
         method: "PUT",
         body: JSON.stringify(payload),

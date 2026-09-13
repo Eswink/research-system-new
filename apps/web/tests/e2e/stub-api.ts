@@ -151,6 +151,50 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
   },
   {
     method: "GET",
+    pattern: /^\/projects$/,
+    handler: () => ({
+      status: 200,
+      body: [
+        {
+          id: "example-project",
+          name: "Example ML Research",
+          status: "ACTIVE",
+          created_at: "1970-01-01T00:00:00+00:00",
+          updated_at: "1970-01-01T00:00:00+00:00",
+        },
+      ],
+    }),
+  },
+  {
+    method: "POST",
+    pattern: /^\/projects$/,
+    handler: (_url, body) => ({
+      status: 201,
+      body: {
+        id: "proj-stubbed-1",
+        name: (body as { name?: string }).name ?? "stub project",
+        status: "ACTIVE",
+        created_at: "2026-09-13T00:00:00+00:00",
+        updated_at: "2026-09-13T00:00:00+00:00",
+      },
+    }),
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/projects\/[^/]+$/,
+    handler: (url, body) => ({
+      status: 200,
+      body: {
+        id: decodeURIComponent(url.pathname.split("/").pop() ?? ""),
+        name: (body as { name?: string }).name ?? "Example ML Research",
+        status: (body as { status?: string }).status ?? "ACTIVE",
+        created_at: "1970-01-01T00:00:00+00:00",
+        updated_at: "2026-09-13T00:00:00+00:00",
+      },
+    }),
+  },
+  {
+    method: "GET",
     pattern: /^\/approvals$/,
     handler: () => ({ status: 200, body: [] }),
   },

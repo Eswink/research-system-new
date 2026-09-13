@@ -1,5 +1,6 @@
 /** 协议编译/预检/试运行客户端（受控模板路径或草稿修订引用）。 */
 
+import { getActiveProjectId } from "./activeProject";
 import { request } from "./http";
 import type {
   CompileResultDto,
@@ -7,8 +8,6 @@ import type {
   PreflightReportDto,
   ProtocolSourceDto,
 } from "./types";
-
-const PROJECT = "example-project";
 
 /** 编译/预检来源：受控模板路径（旧协议）或已保存草稿的不可变修订（WP-B）。 */
 export type ProtocolSource = string | { draft_id: string; draft_revision: number };
@@ -25,19 +24,19 @@ export const protocolClient = {
     });
   },
   compileAndPreflight(source: ProtocolSource): Promise<PreflightReportDto> {
-    return request(`/projects/${PROJECT}/compile`, {
+    return request(`/projects/${getActiveProjectId()}/compile`, {
       method: "POST",
       body: JSON.stringify(protocolSourceBody(source)),
     });
   },
   preflight(source: ProtocolSource): Promise<PreflightReportDto> {
-    return request(`/projects/${PROJECT}/preflight`, {
+    return request(`/projects/${getActiveProjectId()}/preflight`, {
       method: "POST",
       body: JSON.stringify(protocolSourceBody(source)),
     });
   },
   dryRun(source: ProtocolSource): Promise<DryRunProjectionDto> {
-    return request(`/projects/${PROJECT}/dry-run`, {
+    return request(`/projects/${getActiveProjectId()}/dry-run`, {
       method: "POST",
       body: JSON.stringify(protocolSourceBody(source)),
     });

@@ -1,5 +1,6 @@
 /** 运行与审批客户端。 */
 
+import { getActiveProjectId } from "./activeProject";
 import { newIdempotencyKey, request } from "./http";
 import type {
   ApprovalDecideDto,
@@ -11,8 +12,6 @@ import type {
   Version,
 } from "./types";
 
-const PROJECT = "example-project";
-
 export const runClient = {
   start(source: string | { draft_id: string; draft_revision: number }): Promise<RunDetailDto> {
     const body: RunStartPayloadDto =
@@ -20,7 +19,7 @@ export const runClient = {
         ? { protocol_path: source }
         : { draft_id: source.draft_id, draft_revision: source.draft_revision };
     return request(
-      `/projects/${PROJECT}/runs`,
+      `/projects/${getActiveProjectId()}/runs`,
       {
         method: "POST",
         body: JSON.stringify(body),
@@ -28,7 +27,7 @@ export const runClient = {
       { idempotencyKey: newIdempotencyKey() },
     );
   },
-  list(projectId = PROJECT): Promise<RunDetailDto[]> {
+  list(projectId = getActiveProjectId()): Promise<RunDetailDto[]> {
     return request(`/projects/${encodeURIComponent(projectId)}/runs`, { method: "GET" });
   },
   get(runId: string): Promise<RunDetailDto> {

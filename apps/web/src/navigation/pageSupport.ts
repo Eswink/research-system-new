@@ -20,7 +20,10 @@ export interface PageSupport {
 
 /** 后端能力缺口登记（cursor plan §3 / CONSOLE_PAGE_MAP.md）。 */
 export const GAPS = {
-  multiProject: "无多项目管理 API：仅当前单项目上下文",
+  multiProject:
+    "项目注册表已接入（GET/POST/PATCH /projects；创建/归档/上下文切换真实生效，" +
+    "runs/settings/drafts 按项目归属）；不提供删除（归档即终态），" +
+    "agents/memory/experiments 数据面仍单项目共享，租户隔离属 M18 deferred",
   notifications:
     "通知已接入事件投影（GET /notifications + 已读持久化）；无实时推送，数量只来自当前页",
   account: "无账户/身份/Billing/平台 API Keys API",
@@ -64,7 +67,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "portfolio/projects": {
     level: "partial",
     reason: GAPS.multiProject,
-    disabledOperations: ["create", "archive", "delete", "switch-workspace"],
+    disabledOperations: ["delete"],
   },
   "portfolio/experiments": {
     level: "partial",

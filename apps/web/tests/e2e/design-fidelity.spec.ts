@@ -18,7 +18,7 @@ const ALL_ROUTES: readonly { name: string; hash: string; testid: string }[] = [
   {
     name: "portfolio-projects",
     hash: "#/portfolio/projects",
-    testid: "example-page-portfolio-projects",
+    testid: "projects-page",
   },
   { name: "portfolio-experiments", hash: "#/portfolio/experiments", testid: "console-main" },
   { name: "portfolio-runs-history", hash: "#/portfolio/runs-history", testid: "run-history" },

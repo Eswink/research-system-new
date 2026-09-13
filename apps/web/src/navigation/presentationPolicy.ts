@@ -7,8 +7,8 @@ export type SourceSelection = DataSource | "auto";
 /** An absent backend contract, not a failed request, permits a labeled example page. */
 export function resolveDataSource(route: Route, selection: SourceSelection): DataSource {
   if (selection !== "auto") return selection;
-  const key = `${route.domain}/${route.page}`;
-  return pageSupport(route).level === "gap" || key === "portfolio/projects" ? "example" : "live";
+  // WP-C（PLAN-041）：portfolio/projects 已有真实注册表契约，不再强制 example。
+  return pageSupport(route).level === "gap" ? "example" : "live";
 }
 
 export function parseSourceSelection(search: string): SourceSelection {

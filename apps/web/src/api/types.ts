@@ -269,6 +269,23 @@ export interface AgentUpdatePayload {
   max_iterations?: number | null;
 }
 
+export interface ProjectDto {
+  id: string;
+  name: string;
+  status: "ACTIVE" | "ARCHIVED";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectCreateDto {
+  name: string;
+}
+
+export interface ProjectUpdateDto {
+  name?: string | null;
+  status?: "ACTIVE" | "ARCHIVED" | null;
+}
+
 export interface ProjectSettingsDto {
   project_id: string;
   team_template_id: string;

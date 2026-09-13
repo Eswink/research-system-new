@@ -1,5 +1,6 @@
 /** 产品 Memory 控制面客户端（WP-F；PG canonical state，SQLite 503 诚实呈现）。 */
 
+import { getActiveProjectId } from "./activeProject";
 import { newIdempotencyKey, request } from "./http";
 import type {
   MemoryCommittedDto,
@@ -7,10 +8,8 @@ import type {
   MemoryViewDto,
 } from "./types";
 
-const PROJECT = "example-project";
-
 export const memoryClient = {
-  list(projectId = PROJECT): Promise<MemoryViewDto> {
+  list(projectId = getActiveProjectId()): Promise<MemoryViewDto> {
     return request(`/projects/${encodeURIComponent(projectId)}/memory`, { method: "GET" });
   },
   propose(payload: MemoryProposalCreateDto): Promise<MemoryCommittedDto> {

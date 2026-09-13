@@ -281,3 +281,54 @@ test("live: 项目设置参考协议 + 实验双支持 + 审批历史 404 gate�
   };
   expect(Array.isArray(workers.workers)).toBe(true);
 });
+
+test("live: 项目注册表与归属（WP-C cycle 1）", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const defaultList = (await (await page.request.get("/api/projects")).json()) as {
+    id: string;
+    name: string;
+    status: string;
+  }[];
+  const primary = defaultList.find((item) => item.id === "example-project");
+  expect(primary?.id).toBe("example-project");
+  expect(primary?.name).toBe("Example ML Research");
+
+  const created = await page.request.post("/api/projects", {
+    headers: idem("live-project"),
+    data: { name: "Live Registry Study" },
+  });
+  expect(created.status()).toBe(201);
+  const projectId = ((await created.json()) as { id: string }).id;
+  const listed = (await (await page.request.get("/api/projects")).json()) as { id: string }[];
+  expect(listed.map((item) => item.id)).toContain(projectId);
+
+  // 新注册项目自动带默认设置行（可编辑，不伪装未配置）。
+  const settings = await page.request.get(`/api/projects/${projectId}/settings`);
+  expect(settings.ok()).toBeTruthy();
+  expect(((await settings.json()) as Record<string, unknown>).project_id).toBe(projectId);
+
+  // 草稿按项目归属：新项目可见、其它项目不可见。
+  const draft = await page.request.post(`/api/projects/${projectId}/protocol-drafts`, {
+    headers: idem("live-project-draft"),
+    data: { name: "scoped draft", yaml_text: VALID_DRAFT },
+  });
+  expect(draft.status()).toBe(201);
+  const scoped = (await (
+    await page.request.get(`/api/projects/${projectId}/protocol-drafts`)
+  ).json()) as unknown[];
+  expect(scoped.length).toBe(1);
+  const other = (await (
+    await page.request.get("/api/projects/example-project/protocol-drafts")
+  ).json()) as { draft_id: string }[];
+  expect(other.map((item) => item.draft_id)).not.toContain(
+    ((await draft.json()) as { draft_id: string }).draft_id,
+  );
+
+  // 归档语义（无 DELETE）；幽灵项目仍 404。
+  const archived = await page.request.patch(`/api/projects/${projectId}`, {
+    headers: idem("live-project-archive"),
+    data: { status: "ARCHIVED" },
+  });
+  expect(((await archived.json()) as { status: string }).status).toBe("ARCHIVED");
+  expect((await page.request.get("/api/projects/ghost-project/settings")).status()).toBe(404);
+});

@@ -19,6 +19,7 @@ import { inspectionClient } from "./inspectionClient";
 import type { EndpointWithEtag } from "./legacyShapes";
 import { modelsClient } from "./modelsClient";
 import { operationsClient } from "./operationsClient";
+import { projectsClient } from "./projectsClient";
 import { protocolClient, type ProtocolSource } from "./protocolClient";
 import { runClient } from "./runClient";
 import { teamClient } from "./teamClient";
@@ -69,6 +70,14 @@ export const api = {
   probeModel: (id: string) => modelsClient.probe(id),
   removeModel: (modelId: string) => modelsClient.remove(modelId),
   getCompatibility: (modelId: string) => modelsClient.compatibility(modelId),
+
+  // ── projects（WP-C/PLAN-041：注册表 + 归档语义；无 DELETE）──
+  listProjects: () => projectsClient.list(),
+  createProject: (name: string) => projectsClient.create({ name }),
+  updateProject: (
+    projectId: string,
+    payload: { name?: string | null; status?: "ACTIVE" | "ARCHIVED" | null },
+  ) => projectsClient.update(projectId, payload),
 
   // ── team ──
   listRoles: () => teamClient.listRoles(),

@@ -5,6 +5,7 @@
  * save 带 If-Match（陈旧修订 → 412）。
  */
 
+import { getActiveProjectId } from "./activeProject";
 import { newIdempotencyKey, request } from "./http";
 import type {
   ProtocolDraftRevisionDto,
@@ -13,8 +14,6 @@ import type {
   ProtocolDraftValidateResultDto,
   ProtocolDraftViewDto,
 } from "./types";
-
-const PROJECT = "example-project";
 
 export const draftApi = {
   listTemplates(): Promise<ProtocolDraftTemplateDto[]> {
@@ -34,7 +33,7 @@ export const draftApi = {
 
   create(name: string, yamlText: string): Promise<ProtocolDraftViewDto> {
     return request(
-      `/projects/${PROJECT}/protocol-drafts`,
+      `/projects/${getActiveProjectId()}/protocol-drafts`,
       {
         method: "POST",
         body: JSON.stringify({ name, yaml_text: yamlText }),
@@ -44,7 +43,7 @@ export const draftApi = {
   },
 
   list(): Promise<ProtocolDraftSummaryDto[]> {
-    return request(`/projects/${PROJECT}/protocol-drafts`, { method: "GET" });
+    return request(`/projects/${getActiveProjectId()}/protocol-drafts`, { method: "GET" });
   },
 
   get(draftId: string): Promise<ProtocolDraftViewDto> {
