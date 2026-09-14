@@ -2,7 +2,7 @@
 id: PLAN-20260914-046
 slug: budget-adjust-ledger-and-forecast
 title: budget_adjust 走 BudgetLedger + 成本预测投影（GOAL-001 cycle 6：EC-04 第一批）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-14
 updated_at: 2026-09-14
 parent_goal: GOAL-20260912-001
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260912-001 cycle 6（/goal 持续循环迭代指令）；范围=EC-04 的 budget_adjust 与成本预测两项；真 pause-resume/实验队列/artifact diff/memory policy（G16）属后续 cycle"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260914-046-budget-adjust-ledger-and-forecast.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260914-023-budget-ledger-sharing-and-reservation-attribution.md
 ---
 
 # PLAN-20260914-046 — budget_adjust 与成本预测（cycle 6，EC-04 第一批）
@@ -74,7 +75,7 @@ GET /runs/{id}/cost-forecast
   replace_agent 仍 501；forecast 端点 UNKNOWN/混合币种诚实；openapi 零漂移。
 - [x] AC-03（WP-C）：budget 页 forecast 可见 + adjust 真实生效；G5/G12 更新；
   web 门全绿。
-- [ ] AC-04（WP-D）：m0 全绿 + stub/live e2e；push 后 quality-ubuntu 与
+- [x] AC-04（WP-D）：m0 全绿 + stub/live e2e；push 后 quality-ubuntu 与
   console-frontend 全绿；RECHECK-046 回填。
 
 ## 实施清单
@@ -82,7 +83,7 @@ GET /runs/{id}/cost-forecast
 - [x] WP-A 应用层 budget_adjust
 - [x] WP-B API 分支 + forecast 端点
 - [x] WP-C 前端 budget 页 + 文档
-- [ ] WP-D 测试 + 本地门 + 收口
+- [x] WP-D 测试 + 本地门 + 收口
 
 ## 证据
 
@@ -122,7 +123,33 @@ GET /runs/{id}/cost-forecast
 - 2026-09-14 由 GOAL cycle 6 派生，进入执行。
 - 2026-09-14 WP-A/B/C 完成（本地：ruff/mypy 全绿、api+domain 25 用例、
   stub e2e 2 例、live e2e 15 例、openapi 再生零漂移）；待 m0 与 CI。
+- 2026-09-14 DONE：m0 23/23 PASS；全量 pytest 3132 passed/0 failed；
+  commit `837f730`；CI run 34838516562（#60）quality-ubuntu-latest /
+  quality-windows-latest / console-frontend / container-quality / eval-gate 全
+  SUCCESS，collector-quality 仍为 RECHECK-042 起登记的 2 项既有 flake；
+  RECHECK-20260914-046 = PASS_WITH_WARNINGS（W-2 调整不发事件 / W-3 归属依赖
+  进程内 ref，均为已标注边界）。
 
 ## 影响报告
 
-（收口时填写）
+- 改动：应用层 budget_adjust（release+reserve）；域成本预测投影；
+  `LedgerSnapshot.reservations_by_ref`（三实现同步）；API 2 处（interventions
+  budget_adjust 分支、GET /runs/{id}/cost-forecast）；前端 budget 页 + 4 client；
+  docs 3 份 + openapi 再生；测试 25 + stub 2 + live 1。
+- lint/typecheck/test：ruff check/format 全绿；mypy 790 files Success；
+  全量 pytest 3132 passed/0 failed/151 skipped；m0 23/23 PASS；web lint/typecheck/
+  unit/build/boundaries 全绿；stub e2e 32/32；live e2e 15/15。
+- Domain/API/schema：新增 `packages/domain/cost_forecast.py`（视图类型 + 纯投影）；
+  DTO 新增 `CostForecastDto`/`ForecastLineDto`/`BudgetAdjustLineDto`，
+  `InterventionDto` 增 `adjustments`；openapi.m13.json 再生（+425 行），
+  契约快照测试通过。无数据库迁移：`budget_reservations` 既有列复用
+  （`reservation_ref` 读取进 snapshot 的 by_ref 映射）。
+- 安全/凭据：无新凭据面；预算调整策略沿用项目 budget policy（catalog 解析，
+  缺失 503 不落默认）；响应不含凭据或模型输入输出。
+- 兼容性/迁移风险：`LedgerSnapshot` 新增带默认值的字段（向后兼容，既有构造
+  不变）；`reservations_by_ref` 缺失的第三方实现会退化为 `RUN_SCOPE` 归属并
+  如实标注（不静默）。interventions 的 budget_adjust 从 501 变 200 是**行为变更**，
+  前端与文档已同步；replace_agent 仍 501。
+- 上游版本影响：无新增依赖、无版本 pin 变化。
+- 下一项任务：cycle 7 = EC-04 剩余（真 pause-resume 执行协调 / 实验队列 /
+  artifact 文件 diff / memory capability policy G16），见 GOAL 迭代日志。
