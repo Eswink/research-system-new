@@ -176,6 +176,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     """配置面 store（WP-B PLAN-040 / WP-A PLAN-041：SQLite 两组成同侧）。"""
     from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
+    from adapters.sqlite.library_store import SqliteLibraryStore
     from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
@@ -186,6 +187,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "project_settings_store": SqliteProjectSettingsStore(connection=connection),
         "project_store": SqliteProjectStore(connection=connection),
         "notification_reads": SqliteNotificationReadStore(connection=connection),
+        "library_store": SqliteLibraryStore(connection=connection),
     }
 
 

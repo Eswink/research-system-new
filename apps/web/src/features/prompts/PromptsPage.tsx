@@ -1,20 +1,23 @@
 import { useI18n } from "../../i18n/useI18n";
-import { pageSupport } from "../../navigation/pageSupport";
-import { GapLayout } from "../shared/GapLayout";
+import { LibraryPage } from "../library/LibraryPage";
 
-/** 提示词库（T25）：列表 + 编辑/版本/A-B 结构；无后端 API，业务修改禁用。 */
+/** 提示词库（EC-03）：真实库目录（prompt kind）；版本/A-B 结构仍无 API。 */
 export function PromptsPage() {
-  const { t } = useI18n();
-  const support = pageSupport({ domain: "library", page: "prompts" });
+  const { language } = useI18n();
+  const zh = language === "zh";
   return (
-    <div data-testid="gap-page-library-prompts">
-      <GapLayout
-        title={t("page.library.prompts")}
-        support={support}
-        columns={[t("gap.column.item"), t("prompts.version"), t("gap.column.status")]}
-        actions={[{ label: t("action.create") }]}
-        detailTitle={t("prompts.versions")}
-      />
-    </div>
+    <LibraryPage
+      kind="prompt"
+      title={zh ? "提示词库" : "Prompt library"}
+      kicker="LIBRARY / PROMPTS"
+      description={
+        zh
+          ? "项目内登记的提示词条目（名称/描述/标签/内容引用）。版本树与 A-B 无 API，不伪造。"
+          : [
+              "Prompt entries for the active project (name/description/tags/content ref). ",
+              "Version trees and A-B testing have no API and are not faked.",
+            ].join("")
+      }
+    />
   );
 }

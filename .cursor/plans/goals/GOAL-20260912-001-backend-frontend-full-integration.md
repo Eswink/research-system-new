@@ -81,7 +81,7 @@ memory_entries: []
 | --- | --- | --- | --- |
 | EC-01 | 项目注册表 + 前端去硬编码 + projects 页 live | rg + live e2e | PASS |
 | EC-02 | reports/integrations/全局血缘 复用既有域 + live | API/e2e/基线 | PASS |
-| EC-03 | 9 GAP 域中 prompts/datasets/notebooks/alerts/incidents/schedules/data-health 最小域 + live | API/e2e/policy | PENDING |
+| EC-03 | 9 GAP 域中 prompts/datasets/notebooks/alerts/incidents/schedules/data-health 最小域 + live | API/e2e/policy | PARTIAL（prompts/datasets/notebooks 已交付；其余 4 域 cycle 5） |
 | EC-04 | 深水区语义（budget_adjust/预测/真 pause-resume/队列/Diff/memory policy），未落地保持诚实标注 | API + G 表一致性 | PENDING |
 | EC-05 | 33 路由 live-capable（M18/M19 诚实锁定除外）；example 仅设计参照 | stub+live e2e + pageSupport | PENDING |
 | EC-06 | 每 cycle GHA 全绿；收口 RECHECK + 安全扫描处置 | gh run + audits | PENDING |
@@ -93,7 +93,7 @@ RECHECK-20260912-040 = PASS_WITH_WARNINGS；密封扫描 scan-2026-09-12 已处�
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 3 已闭环（CI run #55 达标，EC-02 PASS）；driver=session-goal，owner=root-agent；下一 cycle = 4（EC-03：7 个 GAP 域最小域 + live）**。
+按 README 的 7 步判定执行；当前续点：**cycle 4 已 push 待 CI 盖章（driver=session-goal，owner=root-agent；PLAN-20260914-044 处于 ⑤/⑥ 段）；下一 cycle = 5（EC-03 第二批）**。
 
 ## 驱动
 
@@ -137,6 +137,7 @@ m0 全量单跑截断（分组复跑）。工作流文件 `.github/workflows/m0-
 | 1 | PLAN-20260912-041 | b55df92, 9ba606e, 57feb37 + 收口批 | 全量 pytest exit 0/0 failed；ts 9/9；fw 8/8；stub 30/30；live 11/11；RECHECK-041 PASS_WITH_WARNINGS | run #50/收口 run（见状态历史） | F-2 AC 文案、F-3 docstring、F-1 收口时序 | EC-02~06 | cycle 2 = PLAN-042（EC-02：reports/integrations/lineage 经既有域 HTTP 面） |
 | 2 | PLAN-20260912-042 | 4de2282 | 全量 pytest 2997 passed/205 skipped/0 failed；m0 23/23 PASS；typescript 9/9；framework 8/8；mypy 767 files（默认+linux）Success；docs_consistency 6 PASS | run #53: quality-ubuntu/console-frontend/quality-windows/container-quality/eval-gate 全 SUCCESS；collector-quality FAIL（2 项既有 timing flake，52→53 由 5→2） | project_store 时序、symlink 惰性目录、pinned 镜像引用、docs 检查器大小写 | EC-02~06 | cycle 3 = EC-02（reports/integrations/lineage 经既有域 HTTP 面 + 页面翻 live） |
 | 3 | PLAN-20260913-043 | 94570f6 | 全量 pytest 3067 passed/151 skipped/0 failed；api 新套件 10 passed；stub e2e 30/30；live e2e 12/12；m0 23/23 PASS；web lint/typecheck/test/build+boundaries 全绿；基线 win32+linux 各 2 张 | run #55: quality-ubuntu/console-frontend/quality-windows/container-quality/eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake） | linux 基线 clone 只见已提交内容（改叠加工作树）；inspection.py 超 450 行→拆 router | EC-03~06 | cycle 4 = EC-03（prompts/datasets/notebooks/alerts/incidents/schedules/data-health 最小域 + live） |
+| 4 | PLAN-20260914-044 | 见状态历史（cycle 4 commit） | 全量 pytest 3094 passed/151 skipped/0 failed；store 13/api 7 passed；stub e2e 30/30；live e2e 13/13；m0 23/23 PASS；web 73/73；基线 3 路由 × win32/linux | cycle 4 push → run 终态见状态历史 | 基线 `--update-snapshots` 只写差异（改强制重写+还原无关漂移）；两测试随等级提升同步 | EC-03 第二批 + EC-04~06 | cycle 5 = EC-03 第二批（alerts/incidents/schedules/data-health 最小域 + live） |
 
 ## 状态历史
 

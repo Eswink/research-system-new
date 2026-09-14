@@ -45,6 +45,7 @@ from packages.application.ports.execution_job_queue import (
     ExecutionJobOutcome,
     ExecutionJobQueue,
 )
+from packages.application.ports.library_store import LibraryStore
 from packages.application.ports.memory_store import MemoryStore
 from packages.application.ports.model_gateway import (
     CompletionRequest,
@@ -134,6 +135,7 @@ __all__ = [
     "PolicyEvaluator",
     "PolicyRequest",
     "ProjectSettingsStore",
+    "LibraryStore",
     "ProjectStore",
     "ProtocolDraftStore",
     "ProtocolDraftRecord",

@@ -125,16 +125,23 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ## Library（7 页）
 
 ### `#/library/prompts` — 提示词
-- 设计：`screens/Prompts.jsx`。等级：GAP。
-- 缺口（登记）：无 prompts API。列表/编辑/版本/A-B 结构还原；全部业务修改禁用。
+- 设计：`screens/Prompts.jsx`。等级：PARTIAL。
+- API：`GET /projects/{id}/library?kind=prompt`（`LibraryResourceDto` 列表）、
+  `POST /projects/{id}/library`（kind=prompt）、`PATCH /library/{id}`（重命名/归档）。
+- 缺口（登记）：版本树与 A-B 无 API——结构不渲染；列表/详情为真实目录事实。
 
 ### `#/library/datasets` — 数据集
-- 设计：`screens/Datasets.jsx`。等级：GAP。
-- 缺口（登记）：无 datasets API（dataset_id/version/digest 仅存在于
-  `/evaluations/trend` 过滤参数与点位字段）。注册/上传/删除/数据查询禁用。
+- 设计：`screens/Datasets.jsx`。等级：PARTIAL。
+- API：`GET /projects/{id}/library?kind=dataset`、`POST ...`（kind=dataset）、
+  `PATCH /library/{id}`。
+- 缺口（登记）：上传与字段 schema 无 API；dataset_id/version/digest 的评测输入
+  仍由 eval spec 承载（本域只登记目录引用，不与其耦合）。
 
 ### `#/library/notebooks` — 笔记
-- 设计：`screens/Notebooks.jsx`。等级：GAP。创建/保存/执行禁用。
+- 设计：`screens/Notebooks.jsx`。等级：PARTIAL。
+- API：`GET /projects/{id}/library?kind=notebook`、`POST ...`（kind=notebook）、
+  `PATCH /library/{id}`。
+- 缺口（登记）：单元格编辑与执行无 API。
 
 ### `#/library/model-registry` — 模型注册
 - 设计：`screens/OpsScreens.jsx` `ModelRegistryScreen`。
@@ -295,8 +302,9 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
 | G5 | 预算调整契约 | govern/budget | 禁用（501 语义） |
 | G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已接线**（A5：按钮按能力标注；仍属控制面状态迁移） |
-| G7 | prompts/datasets/notebooks/alerts/incidents/schedules/data-health | 对应 7 页 | GAP 结构还原+禁用（无 Domain 支撑）；~~reports~~（PLAN-043 已交付，见 G7a）、~~integrations~~（PLAN-043 已交付，见 G15） |
+| G7 | alerts/incidents/schedules/data-health | 对应 4 页 | GAP 结构还原+禁用（无 Domain 支撑）；~~prompts/datasets/notebooks~~（PLAN-044 已交付，见 G7b）、~~reports~~（PLAN-043，见 G7a）、~~integrations~~（PLAN-043，见 G15） |
 | G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
+| G7b | ~~prompts/datasets/notebooks 库目录~~ | library 三页 | **已交付**（PLAN-044：GET/POST /projects/{id}/library + PATCH /library/{id}，kind 区分；版本树/上传/单元格执行仍禁用） |
 | G8 | 文件浏览/预览；~~下载~~ | run/workspace | **预览/下载已交付**（WP-C）；文件级 Diff 仍无接口 |
 | G9 | 全局血缘 | library/lineage | **Run 级投影已交付**（PLAN-043：GET /runs/{id}/lineage typed nodes/edges）；全局跨 run 仍无 API |
 | G10 | ~~删除端点（endpoint/model/agent/draft）~~ | library/endpoints、model-registry、run/approvals、plan/protocol | **已交付**（WP-B：四类 DELETE，被引用 409；契约基线不可删；memory 记录删除见 WP-F） |

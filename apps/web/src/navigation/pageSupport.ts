@@ -46,9 +46,14 @@ export const GAPS = {
   experimentCreate:
     "计划预注册/归档已接入（WP-A 起 SQLite 开发路径与 PG 双支持）；" +
     "域内无队列状态，排队/调度无 API，不伪装",
-  prompts: "无 prompts API",
-  datasets: "无 datasets API",
-  notebooks: "无 notebooks API",
+  prompts:
+    "库目录已接入（GET /projects/{id}/library?kind=prompt + 创建/重命名/归档）；" +
+    "版本树与 A-B 无 API，不伪造",
+  datasets:
+    "库目录已接入（kind=dataset 的引用登记）；上传与字段 schema 无 API；" +
+    "评测输入仍由 eval spec 承载",
+  notebooks:
+    "库目录已接入（kind=notebook 的条目登记）；单元格编辑与执行无 API",
   reports:
     "已接入 GET /runs/{id}/deliverable（M12 持久化交付物）；" +
     "报告生成/编辑/PDF/发布无 API——生成动作禁用",
@@ -88,9 +93,21 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
     reason: GAPS.fileBrowse,
     disabledOperations: ["file-browse", "file-preview", "file-diff"],
   },
-  "library/prompts": { level: "gap", reason: GAPS.prompts },
-  "library/datasets": { level: "gap", reason: GAPS.datasets },
-  "library/notebooks": { level: "gap", reason: GAPS.notebooks },
+  "library/prompts": {
+    level: "partial",
+    reason: GAPS.prompts,
+    disabledOperations: ["version-tree", "ab-test"],
+  },
+  "library/datasets": {
+    level: "partial",
+    reason: GAPS.datasets,
+    disabledOperations: ["upload", "schema"],
+  },
+  "library/notebooks": {
+    level: "partial",
+    reason: GAPS.notebooks,
+    disabledOperations: ["cell-edit", "execute"],
+  },
   "library/model-registry": { level: "full" },
   "library/lineage": { level: "partial", reason: GAPS.globalLineage },
   "library/endpoints": { level: "full" },

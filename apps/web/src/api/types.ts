@@ -518,6 +518,22 @@ export interface LineageDto {
   degraded: boolean;
 }
 
+export type ResourceKind = "prompt" | "dataset" | "notebook";
+export type ResourceStatus = "ACTIVE" | "ARCHIVED";
+
+export interface LibraryResourceDto {
+  id: string;
+  project_id: string;
+  kind: ResourceKind;
+  name: string;
+  description: string;
+  content_ref: string | null;
+  tags: string[];
+  status: ResourceStatus;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ExperimentRunDto {
   experiment_run_id: string;
   artifact_ids: string[];

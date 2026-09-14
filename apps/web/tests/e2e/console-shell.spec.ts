@@ -27,11 +27,13 @@ test("八域导航渲染，域展开子页", async ({ page }) => {
 });
 
 test("直达 example 路由保持页面身份与来源，刷新不串页", async ({ page }) => {
-  await page.goto("/#/library/prompts");
-  await expect(page.getByTestId("example-page-library-prompts")).toBeVisible();
+  // PLAN-044：library/prompts 已有真实库目录契约（auto → live）；用仍为 gap 的
+  // 页面验证 example 身份的直达与刷新不串页。
+  await page.goto("/#/ops/alerts");
+  await expect(page.getByTestId("example-page-ops-alerts")).toBeVisible();
   await expect(page.getByTestId("data-source-badge")).toHaveAttribute("data-source", "example");
   await page.reload();
-  await expect(page.getByTestId("example-page-library-prompts")).toBeVisible();
+  await expect(page.getByTestId("example-page-ops-alerts")).toBeVisible();
   await expect(page.getByTestId("data-source-badge")).toHaveAttribute("data-source", "example");
 });
 

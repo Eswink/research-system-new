@@ -1732,6 +1732,173 @@
         "title": "InterventionDto",
         "type": "object"
       },
+      "LibraryResourceCreateDto": {
+        "additionalProperties": false,
+        "description": "创建库条目：id 服务端生成；kind 决定归属页面。",
+        "properties": {
+          "content_ref": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Ref"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "prompt",
+              "dataset",
+              "notebook"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 32,
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ],
+        "title": "LibraryResourceCreateDto",
+        "type": "object"
+      },
+      "LibraryResourceDto": {
+        "additionalProperties": false,
+        "properties": {
+          "content_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Ref"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "prompt",
+              "dataset",
+              "notebook"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "kind",
+          "name",
+          "description",
+          "content_ref",
+          "tags",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "LibraryResourceDto",
+        "type": "object"
+      },
+      "LibraryResourceUpdateDto": {
+        "additionalProperties": false,
+        "description": "重命名与/或归档（ACTIVE ⇄ ARCHIVED；不提供删除）。",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ACTIVE",
+                  "ARCHIVED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "LibraryResourceUpdateDto",
+        "type": "object"
+      },
       "LineageDto": {
         "additionalProperties": false,
         "description": "Run 级来源血缘投影（nodes/edges 确定性排序）。\n\n只由 API 明确返回的 evidence/claim/artifact 引用构造边；缺失引用显示为\n断开（不补节点）。全局跨 run 血缘仍不可用（G9）。",
@@ -3449,6 +3616,15 @@
         "title": "RelationDto",
         "type": "object"
       },
+      "ResourceKind": {
+        "enum": [
+          "prompt",
+          "dataset",
+          "notebook"
+        ],
+        "title": "ResourceKind",
+        "type": "string"
+      },
       "RoleDefinitionDto": {
         "additionalProperties": false,
         "description": "RoleDefinition 视图（不绑定模型；ADR-0011）。",
@@ -5024,6 +5200,100 @@
         ]
       }
     },
+    "/library/{resource_id}": {
+      "get": {
+        "description": "单条库条目；未知 id → 404。",
+        "operationId": "get_library_library__resource_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryResourceDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Library",
+        "tags": [
+          "library"
+        ]
+      },
+      "patch": {
+        "description": "重命名与/或归档（ACTIVE ⇄ ARCHIVED）；未知 id 404；空载荷 422。",
+        "operationId": "update_library_library__resource_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryResourceUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryResourceDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Library",
+        "tags": [
+          "library"
+        ]
+      }
+    },
     "/llm-endpoints": {
       "get": {
         "operationId": "list_endpoints_llm_endpoints_get",
@@ -6229,6 +6499,120 @@
         "summary": "Create Experiment Plan",
         "tags": [
           "inspection"
+        ]
+      }
+    },
+    "/projects/{project_id}/library": {
+      "get": {
+        "description": "项目库条目（确定性排序：created_at, id）；可选 kind 过滤。",
+        "operationId": "list_library_projects__project_id__library_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ResourceKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LibraryResourceDto"
+                  },
+                  "title": "Response List Library Projects  Project Id  Library Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Library",
+        "tags": [
+          "library"
+        ]
+      },
+      "post": {
+        "description": "创建库条目：服务端生成 id + 路径项目归属（未注册项目 404）。",
+        "operationId": "create_library_projects__project_id__library_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryResourceCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryResourceDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Library",
+        "tags": [
+          "library"
         ]
       }
     },

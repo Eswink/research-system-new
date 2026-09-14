@@ -93,6 +93,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
     from adapters.sqlite.db import connect
     from adapters.sqlite.endpoint_store import SqliteEndpointStore
+    from adapters.sqlite.library_store import SqliteLibraryStore
     from adapters.sqlite.model_store import SqliteModelStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
@@ -115,6 +116,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         catalog_overrides=SqliteCatalogOverrideStore(connection=connection),
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
         project_store=SqliteProjectStore(connection=connection),
+        library_store=SqliteLibraryStore(connection=connection),
         protocol_draft_service=_make_draft_service(connection),
         _connection=connection,
     )

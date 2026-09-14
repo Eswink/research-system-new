@@ -45,6 +45,20 @@ PATCH  /projects/{id}                            （rename 和/或 status: ACTIV
   允许 examples 回退）、协议草稿按路径项目创建/列表；agents/memory/experiments
   数据面暂为单项目共享（G2 标注，不伪装隔离）。未注册项目访问项目面 → 404。
 
+## Library（库目录，PLAN-20260914-044 WP-B）
+
+```text
+GET    /projects/{id}/library                    （可选 ?kind=prompt|dataset|notebook 过滤）
+POST   /projects/{id}/library                    （kind/name 必填；id 服务端生成；201）
+GET    /library/{resource_id}                    （未知 404）
+PATCH  /library/{resource_id}                    （rename 和/或 status: ACTIVE|ARCHIVED；无 DELETE）
+```
+
+- prompts/datasets/notebooks 三页共享的目录事实：元数据 + 不透明 content_ref
+  （不解析/不下载）。配置面存储（与 projects/settings/agents 同侧，两组成均为
+  SQLite），不新增 PG 表。datasets 的评测输入仍由 eval spec 承载，不与之耦合。
+  未注册项目写入 → 404；store 未配置 → 503。
+
 ## Roles / Teams / Agents
 
 ```text

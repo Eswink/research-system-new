@@ -17,6 +17,7 @@ import { notificationsClient } from "./notificationClient";
 import { ApiError } from "./http";
 import { inspectionClient } from "./inspectionClient";
 import type { EndpointWithEtag } from "./legacyShapes";
+import { libraryClient } from "./libraryClient";
 import { modelsClient } from "./modelsClient";
 import { operationsClient } from "./operationsClient";
 import { projectsClient } from "./projectsClient";
@@ -35,6 +36,7 @@ import type {
   ModelReadDto,
   ModelUpdateDto,
   ProjectSettingsDto,
+  ResourceKind,
   Version,
 } from "./types";
 
@@ -127,6 +129,18 @@ export const api = {
 
   // ── tool providers（PLAN-043 只读目录）──
   listToolProviders: () => toolProvidersClient.list(),
+
+  // ── library（PLAN-044：prompts/datasets/notebooks 共享目录）──
+  listLibrary: (kind: ResourceKind) => libraryClient.list(kind),
+  createLibrary: (payload: {
+    kind: ResourceKind;
+    name: string;
+    description?: string;
+    content_ref?: string | null;
+    tags?: string[];
+  }) => libraryClient.create(payload),
+  updateLibrary: (resourceId: string, payload: { name?: string; status?: "ACTIVE" | "ARCHIVED" }) =>
+    libraryClient.update(resourceId, payload),
 
   // ── operations ─
   runTelemetry: (runId: string) => operationsClient.telemetry(runId),

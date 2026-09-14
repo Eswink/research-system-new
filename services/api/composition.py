@@ -28,6 +28,7 @@ from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
 from adapters.sqlite.experiment_store import SqliteExperimentStore
 from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
+from adapters.sqlite.library_store import SqliteLibraryStore
 from adapters.sqlite.memory_store import SqliteMemoryStore
 from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
@@ -42,6 +43,7 @@ from packages.application.ports import (
     AgentStore,
     ApprovalStore,
     CatalogOverrideStore,
+    LibraryStore,
     ProjectSettingsStore,
     ProjectStore,
     RunStore,
@@ -111,6 +113,8 @@ class ApiDeps:
     experiment_store: Any | None = field(default=None, repr=False)
     # WP-G：通知已读 view-state（控制面 SQLite；两路径同侧）。
     notification_reads: Any | None = field(default=None, repr=False)
+    # WP-A（PLAN-044）：库目录（prompts/datasets/notebooks；配置面，两组成同侧）。
+    library_store: LibraryStore | None = field(default=None, repr=False)
     # WP-D：provider_id → ToolProvider port 实例注册表（生产未注册时空 dict，
     # build_provider_health 对非 NATIVE provider 诚实返回 UNKNOWN）。
     tool_providers: Mapping[str, Any] = field(default_factory=dict, repr=False)
@@ -252,6 +256,7 @@ def _sqlite_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "project_settings_store": SqliteProjectSettingsStore(connection=connection),
         "project_store": SqliteProjectStore(connection=connection),
         "notification_reads": SqliteNotificationReadStore(connection=connection),
+        "library_store": SqliteLibraryStore(connection=connection),
         "memory": SqliteMemoryStore(connection=connection),
         "experiment_store": SqliteExperimentStore(connection=connection),
         "worker_registry": SqliteWorkerRegistry(connection=connection),

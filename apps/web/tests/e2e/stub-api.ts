@@ -380,6 +380,34 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
       },
     }),
   },
+  // PLAN-044 EC-03: library catalog (prompts/datasets/notebooks) read + create.
+  {
+    method: "GET",
+    pattern: /^\/projects\/[^/]+\/library$/,
+    handler: () => ({ status: 200, body: [] }),
+  },
+  {
+    method: "POST",
+    pattern: /^\/projects\/[^/]+\/library$/,
+    handler: (_url, body) => {
+      const payload = (body ?? {}) as Record<string, unknown>;
+      return {
+        status: 201,
+        body: {
+          id: "lib-stub-1",
+          project_id: "example-project",
+          kind: payload.kind ?? "prompt",
+          name: payload.name ?? "",
+          description: payload.description ?? "",
+          content_ref: payload.content_ref ?? null,
+          tags: payload.tags ?? [],
+          status: "ACTIVE",
+          created_at: "2026-09-14T00:00:00Z",
+          updated_at: "2026-09-14T00:00:00Z",
+        },
+      };
+    },
+  },
 ];
 
 function match(path: string, method: string): Handler | null {

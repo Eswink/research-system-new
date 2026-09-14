@@ -380,3 +380,49 @@ test("live: reports/integrations/lineage 只读面（EC-02）", async ({ page })
   expect((await page.request.get("/api/runs/ghost-run/lineage")).status()).toBe(404);
   expect((await page.request.get("/api/runs/ghost-run/deliverable")).status()).toBe(404);
 });
+
+test("live: library 库目录创建/过滤/归档（EC-03 第一批）", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const created = await page.request.post("/api/projects/example-project/library", {
+    headers: idem("live-lib"),
+    data: { kind: "prompt", name: "live prompt", description: "d", tags: ["x"] },
+  });
+  expect(created.status()).toBe(201);
+  const resource = (await created.json()) as {
+    id: string;
+    kind: string;
+    project_id: string;
+    status: string;
+  };
+  expect(resource.kind).toBe("prompt");
+  expect(resource.project_id).toBe("example-project");
+  expect(resource.status).toBe("ACTIVE");
+
+  // kind 过滤：prompt 列表含之，dataset 列表不含。
+  const prompts = (await (
+    await page.request.get("/api/projects/example-project/library?kind=prompt")
+  ).json()) as { id: string }[];
+  expect(prompts.map((item) => item.id)).toContain(resource.id);
+  const datasets = (await (
+    await page.request.get("/api/projects/example-project/library?kind=dataset")
+  ).json()) as { id: string }[];
+  expect(datasets.map((item) => item.id)).not.toContain(resource.id);
+
+  // 归档幂等（归档非删除）；未知 id 404。
+  const archived = await page.request.patch(`/api/library/${resource.id}`, {
+    headers: idem("live-lib-archive"),
+    data: { status: "ARCHIVED" },
+  });
+  expect(archived.status()).toBe(200);
+  expect(((await archived.json()) as { status: string }).status).toBe("ARCHIVED");
+  expect((await page.request.get("/api/library/ghost-resource")).status()).toBe(404);
+
+  // 幽灵项目写入 404（不伪装归属）。
+  const ghost = await page.request.post("/api/projects/ghost-project/library", {
+    headers: idem("live-lib-ghost"),
+    data: { kind: "prompt", name: "x" },
+  });
+  expect(ghost.status()).toBe(404);
+});
+
