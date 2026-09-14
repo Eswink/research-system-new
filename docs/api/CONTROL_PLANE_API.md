@@ -140,6 +140,7 @@ GET    /runs/{id}/cost
 GET    /runs/{id}/artifacts                （WP-C 只读列表）
 GET    /artifacts/{artifact_id}            （WP-C 元数据 + 内容级 verify）
 GET    /artifacts/{artifact_id}/content    （WP-C 下载/白名单内联预览）
+GET    /artifacts/{left}/diff/{right}      （PLAN-047 制品内容 diff：行级 hunks + 统计）
 GET    /cost/daily                         （WP-D 跨 run 日序列，五状态盖章）
 GET    /evaluations/trend
 GET    /cluster/workers
@@ -161,6 +162,12 @@ M15 Operations（只读投影）：
   分组小计）；只含有数据的日期，无预测无插值。
 - `GET /artifacts/*`（WP-C）— store 缺失 503；未知 404；tombstone/缺 blob
   410；超限 413；非白名单 media 一律 attachment + nosniff。
+- `GET /artifacts/{left}/diff/{right}`（PLAN-047）— 两侧都是 persisted 制品
+  （口径：制品内容 vs 制品内容；控制面**没有**文件系统快照 diff 面）。相同内容
+  → `identical=true` 且 lines 空；二进制/非 UTF-8 → `available=false` +
+  `reason=BINARY_CONTENT|NOT_TEXT`；单侧超过 2 MiB → `reason=TOO_LARGE`；
+  行数超过 2000 → 保留头部 + `truncated=true`。不可比一律 200 + 显式原因，
+  不返回空 diff 冒充"无差异"；diff 不落库。
 
 ## Inspection（只读投影；WP-A 对齐 run gate）
 

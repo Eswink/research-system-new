@@ -32,7 +32,9 @@ export const GAPS = {
     "预测只覆盖已预留额度（未预留开销不外推）；运行中语义变更（换 Agent/协议）仍 501",
   budgetForecast: "Run 级预留-消耗预测已接入（GET /runs/{id}/cost-forecast）；无 burn-rate 外推",
   pauseResume: "pause/resume 仅状态迁移，不证明实际暂停/恢复执行",
-  fileBrowse: "文件 Diff 无接口；预览与下载已接入（GET /artifacts/{id}/content）",
+  fileBrowse:
+    "制品内容 Diff 已接入（GET /artifacts/{left}/diff/{right}，二进制/超限如实标注）；" +
+    "预览与下载已接入（GET /artifacts/{id}/content）；工作区文件树与文件级快照 Diff 无 API",
   globalLineage:
     "全局数据集/提示词血缘无 API（仅 Run 级引用，已接入 GET /runs/{id}/lineage 投影）",
   delete:

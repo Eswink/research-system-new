@@ -12,16 +12,29 @@ from typing import Any
 
 from fastapi import APIRouter, Request, Response
 
+from packages.application.artifacts.diff import (
+    ArtifactDiff,
+    DiffSide,
+    DiffUnavailable,
+    diff_artifacts,
+)
 from packages.application.ports.errors import InvalidInputError
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
-from services.api.dto.artifacts import ArtifactDto
+from services.api.dto.artifacts import (
+    ArtifactDiffDto,
+    ArtifactDiffLineDto,
+    ArtifactDiffStatsDto,
+    ArtifactDto,
+)
 from services.api.errors import ApiError
 from services.api.run_access import get_run_or_error
 
 router = APIRouter(tags=["artifacts"])
 
 MAX_CONTENT_BYTES = 10 * 1024 * 1024
+# diff 上限更小：两侧都要建行索引（超限时直接给 unavailable，不读内容）。
+MAX_DIFF_BYTES = 2 * 1024 * 1024
 # 内联预览白名单（窄集：text/html|xml|javascript 等可执行/可引用类型一律下载）
 _INLINE_MEDIA = (
     "text/plain",
@@ -173,3 +186,71 @@ async def get_artifact_content(artifact_id: str, request: Request) -> Response:
         raise ApiError(410, "Artifact Blob Missing", "content blob is unavailable") from exc
     media, headers = _content_headers(meta)
     return Response(content=content, media_type=media, headers=headers)
+
+
+@router.get("/artifacts/{left_id}/diff/{right_id}", response_model=ArtifactDiffDto)
+async def diff_artifacts_route(left_id: str, right_id: str, request: Request) -> ArtifactDiffDto:
+    """两制品内容行级 diff（PLAN-047；只读派生，不落库）。
+
+    404（任一侧未知 id）/ 503（store 未配置）/ 410（tombstone 或 blob 缺失）；
+    二进制或超限**不是错误**而是 `available=false` + reason —— 与"无差异"严格区分。
+    """
+    deps: ApiDeps = get_deps(request)
+    store = _store(deps)
+    left = _diff_meta(store, left_id)
+    right = _diff_meta(store, right_id)
+    too_large = max(left.size_bytes, right.size_bytes) > MAX_DIFF_BYTES
+    view = (
+        _unavailable_diff(left.digest, right.digest)
+        if too_large
+        else diff_artifacts(_diff_side(store, left, left_id), _diff_side(store, right, right_id))
+    )
+    return _diff_dto(view)
+
+
+def _diff_meta(store: Any, artifact_id: str) -> Any:
+    meta = store.meta(artifact_id)
+    if meta is None:
+        raise ApiError(404, "Artifact Not Found", f"unknown artifact id: {artifact_id}")
+    if str(getattr(meta.state, "value", meta.state)) == "DELETED_TOMBSTONE":
+        raise ApiError(410, "Artifact Deleted", f"artifact deleted: {artifact_id}")
+    return meta
+
+
+def _diff_side(store: Any, meta: Any, artifact_id: str) -> DiffSide:
+    return DiffSide(digest=str(meta.digest), content=_blob(store, artifact_id), label=artifact_id)
+
+
+def _blob(store: Any, artifact_id: str) -> bytes:
+    try:
+        return bytes(store.get(artifact_id))
+    except InvalidInputError as exc:
+        raise ApiError(410, "Artifact Unavailable", str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise ApiError(410, "Artifact Blob Missing", "content blob is unavailable") from exc
+
+
+def _unavailable_diff(left_digest: str, right_digest: str) -> ArtifactDiff:
+    """超限时不读取内容：直接给 unavailable 结果（不把超大内容拉进内存）。"""
+    return ArtifactDiff(
+        left_digest=left_digest,
+        right_digest=right_digest,
+        available=False,
+        identical=False,
+        reason=DiffUnavailable.TOO_LARGE,
+    )
+
+
+def _diff_dto(view: ArtifactDiff) -> ArtifactDiffDto:
+    return ArtifactDiffDto(
+        left_digest=view.left_digest,
+        right_digest=view.right_digest,
+        available=view.available,
+        identical=view.identical,
+        reason=view.reason.value if view.reason is not None else None,
+        lines=[ArtifactDiffLineDto(kind=line.kind.value, text=line.text) for line in view.lines],
+        stats=ArtifactDiffStatsDto(
+            added=view.stats.added, removed=view.stats.removed, context=view.stats.context
+        ),
+        truncated=view.truncated,
+    )

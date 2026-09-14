@@ -18,3 +18,32 @@ class ArtifactDto(BaseModel):
     created_at: str | None = None
     # 内容级校验仅在单资源查询执行；列表视图恒为 None（不伪装已验证）。
     verified: bool | None = None
+
+
+class ArtifactDiffLineDto(BaseModel):
+    kind: str
+    text: str
+
+
+class ArtifactDiffStatsDto(BaseModel):
+    added: int
+    removed: int
+    context: int
+
+
+class ArtifactDiffDto(BaseModel):
+    """两制品内容 diff（PLAN-047）：available=False 时 reason 必须在场且 lines 为空。"""
+
+    left_digest: str
+    right_digest: str
+    comparison: str = "ARTIFACT_CONTENT"
+    available: bool
+    identical: bool
+    reason: str | None = None
+    lines: list[ArtifactDiffLineDto] = []
+    stats: ArtifactDiffStatsDto
+    truncated: bool = False
+    note: str = (
+        "comparison is artifact content vs artifact content; the control plane has "
+        "no filesystem-snapshot diff surface"
+    )

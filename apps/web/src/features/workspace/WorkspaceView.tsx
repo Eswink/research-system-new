@@ -4,11 +4,12 @@ import type { ExperimentRunDto, ExperimentViewDto } from "../../api/types";
 import { Chip } from "../../components/Chip";
 import { PanelSection } from "../../components/PanelSection";
 import { ResourceBoundary } from "../../components/ResourceBoundary";
-import { EmptyState, UnavailableState } from "../../components/States";
+import { EmptyState } from "../../components/States";
 import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { ExperimentMetadata } from "../experiments/ExperimentMetadata";
 import { ArtifactBrowser } from "./ArtifactBrowser";
+import { ArtifactDiffPanel } from "./ArtifactDiffPanel";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
@@ -51,8 +52,19 @@ export function WorkspaceView(props: RunSelectionProps = {}) {
           <ExperimentsBody key={runId} view={view.data} />
         )}
       </ResourceBoundary>
-      {runId !== "" && <ArtifactBrowser runId={runId} />}
+      {runId !== "" && <WorkspaceArtifacts runId={runId} zh={zh} />}
     </section>
+  );
+}
+
+/** 产物面板 + 制品内容 diff：同一份产物列表驱动两个面板（不重复请求）。 */
+function WorkspaceArtifacts({ runId, zh }: { runId: string; zh: boolean }) {
+  const artifacts = useResource(`run-artifacts:${runId}`, () => api.listRunArtifacts(runId));
+  return (
+    <>
+      <ArtifactBrowser state={artifacts} />
+      <ArtifactDiffPanel artifacts={artifacts.data ?? []} zh={zh} />
+    </>
   );
 }
 
@@ -77,17 +89,6 @@ function WorkspaceViewPage({ zh, view, selected, setSelectedId }: WorkspaceViewP
     <div className={styles.page} data-testid="experiments-view">
       <WorkspaceViewSplit {...{ zh, view, selected, setSelectedId }} />
       <p className={styles.notice}>{view.reproduction_note}</p>
-      <UnavailableState
-        title={zh ? "文件 Diff 未接入" : "File diff unavailable"}
-        reason={
-          zh
-            ? "产物预览与下载已接入（GET /artifacts/{id}/content）；两个版本间的 Diff 尚无后端接口。"
-            : [
-                "Artifact preview and download are wired (GET /artifacts/{id}/content); ",
-                "cross-version diff has no backend endpoint yet.",
-              ].join("")
-        }
-      />
     </div>
   );
 }

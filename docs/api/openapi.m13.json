@@ -356,6 +356,117 @@
         "title": "ApprovalDto",
         "type": "object"
       },
+      "ArtifactDiffDto": {
+        "additionalProperties": false,
+        "description": "两制品内容 diff（PLAN-047）：available=False 时 reason 必须在场且 lines 为空。",
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "comparison": {
+            "default": "ARTIFACT_CONTENT",
+            "title": "Comparison",
+            "type": "string"
+          },
+          "identical": {
+            "title": "Identical",
+            "type": "boolean"
+          },
+          "left_digest": {
+            "title": "Left Digest",
+            "type": "string"
+          },
+          "lines": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ArtifactDiffLineDto"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "note": {
+            "default": "comparison is artifact content vs artifact content; the control plane has no filesystem-snapshot diff surface",
+            "title": "Note",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "right_digest": {
+            "title": "Right Digest",
+            "type": "string"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ArtifactDiffStatsDto"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "left_digest",
+          "right_digest",
+          "available",
+          "identical",
+          "stats"
+        ],
+        "title": "ArtifactDiffDto",
+        "type": "object"
+      },
+      "ArtifactDiffLineDto": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "text"
+        ],
+        "title": "ArtifactDiffLineDto",
+        "type": "object"
+      },
+      "ArtifactDiffStatsDto": {
+        "additionalProperties": false,
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "context": {
+            "title": "Context",
+            "type": "integer"
+          },
+          "removed": {
+            "title": "Removed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "added",
+          "removed",
+          "context"
+        ],
+        "title": "ArtifactDiffStatsDto",
+        "type": "object"
+      },
       "ArtifactDto": {
         "additionalProperties": false,
         "properties": {
@@ -5357,6 +5468,58 @@
           }
         },
         "summary": "Get Artifact Content",
+        "tags": [
+          "artifacts"
+        ]
+      }
+    },
+    "/artifacts/{left_id}/diff/{right_id}": {
+      "get": {
+        "description": "两制品内容行级 diff（PLAN-047；只读派生，不落库）。\n\n404（任一侧未知 id）/ 503（store 未配置）/ 410（tombstone 或 blob 缺失）；\n二进制或超限**不是错误**而是 `available=false` + reason —— 与\"无差异\"严格区分。",
+        "operationId": "diff_artifacts_route_artifacts__left_id__diff__right_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "left_id",
+            "required": true,
+            "schema": {
+              "title": "Left Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "right_id",
+            "required": true,
+            "schema": {
+              "title": "Right Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactDiffDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Diff Artifacts Route",
         "tags": [
           "artifacts"
         ]

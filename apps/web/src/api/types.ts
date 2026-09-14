@@ -500,6 +500,32 @@ export interface BudgetAdjustOutcomeDto {
   }[];
 }
 
+/** 制品内容 diff 的一行（PLAN-047；CONTEXT/ADDED/REMOVED/HUNK_HEADER）。 */
+export interface ArtifactDiffLineDto {
+  kind: "CONTEXT" | "ADDED" | "REMOVED" | "HUNK_HEADER";
+  text: string;
+}
+
+export interface ArtifactDiffStatsDto {
+  added: number;
+  removed: number;
+  context: number;
+}
+
+/** 两制品内容 diff：available=false 时 reason 在场且 lines 为空（≠ 无差异）。 */
+export interface ArtifactDiffDto {
+  left_digest: string;
+  right_digest: string;
+  comparison: string;
+  available: boolean;
+  identical: boolean;
+  reason: string | null;
+  lines: ArtifactDiffLineDto[];
+  stats: ArtifactDiffStatsDto;
+  truncated: boolean;
+  note: string;
+}
+
 export interface ExportBundleDto {
   run_id: string;
   run_state: string;

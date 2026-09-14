@@ -160,3 +160,58 @@ def test_binary_media_downloads_not_inline(client: TestClient) -> None:
     assert response.status_code == 200
     assert response.headers["content-disposition"].startswith("attachment;")
     assert response.headers["content-type"].startswith("application/octet-stream")
+
+
+def _put_text(store: FakeArtifactStore, artifact_id: str, text: str) -> None:
+    payload = text.encode("utf-8")
+    store.put(_artifact(artifact_id, payload), payload)
+
+
+def test_artifact_diff_reports_line_changes(client: TestClient) -> None:
+    """两侧都是 persisted 制品：文本变更给出行级 diff（PLAN-047）。"""
+    store = FakeArtifactStore()
+    _put_text(store, "t-5:v1", '{"a": 1}\n')
+    _put_text(store, "t-5:v2", '{"a": 2}\n{"b": 3}\n')
+    _deps(client).artifacts = store
+    response = client.get("/artifacts/t-5:v1/diff/t-5:v2")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["available"] is True
+    assert body["identical"] is False
+    assert body["comparison"] == "ARTIFACT_CONTENT"
+    assert body["stats"]["added"] >= 1 and body["stats"]["removed"] >= 1
+    assert any(line["kind"] == "ADDED" and '"b": 3' in line["text"] for line in body["lines"])
+
+
+def test_artifact_diff_same_digest_is_identical(client: TestClient) -> None:
+    store = FakeArtifactStore()
+    _put_text(store, "t-6:v1", "same\n")
+    _put_text(store, "t-6:v2", "same\n")
+    _deps(client).artifacts = store
+    body = client.get("/artifacts/t-6:v1/diff/t-6:v2").json()
+    assert body["identical"] is True
+    assert body["lines"] == []
+    assert body["reason"] is None
+
+
+def test_artifact_diff_binary_is_unavailable_with_reason(client: TestClient) -> None:
+    """二进制不是错误：200 + available=false + reason（不伪造"看起来一样"）。"""
+    store = FakeArtifactStore()
+    payload = b"\x00\x01PNG\xff"
+    store.put(_artifact("t-7:blob-a", payload), payload)
+    store.put(_artifact("t-7:blob-b", payload + b"\x02"), payload + b"\x02")
+    _deps(client).artifacts = store
+    body = client.get("/artifacts/t-7:blob-a/diff/t-7:blob-b").json()
+    assert body["available"] is False
+    assert body["reason"] == "NOT_TEXT"
+    assert body["lines"] == []
+
+
+def test_artifact_diff_unknown_side_is_404_and_missing_store_503(client: TestClient) -> None:
+    store = FakeArtifactStore()
+    _put_text(store, "t-8:v1", "x\n")
+    _deps(client).artifacts = store
+    assert client.get("/artifacts/t-8:v1/diff/ghost").status_code == 404
+    assert client.get("/artifacts/ghost/diff/t-8:v1").status_code == 404
+    _deps(client).artifacts = None
+    assert client.get("/artifacts/t-8:v1/diff/t-8:v1").status_code == 503

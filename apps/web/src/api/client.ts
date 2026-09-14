@@ -172,6 +172,7 @@ export const api = {
   getArtifact: (artifactId: string) => artifactClient.get(artifactId),
   artifactContentUrl: (artifactId: string) => artifactClient.contentUrl(artifactId),
   artifactPreviewText: (artifactId: string) => artifactClient.contentText(artifactId),
+  artifactDiff: (leftId: string, rightId: string) => artifactClient.diff(leftId, rightId),
 
   // ── experiments（WP-E）──
   projectExperiments: () => experimentClient.listForProject(),

@@ -7,6 +7,7 @@ import { PanelSection } from "../../components/PanelSection";
 import { ResourceBoundary } from "../../components/ResourceBoundary";
 import { EmptyState, LoadingState } from "../../components/States";
 import { useResource } from "../../hooks/useResource";
+import type { ResourceState } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { KeyValueList } from "../shared/KeyValueList";
 import styles from "../shared/LivePage.module.css";
@@ -24,13 +25,10 @@ export function isPreviewable(artifact: ArtifactDto): boolean {
   return PREVIEWABLE.includes(artifact.media_type);
 }
 
-/** 运行产物浏览器（WP-C）：列表来自 GET /runs/{id}/artifacts；详情含下载与白名单预览。 */
-export function ArtifactBrowser({ runId }: { runId: string }) {
+/** 运行产物浏览器（WP-C）：列表由 workspace 页统一加载（同一列表供 diff 面板消费）。 */
+export function ArtifactBrowser({ state: list }: { state: ResourceState<ArtifactDto[]> }) {
   const { language } = useI18n();
   const zh = language === "zh";
-  const list = useResource(runId === "" ? null : `run-artifacts:${runId}`, () =>
-    api.listRunArtifacts(runId),
-  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   return (
     <PanelSection

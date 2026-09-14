@@ -176,3 +176,32 @@
     width: 100%;
   }
 }
+
+.diff {
+  padding: 12px;
+  margin: 0;
+  overflow: auto;
+  max-height: 420px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctrl);
+  font: var(--fs-meta) / 1.6 var(--font-mono);
+  white-space: pre;
+}
+
+.diffAdded {
+  display: block;
+  background: var(--success-dim);
+  color: var(--success);
+}
+
+.diffRemoved {
+  display: block;
+  background: var(--danger-dim);
+  color: var(--danger);
+}
+
+.diffHunk {
+  display: block;
+  color: var(--text-dim);
+}
