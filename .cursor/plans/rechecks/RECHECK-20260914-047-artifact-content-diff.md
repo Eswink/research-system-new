@@ -8,7 +8,7 @@ created_at: 2026-09-14
 completed_at: 2026-09-14
 reviewer: root-agent-gate-evidence
 baseline_ref: 2d520f7
-checked_head: working-tree (pre-commit)
+checked_head: 7eece2f
 ---
 
 # RECHECK-20260914-047 — 制品内容 Diff 独立复检
@@ -40,7 +40,7 @@ GOAL-20260912-001 cycle 7（EC-04 第二批）派生计划的复检。本 cycle 
 | AC-01（WP-A） | 纯函数覆盖 变更/相同/二进制/超限/非 UTF-8/截断；无副作用 | `pytest -q tests/application/test_artifact_diff.py` = 10 passed；模块无 IO、无 store 依赖（只 import `difflib`/`dataclasses`/`enum`） | PASS |
 | AC-02（WP-B） | 404/503/410/200+unavailable 分支；identical 语义；openapi 零漂移 | `pytest -q tests/api/test_artifacts_api.py tests/application/test_artifact_diff.py` = 21 passed；`test_openapi_snapshot` 2 passed（再生后无漂移） | PASS |
 | AC-03（WP-C） | workspace 页可选两侧 + 渲染；不可比原因可见；三处文档同步；web 门全绿 | stub e2e `workspace-diff.spec.ts` 2/2；`pnpm --dir apps/web lint`（--max-warnings 0）+ `typecheck` 绿；unit 73 passed；pageSupport G8 / CONSOLE_PAGE_MAP G8 / CONTROL_PLANE_API 同步 | PASS |
-| AC-04（WP-D） | 本地全门 + stub/live e2e + m0 + CI 终态 | 全量 pytest 3297 passed/6 skipped/0 failed（DSN 固化，postgres 用例实跑）；m0 23/23 PASS（`uv run` + 测试容器 + DSN 固化）；live 套件 17/17；ruff check/format + mypy 4 文件 Success；CI run 见状态历史 | PASS |
+| AC-04（WP-D） | 本地全门 + stub/live e2e + m0 + CI 终态 | 全量 pytest 3297 passed/6 skipped/0 failed（DSN 固化，postgres 用例实跑）；m0 23/23 PASS（`uv run` + 测试容器 + DSN 固化）；stub 套件 34/34；live 套件 17/17；ruff check/format + mypy 4 文件 Success；CI run #63（34846151640）：quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS，collector-quality FAIL（同 2 项既有 flake，日志实测） | PASS |
 
 ## 警告与处置
 

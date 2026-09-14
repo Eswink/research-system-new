@@ -108,9 +108,12 @@ GET /artifacts/{left}/diff/{right}
   渲染；不可比较时给原因且不渲染空 diff；用例内覆盖路由，不动全局 stub fixture 与
   design-fidelity 基线）；live e2e `apps/web/tests/e2e/live-artifact-diff.spec.ts` 2/2
   （真实 HTTP：1 added / 1 removed / 3 context；同制品自身 identical 且 lines 空；
-  未知制品 404 且 title=Artifact Not Found），live 套件 17/17；m0 23/23 PASS（`uv run`
-  + Postgres 测试容器 + DSN 固化）；全量 pytest 3297 passed/6 skipped/0 failed（DSN 固化后 postgres 用例实跑）；ruff check/format +
-  mypy（4 文件）全绿。
+  未知制品 404 且 title=Artifact Not Found），live 套件 17/17；stub 套件 34/34（含
+  design-fidelity 33 路由截图与 example-isolation 未受影响）；m0 23/23 PASS（`uv run`
+  + Postgres 测试容器 + DSN 固化）；全量 pytest 3297 passed/6 skipped/0 failed（DSN 固化后
+  postgres 用例实跑）；ruff check/format + mypy（4 文件）全绿。CI run #63（34846151640）：
+  quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality /
+  eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake，日志实测确认）。
 - 2026-09-14 live 正向链的实现说明（与计划文字的差异，如实记录）：计划设想用参考链
   产出的 stdout/result 制品做 live diff，但实测 `tests/api/console_api_app.py` 的
   m12 参考链在 Fake 执行下 run 终态为 FAILED 且 `GET /runs/{id}/artifacts` 返回 0 条
@@ -138,8 +141,8 @@ GET /artifacts/{left}/diff/{right}
   重构产物列表为单一数据源；docs 三处同步；openapi 再生；新增测试（10 应用层 +
   4 API + 2 stub e2e + 2 live e2e）。
 - **lint/typecheck/test**：ruff check/format 绿；mypy 4 文件 Success；全量 pytest
-  3297 passed/6 skipped/0 failed（DSN 固化后 postgres 用例实跑）；m0 23/23 PASS；web lint/typecheck/unit（73）绿；stub e2e 2/2；
-  live e2e 17/17。
+  3297 passed/6 skipped/0 failed（DSN 固化后 postgres 用例实跑）；m0 23/23 PASS；web lint/typecheck/unit（73）绿；stub e2e 34/34；
+  live e2e 17/17；CI run #63 = 6 job 中 5 SUCCESS（collector-quality 为既有 2 项 flake）。
 - **Domain/API/schema 变化**：无新表、无迁移（diff 是派生只读投影）；Domain 无改动；
   API 面新增一条 GET。
 - **安全/凭据变化**：无。live 制品由 test-only 装配写入受控 Fake store，不含真实凭据
