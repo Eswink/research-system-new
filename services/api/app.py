@@ -24,6 +24,7 @@ from services.api.routers import (
     models,
     notifications,
     operations,
+    ops_view,
     projects,
     protocol_drafts,
     run_events,
@@ -206,4 +207,5 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(deliverable.router)
     app.include_router(lineage.router)
     app.include_router(library.router)
+    app.include_router(ops_view.router)
     return app

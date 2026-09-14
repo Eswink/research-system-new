@@ -233,6 +233,65 @@
         "title": "AgentUpdateDto",
         "type": "object"
       },
+      "AlertItemDto": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "severity",
+          "subject",
+          "detail"
+        ],
+        "title": "AlertItemDto",
+        "type": "object"
+      },
+      "AlertsViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertItemDto"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "rules_available": {
+            "default": false,
+            "title": "Rules Available",
+            "type": "boolean"
+          },
+          "rules_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rules Reason"
+          }
+        },
+        "title": "AlertsViewDto",
+        "type": "object"
+      },
       "ApprovalDecideDto": {
         "additionalProperties": false,
         "properties": {
@@ -991,6 +1050,60 @@
         "title": "CostViewDto",
         "type": "object"
       },
+      "DataHealthMetricDto": {
+        "additionalProperties": false,
+        "properties": {
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metric",
+          "value",
+          "status"
+        ],
+        "title": "DataHealthMetricDto",
+        "type": "object"
+      },
+      "DataHealthViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_available": {
+            "default": false,
+            "title": "Aggregate Available",
+            "type": "boolean"
+          },
+          "aggregate_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Reason"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/DataHealthMetricDto"
+            },
+            "title": "Metrics",
+            "type": "array"
+          }
+        },
+        "title": "DataHealthViewDto",
+        "type": "object"
+      },
       "DeliverableDto": {
         "additionalProperties": false,
         "description": "Run 的 persisted research deliverable（M12 build_deliverable 产物）。\n\navailable=false 时 deliverable 恒空 dict，reason 说明为何不可用（不伪装\n生成空报告）。artifact_id/digest 指向 artifact store 中的 `deliverable.json`。",
@@ -1703,6 +1816,65 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "IncidentItemDto": {
+        "additionalProperties": false,
+        "properties": {
+          "protocol_id": {
+            "title": "Protocol Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "protocol_id",
+          "state",
+          "updated_at"
+        ],
+        "title": "IncidentItemDto",
+        "type": "object"
+      },
+      "IncidentsViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "incidents": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentItemDto"
+            },
+            "title": "Incidents",
+            "type": "array"
+          },
+          "workflow_available": {
+            "default": false,
+            "title": "Workflow Available",
+            "type": "boolean"
+          },
+          "workflow_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Reason"
+          }
+        },
+        "title": "IncidentsViewDto",
         "type": "object"
       },
       "InterventionDto": {
@@ -3883,6 +4055,65 @@
           "sink"
         ],
         "title": "RunTelemetryDto",
+        "type": "object"
+      },
+      "ScheduleEntryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "interval_seconds": {
+            "title": "Interval Seconds",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "interval_seconds",
+          "purpose",
+          "enabled"
+        ],
+        "title": "ScheduleEntryDto",
+        "type": "object"
+      },
+      "SchedulesViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "management_available": {
+            "default": false,
+            "title": "Management Available",
+            "type": "boolean"
+          },
+          "management_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Management Reason"
+          },
+          "schedules": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleEntryDto"
+            },
+            "title": "Schedules",
+            "type": "array"
+          }
+        },
+        "title": "SchedulesViewDto",
         "type": "object"
       },
       "TaskDto": {
@@ -6085,6 +6316,28 @@
         ]
       }
     },
+    "/ops/schedules": {
+      "get": {
+        "description": "进程内 scheduler 的配置事实（只读）。\n\n无用户可见调度 API：不能创建/启停/手动触发；本视图只暴露既有守护线程配置。",
+        "operationId": "list_ops_schedules_ops_schedules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulesViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Ops Schedules",
+        "tags": [
+          "ops-view"
+        ]
+      }
+    },
     "/projects": {
       "get": {
         "description": "注册表视图（确定性排序：created_at, id；默认项目恒在首位）。",
@@ -6655,6 +6908,135 @@
         "summary": "List Project Memory",
         "tags": [
           "memory"
+        ]
+      }
+    },
+    "/projects/{project_id}/ops/alerts": {
+      "get": {
+        "description": "派生告警收件箱（失败 run ∪ 非健康端点 ∪ 离线/排水 worker）。\n\n无告警规则 CRUD（无契约）；worker_registry 缺失时该来源诚实缺省。",
+        "operationId": "list_ops_alerts_projects__project_id__ops_alerts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertsViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Ops Alerts",
+        "tags": [
+          "ops-view"
+        ]
+      }
+    },
+    "/projects/{project_id}/ops/data-health": {
+      "get": {
+        "description": "数据健康聚合（端点健康计数 + dataset 目录计数 + artifact 抽样校验）。\n\n无聚合质量报告 API：只呈现可从既有状态直接观测到的计数与校验结果。",
+        "operationId": "get_ops_data_health_projects__project_id__ops_data_health_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataHealthViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Ops Data Health",
+        "tags": [
+          "ops-view"
+        ]
+      }
+    },
+    "/projects/{project_id}/ops/incidents": {
+      "get": {
+        "description": "事故候选（FAILED run）；无 declare/assign/close 处置工作流。\n\n失败 Run **不**自动成为已登记事故——本端点只列出候选，不改变任何状态。",
+        "operationId": "list_ops_incidents_projects__project_id__ops_incidents_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentsViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Ops Incidents",
+        "tags": [
+          "ops-view"
         ]
       }
     },

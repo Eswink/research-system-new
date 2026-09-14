@@ -20,6 +20,7 @@ import type { EndpointWithEtag } from "./legacyShapes";
 import { libraryClient } from "./libraryClient";
 import { modelsClient } from "./modelsClient";
 import { operationsClient } from "./operationsClient";
+import { opsViewClient } from "./opsViewClient";
 import { projectsClient } from "./projectsClient";
 import { protocolClient, type ProtocolSource } from "./protocolClient";
 import { runClient } from "./runClient";
@@ -141,6 +142,12 @@ export const api = {
   }) => libraryClient.create(payload),
   updateLibrary: (resourceId: string, payload: { name?: string; status?: "ACTIVE" | "ARCHIVED" }) =>
     libraryClient.update(resourceId, payload),
+
+  // ── ops 只读投影（PLAN-045：alerts/incidents/schedules/data-health）──
+  opsAlerts: () => opsViewClient.alerts(),
+  opsIncidents: () => opsViewClient.incidents(),
+  opsSchedules: () => opsViewClient.schedules(),
+  opsDataHealth: () => opsViewClient.dataHealth(),
 
   // ── operations ─
   runTelemetry: (runId: string) => operationsClient.telemetry(runId),

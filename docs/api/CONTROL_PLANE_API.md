@@ -59,6 +59,20 @@ PATCH  /library/{resource_id}                    （rename 和/或 status: ACTIV
   SQLite），不新增 PG 表。datasets 的评测输入仍由 eval spec 承载，不与之耦合。
   未注册项目写入 → 404；store 未配置 → 503。
 
+## Ops（只读运维投影，PLAN-20260914-045 WP-B）
+
+```text
+GET    /projects/{id}/ops/alerts                  （派生：失败 Run ∪ 非健康端点 ∪ 离线 worker）
+GET    /projects/{id}/ops/incidents               （FAILED run 候选；无处置工作流）
+GET    /ops/schedules                             （进程内 scheduler 配置事实）
+GET    /projects/{id}/ops/data-health             （端点健康计数 + dataset 计数 + artifact 抽样校验）
+```
+
+- 四个端点全部**只读派生**，无持久化、无副作用；缺失依赖（worker_registry/
+  artifacts=None）时该项诚实缺省。能力缺口随响应回传：alerts 的 rules_available、
+  incidents 的 workflow_available、schedules 的 management_available、
+  data-health 的 aggregate_available 均为 false + 原因说明。未注册项目 → 404。
+
 ## Roles / Teams / Agents
 
 ```text

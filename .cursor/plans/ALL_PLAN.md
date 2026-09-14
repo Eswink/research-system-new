@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260914-045](tasks/PLAN-20260914-045-ops-observability-projections-live.md) | DONE |
 | [x] | [PLAN-20260914-044](tasks/PLAN-20260914-044-library-catalog-domains-live.md) | DONE |
 | [x] | [PLAN-20260913-043](tasks/PLAN-20260913-043-reports-integrations-lineage-live.md) | DONE |
 | [x] | [PLAN-20260912-042](tasks/PLAN-20260912-042-ci-debt-remediation.md) | DONE |

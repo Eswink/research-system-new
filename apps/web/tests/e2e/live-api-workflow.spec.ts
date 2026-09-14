@@ -426,3 +426,49 @@ test("live: library 库目录创建/过滤/归档（EC-03 第一批）", async (
   expect(ghost.status()).toBe(404);
 });
 
+test("live: ops 只读投影（EC-03 第二批）", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  // schedules：进程内 4 个守护 scheduler 配置事实；管理面诚实锁定。
+  const schedules = await page.request.get("/api/ops/schedules");
+  expect(schedules.ok()).toBeTruthy();
+  const scheduleView = (await schedules.json()) as {
+    schedules: { name: string; interval_seconds: number }[];
+    management_available: boolean;
+  };
+  const names = scheduleView.schedules.map((item) => item.name);
+  expect(names).toContain("lease_recovery");
+  expect(names).toContain("outbox_relay");
+  expect(scheduleView.management_available).toBe(false);
+
+  // alerts：只读派生收件箱；规则 CRUD 锁定。
+  const alerts = await page.request.get("/api/projects/example-project/ops/alerts");
+  expect(alerts.ok()).toBeTruthy();
+  const alertView = (await alerts.json()) as { alerts: unknown[]; rules_available: boolean };
+  expect(Array.isArray(alertView.alerts)).toBe(true);
+  expect(alertView.rules_available).toBe(false);
+
+  // incidents：候选列表；无处置工作流。
+  const incidents = await page.request.get("/api/projects/example-project/ops/incidents");
+  expect(incidents.ok()).toBeTruthy();
+  const incidentView = (await incidents.json()) as {
+    incidents: unknown[];
+    workflow_available: boolean;
+  };
+  expect(Array.isArray(incidentView.incidents)).toBe(true);
+  expect(incidentView.workflow_available).toBe(false);
+
+  // data-health：端点计数可见；聚合报告锁定。
+  const health = await page.request.get("/api/projects/example-project/ops/data-health");
+  expect(health.ok()).toBeTruthy();
+  const healthView = (await health.json()) as {
+    metrics: { metric: string }[];
+    aggregate_available: boolean;
+  };
+  expect(healthView.metrics.map((item) => item.metric)).toContain("endpoints_total");
+  expect(healthView.aggregate_available).toBe(false);
+
+  // 未知项目 404（不伪装空成功）。
+  expect((await page.request.get("/api/projects/ghost-project/ops/alerts")).status()).toBe(404);
+});
+

@@ -16,9 +16,10 @@ test("every route honors live/example selection with no request-dependent fallba
     assert.equal(resolveDataSource(route, "live"), "live");
     assert.equal(resolveDataSource(route, "example"), "example");
   }
-  // PLAN-044：library/prompts 已有真实库目录契约（partial → live）；
-  // 仍为 gap 的页面（如 ops/alerts）在 auto 下回退到 example。
-  assert.equal(resolveDataSource({ domain: "ops", page: "alerts" }, "auto"), "example");
+  // PLAN-044/045：library 与 ops 页面已有真实契约（partial → live）；
+  // 仍为 gap 的页面（ops/matrix 界面状态说明页）在 auto 下回退到 example。
+  assert.equal(resolveDataSource({ domain: "ops", page: "matrix" }, "auto"), "example");
+  assert.equal(resolveDataSource({ domain: "ops", page: "alerts" }, "auto"), "live");
   assert.equal(resolveDataSource({ domain: "library", page: "prompts" }, "auto"), "live");
   assert.equal(resolveDataSource({ domain: "run", page: "timeline" }, "auto"), "live");
   assert.equal(parseSourceSelection("?source=untrusted"), "auto");

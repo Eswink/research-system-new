@@ -211,16 +211,21 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ## Ops（6 设计页 + 2 兼容页）
 
 ### `#/ops/alerts` — 告警
-- 设计：`screens/OpsScreens.jsx` `AlertsScreen`。等级：GAP。
-- 缺口（登记）：无告警规则/收件箱 API。列表/详情/规则结构保留；配置与处理禁用。
+- 设计：`screens/OpsScreens.jsx` `AlertsScreen`。等级：PARTIAL。
+- API：`GET /projects/{id}/ops/alerts`（派生只读收件箱：失败 Run、非健康端点、
+  离线/排水 worker）。
+- 缺口（登记）：无告警规则 CRUD API——规则配置与处理保持禁用。
 
 ### `#/ops/incidents` — 事故
-- 设计：`screens/Incidents.jsx`。等级：GAP。
-- 缺口（登记）：无事件处置 API；失败 Run 不转换成已登记事故。
+- 设计：`screens/Incidents.jsx`。等级：PARTIAL。
+- API：`GET /projects/{id}/ops/incidents`（FAILED run 候选列表）。
+- 缺口（登记）：无 declare/assign/close 处置工作流；失败 Run 不自动登记为事故。
 
 ### `#/ops/schedules` — 调度
-- 设计：`screens/OpsScreens.jsx` `SchedulesScreen`。等级：GAP。
-- 缺口（登记）：scheduler 是进程内守护线程，无 HTTP 面；创建/启停/触发禁用。
+- 设计：`screens/OpsScreens.jsx` `SchedulesScreen`。等级：PARTIAL。
+- API：`GET /ops/schedules`（进程内 4 个守护 scheduler 的配置事实：interval/
+  purpose/enabled）。
+- 缺口（登记）：无用户可见创建/启停/触发 API。
 
 ### `#/ops/integrations` — 集成
 - 设计：`screens/OpsScreens.jsx` `IntegrationsScreen`。等级：PARTIAL。
@@ -230,8 +235,10 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
   端点接口代替。
 
 ### `#/ops/data-health` — 数据健康
-- 设计：`screens/DataHealth.jsx`。等级：GAP。
-- 缺口（登记）：无聚合质量报告 API（仅单 endpoint health）；明确不可用。
+- 设计：`screens/DataHealth.jsx`。等级：PARTIAL。
+- API：`GET /projects/{id}/ops/data-health`（端点健康计数、dataset 目录计数、
+  artifact 抽样校验）。
+- 缺口（登记）：无聚合质量报告 API；仅呈现既有状态的可观测计数与校验结果。
 
 ### `#/ops/matrix` — 状态矩阵
 - 设计：`screens/States.jsx`。等级：GAP（说明性质）。
@@ -302,7 +309,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
 | G5 | 预算调整契约 | govern/budget | 禁用（501 语义） |
 | G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已接线**（A5：按钮按能力标注；仍属控制面状态迁移） |
-| G7 | alerts/incidents/schedules/data-health | 对应 4 页 | GAP 结构还原+禁用（无 Domain 支撑）；~~prompts/datasets/notebooks~~（PLAN-044 已交付，见 G7b）、~~reports~~（PLAN-043，见 G7a）、~~integrations~~（PLAN-043，见 G15） |
+| G7 | ~~alerts/incidents/schedules/data-health~~ | ops 四页 | **只读投影已交付**（PLAN-045：ops/alerts・incidents・schedules・data-health；规则 CRUD/处置流/用户调度/聚合报告仍禁用，见各页缺口）；prompts/datasets/notebooks 见 G7b，reports 见 G7a，integrations 见 G15 |
 | G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
 | G7b | ~~prompts/datasets/notebooks 库目录~~ | library 三页 | **已交付**（PLAN-044：GET/POST /projects/{id}/library + PATCH /library/{id}，kind 区分；版本树/上传/单元格执行仍禁用） |
 | G8 | 文件浏览/预览；~~下载~~ | run/workspace | **预览/下载已交付**（WP-C）；文件级 Diff 仍无接口 |

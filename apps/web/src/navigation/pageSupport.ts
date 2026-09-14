@@ -57,13 +57,21 @@ export const GAPS = {
   reports:
     "已接入 GET /runs/{id}/deliverable（M12 持久化交付物）；" +
     "报告生成/编辑/PDF/发布无 API——生成动作禁用",
-  alerts: "无告警规则/收件箱 API",
-  incidents: "无事件处置 API",
-  schedules: "无用户可见调度 API",
+  alerts:
+    "只读告警收件箱已接入（GET /projects/{id}/ops/alerts，派生自失败 Run/" +
+    "非健康端点/离线 worker）；规则 CRUD 无 API",
+  incidents:
+    "失败 Run 候选列表已接入（GET /projects/{id}/ops/incidents）；" +
+    "无 declare/assign/close 处置工作流，失败 Run 不自动登记为事故",
+  schedules:
+    "进程内 scheduler 配置事实已接入（GET /ops/schedules）；" +
+    "无用户可见创建/启停/触发 API",
   integrations:
     "Tool Provider 目录已接入（GET /tool-providers + 三态健康）；" +
     "install/approve/revoke 属供应链治理面（G15），不提供",
-  dataHealth: "无聚合数据健康 API",
+  dataHealth:
+    "既有状态的可观测指标已接入（GET /projects/{id}/ops/data-health：端点健康计数/" +
+    "dataset 计数/artifact 抽样校验）；无聚合质量报告 API",
 } as const;
 
 function routeKey(route: Route): string {
@@ -119,15 +127,31 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
     disabledOperations: ["generate", "edit", "export-pdf", "publish"],
   },
   "insights/cost-analytics": { level: "partial", reason: GAPS.costSeries },
-  "ops/alerts": { level: "gap", reason: GAPS.alerts },
-  "ops/incidents": { level: "gap", reason: GAPS.incidents },
-  "ops/schedules": { level: "gap", reason: GAPS.schedules },
+  "ops/alerts": {
+    level: "partial",
+    reason: GAPS.alerts,
+    disabledOperations: ["new-rule", "edit-rule", "delete-rule"],
+  },
+  "ops/incidents": {
+    level: "partial",
+    reason: GAPS.incidents,
+    disabledOperations: ["declare", "assign", "close"],
+  },
+  "ops/schedules": {
+    level: "partial",
+    reason: GAPS.schedules,
+    disabledOperations: ["create", "toggle", "trigger"],
+  },
   "ops/integrations": {
     level: "partial",
     reason: GAPS.integrations,
     disabledOperations: ["install", "approve", "revoke"],
   },
-  "ops/data-health": { level: "gap", reason: GAPS.dataHealth },
+  "ops/data-health": {
+    level: "partial",
+    reason: GAPS.dataHealth,
+    disabledOperations: ["aggregate-report"],
+  },
   "ops/matrix": { level: "gap", reason: "界面状态说明页（非实时运维状态）" },
   "ops/compute": { level: "full" },
   "ops/observability": { level: "full" },

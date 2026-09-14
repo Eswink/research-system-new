@@ -534,6 +534,57 @@ export interface LibraryResourceDto {
   updated_at: string;
 }
 
+export interface AlertItemDto {
+  kind: string;
+  severity: string;
+  subject: string;
+  detail: string;
+}
+
+export interface AlertsViewDto {
+  alerts: AlertItemDto[];
+  rules_available: boolean;
+  rules_reason: string | null;
+}
+
+export interface IncidentItemDto {
+  run_id: string;
+  protocol_id: string;
+  state: string;
+  updated_at: string;
+}
+
+export interface IncidentsViewDto {
+  incidents: IncidentItemDto[];
+  workflow_available: boolean;
+  workflow_reason: string | null;
+}
+
+export interface ScheduleEntryDto {
+  name: string;
+  interval_seconds: number;
+  purpose: string;
+  enabled: boolean;
+}
+
+export interface SchedulesViewDto {
+  schedules: ScheduleEntryDto[];
+  management_available: boolean;
+  management_reason: string | null;
+}
+
+export interface DataHealthMetricDto {
+  metric: string;
+  value: string;
+  status: string;
+}
+
+export interface DataHealthViewDto {
+  metrics: DataHealthMetricDto[];
+  aggregate_available: boolean;
+  aggregate_reason: string | null;
+}
+
 export interface ExperimentRunDto {
   experiment_run_id: string;
   artifact_ids: string[];
