@@ -28,7 +28,11 @@ GOAL-20260912-001 cycle 1（PLAN-041）交付中实测固化三条机械门禁�
 1. 命名门禁（`tests/architecture/test_module_file_naming.py`）对 PascalCase
    组件文件要求「文件名 = 唯一导出组件名」：`EndpointDelete.tsx` 导出
    `EndpointDeleteAction` 即违规；TS 测试文件必须 kebab（`active-project.test.ts`）。
-   新建前端组件文件时先按导出命名，别靠 LEGACY_PATH_EXCEPTIONS 登记兜底。
+   **同样适用于 tests/ 目录下的非 .test/.spec TS 模块**（helper/fixture：
+   `stubRoutes.ts` → 必须是 `stub-routes.ts`）——Windows 文件系统大小写不敏感，
+   本地 m0 全绿但 Linux CI 红（run #58 实测）。新建 tests/ 下任何 .ts 文件一律
+   kebab-case。新建前端组件文件时先按导出命名，别靠 LEGACY_PATH_EXCEPTIONS
+   登记兜底。
 2. 50 行函数门禁同样作用于 composition root 与测试装配（`_assemble_sqlite`、
    `build_postgres_apideps`、`make_run_ready_deps` 加字段即超）。既有惯例是
    提取返回 `dict[str, Any]` 的 helper 再 `**` 展开进 dataclass——照此拆分而不是
