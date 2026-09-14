@@ -4,10 +4,10 @@
  * 视觉测试组合入口（见 visualFixtures），不加入生产路由/生产 API 客户端。
  */
 
-import { DRAFT, ENDPOINT, VALID_YAML } from "./stubFixtures";
+import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
-export type { Handler } from "./stubFixtures";
-export { DRAFT, ENDPOINT, VALID_YAML } from "./stubFixtures";
+export type { Handler } from "./stub-fixtures";
+export { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
 export interface StubRoute {
   method: string;

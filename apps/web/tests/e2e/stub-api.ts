@@ -11,9 +11,9 @@
 
 import type { Page, Route } from "@playwright/test";
 
-import { ROUTES, type StubRoute } from "./stubRoutes";
+import { ROUTES, type StubRoute } from "./stub-routes";
 
-export { DRAFT, ENDPOINT, VALID_YAML } from "./stubFixtures";
+export { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
 /** 收集未匹配请求，测试结束断言为空。 */
 export const unmatchedRequests: string[] = [];
