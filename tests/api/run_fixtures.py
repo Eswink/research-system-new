@@ -106,6 +106,9 @@ class _RunReadyContext:
     shared: _RunReadyStores
     runs: RunOrchestrationService
     preflight: PreflightContext
+    # 预算账本：与生产同侧——编排链、preflight 上下文与控制面读取共享同一实例
+    # （分开装配会让 preflight 预留写进 A、API 读 B，预算/预测永远为空）。
+    budget: FakeBudgetLedger
 
 
 def _run_ready_context() -> _RunReadyContext:
@@ -125,7 +128,8 @@ def _run_ready_context() -> _RunReadyContext:
         artifacts=FakeArtifactStore(),
         ledger=FakeEvidenceLedger(),
     )
-    runs = _build_orchestration(connection, events, pricing_store, shared)
+    budget = FakeBudgetLedger()
+    runs = _build_orchestration(connection, events, pricing_store, shared, budget)
     return _RunReadyContext(
         credentials=credentials,
         connection=connection,
@@ -133,7 +137,8 @@ def _run_ready_context() -> _RunReadyContext:
         pricing_store=pricing_store,
         shared=shared,
         runs=runs,
-        preflight=_build_preflight(credentials),
+        preflight=_build_preflight(credentials, budget),
+        budget=budget,
     )
 
 
@@ -164,7 +169,7 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         preflight_override=ctx.preflight,
         protocol_draft_service=_make_draft_service(ctx.connection),
         # WP-Z live e2e 只读链装配：ledger/通知读状态/memory/artifact 均为受控 Fake。
-        budget=FakeBudgetLedger(),
+        budget=ctx.budget,
         notification_reads=SqliteNotificationReadStore(connection=ctx.connection),
         memory=FakeMemoryStore(),
         artifacts=ctx.shared.artifacts,
@@ -224,6 +229,7 @@ def _build_orchestration(
     events: object,
     pricing_store: FakePricingSnapshotStore,
     shared: _RunReadyStores,
+    budget: FakeBudgetLedger,
 ) -> RunOrchestrationService:
     """装配正式编排链（Fake runtime + SQLite workflow/outbox，共享连接）。"""
     from sqlite3 import Connection
@@ -240,7 +246,7 @@ def _build_orchestration(
             workflow=workflow,
             artifacts=shared.artifacts,
             events=events,
-            budget=FakeBudgetLedger(),
+            budget=budget,
             ledger=shared.ledger,
             pricing=pricing,
             pricing_store=pricing_store,
@@ -249,7 +255,9 @@ def _build_orchestration(
     )
 
 
-def _build_preflight(credentials: FakeCredentialResolver) -> PreflightContext:
+def _build_preflight(
+    credentials: FakeCredentialResolver, budget: FakeBudgetLedger
+) -> PreflightContext:
     """完整 preflight context：health/policy/ledger/pin 全注入（受控夹具）。"""
 
     catalog = load_catalog_snapshot()
@@ -269,7 +277,7 @@ def _build_preflight(credentials: FakeCredentialResolver) -> PreflightContext:
         endpoint_health={key: EndpointHealth.HEALTHY for key in pinned.endpoints},
         provider_health={key: EndpointHealth.HEALTHY for key in pinned.tool_providers},
         workspace_available={key: True for key in pinned.workspaces},
-        budget_ledger=FakeBudgetLedger(),
+        budget_ledger=budget,
         policy_evaluator=FakePolicyEvaluator(),
     )
 

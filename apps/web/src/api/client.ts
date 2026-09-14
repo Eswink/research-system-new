@@ -38,6 +38,7 @@ import type {
   ModelUpdateDto,
   ProjectSettingsDto,
   ResourceKind,
+  ResourceType,
   Version,
 } from "./types";
 
@@ -123,6 +124,13 @@ export const api = {
   runEvidence: (runId: string) => inspectionClient.evidence(runId),
   runClaimMap: (runId: string) => inspectionClient.claimMap(runId),
   runUsage: (runId: string) => inspectionClient.usage(runId),
+  /** 成本预测投影（只覆盖已预留部分；PLAN-046）。 */
+  runCostForecast: (runId: string) => inspectionClient.costForecast(runId),
+  /** 预算调整（走 BudgetLedger：release 既有预留 + reserve 新额度）。 */
+  adjustRunBudget: (
+    runId: string,
+    adjustments: { resource_type: ResourceType; quantity: number; unit: string }[],
+  ) => runClient.adjustBudget(runId, adjustments),
   runExperiments: (runId: string) => inspectionClient.experiments(runId),
   runExport: (runId: string) => inspectionClient.export(runId),
   runDeliverable: (runId: string) => inspectionClient.deliverable(runId),

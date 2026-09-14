@@ -185,6 +185,18 @@ export const zh = {
   "budget.quantity": "用量",
   "budget.adjust": "调整预算",
   "budget.reservations": "预算预留",
+  "budget.forecast": "预留-消耗预测",
+  "budget.forecastNote":
+    "只覆盖已预留额度：未预留的未来开销不外推。UNKNOWN 表示不可计量，不等于 0。",
+  "budget.forecastEmpty": "本运行尚无预留或用量记录",
+  "budget.reserved": "已预留",
+  "budget.consumed": "已消耗",
+  "budget.remaining": "剩余",
+  "budget.adjustField": "资源类型",
+  "budget.adjustQuantity": "新额度",
+  "budget.adjustUnit": "单位",
+  "budget.adjustSubmit": "提交调整",
+  "budget.adjustApplied": "已写入账本",
 
   "cc.runs": "运行",
   "cc.refreshNote": "刷新时间独立于实时连接",

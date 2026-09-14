@@ -14,6 +14,7 @@ from services.api.middleware import IdempotencyMiddleware
 from services.api.routers import (
     approvals,
     artifacts,
+    budget_forecast,
     deliverable,
     experiments,
     inspection,
@@ -208,4 +209,5 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(lineage.router)
     app.include_router(library.router)
     app.include_router(ops_view.router)
+    app.include_router(budget_forecast.router)
     return app

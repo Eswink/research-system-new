@@ -221,7 +221,11 @@ def test_pause_terminal_run_is_409(run_ready_client: TestClient) -> None:
 
 
 def test_semantic_intervention_is_501(run_ready_client: TestClient) -> None:
-    """运行中语义变更必须产生 Manifest Revision / Fork；M13 诚实 501（WP-P2 语义按 kind 分支）。"""
+    """运行中语义变更必须产生 Manifest Revision / Fork；M13 诚实 501（WP-P2 语义按 kind 分支）。
+
+    PLAN-046 起 budget_adjust 走 BudgetLedger 真实面（其验收见
+    tests/api/test_budget_forecast_api.py）；本用例固定 replace_agent 恒 501。
+    """
     from typing import Any
     from typing import cast as cast_any
 
@@ -239,7 +243,7 @@ def test_semantic_intervention_is_501(run_ready_client: TestClient) -> None:
     )
     response = run_ready_client.post(
         f"/runs/{run_id}/interventions",
-        json={"kind": "budget_adjust"},
+        json={"kind": "replace_agent"},
         headers={"Idempotency-Key": f"int-{uuid.uuid4()}"},
     )
     assert response.status_code == 501

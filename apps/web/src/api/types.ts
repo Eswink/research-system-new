@@ -458,6 +458,48 @@ export interface BudgetViewDto {
   }[];
 }
 
+/** 单组 (resource_type, unit) 的预留/消耗/剩余；null = 不可计量或尚无消耗记录。 */
+export interface ForecastLineDto {
+  resource_type: ResourceType;
+  unit: string;
+  reserved: number;
+  consumed: number | null;
+  remaining: number | null;
+  data_status: "KNOWN" | "UNKNOWN" | "NO_DATA";
+  entry_count: number;
+  unknown_entry_count: number;
+}
+
+/** 成本预测投影：只覆盖已预留部分（forecast_scope=RESERVED_ONLY）。 */
+export interface CostForecastDto {
+  run_id: string;
+  lines: ForecastLineDto[];
+  consumed_cost_minor: number | null;
+  currency: string | null;
+  cost_status: string;
+  unknown_cost_entries: number;
+  /** 预留归属：RESERVATION_REF（权威引用）/ RUN_SCOPE（退化匹配）/ NONE。 */
+  attribution: "RESERVATION_REF" | "RUN_SCOPE" | "NONE";
+  /** 账本中存在但无权威引用可归到本 run 的预留条数（>0 表示预留总量不完整）。 */
+  unattributed_reserved: number;
+  forecast_scope: string;
+  scope_note: string;
+}
+
+/** 预算调整结果（append-only 账本上的动作摘要；不修改历史条目）。 */
+export interface BudgetAdjustOutcomeDto {
+  run_id: string;
+  released_ref: string | null;
+  reservation_ref: string;
+  reservations: {
+    id: string;
+    scope: string;
+    resource_type: ResourceType;
+    quantity: number;
+    unit: string;
+  }[];
+}
+
 export interface ExportBundleDto {
   run_id: string;
   run_state: string;

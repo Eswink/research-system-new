@@ -27,7 +27,10 @@ export const GAPS = {
   notifications:
     "通知已接入事件投影（GET /notifications + 已读持久化）；无实时推送，数量只来自当前页",
   account: "无账户/身份/Billing/平台 API Keys API",
-  budgetAdjust: "预算调整无契约（interventions budget_adjust 恒 501）",
+  budgetAdjust:
+    "预算调整已接入（interventions budget_adjust 走 BudgetLedger 的 release+reserve）；" +
+    "预测只覆盖已预留额度（未预留开销不外推）；运行中语义变更（换 Agent/协议）仍 501",
+  budgetForecast: "Run 级预留-消耗预测已接入（GET /runs/{id}/cost-forecast）；无 burn-rate 外推",
   pauseResume: "pause/resume 仅状态迁移，不证明实际暂停/恢复执行",
   fileBrowse: "文件 Diff 无接口；预览与下载已接入（GET /artifacts/{id}/content）",
   globalLineage:
@@ -39,7 +42,8 @@ export const GAPS = {
     "审批注册点已接入（human-gate 协议暂停时注册，见 human_gate_demo_v1）；" +
     "无审批门的 run 列表为空是正确状态",
   costSeries:
-    "成本日序列已接入（GET /cost/daily）；预测/前瞻无 API，不绘制",
+    "成本日序列已接入（GET /cost/daily）；Run 级预留-消耗预测已接入" +
+    "（GET /runs/{id}/cost-forecast，仅已预留额度）；跨 run 时间序列预测不绘制",
   memory:
     "产品 Memory 已接入（WP-A 起 SQLite 开发路径与 PG canonical 双支持）；" +
     "无持久化 pending 提案，门链直提交；capability policy 面扩展为 follow-up",
@@ -155,7 +159,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "ops/matrix": { level: "gap", reason: "界面状态说明页（非实时运维状态）" },
   "ops/compute": { level: "full" },
   "ops/observability": { level: "full" },
-  "govern/budget": { level: "partial", reason: GAPS.budgetAdjust, disabledOperations: ["adjust"] },
+  "govern/budget": { level: "partial", reason: GAPS.budgetForecast },
   "govern/audit": { level: "partial", reason: GAPS.memory },
   "settings/settings": {
     level: "partial",

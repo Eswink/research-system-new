@@ -5,6 +5,8 @@ import { newIdempotencyKey, request } from "./http";
 import type {
   ApprovalDecideDto,
   ApprovalDto,
+  BudgetAdjustOutcomeDto,
+  ResourceType,
   RunDetailDto,
   RunEventDto,
   RunStartPayloadDto,
@@ -57,6 +59,23 @@ export const runClient = {
       `/runs/${encodeURIComponent(runId)}/resume`,
       {
         method: "POST",
+      },
+      { idempotencyKey: newIdempotencyKey() },
+    );
+  },
+  /**
+   * 预算调整干预（PLAN-046）：release 既有预留 + reserve 新额度。
+   * 语义变更（replace_agent）不在此客户端暴露——后端诚实 501。
+   */
+  adjustBudget(
+    runId: string,
+    adjustments: { resource_type: ResourceType; quantity: number; unit: string }[],
+  ): Promise<BudgetAdjustOutcomeDto> {
+    return request(
+      `/runs/${encodeURIComponent(runId)}/interventions`,
+      {
+        method: "POST",
+        body: JSON.stringify({ kind: "budget_adjust", adjustments }),
       },
       { idempotencyKey: newIdempotencyKey() },
     );

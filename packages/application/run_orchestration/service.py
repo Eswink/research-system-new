@@ -272,6 +272,17 @@ class RunOrchestrationService:
         """approve 前置探测：无暂存上下文（如进程重启后）不得伪装恢复执行。"""
         return run_id in self._waiting
 
+    def reservation_ref(self, run_id: str) -> str | None:
+        """run 的预算预留引用（budget_adjust 干预的 release 输入）。
+
+        进程内记账：本进程启动的 run 才有；None 表示无预留或跨进程重启丢失。
+        """
+        return self._reservation_refs.get(run_id)
+
+    def register_reservation_ref(self, run_id: str, ref: str) -> None:
+        """budget_adjust 后登记新预留引用（后续收敛释放指向新额度）。"""
+        self._reservation_refs[run_id] = ref
+
     def resume_after_approval(self, run_id: str) -> RunOutcome:
         """审批通过后续跑剩余 specs；再次遇 human gate 会重新暂存 WAITING。"""
         stashed = self._waiting.pop(run_id, None)

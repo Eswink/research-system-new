@@ -4,6 +4,7 @@
  * 视觉测试组合入口（见 visualFixtures），不加入生产路由/生产 API 客户端。
  */
 
+import { BUDGET_ROUTES } from "./stub-routes-budget";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
 export type { Handler } from "./stub-fixtures";
@@ -421,4 +422,6 @@ export const ROUTES: readonly StubRoute[] = [
       },
     }),
   },
+  // PLAN-046 EC-04: budget adjust + reserved-vs-consumed forecast.
+  ...BUDGET_ROUTES,
 ];

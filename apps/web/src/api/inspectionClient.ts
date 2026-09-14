@@ -4,6 +4,7 @@ import { request } from "./http";
 import type {
   BudgetViewDto,
   ClaimMapDto,
+  CostForecastDto,
   DeliverableDto,
   EvidenceDto,
   ExperimentViewDto,
@@ -20,6 +21,9 @@ export const inspectionClient = {
   },
   usage(runId: string): Promise<BudgetViewDto> {
     return request(`/runs/${encodeURIComponent(runId)}/usage`, { method: "GET" });
+  },
+  costForecast(runId: string): Promise<CostForecastDto> {
+    return request(`/runs/${encodeURIComponent(runId)}/cost-forecast`, { method: "GET" });
   },
   experiments(runId: string): Promise<ExperimentViewDto> {
     return request(`/runs/${encodeURIComponent(runId)}/experiments`, { method: "GET" });

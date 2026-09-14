@@ -70,4 +70,5 @@ class FakeBudgetLedger(FakeBase):
         return LedgerSnapshot(
             reservations=tuple(self._reservations),
             entries=self._ledger.entries(),
+            reservations_by_ref=dict(self._reservation_index),
         )

@@ -307,7 +307,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G2 | 多项目管理 | portfolio/projects | **注册表已交付**（WP-A：GET/POST/PATCH /projects + 活动项目上下文 + runs/settings/drafts 真实归属）；项目删除不提供（归档终态），成员/RBAC 属 M18 deferred |
 | G3 | ~~通知持久化~~ | notifications、TopBar 铃铛 | **已交付**（WP-G：事件投影+已读；无推送通道） |
 | G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
-| G5 | 预算调整契约 | govern/budget | 禁用（501 语义） |
+| G5 | ~~预算调整契约~~ | govern/budget | **已交付**（PLAN-046：interventions budget_adjust 走 BudgetLedger 的 release+reserve；replace_agent 语义变更仍 501；预测只覆盖已预留额度） |
 | G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已接线**（A5：按钮按能力标注；仍属控制面状态迁移） |
 | G7 | ~~alerts/incidents/schedules/data-health~~ | ops 四页 | **只读投影已交付**（PLAN-045：ops/alerts・incidents・schedules・data-health；规则 CRUD/处置流/用户调度/聚合报告仍禁用，见各页缺口）；prompts/datasets/notebooks 见 G7b，reports 见 G7a，integrations 见 G15 |
 | G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
@@ -316,7 +316,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G9 | 全局血缘 | library/lineage | **Run 级投影已交付**（PLAN-043：GET /runs/{id}/lineage typed nodes/edges）；全局跨 run 仍无 API |
 | G10 | ~~删除端点（endpoint/model/agent/draft）~~ | library/endpoints、model-registry、run/approvals、plan/protocol | **已交付**（WP-B：四类 DELETE，被引用 409；契约基线不可删；memory 记录删除见 WP-F） |
 | G11 | ~~审批生产接线~~ | run/approvals | **已交付**（WP-H：human-gate 注册点+续跑；空列表为正确状态） |
-| G12 | 成本日序列~~/预测~~ | insights/cost-analytics | **日序列已交付**（WP-D）；预测仍无 API |
+| G12 | 成本日序列~~/预测~~ | insights/cost-analytics、govern/budget | **日序列已交付**（WP-D）；**Run 级预留-消耗预测已交付**（PLAN-046：GET /runs/{id}/cost-forecast，仅已预留额度，无 burn-rate 外推）；跨 run/时间序列预测仍无 API |
 | G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |
 | G14 | 实验~~创建~~/排队/调度 | portfolio/experiments | **预注册/归档已交付**（WP-E）；queue/schedule 无域支撑保持禁用 |
 | G15 | Tool Provider 管理面（install/approve/revoke） | ops/integrations | **目录已交付**（PLAN-043：GET /tool-providers 只读投影 + 三态健康）；管理动作未提供（供应链治理） |

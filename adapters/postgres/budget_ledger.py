@@ -131,19 +131,26 @@ class PostgresBudgetLedger(PostgresAdapterBase):
     def snapshot(self) -> LedgerSnapshot:
         self._record("snapshot", "")
         reservation_rows: Any = self._conn.execute(
-            "SELECT reservations_json FROM budget_reservations WHERE released=FALSE"
+            "SELECT reservation_ref, reservations_json FROM budget_reservations"
+            " WHERE released=FALSE"
         ).fetchall()
         entry_rows: Any = self._conn.execute(
             "SELECT entry_json FROM budget_usage_entries ORDER BY recorded_at, entry_id"
         ).fetchall()
-        reservations = tuple(
-            _decode_reservation(item)
+        by_ref = {
+            str(row["reservation_ref"]): tuple(
+                _decode_reservation(item) for item in _as_list(row["reservations_json"])
+            )
             for row in reservation_rows
-            for item in _as_list(row["reservations_json"])
-        )
+        }
+        reservations = tuple(item for items in by_ref.values() for item in items)
         entries = tuple(_decode_entry(_json_of(row["entry_json"])) for row in entry_rows)
         self._record("snapshot", "", result=f"{len(reservations)}/{len(entries)}")
-        return LedgerSnapshot(reservations=reservations, entries=entries)
+        return LedgerSnapshot(
+            reservations=reservations,
+            entries=entries,
+            reservations_by_ref=by_ref,
+        )
 
 
 def _as_list(value: Any) -> list[Any]:

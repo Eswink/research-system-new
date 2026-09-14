@@ -453,6 +453,34 @@
         "title": "ArtifactDto",
         "type": "object"
       },
+      "BudgetAdjustLineDto": {
+        "additionalProperties": false,
+        "description": "budget_adjust 的单条调整：资源类型 + 目标额度（整个 run，非增量）。",
+        "properties": {
+          "quantity": {
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "unit": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_type",
+          "quantity",
+          "unit"
+        ],
+        "title": "BudgetAdjustLineDto",
+        "type": "object"
+      },
       "BudgetViewDto": {
         "additionalProperties": false,
         "properties": {
@@ -997,6 +1025,79 @@
           "entry_count"
         ],
         "title": "CostDimensionDto",
+        "type": "object"
+      },
+      "CostForecastDto": {
+        "additionalProperties": false,
+        "properties": {
+          "attribution": {
+            "title": "Attribution",
+            "type": "string"
+          },
+          "consumed_cost_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumed Cost Minor"
+          },
+          "cost_status": {
+            "title": "Cost Status",
+            "type": "string"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "forecast_scope": {
+            "title": "Forecast Scope",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ForecastLineDto"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "scope_note": {
+            "title": "Scope Note",
+            "type": "string"
+          },
+          "unattributed_reserved": {
+            "default": 0,
+            "title": "Unattributed Reserved",
+            "type": "integer"
+          },
+          "unknown_cost_entries": {
+            "title": "Unknown Cost Entries",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "cost_status",
+          "unknown_cost_entries",
+          "attribution",
+          "forecast_scope",
+          "scope_note"
+        ],
+        "title": "CostForecastDto",
         "type": "object"
       },
       "CostViewDto": {
@@ -1804,6 +1905,75 @@
         "title": "ExportBundleDto",
         "type": "object"
       },
+      "ForecastLineDto": {
+        "additionalProperties": false,
+        "properties": {
+          "consumed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumed"
+          },
+          "data_status": {
+            "title": "Data Status",
+            "type": "string"
+          },
+          "entry_count": {
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining"
+          },
+          "reserved": {
+            "title": "Reserved",
+            "type": "integer"
+          },
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unknown_entry_count": {
+            "title": "Unknown Entry Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "resource_type",
+          "unit",
+          "reserved",
+          "data_status",
+          "entry_count",
+          "unknown_entry_count"
+        ],
+        "title": "ForecastLineDto",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "additionalProperties": false,
         "properties": {
@@ -1879,8 +2049,15 @@
       },
       "InterventionDto": {
         "additionalProperties": false,
-        "description": "干预请求（M13：pause/resume 走状态机；语义变更 501）。",
+        "description": "干预请求（pause/resume 走状态机；budget_adjust 走 BudgetLedger；\n语义变更 replace_agent 保持 501）。",
         "properties": {
+          "adjustments": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetAdjustLineDto"
+            },
+            "title": "Adjustments",
+            "type": "array"
+          },
           "detail": {
             "anyOf": [
               {
@@ -8094,6 +8271,49 @@
         ]
       }
     },
+    "/runs/{run_id}/cost-forecast": {
+      "get": {
+        "description": "run 成本预测投影（预留-消耗-剩余；只覆盖已预留部分）。\n\n预留归属（不猜）：冻结 manifest/预算调整登记的 ref 解析成功时用其覆盖的\n预留集合；ref 不可解析（跨进程重启后进程内记账丢失）才退化为\n`run:<id>` 作用域匹配，并在 `attribution` 显式标注；正式 preflight 的\n`phase:<id>` 预留无法归属时不并入预留总量，条数记在 `unattributed_reserved`。",
+        "operationId": "run_cost_forecast_runs__run_id__cost_forecast_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostForecastDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Cost Forecast",
+        "tags": [
+          "budget"
+        ]
+      }
+    },
     "/runs/{run_id}/deliverable": {
       "get": {
         "description": "Run 研究报告（M12 build_deliverable 的 persisted 产物）。\n\nrun 未知 → 404（对齐 /usage/export）；store 缺失 → 503；run 存在但未产出\n交付物 → 200 + available=false（诚实空态）。",
@@ -8313,7 +8533,7 @@
     },
     "/runs/{run_id}/interventions": {
       "post": {
-        "description": "干预：按 kind 分支（M13-R1 WP-P2）。\n\n- pause / resume：走正式状态机迁移；\n- budget_adjust / replace_agent（语义变更）：必须产生 Manifest\n  Revision / Fork，M13 诚实返回 501，不再无条件吞掉 payload 改 PAUSE。",
+        "description": "干预：按 kind 分支（M13-R1 WP-P2；PLAN-046 扩展 budget_adjust）。\n\n- pause / resume：走正式状态机迁移；\n- budget_adjust：走 BudgetLedger 正式面（release 既有预留 + reserve 新额度）；\n  预算面缺失 503，无调整行 422；\n- replace_agent（语义变更）：必须产生 Manifest Revision / Fork，诚实 501。",
         "operationId": "intervene_runs__run_id__interventions_post",
         "parameters": [
           {

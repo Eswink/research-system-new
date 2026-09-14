@@ -144,19 +144,26 @@ class SqliteBudgetLedger(SqliteAdapterBase):
         self._record("snapshot", "")
         with self._conn:
             reservation_rows = self._conn.execute(
-                "SELECT reservations_json FROM budget_reservations WHERE released = 0"
+                "SELECT reservation_ref, reservations_json FROM budget_reservations"
+                " WHERE released = 0"
             ).fetchall()
             entry_rows = self._conn.execute(
                 "SELECT entry_json FROM budget_usage_entries ORDER BY recorded_at, entry_id"
             ).fetchall()
-        reservations = tuple(
-            _decode_reservation(item)
+        by_ref = {
+            row["reservation_ref"]: tuple(
+                _decode_reservation(item) for item in json.loads(row["reservations_json"])
+            )
             for row in reservation_rows
-            for item in json.loads(row["reservations_json"])
-        )
+        }
+        reservations = tuple(item for items in by_ref.values() for item in items)
         entries = tuple(_decode_entry(json.loads(row["entry_json"])) for row in entry_rows)
         self._record("snapshot", "", result=f"{len(reservations)}/{len(entries)}")
-        return LedgerSnapshot(reservations=reservations, entries=entries)
+        return LedgerSnapshot(
+            reservations=reservations,
+            entries=entries,
+            reservations_by_ref=by_ref,
+        )
 
 
 def _encode_reservation(item: BudgetReservation) -> dict[str, Any]:

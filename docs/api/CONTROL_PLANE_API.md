@@ -168,6 +168,9 @@ M15 Operations（只读投影）：
 GET    /runs/{id}/evidence                 （未知 run 404；ledger 缺失 503）
 GET    /runs/{id}/claims                   （同上；degraded 标志显式）
 GET    /runs/{id}/usage                    （run 级隔离；UNKNOWN ≠ 0）
+GET    /runs/{id}/cost-forecast            （PLAN-046：预留-消耗-剩余；只覆盖已预留
+                                            额度，不外推；UNKNOWN/跨币种不降级为 0；
+                                            attribution=RESERVATION_REF/RUN_SCOPE/NONE）
 GET    /runs/{id}/export                   （persisted-state 重算，非 UI 内存）
 GET    /runs/{id}/deliverable              （PLAN-043：M12 持久化交付物；无产物 available=false）
 GET    /runs/{id}/lineage                  （PLAN-043：Run 级 nodes/edges typed 投影；全局血缘恒 false）
@@ -191,7 +194,9 @@ GET    /approvals
 POST   /approvals/{id}/decide
 GET    /runs/{id}/approvals               （WP-B：run 审批历史，含已裁决；未知 run 404）
 POST   /runs/{id}/interventions           （pause/resume 状态迁移已接线 WP-H；
-                                          budget_adjust/replace_agent 恒 501）
+                                          budget_adjust 走 BudgetLedger release+reserve
+                                          （PLAN-046：200 调整摘要 / 无调整行 422 /
+                                          预算面缺失 503）；replace_agent 仍 501）
 ```
 
 WP-H（PLAN-20260910-037）审批注册点：协议 phase 声明

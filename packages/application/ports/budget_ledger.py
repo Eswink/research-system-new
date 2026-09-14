@@ -13,7 +13,7 @@ snapshot（只读视图，供阈值评估）。
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Protocol, runtime_checkable
+from typing import Mapping, Protocol, runtime_checkable
 
 from packages.domain.budget import (
     BudgetPolicy,
@@ -26,6 +26,10 @@ from packages.domain.budget import (
 class LedgerSnapshot:
     reservations: tuple[BudgetReservation, ...] = field(default_factory=tuple)
     entries: tuple[UsageLedgerEntry, ...] = field(default_factory=tuple)
+    # 预留引用 → 该引用覆盖的预留集合。run 级归属的唯一权威来源：
+    # 正式 preflight 预留的作用域是 `phase:<id>`（不含 run id），只有冻结
+    # manifest 登记的 ref 能把它们归回某个 run；应用层不得按作用域猜测归属。
+    reservations_by_ref: Mapping[str, tuple[BudgetReservation, ...]] = field(default_factory=dict)
 
 
 @runtime_checkable

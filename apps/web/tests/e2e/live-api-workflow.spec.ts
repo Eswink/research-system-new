@@ -472,3 +472,51 @@ test("live: ops 只读投影（EC-03 第二批）", async ({ page }) => {
   expect((await page.request.get("/api/projects/ghost-project/ops/alerts")).status()).toBe(404);
 });
 
+test("live: 预算调整走账本 + 预留-消耗预测（EC-04 第一批）", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const started = await page.request.post("/api/projects/example-project/runs", {
+    headers: { "Idempotency-Key": `live-046-${String(Date.now())}` },
+    data: { protocol_path: "m12_reference_research_v1.yaml" },
+  });
+  expect(started.ok()).toBeTruthy();
+  const runId = ((await started.json()) as { id: string }).id;
+
+  // preflight 预留经冻结 manifest 的 ref 归属到该 run（不是按作用域猜）。
+  const before = await page.request.get(`/api/runs/${runId}/cost-forecast`);
+  expect(before.ok()).toBeTruthy();
+  const forecast = (await before.json()) as {
+    lines: { reserved: number }[];
+    attribution: string;
+    forecast_scope: string;
+    scope_note: string;
+  };
+  expect(forecast.lines.some((line) => line.reserved > 0)).toBe(true);
+  expect(forecast.attribution).toBe("RESERVATION_REF");
+  expect(forecast.forecast_scope).toBe("RESERVED_ONLY");
+  expect(forecast.scope_note).toContain("not extrapolated");
+
+  // 调整：release 既有预留 + reserve 新额度；预测随之更新。
+  const adjusted = await page.request.post(`/api/runs/${runId}/interventions`, {
+    headers: { "Idempotency-Key": `live-046-adjust-${String(Date.now())}` },
+    data: {
+      kind: "budget_adjust",
+      adjustments: [{ resource_type: "MODEL_TOKENS", quantity: 5000, unit: "tokens" }],
+    },
+  });
+  expect(adjusted.ok()).toBeTruthy();
+  const outcome = (await adjusted.json()) as { released_ref: string | null };
+  expect(outcome.released_ref).not.toBeNull();
+  const after = (await (
+    await page.request.get(`/api/runs/${runId}/cost-forecast`)
+  ).json()) as { lines: { resource_type: string; reserved: number }[] };
+  expect(after.lines.find((line) => line.resource_type === "MODEL_TOKENS")?.reserved).toBe(5000);
+  expect((await page.request.get("/api/runs/ghost/cost-forecast")).status()).toBe(404);
+
+  // 语义变更（换 Agent/协议）不在此处伪装：replace_agent 仍诚实 501。
+  const semantic = await page.request.post(`/api/runs/${runId}/interventions`, {
+    headers: { "Idempotency-Key": `live-046-semantic-${String(Date.now())}` },
+    data: { kind: "replace_agent" },
+  });
+  expect(semantic.status()).toBe(501);
+});
+

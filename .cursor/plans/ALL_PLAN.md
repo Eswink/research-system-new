@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260914-046](tasks/PLAN-20260914-046-budget-adjust-ledger-and-forecast.md) | IN_PROGRESS |
 | [x] | [PLAN-20260914-045](tasks/PLAN-20260914-045-ops-observability-projections-live.md) | DONE |
 | [x] | [PLAN-20260914-044](tasks/PLAN-20260914-044-library-catalog-domains-live.md) | DONE |
 | [x] | [PLAN-20260913-043](tasks/PLAN-20260913-043-reports-integrations-lineage-live.md) | DONE |

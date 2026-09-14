@@ -188,6 +188,18 @@ export const en: Record<TranslationKey, string> = {
   "budget.quantity": "Quantity",
   "budget.adjust": "Adjust budget",
   "budget.reservations": "Reservations",
+  "budget.forecast": "Reserved vs consumed forecast",
+  "budget.forecastNote":
+    "Reserved quota minus recorded usage only; UNKNOWN is not zero.",
+  "budget.forecastEmpty": "No reservations or usage recorded for this run",
+  "budget.reserved": "Reserved",
+  "budget.consumed": "Consumed",
+  "budget.remaining": "Remaining",
+  "budget.adjustField": "Resource type",
+  "budget.adjustQuantity": "New quota",
+  "budget.adjustUnit": "Unit",
+  "budget.adjustSubmit": "Apply adjustment",
+  "budget.adjustApplied": "Written to ledger",
 
   "cc.runs": "Runs",
   "cc.refreshNote": "Refresh time is separate from live connection",

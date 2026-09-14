@@ -14,12 +14,20 @@ from fastapi import APIRouter, Request
 from packages.application.ports import ApprovalStore
 from packages.application.ports.approval_store import ApprovalRecord
 from packages.application.ports.errors import InvalidInputError
+from packages.application.run_orchestration.budget_adjust import (
+    AdjustmentCommand,
+    AdjustmentLine,
+    BudgetAdjustmentError,
+    execute_budget_adjustment,
+)
+from packages.domain.budget import BudgetPolicy, ResourceType
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from services.api.approvals import (
     build_approval_event,
     decide_approval,
 )
+from services.api.catalog_merge import merged_catalog_snapshot, merged_project_settings
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.approvals import (
@@ -186,11 +194,12 @@ async def resume_run(run_id: str, request: Request) -> object:
 
 @router.post("/runs/{run_id}/interventions", response_model=object)
 async def intervene(run_id: str, payload: InterventionDto, request: Request) -> object:
-    """干预：按 kind 分支（M13-R1 WP-P2）。
+    """干预：按 kind 分支（M13-R1 WP-P2；PLAN-046 扩展 budget_adjust）。
 
     - pause / resume：走正式状态机迁移；
-    - budget_adjust / replace_agent（语义变更）：必须产生 Manifest
-      Revision / Fork，M13 诚实返回 501，不再无条件吞掉 payload 改 PAUSE。
+    - budget_adjust：走 BudgetLedger 正式面（release 既有预留 + reserve 新额度）；
+      预算面缺失 503，无调整行 422；
+    - replace_agent（语义变更）：必须产生 Manifest Revision / Fork，诚实 501。
     """
     deps: ApiDeps = get_deps(request)
     run = _require_run(deps, run_id)
@@ -208,10 +217,78 @@ async def intervene(run_id: str, payload: InterventionDto, request: Request) -> 
             raise ApiError(409, "Invalid Transition", str(exc)) from exc
         save_run(deps, updated)
         return _run_payload(updated)
+    if payload.kind == "budget_adjust":
+        return _budget_adjust(deps, run_id, payload)
     raise ApiError(
         501,
         "Semantic Intervention Pending",
         "运行中语义变更必须产生 Manifest Revision / Fork；持久化属 M14",
+    )
+
+
+def _budget_adjust(deps: ApiDeps, run_id: str, payload: InterventionDto) -> dict[str, object]:
+    """budget_adjust：release 既有预留 + reserve 新额度（run 作用域）。
+
+    策略沿用 run 启动时的 project budget policy（catalog 解析）；既有预留
+    引用来自编排服务进程内记账，跨进程重启丢失时诚实按"无既有预留"处理。
+    """
+    if not payload.adjustments:
+        raise ApiError(422, "Empty Adjustment", "budget_adjust requires adjustments[]")
+    if deps.runs is None:
+        raise ApiError(503, "Run Orchestration Unavailable", "run service not configured")
+    project_id = _require_run(deps, run_id).project_id
+    command = AdjustmentCommand(
+        run_id=run_id,
+        policy=_budget_policy(deps, project_id),
+        existing_ref=deps.runs.reservation_ref(run_id),
+        lines=_adjustment_lines(payload),
+    )
+    try:
+        outcome = execute_budget_adjustment(deps.budget, command)
+    except BudgetAdjustmentError as exc:
+        raise ApiError(503, "Budget Ledger Unavailable", str(exc)) from exc
+    except ValueError as exc:
+        raise ApiError(422, "Invalid Adjustment", str(exc)) from exc
+    deps.runs.register_reservation_ref(run_id, outcome.reservation_ref)
+    return {
+        "run_id": run_id,
+        "released_ref": outcome.released_ref,
+        "reservation_ref": outcome.reservation_ref,
+        "reservations": [
+            {
+                "id": item.id,
+                "scope": item.scope,
+                "resource_type": item.resource_type.value,
+                "quantity": item.quantity,
+                "unit": item.unit,
+            }
+            for item in outcome.reservations
+        ],
+    }
+
+
+def _budget_policy(deps: ApiDeps, project_id: str) -> BudgetPolicy:
+    """resolve 项目预算策略；缺失 503（不落默认策略、不静默放行）。"""
+    settings = merged_project_settings(deps, project_id)
+    policy = merged_catalog_snapshot(deps).budget_policies.get(settings.budget_policy_id)
+    if policy is None:
+        raise ApiError(
+            503,
+            "Budget Policy Unavailable",
+            f"budget policy {settings.budget_policy_id} is not resolvable",
+        )
+    return policy
+
+
+def _adjustment_lines(payload: InterventionDto) -> tuple[AdjustmentLine, ...]:
+    """DTO 调整行 → 应用层调整行；未知 resource_type 由 ResourceType 报错（422）。"""
+    return tuple(
+        AdjustmentLine(
+            resource_type=ResourceType(line.resource_type),
+            quantity=line.quantity,
+            unit=line.unit,
+        )
+        for line in payload.adjustments
     )
 
 
