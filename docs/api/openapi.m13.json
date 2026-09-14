@@ -991,6 +991,64 @@
         "title": "CostViewDto",
         "type": "object"
       },
+      "DeliverableDto": {
+        "additionalProperties": false,
+        "description": "Run 的 persisted research deliverable（M12 build_deliverable 产物）。\n\navailable=false 时 deliverable 恒空 dict，reason 说明为何不可用（不伪装\n生成空报告）。artifact_id/digest 指向 artifact store 中的 `deliverable.json`。",
+        "properties": {
+          "artifact_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Digest"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Id"
+          },
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "deliverable": {
+            "additionalProperties": false,
+            "title": "Deliverable",
+            "type": "object"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "available"
+        ],
+        "title": "DeliverableDto",
+        "type": "object"
+      },
       "DiscoverModelsResultDto": {
         "additionalProperties": false,
         "properties": {
@@ -1672,6 +1730,115 @@
           "kind"
         ],
         "title": "InterventionDto",
+        "type": "object"
+      },
+      "LineageDto": {
+        "additionalProperties": false,
+        "description": "Run 级来源血缘投影（nodes/edges 确定性排序）。\n\n只由 API 明确返回的 evidence/claim/artifact 引用构造边；缺失引用显示为\n断开（不补节点）。全局跨 run 血缘仍不可用（G9）。",
+        "properties": {
+          "degraded": {
+            "default": false,
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/LineageEdgeDto"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "global_lineage_available": {
+            "default": false,
+            "title": "Global Lineage Available",
+            "type": "boolean"
+          },
+          "global_lineage_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Lineage Reason"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/LineageNodeDto"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "LineageDto",
+        "type": "object"
+      },
+      "LineageEdgeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "target",
+          "relation"
+        ],
+        "title": "LineageEdgeDto",
+        "type": "object"
+      },
+      "LineageNodeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label"
+        ],
+        "title": "LineageNodeDto",
         "type": "object"
       },
       "LlmEndpointCreateDto": {
@@ -3734,6 +3901,111 @@
           "leased"
         ],
         "title": "TelemetryTaskCountsDto",
+        "type": "object"
+      },
+      "ToolProviderDto": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "effect_class": {
+            "title": "Effect Class",
+            "type": "string"
+          },
+          "health": {
+            "default": "UNKNOWN",
+            "title": "Health",
+            "type": "string"
+          },
+          "health_check": {
+            "default": false,
+            "title": "Health Check",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "network_domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Network Domains",
+            "type": "array"
+          },
+          "protocol_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Version"
+          },
+          "transport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport"
+          },
+          "trust_level": {
+            "title": "Trust Level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "trust_level",
+          "effect_class"
+        ],
+        "title": "ToolProviderDto",
+        "type": "object"
+      },
+      "ToolProviderListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "management_available": {
+            "default": false,
+            "title": "Management Available",
+            "type": "boolean"
+          },
+          "management_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Management Reason"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/ToolProviderDto"
+            },
+            "title": "Providers",
+            "type": "array"
+          }
+        },
+        "title": "ToolProviderListDto",
         "type": "object"
       },
       "TrendDivergenceDto": {
@@ -7056,6 +7328,49 @@
         ]
       }
     },
+    "/runs/{run_id}/deliverable": {
+      "get": {
+        "description": "Run 研究报告（M12 build_deliverable 的 persisted 产物）。\n\nrun 未知 → 404（对齐 /usage/export）；store 缺失 → 503；run 存在但未产出\n交付物 → 200 + available=false（诚实空态）。",
+        "operationId": "run_deliverable_runs__run_id__deliverable_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliverableDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Deliverable",
+        "tags": [
+          "inspection"
+        ]
+      }
+    },
     "/runs/{run_id}/events": {
       "get": {
         "description": "Run Timeline 端点（双模式）：\n\n- `Accept: application/json`（默认 replay）：一次性返回全量事件\n  （初始加载 / 刷新恢复，来自 outbox 持久事件投影）；\n- `Accept: text/event-stream`（SSE）：Last-Event-ID / ?cursor= 续传\n  增量事件，客户端按 event_id 去重（重连安全）。",
@@ -7280,6 +7595,49 @@
         "summary": "Intervene",
         "tags": [
           "approvals"
+        ]
+      }
+    },
+    "/runs/{run_id}/lineage": {
+      "get": {
+        "description": "Run 级来源血缘（nodes/edges 由 persisted evidence/claim 投影）。\n\n未知 run → 404；ledger 损坏 → degraded=true（不整体 422）；全局跨 run\n血缘恒不可用（无 API，G9 诚实锁定，不猜测连边）。",
+        "operationId": "run_lineage_runs__run_id__lineage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LineageDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Lineage",
+        "tags": [
+          "inspection"
         ]
       }
     },
@@ -7612,6 +7970,28 @@
         "summary": "Create Custom Team Template",
         "tags": [
           "team-protocol"
+        ]
+      }
+    },
+    "/tool-providers": {
+      "get": {
+        "description": "Tool Provider 目录（确定性排序）+ 三态健康。\n\n只读：无 install/approve/revoke（供应链治理面），无凭据回显。",
+        "operationId": "list_tool_providers_tool_providers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolProviderListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Tool Providers",
+        "tags": [
+          "tool-providers"
         ]
       }
     }

@@ -4,9 +4,11 @@ import { request } from "./http";
 import type {
   BudgetViewDto,
   ClaimMapDto,
+  DeliverableDto,
   EvidenceDto,
   ExperimentViewDto,
   ExportBundleDto,
+  LineageDto,
 } from "./types";
 
 export const inspectionClient = {
@@ -24,5 +26,11 @@ export const inspectionClient = {
   },
   export(runId: string): Promise<ExportBundleDto> {
     return request(`/runs/${encodeURIComponent(runId)}/export`, { method: "GET" });
+  },
+  deliverable(runId: string): Promise<DeliverableDto> {
+    return request(`/runs/${encodeURIComponent(runId)}/deliverable`, { method: "GET" });
+  },
+  lineage(runId: string): Promise<LineageDto> {
+    return request(`/runs/${encodeURIComponent(runId)}/lineage`, { method: "GET" });
   },
 };

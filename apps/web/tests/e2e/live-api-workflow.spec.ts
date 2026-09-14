@@ -332,3 +332,51 @@ test("live: 项目注册表与归属（WP-C cycle 1）", async ({ page }) => {
   expect(((await archived.json()) as { status: string }).status).toBe("ARCHIVED");
   expect((await page.request.get("/api/projects/ghost-project/settings")).status()).toBe(404);
 });
+
+test("live: reports/integrations/lineage 只读面（EC-02）", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  // tool-providers: catalog 只读投影 + 三态健康；管理面诚实锁定。
+  const providers = await page.request.get("/api/tool-providers");
+  expect(providers.ok()).toBeTruthy();
+  const catalog = (await providers.json()) as {
+    providers: { id: string; kind: string; health: string }[];
+    management_available: boolean;
+  };
+  expect(catalog.providers.length).toBeGreaterThan(0);
+  expect(catalog.providers.some((item) => item.kind === "NATIVE")).toBe(true);
+  expect(catalog.management_available).toBe(false);
+
+  // Start a run so the run-scoped read-only endpoints have a real target.
+  const templates = await page.request.get("/api/protocol-templates");
+  const source = ((await templates.json()) as { source: string }[])[0]?.source ?? "";
+  const start = await page.request.post("/api/projects/example-project/runs", {
+    headers: idem("live-ec02"),
+    data: { protocol_path: source.replace(/^examples\/protocols\//, "") },
+  });
+  expect(start.ok()).toBeTruthy();
+  const runId = ((await start.json()) as { id: string }).id;
+
+  // deliverable: 无产物时 available=false（诚实空态，不生成空报告）。
+  const deliverable = await page.request.get(`/api/runs/${runId}/deliverable`);
+  expect(deliverable.ok()).toBeTruthy();
+  const report = (await deliverable.json()) as { available: boolean; deliverable: unknown };
+  expect(typeof report.available).toBe("boolean");
+  if (!report.available) expect(report.deliverable).toEqual({});
+
+  // lineage: nodes/edges 为数组且全局血缘恒不可用（G9）。
+  const lineage = await page.request.get(`/api/runs/${runId}/lineage`);
+  expect(lineage.ok()).toBeTruthy();
+  const graph = (await lineage.json()) as {
+    nodes: unknown[];
+    edges: unknown[];
+    global_lineage_available: boolean;
+  };
+  expect(Array.isArray(graph.nodes)).toBe(true);
+  expect(Array.isArray(graph.edges)).toBe(true);
+  expect(graph.global_lineage_available).toBe(false);
+
+  // 未知 run 的只读端点 404（不伪装空成功）。
+  expect((await page.request.get("/api/runs/ghost-run/lineage")).status()).toBe(404);
+  expect((await page.request.get("/api/runs/ghost-run/deliverable")).status()).toBe(404);
+});

@@ -141,6 +141,8 @@ GET    /runs/{id}/evidence                 （未知 run 404；ledger 缺失 503
 GET    /runs/{id}/claims                   （同上；degraded 标志显式）
 GET    /runs/{id}/usage                    （run 级隔离；UNKNOWN ≠ 0）
 GET    /runs/{id}/export                   （persisted-state 重算，非 UI 内存）
+GET    /runs/{id}/deliverable              （PLAN-043：M12 持久化交付物；无产物 available=false）
+GET    /runs/{id}/lineage                  （PLAN-043：Run 级 nodes/edges typed 投影；全局血缘恒 false）
 ```
 
 ## Health（WP-A）
@@ -174,9 +176,10 @@ freeze）；执行循环在该 phase 前注册 ApprovalRecord 并 emit
 ## Tools
 
 ```text
+GET    /tool-providers                     （PLAN-043：目录只读投影 + 三态健康）
 POST   /tool-providers                     （未提供：Tool Provider 管理面）
 POST   /tool-providers/{id}/test           （未提供）
-GET    /tool-providers/{id}/health         （未提供；preflight 侧 provider 三态探测已接入 WP-D）
+GET    /tool-providers/{id}/health         （未提供；目录响应内含逐 provider 健康）
 POST   /tool-packs/install                 （未提供：供应链治理，install/approve/revoke 全组）
 POST   /tool-packs/{id}/approve-update     （未提供）
 POST   /tool-packs/{id}/revoke             （未提供）

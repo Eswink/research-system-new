@@ -323,6 +323,63 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
     pattern: /^\/agents\/[^/]+$/,
     handler: () => ({ status: 204, body: null }),
   },
+  // PLAN-043 EC-02: tool-provider catalog, run deliverable and run lineage
+  // (honest empty/shape responses; interaction specs assert real rendering).
+  {
+    method: "GET",
+    pattern: /^\/tool-providers$/,
+    handler: () => ({
+      status: 200,
+      body: {
+        providers: [
+          {
+            id: "openhands_workspace",
+            kind: "NATIVE",
+            trust_level: "BUILT_IN",
+            effect_class: "EXECUTE",
+            capabilities: ["workspace.read", "workspace.write.notes"],
+            transport: null,
+            protocol_version: null,
+            network_domains: [],
+            health_check: false,
+            health: "HEALTHY",
+          },
+        ],
+        management_available: false,
+        management_reason: "Tool Provider management is supply-chain governance (G15)",
+      },
+    }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/runs\/[^/]+\/deliverable$/,
+    handler: (url) => ({
+      status: 200,
+      body: {
+        run_id: url.pathname.split("/")[2] ?? "",
+        available: false,
+        reason: "no persisted deliverable for this run",
+        artifact_id: null,
+        artifact_digest: null,
+        deliverable: {},
+      },
+    }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/runs\/[^/]+\/lineage$/,
+    handler: (url) => ({
+      status: 200,
+      body: {
+        run_id: url.pathname.split("/")[2] ?? "",
+        nodes: [],
+        edges: [],
+        global_lineage_available: false,
+        global_lineage_reason: "global lineage has no API (G9)",
+        degraded: false,
+      },
+    }),
+  },
 ];
 
 function match(path: string, method: string): Handler | null {

@@ -27,6 +27,7 @@ from services.api.dto.inspection import (
 )
 from services.api.errors import ApiError
 from services.api.run_access import get_run_or_error
+from services.api.run_evidence import evidence_of_run
 
 router = APIRouter(tags=["inspection"])
 
@@ -73,25 +74,6 @@ def _claim_dto(claim: Claim, relations: tuple[EvidenceRelation, ...]) -> ClaimDt
     )
 
 
-def _evidence_of_run(ledger: EvidenceLedger, run_id: str) -> tuple[Evidence, ...]:
-    """从 ledger 查询 run 的 evidence（经 relations_for_claim 投影）。"""
-    found: list[Evidence] = []
-    seen: set[str] = set()
-    for claim in ledger.claims():
-        for relation in ledger.relations_for_claim(claim.id):
-            evidence_id = relation.evidence_id
-            if evidence_id in seen:
-                continue
-            seen.add(evidence_id)
-            try:
-                evidence = ledger.get_evidence(evidence_id)
-            except Exception:  # noqa: BLE001 - 引用可能已删除（视觉态：missing evidence）
-                continue
-            if evidence.run_id == run_id:
-                found.append(evidence)
-    return tuple(found)
-
-
 def _claim_map_for_run(
     ledger: EvidenceLedger, run_id: str
 ) -> tuple[list[ClaimDto], list[str], list[str]]:
@@ -102,7 +84,7 @@ def _claim_map_for_run(
     命中该集合的 claim（relation 展示同样只保留 run 内部分，不泄漏他 run
     evidence 引用）；无任何 relation 的 claim 无法归属 run，不返回。
     """
-    run_evidence_ids = {item.id for item in _evidence_of_run(ledger, run_id)}
+    run_evidence_ids = {item.id for item in evidence_of_run(ledger, run_id)}
     claims: list[ClaimDto] = []
     unsupported: list[str] = []
     contradictions: list[str] = []
@@ -130,7 +112,7 @@ async def run_evidence(run_id: str, request: Request) -> list[EvidenceDto]:
     deps: ApiDeps = get_deps(request)
     ledger = _ledger_of(deps)
     get_run_or_error(deps, run_id)
-    return [_evidence_dto(item) for item in _evidence_of_run(ledger, run_id)]
+    return [_evidence_dto(item) for item in evidence_of_run(ledger, run_id)]
 
 
 @router.get("/runs/{run_id}/claims", response_model=ClaimMapDto)
@@ -292,7 +274,7 @@ async def run_export(run_id: str, request: Request) -> ExportBundleDto:
         run_id=run_id,
         run_state=run.state,
         manifest_digest=str(run.manifest_digest) if run.manifest_digest else None,
-        evidence=[_evidence_dto(item) for item in _evidence_of_run(ledger, run_id)],
+        evidence=[_evidence_dto(item) for item in evidence_of_run(ledger, run_id)],
         claims=claims.claims,
         usage=usage,
         exported_from="persisted-state",

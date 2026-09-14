@@ -88,6 +88,49 @@ class ExportBundleDto(BaseModel):
     exported_from: str
 
 
+class DeliverableDto(BaseModel):
+    """Run 的 persisted research deliverable（M12 build_deliverable 产物）。
+
+    available=false 时 deliverable 恒空 dict，reason 说明为何不可用（不伪装
+    生成空报告）。artifact_id/digest 指向 artifact store 中的 `deliverable.json`。
+    """
+
+    run_id: str
+    available: bool
+    reason: str | None = None
+    artifact_id: str | None = None
+    artifact_digest: str | None = None
+    deliverable: dict[str, object] = Field(default_factory=dict)
+
+
+class LineageNodeDto(BaseModel):
+    id: str
+    kind: str
+    label: str
+    run_id: str | None = None
+
+
+class LineageEdgeDto(BaseModel):
+    source: str
+    target: str
+    relation: str
+
+
+class LineageDto(BaseModel):
+    """Run 级来源血缘投影（nodes/edges 确定性排序）。
+
+    只由 API 明确返回的 evidence/claim/artifact 引用构造边；缺失引用显示为
+    断开（不补节点）。全局跨 run 血缘仍不可用（G9）。
+    """
+
+    run_id: str
+    nodes: list[LineageNodeDto] = Field(default_factory=list)
+    edges: list[LineageEdgeDto] = Field(default_factory=list)
+    global_lineage_available: bool = False
+    global_lineage_reason: str | None = None
+    degraded: bool = False
+
+
 class ExperimentRunDto(BaseModel):
     """单个 experiment run 的只读视图（persisted truth）。"""
 

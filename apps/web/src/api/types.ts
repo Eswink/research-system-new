@@ -468,6 +468,56 @@ export interface ExportBundleDto {
   exported_from: string;
 }
 
+export interface DeliverableDto {
+  run_id: string;
+  available: boolean;
+  reason: string | null;
+  artifact_id: string | null;
+  artifact_digest: string | null;
+  deliverable: Record<string, unknown>;
+}
+
+export interface ToolProviderDto {
+  id: string;
+  kind: string;
+  trust_level: string;
+  effect_class: string;
+  capabilities: string[];
+  transport: string | null;
+  protocol_version: string | null;
+  network_domains: string[];
+  health_check: boolean;
+  health: string;
+}
+
+export interface ToolProviderListDto {
+  providers: ToolProviderDto[];
+  management_available: boolean;
+  management_reason: string | null;
+}
+
+export interface LineageNodeDto {
+  id: string;
+  kind: string;
+  label: string;
+  run_id: string | null;
+}
+
+export interface LineageEdgeDto {
+  source: string;
+  target: string;
+  relation: string;
+}
+
+export interface LineageDto {
+  run_id: string;
+  nodes: LineageNodeDto[];
+  edges: LineageEdgeDto[];
+  global_lineage_available: boolean;
+  global_lineage_reason: string | null;
+  degraded: boolean;
+}
+
 export interface ExperimentRunDto {
   experiment_run_id: string;
   artifact_ids: string[];

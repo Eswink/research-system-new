@@ -91,7 +91,7 @@ const REAL_PAGES: Readonly<Record<string, PageFactory>> = {
   "library/prompts": () => <PromptsPage />,
   "library/datasets": () => <DatasetsPage />,
   "library/notebooks": () => <NotebooksPage />,
-  "insights/reports": () => <ReportsPage />,
+  "insights/reports": (_r, ctx) => <ReportsPage ctx={ctx} />,
   "ops/alerts": () => <AlertsPage />,
   "ops/incidents": () => <IncidentsPage />,
   "ops/schedules": () => <SchedulesPage />,

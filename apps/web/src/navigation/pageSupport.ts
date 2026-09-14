@@ -30,7 +30,8 @@ export const GAPS = {
   budgetAdjust: "预算调整无契约（interventions budget_adjust 恒 501）",
   pauseResume: "pause/resume 仅状态迁移，不证明实际暂停/恢复执行",
   fileBrowse: "文件 Diff 无接口；预览与下载已接入（GET /artifacts/{id}/content）",
-  globalLineage: "全局数据集/提示词血缘无 API：仅 Run 级引用",
+  globalLineage:
+    "全局数据集/提示词血缘无 API（仅 Run 级引用，已接入 GET /runs/{id}/lineage 投影）",
   delete:
     "端点/模型/草稿/用户 Agent 已接入 DELETE（被引用 → 409）；" +
     "memory 记录与契约基线（example role/template/agent）不提供删除",
@@ -48,11 +49,15 @@ export const GAPS = {
   prompts: "无 prompts API",
   datasets: "无 datasets API",
   notebooks: "无 notebooks API",
-  reports: "无 reports API",
+  reports:
+    "已接入 GET /runs/{id}/deliverable（M12 持久化交付物）；" +
+    "报告生成/编辑/PDF/发布无 API——生成动作禁用",
   alerts: "无告警规则/收件箱 API",
   incidents: "无事件处置 API",
   schedules: "无用户可见调度 API",
-  integrations: "无 Tool Provider 管理 API",
+  integrations:
+    "Tool Provider 目录已接入（GET /tool-providers + 三态健康）；" +
+    "install/approve/revoke 属供应链治理面（G15），不提供",
   dataHealth: "无聚合数据健康 API",
 } as const;
 
@@ -91,12 +96,20 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "library/endpoints": { level: "full" },
   "library/setup": { level: "full" },
   "evidence/claims": { level: "full" },
-  "insights/reports": { level: "gap", reason: GAPS.reports },
+  "insights/reports": {
+    level: "partial",
+    reason: GAPS.reports,
+    disabledOperations: ["generate", "edit", "export-pdf", "publish"],
+  },
   "insights/cost-analytics": { level: "partial", reason: GAPS.costSeries },
   "ops/alerts": { level: "gap", reason: GAPS.alerts },
   "ops/incidents": { level: "gap", reason: GAPS.incidents },
   "ops/schedules": { level: "gap", reason: GAPS.schedules },
-  "ops/integrations": { level: "gap", reason: GAPS.integrations },
+  "ops/integrations": {
+    level: "partial",
+    reason: GAPS.integrations,
+    disabledOperations: ["install", "approve", "revoke"],
+  },
   "ops/data-health": { level: "gap", reason: GAPS.dataHealth },
   "ops/matrix": { level: "gap", reason: "界面状态说明页（非实时运维状态）" },
   "ops/compute": { level: "full" },

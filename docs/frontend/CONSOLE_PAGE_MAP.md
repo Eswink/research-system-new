@@ -152,9 +152,11 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - 设计：`screens/Lineage.jsx`。
 - API：`GET /runs/{id}/claims`（`ClaimDto.relations[]`: claim_id/evidence_id/
   relation/strength）、`GET /runs/{id}/evidence`（source_ref/artifact_id/
-  image_digest/model_refs/manifest_digest）。
-- 等级：PARTIAL。仅用 API 明确返回的引用构造当前 Run 来源关系。
-- 缺口（登记）：全局数据集/提示词血缘无 API——标注不可用；禁止猜测连边；
+  image_digest/model_refs/manifest_digest）、`GET /runs/{id}/lineage`
+  （`LineageDto`: nodes/edges typed 投影，读取 persisted 引用构造并确定性排序）。
+- 等级：PARTIAL。当前 Run 的显式来源关系（source→evidence→claim→artifact/model）
+  由后端投影。
+- 缺口（登记）：全局数据集/提示词血缘无 API（G9）——标注不可用；禁止猜测连边；
   引用缺失显示断开关系而非补节点。
 
 ### `#/library/endpoints` — 中转站
@@ -183,8 +185,11 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ## Insights（2 页）
 
 ### `#/insights/reports` — 报告
-- 设计：`screens/Reports.jsx`。等级：GAP。
-- 缺口（登记）：无 reports API。报告生成/编辑/PDF/发布禁用；可链接真实
+- 设计：`screens/Reports.jsx`。等级：PARTIAL。
+- API：`GET /runs/{id}/deliverable`（`DeliverableDto`：available/reason/
+  artifact_id/artifact_digest/deliverable）读取既有 M12 `build_deliverable`
+  持久化产物 `deliverable.json`；未产出交付物的 Run 返回 available=false。
+- 缺口（登记）：报告生成/编辑/PDF/发布无 API——生成动作禁用；可另链接真实
   `GET /runs/{id}/export`（JSON bundle），不冒充报告。
 
 ### `#/insights/cost-analytics` — 成本分析
@@ -211,8 +216,11 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - 缺口（登记）：scheduler 是进程内守护线程，无 HTTP 面；创建/启停/触发禁用。
 
 ### `#/ops/integrations` — 集成
-- 设计：`screens/OpsScreens.jsx` `IntegrationsScreen`。等级：GAP。
-- 缺口（登记）：无 Tool Provider 管理 API；不以模型端点接口代替。
+- 设计：`screens/OpsScreens.jsx` `IntegrationsScreen`。等级：PARTIAL。
+- API：`GET /tool-providers`（`ToolProviderListDto`：catalog `tool_providers`
+  只读投影 + 三态健康；NATIVE=HEALTHY、外部未注册=UNKNOWN）。
+- 缺口（登记）：install/approve/revoke 属供应链治理面（G15），不提供；不以模型
+  端点接口代替。
 
 ### `#/ops/data-health` — 数据健康
 - 设计：`screens/DataHealth.jsx`。等级：GAP。
@@ -287,15 +295,16 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
 | G5 | 预算调整契约 | govern/budget | 禁用（501 语义） |
 | G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已接线**（A5：按钮按能力标注；仍属控制面状态迁移） |
-| G7 | prompts/datasets/notebooks/reports/alerts/incidents/schedules/integrations/data-health | 对应 9 页 | GAP 结构还原+禁用（无 Domain 支撑） |
+| G7 | prompts/datasets/notebooks/alerts/incidents/schedules/data-health | 对应 7 页 | GAP 结构还原+禁用（无 Domain 支撑）；~~reports~~（PLAN-043 已交付，见 G7a）、~~integrations~~（PLAN-043 已交付，见 G15） |
+| G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
 | G8 | 文件浏览/预览；~~下载~~ | run/workspace | **预览/下载已交付**（WP-C）；文件级 Diff 仍无接口 |
-| G9 | 全局血缘 | library/lineage | 仅 Run 级引用 |
+| G9 | 全局血缘 | library/lineage | **Run 级投影已交付**（PLAN-043：GET /runs/{id}/lineage typed nodes/edges）；全局跨 run 仍无 API |
 | G10 | ~~删除端点（endpoint/model/agent/draft）~~ | library/endpoints、model-registry、run/approvals、plan/protocol | **已交付**（WP-B：四类 DELETE，被引用 409；契约基线不可删；memory 记录删除见 WP-F） |
 | G11 | ~~审批生产接线~~ | run/approvals | **已交付**（WP-H：human-gate 注册点+续跑；空列表为正确状态） |
 | G12 | 成本日序列~~/预测~~ | insights/cost-analytics | **日序列已交付**（WP-D）；预测仍无 API |
 | G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |
 | G14 | 实验~~创建~~/排队/调度 | portfolio/experiments | **预注册/归档已交付**（WP-E）；queue/schedule 无域支撑保持禁用 |
-| G15 | Tool Provider 管理面（install/approve/revoke） | ops/integrations | 未提供（供应链治理）；provider 三态健康已进 preflight（WP-D） |
+| G15 | Tool Provider 管理面（install/approve/revoke） | ops/integrations | **目录已交付**（PLAN-043：GET /tool-providers 只读投影 + 三态健康）；管理动作未提供（供应链治理） |
 | G16 | Memory capability policy（memory.write 入 policy.yaml 镜像契约） | govern/audit | follow-up（_CAPABILITY_SCOPE 单值映射限制） |
 
 ## 旧路由别名映射（T32 交付兼容）

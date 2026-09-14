@@ -23,6 +23,7 @@ import { projectsClient } from "./projectsClient";
 import { protocolClient, type ProtocolSource } from "./protocolClient";
 import { runClient } from "./runClient";
 import { teamClient } from "./teamClient";
+import { toolProvidersClient } from "./toolProvidersClient";
 import type {
   AgentCreateDto,
   AgentSpecDto,
@@ -121,6 +122,11 @@ export const api = {
   runUsage: (runId: string) => inspectionClient.usage(runId),
   runExperiments: (runId: string) => inspectionClient.experiments(runId),
   runExport: (runId: string) => inspectionClient.export(runId),
+  runDeliverable: (runId: string) => inspectionClient.deliverable(runId),
+  runLineage: (runId: string) => inspectionClient.lineage(runId),
+
+  // ── tool providers（PLAN-043 只读目录）──
+  listToolProviders: () => toolProvidersClient.list(),
 
   // ── operations ─
   runTelemetry: (runId: string) => operationsClient.telemetry(runId),

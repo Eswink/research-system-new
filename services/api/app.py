@@ -14,8 +14,10 @@ from services.api.middleware import IdempotencyMiddleware
 from services.api.routers import (
     approvals,
     artifacts,
+    deliverable,
     experiments,
     inspection,
+    lineage,
     llm_endpoints,
     memory,
     models,
@@ -27,6 +29,7 @@ from services.api.routers import (
     runs,
     team_custom,
     team_protocol,
+    tool_providers,
 )
 from services.api.scheduler import (
     LeaseRecoveryScheduler,
@@ -198,4 +201,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(artifacts.router)
     app.include_router(memory.router)
     app.include_router(notifications.router)
+    app.include_router(tool_providers.router)
+    app.include_router(deliverable.router)
+    app.include_router(lineage.router)
     return app
