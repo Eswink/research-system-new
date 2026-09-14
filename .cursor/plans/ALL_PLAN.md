@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260914-048](tasks/PLAN-20260914-048-pause-resume-dispatch-coordination.md) | DONE |
 | [x] | [PLAN-20260914-047](tasks/PLAN-20260914-047-artifact-content-diff.md) | DONE |
 | [x] | [PLAN-20260914-046](tasks/PLAN-20260914-046-budget-adjust-ledger-and-forecast.md) | DONE |
 | [x] | [PLAN-20260914-045](tasks/PLAN-20260914-045-ops-observability-projections-live.md) | DONE |

@@ -72,15 +72,18 @@ export function RunActionButtonRow({
 function pauseTitle(run: RunDetailDto, zh: boolean): string | undefined {
   if (!canPauseRun(run.state)) return undefined;
   return zh
-    ? "控制面状态迁移 RUNNING→PAUSED；不证明已在执行的 worker 任务被物理暂停"
-    : "Control-plane transition RUNNING→PAUSED; in-flight worker tasks may keep running";
+    ? "协作式暂停：派发面立即停止认领该 run 的任务（已持租约不撤销）；" +
+        "本进程的执行器在下一次 phase 边界停下"
+    : "Cooperative pause: dispatch stops claiming this run's tasks (held leases are " +
+        "not revoked); an in-process executor stops at the next phase boundary";
 }
 
 function resumeTitle(run: RunDetailDto, zh: boolean): string | undefined {
   if (!canResumeRun(run.state)) return undefined;
   return zh
-    ? "恢复需冻结 manifest 摘要一致（mismatch 拒绝）"
-    : "Resume requires the frozen manifest digest to match (mismatch is rejected)";
+    ? "恢复派发；只有本进程持有暂停上下文时才继续剩余任务（否则只解除暂停）"
+    : "Dispatch resumes; remaining tasks continue only if this process holds the " +
+        "paused context (otherwise it only un-pauses)";
 }
 
 interface CancelDialogProps {

@@ -15,19 +15,12 @@ from pathlib import Path
 from typing import Any
 
 from adapters.sqlite.base import SqliteAdapterBase
-from adapters.sqlite.db import connect, now_iso
+from adapters.sqlite.db import RUNS_SCHEMA_SQL, connect, now_iso
 from packages.domain.core import ID, Digest, Timestamp
 from packages.domain.run import ResearchRun
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS runs (
-    run_id TEXT PRIMARY KEY,
-    project_id TEXT NOT NULL,
-    run_json TEXT NOT NULL,
-    created_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_runs_project ON runs(project_id);
-"""
+# 与 db.SCHEMA_SQL 同源：`runs` 是共享 canonical 表（控制面写入、派发面只读 state）。
+_SCHEMA = RUNS_SCHEMA_SQL
 
 
 class SqliteRunStore(SqliteAdapterBase):

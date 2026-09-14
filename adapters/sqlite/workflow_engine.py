@@ -142,6 +142,17 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
         self._record("cancelled_task_ids", run_id, result=str(len(ids)))
         return ids
 
+    def run_state(self, run_id: str) -> str | None:
+        """该 run 的 canonical 状态（未知 run → None）；派发面暂停协调只读视图。"""
+        self._ensure_open()
+        row = self._conn.execute(
+            "SELECT json_extract(run_json, '$.state') AS state FROM runs WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+        state = None if row is None else row["state"]
+        self._record("run_state", run_id, result=str(state))
+        return str(state) if state is not None else None
+
     def recover_expired_leases(self) -> int:
         """超时 lease 任务置回 QUEUED（EXPIRE_LEASE 转换，非绕过状态机）；返回恢复数。"""
         with operation(

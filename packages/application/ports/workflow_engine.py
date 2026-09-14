@@ -93,6 +93,19 @@ class WorkflowEngine(Protocol):
         result is rejected by `(task_id, lease_id, fence)`. Implementations
         must serialize concurrent claims (PostgreSQL `FOR UPDATE SKIP LOCKED`);
         the SQLite/Fake implementations are single-process and say so.
+
+        Cooperative pause (PLAN-20260914-048): a task whose run is canonically
+        `PAUSED` is not claimable. Dispatch stops; leases already held are NOT
+        revoked (no orphan, no fake "stopped" claim).
+        """
+        ...
+
+    def run_state(self, run_id: str) -> str | None:
+        """Read the run's canonical state (`None` = unknown run).
+
+        The dispatch plane needs exactly this one read-only fact to honor a
+        pause: it is the same truth the control plane persists, not a second
+        flag that could drift.
         """
         ...
 

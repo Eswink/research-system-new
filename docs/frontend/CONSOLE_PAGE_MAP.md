@@ -308,7 +308,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G3 | ~~通知持久化~~ | notifications、TopBar 铃铛 | **已交付**（WP-G：事件投影+已读；无推送通道） |
 | G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
 | G5 | ~~预算调整契约~~ | govern/budget | **已交付**（PLAN-046：interventions budget_adjust 走 BudgetLedger 的 release+reserve；replace_agent 语义变更仍 501；预测只覆盖已预留额度） |
-| G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已接线**（A5：按钮按能力标注；仍属控制面状态迁移） |
+| G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已交付**（PLAN-048：PAUSED = 派发面停止认领该 run 的任务（claim_next 过滤，已持租约不撤销），本进程执行器在 phase 边界观测后零任务执行返回 PAUSED；resume 恢复派发，仅持有暂停上下文时继续剩余任务，否则 `continuation=NONE`。无抢占式中断；跨进程暂停上下文不持久化） |
 | G7 | ~~alerts/incidents/schedules/data-health~~ | ops 四页 | **只读投影已交付**（PLAN-045：ops/alerts・incidents・schedules・data-health；规则 CRUD/处置流/用户调度/聚合报告仍禁用，见各页缺口）；prompts/datasets/notebooks 见 G7b，reports 见 G7a，integrations 见 G15 |
 | G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
 | G7b | ~~prompts/datasets/notebooks 库目录~~ | library 三页 | **已交付**（PLAN-044：GET/POST /projects/{id}/library + PATCH /library/{id}，kind 区分；版本树/上传/单元格执行仍禁用） |

@@ -21,20 +21,28 @@ from adapters.postgres.leases import new_lease
 from packages.application.ports.workflow_engine import ClaimRequest, TaskLease
 from packages.domain.enums import TaskKind
 from packages.domain.events import EventType
+from packages.domain.run_state import ResearchRunState
 from packages.domain.task_state import ResearchTaskState
 
-# Static SQL constants (values bound as parameters below).
+# Static SQL constants (values bound as parameters below). Both variants carry the
+# cooperative-pause filter (PLAN-20260914-048): a task whose run is canonically
+# PAUSED is never dispatched. Held leases are untouched — pause stops new claims,
+# it does not revoke anything.
 _SELECT_WITH_PARTITION = (
     "SELECT task_id, run_id, assigned_agent_id, fence_seq FROM tasks "
     "WHERE kind = %s AND status = %s AND cancelled = FALSE "
     "AND (required_capability IS NULL OR required_capability = ANY(%s)) "
     "AND (partition IS NULL OR partition = ANY(%s)) "
+    "AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.run_id = tasks.run_id "
+    "AND runs.run_json ->> 'state' = %s) "
     "ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1"
 )
 _SELECT_CAPABILITY_ONLY = (
     "SELECT task_id, run_id, assigned_agent_id, fence_seq FROM tasks "
     "WHERE kind = %s AND status = %s AND cancelled = FALSE "
     "AND (required_capability IS NULL OR required_capability = ANY(%s)) "
+    "AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.run_id = tasks.run_id "
+    "AND runs.run_json ->> 'state' = %s) "
     "ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1"
 )
 _INSERT_LEASE = (
@@ -51,16 +59,17 @@ class ClaimPayload:
 
 
 def _select_claimable(conn: Any, request: ClaimRequest) -> Any:
+    paused = ResearchRunState.State.PAUSED
     caps = list(request.capabilities)
     if request.relax_partitions:
         return conn.execute(
             _SELECT_CAPABILITY_ONLY,
-            (TaskKind.EXECUTION.value, ResearchTaskState.State.QUEUED, caps),
+            (TaskKind.EXECUTION.value, ResearchTaskState.State.QUEUED, caps, paused),
         ).fetchone()
     parts = list(request.partitions)
     return conn.execute(
         _SELECT_WITH_PARTITION,
-        (TaskKind.EXECUTION.value, ResearchTaskState.State.QUEUED, caps, parts),
+        (TaskKind.EXECUTION.value, ResearchTaskState.State.QUEUED, caps, parts, paused),
     ).fetchone()
 
 

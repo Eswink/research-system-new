@@ -89,6 +89,9 @@ class RunOrchestrationService:
         # WP-H：human gate 暂停暂存（run_id → 上下文与剩余 specs）。in-process 面：
         # 重启后丢失，decide 端点据此诚实 503，绝不伪装恢复了执行。
         self._waiting: dict[str, tuple[RunContext, tuple[SessionSpec, ...]]] = {}
+        # PLAN-048：协作式暂停暂存（run_id → 上下文与剩余 specs）。同样是进程内
+        # 面：没有它时 resume 只解除暂停（派发恢复），不伪造"继续执行"。
+        self._paused: dict[str, tuple[RunContext, tuple[SessionSpec, ...]]] = {}
 
     def start_run(
         self,
@@ -226,6 +229,7 @@ class RunOrchestrationService:
     ) -> RunOutcome:
         """委托 phase_runner 执行；service 负责事件发布、失败收敛与 human-gate 暂存。"""
         paused: list[tuple[SessionSpec, ...]] = []
+        run_id = context.run.id.value
         outcome = execute_phases(
             PhaseRunnerDeps(
                 workflow=self._deps.workflow,
@@ -239,19 +243,45 @@ class RunOrchestrationService:
                 approvals=self._deps.approvals,
                 human_gated=self._pending_human_gates(context),
                 on_pause=paused.append,
+                pause_requested=lambda: self.pause_requested(run_id),
             ),
             PhaseContext(
                 command=command,
                 resolve_sessions=lambda: self._resolve_sessions(context),
                 frozen_manifest_digest=context.frozen_manifest_digest,
                 trace_id=context.trace_id,
-                run_id=context.run.id.value,
+                run_id=run_id,
                 pending=pending,
             ),
         )
         if outcome.state == ResearchRunState.State.WAITING_FOR_APPROVAL and paused:
-            self._waiting[context.run.id.value] = (context, paused[0])
+            self._waiting[run_id] = (context, paused[0])
+        elif outcome.state == ResearchRunState.State.PAUSED and paused:
+            self._paused[run_id] = (context, paused[0])
         return outcome
+
+    def pause_requested(self, run_id: str) -> bool:
+        """协作式暂停谓词：读 canonical run state（派发/执行面唯一暂停事实）。
+
+        未知 run（行尚未落库，如首次执行的起始阶段）→ False：暂停必须先被
+        控制面持久化才会被观测到，不靠进程内标志推断。
+        """
+        return bool(self._deps.workflow.run_state(run_id) == ResearchRunState.State.PAUSED)
+
+    def has_paused_context(self, run_id: str) -> bool:
+        """resume 前置探测：无暂存暂停上下文（如进程重启后）不得伪装继续执行。"""
+        return run_id in self._paused
+
+    def resume_paused(self, run_id: str, run: ResearchRun) -> RunOutcome:
+        """续跑协作式暂停：以控制面已迁移的 canonical run 继续剩余 specs。
+
+        无暂停上下文 → InvalidInputError（调用方据此诚实降级为"只解除暂停"）。
+        """
+        stashed = self._paused.pop(run_id, None)
+        if stashed is None:
+            raise InvalidInputError(f"no paused execution context for run {run_id}")
+        context, pending = stashed
+        return self._execute_with_context(replace(context, run=run), None, pending=pending)
 
     def _pending_human_gates(self, context: RunContext) -> frozenset[str]:
         """声明的 HUMAN_GATE phase − 本 run 已裁决审批（无 store 则不暂停）。"""

@@ -27,6 +27,7 @@ from packages.application.ports.workflow_engine import (
 )
 from packages.domain.enums import TaskKind
 from packages.domain.events import EventType
+from packages.domain.run_state import ResearchRunState
 from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
 
@@ -68,6 +69,26 @@ def _first_matching_candidate(candidates: Any, request: ClaimRequest) -> Any:
                 continue
         return row
     return None
+
+
+def _claim_candidates(conn: sqlite3.Connection) -> Any:
+    """QUEUED EXECUTION 候选扫描（静态 SQL；PAUSED run 的排除在扫描内完成）。
+
+    暂停过滤必须作用在候选集而不是扫描之后：否则被暂停 run 的任务会占满
+    候选窗口，把其他 run 的可派发任务饿死。
+    """
+    return conn.execute(
+        "SELECT task_id, run_id, assigned_agent_id, fence_seq, required_capability,"
+        " partition FROM tasks WHERE kind = ? AND status = ? AND cancelled = 0"
+        " AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.run_id = tasks.run_id"
+        " AND json_extract(runs.run_json, '$.state') = ?)"
+        " ORDER BY created_at",
+        (
+            TaskKind.EXECUTION.value,
+            ResearchTaskState.State.QUEUED,
+            ResearchRunState.State.PAUSED,
+        ),
+    ).fetchall()
 
 
 def _persist_new_lease(
@@ -202,15 +223,13 @@ class SqliteWorkflowOps:
         Capability/partition filtering happens in Python over a static-SQL
         candidate scan (no dynamic query string is ever assembled), then the
         chosen task is re-verified QUEUED inside the write transaction.
+
+        Paused runs (PLAN-20260914-048) are excluded in that same static scan
+        (NOT EXISTS over the shared `runs` row), so a cooperatively paused run
+        stops being dispatched rather than being filtered after the fact.
         """
         self._ensure_open()
-        candidates = self._conn.execute(
-            "SELECT task_id, run_id, assigned_agent_id, fence_seq, required_capability,"
-            " partition FROM tasks WHERE kind = ? AND status = ? AND cancelled = 0"
-            " ORDER BY created_at",
-            (TaskKind.EXECUTION.value, ResearchTaskState.State.QUEUED),
-        ).fetchall()
-        chosen = _first_matching_candidate(candidates, request)
+        chosen = _first_matching_candidate(_claim_candidates(self._conn), request)
         if chosen is None:
             self._record("claim_next", request.worker_id, result="none")
             return None

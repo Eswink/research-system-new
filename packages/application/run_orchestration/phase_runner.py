@@ -89,6 +89,9 @@ class PhaseRunnerDeps:
     approvals: Any | None = None
     human_gated: frozenset[str] = frozenset()
     on_pause: Callable[[tuple[SessionSpec, ...]], None] | None = None
+    # PLAN-048：协作式暂停信号（读 canonical run state）。为真时在组边界停止，
+    # 不执行该组任何任务；剩余 specs 经 on_pause 交回 service 暂存供 resume 续跑。
+    pause_requested: Callable[[], bool] | None = None
 
     def emit(
         self,
@@ -144,6 +147,9 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
         paused = _pause_for_human_gate(deps, ctx, group, groups[index:], outcomes)
         if paused is not None:
             return paused
+        held = _pause_if_requested(deps, ctx, groups[index:], outcomes)
+        if held is not None:
+            return held
         failure = _execute_phase_group(deps, ctx, group, outcomes, handoffs)
         if failure is not None:
             return failure
@@ -155,6 +161,32 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
         tasks=tuple(outcomes),
         manifest_digest=ctx.frozen_manifest_digest,
         handoff_digests=tuple(sorted(handoffs)),
+        system_failure=False,
+    )
+
+
+def _pause_if_requested(
+    deps: PhaseRunnerDeps,
+    ctx: PhaseContext,
+    remaining: "list[tuple[SessionSpec, ...]]",
+    outcomes: "list[TaskOutcome]",
+) -> RunOutcome | None:
+    """协作式暂停（PLAN-20260914-048）：组边界观测到暂停信号 → **零任务执行**
+    返回 PAUSED，剩余 specs（含当前组）经 on_pause 交回 service 暂存。
+
+    只读 canonical run state（service 注入谓词），不自己造暂停事实；
+    已持租约的任务不受影响（不在本函数职责内撤销）。
+    """
+    if deps.pause_requested is None or not deps.pause_requested():
+        return None
+    if deps.on_pause is not None:
+        deps.on_pause(tuple(spec for group in remaining for spec in group))
+    return RunOutcome(
+        run_id=ctx.run_id,
+        state=ResearchRunState.State.PAUSED,
+        message="paused at phase boundary (cooperative pause)",
+        tasks=tuple(outcomes),
+        manifest_digest=ctx.frozen_manifest_digest,
         system_failure=False,
     )
 

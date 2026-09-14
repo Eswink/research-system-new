@@ -8792,7 +8792,7 @@
     },
     "/runs/{run_id}/pause": {
       "post": {
-        "description": "干预：pause（RUNNING → PAUSED；正式状态机迁移）。",
+        "description": "干预：pause（RUNNING → PAUSED）——协作式暂停，不是\"只改状态\"。\n\ncanonical 状态即暂停事实：派发面据此停止向 worker 认领该 run 的任务\n（已持租约不撤销）；本进程若正持有该 run 的执行上下文，执行器会在下一次\nphase 组边界读到该状态并停止派发（零任务执行）。",
         "operationId": "pause_run_runs__run_id__pause_post",
         "parameters": [
           {
@@ -8878,7 +8878,7 @@
     },
     "/runs/{run_id}/resume": {
       "post": {
-        "description": "干预：resume（PAUSED → RUNNING；正式状态机迁移）。",
+        "description": "干预：resume（PAUSED → RUNNING）。\n\n派发恢复是确定的；**继续执行**只在本进程持有暂停上下文时发生，否则响应\n明说 `continuation=NONE`——不把\"解除暂停\"伪装成\"续跑\"。",
         "operationId": "resume_run_runs__run_id__resume_post",
         "parameters": [
           {

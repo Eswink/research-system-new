@@ -168,28 +168,76 @@ def _resume_after_approval(deps: ApiDeps, run_id: str, granted: ResearchRun) -> 
 
 @router.post("/runs/{run_id}/pause", response_model=object)
 async def pause_run(run_id: str, request: Request) -> object:
-    """干预：pause（RUNNING → PAUSED；正式状态机迁移）。"""
+    """干预：pause（RUNNING → PAUSED）——协作式暂停，不是"只改状态"。
+
+    canonical 状态即暂停事实：派发面据此停止向 worker 认领该 run 的任务
+    （已持租约不撤销）；本进程若正持有该 run 的执行上下文，执行器会在下一次
+    phase 组边界读到该状态并停止派发（零任务执行）。
+    """
     deps: ApiDeps = get_deps(request)
     run = _require_run(deps, run_id)
-    try:
-        updated = run.transition(ResearchRunState.Transition.PAUSE)
-    except ValueError as exc:
-        raise ApiError(409, "Invalid Transition", str(exc)) from exc
+    updated = _transition_or_409(run, ResearchRunState.Transition.PAUSE)
     save_run(deps, updated)
-    return _run_payload(updated)
+    return _pause_payload(deps, updated)
 
 
 @router.post("/runs/{run_id}/resume", response_model=object)
 async def resume_run(run_id: str, request: Request) -> object:
-    """干预：resume（PAUSED → RUNNING；正式状态机迁移）。"""
+    """干预：resume（PAUSED → RUNNING）。
+
+    派发恢复是确定的；**继续执行**只在本进程持有暂停上下文时发生，否则响应
+    明说 `continuation=NONE`——不把"解除暂停"伪装成"续跑"。
+    """
     deps: ApiDeps = get_deps(request)
     run = _require_run(deps, run_id)
+    updated = _transition_or_409(run, ResearchRunState.Transition.RESUME)
+    save_run(deps, updated)
+    return _resume_payload(deps, run_id, updated)
+
+
+def _transition_or_409(run: ResearchRun, transition: str) -> ResearchRun:
     try:
-        updated = run.transition(ResearchRunState.Transition.RESUME)
+        return run.transition(transition)
     except ValueError as exc:
         raise ApiError(409, "Invalid Transition", str(exc)) from exc
-    save_run(deps, updated)
-    return _run_payload(updated)
+
+
+def _pause_payload(deps: ApiDeps, run: ResearchRun) -> dict[str, object]:
+    payload = _run_payload(run)
+    payload["dispatch"] = "HELD"
+    payload["execution_context"] = (
+        "PAUSED_IN_PROCESS" if _has_paused_context(deps, run.id.value) else "NONE"
+    )
+    payload["note"] = "cooperative pause: no new task dispatch; leases already held are not revoked"
+    return payload
+
+
+def _resume_payload(deps: ApiDeps, run_id: str, run: ResearchRun) -> dict[str, object]:
+    payload = _run_payload(run)
+    payload["dispatch"] = "RELEASED"
+    payload["continuation"] = "NONE"
+    if deps.runs is None or not deps.runs.has_paused_context(run_id):
+        payload["note"] = (
+            "no paused execution context in this process; dispatch resumes, "
+            "and no continuation was pending"
+        )
+        return payload
+    try:
+        outcome = deps.runs.resume_paused(run_id, run)
+    except InvalidInputError:  # 竞态：上下文已被另一次 resume 取走
+        payload["note"] = "paused execution context was already consumed"
+        return payload
+    resumed = replace(run, state=outcome.state)
+    save_run(deps, resumed)
+    payload = _run_payload(resumed)
+    payload["dispatch"] = "RELEASED"
+    payload["continuation"] = "RESUMED"
+    payload["note"] = "paused execution context resumed; remaining tasks executed"
+    return payload
+
+
+def _has_paused_context(deps: ApiDeps, run_id: str) -> bool:
+    return deps.runs is not None and deps.runs.has_paused_context(run_id)
 
 
 @router.post("/runs/{run_id}/interventions", response_model=object)
@@ -204,19 +252,13 @@ async def intervene(run_id: str, payload: InterventionDto, request: Request) -> 
     deps: ApiDeps = get_deps(request)
     run = _require_run(deps, run_id)
     if payload.kind == "pause":
-        try:
-            updated = run.transition(ResearchRunState.Transition.PAUSE)
-        except ValueError as exc:
-            raise ApiError(409, "Invalid Transition", str(exc)) from exc
+        updated = _transition_or_409(run, ResearchRunState.Transition.PAUSE)
         save_run(deps, updated)
-        return _run_payload(updated)
+        return _pause_payload(deps, updated)
     if payload.kind == "resume":
-        try:
-            updated = run.transition(ResearchRunState.Transition.RESUME)
-        except ValueError as exc:
-            raise ApiError(409, "Invalid Transition", str(exc)) from exc
+        updated = _transition_or_409(run, ResearchRunState.Transition.RESUME)
         save_run(deps, updated)
-        return _run_payload(updated)
+        return _resume_payload(deps, run_id, updated)
     if payload.kind == "budget_adjust":
         return _budget_adjust(deps, run_id, payload)
     raise ApiError(

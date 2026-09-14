@@ -314,6 +314,19 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         self._record("cancelled_task_ids", run_id, result=str(len(ids)))
         return ids
 
+    def run_state(self, run_id: str) -> str | None:
+        """该 run 的 canonical 状态（未知 run → None）；派发面暂停协调只读视图。"""
+        self._ensure_open()
+        try:
+            row = self._conn.execute(
+                "SELECT run_json ->> 'state' AS state FROM runs WHERE run_id = %s", (run_id,)
+            ).fetchone()
+        except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
+            raise self._wrap_operational(exc) from exc
+        state = None if row is None else row["state"]
+        self._record("run_state", run_id, result=str(state))
+        return str(state) if state is not None else None
+
     def recover_expired_leases(self) -> int:
         with operation(
             self._telemetry,

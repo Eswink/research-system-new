@@ -126,6 +126,20 @@ CREATE TABLE IF NOT EXISTS artifacts (
 );
 """
 
+# run 行是共享 canonical 表：控制面（RunStore）写入、派发面（WorkflowEngine）
+# 只读其 state 以执行协作式暂停（PLAN-20260914-048）。DDL 单一来源，避免两处漂移。
+RUNS_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS runs (
+    run_id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    run_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_runs_project ON runs(project_id);
+"""
+
+SCHEMA_SQL = SCHEMA_SQL + RUNS_SCHEMA_SQL
+
 
 def _apply_journal_mode(connection: sqlite3.Connection, journal_mode: str) -> None:
     """Set the journal mode via a literal PRAGMA per allowed value.

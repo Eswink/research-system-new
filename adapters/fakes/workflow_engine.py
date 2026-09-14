@@ -14,6 +14,7 @@ from packages.application.ports.workflow_engine import (
 )
 from packages.domain.core import Timestamp
 from packages.domain.enums import TaskKind
+from packages.domain.run_state import ResearchRunState
 from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
 
@@ -35,6 +36,19 @@ class FakeWorkflowEngine(FakeBase):
         self._cancelled: set[str] = set()
         self._deliveries: dict[str, int] = {}
         self._fences: dict[str, int] = {}
+        # 协作式暂停（PLAN-048）：run 状态视图由控制面注入（与 SQLite/PG 侧
+        # 读共享 runs 行等价），Fake 不自己造第二份真相。
+        self._run_states: dict[str, str] = {}
+
+    def set_run_state(self, run_id: str, state: str) -> None:
+        """测试装配：登记 run 的 canonical 状态（暂停协调的唯一输入）。"""
+        self._run_states[run_id] = state
+
+    def run_state(self, run_id: str) -> str | None:
+        self._enter("run_state", run_id)
+        state = self._run_states.get(run_id)
+        self._record("run_state", run_id, result=str(state))
+        return state
 
     def submit(self, task: ResearchTask, contract: TaskContract) -> None:
         self._enter("submit", task.id.value)
@@ -85,13 +99,16 @@ class FakeWorkflowEngine(FakeBase):
 
         Fake has no cross-process serialization (that is the PostgreSQL
         adapter's guarantee); it models the same claim/fence semantics for
-        contract tests.
+        contract tests. Tasks of a canonically PAUSED run are not claimable
+        (cooperative pause, PLAN-048) — held leases are untouched.
         """
         self._enter("claim_next", request.worker_id)
         for task_id, task in self._tasks.items():
             if task.kind != TaskKind.EXECUTION:
                 continue
             if task.status != ResearchTaskState.State.QUEUED:
+                continue
+            if self._run_states.get(task.run_id.value) == ResearchRunState.State.PAUSED:
                 continue
             if task_id in self._leases or task_id in self._completed or task_id in self._cancelled:
                 continue

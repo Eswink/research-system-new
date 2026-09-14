@@ -31,7 +31,10 @@ export const GAPS = {
     "预算调整已接入（interventions budget_adjust 走 BudgetLedger 的 release+reserve）；" +
     "预测只覆盖已预留额度（未预留开销不外推）；运行中语义变更（换 Agent/协议）仍 501",
   budgetForecast: "Run 级预留-消耗预测已接入（GET /runs/{id}/cost-forecast）；无 burn-rate 外推",
-  pauseResume: "pause/resume 仅状态迁移，不证明实际暂停/恢复执行",
+  pauseResume:
+    "pause/resume 为协作式执行协调：PAUSED 时派发面停止认领该 run 的任务（已持租约" +
+    "不撤销），本进程执行器在 phase 边界停下；resume 恢复派发，只有持有暂停上下文时" +
+    "才继续剩余任务（否则只解除暂停）。无抢占式中断；跨进程暂停上下文不持久化",
   fileBrowse:
     "制品内容 Diff 已接入（GET /artifacts/{left}/diff/{right}，二进制/超限如实标注）；" +
     "预览与下载已接入（GET /artifacts/{id}/content）；工作区文件树与文件级快照 Diff 无 API",
@@ -100,7 +103,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   },
   "portfolio/runs-history": { level: "full" },
   "portfolio/compare": { level: "partial", reason: "仅比较已返回指标；不可比语义保留" },
-  "run/timeline": { level: "full" },
+  "run/timeline": { level: "partial", reason: GAPS.pauseResume },
   "run/approvals": { level: "full" },
   "run/workspace": {
     level: "partial",

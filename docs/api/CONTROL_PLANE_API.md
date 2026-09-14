@@ -129,8 +129,8 @@ POST   /projects/{id}/runs
 GET    /projects/{id}/settings
 PUT    /projects/{id}/settings
 GET    /runs/{id}
-POST   /runs/{id}/pause
-POST   /runs/{id}/resume
+POST   /runs/{id}/pause                   （PLAN-048 协作式暂停：派发面停止认领）
+POST   /runs/{id}/resume                  （恢复派发；有暂停上下文才续跑）
 POST   /runs/{id}/cancel
 POST   /runs/{id}/fork                     （未提供：Fork/Manifest Revision 属后续能力）
 GET    /runs/{id}/events
@@ -162,6 +162,15 @@ M15 Operations（只读投影）：
   分组小计）；只含有数据的日期，无预测无插值。
 - `GET /artifacts/*`（WP-C）— store 缺失 503；未知 404；tombstone/缺 blob
   410；超限 413；非白名单 media 一律 attachment + nosniff。
+- `POST /runs/{id}/pause`（PLAN-048）— canonical 状态即暂停事实：PAUSED 后
+  派发面（`claim_next`）不再认领该 run 的任务，**已持租约不撤销**；本进程若正
+  持有该 run 的执行上下文，执行器在下一次 phase 组边界读到 PAUSED 后零任务
+  执行并返回 PAUSED（剩余 specs 暂存）。响应带 `dispatch=HELD` /
+  `execution_context`（`NONE` 或 `PAUSED_IN_PROCESS`）。只有 RUNNING 可暂停（否则 409）。
+- `POST /runs/{id}/resume`（PLAN-048）— 恢复派发；**继续执行**只在本进程持有
+  暂停上下文时发生，此时响应 `continuation=RESUMED` 并执行剩余任务；否则
+  `continuation=NONE`（只解除暂停，不伪造续跑）。只有 PAUSED 可恢复（否则 409）。
+  无抢占式中断：暂停不撤销在途租约，也不物理停止已派发的 worker 任务。
 - `GET /artifacts/{left}/diff/{right}`（PLAN-047）— 两侧都是 persisted 制品
   （口径：制品内容 vs 制品内容；控制面**没有**文件系统快照 diff 面）。相同内容
   → `identical=true` 且 lines 空；二进制/非 UTF-8 → `available=false` +
