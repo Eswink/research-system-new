@@ -8,7 +8,7 @@ created_at: 2026-09-15
 completed_at: 2026-09-15
 reviewer: root-agent-gate-evidence
 baseline_ref: 10dc459
-checked_head: working-tree (pre-commit)
+checked_head: a5d83dc
 ---
 
 # RECHECK-20260915-048 — pause/resume 派发协调独立复检
@@ -40,12 +40,13 @@ GOAL-20260912-001 cycle 8（EC-04 第三批）派生计划的复检。本 cycle 
 | AC-01（WP-A） | 三实现 `claim_next` 跳过 PAUSED run；解除后恢复；在途租约不受影响；未知 run → None | `pytest -q tests/contracts/test_pause_dispatch_contract.py` = 9 passed（3 用例 × Fake/SQLite/PG，PG 实连测试容器） | PASS |
 | AC-02（WP-B） | 暂停信号为真时零任务执行、返回 PAUSED、剩余 specs 交回、不发 RUN_COMPLETED | `pytest -q tests/application/test_pause_coordination.py` = 5 passed（含"信号恒假仍正常完成"的对照与"第一组后翻转"的边界语义） | PASS |
 | AC-03（WP-C） | 409/404 守卫；暂停后 claim 为 None、恢复后可认领；`continuation=NONE` 诚实；interventions 同实现；web 门全绿 | `pytest -q tests/api/test_pause_resume_api.py` = 5 passed；`pnpm --dir apps/web lint`（--max-warnings 0）+ `typecheck` + unit(73) 绿；stub e2e 34/34；live e2e 17/17 | PASS |
-| AC-04（WP-D） | 本地全门 + m0 + CI 终态 | 全量 pytest 3319 passed/6 skipped/0 failed（DSN 固化）；m0 23/23 PASS；ruff check/format + mypy 绿；CI run 见状态历史 | PASS |
+| AC-04（WP-D） | 本地全门 + m0 + CI 终态 | 全量 pytest 3319 passed/6 skipped/0 failed（DSN 固化）；m0 23/23 PASS；ruff check/format + mypy 绿；CI run #65（34881096941）：quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS，collector-quality FAIL（同 2 项既有 flake，日志实测确认） | PASS |
 
 ## 警告与处置
 
 1. **W-1（WARNING，既有，非本 cycle）** collector-quality 仍是 RECHECK-042/043/044/045/046/047
-   登记的**同 2 项** timing flake；其余 job 终态见 GOAL 迭代日志。按 fix_policy 不放宽
+   登记的**同 2 项** timing flake（本 run 日志实测：`test_collector_persists_research_os_spans`、
+   `test_scenario_d_network_partition_no_old_authority`；2 failed / 85 passed）；其余 5 job 全 SUCCESS。按 fix_policy 不放宽
    断言、不 skip、不改 workflow（治理面）。
 2. **W-2（WARNING，新增）** 进程内 run 是**同步执行**（`POST /runs` 阻塞式跑完整条链，
    单事件循环内无法并发插入 pause）。因此本 cycle 的"执行器观测"只在以下两种情况真实
