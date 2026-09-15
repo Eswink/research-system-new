@@ -34,7 +34,7 @@ GOAL-20260912-001 的第 10 个（末个）cycle。本轮不新增业务能力�
 | --- | --- | --- | --- |
 | AC-01（WP-A/EC-05） | 33 路由能力声明守卫三条（显式条目 / 非 full 必有 reason / gap 仅非业务页），且带**反证断言**（未登记键确实落到默认 gap → 断言非空） | `pnpm test`（apps/web）= 76 passed（新增 3）；`npx tsc --noEmit` 绿；eslint 0 error。分布实测：33 路由 = 10 full / 22 partial / 1 gap（gap 仅 `ops/matrix` 界面状态说明页，不消费后端能力） | PASS |
 | AC-02（WP-B/EC-06） | 密封深扫 seal + 逐条处置表；HIGH 误报升级为可证伪测试；全程不出现"安全"结论 | `security_scan_start/status`：scanId `scan-2026-09-15T04-43-03.726Z-4bad20180460`，seal `sha256:bfeaf946…c5f2db31`，36 findings / 2504 parsed files / 182 packages，coverage **partial**、runStatus **inconclusive**、`verdictEffect: none`；处置表入 `docs/audits/PA1_MIMOSA_REVIEW.md`；`pytest -q tests/application/protocol_authoring/test_draft_service.py` = 13 passed | PASS |
-| AC-03（WP-C） | 末轮复检 + GOAL 记账 + 本地全门 | m0 = 23/23 PASS（全量 pytest **3337 passed / 6 skipped / 0 failed**，DSN 固化，412s）；`pnpm test` 76/76、tsc/eslint 绿；stub e2e 36/36；governance validate PASS；CI 记账见下；GOAL 迭代日志/状态历史/续点与「终止与收口」与实况一致 | PASS |
+| AC-03（WP-C） | 末轮复检 + GOAL 记账 + 本地全门 | m0 = 23/23 PASS（全量 pytest **3337 passed / 6 skipped / 0 failed**，DSN 固化，412s）；`pnpm test` 76/76、tsc/eslint 绿；stub e2e 36/36；governance validate PASS；CI 记账见下（run #69：console-frontend / quality-ubuntu / container-quality / eval-gate SUCCESS；collector-quality 同 2 项持续失败；quality-windows 1 例 RSS 断言 flake，见 W-2）；GOAL 迭代日志/状态历史/续点与「终止与收口」与实况一致 | PASS |
 
 ## 关键发现（本轮纠正的口径）
 
@@ -64,8 +64,18 @@ GOAL-20260912-001 的第 10 个（末个）cycle。本轮不新增业务能力�
    `tests/distributed/test_scenarios.py::test_scenario_g_drain_stops_claims` 失败：
    `_wait_until(registry.get is not None)` 之后、`if reg_before.state == "REGISTERING"`
    之间 worker 已完成握手，check-then-act 竞态触发 `InvalidTransitionError('READY',
-   'HANDSHAKE_OK')`；隔离重跑 10 passed，复跑 m0 见终态。**同类为负载敏感，不是本
-   cycle 变更引入**（本轮 python 侧只新增一个测试文件的用例）。
+   'HANDSHAKE_OK')`；隔离重跑 10 passed，复跑 m0 **23/23 PASS**。同类为负载敏感，不是本
+   cycle 变更引入（本轮 python 侧只新增一个测试文件的用例）。同一次首跑还暴露
+   `ruff format` 1 处（新测试字符串引号，已格式化）与 GOAL frontmatter YAML 缩进
+   （`[收口判定]` 行首指示符 + `run #61` 的 ` #` 注释歧义，已改中文括号与 `run 61-68`），
+   两者都在复跑前修复。
+   **另一例（CI run #69，quality-windows-latest）**：
+   `tests/observability/test_telemetry_overhead.py::test_telemetry_on_overhead_is_bounded_and_shutdown_clean`
+   断言 `RSS grew 135.0 MiB`（阈值 128.0 MiB），1 failed / 3136 passed / 206 skipped。
+   判读：本 series（run 61–69）中**首次**出现；该用例测量的是进程 RSS 相对增量，Linux 侧
+   走 `ru_maxrss`（高水位、单调），整批套件的内存压力可直接抬高读数；本轮变更只新增
+   `tests/application/protocol_authoring/` 的用例，与该断言无路径关系。
+   按 fix_policy **不调阈值**：登记为 flake 类 + 人工决策点（阈值/口径属测试设计）。
 3. **W-3（INFO）** 安全扫描覆盖口径：`coverage=partial`、`runStatus=inconclusive`、
    `verdictEffect=none`、依赖 advisory 1 条**未联网复核** ⇒ 处置记录只等于"逐条人工
    确认"，**不构成安全结论**。
@@ -79,7 +89,11 @@ GOAL-20260912-001 的第 10 个（末个）cycle。本轮不新增业务能力�
 ## 结论
 
 PLAN-20260914-050 AC-01~AC-03 满足（WP-A/EC-05 与 WP-B/EC-06 处置面），判定
-**PASS_WITH_WARNINGS**。GOAL-20260912-001 末轮判定见
+**PASS_WITH_WARNINGS**。CI run #69（34933817161，1f7f4db）：console-frontend / quality-ubuntu-latest /
+container-quality / eval-gate SUCCESS；collector-quality FAIL（同 2 项持续失败）；
+quality-windows-latest FAIL（W-2 的 RSS 断言，首次出现）。
+
+GOAL-20260912-001 末轮判定见
 `GOAL-20260912-001` 状态历史与「终止与收口」节：EC-01/EC-02/EC-03 **PASS**、
 EC-05 **PASS**、EC-04 **PARTIAL**（余 G14 实验队列）、EC-06 **未达成**
 （collector-quality 持续失败，人工决策点）。按 GOAL README"预算触顶即 BLOCKED"的
