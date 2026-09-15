@@ -216,9 +216,17 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - API：`GET /runs/{id}/cost`（`CostViewDto`：dimensions[].amount.status 闭集
   ACTUAL/ESTIMATED/MONETARY_UNAVAILABLE/USAGE_UNKNOWN/ZERO/NO_DATA/
   CURRENCY_CONFLICT/PARTIALLY_METERED；pricing_frozen/degraded_reason）、
-  `GET /runs/{id}/usage`、`GET /cost/daily`（跨 run 日序列，WP-D）。
+  `GET /runs/{id}/usage`、`GET /cost/daily`（跨 run 日序列，WP-D）、
+  `GET /projects/{id}/cost-forecast`（项目级成本预测，G12/PLAN-057）。
 - 等级：PARTIAL。日序列只含有数据的日期（无插值）；混合定价日不求和。
-- 缺口（登记）：预测/前瞻无 API——不画预测曲线。
+- 预测口径：只对**已计价**的天（ACTUAL/ESTIMATED/ZERO 且金额非空）取日均外推
+  （`MEAN_OF_VALUED_DAYS` × `horizon_days`，1~90）；逐日返回
+  `included_in_projection` 与 `exclusion_reason`（USAGE_UNKNOWN/
+  MONETARY_UNAVAILABLE/NO_DATA/CURRENCY_CONFLICT/PARTIALLY_METERED/
+  MIXED_PRICING）；样本为空或跨币种时 `projected_minor=null` +
+  `unavailable_reason`（绝不隐式换算、绝不当 0）。
+- 缺口（登记）：无按资源维度分解的时序预测与置信区间（方法只有日均外推，
+  不含回归/季节性）；归属不明的条目只计数不猜测所属项目。
 
 ## Ops（6 设计页 + 2 兼容页）
 
@@ -274,10 +282,13 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - 设计：`screens/Budget.jsx`。
 - API：`GET /runs/{id}/usage`（`BudgetViewDto`：entries[]、
   total_estimated_cost_minor null=不完整绝不补 0、known_cost_subtotal_minor、
-  unknown_cost_entries、reservations[]）。
+  unknown_cost_entries、reservations[]）、`GET /runs/{id}/cost-forecast`
+  （run 级预留-消耗）、`GET /projects/{id}/cost-forecast`（项目级时序外推，
+  G12/PLAN-057，与成本分析页共用面板）。
 - 等级：PARTIAL。已知小计/未知条目/币种如实展示；金额单位比例无契约证据前
   显示原始 minor units。
-- 缺口（登记）：预算调整无契约（interventions budget_adjust 恒 501）——禁用。
+- 缺口（登记）：run 级不外推未预留开销（口径 `RESERVED_ONLY` 随响应返回）；
+  项目级外推见成本分析页。
 
 ### `#/govern/audit` — 审计与导出
 - 设计：`screens/Govern.jsx`（Audit/Export/Memory 三 Tab）。
@@ -328,7 +339,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G9 | 全局血缘 | library/lineage | **已交付**（PLAN-043 Run 级投影 + PLAN-055 项目级合并图 `GET /projects/{id}/lineage`：共享节点即跨 Run 关系）；剩余受限 = 数据集/提示词与 Run 的引用关系无记录面（库资源只作未连边清单，响应内如实标注） |
 | G10 | ~~删除端点（endpoint/model/agent/draft）~~ | library/endpoints、model-registry、run/approvals、plan/protocol | **已交付**（WP-B：四类 DELETE，被引用 409；契约基线不可删；memory 记录删除见 WP-F） |
 | G11 | ~~审批生产接线~~ | run/approvals | **已交付**（WP-H：human-gate 注册点+续跑；空列表为正确状态） |
-| G12 | 成本日序列~~/预测~~ | insights/cost-analytics、govern/budget | **日序列已交付**（WP-D）；**Run 级预留-消耗预测已交付**（PLAN-046：GET /runs/{id}/cost-forecast，仅已预留额度，无 burn-rate 外推）；跨 run/时间序列预测仍无 API |
+| G12 | 成本日序列/预测 | insights/cost-analytics、govern/budget | **已交付**（日序列 WP-D；Run 级预留-消耗 PLAN-046；**项目级时序外推 PLAN-057** = `GET /projects/{id}/cost-forecast`，只对已计价的天取日均外推，方法/样本/排除项随响应返回，跨币种不给金额）；剩余受限 = 无按资源维度分解的预测与置信区间 |
 | G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |
 | G14 | ~~实验创建/排队/调度~~ | portfolio/experiments | **已交付**（WP-E 预注册/归档 + PLAN-052 队列/调度：`ExperimentQueueEntry` 域 + SQLite/PG 存储 + 原子认领派发器 + 五端点 + console live）；未交付面继续标注：复现执行、日历/矩阵视图 |
 | G15 | Tool Provider 管理面（install/approve/revoke） | ops/integrations | **目录已交付**（PLAN-043：GET /tool-providers 只读投影 + 三态健康）；管理动作未提供（供应链治理） |

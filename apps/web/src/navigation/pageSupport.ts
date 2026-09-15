@@ -30,7 +30,9 @@ export const GAPS = {
   budgetAdjust:
     "预算调整已接入（interventions budget_adjust 走 BudgetLedger 的 release+reserve）；" +
     "预测只覆盖已预留额度（未预留开销不外推）；运行中语义变更（换 Agent/协议）仍 501",
-  budgetForecast: "Run 级预留-消耗预测已接入（GET /runs/{id}/cost-forecast）；无 burn-rate 外推",
+  budgetForecast:
+    "Run 级预留-消耗预测已接入（GET /runs/{id}/cost-forecast，仅已预留额度，不外推）；" +
+    "项目级时序外推见 insights/cost-analytics（GET /projects/{id}/cost-forecast）",
   pauseResume:
     "pause/resume 为协作式执行协调：PAUSED 时派发面停止认领该 run 的任务（已持租约" +
     "不撤销），本进程执行器在 phase 边界停下；resume 恢复派发，只有持有暂停上下文时" +
@@ -49,8 +51,9 @@ export const GAPS = {
     "审批注册点已接入（human-gate 协议暂停时注册，见 human_gate_demo_v1）；" +
     "无审批门的 run 列表为空是正确状态",
   costSeries:
-    "成本日序列已接入（GET /cost/daily）；Run 级预留-消耗预测已接入" +
-    "（GET /runs/{id}/cost-forecast，仅已预留额度）；跨 run 时间序列预测不绘制",
+    "项目级成本预测已接入（GET /projects/{id}/cost-forecast：对已计价的天取日均外推，" +
+    "方法/样本天数/排除项与原因随响应返回；不插值、UNKNOWN 不当 0、跨币种不给金额）；" +
+    "成本日序列见 GET /cost/daily",
   memory:
     "产品 Memory 已接入（WP-A 起 SQLite 开发路径与 PG canonical 双支持）；" +
     "无持久化 pending 提案，门链直提交；memory.write 已入 policy 面（逐 tier 判决" +

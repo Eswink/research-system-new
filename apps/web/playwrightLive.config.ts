@@ -2,17 +2,20 @@
  * 真实 API 浏览器集成测试配置（PLAN-20260908-034 T30/T31）。
  *
  * 启动 tests/api/console_api_app（uvicorn:8011，Fake Ports）+ vite dev（:5174，
- * /api 代理到 8011）。仅运行 live-*.spec.ts。端口受控、不复用运行进程。
+ * /api 代理到 8011）。仅运行 live-*.spec.ts；清单单一来源 =
+ * tests/e2e/live-specs.ts（与默认配置的 testIgnore 同源）。
  */
 
 import { defineConfig, devices } from "@playwright/test";
+
+import { LIVE_SPEC_PATTERN } from "./tests/e2e/live-specs";
 
 const API_PORT = 8011;
 const WEB_PORT = 5174;
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: /live-(api-workflow|artifact-diff|experiment-queue|project-lineage)\.spec\.ts/,
+  testMatch: LIVE_SPEC_PATTERN,
   timeout: 60_000,
   retries: 0,
   workers: 1,

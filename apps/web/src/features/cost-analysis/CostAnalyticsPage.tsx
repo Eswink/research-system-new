@@ -5,6 +5,7 @@ import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import type { PageContext } from "../../navigation/pageContext";
 import { DailyCostPanel } from "./DailyCostPanel";
+import { ProjectCostForecastPanel } from "./ProjectCostForecastPanel";
 import { CostView } from "../operations/CostView";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
@@ -21,10 +22,14 @@ export function CostAnalyticsPage({ ctx }: { ctx: PageContext }) {
         kicker="INSIGHTS / COST ANALYTICS"
         description={
           language === "zh"
-            ? "冻结计价来源、正式五态分类与真实维度明细；不把缺少的时序数据画成预测曲线。"
+            ? [
+                "冻结计价来源、正式五态分类与真实维度明细；",
+                "项目级预测只对已计价的天外推（方法/样本/排除项随响应返回），不插值、UNKNOWN 不当 0。",
+              ].join("")
             : [
                 "Frozen pricing provenance, formal five-state classifications and actual ",
-                "dimensions; missing time series are not fabricated as forecasts.",
+                "dimensions; the project projection extrapolates valued days only (method, ",
+                "sample size and exclusions come from the response) — never interpolated.",
               ].join("")
         }
         actions={
@@ -43,6 +48,7 @@ export function CostAnalyticsPage({ ctx }: { ctx: PageContext }) {
         {cost.data !== null && <CostView cost={cost.data} />}
       </ResourceBoundary>
       <DailyCostPanel />
+      <ProjectCostForecastPanel />
     </section>
   );
 }

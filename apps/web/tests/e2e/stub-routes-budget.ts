@@ -161,4 +161,59 @@ export const BUDGET_ROUTES: readonly StubRoute[] = [
     pattern: /^\/runs\/[^/]+\/interventions$/,
     handler: adjustHandler,
   },
+  // PLAN-20260915-057（G12）：项目级成本预测——一天进样本、一天 USAGE_UNKNOWN 被排除，
+  // 让设计基线与交互用例同时覆盖"外推 + 排除原因"两种视觉态。
+  {
+    method: "GET",
+    pattern: /^\/projects\/[^/]+\/cost-forecast$/,
+    handler: (url) => ({ status: 200, body: projectForecast(url.pathname.split("/")[2] ?? "") }),
+  },
 ];
+
+const MONEY_STAMP = {
+  currency: "USD",
+  effective_from: "2026-01-01",
+  calculation_method: "pricing_version_table",
+};
+
+function projectForecast(projectId: string) {
+  return {
+    project_id: projectId,
+    from_date: null,
+    to_date: null,
+    truncated: false,
+    days: [
+      {
+        date: "2026-09-13",
+        amount: { status: "ACTUAL", minor_units: 1200, ...MONEY_STAMP },
+        mixed_pricing: false,
+        included_in_projection: true,
+        exclusion_reason: null,
+      },
+      {
+        date: "2026-09-14",
+        amount: { status: "USAGE_UNKNOWN", minor_units: null, ...MONEY_STAMP },
+        mixed_pricing: false,
+        included_in_projection: false,
+        exclusion_reason: "USAGE_UNKNOWN",
+      },
+    ],
+    projection: {
+      method: "MEAN_OF_VALUED_DAYS",
+      horizon_days: 7,
+      valued_days: 1,
+      excluded_days: 1,
+      observed_minor: 1200,
+      observed_status: "ACTUAL",
+      currency: "USD",
+      pricing_version: "unpriced_v1",
+      daily_mean_minor: 1200,
+      projected_minor: 8400,
+      unavailable_reason: null,
+      note: "projection = mean of the valued daily amounts in the window × horizon",
+    },
+    unattributed_entries: 0,
+    attribution_note: null,
+    scope_note: "project-scope time-series projection",
+  };
+}

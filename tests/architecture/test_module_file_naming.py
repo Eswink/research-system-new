@@ -145,6 +145,17 @@ def test_legacy_baseline_is_exact_and_not_stale() -> None:
     assert stale_legacy_exceptions(ROOT) == ()
 
 
+def test_generated_playwright_artifacts_are_not_policed(tmp_path: Path) -> None:
+    """test-results 的目录名取自用例标题（可含中文），不属于仓库路径规则。"""
+
+    artifact = tmp_path / "apps" / "web" / "test-results"
+    shot = artifact / "用例标题（dark-normal-zh）" / "shot.png"
+    shot.parent.mkdir(parents=True)
+    shot.write_bytes(b"")
+
+    assert collect_violations(tmp_path) == ()
+
+
 def test_current_repository_has_no_unapproved_naming_violations() -> None:
     violations = collect_violations(ROOT)
     rendered = "\n".join(f"{item.path}: {item.reason}" for item in violations)

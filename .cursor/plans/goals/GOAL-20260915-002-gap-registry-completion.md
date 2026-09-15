@@ -29,7 +29,7 @@ exit_criteria:
       G12 跨 run 时序成本预测：由 cost/daily 序列给出跨 run 预测（口径与计量完备状态如实标注）
     verify: >-
       OpenAPI 快照含预测路径；insights/cost-analytics 与 govern/budget 的 reason 收敛；API + live e2e 用例绿
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       G8 workspace 文件树 + 文件级快照 Diff：只读文件树 API 与文件级 diff 接入页面；
@@ -79,10 +79,12 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-054-netproxy-partition-heal.md
   - .cursor/plans/tasks/PLAN-20260915-055-project-scope-provenance-lineage.md
   - .cursor/plans/tasks/PLAN-20260915-056-blackhole-must-be-effective-on-return.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-055-project-scope-provenance-lineage.md
+  - .cursor/plans/tasks/PLAN-20260915-057-project-scope-cost-forecast.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-057-project-scope-cost-forecast.md
 memory_entries:
   - MEM-20260915-031-partition-injector-must-heal
   - MEM-20260915-032-project-lineage-merge-and-honest-unlinked-resources
+  - MEM-20260915-033-series-projection-valued-days-only
 ---
 
 # GOAL-20260915-002 — 诚实缺口注册表收口（自迭代循环）
@@ -97,7 +99,7 @@ memory_entries:
 | EC | 标准（摘要） | 验证 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | G9 全局跨 run 血缘（项目作用域节点/边） | OpenAPI + pageSupport + live e2e | PASS（2026-09-15 cycle 2；范围注记：跨 run 关系由**共享节点**表达，库资源以未连边清单交付——资源↔run 边无记录面，见 RECHECK-055 W-1） |
-| EC-02 | G12 跨 run 时序成本预测 | OpenAPI + API/live e2e + 计量口径 | PENDING |
+| EC-02 | G12 跨 run 时序成本预测 | OpenAPI + API/live e2e + 计量口径 | PASS（2026-09-15 cycle 3；范围注记：外推只吃**已计价的天**（`MEAN_OF_VALUED_DAYS`），排除项逐日给原因、跨币种不给金额；无趋势/置信区间，见 RECHECK-057 W-1/W-2） |
 | EC-03 | G8 workspace 文件树 + 文件级 diff（或 Accepted ADR 收敛） | OpenAPI/ADR + live e2e | PENDING |
 | EC-04 | G7 ops 写面（告警规则 CRUD + incident 处置） | OpenAPI 写方法 + pageSupport 收敛 | PENDING |
 | EC-05 | G15 tool-provider 管理写面 | OpenAPI 写方法 + pageSupport 收敛 | PENDING |
@@ -110,11 +112,12 @@ memory_entries:
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 2 已闭环（PLAN-20260915-055：
-G9 项目级来源血缘交付，EC-01 = PASS；同 cycle 另立 PLAN-20260915-056 修注入器
-`blackhole()` 的"返回即生效"，RECHECK-055/056 = PASS_WITH_WARNINGS）**。
-下一个动作 = ① derive：取 EC-02（G12 跨 run 时序成本预测），子 PLAN 编号续全局序列
-（下一号 = **PLAN-20260915-057**）。driver=session-goal，owner=root-agent。
+按 README 的 7 步判定执行；当前续点：**cycle 3 已闭环（PLAN-20260915-057：
+G12 项目级成本预测交付——`GET /projects/{id}/cost-forecast` 只对已计价的天取日均外推、
+排除项逐日给原因、跨币种不给金额，EC-02 = PASS；RECHECK-057 = PASS_WITH_WARNINGS）**。
+下一个动作 = ① derive：取 EC-03（G8 workspace 文件树 + 文件级快照 Diff，或产出 Accepted ADR
+收敛标注），子 PLAN 编号续全局序列（下一号 = **PLAN-20260915-058**）。
+driver=session-goal，owner=root-agent。
 
 ## 驱动
 
@@ -155,6 +158,7 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PLAN-20260915-054（CI 债：分区注入器真实性） | e6f09cb | 新语义用例 3 passed + 反证 `legacy: SWALLOWED / fixed: ECHOED`；Linux 容器 D 场景 5/5、`tests/distributed` 全量 25 passed / 4 skipped / 0 failed；本地 m0 23/23；RECHECK-054 = PASS_WITH_WARNINGS | run 34960364156（e6f09cb）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality）——对照修复前 run 34957121713 的 collector-quality 失败 | 旧 `_stall` 消费并丢弃分区期间的字节且连接线程直接结束 ⇒ `restore()` 无法恢复在途请求，worker 阻塞到 30s 客户端超时、SIGTERM 打不断阻塞读 ⇒ D 场景 teardown `wait(10)` 超时（cycle 13 收口提交的 CI 红）；另修宿主 venv 被容器 `uv sync` 覆盖的事故（已重建并验证） | EC-01~06 全部 PENDING（本轮为 EC-06 的门禁债前置，已清零） | cycle 2 = ① derive EC-01（G9 全局跨 run 血缘），子 PLAN 编号 = PLAN-20260915-055 |
 | 2 | PLAN-20260915-055（EC-01：G9 项目级来源血缘）+ PLAN-20260915-056（门禁轮：`blackhole()` 返回即生效） | 见本 cycle 提交 | API 6 passed；stub e2e **40 passed**、live e2e **20 passed**；根 eslint 0 error；web lint/typecheck 通过 + 单测 76 passed；设计基线（win32 本地 + linux pinned 容器）重生成（实测陈旧基线仅差 1.73% ⇒ 旧基线不会报警）；本地 m0 **23/23**（3411 passed / 6 skipped）；RECHECK-055/056 = PASS_WITH_WARNINGS | run **34969935719**（ecf0ebf）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | ① 全页目检发现 `.cards` auto-fit 网格把 4 列节点表裁列 ⇒ 新增 `.stack` 整宽堆叠（先修复再重生成基线）；② 陈旧设计基线与新渲染只差 **15,933 px = 1.73%**，低于 2% 阈值 ⇒ 基线不会报警，必须主动重生成；③ m0 全量在 Windows 上暴露 `blackhole()` 竞态（泵已阻塞在 `recv` ⇒ 标志置了但仍转发）⇒ `blackhole()` 改为等分区生效（有界 2s），PLAN-056 单独记账 | EC-02~06 PENDING | cycle 3 = ① derive EC-02（G12 跨 run 时序成本预测），子 PLAN 编号 = PLAN-20260915-057 |
+| 3 | PLAN-20260915-057（EC-02：G12 项目级成本预测） | 见本 cycle 提交 | 纯函数 7 passed + API 7 passed（项目隔离/unattributed/幽灵项目/422/503）；契约 **355 passed / 56 skipped**；stub e2e **41 passed**、live e2e **21 passed**；根 eslint 0 error + web lint/typecheck 通过 + 单测 76 passed；设计基线 `insights-cost-analytics` / `govern-budget` × win32/linux 重生成并目检；本地 m0 **首跑红**（命名门禁：`liveSpecs.ts` 违反测试文件 kebab-case + Playwright 生成目录 `test-results/<中文用例标题>/` 被判非法路径）→ 修复后 **23/23**；RECHECK-057 = PASS_WITH_WARNINGS | 待 CI（见状态历史） | ① 命名门禁同时抓出**新文件命名**与**生成产物误判**两类问题 ⇒ 前者改名 `live-specs.ts`，后者把 gitignored 的 `test-results` 加入 `IGNORED_DIRECTORIES` 并补回归用例；② `live-*.spec.ts` 清单原在两份 playwright 配置里各写一遍，漏同步会让 stub 套件去连真实后端 ⇒ 抽 `tests/e2e/live-specs.ts` 单一来源（`--list` 复核 41/11 与 21/5 未漂移）；③ 三处新工程债登记为 RECHECK-057 W-1/W-2/W-3（日均方法与窗口语义） | EC-03~06 PENDING；EC-02 已 PASS（范围注记见 EC 表） | cycle 4 = ① derive EC-03（G8 workspace 文件树 + 文件级快照 Diff，或产出 Accepted ADR 收敛标注），子 PLAN 编号 = PLAN-20260915-058 |
 
 ## 状态历史
 
@@ -193,3 +197,25 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
   ① `protocol_authoring/service.py` 的 `yaml.load(_StrictLoader)`——已知误报（`SafeLoader`
   子类 + `# noqa: S506`，与 `yaml.safe_load` 同安全级）、② 与本产品无关的
   `artifacts/钻孔官方API_v12/` 第三方产物目录两条路径穿越。**不主张项目整体安全**。
+- 2026-09-15 cycle 3（EC-02 = G12 项目级成本预测，**PASS**）：新增纯函数
+  `packages/application/cost/series_projection.py`（口径 `MEAN_OF_VALUED_DAYS`）与
+  `GET /projects/{project_id}/cost-forecast`——把项目 runs 的已记录用量按 UTC 日投影成序列，
+  **只对已计价的天**（`ACTUAL`/`ESTIMATED`/`ZERO` 且金额非空）取日均再外推，视野 1~90 天；
+  每个未进样本的天都随响应返回 `exclusion_reason`（`USAGE_UNKNOWN`/`MONETARY_UNAVAILABLE`/
+  `NO_DATA`/`CURRENCY_CONFLICT`/`PARTIALLY_METERED`/`MIXED_PRICING`），样本跨币种时
+  `projected_minor=null` + `CURRENCY_CONFLICT`（不做隐式换算、不插值、缺失不当 0）。
+  项目归属按 run 解析：其它项目的已知 run 明确排除，归属不明的条目只计数
+  （`unattributed_entries` + `attribution_note`）不猜项目。前端新增
+  `ProjectCostForecastPanel`（成本分析页 + 预算页共用），`pageSupport` 的
+  `GAPS.costSeries`/`budgetForecast` 两条 reason 由"不绘制预测"收敛为"已接入 + 口径边界"；
+  `insights-cost-analytics` 与 `govern-budget` 的 win32/linux 设计基线重生成并目检。
+  验证：纯函数 7 passed、API 7 passed、契约 355 passed、stub e2e **41 passed**、
+  live e2e **21 passed**、根 eslint 0 error、web 单测 76 passed。
+  本轮顺带清两处工程债：① `live-*.spec.ts` 清单原在两份 playwright 配置里各写一遍（漏同步会让
+  stub 套件连真实后端）⇒ 抽 `apps/web/tests/e2e/live-specs.ts` 单一来源；② **本地 m0 首跑红**
+  ——命名门禁拦下新文件 `liveSpecs.ts`（测试/夹具须 kebab-case）与 Playwright 生成目录
+  `apps/web/test-results/<中文用例标题>/`（`.gitignore` 已忽略但仍被扫描）⇒ 改名
+  `live-specs.ts`、把 gitignored 的 `test-results` 加入 `IGNORED_DIRECTORIES` 并补回归用例，
+  复跑 m0 **23/23**（该失败如实记入 RECHECK-057，未掩盖）。RECHECK-057 =
+  PASS_WITH_WARNINGS（W-1 日均方法无趋势/置信区间；W-2 窗口无默认值；W-3 归属不明的条目
+  使序列偏小；W-5 生成目录与命名门禁的边界）。

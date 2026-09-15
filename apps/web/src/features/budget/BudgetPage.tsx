@@ -14,6 +14,7 @@ import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
 import { BudgetAdjustBar } from "./BudgetAdjustBar";
+import { ProjectCostForecastPanel } from "../cost-analysis/ProjectCostForecastPanel";
 import { ForecastTable } from "./ForecastTable";
 import { forecastSummary } from "./forecastPresentation";
 import { LedgerTables } from "./LedgerTables";
@@ -127,6 +128,7 @@ function BudgetPageBody({ t, zh, runId, ctx, usage, forecast, ...rest }: BudgetP
       <ResourceBoundary state={usage}>
         {usage.data !== null && <LedgerTables view={usage.data} />}
       </ResourceBoundary>
+      <ProjectCostForecastPanel />
     </section>
   );
 }

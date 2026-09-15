@@ -104,6 +104,47 @@ class CostDailyViewDto(BaseModel):
     attribution_note: str | None = None
 
 
+class ProjectCostDayDto(BaseModel):
+    """项目日序列的一天：`included_in_projection=false` 时给出排除原因（G12）。"""
+
+    date: str
+    amount: CostAmountDto
+    mixed_pricing: bool = False
+    included_in_projection: bool = False
+    exclusion_reason: str | None = None
+
+
+class ProjectCostProjectionDto(BaseModel):
+    """已计价日均外推（`MEAN_OF_VALUED_DAYS`）；`unavailable_reason` 非空时不给金额。"""
+
+    method: str
+    horizon_days: int
+    valued_days: int
+    excluded_days: int
+    observed_minor: int | None = None
+    observed_status: str
+    currency: str | None = None
+    pricing_version: str | None = None
+    daily_mean_minor: int | None = None
+    projected_minor: int | None = None
+    unavailable_reason: str | None = None
+    note: str
+
+
+class ProjectCostForecastDto(BaseModel):
+    """项目级成本预测（G12）：日序列 + 外推 + 排除项 + 归属注记，全部随响应返回。"""
+
+    project_id: str
+    from_date: str | None = None
+    to_date: str | None = None
+    truncated: bool = False
+    days: list[ProjectCostDayDto] = Field(default_factory=list)
+    projection: ProjectCostProjectionDto
+    unattributed_entries: int = 0
+    attribution_note: str | None = None
+    scope_note: str
+
+
 class TrendPointDto(BaseModel):
     report_digest: str
     recorded_at: str | None = None

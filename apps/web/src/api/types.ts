@@ -486,6 +486,49 @@ export interface CostForecastDto {
   scope_note: string;
 }
 
+/** 项目日序列的一天：未进投影样本时给出排除原因（G12）。 */
+export interface ProjectCostDayDto {
+  date: string;
+  amount: CostAmountDto;
+  mixed_pricing: boolean;
+  included_in_projection: boolean;
+  exclusion_reason: string | null;
+}
+
+/**
+ * 已计价日均外推（method=MEAN_OF_VALUED_DAYS）。
+ *
+ * `unavailable_reason` 非空时不给金额：样本为空（NO_VALUED_DAYS）或跨币种
+ * （CURRENCY_CONFLICT，绝不隐式换算）。
+ */
+export interface ProjectCostProjectionDto {
+  method: string;
+  horizon_days: number;
+  valued_days: number;
+  excluded_days: number;
+  observed_minor: number | null;
+  observed_status: string;
+  currency: string | null;
+  pricing_version: string | null;
+  daily_mean_minor: number | null;
+  projected_minor: number | null;
+  unavailable_reason: string | null;
+  note: string;
+}
+
+/** 项目级成本预测：日序列 + 外推 + 排除项 + 归属注记（G12）。 */
+export interface ProjectCostForecastDto {
+  project_id: string;
+  from_date: string | null;
+  to_date: string | null;
+  truncated: boolean;
+  days: ProjectCostDayDto[];
+  projection: ProjectCostProjectionDto;
+  unattributed_entries: number;
+  attribution_note: string | null;
+  scope_note: string;
+}
+
 /** 预算调整结果（append-only 账本上的动作摘要；不修改历史条目）。 */
 export interface BudgetAdjustOutcomeDto {
   run_id: string;

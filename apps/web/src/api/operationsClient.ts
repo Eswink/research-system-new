@@ -1,10 +1,12 @@
 /** 运维观测客户端（遥测/成本/趋势/集群/放置，只读）。 */
 
+import { getActiveProjectId } from "./activeProject";
 import { request } from "./http";
 import type {
   ClusterViewDto,
   CostDailyViewDto,
   CostViewDto,
+  ProjectCostForecastDto,
   RunPlacementDto,
   RunTelemetryDto,
   TrendViewDto,
@@ -44,5 +46,17 @@ export const operationsClient = {
     if (dateTo !== undefined && dateTo !== "") params.set("date_to", dateTo);
     const suffix = params.size > 0 ? `?${params.toString()}` : "";
     return request(`/cost/daily${suffix}`, { method: "GET" });
+  },
+  /** 项目级成本预测（G12）：项目 runs 的已计价日均外推；排除项随响应返回。 */
+  projectCostForecast(
+    projectId: string = getActiveProjectId(),
+    horizonDays?: number,
+  ): Promise<ProjectCostForecastDto> {
+    const params = new URLSearchParams();
+    if (horizonDays !== undefined) params.set("horizon_days", String(horizonDays));
+    const suffix = params.size > 0 ? `?${params.toString()}` : "";
+    return request(`/projects/${encodeURIComponent(projectId)}/cost-forecast${suffix}`, {
+      method: "GET",
+    });
   },
 };

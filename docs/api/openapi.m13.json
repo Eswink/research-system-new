@@ -3754,6 +3754,226 @@
         "title": "ProbeResultDto",
         "type": "object"
       },
+      "ProjectCostDayDto": {
+        "additionalProperties": false,
+        "description": "项目日序列的一天：`included_in_projection=false` 时给出排除原因（G12）。",
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/CostAmountDto"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "exclusion_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclusion Reason"
+          },
+          "included_in_projection": {
+            "default": false,
+            "title": "Included In Projection",
+            "type": "boolean"
+          },
+          "mixed_pricing": {
+            "default": false,
+            "title": "Mixed Pricing",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "date",
+          "amount"
+        ],
+        "title": "ProjectCostDayDto",
+        "type": "object"
+      },
+      "ProjectCostForecastDto": {
+        "additionalProperties": false,
+        "description": "项目级成本预测（G12）：日序列 + 外推 + 排除项 + 归属注记，全部随响应返回。",
+        "properties": {
+          "attribution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution Note"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectCostDayDto"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "from_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Date"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "projection": {
+            "$ref": "#/components/schemas/ProjectCostProjectionDto"
+          },
+          "scope_note": {
+            "title": "Scope Note",
+            "type": "string"
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Date"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "unattributed_entries": {
+            "default": 0,
+            "title": "Unattributed Entries",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "projection",
+          "scope_note"
+        ],
+        "title": "ProjectCostForecastDto",
+        "type": "object"
+      },
+      "ProjectCostProjectionDto": {
+        "additionalProperties": false,
+        "description": "已计价日均外推（`MEAN_OF_VALUED_DAYS`）；`unavailable_reason` 非空时不给金额。",
+        "properties": {
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "daily_mean_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Mean Minor"
+          },
+          "excluded_days": {
+            "title": "Excluded Days",
+            "type": "integer"
+          },
+          "horizon_days": {
+            "title": "Horizon Days",
+            "type": "integer"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "observed_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Minor"
+          },
+          "observed_status": {
+            "title": "Observed Status",
+            "type": "string"
+          },
+          "pricing_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Version"
+          },
+          "projected_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projected Minor"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
+          "valued_days": {
+            "title": "Valued Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "method",
+          "horizon_days",
+          "valued_days",
+          "excluded_days",
+          "observed_status",
+          "note"
+        ],
+        "title": "ProjectCostProjectionDto",
+        "type": "object"
+      },
       "ProjectCreateDto": {
         "additionalProperties": false,
         "description": "创建项目：仅命名；id 服务端生成，默认设置自动落行（可随后编辑）。",
@@ -7612,6 +7832,91 @@
         "summary": "Compile And Preflight Endpoint",
         "tags": [
           "team-protocol"
+        ]
+      }
+    },
+    "/projects/{project_id}/cost-forecast": {
+      "get": {
+        "description": "项目级成本预测：日序列 + 已计价日均外推（无数据日不填充）。\n\n未知项目 → 空序列 + `NO_VALUED_DAYS`（与 `/projects/{id}/runs` 同口径，不 404）；\n未配置 budget ledger → 503；`horizon_days` 越界 → 422。",
+        "operationId": "project_cost_forecast_projects__project_id__cost_forecast_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "horizon_days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "title": "Horizon Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCostForecastDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Project Cost Forecast",
+        "tags": [
+          "budget"
         ]
       }
     },

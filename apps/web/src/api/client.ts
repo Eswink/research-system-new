@@ -168,6 +168,8 @@ export const api = {
   runPlacement: (runId: string) => operationsClient.placement(runId),
   dailyCost: (dateFrom?: string, dateTo?: string) =>
     operationsClient.dailyCost(dateFrom, dateTo),
+  projectCostForecast: (projectId?: string, horizonDays?: number) =>
+    operationsClient.projectCostForecast(projectId, horizonDays),
 
   // ── artifacts（WP-C 只读）──
   listRunArtifacts: (runId: string) => artifactClient.listForRun(runId),

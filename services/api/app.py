@@ -29,6 +29,7 @@ from services.api.routers import (
     operations,
     ops_view,
     policy,
+    project_cost_forecast,
     projects,
     protocol_drafts,
     run_events,
@@ -239,5 +240,6 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(library.router)
     app.include_router(ops_view.router)
     app.include_router(budget_forecast.router)
+    app.include_router(project_cost_forecast.router)
     app.include_router(policy.router)
     return app

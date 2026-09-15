@@ -20,6 +20,9 @@ IGNORED_DIRECTORIES = frozenset({
     "dist",
     "htmlcov",
     "node_modules",
+    # Playwright 生成的瞬时产物（.gitignore 已忽略）；目录名取自用例标题，
+    # 标题允许中文，因此不按仓库路径规则检查。
+    "test-results",
 })
 LEGACY_PATH_EXCEPTIONS = frozenset({
     "adapters/execution/容器归属v1.py",

@@ -23,7 +23,7 @@ from services.api.errors import ApiError
 from services.api.mappers.operations import cost_amount_dto
 
 
-def _parse_day(raw: str | None, field: str) -> date | None:
+def parse_day(raw: str | None, field: str) -> date | None:
     if raw is None:
         return None
     try:
@@ -78,17 +78,17 @@ def cost_daily_view_dto(
     days, truncated = daily_series(
         deps.budget.snapshot().entries,
         attribution.resolve,
-        _parse_day(date_from, "date_from"),
-        _parse_day(date_to, "date_to"),
+        parse_day(date_from, "date_from"),
+        parse_day(date_to, "date_to"),
     )
     return CostDailyViewDto(
         truncated=truncated,
         days=[_day_dto(day) for day in days],
-        attribution_note=_note(attribution.unattributed),
+        attribution_note=note_for_unattributed(attribution.unattributed),
     )
 
 
-def _note(unattributed: int) -> str | None:
+def note_for_unattributed(unattributed: int) -> str | None:
     if unattributed == 0:
         return None
     return (
