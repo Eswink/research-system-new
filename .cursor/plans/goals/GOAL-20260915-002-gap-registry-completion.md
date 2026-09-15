@@ -154,7 +154,7 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PLAN-20260915-054（CI 债：分区注入器真实性） | e6f09cb | 新语义用例 3 passed + 反证 `legacy: SWALLOWED / fixed: ECHOED`；Linux 容器 D 场景 5/5、`tests/distributed` 全量 25 passed / 4 skipped / 0 failed；本地 m0 23/23；RECHECK-054 = PASS_WITH_WARNINGS | run 34960364156（e6f09cb）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality）——对照修复前 run 34957121713 的 collector-quality 失败 | 旧 `_stall` 消费并丢弃分区期间的字节且连接线程直接结束 ⇒ `restore()` 无法恢复在途请求，worker 阻塞到 30s 客户端超时、SIGTERM 打不断阻塞读 ⇒ D 场景 teardown `wait(10)` 超时（cycle 13 收口提交的 CI 红）；另修宿主 venv 被容器 `uv sync` 覆盖的事故（已重建并验证） | EC-01~06 全部 PENDING（本轮为 EC-06 的门禁债前置，已清零） | cycle 2 = ① derive EC-01（G9 全局跨 run 血缘），子 PLAN 编号 = PLAN-20260915-055 |
-| 2 | PLAN-20260915-055（EC-01：G9 项目级来源血缘）+ PLAN-20260915-056（门禁轮：`blackhole()` 返回即生效） | 见本 cycle 提交 | API 6 passed；stub e2e **40 passed**、live e2e **20 passed**；根 eslint 0 error；web lint/typecheck 通过 + 单测 76 passed；设计基线（win32 本地 + linux pinned 容器）重生成（实测陈旧基线仅差 1.73% ⇒ 旧基线不会报警）；本地 m0 **23/23**（3411 passed / 6 skipped）；RECHECK-055/056 = PASS_WITH_WARNINGS | 见本 cycle CI run（提交后回填） | ① 全页目检发现 `.cards` auto-fit 网格把 4 列节点表裁列 ⇒ 新增 `.stack` 整宽堆叠（先修复再重生成基线）；② 陈旧设计基线与新渲染只差 **15,933 px = 1.73%**，低于 2% 阈值 ⇒ 基线不会报警，必须主动重生成；③ m0 全量在 Windows 上暴露 `blackhole()` 竞态（泵已阻塞在 `recv` ⇒ 标志置了但仍转发）⇒ `blackhole()` 改为等分区生效（有界 2s），PLAN-056 单独记账 | EC-02~06 PENDING | cycle 3 = ① derive EC-02（G12 跨 run 时序成本预测），子 PLAN 编号 = PLAN-20260915-057 |
+| 2 | PLAN-20260915-055（EC-01：G9 项目级来源血缘）+ PLAN-20260915-056（门禁轮：`blackhole()` 返回即生效） | 见本 cycle 提交 | API 6 passed；stub e2e **40 passed**、live e2e **20 passed**；根 eslint 0 error；web lint/typecheck 通过 + 单测 76 passed；设计基线（win32 本地 + linux pinned 容器）重生成（实测陈旧基线仅差 1.73% ⇒ 旧基线不会报警）；本地 m0 **23/23**（3411 passed / 6 skipped）；RECHECK-055/056 = PASS_WITH_WARNINGS | run **34969935719**（ecf0ebf）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | ① 全页目检发现 `.cards` auto-fit 网格把 4 列节点表裁列 ⇒ 新增 `.stack` 整宽堆叠（先修复再重生成基线）；② 陈旧设计基线与新渲染只差 **15,933 px = 1.73%**，低于 2% 阈值 ⇒ 基线不会报警，必须主动重生成；③ m0 全量在 Windows 上暴露 `blackhole()` 竞态（泵已阻塞在 `recv` ⇒ 标志置了但仍转发）⇒ `blackhole()` 改为等分区生效（有界 2s），PLAN-056 单独记账 | EC-02~06 PENDING | cycle 3 = ① derive EC-02（G12 跨 run 时序成本预测），子 PLAN 编号 = PLAN-20260915-057 |
 
 ## 状态历史
 
@@ -188,3 +188,8 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
   `NetProxy.blackhole()` 的"标志已置但分区未生效"竞态（泵已阻塞在 `recv`，置标志后的下一批
   字节仍被转发）⇒ 改为等 `stalled_connections >= live_connections`（有界 2s）；定向用例
   8/8、`tests/distributed` 32 passed、m0 23/23；RECHECK-056 = PASS_WITH_WARNINGS。
+  本轮提交 `ecf0ebf` 的 CI run **34969935719 六个 job 全 success**。安全面：Mimosa 密封扫描
+  （36 findings / 3 high，`verdictEffect: none`）对账后**本轮改动文件命中 0 条**；3 条 high 为
+  ① `protocol_authoring/service.py` 的 `yaml.load(_StrictLoader)`——已知误报（`SafeLoader`
+  子类 + `# noqa: S506`，与 `yaml.safe_load` 同安全级）、② 与本产品无关的
+  `artifacts/钻孔官方API_v12/` 第三方产物目录两条路径穿越。**不主张项目整体安全**。

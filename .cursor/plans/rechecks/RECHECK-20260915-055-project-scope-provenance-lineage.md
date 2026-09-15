@@ -37,6 +37,7 @@ PLAN-20260915-055 声称的交付面：后端项目级血缘投影与端点、�
 | 设计基线覆盖新页面且**不是靠旧基线蒙混** | 实测陈旧基线 vs 新渲染差 **15,933 px = 1.73%**（阈值 2% ⇒ 旧基线不会报警）⇒ 删除后重生成 win32（本地）与 linux（pinned noble 容器）；两张基线目检均含新面板且 4 列不再被裁 | PASS |
 | 前端门禁 | `pnpm exec eslint .`（根）= 0 error；`--filter web lint/typecheck` 通过；单测 76 passed；stub e2e **40 passed**；live e2e **20 passed** | PASS |
 | Python 门禁 | 本地 m0 = `profile=m0; 23 deterministic checks`（`3411 passed, 6 skipped`） | PASS |
+| CI 复验（本轮提交） | run **34969935719**（ecf0ebf）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | PASS |
 
 ## 结论
 
@@ -46,6 +47,21 @@ result: **PASS_WITH_WARNINGS**
 表达（不猜边），库资源的记录面缺失随响应如实返回，页面把这三件事都渲染出来；标注同步收敛。
 复核中额外发现并处理了两类问题：① 页面布局缺陷（4 列节点表被 auto-fit 网格裁列）与
 ② 陈旧设计基线**不会**报警（1.73% < 2% 阈值）——两者都按"先修复再目检"的顺序闭环。
+
+## 安全扫描处置（Mimosa 密封扫描）
+
+扫描 `scan-2026-09-15T12-35-58.890Z-5c4c89cbb31d`（seal
+`sha256:ca11c689b1e39af73eb16a2da741b279dadff1d3f2c83722156b0affaf788bbc`，
+36 findings / 3 high、`verdictEffect: none`、证据边界 `static_only_no_runtime_execution`）。
+对账脚本 `scratch/mimosa_cycle2_disposition.py`（只读）：**本轮改动文件命中 0 条**。3 条 high
+全部在范围外，逐条处置如下：
+
+| 位置 | 性质 | 处置 |
+| --- | --- | --- |
+| `packages/application/protocol_authoring/service.py:103`（不安全反序列化） | **已知误报**：`_StrictLoader` 继承 `yaml.SafeLoader`（与 `yaml.safe_load` 同安全级，只追加重复键拒绝），源码内已有 `# noqa: S506` 与注释；扫描器按 `yaml.load(` 字面判定 | 不改（改代码只会为了迁就扫描器字面）；本项目不宣称"扫描零发现" |
+| `artifacts/钻孔官方API_v12/真实API预检_v12.py:16`、`.../src/ppocr_sidecar/客户端.py:24`（路径穿越） | 与本产品代码无关的第三方产物目录（`artifacts/`），不在本轮改动面 | 登记为范围外债务，不在本计划的处置范围内 |
+
+结论：本轮**不新增**任何被扫描器命中的模式；也不主张项目整体安全（扫描结论仅静态、无运行期执行）。
 
 ## 告警
 
