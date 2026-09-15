@@ -72,6 +72,7 @@ memory_entries:
 | WP-B | GitHub API 逐 run 读 job 结论：cycle 1 `34960364156`、cycle 2 `34969935719`、cycle 3 `34978272057`、cycle 4 `34984686466`、cycle 5 `35002027768`、cycle 6 `35011288950` + 记录提交 `35013114804`、cycle 7 `35018256116` —— **8 个 run × 6 job 全 success** | PASS |
 | WP-C | 结转清单：RECHECK-052/053/054/055/056/057/058/059/060/061 的 WARN 项逐条保留（含 RECHECK-054 W-1 与 RECHECK-061 W-2） | PASS |
 | WP-D | RECHECK-20260915-062 = PASS_WITH_WARNINGS；GOAL-20260915-002 status=ACHIEVED（latest_recheck → RECHECK-062） | PASS |
+| WP-D | 收口提交 `e879768` 的 CI run **35021162088** 六个 job 全 success（GitHub API 逐 job 复核，无重跑） | PASS |
 
 ## 已知风险
 

@@ -36,6 +36,7 @@ GOAL-20260915-002 的六个退出标准（EC-01~06）在**当前树**上是否�
 | 证据面脚本 | `python scratch/verify_goal002_closeout.py` → **59 条断言全 PASS**，末尾 `PASS: EC-01..EC-06 证据面与当前树一致` | PASS |
 | 设计门禁清单未被削弱 | 33 条规范路由仍在 `design-fidelity.spec.ts`；`portfolio-projects` 双平台基线文件存在（本轮 cycle 7 重生成） | PASS |
 | 全量套件与门禁 | API **361 passed**、契约 **359 passed / 56 skipped**、stub e2e **59 passed（15 files）**、live e2e **31 passed（9 files）**、web 单测 **76 passed**；本地 m0 = `profile=m0; 23 deterministic checks`；治理 validate 绿 | PASS |
+| 本 cycle 的 CI（收口提交单独跑 run，不拿历史 run 冒充） | run **35021162088**（`e879768`）：eval-gate 20:41:36Z / collector-quality 20:43:40Z / container-quality 20:44:57Z / quality-ubuntu-latest 20:49:08Z / console-frontend 20:49:09Z / quality-windows-latest 20:54:59Z —— **六个 job 全 success**，无重跑（记录提交同样触发六 job，cycle 1 已证明） | PASS |
 
 ## 结论
 
