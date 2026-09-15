@@ -85,7 +85,7 @@ worker 收到 SIGTERM 后**必须在 10s 内退出**。根因链：
 | --- | --- | --- |
 | WP-A | `pytest tests/distributed/test_net_proxy_partition.py` 3 passed；反证 `python scratch/falsify_net_proxy.py` → `legacy: SWALLOWED` / `fixed: ECHOED` | PASS |
 | WP-B | Linux（`python:3.12-slim`，`--network host`，uv frozen）：D 场景 ×5 = 5/5 passed；`tests/distributed` 全量 = **25 passed / 4 skipped / 0 failed** | PASS |
-| WP-C | 本地 m0 23/23；RECHECK-054 = PASS_WITH_WARNINGS | PASS |
+| WP-C | 本地 m0 23/23；RECHECK-054 = PASS_WITH_WARNINGS；CI run **34960364156**（e6f09cb）六 job 全 success | PASS |
 
 ## 已知风险
 

@@ -30,6 +30,7 @@ PLAN-20260915-054 声称的交付面：`tests/distributed/net_proxy.py` 的分�
 | Linux 上 D 场景不再超时（teardown 10s 内退出） | Linux 容器（`python:3.12-slim`，`--network host`，`UV_PROJECT_ENVIRONMENT=/tmp/venv`，真实 host postgres）D 场景连跑 **5/5 passed** | PASS |
 | 回归面（其它用 NetProxy 的用例） | Linux 容器 `tests/distributed` 全量 = **25 passed / 4 skipped / 0 failed**（4 skip 为 GPU 类） | PASS |
 | Windows 侧无回归 | 本地 m0 = `profile=m0; 23 deterministic checks` | PASS |
+| CI 复验（修复提交） | run **34960364156**（e6f09cb）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality）；对照修复前 run 34957121713 的 collector-quality 失败（同一测试） | PASS |
 
 ## 结论
 
