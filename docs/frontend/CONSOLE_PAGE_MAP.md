@@ -168,11 +168,15 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - API：`GET /runs/{id}/claims`（`ClaimDto.relations[]`: claim_id/evidence_id/
   relation/strength）、`GET /runs/{id}/evidence`（source_ref/artifact_id/
   image_digest/model_refs/manifest_digest）、`GET /runs/{id}/lineage`
-  （`LineageDto`: nodes/edges typed 投影，读取 persisted 引用构造并确定性排序）。
-- 等级：PARTIAL。当前 Run 的显式来源关系（source→evidence→claim→artifact/model）
-  由后端投影。
-- 缺口（登记）：全局数据集/提示词血缘无 API（G9）——标注不可用；禁止猜测连边；
-  引用缺失显示断开关系而非补节点。
+  （`LineageDto`: nodes/edges typed 投影，读取 persisted 引用构造并确定性排序）、
+  `GET /projects/{id}/lineage`（`ProjectLineageDto`: 项目内各 Run 的**合并图**，
+  同一节点 id 由多个 Run 贡献即 `shared=true`——跨 Run 关系由共享节点表达）。
+- 等级：PARTIAL。当前 Run 的显式来源关系 + 项目级合并图均由后端投影；
+  库资源以**未连边清单**列出。
+- 缺口（登记）：数据集/提示词与 Run 的**引用关系无记录面**（协议定义与 RunManifest
+  均不含资源 id，`evaluation_dataset_digest` 无法反查 LibraryResource）——响应内
+  `reference_recording=NOT_RECORDED` 如实返回；禁止猜测连边；引用缺失显示断开关系
+  而非补节点。
 
 ### `#/library/endpoints` — 中转站
 - 设计：`screens/Endpoints.jsx`。
@@ -321,7 +325,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
 | G7b | ~~prompts/datasets/notebooks 库目录~~ | library 三页 | **已交付**（PLAN-044：GET/POST /projects/{id}/library + PATCH /library/{id}，kind 区分；版本树/上传/单元格执行仍禁用） |
 | G8 | 文件浏览/预览；~~下载~~ | run/workspace | **预览/下载已交付**（WP-C）；**制品内容 Diff 已交付**（PLAN-047：GET /artifacts/{a}/diff/{b} 行级 diff，二进制/超限如实标注）；工作区文件树与文件级快照 Diff 仍无接口 |
-| G9 | 全局血缘 | library/lineage | **Run 级投影已交付**（PLAN-043：GET /runs/{id}/lineage typed nodes/edges）；全局跨 run 仍无 API |
+| G9 | 全局血缘 | library/lineage | **已交付**（PLAN-043 Run 级投影 + PLAN-055 项目级合并图 `GET /projects/{id}/lineage`：共享节点即跨 Run 关系）；剩余受限 = 数据集/提示词与 Run 的引用关系无记录面（库资源只作未连边清单，响应内如实标注） |
 | G10 | ~~删除端点（endpoint/model/agent/draft）~~ | library/endpoints、model-registry、run/approvals、plan/protocol | **已交付**（WP-B：四类 DELETE，被引用 409；契约基线不可删；memory 记录删除见 WP-F） |
 | G11 | ~~审批生产接线~~ | run/approvals | **已交付**（WP-H：human-gate 注册点+续跑；空列表为正确状态） |
 | G12 | 成本日序列~~/预测~~ | insights/cost-analytics、govern/budget | **日序列已交付**（WP-D）；**Run 级预留-消耗预测已交付**（PLAN-046：GET /runs/{id}/cost-forecast，仅已预留额度，无 burn-rate 外推）；跨 run/时间序列预测仍无 API |

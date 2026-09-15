@@ -12,7 +12,7 @@ const WEB_PORT = 5174;
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: /live-(api-workflow|artifact-diff|experiment-queue)\.spec\.ts/,
+  testMatch: /live-(api-workflow|artifact-diff|experiment-queue|project-lineage)\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   workers: 1,

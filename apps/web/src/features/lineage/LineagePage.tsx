@@ -6,20 +6,30 @@ import { useI18n } from "../../i18n/useI18n";
 import type { PageContext } from "../../navigation/pageContext";
 import { ClaimsWorkspace } from "../inspection/ClaimsWorkspace";
 import { LineageProjection } from "./LineageProjection";
+import { ProjectLineagePanel } from "./ProjectLineagePanel";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
 
 export function LineagePage({ ctx }: { ctx: PageContext }) {
-  const { language } = useI18n();
-  const zh = language === "zh";
+  return (
+    <section className={styles.page} data-testid="lineage-page">
+      <RunScope ctx={ctx} />
+      <ProjectScope />
+    </section>
+  );
+}
+
+/** Run 级投影：选中 run 的 claims/evidence/lineage（未选 run 时给出选择提示）。 */
+function RunScope({ ctx }: { ctx: PageContext }) {
+  const zh = useI18n().language === "zh";
   const runId = ctx.selectedRunId;
   const key = runId === "" ? null : runId;
   const claims = useResource(key, () => api.runClaimMap(runId));
   const evidence = useResource(key, () => api.runEvidence(runId));
   const lineage = useResource(key, () => api.runLineage(runId));
   return (
-    <section className={styles.page} data-testid="lineage-page">
+    <>
       <PageHeader
         title={zh ? "来源血缘" : "Provenance lineage"}
         kicker="LIBRARY / LINEAGE"
@@ -56,20 +66,32 @@ export function LineagePage({ ctx }: { ctx: PageContext }) {
           {lineage.data !== null && <LineageProjection data={lineage.data} />}
         </ResourceBoundary>
       )}
-    </section>
+    </>
+  );
+}
+
+/** 项目级合并图（G9）：项目内所有 run 的共享来源/制品/模型 + 未连边库资源。 */
+function ProjectScope() {
+  const projectLineage = useResource("project-lineage", () => api.projectLineage());
+  return (
+    <ResourceBoundary state={projectLineage}>
+      {projectLineage.data !== null && <ProjectLineagePanel data={projectLineage.data} />}
+    </ResourceBoundary>
   );
 }
 
 function lineageDescription(zh: boolean): string {
   if (zh) {
     return [
-      "当前 Run 的显式来源关系（source→evidence→claim→artifact/model），",
-      "由后端 persisted 引用构造。全局跨 Run 血缘无 API，不猜测。",
+      "当前 Run 的显式来源关系（source→evidence→claim→artifact/model），由后端 persisted 引用构造；",
+      "下方项目级合并图展示项目内所有 Run 的共享来源/制品/模型（共享节点即跨 Run 关系）。",
+      "数据集/提示词只有未连边清单：资源与 Run 的引用关系无记录面，不猜测连边。",
     ].join("");
   }
   return [
     "Explicit provenance for the selected run (source→evidence→claim→artifact/model), ",
-    "projected from persisted references. Global lineage is unavailable; ",
-    "cross-run dependencies are not inferred.",
+    "projected from persisted references. The project merge below shows sources/artifacts/",
+    "models shared across runs (a shared node IS the cross-run relation). Dataset/prompt ",
+    "resources are listed unlinked: their run references are not recorded, so none are inferred.",
   ].join("");
 }

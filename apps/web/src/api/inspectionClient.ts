@@ -1,5 +1,6 @@
 /** 证据/论断/用量/导出客户端（只读投影）。 */
 
+import { getActiveProjectId } from "./activeProject";
 import { request } from "./http";
 import type {
   BudgetViewDto,
@@ -10,6 +11,7 @@ import type {
   ExperimentViewDto,
   ExportBundleDto,
   LineageDto,
+  ProjectLineageDto,
 } from "./types";
 
 export const inspectionClient = {
@@ -36,5 +38,8 @@ export const inspectionClient = {
   },
   lineage(runId: string): Promise<LineageDto> {
     return request(`/runs/${encodeURIComponent(runId)}/lineage`, { method: "GET" });
+  },
+  projectLineage(projectId: string = getActiveProjectId()): Promise<ProjectLineageDto> {
+    return request(`/projects/${encodeURIComponent(projectId)}/lineage`, { method: "GET" });
   },
 };

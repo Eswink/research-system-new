@@ -6,6 +6,8 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-056](tasks/PLAN-20260915-056-blackhole-must-be-effective-on-return.md) | DONE |
+| [x] | [PLAN-20260915-055](tasks/PLAN-20260915-055-project-scope-provenance-lineage.md) | DONE |
 | [x] | [PLAN-20260915-054](tasks/PLAN-20260915-054-netproxy-partition-heal.md) | DONE |
 | [x] | [PLAN-20260915-053](tasks/PLAN-20260915-053-goal-001-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260915-052](tasks/PLAN-20260915-052-experiment-queue-and-scheduling.md) | DONE |

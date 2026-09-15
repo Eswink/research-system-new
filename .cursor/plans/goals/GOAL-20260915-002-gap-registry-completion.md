@@ -23,7 +23,7 @@ exit_criteria:
       G9 全局跨 run 血缘：项目作用域血缘投影（run/dataset/prompt 节点与边）落地并翻 live
     verify: >-
       OpenAPI 快照含项目级 lineage 路径；library/lineage 的 pageSupport reason 收敛；live e2e 用例绿
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       G12 跨 run 时序成本预测：由 cost/daily 序列给出跨 run 预测（口径与计量完备状态如实标注）
@@ -77,9 +77,12 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
 child_plans:
   - .cursor/plans/tasks/PLAN-20260915-054-netproxy-partition-heal.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-054-netproxy-partition-heal.md
+  - .cursor/plans/tasks/PLAN-20260915-055-project-scope-provenance-lineage.md
+  - .cursor/plans/tasks/PLAN-20260915-056-blackhole-must-be-effective-on-return.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-055-project-scope-provenance-lineage.md
 memory_entries:
   - MEM-20260915-031-partition-injector-must-heal
+  - MEM-20260915-032-project-lineage-merge-and-honest-unlinked-resources
 ---
 
 # GOAL-20260915-002 — 诚实缺口注册表收口（自迭代循环）
@@ -93,7 +96,7 @@ memory_entries:
 
 | EC | 标准（摘要） | 验证 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | G9 全局跨 run 血缘（项目作用域节点/边） | OpenAPI + pageSupport + live e2e | PENDING |
+| EC-01 | G9 全局跨 run 血缘（项目作用域节点/边） | OpenAPI + pageSupport + live e2e | PASS（2026-09-15 cycle 2；范围注记：跨 run 关系由**共享节点**表达，库资源以未连边清单交付——资源↔run 边无记录面，见 RECHECK-055 W-1） |
 | EC-02 | G12 跨 run 时序成本预测 | OpenAPI + API/live e2e + 计量口径 | PENDING |
 | EC-03 | G8 workspace 文件树 + 文件级 diff（或 Accepted ADR 收敛） | OpenAPI/ADR + live e2e | PENDING |
 | EC-04 | G7 ops 写面（告警规则 CRUD + incident 处置） | OpenAPI 写方法 + pageSupport 收敛 | PENDING |
@@ -107,10 +110,11 @@ memory_entries:
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 1 已闭环（PLAN-20260915-054：分区注入器真实性
-修复，RECHECK-054 = PASS_WITH_WARNINGS；该轮为 CI 债，六个 EC 仍全部 PENDING）**。
-下一个动作 = ① derive：取 EC-01（G9 全局跨 run 血缘），子 PLAN 编号续全局序列
-（下一号 = **PLAN-20260915-055**）。driver=session-goal，owner=root-agent。
+按 README 的 7 步判定执行；当前续点：**cycle 2 已闭环（PLAN-20260915-055：
+G9 项目级来源血缘交付，EC-01 = PASS；同 cycle 另立 PLAN-20260915-056 修注入器
+`blackhole()` 的"返回即生效"，RECHECK-055/056 = PASS_WITH_WARNINGS）**。
+下一个动作 = ① derive：取 EC-02（G12 跨 run 时序成本预测），子 PLAN 编号续全局序列
+（下一号 = **PLAN-20260915-057**）。driver=session-goal，owner=root-agent。
 
 ## 驱动
 
@@ -150,6 +154,7 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PLAN-20260915-054（CI 债：分区注入器真实性） | e6f09cb | 新语义用例 3 passed + 反证 `legacy: SWALLOWED / fixed: ECHOED`；Linux 容器 D 场景 5/5、`tests/distributed` 全量 25 passed / 4 skipped / 0 failed；本地 m0 23/23；RECHECK-054 = PASS_WITH_WARNINGS | run 34960364156（e6f09cb）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality）——对照修复前 run 34957121713 的 collector-quality 失败 | 旧 `_stall` 消费并丢弃分区期间的字节且连接线程直接结束 ⇒ `restore()` 无法恢复在途请求，worker 阻塞到 30s 客户端超时、SIGTERM 打不断阻塞读 ⇒ D 场景 teardown `wait(10)` 超时（cycle 13 收口提交的 CI 红）；另修宿主 venv 被容器 `uv sync` 覆盖的事故（已重建并验证） | EC-01~06 全部 PENDING（本轮为 EC-06 的门禁债前置，已清零） | cycle 2 = ① derive EC-01（G9 全局跨 run 血缘），子 PLAN 编号 = PLAN-20260915-055 |
+| 2 | PLAN-20260915-055（EC-01：G9 项目级来源血缘）+ PLAN-20260915-056（门禁轮：`blackhole()` 返回即生效） | 见本 cycle 提交 | API 6 passed；stub e2e **40 passed**、live e2e **20 passed**；根 eslint 0 error；web lint/typecheck 通过 + 单测 76 passed；设计基线（win32 本地 + linux pinned 容器）重生成（实测陈旧基线仅差 1.73% ⇒ 旧基线不会报警）；本地 m0 **23/23**（3411 passed / 6 skipped）；RECHECK-055/056 = PASS_WITH_WARNINGS | 见本 cycle CI run（提交后回填） | ① 全页目检发现 `.cards` auto-fit 网格把 4 列节点表裁列 ⇒ 新增 `.stack` 整宽堆叠（先修复再重生成基线）；② 陈旧设计基线与新渲染只差 **15,933 px = 1.73%**，低于 2% 阈值 ⇒ 基线不会报警，必须主动重生成；③ m0 全量在 Windows 上暴露 `blackhole()` 竞态（泵已阻塞在 `recv` ⇒ 标志置了但仍转发）⇒ `blackhole()` 改为等分区生效（有界 2s），PLAN-056 单独记账 | EC-02~06 PENDING | cycle 3 = ① derive EC-02（G12 跨 run 时序成本预测），子 PLAN 编号 = PLAN-20260915-057 |
 
 ## 状态历史
 
@@ -168,3 +173,18 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
   `tests/distributed` 全量 25 passed / 0 failed；本地 m0 23/23。RECHECK-054 =
   PASS_WITH_WARNINGS（W-1 = worker 的 SIGTERM 打不断阻塞中的 HTTP 读、退出上界 = 客户端
   30s 超时，登记给后续 EC 决策）。六个 EC 仍全部 PENDING。
+- 2026-09-15 cycle 2（EC-01 = G9 项目级来源血缘，**PASS**）：`GET /projects/{project_id}/lineage`
+  把 run 级投影规则（`services/api/lineage_projection.py`，run 级与项目级共用）作用到项目内
+  每个 run 并按节点 id 合并 ⇒ **共享节点即跨 run 关系**（`shared = len(run_ids) > 1`）；
+  库资源（dataset/prompt/notebook）以**未连边清单**交付，响应带
+  `reference_recording=NOT_RECORDED` + 原因（协议定义只有 `id/version/phases`、`RunManifest`
+  只有 `evaluation_dataset_digest` 摘要、evidence 的 `source_ref` 不支持资源 id ⇒ 资源↔run
+  的边**当前不可证**，不猜边）。前端 `library/lineage` 新增 `ProjectLineagePanel`
+  （摘要 + 节点/边/未连边资源三表 + 诚实说明），`pageSupport` 的 G9 reason 收敛为
+  「已接入 + 记录面边界」。验证：API 6 passed；stub e2e 40 passed、live e2e 20 passed；
+  根 eslint 0 error；web 单测 76 passed；`library-lineage` 设计基线 win32/linux 重生成；
+  本地 m0 23/23。RECHECK-055 = PASS_WITH_WARNINGS（W-1 记录资源↔run 边的不可交付边界）。
+  同 cycle 门禁轮另立 **PLAN-20260915-056**：本地 m0 全量在 Windows 上暴露
+  `NetProxy.blackhole()` 的"标志已置但分区未生效"竞态（泵已阻塞在 `recv`，置标志后的下一批
+  字节仍被转发）⇒ 改为等 `stalled_connections >= live_connections`（有界 2s）；定向用例
+  8/8、`tests/distributed` 32 passed、m0 23/23；RECHECK-056 = PASS_WITH_WARNINGS。

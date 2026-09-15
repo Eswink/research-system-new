@@ -131,6 +131,47 @@ class LineageDto(BaseModel):
     degraded: bool = False
 
 
+class ProjectLineageNodeDto(BaseModel):
+    """项目级血缘节点：run-scope 同规则，另带贡献该节点的 run 列表。
+
+    `shared=true` 表示有多个 run 贡献同一节点 id（跨 run 的公共来源/制品/模型）
+    —— 跨 run 关系由**共享节点**表达，不由猜测的连边表达。
+    """
+
+    id: str
+    kind: str
+    label: str
+    run_ids: list[str] = Field(default_factory=list)
+    shared: bool = False
+
+
+class ProjectLineageResourceDto(BaseModel):
+    """项目库资源条目（数据集/提示词/笔记本）的未连边清单项。"""
+
+    id: str
+    kind: str
+    name: str
+    status: str
+
+
+class ProjectLineageDto(BaseModel):
+    """项目级来源血缘投影（G9 / GOAL-20260915-002 EC-01）。
+
+    `reference_recording` 如实说明：run 与库资源（数据集/提示词）的引用关系当前
+    **没有记录面**，因此 `library_resources` 只是未连边清单，不画资源边。
+    """
+
+    project_id: str
+    run_count: int
+    nodes: list[ProjectLineageNodeDto] = Field(default_factory=list)
+    edges: list[LineageEdgeDto] = Field(default_factory=list)
+    library_resources: list[ProjectLineageResourceDto] = Field(default_factory=list)
+    reference_recording: str = "NOT_RECORDED"
+    reference_recording_reason: str | None = None
+    degraded: bool = False
+    degraded_reason: str | None = None
+
+
 class ExperimentRunDto(BaseModel):
     """单个 experiment run 的只读视图（persisted truth）。"""
 

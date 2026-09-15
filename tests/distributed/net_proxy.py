@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import socket
 import threading
+import time
 
 
 class NetProxy:
@@ -20,6 +21,9 @@ class NetProxy:
         self._target = (target_host, target_port)
         self._blackholed = threading.Event()
         self._stopping = threading.Event()
+        self._lock = threading.Lock()
+        self._live_connections = 0
+        self._stalled_connections = 0
         listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         listener.bind(("127.0.0.1", 0))
         listener.listen(8)
@@ -37,8 +41,22 @@ class NetProxy:
         acceptor.start()
         self._threads.append(acceptor)
 
-    def blackhole(self) -> None:
+    def blackhole(self, timeout: float = 2.0) -> None:
+        """Start the partition; returns once no byte can transit.
+
+        The pump only checks the flag between iterations, so a connection already
+        blocked in `recv` would still forward the next bytes to arrive — the
+        partition would be "soon" rather than "now". Waiting for every live
+        connection to reach the stall keeps the fault honest for callers that
+        assert bytes do not flow right after this call.
+        """
         self._blackholed.set()
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            with self._lock:
+                if self._stalled_connections >= self._live_connections:
+                    return
+            time.sleep(0.01)
 
     def restore(self) -> None:
         self._blackholed.clear()
@@ -67,6 +85,8 @@ class NetProxy:
 
     def _pipe(self, client: socket.socket) -> None:
         upstream: socket.socket | None = None
+        with self._lock:
+            self._live_connections += 1
         try:
             upstream = socket.create_connection(self._target, timeout=5)
             upstream.settimeout(0.2)
@@ -88,6 +108,8 @@ class NetProxy:
         except OSError:
             pass
         finally:
+            with self._lock:
+                self._live_connections -= 1
             for sock in (client, upstream):
                 if sock is not None:
                     try:
@@ -120,16 +142,25 @@ class NetProxy:
         a different fault than a network partition and would strand callers that
         are correctly written — e.g. a worker blocked in a gateway request cannot
         honor SIGTERM until that read returns.
+
+        Byte accounting for `blackhole()`: this loop is the point at which the
+        partition becomes effective for the connection.
         """
+        with self._lock:
+            self._stalled_connections += 1
         client.settimeout(0.2)
-        while not self._stopping.is_set() and self._blackholed.is_set():
-            try:
-                if client.recv(65536, socket.MSG_PEEK) == b"":
+        try:
+            while not self._stopping.is_set() and self._blackholed.is_set():
+                try:
+                    if client.recv(65536, socket.MSG_PEEK) == b"":
+                        return
+                except socket.timeout:
+                    continue
+                except OSError:
                     return
-            except socket.timeout:
-                continue
-            except OSError:
-                return
+        finally:
+            with self._lock:
+                self._stalled_connections -= 1
 
     def _sleep(self) -> None:
         self._stopping.wait(0.05)

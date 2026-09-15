@@ -136,6 +136,7 @@ export const api = {
   runExport: (runId: string) => inspectionClient.export(runId),
   runDeliverable: (runId: string) => inspectionClient.deliverable(runId),
   runLineage: (runId: string) => inspectionClient.lineage(runId),
+  projectLineage: (projectId?: string) => inspectionClient.projectLineage(projectId),
 
   // ── tool providers（PLAN-043 只读目录）──
   listToolProviders: () => toolProvidersClient.list(),

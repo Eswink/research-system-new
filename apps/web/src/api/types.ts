@@ -586,6 +586,33 @@ export interface LineageDto {
   degraded: boolean;
 }
 
+export interface ProjectLineageNodeDto {
+  id: string;
+  kind: string;
+  label: string;
+  run_ids: string[];
+  shared: boolean;
+}
+
+export interface ProjectLineageResourceDto {
+  id: string;
+  kind: ResourceKind;
+  name: string;
+  status: ResourceStatus;
+}
+
+export interface ProjectLineageDto {
+  project_id: string;
+  run_count: number;
+  nodes: ProjectLineageNodeDto[];
+  edges: LineageEdgeDto[];
+  library_resources: ProjectLineageResourceDto[];
+  reference_recording: string;
+  reference_recording_reason: string | null;
+  degraded: boolean;
+  degraded_reason: string | null;
+}
+
 export type ResourceKind = "prompt" | "dataset" | "notebook";
 export type ResourceStatus = "ACTIVE" | "ARCHIVED";
 

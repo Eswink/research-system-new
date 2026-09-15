@@ -39,7 +39,9 @@ export const GAPS = {
     "制品内容 Diff 已接入（GET /artifacts/{left}/diff/{right}，二进制/超限如实标注）；" +
     "预览与下载已接入（GET /artifacts/{id}/content）；工作区文件树与文件级快照 Diff 无 API",
   globalLineage:
-    "全局数据集/提示词血缘无 API（仅 Run 级引用，已接入 GET /runs/{id}/lineage 投影）",
+    "项目级血缘已接入（GET /projects/{id}/lineage：项目内各 Run 的投影合并图，" +
+    "共享节点即跨 Run 关系）；数据集/提示词与 Run 的引用关系无记录面，" +
+    "库资源只作未连边清单呈现（响应内 reference_recording 如实标注），不猜测连边",
   delete:
     "端点/模型/草稿/用户 Agent 已接入 DELETE（被引用 → 409）；" +
     "memory 记录与契约基线（example role/template/agent）不提供删除",

@@ -3828,6 +3828,146 @@
         "title": "ProjectExperimentsViewDto",
         "type": "object"
       },
+      "ProjectLineageDto": {
+        "additionalProperties": false,
+        "description": "项目级来源血缘投影（G9 / GOAL-20260915-002 EC-01）。\n\n`reference_recording` 如实说明：run 与库资源（数据集/提示词）的引用关系当前\n**没有记录面**，因此 `library_resources` 只是未连边清单，不画资源边。",
+        "properties": {
+          "degraded": {
+            "default": false,
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "degraded_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degraded Reason"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/LineageEdgeDto"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "library_resources": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectLineageResourceDto"
+            },
+            "title": "Library Resources",
+            "type": "array"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectLineageNodeDto"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "reference_recording": {
+            "default": "NOT_RECORDED",
+            "title": "Reference Recording",
+            "type": "string"
+          },
+          "reference_recording_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Recording Reason"
+          },
+          "run_count": {
+            "title": "Run Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "run_count"
+        ],
+        "title": "ProjectLineageDto",
+        "type": "object"
+      },
+      "ProjectLineageNodeDto": {
+        "additionalProperties": false,
+        "description": "项目级血缘节点：run-scope 同规则，另带贡献该节点的 run 列表。\n\n`shared=true` 表示有多个 run 贡献同一节点 id（跨 run 的公共来源/制品/模型）\n—— 跨 run 关系由**共享节点**表达，不由猜测的连边表达。",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Run Ids",
+            "type": "array"
+          },
+          "shared": {
+            "default": false,
+            "title": "Shared",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label"
+        ],
+        "title": "ProjectLineageNodeDto",
+        "type": "object"
+      },
+      "ProjectLineageResourceDto": {
+        "additionalProperties": false,
+        "description": "项目库资源条目（数据集/提示词/笔记本）的未连边清单项。",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "status"
+        ],
+        "title": "ProjectLineageResourceDto",
+        "type": "object"
+      },
       "ProjectSettingsDto": {
         "additionalProperties": false,
         "properties": {
@@ -7841,6 +7981,49 @@
         ]
       }
     },
+    "/projects/{project_id}/lineage": {
+      "get": {
+        "description": "项目级来源血缘（项目 runs 的合并图 + 库资源未连边清单）。\n\n未知项目 → 空图（与 `/projects/{id}/runs`、`/projects/{id}/experiments` 同口径，\n不 404）；ledger 未配置 → 503；单 run 行损坏 → 整图 degraded=true 并给出原因。",
+        "operationId": "project_lineage_view_projects__project_id__lineage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectLineageDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Project Lineage View",
+        "tags": [
+          "inspection"
+        ]
+      }
+    },
     "/projects/{project_id}/memory": {
       "get": {
         "operationId": "list_project_memory_projects__project_id__memory_get",
@@ -9381,7 +9564,7 @@
     },
     "/runs/{run_id}/lineage": {
       "get": {
-        "description": "Run 级来源血缘（nodes/edges 由 persisted evidence/claim 投影）。\n\n未知 run → 404；ledger 损坏 → degraded=true（不整体 422）；全局跨 run\n血缘恒不可用（无 API，G9 诚实锁定，不猜测连边）。",
+        "description": "Run 级来源血缘（nodes/edges 由 persisted evidence/claim 投影）。\n\n未知 run → 404；ledger 损坏 → degraded=true（不整体 422）；项目级血缘见\n`GET /projects/{project_id}/lineage`。",
         "operationId": "run_lineage_runs__run_id__lineage_get",
         "parameters": [
           {

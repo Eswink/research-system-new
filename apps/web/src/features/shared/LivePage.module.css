@@ -44,6 +44,14 @@
   gap: 12px;
 }
 
+/* 纵向堆叠：内容较宽的面板（多列表格）用整宽卡片，避免被 auto-fit 网格压窄截列。 */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 .card {
   background: var(--bg-panel);
   border: 1px solid var(--border);

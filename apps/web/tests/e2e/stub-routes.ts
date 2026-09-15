@@ -6,6 +6,7 @@
 
 import { BUDGET_ROUTES } from "./stub-routes-budget";
 import { EXPERIMENT_QUEUE_ROUTES } from "./stub-routes-experiments";
+import { LINEAGE_ROUTES } from "./stub-routes-lineage";
 import { POLICY_ROUTES } from "./stub-routes-policy";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
@@ -333,21 +334,6 @@ export const ROUTES: readonly StubRoute[] = [
       },
     }),
   },
-  {
-    method: "GET",
-    pattern: /^\/runs\/[^/]+\/lineage$/,
-    handler: (url) => ({
-      status: 200,
-      body: {
-        run_id: url.pathname.split("/")[2] ?? "",
-        nodes: [],
-        edges: [],
-        global_lineage_available: false,
-        global_lineage_reason: "global lineage has no API (G9)",
-        degraded: false,
-      },
-    }),
-  },
   // PLAN-044 EC-03: library catalog (prompts/datasets/notebooks) read + create.
   {
     method: "GET",
@@ -430,4 +416,6 @@ export const ROUTES: readonly StubRoute[] = [
   ...POLICY_ROUTES,
   // PLAN-052 WP-D: experiment queue + plan list (G14).
   ...EXPERIMENT_QUEUE_ROUTES,
+  // PLAN-055 WP-B: run + project lineage (G9).
+  ...LINEAGE_ROUTES,
 ];
