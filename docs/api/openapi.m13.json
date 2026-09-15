@@ -386,7 +386,7 @@
             "type": "array"
           },
           "note": {
-            "default": "comparison is artifact content vs artifact content; the control plane has no filesystem-snapshot diff surface",
+            "default": "comparison is artifact content vs artifact content; workspace snapshot file-level diff is a separate surface (GET /workspace-snapshots/{left}/diff/{right})",
             "title": "Note",
             "type": "string"
           },
@@ -5062,6 +5062,60 @@
         "title": "RunTelemetryDto",
         "type": "object"
       },
+      "RunWorkspaceSnapshotDto": {
+        "additionalProperties": false,
+        "properties": {
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "recorded_as": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recorded As",
+            "type": "array"
+          },
+          "retained": {
+            "title": "Retained",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "digest",
+          "recorded_as",
+          "retained"
+        ],
+        "title": "RunWorkspaceSnapshotDto",
+        "type": "object"
+      },
+      "RunWorkspaceSnapshotsDto": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "default": "these are the snapshot digests this run recorded (evidence/experiment); the control plane does not persist a run-to-workspace binding, so 'retained' only means the digest is present in the configured snapshot store",
+            "title": "Note",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/RunWorkspaceSnapshotDto"
+            },
+            "title": "Snapshots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "run_id",
+          "snapshots"
+        ],
+        "title": "RunWorkspaceSnapshotsDto",
+        "type": "object"
+      },
       "ScheduleEntryDto": {
         "additionalProperties": false,
         "properties": {
@@ -5876,6 +5930,227 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkspaceSnapshotCapabilityDto": {
+        "additionalProperties": false,
+        "description": "快照读取能力：未配置时 configured=False + reason，不返回假计数。",
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "max_files_per_snapshot": {
+            "title": "Max Files Per Snapshot",
+            "type": "integer"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "retained_snapshots": {
+            "title": "Retained Snapshots",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "configured",
+          "retained_snapshots",
+          "max_files_per_snapshot",
+          "note"
+        ],
+        "title": "WorkspaceSnapshotCapabilityDto",
+        "type": "object"
+      },
+      "WorkspaceSnapshotChangeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "left_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Left Sha256"
+          },
+          "left_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Left Size Bytes"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "right_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Right Sha256"
+          },
+          "right_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Right Size Bytes"
+          }
+        },
+        "required": [
+          "path",
+          "kind"
+        ],
+        "title": "WorkspaceSnapshotChangeDto",
+        "type": "object"
+      },
+      "WorkspaceSnapshotDiffDto": {
+        "additionalProperties": false,
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "changed": {
+            "title": "Changed",
+            "type": "integer"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSnapshotChangeDto"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "comparison": {
+            "default": "WORKSPACE_SNAPSHOT_METADATA",
+            "title": "Comparison",
+            "type": "string"
+          },
+          "identical": {
+            "title": "Identical",
+            "type": "boolean"
+          },
+          "left_digest": {
+            "title": "Left Digest",
+            "type": "string"
+          },
+          "note": {
+            "default": "file-level comparison only (path/size/sha256); content line diff is served by GET /artifacts/{left}/diff/{right}",
+            "title": "Note",
+            "type": "string"
+          },
+          "removed": {
+            "title": "Removed",
+            "type": "integer"
+          },
+          "right_digest": {
+            "title": "Right Digest",
+            "type": "string"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "unchanged": {
+            "title": "Unchanged",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "left_digest",
+          "right_digest",
+          "identical",
+          "added",
+          "removed",
+          "changed",
+          "unchanged",
+          "changes",
+          "truncated"
+        ],
+        "title": "WorkspaceSnapshotDiffDto",
+        "type": "object"
+      },
+      "WorkspaceSnapshotFileDto": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "WorkspaceSnapshotFileDto",
+        "type": "object"
+      },
+      "WorkspaceSnapshotTreeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "file_count": {
+            "title": "File Count",
+            "type": "integer"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceSnapshotFileDto"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "total_bytes": {
+            "title": "Total Bytes",
+            "type": "integer"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "digest",
+          "files",
+          "file_count",
+          "total_bytes",
+          "truncated"
+        ],
+        "title": "WorkspaceSnapshotTreeDto",
         "type": "object"
       }
     }
@@ -10172,6 +10447,49 @@
         ]
       }
     },
+    "/runs/{run_id}/workspace-snapshots": {
+      "get": {
+        "description": "run 记录过的快照 digest 与保留状态（不推断 run→工作区绑定）。",
+        "operationId": "run_workspace_snapshots_runs__run_id__workspace_snapshots_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunWorkspaceSnapshotsDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Workspace Snapshots",
+        "tags": [
+          "workspace"
+        ]
+      }
+    },
     "/team-templates": {
       "get": {
         "description": "Lean / Standard / Rigorous 模板目录。",
@@ -10261,6 +10579,123 @@
         "summary": "List Tool Providers",
         "tags": [
           "tool-providers"
+        ]
+      }
+    },
+    "/workspace-snapshots": {
+      "get": {
+        "description": "快照读取能力（未配置时 configured=False + 原因，不伪装计数）。",
+        "operationId": "workspace_snapshot_capability_workspace_snapshots_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSnapshotCapabilityDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Workspace Snapshot Capability",
+        "tags": [
+          "workspace"
+        ]
+      }
+    },
+    "/workspace-snapshots/{digest}/files": {
+      "get": {
+        "description": "某个保留中快照的文件清单（路径/大小/sha256）。",
+        "operationId": "workspace_snapshot_files_workspace_snapshots__digest__files_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "digest",
+            "required": true,
+            "schema": {
+              "title": "Digest",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSnapshotTreeDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Workspace Snapshot Files",
+        "tags": [
+          "workspace"
+        ]
+      }
+    },
+    "/workspace-snapshots/{left}/diff/{right}": {
+      "get": {
+        "description": "两个保留中快照的文件级 diff（新增/删除/内容变化）。",
+        "operationId": "workspace_snapshot_diff_workspace_snapshots__left__diff__right__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "left",
+            "required": true,
+            "schema": {
+              "title": "Left",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "right",
+            "required": true,
+            "schema": {
+              "title": "Right",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSnapshotDiffDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Workspace Snapshot Diff",
+        "tags": [
+          "workspace"
         ]
       }
     }

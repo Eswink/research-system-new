@@ -37,6 +37,7 @@ from services.api.routers import (
     team_custom,
     team_protocol,
     tool_providers,
+    workspace_snapshots,
 )
 from services.api.scheduler import (
     LeaseRecoveryScheduler,
@@ -242,4 +243,5 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(budget_forecast.router)
     app.include_router(project_cost_forecast.router)
     app.include_router(policy.router)
+    app.include_router(workspace_snapshots.router)
     return app

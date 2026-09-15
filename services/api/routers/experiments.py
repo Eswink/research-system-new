@@ -4,8 +4,8 @@
 - evidence 行含 experiment_run_id → 可关联 experiment run + artifact；
 - metrics 经 ArtifactStore 内容寻址读取（若内容可取得）；
 - Reproduction：M12 chain 的 ReproducibilityAudit 不在控制面板存储边界内，
-  诚实标注 unavailable（不伪造审计 digest），file-level workspace diff
-  为 M6/M9 前置能力属性，同样诚实标注。
+  诚实标注 unavailable（不伪造审计 digest）；file-level workspace diff
+  自 PLAN-20260915-058 起由 /workspace-snapshots 提供（见 REPRODUCTION_NOTE）。
 
 WP-E 新增：项目级 run 视图（跨 run evidence 聚合）、ExperimentPlan 预注册
 创建与归档。PLAN-040 WP-A 起 SQLite 开发路径与 PG canonical 双支持；store
@@ -110,16 +110,14 @@ async def run_experiments(run_id: str, request: Request) -> ExperimentViewDto:
                 experiment.metrics = {**experiment.metrics, **metrics}
     return ExperimentViewDto(
         experiments=experiments,
-        reproduction_note=(
-            "ReproducibilityAudit 由 M12 参考链产出，不在控制面板持久化边界内；"
-            "file-level workspace diff 为 M6/M9 前置能力，均诚实标注 unavailable"
-        ),
+        reproduction_note=REPRODUCTION_NOTE,
     )
 
 
 REPRODUCTION_NOTE = (
-    "ReproducibilityAudit 由 M12 参考链产出，不在控制面板持久化边界内；"
-    "file-level workspace diff 为 M6/M9 前置能力，均诚实标注 unavailable"
+    "ReproducibilityAudit 由 M12 参考链产出，不在控制面板持久化边界内，诚实标注 unavailable；"
+    "工作区快照的**文件级** diff 已由 GET /workspace-snapshots/{left}/diff/{right} 提供"
+    "（PLAN-20260915-058）"
 )
 
 

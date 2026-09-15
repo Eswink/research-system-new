@@ -8,6 +8,7 @@ import { BUDGET_ROUTES } from "./stub-routes-budget";
 import { EXPERIMENT_QUEUE_ROUTES } from "./stub-routes-experiments";
 import { LINEAGE_ROUTES } from "./stub-routes-lineage";
 import { POLICY_ROUTES } from "./stub-routes-policy";
+import { WORKSPACE_ROUTES } from "./stub-routes-workspace";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
 export type { Handler } from "./stub-fixtures";
@@ -418,4 +419,6 @@ export const ROUTES: readonly StubRoute[] = [
   ...EXPERIMENT_QUEUE_ROUTES,
   // PLAN-055 WP-B: run + project lineage (G9).
   ...LINEAGE_ROUTES,
+  // PLAN-058 WP-D: workspace snapshot capability / files / file-level diff (G8).
+  ...WORKSPACE_ROUTES,
 ];

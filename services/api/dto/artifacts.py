@@ -44,6 +44,6 @@ class ArtifactDiffDto(BaseModel):
     stats: ArtifactDiffStatsDto
     truncated: bool = False
     note: str = (
-        "comparison is artifact content vs artifact content; the control plane has "
-        "no filesystem-snapshot diff surface"
+        "comparison is artifact content vs artifact content; workspace snapshot file-level "
+        "diff is a separate surface (GET /workspace-snapshots/{left}/diff/{right})"
     )

@@ -73,6 +73,11 @@ def test_openapi_contains_control_plane_paths() -> None:
     assert "/cost/daily" in paths
     # 项目级成本预测（G12 / GOAL-20260915-002 EC-02）
     assert "/projects/{project_id}/cost-forecast" in paths
+    # 工作区快照文件树与文件级 diff（G8 / GOAL-20260915-002 EC-03）
+    assert "/workspace-snapshots" in paths
+    assert "/workspace-snapshots/{digest}/files" in paths
+    assert "/workspace-snapshots/{left}/diff/{right}" in paths
+    assert "/runs/{run_id}/workspace-snapshots" in paths
     # 实验项目视图与计划（PLAN-20260910-037 WP-E）
     assert "/projects/{project_id}/experiments" in paths
     assert "/experiments/{plan_id}/archive" in paths

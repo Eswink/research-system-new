@@ -569,6 +569,64 @@ export interface ArtifactDiffDto {
   note: string;
 }
 
+/** 工作区快照读取能力：未配置快照根时 configured=false + note（不伪装计数）。 */
+export interface WorkspaceSnapshotCapabilityDto {
+  configured: boolean;
+  retained_snapshots: number;
+  max_files_per_snapshot: number;
+  note: string;
+}
+
+export interface WorkspaceSnapshotFileDto {
+  path: string;
+  size_bytes: number;
+  sha256: string;
+}
+
+export interface WorkspaceSnapshotTreeDto {
+  digest: string;
+  files: WorkspaceSnapshotFileDto[];
+  file_count: number;
+  total_bytes: number;
+  truncated: boolean;
+}
+
+export interface WorkspaceSnapshotChangeDto {
+  path: string;
+  kind: string;
+  left_sha256: string | null;
+  right_sha256: string | null;
+  left_size_bytes: number | null;
+  right_size_bytes: number | null;
+}
+
+/** 两个快照的文件级 diff（只比路径/大小/sha256；内容行级 diff 在制品侧）。 */
+export interface WorkspaceSnapshotDiffDto {
+  left_digest: string;
+  right_digest: string;
+  comparison: string;
+  identical: boolean;
+  added: number;
+  removed: number;
+  changed: number;
+  unchanged: number;
+  changes: WorkspaceSnapshotChangeDto[];
+  truncated: boolean;
+  note: string;
+}
+
+export interface RunWorkspaceSnapshotDto {
+  digest: string;
+  recorded_as: string[];
+  retained: boolean;
+}
+
+export interface RunWorkspaceSnapshotsDto {
+  run_id: string;
+  snapshots: RunWorkspaceSnapshotDto[];
+  note: string;
+}
+
 export interface ExportBundleDto {
   run_id: string;
   run_state: string;

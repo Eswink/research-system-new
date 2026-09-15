@@ -126,9 +126,15 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - 设计：`screens/Workspace.jsx`。
 - API：`GET /runs/{id}/experiments`、`/evidence`、`/export`、
   `GET /runs/{id}/artifacts` + `GET /artifacts/{id}` + `GET /artifacts/{id}/content`
-  （列表/元数据 verified/下载与白名单内联预览，WP-C）。
-- 等级：PARTIAL。产物浏览器已接入（store 缺失 503 如实呈现）。
-- 缺口（登记）：文件级 Diff 仍无接口；非白名单 media 一律下载（不内联执行）。
+  （列表/元数据 verified/下载与白名单内联预览，WP-C）、
+  `GET /runs/{id}/workspace-snapshots` + `GET /workspace-snapshots/{digest}/files` +
+  `GET /workspace-snapshots/{left}/diff/{right}`（PLAN-058：run 记录过的快照 digest、
+  单快照文件树、两快照文件级 diff）。
+- 等级：FULL。产物浏览器已接入（store 缺失 503 如实呈现）；快照面板按 digest 只读
+  （快照根未配置时端点 503 并说明原因）。
+- 边界（登记）：快照面只回答"该 run 记录过哪些 digest、哪些仍保留"——控制面不持久化
+  run→工作区绑定，不声称"这就是执行时的工作区"；文件级 diff 只比路径/大小/sha256，
+  内容行级 diff 在制品面板；非白名单 media 一律下载（不内联执行）。
 
 ## Library（7 页）
 
@@ -335,7 +341,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G7 | ~~alerts/incidents/schedules/data-health~~ | ops 四页 | **只读投影已交付**（PLAN-045：ops/alerts・incidents・schedules・data-health；规则 CRUD/处置流/用户调度/聚合报告仍禁用，见各页缺口）；prompts/datasets/notebooks 见 G7b，reports 见 G7a，integrations 见 G15 |
 | G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
 | G7b | ~~prompts/datasets/notebooks 库目录~~ | library 三页 | **已交付**（PLAN-044：GET/POST /projects/{id}/library + PATCH /library/{id}，kind 区分；版本树/上传/单元格执行仍禁用） |
-| G8 | 文件浏览/预览；~~下载~~ | run/workspace | **预览/下载已交付**（WP-C）；**制品内容 Diff 已交付**（PLAN-047：GET /artifacts/{a}/diff/{b} 行级 diff，二进制/超限如实标注）；工作区文件树与文件级快照 Diff 仍无接口 |
+| G8 | 文件浏览/预览；~~下载~~ | run/workspace | **已交付**：预览/下载（WP-C）；制品内容 Diff（PLAN-047：GET /artifacts/{a}/diff/{b} 行级 diff，二进制/超限如实标注）；**工作区快照文件树与文件级 Diff（PLAN-058：GET /workspace-snapshots/{digest}/files 与 /{left}/diff/{right}，按 digest 只读、只比元数据；需配置 RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT）**；剩余受限 = 无 run→工作区绑定记录面（只能回答"记录过哪些快照"） |
 | G9 | 全局血缘 | library/lineage | **已交付**（PLAN-043 Run 级投影 + PLAN-055 项目级合并图 `GET /projects/{id}/lineage`：共享节点即跨 Run 关系）；剩余受限 = 数据集/提示词与 Run 的引用关系无记录面（库资源只作未连边清单，响应内如实标注） |
 | G10 | ~~删除端点（endpoint/model/agent/draft）~~ | library/endpoints、model-registry、run/approvals、plan/protocol | **已交付**（WP-B：四类 DELETE，被引用 409；契约基线不可删；memory 记录删除见 WP-F） |
 | G11 | ~~审批生产接线~~ | run/approvals | **已交付**（WP-H：human-gate 注册点+续跑；空列表为正确状态） |

@@ -12,6 +12,7 @@ const LIVE_SUITES = [
   "experiment-queue",
   "project-lineage",
   "project-cost-forecast",
+  "workspace-snapshots",
 ];
 
 /** 匹配 `live-<suite>.spec.ts`（仅文件名，不含目录）。 */

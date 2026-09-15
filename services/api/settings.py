@@ -53,6 +53,7 @@ class ApiSettings:
         allow_localhost_endpoints: bool = False,
         database_url: str | None = None,
         artifact_blob_dir: str | None = None,
+        workspace_snapshot_root: str | None = None,
         otel: OtelSettings | None = None,
     ) -> None:
         if not db_path:
@@ -68,6 +69,11 @@ class ApiSettings:
         self.artifact_blob_dir = artifact_blob_dir
         if artifact_blob_dir is not None and not artifact_blob_dir.strip():
             raise ValueError("artifact_blob_dir must not be empty string")
+        # PLAN-058: workspace 快照根（含 `<root>/.snapshots/<digest hex>/` 的目录）。
+        # None → 控制面不提供快照枚举面（诚实 503），不猜默认路径。
+        self.workspace_snapshot_root = workspace_snapshot_root
+        if workspace_snapshot_root is not None and not workspace_snapshot_root.strip():
+            raise ValueError("workspace_snapshot_root must not be empty string")
         # M15: telemetry（默认 off；配置错误在装配时回退 Null，不阻断启动）
         self.otel = otel if otel is not None else OtelSettings()
 
@@ -115,5 +121,6 @@ class ApiSettings:
             ),
             database_url=database_url,
             artifact_blob_dir=os.environ.get("RESEARCHOS_ARTIFACT_BLOB_DIR") or None,
+            workspace_snapshot_root=os.environ.get("RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT") or None,
             otel=OtelSettings.from_env(),
         )

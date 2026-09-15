@@ -4,8 +4,10 @@ from adapters.workspace.file_backend import (
     FileWorkspaceBackend,
     workspace_tree_digest,
 )
+from adapters.workspace.snapshot_reader import FileSnapshotReader
 
 __all__ = [
+    "FileSnapshotReader",
     "FileWorkspaceBackend",
     "workspace_tree_digest",
 ]

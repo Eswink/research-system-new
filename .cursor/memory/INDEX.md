@@ -31,6 +31,7 @@
 | [MEM-20260915-031](entries/MEM-20260915-031-partition-injector-must-heal.md) | ACTIVE | repository | 0.90 | 2027-09-15 | PLAN-20260915-054 |
 | [MEM-20260915-032](entries/MEM-20260915-032-project-lineage-merge-and-honest-unlinked-resources.md) | ACTIVE | repository | 0.90 | 2027-09-15 | PLAN-20260915-055 |
 | [MEM-20260915-033](entries/MEM-20260915-033-series-projection-valued-days-only.md) | ACTIVE | repository | 0.90 | 2027-09-15 | PLAN-20260915-057 |
+| [MEM-20260915-034](entries/MEM-20260915-034-digest-addressed-snapshot-read-surface.md) | ACTIVE | repository | 0.90 | 2027-09-15 | PLAN-20260915-058 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

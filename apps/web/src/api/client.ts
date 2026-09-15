@@ -27,6 +27,7 @@ import { protocolClient, type ProtocolSource } from "./protocolClient";
 import { runClient } from "./runClient";
 import { teamClient } from "./teamClient";
 import { toolProvidersClient } from "./toolProvidersClient";
+import { workspaceSnapshotClient } from "./workspaceSnapshotClient";
 import type {
   AgentCreateDto,
   AgentSpecDto,
@@ -177,6 +178,13 @@ export const api = {
   artifactContentUrl: (artifactId: string) => artifactClient.contentUrl(artifactId),
   artifactPreviewText: (artifactId: string) => artifactClient.contentText(artifactId),
   artifactDiff: (leftId: string, rightId: string) => artifactClient.diff(leftId, rightId),
+
+  // ── 工作区快照（PLAN-058 只读）──
+  workspaceSnapshotCapability: () => workspaceSnapshotClient.capability(),
+  runWorkspaceSnapshots: (runId: string) => workspaceSnapshotClient.forRun(runId),
+  workspaceSnapshotFiles: (digest: string) => workspaceSnapshotClient.files(digest),
+  workspaceSnapshotDiff: (left: string, right: string) =>
+    workspaceSnapshotClient.diff(left, right),
 
   // ── experiments（WP-E + G14 队列）──
   projectExperiments: () => experimentClient.listForProject(),

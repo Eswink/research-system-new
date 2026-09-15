@@ -38,6 +38,7 @@ from adapters.sqlite.project_store import SqliteProjectStore
 from adapters.sqlite.run_store import SqliteRunStore
 from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
+from adapters.workspace.snapshot_reader import FileSnapshotReader
 from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
 from packages.application.ports import (
     AgentStore,
@@ -62,6 +63,7 @@ from packages.application.ports.resource_catalog import PreflightContext
 from packages.application.ports.run_projection import RunProjection
 from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
 from packages.application.ports.worker_registry import WorkerRegistry
+from packages.application.ports.workspace_snapshot import WorkspaceSnapshotReader
 from packages.application.run_orchestration.context import RunContext
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
@@ -135,6 +137,9 @@ class ApiDeps:
     # 不得假装存在默认策略）。
     policy: PolicyDefinition | None = field(default=None, repr=False)
     policy_evaluator: PolicyEvaluator | None = field(default=None, repr=False)
+    # PLAN-058：工作区快照只读读取器（仅 `RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT`
+    # 显式配置时构建；None → 快照端点诚实 503，不猜默认路径、不冒充空树）。
+    workspace_snapshots: WorkspaceSnapshotReader | None = field(default=None, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)
@@ -353,4 +358,12 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
         deps = _assemble_sqlite(effective, connection, endpoint_store, model_store, telemetry)
     deps.pricing = _load_pricing()
     deps.exporter_config_digest = exporter_config_digest(effective)
+    deps.workspace_snapshots = _build_snapshot_reader(effective)
     return deps
+
+
+def _build_snapshot_reader(effective: ApiSettings) -> WorkspaceSnapshotReader | None:
+    """快照读取器：仅显式配置根目录时构建（未配置 → None → 端点诚实 503）。"""
+    if not effective.workspace_snapshot_root:
+        return None
+    return FileSnapshotReader(effective.workspace_snapshot_root)

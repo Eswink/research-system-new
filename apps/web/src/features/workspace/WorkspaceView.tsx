@@ -10,6 +10,7 @@ import { useI18n } from "../../i18n/useI18n";
 import { ExperimentMetadata } from "../experiments/ExperimentMetadata";
 import { ArtifactBrowser } from "./ArtifactBrowser";
 import { ArtifactDiffPanel } from "./ArtifactDiffPanel";
+import { WorkspaceSnapshotPanel } from "./WorkspaceSnapshotPanel";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
@@ -28,10 +29,11 @@ export function WorkspaceView(props: RunSelectionProps = {}) {
         kicker="RUN / WORKSPACE"
         description={
           zh
-            ? "已持久化的实验、制品引用与环境指纹；不伪造文件内容或 Diff。"
+            ? "已持久化的实验、制品引用与环境指纹；工作区快照按 digest 只读（文件树 + 文件级 Diff），不伪造文件内容。"
             : [
                 "Persisted experiments, artifact references and environment fingerprints; ",
-                "no invented files or diffs.",
+                "workspace snapshots are read-only by digest (file tree + file-level diff) ",
+                "— no invented files or content.",
               ].join("")
         }
         actions={
@@ -53,6 +55,7 @@ export function WorkspaceView(props: RunSelectionProps = {}) {
         )}
       </ResourceBoundary>
       {runId !== "" && <WorkspaceArtifacts runId={runId} zh={zh} />}
+      {runId !== "" && <WorkspaceSnapshotPanel runId={runId} zh={zh} />}
     </section>
   );
 }
