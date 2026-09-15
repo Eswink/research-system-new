@@ -89,8 +89,10 @@ export const GAPS = {
     "进程内 scheduler 配置事实已接入（GET /ops/schedules）；" +
     "无用户可见创建/启停/触发 API",
   integrations:
-    "Tool Provider 目录已接入（GET /tool-providers + 三态健康）；" +
-    "install/approve/revoke 属供应链治理面（G15），不提供",
+    "Tool Provider 目录与注册治理已接入（GET /tool-providers 目录 + 三态健康；" +
+    "GET/POST /tool-provider-registrations、PATCH、approve/revoke/health-check）；" +
+    "注册须 pin（sha256:<hex>），PENDING 不进目录、APPROVE 后进目录、REVOKE 为终态；" +
+    "缺：provider 凭据绑定与工具包安装（ToolPack）仍无写面，健康探测不含 schema 漂移比对",
   dataHealth:
     "既有状态的可观测指标已接入（GET /projects/{id}/ops/data-health：端点健康计数/" +
     "dataset 计数/artifact 抽样校验）；无聚合质量报告 API",
@@ -164,7 +166,6 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "ops/integrations": {
     level: "partial",
     reason: GAPS.integrations,
-    disabledOperations: ["install", "approve", "revoke"],
   },
   "ops/data-health": {
     level: "partial",

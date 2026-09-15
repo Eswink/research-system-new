@@ -4,7 +4,7 @@ slug: gap-registry-completion
 title: 诚实缺口注册表收口：G9/G12/G8/G7/G15/G2 六项从「诚实禁用」转为「有真实消费者」
 status: ACTIVE
 created_at: 2026-09-15
-updated_at: 2026-09-15
+updated_at: 2026-09-16
 owners:
   - root-agent
 authorization:
@@ -48,7 +48,7 @@ exit_criteria:
       G15 tool-provider 管理写面：注册/更新/健康复核（当前只读投影 → 有真实写面与消费者）
     verify: >-
       OpenAPI 快照写方法存在；ops/integrations 的 disabledOperations 相应项消失；API + live e2e 绿
-    status: PENDING
+    status: PASS
   - id: EC-06
     criterion: >-
       G2 项目删除/归档 + 治理收口：项目归档/删除语义落地（被引用返回 409，不静默级联）；
@@ -82,13 +82,15 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-057-project-scope-cost-forecast.md
   - .cursor/plans/tasks/PLAN-20260915-058-workspace-snapshot-tree-and-file-diff.md
   - .cursor/plans/tasks/PLAN-20260915-059-ops-write-surface-rules-and-incidents.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-059-ops-write-surface-rules-and-incidents.md
+  - .cursor/plans/tasks/PLAN-20260915-060-tool-provider-registration-and-governance-write-surface.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-060-tool-provider-registration-and-governance-write-surface.md
 memory_entries:
   - MEM-20260915-031-partition-injector-must-heal
   - MEM-20260915-032-project-lineage-merge-and-honest-unlinked-resources
   - MEM-20260915-033-series-projection-valued-days-only
   - MEM-20260915-034-digest-addressed-snapshot-read-surface
   - MEM-20260915-035-write-surface-must-be-consumed-by-read-surface
+  - MEM-20260915-036-registration-state-derives-trust
 ---
 
 # GOAL-20260915-002 — 诚实缺口注册表收口（自迭代循环）
@@ -106,7 +108,7 @@ memory_entries:
 | EC-02 | G12 跨 run 时序成本预测 | OpenAPI + API/live e2e + 计量口径 | PASS（2026-09-15 cycle 3；范围注记：外推只吃**已计价的天**（`MEAN_OF_VALUED_DAYS`），排除项逐日给原因、跨币种不给金额；无趋势/置信区间，见 RECHECK-057 W-1/W-2） |
 | EC-03 | G8 workspace 文件树 + 文件级 diff（或 Accepted ADR 收敛） | OpenAPI/ADR + live e2e | PASS（2026-09-15 cycle 4；范围注记：按 digest 只读、需配置 `RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT`；无 run→工作区绑定记录面 ⇒ run 面只回答"记录过哪些快照"，见 RECHECK-058 W-1/W-2） |
 | EC-04 | G7 ops 写面（告警规则 CRUD + incident 处置） | OpenAPI 写方法 + pageSupport 收敛 | PASS（2026-09-16 cycle 5；范围注记：静音只打 `muted/muted_by` 标记**不隐藏**告警、候选不会自动变事故、已关闭再处置 409；`assignee` 无成员校验，见 RECHECK-059 W-2/W-3） |
-| EC-05 | G15 tool-provider 管理写面 | OpenAPI 写方法 + pageSupport 收敛 | PENDING |
+| EC-05 | G15 tool-provider 管理写面 | OpenAPI 写方法 + pageSupport 收敛 | PASS（2026-09-16 cycle 6；范围注记：信任级别由注册状态推导（PENDING→UNTRUSTED/ACTIVE→USER_APPROVED），注册方不能声明 BUILT_IN/VERIFIED；pin 必须是 `sha256:<hex>` 且作为 `tool_pack_digests` 被 preflight 消费；REVOKED 为终态（再处置 409）；capabilities 取值域与 digest 真实性未校验、健康复核无 schema 漂移比对，见 RECHECK-060 W-2/W-3/W-4） |
 | EC-06 | G2 项目归档/删除 + 每 cycle 门禁/CI 全绿 + 收口复检 | DELETE/PATCH + 409 用例 + CI run + RECHECK | PENDING |
 
 **不变量（沿用 GOAL-001 与 AGENTS.md）**：不伪装实现（不注册没人消费的 scheduler/规则、
@@ -116,12 +118,12 @@ memory_entries:
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 5 已闭环（PLAN-20260915-059：
-G7 ops 写面——告警静音规则 CRUD + 事故 declare/assign/close，
-`OpsStore`（域状态机 + SQLite 两表）落地并被读面消费，EC-04 = PASS；
-RECHECK-059 = PASS_WITH_WARNINGS）**。
-下一个动作 = ① derive：取 EC-05（G15 tool-provider 管理写面：注册/更新/健康复核），
-子 PLAN 编号续全局序列（下一号 = **PLAN-20260915-060**）。
+按 README 的 7 步判定执行；当前续点：**cycle 6 已闭环（PLAN-20260915-060：
+G15 tool-provider 注册治理写面——注册 PENDING → 批准 ACTIVE → 吊销 REVOKED 终态 +
+健康复核，`ProviderRegistration` 域状态机 + SQLite 注册表 + 目录合并消费，EC-05 = PASS；
+RECHECK-060 = PASS_WITH_WARNINGS）**。
+下一个动作 = ① derive：取 EC-06（G2 项目归档/删除语义 + 每 cycle 门禁/CI 全绿 + GOAL 收口复检），
+子 PLAN 编号续全局序列（下一号 = **PLAN-20260915-061**）。
 driver=session-goal，owner=root-agent。
 
 ## 驱动
@@ -166,6 +168,7 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 | 3 | PLAN-20260915-057（EC-02：G12 项目级成本预测） | 见本 cycle 提交 | 纯函数 7 passed + API 7 passed（项目隔离/unattributed/幽灵项目/422/503）；契约 **355 passed / 56 skipped**；stub e2e **41 passed**、live e2e **21 passed**；根 eslint 0 error + web lint/typecheck 通过 + 单测 76 passed；设计基线 `insights-cost-analytics` / `govern-budget` × win32/linux 重生成并目检；本地 m0 **首跑红**（命名门禁：`liveSpecs.ts` 违反测试文件 kebab-case + Playwright 生成目录 `test-results/<中文用例标题>/` 被判非法路径）→ 修复后 **23/23**；RECHECK-057 = PASS_WITH_WARNINGS | run **34978272057**（d350e8e）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | ① 命名门禁同时抓出**新文件命名**与**生成产物误判**两类问题 ⇒ 前者改名 `live-specs.ts`，后者把 gitignored 的 `test-results` 加入 `IGNORED_DIRECTORIES` 并补回归用例；② `live-*.spec.ts` 清单原在两份 playwright 配置里各写一遍，漏同步会让 stub 套件去连真实后端 ⇒ 抽 `tests/e2e/live-specs.ts` 单一来源（`--list` 复核 41/11 与 21/5 未漂移）；③ 三处新工程债登记为 RECHECK-057 W-1/W-2/W-3（日均方法与窗口语义） | EC-03~06 PENDING；EC-02 已 PASS（范围注记见 EC 表） | cycle 4 = ① derive EC-03（G8 workspace 文件树 + 文件级快照 Diff，或产出 Accepted ADR 收敛标注），子 PLAN 编号 = PLAN-20260915-058 |
 | 4 | PLAN-20260915-058（EC-03：G8 工作区快照文件树 + 文件级 Diff） | 见本 cycle 提交 | 纯函数 8 passed / 读取器 12 passed / API 11 passed；契约 **383 passed / 56 skipped**；stub e2e **45 passed**、live e2e **25 passed**；根 eslint 0 error + web lint/typecheck 通过 + 单测 76 passed；`run-workspace` 设计基线 win32/linux 重生成并目检、design-fidelity 33 路由绿；本地 m0 **首跑红**（ruff：新增测试两行 101/102 字符）→ 修复后 **23/23**；RECHECK-058 = PASS_WITH_WARNINGS | run **34984686466**（05bcf04）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | ① 全量 stub 套件被严格替身守卫拦下（新面板必然调用 run 快照面）⇒ 默认路由进共享替身表 `stub-routes-workspace.ts`，不逐用例打补丁；② 控制面首次读宿主目录 ⇒ 收窄为只接受 `sha256:<64hex>` digest、只在 `<root>/.snapshots` 内解析、symlink 一律拒绝、未配置即 503；③ `ArtifactDiffDto.note` 与 `REPRODUCTION_NOTE` 里「控制面无快照 diff 面」的旧表述同步收敛（否则新能力被旧文案否认） | EC-04~06 PENDING；EC-03 已 PASS（范围注记见 EC 表） | cycle 5 = ① derive EC-04（G7 ops 写面：告警规则 CRUD + incident 处置），子 PLAN 编号 = PLAN-20260915-059 |
 | 5 | PLAN-20260915-059（EC-04：G7 ops 写面） | 见本 cycle 提交 | 控制面 10 passed + 读面口径 5 passed、全量 API **336 passed**；契约 3 passed（路径 + 写方法断言）；stub e2e **50 passed**、live e2e **28 passed**（含 3 条真实 HTTP 写链）；根 eslint 0 error + web `tsc --noEmit` 通过 + 单测 76 passed；`ops-alerts` / `ops-incidents` 设计基线 win32+linux 重生成并目检；本地 m0 **连续红了 4 次**（格式 / 50 行函数 / 循环依赖 / 命名，逐条修复）→ **23/23**；RECHECK-059 = PASS_WITH_WARNINGS | run **35002027768**（8148df4）：**六个 job 全 success**（quality-ubuntu-latest 17:43:08Z / quality-windows-latest 17:45:36Z / console-frontend / container-quality / eval-gate / collector-quality，无重跑） | ① 写面必须**被读面消费**：规则只打 `muted/muted_by` 标记不隐藏告警、登记事故回链来源 run 的告警、已登记 run 从候选移出；② 本地 m0 连红 **4 次**（格式 → 50 行函数 → 模块循环依赖 → 文件命名），逐条修复后才绿，全部如实记录；③ 本轮量化了**设计门禁的容差盲区**：整块新增面板后旧基线只差 **1.02% / 0.93%**（阈值 2%）⇒ 门禁不会报警，必须主动删基线强制重生成 + 目检（脚本 `scratch/cycle5-baseline-drift/measure.py`）；早期用"任一通道像素差 ≠ 0"得到的 ~40% 是误导性指标 | EC-05~06 PENDING；EC-04 已 PASS（范围注记见 EC 表） | cycle 6 = ① derive EC-05（G15 tool-provider 管理写面：注册/更新/健康复核），子 PLAN 编号 = PLAN-20260915-060 |
+| 6 | PLAN-20260915-060（EC-05：G15 tool-provider 注册治理写面） | 见本 cycle 提交 | 控制面 **18 passed**（状态机/409/422/404/503 + 三态 preflight 消费证明 + 健康同源）、全量 API **354 passed**；契约 **358 passed / 56 skipped**（+648 行 OpenAPI 快照）；stub e2e **55 passed / 14 files**、live e2e **30 passed / 8 files**（含 2 条真实 HTTP 注册链）；根 eslint 0 error + web `tsc --noEmit` 通过 + 单测 76 passed；`ops-integrations` 基线 win32+linux 重生成并目检；本地 m0 **红了 3 次**（行宽 / 格式 / 类型，逐条修复）→ **23/23**；RECHECK-060 = PASS_WITH_WARNINGS | push 后记录（见下方"状态历史"末条：run 号与六 job 结论在 CI 完成后补记，未验证前不留空口 PENDING 数字） | ① 消费证明必须由**同一输入在不同状态下结论不同**给出：`dataset.read`（examples 三 provider 都不声明）在 PENDING → `TOOL_UNAVAILABLE`、ACTIVE → 消失且无 `SUPPLY_CHAIN_UNPINNED`（pin 来自注册）、REVOKED → 回归；② 供应链写面的三条硬门：信任级别由状态推导（DTO 无该字段）、pin 必须 `sha256:<hex>`、内置 id 不影子覆盖；③ 健康复核与读面共用 `probe_provider_spec()`，杜绝"复核说健康、目录说不可证明"；④ 顺带清两处跨 feature 重复（`useOpsAction`→`hooks/useAsyncAction`、`OpsFields`→`components/InlineFields`）；⑤ 复现门禁容差盲区：0.79% / 0.66% ⇒ 不报警 | EC-06 PENDING；EC-05 已 PASS（范围注记见 EC 表） | cycle 7 = ① derive EC-06（G2 项目归档/删除语义 + `DELETE/PATCH /projects/{id}` + 409 用例 + 每 cycle 门禁/CI 全绿 + GOAL 收口复检），子 PLAN 编号 = PLAN-20260915-061 |
 
 ## 状态历史
 
@@ -289,3 +292,41 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
   `verdictEffect: none`）对账后**本轮改动文件命中 0 条**；3 条 high 仍是既有两条路径穿越
   （`artifacts/钻孔官方API_v12/`）与 `protocol_authoring/service.py` 的已知误报
   （`yaml.load(_StrictLoader)`，与 `yaml.safe_load` 同安全级）。**不主张项目整体安全**。
+- 2026-09-16 cycle 6（EC-05 = G15 tool-provider 注册治理写面，**PASS**）：把 `ops/integrations`
+  的"install/approve/revoke 属供应链治理面，不提供"做成真实写面——域
+  `packages/domain/tool_registry.py`（`ProviderRegistration`：PENDING → ACTIVE → REVOKED，
+  REVOKED 终态）、Port `ToolProviderRegistry`、适配器
+  `adapters/sqlite/tool_provider_registry.py`（`tool_provider_registrations` 单表）、
+  6 端点（`GET/POST /tool-provider-registrations`、`PATCH /{id}`、`/{id}/approve`、
+  `/{id}/revoke`、`/{id}/health-check`）。
+  **三条硬门**是本轮的口径：① 信任级别由注册状态推导（PENDING→UNTRUSTED、ACTIVE→USER_APPROVED、
+  REVOKED→REVOKED），请求 DTO 里没有该字段，注册方无法自我声明 BUILT_IN/VERIFIED；
+  ② pin 必须是内容寻址 digest（`sha256:<64hex>`），可漂移的 tag/分支名 422
+  （AGENTS.md §9「默认 deny：unpinned plugin」），且该 pin 作为 `tool_pack_digests[provider_id]`
+  合入目录 ⇒ `preflight._is_pinned_digest` 通过 = "用户 pin 的那份就是 preflight 看到的那份"；
+  ③ 内置目录已占用的 id 拒绝注册（不影子覆盖平台自己的 provider），重复登记 409 且不改写既有行。
+  **消费证明**用"同一份输入在不同状态下结论不同"给出：`dataset.read` 是 examples 三个 provider
+  都不声明的能力，对同一份草稿协议跑 `POST /projects/{id}/preflight`——未注册/PENDING →
+  `TOOL_UNAVAILABLE`；ACTIVE → 该 finding 消失、`SUPPLY_CHAIN_UNPINNED` 不出现、
+  `TOOL_HEALTH_UNPROVEN` 出现（警示不阻断）；REVOKED → `TOOL_UNAVAILABLE` 回归。
+  健康复核与读面共用 `preflight_support.probe_provider_spec()`（一条探测路径，不做两套真相）：
+  注入 Fake ToolProvider 后 health-check 写入 HEALTHY/OPEN_CIRCUIT 与 `GET /tool-providers`
+  完全一致，无实例时 UNKNOWN + 原因。前端新增 `RegistryPanel`（登记/批准/吊销/健康复核、
+  "是否已进入目录"列、终态行不再有处置动作），`pageSupport` 的
+  `disabledOperations: ["install","approve","revoke"]` 删除、`GAPS.integrations` 改写为收敛后口径；
+  `GET /tool-providers` 的 `management_available` 由恒 false 变为"注册表是否装配"（连带
+  `live-api-workflow.spec.ts` 与 API 用例的旧断言同步改写，不是删断言）。验证：控制面
+  **18 passed**、全量 API **354 passed**、契约 **358 passed / 56 skipped**（OpenAPI +648 行）、
+  stub e2e **55 passed**、live e2e **30 passed**（含 2 条真实 HTTP 注册链）、根 eslint 0 error、
+  web 单测 76 passed、`ops-integrations` 基线 win32+linux 重生成并目检；本地 m0 **红了 3 次**
+  （`python/product-lint` 行宽 104 → `python/format-check` 未格式化 → `python/typecheck` 与
+  `typescript/typecheck` 的 Any/可空返回），逐条修复后 **23/23**，全部如实记录。
+  本轮复现了 cycle 5 的门禁容差盲区：新增整块注册面板后旧基线按 Playwright 判据只差
+  **0.79%（win32）/ 0.66%（linux）**，低于 `maxDiffPixelRatio: 0.02` ⇒ 门禁不会报警；
+  量化脚本 `scratch/cycle6-baseline-drift/measure.py`（从 `git show HEAD:` 取旧基线，
+  不往仓库堆 PNG）。顺带清两处跨 feature 重复：`useOpsAction` → `hooks/useAsyncAction`、
+  `OpsFields` → `components/InlineFields`（否则会复制第二份），ops-view 三处调用点同步。
+  另修正一处文档漂移：`docs/api/CONTROL_PLANE_API.md` 的 Ops 段仍写着"只读/no workflow"，
+  本轮补齐 cycle 5 的 7 条写面。RECHECK-060 = PASS_WITH_WARNINGS（W-1 门禁容差盲区复现；
+  W-2 capabilities 取值域不是授权边界；W-3 pin 只校验形态；W-4 健康复核无 schema 漂移比对；
+  W-5 跨 feature 重构需随计划登记）。CI run 与 Mimosa 扫描结论在 push 后补记（未验证前不预填）。

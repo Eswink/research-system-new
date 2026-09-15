@@ -12,7 +12,7 @@ import type { Column } from "../../components/Table";
 import { DeclareCandidateButton, IncidentActions } from "./IncidentActions";
 import { EnabledChip } from "./EnabledChip";
 import styles from "./OpsActions.module.css";
-import { useOpsAction } from "./useOpsAction";
+import { useAsyncAction } from "../../hooks/useAsyncAction";
 
 /** ops 投影各页表格列（拆分以守 50 行函数限制）。 */
 
@@ -95,7 +95,7 @@ function RuleRowActions({
   zh: boolean;
   onDone: () => void;
 }) {
-  const action = useOpsAction(onDone);
+  const action = useAsyncAction(onDone);
   return (
     <span className={styles.row} data-testid="alert-rule-actions">
       <button

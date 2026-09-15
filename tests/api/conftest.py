@@ -98,6 +98,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
+    from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
 
     connection = connect(":memory:")
     events, workflow, ledger, budget, runs, projection = _base_sqlite_parts(connection)
@@ -119,6 +120,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         project_store=SqliteProjectStore(connection=connection),
         library_store=SqliteLibraryStore(connection=connection),
         ops_store=SqliteOpsStore(connection=connection),
+        tool_provider_registry=SqliteToolProviderRegistry(connection=connection),
         protocol_draft_service=_make_draft_service(connection),
         _connection=connection,
     )

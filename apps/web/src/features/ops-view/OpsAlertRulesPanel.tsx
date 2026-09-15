@@ -8,9 +8,9 @@ import { EmptyState, ErrorState, UnavailableState } from "../../components/State
 import { Table } from "../../components/Table";
 import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
-import { OpsSelect, OpsTextInput } from "./OpsFields";
+import { InlineSelect, InlineTextInput } from "../../components/InlineFields";
 import { ruleColumns } from "./opsViewColumns";
-import { useOpsAction } from "./useOpsAction";
+import { useAsyncAction } from "../../hooks/useAsyncAction";
 
 const KINDS = ["RUN_FAILED", "ENDPOINT_DEGRADED", "WORKER_OFFLINE"] as const;
 const SEVERITIES = ["CRITICAL", "WARNING", "INFO"] as const;
@@ -92,7 +92,7 @@ function RuleCreateForm({ zh, onCreated }: { zh: boolean; onCreated: () => void 
   const [name, setName] = useState("");
   const [kind, setKind] = useState("");
   const [severity, setSeverity] = useState("");
-  const action = useOpsAction(onCreated);
+  const action = useAsyncAction(onCreated);
   const submit = (): void => {
     const trimmed = name.trim();
     if (trimmed === "") return;
@@ -114,18 +114,18 @@ function RuleCreateForm({ zh, onCreated }: { zh: boolean; onCreated: () => void 
         submit();
       }}
     >
-      <OpsTextInput
+      <InlineTextInput
         value={name}
         onChange={setName}
         placeholder={zh ? "规则名" : "Rule name"}
       />
-      <OpsSelect
+      <InlineSelect
         value={kind}
         onChange={setKind}
         options={KINDS}
         placeholder={zh ? "全部来源" : "All kinds"}
       />
-      <OpsSelect
+      <InlineSelect
         value={severity}
         onChange={setSeverity}
         options={SEVERITIES}

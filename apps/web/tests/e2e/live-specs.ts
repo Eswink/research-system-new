@@ -14,6 +14,7 @@ const LIVE_SUITES = [
   "project-cost-forecast",
   "workspace-snapshots",
   "ops-write",
+  "registry-write",
 ];
 
 /** 匹配 `live-<suite>.spec.ts`（仅文件名，不含目录）。 */

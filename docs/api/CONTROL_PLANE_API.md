@@ -59,19 +59,35 @@ PATCH  /library/{resource_id}                    （rename 和/或 status: ACTIV
   SQLite），不新增 PG 表。datasets 的评测输入仍由 eval spec 承载，不与之耦合。
   未注册项目写入 → 404；store 未配置 → 503。
 
-## Ops（只读运维投影，PLAN-20260914-045 WP-B）
+## Ops
+
+读面（PLAN-20260914-045 WP-B，只读运维投影）：
 
 ```text
 GET    /projects/{id}/ops/alerts                  （派生：失败 Run ∪ 非健康端点 ∪ 离线 worker）
-GET    /projects/{id}/ops/incidents               （FAILED run 候选；无处置工作流）
+GET    /projects/{id}/ops/incidents               （已登记事故 + FAILED run 候选）
 GET    /ops/schedules                             （进程内 scheduler 配置事实）
 GET    /projects/{id}/ops/data-health             （端点健康计数 + dataset 计数 + artifact 抽样校验）
 ```
 
-- 四个端点全部**只读派生**，无持久化、无副作用；缺失依赖（worker_registry/
+写面（PLAN-20260915-059，G7）：
+
+```text
+GET    /projects/{id}/ops/alert-rules             （项目内静音规则；store 未配置 → rules_available=false + 原因）
+POST   /projects/{id}/ops/alert-rules             （新建规则；kind/max_severity 为空 = 不限来源/级别）
+PATCH  /ops/alert-rules/{id}                      （改名/启停/改范围；clear_kind / clear_max_severity 显式清空）
+DELETE /ops/alert-rules/{id}                      （删除规则；读面即时反映）
+POST   /projects/{id}/ops/incidents               （显式登记事故，可关联来源 run）
+POST   /ops/incidents/{id}/assign                 （指派处理人；已关闭 → 409）
+POST   /ops/incidents/{id}/close                  （关闭并留处理结论；已关闭 → 409）
+```
+
+- 读面全部**只读派生**，无持久化、无副作用；缺失依赖（worker_registry/
   artifacts=None）时该项诚实缺省。能力缺口随响应回传：alerts 的 rules_available、
   incidents 的 workflow_available、schedules 的 management_available、
   data-health 的 aggregate_available 均为 false + 原因说明。未注册项目 → 404。
+- 写面是**被消费**的：规则命中只给告警打 `muted`/`muted_by` 标记（不隐藏），
+  已登记事故回链来源 run 的告警并在候选列表中去重，关闭后不再有处置动作。
 
 ## Roles / Teams / Agents
 
@@ -225,14 +241,25 @@ freeze）；执行循环在该 phase 前注册 ApprovalRecord 并 emit
 ## Tools
 
 ```text
-GET    /tool-providers                     （PLAN-043：目录只读投影 + 三态健康）
-POST   /tool-providers                     （未提供：Tool Provider 管理面）
-POST   /tool-providers/{id}/test           （未提供）
-GET    /tool-providers/{id}/health         （未提供；目录响应内含逐 provider 健康）
-POST   /tool-packs/install                 （未提供：供应链治理，install/approve/revoke 全组）
+GET    /tool-providers                     （PLAN-043：目录只读投影 + 三态健康；只含已批准注册）
+GET    /tool-provider-registrations        （PLAN-060：全部注册；注册表未装配 → 200 + 不可用原因）
+POST   /tool-provider-registrations        （登记 PENDING；pin 必须 sha256:<hex>；id 已存在/被内置目录占用 → 409）
+PATCH  /tool-provider-registrations/{id}   （re-pin/能力等可变字段；REVOKED 终态 → 409）
+POST   /tool-provider-registrations/{id}/approve       （PENDING → ACTIVE：进入目录，preflight/compile 立即可见）
+POST   /tool-provider-registrations/{id}/revoke        （任意非终态 → REVOKED；理由必填并留痕）
+POST   /tool-provider-registrations/{id}/health-check  （写入一次健康事实；读面随后呈现同一结论）
+POST   /tool-packs/install                 （未提供：ToolPack 供应链治理，install/approve-update/revoke 全组）
 POST   /tool-packs/{id}/approve-update     （未提供）
 POST   /tool-packs/{id}/revoke             （未提供）
 ```
+
+- 信任级别由注册状态推导（PENDING→UNTRUSTED、ACTIVE→USER_APPROVED、REVOKED→
+  REVOKED），注册方不能声明 BUILT_IN/VERIFIED；pin 强制内容寻址 digest（AGENTS.md §9
+  「默认 deny：unpinned plugin」），并可漂移的 tag/分支名一律 422。
+- 批准后该 provider 与其 pin digest 合入 `tool_providers`/`tool_pack_digests`：
+  compile 的 `provider_ids`、preflight 的工具可用性与供应链 pin 检查都随之改变；
+  PENDING/REVOKED 不进入目录（未批准不可用、吊销即退出）。
+- provider 凭据绑定无写面（凭据域独立，不经控制面转发）。
 
 ## Experiments（WP-E；WP-A 起 SQLite 开发路径与 PG 双支持）
 

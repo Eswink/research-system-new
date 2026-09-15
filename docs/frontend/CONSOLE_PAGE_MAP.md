@@ -260,9 +260,14 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ### `#/ops/integrations` — 集成
 - 设计：`screens/OpsScreens.jsx` `IntegrationsScreen`。等级：PARTIAL。
 - API：`GET /tool-providers`（`ToolProviderListDto`：catalog `tool_providers`
-  只读投影 + 三态健康；NATIVE=HEALTHY、外部未注册=UNKNOWN）。
-- 缺口（登记）：install/approve/revoke 属供应链治理面（G15），不提供；不以模型
-  端点接口代替。
+  只读投影 + 三态健康；NATIVE=HEALTHY、外部未注册=UNKNOWN；目录只含 examples
+  契约 + **已批准**注册）；`GET/POST /tool-provider-registrations`、
+  `PATCH /tool-provider-registrations/{id}`、`/{id}/approve`、`/{id}/revoke`、
+  `/{id}/health-check`（G15 / PLAN-060：登记 PENDING → 批准 ACTIVE →
+  吊销 REVOKED 终态；信任级别由状态推导，注册方不能声明 BUILT_IN/VERIFIED；
+  pin 必须是 `sha256:<hex>`；批准后 preflight/compile 立即可见）。
+- 缺口（登记）：provider 凭据绑定与 ToolPack install/approve-update/revoke 仍无
+  写面；健康复核不含 schema digest 漂移比对；不以模型端点接口代替。
 
 ### `#/ops/data-health` — 数据健康
 - 设计：`screens/DataHealth.jsx`。等级：PARTIAL。
@@ -352,7 +357,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G12 | 成本日序列/预测 | insights/cost-analytics、govern/budget | **已交付**（日序列 WP-D；Run 级预留-消耗 PLAN-046；**项目级时序外推 PLAN-057** = `GET /projects/{id}/cost-forecast`，只对已计价的天取日均外推，方法/样本/排除项随响应返回，跨币种不给金额）；剩余受限 = 无按资源维度分解的预测与置信区间 |
 | G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |
 | G14 | ~~实验创建/排队/调度~~ | portfolio/experiments | **已交付**（WP-E 预注册/归档 + PLAN-052 队列/调度：`ExperimentQueueEntry` 域 + SQLite/PG 存储 + 原子认领派发器 + 五端点 + console live）；未交付面继续标注：复现执行、日历/矩阵视图 |
-| G15 | Tool Provider 管理面（install/approve/revoke） | ops/integrations | **目录已交付**（PLAN-043：GET /tool-providers 只读投影 + 三态健康）；管理动作未提供（供应链治理） |
+| G15 | ~~Tool Provider 管理面（install/approve/revoke）~~ | ops/integrations | **已交付**（PLAN-043 目录只读投影 + PLAN-060 注册治理写面：`GET/POST /tool-provider-registrations`、PATCH、approve/revoke/health-check 六端点 + SQLite 注册表 + 控制面面板；PENDING 不入目录、APPROVE 后以 USER_APPROVED 进目录并被 preflight/compile 消费、REVOKE 终态退出；pin 必须 `sha256:<hex>`）；剩余受限 = provider 凭据绑定与 ToolPack install/approve-update/revoke 仍无写面，健康复核无 schema 漂移比对 |
 | G16 | ~~Memory capability policy~~ | govern/audit Memory Tab | **已交付**（PLAN-049：memory.write 入 policy.yaml 镜像契约 + 门链 policy 阶段实时生效；GET /policy/capabilities 只读呈现逐 tier 判决；规则变更仍需改 policy.yaml） |
 
 ## 旧路由别名映射（T32 交付兼容）

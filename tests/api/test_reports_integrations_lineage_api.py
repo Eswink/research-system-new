@@ -153,8 +153,10 @@ def test_tool_providers_lists_catalog_with_health(client: TestClient) -> None:
     )
     assert external is not None
     assert external["health"] == "UNKNOWN"
-    assert payload["management_available"] is False
-    assert payload["management_reason"]
+    # PLAN-060 起治理写面在 /tool-provider-registrations，本端点随之标记可管理
+    # （目录本身仍是只读：只反映 examples 契约与已批准注册）。
+    assert payload["management_available"] is True
+    assert payload["management_reason"] is None
 
 
 def test_tool_providers_is_deterministically_sorted(client: TestClient) -> None:

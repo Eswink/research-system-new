@@ -5878,6 +5878,399 @@
         "title": "ToolProviderListDto",
         "type": "object"
       },
+      "ToolProviderRegisterDto": {
+        "additionalProperties": false,
+        "description": "注册请求：pin 必填且必须是 `sha256:<hex>`（不接受可漂移的 tag/分支名）。",
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "effect_class": {
+            "default": "READ_ONLY",
+            "title": "Effect Class",
+            "type": "string"
+          },
+          "health_check": {
+            "default": false,
+            "title": "Health Check",
+            "type": "boolean"
+          },
+          "id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "network_domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Network Domains",
+            "type": "array"
+          },
+          "pinned_revision": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Pinned Revision",
+            "type": "string"
+          },
+          "protocol_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Version"
+          },
+          "transport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "capabilities",
+          "pinned_revision"
+        ],
+        "title": "ToolProviderRegisterDto",
+        "type": "object"
+      },
+      "ToolProviderRegistrationDto": {
+        "additionalProperties": false,
+        "description": "一次注册的完整事实（含最近一次健康探测与是否已进入目录）。",
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "catalog_active": {
+            "default": false,
+            "title": "Catalog Active",
+            "type": "boolean"
+          },
+          "effect_class": {
+            "title": "Effect Class",
+            "type": "string"
+          },
+          "health_check": {
+            "default": false,
+            "title": "Health Check",
+            "type": "boolean"
+          },
+          "health_checked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Health Checked At"
+          },
+          "health_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Health Detail"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "last_health": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Health"
+          },
+          "network_domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Network Domains",
+            "type": "array"
+          },
+          "pinned_revision": {
+            "title": "Pinned Revision",
+            "type": "string"
+          },
+          "protocol_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Version"
+          },
+          "registered_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "revoked_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked Reason"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "transport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport"
+          },
+          "trust_level": {
+            "title": "Trust Level",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "state",
+          "trust_level",
+          "effect_class",
+          "pinned_revision"
+        ],
+        "title": "ToolProviderRegistrationDto",
+        "type": "object"
+      },
+      "ToolProviderRegistrationListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "management_available": {
+            "default": false,
+            "title": "Management Available",
+            "type": "boolean"
+          },
+          "management_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Management Reason"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
+          "registrations": {
+            "items": {
+              "$ref": "#/components/schemas/ToolProviderRegistrationDto"
+            },
+            "title": "Registrations",
+            "type": "array"
+          }
+        },
+        "title": "ToolProviderRegistrationListDto",
+        "type": "object"
+      },
+      "ToolProviderRevokeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "ToolProviderRevokeDto",
+        "type": "object"
+      },
+      "ToolProviderUpdateDto": {
+        "additionalProperties": false,
+        "description": "更新可变字段；`id`/`kind`/`state` 不在其中（kind 变更须新注册）。",
+        "properties": {
+          "capabilities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilities"
+          },
+          "effect_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effect Class"
+          },
+          "health_check": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Health Check"
+          },
+          "network_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Network Domains"
+          },
+          "pinned_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinned Revision"
+          },
+          "protocol_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Version"
+          },
+          "transport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport"
+          }
+        },
+        "title": "ToolProviderUpdateDto",
+        "type": "object"
+      },
       "TrendDivergenceDto": {
         "additionalProperties": false,
         "properties": {
@@ -11302,9 +11695,263 @@
         ]
       }
     },
+    "/tool-provider-registrations": {
+      "get": {
+        "description": "全部注册（含 PENDING/REVOKED）；注册表未装配 → 200 + 显式不可用原因。",
+        "operationId": "list_registrations_tool_provider_registrations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolProviderRegistrationListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Registrations",
+        "tags": [
+          "tool-providers"
+        ]
+      },
+      "post": {
+        "description": "登记 provider（初始 PENDING，需 approve 才进入目录）。",
+        "operationId": "register_provider_tool_provider_registrations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolProviderRegisterDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolProviderRegistrationDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Provider",
+        "tags": [
+          "tool-providers"
+        ]
+      }
+    },
+    "/tool-provider-registrations/{provider_id}": {
+      "patch": {
+        "description": "更新可变字段（re-pin / 能力 / 传输等）；已吊销 → 409。",
+        "operationId": "update_registration_tool_provider_registrations__provider_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "title": "Provider Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolProviderUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolProviderRegistrationDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Registration",
+        "tags": [
+          "tool-providers"
+        ]
+      }
+    },
+    "/tool-provider-registrations/{provider_id}/approve": {
+      "post": {
+        "description": "批准（PENDING → ACTIVE）：此后该 provider 进入目录，preflight 立即可见。",
+        "operationId": "approve_registration_tool_provider_registrations__provider_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "title": "Provider Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolProviderRegistrationDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Registration",
+        "tags": [
+          "tool-providers"
+        ]
+      }
+    },
+    "/tool-provider-registrations/{provider_id}/health-check": {
+      "post": {
+        "description": "复核健康并把事实写回注册（读面 `GET /tool-providers` 随后看到同一结论）。",
+        "operationId": "health_check_registration_tool_provider_registrations__provider_id__health_check_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "title": "Provider Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolProviderRegistrationDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Health Check Registration",
+        "tags": [
+          "tool-providers"
+        ]
+      }
+    },
+    "/tool-provider-registrations/{provider_id}/revoke": {
+      "post": {
+        "description": "吊销（终态）：退出目录；原因必填并留痕。",
+        "operationId": "revoke_registration_tool_provider_registrations__provider_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "title": "Provider Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolProviderRevokeDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolProviderRegistrationDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Registration",
+        "tags": [
+          "tool-providers"
+        ]
+      }
+    },
     "/tool-providers": {
       "get": {
-        "description": "Tool Provider 目录（确定性排序）+ 三态健康。\n\n只读：无 install/approve/revoke（供应链治理面），无凭据回显。",
+        "description": "Tool Provider 目录（确定性排序）+ 三态健康。\n\n只读：无 install/approve/revoke（供应链治理写面在 /tool-provider-registrations），\n无凭据回显。注册表未装配时 management_available=false 并给出原因。",
         "operationId": "list_tool_providers_tool_providers_get",
         "responses": {
           "200": {

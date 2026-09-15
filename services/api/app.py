@@ -38,6 +38,7 @@ from services.api.routers import (
     team_custom,
     team_protocol,
     tool_providers,
+    tool_registrations,
     workspace_snapshots,
 )
 from services.api.scheduler import (
@@ -237,6 +238,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(memory.router)
     app.include_router(notifications.router)
     app.include_router(tool_providers.router)
+    app.include_router(tool_registrations.router)
     app.include_router(deliverable.router)
     app.include_router(lineage.router)
     app.include_router(library.router)

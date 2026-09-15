@@ -106,6 +106,22 @@ def test_openapi_contains_ops_write_methods() -> None:
         assert methods <= set(paths[path]), (path, sorted(paths[path]))
 
 
+def test_openapi_contains_tool_registration_write_methods() -> None:
+    """EC-05 验证项：供应链治理面必须有真实写路径与写方法（只读目录不算交付）。"""
+    schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))
+    paths = schema["paths"]
+    expected = {
+        "/tool-provider-registrations": {"get", "post"},
+        "/tool-provider-registrations/{provider_id}": {"patch"},
+        "/tool-provider-registrations/{provider_id}/approve": {"post"},
+        "/tool-provider-registrations/{provider_id}/revoke": {"post"},
+        "/tool-provider-registrations/{provider_id}/health-check": {"post"},
+    }
+    for path, methods in expected.items():
+        assert path in paths, path
+        assert methods <= set(paths[path]), (path, sorted(paths[path]))
+
+
 def test_openapi_contains_projects_and_governance_paths() -> None:
     """其余治理面路径（与上面分函数以守 50 行/函数上限）。"""
     schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))

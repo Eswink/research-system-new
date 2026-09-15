@@ -19,6 +19,7 @@ from typing import Protocol, TypeVar
 
 from adapters.contracts.roles_loaders import role_from_mapping, team_template_from_mapping
 from packages.application.ports import CatalogSnapshot, ProjectSettings
+from packages.domain.tools import ToolProviderSpec
 from services.api.catalog import load_catalog_snapshot, load_project_settings
 from services.api.composition import ApiDeps
 from services.api.custom_catalog import KIND_ROLES, KIND_TEAM_TEMPLATES
@@ -60,6 +61,9 @@ def merged_catalog_snapshot(deps: ApiDeps) -> CatalogSnapshot:
     按名称覆盖（控制面单一 relay 语义——example 协议内模型绑定经该 id
     解析到用户 relay，使向导配置真实进入 preflight/run 链）。
     WP-B：Role/TeamTemplate 经 CatalogOverrideStore 用户覆盖（同 id 语义）。
+    WP-D/PLAN-060：ACTIVE 的 provider 注册进入 tool_providers，并把它 pin 的
+    digest 写进 tool_pack_digests —— preflight 的供应链检查因此看到的是
+    "用户实际 pin 的那份"，PENDING/REVOKED 一律不进入（未批准/已吊销不可用）。
     """
     base = load_catalog_snapshot()
     endpoints = dict(base.endpoints)
@@ -81,6 +85,7 @@ def merged_catalog_snapshot(deps: ApiDeps) -> CatalogSnapshot:
         team_templates = _merge_overrides(
             team_templates, deps.catalog_overrides, KIND_TEAM_TEMPLATES, team_template_from_mapping
         )
+    tool_providers, tool_pack_digests = _merge_registered_providers(deps, base)
     return replace(
         base,
         endpoints=endpoints,
@@ -88,7 +93,35 @@ def merged_catalog_snapshot(deps: ApiDeps) -> CatalogSnapshot:
         agents=agents,
         roles=roles,
         team_templates=team_templates,
+        tool_providers=tool_providers,
+        tool_pack_digests=tool_pack_digests,
     )
+
+
+def _merge_registered_providers(
+    deps: ApiDeps, base: CatalogSnapshot
+) -> tuple[dict[str, ToolProviderSpec], dict[str, str]]:
+    """ACTIVE 注册 → 目录 providers + 该 provider 的 pinned digest。
+
+    只合并 ACTIVE：PENDING 是"已提交待批准"，REVOKED 是终态退出；两者进入
+    目录都会让 preflight 看到本不该可用的来源。行读取失败按坏行跳过（不阻断
+    整个目录面），与 `_merge_overrides` 同一降级哲学。
+    """
+    providers = dict(base.tool_providers)
+    digests = dict(base.tool_pack_digests)
+    registry = deps.tool_provider_registry
+    if registry is None:
+        return providers, digests
+    for registration in registry.list_registrations():
+        if not registration.active:
+            continue
+        try:
+            spec = registration.spec()
+        except Exception:  # noqa: BLE001 - 坏行跳过，不伪造
+            continue
+        providers[spec.id] = spec
+        digests[spec.id] = registration.pinned_revision
+    return providers, digests
 
 
 DEFAULT_PROJECT_ID = "example-project"

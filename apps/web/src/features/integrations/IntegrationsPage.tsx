@@ -6,10 +6,11 @@ import { Table } from "../../components/Table";
 import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { providerColumns } from "./providerColumns";
+import { RegistryPanel } from "./RegistryPanel";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 
-/** 集成（EC-02）：Tool Provider 目录只读投影 + 三态健康；管理动作保持 G15 锁定。 */
+/** 集成（EC-02 目录 + PLAN-060 治理写面）：provider 目录 + 注册/批准/吊销。 */
 export function IntegrationsPage() {
   const { language } = useI18n();
   const zh = language === "zh";
@@ -44,6 +45,7 @@ export function IntegrationsPage() {
           </>
         )}
       </ResourceBoundary>
+      <RegistryPanel onChanged={providers.reload} />
     </section>
   );
 }
@@ -51,13 +53,13 @@ export function IntegrationsPage() {
 function integrationsDescription(zh: boolean): string {
   if (zh) {
     return [
-      "Tool Provider 目录（Skill→Capability→ToolResolver 的来源配置）+ 三态健康。",
-      "安装/批准/吊销属供应链治理面，不提供。",
+      "目录是已批准的来源（examples 契约 + APPROVED 注册），PENDING/REVOKED 不在这里。",
+      "注册需 pin：sha256 内容寻址 digest；批准后 preflight/compile 立即可见。",
     ].join("");
   }
   return [
-    "Tool Provider catalog (source config for Skill→Capability→ToolResolver) ",
-    "with tri-state health. Install/approve/revoke is supply-chain governance, ",
-    "not offered here.",
+    "The catalog lists approved sources only (examples contracts + APPROVED registrations); ",
+    "PENDING/REVOKED never appear here. Registration requires a sha256 pin, and approval ",
+    "makes it immediately visible to preflight/compile.",
   ].join("");
 }

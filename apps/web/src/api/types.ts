@@ -665,6 +665,59 @@ export interface ToolProviderListDto {
   management_reason: string | null;
 }
 
+/** 注册请求（G15 / PLAN-060）：pinned_revision 必须是 sha256:<hex> 内容寻址 pin。 */
+export interface ToolProviderRegisterDto {
+  id: string;
+  kind: string;
+  capabilities: string[];
+  pinned_revision: string;
+  effect_class?: string;
+  transport?: string | null;
+  protocol_version?: string | null;
+  network_domains?: string[];
+  health_check?: boolean;
+}
+
+export interface ToolProviderUpdateDto {
+  capabilities?: string[];
+  pinned_revision?: string;
+  effect_class?: string;
+  transport?: string | null;
+  protocol_version?: string | null;
+  network_domains?: string[];
+  health_check?: boolean;
+}
+
+export interface ToolProviderRegistrationDto {
+  id: string;
+  kind: string;
+  state: string;
+  trust_level: string;
+  capabilities: string[];
+  effect_class: string;
+  pinned_revision: string;
+  transport: string | null;
+  protocol_version: string | null;
+  network_domains: string[];
+  health_check: boolean;
+  registered_at: string | null;
+  updated_at: string | null;
+  approved_at: string | null;
+  revoked_at: string | null;
+  revoked_reason: string | null;
+  last_health: string | null;
+  health_detail: string | null;
+  health_checked_at: string | null;
+  catalog_active: boolean;
+}
+
+export interface ToolProviderRegistrationListDto {
+  registrations: ToolProviderRegistrationDto[];
+  management_available: boolean;
+  management_reason: string | null;
+  note: string;
+}
+
 export interface LineageNodeDto {
   id: string;
   kind: string;

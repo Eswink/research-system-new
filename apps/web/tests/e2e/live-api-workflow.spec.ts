@@ -336,7 +336,7 @@ test("live: 项目注册表与归属（WP-C cycle 1）", async ({ page }) => {
 test("live: reports/integrations/lineage 只读面（EC-02）", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  // tool-providers: catalog 只读投影 + 三态健康；管理面诚实锁定。
+  // tool-providers: catalog 只读投影 + 三态健康（PLAN-060 起治理写面在注册表端点）。
   const providers = await page.request.get("/api/tool-providers");
   expect(providers.ok()).toBeTruthy();
   const catalog = (await providers.json()) as {
@@ -345,7 +345,7 @@ test("live: reports/integrations/lineage 只读面（EC-02）", async ({ page })
   };
   expect(catalog.providers.length).toBeGreaterThan(0);
   expect(catalog.providers.some((item) => item.kind === "NATIVE")).toBe(true);
-  expect(catalog.management_available).toBe(false);
+  expect(catalog.management_available).toBe(true);
 
   // Start a run so the run-scoped read-only endpoints have a real target.
   const templates = await page.request.get("/api/protocol-templates");

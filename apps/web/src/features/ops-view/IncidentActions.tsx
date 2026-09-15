@@ -4,8 +4,8 @@ import { api } from "../../api/client";
 import type { IncidentCandidateDto, IncidentItemDto } from "../../api/types";
 import { ErrorState } from "../../components/States";
 import styles from "./OpsActions.module.css";
-import { OpsSelect, OpsTextInput } from "./OpsFields";
-import { useOpsAction } from "./useOpsAction";
+import { InlineSelect, InlineTextInput } from "../../components/InlineFields";
+import { useAsyncAction } from "../../hooks/useAsyncAction";
 
 const SEVERITIES = ["CRITICAL", "WARNING", "INFO"] as const;
 
@@ -21,7 +21,7 @@ export function DeclareIncidentForm({
 }) {
   const [title, setTitle] = useState(candidate !== undefined ? candidate.run_id : "");
   const [severity, setSeverity] = useState("WARNING");
-  const action = useOpsAction(onDeclared);
+  const action = useAsyncAction(onDeclared);
   const submit = (): void => {
     const trimmed = title.trim();
     if (trimmed === "") return;
@@ -39,12 +39,12 @@ export function DeclareIncidentForm({
         submit();
       }}
     >
-      <OpsTextInput
+      <InlineTextInput
         value={title}
         onChange={setTitle}
         placeholder={zh ? "事故标题" : "Incident title"}
       />
-      <OpsSelect value={severity} onChange={setSeverity} options={SEVERITIES} />
+      <InlineSelect value={severity} onChange={setSeverity} options={SEVERITIES} />
       <button className="btn" type="submit" disabled={action.busy || title.trim() === ""}>
         {zh ? "登记事故" : "Declare"}
       </button>
@@ -63,7 +63,7 @@ export function DeclareCandidateButton({
   zh: boolean;
   onDone: () => void;
 }) {
-  const action = useOpsAction(onDone);
+  const action = useAsyncAction(onDone);
   return (
     <span className={styles.row}>
       <button
@@ -123,10 +123,10 @@ function AssignControl({
   onDone: () => void;
 }) {
   const [assignee, setAssignee] = useState("");
-  const action = useOpsAction(onDone);
+  const action = useAsyncAction(onDone);
   return (
     <span className={styles.row}>
-      <OpsTextInput
+      <InlineTextInput
         value={assignee}
         onChange={setAssignee}
         placeholder={zh ? "处理人" : "Assignee"}
@@ -157,10 +157,10 @@ function CloseControl({
   onDone: () => void;
 }) {
   const [resolution, setResolution] = useState("");
-  const action = useOpsAction(onDone);
+  const action = useAsyncAction(onDone);
   return (
     <span className={styles.row}>
-      <OpsTextInput
+      <InlineTextInput
         value={resolution}
         onChange={setResolution}
         placeholder={zh ? "处理结论" : "Resolution"}

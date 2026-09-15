@@ -9,6 +9,7 @@ import { EXPERIMENT_QUEUE_ROUTES } from "./stub-routes-experiments";
 import { LINEAGE_ROUTES } from "./stub-routes-lineage";
 import { OPS_ROUTES } from "./stub-routes-ops";
 import { POLICY_ROUTES } from "./stub-routes-policy";
+import { REGISTRY_ROUTES } from "./stub-routes-registry";
 import { WORKSPACE_ROUTES } from "./stub-routes-workspace";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
@@ -294,33 +295,9 @@ export const ROUTES: readonly StubRoute[] = [
     pattern: /^\/agents\/[^/]+$/,
     handler: () => ({ status: 204, body: null }),
   },
-  // PLAN-043 EC-02: tool-provider catalog, run deliverable and run lineage
+  // PLAN-043 EC-02: run deliverable and run lineage
   // (honest empty/shape responses; interaction specs assert real rendering).
-  {
-    method: "GET",
-    pattern: /^\/tool-providers$/,
-    handler: () => ({
-      status: 200,
-      body: {
-        providers: [
-          {
-            id: "openhands_workspace",
-            kind: "NATIVE",
-            trust_level: "BUILT_IN",
-            effect_class: "EXECUTE",
-            capabilities: ["workspace.read", "workspace.write.notes"],
-            transport: null,
-            protocol_version: null,
-            network_domains: [],
-            health_check: false,
-            health: "HEALTHY",
-          },
-        ],
-        management_available: false,
-        management_reason: "Tool Provider management is supply-chain governance (G15)",
-      },
-    }),
-  },
+  // PLAN-060：/tool-providers 目录改由 stub-routes-registry 提供（要随注册状态变化）。
   {
     method: "GET",
     pattern: /^\/runs\/[^/]+\/deliverable$/,
@@ -366,6 +343,8 @@ export const ROUTES: readonly StubRoute[] = [
   },
   // PLAN-045 EC-03 second batch + PLAN-059：ops 读写投影（alerts/incidents/rules/schedules/data-health）。
   ...OPS_ROUTES,
+  // PLAN-060 EC-05：Tool Provider 目录 + 注册治理写面（目录随注册状态变化）。
+  ...REGISTRY_ROUTES,
   // PLAN-046 EC-04: budget adjust + reserved-vs-consumed forecast.
   ...BUDGET_ROUTES,
   // PLAN-049 WP-C: capability policy snapshot.

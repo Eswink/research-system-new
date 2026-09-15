@@ -181,6 +181,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
+    from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
 
     return {
         "agent_store": SqliteAgentStore(connection=connection),
@@ -190,6 +191,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "notification_reads": SqliteNotificationReadStore(connection=connection),
         "library_store": SqliteLibraryStore(connection=connection),
         "ops_store": SqliteOpsStore(connection=connection),
+        "tool_provider_registry": SqliteToolProviderRegistry(connection=connection),
     }
 
 

@@ -47,6 +47,8 @@ import type {
   ProjectSettingsDto,
   ResourceKind,
   ResourceType,
+  ToolProviderRegisterDto,
+  ToolProviderUpdateDto,
   Version,
 } from "./types";
 
@@ -145,8 +147,19 @@ export const api = {
   runLineage: (runId: string) => inspectionClient.lineage(runId),
   projectLineage: (projectId?: string) => inspectionClient.projectLineage(projectId),
 
-  // ── tool providers（PLAN-043 只读目录）──
+  // ── tool providers（PLAN-043 只读目录；PLAN-060 注册治理写面）──
   listToolProviders: () => toolProvidersClient.list(),
+  toolProviderRegistrations: () => toolProvidersClient.registrations(),
+  registerToolProvider: (payload: ToolProviderRegisterDto) =>
+    toolProvidersClient.register(payload),
+  updateToolProviderRegistration: (providerId: string, payload: ToolProviderUpdateDto) =>
+    toolProvidersClient.updateRegistration(providerId, payload),
+  approveToolProvider: (providerId: string) =>
+    toolProvidersClient.approveRegistration(providerId),
+  revokeToolProvider: (providerId: string, reason: string) =>
+    toolProvidersClient.revokeRegistration(providerId, reason),
+  healthCheckToolProvider: (providerId: string) =>
+    toolProvidersClient.healthCheckRegistration(providerId),
 
   // ── library（PLAN-044：prompts/datasets/notebooks 共享目录）──
   listLibrary: (kind: ResourceKind) => libraryClient.list(kind),
