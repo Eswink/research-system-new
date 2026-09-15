@@ -13,9 +13,12 @@ wholesale-replacing the capability set and observation. A 409 from claim
 (stale observation gate) self-heals the same way. Probing only happens while
 idle — never mid-job.
 
-Drain: when the Control Plane marks the worker DRAINING (surfaced via the
-heartbeat response), the loop stops claiming and exits after settling in-flight
-work. SIGTERM requests the same graceful drain.
+Drain vs shutdown: a Control-Plane drain (heartbeat `drain_requested`) settles
+the in-flight job then exits; a local shutdown (SIGTERM) additionally interrupts
+the in-flight execution (see `cancellation.CancelProbe`) and exits WITHOUT
+submitting — the abandoned attempt stays owned by its lease and is recovered by
+the Control Plane (at-least-once), exactly like a crashed worker. The drain flag
+is only read between iterations, so shutdown must interrupt the run itself.
 """
 
 from __future__ import annotations
@@ -55,6 +58,7 @@ from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.domain.enums import FailureCategory
 from packages.domain.workers import WorkerGpuObservation
 from packages.domain.workspace import ExecutionRun, ExecutionSpec, ExecutionStatus
+from services.worker.cancellation import CancelProbe
 from services.worker.计量观测v1 import seconds_observation
 
 
@@ -233,7 +237,19 @@ class WorkerLoop:
                 )
                 bundle_to_directory(bundle, scratch, str(input_digest))
             spec = _spec_from_json(str(job["spec_json"]), str(scratch))
-            run = self._execute_with_lease(spec, task_id, lease_id, fence, job)
+            cancel = CancelProbe(
+                task_id=task_id,
+                cancel_requested=self._client.cancel_requested,
+                should_stop=self._should_stop,
+                interval_seconds=self._config.cancel_poll_interval_seconds,
+            )
+            run = self._execute_with_lease(spec, task_id, lease_id, fence, job, cancel)
+            if cancel.aborted_by_shutdown:
+                # Interrupted by shutdown: this worker no longer speaks for the
+                # attempt, so nothing is uploaded or submitted (the Control
+                # Plane recovers it through its lease, like any lost worker).
+                _log_shutdown_interruption(task_id)
+                return
             self._upload_and_submit(run, task_id, lease_id, fence, scratch)
         finally:
             # SI-1 W1: a self-created scratch was never removed, so a long-lived
@@ -242,13 +258,14 @@ class WorkerLoop:
             if owned_scratch:
                 shutil.rmtree(scratch, ignore_errors=True)
 
-    def _execute_with_lease(
+    def _execute_with_lease(  # noqa: PLR0913 - spec + fencing identity + job + cancel
         self,
         spec: ExecutionSpec,
         task_id: str,
         lease_id: str,
         fence: int,
         job: dict[str, object],
+        cancelled: Callable[[], bool],
     ) -> ExecutionRun:
         """Run the backend job while renewing the lease + emitting the span.
 
@@ -271,7 +288,7 @@ class WorkerLoop:
                 run: ExecutionRun = runner(
                     spec,
                     timeout_seconds=_as_int(job.get("timeout_seconds")),
-                    cancelled=self._cancel_probe(task_id),
+                    cancelled=cancelled,
                 )
                 self._set_span_outcome(op, run)
             self._record_remote_metrics(run, time.monotonic() - started)
@@ -379,29 +396,6 @@ class WorkerLoop:
                 ),
             )
 
-    def _cancel_probe(self, task_id: str) -> Callable[[], bool]:
-        """M17 WP4c cooperative cancel probe (throttled).
-
-        The execution backend calls this between wait steps; the HTTP poll is
-        throttled to at most one request per `cancel_poll_interval_seconds`
-        so a long container job doesn't hammer the gateway. A poll failure
-        NEVER cancels the job (fail-safe: keep running, renewal path reports).
-        """
-        interval = max(0.5, self._config.cancel_poll_interval_seconds)
-        state = {"last": -interval}
-
-        def _probe() -> bool:
-            now = time.monotonic()
-            if now - state["last"] < interval:
-                return False
-            state["last"] = now
-            try:
-                return self._client.cancel_requested(task_id)
-            except Exception:  # noqa: BLE001 - cancel probe must never kill a job
-                return False
-
-        return _probe
-
     def _renew_loop(self, task_id: str, lease_id: str, fence: int, stop: threading.Event) -> None:
         """Renew the held lease until the job settles (M16 re-audit F-7).
 
@@ -420,6 +414,13 @@ class WorkerLoop:
                 return
             if stop.wait(interval):
                 return
+
+
+def _log_shutdown_interruption(task_id: str) -> None:
+    print(  # noqa: T201
+        f"worker-loop: shutdown interrupted job task_id={task_id}; result not submitted",
+        flush=True,
+    )
 
 
 def _as_int(value: object) -> int | None:

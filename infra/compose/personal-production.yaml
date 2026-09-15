@@ -32,10 +32,32 @@ services:
       timeout: 2s
       retries: 30
 
+  # 证据目录供给：fresh clone / 新主机上 `data/otel` 不存在，Docker 会以 root:root
+  # 创建 bind mount 源目录，而 collector 以 uid 10001 运行 ⇒ file exporter
+  # permission denied、证据文件永不落盘（且落盘文件默认 0600，宿主侧读不到）。
+  # 一次性初始化对齐属主/模式；init 镜像复用本栈已依赖的 postgres:16-alpine。
+  evidence-dir:
+    image: postgres:16-alpine
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - >-
+        mkdir -p /var/lib/otelcol &&
+        touch /var/lib/otelcol/research_os_signals.json &&
+        chown -R 10001:10001 /var/lib/otelcol &&
+        chmod 0644 /var/lib/otelcol/research_os_signals.json
+    restart: "no"
+    volumes:
+      - ./data/otel:/var/lib/otelcol
+
   otel-collector:
     build:
       context: ./adapters/otel/collector
     image: research-os/otel-collector:0.139.0
+    depends_on:
+      evidence-dir:
+        condition: service_completed_successfully
     ports:
       # loopback-only: the collector receiver has no auth extension and no TLS,
       # and every accepted signal is written verbatim to the evidence file sink.

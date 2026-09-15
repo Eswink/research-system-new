@@ -7,6 +7,8 @@ request building is checked against an httpx MockTransport.
 
 from __future__ import annotations
 
+import threading
+import time
 from pathlib import Path
 
 import httpx
@@ -15,6 +17,7 @@ import pytest
 from adapters.fakes.execution_backend import FakeExecutionBackend
 from adapters.worker.client import WorkerClient, WorkerClientConfig, WorkerResultPayload
 from packages.domain.workspace import ExecutionStatus
+from services.worker.deterministic_backend import DeterministicExecutionBackend
 from services.worker.loop import WorkerLoop, WorkerLoopConfig
 
 
@@ -36,6 +39,9 @@ class _FakeClient:
 
     def renew(self, task_id: str, lease_id: str, fence: int) -> None:
         self.renews += 1
+
+    def cancel_requested(self, task_id: str) -> bool:
+        return False
 
     def register(
         self,
@@ -123,6 +129,53 @@ def test_loop_honours_drain() -> None:
     client = _DrainingClient(_job(Path(".")))
     loop = WorkerLoop(client, FakeExecutionBackend(), config=WorkerLoopConfig())  # type: ignore[arg-type]
     assert loop.run() == 0  # drains before claiming
+    assert client.results == []
+
+
+def test_shutdown_interrupts_inflight_job_without_submitting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A shutdown must abort in-flight execution, not wait for it to settle.
+
+    The drain flag is only read between loop iterations, so a shutdown that
+    cannot interrupt a running job holds the process past any shutdown window
+    (Linux CI teardown of the distributed D scenario: a 25s job vs a 10s wait).
+    The interrupted attempt is deliberately not submitted — its lease stays
+    authoritative and the Control Plane recovers it (at-least-once), exactly as
+    for a crashed worker.
+    """
+    monkeypatch.setenv("RESEARCHOS_WORKER_EXECUTE_DELAY_SECONDS", "30")
+    client = _FakeClient(_job(tmp_path))
+    shutdown = {"requested": False}
+    loop = WorkerLoop(
+        client,  # type: ignore[arg-type]
+        DeterministicExecutionBackend(),
+        config=WorkerLoopConfig(scratch_root=str(tmp_path / "scratch")),
+        should_stop=lambda: shutdown["requested"],
+    )
+    threading.Timer(0.3, lambda: shutdown.update(requested=True)).start()
+
+    started = time.monotonic()
+    completed = loop.run()
+    elapsed = time.monotonic() - started
+
+    assert completed == 1  # the attempt was claimed and processed
+    assert elapsed < 10.0, "shutdown must interrupt the 30s job, not wait it out"
+    assert client.results == []  # nothing submitted by the shutting-down worker
+    assert client.uploads == []
+
+
+def test_shutdown_before_claim_stops_immediately(tmp_path: Path) -> None:
+    """A shutdown requested before the first claim runs no job at all."""
+    client = _FakeClient(_job(tmp_path))
+    loop = WorkerLoop(
+        client,  # type: ignore[arg-type]
+        FakeExecutionBackend(),
+        config=WorkerLoopConfig(scratch_root=str(tmp_path / "scratch")),
+        should_stop=lambda: True,
+    )
+
+    assert loop.run() == 0
     assert client.results == []
 
 

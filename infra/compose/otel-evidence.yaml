@@ -1,10 +1,35 @@
 # M15 telemetry 证据管线(与 infra/compose/postgres-test.yaml 的 postgres 服务可叠加)。
 # 启动(仓库根): docker compose --project-directory . -f infra/compose/postgres-test.yaml -f infra/compose/otel-evidence.yaml up -d
 services:
+  # 证据目录供给(M15 证据链修复): fresh checkout 里 `data/otel` 不存在,Docker 会以
+  # root:root 创建 bind mount 源目录,而 collector 以 uid 10001 运行 ⇒ file exporter
+  # 打不开证据文件(`permission denied`),文件永不落盘(CI run #61–#69 的
+  # tests/observability/test_collector_evidence.py 即此,本地因目录已存在而一直绿)。
+  # 一次性初始化把目录与文件的属主/模式对齐:写侧 10001 可写,读侧(宿主 runner 用户 /
+  # 本地开发者)可读 —— 文件由 collector 创建时是 0600,只有预置 0644 才能被读侧看到。
+  # init 镜像复用同一 CI 调用里已存在的 postgres:16-alpine(仅需 shell + chown),
+  # 不引入新的上游镜像。
+  evidence-dir:
+    image: postgres:16-alpine
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - >-
+        mkdir -p /var/lib/otelcol &&
+        touch /var/lib/otelcol/research_os_signals.json &&
+        chown -R 10001:10001 /var/lib/otelcol &&
+        chmod 0644 /var/lib/otelcol/research_os_signals.json
+    restart: "no"
+    volumes:
+      - ./data/otel:/var/lib/otelcol
   otel-collector:
     build:
       context: ./adapters/otel/collector
     image: research-os/otel-collector:0.139.0
+    depends_on:
+      evidence-dir:
+        condition: service_completed_successfully
     ports:
       # loopback-only: the collector receiver has no auth extension and no TLS,
       # and every accepted signal is written verbatim to the evidence file sink.

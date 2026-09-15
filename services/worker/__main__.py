@@ -1,8 +1,14 @@
 """Worker CLI entrypoint (M16): `python -m services.worker`.
 
 Reads gateway connection + identity from the environment, installs a SIGTERM
-drain handler, and runs the worker loop. Machine-readable stdout lines support
-the cross-process E2E harness (WP4).
+shutdown handler, and runs the worker loop. Machine-readable stdout lines
+support the cross-process E2E harness (WP4).
+
+Shutdown (`SIGTERM`): stop claiming, interrupt in-flight execution, exit
+promptly. The in-flight attempt is NOT submitted — its lease is recovered by
+the Control Plane (at-least-once), the same path a crashed worker takes. Both
+the heartbeat sleep and the reconnect backoff are interruptible, so the process
+never waits out a sleep window after a shutdown request.
 
 Execution backend selection (`RESEARCHOS_WORKER_EXECUTION_BACKEND`):
 - `deterministic` (DEFAULT): a bounded no-shell test double that fabricates
@@ -19,7 +25,7 @@ import argparse
 import os
 import signal
 import sys
-import time
+import threading
 from pathlib import Path
 
 from adapters.execution.docker_backend import DockerExecutionBackend
@@ -31,6 +37,9 @@ from services.worker.reconnect import run_with_reconnect
 from services.worker.telemetry import build_worker_telemetry
 
 _STOP = {"flag": False}
+# Woken by the shutdown handler so no sleep window (heartbeat cadence, reconnect
+# backoff) delays process exit after SIGTERM.
+_WAKE = threading.Event()
 _PROJECT_VERSION_PATH = Path(__file__).resolve().parents[2] / "VERSION"
 
 
@@ -44,9 +53,15 @@ def _project_version() -> str:
 def _install_drain_handler() -> None:
     def _handler(_signum: int, _frame: object) -> None:
         _STOP["flag"] = True
+        _WAKE.set()
         print("worker: drain requested", flush=True)  # noqa: T201
 
     signal.signal(signal.SIGTERM, _handler)
+
+
+def _interruptible_sleep(seconds: float) -> None:
+    """Sleep, but return as soon as a shutdown was requested."""
+    _WAKE.wait(seconds)
 
 
 def _build_config(worker_id: str) -> WorkerClientConfig:
@@ -116,7 +131,7 @@ def _run_attempt(
             backend,  # type: ignore[arg-type]  # concrete backend implements the Port
             config=loop_config,
             should_stop=lambda: _STOP["flag"],
-            sleep=time.sleep,
+            sleep=_interruptible_sleep,
             gpu_prober=gpu_prober,  # type: ignore[arg-type]
             telemetry=telemetry,  # type: ignore[arg-type]
         )
@@ -140,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     completed = run_with_reconnect(
         lambda: _run_attempt(config, backend, loop_config, telemetry, gpu_prober),
         should_stop=lambda: _STOP["flag"],
+        sleep=_interruptible_sleep,
     )
     print(f"worker: stopped completed={completed}", flush=True)  # noqa: T201
     return 0

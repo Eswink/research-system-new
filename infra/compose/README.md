@@ -7,8 +7,8 @@
 | 文件 | 职责 |
 | --- | --- |
 | `postgres-test.yaml` | CI/开发用一次性 PostgreSQL（tmpfs 数据目录，端口 15432，用完即弃） |
-| `otel-evidence.yaml` | M15 遥测证据管线：pinned OTel Collector，loopback-only 发布，可与 postgres-test 叠加 |
-| `personal-production.yaml` | PA-1 个人生产基线：持久化 PostgreSQL 命名卷 + Collector；API/gateway/worker/console 按 `docs/operations/PERSONAL_DEPLOYMENT.md` 本机启动 |
+| `otel-evidence.yaml` | M15 遥测证据管线：pinned OTel Collector，loopback-only 发布，可与 postgres-test 叠加；一次性 `evidence-dir` 服务先供给 `data/otel`（fresh checkout 由 Docker 创建为 root:root，uid 10001 的 collector 写不进去）|
+| `personal-production.yaml` | PA-1 个人生产基线：持久化 PostgreSQL 命名卷 + Collector（同样带 `evidence-dir` 供给）；API/gateway/worker/console 按 `docs/operations/PERSONAL_DEPLOYMENT.md` 本机启动 |
 | `research-validation.yaml` | 本地完整集成与验证栈：六个研究服务 + 无凭据 loopback 代理；见 `docs/operations/RESEARCH_COMPOSE.md` |
 
 ## 迁移映射（2026-09-07 根目录分类归档）

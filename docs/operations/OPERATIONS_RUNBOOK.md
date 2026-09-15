@@ -78,7 +78,10 @@ SEV3 single task/user issue
   - worker 失联：LOST 由服务端时间判定；租约经
     `recover_expired_leases`（单一权威）回到 QUEUED 供其他 worker claim；
     迟到结果被 fence 拒绝（`remote_execution.stale_result_rejected_total`）。
-  - 优雅下线：`drain`（或 SIGTERM）→ 不再分配 → 既有作业按策略收尾 → OFFLINE。
+  - 服务端 drain：`drain` → 不再分配 → 既有作业正常收尾 → OFFLINE。
+  - 进程关停：SIGTERM → 不再认领 + **中断在途执行**（复用协作式 cancel 通道，
+    不等待长作业跑完）→ 该次尝试**不提交结果**，租约由控制面按 LOST 路径回收
+    （at-least-once，与硬杀一致）；心跳睡眠与重连退避可被打断，进程即刻退出。
   - 协议不兼容：注册即拒（`worker.protocol_mismatch_total`），不「连上算兼容」。
   - 网络分区：`tests/distributed` NetProxy 场景证据；重连不恢复旧权威。
 - 入网凭据：enrollment secret 经 WORKER 凭据域；session token 仅存 sha256；
