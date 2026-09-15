@@ -64,11 +64,13 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ### `#/portfolio/projects` — 项目集
 - 设计：`screens/Projects.jsx`（列表/看板/卡片三视图 + 详情）。
 - API：`GET /projects`（真实注册表）、`POST /projects`（创建即带默认设置）、
-  `PATCH /projects/{id}`（重命名/归档）；`GET/PUT /projects/{id}/settings`
+  `PATCH /projects/{id}`（重命名/归档）、`DELETE /projects/{id}`（G2/PLAN-061：
+  被引用 409 并列出引用、默认项目 409、无引用 204）；`GET/PUT /projects/{id}/settings`
   按项目精确（WP-B）。侧边栏项目切换器（WorkspaceIdentity live）驱动
   `activeProject` 上下文，runs/drafts/settings 路径即时生效。
 - 等级：PARTIAL（真实注册表与归属；看板/日历视图与逐资源全量隔离未交付）。
-- 缺口（登记，G2）：不提供项目删除（归档即终态）；agents/memory/experiments
+- 缺口（登记，G2）：项目删除只对无引用项目可用（有引用时须先自行处置研究数据，
+  控制面不级联）；默认项目为合成基线不可删；agents/memory/experiments
   数据面暂单项目共享；成员/RBAC/租户隔离属 M18 deferred。
 
 ### `#/portfolio/experiments` — 实验

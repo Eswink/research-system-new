@@ -12,6 +12,7 @@ const LIVE_SUITES = [
   "experiment-queue",
   "project-lineage",
   "project-cost-forecast",
+  "project-registry",
   "workspace-snapshots",
   "ops-write",
   "registry-write",

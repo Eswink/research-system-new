@@ -8897,6 +8897,40 @@
       }
     },
     "/projects/{project_id}": {
+      "delete": {
+        "description": "删除项目注册行（**被引用即 409**，不静默级联研究数据）。\n\n判定顺序（每一步都给出可读原因，不假装成功）：\n- `example-project` 由 examples 契约合成 → 409（删了也还在，属\"静默 no-op\"陷阱）；\n- 未知 id → 404；store 未配置 → 503；\n- 仍有项目作用域数据（runs / 协议草稿 / 实验队列 / 库资源 / ops 规则与事故）\n  → 409 + 逐项计数（用户需先自行处置，控制面不做级联删除）；\n- 否则删除注册行与随项目创建的设置行 → 204。\n\n设置行不是\"研究数据\"：它与项目注册同生（POST /projects 自动落默认设置），\n项目不存在时留着只会成为孤儿行，因此随项目一并清理并在此显式声明。",
+        "operationId": "delete_project_projects__project_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Project",
+        "tags": [
+          "projects"
+        ]
+      },
       "patch": {
         "description": "重命名与/或归档（ACTIVE ⇄ ARCHIVED）；未知 id 404；空载荷 422。",
         "operationId": "update_project_projects__project_id__patch",

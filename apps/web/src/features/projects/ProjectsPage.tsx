@@ -11,8 +11,9 @@ import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
+import { ProjectDeleteAction } from "./ProjectDeleteAction";
 
-/** 项目集（PLAN-041 WP-C）：真实注册表视图（列表/创建/归档/切换活动项目）。 */
+/** 项目集（PLAN-041 WP-C + PLAN-061）：真实注册表（列表/创建/归档/删除/切换）。 */
 export function ProjectsPage() {
   const { t } = useI18n();
   const projects = useResource("projects", () => api.listProjects());
@@ -164,6 +165,7 @@ function ProjectRow({
         >
           {active ? t("projects.archive") : t("projects.restore")}
         </button>
+        <ProjectDeleteAction project={project} onDeleted={onChanged} />
       </div>
     </li>
   );

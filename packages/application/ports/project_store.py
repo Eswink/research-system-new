@@ -15,12 +15,19 @@ from packages.domain.projects import ProjectDefinition
 
 @runtime_checkable
 class ProjectStore(Protocol):
-    """项目注册 CRUD；list 按 created_at, id 确定性排序。"""
+    """项目注册 CRUD；list 按 created_at, id 确定性排序。
+
+    `delete_project` 只删注册行本身：调用方（路由层）负责先确认该项目没有
+    被引用的研究数据（runs/drafts/experiments/library/ops），并显式拒绝而不是
+    由存储层静默级联。
+    """
 
     def list_projects(self) -> list[ProjectDefinition]: ...
 
     def get_project(self, project_id: str) -> ProjectDefinition: ...
 
     def save_project(self, project: ProjectDefinition) -> None: ...
+
+    def delete_project(self, project_id: str) -> None: ...
 
     def close(self) -> None: ...

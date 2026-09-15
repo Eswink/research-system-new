@@ -15,8 +15,14 @@ from packages.application.ports.resource_catalog import ProjectSettings
 
 @runtime_checkable
 class ProjectSettingsStore(Protocol):
-    """项目设置读取/保存；语义由实现保证。"""
+    """项目设置读取/保存；语义由实现保证。
+
+    `delete` 幂等（行不存在时静默返回）：设置行与项目注册同生，项目删除时随之
+    清理；单独缺行只说明该项目的设置从未落库，不构成错误。
+    """
 
     def get(self, project_id: str) -> ProjectSettings | None: ...
 
     def save(self, settings: ProjectSettings) -> None: ...
+
+    def delete(self, project_id: str) -> None: ...

@@ -21,8 +21,9 @@ export interface PageSupport {
 /** 后端能力缺口登记（cursor plan §3 / CONSOLE_PAGE_MAP.md）。 */
 export const GAPS = {
   multiProject:
-    "项目注册表已接入（GET/POST/PATCH /projects；创建/归档/上下文切换真实生效，" +
-    "runs/settings/drafts 按项目归属）；不提供删除（归档即终态），" +
+    "项目注册表已接入（GET/POST/PATCH/DELETE /projects；创建/归档/删除/上下文切换" +
+    "真实生效，runs/settings/drafts 按项目归属）；删除仅对无引用项目可用（被运行/" +
+    "草稿/实验队列/库资源/运维记录引用时 409 且不级联），默认项目为合成基线不可删；" +
     "agents/memory/experiments 数据面仍单项目共享，租户隔离属 M18 deferred",
   notifications:
     "通知已接入事件投影（GET /notifications + 已读持久化）；无实时推送，数量只来自当前页",
@@ -49,8 +50,8 @@ export const GAPS = {
     "共享节点即跨 Run 关系）；数据集/提示词与 Run 的引用关系无记录面，" +
     "库资源只作未连边清单呈现（响应内 reference_recording 如实标注），不猜测连边",
   delete:
-    "端点/模型/草稿/用户 Agent 已接入 DELETE（被引用 → 409）；" +
-    "memory 记录与契约基线（example role/template/agent）不提供删除",
+    "端点/模型/草稿/用户 Agent/项目已接入 DELETE（被引用 → 409，项目附引用清单）；" +
+    "memory 记录与契约基线（example role/template/agent、默认项目）不提供删除",
   approvalsEmpty:
     "审批注册点已接入（human-gate 协议暂停时注册，见 human_gate_demo_v1）；" +
     "无审批门的 run 列表为空是正确状态",
@@ -106,11 +107,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "plan/overview": { level: "partial", reason: "聚合已加载数据；无独立 overview API" },
   "plan/protocol": { level: "full" },
   "plan/team": { level: "full" },
-  "portfolio/projects": {
-    level: "partial",
-    reason: GAPS.multiProject,
-    disabledOperations: ["delete"],
-  },
+  "portfolio/projects": { level: "partial", reason: GAPS.multiProject },
   "portfolio/experiments": {
     level: "partial",
     reason: GAPS.experimentCreate,

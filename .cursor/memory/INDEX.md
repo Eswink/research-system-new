@@ -34,6 +34,7 @@
 | [MEM-20260915-034](entries/MEM-20260915-034-digest-addressed-snapshot-read-surface.md) | ACTIVE | repository | 0.90 | 2027-09-15 | PLAN-20260915-058 |
 | [MEM-20260915-035](entries/MEM-20260915-035-write-surface-must-be-consumed-by-read-surface.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-059 |
 | [MEM-20260915-036](entries/MEM-20260915-036-registration-state-derives-trust.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-060 |
+| [MEM-20260915-037](entries/MEM-20260915-037-delete-must-refuse-when-referenced.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-061 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

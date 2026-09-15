@@ -105,3 +105,13 @@ class SqliteProjectStore(SqliteAdapterBase):
         with self._conn:
             self._run(_UPSERT_SQL, (project.id, payload, created, updated))
         self._record("save_project", project.id)
+
+    def delete_project(self, project_id: str) -> None:
+        """删除注册行（只此一行；研究数据由调用方先确认无引用，不静默级联）。"""
+        self._ensure_open()
+        cursor = self._run("DELETE FROM projects WHERE project_id = ?", (project_id,))
+        if cursor.rowcount == 0:
+            self._record("delete_project", project_id, error="KeyError")
+            raise KeyError(f"project not found: {project_id!r}")
+        self._conn.commit()
+        self._record("delete_project", project_id)

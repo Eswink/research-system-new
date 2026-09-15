@@ -86,13 +86,14 @@ export const api = {
   removeModel: (modelId: string) => modelsClient.remove(modelId),
   getCompatibility: (modelId: string) => modelsClient.compatibility(modelId),
 
-  // ── projects（WP-C/PLAN-041：注册表 + 归档语义；无 DELETE）──
+  // ── projects（WP-C/PLAN-041 注册表 + PLAN-061 删除：引用中 409 不级联）──
   listProjects: () => projectsClient.list(),
   createProject: (name: string) => projectsClient.create({ name }),
   updateProject: (
     projectId: string,
     payload: { name?: string | null; status?: "ACTIVE" | "ARCHIVED" | null },
   ) => projectsClient.update(projectId, payload),
+  deleteProject: (projectId: string) => projectsClient.remove(projectId),
 
   // ── team ──
   listRoles: () => teamClient.listRoles(),

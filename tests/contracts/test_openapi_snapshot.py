@@ -122,6 +122,19 @@ def test_openapi_contains_tool_registration_write_methods() -> None:
         assert methods <= set(paths[path]), (path, sorted(paths[path]))
 
 
+def test_openapi_contains_project_delete_method() -> None:
+    """EC-06 验证项：项目注册面必须有真实删除方法，且 schema 记录"引用即拒绝"。"""
+    schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))
+    paths = schema["paths"]
+    expected = {"/projects": {"get", "post"}, "/projects/{project_id}": {"patch", "delete"}}
+    for path, methods in expected.items():
+        assert path in paths, path
+        assert methods <= set(paths[path]), (path, sorted(paths[path]))
+    description = cast(str, paths["/projects/{project_id}"]["delete"]["description"])
+    assert "409" in description, description
+    assert "级联" in description, description
+
+
 def test_openapi_contains_projects_and_governance_paths() -> None:
     """其余治理面路径（与上面分函数以守 50 行/函数上限）。"""
     schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))

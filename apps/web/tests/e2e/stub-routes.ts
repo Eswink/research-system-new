@@ -9,6 +9,7 @@ import { EXPERIMENT_QUEUE_ROUTES } from "./stub-routes-experiments";
 import { LINEAGE_ROUTES } from "./stub-routes-lineage";
 import { OPS_ROUTES } from "./stub-routes-ops";
 import { POLICY_ROUTES } from "./stub-routes-policy";
+import { PROJECT_ROUTES } from "./stub-routes-projects";
 import { REGISTRY_ROUTES } from "./stub-routes-registry";
 import { WORKSPACE_ROUTES } from "./stub-routes-workspace";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
@@ -121,50 +122,7 @@ export const ROUTES: readonly StubRoute[] = [
       },
     }),
   },
-  {
-    method: "GET",
-    pattern: /^\/projects$/,
-    handler: () => ({
-      status: 200,
-      body: [
-        {
-          id: "example-project",
-          name: "Example ML Research",
-          status: "ACTIVE",
-          created_at: "1970-01-01T00:00:00+00:00",
-          updated_at: "1970-01-01T00:00:00+00:00",
-        },
-      ],
-    }),
-  },
-  {
-    method: "POST",
-    pattern: /^\/projects$/,
-    handler: (_url, body) => ({
-      status: 201,
-      body: {
-        id: "proj-stubbed-1",
-        name: (body as { name?: string }).name ?? "stub project",
-        status: "ACTIVE",
-        created_at: "2026-09-13T00:00:00+00:00",
-        updated_at: "2026-09-13T00:00:00+00:00",
-      },
-    }),
-  },
-  {
-    method: "PATCH",
-    pattern: /^\/projects\/[^/]+$/,
-    handler: (url, body) => ({
-      status: 200,
-      body: {
-        id: decodeURIComponent(url.pathname.split("/").pop() ?? ""),
-        name: (body as { name?: string }).name ?? "Example ML Research",
-        status: (body as { status?: string }).status ?? "ACTIVE",
-        created_at: "1970-01-01T00:00:00+00:00",
-        updated_at: "2026-09-13T00:00:00+00:00",
-      },
-    }),
-  },
+  // PLAN-061 EC-06：/projects 读写 + DELETE 改由 stub-routes-projects 提供（状态可变）。
   {
     method: "GET",
     pattern: /^\/approvals$/,
@@ -345,6 +303,8 @@ export const ROUTES: readonly StubRoute[] = [
   ...OPS_ROUTES,
   // PLAN-060 EC-05：Tool Provider 目录 + 注册治理写面（目录随注册状态变化）。
   ...REGISTRY_ROUTES,
+  // PLAN-061 EC-06：项目注册表读写 + 删除（引用中 409；删除后列表真的变化）。
+  ...PROJECT_ROUTES,
   // PLAN-046 EC-04: budget adjust + reserved-vs-consumed forecast.
   ...BUDGET_ROUTES,
   // PLAN-049 WP-C: capability policy snapshot.

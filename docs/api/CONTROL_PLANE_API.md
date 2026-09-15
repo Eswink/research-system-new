@@ -37,9 +37,16 @@ GET    /models/{id}/compatibility        （hard_capability_requirements 为
 ```text
 GET    /projects                                 （默认 example-project 恒在首位；用户项目按 store 合并）
 POST   /projects                                 （name 必填；id 服务端生成；自动落默认设置行）
-PATCH  /projects/{id}                            （rename 和/或 status: ACTIVE|ARCHIVED；无 DELETE，归档即终态）
+PATCH  /projects/{id}                            （rename 和/或 status: ACTIVE|ARCHIVED；归档 ≠ 删除）
+DELETE /projects/{id}                            （PLAN-061：被引用 → 409 且列出引用，不级联；默认项目 409）
 ```
 
+- `DELETE` 的判定顺序与语义：`example-project` 由 examples 契约合成 → 409
+  `Project Reserved`（删了也还在，属静默 no-op 陷阱）；未知 id → 404；未装配 store → 503；
+  仍被 runs / 协议草稿 / 实验队列 / 库资源 / ops 规则或事故引用 → 409 `Project In Use`
+  且 detail 给出逐项计数（`runs=2, drafts=1` 形式）——**控制面不做级联删除**，用户须先
+  自行处置研究数据；无引用 → 204，注册行与随项目创建的设置行一并删除（设置行与项目注册
+  同生，不是研究数据）。删除对活动与已归档项目同样适用。
 - 单用户项目注册表；不表达租户/授权（M18 deferred）。数据面归属真实生效：
   runs 列表按项目过滤、`GET /projects/{id}/settings` 按项目精确（仅默认项目
   允许 examples 回退）、协议草稿按路径项目创建/列表；agents/memory/experiments

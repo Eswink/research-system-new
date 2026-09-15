@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-061](tasks/PLAN-20260915-061-project-delete-and-archive-semantics.md) | DONE |
 | [x] | [PLAN-20260915-060](tasks/PLAN-20260915-060-tool-provider-registration-and-governance-write-surface.md) | DONE |
 | [x] | [PLAN-20260915-059](tasks/PLAN-20260915-059-ops-write-surface-rules-and-incidents.md) | DONE |
 | [x] | [PLAN-20260915-058](tasks/PLAN-20260915-058-workspace-snapshot-tree-and-file-diff.md) | DONE |
