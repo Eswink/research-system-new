@@ -37,6 +37,7 @@ PLAN-20260915-061 声称的交付面：`ProjectStore` / `ProjectSettingsStore` �
 | 替身与后端同因果 | `stub-routes-projects.ts` 接管 `GET/POST/PATCH/DELETE /projects`（原静态三条删除）：创建真的进列表、归档真的改状态、删除真的移出、`proj-funded-study` 带引用清单必 409、默认项目 409、未知 404；`resetProjectsStub()` 每用例复位 | PASS |
 | 清单单一来源仍成立 | 新增 live spec 只改 `tests/e2e/live-specs.ts` 一处；`--list` 复核 stub **59 tests / 15 files**、live **31 tests / 9 files** | PASS |
 | 全量回归 | `pytest tests/api -q` → **361 passed**；契约 **359 passed, 56 skipped**；stub e2e **59 passed（15 files）**；live e2e **31 passed（9 files）**；web 单测 **76 passed** | PASS |
+| main 的 CI（EC-06 的"每 cycle 六 job 全绿"） | 提交 `bc4a9aa` 的 run **35018256116**：eval-gate / collector-quality / container-quality / console-frontend / quality-ubuntu-latest / quality-windows-latest **六个 job 全 success**（20:13–20:24Z，无重跑）；复核方式 = GitHub API `actions/runs/<id>/jobs` 逐 job 读结论，不采信记录里的文字 | PASS |
 | 设计基线 | `portfolio-projects` 的 win32（本地）与 linux（pinned noble 容器）重生成并目检：两行项目各带归档/删除动作、默认项目删除按钮呈禁用态、无溢出/裁列 | PASS |
 | 前端门禁 | 根 `npx eslint .` = 0 error（1 条既有 soft warning：`live-api-workflow.spec.ts` 400 行）；web `tsc --noEmit` 通过；`ProjectDeleteAction` 首次报 60 行超 50 上限 → 抽出 `useProjectDeletion.ts`（hook 文件名与导出同名，过命名门禁） | PASS（先失败后修复） |
 | Python 门禁 | 本地 m0 首跑 `FAILED [framework/validate]`：`工程记忆来源不存在: MEM-20260915-037`（本轮先写记忆条目、后写计划/复检文件）→ 补齐 PLAN-061 + RECHECK-061 后复跑 = `profile=m0; 23 deterministic checks` | PASS（先失败后修复） |
@@ -47,7 +48,8 @@ PLAN-20260915-061 声称的交付面：`ProjectStore` / `ProjectSettingsStore` �
 result: **PASS_WITH_WARNINGS**
 
 EC-06 的判定标准成立：`docs/api/openapi.m13.json` 里有真实的 `DELETE /projects/{project_id}`
-写方法（新增断言把它与"409/不级联"的口径一起锁定在契约里），项目页的
+写方法（新增断言把它与"409/不级联"的口径一起锁定在契约里），main 上本轮的 CI run
+**35018256116 六个 job 全 success**（EC-06 的另一半判定条件），项目页的
 `disabledOperations: ["delete"]` 已删除、`GAPS.multiProject` / `GAPS.delete` 收敛为
 "删除只对无引用项目可用"，且这一页真的能删——替身与 live 两条链都验证了
 "被引用 409（列出引用）+ 无引用 204（列表真的变化）+ 默认项目 409 + 再见 404"。

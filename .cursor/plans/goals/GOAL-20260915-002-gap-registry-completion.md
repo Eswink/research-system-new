@@ -2,7 +2,7 @@
 id: GOAL-20260915-002
 slug: gap-registry-completion
 title: 诚实缺口注册表收口：G9/G12/G8/G7/G15/G2 六项从「诚实禁用」转为「有真实消费者」
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-15
 updated_at: 2026-09-16
 owners:
@@ -84,7 +84,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-059-ops-write-surface-rules-and-incidents.md
   - .cursor/plans/tasks/PLAN-20260915-060-tool-provider-registration-and-governance-write-surface.md
   - .cursor/plans/tasks/PLAN-20260915-061-project-delete-and-archive-semantics.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-061-project-delete-and-archive-semantics.md
+  - .cursor/plans/tasks/PLAN-20260915-062-goal-002-closeout-recheck.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-062-goal-002-closeout.md
 memory_entries:
   - MEM-20260915-031-partition-injector-must-heal
   - MEM-20260915-032-project-lineage-merge-and-honest-unlinked-resources
@@ -93,6 +94,7 @@ memory_entries:
   - MEM-20260915-035-write-surface-must-be-consumed-by-read-surface
   - MEM-20260915-036-registration-state-derives-trust
   - MEM-20260915-037-delete-must-refuse-when-referenced
+  - MEM-20260915-030-goal-closeout-verification-recipe
 ---
 
 # GOAL-20260915-002 — 诚实缺口注册表收口（自迭代循环）
@@ -120,14 +122,14 @@ memory_entries:
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 7 已闭环（PLAN-20260915-061：G2 项目删除
-语义——`DELETE /projects/{id}` 无引用 204、被引用 409 且列出引用计数（不级联）、
-默认项目 409、活动项目删除后上下文回退默认项目，EC-06 = PASS；RECHECK-061 =
-PASS_WITH_WARNINGS）**。六个 EC 至此**全部 PASS**。
-下一个动作 = ① derive：切到**终止与收口**路径——立 GOAL 收口复检子 PLAN
-（`PLAN-20260915-062`），逐条复核六个 EC 的判定标准与范围注记，随后按 README 终止条款
-把本文件 status 置 ACHIEVED 并写收口状态历史。
-driver=session-goal，owner=root-agent。
+按 README 的 7 步判定执行；**循环已收口（status=ACHIEVED，2026-09-16 cycle 8）**：
+六个 EC 全 PASS（EC-01 G9 项目级血缘 / EC-02 G12 项目级成本预测 / EC-03 G8 工作区快照
+文件树与文件级 Diff / EC-04 G7 ops 写面 / EC-05 G15 tool-provider 注册治理写面 /
+EC-06 G2 项目删除语义），独立复检 `RECHECK-20260915-062` = PASS_WITH_WARNINGS
+（`scratch/verify_goal002_closeout.py` 59 条证据面断言 + 8 个 CI run 逐 job 现读全绿）。
+**本文件不再接受新的 cycle**：长程剩余项见「终止与收口 · 收口结论」表，后继工作另立
+GOAL（入口建议：① 设计门禁容差盲区 ② ToolPack install/approve ③ M18 租户/RBAC）。
+driver=session-goal，owner=root-agent（已停止推进）。
 
 ## 驱动
 
@@ -162,6 +164,29 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 - **收口动作**：更新 EC 状态表、迭代日志、child_plans、memory_entries；把长程剩余项
   写入「终止与收口」供后继 GOAL 承接（不在本文件内隐藏缺口）。
 
+### 收口结论（2026-09-16，cycle 8）
+
+**status = ACHIEVED**。六个 EC 全 PASS 且经独立复检（RECHECK-20260915-062 =
+PASS_WITH_WARNINGS）在**当前树**上重新验证：`scratch/verify_goal002_closeout.py`
+的 59 条证据面断言全过；cycle 1~7 的 8 个 CI run 经 GitHub API 逐 job 重读，
+**每个 run 六个 job 全 success**（含收口前的 cycle 7 run 35018256116）。
+
+收口后**仍然开放**的长程项（后继 GOAL 承接，不在本文件内隐藏）：
+
+| # | 长程项 | 来源 |
+| --- | --- | --- |
+| 1 | **设计门禁容差盲区**：整块新增内容后旧基线只差 0.48%~1.73%，低于 `maxDiffPixelRatio: 0.02` ⇒ 门禁不报警；页面改动必须主动重生成基线并目检 | RECHECK-055/057/059/060/061 W-1 |
+| 2 | **替身不校验 `Idempotency-Key`**：stub harness 只匹配 method+path，mutating 约束只有 live/中间件能守 | RECHECK-061 W-2 |
+| 3 | **worker SIGTERM 打不断阻塞中的 HTTP 读**（退出上界 = 客户端 30s 超时） | RECHECK-054 W-1（结转） |
+| 4 | **供应链面**：capabilities 取值域不是授权边界；`pinned_revision` 只校验形态；健康复核无 schema 漂移比对；ToolPack install/approve 面仍未提供 | RECHECK-060 W-2/W-3/W-4 |
+| 5 | **删除面边界**：草稿引用计数上限 200；不做跨项目引用检查；活动项目回退是前端行为 | RECHECK-061 W-3/W-4/W-5 |
+| 6 | **平台面**：成员/RBAC/租户隔离（M18 deferred）、`ops/schedules` 无用户可见创建/启停、聚合报表仍禁、Memory 之外的身份/Billing 面未提供 | GOAL-001 结转 + `pageSupport` |
+| 7 | **环境供给**：`infra/compose/research-validation.yaml` 的 evidence 目录缺口 | GOAL-001 结转 |
+| 8 | **安全声明**：`scanner_enobufs` 期间 hook 扫描无结论，循环内以独立 Mimosa 密封扫描替代（cycle 7 = 36 findings / 3 high，本轮改动文件命中 0 条）；**不主张项目整体安全** | 各 cycle 状态历史 |
+
+后继 GOAL 的入口 = 从本表任选主题（建议优先级：① 门禁盲区 → 用更强的像素/结构判据替代
+纯比率阈值；② 供应链面 ToolPack install/approve；③ 平台面 M18 租户与 RBAC）。
+
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
@@ -172,7 +197,8 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 | 4 | PLAN-20260915-058（EC-03：G8 工作区快照文件树 + 文件级 Diff） | 见本 cycle 提交 | 纯函数 8 passed / 读取器 12 passed / API 11 passed；契约 **383 passed / 56 skipped**；stub e2e **45 passed**、live e2e **25 passed**；根 eslint 0 error + web lint/typecheck 通过 + 单测 76 passed；`run-workspace` 设计基线 win32/linux 重生成并目检、design-fidelity 33 路由绿；本地 m0 **首跑红**（ruff：新增测试两行 101/102 字符）→ 修复后 **23/23**；RECHECK-058 = PASS_WITH_WARNINGS | run **34984686466**（05bcf04）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | ① 全量 stub 套件被严格替身守卫拦下（新面板必然调用 run 快照面）⇒ 默认路由进共享替身表 `stub-routes-workspace.ts`，不逐用例打补丁；② 控制面首次读宿主目录 ⇒ 收窄为只接受 `sha256:<64hex>` digest、只在 `<root>/.snapshots` 内解析、symlink 一律拒绝、未配置即 503；③ `ArtifactDiffDto.note` 与 `REPRODUCTION_NOTE` 里「控制面无快照 diff 面」的旧表述同步收敛（否则新能力被旧文案否认） | EC-04~06 PENDING；EC-03 已 PASS（范围注记见 EC 表） | cycle 5 = ① derive EC-04（G7 ops 写面：告警规则 CRUD + incident 处置），子 PLAN 编号 = PLAN-20260915-059 |
 | 5 | PLAN-20260915-059（EC-04：G7 ops 写面） | 见本 cycle 提交 | 控制面 10 passed + 读面口径 5 passed、全量 API **336 passed**；契约 3 passed（路径 + 写方法断言）；stub e2e **50 passed**、live e2e **28 passed**（含 3 条真实 HTTP 写链）；根 eslint 0 error + web `tsc --noEmit` 通过 + 单测 76 passed；`ops-alerts` / `ops-incidents` 设计基线 win32+linux 重生成并目检；本地 m0 **连续红了 4 次**（格式 / 50 行函数 / 循环依赖 / 命名，逐条修复）→ **23/23**；RECHECK-059 = PASS_WITH_WARNINGS | run **35002027768**（8148df4）：**六个 job 全 success**（quality-ubuntu-latest 17:43:08Z / quality-windows-latest 17:45:36Z / console-frontend / container-quality / eval-gate / collector-quality，无重跑） | ① 写面必须**被读面消费**：规则只打 `muted/muted_by` 标记不隐藏告警、登记事故回链来源 run 的告警、已登记 run 从候选移出；② 本地 m0 连红 **4 次**（格式 → 50 行函数 → 模块循环依赖 → 文件命名），逐条修复后才绿，全部如实记录；③ 本轮量化了**设计门禁的容差盲区**：整块新增面板后旧基线只差 **1.02% / 0.93%**（阈值 2%）⇒ 门禁不会报警，必须主动删基线强制重生成 + 目检（脚本 `scratch/cycle5-baseline-drift/measure.py`）；早期用"任一通道像素差 ≠ 0"得到的 ~40% 是误导性指标 | EC-05~06 PENDING；EC-04 已 PASS（范围注记见 EC 表） | cycle 6 = ① derive EC-05（G15 tool-provider 管理写面：注册/更新/健康复核），子 PLAN 编号 = PLAN-20260915-060 |
 | 6 | PLAN-20260915-060（EC-05：G15 tool-provider 注册治理写面） | 见本 cycle 提交 | 控制面 **18 passed**（状态机/409/422/404/503 + 三态 preflight 消费证明 + 健康同源）、全量 API **354 passed**；契约 **358 passed / 56 skipped**（+648 行 OpenAPI 快照）；stub e2e **55 passed / 14 files**、live e2e **30 passed / 8 files**（含 2 条真实 HTTP 注册链）；根 eslint 0 error + web `tsc --noEmit` 通过 + 单测 76 passed；`ops-integrations` 基线 win32+linux 重生成并目检；本地 m0 **红了 3 次**（行宽 / 格式 / 类型，逐条修复）→ **23/23**；RECHECK-060 = PASS_WITH_WARNINGS | run **35011288950**（5714179）：**六个 job 全 success**（eval-gate 19:03:36Z / collector-quality 19:05:32Z / container-quality 19:06:51Z / console-frontend 19:11:18Z / quality-ubuntu-latest 19:12:35Z / quality-windows-latest 19:16:12Z，无重跑） | ① 消费证明必须由**同一输入在不同状态下结论不同**给出：`dataset.read`（examples 三 provider 都不声明）在 PENDING → `TOOL_UNAVAILABLE`、ACTIVE → 消失且无 `SUPPLY_CHAIN_UNPINNED`（pin 来自注册）、REVOKED → 回归；② 供应链写面的三条硬门：信任级别由状态推导（DTO 无该字段）、pin 必须 `sha256:<hex>`、内置 id 不影子覆盖；③ 健康复核与读面共用 `probe_provider_spec()`，杜绝"复核说健康、目录说不可证明"；④ 顺带清两处跨 feature 重复（`useOpsAction`→`hooks/useAsyncAction`、`OpsFields`→`components/InlineFields`）；⑤ 复现门禁容差盲区：0.79% / 0.66% ⇒ 不报警 | EC-06 PENDING；EC-05 已 PASS（范围注记见 EC 表） | cycle 7 = ① derive EC-06（G2 项目归档/删除语义 + `DELETE/PATCH /projects/{id}` + 409 用例 + 每 cycle 门禁/CI 全绿 + GOAL 收口复检），子 PLAN 编号 = PLAN-20260915-061 |
-| 7 | PLAN-20260915-061（EC-06：G2 项目删除语义） | 见本 cycle 提交 | 删除语义 **7 passed**（无引用 204 / 被 runs·持久化 run·草稿·ops 引用各 409 且数据仍在 / 默认项目 409 / 未装配 503）、全量 API **361 passed**；契约 **359 passed / 56 skipped**（OpenAPI +34 行，仅新增 delete 操作）；stub e2e `project-delete.spec.ts` **4 passed**、全量 stub **59 passed / 15 files**；live e2e `live-project-registry.spec.ts` **2 passed**、全量 live **31 passed / 9 files**；根 eslint 0 error + web `tsc --noEmit` 通过 + 单测 76 passed；`portfolio-projects` 基线 win32+linux 重生成并目检；本地 m0 **首跑红**（治理校验：`MEM-20260915-037` 的来源 PLAN/RECHECK 尚未落盘——本轮先写记忆、后写计划所致）→ 补齐后 **23/23**；RECHECK-061 = PASS_WITH_WARNINGS | run **待回填**（提交后见状态历史） | ① 删除的默认答案是**拒绝**：控制面能删的是注册行，删不掉用户的研究数据 ⇒ `_references()` 只枚举能证实的项目作用域存储并逐项计数（`runs=2, drafts=1`），存储层不级联、原因在路由层；② 合成行（`example-project`）**必须显式 409**——返回 204 会变成"删除成功但列表里还有"的静默陷阱，404 也不对（它确实存在）；③ **替身守不住 `Idempotency-Key`**（反证：去掉该头后 stub 4 用例仍全绿，随后还原）⇒ mutating 调用的该约束只有 live 套件能守；④ `ProjectDeleteAction` 首版 60 行超 50 上限 ⇒ 抽出 `useProjectDeletion.ts`（hook 文件名与导出同名）；⑤ 复现门禁容差盲区第三次：0.48% / 0.47% ⇒ 不报警 | 六个 EC 全部 PASS；剩余 = GOAL 收口复检（`PLAN-20260915-062`）+ 终止条款判定 | GOAL 收口：① derive 收口复检 PLAN（`PLAN-20260915-062`），逐条复核 EC-01~06 的判定标准与范围注记；② 通过后按 README 终止条款置 status=ACHIEVED 并写收口状态历史 |
+| 7 | PLAN-20260915-061（EC-06：G2 项目删除语义） | 见本 cycle 提交 | 删除语义 **7 passed**（无引用 204 / 被 runs·持久化 run·草稿·ops 引用各 409 且数据仍在 / 默认项目 409 / 未装配 503）、全量 API **361 passed**；契约 **359 passed / 56 skipped**（OpenAPI +34 行，仅新增 delete 操作）；stub e2e `project-delete.spec.ts` **4 passed**、全量 stub **59 passed / 15 files**；live e2e `live-project-registry.spec.ts` **2 passed**、全量 live **31 passed / 9 files**；根 eslint 0 error + web `tsc --noEmit` 通过 + 单测 76 passed；`portfolio-projects` 基线 win32+linux 重生成并目检；本地 m0 **首跑红**（治理校验：`MEM-20260915-037` 的来源 PLAN/RECHECK 尚未落盘——本轮先写记忆、后写计划所致）→ 补齐后 **23/23**；RECHECK-061 = PASS_WITH_WARNINGS | run **35018256116**（bc4a9aa）：**六个 job 全 success**（eval-gate 20:13:18Z / collector-quality 20:15:11Z / container-quality 20:16:35Z / console-frontend 20:21:05Z / quality-ubuntu-latest 20:22:10Z / quality-windows-latest 20:23:54Z，无重跑） | ① 删除的默认答案是**拒绝**：控制面能删的是注册行，删不掉用户的研究数据 ⇒ `_references()` 只枚举能证实的项目作用域存储并逐项计数（`runs=2, drafts=1`），存储层不级联、原因在路由层；② 合成行（`example-project`）**必须显式 409**——返回 204 会变成"删除成功但列表里还有"的静默陷阱，404 也不对（它确实存在）；③ **替身守不住 `Idempotency-Key`**（反证：去掉该头后 stub 4 用例仍全绿，随后还原）⇒ mutating 调用的该约束只有 live 套件能守；④ `ProjectDeleteAction` 首版 60 行超 50 上限 ⇒ 抽出 `useProjectDeletion.ts`（hook 文件名与导出同名）；⑤ 复现门禁容差盲区第三次：0.48% / 0.47% ⇒ 不报警 | 六个 EC 全部 PASS；剩余 = GOAL 收口复检（`PLAN-20260915-062`）+ 终止条款判定 | GOAL 收口：① derive 收口复检 PLAN（`PLAN-20260915-062`），逐条复核 EC-01~06 的判定标准与范围注记；② 通过后按 README 终止条款置 status=ACHIEVED 并写收口状态历史 |
+| 8 | PLAN-20260915-062（收口复检：EC-01~06 × 当前树 + CI 逐 job 复核） | 见本 cycle 提交 | `scratch/verify_goal002_closeout.py` **59 条断言全 PASS**（EC-01 5 / EC-02 7 / EC-03 6 / EC-04 12 / EC-05 12 / EC-06 12 / 路由与基线 5）；CI 逐 run 现读：cycle 1~7 的 **8 个 run × 6 job 全 success**；治理 validate 绿；本地 m0 **23/23**；RECHECK-062 = PASS_WITH_WARNINGS | run **待回填**（提交后见状态历史） | 无失败；结转告警 8 类原样保留（见「收口结论」表） | **GOAL 收口**：六个 EC 全 PASS ⇒ status=ACHIEVED、`latest_recheck` 指向 RECHECK-20260915-062；长程剩余项交给后继 GOAL | 本 GOAL 无下一轮。后继 GOAL 建议入口 =「收口结论」表优先级 ① 门禁盲区 ② ToolPack install/approve ③ M18 租户/RBAC |
 
 ## 状态历史
 
@@ -365,6 +391,26 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
   checks`（失败如实记入 RECHECK-061，未掩盖）。RECHECK-061 = PASS_WITH_WARNINGS（W-1 门禁
   容差盲区第三次实测；W-2 替身守不住 Idempotency-Key（含反证）；W-3 草稿引用计数有 200 上限；
   W-4 不做跨项目引用检查；W-5 活动项目回退是前端行为；W-6 继承 RECHECK-054 W-1、
-  RECHECK-060 W-2/W-3/W-4；W-7 live 套件文件规模需拆）。安全面：Mimosa 密封扫描对账后
-  **本轮改动文件命中 0 条**（结论见下方【安全】段）；提交/推送时 Cursor hook 自带的扫描
-  未取得结论（`scanner_enobufs`），上述结论来自独立重跑的完整审计。**不主张项目整体安全**。
+  RECHECK-060 W-2/W-3/W-4；W-7 live 套件文件规模需拆）。本轮提交 `bc4a9aa` 的 CI run
+  **35018256116 六个 job 全 success**（无重跑）。安全面：Mimosa 密封扫描对账后
+  **本轮改动文件命中 0 条**；提交/推送时 Cursor hook 自带的扫描未取得结论
+  （`scanner_enobufs`），上述结论来自独立重跑的完整审计。**不主张项目整体安全**。
+- 2026-09-16 cycle 8（收口复检，**ACHIEVED**）：立 `PLAN-20260915-062` 做 ACHIEVED 前置
+  复检——**不依赖历史结论文本**，只读当前树判定六个 EC。复检脚本
+  `scratch/verify_goal002_closeout.py` 现算 **59 条证据面断言**：EC-01 项目级血缘路径 +
+  `GAPS.globalLineage` 收敛 + 未连边清单的诚实边界标记仍在；EC-02 成本预测两条路径 +
+  「不绘制预测」表述消失 + `MEAN_OF_VALUED_DAYS` 口径仍在；EC-03 三条工作区快照路径 +
+  `RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT` 边界仍在；EC-04 五条 ops 写路径与写方法 +
+  告警/事故 reason 记录写路径 + 两页 `level: "full"`；EC-05 五条注册面路径与写方法 +
+  `ops/integrations` 不再禁写 + `trust_for()` 仍在；EC-06 `/projects/{project_id}` 的
+  `patch|delete` + `portfolio/projects` 不再禁删 + 「归档即终态」表述消失 + 契约描述含
+  `409`/`级联`；以及 33 条规范路由仍在、`portfolio-projects` 双平台基线存在。
+  EC-06 的另一半（每 cycle CI 六 job 全绿）改为**从 GitHub API 逐 job 现读**：
+  cycle 1 `34960364156`、cycle 2 `34969935719`、cycle 3 `34978272057`、cycle 4 `34984686466`、
+  cycle 5 `35002027768`、cycle 6 `35011288950`、记录提交 `35013114804`、cycle 7 `35018256116`
+  —— **8 个 run × 6 job 全 success**，无重跑。治理 validate 绿、本地 m0 **23/23**。
+  RECHECK-062 = PASS_WITH_WARNINGS（8 类结转告警原样保留，见「收口结论」表）。
+  **判定：GOAL-20260915-002 = ACHIEVED**（六个 EC 全 PASS + 独立复检 + 本文件收口，
+  `latest_recheck` 指向 RECHECK-20260915-062）。收口语义：六个诚实缺口已变成**有真实
+  消费者**的能力，且每一项仍带范围注记（能力边界，不是待办占位）；长程剩余项已按主题
+  列入「终止与收口 · 收口结论」表，交后继 GOAL 承接。

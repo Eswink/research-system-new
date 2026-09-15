@@ -125,6 +125,7 @@ memory_entries:
 | WP-D | live e2e `live-project-registry.spec.ts` **2 passed**（真实 HTTP）；全量 live 套件 **31 passed in 9 files** | PASS |
 | WP-E | 基线：`portfolio-projects` win32（本地）+ linux（pinned noble）重生成并目检；漂移量化 `scratch/cycle7-baseline-drift/measure.py` → 0.48% / 0.47% | PASS |
 | WP-E | 本地 m0：首跑 `FAILED [framework/validate]`（MEM-037 的来源文件尚不存在）→ 补 PLAN/RECHECK 后复跑 `profile=m0; 23 deterministic checks` | PASS（先失败后修复） |
+| WP-E | main CI：run **35018256116**（bc4a9aa）六个 job 全 success（GitHub API `actions/runs/<id>/jobs` 逐 job 复核），无重跑 | PASS |
 
 ## 已知风险
 
