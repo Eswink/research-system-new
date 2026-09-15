@@ -2085,6 +2085,40 @@
         "title": "ForecastLineDto",
         "type": "object"
       },
+      "GateCapabilityViewDto": {
+        "additionalProperties": false,
+        "description": "门链能力（同一能力在多个 scope 上求值）的逐 scope 有效判决。",
+        "properties": {
+          "capability": {
+            "title": "Capability",
+            "type": "string"
+          },
+          "effects": {
+            "additionalProperties": false,
+            "title": "Effects",
+            "type": "object"
+          },
+          "reasons": {
+            "additionalProperties": false,
+            "title": "Reasons",
+            "type": "object"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scopes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "capability",
+          "scopes",
+          "effects"
+        ],
+        "title": "GateCapabilityViewDto",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "additionalProperties": false,
         "properties": {
@@ -3195,6 +3229,107 @@
           "note"
         ],
         "title": "NotificationsViewDto",
+        "type": "object"
+      },
+      "PolicyCapabilitiesDto": {
+        "additionalProperties": false,
+        "properties": {
+          "default_effect": {
+            "title": "Default Effect",
+            "type": "string"
+          },
+          "gate_capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/GateCapabilityViewDto"
+            },
+            "title": "Gate Capabilities",
+            "type": "array"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "policy_id": {
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyRuleViewDto"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "policy_id",
+          "version",
+          "default_effect",
+          "source",
+          "note"
+        ],
+        "title": "PolicyCapabilitiesDto",
+        "type": "object"
+      },
+      "PolicyRuleViewDto": {
+        "additionalProperties": false,
+        "description": "一条声明规则（effect 由所属规则组决定）。",
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "capability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capability"
+          },
+          "constraints": {
+            "additionalProperties": false,
+            "title": "Constraints",
+            "type": "object"
+          },
+          "effect": {
+            "title": "Effect",
+            "type": "string"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
+          }
+        },
+        "required": [
+          "effect"
+        ],
+        "title": "PolicyRuleViewDto",
         "type": "object"
       },
       "PreflightReportDto": {
@@ -6675,6 +6810,28 @@
         "summary": "List Ops Schedules",
         "tags": [
           "ops-view"
+        ]
+      }
+    },
+    "/policy/capabilities": {
+      "get": {
+        "description": "策略面只读快照（声明的规则 + 门链能力的逐 scope 有效判决）。",
+        "operationId": "policy_capabilities_policy_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyCapabilitiesDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Policy Capabilities",
+        "tags": [
+          "policy"
         ]
       }
     },

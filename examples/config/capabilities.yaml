@@ -33,6 +33,7 @@ capabilities:
   - workspace.delete
   - artifact.read
   - artifact.write
+  - memory.write
   - code.execute
   - package.install
   - network.academic

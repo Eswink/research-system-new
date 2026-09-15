@@ -40,8 +40,21 @@ _CAPABILITY_SCOPE: dict[str, str] = {
 }
 
 
+# 门链时刻能力（非 preflight 工具需求）：同一能力在多个 scope 上分别声明，
+# scope 由调用方按领域语义给出（memory.write → memory tier）。与 _CAPABILITY_SCOPE
+# 一起构成 policy.yaml 的镜像契约（有测试锁死两者并集 == 声明对）。
+_GATE_CAPABILITY_SCOPES: dict[str, frozenset[str]] = {
+    "memory.write": frozenset({"SESSION", "RUN", "PROJECT", "ORGANIZATION"}),
+}
+
+
 def _policy_scope(capability: str) -> str | None:
     return _CAPABILITY_SCOPE.get(capability)
+
+
+def gate_capability_scopes() -> dict[str, frozenset[str]]:
+    """门链能力 → 求值 scope 集合（控制面可见性读取；返回值不就地修改）。"""
+    return _GATE_CAPABILITY_SCOPES
 
 
 def _evaluate_requirement(

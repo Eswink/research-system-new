@@ -152,6 +152,7 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     """
     from adapters.fakes.memory_store import FakeMemoryStore
     from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
+    from services.api.assembly import policy_bindings
 
     ctx = _run_ready_context()
     return ApiDeps(
@@ -174,6 +175,7 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         memory=FakeMemoryStore(),
         artifacts=ctx.shared.artifacts,
         ledger=ctx.shared.ledger,
+        **policy_bindings(),  # PLAN-049：策略面与生产同源（缺文件 → None）
         **_run_ready_sqlite_stores(ctx.connection),
         _connection=ctx.connection,
     )

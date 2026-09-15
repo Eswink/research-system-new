@@ -21,6 +21,7 @@ import { libraryClient } from "./libraryClient";
 import { modelsClient } from "./modelsClient";
 import { operationsClient } from "./operationsClient";
 import { opsViewClient } from "./opsViewClient";
+import { policyClient } from "./policyClient";
 import { projectsClient } from "./projectsClient";
 import { protocolClient, type ProtocolSource } from "./protocolClient";
 import { runClient } from "./runClient";
@@ -194,6 +195,9 @@ export const api = {
     curator_approved: boolean;
   }) => memoryClient.propose(payload),
   deleteMemory: (memoryId: string) => memoryClient.remove(memoryId),
+
+  // ── policy（WP-C PLAN-049）──
+  policyCapabilities: () => policyClient.capabilities(),
 
   // ── notifications（WP-G）──
   notifications: () => notificationsClient.list(),

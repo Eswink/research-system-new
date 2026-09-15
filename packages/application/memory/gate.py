@@ -105,17 +105,20 @@ def evaluate_memory_proposal(
             return GateResult(
                 accepted=False, stage=stage, decision=PolicyDecision.DENY, reasons=(reason,)
             )
-    decision = _evaluate_policy(proposal, deps)
+    decision, policy_reason = _evaluate_policy(proposal, deps)
     if decision is PolicyDecision.DENY:
         return GateResult(
-            accepted=False, stage="policy", decision=decision, reasons=("policy deny",)
+            accepted=False,
+            stage="policy",
+            decision=decision,
+            reasons=(f"policy deny: {policy_reason}",),
         )
     if decision is PolicyDecision.REQUIRE_APPROVAL and curator_approved is not True:
         return GateResult(
             accepted=False,
             stage="policy",
             decision=decision,
-            reasons=("policy requires approval",),
+            reasons=(f"policy requires approval: {policy_reason}",),
         )
     if proposal.tier in _CURATOR_TIERS and curator_approved is not True:
         return GateResult(
@@ -127,9 +130,12 @@ def evaluate_memory_proposal(
     return GateResult(accepted=True, stage="evaluated", decision=decision)
 
 
-def _evaluate_policy(proposal: MemoryWriteProposal, deps: MemoryGateDeps) -> PolicyDecision:
+def _evaluate_policy(
+    proposal: MemoryWriteProposal, deps: MemoryGateDeps
+) -> tuple[PolicyDecision, str]:
+    """求值并回传可读理由（拒绝原因进 422 detail，不落成不透明枚举）。"""
     if deps.policy is None:
-        return PolicyDecision.ALLOW
+        return PolicyDecision.ALLOW, "no policy evaluator configured (default allow)"
     evaluation = deps.policy.evaluate(
         PolicyRequest(
             actor=proposal.proposed_by or deps.actor,
@@ -138,7 +144,7 @@ def _evaluate_policy(proposal: MemoryWriteProposal, deps: MemoryGateDeps) -> Pol
             scope=proposal.tier.value,
         )
     )
-    return evaluation.decision
+    return evaluation.decision, evaluation.reason or "policy evaluated without reason"
 
 
 def commit_memory(

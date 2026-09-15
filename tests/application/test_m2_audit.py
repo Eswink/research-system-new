@@ -255,9 +255,20 @@ def test_policy_scope_mapping_matches_policy_yaml() -> None:
     for rule in all_rules:
         if rule.scope is not None and rule.capability is not None:
             declared.add((rule.capability, rule.scope))
-    mapped = set(_CAPABILITY_SCOPE.items())
-    # 常量与声明互为镜像：多映射或少映射都视为漂移
+    from packages.application.preflight.policy_check import _GATE_CAPABILITY_SCOPES
+
+    single = set(_CAPABILITY_SCOPE.items())
+    gate = {
+        (capability, scope)
+        for capability, scopes in _GATE_CAPABILITY_SCOPES.items()
+        for scope in scopes
+    }
+    mapped = single | gate
+    # 常量与声明互为镜像（并集相等）：多映射、少映射或被拆散都视为漂移
     assert mapped == declared
+    assert single == {
+        (capability, scope) for capability, scope in declared if capability != "memory.write"
+    }
     # 常量中的 capability 必须能在 capabilities.yaml 注册表中溯源
     capabilities = (load_yaml("examples/config/capabilities.yaml") or {}).get("capabilities", [])
     assert {item[0] for item in mapped} <= set(capabilities)

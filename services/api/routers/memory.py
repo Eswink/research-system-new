@@ -11,10 +11,11 @@ packages.application.memory 用例，不另建第二套 gate。
   提案参数）；
 - 无 principal/多项目边界（M18 deferred）→ 列表带 scope_note，不假称
   project 过滤；
-- capability policy 面（policy.yaml `_CAPABILITY_SCOPE` 镜像契约）当前不
-  含 memory.write；把 memory.write 纳入 capability 注册表属 policy 面扩展
-  （follow-up），此处 policy 槽位显式 None，写入门槛由 provenance 白名单
-  （ledger.has_source）+ PROJECT/ORGANIZATION tier 的 curator 门承担。
+- policy 槽位注入真实求值器（PLAN-20260914-049）：policy.yaml 的
+  `memory.write` 规则按 tier 生效（deny → 422 policy 阶段；require_approval
+  仍需 curator 输入）；policy 文件不可解析时 evaluator 为 None，门链按既有
+  行为继续（不伪造默认策略），provenance 白名单（ledger.has_source）+
+  PROJECT/ORGANIZATION tier 的 curator 门始终兜底。
 """
 
 from __future__ import annotations
@@ -105,11 +106,12 @@ def _proposal(payload: MemoryProposalDto) -> MemoryWriteProposal:
 
 
 def _gate_deps(deps: ApiDeps) -> MemoryGateDeps:
-    """门依赖：policy 槽位显式 None（见模块 docstring），写入门槛由
-    provenance 白名单（ledger 验证）+ tier/curator 门承担。"""
+    """门依赖：policy 面注入 composition 装配的求值器（PLAN-20260914-049）；
+    policy.yaml 不可用时为 None，此时门槛由 provenance 白名单（ledger 验证）
+    + tier/curator 门承担（与接线前一致，不伪造默认策略）。"""
     return MemoryGateDeps(
         store=_store_of(deps),  # type: ignore[arg-type]
-        policy=None,
+        policy=deps.policy_evaluator,
         ledger=deps.ledger,
         publisher=deps.events,
     )

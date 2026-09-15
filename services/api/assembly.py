@@ -63,3 +63,19 @@ def _endpoint_url_policy(effective: ApiSettings) -> EndpointUrlPolicy:
         allow_private=effective.allow_localhost_endpoints,
         allow_link_local=effective.allow_localhost_endpoints,
     )
+
+
+def policy_bindings() -> dict[str, Any]:
+    """策略面装配 kwargs（policy + 求值器同源；SQLite/PG/夹具三处共用）。
+
+    policy.yaml 缺失/不可解析 → 两者都是 None（调用方按诚实缺口处理，不伪造
+    默认策略）。
+    """
+    from packages.application.policy.native import NativePolicyEvaluator
+    from services.api.catalog import load_policy_definition
+
+    policy = load_policy_definition()
+    return {
+        "policy": policy,
+        "policy_evaluator": NativePolicyEvaluator(policy) if policy is not None else None,
+    }

@@ -14,6 +14,17 @@ policy:
       scope: approved_tool_providers
     - capability: network.academic
       scope: approved_domains
+    # Memory 写入按 tier 显式放行（PLAN-20260914-049，G16）：默认保持既有行为
+    # （PROJECT/ORGANIZATION 的审批仍由门链 curator 门承担，不在此重复）；运维可
+    # 在此对某 tier 收紧为 deny / require_approval（门链 policy 阶段实时生效）。
+    - capability: memory.write
+      scope: SESSION
+    - capability: memory.write
+      scope: RUN
+    - capability: memory.write
+      scope: PROJECT
+    - capability: memory.write
+      scope: ORGANIZATION
 
   allow_with_constraints:
     - capability: workspace.write.notes

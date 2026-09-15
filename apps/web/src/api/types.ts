@@ -810,6 +810,32 @@ export interface MemoryCommittedDto {
   decision: string;
 }
 
+/** WP-C（PLAN-049）策略面只读快照：声明规则 + 门链能力的逐 scope 有效判决。 */
+export interface PolicyRuleViewDto {
+  effect: string;
+  capability: string | null;
+  action: string | null;
+  scope: string | null;
+  constraints: Record<string, unknown>;
+}
+
+export interface GateCapabilityViewDto {
+  capability: string;
+  scopes: string[];
+  effects: Record<string, string>;
+  reasons: Record<string, string>;
+}
+
+export interface PolicyCapabilitiesDto {
+  policy_id: string;
+  version: string;
+  default_effect: string;
+  source: string;
+  rules: PolicyRuleViewDto[];
+  gate_capabilities: GateCapabilityViewDto[];
+  note: string;
+}
+
 /** WP-G 通知投影（outbox 事件白名单；不含 payload 内容）。 */
 export interface NotificationDto {
   id: string;

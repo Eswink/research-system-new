@@ -199,6 +199,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
     from adapters.sqlite.approval_store import SqliteApprovalStore
     from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
     from adapters.sqlite.run_store import SqliteRunStore
+    from services.api.assembly import policy_bindings
 
     deps = ApiDeps(
         endpoint_store=assembly.endpoint_store,
@@ -231,6 +232,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         pricing_snapshot_store=assembly.pricing_snapshot_store,
         worker_registry=assembly.worker_registry,
         protocol_draft_service=_build_pg_draft_service(assembly.pg_conn),
+        **policy_bindings(),
         _connection=assembly.connection,
         _pg_connection=assembly.pg_conn,
     )

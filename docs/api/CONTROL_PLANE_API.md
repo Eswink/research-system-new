@@ -265,11 +265,27 @@ DELETE /memory/{id}                        （WP-F；lifecycle 用例 + 幂等�
   pending 状态；两阶段 decide 需要 proposal store + 迁移（未实现，避免伪
   造第二套事实源）。`curator_approved` 作为提案参数进入门链：
   schema → provenance（ledger.has_source 验证）→ contradiction →
-  policy(None=ALLOW) → tier/curator 门 → sanitize-before-commit →
+  policy → tier/curator 门 → sanitize-before-commit →
   commit + MEMORY_PROPOSED/MEMORY_COMMITTED 事件。
-- capability policy 面（`_CAPABILITY_SCOPE` 镜像契约）纳入 memory.write 为
-  follow-up；当前写入门槛由 provenance 白名单 + PROJECT/ORGANIZATION tier
-  的 curator 门承担。
+- PLAN-20260914-049：policy 槽位注入 composition 装配的真实 PolicyEvaluator
+  （NativePolicyEvaluator + `examples/config/policy.yaml`）。`memory.write`
+  按 tier 声明（`_GATE_CAPABILITY_SCOPES` 多 scope 门链能力）：默认四个 tier
+  都是 allow（行为与接线前一致），运维可在 policy.yaml 对某 tier 收紧为
+  deny / require_approval —— 收紧后提案在 policy 阶段被 422 拒绝，reason
+  可读（如 `policy deny: matched deny rule`）。policy.yaml 缺失/不可解析时
+  evaluator 为 None，门链不伪造默认策略（退回 provenance + curator 兜底）。
+
+## Policy（只读快照，PLAN-20260914-049 WP-C）
+
+```text
+GET    /policy/capabilities                （声明规则 + 门链能力逐 scope 有效判决）
+```
+
+- 判决由控制面运行期实际使用的同一 PolicyEvaluator 计算（同代码路径，不做
+  第二套判定）；actor 不参与规则匹配（仅 capability/action/scope），响应 note
+  显式说明。
+- 只读：无规则 CRUD（策略变更是 policy.yaml 的版本化改动 + 重启）；policy
+  未加载 → 503（不伪造快照）。
 
 ## Event Stream
 

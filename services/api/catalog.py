@@ -30,11 +30,25 @@ from adapters.contracts import (
 )
 from adapters.contracts.protocol_loaders import load_protocol
 from packages.application.ports import CatalogSnapshot, ProjectSettings
+from packages.domain.policy import PolicyDefinition
 
 _ROOT = Path(__file__).resolve().parents[2]
 _CONFIG_DIR = "examples/config"
 _PROTOCOLS_DIR = "examples/protocols"
 _CONTRACTS_DIR = "examples/contracts"
+
+
+def load_policy_definition() -> PolicyDefinition | None:
+    """项目策略定义（examples/config/policy.yaml）。
+
+    控制面运行时策略面（记忆门链等）与控制面可见性（GET /policy/capabilities）
+    共用同一份策略；文件缺失或不可解析时返回 None —— 调用方必须按诚实缺口
+    处理（503/显式 None），不得伪造默认策略。
+    """
+    try:
+        return load_policy(f"{_CONFIG_DIR}/policy.yaml")
+    except (OSError, ValueError):
+        return None
 
 
 def load_catalog_snapshot() -> CatalogSnapshot:

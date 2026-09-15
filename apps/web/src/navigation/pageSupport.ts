@@ -51,7 +51,8 @@ export const GAPS = {
     "（GET /runs/{id}/cost-forecast，仅已预留额度）；跨 run 时间序列预测不绘制",
   memory:
     "产品 Memory 已接入（WP-A 起 SQLite 开发路径与 PG canonical 双支持）；" +
-    "无持久化 pending 提案，门链直提交；capability policy 面扩展为 follow-up",
+    "无持久化 pending 提案，门链直提交；memory.write 已入 policy 面（逐 tier 判决" +
+    "在 govern/audit 只读呈现，policy.yaml 变更需重启控制面）",
   experimentCreate:
     "计划预注册/归档已接入（WP-A 起 SQLite 开发路径与 PG 双支持）；" +
     "域内无队列状态，排队/调度无 API，不伪装",

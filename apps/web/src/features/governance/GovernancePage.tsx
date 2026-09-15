@@ -14,6 +14,7 @@ import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
 import { ExportView } from "./ExportView";
 import { MemoryPanel } from "./MemoryPanel";
+import { PolicyPanel } from "./PolicyPanel";
 
 type TabId = "audit" | "export" | "memory";
 
@@ -51,7 +52,12 @@ export function GovernancePage({ ctx }: { ctx: PageContext }) {
           {bundle.data !== null && <ExportView bundle={bundle.data} runId={runId} />}
         </ResourceBoundary>
       )}
-      {tab === "memory" && <MemoryPanel />}
+      {tab === "memory" && (
+        <>
+          <PolicyPanel />
+          <MemoryPanel />
+        </>
+      )}
     </section>
   );
 }

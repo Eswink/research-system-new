@@ -57,6 +57,7 @@ from packages.application.ports.event_publisher import EventPublisher
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.model_gateway import ModelGateway
 from packages.application.ports.model_store import ModelStore
+from packages.application.ports.policy_evaluator import PolicyEvaluator
 from packages.application.ports.resource_catalog import PreflightContext
 from packages.application.ports.run_projection import RunProjection
 from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
@@ -66,12 +67,14 @@ from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
     RunOrchestrationService,
 )
+from packages.domain.policy import PolicyDefinition
 from packages.domain.run import ResearchRun
 from services.api.assembly import (
     _endpoint_url_policy,
     _is_postgres_dsn,
     _load_pricing,
     _open_sqlite,
+    policy_bindings,
 )
 from services.api.demo import _default_events
 from services.api.demo import demo_session_output as demo_session_output
@@ -127,6 +130,11 @@ class ApiDeps:
     pricing: Any | None = field(default=None, repr=False)
     worker_registry: WorkerRegistry | None = field(default=None, repr=False)
     protocol_draft_service: Any | None = field(default=None, repr=False)
+    # WP-B（PLAN-049）：policy 面（examples/config/policy.yaml）与控制面求值器。
+    # 两组成同侧装配；加载失败/缺文件时保持 None（调用方须按诚实缺口处理，
+    # 不得假装存在默认策略）。
+    policy: PolicyDefinition | None = field(default=None, repr=False)
+    policy_evaluator: PolicyEvaluator | None = field(default=None, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)
@@ -305,6 +313,7 @@ def _assemble_sqlite(
         protocol_draft_service=_build_draft_service(connection),
         endpoint_url_policy=_endpoint_url_policy(effective),
         telemetry=telemetry,
+        **policy_bindings(),
         _connection=connection,
     )
 

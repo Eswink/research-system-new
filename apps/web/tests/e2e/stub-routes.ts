@@ -5,6 +5,7 @@
  */
 
 import { BUDGET_ROUTES } from "./stub-routes-budget";
+import { POLICY_ROUTES } from "./stub-routes-policy";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
 export type { Handler } from "./stub-fixtures";
@@ -424,4 +425,6 @@ export const ROUTES: readonly StubRoute[] = [
   },
   // PLAN-046 EC-04: budget adjust + reserved-vs-consumed forecast.
   ...BUDGET_ROUTES,
+  // PLAN-049 WP-C: capability policy snapshot.
+  ...POLICY_ROUTES,
 ];

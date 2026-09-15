@@ -320,7 +320,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |
 | G14 | 实验~~创建~~/排队/调度 | portfolio/experiments | **预注册/归档已交付**（WP-E）；queue/schedule 无域支撑保持禁用 |
 | G15 | Tool Provider 管理面（install/approve/revoke） | ops/integrations | **目录已交付**（PLAN-043：GET /tool-providers 只读投影 + 三态健康）；管理动作未提供（供应链治理） |
-| G16 | Memory capability policy（memory.write 入 policy.yaml 镜像契约） | govern/audit | follow-up（_CAPABILITY_SCOPE 单值映射限制） |
+| G16 | ~~Memory capability policy~~ | govern/audit Memory Tab | **已交付**（PLAN-049：memory.write 入 policy.yaml 镜像契约 + 门链 policy 阶段实时生效；GET /policy/capabilities 只读呈现逐 tier 判决；规则变更仍需改 policy.yaml） |
 
 ## 旧路由别名映射（T32 交付兼容）
 
