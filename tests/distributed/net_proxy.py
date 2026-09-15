@@ -74,7 +74,10 @@ class NetProxy:
             while not self._stopping.is_set():
                 if self._blackholed.is_set():
                     self._stall(client)
-                    return
+                    # `restore()` must actually restore: fall back into the pump
+                    # loop so bytes blocked during the partition (still in the
+                    # socket buffer, never consumed) flow again once it heals.
+                    continue
                 # Pump BOTH directions every iteration. A recv timeout is not
                 # "closed" — short-circuiting on the client direction would
                 # strand the upstream response and hang the client.
@@ -108,11 +111,20 @@ class NetProxy:
         return True
 
     def _stall(self, client: socket.socket) -> None:
-        """Hold the client open but silent (partition: bytes never flow)."""
+        """Hold the connection open but silent until the partition heals.
+
+        Bytes the client sent are **peeked, never consumed**: the partition is
+        "packets do not flow", not "bytes are thrown away". Consuming them would
+        make the request unrecoverable after `restore()` (the client would wait
+        out its full HTTP timeout with the request already swallowed), which is
+        a different fault than a network partition and would strand callers that
+        are correctly written — e.g. a worker blocked in a gateway request cannot
+        honor SIGTERM until that read returns.
+        """
         client.settimeout(0.2)
-        while not self._stopping.is_set():
+        while not self._stopping.is_set() and self._blackholed.is_set():
             try:
-                if client.recv(65536) == b"":
+                if client.recv(65536, socket.MSG_PEEK) == b"":
                     return
             except socket.timeout:
                 continue

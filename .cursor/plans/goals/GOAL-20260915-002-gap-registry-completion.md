@@ -75,9 +75,11 @@ escalation_triggers:
   - 破坏性数据迁移或不可逆动作
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260915-054-netproxy-partition-heal.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-054-netproxy-partition-heal.md
+memory_entries:
+  - MEM-20260915-031-partition-injector-must-heal
 ---
 
 # GOAL-20260915-002 — 诚实缺口注册表收口（自迭代循环）
@@ -105,9 +107,10 @@ memory_entries: []
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 0（尚未开始）**。首个动作 = ① derive：
-按 EC 表顺序取 EC-01（G9 全局血缘），子 PLAN 编号续全局序列（下一号 = PLAN-20260915-054）。
-driver=session-goal，owner=root-agent。
+按 README 的 7 步判定执行；当前续点：**cycle 1 已闭环（PLAN-20260915-054：分区注入器真实性
+修复，RECHECK-054 = PASS_WITH_WARNINGS；该轮为 CI 债，六个 EC 仍全部 PENDING）**。
+下一个动作 = ① derive：取 EC-01（G9 全局跨 run 血缘），子 PLAN 编号续全局序列
+（下一号 = **PLAN-20260915-055**）。driver=session-goal，owner=root-agent。
 
 ## 驱动
 
@@ -146,10 +149,22 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| （尚无 cycle） | — | — | — | — | — | EC-01~06 全部 PENDING | cycle 1 = ① derive EC-01（G9 全局血缘） |
+| 1 | PLAN-20260915-054（CI 债：分区注入器真实性） | 见本轮提交 | 新语义用例 3 passed + 反证 `legacy: SWALLOWED / fixed: ECHOED`；Linux 容器 D 场景 5/5、`tests/distributed` 全量 25 passed / 4 skipped / 0 failed；本地 m0 23/23；RECHECK-054 = PASS_WITH_WARNINGS | 见本轮提交后的 run（起因 run 34957121713 collector-quality 红） | 旧 `_stall` 消费并丢弃分区期间的字节且连接线程直接结束 ⇒ `restore()` 无法恢复在途请求，worker 阻塞到 30s 客户端超时、SIGTERM 打不断阻塞读 ⇒ D 场景 teardown `wait(10)` 超时（cycle 13 收口提交的 CI 红）；另修宿主 venv 被容器 `uv sync` 覆盖的事故（已重建并验证） | EC-01~06 全部 PENDING（本轮为 EC-06 的门禁债前置） | cycle 2 = ① derive EC-01（G9 全局跨 run 血缘），子 PLAN 编号 = PLAN-20260915-055 |
 
 ## 状态历史
 
 - 2026-09-15 创建（ACTIVE）：GOAL-20260912-001 收口（ACHIEVED，RECHECK-20260915-053）后，
   按用户「循环迭代 10-20 次」的授权承接长程迭代；范围 = GOAL-001「终止与收口 · cycle 12
   长程排期」的候选缺口表（G9/G12/G8/G7/G15/G2），六项各立一个 EC。
+- 2026-09-15 cycle 1（CI 债，非 EC 交付）：GOAL-001 cycle 13 的收口提交 `8d18c5e`（只改
+  `.cursor/**` 记录）在 CI run `34957121713` 上 collector-quality 失败
+  ——`test_scenario_d_network_partition_no_old_authority` teardown `subprocess.TimeoutExpired
+  (d-partitioned, 10s)`。根因定位到**故障注入器语义缺陷**：`NetProxy._stall` 用 `recv()`
+  消费并丢弃分区期间的字节、且连接线程随即结束，`restore()` 无法恢复在途请求；调用方只能
+  等自己的 HTTP 超时（worker client 30s），而 SIGTERM 的 handler 只能置标志（主线程阻塞在
+  socket 读，PEP 475 重启该系统调用）⇒ 进程 10s 内不退出。修法：`_stall` 改 `MSG_PEEK`
+  观测、分区解除后回到泵循环（字节留在内核缓冲，恢复后送达）。新增 3 条 loopback 语义用例
+  + 反证脚本（旧语义 `SWALLOWED`／修复后 `ECHOED`）；Linux 容器内 D 场景 5/5、
+  `tests/distributed` 全量 25 passed / 0 failed；本地 m0 23/23。RECHECK-054 =
+  PASS_WITH_WARNINGS（W-1 = worker 的 SIGTERM 打不断阻塞中的 HTTP 读、退出上界 = 客户端
+  30s 超时，登记给后续 EC 决策）。六个 EC 仍全部 PENDING。
