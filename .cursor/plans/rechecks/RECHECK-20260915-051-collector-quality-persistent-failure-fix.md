@@ -100,3 +100,10 @@ PLAN-20260915-051 AC-01~AC-03 满足，判定 **PASS_WITH_WARNINGS**：
 - 未调超时、未放宽/删除断言、未改 workflow、未引入新上游镜像；
 - 剩余 CI 复验（run 结论）在本文件冻结后回写 GOAL 迭代日志与 EC-06 判定；
 - 遗留项见 W-1（research-validation.yaml 同类缺口）。
+
+### CI 复验结果（冻结后补充，2026-09-15）
+
+run **34939068977**（commit `2f688a9`）**六个 job 全 success**：quality-ubuntu-latest /
+quality-windows-latest / console-frontend / container-quality / eval-gate /
+**collector-quality** —— 该 job 自 run #61 起首次转绿，与上表 Linux 侧证据一致。
+GOAL EC-06 据此由「待 CI 复验」改记 **PASS**；本复检结论（PASS_WITH_WARNINGS）不变。

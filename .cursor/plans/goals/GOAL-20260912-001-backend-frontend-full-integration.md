@@ -2,7 +2,7 @@
 id: GOAL-20260912-001
 slug: backend-frontend-full-integration
 title: 后端补全与前端完整对接（预留接口/fixture 全消，33 路由 live-capable）
-status: ACTIVE
+status: BLOCKED
 created_at: 2026-09-12
 updated_at: 2026-09-15
 owners:
@@ -53,10 +53,14 @@ exit_criteria:
       而是经协作式 cancel 通道中断在途执行且不提交该次尝试；② 证据栈增加一次性
       evidence-dir 供给服务（fresh checkout 的 data/otel 会被 Docker 建为 root:root，
       uid 10001 的 collector 写不进、0600 文件宿主也读不到）。Linux 侧实测两项均绿、
-      预修复反证复现 CI 原文 ⇒ 剩余动作仅为 CI 复验
+      预修复反证复现 CI 原文。
+      （CI 复验，2026-09-15）run 34939068977（commit 2f688a9）六个 job 全 success：
+      quality-ubuntu-latest / quality-windows-latest / console-frontend /
+      container-quality / eval-gate / collector-quality —— collector-quality 自 run 61
+      起首次转绿（run 号见本行；frontmatter 内不写井号，避免 YAML 注释歧义）
     verify: gh run list --branch main --workflow m0-quality.yml 最新 run conclusion=success；
       docs/audits/PA1_MIMOSA_REVIEW.md 含收口时间戳节
-    status: PENDING
+    status: PASS
 budget:
   # 10（cycle 6 后授权）已用尽 ⇒ cycle 10 收 BLOCKED；2026-09-15 用户会话再次要求
   # 继续 goal 循环并判定 collector-quality 项按「修产品行为」处理 ⇒ max_cycles 记为 13
@@ -113,7 +117,7 @@ memory_entries:
 | EC-03 | 9 GAP 域中 prompts/datasets/notebooks/alerts/incidents/schedules/data-health 最小域 + live | API/e2e/policy | PASS |
 | EC-04 | 深水区语义（budget_adjust/预测/真 pause-resume/队列/Diff/memory policy），未落地保持诚实标注 | API + G 表一致性 | **BLOCKED**（6 项中 5 项交付：budget_adjust + 成本预测 + 制品内容 Diff + pause/resume + memory capability policy；实验队列 G14 未交付，pageSupport / CONSOLE_PAGE_MAP 保持诚实禁用） |
 | EC-05 | 33 路由 live-capable（M18/M19 诚实锁定除外）；example 仅设计参照 | stub+live e2e + pageSupport | **PASS**（33 路由 = 10 full / 22 partial / 1 gap；gap 仅 ops/matrix 非业务页；守卫测试锁死：显式登记 + 非 full 必有 reason + gap 仅非业务页） |
-| EC-06 | 每 cycle GHA 全绿；收口 RECHECK + 安全扫描处置 | gh run + audits | **PENDING**（收口面已交付：RECHECK-050 + 密封扫描处置；cycle 11 定位并修复 collector-quality 两项根因——worker SIGTERM 关停中断 + 证据目录供给，Linux 实证两项绿、预修复反证复现 CI 原文；剩余动作 = CI 复验） |
+| EC-06 | 每 cycle GHA 全绿；收口 RECHECK + 安全扫描处置 | gh run + audits | **PASS**（收口面：RECHECK-050 PASS_WITH_WARNINGS + 密封扫描逐条处置；cycle 11 修复 collector-quality 两项持续失败，run 34939068977 = **六 job 全 success**，该 job 自 run #61 起首次转绿） |
 
 前置输入（cycle 前已完成，不占 cycle 预算）：PLAN-20260912-040（后端组成浮现、
 接缝闭合、DELETE/custom/clone/approvals-history/参考协议）已 DONE，
@@ -122,7 +126,7 @@ RECHECK-20260912-040 = PASS_WITH_WARNINGS；密封扫描 scan-2026-09-12 已处�
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 11 进行中（PLAN-051：collector-quality 两项持续失败的根因修复）；2026-09-15 用户会话再次授权继续循环、并判定该项按「修产品行为」处理 ⇒ status 由 BLOCKED 转回 ACTIVE，`max_cycles` 10→13；driver=session-goal，owner=root-agent。**
+按 README 的 7 步判定执行；当前续点：**cycle 11 已闭环（PLAN-051：collector-quality 两项根因修复；CI run 34939068977 六 job 全绿 ⇒ EC-06 PASS）。EC-01/02/03/05/06 = PASS，唯一未完成项 = EC-04 实验队列 G14（人工决策）⇒ status=BLOCKED；预算余 cycle 12-13。driver=session-goal，owner=root-agent。**
 
 人工决策点（逐条处理，详见「终止与收口」）：
 1. ~~`collector-quality` 持续失败~~ → **已决（2026-09-15，用户会话）**：修产品行为
@@ -160,12 +164,28 @@ m0 全量单跑截断（分组复跑）。工作流文件 `.github/workflows/m0-
 
 ## 终止与收口
 
-**2026-09-15 cycle 11 更新（ACTIVE）**：cycle 10 的收口判定保留如下（历史事实），但三项
-人工决策中 ①③ 已于 2026-09-15 由用户会话决断（① 修产品行为；③ 继续循环、`max_cycles`
-10→13），GOAL 由 BLOCKED 转回 ACTIVE 并完成 cycle 11：EC-06 改记 **PENDING**（两项根因
-修复 + Linux 实证 + 反证均已落地，仅差 CI 复验，不预设绿）；EC-04 仍 **BLOCKED**（实验
-队列 G14 待人工决策，与 cycle 11 无关）。下次进入：按 ⑤ 读取本 cycle push 后的 CI run
-结论 → 全绿则 EC-06 记 PASS 并评估 GOAL 收口（EC-04 仍需人工决定 G14）。
+**2026-09-15 cycle 11 更新**：cycle 10 的收口判定保留如下（历史事实），但三项人工决策中
+①③ 已于 2026-09-15 由用户会话决断（① 修产品行为；③ 继续循环、`max_cycles` 10→13），
+GOAL 由 BLOCKED 转回 ACTIVE 并完成 cycle 11：collector-quality 两项根因修复后，
+CI run 34939068977（2f688a9）**六 job 全 success** ⇒ **EC-06 = PASS**。
+
+**当前终态判定（cycle 11 收盘）**：
+
+| EC | 判定 | 证据 |
+| --- | --- | --- |
+| EC-01 | PASS | RECHECK-041 |
+| EC-02 | PASS | RECHECK-043 |
+| EC-03 | PASS | RECHECK-044 + RECHECK-045 |
+| EC-04 | **BLOCKED** | 5/6 交付（046/047/048/049）；实验队列 G14 未交付且保持诚实禁用标注 ⇒ 需人工决定是否续做 |
+| EC-05 | PASS | RECHECK-050 + 守卫测试 |
+| EC-06 | **PASS** | run 34939068977 六 job 全 success + RECHECK-050/051 PASS_WITH_WARNINGS + 密封扫描处置 |
+
+**唯一剩余人工决策**：实验队列 G14（queue/schedule）是否续做。两条出路：
+① 续做 ⇒ 恢复 ACTIVE、以 cycle 12 实现最小域（domain + store + API + client + 页面 live +
+e2e），预算余 2 cycle；② 不续做 ⇒ EC-04 按"G14 明确不作为"书面收口，届时 EC-01~06 全
+PASS 可评估 GOAL ACHIEVED（需独立复检 + MEM 沉淀）。
+**可恢复点**：本文件迭代日志最后一行（cycle 11）+ 状态历史末条 + 工作树/远端 = main 的
+cycle 11 提交（2f688a9 及其记录提交）。
 
 **2026-09-15 收口判定（cycle 10，预算用尽；历史记录）**：
 
@@ -209,11 +229,17 @@ m0 全量单跑截断（分组复跑）。工作流文件 `.github/workflows/m0-
 | 7 | PLAN-20260914-047 | 7eece2f | 全量 pytest 3297 passed/6 skipped/0 failed（DSN 固化后 postgres 用例实跑）；应用层 10 + API 4（合计 21 passed）；stub e2e 34/34；live e2e 17/17；m0 23/23 PASS；web lint/typecheck/unit(73) 绿；ruff/mypy 绿；RECHECK-047 PASS_WITH_WARNINGS | run #63（34846151640）: quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake，日志实测确认：`test_collector_persists_research_os_spans`、`test_scenario_d_network_partition_no_old_authority`） | live 正向链无制品可用（m12 参考链在 live 装配下终态 FAILED、artifact 列表 0 条）→ 改为 test-only 装配注入受控制品；ruff format 2 处；stub e2e 用用例内路由覆盖以免搅动 design-fidelity 基线 | EC-04 余 3 项 + EC-05/06 | cycle 8 = EC-04 剩余（真 pause-resume 执行协调 / 实验队列 / memory capability policy G16） |
 | 8 | PLAN-20260914-048 | a5d83dc | 全量 pytest 3319 passed/6 skipped/0 failed（DSN 固化；一次未复现失败见 RECHECK-048 W-5）；应用层 5 + 契约 9（Fake/SQLite/PG）+ API 5 = 19 新增；m0 23/23 PASS；web lint/typecheck/unit(73) 绿；stub e2e 34/34；live e2e 17/17；ruff/mypy 绿；RECHECK-048 PASS_WITH_WARNINGS | run #65（34881096941）: quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake，日志实测确认） | `_claim_next_impl` 53 行 → 抽 `_claim_candidates`（50 行函数上限）；夹具补 `runs_store`（否则派发断言是空的）；SQLite runs DDL 收敛到 `db.RUNS_SCHEMA_SQL` 单一来源 | EC-04 余 2 项 + EC-05/06 | cycle 9 = EC-04 剩余（memory capability policy G16 优先，实验队列次之） |
 | 9 | PLAN-20260914-049 | 14e6c4f | 全量 pytest 3333 passed/6 skipped/0 failed（DSN 固化）；应用层 8（`test_policy_wiring.py`）+ API 4 + stub e2e 2 = 14 新增；m0 23/23 PASS；ruff check/format + mypy（294 files）绿；eslint 0 error；stub e2e 36/36；RECHECK-049 PASS_WITH_WARNINGS | run #67（34928371669）: quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake，日志实测确认：2 failed / 85 passed） | m0 首跑 `test_scenario_f_scheduler_restart_keeps_state`（负载 timing，隔离复跑 10 passed）；mypy 两个测试助手缺返回注解；run_fixtures 超 300 行软阈值 → 抽 `assembly.policy_bindings()` 三处共用；stub-routes.ts 逼近 450 行 → 路由拆到 `stub-routes-policy.ts` | EC-04 余 1 项（实验队列 G14）+ EC-05/06 | cycle 10 = EC-06 收口（最终 RECHECK + 安全扫描处置 + 残留缺口诚实登记） |
-| 11 | PLAN-20260915-051 | (见本 cycle 收口提交) | 单测 `tests/worker` 29 passed（+5：关停中断/不提交 + 3 例 CancelProbe）；mypy 801 files Success；ruff check/format 绿；source-limits 811 passed；m0 的 `python/tests` 3339 passed/5 skipped（420s）+ web lint/test/typecheck/build 4 项 PASS；治理 validate 绿；**Linux 容器复刻 CI job 选择（tests/observability+postgres+distributed+e2e，-m "requires_collector or postgres or distributed"）= 87 passed / 4 skipped / 0 failed**（对照修复前 CI 2 failed / 85 passed） | PENDING（push 后回写；本 cycle 不预设绿） | loop.py 触及 450 行硬阈值 ⇒ 抽 `services/worker/cancellation.py`（445+54 行，行为等价）；m0 复现 invocation 需要 `.venv/Scripts` 在 PATH（否则 `python/dependency-boundaries` 因 `shutil.which("lint-imports")` 假红）；治理要求 PLAN 补 `## 状态历史`/`## 影响报告`；m0 首跑把 `loop.py` 记为超限（真实门禁命中，非噪声） | EC-06 仅差 CI 复验；W-1 = `research-validation.yaml` 同类目录供给缺口（服务集合契约锁定，未修）；EC-04 G14 仍待人工 | CI run 结论 → EC-06 判定；全绿则评估 GOAL 收口（EC-04 G14 是否续做仍需人工） |
+| 11 | PLAN-20260915-051 | 2f688a9 + 本 cycle 记录提交 | 单测 `tests/worker` 29 passed（+5：关停中断/不提交 + 3 例 CancelProbe）；mypy 801 files Success；ruff check/format 绿；source-limits 811 passed；m0 的 `python/tests` 3339 passed/5 skipped（420s）+ web lint/test/typecheck/build 4 项 PASS；治理 validate 绿；**Linux 容器复刻 CI job 选择（tests/observability+postgres+distributed+e2e，-m "requires_collector or postgres or distributed"）= 87 passed / 4 skipped / 0 failed**（对照修复前 CI 2 failed / 85 passed） | run 34939068977（2f688a9）：**六 job 全 success**（quality-ubuntu / quality-windows / console-frontend / container-quality / eval-gate / collector-quality）⇒ EC-06 PASS | loop.py 触及 450 行硬阈值 ⇒ 抽 `services/worker/cancellation.py`（445+54 行，行为等价）；m0 复现 invocation 需要 `.venv/Scripts` 在 PATH（否则 `python/dependency-boundaries` 因 `shutil.which("lint-imports")` 假红）；治理要求 PLAN 补 `## 状态历史`/`## 影响报告`；m0 首跑把 `loop.py` 记为超限（真实门禁命中，非噪声） | EC-06 已 PASS；W-1 = `research-validation.yaml` 同类目录供给缺口（服务集合契约锁定，未修）；EC-04 G14 仍待人工 | 无可自动推进项：EC-04 G14 需人工决定（续做 → cycle 12；不续做 → EC-04 按"不作为"收口后评估 GOAL ACHIEVED） |
 | 10 | PLAN-20260914-050 | (见收口提交) | 路由能力声明守卫 3 例（web unit 76/76；tsc/eslint 绿）；反序列化防线 4 例（authoring 套件 13 passed）；m0 23/23 PASS（复跑口径见 RECHECK-050 W-2）；全量 pytest 3336 passed/6 skipped（首跑 1 例负载敏感失败，隔离复跑 10 passed）；sealed scan 36 findings 逐条处置；RECHECK-050 PASS_WITH_WARNINGS | run #68（34929500205，cycle 9 收口提交）: 5 job SUCCESS + collector-quality FAIL（同 2 项）；cycle 10 自身 run #69（34933817161，1f7f4db）: console-frontend/quality-ubuntu/container-quality/eval-gate SUCCESS，collector-quality FAIL（同 2 项），quality-windows-latest FAIL（telemetry RSS 135.0 vs 阈值 128.0 MiB，series 首次，flake 类，见 RECHECK-050 W-2）；跨 run 取证 #61–#68 该 job 每次失败、失败测试恒为同 2 项 ⇒ 纠正口径：持续失败，非 flake | ruff format 1 处（新增测试字符串引号）；test_scenario_g_drain_stops_claims 首跑 check-then-act 竞态（隔离复跑通过，未改断言）；test_scenario_f_scheduler_restart_keeps_state（cycle 9 首跑）同属负载敏感类 | EC-04 实验队列 + EC-06 GHA 全绿（人工决策点） | 无（预算用尽，status=BLOCKED；恢复条件见「终止与收口」） |
 
 ## 状态历史
 
+- 2026-09-15 cycle 11 CI 复验（run 34939068977，commit 2f688a9）：**六个 job 全 success**
+  —— quality-ubuntu-latest ✅ / quality-windows-latest ✅ / console-frontend ✅ /
+  container-quality ✅ / eval-gate ✅ / **collector-quality ✅（自 run #61 起首次转绿）**。
+  ⇒ **EC-06 → PASS**（收口面 RECHECK-050 早已满足；本轮补齐"每 cycle 全 job 成功"）。
+  至此 EC-01/02/03/05/06 = PASS，唯一未完成项为 EC-04 的实验队列 G14（人工决策）。
+  GOAL 状态：ACTIVE → **BLOCKED**（等待 G14 决策；预算余 cycle 12-13）。
 - 2026-09-15 cycle 11 = PLAN-20260915-051（collector-quality 两项持续失败的根因修复）：
   **BLOCKED → ACTIVE 的状态变更来源**：用户在 2026-09-15 会话给出两个判定——① 该 job 的
   失败是持续失败而非 flake（与 MEM-20260915-027 一致），② 按 fix_policy 不动超时/不让

@@ -99,6 +99,8 @@ memory_entries:
 - 2026-09-15 WP-C 完成：Linux 容器复验（CI 同一 job 选择 87 passed / 0 failed；预修复
   反证复现 CI 原文）、本地 m0 python/typescript 组全绿、RECHECK-051 判定
   PASS_WITH_WARNINGS ⇒ 本计划 DONE。
+- 2026-09-15 CI 复验：run 34939068977（commit 2f688a9）六 job 全 success，
+  collector-quality 自 run #61 起首次转绿 ⇒ GOAL EC-06 记 PASS。
 
 ## 影响报告
 
