@@ -32,6 +32,7 @@ stub/live e2e、`ops-alerts` / `ops-incidents` 设计基线。其它 EC 不在�
 | **写面被读面消费（事故）** | 同文件 + 控制面用例：登记事故后来源 run 的告警带 `incident_id`；关闭后标记消失；已登记的 run 从 `candidates` 移出、留在 `incidents` | PASS |
 | 读面口径改写是交付而非放水 | `tests/api/test_ops_view_api.py` 顶部注明：`rules_available` 由 False 变 True 是本轮 EC 的交付物（写面 + 装配），不是为过门禁改断言；用例同时把"不可用"路径移到显式 `None` 装配的用例里 | PASS |
 | 装配两侧同源 | `services/api/composition.py`、`pg_composition.py` 的配置面 store 组各加一项；`tests/api/conftest.py` 与 `tests/api/run_fixtures._run_ready_sqlite_stores` 同侧加入 `SqliteOpsStore`（live harness 因此具备真实写链） | PASS |
+| CI（push 后） | run **35002027768**（`8148df4`）：六个 job 全 success——quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality，无重跑 | PASS |
 | 全量 API 无回归 | `pytest tests/api -q` → **336 passed**（含 run-ready 装配引入 ops store 后的所有既有用例） | PASS |
 | OpenAPI 快照一致 | `tools/gen_openapi.py` 重生成（+763 行）；新增路径断言 **5 条**；新增 `test_openapi_contains_ops_write_methods` 断言写方法集合（get/post/patch/delete 逐条比对） | PASS |
 | 前端真的能写 | stub e2e `ops-write.spec.ts` 5 用例：静音标记仍列出两条告警；新建规则 → 静音计数 2；停用 → 回到 1；删除 → 0；候选登记 → 候选清空；指派 → 行内出现处理人；关闭 → 行内显示结论且**不再有处置动作** | PASS |
