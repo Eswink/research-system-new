@@ -101,3 +101,29 @@ FastAPI 组合），不宣称"安全"。commit 门禁对主树既有项不再有
   Port/adapter、team_custom/inspection/memory/experiments 路由、apps/web 全套）。
 - 结论：主树产品代码新增 high = 0；唯一产品树 HIGH 为既有 SafeLoader 误报。
   coverage partial 不变，不宣称"安全"。
+
+## 2026-09-15 · GOAL-001 cycle 10 收口扫描处置（scan-2026-09-15T04-43-03.726Z-4bad20180460）
+
+- seal: `sha256:bfeaf94642b7f00c85cf4b4a1306a041c2d7abd5934bd987f333e800c5f2db31`
+- coverage: **partial / runStatus inconclusive**（threatModel 0 入口：scanner 仍看不见
+  `create_app` / worker 组合根；`static_only_no_runtime_execution`，`verdictEffect: none`）。
+- 规模：36 findings / 2504 parsed files / 182 packages；依赖离线快照命中 1 包 1 条
+  advisory（**未联网复核**，不得据此判定依赖安全）。
+- **本记录是"逐条人工确认"的处置账，不是安全认证**：coverage partial 不变，本轮同样
+  **不宣称项目安全**。
+
+| 类别 | 数量 | 处置 |
+| --- | --- | --- |
+| HIGH · 路径穿越（`artifacts/钻孔官方API_v12/真实API预检_v12.py:16`、`src/ppocr_sidecar/客户端.py:24`） | 2 | **范围外，记录**：untracked 外部参考工件（`.gitignore:/artifacts/`），不在 git 树内、不参与构建或运行。 |
+| HIGH · 不安全反序列化（`packages/application/protocol_authoring/service.py:103`） | 1 | **误报，且本轮升级为可证伪锁定**：`yaml.load(text, Loader=_StrictLoader)` 的 `_StrictLoader` 是 `yaml.SafeLoader` 子类。新增 `tests/application/protocol_authoring/test_draft_service.py`：① 三个 `!!python/*` 标签载荷（`os.system` / `python/name` / `subprocess.Popen`）必须解析失败而不构造对象；② `parse_yaml_strict` 代码文本（去注释后）必须含 `class _StrictLoader(yaml.SafeLoader)` 且不含 `FullLoader`/`UnsafeLoader`/`yaml.Loader`。13 passed。 |
+| MEDIUM · 疑似跨文件污点（`scratch/probe_*` ×~15、`tools/probes/probe_*` ×9、`services/worker/__main__.py:92`） | 28 | **沿用既有口径，记录**：operator env（DSN/镜像名）→ 本地连接参数化查询 / 组合根 env 读取，无用户输入污点汇；`scratch/**` 为 gitignored 工作树脚本。全部 advisory=true（proof-gap：需人工确认可利用性）。 |
+| LOW · 不安全随机数（`examples/experiments/m12_reference_classification.py` ×5） | 5 | **记录；保留**：全部为 `random.Random(seed)` 确定性种子（可复现实验设计），非密码学用途。 |
+| 依赖 advisory（离线快照） | 1 | **待联网复核**：离线库 context-only 匹配，未联网确认影响面；本轮不据此下结论。 |
+
+- **本 cycle 新增/修改文件零命中**（memory capability policy 一套：`policy_check.py`
+  镜像常量、`memory/gate.py`、`services/api/{assembly,catalog,composition,
+  pg_composition,app}.py`、`routers/{memory,policy}.py`、`dto/policy.py`、前端
+  `PolicyPanel`/`policyClient`/types、测试与文档）。
+- 结论：主树产品代码新增 high = 0；唯一产品树 HIGH 为既有 SafeLoader 误报（本轮已加
+  测试锁定）。**sealed scan 有处置记录（本节），但 coverage partial + 依赖 advisory
+  未复核 ⇒ 不构成"安全"结论。**

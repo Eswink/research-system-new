@@ -89,6 +89,38 @@ def test_non_mapping_yaml_rejected() -> None:
     assert result.issues[0].code == "SCHEMA_TYPE"
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "!!python/object/apply:os.system ['echo pwned']",
+        "id: x\nversion: 1.0.0\nphases: !!python/name:os.system",
+        '!!python/object/new:subprocess.Popen [["echo", "pwned"]]',
+    ],
+)
+def test_yaml_python_tags_are_rejected_not_executed(payload: str) -> None:
+    """不安全反序列化防线（Mimosa finding：service.py `yaml.load`）：
+
+    解析器是 `yaml.SafeLoader` 子类，任何 `!!python/*` 标签必须解析失败——
+    既不得构造对象，也不得执行代码（本用例以"含副作用标签的文档被拒"证伪）。
+    """
+    result = validate_yaml_document(payload)
+    assert result.ok is False
+    assert any(issue.code == "YAML_PARSE" for issue in result.issues)
+
+
+def test_duplicate_key_hook_subclasses_safe_loader() -> None:
+    """重复键拒绝钩子不得引入不安全 loader（静态扫描按 `yaml.load` 名字告警）。"""
+    import inspect
+
+    from packages.application.protocol_authoring import service as module
+
+    source = inspect.getsource(module.parse_yaml_strict)
+    # 只看代码：注释里出现 "FullLoader" 是为了说明"不使用它"。
+    code = "\n".join(line.split("#", 1)[0] for line in source.splitlines())
+    assert "class _StrictLoader(yaml.SafeLoader)" in code
+    assert "FullLoader" not in code and "UnsafeLoader" not in code and "yaml.Loader" not in code
+
+
 def test_size_limit_enforced() -> None:
     from packages.application.protocol_authoring.service import MAX_YAML_BYTES
 

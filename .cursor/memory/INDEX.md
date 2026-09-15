@@ -24,6 +24,7 @@
 | [MEM-20260914-024](entries/MEM-20260914-024-live-console-artifact-fixtures-and-api-prefix.md) | ACTIVE | repository | 0.85 | 2026-12-14 | PLAN-20260914-047 |
 | [MEM-20260915-025](entries/MEM-20260915-025-pause-dispatch-coordination.md) | ACTIVE | repository | 0.85 | 2026-12-15 | PLAN-20260914-048 |
 | [MEM-20260915-026](entries/MEM-20260915-026-policy-capability-mirror-scopes.md) | ACTIVE | repository | 0.90 | 2026-12-15 | PLAN-20260914-049 |
+| [MEM-20260915-027](entries/MEM-20260915-027-collector-quality-persistent-failures.md) | ACTIVE | repository | 0.90 | 2026-12-15 | PLAN-20260914-050 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |
