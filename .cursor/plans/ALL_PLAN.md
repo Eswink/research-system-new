@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-053](tasks/PLAN-20260915-053-goal-001-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260915-052](tasks/PLAN-20260915-052-experiment-queue-and-scheduling.md) | DONE |
 | [x] | [PLAN-20260915-051](tasks/PLAN-20260915-051-collector-quality-persistent-failure-fix.md) | DONE |
 | [x] | [PLAN-20260914-050](tasks/PLAN-20260914-050-ec05-ec06-closeout.md) | DONE |

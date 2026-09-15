@@ -27,6 +27,7 @@
 | [MEM-20260915-027](entries/MEM-20260915-027-collector-quality-persistent-failures.md) | ACTIVE | repository | 0.90 | 2026-12-15 | PLAN-20260914-050 |
 | [MEM-20260915-028](entries/MEM-20260915-028-collector-quality-root-causes-and-fix.md) | ACTIVE | repository | 0.95 | 2026-12-15 | PLAN-20260915-051 |
 | [MEM-20260915-029](entries/MEM-20260915-029-experiment-queue-claim-and-dispatch.md) | ACTIVE | repository | 0.90 | 2026-12-15 | PLAN-20260915-052 |
+| [MEM-20260915-030](entries/MEM-20260915-030-goal-closeout-verification-recipe.md) | ACTIVE | repository | 0.90 | 2027-03-15 | PLAN-20260915-053 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |
