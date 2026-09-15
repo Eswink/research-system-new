@@ -774,6 +774,36 @@ export interface ExperimentPlanDto {
   updated_at: string;
 }
 
+/** G14 实验队列 DTO（状态来自域状态机；不发明进度字段）。 */
+export interface ExperimentQueueEnqueueDto {
+  protocol_path?: string | null;
+  draft_id?: string | null;
+  draft_revision?: number | null;
+  not_before?: string | null;
+}
+
+export interface ExperimentQueueEntryDto {
+  id: string;
+  project_id: string;
+  plan_id: string;
+  plan_name: string | null;
+  protocol_path: string | null;
+  draft_id: string | null;
+  draft_revision: number | null;
+  state: string;
+  not_before: string | null;
+  claimed_at: string | null;
+  run_id: string | null;
+  failure_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExperimentQueueViewDto {
+  entries: ExperimentQueueEntryDto[];
+  dispatch_note: string;
+}
+
 /** WP-F 产品 Memory DTO（committed records；无 pending 状态）。 */
 export interface MemoryRecordDto {
   id: string;

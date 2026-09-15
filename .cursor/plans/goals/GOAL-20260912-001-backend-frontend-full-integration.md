@@ -2,14 +2,14 @@
 id: GOAL-20260912-001
 slug: backend-frontend-full-integration
 title: 后端补全与前端完整对接（预留接口/fixture 全消，33 路由 live-capable）
-status: BLOCKED
+status: ACTIVE
 created_at: 2026-09-12
 updated_at: 2026-09-15
 owners:
   - root-agent
 authorization:
   source: user-request
-  ref: "2026-09-12 用户要求设计并启用 goal 循环文件以自动迭代完成后端补全与完整对接；GOAL 格式与 push-to-main-for-CI 授权随该计划批准（循环不得推非 main、不得 force）。"
+  ref: "2026-09-12 用户要求设计并启用 goal 循环文件以自动迭代完成后端补全与完整对接；GOAL 格式与 push-to-main-for-CI 授权随该计划批准（循环不得推非 main、不得 force）。2026-09-15 用户会话追加：继续该 GOAL 文件循环迭代 10-20 次让系统更完整 ⇒ 剩余人工决策点②（实验队列 G14）判为「续做」，cycle 12 执行；续做后的长程排期见「终止与收口」的 cycle 12 小节。"
 objective: >
   前端所有 live 页面均消费真实后端能力（无预留接口/fixture 冒充业务数据），
   9 个 GAP 域与项目/深水区语义按已批准 PLAN-041/042 落地，main 的本地门与
@@ -34,10 +34,12 @@ exit_criteria:
     criterion: 深水区语义收口：budget_adjust 走 BudgetLedger、成本预测投影、
       pause/resume 真执行（lease+worker 协调）、实验队列、artifact 文件 diff、
       memory capability policy（G16）；未落地项必须在 GAPS 保持诚实标注（不得默认绿）。
-      （收口判定）6 项中 5 项已交付（046/047/048/049）；实验队列 G14 未交付且保持禁用
-      标注 ⇒ 本 EC 记 BLOCKED（预算用尽，需人工决定是否续做）
+      （收口判定）cycle 10 时 5/6 交付记 BLOCKED；cycle 12 起 6 项全部交付
+      （046/047/048/049/052）：实验队列 G14 由 PLAN-052 交付（域 + 三存储 + 原子
+      认领派发器 + 五端点 + console live），未交付面（复现执行、日历/矩阵视图）
+      继续在 pageSupport / CONSOLE_PAGE_MAP 诚实标注。
     verify: tests/api 对应用例 + CONSOLE_PAGE_MAP G 表逐行与代码一致
-    status: BLOCKED
+    status: PASS
   - id: EC-05
     criterion: example fixture 仅作设计参照：33 路由 live-capable（身份/billing/members
       类除外，保持 M18/M19 诚实锁定）；example-isolation 与 live e2e 全链绿
@@ -65,6 +67,9 @@ budget:
   # 10（cycle 6 后授权）已用尽 ⇒ cycle 10 收 BLOCKED；2026-09-15 用户会话再次要求
   # 继续 goal 循环并判定 collector-quality 项按「修产品行为」处理 ⇒ max_cycles 记为 13
   # （cycle 11 修复 + 2 轮 CI 复验余量），变更来源见状态历史。
+  # cycle 11 收盘后余 cycle 12-13；2026-09-15 用户会话三度授权「继续循环迭代 10-20 次」
+  # ⇒ 人工决策点② 判为续做，cycle 12 交付 G14；本 GOAL 预算不再上调（13 为上限），
+  # 超出部分改由 GOAL-20260912-002 承接（见「终止与收口」）。
   max_cycles: 13
   per_cycle_minutes: 240
   no_progress_stop_cycles: 2
@@ -94,7 +99,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260914-049-memory-capability-policy.md
   - .cursor/plans/tasks/PLAN-20260914-050-ec05-ec06-closeout.md
   - .cursor/plans/tasks/PLAN-20260915-051-collector-quality-persistent-failure-fix.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-051-collector-quality-persistent-failure-fix.md
+  - .cursor/plans/tasks/PLAN-20260915-052-experiment-queue-and-scheduling.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-052-experiment-queue-and-scheduling.md
 memory_entries:
   - MEM-20260914-023-budget-ledger-sharing-and-reservation-attribution
   - MEM-20260914-024-live-console-artifact-fixtures-and-api-prefix
@@ -102,6 +108,7 @@ memory_entries:
   - MEM-20260915-026-policy-capability-mirror-scopes
   - MEM-20260915-027-collector-quality-persistent-failures
   - MEM-20260915-028-collector-quality-root-causes-and-fix
+  - MEM-20260915-029-experiment-queue-claim-and-dispatch
 ---
 
 # GOAL-20260912-001 — 后端补全与前端完整对接（自迭代循环）
@@ -126,13 +133,15 @@ RECHECK-20260912-040 = PASS_WITH_WARNINGS；密封扫描 scan-2026-09-12 已处�
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 11 已闭环（PLAN-051：collector-quality 两项根因修复；CI run 34939068977 六 job 全绿 ⇒ EC-06 PASS）。EC-01/02/03/05/06 = PASS，唯一未完成项 = EC-04 实验队列 G14（人工决策）⇒ status=BLOCKED；预算余 cycle 12-13。driver=session-goal，owner=root-agent。**
+按 README 的 7 步判定执行；当前续点：**cycle 12 已闭环（PLAN-052：G14 实验队列与调度交付，EC-04 PASS）。EC-01/02/03/04/05/06 全 PASS ⇒ 待 cycle 13 跑整体独立复检（RECHECK 全 EC + ACHIEVED 判定）；长程 10-20 次迭代转 GOAL-20260912-002（候选缺口表见「终止与收口」）。预算余 cycle 13。driver=session-goal，owner=root-agent。**
 
 人工决策点（逐条处理，详见「终止与收口」）：
 1. ~~`collector-quality` 持续失败~~ → **已决（2026-09-15，用户会话）**：修产品行为
    （worker 关停语义 + OTel 证据链目录供给），不改验收口径、不动 workflow；
    cycle 11 执行，两项根因与实证见 PLAN-051 / RECHECK-051。
-2. 实验队列 G14（queue/schedule）是否续做 —— **仍待人工**。
+2. ~~实验队列 G14（queue/schedule）是否续做~~ → **已决（2026-09-15，用户会话）**：
+   续做（用户要求"更完整"）⇒ cycle 12 交付最小完整域；备选「不作为收口」已放弃，
+   判定与理由记入状态历史首条。
 3. ~~是否提高 `max_cycles` 并恢复 ACTIVE~~ → **已决**：用户要求继续循环，
    `max_cycles` 记为 13（cycle 11 修复 + CI 复验余量）。
 
@@ -164,6 +173,45 @@ m0 全量单跑截断（分组复跑）。工作流文件 `.github/workflows/m0-
 
 ## 终止与收口
 
+**2026-09-15 cycle 12 更新（恢复 ACTIVE）**：用户在 2026-09-15 会话给出第三条指令——
+「继续我们的 goal 文件，我们需要继续循环迭代 10-20 次，让我们的系统更加的完整！」
+据此把唯一剩余人工决策点（实验队列 G14）判为**续做**（判定来源与备选见状态历史首条），
+GOAL 由 BLOCKED 转回 ACTIVE，cycle 12 = G14 最小完整域（domain + store + dispatcher +
+API + console live + e2e）。本 GOAL 的 `max_cycles` 不再上调（13 为上限，剩 cycle 12-13：
+G14 交付 + 收口复检），**长程 10-20 次迭代**由后继 GOAL-20260912-002 承接（范围 = 诚实缺口
+注册表 G7-G16 的剩余项，见下节「cycle 12 长程排期」）。
+
+**cycle 12 收盘（2026-09-15）**：PLAN-052 交付 G14 ⇒ **EC-04 = PASS（6/6）**，
+EC-01~06 全 PASS。终态判定表更新如下（cycle 11 的判定按历史保留在下一小节）：
+
+| EC | 判定 | 证据 |
+| --- | --- | --- |
+| EC-01 | PASS | RECHECK-041 |
+| EC-02 | PASS | RECHECK-043 |
+| EC-03 | PASS | RECHECK-044 + RECHECK-045 |
+| EC-04 | **PASS** | 6/6 交付（046/047/048/049/052）；RECHECK-052 = PASS_WITH_WARNINGS |
+| EC-05 | PASS | RECHECK-050 + 守卫测试（本轮 76 passed） |
+| EC-06 | **PASS** | run 34939068977 六 job 全 success（cycle 11）+ 本轮 CI 复验见迭代日志 |
+
+**剩余动作**：cycle 13 跑一次整体独立复检（覆盖 EC-01~06 的证据面与代码一致性）
+→ 通过即本 GOAL 记 ACHIEVED；用户要求的 10-20 次迭代余量转 GOAL-20260912-002
+（候选缺口表见下）。
+
+**cycle 12 长程排期（用户授权 10-20 次迭代，GOAL-001 收尾后进入 GOAL-002）**：
+
+| 候选 | 缺口（CONSOLE_PAGE_MAP / pageSupport 诚实标注） | 规模 |
+| --- | --- | --- |
+| G14 | 实验队列/调度（queue/schedule 无域支撑，本 cycle 交付） | L |
+| G9 | 全局跨 run 血缘（当前仅单 run lineage） | M |
+| G12 | 跨 run/时序成本预测（当前单 run 预留预测） | M |
+| G8 | workspace 文件树 / 文件级快照 diff（控制面无快照枚举面） | L |
+| G7 | ops 余项（告警规则 CRUD / incident 处置 / 用户级 schedule / 聚合报表） | M |
+| G15 | tool-provider 管理写面（当前只读投影） | M |
+| G2 | 项目删除/归档（当前仅注册与切换） | S |
+
+排期原则：先收 GOAL-001（EC-04 归零 → ACHIEVED 复检），再由 GOAL-002 按上表顺序 derive
+子 PLAN；每 cycle 仍走 7 步 SOP（本地 m0 → RECHECK → 显式路径提交 → push main → CI 复验）。
+
 **2026-09-15 cycle 11 更新**：cycle 10 的收口判定保留如下（历史事实），但三项人工决策中
 ①③ 已于 2026-09-15 由用户会话决断（① 修产品行为；③ 继续循环、`max_cycles` 10→13），
 GOAL 由 BLOCKED 转回 ACTIVE 并完成 cycle 11：collector-quality 两项根因修复后，
@@ -180,7 +228,8 @@ CI run 34939068977（2f688a9）**六 job 全 success** ⇒ **EC-06 = PASS**。
 | EC-05 | PASS | RECHECK-050 + 守卫测试 |
 | EC-06 | **PASS** | run 34939068977 六 job 全 success + RECHECK-050/051 PASS_WITH_WARNINGS + 密封扫描处置 |
 
-**唯一剩余人工决策**：实验队列 G14（queue/schedule）是否续做。两条出路：
+**唯一剩余人工决策**（2026-09-15 用户会话已决 = 续做，见上节 cycle 12 更新与状态历史首条）：
+实验队列 G14（queue/schedule）是否续做。两条出路：
 ① 续做 ⇒ 恢复 ACTIVE、以 cycle 12 实现最小域（domain + store + API + client + 页面 live +
 e2e），预算余 2 cycle；② 不续做 ⇒ EC-04 按"G14 明确不作为"书面收口，届时 EC-01~06 全
 PASS 可评估 GOAL ACHIEVED（需独立复检 + MEM 沉淀）。
@@ -229,11 +278,41 @@ cycle 11 提交（2f688a9 及其记录提交）。
 | 7 | PLAN-20260914-047 | 7eece2f | 全量 pytest 3297 passed/6 skipped/0 failed（DSN 固化后 postgres 用例实跑）；应用层 10 + API 4（合计 21 passed）；stub e2e 34/34；live e2e 17/17；m0 23/23 PASS；web lint/typecheck/unit(73) 绿；ruff/mypy 绿；RECHECK-047 PASS_WITH_WARNINGS | run #63（34846151640）: quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake，日志实测确认：`test_collector_persists_research_os_spans`、`test_scenario_d_network_partition_no_old_authority`） | live 正向链无制品可用（m12 参考链在 live 装配下终态 FAILED、artifact 列表 0 条）→ 改为 test-only 装配注入受控制品；ruff format 2 处；stub e2e 用用例内路由覆盖以免搅动 design-fidelity 基线 | EC-04 余 3 项 + EC-05/06 | cycle 8 = EC-04 剩余（真 pause-resume 执行协调 / 实验队列 / memory capability policy G16） |
 | 8 | PLAN-20260914-048 | a5d83dc | 全量 pytest 3319 passed/6 skipped/0 failed（DSN 固化；一次未复现失败见 RECHECK-048 W-5）；应用层 5 + 契约 9（Fake/SQLite/PG）+ API 5 = 19 新增；m0 23/23 PASS；web lint/typecheck/unit(73) 绿；stub e2e 34/34；live e2e 17/17；ruff/mypy 绿；RECHECK-048 PASS_WITH_WARNINGS | run #65（34881096941）: quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake，日志实测确认） | `_claim_next_impl` 53 行 → 抽 `_claim_candidates`（50 行函数上限）；夹具补 `runs_store`（否则派发断言是空的）；SQLite runs DDL 收敛到 `db.RUNS_SCHEMA_SQL` 单一来源 | EC-04 余 2 项 + EC-05/06 | cycle 9 = EC-04 剩余（memory capability policy G16 优先，实验队列次之） |
 | 9 | PLAN-20260914-049 | 14e6c4f | 全量 pytest 3333 passed/6 skipped/0 failed（DSN 固化）；应用层 8（`test_policy_wiring.py`）+ API 4 + stub e2e 2 = 14 新增；m0 23/23 PASS；ruff check/format + mypy（294 files）绿；eslint 0 error；stub e2e 36/36；RECHECK-049 PASS_WITH_WARNINGS | run #67（34928371669）: quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake，日志实测确认：2 failed / 85 passed） | m0 首跑 `test_scenario_f_scheduler_restart_keeps_state`（负载 timing，隔离复跑 10 passed）；mypy 两个测试助手缺返回注解；run_fixtures 超 300 行软阈值 → 抽 `assembly.policy_bindings()` 三处共用；stub-routes.ts 逼近 450 行 → 路由拆到 `stub-routes-policy.ts` | EC-04 余 1 项（实验队列 G14）+ EC-05/06 | cycle 10 = EC-06 收口（最终 RECHECK + 安全扫描处置 + 残留缺口诚实登记） |
-| 11 | PLAN-20260915-051 | 2f688a9 + 本 cycle 记录提交 | 单测 `tests/worker` 29 passed（+5：关停中断/不提交 + 3 例 CancelProbe）；mypy 801 files Success；ruff check/format 绿；source-limits 811 passed；m0 的 `python/tests` 3339 passed/5 skipped（420s）+ web lint/test/typecheck/build 4 项 PASS；治理 validate 绿；**Linux 容器复刻 CI job 选择（tests/observability+postgres+distributed+e2e，-m "requires_collector or postgres or distributed"）= 87 passed / 4 skipped / 0 failed**（对照修复前 CI 2 failed / 85 passed） | run 34939068977（2f688a9）：**六 job 全 success**（quality-ubuntu / quality-windows / console-frontend / container-quality / eval-gate / collector-quality）⇒ EC-06 PASS | loop.py 触及 450 行硬阈值 ⇒ 抽 `services/worker/cancellation.py`（445+54 行，行为等价）；m0 复现 invocation 需要 `.venv/Scripts` 在 PATH（否则 `python/dependency-boundaries` 因 `shutil.which("lint-imports")` 假红）；治理要求 PLAN 补 `## 状态历史`/`## 影响报告`；m0 首跑把 `loop.py` 记为超限（真实门禁命中，非噪声） | EC-06 已 PASS；W-1 = `research-validation.yaml` 同类目录供给缺口（服务集合契约锁定，未修）；EC-04 G14 仍待人工 | 无可自动推进项：EC-04 G14 需人工决定（续做 → cycle 12；不续做 → EC-04 按"不作为"收口后评估 GOAL ACHIEVED） |
 | 10 | PLAN-20260914-050 | (见收口提交) | 路由能力声明守卫 3 例（web unit 76/76；tsc/eslint 绿）；反序列化防线 4 例（authoring 套件 13 passed）；m0 23/23 PASS（复跑口径见 RECHECK-050 W-2）；全量 pytest 3336 passed/6 skipped（首跑 1 例负载敏感失败，隔离复跑 10 passed）；sealed scan 36 findings 逐条处置；RECHECK-050 PASS_WITH_WARNINGS | run #68（34929500205，cycle 9 收口提交）: 5 job SUCCESS + collector-quality FAIL（同 2 项）；cycle 10 自身 run #69（34933817161，1f7f4db）: console-frontend/quality-ubuntu/container-quality/eval-gate SUCCESS，collector-quality FAIL（同 2 项），quality-windows-latest FAIL（telemetry RSS 135.0 vs 阈值 128.0 MiB，series 首次，flake 类，见 RECHECK-050 W-2）；跨 run 取证 #61–#68 该 job 每次失败、失败测试恒为同 2 项 ⇒ 纠正口径：持续失败，非 flake | ruff format 1 处（新增测试字符串引号）；test_scenario_g_drain_stops_claims 首跑 check-then-act 竞态（隔离复跑通过，未改断言）；test_scenario_f_scheduler_restart_keeps_state（cycle 9 首跑）同属负载敏感类 | EC-04 实验队列 + EC-06 GHA 全绿（人工决策点） | 无（预算用尽，status=BLOCKED；恢复条件见「终止与收口」） |
+| 11 | PLAN-20260915-051 | 2f688a9 + 本 cycle 记录提交 | 单测 `tests/worker` 29 passed（+5：关停中断/不提交 + 3 例 CancelProbe）；mypy 801 files Success；ruff check/format 绿；source-limits 811 passed；m0 的 `python/tests` 3339 passed/5 skipped（420s）+ web lint/test/typecheck/build 4 项 PASS；治理 validate 绿；**Linux 容器复刻 CI job 选择（tests/observability+postgres+distributed+e2e，-m "requires_collector or postgres or distributed"）= 87 passed / 4 skipped / 0 failed**（对照修复前 CI 2 failed / 85 passed） | run 34939068977（2f688a9）：**六 job 全 success**（quality-ubuntu / quality-windows / console-frontend / container-quality / eval-gate / collector-quality）⇒ EC-06 PASS | loop.py 触及 450 行硬阈值 ⇒ 抽 `services/worker/cancellation.py`（445+54 行，行为等价）；m0 复现 invocation 需要 `.venv/Scripts` 在 PATH（否则 `python/dependency-boundaries` 因 `shutil.which("lint-imports")` 假红）；治理要求 PLAN 补 `## 状态历史`/`## 影响报告`；m0 首跑把 `loop.py` 记为超限（真实门禁命中，非噪声） | EC-06 已 PASS；W-1 = `research-validation.yaml` 同类目录供给缺口（服务集合契约锁定，未修）；EC-04 G14 仍待人工 | 无可自动推进项：EC-04 G14 需人工决定（续做 → cycle 12；不续做 → EC-04 按「不作为」收口后评估 GOAL ACHIEVED） |
+| 12 | PLAN-20260915-052 | 见收口提交 | 域 16 + SQLite 队列 11 + PG 队列 7 + API 10 = 44 新增用例全绿；全量 `tests/{api,domain,adapters,postgres,contracts}` 1528 passed / 4 skipped；source-limits + architecture 873 passed；web lint/typecheck/unit(76)/build 全绿；stub e2e 39 passed（+3）；live e2e 19 passed（+2）；`portfolio-experiments` win32/linux 基线重生成并目检；**本地 m0 23/23 PASS**（首跑 4 红逐条修正：mypy 3 处 / 50 行函数上限 / distributed 场景 G 竞态 / 根 eslint + stub 套件误收 live spec）；RECHECK-052 PASS_WITH_WARNINGS（W-1..W-10） | 待 CI 复验（收口提交后 run） | 取消/改期状态冲突在存储层抛域 `InvalidTransitionError` 而非 Port `InvalidInputError`（三实现同步修正）；`ExperimentQueuePanel` 触 50 行函数上限 ⇒ 拆 `ExperimentEnqueueForm.tsx`；`run_execution.py` 抽出后 `routers/runs.py` 需补 `CancelRunCommand` 导入（ruff F821 捕获）；stub-routes.ts 逼近 450 行 ⇒ 新端点拆 `stub-routes-experiments.ts`；设计基线 2% 容差对首屏之下改动不敏感，两条基线均强制重生成；两处**手写** `ExperimentStore` 测试助手不随 Port 演进（mypy 捕获）⇒ 统一改用共享 `FakeExperimentStore`；`test_scenario_g_drain_stops_claims` 的 test 侧 check-then-act 竞态（与 gateway 的 `HANDSHAKE_OK` 竞争）；`playwright.config.ts` 的 `testIgnore` 与 live 配置的 `testMatch` 是两份手工列表（漏改即静默收进 live 用例）；`framework/run_cursor_framework_evals` 在同机并发写 `evolution_state.json` 时 `os.replace` 报 WinError 5（环境噪声，复跑 PASS） | EC-04 → PASS（6/6）；EC-01~06 全 PASS ⇒ 待整体独立复检后评估 ACHIEVED，长程迭代转 GOAL-20260912-002 | cycle 13 = GOAL-001 收口复检（RECHECK 全 EC + ACHIEVED 判定）+ GOAL-002 建档（候选缺口：G9 全局血缘 / G12 跨 run 时序预测 / G8 workspace 文件树 / G7 ops 余项 / G15 tool-provider 写面 / G2 项目删除） |
 
 ## 状态历史
 
+- 2026-09-15 cycle 12 = PLAN-20260915-052（EC-04 收官：实验队列与调度 G14）：**人工
+  决策点②（续做）的执行轮**。交付 = `ExperimentQueueState`（QUEUED → DISPATCHING →
+  DISPATCHED | FAILED；QUEUED → CANCELLED；DISPATCHING → QUEUED 仅认领过期）+
+  `ExperimentQueueEntry`/`QueueProtocolSource` + Port 扩展（队列 6 方法 + `list_plans`）
+  + Fake/SQLite/PG 三实现 + migration 014（新表 `experiment_queue`）+ 控制面派发器
+  `ExperimentQueueDispatcher`（原子认领 → **与 `POST /runs` 同一条装配链**启动 run →
+  回写 `run_id`/失败原因；认领 TTL 恢复 = at-least-once）+ 五端点 + console live
+  （队列面板/入队/改期/取消/run 跳转，计划面板改为读服务端列表）。**执行装配被抽成
+  单一来源** `services/api/run_execution.py`（`routers/runs.py` 与派发器共用），避免
+  第二条"简化版启动"路径。期间发现并修正一个真实缺陷：取消/改期的状态冲突在存储层
+  抛的是域 `InvalidTransitionError` 而非 Port 的 `InvalidInputError`（三实现同步修正，
+  API 才能把状态冲突映射为 409）。本地证据：域 16 + SQLite 队列 11 + PG 队列 7（真实
+  PG）+ API 10 = 44 新增用例全绿；全量 `tests/{api,domain,adapters,postgres,contracts}`
+  1528 passed / 4 skipped；source-limits + architecture 873 passed；web lint/typecheck/
+  unit(76)/build 全绿；stub e2e 39 passed（+3）；live e2e 19 passed（+2）；OpenAPI 快照
+  重生成后契约测试绿；`portfolio-experiments` 设计基线（win32 本机 + linux 在 pinned
+  playwright noble 容器内）强制重生成并目检。RECHECK-052 = PASS_WITH_WARNINGS
+  （W-1 at-least-once 可见代价、W-2 无 outbox 事件、W-3 派发串行、W-4 设计基线 2%
+  容差对首屏之下改动不敏感、W-5 计划无项目归属、W-6 上轮 WS1 遗留）。
+  ⇒ **EC-04 由 PENDING 改记 PASS（6/6 交付）**；EC-01/02/03/04/05/06 全 PASS，
+  待 cycle 13 的整体独立复检后评估 ACHIEVED。CI 复验结论见下方对应条目。
+- 2026-09-15 cycle 12 恢复（**BLOCKED → ACTIVE 的状态变更来源**）：用户在 2026-09-15 会话
+  第三条指令 ——「继续我们的 goal 文件，我们需要继续循环迭代 10-20 次，让我们的系统更加
+  的完整！」。据此**人工决策点②（实验队列 G14 是否续做）判为「续做」**：判定理由是用户
+  要求"更完整"且 G14 是本 GOAL 唯一未交付项；备选（判为"不作为"以便按 ACHIEVED 收口）被
+  放弃，理由记录在此以便回溯。EC-04 由 BLOCKED 改记 PENDING（G14 未交付前不得预置绿，
+  pageSupport / CONSOLE_PAGE_MAP 保持诚实禁用直至代码落地）。本 GOAL 预算不再上调
+  （`max_cycles: 13` 为上限，cycle 12 = G14 交付、cycle 13 = 收口复检余量）；用户要求的
+  10-20 次迭代中的其余部分由 **GOAL-20260912-002** 承接，候选缺口表见「终止与收口」。
 - 2026-09-15 cycle 11 CI 复验（run 34939068977，commit 2f688a9）：**六个 job 全 success**
   —— quality-ubuntu-latest ✅ / quality-windows-latest ✅ / console-frontend ✅ /
   container-quality ✅ / eval-gate ✅ / **collector-quality ✅（自 run #61 起首次转绿）**。

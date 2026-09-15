@@ -86,6 +86,8 @@ class OperationScope(StrEnum):
     WORKER_SESSION = "worker_session"
     WORKER_DISPATCH = "worker_dispatch"
     REMOTE_EXECUTION = "remote_execution"
+    # G14 experiment queue dispatcher (control-plane consumer)
+    EXPERIMENT_QUEUE = "experiment_queue"
 
 
 class OperationOutcome(StrEnum):

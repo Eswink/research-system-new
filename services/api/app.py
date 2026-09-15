@@ -10,12 +10,14 @@ from fastapi import FastAPI
 
 from services.api.composition import ApiDeps, assemble
 from services.api.errors import register_error_handlers
+from services.api.experiment_queue import ExperimentQueueDispatcher
 from services.api.middleware import IdempotencyMiddleware
 from services.api.routers import (
     approvals,
     artifacts,
     budget_forecast,
     deliverable,
+    experiment_queue,
     experiments,
     inspection,
     library,
@@ -127,14 +129,36 @@ def _start_worker_reaper(deps: ApiDeps) -> "WorkerReaperScheduler | None":
         return None
 
 
+def _start_experiment_queue(deps: ApiDeps) -> "ExperimentQueueDispatcher | None":
+    """G14: the queue needs a consumer — the dispatcher is that consumer.
+
+    Gated on an experiment store (both compositions provide one) and on the run
+    orchestration service (dispatch reuses the `POST /runs` assembly). It claims
+    due entries atomically, starts runs and records the outcome back on the entry.
+    """
+    if getattr(deps, "experiment_store", None) is None or deps.runs is None:
+        return None
+    try:
+        dispatcher = ExperimentQueueDispatcher(
+            deps,
+            interval_seconds=15.0,
+            claim_ttl_seconds=300.0,
+        )
+        dispatcher.start()
+        return dispatcher
+    except Exception:
+        return None
+
+
 def _stop_schedulers(
     reaper: "WorkerReaperScheduler | None",
     retention: "RetentionScheduler | None",
     outbox: "OutboxRelayScheduler | None",
     lease: "LeaseRecoveryScheduler | None",
+    queue: "ExperimentQueueDispatcher | None" = None,
 ) -> None:
     """Reverse-order daemon shutdown; a failing stop must not block the rest."""
-    for sched in (reaper, retention, outbox):
+    for sched in (reaper, retention, outbox, queue):
         if sched is not None:
             try:
                 sched.stop()
@@ -156,14 +180,17 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     outbox_sched: OutboxRelayScheduler | None = None
     retention_sched: RetentionScheduler | None = None
     reaper_sched: WorkerReaperScheduler | None = None
+    queue_dispatcher: ExperimentQueueDispatcher | None = None
     telemetry = getattr(deps, "telemetry", None) if deps is not None else None
     if deps is not None and deps.runs is not None:
         lease_sched = _start_lease_scheduler(deps)
         outbox_sched = _start_outbox_scheduler(deps)
         retention_sched = _start_retention_scheduler(deps)
         reaper_sched = _start_worker_reaper(deps)
+    if deps is not None:
+        queue_dispatcher = _start_experiment_queue(deps)
     yield
-    _stop_schedulers(reaper_sched, retention_sched, outbox_sched, lease_sched)
+    _stop_schedulers(reaper_sched, retention_sched, outbox_sched, lease_sched, queue_dispatcher)
     if telemetry is not None:
         shutdown = getattr(telemetry, "shutdown", None)
         if callable(shutdown):
@@ -201,6 +228,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(inspection.router)
     app.include_router(operations.router)
     app.include_router(experiments.router)
+    app.include_router(experiment_queue.router)
     app.include_router(protocol_drafts.router)
     app.include_router(artifacts.router)
     app.include_router(memory.router)

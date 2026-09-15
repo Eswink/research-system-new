@@ -14,6 +14,7 @@ import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
 import { ExperimentMetadata } from "./ExperimentMetadata";
 import { ExperimentPlanPanel } from "./ExperimentPlanPanel";
+import { ExperimentQueuePanel } from "./ExperimentQueuePanel";
 
 export function ExperimentsPage({ ctx }: { ctx: PageContext }) {
   const { language, t } = useI18n();
@@ -26,10 +27,11 @@ export function ExperimentsPage({ ctx }: { ctx: PageContext }) {
         kicker="PORTFOLIO / EXPERIMENTS"
         description={
           language === "zh"
-            ? "当前运行的实验与指标；创建、排队和执行复现尚无接口，可在显式示例模式体验。"
+            ? "当前运行的实验与指标；计划预注册、排队与调度走真实控制面；复现执行与日历/矩阵视图无 API。"
             : [
-                "Experiments and metrics for the selected run. Creation, scheduling and ",
-                "reproduction have no API; explore them in explicit example mode.",
+                "Experiments and metrics for the selected run. Preregistration, queueing and ",
+                "scheduling go through the live control plane; reproduction runs and ",
+                "calendar/matrix views have no API.",
               ].join("")
         }
         actions={
@@ -48,6 +50,7 @@ export function ExperimentsPage({ ctx }: { ctx: PageContext }) {
         {resource.data !== null && <ExperimentCatalog key={runId} view={resource.data} />}
       </ResourceBoundary>
       <ExperimentPlanPanel />
+      <ExperimentQueuePanel />
     </section>
   );
 }

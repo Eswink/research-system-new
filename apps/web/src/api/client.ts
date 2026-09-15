@@ -175,14 +175,28 @@ export const api = {
   artifactPreviewText: (artifactId: string) => artifactClient.contentText(artifactId),
   artifactDiff: (leftId: string, rightId: string) => artifactClient.diff(leftId, rightId),
 
-  // ── experiments（WP-E）──
+  // ── experiments（WP-E + G14 队列）──
   projectExperiments: () => experimentClient.listForProject(),
+  experimentPlans: (state?: string) => experimentClient.listPlans(state),
   createExperimentPlan: (payload: {
     name: string;
     hypothesis?: string | null;
     task_contract_ref?: string | null;
   }) => experimentClient.createPlan(payload),
   archiveExperimentPlan: (planId: string) => experimentClient.archivePlan(planId),
+  experimentQueue: () => experimentClient.listQueue(),
+  enqueueExperiment: (
+    planId: string,
+    payload: {
+      protocol_path?: string | null;
+      draft_id?: string | null;
+      draft_revision?: number | null;
+      not_before?: string | null;
+    },
+  ) => experimentClient.enqueue(planId, payload),
+  rescheduleExperiment: (entryId: string, notBefore: string | null) =>
+    experimentClient.reschedule(entryId, notBefore),
+  cancelExperiment: (entryId: string) => experimentClient.cancel(entryId),
 
   // ── memory（WP-F）──
   projectMemory: () => memoryClient.list(),

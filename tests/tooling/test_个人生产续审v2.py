@@ -17,6 +17,7 @@ from adapters.execution.remote_backend import RemoteExecutionBackend
 from adapters.fakes.artifact_store import FakeArtifactStore
 from adapters.fakes.eval_report_store import FakeEvalReportStore
 from adapters.fakes.execution_job_queue import FakeExecutionJobQueue
+from adapters.fakes.experiment_store import FakeExperimentStore
 from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
 from packages.application.deliverable.builder import (
     DeliverableBuildError,
@@ -37,7 +38,6 @@ from tests.application.m12_clean_run_fixtures import (
     make_deps,
 )
 from tests.application.test_m12_clean_run_persistence import (
-    _ExperimentStore,
     _Persistence,
     _RunStore,
 )
@@ -49,7 +49,7 @@ def _durable_deps(tmp_path: Path) -> Any:
     return replace(
         make_deps(tmp_path),
         expected_image_digest=IMAGE_DIGEST,
-        persistence=_Persistence(_RunStore(), _ExperimentStore(), FakeEvalReportStore()),
+        persistence=_Persistence(_RunStore(), FakeExperimentStore(), FakeEvalReportStore()),
     )
 
 

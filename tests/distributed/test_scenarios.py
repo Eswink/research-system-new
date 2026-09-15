@@ -259,14 +259,17 @@ def test_scenario_f_scheduler_restart_keeps_state(harness: WorkerHarness) -> Non
     assert outcome.worker_id == "f-takeover"
 
 
+def _registration_state(harness: WorkerHarness, worker_id: str) -> str | None:
+    registration = harness.registry.get(worker_id)
+    return None if registration is None else registration.state
+
+
 def test_scenario_g_drain_stops_claims(harness: WorkerHarness) -> None:
     """G: drained worker stops claiming (server-enforced); others continue; safe offline."""
     harness.spawn_worker("g-w1")
-    assert _wait_until(lambda: harness.registry.get("g-w1") is not None)
-    reg_before = harness.registry.get("g-w1")
-    assert reg_before is not None
-    if reg_before.state == "REGISTERING":
-        harness.registry.transition("g-w1", WorkerState.Transition.HANDSHAKE_OK)
+    # 注册 + 握手由 gateway 与 worker 自行完成（REGISTERING → READY）。测试只等待它落定：
+    # 自己补一次 HANDSHAKE_OK 会与 gateway 的那次迁移竞争（READY + HANDSHAKE_OK → 非法迁移）。
+    assert _wait_until(lambda: _registration_state(harness, "g-w1") == WorkerState.State.READY)
     harness.registry.drain("g-w1")
     reg = harness.registry.get("g-w1")
     assert reg is not None and reg.state == "DRAINING" and reg.drain_requested is True

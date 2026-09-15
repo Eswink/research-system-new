@@ -1,4 +1,4 @@
-"""ExperimentPlan/ExperimentRun/ReproducibilityAudit row mapping（store 共享 codec）.
+"""ExperimentPlan/Run/ReproducibilityAudit/QueueEntry row mapping（store 共享 codec）.
 
 纯 domain ↔ dict 映射，无数据库依赖；由 `adapters/postgres/experiment_store.py`
 与 `adapters/sqlite/experiment_store.py` 共享（whole-object JSON 行）。
@@ -11,6 +11,7 @@ from decimal import Decimal
 from typing import Any
 
 from packages.domain.core import ID, Digest, Timestamp
+from packages.domain.experiment_queue import ExperimentQueueEntry, QueueProtocolSource
 from packages.domain.experiments import (
     ExperimentPlan,
     ExperimentRun,
@@ -231,4 +232,55 @@ def decode_audit(record: dict[str, Any]) -> ReproducibilityAudit:
         observational_metrics_digest=_opt_digest(record.get("observational_metrics_digest")),
         audit_digest=_opt_digest(record.get("audit_digest")),
         created_at=Timestamp(datetime.fromisoformat(record["created_at"])),
+    )
+
+
+# --- ExperimentQueueEntry（G14）---
+
+
+def encode_queue_source(source: QueueProtocolSource) -> dict[str, Any]:
+    return {
+        "protocol_path": source.protocol_path,
+        "draft_id": source.draft_id,
+        "draft_revision": source.draft_revision,
+    }
+
+
+def decode_queue_source(record: dict[str, Any]) -> QueueProtocolSource:
+    return QueueProtocolSource(
+        protocol_path=record.get("protocol_path"),
+        draft_id=record.get("draft_id"),
+        draft_revision=record.get("draft_revision"),
+    )
+
+
+def encode_queue_entry(entry: ExperimentQueueEntry) -> dict[str, Any]:
+    return {
+        "id": entry.id.value,
+        "project_id": entry.project_id,
+        "plan_id": entry.plan_id.value,
+        "source": encode_queue_source(entry.source),
+        "not_before": entry.not_before.value.isoformat() if entry.not_before else None,
+        "state": entry.state,
+        "run_id": entry.run_id,
+        "failure_reason": entry.failure_reason,
+        "claimed_at": entry.claimed_at.value.isoformat() if entry.claimed_at else None,
+        "created_at": entry.created_at.value.isoformat(),
+        "updated_at": entry.updated_at.value.isoformat(),
+    }
+
+
+def decode_queue_entry(record: dict[str, Any]) -> ExperimentQueueEntry:
+    return ExperimentQueueEntry(
+        id=ID(record["id"]),
+        project_id=record["project_id"],
+        plan_id=ID(record["plan_id"]),
+        source=decode_queue_source(record["source"]),
+        not_before=_opt_ts(record.get("not_before")),
+        state=record["state"],
+        run_id=record.get("run_id"),
+        failure_reason=record.get("failure_reason"),
+        claimed_at=_opt_ts(record.get("claimed_at")),
+        created_at=Timestamp(datetime.fromisoformat(record["created_at"])),
+        updated_at=Timestamp(datetime.fromisoformat(record["updated_at"])),
     )

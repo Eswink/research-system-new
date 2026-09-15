@@ -14,22 +14,17 @@ import styles from "../shared/LivePage.module.css";
 
 type ProjectsView = Awaited<ReturnType<typeof api.projectExperiments>>;
 
-/** 预注册计划与项目级实验视图（WP-E；无队列语义，状态来自域）。 */
+/** 预注册计划与项目级实验视图（WP-E + G14：计划列表读服务端，不再只留本地状态）。 */
 export function ExperimentPlanPanel() {
   const { language } = useI18n();
   const zh = language === "zh";
   const view = useResource("project-experiments", () => api.projectExperiments());
-  const [plans, setPlans] = useState<ExperimentPlanDto[]>([]);
+  const plans = useResource("experiment-plans", () => api.experimentPlans());
   return (
     <PanelSection title={zh ? "预注册实验计划" : "Preregistered experiment plans"}>
       <div className={styles.page} data-testid="experiment-plan-panel">
-        <PlanCreateForm
-        onCreated={(plan) => {
-          setPlans((p) => [plan, ...p]);
-        }}
-        zh={zh}
-      />
-        {plans.length > 0 && <PlanRows plans={plans} zh={zh} onChanged={setPlans} />}
+        <PlanCreateForm onCreated={plans.reload} zh={zh} />
+        <PlanRows view={plans} zh={zh} onChanged={plans.reload} />
         <PlanProjectRuns view={view} zh={zh} />
       </div>
     </PanelSection>
@@ -68,7 +63,7 @@ function ProjectRunRow({ row }: { row: ProjectsView["experiments"][number] }) {
   );
 }
 
-function usePlanCreate(onCreated: (plan: ExperimentPlanDto) => void) {
+function usePlanCreate(onCreated: () => void) {
   const [name, setName] = useState("");
   const [hypothesis, setHypothesis] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,9 +78,10 @@ function usePlanCreate(onCreated: (plan: ExperimentPlanDto) => void) {
     setIssue(null);
     try {
       const payload = { name: trimmed, hypothesis: hypothesis.trim() || null };
-      onCreated(await api.createExperimentPlan(payload));
+      await api.createExperimentPlan(payload);
       setName("");
       setHypothesis("");
+      onCreated();
     } catch (err) {
       setIssue(problemText(err));
     } finally {
@@ -95,13 +91,7 @@ function usePlanCreate(onCreated: (plan: ExperimentPlanDto) => void) {
   return { name, setName, hypothesis, setHypothesis, busy, issue, submit };
 }
 
-function PlanCreateForm({
-  onCreated,
-  zh,
-}: {
-  onCreated: (plan: ExperimentPlanDto) => void;
-  zh: boolean;
-}) {
+function PlanCreateForm({ onCreated, zh }: { onCreated: () => void; zh: boolean }) {
   const create = usePlanCreate(onCreated);
   return (
     <div className={styles.toolbar} data-testid="plan-create-form">
@@ -125,8 +115,8 @@ type PlanCreate = ReturnType<typeof usePlanCreate>;
 
 function PlanNameFields({ create, zh }: { create: PlanCreate; zh: boolean }) {
   const hint = zh
-    ? "创建即预注册（PREREGISTERED）；队列/调度无 API，不伪装。SQLite 开发路径返回 503。"
-    : "Create = preregister; no queue/schedule API. SQLite dev path returns 503.";
+    ? "创建即预注册（PREREGISTERED）；排队与调度由下方队列面板承载。SQLite 开发路径返回 503。"
+    : "Create = preregister; queueing and scheduling live in the queue panel below.";
   return (
     <>
       <Field label={zh ? "计划名称" : "Plan name"} htmlFor="plan-name">
@@ -156,41 +146,45 @@ function PlanNameFields({ create, zh }: { create: PlanCreate; zh: boolean }) {
 }
 
 function PlanRows({
-  plans,
+  view,
   zh,
   onChanged,
 }: {
-  plans: ExperimentPlanDto[];
+  view: ResourceState<ExperimentPlanDto[]>;
   zh: boolean;
-  onChanged: (plans: ExperimentPlanDto[]) => void;
+  onChanged: () => void;
 }) {
+  const plans = view.data ?? [];
   const archive = async (plan: ExperimentPlanDto): Promise<void> => {
-    try {
-      const updated = await api.archiveExperimentPlan(plan.id);
-      onChanged(plans.map((item) => (item.id === updated.id ? updated : item)));
-    } catch {
-      onChanged([...plans]);
-    }
+    await api.archiveExperimentPlan(plan.id);
+    onChanged();
   };
   return (
-    <ul className={styles.list} data-testid="plan-rows">
-      {plans.map((plan) => (
-        <li key={plan.id} className={styles.notice}>
-          <span className="mono">{plan.id}</span> · {plan.name}{" "}
-          <Chip tone={plan.state === "ARCHIVED" ? "neutral" : "accent"}>{plan.state}</Chip>
-          {plan.state !== "ARCHIVED" && (
-            <button
-              className="btn sm ghost"
-              type="button"
-              onClick={() => {
-                void archive(plan);
-              }}
-            >
-              {zh ? "归档" : "Archive"}
-            </button>
-          )}
-        </li>
-      ))}
-    </ul>
+    <ResourceBoundary state={view}>
+      {view.phase === "ready" && plans.length === 0 && (
+        <EmptyState message={zh ? "暂无预注册计划" : "No preregistered plans yet"} />
+      )}
+      {plans.length > 0 && (
+        <ul className={styles.list} data-testid="plan-rows">
+          {plans.map((plan) => (
+            <li key={plan.id} className={styles.notice}>
+              <span className="mono">{plan.id}</span> · {plan.name}{" "}
+              <Chip tone={plan.state === "ARCHIVED" ? "neutral" : "accent"}>{plan.state}</Chip>
+              {plan.state !== "ARCHIVED" && (
+                <button
+                  className="btn sm ghost"
+                  type="button"
+                  onClick={() => {
+                    void archive(plan);
+                  }}
+                >
+                  {zh ? "归档" : "Archive"}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </ResourceBoundary>
   );
 }

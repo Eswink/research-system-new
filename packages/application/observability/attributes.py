@@ -223,6 +223,8 @@ class MetricName(StrEnum):
     GPU_EXECUTION_DURATION_MS = "research_os.gpu_execution.duration_ms"
     GPU_OOM_TOTAL = "research_os.gpu_execution.oom_total"
     GPU_UNAVAILABLE_TOTAL = "research_os.gpu_execution.unavailable_total"
+    # G14 experiment queue dispatcher (one sample per dispatch attempt)
+    EXPERIMENT_QUEUE_DISPATCH_TOTAL = "research_os.experiment_queue.dispatch_total"
 
 
 @dataclass(frozen=True, slots=True)

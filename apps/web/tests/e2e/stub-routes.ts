@@ -5,6 +5,7 @@
  */
 
 import { BUDGET_ROUTES } from "./stub-routes-budget";
+import { EXPERIMENT_QUEUE_ROUTES } from "./stub-routes-experiments";
 import { POLICY_ROUTES } from "./stub-routes-policy";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 
@@ -427,4 +428,6 @@ export const ROUTES: readonly StubRoute[] = [
   ...BUDGET_ROUTES,
   // PLAN-049 WP-C: capability policy snapshot.
   ...POLICY_ROUTES,
+  // PLAN-052 WP-D: experiment queue + plan list (G14).
+  ...EXPERIMENT_QUEUE_ROUTES,
 ];

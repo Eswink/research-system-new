@@ -77,10 +77,18 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
   `GET /projects/{id}/experiments`（项目级跨 run evidence 视图，WP-E）、
   `POST /projects/{id}/experiments`（计划预注册 DRAFT→PREREGISTERED；
   WP-A 起 SQLite 开发路径与 PG canonical 双支持，store 缺失仍如实 503）、
-  `POST /experiments/{plan_id}/archive`。
-- 等级：PARTIAL。域内无 queued/running 计划状态，不伪造队列；
-  `reproduction_available` 恒 false，如实呈现。
-- 缺口（登记）：排队/调度/日历无 API（保持禁用）；队列视图属 example 演示。
+  `POST /experiments/{plan_id}/archive`、`GET /experiment-plans`（计划列表）、
+  `POST /projects/{id}/experiments/{plan_id}/queue`（入队：入队即解析协议来源）、
+  `GET /projects/{id}/experiment-queue`、
+  `PATCH /experiment-queue/{entry_id}`（改期）、`DELETE /experiment-queue/{entry_id}`
+  （取消）。
+- 等级：PARTIAL。队列条目状态只来自域状态机（QUEUED/DISPATCHING/DISPATCHED/
+  FAILED/CANCELLED），不发明进度字段；`reproduction_available` 恒 false，如实呈现。
+  派发由控制面队列消费者按 `not_before`/创建时间顺序执行（与 `POST /runs` 同一装配链，
+  进程内同步、串行推进）；认领过期（进程中断）重新派发 = at-least-once，不假装
+  exactly-once；派发失败以 `FAILED + reason` 呈现，不静默重试。
+- 缺口（登记）：复现执行无 API（保持禁用 → `disabledOperations: ["reproduce-run"]`）；
+  日历/矩阵视图未实现（设计参照仍在 example 演示）；队列条目不发 outbox 事件。
 
 ### `#/portfolio/runs-history` — 运行历史
 - 设计：`screens/RunsHistory.jsx`。
@@ -318,7 +326,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G11 | ~~审批生产接线~~ | run/approvals | **已交付**（WP-H：human-gate 注册点+续跑；空列表为正确状态） |
 | G12 | 成本日序列~~/预测~~ | insights/cost-analytics、govern/budget | **日序列已交付**（WP-D）；**Run 级预留-消耗预测已交付**（PLAN-046：GET /runs/{id}/cost-forecast，仅已预留额度，无 burn-rate 外推）；跨 run/时间序列预测仍无 API |
 | G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |
-| G14 | 实验~~创建~~/排队/调度 | portfolio/experiments | **预注册/归档已交付**（WP-E）；queue/schedule 无域支撑保持禁用 |
+| G14 | ~~实验创建/排队/调度~~ | portfolio/experiments | **已交付**（WP-E 预注册/归档 + PLAN-052 队列/调度：`ExperimentQueueEntry` 域 + SQLite/PG 存储 + 原子认领派发器 + 五端点 + console live）；未交付面继续标注：复现执行、日历/矩阵视图 |
 | G15 | Tool Provider 管理面（install/approve/revoke） | ops/integrations | **目录已交付**（PLAN-043：GET /tool-providers 只读投影 + 三态健康）；管理动作未提供（供应链治理） |
 | G16 | ~~Memory capability policy~~ | govern/audit Memory Tab | **已交付**（PLAN-049：memory.write 入 policy.yaml 镜像契约 + 门链 policy 阶段实时生效；GET /policy/capabilities 只读呈现逐 tier 判决；规则变更仍需改 policy.yaml） |
 

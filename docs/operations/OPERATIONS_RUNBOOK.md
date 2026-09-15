@@ -86,3 +86,19 @@ SEV3 single task/user issue
   - 网络分区：`tests/distributed` NetProxy 场景证据；重连不恢复旧权威。
 - 入网凭据：enrollment secret 经 WORKER 凭据域；session token 仅存 sha256；
   生产必须 `RESEARCHOS_WORKER_GATEWAY_REQUIRE_TLS=1`（非 loopback 无 TLS 拒启）。
+
+## Experiment Queue (G14)
+
+- 控制面进程内的队列消费者 `ExperimentQueueDispatcher`（默认 15s，随 API 生命周期
+  启停）：认领到期条目 → 走与 `POST /runs` 相同的装配链启动 run → 把 `run_id`
+  写回条目（`DISPATCHED`）或把失败原因写回（`FAILED`）。
+- 认领是原子的（PG `FOR UPDATE SKIP LOCKED` / SQLite 条件更新）；认领超过 300s
+  的条目（进程崩溃或停机中断）回到 `QUEUED` 重新派发 = **at-least-once**，
+  不假装 exactly-once（同一排期条目可能对应两次启动尝试，条目上的 `run_id`
+  是最近一次的结果）。
+- 派发顺序：`COALESCE(not_before, created_at)` 升序；派发是**串行**的（进程内 run
+  同步执行），因此队列吞吐与 API 侧 run 吞吐同阶，不因队列而上行。
+- 失败处置：失败是终态（不静默重试）。运维重新排队是显式动作；计划被归档后
+  到期的条目按 `FAILED`（原因含 `ARCHIVED`）落地，不启动 run。
+- 观测：`experiment_queue.dispatch_pass` operation span + 
+  `research_os.experiment_queue.dispatch_total` 计数（每次派发尝试一次）。

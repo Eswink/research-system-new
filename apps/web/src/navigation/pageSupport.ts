@@ -54,8 +54,9 @@ export const GAPS = {
     "无持久化 pending 提案，门链直提交；memory.write 已入 policy 面（逐 tier 判决" +
     "在 govern/audit 只读呈现，policy.yaml 变更需重启控制面）",
   experimentCreate:
-    "计划预注册/归档已接入（WP-A 起 SQLite 开发路径与 PG 双支持）；" +
-    "域内无队列状态，排队/调度无 API，不伪装",
+    "计划预注册/归档与实验队列已接入（GET /experiment-plans、POST /projects/{id}/" +
+    "experiments/{plan}/queue、GET/PATCH/DELETE /experiment-queue/{id}；派发由控制面" +
+    "队列消费者按排期执行，at-least-once）；复现执行与日历/矩阵视图无 API，不伪装",
   prompts:
     "库目录已接入（GET /projects/{id}/library?kind=prompt + 创建/重命名/归档）；" +
     "版本树与 A-B 无 API，不伪造",
@@ -100,7 +101,7 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "portfolio/experiments": {
     level: "partial",
     reason: GAPS.experimentCreate,
-    disabledOperations: ["queue", "schedule"],
+    disabledOperations: ["reproduce-run"],
   },
   "portfolio/runs-history": { level: "full" },
   "portfolio/compare": { level: "partial", reason: "仅比较已返回指标；不可比语义保留" },

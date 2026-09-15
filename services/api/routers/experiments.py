@@ -9,7 +9,9 @@
 
 WP-E 新增：项目级 run 视图（跨 run evidence 聚合）、ExperimentPlan 预注册
 创建与归档。PLAN-040 WP-A 起 SQLite 开发路径与 PG canonical 双支持；store
-未配置仍诚实 503。域内不存在 queued/running 计划状态，因此不伪装队列；
+未配置仍诚实 503。G14（PLAN-052）起队列/调度由独立路由
+（`services/api/routers/experiment_queue.py`）+ 控制面派发器承载：计划状态本身
+仍只有 DRAFT/PREREGISTERED/ARCHIVED（排队事实在队列条目上，不写进计划状态），
 执行归属由 run 证据呈现。
 """
 

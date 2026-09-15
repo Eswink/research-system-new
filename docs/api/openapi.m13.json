@@ -1830,6 +1830,228 @@
         "title": "ExperimentPlanDto",
         "type": "object"
       },
+      "ExperimentQueueEnqueueDto": {
+        "additionalProperties": false,
+        "description": "入队请求：协议来源二选一（path 或 draft 修订）+ 可选排期。",
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "draft_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Revision"
+          },
+          "not_before": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Before"
+          },
+          "protocol_path": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Path"
+          }
+        },
+        "title": "ExperimentQueueEnqueueDto",
+        "type": "object"
+      },
+      "ExperimentQueueEntryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "claimed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed At"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "draft_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Revision"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "not_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Before"
+          },
+          "plan_id": {
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "plan_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Name"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "protocol_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Path"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "plan_id",
+          "state",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ExperimentQueueEntryDto",
+        "type": "object"
+      },
+      "ExperimentQueueRescheduleDto": {
+        "additionalProperties": false,
+        "description": "改期请求：null 表示清除排期（立即到期）。",
+        "properties": {
+          "not_before": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Before"
+          }
+        },
+        "title": "ExperimentQueueRescheduleDto",
+        "type": "object"
+      },
+      "ExperimentQueueViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "dispatch_note": {
+            "default": "",
+            "title": "Dispatch Note",
+            "type": "string"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/ExperimentQueueEntryDto"
+            },
+            "title": "Entries",
+            "type": "array"
+          }
+        },
+        "title": "ExperimentQueueViewDto",
+        "type": "object"
+      },
       "ExperimentRunDto": {
         "additionalProperties": false,
         "description": "单个 experiment run 的只读视图（persisted truth）。",
@@ -5831,6 +6053,154 @@
         ]
       }
     },
+    "/experiment-plans": {
+      "get": {
+        "description": "计划列表（新→旧）；`state` 过滤按域取值（DRAFT/PREREGISTERED/ARCHIVED）。\n\n列为域面无项目归属（ExperimentPlan 无 project_id），因此按全局返回——\n与 `GAPS.multiProject` 的诚实标注一致，不伪装项目隔离。",
+        "operationId": "list_experiment_plans_experiment_plans_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExperimentPlanDto"
+                  },
+                  "title": "Response List Experiment Plans Experiment Plans Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Experiment Plans",
+        "tags": [
+          "experiments"
+        ]
+      }
+    },
+    "/experiment-queue/{entry_id}": {
+      "delete": {
+        "description": "取消（只对 QUEUED）；其余状态 409（已在启动中的处置该 run）。",
+        "operationId": "cancel_queue_entry_experiment_queue__entry_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentQueueEntryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Queue Entry",
+        "tags": [
+          "experiments"
+        ]
+      },
+      "patch": {
+        "description": "改期（只对 QUEUED）；空值清除排期（立即到期）。",
+        "operationId": "reschedule_queue_entry_experiment_queue__entry_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentQueueRescheduleDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentQueueEntryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reschedule Queue Entry",
+        "tags": [
+          "experiments"
+        ]
+      }
+    },
     "/experiments/{plan_id}/archive": {
       "post": {
         "description": "归档计划（域状态机权威：已归档/非法迁移 → 409；未知 → 404）。",
@@ -7158,6 +7528,49 @@
         ]
       }
     },
+    "/projects/{project_id}/experiment-queue": {
+      "get": {
+        "description": "项目队列视图（新→旧）；计划名从计划表补齐（缺失则 None，不伪造）。",
+        "operationId": "project_experiment_queue_projects__project_id__experiment_queue_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentQueueViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Project Experiment Queue",
+        "tags": [
+          "experiments"
+        ]
+      }
+    },
     "/projects/{project_id}/experiments": {
       "get": {
         "description": "项目级 experiment run 视图（跨 run 的 evidence 聚合；WP-E）。",
@@ -7249,6 +7662,68 @@
         "summary": "Create Experiment Plan",
         "tags": [
           "inspection"
+        ]
+      }
+    },
+    "/projects/{project_id}/experiments/{plan_id}/queue": {
+      "post": {
+        "description": "把一次实验启动请求入队（来源立即解析；可带 not_before 排期）。",
+        "operationId": "enqueue_experiment_run_projects__project_id__experiments__plan_id__queue_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentQueueEnqueueDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentQueueEntryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enqueue Experiment Run",
+        "tags": [
+          "experiments"
         ]
       }
     },

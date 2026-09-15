@@ -11,10 +11,9 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from adapters.fakes.eval_report_store import FakeEvalReportStore
+from adapters.fakes.experiment_store import FakeExperimentStore
 from packages.application.m12_reference.clean_run import run_clean_workflow
 from packages.application.ports.eval_report_store import EvalReportQuery
-from packages.domain.experiments import ExperimentPlan, ExperimentRun
-from packages.domain.reproducibility import ReproducibilityAudit
 from packages.domain.run import ResearchRun
 from tests.application.m12_clean_run_fixtures import (
     COMMAND,
@@ -42,45 +41,24 @@ class _RunStore:
         self.runs[run.id.value] = run
 
 
-class _ExperimentStore:
-    def __init__(self) -> None:
-        self.plans: dict[str, ExperimentPlan] = {}
-        self.runs: dict[str, ExperimentRun] = {}
-        self.audits: dict[str, ReproducibilityAudit] = {}
-
-    def save_plan(self, plan: ExperimentPlan) -> None:
-        self.plans[plan.id.value] = plan
-
-    def get_plan(self, plan_id: str) -> ExperimentPlan:
-        return self.plans[plan_id]
-
-    def save_run(self, run: ExperimentRun) -> None:
-        self.runs[run.id.value] = run
-
-    def get_run(self, run_id: str) -> ExperimentRun:
-        return self.runs[run_id]
-
-    def save_audit(self, audit: ReproducibilityAudit) -> None:
-        self.audits[audit.experiment_run_id.value] = audit
-
-    def get_audit(self, experiment_run_id: str) -> ReproducibilityAudit:
-        return self.audits[experiment_run_id]
-
-    def close(self) -> None:
-        return None
-
-
 @dataclass(frozen=True, slots=True)
 class _Persistence:
     run_store: _RunStore
-    experiment_store: _ExperimentStore
+    experiment_store: FakeExperimentStore
     eval_report_store: FakeEvalReportStore
+
+
+def _assert_persisted_closure(store: FakeExperimentStore, experiment_run_id: str) -> None:
+    """经 Port 回读整条闭包（未知 id 会抛 InvalidInputError，而非静默空值）。"""
+    assert store.get_plan(PLAN_ID.value).id.value == PLAN_ID.value
+    assert store.get_run(experiment_run_id).id.value == experiment_run_id
+    assert store.get_audit(experiment_run_id).experiment_run_id.value == experiment_run_id
 
 
 def test_reference_run_persists_restorable_truth_closure(tmp_path: Path) -> None:
     base = make_deps(tmp_path)
     run_store = _RunStore()
-    experiment_store = _ExperimentStore()
+    experiment_store = FakeExperimentStore()
     eval_store = FakeEvalReportStore()
     deps = replace(
         base,
@@ -106,9 +84,9 @@ def test_reference_run_persists_restorable_truth_closure(tmp_path: Path) -> None
     assert str(manifest_meta.digest) == result.manifest_digest == str(run.manifest_digest)
     assert deps.artifacts.verify(manifest_id) is True
 
-    assert experiment_store.plans
-    assert result.experiment_run_id in experiment_store.runs
-    assert result.experiment_run_id in experiment_store.audits
+    experiment_run_id = result.experiment_run_id
+    assert experiment_run_id is not None
+    _assert_persisted_closure(experiment_store, experiment_run_id)
 
     reports = eval_store.query(EvalReportQuery(run_id=RUN_ID))
     assert len(reports) == 1
