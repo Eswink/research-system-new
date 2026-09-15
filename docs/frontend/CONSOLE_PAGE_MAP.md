@@ -237,15 +237,19 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 ## Ops（6 设计页 + 2 兼容页）
 
 ### `#/ops/alerts` — 告警
-- 设计：`screens/OpsScreens.jsx` `AlertsScreen`。等级：PARTIAL。
-- API：`GET /projects/{id}/ops/alerts`（派生只读收件箱：失败 Run、非健康端点、
-  离线/排水 worker）。
-- 缺口（登记）：无告警规则 CRUD API——规则配置与处理保持禁用。
+- 设计：`screens/OpsScreens.jsx` `AlertsScreen`。等级：FULL。
+- API：`GET /projects/{id}/ops/alerts`（派生收件箱：失败 Run、非健康端点、离线/排水 worker）；
+  `GET/POST /projects/{id}/ops/alert-rules`、`PATCH/DELETE /ops/alert-rules/{rule_id}`（静音规则写面）。
+- 口径：规则命中只打 `muted`/`muted_by` 标记并给出 `muted_count`，**不隐藏**告警；
+  未配置 OpsStore 时规则面 503 并如实标注原因。
 
 ### `#/ops/incidents` — 事故
-- 设计：`screens/Incidents.jsx`。等级：PARTIAL。
-- API：`GET /projects/{id}/ops/incidents`（FAILED run 候选列表）。
-- 缺口（登记）：无 declare/assign/close 处置工作流；失败 Run 不自动登记为事故。
+- 设计：`screens/Incidents.jsx`。等级：FULL。
+- API：`GET /projects/{id}/ops/incidents`（已登记事故 + FAILED run 候选）；
+  `POST /projects/{id}/ops/incidents`（登记，可关联来源 run）、
+  `POST /ops/incidents/{id}/assign`、`POST /ops/incidents/{id}/close`（写处理结论）。
+- 口径：候选 ≠ 已登记（失败 Run 不会自动变事故）；已关闭再处置 409；
+  已登记的 run 从候选移出但仍留在已登记列表可追溯。
 
 ### `#/ops/schedules` — 调度
 - 设计：`screens/OpsScreens.jsx` `SchedulesScreen`。等级：PARTIAL。
@@ -338,7 +342,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
 | G5 | ~~预算调整契约~~ | govern/budget | **已交付**（PLAN-046：interventions budget_adjust 走 BudgetLedger 的 release+reserve；replace_agent 语义变更仍 501；预测只覆盖已预留额度） |
 | G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已交付**（PLAN-048：PAUSED = 派发面停止认领该 run 的任务（claim_next 过滤，已持租约不撤销），本进程执行器在 phase 边界观测后零任务执行返回 PAUSED；resume 恢复派发，仅持有暂停上下文时继续剩余任务，否则 `continuation=NONE`。无抢占式中断；跨进程暂停上下文不持久化） |
-| G7 | ~~alerts/incidents/schedules/data-health~~ | ops 四页 | **只读投影已交付**（PLAN-045：ops/alerts・incidents・schedules・data-health；规则 CRUD/处置流/用户调度/聚合报告仍禁用，见各页缺口）；prompts/datasets/notebooks 见 G7b，reports 见 G7a，integrations 见 G15 |
+| G7 | ~~alerts/incidents/schedules/data-health~~ | ops 四页 | **二页已交付写面**（PLAN-059：ops/alerts 的静音规则 CRUD + ops/incidents 的 declare/assign/close 走真实 `OpsStore`，写面被读面消费——规则只打 `muted/muted_by` 标记不隐藏告警、登记事故回链来源 run 的告警、已登记 run 移出候选；PLAN-045 的只读投影为底）；schedules 用户调度与 data-health 聚合报告仍禁用（见各页缺口）；prompts/datasets/notebooks 见 G7b，reports 见 G7a，integrations 见 G15 |
 | G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
 | G7b | ~~prompts/datasets/notebooks 库目录~~ | library 三页 | **已交付**（PLAN-044：GET/POST /projects/{id}/library + PATCH /library/{id}，kind 区分；版本树/上传/单元格执行仍禁用） |
 | G8 | 文件浏览/预览；~~下载~~ | run/workspace | **已交付**：预览/下载（WP-C）；制品内容 Diff（PLAN-047：GET /artifacts/{a}/diff/{b} 行级 diff，二进制/超限如实标注）；**工作区快照文件树与文件级 Diff（PLAN-058：GET /workspace-snapshots/{digest}/files 与 /{left}/diff/{right}，按 digest 只读、只比元数据；需配置 RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT）**；剩余受限 = 无 run→工作区绑定记录面（只能回答"记录过哪些快照"） |

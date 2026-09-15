@@ -441,22 +441,24 @@ test("live: ops 只读投影（EC-03 第二批）", async ({ page }) => {
   expect(names).toContain("outbox_relay");
   expect(scheduleView.management_available).toBe(false);
 
-  // alerts：只读派生收件箱；规则 CRUD 锁定。
+  // alerts：派生收件箱 + 规则写面（PLAN-059 起 store 同侧装配 ⇒ 规则可用）。
   const alerts = await page.request.get("/api/projects/example-project/ops/alerts");
   expect(alerts.ok()).toBeTruthy();
   const alertView = (await alerts.json()) as { alerts: unknown[]; rules_available: boolean };
   expect(Array.isArray(alertView.alerts)).toBe(true);
-  expect(alertView.rules_available).toBe(false);
+  expect(alertView.rules_available).toBe(true);
 
-  // incidents：候选列表；无处置工作流。
+  // incidents：已登记列表 + 失败 Run 候选；处置写面可用（细节见 live-ops-write.spec.ts）。
   const incidents = await page.request.get("/api/projects/example-project/ops/incidents");
   expect(incidents.ok()).toBeTruthy();
   const incidentView = (await incidents.json()) as {
     incidents: unknown[];
+    candidates: unknown[];
     workflow_available: boolean;
   };
   expect(Array.isArray(incidentView.incidents)).toBe(true);
-  expect(incidentView.workflow_available).toBe(false);
+  expect(Array.isArray(incidentView.candidates)).toBe(true);
+  expect(incidentView.workflow_available).toBe(true);
 
   // data-health：端点计数可见；聚合报告锁定。
   const health = await page.request.get("/api/projects/example-project/ops/data-health");

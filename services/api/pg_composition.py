@@ -178,6 +178,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
     from adapters.sqlite.library_store import SqliteLibraryStore
     from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
+    from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
 
@@ -188,6 +189,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "project_store": SqliteProjectStore(connection=connection),
         "notification_reads": SqliteNotificationReadStore(connection=connection),
         "library_store": SqliteLibraryStore(connection=connection),
+        "ops_store": SqliteOpsStore(connection=connection),
     }
 
 

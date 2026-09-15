@@ -78,11 +78,13 @@ export const GAPS = {
     "已接入 GET /runs/{id}/deliverable（M12 持久化交付物）；" +
     "报告生成/编辑/PDF/发布无 API——生成动作禁用",
   alerts:
-    "只读告警收件箱已接入（GET /projects/{id}/ops/alerts，派生自失败 Run/" +
-    "非健康端点/离线 worker）；规则 CRUD 无 API",
+    "告警收件箱已接入（GET /projects/{id}/ops/alerts，派生自失败 Run/" +
+    "非健康端点/离线 worker）+ 静音规则写面（POST/PATCH/DELETE /ops/alert-rules）；" +
+    "规则只打 muted/muted_by 标记、不隐藏告警；未配置 OpsStore 时规则面 503 并如实标注",
   incidents:
-    "失败 Run 候选列表已接入（GET /projects/{id}/ops/incidents）；" +
-    "无 declare/assign/close 处置工作流，失败 Run 不自动登记为事故",
+    "事故处置已接入：POST /projects/{id}/ops/incidents 登记（可关联来源 run）、" +
+    "POST /ops/incidents/{id}/assign 指派、POST /ops/incidents/{id}/close 关闭（写结论）；" +
+    "关闭后不可再处置（409）；失败 Run 仍只作候选，不自动登记",
   schedules:
     "进程内 scheduler 配置事实已接入（GET /ops/schedules）；" +
     "无用户可见创建/启停/触发 API",
@@ -147,14 +149,12 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   },
   "insights/cost-analytics": { level: "partial", reason: GAPS.costSeries },
   "ops/alerts": {
-    level: "partial",
+    level: "full",
     reason: GAPS.alerts,
-    disabledOperations: ["new-rule", "edit-rule", "delete-rule"],
   },
   "ops/incidents": {
-    level: "partial",
+    level: "full",
     reason: GAPS.incidents,
-    disabledOperations: ["declare", "assign", "close"],
   },
   "ops/schedules": {
     level: "partial",

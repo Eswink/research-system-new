@@ -21,6 +21,7 @@ import { libraryClient } from "./libraryClient";
 import { modelsClient } from "./modelsClient";
 import { operationsClient } from "./operationsClient";
 import { opsViewClient } from "./opsViewClient";
+import { opsControlClient } from "./opsControlClient";
 import { policyClient } from "./policyClient";
 import { projectsClient } from "./projectsClient";
 import { protocolClient, type ProtocolSource } from "./protocolClient";
@@ -32,6 +33,11 @@ import type {
   AgentCreateDto,
   AgentSpecDto,
   AgentUpdatePayload,
+  AlertRulePatchDto,
+  AlertRuleWriteDto,
+  IncidentAssignDto,
+  IncidentCloseDto,
+  IncidentDeclareDto,
   LlmEndpointCreateDto,
   LlmEndpointReadDto,
   LlmEndpointUpdateDto,
@@ -159,6 +165,18 @@ export const api = {
   opsIncidents: () => opsViewClient.incidents(),
   opsSchedules: () => opsViewClient.schedules(),
   opsDataHealth: () => opsViewClient.dataHealth(),
+
+  // ── ops 写面（PLAN-059：告警规则 CRUD + 事故处置）──
+  opsAlertRules: () => opsControlClient.rules(),
+  createAlertRule: (payload: AlertRuleWriteDto) => opsControlClient.createRule(payload),
+  patchAlertRule: (ruleId: string, payload: AlertRulePatchDto) =>
+    opsControlClient.patchRule(ruleId, payload),
+  deleteAlertRule: (ruleId: string) => opsControlClient.deleteRule(ruleId),
+  declareIncident: (payload: IncidentDeclareDto) => opsControlClient.declareIncident(payload),
+  assignIncident: (incidentId: string, payload: IncidentAssignDto) =>
+    opsControlClient.assignIncident(incidentId, payload),
+  closeIncident: (incidentId: string, payload: IncidentCloseDto) =>
+    opsControlClient.closeIncident(incidentId, payload),
 
   // ── operations ─
   runTelemetry: (runId: string) => operationsClient.telemetry(runId),

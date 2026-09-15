@@ -1,0 +1,7 @@
+/* 表格行内动作组：不要复用页面级 .toolbar（它带 border-bottom，在单元格里会画出多余分隔线）。 */
+.row {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}

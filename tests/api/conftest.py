@@ -95,6 +95,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     from adapters.sqlite.endpoint_store import SqliteEndpointStore
     from adapters.sqlite.library_store import SqliteLibraryStore
     from adapters.sqlite.model_store import SqliteModelStore
+    from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
 
@@ -117,6 +118,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         project_settings_store=SqliteProjectSettingsStore(connection=connection),
         project_store=SqliteProjectStore(connection=connection),
         library_store=SqliteLibraryStore(connection=connection),
+        ops_store=SqliteOpsStore(connection=connection),
         protocol_draft_service=_make_draft_service(connection),
         _connection=connection,
     )

@@ -7,6 +7,7 @@
 import { BUDGET_ROUTES } from "./stub-routes-budget";
 import { EXPERIMENT_QUEUE_ROUTES } from "./stub-routes-experiments";
 import { LINEAGE_ROUTES } from "./stub-routes-lineage";
+import { OPS_ROUTES } from "./stub-routes-ops";
 import { POLICY_ROUTES } from "./stub-routes-policy";
 import { WORKSPACE_ROUTES } from "./stub-routes-workspace";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
@@ -363,54 +364,8 @@ export const ROUTES: readonly StubRoute[] = [
       };
     },
   },
-  // PLAN-045 EC-03 second batch: ops read-only projections.
-  {
-    method: "GET",
-    pattern: /^\/projects\/[^/]+\/ops\/alerts$/,
-    handler: () => ({
-      status: 200,
-      body: { alerts: [], rules_available: false, rules_reason: "no rule CRUD API" },
-    }),
-  },
-  {
-    method: "GET",
-    pattern: /^\/projects\/[^/]+\/ops\/incidents$/,
-    handler: () => ({
-      status: 200,
-      body: { incidents: [], workflow_available: false, workflow_reason: "no workflow API" },
-    }),
-  },
-  {
-    method: "GET",
-    pattern: /^\/ops\/schedules$/,
-    handler: () => ({
-      status: 200,
-      body: {
-        schedules: [
-          {
-            name: "lease_recovery",
-            interval_seconds: 30,
-            purpose: "recover leases",
-            enabled: true,
-          },
-        ],
-        management_available: false,
-        management_reason: "no user-visible scheduling API",
-      },
-    }),
-  },
-  {
-    method: "GET",
-    pattern: /^\/projects\/[^/]+\/ops\/data-health$/,
-    handler: () => ({
-      status: 200,
-      body: {
-        metrics: [{ metric: "endpoints_total", value: "0", status: "INFO" }],
-        aggregate_available: false,
-        aggregate_reason: "no aggregate report API",
-      },
-    }),
-  },
+  // PLAN-045 EC-03 second batch + PLAN-059：ops 读写投影（alerts/incidents/rules/schedules/data-health）。
+  ...OPS_ROUTES,
   // PLAN-046 EC-04: budget adjust + reserved-vs-consumed forecast.
   ...BUDGET_ROUTES,
   // PLAN-049 WP-C: capability policy snapshot.

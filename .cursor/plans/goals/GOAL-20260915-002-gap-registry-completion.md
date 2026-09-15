@@ -42,7 +42,7 @@ exit_criteria:
       G7 ops 写面：告警规则 CRUD 与 incident 处置（declare/assign/close）落地，页面去掉对应 disabledOperations
     verify: >-
       OpenAPI 快照写方法存在；ops/alerts 与 ops/incidents 的 disabledOperations 相应项消失；API + live e2e 绿
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       G15 tool-provider 管理写面：注册/更新/健康复核（当前只读投影 → 有真实写面与消费者）
@@ -81,12 +81,14 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-056-blackhole-must-be-effective-on-return.md
   - .cursor/plans/tasks/PLAN-20260915-057-project-scope-cost-forecast.md
   - .cursor/plans/tasks/PLAN-20260915-058-workspace-snapshot-tree-and-file-diff.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-058-workspace-snapshot-tree-and-file-diff.md
+  - .cursor/plans/tasks/PLAN-20260915-059-ops-write-surface-rules-and-incidents.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-059-ops-write-surface-rules-and-incidents.md
 memory_entries:
   - MEM-20260915-031-partition-injector-must-heal
   - MEM-20260915-032-project-lineage-merge-and-honest-unlinked-resources
   - MEM-20260915-033-series-projection-valued-days-only
   - MEM-20260915-034-digest-addressed-snapshot-read-surface
+  - MEM-20260915-035-write-surface-must-be-consumed-by-read-surface
 ---
 
 # GOAL-20260915-002 — 诚实缺口注册表收口（自迭代循环）
@@ -103,7 +105,7 @@ memory_entries:
 | EC-01 | G9 全局跨 run 血缘（项目作用域节点/边） | OpenAPI + pageSupport + live e2e | PASS（2026-09-15 cycle 2；范围注记：跨 run 关系由**共享节点**表达，库资源以未连边清单交付——资源↔run 边无记录面，见 RECHECK-055 W-1） |
 | EC-02 | G12 跨 run 时序成本预测 | OpenAPI + API/live e2e + 计量口径 | PASS（2026-09-15 cycle 3；范围注记：外推只吃**已计价的天**（`MEAN_OF_VALUED_DAYS`），排除项逐日给原因、跨币种不给金额；无趋势/置信区间，见 RECHECK-057 W-1/W-2） |
 | EC-03 | G8 workspace 文件树 + 文件级 diff（或 Accepted ADR 收敛） | OpenAPI/ADR + live e2e | PASS（2026-09-15 cycle 4；范围注记：按 digest 只读、需配置 `RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT`；无 run→工作区绑定记录面 ⇒ run 面只回答"记录过哪些快照"，见 RECHECK-058 W-1/W-2） |
-| EC-04 | G7 ops 写面（告警规则 CRUD + incident 处置） | OpenAPI 写方法 + pageSupport 收敛 | PENDING |
+| EC-04 | G7 ops 写面（告警规则 CRUD + incident 处置） | OpenAPI 写方法 + pageSupport 收敛 | PASS（2026-09-16 cycle 5；范围注记：静音只打 `muted/muted_by` 标记**不隐藏**告警、候选不会自动变事故、已关闭再处置 409；`assignee` 无成员校验，见 RECHECK-059 W-2/W-3） |
 | EC-05 | G15 tool-provider 管理写面 | OpenAPI 写方法 + pageSupport 收敛 | PENDING |
 | EC-06 | G2 项目归档/删除 + 每 cycle 门禁/CI 全绿 + 收口复检 | DELETE/PATCH + 409 用例 + CI run + RECHECK | PENDING |
 
@@ -114,12 +116,12 @@ memory_entries:
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 4 已闭环（PLAN-20260915-058：
-G8 工作区快照文件树与文件级 Diff 交付——按内容寻址 digest 只读，
-`GET /workspace-snapshots/{digest}/files` 与 `/{left}/diff/{right}`，
-EC-03 = PASS；RECHECK-058 = PASS_WITH_WARNINGS）**。
-下一个动作 = ① derive：取 EC-04（G7 ops 写面：告警规则 CRUD + incident
-declare/assign/close），子 PLAN 编号续全局序列（下一号 = **PLAN-20260915-059**）。
+按 README 的 7 步判定执行；当前续点：**cycle 5 已闭环（PLAN-20260915-059：
+G7 ops 写面——告警静音规则 CRUD + 事故 declare/assign/close，
+`OpsStore`（域状态机 + SQLite 两表）落地并被读面消费，EC-04 = PASS；
+RECHECK-059 = PASS_WITH_WARNINGS）**。
+下一个动作 = ① derive：取 EC-05（G15 tool-provider 管理写面：注册/更新/健康复核），
+子 PLAN 编号续全局序列（下一号 = **PLAN-20260915-060**）。
 driver=session-goal，owner=root-agent。
 
 ## 驱动
@@ -162,7 +164,8 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 | 1 | PLAN-20260915-054（CI 债：分区注入器真实性） | e6f09cb | 新语义用例 3 passed + 反证 `legacy: SWALLOWED / fixed: ECHOED`；Linux 容器 D 场景 5/5、`tests/distributed` 全量 25 passed / 4 skipped / 0 failed；本地 m0 23/23；RECHECK-054 = PASS_WITH_WARNINGS | run 34960364156（e6f09cb）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality）——对照修复前 run 34957121713 的 collector-quality 失败 | 旧 `_stall` 消费并丢弃分区期间的字节且连接线程直接结束 ⇒ `restore()` 无法恢复在途请求，worker 阻塞到 30s 客户端超时、SIGTERM 打不断阻塞读 ⇒ D 场景 teardown `wait(10)` 超时（cycle 13 收口提交的 CI 红）；另修宿主 venv 被容器 `uv sync` 覆盖的事故（已重建并验证） | EC-01~06 全部 PENDING（本轮为 EC-06 的门禁债前置，已清零） | cycle 2 = ① derive EC-01（G9 全局跨 run 血缘），子 PLAN 编号 = PLAN-20260915-055 |
 | 2 | PLAN-20260915-055（EC-01：G9 项目级来源血缘）+ PLAN-20260915-056（门禁轮：`blackhole()` 返回即生效） | 见本 cycle 提交 | API 6 passed；stub e2e **40 passed**、live e2e **20 passed**；根 eslint 0 error；web lint/typecheck 通过 + 单测 76 passed；设计基线（win32 本地 + linux pinned 容器）重生成（实测陈旧基线仅差 1.73% ⇒ 旧基线不会报警）；本地 m0 **23/23**（3411 passed / 6 skipped）；RECHECK-055/056 = PASS_WITH_WARNINGS | run **34969935719**（ecf0ebf）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | ① 全页目检发现 `.cards` auto-fit 网格把 4 列节点表裁列 ⇒ 新增 `.stack` 整宽堆叠（先修复再重生成基线）；② 陈旧设计基线与新渲染只差 **15,933 px = 1.73%**，低于 2% 阈值 ⇒ 基线不会报警，必须主动重生成；③ m0 全量在 Windows 上暴露 `blackhole()` 竞态（泵已阻塞在 `recv` ⇒ 标志置了但仍转发）⇒ `blackhole()` 改为等分区生效（有界 2s），PLAN-056 单独记账 | EC-02~06 PENDING | cycle 3 = ① derive EC-02（G12 跨 run 时序成本预测），子 PLAN 编号 = PLAN-20260915-057 |
 | 3 | PLAN-20260915-057（EC-02：G12 项目级成本预测） | 见本 cycle 提交 | 纯函数 7 passed + API 7 passed（项目隔离/unattributed/幽灵项目/422/503）；契约 **355 passed / 56 skipped**；stub e2e **41 passed**、live e2e **21 passed**；根 eslint 0 error + web lint/typecheck 通过 + 单测 76 passed；设计基线 `insights-cost-analytics` / `govern-budget` × win32/linux 重生成并目检；本地 m0 **首跑红**（命名门禁：`liveSpecs.ts` 违反测试文件 kebab-case + Playwright 生成目录 `test-results/<中文用例标题>/` 被判非法路径）→ 修复后 **23/23**；RECHECK-057 = PASS_WITH_WARNINGS | run **34978272057**（d350e8e）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | ① 命名门禁同时抓出**新文件命名**与**生成产物误判**两类问题 ⇒ 前者改名 `live-specs.ts`，后者把 gitignored 的 `test-results` 加入 `IGNORED_DIRECTORIES` 并补回归用例；② `live-*.spec.ts` 清单原在两份 playwright 配置里各写一遍，漏同步会让 stub 套件去连真实后端 ⇒ 抽 `tests/e2e/live-specs.ts` 单一来源（`--list` 复核 41/11 与 21/5 未漂移）；③ 三处新工程债登记为 RECHECK-057 W-1/W-2/W-3（日均方法与窗口语义） | EC-03~06 PENDING；EC-02 已 PASS（范围注记见 EC 表） | cycle 4 = ① derive EC-03（G8 workspace 文件树 + 文件级快照 Diff，或产出 Accepted ADR 收敛标注），子 PLAN 编号 = PLAN-20260915-058 |
-| 4 | PLAN-20260915-058（EC-03：G8 工作区快照文件树 + 文件级 Diff） | 见本 cycle 提交 | 纯函数 8 passed / 读取器 12 passed / API 11 passed；契约 **383 passed / 56 skipped**；stub e2e **45 passed**、live e2e **25 passed**；根 eslint 0 error + web lint/typecheck 通过 + 单测 76 passed；`run-workspace` 设计基线 win32/linux 重生成并目检、design-fidelity 33 路由绿；本地 m0 **首跑红**（ruff：新增测试两行 101/102 字符）→ 修复后 **23/23**；RECHECK-058 = PASS_WITH_WARNINGS | 待 CI（见状态历史） | ① 全量 stub 套件被严格替身守卫拦下（新面板必然调用 run 快照面）⇒ 默认路由进共享替身表 `stub-routes-workspace.ts`，不逐用例打补丁；② 控制面首次读宿主目录 ⇒ 收窄为只接受 `sha256:<64hex>` digest、只在 `<root>/.snapshots` 内解析、symlink 一律拒绝、未配置即 503；③ `ArtifactDiffDto.note` 与 `REPRODUCTION_NOTE` 里「控制面无快照 diff 面」的旧表述同步收敛（否则新能力被旧文案否认） | EC-04~06 PENDING；EC-03 已 PASS（范围注记见 EC 表） | cycle 5 = ① derive EC-04（G7 ops 写面：告警规则 CRUD + incident 处置），子 PLAN 编号 = PLAN-20260915-059 |
+| 4 | PLAN-20260915-058（EC-03：G8 工作区快照文件树 + 文件级 Diff） | 见本 cycle 提交 | 纯函数 8 passed / 读取器 12 passed / API 11 passed；契约 **383 passed / 56 skipped**；stub e2e **45 passed**、live e2e **25 passed**；根 eslint 0 error + web lint/typecheck 通过 + 单测 76 passed；`run-workspace` 设计基线 win32/linux 重生成并目检、design-fidelity 33 路由绿；本地 m0 **首跑红**（ruff：新增测试两行 101/102 字符）→ 修复后 **23/23**；RECHECK-058 = PASS_WITH_WARNINGS | run **34984686466**（05bcf04）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality） | ① 全量 stub 套件被严格替身守卫拦下（新面板必然调用 run 快照面）⇒ 默认路由进共享替身表 `stub-routes-workspace.ts`，不逐用例打补丁；② 控制面首次读宿主目录 ⇒ 收窄为只接受 `sha256:<64hex>` digest、只在 `<root>/.snapshots` 内解析、symlink 一律拒绝、未配置即 503；③ `ArtifactDiffDto.note` 与 `REPRODUCTION_NOTE` 里「控制面无快照 diff 面」的旧表述同步收敛（否则新能力被旧文案否认） | EC-04~06 PENDING；EC-03 已 PASS（范围注记见 EC 表） | cycle 5 = ① derive EC-04（G7 ops 写面：告警规则 CRUD + incident 处置），子 PLAN 编号 = PLAN-20260915-059 |
+| 5 | PLAN-20260915-059（EC-04：G7 ops 写面） | 见本 cycle 提交 | 控制面 10 passed + 读面口径 5 passed、全量 API **336 passed**；契约 3 passed（路径 + 写方法断言）；stub e2e **50 passed**、live e2e **28 passed**（含 3 条真实 HTTP 写链）；根 eslint 0 error + web `tsc --noEmit` 通过 + 单测 76 passed；`ops-alerts` / `ops-incidents` 设计基线 win32+linux 重生成并目检；本地 m0 **首跑红**（`python/format-check`：手工改过的测试文件未按 ruff 格式化）→ 修复后 **23/23**；RECHECK-059 = PASS_WITH_WARNINGS | 见状态历史（cycle 5 段落） | ① 写面必须**被读面消费**：规则只打 `muted/muted_by` 标记不隐藏告警、登记事故回链来源 run 的告警、已登记 run 从候选移出；② 本地 m0 连红 **4 次**（格式 → 50 行函数 → 模块循环依赖 → 文件命名），逐条修复后才绿，全部如实记录；③ 本轮量化了**设计门禁的容差盲区**：整块新增面板后旧基线只差 **1.02% / 0.93%**（阈值 2%）⇒ 门禁不会报警，必须主动删基线强制重生成 + 目检（脚本 `scratch/cycle5-baseline-drift/measure.py`）；早期用"任一通道像素差 ≠ 0"得到的 ~40% 是误导性指标 | EC-05~06 PENDING；EC-04 已 PASS（范围注记见 EC 表） | cycle 6 = ① derive EC-05（G15 tool-provider 管理写面：注册/更新/健康复核），子 PLAN 编号 = PLAN-20260915-060 |
 
 ## 状态历史
 
@@ -250,4 +253,39 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
   （新增测试两行 101/102 字符）、全量 stub 套件红于严格替身守卫（新面板必然请求 run 快照面）
   ⇒ 后者按既有惯例把默认路由补进共享替身表 `stub-routes-workspace.ts`。RECHECK-058 =
   PASS_WITH_WARNINGS（W-1 无 run→工作区绑定记录面；W-2 快照无 retention；W-3 digest 依赖执行链
-  真的产出过快照；W-4 `stub-routes.ts` 已 403 行、接近硬上限）。
+  真的产出过快照；W-4 `stub-routes.ts` 已 403 行、接近硬上限）。本轮提交 `05bcf04` 的
+  CI run **34984686466 六个 job 全 success**（quality-windows-latest 15:06:31Z 收尾）。
+
+- 2026-09-16 cycle 5（EC-04 = G7 ops 写面，**PASS**）：把 `ops/alerts` 与 `ops/incidents` 的
+  "规则 CRUD 无 API""无处置工作流"两处诚实缺口做成真实写面——域
+  `packages/domain/ops_control.py`（`AlertRule` + `Incident` + `IncidentStatus` 状态机，
+  OPEN→ASSIGNED→CLOSED、可重复指派、OPEN 可直接关闭）、Port
+  `packages/application/ports/ops_store.py`、适配器 `adapters/sqlite/ops_store.py`
+  （`ops_alert_rules` / `ops_incidents` 两表 + 项目索引）、写面 7 端点
+  （`GET/POST /projects/{id}/ops/alert-rules`、`PATCH/DELETE /ops/alert-rules/{rule_id}`、
+  `POST /projects/{id}/ops/incidents`、`/ops/incidents/{id}/assign`、`/close`）。
+  **写面被读面消费**是本轮的核心口径：命中规则的告警在读面带 `muted=true` + `muted_by`
+  但**不从列表消失**（静音不是隐藏）+ `muted_count`；登记事故后来源 run 的告警带
+  `incident_id`，`GET .../ops/incidents` 拆成 `incidents`（已登记）与 `candidates`
+  （派生自 FAILED run，不会自动变事故，已登记者移出候选）；关闭后标记消失、再处置
+  **409**（域状态机拒绝而非静默 no-op）；store 缺失时读面 `*_available=false` + 原因、
+  写面 503。前端新增 `OpsAlertRulesPanel`（新建/启停/删除）与事故处置列
+  （指派/关闭/候选一键登记），`pageSupport` 的 `GAPS.alerts` / `GAPS.incidents` 收敛、
+  两条 `disabledOperations` 清空、`level` 升为 `full`。验证：控制面 10 passed、
+  全量 API **336 passed**、契约 3 passed（含写方法集合断言）、stub e2e **50 passed**、
+  live e2e **28 passed**（新增 3 条真实 HTTP 写链）、根 eslint 0 error、web 单测 76 passed、
+  `ops-alerts` / `ops-incidents` 基线 win32+linux 重生成并目检；本地 m0 **连续红了 4 次**
+  （`python/format-check` 手工改过的测试文件未跑 `ruff format` → `python/tests` 的 50 行/函数上限
+  → `typescript/boundaries` 的面板↔列定义循环依赖 → 命名门禁的"模块名须与唯一组件导出同名"），
+  逐条修复后 **23/23**；四次失败全部如实记录，未跳过任何一道门。
+  本轮另有一项重要的**门禁事实**被量化：ops 两页整块新增面板后，旧设计基线按 Playwright
+  判据（pixelmatch / YIQ 阈值 0.2）只差 **1.02% / 0.93%**，低于 `maxDiffPixelRatio: 0.02`
+  ⇒ 门禁**不会报警**（与 cycle 3 记录的 1.73% 同类）；据此改为主动删除基线强制重生成并目检，
+  量化脚本留在 `scratch/cycle5-baseline-drift/`（并纠正了"任一通道像素差 ≠ 0 ⇒ ~40%"这一
+  误导性指标）。RECHECK-059 = PASS_WITH_WARNINGS（W-1 门禁容差盲区；W-2 静音不抑制来源；
+  W-3 `assignee` 无成员校验；W-4 `IncidentsViewDto.incidents` 元素形状变更需消费者升级；
+  W-5 四道门禁的教训）。安全面：Mimosa 密封扫描
+  （`scan-2026-09-15T16-54-15.771Z-ee27361c7e9a`，seal `sha256:070346dd…`，36 findings / 3 high，
+  `verdictEffect: none`）对账后**本轮改动文件命中 0 条**；3 条 high 仍是既有两条路径穿越
+  （`artifacts/钻孔官方API_v12/`）与 `protocol_authoring/service.py` 的已知误报
+  （`yaml.load(_StrictLoader)`，与 `yaml.safe_load` 同安全级）。**不主张项目整体安全**。

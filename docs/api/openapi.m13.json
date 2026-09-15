@@ -240,9 +240,36 @@
             "title": "Detail",
             "type": "string"
           },
+          "incident_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Id"
+          },
           "kind": {
             "title": "Kind",
             "type": "string"
+          },
+          "muted": {
+            "default": false,
+            "title": "Muted",
+            "type": "boolean"
+          },
+          "muted_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Muted By"
           },
           "severity": {
             "title": "Severity",
@@ -262,6 +289,211 @@
         "title": "AlertItemDto",
         "type": "object"
       },
+      "AlertRuleCreateDto": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "max_severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Severity"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "AlertRuleCreateDto",
+        "type": "object"
+      },
+      "AlertRuleDto": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "max_severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Severity"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "name",
+          "enabled"
+        ],
+        "title": "AlertRuleDto",
+        "type": "object"
+      },
+      "AlertRuleUpdateDto": {
+        "additionalProperties": false,
+        "properties": {
+          "clear_kind": {
+            "default": false,
+            "title": "Clear Kind",
+            "type": "boolean"
+          },
+          "clear_max_severity": {
+            "default": false,
+            "title": "Clear Max Severity",
+            "type": "boolean"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "max_severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Severity"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "AlertRuleUpdateDto",
+        "type": "object"
+      },
+      "AlertRulesViewDto": {
+        "additionalProperties": false,
+        "properties": {
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/AlertRuleDto"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "rules_available": {
+            "default": false,
+            "title": "Rules Available",
+            "type": "boolean"
+          },
+          "rules_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rules Reason"
+          }
+        },
+        "title": "AlertRulesViewDto",
+        "type": "object"
+      },
       "AlertsViewDto": {
         "additionalProperties": false,
         "properties": {
@@ -271,6 +503,16 @@
             },
             "title": "Alerts",
             "type": "array"
+          },
+          "muted_count": {
+            "default": 0,
+            "title": "Muted Count",
+            "type": "integer"
+          },
+          "rules_applied": {
+            "default": 0,
+            "title": "Rules Applied",
+            "type": "integer"
           },
           "rules_available": {
             "default": false,
@@ -2355,8 +2597,23 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
-      "IncidentItemDto": {
+      "IncidentAssignDto": {
         "additionalProperties": false,
+        "properties": {
+          "assignee": {
+            "title": "Assignee",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignee"
+        ],
+        "title": "IncidentAssignDto",
+        "type": "object"
+      },
+      "IncidentCandidateDto": {
+        "additionalProperties": false,
+        "description": "**派生候选**（FAILED run）；失败 Run 不自动登记为事故。",
         "properties": {
           "protocol_id": {
             "title": "Protocol Id",
@@ -2381,12 +2638,159 @@
           "state",
           "updated_at"
         ],
+        "title": "IncidentCandidateDto",
+        "type": "object"
+      },
+      "IncidentCloseDto": {
+        "additionalProperties": false,
+        "properties": {
+          "resolution": {
+            "title": "Resolution",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resolution"
+        ],
+        "title": "IncidentCloseDto",
+        "type": "object"
+      },
+      "IncidentDeclareDto": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "severity": {
+            "default": "WARNING",
+            "title": "Severity",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "IncidentDeclareDto",
+        "type": "object"
+      },
+      "IncidentItemDto": {
+        "additionalProperties": false,
+        "description": "**已登记**事故（declare/assign/close 的真实状态）。",
+        "properties": {
+          "assignee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "opened_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opened At"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "severity",
+          "status"
+        ],
         "title": "IncidentItemDto",
         "type": "object"
       },
       "IncidentsViewDto": {
         "additionalProperties": false,
         "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentCandidateDto"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
           "incidents": {
             "items": {
               "$ref": "#/components/schemas/IncidentItemDto"
@@ -7796,6 +8200,199 @@
         ]
       }
     },
+    "/ops/alert-rules/{rule_id}": {
+      "delete": {
+        "description": "删除规则（删除后该规则不再静音任何告警——读面即时反映）。",
+        "operationId": "delete_alert_rule_ops_alert_rules__rule_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Alert Rule",
+        "tags": [
+          "ops-control"
+        ]
+      },
+      "patch": {
+        "description": "改名/启停/改适用范围；`clear_kind` / `clear_max_severity` 显式清空范围。",
+        "operationId": "update_alert_rule_ops_alert_rules__rule_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Alert Rule",
+        "tags": [
+          "ops-control"
+        ]
+      }
+    },
+    "/ops/incidents/{incident_id}/assign": {
+      "post": {
+        "description": "指派处理人（可重复指派；已关闭事故 → 409）。",
+        "operationId": "assign_incident_ops_incidents__incident_id__assign_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentAssignDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentItemDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assign Incident",
+        "tags": [
+          "ops-control"
+        ]
+      }
+    },
+    "/ops/incidents/{incident_id}/close": {
+      "post": {
+        "description": "关闭事故并留下处理结论（resolution 必填；已关闭 → 409）。",
+        "operationId": "close_incident_ops_incidents__incident_id__close_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentCloseDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentItemDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Close Incident",
+        "tags": [
+          "ops-control"
+        ]
+      }
+    },
     "/ops/schedules": {
       "get": {
         "description": "进程内 scheduler 的配置事实（只读）。\n\n无用户可见调度 API：不能创建/启停/手动触发；本视图只暴露既有守护线程配置。",
@@ -8646,9 +9243,103 @@
         ]
       }
     },
+    "/projects/{project_id}/ops/alert-rules": {
+      "get": {
+        "description": "项目内的告警静音规则（store 未配置 → 200 + rules_available=false + 原因）。",
+        "operationId": "list_alert_rules_projects__project_id__ops_alert_rules_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRulesViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Alert Rules",
+        "tags": [
+          "ops-control"
+        ]
+      },
+      "post": {
+        "description": "新建静音规则（`kind=None` 表示适用全部来源；`max_severity` 限静音上限）。",
+        "operationId": "create_alert_rule_projects__project_id__ops_alert_rules_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Alert Rule",
+        "tags": [
+          "ops-control"
+        ]
+      }
+    },
     "/projects/{project_id}/ops/alerts": {
       "get": {
-        "description": "派生告警收件箱（失败 run ∪ 非健康端点 ∪ 离线/排水 worker）。\n\n无告警规则 CRUD（无契约）；worker_registry 缺失时该来源诚实缺省。",
+        "description": "派生告警收件箱（失败 run ∪ 非健康端点 ∪ 离线/排水 worker）+ 规则静音标记。\n\n规则**不隐藏**告警：匹配的项带 `muted=true` + `muted_by=<rule id>` 并给出计数；\n来源 run 已登记未关闭事故的告警带 `incident_id`（写面被读面消费的第二个点）。\nstore 缺失时 `rules_available=false` + 原因，不伪装成\"没有规则\"。",
         "operationId": "list_ops_alerts_projects__project_id__ops_alerts_get",
         "parameters": [
           {
@@ -8734,7 +9425,7 @@
     },
     "/projects/{project_id}/ops/incidents": {
       "get": {
-        "description": "事故候选（FAILED run）；无 declare/assign/close 处置工作流。\n\n失败 Run **不**自动成为已登记事故——本端点只列出候选，不改变任何状态。",
+        "description": "已登记事故 + 未被登记的失败 Run 候选（两者不混淆）。\n\n失败 Run **不**自动登记为事故：登记过的事故进 `incidents`，其余失败 Run 仍是\n`candidates`。**关闭过的事故也算已登记**——有记录就不该反复以\"未处理候选\"提醒；\n但它不再给告警挂 `incident_id`（只有未关闭的事故才表示\"正在处理\"）。\n处置动作见 `ops_control.py`（declare/assign/close）。",
         "operationId": "list_ops_incidents_projects__project_id__ops_incidents_get",
         "parameters": [
           {
@@ -8772,6 +9463,57 @@
         "summary": "List Ops Incidents",
         "tags": [
           "ops-view"
+        ]
+      },
+      "post": {
+        "description": "登记事故（可关联来源 run；失败 Run 不会自动登记，必须显式声明）。",
+        "operationId": "declare_incident_projects__project_id__ops_incidents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentDeclareDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentItemDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Declare Incident",
+        "tags": [
+          "ops-control"
         ]
       }
     },

@@ -735,15 +735,70 @@ export interface AlertItemDto {
   severity: string;
   subject: string;
   detail: string;
+  /** 规则只做静音标记，不隐藏告警（看不见的问题更难修）。 */
+  muted: boolean;
+  muted_by: string | null;
+  /** 来源 run 已有未关闭事故时带回事故 id（写面被读面消费）。 */
+  incident_id: string | null;
 }
 
 export interface AlertsViewDto {
   alerts: AlertItemDto[];
   rules_available: boolean;
   rules_reason: string | null;
+  rules_applied: number;
+  muted_count: number;
 }
 
+export interface AlertRuleDto {
+  id: string;
+  project_id: string;
+  name: string;
+  kind: string | null;
+  max_severity: string | null;
+  enabled: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface AlertRulesViewDto {
+  rules: AlertRuleDto[];
+  rules_available: boolean;
+  rules_reason: string | null;
+}
+
+export interface AlertRuleWriteDto {
+  name: string;
+  kind?: string | null;
+  max_severity?: string | null;
+  enabled?: boolean;
+}
+
+export interface AlertRulePatchDto {
+  name?: string;
+  kind?: string | null;
+  max_severity?: string | null;
+  enabled?: boolean;
+  clear_kind?: boolean;
+  clear_max_severity?: boolean;
+}
+
+/** 已登记事故（declare/assign/close 的真实状态）。 */
 export interface IncidentItemDto {
+  id: string;
+  title: string;
+  severity: string;
+  status: string;
+  run_id: string | null;
+  assignee: string | null;
+  resolution: string | null;
+  opened_at: string | null;
+  updated_at: string | null;
+  closed_at: string | null;
+}
+
+/** 派生候选（FAILED run）；失败 Run 不自动登记为事故。 */
+export interface IncidentCandidateDto {
   run_id: string;
   protocol_id: string;
   state: string;
@@ -752,8 +807,23 @@ export interface IncidentItemDto {
 
 export interface IncidentsViewDto {
   incidents: IncidentItemDto[];
+  candidates: IncidentCandidateDto[];
   workflow_available: boolean;
   workflow_reason: string | null;
+}
+
+export interface IncidentDeclareDto {
+  title: string;
+  severity?: string;
+  run_id?: string | null;
+}
+
+export interface IncidentAssignDto {
+  assignee: string;
+}
+
+export interface IncidentCloseDto {
+  resolution: string;
 }
 
 export interface ScheduleEntryDto {

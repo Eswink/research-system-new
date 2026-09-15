@@ -32,6 +32,7 @@ from adapters.sqlite.library_store import SqliteLibraryStore
 from adapters.sqlite.memory_store import SqliteMemoryStore
 from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
+from adapters.sqlite.ops_store import SqliteOpsStore
 from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
 from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
 from adapters.sqlite.project_store import SqliteProjectStore
@@ -58,6 +59,7 @@ from packages.application.ports.event_publisher import EventPublisher
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.model_gateway import ModelGateway
 from packages.application.ports.model_store import ModelStore
+from packages.application.ports.ops_store import OpsStore
 from packages.application.ports.policy_evaluator import PolicyEvaluator
 from packages.application.ports.resource_catalog import PreflightContext
 from packages.application.ports.run_projection import RunProjection
@@ -137,6 +139,9 @@ class ApiDeps:
     # 不得假装存在默认策略）。
     policy: PolicyDefinition | None = field(default=None, repr=False)
     policy_evaluator: PolicyEvaluator | None = field(default=None, repr=False)
+    # PLAN-059（EC-04）：ops 写面 store（告警规则 CRUD + 事故处置）。两组成同侧；
+    # 缺失时 ops 读面 rules_available/workflow_available=False + 原因，写面诚实 503。
+    ops_store: OpsStore | None = field(default=None, repr=False)
     # PLAN-058：工作区快照只读读取器（仅 `RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT`
     # 显式配置时构建；None → 快照端点诚实 503，不猜默认路径、不冒充空树）。
     workspace_snapshots: WorkspaceSnapshotReader | None = field(default=None, repr=False)
@@ -272,6 +277,7 @@ def _sqlite_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "library_store": SqliteLibraryStore(connection=connection),
         "memory": SqliteMemoryStore(connection=connection),
         "experiment_store": SqliteExperimentStore(connection=connection),
+        "ops_store": SqliteOpsStore(connection=connection),
         "worker_registry": SqliteWorkerRegistry(connection=connection),
     }
 

@@ -27,6 +27,7 @@ from services.api.routers import (
     models,
     notifications,
     operations,
+    ops_control,
     ops_view,
     policy,
     project_cost_forecast,
@@ -240,6 +241,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(lineage.router)
     app.include_router(library.router)
     app.include_router(ops_view.router)
+    app.include_router(ops_control.router)
     app.include_router(budget_forecast.router)
     app.include_router(project_cost_forecast.router)
     app.include_router(policy.router)

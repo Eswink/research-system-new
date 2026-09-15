@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-059](tasks/PLAN-20260915-059-ops-write-surface-rules-and-incidents.md) | DONE |
 | [x] | [PLAN-20260915-058](tasks/PLAN-20260915-058-workspace-snapshot-tree-and-file-diff.md) | DONE |
 | [x] | [PLAN-20260915-057](tasks/PLAN-20260915-057-project-scope-cost-forecast.md) | DONE |
 | [x] | [PLAN-20260915-056](tasks/PLAN-20260915-056-blackhole-must-be-effective-on-return.md) | DONE |

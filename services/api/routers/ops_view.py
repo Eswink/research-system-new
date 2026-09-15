@@ -1,9 +1,11 @@
-"""Ops 只读运维投影路由（PLAN-20260914-045 WP-B，EC-03 第二批）。
+"""Ops 运维投影路由（PLAN-20260914-045 WP-B；PLAN-20260915-059 起写面接入）。
 
-四个端点全部**只读派生**：alerts（失败 run ∪ 降级端点 ∪ 离线 worker）、
-incidents（失败 run 候选）、schedules（进程内 scheduler 配置事实）、
-data-health（端点健康计数 + dataset 目录计数 + artifact 抽样校验）。
-无持久化、无副作用；缺失依赖诚实在响应里标注，不伪装空成功。
+读面（本模块）仍是派生投影：alerts（失败 run ∪ 降级端点 ∪ 离线 worker）、
+incidents（**已登记**事故 + 未被登记的失败 Run 候选）、schedules（进程内
+scheduler 配置事实）、data-health（端点健康计数 + dataset 目录计数 + artifact
+抽样校验）。写面在 `ops_control.py`——本模块消费它：启用中的规则给告警打
+`muted` 标记（不隐藏），未关闭的事故给其来源 run 的告警带上 `incident_id`。
+缺失依赖诚实在响应里标注，不伪装空成功。
 """
 
 from __future__ import annotations
@@ -17,23 +19,31 @@ from packages.domain.ops_view import (
     AlertKind,
     AlertSeverity,
     DataHealthMetric,
-    IncidentItem,
     ScheduleEntry,
 )
 from services.api.catalog_merge import merged_catalog_snapshot, require_registered_project
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.ops_view import (
-    AlertItemDto,
     AlertsViewDto,
     DataHealthMetricDto,
     DataHealthViewDto,
-    IncidentItemDto,
     IncidentsViewDto,
     ScheduleEntryDto,
     SchedulesViewDto,
 )
 from services.api.errors import ApiError
+from services.api.ops_control_support import (
+    RULES_UNAVAILABLE_REASON,
+    WORKFLOW_UNAVAILABLE_REASON,
+    alert_dto,
+    incident_dto,
+    incident_item_row,
+    incidents_of,
+    muted_by,
+    open_incident_by_run,
+    rules_of,
+)
 from services.api.preflight_support import build_endpoint_health
 
 router = APIRouter(tags=["ops-view"])
@@ -139,61 +149,63 @@ def _worker_alerts(deps: ApiDeps) -> list[AlertItem]:
 
 @router.get("/projects/{project_id}/ops/alerts", response_model=AlertsViewDto)
 async def list_ops_alerts(project_id: str, request: Request) -> AlertsViewDto:
-    """派生告警收件箱（失败 run ∪ 非健康端点 ∪ 离线/排水 worker）。
+    """派生告警收件箱（失败 run ∪ 非健康端点 ∪ 离线/排水 worker）+ 规则静音标记。
 
-    无告警规则 CRUD（无契约）；worker_registry 缺失时该来源诚实缺省。
+    规则**不隐藏**告警：匹配的项带 `muted=true` + `muted_by=<rule id>` 并给出计数；
+    来源 run 已登记未关闭事故的告警带 `incident_id`（写面被读面消费的第二个点）。
+    store 缺失时 `rules_available=false` + 原因，不伪装成"没有规则"。
     """
     deps: ApiDeps = get_deps(request)
     require_registered_project(deps, project_id)
     _store_or_503(deps)
     items = [*_run_alerts(deps, project_id), *_endpoint_alerts(deps), *_worker_alerts(deps)]
     items.sort(key=lambda item: (item.severity.value, item.kind.value, item.subject))
+    rules = rules_of(deps, project_id)
+    incidents_by_run = open_incident_by_run(incidents_of(deps, project_id))
+    alerts = [
+        alert_dto(
+            item,
+            muted_by_id=muted_by(rules, item),
+            incident_id=incidents_by_run.get(item.subject),
+        )
+        for item in items
+    ]
+    available = deps.ops_store is not None
     return AlertsViewDto(
-        alerts=[
-            AlertItemDto(
-                kind=item.kind.value,
-                severity=item.severity.value,
-                subject=item.subject,
-                detail=item.detail,
-            )
-            for item in items
-        ],
-        rules_available=False,
-        rules_reason="无告警规则 CRUD API；本视图为只读派生收件箱",
+        alerts=alerts,
+        rules_available=available,
+        rules_reason=None if available else RULES_UNAVAILABLE_REASON,
+        rules_applied=sum(1 for rule in rules if rule.enabled),
+        muted_count=sum(1 for alert in alerts if alert.muted),
     )
 
 
 @router.get("/projects/{project_id}/ops/incidents", response_model=IncidentsViewDto)
 async def list_ops_incidents(project_id: str, request: Request) -> IncidentsViewDto:
-    """事故候选（FAILED run）；无 declare/assign/close 处置工作流。
+    """已登记事故 + 未被登记的失败 Run 候选（两者不混淆）。
 
-    失败 Run **不**自动成为已登记事故——本端点只列出候选，不改变任何状态。
+    失败 Run **不**自动登记为事故：登记过的事故进 `incidents`，其余失败 Run 仍是
+    `candidates`。**关闭过的事故也算已登记**——有记录就不该反复以"未处理候选"提醒；
+    但它不再给告警挂 `incident_id`（只有未关闭的事故才表示"正在处理"）。
+    处置动作见 `ops_control.py`（declare/assign/close）。
     """
     deps: ApiDeps = get_deps(request)
     require_registered_project(deps, project_id)
     _store_or_503(deps)
+    registered = incidents_of(deps, project_id)
+    claimed = {incident.run_id for incident in registered if incident.run_id is not None}
     candidates = [
-        IncidentItem(
-            run_id=run.id.value,
-            protocol_id=run.protocol_id,
-            state=run.state,
-            updated_at=run.updated_at.value.isoformat(),
-        )
+        incident_item_row(run)
         for run in _failed_runs(deps, project_id)
+        if run.id.value not in claimed
     ]
     candidates.sort(key=lambda item: item.run_id)
+    available = deps.ops_store is not None
     return IncidentsViewDto(
-        incidents=[
-            IncidentItemDto(
-                run_id=item.run_id,
-                protocol_id=item.protocol_id,
-                state=item.state,
-                updated_at=item.updated_at,
-            )
-            for item in candidates
-        ],
-        workflow_available=False,
-        workflow_reason="无事故 declare/assign/close 处置 API；失败 Run 不自动登记为事故",
+        incidents=[incident_dto(incident) for incident in registered],
+        candidates=candidates,
+        workflow_available=available,
+        workflow_reason=None if available else WORKFLOW_UNAVAILABLE_REASON,
     )
 
 

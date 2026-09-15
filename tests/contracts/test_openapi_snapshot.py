@@ -88,3 +88,35 @@ def test_openapi_contains_control_plane_paths() -> None:
     # 通知投影（PLAN-20260910-037 WP-G）
     assert "/notifications" in paths
     assert "/notifications/{event_id}/read" in paths
+
+
+def test_openapi_contains_ops_write_methods() -> None:
+    """EC-04 验证项：ops 写面必须有真实写路径**与写方法**（只读投影不算交付）。"""
+    schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))
+    paths = schema["paths"]
+    expected = {
+        "/projects/{project_id}/ops/alert-rules": {"get", "post"},
+        "/ops/alert-rules/{rule_id}": {"patch", "delete"},
+        "/projects/{project_id}/ops/incidents": {"get", "post"},
+        "/ops/incidents/{incident_id}/assign": {"post"},
+        "/ops/incidents/{incident_id}/close": {"post"},
+    }
+    for path, methods in expected.items():
+        assert path in paths, path
+        assert methods <= set(paths[path]), (path, sorted(paths[path]))
+
+
+def test_openapi_contains_projects_and_governance_paths() -> None:
+    """其余治理面路径（与上面分函数以守 50 行/函数上限）。"""
+    schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))
+    paths = schema["paths"]
+    # 实验项目视图与计划（PLAN-20260910-037 WP-E）
+    assert "/projects/{project_id}/experiments" in paths
+    assert "/experiments/{plan_id}/archive" in paths
+    # 产品 Memory 门链（PLAN-20260910-037 WP-F；无两阶段 decide，见 CONTROL_PLANE_API.md 注记）
+    assert "/projects/{project_id}/memory" in paths
+    assert "/memory/proposals" in paths
+    assert "/memory/{memory_id}" in paths
+    # 通知投影（PLAN-20260910-037 WP-G）
+    assert "/notifications" in paths
+    assert "/notifications/{event_id}/read" in paths

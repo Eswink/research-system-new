@@ -1,7 +1,12 @@
-"""Ops 只读运维投影 API 测试（PLAN-20260914-045 WP-B）。
+"""Ops 运维投影 API 测试（PLAN-20260914-045 WP-B；PLAN-20260915-059 更新）。
 
 alerts/incidents/schedules/data-health 四端点：真实派生、能力缺口诚实标注、
 未知项目 404、缺失依赖诚实降级。
+
+**PLAN-20260915-059（EC-04）更新了两条既有断言**，因为产品行为按 EC 要求改变，
+不是为了让门禁变绿：alerts 的 `rules_available` 由 False（"无规则 CRUD"）变为
+store 配置时的 True；incidents 的 `incidents` 现在只装**已登记**事故，失败 Run
+候选移到 `candidates`。对应的锁断言改成"有 store 时可用"与"候选与登记分离"。
 """
 
 from __future__ import annotations
@@ -29,25 +34,33 @@ def _seed_failed_run(client: TestClient) -> str:
     return run_id
 
 
-def test_alerts_surfaces_failed_run_and_locks_rules(client: TestClient) -> None:
+def test_alerts_surfaces_failed_run_with_rules_available(client: TestClient) -> None:
     run_id = _seed_failed_run(client)
     response = client.get(f"/projects/{_PROJECT}/ops/alerts")
     assert response.status_code == 200, response.text
     payload = response.json()
     failed = [item for item in payload["alerts"] if item["kind"] == "RUN_FAILED"]
     assert any(item["subject"] == run_id for item in failed)
-    assert payload["rules_available"] is False
-    assert payload["rules_reason"]
+    # store 已装配 ⇒ 规则面可用；无规则时没有任何项被静音（不是"没有规则"的假象）。
+    assert payload["rules_available"] is True
+    assert payload["rules_reason"] is None
+    assert payload["rules_applied"] == 0
+    assert payload["muted_count"] == 0
+    assert all(item["muted"] is False for item in payload["alerts"])
 
 
-def test_incidents_lists_failed_run_candidates_without_workflow(client: TestClient) -> None:
+def test_incidents_lists_failed_run_candidates_separately_from_registered(
+    client: TestClient,
+) -> None:
     run_id = _seed_failed_run(client)
     response = client.get(f"/projects/{_PROJECT}/ops/incidents")
     assert response.status_code == 200, response.text
     payload = response.json()
-    assert any(item["run_id"] == run_id for item in payload["incidents"])
-    assert payload["workflow_available"] is False
-    assert payload["workflow_reason"]
+    # 失败 Run 只是**候选**：不自动登记为事故，两者字段分开。
+    assert any(item["run_id"] == run_id for item in payload["candidates"])
+    assert payload["incidents"] == []
+    assert payload["workflow_available"] is True
+    assert payload["workflow_reason"] is None
 
 
 def test_schedules_reports_process_schedulers_readonly(client: TestClient) -> None:
