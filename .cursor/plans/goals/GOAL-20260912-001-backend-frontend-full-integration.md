@@ -191,7 +191,19 @@ EC-01~06 全 PASS。终态判定表更新如下（cycle 11 的判定按历史保
 | EC-03 | PASS | RECHECK-044 + RECHECK-045 |
 | EC-04 | **PASS** | 6/6 交付（046/047/048/049/052）；RECHECK-052 = PASS_WITH_WARNINGS |
 | EC-05 | PASS | RECHECK-050 + 守卫测试（本轮 76 passed） |
-| EC-06 | **PASS** | run 34939068977 六 job 全 success（cycle 11）+ 本轮 CI 复验见迭代日志 |
+| EC-06 | **PASS** | run 34939068977 六 job 全 success（cycle 11）+ **run 34952933291（629f757）六 job 全 success**（cycle 12 收口复验，collector-quality 亦为 success） |
+
+**cycle 12 收口复验（2026-09-15，629f757）**：本地 m0 首跑 4 红（mypy 3 处 / 50 行函数上限 /
+distributed 场景 G 的 test 侧竞态 / 根 eslint + stub 套件误收 live spec）逐条修正后
+`profile=m0; 23 deterministic checks` 全绿；stub e2e 39 / live e2e 19 复跑绿；
+治理 validate 绿；CI run **34952933291** 六个 job 全 success（quality-ubuntu-latest /
+quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality）。
+安全面：Mimosa 密封扫描 `scan-2026-09-15T09-33-06.821Z-d2729fe03dd7`（seal
+`sha256:e09328e1…db7be384`，36 findings）= 与 PA-1R 处置清单**同一集合**（`tools/probes/*`、
+`scratch/probe_*.py`、`examples/experiments/m12_reference_classification.py`、
+`packages/application/protocol_authoring/service.py`、`services/worker/__main__.py`、
+`artifacts/钻孔官方API_v12/*`），**本轮改动零新增 finding**；证据边界 static_only、
+verdictEffect none（不宣称安全）。
 
 **剩余动作**：cycle 13 跑一次整体独立复检（覆盖 EC-01~06 的证据面与代码一致性）
 → 通过即本 GOAL 记 ACHIEVED；用户要求的 10-20 次迭代余量转 GOAL-20260912-002
@@ -280,7 +292,7 @@ cycle 11 提交（2f688a9 及其记录提交）。
 | 9 | PLAN-20260914-049 | 14e6c4f | 全量 pytest 3333 passed/6 skipped/0 failed（DSN 固化）；应用层 8（`test_policy_wiring.py`）+ API 4 + stub e2e 2 = 14 新增；m0 23/23 PASS；ruff check/format + mypy（294 files）绿；eslint 0 error；stub e2e 36/36；RECHECK-049 PASS_WITH_WARNINGS | run #67（34928371669）: quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate 全 SUCCESS；collector-quality FAIL（同 2 项既有 flake，日志实测确认：2 failed / 85 passed） | m0 首跑 `test_scenario_f_scheduler_restart_keeps_state`（负载 timing，隔离复跑 10 passed）；mypy 两个测试助手缺返回注解；run_fixtures 超 300 行软阈值 → 抽 `assembly.policy_bindings()` 三处共用；stub-routes.ts 逼近 450 行 → 路由拆到 `stub-routes-policy.ts` | EC-04 余 1 项（实验队列 G14）+ EC-05/06 | cycle 10 = EC-06 收口（最终 RECHECK + 安全扫描处置 + 残留缺口诚实登记） |
 | 10 | PLAN-20260914-050 | (见收口提交) | 路由能力声明守卫 3 例（web unit 76/76；tsc/eslint 绿）；反序列化防线 4 例（authoring 套件 13 passed）；m0 23/23 PASS（复跑口径见 RECHECK-050 W-2）；全量 pytest 3336 passed/6 skipped（首跑 1 例负载敏感失败，隔离复跑 10 passed）；sealed scan 36 findings 逐条处置；RECHECK-050 PASS_WITH_WARNINGS | run #68（34929500205，cycle 9 收口提交）: 5 job SUCCESS + collector-quality FAIL（同 2 项）；cycle 10 自身 run #69（34933817161，1f7f4db）: console-frontend/quality-ubuntu/container-quality/eval-gate SUCCESS，collector-quality FAIL（同 2 项），quality-windows-latest FAIL（telemetry RSS 135.0 vs 阈值 128.0 MiB，series 首次，flake 类，见 RECHECK-050 W-2）；跨 run 取证 #61–#68 该 job 每次失败、失败测试恒为同 2 项 ⇒ 纠正口径：持续失败，非 flake | ruff format 1 处（新增测试字符串引号）；test_scenario_g_drain_stops_claims 首跑 check-then-act 竞态（隔离复跑通过，未改断言）；test_scenario_f_scheduler_restart_keeps_state（cycle 9 首跑）同属负载敏感类 | EC-04 实验队列 + EC-06 GHA 全绿（人工决策点） | 无（预算用尽，status=BLOCKED；恢复条件见「终止与收口」） |
 | 11 | PLAN-20260915-051 | 2f688a9 + 本 cycle 记录提交 | 单测 `tests/worker` 29 passed（+5：关停中断/不提交 + 3 例 CancelProbe）；mypy 801 files Success；ruff check/format 绿；source-limits 811 passed；m0 的 `python/tests` 3339 passed/5 skipped（420s）+ web lint/test/typecheck/build 4 项 PASS；治理 validate 绿；**Linux 容器复刻 CI job 选择（tests/observability+postgres+distributed+e2e，-m "requires_collector or postgres or distributed"）= 87 passed / 4 skipped / 0 failed**（对照修复前 CI 2 failed / 85 passed） | run 34939068977（2f688a9）：**六 job 全 success**（quality-ubuntu / quality-windows / console-frontend / container-quality / eval-gate / collector-quality）⇒ EC-06 PASS | loop.py 触及 450 行硬阈值 ⇒ 抽 `services/worker/cancellation.py`（445+54 行，行为等价）；m0 复现 invocation 需要 `.venv/Scripts` 在 PATH（否则 `python/dependency-boundaries` 因 `shutil.which("lint-imports")` 假红）；治理要求 PLAN 补 `## 状态历史`/`## 影响报告`；m0 首跑把 `loop.py` 记为超限（真实门禁命中，非噪声） | EC-06 已 PASS；W-1 = `research-validation.yaml` 同类目录供给缺口（服务集合契约锁定，未修）；EC-04 G14 仍待人工 | 无可自动推进项：EC-04 G14 需人工决定（续做 → cycle 12；不续做 → EC-04 按「不作为」收口后评估 GOAL ACHIEVED） |
-| 12 | PLAN-20260915-052 | 见收口提交 | 域 16 + SQLite 队列 11 + PG 队列 7 + API 10 = 44 新增用例全绿；全量 `tests/{api,domain,adapters,postgres,contracts}` 1528 passed / 4 skipped；source-limits + architecture 873 passed；web lint/typecheck/unit(76)/build 全绿；stub e2e 39 passed（+3）；live e2e 19 passed（+2）；`portfolio-experiments` win32/linux 基线重生成并目检；**本地 m0 23/23 PASS**（首跑 4 红逐条修正：mypy 3 处 / 50 行函数上限 / distributed 场景 G 竞态 / 根 eslint + stub 套件误收 live spec）；RECHECK-052 PASS_WITH_WARNINGS（W-1..W-10） | 待 CI 复验（收口提交后 run） | 取消/改期状态冲突在存储层抛域 `InvalidTransitionError` 而非 Port `InvalidInputError`（三实现同步修正）；`ExperimentQueuePanel` 触 50 行函数上限 ⇒ 拆 `ExperimentEnqueueForm.tsx`；`run_execution.py` 抽出后 `routers/runs.py` 需补 `CancelRunCommand` 导入（ruff F821 捕获）；stub-routes.ts 逼近 450 行 ⇒ 新端点拆 `stub-routes-experiments.ts`；设计基线 2% 容差对首屏之下改动不敏感，两条基线均强制重生成；两处**手写** `ExperimentStore` 测试助手不随 Port 演进（mypy 捕获）⇒ 统一改用共享 `FakeExperimentStore`；`test_scenario_g_drain_stops_claims` 的 test 侧 check-then-act 竞态（与 gateway 的 `HANDSHAKE_OK` 竞争）；`playwright.config.ts` 的 `testIgnore` 与 live 配置的 `testMatch` 是两份手工列表（漏改即静默收进 live 用例）；`framework/run_cursor_framework_evals` 在同机并发写 `evolution_state.json` 时 `os.replace` 报 WinError 5（环境噪声，复跑 PASS） | EC-04 → PASS（6/6）；EC-01~06 全 PASS ⇒ 待整体独立复检后评估 ACHIEVED，长程迭代转 GOAL-20260912-002 | cycle 13 = GOAL-001 收口复检（RECHECK 全 EC + ACHIEVED 判定）+ GOAL-002 建档（候选缺口：G9 全局血缘 / G12 跨 run 时序预测 / G8 workspace 文件树 / G7 ops 余项 / G15 tool-provider 写面 / G2 项目删除） |
+| 12 | PLAN-20260915-052 | 629f757 | 域 16 + SQLite 队列 11 + PG 队列 7 + API 10 = 44 新增用例全绿；全量 `tests/{api,domain,adapters,postgres,contracts}` 1528 passed / 4 skipped；source-limits + architecture 873 passed；web lint/typecheck/unit(76)/build 全绿；stub e2e 39 passed（+3）；live e2e 19 passed（+2）；`portfolio-experiments` win32/linux 基线重生成并目检；**本地 m0 23/23 PASS**（首跑 4 红逐条修正：mypy 3 处 / 50 行函数上限 / distributed 场景 G 竞态 / 根 eslint + stub 套件误收 live spec）；RECHECK-052 PASS_WITH_WARNINGS（W-1..W-10） | run 34952933291（629f757）：**六个 job 全 success**（quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality）⇒ EC-06 复验通过 | 取消/改期状态冲突在存储层抛域 `InvalidTransitionError` 而非 Port `InvalidInputError`（三实现同步修正）；`ExperimentQueuePanel` 触 50 行函数上限 ⇒ 拆 `ExperimentEnqueueForm.tsx`；`run_execution.py` 抽出后 `routers/runs.py` 需补 `CancelRunCommand` 导入（ruff F821 捕获）；stub-routes.ts 逼近 450 行 ⇒ 新端点拆 `stub-routes-experiments.ts`；设计基线 2% 容差对首屏之下改动不敏感，两条基线均强制重生成；两处**手写** `ExperimentStore` 测试助手不随 Port 演进（mypy 捕获）⇒ 统一改用共享 `FakeExperimentStore`；`test_scenario_g_drain_stops_claims` 的 test 侧 check-then-act 竞态（与 gateway 的 `HANDSHAKE_OK` 竞争）；`playwright.config.ts` 的 `testIgnore` 与 live 配置的 `testMatch` 是两份手工列表（漏改即静默收进 live 用例）；`framework/run_cursor_framework_evals` 在同机并发写 `evolution_state.json` 时 `os.replace` 报 WinError 5（环境噪声，复跑 PASS） | EC-04 → PASS（6/6）；EC-01~06 全 PASS ⇒ 待整体独立复检后评估 ACHIEVED，长程迭代转 GOAL-20260912-002 | cycle 13 = GOAL-001 收口复检（RECHECK 全 EC + ACHIEVED 判定）+ GOAL-002 建档（候选缺口：G9 全局血缘 / G12 跨 run 时序预测 / G8 workspace 文件树 / G7 ops 余项 / G15 tool-provider 写面 / G2 项目删除） |
 
 ## 状态历史
 
@@ -305,6 +317,23 @@ cycle 11 提交（2f688a9 及其记录提交）。
   容差对首屏之下改动不敏感、W-5 计划无项目归属、W-6 上轮 WS1 遗留）。
   ⇒ **EC-04 由 PENDING 改记 PASS（6/6 交付）**；EC-01/02/03/04/05/06 全 PASS，
   待 cycle 13 的整体独立复检后评估 ACHIEVED。CI 复验结论见下方对应条目。
+- 2026-09-15 cycle 12 收口复验：首轮本地 m0 4 红，逐条定位后修正（不调超时、不让断言让步）——
+  (1) mypy 3 处：派发器 `store` 句柄被注解为 `object`（无法证明 Port 方法存在）、两处**手写**
+  `ExperimentStore` 测试助手未随 Port 扩展 ⇒ 前者改为 `ExperimentStore | None`，后者删除手写
+  fake、统一用共享 `FakeExperimentStore`，断言改为**经 Port 回读**（未知 id 抛错，强于原
+  `in dict`）；(2) 上述断言使 `test_reference_run_persists_restorable_truth_closure` 达 52 行
+  （50 行上限）⇒ 抽 `_assert_persisted_closure`；(3) `test_scenario_g_drain_stops_claims`
+  复现**测试侧 check-then-act 竞态**：测试读到 `REGISTERING` 后自行补 `HANDSHAKE_OK`，与
+  gateway register 路径的同一迁移竞争，输家抛 `InvalidTransitionError(READY, HANDSHAKE_OK)`
+  ⇒ 删除重复迁移、改为等待 worker 自行落定 READY（隔离复跑 5/5 绿）；(4) 根 `eslint .` 报
+  live spec 的 inline import type，且 `playwright.config.ts` 的 `testIgnore` 未排除新 live spec
+  ⇒ stub 套件把 live 用例一并收进来（无 live 服务必失败）⇒ 两处同修并在配置里注明"新增 live
+  spec 时两处必须同步"。修正后 `profile=m0; 23 deterministic checks` **全绿**；stub e2e 39 /
+  live e2e 19 复跑绿；治理 validate 绿。CI run **34952933291**（629f757）六个 job 全 success
+  （含 collector-quality）⇒ EC-06 复验通过。安全面：Mimosa 密封扫描
+  `scan-2026-09-15T09-33-06.821Z-d2729fe03dd7`（seal `sha256:e09328e1…db7be384`，36 findings）
+  与 PA-1R 处置清单**同一集合**、**本轮零新增 finding**，证据边界 static_only、verdictEffect
+  none（不宣称安全）。RECHECK-052 增补收口复验段 + W-7..W-10。
 - 2026-09-15 cycle 12 恢复（**BLOCKED → ACTIVE 的状态变更来源**）：用户在 2026-09-15 会话
   第三条指令 ——「继续我们的 goal 文件，我们需要继续循环迭代 10-20 次，让我们的系统更加
   的完整！」。据此**人工决策点②（实验队列 G14 是否续做）判为「续做」**：判定理由是用户

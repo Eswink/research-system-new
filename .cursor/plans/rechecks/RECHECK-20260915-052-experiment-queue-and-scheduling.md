@@ -48,6 +48,13 @@ console live 接线、能力声明与文档同步、样例与基线。
 | `typescript/lint`（根 eslint，覆盖 `apps/web/tests/e2e`） | `live-experiment-queue.spec.ts` 使用 inline import type；`playwright.config.ts` 的 `testIgnore` 未包含新增 live spec ⇒ **stub 套件把 live 用例一并收进来**（无 live 服务必失败） | 改为顶层 `import type { Page }`；`testIgnore` 补 `experiment-queue` 并注明「新增 live spec 时两处必须同步」；重跑 stub 39 passed / live 19 passed |
 | `framework/run_cursor_framework_evals`（环境噪声，非缺陷） | 首跑 `evolution_gate.py` 的 `atomic_json` 在 `os.replace` 处报 `WinError 5 拒绝访问`（`.cursor/runtime/evolution_state.json` 被同机并发进程占用） | 单项复跑 PASS；全量复跑 PASS。属框架自身，本轮只登记（见 W-10） |
 
+## CI 与安全面（收口提交 629f757）
+
+| 项 | 事实 |
+| --- | --- |
+| CI | run `34952933291`（M0 Quality Gates，head 629f757）：**六个 job 全 success** —— quality-ubuntu-latest / quality-windows-latest / console-frontend / container-quality / eval-gate / collector-quality。collector-quality 继 cycle 11 修复后本轮再次 success（runs #61–#69 的持续失败未复现）。 |
+| 安全扫描 | Mimosa 密封深扫 `scan-2026-09-15T09-33-06.821Z-d2729fe03dd7`，seal `sha256:e09328e1634f381eb4bb8f4aad8894f8240906c2493e01fac3c02af9db7be384`，36 findings / 182 packages / 1 matched advisory；**逐条比对后确认与 PA-1R 已处置清单为同一集合**（`tools/probes/*`、gitignored 的 `scratch/probe_*.py` 与 `artifacts/钻孔官方API_v12/*`、`examples/experiments/m12_reference_classification.py`、`packages/application/protocol_authoring/service.py`、`services/worker/__main__.py`），**本轮改动零新增 finding**。证据边界 `static_only_no_runtime_execution`、`verdictEffect: none` —— 本记录**不宣称项目安全**。 |
+
 ## 结论
 
 result: **PASS_WITH_WARNINGS**
