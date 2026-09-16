@@ -2,7 +2,7 @@
 id: GOAL-20260915-003
 slug: handoff-backlog-completion
 title: 收口清单续做：设计门禁结构判据、ToolPack 供应链面、ops 调度写面、worker 退出语义、替身守卫
-status: BLOCKED
+status: ACTIVE
 created_at: 2026-09-16
 updated_at: 2026-09-16
 owners:
@@ -63,7 +63,7 @@ exit_criteria:
       GOAL 收口时把仍未处理的长程项写成后继入口
     verify: >-
       每 cycle CI run 六 job 结论；收口 RECHECK = PASS 或 PASS_WITH_WARNINGS
-    status: BLOCKED
+    status: PENDING
 budget:
   max_cycles: 10
   per_cycle_minutes: 120
@@ -105,7 +105,7 @@ memory_entries:
 | EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PENDING |
 | EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PENDING |
 | EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PENDING |
-| EC-06 | 每 cycle m0/CI 全绿 + 收口复检 + 安全扫描处置 | CI run 六 job 结论 + RECHECK | **BLOCKED**（2026-09-16 cycle 1：GitHub Actions 账户级计费阻断，六个 job 均未启动，详见「终止与收口」；本地 m0 = 23/23 已绿，CI 不可验证） |
+| EC-06 | 每 cycle m0/CI 全绿 + 收口复检 + 安全扫描处置 | CI run 六 job 结论 + RECHECK | PENDING（cycle 1 一度 BLOCKED：账户计费阻断 → 阻断解除后 run **35059391199 六个 job 全 success**，cycle 1 的 CI 结论已成立；后续每 cycle 继续按此标准记） |
 
 **不变量（沿用 GOAL-001/002 与 AGENTS.md）**：不伪装实现（不注册没人消费的写面、
 不让 fixture 冒充业务数据）；默认 deny 的安全姿态不变；观测隐私不变；每一项写面必须走
@@ -116,15 +116,13 @@ EC-03 为 M、EC-04 为 M（进程信号语义）、EC-05 为 S、EC-01 为 M。
 
 ## 循环入口协议
 
-按 README 的 7 步判定执行；当前续点：**cycle 1 已交付（PLAN-20260915-063：
-设计门禁结构判据——33 条路由结构签名 + 反证用例 + 跨平台一致性，EC-01 = PASS；
-RECHECK-063 见 `latest_recheck`），但 CI 因账户级计费阻断 ⇒ 本 GOAL = BLOCKED
-（状态与恢复条件见「终止与收口」）**。
-BLOCKED 期间的入口判定（README 第 7 条 + 驱动适配）：驱动进入时若 `status != ACTIVE`
-即直接结束，不推进 cycle；只有恢复条件满足（CI 恢复可用、六 job 全 success 回填）后
-才置回 ACTIVE 并执行 ①。
-恢复后的下一个动作 = ① derive：取 EC-02（ToolPack install/approve 供应链面），
-子 PLAN 编号续全局序列（下一号 = **PLAN-20260915-064**）。
+按 README 的 7 步判定执行；当前续点：**cycle 1 已闭环**（PLAN-20260915-063 设计门禁
+结构判据 = EC-01 PASS，RECHECK-063 见 `latest_recheck`；提交 `5a44445`→`28c9c30`，
+CI run **35059391199 六个 job 全 success**）。
+**cycle 2 进行中**：PLAN-20260915-064（EC-02 ToolPack 供应链写面）已 derive 并进入
+实施（store/端口/域编解码/lifecycle `submit`+`approve_update`/路由与装配已落地；
+待做：API 用例、OpenAPI 快照与契约、文档与 pageSupport 收敛、全量门禁与记录）。
+BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
 driver=session-goal，owner=root-agent。
 
 ## 驱动
@@ -160,7 +158,13 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 - **BLOCKED**：预算触顶（`max_cycles` 或 `no_progress_stop_cycles`）、命中 escalation_triggers、
   或同一失败签名超过 `fix_policy` 上限；恢复条件必须写清。
 
-### 当前 BLOCKED（2026-09-16，cycle 1）
+### BLOCKED 记录（2026-09-16，cycle 1）——**已解除**
+
+> **解除（同日）**：账户计费状态恢复后，cycle 1 的收口提交 `28c9c30` 触发 run
+> **35059391199**，六个 job 全部拿到真实 runner 且 **全部 success**（无重跑），
+> `EC-06` 回到 PENDING、GOAL 回到 ACTIVE。本段保留为真实历史与"下次再遇到同签名时
+> 的处置模板"：阻断期间**不推进 cycle**、把"本地能证的"与"远端未证的"分开记账、
+> 解除后先复核 runner 是否真的拿到（`runner_id != 0`）再回填。
 
 **类别**：基础设施（README 分类表「runner 挂/网络/依赖源不可达 → 等窗口重跑 1 次；
 仍败 → BLOCKED（infra 非代码缺陷）」）。**已按要求重跑 1 次，仍败**。
@@ -241,7 +245,7 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20260915-063（EC-01：设计门禁结构判据） | 见本 cycle 提交 | 结构签名基线 33 条（`apps/web/tests/e2e/design-outlines.json`）；guard 用例 **6 passed**（注入可见面板/多一行/视口外节点/删节点 → 判红；只改样式 → 不误报；归一化 4 断言）；对照实验：多一行 **0.079%**、视口外 **0.000%** ⇒ 像素判据不报警而结构判据判红；跨平台一致性：linux 容器重算与 win32 **逐字节一致**（33/33）；全量 stub e2e / live e2e / 单测 / m0 见「证据」段 | run **35056976439**（5a44445）：**失败——但失败在启动前**：六个 job 全部 `runner_id=0`、无 step、2 秒内结束（attempt 1 与 rerun attempt 2 同形）；check-run 注释原样给出根因 *"The job was not started because recent account payments have failed or your spending limit needs to be increased"* ⇒ 账户级计费阻断，非代码/门禁缺陷（详见「终止与收口 · 当前 BLOCKED」）。**本 cycle 的 CI 结论记 FAIL（infra），不记 PASS** | 首次实现踩到三处：① 用 `toMatchSnapshot` 会得到 per-platform `-win32.txt` 基线（CI 在 ubuntu 上必然缺文件）⇒ 改成单一 JSON 基线 + 显式 `UPDATE_OUTLINES=1` 更新；② ISO 正则没吃 `+00:00` 偏移 ⇒ 归一化残留导致 33 条基线含半截时间戳，修正则后重生成；③ 注入到 `body` 末尾的面板落在视口外，像素差 0.000% ⇒ 补"可见注入"用例作为真实对照 | EC-01 已 PASS（范围注记见 EC 表）；EC-02~05 PENDING；**EC-06 BLOCKED（账户级计费阻断 CI）** | **本 cycle 无下一轮**（GOAL = BLOCKED）：恢复条件满足后 cycle 2 = ① derive EC-02（ToolPack install/approve 供应链面：pin↔交付物绑定、能力取值域、schema digest 漂移），子 PLAN 编号 = PLAN-20260915-064 |
+| 1 | PLAN-20260915-063（EC-01：设计门禁结构判据） | 见本 cycle 提交 | 结构签名基线 33 条（`apps/web/tests/e2e/design-outlines.json`）；guard 用例 **6 passed**（注入可见面板/多一行/视口外节点/删节点 → 判红；只改样式 → 不误报；归一化 4 断言）；对照实验：多一行 **0.079%**、视口外 **0.000%** ⇒ 像素判据不报警而结构判据判红；跨平台一致性：linux 容器重算与 win32 **逐字节一致**（33/33）；全量 stub e2e / live e2e / 单测 / m0 见「证据」段 | run **35056976439**（5a44445）：**失败——但失败在启动前**：六个 job 全部 `runner_id=0`、无 step、2 秒内结束（attempt 1 与 rerun attempt 2 同形）；check-run 注释原样给出根因 *"The job was not started because recent account payments have failed or your spending limit needs to be increased"* ⇒ 账户级计费阻断，非代码/门禁缺陷。**两小时后阻断解除**（未做任何仓库内动作）：cycle 1 的收口提交 `28c9c30` → run **35059391199 六个 job 全 success**（container-quality / console-frontend / eval-gate / collector-quality / quality-ubuntu-latest / quality-windows-latest，均拿到真实 runner）⇒ **cycle 1 的 CI 结论成立**（详见「终止与收口 · 当前 BLOCKED」的处置记录） | 首次实现踩到三处：① 用 `toMatchSnapshot` 会得到 per-platform `-win32.txt` 基线（CI 在 ubuntu 上必然缺文件）⇒ 改成单一 JSON 基线 + 显式 `UPDATE_OUTLINES=1` 更新；② ISO 正则没吃 `+00:00` 偏移 ⇒ 归一化残留导致 33 条基线含半截时间戳，修正则后重生成；③ 注入到 `body` 末尾的面板落在视口外，像素差 0.000% ⇒ 补"可见注入"用例作为真实对照 | EC-01 已 PASS（范围注记见 EC 表）；EC-02~05 PENDING；**EC-06 BLOCKED（账户级计费阻断 CI）** | **本 cycle 无下一轮**（GOAL = BLOCKED）：恢复条件满足后 cycle 2 = ① derive EC-02（ToolPack install/approve 供应链面：pin↔交付物绑定、能力取值域、schema digest 漂移），子 PLAN 编号 = PLAN-20260915-064 |
 
 ## 状态历史
 
@@ -275,6 +279,13 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   `EC-06 = BLOCKED`，恢复条件与验证步骤写入「终止与收口 · 当前 BLOCKED」。
   **本 cycle 的 CI 不记 PASS**；本地证据（m0 23/23、stub 66 / live 31 / 单测 76、
   跨平台签名一致、Mimosa 命中 0）不受影响。
+- 2026-09-16 阻断**解除**（account billing 恢复）：cycle 1 收口提交 `28c9c30` → run
+  **35059391199 六个 job 全 success**（container-quality / console-frontend / eval-gate /
+  collector-quality / quality-ubuntu-latest / quality-windows-latest，均 `runner_id != 0`）；
+  `status: BLOCKED → ACTIVE`、`EC-06: BLOCKED → PENDING`；cycle 1 的 CI 结论就此成立。
+  解除未做任何仓库内动作（只等账户侧恢复），且解除后**先复核 runner 真的拿到**再回填。
+- 2026-09-16 cycle 2 开轮（EC-02）：derive = PLAN-20260915-064（ToolPack 供应链写面），
+  入口按「循环入口协议」第 6 条（上一 cycle commit+CI 全绿且 EC 未满足 → 执行 ①）。
 - 2026-09-16 阻断期间追加**CI 等价复现**（明确**不是 CI**，见「终止与收口 · 当前 BLOCKED」表）：
   按六个 job 逐项在本地/容器复现——win32 全量 m0 23/23；linux 容器内根 typescript 5 项全绿、
   web lint/typecheck/unit/build + **stub e2e 66 passed**；eval-gate `PASS` + 110 passed；
