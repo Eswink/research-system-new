@@ -178,6 +178,9 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
   section in your settings"*。
 - 同一 workflow 在本提交之前的 12 个 run 全部 `success`（最近一个 35022837958，
   2026-09-15T20:58Z）⇒ 不是 workflow/代码回归，而是**账户计费状态变化**。
+- 本段记录自身的提交 `ab340cb` 也产生 run **35057354632**：六个 job 同样
+  `runner_id=0`、0 step、同一条注释 ⇒ 与改动内容无关（连只改 `docs` 的记录提交
+  也起不来）。**此后不再逐次追记 run**：同因重复，追记只会再产生一个同形 run。
 
 **为什么不是"重试就能过"**：该条件由 GitHub 账户计费面决定，仓库内任何动作
 （改 workflow、改分支、改提交）都不会改变它；`--force`/重推/新 commit 只会再产生
@@ -237,7 +240,8 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   *"The job was not started because recent account payments have failed or your spending
   limit needs to be increased. Please check the 'Billing & plans' section in your settings"*。
   此前同一 workflow 连续 12 个 run 全 success（最近 35022837958）⇒ 判定为**账户计费状态
-  变化**而非代码回归。按契约「infra 非代码缺陷 → BLOCKED」置 `status: BLOCKED`、
+  变化**而非代码回归（本段记录自身的提交 `ab340cb` → run 35057354632 同形，证明与改动无关）。
+  按契约「infra 非代码缺陷 → BLOCKED」置 `status: BLOCKED`、
   `EC-06 = BLOCKED`，恢复条件与验证步骤写入「终止与收口 · 当前 BLOCKED」。
   **本 cycle 的 CI 不记 PASS**；本地证据（m0 23/23、stub 66 / live 31 / 单测 76、
   跨平台签名一致、Mimosa 命中 0）不受影响。
