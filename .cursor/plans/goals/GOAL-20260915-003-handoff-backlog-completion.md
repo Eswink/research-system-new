@@ -4,7 +4,7 @@ slug: handoff-backlog-completion
 title: 收口清单续做：设计门禁结构判据、ToolPack 供应链面、ops 调度写面、worker 退出语义、替身守卫
 status: ACTIVE
 created_at: 2026-09-16
-updated_at: 2026-09-16
+updated_at: 2026-09-17
 owners:
   - root-agent
 authorization:
@@ -98,7 +98,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-072-provider-endpoint-binding.md
   - .cursor/plans/tasks/PLAN-20260915-073-goal-003-budget-closeout.md
   - .cursor/plans/tasks/PLAN-20260915-074-provider-credential-binding.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-074-provider-credential-binding.md
+  - .cursor/plans/tasks/PLAN-20260915-075-self-made-cursor-serialization.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-075-self-made-cursor-serialization.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -112,6 +113,7 @@ memory_entries:
   - MEM-20260915-047-declared-but-unconsumed-config-is-a-lie
   - MEM-20260915-048-nonportable-counterexamples-are-not-gates
   - MEM-20260915-049-presence-check-is-not-a-resolve
+  - MEM-20260915-050-a-promise-with-two-entry-points
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -642,3 +644,21 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   quality-ubuntu-latest 17:45:03Z / quality-windows-latest 17:45:42Z，无重跑）
   ⇒ 续期后的第一个 cycle 在 main 上全绿；本 cycle 已记 RECHECK-074 与 MEM-049，
   EC-01…EC-06 保持 PASS。
+- 2026-09-17 cycle 12 开轮（`conn.cursor()` 自建游标收口）：derive = PLAN-20260915-075。
+  缺口是 cycle 8/9 修复的**另一个入口**：`SerializedConnection` 只把
+  `execute/executemany/executescript` 收进锁，`conn.cursor()` 返回的仍是裸
+  `sqlite3.Cursor`（语句不取锁、取行不物化），模块 docstring 一直如实登记着这个缺口。
+  仓内当前无调用方 ⇒ 属**潜伏缺口**，如实按"承诺与实现不一致"记账。
+  derive 用四个探针先问清"该写什么判据"：探针 1 确认 CPython 3.12 的
+  `Connection.execute` 系列不经过 Python 层 `cursor()` 覆盖（两个入口互不干扰）；
+  探针 3/4 证明裸游标"读到提交后新行"的行为**取决于查询计划**（带主键 + 排序会进来、
+  无主键 + 排序不会）⇒ **不写成判据**；探针 5 找到与计划无关的对比（裸游标关门后取行
+  抛 `ProgrammingError`）；探针 6 拿到收口前后负载数字。
+- 2026-09-17 cycle 12 交付：新增 `SerializedCursor`（锁内执行 + 锁内取尽 + 仓内用到的
+  游标面），`SerializedConnection.cursor()` 接线；两处"范围注记"docstring 更新为
+  "对两个入口都成立"。判据取与负载/查询计划无关的四条：结构（自建游标 + 物化视图）、
+  **锁真的被取**（持锁时另一线程语句阻塞）、**读在 execute 时刻定死 + 取行不依赖连接**
+  （关门后仍可取）、裸游标反证（关门即 `ProgrammingError`）。实测（探针 6，三次运行）：
+  **收口前 15/18/14 problems per 96 → 收口后 0/0/0**（记录，不是门禁）。
+  定向：新用例 **9 passed**、`tests/adapters/sqlite` **107 passed**、
+  `tests/adapters/sqlite+tests/api+tests/integration` **525 passed**；ruff/format 干净。

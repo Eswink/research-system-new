@@ -160,8 +160,8 @@ class MaterializedRows:
     取行不再依赖连接状态。
 
     覆盖的是本仓实际用到的游标面（`fetchone` / `fetchmany` / `fetchall` / 迭代 /
-    `rowcount` / `description` / `close`）；它不是 `sqlite3.Cursor`，
-    `conn.cursor()` 自建游标的路径不经这里。
+    `rowcount` / `description` / `close`）；它不是 `sqlite3.Cursor`。
+    `conn.cursor()` 自建游标走 `SerializedCursor`（同一套锁内执行 + 锁内取尽口径）。
     """
 
     __slots__ = ("_rows", "_offset", "description", "rowcount", "lastrowid")
@@ -199,6 +199,107 @@ class MaterializedRows:
         """真游标的 close 之后不能再取行；物化视图的取行只读本地列表，故为 no-op。"""
 
 
+class SerializedCursor:
+    """`conn.cursor()` 自建游标的收口包装（PLAN-20260915-075）。
+
+    `SerializedConnection` 原本只把 `execute/executemany/executescript` 收进锁，
+    `conn.cursor()` 返回的仍是**裸** `sqlite3.Cursor`——它的语句执行不取锁、
+    取行也不物化：同一连接上并发使用会退回 cycle 8 的崩溃类（`InterfaceError`）
+    与 cycle 9 的读错类。这个包装把自建游标也收进**同一把锁与同一套物化口径**：
+
+        语句在锁内执行（`execute` / `executemany` / `executescript`）；
+        读语句的行在锁内取尽，之后的 `fetch*` 只读本地列表。
+
+    为什么"取尽"是必须的（实测，同一脚本、同参数）：裸游标上
+    `execute(SELECT)` 之后、`fetchall()` 之前，若同连接上发生写入 + 提交，
+    取回的结果里会**多出**那行新数据（读跨越了提交点）；并发下还会出现列数不对的行。
+    锁内取尽后，这次读的结果在 execute 时刻就定死。
+
+    它不是 `sqlite3.Cursor`：覆盖本仓实际用到的游标面（`execute` / `executemany` /
+    `executescript` / `fetchone` / `fetchmany` / `fetchall` / 迭代 / `close` /
+    `description` / `rowcount` / `lastrowid` / `arraysize` / `connection`）。
+    """
+
+    __slots__ = ("_connection", "_lock", "_raw", "_view", "arraysize")
+
+    def __init__(self, connection: sqlite3.Connection, lock: threading.RLock, raw: Any) -> None:
+        self._connection = connection
+        self._lock = lock
+        self._raw = raw
+        self._view: MaterializedRows | None = None
+        self.arraysize = 1
+
+    @property
+    def connection(self) -> sqlite3.Connection:
+        return self._connection
+
+    @property
+    def description(self) -> Any:
+        return self._raw.description
+
+    @property
+    def rowcount(self) -> int:
+        return cast(int, self._raw.rowcount)
+
+    @property
+    def lastrowid(self) -> int | None:
+        return cast("int | None", self._raw.lastrowid)
+
+    def _forward(self, method: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+        """转发到裸游标（与 SerializedConnection 同形：不拼装、不解析、不缓存 SQL）。"""
+        return getattr(self._raw, method)(*args, **kwargs)
+
+    def _statement(self, *args: Any, **kwargs: Any) -> SerializedCursor:
+        with self._lock:
+            self._forward("execute", args, kwargs)
+            self._take_rows()
+        return self
+
+    def _many_statements(self, *args: Any, **kwargs: Any) -> SerializedCursor:
+        with self._lock:
+            self._forward("executemany", args, kwargs)
+            self._view = None
+        return self
+
+    def _script(self, *args: Any, **kwargs: Any) -> SerializedCursor:
+        with self._lock:
+            self._forward("executescript", args, kwargs)
+            self._view = None
+        return self
+
+    execute = _statement
+    executemany = _many_statements
+    executescript = _script
+
+    def _take_rows(self) -> None:
+        """锁内取尽（调用方必须已持锁）；写语句没有结果集，视图置空。"""
+        if self._raw.description is None:
+            self._view = None
+            return
+        self._view = MaterializedRows(self._raw, list(self._raw.fetchall()))
+
+    def fetchone(self) -> Any:
+        return self._view.fetchone() if self._view is not None else self._raw.fetchone()
+
+    def fetchmany(self, size: int | None = None) -> list[Any]:
+        """不带 size 时用 `arraysize`（与真游标一致）。"""
+        width = self.arraysize if size is None else size
+        source = self._view if self._view is not None else self._raw
+        return cast("list[Any]", source.fetchmany(width))
+
+    def fetchall(self) -> list[Any]:
+        source = self._view if self._view is not None else self._raw
+        return cast("list[Any]", source.fetchall())
+
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self._view if self._view is not None else self._raw)
+
+    def close(self) -> None:
+        with self._lock:
+            self._raw.close()
+            self._view = None
+
+
 class SerializedConnection(sqlite3.Connection):
     """同一连接的多线程使用串行化（语句级 + 读原子）。
 
@@ -216,7 +317,8 @@ class SerializedConnection(sqlite3.Connection):
     ——语句文本由调用方构造，本类不拼装、不解析、不缓存任何 SQL。
 
     范围注记：锁与取尽保证的是**单条语句**的读写自洽，不把一个请求里的多条语句
-    变成原子事务；`conn.cursor()` 自建游标的路径也不经物化。
+    变成原子事务。`conn.cursor()` 自建游标同样在锁内执行、锁内取尽
+    （`SerializedCursor`），因此这条保证对**两个入口**都成立。
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -244,8 +346,10 @@ class SerializedConnection(sqlite3.Connection):
     def _script(self, *args: Any, **kwargs: Any) -> sqlite3.Cursor:
         return cast(sqlite3.Cursor, self._under_lock("executescript", args, kwargs))
 
-    def _cursor_object(self, *args: Any, **kwargs: Any) -> sqlite3.Cursor:
-        return cast(sqlite3.Cursor, self._under_lock("cursor", args, kwargs))
+    def _cursor_object(self, *args: Any, **kwargs: Any) -> SerializedCursor:
+        """自建游标也收口：返回 `SerializedCursor`（锁内执行 + 锁内取尽）。"""
+        raw = self._under_lock("cursor", args, kwargs)
+        return SerializedCursor(self, self._lock, raw)
 
     def _commit_txn(self) -> None:
         self._under_lock("commit", (), {})

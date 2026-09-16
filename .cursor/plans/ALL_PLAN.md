@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-075](tasks/PLAN-20260915-075-self-made-cursor-serialization.md) | DONE |
 | [x] | [PLAN-20260915-074](tasks/PLAN-20260915-074-provider-credential-binding.md) | DONE |
 | [x] | [PLAN-20260915-073](tasks/PLAN-20260915-073-goal-003-budget-closeout.md) | DONE |
 | [x] | [PLAN-20260915-072](tasks/PLAN-20260915-072-provider-endpoint-binding.md) | DONE |
