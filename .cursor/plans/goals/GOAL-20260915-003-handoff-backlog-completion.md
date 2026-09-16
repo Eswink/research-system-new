@@ -87,6 +87,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-064-tool-pack-supply-chain-write-surface.md
   - .cursor/plans/tasks/PLAN-20260915-065-tool-pack-console-surface.md
   - .cursor/plans/tasks/PLAN-20260915-066-ops-schedules-write-surface.md
+  - .cursor/plans/tasks/PLAN-20260915-067-worker-bounded-sigterm-exit.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-066-ops-schedules-write-surface.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
@@ -131,10 +132,11 @@ RECHECK-065 见 `latest_recheck`；提交 `ce28e05` → run **35071216707** 六 
 记录提交 `bc44b68` → run **35072629321** 六 job 全 success）。
 **cycle 4 已闭环**（PLAN-20260915-066 ops 调度写面 = EC-03 PASS，
 RECHECK-066 见 `latest_recheck`；提交见 cycle 4 迭代日志行的 CI 结论）。
-**cycle 5 待开轮**：EC 表首个未满足项是 EC-04（worker 退出语义：SIGTERM 有界中断
-阻塞中的 HTTP 读）；EC-02 仍有未交付子句（provider 侧健康复核 schema digest 漂移 +
-凭据绑定）与 RECHECK-065 W-1（`policy.yaml` 未放行 `tool_pack.*` 的产品决策），
-已在「下一轮输入」备选。BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
+**cycle 5 进行中**：PLAN-20260915-067（EC-04 worker SIGTERM 有界退出）已 derive（① 完成），
+待执行 ②实施 → ⑦记录；口径 = 上界来自"停机后的 drain 宽限期"（默认 5s，env 可覆盖），
+**不是**给所有调用更短的超时；收口点在 `adapters/worker/client.py`（`loop.py` 已 445 行，
+不改）；证据必须含反证（未停机时仍等满客户端超时）+ 修复前实测 + Linux 容器复验。
+BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
 driver=session-goal，owner=root-agent。
 
 ## 驱动
