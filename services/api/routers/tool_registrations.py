@@ -183,12 +183,21 @@ async def revoke_registration(
 async def health_check_registration(
     provider_id: str, request: Request
 ) -> ToolProviderRegistrationDto:
-    """复核健康并把事实写回注册（读面 `GET /tool-providers` 随后看到同一结论）。"""
+    """复核健康并把事实写回注册（读面 `GET /tool-providers` 随后看到同一结论）。
+
+    同时记下提供方这次声明的 schema 指纹：健康面只看三态是不够的，
+    供应链面关心"对方的能力面还是不是当初那个"（漂移与否见 RECHECK-069）。
+    """
     deps = get_deps(request)
     registry = registry_of(deps)
     current = _require_registration(registry, provider_id)
-    status, detail = probe_provider_spec(deps, current.spec())
-    checked = current.record_health(status, detail=detail, now=Timestamp.now())
+    probe = probe_provider_spec(deps, current.spec())
+    checked = current.record_health(
+        probe.status,
+        detail=probe.detail,
+        now=Timestamp.now(),
+        observed_schema_digest=probe.observed_schema_digest,
+    )
     registry.save_registration(checked)
     return registration_dto(checked)
 

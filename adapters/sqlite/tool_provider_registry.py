@@ -59,6 +59,10 @@ def _encode(registration: ProviderRegistration) -> dict[str, Any]:
         "last_health": registration.last_health,
         "health_detail": registration.health_detail,
         "health_checked_at": _iso(registration.health_checked_at),
+        "schema_baseline_digest": registration.schema_baseline_digest,
+        "last_schema_digest": registration.last_schema_digest,
+        "schema_drift": registration.schema_drift,
+        "schema_drift_since": _iso(registration.schema_drift_since),
     }
 
 
@@ -83,6 +87,11 @@ def _decode(raw: dict[str, Any]) -> ProviderRegistration:
         last_health=EndpointHealth(str(health)).value if health else None,
         health_detail=raw.get("health_detail"),
         health_checked_at=_parsed(raw.get("health_checked_at")),
+        # schema 指纹：旧行没有这些键 ⇒ None/False（诚实：老记录就是"没观测过"）
+        schema_baseline_digest=raw.get("schema_baseline_digest"),
+        last_schema_digest=raw.get("last_schema_digest"),
+        schema_drift=bool(raw.get("schema_drift", False)),
+        schema_drift_since=_parsed(raw.get("schema_drift_since")),
     )
 
 

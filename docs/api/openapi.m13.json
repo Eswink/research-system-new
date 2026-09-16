@@ -6479,6 +6479,17 @@
             ],
             "title": "Last Health"
           },
+          "last_schema_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Schema Digest"
+          },
           "network_domains": {
             "items": {
               "type": "string"
@@ -6533,6 +6544,33 @@
               }
             ],
             "title": "Revoked Reason"
+          },
+          "schema_baseline_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Baseline Digest"
+          },
+          "schema_drift": {
+            "default": false,
+            "title": "Schema Drift",
+            "type": "boolean"
+          },
+          "schema_drift_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Drift Since"
           },
           "state": {
             "title": "State",
@@ -12632,7 +12670,7 @@
     },
     "/tool-provider-registrations/{provider_id}/health-check": {
       "post": {
-        "description": "复核健康并把事实写回注册（读面 `GET /tool-providers` 随后看到同一结论）。",
+        "description": "复核健康并把事实写回注册（读面 `GET /tool-providers` 随后看到同一结论）。\n\n同时记下提供方这次声明的 schema 指纹：健康面只看三态是不够的，\n供应链面关心\"对方的能力面还是不是当初那个\"（漂移与否见 RECHECK-069）。",
         "operationId": "health_check_registration_tool_provider_registrations__provider_id__health_check_post",
         "parameters": [
           {

@@ -1,6 +1,7 @@
 import type { ToolProviderRegistrationDto } from "../../api/types";
 import type { Column } from "../../components/Table";
 import { RegistryActions } from "./RegistryActions";
+import { RegistryHealthCell } from "./RegistryHealthCell";
 
 /** 注册表列（integrations 页；动作列与 provider 目录列分离以保持函数 ≤50 行）。 */
 export function registrationColumns(
@@ -36,12 +37,7 @@ export function registrationColumns(
       key: "health",
       header: zh ? "最近复核" : "Last check",
       width: "190px",
-      render: (row) => (
-        <span className="mono" data-testid={`registry-health-${row.id}`}>
-          {row.last_health ?? "—"}
-          {row.health_detail !== null && ` · ${row.health_detail}`}
-        </span>
-      ),
+      render: (row) => <RegistryHealthCell row={row} zh={zh} />,
     },
     {
       key: "actions",

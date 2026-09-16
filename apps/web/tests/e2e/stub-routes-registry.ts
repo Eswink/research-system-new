@@ -28,7 +28,53 @@ interface StubRegistration {
   last_health: string | null;
   health_detail: string | null;
   health_checked_at: string | null;
+  last_schema_digest: string | null;
+  schema_baseline_digest: string | null;
+  schema_drift: boolean;
+  schema_drift_since: string | null;
   catalog_active: boolean;
+}
+
+/** 下一次 health-check 要回的 schema 事实（用例可编排"有漂移/无漂移"两种形态）。
+ *
+ * 替身**不重新实现**漂移判定（那是域的口径，由 tests/api 覆盖）：它只负责把用例
+ * 指定的 DTO 事实回给前端，用来证明 console **渲染**了这些字段。
+ */
+export interface HealthScript {
+  status: string;
+  detail: string;
+  lastSchemaDigest: string | null;
+  baselineDigest: string | null;
+  drift: boolean;
+}
+
+let healthScript: HealthScript | null = null;
+
+/** 编排下一次健康复核的返回形态；不调用则回默认的诚实 UNKNOWN（无 digest）。 */
+export function scriptHealthCheck(script: HealthScript): void {
+  healthScript = script;
+}
+
+/** 有漂移的那次复核（用例最常用的一种编排）。 */
+export function scriptSchemaDrift(baseline: string, current: string): void {
+  scriptHealthCheck({
+    status: "HEALTHY",
+    detail: "scripted probe",
+    lastSchemaDigest: current,
+    baselineDigest: baseline,
+    drift: true,
+  });
+}
+
+/** 无漂移的那次复核（对照组）。 */
+export function scriptSchemaStable(digest: string): void {
+  scriptHealthCheck({
+    status: "HEALTHY",
+    detail: "scripted probe",
+    lastSchemaDigest: digest,
+    baselineDigest: digest,
+    drift: false,
+  });
 }
 
 const NOW = "2026-09-16T00:00:00Z";
@@ -53,6 +99,7 @@ let registrations: StubRegistration[] = [];
 /** 每个用例前复位（注册状态跨用例会串味）。 */
 export function resetRegistryStub(): void {
   registrations = [];
+  healthScript = null;
 }
 
 const TRUST: Record<string, string> = {
@@ -107,6 +154,10 @@ function registration(
     last_health: null,
     health_detail: null,
     health_checked_at: null,
+    last_schema_digest: null,
+    schema_baseline_digest: null,
+    schema_drift: false,
+    schema_drift_since: null,
     catalog_active: false,
   };
 }
@@ -204,10 +255,20 @@ export const REGISTRY_ROUTES: readonly StubRoute[] = [
     handler: (url) =>
       act(url, (current) => ({
         ...current,
-        last_health: "UNKNOWN",
-        health_detail: "控制面未注册可探测的 provider 实例",
+        last_health: healthScript?.status ?? "UNKNOWN",
+        health_detail: healthScript?.detail ?? "控制面未注册可探测的 provider 实例",
         health_checked_at: NOW,
         updated_at: NOW,
+        // 编排过就照编排回；没编排则保持原状（不凭空造 digest，也不清除已有事实）
+        last_schema_digest: healthScript?.lastSchemaDigest ?? current.last_schema_digest,
+        schema_baseline_digest: healthScript?.baselineDigest ?? current.schema_baseline_digest,
+        schema_drift: healthScript?.drift ?? current.schema_drift,
+        schema_drift_since:
+          healthScript === null
+            ? current.schema_drift_since
+            : healthScript.drift
+              ? NOW
+              : null,
       })),
   },
 ];

@@ -71,5 +71,9 @@ def registration_dto(registration: ProviderRegistration) -> ToolProviderRegistra
         last_health=registration.last_health,
         health_detail=registration.health_detail,
         health_checked_at=iso(registration.health_checked_at),
+        last_schema_digest=registration.last_schema_digest,
+        schema_baseline_digest=registration.schema_baseline_digest,
+        schema_drift=registration.schema_drift,
+        schema_drift_since=iso(registration.schema_drift_since),
         catalog_active=registration.active,
     )

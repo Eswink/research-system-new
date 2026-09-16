@@ -9,7 +9,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { assertNoUnmatched, stubApi } from "./stub-api";
-import { resetRegistryStub } from "./stub-routes-registry";
+import { resetRegistryStub, scriptSchemaDrift, scriptSchemaStable } from "./stub-routes-registry";
 
 const PIN = `sha256:${"a".repeat(64)}`;
 
@@ -80,4 +80,33 @@ test("健康复核写入事实并在注册表行显示", async ({ page }) => {
   await registerProvider(page, "dataset_gateway");
   await page.getByTestId("registry-health-check").click();
   await expect(page.getByTestId("registry-health-dataset_gateway")).toContainText("UNKNOWN");
+});
+
+// --- schema 漂移可见（PLAN-20260915-069 / EC-02 剩余子句）----------------------------------
+
+const DIGEST_A = `sha256:${"1".repeat(64)}`;
+const DIGEST_B = `sha256:${"2".repeat(64)}`;
+
+test("schema 漂移在注册表行上可见，并给出可比对的两个指纹", async ({ page }) => {
+  scriptSchemaDrift(DIGEST_A, DIGEST_B);
+  await openIntegrations(page);
+  await registerProvider(page, "dataset_gateway");
+  await page.getByTestId("registry-health-check").click();
+
+  const marker = page.getByTestId("registry-schema-drift-dataset_gateway");
+  await expect(marker).toBeVisible();
+  await expect(marker).toContainText("schema 漂移");
+  // 可比对：漂移前后各截 12 位 hex（完整值仍在 DTO 里，行内只做肉眼区分）
+  await expect(marker).toContainText("111111111111");
+  await expect(marker).toContainText("222222222222");
+});
+
+test("无漂移时不出现漂移标记（对照组：不是恒显示的装饰）", async ({ page }) => {
+  scriptSchemaStable(DIGEST_A);
+  await openIntegrations(page);
+  await registerProvider(page, "dataset_gateway");
+  await page.getByTestId("registry-health-check").click();
+
+  await expect(page.getByTestId("registry-health-dataset_gateway")).toContainText("HEALTHY");
+  await expect(page.getByTestId("registry-schema-drift-dataset_gateway")).toHaveCount(0);
 });

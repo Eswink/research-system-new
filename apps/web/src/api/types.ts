@@ -708,6 +708,13 @@ export interface ToolProviderRegistrationDto {
   last_health: string | null;
   health_detail: string | null;
   health_checked_at: string | null;
+  /** 最近一次复核观测到的 schema 指纹；null = 至今没观测到（≠ 没有漂移）。 */
+  last_schema_digest: string | null;
+  /** 比对基线（首次观测值，或被批准接受的值）。 */
+  schema_baseline_digest: string | null;
+  /** 当前观测是否已偏离基线（状态语义，不是"上次 vs 这次"）。 */
+  schema_drift: boolean;
+  schema_drift_since: string | null;
   catalog_active: boolean;
 }
 

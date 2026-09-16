@@ -16,6 +16,8 @@ Root cause（BLOCKER-B3 之一面）：`PreflightContext.endpoint_health` 默认
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from packages.application.policy.native import NativePolicyEvaluator
 from packages.application.ports import CatalogSnapshot, InvalidInputError, PolicyEvaluator
 from packages.domain.enums import EndpointHealth, ProviderType
@@ -63,7 +65,7 @@ def build_provider_health(deps: ApiDeps, catalog: CatalogSnapshot) -> dict[str, 
     UNKNOWN（触发 TOOL_HEALTH_UNPROVEN 警示而非伪装健康）。
     """
     return {
-        provider_id: probe_provider_spec(deps, spec)[0]
+        provider_id: probe_provider_spec(deps, spec).status
         for provider_id, spec in catalog.tool_providers.items()
     }
 
@@ -71,24 +73,44 @@ def build_provider_health(deps: ApiDeps, catalog: CatalogSnapshot) -> dict[str, 
 NATIVE_PROBE_DETAIL = "NATIVE provider：内置 runtime 能力，无外部 transport 可探测（结构性可用）"
 
 
-def probe_provider_spec(deps: ApiDeps, spec: ToolProviderSpec) -> tuple[EndpointHealth, str]:
-    """provider 三态健康 + 探测说明（读面投影与注册面 health-check 共用同一路径）。
+@dataclass(frozen=True, slots=True)
+class ProviderProbe:
+    """一次 provider 探测的完整结果（状态 + 说明 + 被探测方声明的 schema 指纹）。
+
+    `observed_schema_digest` 是提供方**这次**声明的能力面指纹；适配器已算出
+    （MCP/REST/NCBI 三处都填 `ToolHealthReport.observed_schema_digest`），
+    本结构把它带出探测边界，供注册面记录与漂移比对。None 表示这次**没观测到**
+    ——不等于"没有变化"（见 `ProviderRegistration.record_health` 的口径）。
+    """
+
+    status: EndpointHealth
+    detail: str
+    observed_schema_digest: str | None = None
+
+
+def probe_provider_spec(deps: ApiDeps, spec: ToolProviderSpec) -> ProviderProbe:
+    """provider 三态健康 + 探测说明 + schema 指纹（读面投影与注册面 health-check 共用）。
 
     单一路径的理由：注册面"健康复核"写下的必须是读面看到的那个事实，否则会
     出现"复核说健康、目录说不可证明"的两套真相。UNKNOWN 一律带原因（未注册
     实例 / 未声明 health_check / 探测异常），不伪装成功。
     """
     if spec.kind is ProviderType.NATIVE:
-        return EndpointHealth.HEALTHY, NATIVE_PROBE_DETAIL
+        return ProviderProbe(EndpointHealth.HEALTHY, NATIVE_PROBE_DETAIL)
     provider = deps.tool_providers.get(spec.id)
     if provider is None:
-        return EndpointHealth.UNKNOWN, "控制面未注册可探测的 provider 实例"
+        return ProviderProbe(EndpointHealth.UNKNOWN, "控制面未注册可探测的 provider 实例")
     if not spec.health_check:
-        return EndpointHealth.UNKNOWN, "provider 未声明 health_check，无探测入口"
+        return ProviderProbe(EndpointHealth.UNKNOWN, "provider 未声明 health_check，无探测入口")
     try:
         report = provider.check_health(spec)
     except Exception:  # noqa: BLE001 - 探测异常按不可证明收敛，不伪装结果
-        return EndpointHealth.UNKNOWN, "健康探测抛出异常（已按不可证明收敛）"
+        return ProviderProbe(EndpointHealth.UNKNOWN, "健康探测抛出异常（已按不可证明收敛）")
     status = EndpointHealth(report.status)
     detail = str(getattr(report, "detail", "") or "")
-    return status, detail or f"provider adapter 报告 {status.value}"
+    digest = getattr(report, "observed_schema_digest", None)
+    return ProviderProbe(
+        status=status,
+        detail=detail or f"provider adapter 报告 {status.value}",
+        observed_schema_digest=str(digest) if digest is not None else None,
+    )

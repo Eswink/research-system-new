@@ -98,6 +98,10 @@ class ProviderRegistration:
     last_health: str | None = None
     health_detail: str | None = None
     health_checked_at: Timestamp | None = None
+    schema_baseline_digest: str | None = None
+    last_schema_digest: str | None = None
+    schema_drift: bool = False
+    schema_drift_since: Timestamp | None = None
 
     def __post_init__(self) -> None:
         _check_text(self.id, field="provider id", limit=MAX_PROVIDER_ID_LENGTH)
@@ -141,8 +145,23 @@ class ProviderRegistration:
         )
 
     def approve(self, *, now: Timestamp) -> ProviderRegistration:
+        """批准（PENDING → ACTIVE）；同时**接受当前 schema 形态**作为新基线。
+
+        批准是唯一显式的"我看见了并接受"动作，所以漂移在这里解除：基线换成最后一次
+        观测到的 digest、漂移标志清除。若从未观测到 digest（没复核过），digest 字段不动。
+        """
         state = RegistrationState.transition(self.state, RegistrationState.Transition.APPROVE)
-        return replace(self, state=state, approved_at=now, updated_at=now)
+        if self.last_schema_digest is None:
+            return replace(self, state=state, approved_at=now, updated_at=now)
+        return replace(
+            self,
+            state=state,
+            approved_at=now,
+            updated_at=now,
+            schema_baseline_digest=self.last_schema_digest,
+            schema_drift=False,
+            schema_drift_since=None,
+        )
 
     def revoke(self, reason: str, *, now: Timestamp) -> ProviderRegistration:
         stripped = reason.strip()
@@ -154,15 +173,49 @@ class ProviderRegistration:
         return replace(self, state=state, revoked_reason=stripped, revoked_at=now, updated_at=now)
 
     def record_health(
-        self, status: EndpointHealth, *, detail: str, now: Timestamp
+        self,
+        status: EndpointHealth,
+        *,
+        detail: str,
+        now: Timestamp,
+        observed_schema_digest: str | None = None,
     ) -> ProviderRegistration:
-        """记录一次健康探测事实（不改状态；REVOKED 仍可留痕）。"""
+        """记录一次健康探测事实（不改状态；REVOKED 仍可留痕）。
+
+        `observed_schema_digest` 是提供方这次声明的 schema 指纹（能力面）。漂移是**状态**：
+
+        - 首次观测 ⇒ 它成为基线（基线之前的漂移检测不到，注册面没有可比对象）；
+        - 之后每次观测都拿**当前值 vs 基线**判定 `schema_drift`（不是 vs 上次）——
+          否则 A→B→B 会让"变了"的告警在第二次复核后自己消失，而提供方仍不是当初那个；
+        - **未观测到 digest（None）不动任何 digest 字段**：探测失败/无 digest 的 kind
+          不等于"没变化"，把未知读成无漂移是最危险的误读。
+        """
+        if observed_schema_digest is None:
+            return replace(
+                self,
+                last_health=status.value,
+                health_detail=detail[:MAX_REASON_LENGTH],
+                health_checked_at=now,
+                updated_at=now,
+            )
+        Digest.parse(observed_schema_digest)
+        baseline = self.schema_baseline_digest or observed_schema_digest
+        drift = observed_schema_digest != baseline
+        drift_since = self.schema_drift_since
+        if drift and drift_since is None:
+            drift_since = now
+        if not drift:
+            drift_since = None
         return replace(
             self,
             last_health=status.value,
             health_detail=detail[:MAX_REASON_LENGTH],
             health_checked_at=now,
             updated_at=now,
+            schema_baseline_digest=baseline,
+            last_schema_digest=observed_schema_digest,
+            schema_drift=drift,
+            schema_drift_since=drift_since,
         )
 
     def updated(self, changes: dict[str, Any], *, now: Timestamp) -> ProviderRegistration:

@@ -86,6 +86,10 @@ class ToolProviderRegistrationDto(BaseModel):
     last_health: str | None = None
     health_detail: str | None = None
     health_checked_at: str | None = None
+    last_schema_digest: str | None = None
+    schema_baseline_digest: str | None = None
+    schema_drift: bool = False
+    schema_drift_since: str | None = None
     catalog_active: bool = False
 
 

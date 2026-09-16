@@ -89,7 +89,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-066-ops-schedules-write-surface.md
   - .cursor/plans/tasks/PLAN-20260915-067-worker-bounded-sigterm-exit.md
   - .cursor/plans/tasks/PLAN-20260915-068-stub-harness-idempotency-contract.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-068-stub-harness-idempotency-contract.md
+  - .cursor/plans/tasks/PLAN-20260915-069-provider-health-schema-digest-drift.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-069-provider-health-schema-digest-drift.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -97,6 +98,7 @@ memory_entries:
   - MEM-20260915-041-scheduler-remains-the-executor
   - MEM-20260915-042-sigterm-cannot-break-a-blocked-read
   - MEM-20260915-043-stub-must-enforce-the-contract-it-stands-in-for
+  - MEM-20260915-044-schema-digest-is-a-state-not-an-event
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -111,7 +113,7 @@ memory_entries:
 | EC | 标准（摘要） | 验证 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 设计门禁结构判据（整块新增必红） | 33 路由结构签名 + 反证用例 + 跨平台一致性 | PASS（2026-09-16 cycle 1；范围注记：结构签名只看标签/testid/role/aria-label/叶子文本/子节点数，**不看样式与坐标**（那是像素判据的职责）；文本截断 120 字符 ⇒ 长文案的后半段变化不由本判据覆盖） |
-| EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | **PARTIAL**（2026-09-16 cycle 2：后端写面已交付——三条文档化端点 + SQLite store + digest 重算自证 + 扩张待批准 + capability 取值域 + 目录消费，OpenAPI/契约/文档/pageSupport 全部收敛；2026-09-16 cycle 3：**console 操作面已交付**——`ops/integrations` 面板（安装表单 / 待批准横幅含 diff 明细与候选 digest / 批准 / 吊销理由必填）、stub 6 + live 2 各一条链、两条设计基线重生成；**仍未交付**：健康复核记录 schema digest 并可比对漂移（provider 侧，需先定探测面），以及 provider 凭据绑定；另发现平台默认策略未放行 `tool_pack.*`（default DENY，见 RECHECK-065 W-1）——三项都记在「下一轮输入」） |
+| EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | **PASS**（2026-09-16 cycle 2：后端写面——三条文档化端点 + SQLite store + digest 重算自证 + 扩张待批准 + capability 取值域 + 目录消费，OpenAPI/契约/文档/pageSupport 全部收敛；cycle 3：console 操作面——`ops/integrations` 面板（安装表单 / 待批准横幅含 diff 明细与候选 digest / 批准 / 吊销理由必填）、stub 6 + live 2 各一条链；**cycle 7：健康复核记录 schema digest 并可比对漂移**——适配器早已算出的 `observed_schema_digest` 接到注册记录/DTO/读面/console（漂移是**状态**：当前 vs 基线；**未知观测不清除漂移**；`approve` 重基线化），三条反证在用例里，OpenAPI +39/−1）。判据四条子句至此全部落地。**注记**：`provider 凭据绑定` 与 `policy.yaml` 的 `tool_pack.*` 产品决策是收口时登记的**相邻缺口**，不在本 EC 判据文本内，作为独立长程项留在「下一轮输入」；范围注记：漂移**只在治理读面可见**（目录读面不带 digest、preflight 不消费），"可见"≠"可阻断"；基线只能从**首次观测**起算（更早的漂移检测不到）——见 RECHECK-069 W-2/W-3） |
 | EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PASS（2026-09-16 cycle 4：`ops/schedules` 的 `disabledOperations` 相应项消失、`management_available=true`；**执行体仍是既有守护线程**——`trigger` 调用的就是定时 pass 的**同一个函数对象**（用例以计数器证明），`enabled=false` 被守护线程**自己的读面**（`due(job)`）消费（真实线程 + 可控时钟：停用后 `run_count` 冻结）。诚实的边界都在用例里：无 store → 静态兜底 + 写操作 503；未挂执行体 → `executor_attached=false` 且 trigger 禁用；从未跑过 → `last_outcome=null`（前端显示 UNKNOWN）；pass 失败 → 200 + `FAILED` + `last_error`。范围注记：`run_count` 等事实是**进程内观测**（重启归零，不是配置）；调度写面**不经过 policy**（等价于启停既有守护线程），若要审批需新增 `schedule.*` 能力——见 RECHECK-066 W-6） |
 | EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PASS（2026-09-16 cycle 5：8 处出站调用收口到 `WorkerClient._call`，停机后超过 `RESEARCHOS_WORKER_DRAIN_SECONDS`（默认 5s，取值域 0.1~60）即放弃在途调用并抛 `WorkerDrainAbort`，进程按有序停机退出 0。**实测对照**（同脚本同参数，Linux 容器 + 黑洞网关）：修复前 **29.64s**、修复后 **1.12s**（drain=1）。两层反证：进程内"未停机 ⇒ 同一条阻塞读照常跑满"、进程外"drain 调大 ⇒ 进程不早退"。范围注记：只覆盖**网关读**的停机上界——在途**执行**的中断仍走既有协作式 cancel 通道，其停止时间没有新增上界（RECHECK-067 W-1）；被放弃的请求可能已到达服务端也可能没有，属 at-least-once 允许的模糊点，已写进 runbook（W-2）） |
 | EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PASS（2026-09-16 cycle 6：替身在 handler 之前守门，与真中间件四条语义对齐——缺头/空值 → 422 `Idempotency-Key Required`；同 key 不同摘要 → 422 `Idempotency-Key Reused`；同 key 同摘要 → 重放首次响应；分析类 POST 豁免；响应体与真件 `_problem()` 同形（`instance` 为空串）。**反证做在产品客户端上**：把 `apps/web/src/api/http.ts` 的头发送改成别的头名后，`schedules-write` + `project-delete` **7 failed / 2 passed**，失败面板里呈现的正是真件的 422 detail；还原后 `git diff` 为空。跨语言守卫把 stub 词表与 `middleware.py` 的 `_MUTATING_METHODS`/`_ANALYSIS_ACTIONS` 钉成集合相等（并断言豁免清单非空）——替身单方面放宽会在 Python 套件里红。范围注记：两处**刻意不一致**（替身摘要只做判等、重放不带 ETag）、守门顺序的真实副作用（未知路径 + mutating + 无 key → 422 而非 404 ⇒ 不进 `assertNoUnmatched`）、`PUT` 无真实路由可测——见 RECHECK-068 W-1/W-2/W-3/W-4） |
@@ -140,9 +142,13 @@ RECHECK-067 见 `latest_recheck`；修复前/后实测 29.64s → 1.12s）。
 **cycle 6 已闭环**（PLAN-20260915-068 替身 harness 校验 Idempotency-Key = EC-05 PASS，
 RECHECK-068 见 `latest_recheck`；反证 = 去掉客户端发送头后 mutating 用例 7 failed；
 全量 stub 套件 81 passed、m0 23 项绿；提交见 cycle 6 迭代日志行的 CI 结论）。
-**EC 表至此全项落地**（EC-01/03/04/05 PASS、EC-02 PARTIAL），下一轮起做 EC-02 的剩余子句
-（provider 侧健康复核 schema digest 漂移 + 凭据绑定）与 RECHECK-065 W-1
-（`policy.yaml` 是否放行 `tool_pack.*` 的产品决策），两者都已在「下一轮输入」登记。
+**EC 表至此全项 PASS**（EC-01/02/03/04/05）。下一轮起做**相邻长程项**与 cycle 7 发现的新缺陷：
+① **控制面 SQLite 共享连接的并发写缺陷**（cycle 7 复现：12 线程 24 个
+`POST /ops/schedules` ⇒ 2×500 `sqlite3.InterfaceError` + 2×404；`check_same_thread=False`
+允许跨线程但 sqlite3 连接不支持两个线程同时使用，FastAPI 同步端点跑在 threadpool 里）——
+见 RECHECK-069 W-1，**这是下一轮第一项**；② provider 凭据绑定（`CredentialResolver` 已有先例、
+`ToolProviderSpec.endpoint_env` 已解析但从未被消费）；③ RECHECK-065 W-1 的 `tool_pack.*`
+策略产品决策；④ EC-06 收口复检（GOAL 收口时把仍未处理的长程项写成后继入口）。
 BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
 driver=session-goal，owner=root-agent。
 
@@ -444,3 +450,34 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   教训记为 EXP-20260916-001。Mimosa deep scan（seal
   `sha256:d15c0a99c4c08a2237fc9b53e544eebe45b19d899a6714faa193125c26d32998`）
   36 findings / 182 packages，与 cycle 4/5 逐项一致，本轮四个改动文件零命中。
+- 2026-09-16 cycle 7 开轮（EC-02 剩余子句）：derive = PLAN-20260915-069（健康复核记录
+  schema digest 并可比对漂移）。recon 定位缺口：**适配器早就算出** `observed_schema_digest`
+  （`adapters/mcp/provider.py:145`、`adapters/research_tools/ncbi.py:150`、
+  `adapters/fakes/tool_provider.py:101`），是 `probe_provider_spec` 只取 status/detail
+  把它丢掉、`record_health` 不接收、DTO 与 SQLite 都不落。两条关键口径在 derive 时就写进
+  PLAN：**漂移是状态（当前 vs 基线）不是事件（这次 vs 上次）**——否则 A→B→B 会让告警自己
+  消失，而提供方仍不是当初那个；**未知观测不得清除漂移**——把"没观测到 digest"读成
+  "没变化"会抹掉已经发现的漂移。
+- 2026-09-16 cycle 7 交付（EC-02 → PASS）：域加四字段 + `record_health` 接收 digest
+  （None 时四字段一律不动）+ `approve` 重基线化（"我看见了并接受"）；探测路径改为
+  返回 `ProviderProbe(status, detail, observed_schema_digest)`，写面与读面继续共用它；
+  SQLite 是 JSON-blob-per-row ⇒ **表结构不变、无迁移**，旧行按 `None/False` 解码
+  （用一条手写历史键集的用例钉住）；DTO + OpenAPI（+39/−1）+ TS 镜像 +
+  `RegistryHealthCell`（漂移标记带两个截断指纹）。**门禁拦截一次**：加标记后
+  `registrationColumns` 53 行 > 50 上限被根 eslint 判红 ⇒ 抽成独立组件，未放宽规则。
+  证据：API **23 passed**（含无 digest 不清除、回基线清除两条反证）、store **3 passed**、
+  stub e2e **83 passed**（**33 路由像素与结构签名均未变**——漂移标记只在真漂移时渲染，
+  这是结构判据"只在真实变化时判红"的正向证据）、live e2e **35 passed**、
+  API+store+contracts+architecture **944 passed / 2 skipped**、mypy 860 files clean、
+  m0 **PASS: profile=m0; 23 deterministic checks**。
+- 2026-09-16 cycle 7 的**顺带发现（下一轮第一项）**：live e2e 首轮出现 1 failed
+  ——`live-schedules-write` 的"越界间隔"期望 422 却得到 **500**。隔离复跑 2 passed、
+  第二轮全量 35 passed（单看属于 flake），但顺着这条线**复现出真实缺陷**：对 live 控制面
+  并发发 24 个 `POST /ops/schedules`（12 线程）⇒ **19×201 / 2×500 / 2×404 / 1×409**，
+  500 的服务端栈为 `ops_schedules.py:99 → :50 → schedule_registry.py:94 →
+  adapters/sqlite/schedule_store.py:78` 抛 **`sqlite3.InterfaceError: bad parameter or
+  other API misuse`**——`connect(..., check_same_thread=False)` 允许跨线程，但 sqlite3
+  连接**不允许两个线程同时使用**，而 FastAPI 的同步端点跑在 threadpool 里。
+  这**不是** cycle 7 引入的（本轮只动 provider 注册面），但它意味着此前 EC-03 的
+  "live 35 passed"必须被读成**单并发**下的结论。已记入 RECHECK-069 W-1，并作为 cycle 8 的
+  第一项（修法方向：连接加锁/每线程连接 + `busy_timeout`，并以并发用例钉住）。
