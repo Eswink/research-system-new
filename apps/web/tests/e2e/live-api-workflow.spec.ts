@@ -381,17 +381,22 @@ test("live: library 库目录创建/过滤/归档（EC-03 第一批）", async (
 test("live: ops 只读投影（EC-03 第二批）", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  // schedules：进程内 4 个守护 scheduler 配置事实；管理面诚实锁定。
+  // schedules：4 个内置定义 + 运行事实；PLAN-066（EC-03）起可管理（写面链见
+  // live-schedules-write.spec.ts），断言随产品行为改。
   const schedules = await page.request.get("/api/ops/schedules");
   expect(schedules.ok()).toBeTruthy();
   const scheduleView = (await schedules.json()) as {
-    schedules: { name: string; interval_seconds: number }[];
+    schedules: { name: string; interval_seconds: number; executor_attached: boolean }[];
     management_available: boolean;
+    jobs: { job: string }[];
   };
   const names = scheduleView.schedules.map((item) => item.name);
   expect(names).toContain("lease_recovery");
   expect(names).toContain("outbox_relay");
-  expect(scheduleView.management_available).toBe(false);
+  expect(scheduleView.management_available).toBe(true);
+  // 词表随读面回传（新增定义只能绑定既有 job）；执行体有无如实标注。
+  expect(scheduleView.jobs.map((item) => item.job)).toContain("worker_reaper");
+  expect(scheduleView.schedules.some((item) => item.executor_attached)).toBe(true);
 
   // alerts：派生收件箱 + 规则写面（PLAN-059 起 store 同侧装配 ⇒ 规则可用）。
   const alerts = await page.request.get("/api/projects/example-project/ops/alerts");

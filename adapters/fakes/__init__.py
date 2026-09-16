@@ -23,6 +23,7 @@ from adapters.fakes.model_gateway import FakeModelGateway, FakeModelGatewayOptio
 from adapters.fakes.policy_evaluator import FakePolicyEvaluator
 from adapters.fakes.resource_catalog import FakeResourceCatalog
 from adapters.fakes.retrieval_index import FakeRetrievalIndex
+from adapters.fakes.schedule_store import FakeScheduleStore
 from adapters.fakes.telemetry_sink import FakeTelemetrySink, NullTelemetrySink
 from adapters.fakes.tool_pack_store import FakeToolPackStore
 from adapters.fakes.tool_provider import FakeToolProvider
@@ -49,6 +50,7 @@ __all__ = [
     "FakePolicyEvaluator",
     "FakeResourceCatalog",
     "FakeRetrievalIndex",
+    "FakeScheduleStore",
     "FakeTelemetrySink",
     "FakeToolPackStore",
     "FakeToolProvider",

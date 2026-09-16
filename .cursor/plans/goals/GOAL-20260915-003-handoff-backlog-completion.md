@@ -42,7 +42,7 @@ exit_criteria:
     verify: >-
       OpenAPI 写方法 + ops/schedules 的 disabledOperations 相应项消失 +
       API + live e2e 用例
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       worker 退出语义：SIGTERM 能在有界时间内中断阻塞中的 HTTP 读（退出上界不再
@@ -87,11 +87,12 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-064-tool-pack-supply-chain-write-surface.md
   - .cursor/plans/tasks/PLAN-20260915-065-tool-pack-console-surface.md
   - .cursor/plans/tasks/PLAN-20260915-066-ops-schedules-write-surface.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-065-tool-pack-console-surface.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-066-ops-schedules-write-surface.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
   - MEM-20260915-040-pending-must-be-visible-in-ui
+  - MEM-20260915-041-scheduler-remains-the-executor
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -107,7 +108,7 @@ memory_entries:
 | --- | --- | --- | --- |
 | EC-01 | 设计门禁结构判据（整块新增必红） | 33 路由结构签名 + 反证用例 + 跨平台一致性 | PASS（2026-09-16 cycle 1；范围注记：结构签名只看标签/testid/role/aria-label/叶子文本/子节点数，**不看样式与坐标**（那是像素判据的职责）；文本截断 120 字符 ⇒ 长文案的后半段变化不由本判据覆盖） |
 | EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | **PARTIAL**（2026-09-16 cycle 2：后端写面已交付——三条文档化端点 + SQLite store + digest 重算自证 + 扩张待批准 + capability 取值域 + 目录消费，OpenAPI/契约/文档/pageSupport 全部收敛；2026-09-16 cycle 3：**console 操作面已交付**——`ops/integrations` 面板（安装表单 / 待批准横幅含 diff 明细与候选 digest / 批准 / 吊销理由必填）、stub 6 + live 2 各一条链、两条设计基线重生成；**仍未交付**：健康复核记录 schema digest 并可比对漂移（provider 侧，需先定探测面），以及 provider 凭据绑定；另发现平台默认策略未放行 `tool_pack.*`（default DENY，见 RECHECK-065 W-1）——三项都记在「下一轮输入」） |
-| EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PENDING |
+| EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PASS（2026-09-16 cycle 4：`ops/schedules` 的 `disabledOperations` 相应项消失、`management_available=true`；**执行体仍是既有守护线程**——`trigger` 调用的就是定时 pass 的**同一个函数对象**（用例以计数器证明），`enabled=false` 被守护线程**自己的读面**（`due(job)`）消费（真实线程 + 可控时钟：停用后 `run_count` 冻结）。诚实的边界都在用例里：无 store → 静态兜底 + 写操作 503；未挂执行体 → `executor_attached=false` 且 trigger 禁用；从未跑过 → `last_outcome=null`（前端显示 UNKNOWN）；pass 失败 → 200 + `FAILED` + `last_error`。范围注记：`run_count` 等事实是**进程内观测**（重启归零，不是配置）；调度写面**不经过 policy**（等价于启停既有守护线程），若要审批需新增 `schedule.*` 能力——见 RECHECK-066 W-6） |
 | EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PENDING |
 | EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PENDING |
 | EC-06 | 每 cycle m0/CI 全绿 + 收口复检 + 安全扫描处置 | CI run 六 job 结论 + RECHECK | PENDING（cycle 1 一度 BLOCKED：账户计费阻断 → 阻断解除后 run **35059391199 六个 job 全 success**，cycle 1 的 CI 结论已成立；后续每 cycle 继续按此标准记） |
@@ -128,10 +129,12 @@ EC-03 为 M、EC-04 为 M（进程信号语义）、EC-05 为 S、EC-01 为 M。
 **cycle 3 已闭环**（PLAN-20260915-065 console 操作面 + live 链 = EC-02 前端，
 RECHECK-065 见 `latest_recheck`；提交 `ce28e05` → run **35071216707** 六 job 全 success，
 记录提交 `bc44b68` → run **35072629321** 六 job 全 success）。
-**cycle 4 进行中**：PLAN-20260915-066（EC-03 ops 调度写面）已 derive（① 完成），
-待执行 ②实施 → ⑦记录；口径 = 执行体仍是既有守护线程，本轮只把"调度定义"变成
-可写/可读/可触发，`trigger` 与定时 pass 走同一函数。
-BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
+**cycle 4 已闭环**（PLAN-20260915-066 ops 调度写面 = EC-03 PASS，
+RECHECK-066 见 `latest_recheck`；提交见 cycle 4 迭代日志行的 CI 结论）。
+**cycle 5 待开轮**：EC 表首个未满足项是 EC-04（worker 退出语义：SIGTERM 有界中断
+阻塞中的 HTTP 读）；EC-02 仍有未交付子句（provider 侧健康复核 schema digest 漂移 +
+凭据绑定）与 RECHECK-065 W-1（`policy.yaml` 未放行 `tool_pack.*` 的产品决策），
+已在「下一轮输入」备选。BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
 driver=session-goal，owner=root-agent。
 
 ## 驱动
@@ -346,3 +349,38 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   08:09:07Z，无重跑）⇒ EC-06 的"每 cycle CI 全绿"在本 cycle 成立；本轮本地证据为
   stub 72 / live 33 / 单测 76 / 全量 pytest 3436 passed·8 skipped / m0 23/23 /
   安全扫描（sealed）本轮改动命中 0。
+- 2026-09-16 cycle 4 开轮（EC-03）：derive = PLAN-20260915-066（ops 调度写面），
+  入口按「循环入口协议」第 6 条（上一 cycle commit+CI 全绿且 EC 未满足 → ①）。
+  范围口径与 EC 表述一致：**只把"调度定义"变成可写/可读/可触发，执行体仍是既有守护线程**，
+  验收的关键是"写面被执行体的读面消费"，不是"多了一张表"。
+- 2026-09-16 cycle 4 交付（EC-03 = **PASS**）：`ScheduleDefinition`（名/间隔/启停/note，
+  取值域 1s~86400s、名字 `^[a-z][a-z0-9_]{2,40}$`）+ `ScheduleStore` 端口
+  （SQLite + Fake，登记进 contract matrix）+ `ScheduleRegistry`（due 预约 / record 事实 /
+  trigger 手动 / runtime 读面）+ 四条 HTTP 写面（POST 201 / PATCH / trigger / GET 并入读面），
+  取代原先的 `disabledOperations` 锁定；console 端 `SchedulesPage` 的创建表单、行内启停与
+  触发、事实列（executor / 上次结果），替身 `stub-routes-schedules.ts` 是有状态的最小实现，
+  live 用例跑真实 SQLite。**执行体没变**：`PeriodicDaemon` 在 `start()` 时把自己的
+  `_execute_pass` 注册进 registry，`trigger(name)` 调用的就是这个函数对象（用例用计数器
+  证明同一对象）；守护线程每轮问 `due(job)`，所以 `enabled=false` 是被执行体自己的读面消费的
+  （真实线程 + 可控时钟：停用后 `run_count` 冻结）。过程中发现并修掉一个**真实缺陷**：
+  `record()` 抛错会杀死守护线程（live 日志里 `KeyError: 'worker_reaper'`）——本轮把
+  `_record`/`_due_names`/`_next_wait` 全部改成 fail-open 并补 3 条回归用例
+  （根因未复现，如实记在 RECHECK-066 W-1）；另外首版 registry 的校验比域正则弱，
+  `"ab"` 会穿过写面直达 dataclass 抛 500 ⇒ 收敛成 `validate_schedule_name()` 由域与
+  registry 共用（422）。**门禁拦截一次**：全量 m0 的 `python/tests` 判红于
+  `tests/architecture/python/test_services_api_boundaries.py` 两项——DTO 直接 import 了
+  domain 的枚举（`api-dto-purity` BROKEN）；修法是把取值域校验下沉到域边界
+  （`ScheduleCreateDto.job: str` + `ScheduleRegistry._coerce_job`，未知作业 → 422 点名词表），
+  **未放宽任何断言**，复验 `lint-imports --config .importlinter.api` → 2 kept / 0 broken、
+  `tests/architecture+api+application/ops` 447 passed。教训：定向套件不含
+  `tests/architecture`，新 DTO 的"类型好看"很容易换来一次全量红。
+  **第二次真实拦截（同日）**：全量 m0 又红在 `tests/postgres/test_m13_pg_run_e2e.py`，
+  且随后卡在 71%（一个后端 `idle in transaction` 持锁，另一个在 `TRUNCATE` 等锁）。
+  隔离对照证明是本 cycle 的确定性回归——干净工作树 HEAD `82e3e13` 上 **6/6 通过**，
+  带改动 **6/6 失败**（`OutOfOrderTransactionNesting`）。根因：`next_wait_seconds` 把
+  "尚未预约的定义"当成 0.1s 候选，于是**四个守护线程在 app 起来约 100ms 后同时开跑**，
+  与启动期初始化写在共享 psycopg 连接上并发、打断请求线程的显式事务。修法：未预约的定义
+  不参与候选（等待下界 = 守护线程自身 interval，与"定义下一轮生效"一致）+ 三条钉子用例；
+  复验 `tests/postgres` 70 passed、m13 6/6 绿、`tests/application/ops` 20 passed，
+  **未改动 m13 用例**。两个现象（W-1 的 live `record()` KeyError 与 W-9 的抢跑）**可能同源**，
+  但 KeyError 未被直接复现，故不宣称已解决。

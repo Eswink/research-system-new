@@ -88,6 +88,7 @@ from packages.application.ports.resource_catalog import (
 from packages.application.ports.retrieval_index import IndexEntry, IndexHit, RetrievalIndex
 from packages.application.ports.run_projection import RunProjection
 from packages.application.ports.run_store import RunStore
+from packages.application.ports.schedule_store import ScheduleStore
 from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
 from packages.application.ports.tool_pack_store import ToolPackRecord, ToolPackStore
 from packages.application.ports.tool_provider import ToolProvider
@@ -161,6 +162,7 @@ __all__ = [
     "RunStore",
     "RuntimeEvent",
     "RuntimeEventKind",
+    "ScheduleStore",
     "SecretValue",
     "TaskCompletion",
     "TaskLease",

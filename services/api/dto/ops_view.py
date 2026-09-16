@@ -108,19 +108,6 @@ class IncidentCloseDto(BaseModel):
     resolution: str
 
 
-class ScheduleEntryDto(BaseModel):
-    name: str
-    interval_seconds: float
-    purpose: str
-    enabled: bool
-
-
-class SchedulesViewDto(BaseModel):
-    schedules: list[ScheduleEntryDto] = Field(default_factory=list)
-    management_available: bool = False
-    management_reason: str | None = None
-
-
 class DataHealthMetricDto(BaseModel):
     metric: str
     value: str

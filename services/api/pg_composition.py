@@ -177,6 +177,9 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
 
     PLAN-064（GOAL-003 / EC-02）：ToolPack 供应链状态与 tool provider 注册表同侧
     ——PG 路径的配置面同样是 SQLite，写面语义不因后端切换而分叉。
+
+    PLAN-066（GOAL-003 / EC-03）：调度定义同理；`schedule_registry` 由同一 store
+    构建，守护线程与 HTTP 写面共用（trigger 才找得到执行体）。
     """
     from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
@@ -185,9 +188,12 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
+    from adapters.sqlite.schedule_store import SqliteScheduleStore
     from adapters.sqlite.tool_pack_store import SqliteToolPackStore
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
+    from services.api.schedule_support import build_registry
 
+    schedule_store = SqliteScheduleStore(connection=connection)
     return {
         "agent_store": SqliteAgentStore(connection=connection),
         "catalog_overrides": SqliteCatalogOverrideStore(connection=connection),
@@ -198,6 +204,8 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "ops_store": SqliteOpsStore(connection=connection),
         "tool_provider_registry": SqliteToolProviderRegistry(connection=connection),
         "tool_pack_store": SqliteToolPackStore(connection=connection),  # EC-02 ToolPack 写面
+        "schedule_store": schedule_store,  # EC-03 调度写面
+        "schedule_registry": build_registry(schedule_store),
     }
 
 

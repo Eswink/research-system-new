@@ -73,7 +73,7 @@ PATCH  /library/{resource_id}                    （rename 和/或 status: ACTIV
 ```text
 GET    /projects/{id}/ops/alerts                  （派生：失败 Run ∪ 非健康端点 ∪ 离线 worker）
 GET    /projects/{id}/ops/incidents               （已登记事故 + FAILED run 候选）
-GET    /ops/schedules                             （进程内 scheduler 配置事实）
+GET    /ops/schedules                             （调度定义 + 每项运行事实；见下"调度"）
 GET    /projects/{id}/ops/data-health             （端点健康计数 + dataset 计数 + artifact 抽样校验）
 ```
 
@@ -95,6 +95,31 @@ POST   /ops/incidents/{id}/close                  （关闭并留处理结论；
   data-health 的 aggregate_available 均为 false + 原因说明。未注册项目 → 404。
 - 写面是**被消费**的：规则命中只给告警打 `muted`/`muted_by` 标记（不隐藏），
   已登记事故回链来源 run 的告警并在候选列表中去重，关闭后不再有处置动作。
+
+### 调度（PLAN-20260915-066 / GOAL-003 EC-03）
+
+```text
+GET    /ops/schedules                   （定义 + 每项运行事实；无 store → 静态回落 + management_available=false）
+POST   /ops/schedules                   （登记定义：name/job/interval_seconds/enabled/note）
+PATCH  /ops/schedules/{name}            （启停 / 改 interval）
+POST   /ops/schedules/{name}/trigger    （手动触发一次 pass）
+```
+
+- **执行体不新增**：仍是 `services/api/scheduler.py` 的进程内守护线程。定义只决定
+  `enabled`/`interval_seconds`（守护线程每轮经 `ScheduleRegistry.due` 读取，下一轮生效）；
+  新增定义只能绑定既有 `job` 词表（lease_recovery / outbox_relay / retention /
+  worker_reaper），否则 422 并点名合法值。
+- **trigger 复用同一条 pass**：`ScheduleRegistry.trigger` 调用守护线程注册的同一个函数
+  对象，并写下与定时 pass 相同的运行事实（`run_count`/`last_run_at`/`last_outcome`）。
+  pass 自身失败仍返回 200，但 `last_outcome=FAILED` + `last_error` 如实留痕。
+- **写面被读面消费**（可证伪）：`enabled=false` 后该定义不再出现在 `due()` 里，
+  `run_count` 停止增长；`next_due_at` 为 null。无执行体的作业 `executor_attached=false`。
+- 事实口径：`run_count`/`last_run_at`/`last_outcome` 是**本进程观测**（重启归零），
+  未跑过就是 null/UNKNOWN——不伪造成功。配置（name/job/interval/enabled/note）持久化在
+  ScheduleStore（SQLite 配置面，两组成同侧）。
+- 错误：未知 name → 404；名字重复/占用内置名 → 409；已停用或无执行体触发 → 409；
+  name 形状、interval 越界（1~86400 秒）、job 不在词表 → 422；未装配 store → 503
+  （读面同时回落静态事实并给出 `management_reason`）。
 
 ## Roles / Teams / Agents
 

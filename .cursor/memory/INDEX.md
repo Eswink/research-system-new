@@ -38,6 +38,7 @@
 | [MEM-20260915-038](entries/MEM-20260915-038-structural-signature-complements-pixel-gate.md) | ACTIVE | repository | 0.92 | 2027-09-16 | PLAN-20260915-063 |
 | [MEM-20260915-039](entries/MEM-20260915-039-tool-pack-install-binds-content-digest.md) | ACTIVE | repository | 0.92 | 2027-09-16 | PLAN-20260915-064 |
 | [MEM-20260915-040](entries/MEM-20260915-040-pending-must-be-visible-in-ui.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-065 |
+| [MEM-20260915-041](entries/MEM-20260915-041-scheduler-remains-the-executor.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-066 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

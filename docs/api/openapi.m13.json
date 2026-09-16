@@ -5520,10 +5520,11 @@
         "title": "RunWorkspaceSnapshotsDto",
         "type": "object"
       },
-      "ScheduleEntryDto": {
+      "ScheduleCreateDto": {
         "additionalProperties": false,
         "properties": {
           "enabled": {
+            "default": true,
             "title": "Enabled",
             "type": "boolean"
           },
@@ -5531,8 +5532,133 @@
             "title": "Interval Seconds",
             "type": "number"
           },
+          "job": {
+            "description": "作业词表项（取值域由服务端校验，未知作业 → 422 并点名合法值）；可选值见 GET /ops/schedules 的 `jobs` 字段——那是词表的权威读面。",
+            "title": "Job",
+            "type": "string"
+          },
           "name": {
             "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "job",
+          "interval_seconds"
+        ],
+        "title": "ScheduleCreateDto",
+        "type": "object"
+      },
+      "ScheduleEntryDto": {
+        "additionalProperties": false,
+        "properties": {
+          "builtin": {
+            "default": false,
+            "title": "Builtin",
+            "type": "boolean"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "executor_attached": {
+            "default": false,
+            "title": "Executor Attached",
+            "type": "boolean"
+          },
+          "interval_seconds": {
+            "title": "Interval Seconds",
+            "type": "number"
+          },
+          "job": {
+            "title": "Job",
+            "type": "string"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "last_outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Outcome"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_due_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due At"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "run_count": {
+            "default": 0,
+            "title": "Run Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "job",
+          "interval_seconds",
+          "purpose",
+          "enabled"
+        ],
+        "title": "ScheduleEntryDto",
+        "type": "object"
+      },
+      "ScheduleJobDto": {
+        "additionalProperties": false,
+        "description": "作业词表项：新增定义只能绑定它，界面据此渲染可选作业。",
+        "properties": {
+          "job": {
+            "title": "Job",
             "type": "string"
           },
           "purpose": {
@@ -5541,17 +5667,52 @@
           }
         },
         "required": [
-          "name",
-          "interval_seconds",
-          "purpose",
-          "enabled"
+          "job",
+          "purpose"
         ],
-        "title": "ScheduleEntryDto",
+        "title": "ScheduleJobDto",
+        "type": "object"
+      },
+      "ScheduleUpdateDto": {
+        "additionalProperties": false,
+        "description": "启停 / 改 interval；作业类型不可变（换作业等于换执行体绑定）。",
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "interval_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Seconds"
+          }
+        },
+        "title": "ScheduleUpdateDto",
         "type": "object"
       },
       "SchedulesViewDto": {
         "additionalProperties": false,
         "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleJobDto"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
           "management_available": {
             "default": false,
             "title": "Management Available",
@@ -5567,6 +5728,11 @@
               }
             ],
             "title": "Management Reason"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
           },
           "schedules": {
             "items": {
@@ -9069,7 +9235,7 @@
     },
     "/ops/schedules": {
       "get": {
-        "description": "进程内 scheduler 的配置事实（只读）。\n\n无用户可见调度 API：不能创建/启停/手动触发；本视图只暴露既有守护线程配置。",
+        "description": "调度定义 + 运行事实；未装配 store 时回落静态事实并说明原因。",
         "operationId": "list_ops_schedules_ops_schedules_get",
         "responses": {
           "200": {
@@ -9085,7 +9251,143 @@
         },
         "summary": "List Ops Schedules",
         "tags": [
-          "ops-view"
+          "ops-schedules"
+        ]
+      },
+      "post": {
+        "description": "登记一条定义：name 不得重复、不得占用内置名（409）；取值域非法 → 422。\n\n新增定义绑定既有 job 词表：有执行体则立刻纳入该守护线程的下一轮 pass；\n没有执行体（例如本装配不跑 outbox relay）也照实登记，读面\n`executor_attached=false` 说明它暂时不会被跑。",
+        "operationId": "create_ops_schedule_ops_schedules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleEntryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Ops Schedule",
+        "tags": [
+          "ops-schedules"
+        ]
+      }
+    },
+    "/ops/schedules/{name}": {
+      "patch": {
+        "description": "启停 / 改 interval：下一轮守护线程读定义时生效（写面被读面消费）。",
+        "operationId": "update_ops_schedule_ops_schedules__name__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleEntryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Ops Schedule",
+        "tags": [
+          "ops-schedules"
+        ]
+      }
+    },
+    "/ops/schedules/{name}/trigger": {
+      "post": {
+        "description": "立即执行一次该定义对应的 pass，并写回与定时 pass 相同的运行事实。\n\n未知 name → 404；已停用 / 该作业无执行体 → 409。pass 自身失败不改变 HTTP 状态\n（请求成功了），但 `last_outcome=FAILED` 与 `last_error` 会落在响应里。",
+        "operationId": "trigger_ops_schedule_ops_schedules__name__trigger_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleEntryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trigger Ops Schedule",
+        "tags": [
+          "ops-schedules"
         ]
       }
     },

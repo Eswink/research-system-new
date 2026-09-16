@@ -28,6 +28,7 @@ from adapters.fakes import (
     FakePolicyEvaluator,
     FakeResourceCatalog,
     FakeRetrievalIndex,
+    FakeScheduleStore,
     FakeToolPackStore,
     FakeToolProvider,
     FakeWorkerRegistry,
@@ -84,6 +85,7 @@ _FAKE_FACTORIES: dict[str, Callable[[], FakeBase]] = {
     "endpoint_store": FakeEndpointStore,
     "resource_catalog": FakeResourceCatalog,
     "tool_pack_store": FakeToolPackStore,
+    "schedule_store": FakeScheduleStore,
     "worker_registry": FakeWorkerRegistry,
     "execution_job_queue": FakeExecutionJobQueue,
 }
@@ -107,6 +109,7 @@ _PORT_PROTOCOL_NAMES = {
     "endpoint_store": "EndpointStore",
     "resource_catalog": "ResourceCatalog",
     "tool_pack_store": "ToolPackStore",
+    "schedule_store": "ScheduleStore",
     "telemetry_sink": "TelemetrySink",
     "worker_registry": "WorkerRegistry",
     "execution_job_queue": "ExecutionJobQueue",
@@ -133,6 +136,7 @@ _PORT_PROBES: dict[str, Callable[[Any], object]] = {
     "endpoint_store": lambda fake: fake.get_endpoint("missing-endpoint"),
     "resource_catalog": lambda fake: fake.snapshot(),
     "tool_pack_store": lambda fake: fake.get("missing-pack"),
+    "schedule_store": lambda fake: fake.get_definition("missing-schedule"),
     "worker_registry": lambda fake: fake.get("missing-worker"),
     "execution_job_queue": lambda fake: fake.poll("missing-task"),
 }
@@ -156,6 +160,7 @@ _PORT_PROBE_METHODS: dict[str, str] = {
     "endpoint_store": "get_endpoint",
     "resource_catalog": "snapshot",
     "tool_pack_store": "get",
+    "schedule_store": "get_definition",
     "worker_registry": "get",
     "execution_job_queue": "poll",
 }
@@ -294,6 +299,7 @@ def test_port_interface_compatibility_matrix() -> None:
         "endpoint_store",
         "resource_catalog",
         "tool_pack_store",
+        "schedule_store",
         "telemetry_sink",
         "worker_registry",
         "execution_job_queue",

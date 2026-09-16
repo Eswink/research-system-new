@@ -33,6 +33,7 @@ from adapters.fakes import (
     FakePolicyEvaluator,
     FakeResourceCatalog,
     FakeRetrievalIndex,
+    FakeScheduleStore,
     FakeTelemetrySink,
     FakeToolPackStore,
     FakeToolProvider,
@@ -55,6 +56,7 @@ from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
 from adapters.sqlite.memory_store import SqliteMemoryStore
+from adapters.sqlite.schedule_store import SqliteScheduleStore
 from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from adapters.workspace.file_backend import FileWorkspaceBackend
@@ -255,6 +257,7 @@ PORT_IMPLEMENTATIONS: dict[str, list[Factory]] = {
     "model_gateway": [FakeModelGateway],
     "tool_provider": [FakeToolProvider],
     "tool_pack_store": [FakeToolPackStore],
+    "schedule_store": [FakeScheduleStore, SqliteScheduleStore],
     "workspace_backend": [FakeWorkspaceBackend, _file_workspace_factory],
     "execution_backend": [FakeExecutionBackend],
     "artifact_store": [

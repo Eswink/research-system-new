@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI
 
@@ -28,6 +28,7 @@ from services.api.routers import (
     notifications,
     operations,
     ops_control,
+    ops_schedules,
     ops_view,
     policy,
     project_cost_forecast,
@@ -70,11 +71,23 @@ def _register_health_route(app: FastAPI, deps: ApiDeps, version: str) -> None:
         }
 
 
+def _schedule_control(deps: ApiDeps) -> Any:
+    """调度读/写面共用的 registry（EC-03）。
+
+    未装配（没有 schedule store）→ None：守护线程退化为原来的固定 interval 行为，
+    写面诚实 503——两条路径都不会"假装有调度面"。
+    """
+    return getattr(deps, "schedule_registry", None)
+
+
 def _start_lease_scheduler(deps: ApiDeps) -> LeaseRecoveryScheduler | None:
     try:
         workflow = deps.runs._deps.workflow  # type: ignore[union-attr]
         sched = LeaseRecoveryScheduler(
-            workflow, interval_seconds=30.0, telemetry=getattr(deps, "telemetry", None)
+            workflow,
+            interval_seconds=30.0,
+            telemetry=getattr(deps, "telemetry", None),
+            control=_schedule_control(deps),
         )
         sched.start()
         return sched
@@ -92,6 +105,7 @@ def _start_outbox_scheduler(deps: ApiDeps) -> "OutboxRelayScheduler | None":
             deps.events,
             interval_seconds=5.0,
             telemetry=getattr(deps, "telemetry", None),
+            control=_schedule_control(deps),
         )
         sched.start()
         return sched
@@ -103,7 +117,9 @@ def _start_retention_scheduler(deps: ApiDeps) -> "RetentionScheduler | None":
     if deps.artifacts is None:
         return None
     try:
-        sched = RetentionScheduler(deps.artifacts, interval_seconds=3600.0)
+        sched = RetentionScheduler(
+            deps.artifacts, interval_seconds=3600.0, control=_schedule_control(deps)
+        )
         sched.start()
         return sched
     except Exception:
@@ -127,6 +143,7 @@ def _start_worker_reaper(deps: ApiDeps) -> "WorkerReaperScheduler | None":
             stale_threshold_seconds=30.0,
             interval_seconds=15.0,
             telemetry=getattr(deps, "telemetry", None),
+            control=_schedule_control(deps),
         )
         sched.start()
         return sched
@@ -246,6 +263,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(library.router)
     app.include_router(ops_view.router)
     app.include_router(ops_control.router)
+    app.include_router(ops_schedules.router)
     app.include_router(budget_forecast.router)
     app.include_router(project_cost_forecast.router)
     app.include_router(policy.router)

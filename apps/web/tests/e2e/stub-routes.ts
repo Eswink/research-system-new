@@ -11,6 +11,7 @@ import { OPS_ROUTES } from "./stub-routes-ops";
 import { POLICY_ROUTES } from "./stub-routes-policy";
 import { PROJECT_ROUTES } from "./stub-routes-projects";
 import { REGISTRY_ROUTES } from "./stub-routes-registry";
+import { SCHEDULE_ROUTES } from "./stub-routes-schedules";
 import { TOOL_PACK_ROUTES } from "./stub-routes-toolpacks";
 import { WORKSPACE_ROUTES } from "./stub-routes-workspace";
 import { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
@@ -306,6 +307,8 @@ export const ROUTES: readonly StubRoute[] = [
   ...REGISTRY_ROUTES,
   // PLAN-065 EC-02：ToolPack 供应链写面（digest 重算 + 待批准扩张 + 终态吊销）。
   ...TOOL_PACK_ROUTES,
+  // PLAN-066 EC-03：调度定义写面（登记 / 启停与改间隔 / 触发写回运行事实）。
+  ...SCHEDULE_ROUTES,
   // PLAN-061 EC-06：项目注册表读写 + 删除（引用中 409；删除后列表真的变化）。
   ...PROJECT_ROUTES,
   // PLAN-046 EC-04: budget adjust + reserved-vs-consumed forecast.

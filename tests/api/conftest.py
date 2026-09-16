@@ -99,11 +99,14 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
+    from adapters.sqlite.schedule_store import SqliteScheduleStore
     from adapters.sqlite.tool_pack_store import SqliteToolPackStore
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
+    from services.api.schedule_support import build_registry
 
     connection = connect(":memory:")
     events, workflow, ledger, budget, runs, projection = _base_sqlite_parts(connection)
+    schedule_store = SqliteScheduleStore(connection=connection)
     return ApiDeps(
         endpoint_store=SqliteEndpointStore(connection=connection),
         model_store=SqliteModelStore(connection=connection),
@@ -124,6 +127,8 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         ops_store=SqliteOpsStore(connection=connection),
         tool_provider_registry=SqliteToolProviderRegistry(connection=connection),
         tool_pack_store=SqliteToolPackStore(connection=connection),
+        schedule_store=schedule_store,
+        schedule_registry=build_registry(schedule_store),
         policy_evaluator=FakePolicyEvaluator(),
         protocol_draft_service=_make_draft_service(connection),
         _connection=connection,

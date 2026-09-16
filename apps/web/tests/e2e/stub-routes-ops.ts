@@ -277,25 +277,6 @@ export const OPS_ROUTES: readonly StubRoute[] = [
   },
   {
     method: "GET",
-    pattern: /^\/ops\/schedules$/,
-    handler: () => ({
-      status: 200,
-      body: {
-        schedules: [
-          {
-            name: "lease_recovery",
-            interval_seconds: 30,
-            purpose: "recover leases",
-            enabled: true,
-          },
-        ],
-        management_available: false,
-        management_reason: "no user-visible scheduling API",
-      },
-    }),
-  },
-  {
-    method: "GET",
     pattern: /^\/projects\/[^/]+\/ops\/data-health$/,
     handler: () => ({
       status: 200,

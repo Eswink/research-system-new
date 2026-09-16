@@ -1,11 +1,13 @@
 """Ops 运维投影路由（PLAN-20260914-045 WP-B；PLAN-20260915-059 起写面接入）。
 
 读面（本模块）仍是派生投影：alerts（失败 run ∪ 降级端点 ∪ 离线 worker）、
-incidents（**已登记**事故 + 未被登记的失败 Run 候选）、schedules（进程内
-scheduler 配置事实）、data-health（端点健康计数 + dataset 目录计数 + artifact
-抽样校验）。写面在 `ops_control.py`——本模块消费它：启用中的规则给告警打
-`muted` 标记（不隐藏），未关闭的事故给其来源 run 的告警带上 `incident_id`。
-缺失依赖诚实在响应里标注，不伪装空成功。
+incidents（**已登记**事故 + 未被登记的失败 Run 候选）、data-health（端点健康计数 +
+dataset 目录计数 + artifact 抽样校验）。写面在 `ops_control.py`——本模块消费它：
+启用中的规则给告警打 `muted` 标记（不隐藏），未关闭的事故给其来源 run 的告警带上
+`incident_id`。缺失依赖诚实在响应里标注，不伪装空成功。
+
+`schedules` 已迁到 `ops_schedules.py`（GOAL-003 EC-03 起它不再是只读事实，而是
+可写定义 + 运行事实）。
 """
 
 from __future__ import annotations
@@ -19,7 +21,6 @@ from packages.domain.ops_view import (
     AlertKind,
     AlertSeverity,
     DataHealthMetric,
-    ScheduleEntry,
 )
 from services.api.catalog_merge import merged_catalog_snapshot, require_registered_project
 from services.api.composition import ApiDeps
@@ -29,8 +30,6 @@ from services.api.dto.ops_view import (
     DataHealthMetricDto,
     DataHealthViewDto,
     IncidentsViewDto,
-    ScheduleEntryDto,
-    SchedulesViewDto,
 )
 from services.api.errors import ApiError
 from services.api.ops_control_support import (
@@ -49,34 +48,6 @@ from services.api.preflight_support import build_endpoint_health
 router = APIRouter(tags=["ops-view"])
 
 _HEALTHY = "HEALTHY"
-
-# 进程内 scheduler 配置事实（与 services/api/app.py 的构造默认值一致）。
-_SCHEDULES: tuple[ScheduleEntry, ...] = (
-    ScheduleEntry(
-        name="lease_recovery",
-        interval_seconds=30.0,
-        purpose="恢复过期 lease 并推进 LOST 转换",
-        enabled=True,
-    ),
-    ScheduleEntry(
-        name="outbox_relay",
-        interval_seconds=5.0,
-        purpose="中继 transactional outbox 事件",
-        enabled=True,
-    ),
-    ScheduleEntry(
-        name="retention",
-        interval_seconds=3600.0,
-        purpose="按 retention policy 清理 artifact",
-        enabled=True,
-    ),
-    ScheduleEntry(
-        name="worker_reaper",
-        interval_seconds=15.0,
-        purpose="标记心跳过期 worker 为 LOST",
-        enabled=True,
-    ),
-)
 
 
 def _store_or_503(deps: ApiDeps) -> Any:
@@ -206,27 +177,6 @@ async def list_ops_incidents(project_id: str, request: Request) -> IncidentsView
         candidates=candidates,
         workflow_available=available,
         workflow_reason=None if available else WORKFLOW_UNAVAILABLE_REASON,
-    )
-
-
-@router.get("/ops/schedules", response_model=SchedulesViewDto)
-async def list_ops_schedules() -> SchedulesViewDto:
-    """进程内 scheduler 的配置事实（只读）。
-
-    无用户可见调度 API：不能创建/启停/手动触发；本视图只暴露既有守护线程配置。
-    """
-    return SchedulesViewDto(
-        schedules=[
-            ScheduleEntryDto(
-                name=entry.name,
-                interval_seconds=entry.interval_seconds,
-                purpose=entry.purpose,
-                enabled=entry.enabled,
-            )
-            for entry in _SCHEDULES
-        ],
-        management_available=False,
-        management_reason="scheduler 为进程内守护线程，无用户可见创建/启停/触发 API",
     )
 
 

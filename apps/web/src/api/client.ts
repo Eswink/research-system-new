@@ -48,6 +48,8 @@ import type {
   ProjectSettingsDto,
   ResourceKind,
   ResourceType,
+  ScheduleCreateDto,
+  ScheduleUpdateDto,
   ToolProviderRegisterDto,
   ToolProviderUpdateDto,
   Version,
@@ -198,6 +200,12 @@ export const api = {
     opsControlClient.assignIncident(incidentId, payload),
   closeIncident: (incidentId: string, payload: IncidentCloseDto) =>
     opsControlClient.closeIncident(incidentId, payload),
+
+  // ── 调度写面（EC-03：定义登记 / 启停与改间隔 / 手动触发）──
+  createSchedule: (payload: ScheduleCreateDto) => opsViewClient.createSchedule(payload),
+  updateSchedule: (name: string, payload: ScheduleUpdateDto) =>
+    opsViewClient.updateSchedule(name, payload),
+  triggerSchedule: (name: string) => opsViewClient.triggerSchedule(name),
 
   // ── operations ─
   runTelemetry: (runId: string) => operationsClient.telemetry(runId),

@@ -9,6 +9,8 @@ import type {
 } from "../../api/types";
 import { Chip } from "../../components/Chip";
 import type { Column } from "../../components/Table";
+import { ScheduleActions } from "../schedules/ScheduleActions";
+import { executorLabel, factSummary } from "../schedules/scheduleCopy";
 import { DeclareCandidateButton, IncidentActions } from "./IncidentActions";
 import { EnabledChip } from "./EnabledChip";
 import styles from "./OpsActions.module.css";
@@ -190,21 +192,71 @@ export function declaredIncidentColumns(
   ];
 }
 
-export function scheduleColumns(zh: boolean): Column<ScheduleEntryDto>[] {
+function scheduleNameCell(row: ScheduleEntryDto) {
+  return <span data-testid={`schedule-name-${row.name}`}>{row.name}</span>;
+}
+
+function scheduleIntervalCell(row: ScheduleEntryDto) {
+  return <span data-testid={`schedule-interval-${row.name}`}>{row.interval_seconds}</span>;
+}
+
+function scheduleFactsCell(row: ScheduleEntryDto, zh: boolean) {
+  return <span data-testid={`schedule-facts-${row.name}`}>{factSummary(row, zh)}</span>;
+}
+
+function scheduleExecutorCell(row: ScheduleEntryDto, zh: boolean) {
+  return (
+    <span data-testid={`schedule-executor-${row.name}`}>
+      <Chip tone={row.executor_attached ? "accent" : "warn"}>{executorLabel(row, zh)}</Chip>
+    </span>
+  );
+}
+
+export function scheduleColumns(
+  zh: boolean,
+  onChanged: () => void,
+): Column<ScheduleEntryDto>[] {
   return [
-    { key: "name", header: zh ? "名称" : "Name", render: (row) => row.name },
+    { key: "name", header: zh ? "名称" : "Name", render: scheduleNameCell },
+    {
+      key: "job",
+      header: zh ? "作业" : "Job",
+      width: "150px",
+      render: (row) => <span className="mono">{row.job}</span>,
+    },
     {
       key: "interval",
       header: zh ? "间隔（秒）" : "Interval (s)",
-      width: "140px",
-      render: (row) => String(row.interval_seconds),
+      width: "120px",
+      render: scheduleIntervalCell,
     },
-    { key: "purpose", header: zh ? "用途" : "Purpose", render: (row) => row.purpose },
+    {
+      key: "facts",
+      header: zh ? "运行事实" : "Facts",
+      width: "260px",
+      render: (row) => scheduleFactsCell(row, zh),
+    },
+    {
+      key: "executor",
+      header: zh ? "执行体" : "Executor",
+      width: "120px",
+      render: (row) => scheduleExecutorCell(row, zh),
+    },
     {
       key: "enabled",
       header: zh ? "启用" : "Enabled",
       width: "100px",
-      render: (row) => <EnabledChip enabled={row.enabled} />,
+      render: (row) => (
+        <span data-testid={`schedule-enabled-${row.name}`}>
+          <EnabledChip enabled={row.enabled} />
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: zh ? "操作" : "Actions",
+      width: "240px",
+      render: (row) => <ScheduleActions row={row} zh={zh} onChanged={onChanged} />,
     },
   ];
 }

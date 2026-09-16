@@ -191,10 +191,13 @@ def _run_ready_sqlite_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
     from adapters.sqlite.run_store import SqliteRunStore
+    from adapters.sqlite.schedule_store import SqliteScheduleStore
     from adapters.sqlite.tool_pack_store import SqliteToolPackStore
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
     from adapters.sqlite.worker_registry import SqliteWorkerRegistry
+    from services.api.schedule_support import build_registry
 
+    schedule_store = SqliteScheduleStore(connection=connection)
     return {
         "agent_store": SqliteAgentStore(connection=connection),
         "project_settings_store": SqliteProjectSettingsStore(connection=connection),
@@ -209,6 +212,9 @@ def _run_ready_sqlite_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "tool_provider_registry": SqliteToolProviderRegistry(connection=connection),
         # ToolPack 供应链写面（PLAN-064 / EC-02）：install / approve-update / revoke。
         "tool_pack_store": SqliteToolPackStore(connection=connection),
+        # 调度写面（PLAN-066 / EC-03）：定义 CRUD + trigger；registry 与守护线程共用。
+        "schedule_store": schedule_store,
+        "schedule_registry": build_registry(schedule_store),
         # 与生产 composition 同侧：run 行落在共享连接上，派发面（claim_next）
         # 才读得到 canonical state —— 协作式暂停的事实来源（PLAN-20260914-048）。
         "runs_store": SqliteRunStore(connection=connection),

@@ -879,17 +879,46 @@ export interface IncidentCloseDto {
   resolution: string;
 }
 
+export interface ScheduleJobDto {
+  job: string;
+  purpose: string;
+}
+
 export interface ScheduleEntryDto {
   name: string;
+  job: string;
   interval_seconds: number;
   purpose: string;
   enabled: boolean;
+  builtin: boolean;
+  note: string;
+  executor_attached: boolean;
+  run_count: number;
+  last_run_at: string | null;
+  last_outcome: string | null;
+  last_error: string | null;
+  next_due_at: string | null;
 }
 
 export interface SchedulesViewDto {
   schedules: ScheduleEntryDto[];
+  jobs: ScheduleJobDto[];
+  note: string;
   management_available: boolean;
   management_reason: string | null;
+}
+
+export interface ScheduleCreateDto {
+  name: string;
+  job: string;
+  interval_seconds: number;
+  enabled: boolean;
+  note?: string;
+}
+
+export interface ScheduleUpdateDto {
+  enabled?: boolean | null;
+  interval_seconds?: number | null;
 }
 
 export interface DataHealthMetricDto {

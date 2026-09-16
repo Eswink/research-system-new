@@ -1,10 +1,18 @@
 import { api } from "../../api/client";
+import type { SchedulesViewDto } from "../../api/types";
+import { PanelSection } from "../../components/PanelSection";
 import { Table } from "../../components/Table";
+import { EmptyState, UnavailableState } from "../../components/States";
 import { useI18n } from "../../i18n/useI18n";
 import { OpsViewPage } from "../ops-view/OpsViewPage";
 import { scheduleColumns } from "../ops-view/opsViewColumns";
+import { ScheduleCreateForm } from "./ScheduleCreateForm";
+import { schedulePageCopy as copy } from "./scheduleCopy";
 
-/** 调度（EC-03 第二批）：进程内 scheduler 配置事实；无用户可见调度 API。 */
+/**
+ * 调度（EC-03）：定义可写（登记 / 启停 / 手动触发），执行体仍是进程内守护线程。
+ * 写面的效果由随后的读面加载呈现——`运行事实` 列就是那份证据。
+ */
 export function SchedulesPage() {
   const { language } = useI18n();
   const zh = language === "zh";
@@ -13,25 +21,52 @@ export function SchedulesPage() {
       testid="schedules-page"
       title={zh ? "调度" : "Schedules"}
       kicker="OPS / SCHEDULES"
-      description={
-        zh
-          ? "进程内守护 scheduler 的配置事实（租约恢复/outbox 中继/保留清理/worker 回收）。无创建/启停/触发 API。"
-          : [
-              "Configuration facts for the in-process schedulers (lease recovery, outbox ",
-              "relay, retention, worker reaper). No create/start/stop/trigger API.",
-            ].join("")
-      }
+      description={copy.description(zh)}
       fetch={() => api.opsSchedules()}
-      isEmpty={(data) => data.schedules.length === 0}
+      isEmpty={() => false}
     >
-      {(data) => (
-        <Table
-          columns={scheduleColumns(zh)}
-          rows={data.schedules}
-          rowKey={(row) => row.name}
-          ariaLabel={zh ? "调度器" : "Schedulers"}
+      {(data, reload) => <SchedulesBody data={data} zh={zh} onChanged={reload} />}
+    </OpsViewPage>
+  );
+}
+
+function SchedulesBody({
+  data,
+  zh,
+  onChanged,
+}: {
+  data: SchedulesViewDto;
+  zh: boolean;
+  onChanged: () => void;
+}) {
+  return (
+    <>
+      {!data.management_available && (
+        <UnavailableState
+          title={copy.unavailableTitle(zh)}
+          reason={data.management_reason ?? ""}
         />
       )}
-    </OpsViewPage>
+      <PanelSection title={copy.createTitle(zh)} count={data.schedules.length}>
+        <div data-testid="schedules-panel">
+          {data.management_available && (
+            <ScheduleCreateForm zh={zh} jobs={data.jobs} onCreated={onChanged} />
+          )}
+          {data.schedules.length === 0 ? (
+            <EmptyState message={copy.empty(zh)} />
+          ) : (
+            <Table
+              columns={scheduleColumns(zh, onChanged)}
+              rows={data.schedules}
+              rowKey={(row) => row.name}
+              ariaLabel={zh ? "调度定义" : "Schedule definitions"}
+            />
+          )}
+        </div>
+      </PanelSection>
+      <p className="hint" data-testid="schedules-note">
+        {data.note}
+      </p>
+    </>
   );
 }

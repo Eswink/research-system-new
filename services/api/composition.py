@@ -37,6 +37,7 @@ from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
 from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
 from adapters.sqlite.project_store import SqliteProjectStore
 from adapters.sqlite.run_store import SqliteRunStore
+from adapters.sqlite.schedule_store import SqliteScheduleStore
 from adapters.sqlite.tool_pack_store import SqliteToolPackStore
 from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
 from adapters.sqlite.worker_registry import SqliteWorkerRegistry
@@ -65,6 +66,7 @@ from packages.application.ports.ops_store import OpsStore
 from packages.application.ports.policy_evaluator import PolicyEvaluator
 from packages.application.ports.resource_catalog import PreflightContext
 from packages.application.ports.run_projection import RunProjection
+from packages.application.ports.schedule_store import ScheduleStore
 from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
 from packages.application.ports.tool_pack_store import ToolPackStore
 from packages.application.ports.tool_provider_registry import ToolProviderRegistry
@@ -152,6 +154,10 @@ class ApiDeps:
     # PLAN-064（GOAL-003 / EC-02）：ToolPack 供应链状态（install/approve-update/revoke）。
     # 两组成同侧；缺失时 `/tool-packs` 读面给不可用原因、写面诚实 503。
     tool_pack_store: ToolPackStore | None = field(default=None, repr=False)
+    # PLAN-066（GOAL-003 / EC-03）：调度定义（可写配置）与读/写共用 registry。
+    # 两组成同侧；缺失时 `/ops/schedules` 回落静态事实、写面诚实 503。
+    schedule_store: ScheduleStore | None = field(default=None, repr=False)
+    schedule_registry: Any | None = field(default=None, repr=False)
     # PLAN-058：工作区快照只读读取器（仅 `RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT`
     # 显式配置时构建；None → 快照端点诚实 503，不猜默认路径、不冒充空树）。
     workspace_snapshots: WorkspaceSnapshotReader | None = field(default=None, repr=False)
@@ -277,7 +283,14 @@ def _sqlite_store_parts(
 
 def _sqlite_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     """dev 路径配置/注册面 store（PLAN-040 WP-A / PLAN-041 WP-A；PG canonical
-    仍是研究数据真相；store=None → 诚实 503 的边界保持）。"""
+    仍是研究数据真相；store=None → 诚实 503 的边界保持）。
+
+    PLAN-066（EC-03）：`schedule_registry` 与 `schedule_store` 一起装配——守护线程
+    与 HTTP 写面必须共用同一个实例，否则 `trigger` 找不到执行体。
+    """
+    from services.api.schedule_support import build_registry
+
+    schedule_store = SqliteScheduleStore(connection=connection)
     return {
         "agent_store": SqliteAgentStore(connection=connection),
         "catalog_overrides": SqliteCatalogOverrideStore(connection=connection),
@@ -291,6 +304,8 @@ def _sqlite_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "tool_provider_registry": SqliteToolProviderRegistry(connection=connection),
         "tool_pack_store": SqliteToolPackStore(connection=connection),
         "worker_registry": SqliteWorkerRegistry(connection=connection),
+        "schedule_store": schedule_store,
+        "schedule_registry": build_registry(schedule_store),
     }
 
 

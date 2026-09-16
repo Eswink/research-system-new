@@ -1,7 +1,7 @@
 """Ops 运维投影 API 测试（PLAN-20260914-045 WP-B；PLAN-20260915-059 更新）。
 
-alerts/incidents/schedules/data-health 四端点：真实派生、能力缺口诚实标注、
-未知项目 404、缺失依赖诚实降级。
+alerts/incidents/data-health 三端点：真实派生、能力缺口诚实标注、未知项目 404、
+缺失依赖诚实降级（`schedules` 自 PLAN-066 / EC-03 起是可管理面，见 ops_schedules）。
 
 **PLAN-20260915-059（EC-04）更新了两条既有断言**，因为产品行为按 EC 要求改变，
 不是为了让门禁变绿：alerts 的 `rules_available` 由 False（"无规则 CRUD"）变为
@@ -63,15 +63,23 @@ def test_incidents_lists_failed_run_candidates_separately_from_registered(
     assert payload["workflow_reason"] is None
 
 
-def test_schedules_reports_process_schedulers_readonly(client: TestClient) -> None:
+def test_schedules_reports_definitions_with_management_available(client: TestClient) -> None:
+    """PLAN-066（GOAL-003 / EC-03）：`/ops/schedules` 不再是只读事实。
+
+    产品行为按 EC 要求改变（可写定义 + 运行事实），断言随新行为改：
+    `management_available=True`（store 已装配）、四个内置定义仍在、`builtin=True`。
+    深度行为（写面被读面消费、trigger 与定时 pass 同函数）在
+    `test_ops_schedules_api.py`。
+    """
     response = client.get("/ops/schedules")
     assert response.status_code == 200, response.text
     payload = response.json()
     names = {item["name"] for item in payload["schedules"]}
     assert {"lease_recovery", "outbox_relay", "retention", "worker_reaper"} <= names
     assert all(item["interval_seconds"] > 0 for item in payload["schedules"])
-    assert payload["management_available"] is False
-    assert payload["management_reason"]
+    assert payload["management_available"] is True
+    assert payload["management_reason"] is None
+    assert all(item["builtin"] is True for item in payload["schedules"])
 
 
 def test_data_health_reports_endpoint_counts_and_locks_aggregate(client: TestClient) -> None:

@@ -16,6 +16,7 @@ const LIVE_SUITES = [
   "workspace-snapshots",
   "ops-write",
   "registry-write",
+  "schedules-write",
   "tool-pack-write",
 ];
 

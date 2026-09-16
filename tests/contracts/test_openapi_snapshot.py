@@ -155,6 +155,25 @@ def test_openapi_contains_tool_pack_write_methods() -> None:
     assert "409" in approve, approve
 
 
+def test_openapi_contains_ops_schedule_write_methods() -> None:
+    """EC-03 验证项：ops 调度必须暴露定义写面 + 手动触发，且写明诚实边界。"""
+    schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))
+    paths = schema["paths"]
+    expected = {
+        "/ops/schedules": {"get", "post"},
+        "/ops/schedules/{name}": {"patch"},
+        "/ops/schedules/{name}/trigger": {"post"},
+    }
+    for path, methods in expected.items():
+        assert path in paths, path
+        assert methods <= set(paths[path]), (path, sorted(paths[path]))
+    create = cast(str, paths["/ops/schedules"]["post"]["description"])
+    assert "409" in create and "422" in create, create
+    trigger = cast(str, paths["/ops/schedules/{name}/trigger"]["post"]["description"])
+    assert "404" in trigger and "409" in trigger, trigger
+    assert "last_outcome" in trigger, trigger
+
+
 def test_openapi_contains_projects_and_governance_paths() -> None:
     """其余治理面路径（与上面分函数以守 50 行/函数上限）。"""
     schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))

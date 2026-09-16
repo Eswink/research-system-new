@@ -87,8 +87,10 @@ export const GAPS = {
     "POST /ops/incidents/{id}/assign 指派、POST /ops/incidents/{id}/close 关闭（写结论）；" +
     "关闭后不可再处置（409）；失败 Run 仍只作候选，不自动登记",
   schedules:
-    "进程内 scheduler 配置事实已接入（GET /ops/schedules）；" +
-    "无用户可见创建/启停/触发 API",
+    "调度定义可写（GET/POST /ops/schedules、PATCH /ops/schedules/{name}、" +
+    "POST /ops/schedules/{name}/trigger）：执行体仍是既有进程内守护线程，" +
+    "定义只决定启停与间隔（下一轮生效），trigger 复用同一条 pass 并写回同一份运行事实；" +
+    "缺：不能新增执行路径（只能绑定既有 job 词表）、无删除/归档、无 cron 表达式与日历视图",
   integrations:
     "Tool Provider 目录与注册治理已接入（GET /tool-providers 目录 + 三态健康；" +
     "GET/POST /tool-provider-registrations、PATCH、approve/revoke/health-check）；" +
@@ -161,7 +163,6 @@ const SUPPORT: Readonly<Record<string, PageSupport>> = {
   "ops/schedules": {
     level: "partial",
     reason: GAPS.schedules,
-    disabledOperations: ["create", "toggle", "trigger"],
   },
   "ops/integrations": {
     level: "partial",

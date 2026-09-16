@@ -255,9 +255,15 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 
 ### `#/ops/schedules` — 调度
 - 设计：`screens/OpsScreens.jsx` `SchedulesScreen`。等级：PARTIAL。
-- API：`GET /ops/schedules`（进程内 4 个守护 scheduler 的配置事实：interval/
-  purpose/enabled）。
-- 缺口（登记）：无用户可见创建/启停/触发 API。
+- API：`GET /ops/schedules`（调度定义 + 每项运行事实：job/interval/enabled/note/
+  executor_attached/run_count/last_run_at/last_outcome/next_due_at + 作业词表 `jobs`）；
+  `POST /ops/schedules`（登记定义）、`PATCH /ops/schedules/{name}`（启停 / 改间隔）、
+  `POST /ops/schedules/{name}/trigger`（手动触发一次 pass）。
+- 口径（EC-03）：执行体仍是既有进程内守护线程——定义只决定启停与间隔（下一轮生效），
+  trigger 调用与定时 pass **相同的函数**并把运行事实写回读面（`运行事实` 列即证据）；
+  没有执行体的作业如实标注且禁用触发；未跑过的定义显示"未运行 · UNKNOWN"（不伪造成功）。
+- 缺口（登记）：不能新增执行路径（只能绑定既有 job 词表，无自定义 pass）、
+  无删除/归档定义、无 cron 表达式与日历视图；`POST`/`PATCH` 需 `Idempotency-Key`。
 
 ### `#/ops/integrations` — 集成
 - 设计：`screens/OpsScreens.jsx` `IntegrationsScreen`。等级：PARTIAL。
@@ -356,7 +362,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G4 | 账户/身份/Billing/平台 API Keys | settings 四分区 | 锁定+说明（M18/M19 deferred） |
 | G5 | ~~预算调整契约~~ | govern/budget | **已交付**（PLAN-046：interventions budget_adjust 走 BudgetLedger 的 release+reserve；replace_agent 语义变更仍 501；预测只覆盖已预留额度） |
 | G6 | pause/resume 真实执行效果 | run/timeline 操作 | **已交付**（PLAN-048：PAUSED = 派发面停止认领该 run 的任务（claim_next 过滤，已持租约不撤销），本进程执行器在 phase 边界观测后零任务执行返回 PAUSED；resume 恢复派发，仅持有暂停上下文时继续剩余任务，否则 `continuation=NONE`。无抢占式中断；跨进程暂停上下文不持久化） |
-| G7 | ~~alerts/incidents/schedules/data-health~~ | ops 四页 | **二页已交付写面**（PLAN-059：ops/alerts 的静音规则 CRUD + ops/incidents 的 declare/assign/close 走真实 `OpsStore`，写面被读面消费——规则只打 `muted/muted_by` 标记不隐藏告警、登记事故回链来源 run 的告警、已登记 run 移出候选；PLAN-045 的只读投影为底）；schedules 用户调度与 data-health 聚合报告仍禁用（见各页缺口）；prompts/datasets/notebooks 见 G7b，reports 见 G7a，integrations 见 G15 |
+| G7 | ~~alerts/incidents/schedules/data-health~~ | ops 四页 | **三页已交付写面**（PLAN-059：ops/alerts 的静音规则 CRUD + ops/incidents 的 declare/assign/close 走真实 `OpsStore`，写面被读面消费——规则只打 `muted/muted_by` 标记不隐藏告警、登记事故回链来源 run 的告警、已登记 run 移出候选；PLAN-066：ops/schedules 的定义登记/启停/触发，执行体仍是既有守护线程、trigger 复用同一条 pass、停用后 `run_count` 冻结；PLAN-045 的只读投影为底）；data-health 聚合报告仍禁用（见该页缺口）；prompts/datasets/notebooks 见 G7b，reports 见 G7a，integrations 见 G15 |
 | G7a | ~~reports 只读视图~~ | insights/reports | **已交付**（PLAN-043：GET /runs/{id}/deliverable 读 M12 持久化交付物；生成/编辑/PDF/发布仍禁用） |
 | G7b | ~~prompts/datasets/notebooks 库目录~~ | library 三页 | **已交付**（PLAN-044：GET/POST /projects/{id}/library + PATCH /library/{id}，kind 区分；版本树/上传/单元格执行仍禁用） |
 | G8 | 文件浏览/预览；~~下载~~ | run/workspace | **已交付**：预览/下载（WP-C）；制品内容 Diff（PLAN-047：GET /artifacts/{a}/diff/{b} 行级 diff，二进制/超限如实标注）；**工作区快照文件树与文件级 Diff（PLAN-058：GET /workspace-snapshots/{digest}/files 与 /{left}/diff/{right}，按 digest 只读、只比元数据；需配置 RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT）**；剩余受限 = 无 run→工作区绑定记录面（只能回答"记录过哪些快照"） |

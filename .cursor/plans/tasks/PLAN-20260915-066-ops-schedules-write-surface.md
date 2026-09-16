@@ -2,7 +2,7 @@
 id: PLAN-20260915-066
 slug: ops-schedules-write-surface
 title: ops 调度用户可见写面（EC-03）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-16
 updated_at: 2026-09-16
 parent_goal: GOAL-20260915-003
@@ -76,33 +76,126 @@ POST   /ops/schedules/{name}/trigger    手动触发一次 pass（立即执行�
 
 ## 验收条件
 
-- [ ] AC-01：`GET /ops/schedules` 在既有静态事实之外，给出每项的 `last_run_at` /
+- [x] AC-01：`GET /ops/schedules` 在既有静态事实之外，给出每项的 `last_run_at` /
   `run_count` / `last_outcome`（无执行体时如实为 null/UNKNOWN，不伪造 0 计数）。
-- [ ] AC-02：`POST /ops/schedules` 服务端校验：job 不在词表 → 422 点名；interval 越界
+  ——`test_read_surface_reports_executor_attachment_honestly`：本装配只跑 lease 守护线程 ⇒
+  `worker_reaper.executor_attached=false` 且 `last_outcome=null`、`next_due_at=null`；
+  `lease_recovery=true`。响应另带 `jobs`（作业词表 + 用途）与 `note`（口径）。
+- [x] AC-02：`POST /ops/schedules` 服务端校验：job 不在词表 → 422 点名；interval 越界
   → 422；name 重复 → 409；平台内置名保留 → 409。
-- [ ] AC-03：`PATCH` 启停生效**且被读面消费**：置 `enabled=false` 后读面为 false 且
+  ——`test_create_validates_vocabulary_interval_and_names`：422 文本含合法词表项；0.5s → 422；
+  `Bad-Name` → 422；占用内置名 → 409；重复登记 → 409。**词表校验在 `ScheduleRegistry.create`
+  的 `_coerce_job`（域边界），不在 Pydantic**——DTO 层不得 import domain（架构门禁
+  `api-dto-purity`，首轮 m0 因此判红，见状态历史）。
+- [x] AC-03：`PATCH` 启停生效**且被读面消费**：置 `enabled=false` 后读面为 false 且
   `run_count` 不再增长（用例里用可控 pass 计数证明）；改 interval 后读面 interval 变。
-- [ ] AC-04：`POST .../trigger` 立即执行同一 pass 函数并更新运行事实（`run_count` +1、
+  ——API 侧 `test_patch_toggle_is_consumed_by_the_executor_read_surface`（`due()` 不再授予、
+  trigger 409、启用+改间隔后读面变 120 且 `due()` 重新授予）；
+  执行体侧 `tests/application/ops/test_periodic_daemon.py::test_disable_is_consumed_by_the_daemon_loop`
+  （真实线程：停用后 `run_count` 冻结 0.5s，重新启用后继续增长）。
+- [x] AC-04：`POST .../trigger` 立即执行同一 pass 函数并更新运行事实（`run_count` +1、
   `last_run_at` 前进）；终态/未知 name → 404。
-- [ ] AC-05：console `ops/schedules` 的三个 `disabledOperations`（create/toggle/trigger）
+  ——`test_trigger_runs_registered_pass_and_records_facts`：失败 pass → 200 但
+  `last_outcome=FAILED`+`last_error`；换成计数 pass 后 `calls == ["pass"]`（同一函数）、
+  `run_count=2`、`last_outcome=OK`；未知 → 404；有定义无执行体 → 409。
+- [x] AC-05：console `ops/schedules` 的三个 `disabledOperations`（create/toggle/trigger）
   消失，页面上有可操作控件，且被读面消费（stub + live 各一条链）。
-- [ ] AC-06：OpenAPI 写方法 + 契约断言；文档与 `pageSupport` 收敛（仍缺的子集写清）。
-- [ ] AC-07：全量门禁（stub/live e2e、web 单测、eslint、tsc、根 eslint、全量 pytest、m0 23）
+  ——`pageSupport` 的 `ops/schedules` 项已无 `disabledOperations`；stub
+  `schedules-write.spec.ts` 5 passed（登记后事实为 UNKNOWN、触发后 1 次·OK、停用后 OFF
+  且触发禁用、无执行体禁用、409 落在面板内）；live `live-schedules-write.spec.ts` 2 passed
+  （登记 → 触发 → 停用 → 409 → 复原触发到 2 次；词表外作业/越界间隔 422）。
+- [x] AC-06：OpenAPI 写方法 + 契约断言；文档与 `pageSupport` 收敛（仍缺的子集写清）。
+  ——`docs/api/openapi.m13.json` 重生成（相对基线 **+303 / -2**）；
+  `test_openapi_contains_ops_schedule_write_methods`
+  断言 `GET/POST /ops/schedules`、`PATCH /ops/schedules/{name}`、
+  `POST /ops/schedules/{name}/trigger` 与描述里的 404/409/last_outcome；
+  `CONTROL_PLANE_API.md` 新增「调度（EC-03）」段、`CONSOLE_PAGE_MAP.md` 的页面段与 G7 行、
+  `pageSupport.GAPS.schedules` 写明"仍缺：不能新增执行路径 / 无删除归档 / 无 cron 与日历视图"。
+- [x] AC-07：全量门禁（stub/live e2e、web 单测、eslint、tsc、根 eslint、全量 pytest、m0 23）
   + 设计基线重生成并目检。
-- [ ] AC-08：RECHECK-066 + MEM-041 + GOAL 记账；EC-03 由 PENDING → PASS（若 AC-01~07 全绿）。
+  ——stub e2e **77 passed** / live e2e **35 passed** / web 单测 **76 passed** /
+  `pnpm lint`+`tsc` 通过 / 根 `eslint .` 0 error（1 条既有 soft warning）/
+  契约 **365 passed, 56 skipped** / `tests/postgres` **70 passed** /
+  m0 **PASS: profile=m0; 23 deterministic checks**；
+  结构签名判红（`ops-schedules` +90 节点）→ `UPDATE_OUTLINES=1` 重生成 1 行；
+  win32/linux 像素基线各重生成一张并目检；`verify_linux_outlines.sh` → 33/33 跨平台一致。
+  全量 m0 一共判红两轮（都修在代码里、没动断言）：① 架构门禁 DTO import domain；
+  ② 守护线程启动抢跑（`next_wait_seconds` 的 0.1s 候选）打断 PG 用例的显式事务。
+- [x] AC-08：RECHECK-066 + MEM-041 + GOAL 记账；EC-03 在 AC-01~07 全绿后由未满足转为 PASS。
+  ——RECHECK-20260915-066（PASS_WITH_WARNINGS）+ MEM-20260915-041 +
+  GOAL-20260915-003 的 EC 表/迭代日志/状态历史。
 
 ## 实施清单
 
-- [ ] WP-A 端口与 domain（ScheduleDefinition + job 词表 + 校验）
-- [ ] WP-B 执行体接线（守护线程从定义读 enabled/interval；trigger 复用 pass 函数）
-- [ ] WP-C 路由/DTO/装配（SQLite + PG 两组成 + run_fixtures）
-- [ ] WP-D API 用例 + 契约/OpenAPI
-- [ ] WP-E console 写面 + stub/live e2e + 文案收敛
-- [ ] WP-F 设计基线重生成目检 + 全量门禁 + 记录
+- [x] WP-A 端口与 domain（ScheduleDefinition + job 词表 + 校验）
+- [x] WP-B 执行体接线（守护线程从定义读 enabled/interval；trigger 复用 pass 函数）
+- [x] WP-C 路由/DTO/装配（SQLite + PG 两组成 + run_fixtures）
+- [x] WP-D API 用例 + 契约/OpenAPI
+- [x] WP-E console 写面 + stub/live e2e + 文案收敛
+- [x] WP-F 设计基线重生成目检 + 全量门禁 + 记录
 
 ## 证据
 
-（WP 完成后回填：命令 + 真实输出）
+**WP-A/B（域与执行体）**
+
+```text
+$ python -m pytest tests/application/ops/ -q
+20 passed in 2.17s
+# test_schedule_registry.py（11）：内置补齐幂等 / 创建取值域与保留名 / 更新与未知 /
+#   删除（内置不可删）/ due reserve 与跳过停用 / record 事实 / trigger 共用 pass 与
+#   失败留痕 / trigger 拒绝未知-停用-无执行体 / 停用被读面消费 /
+#   **等待下界不知晓未预约定义**（回归钉子）/ 停用定义不影响等待
+# test_periodic_daemon.py（9）：节奏随定义（29s 内不得再跑、31s 后必须跑）/
+#   停用被守护线程循环消费 / 失败 pass 记账且线程存活 /
+#   attach 后 trigger 跑同一函数 / 无 control 退化 / 记账失败不杀线程 /
+#   读面恢复后重新开跑 / **启动不抢跑**（0.2s 时 pass 必须仍为 0）
+```
+
+**WP-C/D（API 与契约）**
+
+```text
+$ python -m pytest tests/api/test_ops_schedules_api.py tests/api/test_ops_view_api.py -q
+9 passed
+$ python -m pytest tests/contracts -q
+365 passed, 56 skipped
+$ python -m pytest tests/architecture tests/api tests/application/ops -q   # 架构门禁修复后
+447 passed
+$ python -m pytest tests/postgres -q                     # 启动抢跑回归修复后
+70 passed in 26.08s
+$ python -m pytest tests/postgres/test_m13_pg_run_e2e.py -q   # 对照：干净 HEAD 6/6 绿
+# 修复前：本工作树 6/6 红（OutOfOrderTransactionNesting）；修复后 6/6 绿
+$ lint-imports --config .importlinter.api --no-cache
+Contracts: 2 kept, 0 broken.
+$ python -B tools/gen_openapi.py   # docs/api/openapi.m13.json（相对基线 +303 / -2）
+$ git status --short docs/api/openapi.m13.json   -> M
+```
+
+**WP-F（设计基线）**
+
+```text
+$ npx playwright test design-fidelity.spec.ts        # 未设 UPDATE_OUTLINES：结构签名判红
+   drifted=["ops-schedules"]，节点 170 → 260（新 form/panel/table 7 列/note）
+$ UPDATE_OUTLINES=1 npx playwright test design-fidelity.spec.ts
+  design-outlines.json diff = 1 行
+$ npx playwright test design-outline-guard.spec.ts    # 6 passed（反证仍会咬）
+$ bash scratch/gen_linux_baseline_route.sh ops-schedules   # linux 基线重生成
+$ bash scratch/verify_linux_outlines.sh
+  host routes=33 linux routes=33 drifted=[] -> PASS: 33 条结构签名跨平台一致（win32 == linux）
+```
+
+像素判据同一次改动仍绿（实测 **15093 px = 1.64%** < 2% 阈值，`scratch/cycle4-design/`）——
+结构判据补的正是这块盲区（见 MEM-20260915-038）。
+
+**WP-F（全量门禁）**
+
+```text
+$ npx playwright test                     -> 77 passed (4.2m)
+$ npx playwright test --config playwrightLive.config.ts -> 35 passed (46.4s)
+$ npm run test                            -> 76 passed
+$ npm run lint (apps/web) / npm run typecheck -> 0 error / 通过
+$ npm run lint (root eslint .)            -> 0 error（1 条既有 soft warning：live-api-workflow 403 行）
+$ sh scratch/run-m0-cycle12.sh            -> PASS: profile=m0; 23 deterministic checks
+```
 
 ## 状态历史
 
@@ -110,10 +203,79 @@ POST   /ops/schedules/{name}/trigger    手动触发一次 pass（立即执行�
   EC-03。derive 时的关键判断：**写面不能变成第二套调度器**——执行体是既有守护线程，
   本轮只把"定义"变成可写、可读、可触发的对象，并让 `trigger` 与定时 pass 走同一条函数；
   验收证据也因此必须落在"读面事实变化"上（AC-03/04），而不是响应体自述。
+- 2026-09-16 WP-A 完成：domain `ScheduleDefinition`/`ScheduleJob` 词表/`ScheduleRuntime` +
+  `ScheduleStore` 端口（SQLite + Fake 两实现，进 contract registry + 矩阵）+ `ScheduleRegistry`
+  （due 的 reserve 语义、record 事实、trigger 共用 pass）。首版 `_validate` 的名字校验比
+  域正则弱（`"ab"` 会穿过写面直达 dataclass 抛 `ValueError` ⇒ 500）——改为
+  `validate_schedule_name()` 由域与 registry **共用同一实现**，控制面因此稳定返回 422。
+- 2026-09-16 WP-B 完成：`PeriodicDaemon` 基类把"每轮问 `due(job)`、跑完 `record()`"
+  变成四个守护线程的共同循环；`start()` 同时把**同一条** `_execute_pass` 注册进 registry
+  （trigger 走它）。`RetentionScheduler`/`WorkerReaperScheduler` 由各自维护 `start/stop/_run`
+  改为继承基类，`WorkerReaperScheduler` 的 `worker.reaper_pass` span 保留。
+  **计划外加固**：live 首次运行时观察到一次 `record()` 抛 `KeyError`（定义在两次读之间
+  消失/存储读瞬时缺失，两次复跑未复现）让守护线程退出——记账失败被改成 fail-open
+  （`_record`/`_due_names`/`_next_wait` 各自 try/except 退化），并补 3 条反证用例
+  （记账失败仍继续跑、读面故障后能恢复、正常时按名记账）。自愈线程比它写的事实更重要。
+- 2026-09-16 WP-C/D 完成：`/ops/schedules` 读面从 `ops_view.py` 的静态常量迁到
+  `ops_schedules.py`（定义 + 运行事实 + 词表 + note），新增三条写方法；`ApiDeps` 增加
+  `schedule_store`/`schedule_registry`，SQLite 与 PG 两组成、`run_fixtures`、`conftest`
+  同侧装配；lifespan 把**同一个** registry 作为 `control` 交给四个守护线程（两个实例
+  会让 trigger 找不到执行体）。未装配 store 时读面回落静态事实（`management_available=false`
+  + 原因）、写面 503——诚实边界用例覆盖。
+- 2026-09-16 WP-E/F 完成：console 页面改成"面板 = 登记表单 + 7 列表格 + 口径脚注"，
+  行内启停/触发按钮在没有执行体或已停用时禁用并给出原因；`OpsViewPage` 的 `children`
+  增加 `reload` 参数（写操作成功后重载读面，让"写面被读面消费"在 UI 上也成立）。
+  stub 5 + live 2 用例；`pageSupport`/`CONSOLE_PAGE_MAP`/`CONTROL_PLANE_API` 收敛。
+  结构判据判红（+90 节点）而像素判据同次绿（1.64% < 2%）⇒ 重生成两条基线并目检。
+- 2026-09-16 **架构门禁判红并修复**（本 cycle 最有价值的一次失败）：首轮 m0 的  `python/tests` 红在 `tests/architecture/python/test_services_api_boundaries.py` 两项——
+  `services/api/dto/ops_schedules.py` 直接 `from packages.domain.schedules import ScheduleJob`，
+  破了 `api-dto-purity`（"DTO must not import packages/adapters"）。修法不是放宽断言，而是
+  把取值域校验挪到域边界：DTO 的 `job` 改成 `str`（并在字段 description 里指出词表权威读面
+  是 `GET /ops/schedules` 的 `jobs`），`ScheduleRegistry.create` 增加 `_coerce_job()`
+  把字符串收敛成枚举、未知作业 → `InvalidInputError` 点名 `valid: lease_recovery, ...`
+  ⇒ 控制面仍是 422（用例断言的"422 文本含 worker_reaper"照旧成立）。验收：
+  `lint-imports --config .importlinter.api` → **2 kept, 0 broken**；
+  `tests/architecture + tests/api + tests/application/ops` **447 passed**；
+  OpenAPI 重生成（`ScheduleCreateDto.job` 由 enum 变 string + description，
+  `docs/api/openapi.m13.json` 现为 **+303 / -2**，两条删除是迁走的旧只读路由与 `ops-view` tag）。
+  **教训**：定向套件（contracts/api/ops）不会覆盖 `tests/architecture`，而新写的 DTO 很容易
+  为了类型好看去 import domain——m0 的全量 pytest 才是这条门禁的执行点。
+- 2026-09-16 **守护线程启动抢跑回归修复**（全量 m0 的第二个真实拦截）：`python/tests` 在
+  `tests/postgres/test_m13_pg_run_e2e.py` 判红，随后 m0 卡在 71% 达 8 分钟
+  （`pg_stat_activity`：一个后端 `idle in transaction` 持有 `outbox_events` 锁，另一个
+  在 `TRUNCATE` 上等 relation 锁）。隔离复跑确认是**本 cycle 引入的确定性回归**：在干净
+  工作树 HEAD `82e3e13` 上该用例 **6/6 通过**，带本改动的工作树上 **6/6 失败**
+  （`OutOfOrderTransactionNesting`）。根因在 `ScheduleRegistry.next_wait_seconds`：
+  对"尚未预约的定义"返回候选 **0.1s** ⇒ `min(fallback, 0.1)` = 0.1 ⇒ **四个守护线程在
+  `create_app` 后约 100ms 同时执行首个 pass**（原本首轮要等自身 interval：relay 5s /
+  reaper 15s / lease 30s），于是在请求线程使用共享 psycopg 连接时插入并发写，把请求的
+  显式事务打断。修法：未预约的定义**不参与候选**（等待下界恢复为守护线程自身 interval，
+  与"定义下一轮生效"口径一致），补三条钉子用例
+  （registry 两条 + 守护线程一条：0.2s 时 pass 必须仍是 0）。
+  复验：`tests/postgres` **70 passed**、m13 用例 **6/6 绿**、`tests/application/ops`
+  **20 passed**（17 + 3）。**未改动 m13 用例一个字**。
 
 ## 影响报告
 
-（完成后回填）
+- **Domain/API/schema**：新增 `packages/domain/schedules.py`（词表 + 定义 + 运行事实）与
+  `ScheduleStore` 端口（contract registry 已登记，矩阵用例含 `schedule_store`）；
+  `GET /ops/schedules` 响应结构变更（**不兼容**：新增 `job/builtin/note/executor_attached/
+  run_count/last_run_at/last_outcome/last_error/next_due_at/jobs/note`，`management_available`
+  在装配 store 后变 `true`）+ 三条新写方法；`ScheduleCreateDto.job` 由 enum 变 **string**
+  （取值域校验在服务端 `_coerce_job`，DTO 层保持不 import domain）；`docs/api/openapi.m13.json`
+  重生成（+303 / -2）。
+- **安全/凭据**：无凭据面变化。写面只接受既有 job 词表（不新增执行路径/不执行任意代码），
+  name/interval/note 都有取值域校验；trigger 与守护线程共用 pass，不引入新的执行入口。
+  策略面未改（调度不经过 policy 求值——它等价于"进程内既有守护线程的启停"，无外部副作用面）。
+- **兼容性/迁移风险**：`ops_view.py` 不再暴露 `/ops/schedules`（迁到 `ops_schedules.py`），
+  任何按模块名 patch 的测试需改；`SchedulesViewDto`/`ScheduleEntryDto` 从 `dto/ops_view.py`
+  移到 `dto/ops_schedules.py`。SQLite 新表 `schedules`（`CREATE TABLE IF NOT EXISTS`，
+  无迁移脚本需求；既有库首启自动建表并补齐 4 条内置定义）。
+- **上游版本影响**：无新依赖、无版本 pin 变化（不引入 APScheduler/Celery——"不新造调度器"
+  是 EC-03 的口径）。
+- **下一项任务**：EC-04（worker SIGTERM 有界退出）或 EC-05（替身 harness 校验
+  Idempotency-Key），以及 EC-02 剩余子句（provider 健康复核的 schema digest 漂移比对 +
+  provider 凭据绑定）与 `policy.yaml` 的 `tool_pack.*` 产品决策（RECHECK-065 W-1）。
 
 ## 已知风险
 
