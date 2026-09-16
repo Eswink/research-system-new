@@ -195,6 +195,7 @@ $ npm run test                            -> 76 passed
 $ npm run lint (apps/web) / npm run typecheck -> 0 error / 通过
 $ npm run lint (root eslint .)            -> 0 error（1 条既有 soft warning：live-api-workflow 403 行）
 $ sh scratch/run-m0-cycle12.sh            -> PASS: profile=m0; 23 deterministic checks
+# 收口提交 de58a31 → CI run 35087267045：六个 job 全 success（无重跑）
 ```
 
 ## 状态历史
