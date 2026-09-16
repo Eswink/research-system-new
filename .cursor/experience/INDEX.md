@@ -12,6 +12,7 @@
 
 | ID | Status | Confidence | Scope | Review After | Summary |
 | --- | --- | --- | --- | --- | --- |
+| [EXP-20260916-001](entries/EXP-20260916-001.md) | ACTIVE | 0.5 | repository | 2026-12-16 | 后台 Playwright run 被 TaskStop 后 `npx playwright test` 与 `pnpm run dev` 子进程存活、继续向同一重定向日志写入：两个 run 的 ok 与 x/- 混成交错日志（表头仅 1 个但状态自相矛盾），不可作门禁证据。判死看进程命令行 + `grep -c "Running .* tests using"`；按 PID `taskkill //T //F` 清理（勿按镜像名杀 node.exe，ZCode MCP server 也是 node）；每次运行用唯一日志名、勿 TaskStop 正在写日志的 run |
 | [EXP-20260830-002](entries/EXP-20260830-002.md) | ACTIVE | 0.6 | repository | 2026-11-28 | distillation_gate 失败统计与文案强于实现（原始行数计失败、总命中数当「≥2 会话」、未过滤空载荷哨兵、未与本会话签名求交）：收到 stop 提示先用只读聚合复核，只对「跨 ≥2 个 observation 文件 + 有稳定解法」的类生成 LEARN；8/30 第二会话再命中（提示 7 类跨会话、实测 0 类）；另 FRONTMATTER_SIGNATURE_RE 只捕获首个 20-hex，多签名条目漏匹配 |
 | [EXP-20260830-001](entries/EXP-20260830-001.md) | ACTIVE | 0.6 | repository | 2026-11-28 | Grep `path` / Glob `target_directory` 传工作区根绝对路径确定性失败（`rg: : IO error ... os error 3`，根被相对化为空路径），跨 4 会话文件 14 次：全仓检索省略该参数，限定范围只传根之下子路径；静默零结果易误判「无匹配」，且不属 CURSOR_ERROR 瞬时族、重试无效 |
 | [EXP-20260828-002](entries/EXP-20260828-002.md) | ACTIVE | 0.5 | repository | 2026-11-26 | live relay E2E 必须用环境变量（RESEARCHOS_LIVE_E2E_ENDPOINT/KEY）构造真实 LLMEndpoint + 真实模型名，不能复用假 URL fixture（relay.example.com 致 SSL EOF 误报）；请求模型名参数化；503 model_not_found = 模型名与契约不符 |

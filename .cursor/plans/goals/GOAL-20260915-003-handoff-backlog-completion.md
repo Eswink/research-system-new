@@ -88,13 +88,15 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-065-tool-pack-console-surface.md
   - .cursor/plans/tasks/PLAN-20260915-066-ops-schedules-write-surface.md
   - .cursor/plans/tasks/PLAN-20260915-067-worker-bounded-sigterm-exit.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-067-worker-bounded-sigterm-exit.md
+  - .cursor/plans/tasks/PLAN-20260915-068-stub-harness-idempotency-contract.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-068-stub-harness-idempotency-contract.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
   - MEM-20260915-040-pending-must-be-visible-in-ui
   - MEM-20260915-041-scheduler-remains-the-executor
   - MEM-20260915-042-sigterm-cannot-break-a-blocked-read
+  - MEM-20260915-043-stub-must-enforce-the-contract-it-stands-in-for
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -112,7 +114,7 @@ memory_entries:
 | EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | **PARTIAL**（2026-09-16 cycle 2：后端写面已交付——三条文档化端点 + SQLite store + digest 重算自证 + 扩张待批准 + capability 取值域 + 目录消费，OpenAPI/契约/文档/pageSupport 全部收敛；2026-09-16 cycle 3：**console 操作面已交付**——`ops/integrations` 面板（安装表单 / 待批准横幅含 diff 明细与候选 digest / 批准 / 吊销理由必填）、stub 6 + live 2 各一条链、两条设计基线重生成；**仍未交付**：健康复核记录 schema digest 并可比对漂移（provider 侧，需先定探测面），以及 provider 凭据绑定；另发现平台默认策略未放行 `tool_pack.*`（default DENY，见 RECHECK-065 W-1）——三项都记在「下一轮输入」） |
 | EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PASS（2026-09-16 cycle 4：`ops/schedules` 的 `disabledOperations` 相应项消失、`management_available=true`；**执行体仍是既有守护线程**——`trigger` 调用的就是定时 pass 的**同一个函数对象**（用例以计数器证明），`enabled=false` 被守护线程**自己的读面**（`due(job)`）消费（真实线程 + 可控时钟：停用后 `run_count` 冻结）。诚实的边界都在用例里：无 store → 静态兜底 + 写操作 503；未挂执行体 → `executor_attached=false` 且 trigger 禁用；从未跑过 → `last_outcome=null`（前端显示 UNKNOWN）；pass 失败 → 200 + `FAILED` + `last_error`。范围注记：`run_count` 等事实是**进程内观测**（重启归零，不是配置）；调度写面**不经过 policy**（等价于启停既有守护线程），若要审批需新增 `schedule.*` 能力——见 RECHECK-066 W-6） |
 | EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PASS（2026-09-16 cycle 5：8 处出站调用收口到 `WorkerClient._call`，停机后超过 `RESEARCHOS_WORKER_DRAIN_SECONDS`（默认 5s，取值域 0.1~60）即放弃在途调用并抛 `WorkerDrainAbort`，进程按有序停机退出 0。**实测对照**（同脚本同参数，Linux 容器 + 黑洞网关）：修复前 **29.64s**、修复后 **1.12s**（drain=1）。两层反证：进程内"未停机 ⇒ 同一条阻塞读照常跑满"、进程外"drain 调大 ⇒ 进程不早退"。范围注记：只覆盖**网关读**的停机上界——在途**执行**的中断仍走既有协作式 cancel 通道，其停止时间没有新增上界（RECHECK-067 W-1）；被放弃的请求可能已到达服务端也可能没有，属 at-least-once 允许的模糊点，已写进 runbook（W-2）） |
-| EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PENDING |
+| EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PASS（2026-09-16 cycle 6：替身在 handler 之前守门，与真中间件四条语义对齐——缺头/空值 → 422 `Idempotency-Key Required`；同 key 不同摘要 → 422 `Idempotency-Key Reused`；同 key 同摘要 → 重放首次响应；分析类 POST 豁免；响应体与真件 `_problem()` 同形（`instance` 为空串）。**反证做在产品客户端上**：把 `apps/web/src/api/http.ts` 的头发送改成别的头名后，`schedules-write` + `project-delete` **7 failed / 2 passed**，失败面板里呈现的正是真件的 422 detail；还原后 `git diff` 为空。跨语言守卫把 stub 词表与 `middleware.py` 的 `_MUTATING_METHODS`/`_ANALYSIS_ACTIONS` 钉成集合相等（并断言豁免清单非空）——替身单方面放宽会在 Python 套件里红。范围注记：两处**刻意不一致**（替身摘要只做判等、重放不带 ETag）、守门顺序的真实副作用（未知路径 + mutating + 无 key → 422 而非 404 ⇒ 不进 `assertNoUnmatched`）、`PUT` 无真实路由可测——见 RECHECK-068 W-1/W-2/W-3/W-4） |
 | EC-06 | 每 cycle m0/CI 全绿 + 收口复检 + 安全扫描处置 | CI run 六 job 结论 + RECHECK | PENDING（cycle 1 一度 BLOCKED：账户计费阻断 → 阻断解除后 run **35059391199 六个 job 全 success**，cycle 1 的 CI 结论已成立；后续每 cycle 继续按此标准记） |
 
 **不变量（沿用 GOAL-001/002 与 AGENTS.md）**：不伪装实现（不注册没人消费的写面、
@@ -135,9 +137,12 @@ RECHECK-065 见 `latest_recheck`；提交 `ce28e05` → run **35071216707** 六 
 RECHECK-066 见 `latest_recheck`；提交见 cycle 4 迭代日志行的 CI 结论）。
 **cycle 5 已闭环**（PLAN-20260915-067 worker SIGTERM 有界退出 = EC-04 PASS，
 RECHECK-067 见 `latest_recheck`；修复前/后实测 29.64s → 1.12s）。
-**cycle 6 待开轮**：EC 表首个未满足项是 EC-05（替身 harness 校验 Idempotency-Key）；
-EC-02 仍有未交付子句（provider 侧健康复核 schema digest 漂移 + 凭据绑定）与
-RECHECK-065 W-1（`policy.yaml` 未放行 `tool_pack.*` 的产品决策），已在「下一轮输入」备选。
+**cycle 6 已闭环**（PLAN-20260915-068 替身 harness 校验 Idempotency-Key = EC-05 PASS，
+RECHECK-068 见 `latest_recheck`；反证 = 去掉客户端发送头后 mutating 用例 7 failed；
+全量 stub 套件 81 passed、m0 23 项绿；提交见 cycle 6 迭代日志行的 CI 结论）。
+**EC 表至此全项落地**（EC-01/03/04/05 PASS、EC-02 PARTIAL），下一轮起做 EC-02 的剩余子句
+（provider 侧健康复核 schema digest 漂移 + 凭据绑定）与 RECHECK-065 W-1
+（`policy.yaml` 是否放行 `tool_pack.*` 的产品决策），两者都已在「下一轮输入」登记。
 BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
 driver=session-goal，owner=root-agent。
 
@@ -413,3 +418,28 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   复验 `tests/postgres` 70 passed、m13 6/6 绿、`tests/application/ops` 20 passed，
   **未改动 m13 用例**。两个现象（W-1 的 live `record()` KeyError 与 W-9 的抢跑）**可能同源**，
   但 KeyError 未被直接复现，故不宣称已解决。
+- 2026-09-16 cycle 6 开轮（EC-05）：derive = PLAN-20260915-068（替身 harness 校验
+  Idempotency-Key）。关键判断：**反证对象必须是产品客户端**——只写一条"替身会回 422"的用例
+  等于替身自己测自己；真正的风险是客户端漏发头而 stub 放行，所以必须有"去掉发送 → 套件红"
+  的实验，否则这条 EC 只是装饰。替身与真件是"同一契约的两个实现"，词表漂移用**跨语言守卫**
+  （Python 侧 import 真件的 `_MUTATING_METHODS`/`_ANALYSIS_ACTIONS` 做集合相等）钉住，
+  因为替身单方面放宽不会让任何既有用例变红。
+- 2026-09-16 cycle 6 交付（EC-05 PASS）：`stub-idempotency.ts` 实现四条语义（缺头 422 /
+  同 key 不同摘要 422 Reused / 同 key 同摘要重放 / 分析类 POST 豁免），`stub-api.ts` 在
+  `match()` 之前守门、`handler()` 之后记账；4 条用例全绿，全量 stub 套件 **81 passed (4.5m)**。
+  **客户端反证**：临时改 `http.ts` 的头发送后 `schedules-write` + `project-delete`
+  **7 failed / 2 passed**（失败面板里就是真件的 422 detail），还原后工作树零残留。
+  两处**刻意不一致**（摘要只判等、重放不带 ETag）写进模块 docstring 与 RECHECK-068 告警，
+  不假装与真件逐字相同。**门禁拦截两次**：根 `eslint .` 对 `apps/web/tests/**` 判红
+  10 个 error（`max-params` 两处、内联 import type、`dot-notation` 四处、两处冗余判断）——
+  `apps/web` 自己的 lint 只覆盖 `src`，所以本仓"web 门绿"不等于"根 TS 门绿"；
+  修完后 `tsc -p apps/web/tsconfig.json` 又暴露两处（元组推断出 `string | undefined`、
+  `body: string | undefined` 撞 `exactOptionalPropertyTypes`）。两处都**改代码**，
+  未动任何 eslint 配置、未加 disable 注释；修完 m0
+  **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3595 passed / 10 skipped**）。
+  **一次证据采集失误（已纠正并如实记账）**：首次后台跑 stub 套件时把它 `TaskStop` 了，
+  遗留的 `npx playwright test` 子进程与第二次运行共用同一日志文件，产出一份 ok 与 x/-
+  混杂、不可判读的日志 ⇒ 按 PID 清理后用唯一文件名重跑（单表头、81 passed）；
+  教训记为 EXP-20260916-001。Mimosa deep scan（seal
+  `sha256:d15c0a99c4c08a2237fc9b53e544eebe45b19d899a6714faa193125c26d32998`）
+  36 findings / 182 packages，与 cycle 4/5 逐项一致，本轮四个改动文件零命中。

@@ -11,6 +11,7 @@
 
 import type { Page, Route } from "@playwright/test";
 
+import { beginMutation, recordMutation, resetIdempotencyStub } from "./stub-idempotency";
 import { ROUTES, type StubRoute } from "./stub-routes";
 
 export { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
@@ -35,6 +36,7 @@ function fulfill(route: Route, status: number, body: unknown): void {
 
 export async function stubApi(page: Page): Promise<void> {
   unmatchedRequests.length = 0;
+  resetIdempotencyStub();
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     if (!url.pathname.startsWith("/api/")) {
@@ -43,6 +45,18 @@ export async function stubApi(page: Page): Promise<void> {
     }
     const path = url.pathname.replace(/^\/api/, "");
     const method = route.request().method();
+    const post = route.request().postData();
+    // EC-05：mutating 契约在 handler 之前守门（缺头 → 422，与真中间件同语义）
+    const gate = beginMutation({
+      method,
+      path,
+      headers: route.request().headers(),
+      bodyText: post ?? "",
+    });
+    if (gate.reject !== undefined) {
+      fulfill(route, gate.reject.status, gate.reject.body);
+      return;
+    }
     const handler = match(path, method);
     if (handler === null) {
       unmatchedRequests.push(`${method} ${url.pathname}`);
@@ -55,7 +69,6 @@ export async function stubApi(page: Page): Promise<void> {
       });
       return;
     }
-    const post = route.request().postData();
     let body: unknown;
     try {
       body = post ? JSON.parse(post) : undefined;
@@ -63,6 +76,9 @@ export async function stubApi(page: Page): Promise<void> {
       body = undefined;
     }
     const result = handler(url, body);
+    if (gate.ticket !== undefined) {
+      recordMutation(gate.ticket, result);
+    }
     fulfill(route, result.status, result.body);
   });
 }

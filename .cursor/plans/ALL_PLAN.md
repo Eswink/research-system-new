@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-068](tasks/PLAN-20260915-068-stub-harness-idempotency-contract.md) | DONE |
 | [x] | [PLAN-20260915-067](tasks/PLAN-20260915-067-worker-bounded-sigterm-exit.md) | DONE |
 | [x] | [PLAN-20260915-066](tasks/PLAN-20260915-066-ops-schedules-write-surface.md) | DONE |
 | [x] | [PLAN-20260915-065](tasks/PLAN-20260915-065-tool-pack-console-surface.md) | DONE |
