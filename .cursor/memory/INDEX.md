@@ -49,6 +49,7 @@
 | [MEM-20260915-049](entries/MEM-20260915-049-presence-check-is-not-a-resolve.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260915-074 |
 | [MEM-20260915-050](entries/MEM-20260915-050-a-promise-with-two-entry-points.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260915-075 |
 | [MEM-20260915-051](entries/MEM-20260915-051-enumerate-the-boundary-then-gate-it.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260915-076 |
+| [MEM-20260915-052](entries/MEM-20260915-052-the-transaction-was-the-connection-not-the-operation.md) | ACTIVE | repository | 0.93 | 2027-09-17 | PLAN-20260915-077 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

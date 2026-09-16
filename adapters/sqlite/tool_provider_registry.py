@@ -142,36 +142,37 @@ class SqliteToolProviderRegistry(SqliteAdapterBase):
         payload = _encode(registration)
         created = _iso(registration.registered_at) or _iso(registration.updated_at)
         updated = _iso(registration.updated_at) or created
-        self._conn.execute(
-            """
-            INSERT INTO tool_provider_registrations
-                (provider_id, state, pinned_revision, registration_json, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(provider_id) DO UPDATE SET
-                state = excluded.state,
-                pinned_revision = excluded.pinned_revision,
-                registration_json = excluded.registration_json,
-                updated_at = excluded.updated_at
-            """,
-            (
-                registration.id,
-                registration.state,
-                registration.pinned_revision,
-                json.dumps(payload, ensure_ascii=False, sort_keys=True),
-                str(created),
-                str(updated),
-            ),
-        )
-        self._conn.commit()
+        with self._conn:
+            self._conn.execute(
+                """
+                INSERT INTO tool_provider_registrations
+                    (provider_id, state, pinned_revision, registration_json, created_at,
+                     updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(provider_id) DO UPDATE SET
+                    state = excluded.state,
+                    pinned_revision = excluded.pinned_revision,
+                    registration_json = excluded.registration_json,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    registration.id,
+                    registration.state,
+                    registration.pinned_revision,
+                    json.dumps(payload, ensure_ascii=False, sort_keys=True),
+                    str(created),
+                    str(updated),
+                ),
+            )
         self._record("save_registration", registration.id, result=registration.state)
 
     def delete_registration(self, provider_id: str) -> None:
         self._ensure_open()
-        cursor = self._conn.execute(
-            "DELETE FROM tool_provider_registrations WHERE provider_id = ?", (provider_id,)
-        )
-        if cursor.rowcount == 0:
-            self._record("delete_registration", provider_id, error="KeyError")
-            raise KeyError(provider_id)
-        self._conn.commit()
+        with self._conn:
+            cursor = self._conn.execute(
+                "DELETE FROM tool_provider_registrations WHERE provider_id = ?", (provider_id,)
+            )
+            if cursor.rowcount == 0:
+                self._record("delete_registration", provider_id, error="KeyError")
+                raise KeyError(provider_id)
         self._record("delete_registration", provider_id)

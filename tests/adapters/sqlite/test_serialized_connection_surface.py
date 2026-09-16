@@ -123,30 +123,33 @@ def test_context_manager_commits_on_success_and_rolls_back_on_error(tmp_path: Pa
         connection.close()
 
 
-def test_context_manager_exit_takes_the_connection_lock(tmp_path: Path) -> None:
-    """AC-03（确定性）：提交/回滚发生在**锁内**——持锁时退出会阻塞。"""
+def test_context_manager_holds_the_lock_for_the_whole_block(tmp_path: Path) -> None:
+    """AC-03（确定性，PLAN-20260915-077 收紧）：**整块**持锁——块开着时语句进不来。
+
+    PLAN-076 的写法是"另线程持锁、主线程调 `__exit__`"（只测退出那一刻在锁内）。
+    PLAN-077 把边界从"语句"提到"操作"后，那种调用方式**不再是合法协议用法**
+    （`__exit__` 必须与同线程的 `__enter__` 配对），因此改成更强的一条：
+    块开着时，另一个线程的 `execute` 拿不到结果；块退出后立即完成。
+    """
     connection = _connection(tmp_path, "ctx_lock")
-    entered = threading.Event()
+    in_block = threading.Event()
     release = threading.Event()
 
-    def hold_the_lock() -> None:
-        with connection._lock:  # noqa: SLF001 - 本用例测的就是这把锁
-            entered.set()
+    def open_a_block() -> None:
+        with connection:
+            in_block.set()
             assert release.wait(10)
 
-    def exit_the_context() -> bool:
-        return connection.__exit__(None, None, None)
-
-    holder = threading.Thread(target=hold_the_lock)
+    holder = threading.Thread(target=open_a_block)
     holder.start()
     try:
-        assert entered.wait(10)
+        assert in_block.wait(10)
         with ThreadPoolExecutor(max_workers=1) as pool:
-            pending = pool.submit(exit_the_context)
+            pending = pool.submit(lambda: connection.execute("SELECT 1").fetchone())
             with pytest.raises(FutureTimeout):
-                pending.result(timeout=0.5)  # 锁在别人手里 ⇒ 提交进不去
+                pending.result(timeout=0.5)  # 块还开着 ⇒ 语句进不去
             release.set()
-            assert pending.result(timeout=10) is False
+            assert pending.result(timeout=10) is not None
     finally:
         release.set()
         holder.join(timeout=10)

@@ -100,7 +100,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-074-provider-credential-binding.md
   - .cursor/plans/tasks/PLAN-20260915-075-self-made-cursor-serialization.md
   - .cursor/plans/tasks/PLAN-20260915-076-connection-boundary-enumeration.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-076-connection-boundary-enumeration.md
+  - .cursor/plans/tasks/PLAN-20260915-077-operation-scoped-transaction-boundary.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-077-operation-scoped-transaction-boundary.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -116,6 +117,7 @@ memory_entries:
   - MEM-20260915-049-presence-check-is-not-a-resolve
   - MEM-20260915-050-a-promise-with-two-entry-points
   - MEM-20260915-051-enumerate-the-boundary-then-gate-it
+  - MEM-20260915-052-the-transaction-was-the-connection-not-the-operation
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -701,3 +703,19 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   第 3 轮 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3654 passed /
   10 skipped**；`tests/adapters/sqlite` + 文件规模用例合跑 **994 passed**）。
   既有 3 个用例的 import 路径未改且全过。
+- 2026-09-17 cycle 14 开轮（操作级事务边界）：derive = PLAN-20260915-077。三个探针把
+  "事务边界属于连接、不属于操作"这件事量出来：① `isolation_level=''`、DML 开隐式事务、
+  SELECT 不隐式提交；② **`with conn:` 不持锁**（块内第一个写之后，另线程语句 0.000s 执行完），
+  且另线程自己的块退出就把这个**半个操作提交**了（第三个连接当场看到）；
+  ③ 更糟的是回滚：A 的操作整段跑完、B 的块抛错 ⇒ 外部连接看到 **两行全无**（含 A 已"成功返回"的写）
+  ——这是**数据丢失**级的确定性反证，而根因是共享连接上只有一个隐式事务。
+- 2026-09-17 cycle 14 交付：① `with conn:` 从"语句边界"升级为"**操作边界**"——
+  `__enter__` 取可重入锁、`__exit__` 提交/回滚后 `finally` 释放，块内语句与块边界
+  同属一个线程独占区间；② 四条**真实写路径**的裸 `commit()` 改成事务块
+  （门禁首轮抓出：`project_store.delete_project`、`project_settings_store.delete`、
+  `tool_provider_registry.save_registration/delete_registration`，另有 PLAN 里已列的三处）；
+  ③ 新用例 **8 passed**（块持锁 / 原子性对外可见（块内 0 行 → 块退出 2 行）/
+  探针 3 原样重放 **`[]` → `['a1']`** / 探针 2 原样重放 / 提交失败也要释放锁 /
+  嵌套可重入 / 异常不吞 / **AST 结构门禁**：非 `with` 块内的 `.commit()` == 白名单）。
+  定向：`tests/adapters/sqlite` **122 passed**；`tests/adapters/sqlite+api+contracts`
+  **937 passed / 2 skipped**；mypy **871 files clean**；ruff/format 干净。

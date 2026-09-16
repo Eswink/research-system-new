@@ -104,13 +104,13 @@ class SqliteToolPackStore(SqliteAdapterBase):
         if self._row(record.pack_id) is not None:
             self._record("install", record.pack_id, error="InvalidInputError")
             raise InvalidInputError(f"tool pack already installed: {record.pack_id}")
-        self._conn.execute(
-            "INSERT INTO tool_packs"
-            " (pack_id, state, manifest_json, pending_json, revoked_reason,"
-            " installed_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            values,
-        )
-        self._conn.commit()
+        with self._conn:
+            self._conn.execute(
+                "INSERT INTO tool_packs"
+                " (pack_id, state, manifest_json, pending_json, revoked_reason,"
+                " installed_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                values,
+            )
         self._record("install", record.pack_id, result="stored")
 
     def replace(self, record: ToolPackRecord) -> None:
@@ -119,12 +119,12 @@ class SqliteToolPackStore(SqliteAdapterBase):
         if self._row(record.pack_id) is None:
             self._record("replace", record.pack_id, error="InvalidInputError")
             raise InvalidInputError(f"tool pack not installed: {record.pack_id}")
-        self._conn.execute(
-            "UPDATE tool_packs SET state = ?, manifest_json = ?, pending_json = ?,"
-            " revoked_reason = ?, installed_at = ?, updated_at = ? WHERE pack_id = ?",
-            (*values[1:], values[0]),
-        )
-        self._conn.commit()
+        with self._conn:
+            self._conn.execute(
+                "UPDATE tool_packs SET state = ?, manifest_json = ?, pending_json = ?,"
+                " revoked_reason = ?, installed_at = ?, updated_at = ? WHERE pack_id = ?",
+                (*values[1:], values[0]),
+            )
         self._record("replace", record.pack_id, result="stored")
 
     def revoke(self, pack_id: str, reason: str) -> None:
@@ -132,12 +132,12 @@ class SqliteToolPackStore(SqliteAdapterBase):
         if self._row(pack_id) is None:
             self._record("revoke", pack_id, error="InvalidInputError")
             raise InvalidInputError(f"tool pack not installed: {pack_id}")
-        self._conn.execute(
-            "UPDATE tool_packs SET state = ?, revoked_reason = ?, pending_json = NULL,"
-            " updated_at = ? WHERE pack_id = ?",
-            (ToolPackState.REVOKED.value, reason, Timestamp.now().value.isoformat(), pack_id),
-        )
-        self._conn.commit()
+        with self._conn:
+            self._conn.execute(
+                "UPDATE tool_packs SET state = ?, revoked_reason = ?, pending_json = NULL,"
+                " updated_at = ? WHERE pack_id = ?",
+                (ToolPackState.REVOKED.value, reason, Timestamp.now().value.isoformat(), pack_id),
+            )
         self._record("revoke", pack_id, result="revoked")
 
     def get(self, pack_id: str) -> ToolPackRecord | None:

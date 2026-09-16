@@ -85,27 +85,27 @@ class SqliteScheduleStore(SqliteAdapterBase):
     def save_definition(self, definition: ScheduleDefinition) -> None:
         """插入或替换（PATCH 语义，幂等）；同一行始终是这条定义的完整事实。"""
         self._ensure_open()
-        self._conn.execute(
-            "INSERT INTO schedules (name, job, interval_seconds, enabled, builtin, note)"
-            " VALUES (?, ?, ?, ?, ?, ?)"
-            " ON CONFLICT(name) DO UPDATE SET job = excluded.job,"
-            " interval_seconds = excluded.interval_seconds, enabled = excluded.enabled,"
-            " builtin = excluded.builtin, note = excluded.note,"
-            " updated_at = datetime('now')",
-            (
-                definition.name,
-                definition.job.value,
-                definition.interval_seconds,
-                int(definition.enabled),
-                int(definition.builtin),
-                definition.note,
-            ),
-        )
-        self._conn.commit()
+        with self._conn:
+            self._conn.execute(
+                "INSERT INTO schedules (name, job, interval_seconds, enabled, builtin, note)"
+                " VALUES (?, ?, ?, ?, ?, ?)"
+                " ON CONFLICT(name) DO UPDATE SET job = excluded.job,"
+                " interval_seconds = excluded.interval_seconds, enabled = excluded.enabled,"
+                " builtin = excluded.builtin, note = excluded.note,"
+                " updated_at = datetime('now')",
+                (
+                    definition.name,
+                    definition.job.value,
+                    definition.interval_seconds,
+                    int(definition.enabled),
+                    int(definition.builtin),
+                    definition.note,
+                ),
+            )
         self._record("save_definition", definition.name, result="stored")
 
     def delete_definition(self, name: str) -> None:
         self._ensure_open()
-        self._conn.execute("DELETE FROM schedules WHERE name = ?", (name,))
-        self._conn.commit()
+        with self._conn:
+            self._conn.execute("DELETE FROM schedules WHERE name = ?", (name,))
         self._record("delete_definition", name, result="deleted")

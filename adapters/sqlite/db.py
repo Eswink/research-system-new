@@ -180,9 +180,13 @@ class SerializedConnection(sqlite3.Connection):
     实现说明：语句执行面用**别名赋值**暴露，转发经 `getattr(super(), ...)` 走父类代理
     ——语句文本由调用方构造，本类不拼装、不解析、不缓存任何 SQL。
 
-    范围注记：锁与取尽保证的是**单条语句**的读写自洽，不把一个请求里的多条语句
-    变成原子事务。`conn.cursor()` 自建游标同样在锁内执行、锁内取尽
-    （`SerializedCursor`），因此这条保证对**两个入口**都成立。
+    范围注记：锁与取尽保证的是**单条语句**的读写自洽；多条语句的原子性由
+    `with conn:` 提供——它**持锁整块**（PLAN-20260915-077），块内的语句与块边界
+    同属一个线程独占区间，别的线程插不进来、也无法中途提交/回滚这个操作。
+    `conn.cursor()` 自建游标同样在锁内执行、锁内取尽（`SerializedCursor`），
+    因此语句级保证对**两个入口**都成立。
+
+    **块内不要等待别的线程使用同一连接**（会死锁）：持锁整块的代价是临界区变长。
 
     **边界是枚举出来的**（PLAN-20260915-076）：本类只覆写"语句执行面 + 事务边界"
     的那些入口（`execute`/`executemany`/`executescript`/`cursor`/`commit`/`rollback`/
@@ -234,7 +238,18 @@ class SerializedConnection(sqlite3.Connection):
         self._under_lock("close", (), {})
 
     def _enter_context(self) -> SerializedConnection:
-        """`with conn:` 的进入：语义与真连接一致（返回自身），不需要取锁。"""
+        """`with conn:` 的进入：**取锁整块**（PLAN-20260915-077）。
+
+        取锁（不是只取退出那一刻）：块内所有语句由同一线程持有这把可重入锁，
+        别的线程在块期间**完全插不进来**——既不能执行语句，也不能在块中途
+        提交/回滚。事务边界因此属于**操作**，而不是属于**连接**。
+
+        实测（探针 2/3）：不取锁时，块内第一个写之后别的线程的语句 0.000s 就跑了，
+        它自己的块退出就把半个操作**提交**掉；更糟的是它抛错时的回滚会连
+        **别的线程已经完成的操作**一起抹掉（外部连接两行全看不到）。共享连接上
+        只有一个隐式事务，谁先 commit/rollback 谁决定别人的命运。
+        """
+        self._lock.acquire()
         return self
 
     def _exit_context(
@@ -243,16 +258,19 @@ class SerializedConnection(sqlite3.Connection):
         exc: BaseException | None,
         traceback: TracebackType | None,
     ) -> Literal[False]:
-        """`with conn:` 的退出：成功提交、异常回滚——**都要在锁内**。
+        """`with conn:` 的退出：成功提交、异常回滚，然后**释放块锁**。
 
-        实测（PLAN-20260915-076 探针 1）：CPython 的上下文管理器在 C 层直接
-        提交/回滚，**不经过**本类覆写的 `commit`/`rollback`——不收口的话，
-        事务边界会绕过那把锁。返回值恒为 False：不吞异常（与真连接一致）。
+        提交/回滚在锁内（本线程已持有，可重入）；释放放在 `finally`：
+        提交失败也必须把锁还回去，否则整条连接会永久卡死。
+        返回值恒为 False：不吞异常（与真连接一致）。
         """
-        if exc_type is None:
-            self.commit()
-        else:
-            self.rollback()
+        try:
+            if exc_type is None:
+                self.commit()
+            else:
+                self.rollback()
+        finally:
+            self._lock.release()
         return False
 
     def __setattr__(self, name: str, value: Any) -> None:

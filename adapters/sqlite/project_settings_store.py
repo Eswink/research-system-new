@@ -93,8 +93,8 @@ class SqliteProjectSettingsStore(SqliteAdapterBase):
     def delete(self, project_id: str) -> None:
         """删除该项目的设置行（幂等：无行时静默返回，见 Port 说明）。"""
         self._ensure_open()
-        cursor = self._conn.execute(
-            "DELETE FROM project_settings WHERE project_id = ?", (project_id,)
-        )
-        self._conn.commit()
+        with self._conn:
+            cursor = self._conn.execute(
+                "DELETE FROM project_settings WHERE project_id = ?", (project_id,)
+            )
         self._record("delete", project_id, result=f"rows={cursor.rowcount}")

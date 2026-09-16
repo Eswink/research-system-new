@@ -78,18 +78,18 @@ class SqliteEvalReportStore(SqliteAdapterBase):
     def put(self, report: StoredEvalReport) -> None:
         self._ensure_open()
         index = report.index
-        self._connection.execute(
-            "INSERT INTO eval_reports ("
-            "report_digest, body, comparison_digest, dataset_id, dataset_version, "
-            "dataset_digest, gate_config_id, gate_config_version, gate_config_digest, "
-            "scorer_versions, system_version, rubric_digest, case_ids, evaluator_identities, "
-            "verdict, pass_count, fail_count, infra_error_count, reviewer_failure_count, "
-            "usage_ref, cost_ref, run_id, recorded_at"
-            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-            "ON CONFLICT(report_digest) DO NOTHING",
-            _insert_values(report),
-        )
-        self._connection.commit()
+        with self._connection:
+            self._connection.execute(
+                "INSERT INTO eval_reports ("
+                "report_digest, body, comparison_digest, dataset_id, dataset_version, "
+                "dataset_digest, gate_config_id, gate_config_version, gate_config_digest, "
+                "scorer_versions, system_version, rubric_digest, case_ids, evaluator_identities, "
+                "verdict, pass_count, fail_count, infra_error_count, reviewer_failure_count, "
+                "usage_ref, cost_ref, run_id, recorded_at"
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(report_digest) DO NOTHING",
+                _insert_values(report),
+            )
         self._record("put", index.report_digest)
 
     def get(self, report_digest: str) -> StoredEvalReport | None:
