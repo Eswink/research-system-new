@@ -39,7 +39,12 @@ class FakeToolPackStore(FakeBase):
         if record is None:
             self._record("revoke", pack_id, error="InvalidInputError")
             raise InvalidInputError(f"tool pack not installed: {pack_id}")
-        revoked = replace(record, state=ToolPackState.REVOKED, revoked_reason=reason)
+        revoked = replace(
+            record,
+            state=ToolPackState.REVOKED,
+            revoked_reason=reason,
+            pending_manifest=None,
+        )
         self._records[pack_id] = revoked
         self._record("revoke", pack_id, result="revoked")
 

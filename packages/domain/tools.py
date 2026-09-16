@@ -8,6 +8,7 @@ AgentSession 启动后 Tool Set 冻结；ToolPack 需 immutable revision + diges
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from packages.domain.core import Digest, Timestamp, Version
@@ -205,6 +206,117 @@ class ToolPackManifest:
     def verify_content_digest(self) -> bool:
         """manifest.digest 与内容重算一致（digest 篡改检测）。"""
         return self.digest == toolpack_content_digest(self)
+
+
+def manifest_document(manifest: ToolPackManifest) -> dict[str, object]:
+    """manifest 的可序列化文档（内容 + digest + signature）。
+
+    内容部分复用 `_manifest_content_dict`（digest 的计算口径），因此
+    「文档 → manifest → 重算内容 digest」的往返不会因新增字段而漂移：
+    文档里多出来的只有 digest/signature 本身，而它们不参与内容 digest。
+    """
+    document = _manifest_content_dict(manifest)
+    document["digest"] = str(manifest.digest)
+    document["signature"] = manifest.signature
+    return document
+
+
+def _required_str(raw: Mapping[str, object], key: str, where: str) -> str:
+    value = raw.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{where}.{key} must be a non-empty string")
+    return value
+
+
+def _str_list(raw: Mapping[str, object], key: str, where: str) -> list[str]:
+    value = raw.get(key)
+    if value is None:
+        return []
+    if not isinstance(value, (list, tuple)):
+        raise ValueError(f"{where}.{key} must be a list of strings")
+    items: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or not item:
+            raise ValueError(f"{where}.{key} must contain non-empty strings")
+        items.append(item)
+    return items
+
+
+def _object_list(raw: Mapping[str, object], key: str, where: str) -> list[Mapping[str, object]]:
+    value = raw.get(key)
+    if value is None:
+        return []
+    if not isinstance(value, (list, tuple)):
+        raise ValueError(f"{where}.{key} must be a list of objects")
+    items: list[Mapping[str, object]] = []
+    for item in value:
+        if not isinstance(item, Mapping):
+            raise ValueError(f"{where}.{key} must contain objects")
+        items.append(item)
+    return items
+
+
+def _tools_from_document(document: Mapping[str, object]) -> list[ToolSpec]:
+    return [
+        ToolSpec(
+            id=_required_str(item, "id", "tools[]"),
+            name=_required_str(item, "name", "tools[]"),
+            effect_class=EffectClass(_required_str(item, "effect_class", "tools[]")),
+            provider_kind=ProviderType(_required_str(item, "provider_kind", "tools[]")),
+            capabilities=_str_list(item, "capabilities", "tools[]"),
+            description=str(item.get("description") or ""),
+        )
+        for item in _object_list(document, "tools", "manifest")
+    ]
+
+
+def _skills_from_document(document: Mapping[str, object]) -> list[SkillSpec]:
+    return [
+        SkillSpec(
+            id=_required_str(item, "id", "skills[]"),
+            version=Version(_required_str(item, "version", "skills[]")),
+            capabilities=_str_list(item, "capabilities", "skills[]"),
+            description=str(item.get("description") or ""),
+            status=SkillStatus(str(item["status"])) if item.get("status") else SkillStatus.ACTIVE,
+            digest=Digest.parse(str(item["digest"])) if item.get("digest") else None,
+        )
+        for item in _object_list(document, "skills", "manifest")
+    ]
+
+
+def _credentials_from_document(document: Mapping[str, object]) -> list[CredentialRequirement]:
+    return [
+        CredentialRequirement(
+            name=_required_str(item, "name", "credentials[]"),
+            scope=CredentialScope(str(item["scope"])) if item.get("scope") else None,
+            required=bool(item.get("required", True)),
+        )
+        for item in _object_list(document, "credentials", "manifest")
+    ]
+
+
+def manifest_from_document(document: Mapping[str, object]) -> ToolPackManifest:
+    """把文档还原成 ToolPackManifest；形状或枚举非法一律 ValueError（由调用方映射为 422）。
+
+    与 `manifest_document` 构成往返：`manifest_from_document(manifest_document(m)) == m`
+    （域对象为 frozen dataclass，可逐字段比较）。
+    """
+    raw_signature = document.get("signature")
+    signature = raw_signature if isinstance(raw_signature, str) else None
+    return ToolPackManifest(
+        id=_required_str(document, "id", "manifest"),
+        version=Version(_required_str(document, "version", "manifest")),
+        source=_required_str(document, "source", "manifest"),
+        resolved_revision=_required_str(document, "resolved_revision", "manifest"),
+        digest=Digest.parse(_required_str(document, "digest", "manifest")),
+        license=_required_str(document, "license", "manifest"),
+        tools=_tools_from_document(document),
+        skills=_skills_from_document(document),
+        requested_capabilities=_str_list(document, "requested_capabilities", "manifest"),
+        network_domains=_str_list(document, "network_domains", "manifest"),
+        credentials=_credentials_from_document(document),
+        signature=signature,
+    )
 
 
 @dataclass(frozen=True, slots=True)

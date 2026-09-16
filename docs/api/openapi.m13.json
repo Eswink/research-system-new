@@ -5773,6 +5773,287 @@
         "title": "TelemetryTaskCountsDto",
         "type": "object"
       },
+      "ToolPackDto": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "catalog_digest_active": {
+            "default": false,
+            "description": "该 pack 的 digest 是否已进入目录（供 preflight 供应链检查消费）",
+            "title": "Catalog Digest Active",
+            "type": "boolean"
+          },
+          "credential_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Credential Names",
+            "type": "array"
+          },
+          "digest": {
+            "description": "当前生效版本的 manifest digest（pin 与内容自洽）",
+            "title": "Digest",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "installed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installed At"
+          },
+          "license": {
+            "title": "License",
+            "type": "string"
+          },
+          "network_domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Network Domains",
+            "type": "array"
+          },
+          "pending": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolPackPendingDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolved_revision": {
+            "title": "Resolved Revision",
+            "type": "string"
+          },
+          "revoked_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked Reason"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "tool_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tool Ids",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "digest",
+          "version",
+          "source",
+          "resolved_revision",
+          "license"
+        ],
+        "title": "ToolPackDto",
+        "type": "object"
+      },
+      "ToolPackListDto": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "packs": {
+            "items": {
+              "$ref": "#/components/schemas/ToolPackDto"
+            },
+            "title": "Packs",
+            "type": "array"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "ToolPackListDto",
+        "type": "object"
+      },
+      "ToolPackPendingDto": {
+        "additionalProperties": false,
+        "description": "待批准的更新：未生效，只有 approve-update 之后才成为生效版本。",
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "diff": {
+            "$ref": "#/components/schemas/ToolPackPermissionDiffDto"
+          },
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "digest",
+          "version",
+          "diff"
+        ],
+        "title": "ToolPackPendingDto",
+        "type": "object"
+      },
+      "ToolPackPermissionDiffDto": {
+        "additionalProperties": false,
+        "properties": {
+          "added_capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added Capabilities",
+            "type": "array"
+          },
+          "added_credentials": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added Credentials",
+            "type": "array"
+          },
+          "added_network_domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added Network Domains",
+            "type": "array"
+          }
+        },
+        "title": "ToolPackPermissionDiffDto",
+        "type": "object"
+      },
+      "ToolPackRevokeDto": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 280,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "ToolPackRevokeDto",
+        "type": "object"
+      },
+      "ToolPackSubmitDto": {
+        "additionalProperties": false,
+        "description": "install / update 请求：manifest 文档（含内容与 digest）。",
+        "properties": {
+          "manifest": {
+            "additionalProperties": false,
+            "description": "ToolPack manifest 文档；服务端重算内容 digest 并要求与 digest 字段相等",
+            "title": "Manifest",
+            "type": "object"
+          },
+          "note": {
+            "default": "",
+            "description": "审批说明（可选，随事件留痕）",
+            "maxLength": 280,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "manifest"
+        ],
+        "title": "ToolPackSubmitDto",
+        "type": "object"
+      },
+      "ToolPackSubmitResultDto": {
+        "additionalProperties": false,
+        "description": "install 的结果：installed / updated / pending_approval / unchanged。",
+        "properties": {
+          "diff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolPackPermissionDiffDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "pack": {
+            "$ref": "#/components/schemas/ToolPackDto"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "pack",
+          "note"
+        ],
+        "title": "ToolPackSubmitResultDto",
+        "type": "object"
+      },
       "ToolProviderDto": {
         "additionalProperties": false,
         "properties": {
@@ -11726,6 +12007,166 @@
         "summary": "Create Custom Team Template",
         "tags": [
           "team-protocol"
+        ]
+      }
+    },
+    "/tool-packs": {
+      "get": {
+        "description": "已安装的 ToolPack：生效版本、待批准更新（若有）与\"digest 是否进入目录\"。",
+        "operationId": "list_tool_packs_tool_packs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolPackListDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Tool Packs",
+        "tags": [
+          "tool-packs"
+        ]
+      }
+    },
+    "/tool-packs/install": {
+      "post": {
+        "description": "安装或提交 ToolPack 更新。\n\n控制面**重算** manifest 内容 digest 并要求与请求里的 `digest` 相等（不采信字面量），\n因此内容与 pin 不符 → 422；capability 不在平台词表 → 422 并点名；平台自带 pack id → 409。\n同 id 且内容相同 → `unchanged`（不改写任何东西）；同 id 且**扩张权限**\n（新增 capability / network domain / credential）→ `pending_approval`（**不生效**，\n需 `approve-update`）；无扩张的更新直接生效 → `updated`。",
+        "operationId": "install_tool_pack_tool_packs_install_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolPackSubmitDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolPackSubmitResultDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Install Tool Pack",
+        "tags": [
+          "tool-packs"
+        ]
+      }
+    },
+    "/tool-packs/{pack_id}/approve-update": {
+      "post": {
+        "description": "批准待批准的权限扩张：此刻新版本才成为生效版本（此前目录里仍是旧 digest）。\n\n无待批准更新或已 REVOKED → 409；未知 pack → 404；policy 拒绝 → 403。",
+        "operationId": "approve_tool_pack_update_tool_packs__pack_id__approve_update_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "title": "Pack Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolPackSubmitResultDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Tool Pack Update",
+        "tags": [
+          "tool-packs"
+        ]
+      }
+    },
+    "/tool-packs/{pack_id}/revoke": {
+      "post": {
+        "description": "终态吊销：digest 退出目录（供应链检查重新报警）、待批准更新清空。\n\n已 REVOKED → 409（终态不可重复处置）；未知 pack → 404；reason 必填（缺 → 422）。",
+        "operationId": "revoke_tool_pack_tool_packs__pack_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "title": "Pack Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolPackRevokeDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolPackSubmitResultDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Tool Pack",
+        "tags": [
+          "tool-packs"
         ]
       }
     },

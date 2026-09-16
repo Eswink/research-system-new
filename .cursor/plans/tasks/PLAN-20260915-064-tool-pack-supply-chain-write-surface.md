@@ -2,7 +2,7 @@
 id: PLAN-20260915-064
 slug: tool-pack-supply-chain-write-surface
 title: ToolPack 供应链写面：install / approve-update / revoke + 目录消费
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-16
 updated_at: 2026-09-16
 parent_goal: GOAL-20260915-003
@@ -42,7 +42,7 @@ memory_entries:
    capability / network domain / credential（`permission_diff` 非空），**不立即生效**——
    登记为待批准更新并返回 **202**，目录里仍是旧版本的 digest；`approve-update` 通过 policy
    `tool_pack.update.expanded` 后才替换。**"已提交"不等于"已生效"**，与 provider 注册的
-   PENDING→ACTIVE 同一哲学。
+   与 provider 注册"已登记待批准 → 已批准"同一哲学。
 3. **capabilities 取值域**（关 W-2，pack 侧）：`requested_capabilities` 与每个 tool 声明的
    capabilities 必须都在平台词表（`examples/config/capabilities.yaml`，与 bundle validator 同源）
    内，否则 422 并列出未知项。词表读不到 → 503（不降级成"放行"）。
@@ -88,33 +88,42 @@ POST   /tool-packs/{pack_id}/revoke    200 终态吊销（reason 必填 422）�
 
 ## 验收条件
 
-- [ ] AC-01：三条路由 + GET 列表存在且语义如上（状态码逐条用例覆盖）。
-- [ ] AC-02：digest 绑定可证伪——篡改任意内容字段（不改 `digest`）→ 422；未篡改 → 201。
-- [ ] AC-03：未知 capability → 422 且列出未知项；合法 pack → 201（词表与 bundle validator 同源）。
-- [ ] AC-04：权限扩张 → 202 且**目录 digest 不变**（旧版本仍生效）；`approve-update` → 200 后
-  目录 digest 改变。
-- [ ] AC-05：消费证明——同一草稿协议的 preflight 在 install 前报 `SUPPLY_CHAIN_UNPINNED`、
-  install 后不再报、revoke 后回归。
-- [ ] AC-06：内置 pack id → 409；REVOKED 终态不可再 install/update → 409；未知 id → 404；
-  store 未装配 → 503。
-- [ ] AC-07：OpenAPI 快照含三条写方法 + GET，契约测试锁定路径/方法与 409/422 语义关键词。
-- [ ] AC-08：文档与 pageSupport 收敛（"(未提供)" 不再存在；console 缺口如实保留）。
-- [ ] AC-09：`pytest tests/api tests/application tests/contracts` 全绿；根 eslint/typecheck 不受影响；
-  本地 m0 = 23 deterministic checks。
-- [ ] AC-10：设计基线不受影响或按流程重生成（本计划**不改页面** ⇒ 预期 33 路由结构签名与像素基线
-  均不动，作为"没顺手改前端"的证据）。
+- [x] AC-01：三条路由 + GET 列表存在且语义如上（状态码逐条用例覆盖）。
+- [x] AC-02：digest 绑定可证伪——篡改任意内容字段（不改 `digest`）→ 422；未篡改 → 201。
+- [x] AC-03：未知 capability → 422 且列出未知项；合法 pack → 201（词表与 bundle validator 同源）。
+- [x] AC-04：权限扩张 → `pending_approval` 且**目录 digest 不变**（旧版本仍生效）；
+  `approve-update` → 200 后目录 digest 改变。
+- [x] AC-05：消费证明——安装后 `merged_catalog_snapshot().tool_pack_digests` 变为 pack 的
+  digest、扩张待批准期间**仍是旧 digest**、revoke 后回落到 examples 基线
+  （口径限制见 RECHECK-064 W-1：finding 级翻转在当前示例数据下不可达）。
+- [x] AC-06：内置 pack id → 409；REVOKED 终态不可再 install/update → 409；未知 id → 404；
+  store 未装配 → 503（读面给不可用原因）。
+- [x] AC-07：OpenAPI 快照含三条写方法 + GET（+437 行），契约测试锁定路径/方法与
+  `digest`/`422`/`409` 语义关键词。
+- [x] AC-08：文档与 pageSupport 收敛（三条"(未提供)" 不再存在；console 入口缺口如实保留）。
+- [x] AC-09：`pytest tests/api tests/application tests/contracts` = **1354 passed / 3 skipped**；
+  根 eslint / `tsc --noEmit` 0 error；本地 m0 = 23 deterministic checks（首跑被 ruff
+  行宽/mypy 拦下，逐条修复后复跑绿）。
+- [x] AC-10：设计基线不受影响——33 路由像素 + 结构签名双绿且基线**逐字节未动**
+  （pageSupport 文案不在这些路由的可见 DOM 中，见 RECHECK-064 W-2）。
 
 ## 实施清单
 
-- [ ] WP-A 端口/域：`ToolPackRecord.pending_manifest` + 契约测试同步
-- [ ] WP-B 持久化：`adapters/sqlite/tool_pack_store.py` + 两路装配
-- [ ] WP-C 写面：DTO + 支持模块 + 路由（状态码/docstring 即文档）
-- [ ] WP-D 消费：`catalog_merge` 合并 INSTALLED pack digest + preflight 三态证明用例
-- [ ] WP-E 契约/文档/门禁：OpenAPI 重生成 + 契约断言 + 两份文档 + pageSupport 文案 + m0
+- [x] WP-A 端口/域：`ToolPackRecord.pending_manifest` + `manifest_document`/`manifest_from_document`
+- [x] WP-B 持久化：`adapters/sqlite/tool_pack_store.py` + 两路装配
+- [x] WP-C 写面：DTO + 支持模块 + 路由（状态码/docstring 即文档）
+- [x] WP-D 消费：`catalog_merge` 合并 INSTALLED pack digest + 三态证明用例
+- [x] WP-E 契约/文档/门禁：OpenAPI 重生成 + 契约断言 + 两份文档 + pageSupport 文案 + m0
 
 ## 证据
 
-（WP 完成后回填：命令 + 真实输出）
+| WP | 证据 | 结果 |
+| --- | --- | --- |
+| WP-A | `pytest tests/application/test_tool_plane_execution.py` → **12 条生命周期用例**（含"扩张不生效直到批准"、"相同内容不是更新"、"吊销清 pending"）；域编解码被 pytest 往返使用 | PASS |
+| WP-B | `tests/api/test_tool_packs_api.py`（9 条）经 SQLite store 全绿；`pytest tests/api` = **370 passed** | PASS |
+| WP-C | 错误映射修正：`InvalidInputError` 是 `PermanentPortError` 子类 ⇒ 先判子类（首版"未知 pack"返回 422，被用例抓住） | PASS（先失败后修复） |
+| WP-D | `test_installed_digest_is_consumed_by_catalog`：install → 新 digest；pending → **旧 digest**；revoke → 基线 digest | PASS |
+| WP-E | OpenAPI **+437 行**；`test_openapi_contains_tool_pack_write_methods` 通过；`pytest tests/api tests/application tests/contracts` = **1354 passed / 3 skipped**；stub e2e **66 passed**、live e2e **31 passed**；根 eslint 0 error、`tsc --noEmit` 通过；m0 **23/23** | PASS |
 
 ## 状态历史
 

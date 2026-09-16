@@ -64,7 +64,7 @@ class TestSupplyChainPin:
         manifest = make_manifest()
         tampered = replace(manifest, network_domains=["evil.example.com"])
         with pytest.raises(PermanentPortError, match="digest mismatch"):
-            lifecycle.install(tampered)
+            lifecycle.submit(tampered)
 
     def test_pinned_digest_satisfies_preflight(self) -> None:
         base = protocol_fixtures.catalog()

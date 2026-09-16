@@ -135,6 +135,26 @@ def test_openapi_contains_project_delete_method() -> None:
     assert "级联" in description, description
 
 
+def test_openapi_contains_tool_pack_write_methods() -> None:
+    """EC-02 验证项：ToolPack 供应链必须有真实写面，且 schema 记录"扩张需批准"。"""
+    schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))
+    paths = schema["paths"]
+    expected = {
+        "/tool-packs": {"get"},
+        "/tool-packs/install": {"post"},
+        "/tool-packs/{pack_id}/approve-update": {"post"},
+        "/tool-packs/{pack_id}/revoke": {"post"},
+    }
+    for path, methods in expected.items():
+        assert path in paths, path
+        assert methods <= set(paths[path]), (path, sorted(paths[path]))
+    install = cast(str, paths["/tool-packs/install"]["post"]["description"])
+    assert "digest" in install, install
+    assert "422" in install, install
+    approve = cast(str, paths["/tool-packs/{pack_id}/approve-update"]["post"]["description"])
+    assert "409" in approve, approve
+
+
 def test_openapi_contains_projects_and_governance_paths() -> None:
     """其余治理面路径（与上面分函数以守 50 行/函数上限）。"""
     schema = cast(dict[str, Any], json.loads(SNAPSHOT.read_text(encoding="utf-8")))

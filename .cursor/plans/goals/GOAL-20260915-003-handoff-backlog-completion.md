@@ -34,7 +34,7 @@ exit_criteria:
     verify: >-
       OpenAPI 写方法 + API 用例（digest 不符 409/422、未登记 provider 422）+
       live e2e 链 + pageSupport/文档收敛
-    status: PENDING
+    status: PARTIAL
   - id: EC-03
     criterion: >-
       ops 调度用户可见写面：schedule 的创建/启停/触发从"只读事实"变成真实写面
@@ -101,7 +101,7 @@ memory_entries:
 | EC | 标准（摘要） | 验证 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 设计门禁结构判据（整块新增必红） | 33 路由结构签名 + 反证用例 + 跨平台一致性 | PASS（2026-09-16 cycle 1；范围注记：结构签名只看标签/testid/role/aria-label/叶子文本/子节点数，**不看样式与坐标**（那是像素判据的职责）；文本截断 120 字符 ⇒ 长文案的后半段变化不由本判据覆盖） |
-| EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | PENDING |
+| EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | **PARTIAL**（2026-09-16 cycle 2：后端写面已交付——三条文档化端点 + SQLite store + digest 重算自证 + 扩张待批准 + capability 取值域 + 目录消费，OpenAPI/契约/文档/pageSupport 全部收敛；**未交付**：console 操作入口与 live e2e 链 ⇒ cycle 3 承接；范围注记见 EC-02 的 verify） |
 | EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PENDING |
 | EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PENDING |
 | EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PENDING |
@@ -247,6 +247,8 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PLAN-20260915-063（EC-01：设计门禁结构判据） | 见本 cycle 提交 | 结构签名基线 33 条（`apps/web/tests/e2e/design-outlines.json`）；guard 用例 **6 passed**（注入可见面板/多一行/视口外节点/删节点 → 判红；只改样式 → 不误报；归一化 4 断言）；对照实验：多一行 **0.079%**、视口外 **0.000%** ⇒ 像素判据不报警而结构判据判红；跨平台一致性：linux 容器重算与 win32 **逐字节一致**（33/33）；全量 stub e2e / live e2e / 单测 / m0 见「证据」段 | run **35056976439**（5a44445）：**失败——但失败在启动前**：六个 job 全部 `runner_id=0`、无 step、2 秒内结束（attempt 1 与 rerun attempt 2 同形）；check-run 注释原样给出根因 *"The job was not started because recent account payments have failed or your spending limit needs to be increased"* ⇒ 账户级计费阻断，非代码/门禁缺陷。**两小时后阻断解除**（未做任何仓库内动作）：cycle 1 的收口提交 `28c9c30` → run **35059391199 六个 job 全 success**（container-quality / console-frontend / eval-gate / collector-quality / quality-ubuntu-latest / quality-windows-latest，均拿到真实 runner）⇒ **cycle 1 的 CI 结论成立**（详见「终止与收口 · 当前 BLOCKED」的处置记录） | 首次实现踩到三处：① 用 `toMatchSnapshot` 会得到 per-platform `-win32.txt` 基线（CI 在 ubuntu 上必然缺文件）⇒ 改成单一 JSON 基线 + 显式 `UPDATE_OUTLINES=1` 更新；② ISO 正则没吃 `+00:00` 偏移 ⇒ 归一化残留导致 33 条基线含半截时间戳，修正则后重生成；③ 注入到 `body` 末尾的面板落在视口外，像素差 0.000% ⇒ 补"可见注入"用例作为真实对照 | EC-01 已 PASS（范围注记见 EC 表）；EC-02~05 PENDING；**EC-06 BLOCKED（账户级计费阻断 CI）** | **本 cycle 无下一轮**（GOAL = BLOCKED）：恢复条件满足后 cycle 2 = ① derive EC-02（ToolPack install/approve 供应链面：pin↔交付物绑定、能力取值域、schema digest 漂移），子 PLAN 编号 = PLAN-20260915-064 |
 
+| 2 | PLAN-20260915-064（EC-02：ToolPack 供应链写面） | 见本 cycle 提交 | **API 9 passed**（digest 重算 422 / 未知 capability 422 点名 / 内置 id 409 / 扩张待批准且目录 digest 不变 / approve 后生效 / 相似内容 `unchanged` / 终态 409 / 未知 404 / **三态消费证明**）；生命周期 **12 passed**（新增"扩张不生效直到批准"、"相同内容不是更新"、"吊销清 pending"）；契约 **1354 passed / 3 skipped**；OpenAPI **+437 行**（仅新增四条路径）+ 契约断言；stub e2e **66 passed**、live e2e **31 passed**；根 eslint 0 error、`tsc --noEmit` 通过；33 路由像素 + 结构签名双绿（基线逐字节未动）；本地 m0 首跑被 ruff 行宽（3 处）+ mypy（2 处：`signature` 收窄、旧 `install` 调用点）拦下 → 修复后 **23/23** | 见状态历史 | ① `InvalidInputError` 是 `PermanentPortError` 子类 ⇒ 异常映射必须先判子类（首版"未知 pack"返回 422，被"未知 pack 404"用例抓住）；② pin 的正确形态是**控制面自己重算**（不是采信请求里的字面量），且要写清"自洽 ≠ 与上游一致"；③ 扩张不生效要有**读面证据**（pending 期间目录 digest 不变），否则"待批准"只是响应里的一个字段；④ `pageSupport` 的 reason 文本不在 33 路由可见 DOM 中（W-2） | EC-02 记 **PARTIAL**（后端已交付，console 入口与 live 链未做）；EC-03~06 PENDING | cycle 3 = ① derive EC-02 前端面（console ToolPack 操作入口 + 替身 + live e2e 链），并顺带 W-4（provider 健康复核记录 schema digest 并比对漂移），子 PLAN 编号 = PLAN-20260915-065 |
+
 ## 状态历史
 
 - 2026-09-16 创建（ACTIVE）：GOAL-20260915-002 收口（ACHIEVED，RECHECK-20260915-062）后，
@@ -286,6 +288,16 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   解除未做任何仓库内动作（只等账户侧恢复），且解除后**先复核 runner 真的拿到**再回填。
 - 2026-09-16 cycle 2 开轮（EC-02）：derive = PLAN-20260915-064（ToolPack 供应链写面），
   入口按「循环入口协议」第 6 条（上一 cycle commit+CI 全绿且 EC 未满足 → 执行 ①）。
+- 2026-09-16 cycle 2 交付（EC-02 = **PARTIAL**）：把 ADR-0019 的 ToolPack 供应链从
+  "有 use case、无控制面"接成真实写面——`POST /tool-packs/install`（控制面**重算**内容
+  digest 并要求与请求 digest 相等；capability 取值域；内置 pack id 不可覆盖）、
+  `POST /tool-packs/{id}/approve-update`（**权限扩张不生效直到批准**：待批准期间目录里
+  仍是旧 digest）、`POST /tool-packs/{id}/revoke`（终态、清 pending）、`GET /tool-packs`
+  （生效版本与待批准版本分开呈现）。持久化 = `SqliteToolPackStore`（生效版本与待批准
+  版本同一行写入），两组成同侧装配；`catalog_merge` 把 INSTALLED 的 digest 合入
+  `tool_pack_digests`（preflight/compile 的同一读面）⇒ 三态消费证明可证伪。
+  RECHECK-060 结转的 W-2（capability 取值域）与 W-3（pin 与交付物绑定）**在 pack 侧关闭**
+  （provider 侧仍开放，如实结转）。未交付：console 操作入口与 live e2e 链（cycle 3）。
 - 2026-09-16 阻断期间追加**CI 等价复现**（明确**不是 CI**，见「终止与收口 · 当前 BLOCKED」表）：
   按六个 job 逐项在本地/容器复现——win32 全量 m0 23/23；linux 容器内根 typescript 5 项全绿、
   web lint/typecheck/unit/build + **stub e2e 66 passed**；eval-gate `PASS` + 110 passed；

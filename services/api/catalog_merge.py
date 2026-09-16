@@ -13,12 +13,14 @@ state 落地后本服务由持久化实现替换（CatalogSnapshot Port 不变�
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import replace
 from typing import Protocol, TypeVar
 
 from adapters.contracts.roles_loaders import role_from_mapping, team_template_from_mapping
 from packages.application.ports import CatalogSnapshot, ProjectSettings
+from packages.domain.enums import ToolPackState
 from packages.domain.tools import ToolProviderSpec
 from services.api.catalog import load_catalog_snapshot, load_project_settings
 from services.api.composition import ApiDeps
@@ -34,6 +36,8 @@ class _Identifiable(Protocol):
 
 
 _T = TypeVar("_T", bound=_Identifiable)
+
+_PACK_VERSION_SUFFIX = re.compile(r"_v\d+(\.\d+)*$")
 
 
 def _merge_overrides(
@@ -86,6 +90,7 @@ def merged_catalog_snapshot(deps: ApiDeps) -> CatalogSnapshot:
             team_templates, deps.catalog_overrides, KIND_TEAM_TEMPLATES, team_template_from_mapping
         )
     tool_providers, tool_pack_digests = _merge_registered_providers(deps, base)
+    tool_pack_digests = _merge_installed_packs(deps, tool_pack_digests)
     return replace(
         base,
         endpoints=endpoints,
@@ -122,6 +127,24 @@ def _merge_registered_providers(
         providers[spec.id] = spec
         digests[spec.id] = registration.pinned_revision
     return providers, digests
+
+
+def _merge_installed_packs(deps: ApiDeps, digests: dict[str, str]) -> dict[str, str]:
+    """INSTALLED 的 ToolPack → `tool_pack_digests`（键 = pack id 去掉 `_vN` 后缀）。
+
+    键口径与 examples 契约（`catalog._load_tool_pack_digests`）一致：pack id 带版本后缀，
+    而 preflight 的供应链检查按 **provider id** 查表。只有 INSTALLED 贡献 digest——
+    待批准的权限扩张不生效、REVOKED 是终态退出（吊销后 pin 消失、检查重新报警）。
+    """
+    store = deps.tool_pack_store
+    if store is None:
+        return digests
+    merged = dict(digests)
+    for record in store.snapshot().values():
+        if record.state is not ToolPackState.INSTALLED:
+            continue
+        merged[_PACK_VERSION_SUFFIX.sub("", record.pack_id)] = str(record.manifest.digest)
+    return merged
 
 
 DEFAULT_PROJECT_ID = "example-project"

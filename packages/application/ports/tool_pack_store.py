@@ -20,11 +20,19 @@ from packages.domain.tools import ToolPackManifest
 
 @dataclass(frozen=True, slots=True)
 class ToolPackRecord:
+    """一个 pack 的注册状态。
+
+    `manifest` 是**当前生效**版本；`pending_manifest` 是"已提交、待批准"的更新
+    （权限扩张不会立即生效——生效版本仍是 `manifest`）。两者必须同一次写入，
+    否则崩溃后会出现"批准了不存在的东西"或"扩张被静默生效"。
+    """
+
     pack_id: str
     state: ToolPackState
     manifest: ToolPackManifest
     installed_at: Timestamp
     revoked_reason: str | None = None
+    pending_manifest: ToolPackManifest | None = None
 
     def __post_init__(self) -> None:
         if not self.pack_id:
@@ -33,6 +41,10 @@ class ToolPackRecord:
             raise ValueError("pack_id must match manifest id")
         if self.state is ToolPackState.REVOKED and not self.revoked_reason:
             raise ValueError("revoked tool pack must carry a reason")
+        if self.pending_manifest is not None and self.pending_manifest.id != self.pack_id:
+            raise ValueError("pending manifest id must match pack id")
+        if self.state is ToolPackState.REVOKED and self.pending_manifest is not None:
+            raise ValueError("revoked tool pack must not carry a pending update")
 
 
 @runtime_checkable

@@ -1,13 +1,19 @@
-"""ToolPack lifecycle use case：install / update / revoke（ADR-0019）。
+"""ToolPack lifecycle use case：install / approve-update / revoke（ADR-0019）。
 
 供应链验证（digest 校验）在安装门禁内：manifest.digest 必须与内容
-重算一致；update 需权限 diff（requested_capabilities / network_domains
-/ credentials 差集）并通过 policy 审批；revoke 记录原因并发布领域事件。
+重算一致；更新若扩张权限（requested_capabilities / network_domains /
+credentials 差集）**不立即生效**——登记为待批准更新，`approve_update`
+通过 policy 后才替换；revoke 记录原因、清空待批准更新并发布领域事件。
+
+诚实边界：digest 一致是控制面**自己重算**出来的（不是采信调用方写的字面量），
+但控制面不取 pack 的远端交付物，因此它证明的是"提交的内容与声明的 pin 自洽"，
+不是"pin 与上游仓库实际内容一致"——后者需要远端取证，不在本层。
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 from packages.application.ports.errors import InvalidInputError, PermanentPortError
 from packages.application.ports.event_publisher import EventPublisher
@@ -111,8 +117,24 @@ def _verify_supply_chain(manifest: ToolPackManifest) -> None:
             )
 
 
+SubmitStatus = Literal["installed", "updated", "pending_approval", "unchanged", "revoked"]
+
+
+@dataclass(frozen=True, slots=True)
+class SubmitOutcome:
+    """install/update 请求的结果：状态 + 记录 +（扩张时的）权限 diff。
+
+    `unchanged` = 提交的 manifest 与生效版本内容一致（digest 相同），
+    控制面不改写任何东西——调用方不应把它当成"更新成功"。
+    """
+
+    status: SubmitStatus
+    record: ToolPackRecord
+    diff: PermissionDiff | None = None
+
+
 class ToolPackLifecycle:
-    """ToolPack install/update/revoke use case（副作用集中在 Port 边界）。"""
+    """ToolPack install/update/approve/revoke use case（副作用集中在 Port 边界）。"""
 
     def __init__(
         self,
@@ -126,11 +148,24 @@ class ToolPackLifecycle:
         self._events = events
         self._actor = actor
 
-    def install(self, manifest: ToolPackManifest) -> ToolPackRecord:
+    def submit(self, manifest: ToolPackManifest) -> SubmitOutcome:
+        """安装或提交更新：新 pack 直接安装；同 id 无扩张直接替换；扩张转待批准。"""
         _verify_supply_chain(manifest)
+        existing = self._store.get(manifest.id)
+        if existing is not None and existing.state is ToolPackState.REVOKED:
+            raise InvalidInputError(f"revoked tool pack is terminal: {manifest.id}")
+        if existing is None:
+            return self._install_new(manifest)
+        _require_decision(self._policy, self._actor, _UPDATE_CAPABILITY, manifest.id)
+        if existing.manifest.digest == manifest.digest:
+            return SubmitOutcome(status="unchanged", record=existing)
+        diff = permission_diff(existing.manifest, manifest)
+        if not diff.is_empty:
+            return self._register_pending(existing, manifest, diff)
+        return self._apply_update(existing, manifest)
+
+    def _install_new(self, manifest: ToolPackManifest) -> SubmitOutcome:
         _require_decision(self._policy, self._actor, _INSTALL_CAPABILITY, manifest.id)
-        if self._store.get(manifest.id) is not None:
-            raise InvalidInputError(f"tool pack already installed: {manifest.id}")
         record = ToolPackRecord(
             pack_id=manifest.id,
             state=ToolPackState.INSTALLED,
@@ -139,24 +174,33 @@ class ToolPackLifecycle:
         )
         self._store.install(record)
         _publish(self._events, EventType.TOOL_PACK_INSTALLED, manifest.id, self._actor)
-        return record
+        return SubmitOutcome(status="installed", record=record)
 
-    def update(self, manifest: ToolPackManifest) -> ToolPackRecord:
-        _verify_supply_chain(manifest)
-        _require_decision(self._policy, self._actor, _UPDATE_CAPABILITY, manifest.id)
-        existing = self._store.get(manifest.id)
-        if existing is None:
-            raise InvalidInputError(f"tool pack not installed: {manifest.id}")
-        if existing.state is ToolPackState.REVOKED:
-            raise InvalidInputError(f"revoked tool pack cannot be updated: {manifest.id}")
-        diff = permission_diff(existing.manifest, manifest)
-        if not diff.is_empty:
-            _require_decision(
-                self._policy,
-                self._actor,
-                f"{_UPDATE_CAPABILITY}.expanded",
-                manifest.id,
-            )
+    def _register_pending(
+        self,
+        existing: ToolPackRecord,
+        manifest: ToolPackManifest,
+        diff: PermissionDiff,
+    ) -> SubmitOutcome:
+        """扩张更新只登记待批准：生效版本与生效 digest 都保持不变。"""
+        pending = ToolPackRecord(
+            pack_id=existing.pack_id,
+            state=existing.state,
+            manifest=existing.manifest,
+            installed_at=existing.installed_at,
+            pending_manifest=manifest,
+        )
+        self._store.replace(pending)
+        _publish(
+            self._events,
+            EventType.TOOL_PACK_UPDATED,
+            manifest.id,
+            self._actor,
+            {"pending_approval": True},
+        )
+        return SubmitOutcome(status="pending_approval", record=pending, diff=diff)
+
+    def _apply_update(self, existing: ToolPackRecord, manifest: ToolPackManifest) -> SubmitOutcome:
         record = ToolPackRecord(
             pack_id=manifest.id,
             state=ToolPackState.INSTALLED,
@@ -169,7 +213,39 @@ class ToolPackLifecycle:
             EventType.TOOL_PACK_UPDATED,
             manifest.id,
             self._actor,
-            {"expanded": not diff.is_empty},
+            {"expanded": False},
+        )
+        return SubmitOutcome(status="updated", record=record)
+
+    def approve_update(self, pack_id: str) -> ToolPackRecord:
+        """批准待批准的更新：此刻扩张才生效。无待批准 → InvalidInputError。"""
+        existing = self._store.get(pack_id)
+        if existing is None:
+            raise InvalidInputError(f"tool pack not installed: {pack_id}")
+        if existing.state is ToolPackState.REVOKED:
+            raise InvalidInputError(f"revoked tool pack cannot be updated: {pack_id}")
+        pending = existing.pending_manifest
+        if pending is None:
+            raise InvalidInputError(f"tool pack has no pending update: {pack_id}")
+        _require_decision(
+            self._policy,
+            self._actor,
+            f"{_UPDATE_CAPABILITY}.expanded",
+            pack_id,
+        )
+        record = ToolPackRecord(
+            pack_id=pack_id,
+            state=ToolPackState.INSTALLED,
+            manifest=pending,
+            installed_at=Timestamp.now(),
+        )
+        self._store.replace(record)
+        _publish(
+            self._events,
+            EventType.TOOL_PACK_UPDATED,
+            pack_id,
+            self._actor,
+            {"expanded": True, "approved": True},
         )
         return record
 

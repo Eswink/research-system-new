@@ -89,6 +89,7 @@ def _base_sqlite_parts(
 
 def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     """基础装配（endpoint/model CRUD + probe + run 测试用）。"""
+    from adapters.fakes.policy_evaluator import FakePolicyEvaluator
     from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
     from adapters.sqlite.db import connect
@@ -98,6 +99,7 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
+    from adapters.sqlite.tool_pack_store import SqliteToolPackStore
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
 
     connection = connect(":memory:")
@@ -121,6 +123,8 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         library_store=SqliteLibraryStore(connection=connection),
         ops_store=SqliteOpsStore(connection=connection),
         tool_provider_registry=SqliteToolProviderRegistry(connection=connection),
+        tool_pack_store=SqliteToolPackStore(connection=connection),
+        policy_evaluator=FakePolicyEvaluator(),
         protocol_draft_service=_make_draft_service(connection),
         _connection=connection,
     )

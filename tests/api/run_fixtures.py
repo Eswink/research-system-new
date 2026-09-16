@@ -191,6 +191,7 @@ def _run_ready_sqlite_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
     from adapters.sqlite.run_store import SqliteRunStore
+    from adapters.sqlite.tool_pack_store import SqliteToolPackStore
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
     from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 
@@ -206,6 +207,8 @@ def _run_ready_sqlite_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "ops_store": SqliteOpsStore(connection=connection),
         # 供应链治理写面（PLAN-060）：live e2e 要真的登记→批准→吊销。
         "tool_provider_registry": SqliteToolProviderRegistry(connection=connection),
+        # ToolPack 供应链写面（PLAN-064 / EC-02）：install / approve-update / revoke。
+        "tool_pack_store": SqliteToolPackStore(connection=connection),
         # 与生产 composition 同侧：run 行落在共享连接上，派发面（claim_next）
         # 才读得到 canonical state —— 协作式暂停的事实来源（PLAN-20260914-048）。
         "runs_store": SqliteRunStore(connection=connection),

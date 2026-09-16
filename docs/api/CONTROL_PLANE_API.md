@@ -255,10 +255,26 @@ PATCH  /tool-provider-registrations/{id}   （re-pin/能力等可变字段；REV
 POST   /tool-provider-registrations/{id}/approve       （PENDING → ACTIVE：进入目录，preflight/compile 立即可见）
 POST   /tool-provider-registrations/{id}/revoke        （任意非终态 → REVOKED；理由必填并留痕）
 POST   /tool-provider-registrations/{id}/health-check  （写入一次健康事实；读面随后呈现同一结论）
-POST   /tool-packs/install                 （未提供：ToolPack 供应链治理，install/approve-update/revoke 全组）
-POST   /tool-packs/{id}/approve-update     （未提供）
-POST   /tool-packs/{id}/revoke             （未提供）
+GET    /tool-packs                         （PLAN-064：全部已安装 pack；生效版本与待批准版本分开呈现）
+POST   /tool-packs/install                 （PLAN-064：安装/提交更新；控制面重算内容 digest 并要求与请求 digest 相等）
+POST   /tool-packs/{id}/approve-update     （PLAN-064：批准权限扩张；此前新版本不生效）
+POST   /tool-packs/{id}/revoke             （PLAN-064：终态吊销；digest 退出目录、待批准更新清空）
 ```
+
+- **ToolPack 供应链（PLAN-064 / EC-02）**：`install` 由控制面自己重算 manifest 内容
+  digest 并要求与请求里的 `digest` 相等（内容与 pin 不符 → 422；这不是采信调用方写的
+  字面量）；`requested_capabilities` 与各 tool 的 capabilities 必须都在平台词表
+  （`examples/config/capabilities.yaml`，与离线 bundle validator 同源），否则 422 并点名；
+  平台自带 pack id（`examples/contracts/toolpack_*.yaml`）不可影子覆盖 → 409。
+- **权限扩张不立即生效**：同 id 提交的 manifest 若新增 capability / network domain /
+  credential（`permission_diff` 非空），登记为**待批准更新**并返回该 pack 的旧 digest——
+  `approve-update` 通过 policy（`tool_pack.update.expanded`）后才替换；无扩张的更新直接生效；
+  内容完全相同的提交返回 `unchanged`（不改写任何东西）。**"已提交"不等于"已生效"**。
+- **被消费**：state=INSTALLED 的 pack 把 digest 合入 `tool_pack_digests`（键 = pack id 去掉
+  `_vN` 后缀，与 examples 契约同口径），preflight 的 `SUPPLY_CHAIN_UNPINNED` 与 compile 的
+  `tool_pack_digests` 随之改变；REVOKED 是终态退出（吊销后 pin 消失）。
+- 控制面重算 digest 证明的是"提交内容与声明的 pin 自洽"，**不是**"pin 与上游实际交付物一致"
+  （后者需要远端取证，不在控制面职责内）。
 
 - 信任级别由注册状态推导（PENDING→UNTRUSTED、ACTIVE→USER_APPROVED、REVOKED→
   REVOKED），注册方不能声明 BUILT_IN/VERIFIED；pin 强制内容寻址 digest（AGENTS.md §9

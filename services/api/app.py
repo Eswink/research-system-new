@@ -37,6 +37,7 @@ from services.api.routers import (
     runs,
     team_custom,
     team_protocol,
+    tool_packs,
     tool_providers,
     tool_registrations,
     workspace_snapshots,
@@ -239,6 +240,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(notifications.router)
     app.include_router(tool_providers.router)
     app.include_router(tool_registrations.router)
+    app.include_router(tool_packs.router)
     app.include_router(deliverable.router)
     app.include_router(lineage.router)
     app.include_router(library.router)

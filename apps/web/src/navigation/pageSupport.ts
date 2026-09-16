@@ -93,7 +93,10 @@ export const GAPS = {
     "Tool Provider 目录与注册治理已接入（GET /tool-providers 目录 + 三态健康；" +
     "GET/POST /tool-provider-registrations、PATCH、approve/revoke/health-check）；" +
     "注册须 pin（sha256:<hex>），PENDING 不进目录、APPROVE 后进目录、REVOKE 为终态；" +
-    "缺：provider 凭据绑定与工具包安装（ToolPack）仍无写面，健康探测不含 schema 漂移比对",
+    "ToolPack 供应链写面已有 API（GET /tool-packs、install/approve-update/revoke：" +
+    "digest 由控制面重算自证、权限扩张须批准才生效、REVOKE 终态），" +
+    "但本页尚无操作入口；缺：provider 凭据绑定、ToolPack 的 console 入口，" +
+    "健康探测不含 schema 漂移比对",
   dataHealth:
     "既有状态的可观测指标已接入（GET /projects/{id}/ops/data-health：端点健康计数/" +
     "dataset 计数/artifact 抽样校验）；无聚合质量报告 API",

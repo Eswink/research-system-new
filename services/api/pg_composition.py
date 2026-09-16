@@ -173,7 +173,11 @@ def _build_pg_orchestration(c: dict[str, Any], config: PgAssemblyConfig) -> RunO
 
 
 def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
-    """配置面 store（WP-B PLAN-040 / WP-A PLAN-041：SQLite 两组成同侧）。"""
+    """配置面 store（WP-B PLAN-040 / WP-A PLAN-041：SQLite 两组成同侧）。
+
+    PLAN-064（GOAL-003 / EC-02）：ToolPack 供应链状态与 tool provider 注册表同侧
+    ——PG 路径的配置面同样是 SQLite，写面语义不因后端切换而分叉。
+    """
     from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
     from adapters.sqlite.library_store import SqliteLibraryStore
@@ -181,6 +185,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
+    from adapters.sqlite.tool_pack_store import SqliteToolPackStore
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
 
     return {
@@ -192,6 +197,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "library_store": SqliteLibraryStore(connection=connection),
         "ops_store": SqliteOpsStore(connection=connection),
         "tool_provider_registry": SqliteToolProviderRegistry(connection=connection),
+        "tool_pack_store": SqliteToolPackStore(connection=connection),  # EC-02 ToolPack 写面
     }
 
 

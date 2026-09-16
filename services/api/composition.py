@@ -37,6 +37,7 @@ from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
 from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
 from adapters.sqlite.project_store import SqliteProjectStore
 from adapters.sqlite.run_store import SqliteRunStore
+from adapters.sqlite.tool_pack_store import SqliteToolPackStore
 from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
 from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
@@ -65,6 +66,7 @@ from packages.application.ports.policy_evaluator import PolicyEvaluator
 from packages.application.ports.resource_catalog import PreflightContext
 from packages.application.ports.run_projection import RunProjection
 from packages.application.ports.telemetry_sink import NullTelemetrySink, TelemetrySink
+from packages.application.ports.tool_pack_store import ToolPackStore
 from packages.application.ports.tool_provider_registry import ToolProviderRegistry
 from packages.application.ports.worker_registry import WorkerRegistry
 from packages.application.ports.workspace_snapshot import WorkspaceSnapshotReader
@@ -147,6 +149,9 @@ class ApiDeps:
     # PLAN-060（EC-05）：tool provider 注册表（注册/更新/批准/吊销/健康复核）。
     # 两组成同侧；缺失时写面 503，读面目录只反映 examples 契约。
     tool_provider_registry: ToolProviderRegistry | None = field(default=None, repr=False)
+    # PLAN-064（GOAL-003 / EC-02）：ToolPack 供应链状态（install/approve-update/revoke）。
+    # 两组成同侧；缺失时 `/tool-packs` 读面给不可用原因、写面诚实 503。
+    tool_pack_store: ToolPackStore | None = field(default=None, repr=False)
     # PLAN-058：工作区快照只读读取器（仅 `RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT`
     # 显式配置时构建；None → 快照端点诚实 503，不猜默认路径、不冒充空树）。
     workspace_snapshots: WorkspaceSnapshotReader | None = field(default=None, repr=False)
@@ -284,6 +289,7 @@ def _sqlite_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         "experiment_store": SqliteExperimentStore(connection=connection),
         "ops_store": SqliteOpsStore(connection=connection),
         "tool_provider_registry": SqliteToolProviderRegistry(connection=connection),
+        "tool_pack_store": SqliteToolPackStore(connection=connection),
         "worker_registry": SqliteWorkerRegistry(connection=connection),
     }
 
