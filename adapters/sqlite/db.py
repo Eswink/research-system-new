@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import sqlite3
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
@@ -151,8 +151,56 @@ CREATE INDEX IF NOT EXISTS idx_runs_project ON runs(project_id);
 SCHEMA_SQL = SCHEMA_SQL + RUNS_SCHEMA_SQL
 
 
+class MaterializedRows:
+    """只读游标视图：行已在锁内取尽，之后取行不再触碰连接。
+
+    为什么需要它：`execute()` 与调用方的取行之间是一个窗口，共享连接上
+    别的线程可以在这段时间里执行语句或提交，使这次取行拿到**不属于本语句**的结果
+    （实测：读不到刚提交的行，甚至拿回列数不对的行）。把行在锁内取尽后，
+    取行不再依赖连接状态。
+
+    覆盖的是本仓实际用到的游标面（`fetchone` / `fetchmany` / `fetchall` / 迭代 /
+    `rowcount` / `description` / `close`）；它不是 `sqlite3.Cursor`，
+    `conn.cursor()` 自建游标的路径不经这里。
+    """
+
+    __slots__ = ("_rows", "_offset", "description", "rowcount", "lastrowid")
+
+    def __init__(self, source: sqlite3.Cursor, rows: list[Any]) -> None:
+        self._rows = rows
+        self._offset = 0
+        self.description = source.description
+        self.rowcount = source.rowcount
+        self.lastrowid = source.lastrowid
+
+    def fetchone(self) -> Any:
+        if self._offset >= len(self._rows):
+            return None
+        row = self._rows[self._offset]
+        self._offset += 1
+        return row
+
+    def fetchmany(self, size: int = 1) -> list[Any]:
+        """默认取 1 行（与默认 `arraysize = 1` 的真游标一致）。"""
+        rows = self._rows[self._offset : self._offset + size]
+        self._offset += len(rows)
+        return rows
+
+    def fetchall(self) -> list[Any]:
+        rows = self._rows[self._offset :]
+        self._offset = len(self._rows)
+        return rows
+
+    def __iter__(self) -> Iterator[Any]:
+        while self._offset < len(self._rows):
+            yield self.fetchone()
+
+    def close(self) -> None:
+        """真游标的 close 之后不能再取行；物化视图的取行只读本地列表，故为 no-op。"""
+
+
 class SerializedConnection(sqlite3.Connection):
-    """同一连接的多线程使用串行化（语句级）。
+    """同一连接的多线程使用串行化（语句级 + 读原子）。
 
     sqlite3 的连接对象**不是**线程安全的：`check_same_thread=False` 只是关掉了
     "只能在创建它的线程里用"的检查，两个线程同时执行语句仍会破坏内部状态
@@ -160,23 +208,35 @@ class SerializedConnection(sqlite3.Connection):
     收进一把可重入锁：同一时刻只有一个线程在用这条连接，丢掉语句级并发度，
     换来"不会坏"。
 
+    另外，**返回行的语句在锁内取尽**（见 `MaterializedRows`）：只锁语句是不够的，
+    调用方的 `.fetchone()` 可能落在锁外，被别的线程的语句/提交打断——
+    实测共享连接上"写后立读"有 10~20/96 读不到（独立连接 100% 看得见）。
+
     实现说明：语句执行面用**别名赋值**暴露，转发经 `getattr(super(), ...)` 走父类代理
     ——语句文本由调用方构造，本类不拼装、不解析、不缓存任何 SQL。
 
-    范围注记：锁只保证**语句级**串行，不把一个请求里的多条语句变成原子事务——
-    "写后立读"仍可能被另一个线程的语句夹在中间（那需要每线程连接或显式事务 API）。
+    范围注记：锁与取尽保证的是**单条语句**的读写自洽，不把一个请求里的多条语句
+    变成原子事务；`conn.cursor()` 自建游标的路径也不经物化。
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._lock = threading.RLock()
 
+    def _forward(self, method: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+        return getattr(super(), method)(*args, **kwargs)
+
     def _under_lock(self, method: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
         with self._lock:
-            return getattr(super(), method)(*args, **kwargs)
+            return self._forward(method, args, kwargs)
 
     def _statement(self, *args: Any, **kwargs: Any) -> sqlite3.Cursor:
-        return cast(sqlite3.Cursor, self._under_lock("execute", args, kwargs))
+        with self._lock:
+            execute = self._forward("execute", args, kwargs)
+            cursor = cast(sqlite3.Cursor, execute)
+            if cursor.description is None:
+                return cursor
+            return cast(sqlite3.Cursor, MaterializedRows(cursor, list(cursor.fetchall())))
 
     def _many_statements(self, *args: Any, **kwargs: Any) -> sqlite3.Cursor:
         return cast(sqlite3.Cursor, self._under_lock("executemany", args, kwargs))

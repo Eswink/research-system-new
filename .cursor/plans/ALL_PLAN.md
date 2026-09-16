@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-071](tasks/PLAN-20260915-071-shared-connection-read-atomicity.md) | DONE |
 | [x] | [PLAN-20260915-070](tasks/PLAN-20260915-070-shared-sqlite-connection-serialization.md) | DONE |
 | [x] | [PLAN-20260915-069](tasks/PLAN-20260915-069-provider-health-schema-digest-drift.md) | DONE |
 | [x] | [PLAN-20260915-068](tasks/PLAN-20260915-068-stub-harness-idempotency-contract.md) | DONE |

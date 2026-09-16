@@ -91,7 +91,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-068-stub-harness-idempotency-contract.md
   - .cursor/plans/tasks/PLAN-20260915-069-provider-health-schema-digest-drift.md
   - .cursor/plans/tasks/PLAN-20260915-070-shared-sqlite-connection-serialization.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-070-shared-sqlite-connection-serialization.md
+  - .cursor/plans/tasks/PLAN-20260915-071-shared-connection-read-atomicity.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-071-shared-connection-read-atomicity.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -101,6 +102,7 @@ memory_entries:
   - MEM-20260915-043-stub-must-enforce-the-contract-it-stands-in-for
   - MEM-20260915-044-schema-digest-is-a-state-not-an-event
   - MEM-20260915-045-shared-connection-is-not-concurrency-safety
+  - MEM-20260915-046-statement-serialization-is-not-read-atomicity
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -507,3 +509,18 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   live 残留 1/24 的 `404 unknown schedule`（行已提交、独立连接查得到，共享连接上的那次
   SELECT 没看见），单元复现为"12 线程 × 8 轮写后立刻读"里 9~10 次读不到；
   治法需要**每线程连接或显式事务**（结构性改动，本轮刻意不做），见 RECHECK-070 W-1。
+- 2026-09-16 cycle 9 开轮（读原子性）：derive = PLAN-20260915-071。derive 先把"到底
+  什么坏了"钉死再动手——三次诊断脚本依次排除"读快照旧"（miss 时 `in_transaction=False`、
+  同一连接上**紧接着**的 `list_definitions()` 看得见那行）与"写入丢了"（独立连接 100% 看得见），
+  再用 **2×2 对照**定因：只护读即归零、只护写不归零 ⇒ 是**读侧的取行窗口**。
+- 2026-09-16 cycle 9 交付：`SerializedConnection._statement` 在锁内执行，
+  返回行的语句（`cursor.description is not None`）**在锁内取尽**，交回只读视图
+  `MaterializedRows`（fetchone/fetchmany/fetchall/迭代/rowcount/description/close），
+  store 与路由一行未动。证据：修复后 12 线程 × 8 轮 × 3 轮 = **288 次往返 0 处对不上**
+  （修复前 10~20/96）；**反证**可复现（语句级串行的形态既有"读不到"也有
+  `zip() argument 2 is shorter` 的坏行）；游标面七项与真游标逐项相等；
+  `tests/adapters/sqlite tests/api` **476 passed**；live 24×201 / 0×404 / 0×500。
+  **如实收窄**：把控制面切回语句级串行后 216 个并发 POST 仍全 201 ⇒ live 压不出这一类，
+  live 对照只作补充观察，判据由单元级证据承担（RECHECK-071 W-1）；
+  cycle 8 的 live 1×404 因此只能说"与这一类一致"，**不能说已证明同源**。
+  m0 **PASS: profile=m0; 23 deterministic checks**。
