@@ -586,3 +586,8 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   从 cycle 11 续跑。后继入口按优先级：provider 凭据绑定（最小最安全，不出网）→
   provider 端点注入 adapter（含受控出网，安全策略级）→ `tool_pack.*` 策略产品决策 →
   `conn.cursor()` 收口 → 锁粒度（每线程连接）。
+- 2026-09-16 收口提交的 CI：`e020639` → run **35121878161 六个 job 全 success**
+  （eval-gate 16:26:41Z / collector-quality 16:28:27Z / container-quality 16:30:20Z /
+  console-frontend 16:33:31Z / quality-ubuntu-latest 16:34:09Z / quality-windows-latest
+  16:38:12Z，无重跑）⇒ 收口提交本身也过了 main 的全部门禁。**本 GOAL 至此停在
+  BLOCKED（预算触顶），等待用户在前述两条恢复条件里选一条。**

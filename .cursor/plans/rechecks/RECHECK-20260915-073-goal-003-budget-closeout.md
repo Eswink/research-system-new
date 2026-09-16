@@ -47,6 +47,7 @@ checked_head: d5e5de7
 | 8 | `e4f5b3d` | 35111194584 | 六个 job 全 success |
 | 9 | `cb61f41` | 35115260874 | **五个 job success，`quality-ubuntu-latest` 判红**（红在本轮新增的负载型反证：2 vCPU runner 复现不出竞态） |
 | 10 | `d5e5de7` | 35119573827 | **六个 job 全 success** —— 其中 ubuntu 跑的是**更正后的结构判据**，证明更正可移植 |
+| 收口 | `e020639` | 35121878161 | **六个 job 全 success**（eval-gate 16:26:41Z / collector-quality 16:28:27Z / container-quality 16:30:20Z / console-frontend 16:33:31Z / quality-ubuntu-latest 16:34:09Z / quality-windows-latest 16:38:12Z，无重跑）——收口提交本身也过了 main 的全部门禁 |
 
 **cycle 9 红项的处置（按 GOAL 失败分类表）**：分类 = 反证不可移植（非代码缺陷、非门禁过严）；
 处置 = 反证从"负载压出读错"换成"读结果是否在锁内取尽"的**结构判据**，负载型复现器
