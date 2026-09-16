@@ -24,10 +24,13 @@ tool_providers:
     kind: REST
     trust_level: VERIFIED
     transport: rest
-    # 端点来源声明（可选）：环境变量名，其值是端点 URL。
-    # 这里**不声明** —— 适配器自带 E-utilities 默认端点；声明了却未设置环境变量
-    # 会被判为不可用（诚实 UNKNOWN）。凭据（NCBI_API_KEY）不写在这里：
-    # 凭据只经 CredentialResolver 按 credential_ref 解析。
+    # 两个"声明即承诺"的字段都在这里**不声明**，理由各不相同：
+    # - endpoint_env（端点来源）：适配器自带 E-utilities 默认端点；声明了却未设置
+    #   环境变量会被判为不可用（诚实 UNKNOWN）。
+    # - credential_ref（**必需**凭据）：NCBI_API_KEY 是**可选**的——无 key 也能用，
+    #   只是限速更严（3 req/s vs 10 req/s，适配器按 min_request_interval_seconds
+    #   强制间隔）。声明即"没有它不可用"，因此可选凭据不写在这里；适配器自己按
+    #   `NcbiEutilsProvider(credential_ref=...)` 的构造参数在调用点解析。
     protocol_version: eutils-2026-08-22
     capabilities:
       - literature.search
@@ -37,3 +40,19 @@ tool_providers:
     network_domains:
       - eutils.ncbi.nlm.nih.gov
     health_check: true
+
+  # 参考形态（未启用）：需要凭据才能工作的 provider 才写 credential_ref。
+  # MCP streamable_http 就是这种——适配器构造期即要求 credential_ref，
+  # 只是那条要求此前进不了 spec（注册面/读面看不见）。取消注释即生效：
+  # 凭据不在时健康探测如实 UNKNOWN 并点名引用，不伪装可用。
+  # docs_mcp:
+  #   kind: MCP
+  #   trust_level: USER_APPROVED
+  #   transport: streamable_http
+  #   capabilities:
+  #     - docs.search
+  #   effect_class: READ_ONLY
+  #   network_domains:
+  #     - docs.internal.example
+  #   credential_ref: DOCS_MCP_TOKEN
+  #   health_check: true

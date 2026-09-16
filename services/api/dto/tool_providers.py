@@ -42,6 +42,7 @@ class ToolProviderRegisterDto(BaseModel):
     network_domains: list[str] = Field(default_factory=list)
     health_check: bool = False
     endpoint_env: str | None = Field(default=None, min_length=1, max_length=128)
+    credential_ref: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class ToolProviderUpdateDto(BaseModel):
@@ -55,6 +56,7 @@ class ToolProviderUpdateDto(BaseModel):
     network_domains: list[str] | None = None
     health_check: bool | None = None
     endpoint_env: str | None = Field(default=None, min_length=1, max_length=128)
+    credential_ref: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class ToolProviderRevokeDto(BaseModel):
@@ -76,6 +78,18 @@ class ToolProviderEndpointBindingDto(BaseModel):
     state: str
     env_name: str | None = None
     endpoint_digest: str | None = None
+
+
+class ToolProviderCredentialBindingDto(BaseModel):
+    """`credential_ref` 的**存在性**判定结果（PLAN-20260915-074）：状态 / 引用名 / 是否在场。
+
+    凭据值**不进**读面——本 DTO 的三样都回答不了"密钥是什么"，只回答"声明的必需
+    凭据此刻在不在"。判定只走 `CredentialResolver.has`，不解析明文。
+    """
+
+    state: str
+    credential_ref: str | None = None
+    present: bool = False
 
 
 class ToolProviderRegistrationDto(BaseModel):
@@ -106,6 +120,9 @@ class ToolProviderRegistrationDto(BaseModel):
     schema_drift_since: str | None = None
     endpoint_binding: ToolProviderEndpointBindingDto = Field(
         default_factory=lambda: ToolProviderEndpointBindingDto(state="NOT_DECLARED")
+    )
+    credential_binding: ToolProviderCredentialBindingDto = Field(
+        default_factory=lambda: ToolProviderCredentialBindingDto(state="NOT_DECLARED")
     )
     catalog_active: bool = False
 

@@ -678,6 +678,8 @@ export interface ToolProviderRegisterDto {
   health_check?: boolean;
   /** 端点来源**声明**：环境变量名，其值是端点 URL（只存变量名，值不进读面）。 */
   endpoint_env?: string | null;
+  /** **必需**凭据的引用名（声明即必需；只存引用名，凭据值不进读面）。 */
+  credential_ref?: string | null;
 }
 
 export interface ToolProviderUpdateDto {
@@ -689,6 +691,7 @@ export interface ToolProviderUpdateDto {
   network_domains?: string[];
   health_check?: boolean;
   endpoint_env?: string | null;
+  credential_ref?: string | null;
 }
 
 /**
@@ -700,6 +703,17 @@ export interface ToolProviderEndpointBindingDto {
   state: string;
   env_name: string | null;
   endpoint_digest: string | null;
+}
+
+/**
+ * `credential_ref` 的**存在性**判定结果（PLAN-074）：状态 / 引用名 / 是否在场。
+ * PRESENT = 声明的必需凭据当前可解析；ABSENT = 声明了但解析不到（provider 不可用）；
+ * NOT_DECLARED = 没声明过；UNCHECKED = 存在性检查本身不可用（不猜）。凭据值不进读面。
+ */
+export interface ToolProviderCredentialBindingDto {
+  state: string;
+  credential_ref: string | null;
+  present: boolean;
 }
 
 export interface ToolProviderRegistrationDto {
@@ -731,6 +745,8 @@ export interface ToolProviderRegistrationDto {
   schema_drift_since: string | null;
   /** 端点绑定三态（现算：取决于进程环境此刻的样子，不是注册时写下的声明）。 */
   endpoint_binding: ToolProviderEndpointBindingDto;
+  /** 凭据绑定（现算：只查存在性，凭据值不进读面）。 */
+  credential_binding: ToolProviderCredentialBindingDto;
   catalog_active: boolean;
 }
 

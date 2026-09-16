@@ -71,7 +71,10 @@ async def list_registrations(request: Request) -> ToolProviderRegistrationListDt
             note=REGISTRATION_NOTE,
         )
     return ToolProviderRegistrationListDto(
-        registrations=[registration_dto(item) for item in registry.list_registrations()],
+        registrations=[
+            registration_dto(item, credentials=deps.credentials)
+            for item in registry.list_registrations()
+        ],
         management_available=True,
         management_reason=None,
         note=REGISTRATION_NOTE,
@@ -110,13 +113,14 @@ async def register_provider(
             network_domains=list(payload.network_domains),
             health_check=payload.health_check,
             endpoint_env=payload.endpoint_env,
+            credential_ref=payload.credential_ref,
             registered_at=now,
             updated_at=now,
         )
     except ValueError as exc:
         raise ApiError(422, "Invalid Registration", str(exc)) from exc
     registry.save_registration(registration)
-    return registration_dto(registration)
+    return registration_dto(registration, credentials=deps.credentials)
 
 
 @router.patch(
@@ -143,7 +147,7 @@ async def update_registration(
     except ValueError as exc:
         raise ApiError(422, "Invalid Registration", str(exc)) from exc
     registry.save_registration(updated)
-    return registration_dto(updated)
+    return registration_dto(updated, credentials=deps.credentials)
 
 
 @router.post(
@@ -200,7 +204,7 @@ async def health_check_registration(
         observed_schema_digest=probe.observed_schema_digest,
     )
     registry.save_registration(checked)
-    return registration_dto(checked)
+    return registration_dto(checked, credentials=deps.credentials)
 
 
 def _require_registration(registry: ToolProviderRegistry, provider_id: str) -> ProviderRegistration:
@@ -230,4 +234,4 @@ def _transition(
     except ValueError as exc:
         raise ApiError(422, "Invalid Transition", str(exc)) from exc
     registry.save_registration(updated)
-    return registration_dto(updated)
+    return registration_dto(updated, credentials=deps.credentials)

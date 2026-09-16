@@ -108,6 +108,7 @@ def test_a_row_written_before_the_digest_fields_existed_still_decodes() -> None:
     assert decoded.schema_drift_since is None
     assert decoded.last_health == "HEALTHY"  # 其它字段不受影响
     assert decoded.state == "ACTIVE"
+    assert decoded.credential_ref is None  # 加字段前的老行 → "没声明过凭据"
 
 
 def test_list_returns_every_drifted_registration() -> None:
@@ -156,3 +157,40 @@ def test_endpoint_env_round_trips_and_legacy_rows_stay_undeclared() -> None:
     store._conn.commit()  # noqa: SLF001
 
     assert store.get_registration("legacy_gateway").endpoint_env is None
+
+
+def test_credential_ref_round_trips_and_legacy_rows_stay_undeclared() -> None:
+    """PLAN-20260915-074：凭据**声明**入库往返；旧行（无该键）解码为"未声明"。
+
+    注意存的是**引用名**：凭据值永远不入库（判定走 CredentialResolver.has，
+    取值只发生在进程边界）。
+    """
+    store = SqliteToolProviderRegistry(":memory:")
+    declared = _registration(credential_ref="DATASET_GATEWAY_TOKEN")
+    store.save_registration(declared)
+    assert store.get_registration("dataset_gateway") == declared
+    assert store.get_registration("dataset_gateway").credential_ref == "DATASET_GATEWAY_TOKEN"
+
+    # 声明随 spec() 进入目录面（否则注册面写了、探测面看不到——cycle 10 的教训）
+    assert store.get_registration("dataset_gateway").spec().credential_ref == (
+        "DATASET_GATEWAY_TOKEN"
+    )
+
+    legacy = _registration(id="legacy_gateway")
+    store.save_registration(legacy)
+    payload = json.loads(
+        str(
+            store._conn.execute(  # noqa: SLF001 - 直接改行，模拟"加字段之前写下的行"
+                "SELECT registration_json FROM tool_provider_registrations WHERE provider_id = ?",
+                ("legacy_gateway",),
+            ).fetchone()[0]
+        )
+    )
+    payload.pop("credential_ref", None)
+    store._conn.execute(  # noqa: SLF001 - 同上
+        "UPDATE tool_provider_registrations SET registration_json = ? WHERE provider_id = ?",
+        (json.dumps(payload), "legacy_gateway"),
+    )
+    store._conn.commit()  # noqa: SLF001
+
+    assert store.get_registration("legacy_gateway").credential_ref is None

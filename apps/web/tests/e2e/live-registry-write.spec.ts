@@ -79,6 +79,41 @@ test("live: 注册→批准→吊销全链，目录随之变化", async ({ page 
   expect(finalListed.providers.map((item) => item.id)).not.toContain("live_dataset_gateway");
 });
 
+test("live: 声明的必需凭据不在时如实 UNKNOWN（不伪装健康）", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const requiredRef = "LIVE_REGISTRY_REQUIRED_TOKEN_074";
+  const created = await page.request.post("/api/tool-provider-registrations", {
+    headers: idem("cred-register"),
+    data: {
+      id: "live_credential_bound",
+      kind: "REST",
+      capabilities: ["dataset.read"],
+      pinned_revision: PIN,
+      transport: "rest",
+      health_check: true,
+      credential_ref: requiredRef,
+    },
+  });
+  expect(created.status()).toBe(201);
+  const binding = (
+    (await created.json()) as {
+      credential_binding: { state: string; credential_ref: string | null; present: boolean };
+    }
+  ).credential_binding;
+  expect(binding.state).toBe("ABSENT");
+  expect(binding.credential_ref).toBe(requiredRef);
+
+  const checked = await page.request.post(
+    "/api/tool-provider-registrations/live_credential_bound/health-check",
+    { headers: idem("cred-health") },
+  );
+  expect(checked.ok()).toBeTruthy();
+  const checkedBody = (await checked.json()) as { last_health: string; health_detail: string };
+  expect(checkedBody.last_health).toBe("UNKNOWN");
+  expect(checkedBody.health_detail).toContain(requiredRef);
+});
+
 test("live: 可漂移 pin 与重复登记被拒绝", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

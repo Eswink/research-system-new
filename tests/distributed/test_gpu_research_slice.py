@@ -51,6 +51,9 @@ _RUN_ID = "17171717-2222-4333-8444-555555555555"
 
 
 class _Credentials:
+    def has(self, credential_ref: str) -> bool:
+        return True
+
     def resolve(self, credential_ref: str) -> SecretValue:
         return SecretValue("fixture-secret")
 

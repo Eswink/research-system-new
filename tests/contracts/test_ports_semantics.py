@@ -128,6 +128,25 @@ class TestCredentialResolverSemantics:
         with pytest.raises(InvalidInputError):
             resolver.resolve("ref")
 
+    def test_has_agrees_with_resolve_and_never_carries_a_value(self) -> None:
+        """`has` 是 Port 成员（PLAN-20260915-074）：只说"能不能解析"，不带值。
+
+        - `has` 为真 ⇔ `resolve` 会成功（两个方向都钉）；
+        - `has` 的记录里只有布尔，没有值（它能被安全地用在状态判定里）。
+        """
+        resolver = FakeCredentialResolver({"present_ref": "sk-secret-1234567890abcdef"})
+        assert resolver.has("present_ref") is True
+        assert "sk-secret-1234567890abcdef" not in str(resolver.calls)
+
+        assert resolver.has("missing") is False
+        with pytest.raises(InvalidInputError):
+            resolver.resolve("missing")
+
+        resolver.deny_scope("present_ref")
+        assert resolver.has("present_ref") is False  # 拒绝的 scope 不算"在场"
+        with pytest.raises(InvalidInputError):
+            resolver.resolve("present_ref")
+
 
 class TestEventPublisherSemantics:
     def test_event_order_preserved(self) -> None:

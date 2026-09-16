@@ -24,6 +24,7 @@ from packages.domain.enums import EndpointHealth, ProviderType
 from packages.domain.models import LLMEndpoint
 from packages.domain.tools import ToolProviderSpec
 from services.api.composition import ApiDeps
+from services.api.tool_provider_credentials import missing_reason, resolve_credential_binding
 from services.api.tool_provider_endpoints import resolve_endpoint_binding, unbound_reason
 
 
@@ -94,12 +95,22 @@ def probe_provider_spec(deps: ApiDeps, spec: ToolProviderSpec) -> ProviderProbe:
 
     单一路径的理由：注册面"健康复核"写下的必须是读面看到的那个事实，否则会
     出现"复核说健康、目录说不可证明"的两套真相。UNKNOWN 一律带原因（未注册
-    实例 / 未声明 health_check / 探测异常 / **声明的端点环境变量未设置**），不伪装成功。
+    实例 / 未声明 health_check / 探测异常 / **声明的端点环境变量未设置** /
+    **声明的必需凭据不在**），不伪装成功。
 
-    端点门槛（PLAN-20260915-072）：provider 声明了 `endpoint_env` 就意味着它自己说
-    "我的端点来自这个环境变量"——变量没设置时它不可用，因此**不探测**、直接 UNKNOWN
-    并点名变量（名字不是秘密；值不进任何读面）。未声明该字段的 provider 行为不变。
+    两道前置门槛（都只读声明，不碰值）：
+
+    - **凭据门槛**（PLAN-20260915-074）：provider 声明了 `credential_ref` 就意味着它
+      自己说"没有这个凭据我不可用"——凭据当前解析不到时**不探测**、直接 UNKNOWN 并
+      点名引用（引用名不是秘密；值不进任何读面，判定只走 `has`，不调用 `resolve`）。
+      对**所有 kind（含 NATIVE）**成立：凭据是凭据事实，与传输形态无关。
+    - **端点门槛**（PLAN-20260915-072）：声明了 `endpoint_env` 的 provider，其端点环境
+      变量未设置时同样不可用；NATIVE 无外部端点可解析，故**跳过**该门槛——这是与
+      凭据门槛故意的不对称，两者都不适用于未声明该字段的 provider。
     """
+    credential_gap = missing_reason(resolve_credential_binding(spec, resolver=deps.credentials))
+    if credential_gap is not None:
+        return ProviderProbe(EndpointHealth.UNKNOWN, credential_gap)
     if spec.kind is ProviderType.NATIVE:
         return ProviderProbe(EndpointHealth.HEALTHY, NATIVE_PROBE_DETAIL)
     unbound = unbound_reason(resolve_endpoint_binding(spec))

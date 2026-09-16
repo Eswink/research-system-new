@@ -103,6 +103,11 @@ class ToolProviderSpec:
     effect_class: EffectClass = EffectClass.READ_ONLY
     transport: str | None = None
     endpoint_env: str | None = None
+    # 端点来源**声明**：环境变量名，其值是端点 URL（env-only，PLAN-20260915-072）。
+    # 凭据**必需性声明**：`credential_ref` 是"没有它这个 provider 不可用"的那个凭据
+    # 引用（PLAN-20260915-074）。这里只存**引用名**：值永不进 Domain、不进读面——
+    # 存在性判定走 CredentialResolver.has，取值只发生在进程边界。可选凭据不声明。
+    credential_ref: str | None = None
     network_domains: list[str] = field(default_factory=list)
     protocol_version: str | None = None
     health_check: bool = False

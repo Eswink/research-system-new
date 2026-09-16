@@ -2,7 +2,7 @@
 id: GOAL-20260915-003
 slug: handoff-backlog-completion
 title: 收口清单续做：设计门禁结构判据、ToolPack 供应链面、ops 调度写面、worker 退出语义、替身守卫
-status: BLOCKED
+status: ACTIVE
 created_at: 2026-09-16
 updated_at: 2026-09-16
 owners:
@@ -65,7 +65,10 @@ exit_criteria:
       每 cycle CI run 六 job 结论；收口 RECHECK = PASS 或 PASS_WITH_WARNINGS
     status: PASS
 budget:
-  max_cycles: 10
+  # 2026-09-17 显式变更 10 → 20（见「终止与收口 · 续期记录」）：用户指令的区间是
+  # 「循环迭代 10-20 次」，10 是 derive 时自定的下限；cycle 1…10 已全部交付后，
+  # 按用户区间续期到 20，不降低任何判据。
+  max_cycles: 20
   per_cycle_minutes: 120
   no_progress_stop_cycles: 2
 fix_policy:
@@ -93,7 +96,9 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-070-shared-sqlite-connection-serialization.md
   - .cursor/plans/tasks/PLAN-20260915-071-shared-connection-read-atomicity.md
   - .cursor/plans/tasks/PLAN-20260915-072-provider-endpoint-binding.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-073-goal-003-budget-closeout.md
+  - .cursor/plans/tasks/PLAN-20260915-073-goal-003-budget-closeout.md
+  - .cursor/plans/tasks/PLAN-20260915-074-provider-credential-binding.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-074-provider-credential-binding.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -105,6 +110,8 @@ memory_entries:
   - MEM-20260915-045-shared-connection-is-not-concurrency-safety
   - MEM-20260915-046-statement-serialization-is-not-read-atomicity
   - MEM-20260915-047-declared-but-unconsumed-config-is-a-lie
+  - MEM-20260915-048-nonportable-counterexamples-are-not-gates
+  - MEM-20260915-049-presence-check-is-not-a-resolve
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -191,7 +198,22 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 - **BLOCKED**：预算触顶（`max_cycles` 或 `no_progress_stop_cycles`）、命中 escalation_triggers、
   或同一失败签名超过 `fix_policy` 上限；恢复条件必须写清。
 
-### BLOCKED 记录（2026-09-16，cycle 10 收口）——**预算触顶**
+### 续期记录（2026-09-17）——**预算 10 → 20，status BLOCKED → ACTIVE**
+
+> **触发**：用户会话指令的区间是「循环迭代 **10-20** 次」。`max_cycles: 10` 是 derive
+> 时自定的**下限**，不是用户给的上限；cycle 1…10 交付完后按区间续期，是回到用户
+> 口径，不是放宽判据。
+>
+> **变更**：`budget.max_cycles: 10 → 20`（frontmatter 有同源注释）；`status: BLOCKED → ACTIVE`。
+> **EC 未动**：EC-01…EC-06 的 criterion/verify 与判据一字未改；已记 PASS 的不回退、
+> 未达成的不得预置 PASS。
+> **发起方式**：RECHECK-20260915-073 列的恢复条件②（显式变更 `budget.max_cycles`
+> 并置回 ACTIVE，从 cycle 11 续跑）。①（新建承接 GOAL）保留为后续选项。
+> **续期后的推进顺序**：先做「最小、最安全」的一条 —— provider 凭据绑定
+> （RECHECK-072 W-4 / RECHECK-073 后继②）；escalation 级的两项（端点注入 adapter、
+> `tool_pack.*` 策略产品决策）仍**不**由本 GOAL 自行决定。
+
+### BLOCKED 记录（2026-09-16，cycle 10 收口）——**预算触顶（已由上方续期记录解除）**
 
 > **原因**：`budget.max_cycles: 10` 已用尽（cycle 1…10 全部交付，不是 EC 未达成、
 > 也不是失败签名超限）。按 frontmatter 口径「硬上限，触顶即 BLOCKED」置 `status: BLOCKED`。
@@ -591,3 +613,25 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   console-frontend 16:33:31Z / quality-ubuntu-latest 16:34:09Z / quality-windows-latest
   16:38:12Z，无重跑）⇒ 收口提交本身也过了 main 的全部门禁。**本 GOAL 至此停在
   BLOCKED（预算触顶），等待用户在前述两条恢复条件里选一条。**
+- 2026-09-17 续期（**预算 10 → 20，BLOCKED → ACTIVE**）：用户会话指令的区间是
+  「循环迭代 **10-20** 次」，10 是我 derive 时自定的下限而非用户上限。按恢复条件②
+  显式变更 `budget.max_cycles: 20` 并置回 ACTIVE，从 cycle 11 续跑；EC 表一字未改、
+  已记 PASS 的不回退、新增轮次不得预置 PASS。续期记录见「终止与收口 · 续期记录」。
+- 2026-09-17 cycle 11 开轮（凭据绑定）：derive = PLAN-**20260915-074**（cycle 10 登记
+  的"子 PLAN 编号 = 073"已被收口计划占用，如实改用 074）。derive 先核对两件事：
+  ① MCP streamable_http 在**构造期**就要求 `credential_ref`，而这条要求进不了 spec；
+  ② NCBI 的凭据是**可选**的（`_api_key()` 在 `InvalidInputError` 时返回 None），
+  因此字段语义定为「**声明即必需**」，示例配置不给 ncbi 声明凭据。
+- 2026-09-17 cycle 11 交付：`CredentialResolver.has` 成为 Port 成员并补齐全部实现
+  （mypy 用协议抓出 6 处老替身，全部补 `has` 而**未放宽类型**）；
+  `ToolProviderSpec.credential_ref` / `ProviderRegistration.credential_ref` / `spec()` /
+  SQLite 往返（旧行 ⇒ 未声明）/ 注册读面 `credential_binding`（四态：NOT_DECLARED /
+  ABSENT / PRESENT / UNCHECKED）全线打通；探测门槛对**所有 kind 含 NATIVE** 成立
+  （与端点门槛故意不对称，用例两向钉住）；判定**只调 `has`、不调 `resolve`**，
+  用例用"一被调用就断言失败"的 `resolve` 把这条口径变成可执行判据。
+  定向套件：新用例 **8 passed**、`tests/api` **422 passed**、
+  `tests/adapters/sqlite+tests/loaders+tests/api` **525 passed**、
+  `tests/contracts+tests/application` **955 passed / 57 skipped**、
+  `tests/observability` **58 passed / 1 skipped**（canary 替身补齐）；
+  stub e2e **83 passed**（结构与像素基线均未变）、live e2e **36 passed**（+1 凭据链）；
+  OpenAPI 重生成（+1276 字符）后快照契约通过；ruff/format 干净、mypy **867 files clean**。

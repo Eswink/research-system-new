@@ -36,7 +36,11 @@ class RegistryCredentialResolver:
         self._registry.pop(credential_ref, None)
 
     def has(self, credential_ref: str) -> bool:
-        return credential_ref in self._registry or credential_ref in self._environment
+        """存在性检查（PLAN-20260915-074）：与 `resolve` 的成功条件一致——注册表命中
+        且非空，或环境变量存在且非空。空值/未注册/未设置一律 False（不物化明文）。"""
+        if credential_ref in self._registry:
+            return bool(self._registry[credential_ref])
+        return bool(self._environment.get(credential_ref, ""))
 
     def resolve(self, credential_ref: str) -> SecretValue:
         if credential_ref in self._registry:

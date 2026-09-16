@@ -16,6 +16,11 @@
       "description": "端点来源声明的环境变量名：其值是 provider 的端点 URL（env-only，不读文件）。未设置该变量时 provider 判为不可用（健康探测如实 UNKNOWN）。凭据不走这里——凭据只经 CredentialResolver 的 credential_ref 解析。"
     },
     "protocol_version": {"type": "string", "minLength": 1},
+    "credential_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "该 provider **必需**凭据的引用名（声明即必需：没有它这个 provider 不可用）。判定只查存在性（CredentialResolver.has），不取值、不落盘、不进读面；可选凭据不要声明（例如 NCBI E-utilities 无 key 也能用，只是限速更严）。"
+    },
     "capabilities": {
       "type": "array",
       "uniqueItems": true,

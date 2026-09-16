@@ -119,6 +119,9 @@ CORRELATION_SUFFIXES = (
 class _CanaryCredentialResolver:
     """把 canary 当成 OTLP header 凭据解析出来(必须只出现在 header)。"""
 
+    def has(self, credential_ref: str) -> bool:
+        return True
+
     def resolve(self, credential_ref: str) -> Any:
         @dataclass(frozen=True, slots=True)
         class _Secret:

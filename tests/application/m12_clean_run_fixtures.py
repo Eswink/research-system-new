@@ -65,6 +65,9 @@ IMAGE_DIGEST = "sha256:sandbox-image"
 
 
 class _Credentials:
+    def has(self, credential_ref: str) -> bool:
+        return True
+
     def resolve(self, credential_ref: str) -> SecretValue:
         return SecretValue("fixture-secret")
 

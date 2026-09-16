@@ -14,11 +14,17 @@ from packages.domain.models import EndpointProbeSnapshot, LLMEndpoint, ModelDefi
 
 
 class FakeCredentialResolver:
+    def has(self, credential_ref: str) -> bool:
+        return True
+
     def resolve(self, credential_ref: str) -> SecretValue:
         return SecretValue("sk-test-token-1234567890")
 
 
 class MissingCredentialResolver:
+    def has(self, credential_ref: str) -> bool:
+        return False
+
     def resolve(self, credential_ref: str) -> SecretValue:
         raise InvalidInputError(f"credential_ref not found: {credential_ref!r}")
 

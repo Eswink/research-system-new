@@ -6220,6 +6220,37 @@
         "title": "ToolPackSubmitResultDto",
         "type": "object"
       },
+      "ToolProviderCredentialBindingDto": {
+        "additionalProperties": false,
+        "description": "`credential_ref` 的**存在性**判定结果（PLAN-20260915-074）：状态 / 引用名 / 是否在场。\n\n凭据值**不进**读面——本 DTO 的三样都回答不了\"密钥是什么\"，只回答\"声明的必需\n凭据此刻在不在\"。判定只走 `CredentialResolver.has`，不解析明文。",
+        "properties": {
+          "credential_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credential Ref"
+          },
+          "present": {
+            "default": false,
+            "title": "Present",
+            "type": "boolean"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "ToolProviderCredentialBindingDto",
+        "type": "object"
+      },
       "ToolProviderDto": {
         "additionalProperties": false,
         "properties": {
@@ -6374,6 +6405,19 @@
             "title": "Capabilities",
             "type": "array"
           },
+          "credential_ref": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credential Ref"
+          },
           "effect_class": {
             "default": "READ_ONLY",
             "title": "Effect Class",
@@ -6478,6 +6522,9 @@
             "default": false,
             "title": "Catalog Active",
             "type": "boolean"
+          },
+          "credential_binding": {
+            "$ref": "#/components/schemas/ToolProviderCredentialBindingDto"
           },
           "effect_class": {
             "title": "Effect Class",
@@ -6735,6 +6782,19 @@
               }
             ],
             "title": "Capabilities"
+          },
+          "credential_ref": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credential Ref"
           },
           "effect_class": {
             "anyOf": [

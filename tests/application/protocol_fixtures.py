@@ -51,6 +51,9 @@ from packages.domain.workspace import Workspace
 
 
 class Credentials:
+    def has(self, credential_ref: str) -> bool:
+        return True
+
     def resolve(self, credential_ref: str) -> SecretValue:
         return SecretValue(f"value-for-{credential_ref}")
 

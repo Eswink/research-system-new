@@ -6,16 +6,19 @@
 
 from __future__ import annotations
 
+from packages.application.ports.credential_resolver import CredentialResolver
 from packages.application.ports.tool_provider_registry import ToolProviderRegistry
 from packages.domain.core import Timestamp
 from packages.domain.enums import EffectClass, ProviderType
 from packages.domain.tool_registry import ProviderRegistration
 from services.api.composition import ApiDeps
 from services.api.dto.tool_providers import (
+    ToolProviderCredentialBindingDto,
     ToolProviderEndpointBindingDto,
     ToolProviderRegistrationDto,
 )
 from services.api.errors import ApiError
+from services.api.tool_provider_credentials import resolve_credential_binding
 from services.api.tool_provider_endpoints import resolve_endpoint_binding
 
 REGISTRY_UNAVAILABLE_REASON = "Tool Provider 注册表不可用（控制面未装配配置存储）"
@@ -53,13 +56,18 @@ def iso(value: Timestamp | None) -> str | None:
     return None if value is None else value.value.isoformat()
 
 
-def registration_dto(registration: ProviderRegistration) -> ToolProviderRegistrationDto:
+def registration_dto(
+    registration: ProviderRegistration, *, credentials: CredentialResolver
+) -> ToolProviderRegistrationDto:
     """注册实体 → DTO（健康事实直接取实体上的最近一次探测，不另开参数）。
 
-    端点绑定（PLAN-20260915-072）在这里**现算**：状态取决于进程环境此刻的样子，
+    两个绑定都在这里**现算**：状态取决于进程环境与凭据边界**此刻**的样子，
     与注册时写下的"声明"分开——声明是不变的配置，绑定是当下的事实。
+    凭据只做存在性判定（`has`），不取值、不物化明文。
     """
-    binding = resolve_endpoint_binding(registration.spec())
+    spec = registration.spec()
+    binding = resolve_endpoint_binding(spec)
+    credential = resolve_credential_binding(spec, resolver=credentials)
     return ToolProviderRegistrationDto(
         id=registration.id,
         kind=registration.kind.value,
@@ -88,6 +96,11 @@ def registration_dto(registration: ProviderRegistration) -> ToolProviderRegistra
             state=binding.state,
             env_name=binding.env_name,
             endpoint_digest=binding.endpoint_digest,
+        ),
+        credential_binding=ToolProviderCredentialBindingDto(
+            state=credential.state,
+            credential_ref=credential.credential_ref,
+            present=credential.present,
         ),
         catalog_active=registration.active,
     )

@@ -17,6 +17,11 @@ class EnvCredentialResolver:
     def __init__(self, environment: dict[str, str] | None = None) -> None:
         self._environment = environment if environment is not None else dict(os.environ)
 
+    def has(self, credential_ref: str) -> bool:
+        """存在性检查（PLAN-20260915-074）：变量存在且非空——与 `resolve` 的成功条件
+        一致，只回答布尔，不把值带出边界。"""
+        return bool(self._environment.get(credential_ref, ""))
+
     def resolve(self, credential_ref: str) -> SecretValue:
         if credential_ref not in self._environment:
             raise InvalidInputError(f"credential_ref not found in environment: {credential_ref!r}")

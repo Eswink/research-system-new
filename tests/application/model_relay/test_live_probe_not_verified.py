@@ -45,6 +45,9 @@ def _model() -> ModelDefinition:
 
 
 class _NoCredentials:
+    def has(self, credential_ref: str) -> bool:
+        return False
+
     def resolve(self, credential_ref: str) -> SecretValue:
         raise InvalidInputError("credential missing")
 
@@ -80,6 +83,9 @@ class _FailingGateway:
 
 
 class _Credentials:
+    def has(self, credential_ref: str) -> bool:
+        return True
+
     def resolve(self, credential_ref: str) -> SecretValue:
         return SecretValue("fixture-secret")
 

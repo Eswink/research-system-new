@@ -93,6 +93,11 @@ class ProviderRegistration:
     # "变量名"：端点值永不入库、不进读面——解析发生在进程边界
     # （services/api/tool_provider_endpoints.py），凭据仍只走 CredentialResolver。
     endpoint_env: str | None = None
+    # 凭据**必需性声明**（PLAN-20260915-074）：provider 声明"没有这个凭据我不可用"。
+    # 与 endpoint_env 同样只存**名字**：值永不入库、不进读面——存在性判定走
+    # CredentialResolver.has（services/api/tool_provider_credentials.py），
+    # 取值只发生在进程边界。
+    credential_ref: str | None = None
     state: str = RegistrationState.initial()
     registered_at: Timestamp | None = None
     updated_at: Timestamp | None = None
@@ -147,6 +152,7 @@ class ProviderRegistration:
             network_domains=sorted(set(self.network_domains)),
             health_check=self.health_check,
             endpoint_env=self.endpoint_env,
+            credential_ref=self.credential_ref,
         )
 
     def approve(self, *, now: Timestamp) -> ProviderRegistration:

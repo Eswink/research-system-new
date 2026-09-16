@@ -38,6 +38,12 @@ interface StubRegistration {
     env_name: string | null;
     endpoint_digest: string | null;
   };
+  /** 凭据存在性判定（PLAN-074）：替身只回事实，判定在服务端；凭据值不进读面。 */
+  credential_binding: {
+    state: string;
+    credential_ref: string | null;
+    present: boolean;
+  };
   catalog_active: boolean;
 }
 
@@ -165,6 +171,7 @@ function registration(
     schema_drift: false,
     schema_drift_since: null,
     endpoint_binding: { state: "NOT_DECLARED", env_name: null, endpoint_digest: null },
+    credential_binding: { state: "NOT_DECLARED", credential_ref: null, present: false },
     catalog_active: false,
   };
 }

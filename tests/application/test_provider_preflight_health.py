@@ -96,8 +96,19 @@ def _snapshot() -> CatalogSnapshot:
     )
 
 
+def _deps(**overrides: Any) -> Any:
+    """探测所需的**最小** deps 替身（不装整台控制面）。
+
+    `credentials` 是必需的：PLAN-20260915-074 起探测会先做凭据存在性判定
+    （本文件里的 spec 都没声明 `credential_ref`，判定是空转，但边界必须在）。
+    """
+    from adapters.fakes import FakeCredentialResolver
+
+    return cast(Any, SimpleNamespace(credentials=FakeCredentialResolver(), **overrides))
+
+
 def test_builder_native_healthy_unregistered_rest_unknown() -> None:
-    deps = cast(Any, SimpleNamespace(tool_providers={}))
+    deps = _deps(tool_providers={})
     health = build_provider_health(deps, _snapshot())
     assert health["builtin"] is EndpointHealth.HEALTHY
     assert health["mcp-lit"] is EndpointHealth.UNKNOWN
@@ -105,7 +116,7 @@ def test_builder_native_healthy_unregistered_rest_unknown() -> None:
 
 def test_builder_delegates_to_registered_provider_report() -> None:
     provider = FakeToolProvider()
-    deps = cast(Any, SimpleNamespace(tool_providers={"mcp-lit": provider}))
+    deps = _deps(tool_providers={"mcp-lit": provider})
     health = build_provider_health(deps, _snapshot())
     assert health["mcp-lit"] is EndpointHealth.HEALTHY
     provider.fail_health("mcp-lit")
@@ -118,5 +129,5 @@ def test_builder_probe_exception_converges_unknown() -> None:
         def check_health(self, provider: object) -> object:
             raise RuntimeError("transport exploded")
 
-    deps = cast(Any, SimpleNamespace(tool_providers={"mcp-lit": _Boom()}))
+    deps = _deps(tool_providers={"mcp-lit": _Boom()})
     assert build_provider_health(deps, _snapshot())["mcp-lit"] is EndpointHealth.UNKNOWN

@@ -141,6 +141,7 @@ def load_tool_providers(relative_path: str) -> dict[str, ToolProviderSpec]:
             effect_class=EffectClass(raw["effect_class"]),
             transport=raw.get("transport"),
             endpoint_env=raw.get("endpoint_env"),
+            credential_ref=raw.get("credential_ref"),
             network_domains=list(raw.get("network_domains", [])),
             protocol_version=raw.get("protocol_version"),
             health_check=bool(raw.get("health_check", False)),

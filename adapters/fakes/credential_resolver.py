@@ -21,6 +21,14 @@ class FakeCredentialResolver(FakeBase):
     def deny_scope(self, ref: str) -> None:
         self._denied_scopes.add(ref)
 
+    def has(self, credential_ref: str) -> bool:
+        """存在性检查（PLAN-20260915-074）：已注册且未被 deny_scope 拒绝——与
+        `resolve` 的成功条件一致，只回答布尔（记录里也只有布尔，没有值）。"""
+        self._enter("has", credential_ref)
+        available = credential_ref in self._secrets and credential_ref not in self._denied_scopes
+        self._record("has", credential_ref, result="present" if available else "absent")
+        return available
+
     def resolve(self, credential_ref: str) -> SecretValue:
         self._enter("resolve", credential_ref)
         if credential_ref in self._denied_scopes:
