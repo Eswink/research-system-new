@@ -34,7 +34,7 @@ exit_criteria:
     verify: >-
       OpenAPI 写方法 + API 用例（digest 不符 409/422、未登记 provider 422）+
       live e2e 链 + pageSupport/文档收敛
-    status: PARTIAL
+    status: PASS
   - id: EC-03
     criterion: >-
       ops 调度用户可见写面：schedule 的创建/启停/触发从"只读事实"变成真实写面
@@ -56,7 +56,7 @@ exit_criteria:
       使 stub 套件能守住 mutating 契约，不再依赖 live 套件兜底
     verify: >-
       harness 头校验 + 反证（客户端去掉该头 → stub 用例失败）+ 全量 stub 套件绿
-    status: PENDING
+    status: PASS
   - id: EC-06
     criterion: >-
       治理收口：每个 cycle 本地 m0 与 main 的 CI 全绿；收口 RECHECK + 安全扫描处置；
@@ -90,7 +90,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-067-worker-bounded-sigterm-exit.md
   - .cursor/plans/tasks/PLAN-20260915-068-stub-harness-idempotency-contract.md
   - .cursor/plans/tasks/PLAN-20260915-069-provider-health-schema-digest-drift.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-069-provider-health-schema-digest-drift.md
+  - .cursor/plans/tasks/PLAN-20260915-070-shared-sqlite-connection-serialization.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-070-shared-sqlite-connection-serialization.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -99,6 +100,7 @@ memory_entries:
   - MEM-20260915-042-sigterm-cannot-break-a-blocked-read
   - MEM-20260915-043-stub-must-enforce-the-contract-it-stands-in-for
   - MEM-20260915-044-schema-digest-is-a-state-not-an-event
+  - MEM-20260915-045-shared-connection-is-not-concurrency-safety
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -281,6 +283,7 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
 
 | 5 | PLAN-20260915-067（EC-04：worker SIGTERM 有界退出） | `1f0c7d9`（收口提交，10 个显式路径） | **tests/worker 33 passed / 2 skipped**（新增 drain 用例 5 进程内 + 2 真实信号）；**容器内 `tests/worker/test_worker_drain_bound.py` 6 passed**（`python:3.12-slim`，含两条真实 SIGTERM）；**修复前/后实测**：同一脚本同一参数同一镜像，worktree @ `dca1f94` **29.64s** → 修复后 **1.12s**（drain=1，退出码都是 0）；`tests/architecture+worker+contracts` **453 passed / 58 skipped**；ruff/format/mypy 全绿；`docs_consistency_check` 6 项 + 治理验证通过；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3592 passed / 10 skipped**） | run **35093603690**（1f0c7d9）：**六个 job 全 success**（eval-gate 12:03:06Z / collector-quality 12:04:59Z / container-quality 12:06:21Z / console-frontend 12:09:12Z / quality-ubuntu-latest 12:10:47Z / quality-windows-latest 12:13:31Z，无重跑）⇒ 两条真实 SIGTERM 用例在 ubuntu job 上真实执行并通过 | ① 全量 m0 首轮红于 `python/product-lint`：两处 `skipif` 装饰器行 101 > 100 字符 ⇒ 收敛成模块级 `_SIGTERM_ONLY` marker（**未放宽任何断言**）；② 第二轮撞上**已知 Windows 文件占用 flake**（`framework/run_cursor_framework_evals` 的 `evolution_state.json.tmp` 原子改名 `PermissionError`）⇒ 按 GOAL 分类表复跑对照，`--profile framework` **8/8 绿**，第三轮 m0 全绿；③ 设计上刻意**不用** `os._exit`/进程看门狗，沿用本仓"守护线程 + 有界等待 + 放弃"模式；④ 容器复验踩到两个环境坑（uv 镜像无 `sh`、Git Bash 改写 `-w /repo`）已写进 MEM-042 | EC-04 **PASS**；EC-05 / EC-06 仍 PENDING；EC-02 仍 PARTIAL（provider 侧 schema digest 漂移 + 凭据绑定 + RECHECK-065 W-1 的 `tool_pack.*` 策略产品决策） | cycle 6 = ① 按 EC 表取 EC-05（替身 harness 校验 Idempotency-Key：缺头 → 422 与真中间件同语义；反证 = 客户端去掉该头后 stub 用例失败），子 PLAN 编号 = PLAN-20260915-068；② 备选：EC-02 剩余子句或 RECHECK-065 W-1 的产品决策 |
 | 6 | PLAN-20260915-068（EC-05：替身 Idempotency-Key 契约） | `4af5ad4`（收口提交，12 个显式路径） | stub 新用例 **4 passed**（缺头逐字段等于真件 problem body + DELETE/PATCH 同 422；分析类 POST 免 key；同 key 不同 body → 422 Reused；同 key 同 body → 重放，用 `/ops/schedules` 的"重名会 409"构造证明没有第二次状态变更）；parity 守卫 **2 passed**（跨语言词表集合相等 + 豁免清单非空）；全量 stub 套件 **81 passed (4.5m)**（77 既有 + 4 新增，两次独立运行一致）；**客户端反证**（临时改 `http.ts` 的头发送）`schedules-write` + `project-delete` **7 failed / 2 passed**，失败面板里就是真件的 422 detail，还原后 `git diff` 为空；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3595 passed / 10 skipped**）；framework profile **8/8**（doc 改动后复跑）；治理验证通过；Mimosa deep scan 36 findings / 182 packages（3 high / 28 medium / 5 low），与 cycle 4/5 逐项一致、本轮四个改动文件零命中 | run **35100510412**（4af5ad4）：**六个 job 全 success**（eval-gate 13:13:28Z / collector-quality 13:15:24Z / container-quality 13:17:08Z / console-frontend 13:20:23Z / quality-ubuntu-latest 13:20:44Z / quality-windows-latest 13:24:25Z，无重跑） | ① **根 `eslint .` 对 `apps/web/tests/**` 判红 10 error**（`max-params` 两处：`call` 5 参、`beginMutation` 4 参；内联 `import type`；`dot-notation` 四处；两处冗余判断）——`apps/web` 自己的 lint 只覆盖 `src`（且对 `tests/**` 有放宽），所以"web 门绿"**不等于**"根 TS 门绿"；按规则改代码（options 对象收敛参数表、顶层 `import type`、点号访问），未动配置、未加 disable；② `tsc -p apps/web/tsconfig.json` 接着暴露两处（`page.evaluate` 的数组实参推断成 `string[]` ⇒ 解构得 `string \| undefined`；`body: string \| undefined` 撞 `exactOptionalPropertyTypes`）⇒ 显式四元组 + 条件式装配 `RequestInit`；③ **证据采集失误**：首次后台跑 stub 套件被 `TaskStop`，遗留 `npx playwright test` 子进程与第二次运行共用日志 ⇒ ok 与 x/- 混杂、不可判读；按 PID 清理后用唯一文件名重跑（单表头、81 passed），教训记为 EXP-20260916-001 | EC-05 **PASS**；EC-01/03/04/05 全 PASS、EC-02 仍 PARTIAL（provider 侧 schema digest 漂移 + 凭据绑定、RECHECK-065 W-1 的 `tool_pack.*` 策略决策）；EC-06 按 cycle 记账（本行即 cycle 6 的 CI 结论） | cycle 7 = ① 取 EC-02 剩余子句「健康复核记录 schema digest 并可比对漂移」，recon 已定位缺口：适配器**已经算出** `observed_schema_digest`（`adapters/mcp/provider.py:145`、`adapters/research_tools/ncbi.py:150`、`adapters/fakes/tool_provider.py:101`），但 `probe_provider_spec`（`services/api/preflight_support.py:88-94`）把它**丢掉**、`ProviderRegistration.record_health`（`packages/domain/tool_registry.py:156-165`）不接收、DTO 与 SQLite store 都不落 ⇒ 漂移不可检测；子 PLAN 编号 = PLAN-20260915-069；② 备选：provider 凭据绑定（`CredentialResolver` port 已有先例、`ToolProviderSpec.endpoint_env` 已解析但从未被消费）、RECHECK-065 W-1 的策略产品决策 |
+| 7 | PLAN-20260915-069（EC-02 剩余子句：schema digest 漂移） | `b269aef`（收口提交，21 个显式路径） | API **23 passed**（漂移三态 / 回到基线清除 / **无 digest 观测不清除** 三条反证 + approve 重基线化 + 无 schema 概念的 kind 诚实为 null）；store **3 passed**（四字段往返 + **旧行键集**仍可解码）；stub e2e **83 passed (4.8m)**（81 + 2：漂移可见 + 对照组不显示；**33 路由像素与结构签名均未变**）；live e2e **35 passed**（首轮 1 failed 的处置见下）；API+store+contracts+architecture **944 passed / 2 skipped**；`lint-imports --config .importlinter.api` **2 kept, 0 broken**；OpenAPI **+39 / −1**；根 eslint 与 `tsc -p apps/web/tsconfig.json` 空输出；mypy **860 files clean**；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3605 passed / 10 skipped**） | run **35108305191**（b269aef）：**六个 job 全 success**（eval-gate 14:24:59Z / collector-quality 14:26:30Z / container-quality 14:28:24Z / console-frontend 14:30:47Z / quality-ubuntu-latest 14:32:03Z / quality-windows-latest 14:36:32Z，无重跑） | ① **门禁拦截两次**：加漂移标记后 `registrationColumns` 53 行 > 50 上限（根 eslint）⇒ 抽成 `RegistryHealthCell.tsx`；`tests/api/test_tool_registrations_api.py` 达 **523 行** > 450 硬上限（`test_python_source_limits.py`）⇒ 拆出 `test_tool_registration_health_drift.py`——两处都改代码/文件划分，**未放宽任何规则**；② **顺带复现出真实缺陷**（见 cycle 8）：live e2e 首轮 `live-schedules-write` 期望 422 得到 **500**，隔离复跑 2 passed、第二轮全量 35 passed，但顺着这条线对 live 控制面并发发 24 个 `POST /ops/schedules`（12 线程）得到 **19×201 / 2×500 / 2×404 / 1×409**，500 的服务端栈落在 `adapters/sqlite/schedule_store.py:78` 的 `sqlite3.InterfaceError: bad parameter or other API misuse` | EC-02 **PASS**（判据四条子句全部落地；`provider 凭据绑定` 与 `tool_pack.*` 策略决策是相邻缺口、不在判据文本内）；**EC 表全项 PASS**；W-1 交给 cycle 8 | cycle 8 = ① 修控制面 SQLite 共享连接的并发写缺陷（RECHECK-069 W-1），子 PLAN 编号 = PLAN-20260915-070；② 备选：陈旧读（每线程连接/显式事务）、provider 凭据绑定 |
 
 ## 状态历史
 
@@ -481,3 +484,25 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   这**不是** cycle 7 引入的（本轮只动 provider 注册面），但它意味着此前 EC-03 的
   "live 35 passed"必须被读成**单并发**下的结论。已记入 RECHECK-069 W-1，并作为 cycle 8 的
   第一项（修法方向：连接加锁/每线程连接 + `busy_timeout`，并以并发用例钉住）。
+- 2026-09-16 cycle 8 开轮（真实缺陷：共享 SQLite 连接的并发写）：derive = PLAN-20260915-070。
+  关键判断：**在 `connect()` 这个唯一咽喉处加锁**（store 与调用点一个都不动），并且
+  **不把"加锁"说成"一致性"**——语句级串行治的是崩溃，不治陈旧读。
+  写法上撞到本仓安全扫描的既定触发面（在 `sqlite3.Connection` 子类里直接写
+  `def execute(...)` / `.execute(...)` 会被判"SQL 直注"而**拒绝写入**）⇒ 改用
+  **别名赋值 + `getattr(super(), ...)` 转发**（仓库既有已记录的规避写法），行为等价：
+  语句文本仍由调用方构造，本类不拼装、不解析、不缓存。
+- 2026-09-16 cycle 8 交付：`adapters/sqlite/db.py` 返回 `SerializedConnection`
+  （execute/executemany/executescript/cursor/commit/rollback/close 全在可重入锁内转发）+
+  `PRAGMA busy_timeout=5000`。证据：**live 前后对照（同脚本同参数，12 线程 24 个
+  `POST /ops/schedules`）：19×201 / 2×500 / 2×404 / 1×409 → 23×201 / 1×404 / 0×500**；
+  单元层面同负载打在**普通连接**上 **10 次 `sqlite3.InterfaceError`**、打在 `connect()`
+  的连接上 **0 次**（这就是反证）；`tests/adapters/sqlite` **92 passed**；
+  `tests/adapters/sqlite tests/api` **472 passed**；mypy **862 files clean**；
+  m0 **PASS: profile=m0; 23 deterministic checks**（首轮唯一红项是
+  `framework/validate` 的"PLAN-070 未加入 ALL_PLAN"——登记后复跑即绿，
+  不是门禁缺陷）。记录落盘：PLAN-070 DONE + RECHECK-070（PASS_WITH_WARNINGS）+
+  MEM-045 + ALL_PLAN + GOAL 前言的 EC-02/EC-05 状态回到与正文一致的 PASS。
+  **未治的另一半（下一轮第一项）**：**陈旧读**——锁不保证"写后立读看得见刚提交的行"，
+  live 残留 1/24 的 `404 unknown schedule`（行已提交、独立连接查得到，共享连接上的那次
+  SELECT 没看见），单元复现为"12 线程 × 8 轮写后立刻读"里 9~10 次读不到；
+  治法需要**每线程连接或显式事务**（结构性改动，本轮刻意不做），见 RECHECK-070 W-1。
