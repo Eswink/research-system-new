@@ -38,9 +38,10 @@ PLAN-20260915-065 声称的交付面：`toolPacksClient.ts` + `types.ts`/`client
 | 像素判据对同一改动仍不报警 | 同一次运行 33 条像素用例全绿（阈值 2%）⇒ 结构判据补的正是这块盲区 | PASS（缺口已知，非本轮引入） |
 | 基线重生成 + 跨平台一致 | `UPDATE_OUTLINES=1 …design-fidelity` 重生成（diff = 1 行）；容器 `verify_linux_outlines.sh` → `host routes=33 linux routes=33 drifted=[]` / `PASS: 33 条结构签名跨平台一致（win32 == linux）` | PASS |
 | 像素基线两平台重生成 + 目检 | `gen_linux_baseline_route.sh ops-integrations`（pinned `v1.56.1-noble`）+ 本机 `--update-snapshots`；两张 PNG 目检：面板/表单/空态/脚注渲染正确、无溢出、无缺少的样式 | PASS |
-| 全量门禁 | stub e2e **72 passed**（+6）/ live e2e **33 passed**（+2）/ web unit **76 passed** / `pnpm lint` 0 error 1 warning（既有 400 行 soft warning）/ `pnpm typecheck` 通过 / `tests/tooling+api+application` **1890 passed, 1 skipped** / m0 `PASS: profile=m0; 23 deterministic checks` | PASS |
+| 全量门禁 | stub e2e **72 passed**（+6）/ live e2e **33 passed**（+2）/ web unit **76 passed** / `pnpm lint` 0 error 1 warning（既有 400 行 soft warning）/ `pnpm typecheck` 通过 / `tests/tooling+api+application` **1890 passed, 1 skipped** / 全量 pytest **3436 passed, 8 skipped** / m0 `PASS: profile=m0; 23 deterministic checks` | PASS |
 | 文档与文案收敛 | `pageSupport.GAPS.integrations` 改为"已可操作（…待批准版本在横幅里、表中 digest 始终是生效版本…）"；`CONSOLE_PAGE_MAP` 的 `#/ops/integrations` 段与 G15 行同步；`CONTROL_PLANE_API` 增 console 段；`docs_consistency_check` 10 passed | PASS |
 | 安全扫描（sealed） | Mimosa deep scan `scan-2026-09-16T07-54-46.761Z-26a2733ef0fc`，seal `sha256:67261e0898df1e02f610d46387c98b21336907d5c0c20a27571af9d2b0abc9fa`：**36 findings，与上一轮扫描（06:17 同项目）计数相同，且按文件名过滤后与本轮改动相关的命中为 0**（既有项为 pickle/yaml 反序列化、随机性、`postgres/db.py` 环境变量→SQL 等） | PASS |
+| CI（本 cycle 提交 `ce28e05`） | run **35071216707**：eval-gate 07:58:06Z / collector-quality 07:59:51Z / container-quality 08:01:43Z / console-frontend 08:04:13Z / quality-ubuntu-latest 08:04:18Z / **quality-windows-latest 08:09:07Z** —— 六个 job 全 `success`，无重跑 | PASS |
 
 ## 告警
 
