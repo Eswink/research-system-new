@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260915-066](tasks/PLAN-20260915-066-ops-schedules-write-surface.md) | IN_PROGRESS |
 | [x] | [PLAN-20260915-065](tasks/PLAN-20260915-065-tool-pack-console-surface.md) | DONE |
 | [x] | [PLAN-20260915-064](tasks/PLAN-20260915-064-tool-pack-supply-chain-write-surface.md) | DONE |
 | [x] | [PLAN-20260915-063](tasks/PLAN-20260915-063-design-gate-structural-criterion.md) | DONE |

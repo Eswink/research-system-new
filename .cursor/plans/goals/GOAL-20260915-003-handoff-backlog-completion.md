@@ -86,6 +86,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-063-design-gate-structural-criterion.md
   - .cursor/plans/tasks/PLAN-20260915-064-tool-pack-supply-chain-write-surface.md
   - .cursor/plans/tasks/PLAN-20260915-065-tool-pack-console-surface.md
+  - .cursor/plans/tasks/PLAN-20260915-066-ops-schedules-write-surface.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-065-tool-pack-console-surface.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
@@ -125,8 +126,11 @@ EC-03 为 M、EC-04 为 M（进程信号语义）、EC-05 为 S、EC-01 为 M。
 **cycle 2 已闭环**（PLAN-20260915-064 ToolPack 供应链写面 = EC-02 后端，RECHECK-064；
 提交 `3c343f4` → run **35064152993** 六 job 全 success）。
 **cycle 3 已闭环**（PLAN-20260915-065 console 操作面 + live 链 = EC-02 前端，
-RECHECK-065 见 `latest_recheck`；本地全量绿、基线重生成已目检；
-CI run 结论回填在下一条状态历史）。
+RECHECK-065 见 `latest_recheck`；提交 `ce28e05` → run **35071216707** 六 job 全 success，
+记录提交 `bc44b68` → run **35072629321** 六 job 全 success）。
+**cycle 4 进行中**：PLAN-20260915-066（EC-03 ops 调度写面）已 derive（① 完成），
+待执行 ②实施 → ⑦记录；口径 = 执行体仍是既有守护线程，本轮只把"调度定义"变成
+可写/可读/可触发，`trigger` 与定时 pass 走同一函数。
 BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
 driver=session-goal，owner=root-agent。
 
