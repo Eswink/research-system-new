@@ -4,10 +4,22 @@ The only place a worker process talks to the Control Plane. It never touches
 PostgreSQL or ArtifactStore directly — every authoritative interaction goes
 through the authenticated `/worker/v1` gateway. `httpx` is the pinned client
 (already an ADOPTED dependency; no new upstream).
+
+Shutdown (EC-04): a worker that blocks in a gateway read must not stay blocked
+until `request_timeout_seconds` (30s). When `should_stop` is injected, every
+outbound call goes through `_call`, which runs the request on a daemon thread
+and lets the caller **abandon** it once a shutdown has been requested and the
+drain grace period (`drain_seconds`) has expired — raising `WorkerDrainAbort`.
+Without a shutdown request the call behaves exactly like a direct `httpx` call
+(same return value, same exception), so the bound comes from the drain window
+and never from a shorter timeout.
 """
 
 from __future__ import annotations
 
+import threading
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
@@ -15,6 +27,17 @@ import httpx
 
 if TYPE_CHECKING:
     from packages.domain.workers import WorkerGpuObservation
+
+#: 停机后的轮询粒度：主线程每隔这么久检查一次"调用是否已返回 / 宽限期是否到期"。
+_DRAIN_POLL_SECONDS = 0.05
+
+
+class WorkerDrainAbort(Exception):
+    """在途网关调用在停机宽限期内未返回，被放弃（进程随即走有序退出）。
+
+    放弃是 at-least-once + 幂等键允许的：请求可能已经到达服务端，也可能没有——
+    调用方不得把它读成"一定没发生"（见 OPERATIONS_RUNBOOK 的停机段）。
+    """
 
 
 def _json(resp: httpx.Response) -> dict[str, object]:
@@ -35,6 +58,8 @@ class WorkerClientConfig:
     max_concurrency: int = 1
     request_timeout_seconds: float = 30.0
     heartbeat_interval_seconds: float = 10.0
+    #: SIGTERM 之后，在途网关调用最多再等这么久，然后被放弃（EC-04）。
+    drain_seconds: float = 5.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,7 +110,13 @@ class WorkerResultPayload:
 class WorkerClient:
     """Thin, testable gateway client (session token held in-memory only)."""
 
-    def __init__(self, config: WorkerClientConfig, transport: httpx.BaseTransport | None = None):
+    def __init__(
+        self,
+        config: WorkerClientConfig,
+        transport: httpx.BaseTransport | None = None,
+        *,
+        should_stop: Callable[[], bool] | None = None,
+    ):
         self._config = config
         self._token: str | None = None
         self._generation: int = 0
@@ -94,9 +125,46 @@ class WorkerClient:
         # derive 'gpu' from the probe observation; claims must advertise the
         # same set that was registered, or the engine will never match).
         self._capabilities: tuple[str, ...] = tuple(config.capabilities)
+        self._should_stop = should_stop
+        self._drain_deadline: float | None = None
         self._http = httpx.Client(
             base_url=config.base_url, timeout=config.request_timeout_seconds, transport=transport
         )
+
+    def _call(self, request: Callable[[], httpx.Response]) -> httpx.Response:
+        """所有出站调用的**单一收口点**（EC-04）。
+
+        没有注入 `should_stop`（测试/一次性脚本）→ 直接调用，语义与以前逐字一致。
+        注入了 → 请求跑在守护线程上，主线程等待；一旦停机请求到达，最多再等
+        `drain_seconds`，超时即抛 `WorkerDrainAbort` 放弃这次调用。
+        未停机时等待没有额外上界（仍由 httpx 自己的超时决定），所以"上界"只来自停机窗口。
+        """
+        if self._should_stop is None:
+            return request()
+        box: dict[str, object] = {}
+        done = threading.Event()
+
+        def _perform() -> None:
+            try:
+                box["response"] = request()
+            except BaseException as exc:  # noqa: BLE001 — 原样回抛给调用方
+                box["error"] = exc
+            finally:
+                done.set()
+
+        threading.Thread(target=_perform, name="worker-gateway-call", daemon=True).start()
+        while not done.wait(_DRAIN_POLL_SECONDS):
+            if not self._should_stop():
+                continue
+            if self._drain_deadline is None:
+                self._drain_deadline = time.monotonic() + self._config.drain_seconds
+            elif time.monotonic() >= self._drain_deadline:
+                raise WorkerDrainAbort(
+                    f"gateway call abandoned after {self._config.drain_seconds}s drain window"
+                )
+        if "error" in box:
+            raise cast(BaseException, box["error"])
+        return cast(httpx.Response, box["response"])
 
     @property
     def capabilities(self) -> tuple[str, ...]:
@@ -161,10 +229,12 @@ class WorkerClient:
             body["capabilities"] = caps
             body["gpu_observation"] = gpu_observation.to_json_dict()
         self._capabilities = tuple(caps)
-        resp = self._http.post(
-            "/worker/v1/register",
-            headers={"X-Worker-Enrollment": self._config.enrollment_secret},
-            json=body,
+        resp = self._call(
+            lambda: self._http.post(
+                "/worker/v1/register",
+                headers={"X-Worker-Enrollment": self._config.enrollment_secret},
+                json=body,
+            )
         )
         resp.raise_for_status()
         response_body = _json(resp)
@@ -176,26 +246,33 @@ class WorkerClient:
         return response_body
 
     def heartbeat(self) -> dict[str, object]:
-        resp = self._http.post(
-            "/worker/v1/heartbeat",
-            headers=self._auth_headers(),
-            json={"worker_id": self._config.worker_id, "registration_generation": self._generation},
+        resp = self._call(
+            lambda: self._http.post(
+                "/worker/v1/heartbeat",
+                headers=self._auth_headers(),
+                json={
+                    "worker_id": self._config.worker_id,
+                    "registration_generation": self._generation,
+                },
+            )
         )
         resp.raise_for_status()
         return _json(resp)
 
     def claim(self) -> dict[str, object] | None:
-        resp = self._http.post(
-            "/worker/v1/claim",
-            headers=self._auth_headers(),
-            json={
-                "worker_id": self._config.worker_id,
-                "registration_generation": self._generation,
-                # current registration's effective capabilities (M17: register
-                # may have derived 'gpu' from the probe observation)
-                "capabilities": list(self._capabilities),
-                "partitions": list(self._config.partition_slots),
-            },
+        resp = self._call(
+            lambda: self._http.post(
+                "/worker/v1/claim",
+                headers=self._auth_headers(),
+                json={
+                    "worker_id": self._config.worker_id,
+                    "registration_generation": self._generation,
+                    # current registration's effective capabilities (M17: register
+                    # may have derived 'gpu' from the probe observation)
+                    "capabilities": list(self._capabilities),
+                    "partitions": list(self._config.partition_slots),
+                },
+            )
         )
         if resp.status_code == 204:
             return None
@@ -203,19 +280,23 @@ class WorkerClient:
         return _json(resp)
 
     def submit_result(self, task_id: str, payload: WorkerResultPayload) -> dict[str, object]:
-        resp = self._http.post(
-            f"/worker/v1/tasks/{task_id}/result",
-            headers=self._auth_headers(),
-            json=payload.to_body(self._config.worker_id, self._generation),
+        resp = self._call(
+            lambda: self._http.post(
+                f"/worker/v1/tasks/{task_id}/result",
+                headers=self._auth_headers(),
+                json=payload.to_body(self._config.worker_id, self._generation),
+            )
         )
         resp.raise_for_status()
         return _json(resp)
 
     def renew(self, task_id: str, lease_id: str, fence: int) -> None:
         """Extend the in-flight lease (M16 re-audit F-7); raises on stale lease."""
-        resp = self._http.post(
-            f"/worker/v1/tasks/{task_id}/renew",
-            headers=self._lease_headers(task_id, lease_id, fence),
+        resp = self._call(
+            lambda: self._http.post(
+                f"/worker/v1/tasks/{task_id}/renew",
+                headers=self._lease_headers(task_id, lease_id, fence),
+            )
         )
         resp.raise_for_status()
 
@@ -225,9 +306,11 @@ class WorkerClient:
         Only the lease holder is authorized (403 otherwise); a 404 (lease
         already released) maps to False — the job is over either way.
         """
-        resp = self._http.get(
-            f"/worker/v1/tasks/{task_id}/cancel",
-            headers=self._auth_headers(),
+        resp = self._call(
+            lambda: self._http.get(
+                f"/worker/v1/tasks/{task_id}/cancel",
+                headers=self._auth_headers(),
+            )
         )
         if resp.status_code == 404:
             return False
@@ -250,9 +333,11 @@ class WorkerClient:
     def download_bundle(
         self, artifact_id: str, *, task_id: str, lease_id: str, fence: int
     ) -> bytes:
-        resp = self._http.get(
-            f"/worker/v1/artifacts/{artifact_id}",
-            headers=self._lease_headers(task_id, lease_id, fence),
+        resp = self._call(
+            lambda: self._http.get(
+                f"/worker/v1/artifacts/{artifact_id}",
+                headers=self._lease_headers(task_id, lease_id, fence),
+            )
         )
         resp.raise_for_status()
         return resp.content
@@ -260,10 +345,12 @@ class WorkerClient:
     def upload_bundle(
         self, bundle: bytes, *, task_id: str, lease_id: str, fence: int
     ) -> dict[str, object]:
-        resp = self._http.post(
-            "/worker/v1/artifacts",
-            headers=self._lease_headers(task_id, lease_id, fence),
-            content=bundle,
+        resp = self._call(
+            lambda: self._http.post(
+                "/worker/v1/artifacts",
+                headers=self._lease_headers(task_id, lease_id, fence),
+                content=bundle,
+            )
         )
         resp.raise_for_status()
         return _json(resp)

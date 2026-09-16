@@ -49,7 +49,7 @@ exit_criteria:
       等于客户端 30s 超时）
     verify: >-
       定向用例（阻塞读 + SIGTERM → 有界退出，含修复前反证）+ Linux 容器复验
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       替身 harness 校验 Idempotency-Key：缺头 → 422（与真中间件同语义），
@@ -88,12 +88,13 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-065-tool-pack-console-surface.md
   - .cursor/plans/tasks/PLAN-20260915-066-ops-schedules-write-surface.md
   - .cursor/plans/tasks/PLAN-20260915-067-worker-bounded-sigterm-exit.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-066-ops-schedules-write-surface.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-067-worker-bounded-sigterm-exit.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
   - MEM-20260915-040-pending-must-be-visible-in-ui
   - MEM-20260915-041-scheduler-remains-the-executor
+  - MEM-20260915-042-sigterm-cannot-break-a-blocked-read
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -110,7 +111,7 @@ memory_entries:
 | EC-01 | 设计门禁结构判据（整块新增必红） | 33 路由结构签名 + 反证用例 + 跨平台一致性 | PASS（2026-09-16 cycle 1；范围注记：结构签名只看标签/testid/role/aria-label/叶子文本/子节点数，**不看样式与坐标**（那是像素判据的职责）；文本截断 120 字符 ⇒ 长文案的后半段变化不由本判据覆盖） |
 | EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | **PARTIAL**（2026-09-16 cycle 2：后端写面已交付——三条文档化端点 + SQLite store + digest 重算自证 + 扩张待批准 + capability 取值域 + 目录消费，OpenAPI/契约/文档/pageSupport 全部收敛；2026-09-16 cycle 3：**console 操作面已交付**——`ops/integrations` 面板（安装表单 / 待批准横幅含 diff 明细与候选 digest / 批准 / 吊销理由必填）、stub 6 + live 2 各一条链、两条设计基线重生成；**仍未交付**：健康复核记录 schema digest 并可比对漂移（provider 侧，需先定探测面），以及 provider 凭据绑定；另发现平台默认策略未放行 `tool_pack.*`（default DENY，见 RECHECK-065 W-1）——三项都记在「下一轮输入」） |
 | EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PASS（2026-09-16 cycle 4：`ops/schedules` 的 `disabledOperations` 相应项消失、`management_available=true`；**执行体仍是既有守护线程**——`trigger` 调用的就是定时 pass 的**同一个函数对象**（用例以计数器证明），`enabled=false` 被守护线程**自己的读面**（`due(job)`）消费（真实线程 + 可控时钟：停用后 `run_count` 冻结）。诚实的边界都在用例里：无 store → 静态兜底 + 写操作 503；未挂执行体 → `executor_attached=false` 且 trigger 禁用；从未跑过 → `last_outcome=null`（前端显示 UNKNOWN）；pass 失败 → 200 + `FAILED` + `last_error`。范围注记：`run_count` 等事实是**进程内观测**（重启归零，不是配置）；调度写面**不经过 policy**（等价于启停既有守护线程），若要审批需新增 `schedule.*` 能力——见 RECHECK-066 W-6） |
-| EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PENDING |
+| EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PASS（2026-09-16 cycle 5：8 处出站调用收口到 `WorkerClient._call`，停机后超过 `RESEARCHOS_WORKER_DRAIN_SECONDS`（默认 5s，取值域 0.1~60）即放弃在途调用并抛 `WorkerDrainAbort`，进程按有序停机退出 0。**实测对照**（同脚本同参数，Linux 容器 + 黑洞网关）：修复前 **29.64s**、修复后 **1.12s**（drain=1）。两层反证：进程内"未停机 ⇒ 同一条阻塞读照常跑满"、进程外"drain 调大 ⇒ 进程不早退"。范围注记：只覆盖**网关读**的停机上界——在途**执行**的中断仍走既有协作式 cancel 通道，其停止时间没有新增上界（RECHECK-067 W-1）；被放弃的请求可能已到达服务端也可能没有，属 at-least-once 允许的模糊点，已写进 runbook（W-2）） |
 | EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PENDING |
 | EC-06 | 每 cycle m0/CI 全绿 + 收口复检 + 安全扫描处置 | CI run 六 job 结论 + RECHECK | PENDING（cycle 1 一度 BLOCKED：账户计费阻断 → 阻断解除后 run **35059391199 六个 job 全 success**，cycle 1 的 CI 结论已成立；后续每 cycle 继续按此标准记） |
 
@@ -132,10 +133,11 @@ RECHECK-065 见 `latest_recheck`；提交 `ce28e05` → run **35071216707** 六 
 记录提交 `bc44b68` → run **35072629321** 六 job 全 success）。
 **cycle 4 已闭环**（PLAN-20260915-066 ops 调度写面 = EC-03 PASS，
 RECHECK-066 见 `latest_recheck`；提交见 cycle 4 迭代日志行的 CI 结论）。
-**cycle 5 进行中**：PLAN-20260915-067（EC-04 worker SIGTERM 有界退出）已 derive（① 完成），
-待执行 ②实施 → ⑦记录；口径 = 上界来自"停机后的 drain 宽限期"（默认 5s，env 可覆盖），
-**不是**给所有调用更短的超时；收口点在 `adapters/worker/client.py`（`loop.py` 已 445 行，
-不改）；证据必须含反证（未停机时仍等满客户端超时）+ 修复前实测 + Linux 容器复验。
+**cycle 5 已闭环**（PLAN-20260915-067 worker SIGTERM 有界退出 = EC-04 PASS，
+RECHECK-067 见 `latest_recheck`；修复前/后实测 29.64s → 1.12s）。
+**cycle 6 待开轮**：EC 表首个未满足项是 EC-05（替身 harness 校验 Idempotency-Key）；
+EC-02 仍有未交付子句（provider 侧健康复核 schema digest 漂移 + 凭据绑定）与
+RECHECK-065 W-1（`policy.yaml` 未放行 `tool_pack.*` 的产品决策），已在「下一轮输入」备选。
 BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
 driver=session-goal，owner=root-agent。
 
@@ -265,6 +267,21 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
 | 3 | PLAN-20260915-065（EC-02：console 操作面 + live 链） | 见本 cycle 提交 | **stub 6 passed**（空列表是正确状态 / 安装后 digest 由服务端重算校验 / 篡改内容 → 422 detail 在面板内 / 扩张 → 横幅有 diff 且**生效 digest 不变** / 批准后 digest 变 / 吊销理由必填且终态无动作）；**live 2 passed**（真实 uvicorn + 真实 SQLite：install → 扩张（读面 digest 不变、`pending.digest` = 候选）→ approve（digest 变）→ revoke（REVOKED、目录退出、同 id 再装 409）；422 detail 落在面板内）；stub e2e **72 passed**、live e2e **33 passed**、web 单测 **76 passed**、根 eslint 0 error（1 条既有 soft warning）、`tsc --noEmit` 通过、`tests/tooling+api+application` **1890 passed / 1 skipped**、全量 pytest **3436 passed / 8 skipped**；**结构判据首次真实拦截**：`ops-integrations` 节点 **+18** 判红、同一次运行 33 条像素用例全绿（2% 阈值不报警）；基线重生成后 `verify_linux_outlines.sh` → win32 == linux（33/33 逐键一致）；像素基线 win32+linux 各重生成一张并目检；本地 m0 两轮红（ruff 行宽 → ruff format）后 **23/23** | run **35071216707**（ce28e05）：**六个 job 全 success**（eval-gate 07:58:06Z / collector-quality 07:59:51Z / container-quality 08:01:43Z / console-frontend 08:04:13Z / quality-ubuntu-latest 08:04:18Z / quality-windows-latest 08:09:07Z，无重跑） | ① live 第一次跑就撞上"平台默认策略没有 `tool_pack.*` 规则 ⇒ default DENY"，面板把 403 原样显示（界面正确工作的证据）⇒ 本轮只在**夹具层**放行四个能力、不改产品策略（W-1）；② 替身里的 digest 是**镜像口径**（canonical JSON→sha256），权威口径由 live fixture（域代码生成 + 同步守卫）证明（W-2）；③ GOAL 级 EC-02 的第三子句（健康复核 schema digest + 漂移比对）本轮未覆盖 ⇒ AC-10 收窄、EC-02 保持 PARTIAL（W-4） | EC-02 仍 **PARTIAL**（console 面已交付；剩 provider 侧 schema digest 漂移与凭据绑定）；EC-03~06 PENDING | cycle 4 = ① 按 EC 表选首个未满足项（EC-02 剩余子句"schema digest 漂移"需先定探测面从哪来，或直接做 EC-03 ops 调度写面）；② 顺带 W-1 的产品决策（policy.yaml 放行 `tool_pack.*`，或把既有 `action: TOOL_PACK_INSTALL_OR_UPDATE` 接成 require_approval → 登记待批准） |
 
 | 4 | PLAN-20260915-066（EC-03：ops 调度写面） | `de58a31`（收口提交，55 个显式路径） | **tests/application/ops 20 passed**（registry 11 + daemon 9：节奏随定义 / 停用被守护线程读面消费 / trigger 跑同一函数 / 记账失败不杀线程 / **启动不抢跑**）；**tests/api 8 passed**（诚实事实 / 取值域 / PATCH 被 due 消费 / trigger 共用 pass 并记账 / 未装配 registry 的 503）；契约 **365 passed / 56 skipped**；`tests/architecture+api+application/ops` **447 passed**；`tests/postgres` **70 passed**；lint-imports **2 kept, 0 broken**；OpenAPI 重生成（**+303 / -2**）；stub e2e **77 passed**、live e2e **35 passed**、web 单测 **76 passed**、`pnpm lint`/`tsc` 通过、根 `eslint .` 0 error；**结构判据第二次真实拦截**（`ops-schedules` 170 → 260 节点判红，同一次运行 33 条像素用例全绿、实测 **15093 px = 1.64% < 2%**）+ 两平台像素基线重生成目检 + 跨平台 33/33；**m0 PASS: profile=m0; 23 deterministic checks** | run **35087267045**（de58a31）：**六个 job 全 success**（eval-gate 10:52:15Z / collector-quality 10:54:06Z / container-quality 10:56:03Z / console-frontend 10:57:09Z / quality-ubuntu-latest 10:59:18Z / quality-windows-latest 11:04:34Z，无重跑） | ① live 首跑观察到守护线程因 `record()` 抛 `KeyError('worker_reaper')` 退出（三次复跑未复现，根因未定）⇒ 记账/读面调用全部改 fail-open + 3 条回归用例（W-1）；② **架构门禁**：DTO 直接 import domain 的枚举 ⇒ `api-dto-purity` BROKEN（全量 m0 判红）⇒ 取值域校验下沉到 `ScheduleRegistry._coerce_job`、DTO 收字符串，**未放宽断言**；③ **启动抢跑回归**：`next_wait_seconds` 对未预约定义返回 0.1s ⇒ 四个守护线程在 app 起来约 100ms 后同时开跑，打断请求线程的共享 psycopg 事务（m13 PG 用例：干净 HEAD 6/6 绿、带该行为 6/6 红；另有一次合并跑把守护线程留在 idle in transaction 使 TRUNCATE 阻塞 8 分钟）⇒ 未预约定义不参与候选 + 3 条钉子用例（W-9）；④ 首版 registry 校验比域正则弱（`"ab"` 会 500）⇒ 收敛为共用 `validate_schedule_name()` | EC-03 **PASS**；EC-04 / EC-05 / EC-06 仍 PENDING；EC-02 仍 PARTIAL（provider 侧 schema digest 漂移 + 凭据绑定 + RECHECK-065 W-1 的 `tool_pack.*` 策略产品决策） | cycle 5 = ① 按 EC 表取 EC-04（worker SIGTERM 有界中断阻塞读），子 PLAN 编号 = PLAN-20260915-067；② 备选：EC-05（替身 harness 校验 Idempotency-Key）或 EC-02 剩余子句；③ 顺带评估 W-1 与 W-9 是否同源（都指向"启动期并发读写共享 store"，若 EC-04 扩面可一并复现） |
+
+- 2026-09-16 cycle 5 交付（EC-04 = **PASS**）：SIGTERM 之后进程不再等客户端超时——
+  `WorkerClient` 的 8 处出站调用收口到 `_call()`，停机后超过
+  `RESEARCHOS_WORKER_DRAIN_SECONDS`（默认 5s，取值域 0.1~60）即放弃在途调用并抛
+  `WorkerDrainAbort`，`main()` 捕获后按有序停机返回 0。**对照实测**（同一脚本、同一参数、
+  同一容器镜像，黑洞网关 + 真子进程）：
+  **修复前（worktree @ `dca1f94`）29.64s → 修复后 1.12s**（drain=1，退出码都是 0）。
+  两层反证把"上界来自停机窗口而不是写死的常数"钉死：进程内未停机 ⇒ 同一条 1.5s 阻塞读
+  照常跑满；进程外 drain=30 ⇒ 6s 后进程仍在跑。容器内 `tests/worker/test_worker_drain_bound.py`
+  **6 passed**；win32 上两条真实信号用例 skip（`Popen.terminate()` 是 TerminateProcess）。
+  刻意不用 `os._exit`/进程看门狗——沿用本仓"守护线程 + 有界等待 + 放弃"的既有模式。
+  全量 m0 首轮红于 `python/product-lint`（两处 101 字符行 ⇒ 收敛成模块级 skipif marker，
+  **未放宽断言**），第二轮撞上已知 Windows 文件占用 flake（`framework/run_cursor_framework_evals`
+  的 `evolution_state.json.tmp` 原子改名 PermissionError；单独复跑 `--profile framework` **8/8 绿**），
+  第三轮 **PASS: profile=m0; 23 deterministic checks**（全量 pytest 3592 passed / 10 skipped）。
 
 ## 状态历史
 

@@ -2,7 +2,7 @@
 id: PLAN-20260915-067
 slug: worker-bounded-sigterm-exit
 title: worker SIGTERM 有界退出（EC-04）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-16
 updated_at: 2026-09-16
 parent_goal: GOAL-20260915-003
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260915-003 cycle 5 = EC-04（worker 退出语义：SIGTERM 有界中断阻塞中的 HTTP 读）。授权来源：2026-09-15 用户会话指令「继续我们的 goal 文件，我们需要继续循环迭代 10-20 次，让我们的系统更加的完整！」；push-to-main-for-CI 授权沿用 GOAL-001 批准口径（只推 main、不 force、不推旁支触发 CI）。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-067-worker-bounded-sigterm-exit.md
+memory_entries:
+  - MEM-20260915-042-sigterm-cannot-break-a-blocked-read
 ---
 
 # PLAN-20260915-067 — worker SIGTERM 有界退出（GOAL-003 cycle 5 / EC-04）
@@ -61,31 +62,101 @@ PEP 475 会在处理器返回后**重试**那次被中断的系统调用，于�
 
 ## 验收条件
 
-- [ ] AC-01：`WorkerClient` 的出站调用有**单一收口点**，停机后超过 drain 宽限期的在途调用
+- [x] AC-01：`WorkerClient` 的出站调用有**单一收口点**，停机后超过 drain 宽限期的在途调用
   被放弃并抛 `WorkerDrainAbort`（类型与位置写进模块 docstring）。
-- [ ] AC-02：**未停机时语义不变**——同一条阻塞读仍然等满客户端超时（反证用例）。
-- [ ] AC-03：真实 SIGTERM 下进程退出时间有界：阻塞在网关读上的 worker 在
+  ——`_call()` 收口 8 处调用（register / heartbeat / claim / submit_result / renew /
+  cancel_requested / download_bundle / upload_bundle）；类型 `WorkerDrainAbort` 定义在同一模块。
+- [x] AC-02：**未停机时语义不变**——同一条阻塞读仍然等满客户端超时（反证用例）。
+  ——`test_no_shutdown_never_shortens_a_blocked_read`：drain=0.1s 但未停机 ⇒ 1.5s 的阻塞读
+  照常跑完（断言 `elapsed >= 1.5`）；`test_client_without_should_stop_keeps_the_direct_semantics`
+  证明不注入 `should_stop` 时逐字保持原语义。
+- [x] AC-03：真实 SIGTERM 下进程退出时间有界：阻塞在网关读上的 worker 在
   `drain_seconds + ε` 内退出（定向子进程用例；POSIX）。
-- [ ] AC-04：**修复前反证**——同一脚本在修复前的提交上测得的退出时间 ≈ 客户端超时
-  （把两次实测数字都写进证据段，不是只写"应该更快"）。
-- [ ] AC-05：Linux 容器复验（Windows 的 `Popen.terminate()` 是 TerminateProcess，
+  ——`test_sigterm_exits_within_the_drain_window_while_blocked_in_a_read`（黑洞网关 +
+  真子进程 + 真 SIGTERM，`drain=1` ⇒ 断言 <5s）。
+- [x] AC-04：**修复前反证**——同一脚本在修复前的提交上测得的退出时间 ≈ 客户端超时。
+  ——`scratch/measure-worker-sigterm-exit.py` 在容器里对两个工作树各跑一次：
+  **修复前（HEAD `dca1f94`）`exit_after_sigterm_seconds=29.64`**、
+  **修复后 `1.12`**（同一 `RESEARCHOS_WORKER_DRAIN_SECONDS=1`，退出码都是 0）。
+- [x] AC-05：Linux 容器复验（Windows 的 `Popen.terminate()` 是 TerminateProcess，
   不能代表 SIGTERM 语义）——同一条子进程用例在 pinned Linux 镜像里跑绿。
-- [ ] AC-06：`RESEARCHOS_WORKER_DRAIN_SECONDS` 有默认值、有取值域校验、写进 runbook；
+  ——`python:3.12-slim` 容器内 `tests/worker/test_worker_drain_bound.py` **6 passed**
+  （脚本 `scratch/verify-linux-worker-drain.sh`，只装 worker 导入链需要的最小依赖）。
+- [x] AC-06：`RESEARCHOS_WORKER_DRAIN_SECONDS` 有默认值、有取值域校验、写进 runbook；
   未设置时不改变既有行为（默认 5s 只在停机后生效）。
-- [ ] AC-07：全量门禁（m0 23 + 定向套件 + 契约/架构门禁不动）+ 记录（RECHECK-067 + GOAL 记账）。
+  ——`_drain_seconds()`：默认 5.0、范围 `[0.1, 60]`、非数字与越界各自明确报错
+  （`test_drain_seconds_env_knob_has_a_default_and_a_range`）；runbook 停机段已写明。
+- [x] AC-07：全量门禁（m0 23 + 定向套件 + 契约/架构门禁不动）+ 记录（RECHECK-067 + GOAL 记账）。
+  ——`tests/worker` 33 passed / 2 skipped、`tests/architecture+worker+contracts` 453 passed /
+  58 skipped、`tests/distributed` 见 m0 全量、m0 **PASS: profile=m0; 23 deterministic checks**；
+  RECHECK-20260915-067 + MEM-20260915-042 + GOAL 记账。
 
 ## 实施清单
 
-- [ ] WP-A 客户端收口与放弃原语（`_call` + `WorkerDrainAbort` + `drain_seconds`）
-- [ ] WP-B 入口接线（`should_stop` 注入、`main()` 捕获、env 开关）
-- [ ] WP-C 定向用例（阻塞读 + 停机 / 未停机反证 / 子进程 SIGTERM）
-- [ ] WP-D 修复前反证实测（干净工作树跑同一脚本，记录数字）
-- [ ] WP-E Linux 容器复验 + runbook 文档
-- [ ] WP-F 全量门禁 + 记录
+- [x] WP-A 客户端收口与放弃原语（`_call` + `WorkerDrainAbort` + `drain_seconds`）
+- [x] WP-B 入口接线（`should_stop` 注入、`main()` 捕获、env 开关）
+- [x] WP-C 定向用例（阻塞读 + 停机 / 未停机反证 / 子进程 SIGTERM）
+- [x] WP-D 修复前反证实测（干净工作树跑同一脚本，记录数字）
+- [x] WP-E Linux 容器复验 + runbook 文档
+- [x] WP-F 全量门禁 + 记录
 
 ## 证据
 
-（实施中逐项填写）
+**WP-A/B（收口点与接线）**
+
+```text
+$ python -m pytest tests/worker -q
+33 passed, 2 skipped in 4.68s          # 2 skipped = POSIX-only 的真实信号用例（win32）
+$ python -m pytest tests/architecture tests/worker tests/contracts -q
+453 passed, 58 skipped in 45.26s
+$ python -m ruff check adapters/worker/client.py services/worker/__main__.py
+All checks passed!   （ruff format --check、mypy 同步通过）
+```
+
+**WP-C（定向用例）**
+
+```text
+$ python -m pytest tests/worker/test_worker_drain_bound.py -q
+5 passed, 2 skipped in 2.81s
+# 进程内：停机后放弃在途调用 / 未停机不缩短 / 无 should_stop 保持原语义 /
+#         deadline 只 armed 一次 / env 开关默认值与取值域
+```
+
+**WP-D（修复前 vs 修复后，同一脚本同一参数，容器内真实 SIGTERM）**
+
+```text
+$ docker run --rm --entrypoint sh -v "<repo>:/repo" -v "<pre-fix worktree>:/prefix" \
+    -w /repo python:3.12-slim /repo/scratch/measure-drain-both.sh
+=== baseline (pre-fix worktree: dca1f94) ===
+repo=/prefix
+drain_seconds=1
+exit_code=0
+exit_after_sigterm_seconds=29.64
+=== fixed (working tree) ===
+repo=/repo
+drain_seconds=1
+exit_code=0
+exit_after_sigterm_seconds=1.12
+```
+
+**WP-E（Linux 容器复验）**
+
+```text
+$ docker run --rm -v "<repo>:/repo" -w /repo python:3.12-slim \
+    sh /repo/scratch/verify-linux-worker-drain.sh
+worker import ok
+6 passed, 10 warnings in 13.23s      # 含两条真实 SIGTERM 用例
+```
+
+**WP-F（全量门禁）**
+
+```text
+$ sh scratch/run-m0-cycle12.sh      -> PASS: profile=m0; 23 deterministic checks
+# 全量 pytest：3592 passed, 10 skipped（444s）
+# 首轮红于 python/product-lint（两处 101 字符行，已修，未放宽断言）；
+# 第二轮撞上已知 Windows 文件占用 flake（framework/run_cursor_framework_evals，
+#   evolution_state.json.tmp 原子改名 PermissionError）——--profile framework 单独复跑 8/8 绿
+```
 
 ## 状态历史
 
@@ -95,10 +166,35 @@ PEP 475 会在处理器返回后**重试**那次被中断的系统调用，于�
   另据 recon：`services/worker/loop.py` 已 445 行（硬上限 450），本轮**不改它**，
   收口点放在客户端；真实 SIGTERM 只能在 Linux 上验（Windows 的 terminate 是
   TerminateProcess，见 RECHECK-051 F-1）。
+- 2026-09-16 WP-A/B 完成：`adapters/worker/client.py` 把 8 处出站调用收口到 `_call()`，
+  注入 `should_stop` 后请求跑在守护线程、停机后超过 `drain_seconds` 抛 `WorkerDrainAbort`；
+  `services/worker/__main__.py` 接线并新增 `RESEARCHOS_WORKER_DRAIN_SECONDS`（默认 5，
+  取值域 0.1~60）。**刻意不做**：不加进程看门狗、不用 `os._exit`——沿用本仓"守护线程 +
+  有界等待 + 放弃"的既有模式（`adapters/otel/sink.py::_run_bounded`、`renewer.join(timeout=5.0)`）。
+- 2026-09-16 WP-C/D/E 完成：进程内五条用例（含两条反证）在 win32 全绿；两条真实 SIGTERM 用例
+  在 win32 skip、在 `python:3.12-slim` 容器里跑绿（**6 passed**）。修复前/后对照用同一脚本、
+  同一参数、同一镜像对两个工作树各跑一次：**29.64s → 1.12s**（drain=1，退出码都是 0）。
+  runbook 写明在途读的独立上界与"被放弃的请求可能已到达服务端，也可能没有"。
+- 2026-09-16 WP-F 完成：全量 m0 首轮红于 `python/product-lint`（两处 skipif 行 101 字符）
+  ⇒ 收敛成模块级 marker（**未放宽断言**）；再跑又撞上**已知的 Windows 文件占用 flake**
+  （`framework/run_cursor_framework_evals` 的 `evolution_state.json.tmp` 原子改名
+  `PermissionError`，单独复跑 `--profile framework` **8/8 通过**）；第三次
+  **m0 PASS: profile=m0; 23 deterministic checks**（全量 pytest **3592 passed / 10 skipped**）。
 
 ## 影响报告
 
-（收口时填写）
+- **Domain/API/schema**：无 Domain 变化、无 HTTP/OpenAPI 变化（本轮全在 worker 平面）。
+  `WorkerClientConfig` 新增字段 `drain_seconds`（默认 5.0）与 `WorkerClient.__init__` 的
+  关键字参数 `should_stop`（默认 None ⇒ 旧行为）；新异常类型
+  `adapters.worker.client.WorkerDrainAbort`。
+- **安全/凭据**：无凭据面变化。被放弃的请求语义已在 runbook 写明（"可能已到达服务端，
+  也可能没有"），不宣称更强的一致性。
+- **兼容性/迁移风险**：`should_stop` 未注入时逐字保持原语义（既有测试与一次性脚本不受影响）；
+  Python 侧没有新增依赖（threading/time 是标准库），上游版本零变化。
+- **可观测性**：退出路径新增一行 stdout（`worker: drain abort — ...`），与既有
+  `worker: drain requested` / `worker: stopped completed=N` 同格式，供 harness 解析。
+- **下一项任务**：EC-05（替身 harness 校验 Idempotency-Key）或 EC-02 剩余子句
+  （provider 侧健康复核 schema digest 漂移 + 凭据绑定）。
 
 ## 已知风险
 

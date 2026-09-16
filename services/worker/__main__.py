@@ -10,6 +10,13 @@ the Control Plane (at-least-once), the same path a crashed worker takes. Both
 the heartbeat sleep and the reconnect backoff are interruptible, so the process
 never waits out a sleep window after a shutdown request.
 
+EC-04: "promptly" also covers a worker blocked in a gateway **read**. The
+handler only sets the flag, and PEP 475 resumes the interrupted syscall, so
+without more the process waited out the client timeout (30s). The client now
+gets `should_stop` and abandons an in-flight call once the drain grace period
+(`RESEARCHOS_WORKER_DRAIN_SECONDS`, default 5s) expires — `WorkerDrainAbort`
+propagates here and the process exits 0. See `adapters/worker/client.py::_call`.
+
 Execution backend selection (`RESEARCHOS_WORKER_EXECUTION_BACKEND`):
 - `deterministic` (DEFAULT): a bounded no-shell test double that fabricates
   deterministic outputs — used by the offline distributed E2E gate ONLY. It
@@ -30,7 +37,7 @@ from pathlib import Path
 
 from adapters.execution.docker_backend import DockerExecutionBackend
 from adapters.execution.gpu_probe import GPU_SANDBOX_IMAGE_DEFAULT, GpuProbeConfig, probe_gpu
-from adapters.worker.client import WorkerClient, WorkerClientConfig
+from adapters.worker.client import WorkerClient, WorkerClientConfig, WorkerDrainAbort
 from services.worker.deterministic_backend import DeterministicExecutionBackend
 from services.worker.loop import WorkerLoop, WorkerLoopConfig
 from services.worker.reconnect import run_with_reconnect
@@ -41,6 +48,9 @@ _STOP = {"flag": False}
 # backoff) delays process exit after SIGTERM.
 _WAKE = threading.Event()
 _PROJECT_VERSION_PATH = Path(__file__).resolve().parents[2] / "VERSION"
+_DRAIN_SECONDS_DEFAULT = 5.0
+_DRAIN_SECONDS_MIN = 0.1
+_DRAIN_SECONDS_MAX = 60.0
 
 
 def _project_version() -> str:
@@ -62,6 +72,23 @@ def _install_drain_handler() -> None:
 def _interruptible_sleep(seconds: float) -> None:
     """Sleep, but return as soon as a shutdown was requested."""
     _WAKE.wait(seconds)
+
+
+def _drain_seconds() -> float:
+    """停机后的在途调用宽限期（EC-04）；未设置 → 默认，非法 → 明确报错。"""
+    raw = os.environ.get("RESEARCHOS_WORKER_DRAIN_SECONDS", "").strip()
+    if not raw:
+        return _DRAIN_SECONDS_DEFAULT
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError(f"RESEARCHOS_WORKER_DRAIN_SECONDS must be a number: {raw!r}") from exc
+    if not _DRAIN_SECONDS_MIN <= value <= _DRAIN_SECONDS_MAX:
+        raise ValueError(
+            "RESEARCHOS_WORKER_DRAIN_SECONDS must be within "
+            f"[{_DRAIN_SECONDS_MIN}, {_DRAIN_SECONDS_MAX}]: {value}"
+        )
+    return value
 
 
 def _build_config(worker_id: str) -> WorkerClientConfig:
@@ -89,6 +116,7 @@ def _build_config(worker_id: str) -> WorkerClientConfig:
         backend_kinds=backends,
         partition_slots=slots,
         max_concurrency=int(os.environ.get("RESEARCHOS_WORKER_MAX_CONCURRENCY", "1")),
+        drain_seconds=_drain_seconds(),
     )
 
 
@@ -125,7 +153,7 @@ def _run_attempt(
     telemetry: object,
     gpu_prober: object | None,
 ) -> int:
-    with WorkerClient(config) as client:
+    with WorkerClient(config, should_stop=lambda: _STOP["flag"]) as client:
         loop = WorkerLoop(
             client,
             backend,  # type: ignore[arg-type]  # concrete backend implements the Port
@@ -152,11 +180,16 @@ def main(argv: list[str] | None = None) -> int:
     telemetry = build_worker_telemetry(args.worker_id)
     gpu_prober = _gpu_prober_for(execution_backend)
     print(f"worker: starting id={args.worker_id}", flush=True)  # noqa: T201
-    completed = run_with_reconnect(
-        lambda: _run_attempt(config, backend, loop_config, telemetry, gpu_prober),
-        should_stop=lambda: _STOP["flag"],
-        sleep=_interruptible_sleep,
-    )
+    try:
+        completed = run_with_reconnect(
+            lambda: _run_attempt(config, backend, loop_config, telemetry, gpu_prober),
+            should_stop=lambda: _STOP["flag"],
+            sleep=_interruptible_sleep,
+        )
+    except WorkerDrainAbort as exc:
+        # 停机宽限期内没回来的在途调用被放弃：这是有序停机，不是失败。
+        print(f"worker: drain abort — {exc}", flush=True)  # noqa: T201
+        completed = 0
     print(f"worker: stopped completed={completed}", flush=True)  # noqa: T201
     return 0
 

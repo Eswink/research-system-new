@@ -82,6 +82,11 @@ SEV3 single task/user issue
   - 进程关停：SIGTERM → 不再认领 + **中断在途执行**（复用协作式 cancel 通道，
     不等待长作业跑完）→ 该次尝试**不提交结果**，租约由控制面按 LOST 路径回收
     （at-least-once，与硬杀一致）；心跳睡眠与重连退避可被打断，进程即刻退出。
+    **在途网关读**（连上了但读不到数据）另有独立上界：`RESEARCHOS_WORKER_DRAIN_SECONDS`
+    （默认 5s，取值域 0.1~60）到期即**放弃**该次调用，进程随即按有序停机退出（退出码 0）
+    ——本轮之前这个上界等于客户端超时 30s（SIGTERM 处理器只置标志，被中断的 read 会被
+    系统调用重试）。被放弃的请求**可能已到达服务端，也可能没有**：这是 at-least-once
+    允许的模糊点，由幂等键与租约恢复覆盖，不得读成「一定没发生」。
   - 协议不兼容：注册即拒（`worker.protocol_mismatch_total`），不「连上算兼容」。
   - 网络分区：`tests/distributed` NetProxy 场景证据；重连不恢复旧权威。
 - 入网凭据：enrollment secret 经 WORKER 凭据域；session token 仅存 sha256；
