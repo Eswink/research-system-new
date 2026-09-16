@@ -273,6 +273,12 @@ POST   /tool-packs/{id}/revoke             （PLAN-064：终态吊销；digest �
 - **被消费**：state=INSTALLED 的 pack 把 digest 合入 `tool_pack_digests`（键 = pack id 去掉
   `_vN` 后缀，与 examples 契约同口径），preflight 的 `SUPPLY_CHAIN_UNPINNED` 与 compile 的
   `tool_pack_digests` 随之改变；REVOKED 是终态退出（吊销后 pin 消失）。
+- **console 操作入口（PLAN-065）**：`ops/integrations` 的 ToolPack 面板消费上述四条路由
+  （表单提交完整 manifest、待批准横幅给出候选 digest 与 diff 明细、批准/吊销行内动作），
+  stub 与 live e2e 各有一条链。注意：生命周期按能力名 `tool_pack.install/update/revoke`
+  求值策略，而平台默认策略（`examples/config/policy.yaml`）没有这些规则 ⇒ default DENY，
+  真实部署下需运维显式放行；**live 夹具层**（`tests/api/console_api_app.py`）只放行这四个
+  能力以便跑通写链，未放宽产品策略。
 - 控制面重算 digest 证明的是"提交内容与声明的 pin 自洽"，**不是**"pin 与上游实际交付物一致"
   （后者需要远端取证，不在控制面职责内）。
 

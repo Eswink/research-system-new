@@ -1260,3 +1260,49 @@ export interface RunPlacementDto {
   placements: ClusterWorkerDto[];
   execution_tasks: string[];
 }
+
+export interface ToolPackPermissionDiffDto {
+  added_capabilities: string[];
+  added_network_domains: string[];
+  added_credentials: string[];
+}
+
+/** 待批准的更新：未生效。`digest` 是**候选**版本，表里显示的是生效版本。 */
+export interface ToolPackPendingDto {
+  digest: string;
+  version: string;
+  capabilities: string[];
+  diff: ToolPackPermissionDiffDto;
+  note: string;
+}
+
+export interface ToolPackDto {
+  id: string;
+  state: string;
+  digest: string;
+  version: string;
+  source: string;
+  resolved_revision: string;
+  license: string;
+  capabilities: string[];
+  network_domains: string[];
+  credential_names: string[];
+  tool_ids: string[];
+  installed_at: string | null;
+  revoked_reason: string | null;
+  pending: ToolPackPendingDto | null;
+  catalog_digest_active: boolean;
+}
+
+export interface ToolPackListDto {
+  packs: ToolPackDto[];
+  note: string;
+  unavailable_reason: string | null;
+}
+
+export interface ToolPackSubmitResultDto {
+  status: string;
+  pack: ToolPackDto;
+  diff: ToolPackPermissionDiffDto | null;
+  note: string;
+}

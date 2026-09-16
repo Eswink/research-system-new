@@ -267,9 +267,16 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
   `PATCH /tool-provider-registrations/{id}`、`/{id}/approve`、`/{id}/revoke`、
   `/{id}/health-check`（G15 / PLAN-060：登记 PENDING → 批准 ACTIVE →
   吊销 REVOKED 终态；信任级别由状态推导，注册方不能声明 BUILT_IN/VERIFIED；
-  pin 必须是 `sha256:<hex>`；批准后 preflight/compile 立即可见）。
-- 缺口（登记）：provider 凭据绑定与 ToolPack install/approve-update/revoke 仍无
-  写面；健康复核不含 schema digest 漂移比对；不以模型端点接口代替。
+  pin 必须是 `sha256:<hex>`；批准后 preflight/compile 立即可见）；
+  `GET /tool-packs` + `POST /tool-packs/install`、`/{id}/approve-update`、
+  `/{id}/revoke`（PLAN-065 / EC-02 console 操作入口：提交完整 manifest 文档，
+  控制面重算内容 digest 并要求与声明值相等——不符 422 且 detail 落在面板内；
+  **权限扩张只登记为待批准**，横幅展示候选 digest 与 diff 明细，表里 digest 列
+  始终是生效版本，批准后才替换；REVOKE 终态、理由必填）。
+- 缺口（登记）：provider 凭据绑定无写面；健康复核不含 schema digest 漂移比对；
+  平台默认策略（`examples/config/policy.yaml`）没有 `tool_pack.*` 规则 ⇒ default
+  DENY，真实部署下 console 写面需运维显式放行这三个能力（live 夹具层已放行，
+  登记在 RECHECK-20260915-065）；不以模型端点接口代替。
 
 ### `#/ops/data-health` — 数据健康
 - 设计：`screens/DataHealth.jsx`。等级：PARTIAL。
@@ -359,7 +366,7 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 | G12 | 成本日序列/预测 | insights/cost-analytics、govern/budget | **已交付**（日序列 WP-D；Run 级预留-消耗 PLAN-046；**项目级时序外推 PLAN-057** = `GET /projects/{id}/cost-forecast`，只对已计价的天取日均外推，方法/样本/排除项随响应返回，跨币种不给金额）；剩余受限 = 无按资源维度分解的预测与置信区间 |
 | G13 | ~~Memory 管理 API~~ | govern/audit Memory Tab | **已交付**（WP-F：§8 门链直提交；两阶段 decide 不提供） |
 | G14 | ~~实验创建/排队/调度~~ | portfolio/experiments | **已交付**（WP-E 预注册/归档 + PLAN-052 队列/调度：`ExperimentQueueEntry` 域 + SQLite/PG 存储 + 原子认领派发器 + 五端点 + console live）；未交付面继续标注：复现执行、日历/矩阵视图 |
-| G15 | ~~Tool Provider 管理面（install/approve/revoke）~~ | ops/integrations | **已交付**（PLAN-043 目录只读投影 + PLAN-060 注册治理写面：`GET/POST /tool-provider-registrations`、PATCH、approve/revoke/health-check 六端点 + SQLite 注册表 + 控制面面板；PENDING 不入目录、APPROVE 后以 USER_APPROVED 进目录并被 preflight/compile 消费、REVOKE 终态退出；pin 必须 `sha256:<hex>`）；剩余受限 = provider 凭据绑定仍无写面；ToolPack 供应链**后端**写面已由 PLAN-064 补上（`GET /tool-packs` + install/approve-update/revoke：扩张不生效直到批准、digest 由控制面重算自证、INSTALLED 的 digest 进入 preflight/compile 读面），但 console 操作入口仍缺；健康复核仍无 schema 漂移比对 |
+| G15 | ~~Tool Provider 管理面（install/approve/revoke）~~ | ops/integrations | **已交付**（PLAN-043 目录只读投影 + PLAN-060 注册治理写面：`GET/POST /tool-provider-registrations`、PATCH、approve/revoke/health-check 六端点 + SQLite 注册表 + 控制面面板；PENDING 不入目录、APPROVE 后以 USER_APPROVED 进目录并被 preflight/compile 消费、REVOKE 终态退出；pin 必须 `sha256:<hex>`）；剩余受限 = provider 凭据绑定仍无写面；ToolPack 供应链**后端**写面已由 PLAN-064 补上（`GET /tool-packs` + install/approve-update/revoke：扩张不生效直到批准、digest 由控制面重算自证、INSTALLED 的 digest 进入 preflight/compile 读面），**console 操作入口已由 PLAN-065 交付**（安装表单 + 待批准横幅（候选 digest 与 diff 明细，表中 digest 列始终是生效版本）+ 批准/吊销动作；stub 与 live e2e 各一条链；平台默认策略未放行 `tool_pack.*` ⇒ 真实部署需运维显式放行，见该项）；健康复核仍无 schema 漂移比对 |
 | G16 | ~~Memory capability policy~~ | govern/audit Memory Tab | **已交付**（PLAN-049：memory.write 入 policy.yaml 镜像契约 + 门链 policy 阶段实时生效；GET /policy/capabilities 只读呈现逐 tier 判决；规则变更仍需改 policy.yaml） |
 
 ## 旧路由别名映射（T32 交付兼容）

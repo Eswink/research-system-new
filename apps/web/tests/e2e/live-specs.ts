@@ -16,6 +16,7 @@ const LIVE_SUITES = [
   "workspace-snapshots",
   "ops-write",
   "registry-write",
+  "tool-pack-write",
 ];
 
 /** 匹配 `live-<suite>.spec.ts`（仅文件名，不含目录）。 */

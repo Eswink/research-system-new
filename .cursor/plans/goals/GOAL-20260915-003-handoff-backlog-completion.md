@@ -84,9 +84,13 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
 child_plans:
   - .cursor/plans/tasks/PLAN-20260915-063-design-gate-structural-criterion.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-063-design-gate-structural-criterion.md
+  - .cursor/plans/tasks/PLAN-20260915-064-tool-pack-supply-chain-write-surface.md
+  - .cursor/plans/tasks/PLAN-20260915-065-tool-pack-console-surface.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-065-tool-pack-console-surface.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
+  - MEM-20260915-039-tool-pack-install-binds-content-digest
+  - MEM-20260915-040-pending-must-be-visible-in-ui
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -101,7 +105,7 @@ memory_entries:
 | EC | 标准（摘要） | 验证 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 设计门禁结构判据（整块新增必红） | 33 路由结构签名 + 反证用例 + 跨平台一致性 | PASS（2026-09-16 cycle 1；范围注记：结构签名只看标签/testid/role/aria-label/叶子文本/子节点数，**不看样式与坐标**（那是像素判据的职责）；文本截断 120 字符 ⇒ 长文案的后半段变化不由本判据覆盖） |
-| EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | **PARTIAL**（2026-09-16 cycle 2：后端写面已交付——三条文档化端点 + SQLite store + digest 重算自证 + 扩张待批准 + capability 取值域 + 目录消费，OpenAPI/契约/文档/pageSupport 全部收敛；**未交付**：console 操作入口与 live e2e 链 ⇒ cycle 3 承接；范围注记见 EC-02 的 verify） |
+| EC-02 | ToolPack install/approve 供应链面 | OpenAPI 写方法 + API/live e2e | **PARTIAL**（2026-09-16 cycle 2：后端写面已交付——三条文档化端点 + SQLite store + digest 重算自证 + 扩张待批准 + capability 取值域 + 目录消费，OpenAPI/契约/文档/pageSupport 全部收敛；2026-09-16 cycle 3：**console 操作面已交付**——`ops/integrations` 面板（安装表单 / 待批准横幅含 diff 明细与候选 digest / 批准 / 吊销理由必填）、stub 6 + live 2 各一条链、两条设计基线重生成；**仍未交付**：健康复核记录 schema digest 并可比对漂移（provider 侧，需先定探测面），以及 provider 凭据绑定；另发现平台默认策略未放行 `tool_pack.*`（default DENY，见 RECHECK-065 W-1）——三项都记在「下一轮输入」） |
 | EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PENDING |
 | EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PENDING |
 | EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PENDING |
@@ -117,11 +121,12 @@ EC-03 为 M、EC-04 为 M（进程信号语义）、EC-05 为 S、EC-01 为 M。
 ## 循环入口协议
 
 按 README 的 7 步判定执行；当前续点：**cycle 1 已闭环**（PLAN-20260915-063 设计门禁
-结构判据 = EC-01 PASS，RECHECK-063 见 `latest_recheck`；提交 `5a44445`→`28c9c30`，
-CI run **35059391199 六个 job 全 success**）。
-**cycle 2 进行中**：PLAN-20260915-064（EC-02 ToolPack 供应链写面）已 derive 并进入
-实施（store/端口/域编解码/lifecycle `submit`+`approve_update`/路由与装配已落地；
-待做：API 用例、OpenAPI 快照与契约、文档与 pageSupport 收敛、全量门禁与记录）。
+结构判据 = EC-01 PASS，RECHECK-063；提交 `5a44445`→`28c9c30`，CI run **35059391199** 六个 job 全 success）。
+**cycle 2 已闭环**（PLAN-20260915-064 ToolPack 供应链写面 = EC-02 后端，RECHECK-064；
+提交 `3c343f4` → run **35064152993** 六 job 全 success）。
+**cycle 3 已闭环**（PLAN-20260915-065 console 操作面 + live 链 = EC-02 前端，
+RECHECK-065 见 `latest_recheck`；本地全量绿、基线重生成已目检；
+CI run 结论回填在下一条状态历史）。
 BLOCKED 处置模板见「终止与收口 · BLOCKED 记录（已解除）」。
 driver=session-goal，owner=root-agent。
 
@@ -248,6 +253,7 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
 | 1 | PLAN-20260915-063（EC-01：设计门禁结构判据） | 见本 cycle 提交 | 结构签名基线 33 条（`apps/web/tests/e2e/design-outlines.json`）；guard 用例 **6 passed**（注入可见面板/多一行/视口外节点/删节点 → 判红；只改样式 → 不误报；归一化 4 断言）；对照实验：多一行 **0.079%**、视口外 **0.000%** ⇒ 像素判据不报警而结构判据判红；跨平台一致性：linux 容器重算与 win32 **逐字节一致**（33/33）；全量 stub e2e / live e2e / 单测 / m0 见「证据」段 | run **35056976439**（5a44445）：**失败——但失败在启动前**：六个 job 全部 `runner_id=0`、无 step、2 秒内结束（attempt 1 与 rerun attempt 2 同形）；check-run 注释原样给出根因 *"The job was not started because recent account payments have failed or your spending limit needs to be increased"* ⇒ 账户级计费阻断，非代码/门禁缺陷。**两小时后阻断解除**（未做任何仓库内动作）：cycle 1 的收口提交 `28c9c30` → run **35059391199 六个 job 全 success**（container-quality / console-frontend / eval-gate / collector-quality / quality-ubuntu-latest / quality-windows-latest，均拿到真实 runner）⇒ **cycle 1 的 CI 结论成立**（详见「终止与收口 · 当前 BLOCKED」的处置记录） | 首次实现踩到三处：① 用 `toMatchSnapshot` 会得到 per-platform `-win32.txt` 基线（CI 在 ubuntu 上必然缺文件）⇒ 改成单一 JSON 基线 + 显式 `UPDATE_OUTLINES=1` 更新；② ISO 正则没吃 `+00:00` 偏移 ⇒ 归一化残留导致 33 条基线含半截时间戳，修正则后重生成；③ 注入到 `body` 末尾的面板落在视口外，像素差 0.000% ⇒ 补"可见注入"用例作为真实对照 | EC-01 已 PASS（范围注记见 EC 表）；EC-02~05 PENDING；**EC-06 BLOCKED（账户级计费阻断 CI）** | **本 cycle 无下一轮**（GOAL = BLOCKED）：恢复条件满足后 cycle 2 = ① derive EC-02（ToolPack install/approve 供应链面：pin↔交付物绑定、能力取值域、schema digest 漂移），子 PLAN 编号 = PLAN-20260915-064 |
 
 | 2 | PLAN-20260915-064（EC-02：ToolPack 供应链写面） | 见本 cycle 提交 | **API 9 passed**（digest 重算 422 / 未知 capability 422 点名 / 内置 id 409 / 扩张待批准且目录 digest 不变 / approve 后生效 / 相似内容 `unchanged` / 终态 409 / 未知 404 / **三态消费证明**）；生命周期 **12 passed**（新增"扩张不生效直到批准"、"相同内容不是更新"、"吊销清 pending"）；契约 **1354 passed / 3 skipped**；OpenAPI **+437 行**（仅新增四条路径）+ 契约断言；stub e2e **66 passed**、live e2e **31 passed**；根 eslint 0 error、`tsc --noEmit` 通过；33 路由像素 + 结构签名双绿（基线逐字节未动）；本地 m0 连红三轮（ruff 行宽/import 排序 → mypy 2 处 → 50 行函数上限 2 处）→ 修复后 **23/23** | run **35064152993**（3c343f4）：**六个 job 全 success**（eval-gate 06:32:27Z / collector-quality 06:34:05Z / container-quality 06:36:09Z / console-frontend 06:38:03Z / quality-ubuntu-latest 06:40:49Z / quality-windows-latest 06:44:34Z，无重跑） | ① `InvalidInputError` 是 `PermanentPortError` 子类 ⇒ 异常映射必须先判子类（首版"未知 pack"返回 422，被"未知 pack 404"用例抓住）；② pin 的正确形态是**控制面自己重算**（不是采信请求里的字面量），且要写清"自洽 ≠ 与上游一致"；③ 扩张不生效要有**读面证据**（pending 期间目录 digest 不变），否则"待批准"只是响应里的一个字段；④ `pageSupport` 的 reason 文本不在 33 路由可见 DOM 中（W-2） | EC-02 记 **PARTIAL**（后端已交付，console 入口与 live 链未做）；EC-03~06 PENDING | cycle 3 = ① derive EC-02 前端面（console ToolPack 操作入口 + 替身 + live e2e 链），并顺带 W-4（provider 健康复核记录 schema digest 并比对漂移），子 PLAN 编号 = PLAN-20260915-065 |
+| 3 | PLAN-20260915-065（EC-02：console 操作面 + live 链） | 见本 cycle 提交 | **stub 6 passed**（空列表是正确状态 / 安装后 digest 由服务端重算校验 / 篡改内容 → 422 detail 在面板内 / 扩张 → 横幅有 diff 且**生效 digest 不变** / 批准后 digest 变 / 吊销理由必填且终态无动作）；**live 2 passed**（真实 uvicorn + 真实 SQLite：install → 扩张（读面 digest 不变、`pending.digest` = 候选）→ approve（digest 变）→ revoke（REVOKED、目录退出、同 id 再装 409）；422 detail 落在面板内）；stub e2e **72 passed**、live e2e **33 passed**、web 单测 **76 passed**、根 eslint 0 error（1 条既有 soft warning）、`tsc --noEmit` 通过、`tests/tooling+api+application` **1890 passed / 1 skipped**；**结构判据首次真实拦截**：`ops-integrations` 节点 **+18** 判红、同一次运行 33 条像素用例全绿（2% 阈值不报警）；基线重生成后 `verify_linux_outlines.sh` → win32 == linux（33/33 逐键一致）；像素基线 win32+linux 各重生成一张并目检；本地 m0 两轮红（ruff 行宽 → ruff format）后 **23/23** | 见本 cycle 提交后的 run（六 job 结论回填在下一条状态历史） | ① live 第一次跑就撞上"平台默认策略没有 `tool_pack.*` 规则 ⇒ default DENY"，面板把 403 原样显示（界面正确工作的证据）⇒ 本轮只在**夹具层**放行四个能力、不改产品策略（W-1）；② 替身里的 digest 是**镜像口径**（canonical JSON→sha256），权威口径由 live fixture（域代码生成 + 同步守卫）证明（W-2）；③ GOAL 级 EC-02 的第三子句（健康复核 schema digest + 漂移比对）本轮未覆盖 ⇒ AC-10 收窄、EC-02 保持 PARTIAL（W-4） | EC-02 仍 **PARTIAL**（console 面已交付；剩 provider 侧 schema digest 漂移与凭据绑定）；EC-03~06 PENDING | cycle 4 = ① 按 EC 表选首个未满足项（EC-02 剩余子句"schema digest 漂移"需先定探测面从哪来，或直接做 EC-03 ops 调度写面）；② 顺带 W-1 的产品决策（policy.yaml 放行 `tool_pack.*`，或把既有 `action: TOOL_PACK_INSTALL_OR_UPDATE` 接成 require_approval → 登记待批准） |
 
 ## 状态历史
 
@@ -309,3 +315,24 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   **98 passed**（postgres 复用既有实例、collector 本轮新起 ⇒ 该项不等价，如实标注）。
   目的：让 CI 恢复后的首次运行更可能一次绿，并把"阻断期间系统仍然完好"落成可核验证据；
   **EC-06 不因此解冻**（它要求的是 main 上六个 job 的真实结论）。
+- 2026-09-16 cycle 3 开轮（EC-02 收口）：derive = PLAN-20260915-065（console 操作面 +
+  live 链），入口按「循环入口协议」第 6 条（上一 cycle commit+CI 全绿且 EC 未满足 → ①）。
+- 2026-09-16 cycle 3 实施中的两个**计划外事实**（都写进 RECHECK-065，不在循环内改产品语义）：
+  ① **live 第一次运行就 403**——平台默认策略 `examples/config/policy.yaml` 没有
+  `tool_pack.*` 规则 ⇒ `default_effect: DENY`，真实部署下 console 写面（及任何调用
+  lifecycle 的路径）会被拒；面板把 `policy denied capability tool_pack.install` 原样显示
+  在动作旁边（这正是"拒绝原因落在行内"该有的样子）。本轮**只在夹具层**放行四个能力
+  （`tests/api/console_api_app.py::_ConsoleToolPackPolicy`），产品策略未动；待产品决策的
+  两条候选路径记在「下一轮输入」。② **结构判据第一次真实拦截**：新增面板使
+  `ops-integrations` 结构签名 +18 节点判红，而同一次运行的 33 条像素用例全绿（2% 阈值
+  对整块新增依然不敏感）——cycle 1 的判据在真实改动上兑现了它的用途。
+- 2026-09-16 cycle 3 交付（EC-02 = **PARTIAL（收窄）**）：console 面全部交付——
+  `ToolPackPanel`（表列 id/状态(+待批准 chip)/**生效 digest**/版本/capabilities/目录/吊销）、
+  安装表单（完整 manifest JSON → install，422 detail 行内显示）、待批准横幅（候选 digest +
+  `pending.diff` 明细 + 批准按钮，**表里 digest 始终是生效版本**）、吊销（理由必填、终态无动作）；
+  `toolPacksClient` 四方法经 `api.*` 门面；stub 6 + live 2 各一条链（live 的 manifest 由域
+  代码生成、由 `tests/tooling/test_console_toolpack_fixtures.py` 守同步）；`pageSupport` /
+  `CONSOLE_PAGE_MAP` / `CONTROL_PLANE_API` 三处文案收敛；两条设计基线重生成并目检。
+  **AC-10 由"EC-02 PARTIAL → PASS"收窄**为"本 PLAN 十条 AC 全绿 + EC-02 保持 PARTIAL"：
+  GOAL 级 EC-02 的第三子句（健康复核 schema digest + 漂移比对）本轮未覆盖，不用
+  "前端收口"冒充整个 EC-02；剩余范围如实写在 EC 表与「下一轮输入」。

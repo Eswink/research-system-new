@@ -27,6 +27,7 @@ import { projectsClient } from "./projectsClient";
 import { protocolClient, type ProtocolSource } from "./protocolClient";
 import { runClient } from "./runClient";
 import { teamClient } from "./teamClient";
+import { toolPacksClient } from "./toolPacksClient";
 import { toolProvidersClient } from "./toolProvidersClient";
 import { workspaceSnapshotClient } from "./workspaceSnapshotClient";
 import type {
@@ -161,6 +162,12 @@ export const api = {
     toolProvidersClient.revokeRegistration(providerId, reason),
   healthCheckToolProvider: (providerId: string) =>
     toolProvidersClient.healthCheckRegistration(providerId),
+
+  // ── tool packs（PLAN-064 后端 + PLAN-065 console：提交/批准扩张/吊销）──
+  listToolPacks: () => toolPacksClient.list(),
+  installToolPack: (manifest: Record<string, unknown>) => toolPacksClient.install(manifest),
+  approveToolPackUpdate: (packId: string) => toolPacksClient.approveUpdate(packId),
+  revokeToolPack: (packId: string, reason: string) => toolPacksClient.revoke(packId, reason),
 
   // ── library（PLAN-044：prompts/datasets/notebooks 共享目录）──
   listLibrary: (kind: ResourceKind) => libraryClient.list(kind),

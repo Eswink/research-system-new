@@ -1,0 +1,35 @@
+{
+  "base": {
+    "credentials": [],
+    "digest": "sha256:3a38d184346b5257af9b2a7ed4f2853d175698e1105f265e03c848a91316dca3",
+    "id": "live_console_pack",
+    "license": "MIT",
+    "network_domains": [],
+    "requested_capabilities": [
+      "dataset.read"
+    ],
+    "resolved_revision": "rev-console-1.0.0",
+    "signature": null,
+    "skills": [],
+    "source": "fixture://live-console",
+    "tools": [],
+    "version": "1.0.0"
+  },
+  "expanded": {
+    "credentials": [],
+    "digest": "sha256:1d4392fbf03e26dadb1403f6299b51b4cecea2b33ed4a31cffe35fb77429ed7c",
+    "id": "live_console_pack",
+    "license": "MIT",
+    "network_domains": [],
+    "requested_capabilities": [
+      "audit.write",
+      "dataset.read"
+    ],
+    "resolved_revision": "rev-console-1.1.0",
+    "signature": null,
+    "skills": [],
+    "source": "fixture://live-console",
+    "tools": [],
+    "version": "1.1.0"
+  }
+}

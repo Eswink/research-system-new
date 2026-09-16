@@ -7,6 +7,7 @@ import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { providerColumns } from "./providerColumns";
 import { RegistryPanel } from "./RegistryPanel";
+import { ToolPackPanel } from "./ToolPackPanel";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 
@@ -46,6 +47,7 @@ export function IntegrationsPage() {
         )}
       </ResourceBoundary>
       <RegistryPanel onChanged={providers.reload} />
+      <ToolPackPanel onChanged={providers.reload} />
     </section>
   );
 }
@@ -55,11 +57,13 @@ function integrationsDescription(zh: boolean): string {
     return [
       "目录是已批准的来源（examples 契约 + APPROVED 注册），PENDING/REVOKED 不在这里。",
       "注册需 pin：sha256 内容寻址 digest；批准后 preflight/compile 立即可见。",
+      "ToolPack 写面：install 由控制面重算 digest 校验，权限扩张须批准后才生效。",
     ].join("");
   }
   return [
     "The catalog lists approved sources only (examples contracts + APPROVED registrations); ",
     "PENDING/REVOKED never appear here. Registration requires a sha256 pin, and approval ",
-    "makes it immediately visible to preflight/compile.",
+    "makes it immediately visible to preflight/compile. Tool pack installs are digest-verified ",
+    "server-side, and permission expansions stay pending until approved.",
   ].join("");
 }
