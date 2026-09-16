@@ -156,6 +156,7 @@ $ sh scratch/run-m0-cycle12.sh      -> PASS: profile=m0; 23 deterministic checks
 # 首轮红于 python/product-lint（两处 101 字符行，已修，未放宽断言）；
 # 第二轮撞上已知 Windows 文件占用 flake（framework/run_cursor_framework_evals，
 #   evolution_state.json.tmp 原子改名 PermissionError）——--profile framework 单独复跑 8/8 绿
+# 收口提交 1f0c7d9 → CI run 35093603690：六个 job 全 success（无重跑）
 ```
 
 ## 状态历史

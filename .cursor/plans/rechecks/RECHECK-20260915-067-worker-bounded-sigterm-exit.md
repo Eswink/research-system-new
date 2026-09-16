@@ -42,6 +42,7 @@ win32 本机无法复现（需 PG）。
 | 全量门禁（AC-07） | `tests/worker` **33 passed / 2 skipped**；`tests/architecture+worker+contracts` **453 passed / 58 skipped**；m0 **PASS: profile=m0; 23 deterministic checks**（首轮红于 `python/product-lint`：两处 skipif 行 101 > 100 字符 ⇒ 收敛成一个模块级 marker，**未放宽任何断言**；第二轮撞上已知 Windows 文件占用 flake） | PASS |
 | 安全扫描（sealed） | Mimosa deep scan `scan-2026-09-16T12-00-41.425Z-870fb6a2d27f`，seal `sha256:cbd2ba950115c60d76fa2a95722340864358e4b289ece1a049dc749cb17cfe02`：**36 findings（3 high / 28 medium / 5 low），182 packages**，计数与上一轮（cycle 4）完全一致。唯一落在本 cycle 改动文件上的命中是 `services/worker/__main__.py:135` 的 **advisory**（`疑似跨文件污点`：`RESEARCHOS_WORKER_GPU_IMAGE` 环境变量 → `probe_gpu(image=...)`）——**上一轮同一条**（当时报在第 107 行），本轮只是文件加了 28 行导致行号平移；`advisory: true` / `verdictEffect: none`。本轮新增的 `_drain_seconds` 解析带取值域校验，未引入新类别 | PASS |
 | 记录（AC-07） | RECHECK-067 + MEM-20260915-042 + GOAL-003 的 EC 表/迭代日志/状态历史 + ALL_PLAN | PASS |
+| CI（本 cycle 收口提交 `1f0c7d9`） | run **35093603690**：eval-gate 12:03:06Z / collector-quality 12:04:59Z / container-quality 12:06:21Z / console-frontend 12:09:12Z / **quality-ubuntu-latest 12:10:47Z** / **quality-windows-latest 12:13:31Z** —— 六个 job 全 `success`，无重跑。ubuntu job 在真实 Linux 上执行了两条真实 SIGTERM 用例（win32 job 上它们 skip），是本 cycle 的 CI 侧平台证据 | PASS |
 
 ## 告警
 
