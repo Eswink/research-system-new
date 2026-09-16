@@ -14,10 +14,26 @@ from packages.domain.core import ID, Digest, Timestamp
 from packages.domain.enums import (
     AcceptanceCriterionType,
     ComparisonOperator,
+    FailureAction,
     FailureCategory,
     TaskKind,
 )
 from packages.domain.state_machines import ResearchTaskState
+
+# 失败处置 → 落库状态（RETRY 走 RETRY_SCHEDULED，不在这张表里）。
+_FAILURE_STATUS = {
+    FailureAction.FAIL: ResearchTaskState.State.FAILED,
+    FailureAction.DEAD_LETTER: ResearchTaskState.State.DEAD_LETTER,
+}
+
+
+@dataclass(frozen=True, slots=True)
+class FailureDisposition:
+    """一次完成的落库处置：写成什么状态、做了什么动作、要不要重排。"""
+
+    status: str
+    action: FailureAction
+    retrying: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +84,47 @@ class TaskContract:
     retry_policy: RetryPolicy | None = None
     failure_policy: dict[str, str | bool | int | list[str]] = field(default_factory=dict)
     idempotency_scope: str = "task"
+
+    def disposition(
+        self, *, outcome: str, attempt: int, category: FailureCategory | None
+    ) -> FailureDisposition:
+        """一次完成的**落库处置**：写成什么状态、做了什么动作、要不要重排。
+
+        成功/失败只在这里分叉一次，两个 adapter 直接用结果写库，各自不再有第二套 if。
+        """
+        if outcome == "SUCCEEDED":
+            return FailureDisposition(
+                status=ResearchTaskState.State.SUCCEEDED, action=FailureAction.FAIL, retrying=False
+            )
+        action = self.decide_failure(attempt=attempt, category=category)
+        if action is FailureAction.RETRY:
+            return FailureDisposition(
+                status=ResearchTaskState.State.RETRY_SCHEDULED, action=action, retrying=True
+            )
+        return FailureDisposition(status=_FAILURE_STATUS[action], action=action, retrying=False)
+
+    def decide_failure(self, *, attempt: int, category: FailureCategory | None) -> FailureAction:
+        """一次**失败**的完成该被怎么处置（纯函数，两个 adapter 共用同一判据）。
+
+        规则（顺序即优先级）：
+
+        1. 没有 `retry_policy`，或本次完成**没有给出失败类别** ⇒ `FAIL`。
+           没有类别就无从判断"这类失败可不可重试"，默认不重试（保守）。
+        2. 类别不在 `retryable_categories` 里 ⇒ `FAIL`。
+        3. 类别可重试且 `attempt < max_attempts` ⇒ `RETRY`。
+        4. 类别可重试但次数已用尽 ⇒ `DEAD_LETTER`（不再自动重试，等人工恢复）。
+
+        `attempt` 是**本次**尝试的序号（从 1 开始）。退避时延不在这里：见
+        PLAN-20260915-078 的已知风险（策略面没有退避字段，如实不做）。
+        """
+        policy = self.retry_policy
+        if policy is None or category is None:
+            return FailureAction.FAIL
+        if category not in policy.retryable_categories:
+            return FailureAction.FAIL
+        if attempt < policy.max_attempts:
+            return FailureAction.RETRY
+        return FailureAction.DEAD_LETTER
 
     def __post_init__(self) -> None:
         if not self.id:

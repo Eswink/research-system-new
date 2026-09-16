@@ -12,10 +12,17 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
+from adapters.sqlite.completion import publish_completion_outcome
 from adapters.sqlite.db import now_iso
 from adapters.sqlite.leases import iso, lease_from_row, new_lease, request_digest
 from adapters.sqlite.outbox import OutboxWriter
-from adapters.sqlite.serialization import encode_task
+from adapters.sqlite.serialization import decode_contract, encode_task
+from adapters.sqlite.workflow_claim import (
+    CLAIMABLE_STATUSES,
+    claim_candidates,
+    first_matching_candidate,
+    persist_new_lease,
+)
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
 from packages.application.observability.scope import record_metric_safely
 from packages.application.ports.errors import InvalidInputError
@@ -25,14 +32,28 @@ from packages.application.ports.workflow_engine import (
     TaskCompletion,
     TaskLease,
 )
-from packages.domain.enums import TaskKind
+from packages.domain.enums import FailureAction
 from packages.domain.events import EventType
-from packages.domain.run_state import ResearchRunState
 from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
 
 _HostCalls = Callable[..., None]
 _Predicate = Callable[[ResearchTask], bool]
+
+# 这次完成**已经落账**的状态（lease 已删）：重放同一完成必须是幂等 noop。
+# RETRY_SCHEDULED 也在内——它表示完成已被处置（排了下一次尝试），不是"还没完成"。
+_COMPLETION_ALREADY_APPLIED = (
+    ResearchTaskState.State.SUCCEEDED,
+    ResearchTaskState.State.FAILED,
+    ResearchTaskState.State.DEAD_LETTER,
+    ResearchTaskState.State.RETRY_SCHEDULED,
+)
+
+# 失败处置 → 落库状态（RETRY 走 RETRY_SCHEDULED，不在这张表里）。
+_FAILURE_STATUS = {
+    FailureAction.FAIL: ResearchTaskState.State.FAILED,
+    FailureAction.DEAD_LETTER: ResearchTaskState.State.DEAD_LETTER,
+}
 
 
 def _lag_ms_since(created_at: object) -> float | None:
@@ -49,81 +70,6 @@ def _lag_ms_since(created_at: object) -> float | None:
         return max(0.0, (datetime.now(created.tzinfo) - created).total_seconds() * 1000.0)
     except (TypeError, ValueError):
         return None
-
-
-def _first_matching_candidate(candidates: Any, request: ClaimRequest) -> Any:
-    """First QUEUED EXECUTION row whose capability/partition match the claim.
-
-    Python-side filter over a static-SQL scan (M16 §7): a task with NULL
-    required_capability matches any worker; partition is a filter, not
-    ownership. `relax_partitions` (starvation fallback) ignores the partition
-    filter and matches by capability only.
-    """
-    for row in candidates:
-        required = row["required_capability"]
-        if required is not None and required not in request.capabilities:
-            continue
-        if not request.relax_partitions:
-            part = row["partition"]
-            if part is not None and part not in request.partitions:
-                continue
-        return row
-    return None
-
-
-def _claim_candidates(conn: sqlite3.Connection) -> Any:
-    """QUEUED EXECUTION 候选扫描（静态 SQL；PAUSED run 的排除在扫描内完成）。
-
-    暂停过滤必须作用在候选集而不是扫描之后：否则被暂停 run 的任务会占满
-    候选窗口，把其他 run 的可派发任务饿死。
-    """
-    return conn.execute(
-        "SELECT task_id, run_id, assigned_agent_id, fence_seq, required_capability,"
-        " partition FROM tasks WHERE kind = ? AND status = ? AND cancelled = 0"
-        " AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.run_id = tasks.run_id"
-        " AND json_extract(runs.run_json, '$.state') = ?)"
-        " ORDER BY created_at",
-        (
-            TaskKind.EXECUTION.value,
-            ResearchTaskState.State.QUEUED,
-            ResearchRunState.State.PAUSED,
-        ),
-    ).fetchall()
-
-
-def _persist_new_lease(
-    conn: sqlite3.Connection,
-    outbox: OutboxWriter,
-    lease: TaskLease,
-    *,
-    run_id: str,
-) -> None:
-    """Insert a fresh lease row, mark the task LEASED, publish TASK_LEASED."""
-    task_id = lease.task_id
-    assert lease.expires_at is not None and lease.heartbeat_at is not None
-    conn.execute(
-        "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at,"
-        " worker_id, fence) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (
-            task_id,
-            lease.lease_id,
-            lease.agent_id,
-            iso(lease.expires_at),
-            iso(lease.heartbeat_at),
-            lease.worker_id,
-            lease.fence,
-        ),
-    )
-    conn.execute(
-        "UPDATE tasks SET status = ?, fence_seq = ? WHERE task_id = ?",
-        (ResearchTaskState.State.LEASED, lease.fence, task_id),
-    )
-    outbox.publish(
-        EventType.TASK_LEASED,
-        {"task_id": task_id, "lease_id": lease.lease_id, "fence": lease.fence},
-        run_id=run_id,
-        task_id=task_id,
-    )
 
 
 class SqliteWorkflowOps:
@@ -207,7 +153,7 @@ class SqliteWorkflowOps:
             fence=int(row["fence_seq"] or 0) + 1,
         )
         with self._conn:
-            _persist_new_lease(self._conn, self._outbox, lease, run_id=str(row["run_id"]))
+            persist_new_lease(self._conn, self._outbox, lease, run_id=str(row["run_id"]))
         self._note_queue_lag(row)
         self._record("acquire_lease", task_id, result=lease.lease_id)
         return lease
@@ -229,7 +175,7 @@ class SqliteWorkflowOps:
         stops being dispatched rather than being filtered after the fact.
         """
         self._ensure_open()
-        chosen = _first_matching_candidate(_claim_candidates(self._conn), request)
+        chosen = first_matching_candidate(claim_candidates(self._conn), request)
         if chosen is None:
             self._record("claim_next", request.worker_id, result="none")
             return None
@@ -247,10 +193,10 @@ class SqliteWorkflowOps:
             fresh = self._conn.execute(
                 "SELECT status FROM tasks WHERE task_id = ?", (task_id,)
             ).fetchone()
-            if fresh is None or fresh["status"] != ResearchTaskState.State.QUEUED:
+            if fresh is None or fresh["status"] not in CLAIMABLE_STATUSES:
                 self._record("claim_next", request.worker_id, result="contended")
                 return None
-            _persist_new_lease(self._conn, self._outbox, lease, run_id=str(chosen["run_id"]))
+            persist_new_lease(self._conn, self._outbox, lease, run_id=str(chosen["run_id"]))
         self._record("claim_next", request.worker_id, result=f"{task_id}@fence={new_fence}")
         return lease
 
@@ -305,21 +251,10 @@ class SqliteWorkflowOps:
                 raise InvalidInputError(f"no active lease to renew for task: {task_id}")
         self._record("renew_lease", task_id, result="extended")
 
-    def _complete_impl(self, lease: TaskLease, completion: TaskCompletion) -> None:
-        self._ensure_open()
-        task_row = self._conn.execute(
-            "SELECT run_id, status, created_at FROM tasks WHERE task_id = ?", (lease.task_id,)
-        ).fetchone()
-        if task_row is None:
-            self._record("complete", lease.task_id, error="InvalidInputError")
-            raise InvalidInputError(f"unknown task: {lease.task_id}")
-        # at-least-once：已终止任务重放 complete 是幂等 noop（lease 已删）。
-        done = (ResearchTaskState.State.SUCCEEDED, ResearchTaskState.State.FAILED)
-        if task_row["status"] in done:
-            self._record("complete", lease.task_id, result="deduped")
-            return
+    def _require_current_lease(self, lease: TaskLease) -> None:
+        """完成前必须持有**当前**租约：lease_id 匹配且 fence 是这一代（M16 §8）。"""
         row = self._conn.execute(
-            "SELECT * FROM leases WHERE task_id = ?", (lease.task_id,)
+            "SELECT lease_id, fence FROM leases WHERE task_id = ?", (lease.task_id,)
         ).fetchone()
         if row is None or row["lease_id"] != lease.lease_id:
             self._record("complete", lease.task_id, error="InvalidInputError")
@@ -329,25 +264,51 @@ class SqliteWorkflowOps:
             raise InvalidInputError(
                 f"stale fence for task {lease.task_id}: lease generation superseded"
             )
-        status = (
-            ResearchTaskState.State.SUCCEEDED
-            if completion.outcome == "SUCCEEDED"
-            else ResearchTaskState.State.FAILED
+
+    def _complete_impl(self, lease: TaskLease, completion: TaskCompletion) -> None:
+        self._ensure_open()
+        task_row = self._conn.execute(
+            "SELECT run_id, status, created_at, attempt, contract_json FROM tasks"
+            " WHERE task_id = ?",
+            (lease.task_id,),
+        ).fetchone()
+        if task_row is None:
+            self._record("complete", lease.task_id, error="InvalidInputError")
+            raise InvalidInputError(f"unknown task: {lease.task_id}")
+        # at-least-once：这次完成已经落账（lease 已删）时，重放是幂等 noop。
+        # RETRY_SCHEDULED 也在内：它表示完成**已被处置**（排了下一次尝试），
+        # 重放同一次完成不能变成异常。
+        done = _COMPLETION_ALREADY_APPLIED
+        if task_row["status"] in done:
+            self._record("complete", lease.task_id, result="deduped")
+            return
+        self._require_current_lease(lease)
+        # 失败完成的处置由 Domain 的判据决定（PLAN-20260915-078）：
+        # 可重试且还有次数 ⇒ RETRY_SCHEDULED（再次可被 claim）；次数用尽 ⇒ 死信。
+        # `attempt` 是**本次**尝试的序号，由交付路径维护（persist_new_lease 每交付一次
+        # 就把它推进一代），所以这里读列即可——不是提交时的快照。
+        attempt = int(task_row["attempt"] or 1)
+        contract = decode_contract(task_row["contract_json"])
+        plan = contract.disposition(
+            outcome=completion.outcome, attempt=attempt, category=completion.failure_category
         )
         with self._conn:
             self._conn.execute("DELETE FROM leases WHERE task_id = ?", (lease.task_id,))
+            # 完成不改 attempt：一次尝试从**拿到 lease** 才算开始，序号在交付时写定
+            # （域不变量：attempt > 1 必须带 lease_id，完成时租约已删）。
             self._conn.execute(
                 "UPDATE tasks SET status = ? WHERE task_id = ?",
-                (status, lease.task_id),
+                (plan.status, lease.task_id),
             )
-            self._outbox.publish(
-                EventType.TASK_COMPLETED,
-                {"task_id": lease.task_id, "outcome": completion.outcome},
+            publish_completion_outcome(
+                self._outbox,
+                plan,
                 run_id=str(task_row["run_id"]),
-                task_id=lease.task_id,
+                completion=completion,
+                attempt=attempt,
             )
         self._note_task_duration(str(task_row["created_at"]))
-        self._record("complete", lease.task_id, result=completion.outcome)
+        self._record("complete", lease.task_id, result=str(plan.action))
 
     def _recover_impl(self) -> int:
         self._ensure_open()

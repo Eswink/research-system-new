@@ -8,7 +8,7 @@ from typing import Any, cast
 
 from adapters.postgres.db import server_now
 from adapters.postgres.leases import lease_from_row, new_lease
-from adapters.postgres.serialization import decode_timestamp_pg
+from adapters.postgres.serialization import decode_timestamp_pg, reencode_task_json
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import TaskLease
 from packages.domain.events import EventType
@@ -56,9 +56,23 @@ def _insert_lease(conn: Any, task_id: str, lease: Any, outbox: Any, row: Any) ->
     )
     # fence_seq advances in lockstep with each (re)claim; the lease carries the
     # new value so a stale worker's late write is rejected on (lease_id, fence).
+    # attempt 与 task_json 在同一条更新里推进（PLAN-20260915-078）：交付一次 lease
+    # 就是开始一次尝试，投影读的是 task_json，落后就会把重试的用量记进上一次的 entry id。
     conn.execute(
-        "UPDATE tasks SET status = %s, fence_seq = %s WHERE task_id = %s",
-        (ResearchTaskState.State.LEASED, lease.fence, task_id),
+        "UPDATE tasks SET status = %s, fence_seq = %s, attempt = %s, task_json = %s "
+        "WHERE task_id = %s",
+        (
+            ResearchTaskState.State.LEASED,
+            lease.fence,
+            lease.fence,
+            reencode_task_json(
+                row["task_json"],
+                row["contract_json"],
+                attempt=lease.fence,
+                lease_id=lease.lease_id,
+            ),
+            task_id,
+        ),
     )
     outbox.publish(
         EventType.TASK_LEASED,

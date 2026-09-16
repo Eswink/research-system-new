@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from packages.domain.core import Timestamp
+from packages.domain.enums import FailureCategory
 from packages.domain.tasks import ResearchTask, TaskContract
 
 
@@ -68,6 +69,9 @@ class TaskCompletion:
     task_id: str
     outcome: str
     message: str = ""
+    # 失败分类（PLAN-20260915-078）：重试策略要按**类别**判断可否重试，而类别只有
+    # 完成方（执行侧）知道。缺省 None = 未分类 ⇒ 不重试（见 TaskContract.decide_failure）。
+    failure_category: FailureCategory | None = None
 
     def __post_init__(self) -> None:
         if not self.task_id:

@@ -101,7 +101,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-075-self-made-cursor-serialization.md
   - .cursor/plans/tasks/PLAN-20260915-076-connection-boundary-enumeration.md
   - .cursor/plans/tasks/PLAN-20260915-077-operation-scoped-transaction-boundary.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-077-operation-scoped-transaction-boundary.md
+  - .cursor/plans/tasks/PLAN-20260915-078-retry-policy-becomes-real.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-078-retry-policy-becomes-real.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -118,6 +119,7 @@ memory_entries:
   - MEM-20260915-050-a-promise-with-two-entry-points
   - MEM-20260915-051-enumerate-the-boundary-then-gate-it
   - MEM-20260915-052-the-transaction-was-the-connection-not-the-operation
+  - MEM-20260915-053-a-declared-state-with-no-driver
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -720,3 +722,22 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   嵌套可重入 / 异常不吞 / **AST 结构门禁**：非 `with` 块内的 `.commit()` == 白名单）。
   定向：`tests/adapters/sqlite` **122 passed**；`tests/adapters/sqlite+api+contracts`
   **937 passed / 2 skipped**；mypy **871 files clean**；ruff/format 干净。
+- 2026-09-17 cycle 15 开轮（重试策略落地）：derive = PLAN-20260915-078。扫描拿到硬证据：
+  `TaskContract.retry_policy`（`max_attempts` 是**必填**字段）**零消费者**，
+  Domain 状态机里的 `RETRY_SCHEDULED` / `DEAD_LETTER`（限定写法扫生产代码）**命中 0**，
+  `TaskCompletion` 只有 outcome、**没有失败类别**——AGENTS.md §7 要的
+  "retry classification + dead-letter / manual recovery"一条也没落地，
+  而四样声明（必填字段 + 状态常量 + 迁移表 + loader 校验）都在，review 时看不出是空的。
+- 2026-09-17 cycle 15 交付：① 判据下沉 Domain 纯函数 `TaskContract.decide_failure`
+  （无策略/无类别 ⇒ FAIL；不可重试 ⇒ FAIL；可重试且还有次数 ⇒ RETRY；次数用尽 ⇒ DEAD_LETTER），
+  SQLite 与 PG **共用同一份**；② `TaskCompletion.failure_category`（可选，向后兼容）；
+  ③ `RETRY_SCHEDULED` 与 `QUEUED` 同为可 claim 状态；**attempt 的口径**经过三次收敛定成
+  "交付一次 lease = 开始一次尝试"：claim 与 acquire 两条交付路径都在**同一条更新**里写
+  `status + fence_seq + attempt + task_json`（域不变量 `attempt > 1` 必须带 `lease_id`，
+  只有交付那一刻两边同时成立；投影读 task_json，落后一代就会让重试用量一直落进上一次尝试的
+  entry id，`_attempt_scope` 的后缀永远走不到）；
+  ④ 枚举门禁：状态 → 驱动方登记表 + 生产代码扫描（登记"有驱动"的必须有命中、
+  登记"没驱动"的必须没有，反向也查）。定向：新用例 **13 passed**（SQLite 8 / 门禁 3 /
+  PG parity 2，m0 DSN 口径 PG 实跑）、`tests/adapters+tests/domain+tests/postgres+tests/contracts`
+  **1297 passed / 5 skipped**、mypy **876 files clean**、ruff/format 干净、
+  m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3681 passed / 10 skipped**）。

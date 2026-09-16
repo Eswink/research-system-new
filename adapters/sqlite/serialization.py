@@ -52,6 +52,11 @@ def decode_task(task_json: str, contract_json: str) -> TaskRow:
     )
 
 
+def decode_contract(contract_json: str) -> TaskContract:
+    """只有 contract_json 时解出 TaskContract（完成路径要读 retry_policy，PLAN-20260915-078）。"""
+    return _decode_task_contract(json.loads(contract_json))
+
+
 def _decode_research_task(payload: dict[str, Any]) -> ResearchTask:
     phase_run_id = payload.get("phase_run_id")
     return ResearchTask(

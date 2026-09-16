@@ -72,6 +72,19 @@ class FailureCategory(StrEnum):
     SCIENTIFIC_NEGATIVE_RESULT = "SCIENTIFIC_NEGATIVE_RESULT"
 
 
+class FailureAction(StrEnum):
+    """失败的完成该被怎么处置（PLAN-20260915-078）。
+
+    RETRY        重试（再排一次队），attempt 递增；
+    DEAD_LETTER  不再自动重试，进死信等待人工恢复；
+    FAIL         终态失败（与重试策略出现前一致的行为）。
+    """
+
+    RETRY = "RETRY"
+    DEAD_LETTER = "DEAD_LETTER"
+    FAIL = "FAIL"
+
+
 class ModelCapability(StrEnum):
     CHAT = "CHAT"
     STREAMING = "STREAMING"

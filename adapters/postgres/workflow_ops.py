@@ -8,7 +8,8 @@ from typing import Any, cast
 
 from adapters.postgres.db import db_time_expr, server_now
 from adapters.postgres.leases import new_lease
-from adapters.postgres.serialization import decode_timestamp_pg
+from adapters.postgres.serialization import decode_contract_json, decode_timestamp_pg
+from adapters.sqlite.completion import publish_completion_outcome
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
 from packages.domain.core import Timestamp
@@ -98,9 +99,13 @@ def _validate_completion_lease(conn: Any, record: Any, lease: Any, now: Any) -> 
     if task_row["cancelled"]:
         record("complete", lease.task_id, error="InvalidInputError")
         raise InvalidInputError(f"task {lease.task_id} is cancelled; cannot complete")
+    # This completion is already on the books (lease gone) -> a replay must be an
+    # idempotent noop. RETRY_SCHEDULED counts as applied too (PLAN-20260915-078).
     if task_row["status"] in (
         ResearchTaskState.State.SUCCEEDED,
         ResearchTaskState.State.FAILED,
+        ResearchTaskState.State.DEAD_LETTER,
+        ResearchTaskState.State.RETRY_SCHEDULED,
     ):
         return False
     lease_row: Any = conn.execute(
@@ -132,22 +137,29 @@ def complete_impl(conn: Any, record: Any, outbox: Any, payload: CompletePayload)
             record("complete", lease.task_id, result="deduped")
             return
         task_row: Any = conn.execute(
-            "SELECT run_id FROM tasks WHERE task_id = %s", (lease.task_id,)
+            "SELECT run_id, attempt, contract_json FROM tasks WHERE task_id = %s",
+            (lease.task_id,),
         ).fetchone()
-        status = (
-            ResearchTaskState.State.SUCCEEDED
-            if completion.outcome == "SUCCEEDED"
-            else ResearchTaskState.State.FAILED
+        # 与 SqliteWorkflowEngine 同一判据（Domain 纯函数）：可重试且还有次数 ⇒ 重排；
+        # 次数用尽 ⇒ 死信。见 PLAN-20260915-078。
+        # `attempt` 是**本次**尝试的序号，由交付路径维护（每交付一次 lease 推进一代），
+        # 与 SQLite 同口径；完成路径不动它（租约此时已删，域不变量不允许）。
+        attempt = int(task_row["attempt"] or 1)
+        plan = decode_contract_json(task_row["contract_json"]).disposition(
+            outcome=completion.outcome, attempt=attempt, category=completion.failure_category
         )
         conn.execute("DELETE FROM leases WHERE task_id = %s", (lease.task_id,))
-        conn.execute("UPDATE tasks SET status = %s WHERE task_id = %s", (status, lease.task_id))
-        outbox.publish(
-            EventType.TASK_COMPLETED,
-            {"task_id": lease.task_id, "outcome": completion.outcome},
-            run_id=str(task_row["run_id"]),
-            task_id=lease.task_id,
+        conn.execute(
+            "UPDATE tasks SET status = %s WHERE task_id = %s", (plan.status, lease.task_id)
         )
-        record("complete", lease.task_id, result=completion.outcome)
+        publish_completion_outcome(
+            outbox,
+            plan,
+            run_id=str(task_row["run_id"]),
+            completion=completion,
+            attempt=attempt,
+        )
+        record("complete", lease.task_id, result=str(plan.action))
 
 
 def recover_impl(conn: Any, record: Any, outbox: Any, now: Any) -> int:

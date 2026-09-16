@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-078](tasks/PLAN-20260915-078-retry-policy-becomes-real.md) | DONE |
 | [x] | [PLAN-20260915-077](tasks/PLAN-20260915-077-operation-scoped-transaction-boundary.md) | DONE |
 | [x] | [PLAN-20260915-076](tasks/PLAN-20260915-076-connection-boundary-enumeration.md) | DONE |
 | [x] | [PLAN-20260915-075](tasks/PLAN-20260915-075-self-made-cursor-serialization.md) | DONE |
