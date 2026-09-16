@@ -200,6 +200,36 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 不把本地绿当作 CI 绿；不伪造 run 结论；不为绕过计费而改动 `.github/workflows/**`
 （治理面，改动即命中 escalation，需人工决策）。
 
+#### 阻断期间的"CI 等价复现"（**不是 CI**，只用于降低恢复风险）
+
+阻断后按"若 CI 恢复，六个 job 会不会红"逐项做了本地/容器等价复现（提交 `9b5c1a2` 的全新
+clone，pinned `mcr.microsoft.com/playwright:v1.56.1-noble` 镜像 = CI 的 linux 平台）：
+
+| 受阻断的 job | 等价复现方式 | 结果 |
+| --- | --- | --- |
+| quality-windows-latest | 本地 win32 全量 m0（`.venv` + DSN 固化配方） | `profile=m0; 23 deterministic checks` |
+| quality-ubuntu-latest | 容器内跑 m0 的**根 typescript 5 项**（`format:check` / `lint` / `typecheck` / `boundaries` / `test`） | 全绿（prettier 通过、eslint 0 error 1 warning、depcruise 923 modules 0 违规） |
+| console-frontend | 容器内 `pnpm --dir apps/web lint/typecheck/test/build/test:e2e` | 全绿；**stub e2e 66 passed (2.9m)**（含 EC-01 的 33 路由结构签名用例）；win32 上单测 **76 passed** |
+| eval-gate | `python -B -m adapters.cli.eval_gate` + `pytest tests/evals -q -m "not requires_live_llm"` | `M11 CI eval gate: PASS`（两数据集 PASS + digest）；**110 passed** |
+| container-quality | `docker build -t research-os-sandbox:m9-test adapters/execution/sandbox` + `pytest -m requires_docker` | 镜像构建成功；**58 passed**（3474 deselected） |
+| collector-quality | 既有 postgres-test 实例（15432，36h healthy）+ 本轮新起 otel collector；`pytest tests/observability tests/postgres tests/distributed tests/e2e/test_pg_crash_restart.py -m "requires_collector or postgres or distributed"`（`REQUIRE_COLLECTOR=1` / `REQUIRE_POSTGRES=1`） | **98 passed**（64 deselected） |
+
+**这些证据的边界（必须与 CI 区分）**：
+
+1. **不是 CI**：没有 Actions runner、没有 checkout action、没有 job 隔离与并行、没有 runner
+   镜像差异——**因此不构成 EC-06 的"main 的 CI 全绿"，EC-06 仍为 BLOCKED**。
+2. **quality 的 python 侧没有在 linux 上重跑**：本 cycle 的改动是**纯前端测试面**
+   （`apps/web/tests/e2e/**`），python 侧与最近一次 ubuntu 全绿（run 35022837958）逐字节相同；
+   为省时间没有在容器里重建 python 环境跑 3530 条用例——这一点如实记录，不当作"复现过"。
+   （win32 侧 python 全量 m0 已绿，含 58 条 requires_docker。）
+3. **collector-quality 的复现不完全等价**：本轮 `compose up` 的 postgres 容器因
+   `0.0.0.0:15432` 被既有实例占用而**未启动**（`research-system-postgres-1` = Created），
+   测试实际跑在既有的 postgres 实例上（otel collector 是本轮新起的）——所以这一项只是
+   "测试套件在真 collector + 真 postgres 下通过"，不是"CI 的 compose 起停链通过"。
+4. 本轮创建的容器与网络（`research-system-otel-collector-1` / `research-system-postgres-1` /
+   `research-system-evidence-dir-1` / network `research-system_default`）已删除；
+   既有的 `compose-postgres-1`（project=compose）与 5 天前的随机名容器（非本轮产生）未动。
+
 **已确证的部分（不受阻断影响）**：EC-01 的全部证据都是本地/容器可复现的——
 m0 `23 deterministic checks`、stub e2e 66 / live e2e 31 / 单测 76、eslint 0 error、
 `tsc --noEmit` 通过、结构签名跨平台一致性（pinned noble 容器 33/33 逐字节一致）、
@@ -245,3 +275,10 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   `EC-06 = BLOCKED`，恢复条件与验证步骤写入「终止与收口 · 当前 BLOCKED」。
   **本 cycle 的 CI 不记 PASS**；本地证据（m0 23/23、stub 66 / live 31 / 单测 76、
   跨平台签名一致、Mimosa 命中 0）不受影响。
+- 2026-09-16 阻断期间追加**CI 等价复现**（明确**不是 CI**，见「终止与收口 · 当前 BLOCKED」表）：
+  按六个 job 逐项在本地/容器复现——win32 全量 m0 23/23；linux 容器内根 typescript 5 项全绿、
+  web lint/typecheck/unit/build + **stub e2e 66 passed**；eval-gate `PASS` + 110 passed；
+  container-quality 镜像构建 + **58 passed**（requires_docker）；collector-quality 四套件
+  **98 passed**（postgres 复用既有实例、collector 本轮新起 ⇒ 该项不等价，如实标注）。
+  目的：让 CI 恢复后的首次运行更可能一次绿，并把"阻断期间系统仍然完好"落成可核验证据；
+  **EC-06 不因此解冻**（它要求的是 main 上六个 job 的真实结论）。
