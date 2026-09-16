@@ -45,6 +45,7 @@
 | [MEM-20260915-045](entries/MEM-20260915-045-shared-connection-is-not-concurrency-safety.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-070 |
 | [MEM-20260915-046](entries/MEM-20260915-046-statement-serialization-is-not-read-atomicity.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-071 |
 | [MEM-20260915-047](entries/MEM-20260915-047-declared-but-unconsumed-config-is-a-lie.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-072 |
+| [MEM-20260915-048](entries/MEM-20260915-048-nonportable-counterexamples-are-not-gates.md) | ACTIVE | repository | 0.90 | 2027-09-16 | PLAN-20260915-073 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |
