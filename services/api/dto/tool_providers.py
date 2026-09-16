@@ -41,6 +41,7 @@ class ToolProviderRegisterDto(BaseModel):
     protocol_version: str | None = None
     network_domains: list[str] = Field(default_factory=list)
     health_check: bool = False
+    endpoint_env: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class ToolProviderUpdateDto(BaseModel):
@@ -53,6 +54,7 @@ class ToolProviderUpdateDto(BaseModel):
     protocol_version: str | None = None
     network_domains: list[str] | None = None
     health_check: bool | None = None
+    endpoint_env: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class ToolProviderRevokeDto(BaseModel):
@@ -62,6 +64,18 @@ class ToolProviderRevokeDto(BaseModel):
 class ToolProviderHealthDto(BaseModel):
     status: str
     detail: str = ""
+
+
+class ToolProviderEndpointBindingDto(BaseModel):
+    """`endpoint_env` 的解析结果（PLAN-20260915-072）：只有状态 / 变量名 / 指纹。
+
+    端点明文**不进**读面（可能含内网主机名或带 token 的查询串）；要知道具体值
+    就去查环境变量本身。`BOUND` 之外的两种状态不带指纹。
+    """
+
+    state: str
+    env_name: str | None = None
+    endpoint_digest: str | None = None
 
 
 class ToolProviderRegistrationDto(BaseModel):
@@ -90,6 +104,9 @@ class ToolProviderRegistrationDto(BaseModel):
     schema_baseline_digest: str | None = None
     schema_drift: bool = False
     schema_drift_since: str | None = None
+    endpoint_binding: ToolProviderEndpointBindingDto = Field(
+        default_factory=lambda: ToolProviderEndpointBindingDto(state="NOT_DECLARED")
+    )
     catalog_active: bool = False
 
 

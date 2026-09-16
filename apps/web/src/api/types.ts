@@ -676,6 +676,8 @@ export interface ToolProviderRegisterDto {
   protocol_version?: string | null;
   network_domains?: string[];
   health_check?: boolean;
+  /** 端点来源**声明**：环境变量名，其值是端点 URL（只存变量名，值不进读面）。 */
+  endpoint_env?: string | null;
 }
 
 export interface ToolProviderUpdateDto {
@@ -686,6 +688,18 @@ export interface ToolProviderUpdateDto {
   protocol_version?: string | null;
   network_domains?: string[];
   health_check?: boolean;
+  endpoint_env?: string | null;
+}
+
+/**
+ * `endpoint_env` 的解析结果（PLAN-072）：只有状态 / 变量名 / 指纹。
+ * BOUND = 环境变量已设置（此时才有 fingerprint）；ENV_UNSET = 声明了但没设置；
+ * NOT_DECLARED = 没声明过。端点明文不进读面。
+ */
+export interface ToolProviderEndpointBindingDto {
+  state: string;
+  env_name: string | null;
+  endpoint_digest: string | null;
 }
 
 export interface ToolProviderRegistrationDto {
@@ -715,6 +729,8 @@ export interface ToolProviderRegistrationDto {
   /** 当前观测是否已偏离基线（状态语义，不是"上次 vs 这次"）。 */
   schema_drift: boolean;
   schema_drift_since: string | null;
+  /** 端点绑定三态（现算：取决于进程环境此刻的样子，不是注册时写下的声明）。 */
+  endpoint_binding: ToolProviderEndpointBindingDto;
   catalog_active: boolean;
 }
 

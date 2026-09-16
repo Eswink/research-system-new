@@ -109,6 +109,7 @@ async def register_provider(
             protocol_version=payload.protocol_version,
             network_domains=list(payload.network_domains),
             health_check=payload.health_check,
+            endpoint_env=payload.endpoint_env,
             registered_at=now,
             updated_at=now,
         )

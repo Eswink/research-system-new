@@ -24,6 +24,7 @@ from packages.domain.enums import EndpointHealth, ProviderType
 from packages.domain.models import LLMEndpoint
 from packages.domain.tools import ToolProviderSpec
 from services.api.composition import ApiDeps
+from services.api.tool_provider_endpoints import resolve_endpoint_binding, unbound_reason
 
 
 def build_endpoint_health(deps: ApiDeps, catalog: CatalogSnapshot) -> dict[str, EndpointHealth]:
@@ -93,10 +94,17 @@ def probe_provider_spec(deps: ApiDeps, spec: ToolProviderSpec) -> ProviderProbe:
 
     单一路径的理由：注册面"健康复核"写下的必须是读面看到的那个事实，否则会
     出现"复核说健康、目录说不可证明"的两套真相。UNKNOWN 一律带原因（未注册
-    实例 / 未声明 health_check / 探测异常），不伪装成功。
+    实例 / 未声明 health_check / 探测异常 / **声明的端点环境变量未设置**），不伪装成功。
+
+    端点门槛（PLAN-20260915-072）：provider 声明了 `endpoint_env` 就意味着它自己说
+    "我的端点来自这个环境变量"——变量没设置时它不可用，因此**不探测**、直接 UNKNOWN
+    并点名变量（名字不是秘密；值不进任何读面）。未声明该字段的 provider 行为不变。
     """
     if spec.kind is ProviderType.NATIVE:
         return ProviderProbe(EndpointHealth.HEALTHY, NATIVE_PROBE_DETAIL)
+    unbound = unbound_reason(resolve_endpoint_binding(spec))
+    if unbound is not None:
+        return ProviderProbe(EndpointHealth.UNKNOWN, unbound)
     provider = deps.tool_providers.get(spec.id)
     if provider is None:
         return ProviderProbe(EndpointHealth.UNKNOWN, "控制面未注册可探测的 provider 实例")

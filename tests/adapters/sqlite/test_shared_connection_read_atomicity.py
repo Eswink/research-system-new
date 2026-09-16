@@ -7,11 +7,22 @@ cycle 8 把语句收进一把锁之后，还剩一类**静默错误**：共享�
     语句级串行（cycle 8 的形态）：miss 10 / 14 / 13 / 16 / 20 / 6 / 15 / 11（每轮 96 次读）
     读在锁内取尽（本轮修法）    ：miss 0 / 0 / 0
 
+**反证的可移植性（cycle 9 的 CI 教训）**：这是**真实竞态**，复现率随并行度变化——
+8+ 核 Windows 上每次都能压出 10~20/96，2 vCPU 的 CI runner 上 12 线程 × 8 轮 × 3 次
+**一次都没复现**（run 35115260874 的 ubuntu job 就是被这条判红）。
+把确定性做法也试过了（拿着游标不放、让另一线程写+提交后再取行）：**不触发**——
+竞态需要两个线程**同时**在 sqlite3 C 调用里（GIL 已释放），不是简单的时间窗交错。
+因此这里把门禁换成**结构判据**（确定性、任何机器都成立）：
+
+    产品路径：返回行的语句在**锁内取尽**（`MaterializedRows`）
+    退回语句级串行：返回裸 `sqlite3.Cursor`（取行在锁外 ⇒ 不存在原子性）
+
+负载型复现器仍留在记录里（RECHECK-071 的实测数字与脚本），只是不再当 CI 门禁。
+
 本文件钉住四件事：
 
-1. 共享连接上写后立读**不再 miss**（修复前会红）；
-2. **反证**：同一负载打在"语句级串行、不取尽行"的连接上**仍会 miss**
-   —— 证明第 1 条测的是这件事，而不是别的东西；
+1. 共享连接上写后立读**不再对不上真相**（负载型，只断言"无坏结果"）；
+2. **反证**：结构判据——退回语句级串行时，读结果不再在锁内取尽；
 3. 物化视图与真游标在**仓库实际用到的游标面**上行为一致；
 4. 并发下逐行解码不再出现"行列数不对"（`zip(..., strict=True)` 的那类崩溃）。
 """
@@ -83,10 +94,7 @@ def test_write_then_read_on_a_shared_connection_sees_the_row(tmp_path: Path) -> 
 
 
 class _StatementOnly(SerializedConnection):
-    """cycle 8 的形态：语句级串行，但**不**把行在锁内取尽。
-
-    用来做反证——如果这个形态也 0 miss，说明本文件的用例没测到真问题。
-    """
+    """cycle 8 的形态：语句级串行，但**不**把行在锁内取尽（取行回到调用方手里）。"""
 
     def _statement_only(self, *args: Any, **kwargs: Any) -> sqlite3.Cursor:
         return cast(sqlite3.Cursor, self._under_lock("execute", args, kwargs))
@@ -102,23 +110,38 @@ def _statement_only_store(db_path: Path) -> SqliteScheduleStore:
     return SqliteScheduleStore(db_path, connection=connection)
 
 
-def test_statement_level_serialization_still_misses_the_row(tmp_path: Path) -> None:
-    """AC-02 反证：语句级串行的连接上，同一负载**必须**还能复现对不上的读。
+def test_statement_level_serialization_does_not_take_rows_inside_the_lock(tmp_path: Path) -> None:
+    """AC-02 反证（**结构判据**，确定性）：退回语句级串行时，读结果不再锁内取尽。
 
-    若某天这条不再成立（例如 CPython 的 sqlite3 并发语义变了），说明本文件
-    依赖的前提变了：那时要重做取证并改写本文件的口径，而不是把它删掉。
+    症状级（负载压出读错）在 2 vCPU 的 CI runner 上复现不出来（见模块 docstring），
+    因此门禁改判**结构**：产品连接返回 `MaterializedRows`（行已在锁内取尽），
+    退回形态返回裸 `sqlite3.Cursor`（行还在连接上，取行在锁外）。谁把物化改回去，
+    这条就红。
     """
-    observed: list[list[str]] = []
-    for attempt in range(3):
-        store = _statement_only_store(tmp_path.joinpath(f"statement_only_{attempt}.db"))
-        try:
-            observed.append(_run_round_trips(store))
-        finally:
-            store.close()
+    product = connect(tmp_path.joinpath("product.db"))
+    product_store = SqliteScheduleStore(tmp_path.joinpath("product.db"), connection=product)
+    statement_only = _statement_only_store(tmp_path.joinpath("raw.db"))
+    try:
+        for index in range(3):
+            product_store.save_definition(_definition(f"atomic_{index}"))
+            statement_only.save_definition(_definition(f"atomic_{index}"))
 
-    assert any(problems for problems in observed), (
-        f"语句级串行的形态没有复现出对不上的读，本文件的第一条用例失去反证：{observed}"
-    )
+        product_cursor = product.execute("SELECT name FROM schedules ORDER BY name")
+        assert type(product_cursor).__name__ == "MaterializedRows"
+        # 行已在锁内取尽：之后的写入不改变这次读的结果
+        product_store.save_definition(_definition("later"))
+        expected = [("atomic_0",), ("atomic_1",), ("atomic_2",)]
+        assert [tuple(row) for row in product_cursor] == expected
+
+        raw_cursor = statement_only._conn.execute(  # noqa: SLF001 - 反证要看连接的真实形态
+            "SELECT name FROM schedules ORDER BY name"
+        )
+        assert isinstance(raw_cursor, sqlite3.Cursor)
+        assert type(raw_cursor).__name__ != "MaterializedRows"
+    finally:
+        product.close()
+        product_store.close()
+        statement_only.close()
 
 
 def _seed(connection: sqlite3.Connection) -> None:

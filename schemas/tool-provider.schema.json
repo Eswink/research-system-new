@@ -10,7 +10,11 @@
     "kind": {"enum": ["NATIVE", "MCP", "REST", "CLI", "REMOTE_WORKER"]},
     "trust_level": {"enum": ["BUILT_IN", "VERIFIED", "USER_APPROVED", "UNTRUSTED", "REVOKED"]},
     "transport": {"enum": ["streamable_http", "stdio", "native", "rest", "cli", "remote_worker"]},
-    "endpoint_env": {"type": "string", "minLength": 1},
+    "endpoint_env": {
+      "type": "string",
+      "minLength": 1,
+      "description": "端点来源声明的环境变量名：其值是 provider 的端点 URL（env-only，不读文件）。未设置该变量时 provider 判为不可用（健康探测如实 UNKNOWN）。凭据不走这里——凭据只经 CredentialResolver 的 credential_ref 解析。"
+    },
     "protocol_version": {"type": "string", "minLength": 1},
     "capabilities": {
       "type": "array",

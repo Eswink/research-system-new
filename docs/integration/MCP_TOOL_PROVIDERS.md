@@ -56,3 +56,22 @@ health
 - timeout/error rate；
 - circuit breaker；
 - canary after update。
+
+### 6.1 端点绑定（`endpoint_env`）
+
+provider 可以用 `endpoint_env` 声明**它的端点来自哪个环境变量**：
+
+```yaml
+some_rest_provider:
+  kind: REST
+  transport: rest
+  endpoint_env: SOME_REST_ENDPOINT   # 变量名；其值是端点 URL
+```
+
+- **env-only**：只读进程环境（`os.environ`），不读文件、不落盘；
+- **凭据不走这里**：凭据仍只经 `CredentialResolver`（`credential_ref`），
+  把 `NCBI_API_KEY` 这类**凭据名**写进 `endpoint_env` 是配置错误；
+- **未设置即不可用**：声明了 `endpoint_env` 而变量未设置 ⇒ 健康探测**不探测**、
+  如实 UNKNOWN 并点名变量（不伪装健康）；
+- **读面只有指纹**：注册表读面暴露状态（`NOT_DECLARED` / `ENV_UNSET` / `BOUND`）、
+  变量名与端点 `sha256` 指纹，**没有端点明文**（端点可能含内网主机名或带 token 的查询串）。

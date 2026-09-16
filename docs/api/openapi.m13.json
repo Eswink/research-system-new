@@ -6295,6 +6295,43 @@
         "title": "ToolProviderDto",
         "type": "object"
       },
+      "ToolProviderEndpointBindingDto": {
+        "additionalProperties": false,
+        "description": "`endpoint_env` 的解析结果（PLAN-20260915-072）：只有状态 / 变量名 / 指纹。\n\n端点明文**不进**读面（可能含内网主机名或带 token 的查询串）；要知道具体值\n就去查环境变量本身。`BOUND` 之外的两种状态不带指纹。",
+        "properties": {
+          "endpoint_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Digest"
+          },
+          "env_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Env Name"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "ToolProviderEndpointBindingDto",
+        "type": "object"
+      },
       "ToolProviderListDto": {
         "additionalProperties": false,
         "properties": {
@@ -6341,6 +6378,19 @@
             "default": "READ_ONLY",
             "title": "Effect Class",
             "type": "string"
+          },
+          "endpoint_env": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Env"
           },
           "health_check": {
             "default": false,
@@ -6432,6 +6482,9 @@
           "effect_class": {
             "title": "Effect Class",
             "type": "string"
+          },
+          "endpoint_binding": {
+            "$ref": "#/components/schemas/ToolProviderEndpointBindingDto"
           },
           "health_check": {
             "default": false,
@@ -6693,6 +6746,19 @@
               }
             ],
             "title": "Effect Class"
+          },
+          "endpoint_env": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Env"
           },
           "health_check": {
             "anyOf": [

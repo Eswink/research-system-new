@@ -126,6 +126,13 @@ $ ruff check / format --check：干净；mypy：clean
 - 2026-09-16 DONE：全量门禁通过（m0 **PASS: profile=m0; 23 deterministic checks**，
   定向 **476 passed**，ruff/format/mypy 干净），记录落盘（RECHECK-071 PASS_WITH_WARNINGS +
   MEM-046 + GOAL cycle 9 记账 + ALL_PLAN），复检基线 `4bc2f89`。
+- 2026-09-16 **CI 红项与更正**（收口提交 `cb61f41` → run 35115260874：
+  `quality-ubuntu-latest` 在 `python/tests` 判红，其余五个 job success）。红的是**反证用例**
+  本身：负载型反证在 2 vCPU 的 runner 上复现不出（本地 8+ 核每次 10~20/96，CI 0/288）。
+  确定性做法经实验**不成立**（拿住游标 + 另线程写提交不触发——竞态要两个线程同时在
+  sqlite3 C 调用里）。处置：反证改成**结构判据**（读结果是否在锁内取尽），
+  负载型复现器降级为记录（RECHECK-071「更正」段）；修正随 cycle 10 的收口提交入库，
+  并在随后的 CI run 上复核六个 job。
 
 ## 影响报告
 

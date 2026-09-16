@@ -89,6 +89,10 @@ class ProviderRegistration:
     protocol_version: str | None = None
     network_domains: list[str] = field(default_factory=list)
     health_check: bool = False
+    # 端点来源**声明**（环境变量名，值是端点 URL；PLAN-20260915-072）。这里只存
+    # "变量名"：端点值永不入库、不进读面——解析发生在进程边界
+    # （services/api/tool_provider_endpoints.py），凭据仍只走 CredentialResolver。
+    endpoint_env: str | None = None
     state: str = RegistrationState.initial()
     registered_at: Timestamp | None = None
     updated_at: Timestamp | None = None
@@ -142,6 +146,7 @@ class ProviderRegistration:
             protocol_version=self.protocol_version,
             network_domains=sorted(set(self.network_domains)),
             health_check=self.health_check,
+            endpoint_env=self.endpoint_env,
         )
 
     def approve(self, *, now: Timestamp) -> ProviderRegistration:

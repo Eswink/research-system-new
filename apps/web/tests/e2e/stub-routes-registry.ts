@@ -32,6 +32,12 @@ interface StubRegistration {
   schema_baseline_digest: string | null;
   schema_drift: boolean;
   schema_drift_since: string | null;
+  /** 端点绑定三态（PLAN-072）：替身只回事实，判定在服务端。 */
+  endpoint_binding: {
+    state: string;
+    env_name: string | null;
+    endpoint_digest: string | null;
+  };
   catalog_active: boolean;
 }
 
@@ -158,6 +164,7 @@ function registration(
     schema_baseline_digest: null,
     schema_drift: false,
     schema_drift_since: null,
+    endpoint_binding: { state: "NOT_DECLARED", env_name: null, endpoint_digest: null },
     catalog_active: false,
   };
 }

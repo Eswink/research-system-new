@@ -125,3 +125,34 @@ def test_list_returns_every_drifted_registration() -> None:
 
     drifted = {item.id: item.schema_drift for item in store.list_registrations()}
     assert drifted == {"a_provider": False, "b_provider": True}
+
+
+def test_endpoint_env_round_trips_and_legacy_rows_stay_undeclared() -> None:
+    """PLAN-20260915-072：端点来源**声明**入库往返；旧行（无该键）解码为"未声明"。
+
+    注意存的是**变量名**：端点值永远不入库（解析发生在进程边界）。
+    """
+    store = SqliteToolProviderRegistry(":memory:")
+    declared = _registration(endpoint_env="DATASET_GATEWAY_ENDPOINT")
+    store.save_registration(declared)
+    assert store.get_registration("dataset_gateway") == declared
+    assert store.get_registration("dataset_gateway").endpoint_env == "DATASET_GATEWAY_ENDPOINT"
+
+    legacy = _registration(id="legacy_gateway")
+    store.save_registration(legacy)
+    payload = json.loads(
+        str(
+            store._conn.execute(  # noqa: SLF001 - 直接改行，模拟"加字段之前写下的行"
+                "SELECT registration_json FROM tool_provider_registrations WHERE provider_id = ?",
+                ("legacy_gateway",),
+            ).fetchone()[0]
+        )
+    )
+    payload.pop("endpoint_env", None)
+    store._conn.execute(  # noqa: SLF001 - 同上
+        "UPDATE tool_provider_registrations SET registration_json = ? WHERE provider_id = ?",
+        (json.dumps(payload), "legacy_gateway"),
+    )
+    store._conn.commit()  # noqa: SLF001
+
+    assert store.get_registration("legacy_gateway").endpoint_env is None

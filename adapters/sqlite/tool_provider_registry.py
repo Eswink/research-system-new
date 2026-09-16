@@ -50,6 +50,7 @@ def _encode(registration: ProviderRegistration) -> dict[str, Any]:
         "protocol_version": registration.protocol_version,
         "network_domains": list(registration.network_domains),
         "health_check": registration.health_check,
+        "endpoint_env": registration.endpoint_env,
         "state": registration.state,
         "registered_at": _iso(registration.registered_at),
         "updated_at": _iso(registration.updated_at),
@@ -78,6 +79,8 @@ def _decode(raw: dict[str, Any]) -> ProviderRegistration:
         protocol_version=raw.get("protocol_version"),
         network_domains=[str(item) for item in raw.get("network_domains") or []],
         health_check=bool(raw.get("health_check", False)),
+        # 端点来源声明：旧行没有该键 ⇒ None（诚实：老注册没有声明过端点环境变量）
+        endpoint_env=raw.get("endpoint_env"),
         state=str(raw["state"]),
         registered_at=_parsed(raw.get("registered_at")),
         updated_at=_parsed(raw.get("updated_at")),
