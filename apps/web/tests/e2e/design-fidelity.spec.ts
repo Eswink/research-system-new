@@ -9,6 +9,7 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
+import { assertOutlines, buildOutline } from "./design-outline";
 import { stubApi } from "./stub-api";
 
 const ALL_ROUTES: readonly { name: string; hash: string; testid: string }[] = [
@@ -89,4 +90,23 @@ test("33 路由主截图（dark/normal/zh）", async ({ page }) => {
       maxDiffPixelRatio: 0.02,
     });
   }
+});
+
+/**
+ * 结构签名门禁（GOAL-20260915-003 EC-01）：像素比率对"整块新增"不敏感
+ * （实测 0.48%~1.73% < 2%），结构签名必须对节点增删敏感——多一行、多一个面板
+ * 都会变更签名，从而强制"重生成基线 + 目检"这一步真的发生。
+ */
+test("33 路由结构签名（DOM outline，整块新增必红）", async ({ page }) => {
+  test.setTimeout(180_000);
+  await stubApi(page);
+  const observed: Record<string, string> = {};
+  for (const route of ALL_ROUTES) {
+    await seedPrefs(page, { theme: "dark", density: "normal", lang: "zh" });
+    await page.goto(`/${route.hash}`);
+    await expect(page.getByTestId(route.testid).first()).toBeVisible({ timeout: 8_000 });
+    await page.waitForTimeout(120);
+    observed[route.name] = await buildOutline(page);
+  }
+  assertOutlines(observed);
 });
