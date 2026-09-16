@@ -99,7 +99,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-073-goal-003-budget-closeout.md
   - .cursor/plans/tasks/PLAN-20260915-074-provider-credential-binding.md
   - .cursor/plans/tasks/PLAN-20260915-075-self-made-cursor-serialization.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-075-self-made-cursor-serialization.md
+  - .cursor/plans/tasks/PLAN-20260915-076-connection-boundary-enumeration.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-076-connection-boundary-enumeration.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -114,6 +115,7 @@ memory_entries:
   - MEM-20260915-048-nonportable-counterexamples-are-not-gates
   - MEM-20260915-049-presence-check-is-not-a-resolve
   - MEM-20260915-050-a-promise-with-two-entry-points
+  - MEM-20260915-051-enumerate-the-boundary-then-gate-it
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -673,3 +675,28 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   （PLAN 标题以反引号开头 ⇒ YAML frontmatter 解析失败）；第三轮红于**已知 Windows
   原子改名 flake**（`evolution_state.json.tmp` PermissionError，与 cycle 5 同签名）
   ⇒ framework 档单独复跑 **8/8** 后第四轮 **PASS: profile=m0; 23 deterministic checks**。
+- 2026-09-17 cycle 13 开轮（连接边界枚举化）：derive = PLAN-20260915-076。探针 1 实测确认
+  缺口真实且**与直觉相反**：覆写了 `commit`/`rollback` 的子类上跑 `with conn:`，
+  Python 层的覆写**一次都没被调用**（C 层直接提交/回滚）；`isolation_level`/`autocommit`
+  的 setter 同理。也就是说"覆写 commit 就等于锁住事务边界"是错的，而这条从未被检查过。
+  另外，本轮还发现"还有哪些入口没收口"这件事本身一直是**隐含**的（cycle 8/9/12 各补一个，
+  没人能一眼说出边界在哪）。
+- 2026-09-17 cycle 13 交付：① 事务边界收口——`__enter__`/`__exit__`（成功提交、异常回滚、
+  不吞异常，都在锁内）与 `isolation_level`/`autocommit` 的**赋值**（`__setattr__` +
+  `LOCKED_ATTRIBUTES`；读取刻意不收口）；② 边界枚举化——25 个不收口的公共名逐条写理由，
+  用例断言"未收口集合 == 名单"（CPython 新增公共方法即红，逼一次决定），
+  `interrupt` 被显式标注为**故意**不收口（它就是给别的线程用来中止语句的）。
+  判据用**确定性**对照（探针 2：持锁时另线程是否阻塞）：`with` 退出与属性赋值
+  **收口前 False/False → 收口后 True/True**；对照用例证明读取不进锁（持锁时读立即返回）。
+  定向：新用例 **7 passed**、`tests/adapters/sqlite` **114 passed**、
+  `tests/adapters/sqlite+tests/api+tests/integration` **532 passed**；mypy **870 files clean**；
+  ruff/format 干净。
+- 2026-09-17 cycle 13 门禁（**两轮红都如实记录，没有改门禁**）：第 1 轮 m0 红于
+  `test_python_source_size_limits[adapters\sqlite\db.py]`（`assert 475 <= 450`——本轮三段
+  新方法顶穿了硬上限）；**不放宽阈值**，改法是机械化抽取：取行面
+  （`MaterializedRows` / `SerializedCursor`）原样搬到新增的 `adapters/sqlite/cursor.py`，
+  `db.py` 显式再导出（`db.py` 475 → 331 行）。第 2 轮红于 `python/typecheck` 的
+  `no_implicit_reexport`（普通 `import` 不算再导出）⇒ 改用仓内已有的 `X as X` 形式。
+  第 3 轮 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3654 passed /
+  10 skipped**；`tests/adapters/sqlite` + 文件规模用例合跑 **994 passed**）。
+  既有 3 个用例的 import 路径未改且全过。

@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-076](tasks/PLAN-20260915-076-connection-boundary-enumeration.md) | DONE |
 | [x] | [PLAN-20260915-075](tasks/PLAN-20260915-075-self-made-cursor-serialization.md) | DONE |
 | [x] | [PLAN-20260915-074](tasks/PLAN-20260915-074-provider-credential-binding.md) | DONE |
 | [x] | [PLAN-20260915-073](tasks/PLAN-20260915-073-goal-003-budget-closeout.md) | DONE |

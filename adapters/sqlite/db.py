@@ -10,6 +10,9 @@ SQLite 提供单进程 ACID 与进程重启级持久化；PostgreSQL 是生产�
 `sqlite3.InterfaceError: bad parameter or other API misuse`。所以连接统一由
 `SerializedConnection` 加锁；并设 `busy_timeout`，让跨进程写竞争等待而不是立刻失败。
 
+取行面（`MaterializedRows` / `SerializedCursor`）在 `adapters/sqlite/cursor.py`，
+本模块原样重新导出，既有 import 路径不变（拆出原因：450 行硬上限）。
+
 本模块只使用标准库 sqlite3，不引入未 pin 依赖。
 """
 
@@ -17,12 +20,22 @@ from __future__ import annotations
 
 import sqlite3
 import threading
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, cast
+from types import TracebackType
+from typing import Any, Literal, cast
+
+# 显式再导出（mypy `no_implicit_reexport`）：既有 `from adapters.sqlite.db import ...`
+# 的调用点——含 3 个用例——路径与名字都不变。
+from adapters.sqlite.cursor import MaterializedRows as MaterializedRows
+from adapters.sqlite.cursor import SerializedCursor as SerializedCursor
 
 BUSY_TIMEOUT_MS = 5000
+
+# 事务**边界**属性：赋值必须进锁（见 SerializedConnection.__setattr__ 的说明）。
+# 读取不进锁——它们只反映标志位，不触碰连接状态。
+LOCKED_ATTRIBUTES = frozenset({"isolation_level", "autocommit"})
 
 # tasks：ResearchTask 持久化 + 取消标记 + 状态投影
 # leases：TaskLease（at-least-once 投递去重）
@@ -151,155 +164,6 @@ CREATE INDEX IF NOT EXISTS idx_runs_project ON runs(project_id);
 SCHEMA_SQL = SCHEMA_SQL + RUNS_SCHEMA_SQL
 
 
-class MaterializedRows:
-    """只读游标视图：行已在锁内取尽，之后取行不再触碰连接。
-
-    为什么需要它：`execute()` 与调用方的取行之间是一个窗口，共享连接上
-    别的线程可以在这段时间里执行语句或提交，使这次取行拿到**不属于本语句**的结果
-    （实测：读不到刚提交的行，甚至拿回列数不对的行）。把行在锁内取尽后，
-    取行不再依赖连接状态。
-
-    覆盖的是本仓实际用到的游标面（`fetchone` / `fetchmany` / `fetchall` / 迭代 /
-    `rowcount` / `description` / `close`）；它不是 `sqlite3.Cursor`。
-    `conn.cursor()` 自建游标走 `SerializedCursor`（同一套锁内执行 + 锁内取尽口径）。
-    """
-
-    __slots__ = ("_rows", "_offset", "description", "rowcount", "lastrowid")
-
-    def __init__(self, source: sqlite3.Cursor, rows: list[Any]) -> None:
-        self._rows = rows
-        self._offset = 0
-        self.description = source.description
-        self.rowcount = source.rowcount
-        self.lastrowid = source.lastrowid
-
-    def fetchone(self) -> Any:
-        if self._offset >= len(self._rows):
-            return None
-        row = self._rows[self._offset]
-        self._offset += 1
-        return row
-
-    def fetchmany(self, size: int = 1) -> list[Any]:
-        """默认取 1 行（与默认 `arraysize = 1` 的真游标一致）。"""
-        rows = self._rows[self._offset : self._offset + size]
-        self._offset += len(rows)
-        return rows
-
-    def fetchall(self) -> list[Any]:
-        rows = self._rows[self._offset :]
-        self._offset = len(self._rows)
-        return rows
-
-    def __iter__(self) -> Iterator[Any]:
-        while self._offset < len(self._rows):
-            yield self.fetchone()
-
-    def close(self) -> None:
-        """真游标的 close 之后不能再取行；物化视图的取行只读本地列表，故为 no-op。"""
-
-
-class SerializedCursor:
-    """`conn.cursor()` 自建游标的收口包装（PLAN-20260915-075）。
-
-    `SerializedConnection` 原本只把 `execute/executemany/executescript` 收进锁，
-    `conn.cursor()` 返回的仍是**裸** `sqlite3.Cursor`——它的语句执行不取锁、
-    取行也不物化：同一连接上并发使用会退回 cycle 8 的崩溃类（`InterfaceError`）
-    与 cycle 9 的读错类。这个包装把自建游标也收进**同一把锁与同一套物化口径**：
-
-        语句在锁内执行（`execute` / `executemany` / `executescript`）；
-        读语句的行在锁内取尽，之后的 `fetch*` 只读本地列表。
-
-    为什么"取尽"是必须的（实测，同一脚本、同参数）：裸游标上
-    `execute(SELECT)` 之后、`fetchall()` 之前，若同连接上发生写入 + 提交，
-    取回的结果里会**多出**那行新数据（读跨越了提交点）；并发下还会出现列数不对的行。
-    锁内取尽后，这次读的结果在 execute 时刻就定死。
-
-    它不是 `sqlite3.Cursor`：覆盖本仓实际用到的游标面（`execute` / `executemany` /
-    `executescript` / `fetchone` / `fetchmany` / `fetchall` / 迭代 / `close` /
-    `description` / `rowcount` / `lastrowid` / `arraysize` / `connection`）。
-    """
-
-    __slots__ = ("_connection", "_lock", "_raw", "_view", "arraysize")
-
-    def __init__(self, connection: sqlite3.Connection, lock: threading.RLock, raw: Any) -> None:
-        self._connection = connection
-        self._lock = lock
-        self._raw = raw
-        self._view: MaterializedRows | None = None
-        self.arraysize = 1
-
-    @property
-    def connection(self) -> sqlite3.Connection:
-        return self._connection
-
-    @property
-    def description(self) -> Any:
-        return self._raw.description
-
-    @property
-    def rowcount(self) -> int:
-        return cast(int, self._raw.rowcount)
-
-    @property
-    def lastrowid(self) -> int | None:
-        return cast("int | None", self._raw.lastrowid)
-
-    def _forward(self, method: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-        """转发到裸游标（与 SerializedConnection 同形：不拼装、不解析、不缓存 SQL）。"""
-        return getattr(self._raw, method)(*args, **kwargs)
-
-    def _statement(self, *args: Any, **kwargs: Any) -> SerializedCursor:
-        with self._lock:
-            self._forward("execute", args, kwargs)
-            self._take_rows()
-        return self
-
-    def _many_statements(self, *args: Any, **kwargs: Any) -> SerializedCursor:
-        with self._lock:
-            self._forward("executemany", args, kwargs)
-            self._view = None
-        return self
-
-    def _script(self, *args: Any, **kwargs: Any) -> SerializedCursor:
-        with self._lock:
-            self._forward("executescript", args, kwargs)
-            self._view = None
-        return self
-
-    execute = _statement
-    executemany = _many_statements
-    executescript = _script
-
-    def _take_rows(self) -> None:
-        """锁内取尽（调用方必须已持锁）；写语句没有结果集，视图置空。"""
-        if self._raw.description is None:
-            self._view = None
-            return
-        self._view = MaterializedRows(self._raw, list(self._raw.fetchall()))
-
-    def fetchone(self) -> Any:
-        return self._view.fetchone() if self._view is not None else self._raw.fetchone()
-
-    def fetchmany(self, size: int | None = None) -> list[Any]:
-        """不带 size 时用 `arraysize`（与真游标一致）。"""
-        width = self.arraysize if size is None else size
-        source = self._view if self._view is not None else self._raw
-        return cast("list[Any]", source.fetchmany(width))
-
-    def fetchall(self) -> list[Any]:
-        source = self._view if self._view is not None else self._raw
-        return cast("list[Any]", source.fetchall())
-
-    def __iter__(self) -> Iterator[Any]:
-        return iter(self._view if self._view is not None else self._raw)
-
-    def close(self) -> None:
-        with self._lock:
-            self._raw.close()
-            self._view = None
-
-
 class SerializedConnection(sqlite3.Connection):
     """同一连接的多线程使用串行化（语句级 + 读原子）。
 
@@ -319,6 +183,15 @@ class SerializedConnection(sqlite3.Connection):
     范围注记：锁与取尽保证的是**单条语句**的读写自洽，不把一个请求里的多条语句
     变成原子事务。`conn.cursor()` 自建游标同样在锁内执行、锁内取尽
     （`SerializedCursor`），因此这条保证对**两个入口**都成立。
+
+    **边界是枚举出来的**（PLAN-20260915-076）：本类只覆写"语句执行面 + 事务边界"
+    的那些入口（`execute`/`executemany`/`executescript`/`cursor`/`commit`/`rollback`/
+    `close`/`__enter__`/`__exit__`/`isolation_level`/`autocommit`），其余公共名
+    （`backup`/`iterdump`/`serialize`/`create_function`/`set_trace_callback`/`interrupt`…）
+    **刻意**不收口，理由逐条写在 `tests/adapters/sqlite/test_serialized_connection_surface.py`
+    的 allow-list 里，并由该用例把"未收口集合"钉成一个字面量集合：
+    CPython 一旦新增公共方法，这条用例会红，逼一次"要不要收口"的决定，
+    而不是让它悄悄留在锁外。
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -360,6 +233,41 @@ class SerializedConnection(sqlite3.Connection):
     def _close_conn(self) -> None:
         self._under_lock("close", (), {})
 
+    def _enter_context(self) -> SerializedConnection:
+        """`with conn:` 的进入：语义与真连接一致（返回自身），不需要取锁。"""
+        return self
+
+    def _exit_context(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> Literal[False]:
+        """`with conn:` 的退出：成功提交、异常回滚——**都要在锁内**。
+
+        实测（PLAN-20260915-076 探针 1）：CPython 的上下文管理器在 C 层直接
+        提交/回滚，**不经过**本类覆写的 `commit`/`rollback`——不收口的话，
+        事务边界会绕过那把锁。返回值恒为 False：不吞异常（与真连接一致）。
+        """
+        if exc_type is None:
+            self.commit()
+        else:
+            self.rollback()
+        return False
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """事务边界属性（`isolation_level` / `autocommit`）的**赋值**在锁内进行。
+
+        这两个属性不是普通字段：设置 `isolation_level` 会改变事务起点（C 层可能
+        立刻发语句），置 `autocommit=True` 会**提交**未完成事务。读取不收口（只读
+        标志位，不触碰连接状态）。
+        """
+        if name in LOCKED_ATTRIBUTES and getattr(self, "_lock", None) is not None:
+            with self._lock:
+                super().__setattr__(name, value)
+            return
+        super().__setattr__(name, value)
+
     execute = _statement
     executemany = _many_statements
     executescript = _script
@@ -369,6 +277,8 @@ class SerializedConnection(sqlite3.Connection):
     commit = _commit_txn
     rollback = _rollback_txn
     close = _close_conn
+    __enter__ = _enter_context
+    __exit__ = _exit_context
 
 
 def _apply_journal_mode(connection: sqlite3.Connection, journal_mode: str) -> None:
