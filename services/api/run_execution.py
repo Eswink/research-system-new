@@ -92,18 +92,13 @@ class FrozenManifestRefs:
             pricing_digest=text("pricing_digest"),
         )
 
-    @property
-    def frozen(self) -> bool:
-        """是否冻结过 manifest（digest 是冻结事件的必备项）。"""
-        return self.digest is not None
-
     def apply(self, run: ResearchRun) -> ResearchRun:
         """把引用落到 run 行——与成功路径**同一个**域方法（`ResearchRun.with_manifest`）。
 
         没有 digest 时原样返回：preflight 被拒的 run 从没冻结过，伪造一份引用比
         留空更糟（漂移校验会拿它去比对不存在的 manifest）。
         """
-        if not self.frozen:
+        if self.digest is None:
             return run
         return run.with_manifest(
             Digest.parse(self.digest),
