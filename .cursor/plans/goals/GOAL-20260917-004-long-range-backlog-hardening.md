@@ -136,6 +136,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260917-087-failed-run-semantic-digest.md
   - .cursor/plans/tasks/PLAN-20260917-088-per-thread-sqlite-connection.md
   - .cursor/plans/tasks/PLAN-20260917-089-unified-dispatch-ownership-read-surface.md
+  - .cursor/plans/tasks/PLAN-20260917-090-resume-failure-compensation.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -264,10 +265,11 @@ EC-02 为 M、EC-06 为 S、EC-07 为 M（运维/审计，进度不由本循环�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 6 已收口**（EC-05 ②：PLAN-20260917-089 / RECHECK-089 ⇒ EC-05
-**① + ② 全部交付**；CI 结论见迭代日志第 6 行）；下一条工程 cycle = cycle 7 = EC-06
-（`resume_paused` 失败补偿：失败不留悬空 `RUNNING`、补偿可观测且可重入；先反向搜索两条入口
-——API `resume` 与守护线程 `_resume`——各自的失败收敛现状）。
+当前续点：**cycle 7 进行中**（EC-06 = `resume_paused` 失败补偿：PLAN-20260917-090 已建档并
+投影 ALL_PLAN，`status: IN_PROGRESS`；driver=client-goal / owner=root-agent）。反向搜索已确认：
+`resume_paused` 先 pop 上下文再执行（service.py:340）⇒ 执行失败后上下文丢失，API 面异常外冒
+（run 留 `RUNNING`，且 `PAUSED → RUNNING` 迁移会 409 ⇒ 永久悬空）、守护线程面 `except
+Exception: return 0` 同样不补偿；cycle 6 的 CI 见迭代日志第 6 行与状态历史。
 
 ## 驱动
 
