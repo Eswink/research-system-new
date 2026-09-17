@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import pytest
 
 from packages.domain.core import ID, Digest, Timestamp
+from packages.domain.protocol_source import ProtocolBody, ProtocolSource
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from packages.domain.state_machines import InvalidTransitionError
@@ -123,3 +124,25 @@ class TestResearchRunManifest:
         assert frozen.manifest_digest == digest
         assert frozen.state == ResearchRunState.State.READY
         assert run.manifest_digest is None
+
+
+class TestResearchRunFrozenBody:
+    """冻结正文的复制纪律（GOAL-004 cycle 1）：三个显式重建函数都不能丢它。"""
+
+    def test_transitions_and_manifest_updates_keep_the_frozen_body(self) -> None:
+        body = ProtocolBody.of("id: sort_analysis_v1\nversion: 1.0.0\nphases: []\n")
+        run = _run(protocol_body=body)
+
+        moved = run.transition(ResearchRunState.Transition.START_COMPILE)
+        assert moved.protocol_body == body, "状态迁移必须带着冻结正文"
+
+        frozen = moved.with_manifest(Digest.of_bytes(b"manifest"))
+        assert frozen.protocol_body == body, "冻结 manifest 必须带着正文"
+
+        resourced = frozen.with_protocol_source(ProtocolSource(protocol_path="a.yaml"))
+        assert resourced.protocol_body == body, "登记来源不能覆盖/丢掉正文"
+        assert resourced.protocol_source == ProtocolSource(protocol_path="a.yaml")
+
+    def test_a_run_without_a_body_stays_empty(self) -> None:
+        """旧 run（早于正文冻结）显式留空——不猜、不伪造。"""
+        assert _run().protocol_body is None

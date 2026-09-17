@@ -134,6 +134,7 @@ class RunOrchestrationService:
             project_id=command.project_id,
             protocol_id=command.protocol_id,
             protocol_source=command.protocol_source,
+            protocol_body=command.protocol_body,
         )
         run = run.transition(ResearchRunState.Transition.START_COMPILE)
         plan, report = compile_and_preflight(protocol, catalog, project, preflight_context)

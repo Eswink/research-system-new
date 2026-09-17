@@ -17,7 +17,7 @@ from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from packages.application.ports.workflow_engine import TaskCompletion
 from packages.domain.core import ID
 from packages.domain.enums import AcceptanceCriterionType, TaskKind
-from packages.domain.protocol_source import ProtocolSource
+from packages.domain.protocol_source import ProtocolBody, ProtocolSource
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from packages.domain.task_state import ResearchTaskState
@@ -25,6 +25,7 @@ from packages.domain.tasks import AcceptanceCriterion, ResearchTask, TaskContrac
 
 PATH_SOURCE = ProtocolSource(protocol_path="examples/protocols/sort_analysis_v1.yaml")
 DRAFT_SOURCE = ProtocolSource(draft_id="draft-9", draft_revision=4)
+BODY = ProtocolBody.of("id: protocol-1\nversion: 1.0.0\nphases: []\n")
 
 
 def _run(**kwargs: object) -> ResearchRun:
@@ -80,6 +81,22 @@ def test_a_draft_source_round_trips_and_a_legacy_row_stays_empty() -> None:
 
     assert store.get_run(draft.id.value).protocol_source == DRAFT_SOURCE
     assert store.get_run(legacy.id.value).protocol_source is None
+    store.close()
+
+
+def test_the_frozen_body_round_trips_and_a_legacy_row_stays_empty() -> None:
+    """冻结正文（GOAL-004 cycle 1）：落库往返一致、跨状态迁移不丢，旧行留空。"""
+    store = SqliteRunStore(":memory:")
+    frozen = _run(protocol_source=PATH_SOURCE, protocol_body=BODY)
+    legacy = _run()
+    store.save_run(frozen)
+    store.save_run(legacy)
+
+    reloaded = store.get_run(frozen.id.value)
+    assert reloaded.protocol_body == BODY, "正文与 digest 都要往返一致"
+    moved = reloaded.transition(ResearchRunState.Transition.START_COMPILE)
+    assert moved.protocol_body == BODY, "逐字段复制必须包含冻结正文"
+    assert store.get_run(legacy.id.value).protocol_body is None
     store.close()
 
 

@@ -137,3 +137,19 @@ def load_protocol_definition(path: str) -> Any:
     if not resolved.is_file():
         raise ValueError(f"protocol file not found: {path!r}")
     return load_protocol(f"{_PROTOCOLS_DIR}/{path}")
+
+
+def read_protocol_text(path: str) -> str:
+    """读取受控模板的**原始正文**（同一路径校验；不解析）。
+
+    GOAL-004 cycle 1：装配链要冻结"被解析的那份字节"，所以读取与冻结必须同源——
+    先把正文读进来，再从这段正文解析（`load_protocol_from_text`），启动与重建
+    因此对同一份字节解析，不存在"解析一份、冻结另一份"。
+    """
+    resolved = (_ROOT / _PROTOCOLS_DIR / path).resolve()
+    root = (_ROOT / _PROTOCOLS_DIR).resolve()
+    if not str(resolved).startswith(str(root)) or resolved.suffix != ".yaml":
+        raise ValueError(f"protocol path must be within {_PROTOCOLS_DIR}: {path!r}")
+    if not resolved.is_file():
+        raise ValueError(f"protocol file not found: {path!r}")
+    return resolved.read_text(encoding="utf-8")

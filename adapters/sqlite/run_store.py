@@ -17,7 +17,7 @@ from typing import Any
 from adapters.sqlite.base import SqliteAdapterBase
 from adapters.sqlite.db import RUNS_SCHEMA_SQL, connect, now_iso
 from packages.domain.core import ID, Digest, Timestamp
-from packages.domain.protocol_source import ProtocolSource
+from packages.domain.protocol_source import ProtocolBody, ProtocolSource
 from packages.domain.run import ResearchRun
 
 # 与 db.SCHEMA_SQL 同源：`runs` 是共享 canonical 表（控制面写入、派发面只读 state）。
@@ -97,6 +97,7 @@ def _encode(run: ResearchRun) -> dict[str, Any]:
         "pricing_version": run.pricing_version,
         "pricing_digest": run.pricing_digest,
         "protocol_source": _encode_source(run.protocol_source),
+        "protocol_body": _encode_body(run.protocol_body),
         "created_at": run.created_at.value.isoformat(),
         "updated_at": run.updated_at.value.isoformat(),
     }
@@ -123,6 +124,24 @@ def _decode_source(record: dict[str, Any] | None) -> ProtocolSource | None:
     )
 
 
+def _encode_body(body: ProtocolBody | None) -> dict[str, Any] | None:
+    """冻结正文（GOAL-004 cycle 1）：None = 该 run 早于正文冻结，显式保留空值。"""
+    if body is None:
+        return None
+    return {"text": body.text, "digest": str(body.digest)}
+
+
+def _decode_body(record: dict[str, Any] | None) -> ProtocolBody | None:
+    """解码冻结正文；digest 与正文不符时构造即失败（值对象不变量，不静默修）。"""
+    if not record:
+        return None
+    text = record.get("text")
+    digest = record.get("digest")
+    if not isinstance(text, str) or not isinstance(digest, str):
+        return None
+    return ProtocolBody(text=text, digest=Digest.parse(digest))
+
+
 def _decode(record: dict[str, Any]) -> ResearchRun:
     return ResearchRun(
         id=ID(record["id"]),
@@ -138,6 +157,7 @@ def _decode(record: dict[str, Any]) -> ResearchRun:
         pricing_version=record.get("pricing_version"),
         pricing_digest=record.get("pricing_digest"),
         protocol_source=_decode_source(record.get("protocol_source")),
+        protocol_body=_decode_body(record.get("protocol_body")),
         created_at=Timestamp(datetime.fromisoformat(record["created_at"])),
         updated_at=Timestamp(datetime.fromisoformat(record["updated_at"])),
     )

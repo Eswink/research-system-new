@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
 from packages.application.run_orchestration.commands import StartRunCommand
 from packages.domain.core import ID, Digest
+from packages.domain.protocol_source import ProtocolBody
 from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
 from services.api.catalog_merge import merged_catalog_snapshot, merged_project_settings
@@ -26,7 +27,11 @@ from services.api.preflight_support import (
     build_policy_evaluator,
     build_provider_health,
 )
-from services.api.protocol_source import load_protocol_for_source, protocol_source_of
+from services.api.protocol_source import (
+    load_protocol_with_body,
+    parse_frozen_protocol,
+    protocol_source_of,
+)
 from services.api.routers.run_events import events_of
 
 
@@ -39,6 +44,8 @@ class ExecutionInputs:
     project: ProjectSettings
     preflight: PreflightContext
     command: StartRunCommand
+    # GOAL-004 cycle 1：被解析的那份协议正文（随 run 落 canonical，供重启重建）。
+    protocol_body: ProtocolBody | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +58,8 @@ class ExecutionRequest:
     trace_id: str | None
     draft_ref: "tuple[str, int] | None"
     project_id: str
+    # GOAL-004 cycle 1：冻结正文（有它就不读文件/草稿库；重建路径走这一支）。
+    protocol_body: ProtocolBody | None = None
 
 
 def frozen_manifest_refs_of(
@@ -82,7 +91,19 @@ def execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
     设置行；未注册 404——不回退他项目设置，不伪装归属）。
     """
     deps = req.deps
-    protocol = load_protocol_for_source(deps, req.protocol_path, req.draft_ref)
+    if req.protocol_body is not None:
+        # 冻结正文优先（GOAL-004 cycle 1）：重建不再依赖那份外部文件还在。
+        # 来源参数可有可无——重建只认正文（命令里的来源仅用于记账，缺省不改 run 行）。
+        protocol = parse_frozen_protocol(req.protocol_body)
+        protocol_body = req.protocol_body
+        source = (
+            protocol_source_of(req.protocol_path, req.draft_ref)
+            if (req.protocol_path or req.draft_ref)
+            else None
+        )
+    else:
+        protocol, protocol_body = load_protocol_with_body(deps, req.protocol_path, req.draft_ref)
+        source = protocol_source_of(req.protocol_path, req.draft_ref)
     catalog = merged_catalog_snapshot(deps)
     project = merged_project_settings(deps, req.project_id)
     preflight = deps.preflight_override
@@ -105,9 +126,10 @@ def execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
         protocol_id=protocol.id,
         run_id=req.run_id,
         trace_id=req.trace_id or f"api-{req.run_id.value}",
-        protocol_source=protocol_source_of(req.protocol_path, req.draft_ref),
+        protocol_source=source,
+        protocol_body=protocol_body,
     )
-    return ExecutionInputs(protocol, catalog, project, preflight, command)
+    return ExecutionInputs(protocol, catalog, project, preflight, command, protocol_body)
 
 
 def run_from_execution(
@@ -140,6 +162,7 @@ def run_from_execution(
             pricing_version=outcome.pricing_version,
             pricing_digest=outcome.pricing_digest,
             protocol_source=inputs.command.protocol_source,
+            protocol_body=inputs.protocol_body,
         )
     except ValueError:
         frozen_digest, pricing_version, pricing_digest = frozen_manifest_refs_of(deps, run_id.value)
@@ -152,6 +175,7 @@ def run_from_execution(
             pricing_version=pricing_version,
             pricing_digest=pricing_digest,
             protocol_source=inputs.command.protocol_source,
+            protocol_body=inputs.protocol_body,
         )
 
 

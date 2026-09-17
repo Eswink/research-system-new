@@ -21,7 +21,7 @@ from adapters.postgres.workflow_engine import PostgresWorkflowEngine
 from packages.application.ports.workflow_engine import TaskCompletion
 from packages.domain.core import ID
 from packages.domain.enums import AcceptanceCriterionType, TaskKind
-from packages.domain.protocol_source import ProtocolSource
+from packages.domain.protocol_source import ProtocolBody, ProtocolSource
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from packages.domain.task_state import ResearchTaskState
@@ -116,5 +116,32 @@ def test_pg_run_store_round_trips_the_recorded_source() -> None:
         moved = reloaded.transition(ResearchRunState.Transition.START_COMPILE)
         assert moved.protocol_source == source, "状态迁移必须保留来源"
         assert store.get_run(legacy_id.value).protocol_source is None
+    finally:
+        store.close()
+
+
+def test_pg_run_store_round_trips_the_frozen_body() -> None:
+    """冻结正文（GOAL-004 cycle 1）经 JSONB 往返一致；旧行留空。"""
+    store = PostgresRunStore(dsn=_dsn())
+    try:
+        run_id = ID.generate()
+        body = ProtocolBody.of("id: protocol-1\nversion: 1.0.0\nphases: []\n")
+        store.save_run(
+            ResearchRun(
+                id=run_id,
+                project_id="project-1",
+                protocol_id="protocol-1",
+                protocol_source=ProtocolSource(protocol_path="examples/protocols/p.yaml"),
+                protocol_body=body,
+            )
+        )
+        legacy_id = ID.generate()
+        store.save_run(ResearchRun(id=legacy_id, project_id="project-1", protocol_id="protocol-1"))
+
+        reloaded = store.get_run(run_id.value)
+        assert reloaded.protocol_body == body, "正文与 digest 都要往返一致"
+        moved = reloaded.transition(ResearchRunState.Transition.START_COMPILE)
+        assert moved.protocol_body == body, "状态迁移必须保留冻结正文"
+        assert store.get_run(legacy_id.value).protocol_body is None
     finally:
         store.close()

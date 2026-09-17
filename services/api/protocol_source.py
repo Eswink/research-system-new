@@ -10,8 +10,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from packages.domain.protocol_source import ProtocolSource
-from services.api.catalog import load_protocol_definition
+from adapters.contracts.protocol_text_loader import load_protocol_from_text
+from packages.domain.protocol_source import ProtocolBody, ProtocolSource
+from services.api.catalog import load_protocol_definition, read_protocol_text
 from services.api.errors import ApiError
 
 if TYPE_CHECKING:
@@ -51,6 +52,38 @@ def load_protocol_for_source(
     return loaded
 
 
+def load_protocol_with_body(
+    deps: ApiDeps,
+    protocol_path: str | None,
+    draft_ref: tuple[str, int] | None,
+) -> tuple[ProtocolDefinition, ProtocolBody]:
+    """解析协议**并冻结其正文**（GOAL-004 cycle 1）。
+
+    与 `load_protocol_for_source` 同一判据（互斥 / 缺一 422 / 草稿 503/404/422），
+    区别只有一个：解析与冻结取自**同一份字节**——路径来源读文本一次再从该文本解析；
+    草稿来源用修订正文（就是被解析的那段）。冻结正文随 run 落 canonical，重启续跑
+    因此不再依赖那份外部文件仍在。
+    """
+    if draft_ref is not None and protocol_path:
+        raise ApiError(422, "Ambiguous Protocol Source", "provide either path or draft revision")
+    if draft_ref is not None:
+        text = _draft_revision_text(deps, draft_ref)
+        return _parse_draft_text(deps, text), ProtocolBody.of(text)
+    if not protocol_path:
+        raise ApiError(422, "Protocol Source Required", "protocol_path or draft ref required")
+    text = read_protocol_text(protocol_path)
+    return _parse_protocol_text(text), ProtocolBody.of(text)
+
+
+def parse_frozen_protocol(body: ProtocolBody) -> ProtocolDefinition:
+    """冻结正文 → ProtocolDefinition（不触碰文件系统/草稿库）。
+
+    重建路径用它：正文是 run 自己记得的那份字节，解析失败一律 422，不静默换一份。
+    正文自洽 ≠ 语义未漂移——plan/catalog/契约仍要过 `assert_semantics_frozen`。
+    """
+    return _parse_protocol_text(body.text)
+
+
 def protocol_source_of(
     protocol_path: str | None,
     draft_ref: tuple[str, int] | None,
@@ -70,15 +103,36 @@ def protocol_source_of(
 
 
 def _load_draft_revision(deps: ApiDeps, draft_ref: tuple[str, int]) -> ProtocolDefinition:
+    return _parse_draft_text(deps, _draft_revision_text(deps, draft_ref))
+
+
+def _draft_revision_text(deps: ApiDeps, draft_ref: tuple[str, int]) -> str:
+    """不可变修订的正文（503/404 语义与解析链一致）。"""
     draft_id, revision = draft_ref
     if deps.protocol_draft_service is None:
         raise ApiError(503, "Draft Service Unavailable", "protocol draft service not configured")
     revision_view = deps.protocol_draft_service.get_revision(draft_id, revision)
     if revision_view is None:
         raise ApiError(404, "Draft Revision Not Found", f"{draft_id}@{revision}")
+    text: str = revision_view.yaml_text
+    return text
+
+
+def _parse_draft_text(deps: ApiDeps, text: str) -> ProtocolDefinition:
+    service = deps.protocol_draft_service
+    if service is None:  # 防御：调用方先经 _draft_revision_text 校验（503）
+        raise ApiError(503, "Draft Service Unavailable", "protocol draft service not configured")
     try:
-        built = deps.protocol_draft_service.load_protocol(revision_view.yaml_text)
+        built = service.load_protocol(text)
     except ValueError as exc:
         raise ApiError(422, "Protocol Invalid", str(exc)) from exc
     protocol: ProtocolDefinition = built
     return protocol
+
+
+def _parse_protocol_text(text: str) -> ProtocolDefinition:
+    """协议正文 → ProtocolDefinition（与草稿修订同一条 Text→Domain 链）。"""
+    try:
+        return load_protocol_from_text(text)
+    except ValueError as exc:
+        raise ApiError(422, "Protocol Invalid", str(exc)) from exc

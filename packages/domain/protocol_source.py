@@ -13,7 +13,37 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-__all__ = ["ProtocolSource"]
+from packages.domain.core import Digest
+
+__all__ = ["ProtocolBody", "ProtocolSource"]
+
+
+@dataclass(frozen=True, slots=True)
+class ProtocolBody:
+    """冻结的协议正文：启动时**被解析的那份字节** + 它的 sha256。
+
+    为什么冻结正文而不是"重启时再解析一次来源"：来源（受控模板文件 / 草稿修订行）
+    会消失，而"这份 run 是用哪份字节装配的"是 run 自己必须记得的事实——续跑不该
+    因为外部文件被删/被改而失去重建入口（GOAL-004 cycle 1 / RECHECK-083 W-3）。
+
+    值对象不变量：`digest` 必须是 `text` 的 sha256（篡改的正文构造不出来）。
+    正文本身**不是**信任输入——重建仍要过语义 digest 校验（plan/catalog/契约漂移
+    一律拒绝），冻结只是把同一份输入持久化，不新增放行路径。
+    """
+
+    text: str
+    digest: Digest
+
+    def __post_init__(self) -> None:
+        if not self.text:
+            raise ValueError("protocol body must not be empty")
+        if Digest.of_bytes(self.text.encode("utf-8")) != self.digest:
+            raise ValueError("protocol body digest does not match its text")
+
+    @classmethod
+    def of(cls, text: str) -> ProtocolBody:
+        """按正文计算 digest（唯一的构造入口，杜绝"手填 digest"）。"""
+        return cls(text=text, digest=Digest.of_bytes(text.encode("utf-8")))
 
 
 @dataclass(frozen=True, slots=True)
