@@ -419,3 +419,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   读面真的答了"）；m0 见迭代日志第 6 行（首跑 2 红均本改动引入 ⇒ 修类型 + 搬代码，未改门禁）。
   EC-06/EC-07 仍 PENDING ⇒ 下一条工程 cycle = cycle 7 = EC-06（`resume_paused` 失败补偿，
   RECHECK-082 W-3）。
+- 2026-09-17 cycle 6 CI 记录：head `e6656be` → run **35258463258 六个 job 全 success**
+  （collector-quality / container-quality / console-frontend / quality-ubuntu-latest /
+  quality-windows-latest / eval-gate，run_number 143，无重跑）；本 cycle 的代码提交
+  `07213ee`/`48fe31d`/`925ac6c` 与记录提交 `e6656be` 同一棵树，被该 run 覆盖（CI 只跑 head）。
