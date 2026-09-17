@@ -37,6 +37,49 @@ class PausedDispatchDto(BaseModel):
     due_now: bool = False
 
 
+class DispatchRetryDto(BaseModel):
+    """重排读面（与 `PausedDispatchDto` 同一判据、同一次读出的数字）。"""
+
+    scheduled: int = 0
+    due: int = 0
+    next_retry_at: str | None = None
+
+
+class LeaseHolderDto(BaseModel):
+    """一个**活着**的租约持有者（读面不复制作业面凭据 `lease_id`）。
+
+    `worker_id` 为空 = 租约由控制面自己持有（agent session 投递），非空 = worker plane
+    的 claim；`expires_at` 是 canonical 租约行上的到期时刻。
+    """
+
+    task_id: str
+    worker_id: str | None = None
+    fence: int = 0
+    expires_at: str | None = None
+
+
+class DispatchOwnershipDto(BaseModel):
+    """统一派发读面（GOAL-004 cycle 6 = EC-05 ②）：这条 run 现在谁在派发它。
+
+    与 `PausedDispatchDto` 的区别：那一个只回答 `PAUSED` 的**停车语义**（会不会自己走），
+    这一个对**任何状态**回答"有没有活的派发方、是哪一个"。两者由**同一次** port 读
+    （`WorkflowEngine.dispatch_ownership`）分解而来，不会各说各话。
+
+    - `kind=WORKER_CLAIM`：有**活着**的租约持有者（工人 claim 或控制面自身的投递）；
+    - `kind=RETRY_DISPATCH`：任务面有重排（等时钟或已到期）⇒ 派发守护会（或马上会）续跑；
+    - `kind=BOTH`：两件事实同时存在；
+    - `kind=NONE`：都没有（停车等人工介入的 run 通常落在这里）；
+    - `kind=UNKNOWN`：没有 workflow 读面（或读面读不到）⇒ 不猜。
+
+    "活"由 adapter 用权威时钟判定（回收判据的补集）；读面只读 canonical 事实，不回答
+    执行健康度（心跳新鲜度、进度、卡死与否都不在这里）。
+    """
+
+    kind: str
+    retry: DispatchRetryDto = Field(default_factory=DispatchRetryDto)
+    holders: list[LeaseHolderDto] = Field(default_factory=list)
+
+
 class RunDetailDto(BaseModel):
     id: str
     project_id: str
@@ -52,6 +95,8 @@ class RunDetailDto(BaseModel):
     protocol_body_digest: str | None = None
     # GOAL-004 cycle 2：仅当 state == PAUSED 时非 None（其余状态"不适用"）。
     paused_dispatch: PausedDispatchDto | None = None
+    # GOAL-004 cycle 6：统一派发读面（任何状态都给；与 paused_dispatch 同一次读分解而来）。
+    dispatch: DispatchOwnershipDto | None = None
     created_at: str
     updated_at: str
 

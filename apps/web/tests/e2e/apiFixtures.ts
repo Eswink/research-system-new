@@ -14,6 +14,17 @@ export const RUN: RunDetailDto = {
   state: "RUNNING", manifest_digest: "sha256:manifest",
   manifest_semantic_digest: "sha256:semantic", protocol_body_digest: "sha256:body",
   paused_dispatch: null,
+  // GOAL-004 cycle 6：RUNNING 的 run 被判成"有活的租约持有者"（读面任何状态都给）。
+  dispatch: {
+    kind: "WORKER_CLAIM",
+    retry: { scheduled: 0, due: 0, next_retry_at: null },
+    holders: [
+      {
+        task_id: "task-one", worker_id: "worker-one", fence: 1,
+        expires_at: "2026-09-09T00:05:00Z",
+      },
+    ],
+  },
   created_at: "2026-09-09T00:00:00Z", updated_at: "2026-09-09T00:00:00Z",
 };
 

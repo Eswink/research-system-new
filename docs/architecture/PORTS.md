@@ -272,6 +272,22 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
 - Fake 没有写 `RETRY_SCHEDULED` 的路径 ⇒ 它的两个读面永远回答"没有重排"；
   这条限制在 `tests/contracts/test_retry_schedule_contract.py` 里显式钉住。
 
+### WorkflowEngine 增量（GOAL-004 cycle 6 = EC-05 ②）
+
+- 新增 `dispatch_ownership(run_id) -> DispatchOwnership`：**统一派发读面**，一个调用
+  回答"这条 run 现在有没有活的派发方、是哪一个"。两件 canonical 事实一次读出：
+  `retry: RetrySchedule`（与 `retry_schedule` 同一列同一判据、同一个 `now`）与
+  `leases: tuple[LeaseHolder, ...]`（活租约持有者：`task_id` / `worker_id` / `fence` /
+  `expires_at`，**不含 `lease_id`**——那是作业面结果提交的凭据，控制面读面不复制能力）。
+  `kind` 是这两件事实的组合：`NONE` / `RETRY_DISPATCH` / `WORKER_CLAIM` / `BOTH`。
+- "活"= `recover_expired_leases` 回收判据的**补集**：未过期（`expires_at >= now`）且
+  持有者不是 LOST worker；读面因此与回收方永远同判（两个持久化实现的用例在同一个测试里
+  同时断言两侧）。
+- 用途：控制面 `GET /runs/{id}`（与列表）的 `dispatch` 字段；`paused_dispatch` 改为
+  消费**同一次读**的 `PAUSED` 投影（取值与语义逐字不变）。Fake 无租约过期语义
+  （其"活"= 仍在租约表里），边界在 `tests/contracts/test_dispatch_ownership_contract.py`
+  里显式钉住。
+
 ### ExecutionJobQueue（`packages/application/ports/execution_job_queue.py`）
 
 - `enqueue / describe / poll / record_result / request_cancel /

@@ -353,6 +353,30 @@ export interface PausedDispatchDto {
   due_now: boolean;
 }
 
+export interface DispatchRetryDto {
+  // GOAL-004 cycle 6：重排读面（与 paused_dispatch 同一次读出的数字）。
+  scheduled: number;
+  due: number;
+  next_retry_at: string | null;
+}
+
+export interface LeaseHolderDto {
+  // 一个活着的租约持有者；worker_id 为 null = 控制面自己持有（agent session 投递）。
+  task_id: string;
+  worker_id: string | null;
+  fence: number;
+  expires_at: string | null;
+}
+
+export interface DispatchOwnershipDto {
+  // GOAL-004 cycle 6：统一派发读面（任何状态都给）。WORKER_CLAIM = 有活租约持有者；
+  // RETRY_DISPATCH = 任务面有重排（等时钟或已到期）；BOTH = 两件事实同时存在；
+  // NONE = 都没有；UNKNOWN = 读面读不到，不猜。
+  kind: string;
+  retry: DispatchRetryDto;
+  holders: LeaseHolderDto[];
+}
+
 export interface RunDetailDto {
   id: string;
   project_id: string;
@@ -367,6 +391,8 @@ export interface RunDetailDto {
   protocol_body_digest: string | null;
   // GOAL-004 cycle 2：仅 state === "PAUSED" 时非 null。
   paused_dispatch: PausedDispatchDto | null;
+  // GOAL-004 cycle 6：统一派发读面（任何状态都给；与 paused_dispatch 同一次读）。
+  dispatch: DispatchOwnershipDto | null;
   created_at: string;
   updated_at: string;
 }

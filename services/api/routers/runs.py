@@ -20,6 +20,10 @@ from services.api.dto.runs import RunDetailDto, RunStartDto, TaskDto
 from services.api.errors import ApiError
 from services.api.protocol_source import draft_ref_of
 from services.api.run_access import get_run_or_error, save_run
+from services.api.run_dispatch_view import (
+    dispatch_ownership_dto,
+    dispatch_ownership_read,
+)
 from services.api.run_execution import (
     ExecutionRequest,
     execution_inputs,
@@ -32,7 +36,12 @@ projects_router = APIRouter(tags=["runs"])
 
 
 def _detail_dto(deps: ApiDeps, run: ResearchRun) -> RunDetailDto:
-    """canonical run → 读面 DTO（详情与列表共用，停车语义只有这一处分类）。"""
+    """canonical run → 读面 DTO（详情与列表共用，停车语义只有这一处分类）。
+
+    派发读面**每个 run 只读一次**（GOAL-004 cycle 6 = EC-05 ②）：`dispatch` 与
+    `paused_dispatch` 是同一个 `dispatch_ownership` 结果的两个视图，不是一个字段一次读。
+    """
+    dispatch = dispatch_ownership_dto(dispatch_ownership_read(deps.workflow, run.id.value))
     return RunDetailDto(
         id=run.id.value,
         project_id=run.project_id,
@@ -43,7 +52,8 @@ def _detail_dto(deps: ApiDeps, run: ResearchRun) -> RunDetailDto:
             str(run.manifest_semantic_digest) if run.manifest_semantic_digest else None
         ),
         protocol_body_digest=str(run.protocol_body.digest) if run.protocol_body else None,
-        paused_dispatch=paused_dispatch_view(run.state, deps.workflow, run.id.value),
+        paused_dispatch=paused_dispatch_view(run.state, dispatch),
+        dispatch=dispatch,
         created_at=run.created_at.value.isoformat(),
         updated_at=run.updated_at.value.isoformat(),
     )

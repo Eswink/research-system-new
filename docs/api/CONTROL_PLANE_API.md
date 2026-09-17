@@ -191,6 +191,24 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
   非空只表示"这条 run 冻结过一次 manifest 且事件里有这项"，不保证重建成功
   （目录/契约漂移仍被 `assert_semantics_frozen` 拒绝）；`None` = 未冻结、preflight
   被拒，或事件早于本轮（不回填、不猜测）。
+- `GET /runs/{id}`（与列表）的 `dispatch` 是**统一派发读面**（GOAL-004 cycle 6 = EC-05 ②）：
+  **任何状态**都给，回答"这条 run 现在有没有活的派发方、是哪一个"。两个派发方此前各持
+  一半事实（retry dispatch 只看 `PAUSED` 的重排到期；worker plane 的租约不在读面），
+  现在由**一个** port 读（`WorkflowEngine.dispatch_ownership`）同时给出：
+  - `kind=WORKER_CLAIM`：有**活着**的租约持有者（`holders[]` 逐条给 `task_id`/
+    `worker_id`/`fence`/`expires_at`；`worker_id` 为 `null` = 控制面自己持有，即 agent
+    session 投递，不是 worker plane claim）；
+  - `kind=RETRY_DISPATCH`：任务面有重排（`retry.scheduled`/`retry.due`/`retry.next_retry_at`）
+    ⇒ 派发守护会（或马上会）续跑；
+  - `kind=BOTH`：两件事实同时存在；`kind=NONE`：都没有；
+  - `kind=UNKNOWN`：控制面没有 workflow 读面（或读面读不到）⇒ 不猜。
+
+  "活"的判据是**回收判据的补集**（未过期且持有者不是 LOST worker），在 adapter 内用
+  权威时钟取（生产：DB 时钟；测试：注入时钟）——读面与 `recover_expired_leases` 不会
+  各说各话。**诚实边界**：`dispatch` 不回答执行健康度（心跳新鲜度、进度、卡死与否都不在
+  这里）；不暴露 `lease_id`（那是作业面结果提交的凭据，控制面读面不复制能力）；
+  列表路径每 run 一次额外读（N+1，见复检告警）。`paused_dispatch` 与 `dispatch` 出自
+  **同一次读**（`paused_dispatch` 是它的 `PAUSED` 投影），不会互相漂移。
 
 ## Runs
 

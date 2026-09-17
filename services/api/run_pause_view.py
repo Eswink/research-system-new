@@ -10,42 +10,41 @@ canonical 事实——run 行状态与任务行的 `RETRY_SCHEDULED`/`retry_at`�
 - `USER_PAUSED`：停着且任务面没有任何重排 ⇒ 只有人工 resume/cancel 会动它。
 - `UNKNOWN`：控制面没有 workflow 读面，或读面自己读不到（adapter 边界错误）⇒ 不猜。
 
-分类不在这里做：`WorkflowEngine.retry_schedule` 在 adapter 内用**权威时钟**完成
+分类不在这里做：`WorkflowEngine.dispatch_ownership` 在 adapter 内用**权威时钟**完成
 （生产：DB 时钟；测试：注入时钟），与调度器判断到期与否同一处。本模块不拿墙钟比、
 不写任何状态、不缓存。
+
+GOAL-004 cycle 6：本视图改为消费**同一次读**的结果（`DispatchOwnershipDto`，由
+`run_dispatch_view` 从 `dispatch_ownership` 映射而来）——`GET /runs/{id}` 的
+`paused_dispatch` 与 `dispatch` 因此出自一个调用、一个时钟，不会各说各话。
+取值与判据逐字不变（`UNKNOWN` 仍是"读不到"，不是"没有"）。
 """
 
 from __future__ import annotations
 
-from packages.application.ports.errors import PortError
-from packages.application.ports.workflow_engine import WorkflowEngine
 from packages.domain.run_state import ResearchRunState
-from services.api.dto.runs import PausedDispatchDto
+from services.api.dto.runs import DispatchOwnershipDto, PausedDispatchDto
 
 RETRY_SCHEDULED = "RETRY_SCHEDULED"
 USER_PAUSED = "USER_PAUSED"
 UNKNOWN = "UNKNOWN"
 
 
-def paused_dispatch_view(
-    state: str, workflow: WorkflowEngine | None, run_id: str
-) -> PausedDispatchDto | None:
-    """`PAUSED` 的派发语义；非 `PAUSED` 返回 None（不适用，而不是 "false"）。"""
+def paused_dispatch_view(state: str, dispatch: DispatchOwnershipDto) -> PausedDispatchDto | None:
+    """`PAUSED` 的派发语义；非 `PAUSED` 返回 None（不适用，而不是 "false"）。
+
+    `dispatch` 是同一次 `dispatch_ownership` 读的 DTO：`kind=UNKNOWN` 表示读面读不到
+    （没有 workflow 读面，或 adapter 边界错误）⇒ 这里同样回答 UNKNOWN，绝不因此
+    退回 `USER_PAUSED`（"读不到"≠"不会自己走"）。
+    """
     if state != ResearchRunState.State.PAUSED:
         return None
-    if workflow is None:
+    if dispatch.kind == UNKNOWN:
         return PausedDispatchDto(kind=UNKNOWN)
-    try:
-        schedule = workflow.retry_schedule(run_id)
-    except PortError:
-        # 读面读不到 ≠ 没有重排。这时的诚实回答是 UNKNOWN。
-        return PausedDispatchDto(kind=UNKNOWN)
-    if schedule.scheduled or schedule.due:
+    if dispatch.retry.scheduled or dispatch.retry.due:
         return PausedDispatchDto(
             kind=RETRY_SCHEDULED,
-            next_retry_at=(
-                schedule.next_retry_at.value.isoformat() if schedule.next_retry_at else None
-            ),
-            due_now=schedule.due > 0,
+            next_retry_at=dispatch.retry.next_retry_at,
+            due_now=dispatch.retry.due > 0,
         )
     return PausedDispatchDto(kind=USER_PAUSED)
