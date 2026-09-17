@@ -43,6 +43,11 @@ run.failed
 run.degraded
 ```
 
+`manifest.frozen` 的 payload 带三项冻结引用：`digest`（覆盖 `frozen_at` 的快照标识）、
+`semantic_digest`（排除冻结时刻，resume 漂移校验的输入）、`pricing_version` +
+`pricing_digest`。语义 digest 必须在事件里：执行期失败收敛的 run 没有 `RunOutcome`
+可读，只能从事件链把 run 行的冻结引用补回来（GOAL-004 cycle 4 = EC-04）。
+
 ## 2. Event Envelope
 
 ```text

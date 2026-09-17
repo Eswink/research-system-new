@@ -55,10 +55,16 @@ def publish_event(
 
 
 def frozen_payload(run: ResearchRun, manifest: RunManifest) -> dict[str, object]:
-    """MANIFEST_FROZEN 事件 payload（含 pricing 冻结引用）。"""
+    """MANIFEST_FROZEN 事件 payload（含 pricing 冻结引用与语义 digest）。
+
+    `digest` 覆盖 `frozen_at`（这份快照的字节级标识），`semantic_digest` 排除冻结时刻
+    （resume 漂移校验的输入）。两者都要进 payload：失败收敛路径没有 `RunOutcome` 可读，
+    只能从事件链把 run 行的冻结引用补回来（GOAL-004 cycle 4 / RECHECK-083 W-1+W-2）。
+    """
     return {
         "run_id": run.id.value,
         "digest": str(manifest.digest()),
+        "semantic_digest": str(manifest.semantic_digest()),
         "pricing_version": manifest.pricing_version,
         "pricing_digest": manifest.pricing_digest,
     }
