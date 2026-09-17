@@ -976,7 +976,12 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
 - 2026-09-18 cycle 20 CI：收口提交 `eff1082` → run **35191019593 六个 job 全 success**
   （eval-gate 06:42:39Z / collector-quality 06:44:23Z / container-quality 06:45:14Z /
   console-frontend 06:48:05Z / quality-ubuntu-latest 06:51:41Z / quality-windows-latest
-  06:55:14Z，无重跑）。
+  06:55:14Z，无重跑）；本 cycle 的记录提交 `f7dd6c2` → run **35192364455 六个 job 全 success**
+  （eval-gate 07:00:07Z / collector-quality 07:02:13Z / container-quality 07:03:48Z /
+  console-frontend 07:04:55Z / quality-ubuntu-latest 07:07:46Z / quality-windows-latest
+  07:11:53Z，无重跑）——**到此本 GOAL 的每个 cycle 提交都有真实 CI 结论**；本行自身所在的
+  记录提交是最后一次只改 `.cursor/**` 的收尾提交，其 run 可由 Actions 直接核对
+  （不再逐次追记：同因重复，如实说明而不是留一个"未记录即成谜"的尾巴）。
 - 2026-09-18 cycle 20 收口（**预算触顶 20/20 → BLOCKED**）：EC 表逐行复核为 **EC-01…EC-06
   全 PASS**（依据表见「终止与收口 · BLOCKED 记录（2026-09-18）」），`latest_recheck` 指向
   RECHECK-20260915-083（PASS_WITH_WARNINGS）；**仍未处理的长程项已写成 8 条后继入口**
