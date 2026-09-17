@@ -13,10 +13,10 @@ from typing import Any
 
 from adapters.fakes import FakeAgentRuntime, FakeArtifactStore, FakeWorkflowEngine
 from adapters.fakes.telemetry_sink import FakeTelemetrySink
+from packages.application.run_orchestration.outcomes import RunOutcome
 from packages.application.run_orchestration.phase_runner import (
     PhaseContext,
     PhaseRunnerDeps,
-    RunOutcome,
     execute_phases,
 )
 from packages.application.run_orchestration.task_executor import SessionSpecContext

@@ -49,12 +49,15 @@ from packages.application.run_orchestration.eventing import (
     frozen_payload,
     publish_event,
 )
+from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome
 from packages.application.run_orchestration.phase_runner import (
     PhaseContext,
     PhaseRunnerDeps,
-    RunOutcome,
-    TaskOutcome,
     execute_phases,
+)
+from packages.application.run_orchestration.run_terminals import (
+    publish_degraded_run,
+    publish_failed_run,
 )
 from packages.application.run_orchestration.session_resolution import resolve_sessions
 from packages.application.run_orchestration.task_executor import SessionSpecContext
@@ -62,7 +65,6 @@ from packages.application.run_orchestration.usage_recording import record_cancel
 from packages.domain.core import ID
 from packages.domain.enums import GateType
 from packages.domain.events import EventType
-from packages.domain.failure_policy import OnTaskFailure
 from packages.domain.manifest import RunManifest
 from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
@@ -393,18 +395,7 @@ class RunOrchestrationService:
 
     def _fail_run(self, run_id: str, message: str, system_failure: bool) -> RunOutcome:
         release_reservation(self._reservation_refs, self._deps.budget, run_id)
-        self._publish(
-            EventType.RUN_FAILED,
-            {"run_id": run_id, "message": message},
-            run_id=run_id,
-            trace_id="",
-        )
-        return RunOutcome(
-            run_id=run_id,
-            state=ResearchRunState.State.FAILED,
-            message=message,
-            system_failure=system_failure,
-        )
+        return publish_failed_run(self._publish, run_id, message, system_failure)
 
     def _release_if_terminal(self, run_id: str, state: str) -> None:
         if state in ResearchRunState.terminal():
@@ -418,35 +409,9 @@ class RunOrchestrationService:
     ) -> RunOutcome:
         """被容忍的失败 ⇒ `run.degraded`（GOAL-004 cycle 3 = EC-03）。
 
-        事件 payload 是这条 run 的**策略归属事实**：哪几条任务失败、用的是哪条策略。
-        run 行只体现状态 DEGRADED（不新增字段），要追问细节就读事件链。
+        发事件的动作在 `run_terminals`（450 行上限拆出）；这里只接线。
         """
-        self._publish(
-            EventType.RUN_DEGRADED,
-            {
-                "run_id": ctx.run_id,
-                "message": message,
-                "failure_policy": OnTaskFailure.CONTINUE,
-                "tolerated_failures": [
-                    {
-                        "task_id": outcome.task.id.value,
-                        "message": outcome.message,
-                        "failure_policy": outcome.failure_policy,
-                    }
-                    for outcome in tolerated
-                ],
-            },
-            run_id=ctx.run_id,
-            trace_id=ctx.trace_id or "",
-        )
-        return RunOutcome(
-            run_id=ctx.run_id,
-            state=ResearchRunState.State.DEGRADED,
-            message=message,
-            tasks=tolerated,
-            manifest_digest=ctx.frozen_manifest_digest,
-            system_failure=False,
-        )
+        return publish_degraded_run(self._publish, ctx, tolerated, message)
 
     def _publish_phase_event(
         self,

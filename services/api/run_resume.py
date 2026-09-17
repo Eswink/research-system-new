@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from packages.application.preflight.preflight import compile_and_preflight
 from packages.application.run_orchestration.commands import ResumeRunCommand
 from packages.application.run_orchestration.context import RunContext
-from packages.application.run_orchestration.phase_runner import RunOutcome
+from packages.application.run_orchestration.outcomes import RunOutcome
 from packages.application.run_orchestration.service import RunOrchestrationService
 from packages.domain.protocol_source import ProtocolSource
 from packages.domain.run import ResearchRun

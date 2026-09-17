@@ -29,10 +29,9 @@ from packages.application.run_orchestration.memory_promotion import (
     MemoryPromotionContext,
     promote_memory_from_registration,
 )
+from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome
 from packages.application.run_orchestration.phase_runner import (
     PhaseRunnerDeps,
-    RunOutcome,
-    TaskOutcome,
     execute_phases,
 )
 from packages.application.run_orchestration.result_handler import (

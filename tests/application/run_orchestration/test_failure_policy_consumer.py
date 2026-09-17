@@ -20,10 +20,10 @@ from packages.application.ports.agent_runtime import (
     AgentSessionSpec,
 )
 from packages.application.ports.errors import TransientPortError
+from packages.application.run_orchestration.outcomes import RunOutcome
 from packages.application.run_orchestration.phase_runner import (
     PhaseContext,
     PhaseRunnerDeps,
-    RunOutcome,
     execute_phases,
 )
 from packages.application.run_orchestration.task_executor import SessionSpecContext

@@ -49,6 +49,17 @@ DRAFT
 
 Terminal: SUCCEEDED / FAILED / CANCELLED。
 
+### DEGRADED 的语义与生产者（GOAL-004 cycle 3）
+
+`DEGRADED` 是**非终态**的"活干完了、但有几条被容忍的失败"：
+
+- 生产者：契约声明 `failure_policy.on_task_failure: CONTINUE` 时，phase runner 把任务的
+  终局失败记为被容忍（`task.failed` 事件 + `TaskOutcome.failure_policy`），剩余工作照跑；
+  全部跑完后收敛 `DEGRADED` 并发 `run.degraded`（payload 点名策略与被容忍的失败清单）。
+- 为什么不落 `SUCCEEDED` / `FAILED`：前者会掩盖失败，后者把整条 run 判死——而"容忍失败、
+  继续跑完"正是这条声明要买的语义（`FAILED` 是终态，回头不了）。
+- 未声明该键时行为不变：`FAIL_RUN`（缺省）= 首个终局失败即 `FAILED`（隐式 fail-fast）。
+
 ## PhaseRun
 
 ```text

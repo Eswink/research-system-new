@@ -17,6 +17,7 @@ from packages.application.run_orchestration.memory_promotion import (
     MemoryPromotionContext,
     promote_memory_from_registration,
 )
+from packages.application.run_orchestration.outcomes import TaskOutcome
 from packages.application.run_orchestration.result_handler import (
     RegistrationDeps,
     ResultRegistration,
@@ -25,7 +26,9 @@ from packages.application.run_orchestration.result_handler import (
 from packages.domain.enums import MemoryType
 from packages.domain.events import EventType
 from packages.domain.experiment_state import ExperimentRunState
+from packages.domain.failure_policy import OnTaskFailure
 from packages.domain.session_state import AgentSessionState
+from packages.domain.tasks import ResearchTask
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +44,17 @@ class PhaseStep:
     # GOAL-004 cycle 3（EC-03）：终局失败但契约声明了 `on_task_failure: CONTINUE`
     # ⇒ 失败被记账（消息在这里）但不返回 RunOutcome，run 继续跑剩余工作。
     tolerated_failure: str | None = None
+
+
+def tolerated_outcome(task: ResearchTask, message: str) -> TaskOutcome:
+    """被容忍失败的 `TaskOutcome`（GOAL-004 cycle 3）：记账但不改 run 的走向。"""
+    return TaskOutcome(
+        task=task,
+        outcome="FAILED",
+        verdict=OnTaskFailure.CONTINUE,
+        message=message,
+        failure_policy=OnTaskFailure.CONTINUE,
+    )
 
 
 def failure_step(
