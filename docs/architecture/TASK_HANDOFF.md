@@ -36,9 +36,26 @@ acceptance_criteria:
 budget:            # resource → 数量/上限（Decimal 或 null）
 timeout_seconds:
 retry_policy:
-failure_policy:    # resource → 字符串/布尔/整数/字符串数组
+failure_policy:    # resource → 字符串/布尔/整数/字符串数组（见 §2.1）
 idempotency_scope:
 ```
+
+### 2.1 `failure_policy` 的消费者（GOAL-004 cycle 3）
+
+`failure_policy` 是自由键值 dict，**能消费的键才有语义**，其余键不假装生效：
+
+| 键 | 取值 | 消费点 | 语义 |
+| --- | --- | --- | --- |
+| `on_task_failure` | `FAIL_RUN`（缺省） | `phase_runner.failure_step` | 任务**终局失败** ⇒ run 立刻收敛 `FAILED`（隐式 fail-fast，既有行为） |
+| | `CONTINUE` | 同上 | 失败被记为"被容忍"（`task.failed` 事件 + `TaskOutcome.failure_policy`），**剩余工作照跑**；跑完收敛 `DEGRADED`（非终态）并发 `run.degraded` |
+
+- 已知键取值非法 ⇒ `ValueError`（响亮失败，不静默回退）；
+- 未消费的键（如 `on_validation_failure`、`allow_partial_evidence`）由
+  `TaskContract.failure_policy_view().unhonored` **点名**，行为按缺省；
+  `on_validation_failure` 的消费需要"完成任务行之后再写一次"（验收门在 durable 完成之后
+  才跑），登记为后继入口；
+- `DEGRADED` 是"活干完了、但有几条被容忍的失败"的诚实状态：不冒充 `SUCCEEDED`，也不把整条
+  run 判死（`FAILED` 是终态，那正是 `CONTINUE` 要避免的）。
 
 ## 3. AcceptanceCriterion
 

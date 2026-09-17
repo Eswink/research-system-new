@@ -41,6 +41,7 @@ DOCUMENTED_EVENT_TYPES = {
     "task.heartbeat",
     "task.retry_scheduled",
     "task.completed",
+    "task.failed",
     "task.cancelled",
     "handoff.created",
     "approval.requested",
@@ -61,6 +62,7 @@ DOCUMENTED_EVENT_TYPES = {
     "run.completed",
     "run.cancelled",
     "run.failed",
+    "run.degraded",
 }
 
 
@@ -254,4 +256,6 @@ class TestEventTypeInventory:
     def test_covers_documented_event_types(self) -> None:
         actual = {event.value for event in EventType}
         assert actual == DOCUMENTED_EVENT_TYPES
-        assert len(actual) == 34
+        # 34 → 36（GOAL-004 cycle 3 新增 run.degraded / task.failed 两个**已写进
+        # EVENT_MODEL.md 词表**的事件类型；门禁本身不变，只是随词表同步）。
+        assert len(actual) == 36

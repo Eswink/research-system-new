@@ -32,6 +32,9 @@ class EventType(StrEnum):
     TASK_HEARTBEAT = "task.heartbeat"
     TASK_RETRY_SCHEDULED = "task.retry_scheduled"
     TASK_COMPLETED = "task.completed"
+    # GOAL-004 cycle 3：任务终局失败且契约声明容忍（`on_task_failure: CONTINUE`）
+    # ⇒ 记一条 task.failed（payload 带 failure_policy），run 继续跑剩余工作。
+    TASK_FAILED = "task.failed"
     TASK_CANCELLED = "task.cancelled"
     HANDOFF_CREATED = "handoff.created"
     APPROVAL_REQUESTED = "approval.requested"
@@ -52,6 +55,9 @@ class EventType(StrEnum):
     RUN_COMPLETED = "run.completed"
     RUN_CANCELLED = "run.cancelled"
     RUN_FAILED = "run.failed"
+    # GOAL-004 cycle 3：契约声明 `on_task_failure: CONTINUE` 的 run 跑完全部剩余工作、
+    # 但有任务终局失败 ⇒ 收敛 DEGRADED（非终态）并如实点名哪几条失败 + 哪条策略允许的。
+    RUN_DEGRADED = "run.degraded"
 
 
 @dataclass(frozen=True, slots=True)

@@ -19,6 +19,7 @@ task.leased
 task.heartbeat
 task.retry_scheduled
 task.completed
+task.failed
 task.cancelled
 handoff.created
 approval.requested
@@ -39,6 +40,7 @@ run.forked
 run.completed
 run.cancelled
 run.failed
+run.degraded
 ```
 
 ## 2. Event Envelope

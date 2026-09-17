@@ -62,6 +62,7 @@ from packages.application.run_orchestration.usage_recording import record_cancel
 from packages.domain.core import ID
 from packages.domain.enums import GateType
 from packages.domain.events import EventType
+from packages.domain.failure_policy import OnTaskFailure
 from packages.domain.manifest import RunManifest
 from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
@@ -295,6 +296,7 @@ class RunOrchestrationService:
                 ledger=self._deps.ledger,
                 publish=self._publish_phase_event,
                 fail_run=self._fail_run,
+                degrade_run=self._degrade_run,
                 telemetry=self._deps.telemetry,
                 approvals=self._deps.approvals,
                 human_gated=self._pending_human_gates(context),
@@ -407,6 +409,44 @@ class RunOrchestrationService:
     def _release_if_terminal(self, run_id: str, state: str) -> None:
         if state in ResearchRunState.terminal():
             release_reservation(self._reservation_refs, self._deps.budget, run_id)
+
+    def _degrade_run(
+        self,
+        ctx: Any,
+        tolerated: tuple[Any, ...],
+        message: str,
+    ) -> RunOutcome:
+        """被容忍的失败 ⇒ `run.degraded`（GOAL-004 cycle 3 = EC-03）。
+
+        事件 payload 是这条 run 的**策略归属事实**：哪几条任务失败、用的是哪条策略。
+        run 行只体现状态 DEGRADED（不新增字段），要追问细节就读事件链。
+        """
+        self._publish(
+            EventType.RUN_DEGRADED,
+            {
+                "run_id": ctx.run_id,
+                "message": message,
+                "failure_policy": OnTaskFailure.CONTINUE,
+                "tolerated_failures": [
+                    {
+                        "task_id": outcome.task.id.value,
+                        "message": outcome.message,
+                        "failure_policy": outcome.failure_policy,
+                    }
+                    for outcome in tolerated
+                ],
+            },
+            run_id=ctx.run_id,
+            trace_id=ctx.trace_id or "",
+        )
+        return RunOutcome(
+            run_id=ctx.run_id,
+            state=ResearchRunState.State.DEGRADED,
+            message=message,
+            tasks=tolerated,
+            manifest_digest=ctx.frozen_manifest_digest,
+            system_failure=False,
+        )
 
     def _publish_phase_event(
         self,

@@ -23,6 +23,7 @@ from packages.application.run_orchestration.result_handler import (
     register_session_result,
 )
 from packages.domain.enums import MemoryType
+from packages.domain.events import EventType
 from packages.domain.experiment_state import ExperimentRunState
 from packages.domain.session_state import AgentSessionState
 
@@ -37,6 +38,37 @@ class PhaseStep:
     # 这次失败是"交回派发方的重排"（durable 侧已 RETRY_SCHEDULED、等 deadline），
     # 不是终局失败：run 级据此停车（PAUSED）而不是判 FAILED（PLAN-20260915-081）。
     retry_deferred: bool = False
+    # GOAL-004 cycle 3（EC-03）：终局失败但契约声明了 `on_task_failure: CONTINUE`
+    # ⇒ 失败被记账（消息在这里）但不返回 RunOutcome，run 继续跑剩余工作。
+    tolerated_failure: str | None = None
+
+
+def failure_step(
+    deps: Any,
+    tctx: Any,
+    message: str,
+    system_failure: bool,
+) -> PhaseStep:
+    """一个任务失败该怎么落地——**唯一的失败分叉点**（EC-03）。
+
+    契约视图说容忍（`CONTINUE`）⇒ 返回被容忍的步骤（调用方转成 TaskOutcome 继续跑）；
+    否则与基线逐字一致：`deps.fail(...)`（run 立刻失败）。三处失败点（任务失败 /
+    结果畸形 / 验收门拒收）都走这里，策略因此没有第二条解释。
+    """
+    if tctx.contract.failure_policy_view().tolerated:
+        deps.emit(
+            EventType.TASK_FAILED,
+            {
+                "task_id": tctx.task.id.value,
+                "message": message,
+                "failure_policy": tctx.contract.failure_policy_view().on_task_failure,
+            },
+            tctx.ctx.run_id,
+            tctx.ctx.trace_id,
+            tctx.task.id.value,
+        )
+        return PhaseStep(tolerated_failure=message)
+    return PhaseStep(failure=deps.fail(tctx.ctx.run_id, message, system_failure))
 
 
 def registration_from_experiment(
@@ -158,20 +190,20 @@ def register_and_gate(
     task = tctx.task
     registered = register_or_fail(deps, tctx, session_result)
     if isinstance(registered, str):
-        return PhaseStep(
-            failure=deps.fail(
-                tctx.ctx.run_id,
-                f"task {task.id.value} produced malformed result: {registered}",
-                True,
-            )
+        return failure_step(
+            deps,
+            tctx,
+            f"task {task.id.value} produced malformed result: {registered}",
+            True,
         )
     registration = registered
     gate = evaluate_gate(deps, tctx, registration, session_result)
     if gate is None:
-        return PhaseStep(
-            failure=deps.fail(
-                tctx.ctx.run_id, f"task {task.id.value} rejected by acceptance gate", False
-            )
+        return failure_step(
+            deps,
+            tctx,
+            f"task {task.id.value} rejected by acceptance gate",
+            False,
         )
     return _finish_task_step(
         deps,
@@ -193,10 +225,11 @@ def register_and_gate_experiment(
     registration = registration_from_experiment(deps, execution)
     gate = evaluate_gate_experiment(deps, tctx, registration, execution.experiment_outcome)
     if gate is None:
-        return PhaseStep(
-            failure=deps.fail(
-                tctx.ctx.run_id, f"task {task.id.value} rejected by acceptance gate", False
-            )
+        return failure_step(
+            deps,
+            tctx,
+            f"task {task.id.value} rejected by acceptance gate",
+            False,
         )
     kind = (
         MemoryType.NEGATIVE_RESULT

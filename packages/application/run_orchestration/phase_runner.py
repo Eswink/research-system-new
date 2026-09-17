@@ -34,10 +34,12 @@ from packages.application.run_orchestration.task_executor import (
 )
 from packages.application.run_orchestration.task_phase_helpers import (
     PhaseStep,
+    failure_step,
     register_and_gate,
     register_and_gate_experiment,
 )
 from packages.domain.events import EventType
+from packages.domain.failure_policy import OnTaskFailure
 from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import ResearchTask, TaskContract
 
@@ -50,6 +52,9 @@ class TaskOutcome:
     outcome: str
     verdict: str | None = None
     message: str = ""
+    # GOAL-004 cycle 3：这条终局失败是**哪条策略允许的**（None = 成功 / 未走策略；
+    # "CONTINUE" = 契约声明容忍 ⇒ 失败被记账但没停住 run）。
+    failure_policy: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +91,9 @@ class PhaseRunnerDeps:
     memory_gate: MemoryGateDeps | None = None
     publish: Callable[[EventType, dict[str, object], str, str, str | None], None] | None = None
     fail_run: Callable[[str, str, bool], RunOutcome] | None = None
+    # GOAL-004 cycle 3（EC-03）：被容忍的失败收敛到 DEGRADED 的发布回调（service 注入；
+    # 未注入时 `degrade` 仍返回正确的 RunOutcome，只是不发 `run.degraded`）。
+    degrade_run: Callable[[PhaseContext, tuple[TaskOutcome, ...], str], RunOutcome] | None = None
     telemetry: TelemetrySink | None = None
     # WP-H：human gate 注册面。approvals 与 human_gated 同源注入（service 仅在
     # store 存在时给出非空 gate 集）；on_pause 把未执行 specs 交回 service 暂存。
@@ -115,6 +123,33 @@ class PhaseRunnerDeps:
             state=ResearchRunState.State.FAILED,
             message=message,
             system_failure=system_failure,
+        )
+
+    def degrade(
+        self,
+        ctx: PhaseContext,
+        tolerated: tuple[TaskOutcome, ...],
+        handoffs: dict[str, object],
+    ) -> RunOutcome:
+        """跑完全部剩余工作、但有被容忍的失败 ⇒ 收敛 `DEGRADED`（EC-03）。
+
+        DEGRADED 是**非终态**："工作做完了，但有几条任务失败且契约声明容忍"——不冒充
+        `SUCCEEDED`，也不把整条 run 判成 `FAILED`（那正是 `CONTINUE` 要避免的）。
+        """
+        message = (
+            f"run completed with {len(tolerated)} tolerated failure(s) "
+            f"under failure_policy on_task_failure={OnTaskFailure.CONTINUE}"
+        )
+        if self.degrade_run is not None:
+            return self.degrade_run(ctx, tolerated, message)
+        return RunOutcome(
+            run_id=ctx.run_id,
+            state=ResearchRunState.State.DEGRADED,
+            message=message,
+            tasks=(*tolerated,),
+            manifest_digest=ctx.frozen_manifest_digest,
+            handoff_digests=tuple(sorted(handoffs)),
+            system_failure=False,
         )
 
 
@@ -161,6 +196,9 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
         )
         if failure is not None:
             return failure
+    tolerating = tuple(outcome for outcome in outcomes if outcome.failure_policy is not None)
+    if tolerating:
+        return deps.degrade(ctx, tolerating, handoffs)
     deps.emit(EventType.RUN_COMPLETED, {"run_id": ctx.run_id}, ctx.run_id, ctx.trace_id, None)
     return RunOutcome(
         run_id=ctx.run_id,
@@ -311,6 +349,19 @@ def _execute_phase_group(
                 )
             if step.retry_deferred:
                 return _park_for_retry(deps, ctx, group, position, run)
+            if step.tolerated_failure is not None:
+                # 契约声明了容忍（`on_task_failure: CONTINUE`）：失败记账后继续跑，
+                # run 最后收敛 DEGRADED（见 execute_phases），不在这里假装成功。
+                run.outcomes.append(
+                    TaskOutcome(
+                        task=task,
+                        outcome="FAILED",
+                        verdict="CONTINUE",
+                        message=step.tolerated_failure,
+                        failure_policy=OnTaskFailure.CONTINUE,
+                    )
+                )
+                continue
             if step.failure is not None:
                 phase_op.set_outcome(OperationOutcome.FAILED, "task_failed")
                 return step.failure  # type: ignore[no-any-return]
@@ -381,12 +432,11 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
             # 不是终局失败：durable 侧已经排了下一次尝试（带 deadline），由派发方
             # 再来取。这里不 fail run——FAILED 是终态，会把那条重排变成孤儿。
             return PhaseStep(retry_deferred=True)
-        return PhaseStep(
-            failure=deps.fail(
-                tctx.ctx.run_id,
-                f"task {task.id.value} failed: {execution.message}",
-                execution.failure_category is not None,
-            )
+        return failure_step(
+            deps,
+            tctx,
+            f"task {task.id.value} failed: {execution.message}",
+            execution.failure_category is not None,
         )
     if execution.experiment_outcome is not None:
         return register_and_gate_experiment(deps, tctx, execution)
