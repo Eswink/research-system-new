@@ -97,8 +97,8 @@ memory_entries:
   **1993 passed / 4 skipped**（233.21s）；调度器 **11 passed**、补偿 API **4 passed**；
   mypy **920 files** 绿；`test_python_source_limits` **930 passed**。
 - web 门：lint / typecheck / unit **76** / build / stub e2e **83** / live e2e **36** 全绿。
-- m0：首跑 22/23（红项 = MEM-065 引用尚未写入的 RECHECK-090，记录顺序）⇒ 复跑见 GOAL 迭代
-  日志第 7 行（含全量 pytest 3896 passed / 10 skipped）。
+- m0：首跑 22/23（红项 = MEM-065 引用尚未写入的 RECHECK-090，记录顺序）⇒ 补齐记录后复跑
+  **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3896 passed / 10 skipped**，509.48s）。
 - 记录：RECHECK-20260917-090（PASS_WITH_WARNINGS，W-1…W-5）+ MEM-20260917-065。
 
 ## 状态历史
