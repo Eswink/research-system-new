@@ -20,6 +20,7 @@ writable schedule definitions, and each pass is reported back as runtime facts.
 from __future__ import annotations
 
 import threading
+from dataclasses import dataclass, replace
 from typing import Any
 
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
@@ -31,6 +32,7 @@ from packages.application.observability.signals import (
 from packages.application.ops.schedule_registry import OUTCOME_FAILED, OUTCOME_OK
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.worker_registry import WorkerRegistry
+from packages.domain.run_state import ResearchRunState
 from packages.domain.schedules import ScheduleJob
 
 
@@ -310,3 +312,110 @@ class WorkerReaperScheduler(PeriodicDaemon):
                     # reaper failure; the next pass re-evaluates from server time.
                     continue
             return len(lost)
+
+
+@dataclass(frozen=True, slots=True)
+class RetryDispatchDeps:
+    """派发所需的三个只读面（参数对象，避免参数爆发）。"""
+
+    runs: Any
+    runs_store: Any
+    workflow: Any
+
+
+class RetryDispatchScheduler(PeriodicDaemon):
+    """把**重排已到期**的停车 run 自动续跑（GOAL-003 cycle 19）。
+
+    cycle 18 之后，"退避 > 0"的任务失败会把 run 停在 `PAUSED`（而不是终态 FAILED），
+    失败任务与后续 specs 交回 service 暂存——但**没有人自动来按 resume**：worker 的
+    `claim_next` 只派发 EXECUTION 任务，lease 恢复面也不管这件事（探针实测）。
+
+    本守护线程就是那个派发方：扫到期的停车 run 并续跑一次。判定"到期"只问
+    `WorkflowEngine.due_retry_task_ids(run_id)`（adapter 内用权威时钟比较，与写
+    `retry_at` 同源），本类不自己拿墙钟去比。
+
+    诚实边界（写进读面事实，不假装成功）：
+
+    - 只有**本进程**持有续跑上下文（`has_paused_context`）时才动手——进程重启后
+      上下文的缺席是诚实的，跳过并计数，等人工/控制面处理；
+    - 用户手动暂停的 run 没有到期的重排 ⇒ 本守护线程不会碰它（区分靠任务面，
+      不靠猜测）；
+    - 单个 run 的失败不影响整轮（下一个 pass 重新评估）。
+    """
+
+    job = ScheduleJob.RETRY_DISPATCH
+    thread_name = "retry-dispatch"
+
+    def __init__(
+        self,
+        deps: RetryDispatchDeps,
+        *,
+        interval_seconds: float = 15.0,
+        telemetry: TelemetrySink | None = None,
+        control: Any = None,
+    ) -> None:
+        super().__init__(interval_seconds=interval_seconds, control=control)
+        self._runs = deps.runs
+        self._runs_store = deps.runs_store
+        self._workflow = deps.workflow
+        self._telemetry = telemetry
+
+    def _execute_pass(self) -> int:
+        """One dispatch pass: resume every parked run whose retry is due.
+
+        `dispatched` 是本轮真的被续跑的 run 数——读面据此区分"跑过但没有可派发的"
+        与"跑过并推进了工作"。
+        """
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="retry.dispatch_pass",
+        ) as op:
+            try:
+                dispatched = self._dispatch_due()
+            except Exception:
+                op.set_outcome(OperationOutcome.FAILED, "retry_dispatch_failed")
+                raise
+            return dispatched
+
+    def _dispatch_due(self) -> int:
+        dispatched = 0
+        for run in self._runs_store.list_runs():
+            if run.state != ResearchRunState.State.PAUSED:
+                continue
+            run_id = run.id.value
+            if not self._runs.has_paused_context(run_id):
+                continue  # 上下文不在本进程（重启后）——跳过，不假装能续跑
+            try:
+                if not self._workflow.due_retry_task_ids(run_id):
+                    continue  # 没有到期的重排（含用户手动暂停）：不是本守护线程的事
+            except Exception:
+                continue  # 读面失败：下一个 pass 重新评估，不因为一个 run 中断整轮
+            dispatched += self._resume(run_id, run)
+        return dispatched
+
+    def _resume(self, run_id: str, run: Any) -> int:
+        """续跑一个到期的停车 run：先迁 canonical 状态，再续跑，最后写回结果。
+
+        顺序不是随意的：协作式暂停谓词读的就是 canonical run 状态（`pause_requested`），
+        所以"还停在 PAUSED"就是"继续暂停"——必须先按状态机迁到 RUNNING 并落库，续跑才
+        真的会执行任务（与 `POST /runs/{id}/resume` 同序）。续跑又停回 PAUSED（例如
+        durable 侧其实还没到期）时如实写回 PAUSED。
+
+        上下文竞态（另一个 resume 先取走）/ 续跑失败都不影响整轮：返回 0，run 留在
+        RUNNING（派发已释放、没有 continuation）——与 API 面"解除暂停但不伪装续跑"同义。
+        """
+        try:
+            resumed = run.transition(ResearchRunState.Transition.RESUME)
+        except Exception:
+            return 0  # 状态机不允许（并发迁移）——不是本守护线程该处理的
+        try:
+            self._runs_store.save_run(resumed)
+            outcome = self._runs.resume_paused(run_id, resumed)
+        except Exception:
+            return 0
+        try:
+            self._runs_store.save_run(replace(resumed, state=outcome.state))
+        except Exception:
+            return 0
+        return 1

@@ -44,6 +44,7 @@ class ScheduleJob(StrEnum):
     OUTBOX_RELAY = "outbox_relay"
     RETENTION = "retention"
     WORKER_REAPER = "worker_reaper"
+    RETRY_DISPATCH = "retry_dispatch"
 
 
 JOB_PURPOSE: dict[ScheduleJob, str] = {
@@ -51,6 +52,7 @@ JOB_PURPOSE: dict[ScheduleJob, str] = {
     ScheduleJob.OUTBOX_RELAY: "中继 transactional outbox 事件",
     ScheduleJob.RETENTION: "按 retention policy 清理 artifact",
     ScheduleJob.WORKER_REAPER: "把心跳过期的 worker 标记为 LOST",
+    ScheduleJob.RETRY_DISPATCH: "重排到期的停车 run 自动续跑（交付下一次尝试）",
 }
 
 
@@ -117,6 +119,12 @@ BUILTIN_SCHEDULES: tuple[ScheduleDefinition, ...] = (
     ScheduleDefinition(
         name=ScheduleJob.WORKER_REAPER.value,
         job=ScheduleJob.WORKER_REAPER,
+        interval_seconds=15.0,
+        builtin=True,
+    ),
+    ScheduleDefinition(
+        name=ScheduleJob.RETRY_DISPATCH.value,
+        job=ScheduleJob.RETRY_DISPATCH,
         interval_seconds=15.0,
         builtin=True,
     ),

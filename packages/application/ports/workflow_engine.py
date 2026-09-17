@@ -137,4 +137,16 @@ class WorkflowEngine(Protocol):
     def cancelled_task_ids(self, run_id: str) -> tuple[str, ...]:
         """读取该 run 当前处于 CANCELLED 的 canonical task ids（确定性排序）。"""
 
+    def due_retry_task_ids(self, run_id: str) -> tuple[str, ...]:
+        """读取该 run 里**已经到期**的重排任务 ids（确定性排序）。
+
+        与 claim 候选扫描同一判据（`RETRY_SCHEDULED` 且 `retry_at` 为空或已过），
+        但按 run 问：调度器靠这一句判断"停车中的 run 现在能不能再交付一次"
+        （GOAL-003 cycle 19）。任务投影不携带 `retry_at`（期限只在任务行/事件里），
+        所以这是读面唯一能回答该问题的入口。
+
+        比较发生在 adapter 内，用的是**权威时钟**（生产：DB 时钟；测试：注入时钟），
+        与写 `retry_at` 时同一个源——调用方不自己拿"现在"来比。
+        """
+
     def recover_expired_leases(self) -> int: ...

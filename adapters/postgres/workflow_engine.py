@@ -12,7 +12,7 @@ from psycopg.rows import dict_row
 
 from adapters.postgres.base import PostgresAdapterBase
 from adapters.postgres.db import connect as pg_connect
-from adapters.postgres.db import dsn_from_env
+from adapters.postgres.db import dsn_from_env, server_now
 from adapters.postgres.outbox import PgOutboxWriter
 from adapters.postgres.projections import (
     cancelled as proj_cancelled,
@@ -57,6 +57,7 @@ from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import ClaimRequest, TaskCompletion, TaskLease
 from packages.domain.enums import FailureCategory
 from packages.domain.events import EventEnvelope
+from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
 
 
@@ -312,6 +313,29 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             if row.task.id.value in cancelled_ids
         )
         self._record("cancelled_task_ids", run_id, result=str(len(ids)))
+        return ids
+
+    def due_retry_task_ids(self, run_id: str) -> tuple[str, ...]:
+        """该 run 已到期的重排任务（调度器判断"停车中的 run 能不能再交付"）。
+
+        与 claim 候选扫描同一判据、同一个时钟源（`server_now`：生产 DB 时钟 /
+        测试注入时钟），所以"到期"在两处永远指同一件事。
+        """
+        self._ensure_open()
+        try:
+            rows = self._conn.execute(
+                "SELECT task_id FROM tasks WHERE run_id = %s AND status = %s"
+                " AND (retry_at IS NULL OR retry_at <= %s) ORDER BY task_id",
+                (
+                    run_id,
+                    ResearchTaskState.State.RETRY_SCHEDULED,
+                    server_now(self._conn, self._now),
+                ),
+            ).fetchall()
+        except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
+            raise self._wrap_operational(exc) from exc
+        ids = tuple(str(row["task_id"]) for row in rows)
+        self._record("due_retry_task_ids", run_id, result=str(len(ids)))
         return ids
 
     def run_state(self, run_id: str) -> str | None:

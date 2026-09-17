@@ -34,7 +34,15 @@ from tests.api.conftest import make_app_deps
 
 _SEQ = count(1)
 
-_BUILTIN_NAMES = {"lease_recovery", "outbox_relay", "retention", "worker_reaper"}
+# 受控作业词表在本用例里的镜像（读面必须与 domain 的 ScheduleJob 一致）。
+# cycle 19 起多了一个真实执行体：retry_dispatch（停车中的重排由守护线程按时续跑）。
+_BUILTIN_NAMES = {
+    "lease_recovery",
+    "outbox_relay",
+    "retention",
+    "worker_reaper",
+    "retry_dispatch",
+}
 
 
 def _headers(seed: str) -> dict[str, str]:

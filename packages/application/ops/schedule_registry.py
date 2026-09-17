@@ -79,13 +79,17 @@ class ScheduleRegistry:
     # ── 定义（写面） ──
 
     def ensure_builtins(self) -> list[str]:
-        """补齐缺失的平台内置定义（存在的不覆盖：启停/interval 由运维决定）。"""
+        """补齐缺失的平台内置定义（存在的不覆盖：启停/interval 由运维决定）。
+
+        返回**排序后**的新建名字：词表顺序不该渗进返回值（新增一个内置作业时，
+        调用方看到的差异应该只是"多了一个名字"，不是"顺序变了"）。
+        """
         created: list[str] = []
         for definition in BUILTIN_SCHEDULES:
             if self._store.get_definition(definition.name) is None:
                 self._store.save_definition(definition)
                 created.append(definition.name)
-        return created
+        return sorted(created)
 
     def definitions(self) -> list[ScheduleDefinition]:
         return sorted(self._store.list_definitions(), key=lambda item: item.name)

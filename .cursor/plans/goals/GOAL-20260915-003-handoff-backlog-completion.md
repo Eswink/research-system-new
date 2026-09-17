@@ -4,7 +4,7 @@ slug: handoff-backlog-completion
 title: 收口清单续做：设计门禁结构判据、ToolPack 供应链面、ops 调度写面、worker 退出语义、替身守卫
 status: ACTIVE
 created_at: 2026-09-16
-updated_at: 2026-09-17
+updated_at: 2026-09-18
 owners:
   - root-agent
 authorization:
@@ -105,7 +105,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-079-retry-backoff-after-reschedule.md
   - .cursor/plans/tasks/PLAN-20260915-080-one-attempt-ledger-in-process-retry.md
   - .cursor/plans/tasks/PLAN-20260915-081-parked-retry-run-level-redispatch.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-079-retry-backoff-after-reschedule.md
+  - .cursor/plans/tasks/PLAN-20260915-082-unattended-retry-dispatch.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-082-unattended-retry-dispatch.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -124,6 +125,9 @@ memory_entries:
   - MEM-20260915-052-the-transaction-was-the-connection-not-the-operation
   - MEM-20260915-053-a-declared-state-with-no-driver
   - MEM-20260915-054-retry-backoff-and-its-clock
+  - MEM-20260915-055-one-attempt-one-ledger
+  - MEM-20260915-056-terminal-state-orphans-the-declared-retry
+  - MEM-20260915-057-dispatcher-transition-first-and-visible
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -843,3 +847,32 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   （eval-gate / collector-quality / container-quality / console-frontend /
   quality-ubuntu-latest / quality-windows-latest，无重跑）；另：cycle 17 的记录提交
   `192c6e1` → run **35173962575 六个 job 全 success**。
+- 2026-09-18 cycle 19 开轮（无人值守的续跑）：derive = PLAN-20260915-082。cycle 18 让
+  "重排未到期"的失败把 run 停 `PAUSED`（上下文交回 service），但**没有人自动按 resume**。
+  探针 `scratch/goal3-cycle19-probe1-unattended-parked-run.py` 把进程里所有候选派发方逐个
+  问过（**收口前**）：`claim_next = None`（worker 只派发 EXECUTION 任务）、
+  `recover_expired_leases = 0 条`、任务投影里**没有** `retry_at`（期限只在任务行/事件里）
+  ⇒ 任何想按时续跑的组件都**没有办法问出**"到没到期"，停车中的 run 会一直停着。
+- 2026-09-18 cycle 19 交付：① **读面**：`WorkflowEngine.due_retry_task_ids(run_id)`——
+  与 claim 候选扫描**同一判据**（`RETRY_SCHEDULED` 且 `retry_at` 为空或已过），比较在
+  adapter 内用**权威时钟**（生产 DB 时钟 / 测试注入时钟），三个 adapter（Fake/SQLite/PG）
+  同签名；② **守护线程**：`RetryDispatchScheduler`（`ScheduleJob.RETRY_DISPATCH`，15s）
+  扫 canonical `PAUSED` 且**到期**的停车 run 并续跑一次；③ **顺序与 API 面同序**——先
+  `PAUSED → RUNNING` 并落库、再续跑、最后如实写回（这条是 e2e 抓出来的：第一版直接
+  `resume_paused`，续跑被自己的暂停谓词立刻挡住、一个任务都没执行）；④ **诚实边界**：
+  本进程没有续跑上下文（重启后）⇒ 跳过并计数，用户暂停（无到期重排）⇒ 不碰，跑完再扫 ⇒ 0；
+  ⑤ **派发方可见可控**：新作业进受控词表 + 内置定义 + ops 读面回落事实 + docs 合法 job
+  列表 + API 用例镜像；`ensure_builtins` 返回值改**排序**（新增成员不再让"顺序变了"冒充
+  "内容变了"）。定向：e2e **2 passed** + ops/scheduler 单测 **6 passed** + 读面 **3 passed**
+  （SQLite 注入时钟）+ PG parity **2 passed**（实跑非 skip），合跑 **11 passed**；
+  宽口径 `tests/application+adapters+domain+e2e+postgres+contracts` **2003 passed / 7 skipped**；
+  mypy **888 files clean**；ruff/format 干净；**探针收口前/后**（同一脚本）：
+  `无人 resume 时 run=?` → `派发 1 个 run ⇒ canonical run=SUCCEEDED，runtime 共执行 2 次`。
+  **未扩面**：跨进程续跑仍没有（上下文仍是进程内暂存，重启后守护线程如实跳过）、
+  读面仍不区分"重排停车 vs 用户暂停"（守护线程靠任务面区分）、`resume_paused` 失败后
+  run 留 `RUNNING` 无补偿动作——三条都如实登记（RECHECK-082 W-1/W-2/W-3）。
+- 2026-09-18 cycle 19 门禁（**首轮红是收口自伤，未改门禁**）：第 1 轮 m0 红于
+  `framework/validate`——`ALL_PLAN 勾选与 DONE 状态不一致: PLAN-20260915-082`（收口时把
+  该行先写成 `[x]` 而计划仍是 `IN_PROGRESS`；同一轮里 `python/tests` 已跑出
+  **3736 passed / 10 skipped**）⇒ 把计划与投影一并收口到 `DONE` 后复跑 **PASS: profile=m0;
+  23 deterministic checks**（全量 pytest **3736 passed / 10 skipped**，488.57s）。

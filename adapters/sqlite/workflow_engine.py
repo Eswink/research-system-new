@@ -18,11 +18,13 @@ from pathlib import Path
 from adapters.sqlite.base import SqliteAdapterBase
 from adapters.sqlite.cancel_run import cancel_run_tasks, cancel_task
 from adapters.sqlite.db import connect
+from adapters.sqlite.leases import iso, timestamp_now
 from adapters.sqlite.outbox import OutboxWriter
 from adapters.sqlite.projections import (
     cancelled,
     completed,
     deliveries,
+    due_retries,
     list_tasks,
     mark_outbox_published,
     pending_outbox,
@@ -140,6 +142,17 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
             if row.task.id.value in self.cancelled
         )
         self._record("cancelled_task_ids", run_id, result=str(len(ids)))
+        return ids
+
+    def due_retry_task_ids(self, run_id: str) -> tuple[str, ...]:
+        """该 run 已到期的重排任务（调度器判断"停车中的 run 能不能再交付"）。
+
+        比较用 `timestamp_now`（生产：DB 时钟；测试：注入时钟），与写 `retry_at`
+        同一个源——调度器不自己拿"现在"来比。
+        """
+        self._ensure_open()
+        ids = due_retries(self._conn, run_id, iso(timestamp_now(self._now)))
+        self._record("due_retry_task_ids", run_id, result=str(len(ids)))
         return ids
 
     def run_state(self, run_id: str) -> str | None:

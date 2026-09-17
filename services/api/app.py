@@ -47,6 +47,8 @@ from services.api.scheduler import (
     LeaseRecoveryScheduler,
     OutboxRelayScheduler,
     RetentionScheduler,
+    RetryDispatchDeps,
+    RetryDispatchScheduler,
     WorkerReaperScheduler,
 )
 from services.api.settings import ApiSettings
@@ -172,22 +174,41 @@ def _start_experiment_queue(deps: ApiDeps) -> "ExperimentQueueDispatcher | None"
         return None
 
 
-def _stop_schedulers(
-    reaper: "WorkerReaperScheduler | None",
-    retention: "RetentionScheduler | None",
-    outbox: "OutboxRelayScheduler | None",
-    lease: "LeaseRecoveryScheduler | None",
-    queue: "ExperimentQueueDispatcher | None" = None,
-) -> None:
+def _start_retry_dispatch(deps: ApiDeps) -> "RetryDispatchScheduler | None":
+    """GOAL-003 cycle 19: 重排到期的停车 run 由本进程的守护线程自动续跑。
+
+    Gated on the run store (需要按 canonical run 状态扫 PAUSED)——没有 store 就没有
+    "哪些 run 在停车"的事实，宁可不启（不假装有派发方）。
+    """
+    store = getattr(deps, "runs_store", None)
+    if deps.runs is None or store is None:
+        return None
+    try:
+        sched = RetryDispatchScheduler(
+            RetryDispatchDeps(
+                runs=deps.runs,
+                runs_store=store,
+                workflow=deps.runs._deps.workflow,
+            ),
+            interval_seconds=15.0,
+            telemetry=getattr(deps, "telemetry", None),
+            control=_schedule_control(deps),
+        )
+        sched.start()
+        return sched
+    except Exception:
+        return None
+
+
+def _stop_schedulers(*schedulers: Any) -> None:
     """Reverse-order daemon shutdown; a failing stop must not block the rest."""
-    for sched in (reaper, retention, outbox, queue):
-        if sched is not None:
-            try:
-                sched.stop()
-            except Exception:
-                pass
-    if lease is not None:
-        lease.stop()
+    for sched in schedulers:
+        if sched is None:
+            continue
+        try:
+            sched.stop()
+        except Exception:
+            pass
 
 
 @asynccontextmanager
@@ -196,12 +217,15 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     M15: shutdown 时有界 flush/停 telemetry provider(FailSafe 吞错,不阻断停机)。
     M16 re-audit F-3: the worker reaper daemon joins the production lifecycle.
+    GOAL-003 cycle 19: the retry-dispatch daemon joins it too（停车中的 run 需要
+    一个派发方，否则声明的重排只能等人工）。
     """
     deps: ApiDeps | None = getattr(app.state, "deps", None)
     lease_sched: LeaseRecoveryScheduler | None = None
     outbox_sched: OutboxRelayScheduler | None = None
     retention_sched: RetentionScheduler | None = None
     reaper_sched: WorkerReaperScheduler | None = None
+    dispatch_sched: RetryDispatchScheduler | None = None
     queue_dispatcher: ExperimentQueueDispatcher | None = None
     telemetry = getattr(deps, "telemetry", None) if deps is not None else None
     if deps is not None and deps.runs is not None:
@@ -209,10 +233,13 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         outbox_sched = _start_outbox_scheduler(deps)
         retention_sched = _start_retention_scheduler(deps)
         reaper_sched = _start_worker_reaper(deps)
+        dispatch_sched = _start_retry_dispatch(deps)
     if deps is not None:
         queue_dispatcher = _start_experiment_queue(deps)
     yield
-    _stop_schedulers(reaper_sched, retention_sched, outbox_sched, lease_sched, queue_dispatcher)
+    _stop_schedulers(
+        reaper_sched, retention_sched, outbox_sched, queue_dispatcher, dispatch_sched, lease_sched
+    )
     if telemetry is not None:
         shutdown = getattr(telemetry, "shutdown", None)
         if callable(shutdown):

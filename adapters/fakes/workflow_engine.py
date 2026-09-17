@@ -219,6 +219,25 @@ class FakeWorkflowEngine(FakeBase):
         self._record("cancelled_task_ids", run_id, result=str(len(ids)))
         return ids
 
+    def due_retry_task_ids(self, run_id: str) -> tuple[str, ...]:
+        """Fake 无退避时延语义（重排即刻可交付）⇒ 该 run 所有可重排任务都"已到期"。
+
+        与 `cancelled_task_ids` 同形：只按 canonical 任务投影回答，不读墙钟——
+        Fake 没有写入 deadline 的路径（真实 deadline 判定由两个持久化 adapter 提供，
+        tests/adapters/sqlite/test_workflow_due_retries.py 与 PG parity 覆盖）。
+        """
+        self._enter("due_retry_task_ids", run_id)
+        ids = tuple(
+            sorted(
+                task_id
+                for task_id, task in self._tasks.items()
+                if task.run_id.value == run_id
+                and task.status == ResearchTaskState.State.RETRY_SCHEDULED
+            )
+        )
+        self._record("due_retry_task_ids", run_id, result=str(len(ids)))
+        return ids
+
     def recover_expired_leases(self) -> int:
         """Fake 无 lease TTL 语义（lease 随 acquire/heartbeat 刷新），恒无过期 lease。
 

@@ -11,6 +11,7 @@ from adapters.sqlite.db import now_iso
 from adapters.sqlite.serialization import TaskRow, decode_envelope, decode_task
 from packages.application.ports.workflow_engine import TaskCompletion
 from packages.domain.events import EventEnvelope
+from packages.domain.task_state import ResearchTaskState
 
 
 def list_tasks(conn: sqlite3.Connection, run_id: str) -> tuple[TaskRow, ...]:
@@ -58,6 +59,21 @@ def cancelled(conn: sqlite3.Connection) -> set[str]:
     """取消投影：cancelled=1 的任务（M5 语义对齐）。"""
     rows = conn.execute("SELECT task_id FROM tasks WHERE cancelled = 1").fetchall()
     return {row["task_id"] for row in rows}
+
+
+def due_retries(conn: sqlite3.Connection, run_id: str, now_text: str) -> tuple[str, ...]:
+    """该 run 里**已经到期**的重排任务（与 claim 候选扫描同一判据）。
+
+    任务投影不携带 `retry_at`（期限只在任务行/事件里），所以"能不能再交付一次"只能
+    问这一句。`now_text` 由调用方按权威时钟给出（生产：DB 时钟；测试：注入时钟），
+    与写 `retry_at` 时同一个源。
+    """
+    rows = conn.execute(
+        "SELECT task_id FROM tasks WHERE run_id = ? AND status = ?"
+        " AND (retry_at IS NULL OR retry_at <= ?) ORDER BY task_id",
+        (run_id, ResearchTaskState.State.RETRY_SCHEDULED, now_text),
+    ).fetchall()
+    return tuple(str(row["task_id"]) for row in rows)
 
 
 def pending_outbox(conn: sqlite3.Connection) -> tuple[EventEnvelope, ...]:

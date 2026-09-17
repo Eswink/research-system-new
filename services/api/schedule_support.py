@@ -57,6 +57,12 @@ FALLBACK_ENTRIES: tuple[ScheduleEntry, ...] = (
         purpose="标记心跳过期 worker 为 LOST",
         enabled=True,
     ),
+    ScheduleEntry(
+        name="retry_dispatch",
+        interval_seconds=15.0,
+        purpose="重排到期的停车 run 自动续跑（交付下一次尝试）",
+        enabled=True,
+    ),
 )
 
 #: 名称/终态冲突类消息片段（其余 InvalidInputError 视为取值域 → 422）。

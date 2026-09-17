@@ -108,7 +108,8 @@ POST   /ops/schedules/{name}/trigger    （手动触发一次 pass）
 - **执行体不新增**：仍是 `services/api/scheduler.py` 的进程内守护线程。定义只决定
   `enabled`/`interval_seconds`（守护线程每轮经 `ScheduleRegistry.due` 读取，下一轮生效）；
   新增定义只能绑定既有 `job` 词表（lease_recovery / outbox_relay / retention /
-  worker_reaper），否则 422 并点名合法值。
+  worker_reaper / retry_dispatch），否则 422 并点名合法值。`retry_dispatch` 是 cycle 19
+  起的新执行体：把重排已到期、停在 `PAUSED` 的 run 自动续跑（此前只能人工 resume）。
 - **trigger 复用同一条 pass**：`ScheduleRegistry.trigger` 调用守护线程注册的同一个函数
   对象，并写下与定时 pass 相同的运行事实（`run_count`/`last_run_at`/`last_outcome`）。
   pass 自身失败仍返回 200，但 `last_outcome=FAILED` + `last_error` 如实留痕。

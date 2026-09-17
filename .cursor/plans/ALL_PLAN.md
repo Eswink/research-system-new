@@ -10,6 +10,7 @@
 | [x] | [PLAN-20260915-079](tasks/PLAN-20260915-079-retry-backoff-after-reschedule.md) | DONE |
 | [x] | [PLAN-20260915-080](tasks/PLAN-20260915-080-one-attempt-ledger-in-process-retry.md) | DONE |
 | [x] | [PLAN-20260915-081](tasks/PLAN-20260915-081-parked-retry-run-level-redispatch.md) | DONE |
+| [x] | [PLAN-20260915-082](tasks/PLAN-20260915-082-unattended-retry-dispatch.md) | DONE |
 | [x] | [PLAN-20260915-077](tasks/PLAN-20260915-077-operation-scoped-transaction-boundary.md) | DONE |
 | [x] | [PLAN-20260915-076](tasks/PLAN-20260915-076-connection-boundary-enumeration.md) | DONE |
 | [x] | [PLAN-20260915-075](tasks/PLAN-20260915-075-self-made-cursor-serialization.md) | DONE |
