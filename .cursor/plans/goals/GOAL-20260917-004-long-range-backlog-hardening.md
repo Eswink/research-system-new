@@ -2,7 +2,7 @@
 id: GOAL-20260917-004
 slug: long-range-backlog-hardening
 title: 长程项加固：来源自足续跑、停车语义读面、失败策略消费者、失败语义 digest、派发读面与补偿、完整安全审计
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-17
 updated_at: 2026-09-17
 owners:
@@ -138,8 +138,16 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260917-089-unified-dispatch-ownership-read-surface.md
   - .cursor/plans/tasks/PLAN-20260917-090-resume-failure-compensation.md
   - .cursor/plans/tasks/PLAN-20260917-091-security-audit-terminal-state.md
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260917-092-goal-004-closeout-recheck.md
+memory_entries:
+  - MEM-20260917-059
+  - MEM-20260917-060
+  - MEM-20260917-061
+  - MEM-20260917-062
+  - MEM-20260917-063
+  - MEM-20260917-064
+  - MEM-20260917-065
+  - MEM-20260917-066
 ---
 
 # GOAL-20260917-004 — 长程项加固（自迭代循环）
@@ -301,10 +309,9 @@ EC-02 为 M、EC-06 为 S、EC-07 为 M（运维/审计，进度不由本循环�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 8 已收口**（EC-07：PLAN-20260917-091 / RECHECK-20260917-091；终态文档
-`docs/audits/MIMOSA_DEEP_SCAN_20260917.md`；CI 结论见迭代日志第 8 行）；**EC 表 EC-01…EC-07 全 PASS**
-⇒ 下一条工程 cycle = cycle 9 = **GOAL 收口复检**（独立 RECHECK 复核七个 EC 在当前树上的证据与 CI
-逐 job 现状，通过后按 README 终止条款置 `status=ACHIEVED` 并写「终止与收口」）。
+当前续点：**本 GOAL 已收口（ACHIEVED）**——七个 EC 全 PASS + 收口复检 `RECHECK-20260917-092`
+（PASS_WITH_WARNINGS）+「终止与收口」已写。按循环入口协议第 1 条，后续触发只输出终止摘要、
+不再做改动；仍未处理的长程项见「收口结论」表，由后继 GOAL 承接。
 
 ## 驱动
 
@@ -359,6 +366,35 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 收口时必须把「仍未处理的长程项」如实登记为后继入口（不隐藏缺口），并给出恢复条件
 （新建承接 GOAL 或显式变更 budget 并置回 ACTIVE）。
 
+### 收口结论（2026-09-17，cycle 9）
+
+**status = ACHIEVED**。七个 EC 全 PASS 且经独立复检（`RECHECK-20260917-092` =
+PASS_WITH_WARNINGS）在**当前树**上重新验证：`scratch/verify_goal004_closeout.py` 的 **46 条
+断言全 PASS**（含 15 个定向套件**真跑**：域/SQLite/API/e2e/application/postgres）；
+本 GOAL 的 **44 个 commit → 16 个 CI run 逐 job 重读**：#134…#147 每个 run 六个 job 全 success，
+唯一失败 **#133**（建档 run，`collector-quality`）是**测试墙钟依赖**，同 cycle 内以「改夹具、
+不改断言」修复（`5607992` → #134 全绿）；#137 此前未进台账，本轮**补记**。
+
+收口后**仍然开放**的长程项（后继 GOAL 承接，不在本文件内隐藏）：
+
+| # | 长程项 | 来源 |
+| --- | --- | --- |
+| 1 | **安全审计残留**：依赖 advisory 1 条**未署名未决**（需联网复核）；hook 侧 `scanner_enobufs` 未被消除（独立密封深扫是替代通道）；扫描输入含 gitignored 内容（19/36 条落在 `scratch/`+`artifacts/`）；`artifacts/` 内含**未跟踪**明文 token 文件（从未提交）；威胁建模/授权面/业务逻辑**零覆盖**（越权、BOLA/BFLA 不在射程） | EC-07 / RECHECK-091 W-1…W-5 |
+| 2 | **同形未修入口**：`resume_after_approval` 也是「先 pop 后执行」，失败同样不补偿（只是停在 `WAITING_FOR_APPROVAL`） | RECHECK-090 W-1 |
+| 3 | **策略面仍有未消费项**：`on_validation_failure` 声明了没有消费者；`ClaimRequest.lease_ttl_seconds` 声明了无人读 | RECHECK-086 W-1 / RECHECK-089 W-1 |
+| 4 | **读面语义边界**：`dispatch_ownership` 不回答持有者健康度；PG 两读不构成快照；Fake 无过期语义；`WORKER_CLAIM` 也覆盖控制面自持租约；列表路径每 run 一次读（N+1） | RECHECK-089 W-2…W-6 |
+| 5 | **失败 run 的重建执行期结局**：判据停在冻结语义守卫，`FAILED → 重建` 之后仍可能再次失败 | RECHECK-087 W-2 |
+| 6 | **历史行不可追溯**：正文冻结只在启动路径产生（旧 run 无正文、需重建被拒）；旧 `manifest.frozen` 事件无 `semantic_digest` 键，不回填 | RECHECK-084 W-2 / RECHECK-087 W-1 |
+| 7 | **补偿的诚实边界**：守护线程补偿失败静默降级（不拖垮整轮）；API 失败仍 200（以 `continuation` 判别）；失败原因只有异常类型/文本，无任务级归因；进程内暂停上下文不复活 | RECHECK-090 W-2…W-5 |
+| 8 | **450 行硬上限持续贴线**：`run_orchestration/service.py` 450/450——后续任何改动都要**先搬代码**（本 GOAL 已两次以搬代码收口） | RECHECK-086 W-5 |
+| 9 | **同类时钟/时序风险只做了 grep 排查**（12 个注入时钟的 PG 用例文件里只改了 1 个，其余按「未观测到失败」保留） | RECHECK-084 W-5 |
+
+**后继 GOAL 的入口** = 从本表任选主题（建议优先级：① 安全审计残留的**联网复核**与
+干净 checkout 上的重扫；② 同形未修入口 `resume_after_approval`；③ 声明未消费项清账
+（`on_validation_failure` / `lease_ttl_seconds`））。
+
+**不进入循环 / 需人工拍板（原样保留）**：见下一节。
+
 ## 不进入循环 / 需人工拍板
 
 **后继入口第 8 项（escalation 级，不在本 GOAL 的 EC 内）**：
@@ -381,6 +417,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 6 | PLAN-20260917-089（EC-05 第②半：统一派发读面 `dispatch_ownership` + `dispatch` 字段；driver=client-goal / owner=root-agent） | `07213ee`（WP-A：port `DispatchOwnership`/`LeaseHolder` + SQLite/PG/Fake 三实现 + 契约套件 + SQLite 注入时钟单测 + PG parity）、`48fe31d`（WP-B：DTO/视图/路由器 + OpenAPI 快照 + web 类型与夹具 + CONTROL_PLANE_API/PORTS + 7 条 API 用例）、`925ac6c`（修复：PG 引擎 479 行 ⇒ 搬 `projections.py`/`db.py`；3 处 mypy；两条断言按反证增强） | 定向（DSN 固化配方，PG 实跑）`api+contracts+adapters+application+e2e+postgres` **2108 passed / 7 skipped**（347.66s）；`test_python_source_limits` **927 passed**；mypy **917 files** 绿；web 门全绿（lint / typecheck / unit **76** / build / stub e2e **83** / live e2e **36**）；**反证三跑**：① 去掉过期判据 ⇒ SQLite/PG 各 1 红、② 去掉 LOST 判据 ⇒ 各 1 红、③ 去掉路由器装配 ⇒ 新 API 用例 **7 红**（首跑 5 红 ⇒ 两条“两侧相等”用例假绿 ⇒ 补“先钉住读面真的答了”后复跑 7 红）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3887 passed / 10 skipped**，521.87s；首跑 2 红 = 3 处 mypy + PG 引擎 450 行硬上限，均本改动引入 ⇒ 修类型 + 搬代码；第二次复跑唯一红项 = MEM-064 frontmatter 的 YAML 引号 ⇒ 修复后第三次实跑全绿） | 首跑 m0 红 2 处（类型/行数，均本改动引入）；反证暴露一处**假绿**（列表同判与只读性用例在 `dispatch=None` 时两侧同为空仍相等）⇒ 断言只增强；PG 引擎撞 450 行上限 ⇒ 搬代码而非改门禁 | EC-05 **PASS**（① RECHECK-088 + ② RECHECK-089，W-1…W-6：`ClaimRequest.lease_ttl_seconds` 无人消费、列表 N+1、读面不含健康度、Fake 无过期语义、PG 两读无快照、`kind` 词表张力）；EC-06/EC-07 仍 PENDING | cycle 7：derive 取 EC 表首个 PENDING（EC-06 = `resume_paused` 失败补偿，RECHECK-082 W-3），先反向搜索确认失败路径当前把 run 留在什么状态、两条入口（API / 守护线程）各自怎么收敛 |
 | 7 | PLAN-20260917-090（EC-06：续跑失败补偿 `compensate_failed_resume` + `run.resume_failed`；driver=client-goal / owner=root-agent） | `56a93e8`（事件类型 + 词表同步 + 共享补偿 + 两条入口 + API/调度器用例 + `human_gates.py`/`lease_recovery.py` 两处 450 行搬迁） | 定向（DSN pin）`api+application+e2e+domain+contracts` **1993 passed / 4 skipped**（233.21s）；调度器 **11 passed**、补偿 API **4 passed**；mypy **920 files** 绿；`test_python_source_limits` **930 passed**；web 门全绿（lint / typecheck / unit **76** / build / stub e2e **83** / live e2e **36**）；**反证两跑**：去掉 API 补偿 ⇒ 2 红、去掉守护线程补偿 ⇒ 2 红（失败文本 = 旧行为 `RUNNING != PAUSED`）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3896 passed / 10 skipped**，509.48s；首跑 22/23，红项 = MEM-065 引用尚未写入的 RECHECK-090（记录顺序）⇒ 补齐后复跑全绿） | 两处 450 行硬上限（`service.py`/`scheduler.py`）以**搬代码**收口（`human_gates.py` / `lease_recovery.py`），未改门禁；未 pin DSN 的组合跑出现 3 条假红 ⇒ 隔离 + pin 复跑判定为环境 | EC-06 **PASS**（RECHECK-090，W-1…W-5：`resume_after_approval` 同形未修、上下文不复活、失败无任务级归因、守护线程补偿失败静默降级、响应仍 200）；EC-07 仍 PENDING | cycle 8：derive 取 EC 表首个 PENDING（EC-07 = 完整安全审计的可复核终态，二选一；`scanner_enobufs` 证据见 `scratch/goal4-mimosa-enobufs.md`） |
 | 8 | PLAN-20260917-091（EC-07：完整安全审计的可复核终态；driver=client-goal / owner=root-agent） | 见本 cycle 提交（终态文档 `docs/audits/MIMOSA_DEEP_SCAN_20260917.md` + PLAN/RECHECK/MEM/ALL_PLAN/GOAL 回写） | MCP 独立密封深扫 **completed**（`scan-2026-09-17T20-05-18.700Z-663d0976701f`，seal `sha256:b2af6739…`，36 = high 3 / medium 28 / low 5；三件产物逐件 sha256 与 `seal.json.artifacts` **全 ok**；同 projectId 连续 6 次深扫剖面逐次相同）；定向：`tests/application/protocol_authoring/test_draft_service.py` **13 passed**（含危险 tag 不执行 / 钩子继承 SafeLoader）、`tests/distributed/test_security_distributed.py` 凭据隔离 2 条 **2 passed**；动态 SQL 形态检索产品树**零命中 + 反证**（蓄意四形态命中、参数化写法不命中）；治理 validate 绿；m0 见「状态历史」 | run **35272745779**（`b6e14d4`，run_number 147）：**六个 job 全 success**（container-quality / quality-ubuntu-latest / collector-quality / eval-gate / quality-windows-latest / console-frontend，无重跑） | **无产品代码变更**：36 条逐条处置 = 1 条产品代码 HIGH 误报（SafeLoader 子类）+ 2 条 HIGH 仓库外（未跟踪转储）+ 27 条 MEDIUM 同签名误报（env→DSN 被读成 env→SQL 文本）+ 1 条 MEDIUM 误报（汇点为 `tempfile.mkdtemp`）+ 5 条 LOW 误报（M12 固定 seed） | EC-07 **PASS**（终态 a；RECHECK-091 W-1…W-5 = 依赖 advisory 未署名未决 / hook 侧 enobufs 仍存 / 扫描输入含 gitignored 内容 / `artifacts/` 内明文 token 未跟踪 / 威胁建模与授权面零覆盖）；**EC-01…EC-07 全 PASS** | GOAL 收口：cycle 9 = 收口复检（独立 RECHECK 复核七个 EC 在当前树上的证据 + CI 逐 job 现状），通过后按 README 终止条款置 `ACHIEVED` 并写「终止与收口」 |
+| 9 | PLAN-20260917-092（收口复检：EC-01…07 × 当前树 + CI 台账逐 job） | 见本 cycle 提交 | `scratch/verify_goal004_closeout.py` **46 条断言全 PASS**（含 15 个定向套件真跑；首跑抓出 EC-07 处置表「合并行只有 7 行 < 36」⇒ 按封印产物逐条生成 36 行后复绿）；CI 台账 **16 个 run 逐 job 重读**（#134…#147 全 success；#133 失败已同 cycle 修复；#137 补记）；治理 validate 绿；m0 见「状态历史」 | 见「状态历史」（push 后回填） | 唯一失败项是复检脚本自己抓出的处置表缺项（**判据有效性的正面证据**，非产品缺陷）；无产品代码变更 | 七个 EC 全 PASS + 独立复检通过 ⇒ **ACHIEVED**；长程剩余 9 类见「收口结论」表 | 无（本 GOAL 终止）；后继入口 = 收口结论表优先级 ① 安全审计联网复核 ② `resume_after_approval` ③ 声明未消费项清账 |
 
 
 ## 状态历史
@@ -505,3 +542,19 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   （run_number 147；container-quality / quality-ubuntu-latest / collector-quality / eval-gate /
   quality-windows-latest / console-frontend 全 success，无重跑）——本 cycle 只有记录/文档提交
   （终态文档 + PLAN/RECHECK/MEM/ALL_PLAN/GOAL 回写），六 job 仍全绿。
+- 2026-09-17 cycle 9 建档：GOAL 进入收口阶段（PLAN-20260917-092「收口复检」，
+  driver=client-goal / owner=root-agent）；复检方式 = 只读当前树 + **真跑** 15 个定向套件
+  （不读历史 RECHECK 结论）。
+- 2026-09-17 cycle 9 收口：**ACHIEVED**。`scratch/verify_goal004_closeout.py` **46 条断言全 PASS**
+  （首跑抓出 EC-07 处置表「合并行只有 7 行 < 36」⇒ 改为**按封印产物逐条生成 36 行**后复绿——
+  这是判据有效性的正面证据，不是产品缺陷）；CI 台账 **44 个 GOAL-004 commit → 16 个 run 逐 job
+  重读**（#136 之前含 cycle 2 的 `7316d1d`、#139 `13054a8` 等；#134…#147 全 success；
+  #137 `ffa272c` **补记**；唯一失败 #133 为测试墙钟依赖，已同 cycle 修复）；本地 m0 **23/23 全绿**
+  （全量 pytest **3896 passed / 10 skipped**，497.25s）；「终止与收口」写入**收口结论**
+  （含 9 类仍开放长程项 + 后继入口建议）与「不进入循环 / 需人工拍板」原样保留；
+  `latest_recheck` = RECHECK-20260917-092，`memory_entries` = MEM-059…066。
+- 2026-09-17 cycle 8 收口提交 CI 记录：head `d00dec6` → run **35274491507 六个 job 全 success**
+  （run_number 148；container-quality / quality-ubuntu-latest / collector-quality / eval-gate /
+  quality-windows-latest / console-frontend 全 success）——记录提交只改 `.cursor/**` 同样触发六 job，
+  按同口径等到终态（收口复检时读回）。
+

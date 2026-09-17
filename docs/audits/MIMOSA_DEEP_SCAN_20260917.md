@@ -65,30 +65,54 @@ print({k: ('ok' if 'sha256:'+hashlib.sha256(pathlib.Path(k).read_bytes()).hexdig
 
 | # | 位置 | 结论 | 依据 | 处置 |
 | --- | --- | --- | --- | --- |
-| H-1 | `packages/application/protocol_authoring/service.py:103`（不安全反序列化） | **误报**：静态规则按 `yaml.load` 名字告警，实际加载器是 `yaml.SafeLoader` 的子类 | E-3（代码行 + 3 个已执行用例，含「python/object tag 不执行」与「钩子类必须继承 SafeLoader」） | 登记误报，**无代码变更**（换 `safe_load` 会丢掉重复键拒绝钩子，属判据削弱） |
-| H-2 | `artifacts/钻孔官方API_v12/真实API预检_v12.py:16`（路径穿越） | **仓库外范围**：第三方 API 转储的未跟踪副本，未被仓库代码 import/构建/CI 执行 | E-4（`git ls-files artifacts/` = 0；`.gitignore:36`；`git log --all` 无该路径） | 登记为仓库外（含该目录内明文 token 文件的**未跟踪**事实，见 §6-U3） |
-| H-3 | `artifacts/钻孔官方API_v12/src/ppocr_sidecar/客户端.py:24`（路径穿越） | 同 H-2 | E-4 | 同 H-2 |
+| H-1 | `packages/application/protocol_authoring/service.py:103`（insecure-deserialization） | **误报**：静态规则按 `yaml.load` 名字告警，实际加载器是 `yaml.SafeLoader` 的子类 | E-3 | 登记误报，**无代码变更**（换 `safe_load` 会丢掉重复键拒绝钩子，属判据削弱） |
+| H-2 | `artifacts/钻孔官方API_v12/真实API预检_v12.py:16`（path-traversal） | **仓库外范围**：第三方 API 转储的未跟踪副本，未被仓库代码 import/构建/CI 执行 | E-4 | 登记为仓库外（含该目录内明文 token 文件的**未跟踪**事实，见 §6-U3） |
+| H-3 | `artifacts/钻孔官方API_v12/src/ppocr_sidecar/客户端.py:24`（path-traversal） | **仓库外范围**：第三方 API 转储的未跟踪副本，未被仓库代码 import/构建/CI 执行 | E-4 | 登记为仓库外（含该目录内明文 token 文件的**未跟踪**事实，见 §6-U3） |
 
 ### 2.2 MEDIUM（28，全部「疑似跨文件污点」，均带 proof-gap「需人工确认真实数据流和可利用性」）
 
-同一签名 27 条（env → `adapters/postgres/db.py:202` 的「SQL 执行 `.execute`」）：
-**结论 = 误报**；依据 = E-1 + E-2；处置 = 登记误报，无代码变更。
-
 | # | 位置 | 结论 | 依据 | 处置 |
 | --- | --- | --- | --- | --- |
-| M-01…M-17 | `scratch/probe_cancel_race.py:63`、`scratch/probe_canonical_state.py:84`、`scratch/probe_db_failure.py:76`、`:121`、`scratch/probe_migration.py:74`、`:100`、`:124`、`:126`、`:130`、`:140`、`:146`、`scratch/probe_outbox.py:78`、`:114`、`scratch/probe_scheduled_recovery.py:93`、`:132`、`scratch/probe_stale_worker.py:95`、`:124` | 误报 | E-1 / E-2 | 登记（`scratch/` 未跟踪，operator 自用探针） |
-| M-18…M-27 | `tools/probes/probe_cancel_race.py:73`、`probe_canonical_state.py:96`、`probe_db_failure.py:100`、`:140`、`probe_outbox.py:90`、`:127`、`probe_scheduled_recovery.py:100`、`:142`、`probe_stale_worker.py:103`、`:134` | 误报 | E-1 / E-2 | 登记（跟踪目录内 10 条，同为 operator 探针参数化查询） |
-| M-28 | `services/worker/__main__.py:135`（污点汇写作「`execution/gpu_probe.py:138` 路径穿越」） | 误报 | E-5 | 登记误报；「operator env 选镜像」作为明示配置面记录 |
-
-E-1 / E-2 的要点：`migrate()` 执行的 SQL 文本**全部**来自仓库内 `*.sql` 迁移文件与字面量
-DDL/SELECT，唯一带参语句是占位符参数化 INSERT；env 值只进 **DSN（连接目标）**，不进 SQL
-文本。**仓库全量**动态 SQL 形态检索零命中，且该检索经反证证明有判别力（§3 E-1）。
+| M-01 | `scratch/probe_cancel_race.py:63` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-02 | `scratch/probe_canonical_state.py:84` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-03 | `scratch/probe_db_failure.py:76` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-04 | `scratch/probe_db_failure.py:121` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-05 | `scratch/probe_migration.py:74` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-06 | `scratch/probe_migration.py:100` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-07 | `scratch/probe_migration.py:124` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-08 | `scratch/probe_migration.py:126` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-09 | `scratch/probe_migration.py:130` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-10 | `scratch/probe_migration.py:140` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-11 | `scratch/probe_migration.py:146` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-12 | `scratch/probe_outbox.py:78` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-13 | `scratch/probe_outbox.py:114` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-14 | `scratch/probe_scheduled_recovery.py:93` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-15 | `scratch/probe_scheduled_recovery.py:132` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-16 | `scratch/probe_stale_worker.py:95`（`services/worker` operator env → 镜像引用） | **误报**：污点汇是 `tempfile.mkdtemp()` 生成的临时目录，不是 env 值 | E-5 | 登记误报；「operator env 选镜像」作为明示配置面记录 |
+| M-17 | `scratch/probe_stale_worker.py:124`（`services/worker` operator env → 镜像引用） | **误报**：污点汇是 `tempfile.mkdtemp()` 生成的临时目录，不是 env 值 | E-5 | 登记误报；「operator env 选镜像」作为明示配置面记录 |
+| M-18 | `services/worker/__main__.py:135`（`services/worker` operator env → 镜像引用） | **误报**：污点汇是 `tempfile.mkdtemp()` 生成的临时目录，不是 env 值 | E-5 | 登记误报；「operator env 选镜像」作为明示配置面记录 |
+| M-19 | `tools/probes/probe_cancel_race.py:73` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-20 | `tools/probes/probe_canonical_state.py:96` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-21 | `tools/probes/probe_db_failure.py:100` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-22 | `tools/probes/probe_db_failure.py:140` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-23 | `tools/probes/probe_outbox.py:90` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-24 | `tools/probes/probe_outbox.py:127` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-25 | `tools/probes/probe_scheduled_recovery.py:100` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-26 | `tools/probes/probe_scheduled_recovery.py:142` | **误报**：env 值只作 **DSN（连接目标）**，不进 SQL 文本 | E-1 / E-2 | 登记误报，无代码变更（operator 自用探针：env → 连接 → 参数化查询） |
+| M-27 | `tools/probes/probe_stale_worker.py:103`（`services/worker` operator env → 镜像引用） | **误报**：污点汇是 `tempfile.mkdtemp()` 生成的临时目录，不是 env 值 | E-5 | 登记误报；「operator env 选镜像」作为明示配置面记录 |
+| M-28 | `tools/probes/probe_stale_worker.py:134`（`services/worker` operator env → 镜像引用） | **误报**：污点汇是 `tempfile.mkdtemp()` 生成的临时目录，不是 env 值 | E-5 | 登记误报；「operator env 选镜像」作为明示配置面记录 |
 
 ### 2.3 LOW（5）
 
 | # | 位置 | 结论 | 依据 | 处置 |
 | --- | --- | --- | --- | --- |
-| L-1…L-5 | `examples/experiments/m12_reference_classification.py:33`、`:42`、`:64`、`:69`、`:142`（不安全的随机数） | 误报 | E-6 | 登记误报，**保留代码**（`random.Random(seed)` 固定 seed=7 是 M12 参考实验的字节级可复现契约；改 `secrets` 会破坏可复现性且无安全收益） |
+| L-1 | `examples/experiments/m12_reference_classification.py:33`（insecure-randomness） | **误报**：`random.Random(seed)` 固定 seed 用于可复现参考实验 | E-6 | 登记误报，**保留代码**（改 `secrets` 会破坏 M12 参考实验的字节级可复现契约，且无安全收益） |
+| L-2 | `examples/experiments/m12_reference_classification.py:42`（insecure-randomness） | **误报**：`random.Random(seed)` 固定 seed 用于可复现参考实验 | E-6 | 登记误报，**保留代码**（改 `secrets` 会破坏 M12 参考实验的字节级可复现契约，且无安全收益） |
+| L-3 | `examples/experiments/m12_reference_classification.py:64`（insecure-randomness） | **误报**：`random.Random(seed)` 固定 seed 用于可复现参考实验 | E-6 | 登记误报，**保留代码**（改 `secrets` 会破坏 M12 参考实验的字节级可复现契约，且无安全收益） |
+| L-4 | `examples/experiments/m12_reference_classification.py:69`（insecure-randomness） | **误报**：`random.Random(seed)` 固定 seed 用于可复现参考实验 | E-6 | 登记误报，**保留代码**（改 `secrets` 会破坏 M12 参考实验的字节级可复现契约，且无安全收益） |
+| L-5 | `examples/experiments/m12_reference_classification.py:142`（insecure-randomness） | **误报**：`random.Random(seed)` 固定 seed 用于可复现参考实验 | E-6 | 登记误报，**保留代码**（改 `secrets` 会破坏 M12 参考实验的字节级可复现契约，且无安全收益） |
+
+合计 **3 + 28 + 5 = 36**，与封印产物 `totals` 一一对应。
 
 ## 3. 依据块
 
