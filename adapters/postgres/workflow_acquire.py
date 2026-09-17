@@ -58,9 +58,10 @@ def _insert_lease(conn: Any, task_id: str, lease: Any, outbox: Any, row: Any) ->
     # new value so a stale worker's late write is rejected on (lease_id, fence).
     # attempt 与 task_json 在同一条更新里推进（PLAN-20260915-078）：交付一次 lease
     # 就是开始一次尝试，投影读的是 task_json，落后就会把重试的用量记进上一次的 entry id。
+    # retry_at 交付即清（PLAN-20260915-079）：一次交付就是一个时刻，不留退避残留。
     conn.execute(
-        "UPDATE tasks SET status = %s, fence_seq = %s, attempt = %s, task_json = %s "
-        "WHERE task_id = %s",
+        "UPDATE tasks SET status = %s, fence_seq = %s, attempt = %s, retry_at = NULL, "
+        "task_json = %s WHERE task_id = %s",
         (
             ResearchTaskState.State.LEASED,
             lease.fence,

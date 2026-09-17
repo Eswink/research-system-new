@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import timedelta, timezone
 from typing import Any, cast
 
 from adapters.postgres.db import db_time_expr, server_now
 from adapters.postgres.leases import new_lease
 from adapters.postgres.serialization import decode_contract_json, decode_timestamp_pg
-from adapters.sqlite.completion import publish_completion_outcome
+from adapters.sqlite.completion import RetryNotice, publish_completion_outcome
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
 from packages.domain.core import Timestamp
@@ -145,19 +145,37 @@ def complete_impl(conn: Any, record: Any, outbox: Any, payload: CompletePayload)
         # `attempt` 是**本次**尝试的序号，由交付路径维护（每交付一次 lease 推进一代），
         # 与 SQLite 同口径；完成路径不动它（租约此时已删，域不变量不允许）。
         attempt = int(task_row["attempt"] or 1)
-        plan = decode_contract_json(task_row["contract_json"]).disposition(
+        contract = decode_contract_json(task_row["contract_json"])
+        plan = contract.disposition(
             outcome=completion.outcome, attempt=attempt, category=completion.failure_category
         )
+        # 重排则写退避 deadline（PLAN-20260915-079）：时延由 Domain 纯函数算，
+        # deadline 走 `server_now` —— 与 claim 的比较**同一个**权威时间源（生产是数据库
+        # 时钟，测试是注入时钟；两处各取一个时钟就会让 deadline 落错边）。
+        # 0 秒 = 立即重排（既有行为）。
+        delay = int(contract.retry_delay(attempt=attempt).total_seconds()) if plan.retrying else 0
         conn.execute("DELETE FROM leases WHERE task_id = %s", (lease.task_id,))
-        conn.execute(
-            "UPDATE tasks SET status = %s WHERE task_id = %s", (plan.status, lease.task_id)
-        )
+        if delay:
+            deadline = server_now(conn, payload.now) + timedelta(seconds=delay)
+            conn.execute(
+                "UPDATE tasks SET status = %s, retry_at = %s WHERE task_id = %s",
+                (plan.status, deadline, lease.task_id),
+            )
+            retry_at: str | None = (
+                deadline.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+            )
+        else:
+            conn.execute(
+                "UPDATE tasks SET status = %s, retry_at = NULL WHERE task_id = %s",
+                (plan.status, lease.task_id),
+            )
+            retry_at = None
         publish_completion_outcome(
             outbox,
             plan,
             run_id=str(task_row["run_id"]),
             completion=completion,
-            attempt=attempt,
+            retry=RetryNotice(next_attempt=attempt + 1, retry_at=retry_at),
         )
         record("complete", lease.task_id, result=str(plan.action))
 

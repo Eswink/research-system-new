@@ -28,7 +28,13 @@ memory_entries:
 都接受这些字段——但**没有任何生产调用方**：
 
 - 两个 engine 的 `complete()` 把任何非 `SUCCEEDED` 的完成一律写成 `FAILED`；
-- `retry_policy` 零消费者（`max_attempts` 写了也没人看）；
+- `retry_policy` 在 **durable 层**零消费者（`max_attempts` 写了没人看）。
+  > **校正（cycle 16 / PLAN-20260915-079 WP-0）**：原写作"零消费者"，**过宽**——
+  > 应用层的 in-process 重试循环一直在消费它：
+  > `packages/application/run_orchestration/task_executor.py:83`（`_retry_policy`）、
+  > `:87`（`_retryable` 用 `retryable_categories`）、`:111`（用 `max_attempts` 刹车）。
+  > 准确表述：本轮的缺口是"**durable 层**（engine 的 complete/claim）零消费 +
+  > `RETRY_SCHEDULED`/`DEAD_LETTER` 无生产驱动方"，这一条仍成立。
 - `RETRY_SCHEDULED` / `DEAD_LETTER` 两个状态**没有任何 adapter/服务会设置**
   （探针：限定写法 `ResearchTaskState.State.<NAME>` 扫生产代码，命中 0）；
 - `TaskCompletion` 只有 `outcome`，**没有失败类别**——重试分类的输入根本不存在，
@@ -173,3 +179,8 @@ PASS: profile=m0; 23 deterministic checks     # 全量 pytest 3681 passed / 10 s
   全量 pytest **3681 passed / 10 skipped**），ruff/format 干净、mypy **876 files clean**，
   `tests/adapters+tests/domain+tests/postgres+tests/contracts` **1297 passed / 5 skipped**，
   记录落盘（RECHECK-078 + MEM-053 + GOAL cycle 15 记账 + ALL_PLAN）。
+- 2026-09-17 口径校正（cycle 16 / PLAN-20260915-079 WP-0，**追加不改写**）：本轮"`retry_policy`
+  零消费者"的说法过宽——应用层 `task_executor` 的 in-process 重试循环一直在消费
+  `max_attempts` 与 `retryable_categories`（行号见「目标」段的就地标注）。本轮的缺口因此
+  收窄为"**durable 层**零消费 + 两个状态无生产驱动方"，后者（限定写法扫生产代码命中 0）
+  不受影响。结论与 RECHECK 的 PASS_WITH_WARNINGS 不变。

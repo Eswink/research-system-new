@@ -90,6 +90,16 @@
       "required": ["max_attempts", "retryable_categories"],
       "properties": {
         "max_attempts": {"type": "integer", "minimum": 1},
+        "backoff_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "指数退避的基数：第 n 次尝试失败后等 min(base * 2^(n-1), max_backoff_seconds)；省略或 0 表示立即重排。"
+        },
+        "max_backoff_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "退避上限（只封顶，不压低基数）；省略表示不封顶。"
+        },
         "retryable_categories": {
           "type": "array",
           "uniqueItems": true,

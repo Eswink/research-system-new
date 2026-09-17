@@ -78,6 +78,9 @@ def load_task_contracts(relative_path: str) -> dict[str, TaskContract]:
                 retryable_categories=[
                     FailureCategory(item) for item in retry.get("retryable_categories", [])
                 ],
+                # 退避（PLAN-20260915-079）：省略即"立即重排"，既有契约不受影响。
+                backoff_seconds=retry.get("backoff_seconds"),
+                max_backoff_seconds=retry.get("max_backoff_seconds"),
             )
             if retry
             else None

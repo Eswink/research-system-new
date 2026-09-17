@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import replace
+from datetime import datetime
 from typing import Any
 
+from adapters.sqlite.db import now_iso
 from adapters.sqlite.leases import iso
 from adapters.sqlite.outbox import OutboxWriter
 from adapters.sqlite.serialization import decode_task, encode_task
@@ -48,21 +50,24 @@ def first_matching_candidate(candidates: Any, request: ClaimRequest) -> Any:
     return None
 
 
-def claim_candidates(conn: sqlite3.Connection) -> Any:
-    """可 claim 的 EXECUTION 候选扫描（静态 SQL；PAUSED run 的排除在扫描内完成）。
+def claim_candidates(conn: sqlite3.Connection, now: datetime) -> Any:
+    """可 claim 的 EXECUTION 候选扫描（静态 SQL；暂停与未到期退避都在扫描内排除）。
 
     暂停过滤必须作用在候选集而不是扫描之后：否则被暂停 run 的任务会占满
-    候选窗口，把其他 run 的可派发任务饿死。
+    候选窗口，把其他 run 的可派发任务饿死。退避（PLAN-20260915-079）同理——
+    没到 `retry_at` 的重试任务不该占窗口，到期后与首次排队同权。
     """
     return conn.execute(
         "SELECT task_id, run_id, assigned_agent_id, fence_seq, required_capability,"
         " partition FROM tasks WHERE kind = ? AND status IN (?, ?) AND cancelled = 0"
+        " AND (retry_at IS NULL OR retry_at <= ?)"
         " AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.run_id = tasks.run_id"
         " AND json_extract(runs.run_json, '$.state') = ?)"
         " ORDER BY created_at",
         (
             TaskKind.EXECUTION.value,
             *CLAIMABLE_STATUSES,
+            now_iso(lambda: now),
             ResearchRunState.State.PAUSED,
         ),
     ).fetchall()
@@ -114,7 +119,8 @@ def persist_new_lease(
         ),
     )
     conn.execute(
-        "UPDATE tasks SET status = ?, fence_seq = ?, attempt = ?, task_json = ? WHERE task_id = ?",
+        "UPDATE tasks SET status = ?, fence_seq = ?, attempt = ?, retry_at = NULL,"
+        " task_json = ? WHERE task_id = ?",
         (
             ResearchTaskState.State.LEASED,
             lease.fence,

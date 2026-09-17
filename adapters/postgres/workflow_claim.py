@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, cast
 
+from adapters.postgres.db import server_now
 from adapters.postgres.leases import new_lease
 from adapters.postgres.serialization import reencode_task_json
 from packages.application.ports.workflow_engine import ClaimRequest, TaskLease
@@ -29,12 +30,15 @@ from packages.domain.run_state import ResearchRunState
 from packages.domain.task_state import ResearchTaskState
 
 # Static SQL constants (values bound as parameters below). Both variants carry the
-# cooperative-pause filter (PLAN-20260914-048): a task whose run is canonically
-# PAUSED is never dispatched. Held leases are untouched — pause stops new claims,
-# it does not revoke anything.
+# cooperative-pause filter (PLAN-20260914-048) and the backoff filter
+# (PLAN-20260915-079): a task whose run is canonically PAUSED is never dispatched,
+# and a rescheduled task is not claimable before its `retry_at` deadline — the
+# filter sits inside the scan so an unexpired retry cannot eat the candidate
+# window. Held leases are untouched — pause stops new claims, it does not revoke.
 _SELECT_WITH_PARTITION = (
     "SELECT task_id, run_id, assigned_agent_id, fence_seq, task_json, contract_json FROM tasks "
     "WHERE kind = %s AND status IN (%s, %s) AND cancelled = FALSE "
+    "AND (retry_at IS NULL OR retry_at <= %s) "
     "AND (required_capability IS NULL OR required_capability = ANY(%s)) "
     "AND (partition IS NULL OR partition = ANY(%s)) "
     "AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.run_id = tasks.run_id "
@@ -44,6 +48,7 @@ _SELECT_WITH_PARTITION = (
 _SELECT_CAPABILITY_ONLY = (
     "SELECT task_id, run_id, assigned_agent_id, fence_seq, task_json, contract_json FROM tasks "
     "WHERE kind = %s AND status IN (%s, %s) AND cancelled = FALSE "
+    "AND (retry_at IS NULL OR retry_at <= %s) "
     "AND (required_capability IS NULL OR required_capability = ANY(%s)) "
     "AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.run_id = tasks.run_id "
     "AND runs.run_json ->> 'state' = %s) "
@@ -53,10 +58,12 @@ _INSERT_LEASE = (
     "INSERT INTO leases (task_id, lease_id, agent_id, expires_at, heartbeat_at, "
     "worker_id, fence) VALUES (%s, %s, %s, %s, %s, %s, %s)"
 )
-# 一次交付就是一个时刻：状态、交付代次、尝试序号与 task_json 必须在同一条更新里落账
-# （PLAN-20260915-078——投影读 task_json，落后就会把重试的用量记进上一次尝试的 entry id）。
+# 一次交付就是一个时刻：状态、交付代次、尝试序号、退避 deadline 与 task_json 必须在同一条
+# 更新里落账（PLAN-20260915-078/079——投影读 task_json，落后就会把重试的用量记进上一次
+# 尝试的 entry id；`retry_at` 交付即清，不残留影响后续 claim）。
 _MARK_LEASED = (
-    "UPDATE tasks SET status = %s, fence_seq = %s, attempt = %s, task_json = %s WHERE task_id = %s"
+    "UPDATE tasks SET status = %s, fence_seq = %s, attempt = %s, retry_at = NULL, "
+    "task_json = %s WHERE task_id = %s"
 )
 
 
@@ -66,21 +73,22 @@ class ClaimPayload:
     ttl: timedelta
 
 
-def _select_claimable(conn: Any, request: ClaimRequest) -> Any:
+def _select_claimable(conn: Any, request: ClaimRequest, now: Any) -> Any:
     paused = ResearchRunState.State.PAUSED
-    # 排了下一次尝试的任务与首次排队同样可派发（PLAN-20260915-078）。
+    # 排了下一次尝试的任务与首次排队同样可派发（PLAN-20260915-078）——但要过了退避
+    # deadline（PLAN-20260915-079）；比较用数据库时钟，跨进程只有一个权威时间源。
     queued = ResearchTaskState.State.QUEUED
     retry = ResearchTaskState.State.RETRY_SCHEDULED
     caps = list(request.capabilities)
     if request.relax_partitions:
         return conn.execute(
             _SELECT_CAPABILITY_ONLY,
-            (TaskKind.EXECUTION.value, queued, retry, caps, paused),
+            (TaskKind.EXECUTION.value, queued, retry, now, caps, paused),
         ).fetchone()
     parts = list(request.partitions)
     return conn.execute(
         _SELECT_WITH_PARTITION,
-        (TaskKind.EXECUTION.value, queued, retry, caps, parts, paused),
+        (TaskKind.EXECUTION.value, queued, retry, now, caps, parts, paused),
     ).fetchone()
 
 
@@ -126,7 +134,7 @@ def claim_next_impl(
     request = payload.request
     ttl = payload.ttl
     with conn.transaction():
-        row = _select_claimable(conn, request)
+        row = _select_claimable(conn, request, server_now(conn, now))
         if row is None:
             record("claim_next", request.worker_id, result="none")
             return None

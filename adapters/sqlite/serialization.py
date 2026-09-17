@@ -122,6 +122,9 @@ def _decode_retry_policy(payload: dict[str, Any]) -> RetryPolicy:
         retryable_categories=[
             FailureCategory(item) for item in payload.get("retryable_categories", [])
         ],
+        # 退避（PLAN-20260915-079）：退避字段之前落盘的契约没有这两个键 ⇒ 缺省 = 立即重排。
+        backoff_seconds=payload.get("backoff_seconds"),
+        max_backoff_seconds=payload.get("max_backoff_seconds"),
     )
 
 

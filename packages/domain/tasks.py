@@ -8,6 +8,7 @@ LLM 不能自行宣布验收通过；副作用绑定 task_id + attempt + operati
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import timedelta
 from decimal import Decimal
 
 from packages.domain.core import ID, Digest, Timestamp
@@ -40,10 +41,26 @@ class FailureDisposition:
 class RetryPolicy:
     max_attempts: int
     retryable_categories: list[FailureCategory] = field(default_factory=list)
+    # 退避（PLAN-20260915-079）：`backoff_seconds` 是指数退避的**基数**，第 n 次尝试失败后
+    # 等 `min(base * 2^(n-1), max_backoff_seconds)`。两个字段都可空 —— 不写就是"立即重排"，
+    # 与退避字段出现之前完全一致（既有契约不受影响）。
+    backoff_seconds: int | None = None
+    max_backoff_seconds: int | None = None
 
     def __post_init__(self) -> None:
         if self.max_attempts < 1:
             raise ValueError("max_attempts must be >= 1")
+        if self.backoff_seconds is not None and self.backoff_seconds < 0:
+            raise ValueError("backoff_seconds must be >= 0")
+        if self.max_backoff_seconds is not None and self.max_backoff_seconds < 0:
+            raise ValueError("max_backoff_seconds must be >= 0")
+        if (
+            self.backoff_seconds is not None
+            and self.max_backoff_seconds is not None
+            and self.max_backoff_seconds < self.backoff_seconds
+        ):
+            # 否则 cap 会静默压低基数（写的是 30s 上限、5s 基数却得到 5s 上限）。
+            raise ValueError("max_backoff_seconds must be >= backoff_seconds")
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,7 +132,7 @@ class TaskContract:
         4. 类别可重试但次数已用尽 ⇒ `DEAD_LETTER`（不再自动重试，等人工恢复）。
 
         `attempt` 是**本次**尝试的序号（从 1 开始）。退避时延不在这里：见
-        PLAN-20260915-078 的已知风险（策略面没有退避字段，如实不做）。
+        `retry_delay`（同一份策略，纯函数）。
         """
         policy = self.retry_policy
         if policy is None or category is None:
@@ -125,6 +142,26 @@ class TaskContract:
         if attempt < policy.max_attempts:
             return FailureAction.RETRY
         return FailureAction.DEAD_LETTER
+
+    def retry_delay(self, *, attempt: int) -> timedelta:
+        """第 `attempt` 次尝试失败、决定重排后，**等多久**再交付下一次（纯函数）。
+
+        规则：`min(backoff_seconds * 2^(attempt-1), max_backoff_seconds)`；
+        没有 `retry_policy`、没写 `backoff_seconds`、或基数为 0 ⇒ 零时延
+        （= 退避字段出现之前的行为）。上限只封顶、不压低基数。
+
+        时延由 Domain 算、由 adapter 落库（`tasks.retry_at`）：两个 adapter 各自
+        "什么时候能再 claim"的判断必须来自同一个数，否则 SQLite 与 PG 会漂移。
+        """
+        policy = self.retry_policy
+        if policy is None or not policy.backoff_seconds:
+            return timedelta(0)
+        if attempt < 1:
+            raise ValueError("attempt must be >= 1")
+        seconds = policy.backoff_seconds * (2 ** (attempt - 1))
+        if policy.max_backoff_seconds is not None:
+            seconds = min(seconds, policy.max_backoff_seconds)
+        return timedelta(seconds=seconds)
 
     def __post_init__(self) -> None:
         if not self.id:

@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     kind TEXT NOT NULL DEFAULT 'AGENT_SESSION',
     partition INTEGER,
     required_capability TEXT,
-    fence_seq INTEGER NOT NULL DEFAULT 0
+    fence_seq INTEGER NOT NULL DEFAULT 0,
+    retry_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_run ON tasks(run_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_idem ON tasks(idempotency_key)

@@ -12,9 +12,15 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
-from adapters.sqlite.completion import publish_completion_outcome
+from adapters.sqlite.completion import RetryNotice, publish_completion_outcome
 from adapters.sqlite.db import now_iso
-from adapters.sqlite.leases import iso, lease_from_row, new_lease, request_digest
+from adapters.sqlite.leases import (
+    iso,
+    lease_from_row,
+    new_lease,
+    request_digest,
+    timestamp_now,
+)
 from adapters.sqlite.outbox import OutboxWriter
 from adapters.sqlite.serialization import decode_contract, encode_task
 from adapters.sqlite.workflow_claim import (
@@ -32,10 +38,11 @@ from packages.application.ports.workflow_engine import (
     TaskCompletion,
     TaskLease,
 )
+from packages.domain.core import Timestamp
 from packages.domain.enums import FailureAction
 from packages.domain.events import EventType
 from packages.domain.task_state import ResearchTaskState
-from packages.domain.tasks import ResearchTask, TaskContract
+from packages.domain.tasks import FailureDisposition, ResearchTask, TaskContract
 
 _HostCalls = Callable[..., None]
 _Predicate = Callable[[ResearchTask], bool]
@@ -175,7 +182,9 @@ class SqliteWorkflowOps:
         stops being dispatched rather than being filtered after the fact.
         """
         self._ensure_open()
-        chosen = first_matching_candidate(claim_candidates(self._conn), request)
+        chosen = first_matching_candidate(
+            claim_candidates(self._conn, timestamp_now(self._now).value), request
+        )
         if chosen is None:
             self._record("claim_next", request.worker_id, result="none")
             return None
@@ -294,21 +303,40 @@ class SqliteWorkflowOps:
         )
         with self._conn:
             self._conn.execute("DELETE FROM leases WHERE task_id = ?", (lease.task_id,))
-            # 完成不改 attempt：一次尝试从**拿到 lease** 才算开始，序号在交付时写定
-            # （域不变量：attempt > 1 必须带 lease_id，完成时租约已删）。
-            self._conn.execute(
-                "UPDATE tasks SET status = ? WHERE task_id = ?",
-                (plan.status, lease.task_id),
-            )
+            retry_at = self._write_disposition(lease, plan, contract, attempt)
+            # 事件必须留在**同一个提交块内**：连接上只有一个隐式事务，块外的 publish 会
+            # 停在没有提交的事务里，另一个连接（如重启后的 outbox 读取方）看不到它。
             publish_completion_outcome(
                 self._outbox,
                 plan,
                 run_id=str(task_row["run_id"]),
                 completion=completion,
-                attempt=attempt,
+                retry=RetryNotice(next_attempt=attempt + 1, retry_at=retry_at),
             )
         self._note_task_duration(str(task_row["created_at"]))
         self._record("complete", lease.task_id, result=str(plan.action))
+
+    def _write_disposition(
+        self, lease: TaskLease, plan: FailureDisposition, contract: TaskContract, attempt: int
+    ) -> str | None:
+        """把处置写进任务行：状态 + 重排时的退避 deadline（返回 deadline 文本）。
+
+        完成不改 attempt：一次尝试从**拿到 lease** 才算开始，序号在交付时写定
+        （域不变量：attempt > 1 必须带 lease_id，完成时租约已删）。
+        重排则写下 `retry_at`（PLAN-20260915-079）：时延由 Domain 纯函数算，
+        claim 的候选扫描按它过滤——没到期的重试不占候选窗口。
+        """
+        delay = contract.retry_delay(attempt=attempt) if plan.retrying else timedelta(0)
+        retry_at = (
+            iso(Timestamp(timestamp_now(self._now).value + delay))
+            if plan.retrying and delay
+            else None
+        )
+        self._conn.execute(
+            "UPDATE tasks SET status = ?, retry_at = ? WHERE task_id = ?",
+            (plan.status, retry_at, lease.task_id),
+        )
+        return retry_at
 
     def _recover_impl(self) -> int:
         self._ensure_open()

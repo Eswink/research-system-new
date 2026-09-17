@@ -26,14 +26,20 @@ tags:
 
 `TaskContract.retry_policy.max_attempts` 是**必填字段**，Domain 状态机写着
 `RETRY_SCHEDULED` / `DEAD_LETTER` 与对应迁移，schema 与 loader 都收这些字段——
-但**没有任何生产调用方**：
+但 **durable 层**（WorkflowEngine 的 complete/claim）**没有任何消费者**：
 
 ```text
 限定写法扫描生产代码（ResearchTaskState.State.<NAME>）：
   RETRY_SCHEDULED 命中 0     DEAD_LETTER 命中 0
-complete() 任何非 SUCCEEDED 的完成一律写 FAILED；
+complete() 任何非 SUCCEEDED 的完成一律写 FAILED，从不读 retry_policy；
 TaskCompletion 只有 outcome —— 没有"失败类别"，重试分类的输入根本不存在。
 ```
+
+> **校正（2026-09-17，PLAN-20260915-079 WP-0）**：本条原写"`retry_policy` 零消费者"，
+> 过大——应用层 in-process 重试循环一直在消费它
+> （`packages/application/run_orchestration/task_executor.py:83/87/111`：`_retry_policy` /
+> `_retryable` / `max_attempts` 刹车）。"零消费者"只对 **durable 层**成立。
+> 教训：说"没人消费"必须限定**哪一层**，否则下一个读者会把应用层的消费者也当成不存在。
 
 也就是说 AGENTS.md §7 要的"retry classification + dead-letter / manual recovery"
 一条也没落地，而**代码里看不出来**：状态机会接受这些状态，只是没人会走进去。
@@ -82,6 +88,10 @@ adapter 只调用；③ attempt/计数类字段与域不变量对齐（递增时
   退避需要策略字段或新列，本轮刻意不做（如实登记）。
 - **`failure_policy` 仍是零消费者**：它的键名空间没和 `FailureCategory` 对齐，
   直接消费等于自己发明语义——**不猜**，留给单独一轮。
+- **"零消费者"要限定层**：同一条策略在 durable 层无人读、在应用层却一直在用
+  （`task_executor` 的 in-process 循环）。写缺口时先问"哪一层"，否则校正要花一轮。
+  由此暴露的真问题：同一个 `max_attempts` 目前是**两套账**（in-process 局部计数 vs
+  durable 的 `attempt` 列），尚未统一。
 - **门禁是文本级**：按 `ResearchTaskState.State.<NAME>` 限定写法扫描，别名导入会漏。
 - 相关：[[MEM-20260915-047]]（声明了却没人消费的配置是一种谎言）、
   [[MEM-20260915-051]]（把边界枚举出来再门禁）、[[MEM-20260915-049]]（存在性检查不是解析）。

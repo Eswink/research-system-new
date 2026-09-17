@@ -26,7 +26,7 @@ adapter 的 complete/claim/acquire 三条路径（判据、可 claim 状态表�
 
 | 声称 | 检验方式 | 结果 |
 | --- | --- | --- |
-| 缺口是"声明了但没人驱动"（实测，不是推断） | 限定写法 `ResearchTaskState.State.<NAME>` 扫生产代码（adapters/services/packages/apps/tools/scripts，排除 fakes）：收口前 `RETRY_SCHEDULED` 与 `DEAD_LETTER` 命中 **0**；`TaskCompletion` 无失败类别字段；`retry_policy` 无消费者 | PASS（收口前） |
+| 缺口是"声明了但没人驱动"（实测，不是推断） | 限定写法 `ResearchTaskState.State.<NAME>` 扫生产代码（adapters/services/packages/apps/tools/scripts，排除 fakes）：收口前 `RETRY_SCHEDULED` 与 `DEAD_LETTER` 命中 **0**；`TaskCompletion` 无失败类别字段；`retry_policy` 在 durable 层无消费者。**校正（PLAN-20260915-079 WP-0，2026-09-17）**：此行原写"`retry_policy` 无消费者"，**过宽**——应用层 in-process 重试循环一直在消费它（`packages/application/run_orchestration/task_executor.py:83/87/111`），准确表述是"**durable 层**（engine 的 complete/claim）零消费"；状态扫描那部分（命中 0）不受影响 | PASS（措辞已校正） |
 | 判据只有一份（Domain 纯函数） | `decide_failure` 在 `packages/domain/tasks.py`；SQLite `_complete_impl` 与 PG `complete_impl` 都只调用它，各自没有第二套 if 规则（grep 两条 `decide_failure` 调用点） | PASS |
 | 可重试失败重排（AC-01） | `test_a_retryable_failure_is_rescheduled_and_claimable_again`：状态 → `RETRY_SCHEDULED`、`TASK_RETRY_SCHEDULED` 事件在 outbox、**能再被 claim**、再次 claim 后 attempt 1 → 2（投影与列同口径） | PASS |
 | 交付代次与投影同步 | `test_a_reclaimed_task_projection_advances_with_the_hand_out`：走**不依赖 retry_policy** 的路径（租约过期 → `recover_expired_leases` → 再交付），断言 lease 的 fence 1 → 2 且投影 attempt = 2 | PASS |
@@ -60,6 +60,12 @@ adapter 的 complete/claim/acquire 三条路径（判据、可 claim 状态表�
   把 task_json 当作"提交时的原始快照"来比对，需要改成读投影（`list_tasks` 对 status
   已经是投影口径）。这条口径有回归用例把着：`test_a_reclaimed_task_projection_advances_with_the_hand_out`
   用"租约过期 → 回收 → 再交付"这条**不依赖 retry_policy** 的路径断言投影 attempt 前进。
+
+- **W-7（口径过宽，已就地校正）**：本轮把"`retry_policy` 零消费者"写成了普遍结论，
+  实际只对 durable 层成立——应用层 in-process 重试循环（`task_executor.py`）一直在消费
+  `max_attempts` 与 `retryable_categories`。已按"追加 + 就地标注"校正（PLAN-20260915-079
+  WP-0）；由此还发现一个真缺口：同一个 `max_attempts` 目前是**两套账**（in-process 用局部
+  `attempts` 计数，durable 用 `attempt` 列），留作后续轮次输入。
 
 ## 结论
 

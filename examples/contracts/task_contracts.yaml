@@ -22,6 +22,10 @@ task_contracts:
     retry_policy:
       max_attempts: 3
       retryable_categories: [MODEL_RATE_LIMIT, TOOL_TIMEOUT]
+      # 退避（PLAN-20260915-079）：第 n 次失败后等 min(30 * 2^(n-1), 300) 秒；
+      # 这是"重排"与"再派发"之间唯一的时间间隔，没有它失败快的任务会热循环。
+      backoff_seconds: 30
+      max_backoff_seconds: 300
 
   experiment_execution:
     version: 1.0.0
