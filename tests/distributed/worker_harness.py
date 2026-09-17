@@ -172,7 +172,8 @@ class WorkerHarness:
         In production these daemon threads live in the API process (M14/M16);
         the harness hosts them the same way so failover scenarios converge fast.
         """
-        from services.api.scheduler import LeaseRecoveryScheduler, WorkerReaperScheduler
+        from services.api.lease_recovery import LeaseRecoveryScheduler
+        from services.api.scheduler import WorkerReaperScheduler
 
         # dedicated connections for the scheduler threads (mirrors a real
         # scheduler process owning its own adapters)

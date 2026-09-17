@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from services.api.composition import ApiDeps, assemble
 from services.api.errors import register_error_handlers
 from services.api.experiment_queue import ExperimentQueueDispatcher
+from services.api.lease_recovery import LeaseRecoveryScheduler
 from services.api.middleware import IdempotencyMiddleware
 from services.api.routers import (
     approvals,
@@ -45,7 +46,6 @@ from services.api.routers import (
 )
 from services.api.run_resume import rebuild_and_resume
 from services.api.scheduler import (
-    LeaseRecoveryScheduler,
     OutboxRelayScheduler,
     RetentionScheduler,
     RetryDispatchDeps,

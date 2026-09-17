@@ -23,8 +23,7 @@ import threading
 from dataclasses import dataclass, replace
 from typing import Any
 
-from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
-from packages.application.observability.scope import operation, record_metric_safely
+from packages.application.observability.scope import operation
 from packages.application.observability.signals import (
     OperationOutcome,
     OperationScope,
@@ -133,56 +132,6 @@ class PeriodicDaemon:
     # 兼容既有调用面（某些测试/装配直接用 run_once）
     def run_once(self) -> object:
         return self._execute_pass()
-
-
-class LeaseRecoveryScheduler(PeriodicDaemon):
-    """Background daemon that calls `workflow.recover_expired_leases()` on interval.
-
-    No new Port — it operates on the existing WorkflowEngine port.
-    """
-
-    job = ScheduleJob.LEASE_RECOVERY
-    thread_name = "lease-recovery"
-
-    def __init__(
-        self,
-        workflow: Any,
-        *,
-        interval_seconds: float = 30.0,
-        telemetry: TelemetrySink | None = None,
-        control: Any = None,
-    ) -> None:
-        super().__init__(interval_seconds=interval_seconds, control=control)
-        self._workflow = workflow
-        self._telemetry = telemetry
-
-    def _execute_pass(self) -> int:
-        """One lease-recovery pass.
-
-        M15 复审:此处的 `record_metric` 原先裸调用,抛错会穿出 `_run` 并让
-        lease-recovery 守护线程在进程余生内消失——正是 M14 引入该 scheduler
-        要防的失败模式。现在经 `record_metric_safely`(构造 + 投递都受保护)。
-        """
-        with operation(
-            self._telemetry,
-            scope=OperationScope.LEASE_RECOVERY,
-            name="lease_recovery.pass",
-        ) as op:
-            try:
-                recovered = self._workflow.recover_expired_leases()
-            except Exception:
-                op.set_outcome(OperationOutcome.FAILED, "lease_recovery_failed")
-                raise
-            if recovered:
-                record_metric_safely(
-                    self._telemetry,
-                    lambda: MetricSample(
-                        name=MetricName.WORKFLOW_LEASE_EXPIRED,
-                        kind=MetricKind.COUNTER,
-                        value=recovered,
-                    ),
-                )
-            return int(recovered)
 
 
 class OutboxRelayScheduler(PeriodicDaemon):
@@ -421,8 +370,10 @@ class RetryDispatchScheduler(PeriodicDaemon):
 
         两种续跑来源（GOAL-003 cycle 20）：本进程持有上下文 ⇒ `resume_paused`；否则按
         run 记下的装配来源重建。**重建被诚实拒绝**时把 canonical 放回停车状态（本进程
-        一个任务都没执行，留 RUNNING 就不是事实）；上下文竞态等其他失败仍返回 0 并留
-        RUNNING（派发已释放、没有 continuation）——与 API 面"解除暂停但不伪装续跑"同义。
+        一个任务都没执行，留 RUNNING 就不是事实）；**执行期失败**走同一处补偿
+        （GOAL-004 cycle 7 = EC-06：`compensate_failed_resume` 放回 PAUSED + 记原因），
+        不留悬空 RUNNING——两条入口的失败语义由此一致。状态机不允许（并发迁移）时返回
+        0 且**不动** canonical（那条迁移不是本守护线程做的，不该替别人改状态）。
         """
         try:
             resumed = run.transition(ResearchRunState.Transition.RESUME)
@@ -441,10 +392,23 @@ class RetryDispatchScheduler(PeriodicDaemon):
             except Exception:
                 pass
             return 0
-        except Exception:
+        except Exception as exc:  # noqa: BLE001 - 续跑失败 ⇒ 补偿，不吞掉
+            self._compensate_failed_resume(run_id, resumed, exc)
             return 0
         try:
             self._runs_store.save_run(replace(resumed, state=outcome.state))
         except Exception:
             return 0
         return 1
+
+    def _compensate_failed_resume(self, run_id: str, resumed: Any, failure: BaseException) -> None:
+        """失败补偿：canonical 放回 PAUSED + 事件链记原因（EC-06）。
+
+        补偿本身也只在守护线程的能力圈内做：补偿失败（例如 store 不可用）时本 pass 放弃，
+        下一轮重新评估——不因为一条 run 的补偿失败中断整轮（既有约定）。
+        """
+        try:
+            compensated = self._runs.compensate_failed_resume(resumed, failure)
+            self._runs_store.save_run(compensated)
+        except Exception:  # noqa: BLE001 - 下一轮重新评估，不拖垮整轮
+            pass

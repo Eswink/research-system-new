@@ -49,6 +49,7 @@ from packages.application.run_orchestration.eventing import (
     frozen_payload,
     publish_event,
 )
+from packages.application.run_orchestration.human_gates import pending_human_gates
 from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome
 from packages.application.run_orchestration.phase_runner import (
     PhaseContext,
@@ -56,6 +57,7 @@ from packages.application.run_orchestration.phase_runner import (
     execute_phases,
 )
 from packages.application.run_orchestration.run_terminals import (
+    compensate_failed_resume,
     publish_degraded_run,
     publish_failed_run,
 )
@@ -63,7 +65,6 @@ from packages.application.run_orchestration.session_resolution import resolve_se
 from packages.application.run_orchestration.task_executor import SessionSpecContext
 from packages.application.run_orchestration.usage_recording import record_cancelled_usage
 from packages.domain.core import ID
-from packages.domain.enums import GateType
 from packages.domain.events import EventType
 from packages.domain.manifest import RunManifest
 from packages.domain.protocols import ProtocolDefinition
@@ -301,7 +302,7 @@ class RunOrchestrationService:
                 degrade_run=self._degrade_run,
                 telemetry=self._deps.telemetry,
                 approvals=self._deps.approvals,
-                human_gated=self._pending_human_gates(context),
+                human_gated=pending_human_gates(self._deps.approvals, context.plan, run_id),
                 on_pause=paused.append,
                 pause_requested=lambda: self.pause_requested(run_id),
             ),
@@ -336,6 +337,10 @@ class RunOrchestrationService:
         """续跑协作式暂停：以控制面已迁移的 canonical run 继续剩余 specs。
 
         无暂停上下文 → InvalidInputError（调用方据此诚实降级为"只解除暂停"）。
+
+        GOAL-004 cycle 7（EC-06）：执行阶段的**失败**会把上下文留在 pop 之后（不复活），
+        调用方必须据 `compensate_failed_resume` 把 canonical 放回停车——不在悬空 RUNNING
+        上等一个永远不会来的续跑。
         """
         stashed = self._paused.pop(run_id, None)
         if stashed is None:
@@ -343,20 +348,14 @@ class RunOrchestrationService:
         context, pending = stashed
         return self._execute_with_context(replace(context, run=run), None, pending=pending)
 
-    def _pending_human_gates(self, context: RunContext) -> frozenset[str]:
-        """声明的 HUMAN_GATE phase − 本 run 已裁决审批（无 store 则不暂停）。"""
-        approvals = self._deps.approvals
-        if approvals is None:
-            return frozenset()
-        declared = {
-            gate.phase_id for gate in context.plan.gates if gate.gate is GateType.HUMAN_GATE
-        }
-        decided = {
-            approval.context
-            for approval in approvals.list_for_run(context.run.id.value)
-            if approval.status != "PENDING"
-        }
-        return frozenset(declared - decided)
+    def compensate_failed_resume(self, run: ResearchRun, failure: BaseException) -> ResearchRun:
+        """续跑失败 ⇒ canonical 放回 `PAUSED` 并记原因（GOAL-004 cycle 7 = EC-06）。
+
+        迁移与发事件的动作在 `run_terminals`（450 行上限）；调用方负责把返回的 run 落库。
+        两条入口（API `POST /resume` 与守护线程 `_resume`）共用这一处补偿。
+        """
+        compensated: ResearchRun = compensate_failed_resume(self._publish, run, failure)
+        return compensated
 
     def has_waiting_context(self, run_id: str) -> bool:
         """approve 前置探测：无暂存上下文（如进程重启后）不得伪装恢复执行。"""

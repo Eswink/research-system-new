@@ -238,6 +238,19 @@ def _resume_payload(deps: ApiDeps, run_id: str, run: ResearchRun) -> dict[str, o
         except InvalidInputError:  # 竞态：上下文已被另一次 resume 取走
             payload["note"] = "paused execution context was already consumed"
             return payload
+        except Exception as exc:  # noqa: BLE001 - 续跑失败 ⇒ 补偿，不吞掉
+            # GOAL-004 cycle 7（EC-06）：续跑失败不留悬空 RUNNING。放回 PAUSED 并记原因
+            # （事件链）；响应如实说 `FAILED` + 原因，而 run 行是停车态（不是 RUNNING）。
+            compensated = deps.runs.compensate_failed_resume(run, exc)
+            save_run(deps, compensated)
+            payload = _run_payload(compensated)
+            payload["dispatch"] = "HELD"
+            payload["continuation"] = "FAILED"
+            payload["note"] = (
+                "resume failed and the run was compensated back to PAUSED: "
+                f"{type(exc).__name__}: {exc}"
+            )
+            return payload
         resumed = replace(run, state=outcome.state)
         save_run(deps, resumed)
         payload = _run_payload(resumed)

@@ -54,6 +54,7 @@ class _Runs:
     resumed: list[str] = field(default_factory=list)
     outcome_state: str = ResearchRunState.State.SUCCEEDED
     boom: bool = False
+    compensations: list[tuple[str, str]] = field(default_factory=list)
 
     def has_paused_context(self, run_id: str) -> bool:
         return run_id in self.contexts
@@ -63,6 +64,11 @@ class _Runs:
             raise RuntimeError("resume exploded")
         self.resumed.append(run_id)
         return replace(run, state=self.outcome_state)
+
+    def compensate_failed_resume(self, run: Any, failure: BaseException) -> Any:
+        """与真实现同形：放回 PAUSED（迁移 + 记原因在真实现里发事件）。"""
+        self.compensations.append((run.id.value, type(failure).__name__))
+        return run.transition(ResearchRunState.Transition.PAUSE)
 
 
 def _run(
@@ -145,19 +151,42 @@ def test_a_run_in_another_state_is_not_touched() -> None:
 
 
 def test_one_bad_run_does_not_break_the_pass() -> None:
-    """单个 run 的读面/续跑失败 ⇒ 本轮跳过它（返回 0），不把异常抛出守护线程。"""
+    """单个 run 的读面失败 ⇒ 本轮跳过它（返回 0），不把异常抛出守护线程。"""
     scheduler, workflow, runs, store = _scheduler()
     workflow.boom = True
 
     assert scheduler._execute_pass() == 0
     assert runs.resumed == []
+    assert store.saved == [], "读面失败连状态都不该动"
 
+
+def test_a_failed_resume_is_compensated_back_to_paused() -> None:
+    """续跑失败不留悬空 RUNNING（GOAL-004 cycle 7 = EC-06）：放回 PAUSED 并记原因。"""
+    scheduler, workflow, runs, store = _scheduler()
     workflow.boom = False
     runs.boom = True
+
+    assert scheduler._execute_pass() == 0, "失败的那条不算派发成功"
+
+    assert runs.compensations == [(_RUN_ID, "RuntimeError")], "补偿必须真的发生（带原因类型）"
+    assert store.saved == [
+        (_RUN_ID, ResearchRunState.State.RUNNING),
+        (_RUN_ID, ResearchRunState.State.PAUSED),
+    ], "先迁 RUNNING（续跑需要），失败后补偿回 PAUSED——不留悬空 RUNNING"
+
+
+def test_a_compensated_run_can_be_resumed_on_the_next_pass() -> None:
+    """补偿后可重入：同一入口下一轮 pass 真的能把它续起来（不是把它钉死在停车态）。"""
+    scheduler, _, runs, store = _scheduler()
+    runs.boom = True
     assert scheduler._execute_pass() == 0
-    assert store.saved == [(_RUN_ID, ResearchRunState.State.RUNNING)], (
-        "续跑失败时 run 留在 RUNNING（派发已释放、没有 continuation），不伪装成已续跑"
-    )
+    assert store.saved[-1] == (_RUN_ID, ResearchRunState.State.PAUSED)
+
+    runs.boom = False
+    assert scheduler._execute_pass() == 1, "补偿只是回到可重试的状态，不是终局"
+
+    assert store.saved[-1] == (_RUN_ID, ResearchRunState.State.SUCCEEDED)
+    assert runs.resumed == [_RUN_ID]
 
 
 # --- GOAL-003 cycle 20：本进程没有上下文时按 durable 来源重建续跑 ---

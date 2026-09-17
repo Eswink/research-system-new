@@ -41,12 +41,18 @@ run.completed
 run.cancelled
 run.failed
 run.degraded
+run.resume_failed
 ```
 
 `manifest.frozen` 的 payload 带三项冻结引用：`digest`（覆盖 `frozen_at` 的快照标识）、
 `semantic_digest`（排除冻结时刻，resume 漂移校验的输入）、`pricing_version` +
 `pricing_digest`。语义 digest 必须在事件里：执行期失败收敛的 run 没有 `RunOutcome`
 可读，只能从事件链把 run 行的冻结引用补回来（GOAL-004 cycle 4 = EC-04）。
+
+`run.resume_failed` 是**续跑失败被补偿**的记录（GOAL-004 cycle 7 = EC-06）：一次续跑
+尝试执行失败后，canonical 被放回 `PAUSED`，payload 带 `failure_type` / `message` /
+`compensated_to`。失败**不是终态**，所以它不等于 `run.failed`；读面也不新增"停车原因"
+字段——原因只在事件链里（与 GOAL-004 cycle 2 的口径一致）。
 
 ## 2. Event Envelope
 

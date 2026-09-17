@@ -58,6 +58,9 @@ class EventType(StrEnum):
     # GOAL-004 cycle 3：契约声明 `on_task_failure: CONTINUE` 的 run 跑完全部剩余工作、
     # 但有任务终局失败 ⇒ 收敛 DEGRADED（非终态）并如实点名哪几条失败 + 哪条策略允许的。
     RUN_DEGRADED = "run.degraded"
+    # GOAL-004 cycle 7：一次续跑尝试失败并被补偿回停车（canonical 放回 PAUSED）。
+    # 事件链是这次失败原因的 canonical 记录——读面不新增"停车原因"字段。
+    RUN_RESUME_FAILED = "run.resume_failed"
 
 
 @dataclass(frozen=True, slots=True)
