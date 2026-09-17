@@ -2,7 +2,7 @@
 id: PLAN-20260917-085
 slug: parked-run-read-surface
 title: 停车语义读面：运维面判定"到期会自己走"还是"只有人工能动"
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-17
 updated_at: 2026-09-17
 parent_goal: GOAL-20260917-004
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260917-004 cycle 2 = EC-02（承接 GOAL-003「终止与收口 · BLOCKED 记录（2026-09-18）」后继入口第 3 项）。授权来源：2026-09-17 用户 goal 模式指令（新建承接 GOAL-004 并自动化循环推进）。push-to-main-for-CI 授权沿用 GOAL-001 批准口径（只推 main、不 force、不推旁支触发 CI）。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260917-085-parked-run-read-surface.md
+memory_entries:
+  - MEM-20260917-060
 ---
 
 # PLAN-20260917-085 — 停车语义读面（GOAL-004 cycle 2 = EC-02）
@@ -49,38 +50,49 @@ cycle 18/19 之后，一条 run 停 `PAUSED` 有三种来源，而**运维读面
 
 ## 验收条件
 
-- [ ] AC-01 **到期读面（port）**：`WorkflowEngine.retry_schedule(run_id)` 回答
+- [x] AC-01 **到期读面（port）**：`WorkflowEngine.retry_schedule(run_id)` 回答
   `scheduled`（未到期条数）/ `due`（已到期条数，含无 deadline 的立即重排）/
   `next_retry_at`（最近一条未到期 deadline），分类在 adapter 内用权威时钟完成；
   SQLite/PG/Fake 三实现同判据，PG parity 实跑非 skip。
-- [ ] AC-02 **重排停车可判定**：run 有未到期的重排 ⇒ `GET /runs/{id}` 的
+- [x] AC-02 **重排停车可判定**：run 有未到期的重排 ⇒ `GET /runs/{id}` 的
   `paused_dispatch.kind == "RETRY_SCHEDULED"`、`next_retry_at` 等于那条 deadline、
   `due_now == false`；到期后（注入时钟越过 deadline）同一读面给出 `due_now == true`。
-- [ ] AC-03 **用户暂停可判定**：run 停在 `PAUSED` 且任务面没有任何重排 ⇒
+- [x] AC-03 **用户暂停可判定**：run 停在 `PAUSED` 且任务面没有任何重排 ⇒
   `kind == "USER_PAUSED"`、`next_retry_at == null`、`due_now == false`。
-- [ ] AC-04 **不猜**：没有 workflow 读面 ⇒ `kind == "UNKNOWN"`；run 不是 `PAUSED` ⇒
+- [x] AC-04 **不猜**：没有 workflow 读面 ⇒ `kind == "UNKNOWN"`；run 不是 `PAUSED` ⇒
   `paused_dispatch == null`；列表读面与详情读面同判据（同一处 classify）。
-- [ ] AC-05 **门禁与记录**：定向 + 契约快照重生成 + web 类型同步 + m0 23 项 + RECHECK-085
+- [x] AC-05 **门禁与记录**：定向 + 契约快照重生成 + web 类型同步 + m0 23 项 + RECHECK-085
   + MEM + GOAL-004 cycle 2 记账（迭代日志/EC 状态/child_plans/ALL_PLAN 投影）。
 
 ## 实施清单
 
-- [ ] WP-A **port + 三个 adapter**：`RetrySchedule` 值对象（application/ports）+
+- [x] WP-A **port + 三个 adapter**：`RetrySchedule` 值对象（application/ports）+
   SQLite/PG/Fake 实现（adapter 内权威时钟分类）+ 单测/PG parity。
-- [ ] WP-B **读面**：`services/api/run_pause_view.py`（唯一 classify 处）+
+- [x] WP-B **读面**：`services/api/run_pause_view.py`（唯一 classify 处）+
   `RunDetailDto.paused_dispatch`（`PausedDispatchDto`：kind/next_retry_at/due_now）+
   详情与列表两处接线 + OpenAPI 快照重生成 + web 类型 + `docs/api/CONTROL_PLANE_API.md`
   （含"第三种来源归入其一"的诚实边界）。
-- [ ] WP-C **用例 + 收口**：API 用例（重排停车/到期/用户暂停/无 workflow/非停车）+
+- [x] WP-C **用例 + 收口**：API 用例（重排停车/到期/用户暂停/无 workflow/非停车）+
   定向 + m0 → commit（每 WP 独立）→ push → CI 六 job → RECHECK-085 + MEM + GOAL-004 回写。
 
 ## 证据
 
-（执行后填写）
+- 提交：`9b163cf`（WP-A：port + 三实现 + 单测/PG parity/契约）、`fd8654f`（WP-B：读面 +
+  DTO/OpenAPI/web 类型 + 文档）、`98569c1`（PG 分类挪进 projections：450 行硬上限）、
+  `c2cdc98`（WP-C：API 用例）、`f62bda4`（格式）。
+- 定向：SQLite 6 / PG parity 5（实跑非 skip）/ 契约 8 / API 7 / OpenAPI 快照 8 全 passed；
+  受影响广度复跑 1137 passed / 2 skipped。
+- web 门：lint / typecheck / unit 76 / build / stub e2e 83 / live e2e 36 全绿。
+- m0：**PASS: profile=m0; 23 deterministic checks**；全量 pytest **3804 passed / 10 skipped**
+  （485.85s）。首跑 10 红为环境并发污染（被 kill 的上一轮留下孙子 pytest 进程 + 残留容器），
+  清理后 23/23——隔离复跑该 PG 文件 5 passed 证明非产品缺陷（详见 RECHECK-085「反证与实测」）。
+- 记录：RECHECK-20260917-085（PASS_WITH_WARNINGS，W-1…W-5）+ MEM-20260917-060。
 
 ## 状态历史
 
 - 2026-09-17 建档（GOAL-20260917-004 cycle 2 = EC-02）；`status: IN_PROGRESS`。
+- 2026-09-17 收口：WP-A/WP-B/WP-C 完成；m0 23/23 + 定向全绿；RECHECK-085
+  **PASS_WITH_WARNINGS**；`status: DONE`。
 
 ## 影响报告
 
