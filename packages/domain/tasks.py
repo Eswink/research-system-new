@@ -19,6 +19,7 @@ from packages.domain.enums import (
     FailureCategory,
     TaskKind,
 )
+from packages.domain.failure_policy import FailurePolicyView, failure_policy_view
 from packages.domain.state_machines import ResearchTaskState
 
 # 失败处置 → 落库状态（RETRY 走 RETRY_SCHEDULED，不在这张表里）。
@@ -101,6 +102,15 @@ class TaskContract:
     retry_policy: RetryPolicy | None = None
     failure_policy: dict[str, str | bool | int | list[str]] = field(default_factory=dict)
     idempotency_scope: str = "task"
+
+    def failure_policy_view(self) -> FailurePolicyView:
+        """这份契约声明的失败策略**实际被消费**的部分（GOAL-004 cycle 3 = EC-03）。
+
+        自由 dict 的代价是"写了没人消费也没人知道"；这里把它收敛成冻结视图：
+        能消费的键给取值（本轮只有 run 级 `on_task_failure`），不能消费的键进
+        `unhonored` 由文档点名。取值非法 ⇒ `ValueError`（响亮，不静默回退）。
+        """
+        return failure_policy_view(self.failure_policy)
 
     def disposition(
         self, *, outcome: str, attempt: int, category: FailureCategory | None
