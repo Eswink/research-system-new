@@ -60,6 +60,7 @@
 | [MEM-20260917-060](entries/MEM-20260917-060-parked-semantics-become-read-surface-facts.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260917-085 |
 | [MEM-20260917-061](entries/MEM-20260917-061-declared-policy-needs-a-consumer-or-a-name.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260917-086 |
 | [MEM-20260917-062](entries/MEM-20260917-062-convergence-facts-come-from-the-event-chain.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260917-087 |
+| [MEM-20260917-063](entries/MEM-20260917-063-per-thread-connections-and-the-proxy-surface.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260917-088 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

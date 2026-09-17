@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260917-088](tasks/PLAN-20260917-088-per-thread-sqlite-connection.md) | DONE |
 | [x] | [PLAN-20260917-087](tasks/PLAN-20260917-087-failed-run-semantic-digest.md) | DONE |
 | [x] | [PLAN-20260917-086](tasks/PLAN-20260917-086-failure-policy-gets-a-consumer.md) | DONE |
 | [x] | [PLAN-20260917-085](tasks/PLAN-20260917-085-parked-run-read-surface.md) | DONE |
