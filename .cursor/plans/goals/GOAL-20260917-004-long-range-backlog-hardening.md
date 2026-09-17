@@ -109,7 +109,7 @@ exit_criteria:
       b) 根因定位证据（复现命令、原始日志、影响面）、可复现配方、人工步骤清单；
       两种终态都把「未覆盖范围」写进记录；本 EC 的 PASS 以其终态文档 + 证据为准，
       不以「扫描没报问题」为 PASS 依据。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -137,6 +137,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260917-088-per-thread-sqlite-connection.md
   - .cursor/plans/tasks/PLAN-20260917-089-unified-dispatch-ownership-read-surface.md
   - .cursor/plans/tasks/PLAN-20260917-090-resume-failure-compensation.md
+  - .cursor/plans/tasks/PLAN-20260917-091-security-audit-terminal-state.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -158,7 +159,7 @@ memory_entries: []
 | EC-04 | 第 5 项 | 失败 run 与 `manifest.frozen` 事件的语义 digest（W-1/W-2） | API/事件/重放一致性用例 + 反证 | **PASS**（cycle 4：PLAN-20260917-087 / RECHECK-087；详见下方 EC-04 注记） |
 | EC-05 | 第 6 项 | 锁粒度（每线程连接）+ 两个派发方的统一读面 | 并发反证场景 + 三态读面用例 + PG parity | **PASS**（① cycle 5：PLAN-20260917-088 / RECHECK-088；② cycle 6：PLAN-20260917-089 / RECHECK-089；详见下方注记） |
 | EC-06 | 第 7 项 | `resume_paused` 失败补偿（不留悬空 RUNNING） | 失败注入 + 重入用例 + 反证 | **PASS**（cycle 7：PLAN-20260917-090 / RECHECK-090；详见下方注记） |
-| EC-07 | 第 1 项 | 完整安全审计的可复核终态（二选一） | 终态文档 + 封印标识/findings 处置 或 根因+配方+人工清单 | PENDING |
+| EC-07 | 第 1 项 | 完整安全审计的可复核终态（二选一） | 终态文档 + 封印标识/findings 处置 或 根因+配方+人工清单 | PASS |
 
 **EC-01 注记（2026-09-17 cycle 1）**：`ProtocolBody`（正文 + sha256，构造即校验）随启动
 落 canonical；重建优先用冻结正文，外部文件/草稿修订消失不再阻断（API 面实测：
@@ -250,6 +251,25 @@ canonical 记录，**读面不新增"停车原因"字段**（与 EC-02 口径一
 正文的旧 run 会被诚实拒绝）；失败原因无任务级归因（只有异常类型/文本）；守护线程补偿失败静默
 降级（既有"不拖垮整轮"约定）；API 响应仍是 200（以 `continuation` 判别结局）。
 
+**EC-07 注记（2026-09-17 cycle 8）**：走**终态 a**——独立密封深扫首次跑通（hook 侧
+`scanner_enobufs` 依旧，两条通道不互相抵消）。扫描标识：`scan-2026-09-17T20-05-18.700Z-663d0976701f`，
+seal `sha256:b2af673997a765567d519bc4aee226c861deac1a6c6ec7dc76e87f69a0610347`，
+depth=deep，`runStatus=inconclusive` / `completeness=partial`（**该扫描器在本仓库的常态**：
+同 projectId 连续 6 次深扫剖面逐次相同 3/28/5，与 `docs/audits/PA1_MIMOSA_REVIEW.md`
+两次记录同口径），36 findings = high 3 / medium 28 / low 5。**逐条处置**（每条：结论/依据/处置）
+落在 `docs/audits/MIMOSA_DEEP_SCAN_20260917.md`：1 条产品代码 HIGH（`yaml.load`）经代码行 +
+3 个已执行用例判**误报**（加载器是 `yaml.SafeLoader` 子类，且「危险 tag 不执行」被用例钉住）；
+2 条 HIGH 落在**未跟踪**的第三方转储目录（`git ls-files artifacts/` = 0、`.gitignore:36`、
+`git log --all` 为空）；27 条 MEDIUM 是同一静态污点启发式（把 env→**连接目标**读成
+env→**SQL 文本**），判误报的依据是产品树全量动态 SQL 形态检索**零命中 + 反证**（同一模式对
+四种蓄意形态命中、对参数化写法不命中）+ 汇点逐行核对；1 条 MEDIUM（worker GPU 镜像 env）
+污点汇实为 `tempfile.mkdtemp`，另有已执行用例断言该 env 不进沙箱子进程；5 条 LOW 是 M12
+参考实验的固定 seed。**证据可复核性**：三件产物逐件 sha256 与 `seal.json.artifacts` 全部一致
+（聚合 `digest` 的合成属扫描器内部，明确**不宣称**可复算）；可复跑配方与未覆盖范围
+（静态-only、threatModel 0 入口/0 主体/0 授权面、业务逻辑候选 0、validation investigated 0、
+依赖 advisory 命中 1 条**未署名**未决、扫描输入含 gitignored 目录）同文记录。
+**本 EC 的 PASS 不以「扫描没报问题」为依据，也不主张项目安全。**
+
 **后继入口 ↔ EC 映射与取舍**：第 1 项（完整安全审计）在 GOAL-003 记录里就被标注为
 「运维动作，不在循环内可完成」——本 GOAL 把它**单列**为 EC-07，判据容纳两种合格终态，
 不做成循环主线（derive 顺序取 EC 表首个 PENDING，故 EC-07 只在循环空档或有新证据时
@@ -281,11 +301,10 @@ EC-02 为 M、EC-06 为 S、EC-07 为 M（运维/审计，进度不由本循环�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 7 已收口**（EC-06：PLAN-20260917-090 / RECHECK-090；CI 结论见迭代日志
-第 7 行）；EC 表只剩 **EC-07**（完整安全审计的可复核终态，二选一：a) 扫描跑通 ⇒ findings 逐条
-处置 + 结论文本；b) 环境仍 `scanner_enobufs` ⇒ 根因 + 可复现配方 + 人工步骤清单；两种终态都禁止
-宣称"项目安全"）。下一条工程 cycle = cycle 8 = EC-07，先按 `scratch/goal4-mimosa-enobufs.md`
-的既有证据核对扫描器环境现状，再决定走哪一条终态。
+当前续点：**cycle 8 已收口**（EC-07：PLAN-20260917-091 / RECHECK-20260917-091；终态文档
+`docs/audits/MIMOSA_DEEP_SCAN_20260917.md`；CI 结论见迭代日志第 8 行）；**EC 表 EC-01…EC-07 全 PASS**
+⇒ 下一条工程 cycle = cycle 9 = **GOAL 收口复检**（独立 RECHECK 复核七个 EC 在当前树上的证据与 CI
+逐 job 现状，通过后按 README 终止条款置 `status=ACHIEVED` 并写「终止与收口」）。
 
 ## 驱动
 
@@ -361,6 +380,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 5 | PLAN-20260917-088（EC-05 第①半：控制面每线程一条 SQLite 连接；driver=client-goal / owner=root-agent） | `64d668a`（`ThreadLocalConnection` + `_open_sqlite`/`close_all` 装配 + 夹具统一走池 + 池单测 5 + 负载用例 2） | 定向：池单测 **5 passed** / 负载用例 **2 passed**（内存 + 文件两路径）/ `tests/api` **420 passed** / `adapters-sqlite+application+contracts+e2e+postgres` 复跑 **1371 passed / 4 skipped**（213.47s）；mypy **911 files** 绿；live e2e **36 passed**（真 app + 文件库）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3846 passed / 10 skipped**，510.93s；首跑红 1 处 = `conftest.make_base_deps` 54 行撞 50 行/函数硬上限 ⇒ 拆出 `tests/api/base_fixtures.py`（`121246c`）后复跑全绿） | **CI**：head `d8c9377`（`64d668a` 池/装配/用例 + `121246c` 夹具拆分 + `d8c9377` 记录提交，同一棵树）→ run **35245282964 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 1000006994…1000006999，无重跑） | Mimosa 把 `__getattr__` 之前的显式转发方法（`execute(self, sql, ...)`）误报成 SQL 注入 ⇒ 改成委托式代理面（少写 N 个转发方法，也把误报消除）；夹具默认 `:memory:` 不覆盖每线程连接 ⇒ 另加文件库夹具的负载用例；池不是 `sqlite3.Connection` 子类 ⇒ 装配边界 cast（mypy 看不到鸭子类型） | EC-05 **部分交付**（① 交付并验收，② 统一派发读面待做）⇒ EC-05 保持 PENDING；cycle 7 的 1×404 在 hermetic harness 不可复现（不宣称已修） | cycle 6 = PLAN-089（EC-05 ②：worker claim 与 retry dispatch 的统一派发读面 + 三态用例 + PG parity），先反向搜索两家当前各自能读到什么、lease 事实在哪些表里 |
 | 6 | PLAN-20260917-089（EC-05 第②半：统一派发读面 `dispatch_ownership` + `dispatch` 字段；driver=client-goal / owner=root-agent） | `07213ee`（WP-A：port `DispatchOwnership`/`LeaseHolder` + SQLite/PG/Fake 三实现 + 契约套件 + SQLite 注入时钟单测 + PG parity）、`48fe31d`（WP-B：DTO/视图/路由器 + OpenAPI 快照 + web 类型与夹具 + CONTROL_PLANE_API/PORTS + 7 条 API 用例）、`925ac6c`（修复：PG 引擎 479 行 ⇒ 搬 `projections.py`/`db.py`；3 处 mypy；两条断言按反证增强） | 定向（DSN 固化配方，PG 实跑）`api+contracts+adapters+application+e2e+postgres` **2108 passed / 7 skipped**（347.66s）；`test_python_source_limits` **927 passed**；mypy **917 files** 绿；web 门全绿（lint / typecheck / unit **76** / build / stub e2e **83** / live e2e **36**）；**反证三跑**：① 去掉过期判据 ⇒ SQLite/PG 各 1 红、② 去掉 LOST 判据 ⇒ 各 1 红、③ 去掉路由器装配 ⇒ 新 API 用例 **7 红**（首跑 5 红 ⇒ 两条“两侧相等”用例假绿 ⇒ 补“先钉住读面真的答了”后复跑 7 红）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3887 passed / 10 skipped**，521.87s；首跑 2 红 = 3 处 mypy + PG 引擎 450 行硬上限，均本改动引入 ⇒ 修类型 + 搬代码；第二次复跑唯一红项 = MEM-064 frontmatter 的 YAML 引号 ⇒ 修复后第三次实跑全绿） | 首跑 m0 红 2 处（类型/行数，均本改动引入）；反证暴露一处**假绿**（列表同判与只读性用例在 `dispatch=None` 时两侧同为空仍相等）⇒ 断言只增强；PG 引擎撞 450 行上限 ⇒ 搬代码而非改门禁 | EC-05 **PASS**（① RECHECK-088 + ② RECHECK-089，W-1…W-6：`ClaimRequest.lease_ttl_seconds` 无人消费、列表 N+1、读面不含健康度、Fake 无过期语义、PG 两读无快照、`kind` 词表张力）；EC-06/EC-07 仍 PENDING | cycle 7：derive 取 EC 表首个 PENDING（EC-06 = `resume_paused` 失败补偿，RECHECK-082 W-3），先反向搜索确认失败路径当前把 run 留在什么状态、两条入口（API / 守护线程）各自怎么收敛 |
 | 7 | PLAN-20260917-090（EC-06：续跑失败补偿 `compensate_failed_resume` + `run.resume_failed`；driver=client-goal / owner=root-agent） | `56a93e8`（事件类型 + 词表同步 + 共享补偿 + 两条入口 + API/调度器用例 + `human_gates.py`/`lease_recovery.py` 两处 450 行搬迁） | 定向（DSN pin）`api+application+e2e+domain+contracts` **1993 passed / 4 skipped**（233.21s）；调度器 **11 passed**、补偿 API **4 passed**；mypy **920 files** 绿；`test_python_source_limits` **930 passed**；web 门全绿（lint / typecheck / unit **76** / build / stub e2e **83** / live e2e **36**）；**反证两跑**：去掉 API 补偿 ⇒ 2 红、去掉守护线程补偿 ⇒ 2 红（失败文本 = 旧行为 `RUNNING != PAUSED`）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3896 passed / 10 skipped**，509.48s；首跑 22/23，红项 = MEM-065 引用尚未写入的 RECHECK-090（记录顺序）⇒ 补齐后复跑全绿） | 两处 450 行硬上限（`service.py`/`scheduler.py`）以**搬代码**收口（`human_gates.py` / `lease_recovery.py`），未改门禁；未 pin DSN 的组合跑出现 3 条假红 ⇒ 隔离 + pin 复跑判定为环境 | EC-06 **PASS**（RECHECK-090，W-1…W-5：`resume_after_approval` 同形未修、上下文不复活、失败无任务级归因、守护线程补偿失败静默降级、响应仍 200）；EC-07 仍 PENDING | cycle 8：derive 取 EC 表首个 PENDING（EC-07 = 完整安全审计的可复核终态，二选一；`scanner_enobufs` 证据见 `scratch/goal4-mimosa-enobufs.md`） |
+| 8 | PLAN-20260917-091（EC-07：完整安全审计的可复核终态；driver=client-goal / owner=root-agent） | 见本 cycle 提交（终态文档 `docs/audits/MIMOSA_DEEP_SCAN_20260917.md` + PLAN/RECHECK/MEM/ALL_PLAN/GOAL 回写） | MCP 独立密封深扫 **completed**（`scan-2026-09-17T20-05-18.700Z-663d0976701f`，seal `sha256:b2af6739…`，36 = high 3 / medium 28 / low 5；三件产物逐件 sha256 与 `seal.json.artifacts` **全 ok**；同 projectId 连续 6 次深扫剖面逐次相同）；定向：`tests/application/protocol_authoring/test_draft_service.py` **13 passed**（含危险 tag 不执行 / 钩子继承 SafeLoader）、`tests/distributed/test_security_distributed.py` 凭据隔离 2 条 **2 passed**；动态 SQL 形态检索产品树**零命中 + 反证**（蓄意四形态命中、参数化写法不命中）；治理 validate 绿；m0 见「状态历史」 | CI 结论见「状态历史」（push 后回填） | **无产品代码变更**：36 条逐条处置 = 1 条产品代码 HIGH 误报（SafeLoader 子类）+ 2 条 HIGH 仓库外（未跟踪转储）+ 27 条 MEDIUM 同签名误报（env→DSN 被读成 env→SQL 文本）+ 1 条 MEDIUM 误报（汇点为 `tempfile.mkdtemp`）+ 5 条 LOW 误报（M12 固定 seed） | EC-07 **PASS**（终态 a；RECHECK-091 W-1…W-5 = 依赖 advisory 未署名未决 / hook 侧 enobufs 仍存 / 扫描输入含 gitignored 内容 / `artifacts/` 内明文 token 未跟踪 / 威胁建模与授权面零覆盖）；**EC-01…EC-07 全 PASS** | GOAL 收口：cycle 9 = 收口复检（独立 RECHECK 复核七个 EC 在当前树上的证据 + CI 逐 job 现状），通过后按 README 终止条款置 `ACHIEVED` 并写「终止与收口」 |
 
 
 ## 状态历史
@@ -461,3 +481,21 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   （collector-quality / quality-windows-latest / eval-gate / quality-ubuntu-latest /
   container-quality / console-frontend，无重跑）；本 cycle 的代码提交 `56a93e8`、记录提交
   `3a324ee` 与 m0 结果回填 `0a58b6d` 同一棵树，被该 run 覆盖（CI 只跑 head）。
+- 2026-09-17 cycle 8 建档：EC-07 **IN_PROGRESS**（PLAN-20260917-091，`parent_goal` 已投影
+  ALL_PLAN；driver=client-goal / owner=root-agent）；通道判定 = commit hook 侧**仍**
+  `scanner_enobufs`，改用 MCP 独立密封深扫并**首次跑通**（deep / completed / 36 findings /
+  seal `sha256:b2af6739…`）；同 projectId 连续 6 次深扫剖面逐次相同（3 / 28 / 5）⇒
+  `inconclusive` + `partial` 是本扫描器在本仓库的常态，不是本轮回归。
+- 2026-09-17 cycle 8 收口：EC-07 **PASS**（终态 a）——36 条 findings 逐条处置，**全部**为误报
+  （1 条产品代码 HIGH = `SafeLoader` 子类；27 条 MEDIUM = env→DSN 被启发式读成 env→SQL 文本；
+  1 条 MEDIUM = 污点汇实为 `tempfile.mkdtemp`；5 条 LOW = M12 固定 seed）或**仓库外**
+  （2 条 HIGH 落在未跟踪的 `artifacts/` 转储：`git ls-files artifacts/` = 0、`.gitignore:36`、
+  `git log --all` 为空）⇒ **无产品代码变更**；终态文档 `docs/audits/MIMOSA_DEEP_SCAN_20260917.md`
+  + `docs/INDEX.md` 登记；**本地 m0 首跑 22/23**（红项 = `framework/validate`：PLAN-091 缺注册章节
+  `## 验收条件 / ## 实施清单 / ## 证据 / ## 状态历史 / ## 影响报告`；**补章节，未改 validator**）
+  ⇒ 复跑 **23/23 全绿**（全量 pytest **3896 passed / 10 skipped**，493.96s）；定向 =
+  `test_draft_service` **13 passed**（含危险 tag 不执行）+ `tests/distributed` 凭据隔离 **2 passed**；
+  反证 = 动态 SQL 形态检索对四种蓄意形态命中、对参数化写法不命中（产品树零命中因此有意义）；
+  RECHECK-091 = PASS_WITH_WARNINGS（W-1…W-5：依赖 advisory 未署名未决 / hook 侧 enobufs 仍存 /
+  扫描输入含 gitignored 内容 / `artifacts/` 内明文 token 未跟踪 / 威胁建模与授权面零覆盖）；
+  **EC-01…EC-07 全 PASS** ⇒ 下一条工程 cycle = cycle 9 = GOAL 收口复检。
