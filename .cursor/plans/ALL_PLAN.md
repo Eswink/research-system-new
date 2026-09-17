@@ -7,7 +7,7 @@
 |  | Plan | Status |
 | --- | --- | --- |
 | [x] | [PLAN-20260917-089](tasks/PLAN-20260917-089-unified-dispatch-ownership-read-surface.md) | DONE |
-| [ ] | [PLAN-20260917-090](tasks/PLAN-20260917-090-resume-failure-compensation.md) | IN_PROGRESS |
+| [x] | [PLAN-20260917-090](tasks/PLAN-20260917-090-resume-failure-compensation.md) | DONE |
 | [x] | [PLAN-20260917-088](tasks/PLAN-20260917-088-per-thread-sqlite-connection.md) | DONE |
 | [x] | [PLAN-20260917-087](tasks/PLAN-20260917-087-failed-run-semantic-digest.md) | DONE |
 | [x] | [PLAN-20260917-086](tasks/PLAN-20260917-086-failure-policy-gets-a-consumer.md) | DONE |

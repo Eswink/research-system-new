@@ -2,7 +2,7 @@
 id: PLAN-20260917-090
 slug: resume-failure-compensation
 title: 续跑失败即补偿：不留悬空 RUNNING、原因进事件链、补偿后可重入（EC-06）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-17
 updated_at: 2026-09-17
 parent_goal: GOAL-20260917-004
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260917-004 cycle 7 = EC-06（后继入口第 7 项 / RECHECK-082 W-3）。授权来源：2026-09-17 用户 goal 模式指令（新建承接 GOAL-004 并自动化循环推进）。push-to-main-for-CI 授权沿用 GOAL-001 批准口径（只推 main、不 force、不推旁支触发 CI）。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260917-090-resume-failure-compensation.md
+memory_entries:
+  - MEM-20260917-065
 ---
 
 # PLAN-20260917-090 — 续跑失败补偿（GOAL-004 cycle 7 = EC-06）
@@ -59,42 +60,55 @@ memory_entries: []
 
 ## 验收条件
 
-- [ ] AC-01 **不留悬空 RUNNING（API 入口）**：注入 `resume_paused` 失败（进程内上下文在）
+- [x] AC-01 **不留悬空 RUNNING（API 入口）**：注入 `resume_paused` 失败（进程内上下文在）
   ⇒ 响应如实（`continuation=FAILED` + 原因、`dispatch=HELD`）且 **run 行是 `PAUSED`**
   （不是 `RUNNING`）。
-- [ ] AC-02 **不留悬空 RUNNING（守护线程入口）**：同一个失败注入 ⇒ 该 run 被放回 `PAUSED`，
+- [x] AC-02 **不留悬空 RUNNING（守护线程入口）**：同一个失败注入 ⇒ 该 run 被放回 `PAUSED`，
   且本轮 dispatch 不因它中断（其它到期 run 照常续跑）。
-- [ ] AC-03 **原因可从 canonical 事实读到**：两个入口各写一条 `run.resume_failed`
+- [x] AC-03 **原因可从 canonical 事实读到**：两个入口各写一条 `run.resume_failed`
   （`failure_type`/`message`/`compensated_to=PAUSED`），并能从 run 的事件链读回
   （`GET /runs/{id}/events` 面或 store 直读）。
-- [ ] AC-04 **可重入**：失败一次（补偿回 `PAUSED`）后，把注入的失败撤掉再 resume ⇒
+- [x] AC-04 **可重入**：失败一次（补偿回 `PAUSED`）后，把注入的失败撤掉再 resume ⇒
   **成功**（走出 `REBUILT` 或 `RESUMED`），run 不再停在停车态。
-- [ ] AC-05 **反证**：去掉补偿（异常直接冒/直接 return 0）⇒ AC-01/AC-02 用例红（run 留
+- [x] AC-05 **反证**：去掉补偿（异常直接冒/直接 return 0）⇒ AC-01/AC-02 用例红（run 留
   `RUNNING`），撤掉后复绿；反证必须实跑（Edit 改→跑→改回）。
-- [ ] AC-06 **收口**：事件词表门禁同步（`EventType` 36 → 37 + `DOCUMENTED_EVENT_TYPES`
+- [x] AC-06 **收口**：事件词表门禁同步（`EventType` 36 → 37 + `DOCUMENTED_EVENT_TYPES`
   + `EVENT_MODEL.md`）；定向套件 + m0 23 项 + web 门；RECHECK-090 + MEM + GOAL/ALL_PLAN
   记账。
 
 ## 实施清单
 
-- [ ] WP-A **域/应用**：`EventType.RUN_RESUME_FAILED`；`run_terminals.compensate_failed_resume`
+- [x] WP-A **域/应用**：`EventType.RUN_RESUME_FAILED`；`run_terminals.compensate_failed_resume`
   （迁移 + 发事件）；`service.compensate_failed_resume` 薄接线（450 行上限 ⇒ 先把
   `_pending_human_gates` 搬到 `human_gates.py` 腾出空间，**不改门禁**）；词表门禁同步
   （domain 用例 + `EVENT_MODEL.md`）。
-- [ ] WP-B **两条入口**：API `_resume_payload` 捕获失败 ⇒ 补偿 + 落库 + 如实响应；
+- [x] WP-B **两条入口**：API `_resume_payload` 捕获失败 ⇒ 补偿 + 落库 + 如实响应；
   守护线程 `_resume` 捕获失败 ⇒ 同一补偿 + 落库 + 不中断本轮。
-- [ ] WP-C **用例 + 反证 + 记录**：API 用例（失败补偿/事件可读/**可重入**）、守护线程用例
+- [x] WP-C **用例 + 反证 + 记录**：API 用例（失败补偿/事件可读/**可重入**）、守护线程用例
   （补偿 + 不中断）、反证一跑、定向 + m0 + web 门、RECHECK-090 + MEM + GOAL/ALL_PLAN。
 
 ## 证据
 
-（收口时回填。）
+- 提交：`56a93e8`（WP-A/WP-B/WP-C 一体：事件类型 + 词表同步 + 共享补偿 + 两条入口 +
+  API/调度器用例 + 两处 450 行搬迁）。
+- 反证两跑（Edit 改→跑→改回）：去掉 API 补偿 ⇒ 2 红；去掉守护线程补偿 ⇒ 2 红
+  （失败文本 = 旧行为 `RUNNING != PAUSED`）。
+- 定向（DSN pin）：`tests/api tests/application tests/e2e tests/domain tests/contracts`
+  **1993 passed / 4 skipped**（233.21s）；调度器 **11 passed**、补偿 API **4 passed**；
+  mypy **920 files** 绿；`test_python_source_limits` **930 passed**。
+- web 门：lint / typecheck / unit **76** / build / stub e2e **83** / live e2e **36** 全绿。
+- m0：首跑 22/23（红项 = MEM-065 引用尚未写入的 RECHECK-090，记录顺序）⇒ 复跑见 GOAL 迭代
+  日志第 7 行（含全量 pytest 3896 passed / 10 skipped）。
+- 记录：RECHECK-20260917-090（PASS_WITH_WARNINGS，W-1…W-5）+ MEM-20260917-065。
 
 ## 状态历史
 
 - 2026-09-17 建档（GOAL-20260917-004 cycle 7 = EC-06，driver=client-goal / owner=root-agent）；
   反向搜索确认机制 = `resume_paused` 先 pop 后执行（service.py:340）+ API 面异常外冒 +
   守护线程面 `except Exception: return 0`，两条路径都不补偿；`status: IN_PROGRESS`。
+- 2026-09-17 收口：WP-A/WP-B/WP-C 完成；补偿落在 `run_terminals`（一处）、两条入口接线、
+  事件词表 36 → 37；API 4 条 + 调度器 11 条用例全绿，反证两跑有效；RECHECK-090
+  PASS_WITH_WARNINGS；`status: DONE`。
 
 ## 影响报告
 
