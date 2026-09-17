@@ -145,13 +145,20 @@ memory_entries: []
 
 | EC | 后继入口 | 标准（摘要） | 验证 | 状态 |
 | --- | --- | --- | --- | --- |
-| EC-01 | 第 2 项 | 重建的来源自足（协议正文冻结进 run 行或 CAS） | e2e：删文件后仍能重建续跑 + 篡改反证 + 持久化往返 | PENDING |
+| EC-01 | 第 2 项 | 重建的来源自足（协议正文冻结进 run 行或 CAS） | e2e：删文件后仍能重建续跑 + 篡改反证 + 持久化往返 | **PASS**（cycle 1：PLAN-20260917-084 / RECHECK-084；详见下方 EC-01 注记） |
 | EC-02 | 第 3 项 | 读面区分两种 `PAUSED`（重排停车 vs 用户暂停） | 读面用例（注入时钟）+ PG parity + 文档同源 | PENDING |
 | EC-03 | 第 4 项 | `failure_policy` 有真实消费者 | 反向搜索 + fail-fast/重试对照用例 + 回归对照 | PENDING |
 | EC-04 | 第 5 项 | 失败 run 与 `manifest.frozen` 事件的语义 digest（W-1/W-2） | API/事件/重放一致性用例 + 反证 | PENDING |
 | EC-05 | 第 6 项 | 锁粒度（每线程连接）+ 两个派发方的统一读面 | 并发反证场景 + 三态读面用例 + PG parity | PENDING |
 | EC-06 | 第 7 项 | `resume_paused` 失败补偿（不留悬空 RUNNING） | 失败注入 + 重入用例 + 反证 | PENDING |
 | EC-07 | 第 1 项 | 完整安全审计的可复核终态（二选一） | 终态文档 + 封印标识/findings 处置 或 根因+配方+人工清单 | PENDING |
+
+**EC-01 注记（2026-09-17 cycle 1）**：`ProtocolBody`（正文 + sha256，构造即校验）随启动
+落 canonical；重建优先用冻结正文，外部文件/草稿修订消失不再阻断（API 面实测：
+删除模板后 `continuation=REBUILT`，修复前为 `NONE` + `protocol file not found`）；
+漂移判据未放宽（换一份自洽正文 ⇒ 语义漂移拒绝、一次都不执行）；拒绝原因点名两条事实。
+范围注记（RECHECK-084 W-2/W-4）：旧 run（早于正文冻结）没有正文，重启续跑仍依赖来源
+可解析；`protocol_body_digest` 非空不保证重建成功（目录/契约漂移仍拒绝）。
 
 **后继入口 ↔ EC 映射与取舍**：第 1 项（完整安全审计）在 GOAL-003 记录里就被标注为
 「运维动作，不在循环内可完成」——本 GOAL 把它**单列**为 EC-07，判据容纳两种合格终态，
@@ -253,7 +260,8 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 建档（本文件 + GOAL-003 事实更正行；driver=client-goal / owner=root-agent） | 见状态历史 | `.cursor/skills/governance-check/scripts/validate.py` 绿（本机实跑） | 见状态历史（建档提交 run 结论） | — | EC-01…EC-07 全 PENDING | cycle 1 = EC-01（来源自足续跑：协议正文冻结进 run 行或 CAS） |
+| 0 | 建档（本文件 + GOAL-003 事实更正行；driver=client-goal / owner=root-agent） | `7c0d9f2` | `.cursor/skills/governance-check/scripts/validate.py` 绿（本机实跑） | run **35203036505**（7c0d9f2）：**failure**——仅 `collector-quality` 红，2 条 PG 退避用例断言失败（其余五 job success） | 定位为**测试墙钟依赖**（非本提交缺陷）：夹具注入固定引擎时钟却用 SQL `now()` 挪 deadline，CI 墙钟越过 `START` 后必红；修复提交 `5607992`（夹具改用引擎时钟，断言未改）→ run **35204710864 六个 job 全 success** | EC-01…EC-07 全 PENDING | cycle 1 = EC-01（来源自足续跑：协议正文冻结进 run 行或 CAS） |
+| 1 | PLAN-20260917-084（来源自足续跑：`ProtocolBody` 冻结进 run 行 + 重建只认它） | `3d9cc73`（WP-A 域/装配/两个 store）、`87c2d86`（WP-B 重建/读面/用例）、收口记录提交见下 | 定向：api **9** / e2e **5** / domain **4+13** / sqlite **4** / pg **3** 全 passed；契约 `test_openapi_snapshot.py` **8 passed**（DTO 新增字段后重生成快照 +11 行）；web 门（lint/typecheck/unit/build/web-*）全绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3773 passed / 10 skipped**，497.96s；首轮 m0 红 2 处——契约快照漂移 + web 夹具缺字段——均为本改动引入、已修后复跑全绿） | 见本行下方「CI」注 | 首轮 m0 红 2 处（契约快照漂移 + web 夹具缺字段），均为本改动引入、已修 | EC-01 **PASS**（RECHECK-084）；新发现 W-1：重建"没有剩余工作"的 run 会退化成重跑全部并收敛 `FAILED`；EC-02…EC-07 PENDING | cycle 2 = EC-02（读面区分两种 `PAUSED`）或先处置 W-1（重建无剩余工作的语义） |
 
 ## 状态历史
 

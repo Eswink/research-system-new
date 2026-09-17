@@ -56,6 +56,7 @@
 | [MEM-20260915-056](entries/MEM-20260915-056-terminal-state-orphans-the-declared-retry.md) | ACTIVE | repository | 0.92 | 2027-09-18 | PLAN-20260915-081 |
 | [MEM-20260915-057](entries/MEM-20260915-057-dispatcher-transition-first-and-visible.md) | ACTIVE | repository | 0.92 | 2027-09-18 | PLAN-20260915-082 |
 | [MEM-20260915-058](entries/MEM-20260915-058-process-context-is-not-a-continuation.md) | ACTIVE | repository | 0.93 | 2027-09-18 | PLAN-20260915-083 |
+| [MEM-20260917-059](entries/MEM-20260917-059-freeze-the-bytes-not-the-pointer.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260917-084 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

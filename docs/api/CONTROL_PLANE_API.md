@@ -169,6 +169,10 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
 - 旧 `protocol_path` 请求保持兼容。
 - WP-B（PLAN-20260910-037）：validate/compile/preflight/dry-run 与 runs 启动共用
   同一 `protocol_source` loader（互斥来源、缺失 422、未知修订 404）。
+- GOAL-004 cycle 1：启动时把**被解析的那份正文**连同 sha256 冻结进 run 行
+  （`protocol_body`），重启后的重建只认这份字节——外部文件/草稿修订消失都不再阻断
+  续跑；`GET /runs/{id}` 的 `protocol_body_digest` 为空表示该 run 早于正文冻结，
+  其重启续跑仍依赖来源可解析。冻结不改变漂移判据：重建仍要过语义 digest 校验。
 
 ## Runs
 
@@ -179,7 +183,7 @@ GET    /projects/{id}/settings
 PUT    /projects/{id}/settings
 GET    /runs/{id}
 POST   /runs/{id}/pause                   （PLAN-048 协作式暂停：派发面停止认领）
-POST   /runs/{id}/resume                  （恢复派发；有暂停上下文才续跑）
+POST   /runs/{id}/resume                  （恢复派发；无进程内上下文时按 run 的冻结正文重建续跑）
 POST   /runs/{id}/cancel
 POST   /runs/{id}/fork                     （未提供：Fork/Manifest Revision 属后续能力）
 GET    /runs/{id}/events

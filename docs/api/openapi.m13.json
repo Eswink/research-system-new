@@ -5302,6 +5302,17 @@
             "title": "Project Id",
             "type": "string"
           },
+          "protocol_body_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Body Digest"
+          },
           "protocol_id": {
             "title": "Protocol Id",
             "type": "string"
