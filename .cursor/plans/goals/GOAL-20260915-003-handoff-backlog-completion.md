@@ -104,6 +104,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-078-retry-policy-becomes-real.md
   - .cursor/plans/tasks/PLAN-20260915-079-retry-backoff-after-reschedule.md
   - .cursor/plans/tasks/PLAN-20260915-080-one-attempt-ledger-in-process-retry.md
+  - .cursor/plans/tasks/PLAN-20260915-081-parked-retry-run-level-redispatch.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-079-retry-backoff-after-reschedule.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
@@ -812,3 +813,28 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   （eval-gate / collector-quality / container-quality / console-frontend /
   quality-ubuntu-latest / quality-windows-latest，无重跑）；另：cycle 16 的记录提交
   `1dd2a89` → run **35168577630 六个 job 全 success**。
+- 2026-09-18 cycle 18 开轮（停下来的重试）：derive = PLAN-20260915-081。cycle 17 把
+  "退避 > 0 ⇒ 交回派发方"落地后，任务落 `RETRY_SCHEDULED`（带 `retry_at`），但对
+  AGENT_SESSION 任务**没有派发方**——探针 `scratch/goal3-cycle18-probe1-parked-retry.py`
+  量出（**收口前**）：`phase runner 返回 = FAILED`（FAILED 是终态，`RESUME` 抛
+  `InvalidTransitionError`）、`on_pause 拿到的 specs = 0`（连续跑上下文都没有）、
+  而 durable 侧其实一切正常（deadline 前 `acquire` 被拒、到期后能租到 `fence=2`
+  并真的再执行）⇒ 声明得完完整整的重排是**孤儿**。
+- 2026-09-18 cycle 18 交付：① **重排未到期 ≠ 失败**——执行器把这次尝试标成
+  `retry_deferred`，phase runner 据此**停车**（`PAUSED`）而不是判 run `FAILED`；
+  ② **失败的任务与它后面的所有 specs 一起交回** service 暂存（复用 PLAN-048 的
+  `on_pause` + `_paused` 机制，已成功的任务仍计入 `outcome.tasks`）；③ **resume 就是
+  派发方**：到期后 `resume_paused` 续跑会真的执行第二次尝试并跑完后续 phase，没到期就
+  resume 只是重新停车（不执行、不判失败、不破坏 run）；④ **deadline 判定细分**：守卫从裸
+  `InvalidInputError` 改为子类 `RetryNotDueError`（两个 adapter 一致），让调用方能区分
+  "现在不是交付时机"和"这个任务交付不了"（既有的 `except InvalidInputError` 语义不变）。
+  定向：e2e **5 passed**（真 SQLite + 注入时钟：停车 / 早到 resume 重停 / 到期后真的重试
+  且 run `SUCCEEDED` / 无策略对照组 / 有重试无退避对照组）+ 应用层 **4 passed**；
+  宽口径 `tests/application+adapters+domain+e2e+postgres+contracts` **1990 passed / 7 skipped**；
+  mypy **884 files clean**；ruff/format 干净；m0 **PASS: profile=m0; 23 deterministic checks**
+  （全量 pytest **3719 passed / 10 skipped**）。**未扩面**：自动重派（守护线程/调度器按时
+  resume）仍未做、跨进程续跑仍没有（进程内暂存，重启后诚实报 `continuation=NONE`）、
+  读面不区分"重排停车 vs 用户暂停"——三条都如实登记。
+- 2026-09-18 cycle 18 门禁（**首轮红是收口自伤，未改门禁**）：第 1 轮 m0 红于
+  `framework/validate`——`任务计划未加入 ALL_PLAN: PLAN-20260915-081`（收口时漏登记
+  ALL_PLAN 行）⇒ 登记后复跑 **23/23 全绿**。

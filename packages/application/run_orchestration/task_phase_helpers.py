@@ -34,6 +34,9 @@ class PhaseStep:
     handoff: object | None = None
     verdict: str | None = None
     failure: Any | None = None
+    # 这次失败是"交回派发方的重排"（durable 侧已 RETRY_SCHEDULED、等 deadline），
+    # 不是终局失败：run 级据此停车（PAUSED）而不是判 FAILED（PLAN-20260915-081）。
+    retry_deferred: bool = False
 
 
 def registration_from_experiment(

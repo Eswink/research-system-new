@@ -31,7 +31,7 @@ from adapters.sqlite.workflow_claim import (
 )
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
 from packages.application.observability.scope import record_metric_safely
-from packages.application.ports.errors import InvalidInputError
+from packages.application.ports.errors import InvalidInputError, RetryNotDueError
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
@@ -166,9 +166,11 @@ class SqliteWorkflowOps:
             return lease_from_row(existing)
         # 退避 deadline 对**每个交付入口**成立，不只是 claim 的候选扫描
         # （PLAN-20260915-080）：按 task_id 直接租也不能把没到期的重试提前放出去。
+        # 拒绝用 RetryNotDueError：调用方据此重新停车，而不是把 run 判失败
+        # （PLAN-20260915-081）。
         if _before_retry_deadline(row, timestamp_now(self._now).value):
             self._record("acquire_lease", task_id, error="InvalidInputError")
-            raise InvalidInputError(
+            raise RetryNotDueError(
                 f"task {task_id} is waiting for its retry backoff until {row['retry_at']}"
             )
         lease = new_lease(

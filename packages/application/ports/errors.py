@@ -57,6 +57,15 @@ class InvalidInputError(PermanentPortError):
         super().__init__(message, failure_category=FailureCategory.VALIDATION_FAILURE)
 
 
+class RetryNotDueError(InvalidInputError):
+    """重排还没到 `retry_at`：现在不是交付时机，**不是**调用方 bug。
+
+    与别的 InvalidInputError 区分开，调用方据此重新停车（等 deadline）而不是把 run
+    判失败（PLAN-20260915-081）。对既有调用方它仍然是一个 InvalidInputError——
+    "deadline 之前不得交付"这条不变量对外语义不变。
+    """
+
+
 class PortTimeoutError(TransientPortError):
     """超时；属于瞬时失败，可重试。"""
 

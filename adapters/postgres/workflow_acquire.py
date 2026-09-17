@@ -9,7 +9,7 @@ from typing import Any, cast
 from adapters.postgres.db import server_now
 from adapters.postgres.leases import lease_from_row, new_lease
 from adapters.postgres.serialization import decode_timestamp_pg, reencode_task_json
-from packages.application.ports.errors import InvalidInputError
+from packages.application.ports.errors import InvalidInputError, RetryNotDueError
 from packages.application.ports.workflow_engine import TaskLease
 from packages.domain.events import EventType
 from packages.domain.task_state import ResearchTaskState
@@ -96,10 +96,12 @@ def acquire_lease_impl(
         row: Any = _require_task(conn, record, task_id)
         # 退避 deadline 对**每个交付入口**成立，不只是 claim 的候选扫描
         # （PLAN-20260915-080）：按 task_id 直接租也不能把没到期的重试提前放出去。
+        # 拒绝用 RetryNotDueError：调用方据此重新停车，而不是把 run 判失败
+        # （PLAN-20260915-081）。
         deadline: Any = row["retry_at"] if "retry_at" in row else None
         if deadline is not None and deadline > server_now(conn, now):
             record("acquire_lease", task_id, error="InvalidInputError")
-            raise InvalidInputError(
+            raise RetryNotDueError(
                 f"task {task_id} is waiting for its retry backoff until {deadline}"
             )
         existing: Any = _get_existing_lease(conn, task_id)

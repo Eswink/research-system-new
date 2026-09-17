@@ -25,6 +25,7 @@ from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.errors import (
     PermanentPortError,
     PortError,
+    RetryNotDueError,
     TransientPortError,
 )
 from packages.application.ports.workflow_engine import (
@@ -48,6 +49,11 @@ class TaskExecutionResult:
     attempts: int = 1
     failure_category: FailureCategory | None = None
     message: str = ""
+    # 这次失败**不是终局**：durable 侧已经是 RETRY_SCHEDULED，下一次尝试要等
+    # deadline，由派发方（run 级：resume / 控制面；worker 级：claim）再来取。
+    # run 级据此把 run 停在 PAUSED 而不是判失败——FAILED 是终态，会把声明的重排
+    # 变成孤儿（PLAN-20260915-081）。
+    retry_deferred: bool = False
 
     @property
     def succeeded(self) -> bool:
@@ -117,13 +123,9 @@ def execute_task(
     policy = _retry_policy(contract)
     while True:
         acquired = _acquire_or_fail(engine, task)
-        if acquired[0] is None:
-            # 重放/去重边界：任务已被投递但本执行单元无 lease 权限时安全收敛，
-            # 不传播崩溃（同一 run 重放 → RUN FAILED，不产生重复副作用）。
-            return _task_failed(
-                task, max(task.attempt, 1), None, acquired[1] or "task already delivered"
-            )
-        lease = acquired[0]
+        if isinstance(acquired, _AcquireFailure):
+            return _refused(task, acquired)
+        lease = acquired
         attempt = max(lease.fence, 1)
         current = _with_attempt(task, attempt, lease.lease_id)
         outcome = _attempt_once(
@@ -143,7 +145,11 @@ def execute_task(
             # 声明了退避 ⇒ **不**在这个进程里等，把下一次尝试交回派发方
             # （PLAN-20260915-080）：deadline 是 durable 的事实，进程内自旋会绕过它。
             return _task_failed(
-                current, attempt, outcome.category, "retry deferred to the dispatcher"
+                current,
+                attempt,
+                outcome.category,
+                "retry deferred to the dispatcher",
+                deferred=True,
             )
 
 
@@ -237,14 +243,35 @@ def _failure_reason(category: FailureCategory | None) -> str | None:
     return category.value if category is not None else None
 
 
-def _acquire_or_fail(
-    engine: WorkflowEngine, task: ResearchTask
-) -> tuple[TaskLease | None, str | None]:
-    """获取 lease；任务已被投递（重放边界）时返回 (None, message) 安全收敛。"""
+@dataclass(frozen=True, slots=True)
+class _AcquireFailure:
+    """拿不到 lease 的两种情形：**还没到期**（可以再停）与真的交付不了。"""
+
+    message: str
+    not_due: bool = False
+
+
+def _refused(task: ResearchTask, failure: _AcquireFailure) -> TaskExecutionResult:
+    """acquire 被拒：还没到 deadline ⇒ 交回派发方重新停车；其余照旧安全收敛。
+
+    重放/去重边界（任务已被投递但本执行单元无 lease 权限）仍然不传播崩溃
+    （同一 run 重放 → RUN FAILED，不产生重复副作用）。
+    """
+    if failure.not_due:
+        return _task_failed(task, max(task.attempt, 1), None, failure.message, deferred=True)
+    return _task_failed(
+        task, max(task.attempt, 1), None, failure.message or "task already delivered"
+    )
+
+
+def _acquire_or_fail(engine: WorkflowEngine, task: ResearchTask) -> TaskLease | _AcquireFailure:
+    """获取 lease 或把拒绝原因交回调用方；**不在这里**决定 run 的生死。"""
     try:
-        return engine.acquire_lease(task.id.value), None
+        return engine.acquire_lease(task.id.value)
+    except RetryNotDueError as error:
+        return _AcquireFailure(str(error), not_due=True)
     except PermanentPortError as error:
-        return None, str(error)
+        return _AcquireFailure(str(error))
 
 
 def _task_failed(
@@ -252,6 +279,8 @@ def _task_failed(
     attempts: int,
     failure_category: FailureCategory | None,
     message: str,
+    *,
+    deferred: bool = False,
 ) -> TaskExecutionResult:
     return TaskExecutionResult(
         task=task,
@@ -259,6 +288,7 @@ def _task_failed(
         attempts=attempts,
         failure_category=failure_category,
         message=message,
+        retry_deferred=deferred,
     )
 
 

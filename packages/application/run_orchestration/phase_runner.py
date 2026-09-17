@@ -150,7 +150,12 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
         held = _pause_if_requested(deps, ctx, groups[index:], outcomes)
         if held is not None:
             return held
-        failure = _execute_phase_group(deps, ctx, group, outcomes, handoffs)
+        failure = _execute_phase_group(
+            deps,
+            ctx,
+            group,
+            _GroupRun(outcomes=outcomes, handoffs=handoffs, tail=groups[index + 1 :]),
+        )
         if failure is not None:
             return failure
     deps.emit(EventType.RUN_COMPLETED, {"run_id": ctx.run_id}, ctx.run_id, ctx.trace_id, None)
@@ -248,12 +253,24 @@ def _phase_groups(
         index = end
 
 
+@dataclass(slots=True)
+class _GroupRun:
+    """一个 phase 组的执行现场：累积结果 + 本组之后的剩余组（参数对象）。
+
+    `_execute_phase_group` / `_park_for_retry` 需要同时拿到"已经成功的任务""本组
+    之后的 specs""handoff 累积"，逐个当参数传会撞上 5 参数上限——收敛成一个现场对象。
+    """
+
+    outcomes: list[TaskOutcome]
+    handoffs: dict[str, object]
+    tail: list[tuple[SessionSpec, ...]]
+
+
 def _execute_phase_group(
     deps: PhaseRunnerDeps,
     ctx: PhaseContext,
-    group: "tuple[SessionSpec, ...]",
-    outcomes: "list[TaskOutcome]",
-    handoffs: "dict[str, object]",
+    group: tuple[SessionSpec, ...],
+    run: _GroupRun,
 ) -> RunOutcome | None:
     """执行一个 phase 分组(外包 PHASE span);返回失败 RunOutcome 或 None。
 
@@ -272,7 +289,7 @@ def _execute_phase_group(
         name="phase",
         correlation=phase_correlation,
     ) as phase_op:
-        for task, contract, spec_context in group:
+        for position, (task, contract, spec_context) in enumerate(group):
             task_correlation = CorrelationRef(
                 run_id=ctx.run_id,
                 task_id=task.id.value,
@@ -289,12 +306,42 @@ def _execute_phase_group(
                     deps,
                     TaskContext(task=task, contract=contract, spec_context=spec_context, ctx=ctx),
                 )
+            if step.retry_deferred:
+                return _park_for_retry(deps, ctx, group, position, run)
             if step.failure is not None:
                 phase_op.set_outcome(OperationOutcome.FAILED, "task_failed")
                 return step.failure  # type: ignore[no-any-return]
-            handoffs[task.id.value] = step.handoff
-            outcomes.append(TaskOutcome(task=task, outcome="SUCCEEDED", verdict=step.verdict))
+            run.handoffs[task.id.value] = step.handoff
+            run.outcomes.append(TaskOutcome(task=task, outcome="SUCCEEDED", verdict=step.verdict))
     return None
+
+
+def _park_for_retry(
+    deps: PhaseRunnerDeps,
+    ctx: PhaseContext,
+    group: tuple[SessionSpec, ...],
+    position: int,
+    run: _GroupRun,
+) -> RunOutcome:
+    """把"重排还没到期"的 run 停在 PAUSED，而不是判失败（PLAN-20260915-081）。
+
+    失败的那个任务与它后面的所有 specs 一起交回 service 暂存供 resume 续跑。
+    为什么不能判失败：run 的 FAILED 是**终态**（`FAILED --RESUME-->` 不在迁移表里），
+    一旦落 FAILED，durable 侧那条 `RETRY_SCHEDULED`（带 `retry_at`）就再没有派发方
+    会来取——声明了退避的重排会变成孤儿（RECHECK-20260915-080 W-1）。
+    """
+    if deps.on_pause is not None:
+        deps.on_pause(tuple(group[position:]) + tuple(spec for chunk in run.tail for spec in chunk))
+    return RunOutcome(
+        run_id=ctx.run_id,
+        state=ResearchRunState.State.PAUSED,
+        message=(
+            f"task {group[position][0].id.value} retry scheduled; run parked until the retry is due"
+        ),
+        tasks=tuple(run.outcomes),
+        manifest_digest=ctx.frozen_manifest_digest,
+        system_failure=False,
+    )
 
 
 def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
@@ -327,6 +374,10 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
             trace_id=tctx.ctx.trace_id,
         )
     if not execution.succeeded:
+        if execution.retry_deferred:
+            # 不是终局失败：durable 侧已经排了下一次尝试（带 deadline），由派发方
+            # 再来取。这里不 fail run——FAILED 是终态，会把那条重排变成孤儿。
+            return PhaseStep(retry_deferred=True)
         return PhaseStep(
             failure=deps.fail(
                 tctx.ctx.run_id,
