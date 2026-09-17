@@ -216,8 +216,9 @@ EC-02 为 M、EC-06 为 S、EC-07 为 M（运维/审计，进度不由本循环�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 3 已收口**（EC-03 PASS，RECHECK-086；CI 结论见迭代日志第 3 行）；
-下一条工程 cycle = cycle 4 = EC-04（失败 run 与 `manifest.frozen` 事件的语义 digest）。
+当前续点：**cycle 4 进行中**（EC-04 = 失败 run 与 `manifest.frozen` 事件的语义 digest；
+子 PLAN-20260917-087 已建档并投影 ALL_PLAN）。cycle 3 已收口（EC-03 PASS，RECHECK-086；
+CI run 35227784813 六个 job 全 success，见迭代日志第 3 行）。
 
 ## 驱动
 
@@ -288,7 +289,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 0 | 建档（本文件 + GOAL-003 事实更正行；driver=client-goal / owner=root-agent） | `7c0d9f2` | `.cursor/skills/governance-check/scripts/validate.py` 绿（本机实跑） | run **35203036505**（7c0d9f2）：**failure**——仅 `collector-quality` 红，2 条 PG 退避用例断言失败（其余五 job success） | 定位为**测试墙钟依赖**（非本提交缺陷）：夹具注入固定引擎时钟却用 SQL `now()` 挪 deadline，CI 墙钟越过 `START` 后必红；修复提交 `5607992`（夹具改用引擎时钟，断言未改）→ run **35204710864 六个 job 全 success** | EC-01…EC-07 全 PENDING | cycle 1 = EC-01（来源自足续跑：协议正文冻结进 run 行或 CAS） |
 | 1 | PLAN-20260917-084（来源自足续跑：`ProtocolBody` 冻结进 run 行 + 重建只认它） | `3d9cc73`（WP-A 域/装配/两个 store）、`87c2d86`（WP-B 重建/读面/用例）、`5141e06`（WP-C 记录 + 契约快照 + 文档） | 定向：api **9** / e2e **5** / domain **4+13** / sqlite **4** / pg **3** 全 passed；契约 `test_openapi_snapshot.py` **8 passed**（DTO 新增字段后重生成快照 +11 行）；web 门（lint/typecheck/unit/build/web-*）全绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3773 passed / 10 skipped**，497.96s；首轮 m0 红 2 处——契约快照漂移 + web 夹具缺字段——均为本改动引入、已修后复跑全绿） | **CI**：记录提交 `5141e06` → run **35211094454 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，无重跑）；另：WP-A/WP-B 提交经 `5141e06` 的同一棵树覆盖验证（CI 只跑 head） | 首轮 m0 红 2 处（契约快照漂移 + web 夹具缺字段），均为本改动引入、已修 | EC-01 **PASS**（RECHECK-084）；新发现 W-1：重建"没有剩余工作"的 run 会退化成重跑全部并收敛 `FAILED`；EC-02…EC-07 PENDING | cycle 2 = EC-02（停车语义读面：PLAN-20260917-085 已建档） |
 | 2 | PLAN-20260917-085（停车语义读面：`retry_schedule` 读面 + `paused_dispatch`；driver=client-goal / owner=root-agent） | `9b163cf`（WP-A：port `RetrySchedule` + SQLite/PG/Fake + 单测/PG parity/契约）、`fd8654f`（WP-B：`run_pause_view` + DTO/OpenAPI/web 类型 + 文档）、`98569c1`（PG 分类挪进 projections：450 行硬上限）、`c2cdc98`（WP-C：API 用例）、`f62bda4`（格式）、`8da4b13`（RECHECK-085 + MEM-060 + GOAL/ALL_PLAN） | 定向：sqlite **6** / pg parity **5**（pinned DSN，实跑非 skip）/ 契约 **8** / API **7** / OpenAPI 快照 **8** 全 passed；受影响广度复跑 **1137 passed / 2 skipped**；web 门全绿（unit **76** / stub e2e **83** / live e2e **36**）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3804 passed / 10 skipped**，485.85s）。首跑 10 红经隔离复跑判定为**环境并发污染**（被 kill 的上一轮留下孙子 pytest 进程共享 test DB/容器），清理后 23/23 | **CI**：head `7316d1d`（`2dbf3c7` 记录提交 + WP 提交 + `8da4b13` 记录提交，同一棵树）→ run **35219834215 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 非 0，无重跑） | 首跑 m0 红 10 处 = 环境并发污染（非本改动；隔离复跑该 PG 文件 5 passed 为判据）；`python/format-check`/`python/typecheck`/450 行硬上限三处为本改动引入、已修 | EC-02 **PASS**（RECHECK-085，W-1…W-5）；EC-03…EC-07 PENDING；候选下一 cycle：EC-03（`failure_policy` 消费者）或 RECHECK-084 W-1（"没有剩余工作"的重建语义） | cycle 3：derive 取 EC 表首个 PENDING（EC-03 = `failure_policy` 真实消费者），先做反向搜索确认真实缺口 |
-| 3 | PLAN-20260917-086（失败策略的消费者：`on_task_failure` 消费 + DEGRADED 落点 + 未消费键点名；driver=client-goal / owner=root-agent） | `2a014ad`（WP-A 域视图）、`7896525`（WP-B 消费/事件/e2e/文档 + 词表门禁同步）、`652e712`（450 行/50 行硬上限的搬移重构）、`1c280b2`（RECHECK-086 + MEM-061 + GOAL/ALL_PLAN） | 定向：domain **5** / application **6** / e2e **2**（新增）+ 受影响套件复跑 **977 passed**；事件词表门禁 **14 passed**；mypy 906 files 绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3823 passed / 10 skipped**，511.99s）。首跑 m0 红 2 处 = `phase_runner.py` 456 行 + `_execute_group` 61 行、`service.py` 483 行（均为本改动引入、已搬代码修复） | 推送后轮询（本行随 CI 结论回填） | 事件词表门禁先红（新增 2 个事件类型）⇒ 补词表与清单，断言未改；组合复跑的 3 条 PG 假红 = 手工顺序把 `tests/api` 排到 `test_pg_crash_restart` 之后（非产品缺陷，隔离复跑 + m0 全量为判据） | EC-03 **PASS**（RECHECK-086，W-1…W-5）；EC-04…EC-07 PENDING | cycle 4：derive 取 EC 表首个 PENDING（EC-04 = 失败 run 与 `manifest.frozen` 事件的语义 digest），先反向搜索确认 `run_from_execution` 的 ValueError 收敛分支与事件 payload 现状 |
+| 3 | PLAN-20260917-086（失败策略的消费者：`on_task_failure` 消费 + DEGRADED 落点 + 未消费键点名；driver=client-goal / owner=root-agent） | `2a014ad`（WP-A 域视图）、`7896525`（WP-B 消费/事件/e2e/文档 + 词表门禁同步）、`652e712`（450 行/50 行硬上限的搬移重构）、`1c280b2`（RECHECK-086 + MEM-061 + GOAL/ALL_PLAN） | 定向：domain **5** / application **6** / e2e **2**（新增）+ 受影响套件复跑 **977 passed**；事件词表门禁 **14 passed**；mypy 906 files 绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3823 passed / 10 skipped**，511.99s）。首跑 m0 红 2 处 = `phase_runner.py` 456 行 + `_execute_group` 61 行、`service.py` 483 行（均为本改动引入、已搬代码修复） | **CI**：head `186963c`（`2a014ad`/`7896525`/`652e712` 三个 WP 提交 + `1c280b2` 记录提交 + `186963c` 迭代日志回填，同一棵树）→ run **35227784813 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 1000006747…1000006752，无重跑） | 事件词表门禁先红（新增 2 个事件类型）⇒ 补词表与清单，断言未改；组合复跑的 3 条 PG 假红 = 手工顺序把 `tests/api` 排到 `test_pg_crash_restart` 之后（非产品缺陷，隔离复跑 + m0 全量为判据） | EC-03 **PASS**（RECHECK-086，W-1…W-5）；EC-04…EC-07 PENDING | cycle 4：derive 取 EC 表首个 PENDING（EC-04 = 失败 run 与 `manifest.frozen` 事件的语义 digest），先反向搜索确认 `run_from_execution` 的 ValueError 收敛分支与事件 payload 现状 |
 
 ## 状态历史
 
@@ -315,3 +316,12 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   "未消费键点名"（`unhonored`），容忍失败收敛 `DEGRADED`（此前无生产者）并发 `run.degraded`；
   m0 23/23（全量 pytest 3823 passed / 10 skipped）；首跑红 2 处 = 两个文件撞 450 行硬上限，
   以"搬代码"而非改门禁收口。
+- 2026-09-17 cycle 3 CI 记录：head `186963c` → run **35227784813 六个 job 全 success**
+  （runner_id 1000006747…1000006752，无重跑）；首次轮询脚本因 API 响应截断 JSON 解析失败
+  （`goal4-ci-watch.sh` 的重试分支未覆盖解析异常），重跑同一脚本即取得终态——按"重跑脚本
+  而非猜结论"处置，未记录任何未观察到的结论。
+- 2026-09-17 cycle 4 建档：EC-04 **IN_PROGRESS**（PLAN-20260917-087，`parent_goal` 已投影
+  ALL_PLAN；driver=client-goal / owner=root-agent）；反向搜索确认缺口 =
+  `eventing.frozen_payload` 无 `semantic_digest`（`eventing.py:57-64`）+ 收敛分支
+  `frozen_manifest_refs_of` 只读三项（`run_execution.py:65-82`）⇒ FAILED run 的语义 digest
+  缺失，`assert_semantics_frozen` 直接拒绝（`convergence.py:29`）。

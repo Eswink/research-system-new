@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260917-087](tasks/PLAN-20260917-087-failed-run-semantic-digest.md) | IN_PROGRESS |
 | [x] | [PLAN-20260917-086](tasks/PLAN-20260917-086-failure-policy-gets-a-consumer.md) | DONE |
 | [x] | [PLAN-20260917-085](tasks/PLAN-20260917-085-parked-run-read-surface.md) | DONE |
 | [x] | [PLAN-20260917-084](tasks/PLAN-20260917-084-freeze-protocol-body-into-run.md) | DONE |
