@@ -125,7 +125,7 @@ def test_the_fake_never_reports_a_retry_it_cannot_write() -> None:
     这是既有边界（与 `due_retry_task_ids` 同源），钉在这里是为了让它显式：看到 Fake
     上读面全零时，那不是"没有重排"，而是"Fake 不会产生重排"。
     """
-    engine: WorkflowEngine = FakeWorkflowEngine()  # type: ignore[assignment]
+    engine: WorkflowEngine = FakeWorkflowEngine()
     _rescheduled(engine, _task(), backoff=600)
 
     assert engine.retry_schedule(RUN_ID) == RetrySchedule()

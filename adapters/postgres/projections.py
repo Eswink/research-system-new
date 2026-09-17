@@ -11,8 +11,13 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any
 
-from adapters.postgres.serialization import TaskRow, decode_envelope, decode_task
-from packages.application.ports.workflow_engine import TaskCompletion
+from adapters.postgres.serialization import (
+    TaskRow,
+    decode_envelope,
+    decode_task,
+    decode_timestamp_pg,
+)
+from packages.application.ports.workflow_engine import RetrySchedule, TaskCompletion
 from packages.domain.events import EventEnvelope
 from packages.domain.task_state import ResearchTaskState
 
@@ -77,14 +82,12 @@ def cancelled(conn: Any) -> set[str]:
     return {row["task_id"] for row in rows}
 
 
-def retry_schedule(
-    conn: Any, run_id: str, now: datetime
-) -> tuple[int, int, datetime | None]:
-    """该 run 的重排读面：(未到期条数, 已到期条数, 最近未到期期限)。
+def retry_schedule(conn: Any, run_id: str, now: datetime) -> RetrySchedule:
+    """该 run 的重排读面（未到期条数 / 已到期条数 / 最近未到期期限）。
 
     与 claim 候选扫描、`due_retry_task_ids` 同一列同一判据；`now` 由调用方按权威
     时钟给出（生产：`server_now` → DB 时钟；测试：注入时钟），与写 `retry_at` 时
-    同一个源。期限分类在 SQL 之外做，好让"最近未到期期限"和计数出自同一遍扫描。
+    同一个源。分类在 SQL 之外做，好让"最近未到期期限"和计数出自同一遍扫描。
     """
     rows: Any = conn.execute(
         "SELECT retry_at FROM tasks WHERE run_id = %s AND status = %s",
@@ -105,7 +108,11 @@ def retry_schedule(
         scheduled += 1
         if next_retry_at is None or value < next_retry_at:
             next_retry_at = value
-    return scheduled, due, next_retry_at
+    return RetrySchedule(
+        scheduled=scheduled,
+        due=due,
+        next_retry_at=decode_timestamp_pg(next_retry_at) if next_retry_at is not None else None,
+    )
 
 
 def _as_utc(value: datetime) -> datetime:

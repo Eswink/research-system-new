@@ -35,7 +35,7 @@ from adapters.postgres.projections import (
 from adapters.postgres.projections import (
     retry_schedule as proj_retry_schedule,
 )
-from adapters.postgres.serialization import TaskRow, decode_timestamp_pg, encode_task
+from adapters.postgres.serialization import TaskRow, encode_task
 from adapters.postgres.telemetry_notes import note_queue_lag, note_task_duration
 from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_impl
 from adapters.postgres.workflow_claim import ClaimPayload, claim_next_impl
@@ -355,17 +355,13 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         """
         self._ensure_open()
         try:
-            scheduled, due, deadline = proj_retry_schedule(
+            schedule = proj_retry_schedule(
                 self._conn, run_id, server_now(self._conn, self._now)
             )
         except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
             raise self._wrap_operational(exc) from exc
-        self._record("retry_schedule", run_id, result=f"scheduled={scheduled} due={due}")
-        return RetrySchedule(
-            scheduled=scheduled,
-            due=due,
-            next_retry_at=decode_timestamp_pg(deadline) if deadline is not None else None,
-        )
+        self._record("retry_schedule", run_id, result=str(schedule))
+        return schedule
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。
