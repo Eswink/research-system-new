@@ -557,4 +557,8 @@ PASS_WITH_WARNINGS）在**当前树**上重新验证：`scratch/verify_goal004_c
   （run_number 148；container-quality / quality-ubuntu-latest / collector-quality / eval-gate /
   quality-windows-latest / console-frontend 全 success）——记录提交只改 `.cursor/**` 同样触发六 job，
   按同口径等到终态（收口复检时读回）。
+- 2026-09-17 cycle 9 收口提交 CI 记录：head `8d7673a` → run **35276681244 六个 job 全 success**
+  （run_number 149；container-quality / quality-ubuntu-latest / collector-quality / eval-gate /
+  quality-windows-latest / console-frontend 全 success）——本 GOAL 的**最后一个工程 cycle** 的记录
+  提交；此后本文件 `status=ACHIEVED`，按循环入口协议第 1 条只输出终止摘要、不再改动。
 
