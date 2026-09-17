@@ -132,6 +132,10 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260917-084-freeze-protocol-body-into-run.md
   - .cursor/plans/tasks/PLAN-20260917-085-parked-run-read-surface.md
+  - .cursor/plans/tasks/PLAN-20260917-086-failure-policy-gets-a-consumer.md
+  - .cursor/plans/tasks/PLAN-20260917-087-failed-run-semantic-digest.md
+  - .cursor/plans/tasks/PLAN-20260917-088-per-thread-sqlite-connection.md
+  - .cursor/plans/tasks/PLAN-20260917-089-unified-dispatch-ownership-read-surface.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -243,8 +247,9 @@ EC-02 为 M、EC-06 为 S、EC-07 为 M（运维/审计，进度不由本循环�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 5 部分交付已收口**（EC-05 ①：PLAN-20260917-088 / RECHECK-088；CI 结论见迭代日志第 5 行）；
-下一条工程 cycle = cycle 6 = EC-05 ②（PLAN-089：worker claim 与 retry dispatch 的统一派发读面）。
+当前续点：**cycle 6 进行中**（EC-05 ②：PLAN-20260917-089 已建档并投影 ALL_PLAN，
+`status: IN_PROGRESS`；driver=client-goal / owner=root-agent）；
+cycle 5 的收口 CI 已记录（run 35246943135，见状态历史末行）。
 
 ## 驱动
 
