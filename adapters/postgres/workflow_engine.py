@@ -8,11 +8,9 @@ from typing import Any
 
 import psycopg
 import psycopg.errors
-from psycopg.rows import dict_row
 
 from adapters.postgres.base import PostgresAdapterBase
-from adapters.postgres.db import connect as pg_connect
-from adapters.postgres.db import dsn_from_env, server_now
+from adapters.postgres.db import resolve_connection, server_now
 from adapters.postgres.outbox import PgOutboxWriter
 from adapters.postgres.projections import (
     cancelled as proj_cancelled,
@@ -24,10 +22,13 @@ from adapters.postgres.projections import (
     deliveries as proj_deliveries,
 )
 from adapters.postgres.projections import (
-    list_tasks as proj_list_tasks,
+    dispatch_ownership as proj_dispatch_ownership,
 )
 from adapters.postgres.projections import (
-    live_lease_holders as proj_live_lease_holders,
+    due_retries as proj_due_retries,
+)
+from adapters.postgres.projections import (
+    list_tasks as proj_list_tasks,
 )
 from adapters.postgres.projections import (
     mark_outbox_published as proj_mark_published,
@@ -38,7 +39,7 @@ from adapters.postgres.projections import (
 from adapters.postgres.projections import (
     retry_schedule as proj_retry_schedule,
 )
-from adapters.postgres.serialization import TaskRow, decode_timestamp_pg, encode_task
+from adapters.postgres.serialization import TaskRow, encode_task
 from adapters.postgres.telemetry_notes import note_queue_lag, note_task_duration
 from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_impl
 from adapters.postgres.workflow_claim import ClaimPayload, claim_next_impl
@@ -63,7 +64,6 @@ from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
     DispatchOwnership,
-    LeaseHolder,
     RetrySchedule,
     TaskCompletion,
     TaskIdentity,
@@ -71,25 +71,7 @@ from packages.application.ports.workflow_engine import (
 )
 from packages.domain.enums import FailureCategory
 from packages.domain.events import EventEnvelope
-from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
-
-
-def _resolve_connection(dsn: str | None, connection: Any | None) -> tuple[Any, bool]:
-    """Return (connection, owns_connection) with dict_row factory applied."""
-    if connection is not None:
-        conn = connection
-        owns = False
-    else:
-        resolved = dsn or dsn_from_env()
-        if not resolved:
-            raise ValueError("PostgresWorkflowEngine requires dsn or connection")
-        conn, owns = pg_connect(resolved), True
-    try:
-        conn.row_factory = dict_row
-    except Exception:
-        pass
-    return conn, owns
 
 
 class PostgresWorkflowEngine(PostgresAdapterBase):
@@ -109,7 +91,7 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         self._now = now
         self._telemetry = telemetry
         self._owned_lease_ids: set[str] = set()
-        self._conn, self._owns_connection = _resolve_connection(dsn, connection)
+        self._conn, self._owns_connection = resolve_connection(dsn, connection)
         self._outbox = PgOutboxWriter(self._conn, self._now)
 
     def close(self) -> None:
@@ -333,22 +315,14 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         """该 run 已到期的重排任务（调度器判断"停车中的 run 能不能再交付"）。
 
         与 claim 候选扫描同一判据、同一个时钟源（`server_now`：生产 DB 时钟 /
-        测试注入时钟），所以"到期"在两处永远指同一件事。
+        测试注入时钟），所以"到期"在两处永远指同一件事。扫描在 `projections.py`
+        （与 SQLite 侧同形），本方法只做时钟、错误边界与记录。
         """
         self._ensure_open()
         try:
-            rows = self._conn.execute(
-                "SELECT task_id FROM tasks WHERE run_id = %s AND status = %s"
-                " AND (retry_at IS NULL OR retry_at <= %s) ORDER BY task_id",
-                (
-                    run_id,
-                    ResearchTaskState.State.RETRY_SCHEDULED,
-                    server_now(self._conn, self._now),
-                ),
-            ).fetchall()
+            ids = proj_due_retries(self._conn, run_id, server_now(self._conn, self._now))
         except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
             raise self._wrap_operational(exc) from exc
-        ids = tuple(str(row["task_id"]) for row in rows)
         self._record("due_retry_task_ids", run_id, result=str(len(ids)))
         return ids
 
@@ -372,25 +346,15 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         与 SQLite 实现同一判据、同一个时钟源（`server_now`：生产 DB 时钟 / 测试注入
         时钟）：重排读面 + 活租约持有者（未过期且持有者不是 LOST worker）。两件事实在
         同一个连接上读到；读面是观测，不承诺跨表快照一致（并发写期间两读之间可能前移）。
+        组合在 `projections.py`（与 SQLite 侧同形），本方法只做时钟、错误边界与记录。
         """
         self._ensure_open()
         try:
-            now = server_now(self._conn, self._now)
-            schedule = proj_retry_schedule(self._conn, run_id, now)
-            holders = tuple(
-                LeaseHolder(
-                    task_id=task_id,
-                    worker_id=worker_id,
-                    fence=fence,
-                    expires_at=(None if expires_at is None else decode_timestamp_pg(expires_at)),
-                )
-                for task_id, worker_id, fence, expires_at in proj_live_lease_holders(
-                    self._conn, run_id, now
-                )
+            ownership = proj_dispatch_ownership(
+                self._conn, run_id, server_now(self._conn, self._now)
             )
         except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
             raise self._wrap_operational(exc) from exc
-        ownership = DispatchOwnership(retry=schedule, leases=holders)
         self._record("dispatch_ownership", run_id, result=ownership.kind)
         return ownership
 

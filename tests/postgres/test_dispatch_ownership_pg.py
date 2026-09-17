@@ -19,7 +19,6 @@ import pytest
 
 from adapters.postgres.db import migrate
 from adapters.postgres.workflow_engine import PostgresWorkflowEngine
-from packages.application.ports.worker_registry import WorkerRegistration
 from packages.application.ports.workflow_engine import (
     DISPATCH_BOTH,
     DISPATCH_NONE,
@@ -36,6 +35,7 @@ from packages.domain.tasks import (
     RetryPolicy,
     TaskContract,
 )
+from packages.domain.workers import WorkerRegistration
 
 pytestmark = pytest.mark.postgres
 

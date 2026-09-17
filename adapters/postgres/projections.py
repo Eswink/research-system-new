@@ -17,7 +17,12 @@ from adapters.postgres.serialization import (
     decode_task,
     decode_timestamp_pg,
 )
-from packages.application.ports.workflow_engine import RetrySchedule, TaskCompletion
+from packages.application.ports.workflow_engine import (
+    DispatchOwnership,
+    LeaseHolder,
+    RetrySchedule,
+    TaskCompletion,
+)
 from packages.domain.events import EventEnvelope
 from packages.domain.task_state import ResearchTaskState
 
@@ -80,6 +85,20 @@ def completed(conn: Any) -> dict[str, TaskCompletion]:
 def cancelled(conn: Any) -> set[str]:
     rows: Any = conn.execute("SELECT task_id FROM tasks WHERE cancelled = TRUE").fetchall()
     return {row["task_id"] for row in rows}
+
+
+def due_retries(conn: Any, run_id: str, now: datetime) -> tuple[str, ...]:
+    """该 run 里**已经到期**的重排任务 ids（SQLite 侧同一判据，见 sqlite/projections.py）。
+
+    与 claim 候选扫描、`retry_schedule` 同一列同一判据；`now` 由调用方按权威时钟给出
+    （生产：`server_now` → DB 时钟；测试：注入时钟），与写 `retry_at` 时同一个源。
+    """
+    rows: Any = conn.execute(
+        "SELECT task_id FROM tasks WHERE run_id = %s AND status = %s"
+        " AND (retry_at IS NULL OR retry_at <= %s) ORDER BY task_id",
+        (run_id, ResearchTaskState.State.RETRY_SCHEDULED, now),
+    ).fetchall()
+    return tuple(str(row["task_id"]) for row in rows)
 
 
 def retry_schedule(conn: Any, run_id: str, now: datetime) -> RetrySchedule:
@@ -148,6 +167,26 @@ def live_lease_holders(
         )
         for row in rows
     )
+
+
+def dispatch_ownership(conn: Any, run_id: str, now: datetime) -> DispatchOwnership:
+    """统一派发读面的组合（GOAL-004 cycle 6 = EC-05 ②；与 SQLite 侧同形）。
+
+    两件 canonical 事实一次读出并组合：重排读面 + 活租约持有者。`kind` 由
+    `DispatchOwnership` 自己算（同一个组合规则，三实现不会各算各的）；`now` 由调用方
+    按权威时钟给出（生产：`server_now` → DB 时钟；测试：注入时钟）。
+    """
+    schedule = retry_schedule(conn, run_id, now)
+    holders = tuple(
+        LeaseHolder(
+            task_id=task_id,
+            worker_id=worker_id,
+            fence=fence,
+            expires_at=None if expires_at is None else decode_timestamp_pg(expires_at),
+        )
+        for task_id, worker_id, fence, expires_at in live_lease_holders(conn, run_id, now)
+    )
+    return DispatchOwnership(retry=schedule, leases=holders)
 
 
 def pending_outbox(conn: Any) -> tuple[EventEnvelope, ...]:

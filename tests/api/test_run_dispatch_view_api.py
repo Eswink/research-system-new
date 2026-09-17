@@ -71,7 +71,7 @@ def _contract(*, backoff: int | None) -> TaskContract:
     )
 
 
-def _task(run_id: str, *, kind: str, capability: str | None) -> ResearchTask:
+def _task(run_id: str, *, kind: TaskKind, capability: str | None) -> ResearchTask:
     return ResearchTask(
         id=ID.generate(),
         run_id=ID(run_id),
@@ -221,23 +221,22 @@ def test_the_list_read_face_reports_the_same_ownership(run_ready_client: TestCli
     assert listed.status_code == 200
     rows = [row for row in listed.json() if row["id"] == run_id]
     assert len(rows) == 1
-    assert rows[0]["dispatch"] == _dispatch(run_ready_client, run_id)
+    detail = _dispatch(run_ready_client, run_id)
+    assert detail["kind"] == "WORKER_CLAIM", "先钉住：两侧相等不比两个空值更弱"
+    assert rows[0]["dispatch"] == detail
 
 
 def test_the_read_face_does_not_write_anything(run_ready_client: TestClient) -> None:
     """读面是只读的：读两次不改 canonical 事实（任务行与租约行都不动）。"""
     deps, run_id = _inject_run(run_ready_client, ResearchRunState.State.RUNNING)
     task_id = _claimed_task(deps, run_id)
-    before = (
-        _stored_lease(deps, task_id)["fence"],
-        deps.workflow.run_state(run_id),
-        _dispatch(run_ready_client, run_id),
-    )
+    before = _dispatch(run_ready_client, run_id)
+    assert before["kind"] == "WORKER_CLAIM", "先确认读面真的答了，再谈读不改事实"
 
     _dispatch(run_ready_client, run_id)
 
-    assert (
-        _stored_lease(deps, task_id)["fence"],
-        deps.workflow.run_state(run_id),
-        _dispatch(run_ready_client, run_id),
-    ) == before
+    assert (_stored_lease(deps, task_id)["fence"], deps.workflow.run_state(run_id)) == (
+        1,
+        ResearchRunState.State.RUNNING,
+    ), "租约代次与 run 状态都没被读面改动"
+    assert _dispatch(run_ready_client, run_id) == before, "读两次结果一致（不缓存、不漂移）"

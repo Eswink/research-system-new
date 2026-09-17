@@ -322,3 +322,24 @@ def dsn_from_env() -> str | None:
         if val:
             return val
     return None
+
+
+def resolve_connection(dsn: str | None, connection: Any | None) -> tuple[Any, bool]:
+    """Return (connection, owns_connection) with the dict_row factory applied.
+
+    适配器的连接装配口径（GOAL-004 cycle 6 从 `workflow_engine.py` 上移到此处，
+    让 450 行硬上限以"搬代码"而非放宽门禁的方式收口）：外部注入的连接不归调用方
+    所有（`owns=False`，关闭时不动它）；未注入时按 DSN 自建（`owns=True`）。
+    """
+    if connection is not None:
+        conn, owns = connection, False
+    else:
+        resolved = dsn or dsn_from_env()
+        if not resolved:
+            raise ValueError("postgres adapter requires dsn or connection")
+        conn, owns = connect(resolved), True
+    try:
+        conn.row_factory = dict_row
+    except Exception:  # noqa: BLE001 - 已设过工厂的连接保持原样
+        pass
+    return conn, owns

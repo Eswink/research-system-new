@@ -18,7 +18,6 @@ from datetime import datetime, timedelta, timezone
 from adapters.sqlite.db import connect as sqlite_connect
 from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
-from packages.application.ports.worker_registry import WorkerRegistration
 from packages.application.ports.workflow_engine import (
     DISPATCH_BOTH,
     DISPATCH_NONE,
@@ -36,6 +35,7 @@ from packages.domain.tasks import (
     RetryPolicy,
     TaskContract,
 )
+from packages.domain.workers import WorkerRegistration
 
 START = datetime(2026, 9, 18, 9, 0, 0, tzinfo=timezone.utc)
 _TTL = 60
