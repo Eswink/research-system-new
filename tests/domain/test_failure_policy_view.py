@@ -29,8 +29,7 @@ def _contract(**policy: str | bool | int | list[str]) -> TaskContract:
 
 
 def test_an_undeclared_policy_means_fail_run() -> None:
-    for policy in (None, {}):
-        view = failure_policy_view(policy)
+    for view in (failure_policy_view(None), failure_policy_view({})):
         assert view == FailurePolicyView()
         assert view.on_task_failure == "FAIL_RUN"
         assert view.tolerated is False
