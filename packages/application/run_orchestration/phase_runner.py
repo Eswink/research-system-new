@@ -59,6 +59,9 @@ class RunOutcome:
     message: str = ""
     tasks: tuple[TaskOutcome, ...] = ()
     manifest_digest: str | None = None
+    # cycle 20：语义 digest 与定价引用同源处理——不随执行结果回填，HTTP 边界就会
+    # 静默丢字段，而 resume 的漂移校验（assert_semantics_frozen）恰恰只认它。
+    manifest_semantic_digest: str | None = None
     # M15 定价冻结引用(BLOCKER-6):service 在 Manifest freeze 后把这两个
     # 字段回填执行结果，API 再持久化到 ResearchRun；不能只存 manifest digest
     # 否则 run 行会在 HTTP 边界静默丢失冻结价格引用。

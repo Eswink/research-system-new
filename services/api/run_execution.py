@@ -26,7 +26,7 @@ from services.api.preflight_support import (
     build_policy_evaluator,
     build_provider_health,
 )
-from services.api.protocol_source import load_protocol_for_source
+from services.api.protocol_source import load_protocol_for_source, protocol_source_of
 from services.api.routers.run_events import events_of
 
 
@@ -105,6 +105,7 @@ def execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
         protocol_id=protocol.id,
         run_id=req.run_id,
         trace_id=req.trace_id or f"api-{req.run_id.value}",
+        protocol_source=protocol_source_of(req.protocol_path, req.draft_ref),
     )
     return ExecutionInputs(protocol, catalog, project, preflight, command)
 
@@ -131,8 +132,14 @@ def run_from_execution(
             manifest_digest=Digest.parse(outcome.manifest_digest)
             if outcome.manifest_digest
             else None,
+            # cycle 20：语义 digest 与装配来源都必须过 HTTP 边界——前者是 resume 的
+            # 漂移校验输入，后者是重启后重建上下文的唯一入口（丢了就没有续跑入口）。
+            manifest_semantic_digest=Digest.parse(outcome.manifest_semantic_digest)
+            if outcome.manifest_semantic_digest
+            else None,
             pricing_version=outcome.pricing_version,
             pricing_digest=outcome.pricing_digest,
+            protocol_source=inputs.command.protocol_source,
         )
     except ValueError:
         frozen_digest, pricing_version, pricing_digest = frozen_manifest_refs_of(deps, run_id.value)
@@ -144,6 +151,7 @@ def run_from_execution(
             manifest_digest=Digest.parse(frozen_digest) if frozen_digest else None,
             pricing_version=pricing_version,
             pricing_digest=pricing_digest,
+            protocol_source=inputs.command.protocol_source,
         )
 
 

@@ -34,6 +34,7 @@ from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.worker_registry import WorkerRegistry
 from packages.domain.run_state import ResearchRunState
 from packages.domain.schedules import ScheduleJob
+from services.api.run_resume import RebuildRefused, continue_from_rebuild
 
 
 class PeriodicDaemon:
@@ -316,11 +317,17 @@ class WorkerReaperScheduler(PeriodicDaemon):
 
 @dataclass(frozen=True, slots=True)
 class RetryDispatchDeps:
-    """派发所需的三个只读面（参数对象，避免参数爆发）。"""
+    """派发所需的三个只读面（参数对象，避免参数爆发）。
+
+    `rebuild` 是本进程**没有**续跑上下文时的第二入口（GOAL-003 cycle 20）：按 run 记下的
+    装配来源重建上下文并续跑（composition root 注入 `run_resume.rebuild_and_resume`）。
+    None ⇒ 重启后的停车 run 只能等人工——诚实降级，不假装有派发方。
+    """
 
     runs: Any
     runs_store: Any
     workflow: Any
+    rebuild: Any = None
 
 
 class RetryDispatchScheduler(PeriodicDaemon):
@@ -358,6 +365,7 @@ class RetryDispatchScheduler(PeriodicDaemon):
         self._runs = deps.runs
         self._runs_store = deps.runs_store
         self._workflow = deps.workflow
+        self._rebuild = deps.rebuild
         self._telemetry = telemetry
 
     def _execute_pass(self) -> int:
@@ -384,17 +392,26 @@ class RetryDispatchScheduler(PeriodicDaemon):
             if run.state != ResearchRunState.State.PAUSED:
                 continue
             run_id = run.id.value
-            if not self._runs.has_paused_context(run_id):
-                continue  # 上下文不在本进程（重启后）——跳过，不假装能续跑
+            local = self._runs.has_paused_context(run_id)
+            if not local and not self._can_rebuild(run):
+                continue  # 没有续跑能力（既有：上下文不在本进程；cycle 20 起：也无可重建来源）
             try:
                 if not self._workflow.due_retry_task_ids(run_id):
                     continue  # 没有到期的重排（含用户手动暂停）：不是本守护线程的事
             except Exception:
                 continue  # 读面失败：下一个 pass 重新评估，不因为一个 run 中断整轮
-            dispatched += self._resume(run_id, run)
+            dispatched += self._resume(run_id, run, local=local)
         return dispatched
 
-    def _resume(self, run_id: str, run: Any) -> int:
+    def _can_rebuild(self, run: Any) -> bool:
+        """重建入口可用性：本进程装了重建函数 **且** run 记下了装配来源。
+
+        来源缺失（早于来源登记的旧 run）时不翻转 canonical 状态——不把"没有入口"
+        伪装成"派发过一次"。
+        """
+        return self._rebuild is not None and getattr(run, "protocol_source", None) is not None
+
+    def _resume(self, run_id: str, run: Any, *, local: bool) -> int:
         """续跑一个到期的停车 run：先迁 canonical 状态，再续跑，最后写回结果。
 
         顺序不是随意的：协作式暂停谓词读的就是 canonical run 状态（`pause_requested`），
@@ -402,7 +419,9 @@ class RetryDispatchScheduler(PeriodicDaemon):
         真的会执行任务（与 `POST /runs/{id}/resume` 同序）。续跑又停回 PAUSED（例如
         durable 侧其实还没到期）时如实写回 PAUSED。
 
-        上下文竞态（另一个 resume 先取走）/ 续跑失败都不影响整轮：返回 0，run 留在
+        两种续跑来源（GOAL-003 cycle 20）：本进程持有上下文 ⇒ `resume_paused`；否则按
+        run 记下的装配来源重建。**重建被诚实拒绝**时把 canonical 放回停车状态（本进程
+        一个任务都没执行，留 RUNNING 就不是事实）；上下文竞态等其他失败仍返回 0 并留
         RUNNING（派发已释放、没有 continuation）——与 API 面"解除暂停但不伪装续跑"同义。
         """
         try:
@@ -411,7 +430,17 @@ class RetryDispatchScheduler(PeriodicDaemon):
             return 0  # 状态机不允许（并发迁移）——不是本守护线程该处理的
         try:
             self._runs_store.save_run(resumed)
-            outcome = self._runs.resume_paused(run_id, resumed)
+            outcome = (
+                self._runs.resume_paused(run_id, resumed)
+                if local
+                else continue_from_rebuild(self._rebuild, resumed)
+            )
+        except RebuildRefused:
+            try:
+                self._runs_store.save_run(resumed.transition(ResearchRunState.Transition.PAUSE))
+            except Exception:
+                pass
+            return 0
         except Exception:
             return 0
         try:

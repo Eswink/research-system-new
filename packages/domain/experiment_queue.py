@@ -19,42 +19,16 @@ from dataclasses import dataclass, field, replace
 
 from packages.domain.core import ID, Timestamp
 from packages.domain.experiment_state import ExperimentQueueState
+from packages.domain.protocol_source import ProtocolSource
 from packages.domain.state_base import InvalidTransitionError
 
 # 改期不是状态迁移（状态不变、排期事实变），但同样只对 QUEUED 合法；
 # 非法时复用同一异常类型，动作用事件名表达，避免第二套错误词汇。
 RESCHEDULE = "RESCHEDULE"
 
-
-@dataclass(frozen=True, slots=True)
-class QueueProtocolSource:
-    """入队时冻结的协议来源：受控模板路径或草稿修订（互斥）。"""
-
-    protocol_path: str | None = None
-    draft_id: str | None = None
-    draft_revision: int | None = None
-
-    def __post_init__(self) -> None:
-        has_path = self.protocol_path is not None
-        has_draft = self.draft_id is not None or self.draft_revision is not None
-        if has_path == has_draft:
-            raise ValueError(
-                "exactly one protocol source required: protocol_path xor draft revision"
-            )
-        if has_path and not self.protocol_path:
-            raise ValueError("protocol_path must not be empty when provided")
-        if has_draft:
-            if not self.draft_id:
-                raise ValueError("draft source requires a non-empty draft_id")
-            if self.draft_revision is None or self.draft_revision < 1:
-                raise ValueError("draft source requires a positive draft_revision")
-
-    @property
-    def draft_ref(self) -> tuple[str, int] | None:
-        """草稿来源的 (draft_id, revision)；路径来源为 None。"""
-        if self.draft_id is None or self.draft_revision is None:
-            return None
-        return (self.draft_id, self.draft_revision)
+# 协议来源值对象由 `packages.domain.protocol_source` 拥有（run 与队列共用同一个
+# 事实）；本模块保留入队语境下的历史名字，避免调用点与持久化行做无意义改名。
+QueueProtocolSource = ProtocolSource
 
 
 @dataclass(frozen=True, slots=True)

@@ -43,6 +43,7 @@ from services.api.routers import (
     tool_registrations,
     workspace_snapshots,
 )
+from services.api.run_resume import rebuild_and_resume
 from services.api.scheduler import (
     LeaseRecoveryScheduler,
     OutboxRelayScheduler,
@@ -179,16 +180,24 @@ def _start_retry_dispatch(deps: ApiDeps) -> "RetryDispatchScheduler | None":
 
     Gated on the run store (需要按 canonical run 状态扫 PAUSED)——没有 store 就没有
     "哪些 run 在停车"的事实，宁可不启（不假装有派发方）。
+
+    cycle 20：本进程没有续跑上下文（重启后）时，守护线程按 run 记下的装配来源**重建**
+    上下文再续跑（与 `POST /runs/{id}/resume` 同一条重建链，不建第二套）。
     """
     store = getattr(deps, "runs_store", None)
     if deps.runs is None or store is None:
         return None
+
+    def _rebuild(run: Any) -> Any:
+        return rebuild_and_resume(deps, run)
+
     try:
         sched = RetryDispatchScheduler(
             RetryDispatchDeps(
                 runs=deps.runs,
                 runs_store=store,
                 workflow=deps.runs._deps.workflow,
+                rebuild=_rebuild,
             ),
             interval_seconds=15.0,
             telemetry=getattr(deps, "telemetry", None),

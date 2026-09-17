@@ -80,6 +80,15 @@ class TaskCompletion:
             raise ValueError("outcome must not be empty")
 
 
+@dataclass(frozen=True, slots=True)
+class TaskIdentity:
+    """canonical 任务的稳定身份投影（重启后续跑按 idempotency key 对齐用）。"""
+
+    idempotency_key: str
+    task_id: str
+    status: str
+
+
 @runtime_checkable
 class WorkflowEngine(Protocol):
     """at-least-once 任务分发契约；实现必须保证幂等去重。"""
@@ -147,6 +156,21 @@ class WorkflowEngine(Protocol):
 
         比较发生在 adapter 内，用的是**权威时钟**（生产：DB 时钟；测试：注入时钟），
         与写 `retry_at` 时同一个源——调用方不自己拿"现在"来比。
+        """
+
+    def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
+        """读取该 run 已登记任务的稳定身份（确定性排序）。
+
+        重启后的续跑要重算"还剩哪些工作"（GOAL-003 cycle 20）：`resolve_sessions`
+        每次解析都会生成**新的 task id**，而 idempotency key（`run:phase:agent`）才是
+        稳定身份。重建路径靠这一句把解析出来的 spec 对齐回 canonical 任务：
+
+        - 已 `SUCCEEDED` 的任务不重跑（重算剩余工作）；
+        - 其余任务必须用 canonical task id（引擎按 key 去重，拿新 id 去 acquire
+          只会得到"这个任务不存在"）；
+        - 未登记的任务（首次交付）按解析出的新 id 走。
+
+        无 key 的任务行（既有/异常数据）不参与回答。
         """
 
     def recover_expired_leases(self) -> int: ...

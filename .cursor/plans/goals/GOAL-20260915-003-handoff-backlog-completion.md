@@ -2,7 +2,7 @@
 id: GOAL-20260915-003
 slug: handoff-backlog-completion
 title: 收口清单续做：设计门禁结构判据、ToolPack 供应链面、ops 调度写面、worker 退出语义、替身守卫
-status: ACTIVE
+status: BLOCKED
 created_at: 2026-09-16
 updated_at: 2026-09-18
 owners:
@@ -106,7 +106,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-080-one-attempt-ledger-in-process-retry.md
   - .cursor/plans/tasks/PLAN-20260915-081-parked-retry-run-level-redispatch.md
   - .cursor/plans/tasks/PLAN-20260915-082-unattended-retry-dispatch.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-082-unattended-retry-dispatch.md
+  - .cursor/plans/tasks/PLAN-20260915-083-durable-resume-entry.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-083-durable-resume-entry.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
   - MEM-20260915-039-tool-pack-install-binds-content-digest
@@ -128,6 +129,7 @@ memory_entries:
   - MEM-20260915-055-one-attempt-one-ledger
   - MEM-20260915-056-terminal-state-orphans-the-declared-retry
   - MEM-20260915-057-dispatcher-transition-first-and-visible
+  - MEM-20260915-058-process-context-is-not-a-continuation
 ---
 
 # GOAL-20260915-003 — 收口清单续做（自迭代循环）
@@ -146,7 +148,7 @@ memory_entries:
 | EC-03 | ops 调度用户可见写面 | OpenAPI 写方法 + pageSupport 收敛 + e2e | PASS（2026-09-16 cycle 4：`ops/schedules` 的 `disabledOperations` 相应项消失、`management_available=true`；**执行体仍是既有守护线程**——`trigger` 调用的就是定时 pass 的**同一个函数对象**（用例以计数器证明），`enabled=false` 被守护线程**自己的读面**（`due(job)`）消费（真实线程 + 可控时钟：停用后 `run_count` 冻结）。诚实的边界都在用例里：无 store → 静态兜底 + 写操作 503；未挂执行体 → `executor_attached=false` 且 trigger 禁用；从未跑过 → `last_outcome=null`（前端显示 UNKNOWN）；pass 失败 → 200 + `FAILED` + `last_error`。范围注记：`run_count` 等事实是**进程内观测**（重启归零，不是配置）；调度写面**不经过 policy**（等价于启停既有守护线程），若要审批需新增 `schedule.*` 能力——见 RECHECK-066 W-6） |
 | EC-04 | worker 退出语义（SIGTERM 有界中断阻塞读） | 定向用例 + 反证 + Linux 容器复验 | PASS（2026-09-16 cycle 5：8 处出站调用收口到 `WorkerClient._call`，停机后超过 `RESEARCHOS_WORKER_DRAIN_SECONDS`（默认 5s，取值域 0.1~60）即放弃在途调用并抛 `WorkerDrainAbort`，进程按有序停机退出 0。**实测对照**（同脚本同参数，Linux 容器 + 黑洞网关）：修复前 **29.64s**、修复后 **1.12s**（drain=1）。两层反证：进程内"未停机 ⇒ 同一条阻塞读照常跑满"、进程外"drain 调大 ⇒ 进程不早退"。范围注记：只覆盖**网关读**的停机上界——在途**执行**的中断仍走既有协作式 cancel 通道，其停止时间没有新增上界（RECHECK-067 W-1）；被放弃的请求可能已到达服务端也可能没有，属 at-least-once 允许的模糊点，已写进 runbook（W-2）） |
 | EC-05 | 替身 harness 校验 Idempotency-Key | 头校验 + 反证 + stub 套件绿 | PASS（2026-09-16 cycle 6：替身在 handler 之前守门，与真中间件四条语义对齐——缺头/空值 → 422 `Idempotency-Key Required`；同 key 不同摘要 → 422 `Idempotency-Key Reused`；同 key 同摘要 → 重放首次响应；分析类 POST 豁免；响应体与真件 `_problem()` 同形（`instance` 为空串）。**反证做在产品客户端上**：把 `apps/web/src/api/http.ts` 的头发送改成别的头名后，`schedules-write` + `project-delete` **7 failed / 2 passed**，失败面板里呈现的正是真件的 422 detail；还原后 `git diff` 为空。跨语言守卫把 stub 词表与 `middleware.py` 的 `_MUTATING_METHODS`/`_ANALYSIS_ACTIONS` 钉成集合相等（并断言豁免清单非空）——替身单方面放宽会在 Python 套件里红。范围注记：两处**刻意不一致**（替身摘要只做判等、重放不带 ETag）、守门顺序的真实副作用（未知路径 + mutating + 无 key → 422 而非 404 ⇒ 不进 `assertNoUnmatched`）、`PUT` 无真实路由可测——见 RECHECK-068 W-1/W-2/W-3/W-4） |
-| EC-06 | 每 cycle m0/CI 全绿 + 收口复检 + 安全扫描处置 | CI run 六 job 结论 + RECHECK | PENDING（cycle 1 一度 BLOCKED：账户计费阻断 → 阻断解除后 run **35059391199 六个 job 全 success**，cycle 1 的 CI 结论已成立；后续每 cycle 继续按此标准记） |
+| EC-06 | 每 cycle m0/CI 全绿 + 收口复检 + 安全扫描处置 | CI run 六 job 结论 + RECHECK | PASS（cycle 1 一度 BLOCKED：账户计费阻断 → 阻断解除后 run **35059391199 六个 job 全 success**，cycle 1 的 CI 结论已成立；cycle 1…20 每轮的 run 与六 job 结论逐行记在迭代日志；**收口复检 = RECHECK-20260915-083（PASS_WITH_WARNINGS）**；安全扫描：本环境多次返回 `scanner_enobufs`（结论不完整），按兼容策略继续且**未宣称项目安全**，完整审计列为后继入口第 1 项） |
 
 **不变量（沿用 GOAL-001/002 与 AGENTS.md）**：不伪装实现（不注册没人消费的写面、
 不让 fixture 冒充业务数据）；默认 deny 的安全姿态不变；观测隐私不变；每一项写面必须走
@@ -228,6 +230,56 @@ m0 全量单跑在负载下的 timing 用例（隔离复跑对照）、DSN 注�
 > **续期后的推进顺序**：先做「最小、最安全」的一条 —— provider 凭据绑定
 > （RECHECK-072 W-4 / RECHECK-073 后继②）；escalation 级的两项（端点注入 adapter、
 > `tool_pack.*` 策略产品决策）仍**不**由本 GOAL 自行决定。
+
+### BLOCKED 记录（2026-09-18，cycle 20 收口）——**预算触顶（第二次，区间上界）**
+
+> **原因**：`budget.max_cycles: 20` 已用尽（cycle 1…20 全部交付；不是 EC 未达成、
+> 也不是同一失败签名超限）。按 frontmatter 口径「硬上限，触顶即 BLOCKED」置
+> `status: BLOCKED`。`per_cycle_minutes` 与 `no_progress_stop_cycles` 均未触发。
+>
+> **EC 状态表复核（本文件「目标与退出标准」的 EC 表已逐行对齐 frontmatter）**：
+> EC-01…EC-06 **全 PASS**，逐条依据：
+>
+> | EC | 交付 cycle | 依据 |
+> | --- | --- | --- |
+> | EC-01 | 1 | 33 路由结构签名 + 反证用例（注入面板/多一行/删节点判红、只改样式不误报）+ 跨平台逐字节一致（RECHECK-063） |
+> | EC-02 | 2 / 3 / 7 | 写面 + console 操作面 + 健康复核 schema digest 漂移可见（RECHECK-064/065/069） |
+> | EC-03 | 4 | `disabledOperations` 相应项消失；`trigger` 与定时 pass 是**同一个函数对象**（计数器证明）；`enabled=false` 被守护线程自己的读面消费（RECHECK-066） |
+> | EC-04 | 5 | 8 处出站收口到 `_call`；黑洞网关实测 29.64s → **1.12s**（drain=1）+ 两层反证（RECHECK-067） |
+> | EC-05 | 6 | 替身在 handler 前守门；反证做在产品客户端上（去掉头 ⇒ 7 failed / 2 passed，还原后 diff 为空）（RECHECK-068） |
+> | EC-06 | 1…20 | 每 cycle 本地 m0（23 项）+ main CI 六个 job，逐行记在迭代日志；收口复检 = RECHECK-20260915-083（PASS_WITH_WARNINGS）；安全扫描处置见下；长程项已写成后继入口 |
+>
+> **收口复检**：RECHECK-20260915-083（`result: PASS_WITH_WARNINGS`），本文件
+> `latest_recheck` 已指向它；内含告警 W-1…W-6（失败收敛分支与事件 payload 的语义
+> digest、重建依赖来源可解析、两个入口拒绝语义有意不同、身份读面只回答带 key 的行、
+> 探针口径）。
+>
+> **安全扫描处置**：本环境的提交前 Mimosa 扫描多次返回 `scanner_enobufs`（扫描器
+> 结论不完整），按兼容策略继续，**不作"项目安全"声明**；本轮改动面是 domain 值对象 +
+> run 字段 + 端口只读方法 + API 重建入口 + 用例，不涉及凭据字面量、出网、破坏性动作
+> 或权限放宽。完整审计列为后继入口第 1 项（运维动作，不在循环内可完成）。
+>
+> **恢复条件（二选一，由用户决定，本 GOAL 不自作续期）**：
+> ① 新建承接 GOAL（GOAL-002 → GOAL-003 → GOAL-004 的同一方式），把下方「仍未处理的
+> 长程项」按优先级写进新 GOAL 的 EC；② 显式变更本 GOAL 的 `budget.max_cycles`
+> （如 20 → 30）并置回 `status: ACTIVE`。**两条都需要用户拍板**——其中第 8 项本就是
+> escalation 级决策（受控出网 / 产品策略），循环内不得自行决定。
+>
+> **仍未处理的长程项（后继入口，按建议优先级）**：
+>
+> 1. **完整安全审计**（Mimosa 全量扫描 + 逐条处置）——本环境多次 `scanner_enobufs`，
+>    "项目安全"这句话至今没有完整结论支撑。
+> 2. **重建的来源兜底**：把协议正文/草稿修订冻结进 run 行（或内容寻址存储），
+>    使重启续跑不再依赖那份外部文件仍在（RECHECK-083 W-3）。
+> 3. **读面区分两种 `PAUSED`**（重排停车 vs 用户暂停）：守护线程靠任务面区分，
+>    运维读面看不到"这个停车会不会自己走"。
+> 4. **`failure_policy` 零消费者**：契约里声明了失败策略但无人消费（cycle 12 起登记）。
+> 5. **失败 run 与 `manifest.frozen` 事件的语义 digest**（RECHECK-083 W-1/W-2）。
+> 6. **锁粒度（每线程连接）** 与 **两个派发方的统一读面**（worker claim / retry
+>    dispatch 各管一半，没有一处能看到"这个 run 现在有没有活的派发方"）。
+> 7. **`resume_paused` 失败后 run 留 `RUNNING` 无补偿**（RECHECK-082 W-3）。
+> 8. **「按声明给 adapter 接线」与 `tool_pack.*`/脚本策略**——escalation 级
+>    （受控出网、产品决策），需用户/ADR 拍板。
 
 ### BLOCKED 记录（2026-09-16，cycle 10 收口）——**预算触顶（已由上方续期记录解除）**
 
@@ -881,4 +933,42 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   （eval-gate 04:53:06Z / collector-quality 04:54:53Z / container-quality 04:56:46Z /
   console-frontend 04:57:59Z / quality-ubuntu-latest 05:02:06Z / quality-windows-latest
   05:04:46Z，无重跑）；另：cycle 18 的记录提交 `4d95b48` → run **35178543987 六个 job
-  全 success**。
+  全 success**；cycle 19 的记录提交 `405d327` → run **35184574461 六个 job 全 success**。
+- 2026-09-18 cycle 20 开轮（**预算内最后一轮**）：cycle 19 的「下一轮输入」第一项
+  = 重启后的续跑入口。derive 探针（真实 `SqliteWorkflowEngine`）把现状量成事实：
+  停车后 durable 侧只有断点那条任务行、**没有"还剩哪些 specs"的记录**；重启后
+  `has_paused_context=False`、`resume_paused` 抛 `InvalidInputError`、守护线程派发 **0**
+  ⇒ 已到期的重排在重启后**没有任何交付入口**。
+- 2026-09-18 cycle 20 交付（PLAN-20260915-083，RECHECK-083 PASS_WITH_WARNINGS）：
+  ① **来源落 canonical**：新增 `ProtocolSource` 值对象（路径 xor 草稿修订），
+  `ResearchRun.protocol_source` 随状态迁移/冻结逐字段保留，两个 run store（SQLite
+  `run_json` + PG JSONB）编码往返，`POST /runs` 与队列派发同源登记；
+  ② **重建链**：`rebuild_and_resume` 复用同一条装配链（来源解析 → 目录/项目合并 →
+  编译/预检）重建 `RunContext`，`resume_rebuilt` 续跑——**不建第二套"简化版启动"**；
+  ③ **剩余工作按稳定身份重算**：`resolve_sessions` 每次生成新 task id，只有
+  `run:phase:agent` 这个 idempotency key 稳定 ⇒ 新增只读读面 `task_identities`
+  （Fake/SQLite/PG 同判据）把解析结果对齐回 canonical 任务（已成功的不重跑）；
+  ④ **两个入口共用**：`POST /runs/{id}/resume` 新增 `continuation=REBUILT` 口径，
+  `RetryDispatchScheduler` 无本进程上下文时也走同一条重建链（被诚实拒绝 ⇒ 放回 `PAUSED`）；
+  ⑤ **顺带修掉一个真缺陷**：冻结语义 digest 此前**从不过 HTTP 边界**
+  （`RunOutcome` 只带 manifest digest 与定价引用）⇒ 任何 API 启动的 run 都过不了
+  resume 的漂移校验（旧路径走进程内上下文，恰好绕开了这项检查）。
+  定向 **23 passed**（e2e 4 + API 5 + SQLite 3 + PG 2 + ops/调度 9）；受影响广套件
+  `tests/application tests/api` **1005 passed / 1 skipped**（2:36）；宽口径
+  `tests/application+adapters+domain+e2e+postgres+contracts` 收集 **2022** 项 ⇒
+  **2015 passed / 7 skipped**（4:52）；mypy **894 source files clean**；ruff/format 干净
+  （904 files）。
+  **未扩面（如实登记）**：失败收敛分支与 `manifest.frozen` payload 仍不带语义 digest
+  （RECHECK-083 W-1/W-2）、重建依赖来源可解析（W-3）、两个入口的拒绝语义有意不同（W-4）、
+  身份读面只回答带 key 的任务行（W-5）。
+- 2026-09-18 cycle 20 门禁（**首轮红含 3 条真实规模门禁，按门禁改代码而非改门禁**）：
+  第 1 轮 m0 的 `python/tests` 红于 `tests/tooling/test_python_source_size_limits.py`
+  ——`services/api/run_resume.py::rebuild_and_resume` **57 行**（>50）、
+  `services/api/scheduler.py` **462 行**（>450 硬上限）、e2e 一个用例 **51 行**（>50）。
+  处置：拆出 `_resume_from_source`；把"被拒 ⇒ 异常"的翻译与 `RebuildRefused` 从调度器
+  挪进 `run_resume.py`（复用同一模块）；e2e 抽出 `_two_task_harness()`——**门禁一字未改**。
+  同一轮另有 **13 条环境干扰**：我 kill 掉上一轮 m0 时它起的**孤儿 pytest 进程**仍在跑
+  （docker/GPU 的"无残留容器"断言 8 条、PG `DeadlockDetected` 与网络分区时序 5 条）；
+  按 PID 创建时间确认来源后终止孤儿进程、确认 `research-os-exec-*` 容器为 0，再复跑 ⇒
+  **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3759 passed / 10 skipped**，
+  478.71s）。

@@ -54,7 +54,12 @@ from packages.application.ports.errors import (
     TransientPortError,
 )
 from packages.application.ports.telemetry_sink import TelemetrySink
-from packages.application.ports.workflow_engine import ClaimRequest, TaskCompletion, TaskLease
+from packages.application.ports.workflow_engine import (
+    ClaimRequest,
+    TaskCompletion,
+    TaskIdentity,
+    TaskLease,
+)
 from packages.domain.enums import FailureCategory
 from packages.domain.events import EventEnvelope
 from packages.domain.task_state import ResearchTaskState
@@ -337,6 +342,31 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         ids = tuple(str(row["task_id"]) for row in rows)
         self._record("due_retry_task_ids", run_id, result=str(len(ids)))
         return ids
+
+    def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
+        """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。
+
+        specs 每次解析都会生成新的 task id，只有 idempotency key 是稳定身份。
+        """
+        self._ensure_open()
+        try:
+            rows = self._conn.execute(
+                "SELECT idempotency_key, task_id, status FROM tasks WHERE run_id = %s"
+                " AND idempotency_key IS NOT NULL ORDER BY idempotency_key",
+                (run_id,),
+            ).fetchall()
+        except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
+            raise self._wrap_operational(exc) from exc
+        identities = tuple(
+            TaskIdentity(
+                idempotency_key=str(row["idempotency_key"]),
+                task_id=str(row["task_id"]),
+                status=str(row["status"]),
+            )
+            for row in rows
+        )
+        self._record("task_identities", run_id, result=str(len(identities)))
+        return identities
 
     def run_state(self, run_id: str) -> str | None:
         """该 run 的 canonical 状态（未知 run → None）；派发面暂停协调只读视图。"""

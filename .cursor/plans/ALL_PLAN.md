@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260915-083](tasks/PLAN-20260915-083-durable-resume-entry.md) | DONE |
 | [x] | [PLAN-20260915-078](tasks/PLAN-20260915-078-retry-policy-becomes-real.md) | DONE |
 | [x] | [PLAN-20260915-079](tasks/PLAN-20260915-079-retry-backoff-after-reschedule.md) | DONE |
 | [x] | [PLAN-20260915-080](tasks/PLAN-20260915-080-one-attempt-ledger-in-process-retry.md) | DONE |

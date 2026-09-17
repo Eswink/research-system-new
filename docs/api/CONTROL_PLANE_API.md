@@ -216,9 +216,12 @@ M15 Operations（只读投影）：
   持有该 run 的执行上下文，执行器在下一次 phase 组边界读到 PAUSED 后零任务
   执行并返回 PAUSED（剩余 specs 暂存）。响应带 `dispatch=HELD` /
   `execution_context`（`NONE` 或 `PAUSED_IN_PROCESS`）。只有 RUNNING 可暂停（否则 409）。
-- `POST /runs/{id}/resume`（PLAN-048）— 恢复派发；**继续执行**只在本进程持有
-  暂停上下文时发生，此时响应 `continuation=RESUMED` 并执行剩余任务；否则
-  `continuation=NONE`（只解除暂停，不伪造续跑）。只有 PAUSED 可恢复（否则 409）。
+- `POST /runs/{id}/resume`（PLAN-048；cycle 20 扩展）— 恢复派发；**继续执行**优先用
+  本进程持有的暂停上下文（`continuation=RESUMED`），没有上下文时（进程重启过）按 run 行
+  记下的**协议来源**重建执行上下文再续跑（`continuation=REBUILT`，重建的装配链与
+  `POST /runs` 同一条：来源解析 → 目录/项目合并 → preflight → 冻结语义校验，漂移一律拒绝）；
+  重建被拒或没有来源可重建时 `continuation=NONE` 并在 `note` 里点名原因（只解除暂停，
+  不伪造续跑）。只有 PAUSED 可恢复（否则 409）。
   无抢占式中断：暂停不撤销在途租约，也不物理停止已派发的 worker 任务。
 - `GET /artifacts/{left}/diff/{right}`（PLAN-047）— 两侧都是 persisted 制品
   （口径：制品内容 vs 制品内容；控制面**没有**文件系统快照 diff 面）。相同内容

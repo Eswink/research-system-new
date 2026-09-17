@@ -29,12 +29,18 @@ from adapters.sqlite.projections import (
     mark_outbox_published,
     pending_outbox,
 )
+from adapters.sqlite.projections import task_identities as select_task_identities
 from adapters.sqlite.serialization import TaskRow
 from adapters.sqlite.workflow_ops import SqliteWorkflowOps
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import CorrelationRef, OperationScope
 from packages.application.ports.telemetry_sink import TelemetrySink
-from packages.application.ports.workflow_engine import ClaimRequest, TaskCompletion, TaskLease
+from packages.application.ports.workflow_engine import (
+    ClaimRequest,
+    TaskCompletion,
+    TaskIdentity,
+    TaskLease,
+)
 from packages.domain.events import EventEnvelope
 from packages.domain.tasks import ResearchTask, TaskContract
 
@@ -154,6 +160,16 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
         ids = due_retries(self._conn, run_id, iso(timestamp_now(self._now)))
         self._record("due_retry_task_ids", run_id, result=str(len(ids)))
         return ids
+
+    def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
+        """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。"""
+        self._ensure_open()
+        identities = tuple(
+            TaskIdentity(idempotency_key=key, task_id=task_id, status=status)
+            for key, task_id, status in select_task_identities(self._conn, run_id)
+        )
+        self._record("task_identities", run_id, result=str(len(identities)))
+        return identities
 
     def run_state(self, run_id: str) -> str | None:
         """该 run 的 canonical 状态（未知 run → None）；派发面暂停协调只读视图。"""

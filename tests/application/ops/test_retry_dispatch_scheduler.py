@@ -15,6 +15,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from packages.domain.core import ID
+from packages.domain.protocol_source import ProtocolSource
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from services.api.scheduler import RetryDispatchDeps, RetryDispatchScheduler
@@ -64,9 +65,17 @@ class _Runs:
         return replace(run, state=self.outcome_state)
 
 
-def _run(state: str = ResearchRunState.State.PAUSED) -> ResearchRun:
+def _run(
+    state: str = ResearchRunState.State.PAUSED,
+    *,
+    protocol_source: ProtocolSource | None = None,
+) -> ResearchRun:
     return ResearchRun(
-        id=ID(_RUN_ID), project_id="project-1", protocol_id="protocol-1", state=state
+        id=ID(_RUN_ID),
+        project_id="project-1",
+        protocol_id="protocol-1",
+        state=state,
+        protocol_source=protocol_source,
     )
 
 
@@ -149,3 +158,80 @@ def test_one_bad_run_does_not_break_the_pass() -> None:
     assert store.saved == [(_RUN_ID, ResearchRunState.State.RUNNING)], (
         "续跑失败时 run 留在 RUNNING（派发已释放、没有 continuation），不伪装成已续跑"
     )
+
+
+# --- GOAL-003 cycle 20：本进程没有上下文时按 durable 来源重建续跑 ---
+
+_SOURCE = ProtocolSource(protocol_path="examples/protocols/sort_analysis_v1.yaml")
+
+
+@dataclass
+class _Outcome:
+    state: str
+
+
+@dataclass
+class _Attempt:
+    outcome: _Outcome | None = None
+    refusal: str | None = None
+
+
+@dataclass
+class _Rebuilder:
+    attempts: list[str] = field(default_factory=list)
+    refusal: str | None = None
+
+    def __call__(self, run: Any) -> _Attempt:
+        self.attempts.append(run.id.value)
+        if self.refusal is not None:
+            return _Attempt(refusal=self.refusal)
+        return _Attempt(outcome=_Outcome(state=ResearchRunState.State.SUCCEEDED))
+
+
+def _scheduled_for_rebuild(
+    *, source: ProtocolSource | None = _SOURCE
+) -> tuple[RetryDispatchScheduler, _RunStore, _Rebuilder, _Runs]:
+    workflow = _Workflow(due={_RUN_ID: ("task-1",)})
+    runs = _Runs(contexts=set())  # 重启后：本进程没有续跑上下文
+    store = _RunStore(runs=[_run(protocol_source=source)])
+    rebuilder = _Rebuilder()
+    scheduler = RetryDispatchScheduler(
+        RetryDispatchDeps(runs=runs, runs_store=store, workflow=workflow, rebuild=rebuilder)
+    )
+    return scheduler, store, rebuilder, runs
+
+
+def test_without_a_local_context_a_recorded_source_is_rebuilt_and_resumed() -> None:
+    """重启后没有上下文 ⇒ 按 run 记下的来源重建续跑（cycle 20 的新入口）。"""
+    scheduler, store, rebuilder, _ = _scheduled_for_rebuild()
+
+    dispatched = scheduler._execute_pass()
+
+    assert dispatched == 1
+    assert rebuilder.attempts == [_RUN_ID], "重建入口必须被真的调用"
+    assert store.saved == [
+        (_RUN_ID, ResearchRunState.State.RUNNING),
+        (_RUN_ID, ResearchRunState.State.SUCCEEDED),
+    ]
+
+
+def test_a_refused_rebuild_puts_the_run_back_to_parked() -> None:
+    """重建被诚实拒绝 ⇒ 放回停车状态（本进程一个任务都没执行，不假装 RUNNING）。"""
+    scheduler, store, rebuilder, _ = _scheduled_for_rebuild()
+    rebuilder.refusal = "run has no recorded protocol source"
+
+    assert scheduler._execute_pass() == 0
+    assert store.saved == [
+        (_RUN_ID, ResearchRunState.State.RUNNING),
+        (_RUN_ID, ResearchRunState.State.PAUSED),
+    ], "拒绝之后 canonical 必须回到 PAUSED"
+
+
+def test_a_run_without_a_recorded_source_is_not_even_considered() -> None:
+    """没有来源可重建 ⇒ 连 canonical 都不碰（不把"没有入口"伪装成"派发过一次"）。"""
+    scheduler, store, rebuilder, runs = _scheduled_for_rebuild(source=None)
+
+    assert scheduler._execute_pass() == 0
+    assert store.saved == []
+    assert rebuilder.attempts == []
+    assert runs.resumed == []

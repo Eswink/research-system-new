@@ -10,6 +10,7 @@ from adapters.postgres.base import PostgresAdapterBase
 from adapters.postgres.db import connect as pg_connect
 from adapters.postgres.db import dsn_from_env, now_iso
 from packages.domain.core import ID, Digest, Timestamp
+from packages.domain.protocol_source import ProtocolSource
 from packages.domain.run import ResearchRun
 
 
@@ -105,9 +106,31 @@ def _encode(run: ResearchRun) -> dict[str, Any]:
         ),
         "pricing_version": run.pricing_version,
         "pricing_digest": run.pricing_digest,
+        "protocol_source": _encode_source(run.protocol_source),
         "created_at": run.created_at.value.isoformat(),
         "updated_at": run.updated_at.value.isoformat(),
     }
+
+
+def _encode_source(source: ProtocolSource | None) -> dict[str, Any] | None:
+    """装配来源（GOAL-003 cycle 20）：None = 该 run 早于来源登记，显式保留空值。"""
+    if source is None:
+        return None
+    return {
+        "protocol_path": source.protocol_path,
+        "draft_id": source.draft_id,
+        "draft_revision": source.draft_revision,
+    }
+
+
+def _decode_source(record: dict[str, Any] | None) -> ProtocolSource | None:
+    if not record:
+        return None
+    return ProtocolSource(
+        protocol_path=record.get("protocol_path"),
+        draft_id=record.get("draft_id"),
+        draft_revision=record.get("draft_revision"),
+    )
 
 
 def _decode(record: dict[str, Any]) -> ResearchRun:
@@ -124,6 +147,7 @@ def _decode(record: dict[str, Any]) -> ResearchRun:
         else None,
         pricing_version=record.get("pricing_version"),
         pricing_digest=record.get("pricing_digest"),
+        protocol_source=_decode_source(record.get("protocol_source")),
         created_at=Timestamp(datetime.fromisoformat(record["created_at"])),
         updated_at=Timestamp(datetime.fromisoformat(record["updated_at"])),
     )

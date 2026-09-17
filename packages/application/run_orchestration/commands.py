@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from packages.domain.core import ID
+from packages.domain.protocol_source import ProtocolSource
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,6 +22,9 @@ class StartRunCommand:
     trace_id: str
     idempotency_key: str | None = None
     notes: dict[str, str] = field(default_factory=dict)
+    # GOAL-003 cycle 20：装配来源随 run 落 canonical（重启后的续跑唯一重建入口）。
+    # 缺省 None = 调用方不持有来源（既有测试/内部装配），run 行显式留空。
+    protocol_source: ProtocolSource | None = None
 
     def __post_init__(self) -> None:
         if not self.project_id:

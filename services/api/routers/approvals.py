@@ -37,6 +37,7 @@ from services.api.dto.approvals import (
 )
 from services.api.errors import ApiError
 from services.api.run_access import get_run_or_error, save_run
+from services.api.run_resume import rebuild_and_resume
 
 router = APIRouter(tags=["approvals"])
 
@@ -213,26 +214,64 @@ def _pause_payload(deps: ApiDeps, run: ResearchRun) -> dict[str, object]:
 
 
 def _resume_payload(deps: ApiDeps, run_id: str, run: ResearchRun) -> dict[str, object]:
+    """resume 的三种结局（都如实表达，不把"解除暂停"伪装成"续跑"）：
+
+    1. 本进程持有暂停上下文 ⇒ `RESUMED`（真的执行剩余任务）；
+    2. 没有本进程上下文（重启后）⇒ 按 run 记下的装配来源**重建**后续跑（GOAL-003
+       cycle 20）⇒ `REBUILT`；重建被诚实拒绝（来源缺失/不可解析/preflight 不过/
+       语义漂移）⇒ `NONE` + 点名原因，canonical 状态不动（resume 的既有语义是
+       "恢复派发"，一次失败的续跑不该把这个闸门重新关上）；
+    3. 连服务都没装配 ⇒ `NONE`（既有行为）。
+    """
     payload = _run_payload(run)
     payload["dispatch"] = "RELEASED"
     payload["continuation"] = "NONE"
-    if deps.runs is None or not deps.runs.has_paused_context(run_id):
+    if deps.runs is None:
         payload["note"] = (
             "no paused execution context in this process; dispatch resumes, "
             "and no continuation was pending"
         )
         return payload
-    try:
-        outcome = deps.runs.resume_paused(run_id, run)
-    except InvalidInputError:  # 竞态：上下文已被另一次 resume 取走
-        payload["note"] = "paused execution context was already consumed"
+    if deps.runs.has_paused_context(run_id):
+        try:
+            outcome = deps.runs.resume_paused(run_id, run)
+        except InvalidInputError:  # 竞态：上下文已被另一次 resume 取走
+            payload["note"] = "paused execution context was already consumed"
+            return payload
+        resumed = replace(run, state=outcome.state)
+        save_run(deps, resumed)
+        payload = _run_payload(resumed)
+        payload["dispatch"] = "RELEASED"
+        payload["continuation"] = "RESUMED"
+        payload["note"] = "paused execution context resumed; remaining tasks executed"
         return payload
-    resumed = replace(run, state=outcome.state)
+    return _rebuilt_payload(deps, run)
+
+
+def _rebuilt_payload(deps: ApiDeps, run: ResearchRun) -> dict[str, object]:
+    """重启后的续跑：按 run 记下的装配来源重建上下文。
+
+    重建被诚实拒绝时**不动 canonical 状态**：resume 的既有语义是"恢复派发"
+    （PAUSED 是派发面的闸门），重建失败不该把闸门重新关上；这里的职责是把原因
+    如实说出来，而不是把 run 挂回停车状态——那留给控制面（`POST /pause`）。
+    """
+    attempt = rebuild_and_resume(deps, run)
+    if not attempt.resumed:
+        payload = _run_payload(run)
+        payload["dispatch"] = "RELEASED"
+        payload["continuation"] = "NONE"
+        payload["note"] = (
+            f"no paused execution context in this process; rebuild refused: {attempt.refusal}"
+        )
+        return payload
+    resumed = replace(run, state=attempt.outcome.state if attempt.outcome else run.state)
     save_run(deps, resumed)
     payload = _run_payload(resumed)
     payload["dispatch"] = "RELEASED"
-    payload["continuation"] = "RESUMED"
-    payload["note"] = "paused execution context resumed; remaining tasks executed"
+    payload["continuation"] = "REBUILT"
+    payload["note"] = (
+        "execution context rebuilt from the recorded protocol source; remaining tasks executed"
+    )
     return payload
 
 

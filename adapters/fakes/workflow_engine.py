@@ -10,6 +10,7 @@ from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
     TaskCompletion,
+    TaskIdentity,
     TaskLease,
 )
 from packages.domain.core import Timestamp
@@ -237,6 +238,31 @@ class FakeWorkflowEngine(FakeBase):
         )
         self._record("due_retry_task_ids", run_id, result=str(len(ids)))
         return ids
+
+    def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
+        """Fake 与两个持久化 adapter 同判据：按 canonical 任务回答稳定身份。
+
+        `resolve_sessions` 每次生成新的 task id，所以重算剩余工作只能按
+        idempotency key 对齐；无 key 的任务行不参与回答（与 SQL 侧 `IS NOT NULL` 同义）。
+        """
+        self._enter("task_identities", run_id)
+        identities: list[TaskIdentity] = []
+        for task in sorted(
+            (
+                item
+                for item in self._tasks.values()
+                if item.run_id.value == run_id and item.idempotency_key is not None
+            ),
+            key=lambda item: item.idempotency_key or "",
+        ):
+            key = task.idempotency_key
+            if key is None:  # pragma: no cover - 上面的过滤已排除（mypy 需要显式收窄）
+                continue
+            identities.append(
+                TaskIdentity(idempotency_key=key, task_id=task.id.value, status=task.status)
+            )
+        self._record("task_identities", run_id, result=str(len(identities)))
+        return tuple(identities)
 
     def recover_expired_leases(self) -> int:
         """Fake 无 lease TTL 语义（lease 随 acquire/heartbeat 刷新），恒无过期 lease。

@@ -76,6 +76,23 @@ def due_retries(conn: sqlite3.Connection, run_id: str, now_text: str) -> tuple[s
     return tuple(str(row["task_id"]) for row in rows)
 
 
+def task_identities(conn: sqlite3.Connection, run_id: str) -> tuple[tuple[str, str, str], ...]:
+    """该 run 已登记任务的 (idempotency_key, task_id, status)（确定性排序）。
+
+    specs 每次解析都会生成新的 task id，只有 idempotency key（`run:phase:agent`）
+    是稳定身份 ⇒ 重启后的续跑靠这一句把解析结果对齐回 canonical 任务（已成功的不重跑、
+    其余用 canonical id 交付）。
+    """
+    rows = conn.execute(
+        "SELECT idempotency_key, task_id, status FROM tasks WHERE run_id = ?"
+        " AND idempotency_key IS NOT NULL ORDER BY idempotency_key",
+        (run_id,),
+    ).fetchall()
+    return tuple(
+        (str(row["idempotency_key"]), str(row["task_id"]), str(row["status"])) for row in rows
+    )
+
+
 def pending_outbox(conn: sqlite3.Connection) -> tuple[EventEnvelope, ...]:
     """未投递的 outbox 事件（供 EventPublisher 轮询）。"""
     rows = conn.execute(

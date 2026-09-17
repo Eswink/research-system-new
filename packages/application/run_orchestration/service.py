@@ -59,12 +59,14 @@ from packages.application.run_orchestration.phase_runner import (
 from packages.application.run_orchestration.session_resolution import resolve_sessions
 from packages.application.run_orchestration.task_executor import SessionSpecContext
 from packages.application.run_orchestration.usage_recording import record_cancelled_usage
+from packages.domain.core import ID
 from packages.domain.enums import GateType
 from packages.domain.events import EventType
 from packages.domain.manifest import RunManifest
 from packages.domain.protocols import ProtocolDefinition
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
+from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
 
 SessionSpec = tuple[ResearchTask, TaskContract, SessionSpecContext]
@@ -128,7 +130,10 @@ class RunOrchestrationService:
         # 懒触发 lease 恢复：上次进程崩溃遗留的过期 lease 先收敛再调度新 run。
         self._deps.workflow.recover_expired_leases()
         run = ResearchRun(
-            id=command.run_id, project_id=command.project_id, protocol_id=command.protocol_id
+            id=command.run_id,
+            project_id=command.project_id,
+            protocol_id=command.protocol_id,
+            protocol_source=command.protocol_source,
         )
         run = run.transition(ResearchRunState.Transition.START_COMPILE)
         plan, report = compile_and_preflight(protocol, catalog, project, preflight_context)
@@ -191,18 +196,63 @@ class RunOrchestrationService:
         pending: tuple[SessionSpec, ...],
     ) -> RunOutcome:
         """恢复：以冻结 manifest 语义继续剩余任务（mismatch 拒绝）。"""
-        if str(context.run.manifest_digest or "") != command.frozen_manifest_digest:
-            raise ManifestFreezeError("resume manifest digest does not match frozen snapshot")
+        self._assert_resumable(context, command)
         if context.run.state != ResearchRunState.State.PAUSED:
             raise ValueError(f"cannot resume run in state {context.run.state}")
+        resumed = context.run.transition(ResearchRunState.Transition.RESUME)
+        context = replace(context, run=resumed)
+        return self._execute_with_context(context, None, pending=pending)
+
+    def resume_rebuilt(self, context: RunContext, command: ResumeRunCommand) -> RunOutcome:
+        """重启后的续跑：上下文由调用方按 durable 事实重建（GOAL-003 cycle 20）。
+
+        与 `resume_run` 的差别只有一处：canonical 状态迁移**已由控制面完成**并落库
+        （先迁 `PAUSED → RUNNING` 再续跑——协作式暂停谓词读的就是 canonical 状态，
+        顺序反了续跑会被自己的暂停谓词挡住，cycle 19 的教训）。剩余工作由本服务按
+        canonical 任务重算：specs 每次解析都会生成新的 task id，只有 idempotency key
+        是稳定身份，所以"已成功的任务不重跑"只能按 key 对齐。
+
+        冻结语义校验与 `resume_run` 完全同一套（digest + 语义 digest），不做任何放宽。
+        """
+        self._assert_resumable(context, command)
+        if context.run.state != ResearchRunState.State.RUNNING:
+            raise ValueError(f"cannot continue a rebuilt resume in state {context.run.state}")
+        return self._execute_with_context(context, None, pending=self._remaining_specs(context))
+
+    def _assert_resumable(self, context: RunContext, command: ResumeRunCommand) -> None:
+        """resume 前置断言：冻结 digest 一致 + 语义未漂移（两个入口共用）。"""
+        if str(context.run.manifest_digest or "") != command.frozen_manifest_digest:
+            raise ManifestFreezeError("resume manifest digest does not match frozen snapshot")
         assert_semantics_frozen(
             context,
             pricing_version=context.run.pricing_version,
             pricing_digest=context.run.pricing_digest,
         )
-        resumed = context.run.transition(ResearchRunState.Transition.RESUME)
-        context = replace(context, run=resumed)
-        return self._execute_with_context(context, None, pending=pending)
+
+    def _remaining_specs(self, context: RunContext) -> tuple[SessionSpec, ...]:
+        """重算剩余工作（按 idempotency key 对齐 canonical 任务）。
+
+        两条规则缺一不可：
+
+        - 已 `SUCCEEDED` 的任务**不重跑**（重建出来的 specs 是全量的，不是断点）；
+        - 未成功的任务必须换成 **canonical task id**——`resolve_sessions` 每次解析都
+          生成新 id，而引擎按 idempotency key 去重，拿新 id 去 acquire 只会得到
+          "这个任务不存在"（替身/持久化 adapter 同判据）。
+        """
+        identities = {
+            item.idempotency_key: item
+            for item in self._deps.workflow.task_identities(context.run.id.value)
+        }
+        remaining: list[SessionSpec] = []
+        for task, contract, spec_context in self._resolve_sessions(context):
+            identity = identities.get(task.idempotency_key or "")
+            if identity is None:
+                remaining.append((task, contract, spec_context))
+                continue
+            if identity.status == ResearchTaskState.State.SUCCEEDED:
+                continue
+            remaining.append((replace(task, id=ID(identity.task_id)), contract, spec_context))
+        return tuple(remaining)
 
     def _execute_with_context(
         self,
@@ -216,6 +266,11 @@ class RunOrchestrationService:
             outcome,
             pricing_version=context.run.pricing_version,
             pricing_digest=context.run.pricing_digest,
+            manifest_semantic_digest=(
+                str(context.run.manifest_semantic_digest)
+                if context.run.manifest_semantic_digest is not None
+                else None
+            ),
         )
         self._release_if_terminal(context.run.id.value, outcome.state)
         return outcome

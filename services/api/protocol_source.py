@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from packages.domain.protocol_source import ProtocolSource
 from services.api.catalog import load_protocol_definition
 from services.api.errors import ApiError
 
@@ -48,6 +49,24 @@ def load_protocol_for_source(
         raise ApiError(422, "Protocol Source Required", "protocol_path or draft ref required")
     loaded: ProtocolDefinition = load_protocol_definition(protocol_path)
     return loaded
+
+
+def protocol_source_of(
+    protocol_path: str | None,
+    draft_ref: tuple[str, int] | None,
+) -> ProtocolSource:
+    """把已校验的来源参数落成领域值对象（与 `load_protocol_for_source` 同判据）。
+
+    GOAL-003 cycle 20：run 行要记住"这份 run 用哪份协议装配"，重启后的续跑才有
+    重建入口；判据与解析链一致（二者互斥、缺一报 422），不在这里放宽任何一条。
+    """
+    if draft_ref is not None and protocol_path:
+        raise ApiError(422, "Ambiguous Protocol Source", "provide either path or draft revision")
+    if draft_ref is not None:
+        return ProtocolSource(draft_id=draft_ref[0], draft_revision=draft_ref[1])
+    if not protocol_path:
+        raise ApiError(422, "Protocol Source Required", "protocol_path or draft ref required")
+    return ProtocolSource(protocol_path=protocol_path)
 
 
 def _load_draft_revision(deps: ApiDeps, draft_ref: tuple[str, int]) -> ProtocolDefinition:
