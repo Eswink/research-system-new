@@ -87,7 +87,7 @@ exit_criteria:
       场景 ⇒ 无 `InterfaceError`/404 类失败（反证：修复前该场景 2×500 + 2×404）；
       统一读面用例：worker claim 持有、retry dispatch 持有、两者皆无三种情形各有可判定
       答案；PG parity；文档 + 读面收敛。
-    status: PENDING
+    status: PASS
   - id: EC-06
     criterion: >-
       `resume_paused` 失败后的补偿（后继入口第 7 项 / RECHECK-082 W-3）：续跑失败路径
@@ -155,7 +155,7 @@ memory_entries: []
 | EC-02 | 第 3 项 | 读面区分两种 `PAUSED`（重排停车 vs 用户暂停） | 读面用例（注入时钟）+ PG parity + 文档同源 | **PASS**（cycle 2：PLAN-20260917-085 / RECHECK-085；详见下方 EC-02 注记） |
 | EC-03 | 第 4 项 | `failure_policy` 有真实消费者 | 反向搜索 + fail-fast/重试对照用例 + 回归对照 | **PASS**（cycle 3：PLAN-20260917-086 / RECHECK-086；详见下方 EC-03 注记） |
 | EC-04 | 第 5 项 | 失败 run 与 `manifest.frozen` 事件的语义 digest（W-1/W-2） | API/事件/重放一致性用例 + 反证 | **PASS**（cycle 4：PLAN-20260917-087 / RECHECK-087；详见下方 EC-04 注记） |
-| EC-05 | 第 6 项 | 锁粒度（每线程连接）+ 两个派发方的统一读面 | 并发反证场景 + 三态读面用例 + PG parity | **PENDING**（① 已交付 cycle 5：PLAN-20260917-088 / RECHECK-088；② 待下一 cycle 的 PLAN-089） |
+| EC-05 | 第 6 项 | 锁粒度（每线程连接）+ 两个派发方的统一读面 | 并发反证场景 + 三态读面用例 + PG parity | **PASS**（① cycle 5：PLAN-20260917-088 / RECHECK-088；② cycle 6：PLAN-20260917-089 / RECHECK-089；详见下方注记） |
 | EC-06 | 第 7 项 | `resume_paused` 失败补偿（不留悬空 RUNNING） | 失败注入 + 重入用例 + 反证 | PENDING |
 | EC-07 | 第 1 项 | 完整安全审计的可复核终态（二选一） | 终态文档 + 封印标识/findings 处置 或 根因+配方+人工清单 | PENDING |
 
@@ -216,6 +216,23 @@ None"时相等成立）——已把"重放出来的值非空"钉进断言，判�
 本轮不宣称"404 已修"；代理面是鸭子类型（mypy 在装配边界 cast，覆盖靠套件）；池不做线程
 死亡回收；**统一派发读面（②）仍未做**——EC-05 因此保持 PENDING。
 
+**EC-05 注记②（2026-09-17 cycle 6，交付完成）**：`WorkflowEngine.dispatch_ownership(run_id)`
+成为**统一派发读面**——一个调用同时给出重排读面（`RetrySchedule`，与 `retry_schedule` 同一列
+同一判据、同一个 `now`）与**活**租约持有者（`LeaseHolder`：`task_id`/`worker_id`/`fence`/
+`expires_at`，**不含 `lease_id`**），并组合成 `kind ∈ {NONE, RETRY_DISPATCH, WORKER_CLAIM,
+BOTH}`；三实现（Fake/SQLite/PG）同判据，控制面 `GET /runs/{id}`（与列表）新增 `dispatch`
+字段（读不到 ⇒ `UNKNOWN`，不猜 `NONE`）。**"活"= 回收判据的补集**（未过期且持有者不是 LOST
+worker），由 adapter 用权威时钟判定，两个持久化实现的用例都在**同一个测试里**同时断言
+"读面说不活的，回收就该动手"。`paused_dispatch`（EC-02）改为消费**同一次读**的 `PAUSED`
+投影——取值与语义逐字不变，两个字段不再可能各说各话。证据：契约套件（3 实现）、SQLite
+注入时钟 7 条（过期/边界秒/LOST/控制面自持/重排/BOTH）、PG parity 4 条、API 7 条
+（三态 + BOTH + UNKNOWN + 列表同判 + 只读性）、**反证三跑**（过期判据/LOST 判据/路由器装配，
+分别 2/2/7 红）。**诚实边界（RECHECK-089 W-1…W-6）**：`ClaimRequest.lease_ttl_seconds` 三个
+实现都未消费（既有 port 漂移，实测撞到）；列表路径每 run 一次读（N+1）；读面不回答持有者
+健康度（心跳/进度/卡死不在读面）；Fake 无过期语义（"活"= 仍在租约表里）；PG 两读不构成
+跨表快照；`WORKER_CLAIM` 词表也覆盖 `worker_id=None` 的控制面自持租约（靠 `holder.worker_id`
+区分，已写进文档）。EC-05 两半（① 每线程连接 cycle 5、② 统一读面 cycle 6）由此**全部交付**。
+
 **后继入口 ↔ EC 映射与取舍**：第 1 项（完整安全审计）在 GOAL-003 记录里就被标注为
 「运维动作，不在循环内可完成」——本 GOAL 把它**单列**为 EC-07，判据容纳两种合格终态，
 不做成循环主线（derive 顺序取 EC 表首个 PENDING，故 EC-07 只在循环空档或有新证据时
@@ -247,9 +264,10 @@ EC-02 为 M、EC-06 为 S、EC-07 为 M（运维/审计，进度不由本循环�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 6 进行中**（EC-05 ②：PLAN-20260917-089 已建档并投影 ALL_PLAN，
-`status: IN_PROGRESS`；driver=client-goal / owner=root-agent）；
-cycle 5 的收口 CI 已记录（run 35246943135，见状态历史末行）。
+当前续点：**cycle 6 已收口**（EC-05 ②：PLAN-20260917-089 / RECHECK-089 ⇒ EC-05
+**① + ② 全部交付**；CI 结论见迭代日志第 6 行）；下一条工程 cycle = cycle 7 = EC-06
+（`resume_paused` 失败补偿：失败不留悬空 `RUNNING`、补偿可观测且可重入；先反向搜索两条入口
+——API `resume` 与守护线程 `_resume`——各自的失败收敛现状）。
 
 ## 驱动
 
@@ -323,6 +341,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 3 | PLAN-20260917-086（失败策略的消费者：`on_task_failure` 消费 + DEGRADED 落点 + 未消费键点名；driver=client-goal / owner=root-agent） | `2a014ad`（WP-A 域视图）、`7896525`（WP-B 消费/事件/e2e/文档 + 词表门禁同步）、`652e712`（450 行/50 行硬上限的搬移重构）、`1c280b2`（RECHECK-086 + MEM-061 + GOAL/ALL_PLAN） | 定向：domain **5** / application **6** / e2e **2**（新增）+ 受影响套件复跑 **977 passed**；事件词表门禁 **14 passed**；mypy 906 files 绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3823 passed / 10 skipped**，511.99s）。首跑 m0 红 2 处 = `phase_runner.py` 456 行 + `_execute_group` 61 行、`service.py` 483 行（均为本改动引入、已搬代码修复） | **CI**：head `186963c`（`2a014ad`/`7896525`/`652e712` 三个 WP 提交 + `1c280b2` 记录提交 + `186963c` 迭代日志回填，同一棵树）→ run **35227784813 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 1000006747…1000006752，无重跑） | 事件词表门禁先红（新增 2 个事件类型）⇒ 补词表与清单，断言未改；组合复跑的 3 条 PG 假红 = 手工顺序把 `tests/api` 排到 `test_pg_crash_restart` 之后（非产品缺陷，隔离复跑 + m0 全量为判据） | EC-03 **PASS**（RECHECK-086，W-1…W-5）；EC-04…EC-07 PENDING | cycle 4：derive 取 EC 表首个 PENDING（EC-04 = 失败 run 与 `manifest.frozen` 事件的语义 digest），先反向搜索确认 `run_from_execution` 的 ValueError 收敛分支与事件 payload 现状 |
 | 4 | PLAN-20260917-087（失败 run 的冻结语义 digest：事件 payload 带语义 digest + 收敛分支走同一个 `with_manifest`；driver=client-goal / owner=root-agent） | `1831841`（WP-A 事件 payload + EVENT_MODEL）、`028abf3`（WP-B 收敛路径 + `FrozenManifestRefs` + DTO/OpenAPI/web 类型与夹具 + CONTROL_PLANE_API）、`65d1ebd`（WP-C API 用例 7 条）、`a3ccc66`（复跑抓到的类型收窄修复） | 定向：`tests/api` **418 passed**（新增 7）+ 新增应用用例 **3 passed**；`tests/domain tests/application tests/contracts tests/postgres tests/e2e` 复跑 **1629 passed / 4 skipped**（197.19s）；web 门全绿（lint 0 error / typecheck / unit **76** / build / stub e2e **83** / live e2e **36**）；**反证双跑**：去掉事件 payload 键 ⇒ **7 failed / 3 passed**、去掉收敛分支的语义 digest 参数 ⇒ **3 failed / 4 passed**（失败文本 = 改动前的 `frozen manifest lacks a semantic digest`）；m0 首跑 24/25（唯一红项 = MEM-062 引用的 RECHECK-087 尚未写入的记录顺序问题，非产品缺陷）⇒ 补齐记录后复跑又暴露 `python/typecheck` 的 `str | None` 收窄问题（`Digest.parse` 收到 `str | None`，已恢复显式判空并删掉未被消费的 `frozen` 属性）⇒ 第三次实跑 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3835 passed / 10 skipped**，477.88s） | **CI**：head `13054a8`（`1831841`/`028abf3`/`65d1ebd`/`a3ccc66` 四个 WP/修复提交 + `13054a8` 记录提交，同一棵树）→ run **35238057745 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 1000006862…1000006867，无重跑） | 反证暴露一处**假绿**：重放一致性用例在"两侧同为 None"时相等成立 ⇒ 已把"重放值非空"钉进断言（判据只增强）；首跑"守卫放行"用例报 `drifted`，用临时探针定位为**用例替身** `_park` 漏复制定价引用（守卫正常工作），修替身而非改产品/断言 | EC-04 **PASS**（RECHECK-087，W-1…W-5）；EC-05…EC-07 PENDING | cycle 5：derive 取 EC 表首个 PENDING（EC-05 = 锁粒度每线程连接 + worker claim/retry dispatch 的统一派发读面），先反向搜索确认控制面 SQLite 共享连接的当前用法与两个派发方各自读到的事实 |
 | 5 | PLAN-20260917-088（EC-05 第①半：控制面每线程一条 SQLite 连接；driver=client-goal / owner=root-agent） | `64d668a`（`ThreadLocalConnection` + `_open_sqlite`/`close_all` 装配 + 夹具统一走池 + 池单测 5 + 负载用例 2） | 定向：池单测 **5 passed** / 负载用例 **2 passed**（内存 + 文件两路径）/ `tests/api` **420 passed** / `adapters-sqlite+application+contracts+e2e+postgres` 复跑 **1371 passed / 4 skipped**（213.47s）；mypy **911 files** 绿；live e2e **36 passed**（真 app + 文件库）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3846 passed / 10 skipped**，510.93s；首跑红 1 处 = `conftest.make_base_deps` 54 行撞 50 行/函数硬上限 ⇒ 拆出 `tests/api/base_fixtures.py`（`121246c`）后复跑全绿） | **CI**：head `d8c9377`（`64d668a` 池/装配/用例 + `121246c` 夹具拆分 + `d8c9377` 记录提交，同一棵树）→ run **35245282964 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 1000006994…1000006999，无重跑） | Mimosa 把 `__getattr__` 之前的显式转发方法（`execute(self, sql, ...)`）误报成 SQL 注入 ⇒ 改成委托式代理面（少写 N 个转发方法，也把误报消除）；夹具默认 `:memory:` 不覆盖每线程连接 ⇒ 另加文件库夹具的负载用例；池不是 `sqlite3.Connection` 子类 ⇒ 装配边界 cast（mypy 看不到鸭子类型） | EC-05 **部分交付**（① 交付并验收，② 统一派发读面待做）⇒ EC-05 保持 PENDING；cycle 7 的 1×404 在 hermetic harness 不可复现（不宣称已修） | cycle 6 = PLAN-089（EC-05 ②：worker claim 与 retry dispatch 的统一派发读面 + 三态用例 + PG parity），先反向搜索两家当前各自能读到什么、lease 事实在哪些表里 |
+| 6 | PLAN-20260917-089（EC-05 第②半：统一派发读面 `dispatch_ownership` + `dispatch` 字段；driver=client-goal / owner=root-agent） | `07213ee`（WP-A：port `DispatchOwnership`/`LeaseHolder` + SQLite/PG/Fake 三实现 + 契约套件 + SQLite 注入时钟单测 + PG parity）、`48fe31d`（WP-B：DTO/视图/路由器 + OpenAPI 快照 + web 类型与夹具 + CONTROL_PLANE_API/PORTS + 7 条 API 用例）、`925ac6c`（修复：PG 引擎 479 行 ⇒ 搬 `projections.py`/`db.py`；3 处 mypy；两条断言按反证增强） | 定向（DSN 固化配方，PG 实跑）`api+contracts+adapters+application+e2e+postgres` **2108 passed / 7 skipped**（347.66s）；`test_python_source_limits` **927 passed**；mypy **917 files** 绿；web 门全绿（lint / typecheck / unit **76** / build / stub e2e **83** / live e2e **36**）；**反证三跑**：① 去掉过期判据 ⇒ SQLite/PG 各 1 红、② 去掉 LOST 判据 ⇒ 各 1 红、③ 去掉路由器装配 ⇒ 新 API 用例 **7 红**（首跑 5 红 ⇒ 两条“两侧相等”用例假绿 ⇒ 补“先钉住读面真的答了”后复跑 7 红）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3887 passed / 10 skipped**，521.87s；首跑 2 红 = 3 处 mypy + PG 引擎 450 行硬上限，均本改动引入 ⇒ 修类型 + 搬代码；第二次复跑唯一红项 = MEM-064 frontmatter 的 YAML 引号 ⇒ 修复后第三次实跑全绿） | 首跑 m0 红 2 处（类型/行数，均本改动引入）；反证暴露一处**假绿**（列表同判与只读性用例在 `dispatch=None` 时两侧同为空仍相等）⇒ 断言只增强；PG 引擎撞 450 行上限 ⇒ 搬代码而非改门禁 | EC-05 **PASS**（① RECHECK-088 + ② RECHECK-089，W-1…W-6：`ClaimRequest.lease_ttl_seconds` 无人消费、列表 N+1、读面不含健康度、Fake 无过期语义、PG 两读无快照、`kind` 词表张力）；EC-06/EC-07 仍 PENDING | cycle 7：derive 取 EC 表首个 PENDING（EC-06 = `resume_paused` 失败补偿，RECHECK-082 W-3），先反向搜索确认失败路径当前把 run 留在什么状态、两条入口（API / 守护线程）各自怎么收敛 |
 
 ## 状态历史
 
@@ -382,3 +401,21 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 - 2026-09-17 cycle 5 CI 记录：head `d8c9377` → run **35245282964 六个 job 全 success**
   （runner_id 1000006994…1000006999，无重跑）；池/夹具/记录提交同一棵树被该 run 覆盖
   （CI 只跑 head）。
+
+- 2026-09-17 cycle 5 收口提交 CI 记录：head `2a979e2` → run **35246943135 六个 job 全 success**
+  （run_number 142；collector-quality / eval-gate / console-frontend / container-quality /
+  quality-ubuntu-latest / quality-windows-latest 全 success，无重跑）——记录提交只改
+  `.cursor/**`（RECHECK-088 / MEM-063 / GOAL 回写）同样触发六 job，按同口径等待到终态。
+- 2026-09-17 cycle 6 建档：EC-05 ② **IN_PROGRESS**（PLAN-20260917-089，`parent_goal` 已投影
+  ALL_PLAN；driver=client-goal / owner=root-agent）；反向搜索确认缺口 = `leases` 表没有任何
+  run 级读口（PG 只有进程内 `claimed_by(task_id)`）、`paused_dispatch` 只覆盖 `PAUSED`，
+  且"活"的判据必须与 `recover_expired_leases`（`expires_at < now` 或 worker LOST）互补。
+- 2026-09-17 cycle 6 收口：EC-05 **PASS（① + ② 全部交付）**（PLAN-20260917-089 /
+  RECHECK-089，PASS_WITH_WARNINGS，W-1…W-6）；`dispatch_ownership` 成为统一派发读面
+  （重排 + 活租约 ⇒ `NONE`/`RETRY_DISPATCH`/`WORKER_CLAIM`/`BOTH`），控制面新增 `dispatch`
+  字段、`paused_dispatch` 改为消费同一次读；三实现契约 + SQLite 注入时钟（过期/边界秒/LOST）
+  + PG parity + API 三态全绿；定向 2108 passed / 7 skipped；web 门全绿；**反证三跑**有效
+  （含一处假绿修复：列表同判与只读性用例在 `dispatch=None` 时两侧同为空仍相等 ⇒ 补"先钉住
+  读面真的答了"）；m0 见迭代日志第 6 行（首跑 2 红均本改动引入 ⇒ 修类型 + 搬代码，未改门禁）。
+  EC-06/EC-07 仍 PENDING ⇒ 下一条工程 cycle = cycle 7 = EC-06（`resume_paused` 失败补偿，
+  RECHECK-082 W-3）。
