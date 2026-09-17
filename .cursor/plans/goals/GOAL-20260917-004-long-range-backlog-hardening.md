@@ -129,7 +129,9 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更（含为判据引入新的图像/解析库——优先用现有依赖实现）
   - 同一失败签名超过 fix_policy 上限
   - 「按声明给 adapter 接线」与 `tool_pack.*`/脚本策略（后继入口第 8 项）——受控出网与产品决策，需用户或 ADR 拍板
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260917-084-freeze-protocol-body-into-run.md
+  - .cursor/plans/tasks/PLAN-20260917-085-parked-run-read-surface.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -261,10 +263,16 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 建档（本文件 + GOAL-003 事实更正行；driver=client-goal / owner=root-agent） | `7c0d9f2` | `.cursor/skills/governance-check/scripts/validate.py` 绿（本机实跑） | run **35203036505**（7c0d9f2）：**failure**——仅 `collector-quality` 红，2 条 PG 退避用例断言失败（其余五 job success） | 定位为**测试墙钟依赖**（非本提交缺陷）：夹具注入固定引擎时钟却用 SQL `now()` 挪 deadline，CI 墙钟越过 `START` 后必红；修复提交 `5607992`（夹具改用引擎时钟，断言未改）→ run **35204710864 六个 job 全 success** | EC-01…EC-07 全 PENDING | cycle 1 = EC-01（来源自足续跑：协议正文冻结进 run 行或 CAS） |
-| 1 | PLAN-20260917-084（来源自足续跑：`ProtocolBody` 冻结进 run 行 + 重建只认它） | `3d9cc73`（WP-A 域/装配/两个 store）、`87c2d86`（WP-B 重建/读面/用例）、收口记录提交见下 | 定向：api **9** / e2e **5** / domain **4+13** / sqlite **4** / pg **3** 全 passed；契约 `test_openapi_snapshot.py` **8 passed**（DTO 新增字段后重生成快照 +11 行）；web 门（lint/typecheck/unit/build/web-*）全绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3773 passed / 10 skipped**，497.96s；首轮 m0 红 2 处——契约快照漂移 + web 夹具缺字段——均为本改动引入、已修后复跑全绿） | 见本行下方「CI」注 | 首轮 m0 红 2 处（契约快照漂移 + web 夹具缺字段），均为本改动引入、已修 | EC-01 **PASS**（RECHECK-084）；新发现 W-1：重建"没有剩余工作"的 run 会退化成重跑全部并收敛 `FAILED`；EC-02…EC-07 PENDING | cycle 2 = EC-02（读面区分两种 `PAUSED`）或先处置 W-1（重建无剩余工作的语义） |
+| 1 | PLAN-20260917-084（来源自足续跑：`ProtocolBody` 冻结进 run 行 + 重建只认它） | `3d9cc73`（WP-A 域/装配/两个 store）、`87c2d86`（WP-B 重建/读面/用例）、`5141e06`（WP-C 记录 + 契约快照 + 文档） | 定向：api **9** / e2e **5** / domain **4+13** / sqlite **4** / pg **3** 全 passed；契约 `test_openapi_snapshot.py` **8 passed**（DTO 新增字段后重生成快照 +11 行）；web 门（lint/typecheck/unit/build/web-*）全绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3773 passed / 10 skipped**，497.96s；首轮 m0 红 2 处——契约快照漂移 + web 夹具缺字段——均为本改动引入、已修后复跑全绿） | **CI**：记录提交 `5141e06` → run **35211094454 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，无重跑）；另：WP-A/WP-B 提交经 `5141e06` 的同一棵树覆盖验证（CI 只跑 head） | 首轮 m0 红 2 处（契约快照漂移 + web 夹具缺字段），均为本改动引入、已修 | EC-01 **PASS**（RECHECK-084）；新发现 W-1：重建"没有剩余工作"的 run 会退化成重跑全部并收敛 `FAILED`；EC-02…EC-07 PENDING | cycle 2 = EC-02（停车语义读面：PLAN-20260917-085 已建档） |
 
 ## 状态历史
 
 - 2026-09-17 建档：由 GOAL-003 恢复条件①建立（用户 goal 模式指令）；`status: ACTIVE`；
   EC-01…EC-07 全 PENDING；GOAL-003 保持 BLOCKED，仅按只追加原则补一行事实更正
   （其 BLOCKED 记录写「W-1…W-6」，RECHECK-083 实为 W-1…W-7）。
+- 2026-09-17 cycle 1 收口：EC-01 **PASS**（PLAN-20260917-084 / RECHECK-084，
+  PASS_WITH_WARNINGS）；记录提交 `5141e06` → CI run **35211094454 六个 job 全 success**；
+  建档提交的 CI 红项（PG 退避用例的墙钟依赖）已定位并修复（`5607992` → run
+  **35204710864 六个 job 全 success**，非本 GOAL 代码缺陷）；新发现 W-1（重建"没有剩余
+  工作"会重跑全部并收敛 `FAILED`）登记为 cycle 2 的候选；cycle 2 已建档
+  PLAN-20260917-085（EC-02 停车语义读面）。
