@@ -6,23 +6,44 @@
 2. 没有本进程上下文、来源又不可解析时，`POST /runs/{id}/resume` 明说重建被拒的原因，
    而不是含糊地报"没有续跑"；
 3. 编排服务没装配时同样诚实拒绝（不伪装）。
+
+GOAL-004 cycle 1 追加第四件：**冻结正文**（`protocol_body`）随 run 落 canonical，
+重建不再依赖那份外部来源文件还在——同一组用例同时证明"文件消失后仍能重建"与
+"换一份正文会被拒绝"。
 """
 
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import replace
+from pathlib import Path
 from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
-from packages.domain.core import ID
-from packages.domain.protocol_source import ProtocolSource
+from packages.domain.core import ID, Digest
+from packages.domain.protocol_source import ProtocolBody, ProtocolSource
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from services.api.run_resume import rebuild_and_resume
 
 _PROTOCOL = "m12_reference_research_v1.yaml"
+_DEMO_PROTOCOL = "console_demo_research_v1.yaml"
+_PROTOCOLS_DIR = Path(__file__).resolve().parents[2] / "examples" / "protocols"
+
+
+@contextmanager
+def _temp_protocol(source_name: str) -> Iterator[tuple[str, Path]]:
+    """受控模板的临时副本：真实文件，用完即删——用来量"来源消失后还能不能重建"。"""
+    name = f"frozen-body-{uuid.uuid4().hex}.yaml"
+    path = _PROTOCOLS_DIR / name
+    path.write_text((_PROTOCOLS_DIR / source_name).read_text(encoding="utf-8"), encoding="utf-8")
+    try:
+        yield name, path
+    finally:
+        path.unlink(missing_ok=True)
 
 
 def _deps(client: TestClient) -> Any:
@@ -139,3 +160,145 @@ def test_without_an_orchestration_service_the_rebuild_refuses(run_ready_client: 
 
     assert attempt.resumed is False
     assert attempt.refusal is not None and "not configured" in attempt.refusal
+
+
+def _canonical(client: TestClient, run_id: str) -> ResearchRun:
+    """canonical 读面：有 run store 走 store，基础装配（无 store）走注册表。"""
+    deps = _deps(client)
+    if deps.runs_store is not None:
+        return cast(ResearchRun, deps.runs_store.get_run(run_id))
+    return cast(ResearchRun, deps.run_registry[run_id])
+
+
+def _start_demo_run(client: TestClient, protocol_path: str) -> ResearchRun:
+    """用受控模板跑一次真 run（Fake runtime 快速终态），返回 canonical 行。"""
+    cast(Any, client.app).state.deps.credentials.register("LLM_MAIN_KEY", "sk-demo-key-0001")
+    response = client.post(
+        "/projects/example-project/runs",
+        json={"protocol_path": protocol_path},
+        headers={"Idempotency-Key": f"frozen-{uuid.uuid4()}"},
+    )
+    assert response.status_code == 200, response.text
+    return _canonical(client, response.json()["id"])
+
+
+def _park(run: ResearchRun, **overrides: object) -> ResearchRun:
+    """以既有 run 的冻结事实构造"同一条 run 的停车态"。
+
+    保留原 id 不是细节：语义 digest 覆盖 `run_id`，换一个 id 就不再是"这条 run"，
+    重建时会因为 digest 对不上被诚实拒绝（这正是校验在起作用，不是可以绕开的噪声）。
+    """
+    base: dict[str, object] = {
+        "id": run.id,
+        "project_id": run.project_id,
+        "protocol_id": run.protocol_id,
+        "state": ResearchRunState.State.PAUSED,
+        "manifest_digest": run.manifest_digest,
+        "manifest_semantic_digest": run.manifest_semantic_digest,
+        "protocol_source": run.protocol_source,
+        "protocol_body": run.protocol_body,
+    }
+    base.update(overrides)
+    return ResearchRun(**base)  # type: ignore[arg-type]
+
+
+def _save_parked(client: TestClient, parked: ResearchRun) -> str:
+    deps = _deps(client)
+    deps.run_registry[parked.id.value] = parked
+    if deps.runs_store is not None:
+        deps.runs_store.save_run(parked)
+    return parked.id.value
+
+
+def test_a_started_run_freezes_the_protocol_body(run_ready_client: TestClient) -> None:
+    """正文随 run 落 canonical（AC-01）：digest 等于那份被解析字节的 sha256，读面可见。"""
+    stored = _start_demo_run(run_ready_client, _DEMO_PROTOCOL)
+    expected = (_PROTOCOLS_DIR / _DEMO_PROTOCOL).read_text(encoding="utf-8")
+
+    assert stored.protocol_body is not None, "启动时必须冻结被解析的那份正文"
+    assert stored.protocol_body.text == expected
+    assert stored.protocol_body.digest == Digest.of_bytes(expected.encode("utf-8"))
+
+    detail = run_ready_client.get(f"/runs/{stored.id.value}").json()
+    assert detail["protocol_body_digest"] == str(stored.protocol_body.digest)
+
+
+def test_a_run_is_rebuilt_from_its_frozen_body_after_the_source_file_is_gone(
+    client: TestClient,
+) -> None:
+    """来源文件消失 ⇒ 重建入口仍走得通（AC-02，cycle 1 的核心判据）。
+
+    判据落在"重建**装配**成功"上：`continuation == "REBUILT"` 意味着装配链从冻结正文
+    重新解析、编译、预检、过语义校验并交付了续跑——退一步（没有冻结正文）就是
+    `NONE` + "protocol file not found"（见本文件另一条用例）。已跑完的 run 重新续跑
+    会落到"没有剩余工作"的分支（发现见 RECHECK-084 W-2），不在本用例的判据内。
+    """
+    with _temp_protocol(_DEMO_PROTOCOL) as (name, path):
+        started = _start_demo_run(client, name)
+        assert started.state == "SUCCEEDED"
+        assert started.protocol_body is not None
+        parked = _park(started, protocol_source=ProtocolSource(protocol_path=name))
+    assert not path.exists(), "临时模板已删除：重建不得再依赖这份文件"
+
+    run_id = _save_parked(client, parked)
+    deps = _deps(client)
+    assert deps.runs is not None and deps.runs.has_paused_context(run_id) is False, (
+        "本进程没有暂停上下文 ⇒ 只能走重建入口"
+    )
+
+    payload = _post(client, f"/runs/{run_id}/resume").json()
+
+    assert payload["continuation"] == "REBUILT", payload
+    assert "rebuilt from the recorded protocol source" in payload["note"]
+
+
+def test_a_swapped_frozen_body_is_refused(client: TestClient) -> None:
+    """换一份自洽但不同的正文 ⇒ 语义漂移，重建被拒（AC-03a：冻结 ≠ 放行）。"""
+    with _temp_protocol(_DEMO_PROTOCOL) as (name, _path):
+        started = _start_demo_run(client, name)
+        assert started.protocol_body is not None
+        swapped_text = started.protocol_body.text.replace("version: 0.4.0", "version: 0.4.1")
+        assert swapped_text != started.protocol_body.text, "替身正文必须真的不同"
+        parked = _park(
+            started,
+            protocol_source=ProtocolSource(protocol_path=name),
+            protocol_body=ProtocolBody.of(swapped_text),
+        )
+
+    deps = _deps(client)
+    run_id = _save_parked(client, parked)
+    before = len(deps.workflow.task_identities(run_id))
+
+    payload = _post(client, f"/runs/{run_id}/resume").json()
+
+    assert payload["continuation"] == "NONE", payload
+    assert "rebuild refused" in payload["note"]
+    assert "drifted" in payload["note"], "拒绝原因点名语义漂移"
+    assert payload["manifest_digest"] == str(started.manifest_digest), "拒绝不得重盖冻结引用"
+    assert len(deps.workflow.task_identities(run_id)) == before, "拒绝时一次都不执行"
+
+
+def test_a_run_without_a_frozen_body_names_both_missing_facts(
+    run_ready_client: TestClient,
+) -> None:
+    """旧 run（无冻结正文）+ 来源不可解析 ⇒ 拒绝原因同时点名两条事实（AC-03b）。"""
+    client = run_ready_client
+    legacy = _park(
+        ResearchRun(
+            id=ID.generate(),
+            project_id="example-project",
+            protocol_id="test_protocol",
+            state=ResearchRunState.State.PAUSED,
+        ),
+        manifest_digest=Digest.parse("sha256:" + "0" * 64),
+        manifest_semantic_digest=None,
+        protocol_source=ProtocolSource(protocol_path="examples/protocols/does-not-exist.yaml"),
+        protocol_body=None,
+    )
+    run_id = _save_parked(client, legacy)
+
+    payload = _post(client, f"/runs/{run_id}/resume").json()
+
+    assert payload["continuation"] == "NONE"
+    assert "no frozen protocol body" in payload["note"], "点名缺的第一条事实"
+    assert "protocol file not found" in payload["note"], "点名缺的第二条事实（来源不可解析）"

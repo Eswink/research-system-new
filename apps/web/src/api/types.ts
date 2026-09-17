@@ -350,6 +350,9 @@ export interface RunDetailDto {
   protocol_id: string;
   state: string;
   manifest_digest: string | null;
+  // GOAL-004 cycle 1：冻结协议正文的 digest（null = 旧 run 没有冻结正文，
+  // 重启续跑仍依赖外部来源可解析）。
+  protocol_body_digest: string | null;
   created_at: string;
   updated_at: string;
 }

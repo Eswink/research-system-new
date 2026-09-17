@@ -32,11 +32,13 @@ from packages.application.run_orchestration.commands import ResumeRunCommand
 from packages.application.run_orchestration.context import RunContext
 from packages.domain.core import ID, Digest
 from packages.domain.enums import FailureCategory
-from packages.domain.protocol_source import ProtocolSource
+from packages.domain.protocol_source import ProtocolBody, ProtocolSource
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import RetryPolicy
-from tests.e2e.scenario import StructuredOutputAgentRuntime, m7_protocol
+from services.api.catalog import read_protocol_text
+from services.api.protocol_source import parse_frozen_protocol
+from tests.e2e.scenario import PROTOCOL_PATH, StructuredOutputAgentRuntime, m7_protocol
 from tests.e2e.scenario_catalog import m7_catalog, m7_preflight_context, m7_project
 from tests.e2e.test_retry_park_and_resume import (
     BACKOFF_SECONDS,
@@ -47,6 +49,8 @@ from tests.e2e.test_retry_park_and_resume import (
 )
 
 REVIEW_CONTRACT = "sort_analysis_review"
+# 受控模板在 `examples/protocols/` 下的文件名（`read_protocol_text` 的入参口径）。
+_PROTOCOL_FILE = PROTOCOL_PATH.removeprefix("examples/protocols/")
 
 
 class _ReviewFlakyOnce(StructuredOutputAgentRuntime):
@@ -80,8 +84,12 @@ def _parked_run(
     digests: tuple[str, str],
     *,
     source: ProtocolSource | None,
+    body: ProtocolBody | None = None,
 ) -> ResearchRun:
-    """控制面持久化后的那个 run：PAUSED + 冻结引用（digest + 语义 digest）+ 装配来源。"""
+    """控制面持久化后的那个 run：PAUSED + 冻结引用（digest + 语义 digest）+ 装配事实。
+
+    GOAL-004 cycle 1：`body` 是被解析的那份协议正文（自足续跑的输入）。
+    """
     digest, semantic = digests
     return ResearchRun(
         id=run_id,
@@ -91,6 +99,7 @@ def _parked_run(
         manifest_digest=Digest.parse(digest),
         manifest_semantic_digest=Digest.parse(semantic),
         protocol_source=source,
+        protocol_body=body,
     )
 
 
@@ -157,12 +166,74 @@ def _rebuilt_context(run: ResearchRun, catalog: Any) -> RunContext:
     )
 
 
+def _rebuilt_context_from_body(run: ResearchRun, catalog: Any, body: ProtocolBody) -> RunContext:
+    """按 **run 行里的冻结正文**重建上下文（GOAL-004 cycle 1：不碰任何外部来源）。"""
+    from packages.application.preflight.preflight import compile_and_preflight
+
+    protocol = parse_frozen_protocol(body)
+    project = m7_project()
+    preflight = m7_preflight_context(catalog, project)
+    plan, report = compile_and_preflight(protocol, catalog, project, preflight)
+    assert plan is not None and report.passed
+    return RunContext(
+        protocol=protocol,
+        plan=plan,
+        report=report,
+        run=run,
+        catalog=catalog,
+        project=project,
+        preflight=preflight,
+        trace_id=f"api-resume-{run.id.value}",
+    )
+
+
 def _resume_command(run: ResearchRun, *, digest: str | None = None) -> ResumeRunCommand:
     return ResumeRunCommand(
         run_id=run.id,
         frozen_manifest_digest=digest if digest is not None else str(run.manifest_digest),
         trace_id=f"api-resume-{run.id.value}",
     )
+
+
+def test_a_rebuild_from_the_frozen_body_finishes_the_remaining_work() -> None:
+    """冻结正文是重建的**充分输入**（GOAL-004 cycle 1）。
+
+    与 cycle 20 的差别只有一处：上下文不是从进程内的 `m7_protocol()` 装配，而是从
+    **canonical run 行里那份正文**（先写库、再从库里读回来）装配——外部协议来源在
+    这里完全缺席（`source=None`），跑完与否只取决于 run 自己记得的字节。
+    断点语义不变：已成功的任务不重跑，重排的任务走第二次尝试。
+    """
+    service, engine, runtime, artifacts, clock = _two_task_harness()
+    catalog = _catalog_with_review_retry()
+    store = SqliteRunStore(connection=engine._conn)
+    try:
+        run_id = ID.generate()
+        parked = _start(service, catalog, run_id)
+        assert parked.state == ResearchRunState.State.PAUSED
+        body = ProtocolBody.of(read_protocol_text(_PROTOCOL_FILE))
+        assert parse_frozen_protocol(body) == m7_protocol(), "正文解出的定义与装配链同源"
+
+        canonical = _parked_run(run_id, _frozen_digests(run_id, catalog), source=None, body=body)
+        store.save_run(canonical)
+        reloaded = store.get_run(run_id.value)
+        assert reloaded.protocol_body == body, "重建的输入只能来自 canonical 行"
+
+        clock.value = clock.value + timedelta(seconds=BACKOFF_SECONDS)
+        restarted = _restarted(service, artifacts)
+        resumed_run = reloaded.transition(ResearchRunState.Transition.RESUME)
+        store.save_run(resumed_run)
+
+        outcome = restarted.resume_rebuilt(
+            _rebuilt_context_from_body(resumed_run, catalog, reloaded.protocol_body),
+            _resume_command(resumed_run),
+        )
+
+        assert outcome.state == ResearchRunState.State.SUCCEEDED
+        assert runtime.contract_of.count("sort_analysis_execution") == 1, "第一个任务不重跑"
+        assert runtime.review_attempts == 2, "断点任务走第二次尝试"
+    finally:
+        artifacts.close()
+        engine.close()
 
 
 def test_a_restarted_process_finishes_a_parked_run_from_its_recorded_source() -> None:

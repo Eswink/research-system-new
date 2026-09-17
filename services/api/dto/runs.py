@@ -25,6 +25,9 @@ class RunDetailDto(BaseModel):
     protocol_id: str
     state: str
     manifest_digest: str | None = None
+    # GOAL-004 cycle 1：冻结协议正文的 digest。None = 旧 run 没有冻结正文
+    # （重启续跑仍依赖那份外部来源可解析），非 None = 这条 run 自足可重建。
+    protocol_body_digest: str | None = None
     created_at: str
     updated_at: str
 

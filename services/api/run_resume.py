@@ -18,7 +18,9 @@ cycle 18/19 让"重排未到期"把 run 停 `PAUSED` 并让**本进程**的守�
 诚实边界（全部不改变 run 状态）：
 
 - 没有登记来源的旧 run ⇒ 拒绝（"没有来源就无法重建 plan"），不猜协议；
-- 来源不可解析（路径消失 / 修订不存在 / 草稿服务缺失）⇒ 拒绝，不换一份协议；
+- **有冻结正文**（GOAL-004 cycle 1）⇒ 只用正文重装配，外部来源消失/被改都不影响；
+- 没有冻结正文时来源不可解析（路径消失 / 修订不存在 / 草稿服务缺失）⇒ 拒绝，
+  拒绝原因同时点名"没有冻结正文"与具体解析失败，不换一份协议；
 - 重编译的 preflight 未通过 ⇒ 拒绝；
 - 冻结语义漂移（plan/catalog/契约/定价）⇒ `assert_semantics_frozen` 拒绝
   （在 `resume_rebuilt` 内），本模块只把拒绝原因如实带出来。
@@ -76,12 +78,18 @@ def rebuild_and_resume(deps: ApiDeps, run: ResearchRun) -> ResumeAttempt:
 
     先迁状态再调本函数不是可选顺序：协作式暂停谓词读的就是 canonical run 状态，
     "还停在 PAUSED"对执行循环就是"继续暂停"（cycle 19 的教训）。
+
+    输入优先级（GOAL-004 cycle 1）：run 行里的**冻结正文**说了算——有它就不碰
+    文件系统/草稿库（外部来源消失/漂移都不再影响这条 run）；没有它才走来源解析
+    （旧 run 的兼容路径），此时拒绝原因必须**同时点名**缺的是"冻结正文"与
+    "来源不可解析"两件事实。
     """
     service = deps.runs
     if service is None:
         return ResumeAttempt(refusal="run orchestration service is not configured")
     source = run.protocol_source
-    if source is None:
+    body = run.protocol_body
+    if source is None and body is None:
         return ResumeAttempt(
             refusal="run has no recorded protocol source (predates source recording)"
         )
@@ -92,25 +100,27 @@ def rebuild_and_resume(deps: ApiDeps, run: ResearchRun) -> ResumeAttempt:
     try:
         return _resume_from_source(service, deps, run, source, trace_id)
     except Exception as exc:  # noqa: BLE001 - 任何重建/校验失败都诚实拒绝，不改状态
-        return ResumeAttempt(refusal=f"{type(exc).__name__}: {exc}")
+        prefix = "" if body is not None else "run has no frozen protocol body; "
+        return ResumeAttempt(refusal=f"{prefix}{type(exc).__name__}: {exc}")
 
 
 def _resume_from_source(
     service: RunOrchestrationService,
     deps: ApiDeps,
     run: ResearchRun,
-    source: ProtocolSource,
+    source: ProtocolSource | None,
     trace_id: str,
 ) -> ResumeAttempt:
     """同一条装配链重建上下文 → 续跑（装配失败原样抛出，由调用方转成拒绝原因）。"""
     inputs = execution_inputs(
         ExecutionRequest(
             deps=deps,
-            protocol_path=source.protocol_path,
+            protocol_path=source.protocol_path if source is not None else None,
             run_id=run.id,
             trace_id=trace_id,
-            draft_ref=source.draft_ref,
+            draft_ref=source.draft_ref if source is not None else None,
             project_id=run.project_id,
+            protocol_body=run.protocol_body,
         )
     )
     plan, report = compile_and_preflight(

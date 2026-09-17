@@ -38,6 +38,7 @@ def _run_state_dto(deps: ApiDeps, run_id: str) -> RunDetailDto:
         protocol_id=run.protocol_id,
         state=run.state,
         manifest_digest=manifest,
+        protocol_body_digest=str(run.protocol_body.digest) if run.protocol_body else None,
         created_at=run.created_at.value.isoformat(),
         updated_at=run.updated_at.value.isoformat(),
     )
@@ -82,6 +83,7 @@ async def list_runs(project_id: str, request: Request) -> list[RunDetailDto]:
             protocol_id=run.protocol_id,
             state=run.state,
             manifest_digest=str(run.manifest_digest) if run.manifest_digest else None,
+            protocol_body_digest=str(run.protocol_body.digest) if run.protocol_body else None,
             created_at=run.created_at.value.isoformat(),
             updated_at=run.updated_at.value.isoformat(),
         )
