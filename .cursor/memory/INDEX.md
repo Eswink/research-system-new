@@ -52,6 +52,7 @@
 | [MEM-20260915-052](entries/MEM-20260915-052-the-transaction-was-the-connection-not-the-operation.md) | ACTIVE | repository | 0.93 | 2027-09-17 | PLAN-20260915-077 |
 | [MEM-20260915-053](entries/MEM-20260915-053-a-declared-state-with-no-driver.md) | ACTIVE | repository | 0.92 | 2027-09-17 | PLAN-20260915-078 |
 | [MEM-20260915-054](entries/MEM-20260915-054-retry-backoff-and-its-clock.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260915-079 |
+| [MEM-20260915-055](entries/MEM-20260915-055-one-attempt-one-ledger.md) | ACTIVE | repository | 0.92 | 2027-09-17 | PLAN-20260915-080 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

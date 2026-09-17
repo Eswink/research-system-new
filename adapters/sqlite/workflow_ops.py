@@ -63,6 +63,18 @@ _FAILURE_STATUS = {
 }
 
 
+def _before_retry_deadline(row: Any, now: datetime) -> bool:
+    """这条任务是不是还在等退避（PLAN-20260915-080）。
+
+    `retry_at` 与 `now` 都是同一格式的 UTC ISO 文本（`iso()` / `now_iso()`），
+    字符串比较即时间比较——与 claim 候选扫描里的 SQL 比较同一口径。
+    """
+    retry_at = row["retry_at"] if "retry_at" in row.keys() else None
+    if retry_at is None:
+        return False
+    return str(retry_at) > iso(Timestamp(now))
+
+
 def _lag_ms_since(created_at: object) -> float | None:
     """created_at → 现在的毫秒时延;解析失败返回 None(telemetry 不阻断)。
 
@@ -152,6 +164,13 @@ class SqliteWorkflowOps:
         if existing is not None:
             self._record("acquire_lease", task_id, result="deduped")
             return lease_from_row(existing)
+        # 退避 deadline 对**每个交付入口**成立，不只是 claim 的候选扫描
+        # （PLAN-20260915-080）：按 task_id 直接租也不能把没到期的重试提前放出去。
+        if _before_retry_deadline(row, timestamp_now(self._now).value):
+            self._record("acquire_lease", task_id, error="InvalidInputError")
+            raise InvalidInputError(
+                f"task {task_id} is waiting for its retry backoff until {row['retry_at']}"
+            )
         lease = new_lease(
             task_id,
             row["assigned_agent_id"],

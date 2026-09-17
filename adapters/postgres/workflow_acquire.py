@@ -94,6 +94,14 @@ def acquire_lease_impl(
     ttl = payload.ttl
     with conn.transaction():
         row: Any = _require_task(conn, record, task_id)
+        # 退避 deadline 对**每个交付入口**成立，不只是 claim 的候选扫描
+        # （PLAN-20260915-080）：按 task_id 直接租也不能把没到期的重试提前放出去。
+        deadline: Any = row["retry_at"] if "retry_at" in row else None
+        if deadline is not None and deadline > server_now(conn, now):
+            record("acquire_lease", task_id, error="InvalidInputError")
+            raise InvalidInputError(
+                f"task {task_id} is waiting for its retry backoff until {deadline}"
+            )
         existing: Any = _get_existing_lease(conn, task_id)
         if existing is not None:
             # Check whether the existing lease has expired.

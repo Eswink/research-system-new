@@ -103,6 +103,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260915-077-operation-scoped-transaction-boundary.md
   - .cursor/plans/tasks/PLAN-20260915-078-retry-policy-becomes-real.md
   - .cursor/plans/tasks/PLAN-20260915-079-retry-backoff-after-reschedule.md
+  - .cursor/plans/tasks/PLAN-20260915-080-one-attempt-ledger-in-process-retry.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260915-079-retry-backoff-after-reschedule.md
 memory_entries:
   - MEM-20260915-038-structural-signature-complements-pixel-gate
@@ -782,3 +783,27 @@ Mimosa 密封扫描本轮改动文件命中 0 条。阻断的只是"main 上六�
   quality-ubuntu-latest / quality-windows-latest，无重跑）。本地 m0 本轮**首轮即绿**——
   大小门禁的红是更早的定向用例（`tests/tooling/test_python_source_limits.py`）先抓到的，
   按"抽出助手、不放宽阈值"处置，全过程记在 PLAN-078 的状态历史里。
+- 2026-09-17 cycle 17 开轮（一次尝试一套账）：derive = PLAN-20260915-080。用探针
+  `scratch/goal3-cycle17-probe1-two-ledgers.py` 把 cycle 16 登记的"一个 `max_attempts`
+  两套账"量出来（**收口前实测**）：`max_attempts=3` 时 in-process 循环每交付跑满 3 次
+  ⇒ 3 次交付共执行 **9 次**；声明 3600s 退避仍**立刻**跑满 3 次；瞬态失败耗尽时
+  `execute_task` 从不 `complete` ⇒ 任务停在 **LEASED**（durable 的重排/死信/退避三个判据
+  在这条路径上**一个都够不着**）。
+- 2026-09-17 cycle 17 交付：① **尝试序号只有一处**——`execute_task` 用 durable 的交付代次
+  （`lease.fence`）当 attempt，循环里不再有第二个计数器；② **每次失败先落账**
+  （`complete(FAILED, failure_category=<本次类别>)`，用**心跳之后**的租约——心跳会轮换
+  `lease_id`）再由 durable 判据决定重排/死信；③ **退避 > 0 ⇒ 不在进程里等**：声明了退避
+  就把下一次尝试交回派发方（返回 `retry deferred to the dispatcher`），进程内不再自旋；
+  ④ **acquire 入口也守 deadline**：cycle 16 只在 `claim_next` 的候选扫描里过滤 `retry_at`，
+  按 task_id 的 `acquire_lease` 仍能把没到期的重试租出去 ⇒ 两个 adapter 的这条入口都补上
+  守卫（与 cycle 13/14 同源教训：不变量要在**每个入口**成立）。定向：新用例 **7 passed**
+  （executor 3 / SQLite acquire 2 / PG parity 2，PG 实跑非 skip）+ 既有
+  `test_execute_task_accounting.py` **10 passed 未改断言**；宽口径
+  `tests/application+adapters+domain+postgres+contracts+e2e` **1981 passed / 7 skipped**；
+  mypy **882 files clean**；ruff/format 干净；m0 **PASS: profile=m0; 23 deterministic checks**
+  （全量 pytest **3708 passed / 10 skipped**）。探针收口后：`max_attempts=3` 累计 **3 次**且落
+  `DEAD_LETTER`、声明 3600s 退避时一次调用只跑 **1 次**。**未扩面**：run 级重派仍缺席
+  （RECHECK-080 W-1）、session 级失败仍无类别来源（W-2），如实登记不假装闭环。
+- 2026-09-17 cycle 17 门禁（**首轮红是收口自伤，未改门禁**）：第 1 轮 m0 红于
+  `framework/validate`——`工程记忆未加入 INDEX: MEM-20260915-055`（新记忆条目的 INDEX 行
+  漏登记）⇒ 补 `.cursor/memory/INDEX.md` 一行后复跑 **23/23 全绿**。

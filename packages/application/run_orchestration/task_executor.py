@@ -12,6 +12,7 @@ M7 恢复边界（诚实声明）：Port 为同步语义（M5 D2），run() 阻�
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
+from datetime import timedelta
 
 from packages.application.experiments.evidence_admission import ExperimentEvidenceResult
 from packages.application.experiments.types import ExperimentExecutionOutcome
@@ -105,33 +106,52 @@ def execute_task(
 
     返回 TaskExecutionResult；业务失败（会话 FAILED / 验收拒绝）以
     outcome=FAILED 表达，不是系统异常。系统级 permanent 失败直接抛出。
+
+    **一次尝试一套账**（PLAN-20260915-080）：尝试序号取 durable 的交付代次
+    （`lease.fence`），每一次尝试失败都先 `complete(FAILED, category)` 落账，再由 durable
+    判据决定重排/死信。收口前这里用局部计数、每次交付都能"再来一遍预算"——实测
+    `max_attempts=3` 在 3 次交付下执行了 9 次，退避声明也管不住这个循环。
     """
     engine = deps.engine
     engine.submit(task, contract)
     policy = _retry_policy(contract)
-    attempts = 0
     while True:
-        attempts += 1
         acquired = _acquire_or_fail(engine, task)
         if acquired[0] is None:
             # 重放/去重边界：任务已被投递但本执行单元无 lease 权限时安全收敛，
             # 不传播崩溃（同一 run 重放 → RUN FAILED，不产生重复副作用）。
-            return _task_failed(task, attempts, None, acquired[1] or "task already delivered")
+            return _task_failed(
+                task, max(task.attempt, 1), None, acquired[1] or "task already delivered"
+            )
         lease = acquired[0]
-        current = _with_attempt(task, attempts, lease.lease_id)
-        result = _attempt_once(
+        attempt = max(lease.fence, 1)
+        current = _with_attempt(task, attempt, lease.lease_id)
+        outcome = _attempt_once(
             _AttemptInputs(deps, contract, spec_context, trace_id), current, lease
         )
-        if result is not None:
-            return result
-        if attempts >= policy.max_attempts:
+        if isinstance(outcome, TaskExecutionResult):
+            return outcome
+        if attempt >= policy.max_attempts:
             # 不在此处记账:`_attempt_once` 已经为**这一次** attempt 记过账
             # (同 attempt 号 → 同 entry_id)。原先这里再记一次,导致
             # `InvalidInputError: duplicate usage entry` 穿出 use case,把一次
             # 干净的 task FAILED 变成未处理异常(M15 复审 BLOCKER-5,实测
             # transient/timeout 两条路径必现)。耗尽这一事实由返回值的
             # message 表达,不需要第二条 ledger entry。
-            return _task_failed(current, attempts, None, "retry budget exhausted")
+            return _task_failed(current, attempt, outcome.category, "retry budget exhausted")
+        if contract.retry_delay(attempt=attempt) > timedelta(0):
+            # 声明了退避 ⇒ **不**在这个进程里等，把下一次尝试交回派发方
+            # （PLAN-20260915-080）：deadline 是 durable 的事实，进程内自旋会绕过它。
+            return _task_failed(
+                current, attempt, outcome.category, "retry deferred to the dispatcher"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class _Retryable:
+    """这次尝试以可重试的失败结束（已经落账）；调用方决定还要不要再试一次。"""
+
+    category: FailureCategory | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,16 +168,22 @@ def _attempt_once(
     inputs: _AttemptInputs,
     task: ResearchTask,
     lease: TaskLease,
-) -> TaskExecutionResult | None:
-    """单次尝试：heartbeat → session → complete；失败返回 None 表示可重试。"""
+) -> TaskExecutionResult | _Retryable:
+    """单次尝试：heartbeat → session → complete。
+
+    失败一律先落账（`complete` 带上失败类别），再返回 `_Retryable` 表示"还可以再试"。
+    收口前这条路径直接返回 None 且**从不 complete**：任务停在 LEASED，durable 的重排/
+    死信/退避判据一个都够不着（PLAN-20260915-080）。
+    """
     engine = inputs.deps.engine
+    live = lease
     try:
-        renewed = engine.heartbeat(lease)
+        live = engine.heartbeat(lease)
         result = _run_session(
             inputs.deps.runtime, task, inputs.contract, inputs.spec_context, inputs.trace_id
         )
         outcome = "SUCCEEDED" if result.status == "SUCCEEDED" else "FAILED"
-        engine.complete(renewed, TaskCompletion(task_id=task.id.value, outcome=outcome))
+        engine.complete(live, TaskCompletion(task_id=task.id.value, outcome=outcome))
         return TaskExecutionResult(
             task=task,
             outcome=outcome,
@@ -169,13 +195,35 @@ def _attempt_once(
             inputs.deps.budget, task, task.attempt, _failure_reason(error.failure_category)
         )
         if not _retryable(error, _retry_policy(inputs.contract)):
+            _complete_attempt(inputs, live, error.failure_category)
             return _task_failed(task, task.attempt, error.failure_category, str(error))
-        return None
+        # 可重试：把这次失败**落账**（带类别），让 durable 判据决定重排/死信——
+        # 是否在同一次调用里继续下一轮由 execute_task 按处置结果决定。
+        _complete_attempt(inputs, live, error.failure_category)
+        return _Retryable(category=error.failure_category)
     except PermanentPortError as error:
         record_attempt_usage(
             inputs.deps.budget, task, task.attempt, _failure_reason(error.failure_category)
         )
+        _complete_attempt(inputs, live, error.failure_category)
         return _task_failed(task, task.attempt, error.failure_category, str(error))
+
+
+def _complete_attempt(
+    inputs: _AttemptInputs, lease: TaskLease, category: FailureCategory | None
+) -> None:
+    """把这次失败的尝试落账（失败类别交给 durable 判据）。
+
+    收口前失败路径**从不** complete：任务停在 LEASED、durable 侧看不到失败，
+    `RETRY_SCHEDULED`/`DEAD_LETTER`/退避一个都够不着（PLAN-20260915-080）。
+
+    传进来的必须是**当前**租约：heartbeat 会轮换 `lease_id`（M14 fencing），失败发生在
+    心跳之后 ⇒ 手里的旧租约已经作废。
+    """
+    inputs.deps.engine.complete(
+        lease,
+        TaskCompletion(task_id=lease.task_id, outcome="FAILED", failure_category=category),
+    )
 
 
 def _failure_reason(category: FailureCategory | None) -> str | None:
