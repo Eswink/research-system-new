@@ -355,9 +355,7 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         """
         self._ensure_open()
         try:
-            schedule = proj_retry_schedule(
-                self._conn, run_id, server_now(self._conn, self._now)
-            )
+            schedule = proj_retry_schedule(self._conn, run_id, server_now(self._conn, self._now))
         except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
             raise self._wrap_operational(exc) from exc
         self._record("retry_schedule", run_id, result=str(schedule))
