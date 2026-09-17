@@ -39,7 +39,7 @@ exit_criteria:
       符合断点语义；反证：篡改冻结正文 ⇒ 拒绝且一次都不执行；持久化用例（SQLite 往返 +
       PG parity）证明冻结正文随 run 行落 canonical（或 CAS 引用可解析）；重建被拒时
       拒绝原因点名缺的是哪条事实（不笼统报缺文件）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       读面区分两种 `PAUSED`（后继入口第 3 项）：运维读面能判定一个停车中的 run 是
@@ -50,7 +50,7 @@ exit_criteria:
       读面用例（SQLite 注入时钟）：重排停车 → 读面给出 reschedule 判定与下一到期事实；
       用户暂停 → 读面给出 user-paused 且无到期；PG parity 用例；读面在无 store / 未知
       取值时如实回答 UNKNOWN（不猜）；OpenAPI/文档与读面同源收敛。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       `failure_policy` 从「声明了没人消费」变成有真实消费者（后继入口第 4 项）：
@@ -62,7 +62,7 @@ exit_criteria:
       `packages/domain/tasks.py` 的字段声明）；用例：声明 fail-fast 的 run 在任务失败后
       不重发后续任务、声明重试的走既有重试链、未声明时行为与基线一致（回归对照）；
       策略归属在 run 事实/读面可见；受影响套件 + m0 绿。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       失败 run 与 `manifest.frozen` 事件的语义 digest（后继入口第 5 项 /
@@ -75,7 +75,7 @@ exit_criteria:
       事件用例：`manifest.frozen` payload 含语义 digest 且与 run 行相等；重放一致性用例：
       由事件重建 run 行 ⇒ 语义 digest 相同；反证：去掉该字段 ⇒ 对应用例失败
       （避免「从不开火的守卫」）。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       锁粒度与统一派发读面（后继入口第 6 项）：① 控制面 SQLite 共享连接的锁粒度落到
@@ -150,7 +150,7 @@ memory_entries: []
 | EC-01 | 第 2 项 | 重建的来源自足（协议正文冻结进 run 行或 CAS） | e2e：删文件后仍能重建续跑 + 篡改反证 + 持久化往返 | **PASS**（cycle 1：PLAN-20260917-084 / RECHECK-084；详见下方 EC-01 注记） |
 | EC-02 | 第 3 项 | 读面区分两种 `PAUSED`（重排停车 vs 用户暂停） | 读面用例（注入时钟）+ PG parity + 文档同源 | **PASS**（cycle 2：PLAN-20260917-085 / RECHECK-085；详见下方 EC-02 注记） |
 | EC-03 | 第 4 项 | `failure_policy` 有真实消费者 | 反向搜索 + fail-fast/重试对照用例 + 回归对照 | **PASS**（cycle 3：PLAN-20260917-086 / RECHECK-086；详见下方 EC-03 注记） |
-| EC-04 | 第 5 项 | 失败 run 与 `manifest.frozen` 事件的语义 digest（W-1/W-2） | API/事件/重放一致性用例 + 反证 | PENDING |
+| EC-04 | 第 5 项 | 失败 run 与 `manifest.frozen` 事件的语义 digest（W-1/W-2） | API/事件/重放一致性用例 + 反证 | **PASS**（cycle 4：PLAN-20260917-087 / RECHECK-087；详见下方 EC-04 注记） |
 | EC-05 | 第 6 项 | 锁粒度（每线程连接）+ 两个派发方的统一读面 | 并发反证场景 + 三态读面用例 + PG parity | PENDING |
 | EC-06 | 第 7 项 | `resume_paused` 失败补偿（不留悬空 RUNNING） | 失败注入 + 重入用例 + 反证 | PENDING |
 | EC-07 | 第 1 项 | 完整安全审计的可复核终态（二选一） | 终态文档 + 封印标识/findings 处置 或 根因+配方+人工清单 | PENDING |
@@ -185,6 +185,22 @@ Fake 无写 `RETRY_SCHEDULED` 路径故其读面恒空（W-2，已显式钉成�
 范围注记（RECHECK-086 W-2/W-3/W-4）：`DEGRADED` 的 HTTP 落库走既有 `state=outcome.state`
 映射、未单独 e2e；被容忍失败不进 run 行（读清单走事件链）；`DEGRADED` 没有自动后续推进。
 
+**EC-04 注记（2026-09-17 cycle 4）**：冻结语义在**失败收敛路径**上补齐。`manifest.frozen`
+payload 增 `semantic_digest`（排除 `frozen_at`；与 `digest` 同一 producer
+`RunManifest.semantic_digest()`）；执行期 `ValueError` 收敛分支不再自己拼字段——改为唯一的
+payload→引用映射 `FrozenManifestRefs.from_payload(...).apply(run)`，`apply` 内部走
+**成功路径同一个** `ResearchRun.with_manifest(...)`（"同判据" = 同一 producer + 同一域方法）。
+读面 `GET /runs/{id}`（与列表）新增 `manifest_semantic_digest`。**判据落地为四件可复核事实**：
+① 收敛 FAILED 的行与成功路径共用同一个断言函数（非空、`sha256:` 前缀、`!= manifest_digest`）；
+② 事件 payload 的语义 digest 与行相等；③ 只凭事件链能把行的四项冻结引用（快照/语义/定价版本/
+定价 digest）原样重建；④ 漂移守卫真的消费它——带对的值 ⇒ 不再被 `lacks a semantic digest`
+挡住并一路走到执行，换成别的值 ⇒ `drifted` 拒绝。**反证双跑**：去掉事件 payload 键 ⇒ 7 红、
+去掉收敛分支的语义 digest 参数 ⇒ 3 红（失败文本正是改动前的
+`frozen manifest lacks a semantic digest`）。反证还暴露一处**假绿**（重放用例在"两侧同为
+None"时相等成立）——已把"重放出来的值非空"钉进断言，判据只增强。
+范围注记（RECHECK-087 W-1/W-2）：旧 `manifest.frozen` 事件没有该键 ⇒ 那些 run 读回 None
+且**不回填**（重建仍被守卫拒绝，与今天一致）；"重建后续跑在执行期再失败"的结局仍属 EC-06。
+
 **后继入口 ↔ EC 映射与取舍**：第 1 项（完整安全审计）在 GOAL-003 记录里就被标注为
 「运维动作，不在循环内可完成」——本 GOAL 把它**单列**为 EC-07，判据容纳两种合格终态，
 不做成循环主线（derive 顺序取 EC 表首个 PENDING，故 EC-07 只在循环空档或有新证据时
@@ -216,9 +232,8 @@ EC-02 为 M、EC-06 为 S、EC-07 为 M（运维/审计，进度不由本循环�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 4 进行中**（EC-04 = 失败 run 与 `manifest.frozen` 事件的语义 digest；
-子 PLAN-20260917-087 已建档并投影 ALL_PLAN）。cycle 3 已收口（EC-03 PASS，RECHECK-086；
-CI run 35227784813 六个 job 全 success，见迭代日志第 3 行）。
+当前续点：**cycle 4 已收口**（EC-04 PASS，RECHECK-087；CI 结论见迭代日志第 4 行）；
+下一条工程 cycle = cycle 5 = EC-05（锁粒度每线程连接 + 两个派发方的统一读面）。
 
 ## 驱动
 
@@ -290,6 +305,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 1 | PLAN-20260917-084（来源自足续跑：`ProtocolBody` 冻结进 run 行 + 重建只认它） | `3d9cc73`（WP-A 域/装配/两个 store）、`87c2d86`（WP-B 重建/读面/用例）、`5141e06`（WP-C 记录 + 契约快照 + 文档） | 定向：api **9** / e2e **5** / domain **4+13** / sqlite **4** / pg **3** 全 passed；契约 `test_openapi_snapshot.py` **8 passed**（DTO 新增字段后重生成快照 +11 行）；web 门（lint/typecheck/unit/build/web-*）全绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3773 passed / 10 skipped**，497.96s；首轮 m0 红 2 处——契约快照漂移 + web 夹具缺字段——均为本改动引入、已修后复跑全绿） | **CI**：记录提交 `5141e06` → run **35211094454 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，无重跑）；另：WP-A/WP-B 提交经 `5141e06` 的同一棵树覆盖验证（CI 只跑 head） | 首轮 m0 红 2 处（契约快照漂移 + web 夹具缺字段），均为本改动引入、已修 | EC-01 **PASS**（RECHECK-084）；新发现 W-1：重建"没有剩余工作"的 run 会退化成重跑全部并收敛 `FAILED`；EC-02…EC-07 PENDING | cycle 2 = EC-02（停车语义读面：PLAN-20260917-085 已建档） |
 | 2 | PLAN-20260917-085（停车语义读面：`retry_schedule` 读面 + `paused_dispatch`；driver=client-goal / owner=root-agent） | `9b163cf`（WP-A：port `RetrySchedule` + SQLite/PG/Fake + 单测/PG parity/契约）、`fd8654f`（WP-B：`run_pause_view` + DTO/OpenAPI/web 类型 + 文档）、`98569c1`（PG 分类挪进 projections：450 行硬上限）、`c2cdc98`（WP-C：API 用例）、`f62bda4`（格式）、`8da4b13`（RECHECK-085 + MEM-060 + GOAL/ALL_PLAN） | 定向：sqlite **6** / pg parity **5**（pinned DSN，实跑非 skip）/ 契约 **8** / API **7** / OpenAPI 快照 **8** 全 passed；受影响广度复跑 **1137 passed / 2 skipped**；web 门全绿（unit **76** / stub e2e **83** / live e2e **36**）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3804 passed / 10 skipped**，485.85s）。首跑 10 红经隔离复跑判定为**环境并发污染**（被 kill 的上一轮留下孙子 pytest 进程共享 test DB/容器），清理后 23/23 | **CI**：head `7316d1d`（`2dbf3c7` 记录提交 + WP 提交 + `8da4b13` 记录提交，同一棵树）→ run **35219834215 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 非 0，无重跑） | 首跑 m0 红 10 处 = 环境并发污染（非本改动；隔离复跑该 PG 文件 5 passed 为判据）；`python/format-check`/`python/typecheck`/450 行硬上限三处为本改动引入、已修 | EC-02 **PASS**（RECHECK-085，W-1…W-5）；EC-03…EC-07 PENDING；候选下一 cycle：EC-03（`failure_policy` 消费者）或 RECHECK-084 W-1（"没有剩余工作"的重建语义） | cycle 3：derive 取 EC 表首个 PENDING（EC-03 = `failure_policy` 真实消费者），先做反向搜索确认真实缺口 |
 | 3 | PLAN-20260917-086（失败策略的消费者：`on_task_failure` 消费 + DEGRADED 落点 + 未消费键点名；driver=client-goal / owner=root-agent） | `2a014ad`（WP-A 域视图）、`7896525`（WP-B 消费/事件/e2e/文档 + 词表门禁同步）、`652e712`（450 行/50 行硬上限的搬移重构）、`1c280b2`（RECHECK-086 + MEM-061 + GOAL/ALL_PLAN） | 定向：domain **5** / application **6** / e2e **2**（新增）+ 受影响套件复跑 **977 passed**；事件词表门禁 **14 passed**；mypy 906 files 绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3823 passed / 10 skipped**，511.99s）。首跑 m0 红 2 处 = `phase_runner.py` 456 行 + `_execute_group` 61 行、`service.py` 483 行（均为本改动引入、已搬代码修复） | **CI**：head `186963c`（`2a014ad`/`7896525`/`652e712` 三个 WP 提交 + `1c280b2` 记录提交 + `186963c` 迭代日志回填，同一棵树）→ run **35227784813 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 1000006747…1000006752，无重跑） | 事件词表门禁先红（新增 2 个事件类型）⇒ 补词表与清单，断言未改；组合复跑的 3 条 PG 假红 = 手工顺序把 `tests/api` 排到 `test_pg_crash_restart` 之后（非产品缺陷，隔离复跑 + m0 全量为判据） | EC-03 **PASS**（RECHECK-086，W-1…W-5）；EC-04…EC-07 PENDING | cycle 4：derive 取 EC 表首个 PENDING（EC-04 = 失败 run 与 `manifest.frozen` 事件的语义 digest），先反向搜索确认 `run_from_execution` 的 ValueError 收敛分支与事件 payload 现状 |
+| 4 | PLAN-20260917-087（失败 run 的冻结语义 digest：事件 payload 带语义 digest + 收敛分支走同一个 `with_manifest`；driver=client-goal / owner=root-agent） | `1831841`（WP-A 事件 payload + EVENT_MODEL）、`028abf3`（WP-B 收敛路径 + `FrozenManifestRefs` + DTO/OpenAPI/web 类型与夹具 + CONTROL_PLANE_API）、`65d1ebd`（WP-C API 用例 7 条）、`a3ccc66`（复跑抓到的类型收窄修复） | 定向：`tests/api` **418 passed**（新增 7）+ 新增应用用例 **3 passed**；`tests/domain tests/application tests/contracts tests/postgres tests/e2e` 复跑 **1629 passed / 4 skipped**（197.19s）；web 门全绿（lint 0 error / typecheck / unit **76** / build / stub e2e **83** / live e2e **36**）；**反证双跑**：去掉事件 payload 键 ⇒ **7 failed / 3 passed**、去掉收敛分支的语义 digest 参数 ⇒ **3 failed / 4 passed**（失败文本 = 改动前的 `frozen manifest lacks a semantic digest`）；m0 首跑 24/25（唯一红项 = MEM-062 引用的 RECHECK-087 尚未写入的记录顺序问题，非产品缺陷）⇒ 补齐记录后复跑又暴露 `python/typecheck` 的 `str | None` 收窄问题（`Digest.parse` 收到 `str | None`，已恢复显式判空并删掉未被消费的 `frozen` 属性）⇒ 第三次实跑 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3835 passed / 10 skipped**，477.88s） | 推送后轮询（本行随 CI 结论回填） | 反证暴露一处**假绿**：重放一致性用例在"两侧同为 None"时相等成立 ⇒ 已把"重放值非空"钉进断言（判据只增强）；首跑"守卫放行"用例报 `drifted`，用临时探针定位为**用例替身** `_park` 漏复制定价引用（守卫正常工作），修替身而非改产品/断言 | EC-04 **PASS**（RECHECK-087，W-1…W-4）；EC-05…EC-07 PENDING | cycle 5：derive 取 EC 表首个 PENDING（EC-05 = 锁粒度每线程连接 + worker claim/retry dispatch 的统一派发读面），先反向搜索确认控制面 SQLite 共享连接的当前用法与两个派发方各自读到的事实 |
 
 ## 状态历史
 
@@ -323,5 +339,16 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 - 2026-09-17 cycle 4 建档：EC-04 **IN_PROGRESS**（PLAN-20260917-087，`parent_goal` 已投影
   ALL_PLAN；driver=client-goal / owner=root-agent）；反向搜索确认缺口 =
   `eventing.frozen_payload` 无 `semantic_digest`（`eventing.py:57-64`）+ 收敛分支
-  `frozen_manifest_refs_of` 只读三项（`run_execution.py:65-82`）⇒ FAILED run 的语义 digest
+   `frozen_manifest_refs_of` 只读三项（`run_execution.py:65-82`）⇒ FAILED run 的语义 digest
   缺失，`assert_semantics_frozen` 直接拒绝（`convergence.py:29`）。
+- 2026-09-17 cycle 4 收口：EC-04 **PASS**（PLAN-20260917-087 / RECHECK-087，
+  PASS_WITH_WARNINGS，W-1…W-4）；`manifest.frozen` payload 带 `semantic_digest`，
+  失败收敛分支经唯一的 payload→引用映射（`FrozenManifestRefs.from_payload(...).apply`）
+  走**与成功路径同一个** `with_manifest` 落行，读面新增 `manifest_semantic_digest`；
+  重放用例证明"只凭事件链"能把四项冻结引用原样重建；**反证双跑**（拆 payload 键 ⇒ 7 红、
+  拆收敛参数 ⇒ 3 红，失败文本 = 改动前的 `lacks a semantic digest`）；反证暴露并修掉一处
+  假绿（重放用例在"两侧同为 None"时相等成立 ⇒ 断言补"非空"）；定向 `tests/api` 418 passed、
+  `domain/application/contracts/postgres/e2e` 复跑 1629 passed / 4 skipped、web 门全绿；
+  m0 见迭代日志第 4 行（首跑唯一红项 = MEM 先于 RECHECK 写入的记录顺序，补齐后复跑）。
+  EC-01…EC-04 的 exit_criteria `status` 一并按既有表格口径校准为 PASS（此前只在表格里
+  记录，列表字段留在 PENDING——本次不改变任何判据事实，只消除同一文件内两处口径不一致）。
