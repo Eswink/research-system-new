@@ -29,6 +29,7 @@ from adapters.sqlite.projections import (
     mark_outbox_published,
     pending_outbox,
 )
+from adapters.sqlite.projections import live_lease_holders as select_live_lease_holders
 from adapters.sqlite.projections import retry_schedule as select_retry_schedule
 from adapters.sqlite.projections import task_identities as select_task_identities
 from adapters.sqlite.serialization import TaskRow, decode_timestamp
@@ -38,6 +39,8 @@ from packages.application.observability.signals import CorrelationRef, Operation
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
+    DispatchOwnership,
+    LeaseHolder,
     RetrySchedule,
     TaskCompletion,
     TaskIdentity,
@@ -179,6 +182,39 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
             due=due,
             next_retry_at=decode_timestamp(deadline) if deadline is not None else None,
         )
+
+    def dispatch_ownership(self, run_id: str) -> DispatchOwnership:
+        """该 run 的统一派发读面（GOAL-004 cycle 6 = EC-05 ②）。
+
+        两件 canonical 事实一次读：重排读面（与 `retry_schedule` 同一列同一判据）+ 活租约
+        持有者（`live_lease_holders`：未过期且持有者不是 LOST worker）。两处都用
+        `timestamp_now` —— 与写 `retry_at`/`expires_at`、与回收方同一个源，分类不在这里
+        二次判断。读面零写、零缓存。
+        """
+        self._ensure_open()
+        now_text = iso(timestamp_now(self._now))
+        scheduled, due, deadline = select_retry_schedule(self._conn, run_id, now_text)
+        holders = tuple(
+            LeaseHolder(
+                task_id=task_id,
+                worker_id=worker_id,
+                fence=fence,
+                expires_at=None if expires_at is None else decode_timestamp(expires_at),
+            )
+            for task_id, worker_id, fence, expires_at in select_live_lease_holders(
+                self._conn, run_id, now_text
+            )
+        )
+        ownership = DispatchOwnership(
+            retry=RetrySchedule(
+                scheduled=scheduled,
+                due=due,
+                next_retry_at=decode_timestamp(deadline) if deadline is not None else None,
+            ),
+            leases=holders,
+        )
+        self._record("dispatch_ownership", run_id, result=ownership.kind)
+        return ownership
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。"""

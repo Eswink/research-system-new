@@ -11,7 +11,7 @@ PostgreSQL 实现。M5 决策 D2：同步语义；cancellation 为协作式。
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
 from packages.domain.core import Timestamp
@@ -112,6 +112,66 @@ class RetrySchedule:
             raise ValueError("no scheduled retry may carry a deadline")
 
 
+# 统一派发读面的 kind 取值（GOAL-004 cycle 6 = EC-05 ②）。四个取值只是两件 canonical
+# 事实（重排读面 + 活租约持有者）的组合，不是第二份真相：
+# `NONE` = 没有活的派发方（可能仍停在 PAUSED 等人工介入）。
+DISPATCH_NONE = "NONE"
+DISPATCH_RETRY = "RETRY_DISPATCH"
+DISPATCH_WORKER_CLAIM = "WORKER_CLAIM"
+DISPATCH_BOTH = "BOTH"
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseHolder:
+    """一个 run 里**活着**的租约持有者（读面用，不含 `lease_id`）。
+
+    `worker_id` 为空 = 租约由控制面自己持有（agent session 投递路径），非空 = worker
+    plane 的 claim。`lease_id` **不进读面**：那是作业面结果提交的凭据，读面不复制
+    能力面（AGENTS.md §9 的最小暴露）。
+    """
+
+    task_id: str
+    worker_id: str | None = None
+    fence: int = 0
+    expires_at: Timestamp | None = None
+
+    def __post_init__(self) -> None:
+        if not self.task_id:
+            raise ValueError("task_id must not be empty")
+        if self.fence < 0:
+            raise ValueError("fence must be non-negative")
+
+
+@dataclass(frozen=True, slots=True)
+class DispatchOwnership:
+    """一个 run 的**统一派发读面**：现在谁在派发它（GOAL-004 cycle 6 = EC-05 ②）。
+
+    两个派发方此前各持一半事实、没有一处答得出"这条 run 有没有活的派发方"：retry
+    dispatch 守护线程只看 `PAUSED` 的重排到期，worker plane 的租约事实则完全不在读面。
+    本读模型把两件 canonical 事实放进**同一次读**：`retry`（任务行的重排）与 `leases`
+    （活租约持有者）。
+
+    "活"由 adapter 用**权威时钟**判定（生产：DB 时钟；测试：注入时钟），且是
+    `recover_expired_leases` 回收判据的**补集**——回收会动手的那条不算持有，读面不许把
+    "马上要被回收"说成"有人在派发"。`kind` 只是这两件事实的组合，调用方不必自己拼。
+    """
+
+    retry: RetrySchedule = field(default_factory=RetrySchedule)
+    leases: tuple[LeaseHolder, ...] = ()
+
+    @property
+    def kind(self) -> str:
+        retrying = self.retry.scheduled > 0 or self.retry.due > 0
+        claimed = bool(self.leases)
+        if retrying and claimed:
+            return DISPATCH_BOTH
+        if claimed:
+            return DISPATCH_WORKER_CLAIM
+        if retrying:
+            return DISPATCH_RETRY
+        return DISPATCH_NONE
+
+
 @runtime_checkable
 class WorkflowEngine(Protocol):
     """at-least-once 任务分发契约；实现必须保证幂等去重。"""
@@ -188,6 +248,21 @@ class WorkflowEngine(Protocol):
         但回答运维读面要问的问题："这条停车会不会自己走、下一个到期是什么时候、现在
         是不是已经到期"。调度器要的是 ids（`due_retry_task_ids`），读面要的是计数与
         最近期限（这一句）——两者由同一个 adapter 时钟分类，不会各算各的。
+        """
+
+    def dispatch_ownership(self, run_id: str) -> DispatchOwnership:
+        """该 run 的**统一派发读面**：现在谁在派发它（一个调用、一个时钟）。
+
+        两个派发方（retry dispatch 守护线程 / worker plane 的 claim）此前各持一半事实，
+        没有一处答得出"这条 run 有没有活的派发方、是哪一个"——这一句就是那一个答案：
+        `retry` 给重排读面（与 `retry_schedule` 同一列同一判据、同一个 `now`），
+        `leases` 给**活着**的租约持有者（`expires_at >= now` 且持有者不是 LOST worker，
+        即 `recover_expired_leases` 回收集合的补集）。
+
+        范围与诚实边界：只回答"有没有"与"是谁"（task/worker/fence/到期），**不回答
+        "是不是健康"**（心跳新鲜度、执行进度、卡死与否都不在这里）；读面零写、零缓存，
+        也不新增"派发原因"字段——`kind` 由两件 canonical 事实组合，不是第二份真相。
+        三实现语义一致；Fake 无租约过期语义（其"活"= 仍在租约表里）由契约用例钉住。
         """
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:

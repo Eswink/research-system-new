@@ -104,6 +104,39 @@ def retry_schedule(
     return scheduled, due, next_retry_at
 
 
+def live_lease_holders(
+    conn: sqlite3.Connection, run_id: str, now_text: str
+) -> tuple[tuple[str, str | None, int, str | None], ...]:
+    """该 run 里**活着**的租约持有者：(task_id, worker_id, fence, expires_at)。
+
+    "活"= `recover_expired_leases` 回收判据的**补集**：未过期（`expires_at >= now`）
+    且持有者不是 LOST worker。回收会动手的那条不算持有——读面不许把"马上要被回收"
+    说成"有人在派发"。`now_text` 由调用方按权威时钟给出（生产：DB 时钟；测试：注入
+    时钟），与写 `expires_at`、与回收方同一个源。
+
+    `worker_id` 为空 = 控制面自己持有（agent session 投递），非空 = worker plane claim。
+    `lease_id` 有意不读：它是作业面提交结果的凭据，读面不复制能力面。
+    """
+    rows = conn.execute(
+        "SELECT l.task_id AS task_id, l.worker_id AS worker_id, l.fence AS fence,"
+        " l.expires_at AS expires_at FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
+        " WHERE t.run_id = ? AND l.expires_at >= ?"
+        " AND (l.worker_id IS NULL OR l.worker_id NOT IN"
+        " (SELECT worker_id FROM workers WHERE state = 'LOST'))"
+        " ORDER BY l.task_id",
+        (run_id, now_text),
+    ).fetchall()
+    return tuple(
+        (
+            str(row["task_id"]),
+            None if row["worker_id"] is None else str(row["worker_id"]),
+            int(row["fence"] or 0),
+            None if row["expires_at"] is None else str(row["expires_at"]),
+        )
+        for row in rows
+    )
+
+
 def task_identities(conn: sqlite3.Connection, run_id: str) -> tuple[tuple[str, str, str], ...]:
     """该 run 已登记任务的 (idempotency_key, task_id, status)（确定性排序）。
 

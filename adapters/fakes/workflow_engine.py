@@ -9,6 +9,8 @@ from adapters.fakes.base import FakeBase
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
+    DispatchOwnership,
+    LeaseHolder,
     RetrySchedule,
     TaskCompletion,
     TaskIdentity,
@@ -256,6 +258,29 @@ class FakeWorkflowEngine(FakeBase):
         )
         self._record("retry_schedule", run_id, result=f"scheduled=0 due={due}")
         return RetrySchedule(due=due)
+
+    def dispatch_ownership(self, run_id: str) -> DispatchOwnership:
+        """Fake 的统一派发读面：持有 = 租约还在表里（Fake 没有过期语义）。
+
+        Fake 的租约不携带时钟（`expires_at` 只是构造时刻的戳，没有回收路径），所以
+        "活"在这里只能是"仍被持有"——**这不是与持久化实现同强度的判据**，过期与
+        LOST worker 两种情形由 SQLite 注入时钟单测与 PG parity 覆盖，本类不假装实现。
+        `retry` 沿用 `retry_schedule`（Fake 无写 `RETRY_SCHEDULED` 路径 ⇒ 恒为零）。
+        """
+        self._enter("dispatch_ownership", run_id)
+        holders = tuple(
+            LeaseHolder(
+                task_id=task_id,
+                worker_id=lease.worker_id,
+                fence=lease.fence,
+                expires_at=lease.expires_at,
+            )
+            for task_id, lease in sorted(self._leases.items())
+            if task_id in self._tasks and self._tasks[task_id].run_id.value == run_id
+        )
+        ownership = DispatchOwnership(retry=self.retry_schedule(run_id), leases=holders)
+        self._record("dispatch_ownership", run_id, result=ownership.kind)
+        return ownership
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """Fake 与两个持久化 adapter 同判据：按 canonical 任务回答稳定身份。

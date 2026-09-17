@@ -121,6 +121,35 @@ def _as_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def live_lease_holders(
+    conn: Any, run_id: str, now: datetime
+) -> tuple[tuple[str, str | None, int, datetime | None], ...]:
+    """该 run 里**活着**的租约持有者（SQLite 侧同一个判据，见 sqlite/projections.py）。
+
+    "活"= `recover_expired_leases` 回收判据的补集：未过期（`expires_at >= now`）且持有者
+    不是 LOST worker。`now` 由调用方按权威时钟给出（生产：`server_now` → DB 时钟；测试：
+    注入时钟），与回收方同一个源。`lease_id` 有意不读（作业面凭据不进控制面读面）。
+    """
+    rows: Any = conn.execute(
+        "SELECT l.task_id AS task_id, l.worker_id AS worker_id, l.fence AS fence,"
+        " l.expires_at AS expires_at FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
+        " WHERE t.run_id = %s AND l.expires_at >= %s"
+        " AND (l.worker_id IS NULL OR l.worker_id NOT IN"
+        " (SELECT worker_id FROM workers WHERE state = 'LOST'))"
+        " ORDER BY l.task_id",
+        (run_id, now),
+    ).fetchall()
+    return tuple(
+        (
+            str(row["task_id"]),
+            None if row["worker_id"] is None else str(row["worker_id"]),
+            int(row["fence"] or 0),
+            None if row["expires_at"] is None else _as_utc(row["expires_at"]),
+        )
+        for row in rows
+    )
+
+
 def pending_outbox(conn: Any) -> tuple[EventEnvelope, ...]:
     rows: Any = conn.execute(
         "SELECT envelope_json FROM outbox_events WHERE published_at IS NULL ORDER BY created_at"

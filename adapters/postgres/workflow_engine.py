@@ -27,6 +27,9 @@ from adapters.postgres.projections import (
     list_tasks as proj_list_tasks,
 )
 from adapters.postgres.projections import (
+    live_lease_holders as proj_live_lease_holders,
+)
+from adapters.postgres.projections import (
     mark_outbox_published as proj_mark_published,
 )
 from adapters.postgres.projections import (
@@ -35,7 +38,7 @@ from adapters.postgres.projections import (
 from adapters.postgres.projections import (
     retry_schedule as proj_retry_schedule,
 )
-from adapters.postgres.serialization import TaskRow, encode_task
+from adapters.postgres.serialization import TaskRow, decode_timestamp_pg, encode_task
 from adapters.postgres.telemetry_notes import note_queue_lag, note_task_duration
 from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_impl
 from adapters.postgres.workflow_claim import ClaimPayload, claim_next_impl
@@ -59,6 +62,8 @@ from packages.application.ports.errors import (
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
+    DispatchOwnership,
+    LeaseHolder,
     RetrySchedule,
     TaskCompletion,
     TaskIdentity,
@@ -360,6 +365,34 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
             raise self._wrap_operational(exc) from exc
         self._record("retry_schedule", run_id, result=str(schedule))
         return schedule
+
+    def dispatch_ownership(self, run_id: str) -> DispatchOwnership:
+        """该 run 的统一派发读面（GOAL-004 cycle 6 = EC-05 ②）。
+
+        与 SQLite 实现同一判据、同一个时钟源（`server_now`：生产 DB 时钟 / 测试注入
+        时钟）：重排读面 + 活租约持有者（未过期且持有者不是 LOST worker）。两件事实在
+        同一个连接上读到；读面是观测，不承诺跨表快照一致（并发写期间两读之间可能前移）。
+        """
+        self._ensure_open()
+        try:
+            now = server_now(self._conn, self._now)
+            schedule = proj_retry_schedule(self._conn, run_id, now)
+            holders = tuple(
+                LeaseHolder(
+                    task_id=task_id,
+                    worker_id=worker_id,
+                    fence=fence,
+                    expires_at=(None if expires_at is None else decode_timestamp_pg(expires_at)),
+                )
+                for task_id, worker_id, fence, expires_at in proj_live_lease_holders(
+                    self._conn, run_id, now
+                )
+            )
+        except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
+            raise self._wrap_operational(exc) from exc
+        ownership = DispatchOwnership(retry=schedule, leases=holders)
+        self._record("dispatch_ownership", run_id, result=ownership.kind)
+        return ownership
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。
