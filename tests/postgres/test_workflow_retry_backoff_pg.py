@@ -3,9 +3,11 @@
 与 `tests/adapters/sqlite/test_workflow_retry_backoff.py` 逐条对应：声明了退避的重排任务
 在 deadline 之前不能被 claim，到点后与首次排队同权；没声明退避的契约立即可 claim。
 
-差别只在**时钟来源**：PG 用数据库时钟（complete 写 `now() + 时延`，claim 与 `now()` 比较），
-所以这里不推进假时钟，而是直接把 `retry_at` 挪到过去 / 观察它被写成未来——这样断言的是
-"数据库里的事实"，不是测试进程里的时间。
+差别只在**时钟来源**：PG 的 deadline 写入（complete）与 claim 判据都走 `server_now`——
+生产（`now=None`）是数据库时钟，本文件（注入 `now=lambda: START`）是那个固定时钟。
+所以这里不推进假时钟，而是直接把 `retry_at` 写成 `START ± 时延`：断言的是"库里的事实"，
+且与墙钟无关。**注入时钟时不能拿 SQL `now()` 去挪 deadline**——那是两个时钟，墙钟越过
+START 之后用例会必红（与产品行为无关；cycle 1 的 CI 就是这样红的）。
 
 Skipped automatically if PostgreSQL is not reachable (tests/postgres/conftest.py).
 """
@@ -116,13 +118,14 @@ def _retry_at(task: ResearchTask) -> datetime | None:
 
 
 def _set_retry_at_in_the_past(task: ResearchTask) -> None:
+    """把 deadline 挪到引擎时钟（START）之前——与 complete/claim 同一个权威时间源。"""
     import psycopg
 
     conn = psycopg.connect(_dsn(), autocommit=True)
     try:
         conn.execute(
-            "UPDATE tasks SET retry_at = now() - interval '1 second' WHERE task_id = %s",
-            (task.id.value,),
+            "UPDATE tasks SET retry_at = %s - interval '1 second' WHERE task_id = %s",
+            (START, task.id.value),
         )
     finally:
         conn.close()
