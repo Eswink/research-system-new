@@ -11,7 +11,8 @@ export { claimsView, eventFrame, evidenceRecord, usageView, DRAFT, ENDPOINT, VAL
 
 export const RUN: RunDetailDto = {
   id: "run-one", project_id: "example-project", protocol_id: "controlled-protocol",
-  state: "RUNNING", manifest_digest: "sha256:manifest", protocol_body_digest: "sha256:body",
+  state: "RUNNING", manifest_digest: "sha256:manifest",
+  manifest_semantic_digest: "sha256:semantic", protocol_body_digest: "sha256:body",
   paused_dispatch: null,
   created_at: "2026-09-09T00:00:00Z", updated_at: "2026-09-09T00:00:00Z",
 };

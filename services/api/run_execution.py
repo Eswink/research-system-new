@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from packages.application.ports import CatalogSnapshot, PreflightContext, ProjectSettings
@@ -62,24 +63,64 @@ class ExecutionRequest:
     protocol_body: ProtocolBody | None = None
 
 
-def frozen_manifest_refs_of(
-    deps: ApiDeps,
-    run_id: str,
-) -> tuple[str | None, str | None, str | None]:
-    """从冻结事件恢复 manifest 与 pricing 引用（失败收敛路径）。"""
+@dataclass(frozen=True, slots=True)
+class FrozenManifestRefs:
+    """`manifest.frozen` payload → run 行的四项冻结引用（失败收敛与事件重放共用）。
+
+    这是**唯一**的 payload→引用映射：执行期失败收敛（本模块）与"从事件链重放 run 行"
+    （用例/运维）读的是同一份事实，键名不写第二遍。None = 事件里没有这一项（本轮之前的
+    旧事件、或这条 run 从未冻结）：不猜测、不回填。
+    """
+
+    digest: str | None = None
+    semantic_digest: str | None = None
+    pricing_version: str | None = None
+    pricing_digest: str | None = None
+
+    @classmethod
+    def from_payload(cls, payload: Mapping[str, object]) -> FrozenManifestRefs:
+        """事件 payload → 引用（非字符串/空串一律当作"没有这一项"）。"""
+
+        def text(key: str) -> str | None:
+            value = payload.get(key)
+            return value if isinstance(value, str) and value else None
+
+        return cls(
+            digest=text("digest"),
+            semantic_digest=text("semantic_digest"),
+            pricing_version=text("pricing_version"),
+            pricing_digest=text("pricing_digest"),
+        )
+
+    @property
+    def frozen(self) -> bool:
+        """是否冻结过 manifest（digest 是冻结事件的必备项）。"""
+        return self.digest is not None
+
+    def apply(self, run: ResearchRun) -> ResearchRun:
+        """把引用落到 run 行——与成功路径**同一个**域方法（`ResearchRun.with_manifest`）。
+
+        没有 digest 时原样返回：preflight 被拒的 run 从没冻结过，伪造一份引用比
+        留空更糟（漂移校验会拿它去比对不存在的 manifest）。
+        """
+        if not self.frozen:
+            return run
+        return run.with_manifest(
+            Digest.parse(self.digest),
+            Digest.parse(self.semantic_digest) if self.semantic_digest else None,
+            pricing_version=self.pricing_version,
+            pricing_digest=self.pricing_digest,
+        )
+
+
+def frozen_manifest_refs_of(deps: ApiDeps, run_id: str) -> FrozenManifestRefs:
+    """从冻结事件恢复 manifest / 语义 digest / pricing 引用（失败收敛路径）。"""
     if deps.projection is None:
-        return None, None, None
+        return FrozenManifestRefs()
     for envelope in events_of(deps.projection, run_id):
         if envelope.event_type.value == "manifest.frozen":
-            digest = envelope.payload.get("digest")
-            pricing_version = envelope.payload.get("pricing_version")
-            pricing_digest = envelope.payload.get("pricing_digest")
-            return (
-                digest if isinstance(digest, str) else None,
-                pricing_version if isinstance(pricing_version, str) else None,
-                pricing_digest if isinstance(pricing_digest, str) else None,
-            )
-    return None, None, None
+            return FrozenManifestRefs.from_payload(envelope.payload)
+    return FrozenManifestRefs()
 
 
 def execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
@@ -165,17 +206,19 @@ def run_from_execution(
             protocol_body=inputs.protocol_body,
         )
     except ValueError:
-        frozen_digest, pricing_version, pricing_digest = frozen_manifest_refs_of(deps, run_id.value)
-        return ResearchRun(
-            id=run_id,
-            project_id=project_id,
-            protocol_id=protocol_id,
-            state="FAILED",
-            manifest_digest=Digest.parse(frozen_digest) if frozen_digest else None,
-            pricing_version=pricing_version,
-            pricing_digest=pricing_digest,
-            protocol_source=inputs.command.protocol_source,
-            protocol_body=inputs.protocol_body,
+        # 失败收敛：执行期的 outcome 不存在，冻结引用只从事件链补回来，落行走与成功
+        # 路径同一个域方法（with_manifest）。语义 digest 必须在这条路径上活下来：
+        # `assert_semantics_frozen` 缺它就拒绝重建（GOAL-004 cycle 4 = EC-04）。
+        refs = frozen_manifest_refs_of(deps, run_id.value)
+        return refs.apply(
+            ResearchRun(
+                id=run_id,
+                project_id=project_id,
+                protocol_id=protocol_id,
+                state="FAILED",
+                protocol_source=inputs.command.protocol_source,
+                protocol_body=inputs.protocol_body,
+            )
         )
 
 
@@ -194,6 +237,7 @@ def start_run_from_source(req: ExecutionRequest) -> ResearchRun:
 __all__ = [
     "ExecutionInputs",
     "ExecutionRequest",
+    "FrozenManifestRefs",
     "execution_inputs",
     "frozen_manifest_refs_of",
     "run_from_execution",

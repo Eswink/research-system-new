@@ -39,6 +39,9 @@ def _detail_dto(deps: ApiDeps, run: ResearchRun) -> RunDetailDto:
         protocol_id=run.protocol_id,
         state=run.state,
         manifest_digest=str(run.manifest_digest) if run.manifest_digest else None,
+        manifest_semantic_digest=(
+            str(run.manifest_semantic_digest) if run.manifest_semantic_digest else None
+        ),
         protocol_body_digest=str(run.protocol_body.digest) if run.protocol_body else None,
         paused_dispatch=paused_dispatch_view(run.state, deps.workflow, run.id.value),
         created_at=run.created_at.value.isoformat(),

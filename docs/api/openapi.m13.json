@@ -5329,6 +5329,17 @@
             ],
             "title": "Manifest Digest"
           },
+          "manifest_semantic_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Semantic Digest"
+          },
           "paused_dispatch": {
             "anyOf": [
               {

@@ -183,6 +183,14 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
   不是"停车原因"字段；"现在"在 adapter 内用权威时钟取（与调度器同一处），读面不自己
   比墙钟。**诚实边界**：重建被拒后放回的停车在任务面表现为"重排已到期但没动"
   （`RETRY_SCHEDULED` + `due_now=true`），**拒绝原因不在读面**（只在本进程遥测/日志）。
+- `GET /runs/{id}`（与列表）的 `manifest_semantic_digest` 是**冻结的语义 digest**
+  （GOAL-004 cycle 4 = EC-04）：排除 `frozen_at`（`manifest_digest` 覆盖它），是
+  resume/重建的漂移校验输入。成功路径与**执行期失败收敛的 `FAILED` run** 都带它——
+  收敛路径没有 `RunOutcome`，从 `manifest.frozen` 事件 payload 的 `semantic_digest`
+  补回，落行走与成功路径同一个 `ResearchRun.with_manifest(...)`。**诚实边界**：
+  非空只表示"这条 run 冻结过一次 manifest 且事件里有这项"，不保证重建成功
+  （目录/契约漂移仍被 `assert_semantics_frozen` 拒绝）；`None` = 未冻结、preflight
+  被拒，或事件早于本轮（不回填、不猜测）。
 
 ## Runs
 

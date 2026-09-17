@@ -43,6 +43,10 @@ class RunDetailDto(BaseModel):
     protocol_id: str
     state: str
     manifest_digest: str | None = None
+    # GOAL-004 cycle 4：冻结的**语义 digest**（排除 frozen_at，resume 漂移校验的输入）。
+    # 非空 = 这条 run 冻结过 manifest 且事件里带这项；执行期失败收敛的 run 同样带
+    # （此前只带 manifest_digest）。None = 未冻结或事件早于本轮，不保证可重建。
+    manifest_semantic_digest: str | None = None
     # GOAL-004 cycle 1：冻结协议正文的 digest。None = 旧 run 没有冻结正文
     # （重启续跑仍依赖那份外部来源可解析），非 None = 这条 run 自足可重建。
     protocol_body_digest: str | None = None
