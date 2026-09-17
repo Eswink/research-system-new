@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from adapters.contracts.pricing_loaders import load_pricing_table
-from adapters.sqlite.db import connect as sqlite_connect
+from adapters.sqlite.pool import ThreadLocalConnection
 from packages.application.cost.pricing import unpriced_table
 from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
 from services.api.settings import ApiSettings
@@ -25,10 +25,15 @@ def _is_postgres_dsn(dsn: str | None) -> bool:
 
 
 def _open_sqlite(db_path: str) -> Any:
+    """控制面的 SQLite 入口：**每线程一条连接**（GOAL-004 cycle 5 = EC-05）。
+
+    文件库不再把一条连接发给所有线程（含守护线程）；`:memory:` 仍共用一条
+    （SQLite 语义：内存库属于连接），见 `adapters/sqlite/pool.py`。
+    """
     path = Path(db_path)
     if str(path) != ":memory:":
         os.makedirs(path.parent, exist_ok=True)
-    return sqlite_connect(db_path)
+    return ThreadLocalConnection(db_path)
 
 
 def _load_pricing() -> Any:

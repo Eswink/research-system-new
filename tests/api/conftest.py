@@ -33,17 +33,20 @@ def make_app_deps(
     *,
     gateway: FakeModelGateway | None = None,
     run_ready: bool = False,
+    db_path: str = ":memory:",
 ) -> ApiDeps:
-    """测试装配：Sqlite(:memory:) 配置存储 + Fakes + 内存幂等。
+    """测试装配：Sqlite 配置存储（默认 `:memory:`）+ Fakes + 内存幂等。
 
     run_ready=True 时装配可冻结 Manifest 的完整 preflight context
     （定义在 run_fixtures.py，避免本文件超行数阈值）。
+    `db_path` 传文件路径 ⇒ 控制面走**每线程一条连接**（GOAL-004 cycle 5 = EC-05）；
+    默认 `:memory:` 仍共用一条（内存库属于连接）。
     """
     from tests.api.run_fixtures import make_run_ready_deps
 
     if run_ready:
         return make_run_ready_deps(gateway=gateway)
-    return make_base_deps(gateway=gateway)
+    return make_base_deps(gateway=gateway, db_path=db_path)
 
 
 def _base_sqlite_parts(
@@ -87,16 +90,22 @@ def _base_sqlite_parts(
     return events, workflow, ledger, budget, runs, projection
 
 
-def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
-    """基础装配（endpoint/model CRUD + probe + run 测试用）。"""
+def make_base_deps(
+    *, gateway: FakeModelGateway | None = None, db_path: str = ":memory:"
+) -> ApiDeps:
+    """基础装配（endpoint/model CRUD + probe + run 测试用）。
+
+    连接统一走 `ThreadLocalConnection`：`:memory:` 时它退化成一条共享连接（与既有
+    行为逐字一致），文件路径时才真的每线程一条。
+    """
     from adapters.fakes.policy_evaluator import FakePolicyEvaluator
     from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
-    from adapters.sqlite.db import connect
     from adapters.sqlite.endpoint_store import SqliteEndpointStore
     from adapters.sqlite.library_store import SqliteLibraryStore
     from adapters.sqlite.model_store import SqliteModelStore
     from adapters.sqlite.ops_store import SqliteOpsStore
+    from adapters.sqlite.pool import ThreadLocalConnection
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
     from adapters.sqlite.schedule_store import SqliteScheduleStore
@@ -104,7 +113,9 @@ def make_base_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
     from services.api.schedule_support import build_registry
 
-    connection = connect(":memory:")
+    # 代理面与 sqlite3.Connection 同形（execute/cursor/commit/with 块/row_factory），
+    # 但类型上不是它的子类：装配边界显式 cast，覆盖由池单测 + 整库 API 套件提供。
+    connection = cast("sqlite3.Connection", ThreadLocalConnection(db_path))
     events, workflow, ledger, budget, runs, projection = _base_sqlite_parts(connection)
     schedule_store = SqliteScheduleStore(connection=connection)
     return ApiDeps(

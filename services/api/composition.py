@@ -166,9 +166,17 @@ class ApiDeps:
     _pg_connection: Any | None = field(default=None, repr=False)
 
     def close(self) -> None:
-        """关闭自持连接（app shutdown 钩子；注入连接不关闭）。"""
+        """关闭自持连接（app shutdown 钩子；注入连接不关闭）。
+
+        每线程连接池（GOAL-004 cycle 5）要关**全部**线程的连接：`close()` 只关本线程
+        那条，shutdown 时其余线程的连接会留在登记表里。
+        """
         if self._connection is not None:
-            self._connection.close()
+            close_all = getattr(self._connection, "close_all", None)
+            if callable(close_all):
+                close_all()
+            else:
+                self._connection.close()
         if self._pg_connection is not None:
             try:
                 self._pg_connection.close()
