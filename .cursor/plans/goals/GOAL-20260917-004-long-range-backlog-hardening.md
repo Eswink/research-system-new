@@ -457,3 +457,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   web 门全绿；两处 450 行硬上限以搬代码收口（`human_gates.py` / `lease_recovery.py`）。
   EC-07 仍 PENDING ⇒ 下一条工程 cycle = cycle 8 = EC-07（完整安全审计的可复核终态；
   `scanner_enobufs` 证据在 `scratch/goal4-mimosa-enobufs.md`）。
+- 2026-09-17 cycle 7 CI 记录：head `0a58b6d` → run **35266572576 六个 job 全 success**
+  （collector-quality / quality-windows-latest / eval-gate / quality-ubuntu-latest /
+  container-quality / console-frontend，无重跑）；本 cycle 的代码提交 `56a93e8`、记录提交
+  `3a324ee` 与 m0 结果回填 `0a58b6d` 同一棵树，被该 run 覆盖（CI 只跑 head）。
