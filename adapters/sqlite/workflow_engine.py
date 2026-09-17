@@ -29,14 +29,16 @@ from adapters.sqlite.projections import (
     mark_outbox_published,
     pending_outbox,
 )
+from adapters.sqlite.projections import retry_schedule as select_retry_schedule
 from adapters.sqlite.projections import task_identities as select_task_identities
-from adapters.sqlite.serialization import TaskRow
+from adapters.sqlite.serialization import TaskRow, decode_timestamp
 from adapters.sqlite.workflow_ops import SqliteWorkflowOps
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import CorrelationRef, OperationScope
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
+    RetrySchedule,
     TaskCompletion,
     TaskIdentity,
     TaskLease,
@@ -160,6 +162,23 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
         ids = due_retries(self._conn, run_id, iso(timestamp_now(self._now)))
         self._record("due_retry_task_ids", run_id, result=str(len(ids)))
         return ids
+
+    def retry_schedule(self, run_id: str) -> RetrySchedule:
+        """该 run 的重排读面（读面用；分类用与写 `retry_at` 同一个时钟）。
+
+        `due_retry_task_ids` 回答"哪些任务现在能再交付"，这一句回答"还剩多少在等
+        时钟、下一条什么时候到"——同一个 `now`，两处不会各算各的。
+        """
+        self._ensure_open()
+        scheduled, due, deadline = select_retry_schedule(
+            self._conn, run_id, iso(timestamp_now(self._now))
+        )
+        self._record("retry_schedule", run_id, result=f"scheduled={scheduled} due={due}")
+        return RetrySchedule(
+            scheduled=scheduled,
+            due=due,
+            next_retry_at=decode_timestamp(deadline) if deadline is not None else None,
+        )
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。"""

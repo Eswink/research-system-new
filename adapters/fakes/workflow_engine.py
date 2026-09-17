@@ -9,6 +9,7 @@ from adapters.fakes.base import FakeBase
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
+    RetrySchedule,
     TaskCompletion,
     TaskIdentity,
     TaskLease,
@@ -238,6 +239,23 @@ class FakeWorkflowEngine(FakeBase):
         )
         self._record("due_retry_task_ids", run_id, result=str(len(ids)))
         return ids
+
+    def retry_schedule(self, run_id: str) -> RetrySchedule:
+        """Fake 无退避时延语义 ⇒ 该 run 所有重排任务都算"已到期"、无下一个期限。
+
+        与 `due_retry_task_ids` 同判据（只按 canonical 任务投影回答，不读墙钟）：
+        Fake 没有写入 deadline 的路径，真实 deadline 分类由两个持久化 adapter 提供
+        （SQLite 单测与 PG parity 覆盖）。
+        """
+        self._enter("retry_schedule", run_id)
+        due = sum(
+            1
+            for task in self._tasks.values()
+            if task.run_id.value == run_id
+            and task.status == ResearchTaskState.State.RETRY_SCHEDULED
+        )
+        self._record("retry_schedule", run_id, result=f"scheduled=0 due={due}")
+        return RetrySchedule(due=due)
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """Fake 与两个持久化 adapter 同判据：按 canonical 任务回答稳定身份。

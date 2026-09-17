@@ -76,6 +76,34 @@ def due_retries(conn: sqlite3.Connection, run_id: str, now_text: str) -> tuple[s
     return tuple(str(row["task_id"]) for row in rows)
 
 
+def retry_schedule(
+    conn: sqlite3.Connection, run_id: str, now_text: str
+) -> tuple[int, int, str | None]:
+    """该 run 的重排读面：(未到期条数, 已到期条数, 最近未到期期限)。
+
+    与 `due_retries` 同一判据（同一列、同一个 `now_text`），只是回答"还剩几条在等
+    时钟、几条现在就能走、下一个期限是什么"。`now_text` 由调用方按权威时钟给出
+    （生产：DB 时钟；测试：注入时钟），与写 `retry_at` 时同一个源。
+    """
+    rows = conn.execute(
+        "SELECT retry_at FROM tasks WHERE run_id = ? AND status = ?",
+        (run_id, ResearchTaskState.State.RETRY_SCHEDULED),
+    ).fetchall()
+    scheduled = 0
+    due = 0
+    next_retry_at: str | None = None
+    for row in rows:
+        deadline = row["retry_at"]
+        text = None if deadline is None else str(deadline)
+        if text is None or text <= now_text:
+            due += 1
+            continue
+        scheduled += 1
+        if next_retry_at is None or text < next_retry_at:
+            next_retry_at = text
+    return scheduled, due, next_retry_at
+
+
 def task_identities(conn: sqlite3.Connection, run_id: str) -> tuple[tuple[str, str, str], ...]:
     """该 run 已登记任务的 (idempotency_key, task_id, status)（确定性排序）。
 

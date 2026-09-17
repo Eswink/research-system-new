@@ -89,6 +89,29 @@ class TaskIdentity:
     status: str
 
 
+@dataclass(frozen=True, slots=True)
+class RetrySchedule:
+    """该 run 的重排读面（GOAL-004 cycle 2 = EC-02）。
+
+    两件 canonical 事实：任务行的 `status == RETRY_SCHEDULED` 与 `retry_at`。
+    `scheduled` 是**还没到**期限的条数，`due` 是**现在就能再交付**的条数
+    （`retry_at` 为空 = 立即重排，也算到期），`next_retry_at` 是最近一条未到期的
+    期限。分类在 adapter 内用权威时钟完成，所以这里的数字不需要调用方再拿"现在"比。
+    """
+
+    scheduled: int = 0
+    due: int = 0
+    next_retry_at: Timestamp | None = None
+
+    def __post_init__(self) -> None:
+        if self.scheduled < 0 or self.due < 0:
+            raise ValueError("retry schedule counts must be non-negative")
+        if self.scheduled > 0 and self.next_retry_at is None:
+            raise ValueError("a scheduled retry must carry its next deadline")
+        if self.scheduled == 0 and self.next_retry_at is not None:
+            raise ValueError("no scheduled retry may carry a deadline")
+
+
 @runtime_checkable
 class WorkflowEngine(Protocol):
     """at-least-once 任务分发契约；实现必须保证幂等去重。"""
@@ -156,6 +179,15 @@ class WorkflowEngine(Protocol):
 
         比较发生在 adapter 内，用的是**权威时钟**（生产：DB 时钟；测试：注入时钟），
         与写 `retry_at` 时同一个源——调用方不自己拿"现在"来比。
+        """
+
+    def retry_schedule(self, run_id: str) -> RetrySchedule:
+        """该 run 当前的**重排读面**（一个调用、一个时钟）。
+
+        与 `due_retry_task_ids` 同一判据（`RETRY_SCHEDULED` 且 `retry_at` 为空或已过），
+        但回答运维读面要问的问题："这条停车会不会自己走、下一个到期是什么时候、现在
+        是不是已经到期"。调度器要的是 ids（`due_retry_task_ids`），读面要的是计数与
+        最近期限（这一句）——两者由同一个 adapter 时钟分类，不会各算各的。
         """
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:

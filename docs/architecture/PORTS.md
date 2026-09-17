@@ -261,6 +261,17 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
   `tasks.fence_seq` 单调递增，每次 (re)claim 写入 `leases.fence`，
   completion 校验 `(task_id, lease_id, fence)`（stale generation 拒绝）。
 
+### WorkflowEngine 增量（GOAL-004 cycle 2）
+
+- 新增 `retry_schedule(run_id) -> RetrySchedule`：该 run 的重排读面
+  （`scheduled` 未到期条数 / `due` 已到期条数 / `next_retry_at` 最近未到期期限）。
+  与 `due_retry_task_ids` **同一列同一判据、同一个权威时钟**（分类在 adapter 内：
+  生产 DB 时钟、测试注入时钟）；调用方不自己拿"现在"比较、不逐任务问。
+  控制面 `GET /runs/{id}` 的 `paused_dispatch` 是它目前的唯一用途（详见
+  `docs/api/CONTROL_PLANE_API.md`）。
+- Fake 没有写 `RETRY_SCHEDULED` 的路径 ⇒ 它的两个读面永远回答"没有重排"；
+  这条限制在 `tests/contracts/test_retry_schedule_contract.py` 里显式钉住。
+
 ### ExecutionJobQueue（`packages/application/ports/execution_job_queue.py`）
 
 - `enqueue / describe / poll / record_result / request_cancel /

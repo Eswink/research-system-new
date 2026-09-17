@@ -8,12 +8,13 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from adapters.postgres.serialization import TaskRow, decode_envelope, decode_task
 from packages.application.ports.workflow_engine import TaskCompletion
 from packages.domain.events import EventEnvelope
+from packages.domain.task_state import ResearchTaskState
 
 
 def _get_task_json(row: Any) -> str:
@@ -74,6 +75,43 @@ def completed(conn: Any) -> dict[str, TaskCompletion]:
 def cancelled(conn: Any) -> set[str]:
     rows: Any = conn.execute("SELECT task_id FROM tasks WHERE cancelled = TRUE").fetchall()
     return {row["task_id"] for row in rows}
+
+
+def retry_schedule(
+    conn: Any, run_id: str, now: datetime
+) -> tuple[int, int, datetime | None]:
+    """该 run 的重排读面：(未到期条数, 已到期条数, 最近未到期期限)。
+
+    与 claim 候选扫描、`due_retry_task_ids` 同一列同一判据；`now` 由调用方按权威
+    时钟给出（生产：`server_now` → DB 时钟；测试：注入时钟），与写 `retry_at` 时
+    同一个源。期限分类在 SQL 之外做，好让"最近未到期期限"和计数出自同一遍扫描。
+    """
+    rows: Any = conn.execute(
+        "SELECT retry_at FROM tasks WHERE run_id = %s AND status = %s",
+        (run_id, ResearchTaskState.State.RETRY_SCHEDULED),
+    ).fetchall()
+    scheduled = 0
+    due = 0
+    next_retry_at: datetime | None = None
+    for row in rows:
+        deadline = row["retry_at"]
+        if deadline is None:
+            due += 1
+            continue
+        value = _as_utc(deadline)
+        if value <= now:
+            due += 1
+            continue
+        scheduled += 1
+        if next_retry_at is None or value < next_retry_at:
+            next_retry_at = value
+    return scheduled, due, next_retry_at
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:  # defensive: treat naive DB result as UTC
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 
 def pending_outbox(conn: Any) -> tuple[EventEnvelope, ...]:
