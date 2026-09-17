@@ -2,7 +2,7 @@
 id: PLAN-20260917-086
 slug: failure-policy-gets-a-consumer
 title: 失败策略有真实消费者：终局失败被容忍还是立刻失败，且"消费了哪条"可见
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-17
 updated_at: 2026-09-17
 parent_goal: GOAL-20260917-004
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260917-004 cycle 3 = EC-03（承接 GOAL-003「终止与收口 · BLOCKED 记录（2026-09-18）」后继入口第 4 项）。授权来源：2026-09-17 用户 goal 模式指令（新建承接 GOAL-004 并自动化循环推进）。push-to-main-for-CI 授权沿用 GOAL-001 批准口径（只推 main、不 force、不推旁支触发 CI）。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260917-086-failure-policy-gets-a-consumer.md
+memory_entries:
+  - MEM-20260917-061
 ---
 
 # PLAN-20260917-086 — 失败策略的消费者（GOAL-004 cycle 3 = EC-03）
@@ -52,37 +53,44 @@ memory_entries: []
 
 ## 验收条件
 
-- [ ] AC-01 **域判定**：`TaskContract.failure_policy_view()` 返回冻结视图
+- [x] AC-01 **域判定**：`TaskContract.failure_policy_view()` 返回冻结视图
   （`on_task_failure` + `declared` + `unhonored`）；缺省 `FAIL_RUN`；已知键非法取值
   `ValueError`；未知键进 `unhonored` 且不影响取值。
-- [ ] AC-02 **run 级消费**：声明 `CONTINUE` 的 run 在任务终局失败后**继续执行**同组后续
+- [x] AC-02 **run 级消费**：声明 `CONTINUE` 的 run 在任务终局失败后**继续执行**同组后续
   任务与后续 phase，最后收敛 `DEGRADED`；声明 `FAIL_RUN` 或未声明 ⇒ 与基线逐字一致
   （首个失败即 `FAILED`、后续任务不执行）；**反证**：把消费点去掉 ⇒ 新用例失败。
-- [ ] AC-03 **可见**：被容忍失败的 `TaskOutcome.failure_policy == "CONTINUE"`；
+- [x] AC-03 **可见**：被容忍失败的 `TaskOutcome.failure_policy == "CONTINUE"`；
   `run.degraded` payload 含 `failure_policy` 与被容忍失败清单；成功路径不发该事件。
-- [ ] AC-04 **诚实边界**：`on_validation_failure`/`allow_partial_evidence` 在视图里
+- [x] AC-04 **诚实边界**：`on_validation_failure`/`allow_partial_evidence` 在视图里
   `unhonored`，用例钉住"声明了它们也不改变行为"，文档点名原因与后继入口。
-- [ ] AC-05 **门禁与记录**：定向（domain/application/e2e/api）+ m0 23 项 + OpenAPI/文档
+- [x] AC-05 **门禁与记录**：定向（domain/application/e2e/api）+ m0 23 项 + OpenAPI/文档
   同源 + RECHECK-086 + MEM + GOAL-004/ALL_PLAN 记账。
 
 ## 实施清单
 
-- [ ] WP-A **域**：`packages/domain/failure_policy.py`（`OnTaskFailure`、`FailurePolicyView`、
+- [x] WP-A **域**：`packages/domain/failure_policy.py`（`OnTaskFailure`、`FailurePolicyView`、
   `failure_policy_view(policy)`）+ `TaskContract.failure_policy_view()` + 域用例。
-- [ ] WP-B **执行器**：`PhaseStep.tolerated_failure`、`TaskOutcome.failure_policy`、
+- [x] WP-B **执行器**：`PhaseStep.tolerated_failure`、`TaskOutcome.failure_policy`、
   三处失败点（任务失败 / 结果畸形 / 验收门拒收）统一走同一个 `failure_step(...)`、
   `execute_phases` 收敛 `DEGRADED` + `EventType.RUN_DEGRADED`（+ `EVENT_MODEL.md` 词表）+
   `service._degrade_run` + 应用/e2e 用例。
-- [ ] WP-C **诚实边界与收口**：unhonored 用例 + 文档（`CONTROL_PLANE_API.md` 语义段）+
+- [x] WP-C **诚实边界与收口**：unhonored 用例 + 文档（`CONTROL_PLANE_API.md` 语义段）+
   定向 + m0 → commit（每 WP 独立）→ push → CI 六 job → RECHECK-086 + MEM + GOAL-004 回写。
 
 ## 证据
 
-（执行后填写）
+- 提交：`2a014ad`（WP-A 域视图 + 域用例）、`7896525`（WP-B 消费 + 事件 + e2e/应用用例 +
+  文档 + 词表门禁同步）、`652e712`（450 行/50 行硬上限的搬移重构）。
+- 定向：domain 5 / application 6 / e2e 2（新增）+ 受影响套件复跑 **977 passed**；
+  事件词表门禁 14 passed；mypy 906 files 绿；m0 **PASS: profile=m0; 23 deterministic checks**
+  （全量 pytest **3823 passed / 10 skipped**）。
+- 记录：RECHECK-20260917-086（PASS_WITH_WARNINGS，W-1…W-5）+ MEM-20260917-061。
 
 ## 状态历史
 
 - 2026-09-17 建档（GOAL-20260917-004 cycle 3 = EC-03）；`status: IN_PROGRESS`。
+- 2026-09-17 收口：WP-A/WP-B/WP-C 完成（含 450 行/50 行门禁触发的搬移重构）；m0 23/23；
+  RECHECK-086 **PASS_WITH_WARNINGS**；`status: DONE`。
 
 ## 影响报告
 

@@ -149,7 +149,7 @@ memory_entries: []
 | --- | --- | --- | --- | --- |
 | EC-01 | 第 2 项 | 重建的来源自足（协议正文冻结进 run 行或 CAS） | e2e：删文件后仍能重建续跑 + 篡改反证 + 持久化往返 | **PASS**（cycle 1：PLAN-20260917-084 / RECHECK-084；详见下方 EC-01 注记） |
 | EC-02 | 第 3 项 | 读面区分两种 `PAUSED`（重排停车 vs 用户暂停） | 读面用例（注入时钟）+ PG parity + 文档同源 | **PASS**（cycle 2：PLAN-20260917-085 / RECHECK-085；详见下方 EC-02 注记） |
-| EC-03 | 第 4 项 | `failure_policy` 有真实消费者 | 反向搜索 + fail-fast/重试对照用例 + 回归对照 | PENDING |
+| EC-03 | 第 4 项 | `failure_policy` 有真实消费者 | 反向搜索 + fail-fast/重试对照用例 + 回归对照 | **PASS**（cycle 3：PLAN-20260917-086 / RECHECK-086；详见下方 EC-03 注记） |
 | EC-04 | 第 5 项 | 失败 run 与 `manifest.frozen` 事件的语义 digest（W-1/W-2） | API/事件/重放一致性用例 + 反证 | PENDING |
 | EC-05 | 第 6 项 | 锁粒度（每线程连接）+ 两个派发方的统一读面 | 并发反证场景 + 三态读面用例 + PG parity | PENDING |
 | EC-06 | 第 7 项 | `resume_paused` 失败补偿（不留悬空 RUNNING） | 失败注入 + 重入用例 + 反证 | PENDING |
@@ -173,6 +173,17 @@ UNKNOWN}`，`RETRY_SCHEDULED` 带 `next_retry_at` 与 `due_now`。判据只读 c
 并登记为后继入口（RECHECK-085 W-1）。其余口径登记：读面按 run 聚合不回答"是哪条任务"
 （W-3）、`next_retry_at` 不表达"迟到多久"（W-4）、`paused_dispatch` 不进事件流（W-5）、
 Fake 无写 `RETRY_SCHEDULED` 路径故其读面恒空（W-2，已显式钉成用例）。
+
+**EC-03 注记（2026-09-17 cycle 3）**：`failure_policy` 从"只有解析面"变成**有消费者 + 可点名**：
+`TaskContract.failure_policy_view()` 返回冻结视图（`on_task_failure ∈ {FAIL_RUN(缺省), CONTINUE}`
++ `declared`/`unhonored`），取值非法 ⇒ `ValueError`；消费点在 `phase_runner.failure_step`——
+三处失败（任务失败 / 结果畸形 / 验收门拒收）**唯一分叉**：缺省 = 既有隐式 fail-fast（逐字不变），
+`CONTINUE` = 失败被容忍（`task.failed` 事件 + `TaskOutcome.failure_policy`）且剩余工作照跑，
+跑完收敛 `DEGRADED`（此前无生产者的状态）并发 `run.degraded`（点名策略与失败清单）。
+**未消费的键被点名**：`on_validation_failure`/`allow_partial_evidence` 在 `unhonored` 里，用例钉住
+"声明它们不改行为"（消费 `on_validation_failure` 需要"完成后二次写任务行"，登记为后继入口）。
+范围注记（RECHECK-086 W-2/W-3/W-4）：`DEGRADED` 的 HTTP 落库走既有 `state=outcome.state`
+映射、未单独 e2e；被容忍失败不进 run 行（读清单走事件链）；`DEGRADED` 没有自动后续推进。
 
 **后继入口 ↔ EC 映射与取舍**：第 1 项（完整安全审计）在 GOAL-003 记录里就被标注为
 「运维动作，不在循环内可完成」——本 GOAL 把它**单列**为 EC-07，判据容纳两种合格终态，
@@ -205,8 +216,8 @@ EC-02 为 M、EC-06 为 S、EC-07 为 M（运维/审计，进度不由本循环�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 2 已收口**（EC-02 PASS，RECHECK-085；CI 结论见迭代日志第 2 行）；
-下一条工程 cycle = cycle 3 = EC-03（`failure_policy` 真实消费者）。
+当前续点：**cycle 3 已收口**（EC-03 PASS，RECHECK-086；CI 结论见迭代日志第 3 行）；
+下一条工程 cycle = cycle 4 = EC-04（失败 run 与 `manifest.frozen` 事件的语义 digest）。
 
 ## 驱动
 
@@ -277,6 +288,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 0 | 建档（本文件 + GOAL-003 事实更正行；driver=client-goal / owner=root-agent） | `7c0d9f2` | `.cursor/skills/governance-check/scripts/validate.py` 绿（本机实跑） | run **35203036505**（7c0d9f2）：**failure**——仅 `collector-quality` 红，2 条 PG 退避用例断言失败（其余五 job success） | 定位为**测试墙钟依赖**（非本提交缺陷）：夹具注入固定引擎时钟却用 SQL `now()` 挪 deadline，CI 墙钟越过 `START` 后必红；修复提交 `5607992`（夹具改用引擎时钟，断言未改）→ run **35204710864 六个 job 全 success** | EC-01…EC-07 全 PENDING | cycle 1 = EC-01（来源自足续跑：协议正文冻结进 run 行或 CAS） |
 | 1 | PLAN-20260917-084（来源自足续跑：`ProtocolBody` 冻结进 run 行 + 重建只认它） | `3d9cc73`（WP-A 域/装配/两个 store）、`87c2d86`（WP-B 重建/读面/用例）、`5141e06`（WP-C 记录 + 契约快照 + 文档） | 定向：api **9** / e2e **5** / domain **4+13** / sqlite **4** / pg **3** 全 passed；契约 `test_openapi_snapshot.py` **8 passed**（DTO 新增字段后重生成快照 +11 行）；web 门（lint/typecheck/unit/build/web-*）全绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3773 passed / 10 skipped**，497.96s；首轮 m0 红 2 处——契约快照漂移 + web 夹具缺字段——均为本改动引入、已修后复跑全绿） | **CI**：记录提交 `5141e06` → run **35211094454 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，无重跑）；另：WP-A/WP-B 提交经 `5141e06` 的同一棵树覆盖验证（CI 只跑 head） | 首轮 m0 红 2 处（契约快照漂移 + web 夹具缺字段），均为本改动引入、已修 | EC-01 **PASS**（RECHECK-084）；新发现 W-1：重建"没有剩余工作"的 run 会退化成重跑全部并收敛 `FAILED`；EC-02…EC-07 PENDING | cycle 2 = EC-02（停车语义读面：PLAN-20260917-085 已建档） |
 | 2 | PLAN-20260917-085（停车语义读面：`retry_schedule` 读面 + `paused_dispatch`；driver=client-goal / owner=root-agent） | `9b163cf`（WP-A：port `RetrySchedule` + SQLite/PG/Fake + 单测/PG parity/契约）、`fd8654f`（WP-B：`run_pause_view` + DTO/OpenAPI/web 类型 + 文档）、`98569c1`（PG 分类挪进 projections：450 行硬上限）、`c2cdc98`（WP-C：API 用例）、`f62bda4`（格式）、`8da4b13`（RECHECK-085 + MEM-060 + GOAL/ALL_PLAN） | 定向：sqlite **6** / pg parity **5**（pinned DSN，实跑非 skip）/ 契约 **8** / API **7** / OpenAPI 快照 **8** 全 passed；受影响广度复跑 **1137 passed / 2 skipped**；web 门全绿（unit **76** / stub e2e **83** / live e2e **36**）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3804 passed / 10 skipped**，485.85s）。首跑 10 红经隔离复跑判定为**环境并发污染**（被 kill 的上一轮留下孙子 pytest 进程共享 test DB/容器），清理后 23/23 | **CI**：head `7316d1d`（`2dbf3c7` 记录提交 + WP 提交 + `8da4b13` 记录提交，同一棵树）→ run **35219834215 六个 job 全 success**（collector-quality / eval-gate / console-frontend / container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 非 0，无重跑） | 首跑 m0 红 10 处 = 环境并发污染（非本改动；隔离复跑该 PG 文件 5 passed 为判据）；`python/format-check`/`python/typecheck`/450 行硬上限三处为本改动引入、已修 | EC-02 **PASS**（RECHECK-085，W-1…W-5）；EC-03…EC-07 PENDING；候选下一 cycle：EC-03（`failure_policy` 消费者）或 RECHECK-084 W-1（"没有剩余工作"的重建语义） | cycle 3：derive 取 EC 表首个 PENDING（EC-03 = `failure_policy` 真实消费者），先做反向搜索确认真实缺口 |
+| 3 | PLAN-20260917-086（失败策略的消费者：`on_task_failure` 消费 + DEGRADED 落点 + 未消费键点名；driver=client-goal / owner=root-agent） | `2a014ad`（WP-A 域视图）、`7896525`（WP-B 消费/事件/e2e/文档 + 词表门禁同步）、`652e712`（450 行/50 行硬上限的搬移重构）、`<records>`（RECHECK-086 + MEM-061 + GOAL/ALL_PLAN） | 定向：domain **5** / application **6** / e2e **2**（新增）+ 受影响套件复跑 **977 passed**；事件词表门禁 **14 passed**；mypy 906 files 绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3823 passed / 10 skipped**，511.99s）。首跑 m0 红 2 处 = `phase_runner.py` 456 行 + `_execute_group` 61 行、`service.py` 483 行（均为本改动引入、已搬代码修复） | 推送后轮询（本行随 CI 结论回填） | 事件词表门禁先红（新增 2 个事件类型）⇒ 补词表与清单，断言未改；组合复跑的 3 条 PG 假红 = 手工顺序把 `tests/api` 排到 `test_pg_crash_restart` 之后（非产品缺陷，隔离复跑 + m0 全量为判据） | EC-03 **PASS**（RECHECK-086，W-1…W-5）；EC-04…EC-07 PENDING | cycle 4：derive 取 EC 表首个 PENDING（EC-04 = 失败 run 与 `manifest.frozen` 事件的语义 digest），先反向搜索确认 `run_from_execution` 的 ValueError 收敛分支与事件 payload 现状 |
 
 ## 状态历史
 
@@ -298,3 +310,8 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 - 2026-09-17 cycle 2 CI 记录：head `7316d1d` → run **35219834215 六个 job 全 success**
   （runner_id 非 0，无重跑）；记录提交 `2dbf3c7`/`8da4b13` 与 WP 提交同一棵树被该 run 覆盖
   （CI 只跑 head）。
+- 2026-09-17 cycle 3 收口：EC-03 **PASS**（PLAN-20260917-086 / RECHECK-086，
+  PASS_WITH_WARNINGS，W-1…W-5）；`failure_policy` 有了真实消费者（`on_task_failure`）与
+  "未消费键点名"（`unhonored`），容忍失败收敛 `DEGRADED`（此前无生产者）并发 `run.degraded`；
+  m0 23/23（全量 pytest 3823 passed / 10 skipped）；首跑红 2 处 = 两个文件撞 450 行硬上限，
+  以"搬代码"而非改门禁收口。
