@@ -12,6 +12,7 @@ from fastapi import APIRouter, Request
 
 from packages.application.run_orchestration.commands import CancelRunCommand
 from packages.domain.core import ID
+from packages.domain.run import ResearchRun
 from packages.domain.state_base import InvalidTransitionError
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
@@ -24,24 +25,29 @@ from services.api.run_execution import (
     execution_inputs,
     run_from_execution,
 )
+from services.api.run_pause_view import paused_dispatch_view
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 projects_router = APIRouter(tags=["runs"])
 
 
-def _run_state_dto(deps: ApiDeps, run_id: str) -> RunDetailDto:
-    run = get_run_or_error(deps, run_id)
-    manifest = str(run.manifest_digest) if run.manifest_digest else None
+def _detail_dto(deps: ApiDeps, run: ResearchRun) -> RunDetailDto:
+    """canonical run → 读面 DTO（详情与列表共用，停车语义只有这一处分类）。"""
     return RunDetailDto(
         id=run.id.value,
         project_id=run.project_id,
         protocol_id=run.protocol_id,
         state=run.state,
-        manifest_digest=manifest,
+        manifest_digest=str(run.manifest_digest) if run.manifest_digest else None,
         protocol_body_digest=str(run.protocol_body.digest) if run.protocol_body else None,
+        paused_dispatch=paused_dispatch_view(run.state, deps.workflow, run.id.value),
         created_at=run.created_at.value.isoformat(),
         updated_at=run.updated_at.value.isoformat(),
     )
+
+
+def _run_state_dto(deps: ApiDeps, run_id: str) -> RunDetailDto:
+    return _detail_dto(deps, get_run_or_error(deps, run_id))
 
 
 @projects_router.post("/projects/{project_id}/runs", response_model=RunDetailDto)
@@ -71,24 +77,12 @@ async def list_runs(project_id: str, request: Request) -> list[RunDetailDto]:
     if deps.runs_store is None:
         # 注册表回退（测试注入）同样按项目过滤（WP-B：不跨项目泄漏）。
         return [
-            _run_state_dto(deps, run.id.value)
+            _detail_dto(deps, run)
             for run in reversed(list(deps.run_registry.values()))
             if run.project_id == scope_project_id
         ]
     runs = deps.runs_store.list_runs(scope_project_id)
-    return [
-        RunDetailDto(
-            id=run.id.value,
-            project_id=run.project_id,
-            protocol_id=run.protocol_id,
-            state=run.state,
-            manifest_digest=str(run.manifest_digest) if run.manifest_digest else None,
-            protocol_body_digest=str(run.protocol_body.digest) if run.protocol_body else None,
-            created_at=run.created_at.value.isoformat(),
-            updated_at=run.updated_at.value.isoformat(),
-        )
-        for run in runs
-    ]
+    return [_detail_dto(deps, run) for run in runs]
 
 
 @router.get("/{run_id}", response_model=RunDetailDto)

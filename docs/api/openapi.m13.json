@@ -3857,6 +3857,37 @@
         "title": "NotificationsViewDto",
         "type": "object"
       },
+      "PausedDispatchDto": {
+        "additionalProperties": false,
+        "description": "`PAUSED` 的派发语义（GOAL-004 cycle 2 = EC-02）。\n\n只由 canonical 事实推出（run 行状态 + 任务行 `RETRY_SCHEDULED`/`retry_at`），\n不是\"停车原因\"字段：没有第二个会被别的状态变更写脏的标志位。\n\n- `kind=RETRY_SCHEDULED`：任务面有重排 ⇒ 守护线程会在到期后自己续跑；\n  `due_now=true` 表示**现在**就已经到期（含\"重建被拒后放回停车\"这一种，\n  拒绝原因不在读面）。\n- `kind=USER_PAUSED`：任务面没有任何重排 ⇒ 只有人工 resume/cancel 会动它。\n- `kind=UNKNOWN`：没有 workflow 读面（或读面读不到）⇒ 不猜。",
+        "properties": {
+          "due_now": {
+            "default": false,
+            "title": "Due Now",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "next_retry_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Retry At"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "PausedDispatchDto",
+        "type": "object"
+      },
       "PolicyCapabilitiesDto": {
         "additionalProperties": false,
         "properties": {
@@ -5297,6 +5328,16 @@
               }
             ],
             "title": "Manifest Digest"
+          },
+          "paused_dispatch": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PausedDispatchDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "project_id": {
             "title": "Project Id",

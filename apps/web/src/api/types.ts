@@ -344,6 +344,15 @@ export interface DryRunProjectionDto {
   approval_actions: string[];
 }
 
+export interface PausedDispatchDto {
+  // GOAL-004 cycle 2：PAUSED 的派发语义。RETRY_SCHEDULED = 守护线程到期会自己续跑
+  // （due_now=true 表示现在就已到期）；USER_PAUSED = 只有人工 resume 会动它；
+  // UNKNOWN = 没有 workflow 读面，不猜。
+  kind: string;
+  next_retry_at: string | null;
+  due_now: boolean;
+}
+
 export interface RunDetailDto {
   id: string;
   project_id: string;
@@ -353,6 +362,8 @@ export interface RunDetailDto {
   // GOAL-004 cycle 1：冻结协议正文的 digest（null = 旧 run 没有冻结正文，
   // 重启续跑仍依赖外部来源可解析）。
   protocol_body_digest: string | null;
+  // GOAL-004 cycle 2：仅 state === "PAUSED" 时非 null。
+  paused_dispatch: PausedDispatchDto | null;
   created_at: string;
   updated_at: string;
 }

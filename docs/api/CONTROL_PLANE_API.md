@@ -173,6 +173,16 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
   （`protocol_body`），重启后的重建只认这份字节——外部文件/草稿修订消失都不再阻断
   续跑；`GET /runs/{id}` 的 `protocol_body_digest` 为空表示该 run 早于正文冻结，
   其重启续跑仍依赖来源可解析。冻结不改变漂移判据：重建仍要过语义 digest 校验。
+- `GET /runs/{id}`（与列表）的 `paused_dispatch` 是**停车语义读面**（GOAL-004 cycle 2）：
+  仅当 `state == "PAUSED"` 时非空，`kind` 取三值之一——
+  - `RETRY_SCHEDULED`：任务面有重排在等时钟（`due_now=false`，`next_retry_at` 是该
+    期限）或已经到期（`due_now=true`）⇒ 派发守护到期会自己把它续起来；
+  - `USER_PAUSED`：任务面没有任何重排 ⇒ 只有人工 `resume`/`cancel` 会动它；
+  - `UNKNOWN`：控制面没有 workflow 读面（或读面读不到）⇒ 不猜。
+  判据只有两件 canonical 事实（run 行状态 + 任务行 `RETRY_SCHEDULED`/`retry_at`），
+  不是"停车原因"字段；"现在"在 adapter 内用权威时钟取（与调度器同一处），读面不自己
+  比墙钟。**诚实边界**：重建被拒后放回的停车在任务面表现为"重排已到期但没动"
+  （`RETRY_SCHEDULED` + `due_now=true`），**拒绝原因不在读面**（只在本进程遥测/日志）。
 
 ## Runs
 
