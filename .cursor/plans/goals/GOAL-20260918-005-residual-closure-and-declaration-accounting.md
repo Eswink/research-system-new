@@ -53,7 +53,7 @@ exit_criteria:
       未覆盖范围段。**反证**：把 advisory 查询换成「复核无问题」的空话 ⇒ 判 FAIL；
       把扫描输入换成含 `scratch/`/`artifacts/` 的路径 ⇒ 判 FAIL（判据落在「扫描根 =
       仅 tracked 导出目录」这一可查事实上，不落在「扫描没报问题」上）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       `resume_after_approval` 同形未补偿入口（收口结论表第 2 项 / RECHECK-090 W-1）：
@@ -140,9 +140,11 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
   - 「按声明给 adapter 接线」与 `tool_pack.*`/脚本策略（GOAL-004 后继入口第 8 项）——受控出网与产品决策，需用户或 ADR 拍板
   - 威胁建模/授权面（BOLA/BFLA）覆盖与受控出网类决策——需用户或 ADR 拍板，本循环不得自行决定
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260918-093-security-audit-residual-recheck.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - MEM-20260918-067
 ---
 
 # GOAL-20260918-005 — 残留收口与声明清账（自迭代循环）
@@ -162,7 +164,7 @@ token 清理、后继入口第 8 项、450 行硬上限的持续搬迁）按契�
 
 | EC | 主题 | 来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 安全审计残留复核（advisory 署名 + 干净 checkout 重扫 + `scanner_enobufs` 根因/配方） | 收口结论表 1 / RECHECK-091 W-1…W-5 | PENDING |
+| EC-01 | 安全审计残留复核（advisory 署名 + 干净 checkout 重扫 + `scanner_enobufs` 根因/配方） | 收口结论表 1 / RECHECK-091 W-1…W-5 | **PASS**（RECHECK-20260918-093） |
 | EC-02 | `resume_after_approval` 同形未补偿入口 | 收口结论表 2 / RECHECK-090 W-1 | PENDING |
 | EC-03 | 声明未消费项清账（`on_validation_failure` / `ClaimRequest.lease_ttl_seconds`） | 收口结论表 3 / RECHECK-086 W-1 + 089 W-1 | PENDING |
 | EC-04 | 时钟/时序风险逐个收口（不做「未观测到失败」式收尾） | 收口结论表 9 / RECHECK-084 W-5 | PENDING |
@@ -253,8 +255,9 @@ GOAL-004 EC-06 的判据形状是：**失败即补偿 + 补偿可观测 + 可重
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**建档待提交**——本文件为 cycle 0 产物；下一步 = 治理校验绿 ⇒ 建档提交
-（显式路径）⇒ push origin main ⇒ 轮询 CI 到终态并记账 ⇒ 进入 cycle 1（EC-01）。
+当前续点：**cycle 1 已收口**（EC-01 PASS + RECHECK-20260918-093 + run 35311496737 六 job 全绿），
+下一条 = **cycle 2 = EC-02**（`resume_after_approval` 同形未补偿入口）：先反向搜索确认
+失败路径当前把 run 留在什么状态、`_waiting` 上下文被 pop 后两条入口各自怎么收敛。
 
 ## 驱动
 
@@ -330,15 +333,46 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 4. **450 行硬上限贴线的持续重构**：`packages/application/run_orchestration/service.py`
    450/450 属「下一行就会红」的状态；**随改动搬代码**（每个 cycle 的 ③ 自查），
    **不单独成 EC**。需要改门禁时即 BLOCKED。
+5. **依赖 pin 升级**（cycle 1 新登记，RECHECK-20260918-093 W-1）：`undici@5.29.0`（12 条）、
+   `vite@6.3.5`（7 条）、`yaml@2.8.1`（1 条）全部有修复版本，但都在 **devDependency 链**上，
+   升级属上游 pin 变更 ⇒ 命中 `escalation_triggers`，由用户/ADR 拍板。**不得**读作
+   「依赖面无风险」。
+6. **hook 侧 L3 门修复**（cycle 1 新登记，W-2）：根因是插件检测层（semgrep 1.136.0）未安装，
+   修复命令见 `docs/audits/MIMOSA_POST_CLOSURE_AUDIT_20260918.md §3.3`；但装上后
+   `MIMOSA_GIT_GATE_MODE=graded` 的 medium 会**交互式询问**，可能挡住无人值守提交 ⇒
+   修与不修都是**安全策略决定**，留人工。
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 建档（本文件；driver=client-goal / owner=root-agent） | 见下方状态历史 | 待跑：`.cursor/skills/governance-check/scripts/validate.py` | 待记 | — | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（安全审计残留复核：advisory 联网复核 + 干净 checkout 重扫 + `scanner_enobufs` 根因/配方） |
+| 0 | 建档（本文件；driver=client-goal / owner=root-agent） | `6007b01` | `.cursor/skills/governance-check/scripts/validate.py` 绿（本机实跑） | run **35308775303**（#151，`6007b01`）：**failure**——仅 `quality-windows-latest` 红，`python/tests` 里 1 条**既有**并发用例 `OperationalError: database is locked`（12 线程并发写，4/96 次写越过 5 s 预算；其余五 job success） | 该签名此前从未出现（非已知 flake 配方）⇒ 按「产品测试失败」处置：定位为**控制面 SQLite 的 busy_timeout 预算不足**（实测：同一把锁被持 8 s 时，旧预算 5.53 s 即失败、新预算等待 8.02 s 成功）；修复提交 `ef0d722`（`adapters/sqlite/db.py` 的 `BUSY_TIMEOUT_MS` 5 s → 30 s，**断言未改**）→ run **35311496737 六个 job 全 success** | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（安全审计残留复核） |
+| 1 | PLAN-20260918-093（EC-01：安全审计残留复核；driver=client-goal / owner=root-agent） | `3eaa19a`（OSV 探针 + 证据 JSON）、`07fab27`（AST 判据探针）、`04e8c54`（终态记录 + `docs/INDEX.md`）、`e3f0ee4`（PLAN/RECHECK/MEM/ALL_PLAN）、`ef0d722`（CI 修复：SQLite busy timeout） | 治理 validate 绿；定向：`tests/adapters/sqlite` **161 passed**（3.12，含并发池用例）、`tests/tooling/test_python_source_limits.py` **930 passed**、`tests/application/protocol_authoring/test_draft_service.py` **13 passed**；探针自证 `probe_dynamic_sql_forms.py --selftest` **8/8 ok**；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3896 passed / 10 skipped**，561.60s） | run **35311496737**（#152，`ef0d722`）：**六个 job 全 success**（collector-quality / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate / console-frontend，runner_id 非 0，无重跑） | 首跑 CI 红 1 条（并发池用例）⇒ **修产品**（busy timeout）而非改断言；**方法学更正**：上一轮「产品树动态 SQL 零命中（grep）」被 AST 判据更正为「22 处构造、逐处核对为常量/固定记号」（结论未变、依据升级） | EC-01 **PASS**（RECHECK-20260918-093 = PASS_WITH_WARNINGS，W-1…W-5）；EC-02…EC-06 PENDING | cycle 2 = EC-02（`resume_after_approval` 同形未补偿入口） |
 
 ## 状态历史
 
 - 2026-09-18 建档：由 GOAL-20260917-004 收口结论表的「后继 GOAL 的入口」建立（用户
   goal 模式指令：新建承接 GOAL-005 并自动化循环推进、无需逐轮确认）；`status: ACTIVE`；
   EC-01…EC-06 全 PENDING；GOAL-004（ACHIEVED）与 GOAL-003（BLOCKED）保持只读。
+- 2026-09-18 建档 CI（run **35308775303** = #151，head `6007b01`）：**failure**——仅
+  `quality-windows-latest` 的 `python/tests` 里 1 条**既有**并发用例
+  （`tests/adapters/sqlite/test_thread_local_connection.py::test_twelve_threads_write_without_lost_rows_or_interface_errors`）
+  报 4 次 `OperationalError: database is locked`。该签名此前从未出现（不在已知 flake 配方里）
+  ⇒ 按「产品测试失败」处置。定位过程与判据：① 本机隔离复跑 3/3 绿 + 6 CPU 压力下 6/6 绿
+  （**不足以判 flake**）；② 实测 busy handler **是被遵守的**（持锁 8 s 时等待 5.53 s 后失败）
+  ⇒ 缺陷边界是「5 s 预算在 12 写者并发下不够」，不是「handler 被绕过」；③ 3.12 下复跑
+  同判据。修复 = 产品常量 `BUSY_TIMEOUT_MS` 5 s → 30 s（`adapters/sqlite/db.py`，PRAGMA
+  字面量同步；既有用例按常量对账 ⇒ **未改任何断言**）。修复提交 `ef0d722` → 本地 m0 23/23
+  （全量 pytest **3896 passed / 10 skipped**）→ run **35311496737**（#152）**六个 job 全 success**。
+- 2026-09-18 cycle 1 收口：EC-01 **PASS**（PLAN-20260918-093 / RECHECK-20260918-093 =
+  PASS_WITH_WARNINGS，W-1…W-5）。交付：① 干净 checkout 重扫（`git archive` 导出
+  **3025 == `git ls-files` 3025**，树内无 `scratch/`/`artifacts/`；新封印
+  `sha256:1e549272…`，剖面 **25** = 1/19/5，三件产物摘要逐件 OK；工作树 36 条里 19 条
+  非仓库内容 findings 在干净输入上归零 ⇒ 输入边界会改变结论）；② 依赖 advisory **署名**
+  （413 锁定包 ⇒ **3 包 20 条**：`undici@5.29.0` 12 / `vite@6.3.5` 7 / `yaml@2.8.1` 1，
+  全在 devDependency 链，带 CVE/CVSS/修复版本；扫描器自报 182/1 与 11/0 互相矛盾 ⇒ 不作依据）；
+  ③ hook 侧 `scanner_enobufs` **复现 + 根因**（2/2 次 `scanner_no_output` 790/767 ms；
+  `cli.js semgrep status --json` ⇒ `installed:false` / `install_metadata_missing` ⇒ L3 门检测层
+  未装）；④ 25 条 findings 逐条处置（无产品代码真实缺陷）；⑤ 方法学更正（grep → AST 结构判据）。
+  **无产品代码变更**（唯一产品改动是本 cycle 的 CI 修复 `ef0d722`）；`child_plans` 增
+  PLAN-20260918-093、`memory_entries` 增 MEM-20260918-067。
