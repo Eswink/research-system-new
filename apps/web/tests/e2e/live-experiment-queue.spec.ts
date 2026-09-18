@@ -3,8 +3,15 @@
  *
  * 后端 = tests/api/console_api_app（Fake Ports，无真实凭据/付费 LLM）。
  * 覆盖：计划预注册 → 入队（协议来源立即解析）→ 队列视图 → 改期 → 取消；
- * 以及错误面（未知计划 404、非法来源 422）。派发器不在本链路上跑（真实 run
- * 启动由 tests/api/test_experiment_queue_api.py 用同一派发器验证）。
+ * 以及错误面（未知计划 404、非法来源 422）。
+ *
+ * **本链路的派发器窗口**（CI run 35384309066 的 409 根因）：live app 与生产同源地
+ * 启动了 `ExperimentQueueDispatcher`（`services/api/app.py::_start_experiment_queue`，
+ * interval 15s）——"派发器不在本链路上跑"这句旧注释是错的：到期条目会在某个 tick 被
+ * 认领（离开 QUEUED），于是"入队后立刻改期"在 CI 负载下会 409（`queue entry ... is not
+ * QUEUED`）。本链路入队时给 `not_before` 一个**未来时刻**（2030），让条目在整个用例
+ * 窗口内都不够"到期"，与派发器完全不相交；派发器自身的认领语义由
+ * tests/api/test_experiment_queue_api.py 用同一实现验证。
  */
 
 import { expect, test } from "@playwright/test";
@@ -34,13 +41,12 @@ test("live: 入队 → 列表 → 改期 → 取消", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const planId = await createPlan(page, `live-queue-${String(Date.now())}`);
 
-  const enqueued = await page.request.post(
-    `/api/projects/${PROJECT}/experiments/${planId}/queue`,
-    {
-      data: { protocol_path: PROTOCOL },
-      headers: { "Idempotency-Key": `live-enqueue-${String(Date.now())}` },
-    },
-  );
+  const enqueued = await page.request.post(`/api/projects/${PROJECT}/experiments/${planId}/queue`, {
+    // 未来排期：让条目在用例窗口内不"到期"，把 15s 的队列派发器排除在本链路之外
+    // （否则 CI 负载下改期会 409，见文件头）。
+    data: { protocol_path: PROTOCOL, not_before: "2030-01-01T00:00:00+00:00" },
+    headers: { "Idempotency-Key": `live-enqueue-${String(Date.now())}` },
+  });
   expect(enqueued.status(), await enqueued.text()).toBe(201);
   const entry = (await enqueued.json()) as {
     id: string;
