@@ -10,6 +10,7 @@ import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
 import type { RunSelectionProps } from "../shared/useSelectedRun";
 import { RunActions } from "./RunActions";
+import { RebuildReadiness } from "./RebuildReadiness";
 import { TimelineView } from "./TimelineView";
 import { useRunTimeline } from "./useRunTimeline";
 
@@ -32,6 +33,9 @@ function RunPanelsection({ zh, flow }: RunPanelsectionProps) {
       <RunNavigation />
       <ResourceBoundary state={flow.run}>
         {flow.run.data !== null && <RunIdentity run={flow.run.data} flow={flow} />}
+      </ResourceBoundary>
+      <ResourceBoundary state={flow.run}>
+        {flow.run.data !== null && <RebuildReadiness rebuild={flow.run.data.rebuild} />}
       </ResourceBoundary>
       {flow.runId === "" ? (
         <div data-testid="runs-empty">

@@ -111,7 +111,9 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
   （SSE 具名帧：manifest.frozen/task.created/task.leased/task.completed/
   task.retry_scheduled/task.cancelled/run.completed/run.failed/claim.verified/
   claim.disputed/approval.decided；JSON replay + Last-Event-ID/cursor 续传）。
-- 等级：FULL。运行状态条、任务区、事件列表、筛选、详情抽屉。
+- 等级：FULL。运行状态条、任务区、事件列表、筛选、详情抽屉；**重建就绪（读面）**面板
+  直接渲染 `GET /runs/{id}` 的 `rebuild`（三态 + `missing` 行字段名），文案与
+  `docs/api/CONTROL_PLANE_API.md` 同口径：记录自足 ≠ 重建必过、读面拒绝 ≠ 不可回填。
 - 缺口：阶段时间/依赖映射缺失时保留区域并说明，不以任务顺序编造泳道时长。
 
 ### `#/run/approvals` — 审批

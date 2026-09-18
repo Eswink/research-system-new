@@ -11,6 +11,7 @@ import { OPS_ROUTES } from "./stub-routes-ops";
 import { POLICY_ROUTES } from "./stub-routes-policy";
 import { PROJECT_ROUTES } from "./stub-routes-projects";
 import { REGISTRY_ROUTES } from "./stub-routes-registry";
+import { RUN_ROUTES } from "./stub-routes-runs";
 import { SCHEDULE_ROUTES } from "./stub-routes-schedules";
 import { TOOL_PACK_ROUTES } from "./stub-routes-toolpacks";
 import { WORKSPACE_ROUTES } from "./stub-routes-workspace";
@@ -319,6 +320,8 @@ export const ROUTES: readonly StubRoute[] = [
   ...EXPERIMENT_QUEUE_ROUTES,
   // PLAN-055 WP-B: run + project lineage (G9).
   ...LINEAGE_ROUTES,
+  // GOAL-20260918-006 cycle 3 = EC-03: run detail + rebuild readiness read surface.
+  ...RUN_ROUTES,
   // PLAN-058 WP-D: workspace snapshot capability / files / file-level diff (G8).
   ...WORKSPACE_ROUTES,
 ];

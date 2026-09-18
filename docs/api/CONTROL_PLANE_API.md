@@ -238,7 +238,12 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
 
   **同源**：`missing` 与 `/resume` 拒绝文案由**同一个分类器**给出
   （`packages/application/run_orchestration/rebuild_readiness.py`），不会各说各话；
-  `missing` 里的名字就是 canonical run 行的**字段名**。**诚实边界**：`rebuild` 只回答
+  `missing` 里的名字就是 canonical run 行的**字段名**。**控制台**（GOAL-006 cycle 3 =
+  EC-03）：`#/run/timeline` 的「重建就绪（读面）」面板直接渲染这份 `status`/`missing`
+  （`apps/web/src/features/runs/RebuildReadiness.tsx`），文案与本节同口径——`SELF_CONTAINED`
+  写成"记录自足"（不是"重建必过"）、`REFUSED` 写成"读面拒绝给出结论"（不是"不可回填"）、
+  `missing` 以行字段名逐个点名；stub 与 live 两条 e2e 都断言"页面值 == 读面返回值"。
+  **诚实边界**：`rebuild` 只回答
   "输入齐不齐"，不回答"该不该重建"（状态机/策略/预算不在这里），也不承诺"重建必过"
   ——漂移校验与 preflight 仍在 `/resume` 真跑时判。`REFUSED` **不是**"不可回填"的裁决：
   运营侧仍可用 `tools/snapshot_migrate.py`（显式 opt-in）对个别 run 做 re-freeze / fork。
