@@ -146,13 +146,15 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260918-095-declaration-clearing.md
   - .cursor/plans/tasks/PLAN-20260918-096-clock-injection-adjudication.md
   - .cursor/plans/tasks/PLAN-20260918-097-dispatch-list-batch-read.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20260918-098-rebuild-readiness-read-surface.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260918-098-rebuild-readiness-read-surface.md
 memory_entries:
   - MEM-20260918-067
   - MEM-20260918-068
   - MEM-20260918-069
   - MEM-20260918-070
   - MEM-20260918-071
+  - MEM-20260918-072
 ---
 
 # GOAL-20260918-005 — 残留收口与声明清账（自迭代循环）
@@ -177,7 +179,7 @@ token 清理、后继入口第 8 项、450 行硬上限的持续搬迁）按契�
 | EC-03 | 声明未消费项清账（`on_validation_failure` / `ClaimRequest.lease_ttl_seconds`） | 收口结论表 3 / RECHECK-086 W-1 + 089 W-1 | **PASS**（RECHECK-20260918-095） |
 | EC-04 | 时钟/时序风险逐个收口（不做「未观测到失败」式收尾） | 收口结论表 9 / RECHECK-084 W-5 | **PASS**（RECHECK-20260918-096） |
 | EC-05 | 读面语义边界（列表 N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） | 收口结论表 4 / RECHECK-089 W-2…W-6 | **PASS**（RECHECK-20260918-097，做 ①） |
-| EC-06 | 历史行可追溯（旧 run 无正文 / 旧事件无 `semantic_digest`，三选一） | 收口结论表 6 / RECHECK-084 W-2 + 087 W-1 | PENDING |
+| EC-06 | 历史行可追溯（旧 run 无正文 / 旧事件无 `semantic_digest`，三选一） | 收口结论表 6 / RECHECK-084 W-2 + 087 W-1 | **PASS**（RECHECK-20260918-098，做 (b)） |
 
 **优先级**：EC-01 → EC-02 → EC-03 → EC-04 → EC-05 → EC-06（derive 取 EC 表首个 PENDING；
 若某 EC 本轮**部分交付**，其「下一轮输入」优先于表序）。
@@ -263,22 +265,12 @@ GOAL-004 EC-06 的判据形状是：**失败即补偿 + 补偿可观测 + 可重
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 5 已收口**（EC-05 ① PASS + RECHECK-20260918-097 + PLAN-20260918-097 DONE；
-收口 CI 见「状态历史」），下一条 = **cycle 6 = EC-06**（历史行可追溯，**三选一**）：
-旧 run 无冻结正文、旧 `manifest.frozen` 事件无 `semantic_digest` 两条历史行缺口。
-(a) 迁移/回填（注意 `escalation_triggers` 的破坏性迁移边界）；(b) **一等事实 + 读面写明**
-（读面能正面回答 "这是历史行、缺的是什么、重建此路不通"，拒绝原因点名事实）；
-(c) 明确不可回填（给判定与拒绝路径点名 + 同源文档）。三条都要求：历史行与当前行在
-**读面可区分**、判定有**用例或结构判据**。已探明的事实（cycle 5 期间只读勘察，未动代码）：
-① 控制面 run 行只持久化两个 digest 与 `protocol_body`，**manifest 正文从不入库**；
-② 现有读面 `RunDetailDto.manifest_semantic_digest` / `protocol_body_digest` 为 `None` 时
-**不区分**"功能前历史行 / 起步时冻结失败"；③ 重建路径的拒绝在
-`convergence.assert_semantics_frozen`（`ManifestFreezeError("frozen manifest lacks a
-semantic digest; fork run or revision required")`）；④ 已存在**显式 opt-in** 的运营工具
-`tools/snapshot_migrate.py`（`keep`/`re-freeze`/`fork` 三分类，非自动 backfill）；
-⑤ 旧事件形状（只有 `digest`）由 `FrozenManifestRefs.from_payload` 落在 `None`，
-但**该 from-event 回填分支没有任何用例**（既有 restart 用例的 run 行自带 semantic digest）
-⇒ (b) 的候选交付面。
+当前续点：**cycle 6 已收口**（EC-06 (b) PASS + RECHECK-20260918-098 + PLAN-20260918-098
+DONE；收口 CI 见「状态历史」）。**EC-01…EC-06 全 PASS** ⇒ 下一条 = **收口（closeout）**：
+按「终止与收口」的 ACHIEVED 条件办——① 独立收口复检（新 RECHECK，覆盖六条 EC 的
+终态与残余）② 本文件 `latest_recheck` 指向它 ③ 「收口结论」写明六条 EC 的终态、
+仍未处理的长程项（含「不进入循环 / 需人工拍板」六项）与后继入口。收口前**不新开
+功能 cycle**（避免把收口写成"顺便"）。
 
 ## 驱动
 
@@ -373,6 +365,8 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 3 | PLAN-20260918-095（EC-03：声明未消费项清账；driver=client-goal / owner=root-agent） | `053301a`（port 移除请求级 TTL + 示例契约清账 + 两件判据用例 + 四处文档同源）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 validate 绿；**反向搜索（判据）**：`lease_ttl_seconds` 读者 0（三实现只读引擎级 `self._lease_ttl`）、19 个 `ClaimRequest(...)` 构造点无一传它；`on_validation_failure` 只进 `unhonored`；定向（DSN pin）`tests/api+adapters+e2e+contracts+application+domain+loaders` **2474 passed / 7 skipped**（355.46s）；**反证两跑**：① 把 `lease_ttl_seconds` 放回 `ClaimRequest` ⇒ **1 failed / 18 passed / 9 skipped**、② 把 `on_validation_failure` 放回示例契约 ⇒ **1 failed / 21 passed**（各只红对应的钉住用例）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed / 10 skipped**，479.83s；首跑红 1 处 = RECHECK 缺 `## 结论` 章节 ⇒ 补齐后复跑全绿） | run **35321234815**（#157，`43933a1`）：**六个 job 全 success**（runner_id 非 0、无重跑） | m0 首跑 `framework/validate` 红（RECHECK 缺章节，记录未写完的中间态）⇒ 补章节后 23/23；EC-03 原文「从 port 与三个实现的构造参数中移除写明」按「移除**请求级**声明 + 写明**引擎级**位置」判读——引擎级 `lease_ttl_seconds` **是被读的**（claim/`renew_lease`/回收共用），删它会砍真实能力（RECHECK W-2） | EC-03 **PASS**（RECHECK-20260918-095 = PASS_WITH_WARNINGS，W-1…W-4）；EC-04…EC-06 PENDING | cycle 4 = EC-04（时钟/时序风险逐个判定；枚举面 = 12 个注入时钟的 PG 用例文件） |
 | 4 | PLAN-20260918-096（EC-04：时钟/时序风险逐个判定；driver=client-goal / owner=root-agent） | 本次回写提交（只读探针 + `PORTS.md` 时钟纪律段 + PLAN/RECHECK/MEM/ALL_PLAN/GOAL） | 治理 validate 绿；**枚举以脚本为判据**（`tools/probes/enumerate_clock_injected_pg_tests.py`，AST + 行扫描，只读）：27 个 PG 用例文件 / **12 个注入时钟** / **0 处墙钟读** / 6 个含"无时钟构造点"（逐用例核对）；**逐文件判定 12/12「安全」**，依据 = 写入路径（`db_time_expr`/`server_now` 是写时钟敏感列与做比较的**同一个源**；全树唯一无条件 `now()` 的 SQL 是 `outbox_events.created_at`，断言只按事件类型成员）；`grep now() tests/postgres/*.py` 只剩一行文档字符串（与 W-5「修复后为零」一致）；定向 `tests/postgres` **91 passed**（27.92s）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed / 10 skipped**，505.98s） | run **35322946077**（#158，`3358b2e`）：**六个 job 全 success**（runner_id 非 0、无重跑） | 无「修复」项 ⇒ 无"去掉修复"式反证；判定的判别力来自**结构可复核**（如 `next_retry_at == START+3600` ← `projections.retry_schedule(server_now)`，改回 SQL `now()` 该断言即红） | EC-04 **PASS**（RECHECK-20260918-096 = PASS_WITH_WARNINGS，W-1…W-4：并发条数断言的调度依赖、parity 无时钟分支无调用点、WorkerRegistry 生产用 DB 时钟、真墙钟矩阵有意在外）；EC-05/EC-06 PENDING | cycle 5 = EC-05（读面语义边界：N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） |
 | 5 | PLAN-20260918-097（EC-05 ①：列表路径的批量派发读面；driver=client-goal / owner=root-agent） | `5fce188`（port `dispatch_ownership_many` + 三实现共用装配 + 控制面列表改批量读 + 用例与反证 + 两处文档 + OpenAPI 快照再生成）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 validate 绿；**先确认 N+1 真实存在**（`list_runs` → `_detail_dto` → 每条一次 `dispatch_ownership`，每次两条 SQL ⇒ `2N`）；**同判是结构性的**：单 run 读改成"批量读的一条"（三实现共用 `_dispatch_ownerships`/`_ownership_of`），契约用例三实现断言"逐字相等"（含未知 run ⇒ `NONE` 条目、空入参 ⇒ 空 dict）；**N+1 哨兵**用 adapter call log（列表后批量 +1、逐 run 零次）；**反证实跑**：列表路径改回逐 run 读 ⇒ `-k list` **1 failed / 3 passed / 7 deselected**（`assert 0 == (0 + 1)`）；定向（DSN pin）`tests/api+contracts+adapters/sqlite+postgres+adapters` **1425 passed / 5 skipped**（235.04s）；返工后复跑 `tests/api+contracts+adapters/sqlite` **1053 passed / 2 skipped**；规模门禁 `test_python_source_limits` **932 passed**（PG 引擎 459 → 447 行）；过滤全走绑定参数（`json_each(?)` / `= ANY(%s)`）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3914 passed / 10 skipped**，468.62s） | run **35330877315**（#159，`3c49638`）：**六个 job 全 success**（collector-quality / container-quality / quality-windows-latest / eval-gate / quality-ubuntu-latest / console-frontend，runner_id 非 0、无重跑） | 首轮改动后引擎里 `retry_schedule` 仍调旧别名 ⇒ 10 条红（`NameError`）⇒ **改产品代码**（改用批量投影的单条取值），**未改断言**，复跑全绿；收口门禁返工两处：① `python/product-lint` 红（新 import 未排序）⇒ 合并既有 import；② PG 引擎 459 > 450 行（规模门禁红）⇒ **搬代码**到新模块 `adapters/postgres/workflow_dispatch.py`（447 行），**未动门禁**；EC-05 ② （PG 两读快照）本轮**不做**（EC-05 允许至少一项），边界留在 port docstring / `PORTS.md` / RECHECK W-1 | EC-05 **PASS**（RECHECK-20260918-097 = PASS_WITH_WARNINGS，W-1…W-4）；EC-06 PENDING | cycle 6 = EC-06（历史行可追溯，三选一） |
+| 6 | PLAN-20260918-098（EC-06 (b)：重建能力读面点名缺失事实；driver=client-goal / owner=root-agent） | `813e93c`（分类器 + 读面字段 + `/resume` 同源 + 用例与反证 + 两处文档 + OpenAPI/web 类型与夹具）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 validate 绿；**先探明再动手**（只读勘察）：正文不入库、两种 `None` 混用、拒绝文案分散在 `run_resume`/`convergence`、`snapshot_migrate` 是 opt-in、旧事件回填分支**无用例**；交付：`rebuild_readiness.py`（纯函数分类器：四字段 ⇒ `SELF_CONTAINED`/`SOURCE_DEPENDENT`/`REFUSED` + 按**行字段名**排序的 `missing`）+ `RunDetailDto.rebuild` + `run_rebuild_view.py`；`/resume` 的两条早退与异常前缀改从分类器取（**条件与文案逐字不变**）；**反证实跑**：去掉 `manifest_semantic_digest` 判定 ⇒ **6 failed / 25 passed**，还原 ⇒ **31 passed**；**首轮踩坑并修正**：把"缺正文"前缀绑在 `SOURCE_DEPENDENT` 上会让"同时缺语义 digest"的行丢前缀（既有用例红）⇒ 分类器显式带出 `body_frozen`（**未改断言**）；定向（DSN pin）`tests/api+contracts+application+adapters+e2e` **2053 passed / 7 skipped**（322.87s）；web 六门：lint/typecheck/unit **76 passed**/build/stub e2e **83 passed**/live e2e **36 passed**；规模门禁 **935 passed**；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3932 passed / 10 skipped**，491.81s） | run（见「状态历史」，本轮收口 CI 到终态后补记） | 分类器输出必须把**判过的每个事实**都带出来（`body_frozen` 是第三条不变量）；新增必填 DTO 字段会牵动三处（OpenAPI 快照 / `types.ts` / e2e 夹具）——漏夹具 typecheck 即红；`REFUSED` **不裁决**"不可回填"（opt-in 运营工具仍在） | EC-06 **PASS**（RECHECK-20260918-098 = PASS_WITH_WARNINGS，W-1…W-4）；**EC-01…EC-06 全 PASS** | GOAL 收口（独立复检 + 收口结论 + 后继入口登记） |
+
 
 ## 状态历史
 
@@ -496,3 +490,37 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   → run **35330877315**（#159）**六个 job 全 success**（collector-quality /
   container-quality / quality-windows-latest / eval-gate / quality-ubuntu-latest /
   console-frontend，runner_id 非 0、无重跑）。
+- 2026-09-18 cycle 5 记录提交（CI 记账）的 CI 记录：head `1189336` → run **35332314096**
+  （#160）**六个 job 全 success**（container-quality / quality-windows-latest /
+  console-frontend / collector-quality / eval-gate / quality-ubuntu-latest，runner_id 非 0）。
+- 2026-09-18 cycle 6 收口：EC-06 **PASS**（PLAN-20260918-098 / RECHECK-20260918-098 =
+  PASS_WITH_WARNINGS，W-1…W-4），做的是 **(b) 一等事实 + 读面写明**。**先只读勘察再动手**：
+  ① 控制面 run 行只持久化两个 digest 与 `protocol_body`（**manifest 正文从不入库**）；
+  ② `manifest_semantic_digest` / `protocol_body_digest` 的 `None` **混着三种处境**（功能前
+  历史行 / 起步时冻结失败 / 还没冻结）；③ 拒绝文案分散在 `run_resume`（两条早退 +
+  `body is None` 前缀）与 `convergence`（语义 digest 守卫）；④ `tools/snapshot_migrate.py`
+  是**显式 opt-in** 的运营动作（`keep`/`re-freeze`/`fork`），非自动 backfill；
+  ⑤ 旧 `manifest.frozen` payload（只有 `digest`）的 from-event 回填分支**没有任何用例**。
+  交付：`packages/application/run_orchestration/rebuild_readiness.py`（纯函数分类器：
+  四字段 ⇒ `SELF_CONTAINED`/`SOURCE_DEPENDENT`/`REFUSED` + **按行字段名确定性排序**的
+  `missing`）+ `RunDetailDto.rebuild`（任何状态都给）+ `services/api/run_rebuild_view.py`；
+  `/resume` 的两条早退与异常前缀改从分类器取（**条件与文案逐字不变**）⇒ 读面与拒绝
+  **同源**。判据三件：① 分类器矩阵 10 用例 + 值对象三条不变量 + `missing` 取值 ⊆
+  `dataclasses.fields(ResearchRun)`（结构判据）；② 读面用例：旧事件形态点名
+  `manifest_semantic_digest`、旧 run 形态点名 `protocol_body`+`protocol_source`、
+  自足行 `missing == []`（**历史行与当前行可区分**）；③ 旧事件回填分支补覆盖
+  （`from_payload({"digest": …})` ⇒ None，不伪造）。**反证实跑**：去掉
+  `manifest_semantic_digest` 判定 ⇒ **6 failed / 25 passed**，还原 ⇒ **31 passed**。
+  **首轮踩坑并修正（如实记）**：把"没有冻结正文"前缀绑在 `status=SOURCE_DEPENDENT` 上，
+  会让"既缺正文又缺语义 digest"的行丢前缀 ⇒ 既有用例
+  `test_a_run_without_a_frozen_body_names_both_missing_facts` 红；修正 = 分类器显式带出
+  `body_frozen`（**未改断言**）。定向（DSN pin）`tests/api+contracts+application+adapters+e2e`
+  **2053 passed / 7 skipped**（322.87s）；web 六门绿（lint / typecheck / unit **76** /
+  build / stub e2e **83** / live e2e **36**）；规模门禁 **935 passed**；m0
+  **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3932 passed / 10 skipped**，
+  491.81s）。文档同源两处（`CONTROL_PLANE_API.md` 读面三态与诚实边界、`EVENT_MODEL.md`
+  旧 payload 形态）；OpenAPI 快照 + web `types.ts` + e2e 夹具同步。
+  `child_plans` 增 PLAN-20260918-098、`memory_entries` 增 MEM-20260918-072，
+  `latest_recheck` 指向 RECHECK-20260918-098。**EC-01…EC-06 全 PASS** ⇒ 下一条 = 收口。
+  **未宣称**：读面不预测重建结果（W-1）、不裁决"不可回填"（W-2）、前端未消费 `rebuild`
+  （W-3）、`missing` 未做 UI 文案映射（W-4）。
