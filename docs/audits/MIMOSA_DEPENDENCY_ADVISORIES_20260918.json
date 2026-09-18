@@ -1,0 +1,314 @@
+{
+  "schemaVersion": "researchos-dependency-advisory-evidence/v1",
+  "queriedAt": "2026-09-18T05:01:28.588568+00:00",
+  "endpoint": "https://api.osv.dev/v1/querybatch",
+  "reproduce": [
+    "python tools/probes/probe_dependency_advisories.py --root . > batches.jsonl",
+    "curl -s -X POST https://api.osv.dev/v1/querybatch -H 'Content-Type: application/json' --data @batch-1.json > response-1.json",
+    "python tools/probes/probe_dependency_advisories.py --root . --responses response-1.json"
+  ],
+  "lockfiles": {
+    "uv.lock": {
+      "sha256": "sha256:98af1c423afe114cba173502674b9f3340763ad9f0ca50a550f0f61cf5f33390",
+      "packages": 149
+    },
+    "pnpm-lock.yaml": {
+      "sha256": "sha256:fb03b4db50e1d2f4e87bef04810a91fea165d32aed6181ec2939b58d503458f5",
+      "packages": 264
+    }
+  },
+  "queries": {
+    "total": 413,
+    "byEcosystem": {
+      "PyPI": 149,
+      "npm": 264
+    }
+  },
+  "hitCount": 3,
+  "hits": [
+    {
+      "ecosystem": "npm",
+      "package": "undici",
+      "version": "5.29.0",
+      "provenance": "transitive dependency of @cursor/sdk@1.0.30 (root devDependency)",
+      "advisories": [
+        {
+          "id": "GHSA-2mjp-6q6p-2qxm",
+          "aliases": [
+            "CVE-2026-1525"
+          ],
+          "summary": "Undici has an HTTP Request/Response Smuggling issue",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L",
+          "fixedVersions": [
+            "6.24.0",
+            "7.24.0"
+          ]
+        },
+        {
+          "id": "GHSA-35p6-xmwp-9g52",
+          "aliases": [
+            "CVE-2026-6733"
+          ],
+          "summary": "undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+          "fixedVersions": [
+            "6.27.0",
+            "7.28.0",
+            "8.5.0"
+          ]
+        },
+        {
+          "id": "GHSA-4992-7rv2-5pvq",
+          "aliases": [
+            "CVE-2026-1527"
+          ],
+          "summary": "Undici has CRLF Injection in undici via `upgrade` option",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+          "fixedVersions": [
+            "6.24.0",
+            "7.24.0"
+          ]
+        },
+        {
+          "id": "GHSA-8xcm-r25x-g524",
+          "aliases": [
+            "CVE-2026-16728"
+          ],
+          "summary": "undici vulnerable to downstream response desynchronization via retry interceptor",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N",
+          "fixedVersions": [
+            "6.28.0",
+            "7.29.0",
+            "8.9.0"
+          ]
+        },
+        {
+          "id": "GHSA-g8m3-5g58-fq7m",
+          "aliases": [
+            "CVE-2026-11525"
+          ],
+          "summary": "undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+          "fixedVersions": [
+            "6.27.0",
+            "7.28.0",
+            "8.5.0"
+          ]
+        },
+        {
+          "id": "GHSA-g9mf-h72j-4rw9",
+          "aliases": [
+            "CVE-2026-22036"
+          ],
+          "summary": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "fixedVersions": [
+            "6.23.0",
+            "7.18.2"
+          ]
+        },
+        {
+          "id": "GHSA-m8rv-5g2x-5cg5",
+          "aliases": [
+            "CVE-2026-15157"
+          ],
+          "summary": "undici vulnerable to CRLF Injection via blob-like body 'type' property",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:N",
+          "fixedVersions": [
+            "6.28.0",
+            "7.29.0",
+            "8.9.0"
+          ]
+        },
+        {
+          "id": "GHSA-p88m-4jfj-68fv",
+          "aliases": [
+            "CVE-2026-9679"
+          ],
+          "summary": "undici vulnerable to HTTP header injection via Set-Cookie percent-decoding",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N",
+          "fixedVersions": [
+            "6.27.0",
+            "7.28.0",
+            "8.5.0"
+          ]
+        },
+        {
+          "id": "GHSA-v3r7-h72x-cjcm",
+          "aliases": [
+            "CVE-2026-16729"
+          ],
+          "summary": "undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N",
+          "fixedVersions": [
+            "6.28.0",
+            "7.29.0",
+            "8.9.0"
+          ]
+        },
+        {
+          "id": "GHSA-v9p9-hfj2-hcw8",
+          "aliases": [
+            "CVE-2026-2229"
+          ],
+          "summary": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "fixedVersions": [
+            "6.24.0",
+            "7.24.0"
+          ]
+        },
+        {
+          "id": "GHSA-vrm6-8vpv-qv8q",
+          "aliases": [
+            "CVE-2026-1526"
+          ],
+          "summary": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "fixedVersions": [
+            "6.24.0",
+            "7.24.0"
+          ]
+        },
+        {
+          "id": "GHSA-vxpw-j846-p89q",
+          "aliases": [
+            "CVE-2026-12151"
+          ],
+          "summary": "undici WebSocket client vulnerable to denial of service via fragment count bypass",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "fixedVersions": [
+            "6.27.0",
+            "7.28.0",
+            "8.5.0"
+          ]
+        }
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "package": "vite",
+      "version": "6.3.5",
+      "provenance": "direct devDependency of apps/web",
+      "advisories": [
+        {
+          "id": "GHSA-4w7w-66w2-5vf9",
+          "aliases": [
+            "CVE-2026-39365"
+          ],
+          "summary": "Vite Vulnerable to Path Traversal in Optimized Deps `.map` Handling",
+          "cvssV3": "",
+          "fixedVersions": [
+            "6.4.2",
+            "7.3.2",
+            "8.0.5"
+          ]
+        },
+        {
+          "id": "GHSA-93m4-6634-74q7",
+          "aliases": [
+            "CVE-2025-62522"
+          ],
+          "summary": "vite allows server.fs.deny bypass via backslash on Windows",
+          "cvssV3": "",
+          "fixedVersions": [
+            "5.4.21",
+            "6.4.1",
+            "7.0.8",
+            "7.1.11"
+          ]
+        },
+        {
+          "id": "GHSA-fx2h-pf6j-xcff",
+          "aliases": [
+            "CVE-2026-53571"
+          ],
+          "summary": "vite: `server.fs.deny` bypass on Windows alternate paths",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "fixedVersions": [
+            "0.1.24",
+            "6.4.3",
+            "7.3.5",
+            "8.0.16"
+          ]
+        },
+        {
+          "id": "GHSA-g4jq-h2w9-997c",
+          "aliases": [
+            "CVE-2025-58751"
+          ],
+          "summary": "Vite middleware may serve files starting with the same name with the public directory",
+          "cvssV3": "",
+          "fixedVersions": [
+            "5.4.20",
+            "6.3.6",
+            "7.0.7",
+            "7.1.5"
+          ]
+        },
+        {
+          "id": "GHSA-jqfw-vq24-v9c3",
+          "aliases": [
+            "CVE-2025-58752"
+          ],
+          "summary": "Vite's `server.fs` settings were not applied to HTML files",
+          "cvssV3": "",
+          "fixedVersions": [
+            "5.4.20",
+            "6.3.6",
+            "7.0.7",
+            "7.1.5"
+          ]
+        },
+        {
+          "id": "GHSA-p9ff-h696-f583",
+          "aliases": [
+            "CVE-2026-39363"
+          ],
+          "summary": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket",
+          "cvssV3": "",
+          "fixedVersions": [
+            "6.4.2",
+            "7.3.2",
+            "8.0.5"
+          ]
+        },
+        {
+          "id": "GHSA-v6wh-96g9-6wx3",
+          "aliases": [
+            "CVE-2026-53632"
+          ],
+          "summary": "launch-editor: NTLMv2 hash disclosure via UNC path handling on Windows",
+          "cvssV3": "",
+          "fixedVersions": [
+            "0.1.24",
+            "2.14.1",
+            "6.4.3",
+            "7.3.5",
+            "8.0.16"
+          ]
+        }
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "package": "yaml",
+      "version": "2.8.1",
+      "provenance": "direct devDependency of apps/web",
+      "advisories": [
+        {
+          "id": "GHSA-48c2-rrv3-qjmp",
+          "aliases": [
+            "CVE-2026-33532"
+          ],
+          "summary": "yaml is vulnerable to Stack Overflow via deeply nested YAML collections",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L",
+          "fixedVersions": [
+            "1.10.3",
+            "2.8.3"
+          ]
+        }
+      ]
+    }
+  ]
+}
