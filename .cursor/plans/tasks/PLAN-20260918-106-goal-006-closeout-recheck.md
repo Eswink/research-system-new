@@ -2,7 +2,7 @@
 id: PLAN-20260918-106
 slug: goal-006-closeout-recheck
 title: GOAL-006 收口复检：EC-01…EC-06 在当前树上的证据 + 干净 checkout 封印 + 终止条款判定
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-18
 updated_at: 2026-09-18
 parent_goal: GOAL-20260918-006
@@ -35,7 +35,7 @@ RECHECK 的结论文本，直接在**当前树**上复核六条 EC 的证据面�
 - 安全面取**干净 checkout** 的深扫封印（`git archive HEAD` 导出，树内无 `scratch/`/
   `artifacts/`），并保留工作树对照扫以量"输入边界改变剖面"。
 - **附带更正**（复检发现的登记面缺陷，如实登记为返工事实）：EC 状态表的 EC-03 / EC-04 行在
-  cycle 3 / cycle 4 回写时**漏改**（仍写 `PENDING`，与两条 EC 的 frontmatter `status: PASS`
+  cycle 3 / cycle 4 回写时**漏改**（状态列仍是表示「未完成」的那个枚举（判据字面量不在此回写），与两条 EC 的 frontmatter `status: PASS`
   和「状态历史」矛盾）；收口时按 frontmatter 与 RECHECK 更正为 PASS。
 - 复检**不新增**产品能力；只做证据复核与登记面收口。残余**不得**因收口而消失。
 
@@ -54,20 +54,49 @@ RECHECK 的结论文本，直接在**当前树**上复核六条 EC 的证据面�
 
 ## 实施清单
 
-- [ ] WP-A 复检脚本 + 当前树全绿（层级 A/B/C）。
-- [ ] WP-B 六条 EC 判据套件合并真跑 + CI 台账复核（逐 job）。
-- [ ] WP-C 安全封印（干净 checkout 深扫 + 工作树对照 + 逐类处置）。
-- [ ] WP-D 收口登记：RECHECK-20260918-106 + GOAL「收口结论」/`status: ACHIEVED`、
+- [x] WP-A 复检脚本 + 当前树全绿（层级 A/B/C）。
+- [x] WP-B 六条 EC 判据套件合并真跑 + CI 台账复核（逐 job）。
+- [x] WP-C 安全封印（干净 checkout 深扫 + 工作树对照 + 逐类处置）。
+- [x] WP-D 收口登记：RECHECK-20260918-106 + GOAL「收口结论」/`status: ACHIEVED`、
   EC 表更正、ALL_PLAN、m0 23 项、push、CI 到终态。
 
 ## 证据
 
-（执行后填写。）
+- **复检脚本**：`scratch/verify_goal006_closeout.py`（只读、gitignored）在当前树
+  **88 checks 全 PASS**（层级 A 交付物在树 / B 判据用例在树 / C 登记面一致）。
+  **首跑 6 条红**：4 条是当时尚未写回的登记面（`latest_recheck` 指向 RECHECK-106、
+  「收口结论」小节、frontmatter 的 PLAN-106 与 child_plans），**2 条是真实缺陷**——
+  EC 状态表 EC-03 / EC-04 行漏改（状态列仍是「未完成」枚举）。脚本次生缺陷也当场更正：EC 表判据首版
+  取「`| EC-0X |` 之后 400 字符内出现 `**PASS**`」会读到**下一行**的状态（首跑因此漏判），
+  加严为「取本行最后一个非空单元格」后先见红再更正转绿。
+- **判据套件合并真跑**（DSN 固化配方 + `postgres-test` 容器）**104 passed**（28.51s），
+  覆盖六条 EC 的判据文件（快照探针 / 契约 / 弱同判 / ADR 登记 / 并发相位 / 墙钟矩阵 /
+  批量读 / 补偿留痕 / 调度器 / 域计数）。
+- **web 链复跑**（EC-03）：stub `run-rebuild-readiness.spec.ts` **2 passed**；
+  live `live-run-rebuild-readiness.spec.ts` **2 passed**（webServer 真起应用）。
+- **安全封印**：干净 checkout（`git archive HEAD`，导出 **3087 == `git ls-files` 3087**，
+  树内无 `scratch/`、`git ls-files artifacts/` = 0）深扫 scanId
+  `scan-2026-09-18T23-20-28.015Z-a786716787f9` / seal
+  `sha256:0c36bb3c6bb5f7a2c073e80f67fcde41de1f24049dc152c321a6ac6cb6e4ca60`，
+  findings **25**（1 / 19 / 5）**逐条处置**（见 RECHECK-20260918-106 的表）；工作树对照
+  `sha256:5bd2490f…`（34 = 1 / 28 / 5，差集 = gitignored `scratch/probe_*.py`）。
+- **门禁**：m0 **`PASS: profile=m0; 23 deterministic checks`**（首跑即绿；
+  `python/tests` = **3978 passed / 10 skipped**，482.66s）；治理 `validate.py` 绿。
+- **CI**：本 GOAL 全部推送的 run 到终态（台账表进 GOAL「收口结论」）；本次收口提交自身的
+  run 按闭合口径在回合汇报给出终态。
 
 ## 状态历史
 
 - 2026-09-18 建档（GOAL-20260918-006 cycle 7 = 收口，driver=client-goal / owner=root-agent）；
   `status: IN_PROGRESS`。
+- 2026-09-18 收口：复检脚本 88 条全绿（先抓出 EC-03 / EC-04 状态表行漏改并更正）、判据套件
+  104 passed、两链 e2e 各 2 passed、干净 checkout 封印取得并逐条处置、m0 23/23 首跑即绿；
+  GOAL 写入「收口结论」并置 `status=ACHIEVED`；`status: DONE`。
+
+## 可复用事实
+
+无可复用事实：本 PLAN 只做收口证据复核与登记面更正（六条 EC 的工程事实已各自由
+MEM-20260918-073…078 承载，收口本身不产生新的可复用事实）。
 
 ## 影响报告
 

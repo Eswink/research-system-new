@@ -2,7 +2,7 @@
 id: GOAL-20260918-006
 slug: read-face-and-terminal-semantics-closure
 title: 读面与终态语义收口：PG 快照一致读、DEAD_LETTER 消费、前端消费重建读面、时钟断言去调度依赖、批量读上限与 Fake 同判、失败诚实边界
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-18
 updated_at: 2026-09-18
 owners:
@@ -272,7 +272,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260918-103-clock-assertion-and-wall-clock-matrix.md
   - .cursor/plans/tasks/PLAN-20260918-104-batch-read-upper-limit-and-fake-boundary.md
   - .cursor/plans/tasks/PLAN-20260918-105-resume-compensation-failure-visibility.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260918-105-resume-compensation-failure-visibility.md
+  - .cursor/plans/tasks/PLAN-20260918-106-goal-006-closeout-recheck.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260918-106-goal-006-closeout-recheck.md
 memory_entries:
   - MEM-20260918-073
   - MEM-20260918-074
@@ -299,8 +300,8 @@ GOAL-005 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 | --- | --- | --- | --- |
 | EC-01 | PG 两读快照一致性（实现一致读 或 ADR 级论证 + 契约收敛） | GOAL-005 收口结论 2 / RECHECK-097 W-1 | **PASS**（RECHECK-20260918-100，做 (a)） |
 | EC-02 | `DEAD_LETTER` 消费（既有边界内实现 或 ADR 草案 + 权威登记 + 同源收敛） | GOAL-005 收口结论 3 / RECHECK-095 W-2 | **PASS**（RECHECK-20260918-101，做 (b)） |
-| EC-03 | 前端消费重建读面（页面接入 + stub/live e2e + 「不预测结果」同源） | GOAL-005 收口结论 4 / RECHECK-098 W-3 | PENDING |
-| EC-04 | 时钟断言去调度依赖 + 真墙钟对照矩阵（或一等事实 + 结构判据） | GOAL-005 收口结论 4 / RECHECK-096 W-1 + W-4 | PENDING |
+| EC-03 | 前端消费重建读面（页面接入 + stub/live e2e + 「不预测结果」同源） | GOAL-005 收口结论 4 / RECHECK-098 W-3 | **PASS**（RECHECK-20260918-102，收口复检更正） |
+| EC-04 | 时钟断言去调度依赖 + 真墙钟对照矩阵（或一等事实 + 结构判据） | GOAL-005 收口结论 4 / RECHECK-096 W-1 + W-4 | **PASS**（RECHECK-20260918-103，收口复检更正） |
 | EC-05 | 批量读显式上限 + Fake 弱同判对齐或写成显式边界 | GOAL-005 收口结论 4 / RECHECK-097 W-2 + W-3 | **PASS**（RECHECK-20260918-104，上限 + 逐条边界） |
 | EC-06 | 失败的诚实边界（结构化任务级归因 或 一等边界 + 补偿失败降级可见） | GOAL-005 收口结论 4 / RECHECK-090 W-3…W-5 | **PASS**（RECHECK-20260918-105，做 (b)） |
 
@@ -376,8 +377,8 @@ RECHECK-098 W-2（历史行要不要 re-freeze/fork）与 RECHECK-090 W-5（响�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 6 已收口，六条 EC 全 PASS ⇒ 进入 cycle 7 = GOAL 收口**（按 README 收口流程：独立收口复检 RECHECK + 干净 checkout 封印 + CI 台账尾巴；六条 EC 的 PASS 依据分别是 RECHECK-100 / 101 / 102 / 103 / 104 / 105）。
-EC-01…EC-04 已 PASS（RECHECK-20260918-100 / 101 / 102 / 103，均 PASS_WITH_WARNINGS）；
+当前续点：**无（本 GOAL 已于 2026-09-18 收口 `status: ACHIEVED`）**。六条 EC 全 PASS，各有独立 RECHECK（RECHECK-20260918-100…105，均 PASS_WITH_WARNINGS）；收口独立复检 = RECHECK-20260918-106（本文件 `latest_recheck`）；后继入口见「终止与收口 · 收口结论」的长程项表，恢复条件 = 新建承接 GOAL 或显式变更 `budget` 并置回 `status: ACTIVE`。
+六条 EC 全 PASS（RECHECK-20260918-100…105，均 PASS_WITH_WARNINGS）；
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -437,9 +438,65 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 收口时必须把「仍未处理的长程项」如实登记为后继入口（不隐藏缺口），并给出恢复条件
 （新建承接 GOAL 或显式变更 budget 并置回 ACTIVE）。
 
-### 收口结论
+### 收口结论（2026-09-18）
 
-（未收口；收口时填写。）
+**终态：ACHIEVED。** 六条 EC 全部 PASS 且各有实跑证据与独立 RECHECK（100…105，均
+PASS_WITH_WARNINGS）；收口独立复检 = RECHECK-20260918-106（`scratch/verify_goal006_closeout.py`
+**88 条只读判据在当前树全绿** + 六条 EC 判据套件合并真跑 **104 passed** + stub/live 两链各
+**2 passed** + 干净 checkout 深扫封印 `sha256:0c36bb3c6bb5f7a2c073e80f67fcde41de1f24049dc152c321a6ac6cb6e4ca60`
+（25 条发现逐条处置：1 high 误报 + 5 low 误报 + 19 medium 工具面，见 RECHECK-20260918-106）。
+
+| EC | 终态 | 判据依据 | 残余（W 列表，收口不消灭） |
+| --- | --- | --- | --- |
+| EC-01 | PASS | RECHECK-20260918-100 | 语句级 ≠ 事务级；单面调用代价未量化；Fake 不适用探针；RECHECK-097 括注不实已更正；未做真并发压测 |
+| EC-02 | PASS | RECHECK-20260918-101 | 待拍板 ≠ 已解决（`DEAD_LETTER` 消费仍未实现）；选项 D 未实测；存量未盘点；判据只钉同源；ADR 编号无权威登记表 |
+| EC-03 | PASS | RECHECK-20260918-102 | `SOURCE_DEPENDENT` 无 live 证据（人为形态）；`missing` 人话映射部分留白；`frozen_manifest` 标签今天不可达；新面板无像素基线；替身 run 路由只服务受控 fixture |
+| EC-04 | PASS | RECHECK-20260918-103 | 判据钉结构不钉时间；相位判据证明的是"测试前提"而非 DB 观测到并发；扰动是测试内 sleep；矩阵只覆盖本文件；矩阵格式本身是判据的一部分 |
+| EC-05 | PASS | RECHECK-20260918-104 | 上限量级无独立依据；跨块快照边界无并发写反证；分块用例是单元级（不经 HTTP）；`adapters/postgres/workflow_engine.py` 恰好 450 行零余量；不可同判轴由代码结构判定 |
+| EC-06 | PASS | RECHECK-20260918-105 | 可见 ≠ 自动恢复；地板仍是地板（发布面同挂只剩遥测）；审批入口 `resume_after_approval` 未接留痕；归因仍是文本（(b) 路线的有意终态）；未实测真 store 故障 |
+
+**仍未处理的长程项（收口 ≠ 已解决）**：
+
+1. 「不进入循环 / 需人工拍板」六项**原样保留**：威胁建模/授权面覆盖、`artifacts/` 明文 token
+   清理、按声明给 adapter 接线与 `tool_pack.*` 策略、450 行贴线的持续重构、依赖 pin 升级
+   （`undici` / `vite` / `yaml`）、hook 侧 L3 门修复。
+2. EC-02 只到 `docs/adr/ADR-0030-validation-failure-consumption.md`（**Proposed**）：
+   `DEAD_LETTER` 消费仍是待拍板项，需人工决策后在后续承接 GOAL 里做。
+3. 六条 EC 的 W 列表（上表）全部保留。
+4. 安全扫描口径照旧：`runStatus=inconclusive` / `completeness=partial`（`threatModel` 0 入口）
+   ⇒ **不得读作"项目安全"**；离线 advisory 通道两次输入答案不同（干净输入 0 包 / 工作树 1 包）
+   ⇒ **不作依赖结论**；本 GOAL 的任何 EC PASS 也不构成整体安全结论。
+5. RECHECK-098 W-2（历史行要不要 re-freeze/fork）与 RECHECK-090 W-5（响应仍 200）仍是
+   产品/运营决策，只作如实登记。
+
+**恢复条件**：新建承接 GOAL（照 GOAL-005 → GOAL-006 的承接口径），或显式变更本文件 `budget`
+并置回 `status: ACTIVE`。
+
+**CI 台账（本 GOAL 全部推送的 run 到终态；逐 job 以 GitHub API 为准）**：
+
+| push head | run | 结论 |
+| --- | --- | --- |
+| `55d789b`（建档） | 35366755971 | 六个 job 全 success |
+| `e3e2253`（cycle 1 实现，含 `1338a67` / `4da4c31` / `4fe7f00` / `e99d8a4`） | 35371528406 | 六个 job 全 success |
+| `447059f`（cycle 1 回写） | 35373042198 | 六个 job 全 success |
+| `4037d3b`（cycle 2，含 `9c7d8cc` / `495cc7d` / `c687ff4`） | 35376027444 | 六个 job 全 success |
+| `7f116d4`（cycle 3 derive） | 35377791873 | 六个 job 全 success |
+| `49142e2`（cycle 3 实现） | 35382318514 | 六个 job 全 success |
+| `c5b60e8`（cycle 3 回写） | 35384309066 | console-frontend **1 红**（`live-experiment-queue` 改期 409）⇒ 根因实测 + 只改夹具前提修复 |
+| `63eaa22`（cycle 3 修复） | 35386692993 | 六个 job 全 success |
+| `26bf47e`（cycle 4，含 `ce450c3`） | 35392731917 | 六个 job 全 success |
+| `5eecd18`（cycle 4 回写） | 35394175528 | 六个 job 全 success |
+| `7de7862`（cycle 5，含 `0e14ce5` / `9dfe749`） | 35398254001（M0）+ 35398253835（Push on main） | 六个 job 全 success |
+| `ca4bb05`（cycle 5 台账） | 35399496844 | 六个 job 全 success |
+| `3b189c8`（cycle 6，含 `69aceaa` / `07d1e3f`） | 35403759948 | 六个 job 全 success |
+| 本次收口提交 | 见回合汇报 | 按闭合口径在回合汇报给出终态，不再回写文件 |
+
+**登记面更正（复检抓到的返工事实，不粉饰）**：EC 状态表的 EC-03 / EC-04 两行在 cycle 3 /
+cycle 4 回写时**漏改**（一直写 `PENDING`），与两条 EC 的 frontmatter `status: PASS`、状态历史
+和 RECHECK-102 / 103 矛盾；治理 validator 与两轮回写都未抓到，是**收口独立复检**（脚本首版
+判据取"`| EC-0X |` 之后 400 字符内是否出现 `**PASS**`"，会读到**下一行**的状态 ⇒ 加严为
+"取本行最后一个非空单元格"）才暴露的：加严后先见红（EC-03 / EC-04 = `PENDING`），再按
+frontmatter 更正为 PASS 后全绿。
 
 ## 不进入循环 / 需人工拍板
 
@@ -483,6 +540,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 4 | PLAN-20260918-103（EC-04：时钟断言去调度依赖 + 真墙钟覆盖矩阵；driver=client-goal / owner=root-agent） | `26bf47e`（相位判据 + 覆盖矩阵 + 机器判据）、本次回写提交（RECHECK-20260918-103 / MEM-20260918-076 / PLAN / ALL_PLAN / INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | 治理 `validate.py` 绿；**先探明再动手**（只读勘察）：旧断言 `sum(... if claimed) >= 2` 读的是调度产物（`Barrier` 只保证同时开始；24 条任务下单线程可合法排空 ⇒ 实测 0.5s 头程即 `assert 1 >= 2`）；`_drain` 无任何相位事实；`test_cross_process_real.py` 的等待面是有界轮询（deadline 40s / 轮询 2s）但**没有覆盖表**。交付：`_ClaimProbe`（领循环尝试数 + **同一个** `overlap` barrier 的到达序号）+ 共享 barrier 强制首次领任务重叠 + 线程异常进 `failures`（不再静默）；`test_cross_process_real.py` 模块 docstring 补覆盖矩阵（用例 × 等待判据 + 逐条覆盖时序/证伪条件 + **未覆盖 4 条**）；新判据 `test_wall_clock_coverage_matrix.py`（8 条：一一对应 / 判据词汇与数字同 AST 交叉核对 / 任何 `time.sleep` 必须在含 `deadline` 守卫的函数里 / 未覆盖小节非空 / `timing_sensitive` 在位）。**反证实跑**：同一扰动下旧形态（每 worker 一个 `Barrier(1)`）+ 旧断言 ⇒ **3/3 红**（`assert 1 >= 2`）、新判据 ⇒ **3/3 绿**、退化形态下新判据也红（序号全 0）；矩阵 4 种退化各红一次（删行 / `SLEEP(3s)` / 模块级 sleep `<module>:51` / 无守卫函数内 sleep `_clean:106`），还原 8 passed。定向 `tests/postgres` **100 passed**（28.29s）、规模门禁 **939 passed**、m0 **23/23**（首跑 1 红 `python/product-lint`=矩阵长行 `E501` ⇒ 拆"短表 + 逐条要点"，断言强度未降） | run **35392731917**（`26bf47e`）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，attempt 1）；本次回写提交自身触发的 run 见回合汇报（按闭合约定不再回写文件） | 首跑 1 红（`python/product-lint`：矩阵 4 列行 220 字符 `E501`）⇒ 拆表 + 判据两段式解析；反证脚本首版两处失真已记录（头程 sleep 曾被 barrier 抵消；无界 sleep 曾注入到有守卫的函数里 ⇒ 判据不报是对的） | EC-04 **PASS**（RECHECK-20260918-103 = PASS_WITH_WARNINGS，W-1…W-5：判据钉结构不钉时间、相位判据证明"测试前提"而非 DB 观测、扰动是测试内 sleep、矩阵只覆盖本文件、矩阵格式本身是判据的一部分）；EC-05…EC-06 PENDING | cycle 5 = EC-05（批量读显式上限 + Fake 弱同判对齐或写成显式边界） |
 | 5 | PLAN-20260918-104（EC-05：批量读显式上限 + Fake 弱同判逐条点名；driver=client-goal / owner=root-agent） | `0e14ce5`（derive PLAN + ALL_PLAN 投影）、`9dfe749`（上限 + 服务层分块 + 弱同判逐条边界 + 机器判据 + 两处文档）、本次回写提交（RECHECK-20260918-104 / MEM-20260918-077 / PLAN / ALL_PLAN / INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | 治理 `validate.py` 绿；**先探明再动手**（只读勘察四条）：① 批量读面此前**没有规模上限**（传多少 id 就发多大语句），列表路径未分页；② 三实现（Fake / SQLite `json_each(?)` / PG `= ANY(%s)`）都无超限判定；③ PG 的 `dispatch_ownership_many` 把调用包在 `try` 里统一走 `_wrap_operational` ⇒ 上限校验若落在 `try` 内会被误分类成瞬时失败；④ Fake 的弱同判只有执行性反例（`test_the_fake_never_expires_a_lease_it_holds`）而**没有**逐条点名的清单与判据。交付：port `MAX_DISPATCH_OWNERSHIP_BATCH = 500` + `validate_dispatch_batch()`（三实现共用同一句判据，都放在读库之前；PG 在 `try` 之外）、服务层 `dispatch_ownership_read_many` 按上限分块 + 合并（重复 id 先归一；任一块读不到 ⇒ 整批空 dict，不交半份答案）并在三处文档写明「整批可能跨多个快照（块内仍是一个快照）」、port 模块 docstring 末节逐条点名 8 条可同判轴 + 3 条不可同判轴（租约过期 / LOST worker / 重排与 `BOTH`）、新判据 `tests/contracts/test_dispatch_ownership_weak_equivalence.py`（7 条：引用可解析、可同判轴必须真的按 `_FACTORIES` 跑、与套件三实现用例**双向一一对应**、不可同判轴不许声称三实现、`_FACTORIES` 来自注册表且含 Fake、上限值与两文档同源）。**反证实跑（P1…P7 先红后复原）**：P1 Fake 去掉上限校验 ⇒ `DID NOT RAISE InvalidInputError`（1 failed / 2 passed）；P2 SQLite 校验挪到取数之后 ⇒ 语句探针 `assert 1 == 0`；P3 PG 校验挪进 `try` ⇒ `TransientPortError: postgres transient failure: InvalidInputError(...)`（误分类本体）；P4 契约里批量读用例改 `_PERSISTENT_FACTORIES` ⇒ 2 failed；P5 某条 `[不同判]` 改 `[同判]` ⇒ 3 failed；P6 点名的用例名写错一个字母 ⇒ 3 failed；P7 `PORTS.md` 的值改 400 ⇒ 1 failed。定向（DSN pin + PG 容器）**1003 passed**；规模门禁 **940 passed**；m0 **PASS: profile=m0; 23 deterministic checks**（首跑 2 红 = `python/dependency-boundaries` + `python/tests`，根因是**启动方式**：直接跑 `.venv/Scripts/python.exe` 时 `lint-imports` 不在 PATH，改用仓库既定 `uv run --frozen --no-sync python -B … --profile m0` ⇒ 23/23，**非代码回归**）；`framework/docs_consistency_check` = **DOCS-CHECK PASS** | run **35398253835**（`7de7862`，「Push on main」）**success**；run **35398254001**（`9dfe749` + `7de7862` 同一批推送的「M0 Quality Gates」）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，attempt 1、runner_id 非 0、无重跑）；上一条推送（cycle 4 回写 `5eecd18`）的 run **35394175528** 亦已到终态：**六个 job 全 success**（同六项） | 返工三处（记录诚实）：① 轴清单写在**方法 docstring** 里 ⇒ 撞 50 行函数门禁（63 行），移到 port **模块 docstring**，方法 docstring 只留契约要点 + 指针；② `adapters/postgres/workflow_engine.py` 因新增说明到 454 行 ⇒ 压回 450（顺带修正该 docstring 里「两条 SQL」的陈旧说法——EC-01 后是一次调用一条语句）；③ 长测试名的 `path::test_name` 紧邻写法两行超 100 列（`E501`）⇒ 改成「文件 + 用例名」分开点名，判据分辨率不变（P6 仍能红） | EC-05 **PASS**（RECHECK-20260918-104 = PASS_WITH_WARNINGS，W-1…W-5：上限量级无独立依据、跨块快照边界无并发写反证、分块用例是单元级（不经 HTTP）、`adapters/postgres/workflow_engine.py` 恰好 450 行零余量、不可同判轴由代码结构判定而非运行时差分实测）；EC-06 PENDING | cycle 6 = EC-06（失败的诚实边界：结构化任务级归因 或 一等边界 + 补偿失败降级可见） |
 | 6 | PLAN-20260918-105（EC-06 选 (b)：归因边界一等登记 + 守护线程补偿失败留痕；driver=client-goal / owner=root-agent） | `69aceaa`（derive PLAN + ALL_PLAN）、`07d1e3f`（事件类型 + 发布函数 + 服务薄封装 + 守护线程接线 + 读面/形状判据 + 两处文档）、本次回写提交（RECHECK-20260918-105 / MEM-20260918-078 / PLAN / ALL_PLAN / INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | 治理 `validate.py` 绿；**先探明再动手**（只读勘察四条）：① `run.resume_failed` payload 只有 `failure_type` / `message` / `compensated_to`，**无任务级归因**（W-3）；② 守护线程 `_compensate_failed_resume` 是 `except: pass` ⇒ 补偿失败**没有任何 canonical 痕迹**（W-4）；③ 既有 `GET /runs/{id}/events`（SSE + JSON replay）就是 canonical 事件读面 ⇒ 事件形态不必新增 DTO 字段；④ 审批入口 `resume_after_approval` 是同形入口但已登记为后继项（W-1，不在本 EC 内）。交付：`EventType.RUN_RESUME_COMPENSATION_FAILED`（附加式，词表 + 域计数 37 → 38 同步）、`run_terminals.publish_compensation_failure`（payload 四键并在 docstring 里**声明键集合**）、服务薄封装、守护线程失败路径先发后吸收（整轮不中断语义不变；450 行上限就地让行 452 → 448）、读面用例（**真跑一轮调度** + 只打坏补偿落库 ⇒ `GET /runs/{id}/events` 可判；反空洞用例覆盖"补偿成功 ⇒ 无该事件"）、键集合互钉判据、两处文档同源（`EVENT_MODEL.md` + `CONTROL_PLANE_API.md`，含「不含任务级归因」与「响应仍 200」两条一等边界）。**反证实跑（CP-1…CP-5 先红后复原）**：改回 `except: pass` ⇒ 3 failed；删 payload 键 ⇒ 3 failed；删契约声明键 ⇒ 1 failed；删边界措辞 ⇒ 1 failed；去掉留痕外层 try/except ⇒ 1 failed。定向 `tests/api tests/application tests/domain tests/contracts` **1959 passed / 3 skipped**；`mypy` **932 files**；m0 **PASS: profile=m0; 23 deterministic checks**（首跑 1 红 = `framework/run_cursor_framework_evals` 的既有 Windows 文件占用 flake（`WinError 5` on `os.replace(.cursor/runtime/evolution_state.json.tmp)`），隔离复跑 FRAMEWORK EVAL PASS + 全量复跑 23/23，**非代码回归**）；DOCS-CHECK PASS | 本次实现提交与本次回写提交的 run 见回合汇报（按闭合约定，随本次回写的提交自身触发的 run 不回写文件） | 返工两处（记录诚实）：① `service.py` 新增薄封装后 452 行 ⇒ 按「随改动搬代码」纪律就地收紧三处 docstring 到 448 行（**无行为改动**）；② 调度器用例首版用全局 `boom` 打坏全部 run ⇒ "一条坏 run 不影响另一条"的断言红，改为按 run 注入（`boom_only`）后绿（夹具修正，未改断言强度）；新判据里一行残留占位断言已删并补足逐项断言 | EC-06 **PASS**（RECHECK-20260918-105 = PASS_WITH_WARNINGS，W-1…W-5：可见 ≠ 自动恢复、地板仍是地板、审批入口未接留痕、归因仍是文本（(b) 的有意终态）、未实测真 store 故障）；**六条 EC 全 PASS** ⇒ 收口条件已满足，下一轮按 README 收口 | cycle 7 = GOAL 收口（独立收口复检 + 干净 checkout 封印 + CI 台账尾巴 + `status: ACHIEVED`） |
+| 7 | PLAN-20260918-106（GOAL-006 收口复检：独立复检 + 干净 checkout 封印 + 终止条款判定；driver=client-goal / owner=root-agent） | `b10760f`（derive 收口 PLAN + ALL_PLAN）、本次收口提交（RECHECK-20260918-106 / PLAN-106 DONE / ALL_PLAN / EC 表更正 / 本文件收口结论 + `status: ACHIEVED`）；本条推送的 run 按闭合口径在回合汇报给出终态 | 治理 `validate.py` 绿；复检脚本 `scratch/verify_goal006_closeout.py` **88 条只读判据在当前树全绿**（层级 A 交付物 / B 判据用例 / C 登记面）；六条 EC 的判据套件合并真跑 **104 passed**（PG 单语句快照探针 + 批量读上限/弱同判 + 补偿失败留痕读面 + 重新判定 + 时钟覆盖矩阵 + 规模门禁同轮）；EC-03 两链复跑（stub **2 passed** + live **2 passed**，live 由 webServer 真起应用）；m0 **PASS: profile=m0; 23 deterministic checks**；干净 checkout 封印 `sha256:0c36bb3c…`（25 条逐条处置）+ 工作树对照 `sha256:5bd2490f…`（34 条，差集 = gitignored `scratch/probe_*.py`） | 本次收口提交的 run 见回合汇报（按闭合约定，写下本条的这个提交自身触发的 run 不回写文件）；本 GOAL 其余推送的 run 全部已在「收口结论」的 CI 台账表里到终态 | 复检抓到两处登记面缺陷并当场更正：① EC 状态表 EC-03 / EC-04 两行在 cycle 3 / 4 回写时**漏改**（仍写 `PENDING`）⇒ 按 frontmatter 与 RECHECK 更正为 PASS；② 复检脚本首版 EC 表判据会读到**下一行**的状态（首跑因此漏判），加严为"取本行最后一个非空单元格"后两条真实缺陷立刻见红（先红后更正） | 六条 EC 全 PASS 且证据齐（RECHECK-102 / 103 的交付物与判据在收口 head 上逐条复核）；残余全部如实登记（六条 EC 的 W 列表 + 人工拍板六项 + EC-02 的 ADR 仍 Proposed + 扫描 coverage 缺口 + advisory 通道不稳定） | 无（本 GOAL 收口 `status: ACHIEVED`；后继入口 = 收口结论的长程项表，恢复条件 = 新建承接 GOAL 或改 `budget` 并置回 ACTIVE） |
 
 ## 状态历史
 
@@ -523,3 +581,5 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 - 2026-09-18 cycle 5 收口：EC-05 **PASS**（PLAN-20260918-104 / RECHECK-20260918-104 = PASS_WITH_WARNINGS，W-1…W-5）。批量读面从「没有上限」变成「上限是契约事实」：`MAX_DISPATCH_OWNERSHIP_BATCH = 500`（port 常量，值唯一事实源）、按**入参长度**判定、超限 ⇒ `InvalidInputError`（调用方 bug，**不静默截断**）、恰好等于上限合法；三实现共用 port 的同一句校验且都在**读库之前**（PG 在 `try` 之外，避免被 `_wrap_operational` 误分类成瞬时失败）；分块归**调用方**（服务层按上限切块 + 合并，重复 id 先归一，任一块读不到 ⇒ 整批空），并在 port docstring / `PORTS.md` / `CONTROL_PLANE_API.md` 三处登记「整批可能跨多个快照（块内仍是一个快照）」这条代价。Fake 的弱同判选**显式边界**：port 模块 docstring 末节逐条点名 8 条可同判轴与 3 条不可同判轴（租约过期 / LOST worker / 重排与 `BOTH`），每条点名判据文件与用例名，并由 `tests/contracts/test_dispatch_ownership_weak_equivalence.py` 机器校验（引用可解析 + 可同判轴真的在三实现上跑 + 与套件三实现用例**双向一一对应** + 不可同判轴不许声称三实现）。证据面：**七条反证先红后复原**（P1…P7，含 PG 误分类本体与语句探针「超限时语句数 == 0」）；定向 **1003 passed**；规模门禁 **940 passed**；m0 **23/23 PASS**（首跑 2 红根因是启动方式：`.venv/Scripts/python.exe` 直启时 `lint-imports` 不在 PATH，改用 `uv run --frozen --no-sync` 后 23/23，非代码回归）；DOCS-CHECK PASS。零 Domain/API/schema 变化（OpenAPI 快照未动）。CI 台账见迭代日志 cycle 5 行。
 
 - 2026-09-18 cycle 6 收口：EC-06 **PASS**（PLAN-20260918-105 / RECHECK-20260918-105 = PASS_WITH_WARNINGS，W-1…W-5），选 **(b) 一等边界 + 降级可见**。① 「失败原因不含任务级归因」写进 `EVENT_MODEL.md` 与 `CONTROL_PLANE_API.md` 两处；② 守护线程补偿失败**不再静默**：新增 `run.resume_compensation_failed`（payload 四键，`canonical_state` 如实回答"补偿失败时 run 停在哪"，不伪造成 `PAUSED`），失败路径**先发后吸收**（整轮不中断语义不变），读面 `GET /runs/{id}/events` 可判——零 DTO / 路由 / OpenAPI / 迁移变化。证据面：**读面用例真跑一轮调度**（真 service + 真事件发布，只打坏补偿落库）+ **反空洞**用例（补偿成功 ⇒ 无该事件）；payload 键集合与契约文本声明行互钉；**五条反证先红后复原**（改回 `except: pass` / 删 payload 键 / 删声明键 / 删边界措辞 / 去掉地板 try）。定向 **1959 passed / 3 skipped**；m0 **23/23 PASS**（首跑 1 红 = 既有 Windows 文件占用 flake，隔离 + 全量复跑绿）；DOCS-CHECK PASS。**至此六条 EC 全 PASS** ⇒ 进入收口（cycle 7）。
+
+- 2026-09-18 cycle 7 收口：**ACHIEVED**。收口独立复检 = PLAN-20260918-106 / RECHECK-20260918-106：`scratch/verify_goal006_closeout.py` **88 条只读判据在当前树全绿**（层级 A 交付物在树 / B 判据用例在树 / C 登记面一致——EC 表逐行取本行状态列、child_plans 指向的文件存在、ALL_PLAN 行 DONE）；六条 EC 的判据套件合并真跑 **104 passed**（28.51s，DSN 固化配方 + PG 容器）；EC-03 两链复跑（stub **2 passed** + live **2 passed**）；干净 checkout 深扫封印 `sha256:0c36bb3c6bb5f7a2c073e80f67fcde41de1f24049dc152c321a6ac6cb6e4ca60`（`git archive HEAD` 导出 3087 文件 == `git ls-files` 3087，树内无 `scratch/`、`git ls-files artifacts/` = 0）——25 条发现逐条处置（1 high 不安全反序列化 = `yaml.load` 配 `SafeLoader` 子类的误报；5 low 不安全随机数 = 带种子演示生成；19 medium 跨文件污点 = 运维探针脚本与 operator 环境变量），工作树对照扫 `sha256:5bd2490f…`（34 = 1/28/5，差集 = gitignored `scratch/probe_*.py`）；m0 **PASS: profile=m0; 23 deterministic checks**。**复检抓到两处登记面缺陷并当场更正**：EC 状态表 EC-03 / EC-04 两行在 cycle 3 / 4 回写时漏改（仍写 `PENDING`）⇒ 按 frontmatter 与 RECHECK-102 / 103 更正为 PASS；复检脚本首版EC 表判据会读到下一行的状态、加严为"取本行最后一个非空单元格"后才识破（先红后更正）。本 GOAL 全部推送的 run 到终态（台账表见「收口结论」；唯一失败 = `c5b60e8` 的 35384309066，已根因修复复绿）；本次收口提交自身的 run 按闭合口径在回合汇报给出终态。**收口不宣称项目安全**：扫描 `verdictEffect=none`、coverage `inconclusive`。
