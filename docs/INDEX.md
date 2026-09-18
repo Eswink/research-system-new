@@ -173,6 +173,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `adr/ADR-0029-gpu-execution-boundary.md` — GPU Execution Boundary 决策（M17；单 token 调度键 vs 观测分离、freshness 四层、rootfs 不放开、无静默 CPU fallback 四层、physically-remote NOT VERIFIED）
 - `roadmap/M15_COMPLETION_RECORD.md` — M15 完成记录（DoD 21/21 PASS）
 - `adr/ADR-0025-temporal-defer.md` — Temporal deferral ADR（M14；DEFER 决策，M16 重评）
+- `adr/ADR-0030-validation-failure-consumption.md` — 验收门拒收的处置（**Proposed / 待拍板**：`on_validation_failure` 的消费为何仍未做、选项 A–E 的代价与收益、触发条件；GOAL-20260918-006 EC-02 草案）
 
 ## Roadmap / Versioning
 
