@@ -195,6 +195,8 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `roadmap/DOCUMENT_RECOVERY_M0_M11.md` — DOC-R1 最终报告（inventory/重建/修正/验证结果/remaining risks）
 - `audits/SYSTEM_AUDIT_M0_M11.md` — SA-1 Pre-M12 全系统审计与加固（2026-08-20；Audit Coverage Matrix / BLOCKER+MAJOR+MINOR findings / Fault Injection evidence / 延期技术债 / PASS + M12 READY）
 - `audits/MIMOSA_DEEP_SCAN_20260917.md` — Mimosa 密封深扫终态记录（2026-09-17，GOAL-004 cycle 8 = EC-07；scanId + seal + 逐件摘要复核 + 36 条 findings 逐条处置 + 未覆盖范围；**不主张项目安全**）
+- `audits/MIMOSA_POST_CLOSURE_AUDIT_20260918.md` — 收口后安全复核（2026-09-18，GOAL-005 cycle 1 = EC-01；干净 checkout 重扫封印 + 依赖 advisory 联网复核署名 + hook 侧 `scanner_enobufs` 根因 + 25 条 findings 逐条处置 + 动态 SQL 结构判据更正；**不主张项目安全**）
+- `audits/MIMOSA_DEPENDENCY_ADVISORIES_20260918.json` — 依赖 advisory 复核证据（413 个锁定包的 OSV 查询：3 包 20 条，含 CVE 别名 / CVSS / 修复版本 / 来源与复跑命令）
 - `versioning/VERSION_POLICY.md`
 
 ## 阶段工程记录（Plan / Recheck）
