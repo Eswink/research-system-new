@@ -4,10 +4,38 @@ Every worker is an independent OS process (subprocess.run on the helper
 script) with its own psycopg connection and DSN. No threads, no asyncio,
 no in-process double-connection simulation, no injected clocks.
 
-Covers:
-- WP-B2: concurrent claim exclusivity — exactly one worker owns the lease
-- WP-C2: expiry-window fencing — stale writer is rejected after real TTL
-- WP-A3/H4: crash/restart recovery — hard kill then recover+claim+complete
+真墙钟覆盖矩阵（GOAL-006 cycle 4 = EC-04；机器判据在
+`tests/postgres/test_wall_clock_coverage_matrix.py`，与该文件的用例集合**一一对应**）：
+
+| 用例 | 等待判据 |
+| --- | --- |
+| test_concurrent_claim_exactly_one_owner | NO_WAIT |
+| test_stale_fenced_after_expiry_window | BOUNDED_POLL(deadline=40s,interval=2s) |
+| test_crash_recovery_real_subprocess | BOUNDED_POLL(deadline=40s,interval=2s) |
+
+每个用例覆盖的时序与证伪条件（逐条，与上表同一集合）：
+
+- `test_concurrent_claim_exactly_one_owner`：两个独立进程**同时**认领同一任务（租约互斥，
+  无等待）；证伪 = 两者都成功或都失败，或租约行数不是 1。
+- `test_stale_fenced_after_expiry_window`：真实 TTL（5s，不注入时钟）到期后第二个进程惰性
+  重领 + 陈旧租约被 fencing 拒绝；证伪 = 40s 内没出现不同 lease id，或陈旧 complete 未被拒。
+- `test_crash_recovery_real_subprocess`：硬杀（os._exit(9)，无清理）→ 真实 TTL 过期 →
+  recover 回收 → 第三个进程领取并完成；证伪 = 40s 内 recover 没报 n>=1，或状态/租约行
+  没回到 QUEUED/0。
+
+未覆盖的时序（**诚实边界**，不写成"全覆盖"）：
+
+- worker 之间的**时钟偏移**：所有 worker 用同一个 DSN 上的服务器时钟，没有独立的进程内
+  注入时钟 ⇒ 跨进程时钟漂移不在本文件覆盖；
+- **网络分区 / 连接中断**下的租约行为（需要受控网络故障注入，不在本仓库能力内）；
+- **并发度 > 2 进程**的压测：并发面由同进程 4 线程用例覆盖
+  （`tests/postgres/test_claim_concurrency_pg.py`）；
+- GPU / 容器类真实等待（属 `tests/adapters/execution` 的既有 E2E）。
+
+为什么属 `pytest.mark.timing_sensitive`：这些用例读的是**真实墙钟**（真实 TTL、真实进程
+崩溃、真实子进程启动、不注入时钟），必须在串行、无重负载时跑 —— 标记语义见
+`pyproject.toml`，m0 runner 的 docstring 同口径（"这些用例在并发负载下可能 flake、不是
+产品回归"）。
 
 PART B W-04: the expiry/recovery waits are bounded POLLS, not fixed
 `sleep(ttl+3)` — the fixed pattern raced under concurrent load (recovery once
