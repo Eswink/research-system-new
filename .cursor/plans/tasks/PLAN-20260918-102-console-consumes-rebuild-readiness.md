@@ -2,7 +2,7 @@
 id: PLAN-20260918-102
 slug: console-consumes-rebuild-readiness
 title: 控制台消费重建读面：三态可区分 + stub/live e2e 各一条链（EC-03）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-18
 updated_at: 2026-09-18
 parent_goal: GOAL-20260918-006
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260918-006 cycle 3 = EC-03（GOAL-005 收口结论第 4 项 / RECHECK-098 W-3：`rebuild` 读面已存在但前端未消费）。授权来源：2026-09-18 用户 goal 模式指令（新建承接 GOAL-006 并自动化循环推进、无需逐轮确认）。push-to-main-for-CI 授权沿用 GOAL-001…005 批准口径（只推 main、不 force、不重写历史、不推旁支触发 CI）。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260918-102-console-consumes-rebuild-readiness.md
+memory_entries:
+  - MEM-20260918-075
 ---
 
 # PLAN-20260918-102 — 控制台消费重建读面（GOAL-006 cycle 3 = EC-03）
@@ -71,46 +72,65 @@ GOAL-005 cycle 6 把"这份记录够不够重建、缺哪条事实"做成了一�
 
 ### WP-A — 页面接入
 
-- [ ] 新组件（`apps/web/src/features/runs/`）：渲染三态 + `missing` 字段名列表 + 文案映射
-      （字段名 → 人话，集中一处，便于 W-4 的后续维护）。
-- [ ] 接进 `RunPanel` 的渲染路径（`ResourceBoundary state={flow.run}` 内，`RunIdentity` 之后）。
-- [ ] i18n：中英文案都写（仓库既有 `zh` 分支模式）。
+- [x] 新组件（`apps/web/src/features/runs/RebuildReadiness.tsx`，80 行）：渲染三态 + `missing`
+      字段名列表 + 文案映射（`FIELD_LABELS`，集中一处）。
+- [x] 接进 `RunPanel` 的渲染路径（`ResourceBoundary state={flow.run}` 内，`RunIdentity` 之后）。
+- [x] i18n：中英文案都写（`zh` 分支模式）。
 
 ### WP-B — stub e2e
 
-- [ ] 新 spec（`apps/web/tests/e2e/`）：三态可区分 + `missing` 展示；
-      **反证实跑**：临时去掉渲染分支 ⇒ 该 spec 红。
-- [ ] 夹具：按既有 `stub-routes*.ts` 方式注入状态（不改既有夹具的默认值语义）。
+- [x] 新 spec（`run-rebuild-readiness.spec.ts`）：三态可区分 + `missing` 点名 + 文案不越界；
+      **反证实跑**：临时去掉渲染分支 ⇒ **2 failed**，还原 ⇒ **2 passed**。
+- [x] 夹具：新增 `stub-routes-runs.ts` 三条受控 run fixture（分类器三态）+ `GET /runs/{id}`
+      路由（精确锚定，未注册 id ⇒ 404）。
 
 ### WP-C — live e2e
 
-- [ ] 新 `live-*.spec.ts`：跑真实 app，断言 `rebuild` 在页面上可读；夹具由域代码生成；
-      spec 幂等（可重复跑）。
+- [x] 新 `live-run-rebuild-readiness.spec.ts`：真启动 `m12_reference_research_v1.yaml` ⇒
+      读面 `SELF_CONTAINED`、夹具历史行 ⇒ `REFUSED` + 四字段名；两处都断言"页面值 ==
+      读面返回值"；spec 幂等（`Idempotency-Key` 带时间戳），两次实跑均 2 passed。
 
 ### WP-D — 文档同源 + 设计基线
 
-- [ ] `docs/api/CONTROL_PLANE_API.md` 的 `rebuild` 段补"控制台在哪展示、文案口径与读面一致"。
-- [ ] 结构签名重生成 + 跨平台一致性复核（既有容器配方）。
+- [x] `docs/api/CONTROL_PLANE_API.md` 的 `rebuild` 段补控制台消费点与同一口径；
+      `docs/frontend/CONSOLE_PAGE_MAP.md` 的 `#/run/timeline` 条目同步。
+- [x] 设计两门实跑：`design-outline-guard` 6 passed、`design-fidelity` 2 passed；
+      该路由基线不选 run ⇒ 像素与结构签名**未变**，无需重生成（实跑结论，非省略）。
 
 ### WP-E — 记录与回写
 
-- [ ] RECHECK-20260918-102、MEM-20260918-075、PLAN/RECHECK/ALL_PLAN/`memory/INDEX.md`、
+- [x] RECHECK-20260918-102、MEM-20260918-075、PLAN/ALL_PLAN/`memory/INDEX.md`、
       GOAL-006 回写（EC-03 状态 / 迭代日志 / child_plans / 状态历史）。
 
 ## 证据
 
-- 待记（执行后填写：反证实跑、web 六门、结构签名、m0、CI）。
+- **反证（页面渲染分支）**：删 `RunPanel` 的 `RebuildReadiness` 渲染 ⇒ stub spec
+  **2 failed**；还原 ⇒ **2 passed**。
+- **两条链**：stub `run-rebuild-readiness` **2 passed**（全量 stub 套件 **85 passed**）；
+  live `run-rebuild-readiness` **2 passed**（全量 live 套件 **38 passed**）。
+- **live 现场探针**（受控，起在 8012 后收掉）：m12 ⇒ 三 digest 齐 ⇒ `SELF_CONTAINED`；
+  `console_demo_research_v1.yaml` ⇒ `manifest_digest: null` ⇒ `REFUSED` + `missing:
+  ["manifest_digest"]`；历史行 ⇒ `REFUSED` + 四个字段名。
+- **web 六门 / 规模门禁**：`run_all_checks.py --profile typescript` ⇒ **9/9 PASS**
+  （首跑 1 红：live spec 内联 `import("...")` 类型触发 `no-restricted-syntax` ⇒ 顶层
+  `import type { Page }`；未改任何断言）。
+- **m0 全量**：`make validate-all`（DSN pin 配方）⇒ **PASS: profile=m0; 23 deterministic checks**。
+- **执行修正（口径）**：分类器不变量是 `missing` 非空 ⇔ `REFUSED`（`SOURCE_DEPENDENT`
+  本身不带 `missing`）。故"列出 `missing` 字段名"落在 `REFUSED` 态；面板不特判状态、
+  有 `missing` 就列，两态都按读面值渲染。
 
 ## 状态历史
 
 - 2026-09-18 建档（GOAL-006 cycle 3 = EC-03，driver=client-goal / owner=root-agent）：
   只读勘察确认类型与 stub 夹具已带 `rebuild`、页面零消费；`status: IN_PROGRESS`。
+- 2026-09-18 执行完成：WP-A…WP-E 全绿（反证 + 两渠道 e2e + 文档同源 + m0 23/23）；
+  `status: DONE`；`latest_recheck` 指向 RECHECK-20260918-102（PASS_WITH_WARNINGS，W-1…W-5）。
 
 ## 影响报告
 
 - **Domain / API / schema**：Domain 与 API **零变化**（只消费既有 DTO）；OpenAPI 快照不变。
 - **持久化 / 迁移**：无。
 - **安全 / 凭据**：无凭据面变化；页面只读既有字段。
-- **兼容性 / 迁移风险**：低（新增一块只读展示）；设计基线需按流程重生成。
+- **兼容性 / 迁移风险**：低（新增一块只读展示）。
 - **上游版本影响**：无。
 - **下一项任务**：GOAL-006 cycle 4 = EC-04（时钟断言去调度依赖 + 真墙钟对照矩阵）。
