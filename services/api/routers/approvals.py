@@ -157,12 +157,21 @@ def _require_resumable(
 
 def _resume_after_approval(deps: ApiDeps, run_id: str, granted: ResearchRun) -> None:
     """续跑 human-gate 暂停；无暂存上下文（非 orchestration 审批竞态/重启）为
-    no-op：decision 已按 canonical 状态机落库，绝不伪造续跑。"""
+    no-op：decision 已按 canonical 状态机落库，绝不伪造续跑。
+
+    GOAL-005 cycle 2（EC-02）：续跑**失败**必须补偿——上下文在 `resume_after_approval`
+    里被 pop 掉，若把异常冒给端点，canonical 会停在**悬空 `RUNNING`**（没有执行者，
+    也没有第二个入口能再续）。与 `resume_paused` 同形：放回停车 +
+    `run.resume_failed` 记原因（补偿动作在 `run_terminals`，两条入口共用一处）。
+    """
     if deps.runs is None:
         return
     try:
         outcome = deps.runs.resume_after_approval(run_id)
     except InvalidInputError:
+        return
+    except Exception as exc:  # noqa: BLE001 - 失败必须补偿，不能冒给端点
+        save_run(deps, deps.runs.compensate_failed_resume(granted, exc))
         return
     save_run(deps, replace(granted, state=outcome.state))
 

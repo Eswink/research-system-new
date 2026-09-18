@@ -314,6 +314,16 @@ freeze）；执行循环在该 phase 前注册 ApprovalRecord 并 emit
 剩余 specs 并持久化终态；进程重启导致执行上下文丢失时 approve 诚实返回
 503 且不消费审批（绝不伪造恢复）。deny → APPROVAL_REJECTED → FAILED。
 
+approve 的**续跑失败**（GOAL-005 cycle 2 = EC-02）：裁决已落库（响应仍是 200 +
+`APPROVED`），但续跑执行失败时 canonical **不放任在悬空 `RUNNING`**——与
+`POST /runs/{id}/resume` 的补偿同形：run 放回 `PAUSED`，失败原因写进事件链
+（`run.resume_failed`：`failure_type` / `message` / `compensated_to`）。响应体不新增
+字段，**结局以 canonical 状态 + 事件链判别**（与 `/resume` 的 `continuation` 口径一致：
+失败不是终态，运营可再从停车态续）。本入口只有一处驱动（本端点），`resume_paused`
+的另一条驱动是守护线程，两者的补偿共用同一实现（`compensate_failed_resume`）。
+竞态（上下文已被取走 ⇒ `InvalidInputError`）保持既有 no-op——那种情况下另一个入口
+正在跑这个 run，`RUNNING` 是正确状态。
+
 ## Tools
 
 ```text
