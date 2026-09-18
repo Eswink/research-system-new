@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260918-105](tasks/PLAN-20260918-105-resume-compensation-failure-visibility.md) | IN_PROGRESS |
 | [x] | [PLAN-20260918-104](tasks/PLAN-20260918-104-batch-read-upper-limit-and-fake-boundary.md) | DONE |
 | [x] | [PLAN-20260918-103](tasks/PLAN-20260918-103-clock-assertion-and-wall-clock-matrix.md) | DONE |
 | [x] | [PLAN-20260918-102](tasks/PLAN-20260918-102-console-consumes-rebuild-readiness.md) | DONE |
