@@ -581,5 +581,12 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   记账**：其后不再有内容提交（`status: ACHIEVED`，循环终止）。
 - 2026-09-18 终态记账：head `cf09efc` → run **35339327745**（#164）**六个 job 全 success**
   （collector-quality / eval-gate / container-quality / quality-ubuntu-latest /
-  quality-windows-latest / console-frontend）。**本 GOAL 的 CI 台账至此闭合**：cycle 1…7 与
-  全部记账提交的 run 均已轮询到终态；此后不再新增提交。
+  quality-windows-latest / console-frontend）。
+- 2026-09-18 台账闭合提交自身的 CI 记录：head `8535fb6` → run **35340409693**（#165）
+  **六个 job 全 success**（collector-quality / eval-gate / container-quality /
+  quality-ubuntu-latest / quality-windows-latest / console-frontend，runner_id 非 0）。
+  **CI 台账闭合口径（写死在这里，避免"记录—提交—再记录"的无限递归）**：台账逐条记录**每个
+  推送提交**触发的 run 到终态；**本轮记账提交自身**（即写下本条的这个提交）触发的 run 在
+  **回合汇报**里给出终态（run id + 六 job 结论），**不再回写本文件**——因为回写又会产生一个
+  新提交与新 run，递归没有终点。据此：`#165` 是最后一个**被文件记录**的 run，
+  其后仅剩"记录本条的那个提交"的 run（回合报告口径），**本 GOAL 不再新增内容提交**。
