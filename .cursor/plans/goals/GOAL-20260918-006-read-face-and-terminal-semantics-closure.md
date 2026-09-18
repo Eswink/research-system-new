@@ -134,7 +134,32 @@ exit_criteria:
       反证（把断言替换回调度依赖形态 ⇒ 判据可识破；或注入调度扰动 ⇒ 新断言仍不红）+
       真墙钟矩阵：文件级覆盖表（或不可行论证 + 结构判据）+ 受影响套件（`tests/postgres`）+
       m0 绿。矩阵口径须写明**等待有界**（有界轮询，非固定 sleep）。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      PLAN-20260918-103 / RECHECK-20260918-103（PASS_WITH_WARNINGS，W-1…W-5）。① 调度依赖
+      去掉且前提保留：`test_claim_concurrency_pg.py` 的 `sum(...) >= 2`（谁先拿到 CPU 谁就能
+      合法排空全部任务）换成**相位/计数事实**——`_ClaimProbe` 记每个 worker 的领循环尝试数
+      （含空返回）与**同一个 `overlap` barrier 上的到达序号**，断言 = 所有 worker `attempts >= 1`
+      且序号集合 `== {0…N-1}`（同一 barrier 的 N 个到达者互不相同 ⇒ 重叠是构造而非运气）；
+      线程异常进 `failures` 断言（不再静默）。**反证实跑**：同一扰动（`start` barrier 之后给
+      worker-0 之外 0.5s 头程）下，退化成旧形态（每 worker 一个 `Barrier(1)`）+ 旧断言 ⇒
+      **3/3 红**（`assert 1 >= 2` = 恰好一个 worker 排空 24 条），新判据 ⇒ **3/3 绿**，且退化
+      形态下新判据自己也红（到达序号全 0 ⇒ 判据可识破"相位构造被拆"）。② 真墙钟覆盖矩阵：
+      `test_cross_process_real.py` 模块 docstring 给出用例 × 等待判据（`NO_WAIT` /
+      `BOUNDED_POLL(deadline=40s,interval=2s)`）+ 逐条"覆盖时序 / 证伪条件" + **未覆盖小节
+      4 条**（跨进程时钟漂移、网络分区、>2 进程压测、GPU/容器等待）；机器判据
+      `tests/postgres/test_wall_clock_coverage_matrix.py`（8 条）钉住一一对应、判据词汇与数字
+      同 AST 交叉核对（`interval` 必须是文件里的 `time.sleep` 值、`deadline` 必须是 `timeout`
+      默认值）、**任何 `time.sleep` 必须落在含 `deadline` 守卫的函数里**（模块级也算无界）、
+      未覆盖小节非空、`timing_sensitive` 标记在位。**反证实跑**：删矩阵行 / 判据写 `SLEEP(3s)` /
+      模块级 `time.sleep(60)` / 无守卫函数体内 `time.sleep(60)` ⇒ 各红一次
+      （`<module>:51` / `_clean:106`），还原 **8 passed**。门禁：`tests/postgres` **100 passed**
+      （28.29s，DSN pin）、规模门禁 **939 passed**、`ruff format/check` 与 `mypy` 绿、m0 全量
+      **23/23**（首跑 1 红 `python/product-lint` = 矩阵 4 列行 220 字符 `E501` ⇒ 拆成"短表 +
+      逐条要点"，判据同步两段式，断言强度未降）。零产品代码变化（只动 `tests/postgres/**`）。
+      W：判据钉结构不钉时间（守卫函数里的超长 sleep 仍会通过）、相位判据证明的是"测试前提"
+      而非 DB 观测到并发、扰动是测试内 sleep（真饿死会因 30s 相位超时响亮失败）、矩阵只覆盖
+      本文件、矩阵格式本身是判据的一部分。
   - id: EC-05
     criterion: >-
       批量读上限与 Fake 同判（RECHECK-097 W-2 + W-3）：① `dispatch_ownership_many` 加
@@ -191,11 +216,13 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260918-100-dispatch-read-single-snapshot.md
   - .cursor/plans/tasks/PLAN-20260918-101-validation-failure-consumption-adr.md
   - .cursor/plans/tasks/PLAN-20260918-102-console-consumes-rebuild-readiness.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260918-102-console-consumes-rebuild-readiness.md
+  - .cursor/plans/tasks/PLAN-20260918-103-clock-assertion-and-wall-clock-matrix.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260918-103-clock-assertion-and-wall-clock-matrix.md
 memory_entries:
   - MEM-20260918-073
   - MEM-20260918-074
   - MEM-20260918-075
+  - MEM-20260918-076
 ---
 
 # GOAL-20260918-006 — 读面与终态语义收口（自迭代循环）
@@ -292,8 +319,8 @@ RECHECK-098 W-2（历史行要不要 re-freeze/fork）与 RECHECK-090 W-5（响�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 3 已收口，进入 cycle 4 = EC-04（时钟断言去调度依赖 + 真墙钟对照矩阵）**。
-EC-01、EC-02、EC-03 已 PASS（RECHECK-20260918-100 / 101 / 102，均 PASS_WITH_WARNINGS）；
+当前续点：**cycle 4 已收口，进入 cycle 5 = EC-05（批量读显式上限 + Fake 弱同判对齐或显式边界）**。
+EC-01…EC-04 已 PASS（RECHECK-20260918-100 / 101 / 102 / 103，均 PASS_WITH_WARNINGS）；
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -388,6 +415,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 **不得**读作项目安全。本 GOAL 的任何 EC PASS 也不构成整体安全结论。
 
 - 2026-09-18 cycle 3 CI 修复：写回提交（`c5b60e8`）触发的 run **35384309066** 在 console-frontend 红 —— `live-experiment-queue` 的改期 409。根因**实测**（受控探针：到期条目 20s 后改期 409、未来排期 20s 后改期 200）：live app 启动了 15s 的 `ExperimentQueueDispatcher`，而该 spec 入队时未给 `not_before`，条目被派发器认领后离开 QUEUED。修复只动该 spec 的**夹具前提**（入队即给未来排期，与派发器错开），断言与其它用例不动；本地全量 live **38 passed**。
+- 2026-09-18 cycle 4 收口：EC-04 **PASS**（PLAN-20260918-103 / RECHECK-20260918-103 = PASS_WITH_WARNINGS，W-1…W-5）。① 「并发是真的」不再读调度产物：`_ClaimProbe` 记每个 worker 的领循环尝试数与**同一个 `overlap` barrier 的到达序号**，断言 = 所有 worker 尝试 ≥ 1 且序号集合 == {0…N-1}（重叠由构造保证）；同一扰动下旧形态 **3/3 红**（`assert 1 >= 2`，恰好一个 worker 排空 24 条）、新判据 **3/3 绿**，拆掉相位构造新判据自己也红（可识破）。② 真墙钟覆盖矩阵落地：`test_cross_process_real.py` 模块 docstring 给用例 × 等待判据 + 逐条覆盖时序/证伪条件 + 未覆盖 4 条；`tests/postgres/test_wall_clock_coverage_matrix.py` 用 8 条判据钉住（一一对应、判据词汇与数字同 AST 交叉核对、任何 `time.sleep` 必须在含 `deadline` 守卫的函数里、未覆盖小节非空、`timing_sensitive` 在位），4 种退化各被识破一次。定向 `tests/postgres` **100 passed**、规模门禁 **939 passed**、m0 **23/23**；零产品代码变化。CI 台账见迭代日志 cycle 4 行。
 ## 迭代日志
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -395,6 +423,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 1 | PLAN-20260918-100（EC-01：派发读面一次读 = 一条语句 = 一个快照；driver=client-goal / owner=root-agent） | `1338a67`（PG 单语句取齐）、`4da4c31`（SQLite 同形 + 引擎薄封装）、`4fe7f00`（两方言探针用例）、`e99d8a4`（契约/三处文档收敛）、`e3e2253`（规模/类型门禁修正：ruff format + 探针安装的 cast）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 `validate.py` 绿；**先探明再动手**（只读勘察）：确认两条独立语句 + `autocommit=True`（PG）/`SerializedConnection` 只保单语句（SQLite）⇒ 撕裂读真实存在；**并发现 RECHECK-097 W-1 的括注不实**（声称"port docstring 与 `PORTS.md` 已写明不承诺快照一致"，树内只有"每次调用两条 SQL"）⇒ 本 EC 选 (a) 实现而非补免责；交付：`_FACTS_SQL`（`UNION ALL` + 判别列 `kind`）+ `_dispatch_facts`（一次 `execute`），三个入口同源取数；**反证实跑**：两方言各把取数拆回两条独立语句 ⇒ 探针红（PG/SQLite 均 `assert 2 == 1` 与语义断言 `'RETRY_DISPATCH' == 'BOTH'` = 撕裂本体），还原后 **2 passed**；定向（DSN pin）`tests/adapters tests/contracts tests/api tests/postgres` **1432 passed / 5 skipped**（223.34s）；规模门禁 **937 passed**（PG 投影 300 行 / 最长函数 41；SQLite 296 / 47）；文档门 **DOCS-CHECK PASS**；m0 **PASS: profile=m0; 23 deterministic checks**（首跑 2 红：`python/format-check` + `python/typecheck` ⇒ 两文件 `ruff format` + 探针安装 `cast`，复跑全绿） | run **35371528406**（#164，`e3e2253`）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，runner_id 非 0、无重跑） | 首轮三处修正（**未改任何断言**）：① SQLite 装配搬进 `projections.py` 后漏 `decode_timestamp` 导入 ⇒ 10 条红（`NameError`），补导入即绿；② 探针断言顺序：把语义断言放在计数之前，否则反证只停在"2 != 1"、看不到撕裂本体；③ m0 门禁 `python/format-check` 与 `python/typecheck` 红（子集跑绿、全量抓出）⇒ 格式化 + `cast` 修类型，复跑 23/23 | EC-01 **PASS**（RECHECK-20260918-100 = PASS_WITH_WARNINGS，W-1…W-5：语句级≠事务级、单面调用代价未量化、Fake 不适用探针、RECHECK-097 括注不实已登记、未做真并发压测）；EC-02…EC-06 PENDING | cycle 2 = EC-02（`DEAD_LETTER` 消费，二选一；触及 canonical 边界即 BLOCKED） |
 | 2 | PLAN-20260918-101（EC-02 (b)：`DEAD_LETTER` 消费做成"可决策形态"；driver=client-goal / owner=root-agent） | 本次提交（ADR-0030 草案 + INDEX 登记 + 三处声明面指针 + 判据用例 + PLAN/RECHECK/MEM/ALL_PLAN/INDEX/GOAL）；本条推送的 run 按闭合约定在回合汇报给出终态 | 治理 `validate.py` 绿；**先探明再动手**（只读勘察，四件事实逐行对照）：① `task_executor._attempt_once` 先 `engine.complete(outcome="SUCCEEDED")`、`register_and_gate` 之后才跑验收门；② 门拒收只走 run 级（`failure_step` → `deps.fail` → `run_terminals.publish_failed_run` 的 `run.failed`；`on_task_failure: CONTINUE` 时 `run.degraded` 的 `tolerated_failures[].message` 同句），**任务行不动**；③ `ResearchTaskState._TRANSITIONS` 里 `SUCCEEDED` 是终态、**无出边**，`DEAD_LETTER` 只能从 `RETRY_SCHEDULED` 到达 ⇒ **(a) 被 canonical 边界挡住**；④ 声明面已被如实登记但**无权威决策记录**。交付：`docs/adr/ADR-0030-validation-failure-consumption.md`（**Proposed**：Context / Decision needed / Options A–E 逐个代价与收益（含"把门挪到 durable 完成之前"这条不破坏终态语义的路径）/ Why not now / Trigger / Consequences）+ `docs/INDEX.md` 唯一入口 + 三处声明面同源指针；判据 `tests/tooling/test_pending_validation_failure_registration.py` **4 passed**；**反证实跑**：① 删 `task_contracts.yaml` 的 ADR 指针 ⇒ 第 3 条红（1 failed / 3 passed）；② ADR 改 `Status: Accepted` ⇒ 第 1 条红；两次均还原 ⇒ 4 passed；定向 `tests/domain tests/loaders tests/tooling tests/application/run_orchestration` **1537 passed**（9.65s）；`ruff format/check` 938 files 全绿、`mypy` **928 source files** 无问题；文档门 **DOCS-CHECK PASS**；m0 **PASS: profile=m0; 23 deterministic checks** | 本条推送的 run 见回合汇报（按闭合约定，随本条回写的提交自身触发的 run 不再回写文件） | m0 **首跑 1 红**（`framework/run_cursor_framework_evals`，命中既有 flake 配方"Windows 偶发文件占用"）⇒ 隔离复跑 **FRAMEWORK EVAL PASS** + 全量复跑 **23/23**；其余无返工 | EC-02 **PASS**（RECHECK-20260918-101 = PASS_WITH_WARNINGS，W-1…W-5：待拍板≠已解决、选项 D 未实测、存量未盘点、判据只钉同源、ADR 编号无权威登记表）；EC-03…EC-06 PENDING | cycle 3 = EC-03（前端消费 `rebuild` 读面：页面接入 + stub/live e2e + 「读面不预测结果」同源） |
 | 3 | PLAN-20260918-102（EC-03：控制台消费重建读面——页面接入 + stub/live 两链 + 口径同源；driver=client-goal / owner=root-agent） | `7f116d4`（derive）、`49142e2`（页面接入 + 两条 e2e + 替身 run 详情路由 + 文档同源）、本次回写提交（RECHECK-20260918-102 / MEM-20260918-075 / PLAN / ALL_PLAN / INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | 治理 `validate.py` 绿；**先探明再动手**（只读勘察 + 受控探针）：`types.ts` 与 stub 夹具早已带 `rebuild`、`RunPanel` 零消费；起受控探针核对 live 读面 —— `m12_reference_research_v1.yaml` ⇒ 行上 freeze 完整（manifest digest + 语义 digest + 冻结正文）⇒ `SELF_CONTAINED`（run 终态 FAILED 不改变「记录自足」），`console_demo_research_v1.yaml` ⇒ `manifest_digest: null` ⇒ `REFUSED` + `missing: ["manifest_digest"]`，夹具历史行 ⇒ `REFUSED` + 四个字段名 ⇒ 据此决定 live 链用哪条协议（探针进程已收掉）；交付：`RebuildReadiness.tsx`（80 行：三态文案 + `missing` 字段名映射 + 固定注「不预告重建结果」）+ `RunPanel` 渲染分支 + `stub-routes-runs.ts`（新增替身 `GET /runs/{id}`，此前替身没有 run 详情路由）+ stub/live 两条 spec；**反证实跑**：删渲染分支 ⇒ stub spec **2 failed**，还原 ⇒ **2 passed**；定向：stub 全量 **85 passed**、live 全量 **38 passed**、`run_all_checks.py --profile typescript` **9/9 PASS**；设计两门实跑（`design-outline-guard` **6 passed** + `design-fidelity` **2 passed**——该路由基线不选 run ⇒ 像素与结构签名未变，**无需重生成**）；文档门 **DOCS-CHECK PASS**；m0 **PASS: profile=m0; 23 deterministic checks**（实现树首跑即绿）；回写树：framework profile **8/8 PASS**（回写只动 `.cursor/**` 记录，python/typescript 组不读它们） | run **35377791873**（`7f116d4`）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，attempt 1）；run **35382318514**（`49142e2`）：**六个 job 全 success**（同上六项，attempt 1，runner_id 非 0）；run **35384309066**（`c5b60e8`，本行写回提交自身）：console-frontend **1 红**（`live-experiment-queue` 改期 409）⇒ 根因实测 + 修复（见「修复」列），修复提交的 run 见回合汇报 | 首跑 1 红：新 live spec 的内联 `import("@playwright/test").Page` 触发 eslint `no-restricted-syntax` ⇒ 改顶层 `import type { Page }`（**未改任何断言**）；`stub-routes-runs.ts` 按 prettier 重排，三态 fixture 由 spread 助手改为字面量（`exactOptionalPropertyTypes` 下 spread 会引入 `undefined`）；e2e 首次取不到 run（替身 id 取值写成 `split("/")[2]`，实际是索引 3）⇒ 修路由取值；回写树 framework profile 首跑 1 红（`framework/run_cursor_framework_evals` 命中既有 Windows 文件占用配方：`.cursor/runtime/evolution_state.json.tmp` WinError 5）⇒ 隔离复跑 **FRAMEWORK EVAL PASS** + 全量 framework **8/8**；**CI 红根因实测**：写回提交的 console-frontend 红在 `live-experiment-queue` 的改期 409 —— live app 与生产同源启动了 `ExperimentQueueDispatcher`（`services/api/app.py::_start_experiment_queue`，interval 15s），该 spec 入队时未给 `not_before` ⇒ 条目到期后在某次 tick 被认领、离开 QUEUED，CI 负载下「入队→改期」窗口跨过 tick 就 409（旧注释「派发器不在本链路上跑」是错的）；受控复现（8013 探针）：到期条目等 20s ⇒ PATCH **409** `is not QUEUED`，同形态加 `not_before=2030` 等 20s ⇒ PATCH **200**；修复 = spec 入队即给未来排期（把派发器排除在用例窗口外），**断言一字未改**，本地全量 live 复跑 **38 passed** | EC-03 **PASS**（RECHECK-20260918-102 = PASS_WITH_WARNINGS，W-1…W-5：`SOURCE_DEPENDENT` 无 live 证据、`missing` 人话映射部分留白、`frozen_manifest` 标签今天不可达、新面板无像素基线、替身 run 路由只服务受控 fixture）；EC-04…EC-06 PENDING | cycle 4 = EC-04（时钟断言去调度依赖 + 真墙钟对照矩阵） |
+| 4 | PLAN-20260918-103（EC-04：时钟断言去调度依赖 + 真墙钟覆盖矩阵；driver=client-goal / owner=root-agent） | `26bf47e`（相位判据 + 覆盖矩阵 + 机器判据）、本次回写提交（RECHECK-20260918-103 / MEM-20260918-076 / PLAN / ALL_PLAN / INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | 治理 `validate.py` 绿；**先探明再动手**（只读勘察）：旧断言 `sum(... if claimed) >= 2` 读的是调度产物（`Barrier` 只保证同时开始；24 条任务下单线程可合法排空 ⇒ 实测 0.5s 头程即 `assert 1 >= 2`）；`_drain` 无任何相位事实；`test_cross_process_real.py` 的等待面是有界轮询（deadline 40s / 轮询 2s）但**没有覆盖表**。交付：`_ClaimProbe`（领循环尝试数 + **同一个** `overlap` barrier 的到达序号）+ 共享 barrier 强制首次领任务重叠 + 线程异常进 `failures`（不再静默）；`test_cross_process_real.py` 模块 docstring 补覆盖矩阵（用例 × 等待判据 + 逐条覆盖时序/证伪条件 + **未覆盖 4 条**）；新判据 `test_wall_clock_coverage_matrix.py`（8 条：一一对应 / 判据词汇与数字同 AST 交叉核对 / 任何 `time.sleep` 必须在含 `deadline` 守卫的函数里 / 未覆盖小节非空 / `timing_sensitive` 在位）。**反证实跑**：同一扰动下旧形态（每 worker 一个 `Barrier(1)`）+ 旧断言 ⇒ **3/3 红**（`assert 1 >= 2`）、新判据 ⇒ **3/3 绿**、退化形态下新判据也红（序号全 0）；矩阵 4 种退化各红一次（删行 / `SLEEP(3s)` / 模块级 sleep `<module>:51` / 无守卫函数内 sleep `_clean:106`），还原 8 passed。定向 `tests/postgres` **100 passed**（28.29s）、规模门禁 **939 passed**、m0 **23/23**（首跑 1 红 `python/product-lint`=矩阵长行 `E501` ⇒ 拆"短表 + 逐条要点"，断言强度未降） | run **35392731917**（`26bf47e`）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，attempt 1）；本次回写提交自身触发的 run 见回合汇报（按闭合约定不再回写文件） | 首跑 1 红（`python/product-lint`：矩阵 4 列行 220 字符 `E501`）⇒ 拆表 + 判据两段式解析；反证脚本首版两处失真已记录（头程 sleep 曾被 barrier 抵消；无界 sleep 曾注入到有守卫的函数里 ⇒ 判据不报是对的） | EC-04 **PASS**（RECHECK-20260918-103 = PASS_WITH_WARNINGS，W-1…W-5：判据钉结构不钉时间、相位判据证明"测试前提"而非 DB 观测、扰动是测试内 sleep、矩阵只覆盖本文件、矩阵格式本身是判据的一部分）；EC-05…EC-06 PENDING | cycle 5 = EC-05（批量读显式上限 + Fake 弱同判对齐或写成显式边界） |
 
 ## 状态历史
 
