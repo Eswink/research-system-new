@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260918-103](tasks/PLAN-20260918-103-clock-assertion-and-wall-clock-matrix.md) | IN_PROGRESS |
 | [x] | [PLAN-20260918-102](tasks/PLAN-20260918-102-console-consumes-rebuild-readiness.md) | DONE |
 | [x] | [PLAN-20260918-101](tasks/PLAN-20260918-101-validation-failure-consumption-adr.md) | DONE |
 | [x] | [PLAN-20260918-100](tasks/PLAN-20260918-100-dispatch-read-single-snapshot.md) | DONE |
