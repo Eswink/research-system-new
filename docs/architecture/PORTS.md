@@ -312,8 +312,23 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
   （实现里两处共用同一段装配，不许第二套判据）⇒ 逐 run 读与整页读逐字同判；每个请求到的
   `run_id` 都有条目（未知 run 与"没有持有"同判 `NONE`）；空入参返回空 dict 不读库。
   过滤全走**绑定参数**（SQLite：`json_each(?)`；PG：`= ANY(%s)`），SQL 里没有拼进去的值。
-  查询数由"每条 run 两次读"变成"每次调用两条 SQL"；控制面的 N+1 哨兵用例在
-  `tests/api/test_run_dispatch_view_api.py`（列表路径批量读一次、逐 run 读零次）。
+  控制面的 N+1 哨兵用例在 `tests/api/test_run_dispatch_view_api.py`（列表路径批量读一次、
+  逐 run 读零次）。
+- **一次读 = 一条语句 = 一个快照**（GOAL-20260918-006 cycle 1 = EC-01）：两件 canonical
+  事实（重排 + 活租约）由**同一条语句**取出（`UNION ALL` + 判别列），所以组合 `kind` 的
+  两件事实**同刻**——并发写只会让整条语句落在写前或写后，不会出现"重排面已前移、租约面
+  仍是旧值"的撕裂读。PG 侧连接是 `autocommit=True`（每条语句各自取快照）⇒ 这一点由语句
+  本身保证，不依赖隔离级别或显式事务。判据（含"两次取数之间注入外部写"的反证）在
+  `tests/postgres/test_dispatch_read_snapshot_pg.py` 与
+  `tests/adapters/sqlite/test_dispatch_read_snapshot.py`。**注意**：单面调用
+  （`retry_schedule` / `live_lease_holders`）也会读到另一面的行——这是"判据只有一处 +
+  同一快照"的有意代价，行数由 `run_id` 集合界住。
+  **Fake 的显式边界**：Fake 没有 SQL 语句面，其一致性来自"同一段装配在同一次 Python
+  调用内完成"；它**不做**并发写保护（无锁、无隔离级别），强度低于两个持久化实现，
+  不假装同等。
+  （事实更正，GOAL-20260918-006 cycle 1：RECHECK-20260918-097 W-1 曾写"port docstring 与
+  本文件已如实写明不承诺跨表快照一致"——树内当时**没有**这句；本轮把该边界作为**一次读
+  即一个快照**写进契约，而不是留一句免责。）
 
 ### ExecutionJobQueue（`packages/application/ports/execution_job_queue.py`）
 

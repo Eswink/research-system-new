@@ -214,6 +214,8 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
   （`WorkflowEngine.dispatch_ownership_many`，GOAL-005 cycle 5 = EC-05 ①）：单 run 读就是
   批量读的一条（同一段装配）⇒ 逐行判定与 `GET /runs/{id}` 逐字相同，而查询数不再随 run
   数增长。没有 workflow 读面时逐行 `UNKNOWN`（与详情同口径）；空页不读派发面。
+  `kind` 的两件事实出自**同一条语句**（GOAL-20260918-006 cycle 1 = EC-01）⇒ 它们来自
+  **同一个快照**：并发写不会让响应出现"重排面已前移、租约面仍是旧值"的混合态。
 
   **两条容易读错的事实**（同源登记，EC-05 文档面）：① **Fake 实现没有租约过期语义** ——
   它的"活"= 仍在租约表里，过期与 LOST worker 两种情形由 SQLite 注入时钟单测与 PG parity

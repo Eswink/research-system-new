@@ -265,6 +265,14 @@ class WorkflowEngine(Protocol):
         范围与诚实边界：只回答"有没有"与"是谁"（task/worker/fence/到期），**不回答
         "是不是健康"**（心跳新鲜度、执行进度、卡死与否都不在这里）；读面零写、零缓存，
         也不新增"派发原因"字段——`kind` 由两件 canonical 事实组合，不是第二份真相。
+
+        **快照语义**（GOAL-20260918-006 cycle 1 = EC-01）：两件事实出自**同一条语句**，因此是
+        **同一个快照**——组合 `kind` 不会出现"重排面已前移、租约面仍是旧值"的撕裂读
+        （并发写只会让整条语句落在写前或写后）。持久化实现各用本方言的单语句形式
+        （PG：`UNION ALL`；SQLite：`UNION ALL` + `json_each(?)`）；**Fake 无语句面**，
+        其一致性来自"同一段装配在同一次 Python 调用内完成"——Fake **不做**并发写保护
+        （无锁、无隔离级别），这条弱化是显式边界，不是同等的强度。
+
         三实现语义一致；Fake 无租约过期语义（其"活"= 仍在租约表里）由契约用例钉住。
         """
 
@@ -281,6 +289,11 @@ class WorkflowEngine(Protocol):
           不许第二套判据；`kind` 仍由 `DispatchOwnership` 的组合规则算出；
         - **全量条目**：请求的每个 `run_id` 都有条目；没有重排也没有活租约（含未知 run）
           ⇒ `DISPATCH_NONE`（与单 run 读对未知 run 的答案一致）；
+        - **一个快照**（GOAL-20260918-006 cycle 1 = EC-01）：两件事实必须出自**同一条语句**
+          （读面调用内的语句数 == 1），组合 `kind` 的两件事实同刻——不得用两条独立查询
+          各取一件再拼（撕裂读）。用注入写在两次取数之间做反证的用例分别落在
+          `tests/postgres/test_dispatch_read_snapshot_pg.py` 与
+          `tests/adapters/sqlite/test_dispatch_read_snapshot.py`；
         - **零写、零缓存**；空入参返回空 dict（不读库）。
         """
 
