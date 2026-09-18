@@ -55,20 +55,32 @@ class _Runs:
     outcome_state: str = ResearchRunState.State.SUCCEEDED
     boom: bool = False
     compensations: list[tuple[str, str]] = field(default_factory=list)
+    compensation_failures: list[tuple[str, str, str]] = field(default_factory=list)
+    compensation_raises: bool = False
+    failure_event_raises: bool = False
+    boom_only: set[str] | None = None
 
     def has_paused_context(self, run_id: str) -> bool:
         return run_id in self.contexts
 
     def resume_paused(self, run_id: str, run: Any) -> Any:
-        if self.boom:
+        if self.boom and (self.boom_only is None or run_id in self.boom_only):
             raise RuntimeError("resume exploded")
         self.resumed.append(run_id)
         return replace(run, state=self.outcome_state)
 
     def compensate_failed_resume(self, run: Any, failure: BaseException) -> Any:
         """与真实现同形：放回 PAUSED（迁移 + 记原因在真实现里发事件）。"""
+        if self.compensation_raises:
+            raise RuntimeError("compensation exploded")
         self.compensations.append((run.id.value, type(failure).__name__))
         return run.transition(ResearchRunState.Transition.PAUSE)
+
+    def publish_compensation_failure(self, run_id: str, failure: BaseException, state: Any) -> None:
+        """补偿失败留痕（EC-06 (b)）；真实现里这一步是发 canonical 事件。"""
+        if self.failure_event_raises:
+            raise RuntimeError("even the event cannot be published")
+        self.compensation_failures.append((run_id, type(failure).__name__, str(state)))
 
 
 def _run(
@@ -173,6 +185,53 @@ def test_a_failed_resume_is_compensated_back_to_paused() -> None:
         (_RUN_ID, ResearchRunState.State.RUNNING),
         (_RUN_ID, ResearchRunState.State.PAUSED),
     ], "先迁 RUNNING（续跑需要），失败后补偿回 PAUSED——不留悬空 RUNNING"
+
+
+def test_a_failed_compensation_is_recorded_and_the_pass_survives() -> None:
+    """补偿**本身**失败也要留痕（GOAL-006 cycle 6 = EC-06 (b)）——但整轮不因此中断。"""
+    scheduler, _, runs, store = _scheduler()
+    runs.boom = True
+    runs.compensation_raises = True
+
+    assert scheduler._execute_pass() == 0, "补偿都没做成的 run 不算派发成功（也不抛出去）"
+
+    assert runs.compensation_failures == [
+        (_RUN_ID, "RuntimeError", ResearchRunState.State.RUNNING)
+    ], "留痕要带上补偿失败的类型与当时 canonical 仍停的状态"
+    assert store.saved == [(_RUN_ID, ResearchRunState.State.RUNNING)], (
+        "补偿没落库 ⇒ canonical 不被伪造成 PAUSED"
+    )
+
+
+def test_one_bad_run_does_not_break_the_compensation_of_another() -> None:
+    """一条 run 的补偿失败不影响同轮其它 run（既有约定不变）。"""
+    scheduler, workflow, runs, store = _scheduler()
+    runs.boom = True
+    runs.boom_only = {_RUN_ID}
+    runs.compensation_raises = True
+    second = _run()
+    second_id = "5b2c3d4e-6f70-4a8b-9c0d-1e2f3a4b5c6d"
+    store.runs.append(replace(second, id=ID(second_id)))
+    workflow.due[second_id] = ("task-2",)
+    runs.contexts.add(second_id)
+
+    assert scheduler._execute_pass() == 1, "同轮里另一条 run 照常被续跑"
+
+    assert runs.compensation_failures == [(_RUN_ID, "RuntimeError", ResearchRunState.State.RUNNING)]
+    assert store.saved[-1] == (second_id, ResearchRunState.State.SUCCEEDED)
+
+
+def test_even_an_unpublishable_failure_event_does_not_break_the_pass() -> None:
+    """地板（RECHECK-090 W-4 的诚实边界）：连留痕事件都发不出去时仍有既有语义——不中断整轮。"""
+    scheduler, _, runs, store = _scheduler()
+    runs.boom = True
+    runs.compensation_raises = True
+    runs.failure_event_raises = True
+
+    assert scheduler._execute_pass() == 0
+
+    assert runs.compensation_failures == [], "发布面也挂了 ⇒ 只剩遥测（这条边界是显式登记的）"
+    assert store.saved == [(_RUN_ID, ResearchRunState.State.RUNNING)]
 
 
 def test_a_compensated_run_can_be_resumed_on_the_next_pass() -> None:

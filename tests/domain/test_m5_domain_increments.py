@@ -64,6 +64,7 @@ DOCUMENTED_EVENT_TYPES = {
     "run.failed",
     "run.degraded",
     "run.resume_failed",
+    "run.resume_compensation_failed",
 }
 
 
@@ -259,5 +260,6 @@ class TestEventTypeInventory:
         assert actual == DOCUMENTED_EVENT_TYPES
         # 34 → 36（GOAL-004 cycle 3 新增 run.degraded / task.failed 两个**已写进
         # EVENT_MODEL.md 词表**的事件类型）→ 37（GOAL-004 cycle 7 新增 run.resume_failed：
-        # 续跑失败被补偿的记录）；门禁本身不变，只是随词表同步。
-        assert len(actual) == 37
+        # 续跑失败被补偿的记录）→ 38（GOAL-006 cycle 6 新增 run.resume_compensation_failed：
+        # 补偿**本身**失败被留痕的记录）；门禁本身不变，只是随词表同步。
+        assert len(actual) == 38

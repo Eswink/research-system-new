@@ -61,6 +61,10 @@ class EventType(StrEnum):
     # GOAL-004 cycle 7：一次续跑尝试失败并被补偿回停车（canonical 放回 PAUSED）。
     # 事件链是这次失败原因的 canonical 记录——读面不新增"停车原因"字段。
     RUN_RESUME_FAILED = "run.resume_failed"
+    # GOAL-006 cycle 6：**补偿本身**失败（守护线程面 store 不可用等）⇒ run 仍停在原
+    # canonical 状态、下一轮重新评估。此前这条路径是 `except: pass`，事实只在遥测/log 里；
+    # 这条事件把"这次补偿没做成"变成读面（事件链）可判的 canonical 事实。
+    RUN_RESUME_COMPENSATION_FAILED = "run.resume_compensation_failed"
 
 
 @dataclass(frozen=True, slots=True)

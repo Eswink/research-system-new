@@ -42,6 +42,7 @@ run.cancelled
 run.failed
 run.degraded
 run.resume_failed
+run.resume_compensation_failed
 ```
 
 `manifest.frozen` 的 payload 带三项冻结引用：`digest`（覆盖 `frozen_at` 的快照标识）、
@@ -63,6 +64,15 @@ payload **只有 `digest`**（可能另有 `run_id`）。回填路径对缺失�
 尝试执行失败后，canonical 被放回 `PAUSED`，payload 带 `failure_type` / `message` /
 `compensated_to`。失败**不是终态**，所以它不等于 `run.failed`；读面也不新增"停车原因"
 字段——原因只在事件链里（与 GOAL-004 cycle 2 的口径一致）。
+
+`run.resume_compensation_failed` 是**补偿本身失败**的记录（GOAL-20260918-006 cycle 6 =
+EC-06 (b)）：一次补偿尝试（迁移 + 落库）没做成时 run 仍停在原 canonical 状态、下一轮重新
+评估；这条事件让"这次补偿没做成"在读面上可判，而不是只在遥测/log 里（此前该路径是
+`except: pass`）。payload 键：`run_id` / `failure_type` / `message` / `canonical_state`——
+前三个与 `run.resume_failed` 同形但描述的是**补偿**这次的失败，`canonical_state` 是补偿
+失败时 run 仍停在的状态（没有被伪造成 `PAUSED`）。**一等边界**：`run.resume_failed` 的
+payload 只有异常类型与文本，**不含任务级归因**（"哪一步炸的"要读该 run 的事件链上下文，
+本事件与它都不承诺任务/phase 身份）。
 
 ## 2. Event Envelope
 

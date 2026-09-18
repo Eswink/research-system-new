@@ -406,9 +406,20 @@ class RetryDispatchScheduler(PeriodicDaemon):
 
         补偿本身也只在守护线程的能力圈内做：补偿失败（例如 store 不可用）时本 pass 放弃，
         下一轮重新评估——不因为一条 run 的补偿失败中断整轮（既有约定）。
+
+        GOAL-006 cycle 6（EC-06 (b)）：放弃**不等于静默**——补偿失败本身要在 canonical 事件链
+        留一条 `run.resume_compensation_failed`（读面可判），然后才吸收异常。地板：连这条事件
+        都发不出去（发布面也挂了）时只剩遥测，这条边界写在 `run_terminals` 的 docstring 里。
+
+        **可见 ≠ 自动恢复**：失败若发生在补偿的**落库**这一步，canonical 行已停在前一步写的
+        `RUNNING`，而本类的 `_dispatch_due` 只扫 `PAUSED` ⇒ 下一轮不会自动捞回来；那条事件
+        就是它唯一的痕迹（自动修复属新机制与产品决策，不在本 EC 内）。
         """
         try:
             compensated = self._runs.compensate_failed_resume(resumed, failure)
             self._runs_store.save_run(compensated)
-        except Exception:  # noqa: BLE001 - 下一轮重新评估，不拖垮整轮
-            pass
+        except Exception as exc:  # noqa: BLE001 - 下一轮重新评估，不拖垮整轮
+            try:
+                self._runs.publish_compensation_failure(run_id, exc, resumed.state)
+            except Exception:  # noqa: BLE001 - 地板：只剩遥测，仍不拖垮整轮
+                pass

@@ -373,6 +373,19 @@ approve 的**续跑失败**（GOAL-005 cycle 2 = EC-02）：裁决已落库（�
 竞态（上下文已被取走 ⇒ `InvalidInputError`）保持既有 no-op——那种情况下另一个入口
 正在跑这个 run，`RUNNING` 是正确状态。
 
+**补偿失败本身也是可读事实**（GOAL-20260918-006 cycle 6 = EC-06 (b)）：守护线程面补偿
+失败（store 不可用等）时，run 仍停在原 canonical 状态、下一轮重新评估，**并**在事件链里
+记一条 `run.resume_compensation_failed`（payload：`run_id` / `failure_type` / `message` /
+`canonical_state`；`canonical_state` 是补偿失败时 run 仍停在的状态，**没有**被伪造成
+`PAUSED`）⇒ 用 `GET /runs/{id}/events` 就能判"这次补偿没做成"，不必翻遥测/log。
+**地板**：连这条事件也发不出去时只剩遥测（本轮如实登记，不宣称"必然留痕"）。
+
+**两条一等边界**（同源登记，EC-06）：① `run.resume_failed` /
+`run.resume_compensation_failed` 的 payload **不含任务级归因**——"哪一步（哪个 task/phase）
+炸的"要读该 run 的事件链上下文（本读面不承诺任务级归因）；② `/resume` 的续跑失败响应仍是
+`200` + `continuation=FAILED`（与 `NONE` / `REBUILT` 同形状），**结局必须看 `continuation`
+与 canonical 状态**；换成 5xx 之类的传输层信号属产品决策，本轮只如实登记、不改。
+
 ## Tools
 
 ```text

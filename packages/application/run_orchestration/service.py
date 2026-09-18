@@ -58,6 +58,7 @@ from packages.application.run_orchestration.phase_runner import (
 )
 from packages.application.run_orchestration.run_terminals import (
     compensate_failed_resume,
+    publish_compensation_failure,
     publish_degraded_run,
     publish_failed_run,
 )
@@ -324,8 +325,7 @@ class RunOrchestrationService:
     def pause_requested(self, run_id: str) -> bool:
         """协作式暂停谓词：读 canonical run state（派发/执行面唯一暂停事实）。
 
-        未知 run（行尚未落库，如首次执行的起始阶段）→ False：暂停必须先被
-        控制面持久化才会被观测到，不靠进程内标志推断。
+        未知 run（行尚未落库）→ False；不靠进程内标志推断。
         """
         return bool(self._deps.workflow.run_state(run_id) == ResearchRunState.State.PAUSED)
 
@@ -351,21 +351,21 @@ class RunOrchestrationService:
     def compensate_failed_resume(self, run: ResearchRun, failure: BaseException) -> ResearchRun:
         """续跑失败 ⇒ canonical 放回 `PAUSED` 并记原因（GOAL-004 cycle 7 = EC-06）。
 
-        迁移与发事件的动作在 `run_terminals`（450 行上限）；调用方负责把返回的 run 落库。
-        两条入口（API `POST /resume` 与守护线程 `_resume`）共用这一处补偿。
+        迁移与发事件在 `run_terminals`；调用方负责落库（API 与守护线程两条入口共用）。
         """
         compensated: ResearchRun = compensate_failed_resume(self._publish, run, failure)
         return compensated
+
+    def publish_compensation_failure(self, run_id: str, failure: BaseException, state: Any) -> None:
+        """补偿**失败**留痕（GOAL-006 cycle 6 = EC-06 (b)）：静默降级也要在读面可判。"""
+        publish_compensation_failure(self._publish, run_id, failure, state)
 
     def has_waiting_context(self, run_id: str) -> bool:
         """approve 前置探测：无暂存上下文（如进程重启后）不得伪装恢复执行。"""
         return run_id in self._waiting
 
     def reservation_ref(self, run_id: str) -> str | None:
-        """run 的预算预留引用（budget_adjust 干预的 release 输入）。
-
-        进程内记账：本进程启动的 run 才有；None 表示无预留或跨进程重启丢失。
-        """
+        """run 的预算预留引用（budget_adjust 的 release 输入；进程内记账，重启即丢）。"""
         return self._reservation_refs.get(run_id)
 
     def register_reservation_ref(self, run_id: str, ref: str) -> None:

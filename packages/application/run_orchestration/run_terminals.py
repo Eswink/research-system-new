@@ -6,6 +6,10 @@
 
 GOAL-004 cycle 7（EC-06）加入第三个发布：`compensate_failed_resume` —— 续跑**失败**不是
 终态，它把 canonical 放回停车并记录原因，所以它返回改好状态的 run 而不是 `RunOutcome`。
+
+GOAL-006 cycle 6（EC-06 (b)）加入第四个发布：`publish_compensation_failure` —— **补偿本身**
+失败（守护线程面 store 不可用时的 `except: pass`）此前只留在遥测/log；这条发布把"这次补偿
+没做成"写成 canonical 事实，读面（`GET /runs/{id}/events`）据此可判。
 """
 
 from __future__ import annotations
@@ -91,3 +95,31 @@ def compensate_failed_resume(publish: _Publish, run: Any, failure: BaseException
         trace_id="",
     )
     return compensated
+
+
+def publish_compensation_failure(
+    publish: _Publish, run_id: str, failure: BaseException, canonical_state: Any
+) -> None:
+    """补偿失败 ⇒ 在 canonical 事件链留痕（GOAL-006 cycle 6 = EC-06 (b)）。
+
+    守护线程面的补偿失败（store 不可用、发布失败等）此前走 `except: pass`：run 仍停在原
+    canonical 状态、下一轮重新评估，但**这件事本身没有 canonical 痕迹**（RECHECK-090 W-4）。
+    这条事件把"这次补偿没做成"变成可读的事实——读面 `GET /runs/{id}/events` 据此可判，
+    不必去翻遥测/log。
+
+    payload 键（判据按这一行核对）：`run_id` / `failure_type` / `message` / `canonical_state`。
+    前三个与 `run.resume_failed` 同形，但 `failure_type` / `message` 描述的是**补偿**这次的
+    失败（最初那次续跑失败由 `run.resume_failed` 记录）；`canonical_state` 是补偿失败时 run
+    仍停在的状态（**没有**被伪造成 `PAUSED`）。
+    """
+    publish(
+        EventType.RUN_RESUME_COMPENSATION_FAILED,
+        {
+            "run_id": run_id,
+            "failure_type": type(failure).__name__,
+            "message": str(failure),
+            "canonical_state": canonical_state,
+        },
+        run_id=run_id,
+        trace_id="",
+    )
