@@ -60,7 +60,11 @@ idempotency_scope:
 - `on_validation_failure` 的消费为什么仍未做：验收门跑在任务行 **durable `SUCCEEDED` 之后**
   （`task_executor._attempt_once` 先 `engine.complete(...)`，`register_and_gate` 才
   `evaluate_gate`），门拒收时任务行已是终态；按 `DEAD_LETTER` 处置就得把一条 `SUCCEEDED`
-  行改写回去 ⇒ **canonical 状态机改动（ADR 边界）**，登记为后继入口，不在清账里私自实现；
+  行改写回去 ⇒ **canonical 状态机改动（ADR 边界）**，登记为后继入口，不在清账里私自实现。
+  **决策记录**（GOAL-20260918-006 cycle 2 = EC-02）：
+  `docs/adr/ADR-0030-validation-failure-consumption.md`（Status: Proposed）——选项 A–E 的
+  代价与收益、以及"何时必须拍板"的触发条件都在那里；在它被接受之前，"声明它不改变任何
+  判定"就是当前口径；
 - `DEGRADED` 是"活干完了、但有几条被容忍的失败"的诚实状态：不冒充 `SUCCEEDED`，也不把整条
   run 判死（`FAILED` 是终态，那正是 `CONTINUE` 要避免的）。
 

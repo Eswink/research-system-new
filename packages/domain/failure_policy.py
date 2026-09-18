@@ -16,6 +16,11 @@ on_task_failure: FAIL_RUN   # 缺省：终局失败 ⇒ 立刻失败 run（既�
 完成之后才跑，改写一条 `SUCCEEDED` 行属 canonical 状态机改动），属后继入口——如实登记比
 默默忽略更安全。平台自带的示例契约因此只声明**被消费**的键（GOAL-005 cycle 3 = EC-03），
 但用户契约里再写 `on_validation_failure` 照样被点名。
+
+**待拍板的决策在哪**（GOAL-20260918-006 cycle 2 = EC-02）：`on_validation_failure` 的处置
+是 `docs/adr/ADR-0030-validation-failure-consumption.md`（Status: Proposed）——该 ADR 给出
+`SUCCEEDED` 不可回头的状态机事实、选项 A–E 的代价与收益、以及"何时必须拍板"的触发条件。
+在它被接受之前，"声明它不改变任何判定"就是**当前口径**（本模块与示例契约都是这个口径）。
 """
 
 from __future__ import annotations

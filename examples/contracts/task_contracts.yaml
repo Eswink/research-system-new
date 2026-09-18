@@ -20,8 +20,9 @@ task_contracts:
       # 只声明**被消费**的键（GOAL-005 cycle 3 = EC-03）。这里曾同时写着
       # `on_validation_failure` 与 `allow_partial_evidence`，但两者都没有执行期
       # 消费者（验收门跑在任务行 durable 完成之后，改写一条 SUCCEEDED 行属 canonical
-      # 状态机改动）——不生效的策略不进示例。用户契约里的未知键仍由
-      # `failure_policy_view().unhonored` 点名，行为按缺省。
+      # 状态机改动）——不生效的策略不进示例。待拍板的决策见
+      # docs/adr/ADR-0030-validation-failure-consumption.md（Proposed）。用户契约里的
+      # 未知键仍由 `failure_policy_view().unhonored` 点名，行为按缺省。
       on_task_failure: FAIL_RUN  # 缺省值，显式写出
     retry_policy:
       max_attempts: 3
