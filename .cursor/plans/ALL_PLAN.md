@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260918-102](tasks/PLAN-20260918-102-console-consumes-rebuild-readiness.md) | IN_PROGRESS |
 | [x] | [PLAN-20260918-101](tasks/PLAN-20260918-101-validation-failure-consumption-adr.md) | DONE |
 | [x] | [PLAN-20260918-100](tasks/PLAN-20260918-100-dispatch-read-single-snapshot.md) | DONE |
 | [x] | [PLAN-20260918-099](tasks/PLAN-20260918-099-goal-005-closeout-recheck.md) | DONE |
