@@ -66,7 +66,7 @@ exit_criteria:
       「上下文已丢但仍声称等待审批」的不一致态，状态与失败原因可从 canonical 读到；
       重入用例：补偿后再次审批续跑成功；**反证：去掉补偿 ⇒ 对应用例变红**；
       受影响套件 + m0 绿。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       声明未消费项清账（收口结论表第 3 项 / RECHECK-086 W-1 + RECHECK-089 W-1）：
@@ -142,9 +142,11 @@ escalation_triggers:
   - 威胁建模/授权面（BOLA/BFLA）覆盖与受控出网类决策——需用户或 ADR 拍板，本循环不得自行决定
 child_plans:
   - .cursor/plans/tasks/PLAN-20260918-093-security-audit-residual-recheck.md
+  - .cursor/plans/tasks/PLAN-20260918-094-approval-resume-failure-compensation.md
 latest_recheck: null
 memory_entries:
   - MEM-20260918-067
+  - MEM-20260918-068
 ---
 
 # GOAL-20260918-005 — 残留收口与声明清账（自迭代循环）
@@ -165,7 +167,7 @@ token 清理、后继入口第 8 项、450 行硬上限的持续搬迁）按契�
 | EC | 主题 | 来源 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 安全审计残留复核（advisory 署名 + 干净 checkout 重扫 + `scanner_enobufs` 根因/配方） | 收口结论表 1 / RECHECK-091 W-1…W-5 | **PASS**（RECHECK-20260918-093） |
-| EC-02 | `resume_after_approval` 同形未补偿入口 | 收口结论表 2 / RECHECK-090 W-1 | PENDING |
+| EC-02 | `resume_after_approval` 同形未补偿入口 | 收口结论表 2 / RECHECK-090 W-1 | **PASS**（RECHECK-20260918-094） |
 | EC-03 | 声明未消费项清账（`on_validation_failure` / `ClaimRequest.lease_ttl_seconds`） | 收口结论表 3 / RECHECK-086 W-1 + 089 W-1 | PENDING |
 | EC-04 | 时钟/时序风险逐个收口（不做「未观测到失败」式收尾） | 收口结论表 9 / RECHECK-084 W-5 | PENDING |
 | EC-05 | 读面语义边界（列表 N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） | 收口结论表 4 / RECHECK-089 W-2…W-6 | PENDING |
@@ -255,9 +257,10 @@ GOAL-004 EC-06 的判据形状是：**失败即补偿 + 补偿可观测 + 可重
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 1 已收口**（EC-01 PASS + RECHECK-20260918-093 + run 35311496737 六 job 全绿），
-下一条 = **cycle 2 = EC-02**（`resume_after_approval` 同形未补偿入口）：先反向搜索确认
-失败路径当前把 run 留在什么状态、`_waiting` 上下文被 pop 后两条入口各自怎么收敛。
+当前续点：**cycle 2 已收口**（EC-02 PASS + RECHECK-20260918-094 + run 35314730222 六 job 全绿），
+下一条 = **cycle 3 = EC-03**（声明未消费项清账）：先反向搜索 `on_validation_failure` 与
+`ClaimRequest.lease_ttl_seconds` 的全树命中，逐条判定「给真实消费者」还是「从契约/文档
+移除并写明」，两条各自独立处置。
 
 ## 驱动
 
@@ -348,6 +351,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 建档（本文件；driver=client-goal / owner=root-agent） | `6007b01` | `.cursor/skills/governance-check/scripts/validate.py` 绿（本机实跑） | run **35308775303**（#151，`6007b01`）：**failure**——仅 `quality-windows-latest` 红，`python/tests` 里 1 条**既有**并发用例 `OperationalError: database is locked`（12 线程并发写，4/96 次写越过 5 s 预算；其余五 job success） | 该签名此前从未出现（非已知 flake 配方）⇒ 按「产品测试失败」处置：定位为**控制面 SQLite 的 busy_timeout 预算不足**（实测：同一把锁被持 8 s 时，旧预算 5.53 s 即失败、新预算等待 8.02 s 成功）；修复提交 `ef0d722`（`adapters/sqlite/db.py` 的 `BUSY_TIMEOUT_MS` 5 s → 30 s，**断言未改**）→ run **35311496737 六个 job 全 success** | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（安全审计残留复核） |
 | 1 | PLAN-20260918-093（EC-01：安全审计残留复核；driver=client-goal / owner=root-agent） | `3eaa19a`（OSV 探针 + 证据 JSON）、`07fab27`（AST 判据探针）、`04e8c54`（终态记录 + `docs/INDEX.md`）、`e3f0ee4`（PLAN/RECHECK/MEM/ALL_PLAN）、`ef0d722`（CI 修复：SQLite busy timeout） | 治理 validate 绿；定向：`tests/adapters/sqlite` **161 passed**（3.12，含并发池用例）、`tests/tooling/test_python_source_limits.py` **930 passed**、`tests/application/protocol_authoring/test_draft_service.py` **13 passed**；探针自证 `probe_dynamic_sql_forms.py --selftest` **8/8 ok**；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3896 passed / 10 skipped**，561.60s） | run **35311496737**（#152，`ef0d722`）：**六个 job 全 success**（collector-quality / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate / console-frontend，runner_id 非 0，无重跑） | 首跑 CI 红 1 条（并发池用例）⇒ **修产品**（busy timeout）而非改断言；**方法学更正**：上一轮「产品树动态 SQL 零命中（grep）」被 AST 判据更正为「22 处构造、逐处核对为常量/固定记号」（结论未变、依据升级） | EC-01 **PASS**（RECHECK-20260918-093 = PASS_WITH_WARNINGS，W-1…W-5）；EC-02…EC-06 PENDING | cycle 2 = EC-02（`resume_after_approval` 同形未补偿入口） |
+| 2 | PLAN-20260918-094（EC-02：审批通过后续跑失败的补偿；driver=client-goal / owner=root-agent） | `55757a3`（补偿接线 + 4 条用例 + `CONTROL_PLANE_API.md`）、`9af9c18`（PLAN/RECHECK/MEM/ALL_PLAN + 新文件 ruff format） | 治理 validate 绿；**新用例「先纠正了上游告警的错描述」**：W-1 说失败停在 `WAITING_FOR_APPROVAL`，实测 `decide` 先落 `RUNNING` ⇒ 真实缺口是**悬空 RUNNING**；定向（DSN pin）`tests/api+application+contracts+domain+e2e` **1997 passed / 4 skipped**（271.89s）；新用例 **4 passed**、与既有补偿/审批用例合并 **18 passed**；**反证**：补偿换成 `raise exc` ⇒ **2 failed / 2 passed**（红的正是断言补偿的两条）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3901 passed / 10 skipped**，558.25s；首跑红 1 处 = 新增测试文件 ruff format ⇒ 格式化后复跑全绿，未改断言） | run **35314730222**（#155，`9af9c18`）：**六个 job 全 success**（collector-quality / console-frontend / quality-windows-latest / eval-gate / container-quality / quality-ubuntu-latest，无重跑） | m0 首跑 `python/format-check` 红（新文件未格式化）⇒ `ruff format` 后全绿；补偿走**既有域迁移**（`RUNNING --PAUSE--> PAUSED`）⇒ 未新增 canonical 状态，不触 ADR 边界 | EC-02 **PASS**（RECHECK-20260918-094 = **PASS**，W-1…W-4 为沿用 EC-06 的诚实边界）；EC-03…EC-06 PENDING | cycle 3 = EC-03（声明未消费项清账：`on_validation_failure` / `ClaimRequest.lease_ttl_seconds`） |
 
 ## 状态历史
 
@@ -376,3 +380,20 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   未装）；④ 25 条 findings 逐条处置（无产品代码真实缺陷）；⑤ 方法学更正（grep → AST 结构判据）。
   **无产品代码变更**（唯一产品改动是本 cycle 的 CI 修复 `ef0d722`）；`child_plans` 增
   PLAN-20260918-093、`memory_entries` 增 MEM-20260918-067。
+- 2026-09-18 cycle 1 收口提交 CI 记录：head `299ef55` → run **35312655449**（#153）
+  **六个 job 全 success**（记录提交只改 `.cursor/**` 同样触发六 job，按同口径等到终态）。
+- 2026-09-18 cycle 2 收口：EC-02 **PASS**（PLAN-20260918-094 / RECHECK-20260918-094 =
+  **PASS**）。**先纠正上游告警描述再动手**：RECHECK-090 W-1 写「失败后 run 停在
+  `WAITING_FOR_APPROVAL`」，实测 `decide` 端点先按状态机把 run 落成 `RUNNING`
+  （`WAITING_FOR_APPROVAL --APPROVAL_GRANTED--> RUNNING`），`_resume_after_approval` 只捕
+  `InvalidInputError` ⇒ 失败后的真实事实是**悬空 `RUNNING`**（没有执行者、`_waiting` 已被
+  pop、连重入的 `PAUSED → RUNNING` 迁移也走不到）。修复 = 该分支捕获其余异常并调用
+  **与 `resume_paused` 共用的** `compensate_failed_resume`（既有域迁移 `RUNNING --PAUSE-->
+  PAUSED` + `run.resume_failed` 事件），**未新增 canonical 状态/迁移/事件类型**。
+  判据：新用例 4 条（失败 ⇒ store 里是 `PAUSED`；事件三个键；补偿后可重入
+  `continuation=RESUMED`；正常路径与竞态 no-op 不变）；**反证** 2 红（把补偿换成 `raise`
+  ⇒ 只有断言补偿的两条红）；定向 **1997 passed / 4 skipped**；m0 首跑 `python/format-check`
+  红（新文件未格式化）⇒ `ruff format` 后 **23/23**（全量 pytest **3901 passed / 10 skipped**）；
+  CI run **35314730222**（#155，head `9af9c18`）**六个 job 全 success**。产品改动一处
+  （`services/api/routers/approvals.py`）+ 新增测试文件 + 文档段；`child_plans` 增
+  PLAN-20260918-094、`memory_entries` 增 MEM-20260918-068。
