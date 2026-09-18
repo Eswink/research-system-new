@@ -575,3 +575,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   （collector-quality / eval-gate / quality-ubuntu-latest / console-frontend /
   quality-windows-latest / container-quality，runner_id 非 0、无重跑）。**GOAL-005 至此收口**：
   `status: ACHIEVED`，不再有新 cycle；本条之后的记录提交只做 CI 记账（同 GOAL-004 收口口径）。
+- 2026-09-18 收口记录提交的 CI 记录：head `2bddf4f` → run **35338050399**（#163）**六个 job 全 success**
+  （console-frontend / collector-quality / eval-gate / quality-ubuntu-latest /
+  quality-windows-latest / container-quality，runner_id 非 0、无重跑）。**这是本 GOAL 的最后一条
+  记账**：其后不再有内容提交（`status: ACHIEVED`，循环终止）。
