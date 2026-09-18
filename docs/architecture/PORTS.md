@@ -260,6 +260,12 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
 - `TaskLease` 增补 `worker_id` / `fence`（默认值兼容既有构造）；
   `tasks.fence_seq` 单调递增，每次 (re)claim 写入 `leases.fence`，
   completion 校验 `(task_id, lease_id, fence)`（stale generation 拒绝）。
+- **租约 TTL 不在 `ClaimRequest` 里**（GOAL-005 cycle 3 = EC-03）：它是引擎级配置
+  （`SqliteWorkflowEngine` / `PostgresWorkflowEngine` 的构造参数 `lease_ttl_seconds`，
+  默认 300），claim / `renew_lease` / 过期回收判据共用同一个值。请求上曾声明过同名字段
+  但三实现都不读、19 个构造点也没人传 ⇒ 已移除（不是补实现：初始租约按请求给、续租按
+  引擎给会让同一个租约有两个 TTL，要做对得把 TTL 落到 `leases` 行）；
+  `tests/contracts/test_claim_fencing_contract.py` 有用例钉住"这个字段不再存在"。
 
 ### WorkflowEngine 增量（GOAL-004 cycle 2）
 

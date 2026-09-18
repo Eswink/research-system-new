@@ -9,7 +9,7 @@ stale-fence completion rejection.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import fields, replace
 
 import pytest
 
@@ -57,6 +57,19 @@ def _request(worker_id: str = "w1", **overrides: object) -> ClaimRequest:
 
 def _with_fence(lease: TaskLease, *, fence: int) -> TaskLease:
     return replace(lease, fence=fence)
+
+
+def test_claim_request_declares_no_lease_ttl_field() -> None:
+    """GOAL-005 cycle 3 = EC-03: no declaration without a consumer.
+
+    `ClaimRequest.lease_ttl_seconds` used to sit here (default 300, with a
+    `>= 1` check) while all three implementations leased with the *engine*
+    TTL and no call site passed the field — a false affordance. It was
+    removed rather than given invented semantics. Re-introducing per-claim
+    TTL takes a real reader plus the same documents updated; this case going
+    red is that reminder, not a bug.
+    """
+    assert "lease_ttl_seconds" not in {item.name for item in fields(ClaimRequest)}
 
 
 @pytest.mark.parametrize("factory", _FACTORIES)

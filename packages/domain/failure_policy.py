@@ -11,9 +11,11 @@ on_task_failure: FAIL_RUN   # 缺省：终局失败 ⇒ 立刻失败 run（既�
                  CONTINUE   # 声明：失败被记为"被容忍"，剩余工作照跑，最后 DEGRADED
 ```
 
-其余键（如示例里的 `on_validation_failure` / `allow_partial_evidence`）**不假装消费**：
-它们进 `unhonored`，由文档点名原因。`on_validation_failure` 的消费需要"完成任务行之后再
-写一次"（验收门在 durable 完成之后才跑），属后继入口——如实登记比默默忽略更安全。
+其余键（用户契约里任何不在 `KNOWN_KEYS` 的键）**不假装消费**：它们进 `unhonored`，由文档
+点名原因。`on_validation_failure` 的消费需要"完成任务行之后再写一次"（验收门在 durable
+完成之后才跑，改写一条 `SUCCEEDED` 行属 canonical 状态机改动），属后继入口——如实登记比
+默默忽略更安全。平台自带的示例契约因此只声明**被消费**的键（GOAL-005 cycle 3 = EC-03），
+但用户契约里再写 `on_validation_failure` 照样被点名。
 """
 
 from __future__ import annotations

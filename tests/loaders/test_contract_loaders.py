@@ -171,10 +171,24 @@ def test_load_task_contracts_carries_extended_fields() -> None:
     assert discovery.input_schema == "domain_discovery_input_v1"
     assert discovery.budget["model_cost_usd"] is not None
     assert discovery.budget["tool_requests"] is None
-    assert discovery.failure_policy["on_validation_failure"] == "DEAD_LETTER"
+    assert discovery.failure_policy["on_task_failure"] == "FAIL_RUN"
     execution = contracts["experiment_execution"]
     assert execution.input_schema == "experiment_run_input_v1"
     assert execution.output_schema == "experiment_run_output_v1"
+
+
+def test_example_contracts_declare_only_honored_failure_policy_keys() -> None:
+    """示例契约只声明**被消费**的键（GOAL-005 cycle 3 = EC-03）。
+
+    示例是给人抄的：一条不生效的策略写在里面就是陷阱。不变量可判定——每个示例契约的
+    `failure_policy_view().unhonored` 都为空。用户契约里写未知键（包括
+    `on_validation_failure`）照样被点名，见 `tests/domain/test_failure_policy_view.py`。
+    """
+    contracts = load_task_contracts("examples/contracts/task_contracts.yaml")
+    assert contracts, "夹具必须先真的加载到契约"
+    for name, contract in contracts.items():
+        view = contract.failure_policy_view()
+        assert view.unhonored == (), f"{name} 声明了没有消费者的键: {view.unhonored}"
 
 
 def test_load_acceptance_criteria_structured_parameters() -> None:

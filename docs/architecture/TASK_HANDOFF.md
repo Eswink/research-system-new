@@ -50,10 +50,17 @@ idempotency_scope:
 | | `CONTINUE` | 同上 | 失败被记为"被容忍"（`task.failed` 事件 + `TaskOutcome.failure_policy`），**剩余工作照跑**；跑完收敛 `DEGRADED`（非终态）并发 `run.degraded` |
 
 - 已知键取值非法 ⇒ `ValueError`（响亮失败，不静默回退）；
-- 未消费的键（如 `on_validation_failure`、`allow_partial_evidence`）由
+- 未消费的键（用户契约里任何不在 `KNOWN_KEYS` 的键）由
   `TaskContract.failure_policy_view().unhonored` **点名**，行为按缺省；
-  `on_validation_failure` 的消费需要"完成任务行之后再写一次"（验收门在 durable 完成之后
-  才跑），登记为后继入口；
+- **平台自带的示例契约只声明被消费的键**（GOAL-005 cycle 3 = EC-03）：示例里曾同时写着
+  `on_validation_failure: DEAD_LETTER` 与 `allow_partial_evidence: false`，两者都没有执行期
+  消费者——示例不该示范一条不生效的策略，故从 `examples/contracts/task_contracts.yaml`
+  移除（`on_task_failure: FAIL_RUN` 是显式写出的缺省值）。移除的是**声明**，不是这个键本身：
+  用户契约里再写 `on_validation_failure` 照样进 `unhonored` 被点名、行为按缺省；
+- `on_validation_failure` 的消费为什么仍未做：验收门跑在任务行 **durable `SUCCEEDED` 之后**
+  （`task_executor._attempt_once` 先 `engine.complete(...)`，`register_and_gate` 才
+  `evaluate_gate`），门拒收时任务行已是终态；按 `DEAD_LETTER` 处置就得把一条 `SUCCEEDED`
+  行改写回去 ⇒ **canonical 状态机改动（ADR 边界）**，登记为后继入口，不在清账里私自实现；
 - `DEGRADED` 是"活干完了、但有几条被容忍的失败"的诚实状态：不冒充 `SUCCEEDED`，也不把整条
   run 判死（`FAILED` 是终态，那正是 `CONTINUE` 要避免的）。
 

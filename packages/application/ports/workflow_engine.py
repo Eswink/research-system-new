@@ -49,19 +49,22 @@ class ClaimRequest:
     fence). `relax_partitions` is the starvation fallback — when a partition
     has no worker coverage past a threshold, the scheduler may claim by
     capability only.
+
+    租约 TTL **不在请求里**：它是引擎级配置（adapter 构造参数 `lease_ttl_seconds`），
+    续租（`renew_lease`）也按同一个值走——初始租约按请求给、续租按引擎给的话，同一个
+    租约就有两个 TTL。这里曾经声明过 `lease_ttl_seconds`（默认 300），但三个实现都不读
+    它、十九个构造点也没人传（GOAL-005 cycle 3 = EC-03）：给一个没有需求方的字段发明
+    语义比删掉声明更糟，故移除而不是补实现。
     """
 
     worker_id: str
     capabilities: frozenset[str]
     partitions: frozenset[int]
-    lease_ttl_seconds: int = 300
     relax_partitions: bool = False
 
     def __post_init__(self) -> None:
         if not self.worker_id:
             raise ValueError("worker_id must not be empty")
-        if self.lease_ttl_seconds < 1:
-            raise ValueError("lease_ttl_seconds must be >= 1")
 
 
 @dataclass(frozen=True, slots=True)
