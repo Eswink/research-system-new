@@ -65,6 +65,7 @@
 | [MEM-20260917-065](entries/MEM-20260917-065-resume-failure-compensation.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260917-090 |
 | [MEM-20260917-066](entries/MEM-20260917-066-security-audit-terminal-state.md) | ACTIVE | repository | 0.90 | 2027-09-17 | PLAN-20260917-091 |
 | [MEM-20260918-067](entries/MEM-20260918-067-security-audit-residual-recheck.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-093 |
+| [MEM-20260918-068](entries/MEM-20260918-068-approval-resume-compensation.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-094 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

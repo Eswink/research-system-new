@@ -57,7 +57,7 @@ def load_pnpm_lock(path: str) -> list[tuple[str, str]]:
     with open(path, encoding="utf-8") as handle:
         data = yaml.safe_load(handle)
     packages: list[tuple[str, str]] = []
-    for key in (data.get("packages") or {}):
+    for key in data.get("packages") or {}:
         name, _sep, _peer = str(key).partition("(")
         head, sep, tail = name.rpartition("@")
         if not sep or not head:
@@ -87,26 +87,24 @@ def collect_hits(
         vulns = result.get("vulns") or []
         if not vulns:
             continue
-        hits.append(
-            {
-                "package": query["package"]["name"],
-                "version": query["version"],
-                "ecosystem": query["package"]["ecosystem"],
-                "advisories": [
-                    {
-                        "id": vuln.get("id"),
-                        "aliases": vuln.get("aliases", []),
-                        "summary": vuln.get("summary"),
-                        "details": (vuln.get("details") or "")[:400],
-                        "published": vuln.get("published"),
-                        "modified": vuln.get("modified"),
-                        "severity": vuln.get("severity", []),
-                        "url": "https://osv.dev/vulnerability/" + str(vuln.get("id")),
-                    }
-                    for vuln in vulns
-                ],
-            }
-        )
+        hits.append({
+            "package": query["package"]["name"],
+            "version": query["version"],
+            "ecosystem": query["package"]["ecosystem"],
+            "advisories": [
+                {
+                    "id": vuln.get("id"),
+                    "aliases": vuln.get("aliases", []),
+                    "summary": vuln.get("summary"),
+                    "details": (vuln.get("details") or "")[:400],
+                    "published": vuln.get("published"),
+                    "modified": vuln.get("modified"),
+                    "severity": vuln.get("severity", []),
+                    "url": "https://osv.dev/vulnerability/" + str(vuln.get("id")),
+                }
+                for vuln in vulns
+            ],
+        })
     return hits
 
 

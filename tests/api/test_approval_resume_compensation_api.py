@@ -131,9 +131,7 @@ def test_the_compensated_approval_run_is_not_bricked(run_ready_client: TestClien
     assert _stored_state(deps, run_id) == ResearchRunState.State.PAUSED
 
     deps.runs.has_paused_context = lambda run_id: True
-    deps.runs.resume_paused = lambda run_id, run: replace(
-        run, state=ResearchRunState.State.RUNNING
-    )
+    deps.runs.resume_paused = lambda run_id, run: replace(run, state=ResearchRunState.State.RUNNING)
     resumed = run_ready_client.post(
         f"/runs/{run_id}/resume", headers={"Idempotency-Key": f"k-{uuid.uuid4()}"}
     )
