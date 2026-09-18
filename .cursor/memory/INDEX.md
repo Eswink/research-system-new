@@ -68,6 +68,7 @@
 | [MEM-20260918-068](entries/MEM-20260918-068-approval-resume-compensation.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-094 |
 | [MEM-20260918-069](entries/MEM-20260918-069-dead-declarations-get-removed-not-invented.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-095 |
 | [MEM-20260918-070](entries/MEM-20260918-070-clock-injection-discipline.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-096 |
+| [MEM-20260918-071](entries/MEM-20260918-071-batch-read-must-share-one-assembly.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-097 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

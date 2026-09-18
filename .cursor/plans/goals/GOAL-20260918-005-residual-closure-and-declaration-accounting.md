@@ -145,12 +145,14 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260918-094-approval-resume-failure-compensation.md
   - .cursor/plans/tasks/PLAN-20260918-095-declaration-clearing.md
   - .cursor/plans/tasks/PLAN-20260918-096-clock-injection-adjudication.md
+  - .cursor/plans/tasks/PLAN-20260918-097-dispatch-list-batch-read.md
 latest_recheck: null
 memory_entries:
   - MEM-20260918-067
   - MEM-20260918-068
   - MEM-20260918-069
   - MEM-20260918-070
+  - MEM-20260918-071
 ---
 
 # GOAL-20260918-005 — 残留收口与声明清账（自迭代循环）
@@ -174,7 +176,7 @@ token 清理、后继入口第 8 项、450 行硬上限的持续搬迁）按契�
 | EC-02 | `resume_after_approval` 同形未补偿入口 | 收口结论表 2 / RECHECK-090 W-1 | **PASS**（RECHECK-20260918-094） |
 | EC-03 | 声明未消费项清账（`on_validation_failure` / `ClaimRequest.lease_ttl_seconds`） | 收口结论表 3 / RECHECK-086 W-1 + 089 W-1 | **PASS**（RECHECK-20260918-095） |
 | EC-04 | 时钟/时序风险逐个收口（不做「未观测到失败」式收尾） | 收口结论表 9 / RECHECK-084 W-5 | **PASS**（RECHECK-20260918-096） |
-| EC-05 | 读面语义边界（列表 N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） | 收口结论表 4 / RECHECK-089 W-2…W-6 | PENDING |
+| EC-05 | 读面语义边界（列表 N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） | 收口结论表 4 / RECHECK-089 W-2…W-6 | **PASS**（RECHECK-20260918-097，做 ①） |
 | EC-06 | 历史行可追溯（旧 run 无正文 / 旧事件无 `semantic_digest`，三选一） | 收口结论表 6 / RECHECK-084 W-2 + 087 W-1 | PENDING |
 
 **优先级**：EC-01 → EC-02 → EC-03 → EC-04 → EC-05 → EC-06（derive 取 EC 表首个 PENDING；
@@ -261,12 +263,22 @@ GOAL-004 EC-06 的判据形状是：**失败即补偿 + 补偿可观测 + 可重
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 4 已收口**（EC-04 PASS + RECHECK-20260918-096 + PLAN-20260918-096 DONE），
-下一条 = **cycle 5 = EC-05**（读面语义边界，**至少完成一项**）：① `GET /projects/{id}/runs`
-的列表路径不再对每条 run 各做一次 `dispatch_ownership`（批量读面与逐 run 读同判，含三态与
-`dispatch=None` 边界），或 ② PG 的两读（重排 + 租约）落在**同一快照/同一语句**（反证：拆回
-两次读 ⇒ 用例红）；**文档面必做**：`docs/api/CONTROL_PLANE_API.md` 写明 Fake 无过期语义、
-`WORKER_CLAIM` 也覆盖控制面自持租约。
+当前续点：**cycle 5 已收口**（EC-05 ① PASS + RECHECK-20260918-097 + PLAN-20260918-097 DONE；
+收口 CI 见「状态历史」），下一条 = **cycle 6 = EC-06**（历史行可追溯，**三选一**）：
+旧 run 无冻结正文、旧 `manifest.frozen` 事件无 `semantic_digest` 两条历史行缺口。
+(a) 迁移/回填（注意 `escalation_triggers` 的破坏性迁移边界）；(b) **一等事实 + 读面写明**
+（读面能正面回答 "这是历史行、缺的是什么、重建此路不通"，拒绝原因点名事实）；
+(c) 明确不可回填（给判定与拒绝路径点名 + 同源文档）。三条都要求：历史行与当前行在
+**读面可区分**、判定有**用例或结构判据**。已探明的事实（cycle 5 期间只读勘察，未动代码）：
+① 控制面 run 行只持久化两个 digest 与 `protocol_body`，**manifest 正文从不入库**；
+② 现有读面 `RunDetailDto.manifest_semantic_digest` / `protocol_body_digest` 为 `None` 时
+**不区分**"功能前历史行 / 起步时冻结失败"；③ 重建路径的拒绝在
+`convergence.assert_semantics_frozen`（`ManifestFreezeError("frozen manifest lacks a
+semantic digest; fork run or revision required")`）；④ 已存在**显式 opt-in** 的运营工具
+`tools/snapshot_migrate.py`（`keep`/`re-freeze`/`fork` 三分类，非自动 backfill）；
+⑤ 旧事件形状（只有 `digest`）由 `FrozenManifestRefs.from_payload` 落在 `None`，
+但**该 from-event 回填分支没有任何用例**（既有 restart 用例的 run 行自带 semantic digest）
+⇒ (b) 的候选交付面。
 
 ## 驱动
 
@@ -358,8 +370,9 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 0 | 建档（本文件；driver=client-goal / owner=root-agent） | `6007b01` | `.cursor/skills/governance-check/scripts/validate.py` 绿（本机实跑） | run **35308775303**（#151，`6007b01`）：**failure**——仅 `quality-windows-latest` 红，`python/tests` 里 1 条**既有**并发用例 `OperationalError: database is locked`（12 线程并发写，4/96 次写越过 5 s 预算；其余五 job success） | 该签名此前从未出现（非已知 flake 配方）⇒ 按「产品测试失败」处置：定位为**控制面 SQLite 的 busy_timeout 预算不足**（实测：同一把锁被持 8 s 时，旧预算 5.53 s 即失败、新预算等待 8.02 s 成功）；修复提交 `ef0d722`（`adapters/sqlite/db.py` 的 `BUSY_TIMEOUT_MS` 5 s → 30 s，**断言未改**）→ run **35311496737 六个 job 全 success** | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（安全审计残留复核） |
 | 1 | PLAN-20260918-093（EC-01：安全审计残留复核；driver=client-goal / owner=root-agent） | `3eaa19a`（OSV 探针 + 证据 JSON）、`07fab27`（AST 判据探针）、`04e8c54`（终态记录 + `docs/INDEX.md`）、`e3f0ee4`（PLAN/RECHECK/MEM/ALL_PLAN）、`ef0d722`（CI 修复：SQLite busy timeout） | 治理 validate 绿；定向：`tests/adapters/sqlite` **161 passed**（3.12，含并发池用例）、`tests/tooling/test_python_source_limits.py` **930 passed**、`tests/application/protocol_authoring/test_draft_service.py` **13 passed**；探针自证 `probe_dynamic_sql_forms.py --selftest` **8/8 ok**；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3896 passed / 10 skipped**，561.60s） | run **35311496737**（#152，`ef0d722`）：**六个 job 全 success**（collector-quality / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate / console-frontend，runner_id 非 0，无重跑） | 首跑 CI 红 1 条（并发池用例）⇒ **修产品**（busy timeout）而非改断言；**方法学更正**：上一轮「产品树动态 SQL 零命中（grep）」被 AST 判据更正为「22 处构造、逐处核对为常量/固定记号」（结论未变、依据升级） | EC-01 **PASS**（RECHECK-20260918-093 = PASS_WITH_WARNINGS，W-1…W-5）；EC-02…EC-06 PENDING | cycle 2 = EC-02（`resume_after_approval` 同形未补偿入口） |
 | 2 | PLAN-20260918-094（EC-02：审批通过后续跑失败的补偿；driver=client-goal / owner=root-agent） | `55757a3`（补偿接线 + 4 条用例 + `CONTROL_PLANE_API.md`）、`9af9c18`（PLAN/RECHECK/MEM/ALL_PLAN + 新文件 ruff format） | 治理 validate 绿；**新用例「先纠正了上游告警的错描述」**：W-1 说失败停在 `WAITING_FOR_APPROVAL`，实测 `decide` 先落 `RUNNING` ⇒ 真实缺口是**悬空 RUNNING**；定向（DSN pin）`tests/api+application+contracts+domain+e2e` **1997 passed / 4 skipped**（271.89s）；新用例 **4 passed**、与既有补偿/审批用例合并 **18 passed**；**反证**：补偿换成 `raise exc` ⇒ **2 failed / 2 passed**（红的正是断言补偿的两条）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3901 passed / 10 skipped**，558.25s；首跑红 1 处 = 新增测试文件 ruff format ⇒ 格式化后复跑全绿，未改断言） | run **35314730222**（#155，`9af9c18`）：**六个 job 全 success**（collector-quality / console-frontend / quality-windows-latest / eval-gate / container-quality / quality-ubuntu-latest，无重跑） | m0 首跑 `python/format-check` 红（新文件未格式化）⇒ `ruff format` 后全绿；补偿走**既有域迁移**（`RUNNING --PAUSE--> PAUSED`）⇒ 未新增 canonical 状态，不触 ADR 边界 | EC-02 **PASS**（RECHECK-20260918-094 = **PASS**，W-1…W-4 为沿用 EC-06 的诚实边界）；EC-03…EC-06 PENDING | cycle 3 = EC-03（声明未消费项清账：`on_validation_failure` / `ClaimRequest.lease_ttl_seconds`） |
-| 3 | PLAN-20260918-095（EC-03：声明未消费项清账；driver=client-goal / owner=root-agent） | `053301a`（port 移除请求级 TTL + 示例契约清账 + 两件判据用例 + 四处文档同源）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 validate 绿；**反向搜索（判据）**：`lease_ttl_seconds` 读者 0（三实现只读引擎级 `self._lease_ttl`）、19 个 `ClaimRequest(...)` 构造点无一传它；`on_validation_failure` 只进 `unhonored`；定向（DSN pin）`tests/api+adapters+e2e+contracts+application+domain+loaders` **2474 passed / 7 skipped**（355.46s）；**反证两跑**：① 把 `lease_ttl_seconds` 放回 `ClaimRequest` ⇒ **1 failed / 18 passed / 9 skipped**、② 把 `on_validation_failure` 放回示例契约 ⇒ **1 failed / 21 passed**（各只红对应的钉住用例）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed / 10 skipped**，479.83s；首跑红 1 处 = RECHECK 缺 `## 结论` 章节 ⇒ 补齐后复跑全绿） | run（见「状态历史」，本轮收口 CI 到终态后补记） | m0 首跑 `framework/validate` 红（RECHECK 缺章节，记录未写完的中间态）⇒ 补章节后 23/23；EC-03 原文「从 port 与三个实现的构造参数中移除写明」按「移除**请求级**声明 + 写明**引擎级**位置」判读——引擎级 `lease_ttl_seconds` **是被读的**（claim/`renew_lease`/回收共用），删它会砍真实能力（RECHECK W-2） | EC-03 **PASS**（RECHECK-20260918-095 = PASS_WITH_WARNINGS，W-1…W-4）；EC-04…EC-06 PENDING | cycle 4 = EC-04（时钟/时序风险逐个判定；枚举面 = 12 个注入时钟的 PG 用例文件） |
-| 4 | PLAN-20260918-096（EC-04：时钟/时序风险逐个判定；driver=client-goal / owner=root-agent） | 本次回写提交（只读探针 + `PORTS.md` 时钟纪律段 + PLAN/RECHECK/MEM/ALL_PLAN/GOAL） | 治理 validate 绿；**枚举以脚本为判据**（`tools/probes/enumerate_clock_injected_pg_tests.py`，AST + 行扫描，只读）：27 个 PG 用例文件 / **12 个注入时钟** / **0 处墙钟读** / 6 个含"无时钟构造点"（逐用例核对）；**逐文件判定 12/12「安全」**，依据 = 写入路径（`db_time_expr`/`server_now` 是写时钟敏感列与做比较的**同一个源**；全树唯一无条件 `now()` 的 SQL 是 `outbox_events.created_at`，断言只按事件类型成员）；`grep now() tests/postgres/*.py` 只剩一行文档字符串（与 W-5「修复后为零」一致）；定向 `tests/postgres` **91 passed**（27.92s）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed / 10 skipped**，505.98s） | run（见「状态历史」，收口 CI 到终态后补记） | 无「修复」项 ⇒ 无"去掉修复"式反证；判定的判别力来自**结构可复核**（如 `next_retry_at == START+3600` ← `projections.retry_schedule(server_now)`，改回 SQL `now()` 该断言即红） | EC-04 **PASS**（RECHECK-20260918-096 = PASS_WITH_WARNINGS，W-1…W-4：并发条数断言的调度依赖、parity 无时钟分支无调用点、WorkerRegistry 生产用 DB 时钟、真墙钟矩阵有意在外）；EC-05/EC-06 PENDING | cycle 5 = EC-05（读面语义边界：N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） |
+| 3 | PLAN-20260918-095（EC-03：声明未消费项清账；driver=client-goal / owner=root-agent） | `053301a`（port 移除请求级 TTL + 示例契约清账 + 两件判据用例 + 四处文档同源）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 validate 绿；**反向搜索（判据）**：`lease_ttl_seconds` 读者 0（三实现只读引擎级 `self._lease_ttl`）、19 个 `ClaimRequest(...)` 构造点无一传它；`on_validation_failure` 只进 `unhonored`；定向（DSN pin）`tests/api+adapters+e2e+contracts+application+domain+loaders` **2474 passed / 7 skipped**（355.46s）；**反证两跑**：① 把 `lease_ttl_seconds` 放回 `ClaimRequest` ⇒ **1 failed / 18 passed / 9 skipped**、② 把 `on_validation_failure` 放回示例契约 ⇒ **1 failed / 21 passed**（各只红对应的钉住用例）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed / 10 skipped**，479.83s；首跑红 1 处 = RECHECK 缺 `## 结论` 章节 ⇒ 补齐后复跑全绿） | run **35321234815**（#157，`43933a1`）：**六个 job 全 success**（runner_id 非 0、无重跑） | m0 首跑 `framework/validate` 红（RECHECK 缺章节，记录未写完的中间态）⇒ 补章节后 23/23；EC-03 原文「从 port 与三个实现的构造参数中移除写明」按「移除**请求级**声明 + 写明**引擎级**位置」判读——引擎级 `lease_ttl_seconds` **是被读的**（claim/`renew_lease`/回收共用），删它会砍真实能力（RECHECK W-2） | EC-03 **PASS**（RECHECK-20260918-095 = PASS_WITH_WARNINGS，W-1…W-4）；EC-04…EC-06 PENDING | cycle 4 = EC-04（时钟/时序风险逐个判定；枚举面 = 12 个注入时钟的 PG 用例文件） |
+| 4 | PLAN-20260918-096（EC-04：时钟/时序风险逐个判定；driver=client-goal / owner=root-agent） | 本次回写提交（只读探针 + `PORTS.md` 时钟纪律段 + PLAN/RECHECK/MEM/ALL_PLAN/GOAL） | 治理 validate 绿；**枚举以脚本为判据**（`tools/probes/enumerate_clock_injected_pg_tests.py`，AST + 行扫描，只读）：27 个 PG 用例文件 / **12 个注入时钟** / **0 处墙钟读** / 6 个含"无时钟构造点"（逐用例核对）；**逐文件判定 12/12「安全」**，依据 = 写入路径（`db_time_expr`/`server_now` 是写时钟敏感列与做比较的**同一个源**；全树唯一无条件 `now()` 的 SQL 是 `outbox_events.created_at`，断言只按事件类型成员）；`grep now() tests/postgres/*.py` 只剩一行文档字符串（与 W-5「修复后为零」一致）；定向 `tests/postgres` **91 passed**（27.92s）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed / 10 skipped**，505.98s） | run **35322946077**（#158，`3358b2e`）：**六个 job 全 success**（runner_id 非 0、无重跑） | 无「修复」项 ⇒ 无"去掉修复"式反证；判定的判别力来自**结构可复核**（如 `next_retry_at == START+3600` ← `projections.retry_schedule(server_now)`，改回 SQL `now()` 该断言即红） | EC-04 **PASS**（RECHECK-20260918-096 = PASS_WITH_WARNINGS，W-1…W-4：并发条数断言的调度依赖、parity 无时钟分支无调用点、WorkerRegistry 生产用 DB 时钟、真墙钟矩阵有意在外）；EC-05/EC-06 PENDING | cycle 5 = EC-05（读面语义边界：N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） |
+| 5 | PLAN-20260918-097（EC-05 ①：列表路径的批量派发读面；driver=client-goal / owner=root-agent） | `5fce188`（port `dispatch_ownership_many` + 三实现共用装配 + 控制面列表改批量读 + 用例与反证 + 两处文档 + OpenAPI 快照再生成）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 validate 绿；**先确认 N+1 真实存在**（`list_runs` → `_detail_dto` → 每条一次 `dispatch_ownership`，每次两条 SQL ⇒ `2N`）；**同判是结构性的**：单 run 读改成"批量读的一条"（三实现共用 `_dispatch_ownerships`/`_ownership_of`），契约用例三实现断言"逐字相等"（含未知 run ⇒ `NONE` 条目、空入参 ⇒ 空 dict）；**N+1 哨兵**用 adapter call log（列表后批量 +1、逐 run 零次）；**反证实跑**：列表路径改回逐 run 读 ⇒ `-k list` **1 failed / 3 passed / 7 deselected**（`assert 0 == (0 + 1)`）；定向（DSN pin）`tests/api+contracts+adapters/sqlite+postgres+adapters` **1425 passed / 5 skipped**（235.04s）；返工后复跑 `tests/api+contracts+adapters/sqlite` **1053 passed / 2 skipped**；规模门禁 `test_python_source_limits` **932 passed**（PG 引擎 459 → 447 行）；过滤全走绑定参数（`json_each(?)` / `= ANY(%s)`）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3914 passed / 10 skipped**，468.62s） | run（见「状态历史」，本轮收口 CI 到终态后补记） | 首轮改动后引擎里 `retry_schedule` 仍调旧别名 ⇒ 10 条红（`NameError`）⇒ **改产品代码**（改用批量投影的单条取值），**未改断言**，复跑全绿；收口门禁返工两处：① `python/product-lint` 红（新 import 未排序）⇒ 合并既有 import；② PG 引擎 459 > 450 行（规模门禁红）⇒ **搬代码**到新模块 `adapters/postgres/workflow_dispatch.py`（447 行），**未动门禁**；EC-05 ② （PG 两读快照）本轮**不做**（EC-05 允许至少一项），边界留在 port docstring / `PORTS.md` / RECHECK W-1 | EC-05 **PASS**（RECHECK-20260918-097 = PASS_WITH_WARNINGS，W-1…W-4）；EC-06 PENDING | cycle 6 = EC-06（历史行可追溯，三选一） |
 
 ## 状态历史
 
@@ -425,7 +438,9 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   `## 结论` 章节，记录未写完的中间态）⇒ 补齐后 **PASS: profile=m0; 23 deterministic checks**
   （全量 pytest **3903 passed / 10 skipped**，479.83s）。产品改动 5 文件 + 2 测试文件 +
   文档 4 处；`child_plans` 增 PLAN-20260918-095、`memory_entries` 增 MEM-20260918-069。
-  2026-09-18 本轮收口提交 CI 到终态后补记（同前两轮口径）。
+- 2026-09-18 cycle 3 收口提交 CI 记录：head `43933a1` → run **35321234815**（#157）
+  **六个 job 全 success**（eval-gate / console-frontend / collector-quality /
+  container-quality / quality-ubuntu-latest / quality-windows-latest，runner_id 非 0、无重跑）。
 - 2026-09-18 cycle 4 收口：EC-04 **PASS**（PLAN-20260918-096 / RECHECK-20260918-096 =
   PASS_WITH_WARNINGS，W-1…W-4）。**先把枚举做成脚本判据**（不靠记忆）：
   `tools/probes/enumerate_clock_injected_pg_tests.py`（只读，AST + 行扫描）实跑 ⇒
@@ -449,3 +464,31 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   的「时钟注入纪律」段）；`child_plans` 增 PLAN-20260918-096、`memory_entries` 增
   MEM-20260918-070。**未宣称"时序风险已清空"**：真墙钟矩阵
   `test_cross_process_real.py`（`timing_sensitive`）有意不在枚举面内（W-4）。
+- 2026-09-18 cycle 4 收口提交 CI 记录：head `3358b2e` → run **35322946077**（#158）
+  **六个 job 全 success**（console-frontend / container-quality / collector-quality /
+  quality-windows-latest / eval-gate / quality-ubuntu-latest，runner_id 非 0、无重跑）。
+- 2026-09-18 cycle 5 收口：EC-05 **PASS**（PLAN-20260918-097 / RECHECK-20260918-097 =
+  PASS_WITH_WARNINGS，W-1…W-4），做的是 **①（列表 N+1）**。**先确认 N+1 真实存在**：
+  `GET /projects/{id}/runs` 对每条 run 各调一次 `dispatch_ownership`（每次内部两条读）
+  ⇒ 查询数 `2N`。交付：port 新增 `dispatch_ownership_many(run_ids)`；三实现的单 run 读
+  改成"批量读的**一条**"（SQLite/PG 共用 `_dispatch_ownerships`、Fake 共用 `_ownership_of`）
+  ⇒ 同判是**结构性**的而不是两边各写一套；投影层新增批量查询（SQLite `json_each(?)`、
+  PG `= ANY(%s)`，**全绑定参数**，`retry_schedules`/`live_lease_holders_many` 供单 run 版
+  复用）；控制面列表一次批量读 + 逐行装配。判据三件：① 契约用例三实现断言"批量 == 逐 run"
+  （含未知 run 是 `NONE` 条目、空入参空 dict）；② **N+1 哨兵**用 adapter call log
+  （整页后批量 +1、逐 run **零次**）；③ **反证实跑**：把列表路径改回逐 run 读 ⇒ `-k list`
+  **1 failed / 3 passed**（`assert 0 == (0 + 1)`）。EC-05 的**文档面**（必做）写进
+  `CONTROL_PLANE_API.md`：Fake **无租约过期语义**（"活"= 仍在租约表里）、
+  `WORKER_CLAIM` **也覆盖控制面自持租约**（`worker_id=null`）。
+  **收口门禁返工（如实记）**：① m0 首跑 `python/product-lint` 红（新 import 未排序）；
+  ② 复跑规模门禁红（`adapters/postgres/workflow_engine.py` 459 > 450 行）⇒ **搬代码**
+  （不碰门禁）：把派发读面的装配与记账移到新模块 `adapters/postgres/workflow_dispatch.py`
+  （与既有 `workflow_claim`/`workflow_ops`/`workflow_submit` 同形），引擎方法只留
+  `_ensure_open` + 错误边界，文件 **447 行**；③ 列表路由 docstring 改成**消费者可读**的
+  说明（不含 cycle/EC 编号）并**重新生成** `docs/api/openapi.m13.json`（1 处 `description`
+  变化，随本轮提交——**不是"快照没变"**）。定向（DSN pin）**1425 passed / 5 skipped**，
+  返工后复跑 **1053 passed / 2 skipped**；m0 **PASS: profile=m0; 23 deterministic checks**
+  （全量 pytest **3914 passed / 10 skipped**，468.62s）。产品改动 + 文档 3 处 + 快照 1 处 +
+  2 个测试文件；`child_plans` 增 PLAN-20260918-097、`memory_entries` 增 MEM-20260918-071。
+  EC-05 ② （PG 两读快照一致性）**未做**（EC-05 允许"至少一项"）：批量读消掉的是 N+1，
+  不是撕裂读；诚实边界仍在 port docstring 与 `PORTS.md`（W-1）。

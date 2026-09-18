@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260918-097](tasks/PLAN-20260918-097-dispatch-list-batch-read.md) | DONE |
 | [x] | [PLAN-20260918-096](tasks/PLAN-20260918-096-clock-injection-adjudication.md) | DONE |
 | [x] | [PLAN-20260918-095](tasks/PLAN-20260918-095-declaration-clearing.md) | DONE |
 | [x] | [PLAN-20260918-094](tasks/PLAN-20260918-094-approval-resume-failure-compensation.md) | DONE |
