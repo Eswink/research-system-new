@@ -579,3 +579,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   （console-frontend / collector-quality / eval-gate / quality-ubuntu-latest /
   quality-windows-latest / container-quality，runner_id 非 0、无重跑）。**这是本 GOAL 的最后一条
   记账**：其后不再有内容提交（`status: ACHIEVED`，循环终止）。
+- 2026-09-18 终态记账：head `cf09efc` → run **35339327745**（#164）**六个 job 全 success**
+  （collector-quality / eval-gate / container-quality / quality-ubuntu-latest /
+  quality-windows-latest / console-frontend）。**本 GOAL 的 CI 台账至此闭合**：cycle 1…7 与
+  全部记账提交的 run 均已轮询到终态；此后不再新增提交。
