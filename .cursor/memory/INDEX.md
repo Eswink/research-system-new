@@ -70,6 +70,7 @@
 | [MEM-20260918-070](entries/MEM-20260918-070-clock-injection-discipline.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-096 |
 | [MEM-20260918-071](entries/MEM-20260918-071-batch-read-must-share-one-assembly.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-097 |
 | [MEM-20260918-072](entries/MEM-20260918-072-rebuild-readiness-names-the-missing-fact.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-098 |
+| [MEM-20260918-073](entries/MEM-20260918-073-single-statement-snapshot-for-composite-reads.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-100 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

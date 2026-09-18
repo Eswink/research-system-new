@@ -51,7 +51,15 @@ exit_criteria:
       **PG parity**（SQLite/Fake 与 PG 在快照语义上的同判形态写明；不一致处点名为显式边界）+
       受影响套件（含 `tests/postgres`）+ m0 绿。选 (b) 时：ADR 草案/一等事实文档在树 +
       三处契约逐处一致（反向搜索快照相关措辞）。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      PLAN-20260918-100 / RECHECK-20260918-100（PASS_WITH_WARNINGS，W-1…W-5）；选 (a)
+      实现：两方言各一条 `UNION ALL` 语句（判别列 `kind`）取齐两件事实，三个入口同源
+      （`_FACTS_SQL` / `_dispatch_facts`）；探针用例确定性注入外部写 ⇒ 答案取写前快照、
+      语句数 == 1、写入事后可见；**反证实跑**：拆回两次独立取数 ⇒ 两方言各 1 红
+      （`2 == 1` + 撕裂本体 `'RETRY_DISPATCH' == 'BOTH'`），还原绿；定向
+      **1432 passed / 5 skipped**、规模门禁 **937 passed**、文档门 PASS；三处契约/文档
+      同源并登记 RECHECK-097 W-1 括注不实的事实更正。
   - id: EC-02
     criterion: >-
       `DEAD_LETTER` 消费（GOAL-005 收口结论第 3 项 / RECHECK-095 W-2，承接其 EC-03 余项）：
@@ -148,9 +156,11 @@ escalation_triggers:
   - 「按声明给 adapter 接线」与 `tool_pack.*`/脚本策略（GOAL-004 后继入口第 8 项）——受控出网与产品决策，需用户或 ADR 拍板
   - 威胁建模/授权面（BOLA/BFLA）覆盖与受控出网类决策——需用户或 ADR 拍板，本循环不得自行决定
   - 依赖 pin 升级（`undici` / `vite` / `yaml` 等有修复版本的包）——上游 pin 变更，需用户或 ADR 拍板
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260918-100-dispatch-read-single-snapshot.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - MEM-20260918-073
 ---
 
 # GOAL-20260918-006 — 读面与终态语义收口（自迭代循环）
@@ -168,7 +178,7 @@ GOAL-005 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 
 | EC | 主题 | 来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | PG 两读快照一致性（实现一致读 或 ADR 级论证 + 契约收敛） | GOAL-005 收口结论 2 / RECHECK-097 W-1 | PENDING |
+| EC-01 | PG 两读快照一致性（实现一致读 或 ADR 级论证 + 契约收敛） | GOAL-005 收口结论 2 / RECHECK-097 W-1 | **PASS**（RECHECK-20260918-100，做 (a)） |
 | EC-02 | `DEAD_LETTER` 消费（既有边界内实现 或 ADR 草案 + 权威登记 + 同源收敛） | GOAL-005 收口结论 3 / RECHECK-095 W-2 | PENDING |
 | EC-03 | 前端消费重建读面（页面接入 + stub/live e2e + 「不预测结果」同源） | GOAL-005 收口结论 4 / RECHECK-098 W-3 | PENDING |
 | EC-04 | 时钟断言去调度依赖 + 真墙钟对照矩阵（或一等事实 + 结构判据） | GOAL-005 收口结论 4 / RECHECK-096 W-1 + W-4 | PENDING |
@@ -247,8 +257,9 @@ RECHECK-098 W-2（历史行要不要 re-freeze/fork）与 RECHECK-090 W-5（响�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**建档完成即进入 cycle 1 = EC-01（PG 两读快照一致性）**。状态以本文件
-「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
+当前续点：**cycle 1 已收口，进入 cycle 2 = EC-02（`DEAD_LETTER` 消费）**。EC-01 已 PASS
+（RECHECK-20260918-100 = PASS_WITH_WARNINGS）；状态以本文件「迭代日志」末行 + 工作树实况
+为准；不凭记忆假设上一轮状态。
 
 ## 驱动
 
@@ -345,7 +356,8 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 建档（本文件；driver=client-goal / owner=root-agent） | 本次建档提交 | 待记（governance validate 绿 + m0 + 建档 CI） | 待记 | — | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（PG 两读快照一致性） |
+| 0 | 建档（本文件；driver=client-goal / owner=root-agent） | `55d789b` | 治理 `validate.py` 绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest 通过，本机 DSN pin 配方） | run **35366755971**（#163，`55d789b`）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，runner_id 非 0、无重跑） | 无 | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（PG 两读快照一致性） |
+| 1 | PLAN-20260918-100（EC-01：派发读面一次读 = 一条语句 = 一个快照；driver=client-goal / owner=root-agent） | `1338a67`（PG 单语句取齐）、`4da4c31`（SQLite 同形 + 引擎薄封装）、`4fe7f00`（两方言探针用例）、`e99d8a4`（契约/三处文档收敛）、`e3e2253`（规模/类型门禁修正：ruff format + 探针安装的 cast）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 `validate.py` 绿；**先探明再动手**（只读勘察）：确认两条独立语句 + `autocommit=True`（PG）/`SerializedConnection` 只保单语句（SQLite）⇒ 撕裂读真实存在；**并发现 RECHECK-097 W-1 的括注不实**（声称"port docstring 与 `PORTS.md` 已写明不承诺快照一致"，树内只有"每次调用两条 SQL"）⇒ 本 EC 选 (a) 实现而非补免责；交付：`_FACTS_SQL`（`UNION ALL` + 判别列 `kind`）+ `_dispatch_facts`（一次 `execute`），三个入口同源取数；**反证实跑**：两方言各把取数拆回两条独立语句 ⇒ 探针红（PG/SQLite 均 `assert 2 == 1` 与语义断言 `'RETRY_DISPATCH' == 'BOTH'` = 撕裂本体），还原后 **2 passed**；定向（DSN pin）`tests/adapters tests/contracts tests/api tests/postgres` **1432 passed / 5 skipped**（223.34s）；规模门禁 **937 passed**（PG 投影 300 行 / 最长函数 41；SQLite 296 / 47）；文档门 **DOCS-CHECK PASS**；m0 **PASS: profile=m0; 23 deterministic checks**（首跑 2 红：`python/format-check` + `python/typecheck` ⇒ 两文件 `ruff format` + 探针安装 `cast`，复跑全绿） | run **35371528406**（#164，`e3e2253`）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，runner_id 非 0、无重跑） | 首轮三处修正（**未改任何断言**）：① SQLite 装配搬进 `projections.py` 后漏 `decode_timestamp` 导入 ⇒ 10 条红（`NameError`），补导入即绿；② 探针断言顺序：把语义断言放在计数之前，否则反证只停在"2 != 1"、看不到撕裂本体；③ m0 门禁 `python/format-check` 与 `python/typecheck` 红（子集跑绿、全量抓出）⇒ 格式化 + `cast` 修类型，复跑 23/23 | EC-01 **PASS**（RECHECK-20260918-100 = PASS_WITH_WARNINGS，W-1…W-5：语句级≠事务级、单面调用代价未量化、Fake 不适用探针、RECHECK-097 括注不实已登记、未做真并发压测）；EC-02…EC-06 PENDING | cycle 2 = EC-02（`DEAD_LETTER` 消费，二选一；触及 canonical 边界即 BLOCKED） |
 
 ## 状态历史
 
@@ -353,3 +365,12 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   恢复条件（用户新建承接 GOAL）建立（用户 goal 模式指令：承接 GOAL-005 收口登记的残留项
   并自动化循环推进、无需逐轮确认）；`status: ACTIVE`；EC-01…EC-06 全 PENDING；
   GOAL-005 / GOAL-004（ACHIEVED）与 GOAL-003（BLOCKED）保持只读。
+- 2026-09-18 建档 CI（run **35366755971**，head `55d789b`）：**六个 job 全 success**；
+  本地 m0 **23/23**。cycle 0 收口。
+- 2026-09-18 cycle 1 收口：EC-01 **PASS**（PLAN-20260918-100 / RECHECK-20260918-100 =
+  PASS_WITH_WARNINGS，W-1…W-5）。选 (a) **实现一致读**：两方言的派发读面一次调用只发
+  **一条语句**（`UNION ALL` + 判别列 `kind`），组合 `kind` 的两件事实因此同刻；反证实跑
+  两方言各 1 红（`2 == 1` + 撕裂本体 `'RETRY_DISPATCH' == 'BOTH'`）；同判语义与响应形状
+  逐字不变（契约/parity/列表哨兵全绿）；三处契约与文档同源收敛，并登记
+  **RECHECK-097 W-1 括注不实**（"port docstring 与 `PORTS.md` 已写明"树内不存在）的事实
+  更正。CI 台账见迭代日志 cycle 1 行。
