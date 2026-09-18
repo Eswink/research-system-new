@@ -144,11 +144,13 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260918-093-security-audit-residual-recheck.md
   - .cursor/plans/tasks/PLAN-20260918-094-approval-resume-failure-compensation.md
   - .cursor/plans/tasks/PLAN-20260918-095-declaration-clearing.md
+  - .cursor/plans/tasks/PLAN-20260918-096-clock-injection-adjudication.md
 latest_recheck: null
 memory_entries:
   - MEM-20260918-067
   - MEM-20260918-068
   - MEM-20260918-069
+  - MEM-20260918-070
 ---
 
 # GOAL-20260918-005 — 残留收口与声明清账（自迭代循环）
@@ -171,7 +173,7 @@ token 清理、后继入口第 8 项、450 行硬上限的持续搬迁）按契�
 | EC-01 | 安全审计残留复核（advisory 署名 + 干净 checkout 重扫 + `scanner_enobufs` 根因/配方） | 收口结论表 1 / RECHECK-091 W-1…W-5 | **PASS**（RECHECK-20260918-093） |
 | EC-02 | `resume_after_approval` 同形未补偿入口 | 收口结论表 2 / RECHECK-090 W-1 | **PASS**（RECHECK-20260918-094） |
 | EC-03 | 声明未消费项清账（`on_validation_failure` / `ClaimRequest.lease_ttl_seconds`） | 收口结论表 3 / RECHECK-086 W-1 + 089 W-1 | **PASS**（RECHECK-20260918-095） |
-| EC-04 | 时钟/时序风险逐个收口（不做「未观测到失败」式收尾） | 收口结论表 9 / RECHECK-084 W-5 | PENDING |
+| EC-04 | 时钟/时序风险逐个收口（不做「未观测到失败」式收尾） | 收口结论表 9 / RECHECK-084 W-5 | **PASS**（RECHECK-20260918-096） |
 | EC-05 | 读面语义边界（列表 N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） | 收口结论表 4 / RECHECK-089 W-2…W-6 | PENDING |
 | EC-06 | 历史行可追溯（旧 run 无正文 / 旧事件无 `semantic_digest`，三选一） | 收口结论表 6 / RECHECK-084 W-2 + 087 W-1 | PENDING |
 
@@ -259,11 +261,12 @@ GOAL-004 EC-06 的判据形状是：**失败即补偿 + 补偿可观测 + 可重
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 3 已收口**（EC-03 PASS + RECHECK-20260918-095 + PLAN-20260918-095 DONE），
-下一条 = **cycle 4 = EC-04**（时钟/时序风险逐个收口）：先用脚本枚举 `tests/postgres/` 下
-**所有注入时钟的用例文件**（RECHECK-084 W-5 记的是 12 个，本轮实测 12 个），逐文件给
-「安全（写明为何不依赖墙钟/为何 SQL 时钟与注入时钟同源）」或「修复」的结构依据，
-**不接受「跑一次没红」**。
+当前续点：**cycle 4 已收口**（EC-04 PASS + RECHECK-20260918-096 + PLAN-20260918-096 DONE），
+下一条 = **cycle 5 = EC-05**（读面语义边界，**至少完成一项**）：① `GET /projects/{id}/runs`
+的列表路径不再对每条 run 各做一次 `dispatch_ownership`（批量读面与逐 run 读同判，含三态与
+`dispatch=None` 边界），或 ② PG 的两读（重排 + 租约）落在**同一快照/同一语句**（反证：拆回
+两次读 ⇒ 用例红）；**文档面必做**：`docs/api/CONTROL_PLANE_API.md` 写明 Fake 无过期语义、
+`WORKER_CLAIM` 也覆盖控制面自持租约。
 
 ## 驱动
 
@@ -356,6 +359,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 1 | PLAN-20260918-093（EC-01：安全审计残留复核；driver=client-goal / owner=root-agent） | `3eaa19a`（OSV 探针 + 证据 JSON）、`07fab27`（AST 判据探针）、`04e8c54`（终态记录 + `docs/INDEX.md`）、`e3f0ee4`（PLAN/RECHECK/MEM/ALL_PLAN）、`ef0d722`（CI 修复：SQLite busy timeout） | 治理 validate 绿；定向：`tests/adapters/sqlite` **161 passed**（3.12，含并发池用例）、`tests/tooling/test_python_source_limits.py` **930 passed**、`tests/application/protocol_authoring/test_draft_service.py` **13 passed**；探针自证 `probe_dynamic_sql_forms.py --selftest` **8/8 ok**；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3896 passed / 10 skipped**，561.60s） | run **35311496737**（#152，`ef0d722`）：**六个 job 全 success**（collector-quality / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate / console-frontend，runner_id 非 0，无重跑） | 首跑 CI 红 1 条（并发池用例）⇒ **修产品**（busy timeout）而非改断言；**方法学更正**：上一轮「产品树动态 SQL 零命中（grep）」被 AST 判据更正为「22 处构造、逐处核对为常量/固定记号」（结论未变、依据升级） | EC-01 **PASS**（RECHECK-20260918-093 = PASS_WITH_WARNINGS，W-1…W-5）；EC-02…EC-06 PENDING | cycle 2 = EC-02（`resume_after_approval` 同形未补偿入口） |
 | 2 | PLAN-20260918-094（EC-02：审批通过后续跑失败的补偿；driver=client-goal / owner=root-agent） | `55757a3`（补偿接线 + 4 条用例 + `CONTROL_PLANE_API.md`）、`9af9c18`（PLAN/RECHECK/MEM/ALL_PLAN + 新文件 ruff format） | 治理 validate 绿；**新用例「先纠正了上游告警的错描述」**：W-1 说失败停在 `WAITING_FOR_APPROVAL`，实测 `decide` 先落 `RUNNING` ⇒ 真实缺口是**悬空 RUNNING**；定向（DSN pin）`tests/api+application+contracts+domain+e2e` **1997 passed / 4 skipped**（271.89s）；新用例 **4 passed**、与既有补偿/审批用例合并 **18 passed**；**反证**：补偿换成 `raise exc` ⇒ **2 failed / 2 passed**（红的正是断言补偿的两条）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3901 passed / 10 skipped**，558.25s；首跑红 1 处 = 新增测试文件 ruff format ⇒ 格式化后复跑全绿，未改断言） | run **35314730222**（#155，`9af9c18`）：**六个 job 全 success**（collector-quality / console-frontend / quality-windows-latest / eval-gate / container-quality / quality-ubuntu-latest，无重跑） | m0 首跑 `python/format-check` 红（新文件未格式化）⇒ `ruff format` 后全绿；补偿走**既有域迁移**（`RUNNING --PAUSE--> PAUSED`）⇒ 未新增 canonical 状态，不触 ADR 边界 | EC-02 **PASS**（RECHECK-20260918-094 = **PASS**，W-1…W-4 为沿用 EC-06 的诚实边界）；EC-03…EC-06 PENDING | cycle 3 = EC-03（声明未消费项清账：`on_validation_failure` / `ClaimRequest.lease_ttl_seconds`） |
 | 3 | PLAN-20260918-095（EC-03：声明未消费项清账；driver=client-goal / owner=root-agent） | `053301a`（port 移除请求级 TTL + 示例契约清账 + 两件判据用例 + 四处文档同源）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 validate 绿；**反向搜索（判据）**：`lease_ttl_seconds` 读者 0（三实现只读引擎级 `self._lease_ttl`）、19 个 `ClaimRequest(...)` 构造点无一传它；`on_validation_failure` 只进 `unhonored`；定向（DSN pin）`tests/api+adapters+e2e+contracts+application+domain+loaders` **2474 passed / 7 skipped**（355.46s）；**反证两跑**：① 把 `lease_ttl_seconds` 放回 `ClaimRequest` ⇒ **1 failed / 18 passed / 9 skipped**、② 把 `on_validation_failure` 放回示例契约 ⇒ **1 failed / 21 passed**（各只红对应的钉住用例）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed / 10 skipped**，479.83s；首跑红 1 处 = RECHECK 缺 `## 结论` 章节 ⇒ 补齐后复跑全绿） | run（见「状态历史」，本轮收口 CI 到终态后补记） | m0 首跑 `framework/validate` 红（RECHECK 缺章节，记录未写完的中间态）⇒ 补章节后 23/23；EC-03 原文「从 port 与三个实现的构造参数中移除写明」按「移除**请求级**声明 + 写明**引擎级**位置」判读——引擎级 `lease_ttl_seconds` **是被读的**（claim/`renew_lease`/回收共用），删它会砍真实能力（RECHECK W-2） | EC-03 **PASS**（RECHECK-20260918-095 = PASS_WITH_WARNINGS，W-1…W-4）；EC-04…EC-06 PENDING | cycle 4 = EC-04（时钟/时序风险逐个判定；枚举面 = 12 个注入时钟的 PG 用例文件） |
+| 4 | PLAN-20260918-096（EC-04：时钟/时序风险逐个判定；driver=client-goal / owner=root-agent） | 本次回写提交（只读探针 + `PORTS.md` 时钟纪律段 + PLAN/RECHECK/MEM/ALL_PLAN/GOAL） | 治理 validate 绿；**枚举以脚本为判据**（`tools/probes/enumerate_clock_injected_pg_tests.py`，AST + 行扫描，只读）：27 个 PG 用例文件 / **12 个注入时钟** / **0 处墙钟读** / 6 个含"无时钟构造点"（逐用例核对）；**逐文件判定 12/12「安全」**，依据 = 写入路径（`db_time_expr`/`server_now` 是写时钟敏感列与做比较的**同一个源**；全树唯一无条件 `now()` 的 SQL 是 `outbox_events.created_at`，断言只按事件类型成员）；`grep now() tests/postgres/*.py` 只剩一行文档字符串（与 W-5「修复后为零」一致）；定向 `tests/postgres` **91 passed**（27.92s）；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed / 10 skipped**，505.98s） | run（见「状态历史」，收口 CI 到终态后补记） | 无「修复」项 ⇒ 无"去掉修复"式反证；判定的判别力来自**结构可复核**（如 `next_retry_at == START+3600` ← `projections.retry_schedule(server_now)`，改回 SQL `now()` 该断言即红） | EC-04 **PASS**（RECHECK-20260918-096 = PASS_WITH_WARNINGS，W-1…W-4：并发条数断言的调度依赖、parity 无时钟分支无调用点、WorkerRegistry 生产用 DB 时钟、真墙钟矩阵有意在外）；EC-05/EC-06 PENDING | cycle 5 = EC-05（读面语义边界：N+1 或 PG 两读快照至少一项 + Fake/`WORKER_CLAIM` 同源文档） |
 
 ## 状态历史
 
@@ -422,3 +426,26 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   （全量 pytest **3903 passed / 10 skipped**，479.83s）。产品改动 5 文件 + 2 测试文件 +
   文档 4 处；`child_plans` 增 PLAN-20260918-095、`memory_entries` 增 MEM-20260918-069。
   2026-09-18 本轮收口提交 CI 到终态后补记（同前两轮口径）。
+- 2026-09-18 cycle 4 收口：EC-04 **PASS**（PLAN-20260918-096 / RECHECK-20260918-096 =
+  PASS_WITH_WARNINGS，W-1…W-4）。**先把枚举做成脚本判据**（不靠记忆）：
+  `tools/probes/enumerate_clock_injected_pg_tests.py`（只读，AST + 行扫描）实跑 ⇒
+  27 个 PG 用例文件里 **12 个注入时钟**、**0 处墙钟读**、6 个含"无时钟构造点"。
+  逐文件判定 **12/12「安全」**，每条依据都落在**写入路径**上而不是"没跑红"：
+  ① 时钟敏感列（`leases.expires_at` / `heartbeat_at`、`tasks.retry_at`）由
+  `server_now(conn, now)` 算好**绑定写入**，判据比较也走同一个源（`db_time_expr`），
+  生产取数据库时钟、测试注入 ⇒ 写入与比较不会各算各的；② 全树唯一**无条件** `now()`
+  的 SQL 是 `outbox_events.created_at`，且没有用例断言它的取值或排序（断言形态是
+  `EventType.X in kinds`）；③ 6 个含无时钟构造点的文件逐个看用例断言：
+  `test_cross_process`/`test_lease_fencing`/`test_workflow_engine_pg` 的 DB 时钟用例断言
+  dedup/状态/异常、`test_experiment_queue_pg` 的时钟是**方法参数**、
+  `test_workflow_engine_parity` 的无时钟分支**没有调用点**、
+  `test_dispatch_ownership_pg` 的 WorkerRegistry 只被断言状态与 `kind`。
+  `grep -rn "now()" tests/postgres/*.py` 只剩一行文档字符串（与 RECHECK-084 W-5 的修复一致）。
+  无「修复」项 ⇒ 没有"去掉修复 ⇒ 用例红"式反证，取而代之的是**结构可复核性**
+  （如 `next_retry_at == START + 3600` 由 `projections.retry_schedule(server_now)` 产生，
+  改回 SQL `now()` 该断言即红）。定向 `tests/postgres` **91 passed**（27.92s）；m0
+  一次通过 **PASS: profile=m0; 23 deterministic checks**（全量 pytest **3903 passed /
+  10 skipped**，505.98s）。产品代码未改（新增 1 个只读探针 + `docs/architecture/PORTS.md`
+  的「时钟注入纪律」段）；`child_plans` 增 PLAN-20260918-096、`memory_entries` 增
+  MEM-20260918-070。**未宣称"时序风险已清空"**：真墙钟矩阵
+  `test_cross_process_real.py`（`timing_sensitive`）有意不在枚举面内（W-4）。

@@ -267,6 +267,20 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
   引擎给会让同一个租约有两个 TTL，要做对得把 TTL 落到 `leases` 行）；
   `tests/contracts/test_claim_fencing_contract.py` 有用例钉住"这个字段不再存在"。
 
+### 时钟注入纪律（GOAL-005 cycle 4 = EC-04）
+
+租约/重排/回收判据里的"现在"**只有一个来源**：`adapters/postgres/db.py` 的
+`db_time_expr(now)`（SQL 片段）与 `server_now(conn, now)`（Python 侧比较）。生产
+（`now is None`）两者都取数据库时钟（`now()` / `SELECT now()`）；测试注入确定性时钟时
+改**绑定参数**——同一个源既写时钟敏感列也做比较（`workflow_ops.py` 的重排 deadline、
+`workflow_claim.py` 的候选扫描、`projections.py` 的重排读面都是这一条）。
+全树唯一**无条件**用 `now()` 的 SQL 是 `outbox.py` 的 `outbox_events.created_at`
+（事件行时间戳）；对它的断言只按事件**类型成员**（`EventType.X in kinds`），没有用例
+断言它的排序或取值。WorkerRegistry 走同形的 `_time_expr()`（构造参数 `now` 可注入）。
+枚举脚本：`tools/probes/enumerate_clock_injected_pg_tests.py`
+（`tests/postgres/` 12 个注入时钟的用例文件、0 处墙钟读、6 个文件含"无时钟构造点"），
+逐文件判定与结构依据见 `RECHECK-20260918-096`。
+
 ### WorkflowEngine 增量（GOAL-004 cycle 2）
 
 - 新增 `retry_schedule(run_id) -> RetrySchedule`：该 run 的重排读面
