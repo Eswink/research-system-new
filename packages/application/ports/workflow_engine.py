@@ -268,6 +268,22 @@ class WorkflowEngine(Protocol):
         三实现语义一致；Fake 无租约过期语义（其"活"= 仍在租约表里）由契约用例钉住。
         """
 
+    def dispatch_ownership_many(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
+        """一批 run 的统一派发读面（GOAL-005 cycle 5 = EC-05 ①）：与逐 run 读**同判**。
+
+        存在理由只有一个：控制面列表路径（`GET /projects/{id}/runs`）此前对每条 run 各
+        调一次 `dispatch_ownership`（每条还要读两件事实），列表长度直接放大查询数。批量
+        读面把这一批放进**同一次读**（SQLite：`json_each` 绑定参数过滤；PG：`= ANY(%s)`）。
+
+        契约（由契约用例钉住，三实现同判）：
+
+        - **同判**：单 run 读必须就是"这批只有一条"——实现里两处共用同一段装配，
+          不许第二套判据；`kind` 仍由 `DispatchOwnership` 的组合规则算出；
+        - **全量条目**：请求的每个 `run_id` 都有条目；没有重排也没有活租约（含未知 run）
+          ⇒ `DISPATCH_NONE`（与单 run 读对未知 run 的答案一致）；
+        - **零写、零缓存**；空入参返回空 dict（不读库）。
+        """
+
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """读取该 run 已登记任务的稳定身份（确定性排序）。
 

@@ -29,8 +29,10 @@ from adapters.sqlite.projections import (
     mark_outbox_published,
     pending_outbox,
 )
-from adapters.sqlite.projections import live_lease_holders as select_live_lease_holders
-from adapters.sqlite.projections import retry_schedule as select_retry_schedule
+from adapters.sqlite.projections import (
+    live_lease_holders_many as select_live_lease_holders_many,
+)
+from adapters.sqlite.projections import retry_schedules as select_retry_schedules
 from adapters.sqlite.projections import task_identities as select_task_identities
 from adapters.sqlite.serialization import TaskRow, decode_timestamp
 from adapters.sqlite.workflow_ops import SqliteWorkflowOps
@@ -173,9 +175,9 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
         时钟、下一条什么时候到"——同一个 `now`，两处不会各算各的。
         """
         self._ensure_open()
-        scheduled, due, deadline = select_retry_schedule(
-            self._conn, run_id, iso(timestamp_now(self._now))
-        )
+        scheduled, due, deadline = select_retry_schedules(
+            self._conn, (run_id,), iso(timestamp_now(self._now))
+        )[run_id]
         self._record("retry_schedule", run_id, result=f"scheduled={scheduled} due={due}")
         return RetrySchedule(
             scheduled=scheduled,
@@ -190,31 +192,51 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
         持有者（`live_lease_holders`：未过期且持有者不是 LOST worker）。两处都用
         `timestamp_now` —— 与写 `retry_at`/`expires_at`、与回收方同一个源，分类不在这里
         二次判断。读面零写、零缓存。
+
+        单 run 版就是批量版的**一条**（`_dispatch_ownerships`）——判据只有一处；本方法只
+        负责把它按单 run 的名字记账。
         """
-        self._ensure_open()
-        now_text = iso(timestamp_now(self._now))
-        scheduled, due, deadline = select_retry_schedule(self._conn, run_id, now_text)
-        holders = tuple(
-            LeaseHolder(
-                task_id=task_id,
-                worker_id=worker_id,
-                fence=fence,
-                expires_at=None if expires_at is None else decode_timestamp(expires_at),
-            )
-            for task_id, worker_id, fence, expires_at in select_live_lease_holders(
-                self._conn, run_id, now_text
-            )
-        )
-        ownership = DispatchOwnership(
-            retry=RetrySchedule(
-                scheduled=scheduled,
-                due=due,
-                next_retry_at=decode_timestamp(deadline) if deadline is not None else None,
-            ),
-            leases=holders,
-        )
+        ownership = self._dispatch_ownerships((run_id,))[run_id]
         self._record("dispatch_ownership", run_id, result=ownership.kind)
         return ownership
+
+    def dispatch_ownership_many(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
+        """一批 run 的统一派发读面（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+
+        与单 run 版同一段装配（`_dispatch_ownerships`），所以"列表读"与"逐 run 读"不会
+        各有一套判据；列表路径因此不再按 run 数放大查询（每次调用两条 SQL：重排 + 租约）。
+        """
+        ownerships = self._dispatch_ownerships(run_ids)
+        self._record("dispatch_ownership_many", f"n={len(ownerships)}")
+        return ownerships
+
+    def _dispatch_ownerships(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
+        """单 run 与批量**共用**的装配：两条 SQL 取整批，同一时钟、同一判据。"""
+        self._ensure_open()
+        now_text = iso(timestamp_now(self._now))
+        schedules = select_retry_schedules(self._conn, run_ids, now_text)
+        holders = select_live_lease_holders_many(self._conn, run_ids, now_text)
+        return {
+            run_id: DispatchOwnership(
+                retry=RetrySchedule(
+                    scheduled=schedule[0],
+                    due=schedule[1],
+                    next_retry_at=(
+                        decode_timestamp(schedule[2]) if schedule[2] is not None else None
+                    ),
+                ),
+                leases=tuple(
+                    LeaseHolder(
+                        task_id=task_id,
+                        worker_id=worker_id,
+                        fence=fence,
+                        expires_at=(None if expires_at is None else decode_timestamp(expires_at)),
+                    )
+                    for task_id, worker_id, fence, expires_at in holders[run_id]
+                ),
+            )
+            for run_id, schedule in schedules.items()
+        }
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。"""

@@ -22,9 +22,6 @@ from adapters.postgres.projections import (
     deliveries as proj_deliveries,
 )
 from adapters.postgres.projections import (
-    dispatch_ownership as proj_dispatch_ownership,
-)
-from adapters.postgres.projections import (
     due_retries as proj_due_retries,
 )
 from adapters.postgres.projections import (
@@ -43,6 +40,10 @@ from adapters.postgres.serialization import TaskRow, encode_task
 from adapters.postgres.telemetry_notes import note_queue_lag, note_task_duration
 from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_impl
 from adapters.postgres.workflow_claim import ClaimPayload, claim_next_impl
+from adapters.postgres.workflow_dispatch import (
+    dispatch_ownership_impl,
+    dispatch_ownership_many_impl,
+)
 from adapters.postgres.workflow_ops import (
     complete_impl,
     heartbeat_impl,
@@ -312,11 +313,9 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         return ids
 
     def due_retry_task_ids(self, run_id: str) -> tuple[str, ...]:
-        """该 run 已到期的重排任务（调度器判断"停车中的 run 能不能再交付"）。
+        """该 run 已到期的重排任务；与 claim 候选扫描同判据、同时钟（`server_now`）。
 
-        与 claim 候选扫描同一判据、同一个时钟源（`server_now`：生产 DB 时钟 /
-        测试注入时钟），所以"到期"在两处永远指同一件事。扫描在 `projections.py`
-        （与 SQLite 侧同形），本方法只做时钟、错误边界与记录。
+        扫描在 `projections.py`（与 SQLite 侧同形），本方法只做时钟、错误边界与记录。
         """
         self._ensure_open()
         try:
@@ -327,11 +326,7 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
         return ids
 
     def retry_schedule(self, run_id: str) -> RetrySchedule:
-        """该 run 的重排读面（读面用；分类用与写 `retry_at` 同一个时钟）。
-
-        `due_retry_task_ids` 回答"哪些任务现在能再交付"，这一句回答"还剩多少在等
-        时钟、下一条什么时候到"——同一个 `server_now`，两处不会各算各的。
-        """
+        """该 run 还剩多少重排在等时钟、下一条什么时候到（与 `due_retry_task_ids` 同 `now`）。"""
         self._ensure_open()
         try:
             schedule = proj_retry_schedule(self._conn, run_id, server_now(self._conn, self._now))
@@ -343,20 +338,29 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
     def dispatch_ownership(self, run_id: str) -> DispatchOwnership:
         """该 run 的统一派发读面（GOAL-004 cycle 6 = EC-05 ②）。
 
-        与 SQLite 实现同一判据、同一个时钟源（`server_now`：生产 DB 时钟 / 测试注入
-        时钟）：重排读面 + 活租约持有者（未过期且持有者不是 LOST worker）。两件事实在
-        同一个连接上读到；读面是观测，不承诺跨表快照一致（并发写期间两读之间可能前移）。
-        组合在 `projections.py`（与 SQLite 侧同形），本方法只做时钟、错误边界与记录。
+        判据、时钟（`server_now`）与装配在 `workflow_dispatch.py`（与 SQLite 侧同形）；
+        单 run 版就是批量版的一条——装配只有一处。
         """
         self._ensure_open()
         try:
-            ownership = proj_dispatch_ownership(
-                self._conn, run_id, server_now(self._conn, self._now)
+            return dispatch_ownership_impl(
+                self._conn, self._record, run_id, server_now(self._conn, self._now)
             )
         except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
             raise self._wrap_operational(exc) from exc
-        self._record("dispatch_ownership", run_id, result=ownership.kind)
-        return ownership
+
+    def dispatch_ownership_many(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
+        """一批 run 的统一派发读面（GOAL-005 cycle 5 = EC-05 ①）：与逐 run 读同判。
+
+        见 `workflow_dispatch.py`；每次调用两条 SQL（重排 + 租约），不随 run 数增长。
+        """
+        self._ensure_open()
+        try:
+            return dispatch_ownership_many_impl(
+                self._conn, self._record, run_ids, server_now(self._conn, self._now)
+            )
+        except Exception as exc:  # noqa: BLE001 - 端口边界统一转 Transient
+            raise self._wrap_operational(exc) from exc
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。

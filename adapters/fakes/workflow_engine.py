@@ -250,13 +250,18 @@ class FakeWorkflowEngine(FakeBase):
         （SQLite 单测与 PG parity 覆盖）。
         """
         self._enter("retry_schedule", run_id)
+        schedule = self._retry_schedule_of(run_id)
+        self._record("retry_schedule", run_id, result=f"scheduled=0 due={schedule.due}")
+        return schedule
+
+    def _retry_schedule_of(self, run_id: str) -> RetrySchedule:
+        """不记账的装配（单 run 与批量共用；见 `dispatch_ownership_many`）。"""
         due = sum(
             1
             for task in self._tasks.values()
             if task.run_id.value == run_id
             and task.status == ResearchTaskState.State.RETRY_SCHEDULED
         )
-        self._record("retry_schedule", run_id, result=f"scheduled=0 due={due}")
         return RetrySchedule(due=due)
 
     def dispatch_ownership(self, run_id: str) -> DispatchOwnership:
@@ -266,8 +271,33 @@ class FakeWorkflowEngine(FakeBase):
         "活"在这里只能是"仍被持有"——**这不是与持久化实现同强度的判据**，过期与
         LOST worker 两种情形由 SQLite 注入时钟单测与 PG parity 覆盖，本类不假装实现。
         `retry` 沿用 `retry_schedule`（Fake 无写 `RETRY_SCHEDULED` 路径 ⇒ 恒为零）。
+
+        单 run 版就是批量版的**一条**（`_ownership_of`）——两个入口共用同一段装配。
         """
         self._enter("dispatch_ownership", run_id)
+        ownership = self._ownership_of(run_id)
+        self._record("dispatch_ownership", run_id, result=ownership.kind)
+        return ownership
+
+    def dispatch_ownership_many(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
+        """一批 run 的统一派发读面（GOAL-005 cycle 5 = EC-05 ①）。
+
+        与单 run 版同一段装配（`_ownership_of`）⇒ 两个入口不会各算各的；每个请求到的
+        run_id 都有条目（未知 run 与"没有持有"同判 = `DISPATCH_NONE`）。记账只记一次
+        （列表路径的入口），不把内部的单 run 装配记成 N 次调用。
+        """
+        self._enter("dispatch_ownership_many", f"n={len(run_ids)}")
+        ownerships = {run_id: self._ownership_of(run_id) for run_id in dict.fromkeys(run_ids)}
+        kinds = ",".join(sorted({ownership.kind for ownership in ownerships.values()}))
+        self._record(
+            "dispatch_ownership_many",
+            f"n={len(ownerships)}",
+            result=kinds or "-",
+        )
+        return ownerships
+
+    def _ownership_of(self, run_id: str) -> DispatchOwnership:
+        """单 run 装配（不记账）：单 run 与批量共用的唯一一段判据。"""
         holders = tuple(
             LeaseHolder(
                 task_id=task_id,
@@ -278,9 +308,7 @@ class FakeWorkflowEngine(FakeBase):
             for task_id, lease in sorted(self._leases.items())
             if task_id in self._tasks and self._tasks[task_id].run_id.value == run_id
         )
-        ownership = DispatchOwnership(retry=self.retry_schedule(run_id), leases=holders)
-        self._record("dispatch_ownership", run_id, result=ownership.kind)
-        return ownership
+        return DispatchOwnership(retry=self._retry_schedule_of(run_id), leases=holders)
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """Fake 与两个持久化 adapter 同判据：按 canonical 任务回答稳定身份。

@@ -107,21 +107,41 @@ def retry_schedule(conn: Any, run_id: str, now: datetime) -> RetrySchedule:
     与 claim 候选扫描、`due_retry_task_ids` 同一列同一判据；`now` 由调用方按权威
     时钟给出（生产：`server_now` → DB 时钟；测试：注入时钟），与写 `retry_at` 时
     同一个源。分类在 SQL 之外做，好让"最近未到期期限"和计数出自同一遍扫描。
+
+    单 run 版就是批量版的一条（`retry_schedules`）——判据只有一处。
     """
+    return retry_schedules(conn, (run_id,), now)[run_id]
+
+
+def retry_schedules(conn: Any, run_ids: tuple[str, ...], now: datetime) -> dict[str, RetrySchedule]:
+    """一批 run 的重排读面（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+
+    过滤走 `= ANY(%s)`（**绑定参数**：psycopg 把 list 适配成数组，SQL 里没有拼进去的
+    值）；每个请求到的 run_id 都有条目（未知/无重排行 ⇒ 全零 `RetrySchedule`）。分类与
+    单 run 版共用 `_summarize_retries`，所以两个入口不会各算各的。
+    """
+    ordered = tuple(dict.fromkeys(run_ids))
+    if not ordered:
+        return {}
     rows: Any = conn.execute(
-        "SELECT retry_at FROM tasks WHERE run_id = %s AND status = %s",
-        (run_id, ResearchTaskState.State.RETRY_SCHEDULED),
+        "SELECT run_id, retry_at FROM tasks WHERE run_id = ANY(%s) AND status = %s",
+        (list(ordered), ResearchTaskState.State.RETRY_SCHEDULED),
     ).fetchall()
+    deadlines: dict[str, list[datetime | None]] = {run_id: [] for run_id in ordered}
+    for row in rows:
+        deadlines[str(row["run_id"])].append(
+            None if row["retry_at"] is None else _as_utc(row["retry_at"])
+        )
+    return {run_id: _summarize_retries(items, now) for run_id, items in deadlines.items()}
+
+
+def _summarize_retries(deadlines: list[datetime | None], now: datetime) -> RetrySchedule:
+    """重排行分类（计数 + 最近未到期期限）——单 run 与批量共用同一段。"""
     scheduled = 0
     due = 0
     next_retry_at: datetime | None = None
-    for row in rows:
-        deadline = row["retry_at"]
-        if deadline is None:
-            due += 1
-            continue
-        value = _as_utc(deadline)
-        if value <= now:
+    for value in deadlines:
+        if value is None or value <= now:
             due += 1
             continue
         scheduled += 1
@@ -148,25 +168,44 @@ def live_lease_holders(
     "活"= `recover_expired_leases` 回收判据的补集：未过期（`expires_at >= now`）且持有者
     不是 LOST worker。`now` 由调用方按权威时钟给出（生产：`server_now` → DB 时钟；测试：
     注入时钟），与回收方同一个源。`lease_id` 有意不读（作业面凭据不进控制面读面）。
+
+    单 run 版就是批量版的一条（`live_lease_holders_many`）。
     """
+    return live_lease_holders_many(conn, (run_id,), now)[run_id]
+
+
+def live_lease_holders_many(
+    conn: Any, run_ids: tuple[str, ...], now: datetime
+) -> dict[str, tuple[tuple[str, str | None, int, datetime | None], ...]]:
+    """一批 run 的活租约持有者（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+
+    判据与单 run 版逐字相同（同一列、同一个 `now`、同一条 LOST 排除子查询），过滤走
+    `= ANY(%s)` 绑定参数；每个请求到的 run_id 都有条目（无持有 ⇒ 空元组）。
+    """
+    ordered = tuple(dict.fromkeys(run_ids))
+    if not ordered:
+        return {}
     rows: Any = conn.execute(
-        "SELECT l.task_id AS task_id, l.worker_id AS worker_id, l.fence AS fence,"
-        " l.expires_at AS expires_at FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
-        " WHERE t.run_id = %s AND l.expires_at >= %s"
+        "SELECT t.run_id AS run_id, l.task_id AS task_id, l.worker_id AS worker_id,"
+        " l.fence AS fence, l.expires_at AS expires_at"
+        " FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
+        " WHERE t.run_id = ANY(%s) AND l.expires_at >= %s"
         " AND (l.worker_id IS NULL OR l.worker_id NOT IN"
         " (SELECT worker_id FROM workers WHERE state = 'LOST'))"
-        " ORDER BY l.task_id",
-        (run_id, now),
+        " ORDER BY t.run_id, l.task_id",
+        (list(ordered), now),
     ).fetchall()
-    return tuple(
-        (
+    grouped: dict[str, list[tuple[str, str | None, int, datetime | None]]] = {
+        run_id: [] for run_id in ordered
+    }
+    for row in rows:
+        grouped[str(row["run_id"])].append((
             str(row["task_id"]),
             None if row["worker_id"] is None else str(row["worker_id"]),
             int(row["fence"] or 0),
             None if row["expires_at"] is None else _as_utc(row["expires_at"]),
-        )
-        for row in rows
-    )
+        ))
+    return {run_id: tuple(items) for run_id, items in grouped.items()}
 
 
 def dispatch_ownership(conn: Any, run_id: str, now: datetime) -> DispatchOwnership:
@@ -175,18 +214,37 @@ def dispatch_ownership(conn: Any, run_id: str, now: datetime) -> DispatchOwnersh
     两件 canonical 事实一次读出并组合：重排读面 + 活租约持有者。`kind` 由
     `DispatchOwnership` 自己算（同一个组合规则，三实现不会各算各的）；`now` 由调用方
     按权威时钟给出（生产：`server_now` → DB 时钟；测试：注入时钟）。
+
+    单 run 版就是批量版的一条（`dispatch_ownership_many`）——装配只有一处。
     """
-    schedule = retry_schedule(conn, run_id, now)
-    holders = tuple(
-        LeaseHolder(
-            task_id=task_id,
-            worker_id=worker_id,
-            fence=fence,
-            expires_at=None if expires_at is None else decode_timestamp_pg(expires_at),
+    return dispatch_ownership_many(conn, (run_id,), now)[run_id]
+
+
+def dispatch_ownership_many(
+    conn: Any, run_ids: tuple[str, ...], now: datetime
+) -> dict[str, DispatchOwnership]:
+    """一批 run 的统一派发读面（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+
+    两条 SQL（重排 + 租约）取整批，装配与单 run 版共用同一段：列表路径不再按 run 数
+    放大查询，且与逐 run 读逐字同判（含"全零 = `DISPATCH_NONE`"的未知 run 边界）。
+    """
+    schedules = retry_schedules(conn, run_ids, now)
+    holders_by_run = live_lease_holders_many(conn, run_ids, now)
+    return {
+        run_id: DispatchOwnership(
+            retry=schedule,
+            leases=tuple(
+                LeaseHolder(
+                    task_id=task_id,
+                    worker_id=worker_id,
+                    fence=fence,
+                    expires_at=None if expires_at is None else decode_timestamp_pg(expires_at),
+                )
+                for task_id, worker_id, fence, expires_at in holders_by_run[run_id]
+            ),
         )
-        for task_id, worker_id, fence, expires_at in live_lease_holders(conn, run_id, now)
-    )
-    return DispatchOwnership(retry=schedule, leases=holders)
+        for run_id, schedule in schedules.items()
+    }
 
 
 def pending_outbox(conn: Any) -> tuple[EventEnvelope, ...]:

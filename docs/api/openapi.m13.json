@@ -11012,7 +11012,7 @@
     },
     "/projects/{project_id}/runs": {
       "get": {
-        "description": "Run 列表（created_at 倒序；M13-R1 WP-M2：刷新恢复入口）。",
+        "description": "Run 列表（created_at 倒序；M13-R1 WP-M2：刷新恢复入口）。\n\n每行的 `dispatch` 与 `GET /runs/{id}` 同一判据：整页由**一次**批量读回答，\n不随列表长度放大成 N 次内部读。",
         "operationId": "list_runs_projects__project_id__runs_get",
         "parameters": [
           {

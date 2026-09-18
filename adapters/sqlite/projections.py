@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import replace
 from datetime import datetime
 
@@ -84,17 +85,44 @@ def retry_schedule(
     与 `due_retries` 同一判据（同一列、同一个 `now_text`），只是回答"还剩几条在等
     时钟、几条现在就能走、下一个期限是什么"。`now_text` 由调用方按权威时钟给出
     （生产：DB 时钟；测试：注入时钟），与写 `retry_at` 时同一个源。
+
+    单 run 版就是批量版的一条（`retry_schedules`）——判据只有一处，不会两套漂移。
     """
+    return retry_schedules(conn, (run_id,), now_text)[run_id]
+
+
+def retry_schedules(
+    conn: sqlite3.Connection, run_ids: tuple[str, ...], now_text: str
+) -> dict[str, tuple[int, int, str | None]]:
+    """一批 run 的重排读面（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+
+    过滤走 `json_each(?)`（**绑定参数**，SQL 里没有拼进去的值）；每个请求到的 run_id 都有
+    条目（未知/无重排行 ⇒ `(0, 0, None)`）。分类与单 run 版共用 `_summarize_retries`。
+    """
+    ordered = tuple(dict.fromkeys(run_ids))
+    if not ordered:
+        return {}
     rows = conn.execute(
-        "SELECT retry_at FROM tasks WHERE run_id = ? AND status = ?",
-        (run_id, ResearchTaskState.State.RETRY_SCHEDULED),
+        "SELECT run_id, retry_at FROM tasks"
+        " WHERE run_id IN (SELECT value FROM json_each(?)) AND status = ?",
+        (json.dumps(list(ordered)), ResearchTaskState.State.RETRY_SCHEDULED),
     ).fetchall()
+    deadlines: dict[str, list[str | None]] = {run_id: [] for run_id in ordered}
+    for row in rows:
+        deadlines[str(row["run_id"])].append(
+            None if row["retry_at"] is None else str(row["retry_at"])
+        )
+    return {run_id: _summarize_retries(items, now_text) for run_id, items in deadlines.items()}
+
+
+def _summarize_retries(
+    deadlines: Sequence[str | None], now_text: str
+) -> tuple[int, int, str | None]:
+    """重排行分类：(未到期条数, 已到期条数, 最近未到期期限)——单 run 与批量共用。"""
     scheduled = 0
     due = 0
     next_retry_at: str | None = None
-    for row in rows:
-        deadline = row["retry_at"]
-        text = None if deadline is None else str(deadline)
+    for text in deadlines:
         if text is None or text <= now_text:
             due += 1
             continue
@@ -116,25 +144,44 @@ def live_lease_holders(
 
     `worker_id` 为空 = 控制面自己持有（agent session 投递），非空 = worker plane claim。
     `lease_id` 有意不读：它是作业面提交结果的凭据，读面不复制能力面。
+
+    单 run 版就是批量版的一条（`live_lease_holders_many`）。
     """
+    return live_lease_holders_many(conn, (run_id,), now_text)[run_id]
+
+
+def live_lease_holders_many(
+    conn: sqlite3.Connection, run_ids: tuple[str, ...], now_text: str
+) -> dict[str, tuple[tuple[str, str | None, int, str | None], ...]]:
+    """一批 run 的活租约持有者（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+
+    判据与单 run 版逐字相同（同一列、同一个 `now_text`、同一条 LOST 排除子查询），
+    过滤走 `json_each(?)` 绑定参数；每个请求到的 run_id 都有条目（无持有 ⇒ 空元组）。
+    """
+    ordered = tuple(dict.fromkeys(run_ids))
+    if not ordered:
+        return {}
     rows = conn.execute(
-        "SELECT l.task_id AS task_id, l.worker_id AS worker_id, l.fence AS fence,"
-        " l.expires_at AS expires_at FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
-        " WHERE t.run_id = ? AND l.expires_at >= ?"
+        "SELECT t.run_id AS run_id, l.task_id AS task_id, l.worker_id AS worker_id,"
+        " l.fence AS fence, l.expires_at AS expires_at"
+        " FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
+        " WHERE t.run_id IN (SELECT value FROM json_each(?)) AND l.expires_at >= ?"
         " AND (l.worker_id IS NULL OR l.worker_id NOT IN"
         " (SELECT worker_id FROM workers WHERE state = 'LOST'))"
-        " ORDER BY l.task_id",
-        (run_id, now_text),
+        " ORDER BY t.run_id, l.task_id",
+        (json.dumps(list(ordered)), now_text),
     ).fetchall()
-    return tuple(
-        (
+    grouped: dict[str, list[tuple[str, str | None, int, str | None]]] = {
+        run_id: [] for run_id in ordered
+    }
+    for row in rows:
+        grouped[str(row["run_id"])].append((
             str(row["task_id"]),
             None if row["worker_id"] is None else str(row["worker_id"]),
             int(row["fence"] or 0),
             None if row["expires_at"] is None else str(row["expires_at"]),
-        )
-        for row in rows
-    )
+        ))
+    return {run_id: tuple(items) for run_id, items in grouped.items()}
 
 
 def task_identities(conn: sqlite3.Connection, run_id: str) -> tuple[tuple[str, str, str], ...]:

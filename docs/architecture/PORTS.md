@@ -307,6 +307,13 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
   消费**同一次读**的 `PAUSED` 投影（取值与语义逐字不变）。Fake 无租约过期语义
   （其"活"= 仍在租约表里），边界在 `tests/contracts/test_dispatch_ownership_contract.py`
   里显式钉住。
+- 新增 `dispatch_ownership_many(run_ids) -> dict[str, DispatchOwnership]`
+  （GOAL-005 cycle 5 = EC-05 ①）：列表路径的**批量读面**。单 run 读就是它的一条
+  （实现里两处共用同一段装配，不许第二套判据）⇒ 逐 run 读与整页读逐字同判；每个请求到的
+  `run_id` 都有条目（未知 run 与"没有持有"同判 `NONE`）；空入参返回空 dict 不读库。
+  过滤全走**绑定参数**（SQLite：`json_each(?)`；PG：`= ANY(%s)`），SQL 里没有拼进去的值。
+  查询数由"每条 run 两次读"变成"每次调用两条 SQL"；控制面的 N+1 哨兵用例在
+  `tests/api/test_run_dispatch_view_api.py`（列表路径批量读一次、逐 run 读零次）。
 
 ### ExecutionJobQueue（`packages/application/ports/execution_job_queue.py`）
 

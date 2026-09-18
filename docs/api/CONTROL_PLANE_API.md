@@ -206,9 +206,20 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
   "活"的判据是**回收判据的补集**（未过期且持有者不是 LOST worker），在 adapter 内用
   权威时钟取（生产：DB 时钟；测试：注入时钟）——读面与 `recover_expired_leases` 不会
   各说各话。**诚实边界**：`dispatch` 不回答执行健康度（心跳新鲜度、进度、卡死与否都不在
-  这里）；不暴露 `lease_id`（那是作业面结果提交的凭据，控制面读面不复制能力）；
-  列表路径每 run 一次额外读（N+1，见复检告警）。`paused_dispatch` 与 `dispatch` 出自
-  **同一次读**（`paused_dispatch` 是它的 `PAUSED` 投影），不会互相漂移。
+  这里）；不暴露 `lease_id`（那是作业面结果提交的凭据，控制面读面不复制能力）。
+  `paused_dispatch` 与 `dispatch` 出自**同一次读**（`paused_dispatch` 是它的 `PAUSED`
+  投影），不会互相漂移。
+
+  **列表路径**（`GET /projects/{id}/runs`）走**一次批量读**
+  （`WorkflowEngine.dispatch_ownership_many`，GOAL-005 cycle 5 = EC-05 ①）：单 run 读就是
+  批量读的一条（同一段装配）⇒ 逐行判定与 `GET /runs/{id}` 逐字相同，而查询数不再随 run
+  数增长。没有 workflow 读面时逐行 `UNKNOWN`（与详情同口径）；空页不读派发面。
+
+  **两条容易读错的事实**（同源登记，EC-05 文档面）：① **Fake 实现没有租约过期语义** ——
+  它的"活"= 仍在租约表里，过期与 LOST worker 两种情形由 SQLite 注入时钟单测与 PG parity
+  覆盖（Fake 不假装实现回收）；② `kind=WORKER_CLAIM` **也覆盖控制面自持的租约** ——
+  `worker_id` 为 `null` 的持有者是 agent session 投递路径，不是 worker plane claim，
+  `kind` 不区分这两种持有者（要区分只能看 `holders[].worker_id`）。
 
 ## Runs
 

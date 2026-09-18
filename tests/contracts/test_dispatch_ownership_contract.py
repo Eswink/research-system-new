@@ -186,6 +186,36 @@ def test_a_retry_waiting_beside_a_claim_reads_as_both(factory: Callable[[], obje
     assert ownership.leases[0].task_id == claimed.id.value
 
 
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_the_batch_read_equals_the_per_run_read(factory: Callable[[], object]) -> None:
+    """GOAL-005 cycle 5 = EC-05 ①：批量读面与逐 run 读**逐字同判**。
+
+    这是列表路径（`GET /projects/{id}/runs`）放弃 N+1 的前提：批量读不是第二套判据，
+    它就是"单 run 读"在同一次读里回答了整批（实现里两处共用同一段装配）。未知 run 也要
+    有条目（与单 run 读同形 ⇒ `NONE`，不是缺项、不是异常）。
+    """
+    engine: WorkflowEngine = factory()  # type: ignore[assignment]
+    task = _execution_task()
+    engine.submit(task, _contract())
+    _claim(engine, task)
+    unknown = str(ID.generate().value)
+
+    batch = engine.dispatch_ownership_many((RUN_ID, unknown))
+
+    assert set(batch) == {RUN_ID, unknown}, "请求到的每条 run 都有条目"
+    assert batch[RUN_ID].kind == DISPATCH_WORKER_CLAIM, "先钉住批量读真的答了"
+    for run_id in (RUN_ID, unknown):
+        assert batch[run_id] == engine.dispatch_ownership(run_id), run_id
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_an_empty_batch_reads_nothing(factory: Callable[[], object]) -> None:
+    """空入参 ⇒ 空 dict（列表页没有 run 时不该为了空集合去读库）。"""
+    engine: WorkflowEngine = factory()  # type: ignore[assignment]
+
+    assert engine.dispatch_ownership_many(()) == {}
+
+
 def test_the_fake_never_expires_a_lease_it_holds() -> None:
     """Fake 的"活"= 仍在租约表里（没有过期/回收路径）——这是它的边界，不是判据。
 

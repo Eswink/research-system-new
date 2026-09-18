@@ -226,6 +226,75 @@ def test_the_list_read_face_reports_the_same_ownership(run_ready_client: TestCli
     assert rows[0]["dispatch"] == detail
 
 
+def test_the_list_path_reads_dispatch_once_for_the_whole_page(
+    run_ready_client: TestClient,
+) -> None:
+    """EC-05 ① 的哨兵：列表路径**一次批量读**，不再逐 run 各读一次（N+1）。"""
+    deps, run_id = _inject_run(run_ready_client, ResearchRunState.State.RUNNING)
+    _claimed_task(deps, run_id)
+    workflow = deps.workflow
+    assert workflow is not None
+    single_before = workflow.method_calls("dispatch_ownership")
+    batch_before = workflow.method_calls("dispatch_ownership_many")
+
+    listed = run_ready_client.get("/projects/example-project/runs")
+    assert listed.status_code == 200
+
+    assert workflow.method_calls("dispatch_ownership_many") == batch_before + 1, "整页只读一次"
+    assert workflow.method_calls("dispatch_ownership") == single_before, (
+        "列表路径不许再逐 run 读——那正是被清掉的 N+1"
+    )
+
+
+def test_the_list_page_answers_three_states_in_one_read(run_ready_client: TestClient) -> None:
+    """同一页里三态一次读齐，且**逐行与详情读同判**（批量读不是第二套判据）。"""
+    deps, claimed_run = _inject_run(run_ready_client, ResearchRunState.State.RUNNING)
+    _claimed_task(deps, claimed_run)
+    _, retry_run = _inject_run(run_ready_client, ResearchRunState.State.PAUSED)
+    _parked_retry(deps, retry_run, backoff=BACKOFF_SECONDS)
+    _, quiet_run = _inject_run(run_ready_client, ResearchRunState.State.PAUSED)
+
+    listed = run_ready_client.get("/projects/example-project/runs")
+    assert listed.status_code == 200
+    rows = {row["id"]: row for row in listed.json()}
+
+    assert rows[claimed_run]["dispatch"]["kind"] == "WORKER_CLAIM"
+    assert rows[retry_run]["dispatch"]["kind"] == "RETRY_DISPATCH"
+    assert rows[quiet_run]["dispatch"]["kind"] == "NONE"
+    for run_id in (claimed_run, retry_run, quiet_run):
+        detail = _dispatch(run_ready_client, run_id)
+        assert rows[run_id]["dispatch"] == detail, f"{run_id}: 批量读与逐 run 读同判"
+
+
+def test_the_list_page_without_a_workflow_read_face_says_unknown(
+    run_ready_client: TestClient,
+) -> None:
+    """没有 workflow 读面时列表逐行 `UNKNOWN`（与详情同口径：读不到 ≠ 没有派发方）。"""
+    deps, run_id = _inject_run(run_ready_client, ResearchRunState.State.RUNNING)
+    deps.workflow = None
+
+    rows = [
+        row
+        for row in run_ready_client.get("/projects/example-project/runs").json()
+        if row["id"] == run_id
+    ]
+
+    assert len(rows) == 1
+    assert rows[0]["dispatch"]["kind"] == "UNKNOWN"
+
+
+def test_an_empty_page_does_not_read_dispatch_at_all(run_ready_client: TestClient) -> None:
+    """空页不读派发面：没有 run 就没有要回答的问题。"""
+    deps = _deps(run_ready_client)
+    workflow = deps.workflow
+    assert workflow is not None
+    before = workflow.method_calls("dispatch_ownership_many")
+
+    assert run_ready_client.get("/projects/no-such-project/runs").json() == []
+
+    assert workflow.method_calls("dispatch_ownership_many") == before
+
+
 def test_the_read_face_does_not_write_anything(run_ready_client: TestClient) -> None:
     """读面是只读的：读两次不改 canonical 事实（任务行与租约行都不动）。"""
     deps, run_id = _inject_run(run_ready_client, ResearchRunState.State.RUNNING)

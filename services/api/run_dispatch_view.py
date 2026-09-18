@@ -32,6 +32,24 @@ def dispatch_ownership_read(
         return None
 
 
+def dispatch_ownership_read_many(
+    workflow: WorkflowEngine | None, run_ids: tuple[str, ...]
+) -> dict[str, DispatchOwnership]:
+    """列表路径的批量入口（GOAL-005 cycle 5 = EC-05 ①）：**同一次读**回答整批。
+
+    逐 run 读与批量读是同一个判据（port 里单 run 就是批量的一条）⇒ 调用方拿到的
+    `kind`/`retry`/`holders` 与逐 run 读逐字相同。降级口径与单 run 一致：没有 workflow
+    读面或整批读不到（`PortError`）⇒ 返回空 dict，调用方对每条 run 给 `UNKNOWN`
+    （**不是** `NONE`——"读不到"与"没有派发方"是两件事）。
+    """
+    if workflow is None or not run_ids:
+        return {}
+    try:
+        return workflow.dispatch_ownership_many(tuple(run_ids))
+    except PortError:
+        return {}
+
+
 def dispatch_ownership_view(workflow: WorkflowEngine | None, run_id: str) -> DispatchOwnershipDto:
     """统一派发读面的 HTTP 形状；读不到的诚实回答是 `UNKNOWN`。"""
     return dispatch_ownership_dto(dispatch_ownership_read(workflow, run_id))

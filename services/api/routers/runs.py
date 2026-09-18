@@ -16,13 +16,14 @@ from packages.domain.run import ResearchRun
 from packages.domain.state_base import InvalidTransitionError
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
-from services.api.dto.runs import RunDetailDto, RunStartDto, TaskDto
+from services.api.dto.runs import DispatchOwnershipDto, RunDetailDto, RunStartDto, TaskDto
 from services.api.errors import ApiError
 from services.api.protocol_source import draft_ref_of
 from services.api.run_access import get_run_or_error, save_run
 from services.api.run_dispatch_view import (
     dispatch_ownership_dto,
     dispatch_ownership_read,
+    dispatch_ownership_read_many,
 )
 from services.api.run_execution import (
     ExecutionRequest,
@@ -35,13 +36,18 @@ router = APIRouter(prefix="/runs", tags=["runs"])
 projects_router = APIRouter(tags=["runs"])
 
 
-def _detail_dto(deps: ApiDeps, run: ResearchRun) -> RunDetailDto:
+def _detail_dto(
+    deps: ApiDeps, run: ResearchRun, *, dispatch: DispatchOwnershipDto | None = None
+) -> RunDetailDto:
     """canonical run → 读面 DTO（详情与列表共用，停车语义只有这一处分类）。
 
     派发读面**每个 run 只读一次**（GOAL-004 cycle 6 = EC-05 ②）：`dispatch` 与
-    `paused_dispatch` 是同一个 `dispatch_ownership` 结果的两个视图，不是一个字段一次读。
+    `paused_dispatch` 是同一个读结果的两个视图，不是一个字段一次读。列表路径把**批量读到的**
+    `dispatch` 传进来（GOAL-005 cycle 5 = EC-05 ①：不再逐 run 各读一次）；`dispatch=None`
+    时本函数自己读一次（详情路径）。
     """
-    dispatch = dispatch_ownership_dto(dispatch_ownership_read(deps.workflow, run.id.value))
+    if dispatch is None:
+        dispatch = dispatch_ownership_dto(dispatch_ownership_read(deps.workflow, run.id.value))
     return RunDetailDto(
         id=run.id.value,
         project_id=run.project_id,
@@ -84,18 +90,33 @@ async def start_run(project_id: str, payload: RunStartDto, request: Request) -> 
 
 @projects_router.get("/projects/{project_id}/runs", response_model=list[RunDetailDto])
 async def list_runs(project_id: str, request: Request) -> list[RunDetailDto]:
-    """Run 列表（created_at 倒序；M13-R1 WP-M2：刷新恢复入口）。"""
+    """Run 列表（created_at 倒序；M13-R1 WP-M2：刷新恢复入口）。
+
+    每行的 `dispatch` 与 `GET /runs/{id}` 同一判据：整页由**一次**批量读回答，
+    不随列表长度放大成 N 次内部读。
+    """
     scope_project_id = project_id
     deps: ApiDeps = get_deps(request)
     if deps.runs_store is None:
         # 注册表回退（测试注入）同样按项目过滤（WP-B：不跨项目泄漏）。
-        return [
-            _detail_dto(deps, run)
+        runs = [
+            run
             for run in reversed(list(deps.run_registry.values()))
             if run.project_id == scope_project_id
         ]
-    runs = deps.runs_store.list_runs(scope_project_id)
-    return [_detail_dto(deps, run) for run in runs]
+    else:
+        runs = list(deps.runs_store.list_runs(scope_project_id))
+    dispatch_by_run = dispatch_ownership_read_many(
+        deps.workflow, tuple(run.id.value for run in runs)
+    )
+    return [
+        _detail_dto(
+            deps,
+            run,
+            dispatch=dispatch_ownership_dto(dispatch_by_run.get(run.id.value)),
+        )
+        for run in runs
+    ]
 
 
 @router.get("/{run_id}", response_model=RunDetailDto)
