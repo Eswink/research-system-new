@@ -30,7 +30,7 @@ from adapters.sqlite.projections import (
     pending_outbox,
 )
 from adapters.sqlite.projections import (
-    live_lease_holders_many as select_live_lease_holders_many,
+    dispatch_ownerships as select_dispatch_ownerships,
 )
 from adapters.sqlite.projections import retry_schedules as select_retry_schedules
 from adapters.sqlite.projections import task_identities as select_task_identities
@@ -42,7 +42,6 @@ from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
     DispatchOwnership,
-    LeaseHolder,
     RetrySchedule,
     TaskCompletion,
     TaskIdentity,
@@ -201,42 +200,21 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
         return ownership
 
     def dispatch_ownership_many(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
-        """一批 run 的统一派发读面（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+        """一批 run 的统一派发读面：一次读回答整批。
 
         与单 run 版同一段装配（`_dispatch_ownerships`），所以"列表读"与"逐 run 读"不会
-        各有一套判据；列表路径因此不再按 run 数放大查询（每次调用两条 SQL：重排 + 租约）。
+        各有一套判据；列表路径因此不再按 run 数放大查询（每次调用**一条语句**：重排 +
+        租约由 `UNION ALL` 同语句取出，两件事实同一个快照）。
         """
         ownerships = self._dispatch_ownerships(run_ids)
         self._record("dispatch_ownership_many", f"n={len(ownerships)}")
         return ownerships
 
     def _dispatch_ownerships(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
-        """单 run 与批量**共用**的装配：两条 SQL 取整批，同一时钟、同一判据。"""
+        """单 run 与批量**共用**的装配：**一条语句**取两件事实，同一时钟、同一快照。"""
         self._ensure_open()
         now_text = iso(timestamp_now(self._now))
-        schedules = select_retry_schedules(self._conn, run_ids, now_text)
-        holders = select_live_lease_holders_many(self._conn, run_ids, now_text)
-        return {
-            run_id: DispatchOwnership(
-                retry=RetrySchedule(
-                    scheduled=schedule[0],
-                    due=schedule[1],
-                    next_retry_at=(
-                        decode_timestamp(schedule[2]) if schedule[2] is not None else None
-                    ),
-                ),
-                leases=tuple(
-                    LeaseHolder(
-                        task_id=task_id,
-                        worker_id=worker_id,
-                        fence=fence,
-                        expires_at=(None if expires_at is None else decode_timestamp(expires_at)),
-                    )
-                    for task_id, worker_id, fence, expires_at in holders[run_id]
-                ),
-            )
-            for run_id, schedule in schedules.items()
-        }
+        return select_dispatch_ownerships(self._conn, run_ids, now_text)
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:
         """该 run 已登记任务的稳定身份（重启后续跑按 idempotency key 对齐）。"""

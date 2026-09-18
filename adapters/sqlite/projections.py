@@ -9,8 +9,13 @@ from dataclasses import replace
 from datetime import datetime
 
 from adapters.sqlite.db import now_iso
-from adapters.sqlite.serialization import TaskRow, decode_envelope, decode_task
-from packages.application.ports.workflow_engine import TaskCompletion
+from adapters.sqlite.serialization import TaskRow, decode_envelope, decode_task, decode_timestamp
+from packages.application.ports.workflow_engine import (
+    DispatchOwnership,
+    LeaseHolder,
+    RetrySchedule,
+    TaskCompletion,
+)
 from packages.domain.events import EventEnvelope
 from packages.domain.task_state import ResearchTaskState
 
@@ -94,24 +99,13 @@ def retry_schedule(
 def retry_schedules(
     conn: sqlite3.Connection, run_ids: tuple[str, ...], now_text: str
 ) -> dict[str, tuple[int, int, str | None]]:
-    """一批 run 的重排读面（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+    """一批 run 的重排读面：一次读回答整批。
 
-    过滤走 `json_each(?)`（**绑定参数**，SQL 里没有拼进去的值）；每个请求到的 run_id 都有
-    条目（未知/无重排行 ⇒ `(0, 0, None)`）。分类与单 run 版共用 `_summarize_retries`。
+    取数走 `_dispatch_facts`（**一条语句**，与租约面同语句）——过滤仍走 `json_each(?)`
+    （**绑定参数**，SQL 里没有拼进去的值）；每个请求到的 run_id 都有条目
+    （未知/无重排行 ⇒ `(0, 0, None)`）。分类与单 run 版共用 `_summarize_retries`。
     """
-    ordered = tuple(dict.fromkeys(run_ids))
-    if not ordered:
-        return {}
-    rows = conn.execute(
-        "SELECT run_id, retry_at FROM tasks"
-        " WHERE run_id IN (SELECT value FROM json_each(?)) AND status = ?",
-        (json.dumps(list(ordered)), ResearchTaskState.State.RETRY_SCHEDULED),
-    ).fetchall()
-    deadlines: dict[str, list[str | None]] = {run_id: [] for run_id in ordered}
-    for row in rows:
-        deadlines[str(row["run_id"])].append(
-            None if row["retry_at"] is None else str(row["retry_at"])
-        )
+    deadlines, _ = _dispatch_facts(conn, run_ids, now_text)
     return {run_id: _summarize_retries(items, now_text) for run_id, items in deadlines.items()}
 
 
@@ -153,35 +147,114 @@ def live_lease_holders(
 def live_lease_holders_many(
     conn: sqlite3.Connection, run_ids: tuple[str, ...], now_text: str
 ) -> dict[str, tuple[tuple[str, str | None, int, str | None], ...]]:
-    """一批 run 的活租约持有者（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+    """一批 run 的活租约持有者：一次读回答整批。
 
-    判据与单 run 版逐字相同（同一列、同一个 `now_text`、同一条 LOST 排除子查询），
-    过滤走 `json_each(?)` 绑定参数；每个请求到的 run_id 都有条目（无持有 ⇒ 空元组）。
+    判据与单 run 版逐字相同（同一列、同一个 `now_text`、同一条 LOST 排除子查询）；
+    取数走 `_dispatch_facts`（**一条语句**，与重排面同语句），过滤走 `json_each(?)`
+    绑定参数；每个请求到的 run_id 都有条目（无持有 ⇒ 空元组）。
+    """
+    _, holders = _dispatch_facts(conn, run_ids, now_text)
+    return holders
+
+
+_FACTS_SQL = (
+    "SELECT kind, run_id, retry_at, task_id, worker_id, fence, expires_at FROM ("
+    " SELECT 'RETRY' AS kind, run_id, retry_at,"
+    " NULL AS task_id, NULL AS worker_id, NULL AS fence, NULL AS expires_at FROM tasks"
+    " WHERE run_id IN (SELECT value FROM json_each(?)) AND status = ?"
+    " UNION ALL"
+    " SELECT 'LEASE' AS kind, t.run_id, NULL AS retry_at,"
+    " l.task_id, l.worker_id, l.fence, l.expires_at"
+    " FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
+    " WHERE t.run_id IN (SELECT value FROM json_each(?)) AND l.expires_at >= ?"
+    " AND (l.worker_id IS NULL OR l.worker_id NOT IN"
+    " (SELECT worker_id FROM workers WHERE state = 'LOST'))"
+    ") AS facts ORDER BY kind, run_id, task_id"
+)
+
+
+def _dispatch_facts(
+    conn: sqlite3.Connection, run_ids: tuple[str, ...], now_text: str
+) -> tuple[
+    dict[str, list[str | None]],
+    dict[str, tuple[tuple[str, str | None, int, str | None], ...]],
+]:
+    """派发读面的两件事实：**一条语句**取出，调用方各取所需的一面。
+
+    存在理由：`_dispatch_ownerships` 必须把两件事实组合成**一个**答案，而
+    `SerializedConnection` 的锁与"行取尽"只保证**单条语句**的自洽
+    （`adapters/sqlite/db.py`）——语句之间别的连接可以提交，两次独立查询会撕裂。单条
+    语句（`UNION ALL` + 判别列 `kind`）把一致性交给语句本身，锁与事务边界都不用动。
+
+    代价（有意）：单面调用（`retry_schedules` / `live_lease_holders_many`）也会读到另一
+    面的行——换来"判据只有一处"与同一个快照语义；行数由 `run_id` 集合界住。
+
+    每个请求到的 run_id 两面都有条目（无行 ⇒ 空列表）；空入参不读库。
     """
     ordered = tuple(dict.fromkeys(run_ids))
-    if not ordered:
-        return {}
-    rows = conn.execute(
-        "SELECT t.run_id AS run_id, l.task_id AS task_id, l.worker_id AS worker_id,"
-        " l.fence AS fence, l.expires_at AS expires_at"
-        " FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
-        " WHERE t.run_id IN (SELECT value FROM json_each(?)) AND l.expires_at >= ?"
-        " AND (l.worker_id IS NULL OR l.worker_id NOT IN"
-        " (SELECT worker_id FROM workers WHERE state = 'LOST'))"
-        " ORDER BY t.run_id, l.task_id",
-        (json.dumps(list(ordered)), now_text),
-    ).fetchall()
-    grouped: dict[str, list[tuple[str, str | None, int, str | None]]] = {
+    deadlines: dict[str, list[str | None]] = {run_id: [] for run_id in ordered}
+    holders: dict[str, list[tuple[str, str | None, int, str | None]]] = {
         run_id: [] for run_id in ordered
     }
+    if not ordered:
+        return deadlines, {run_id: () for run_id in ordered}
+    rows = conn.execute(
+        _FACTS_SQL,
+        (
+            json.dumps(list(ordered)),
+            ResearchTaskState.State.RETRY_SCHEDULED,
+            json.dumps(list(ordered)),
+            now_text,
+        ),
+    ).fetchall()
     for row in rows:
-        grouped[str(row["run_id"])].append((
+        run_id = str(row["run_id"])
+        if row["kind"] == "RETRY":
+            value = row["retry_at"]
+            deadlines[run_id].append(None if value is None else str(value))
+            continue
+        holders[run_id].append((
             str(row["task_id"]),
             None if row["worker_id"] is None else str(row["worker_id"]),
             int(row["fence"] or 0),
             None if row["expires_at"] is None else str(row["expires_at"]),
         ))
-    return {run_id: tuple(items) for run_id, items in grouped.items()}
+    return deadlines, {run_id: tuple(items) for run_id, items in holders.items()}
+
+
+def dispatch_ownerships(
+    conn: sqlite3.Connection, run_ids: tuple[str, ...], now_text: str
+) -> dict[str, DispatchOwnership]:
+    """一批 run 的统一派发读面：一趟读一条语句、一个快照回答整批。
+
+    两件 canonical 事实（重排 + 活租约）由 `_dispatch_facts` 的**同一条语句**取出：
+    `SerializedConnection` 只保证单条语句的自洽，所以组合 `kind` 的两件事实必须同刻
+    ——不会出现"重排面已前移、租约面仍是旧值"的撕裂读。装配与单 run 读共用这一处
+    （`SqliteWorkflowEngine._dispatch_ownerships` 只负责 `_ensure_open` 与记账）。
+    """
+    deadlines_by_run, holders_by_run = _dispatch_facts(conn, run_ids, now_text)
+    ownerships: dict[str, DispatchOwnership] = {}
+    for run_id, deadlines in deadlines_by_run.items():
+        schedule = _summarize_retries(deadlines, now_text)
+        ownerships[run_id] = DispatchOwnership(
+            retry=RetrySchedule(
+                scheduled=schedule[0],
+                due=schedule[1],
+                next_retry_at=(
+                    decode_timestamp(schedule[2]) if schedule[2] is not None else None
+                ),
+            ),
+            leases=tuple(
+                LeaseHolder(
+                    task_id=task_id,
+                    worker_id=worker_id,
+                    fence=fence,
+                    expires_at=(None if expires_at is None else decode_timestamp(expires_at)),
+                )
+                for task_id, worker_id, fence, expires_at in holders_by_run[run_id]
+            ),
+        )
+    return ownerships
 
 
 def task_identities(conn: sqlite3.Connection, run_id: str) -> tuple[tuple[str, str, str], ...]:
