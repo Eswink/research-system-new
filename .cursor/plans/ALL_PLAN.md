@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260918-093](tasks/PLAN-20260918-093-security-audit-residual-recheck.md) | DONE |
 | [x] | [PLAN-20260917-092](tasks/PLAN-20260917-092-goal-004-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260917-091](tasks/PLAN-20260917-091-security-audit-terminal-state.md) | DONE |
 | [x] | [PLAN-20260917-089](tasks/PLAN-20260917-089-unified-dispatch-ownership-read-surface.md) | DONE |
