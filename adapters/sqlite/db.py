@@ -31,7 +31,7 @@ from typing import Any, Literal, cast
 from adapters.sqlite.cursor import MaterializedRows as MaterializedRows
 from adapters.sqlite.cursor import SerializedCursor as SerializedCursor
 
-BUSY_TIMEOUT_MS = 5000
+BUSY_TIMEOUT_MS = 30000
 
 # 事务**边界**属性：赋值必须进锁（见 SerializedConnection.__setattr__ 的说明）。
 # 读取不进锁——它们只反映标志位，不触碰连接状态。
@@ -334,7 +334,7 @@ def connect(db_path: str | Path, *, journal_mode: str = "WAL") -> sqlite3.Connec
     )
     connection.row_factory = sqlite3.Row
     _apply_journal_mode(connection, journal_mode)
-    connection.execute("PRAGMA busy_timeout=5000")
+    connection.execute("PRAGMA busy_timeout=30000")
     connection.execute("PRAGMA foreign_keys=ON")
     connection.executescript(SCHEMA_SQL)
     return connection
