@@ -19,10 +19,12 @@ import pytest
 
 from adapters.postgres.db import migrate
 from adapters.postgres.workflow_engine import PostgresWorkflowEngine
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import (
     DISPATCH_BOTH,
     DISPATCH_NONE,
     DISPATCH_WORKER_CLAIM,
+    MAX_DISPATCH_OWNERSHIP_BATCH,
     ClaimRequest,
     TaskCompletion,
 )
@@ -196,3 +198,32 @@ def test_pg_a_due_retry_beside_a_live_claim_reads_as_both() -> None:
     assert ownership.kind == DISPATCH_BOTH
     assert ownership.retry.due == 1 and ownership.retry.scheduled == 0
     assert len(ownership.leases) == 1
+
+
+def test_pg_an_over_limit_batch_is_rejected_as_a_caller_bug() -> None:
+    """EC-05 ①：超限 ⇒ `InvalidInputError`，且**不被 `_wrap_operational` 误分类**。
+
+    分类错了比不判更糟：若上限判定落在 `try` 之内，异常会被包成 `TransientPortError`，
+    调用方会去重试一个永远不会成功的调用。判定还必须**在读库之前**——判据用"已关闭的引擎"
+    做结构性反证：关闭的引擎对任何读都抛"adapter is closed"（`PermanentPortError` 而非
+    `InvalidInputError`），所以超限调用若仍拿到上限错误，就说明它先于 `_ensure_open()`。
+    """
+    too_many = tuple(str(ID.generate().value) for _ in range(MAX_DISPATCH_OWNERSHIP_BATCH + 1))
+
+    with pytest.raises(InvalidInputError) as rejected:
+        _engine().dispatch_ownership_many(too_many)
+
+    assert rejected.value.retryable is False, "调用方 bug 不是可重试的瞬时失败"
+    assert str(MAX_DISPATCH_OWNERSHIP_BATCH) in str(rejected.value)
+
+    closed = _engine()
+    closed.close()
+    with pytest.raises(InvalidInputError):
+        closed.dispatch_ownership_many(too_many)
+
+    engine = _engine()
+    unknown = str(ID.generate().value)
+    assert engine.dispatch_ownership_many((unknown,))[unknown].kind == DISPATCH_NONE, (
+        "拒绝之后读面仍然可用（上限判定不留坏状态）"
+    )
+    engine.close()

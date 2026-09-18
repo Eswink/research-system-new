@@ -15,6 +15,7 @@ from packages.application.ports.workflow_engine import (
     TaskCompletion,
     TaskIdentity,
     TaskLease,
+    validate_dispatch_batch,
 )
 from packages.domain.core import Timestamp
 from packages.domain.enums import TaskKind
@@ -285,7 +286,11 @@ class FakeWorkflowEngine(FakeBase):
         与单 run 版同一段装配（`_ownership_of`）⇒ 两个入口不会各算各的；每个请求到的
         run_id 都有条目（未知 run 与"没有持有"同判 = `DISPATCH_NONE`）。记账只记一次
         （列表路径的入口），不把内部的单 run 装配记成 N 次调用。
+
+        上限（EC-05 ①）用 port 的**同一句**判据（`validate_dispatch_batch`），在最早处
+        拒绝：超限的调用既不记账也不装配——它不是一次"读到了零条"，而是根本没读。
         """
+        validate_dispatch_batch(run_ids)
         self._enter("dispatch_ownership_many", f"n={len(run_ids)}")
         ownerships = {run_id: self._ownership_of(run_id) for run_id in dict.fromkeys(run_ids)}
         kinds = ",".join(sorted({ownership.kind for ownership in ownerships.values()}))

@@ -69,6 +69,7 @@ from packages.application.ports.workflow_engine import (
     TaskCompletion,
     TaskIdentity,
     TaskLease,
+    validate_dispatch_batch,
 )
 from packages.domain.enums import FailureCategory
 from packages.domain.events import EventEnvelope
@@ -352,8 +353,10 @@ class PostgresWorkflowEngine(PostgresAdapterBase):
     def dispatch_ownership_many(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
         """一批 run 的统一派发读面（GOAL-005 cycle 5 = EC-05 ①）：与逐 run 读同判。
 
-        见 `workflow_dispatch.py`；每次调用两条 SQL（重排 + 租约），不随 run 数增长。
+        见 `workflow_dispatch.py`（一次调用**一条语句**，不随 run 数增长）。上限（EC-05 ①）
+        用 port 同一句判据放在 `try` 之外：超限 ⇒ `InvalidInputError`，不发语句也不误分类。
         """
+        validate_dispatch_batch(run_ids)
         self._ensure_open()
         try:
             return dispatch_ownership_many_impl(

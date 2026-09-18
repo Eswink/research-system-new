@@ -7,6 +7,44 @@ retry 调度、取消传播；不执行 Agent 循环（AgentRuntime 职责）。
 
 M5 决策 D1：本 Port 与 Fake 在 M5 冻结语义；M7 以 contract suite 验收
 PostgreSQL 实现。M5 决策 D2：同步语义；cancellation 为协作式。
+
+弱同判边界（GOAL-20260918-006 cycle 5 = EC-05 ②）：`dispatch_ownership_many` 的契约在
+**可同判轴**上要求三个实现（Fake / SQLite / PG）给同一个答案，在**不可同判轴**上单列并
+点名真实现判据——Fake 不假装实现它没有的语义。每条都点名判据文件与用例名；这份清单由
+`tests/contracts/test_dispatch_ownership_weak_equivalence.py` 机器校验（点名必须可解析、
+可同判轴必须真的在三实现上跑、与契约套件里的三实现用例双向一一对应）。
+
+可同判轴的判据文件：`tests/contracts/test_dispatch_ownership_contract.py`。
+
+- [同判] 无派发方 ⇒ `NONE` —— 判据
+  `test_a_run_without_claims_or_retries_has_no_dispatch_owner`；
+- [同判] 未知 run 是"同样的答案"而不是异常 —— 判据同文件里的
+  `test_an_unknown_run_is_the_same_answer_not_an_error`；
+- [同判] 被持有 ⇒ `WORKER_CLAIM` 且持有者点名 task/worker/fence/到期 —— 判据同文件里的
+  `test_a_worker_claim_names_the_holder`；
+- [同判] 任务完成 ⇒ 租约消失 ⇒ `NONE` —— 判据同文件里的
+  `test_completing_the_task_releases_the_claim`；
+- [同判] 读面按 run 回答（别的 run 的租约不串台）—— 判据同文件里的
+  `test_the_read_face_is_per_run`；
+- [同判] 批量读 == 逐 run 读（未知 run 也有条目）—— 判据同文件里的
+  `test_the_batch_read_equals_the_per_run_read`；
+- [同判] 空入参 ⇒ 空 dict —— 判据同文件里的 `test_an_empty_batch_reads_nothing`；
+- [同判] 超限 ⇒ `InvalidInputError`，恰好等于上限合法 —— 判据同文件里的
+  `test_a_batch_over_the_limit_is_rejected`；
+- [不同判] **租约过期**（权威时钟推进后那条租约不再算活）：Fake 的租约不携带时钟、没有回收
+  路径 ⇒ 它答不出这一轴，不假装实现 —— 真实现判据 `tests/adapters/sqlite/test_dispatch_ownership.py`
+  里的 `test_an_expired_lease_is_not_a_live_holder_and_recovery_agrees` 与
+  `tests/postgres/test_dispatch_ownership_pg.py` 里的
+  `test_pg_an_expired_lease_is_not_live_and_recovery_agrees`；
+- [不同判] **LOST worker 的租约不算活**：Fake 没有 worker 注册表 ⇒ 无 LOST 语义 ——
+  真实现判据 `tests/adapters/sqlite/test_dispatch_ownership.py` 里的
+  `test_a_lost_workers_lease_is_not_a_live_holder` 与 `tests/postgres/test_dispatch_ownership_pg.py`
+  里的 `test_pg_a_lost_workers_lease_is_not_live`；
+- [不同判] **重排计数与 `BOTH` 组合**：Fake 没有写 `RETRY_SCHEDULED` 的路径 ⇒ 它的重排面
+  恒为零 —— 真实现判据 `tests/contracts/test_dispatch_ownership_contract.py` 里的
+  `test_a_retry_waiting_beside_a_claim_reads_as_both` 与
+  `tests/contracts/test_retry_schedule_contract.py` 里的
+  `test_the_fake_never_reports_a_retry_it_cannot_write`。
 """
 
 from __future__ import annotations
@@ -14,6 +52,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
+from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import Timestamp
 from packages.domain.enums import FailureCategory
 from packages.domain.tasks import ResearchTask, TaskContract
@@ -122,6 +161,26 @@ DISPATCH_NONE = "NONE"
 DISPATCH_RETRY = "RETRY_DISPATCH"
 DISPATCH_WORKER_CLAIM = "WORKER_CLAIM"
 DISPATCH_BOTH = "BOTH"
+
+# 批量派发读面的**显式上限**（GOAL-20260918-006 cycle 5 = EC-05 ①）：一次调用最多回答
+# 这么多条 run。上限的意义不是省资源，而是让"列表长度 → 查询规模"的放大**可判定**：
+# 超限 ⇒ `InvalidInputError`（调用方 bug），**不静默截断**——截断会让读面少条目，等于
+# 悄悄说假话。要读更多由调用方按本常量分块（`services/api/run_dispatch_view.py` 就是
+# 这么做的，并因此承担"整批可能跨多个快照"这条边界；块内仍是一个快照）。
+MAX_DISPATCH_OWNERSHIP_BATCH = 500
+
+
+def validate_dispatch_batch(run_ids: tuple[str, ...]) -> None:
+    """批量读面的**唯一一句**上限判据（三个实现共用，不许各写各的）。
+
+    放在 port 而不是各 adapter：上限是契约事实（值、判定口径、失败分类都在这里），
+    adapter 只负责在自己的入口最早处调用它——超限在读库之前就被拒。
+    """
+    if len(run_ids) > MAX_DISPATCH_OWNERSHIP_BATCH:
+        raise InvalidInputError(
+            "dispatch_ownership_many accepts at most "
+            f"{MAX_DISPATCH_OWNERSHIP_BATCH} run ids, got {len(run_ids)}"
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -285,16 +344,20 @@ class WorkflowEngine(Protocol):
 
         契约（由契约用例钉住，三实现同判）：
 
-        - **同判**：单 run 读必须就是"这批只有一条"——实现里两处共用同一段装配，
-          不许第二套判据；`kind` 仍由 `DispatchOwnership` 的组合规则算出；
-        - **全量条目**：请求的每个 `run_id` 都有条目；没有重排也没有活租约（含未知 run）
-          ⇒ `DISPATCH_NONE`（与单 run 读对未知 run 的答案一致）；
-        - **一个快照**（GOAL-20260918-006 cycle 1 = EC-01）：两件事实必须出自**同一条语句**
-          （读面调用内的语句数 == 1），组合 `kind` 的两件事实同刻——不得用两条独立查询
-          各取一件再拼（撕裂读）。用注入写在两次取数之间做反证的用例分别落在
-          `tests/postgres/test_dispatch_read_snapshot_pg.py` 与
-          `tests/adapters/sqlite/test_dispatch_read_snapshot.py`；
-        - **零写、零缓存**；空入参返回空 dict（不读库）。
+        - **同判**：单 run 读就是"这批只有一条"——两处共用同一段装配，不许第二套判据；
+        - **全量条目**：每个请求到的 `run_id` 都有条目（未知 run 与"没有持有"同判 `NONE`）；
+        - **一个快照**（EC-01）：两件事实出自**同一条语句**（调用内语句数 == 1），不得两条
+          查询各取一件再拼；注入写反证在 `test_dispatch_read_snapshot*.py`（SQLite / PG）；
+        - **零写、零缓存**；空入参返回空 dict（不读库）；
+        - **显式上限**（EC-05 ①）：单次最多 `MAX_DISPATCH_OWNERSHIP_BATCH`（模块常量，
+          唯一事实源）条，按**入参长度**算（重复 id 不豁免）；超限 ⇒ `InvalidInputError`
+          （可判定拒绝，**不静默截断**）；恰好等于上限合法。分块是**调用方**的责任
+          （`services/api/run_dispatch_view.py`），并因此多承担一条边界——**整批可能跨
+          多个快照**（块内仍是一个快照）。
+
+        **弱同判边界**（EC-05 ②）**逐条点名**见模块 docstring 末节（可同判轴 / 不可同判轴，
+        每条带 `path::test_name` 判据）；那份清单由
+        `tests/contracts/test_dispatch_ownership_weak_equivalence.py` 机器校验。
         """
 
     def task_identities(self, run_id: str) -> tuple[TaskIdentity, ...]:

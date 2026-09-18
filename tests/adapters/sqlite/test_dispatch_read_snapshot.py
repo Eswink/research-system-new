@@ -26,11 +26,16 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, cast
 
+import pytest
+
 from adapters.sqlite.db import connect as sqlite_connect
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import (
     DISPATCH_BOTH,
+    DISPATCH_NONE,
     DISPATCH_RETRY,
+    MAX_DISPATCH_OWNERSHIP_BATCH,
     ClaimRequest,
     TaskCompletion,
 )
@@ -184,3 +189,28 @@ def test_sqlite_the_read_face_answers_from_one_snapshot(tmp_path: Path) -> None:
         "注入的写必须真的生效，否则上一条断言没有判别力"
     )
     after.close()
+
+
+def test_sqlite_an_over_limit_batch_sends_no_statement(tmp_path: Path) -> None:
+    """EC-05 ①：超限在**读库之前**被拒——读面一条语句都不发。
+
+    与上一条用例共用探针：这里数的是"上限判定发生在语句之前还是之后"。若上限检查写在取数
+    之后（或干脆没有），超限调用会先发一条巨大的语句再报错——那对资源面毫无意义。末尾的
+    对照读是**反空洞**：探针必须真的会计数，否则 `count == 0` 什么都不证明。
+    """
+    engine = SqliteWorkflowEngine(str(tmp_path / "control.db"), lease_ttl_seconds=_TTL)
+    probe = _StatementProbe(engine._conn, lambda: None)
+    engine._conn = cast(sqlite3.Connection, probe)
+    too_many = tuple(str(ID.generate().value) for _ in range(MAX_DISPATCH_OWNERSHIP_BATCH + 1))
+
+    with pytest.raises(InvalidInputError):
+        engine.dispatch_ownership_many(too_many)
+
+    assert probe.count == 0, "超限调用不许读库（上限判定在读之前）"
+
+    unknown = str(ID.generate().value)
+    answered = engine.dispatch_ownership_many((unknown,))
+
+    assert probe.count == 1, "对照：探针确实在计数，且拒绝之后读面仍然可用"
+    assert set(answered) == {unknown} and answered[unknown].kind == DISPATCH_NONE
+    engine.close()

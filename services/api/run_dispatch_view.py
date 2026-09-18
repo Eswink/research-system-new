@@ -14,7 +14,11 @@ plane 的租约**完全不在读面**（一条 `RUNNING` 且任务正被 worker 
 from __future__ import annotations
 
 from packages.application.ports.errors import PortError
-from packages.application.ports.workflow_engine import DispatchOwnership, WorkflowEngine
+from packages.application.ports.workflow_engine import (
+    MAX_DISPATCH_OWNERSHIP_BATCH,
+    DispatchOwnership,
+    WorkflowEngine,
+)
 from services.api.dto.runs import DispatchOwnershipDto, DispatchRetryDto, LeaseHolderDto
 
 UNKNOWN = "UNKNOWN"
@@ -35,19 +39,36 @@ def dispatch_ownership_read(
 def dispatch_ownership_read_many(
     workflow: WorkflowEngine | None, run_ids: tuple[str, ...]
 ) -> dict[str, DispatchOwnership]:
-    """列表路径的批量入口（GOAL-005 cycle 5 = EC-05 ①）：**同一次读**回答整批。
+    """列表路径的批量入口（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批（必要时分块）。
 
     逐 run 读与批量读是同一个判据（port 里单 run 就是批量的一条）⇒ 调用方拿到的
     `kind`/`retry`/`holders` 与逐 run 读逐字相同。降级口径与单 run 一致：没有 workflow
     读面或整批读不到（`PortError`）⇒ 返回空 dict，调用方对每条 run 给 `UNKNOWN`
     （**不是** `NONE`——"读不到"与"没有派发方"是两件事）。
+
+    上限（EC-05 ①）：port 一次调用最多 `MAX_DISPATCH_OWNERSHIP_BATCH` 条，所以**分块是
+    调用方的责任**——这里按该常量切块、合并结果（重复 id 先归一去重，不让重复项占额度）。
+    由此多承担一条**显式边界**：页大于上限时整批可能跨多个快照（块内仍确定是一个快照）；
+    同一页里两条 run 的 `kind` 因此可能来自相隔一次提交的两个时刻。降级口径不变：任一块
+    读不到 ⇒ 整批返回空 dict（不交半份答案——半份会让调用方把"没读的部分"当成 `NONE`）。
     """
     if workflow is None or not run_ids:
         return {}
+    merged: dict[str, DispatchOwnership] = {}
     try:
-        return workflow.dispatch_ownership_many(tuple(run_ids))
+        for chunk in _dispatch_batch_chunks(tuple(dict.fromkeys(run_ids))):
+            merged.update(workflow.dispatch_ownership_many(chunk))
     except PortError:
         return {}
+    return merged
+
+
+def _dispatch_batch_chunks(run_ids: tuple[str, ...]) -> list[tuple[str, ...]]:
+    """按 port 上限切块（空入参不给块 ⇒ 不读库）。"""
+    return [
+        run_ids[start : start + MAX_DISPATCH_OWNERSHIP_BATCH]
+        for start in range(0, len(run_ids), MAX_DISPATCH_OWNERSHIP_BATCH)
+    ]
 
 
 def dispatch_ownership_view(workflow: WorkflowEngine | None, run_id: str) -> DispatchOwnershipDto:

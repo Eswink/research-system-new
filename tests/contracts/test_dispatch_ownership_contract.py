@@ -9,7 +9,10 @@ worker plane 的租约事实完全不在读面。这里钉**实现无关**的不
 3. 持有者完成任务 ⇒ 租约消失 ⇒ 回到 `NONE`（读面跟着 canonical 事实走）；
 4. 读面按 run 回答（另一条 run 的租约不串台）；
 5. 重排 + 租约同时存在 ⇒ `BOTH`（**只在两个持久化实现上钉**：Fake 没有写
-   `RETRY_SCHEDULED` 的路径，与 `test_retry_schedule_contract.py` 的边界同源）。
+   `RETRY_SCHEDULED` 的路径，与 `test_retry_schedule_contract.py` 的边界同源）；
+6. 批量读的**显式上限**（EC-05 ①）：恰好等于上限 ⇒ 全量回答；多一条 ⇒
+   `InvalidInputError`。上限值与"谁负责分块"写在 port 常量与 docstring 里，本文件只在
+   三实现上钉行为（值本身不是三个 adapter 各自的选择）。
 
 "活"的时钟判据（过期 / LOST worker）不在本文件：Fake 没有过期语义，三实现不同强度；
 那两条由 SQLite 注入时钟单测（tests/adapters/sqlite/test_dispatch_ownership.py）与
@@ -23,10 +26,12 @@ from collections.abc import Callable
 import pytest
 
 from adapters.fakes.workflow_engine import FakeWorkflowEngine
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import (
     DISPATCH_BOTH,
     DISPATCH_NONE,
     DISPATCH_WORKER_CLAIM,
+    MAX_DISPATCH_OWNERSHIP_BATCH,
     ClaimRequest,
     LeaseHolder,
     TaskCompletion,
@@ -214,6 +219,29 @@ def test_an_empty_batch_reads_nothing(factory: Callable[[], object]) -> None:
     engine: WorkflowEngine = factory()  # type: ignore[assignment]
 
     assert engine.dispatch_ownership_many(()) == {}
+
+
+@pytest.mark.parametrize("factory", _FACTORIES)
+def test_a_batch_over_the_limit_is_rejected(factory: Callable[[], object]) -> None:
+    """EC-05 ①：超限**可判定拒绝**——不是静默截断，也不是"传多少放大多少"。
+
+    上限是契约事实（值在 port 常量 `MAX_DISPATCH_OWNERSHIP_BATCH`，三实现共用 port 的
+    同一句判据）；边界两侧各钉一次：恰好等于上限合法且全量条目，多一条就拒。拒绝的异常
+    必须是 `InvalidInputError`（调用方 bug、不可重试），不是瞬时失败——否则调用方会去重试
+    一个永远不会成功的调用。
+    """
+    engine: WorkflowEngine = factory()  # type: ignore[assignment]
+    at_limit = tuple(str(ID.generate().value) for _ in range(MAX_DISPATCH_OWNERSHIP_BATCH))
+
+    answered = engine.dispatch_ownership_many(at_limit)
+
+    assert set(answered) == set(at_limit), "恰好等于上限是合法的，且每条都有条目"
+    assert {ownership.kind for ownership in answered.values()} == {DISPATCH_NONE}
+
+    with pytest.raises(InvalidInputError) as rejected:
+        engine.dispatch_ownership_many((*at_limit, str(ID.generate().value)))
+
+    assert str(MAX_DISPATCH_OWNERSHIP_BATCH) in str(rejected.value), "拒绝要说清上限是多少"
 
 
 def test_the_fake_never_expires_a_lease_it_holds() -> None:

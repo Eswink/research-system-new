@@ -314,6 +314,23 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
   过滤全走**绑定参数**（SQLite：`json_each(?)`；PG：`= ANY(%s)`），SQL 里没有拼进去的值。
   控制面的 N+1 哨兵用例在 `tests/api/test_run_dispatch_view_api.py`（列表路径批量读一次、
   逐 run 读零次）。
+- **批量读的显式上限**（GOAL-20260918-006 cycle 5 = EC-05 ①）：上限是 port 常量
+  `MAX_DISPATCH_OWNERSHIP_BATCH`（= 500 条，唯一事实源，值只在 port 里写一次）；单次调用
+  **超限 ⇒ `InvalidInputError`**（调用方 bug、可判定拒绝，**不静默截断**——截断会让读面少
+  条目，等于悄悄说假话），按入参长度判定（重复 id 不豁免），恰好等于上限合法。**分块是
+  调用方的责任**：控制面服务层按这个常量切块、合并结果（`services/api/run_dispatch_view.py`），
+  因此多承担一条显式边界——页大于上限时整批**可能跨多个快照**（块内仍是一个快照）。
+  判据落在契约套件（三实现同判）与 SQLite 语句探针（超限时**一条语句都不发**）：
+  `tests/contracts/test_dispatch_ownership_contract.py`、
+  `tests/adapters/sqlite/test_dispatch_read_snapshot.py`、
+  `tests/postgres/test_dispatch_ownership_pg.py`、`tests/api/test_run_dispatch_view_api.py`。
+- **弱同判边界逐条点名**（GOAL-20260918-006 cycle 5 = EC-05 ②）：Fake 与两个持久化实现
+  **可同判**的轴（无派发方 / 未知 run、持有者点名、完成后归还、按 run 隔离、批量 == 逐 run、
+  空入参、超限拒绝）与**不可同判**的轴（租约过期、LOST worker、重排计数与 `BOTH`）逐条写在
+  port **模块 docstring** 里（`packages/application/ports/workflow_engine.py`），每条点名判据
+  文件与用例名；点名与实际断言的轴由
+  `tests/contracts/test_dispatch_ownership_weak_equivalence.py` 机器校验——可同判轴与契约
+  套件里所有三实现参数化用例**双向一一对应**，不可同判轴的判据不许声称三实现。
 - **一次读 = 一条语句 = 一个快照**（GOAL-20260918-006 cycle 1 = EC-01）：两件 canonical
   事实（重排 + 活租约）由**同一条语句**取出（`UNION ALL` + 判别列），所以组合 `kind` 的
   两件事实**同刻**——并发写只会让整条语句落在写前或写后，不会出现"重排面已前移、租约面

@@ -217,11 +217,22 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
   `kind` 的两件事实出自**同一条语句**（GOAL-20260918-006 cycle 1 = EC-01）⇒ 它们来自
   **同一个快照**：并发写不会让响应出现"重排面已前移、租约面仍是旧值"的混合态。
 
+  批量读**有显式上限**（GOAL-20260918-006 cycle 5 = EC-05 ①）：上限是 port 常量
+  `MAX_DISPATCH_OWNERSHIP_BATCH`（= 500 条，唯一事实源）；单次调用超限 ⇒
+  `InvalidInputError`（调用方 bug、可判定拒绝，**不静默截断**），恰好等于上限合法。
+  页大于上限时**由控制面服务层按该常量分块**（`services/api/run_dispatch_view.py`）、
+  合并后回答整页 —— 代价是一条**显式边界**：此时整批可能**跨多个快照**（块内仍确定是
+  一个快照），同一页里两条 run 的 `kind` 因此可能来自相隔一次提交的两个时刻。任一块读不到
+  ⇒ 整批 `UNKNOWN`（不给半份答案：半份会让"没读的部分"看着像 `NONE`）。
+
   **两条容易读错的事实**（同源登记，EC-05 文档面）：① **Fake 实现没有租约过期语义** ——
   它的"活"= 仍在租约表里，过期与 LOST worker 两种情形由 SQLite 注入时钟单测与 PG parity
   覆盖（Fake 不假装实现回收）；② `kind=WORKER_CLAIM` **也覆盖控制面自持的租约** ——
   `worker_id` 为 `null` 的持有者是 agent session 投递路径，不是 worker plane claim，
   `kind` 不区分这两种持有者（要区分只能看 `holders[].worker_id`）。
+  这两条只是"逐条点名"清单里的两条：可同判轴与不可同判轴的完整清单写在 port docstring 里，
+  由 `tests/contracts/test_dispatch_ownership_weak_equivalence.py` 机器校验（可同判轴与契约
+  套件里的三实现用例双向一一对应；不可同判轴的判据不许声称三实现）。
 - `GET /runs/{id}`（与列表）的 `rebuild` 是**重建能力读面**（GOAL-005 cycle 6 = EC-06）：
   **任何状态**都给，正面回答"这份**记录**够不够重建、缺哪条事实"——历史上这里只有两个
   含糊的 `None`（`manifest_semantic_digest` / `protocol_body_digest`），分不清"功能前的

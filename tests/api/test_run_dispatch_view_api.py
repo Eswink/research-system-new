@@ -20,7 +20,14 @@ from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
-from packages.application.ports.workflow_engine import ClaimRequest, TaskCompletion
+from packages.application.ports.errors import TransientPortError
+from packages.application.ports.workflow_engine import (
+    MAX_DISPATCH_OWNERSHIP_BATCH,
+    ClaimRequest,
+    DispatchOwnership,
+    TaskCompletion,
+    WorkflowEngine,
+)
 from packages.domain.core import ID
 from packages.domain.enums import AcceptanceCriterionType, FailureCategory, TaskKind
 from packages.domain.run import ResearchRun
@@ -32,9 +39,79 @@ from packages.domain.tasks import (
     RetryPolicy,
     TaskContract,
 )
+from services.api.run_dispatch_view import dispatch_ownership_read_many
 
 BACKOFF_SECONDS = 600
 _CAPABILITY = "python_exec"
+
+
+class _ChunkSpy:
+    """只实现批量读的替身：记录每次的块大小，可指定第几次调用失败。
+
+    服务层分块是**它自己的契约**（页大于 port 上限时谁负责切块），所以这里直接对
+    `dispatch_ownership_read_many` 断言，不经 HTTP——HTTP 侧只负责把合并结果逐行放进
+    列表（那部分由本文件其余的用例钉住）。
+    """
+
+    def __init__(self, *, fail_on_call: int | None = None) -> None:
+        self.chunk_sizes: list[int] = []
+        self._fail_on_call = fail_on_call
+
+    def dispatch_ownership_many(self, run_ids: tuple[str, ...]) -> dict[str, DispatchOwnership]:
+        self.chunk_sizes.append(len(run_ids))
+        if self._fail_on_call == len(self.chunk_sizes):
+            raise TransientPortError(
+                "dispatch read face is down", failure_category=FailureCategory.MODEL_TIMEOUT
+            )
+        return {run_id: DispatchOwnership() for run_id in run_ids}
+
+
+def _batch_ids(count: int) -> tuple[str, ...]:
+    return tuple(f"{index:07d}-0000-4000-8000-000000000000" for index in range(count))
+
+
+def test_a_page_under_the_limit_is_still_one_read() -> None:
+    """EC-05 ①：页在上限内 ⇒ 仍然只有一次读（N+1 哨兵的单元级对应物）。"""
+    spy = _ChunkSpy()
+
+    merged = dispatch_ownership_read_many(cast(WorkflowEngine, spy), ("run-a", "run-b"))
+
+    assert spy.chunk_sizes == [2]
+    assert set(merged) == {"run-a", "run-b"}
+
+
+def test_a_page_over_the_limit_is_read_in_chunks_of_the_port_limit() -> None:
+    """页大于 port 上限 ⇒ **服务层**按上限切块并合并（port 一次只承诺一个快照）。"""
+    ids = _batch_ids(MAX_DISPATCH_OWNERSHIP_BATCH * 2 + 1)
+    spy = _ChunkSpy()
+
+    merged = dispatch_ownership_read_many(cast(WorkflowEngine, spy), ids)
+
+    assert spy.chunk_sizes == [MAX_DISPATCH_OWNERSHIP_BATCH, MAX_DISPATCH_OWNERSHIP_BATCH, 1]
+    assert set(merged) == set(ids), "合并后覆盖所有请求到的 id"
+
+
+def test_duplicate_run_ids_do_not_eat_the_quota() -> None:
+    """重复 id 先归一再切块：列表页重复一行不该把页拆成两块。"""
+    spy = _ChunkSpy()
+
+    merged = dispatch_ownership_read_many(
+        cast(WorkflowEngine, spy), ("run-a",) * (MAX_DISPATCH_OWNERSHIP_BATCH + 1)
+    )
+
+    assert spy.chunk_sizes == [1]
+    assert set(merged) == {"run-a"}
+
+
+def test_a_failing_chunk_returns_no_half_answer() -> None:
+    """任一块读不到 ⇒ 整批空：半份答案会让调用方把"没读的部分"当成 `NONE`。"""
+    ids = _batch_ids(MAX_DISPATCH_OWNERSHIP_BATCH * 2)
+    spy = _ChunkSpy(fail_on_call=2)
+
+    merged = dispatch_ownership_read_many(cast(WorkflowEngine, spy), ids)
+
+    assert spy.chunk_sizes == [MAX_DISPATCH_OWNERSHIP_BATCH, MAX_DISPATCH_OWNERSHIP_BATCH]
+    assert merged == {}, "第一块读到了也不给半份"
 
 
 def _deps(client: TestClient) -> Any:

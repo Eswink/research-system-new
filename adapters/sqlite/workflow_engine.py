@@ -46,6 +46,7 @@ from packages.application.ports.workflow_engine import (
     TaskCompletion,
     TaskIdentity,
     TaskLease,
+    validate_dispatch_batch,
 )
 from packages.domain.events import EventEnvelope
 from packages.domain.tasks import ResearchTask, TaskContract
@@ -205,7 +206,11 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
         与单 run 版同一段装配（`_dispatch_ownerships`），所以"列表读"与"逐 run 读"不会
         各有一套判据；列表路径因此不再按 run 数放大查询（每次调用**一条语句**：重排 +
         租约由 `UNION ALL` 同语句取出，两件事实同一个快照）。
+
+        上限（EC-05 ①）用 port 的**同一句**判据（`validate_dispatch_batch`），并且放在
+        读库之前：超限的调用**一条语句都不发**。
         """
+        validate_dispatch_batch(run_ids)
         ownerships = self._dispatch_ownerships(run_ids)
         self._record("dispatch_ownership_many", f"n={len(ownerships)}")
         return ownerships
