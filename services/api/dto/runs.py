@@ -58,6 +58,27 @@ class LeaseHolderDto(BaseModel):
     expires_at: str | None = None
 
 
+class RebuildReadinessDto(BaseModel):
+    """重建能力读面：这份**记录**够不够重建、缺哪条事实。
+
+    历史行（旧 run 没有冻结正文、旧 `manifest.frozen` 事件没有 `semantic_digest`）此前
+    只能读到一个 `None`，分不清"功能前历史行"与"还没冻结"。这个读面正面回答：
+
+    - `status=SELF_CONTAINED`：冻结正文 + 两个 digest 齐 ⇒ 重建只用行上的字节；
+    - `status=SOURCE_DEPENDENT`：两个 digest 齐、无冻结正文 ⇒ 重建依赖来源仍可解析
+      （路径 / 草稿修订还在）；
+    - `status=REFUSED`：缺阻塞事实 ⇒ 重建会被拒绝，出路是 fork run 或 revision；
+      `missing` **点名**缺的是哪条事实（`manifest_digest` / `manifest_semantic_digest` /
+      `protocol_body` / `protocol_source`，即 canonical 行上的字段名）。
+
+    诚实边界：只回答"输入齐不齐"，不回答"该不该重建"（状态机 / 策略 / 预算不在这里），
+    也不承诺"重建必过"（漂移校验与 preflight 仍在 `/resume` 真跑时判）。
+    """
+
+    status: str
+    missing: list[str] = Field(default_factory=list)
+
+
 class DispatchOwnershipDto(BaseModel):
     """统一派发读面（GOAL-004 cycle 6 = EC-05 ②）：这条 run 现在谁在派发它。
 
@@ -97,6 +118,9 @@ class RunDetailDto(BaseModel):
     paused_dispatch: PausedDispatchDto | None = None
     # GOAL-004 cycle 6：统一派发读面（任何状态都给；与 paused_dispatch 同一次读分解而来）。
     dispatch: DispatchOwnershipDto | None = None
+    # GOAL-005 cycle 6 = EC-06：重建能力读面（任何状态都给）。把上面两个 None 与
+    # "冻结正文缺席"合成一个**点名事实**的回答——历史行不再是含糊的 None。
+    rebuild: RebuildReadinessDto
     created_at: str
     updated_at: str
 

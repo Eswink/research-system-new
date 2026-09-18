@@ -377,6 +377,12 @@ export interface DispatchOwnershipDto {
   holders: LeaseHolderDto[];
 }
 
+/** 重建能力读面：这份**记录**够不够重建、缺哪条事实（`missing` 是 canonical 行字段名）。 */
+export interface RebuildReadinessDto {
+  status: string;
+  missing: string[];
+}
+
 export interface RunDetailDto {
   id: string;
   project_id: string;
@@ -393,6 +399,8 @@ export interface RunDetailDto {
   paused_dispatch: PausedDispatchDto | null;
   // GOAL-004 cycle 6：统一派发读面（任何状态都给；与 paused_dispatch 同一次读）。
   dispatch: DispatchOwnershipDto | null;
+  // GOAL-005 cycle 6 = EC-06：重建能力读面（任何状态都给；历史行点名缺失事实）。
+  rebuild: RebuildReadinessDto;
   created_at: string;
   updated_at: string;
 }

@@ -21,7 +21,7 @@ from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
-from packages.domain.core import Digest
+from packages.domain.core import ID, Digest
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from services.api.run_execution import FrozenManifestRefs
@@ -144,6 +144,60 @@ def test_a_failed_run_without_a_freeze_event_has_no_semantic_digest(
     assert row.state == "FAILED"
     assert row.manifest_digest is None
     assert row.manifest_semantic_digest is None
+
+
+def test_a_legacy_freeze_event_without_a_semantic_digest_stays_empty() -> None:
+    """旧事件形态（payload 只有 `digest`）⇒ 回填路径落到 None，**不伪造**语义 digest。
+
+    GOAL-005 cycle 6 = EC-06：这条 from-event 回填分支此前没有用例（既有 restart 用例
+    的 run 行自带语义 digest，走不到这里）。判据是结构性的：`from_payload` 对缺失键
+    一律"当作没有这一项"，`apply` 只落它真的读到的引用。
+    """
+    legacy_payload = {"digest": "sha256:" + "0" * 64, "run_id": str(uuid.uuid4())}
+
+    refs = FrozenManifestRefs.from_payload(legacy_payload)
+    applied = refs.apply(
+        ResearchRun(
+            id=ID(legacy_payload["run_id"]),
+            project_id="example-project",
+            protocol_id="test_protocol",
+            state=ResearchRunState.State.PAUSED,
+        )
+    )
+
+    assert refs.semantic_digest is None, "旧事件没有这项 ⇒ 不猜"
+    assert applied.manifest_digest is not None, "字节 digest 该落就落"
+    assert applied.manifest_semantic_digest is None, "不伪造语义 digest"
+
+
+def test_a_legacy_freeze_event_leaves_the_row_naming_the_missing_fact(
+    run_ready_client: TestClient,
+) -> None:
+    """同一行的读面必须**点名**缺的事实（历史行不再是含糊的 None）：EC-06 (b) 的判据。
+
+    这条把"事件形态的历史行"一路走到 HTTP 读面：run 行只有字节 digest → 读面
+    `rebuild.status=REFUSED` 且 `missing` 点名 `manifest_semantic_digest`。
+    """
+    client = run_ready_client
+    legacy_payload = {"digest": "sha256:" + "0" * 64, "run_id": str(ID.generate().value)}
+    run_id = str(legacy_payload["run_id"])
+    parked = FrozenManifestRefs.from_payload(legacy_payload).apply(
+        ResearchRun(
+            id=ID(run_id),
+            project_id="example-project",
+            protocol_id="test_protocol",
+            state=ResearchRunState.State.PAUSED,
+        )
+    )
+    deps = _deps(client)
+    deps.run_registry[run_id] = parked
+    deps.runs_store.save_run(parked)
+
+    rebuild = client.get(f"/runs/{run_id}").json()["rebuild"]
+
+    assert rebuild["status"] == "REFUSED", rebuild
+    assert rebuild["missing"][0] == "manifest_semantic_digest", "点名缺的第一条事实"
+    assert "protocol_body" in rebuild["missing"], "旧行同样没有冻结正文（第二条事实）"
 
 
 def _park(row: ResearchRun, **overrides: object) -> ResearchRun:

@@ -5250,6 +5250,28 @@
         "title": "ProtocolSourceDto",
         "type": "object"
       },
+      "RebuildReadinessDto": {
+        "additionalProperties": false,
+        "description": "重建能力读面：这份**记录**够不够重建、缺哪条事实。\n\n历史行（旧 run 没有冻结正文、旧 `manifest.frozen` 事件没有 `semantic_digest`）此前\n只能读到一个 `None`，分不清\"功能前历史行\"与\"还没冻结\"。这个读面正面回答：\n\n- `status=SELF_CONTAINED`：冻结正文 + 两个 digest 齐 ⇒ 重建只用行上的字节；\n- `status=SOURCE_DEPENDENT`：两个 digest 齐、无冻结正文 ⇒ 重建依赖来源仍可解析\n  （路径 / 草稿修订还在）；\n- `status=REFUSED`：缺阻塞事实 ⇒ 重建会被拒绝，出路是 fork run 或 revision；\n  `missing` **点名**缺的是哪条事实（`manifest_digest` / `manifest_semantic_digest` /\n  `protocol_body` / `protocol_source`，即 canonical 行上的字段名）。\n\n诚实边界：只回答\"输入齐不齐\"，不回答\"该不该重建\"（状态机 / 策略 / 预算不在这里），\n也不承诺\"重建必过\"（漂移校验与 preflight 仍在 `/resume` 真跑时判）。",
+        "properties": {
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "RebuildReadinessDto",
+        "type": "object"
+      },
       "RegressionMarkerDto": {
         "additionalProperties": false,
         "properties": {
@@ -5475,6 +5497,9 @@
             "title": "Protocol Id",
             "type": "string"
           },
+          "rebuild": {
+            "$ref": "#/components/schemas/RebuildReadinessDto"
+          },
           "state": {
             "title": "State",
             "type": "string"
@@ -5489,6 +5514,7 @@
           "project_id",
           "protocol_id",
           "state",
+          "rebuild",
           "created_at",
           "updated_at"
         ],

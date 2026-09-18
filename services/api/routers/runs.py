@@ -31,6 +31,7 @@ from services.api.run_execution import (
     run_from_execution,
 )
 from services.api.run_pause_view import paused_dispatch_view
+from services.api.run_rebuild_view import rebuild_readiness_dto
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 projects_router = APIRouter(tags=["runs"])
@@ -60,6 +61,7 @@ def _detail_dto(
         protocol_body_digest=str(run.protocol_body.digest) if run.protocol_body else None,
         paused_dispatch=paused_dispatch_view(run.state, dispatch),
         dispatch=dispatch,
+        rebuild=rebuild_readiness_dto(run),
         created_at=run.created_at.value.isoformat(),
         updated_at=run.updated_at.value.isoformat(),
     )

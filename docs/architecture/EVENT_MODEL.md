@@ -49,6 +49,16 @@ run.resume_failed
 `pricing_digest`。语义 digest 必须在事件里：执行期失败收敛的 run 没有 `RunOutcome`
 可读，只能从事件链把 run 行的冻结引用补回来（GOAL-004 cycle 4 = EC-04）。
 
+**旧事件形态**（GOAL-005 cycle 6 = EC-06）：早于语义 digest 那一轮的 `manifest.frozen`
+payload **只有 `digest`**（可能另有 `run_id`）。回填路径对缺失键的处理是"当作没有这一项"
+（`FrozenManifestRefs.from_payload` 只认非空字符串）⇒ 这类 run 的
+`manifest_semantic_digest` 落 `None`，**不伪造**语义 digest（伪造的引用会被漂移校验拿去
+比对一份不存在的 manifest，比留空更糟）。这类历史行在控制面读面上由
+`RunDetailDto.rebuild` **点名**：`status=REFUSED` +
+`missing=["manifest_semantic_digest", …]`（哪条事实缺、重建此路不通），而不是一个含糊的
+`None`；`/resume` 的拒绝文案与它同源（同一个分类器
+`packages/application/run_orchestration/rebuild_readiness.py`）。
+
 `run.resume_failed` 是**续跑失败被补偿**的记录（GOAL-004 cycle 7 = EC-06）：一次续跑
 尝试执行失败后，canonical 被放回 `PAUSED`，payload 带 `failure_type` / `message` /
 `compensated_to`。失败**不是终态**，所以它不等于 `run.failed`；读面也不新增"停车原因"

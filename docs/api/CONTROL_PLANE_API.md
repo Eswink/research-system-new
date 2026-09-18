@@ -220,6 +220,26 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
   覆盖（Fake 不假装实现回收）；② `kind=WORKER_CLAIM` **也覆盖控制面自持的租约** ——
   `worker_id` 为 `null` 的持有者是 agent session 投递路径，不是 worker plane claim，
   `kind` 不区分这两种持有者（要区分只能看 `holders[].worker_id`）。
+- `GET /runs/{id}`（与列表）的 `rebuild` 是**重建能力读面**（GOAL-005 cycle 6 = EC-06）：
+  **任何状态**都给，正面回答"这份**记录**够不够重建、缺哪条事实"——历史上这里只有两个
+  含糊的 `None`（`manifest_semantic_digest` / `protocol_body_digest`），分不清"功能前的
+  历史行"与"起步时冻结失败 / 还没冻结"：
+  - `status=SELF_CONTAINED`：冻结正文（`protocol_body_digest` 非空）+ 两个 digest 齐
+    ⇒ 重建只用行上的字节，外部来源消失/漂移都不影响；
+  - `status=SOURCE_DEPENDENT`：两个 digest 齐、**没有**冻结正文 ⇒ 重建依赖来源仍可解析
+    （模板路径还在 / 草稿修订还在）；
+  - `status=REFUSED`：缺阻塞事实 ⇒ 重建会被拒绝，`missing` **点名**缺的是哪条：
+    `manifest_digest`（无法校验重建）、`manifest_semantic_digest`（**旧 `manifest.frozen`
+    事件形态**：事件早于语义 digest 那一轮，漂移校验没有输入）、
+    `protocol_body` + `protocol_source`（**旧 run 形态**：没有任何装配输入）；出路是
+    fork run 或 revision（与 `/resume` 拒绝文案同一口径）。
+
+  **同源**：`missing` 与 `/resume` 拒绝文案由**同一个分类器**给出
+  （`packages/application/run_orchestration/rebuild_readiness.py`），不会各说各话；
+  `missing` 里的名字就是 canonical run 行的**字段名**。**诚实边界**：`rebuild` 只回答
+  "输入齐不齐"，不回答"该不该重建"（状态机/策略/预算不在这里），也不承诺"重建必过"
+  ——漂移校验与 preflight 仍在 `/resume` 真跑时判。`REFUSED` **不是**"不可回填"的裁决：
+  运营侧仍可用 `tools/snapshot_migrate.py`（显式 opt-in）对个别 run 做 re-freeze / fork。
 
 ## Runs
 

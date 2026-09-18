@@ -302,3 +302,81 @@ def test_a_run_without_a_frozen_body_names_both_missing_facts(
     assert payload["continuation"] == "NONE"
     assert "no frozen protocol body" in payload["note"], "点名缺的第一条事实"
     assert "protocol file not found" in payload["note"], "点名缺的第二条事实（来源不可解析）"
+
+
+def test_the_read_surface_names_the_missing_fact_of_a_legacy_event_row(
+    run_ready_client: TestClient,
+) -> None:
+    """EC-06 (b)：旧事件形态（有 digest、无语义 digest）的读面必须**点名**缺的事实。
+
+    这是"历史行 vs 当前行在读面可区分"的正面判据：此前只能读到一个 `None`，
+    分不清"功能前历史行 / 起步时冻结失败 / 还没冻结"。
+    """
+    client = run_ready_client
+    legacy = _park(
+        ResearchRun(
+            id=ID.generate(),
+            project_id="example-project",
+            protocol_id="test_protocol",
+            state=ResearchRunState.State.FAILED,
+        ),
+        manifest_digest=Digest.parse("sha256:" + "0" * 64),
+        manifest_semantic_digest=None,
+        protocol_source=ProtocolSource(protocol_path=_PROTOCOL),
+        protocol_body=None,
+    )
+    run_id = _save_parked(client, legacy)
+
+    rebuild = client.get(f"/runs/{run_id}").json()["rebuild"]
+
+    assert rebuild["status"] == "REFUSED", rebuild
+    assert rebuild["missing"] == ["manifest_semantic_digest"], "点名缺的事实（行字段名）"
+
+
+def test_the_read_surface_separates_a_legacy_row_from_a_current_one(client: TestClient) -> None:
+    """历史行与当前行在读面**可区分**：当前行不缺事实，历史行点名两条装配输入。"""
+    started = _start_demo_run(client, _DEMO_PROTOCOL)
+    current = client.get(f"/runs/{started.id.value}").json()["rebuild"]
+
+    legacy = _park(
+        ResearchRun(
+            id=ID.generate(),
+            project_id="example-project",
+            protocol_id="test_protocol",
+            state=ResearchRunState.State.PAUSED,
+        ),
+        manifest_digest=Digest.parse("sha256:" + "0" * 64),
+        manifest_semantic_digest=Digest.parse("sha256:" + "1" * 64),
+    )
+    legacy_id = _save_parked(client, legacy)
+    old = client.get(f"/runs/{legacy_id}").json()["rebuild"]
+
+    assert current["status"] == "SELF_CONTAINED", current
+    assert current["missing"] == []
+    assert old["status"] == "REFUSED", old
+    assert old["missing"] == ["protocol_body", "protocol_source"], "旧 run 缺的是装配输入"
+    assert current["status"] != old["status"], "两种行不得读出同一个答案"
+
+
+def test_the_read_surface_names_what_the_resume_refusal_names(client: TestClient) -> None:
+    """读面与 `/resume` 拒绝**同源**：同一行上点名的是同一条事实（不各说各话）。"""
+    legacy = _park(
+        ResearchRun(
+            id=ID.generate(),
+            project_id="example-project",
+            protocol_id="test_protocol",
+            state=ResearchRunState.State.PAUSED,
+        ),
+        manifest_digest=Digest.parse("sha256:" + "0" * 64),
+        manifest_semantic_digest=None,
+        protocol_source=None,
+        protocol_body=None,
+    )
+    run_id = _save_parked(client, legacy)
+
+    rebuild = client.get(f"/runs/{run_id}").json()["rebuild"]
+    note = _post(client, f"/runs/{run_id}/resume").json()["note"]
+
+    assert rebuild["missing"] == ["manifest_semantic_digest", "protocol_body", "protocol_source"]
+    assert "no recorded protocol source" in note, "早退文案与分类器同源（装配输入全缺先拒）"
+    assert "protocol_source" in rebuild["missing"], "拒绝点名的事实必须在读面 missing 里"

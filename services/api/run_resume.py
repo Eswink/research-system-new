@@ -35,6 +35,7 @@ from packages.application.preflight.preflight import compile_and_preflight
 from packages.application.run_orchestration.commands import ResumeRunCommand
 from packages.application.run_orchestration.context import RunContext
 from packages.application.run_orchestration.outcomes import RunOutcome
+from packages.application.run_orchestration.rebuild_readiness import rebuild_readiness
 from packages.application.run_orchestration.service import RunOrchestrationService
 from packages.domain.protocol_source import ProtocolSource
 from packages.domain.run import ResearchRun
@@ -88,20 +89,18 @@ def rebuild_and_resume(deps: ApiDeps, run: ResearchRun) -> ResumeAttempt:
     if service is None:
         return ResumeAttempt(refusal="run orchestration service is not configured")
     source = run.protocol_source
-    body = run.protocol_body
-    if source is None and body is None:
-        return ResumeAttempt(
-            refusal="run has no recorded protocol source (predates source recording)"
-        )
-    if run.manifest_digest is None:
-        return ResumeAttempt(refusal="run has no frozen manifest digest; cannot verify rebuild")
+    # 拒绝条件与文案来自**同一个分类器**（GOAL-005 cycle 6 = EC-06）：读面
+    # （`RunDetailDto.rebuild`）与这里点名的事实不会各说各话。
+    readiness = rebuild_readiness(run)
+    early = readiness.early_refusal()
+    if early is not None:
+        return ResumeAttempt(refusal=early)
 
     trace_id = f"api-resume-{run.id.value}"
     try:
         return _resume_from_source(service, deps, run, source, trace_id)
     except Exception as exc:  # noqa: BLE001 - 任何重建/校验失败都诚实拒绝，不改状态
-        prefix = "" if body is not None else "run has no frozen protocol body; "
-        return ResumeAttempt(refusal=f"{prefix}{type(exc).__name__}: {exc}")
+        return ResumeAttempt(refusal=f"{readiness.dependency_prefix()}{type(exc).__name__}: {exc}")
 
 
 def _resume_from_source(
