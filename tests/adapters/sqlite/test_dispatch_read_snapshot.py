@@ -24,7 +24,7 @@ import sqlite3
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from adapters.sqlite.db import connect as sqlite_connect
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
@@ -168,7 +168,8 @@ def test_sqlite_the_read_face_answers_from_one_snapshot(tmp_path: Path) -> None:
 
     clock.value = START + timedelta(seconds=61)
     probe = _StatementProbe(engine._conn, _expire_every_lease(db_path))
-    engine._conn = probe
+    # 测试接缝：探针转发其余属性，读面调用只经它的语句入口（cast 只为满足类型标注）。
+    engine._conn = cast(sqlite3.Connection, probe)
 
     ownership = engine.dispatch_ownership(run_id.value)
 

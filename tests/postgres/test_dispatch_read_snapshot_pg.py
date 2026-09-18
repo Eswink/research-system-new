@@ -185,9 +185,7 @@ def test_pg_the_read_face_answers_from_one_snapshot() -> None:
     setup.close()
 
     read_at = START + timedelta(seconds=61)
-    reader = PostgresWorkflowEngine(
-        dsn=_dsn(), lease_ttl_seconds=_TTL, now=lambda: read_at
-    )
+    reader = PostgresWorkflowEngine(dsn=_dsn(), lease_ttl_seconds=_TTL, now=lambda: read_at)
     probe = _StatementProbe(reader._conn, _expire_every_lease())
     reader._conn = probe
 

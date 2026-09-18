@@ -240,9 +240,7 @@ def dispatch_ownerships(
             retry=RetrySchedule(
                 scheduled=schedule[0],
                 due=schedule[1],
-                next_retry_at=(
-                    decode_timestamp(schedule[2]) if schedule[2] is not None else None
-                ),
+                next_retry_at=(decode_timestamp(schedule[2]) if schedule[2] is not None else None),
             ),
             leases=tuple(
                 LeaseHolder(
