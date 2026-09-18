@@ -114,24 +114,14 @@ def retry_schedule(conn: Any, run_id: str, now: datetime) -> RetrySchedule:
 
 
 def retry_schedules(conn: Any, run_ids: tuple[str, ...], now: datetime) -> dict[str, RetrySchedule]:
-    """一批 run 的重排读面（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+    """一批 run 的重排读面：一次读回答整批。
 
-    过滤走 `= ANY(%s)`（**绑定参数**：psycopg 把 list 适配成数组，SQL 里没有拼进去的
-    值）；每个请求到的 run_id 都有条目（未知/无重排行 ⇒ 全零 `RetrySchedule`）。分类与
-    单 run 版共用 `_summarize_retries`，所以两个入口不会各算各的。
+    取数走 `_dispatch_facts`（**一条语句**，与租约面同语句）——过滤仍走 `= ANY(%s)`
+    （**绑定参数**：psycopg 把 list 适配成数组，SQL 里没有拼进去的值）；每个请求到的
+    run_id 都有条目（未知/无重排行 ⇒ 全零 `RetrySchedule`）。分类与单 run 版共用
+    `_summarize_retries`，所以两个入口不会各算各的。
     """
-    ordered = tuple(dict.fromkeys(run_ids))
-    if not ordered:
-        return {}
-    rows: Any = conn.execute(
-        "SELECT run_id, retry_at FROM tasks WHERE run_id = ANY(%s) AND status = %s",
-        (list(ordered), ResearchTaskState.State.RETRY_SCHEDULED),
-    ).fetchall()
-    deadlines: dict[str, list[datetime | None]] = {run_id: [] for run_id in ordered}
-    for row in rows:
-        deadlines[str(row["run_id"])].append(
-            None if row["retry_at"] is None else _as_utc(row["retry_at"])
-        )
+    deadlines, _ = _dispatch_facts(conn, run_ids, now)
     return {run_id: _summarize_retries(items, now) for run_id, items in deadlines.items()}
 
 
@@ -177,35 +167,14 @@ def live_lease_holders(
 def live_lease_holders_many(
     conn: Any, run_ids: tuple[str, ...], now: datetime
 ) -> dict[str, tuple[tuple[str, str | None, int, datetime | None], ...]]:
-    """一批 run 的活租约持有者（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+    """一批 run 的活租约持有者：一次读回答整批。
 
-    判据与单 run 版逐字相同（同一列、同一个 `now`、同一条 LOST 排除子查询），过滤走
-    `= ANY(%s)` 绑定参数；每个请求到的 run_id 都有条目（无持有 ⇒ 空元组）。
+    判据与单 run 版逐字相同（同一列、同一个 `now`、同一条 LOST 排除子查询）；取数走
+    `_dispatch_facts`（**一条语句**，与重排面同语句），过滤走 `= ANY(%s)` 绑定参数；
+    每个请求到的 run_id 都有条目（无持有 ⇒ 空元组）。
     """
-    ordered = tuple(dict.fromkeys(run_ids))
-    if not ordered:
-        return {}
-    rows: Any = conn.execute(
-        "SELECT t.run_id AS run_id, l.task_id AS task_id, l.worker_id AS worker_id,"
-        " l.fence AS fence, l.expires_at AS expires_at"
-        " FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
-        " WHERE t.run_id = ANY(%s) AND l.expires_at >= %s"
-        " AND (l.worker_id IS NULL OR l.worker_id NOT IN"
-        " (SELECT worker_id FROM workers WHERE state = 'LOST'))"
-        " ORDER BY t.run_id, l.task_id",
-        (list(ordered), now),
-    ).fetchall()
-    grouped: dict[str, list[tuple[str, str | None, int, datetime | None]]] = {
-        run_id: [] for run_id in ordered
-    }
-    for row in rows:
-        grouped[str(row["run_id"])].append((
-            str(row["task_id"]),
-            None if row["worker_id"] is None else str(row["worker_id"]),
-            int(row["fence"] or 0),
-            None if row["expires_at"] is None else _as_utc(row["expires_at"]),
-        ))
-    return {run_id: tuple(items) for run_id, items in grouped.items()}
+    _, holders = _dispatch_facts(conn, run_ids, now)
+    return holders
 
 
 def dispatch_ownership(conn: Any, run_id: str, now: datetime) -> DispatchOwnership:
@@ -223,16 +192,18 @@ def dispatch_ownership(conn: Any, run_id: str, now: datetime) -> DispatchOwnersh
 def dispatch_ownership_many(
     conn: Any, run_ids: tuple[str, ...], now: datetime
 ) -> dict[str, DispatchOwnership]:
-    """一批 run 的统一派发读面（GOAL-005 cycle 5 = EC-05 ①）：一次读回答整批。
+    """一批 run 的统一派发读面：一趟读一条语句、一个快照回答整批。
 
-    两条 SQL（重排 + 租约）取整批，装配与单 run 版共用同一段：列表路径不再按 run 数
-    放大查询，且与逐 run 读逐字同判（含"全零 = `DISPATCH_NONE`"的未知 run 边界）。
+    两件 canonical 事实（重排 + 活租约）由 `_dispatch_facts` 的**同一条语句**取出：
+    PostgreSQL 对单条语句取一个快照，所以组合 `kind` 的两件事实**同刻**——不会出现
+    "重排面已前移、租约面仍是旧值"的撕裂读（并发写只会整条语句落在写前或写后）。
+    列表路径因此不按 run 数放大查询，且与逐 run 读逐字同判（含"全零 = `DISPATCH_NONE`"
+    的未知 run 边界）。
     """
-    schedules = retry_schedules(conn, run_ids, now)
-    holders_by_run = live_lease_holders_many(conn, run_ids, now)
+    deadlines, holders_by_run = _dispatch_facts(conn, run_ids, now)
     return {
         run_id: DispatchOwnership(
-            retry=schedule,
+            retry=_summarize_retries(deadlines[run_id], now),
             leases=tuple(
                 LeaseHolder(
                     task_id=task_id,
@@ -243,8 +214,67 @@ def dispatch_ownership_many(
                 for task_id, worker_id, fence, expires_at in holders_by_run[run_id]
             ),
         )
-        for run_id, schedule in schedules.items()
+        for run_id in deadlines
     }
+
+
+_FACTS_SQL = (
+    "SELECT kind, run_id, retry_at, task_id, worker_id, fence, expires_at FROM ("
+    " SELECT 'RETRY'::text AS kind, run_id, retry_at,"
+    " NULL::text AS task_id, NULL::text AS worker_id, NULL::bigint AS fence,"
+    " NULL::timestamptz AS expires_at FROM tasks WHERE run_id = ANY(%s) AND status = %s"
+    " UNION ALL"
+    " SELECT 'LEASE'::text AS kind, t.run_id, NULL::timestamptz AS retry_at,"
+    " l.task_id, l.worker_id, l.fence, l.expires_at"
+    " FROM leases AS l JOIN tasks AS t ON t.task_id = l.task_id"
+    " WHERE t.run_id = ANY(%s) AND l.expires_at >= %s"
+    " AND (l.worker_id IS NULL OR l.worker_id NOT IN"
+    " (SELECT worker_id FROM workers WHERE state = 'LOST'))"
+    ") AS facts ORDER BY kind, run_id, task_id"
+)
+
+
+def _dispatch_facts(
+    conn: Any, run_ids: tuple[str, ...], now: datetime
+) -> tuple[
+    dict[str, list[datetime | None]],
+    dict[str, tuple[tuple[str, str | None, int, datetime | None], ...]],
+]:
+    """派发读面的两件事实：**一条语句**取出，调用方各取所需的一面。
+
+    存在理由：`dispatch_ownership` 必须把两件事实组合成**一个**答案，两次独立查询之间
+    没有快照保证（PG autocommit 下每条语句各取快照）⇒ 可能撕裂。单条语句（`UNION ALL`
+    + 判别列 `kind`）把一致性交给语句快照本身，隔离级别与事务边界都不用动。
+
+    代价（有意）：单面调用（`retry_schedules` / `live_lease_holders_many`）也会读到另一
+    面的行——换来"判据只有一处"与同一个快照语义；行数由 `run_id` 集合界住。
+
+    每个请求到的 run_id 两面都有条目（无行 ⇒ 空列表）；空入参不读库。
+    """
+    ordered = tuple(dict.fromkeys(run_ids))
+    deadlines: dict[str, list[datetime | None]] = {run_id: [] for run_id in ordered}
+    holders: dict[str, list[tuple[str, str | None, int, datetime | None]]] = {
+        run_id: [] for run_id in ordered
+    }
+    if not ordered:
+        return deadlines, {run_id: () for run_id in ordered}
+    rows: Any = conn.execute(
+        _FACTS_SQL,
+        (list(ordered), ResearchTaskState.State.RETRY_SCHEDULED, list(ordered), now),
+    ).fetchall()
+    for row in rows:
+        run_id = str(row["run_id"])
+        if row["kind"] == "RETRY":
+            value = row["retry_at"]
+            deadlines[run_id].append(None if value is None else _as_utc(value))
+            continue
+        holders[run_id].append((
+            str(row["task_id"]),
+            None if row["worker_id"] is None else str(row["worker_id"]),
+            int(row["fence"] or 0),
+            None if row["expires_at"] is None else _as_utc(row["expires_at"]),
+        ))
+    return deadlines, {run_id: tuple(items) for run_id, items in holders.items()}
 
 
 def pending_outbox(conn: Any) -> tuple[EventEnvelope, ...]:
