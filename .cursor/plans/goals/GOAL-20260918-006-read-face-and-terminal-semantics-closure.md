@@ -75,7 +75,17 @@ exit_criteria:
       (b) ADR 草案文件在树（`docs/adr/`）+ 权威登记（`docs/INDEX.md` 或既有 ADR 的未决段）
       + `on_validation_failure` 反向搜索每处命中要么是「真实消费者 + 用例」要么是
       「不提供/待决」说明 + 四处文档逐处一致。两条都要求：**不得只改注释/文案充数**。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      PLAN-20260918-101 / RECHECK-20260918-101（PASS_WITH_WARNINGS，W-1…W-5）；走 (b)：
+      (a) 被 canonical 终态边界挡住（`ResearchTaskState._TRANSITIONS` 里 `SUCCEEDED` 是终态、
+      **无出边**；`DEAD_LETTER` 只能从 `RETRY_SCHEDULED` 到达）⇒ 不自行扩大边界。交付：
+      `docs/adr/ADR-0030-validation-failure-consumption.md`（Proposed：四条可复核事实 +
+      选项 A–E 逐个代价/收益 + 触发条件 + 影响面）+ `docs/INDEX.md` 唯一入口 + 三处声明面
+      同源指针（`failure_policy.py` / `TASK_HANDOFF.md` §2.1 / `task_contracts.yaml`）；
+      判据 `tests/tooling/test_pending_validation_failure_registration.py`（4 passed）；
+      **反证**：删指针 ⇒ 第 3 条红、ADR 改 `Accepted` ⇒ 第 1 条红（均还原绿）；
+      定向 **1537 passed**；产品行为 / canonical 状态机 / Accepted ADR / 迁移 / 依赖**零改动**。
   - id: EC-03
     criterion: >-
       前端消费重建读面（RECHECK-098 W-3）：控制台页面**真的展示** `RunDetailDto.rebuild`
@@ -158,9 +168,11 @@ escalation_triggers:
   - 依赖 pin 升级（`undici` / `vite` / `yaml` 等有修复版本的包）——上游 pin 变更，需用户或 ADR 拍板
 child_plans:
   - .cursor/plans/tasks/PLAN-20260918-100-dispatch-read-single-snapshot.md
+  - .cursor/plans/tasks/PLAN-20260918-101-validation-failure-consumption-adr.md
 latest_recheck: null
 memory_entries:
   - MEM-20260918-073
+  - MEM-20260918-074
 ---
 
 # GOAL-20260918-006 — 读面与终态语义收口（自迭代循环）
@@ -179,7 +191,7 @@ GOAL-005 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 | EC | 主题 | 来源 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | PG 两读快照一致性（实现一致读 或 ADR 级论证 + 契约收敛） | GOAL-005 收口结论 2 / RECHECK-097 W-1 | **PASS**（RECHECK-20260918-100，做 (a)） |
-| EC-02 | `DEAD_LETTER` 消费（既有边界内实现 或 ADR 草案 + 权威登记 + 同源收敛） | GOAL-005 收口结论 3 / RECHECK-095 W-2 | PENDING |
+| EC-02 | `DEAD_LETTER` 消费（既有边界内实现 或 ADR 草案 + 权威登记 + 同源收敛） | GOAL-005 收口结论 3 / RECHECK-095 W-2 | **PASS**（RECHECK-20260918-101，做 (b)） |
 | EC-03 | 前端消费重建读面（页面接入 + stub/live e2e + 「不预测结果」同源） | GOAL-005 收口结论 4 / RECHECK-098 W-3 | PENDING |
 | EC-04 | 时钟断言去调度依赖 + 真墙钟对照矩阵（或一等事实 + 结构判据） | GOAL-005 收口结论 4 / RECHECK-096 W-1 + W-4 | PENDING |
 | EC-05 | 批量读显式上限 + Fake 弱同判对齐或写成显式边界 | GOAL-005 收口结论 4 / RECHECK-097 W-2 + W-3 | PENDING |
@@ -257,9 +269,9 @@ RECHECK-098 W-2（历史行要不要 re-freeze/fork）与 RECHECK-090 W-5（响�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-当前续点：**cycle 1 已收口，进入 cycle 2 = EC-02（`DEAD_LETTER` 消费）**。EC-01 已 PASS
-（RECHECK-20260918-100 = PASS_WITH_WARNINGS）；状态以本文件「迭代日志」末行 + 工作树实况
-为准；不凭记忆假设上一轮状态。
+当前续点：**cycle 2 已收口，进入 cycle 3 = EC-03（前端消费 `rebuild` 读面）**。EC-01、EC-02
+已 PASS（RECHECK-20260918-100 / 101，均 PASS_WITH_WARNINGS）；状态以本文件「迭代日志」末行
++ 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
 
@@ -358,6 +370,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 建档（本文件；driver=client-goal / owner=root-agent） | `55d789b` | 治理 `validate.py` 绿；m0 **PASS: profile=m0; 23 deterministic checks**（全量 pytest 通过，本机 DSN pin 配方） | run **35366755971**（#163，`55d789b`）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，runner_id 非 0、无重跑） | 无 | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（PG 两读快照一致性） |
 | 1 | PLAN-20260918-100（EC-01：派发读面一次读 = 一条语句 = 一个快照；driver=client-goal / owner=root-agent） | `1338a67`（PG 单语句取齐）、`4da4c31`（SQLite 同形 + 引擎薄封装）、`4fe7f00`（两方言探针用例）、`e99d8a4`（契约/三处文档收敛）、`e3e2253`（规模/类型门禁修正：ruff format + 探针安装的 cast）、本次回写提交（PLAN/RECHECK/MEM/ALL_PLAN/INDEX + 本文件） | 治理 `validate.py` 绿；**先探明再动手**（只读勘察）：确认两条独立语句 + `autocommit=True`（PG）/`SerializedConnection` 只保单语句（SQLite）⇒ 撕裂读真实存在；**并发现 RECHECK-097 W-1 的括注不实**（声称"port docstring 与 `PORTS.md` 已写明不承诺快照一致"，树内只有"每次调用两条 SQL"）⇒ 本 EC 选 (a) 实现而非补免责；交付：`_FACTS_SQL`（`UNION ALL` + 判别列 `kind`）+ `_dispatch_facts`（一次 `execute`），三个入口同源取数；**反证实跑**：两方言各把取数拆回两条独立语句 ⇒ 探针红（PG/SQLite 均 `assert 2 == 1` 与语义断言 `'RETRY_DISPATCH' == 'BOTH'` = 撕裂本体），还原后 **2 passed**；定向（DSN pin）`tests/adapters tests/contracts tests/api tests/postgres` **1432 passed / 5 skipped**（223.34s）；规模门禁 **937 passed**（PG 投影 300 行 / 最长函数 41；SQLite 296 / 47）；文档门 **DOCS-CHECK PASS**；m0 **PASS: profile=m0; 23 deterministic checks**（首跑 2 红：`python/format-check` + `python/typecheck` ⇒ 两文件 `ruff format` + 探针安装 `cast`，复跑全绿） | run **35371528406**（#164，`e3e2253`）：**六个 job 全 success**（collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate，runner_id 非 0、无重跑） | 首轮三处修正（**未改任何断言**）：① SQLite 装配搬进 `projections.py` 后漏 `decode_timestamp` 导入 ⇒ 10 条红（`NameError`），补导入即绿；② 探针断言顺序：把语义断言放在计数之前，否则反证只停在"2 != 1"、看不到撕裂本体；③ m0 门禁 `python/format-check` 与 `python/typecheck` 红（子集跑绿、全量抓出）⇒ 格式化 + `cast` 修类型，复跑 23/23 | EC-01 **PASS**（RECHECK-20260918-100 = PASS_WITH_WARNINGS，W-1…W-5：语句级≠事务级、单面调用代价未量化、Fake 不适用探针、RECHECK-097 括注不实已登记、未做真并发压测）；EC-02…EC-06 PENDING | cycle 2 = EC-02（`DEAD_LETTER` 消费，二选一；触及 canonical 边界即 BLOCKED） |
+| 2 | PLAN-20260918-101（EC-02 (b)：`DEAD_LETTER` 消费做成"可决策形态"；driver=client-goal / owner=root-agent） | 本次提交（ADR-0030 草案 + INDEX 登记 + 三处声明面指针 + 判据用例 + PLAN/RECHECK/MEM/ALL_PLAN/INDEX/GOAL）；本条推送的 run 按闭合约定在回合汇报给出终态 | 治理 `validate.py` 绿；**先探明再动手**（只读勘察，四件事实逐行对照）：① `task_executor._attempt_once` 先 `engine.complete(outcome="SUCCEEDED")`、`register_and_gate` 之后才跑验收门；② 门拒收只走 run 级（`failure_step` → `deps.fail` → `run_terminals.publish_failed_run` 的 `run.failed`；`on_task_failure: CONTINUE` 时 `run.degraded` 的 `tolerated_failures[].message` 同句），**任务行不动**；③ `ResearchTaskState._TRANSITIONS` 里 `SUCCEEDED` 是终态、**无出边**，`DEAD_LETTER` 只能从 `RETRY_SCHEDULED` 到达 ⇒ **(a) 被 canonical 边界挡住**；④ 声明面已被如实登记但**无权威决策记录**。交付：`docs/adr/ADR-0030-validation-failure-consumption.md`（**Proposed**：Context / Decision needed / Options A–E 逐个代价与收益（含"把门挪到 durable 完成之前"这条不破坏终态语义的路径）/ Why not now / Trigger / Consequences）+ `docs/INDEX.md` 唯一入口 + 三处声明面同源指针；判据 `tests/tooling/test_pending_validation_failure_registration.py` **4 passed**；**反证实跑**：① 删 `task_contracts.yaml` 的 ADR 指针 ⇒ 第 3 条红（1 failed / 3 passed）；② ADR 改 `Status: Accepted` ⇒ 第 1 条红；两次均还原 ⇒ 4 passed；定向 `tests/domain tests/loaders tests/tooling tests/application/run_orchestration` **1537 passed**（9.65s）；`ruff format/check` 938 files 全绿、`mypy` **928 source files** 无问题；文档门 **DOCS-CHECK PASS**；m0 **PASS: profile=m0; 23 deterministic checks** | 本条推送的 run 见回合汇报（按闭合约定，随本条回写的提交自身触发的 run 不再回写文件） | m0 **首跑 1 红**（`framework/run_cursor_framework_evals`，命中既有 flake 配方"Windows 偶发文件占用"）⇒ 隔离复跑 **FRAMEWORK EVAL PASS** + 全量复跑 **23/23**；其余无返工 | EC-02 **PASS**（RECHECK-20260918-101 = PASS_WITH_WARNINGS，W-1…W-5：待拍板≠已解决、选项 D 未实测、存量未盘点、判据只钉同源、ADR 编号无权威登记表）；EC-03…EC-06 PENDING | cycle 3 = EC-03（前端消费 `rebuild` 读面：页面接入 + stub/live e2e + 「读面不预测结果」同源） |
 
 ## 状态历史
 
@@ -374,3 +387,12 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   逐字不变（契约/parity/列表哨兵全绿）；三处契约与文档同源收敛，并登记
   **RECHECK-097 W-1 括注不实**（"port docstring 与 `PORTS.md` 已写明"树内不存在）的事实
   更正。CI 台账见迭代日志 cycle 1 行。
+- 2026-09-18 cycle 2 收口：EC-02 **PASS**（PLAN-20260918-101 / RECHECK-20260918-101 =
+  PASS_WITH_WARNINGS，W-1…W-5）。走 **(b)**：只读勘察确证 (a) 被 canonical 终态边界挡住
+  （`SUCCEEDED` 在 `ResearchTaskState._TRANSITIONS` 里**无出边**，按声明改写已成功的行必须
+  新增"从终态出发的迁移"或新状态）⇒ 不自行扩大边界。交付一份**可决策形态**的记录：
+  `docs/adr/ADR-0030-validation-failure-consumption.md`（**Status: Proposed**，含四个可复核
+  事实、选项 A–E 与逐个代价/收益、触发条件、影响面）+ `docs/INDEX.md` 唯一入口 + 三处声明面
+  同源指针 + 判据用例（`tests/tooling/test_pending_validation_failure_registration.py`，
+  4 passed；反证两跑：删指针 ⇒ 第 3 条红、ADR 改 `Accepted` ⇒ 第 1 条红，均还原绿）。
+  **产品行为 / canonical 状态机 / Accepted ADR / 迁移 / 依赖零改动**。

@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260918-101](tasks/PLAN-20260918-101-validation-failure-consumption-adr.md) | DONE |
 | [x] | [PLAN-20260918-100](tasks/PLAN-20260918-100-dispatch-read-single-snapshot.md) | DONE |
 | [x] | [PLAN-20260918-099](tasks/PLAN-20260918-099-goal-005-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260918-098](tasks/PLAN-20260918-098-rebuild-readiness-read-surface.md) | DONE |
