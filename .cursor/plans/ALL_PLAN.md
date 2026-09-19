@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260919-110](tasks/PLAN-20260919-110-honest-substrate-disclosure.md) | IN_PROGRESS |
+| [x] | [PLAN-20260919-110](tasks/PLAN-20260919-110-honest-substrate-disclosure.md) | DONE |
 | [x] | [PLAN-20260919-109](tasks/PLAN-20260919-109-real-runtime-offline-full-chain.md) | DONE |
 | [x] | [PLAN-20260919-108](tasks/PLAN-20260919-108-egress-gate-chain.md) | DONE |
 | [x] | [PLAN-20260919-107](tasks/PLAN-20260919-107-runtime-selection-surface.md) | DONE |

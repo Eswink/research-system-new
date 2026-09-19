@@ -2,7 +2,7 @@
 id: PLAN-20260919-110
 slug: honest-substrate-disclosure
 title: 诚实披露：执行体性质与运行时指纹进读面 DTO 与页面渲染分支，demo 输出不再与真实结果同形（EC-04）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-19
 updated_at: 2026-09-19
 parent_goal: GOAL-20260919-007
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260919-007 cycle 4 = EC-04。授权来源：2026-09-19 用户 goal 模式指令（自动化循环推进、无需逐轮确认）；push-to-main-for-CI 授权见 GOAL-20260919-007 frontmatter `authorization.ref`。本 PLAN 遵守：默认 runtime 保持 Fake、不引入新依赖、不改上游 pin、真实端点调用永不进默认 CI、默认 deny 姿态不得放松、不改 Accepted ADR / Canonical State 边界。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260919-110-honest-substrate-disclosure.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260919-082-honest-substrate-disclosure.md
 ---
 
 # PLAN-20260919-110 — 诚实披露（GOAL-007 cycle 4 = EC-04）
@@ -65,15 +66,26 @@ memory_entries: []
 
 ## 先探明再动手
 
-1. `_detail_dto` 拿不到 manifest 实体（只有 digest）——**待本轮确认**：冻结后的
-   `execution_backend` 是否只能从事件读面取回（`get_events(run_id)` 里筛 `manifest.frozen`），
-   有没有既有的「按 run 读事件」端口可直接复用而不新开查询路径。<!-- 待补 -->
-2. 事件读面在**未冻结 run** 上返回什么（空列表 / 404），页面在 `None` 时的显示口径。<!-- 待补 -->
-3. 运行时指纹记录在 payload 里的**最小可披露形态**（status/substrate/reason 三件）。<!-- 待补 -->
-4. `run-timeline` 的结构签名在加了「选中 run」的元素后是否变化（基线不选 run ⇒ 可能不变，
-   那就意味着**门覆盖不到**，需要显式处置而不是假装有覆盖）。<!-- 待补 -->
-5. live e2e 的 Fake 链能否造出「另一种执行体」的 run，还是必须在 live 套件里装配
-   openhands 执行体（可复用 `tests/e2e/test_ec03_real_runtime_offline_chain.py` 的离线装配）。<!-- 待补 -->
+1. **已探明**：manifest 实体不落库（run 行只有 digest），冻结后的 `execution_backend` 只能
+   从事件读面取回；**既有端口就够**，无需新查询路径——`ApiDeps.projection`（`RunProjection`）
+   的 `events(run_id)` 返回全部 envelope，筛 `EventType.MANIFEST_FROZEN` 即得 payload。
+   据此建 `services/api/run_execution_view.py`（唯一事实来源 = 该 payload）。
+2. **已探明**：未冻结 run 的 `events(run_id)` 返回**空列表**（不 404）⇒ 读面拿不到
+   `manifest.frozen` ⇒ DTO 给 `None`。页面口径按「未冻结」显示，与 `manifest_digest` 的
+   `null → NOT FROZEN` 同形，**不读成某个执行体**。
+3. **已探明**：最小可披露形态就是 `selection.fingerprint_record()` 的三件
+   （`status` / `substrate` / `reason`，`services/api/runtime_support.py`）；冻结时**空 dict**
+   是「未声明该面」（`eventing.frozen_payload` 的既有口径），读面转 `None`——不把 `{}`
+   当成一条记录（否则要么崩、要么编出空状态）。
+4. **已探明（实测）**：加行后 `run-timeline` 的结构签名**不变**——基线不选 run
+   （`runs-empty`），披露行只在选中 run 时渲染 ⇒ 既有像素/结构门**覆盖不到**新分支。
+   处置：新增第 34 条基线条目 `run-timeline-substrate`（`#/run/timeline?run=substrate-openhands`），
+   win32 与 linux 各一张像素 + 结构签名，跨平台一致性复核（34/34、零漂移）。
+5. **已探明**：live 套件的 Fake 链**只有一种**执行体（app 的选择面只有一处取值）⇒ 第二种
+   执行体无法靠"真启动"造出来。处置：夹具**声明**一条 run（`LIVE_SUBSTRATE_RUN_ID`），
+   冻结事实经**生产自己的** `frozen_payload` + `publish_event` 路径发布（不手写 JSON），
+   页面/读面仍走生产代码；live e2e 因此判的是「页面 == 读面」，不是「真跑过 openhands」
+   （真实执行体离线全链已由 EC-03 的 `tests/e2e/test_ec03_real_runtime_offline_chain.py` 覆盖）。
 
 ## 验收条件
 
@@ -93,22 +105,44 @@ memory_entries: []
 
 ## 实施清单
 
-- [ ] **WP-A** 读面 DTO：`RunDetailDto.execution_backend`（+ 指纹状态），来源为冻结事件；OpenAPI 快照重生成 + `types.ts` 同步
-- [ ] **WP-B** 页面渲染分支：`RunIdentity` 增「执行体」行（含未冻结/未声明的显示口径）+ stub fixtures 两种执行体
-- [ ] **WP-C** e2e 两条（stub + live）+ 反证（拆分支 ⇒ 红）
-- [ ] **WP-D** 设计基线/结构签名处置 + 跨平台一致性复核（如实记录覆盖结论）
-- [ ] **WP-E** 文案同源收敛（含过时声明与不实声明的更正）
+- [x] **WP-A** 读面 DTO：`RunDetailDto.execution`（`execution_backend` + 指纹 `status`/`reason`），来源为冻结事件；OpenAPI 快照重生成 + `types.ts` 同步
+- [x] **WP-B** 页面渲染分支：`RunIdentityFacts` 增「执行体」「运行时指纹」两行（四态显示口径）+ stub fixtures 四态
+- [x] **WP-C** e2e 两条（stub 四态 + live 同值）+ 反证（摘分支 ⇒ stub 红；payload 读空 ⇒ live 红）
+- [x] **WP-D** 设计基线/结构签名处置 + 跨平台一致性复核（第 34 条基线条目；34/34 零漂移；覆盖结论如实记录）
+- [x] **WP-E** 文案同源收敛（含 M13 记录的不实披露声明更正 + 两处过时口径改写）
 
 ## 证据
 
-（执行后回填。）
+| 项 | 证据 |
+| --- | --- |
+| 读面（AC-01） | `services/api/run_execution_view.py`（新，读 `manifest.frozen` payload）+ `services/api/dto/runs.py` 的 `RunExecutionDto` / `RuntimeFingerprintDto` + `services/api/routers/runs.py::_detail_dto(with_execution=…)`；`docs/api/openapi.m13.json` 重生成；`apps/web/src/api/types.ts` 同步 |
+| 页面分支（AC-02） | `apps/web/src/features/runs/RunPanel.tsx`：`run-execution-backend` / `run-runtime-fingerprint` 两个 testid + `executionBackendLabel` / `fingerprintLabel`（四态文案） |
+| e2e（AC-03） | stub `apps/web/tests/e2e/run-substrate-disclosure.spec.ts`（2 passed，四态互不相同）；live `apps/web/tests/e2e/live-run-substrate-disclosure.spec.ts`（1 passed，页面 == 读面）；live 名单 `apps/web/tests/e2e/live-specs.ts` |
+| 反证（AC-04） | F-A 摘渲染两行 ⇒ stub 2 failed（element not found）；F-B `_frozen_payload` 恒空 ⇒ live 1 failed（读面即红）。均记录在 RECHECK-20260919-110 并已复原 |
+| web 六门（AC-05） | lint 0 problems / typecheck 绿 / unit 76 passed / build 绿 / stub e2e 87 passed / live e2e 39 passed |
+| 设计基线（AC-06） | 第 34 条条目 `run-timeline-substrate` + win32/linux 两张像素 + `design-outlines.json`（34 条）；`design-fidelity` 2 passed；`bash scratch/verify_linux_outlines.sh` ⇒ 34/34 零漂移；覆盖缺口结论写进 RECHECK 与 `docs/frontend/CONSOLE_DELIVERY.md` 更正说明 |
+| 文案同源（AC-07） | `docs/roadmap/M13_R1_COMPLETION_RECORD.md`（日期化更正）、`docs/architecture/{AGENT_RUNTIME,EVENT_MODEL,DOMAIN_MODEL}.md`、`docs/api/CONTROL_PLANE_API.md`、`docs/frontend/CONSOLE_PAGE_MAP.md`、`packages/application/run_orchestration/eventing.py` 注释、`tests/api/test_runtime_selection_surface.py` docstring |
+| 门禁（AC-08） | 尺寸门 948 passed（首跑红两处，已拆）；ruff check/format 绿；mypy 938 files 绿（首跑红 1 处已修）；受影响套件 2049 passed / 2 skipped；m0 **23/23 PASS** |
 
 ## 影响报告
 
-（执行后回填。）
+- **Domain/API/schema 变化**：`RunDetailDto` 增 `execution`（可空）；OpenAPI 快照与
+  `types.ts` 同步更新。**无** Domain 实体、**无**存储迁移、**无**新路由（复用
+  `GET /runs/{id}` 与既有两个详情返回点）。`RunManifest` 结构未变。
+- **安全/凭据变化**：无。新读面只读 canonical 事件里的**非敏感**事实
+  （执行体标识与指纹状态/原因）；不触端点、不读凭据、不新增出网；真实端点调用仍只在
+  `requires_live_llm` 门控下。
+- **兼容性/迁移风险**：`execution` 是新增可空字段；未冻结 run 上为 `null`（与
+  `manifest_digest` 的既有 `null` 语义一致）。列表路径不带该字段（显式边界，N+1 理由）。
+  历史 run 只要 outbox 里有 `manifest.frozen` 就能读回；没有该事件的 run 显示"未冻结"。
+- **上游版本影响**：无（未引入依赖、未改 pin）。
+- **下一项任务**：EC-05（工具面边界：provider → SDK 工具映射缺口，cycle 3 已实测）→
+  EC-06（`tool_pack.*` 两选终态）。
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-09-19 | IN_PROGRESS | cycle 4 建档（EC-04）；两条只读勘察已回填（读面/页面/门禁现状 + 已过时声明清单）；先探明项 1-5 待补 |
+| 2026-09-19 | IN_PROGRESS | cycle 4 建档（EC-04）；两条只读勘察已回填（读面/页面/门禁现状 + 已过时声明清单） |
+| 2026-09-19 | IN_PROGRESS | 先探明项 1-5 全部实测回填；WP-A…WP-E 全部落地（含两处反证与两次首跑红） |
+| 2026-09-19 | DONE | RECHECK-20260919-110 PASS_WITH_WARNINGS（W-1…W-7）；m0 23/23；WP-A…E 五次提交推送（d291566…cc815fd） |

@@ -229,8 +229,13 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260919-107-runtime-selection-surface.md
   - .cursor/plans/tasks/PLAN-20260919-108-egress-gate-chain.md
   - .cursor/plans/tasks/PLAN-20260919-109-real-runtime-offline-full-chain.md
-latest_recheck: null
-memory_entries: []
+  - .cursor/plans/tasks/PLAN-20260919-110-honest-substrate-disclosure.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260919-110-honest-substrate-disclosure.md
+memory_entries:
+  - MEM-20260919-079
+  - MEM-20260919-080
+  - MEM-20260919-081
+  - MEM-20260919-082
 ---
 
 # GOAL-20260919-007 — 真实执行体接线（自迭代循环）
@@ -257,7 +262,7 @@ GOAL-006 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 | EC-01 | Runtime 选择面（配置驱动 Fake \| OpenHands，两个组合根同侧，未配置逐字节一致，选择结果与指纹进 manifest/读面） | GOAL-006 人工面第 3 项（adapter 接线部分） | **PASS**（RECHECK-20260919-107，W-1…W-6） |
 | EC-02 | 受控出网门链（URL 策略 / 凭据 / 端点健康 / 能力匹配；拒绝点名缺哪条事实；出站调用 0） | 同上 + AGENTS.md §9 | **PASS**（RECHECK-20260919-108，W-1…W-6） |
 | EC-03 | 真实 runtime 离线全链进默认 CI（mock 端点 → 会话/事件/归账/制品；真端点走 `requires_live_llm`） | 同上 + AGENTS.md §11 | **PASS**（RECHECK-20260919-109，W-1…W-6） |
-| EC-04 | 诚实披露（执行体性质 + 运行时指纹进读面与 UI；demo 输出不再与真实结果同形） | 同上 + AGENTS.md §4 | **PENDING** |
+| EC-04 | 诚实披露（执行体性质 + 运行时指纹进读面与 UI；demo 输出不再与真实结果同形） | 同上 + AGENTS.md §4 | **PASS**（RECHECK-20260919-110，W-1…W-7） |
 | EC-05 | 工具面边界（Tool Set 冻结 + Policy Wrapper 强制；MCP/tool provider 接入边界如实登记） | AGENTS.md §5 | **PENDING** |
 | EC-06 | `tool_pack.*` / 脚本策略二选一终态（既有边界内实现 或 ADR 草案 + 权威登记 + 同源收敛） | GOAL-006 人工面第 3 项（产品决策部分） | **PENDING** |
 
@@ -376,18 +381,13 @@ adapter 接线部分以外的全部内容、GOAL-006 六条 EC 的 W 列表、�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-**当前续点**：**cycle 3 收口（EC-01 / EC-02 / EC-03 PASS）**，下一步 = **cycle 4 = EC-04
-（诚实披露）**：UI 与控制面读面标明**当前执行体**（受控 demo vs 真实 runtime）与**运行时
-指纹**；**demo 输出不再与真实结果同形**——现有 `demo_session_output` 的披露文案纳入
-**同源收敛**（同一口径在域/读面/UI/文档逐处一致）。判定细则见「EC-04 判定细则」：
-「披露」= **读面字段 + 页面渲染分支**（只在 `types.ts` 里存在字段不算）；stub e2e 与
-live e2e 各一条断言两种执行体在页面上**可区分**；页面改动必须走既有设计基线流程
-（结构签名判红 ⇒ `UPDATE_OUTLINES=1` 重生成 ⇒ 跨平台一致性复核），否则 web 门会红。
-**已知前置事实**：EC-01 已把选择结果写进 `RunManifest.execution_backend`（随
-`MANIFEST_FROZEN` payload 出现在 `GET /runs/{id}/events`），读面 DTO 与页面渲染分支是
-EC-04 要补的那一半；`demo_session_output()`（`services/api/demo.py:17-27`）目前的披露只在
-payload 内部（`"controlled fake session output (M13-R1 console demo)"`），读面/UI 没有独立的
-「执行体性质」字段。状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
+**当前续点**：**cycle 4 收口（EC-01 / EC-02 / EC-03 / EC-04 PASS）**，下一步 = **cycle 5 = EC-05
+（工具面边界）**：Tool Set 冻结 + Policy Wrapper 强制；MCP / tool provider 接入边界如实登记。
+判定细则见「EC-05 判定细则」。**已知前置事实（cycle 3 实测，直接进 EC-05 的靶心）**：
+冻结 Tool Set 里是 **tool provider id**（`openhands_workspace` / `m12_artifact` / `ncbi_eutils`），
+缺 provider → SDK 工具映射时会话创建**点名失败**（`::test_unmapped_tool_set_is_named_not_silently_dropped`
+把这一真实行为固定下来）——「不静默丢工具」已成立，但「映射本身」今天在控制面**不存在**，
+是 EC-05 要判的边界。状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
 
@@ -507,7 +507,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 1 | PLAN-20260919-107（EC-01：Runtime 选择面；driver=client-goal / owner=root-agent） | `fb8ddf8`（derive）、`10422e5`（WP-A 选择面骨架：`runtime_support.py` + `ApiSettings.agent_runtime`）、`ade2081`（WP-B 两组合根接线 + PG 凭据面单实例）、`0e01d2e`（WP-C 选择结果进 manifest/读面）、`54e2986`（WP-D 13 条判据）、`2d71e87`（WP-E 文档同源收敛）、`5b03d27`（mypy 门禁修正）、本次回写提交（RECHECK-20260919-107 / MEM-20260919-079 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | derive 前只读勘察九条事实；实现后：**反证四条先红后复原**（PG 根改回硬编码 ⇒ 结构判据红 1 failed；openhands 分支短路 ⇒ 2 failed；未知取值静默回退 ⇒ `DID NOT RAISE`；去掉 `execution_backend` 填充 ⇒ `assert None == 'openhands'` 2 failed）；`tests/api/test_runtime_selection_surface.py` **13 passed**；定向 `tests/api` **459 passed / 1 skipped**；架构门 **963 passed**；规模门禁 **944 passed**；`ruff check` / `format --check` 绿；`mypy` **934 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**（3803 passed / 200 skipped，539.63s）；DOCS-CHECK PASS | `11d47cf`（建档）的 M0 run **35446933910 = cancelled**（`concurrency.cancel-in-progress` 结构性取消：紧随其后的 `fb8ddf8` 推送取消了在飞的 M0；同一内容的覆盖由 `fb8ddf8` 的 run 承担）；`11d47cf` 的 Push-on-main run **35446933991 = success**；`fb8ddf8` 的 M0 run **35447242640 = success**（六个 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）、Push-on-main run **35447242522 = success**；本条推送的 run 见回合汇报 | 返工三处（记录诚实，**未改任何断言**）：① 初版把 runtime 装配内联进 `_sqlite_store_parts` ⇒ 撞 50 行函数门禁（58 行）+ `composition.py` 涨到 451 行（超 450）⇒ 拆出 `_sqlite_orchestration` / `_sqlite_apideps`，并把 `sqlite_artifact_blob_dir` 与 `build_sqlite_draft_service` 移到 `assembly.py`（该模块本就为此存在）；② `composition.py` 不再 re-export `demo_session_output` ⇒ `tests/api/base_fixtures.py` 导入失败（243 errors）⇒ 改从属主 `services.api.demo` 导入（机械搬 import）；③ m0 抓出 `python/typecheck` 6 条 mypy 错（守卫列表不带窄化、测试触私有属性、缺 cast）⇒ 守卫改成直接判两个值使 mypy 真窄化 | EC-01 **PASS**（RECHECK-20260919-107 = PASS_WITH_WARNINGS，W-1…W-6：加性披露使 manifest digest 变化、旧 run 的 `None` 不得读作执行体、「可装配 ≠ 可运行」、SDK 导入横幅、选择面射程只覆盖控制面两路径、指纹槽位仍是占位）；EC-02…EC-06 PENDING | cycle 2 = EC-02（受控出网门链：URL 策略 / 凭据存在性 / 端点健康 / 能力匹配；拒绝点名缺哪条事实；出站调用 0） |
 | 2 | PLAN-20260919-108（EC-02：受控出网门链；driver=client-goal / owner=root-agent） | 本次推送为**单次批量推送**（derive + WP-A…WP-E + 回写同推，沿用 GOAL-006 cycle 1 与 cycle 1 的攒批形态以避开 M0 并发取消） | derive 前只读勘察八条事实（其中两条是关键发现：`validate_endpoint_url` 只有两个**手动**调用点；`_probe_endpoint` 无 URL 裁决即出网）；实现后：**反证三条先红后复原**（删 `_probe_endpoint` 短路 ⇒ 2 failed；删 `_check_endpoint` 的 URL 环 ⇒ 2 failed 且失败形态降级为**不点名**的 `ENDPOINT_UNHEALTHY`；删 `run_execution` 注入 ⇒ 1 failed）；`tests/api/test_runtime_egress_gate.py` **9 passed**；尺寸门 **945 passed**；受影响套件（tests/api + tests/application + tests/contracts + tests/architecture/python）**1519 passed / 70 skipped / 3 failed**（3 条为 `@pytest.mark.postgres` 靶向运行未加载 `tests/postgres/conftest.py` 的环境依赖，同一批在 m0 全量下通过）；`ruff check` / `format --check` 绿；`mypy` **935 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**（4003 passed / 10 skipped，500.00s）；治理 `validate.py` 绿 | `f3e388a`（cycle 1 回写提交）的 M0 run **35451031056 = success**（六个 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）、Push-on-main run **35451030745 = success**（本轮补记到台账）；本条推送的 run 按闭合约定在回合汇报给出终态 | 返工两处（**未改任何断言**）：① `_probe_endpoint` 加一行 URL 裁决使 `run_execution.execution_inputs` 涨到 51 行 ⇒ 撞 50 行函数门禁 ⇒ 抽出 `_live_preflight`（并写明「裁决与 health 必须同源求值」）；② m0 首跑 `framework/validate` 红：`PLAN-20260919-108` 缺 `## 影响报告` 章节 ⇒ 补齐后治理验证通过、m0 全量复跑绿（**这条首跑红如实记录，不当作绿**） | EC-01/EC-02 **PASS**（RECHECK-107 / RECHECK-108，均 PASS_WITH_WARNINGS）；EC-03…EC-06 PENDING | cycle 3 = EC-03（真实 runtime 离线全链进默认 CI：脚本化 mock 端点 → 会话创建/事件映射 → 预算归账 → 制品与证据落 canonical；另附 `requires_live_llm` 门控的真端点手动 E2E，无凭据环境如实 skip） |
 | 3 | PLAN-20260919-109（EC-03：真实 runtime 离线全链；driver=client-goal / owner=root-agent） | `9bb468f`（derive）、`adf8b83`（WP-A spec 携带执行目标 + 解析点下沉）、`63746f2`（WP-B/WP-C 受门工厂 + 组合根接线 + host shell 显式开关）、`46ceae3`（WP-D 交付物映射 + usage 归因）、`8e398a3`（WP-D 四段判据与 live 门控用例）、`a1137f4`（WP-E 文档同源）、本次回写提交（RECHECK-20260919-109 / MEM-20260919-081 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条批量推送的 run 按闭合约定在回合汇报给出终态 | derive 前只读勘察确认**三处结构性断点**（spec 不携带执行目标 / 3 参工厂对 1 参调用 / 交付物不进结构化输出）；实现后：**反证四条先红后复原**（F1 `execution_target` 恒 `None` ⇒ 段 1 红 + run 失败消息点名 `carries no execution target: endpoint and model`；F2 断 MESSAGE 映射 ⇒ 段 2 红且 artifact 列表为空；F3 不写账本 ⇒ 段 3 红而 1/2/4 绿；F4 空登记 ⇒ 制品/证据读面为 `[]` 但 run 仍走到 acceptance gate，与 F2 签名可区分）；`tests/e2e/test_ec03_real_runtime_offline_chain.py` **2 passed / 1 skipped**（skip = live 用例，原因点名 `RESEARCHOS_LIVE_E2E_ENDPOINT` / `_KEY`）；`tests/api/test_session_llm_factory.py` **10 passed**；受影响套件 `tests/adapters/openhands`+`tests/application`+`tests/architecture` **765 passed / 1 skipped**、`tests/api` **482 passed**、`tests/e2e` 全绿；尺寸门 **947 passed**；`ruff check` / `format --check` 绿；`mypy` **937 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**（改完源码与文档后跑；`.cursor` 记录写入在其后，追加跑 `--profile framework` **8 项 PASS** 覆盖治理/文档面）；治理 `validate.py` 绿。**跑法提示**：`tests/api` 全量需 `RESEARCHOS_POSTGRES_DSN` 钉到 test DSN（否则 litellm `load_dotenv` 注入 operator `.env` ⇒ 3 条组合根用例 `password authentication failed`），`lint-imports` 需 `.venv/Scripts` 在 PATH | `032c30e`（cycle 2 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35454369106 = success**、Push-on-main run **35454368423 = success**（六 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）——本轮按闭合约定补记入台账；本条批量推送的 run 见回合汇报 | 返工三处（记录诚实，**未改任何断言**）：① 尺寸门首跑红——`runtime_support.py::session_llm_factory` 54 行、e2e `_openhands_deps` 83 行、四段用例 66 行 ⇒ 拆出 `_gated_session_target` / `_point_catalog_at` + `_register_live_key` + `_real_runtime` + 四个 `_assert_*` 段函数（并把四次读面合并为 `_ChainReads`，顺带解决 6 参函数）；② `mypy` 三条（`deps.credentials` 声明为 Port 而实际是 Fake ⇒ 需 `cast`；`TestClient.json()` 返回 `Any` ⇒ 需 `cast`；一处 `assert replace` 的凑数写法删除）；③ e2e 断言按**实测**修正而非按预期：会话终态**不是** SUCCEEDED（合约要 `analysis_report`、真实会话交付 `session_message` ⇒ acceptance gate 判拒），段 2 改为读 artifact 载荷的 `message_count`/`session_id`，段 3 从「账本非空」改为**可归因**（`task_id`/`model_id`） | EC-01/EC-02/EC-03 **PASS**（RECHECK-107 / 108 / 109，均 PASS_WITH_WARNINGS）；EC-04…EC-06 PENDING。EC-03 的 W-1…W-6：段 2/段 4 共享制品窗口（canonical 不落 session 级事件）、`session_message` 键名属 `tool_pack.*` 决策、live 用例本机只证明 skip 路径、真实会话目前需显式 host shell 开关、mock 端点需本地 socket、段 3 的读面强度低于段 4 | cycle 4 = EC-04（诚实披露：执行体性质 + 运行时指纹进读面与 UI；demo 输出不再与真实结果同形） |
-| 4 | PLAN-20260919-110（EC-04：诚实披露；driver=client-goal / owner=root-agent）——**derive 完成，执行中** | derive 提交与后续 WP 攒批同推（避开 M0 并发取消） | derive 前两条**只读勘察**已回填（读面/页面/门禁现状 + 过时声明清单）：执行体今天只在 `manifest.frozen` 事件 payload（**无 OpenAPI schema**、前端零引用）；`RunDetailDto` 无该字段且**没有 manifest 内容路由**；`RunIdentity` 只渲染五行；指纹记录冻结进 manifest 但**不在任何读面**；`M13_R1_COMPLETION_RECORD.md:164` 声称的 UI 披露在 `apps/web/src` 里**不存在**；三处「零 DTO/路由/OpenAPI」声明与 `EVENT_MODEL.md` / `DOMAIN_MODEL.md` 的口径已过时；**已知坑**：`#/run/timeline` 设计基线**不选 run** ⇒ 只加「选中 run 才显示」的分支现有像素/结构门**覆盖不到** | 本轮无（derive 尚未推送） | 无 | EC-01/EC-02/EC-03 **PASS**；EC-04 IN_PROGRESS（derive 完成）；EC-05/EC-06 PENDING | cycle 4 继续：补先探明项 1-5（DTO 取数路径 / 未冻结 run 口径 / 指纹最小披露形态 / 结构签名是否变化 / live 侧如何造出另一种执行体）→ WP-A…WP-E |
+| 4 | PLAN-20260919-110（EC-04：诚实披露；driver=client-goal / owner=root-agent） | `7039424`（derive）、`d291566`（WP-A 读面 DTO + 指纹记录 + OpenAPI 快照重生成）、`528b45c`（WP-B 页面两行渲染分支 + 四态 fixtures）、`ff763f9`（WP-C stub/live 各一条 e2e + live 夹具声明）、`37639be`（WP-D 第 34 条基线条目 + win32/linux 两张像素）、`cc815fd`（WP-E 文案同源收敛）、本次回写提交（RECHECK-20260919-110 / MEM-20260919-082 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条批量推送的 run 按闭合约定在回合汇报给出终态 | derive 前两条只读勘察 + 先探明项 1-5 **全部实测回填**（取数路径 = 既有 `RunProjection.events` 端口；未冻结 run 的空列表口径；指纹最小披露形态 = status/substrate/reason；结构签名是否变化；live 侧如何造第二种执行体）。实现后：**反证两条先红后复原**（F-A 摘掉 `RunPanel` 两行 ⇒ stub 2 failed「element(s) not found」；F-B `_frozen_payload` 恒空 ⇒ live 1 failed：读面上 `execution_backend` 是 `undefined`）；另有一处**实测撞车**（夹具 UUID 与 `live-workspace-snapshots` 的"未知 run"哨兵相同 ⇒ 404 断言变 200；改用全仓库未占用的 UUID 后复跑绿）；stub e2e 四态用例 **2 passed**、live 披露用例 **1 passed**；web 六门（lint 0 problems / typecheck / unit **76 passed** / build / stub e2e **87 passed** / live e2e **39 passed**）；设计基线 **34 条** + `design-fidelity` **2 passed** + linux 容器重算结构签名 **34/34 零漂移**；尺寸门 **948 passed**；`ruff check` / `format --check` 绿；`mypy` **938 files no issues**；受影响套件 `tests/{api,contracts,architecture,tooling}` **2049 passed / 2 skipped**；m0 **PASS: profile=m0; 23 deterministic checks**；治理 `validate.py` 绿 | `89b7bc8`（cycle 3 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35459621217 = success**、Push-on-main run **35459621222 = success**（六 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）——本轮按闭合约定补记入台账；本条批量推送（tip `cc815fd`）的 M0 run **35464764161 = success**（六 job 全 success）、Push-on-main run **35464763828 = success** | 返工三处（记录诚实，**未改任何断言**）：① 尺寸门首跑红两处——`console_api_app.py::_with_substrate_disclosure` 62 行、`RunPanel.tsx::RunIdentity` 57 行 ⇒ 拆 `_bind_disclosure_selection` + `_declare_substrate_run` 与 `RunIdentityFacts`；② `mypy` 首跑红 1 处（`deps.projection` 可空未判）⇒ 加守卫；③ **设计门首跑没有判红**（加行后结构签名逐字节不变）——因为 `#/run/timeline` 基线不选 run，新分支在门**外面** ⇒ 新增第 34 条基线条目（同页的选中 run 变体）把分支纳入覆盖。另：live 夹具 UUID 撞车（见「本地验证」） | EC-01…EC-04 **PASS**（RECHECK-107/108/109/110，均 PASS_WITH_WARNINGS）；EC-05 / EC-06 PENDING。EC-04 的 W-1…W-7：读面只在详情路径（列表路径 = N+1 边界）、`VERIFIED` 指纹分支无用例可走、live 的第二种执行体是**声明**的（判「页面 == 读面」，不是真跑过）、`events(run_id)` 是 outbox 全表扫描、`_frozen_payload` 取第一条 `MANIFEST_FROZEN`（将来允许 Manifest Revision 需改）、历史交付记录的「33 路由」按历史保留（已加日期化更正）、夹具 UUID 约束只写在注释里无机械门禁 | cycle 5 = EC-05（工具面边界：Tool Set 冻结 + Policy Wrapper 强制；MCP / tool provider 接入边界如实登记）——cycle 3 已实测「provider → SDK 工具映射」在控制面**不存在**且缺映射时会话创建**点名失败**，EC-05 判的就是这条边界 |
 
 ## 状态历史
 
@@ -589,3 +589,27 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   （首跑红 ⇒ 三个超 50 行函数已拆分）、`mypy` **937 files 干净**、m0 **23/23**、
   `--profile framework` **8/8**、DOCS-CHECK PASS。CI 台账见迭代日志 cycle 3 行
   （含上一 cycle 批量推送 run 的补记）。
+- 2026-09-19 cycle 4 收口：EC-04 **PASS**（PLAN-20260919-110 / RECHECK-20260919-110 =
+  PASS_WITH_WARNINGS，W-1…W-7）。这条 EC 的原始落差是一句**不成立的声明**：
+  `M13_R1_COMPLETION_RECORD.md` 写着 Run Control 已含「执行体为受控 Fake Runtime」披露，
+  实测该字符串只存在于协议注释与 `demo_session_output()` 的 payload 文案里，
+  `apps/web/src` **零引用**——披露**从未可见**。本轮把「哪个执行体跑的」做成
+  **读面字段 + 页面渲染分支**：冻结的 `manifest.frozen`（canonical outbox 事件）→
+  既有 `RunProjection.events(run_id)` 端口（与 `GET /runs/{id}/events` 同一条实现，
+  **不新增第二份真相、不加迁移、不改 `RunManifest` 结构**）→ `RunDetailDto.execution`
+  → 运行页 `run-execution-backend` / `run-runtime-fingerprint` 两行。**四态必须分开说**：
+  具体执行体 / 冻结了但**未声明**（`execution_backend = null`）/ **未冻结**（`execution = null`）
+  / 指纹未声明——空 dict 是「未声明该面」，不得当成一条记录（否则读面要么崩、要么编造
+  空状态）。指纹按 AGENTS.md §4 **只报状态与原因**（`NOT_VERIFIED · <reason>`），
+  不冒充指纹值。**本轮最有价值的一条教训（设计门的盲区）**：`#/run/timeline` 的既有基线
+  **不选 run**（`runs-empty`），而披露行只在选中 run 时渲染 ⇒ 加行后**结构签名逐字节不变**，
+  门是绿的但它**没在看你**；处置 = 新增第 34 条基线条目（同页的选中 run 变体，
+  `?run=substrate-openhands`）+ win32/linux 两张像素 + 跨平台结构签名 **34/34 零漂移**。
+  反证两条各自可复现：摘掉渲染两行 ⇒ stub 两条 e2e 红（钉在**页面分支**上，不是钉在 DTO 上）；
+  `_frozen_payload` 读空 ⇒ live 用例在**读面**就红。另有一次**实测撞车**：live 夹具的 run id
+  与 `live-workspace-snapshots` 当哨兵用的「不存在的 run」相同 ⇒ 那条 404 断言变 200，
+  已改用全仓库未占用的 UUID 并在两处写明约束（这条依赖目前只靠用例偶然捕获，无机械门禁）。
+  门禁：stub e2e **87 passed**（含四态披露 2 条与 34 条设计基线）、live e2e **39 passed**、
+  web 其余四门绿、尺寸门 **948 passed**（首跑红两处已拆）、`mypy` **938 files 干净**
+  （首跑红 1 处已修）、受影响套件 **2049 passed / 2 skipped**、m0 **23/23**。CI 台账见
+  迭代日志 cycle 4 行（含上一 cycle 批量推送 run 的补记与本次批量推送的六 job 终态）。
