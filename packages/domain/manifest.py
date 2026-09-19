@@ -7,10 +7,18 @@ revision + approval + audit（AGENTS.md §5）。
 
 M7 边界（诚实声明）：以下字段当前无法从 compile/preflight 上下文获取，
 保持 None/空（不做伪填充）：source_commit（无 git 元数据来源）、
-model_runtime_fingerprints（真实 model probe 在 M8 接入）、
-context_template_hashes（Context Engine 未落地）、execution_backend /
-environment（runtime 装配由 OpenHandsRuntimeAdapter 决定，adapter 不反向
-上报执行环境标识）、input_artifact_digests（M7 场景无输入 Artifact）。
+context_template_hashes（Context Engine 未落地）、environment、input_artifact_digests
+（M7 场景无输入 Artifact）。
+
+已收敛的两项（PLAN-20260919-107 / EC-01，原声明与事实不符，此处更正）：
+- `execution_backend`：**现在有来源**——执行基质由组合根的选择面声明
+  （`PreflightContext.execution_substrate` → 冻结到这里）。原注释写「runtime 装配
+  由 OpenHandsRuntimeAdapter 决定，adapter 不反向上报执行环境标识」，但组合根当时
+  硬编码 Fake、adapter 从未被接线，声明与事实不符；现在装配点唯一且如实上报。
+  未声明时仍是 None（不伪填充）。
+- `model_runtime_fingerprints`：槽位可填（`PreflightContext.runtime_fingerprints`）；
+  本控制面路径在**没有 probe 事实**时填**显式未验证记录**而不是留空——留空分不清
+  「没探」与「探了没问题」。真实 probe 结果在 M12 参考路径与模型探测路由产生。
 """
 
 from __future__ import annotations
