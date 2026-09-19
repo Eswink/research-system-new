@@ -150,7 +150,8 @@ class _ConsoleToolPackPolicy:
     平台默认策略（`examples/config/policy.yaml`）没有 `tool_pack.*` 规则 ⇒ default
     DENY，真实默认下 console 写面会 403（既有缺口，登记在 RECHECK-20260915-065）。
     live 套件验证的是"写面 → 读面"的因果，因此在**夹具层**放行这四个能力，
-    不放宽产品策略。
+    不放宽产品策略。该缺口的产品侧处置待拍板，见
+    `docs/adr/ADR-0031-toolpack-capability-policy.md`（Status: `Proposed`）。
     """
 
     real: PolicyEvaluator

@@ -289,7 +289,8 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - 缺口（登记）：provider 凭据绑定无写面；健康复核不含 schema digest 漂移比对；
   平台默认策略（`examples/config/policy.yaml`）没有 `tool_pack.*` 规则 ⇒ default
   DENY，真实部署下 console 写面需运维显式放行这三个能力（live 夹具层已放行，
-  登记在 RECHECK-20260915-065）；不以模型端点接口代替。
+  登记在 RECHECK-20260915-065）；不以模型端点接口代替。处置待拍板，见
+  `docs/adr/ADR-0031-toolpack-capability-policy.md`（Status: `Proposed`）。
 
 ### `#/ops/data-health` — 数据健康
 - 设计：`screens/DataHealth.jsx`。等级：PARTIAL。

@@ -71,6 +71,11 @@ tool_call_records
 tool_result_records
 ```
 
+本节（及上文各节）列的是**领域草图名**，不逐字等于物理表名。已落地的序列里，
+ToolPack 写面用的是 `tool_packs`（`adapters/sqlite/tool_pack_store.py`），
+provider 注册用 `tool_provider_registrations`（`adapters/sqlite/tool_provider_registry.py`）；
+物理命名整体偏短（如 `runs`、`artifacts`），M16 新增面见下文小节。
+
 ## Workspace / Execution
 
 ```text
