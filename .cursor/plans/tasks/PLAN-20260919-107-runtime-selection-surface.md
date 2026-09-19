@@ -179,14 +179,53 @@ OpenHandsRuntimeAdapter 决定』」这条**声明与事实的落差**收敛成*
 
 （实施时逐条填写；未实跑不得记 PASS。）
 
-- 事实复验（WP-A）：
-- AC-01 结构判据：
-- AC-02 回归对照：
-- AC-03 / AC-04 / AC-05 用例输出：
-- AC-06 反证四条（先红后复原）：
-- AC-07 门禁（规模 / 快照 / m0 23 项 / 定向套件 / web 六门）：
-- AC-08 安全（零出网 / 零凭据字面量 / ports 门禁绿 / 零新增依赖）：
-- CI run（六 job 终态）：
+- **事实复验（WP-A）**：
+  - **事实 5 精确化**：`tests/contracts/test_common_contract.py::test_provider_types_do_not_leak_from_ports`
+    只扫 `packages/application/ports/*.py`（顶层 `.py`），禁止 token
+    `("openhands", "litellm", "lite_llm", "temporal", "openai", "anthropic", "adapters.")`
+    —— `openai` 也在名单里，所以 `PreflightContext` 的新字段连 docstring 都不能带这些词，
+    落地时字段名取 `execution_substrate` / `runtime_fingerprints`。
+  - **事实 7 复验**：`tests/api/**`、`tests/e2e/**` 中**没有**对
+    `manifest_digest` / `manifest_semantic_digest` 的硬编码断言——唯二命中是手工夹具串
+    （`tests/adapters/sqlite/test_evidence_memory_persistence.py:92` 的 `"sha256:manifest"`、
+    `tests/application/test_pause_coordination.py:112` 的 `"manifest-digest"`），与冻结无关。
+    因此填充一个**本就声明、今天恒 None** 的 manifest 字段不撞既有断言（实跑证实）。
+- **AC-01 结构判据**：`tests/api/test_runtime_selection_surface.py::test_no_composition_root_builds_the_fake_runtime_directly`
+  （AST 数 `FakeAgentRuntime(...)` 调用点，两个组合根均 0）+ `::test_composition_roots_call_the_one_selection_point`。
+- **AC-02 回归对照**：`::test_unconfigured_settings_select_the_controlled_demo_runtime`（默认 `fake` /
+  `configured=False`）、`::test_explicit_fake_is_marked_configured`（显式与默认可区分）、
+  `::test_demo_session_output_is_unchanged`（**逐字段**等于
+  `{"analysis_report": {"summary": "controlled fake session output (M13-R1 console demo)", "status": "ok"}}`）；
+  受影响套件 `tests/api` **459 passed / 1 skipped**（DSN pin 配方；见下方「环境事实」）。
+- **AC-03 / AC-04 / AC-05 用例输出**：`tests/api/test_runtime_selection_surface.py` **13 passed**
+  （含 `::test_openhands_selection_constructs_the_real_adapter_offline`——用「`resolve` 即炸」的
+  凭据替身证明**构造期不解析凭据**，因此不触网；`::test_openhands_without_required_faces_names_what_is_missing`
+  逐项点名；`::test_unknown_runtime_fails_closed_naming_the_value`；
+  `::test_frozen_manifest_records_the_selected_substrate`、
+  `::test_frozen_manifest_stays_undeclared_without_a_selection`、
+  `::test_runtime_fingerprints_are_explicitly_not_verified`、
+  `::test_frozen_event_payload_carries_the_substrate_to_the_read_face`）。
+- **AC-06 反证四条（先红后复原，全部实跑）**：
+  | # | 注入 | 结果 |
+  | --- | --- | --- |
+  | ① | `pg_composition._build_pg_orchestration` 改回硬编码 `FakeAgentRuntime(...)` | `test_no_composition_root_builds_the_fake_runtime_directly` **红**（1 failed / 12 passed）⇒ 复原 |
+  | ② | `build_agent_runtime` 的 openhands 分支短路成 `_fake_runtime()` | `test_openhands_selection_constructs_the_real_adapter_offline` + `::test_openhands_without_required_faces_names_what_is_missing` **红**（2 failed）⇒ 复原 |
+  | ③ | 未知取值改成静默回退 Fake | `test_unknown_runtime_fails_closed_naming_the_value` **红**（`DID NOT RAISE RuntimeConfigurationError`）⇒ 复原 |
+  | ④ | `_manifest_of` 去掉 `execution_backend=context.execution_substrate` | `test_frozen_manifest_records_the_selected_substrate` + `::test_frozen_event_payload_carries_the_substrate_to_the_read_face` **红**（`assert None == 'openhands'`）⇒ 复原 |
+  四次复原后 `git status --short` 干净、13 passed。
+- **AC-07 门禁**：规模门禁 `tests/tooling/test_python_source_limits.py` **944 passed**（0.00 超限）；
+  `ruff check` + `ruff format --check` 绿；`mypy` **934 source files, no issues**；
+  m0 全量 23 项（见「CI / 门禁」）；架构门 `tests/architecture/python` **963 passed**
+  （含 import-linter 两条；**必须用 `uv run --frozen --no-sync` 启动**，否则 `lint-imports` 不在 PATH 会误红）。
+- **AC-08 安全**：本 PLAN 的产品代码零真实端点调用（唯一构造路径不解析凭据、不建连接）；
+  零凭据字面量（测试里的 `sk-test-...` 是既有受控夹具串，不与真实端点组合）；
+  ports token 门禁保持绿；`ruff`/mypy 全绿；**零新增依赖**（未改 `pyproject.toml` / lock）。
+- **环境事实（重要，非代码缺陷）**：`tests/api` 单独跑时 3 条 `@pytest.mark.postgres` 用例
+  （`tests/api/test_worker_plane_composition.py` 的 2 条 + `test_api_assembly_reads_artifact_blob_dir_env`）
+  会**真连 PG**：它们只在加载 `tests/postgres/conftest.py` 时才按标记 skip，
+  单独跑该文件则不加载 ⇒ 容器不在时红。这是既有口径（记忆：postgres marker skip needs PG conftest），
+  **不是本轮回归**；m0 全量跑时该 conftest 在射程内。
+- **CI run（六 job 终态）**：
 
 ## 状态历史
 

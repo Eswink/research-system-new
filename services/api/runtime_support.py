@@ -117,15 +117,15 @@ def _openhands_runtime(
     from adapters.openhands.session_types import AdapterDependencies
     from adapters.openhands.workspace_adapter import build_local_workspace
 
-    missing = [
-        name
-        for name, present in (
-            ("credential_resolver", credentials is not None),
-            ("policy_evaluator", policy_evaluator is not None),
-        )
-        if not present
-    ]
-    if missing:
+    if credentials is None or policy_evaluator is None:
+        missing = [
+            name
+            for name, present in (
+                ("credential_resolver", credentials is not None),
+                ("policy_evaluator", policy_evaluator is not None),
+            )
+            if not present
+        ]
         raise RuntimeConfigurationError(
             "agent runtime 'openhands' requires " + " and ".join(missing)
         )

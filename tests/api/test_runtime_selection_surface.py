@@ -21,7 +21,7 @@ from __future__ import annotations
 import ast
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -121,7 +121,8 @@ def test_explicit_fake_is_marked_configured() -> None:
 def test_demo_session_output_is_unchanged() -> None:
     """AC-02 回归对照：默认路径的 demo 输出逐字段不变。"""
     assert demo_session_output() == _demo_payload()
-    assert build_agent_runtime(ApiSettings())._structured_output == _demo_payload()
+    runtime = build_agent_runtime(ApiSettings())
+    assert cast(Any, runtime)._structured_output == _demo_payload()
 
 
 # ---------------------------------------------------------- AC-03/04 选择与拒绝
@@ -133,8 +134,8 @@ def test_openhands_selection_constructs_the_real_adapter_offline() -> None:
 
     runtime = build_agent_runtime(
         ApiSettings(agent_runtime=OPENHANDS_RUNTIME),
-        credentials=_ExplodingResolver(),  # type: ignore[arg-type]
-        policy_evaluator=object(),  # type: ignore[arg-type]
+        credentials=_ExplodingResolver(),
+        policy_evaluator=cast(Any, object()),
     )
     assert isinstance(runtime, OpenHandsRuntimeAdapter)
 
@@ -149,7 +150,7 @@ def test_openhands_without_required_faces_names_what_is_missing() -> None:
     with pytest.raises(RuntimeConfigurationError) as missing_policy:
         build_agent_runtime(
             ApiSettings(agent_runtime=OPENHANDS_RUNTIME),
-            credentials=_ExplodingResolver(),  # type: ignore[arg-type]
+            credentials=_ExplodingResolver(),
         )
     assert "policy_evaluator" in str(missing_policy.value)
     assert "credential_resolver" not in str(missing_policy.value)
@@ -179,9 +180,10 @@ def test_settings_read_the_runtime_from_the_environment(monkeypatch: pytest.Monk
 
 
 def _frozen_manifest(ctx: Any) -> Any:
+    from services.api.composition import ApiDeps
     from services.api.protocol_source import load_protocol_with_body
 
-    deps = _StubDeps()
+    deps = cast(ApiDeps, _StubDeps())
     protocol, _body = load_protocol_with_body(deps, "console_demo_research_v1.yaml", None)
     plan, report = compile_and_preflight(protocol, ctx.catalog, ctx.project, ctx)
     assert plan is not None and report.passed, "fixture preflight must pass"
