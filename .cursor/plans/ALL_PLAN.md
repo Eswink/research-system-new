@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260919-113](tasks/PLAN-20260919-113-goal-007-closeout-recheck.md) | IN_PROGRESS |
 | [x] | [PLAN-20260919-112](tasks/PLAN-20260919-112-toolpack-capability-policy-decision.md) | DONE |
 | [x] | [PLAN-20260919-111](tasks/PLAN-20260919-111-tool-plane-boundary.md) | DONE |
 | [x] | [PLAN-20260919-110](tasks/PLAN-20260919-110-honest-substrate-disclosure.md) | DONE |
