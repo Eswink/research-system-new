@@ -30,6 +30,7 @@ from services.api.run_execution import (
     execution_inputs,
     run_from_execution,
 )
+from services.api.run_execution_view import run_execution_dto
 from services.api.run_pause_view import paused_dispatch_view
 from services.api.run_rebuild_view import rebuild_readiness_dto
 
@@ -38,7 +39,11 @@ projects_router = APIRouter(tags=["runs"])
 
 
 def _detail_dto(
-    deps: ApiDeps, run: ResearchRun, *, dispatch: DispatchOwnershipDto | None = None
+    deps: ApiDeps,
+    run: ResearchRun,
+    *,
+    dispatch: DispatchOwnershipDto | None = None,
+    with_execution: bool = False,
 ) -> RunDetailDto:
     """canonical run → 读面 DTO（详情与列表共用，停车语义只有这一处分类）。
 
@@ -46,9 +51,19 @@ def _detail_dto(
     `paused_dispatch` 是同一个读结果的两个视图，不是一个字段一次读。列表路径把**批量读到的**
     `dispatch` 传进来（GOAL-005 cycle 5 = EC-05 ①：不再逐 run 各读一次）；`dispatch=None`
     时本函数自己读一次（详情路径）。
+
+    `with_execution`（GOAL-007 cycle 4 = EC-04）**只由详情路径开启**：执行体读面要回读该
+    run 的冻结事件，列表路径逐 run 回读会变成 N+1。默认 False 让「哪条路径披露什么」是
+    显式的，不靠 `dispatch is None` 这种巧合。
     """
     if dispatch is None:
         dispatch = dispatch_ownership_dto(dispatch_ownership_read(deps.workflow, run.id.value))
+    projection = deps.projection
+    execution = (
+        run_execution_dto(projection, run.id.value)
+        if with_execution and projection is not None
+        else None
+    )
     return RunDetailDto(
         id=run.id.value,
         project_id=run.project_id,
@@ -62,13 +77,15 @@ def _detail_dto(
         paused_dispatch=paused_dispatch_view(run.state, dispatch),
         dispatch=dispatch,
         rebuild=rebuild_readiness_dto(run),
+        execution=execution,
         created_at=run.created_at.value.isoformat(),
         updated_at=run.updated_at.value.isoformat(),
     )
 
 
 def _run_state_dto(deps: ApiDeps, run_id: str) -> RunDetailDto:
-    return _detail_dto(deps, get_run_or_error(deps, run_id))
+    """启动/取消后的详情读面（与 `GET /runs/{id}` 同一条路径，含执行体披露）。"""
+    return _detail_dto(deps, get_run_or_error(deps, run_id), with_execution=True)
 
 
 @projects_router.post("/projects/{project_id}/runs", response_model=RunDetailDto)

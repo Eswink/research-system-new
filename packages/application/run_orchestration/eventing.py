@@ -67,10 +67,15 @@ def frozen_payload(run: ResearchRun, manifest: RunManifest) -> dict[str, object]
         "semantic_digest": str(manifest.semantic_digest()),
         "pricing_version": manifest.pricing_version,
         "pricing_digest": manifest.pricing_digest,
-        # PLAN-20260919-107（EC-01）：执行基质随冻结快照进读面。读面走既有
-        # `GET /runs/{id}/events`，因此零 DTO/路由/OpenAPI/迁移变化。
+        # PLAN-20260919-107（EC-01）：执行基质随冻结快照进读面。EC-01 时读面只走
+        # `GET /runs/{id}/events`；EC-04 起同一事实另有 `GET /runs/{id}` 的 `execution`
+        # 读面——**回读的仍是本 payload**，不另存一份（少一处可漂移的副本）。
         # None = 冻结时未声明（M7 不伪填充口径），不得读作某一个具体执行体。
         "execution_backend": manifest.execution_backend,
+        # PLAN-20260919-110（EC-04）：指纹槽位的**诚实状态**（AGENTS.md §4）随冻结快照
+        # 进读面。空 dict = 冻结时未声明该面，与 `execution_backend` 的 None 同口径；
+        # 有值时是 `{substrate, status, reason}` 的**状态**记录，不是指纹值本身。
+        "runtime_fingerprint": dict(manifest.model_runtime_fingerprints),
     }
 
 

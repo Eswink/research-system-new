@@ -5442,6 +5442,16 @@
               }
             ]
           },
+          "execution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunExecutionDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -5519,6 +5529,35 @@
           "updated_at"
         ],
         "title": "RunDetailDto",
+        "type": "object"
+      },
+      "RunExecutionDto": {
+        "additionalProperties": false,
+        "description": "执行体读面（GOAL-007 cycle 4 = EC-04）：这条 run 是哪个执行体跑的。\n\n事实来源是冻结的 `manifest.frozen` 事件。`execution_backend is None` 有两种情形，\n由外层区分：外层为 `None` = 这条 run **尚未冻结**；外层非 `None` 而\n`execution_backend is None` = **冻结时未声明**（M7 不伪填充口径）。两者都**不得**\n读作某一个具体执行体。",
+        "properties": {
+          "execution_backend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Backend"
+          },
+          "runtime_fingerprint": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeFingerprintDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "RunExecutionDto",
         "type": "object"
       },
       "RunPlacementDto": {
@@ -5713,6 +5752,43 @@
           "snapshots"
         ],
         "title": "RunWorkspaceSnapshotsDto",
+        "type": "object"
+      },
+      "RuntimeFingerprintDto": {
+        "additionalProperties": false,
+        "description": "运行时指纹槽位的**诚实状态**（AGENTS.md §4 / GOAL-007 EC-04）。\n\n`status` 取 `NOT_VERIFIED` 时 `reason` 点名为什么（默认受控 demo 执行体不发起模型\n调用，§4 的七件事实一件也不存在）。它是**状态**不是**指纹值**：读面不得把它当作\n「已验证的指纹」，也不得在 `status != VERIFIED` 时渲染成指纹结论。",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "substrate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Substrate"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "RuntimeFingerprintDto",
         "type": "object"
       },
       "ScheduleCreateDto": {

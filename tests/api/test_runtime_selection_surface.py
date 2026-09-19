@@ -239,7 +239,9 @@ def test_runtime_fingerprints_are_explicitly_not_verified() -> None:
 def test_frozen_event_payload_carries_the_substrate_to_the_read_face() -> None:
     """AC-05 读面：`MANIFEST_FROZEN` payload 带执行基质 ⇒ 既有 events 读面即可判。
 
-    零 DTO / 路由 / OpenAPI / 迁移变化（与 GOAL-006 EC-06 同形态）。
+    EC-01 加的是 payload 键、**不动 DTO**；GOAL-007 EC-04 之后同一事实另有
+    `GET /runs/{id}` 的 `execution` 读面，而那一面**回读的仍是这份 payload**
+    （`services/api/run_execution_view.py`）⇒ 两条读面同源，不存在第二份真相。
     """
     from packages.domain.core import ID
     from packages.domain.run import ResearchRun

@@ -383,6 +383,20 @@ export interface RebuildReadinessDto {
   missing: string[];
 }
 
+export interface RuntimeFingerprintDto {
+  status: string;
+  substrate: string | null;
+  reason: string | null;
+}
+
+// GOAL-007 cycle 4 = EC-04：执行体读面。外层的 null 与 execution_backend 的
+// null 是两件事：外层 null = 这条 run 尚未冻结；execution_backend === null =
+// 冻结时未声明。两者都不代表某个具体执行体。
+export interface RunExecutionDto {
+  execution_backend: string | null;
+  runtime_fingerprint: RuntimeFingerprintDto | null;
+}
+
 export interface RunDetailDto {
   id: string;
   project_id: string;
@@ -401,6 +415,8 @@ export interface RunDetailDto {
   dispatch: DispatchOwnershipDto | null;
   // GOAL-005 cycle 6 = EC-06：重建能力读面（任何状态都给；历史行点名缺失事实）。
   rebuild: RebuildReadinessDto;
+  // GOAL-007 cycle 4 = EC-04：执行体读面（仅详情路径给；列表路径为 null）。
+  execution: RunExecutionDto | null;
   created_at: string;
   updated_at: string;
 }

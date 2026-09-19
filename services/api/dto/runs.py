@@ -101,6 +101,32 @@ class DispatchOwnershipDto(BaseModel):
     holders: list[LeaseHolderDto] = Field(default_factory=list)
 
 
+class RuntimeFingerprintDto(BaseModel):
+    """运行时指纹槽位的**诚实状态**（AGENTS.md §4 / GOAL-007 EC-04）。
+
+    `status` 取 `NOT_VERIFIED` 时 `reason` 点名为什么（默认受控 demo 执行体不发起模型
+    调用，§4 的七件事实一件也不存在）。它是**状态**不是**指纹值**：读面不得把它当作
+    「已验证的指纹」，也不得在 `status != VERIFIED` 时渲染成指纹结论。
+    """
+
+    status: str
+    substrate: str | None = None
+    reason: str | None = None
+
+
+class RunExecutionDto(BaseModel):
+    """执行体读面（GOAL-007 cycle 4 = EC-04）：这条 run 是哪个执行体跑的。
+
+    事实来源是冻结的 `manifest.frozen` 事件。`execution_backend is None` 有两种情形，
+    由外层区分：外层为 `None` = 这条 run **尚未冻结**；外层非 `None` 而
+    `execution_backend is None` = **冻结时未声明**（M7 不伪填充口径）。两者都**不得**
+    读作某一个具体执行体。
+    """
+
+    execution_backend: str | None = None
+    runtime_fingerprint: RuntimeFingerprintDto | None = None
+
+
 class RunDetailDto(BaseModel):
     id: str
     project_id: str
@@ -121,6 +147,9 @@ class RunDetailDto(BaseModel):
     # GOAL-005 cycle 6 = EC-06：重建能力读面（任何状态都给）。把上面两个 None 与
     # "冻结正文缺席"合成一个**点名事实**的回答——历史行不再是含糊的 None。
     rebuild: RebuildReadinessDto
+    # GOAL-007 cycle 4 = EC-04：执行体读面（**仅详情路径**给）。列表路径不带它：那是批量
+    # 读面，逐 run 回读冻结事件会变成 N+1；列表要披露时另开批量读面，不在这里静默省略。
+    execution: RunExecutionDto | None = None
     created_at: str
     updated_at: str
 
