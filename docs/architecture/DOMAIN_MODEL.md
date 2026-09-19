@@ -53,10 +53,12 @@ budget reservation
 
 `digest()` 覆盖全部声明字段；`semantic_digest()` 排除 `frozen_at`
 （冻结时刻元数据不参与语义比对），用于 resume 时校验 plan/catalog/契约
-未漂移（WORKFLOW_RELIABILITY.md §8）。M7 无法从 compile/preflight 上下文
-获取的字段（source_commit、model_runtime_fingerprints、context_template_hashes、
-execution_backend、environment、input_artifact_digests）保持 None/空，不伪填充
-（见 packages/domain/manifest.py 的 M7 边界声明）。
+未漂移（WORKFLOW_RELIABILITY.md §8）。**部分字段已有来源**：`execution_backend` 由
+组合根的选择面写入、`model_runtime_fingerprints` 由该选择面给出**状态**记录
+（GOAL-007 EC-01/EC-04，见 AGENT_RUNTIME.md §3.1 与 §3.3）；其余 M7 期无法从
+compile/preflight 上下文获取的字段（source_commit、context_template_hashes、
+environment、input_artifact_digests）保持 None/空，**不伪填充**——「有来源」与
+「没来源」必须分开说（见 packages/domain/manifest.py 的 M7 边界声明）。
 
 ### RunManifestRevision
 

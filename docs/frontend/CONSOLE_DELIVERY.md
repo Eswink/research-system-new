@@ -65,3 +65,9 @@ vite `/api` 代理与 `Dockerfile.console` 构建入口不变。
 设计对照基准：`docs/references/design/console-design/reference/`（73 张，冻结交付包生成）。
 实现回归基线：`apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/`（33 路由 dark/normal/zh）。
 两者分离；回归基线在设计对照通过后批准。
+
+**基线条目更正（GOAL-007 EC-04，2026-09-19）**：上行的 33 条基线在设计对照当时成立；
+EC-04 追加了第 34 条基线条目 `run-timeline-substrate`（`#/run/timeline?run=substrate-openhands`），
+因为执行体披露行只在选中 run 时渲染，而不选 run 的 `run-timeline` 基线**看不见**该分支
+（实测：加行后结构签名不变）。规范路由仍是 `registry.ts` 的 33 条，多出的是同页的
+"选中 run" 变体基线。

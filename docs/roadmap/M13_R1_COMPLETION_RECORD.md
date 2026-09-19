@@ -161,7 +161,8 @@ uv run --frozen --no-sync python -B tools/gen_openapi.py
 
 1. `system_fingerprint` 取决于 relay 是否返回；未返回时 UI 如实 `Configuration reproducible / provider fingerprint unavailable`（AGENTS.md §4），不美化为 Fully reproducible。
 2. `WorkspaceSnapshot` 仅树级 digest；file-level diff 为 M6/M9 前置能力缺口，Workspace & Experiments 页已诚实标注 `file-level workspace diff unavailable`，Remaining Debt 入本记录。
-3. Real Execution 仍为受控 Fake Runtime（不切换 OpenHands Agent Loop，M12 已接受边界）；Run Control 含 `Agent 研究执行体为受控 Fake Runtime（非真实 LLM 推理）` 披露；Docker 真实执行经 M9 路径独立验证（`container-quality`）。
+3. Real Execution 仍为受控 Fake Runtime（不切换 OpenHands Agent Loop，M12 已接受边界）；Docker 真实执行经 M9 路径独立验证（`container-quality`）。
+   **披露更正（GOAL-007 EC-04，2026-09-19）**：本条原称「Run Control 含 `Agent 研究执行体为受控 Fake Runtime（非真实 LLM 推理）` 披露」——该字符串只存在于协议注释与 Fake 输出文案里，`apps/web` 当时**没有任何渲染分支**承载它，属**声称已披露、实际不可见**。EC-04 起披露改走读面字段（`GET /runs/{id}` 的 `execution`）＋页面渲染分支（`run-execution-backend` / `run-runtime-fingerprint`），并有 stub/live 两条用例证明两种执行体在页面上可区分。
 4. Evidence/Memory 持久化仍为 SQLite（M12/M13 闭环所需）；PostgreSQL canonical state 属 M14（MILESTONES 明示 Non-goals）。
 5. `ApiDeps.run_registry` dict 保留为测试注入兼容层；生产读取走 `SqliteRunStore`（重启可恢复），写入双写（注册表 + 持久化）。
 

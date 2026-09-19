@@ -45,9 +45,13 @@ run.resume_failed
 run.resume_compensation_failed
 ```
 
-`manifest.frozen` 的 payload 带三项冻结引用：`digest`（覆盖 `frozen_at` 的快照标识）、
-`semantic_digest`（排除冻结时刻，resume 漂移校验的输入）、`pricing_version` +
-`pricing_digest`。语义 digest 必须在事件里：执行期失败收敛的 run 没有 `RunOutcome`
+`manifest.frozen` 的 payload 带冻结引用与执行体事实：`digest`（覆盖 `frozen_at` 的快照
+标识）、`semantic_digest`（排除冻结时刻，resume 漂移校验的输入）、`pricing_version` +
+`pricing_digest`、`run_id`，以及 `execution_backend`（执行基质；`None` = 冻结时未声明）
+与 `runtime_fingerprint`（AGENTS.md §4 指纹槽位的**状态**记录；空对象 = 未声明该面）。
+后三项是 GOAL-007 EC-01/EC-04 依次加的**加性**键——旧 reader 忽略即兼容，且
+`GET /runs/{id}` 的 `execution` 读面回读的正是这份 payload（不另存副本）。
+语义 digest 必须在事件里：执行期失败收敛的 run 没有 `RunOutcome`
 可读，只能从事件链把 run 行的冻结引用补回来（GOAL-004 cycle 4 = EC-04）。
 
 **旧事件形态**（GOAL-005 cycle 6 = EC-06）：早于语义 digest 那一轮的 `manifest.frozen`

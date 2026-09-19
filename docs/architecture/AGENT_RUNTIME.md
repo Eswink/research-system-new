@@ -57,10 +57,12 @@ OpenHandsRuntimeAdapter
 - **取值词表归组合层**：`packages/application/ports/**` 有 provider token 字符串门禁
   （`test_provider_types_do_not_leak_from_ports`），因此 Port 与 Domain 只见**中性的
   基质标识字符串**（`RunManifest.execution_backend`）。
-- **选择结果进 manifest，并经既有读面可判**：组合根把选择写进
+- **选择结果进 manifest，并经两条读面可判**：组合根把选择写进
   `PreflightContext.execution_substrate`，`freeze_manifest` 冻结为
-  `RunManifest.execution_backend`，并随 `MANIFEST_FROZEN` payload 出现在
-  `GET /runs/{id}/events` 上（零 DTO / 路由 / OpenAPI / 迁移变化）。
+  `RunManifest.execution_backend`，随后（a）随 `MANIFEST_FROZEN` payload 出现在
+  `GET /runs/{id}/events` 上，（b）由 `GET /runs/{id}` 的 `execution` 读面回读
+  **同一份 payload**（GOAL-007 EC-04；只加一个可选 DTO 字段与一个视图模块，无迁移）。
+  列表路径不带该字段：那是批量读面，逐 run 回读冻结事件会变成 N+1（要披露时另开批量读面）。
 - **本节不宣称的部分**：受控出网门链（端点 URL 策略 / 凭据存在性 / 端点健康 / 能力
   匹配）属 GOAL-007 EC-02，真实 runtime 的离线全链属 EC-03。EC-01 只保证**构造路径
   可用且可判**、且构造**不发起任何出站调用**——「能装配」不等于「已放行执行」。
