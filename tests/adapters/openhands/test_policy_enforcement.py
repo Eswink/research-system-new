@@ -142,6 +142,15 @@ class TestAgentLoopPolicyGate:
 
 
 class TestDirectExecutionGate:
+    def test_the_adapter_exposes_exactly_one_tool_execution_entry(self) -> None:
+        """EC-05：adapter 的公开面里执行入口只有门控那一个（结构事实的运行时读数）。"""
+        public = {
+            name
+            for name in dir(OpenHandsRuntimeAdapter)
+            if not name.startswith("_") and "execute" in name
+        }
+        assert public == {"execute_tool_gated"}, public
+
     def test_gated_direct_execution_denied_before_sdk(self, tmp_path: Path) -> None:
         runtime = _make_adapter(tmp_path, default_decision=PolicyDecision.DENY)
         handle = runtime.create_session(_spec())
