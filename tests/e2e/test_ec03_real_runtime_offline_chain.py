@@ -39,10 +39,38 @@ from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
+from openhands.sdk.tool.schema import Action, Observation
+from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
 
 from packages.domain.budget import ResourceType
 
 _PROTOCOL = "console_demo_research_v1.yaml"
+
+
+class _InertAction(Action):
+    """惰性工具的动作（无副作用）；模块级定义的原因见 `_inert_tool_class()`。"""
+
+    note: str = ""
+
+
+class _InertExecutor(ToolExecutor[Any, Observation]):
+    def __call__(self, action: Any, conversation: Any = None) -> Observation:
+        return Observation.from_text("inert")
+
+
+class InertTool(ToolDefinition[Any, Observation]):
+    """测试侧惰性工具：只为让冻结集里的 provider id 在 SDK 注册表里可解析。"""
+
+    @classmethod
+    def create(cls, conv_state: Any = None, **params: Any) -> list[Any]:
+        return [
+            cls(
+                description="Inert test tool",
+                action_type=_InertAction,
+                observation_type=None,
+                executor=_InertExecutor(),
+            )
+        ]
 
 
 class _MockRelayHandler(BaseHTTPRequestHandler):
@@ -103,28 +131,16 @@ def mock_relay() -> Iterator[str]:
 
 
 def _inert_tool_class() -> Any:
-    """惰性 SDK 工具（无副作用）：只为让 provider id 在 SDK 注册表里可解析。"""
-    from openhands.sdk.tool.schema import Action, Observation
-    from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
+    """惰性 SDK 工具（无副作用）：只为让 provider id 在 SDK 注册表里可解析。
 
-    class _InertAction(Action):
-        note: str = ""
-
-    class _InertExecutor(ToolExecutor[Any, Observation]):
-        def __call__(self, action: Any, conversation: Any = None) -> Observation:
-            return Observation.from_text("inert")
-
-    class InertTool(ToolDefinition[Any, Observation]):
-        @classmethod
-        def create(cls, conv_state: Any = None, **params: Any) -> list[Any]:
-            tool = cls(
-                description="Inert test tool",
-                action_type=_InertAction,
-                observation_type=None,
-                executor=_InertExecutor(),
-            )
-            return [tool]
-
+    类定义在**模块级**（与 `tests/adapters/openhands/test_spike_e2e.py` 同形态）：
+    SDK 会枚举 `Action` 的全部具体子类来构建判别联合，遇到 `<locals>` 限定名直接
+    抛 "Local classes not supported!" ⇒ 函数内局部类会**毒化同进程后续任何事件
+    round-trip**（fork 路径就会走它）。这是本轮收口独立复检实测到的跨套件污染：
+    `pytest tests/e2e/test_ec03_real_runtime_offline_chain.py
+    tests/contracts/test_agent_runtime_contract.py` 可复现；m0 的字母序下 contracts
+    先跑，所以 CI 与 m0 看不见它。
+    """
     return InertTool
 
 
