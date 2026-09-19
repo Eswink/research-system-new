@@ -25,7 +25,10 @@
   （LLMTimeoutError → TransientPortError 等）；SDK 异常类型不越过边界。
 - LLM Relay：base_url/api_key/model 三要素透传；非知名 model +
   自定义 base_url 时 runtime model identifier 加 `openai/` 前缀变换
-  （R-08 实证；变换只存在于 llm_factory）。
+  （R-08 实证；变换只存在于 llm_factory）。**出网门禁不在本层**：base_url 的
+  URL 策略由受控出网门链在 run 路径上先裁决（GOAL-007 EC-02，见
+  `docs/architecture/AGENT_RUNTIME.md` §3.2）；`build_llm` 不做 host 判断，
+  也不得自行新造一份——host 分类全仓只有 `endpoint_policy.py` 一处。
 - Policy（R-03 修正）：PolicyEnforcingAgent 在 SDK agent loop 工具执行点
   （_execute_action_event）强制 PolicyEvaluator——DENY/REQUIRE_APPROVAL
   返回拒绝反馈且不触达工具 executor；REQUIRE_APPROVAL 额外投影

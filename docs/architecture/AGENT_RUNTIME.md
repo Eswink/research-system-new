@@ -64,6 +64,42 @@ OpenHandsRuntimeAdapter
   匹配）属 GOAL-007 EC-02，真实 runtime 的离线全链属 EC-03。EC-01 只保证**构造路径
   可用且可判**、且构造**不发起任何出站调用**——「能装配」不等于「已放行执行」。
 
+### 3.2 受控出网门链（PLAN-20260919-108 / GOAL-007 EC-02）
+
+执行体**唯一**的出网口是 LLM endpoint。这条口子上有**一条有序门链**，每一环都必须
+**点名**阻塞它的事实，且链在**第一环之前就决定了探针是否值得发生**：
+
+```text
+URL 策略（EndpointUrlPolicy / validate_endpoint_url）
+  → 凭据存在性（CREDENTIAL_MISSING）
+  → 端点健康（ENDPOINT_UNHEALTHY）
+  → 模型能力匹配（MODEL_ELIGIBILITY）
+```
+
+| 环 | 事实来源 | 拒绝时的 finding / 形态 |
+| --- | --- | --- |
+| URL 策略 | `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS`（默认 `0` = deny）经 `ApiSettings` 构造策略 | `ENDPOINT_URL_DENIED`（点名 endpoint、base_url 与放行方式） |
+| 凭据存在性 | `CredentialResolver.resolve(credential_ref)` | `CREDENTIAL_MISSING`（点名 `credential_ref` 与 endpoint） |
+| 端点健康 | 实时 `GET /models` 探测 | `ENDPOINT_UNHEALTHY`（点名 health 取值） |
+| 能力匹配 | `decide_eligibility(model, hard_capabilities)` | `MODEL_ELIGIBILITY`（点名缺失能力） |
+
+- **门链先于触网**：`services/api/preflight_support.py::_probe_endpoint` 在解析凭据与
+  发起探测**之前**先做 URL 裁决；策略没放行的 endpoint **一次出站调用都不发起**。
+  该事实由记录型 `httpx` 传输替身计数（`tests/api/test_runtime_egress_gate.py`），
+  不是「没抛异常」。
+- **短路语义**：URL 被拒时同一 endpoint 上的下游 finding **不派生**——探测根本没有
+  发生，把 health 报成 `UNKNOWN` 只是派生噪声。因此 URL 被拒时只报 `ENDPOINT_URL_DENIED`。
+- **门链无条件，不按基质分叉**：Fake 与真实执行体走同一条链，因此不可能出现「真实
+  runtime 比 demo 更松」的缝隙；代价是目录里写 `localhost` 默认就会被拒——这正是
+  `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 的用途，默认 deny 姿态不放松（AGENTS.md §9）。
+- **host 判据只有一份**：全仓 host 分类只存在于
+  `packages/application/model_relay/endpoint_policy.py`；门链两端（触网前短路 /
+  findings 点名）都经 `endpoint_url_refusal` 取值，不新造第二份判据。
+- **本节不宣称的部分**：真实 runtime 的**离线全链**（mock 端点 → 会话创建 → 预算
+  归账 → 制品落 canonical）属 EC-03；`AgentSessionSpec` 仍不携带 endpoint/model/凭据，
+  因此 session 期的 LLM 装配尚未接线。本节只保证**只要出网口被使用，它已经过门链**——
+  且 EC-01 已证明构造路径本身不出网。
+
 ## 4. Adapter Guardrails
 
 ### Resume
