@@ -56,25 +56,16 @@ def _credential_findings(
     credential_ref: str,
     context: PreflightContext,
 ) -> list[PreflightFinding]:
+    # 消息**点名 ref**（GOAL-007 EC-02「拒绝点名缺哪条事实」）：只说 endpoint
+    # 能让运维知道哪里断，但不知道要配哪一条凭据。ref 是键名，不是秘密值。
     subject = f"endpoint:{endpoint_id}"
+    message = f"credential {credential_ref} for endpoint {endpoint_id} cannot be resolved"
     if context.credentials is None:
-        return [
-            _finding(
-                PreflightFindingCode.CREDENTIAL_MISSING.value,
-                f"credential for endpoint {endpoint_id} cannot be resolved",
-                subject,
-            )
-        ]
+        return [_finding(PreflightFindingCode.CREDENTIAL_MISSING.value, message, subject)]
     try:
         context.credentials.resolve(credential_ref)
     except InvalidInputError:
-        return [
-            _finding(
-                PreflightFindingCode.CREDENTIAL_MISSING.value,
-                f"credential for endpoint {endpoint_id} cannot be resolved",
-                subject,
-            )
-        ]
+        return [_finding(PreflightFindingCode.CREDENTIAL_MISSING.value, message, subject)]
     return []
 
 
@@ -104,6 +95,17 @@ def _check_endpoint(
     if endpoint.id in checked_endpoints:
         return []
     checked_endpoints.add(endpoint.id)
+    # 门链第一环（GOAL-007 EC-02）：URL 策略先于健康/凭据。被拒即**短路**——探测
+    # 根本没发生，此时把 health 报成 UNKNOWN 是派生噪声，凭据也不是当前阻塞事实。
+    denial = context.endpoint_url_denials.get(endpoint.id)
+    if denial is not None:
+        return [
+            _finding(
+                PreflightFindingCode.ENDPOINT_URL_DENIED.value,
+                f"endpoint {endpoint.id} base_url is refused by the endpoint URL policy: {denial}",
+                f"endpoint:{endpoint.id}",
+            )
+        ]
     findings: list[PreflightFinding] = []
     health = context.endpoint_health.get(endpoint.id, EndpointHealth.UNKNOWN)
     if health is not EndpointHealth.HEALTHY:

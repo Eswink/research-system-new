@@ -25,6 +25,7 @@ from services.api.composition import ApiDeps
 from services.api.errors import ApiError
 from services.api.preflight_support import (
     build_endpoint_health,
+    build_endpoint_url_denials,
     build_policy_evaluator,
     build_provider_health,
     runtime_fingerprints,
@@ -120,6 +121,29 @@ def frozen_manifest_refs_of(deps: ApiDeps, run_id: str) -> FrozenManifestRefs:
     return FrozenManifestRefs()
 
 
+def _live_preflight(
+    deps: ApiDeps, catalog: CatalogSnapshot, project: ProjectSettings
+) -> PreflightContext:
+    """生产 preflight context（无 override 时）：实时 health + URL 裁决 + 策略/预算面。
+
+    URL 裁决（EC-02 门链第一环）与 health 同源地在这里取——两者都必须在**同一次**
+    请求内对同一份合并目录求值，否则「探了什么」与「拒了什么」可能不是同一组 endpoint。
+    """
+    return PreflightContext(
+        catalog=catalog,
+        project=project,
+        credentials=deps.credentials,
+        endpoint_health=build_endpoint_health(deps, catalog),
+        endpoint_url_denials=build_endpoint_url_denials(deps, catalog),
+        provider_health=build_provider_health(deps, catalog),
+        workspace_available={},
+        budget_ledger=deps.budget,
+        policy_evaluator=build_policy_evaluator(catalog),
+        execution_substrate=runtime_substrate(deps),
+        runtime_fingerprints=runtime_fingerprints(deps),
+    )
+
+
 def execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
     """加载协议/目录/项目并构建命令（override 时 catalog/project 与 preflight 同源）。
 
@@ -149,18 +173,7 @@ def execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
         catalog = preflight.catalog
         project = preflight.project
     else:
-        preflight = PreflightContext(
-            catalog=catalog,
-            project=project,
-            credentials=deps.credentials,
-            endpoint_health=build_endpoint_health(deps, catalog),
-            provider_health=build_provider_health(deps, catalog),
-            workspace_available={},
-            budget_ledger=deps.budget,
-            policy_evaluator=build_policy_evaluator(catalog),
-            execution_substrate=runtime_substrate(deps),
-            runtime_fingerprints=runtime_fingerprints(deps),
-        )
+        preflight = _live_preflight(deps, catalog, project)
     command = StartRunCommand(
         project_id=project.project_id,
         protocol_id=protocol.id,

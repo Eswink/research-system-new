@@ -57,3 +57,17 @@ def validate_endpoint_url(base_url: str, policy: EndpointUrlPolicy) -> None:
         raise ValueError(f"private IP base_url not allowed by policy: {base_url!r}")
     if kind == "link_local" and not policy.allow_link_local:
         raise ValueError(f"link-local base_url not allowed by policy: {base_url!r}")
+
+
+def endpoint_url_refusal(base_url: str, policy: EndpointUrlPolicy) -> str | None:
+    """`validate_endpoint_url` 的薄包装：返回拒绝理由，放行时返回 None。
+
+    存在的理由只有一个：门链需要在**两个**位置问同一个问题——`_probe_endpoint`
+    要在触网**之前**短路，preflight 要把拒绝**点名**进 findings。用异常返回值而非
+    重新判断主机类型，保证全仓只有一份 host 判据（GOAL-007 EC-02）。
+    """
+    try:
+        validate_endpoint_url(base_url, policy)
+    except ValueError as exc:
+        return str(exc)
+    return None

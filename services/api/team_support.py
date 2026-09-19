@@ -24,6 +24,7 @@ from services.api.composition import ApiDeps
 from services.api.errors import ApiError
 from services.api.preflight_support import (
     build_endpoint_health,
+    build_endpoint_url_denials,
     build_policy_evaluator,
     build_provider_health,
     runtime_fingerprints,
@@ -42,6 +43,7 @@ def build_preflight_context(
         project=project,
         credentials=deps.credentials,
         endpoint_health=build_endpoint_health(deps, catalog),
+        endpoint_url_denials=build_endpoint_url_denials(deps, catalog),
         provider_health=build_provider_health(deps, catalog),
         workspace_available={},
         budget_ledger=None,

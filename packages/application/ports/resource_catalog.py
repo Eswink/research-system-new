@@ -92,6 +92,14 @@ class PreflightContext:
     workspace_available: Mapping[str, bool] = field(default_factory=dict)
     budget_ledger: BudgetLedger | None = None
     policy_evaluator: PolicyEvaluator | None = None
+    # 出网 URL 策略裁决（GOAL-007 EC-02）：key = endpoint_id，value = 拒绝理由
+    # （由 `endpoint_url_refusal` 给出，即 `validate_endpoint_url` 的原文）。
+    # 与 provider_health 同口径：**未注入 key 视为注入方未声明该面**（单测/fixture），
+    # 不产生 finding；两条生产控制面路径都注入（`services/api/preflight_support.py`
+    # 用真实 `EndpointUrlPolicy` 裁决，未配置时按默认 deny）。
+    # 这里放裁决结果而不是策略对象，是因为 `ports` 不能 import `model_relay`
+    # （后者反向 import 本包，会落在部分初始化的模块上）。
+    endpoint_url_denials: Mapping[str, str] = field(default_factory=dict)
     # 执行基质标识与运行时指纹槽位（PLAN-20260919-107 / EC-01）。由组合根填充，
     # 冻结进 RunManifest 的 `execution_backend` / `model_runtime_fingerprints`；
     # 未填充时保持 None/空 = 冻结方未声明（沿用 M7 的「不伪填充」口径）。

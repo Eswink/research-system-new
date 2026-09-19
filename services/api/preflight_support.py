@@ -18,6 +18,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from packages.application.model_relay.endpoint_policy import (
+    EndpointUrlPolicy,
+    endpoint_url_refusal,
+)
 from packages.application.policy.native import NativePolicyEvaluator
 from packages.application.ports import CatalogSnapshot, InvalidInputError, PolicyEvaluator
 from packages.domain.enums import EndpointHealth, ProviderType
@@ -63,7 +67,27 @@ def runtime_fingerprints(deps: ApiDeps) -> dict[str, object]:
     return {} if selection is None else dict(selection.fingerprint_record())
 
 
+def build_endpoint_url_denials(deps: ApiDeps, catalog: CatalogSnapshot) -> dict[str, str]:
+    """出网 URL 策略裁决（GOAL-007 EC-02 门链第一环）。
+
+    唯一 host 判据仍是 `validate_endpoint_url`（经 `endpoint_url_refusal` 取值）——
+    本函数只把「哪个 endpoint 被拒、理由是什么」搬进 preflight。策略面未配置时按
+    `EndpointUrlPolicy()` 默认（localhost / 私有 / 链路本地全拒）裁决，即 fail-closed。
+    """
+    policy = deps.endpoint_url_policy or EndpointUrlPolicy()
+    denials: dict[str, str] = {}
+    for endpoint_id, endpoint in catalog.endpoints.items():
+        refusal = endpoint_url_refusal(endpoint.base_url, policy)
+        if refusal is not None:
+            denials[endpoint_id] = f"{refusal} (RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1 allows it)"
+    return denials
+
+
 def _probe_endpoint(deps: ApiDeps, endpoint: LLMEndpoint) -> EndpointHealth:
+    # 受控出网：策略没放行的 URL **一次都不发起出站调用**（EC-02 的反证判据）。
+    # 放在解析凭据之前——被拒的 endpoint 连凭据都不该被取用。
+    if endpoint_url_refusal(endpoint.base_url, deps.endpoint_url_policy or EndpointUrlPolicy()):
+        return EndpointHealth.UNKNOWN
     try:
         credential = deps.credentials.resolve(endpoint.credential_ref)
     except InvalidInputError:
