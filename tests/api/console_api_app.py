@@ -52,6 +52,11 @@ LIVE_DIFF_ARTIFACTS: tuple[tuple[str, bytes], ...] = (
 
 # live 快照链的受控 run（UUID 形式；evidence 记录快照 digest，端点据此回答）。
 LIVE_SNAPSHOT_RUN_ID = "11111111-1111-4111-8111-111111111111"
+# live 执行体披露链的受控 run（GOAL-007 EC-04）：声明为**真实执行体**，好让运行页上
+# 两种执行体同时可判（另一些 run 是 app 自己的默认选择 = 受控 demo 执行体）。
+# 取值必须是别处**没有**被当作「不存在的 run」用的 UUID——它一旦存在，那些 404 断言
+# 就会变成 200（首跑实测：撞上 live-workspace-snapshots 的未知 run 用例）。
+LIVE_SUBSTRATE_RUN_ID = "44444444-4444-4444-8444-444444444444"
 LIVE_SNAPSHOT_FILES: tuple[tuple[str, bytes], ...] = (
     ("notes.md", b"# live snapshot fixture\n"),
     ("src/main.py", b"print('before')\n"),
@@ -177,5 +182,83 @@ def _with_snapshots(deps: ApiDeps) -> ApiDeps:
     return deps
 
 
+def _bind_disclosure_selection(deps: ApiDeps) -> None:
+    """选择面 + preflight override 的受控接线（生产取值函数，不在这里硬写 "fake"）。"""
+    from dataclasses import replace
+
+    from services.api.preflight_support import runtime_fingerprints, runtime_substrate
+    from services.api.runtime_support import resolve_runtime_selection
+    from services.api.settings import ApiSettings
+
+    deps.runtime_selection = resolve_runtime_selection(ApiSettings())
+    # 生产的两条控制面路径都把这些事实注入 preflight context（`_live_preflight` /
+    # team_support）；夹具把 override 也补上，冻结出的 manifest 才与生产同形。
+    context = deps.preflight_override
+    if context is not None:
+        deps.preflight_override = replace(
+            context,
+            execution_substrate=runtime_substrate(deps),
+            runtime_fingerprints=runtime_fingerprints(deps),
+        )
+
+
+def _declare_substrate_run(deps: ApiDeps) -> None:
+    """把 `LIVE_SUBSTRATE_RUN_ID` 声明为 `openhands` 执行体（冻结事实走生产发布路径）。"""
+    from packages.application.run_orchestration.eventing import (
+        EventSink,
+        EventTarget,
+        frozen_payload,
+        publish_event,
+    )
+    from packages.domain.core import Version
+    from packages.domain.events import EventType
+    from packages.domain.manifest import RunManifest
+
+    run = ResearchRun(
+        id=ID(LIVE_SUBSTRATE_RUN_ID), project_id="example-project", protocol_id="proto"
+    )
+    save_run(deps, run)
+    manifest = RunManifest(
+        run_id=LIVE_SUBSTRATE_RUN_ID,
+        project_id="example-project",
+        protocol_version=Version("1.0.0"),
+        execution_backend="openhands",
+        model_runtime_fingerprints={
+            "substrate": "openhands",
+            "status": "NOT_VERIFIED",
+            "reason": "runtime selected but no model probe fact was collected for this run",
+        },
+    )
+    publish_event(
+        EventSink(deps.events, "system:orchestration"),
+        EventType.MANIFEST_FROZEN,
+        frozen_payload(run, manifest),
+        EventTarget(run_id=LIVE_SUBSTRATE_RUN_ID, trace_id="live-substrate-fixture"),
+    )
+
+
+def _with_substrate_disclosure(deps: ApiDeps) -> ApiDeps:
+    """执行体披露的受控输入（GOAL-007 EC-04，live e2e 专用）。
+
+    运行页要能**同时**看到两种执行体，而一个 app 实例的选择面只有一个取值。因此：
+
+    - `deps.runtime_selection` 设为**默认解析结果**（未配置 ⇒ 受控 demo 执行体）——
+      这样本 app 启动的 run 冻结出的 `execution_backend` 是 `fake`；
+    - 另**声明**一条 run（`LIVE_SUBSTRATE_RUN_ID`）为 `openhands`：冻结事实经**同一份**
+      `frozen_payload` + `publish_event` 发布（不是手写 JSON），读面因此与生产同路径。
+
+    诚实边界：这条 run 的**执行**仍是 app 的 Fake 链，声明的是它的**执行体身份**——
+    live e2e 判的是"页面 == 读面"，不是"真的跑过 openhands"（真实执行体离线全链在
+    `tests/e2e/test_ec03_real_runtime_offline_chain.py`）。
+    """
+    _bind_disclosure_selection(deps)
+    _declare_substrate_run(deps)
+    return deps
+
+
 # 单一进程内装配：SQLite in-memory + Fake runtime/gateway/ledger。
-app = create_app(_with_tool_pack_policy(_with_snapshots(_with_artifacts(make_run_ready_deps()))))
+app = create_app(
+    _with_tool_pack_policy(
+        _with_substrate_disclosure(_with_snapshots(_with_artifacts(make_run_ready_deps())))
+    )
+)

@@ -19,6 +19,7 @@ const LIVE_SUITES = [
   "schedules-write",
   "tool-pack-write",
   "run-rebuild-readiness",
+  "run-substrate-disclosure",
 ];
 
 /** 匹配 `live-<suite>.spec.ts`（仅文件名，不含目录）。 */
