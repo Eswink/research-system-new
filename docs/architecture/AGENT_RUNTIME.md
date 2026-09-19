@@ -21,6 +21,7 @@ TaskContract
 RoleDefinition
 AgentSpec
 Resolved Model
+Execution Target（endpoint + model；凭据只带 credential_ref，不带凭据值）
 Frozen Tool Set
 WorkspaceLease
 ContextSnapshot
@@ -96,9 +97,62 @@ URL 策略（EndpointUrlPolicy / validate_endpoint_url）
   `packages/application/model_relay/endpoint_policy.py`；门链两端（触网前短路 /
   findings 点名）都经 `endpoint_url_refusal` 取值，不新造第二份判据。
 - **本节不宣称的部分**：真实 runtime 的**离线全链**（mock 端点 → 会话创建 → 预算
-  归账 → 制品落 canonical）属 EC-03；`AgentSessionSpec` 仍不携带 endpoint/model/凭据，
-  因此 session 期的 LLM 装配尚未接线。本节只保证**只要出网口被使用，它已经过门链**——
-  且 EC-01 已证明构造路径本身不出网。
+  归账 → 制品落 canonical）属 EC-03（见 §3.3）。本节只保证**只要出网口被使用，它
+  已经过门链**——且 EC-01 已证明构造路径本身不出网。
+
+### 3.3 会话期的执行目标与离线全链（PLAN-20260919-109 / GOAL-007 EC-03）
+
+**执行目标在 catalog 在手的层解析，adapter 只消费**。解析链是纯映射，逐段独立收敛：
+
+```text
+plan.resolved_models[agent_id] → catalog.models[model_id] → catalog.endpoints[model.endpoint_id]
+```
+
+`packages/application/run_orchestration/session_resolution.py::execution_target` 把结果
+放进 `AgentSessionSpec.endpoint / .model`（Domain 类型；**凭据值不进 spec**，只带
+endpoint 自带的 `credential_ref`，值由 adapter 侧经 `CredentialResolver` 取）。缺 model
+时两者都是 `None`；有 model 而 endpoint 不在目录里时返回 `(None, model)`，拒绝消息才能
+精确到「缺 endpoint」而不是含糊地说「缺目标」。不回落别的 model、不编造 endpoint。
+
+**会话期的 LLM 装配同样受门**：`services/api/runtime_support.py::session_llm_factory`
+返回一个 **spec 驱动**的工厂（`SessionBuilder.build_session` 按 1 参调用它），它按与
+§3.2 **同一条链**裁决，**在构造 LLM 之前**就拒绝：
+
+```text
+URL 策略（endpoint_url_refusal，复用唯一 host 判据）
+  → 凭据存在性（CredentialResolver.resolve）
+  → build_llm（三要素装配；凭据值只在此处出现，不写日志/事件）
+```
+
+任一步失败即 `RuntimeConfigurationError` 并**点名**事实（缺 endpoint / 缺 model /
+哪个 base_url 被拒且如何放行 / 哪个 `credential_ref` 取不到）。拒绝发生在构造之前，
+因此**零出站**；离线全链的拒绝判据正是这条（`tests/e2e/test_ec03_real_runtime_offline_chain.py`）。
+
+**离线全链在默认门里跑**（`RESEARCHOS_AGENT_RUNTIME=openhands` + 本机 mock 端点）：
+
+| 段 | 可判事实（读面） |
+| --- | --- |
+| 会话创建 | mock 端点真的收到补全请求，且请求里的 model 就是目录里绑定的那个 |
+| 事件映射 | 映射结果落 canonical：artifact 载荷携带 `message_count`（被映射的 MESSAGE 事件数）与真实 `session_id` |
+| 预算归账 | 账本里有正向 `MODEL_TOKENS` 条目，且**归因**到这次 run 的 task 与目录里绑定的 model |
+| 制品与证据 | `GET /runs/{id}/artifacts`、`/evidence` 非空，随后由既有 acceptance gate 对着合约裁决 |
+
+- **链的实测终点是判拒，而不是通过**：合约声明要 `analysis_report`，真实会话交付的是
+  `session_message`，因此 acceptance gate **拒绝**——这是链在正常工作（登记 → 裁决），
+  不是缺陷。"真实模型产出什么"属于模型能力，不属于本节的靶子。
+- **零出站的反面同样被测量**：URL 被拒 / 缺执行目标时 run 失败消息点名事实，且 mock
+  端点**一次请求都没收到**（`test_unmapped_tool_set_is_named_not_silently_dropped` 与
+  F1 反证）。
+- **真端点调用不进默认 CI**：真端点用例挂 `requires_live_llm`，无凭据环境**如实
+  skip**（skip 不是 PASS）；凭据只经 `RESEARCHOS_LIVE_E2E_ENDPOINT` /
+  `RESEARCHOS_LIVE_E2E_KEY` 从环境读，源码/示例/测试不写可用凭据字面量。
+- **host shell 仍默认 deny**：workspace 构造器按 `RESEARCHOS_WORKSPACE_ALLOW_HOST_SHELL`
+  （默认 `0`）传递，只有操作者显式打开才会得到 workspace——「可装配」与「可运行」
+  因此仍然分开（AGENTS.md §9）。
+- **本节不宣称的部分**：冻结 Tool Set 里是 Research OS 的 **tool provider id**
+  （`openhands_workspace` / `m12_artifact` / `ncbi_eutils`），不是 SDK 工具名；
+  provider → SDK 工具的映射属 EC-05。缺这一环时控制面**不静默丢工具**，而是让会话
+  创建失败并点名未注册的 id（本节的 e2e 用测试侧惰性注册补上这一环，好让四段可测）。
 
 ## 4. Adapter Guardrails
 

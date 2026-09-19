@@ -29,6 +29,11 @@
   URL 策略由受控出网门链在 run 路径上先裁决（GOAL-007 EC-02，见
   `docs/architecture/AGENT_RUNTIME.md` §3.2）；`build_llm` 不做 host 判断，
   也不得自行新造一份——host 分类全仓只有 `endpoint_policy.py` 一处。
+  **三要素的来源**（GOAL-007 EC-03，见 §3.3）由 `AgentSessionSpec` 携带：
+  `endpoint`/`model` 在上层（orchestration，catalog 在手处）解析，凭据**值**由
+  adapter 经注入的 `CredentialResolver` 按 `spec.endpoint.credential_ref` 取；
+  生产装配的 `build_llm` 是 `session_llm_factory` 返回的 **spec 驱动**工厂，
+  它在构造 LLM **之前**按 `URL 策略 → 凭据存在性` 拒绝并点名事实（零出站）。
 - Policy（R-03 修正）：PolicyEnforcingAgent 在 SDK agent loop 工具执行点
   （_execute_action_event）强制 PolicyEvaluator——DENY/REQUIRE_APPROVAL
   返回拒绝反馈且不触达工具 executor；REQUIRE_APPROVAL 额外投影
@@ -39,13 +44,21 @@
   （容器链路验证延后至 M9 Real Experiment Runtime，见 BACKLOG 技术债）。
 - Usage（R-16 记账面）：run() 终态后 ConversationStats →
   UsageLedgerEntry 归一化并实际写入 BudgetLedger（signal 语义，记账
-  失败不阻断结果）；BudgetLedger 仍 Research OS 拥有。
+  失败不阻断结果）；BudgetLedger 仍 Research OS 拥有。条目按 `task_id` 与
+  `model_id` 归因（EC-03：spec 携带执行目标后 model 归因在 adapter 侧可见）。
 - fork（复审 F-4 修正）：ForkSpec.model_override 经注入的
   build_llm_for_fork 重建 LLM；tool_set_override 重建工具集；
   manifest_revision_ref 投影到新会话 spec。
 - 事件投影（复审 F-5/F-10 修正）：run() 启动投影 SESSION_STARTED（与
   Fake 对齐）；终端 kind 已由事件映射投影时不重复追加；RuntimeEvent
   message 经 domain redaction 脱敏。
+- 结构化输出（GOAL-007 EC-03）：run() 收敛到 SUCCEEDED 时携带**最小交付物**
+  `{"session_message": {content, message_count, conversation_id, session_id}}`，
+  content 取自**已映射**的 `RuntimeEvent.MESSAGE`（复用同一份 redact 与截断，
+  不新开绕过脱敏的通道）。非成功终态返回空——失败会话没有结论，把它中间的文本
+  登记进 canonical 会把「没做完」伪装成「有产出」（与 Fake 侧同口径）。键名
+  `session_message` 是**事实名**：真实交付物与合约声明的 artifact 名之间的映射
+  （谁能声明 `analysis_report`）是产品决策，adapter 不自行发明。
 - Persistence Boundary：OpenHands conversation 持久化仅 runtime 参考，
   不替代 PostgreSQL Run/AgentRun/Manifest/Domain Event。
 
