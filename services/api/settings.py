@@ -48,6 +48,13 @@ class ApiSettings:
     未配置 ⇒ 选择面回落 `fake`（受控 demo 执行体；CI 与离线开发不依赖网络）。
     真实 runtime 必须**显式配置**（`RESEARCHOS_AGENT_RUNTIME`）；非法取值在装配期
     fail-closed（`runtime_support.resolve_runtime_selection`），不静默回退。
+
+    workspace_allow_host_shell：workspace 的 host shell 开关（PLAN-20260919-109 /
+    EC-03）。`adapters/openhands/workspace_adapter.build_local_workspace` 在
+    `allow_host_shell=False` 时**直接拒绝构造**——这是 AGENTS.md §9 的默认 deny，
+    不是可选项。真实 runtime 要创建会话就必须**显式**打开它，因此这里默认
+    `False`（deny 姿态不变），只有 `RESEARCHOS_WORKSPACE_ALLOW_HOST_SHELL=1`
+    才放行；语义与 `allow_localhost_endpoints` 同口径（显式开发开关）。
     """
 
     def __init__(  # noqa: PLR0913 - settings surface (explicit env/ctor config)
@@ -60,6 +67,7 @@ class ApiSettings:
         artifact_blob_dir: str | None = None,
         workspace_snapshot_root: str | None = None,
         agent_runtime: str = "",
+        workspace_allow_host_shell: bool = False,
         otel: OtelSettings | None = None,
     ) -> None:
         if not db_path:
@@ -70,6 +78,8 @@ class ApiSettings:
         # PLAN-20260919-107：取值校验归选择面（此处不做静默归一，避免
         # 「配错了但看起来正常」）。
         self.agent_runtime = agent_runtime
+        # EC-03：workspace host shell 的显式开发开关（默认 deny 不变）。
+        self.workspace_allow_host_shell = workspace_allow_host_shell
         # M14: PostgreSQL DSN (optional) — explicit construct or env
         self.database_url = database_url
         if self.database_url is not None and not self.database_url.strip():
@@ -132,5 +142,9 @@ class ApiSettings:
             artifact_blob_dir=os.environ.get("RESEARCHOS_ARTIFACT_BLOB_DIR") or None,
             workspace_snapshot_root=os.environ.get("RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT") or None,
             agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
+            workspace_allow_host_shell=(
+                os.environ.get("RESEARCHOS_WORKSPACE_ALLOW_HOST_SHELL", "0").strip().lower()
+                in ("1", "true", "yes", "on")
+            ),
             otel=OtelSettings.from_env(),
         )

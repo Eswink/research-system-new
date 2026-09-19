@@ -16,9 +16,13 @@
   因此词表**不得**放进 ports 或 domain；Domain 只存中性标识字符串。
 - **本模块的构造是纯装配**：`OpenHandsRuntimeAdapter.__init__` 只存依赖，不发任何
   出站调用（出网门链与放行语义属 EC-02；离线全链属 EC-03）。
+- **EC-03（PLAN-20260919-109）补上 session 期的执行目标与受门工厂**：真实 adapter 的
+  `build_llm` 不再是 3 参工厂（那会让 `create_session` 一调用就 `TypeError`），而是
+  `session_llm_factory(...)` 返回的 **spec 驱动**工厂——目标由上层解析后随 spec 传入，
+  工厂按与 EC-02 同一条链（URL 策略 → 凭据存在性）裁决后才装配 LLM。
 - **默认 deny 不放松**：workspace 构造器保持 `build_local_workspace` 的
   `allow_host_shell=False` 默认（AGENTS.md §9），即真实 runtime 可被装配、
-  但会话创建仍受 host shell deny 约束。
+  但会话创建仍受 host shell deny 约束；URL 策略未显式配置时同样按默认 deny。
 """
 
 from __future__ import annotations
@@ -27,9 +31,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from adapters.fakes.agent_runtime import FakeAgentRuntime
-from packages.application.ports.agent_runtime import AgentRuntime
+from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
+from packages.application.ports.agent_runtime import AgentRuntime, AgentSessionSpec
 from packages.application.ports.credential_resolver import CredentialResolver
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.policy_evaluator import PolicyEvaluator
+from packages.domain.models import LLMEndpoint, ModelDefinition
 from services.api.demo import demo_session_output
 from services.api.settings import ApiSettings
 
@@ -101,7 +108,71 @@ def _fake_runtime() -> AgentRuntime:
     return FakeAgentRuntime(structured_output=demo_session_output())
 
 
+def _gated_session_target(
+    spec: AgentSessionSpec,
+    credentials: CredentialResolver,
+    policy: EndpointUrlPolicy,
+) -> tuple[LLMEndpoint, ModelDefinition, Any]:
+    """spec 的执行目标 → `(endpoint, model, credential)`，任一步缺失**点名拒绝**。
+
+    裁决顺序与 EC-02 同一条链，且**在构造 LLM 之前**：缺目标 → URL 策略 →
+    凭据存在性。绝不用空目标或另一个 model 顶上——静默替换会让「跑的是 A」与
+    「配的是 B」不可区分（AGENTS.md §4）。
+    """
+    from packages.application.model_relay.endpoint_policy import endpoint_url_refusal
+
+    if spec.endpoint is None or spec.model is None:
+        missing = " and ".join(
+            name
+            for name, present in (
+                ("endpoint", spec.endpoint is not None),
+                ("model", spec.model is not None),
+            )
+            if not present
+        )
+        raise RuntimeConfigurationError(
+            f"session for task {spec.task_id.value} carries no execution target: {missing}"
+        )
+    refusal = endpoint_url_refusal(spec.endpoint.base_url, policy)
+    if refusal is not None:
+        raise RuntimeConfigurationError(
+            f"endpoint {spec.endpoint.id} base_url is refused by the endpoint URL policy: "
+            f"{refusal} (RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1 allows it)"
+        )
+    try:
+        credential = credentials.resolve(spec.endpoint.credential_ref)
+    except InvalidInputError as exc:
+        raise RuntimeConfigurationError(
+            f"credential {spec.endpoint.credential_ref} for endpoint "
+            f"{spec.endpoint.id} cannot be resolved"
+        ) from exc
+    return spec.endpoint, spec.model, credential
+
+
+def session_llm_factory(
+    credentials: CredentialResolver,
+    policy: EndpointUrlPolicy,
+) -> Any:
+    """spec → OpenHands LLM 的**受门**工厂（EC-03 / PLAN-20260919-109）。
+
+    `SessionBuilder.build_session` 按 `(spec)` 调用它（`adapters/openhands/session_builder.py`），
+    而 LLM 的三要素（endpoint / model / credential）此前没有任何来源——生产把 3 参
+    `build_llm` 直接塞进去，选真实 runtime 时 `create_session` 必然 `TypeError`。
+    本工厂把执行目标从 spec 取出，经 `_gated_session_target`（URL 策略 → 凭据存在性）
+    裁决后才装配；拒绝发生在构造之前，因此**不产生出站调用**。
+    """
+
+    def build(spec: AgentSessionSpec) -> Any:
+        from adapters.openhands.llm_factory import build_llm
+
+        endpoint, model, credential = _gated_session_target(spec, credentials, policy)
+        return build_llm(endpoint, model, credential)
+
+    return build
+
+
 def _openhands_runtime(
+    settings: ApiSettings,
     *,
     credentials: CredentialResolver | None,
     policy_evaluator: PolicyEvaluator | None,
@@ -111,11 +182,16 @@ def _openhands_runtime(
 
     缺凭据解析面或缺 policy 求值面时**点名拒绝**——真实 runtime 需要这两件事实才能
     受策略门禁约束（AGENTS.md §5：不得绕过 Policy Wrapper），缺一不可。
+
+    URL 策略由**同一个 settings** 经 `assembly._endpoint_url_policy` 派生——与
+    `ApiDeps.endpoint_url_policy`（两组合根都从各自的 `effective` 派生，而 PG 的
+    `assembly.effective is config.effective`）同源同值。不额外传参是为了让「策略从哪来」
+    只有一条路径（多一个入口就多一次漂移机会）。
     """
-    from adapters.openhands.llm_factory import build_llm
     from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
     from adapters.openhands.session_types import AdapterDependencies
     from adapters.openhands.workspace_adapter import build_local_workspace
+    from services.api.assembly import _endpoint_url_policy
 
     if credentials is None or policy_evaluator is None:
         missing = [
@@ -132,9 +208,15 @@ def _openhands_runtime(
     deps = AdapterDependencies(
         credential_resolver=credentials,
         policy_evaluator=policy_evaluator,
-        build_llm=build_llm,
-        # 默认 deny 保持：allow_host_shell 不打开（AGENTS.md §9）。
-        build_workspace=build_local_workspace,
+        build_llm=session_llm_factory(credentials, _endpoint_url_policy(settings)),
+        # host shell **仍然默认 deny**（AGENTS.md §9）：`build_local_workspace` 在
+        # allow_host_shell=False 时直接拒绝构造，所以这里必须显式传值——默认
+        # `settings.workspace_allow_host_shell is False` 即保持拒绝，只有操作者显式
+        # 打开（`RESEARCHOS_WORKSPACE_ALLOW_HOST_SHELL=1`）才会得到 workspace。
+        # 「可装配」与「可运行」因此仍然分开：装配不因缺开关而失败，创建会话才会。
+        build_workspace=lambda lease, session_id: build_local_workspace(
+            lease, session_id, allow_host_shell=settings.workspace_allow_host_shell
+        ),
         budget_ledger=budget_ledger,
     )
     return OpenHandsRuntimeAdapter(deps)
@@ -157,6 +239,7 @@ def build_agent_runtime(
     if resolved.kind == FAKE_RUNTIME:
         return _fake_runtime()
     return _openhands_runtime(
+        settings,
         credentials=credentials,
         policy_evaluator=policy_evaluator,
         budget_ledger=budget_ledger,
@@ -171,4 +254,5 @@ __all__ = [
     "RuntimeSelection",
     "build_agent_runtime",
     "resolve_runtime_selection",
+    "session_llm_factory",
 ]
