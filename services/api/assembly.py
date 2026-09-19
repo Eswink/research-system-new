@@ -62,12 +62,35 @@ def last_pricing_error() -> str | None:
 
 
 def _endpoint_url_policy(effective: ApiSettings) -> EndpointUrlPolicy:
-    """localhost/private/link-local 同开关(显式开发放行,默认 fail-closed)。"""
+    """localhost/private/link-local 同开关（显式开发放行，默认 fail-closed）。"""
     return EndpointUrlPolicy(
         allow_localhost=effective.allow_localhost_endpoints,
         allow_private=effective.allow_localhost_endpoints,
         allow_link_local=effective.allow_localhost_endpoints,
     )
+
+
+def sqlite_artifact_blob_dir(effective: ApiSettings) -> str:
+    """内容寻址 blob 目录：显式配置优先；默认落在 dev DB 同级的
+    `artifact-blobs/`（`data/research-os-control.db` → `data/artifact-blobs`），
+    与 DB 文件同级意味着重启后 artifact 内容仍可下载（PLAN-040 WP-A）。"""
+    if effective.artifact_blob_dir:
+        return effective.artifact_blob_dir
+    db = Path(effective.db_path)
+    base = db.parent if str(db) != ":memory:" else Path(".")
+    return str(base / "artifact-blobs")
+
+
+def build_sqlite_draft_service(connection: Any) -> Any:
+    """构建协议草稿服务（SQLite 开发路径；PG 路径见 pg_composition）。"""
+    from adapters.contracts.protocol_text_loader import load_protocol_from_text
+    from adapters.sqlite.protocol_draft_store import SqliteProtocolDraftStore
+    from packages.application.protocol_authoring.service import DraftService, DraftTemplates
+    from services.api.routers.protocol_drafts import default_templates
+
+    store = SqliteProtocolDraftStore(connection=connection)
+    templates: DraftTemplates = default_templates()
+    return DraftService(store, templates, text_loader=load_protocol_from_text)
 
 
 def policy_bindings() -> dict[str, Any]:

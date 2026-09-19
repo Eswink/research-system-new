@@ -11,15 +11,17 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
-from adapters.fakes.agent_runtime import FakeAgentRuntime
+from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
+from adapters.sqlite.approval_store import SqliteApprovalStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from packages.application.run_orchestration.context import RunContext  # noqa: F401 (re-export)
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
     RunOrchestrationService,
 )
-from services.api.assembly import _endpoint_url_policy, _load_pricing
-from services.api.composition import ApiDeps, demo_session_output
+from services.api.assembly import _endpoint_url_policy, _load_pricing, policy_bindings
+from services.api.composition import ApiDeps
+from services.api.runtime_support import build_agent_runtime
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +51,26 @@ class PostgresAssembly:
     credentials_override: Any = None
     preflight_override: Any = None
     telemetry: Any = None
+    # PLAN-20260919-107（EC-01）：runtime 与 ApiDeps 共用的凭据/policy 面——同一个
+    # `RegistryCredentialResolver` 实例必须两处共享（它是**有状态的**：API 注册的
+    # API Key 只活在实例内存里，`register()` 写进的是哪一个实例，另一个就解析不到）。
+    runtime_inputs: Any = None
+
+
+@dataclass(frozen=True, slots=True)
+class _PgRuntimeInputs:
+    """PG 根里 runtime 装配与 ApiDeps 共享的输入（单实例，见 PostgresAssembly 注）。"""
+
+    credentials: Any
+    policy_bindings: dict[str, Any]
+
+
+def _pg_runtime_inputs(config: PgAssemblyConfig) -> _PgRuntimeInputs:
+    """凭据解析面与 policy 装载面只解析一次，两处复用（不各建一套）。"""
+    return _PgRuntimeInputs(
+        credentials=config.credentials_override or RegistryCredentialResolver(),
+        policy_bindings=policy_bindings(),
+    )
 
 
 def _pg_components(
@@ -127,7 +149,8 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         pg_migrate(pg_dsn)
 
     c = _pg_components(pg_dsn, connection, config.events_sink, config.artifact_blob_dir)
-    orchestration = _build_pg_orchestration(c, config)
+    runtime_inputs = _pg_runtime_inputs(config)
+    orchestration = _build_pg_orchestration(c, config, runtime_inputs)
     return PostgresAssembly(
         effective=effective,
         connection=connection,
@@ -151,14 +174,27 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         gateway_override=getattr(config, "gateway_override", None),
         credentials_override=getattr(config, "credentials_override", None),
         preflight_override=getattr(config, "preflight_override", None),
+        runtime_inputs=runtime_inputs,
     )
 
 
-def _build_pg_orchestration(c: dict[str, Any], config: PgAssemblyConfig) -> RunOrchestrationService:
-    """PG 编排服务装配；与 ApiDeps 共享同一 approvals 实例（decide 读、执行循环写）。"""
+def _build_pg_orchestration(
+    c: dict[str, Any], config: PgAssemblyConfig, inputs: _PgRuntimeInputs
+) -> RunOrchestrationService:
+    """PG 编排服务装配；与 ApiDeps 共享同一 approvals 实例（decide 读、执行循环写）。
+
+    PLAN-20260919-107（EC-01）：runtime 不再在此硬编码——与 SQLite 根同侧，经
+    选择面 `build_agent_runtime(...)` 装配；凭据/policy 面经 `inputs` 与 ApiDeps 共用
+    （见 `PostgresAssembly.runtime_inputs`）。
+    """
     return RunOrchestrationService(
         OrchestrationDependencies(
-            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
+            runtime=build_agent_runtime(
+                config.effective,
+                credentials=inputs.credentials,
+                policy_evaluator=inputs.policy_bindings["policy_evaluator"],
+                budget_ledger=c["budget"],
+            ),
             workflow=c["workflow"],
             artifacts=c["artifacts"],
             events=c["events"],
@@ -210,52 +246,76 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
 
 
 def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
-    """PG assembly -> ApiDeps（composition root 装配点唯一）。"""
+    """PG assembly -> ApiDeps（composition root 装配点唯一）。
+
+    PLAN-20260919-107（EC-01）：凭据解析面与 policy 装载面沿用 `assembly.runtime_inputs`
+    的**同一实例**（不再各建一套——`RegistryCredentialResolver` 有状态，两套会让
+    运行时解析不到 API 注册的凭据）。
+    """
     from adapters.fakes.artifact_store import FakeArtifactStore
     from adapters.relay.gateway import OpenAIChatGateway
-    from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
-    from adapters.sqlite.approval_store import SqliteApprovalStore
-    from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
-    from adapters.sqlite.run_store import SqliteRunStore
-    from services.api.assembly import policy_bindings
 
+    credentials, bindings = _apideps_shared_faces(assembly)
     deps = ApiDeps(
         endpoint_store=assembly.endpoint_store,
         model_store=assembly.model_store,
-        credentials=assembly.credentials_override or RegistryCredentialResolver(),
+        credentials=credentials,
         gateway=assembly.gateway_override
         or OpenAIChatGateway(
             default_timeout_seconds=assembly.effective.endpoint_timeout_seconds,
             telemetry=assembly.telemetry,
         ),
-        idempotency=SqliteIdempotencyStore(connection=assembly.connection),
         events=assembly.events,
         projection=assembly.projection,
         approvals=assembly.approvals_store or SqliteApprovalStore(connection=assembly.connection),
         runs=assembly.orchestration,
         workflow=assembly.workflow,
-        runs_store=assembly.runs_store_pg or SqliteRunStore(connection=assembly.connection),
         artifacts=assembly.artifacts_pg or FakeArtifactStore(),
-        # WP-E：实验计划存储（PG canonical state；PLAN-040 WP-A 起 SQLite 开发
-        # 路径由 composition._assemble_sqlite 注入同 Port 实现，不再 503）。
         experiment_store=assembly.experiment_store,
         ledger=assembly.ledger,
         budget=assembly.budget,
-        **_pg_config_stores(assembly.connection),
-        endpoint_url_policy=_endpoint_url_policy(assembly.effective),
         memory=assembly.memory_store,
         preflight_override=assembly.preflight_override,
         telemetry=assembly.telemetry,
         eval_report_store=assembly.eval_report_store,
         pricing_snapshot_store=assembly.pricing_snapshot_store,
         worker_registry=assembly.worker_registry,
+        **_pg_apideps_stores(assembly),
+        **_pg_config_stores(assembly.connection),
+        endpoint_url_policy=_endpoint_url_policy(assembly.effective),
         protocol_draft_service=_build_pg_draft_service(assembly.pg_conn),
-        **policy_bindings(),
+        **bindings,
         _connection=assembly.connection,
         _pg_connection=assembly.pg_conn,
     )
     deps.outbox_relay_enabled = True
     return deps
+
+
+def _pg_apideps_stores(assembly: PostgresAssembly) -> dict[str, Any]:
+    """PG ApiDeps 的 store 面（helper 控制 `build_postgres_apideps` 长度）。"""
+    from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
+    from adapters.sqlite.run_store import SqliteRunStore
+
+    return {
+        "idempotency": SqliteIdempotencyStore(connection=assembly.connection),
+        "runs_store": assembly.runs_store_pg or SqliteRunStore(connection=assembly.connection),
+    }
+
+
+def _apideps_shared_faces(assembly: PostgresAssembly) -> tuple[Any, dict[str, Any]]:
+    """ApiDeps 与 runtime 共用的凭据/policy 面（缺失时按既有口径各建一套）。
+
+    `build_postgres_assembly` 总会填 `runtime_inputs`；这里保留回落是为了让
+    手工构造 `PostgresAssembly` 的调用方（测试夹具）行为不变。
+    """
+    inputs = assembly.runtime_inputs
+    if inputs is not None:
+        return inputs.credentials, inputs.policy_bindings
+    from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
+
+    credentials = assembly.credentials_override or RegistryCredentialResolver()
+    return credentials, policy_bindings()
 
 
 def _build_pg_draft_service(pg_conn: Any) -> Any:

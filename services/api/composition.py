@@ -11,10 +11,8 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
-from adapters.fakes.agent_runtime import FakeAgentRuntime
 from adapters.relay.gateway import OpenAIChatGateway
 from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
 from adapters.sqlite.agent_store import SqliteAgentStore
@@ -84,11 +82,13 @@ from services.api.assembly import (
     _is_postgres_dsn,
     _load_pricing,
     _open_sqlite,
+    build_sqlite_draft_service,
     policy_bindings,
+    sqlite_artifact_blob_dir,
 )
 from services.api.demo import _default_events
-from services.api.demo import demo_session_output as demo_session_output
 from services.api.idempotency import IdempotencyStore
+from services.api.runtime_support import build_agent_runtime
 from services.api.settings import ApiSettings
 from services.api.telemetry import build_api_telemetry, exporter_config_digest
 
@@ -214,8 +214,22 @@ def _assemble_postgres(  # noqa: PLR0913 - composition root 装配参数
 
 
 @dataclass(frozen=True, slots=True)
+class _ControlFaces:
+    """控制面装配的共享输入面（settings + 有状态凭据面 + policy 求值面）。
+
+    PLAN-20260919-107（EC-01）：这三件必须**同一实例**贯穿 runtime 装配与 ApiDeps
+    ——`RegistryCredentialResolver` 有状态（API 注册的 Key 只在该实例内存里），
+    两套会让运行时解析不到凭据。
+    """
+
+    settings: ApiSettings
+    credentials: RegistryCredentialResolver
+    policy_evaluator: PolicyEvaluator | None
+
+
+@dataclass(frozen=True, slots=True)
 class _SqliteStoreParts:
-    """SQLite 共享连接的 store/orchestration 部分（类型化装配产物）。"""
+    """SQLite 共享连接的 Port 面（类型化装配产物；编排服务另经 `_sqlite_orchestration` 装配）。"""
 
     events: SqliteOutboxEventPublisher
     workflow: SqliteWorkflowEngine
@@ -224,20 +238,8 @@ class _SqliteStoreParts:
     budget: BudgetLedger
     pricing: Any
     pricing_store: SqlitePricingSnapshotStore
-    orchestration: RunOrchestrationService
     artifacts: Any
     approvals: Any
-
-
-def _sqlite_artifact_blob_dir(effective: ApiSettings) -> str:
-    """内容寻址 blob 目录：显式配置优先；默认落在 dev DB 同级的
-    `artifact-blobs/`（`data/research-os-control.db` → `data/artifact-blobs`），
-    与 DB 文件同级意味着重启后 artifact 内容仍可下载（PLAN-040 WP-A）。"""
-    if effective.artifact_blob_dir:
-        return effective.artifact_blob_dir
-    db = Path(effective.db_path)
-    base = db.parent if str(db) != ":memory:" else Path(".")
-    return str(base / "artifact-blobs")
 
 
 def _sqlite_store_parts(
@@ -245,7 +247,7 @@ def _sqlite_store_parts(
     telemetry: TelemetrySink,
     blob_dir: str,
 ) -> _SqliteStoreParts:
-    """SQLite 共享连接的 store/orchestration 部分（helper 控制函数长度）。"""
+    """SQLite 共享连接的 store 部分（helper 控制函数长度）。"""
     events = SqliteOutboxEventPublisher(connection=connection)
     workflow = SqliteWorkflowEngine(connection=connection, telemetry=telemetry)
     from adapters.sqlite.run_projection import SqliteRunProjection
@@ -261,20 +263,6 @@ def _sqlite_store_parts(
     artifacts = SqliteArtifactStore(connection=connection, blob_dir=blob_dir)
     # WP-H：同一审批存储实例（执行循环 register、decide/GET 读取）。
     approvals = SqliteApprovalStore(connection=connection)
-    orchestration = RunOrchestrationService(
-        OrchestrationDependencies(
-            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
-            workflow=workflow,
-            artifacts=artifacts,
-            events=events,
-            budget=budget,
-            ledger=ledger,
-            telemetry=telemetry,
-            pricing=pricing,
-            pricing_store=pricing_store,
-            approvals=approvals,
-        )
-    )
     return _SqliteStoreParts(
         events=events,
         workflow=workflow,
@@ -283,9 +271,38 @@ def _sqlite_store_parts(
         budget=budget,
         pricing=pricing,
         pricing_store=pricing_store,
-        orchestration=orchestration,
         artifacts=artifacts,
         approvals=approvals,
+    )
+
+
+def _sqlite_orchestration(
+    faces: _ControlFaces, ports: _SqliteStoreParts, telemetry: TelemetrySink
+) -> RunOrchestrationService:
+    """编排服务装配：runtime 经选择面（EC-01），其余 Port 显式注入。
+
+    PLAN-20260919-107：runtime 不再硬编码——两个组合根同侧、都经
+    `build_agent_runtime(faces.settings, ...)`；凭据/policy 面与 ApiDeps 同一实例。
+    """
+    runtime = build_agent_runtime(
+        faces.settings,
+        credentials=faces.credentials,
+        policy_evaluator=faces.policy_evaluator,
+        budget_ledger=ports.budget,
+    )
+    return RunOrchestrationService(
+        OrchestrationDependencies(
+            runtime=runtime,
+            workflow=ports.workflow,
+            artifacts=ports.artifacts,
+            events=ports.events,
+            budget=ports.budget,
+            ledger=ports.ledger,
+            telemetry=telemetry,
+            pricing=ports.pricing,
+            pricing_store=ports.pricing_store,
+            approvals=ports.approvals,
+        )
     )
 
 
@@ -324,56 +341,64 @@ def _assemble_sqlite(
     model_store: ModelStore,
     telemetry: TelemetrySink,
 ) -> ApiDeps:
-    parts = _sqlite_store_parts(connection, telemetry, _sqlite_artifact_blob_dir(effective))
-    events_sqlite = parts.events
-    workflow_sqlite = parts.workflow
-    projection_sqlite = parts.projection
-    ledger_sqlite = parts.ledger
-    budget_sqlite = parts.budget
-    pricing_sqlite = parts.pricing
-    pricing_store_sqlite = parts.pricing_store
-    orchestration_sqlite = parts.orchestration
-    eval_store = SqliteEvalReportStore(connection=connection)
+    bindings = policy_bindings()
+    credentials = RegistryCredentialResolver()
+    parts = _sqlite_store_parts(connection, telemetry, sqlite_artifact_blob_dir(effective))
+    return _sqlite_apideps(
+        effective,
+        connection,
+        endpoint_store,
+        model_store,
+        telemetry,
+        _ControlFaces(
+            settings=effective,
+            credentials=credentials,
+            policy_evaluator=bindings["policy_evaluator"],
+        ),
+        parts,
+        bindings,
+    )
+
+
+def _sqlite_apideps(  # noqa: PLR0913 - composition root 装配参数
+    effective: ApiSettings,
+    connection: sqlite3.Connection,
+    endpoint_store: EndpointStore,
+    model_store: ModelStore,
+    telemetry: TelemetrySink,
+    faces: _ControlFaces,
+    parts: _SqliteStoreParts,
+    bindings: dict[str, Any],
+) -> ApiDeps:
+    """ApiDeps 构造（helper 控制 `_assemble_sqlite` 长度）。"""
     return ApiDeps(
         endpoint_store=endpoint_store,
         model_store=model_store,
-        credentials=RegistryCredentialResolver(),
-        eval_report_store=eval_store,
-        pricing_snapshot_store=pricing_store_sqlite,
-        pricing=pricing_sqlite,
+        credentials=faces.credentials,
+        eval_report_store=SqliteEvalReportStore(connection=connection),
+        pricing_snapshot_store=parts.pricing_store,
+        pricing=parts.pricing,
         gateway=OpenAIChatGateway(
             default_timeout_seconds=effective.endpoint_timeout_seconds,
             telemetry=telemetry,
         ),
         idempotency=SqliteIdempotencyStore(connection=connection),
-        events=events_sqlite,
-        projection=projection_sqlite,
+        events=parts.events,
+        projection=parts.projection,
         approvals=parts.approvals,
-        runs=orchestration_sqlite,
-        workflow=workflow_sqlite,
+        runs=_sqlite_orchestration(faces, parts, telemetry),
+        workflow=parts.workflow,
         runs_store=SqliteRunStore(connection=connection),
         artifacts=parts.artifacts,
-        ledger=ledger_sqlite,
-        budget=budget_sqlite,
+        ledger=parts.ledger,
+        budget=parts.budget,
         **_sqlite_config_stores(connection),
-        protocol_draft_service=_build_draft_service(connection),
+        protocol_draft_service=build_sqlite_draft_service(connection),
         endpoint_url_policy=_endpoint_url_policy(effective),
         telemetry=telemetry,
-        **policy_bindings(),
+        **bindings,
         _connection=connection,
     )
-
-
-def _build_draft_service(connection: sqlite3.Connection) -> Any:
-    """构建协议草稿服务（SQLite 开发路径；PG 路径见 pg_composition）。"""
-    from adapters.contracts.protocol_text_loader import load_protocol_from_text
-    from adapters.sqlite.protocol_draft_store import SqliteProtocolDraftStore
-    from packages.application.protocol_authoring.service import DraftService, DraftTemplates
-    from services.api.routers.protocol_drafts import default_templates
-
-    store = SqliteProtocolDraftStore(connection=connection)
-    templates: DraftTemplates = default_templates()
-    return DraftService(store, templates, text_loader=load_protocol_from_text)
 
 
 def assemble(settings: ApiSettings | None = None) -> ApiDeps:
