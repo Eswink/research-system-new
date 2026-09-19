@@ -6,6 +6,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from packages.domain.core import ID
+from packages.domain.models import LLMEndpoint, ModelDefinition
 from packages.domain.protocols import CompiledRunPlan
 from packages.domain.tasks import ResearchTask, TaskContract
 from packages.domain.team_plan import PhaseAssignment
@@ -33,6 +34,31 @@ def flatten_tool_providers(plan: CompiledRunPlan) -> tuple[str, ...]:
     )
 
 
+def execution_target(
+    context: "RunContext", agent_id: str
+) -> tuple[LLMEndpoint | None, ModelDefinition | None]:
+    """Agent 的**执行目标**（endpoint + model）——EC-03 解析点。
+
+    解析链：`plan.resolved_models[agent_id]`（编译期定下的 agent → model 绑定，与
+    `RunManifest.resolved_models` 同源）→ `catalog.models[model_id]` →
+    `catalog.endpoints[model.endpoint_id]`。
+
+    三段**各自独立**收敛为 None：没有 model 时两者都是 None；有 model 但其 endpoint
+    不在目录里时返回 `(None, model)`——保留已解析出的那一半，拒绝消息才能精确到
+    「缺 endpoint」而不是含糊地说「缺目标」。**不**回退到别的 model、**不**编造
+    endpoint：解析是纯映射，拒绝语义在 adapter 侧由门链给（点名缺哪条事实）。
+    这样「编译期绑定」与「会话期实际调用」始终是同一份事实，不会漂移。
+    """
+    model_id = context.plan.resolved_models.get(agent_id)
+    if model_id is None:
+        return None, None
+    model = context.catalog.models.get(model_id)
+    if model is None:
+        return None, None
+    endpoint = context.catalog.endpoints.get(model.endpoint_id)
+    return endpoint, model
+
+
 def resolve_sessions(
     context: "RunContext",
     *,
@@ -51,6 +77,7 @@ def resolve_sessions(
             agent = context.catalog.agents[agent_id]
             role = context.catalog.roles[agent.role]
             contract = contract_for(context, phase.task_contract_refs)
+            endpoint, model = execution_target(context, agent_id)
             task = ResearchTask(
                 id=ID.generate(),
                 run_id=context.run.id,
@@ -67,6 +94,8 @@ def resolve_sessions(
                     agent=agent,
                     frozen_manifest_digest=context.frozen_manifest_digest,
                     frozen_tool_set=flatten_tool_providers(context.plan),
+                    endpoint=endpoint,
+                    model=model,
                     phase_id=phase.id,
                 ),
             ))

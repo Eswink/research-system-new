@@ -19,6 +19,7 @@ from typing import Protocol, runtime_checkable
 from packages.domain.budget import BudgetReservation
 from packages.domain.core import ID
 from packages.domain.memory import ContextSnapshot
+from packages.domain.models import LLMEndpoint, ModelDefinition
 from packages.domain.roles import AgentSpec, RoleDefinition
 from packages.domain.session_state import AgentSessionState
 from packages.domain.tasks import TaskContract
@@ -27,7 +28,13 @@ from packages.domain.workspace import WorkspaceLease
 
 @dataclass(frozen=True, slots=True)
 class AgentSessionSpec:
-    """会话创建规格（AGENT_RUNTIME.md §2）。"""
+    """会话创建规格（AGENT_RUNTIME.md §2）。
+
+    `endpoint` / `model` 是 **EC-03（PLAN-20260919-109）** 补上的**执行目标**：谁被调用。
+    runtime 的职责是执行既定目标，不是自己挑目标（不选模型是本 Port 的既有边界，
+    AGENT_RUNTIME.md 第 5 行），所以目标必须由上层解析后随 spec 传入。`None` 表示
+    上层未解析出目标，真实 runtime 必须**点名拒绝**而不是猜一个。
+    """
 
     task_id: ID
     task_contract: TaskContract
@@ -38,6 +45,8 @@ class AgentSessionSpec:
     context_snapshot: ContextSnapshot | None = None
     budget_reservation: BudgetReservation | None = None
     manifest_ref: str | None = None
+    endpoint: LLMEndpoint | None = None
+    model: ModelDefinition | None = None
 
 
 @dataclass(frozen=True, slots=True)

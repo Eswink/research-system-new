@@ -35,6 +35,7 @@ from packages.application.ports.workflow_engine import (
 )
 from packages.application.run_orchestration.usage_recording import record_attempt_usage
 from packages.domain.enums import FailureCategory
+from packages.domain.models import LLMEndpoint, ModelDefinition
 from packages.domain.roles import AgentSpec, RoleDefinition
 from packages.domain.tasks import ResearchTask, RetryPolicy, TaskContract
 
@@ -72,6 +73,15 @@ class SessionSpecContext:
     agent: AgentSpec
     frozen_manifest_digest: str
     frozen_tool_set: tuple[str, ...] = field(default_factory=tuple)
+    # EC-03（PLAN-20260919-109）：**执行目标**——这次会话要调用哪个 endpoint / 哪个
+    # model。它此前只存在于 preflight 与 manifest，spec 不携带，于是真实 adapter 无从
+    # 装配 LLM（生产把 3 参工厂塞给按 1 参调用的 SessionBuilder ⇒ 一调用就 TypeError）。
+    # 在 catalog 在手的 orchestration 层解析，adapter 只消费、不反向依赖 catalog。
+    # 凭据**值**不进 spec：只带 endpoint 自带的 `credential_ref`，值由 adapter 侧经
+    # CredentialResolver 取。未解析出时保持 None ⇒ 真实 adapter **点名拒绝**，不静默
+    # 拿空目标去装配；Fake 侧不看这两个字段，默认路径逐字节不变。
+    endpoint: LLMEndpoint | None = None
+    model: ModelDefinition | None = None
     # M15 债务清偿:phase 归属(观测 PHASE span 分组/父子链接用);缺省 "" 表示
     # 来源不携带 phase 信息(如 resume 重建路径)——此时 TASK 落回 RUN 父
     phase_id: str = ""
@@ -311,6 +321,8 @@ def _run_session(
         agent=spec_context.agent,
         frozen_tool_set=spec_context.frozen_tool_set,
         manifest_ref=spec_context.frozen_manifest_digest,
+        endpoint=spec_context.endpoint,
+        model=spec_context.model,
     )
     handle = runtime.create_session(spec)
     _assert_frozen_manifest(spec, spec_context)
