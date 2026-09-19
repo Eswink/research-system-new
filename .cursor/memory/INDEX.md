@@ -80,6 +80,7 @@
 | [MEM-20260919-080](entries/MEM-20260919-080-egress-gate-chain-probe-is-the-egress-port.md) | ACTIVE | repository | 0.90 | 2027-09-19 | PLAN-20260919-108 |
 | [MEM-20260919-081](entries/MEM-20260919-081-real-runtime-offline-full-chain.md) | ACTIVE | repository | 0.90 | 2027-09-19 | PLAN-20260919-109 |
 | [MEM-20260919-082](entries/MEM-20260919-082-honest-substrate-disclosure.md) | ACTIVE | repository | 0.90 | 2027-09-19 | PLAN-20260919-110 |
+| [MEM-20260919-083](entries/MEM-20260919-083-tool-plane-boundary.md) | ACTIVE | repository | 0.90 | 2027-09-19 | PLAN-20260919-111 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

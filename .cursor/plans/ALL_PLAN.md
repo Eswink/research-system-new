@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260919-111](tasks/PLAN-20260919-111-tool-plane-boundary.md) | DONE |
 | [x] | [PLAN-20260919-110](tasks/PLAN-20260919-110-honest-substrate-disclosure.md) | DONE |
 | [x] | [PLAN-20260919-109](tasks/PLAN-20260919-109-real-runtime-offline-full-chain.md) | DONE |
 | [x] | [PLAN-20260919-108](tasks/PLAN-20260919-108-egress-gate-chain.md) | DONE |
