@@ -43,6 +43,11 @@ class ApiSettings:
     allow_localhost_endpoints：显式开发开关（RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1
     放行 localhost/private/link-local 端点探测）；默认关闭保持 fail-closed
     （endpoint_policy.py 默认拒绝，生产不暴露 loopback SSRF 面）。
+
+    agent_runtime：Agent runtime 选择（PLAN-20260919-107 / EC-01）。默认空串 =
+    未配置 ⇒ 选择面回落 `fake`（受控 demo 执行体；CI 与离线开发不依赖网络）。
+    真实 runtime 必须**显式配置**（`RESEARCHOS_AGENT_RUNTIME`）；非法取值在装配期
+    fail-closed（`runtime_support.resolve_runtime_selection`），不静默回退。
     """
 
     def __init__(  # noqa: PLR0913 - settings surface (explicit env/ctor config)
@@ -54,6 +59,7 @@ class ApiSettings:
         database_url: str | None = None,
         artifact_blob_dir: str | None = None,
         workspace_snapshot_root: str | None = None,
+        agent_runtime: str = "",
         otel: OtelSettings | None = None,
     ) -> None:
         if not db_path:
@@ -61,6 +67,9 @@ class ApiSettings:
         self.db_path = db_path
         self.endpoint_timeout_seconds = endpoint_timeout_seconds
         self.allow_localhost_endpoints = allow_localhost_endpoints
+        # PLAN-20260919-107：取值校验归选择面（此处不做静默归一，避免
+        # 「配错了但看起来正常」）。
+        self.agent_runtime = agent_runtime
         # M14: PostgreSQL DSN (optional) — explicit construct or env
         self.database_url = database_url
         if self.database_url is not None and not self.database_url.strip():
@@ -122,5 +131,6 @@ class ApiSettings:
             database_url=database_url,
             artifact_blob_dir=os.environ.get("RESEARCHOS_ARTIFACT_BLOB_DIR") or None,
             workspace_snapshot_root=os.environ.get("RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT") or None,
+            agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
             otel=OtelSettings.from_env(),
         )
