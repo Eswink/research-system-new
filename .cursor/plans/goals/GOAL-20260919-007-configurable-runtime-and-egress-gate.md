@@ -150,7 +150,8 @@ escalation_triggers:
   - 授权范围内的 runtime 接线不受此限；`tool_pack.*` 产品决策、新增依赖/上游 pin 变更、Accepted ADR / Canonical State 边界仍须拍板
   - 威胁建模/授权面（BOLA/BFLA）覆盖类决策——需用户或 ADR 拍板，本循环不得自行决定
   - 依赖 pin 升级（`undici` / `vite` / `yaml` 等有修复版本的包）——上游 pin 变更，需用户或 ADR 拍板
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260919-107-runtime-selection-surface.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -298,7 +299,10 @@ adapter 接线部分以外的全部内容、GOAL-006 六条 EC 的 W 列表、�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-**当前续点**：**建档完成，下一步 = cycle 1（derive EC-01 子 PLAN）**。
+**当前续点**：**cycle 1 进行中**——子 PLAN 已派生
+（`.cursor/plans/tasks/PLAN-20260919-107-runtime-selection-surface.md`，EC-01，`IN_PROGRESS`），
+下一步 = 按该 PLAN 的 WP-A…WP-E 执行（先探明 → 选择面骨架 → 两组合根接线 → manifest/读面 →
+判据与反证 → 文档同源与回写）。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -416,6 +420,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 建档（本文件；driver=client-goal / owner=root-agent） | 建档提交见本行「本地验证」列之下的补录（回写下条补 commit hash） | 治理 `validate.py` 绿（建档后实跑）；只读勘察八条现状事实（见「本轮已探明的现状」） | 建档提交自身的 run 见回合汇报（按闭合口径） | 无 | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（Runtime 选择面：配置驱动 Fake \| OpenHands，两个组合根同侧） |
+| 1 | PLAN-20260919-107（EC-01：Runtime 选择面；driver=client-goal / owner=root-agent） | 本条 derive 提交（PLAN + ALL_PLAN 投影 + 本文件回写）；后续 WP-A…WP-E 各自独立提交 | derive 前只读勘察九条事实（两个组合根各硬编码一处 `FakeAgentRuntime`、真实 adapter 构造入口、`_manifest_of` 今天不设 `execution_backend`、**`packages/application/ports/*.py` 有 `openhands` token 字符串门禁**、domain 侧无字符串门禁、`tests/api`+`tests/e2e` 无钉死 manifest digest、DTO 增字段需同步 OpenAPI/web types、`demo_session_output` 披露只在 payload 内）；据此写死六条设计口径 | 待实现后推送（本行随实现回写补 run） | 无（derive 阶段） | EC-01 PENDING（实施中） | WP-A…WP-E 执行 |
 
 ## 状态历史
 
