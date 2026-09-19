@@ -157,6 +157,14 @@ class FakeAgentRuntime(FakeBase):
         ]
         # ForkSpec override 投影到新会话 spec（与真实 adapter 对齐，M6 复审 F-4）
         source = self._specs[session_id]
+        if spec.tool_set_override is not None and spec.manifest_revision_ref is None:
+            # EC-05：有效 Tool Set 冻结——改写必须显式声明 Manifest Revision（与真实
+            # adapter 的 `spec_with_overrides` 同一条契约，两个实现一起被判）。
+            raise InvalidInputError(
+                "fork tool_set_override requires ForkSpec.manifest_revision_ref:"
+                " the effective tool set is frozen and may only change under an"
+                " explicit manifest revision"
+            )
         if spec.tool_set_override is not None or spec.manifest_revision_ref is not None:
             self._specs[forked.session_id] = AgentSessionSpec(
                 task_id=source.task_id,

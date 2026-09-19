@@ -188,3 +188,45 @@ def test_workflow_acquire_after_complete_is_rejected(factory: type[object]) -> N
     engine.complete(lease, TaskCompletion(task_id=task.id.value, outcome="SUCCEEDED"))
     with pytest.raises(InvalidInputError):
         engine.acquire_lease(task.id.value)
+
+
+@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])
+def test_agent_runtime_fork_rejects_tool_set_change_without_a_revision(
+    factory: type[object],
+) -> None:
+    """EC-05：有效 Tool Set 冻结——改它必须显式声明 Manifest Revision。
+
+    两个实现（Fake 与真实 adapter）走**同一条契约**：只带 `tool_set_override` 而不带
+    `manifest_revision_ref` 的 fork 一律拒绝，拒绝消息点名缺哪条事实。
+    """
+    runtime = _as_runtime(factory)
+    handle = runtime.create_session(_spec())
+    with pytest.raises(InvalidInputError) as failure:
+        runtime.fork(
+            handle.session_id,
+            ForkSpec(
+                session_id=handle.session_id,
+                reason="swap the tool set",
+                tool_set_override=("other-provider",),
+            ),
+        )
+    assert "manifest_revision_ref" in str(failure.value)
+
+
+@pytest.mark.parametrize("factory", PORT_IMPLEMENTATIONS["agent_runtime"])
+def test_agent_runtime_fork_applies_tool_set_change_under_a_revision(
+    factory: type[object],
+) -> None:
+    """声明 revision 后改写**生效**（门不是一刀切禁止，也不是装作生效）。"""
+    runtime = _as_runtime(factory)
+    handle = runtime.create_session(_spec())
+    forked = runtime.fork(
+        handle.session_id,
+        ForkSpec(
+            session_id=handle.session_id,
+            reason="swap the tool set",
+            tool_set_override=("other-provider",),
+            manifest_revision_ref="manifest-rev-2",
+        ),
+    )
+    assert forked.session_id != handle.session_id

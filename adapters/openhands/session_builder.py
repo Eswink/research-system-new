@@ -112,17 +112,21 @@ class SessionBuilder:
             llm = self._build_llm_for_fork(entry.spec, spec.model_override)
         else:
             llm = getattr(entry.conversation.agent, "llm", None)
-        tool_set = (
-            tuple(spec.tool_set_override)
-            if spec.tool_set_override is not None
-            else entry.spec.frozen_tool_set
-        )
-        self._register_tools(tool_set)
-        agent = self.assemble_agent(llm, entry.spec, new_id)
+        # 有效 Tool Set 冻结（EC-05）：改它必须显式声明 Manifest Revision；且重建 agent 时
+        # 必须用**改写后**的 spec，否则 override 只落到记录里、落不到真在跑的工具集上。
+        effective = self.spec_with_overrides(entry.spec, spec)
+        self._register_tools(effective.frozen_tool_set)
+        agent = self.assemble_agent(llm, effective, new_id)
         return entry.conversation.fork(agent=agent)
 
     @staticmethod
     def spec_with_overrides(spec: AgentSessionSpec, fork: ForkSpec) -> AgentSessionSpec:
+        if fork.tool_set_override is not None and fork.manifest_revision_ref is None:
+            raise InvalidInputError(
+                "fork tool_set_override requires ForkSpec.manifest_revision_ref:"
+                " the effective tool set is frozen and may only change under an"
+                " explicit manifest revision"
+            )
         if fork.tool_set_override is None and fork.manifest_revision_ref is None:
             return spec
         return AgentSessionSpec(

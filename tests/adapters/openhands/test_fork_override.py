@@ -89,6 +89,28 @@ class TestForkOverrides:
         assert calls == ["openai/gpt-alt"]  # 新 LLM 被构建
         runtime.close()
 
+    def test_fork_tool_set_override_rebuilds_the_agents_tools(self, tmp_path: Path) -> None:
+        """EC-05：声明 Manifest Revision 后，override 真的重建工具集（不是只写进记录）。
+
+        判据取重建 agent 的 `tools`（真在跑的集合），不是会话记录里的字段——
+        两者曾经不一致：override 只落到 spec，agent 仍按父会话的工具集装配。
+        """
+        runtime = _make_adapter(tmp_path, fork_llm_calls=[])
+        handle = runtime.create_session(_spec())
+        forked = runtime.fork(
+            handle.session_id,
+            ForkSpec(
+                session_id=handle.session_id,
+                reason="swap the tool set",
+                tool_set_override=("policy_echo",),
+                manifest_revision_ref="manifest-rev-2",
+            ),
+        )
+        entry = runtime._sessions[forked.session_id]
+        assert tuple(tool.name for tool in entry.conversation.agent.tools) == ("policy_echo",)
+        assert entry.spec.frozen_tool_set == ("policy_echo",)
+        runtime.close()
+
     def test_fork_without_build_llm_for_fork_rejected(self, tmp_path: Path) -> None:
         llm = TestLLM.from_messages([
             Message(role="assistant", content=[TextContent(text="Done.")]),
