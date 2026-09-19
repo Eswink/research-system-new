@@ -28,6 +28,8 @@ export const RUN: RunDetailDto = {
   created_at: "2026-09-09T00:00:00Z", updated_at: "2026-09-09T00:00:00Z",
   // GOAL-005 cycle 6 = EC-06：这条 run 带冻结正文 ⇒ 重建能力自足（不缺事实）。
   rebuild: { status: "SELF_CONTAINED", missing: [] },
+  // GOAL-007 cycle 4 = EC-04：读面执行体（本夹具的 run 由受控 demo 执行体跑）。
+  execution: { execution_backend: "fake", runtime_fingerprint: null },
 };
 
 export const MODEL: ModelReadDto = {

@@ -157,15 +157,47 @@ function RunIdentity({
           {zh ? "连接状态不等于执行进度" : "Connection state is not execution progress"}
         </span>
       </div>
-      <KeyValueList
-        fields={[
-          { label: "Run", value: run.id },
-          { label: "Protocol", value: run.protocol_id },
-          { label: "Manifest", value: run.manifest_digest ?? "NOT FROZEN" },
-        ]}
-      />
+      <RunIdentityFacts run={run} zh={zh} />
     </PanelSection>
   );
+}
+
+/** 身份事实表（含执行体与运行时指纹两行；GOAL-007 EC-04）。 */
+function RunIdentityFacts({ run, zh }: { run: RunDetailDto; zh: boolean }) {
+  return (
+    <KeyValueList
+      fields={[
+        { label: "Run", value: run.id },
+        { label: "Protocol", value: run.protocol_id },
+        { label: "Manifest", value: run.manifest_digest ?? "NOT FROZEN" },
+        {
+          label: zh ? "执行体" : "Execution",
+          value: <span data-testid="run-execution-backend">{executionBackendLabel(run, zh)}</span>,
+        },
+        {
+          label: zh ? "运行时指纹" : "Runtime fingerprint",
+          value: <span data-testid="run-runtime-fingerprint">{fingerprintLabel(run, zh)}</span>,
+        },
+      ]}
+    />
+  );
+}
+
+/** 执行体读面文案（GOAL-007 EC-04）：未冻结 / 未声明 / 具体基质三态分开说。 */
+function executionBackendLabel(run: RunDetailDto, zh: boolean): string {
+  if (run.execution === null) return zh ? "未冻结" : "NOT FROZEN";
+  if (run.execution.execution_backend === null) return zh ? "未声明" : "UNDECLARED";
+  return run.execution.execution_backend;
+}
+
+/** 指纹读面文案：只报**状态**，`NOT_VERIFIED` 时连同原因一起显示，不冒充指纹值。 */
+function fingerprintLabel(run: RunDetailDto, zh: boolean): string {
+  const fingerprint = run.execution?.runtime_fingerprint ?? null;
+  if (fingerprint === null) return zh ? "未声明" : "UNDECLARED";
+  if (fingerprint.status !== "VERIFIED" && fingerprint.reason) {
+    return `${fingerprint.status} · ${fingerprint.reason}`;
+  }
+  return fingerprint.status;
 }
 
 function TaskList({ tasks }: { tasks: TaskDto[] }) {
