@@ -165,10 +165,17 @@ OpenHands 可以允许 LLM/context 在恢复时变化；Research OS 先验证 Ma
 ### Tool Set
 
 OpenHands 恢复要求工具名一致，因此 Session 的 Effective Tool Set 冻结。
+改变 Tool Set 的唯一实现路径是 fork，且 fork 必须显式声明 Manifest Revision
+（只带 `tool_set_override` 的 fork 被拒绝；真实 adapter 与 Fake 同一契约）。
+「冻结」三层判据与**未落地**的交集公式（policy ∩ health ∩ credential scope）
+见 `TOOL_RUNTIME.md` §3。
 
 ### Direct Tool Execution
 
 绕过 Agent loop 的直接执行必须经过 Research OS Policy Wrapper；高风险调用禁止直接透传。
+生产源码里唯一提及 SDK 直达执行点的地方就是那个包装调用（把 bound method 作为参数交给
+Policy Wrapper），且 `AgentRuntime` Port 的公开面没有任何直接执行方法——结构判据见
+`tests/architecture/python/test_tool_plane_boundary.py`。
 
 ### Secrets
 

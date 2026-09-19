@@ -48,7 +48,11 @@
   `model_id` 归因（EC-03：spec 携带执行目标后 model 归因在 adapter 侧可见）。
 - fork（复审 F-4 修正）：ForkSpec.model_override 经注入的
   build_llm_for_fork 重建 LLM；tool_set_override 重建工具集；
-  manifest_revision_ref 投影到新会话 spec。
+  manifest_revision_ref 投影到新会话 spec。**EC-05 补的窄门**：只带
+  `tool_set_override` 而不带 `manifest_revision_ref` 的 fork 一律拒绝
+  （`InvalidInputError`，消息点名缺哪条事实）——有效 Tool Set 冻结，改变必须显式
+  声明 Manifest Revision；声明后 override 进的是**重建 agent 用的**那个 spec
+  （此前只写进会话记录，真在跑的工具集其实没换）。Fake 走同一条契约。
 - 事件投影（复审 F-5/F-10 修正）：run() 启动投影 SESSION_STARTED（与
   Fake 对齐）；终端 kind 已由事件映射投影时不重复追加；RuntimeEvent
   message 经 domain redaction 脱敏。
