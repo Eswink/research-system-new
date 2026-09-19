@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260919-108](tasks/PLAN-20260919-108-egress-gate-chain.md) | DONE |
 | [x] | [PLAN-20260919-107](tasks/PLAN-20260919-107-runtime-selection-surface.md) | DONE |
 | [x] | [PLAN-20260918-106](tasks/PLAN-20260918-106-goal-006-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260918-105](tasks/PLAN-20260918-105-resume-compensation-failure-visibility.md) | DONE |
