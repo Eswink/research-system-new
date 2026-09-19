@@ -141,8 +141,30 @@ exit_criteria:
       进 canonical 事件链、usage 归账进 BudgetLedger、制品/证据可读；**反证**（断开事件映射 /
       断开归账 / 断开制品落库各自 ⇒ 对应用例红）+ live 门控用例在无凭据环境**如实 skip**
       （记录 skip 事实，不记 PASS）+ 默认门**离线可跑**（无网络依赖）+ m0 绿。
-    status: PENDING
-    evidence: ""
+    status: PASS
+    evidence: >-
+      PLAN-20260919-109 / RECHECK-20260919-109（PASS_WITH_WARNINGS，W-1…W-6）。三处**结构性**
+      断点各自修复：① `AgentSessionSpec` 不携带执行目标（endpoint/model）⇒ 解析点下沉到
+      `session_resolution.execution_target`（纯映射，逐段独立收敛为 `None`）并随 spec 携带
+      （Domain 类型；只带 `credential_ref`，凭据值仍由 adapter 侧 `CredentialResolver` 取）；
+      ② 生产把 **3 参** `build_llm` 塞给按 **1 参** `self._build_llm(spec)` 调用的
+      `SessionBuilder.build_session` ⇒ `create_session` 必然 `TypeError`（「一调用就炸」，
+      不是「未接线」）⇒ `session_llm_factory` 按与 EC-02 **同一条链**（URL 策略 → 凭据存在性）
+      在**构造 LLM 之前**裁决，拒绝点名事实且**零出站**；③ 真实 adapter 的
+      `AgentSessionResult` 不携带 `structured_output`（第四段结构性不可达）⇒ SUCCEEDED 时
+      携带最小交付物 `session_message`（取自**已映射**的 `RuntimeEvent.MESSAGE`，复用同一份
+      redact/截断），非成功终态保持空。离线全链四段各有独立断言与独立反证：会话创建（mock
+      端点真的收到补全请求，线上 model 名来自目录绑定；F1 目标恒 `None` ⇒ 红）、事件映射
+      （artifact 载荷的 `message_count`/`session_id`；F2 断映射 ⇒ 红）、预算归账（正向
+      `MODEL_TOKENS` 且 `task_id`/`model_id` 归因正确——顺带补上 `UsageContext` 缺失的
+      `model_id`；F3 不写账本 ⇒ 红）、制品与证据（`/artifacts`、`/evidence` 非空并由既有
+      acceptance gate 裁决；F4 空登记 ⇒ 红）。**链的实测终点是判拒**：合约声明要
+      `analysis_report`、真实会话交付 `session_message`，acceptance gate 判拒是链在正常
+      工作（键名→合约 artifact 名的映射属 `tool_pack.*` 产品决策）。live 用例挂
+      `requires_live_llm`，无凭据环境**如实 skip**（skip 不是 PASS；本机只证明 skip 路径）。
+      实测边界（EC-05 的活）：冻结 Tool Set 里是 tool provider id，缺 provider→SDK 映射时
+      控制面**不静默丢工具**而是点名未注册的 id（`::test_unmapped_tool_set_is_named_not_silently_dropped`
+      固定该行为），四段用例因此用测试侧惰性注册补这一环。
   - id: EC-04
     criterion: >-
       **诚实披露**：UI 与控制面读面标明**当前执行体**（受控 demo vs 真实 runtime）与
@@ -234,7 +256,7 @@ GOAL-006 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 | --- | --- | --- | --- |
 | EC-01 | Runtime 选择面（配置驱动 Fake \| OpenHands，两个组合根同侧，未配置逐字节一致，选择结果与指纹进 manifest/读面） | GOAL-006 人工面第 3 项（adapter 接线部分） | **PASS**（RECHECK-20260919-107，W-1…W-6） |
 | EC-02 | 受控出网门链（URL 策略 / 凭据 / 端点健康 / 能力匹配；拒绝点名缺哪条事实；出站调用 0） | 同上 + AGENTS.md §9 | **PASS**（RECHECK-20260919-108，W-1…W-6） |
-| EC-03 | 真实 runtime 离线全链进默认 CI（mock 端点 → 会话/事件/归账/制品；真端点走 `requires_live_llm`） | 同上 + AGENTS.md §11 | **PENDING** |
+| EC-03 | 真实 runtime 离线全链进默认 CI（mock 端点 → 会话/事件/归账/制品；真端点走 `requires_live_llm`） | 同上 + AGENTS.md §11 | **PASS**（RECHECK-20260919-109，W-1…W-6） |
 | EC-04 | 诚实披露（执行体性质 + 运行时指纹进读面与 UI；demo 输出不再与真实结果同形） | 同上 + AGENTS.md §4 | **PENDING** |
 | EC-05 | 工具面边界（Tool Set 冻结 + Policy Wrapper 强制；MCP/tool provider 接入边界如实登记） | AGENTS.md §5 | **PENDING** |
 | EC-06 | `tool_pack.*` / 脚本策略二选一终态（既有边界内实现 或 ADR 草案 + 权威登记 + 同源收敛） | GOAL-006 人工面第 3 项（产品决策部分） | **PENDING** |
@@ -354,18 +376,18 @@ adapter 接线部分以外的全部内容、GOAL-006 六条 EC 的 W 列表、�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-**当前续点**：**cycle 2 收口（EC-01 / EC-02 PASS）**，下一步 = **cycle 3 = EC-03（离线全链）**：
-脚本化 mock 端点（`httpx.MockTransport` 驱动真实 `OpenAIChatGateway`，先例见
-`tests/e2e/test_m12_usage_real_relay.py`）→ **会话创建 / 事件映射进 canonical** →
-**预算归账** → **制品与证据落 canonical**；四段各自可判定、任一段断开都能让用例红；
-另附 `requires_live_llm` 门控的真端点手动 E2E，无凭据环境**如实 skip**（不记 PASS）。
-**已知前置事实**：`AgentSessionSpec` 今天**不携带** endpoint / model / 凭据
-（`packages/application/ports/agent_runtime.py:28-40`），而生产装配把 3 参 `build_llm`
-直接塞给只按 `(spec)` 调用的 `SessionBuilder.build_session`
-（`adapters/openhands/session_builder.py:60`）⇒ 选 `openhands` 时 `create_session` 今天会
-在 `TypeError` 上收敛成 `PermanentPortError(SYSTEM_BUG)`。EC-03 必须先把这个 session 期
-装配点接上，且经 EC-02 的门链（不得新开旁路）。
-状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
+**当前续点**：**cycle 3 收口（EC-01 / EC-02 / EC-03 PASS）**，下一步 = **cycle 4 = EC-04
+（诚实披露）**：UI 与控制面读面标明**当前执行体**（受控 demo vs 真实 runtime）与**运行时
+指纹**；**demo 输出不再与真实结果同形**——现有 `demo_session_output` 的披露文案纳入
+**同源收敛**（同一口径在域/读面/UI/文档逐处一致）。判定细则见「EC-04 判定细则」：
+「披露」= **读面字段 + 页面渲染分支**（只在 `types.ts` 里存在字段不算）；stub e2e 与
+live e2e 各一条断言两种执行体在页面上**可区分**；页面改动必须走既有设计基线流程
+（结构签名判红 ⇒ `UPDATE_OUTLINES=1` 重生成 ⇒ 跨平台一致性复核），否则 web 门会红。
+**已知前置事实**：EC-01 已把选择结果写进 `RunManifest.execution_backend`（随
+`MANIFEST_FROZEN` payload 出现在 `GET /runs/{id}/events`），读面 DTO 与页面渲染分支是
+EC-04 要补的那一半；`demo_session_output()`（`services/api/demo.py:17-27`）目前的披露只在
+payload 内部（`"controlled fake session output (M13-R1 console demo)"`），读面/UI 没有独立的
+「执行体性质」字段。状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
 
@@ -484,7 +506,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 0 | 建档（本文件；driver=client-goal / owner=root-agent） | 建档提交见本行「本地验证」列之下的补录（回写下条补 commit hash） | 治理 `validate.py` 绿（建档后实跑）；只读勘察八条现状事实（见「本轮已探明的现状」） | 建档提交自身的 run 见回合汇报（按闭合口径） | 无 | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（Runtime 选择面：配置驱动 Fake \| OpenHands，两个组合根同侧） |
 | 1 | PLAN-20260919-107（EC-01：Runtime 选择面；driver=client-goal / owner=root-agent） | `fb8ddf8`（derive）、`10422e5`（WP-A 选择面骨架：`runtime_support.py` + `ApiSettings.agent_runtime`）、`ade2081`（WP-B 两组合根接线 + PG 凭据面单实例）、`0e01d2e`（WP-C 选择结果进 manifest/读面）、`54e2986`（WP-D 13 条判据）、`2d71e87`（WP-E 文档同源收敛）、`5b03d27`（mypy 门禁修正）、本次回写提交（RECHECK-20260919-107 / MEM-20260919-079 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | derive 前只读勘察九条事实；实现后：**反证四条先红后复原**（PG 根改回硬编码 ⇒ 结构判据红 1 failed；openhands 分支短路 ⇒ 2 failed；未知取值静默回退 ⇒ `DID NOT RAISE`；去掉 `execution_backend` 填充 ⇒ `assert None == 'openhands'` 2 failed）；`tests/api/test_runtime_selection_surface.py` **13 passed**；定向 `tests/api` **459 passed / 1 skipped**；架构门 **963 passed**；规模门禁 **944 passed**；`ruff check` / `format --check` 绿；`mypy` **934 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**（3803 passed / 200 skipped，539.63s）；DOCS-CHECK PASS | `11d47cf`（建档）的 M0 run **35446933910 = cancelled**（`concurrency.cancel-in-progress` 结构性取消：紧随其后的 `fb8ddf8` 推送取消了在飞的 M0；同一内容的覆盖由 `fb8ddf8` 的 run 承担）；`11d47cf` 的 Push-on-main run **35446933991 = success**；`fb8ddf8` 的 M0 run **35447242640 = success**（六个 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）、Push-on-main run **35447242522 = success**；本条推送的 run 见回合汇报 | 返工三处（记录诚实，**未改任何断言**）：① 初版把 runtime 装配内联进 `_sqlite_store_parts` ⇒ 撞 50 行函数门禁（58 行）+ `composition.py` 涨到 451 行（超 450）⇒ 拆出 `_sqlite_orchestration` / `_sqlite_apideps`，并把 `sqlite_artifact_blob_dir` 与 `build_sqlite_draft_service` 移到 `assembly.py`（该模块本就为此存在）；② `composition.py` 不再 re-export `demo_session_output` ⇒ `tests/api/base_fixtures.py` 导入失败（243 errors）⇒ 改从属主 `services.api.demo` 导入（机械搬 import）；③ m0 抓出 `python/typecheck` 6 条 mypy 错（守卫列表不带窄化、测试触私有属性、缺 cast）⇒ 守卫改成直接判两个值使 mypy 真窄化 | EC-01 **PASS**（RECHECK-20260919-107 = PASS_WITH_WARNINGS，W-1…W-6：加性披露使 manifest digest 变化、旧 run 的 `None` 不得读作执行体、「可装配 ≠ 可运行」、SDK 导入横幅、选择面射程只覆盖控制面两路径、指纹槽位仍是占位）；EC-02…EC-06 PENDING | cycle 2 = EC-02（受控出网门链：URL 策略 / 凭据存在性 / 端点健康 / 能力匹配；拒绝点名缺哪条事实；出站调用 0） |
 | 2 | PLAN-20260919-108（EC-02：受控出网门链；driver=client-goal / owner=root-agent） | 本次推送为**单次批量推送**（derive + WP-A…WP-E + 回写同推，沿用 GOAL-006 cycle 1 与 cycle 1 的攒批形态以避开 M0 并发取消） | derive 前只读勘察八条事实（其中两条是关键发现：`validate_endpoint_url` 只有两个**手动**调用点；`_probe_endpoint` 无 URL 裁决即出网）；实现后：**反证三条先红后复原**（删 `_probe_endpoint` 短路 ⇒ 2 failed；删 `_check_endpoint` 的 URL 环 ⇒ 2 failed 且失败形态降级为**不点名**的 `ENDPOINT_UNHEALTHY`；删 `run_execution` 注入 ⇒ 1 failed）；`tests/api/test_runtime_egress_gate.py` **9 passed**；尺寸门 **945 passed**；受影响套件（tests/api + tests/application + tests/contracts + tests/architecture/python）**1519 passed / 70 skipped / 3 failed**（3 条为 `@pytest.mark.postgres` 靶向运行未加载 `tests/postgres/conftest.py` 的环境依赖，同一批在 m0 全量下通过）；`ruff check` / `format --check` 绿；`mypy` **935 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**（4003 passed / 10 skipped，500.00s）；治理 `validate.py` 绿 | `f3e388a`（cycle 1 回写提交）的 M0 run **35451031056 = success**（六个 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）、Push-on-main run **35451030745 = success**（本轮补记到台账）；本条推送的 run 按闭合约定在回合汇报给出终态 | 返工两处（**未改任何断言**）：① `_probe_endpoint` 加一行 URL 裁决使 `run_execution.execution_inputs` 涨到 51 行 ⇒ 撞 50 行函数门禁 ⇒ 抽出 `_live_preflight`（并写明「裁决与 health 必须同源求值」）；② m0 首跑 `framework/validate` 红：`PLAN-20260919-108` 缺 `## 影响报告` 章节 ⇒ 补齐后治理验证通过、m0 全量复跑绿（**这条首跑红如实记录，不当作绿**） | EC-01/EC-02 **PASS**（RECHECK-107 / RECHECK-108，均 PASS_WITH_WARNINGS）；EC-03…EC-06 PENDING | cycle 3 = EC-03（真实 runtime 离线全链进默认 CI：脚本化 mock 端点 → 会话创建/事件映射 → 预算归账 → 制品与证据落 canonical；另附 `requires_live_llm` 门控的真端点手动 E2E，无凭据环境如实 skip） |
-| 3 | PLAN-20260919-109（EC-03：真实 runtime 离线全链；driver=client-goal / owner=root-agent）——**derive 完成，执行中** | derive 提交与后续 WP 攒批同推（避开 M0 并发取消） | derive 前只读勘察已确认**结构性断点**：`AgentSessionSpec`（`ports/agent_runtime.py:28-40`）不携带 endpoint/model/凭据，而生产把 **3 参** `build_llm` 塞给按 **1 参** `self._build_llm(spec)` 调用的 `SessionBuilder.build_session`（`adapters/openhands/session_builder.py:60`）⇒ 选 `openhands` 时 `create_session` 在 `TypeError` 上收敛成 `PermanentPortError(SYSTEM_BUG)`；可复用资产：`tests/adapters/openhands/test_spike_e2e.py` 已用本地 threading HTTP 服务器驱动真实 `build_llm` + 真实 SDK Conversation 跑通 adapter 侧四段 | 本轮无（尚未推送） | 无 | EC-01/EC-02 **PASS**；EC-03 IN_PROGRESS（derive 完成）；EC-04…EC-06 PENDING | cycle 3 继续：补先探明项 2-5（预算归账 / 制品与证据落 canonical 的现状）→ WP-A…WP-E |
+| 3 | PLAN-20260919-109（EC-03：真实 runtime 离线全链；driver=client-goal / owner=root-agent） | `9bb468f`（derive）、`adf8b83`（WP-A spec 携带执行目标 + 解析点下沉）、`63746f2`（WP-B/WP-C 受门工厂 + 组合根接线 + host shell 显式开关）、`46ceae3`（WP-D 交付物映射 + usage 归因）、`8e398a3`（WP-D 四段判据与 live 门控用例）、`a1137f4`（WP-E 文档同源）、本次回写提交（RECHECK-20260919-109 / MEM-20260919-081 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条批量推送的 run 按闭合约定在回合汇报给出终态 | derive 前只读勘察确认**三处结构性断点**（spec 不携带执行目标 / 3 参工厂对 1 参调用 / 交付物不进结构化输出）；实现后：**反证四条先红后复原**（F1 `execution_target` 恒 `None` ⇒ 段 1 红 + run 失败消息点名 `carries no execution target: endpoint and model`；F2 断 MESSAGE 映射 ⇒ 段 2 红且 artifact 列表为空；F3 不写账本 ⇒ 段 3 红而 1/2/4 绿；F4 空登记 ⇒ 制品/证据读面为 `[]` 但 run 仍走到 acceptance gate，与 F2 签名可区分）；`tests/e2e/test_ec03_real_runtime_offline_chain.py` **2 passed / 1 skipped**（skip = live 用例，原因点名 `RESEARCHOS_LIVE_E2E_ENDPOINT` / `_KEY`）；`tests/api/test_session_llm_factory.py` **10 passed**；受影响套件 `tests/adapters/openhands`+`tests/application`+`tests/architecture` **765 passed / 1 skipped**、`tests/api` **482 passed**、`tests/e2e` 全绿；尺寸门 **947 passed**；`ruff check` / `format --check` 绿；`mypy` **937 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**（改完源码与文档后跑；`.cursor` 记录写入在其后，追加跑 `--profile framework` **8 项 PASS** 覆盖治理/文档面）；治理 `validate.py` 绿。**跑法提示**：`tests/api` 全量需 `RESEARCHOS_POSTGRES_DSN` 钉到 test DSN（否则 litellm `load_dotenv` 注入 operator `.env` ⇒ 3 条组合根用例 `password authentication failed`），`lint-imports` 需 `.venv/Scripts` 在 PATH | `032c30e`（cycle 2 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35454369106 = success**、Push-on-main run **35454368423 = success**（六 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）——本轮按闭合约定补记入台账；本条批量推送的 run 见回合汇报 | 返工三处（记录诚实，**未改任何断言**）：① 尺寸门首跑红——`runtime_support.py::session_llm_factory` 54 行、e2e `_openhands_deps` 83 行、四段用例 66 行 ⇒ 拆出 `_gated_session_target` / `_point_catalog_at` + `_register_live_key` + `_real_runtime` + 四个 `_assert_*` 段函数（并把四次读面合并为 `_ChainReads`，顺带解决 6 参函数）；② `mypy` 三条（`deps.credentials` 声明为 Port 而实际是 Fake ⇒ 需 `cast`；`TestClient.json()` 返回 `Any` ⇒ 需 `cast`；一处 `assert replace` 的凑数写法删除）；③ e2e 断言按**实测**修正而非按预期：会话终态**不是** SUCCEEDED（合约要 `analysis_report`、真实会话交付 `session_message` ⇒ acceptance gate 判拒），段 2 改为读 artifact 载荷的 `message_count`/`session_id`，段 3 从「账本非空」改为**可归因**（`task_id`/`model_id`） | EC-01/EC-02/EC-03 **PASS**（RECHECK-107 / 108 / 109，均 PASS_WITH_WARNINGS）；EC-04…EC-06 PENDING。EC-03 的 W-1…W-6：段 2/段 4 共享制品窗口（canonical 不落 session 级事件）、`session_message` 键名属 `tool_pack.*` 决策、live 用例本机只证明 skip 路径、真实会话目前需显式 host shell 开关、mock 端点需本地 socket、段 3 的读面强度低于段 4 | cycle 4 = EC-04（诚实披露：执行体性质 + 运行时指纹进读面与 UI；demo 输出不再与真实结果同形） |
 
 ## 状态历史
 
@@ -540,3 +562,29 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   **部分初始化**的模块上（是否真报错取决于导入顺序，属软失败点）。需要跨越这条边界的
   值对象（如 URL 策略）只能以**中性编码**（`Mapping[str, str]` 裁决结果）注入，
   或在服务层求值——沿用 `provider_health` 的既有口径。
+- 2026-09-19 cycle 3 收口：EC-03 **PASS**（PLAN-20260919-109 / RECHECK-20260919-109 =
+  PASS_WITH_WARNINGS，W-1…W-6）。这条链在 cycle 2 勘察时断在**第一段之前**，而且是
+  **结构性**的三处：① `AgentSessionSpec` 只携带控制面事实、**不携带**执行目标
+  （endpoint/model），真实 adapter 因此无从装配 LLM；② 生产把 **3 参** `build_llm` 塞进
+  `AdapterDependencies.build_llm`，而 `SessionBuilder.build_session` 按 **1 参**
+  `self._build_llm(spec)` 调用 ⇒ 选 `openhands` 时 `create_session` 必然 `TypeError`
+  （收敛为 `PermanentPortError(SYSTEM_BUG)`）——**不是「未接线」，是「一调用就炸」**；
+  ③ 真实 adapter 的 `AgentSessionResult` **不携带** `structured_output`，而 canonical 的
+  制品/证据登记正是由结构化输出驱动 ⇒ 第四段从来不可达。本轮三段各自补上：执行目标在
+  **catalog 在手的层**（orchestration）解析为纯映射并随 spec 携带（**只带
+  `credential_ref`，不带凭据值**）；会话 LLM 工厂按与 EC-02 **同一条链**（URL 策略 →
+  凭据存在性）在**构造 LLM 之前**裁决，拒绝点名事实且**零出站**；SUCCEEDED 时携带最小
+  交付物（取自**已映射**的 `RuntimeEvent.MESSAGE`，复用同一份 redact/截断），非成功终态
+  保持空（把失败会话的中间文本登记成结论 = 把「没做完」伪装成「有产出」）。
+  **一处方法论要点**（本轮实测）：Port 的依赖是 callable 时，**元数/契约**必须由一条
+  真的调用它的用例来判——「装上了」与「调得通」是两件事。**链的实测终点是判拒**：
+  四段全绿后 run 仍 `FAILED`（`rejected by acceptance gate`），因为合约要 `analysis_report`
+  而真实会话交付 `session_message`——这是链在正常工作，不是缺陷；键名→合约 artifact 名的
+  映射属 `tool_pack.*` 产品决策（EC-06 一侧）。**如实登记的射程边界**：冻结 Tool Set 里是
+  tool provider id 而非 SDK 工具名，缺映射时会话创建**点名**未注册的 id（不静默丢工具，
+  有专门用例固定该行为），四段用例用测试侧惰性注册补这一环；live 用例本机**只证明 skip
+  路径**（skip 不是 PASS）；canonical 不落 session 级事件 ⇒ 段 2 与段 4 共享制品窗口。
+  门禁：四段用例 **2 passed / 1 skipped**、工厂用例 **10 passed**、尺寸门 **947 passed**
+  （首跑红 ⇒ 三个超 50 行函数已拆分）、`mypy` **937 files 干净**、m0 **23/23**、
+  `--profile framework` **8/8**、DOCS-CHECK PASS。CI 台账见迭代日志 cycle 3 行
+  （含上一 cycle 批量推送 run 的补记）。
