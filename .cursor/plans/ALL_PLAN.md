@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260919-112](tasks/PLAN-20260919-112-toolpack-capability-policy-decision.md) | IN_PROGRESS |
 | [x] | [PLAN-20260919-111](tasks/PLAN-20260919-111-tool-plane-boundary.md) | DONE |
 | [x] | [PLAN-20260919-110](tasks/PLAN-20260919-110-honest-substrate-disclosure.md) | DONE |
 | [x] | [PLAN-20260919-109](tasks/PLAN-20260919-109-real-runtime-offline-full-chain.md) | DONE |
