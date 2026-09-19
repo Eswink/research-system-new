@@ -67,6 +67,10 @@ def frozen_payload(run: ResearchRun, manifest: RunManifest) -> dict[str, object]
         "semantic_digest": str(manifest.semantic_digest()),
         "pricing_version": manifest.pricing_version,
         "pricing_digest": manifest.pricing_digest,
+        # PLAN-20260919-107（EC-01）：执行基质随冻结快照进读面。读面走既有
+        # `GET /runs/{id}/events`，因此零 DTO/路由/OpenAPI/迁移变化。
+        # None = 冻结时未声明（M7 不伪填充口径），不得读作某一个具体执行体。
+        "execution_backend": manifest.execution_backend,
     }
 
 

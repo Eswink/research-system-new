@@ -237,6 +237,7 @@ def _manifest_of(
         role_definitions=dict(context.catalog.roles),
         agent_specs=dict(context.catalog.agents),
         resolved_models=dict(plan.resolved_models),
+        model_runtime_fingerprints=dict(context.runtime_fingerprints),
         effective_tools={
             f"{item.phase_id}:{item.capability}": list(item.provider_ids)
             for item in plan.tool_requirements
@@ -245,6 +246,9 @@ def _manifest_of(
         task_contracts=frozen_contracts,
         policy_version=policy_version,
         workspace_backend=context.project.workspace_backend,
+        # PLAN-20260919-107（EC-01）：执行基质由组合根声明（选择面）；未声明保持
+        # None —— M7 的「不伪填充」口径不变，只是以前无来源、现在有来源。
+        execution_backend=context.execution_substrate,
         budget_reservation_ref=report.reserved_budget_ref,
         frozen_at=Timestamp.now(),
         pricing_version=pricing.version,

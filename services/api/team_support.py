@@ -26,6 +26,8 @@ from services.api.preflight_support import (
     build_endpoint_health,
     build_policy_evaluator,
     build_provider_health,
+    runtime_fingerprints,
+    runtime_substrate,
 )
 
 
@@ -44,6 +46,8 @@ def build_preflight_context(
         workspace_available={},
         budget_ledger=None,
         policy_evaluator=build_policy_evaluator(catalog),
+        execution_substrate=runtime_substrate(deps),
+        runtime_fingerprints=runtime_fingerprints(deps),
     )
 
 

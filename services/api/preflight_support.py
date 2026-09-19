@@ -47,6 +47,22 @@ def build_policy_evaluator(catalog: CatalogSnapshot) -> PolicyEvaluator | None:
     return NativePolicyEvaluator(policy=catalog.policy)
 
 
+def runtime_substrate(deps: ApiDeps) -> str | None:
+    """执行基质标识（PLAN-20260919-107 / EC-01）：选择结果 → 冻结进 manifest。
+
+    None = 该装配没有选择面（`runtime_selection is None`）；控制面两条生产路径
+    都会填，因此 None 在读面上是「未声明」，不得读作某一个具体执行体。
+    """
+    selection = deps.runtime_selection
+    return None if selection is None else selection.substrate
+
+
+def runtime_fingerprints(deps: ApiDeps) -> dict[str, object]:
+    """AGENTS.md §4 运行时指纹槽位的诚实状态记录（选择面给出；无选择面 = 不声明）。"""
+    selection = deps.runtime_selection
+    return {} if selection is None else dict(selection.fingerprint_record())
+
+
 def _probe_endpoint(deps: ApiDeps, endpoint: LLMEndpoint) -> EndpointHealth:
     try:
         credential = deps.credentials.resolve(endpoint.credential_ref)

@@ -59,6 +59,29 @@ class RuntimeSelection:
         """写进 `RunManifest.execution_backend` 的中性标识（opaque string）。"""
         return self.kind
 
+    def fingerprint_record(self) -> dict[str, object]:
+        """AGENTS.md §4 运行时指纹槽位的**诚实状态记录**。
+
+        §4 要的七件事实（ModelDefinition / endpoint 配置摘要 / 返回的 model 名 /
+        系统指纹 / 白名单响应头 / probe 套件版本 / 兼容性结论）来自一次真实探测。
+        默认的受控 demo 执行体**不发起任何模型调用**，因此这七件事实一件也不存在
+        ——诚实做法是**显式标注未验证**，不是留空冒充已验证（留空会让读面分不清
+        「没探」与「探了但没问题」）。
+
+        选择真实 runtime 时这里同样先记 `NOT_VERIFIED`：真实事实由出网门链与
+        离线全链（EC-02 / EC-03）在拿到 probe 结果后替换，替换前不得宣称已验证。
+        """
+        return {
+            "substrate": self.kind,
+            "status": "NOT_VERIFIED",
+            "reason": (
+                "no model probe was run for this run: the controlled demo runtime makes no "
+                "model call, so none of the AGENTS.md section 4 facts exist"
+                if self.kind == FAKE_RUNTIME
+                else "runtime selected but no model probe fact was collected for this run"
+            ),
+        }
+
 
 def resolve_runtime_selection(settings: ApiSettings) -> RuntimeSelection:
     """从配置解析选择结果；未知取值 fail-closed。"""
@@ -120,13 +143,18 @@ def _openhands_runtime(
 def build_agent_runtime(
     settings: ApiSettings,
     *,
+    selection: RuntimeSelection | None = None,
     credentials: CredentialResolver | None = None,
     policy_evaluator: PolicyEvaluator | None = None,
     budget_ledger: Any | None = None,
 ) -> AgentRuntime:
-    """按选择结果装配 AgentRuntime（两个组合根的唯一装配入口）。"""
-    selection = resolve_runtime_selection(settings)
-    if selection.kind == FAKE_RUNTIME:
+    """按选择结果装配 AgentRuntime（两个组合根的唯一装配入口）。
+
+    `selection` 允许调用方传入已经解析过的结果——组合根解析一次、装配与披露共用
+    同一个对象（避免"装配用的是 A、读面写的是 B"这类不可见的漂移）。
+    """
+    resolved = selection if selection is not None else resolve_runtime_selection(settings)
+    if resolved.kind == FAKE_RUNTIME:
         return _fake_runtime()
     return _openhands_runtime(
         credentials=credentials,

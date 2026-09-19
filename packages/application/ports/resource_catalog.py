@@ -92,3 +92,9 @@ class PreflightContext:
     workspace_available: Mapping[str, bool] = field(default_factory=dict)
     budget_ledger: BudgetLedger | None = None
     policy_evaluator: PolicyEvaluator | None = None
+    # 执行基质标识与运行时指纹槽位（PLAN-20260919-107 / EC-01）。由组合根填充，
+    # 冻结进 RunManifest 的 `execution_backend` / `model_runtime_fingerprints`；
+    # 未填充时保持 None/空 = 冻结方未声明（沿用 M7 的「不伪填充」口径）。
+    # 命名保持中性：本包有 provider token 门禁（test_provider_types_do_not_leak_from_ports）。
+    execution_substrate: str | None = None
+    runtime_fingerprints: Mapping[str, object] = field(default_factory=dict)

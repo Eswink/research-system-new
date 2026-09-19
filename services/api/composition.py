@@ -88,7 +88,11 @@ from services.api.assembly import (
 )
 from services.api.demo import _default_events
 from services.api.idempotency import IdempotencyStore
-from services.api.runtime_support import build_agent_runtime
+from services.api.runtime_support import (
+    RuntimeSelection,
+    build_agent_runtime,
+    resolve_runtime_selection,
+)
 from services.api.settings import ApiSettings
 from services.api.telemetry import build_api_telemetry, exporter_config_digest
 
@@ -133,6 +137,9 @@ class ApiDeps:
     tool_providers: Mapping[str, Any] = field(default_factory=dict, repr=False)
     preflight_override: PreflightContext | None = field(default=None, repr=False)
     endpoint_url_policy: EndpointUrlPolicy | None = field(default=None, repr=False)
+    # PLAN-20260919-107（EC-01）：runtime 选择结果（选择面解析一次，两组合根同侧）。
+    # None = 该装配未经过选择面（历史上没有这个面）；读面按「未声明」处理。
+    runtime_selection: RuntimeSelection | None = field(default=None, repr=False)
     telemetry: TelemetrySink = field(default_factory=NullTelemetrySink, repr=False)
     exporter_config_digest: str | None = field(default=None, repr=False)
     eval_report_store: Any | None = field(default=None, repr=False)
@@ -225,6 +232,8 @@ class _ControlFaces:
     settings: ApiSettings
     credentials: RegistryCredentialResolver
     policy_evaluator: PolicyEvaluator | None
+    #: 已解析的 runtime 选择（解析一次；装配与读面披露共用同一对象）。
+    selection: RuntimeSelection
 
 
 @dataclass(frozen=True, slots=True)
@@ -286,6 +295,7 @@ def _sqlite_orchestration(
     """
     runtime = build_agent_runtime(
         faces.settings,
+        selection=faces.selection,
         credentials=faces.credentials,
         policy_evaluator=faces.policy_evaluator,
         budget_ledger=ports.budget,
@@ -354,6 +364,7 @@ def _assemble_sqlite(
             settings=effective,
             credentials=credentials,
             policy_evaluator=bindings["policy_evaluator"],
+            selection=resolve_runtime_selection(effective),
         ),
         parts,
         bindings,
@@ -395,6 +406,7 @@ def _sqlite_apideps(  # noqa: PLR0913 - composition root 装配参数
         **_sqlite_config_stores(connection),
         protocol_draft_service=build_sqlite_draft_service(connection),
         endpoint_url_policy=_endpoint_url_policy(effective),
+        runtime_selection=faces.selection,
         telemetry=telemetry,
         **bindings,
         _connection=connection,

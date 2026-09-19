@@ -27,6 +27,8 @@ from services.api.preflight_support import (
     build_endpoint_health,
     build_policy_evaluator,
     build_provider_health,
+    runtime_fingerprints,
+    runtime_substrate,
 )
 from services.api.protocol_source import (
     load_protocol_with_body,
@@ -156,6 +158,8 @@ def execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
             workspace_available={},
             budget_ledger=deps.budget,
             policy_evaluator=build_policy_evaluator(catalog),
+            execution_substrate=runtime_substrate(deps),
+            runtime_fingerprints=runtime_fingerprints(deps),
         )
     command = StartRunCommand(
         project_id=project.project_id,

@@ -21,7 +21,7 @@ from packages.application.run_orchestration.service import (
 )
 from services.api.assembly import _endpoint_url_policy, _load_pricing, policy_bindings
 from services.api.composition import ApiDeps
-from services.api.runtime_support import build_agent_runtime
+from services.api.runtime_support import build_agent_runtime, resolve_runtime_selection
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,13 +63,15 @@ class _PgRuntimeInputs:
 
     credentials: Any
     policy_bindings: dict[str, Any]
+    selection: Any
 
 
 def _pg_runtime_inputs(config: PgAssemblyConfig) -> _PgRuntimeInputs:
-    """凭据解析面与 policy 装载面只解析一次，两处复用（不各建一套）。"""
+    """凭据解析面、policy 装载面与 runtime 选择只解析一次，两处复用（不各建一套）。"""
     return _PgRuntimeInputs(
         credentials=config.credentials_override or RegistryCredentialResolver(),
         policy_bindings=policy_bindings(),
+        selection=resolve_runtime_selection(config.effective),
     )
 
 
@@ -191,6 +193,7 @@ def _build_pg_orchestration(
         OrchestrationDependencies(
             runtime=build_agent_runtime(
                 config.effective,
+                selection=inputs.selection,
                 credentials=inputs.credentials,
                 policy_evaluator=inputs.policy_bindings["policy_evaluator"],
                 budget_ledger=c["budget"],
@@ -283,6 +286,9 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         **_pg_apideps_stores(assembly),
         **_pg_config_stores(assembly.connection),
         endpoint_url_policy=_endpoint_url_policy(assembly.effective),
+        runtime_selection=assembly.runtime_inputs.selection
+        if assembly.runtime_inputs is not None
+        else None,
         protocol_draft_service=_build_pg_draft_service(assembly.pg_conn),
         **bindings,
         _connection=assembly.connection,

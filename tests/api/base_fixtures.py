@@ -48,7 +48,7 @@ def _base_sqlite_parts(
         OrchestrationDependencies,
         RunOrchestrationService,
     )
-    from services.api.composition import demo_session_output
+    from services.api.demo import demo_session_output
 
     events = SqliteOutboxEventPublisher(connection=connection)
     workflow = SqliteWorkflowEngine(connection=connection)
