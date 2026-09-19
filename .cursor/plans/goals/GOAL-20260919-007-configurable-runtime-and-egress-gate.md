@@ -2,7 +2,7 @@
 id: GOAL-20260919-007
 slug: configurable-runtime-and-egress-gate
 title: 真实执行体接线：runtime 可配置、受控出网门链、离线全链进 CI、诚实披露与工具面边界
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-19
 updated_at: 2026-09-19
 owners:
@@ -176,8 +176,19 @@ exit_criteria:
       ⇒ 对应 e2e 红）+ web 六门（lint / typecheck / unit / build / stub e2e / live e2e）+
       页面改动的设计基线/结构签名按既有流程重生成（跨平台一致性用既有容器配方复核）+
       文案同源（`CONTROL_PLANE_API.md` / `CONSOLE_PAGE_MAP.md` / `demo.py` 同一口径）。
-    status: PENDING
-    evidence: ""
+    status: PASS
+    evidence: >-
+      PLAN-20260919-110 / RECHECK-20260919-110（PASS_WITH_WARNINGS，W-1…W-7）。交付：读面
+      `services/api/run_execution_view.py::run_execution_dto` 经**既有** `RunProjection.events`
+      端口读冻结 manifest 载荷（四态：openhands / fake / 已冻结但未声明 / 未冻结）；
+      页面 `apps/web/src/features/runs/RunPanel.tsx::RunIdentityFacts` 两行渲染分支
+      （`KeyValueList`，四态文案）；stub e2e 两条（四态 CASES + 指纹只报 `NOT_VERIFIED`
+      连同原因）+ live e2e 一条（页面 == 读面）；设计基线补**第 34 条**条目
+      `run-timeline-substrate`（原 `run-timeline` 基线不选 run ⇒ 新分支落在门外面，这是
+      本轮实测发现的覆盖盲点）+ win32/linux 像素 + 跨平台结构签名 34/34 零漂移；
+      web 六门全绿（unit 76 / stub e2e 87 / live e2e 39）；m0 23/23。反证两条：摘掉两行
+      ⇒ stub e2e 红；`_frozen_payload` 恒空 ⇒ live e2e 红。另实测撞车一处（夹具 UUID 与
+      `live-workspace-snapshots` 的"未知 run"哨兵相同 ⇒ 改用全仓未占用 UUID）。
   - id: EC-05
     criterion: >-
       **工具面边界**：OpenHands 侧**工具集冻结**（AgentSession 有效 Tool Set 不可变）+
@@ -188,8 +199,22 @@ exit_criteria:
       用例（policy DENY ⇒ 工具 executor **未被触达**；REQUIRE_APPROVAL ⇒ 拒绝反馈 + 审批事件）+
       **反证**（把门控入口换回直通 ⇒ 用例红）+ 工具集冻结用例（会话内有效 Tool Set 不可被改写）
       + 接入边界登记（文档同源、逐条点名已覆盖与未覆盖）+ 受影响套件 + m0 绿。
-    status: PENDING
-    evidence: ""
+    status: PASS
+    evidence: >-
+      PLAN-20260919-111 / RECHECK-20260919-111（PASS_WITH_WARNINGS，W-1…W-8）。交付：
+      结构判据 `tests/architecture/python/test_tool_plane_boundary.py`（**6 passed**，AST
+      全树）——生产源码里提及 SDK 直达执行点的地方**恰有一处**且必须"把 bound method
+      交给策略包装"（判值流向）；组合根零执行体构造；`AgentRuntime` Port 公开面无 `execute*`；
+      agent loop 覆盖点要求 `_evaluate` **先于**委托。冻结：spec frozen（`FrozenInstanceError`）
+      + 生产源码无 spec/conversation 重赋值 + **fork 窄门**（改工具集必须声明
+      `manifest_revision_ref`，真实 adapter 与 Fake **同契约**，契约用例参数化两边都判）
+      ——同时**修掉一处实测半应用缺陷**：fork 的 `tool_set_override` 原先只写进记录、
+      重建 agent 仍用父 spec。接入边界登记进 `docs/architecture/TOOL_RUNTIME.md` §9
+      （已覆盖 3 条 / 未覆盖 5 条逐条点名）。反证三条：直接调用 SDK 执行点 ⇒ 结构判据红
+      并点名 "does not pass the SDK entry into the policy wrapper"；窄门短路 ⇒ 真实 adapter
+      契约分支红；撤销"用改写后 spec 装配" ⇒ 重建判据红。受影响套件 1608 passed / 6 skipped；
+      m0 23/23。W-1（**门控在生产零调用点**）必须留档：本 EC 判"边界成立且可判"，
+      不判"控制面已在跑工具"。
   - id: EC-06
     criterion: >-
       **`tool_pack.*` / 脚本策略的二选一终态**：(a) 在**既有边界内实现**（既有
@@ -245,7 +270,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260919-110-honest-substrate-disclosure.md
   - .cursor/plans/tasks/PLAN-20260919-111-tool-plane-boundary.md
   - .cursor/plans/tasks/PLAN-20260919-112-toolpack-capability-policy-decision.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260919-112-toolpack-capability-policy-decision.md
+  - .cursor/plans/tasks/PLAN-20260919-113-goal-007-closeout-recheck.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260919-113-goal-007-closeout-recheck.md
 memory_entries:
   - MEM-20260919-079
   - MEM-20260919-080
@@ -253,6 +279,8 @@ memory_entries:
   - MEM-20260919-082
   - MEM-20260919-083
   - MEM-20260919-084
+  - MEM-20260919-085
+  - MEM-20260919-086
 ---
 
 # GOAL-20260919-007 — 真实执行体接线（自迭代循环）
@@ -481,7 +509,61 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 
 ### 收口结论
 
-（尚未收口；本文件 `status: ACTIVE`。）
+**ACHIEVED**（2026-09-19，cycle 7 收口；`latest_recheck` =
+`.cursor/plans/rechecks/RECHECK-20260919-113-goal-007-closeout-recheck.md` = PASS_WITH_WARNINGS）。
+
+**EC 终态表**
+
+| EC | 结论 | 收口复检（独立回证据，不看历史结论文本） |
+| --- | --- | --- |
+| EC-01 Runtime 选择面 | **PASS** | `runtime_support.py` 选择面在两个组合根上同侧；选择结果与运行时指纹进 manifest / 读面；默认（未配置）行为不变 |
+| EC-02 受控出网门链 | **PASS** | `run_execution.py::_live_preflight` 裁决与 health 同源求值；拒绝路径**出站调用 0**（计数器证明非空转）；逐环点名各自缺的事实 |
+| EC-03 离线全链进 CI | **PASS** | mock 端点 → 真实 adapter → 事件映射 → 预算归账 → 制品/证据落 canonical；终点按合约判拒（链正常工作）；live 用例 `requires_live_llm` 门控，无凭据**如实 skip** |
+| EC-04 诚实披露 | **PASS** | 读面 DTO 四态（openhands / fake / 已冻结未声明 / 未冻结）+ 页面渲染分支 + stub/live 各一条 e2e + 第 34 条设计基线条目（原基线不选 run，是本轮实测出的覆盖盲点） |
+| EC-05 工具面边界 | **PASS** | 唯一门控执行入口（结构判据：生产源码里恰有一处提及 SDK 直达执行点且必须交给策略包装）+ 有效 Tool Set 冻结（fork 窄门要求 `manifest_revision_ref`，两实现同契约）+ 接入边界如实登记（已覆盖 3 / 未覆盖 5） |
+| EC-06 `tool_pack.*` 二选一终态 | **PASS** | 选 (b)：ADR-0031（`Status: Proposed`）+ `docs/INDEX.md` 权威登记 + 四处同源收敛 + 判据证明**行为未变**（真实策略 DENY 且判词来自 default、生命周期请求不带 action、验收门按字面名判拒）+ 零产品代码改动 |
+
+**收口复检口径与结果**：只读复检脚本 `scratch/verify_goal007_closeout.py`（三层判据
+A 交付物 / B 判据用例 / C 登记面）在**当前树**与**干净 checkout**（`git clone --no-hardlinks`
+到仓库外的 `d001b62`）两处运行；六条 EC 的判据套件**合并真跑** 85 passed / 1 skipped（修复后）；
+m0 **23/23**；治理 `validate.py` 绿；CI 逐 job conclusion 见迭代日志 cycle 6/7 行。
+
+**收口期间发现并处理的两件事（如实登记，均已修）**：
+
+1. **跨套件污染**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` 把 SDK `Action` 子类定义在
+   **函数内** ⇒ SDK 枚举具体子类时命中 `<locals>` 抛 `Local classes not supported!` ⇒ 同进程后续
+   任何事件 round-trip（fork 路径）全挂。m0 / CI 因**字母序**（contracts 在 e2e 前）看不见。
+   修复 = 类提升到模块级，**未改任何断言**（同一命令 83p/2f/1s → 85p/0f/1s）。
+2. **登记面漂移**：EC 表的 **EC-04 / EC-05** 行在 cycle 4 / cycle 5 回写时**漏改**
+   （`status` 仍是「未完成」枚举、`evidence` 空串），与迭代日志/状态历史/RECHECK 矛盾；
+   收口时更正为 PASS 并补齐证据。GOAL-006 收口时出现过同一类漂移 ⇒ 已沉淀为
+   `MEM-20260919-085`（回写时把 EC 表行与日志行当同一笔改动）。
+
+**仍未处理的长程项（不因本 GOAL 存在而被宣称已解决）**：
+
+1. **`tool_pack.*` 产品决策**：`docs/adr/ADR-0031-toolpack-capability-policy.md` 仍是
+   **`Status: Proposed`**；`policy.yaml` 没有 `tool_pack.*` 能力规则（default DENY）⇒ 真实部署
+   下控制台供应链写面仍 403；那条 `action: TOOL_PACK_INSTALL_OR_UPDATE` 仍按构造不可匹配。
+   **是否采纳、是否置 Accepted 归用户。**
+2. **执行期门控无生产调用点**：`execute_tool_call` / `execute_tool_gated` 只被测试调用；
+   `ApiDeps.tool_providers` 恒空、无 provider→SDK 映射、无 MCP server ⇒ "DENY 不触达 executor"
+   成立，但**没有生产路径在跑工具**。
+3. **威胁建模 / 授权面覆盖**（BOLA/BFLA、业务逻辑风险）未覆盖，需独立审计射程与决策面。
+4. **`artifacts/` 内未跟踪明文 token 文件**的清理属操作者决策（从未提交，事实已登记）。
+5. **450 行硬上限贴线文件**仍是「下一行就会红」；本 GOAL 未做专项重构（随改动搬代码）。
+6. **依赖 pin 升级**（`undici` / `vite` / `yaml` 等有修复版本的 devDependency 链）与
+   **hook 侧 L3 门**（semgrep 检测层未装；装上后 medium 会交互式询问）**均需人工拍板**。
+7. **真实端点路径**只在 `requires_live_llm` 人工门控下运行；本机只证明 skip 路径。
+   EC-04 的 live 第二种执行体是**声明**出来的（判「页面 == 读面」）。
+8. **真实 runtime × 声明式合约仍必判拒**（`session_message` vs `analysis_report`，即 ADR-0031 的
+   D2 未拍板）；「事实名 → 合约名」的映射面尚无声明方。
+
+**恢复条件（如何继续）**：本 GOAL 已 `ACHIEVED`，不再有循环。后续工作按新 GOAL 或既有规划入口：
+(a) 用户对 ADR-0031 的 D1 / D2 拍板后，起一个实施型 PLAN（改策略/词表/生命周期处理或映射面）；
+(b) 工具面接入（provider→SDK 映射、MCP）需先定 `tool.*` 能力词表（属核心安全策略）；
+(c) 依赖 pin 与 hook 侧 L3 门属安全策略决定，需用户或 ADR；
+(d) 任何新 GOAL 承接上述长程项时，**不得**把本 GOAL 的 EC PASS 读作「这些项已解决」，
+也**不得**读作整体安全结论（扫描 `verdictEffect=none`、coverage inconclusive 的口径不变）。
 
 ## 不进入循环 / 需人工拍板
 
@@ -527,6 +609,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 4 | PLAN-20260919-110（EC-04：诚实披露；driver=client-goal / owner=root-agent） | `7039424`（derive）、`d291566`（WP-A 读面 DTO + 指纹记录 + OpenAPI 快照重生成）、`528b45c`（WP-B 页面两行渲染分支 + 四态 fixtures）、`ff763f9`（WP-C stub/live 各一条 e2e + live 夹具声明）、`37639be`（WP-D 第 34 条基线条目 + win32/linux 两张像素）、`cc815fd`（WP-E 文案同源收敛）、本次回写提交（RECHECK-20260919-110 / MEM-20260919-082 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条批量推送的 run 按闭合约定在回合汇报给出终态 | derive 前两条只读勘察 + 先探明项 1-5 **全部实测回填**（取数路径 = 既有 `RunProjection.events` 端口；未冻结 run 的空列表口径；指纹最小披露形态 = status/substrate/reason；结构签名是否变化；live 侧如何造第二种执行体）。实现后：**反证两条先红后复原**（F-A 摘掉 `RunPanel` 两行 ⇒ stub 2 failed「element(s) not found」；F-B `_frozen_payload` 恒空 ⇒ live 1 failed：读面上 `execution_backend` 是 `undefined`）；另有一处**实测撞车**（夹具 UUID 与 `live-workspace-snapshots` 的"未知 run"哨兵相同 ⇒ 404 断言变 200；改用全仓库未占用的 UUID 后复跑绿）；stub e2e 四态用例 **2 passed**、live 披露用例 **1 passed**；web 六门（lint 0 problems / typecheck / unit **76 passed** / build / stub e2e **87 passed** / live e2e **39 passed**）；设计基线 **34 条** + `design-fidelity` **2 passed** + linux 容器重算结构签名 **34/34 零漂移**；尺寸门 **948 passed**；`ruff check` / `format --check` 绿；`mypy` **938 files no issues**；受影响套件 `tests/{api,contracts,architecture,tooling}` **2049 passed / 2 skipped**；m0 **PASS: profile=m0; 23 deterministic checks**；治理 `validate.py` 绿 | `89b7bc8`（cycle 3 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35459621217 = success**、Push-on-main run **35459621222 = success**（六 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）——本轮按闭合约定补记入台账；本条批量推送（tip `cc815fd`）的 M0 run **35464764161 = success**（六 job 全 success）、Push-on-main run **35464763828 = success** | 返工三处（记录诚实，**未改任何断言**）：① 尺寸门首跑红两处——`console_api_app.py::_with_substrate_disclosure` 62 行、`RunPanel.tsx::RunIdentity` 57 行 ⇒ 拆 `_bind_disclosure_selection` + `_declare_substrate_run` 与 `RunIdentityFacts`；② `mypy` 首跑红 1 处（`deps.projection` 可空未判）⇒ 加守卫；③ **设计门首跑没有判红**（加行后结构签名逐字节不变）——因为 `#/run/timeline` 基线不选 run，新分支在门**外面** ⇒ 新增第 34 条基线条目（同页的选中 run 变体）把分支纳入覆盖。另：live 夹具 UUID 撞车（见「本地验证」） | EC-01…EC-04 **PASS**（RECHECK-107/108/109/110，均 PASS_WITH_WARNINGS）；EC-05 / EC-06 PENDING。EC-04 的 W-1…W-7：读面只在详情路径（列表路径 = N+1 边界）、`VERIFIED` 指纹分支无用例可走、live 的第二种执行体是**声明**的（判「页面 == 读面」，不是真跑过）、`events(run_id)` 是 outbox 全表扫描、`_frozen_payload` 取第一条 `MANIFEST_FROZEN`（将来允许 Manifest Revision 需改）、历史交付记录的「33 路由」按历史保留（已加日期化更正）、夹具 UUID 约束只写在注释里无机械门禁 | cycle 5 = EC-05（工具面边界：Tool Set 冻结 + Policy Wrapper 强制；MCP / tool provider 接入边界如实登记）——cycle 3 已实测「provider → SDK 工具映射」在控制面**不存在**且缺映射时会话创建**点名失败**，EC-05 判的就是这条边界 |
 | 5 | PLAN-20260919-111（EC-05：工具面边界；driver=client-goal / owner=root-agent） | `ff8e8f6`（derive）、`a1c86ba`（WP-A 结构判据：唯一门控入口 + 组合根 + Port 面）、`c857b76`（WP-B 冻结窄门 + **重建 agent 用改写后 spec** + 两实现同契约）、`b4f46ea`（WP-C adapter 公开面恰为 `execute_tool_gated`）、`6f33982`（WP-D `TOOL_RUNTIME.md` §9 接入边界登记）、`ebabb3a`（WP-E 文档同源收敛）、本次回写提交（RECHECK-20260919-111 / MEM-20260919-083 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条批量推送的 run 按闭合约定在回合汇报给出终态 | 只读勘察 **14 条事实**（三条结构性发现：① 门控入口 `execute_tool_call` / `execute_tool_gated` **生产零调用点**；② fork 的 `tool_set_override` **半应用**——只投影进 spec，重建 agent 仍用父 spec ⇒ 记录里换了、真在跑的没换，且无任何声明要求；③ provider id → SDK tool name 的**映射不存在**）。实现后：**反证三处先红后复原**（F-3 把 `execute_tool_gated` 改成直接调用 SDK 执行点 ⇒ 结构判据红并点名「does not pass the SDK entry into the policy wrapper」；F-2 窄门条件短路 ⇒ `test_agent_runtime_fork_rejects_tool_set_change_without_a_revision[_openhands_runtime_factory]` 红；F-1 撤销「用改写后 spec 装配 agent」⇒ 重建判据红）；结构判据 **6 passed**；契约 tool_set **4 passed**（两例 × 两实现）；`tests/adapters/openhands` 全绿；受影响套件 `tests/{architecture,contracts,adapters,application}` **1608 passed / 6 skipped**；尺寸门 **949 passed**；`ruff check`（产品树）/ `format --check` 绿；`mypy` **939 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**；治理 `validate.py` 绿 | `697170f`（cycle 4 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35465712897 = success**、Push-on-main run **35465712558 = success** ——本轮按闭合约定补记入台账；本条批量推送（tip `ebabb3a`）的 M0 run **35467664993 = failure**、Push-on-main run **35467664463 = success**；失败分类 = **治理/记录面**（不是代码/门禁/断言）：`quality-ubuntu-latest` 与 `quality-windows-latest` 都在 `framework/validate` 报**唯一**一条「任务计划未加入 ALL_PLAN: PLAN-20260919-111」（其余 22 项全绿）——derive 提交带进了新 PLAN 而 ALL_PLAN 行在其后，**本地校验枚举已跟踪文件 ⇒ 本地 23/23 绿、CI 红**；修复 = 本回写提交同时带上 ALL_PLAN 行，**未改任何门禁/快照/断言**，修复后的 run 见回合汇报 | 返工两处（记录诚实，**未改任何断言**）：① 首跑红：`ruff` 超长行 1 处、`mypy` 2 处（AST 节点窄化、`__dataclass_params__` 访问——按类型正确写法改掉，**未加 ignore**）；② CI 红 1 次（治理/记录面，见 CI 台账列）：derive 与 ALL_PLAN 行**必须同提交**——这条差异（本地看工作树 / CI 看推送内容）已写入 RECHECK-111「CI 失败分类与修复」与 W-8 | EC-01…EC-05 **PASS**（RECHECK-107/108/109/110/111，均 PASS_WITH_WARNINGS）；EC-06 PENDING。EC-05 的 W-1…W-8：**门控无生产调用点**（边界成立且可判，但控制面还没在跑工具）、执行期 capability 语义与 exposure-time 不一致（`tool.*` 词表属核心安全策略）、生产冻结集是裸并集（交集公式未落地）、fork 窄门今天没有 HTTP 面、SDK 上游 MCP 动态面未使用、`tools/*.py` 手工脚本可旁路、包装是条件式的、本地/CI 治理枚举口径差异 | cycle 6 = EC-06（`tool_pack.*` / 脚本策略二选一终态：既有边界内实现 或 ADR 草案(Proposed) + 权威登记 + 同源收敛；至少 1 条用例或结构判据证明不是文案改动）——cycle 3 实测的「`session_message` 键名 vs 合约 `artifact` 名」属该项产品决策 |
 | 6 | PLAN-20260919-112（EC-06：`tool_pack.*` 二选一终态；driver=client-goal / owner=root-agent） | `d9537cb`（derive：PLAN-112 **与 ALL_PLAN 行同提交**——cycle 5 的 CI 教训）、`51ba4ba`（WP-A/WP-B：ADR-0031（Proposed）+ `docs/INDEX.md` 登记）、`365a045`（WP-C：四处声明面同源收敛 + `DATABASE_SCHEMA.md` 草图名/物理名注记）、`fcc8538`（WP-D：判据测试 10 例）、本次回写提交（RECHECK-20260919-112 / MEM-20260919-084 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | 只读勘察 **12 条事实**（四条关键：① 平台策略**没有任何 `tool_pack.*` 规则** ⇒ 真实默认 403；② 那条 `action: TOOL_PACK_INSTALL_OR_UPDATE` **按构造不可匹配**（生命周期只传 capability）；③ `_require_decision` **只拦 DENY** ⇒ 今天把规则接通会**静默放行**；④「事实名 → 合约名」无映射）。二选一判成 **(b)**：(a) 的两条实现路径分别踩「放松默认 deny」与「改审批语义」两条 escalation 线。实现后：**反证四处先红后复原**（F-1 ADR 改 `Accepted` ⇒ 1 failed；F-2 删夹具 docstring 的 ADR 指针 ⇒ 1 failed 且点名 `console_api_app.py`；F-3a 加**带 scope** 的 allow 规则 ⇒ 结构断言 1 failed 而 DENY 那条未红（scope 严格相等，见 W-3）；F-3b 加**不带 scope** 的 allow ⇒ **3 failed**，含 `DID NOT RAISE PermanentPortError` 的**行为红**——`submit` 真的安装成功）；判据 `tests/tooling/test_toolpack_capability_policy_pending.py` **10 passed**；尺寸门 **950 passed**；受影响套件 `tests/{tooling,api}` **1543 passed**（钉 `RESEARCHOS_POSTGRES_DSN`；不钉时 3 条组合根用例因 operator `.env` 被 `load_dotenv` 注入而 `password authentication failed`——环境问题，同一批在 m0 下通过）；`ruff check` / `format --check` 绿（首跑红 1 处超长行，已折行）；`mypy` 新增文件 `no issues`；m0 **PASS: profile=m0; 23 deterministic checks**；治理 `validate.py` 绿 | `2cbc80c`（cycle 5 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35468554148 = success**、Push-on-main run **35468553904 = success**（六 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）——本轮按闭合约定补记入台账；本条批量推送（tip `fcc8538`）的 M0 run **35471008774** 与 Push-on-main run **35471008451 = success**，M0 终态见回合汇报 | 返工一处（记录诚实，**未改任何断言**）：`ruff` 超长行 1 处（断言消息过长）⇒ 折行；另有 1 处**勘察结论精化**：初判 `DATABASE_SCHEMA.md` 的 `tool_pack_manifests` 是「文档与实现不符」，实测该文档通篇是**草图口径**（`research_runs`/`artifacts` 同样不是物理名）⇒ 处置从「改名」改为「加注记并点出实际表名 `tool_packs`」，PLAN 事实 12 与 AC-03 同步更正（**未改任何门禁或断言**） | EC-01…EC-06 **全 PASS**（RECHECK-107/108/109/110/111/112 均 PASS_WITH_WARNINGS）。EC-06 的 W-1…W-9：**交付的是草案**（Proposed 期间真实部署下写面仍 403）、那条 action 规则仍不可匹配、策略规则 `scope` 严格相等（带 scope 的 allow 永不命中生命周期，不带 scope 的立刻生效）、拍板后实施时判据会红（刻意设计）、草图名 ≠ 物理名是全局现象、D2 未拍板前真实 runtime × 声明式合约仍判拒、本轮**零产品代码改动**、事实名的证明强度低于 EC-03 端到端、Mimosa 沿用兼容策略不得读作项目安全 | cycle 7 = **GOAL 收口**：六条 EC 独立复检（全树实跑复验）+ `ACHIEVED` 判定 + **干净 checkout 封印**（clone 出来的树上复跑关键判据与 m0）+ 残余登记（各 EC 的 W 汇总 + 明确不因本 GOAL 被宣称已解决的项）+ CI 台账尾巴。**ADR-0031 仍是 Proposed：是否采纳归用户** |
+| 7 | PLAN-20260919-113（GOAL 收口复检；driver=client-goal / owner=root-agent） | `91a1cef`（derive：PLAN-113 **与 ALL_PLAN 行同提交**）、`5219a93`（收口实测缺陷修复：e2e 惰性工具类提升到模块级）、本次收口提交（RECHECK-20260919-113 / MEM-20260919-085…086 / PLAN DONE / ALL_PLAN / GOAL `status: ACHIEVED` + 「收口结论」+ EC 表更正 + memory INDEX）；本条推送的 run 按闭合约定在回合汇报给出终态 | 只读复检脚本 `scratch/verify_goal007_closeout.py`（gitignored）**三层判据**：A 交付物在树 / B 判据用例在树 / C 登记面一致 ⇒ 当前树 **80 checks / 0 failures**；六条 EC 判据套件**合并真跑** **85 passed / 1 skipped**（修复前同一命令 83 passed / **2 failed** / 1 skipped）；尺寸门 **950 passed**；`ruff check` / `format --check` 绿；`mypy` 绿；m0 **PASS: profile=m0; 23 deterministic checks**；治理 `validate.py` 绿。**干净 checkout 封印**：`git clone --no-hardlinks` 到仓库外 （`d001b62`；`node_modules` 以 junction 指向本机依赖，如实披露这一处人为补足），在 clone 上跑同一份脚本与同一批套件 ⇒ 脚本 80 checks（唯一失败项是 RECHECK-113 尚未存在 = 收口循环自身产物）、套件 83p/2f/1s = **与当前树修复前的同一签名**（两树结论一致：不引入新绿，也不引入新红） | `fcc8538`（cycle 6 批量推送 tip）的 M0 run **35471008774 = cancelled**（`concurrency.cancel-in-progress`：紧随其后的回写推送取消了在飞的 M0 —— 结构性取消，同一内容的覆盖由 `d001b62` 的 run 承担）、Push-on-main **35471008451 = success**；`d001b62`（cycle 6 回写提交）的 M0 run **35471382908 = success**（六 job 全 success：quality-ubuntu-latest / quality-windows-latest / console-frontend / collector-quality / container-quality / eval-gate）、Push-on-main **35471382634 = success**；本条收口推送的 run 见回合汇报 | 返工两处（记录诚实，**未改任何断言**）：① **复检实测缺陷**——合并跑判据套件时 `tests/contracts` 两条 openhands fork 用例红，根因是 `tests/e2e` 的惰性工具把 SDK `Action` 子类定义在**函数内**，SDK 枚举具体子类时命中 `<locals>` 抛 `Local classes not supported!` ⇒ 同进程后续事件 round-trip 全挂；m0/CI 是字母序（contracts 先跑）所以看不见 ⇒ 类提升到模块级修复；② **登记面漂移**——EC 表的 EC-04 / EC-05 行在 cycle 4 / cycle 5 回写时漏改（`status` 仍是「未完成」、`evidence` 空串），收口时按 RECHECK-110/111 更正 | **EC-01…EC-06 全 PASS**（RECHECK-107…113 均 PASS_WITH_WARNINGS）；GOAL **ACHIEVED**。残余见「终止与收口 · 收口结论」8 项：ADR-0031 仍未拍板（Proposed）、门控无生产调用点、威胁建模/BOLA-BFLA 未覆盖、`artifacts/` 明文 token 清理、450 行贴线文件、依赖 pin 与 hook L3 门、真实端点路径与 live 分支、「事实名 → 合约名」映射面缺失 | 无（本 GOAL 已 `ACHIEVED`，不再开 cycle）。后续按新 GOAL 或既有规划入口：ADR-0031 拍板 → 实施 PLAN；工具面接入需先定 `tool.*` 词表；依赖 pin / hook L3 门需用户或 ADR 决定。**不得**把本 GOAL 的 EC PASS 读作上述长程项已解决，也不构成整体安全结论 |
 
 ## 状态历史
 
@@ -682,3 +765,26 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   `ruff`/`format` 绿、`mypy` 干净、m0 **23/23**、治理 `validate.py` 绿。CI 台账见迭代日志 cycle 6 行。
   至此 EC-01…EC-06 **全 PASS**；下一轮 = **cycle 7 = GOAL 收口**（独立复检 + ACHIEVED 判定 +
   干净 checkout 封印 + 残余登记 + CI 台账尾巴）。**ADR-0031 仍是 Proposed：是否采纳归用户。**
+
+- 2026-09-19 cycle 7 收口：GOAL **ACHIEVED**（PLAN-20260919-113 / RECHECK-20260919-113 =
+  PASS_WITH_WARNINGS）。**独立复检**不采信历史结论：只读脚本 `scratch/verify_goal007_closeout.py`
+  三层判据（A 交付物在树 / B 判据用例在树 / C 登记面一致，**80 checks**）在**当前树**与
+  **干净 checkout**（`git clone --no-hardlinks` 到仓库外、tip `d001b62`）两处跑；六条 EC 的判据
+  套件**合并真跑**；m0 **23/23**；治理 `validate.py` 绿；CI 台账以逐 job conclusion 补记
+  （`d001b62` 的 M0 run 35471382908 六 job 全 success）。**收口期间发现并处理两件事**：
+  ① **跨套件污染**（复检实测）：`tests/e2e/test_ec03_real_runtime_offline_chain.py` 把 SDK `Action`
+  子类定义在**函数内** ⇒ SDK 构建判别联合时枚举具体子类、命中 `<locals>` 直接抛
+  `Local classes not supported!` ⇒ **同进程此后任何事件 round-trip（fork 路径）全挂**；
+  m0 / CI 因**字母序**（`tests/contracts` 在 `tests/e2e` 之前）而看不见这颗雷。修复 = 三个类提升到
+  模块级（与 `tests/adapters/openhands/test_spike_e2e.py` 同形态），**未改任何断言**：同一命令
+  83 passed / 2 failed / 1 skipped → **85 passed / 0 failed / 1 skipped**；干净 checkout 上保留了
+  修复前的红 ⇒ 两树在修复前结论一致（不引入新绿也不引入新红），这正是封印该有的性质。
+  ② **登记面漂移**：EC 表的 **EC-04 / EC-05 行**在 cycle 4 / cycle 5 回写时**漏改**
+  （`status` 仍是「未完成」枚举、`evidence` 空串），与迭代日志、状态历史、RECHECK-110 / 111 的
+  PASS 结论矛盾；收口时按两条 RECHECK 更正。**GOAL-006 收口时出现过同一类漂移** ⇒ 已沉淀为
+  `MEM-20260919-085`（回写时把 EC 表行与迭代日志行当同一笔改动）与 `MEM-20260919-086`
+  （SDK 局部 `Action` 子类毒化进程）。**收口结论**（写在本文件「终止与收口」）：六条 EC 全部 PASS；
+  残余 8 项如实登记（ADR-0031 仍是 `Proposed`、门控无生产调用点、威胁建模/BOLA-BFLA 未覆盖、
+  `artifacts/` 明文 token 清理、450 行贴线文件、依赖 pin 与 hook L3 门、真实端点路径与 live 分支、
+  「事实名 → 合约名」映射面缺失），**不因本 GOAL 存在而被宣称已解决**；本 GOAL 的任何 PASS
+  也不构成整体安全结论。
