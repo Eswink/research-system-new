@@ -1,7 +1,8 @@
 /**
  * 视觉对照截图门禁（PLAN-20260908-034 T31）。
  *
- * 33 条规范路由 × dark/normal/zh 主截图；高风险页增加双主题×双密度×中英文组合。
+ * 34 条基线条目（33 条规范路由 + 1 条携带选中 run 的时间线变体）× dark/normal/zh 主截图；
+ * 高风险页增加双主题×双密度×中英文组合。
  * 截图前断言页面身份（testid）与关键控件存在，避免把缺页/错误态录为正常基准。
  * 首跑 `pnpm exec playwright test design-fidelity --update-snapshots` 生成回归基线
  * （基线须在设计对照通过后批准）。
@@ -25,6 +26,14 @@ const ALL_ROUTES: readonly { name: string; hash: string; testid: string }[] = [
   { name: "portfolio-runs-history", hash: "#/portfolio/runs-history", testid: "run-history" },
   { name: "portfolio-compare", hash: "#/portfolio/compare", testid: "console-main" },
   { name: "run-timeline", hash: "#/run/timeline", testid: "run-panel" },
+  // GOAL-007 cycle 4 = EC-04：**选中 run** 的运行页。既有 `run-timeline` 基线不选 run
+  // （`runs-empty`），而执行体披露行只在选中 run 时渲染 ⇒ 只留那一条基线的话，新分支在
+  // 像素/结构门上是**不可见**的（本轮实测：加行后结构签名不变）。这条基线让披露行真的被门覆盖。
+  {
+    name: "run-timeline-substrate",
+    hash: "#/run/timeline?run=substrate-openhands",
+    testid: "run-panel",
+  },
   { name: "run-approvals", hash: "#/run/approvals", testid: "approvals-panel" },
   { name: "run-workspace", hash: "#/run/workspace", testid: "console-main" },
   { name: "library-prompts", hash: "#/library/prompts", testid: "library-prompt-page" },
@@ -78,7 +87,7 @@ async function seedPrefs(page: Page, prefs: Prefs): Promise<void> {
   );
 }
 
-test("33 路由主截图（dark/normal/zh）", async ({ page }) => {
+test("34 路由主截图（dark/normal/zh）", async ({ page }) => {
   test.setTimeout(180_000);
   await stubApi(page);
   for (const route of ALL_ROUTES) {
@@ -97,7 +106,7 @@ test("33 路由主截图（dark/normal/zh）", async ({ page }) => {
  * （实测 0.48%~1.73% < 2%），结构签名必须对节点增删敏感——多一行、多一个面板
  * 都会变更签名，从而强制"重生成基线 + 目检"这一步真的发生。
  */
-test("33 路由结构签名（DOM outline，整块新增必红）", async ({ page }) => {
+test("34 路由结构签名（DOM outline，整块新增必红）", async ({ page }) => {
   test.setTimeout(180_000);
   await stubApi(page);
   const observed: Record<string, string> = {};
