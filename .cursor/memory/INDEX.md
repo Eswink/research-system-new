@@ -76,6 +76,7 @@
 | [MEM-20260918-076](entries/MEM-20260918-076-phase-facts-not-scheduler-products.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-103 |
 | [MEM-20260918-077](entries/MEM-20260918-077-batch-cap-contract-and-weak-equivalence-axes.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-104 |
 | [MEM-20260918-078](entries/MEM-20260918-078-compensation-failure-must-leave-a-trace.md) | ACTIVE | repository | 0.90 | 2027-09-18 | PLAN-20260918-105 |
+| [MEM-20260919-079](entries/MEM-20260919-079-runtime-selection-vocabulary-and-honest-fingerprint.md) | ACTIVE | repository | 0.90 | 2027-09-19 | PLAN-20260919-107 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

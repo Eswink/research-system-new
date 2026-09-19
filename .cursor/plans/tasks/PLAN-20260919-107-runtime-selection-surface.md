@@ -2,7 +2,7 @@
 id: PLAN-20260919-107
 slug: runtime-selection-surface
 title: Runtime 选择面：配置驱动 Fake | OpenHands（两组合根同侧、未配置一致、选择结果与运行时指纹进 manifest/读面）（EC-01）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-19
 updated_at: 2026-09-19
 parent_goal: GOAL-20260919-007
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260919-007 cycle 1 = EC-01（GOAL-006 收口结论长程项第 1 项中「按声明给 adapter 接线」的 adapter 接线部分）。授权来源：2026-09-19 用户 goal 模式指令（新建承接 GOAL-007 并自动化循环推进、无需逐轮确认），并显式授权解除该项 escalation。受控出网边界与 push-to-main-for-CI 授权见 GOAL-20260919-007 frontmatter `authorization.ref`（本 PLAN 严格遵守：默认 runtime 保持 Fake、不引入新依赖、凭据只从环境变量读、真实端点不进默认 CI）。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260919-107-runtime-selection-surface.md
+memory_entries:
+  - MEM-20260919-079
 ---
 
 # PLAN-20260919-107 — Runtime 选择面（GOAL-007 cycle 1 = EC-01）
@@ -133,47 +134,47 @@ OpenHandsRuntimeAdapter 决定』」这条**声明与事实的落差**收敛成*
 
 ### WP-A — 探明与选择面骨架（先探明再动手）
 
-- [ ] 复验事实 7（无测试钉死 manifest digest：`tests/api/**`、`tests/e2e/**` 反向搜索）
+- [x] 复验事实 7（无测试钉死 manifest digest：`tests/api/**`、`tests/e2e/**` 反向搜索）
       与事实 5（ports 字符串门禁的**确切** token 列表与扫描范围）——把结果写进本 PLAN 的「证据」。
-- [ ] 新增 `services/api/runtime_support.py`：`RuntimeSelection` 值对象 +
+- [x] 新增 `services/api/runtime_support.py`：`RuntimeSelection` 值对象 +
       `build_agent_runtime(settings, ...) -> AgentRuntime`；取值词表与 `"openhands"` 字面量
       只在本模块与 adapter 层出现。
-- [ ] `ApiSettings` 增 `agent_runtime`（env `RESEARCHOS_AGENT_RUNTIME`，默认 `"fake"`；
+- [x] `ApiSettings` 增 `agent_runtime`（env `RESEARCHOS_AGENT_RUNTIME`，默认 `"fake"`；
       未知取值 fail-closed 报错）。
-- [ ] **WP-A commit**（独立提交）。
+- [x] **WP-A commit**（独立提交）。
 
 ### WP-B — 两个组合根接线（同侧）
 
-- [ ] `composition.py::_sqlite_store_parts` 与 `pg_composition.py::_build_pg_orchestration`
+- [x] `composition.py::_sqlite_store_parts` 与 `pg_composition.py::_build_pg_orchestration`
       改为经 `build_agent_runtime(...)` 取 runtime；**两处形态一致**。
-- [ ] 反向搜索确认 `FakeAgentRuntime(` 在两个组合根里**零直接构造**。
-- [ ] **WP-B commit**（独立提交）。
+- [x] 反向搜索确认 `FakeAgentRuntime(` 在两个组合根里**零直接构造**。
+- [x] **WP-B commit**（独立提交）。
 
 ### WP-C — 选择结果进 manifest / 读面
 
-- [ ] `PreflightContext` 加中性命名的 optional 字段；组合根从 `RuntimeSelection` 填充；
+- [x] `PreflightContext` 加中性命名的 optional 字段；组合根从 `RuntimeSelection` 填充；
       `_manifest_of` 写进 `RunManifest.execution_backend`。
-- [ ] 读面：执行体标识与运行时指纹的**可判载体**（DTO 增字段按既成流程同步
+- [x] 读面：执行体标识与运行时指纹的**可判载体**（DTO 增字段按既成流程同步
       OpenAPI 快照 + `types.ts` + e2e 夹具）；证明不了的指纹项**显式标注未验证**。
-- [ ] **WP-C commit**（独立提交）。
+- [x] **WP-C commit**（独立提交）。
 
 ### WP-D — 判据与反证
 
-- [ ] AC-01 结构判据（组合根反向搜索 + 单装配点）。
-- [ ] AC-02 回归对照（默认路径 `demo_session_output()` 逐字段相等 + 受影响套件）。
-- [ ] AC-03/04/05 用例（选 openhands 构造真实 adapter 且零出站；未知取值 fail-closed；
+- [x] AC-01 结构判据（组合根反向搜索 + 单装配点）。
+- [x] AC-02 回归对照（默认路径 `demo_session_output()` 逐字段相等 + 受影响套件）。
+- [x] AC-03/04/05 用例（选 openhands 构造真实 adapter 且零出站；未知取值 fail-closed；
       manifest `execution_backend` 两路径不同）。
-- [ ] AC-06 四条反证**逐条先红后复原**，每条记下红/绿的真实输出。
-- [ ] **WP-D commit**（独立提交）。
+- [x] AC-06 四条反证**逐条先红后复原**，每条记下红/绿的真实输出。
+- [x] **WP-D commit**（独立提交）。
 
 ### WP-E — 文档同源 + 记录与回写
 
-- [ ] 收敛 `packages/domain/manifest.py` 的 M7 边界声明（事实 1：今天声称「runtime 装配由
+- [x] 收敛 `packages/domain/manifest.py` 的 M7 边界声明（事实 1：今天声称「runtime 装配由
       OpenHandsRuntimeAdapter 决定」而实际是 Fake）、`docs/architecture/AGENT_RUNTIME.md`、
       `docs/integration/OPENHANDS_ADAPTER.md` 到与事实一致的口径。
-- [ ] 写 RECHECK（`.cursor/plans/rechecks/RECHECK-20260919-107-*.md`）+ MEM + ALL_PLAN 投影 +
+- [x] 写 RECHECK（`.cursor/plans/rechecks/RECHECK-20260919-107-*.md`）+ MEM + ALL_PLAN 投影 +
       GOAL 回写（EC-01 状态 / 迭代日志 / child_plans / 状态历史）。
-- [ ] **WP-E commit**（独立提交）。
+- [x] **WP-E commit**（独立提交）。
 
 ## 证据
 
@@ -229,7 +230,20 @@ OpenHandsRuntimeAdapter 决定』」这条**声明与事实的落差**收敛成*
 
 ## 状态历史
 
-- 2026-09-19 derive：由 GOAL-20260919-007 cycle 1 派生（EC-01 为 EC 表首个 PENDING）。
+- 2026-09-19 done：EC-01 交付并复检 **PASS_WITH_WARNINGS**（RECHECK-20260919-107，W-1…W-6）。
+  5 个 WP 各自独立提交：WP-A 选择面骨架（`runtime_support.py` + `ApiSettings.agent_runtime`）、
+  WP-B 两组合根接线（含 PG 凭据面单实例修复）、WP-C manifest/读面载体、WP-D 13 条判据、
+  WP-E 文档同源收敛（`manifest.py` 的声明与事实不符已更正 + `AGENT_RUNTIME.md` §3.1）。
+  四条反证逐条先红后复原；m0 **23/23**；`mypy` 934 files 干净。
+  实现期返工三处（记录诚实）：① 初版把 runtime 装配内联进 `_sqlite_store_parts` ⇒ 撞
+  50 行函数门禁（58 行）+ `composition.py` 到 451 行（超 450）⇒ 按「随改动搬代码」拆出
+  `_sqlite_orchestration` / `_sqlite_apideps`，并把 `sqlite_artifact_blob_dir` 与
+  `build_sqlite_draft_service` 移到 `assembly.py`（该模块本就为此存在）；
+  ② `composition.py` 不再 re-export `demo_session_output` ⇒ `tests/api/base_fixtures.py`
+  导入失败（243 errors）⇒ 改从真正的属主 `services.api.demo` 导入（**机械搬 import，
+  未改任何断言**）；③ m0 抓出 `python/typecheck` 6 条 mypy 错（守卫列表不带窄化、测试触
+  私有属性、缺 cast）⇒ 守卫改成直接判两个值使 mypy 真窄化，**未削弱任何判据**。
+- 2026-09-19 derive：由 GOAL-20260919-007 cycle 1 派生（EC-01 为 EC 表首个待办项）。
   本轮**只读勘察**确认了九条起点事实（两个组合根各硬编码一处 Fake 装配点、真实 adapter
   的构造入口与必填依赖、manifest 冻结的单入口 `_manifest_of` 今天不设 `execution_backend`、
   **ports 目录有 `openhands` token 字符串门禁**、domain 侧只有依赖门禁无字符串门禁、

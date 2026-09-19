@@ -58,8 +58,37 @@ exit_criteria:
       demo 会话输出**逐字节不变** + 选择 OpenHands ⇒ 真实 adapter 被构造（受控 deps，
       离线）+ 选择结果与指纹字段在 manifest / 读面**可判** + **反证**（把选择函数短路回
       硬编码 Fake ⇒ 选择用例红；把指纹字段去掉 ⇒ manifest/读面判据红）+ 受影响套件 + m0 绿。
-    status: PENDING
-    evidence: ""
+    status: PASS
+    evidence: >-
+      PLAN-20260919-107 / RECHECK-20260919-107（PASS_WITH_WARNINGS，W-1…W-6）。交付：
+      新模块 `services/api/runtime_support.py`（`RuntimeSelection(kind, configured)` +
+      `resolve_runtime_selection` + `build_agent_runtime`）+ `ApiSettings.agent_runtime`
+      （`RESEARCHOS_AGENT_RUNTIME`，默认空串 = 未配置 ⇒ 受控 demo 执行体）；**两个组合根
+      同侧**（`composition._sqlite_orchestration` 与 `pg_composition._build_pg_orchestration`
+      都经同一函数，组合根内 `FakeAgentRuntime(...)` 直接构造 **AST 判据数到 0**）；
+      **未知取值 fail-closed** 并同时点名取值与合法词表（不静默回退——静默回退会让
+      「配了真实 runtime」与「跑的是 demo」不可区分）；`openhands` 分支在缺
+      `credential_resolver` / `policy_evaluator` 时**点名拒绝**（AGENTS §5：不受 Policy
+      Wrapper 约束的真实 runtime 不允许被装配），且**构造期零出站**（用例用「`resolve`
+      即炸」的凭据替身证明构造期连凭据都没解析）；选择结果经
+      `PreflightContext.execution_substrate` 冻结进 `RunManifest.execution_backend`
+      （M7 声明过、此前**恒为 None**——原注释称「runtime 装配由 OpenHandsRuntimeAdapter
+      决定」与事实不符，本轮更正），并随 `MANIFEST_FROZEN` payload 出现在既有
+      `GET /runs/{id}/events` 上（**零 DTO / 路由 / OpenAPI / 迁移变化**）；指纹槽位写
+      **显式 `NOT_VERIFIED` 记录**而不是留空（留空分不清「没探」与「探了没问题」，且
+      受控 demo 不发起任何模型调用 ⇒ AGENTS §4 七件事实一件也不存在）。
+      **反证四条先红后复原**：① PG 根改回硬编码 ⇒ 结构判据红（1 failed）；② openhands
+      分支短路成 Fake ⇒ 2 failed；③ 未知取值改静默回退 ⇒ `DID NOT RAISE`（1 failed）；
+      ④ 去掉 `execution_backend` 填充 ⇒ 2 failed（`assert None == 'openhands'`）。
+      顺手修掉一条**同实例**真缺陷：PG 根凭据面此前两处各解析一次，而
+      `RegistryCredentialResolver` **有状态**（API 注册的 Key 只在该实例内存里）⇒ 收敛成
+      `_PgRuntimeInputs` 单实例贯穿装配与 ApiDeps。门禁：定向 `tests/api` 459 passed /
+      1 skipped（DSN pin 配方）、架构门 **963 passed**、规模门禁 **944 passed**、
+      `mypy` **934 files 无问题**、m0 **PASS: profile=m0; 23 deterministic checks**
+      （3803 passed / 200 skipped）、DOCS-CHECK PASS。W：加性披露使 manifest digest 与
+      改动前不同（EC 自身要求，已点名）、旧 run 的 `None` 不得读作某个执行体、
+      「可装配 ≠ 可运行」（门链与全链属 EC-02/EC-03）、SDK 导入横幅为既有噪声、
+      选择面射程只覆盖控制面两条路径、指纹槽位仍是占位。
   - id: EC-02
     criterion: >-
       **受控出网门链**：真实 runtime 启用时走 policy / preflight 门——**端点 URL 策略**
@@ -177,7 +206,7 @@ GOAL-006 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 
 | EC | 主题 | 来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | Runtime 选择面（配置驱动 Fake \| OpenHands，两个组合根同侧，未配置逐字节一致，选择结果与指纹进 manifest/读面） | GOAL-006 人工面第 3 项（adapter 接线部分） | **PENDING** |
+| EC-01 | Runtime 选择面（配置驱动 Fake \| OpenHands，两个组合根同侧，未配置逐字节一致，选择结果与指纹进 manifest/读面） | GOAL-006 人工面第 3 项（adapter 接线部分） | **PASS**（RECHECK-20260919-107，W-1…W-6） |
 | EC-02 | 受控出网门链（URL 策略 / 凭据 / 端点健康 / 能力匹配；拒绝点名缺哪条事实；出站调用 0） | 同上 + AGENTS.md §9 | **PENDING** |
 | EC-03 | 真实 runtime 离线全链进默认 CI（mock 端点 → 会话/事件/归账/制品；真端点走 `requires_live_llm`） | 同上 + AGENTS.md §11 | **PENDING** |
 | EC-04 | 诚实披露（执行体性质 + 运行时指纹进读面与 UI；demo 输出不再与真实结果同形） | 同上 + AGENTS.md §4 | **PENDING** |
@@ -299,10 +328,10 @@ adapter 接线部分以外的全部内容、GOAL-006 六条 EC 的 W 列表、�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-**当前续点**：**cycle 1 进行中**——子 PLAN 已派生
-（`.cursor/plans/tasks/PLAN-20260919-107-runtime-selection-surface.md`，EC-01，`IN_PROGRESS`），
-下一步 = 按该 PLAN 的 WP-A…WP-E 执行（先探明 → 选择面骨架 → 两组合根接线 → manifest/读面 →
-判据与反证 → 文档同源与回写）。
+**当前续点**：**cycle 1 收口（EC-01 PASS）**，下一步 = **cycle 2 = EC-02（受控出网门链）**：
+真实 runtime 启用时走 policy / preflight 门——端点 URL 策略（复用既有 `EndpointUrlPolicy`
+与 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 语义）、凭据存在性、端点健康、模型能力匹配；
+拒绝语义点名缺哪条事实；反证 = 缺配置或策略不允许 ⇒ 拒绝且**一次都不发起出站调用**。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -420,7 +449,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 建档（本文件；driver=client-goal / owner=root-agent） | 建档提交见本行「本地验证」列之下的补录（回写下条补 commit hash） | 治理 `validate.py` 绿（建档后实跑）；只读勘察八条现状事实（见「本轮已探明的现状」） | 建档提交自身的 run 见回合汇报（按闭合口径） | 无 | EC-01…EC-06 全 PENDING | cycle 1 = EC-01（Runtime 选择面：配置驱动 Fake \| OpenHands，两个组合根同侧） |
-| 1 | PLAN-20260919-107（EC-01：Runtime 选择面；driver=client-goal / owner=root-agent） | 本条 derive 提交（PLAN + ALL_PLAN 投影 + 本文件回写）；后续 WP-A…WP-E 各自独立提交 | derive 前只读勘察九条事实（两个组合根各硬编码一处 `FakeAgentRuntime`、真实 adapter 构造入口、`_manifest_of` 今天不设 `execution_backend`、**`packages/application/ports/*.py` 有 `openhands` token 字符串门禁**、domain 侧无字符串门禁、`tests/api`+`tests/e2e` 无钉死 manifest digest、DTO 增字段需同步 OpenAPI/web types、`demo_session_output` 披露只在 payload 内）；据此写死六条设计口径 | 待实现后推送（本行随实现回写补 run） | 无（derive 阶段） | EC-01 PENDING（实施中） | WP-A…WP-E 执行 |
+| 1 | PLAN-20260919-107（EC-01：Runtime 选择面；driver=client-goal / owner=root-agent） | `fb8ddf8`（derive）、`10422e5`（WP-A 选择面骨架：`runtime_support.py` + `ApiSettings.agent_runtime`）、`ade2081`（WP-B 两组合根接线 + PG 凭据面单实例）、`0e01d2e`（WP-C 选择结果进 manifest/读面）、`54e2986`（WP-D 13 条判据）、`2d71e87`（WP-E 文档同源收敛）、`5b03d27`（mypy 门禁修正）、本次回写提交（RECHECK-20260919-107 / MEM-20260919-079 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | derive 前只读勘察九条事实；实现后：**反证四条先红后复原**（PG 根改回硬编码 ⇒ 结构判据红 1 failed；openhands 分支短路 ⇒ 2 failed；未知取值静默回退 ⇒ `DID NOT RAISE`；去掉 `execution_backend` 填充 ⇒ `assert None == 'openhands'` 2 failed）；`tests/api/test_runtime_selection_surface.py` **13 passed**；定向 `tests/api` **459 passed / 1 skipped**；架构门 **963 passed**；规模门禁 **944 passed**；`ruff check` / `format --check` 绿；`mypy` **934 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**（3803 passed / 200 skipped，539.63s）；DOCS-CHECK PASS | `11d47cf`（建档）的 M0 run **35446933910 = cancelled**（`concurrency.cancel-in-progress` 结构性取消：紧随其后的 `fb8ddf8` 推送取消了在飞的 M0；同一内容的覆盖由 `fb8ddf8` 的 run 承担）；`11d47cf` 的 Push-on-main run **35446933991 = success**；`fb8ddf8` 的 M0 run **35447242640 = success**（六个 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）、Push-on-main run **35447242522 = success**；本条推送的 run 见回合汇报 | 返工三处（记录诚实，**未改任何断言**）：① 初版把 runtime 装配内联进 `_sqlite_store_parts` ⇒ 撞 50 行函数门禁（58 行）+ `composition.py` 涨到 451 行（超 450）⇒ 拆出 `_sqlite_orchestration` / `_sqlite_apideps`，并把 `sqlite_artifact_blob_dir` 与 `build_sqlite_draft_service` 移到 `assembly.py`（该模块本就为此存在）；② `composition.py` 不再 re-export `demo_session_output` ⇒ `tests/api/base_fixtures.py` 导入失败（243 errors）⇒ 改从属主 `services.api.demo` 导入（机械搬 import）；③ m0 抓出 `python/typecheck` 6 条 mypy 错（守卫列表不带窄化、测试触私有属性、缺 cast）⇒ 守卫改成直接判两个值使 mypy 真窄化 | EC-01 **PASS**（RECHECK-20260919-107 = PASS_WITH_WARNINGS，W-1…W-6：加性披露使 manifest digest 变化、旧 run 的 `None` 不得读作执行体、「可装配 ≠ 可运行」、SDK 导入横幅、选择面射程只覆盖控制面两路径、指纹槽位仍是占位）；EC-02…EC-06 PENDING | cycle 2 = EC-02（受控出网门链：URL 策略 / 凭据存在性 / 端点健康 / 能力匹配；拒绝点名缺哪条事实；出站调用 0） |
 
 ## 状态历史
 
@@ -433,3 +462,27 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 既有语义、预检四门已有、指纹已实现但主运行路径
   不写 manifest、mock 端点与 `requires_live_llm` 先例已存在、demo 披露只在 payload 内）；
   这些是**起点事实**而非验收依据。
+- 2026-09-19 cycle 1 收口：EC-01 **PASS**（PLAN-20260919-107 / RECHECK-20260919-107 =
+  PASS_WITH_WARNINGS，W-1…W-6）。runtime 从「组合根硬编码 Fake、OpenHands adapter 零接线、
+  而 `manifest.py` 却声称『runtime 装配由 OpenHandsRuntimeAdapter 决定』」收敛成
+  **配置驱动的选择面**：`services/api/runtime_support.py` 是唯一装配点，两个组合根同侧
+  （AST 判据数到 `FakeAgentRuntime(...)` 直接构造 0 处）；未配置 ⇒ 受控 demo 执行体，
+  `demo_session_output()` 逐字段不变；**未知取值 fail-closed** 并点名取值与合法词表；
+  `openhands` 缺凭据面/policy 面时点名拒绝，且**构造期零出站**（「`resolve` 即炸」的凭据
+  替身证明构造期连凭据都没解析）；选择结果冻结进 `RunManifest.execution_backend` 并随
+  `MANIFEST_FROZEN` payload 出现在既有 `GET /runs/{id}/events`（零 DTO / 路由 / OpenAPI /
+  迁移变化）；指纹槽位写显式 `NOT_VERIFIED` 记录而非留空。**四条反证先红后复原**。
+  顺手修掉 PG 根凭据面「两处各解析一次」的**同实例**真缺陷（`RegistryCredentialResolver`
+  有状态）。门禁：13 条判据全绿、定向 `tests/api` 459 passed、架构门 963 passed、
+  规模门禁 944 passed、`mypy` 934 files 干净、m0 **23/23**、DOCS-CHECK PASS。
+  **一处声明与事实不符的更正**：`packages/domain/manifest.py` 的 M7 边界注释原称
+  「runtime 装配由 OpenHandsRuntimeAdapter 决定」——事实上组合根硬编码 Fake 且该 adapter
+  在 `services/`/`packages/` 零引用，字段因此恒为 None；本轮按事实改写，
+  并在 `docs/architecture/AGENT_RUNTIME.md` 新增 §3.1 装配事实表（含「本节不宣称的部分」）。
+  CI 台账见迭代日志 cycle 1 行。
+- 2026-09-19 CI 口径事实（本轮实测，供后续 cycle 复用）：`.github/workflows/m0-quality.yml`
+  有 `concurrency: {group: m0-quality-…-refs/heads/main, cancel-in-progress: true}` ⇒
+  **连续推送会取消在飞的 M0 run**（本轮 `11d47cf` 的 M0 run 35446933910 即被紧随的
+  `fb8ddf8` 取消，终态 `cancelled`）。因此**同内容的多 WP 应攒成一次推送**（GOAL-006
+  cycle 1 也是这个形态），或推送后等在飞 run 到终态再推下一次；被取消的那条要如实记为
+  `cancelled` 并说明覆盖由哪条 run 承担，不得当作 success。
