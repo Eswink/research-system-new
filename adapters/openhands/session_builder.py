@@ -151,6 +151,10 @@ class SessionBuilder:
                 source="openhands",
                 task_id=entry.spec.task_id.value,
                 agent_id=entry.spec.agent.id,
+                # EC-03：用量要能归因到**实际跑的那个 model**（AGENTS.md §4 同名漂移
+                # 必须可见）。spec 现在携带执行目标，这个事实在 adapter 侧可见；缺目标
+                # 时保持 None——不猜、不回填别的 model。
+                model_id=entry.spec.model.id if entry.spec.model is not None else None,
             )
             entries = publish_usage(stats, self._budget_ledger, context)
             if self._usage_reporter is not None:

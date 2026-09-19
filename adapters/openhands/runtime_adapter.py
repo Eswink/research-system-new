@@ -19,6 +19,8 @@ create/run/pause/cancel/stream_events/fork 全同步语义（M5 D2）。
 - fork：ForkSpec.model_override / tool_set_override 经注入的
   build_llm_for_fork 重建 Agent 后 fork（复审 F-4）。
 - 会话装配与 usage 记录委托 session_builder.SessionBuilder（行数约束）。
+- 交付物（EC-03）：`SUCCEEDED` 时把**最后一条会话消息**作为最小交付物放进
+  `AgentSessionResult.structured_output`，canonical 的制品/证据登记据此落库。
 """
 
 from __future__ import annotations
@@ -59,6 +61,37 @@ from packages.application.ports.errors import (
 )
 from packages.domain.enums import FailureCategory
 from packages.domain.session_state import AgentSessionState
+
+
+def _deliverable(entry: _SessionEntry, terminal: str) -> dict[str, object]:
+    """真实会话的**最小交付物**（EC-03 / PLAN-20260919-109）。
+
+    只有 `SUCCEEDED` 才产出交付物：失败会话没有结论，把它中间的文本当结论登记进
+    canonical 会把「没做完」伪装成「有产出」（与 Fake 侧同口径：非成功返回空）。
+
+    文本取自**已映射**的 `RuntimeEvent.MESSAGE`——`event_mapping._message_text` 已经
+    做过 redact 与截断，因此这里不新开一条绕过脱敏的通道，也不直接读 SDK 对象的
+    原始字段。键名 `session_message` 是**事实名**（这是一条会话消息），不是对内容的
+    承诺；真实交付物与合约声明的 artifact 名之间的映射（谁能声明 `analysis_report`）
+    是下一等的产品决策，本 adapter 不自行发明。
+    """
+    if terminal != AgentSessionState.State.SUCCEEDED:
+        return {}
+    messages = [
+        event.message
+        for event in entry.events
+        if event.kind is RuntimeEventKind.MESSAGE and event.message
+    ]
+    if not messages:
+        return {}
+    return {
+        "session_message": {
+            "content": messages[-1],
+            "message_count": len(messages),
+            "conversation_id": entry.conversation_id,
+            "session_id": entry.session_id,
+        }
+    }
 
 
 class OpenHandsRuntimeAdapter:
@@ -231,7 +264,11 @@ class OpenHandsRuntimeAdapter:
         kind = _TERMINAL_EVENT_KIND[terminal]
         if kind not in entry.terminal_kinds_seen:
             entry.events.append(RuntimeEvent(entry.session_id, kind))
-        result = AgentSessionResult(session_id=entry.session_id, status=terminal)
+        result = AgentSessionResult(
+            session_id=entry.session_id,
+            status=terminal,
+            structured_output=_deliverable(entry, terminal),
+        )
         entry.terminal_result = result
         return result
 
