@@ -202,8 +202,21 @@ exit_criteria:
       **反证：去掉策略门 ⇒ 用例红**）；(b) ADR 草案文件在树（`Status: Proposed`）+ 权威登记
       + 声明面反向搜索每处命中要么是「真实消费者 + 用例」要么是「不提供/待决」说明 +
       文档逐处一致。两条都要求：**不得只改注释/文案充数**，且**不得**把 `Status` 写成 Accepted。
-    status: PENDING
-    evidence: ""
+    status: PASS
+    evidence: >-
+      PLAN-20260919-112 / RECHECK-20260919-112（PASS_WITH_WARNINGS）。选 **(b)**：ADR-0031
+      （`docs/adr/ADR-0031-toolpack-capability-policy.md`，`Status: Proposed`；决策面 D1
+      `tool_pack.*` 能力策略 / D2「事实名 → 合约名」声明权，各 ≥3 选项含做法/收益/代价 +
+      Trigger + Consequences）+ `docs/INDEX.md` 权威登记（行内标 Proposed）+ 四处同源收敛
+      （控制面 API 文档 / 控制台页面图 / live 夹具注释都与索引指向同一 ADR）。判据
+      `tests/tooling/test_toolpack_capability_policy_pending.py` **10 passed**，且证明**不是
+      文案改动**：真实 `policy.yaml` 经 `NativePolicyEvaluator` 对三个 `tool_pack.*` 能力判
+      DENY（判词 `used default policy effect`）；那条 `action: TOOL_PACK_INSTALL_OR_UPDATE`
+      对不带 action 的请求不匹配，且**走公共 use case** 证明生命周期请求 `action is None`
+      并被拒；真实合约 `console_demo_deliverable` 的 `ARTIFACT_EXISTS: analysis_report`
+      对 `session_message` 判拒。反证四处（含 F-3b 的**行为红** `DID NOT RAISE`：加一条不带
+      scope 的 allow 规则后 `submit` 真的成功）。**零产品代码改动**（默认 deny 姿态 / 能力
+      词表 / 验收语义 / 生命周期决策处理均未触碰）。W-1…W-9 见 RECHECK-20260919-112。
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -231,13 +244,15 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260919-109-real-runtime-offline-full-chain.md
   - .cursor/plans/tasks/PLAN-20260919-110-honest-substrate-disclosure.md
   - .cursor/plans/tasks/PLAN-20260919-111-tool-plane-boundary.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260919-111-tool-plane-boundary.md
+  - .cursor/plans/tasks/PLAN-20260919-112-toolpack-capability-policy-decision.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260919-112-toolpack-capability-policy-decision.md
 memory_entries:
   - MEM-20260919-079
   - MEM-20260919-080
   - MEM-20260919-081
   - MEM-20260919-082
   - MEM-20260919-083
+  - MEM-20260919-084
 ---
 
 # GOAL-20260919-007 — 真实执行体接线（自迭代循环）
@@ -383,16 +398,12 @@ adapter 接线部分以外的全部内容、GOAL-006 六条 EC 的 W 列表、�
 4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
    持有未收口 ACTIVE cycle 时等待，不并发双写。
 
-**当前续点**：**cycle 5 收口（EC-01…EC-05 PASS）**，下一步 = **cycle 6 = EC-06
-（`tool_pack.*` / 脚本策略二选一终态）**。判定细则见「EC-06 判定细则」：两条合法终态是
-**(a) 既有边界内实现**（只允许既有能力名 `tool_pack.install|update|revoke` 与既有供应链读面；
-不得新增 canonical 状态、不得新增迁移、不得改 Accepted ADR）或 **(b) ADR 草案**（必须给出
-问题陈述 / 候选方案与代价 / 为何本轮不做 / 触发条件 / 影响面，且 `Status` **保持
-`Proposed`**——把 ADR 置为 `Accepted` 即越权判负）；两条都要求**至少 1 条用例或结构判据**
-证明不是文案改动。**已知前置事实（cycle 3 实测）**：真实会话交付的键名是事实名
-`session_message`，而演示合约声明要 `analysis_report` ⇒ acceptance gate 判拒——
-「事实名 → 合约 artifact 名」的映射/声明正是 EC-06 要收敛的产品决策面；
-EC-06 只允许在既有边界内实现或留下 Proposed 的 ADR 草案，**是否采纳归用户**。
+**当前续点**：**cycle 6 收口（EC-01…EC-06 全 PASS）**，下一步 = **cycle 7 = GOAL 收口**：
+六条 EC 的独立复检（对全树逐条实跑复验，不接受"上一轮已经跑过"）+ `status: ACHIEVED` 判定
++ **干净 checkout 封印**（在 clone 出来的树上复跑关键判据与 m0，证明绿不是工作树残留）
++ 残余登记（各 EC 的 W 列表汇总 + 明确不因本 GOAL 被宣称已解决的项）+ CI 台账尾巴。
+收口前不得开新的 EC；EC-06 交付的是**草案**（ADR-0031 `Status: Proposed`），
+**是否采纳、是否置 Accepted 归用户**——收口记录里不得写成"已解决产品决策"。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -515,6 +526,7 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
 | 3 | PLAN-20260919-109（EC-03：真实 runtime 离线全链；driver=client-goal / owner=root-agent） | `9bb468f`（derive）、`adf8b83`（WP-A spec 携带执行目标 + 解析点下沉）、`63746f2`（WP-B/WP-C 受门工厂 + 组合根接线 + host shell 显式开关）、`46ceae3`（WP-D 交付物映射 + usage 归因）、`8e398a3`（WP-D 四段判据与 live 门控用例）、`a1137f4`（WP-E 文档同源）、本次回写提交（RECHECK-20260919-109 / MEM-20260919-081 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条批量推送的 run 按闭合约定在回合汇报给出终态 | derive 前只读勘察确认**三处结构性断点**（spec 不携带执行目标 / 3 参工厂对 1 参调用 / 交付物不进结构化输出）；实现后：**反证四条先红后复原**（F1 `execution_target` 恒 `None` ⇒ 段 1 红 + run 失败消息点名 `carries no execution target: endpoint and model`；F2 断 MESSAGE 映射 ⇒ 段 2 红且 artifact 列表为空；F3 不写账本 ⇒ 段 3 红而 1/2/4 绿；F4 空登记 ⇒ 制品/证据读面为 `[]` 但 run 仍走到 acceptance gate，与 F2 签名可区分）；`tests/e2e/test_ec03_real_runtime_offline_chain.py` **2 passed / 1 skipped**（skip = live 用例，原因点名 `RESEARCHOS_LIVE_E2E_ENDPOINT` / `_KEY`）；`tests/api/test_session_llm_factory.py` **10 passed**；受影响套件 `tests/adapters/openhands`+`tests/application`+`tests/architecture` **765 passed / 1 skipped**、`tests/api` **482 passed**、`tests/e2e` 全绿；尺寸门 **947 passed**；`ruff check` / `format --check` 绿；`mypy` **937 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**（改完源码与文档后跑；`.cursor` 记录写入在其后，追加跑 `--profile framework` **8 项 PASS** 覆盖治理/文档面）；治理 `validate.py` 绿。**跑法提示**：`tests/api` 全量需 `RESEARCHOS_POSTGRES_DSN` 钉到 test DSN（否则 litellm `load_dotenv` 注入 operator `.env` ⇒ 3 条组合根用例 `password authentication failed`），`lint-imports` 需 `.venv/Scripts` 在 PATH | `032c30e`（cycle 2 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35454369106 = success**、Push-on-main run **35454368423 = success**（六 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）——本轮按闭合约定补记入台账；本条批量推送的 run 见回合汇报 | 返工三处（记录诚实，**未改任何断言**）：① 尺寸门首跑红——`runtime_support.py::session_llm_factory` 54 行、e2e `_openhands_deps` 83 行、四段用例 66 行 ⇒ 拆出 `_gated_session_target` / `_point_catalog_at` + `_register_live_key` + `_real_runtime` + 四个 `_assert_*` 段函数（并把四次读面合并为 `_ChainReads`，顺带解决 6 参函数）；② `mypy` 三条（`deps.credentials` 声明为 Port 而实际是 Fake ⇒ 需 `cast`；`TestClient.json()` 返回 `Any` ⇒ 需 `cast`；一处 `assert replace` 的凑数写法删除）；③ e2e 断言按**实测**修正而非按预期：会话终态**不是** SUCCEEDED（合约要 `analysis_report`、真实会话交付 `session_message` ⇒ acceptance gate 判拒），段 2 改为读 artifact 载荷的 `message_count`/`session_id`，段 3 从「账本非空」改为**可归因**（`task_id`/`model_id`） | EC-01/EC-02/EC-03 **PASS**（RECHECK-107 / 108 / 109，均 PASS_WITH_WARNINGS）；EC-04…EC-06 PENDING。EC-03 的 W-1…W-6：段 2/段 4 共享制品窗口（canonical 不落 session 级事件）、`session_message` 键名属 `tool_pack.*` 决策、live 用例本机只证明 skip 路径、真实会话目前需显式 host shell 开关、mock 端点需本地 socket、段 3 的读面强度低于段 4 | cycle 4 = EC-04（诚实披露：执行体性质 + 运行时指纹进读面与 UI；demo 输出不再与真实结果同形） |
 | 4 | PLAN-20260919-110（EC-04：诚实披露；driver=client-goal / owner=root-agent） | `7039424`（derive）、`d291566`（WP-A 读面 DTO + 指纹记录 + OpenAPI 快照重生成）、`528b45c`（WP-B 页面两行渲染分支 + 四态 fixtures）、`ff763f9`（WP-C stub/live 各一条 e2e + live 夹具声明）、`37639be`（WP-D 第 34 条基线条目 + win32/linux 两张像素）、`cc815fd`（WP-E 文案同源收敛）、本次回写提交（RECHECK-20260919-110 / MEM-20260919-082 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条批量推送的 run 按闭合约定在回合汇报给出终态 | derive 前两条只读勘察 + 先探明项 1-5 **全部实测回填**（取数路径 = 既有 `RunProjection.events` 端口；未冻结 run 的空列表口径；指纹最小披露形态 = status/substrate/reason；结构签名是否变化；live 侧如何造第二种执行体）。实现后：**反证两条先红后复原**（F-A 摘掉 `RunPanel` 两行 ⇒ stub 2 failed「element(s) not found」；F-B `_frozen_payload` 恒空 ⇒ live 1 failed：读面上 `execution_backend` 是 `undefined`）；另有一处**实测撞车**（夹具 UUID 与 `live-workspace-snapshots` 的"未知 run"哨兵相同 ⇒ 404 断言变 200；改用全仓库未占用的 UUID 后复跑绿）；stub e2e 四态用例 **2 passed**、live 披露用例 **1 passed**；web 六门（lint 0 problems / typecheck / unit **76 passed** / build / stub e2e **87 passed** / live e2e **39 passed**）；设计基线 **34 条** + `design-fidelity` **2 passed** + linux 容器重算结构签名 **34/34 零漂移**；尺寸门 **948 passed**；`ruff check` / `format --check` 绿；`mypy` **938 files no issues**；受影响套件 `tests/{api,contracts,architecture,tooling}` **2049 passed / 2 skipped**；m0 **PASS: profile=m0; 23 deterministic checks**；治理 `validate.py` 绿 | `89b7bc8`（cycle 3 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35459621217 = success**、Push-on-main run **35459621222 = success**（六 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）——本轮按闭合约定补记入台账；本条批量推送（tip `cc815fd`）的 M0 run **35464764161 = success**（六 job 全 success）、Push-on-main run **35464763828 = success** | 返工三处（记录诚实，**未改任何断言**）：① 尺寸门首跑红两处——`console_api_app.py::_with_substrate_disclosure` 62 行、`RunPanel.tsx::RunIdentity` 57 行 ⇒ 拆 `_bind_disclosure_selection` + `_declare_substrate_run` 与 `RunIdentityFacts`；② `mypy` 首跑红 1 处（`deps.projection` 可空未判）⇒ 加守卫；③ **设计门首跑没有判红**（加行后结构签名逐字节不变）——因为 `#/run/timeline` 基线不选 run，新分支在门**外面** ⇒ 新增第 34 条基线条目（同页的选中 run 变体）把分支纳入覆盖。另：live 夹具 UUID 撞车（见「本地验证」） | EC-01…EC-04 **PASS**（RECHECK-107/108/109/110，均 PASS_WITH_WARNINGS）；EC-05 / EC-06 PENDING。EC-04 的 W-1…W-7：读面只在详情路径（列表路径 = N+1 边界）、`VERIFIED` 指纹分支无用例可走、live 的第二种执行体是**声明**的（判「页面 == 读面」，不是真跑过）、`events(run_id)` 是 outbox 全表扫描、`_frozen_payload` 取第一条 `MANIFEST_FROZEN`（将来允许 Manifest Revision 需改）、历史交付记录的「33 路由」按历史保留（已加日期化更正）、夹具 UUID 约束只写在注释里无机械门禁 | cycle 5 = EC-05（工具面边界：Tool Set 冻结 + Policy Wrapper 强制；MCP / tool provider 接入边界如实登记）——cycle 3 已实测「provider → SDK 工具映射」在控制面**不存在**且缺映射时会话创建**点名失败**，EC-05 判的就是这条边界 |
 | 5 | PLAN-20260919-111（EC-05：工具面边界；driver=client-goal / owner=root-agent） | `ff8e8f6`（derive）、`a1c86ba`（WP-A 结构判据：唯一门控入口 + 组合根 + Port 面）、`c857b76`（WP-B 冻结窄门 + **重建 agent 用改写后 spec** + 两实现同契约）、`b4f46ea`（WP-C adapter 公开面恰为 `execute_tool_gated`）、`6f33982`（WP-D `TOOL_RUNTIME.md` §9 接入边界登记）、`ebabb3a`（WP-E 文档同源收敛）、本次回写提交（RECHECK-20260919-111 / MEM-20260919-083 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条批量推送的 run 按闭合约定在回合汇报给出终态 | 只读勘察 **14 条事实**（三条结构性发现：① 门控入口 `execute_tool_call` / `execute_tool_gated` **生产零调用点**；② fork 的 `tool_set_override` **半应用**——只投影进 spec，重建 agent 仍用父 spec ⇒ 记录里换了、真在跑的没换，且无任何声明要求；③ provider id → SDK tool name 的**映射不存在**）。实现后：**反证三处先红后复原**（F-3 把 `execute_tool_gated` 改成直接调用 SDK 执行点 ⇒ 结构判据红并点名「does not pass the SDK entry into the policy wrapper」；F-2 窄门条件短路 ⇒ `test_agent_runtime_fork_rejects_tool_set_change_without_a_revision[_openhands_runtime_factory]` 红；F-1 撤销「用改写后 spec 装配 agent」⇒ 重建判据红）；结构判据 **6 passed**；契约 tool_set **4 passed**（两例 × 两实现）；`tests/adapters/openhands` 全绿；受影响套件 `tests/{architecture,contracts,adapters,application}` **1608 passed / 6 skipped**；尺寸门 **949 passed**；`ruff check`（产品树）/ `format --check` 绿；`mypy` **939 files no issues**；m0 **PASS: profile=m0; 23 deterministic checks**；治理 `validate.py` 绿 | `697170f`（cycle 4 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35465712897 = success**、Push-on-main run **35465712558 = success** ——本轮按闭合约定补记入台账；本条批量推送（tip `ebabb3a`）的 M0 run **35467664993 = failure**、Push-on-main run **35467664463 = success**；失败分类 = **治理/记录面**（不是代码/门禁/断言）：`quality-ubuntu-latest` 与 `quality-windows-latest` 都在 `framework/validate` 报**唯一**一条「任务计划未加入 ALL_PLAN: PLAN-20260919-111」（其余 22 项全绿）——derive 提交带进了新 PLAN 而 ALL_PLAN 行在其后，**本地校验枚举已跟踪文件 ⇒ 本地 23/23 绿、CI 红**；修复 = 本回写提交同时带上 ALL_PLAN 行，**未改任何门禁/快照/断言**，修复后的 run 见回合汇报 | 返工两处（记录诚实，**未改任何断言**）：① 首跑红：`ruff` 超长行 1 处、`mypy` 2 处（AST 节点窄化、`__dataclass_params__` 访问——按类型正确写法改掉，**未加 ignore**）；② CI 红 1 次（治理/记录面，见 CI 台账列）：derive 与 ALL_PLAN 行**必须同提交**——这条差异（本地看工作树 / CI 看推送内容）已写入 RECHECK-111「CI 失败分类与修复」与 W-8 | EC-01…EC-05 **PASS**（RECHECK-107/108/109/110/111，均 PASS_WITH_WARNINGS）；EC-06 PENDING。EC-05 的 W-1…W-8：**门控无生产调用点**（边界成立且可判，但控制面还没在跑工具）、执行期 capability 语义与 exposure-time 不一致（`tool.*` 词表属核心安全策略）、生产冻结集是裸并集（交集公式未落地）、fork 窄门今天没有 HTTP 面、SDK 上游 MCP 动态面未使用、`tools/*.py` 手工脚本可旁路、包装是条件式的、本地/CI 治理枚举口径差异 | cycle 6 = EC-06（`tool_pack.*` / 脚本策略二选一终态：既有边界内实现 或 ADR 草案(Proposed) + 权威登记 + 同源收敛；至少 1 条用例或结构判据证明不是文案改动）——cycle 3 实测的「`session_message` 键名 vs 合约 `artifact` 名」属该项产品决策 |
+| 6 | PLAN-20260919-112（EC-06：`tool_pack.*` 二选一终态；driver=client-goal / owner=root-agent） | `d9537cb`（derive：PLAN-112 **与 ALL_PLAN 行同提交**——cycle 5 的 CI 教训）、`51ba4ba`（WP-A/WP-B：ADR-0031（Proposed）+ `docs/INDEX.md` 登记）、`365a045`（WP-C：四处声明面同源收敛 + `DATABASE_SCHEMA.md` 草图名/物理名注记）、`fcc8538`（WP-D：判据测试 10 例）、本次回写提交（RECHECK-20260919-112 / MEM-20260919-084 / PLAN DONE / ALL_PLAN / memory INDEX + 本文件）；本条推送的 run 按闭合约定在回合汇报给出终态 | 只读勘察 **12 条事实**（四条关键：① 平台策略**没有任何 `tool_pack.*` 规则** ⇒ 真实默认 403；② 那条 `action: TOOL_PACK_INSTALL_OR_UPDATE` **按构造不可匹配**（生命周期只传 capability）；③ `_require_decision` **只拦 DENY** ⇒ 今天把规则接通会**静默放行**；④「事实名 → 合约名」无映射）。二选一判成 **(b)**：(a) 的两条实现路径分别踩「放松默认 deny」与「改审批语义」两条 escalation 线。实现后：**反证四处先红后复原**（F-1 ADR 改 `Accepted` ⇒ 1 failed；F-2 删夹具 docstring 的 ADR 指针 ⇒ 1 failed 且点名 `console_api_app.py`；F-3a 加**带 scope** 的 allow 规则 ⇒ 结构断言 1 failed 而 DENY 那条未红（scope 严格相等，见 W-3）；F-3b 加**不带 scope** 的 allow ⇒ **3 failed**，含 `DID NOT RAISE PermanentPortError` 的**行为红**——`submit` 真的安装成功）；判据 `tests/tooling/test_toolpack_capability_policy_pending.py` **10 passed**；尺寸门 **950 passed**；受影响套件 `tests/{tooling,api}` **1543 passed**（钉 `RESEARCHOS_POSTGRES_DSN`；不钉时 3 条组合根用例因 operator `.env` 被 `load_dotenv` 注入而 `password authentication failed`——环境问题，同一批在 m0 下通过）；`ruff check` / `format --check` 绿（首跑红 1 处超长行，已折行）；`mypy` 新增文件 `no issues`；m0 **PASS: profile=m0; 23 deterministic checks**；治理 `validate.py` 绿 | `2cbc80c`（cycle 5 回写提交 = 上一 cycle 批量推送的 tip）的 M0 run **35468554148 = success**、Push-on-main run **35468553904 = success**（六 job 全 success：collector-quality / console-frontend / container-quality / quality-windows-latest / quality-ubuntu-latest / eval-gate）——本轮按闭合约定补记入台账；本条批量推送（tip `fcc8538`）的 M0 run **35471008774** 与 Push-on-main run **35471008451 = success**，M0 终态见回合汇报 | 返工一处（记录诚实，**未改任何断言**）：`ruff` 超长行 1 处（断言消息过长）⇒ 折行；另有 1 处**勘察结论精化**：初判 `DATABASE_SCHEMA.md` 的 `tool_pack_manifests` 是「文档与实现不符」，实测该文档通篇是**草图口径**（`research_runs`/`artifacts` 同样不是物理名）⇒ 处置从「改名」改为「加注记并点出实际表名 `tool_packs`」，PLAN 事实 12 与 AC-03 同步更正（**未改任何门禁或断言**） | EC-01…EC-06 **全 PASS**（RECHECK-107/108/109/110/111/112 均 PASS_WITH_WARNINGS）。EC-06 的 W-1…W-9：**交付的是草案**（Proposed 期间真实部署下写面仍 403）、那条 action 规则仍不可匹配、策略规则 `scope` 严格相等（带 scope 的 allow 永不命中生命周期，不带 scope 的立刻生效）、拍板后实施时判据会红（刻意设计）、草图名 ≠ 物理名是全局现象、D2 未拍板前真实 runtime × 声明式合约仍判拒、本轮**零产品代码改动**、事实名的证明强度低于 EC-03 端到端、Mimosa 沿用兼容策略不得读作项目安全 | cycle 7 = **GOAL 收口**：六条 EC 独立复检（全树实跑复验）+ `ACHIEVED` 判定 + **干净 checkout 封印**（clone 出来的树上复跑关键判据与 m0）+ 残余登记（各 EC 的 W 汇总 + 明确不因本 GOAL 被宣称已解决的项）+ CI 台账尾巴。**ADR-0031 仍是 Proposed：是否采纳归用户** |
 
 ## 状态历史
 
@@ -644,3 +656,29 @@ observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑�
   门禁：结构判据 **6 passed**、契约 tool_set 两例 × 两实现 **4 passed**、受影响套件
   **1608 passed / 6 skipped**、尺寸门 **949 passed**、`mypy` **939 files 干净**、
   m0 **23/23**。CI 台账见迭代日志 cycle 5 行。
+
+- 2026-09-19 cycle 6 收口：EC-06 **PASS**（PLAN-20260919-112 / RECHECK-20260919-112 =
+  PASS_WITH_WARNINGS）。二选一判成 **(b) ADR 草案（`Status: Proposed`）+ 权威登记 +
+  同源收敛**——(a) 的两条实现路径分别踩到「放松默认 deny」（核心安全策略）与「改审批语义」
+  （产品决策）两条 escalation 线，故本轮交付 (b)。**交付物**：`docs/adr/ADR-0031-toolpack-capability-policy.md`
+  （决策面 D1 `tool_pack.*` 能力策略 / D2「事实名 → 合约名」声明权，各 ≥3 选项含做法/收益/代价、
+  Trigger、Consequences）；`docs/INDEX.md` ADR 列表加一行（行内标 `Proposed / 待拍板`）；
+  四处声明面同源收敛（`CONTROL_PLANE_API.md` / `CONSOLE_PAGE_MAP.md` / 夹具 docstring 都指向该 ADR）；
+  顺带把 `DATABASE_SCHEMA.md` 的「草图名 ≠ 物理名」说清楚（ToolPack 实际表名是 `tool_packs`）。
+  **判据证明的不是文案**：`tests/tooling/test_toolpack_capability_policy_pending.py`（10 passed）
+  实跑求值器与 use case —— 真实 `policy.yaml` 经 `NativePolicyEvaluator` 判三个能力 DENY 且判词为
+  `used default policy effect`；那条 `action: TOOL_PACK_INSTALL_OR_UPDATE` 对不带 action 的请求不匹配，
+  且生命周期走**公共** use case 发出的请求 `action is None`、被拒；真实合约 `console_demo_deliverable`
+  的 `ARTIFACT_EXISTS: analysis_report` 对 `session_message` 判拒。反证四处：ADR 改 `Accepted` ⇒ 红；
+  删任一声明面指针 ⇒ 红；加**带 scope** 的 allow ⇒ 结构断言红（DENY 那条未红）；加**不带 scope** 的
+  allow ⇒ **3 failed 含行为红**（`DID NOT RAISE`：`submit` 真的安装成功）。**零产品代码改动**：
+  `policy.yaml` / `capabilities.yaml` / `acceptance.py` / `lifecycle.py` 均未触碰（默认 deny 姿态未放松）。
+  **如实登记的射程边界**：W-1 交付的是草案（Proposed 期间真实部署下写面仍 403）、W-2 那条 action 规则
+  仍不可匹配、W-3 策略规则 `scope` 严格相等（带 scope 的 allow 永不命中生命周期，不带 scope 的立刻生效
+  —— 实测细节，此前无文档写过）、W-4 拍板后实施时判据必红（刻意设计：改行为先改记录）、W-5 草图名 ≠
+  物理名是全局现象、W-6 D2 未拍板前「真实 runtime × 声明式合约」仍判拒、W-7 本轮零产品改动、
+  W-8 事实名来源的证明强度低于 EC-03 端到端、W-9 Mimosa 沿用兼容策略不得读作项目安全。
+  门禁：判据 **10 passed**、尺寸门 **950 passed**、受影响套件 `tests/{tooling,api}` **1543 passed**、
+  `ruff`/`format` 绿、`mypy` 干净、m0 **23/23**、治理 `validate.py` 绿。CI 台账见迭代日志 cycle 6 行。
+  至此 EC-01…EC-06 **全 PASS**；下一轮 = **cycle 7 = GOAL 收口**（独立复检 + ACHIEVED 判定 +
+  干净 checkout 封印 + 残余登记 + CI 台账尾巴）。**ADR-0031 仍是 Proposed：是否采纳归用户。**

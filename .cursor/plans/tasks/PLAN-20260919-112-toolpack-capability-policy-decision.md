@@ -2,7 +2,7 @@
 id: PLAN-20260919-112
 slug: toolpack-capability-policy-decision
 title: "`tool_pack.*` 二选一终态：ADR 草案（Proposed）+ 权威登记 + 同源收敛 + 结构判据（EC-06）"
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-19
 updated_at: 2026-09-19
 parent_goal: GOAL-20260919-007
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260919-007 cycle 6 = EC-06。授权来源：2026-09-19 用户 goal 模式指令（自动化循环推进、无需逐轮确认）；push-to-main-for-CI 授权见 GOAL-20260919-007 frontmatter `authorization.ref`。EC-06 只允许 (a) 既有边界内实现 或 (b) ADR 草案（`Status: Proposed`）+ 权威登记 + 同源收敛；**是否采纳、是否置 Accepted 归用户**。本 PLAN 遵守：不放松默认 deny、不新增 canonical 状态/迁移、不改 Accepted ADR、不新增依赖、真实端点调用永不进默认 CI。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260919-112-toolpack-capability-policy-decision.md
+memory_entries:
+  - MEM-20260919-084
 ---
 
 # PLAN-20260919-112 — `tool_pack.*` 二选一终态（GOAL-007 cycle 6 = EC-06）
@@ -80,22 +81,59 @@ memory_entries: []
 
 ## 实施清单
 
-- [ ] **WP-A** ADR-0031 草案（`Status: Proposed`，含 `tool_pack.*` 与"事实名→合约名"两个决策面）
-- [ ] **WP-B** `docs/INDEX.md` 权威登记
-- [ ] **WP-C** 三处声明面同源收敛 + `DATABASE_SCHEMA.md` 草图名/物理名注记
-- [ ] **WP-D** 判据测试（含三条反证签名登记）
-- [ ] **WP-E** 尺寸/静态/受影响套件/m0 门禁
+- [x] **WP-A** ADR-0031 草案（`Status: Proposed`，含 `tool_pack.*` 与"事实名→合约名"两个决策面）
+- [x] **WP-B** `docs/INDEX.md` 权威登记
+- [x] **WP-C** 三处声明面同源收敛 + `DATABASE_SCHEMA.md` 草图名/物理名注记
+- [x] **WP-D** 判据测试（含三条反证签名登记）
+- [x] **WP-E** 尺寸/静态/受影响套件/m0 门禁
 
 ## 证据
 
-（执行后回填。）
+- **WP-A**：`docs/adr/ADR-0031-toolpack-capability-policy.md`（新文件，`Status: Proposed`；
+  `Deciders` 行写明待拍板；决策面 D1/D2 各有 ≥3 选项，逐条写做法/收益/代价；`Trigger`
+  三个时刻；`Consequences` 写明草案期间边界）。
+- **WP-B**：`docs/INDEX.md` ADR 列表新增一行，行内标 `**Proposed / 待拍板**`。
+- **WP-C**：`docs/api/CONTROL_PLANE_API.md`（console 入口条）、
+  `docs/frontend/CONSOLE_PAGE_MAP.md`（ops/integrations 缺口条）、
+  `tests/api/console_api_app.py`（夹具策略类 docstring）三处都接上 ADR 指针；
+  `docs/storage/DATABASE_SCHEMA.md` Tool 段后加"草图名 ≠ 物理名"注记（点名 `tool_packs` /
+  `tool_provider_registrations`）。
+- **WP-D**：`tests/tooling/test_toolpack_capability_policy_pending.py`（新文件，**10 passed**）。
+  逐条对上 AC-04：ADR `Status: Proposed` 且无 `Status: Accepted`；INDEX 行含 `Proposed`；
+  三处声明面同源；**行为未变**——真实 `policy.yaml` 经 `NativePolicyEvaluator` 对
+  `tool_pack.install|update|revoke` 判 `DENY`（判词 `used default policy effect`）且策略里
+  无任何 `tool_pack.*` 能力规则；那条 `action: TOOL_PACK_INSTALL_OR_UPDATE` 对不带 action 的
+  请求不匹配；**走公共 use case**（`ToolPackLifecycle.submit` + 记录型求值器）证明生命周期
+  发出的请求 `action is None` 且被拒；真实合约 `console_demo_deliverable` 的
+  `ARTIFACT_EXISTS: analysis_report` 对 `session_message` 判拒、对字面名判过。
+- **AC-05 反证（四处，每处跑完即复原，工作树现值 = 复原后）**：
+  ① ADR 改 `Status: Accepted` ⇒ **1 failed**（`…is_a_proposal_not_a_decision`）；
+  ② 删 live 夹具 docstring 的 ADR 指针 ⇒ **1 failed**（`…points_at_the_same_record` 点名
+  `console_api_app.py`）；③ 给 `policy.yaml` 加**带 scope** 的 `tool_pack.install` allow ⇒
+  **1 failed**（结构断言红；DENY 那条未红，原因是 scope 严格相等 —— 见 RECHECK W-3）；
+  ④ 同上但**不带 scope** ⇒ **3 failed**，含 `DID NOT RAISE PermanentPortError`
+  （`submit` 真的安装成功）的**行为红**。
+- **AC-06 门禁**：尺寸门 **950 passed**；受影响套件 `tests/{tooling,api}` **1543 passed**
+  （钉 `RESEARCHOS_POSTGRES_DSN`；不钉时 3 条组合根用例因 operator `.env` 注入连不上库，
+  环境问题）；`ruff check` 绿（首跑红 1 处超长行，已折行）、`ruff format --check` 绿；
+  `mypy` 新增文件 `no issues`；m0 **23/23 PASS**；治理 `validate.py` 绿。
+- **AC-07 零产品改动**：`git diff --stat` 只有 1 个新 ADR + 4 个文档/夹具注释 + 1 个新测试
+  文件；`policy.yaml` / `capabilities.yaml` / `acceptance.py` / `lifecycle.py` **零改动**。
+- **复检**：RECHECK-20260919-112 = PASS_WITH_WARNINGS（W-1…W-9）。
 
 ## 影响报告
 
-（执行后回填。）
+- **Domain / API / schema**：无变化（无新实体、无新端点、无 DTO/OpenAPI 快照改动）。
+- **安全 / 凭据**：无变化；默认 deny 姿态未放松，`policy.yaml` 未被触碰（判据反向固定）。
+- **兼容性 / 迁移**：无迁移、无数据变更。
+- **上游版本影响**：无（未新增依赖、未改 pin）。
+- **文档**：新增 ADR-0031（Proposed）并登记；三处声明面同源收敛；一处文档事实澄清。
+- **未做的事（如实登记）**：`Status` 是否置 Accepted、D1/D2 如何选，**全部归用户**；
+  本轮只交付"待拍板的可判形状 + 行为未变的判据"。
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-09-19 | IN_PROGRESS | cycle 6 建档（EC-06）；只读勘察 12 条事实回填；二选一判定为 **(b) ADR 草案**（(a) 的两种实现都命中 escalation） |
+| 2026-09-19 | DONE | WP-A…WP-E 全绿：ADR-0031（Proposed）+ INDEX 登记 + 四处同源收敛 + 判据 10 passed + 反证四处（含一条行为红）+ 尺寸/套件/m0/治理门禁；零产品代码改动 |
