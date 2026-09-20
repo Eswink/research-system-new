@@ -86,7 +86,7 @@ exit_criteria:
       `agnes-anthropic`」钉住，且 `docs/integration/LIVE_MODEL_RUNBOOK.md` 含改绑步骤与影响面，
       该文档的仓库路径/变量名/目标判据**全部可解析**（沿用 GOAL-008 EC-06 的同源判据形态）。
       两条路径都要求：**决策记录存在**（RECHECK 里写明选了哪条、为什么）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **漂移实测样本（补 EC-05 的 live 缺口）**：把「**实测返回 model 名 vs 声明值**」的**真实样本**
@@ -181,7 +181,7 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | EC | 标准 | 验证命令／证据来源 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | live 采样第一次：live 分支四段全中（probe ok / 到终态 / 指纹可判 / usage 归账 / 制品证据可读），口径停在 `REPEATABLE_CONFIGURATION`；样本如实登记 | `RESEARCHOS_AGENT_RUNTIME=openhands … pytest tests/e2e/test_ec04_live_first_run.py -v` ⇒ 该用例 **PASS 非 skip**；落盘 `live-run-record.json` 的 `verdict == REPEATABLE_CONFIGURATION` | **PASS**（**终态 = `FAILED`**，设计内 acceptance-gate 判拒；样本已登记，`RECHECK-20260920-121` = PASS_WITH_WARNINGS） |
-| EC-02 | run 自身消费 anthropic 面的口径（二选一终态）：(a) 改绑使 run 走 ANTHROPIC 到终态，或 (b) 把「run=main / probe=anthropic」写成一等边界 + 改绑草案；决策必须落记录 | (a) live run 记录里 run 端点 `protocol == ANTHROPIC` + 终态 + 归账；(b) 同源判据 PASS + runbook 含改绑步骤/影响面；两条都要求 RECHECK 写明选了哪条与为什么 | PENDING |
+| EC-02 | run 自身消费 anthropic 面的口径（二选一终态）：(a) 改绑使 run 走 ANTHROPIC 到终态，或 (b) 把「run=main / probe=anthropic」写成一等边界 + 改绑草案；决策必须落记录 | (a) live run 记录里 run 端点 `protocol == ANTHROPIC` + 终态 + 归账；(b) 同源判据 PASS + runbook 含改绑步骤/影响面；两条都要求 RECHECK 写明选了哪条与为什么 | **PASS**（取 **(b)**：边界已钉成一等**可判**事实 §12 + 改绑步骤/影响面/判据草案；`RECHECK-20260920-122` = PASS_WITH_WARNINGS） |
 | EC-03 | 漂移实测样本：实测返回 model 名 vs 声明值，三态从「未知」变「实测」；不同则如实记为漂移并给影响面，相同则写明证明力边界 | 记录含真实样本（返回名/声明值/判定/时间/run id）且经既有读面可取；「未知 ≠ 无漂移」钉住用例仍 PASS；**不额外发起调用** | PENDING |
 | EC-04 | 失败路径诚实语义（反证式）：无效凭据/端点拒绝/模型不存在三类可判定；至少一条反证先红后复原，全程不打印值 | 反证的先红后绿证据 + 三类期望语义明文；复原后复跑 EC-01 判据确认无残留 | PENDING |
 | EC-05 | 凭据生命周期 runbook：注入（`set -a; . ./.env; set +a`）/轮换/撤销/可弃用额度说明落成同源判据 | 同源判据套件 PASS；轮换与撤销各有实跑证据；无凭据值出现在任何记录/日志/回显 | PENDING |
@@ -372,12 +372,15 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | （见状态历史） | 治理 `validate.py` 绿 + `validate_bundle` / DOCS-CHECK 绿 | （见状态历史） | — | EC-01…EC-06 全 PENDING；凭据**已可用**（F-2/F-3）⇒ live 采样**可以真的跑**（与 GOAL-008 建档时的「六项凭据全 absent」不同） | cycle 1 = derive EC-01 子 PLAN（live 采样第一次） |
 | 1 | PLAN-20260920-121（EC-01） | `291224f`（derive + ALL_PLAN）、`dab74b0`（impl：runbook 样本 + MEM-094） | **live 分支真跑 PASS（非 skip）**：`RESEARCHOS_AGENT_RUNTIME=openhands` 内联前缀跑 `tests/e2e/test_ec04_live_first_run.py` ⇒ **1 passed / 1 skipped in 28.69s**（run id `142f7e77-cd4d-4044-a953-79296509fd54`，**终态 `FAILED`** = 设计内 acceptance-gate 判拒，`verdict = REPEATABLE_CONFIGURATION`，tokens 15219，制品 1 / 证据 1，缺项 2 已声明）；离线基线 + 反证：默认门 **1 passed / 1 skipped**、内联前缀 `-k closed` ⇒ **SKIPPED（gate is open）**、去前缀复跑回到 **1 passed / 1 skipped**（无残留）；同源判据 **10 passed**；离线同路径套件 **2 passed / 1 skipped**（独立复现「判拒是链在正常工作」）；独立复检脚本 `scratch/verify_goal009_cycle1.py` **22 checks PASS**（凭据面扫描 tracked 文件 `hits=0`，**未打印值**）；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35514493092 = success**（`47c50d2` 建档推送；六 job 全 success：`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `collector-quality` / `container-quality` / `eval-gate`，逐 job 实查，terminal `status=completed conclusion=success`）；cycle 1 自身的推送 run 在回合汇报里给出终态 | **m0 三轮，全部如实登记，最终 23/23**：第 1 轮 22/23（红：`python/tests` 的单条 `test_start_run_unprovisioned_control_plane_reports_actionable_failure`）、第 2 轮（空 DSN）**同一个红** ⇒ **推翻**了我第一轮的 DSN 归因、第 3 轮（`LLM_MAIN_KEY=""` 复现 CI 的「无凭据」条件）**PASS：profile=m0; 23 deterministic checks（4201 passed / 12 skipped，557.61s）**。**真根因**经反证定位：该用例对**凭据是否可解析**不封闭——前序 import 过 openhands-sdk 后 `.env` 凭据入进程 ⇒ `main` 端点（`discovery.enabled: true`）**真的做端点发现** ⇒ run 走到 `FAILED` 却不再产出 `run.failed` ⇒ 断言空集。**最小复现** `pytest tests/adapters/openhands <该用例>` ⇒ **1 failed / 83 passed** 且日志含 `GET https://apihub.agnes-ai.com/v1/models` **200 OK**；**决定性反证** 同命令加 `LLM_MAIN_KEY=""` ⇒ **84 passed** 且**零出站** ⇒ **红 ⇔ 凭据可得**，而 **CI 无 `.env`、无凭据** ⇒ **CI 不可复现**。**一次真实出站已被捕获**——「本地门离线」**不是**结构保证，作为残余登记（W-7 / MEM-20260920-095）。**未改任何断言/门禁/快照**，只改环境输入且被阻断的正是 CI 不具备的输入 | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W：W-1 终态是 `FAILED` 非 `SUCCEEDED`（设计内，须写明）、W-2 逐条失败消息未捕获、W-3 litellm 无该模型价格映射、W-4 「一致」是单次样本、W-5 缺 `system_fingerprint`、W-6 anthropic 面问题归 EC-02、W-7 全量 m0 时序 | cycle 2 = derive **EC-02**（run 自身消费 anthropic 面的二选一终态） |
+| 2 | PLAN-20260920-122（EC-02） | `dcbd313`（derive + ALL_PLAN）、`2785e68`（判据 + 文档）、`86e77d8`（**CI 红修复**：MEM-094 改写进暂存） | 判据 `test_anthropic_surface_boundary.py` **10 passed** 且**被压过**（改绑 `research_alpha` ⇒ **RED**，定位精确到 run 腿那一条；复原 ⇒ **GREEN**；`git diff examples/config/models.yaml` **空**）；定向 `tests/architecture tests/loaders tests/e2e/test_ec04_*` ⇒ **145 passed / 1 skipped**；`ruff`/`format`/`mypy` 绿；治理 `validate.py` 绿；m0 首轮红是 **stale**（在我修完行宽/类型之前启动，读旧文件）⇒ 按干净树复跑（见状态历史） | **run 35517481162 = failure**（`e16e458`；`quality-ubuntu-latest` / `quality-windows-latest` 红 —— `framework/validate` 报 `MEM-20260920-094` 缺章节；其余四 job success）。**CI 是对的**：本地把该条目改好了但**改写未进暂存区**，提交进去的仍是旧形态，而本地门读的是**未提交**的工作树 ⇒ **本地绿而提交红**。处置：`86e77d8` **修记录**（**不放宽 validator**），沉淀 `MEM-20260920-096`。cycle 2 自身的推送 run 在回合汇报里给出终态 | — （**未改任何门禁/断言强度**；判据的 `::symbol` 路径处理是**让判据更对**，不是放宽） | EC-02 **PASS（取 (b)）**；EC-03…EC-06 PENDING。残余 W-1…W-6（W-1 run 腿仍走 OPENAI_COMPATIBLE、W-2「会打到 OpenAI 形态 mock」是**强推断非实跑**、W-3 判据**有意过严**、W-4 判据不覆盖执行正确性、W-5 前端列无判据把守、W-6 = 上述 CI 红已修） | cycle 3 = derive **EC-03**（漂移实测样本落到读面/记录；样本已由 cycle 1 的同一次 probe 带出：实测返回标识 == 声明值 ⇒ **一致**，不另发调用） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档 | `47c50d2` | [35514493092](https://github.com/Eswink/research-system-new/actions/runs/35514493092) | 六 job 全 **success**（`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `collector-quality` / `container-quality` / `eval-gate`；terminal `status=completed conclusion=success`） |
+| cycle 1 收口 | `e16e458` | [35517481162](https://github.com/Eswink/research-system-new/actions/runs/35517481162) | **failure** —— `quality-ubuntu-latest` / `quality-windows-latest` **红**（`framework/validate`：`MEM-20260920-094` 缺章节），其余四 job **success**。**归类：治理/安全门禁 → 修记录**（`86e77d8`），**不放宽 validator** |
+| cycle 2（含上条修复） | `86e77d8` | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） |
 
 **台账尾巴口径**（沿用 GOAL-005…008，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 **只在回合汇报里给出终态、不再回写文件**——否则每轮都要为回写再推一次、无限追加。
@@ -408,6 +411,31 @@ live 证据只在本地产生并落 RECHECK。
   **一致**；**边界**：单次一致 ≠ 永不漂移，口径仍只能停在「可重复配置」。
   **CI 台账**：建档推送 `47c50d2` → **run 35514493092 = success**（六 job 全 success）。
   **未改任何判据、未改门禁、未新增依赖、未改 pin、未改默认 runtime、未把凭据写进 CI。**
+
+- 2026-09-20 cycle 2（`driver=client-goal / owner=root-agent`）：**EC-02 PASS，取 (b)**
+  （PLAN-20260920-122 / RECHECK-20260920-122 = PASS_WITH_WARNINGS，W-1…W-6）。
+  **决策过程本身就是本轮的交付**：EC-02 的 (a)（改绑让 run 走 ANTHROPIC）一开始看起来更强，
+  但**把影响量出来**之后结论反了——run 腿消费的是 `research_alpha` / `reviewer_gamma`
+  （**不是** `agnes_flash`，它只被 probe 腿用到），而两处耦合挡在路上：
+  `tests/loaders/test_contract_loaders.py` 断言 `research_alpha.endpoint_id == "main"`，
+  且离线链用例的 mock **自称「最小 OpenAI-compatible 端点」**而
+  `tests/e2e/live_run_support.py` 的 `point_catalog_at` **只换 `base_url`、保留 `protocol`**
+  ⇒ 改绑会把 **Messages 形态**请求打到 OpenAI 形态的 mock 上，修它落在「测试与门禁」的射程内，
+  正是本 GOAL fix_policy 画红线的地方。加之 `ANTHROPIC` 的 **run** 路径**从未真跑**
+  （cycle 1 被 live 消费的是 probe 腿），(a) **无法不花真实调用就验证**。
+  **交付**：`tests/architecture/python/test_anthropic_surface_boundary.py`（**10 checks**，
+  解析链 roles → agents → binding → models → endpoints → protocol；run 腿必须落在
+  `OPENAI_COMPATIBLE`；probe 腿必须指向 `agnes-anthropic`；读面必须仍暴露
+  `protocol` / `endpoint_id`）+ `docs/integration/LLM_ENDPOINTS.md` **§12**
+  （12.1 现在走哪一面 / 12.2 改绑步骤 / 12.3 **实测**影响面 / 12.4 判据草案）。
+  **判据被压过**：改绑 `research_alpha` ⇒ **RED**（定位精确到 run 腿那一条），复原 ⇒ **GREEN**，
+  `git diff` 空 ⇒ 不是恒绿、不是恒红。**判据有意过严**（改绑是架构决策，应该撞门）。
+  **CI 抓到我漏掉的一条（本轮最有价值的反馈）**：cycle 1 的推送 `e16e458` 让
+  **run 35517481162 = failure**——`framework/validate` 报 `MEM-20260920-094` 缺章节。
+  **CI 是对的**：该条目我在本地修好了，但**改写没进暂存区**，提交进去的仍是旧形态，
+  而本地门绿是因为它读了**未提交**的工作树 ⇒ **本地绿而提交红**。处置是 `86e77d8` **修记录**，
+  **没有**放宽 validator；沉淀为 `MEM-20260920-096`。
+  **未改任何门禁或断言强度；未新增依赖；未改 pin；未发起真实调用**（取 (b)，判据全部离线可判）。
 
 - 2026-09-20 cycle 1 派生（`driver=client-goal / owner=root-agent`）：derive
   `PLAN-20260920-121-first-live-sampling-run`（EC-01，投影 ALL_PLAN）。**派生前的离线实跑**

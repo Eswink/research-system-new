@@ -2,7 +2,7 @@
 id: PLAN-20260920-122
 slug: anthropic-surface-boundary-decision
 title: run 自身消费哪一面：给「run 走 main（OPENAI_COMPATIBLE）/ anthropic 面由 probe 段驱动」一个一等、可判的终态（EC-02，取 (b)），并给出改绑步骤、影响面与判据草案
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-009
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-009 cycle 2 = EC-02（run 自身消费 anthropic 面的口径，二选一终态）。授权来源：2026-09-20 用户 goal 模式指令 frontmatter `authorization.ref` 第 (1) 条（授权 live-gated 真实调用，**次数取最小必要**）与第 (3) 条（默认 runtime 保持 Fake、默认 CI 离线；live 分支必须显式 `RESEARCHOS_AGENT_RUNTIME=openhands` 才开门）。EC-02 明文允许 (a) 改绑 / (b) 把边界写成一等（读面/文档同源）并给出改绑步骤、影响面与判据草案——**二选一，不得留模糊状态**。本 PLAN 遵守：不新增依赖、不改 pin、不改 Policy/eligibility、不把真实 runtime 设为默认、不把凭据写进 CI；**本 PLAN 不修改任何门禁或断言强度**；**不发起真实调用**（取 (b)，判据全部离线可判）。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-122-anthropic-surface-boundary-decision.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-096-local-gate-reads-worktree-ci-reads-commit.md
 ---
 
 # PLAN-20260920-122 — anthropic 面口径（GOAL-009 cycle 2 = EC-02）
@@ -92,13 +93,13 @@ memory_entries: []
 
 ## 实施清单
 
-- [ ] WP1 读面核对：确认 `LlmEndpointReadDto.protocol` / `ModelReadDto.endpoint_id` 在 API 上
+- [x] WP1 读面核对：确认 `LlmEndpointReadDto.protocol` / `ModelReadDto.endpoint_id` 在 API 上
       真的可达（跑既有 endpoints/models 套件即可，不必新起服务）。
-- [ ] WP2 写同源判据 `tests/architecture/python/test_anthropic_surface_boundary.py`（AC-1）。
-- [ ] WP3 反证 AC-2（先红后复原），把两次输出留证。
-- [ ] WP4 文档：在 `docs/integration/LLM_ENDPOINTS.md` 写「run 腿 / probe 腿」边界小节 +
+- [x] WP2 写同源判据 `tests/architecture/python/test_anthropic_surface_boundary.py`（AC-1）。
+- [x] WP3 反证 AC-2（先红后复原），把两次输出留证。
+- [x] WP4 文档：在 `docs/integration/LLM_ENDPOINTS.md` 写「run 腿 / probe 腿」边界小节 +
       改绑步骤 + 实测影响面 + 判据草案（AC-3）；必要时在 runbook 交叉引用。
-- [ ] WP5 本地验证（AC-5）→ 写 RECHECK → 置 DONE → 投影 ALL_PLAN → 回写 GOAL-009
+- [x] WP5 本地验证（AC-5）→ 写 RECHECK → 置 DONE → 投影 ALL_PLAN → 回写 GOAL-009
       （EC-02 状态 / 迭代日志 / 状态历史）→ commit（显式路径）→ push → CI 到终态。
 
 ## 证据
@@ -107,13 +108,59 @@ memory_entries: []
 
 ### WP1 读面核对
 
-（待填）
+`LlmEndpointReadDto.protocol`（`services/api/dto/endpoints.py`）与 `ModelReadDto.endpoint_id`
+（`services/api/dto/models.py`）**均已存在**；判据里各有一条断言防止它们被改掉
+（`TestTheBoundaryIsReadableAtTheReadFace` 两条 **PASS**）。⇒ 边界**本来就可读**，
+本 PLAN 只是把它钉住，**未新增任何读面字段**。
 
-### WP3 反证
+### WP2 判据
 
-（待填）
+`tests/architecture/python/test_anthropic_surface_boundary.py` ⇒ **10 passed**。
+其中 `test_protocol_roles_resolve_to_at_least_one_model` 是**判据自身的前提**：
+解析链必须真的解析出模型（否则后续断言是空集合上的 vacuously true）。
+
+### WP3 反证（**先红后绿**）
+
+| 步 | 动作 | 观察 |
+| --- | --- | --- |
+| 1 | `examples/config/models.yaml` 的 `research_alpha.endpoint` 改成 `agnes-anthropic` | **RED**：`assert not {'research_alpha': 'ANTHROPIC'}`；**只有** run 腿那条红（其余 9 条绿）⇒ 定位精确 |
+| 2 | 复原为 `main` | **GREEN**：`10 passed` |
+| 3 | `git diff examples/config/models.yaml` | **空** ⇒ 复原干净 |
+
+### WP4 文档
+
+`docs/integration/LLM_ENDPOINTS.md` 新增 **§12**（`## 12. run 腿与 probe 腿：现在走哪一面`
++ `### 12.1 现在走哪一面` / `### 12.2 改绑步骤` / `### 12.3 影响面（实测）` /
+`### 12.4 改绑后的判据草案`），并把 §11 末尾那句「尚未做」改成指向 §12。
+判据逐条核对：四个小节标题在场、反引号里的仓库路径**真的存在**、§12.3 **点名**三个实测耦合点。
+
+### WP5 本地验证
+
+- 定向：`tests/architecture tests/loaders tests/e2e/test_ec04_live_first_run.py
+  tests/e2e/test_ec04_live_gate_offline.py` ⇒ **145 passed / 1 skipped**；
+  判据 + loaders ⇒ **33 passed**。
+- `ruff check` / `ruff format --check` / `mypy` ⇒ 绿（修了 1 处行宽 + 2 处 `str | None` 收窄）。
+- **m0 首次针对本轮的红是 stale**：该轮在我修完行宽/类型**之前**启动，读到的是旧文件
+  ⇒ `python/product-lint` + `python/typecheck` 红，**两条都指向我已修好的行**。
+  如实记录，并按干净树重跑（结果见 GOAL-009 迭代日志）。
+- 治理 `validate.py` 绿。
+
+### WP6 收口（本 PLAN 自己产出的教训）
+
+**CI 抓到一条我漏掉的东西**：cycle 1 的推送 `e16e458` 让 `framework/validate` 红——
+`MEM-20260920-094` 缺章节。**CI 是对的**：我在本地把该条目改好了，但**改写没进暂存区**，
+提交进去的仍是旧形态，本地门绿是因为它读了**未提交**的工作树。
+处置：独立 fix 提交 `86e77d8`（**修记录**，不是放宽 validator）。
+沉淀为 `MEM-20260920-096`（本地门读工作树 / CI 读提交）。
 
 ## 状态历史
+
+- 2026-09-20 收口：**DONE**。EC-02 取 **(b)** 并达到终态，独立复检
+  `RECHECK-20260920-122` = **PASS_WITH_WARNINGS**（W-1…W-6）。判据 10 checks 绿且**被压过**
+  （改绑 ⇒ 红、复原 ⇒ 绿、`git diff` 空）。**CI 反馈**：cycle 1 的 `e16e458` 触发
+  **run 35517481162 = failure**（`framework/validate`，`MEM-20260920-094` 缺章节）——
+  **CI 是对的**，根因是**改写未进暂存区**（本地门读工作树 ⇒ 本地绿而提交红），
+  以 `86e77d8` **修记录**收口，沉淀 `MEM-20260920-096`。**未改任何门禁或断言强度。**
 
 - 2026-09-20 建档：`driver=client-goal / owner=root-agent`。承接 GOAL-009 cycle 2（EC-02）。
   **决策已定：取 (b)**，理由基于 cycle 1 的 F-10 与本次只读勘察的四个实测耦合点
