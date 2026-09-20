@@ -91,6 +91,7 @@
 | [MEM-20260920-091](entries/MEM-20260920-091-verdict-enums-and-runtime-derived-guards.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-118 |
 | [MEM-20260920-092](entries/MEM-20260920-092-new-judges-must-be-pressed-by-falsification.md) | ACTIVE | repository | 0.92 | 2027-09-20 | PLAN-20260920-119 |
 | [MEM-20260920-093](entries/MEM-20260920-093-clean-checkout-seal-and-load-flake.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-120 |
+| [MEM-20260920-094](entries/MEM-20260920-094-live-gate-credential-visibility-and-designed-failed.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-121 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

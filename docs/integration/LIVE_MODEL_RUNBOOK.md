@@ -165,5 +165,49 @@ runtime 必须**显式**配成 live runtime，且端点凭据**可解析**（只
 - 真实端点与模型：见 §1.1 的 `agnes-anthropic` / `agnes_flash`。
 
 **仍未验证的面**（如实登记，别在 runbook 里假装已知）：真实端点上的**一次 run 到终态**
-在本机**没有发生过**（无凭据注入）——live 分支的实测记录见
+**已经发生过**（见 §6 的实测样本），但它的**终态是 FAILED**——那是**协议设计内的
+acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装配缺陷（判定依据见 §6）。
+截至 GOAL-008 收口时该 run 尚未发生，当时的如实 skip 记录见
 `.cursor/plans/rechecks/RECHECK-20260920-118-first-live-gated-real-run.md` 的 W-1。
+
+---
+
+## 6. 首次 live 样本（实测记录）
+
+本节的数字来自 **2026-09-20 GOAL-009 cycle 1** 的**唯一一次**真实调用序列
+（`PLAN-20260920-121`；授权口径：**次数取最小必要**、不压测、不批量、不重复重跑）。
+**本节不含凭据值或片段**——只出现键名 `LLM_MAIN_KEY`。
+
+| 项 | 值 |
+| --- | --- |
+| 命令 | `RESEARCHOS_AGENT_RUNTIME=openhands` 内联前缀 + `tests/e2e/test_ec04_live_first_run.py` |
+| 结果 | **1 passed, 1 skipped**（live 用例 PASSED；关门用例走 skip 分支＝门已开） |
+| run id | `142f7e77-cd4d-4044-a953-79296509fd54` |
+| 用时 | 28.69s（含 probe 段） |
+| 端点 | `agnes-anthropic` 的 `base_url`，实际走 `main` 绑定（见下「面」一栏） |
+| probe 段 | `verified and ok` |
+| 返回 model 名 | `agnes-2.5-flash` |
+| 声明 model 名 | `agnes-2.5-flash`（`examples/config/models.yaml` 的 `agnes_flash.model_name`） |
+| 漂移判定 | **一致**（实测返回标识 == 声明值）——见下「证明力边界」 |
+| 终态 | `FAILED`（**设计内**：见下「判拒为什么不是缺陷」） |
+| 口径 | `REPEATABLE_CONFIGURATION`（AGENTS.md §4；**不是**「完全模型可复现」） |
+| usage 归账 | `MODEL_TOKENS` 1 条、合计 15219 tokens |
+| 制品 | 1 条，id 以 `:session_message` 结尾 |
+| 证据 | 1 条，`evidence:` 前缀 + 同一 `session_message` 后缀 |
+| 如实缺口 | `system_fingerprint` 与 `safe_response_metadata` 缺失（记录里进 `missing_fields`，**不**留白冒充） |
+
+**判拒为什么不是缺陷**：本示例协议的 task contract 要 `analysis_report`，而真实会话产出的是
+`session_message`，于是 acceptance gate 按合约**判拒**——这正是登记链在正常工作。判据请对照
+`tests/e2e/test_ec03_real_runtime_offline_chain.py` 的 `_assert_deliverable_adjudicated`：
+它把「`FAILED` + 点名 acceptance gate」固定为真实 runtime 路径的**期望**结果，并把
+「出现 `carries no structured output`」当成判红条件（那才说明登记链被跳过）。
+本次样本的制品 id 后缀恰好是 `:session_message`，与该路径一致。
+
+**证明力边界（别过度解读）**：`一致` 只代表**这一次**一致——它**不**证明该中转站永不漂移，
+也**不**证明底层模型与声明完全同一。单次样本**不能**把三态里的「一致」升级成永久结论；
+按 AGENTS.md §4，结论口径**只能**停在「可重复配置」。
+
+**未捕获的一项（如实登记）**：本次运行的**逐条失败消息**产生于该次进程内的 in-memory
+事件库，进程结束即消失，因此**没有**留成文本。上面的归类依据是三条**收敛**证据
+（制品 id 后缀为 `:session_message`、usage 已真实归账、probe 段已 `verified and ok`）
+加上同路径离线判据对 `FAILED` 的既有期望——**不是**直接读到的失败字符串。

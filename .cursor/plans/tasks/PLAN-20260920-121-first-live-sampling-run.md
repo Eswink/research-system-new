@@ -117,11 +117,69 @@ memory_entries: []
 
 ### WP2 首次 live 采样
 
-（待填）
+**AC-1 PASS**：`RESEARCHOS_AGENT_RUNTIME=openhands uv run --frozen --no-sync python -B -m pytest
+tests/e2e/test_ec04_live_first_run.py -v -p no:randomly --basetemp=scratch/live-run-ec01`
+⇒ **1 passed, 1 skipped, 3 warnings in 28.69s**：
+
+- `test_live_first_run_reaches_a_terminal_state` **PASSED**（首个真实 live run 到终态）；
+- `test_live_gate_stays_closed_without_configuration` **SKIPPED**（跳过即「gate is open」）。
+
+**落盘记录**（`scratch/live-run-ec01/test_live_first_run_reaches_a_0/live-run-record.json`，
+**不含凭据值或片段**）：
+
+| 字段 | 值 |
+| --- | --- |
+| `run_id` | `142f7e77-cd4d-4044-a953-79296509fd54` |
+| `terminal_state` | `FAILED`（**设计内**，见下「失败归类」） |
+| `verdict` | `REPEATABLE_CONFIGURATION` |
+| `endpoint_config_digest` | `sha256:51997c6f…` |
+| `returned_model_identifier` | `agnes-2.5-flash` |
+| `system_fingerprint` | `null`（如实缺口，进 `missing_fields`） |
+| `probe_suite_digest` | `sha256:d384cbb5…` |
+| `missing_fields` | `["system_fingerprint", "safe_response_metadata"]` |
+| `model_tokens` | `15219` |
+| `usage_entries` | `1` |
+| `artifact_ids` | `["400c60fc-870e-4f39-8657-ed9e16b9b7dc:session_message"]` |
+| `evidence_ids` | `["evidence:400c60fc-…:session_message"]` |
+| `reason` | `null` |
+
+**AC-2 PASS**：六项判据为真——`reached_terminal_state`（`FAILED` ∈ 域终态集）、
+`returned_model_identifier` 非空（**指纹可判**）、`usage_entries ≥ 1`、`model_tokens > 0`
+（**usage 真归账**）、`artifact_ids` 与 `evidence_ids` 非空（**制品与证据可读**）；
+`verdict` 恰为 `REPEATABLE_CONFIGURATION`（口径停在「可重复配置」）。
+
+**失败归类（本 PLAN 最要紧的一条诚实记录）**：终态是 **`FAILED`**——**不**写成 SUCCEEDED。
+归类结论是 **协议设计内的 acceptance gate 判拒，不是端点/协议/装配缺陷**，依据三条收敛证据：
+
+1. 制品 id 后缀是 **`:session_message`**——合约要的是 `analysis_report`，真实会话给的是
+   `session_message`，两者不符 ⇒ 判拒；
+2. 同路径的**离线判据**（`tests/e2e/test_ec03_real_runtime_offline_chain.py` 的
+   `_assert_deliverable_adjudicated`）把「`FAILED` + 点名 acceptance gate」固定为该路径的
+   **期望**结果，并把「出现 `carries no structured output`」当判红条件（那才说明登记链被跳过）；
+3. probe 段 `verified and ok` 且 usage 真实归账 ⇒ LLM 链路本身是通的。
+
+**未捕获项（如实登记）**：该次运行的**逐条失败消息**只存在于进程内的 in-memory 事件库，
+进程结束即消失，**没有**留成文本 ⇒ 上面的归类依据是上述三条收敛证据 + 既有离线期望，
+**不是**直接读到的失败字符串。**本 PLAN 因此不重复跑真实调用**（授权要求次数取最小必要）。
+
+**同一次 probe 带出的 EC-03 原始样本**：实测返回 model 名 `agnes-2.5-flash` == 声明值
+`agnes-2.5-flash`（`examples/config/models.yaml` 的 `agnes_flash.model_name`）⇒ 漂移判定
+**一致**。**证明力边界**：单次一致**不**等于「永不漂移」，**不**升级三态里的「一致」为永久结论。
+
+**顺带观察（非缺陷登记）**：pytest 输出 3 条同类 warning——litellm 对
+`model=agnes-2.5-flash` 无价格映射（`Cost calculation failed: This model isn't mapped yet`）。
+这是**如实的能力边界**（该模型不在 litellm 价格表里），**不**影响归账（token 数由响应 usage 得出），
+本 PLAN **不**为消除该 warning 而改依赖或改 pin。
 
 ### WP4 反证
 
-（待填）
+**AC-4 PASS**：去掉内联前缀跑同一文件
+（`uv run --frozen --no-sync python -B -m pytest tests/e2e/test_ec04_live_first_run.py -v -p no:randomly`）
+⇒ **1 passed, 1 skipped in 9.66s**：live 用例 **SKIPPED**、关门用例 **PASSED**
+—— 即回到 GOAL-008 的「如实 skip + `NOT_VERIFIED`」语义，**零出站**（门关着不构造 URL、不碰 socket）。
+
+**AC-5 PASS**：跑前跑后 `echo` 环境 ⇒ `RESEARCHOS_AGENT_RUNTIME` 为 **unset**；
+`grep -c '^RESEARCHOS_AGENT_RUNTIME' .env` ⇒ **0**。开关**没有**留在环境或 `.env`。
 
 ## 状态历史
 
