@@ -31,6 +31,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 4. **当前架构是什么？** → [SYSTEM_ARCHITECTURE.md](architecture/SYSTEM_ARCHITECTURE.md)、[PORTS.md](architecture/PORTS.md)
 5. **哪些 Contracts 已稳定？** → [PORTS.md](architecture/PORTS.md)、`../schemas/`、`../UPSTREAM_COMPONENTS.yaml`
 6. **OpenHands 在哪里？** → [OPENHANDS_ADAPTER.md](integration/OPENHANDS_ADAPTER.md)、[AGENT_RUNTIME.md](architecture/AGENT_RUNTIME.md)
+7. **怎么接一个真实端点 / 怎么退回 Fake？** → [LIVE_MODEL_RUNBOOK.md](integration/LIVE_MODEL_RUNBOOK.md)（登记、凭据注入与轮换、重启边界、切换与回退、仍是 demo 的面）
 7. **upstream 研究在哪里？** → [Open Source / Upstream](#open-source--upstream) 节
 8. **当前如何发起改进？** → [UD 使用驱动改进模板](roadmap/USAGE_DRIVEN_IMPROVEMENT_TEMPLATE.md)；固定 Milestone 主线暂停，重新激活条件见 `roadmap/MILESTONES.md`
 9. **BACKLOG 在哪里？** → `../BACKLOG.md`
@@ -122,6 +123,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 ## Integrations
 
 - `integration/LLM_ENDPOINTS.md`
+- `integration/LIVE_MODEL_RUNBOOK.md`
 - `integration/MODEL_GATEWAY.md`
 - `integration/MODEL_PROBE.md`
 - `integration/OPENHANDS_ADAPTER.md`
