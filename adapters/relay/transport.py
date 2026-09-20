@@ -89,6 +89,50 @@ def _note_internal_retry(telemetry: TelemetrySink | None) -> None:
     )
 
 
+def _default_headers(credential: SecretValue) -> dict[str, str]:
+    """既有默认鉴权头（OpenAI-compatible 形态）。"""
+    return {"Authorization": f"Bearer {credential.value}", "Accept": "application/json"}
+
+
+def _execute_request(  # noqa: PLR0913 - 单次 HTTP 语义参数完整,分组对象会降低可读性
+    client: httpx.Client,
+    method: str,
+    url: str,
+    endpoint: LLMEndpoint,
+    headers: dict[str, str],
+    json_body: dict[str, Any] | None,
+    telemetry: TelemetrySink | None,
+) -> httpx.Response:
+    """单次 HTTP 执行与错误分类；重试由调用方的 tenacity 驱动。"""
+    try:
+        response = client.request(
+            method,
+            url,
+            headers=headers,
+            json=json_body,
+            timeout=endpoint.request_timeout_seconds,
+        )
+    except httpx.TimeoutException as exc:
+        _note_internal_retry(telemetry)
+        raise RelayHTTPError(
+            FailureCategory.MODEL_TIMEOUT,
+            redact_exception_message(f"request timed out: {exc}"),
+        ) from exc
+    except httpx.HTTPError as exc:
+        _note_internal_retry(telemetry)
+        raise RelayHTTPError(
+            FailureCategory.EXECUTION_FAILURE,
+            redact_exception_message(f"transport error: {exc}"),
+        ) from exc
+    try:
+        raise_for_status(response)
+    except RelayHTTPError as exc:
+        if is_retryable(exc):
+            _note_internal_retry(telemetry)
+        raise
+    return response
+
+
 def request_with_retries(  # noqa: PLR0913 - HTTP 语义参数完整,分组对象会降低可读性
     client: httpx.Client,
     method: str,
@@ -105,44 +149,13 @@ def request_with_retries(  # noqa: PLR0913 - HTTP 语义参数完整,分组对�
     ``headers`` 为 None 时用默认 ``Authorization: Bearer``（既有形态逐字不变）；
     非 None 时按调用方给定（如 Messages 形态的 ``x-api-key`` + ``anthropic-version``）。
     """
-    effective_headers = (
-        headers
-        if headers is not None
-        else {
-            "Authorization": f"Bearer {credential.value}",
-            "Accept": "application/json",
-        }
-    )
+    effective_headers = headers if headers is not None else _default_headers(credential)
     retrying = _make_retrying(max(1, endpoint.max_retries + 1))
     attempts = 0
     for attempt in retrying:
         with attempt:
             attempts += 1
-            try:
-                response = client.request(
-                    method,
-                    url,
-                    headers=effective_headers,
-                    json=json_body,
-                    timeout=endpoint.request_timeout_seconds,
-                )
-            except httpx.TimeoutException as exc:
-                _note_internal_retry(telemetry)
-                raise RelayHTTPError(
-                    FailureCategory.MODEL_TIMEOUT,
-                    redact_exception_message(f"request timed out: {exc}"),
-                ) from exc
-            except httpx.HTTPError as exc:
-                _note_internal_retry(telemetry)
-                raise RelayHTTPError(
-                    FailureCategory.EXECUTION_FAILURE,
-                    redact_exception_message(f"transport error: {exc}"),
-                ) from exc
-            try:
-                raise_for_status(response)
-            except RelayHTTPError as exc:
-                if is_retryable(exc):
-                    _note_internal_retry(telemetry)
-                raise
-            return response, attempts
+            return _execute_request(
+                client, method, url, endpoint, effective_headers, json_body, telemetry
+            ), attempts
     raise AssertionError("unreachable: tenacity must reraise")
