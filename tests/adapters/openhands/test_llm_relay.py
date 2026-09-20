@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+import pytest
 from openhands.sdk.conversation.conversation_stats import ConversationStats
 from openhands.sdk.llm.utils.metrics import Metrics, ResponseLatency, TokenUsage
 
@@ -77,6 +78,60 @@ class TestBuildLLM:
         assert "sk-super-secret-999" not in dumped
         assert "sk-super-secret-999" not in str(llm.model_dump())
         json.loads(dumped)  # 可序列化
+
+
+def _anthropic_endpoint() -> LLMEndpoint:
+    return LLMEndpoint(
+        id="relay-anthropic",
+        name="test anthropic relay",
+        protocol="ANTHROPIC",
+        base_url="https://relay.example.test/v1",
+        credential_ref="TEST_RELAY_KEY",
+    )
+
+
+class TestProtocolPrefix:
+    """runtime model identifier 前缀按 endpoint.protocol 选择（EC-01）。"""
+
+    def test_anthropic_endpoint_gets_anthropic_prefix(self) -> None:
+        assert (
+            resolve_runtime_model_name(
+                "relay-model-x", "https://relay.example.test/v1", protocol="ANTHROPIC"
+            )
+            == "anthropic/relay-model-x"
+        )
+
+    def test_openai_compatible_prefix_is_unchanged(self) -> None:
+        assert (
+            resolve_runtime_model_name(
+                "relay-model-x",
+                "https://relay.example.test/v1",
+                protocol="OPENAI_COMPATIBLE",
+            )
+            == "openai/relay-model-x"
+        )
+
+    def test_explicit_provider_prefix_passes_through_under_both_protocols(self) -> None:
+        for protocol in ("OPENAI_COMPATIBLE", "ANTHROPIC"):
+            assert (
+                resolve_runtime_model_name(
+                    "vendor/model-x", "https://relay.example.test/v1", protocol=protocol
+                )
+                == "vendor/model-x"
+            )
+
+    def test_unknown_protocol_is_refused_not_defaulted(self) -> None:
+        with pytest.raises(ValueError) as excinfo:
+            resolve_runtime_model_name("m", "https://relay.example.test/v1", protocol="NOPE")
+        assert "endpoint protocol must be one of" in str(excinfo.value)
+
+    def test_build_llm_takes_the_prefix_from_the_endpoint(self) -> None:
+        llm = build_llm(
+            _anthropic_endpoint(),
+            _model(),
+            SecretValue("placeholder-not-a-real-credential"),
+        )
+        assert llm.model == "anthropic/relay-model-x"
 
 
 def _usage_context(now: datetime | None = None) -> UsageContext:
