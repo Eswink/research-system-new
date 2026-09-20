@@ -1,8 +1,10 @@
-"""OpenAI-compatible Chat Completions 网关（httpx + tenacity）。
+"""模型网关（httpx + tenacity），按 `endpoint.protocol` 选线形态。
 
-协议基线：OpenAI openapi.yaml v2.3.0 的 `/v1/chat/completions` 与 `/v1/models`。
+协议基线：OpenAI openapi.yaml v2.3.0 的 `/v1/chat/completions` 与 `/v1/models`，
+以及 Anthropic Messages 形态的 `/v1/messages`（形态选择与鉴权头在 protocols；
+未知协议 fail-closed）。
 错误分类 / 重试 / 请求执行在 transport；completion 变体在 completions；
-请求/解析细节在 chat_api / responses_api / streaming（规模阈值拆分）。
+请求/解析细节在 chat_api / anthropic_api / responses_api / streaming（规模阈值拆分）。
 响应头只采集白名单（Authorization 永不进入结果）；错误消息一律 redacted。
 M15 观测:`telemetry` 注入(默认 None);只发 LLM_CALL span + retry metric,
 attributes 走闭集词汇,无内容通道(ADR-0026)。
@@ -62,10 +64,11 @@ def _outcome_for_category(category: FailureCategory) -> OperationOutcome:
 
 
 class OpenAIChatGateway:
-    """OpenAI-compatible 网关（httpx + tenacity）。
+    """模型网关（httpx + tenacity）。
 
-    支持 chat_completions 与 responses 两种 API 风格（LLMEndpoint.api_style），
-    共用 error classification / retry / 脱敏。
+    线形态由 `LLMEndpoint.protocol` 决定：`OPENAI_COMPATIBLE` 按
+    `LLMEndpoint.api_style` 分 chat_completions / responses，`ANTHROPIC` 走
+    Messages 形态；共用 error classification / retry / 脱敏。
     """
 
     def __init__(
