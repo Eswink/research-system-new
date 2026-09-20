@@ -95,6 +95,7 @@
 | [MEM-20260920-095](entries/MEM-20260920-095-credential-availability-breaks-hermetic-tests.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-121 |
 | [MEM-20260920-096](entries/MEM-20260920-096-local-gate-reads-worktree-ci-reads-commit.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-122 |
 | [MEM-20260920-097](entries/MEM-20260920-097-doc-value-judges-must-name-the-missing-label.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-123 |
+| [MEM-20260920-098](entries/MEM-20260920-098-evidence-must-match-the-committed-shape.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-124 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

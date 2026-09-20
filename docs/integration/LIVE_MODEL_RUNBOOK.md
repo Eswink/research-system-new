@@ -216,3 +216,29 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 事件库，进程结束即消失，因此**没有**留成文本。上面的归类依据是三条**收敛**证据
 （制品 id 后缀为 `:session_message`、usage 已真实归账、probe 段已 `verified and ok`）
 加上同路径离线判据对 `FAILED` 的既有期望——**不是**直接读到的失败字符串。
+
+## 7. 失败路径的诚实语义
+
+三类情形各自的**期望**写死在这里。判据
+`tests/architecture/python/test_live_failure_paths_same_source.py` 按**固定标签**读这张表，
+并核对表里每一条「证据在哪」的说法**仍然成立**——改坏任意一格即判红。
+表的**目的**是让「失败时该发生什么」不必靠记忆或猜。
+
+| 情形 | 期望语义 | 证据在哪 |
+| --- | --- | --- |
+| 无效凭据 | 门**开**（`has()` 只问存在性，**不**问有效性）⇒ **发起**调用 ⇒ **明确失败**并落终态，点名鉴权；**不**静默成功、**不**无限重试 | `tests/e2e/test_live_failure_paths.py` 的 `test_live_invalid_credential_fails_loudly_without_leaking`（live，需显式预置条件）；门的语义由 `tests/architecture/python/test_live_failure_paths_same_source.py` 钉住 |
+| 端点拒绝 | URL 策略是**门链第一环且先于触网**：拒 localhost / 环回 / 私有 / 保留时 **零出站**，且**点名策略**；链**短路**（同 endpoint 上不再派生 health / credential 的拒绝） | `tests/api/test_runtime_egress_gate.py`（既有套件，**不重复实现**） |
+| 模型不存在 | **明确失败**并落记录（点名模型标识），**不**回退到别的模型 | `adapters/openhands/llm_factory.py` 只接收**一个** `ModelDefinition`；run 的 LLM 装配路径**不消费** fallback（判据：`tests/architecture/python/test_live_failure_paths_same_source.py`） |
+
+**三条必须一起读的边界**：
+
+1. **「门开」≠「凭据有效」**。门答的是「**此刻能不能发起**」，不是「**会不会成功**」。
+   把门改成校验有效性会是行为变更（本仓明文不做）；因此**无效值也开门**是**设计内**的语义，
+   不是缺陷——它把「值错了」这件事**推迟到调用结果**里如实暴露。
+2. **重试是**有界**的**：`num_retries` 来自 `endpoint` 的 `max_retries`
+   （示例配置 = `2`），不是 SDK 默认、也不是无上限——所以「不重试到超时」是**配置保证**，
+   不是「恰好没重试」。
+3. **本仓**有** fallback 概念**（`ModelProfile.fallback` / `plan_fallback`），
+   但**会话中途不切换模型**：run 的 LLM 装配路径只消费被绑定的那**一个**模型。
+   「不回退」指的是**这条路径**的行为，不是「仓库里没有 fallback」。
+
