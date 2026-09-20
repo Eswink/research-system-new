@@ -25,3 +25,12 @@ LOCALHOST_ENDPOINT = LLMEndpoint(
 )
 
 MODEL = ModelDefinition(id="model-alpha", endpoint_id="main", model_name="model-alpha")
+
+#: 保留类（IPv4 多播）：改动前 `_host_kind` 判成 public ⇒ 默认放行（GOAL-008 EC-03）。
+RESERVED_ENDPOINT = LLMEndpoint(
+    id="reserved",
+    name="Reserved Relay",
+    protocol="OPENAI_COMPATIBLE",
+    base_url="http://224.0.0.1/v1",
+    credential_ref="llm_main_key",
+)
