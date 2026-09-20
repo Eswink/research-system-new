@@ -199,3 +199,43 @@ circuit_breaker:
 - organization/project override。
 
 不要在 MVP 引入复杂智能路由。
+
+## 11. 首次真实 run（live-gated）
+
+真实端点上的第一次 run 是**门控**动作，不是默认路径（AGENTS.md §11：Fake 仍是默认 runtime）。
+
+**开门条件**（`packages/application/model_relay/live_run_gate.py`，两条都要满足）：
+
+1. runtime **显式配置**：`RESEARCHOS_AGENT_RUNTIME=openhands`（默认空串 = 保持 Fake；
+   配别的值也关门——Fake 跑出来的不是真实 run）；
+2. 登记端点的凭据**可解析**：用 `CredentialResolver.has()`——只问「能不能」，
+   **不物化明文**（`resolve` 才要值）。
+
+**怎么跑**（凭据由操作者注入，只经环境变量或 Credential boundary）：
+
+```bash
+RESEARCHOS_AGENT_RUNTIME=openhands LLM_MAIN_KEY=… \
+  pytest tests/e2e/test_ec04_live_first_run.py
+```
+
+**跑成什么样才算数**：run 到**终态**、运行时**指纹**可判（endpoint 配置摘要 / 返回的模型标识 /
+白名单响应头 / probe 套件版本）、usage **真归账**（`BudgetLedger` 的 `MODEL_TOKENS` 正向）、
+制品与证据落 canonical 且**可读**。
+
+**结论口径**（AGENTS.md §4）：只能停在「**可重复配置**」——端点、模型与配置被真实运行
+确认，但底层模型是否完全一致**不可证明**（provider 不给证据时尤其如此）。本仓不宣称
+「模型完全可复现」；这句话本身也由判据把守
+（`tests/architecture/python/test_reproducibility_wording.py`：口径面必须出现「可重复配置」，
+**肯定式**的越级宣称判红）。
+
+**门关着时**（无凭据 / runtime 未配置）：**不发起任何真实调用**，产出结构化的
+`NOT_VERIFIED` 记录（`live_run_record.py`）并点名缺哪一个 `credential_ref`。
+**skip 不是 PASS**：它是「没有证据」，不是「证据支持」。
+
+**落地实现**：`apps/web` 的模型详情页对 probe 指纹显示
+`Configuration reproducible / provider fingerprint unavailable`（无指纹时），
+即同一口径的读面落实。
+
+**已知边界**（如实登记）：目录里所有模型当前都绑定 `main`（OPENAI_COMPATIBLE 面），
+登记进目录的 **ANTHROPIC 端点**（`agnes-anthropic`）由 live 用例的 probe 段单独驱动
+——让**一次 run 自身**消费 anthropic 面需要改模型→端点绑定，尚未做。
