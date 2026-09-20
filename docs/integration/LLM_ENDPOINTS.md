@@ -150,6 +150,16 @@ circuit_breaker:
 - calibration result digest；
 - observed capabilities。
 
+**对比结论必须进读面**（每次 probe 都算一次，三态语义见 `docs/integration/MODEL_PROBE.md`
+§「漂移判定」）：
+
+- **一致**：登记声明值与返回标识精确相符；
+- **漂移**：不符，且**点名两个原值**——只差大小写也算漂移（不折叠，见该节的严格口径）；
+- **未知**：未探到（没探测 / provider 没回标识 / 探测失败）。**未知不等于无漂移**，
+  读面文案必须自带这句反义。
+
+漂移是**可见性**不是熔断：不自动禁用模型、不改 eligibility。
+
 不能获取真实底模时，不宣称“模型完全可复现”。
 
 ## 9. Credentials

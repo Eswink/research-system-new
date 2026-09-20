@@ -33,6 +33,30 @@ Structured output probe 的 schema 为最小 JSON Schema（`{"type": "object", "
 - `calibration_prompt_version`：`probe-suite-v1`（与 suite digest 配套的人类可读版本号）。
 - `calibration_result_digest`：对返回文本与 `system_fingerprint` 的 canonical serialization digest。
 
+## 漂移判定（登记声明值 vs provider 返回标识）
+
+中转站可能在**同一个 Model ID 之后替换真实模型**（AGENTS.md §4）。因此每次 probe 都把
+**登记声明值**（`ModelDefinition.model_name`）与**provider 返回的模型标识**
+（completion 响应里的 `model` 字段）做一次对比，结论以三态出现在读面上：
+
+| 状态 | 何时 | 读面义务 |
+| --- | --- | --- |
+| `MATCH` | 去首尾空白后**精确相等** | 可以说「一致」 |
+| `DRIFT` | 两者都存在但不相等 | **必须点名两个原值**，让人判断差在哪 |
+| `UNKNOWN` | 未探到（没探测 / provider 没回模型名 / 探测失败） | **必须写明「未知不等于无漂移」** |
+
+判据只有一处：`packages/domain/model_drift.py::assess_model_drift`（纯函数，无 IO）。
+
+两条**刻意的严格**：
+
+- 只做 `strip()`，**不折叠大小写**、不解释别名/日期后缀——`model-a` 与 `MODEL-A` 记
+  `DRIFT`。本仓无法证明它们指向同一底层模型，宽松归一化等于替 provider 打包票；
+- `UNKNOWN` **不是**「无漂移」。它是「无法证明一致」，必须与「已证明一致」在文案上分开，
+  否则一次没探到的探测会被读成一次通过。
+
+漂移是**可见性**，不是熔断：`DRIFT` 不自动禁用模型、不改变 eligibility 判定
+（`docs/architecture/MODEL_COMPATIBILITY.md`）；它只把差异摆到读面上。
+
 ## 判定规则
 
 - 每项验证通过的能力以 `CapabilityAssertion(status=PROBED, ...)` 写入结果断言，`probe_version` 记录 suite 版本；
