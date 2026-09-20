@@ -66,9 +66,9 @@ class TestBuildLLM:
         assert llm.max_output_tokens == 4096
 
     def test_known_provider_model_passthrough(self) -> None:
-        assert resolve_runtime_model_name("openai/gpt-5.5", "https://relay.example.test/v1") == (
-            "openai/gpt-5.5"
-        )
+        assert resolve_runtime_model_name(
+            "openai/gpt-5.5", "https://relay.example.test/v1", protocol="OPENAI_COMPATIBLE"
+        ) == ("openai/gpt-5.5")
 
     def test_api_key_never_leaks_in_repr_or_dump(self) -> None:
         llm = build_llm(_endpoint(), _model(), SecretValue("sk-super-secret-999"))
