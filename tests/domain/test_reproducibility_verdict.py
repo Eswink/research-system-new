@@ -42,6 +42,11 @@ def test_repeatable_configuration_is_the_strongest_statement() -> None:
 
 
 def test_not_verified_is_distinct_from_the_verified_state() -> None:
-    assert ModelReproducibilityVerdict.NOT_VERIFIED is not (
-        ModelReproducibilityVerdict.REPEATABLE_CONFIGURATION
-    )
+    """两态不得被合并成一个：成员两个，取值也两个。
+
+    走**运行期枚举**而不是两个成员的字面比较——把「未验证」和「已验证」写成同一个
+    取值，会在这里被数出来。
+    """
+    members = list(ModelReproducibilityVerdict)
+    assert len(members) == 2
+    assert len({member.value for member in members}) == 2
