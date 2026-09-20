@@ -11,6 +11,15 @@
     "display_name": {"type": "string", "minLength": 1},
     "model_name": {"type": "string", "minLength": 1},
     "enabled": {"type": "boolean"},
+    "context_window_tokens": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "声明的上下文窗口（tokens）。声明值：本版本不发送给 provider，也不参与 eligibility 判定。"
+    },
+    "thinking_intensity": {
+      "enum": ["MINIMAL", "LOW", "MEDIUM", "HIGH", "MAX"],
+      "description": "声明的思考强度级别（厂商中立相对词）。声明值：执行侧映射未实现时如实登记，不得假装生效。"
+    },
     "capabilities": {
       "type": "object",
       "additionalProperties": {"$ref": "#/$defs/capabilityAssertion"}

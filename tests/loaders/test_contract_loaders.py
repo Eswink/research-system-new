@@ -29,6 +29,7 @@ from packages.domain.enums import (
     ReviewPanelRole,
     RoleCategory,
     SelectionStrategy,
+    ThinkingIntensity,
     WorkspacePolicy,
 )
 
@@ -141,6 +142,18 @@ def test_load_models_from_fixture() -> None:
     assert model.endpoint_id == "main"
     assert model.model_name == "agnes-2.5-flash"
     assert ModelCapability.TOOL_CALLING_NATIVE in model.capabilities
+
+
+def test_load_models_carries_declared_parameters() -> None:
+    """声明参数经契约读到域实体（EC-02）：有值可判、未声明者保持 None。"""
+    models = load_models("examples/config/models.yaml")
+    declared = models["agnes_flash"]
+    assert declared.context_window_tokens == 512000
+    assert declared.thinking_intensity is ThinkingIntensity.MAX
+    # 未声明的模型不得被"补默认值"
+    undeclared = models["research_alpha"]
+    assert undeclared.context_window_tokens is None
+    assert undeclared.thinking_intensity is None
 
 
 def test_load_model_profiles_from_fixture() -> None:

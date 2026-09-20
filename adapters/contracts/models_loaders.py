@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from adapters.contracts.base import load_flat_collection, load_yaml, mapping_under
 from packages.domain.circuit_breaker import CircuitBreakerConfig
-from packages.domain.enums import CapabilitySource, CapabilityStatus, ModelCapability
+from packages.domain.enums import (
+    CapabilitySource,
+    CapabilityStatus,
+    ModelCapability,
+    ThinkingIntensity,
+)
 from packages.domain.models import (
     CapabilityAssertion,
     EndpointDiscoveryConfig,
@@ -12,6 +17,13 @@ from packages.domain.models import (
     ModelDefinition,
     ModelProfile,
 )
+
+
+def _intensity(value: object) -> ThinkingIntensity | None:
+    """声明强度：缺省/空 ⇒ None；非法取值由域枚举拒绝（不静默丢弃）。"""
+    if value is None:
+        return None
+    return ThinkingIntensity(str(value))
 
 
 def load_llm_endpoints(relative_path: str) -> dict[str, LLMEndpoint]:
@@ -71,6 +83,8 @@ def load_models(relative_path: str) -> dict[str, ModelDefinition]:
             display_name=raw.get("display_name"),
             enabled=raw.get("enabled", True),
             capabilities=capabilities,
+            context_window_tokens=raw.get("context_window_tokens"),
+            thinking_intensity=_intensity(raw.get("thinking_intensity")),
         )
     return collection
 

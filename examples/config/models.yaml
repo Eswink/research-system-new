@@ -3,6 +3,9 @@ models:
     endpoint: main
     display_name: Agnes Flash
     model_name: agnes-2.5-flash
+    # 声明值（由登记方声明、非探测）：本版本不发送给 provider，也不参与 eligibility 判定
+    context_window_tokens: 512000
+    thinking_intensity: MAX
     capabilities:
       CHAT: &user_declared_supported
         status: SUPPORTED
