@@ -68,6 +68,7 @@ exit_criteria:
       `EnvCredentialResolver().has('LLM_MAIN_KEY') is True`（只问存在性，**不物化值**）。
       反证：把 `RESEARCHOS_AGENT_RUNTIME` 前缀去掉 ⇒ 同一命令必须走 skip 且记录
       `NOT_VERIFIED`（门关着 ⇒ 零出站）。
+    status: PASS
   - id: EC-02
     criterion: >-
       **run 自身消费 anthropic 面的口径（二选一终态，不得留模糊状态）**：
@@ -85,6 +86,7 @@ exit_criteria:
       `agnes-anthropic`」钉住，且 `docs/integration/LIVE_MODEL_RUNBOOK.md` 含改绑步骤与影响面，
       该文档的仓库路径/变量名/目标判据**全部可解析**（沿用 GOAL-008 EC-06 的同源判据形态）。
       两条路径都要求：**决策记录存在**（RECHECK 里写明选了哪条、为什么）。
+    status: PENDING
   - id: EC-03
     criterion: >-
       **漂移实测样本（补 EC-05 的 live 缺口）**：把「**实测返回 model 名 vs 声明值**」的**真实样本**
@@ -96,6 +98,7 @@ exit_criteria:
       记录中含**真实样本**（返回 model 名 + 声明值 + 判定结果 + 时间 + run id），且该样本经既有读面
       （模型详情 DTO / 页面三态渲染）可取；判据含「未知 ≠ 无漂移」的钉住（沿用 EC-05 既有用例）。
       样本本身来自 EC-01 的 live 调用，**不额外发起调用**（次数取最小必要）。
+    status: PENDING
   - id: EC-04
     criterion: >-
       **失败路径的诚实语义（反证式）**：无效凭据 / 端点拒绝 / 模型不存在三类情形下，门与记录的语义
@@ -106,6 +109,7 @@ exit_criteria:
       反证的**先红后绿**证据（改动 → 观察到预期行为 → 复原 → 复绿），且每一次都记录**命令形态与
       结论**而非输出值；三类情形各自的期望语义有明文（记录/读面/文档同源）。复原后必须复跑
       EC-01 的判据确认无残留。
+    status: PENDING
   - id: EC-05
     criterion: >-
       **凭据生命周期 runbook 落地**：把本机 `.env` 注入、`set -a; . ./.env; set +a` 的加载方式、
@@ -115,6 +119,7 @@ exit_criteria:
     verify: >-
       同源判据套件 PASS（文档路径/变量名/pytest 目标全部可解析）；轮换与撤销各有一条**实跑**证据
       （先使门关、再使门开，或反之），**全过程无凭据值出现在任何记录/日志/回显**。
+    status: PENDING
   - id: EC-06
     criterion: >-
       **收口复检 + 残余登记**：独立复检脚本（**当前树 + 干净 checkout 同结论**）+ 本地 m0 全量 +
@@ -125,6 +130,7 @@ exit_criteria:
       复检脚本三层判据全 PASS 且两棵树同结论；m0 **23/23**；治理 `validate.py` 绿；本文件
       `latest_recheck` 指向 PASS/PASS_WITH_WARNINGS 的 RECHECK；frontmatter 的 EC 状态与
       markdown 状态表**一致**（GOAL-006/007/008 收口时同一类漏改，见 MEM-20260920-093）。
+    status: PENDING
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -174,7 +180,7 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 
 | EC | 标准 | 验证命令／证据来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | live 采样第一次：live 分支四段全中（probe ok / 到终态 / 指纹可判 / usage 归账 / 制品证据可读），口径停在 `REPEATABLE_CONFIGURATION`；样本如实登记 | `RESEARCHOS_AGENT_RUNTIME=openhands … pytest tests/e2e/test_ec04_live_first_run.py -v` ⇒ 该用例 **PASS 非 skip**；落盘 `live-run-record.json` 的 `verdict == REPEATABLE_CONFIGURATION` | PENDING |
+| EC-01 | live 采样第一次：live 分支四段全中（probe ok / 到终态 / 指纹可判 / usage 归账 / 制品证据可读），口径停在 `REPEATABLE_CONFIGURATION`；样本如实登记 | `RESEARCHOS_AGENT_RUNTIME=openhands … pytest tests/e2e/test_ec04_live_first_run.py -v` ⇒ 该用例 **PASS 非 skip**；落盘 `live-run-record.json` 的 `verdict == REPEATABLE_CONFIGURATION` | **PASS**（**终态 = `FAILED`**，设计内 acceptance-gate 判拒；样本已登记，`RECHECK-20260920-121` = PASS_WITH_WARNINGS） |
 | EC-02 | run 自身消费 anthropic 面的口径（二选一终态）：(a) 改绑使 run 走 ANTHROPIC 到终态，或 (b) 把「run=main / probe=anthropic」写成一等边界 + 改绑草案；决策必须落记录 | (a) live run 记录里 run 端点 `protocol == ANTHROPIC` + 终态 + 归账；(b) 同源判据 PASS + runbook 含改绑步骤/影响面；两条都要求 RECHECK 写明选了哪条与为什么 | PENDING |
 | EC-03 | 漂移实测样本：实测返回 model 名 vs 声明值，三态从「未知」变「实测」；不同则如实记为漂移并给影响面，相同则写明证明力边界 | 记录含真实样本（返回名/声明值/判定/时间/run id）且经既有读面可取；「未知 ≠ 无漂移」钉住用例仍 PASS；**不额外发起调用** | PENDING |
 | EC-04 | 失败路径诚实语义（反证式）：无效凭据/端点拒绝/模型不存在三类可判定；至少一条反证先红后复原，全程不打印值 | 反证的先红后绿证据 + 三类期望语义明文；复原后复跑 EC-01 判据确认无残留 | PENDING |
@@ -196,6 +202,7 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | F-7 | 端点协议与绑定现状 | 读 `examples/config/llm_endpoints.yaml` / `models.yaml` | `main` = `OPENAI_COMPATIBLE`（`credential_ref: LLM_MAIN_KEY`）；`agnes-anthropic` = **`ANTHROPIC`**、**已登记**；**`agnes_flash.endpoint == main`** ⇒ EC-02 的 (a) 需要改绑 |
 | F-8 | 一次 run 实际用到的模型 | `examples/config/agents.yaml` + `examples/protocols/console_demo_research_v1.yaml` | 协议绑**角色**（`domain_researcher` / `scientific_reviewer`），AgentSpec 绑 **`research_alpha` / `reviewer_gamma` / `coding_beta`** 与 profile `research_strong` —— 这些都走 `main` |
 | F-9 | 本 GOAL 建档时**未发起任何真实调用** | —— | 截至建档，`agnes-2.5-flash` 的真实返回标识仍**无样本**（EC-01/EC-03 的起点） |
+| F-10 | 一次 run **实际消费哪些模型**（决定 EC-02 (a) 的改绑靶子） | `examples/config/agents.yaml` + `model_profiles.yaml` + `examples/protocols/console_demo_research_v1.yaml` 的角色表，交叉核对 | 协议要 `domain_researcher` / `scientific_reviewer` ⇒ `domain_a` = **`research_alpha`**、`reviewer_a` = **`reviewer_gamma`**（均绑 `main`）；`research_strong` profile 的 primary 也是 `research_alpha`。**`agnes_flash` 只被 probe 段使用** ⇒ 只改绑它**不会**让 run 走 ANTHROPIC |
 
 **结论**：GOAL-008 的恢复条件已满足（F-2/F-3），且默认姿态没有被破坏（F-5/F-6）。EC-01 与 EC-03
 的 live 分支**可以真的跑**；EC-02 需要一次**有证据的决策**（F-7/F-8 说明 (a) 不是零成本的）。
@@ -222,6 +229,17 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
   `agnes_flash → main`；设计基线（前端像素/结构签名）是否随读面文案变化；前端读面是否展示协议。
 - 选 (b) 时**必须**给出：改绑步骤、影响面、判据草案——**并**把当前边界写成可判的同源事实，
   而不是散落在注释里。
+- **cycle 1 实测补充（F-10，改绑的靶子不是 `agnes_flash`）**：本 GOAL 的 EC-02 (a) 沿用了
+  用户指令里的简写「`agnes_flash` → `agnes-anthropic`」。**实测澄清**（读
+  `examples/config/agents.yaml` + `model_profiles.yaml` + 协议的角色表）：
+  **一次 run 消费的模型不是 `agnes_flash`**——协议的两个 phase 要
+  `domain_researcher` 与 `scientific_reviewer`，前者由 `domain_a`（`EXPLICIT_MODEL
+  research_alpha`）承担、后者由 `reviewer_a`（`EXPLICIT_MODEL reviewer_gamma`）承担；
+  `agnes_flash` **只**被 EC-04 判据的 **probe 段**用到。⇒ 只把 `agnes_flash` 改绑到
+  `agnes-anthropic`，**run 本身仍然走 `main`**，**达不成** EC-02 的判据（「run 的端点协议为
+  `ANTHROPIC`」）。因此选 (a) 时**改绑的靶子是 run 实际消费的模型**（至少
+  `research_alpha` 与 `reviewer_gamma`，必要时 `coding_beta`）；
+  **这不是把判据放宽或挪动，而是把靶子读准**——判据一直是「run 的端点协议」。
 - 回退路径必须写明（改绑是配置改动，回退同样是配置改动；**不涉及** Domain / Canonical State）。
 
 ### EC-03 判定细则（漂移实测样本）
@@ -353,9 +371,43 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | （见状态历史） | 治理 `validate.py` 绿 + `validate_bundle` / DOCS-CHECK 绿 | （见状态历史） | — | EC-01…EC-06 全 PENDING；凭据**已可用**（F-2/F-3）⇒ live 采样**可以真的跑**（与 GOAL-008 建档时的「六项凭据全 absent」不同） | cycle 1 = derive EC-01 子 PLAN（live 采样第一次） |
-| 1 | PLAN-20260920-121（EC-01） | （执行中） | 离线基线：默认门 **1 passed / 1 skipped**；内联前缀 + `-k closed` ⇒ **SKIPPED（gate is open）** ⇒ 凭据可用且门能开、前缀未被 dotenv 覆盖 | （待记） | — | EC-01 执行中；EC-02…EC-06 PENDING | 执行 WP2：一次真实调用序列（probe + run），样本登进 RECHECK 与 runbook |
+| 1 | PLAN-20260920-121（EC-01） | `291224f`（derive + ALL_PLAN）、`dab74b0`（impl：runbook 样本 + MEM-094） | **live 分支真跑 PASS（非 skip）**：`RESEARCHOS_AGENT_RUNTIME=openhands` 内联前缀跑 `tests/e2e/test_ec04_live_first_run.py` ⇒ **1 passed / 1 skipped in 28.69s**（run id `142f7e77-cd4d-4044-a953-79296509fd54`，**终态 `FAILED`** = 设计内 acceptance-gate 判拒，`verdict = REPEATABLE_CONFIGURATION`，tokens 15219，制品 1 / 证据 1，缺项 2 已声明）；离线基线 + 反证：默认门 **1 passed / 1 skipped**、内联前缀 `-k closed` ⇒ **SKIPPED（gate is open）**、去前缀复跑回到 **1 passed / 1 skipped**（无残留）；同源判据 **10 passed**；离线同路径套件 **2 passed / 1 skipped**（独立复现「判拒是链在正常工作」）；独立复检脚本 `scratch/verify_goal009_cycle1.py` **22 checks PASS**（凭据面扫描 tracked 文件 `hits=0`，**未打印值**）；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35514493092 = success**（`47c50d2` 建档推送；六 job 全 success：`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `collector-quality` / `container-quality` / `eval-gate`，逐 job 实查，terminal `status=completed conclusion=success`）；cycle 1 自身的推送 run 在回合汇报里给出终态 | **m0 三轮，全部如实登记，最终 23/23**：第 1 轮 22/23（红：`python/tests` 的单条 `test_start_run_unprovisioned_control_plane_reports_actionable_failure`）、第 2 轮（空 DSN）**同一个红** ⇒ **推翻**了我第一轮的 DSN 归因、第 3 轮（`LLM_MAIN_KEY=""` 复现 CI 的「无凭据」条件）**PASS：profile=m0; 23 deterministic checks（4201 passed / 12 skipped，557.61s）**。**真根因**经反证定位：该用例对**凭据是否可解析**不封闭——前序 import 过 openhands-sdk 后 `.env` 凭据入进程 ⇒ `main` 端点（`discovery.enabled: true`）**真的做端点发现** ⇒ run 走到 `FAILED` 却不再产出 `run.failed` ⇒ 断言空集。**最小复现** `pytest tests/adapters/openhands <该用例>` ⇒ **1 failed / 83 passed** 且日志含 `GET https://apihub.agnes-ai.com/v1/models` **200 OK**；**决定性反证** 同命令加 `LLM_MAIN_KEY=""` ⇒ **84 passed** 且**零出站** ⇒ **红 ⇔ 凭据可得**，而 **CI 无 `.env`、无凭据** ⇒ **CI 不可复现**。**一次真实出站已被捕获**——「本地门离线」**不是**结构保证，作为残余登记（W-7 / MEM-20260920-095）。**未改任何断言/门禁/快照**，只改环境输入且被阻断的正是 CI 不具备的输入 | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W：W-1 终态是 `FAILED` 非 `SUCCEEDED`（设计内，须写明）、W-2 逐条失败消息未捕获、W-3 litellm 无该模型价格映射、W-4 「一致」是单次样本、W-5 缺 `system_fingerprint`、W-6 anthropic 面问题归 EC-02、W-7 全量 m0 时序 | cycle 2 = derive **EC-02**（run 自身消费 anthropic 面的二选一终态） |
+
+### CI 台账（逐 run 逐 job 实查；全部落在 main）
+
+| 推送 | 提交 | run | 六 job 结论 |
+| --- | --- | --- | --- |
+| 建档 | `47c50d2` | [35514493092](https://github.com/Eswink/research-system-new/actions/runs/35514493092) | 六 job 全 **success**（`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `collector-quality` / `container-quality` / `eval-gate`；terminal `status=completed conclusion=success`） |
+
+**台账尾巴口径**（沿用 GOAL-005…008，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
+**只在回合汇报里给出终态、不再回写文件**——否则每轮都要为回写再推一次、无限追加。
+**CI 保持离线**：本 GOAL **明文禁止**把凭据写进 CI（哪怕是为了让 CI 里看到 live 分支），
+live 证据只在本地产生并落 RECHECK。
 
 ## 状态历史
+
+- 2026-09-20 cycle 1（`driver=client-goal / owner=root-agent`）：**EC-01 PASS**
+  （PLAN-20260920-121 / RECHECK-20260920-121 = PASS_WITH_WARNINGS，W-1…W-7）。
+  **本轮最大的事实变化：本仓第一次真实 live run 真的发生了**——GOAL-008 收口时那条
+  「live 分支如实 skip」的缺口，由 GOAL-009 用**一次**真实调用序列（probe + run，次数取最小必要）
+  补上：`test_live_first_run_reaches_a_terminal_state` **PASS（非 skip）**，
+  run id `142f7e77-cd4d-4044-a953-79296509fd54`，probe `verified and ok`，返回 model 名
+  `agnes-2.5-flash`，tokens 15219 真归账，制品与证据各 1 条可读，口径恰为
+  `REPEATABLE_CONFIGURATION`。
+  **本轮最要紧的诚实记录**：该 run 的**终态是 `FAILED`**——**没有**写成 SUCCEEDED。
+  归类结论是**协议设计内的 acceptance-gate 判拒**（合约要 `analysis_report`、真实会话给
+  `session_message`；制品 id 后缀正是 `:session_message`），依据是三条收敛证据 + 离线同路径判据
+  `_assert_deliverable_adjudicated` 的既有期望（该套件本轮真跑 **2 passed / 1 skipped**
+  独立复现）。**未捕获项**（逐条失败消息只活在 in-memory 事件库）已**逐字登记**，
+  归类是**收敛证据**而非直读——runbook 与 RECHECK 都写明了这一点。
+  **独立复检**：`scratch/verify_goal009_cycle1.py` **22 checks PASS**，四面（记录 / 同源 / 判据 /
+  凭据），其中凭据面是**扫描全部 tracked 文件找凭据值、只输出命中数**（`hits=0`，**未打印值**）。
+  反证：默认门 **1 passed / 1 skipped** → 内联前缀 `-k closed` **SKIPPED（gate is open）** →
+  去前缀复跑回到 **1 passed / 1 skipped**（**无残留**，开关未留在环境或 `.env`）。
+  **顺带带出 EC-03 的漂移原始样本**（同一次 probe，未另发调用）：实测返回标识 == 声明值 ⇒
+  **一致**；**边界**：单次一致 ≠ 永不漂移，口径仍只能停在「可重复配置」。
+  **CI 台账**：建档推送 `47c50d2` → **run 35514493092 = success**（六 job 全 success）。
+  **未改任何判据、未改门禁、未新增依赖、未改 pin、未改默认 runtime、未把凭据写进 CI。**
 
 - 2026-09-20 cycle 1 派生（`driver=client-goal / owner=root-agent`）：derive
   `PLAN-20260920-121-first-live-sampling-run`（EC-01，投影 ALL_PLAN）。**派生前的离线实跑**

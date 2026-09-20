@@ -2,7 +2,7 @@
 id: PLAN-20260920-121
 slug: first-live-sampling-run
 title: 首次 live 采样：把 EC-04 的 live 分支从「如实 skip」跑到「有真实样本」（run 到终态 + 指纹可判 + usage 真归账 + 制品与证据可读，口径停在可重复配置）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-009
@@ -13,8 +13,10 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-009 cycle 1 = EC-01（live 采样第一次）。授权来源：2026-09-20 用户 goal 模式指令 frontmatter `authorization.ref` 第 (1) 条（授权在端点 `https://apihub.agnes-ai.com`、模型 `agnes-2.5-flash` 上做 **live-gated 真实调用**，**次数取最小必要**，不做压测/批量/重复重跑；该凭据为**可弃用的免费额度**，泄露风险已由用户明示接受——此声明只降低追责口径，**不放松凭据纪律**）、第 (2) 条（键名 `LLM_MAIN_KEY`，值只存在于本机 gitignored 的 `.env`；值不得写入任何 tracked 文件、DB、记录、日志或命令回显；**不得**把 `RESEARCHOS_AGENT_RUNTIME` 写进 `.env`，它只作为单条命令的内联前缀）、第 (3) 条（默认 runtime 保持 Fake、默认 CI 离线；live 分支必须**显式** `RESEARCHOS_AGENT_RUNTIME=openhands` 才开门）与 AGENTS.md §4（结论口径停在「可重复配置」，**不得**声称「完全模型可复现」）。本 PLAN 遵守：不新增依赖、不改 pin、不改 Policy/eligibility、不把真实 runtime 设为默认、不把凭据写进 CI、不修改任何门禁或断言强度；**live 调用次数取最小必要（本 PLAN 只跑一次真实调用序列）**。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-121-first-live-sampling-run.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-094-live-gate-credential-visibility-and-designed-failed.md
+  - .cursor/memory/entries/MEM-20260920-095-credential-availability-breaks-hermetic-tests.md
 ---
 
 # PLAN-20260920-121 — 首次 live 采样（GOAL-009 cycle 1 = EC-01）
@@ -91,18 +93,18 @@ memory_entries: []
 
 ## 实施清单
 
-- [ ] WP1 **离线基线**（无网络）：默认门下跑 `tests/e2e/test_ec04_live_first_run.py`
+- [x] WP1 **离线基线**（无网络）：默认门下跑 `tests/e2e/test_ec04_live_first_run.py`
       ⇒ 记录 1 passed / 1 skipped；再以 `-k closed` + 内联前缀确认门能开（SKIPPED）。
-- [ ] WP2 **执行 live 采样（唯一一次真实调用序列）**：
+- [x] WP2 **执行 live 采样（唯一一次真实调用序列）**：
       `RESEARCHOS_AGENT_RUNTIME=openhands … pytest tests/e2e/test_ec04_live_first_run.py -v
       --basetemp=scratch/live-run-ec01` ⇒ 记录 PASS + 落盘记录路径。
-- [ ] WP3 **登记样本**：把 run id / UTC 时间 / 返回 model 名 / 声明值 / 判定 / 口径
+- [x] WP3 **登记样本**：把 run id / UTC 时间 / 返回 model 名 / 声明值 / 判定 / 口径
       写进本 PLAN 的证据段与 RECHECK；在 `docs/integration/LIVE_MODEL_RUNBOOK.md` 增加
       **首次 live 样本**条目（**不得**引入会被同源判据判红的反引号 token）。
-- [ ] WP4 **反证门**：去掉内联前缀复跑 ⇒ skip + `NOT_VERIFIED`；并确认开关未留痕。
-- [ ] WP5 **本地验证**：`make validate-all`（m0 23 项）+ 定向套件 + 治理 `validate.py`
+- [x] WP4 **反证门**：去掉内联前缀复跑 ⇒ skip + `NOT_VERIFIED`；并确认开关未留痕。
+- [x] WP5 **本地验证**：`make validate-all`（m0 23 项）+ 定向套件 + 治理 `validate.py`
       + `validate_bundle` + DOCS-CHECK；跑后复核 `git status`。
-- [ ] WP6 **收口**：写 RECHECK（独立复检）、置本 PLAN 为 DONE、投影 ALL_PLAN、
+- [x] WP6 **收口**：写 RECHECK（独立复检）、置本 PLAN 为 DONE、投影 ALL_PLAN、
       回写 GOAL-009 的 EC-01 状态 / 迭代日志 / 状态历史；commit（显式路径）→ push → CI 到终态。
 
 ## 证据
@@ -171,6 +173,31 @@ tests/e2e/test_ec04_live_first_run.py -v -p no:randomly --basetemp=scratch/live-
 这是**如实的能力边界**（该模型不在 litellm 价格表里），**不**影响归账（token 数由响应 usage 得出），
 本 PLAN **不**为消除该 warning 而改依赖或改 pin。
 
+### WP5 本地验证
+
+**AC-6 PASS**（m0 三轮，**全部如实登记**）：
+
+| 轮 | 配置 | 结果 |
+| --- | --- | --- |
+| 1 | test DSN pin | 22/23（红：`python/tests` 单条；4200 passed / 12 skipped） |
+| 2 | `RESEARCHOS_POSTGRES_DSN=""`（+另三个空） | 同一个红（4008 passed / 204 skipped） |
+| 3 | test DSN pin + `LLM_MAIN_KEY=""` | **PASS：profile=m0; 23 deterministic checks**（**4201 passed / 12 skipped**，557.61s） |
+
+- **红项根因（反证定位，不是 DSN）**：`tests/api/test_runs_api.py::test_start_run_unprovisioned_control_plane_reports_actionable_failure`
+  对**凭据是否可解析**不封闭。前序模块 import 过 openhands-sdk（⇒ litellm ⇒ `load_dotenv()`）
+  后 `.env` 的凭据进入进程 ⇒ 目录里 `main` 端点（`discovery.enabled: true`）**真的发起端点发现**
+  ⇒ 控制面状态改变 ⇒ run 走到 `FAILED` 却**不再产出 `run.failed`** ⇒ 断言空集。
+- **最小复现**：`pytest tests/adapters/openhands <该用例>` ⇒ **1 failed, 83 passed in 28.08s**，
+  日志里有 `GET https://apihub.agnes-ai.com/v1/models "HTTP/1.1 200 OK"`。
+- **决定性反证**：同一对命令加 `LLM_MAIN_KEY=""` ⇒ **84 passed in 18.25s**，**无任何出站记录**
+  ⇒ **红 ⇔ 凭据可解析**；**CI 无 `.env`、无凭据**（`quality-*` job 只设 `PYTHONUTF8` /
+  `PYTHONIOENCODING`，已逐行核对 workflow）⇒ **该红在 CI 上不可复现**。
+- **被自己推翻的中间假设**：曾把根因归给 DSN pin（第 1 轮后）；**第 2 轮空 DSN 仍红 ⇒ 假设不成立**，
+  已在 RECHECK W-7 与 `MEM-20260920-095` 里**如实改正**。
+- 定向套件：runbook 同源判据 **10 passed**；离线同路径 **2 passed / 1 skipped**；
+  独立复检脚本 **22 checks PASS**。
+- 治理：`validate.py` / `validate_bundle` / DOCS-CHECK 绿。
+
 ### WP4 反证
 
 **AC-4 PASS**：去掉内联前缀跑同一文件
@@ -182,6 +209,24 @@ tests/e2e/test_ec04_live_first_run.py -v -p no:randomly --basetemp=scratch/live-
 `grep -c '^RESEARCHOS_AGENT_RUNTIME' .env` ⇒ **0**。开关**没有**留在环境或 `.env`。
 
 ## 状态历史
+
+- 2026-09-20 收口：**DONE**。EC-01 判据全部成立且经**独立复检**（
+  `.cursor/plans/rechecks/RECHECK-20260920-121-first-live-sampling-run.md`，
+  `result: PASS_WITH_WARNINGS`，W-1…W-7）。独立脚本 `scratch/verify_goal009_cycle1.py`
+  **22 checks PASS**（记录面 8 / 同源面 8 / 判据面 2 / 凭据面 4），其中凭据面是
+  **扫描全部 tracked 文件找凭据值、只输出命中数**（`hits=0`，**未打印值**）。
+  离线同路径套件真跑 **2 passed / 1 skipped**，独立复现「判拒是链在正常工作」。
+  **真实调用 1 次序列**（probe + run），与授权的最小必要口径一致；EC-03 的漂移原始样本
+  由同一次 probe 带出，未另发调用。工程记忆沉淀：`MEM-20260920-094`。**未改任何判据、
+  未改门禁、未新增依赖、未改 pin**。
+
+- 2026-09-20 本地门禁（三轮，如实登记）：第 1 轮 **22/23**、第 2 轮**同一个红**、
+  第 3 轮（`LLM_MAIN_KEY=""` 复现 CI 的「无凭据」条件 + test DSN pin）**PASS：profile=m0;
+  23 deterministic checks（4201 passed / 12 skipped）**。红项经**反证**定位为「凭据可得性」驱动的
+  环境签名（最小复现 + 决定性反证见 WP5），**不是**本轮改动造成的回归（本轮只改文档与记录）；
+  **中间假设被自己推翻并已改正**（RECHECK W-7 / `MEM-20260920-095`）。同轮还捕获到**一次真实出站**
+  （`GET https://apihub.agnes-ai.com/v1/models` **200 OK**）——「本地门离线」**不是**结构保证，
+  已作为残余登记。**未改任何断言、门禁或快照**：改的是环境输入，且被阻断的正是 CI 不具备的输入。
 
 - 2026-09-20 建档：`driver=client-goal / owner=root-agent`。承接 GOAL-009 cycle 1（EC-01）。
   建档前只读勘察 + **两次离线实跑**（默认门 1 passed / 1 skipped；内联前缀下关门用例 SKIPPED）

@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260920-121](tasks/PLAN-20260920-121-first-live-sampling-run.md) | IN_PROGRESS |
+| [x] | [PLAN-20260920-121](tasks/PLAN-20260920-121-first-live-sampling-run.md) | DONE |
 | [x] | [PLAN-20260920-120](tasks/PLAN-20260920-120-goal-008-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260920-119](tasks/PLAN-20260920-119-live-model-runbook.md) | DONE |
 | [x] | [PLAN-20260920-118](tasks/PLAN-20260920-118-first-live-gated-real-run.md) | DONE |
