@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260920-117](tasks/PLAN-20260920-117-model-drift-visibility-three-states.md) | IN_PROGRESS |
 | [x] | [PLAN-20260920-116](tasks/PLAN-20260920-116-supply-chain-registration-and-credential-discipline.md) | DONE |
 | [x] | [PLAN-20260920-115](tasks/PLAN-20260920-115-model-parameter-persistence.md) | DONE |
 | [x] | [PLAN-20260920-114](tasks/PLAN-20260920-114-anthropic-protocol-execution-path.md) | DONE |

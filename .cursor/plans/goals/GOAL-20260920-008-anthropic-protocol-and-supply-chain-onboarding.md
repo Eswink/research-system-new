@@ -216,6 +216,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260920-114-anthropic-protocol-execution-path.md
   - .cursor/plans/tasks/PLAN-20260920-115-model-parameter-persistence.md
   - .cursor/plans/tasks/PLAN-20260920-116-supply-chain-registration-and-credential-discipline.md
+  - .cursor/plans/tasks/PLAN-20260920-117-model-drift-visibility-three-states.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-116-supply-chain-registration-and-credential-discipline.md
 memory_entries:
   - MEM-20260920-087
@@ -377,12 +378,11 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**cycle 3 已收口（PLAN-20260920-116 = EC-03，`DONE`；RECHECK-20260920-116 =
-PASS_WITH_WARNINGS）**，EC-03 **PASS**。下一步 = **cycle 4 的 ①：derive EC-05（漂移可见性）
-子 PLAN**——判据须区分「一致 / 漂移（点名差异）/ **未知**（未探到）」三态，`未知` 不得显示为
-「无漂移」；live 探针在无凭据时**如实 skip**（记录 skip 事实），离线判据仍须绿。
-EC-04（首次真实 run）仍受**无凭据**限制（本机候选环境变量全 absent、`endpoint:*` 命名环境变量 0 个），
-按判定细则「skip 不是 PASS」处置；EC-06（文档与 runbook）排在 EC-04 之后。
+**当前续点**：**cycle 4 已 derive（PLAN-20260920-117 = EC-05 漂移可见性三态，`IN_PROGRESS`）**，
+下一步 = 按该子 PLAN 的 WP-A…WP-E 执行（域三态分类器 → probe 读面带 drift →
+页面三态渲染 → 文档三态与 live skip → 反证/记录/收口）。
+EC-04（首次真实 run）仍受**无凭据**限制（cycle 3 实跑复核：候选环境变量全 absent、
+`endpoint:*` 命名环境变量 0 个），按判定细则「skip 不是 PASS」处置；EC-06（文档与 runbook）排在 EC-04 之后。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -494,6 +494,8 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 | 1 | PLAN-20260920-114（EC-01） | `7a28799`（PLAN+ALL_PLAN）、`c9a5caa`、`4693e6b`、`fbe6dee`、`d9e4be9`、`cc704e5`、`691414a`、`5f82071`、`0a04520`、`4e28e93`（记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4072 passed / 11 skipped，冻结树 `0a04520`；0 failed checks）；定向 168 passed + probe 判据 3 passed；`ruff`/`format`/`mypy`(945 files) 绿；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35493396918 = success**（`4e28e93`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | m0 拦下四处：format-check / typecheck(7) / 50 行函数门 / validate_bundle（G1–G4，均按缺陷修，未动断言与门禁） | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W-1（真实端点面未实测）、W-6（示例端点未入库）转由 EC-03/EC-04 承接 | cycle 2 = derive EC-02 子 PLAN（模型参数落库：上下文窗口 512000 + 思考强度 Max） |
 | 2 | PLAN-20260920-115（EC-02） | `a6c03bc`（derive）、`3eece38`、`d3eedf7`、`3caf6c2`、`abed221`、`b8f2e9b`、`a0f98bb`、`40fe55d`、`53f4a26`、`1df2e11`（收口记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4097 passed / 11 skipped，461.72s，冻结树 `40fe55d`；其后仅一段文档改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 56 passed、PG 根 + 装配判据 5 passed、web unit 76 passed、web lint/typecheck 绿、design-fidelity 2 passed（基线零 diff）；`ruff`/`format`/`mypy`(949 files) 绿 | **run 35497734881 = success**（`1df2e11`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest）；cycle 2 的 CI 台账提交 `105b745` → **run 35498375517 = success**（六 job 全 success，与 35497734881 同批，补记于 cycle 3） | — （本轮 m0 全量一次通过，无 G 项：提交前已就地跑格式化与类型门） | EC-02 **PASS**；EC-03…EC-06 PENDING。EC-02 的 W-1（声明值不发送/不生效，需执行侧映射）、W-2（OpenHands 未接线）、W-3（web 类型无自动 drift 门）、W-5（设计门射程）为如实边界 | cycle 3 = derive EC-03 子 PLAN（供应链登记与凭据纪律：端点/模型入库 + URL 策略 + 明文凭据 grep 反证 + 重启失效边界） |
 | 3 | PLAN-20260920-116（EC-03） | `dd989b7`（derive）、`b6c7386`、`26f93b3`、`eee4728`、`1e16c40`、`40bddd5`、`94db850`、`18794a1`、`5f43b98`、`fdf0281`（收口记录） | m0 **PASS: profile=m0; 23 deterministic checks**（**4131 passed / 11 skipped**，479.71s，冻结树 `5f43b98`；其后仅 `.cursor/**` 记录改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 `tests/api + tests/application + tests/architecture + tests/tooling` **2292 passed / 2 skipped**（2 条需 `RESEARCHOS_POSTGRES_DSN` 钉桩，补桩后 6 passed——已知 DSN 条件，非回归）；`ruff format/check` / `mypy`(951 files) 绿；web `lint`(max-warnings 0)/`typecheck`/e2e 新增 spec **2 passed**、`design-fidelity` **2 passed 且基线零 diff**（新文案在未打开的抽屉里 ⇒ 对设计门不可见）；审计工具实跑四面 0 命中 | **run 35503139831 = success**（`fdf0281`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | **m0 拦下 1 处**（G1：新用例里 `int(object)` + `# type: ignore` 触发 `unused-ignore` / `call-overload` / `attr-defined`；按缺陷修为先断言类型的助手，`5f43b98`，未动门禁与断言强度） | EC-03 **PASS**；EC-04/EC-05/EC-06 PENDING。残余 7 条：W-1 注册面仍不校验 URL、W-2 出站 0 只在 Fakes 上证明、W-3 措辞判据不覆盖渲染、W-4 向导面未加声明、W-5 审计白名单人维护、W-6 本机仍无凭据、W-7 `.env` 不在扫描面内 | cycle 4 = derive **EC-05**（漂移可见性：probe 返回 model 名 vs 声明值三态；live 分支无凭据 ⇒ 如实 skip） |
+
+| 4 | PLAN-20260920-117（EC-05） | derive 提交 = 本行的提交（PLAN-117 + ALL_PLAN + 本 GOAL 行） | 收口时登记（实施中：域三态判据已绿） | 收口时登记 | 收口时登记 | EC-05 实施中 | cycle 5 = derive EC-04（首次真实 run；无凭据 ⇒ 如实 skip）或 EC-06 |
 
 ## 状态历史
 
