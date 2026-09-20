@@ -59,8 +59,46 @@ exit_criteria:
       chat/completions 形态与响应解析**与改动前一致**）+ 未知协议用例（**拒绝并点名** +
       **出站调用 0**，用可观测传输层计数器证明）+ **反证**（把分派短路回无条件 `openai/` 前缀
       ⇒ 对应用例红，先红后复原）+ 受影响套件 + m0 绿。
-    status: PENDING
-    evidence: ""
+    status: PASS
+    evidence: >-
+      PLAN-20260920-114 / RECHECK-20260920-114（PASS_WITH_WARNINGS，W-1…W-9）。终态 **(a) 实现**。
+      交付：域枚举 `LLMProtocol`（唯一词表，`LLMEndpoint.__post_init__` 按它校验，**接受集合与错误
+      文本未变**）；`adapters/relay/protocols.py`（`select_wire_shape` 唯一分派点 + `request_headers`
+      按协议构造鉴权头 + `ANTHROPIC_VERSION`）；`adapters/relay/anthropic_api.py`（Messages 形态
+      请求构造与响应解析）；`complete_any` 经 `select_wire_shape` 分派、新增 `_complete_anthropic`；
+      `transport.request_with_retries(headers=…)`（None 时既有默认头**逐字不变**）；
+      `gateway.list_models` 走协议头；`CompletionRequest.max_tokens`（可选）+
+      `suite.probe_max_tokens`（**只对 ANTHROPIC** 给 probe 常量 256，OpenAI 形态仍不发该键）；
+      `resolve_runtime_model_name(*, protocol)` ⇒ `ANTHROPIC` 取 `anthropic/` 前缀，
+      `OPENAI_COMPATIBLE` 取值不变，未知协议 `ValueError`。
+      **判据**：`tests/adapters/relay/test_anthropic_messages.py`（14：路径 `/messages`、
+      `x-api-key` 有而 `authorization` 无、`max_tokens`、`content[]` 合并、`tool_use` ⇒ ToolCallDraft、
+      `system_fingerprint is None`、usage 缺失不伪造）+ `TestOpenAiShapeRegression`（chat 形态不变且
+      **无 `max_tokens` 键**）+ `TestFailClosed` 4 条**记录型 transport 证明 `seen == []`**
+      （未知协议 / 缺 `max_tokens` / `stream=True` / `response_format`）+
+      `tests/architecture/python/test_protocol_vocabulary.py`（3：schema enum == DTO Literal ==
+      `LLMProtocol`；执行侧 AST **零协议字面量**）+ `tests/adapters/openhands/test_llm_relay.py::
+      TestProtocolPrefix`（5）+ `tests/application/test_probe_protocol_requests.py`（3，记录真实
+      `CompletionRequest` 证明 probe 常量只发给 ANTHROPIC）。
+      **反证三条先红后复原**：F1 前缀分支短路 ⇒ 2 failed；F2 Messages 分派短路 ⇒ 与 F1 合并 9 failed
+      （失败日志显示请求落到 `/chat/completions`，即分派本身）；F3 未知协议静默回退 ⇒ 2 failed
+      （`DID NOT RAISE`），复原后同命令 **168 passed**。
+      **m0 本轮真拦下四处缺陷并按缺陷修**：`python/format-check`（3 文件）、`python/typecheck`
+      （7 错误，含布尔量收窄 token 求和不被 mypy 跟随）、**50 行函数门**（`request_with_retries`
+      涨到 57 行 ⇒ 抽出 `_execute_request`/`_default_headers`，控制流不变）、`framework/validate_bundle`
+      （本地工具里的 TEST-NET-1 网段字面量命中旧版本号正则 ⇒ 改成「显式网段 + 地址分类兜底」，**反更严**）。
+      文档同源：`docs/integration/LLM_ENDPOINTS.md` §1 协议表 + 缺口登记、`MODEL_GATEWAY.md` §3、
+      `gateway.py` 不再自称 OpenAI-only。门禁：定向 **168 passed** + probe 判据 3 passed +
+      **m0 PASS: profile=m0; 23 deterministic checks（4072 passed / 11 skipped）** + 治理 `validate.py` 绿。
+       **W**：W-1 真实端点面**未实测**（本机无凭据 ⇒ 不对真实端点发任何调用；「该端点是否真在
+      `{base_url}/messages` 提供 Messages 面」仍未验证，属 EC-03/EC-04 live 分支）；
+      W-2 流式未实现（点名拒绝，probe 记为 capability failure 且**不写 SUPPORTED**）；
+      W-3 `response_format` 无对应参数（同样拒绝）；W-4 `max_tokens` 在 Messages 形态变必填而
+      **产品侧暂无调用方**（agent 真实运行走 SDK/litellm，不经此路径）；W-5 `system_fingerprint`
+      恒 `None` ⇒ 该端点 `SYSTEM_FINGERPRINT` 能力将永远观测不到（漂移可见性覆盖缺口，EC-05 只能靠
+      `returned model name`）；W-6 示例端点**仍未入库**（属 EC-03）；W-7 上游历史记录
+      `M5_CORRECTIONS_LOG.md` 未追改；W-8 域值名含厂商词是**既有取值**（本轮前就已被接受），
+      EC-02 的厂商中立约束针对新增字段；W-9 `tool_use.input` 非 dict 无用例。
   - id: EC-02
     criterion: >-
       **模型参数落库**：上下文窗口（**512000 tokens**）与思考强度（**Max**）在域实体上有
@@ -149,9 +187,11 @@ escalation_triggers:
   - ADR-0031（`tool_pack.*`，Status: Proposed）是否采纳——归用户
   - 把真实 runtime 设为**默认**（默认必须仍是 Fake；本循环只做「显式配置才启用」）
   - 新增依赖或改动既有依赖 pin（含为 anthropic 形态引入 SDK——优先用手写 HTTP，见 EC-01 判定细则）
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260920-114-anthropic-protocol-execution-path.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - MEM-20260920-087
 ---
 
 # GOAL-20260920-008 — 真实供应链接入（自迭代循环）
@@ -173,7 +213,7 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 
 | EC | 主题 | 来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | ANTHROPIC 协议执行路径（按 `endpoint.protocol` 选路；未知协议 fail-closed；反证：不再无条件 `openai/` 前缀） | GOAL-007 残余第 7 项 + 用户授权 (1) | **PENDING** |
+| EC-01 | ANTHROPIC 协议执行路径（按 `endpoint.protocol` 选路；未知协议 fail-closed；反证：不再无条件 `openai/` 前缀） | GOAL-007 残余第 7 项 + 用户授权 (1) | **PASS**（RECHECK-20260920-114，W-1…W-9） |
 | EC-02 | 模型参数落库（上下文窗口 512000 + 思考强度 Max 有承载字段、契约、往返、读面、快照；缺字段即红） | 用户授权 (2) + AGENTS.md §1/§4 | **PENDING** |
 | EC-03 | 供应链登记与凭据纪律（端点/模型入库；URL 策略放行 https 公网、拒绝本地/私有；明文凭据 grep 反证；重启失效边界如实披露） | 用户授权 (1)(3) + AGENTS.md §9 | **PENDING** |
 | EC-04 | 首次真实 run（live-gated：该端点 + `agnes-2.5-flash` 跑到终态；指纹/归账/制品/证据；口径=可重复配置；无凭据则如实 skip） | 用户授权 (1)(3) + AGENTS.md §4 | **PENDING** |
@@ -308,8 +348,9 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**建档完成（cycle 0）**，下一步 = **cycle 1**：derive EC-01 子 PLAN
-（anthropic 协议执行路径）并按 WP 推进。状态以本文件「迭代日志」末行 + 工作树实况为准；
+**当前续点**：**cycle 1 收口（EC-01 = PASS）**，下一步 = **cycle 2**：derive EC-02 子 PLAN
+（模型参数落库：上下文窗口 512000 + 思考强度 Max 的承载字段 / 契约 / 往返 / 读面 / 快照，
+反证「缺字段 ⇒ 用例红」）。状态以本文件「迭代日志」末行 + 工作树实况为准；
 不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -417,7 +458,8 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 见下方状态历史 | 治理 `validate.py` 绿 | 见下方状态历史 | — | EC-01…EC-06 全 PENDING；本机**无凭据**（`DEV_LLM_API_KEY` 空）⇒ EC-03/04/05 的 live 分支只能走如实 skip | cycle 1 = derive EC-01 子 PLAN（anthropic 协议执行路径） |
+| 0 | （建档，无子 PLAN） | `167bdd3` | 治理 `validate.py` 绿 | run 35490147869 = **success**（六 job 全 success） | — | EC-01…EC-06 全 PENDING；本机**无凭据**（`DEV_LLM_API_KEY` 空）⇒ EC-03/04/05 的 live 分支只能走如实 skip | cycle 1 = derive EC-01 子 PLAN |
+| 1 | PLAN-20260920-114（EC-01） | `7a28799`（PLAN+ALL_PLAN）、`c9a5caa`、`4693e6b`、`fbe6dee`、`d9e4be9`、`cc704e5`、`691414a`、`5f82071`、`0a04520`、记录提交见状态历史 | m0 **PASS: profile=m0; 23 deterministic checks**（4072 passed / 11 skipped，冻结树）；定向 168 passed + probe 判据 3 passed；`ruff`/`format`/`mypy`(945 files) 绿；治理 `validate.py` 绿 | run 见状态历史（cycle 1 攒成一次推送；写下本条的那个提交自身的 run 在回合汇报记账） | m0 拦下四处：format-check / typecheck(7) / 50 行函数门 / validate_bundle（G1–G4，均按缺陷修，未动断言与门禁） | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W-1（真实端点面未实测）、W-6（示例端点未入库）转由 EC-03/EC-04 承接 | cycle 2 = derive EC-02 子 PLAN（模型参数落库：上下文窗口 512000 + 思考强度 Max） |
 
 ## 状态历史
 
@@ -429,3 +471,20 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
   `DEV_LLM_API_KEY` 为空、URL 策略唯一裁决点）。GOAL-001…007 全部只读，未做任何修改。
   **EC-01 终态选择 (a) 实现**并记录理由（无凭据 ⇒ (b) 的实测前提不可满足）；
   **EC-02 的「迁移」口径按现状收敛为「解码向后兼容 + 往返」**（无 SQL 列可加，不新建 PG 表）。
+- 2026-09-20 cycle 1（driver=client-goal / owner=root-agent）：EC-01 **PASS**
+  （PLAN-20260920-114 / RECHECK-20260920-114 = PASS_WITH_WARNINGS）。
+  **交付**：`protocol` 从「只被持久化/DTO 读取的字符串」变成**真正的执行选路面**——
+  域枚举 `LLMProtocol` 为唯一词表；`adapters/relay/protocols.py::select_wire_shape` 是唯一分派点
+  （未知协议**抛分类错误且不发起请求**）；新增 Messages 形态实现
+  （`adapters/relay/anthropic_api.py` + `_complete_anthropic`，`x-api-key` + `anthropic-version`）；
+  `llm_factory.resolve_runtime_model_name(*, protocol)` 按协议取 `anthropic/` 前缀。
+  **三处不伪造**：缺 `max_tokens` 拒绝（不编默认值）、流式拒绝（不降级）、
+  `system_fingerprint`/usage 不编造。**三条反证先红后复原**（F1/F2/F3，最重 9 failed），
+  复原后定向 **168 passed**。**m0 本轮真的拦下四处缺陷**（G1–G4：format / mypy 7 错 /
+  **50 行函数门** / validate_bundle 旧版本号误判）——全部按缺陷修，**未动任何断言与门禁**；
+  G3 抽出 `_execute_request`（控制流不变），G4 改成「显式网段 + 地址分类兜底」**反而更严**。
+  冻结树 m0 **23/23（4072 passed / 11 skipped）**。**沉淀** `MEM-20260920-087`
+  （validate_bundle 扫全树 .py 含 gitignored `scratch/`，TEST-NET-1 网段字面量会命中旧版本号正则）。
+  **如实登记的边界**：W-1 真实端点面**未实测**（本机无凭据，一次出站都没发）、W-2/W-3 流式与
+  `response_format` 缺口、W-5 `system_fingerprint` 恒空、W-6 示例端点未入库（属 EC-03）、
+  W-8 域值名含厂商词属**既有**取值。**ADR-0031 仍是 Proposed；未新增依赖/未改 pin。**

@@ -2,7 +2,7 @@
 id: PLAN-20260920-114
 slug: anthropic-protocol-execution-path
 title: ANTHROPIC 协议执行路径：按 endpoint.protocol 选路（Messages 形态 + 未知协议 fail-closed + llm_factory 前缀）（EC-01）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-008
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-008 cycle 1 = EC-01（ANTHROPIC 协议执行路径）。授权来源：2026-09-20 用户 goal 模式指令（建档 GOAL-008 并自动化循环推进、无需逐轮确认）。真实端点登记 / 模型参数口径 / 凭据纪律 / push-to-main-for-CI 授权见 GOAL-20260920-008 frontmatter `authorization.ref`。本 PLAN 严格遵守：不解锁任何出网、不引入新依赖（anthropic 形态**手写 HTTP**）、不上传凭据、不把真实 runtime 设为默认、默认门保持离线。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-114-anthropic-protocol-execution-path.md
+memory_entries:
+  - MEM-20260920-087
 ---
 
 # PLAN-20260920-114 — ANTHROPIC 协议执行路径（GOAL-008 cycle 1 = EC-01）
@@ -165,24 +166,57 @@ memory_entries: []
 
 ## 证据
 
-（实施中登记：每条 AC 的命令 + 实测输出摘要 + 反证的前后对照。）
+- **交付物（树内可复核）**：`packages/domain/enums.py::LLMProtocol`、
+  `packages/domain/models.py::_LEGAL_PROTOCOLS`、`adapters/relay/protocols.py`
+  （`select_wire_shape` / `request_headers` / `ANTHROPIC_VERSION`）、
+  `adapters/relay/anthropic_api.py`、`adapters/relay/completions.py::_complete_anthropic`、
+  `adapters/relay/gateway.py`（`list_models` 走协议头）、
+  `adapters/relay/transport.py`（`headers` 覆盖 + `_execute_request`）、
+  `packages/application/ports/model_gateway.py::CompletionRequest.max_tokens`、
+  `packages/application/model_relay/suite.py::probe_max_tokens`、
+  `adapters/openhands/llm_factory.py::resolve_runtime_model_name(*, protocol)`、
+  文档 `docs/integration/LLM_ENDPOINTS.md` §1 / `MODEL_GATEWAY.md` §3。
+- **判据套件**：`tests/adapters/relay/test_anthropic_messages.py`（14）、
+  `tests/architecture/python/test_protocol_vocabulary.py`（3）、
+  `tests/application/test_probe_protocol_requests.py`（3）、
+  `tests/adapters/openhands/test_llm_relay.py::TestProtocolPrefix`（5）。
+- **反证（先红后复原）**：F1 `llm_factory` 前缀分支短路 ⇒ 2 failed；
+  F2 `complete_any` Messages 分派短路 ⇒ 与 F1 合并 9 failed（失败日志显示请求落到
+  `/chat/completions`）；F3 未知协议静默回退 ⇒ 2 failed（`DID NOT RAISE`）。
+  复原后同命令 **168 passed**。
+- **门禁（完整 m0，冻结树）**：`PASS: profile=m0; 23 deterministic checks`，
+  **4072 passed / 11 skipped**。m0 本轮实际拦下四处缺陷并按缺陷修（`python/format-check`、
+  `python/typecheck` 7 错误、50 行函数门 G3、`framework/validate_bundle` G4）——
+  详见 RECHECK-20260920-114 的 G1–G4 与 W-1…W-9。
+- **复检**：`.cursor/plans/rechecks/RECHECK-20260920-114-anthropic-protocol-execution-path.md`
+  = **PASS_WITH_WARNINGS**（W-1 真实端点面未实测 / W-2 流式未实现 / W-3 `response_format`
+  无对应 / W-4 `max_tokens` 无产品调用方 / W-5 `system_fingerprint` 恒空 / W-6 端点未入库 /
+  W-7 上游历史记录未改写 / W-8 域值名含厂商词属既有取值 / W-9 `tool_use.input` 非 dict 无用例）。
 
 ## 状态历史
 
 - 2026-09-20 建档（GOAL-008 cycle 1 = EC-01）：`status: IN_PROGRESS`。
   只读勘察确认 6 条事实（分派键是 `api_style`、鉴权头写死在传输层、`max_tokens` 无承载、
   `openai/` 前缀唯一且无条件、relay 禁 import 厂商 SDK、既有测试面行号）。
+- 2026-09-20 完成（`status: DONE`）。WP-A…WP-E 各自独立提交；三条反证先红后复原；
+  m0 三跑（前两跑各拦下一批缺陷，冻结树上最终 **23/23 + 4072 passed**）；
+  RECHECK-20260920-114 = PASS_WITH_WARNINGS（W-1…W-9 已登记）。
 
 ## 影响报告
 
-- **Domain/API/schema 变化**：新增 `LLMProtocol` 枚举（**接受集合不变**）；
-  `CompletionRequest` 增**可选** `max_tokens`（默认 None ⇒ 既有调用方行为不变）；
-  `resolve_runtime_model_name` 签名变为关键字参数（**调用点显式化**）。
-  **无 DTO / 路由 / OpenAPI 快照 / 迁移变化**（协议值集合与持久化编码均未变）。
-- **安全/凭据变化**：鉴权头按协议构造（Anthropic 用 `x-api-key`）；**新增头不得进入
-  白名单采集**（`SAFE_RESPONSE_HEADERS` 不变，请求头本就不落盘）；不新增出网面
-  （分派仍在既有 URL 策略与门链之后）。
-- **兼容性/迁移风险**：无数据迁移；风险点是 `max_tokens` 语义（Anthropic 必填）——
-  以「缺失即点名拒绝」处理，**不静默补默认值**；anthropic 流式未实现是**登记缺口**。
-- **上游版本影响**：无（不引入依赖、不改 pin）。
-- **下一项任务**：EC-02（模型参数落库）。
+- **Domain/API/schema 变化**：新增 `LLMProtocol` 枚举（**接受集合不变**：仍是
+  `OPENAI_COMPATIBLE` / `ANTHROPIC`，错误文本逐字未改）；`CompletionRequest` 增**可选**
+  `max_tokens`（默认 None ⇒ 既有调用方行为不变）；`resolve_runtime_model_name` 的 protocol
+  改为**必填关键字参数**（调用点显式化，唯一测试调用点已更新且断言未改）。
+  **无 DTO / 路由 / OpenAPI 快照 / 迁移变化**（协议值集合与持久化编码均未变；
+  `docs/api/openapi.m13.json` 本轮未改，快照门在 m0 内通过）。
+- **安全/凭据变化**：鉴权头**按协议**构造（Messages 用 `x-api-key` + `anthropic-version`，
+  且不再发送 `Authorization`）；请求头**不进入**白名单采集（`SAFE_RESPONSE_HEADERS` 未动）；
+  **未新增出网面**——分派发生在既有 URL 策略与门链之后，且未知协议在触网前拒绝。
+- **兼容性/迁移风险**：无数据迁移。风险点是 Messages 形态的 `max_tokens` 语义
+  （缺失即点名拒绝，**不静默补默认**）与**流式未实现**（拒绝而非降级）——两者都是
+  「宁可拒绝也不伪造能力」，已随 W-2/W-4 登记。
+- **上游版本影响**：**无**（未引入依赖、未改 pin；Messages 形态手写 HTTP，relay 适配器
+  「不得 import 厂商 SDK」的既有结构约束仍绿）。
+- **下一项任务**：EC-02（模型参数落库：上下文窗口 512000 + 思考强度 Max 的承载字段、
+  往返、读面、快照；反证：缺字段 ⇒ 用例红）。
