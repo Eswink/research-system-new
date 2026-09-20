@@ -39,8 +39,10 @@ def test_surrounding_whitespace_is_not_a_difference() -> None:
 def test_missing_returned_name_is_unknown(returned: str | None) -> None:
     """**未探到 ≠ 一致**：这是本判据的核心反义（AGENTS.md §4）。"""
     verdict = assess_model_drift("model-a", returned)
-    assert verdict.state is ModelDriftState.UNKNOWN
+    # 先断言「不是一致」，再断言「是未知」：顺序有意义——把退化写成 MATCH 时，
+    # 这条会先咬（mypy 也能看出先断言的那条不是恒真）。
     assert verdict.state is not ModelDriftState.MATCH
+    assert verdict.state is ModelDriftState.UNKNOWN
     assert verdict.is_drift is False
     assert verdict.returned_model_name is None
     assert "unknown is not the same as no drift" in verdict.detail
