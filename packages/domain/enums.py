@@ -168,6 +168,23 @@ class ModelDriftState(StrEnum):
     UNKNOWN = "UNKNOWN"
 
 
+class ModelReproducibilityVerdict(StrEnum):
+    """一次真实 run 的结论口径（AGENTS.md §4：不得宣称「完全模型可复现」）。
+
+    - `REPEATABLE_CONFIGURATION`：端点 + 模型 + 配置**已被真实运行确认**，但
+      provider 未给出足以证明底层模型完全一致的证据（如 `system_fingerprint`）⇒
+      结论只能停在「**可重复配置**」；
+    - `NOT_VERIFIED`：**什么都没证明**（无凭据 / 门关闭 / 探测或运行失败）。
+
+    两态是**穷举**的：不存在能表达「完全可复现」的成员——把该宣称写进读面之前，
+    必须先让这个枚举多一个成员，而成员集合本身有判据把守。
+    `NOT_VERIFIED` **不是** PASS：它是「没有证据」，不是「证据支持」。
+    """
+
+    REPEATABLE_CONFIGURATION = "REPEATABLE_CONFIGURATION"
+    NOT_VERIFIED = "NOT_VERIFIED"
+
+
 class PolicyDecision(StrEnum):
     ALLOW = "ALLOW"
     DENY = "DENY"
