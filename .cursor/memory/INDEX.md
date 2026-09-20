@@ -88,6 +88,7 @@
 | [MEM-20260920-088](entries/MEM-20260920-088-new-render-branch-may-be-invisible-to-the-design-gate.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-115 |
 | [MEM-20260920-089](entries/MEM-20260920-089-read-face-lies-need-wording-gates.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-116 |
 | [MEM-20260920-090](entries/MEM-20260920-090-unknown-must-not-render-as-none.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-117 |
+| [MEM-20260920-091](entries/MEM-20260920-091-verdict-enums-and-runtime-derived-guards.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-118 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

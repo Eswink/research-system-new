@@ -2,7 +2,7 @@
 id: PLAN-20260920-118
 slug: first-live-gated-real-run
 title: 首次 live-gated 真实 run：门控、运行时指纹、usage 归账、制品与证据、结论口径「可重复配置」（EC-04）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-008
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-008 cycle 5 = EC-04（首次真实 run）。授权来源：2026-09-20 用户 goal 模式指令 frontmatter `authorization.ref` 第 (1) 条（登记真实端点与模型 **anthropic 兼容型**、`base_url = https://apihub.agnes-ai.com`、模型 `agnes-2.5-flash`，并允许一次 live-gated 真实 run，最小必要次数，不跑压力/批量）、第 (3) 条（凭据只从环境变量或 Credential boundary 读取，由用户注入；不得写入仓库/数据库/CI/记录/日志/提示词，不得回显；本循环不得索取明文）与 AGENTS.md §4（无法证明底层模型完全一致时必须标注「可重复配置」而非「完全模型可复现」）。本 PLAN 遵守：默认 runtime 保持 Fake、默认门离线、真实 runtime 仅显式配置时启用、不新增依赖、不改 pin、不改 Policy/eligibility；**无凭据时 live 分支如实 skip，skip 不是 PASS**。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-118-first-live-gated-real-run.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-091-verdict-enums-and-runtime-derived-guards.md
 ---
 
 # PLAN-20260920-118 — 首次 live-gated 真实 run（GOAL-008 cycle 5 = EC-04）
@@ -148,8 +149,30 @@ memory_entries: []
 
 ## 证据
 
-逐条 AC 与 F1–F4 的注入/观察/复原对照见
-`.cursor/plans/rechecks/RECHECK-20260920-118-first-live-gated-real-run.md`。
+逐条 AC 与 F1–F5 的注入/观察/复原对照、以及本地门禁拦下的 G1–G3 见
+`.cursor/plans/rechecks/RECHECK-20260920-118-first-live-gated-real-run.md`。摘要：
+
+- **AC-01**：`tests/domain/test_reproducibility_verdict.py` **4 passed**（成员恰好两态 +
+  成员名无越级痕迹 + 最强档只到「配置」+ 两态不得合并）；反证 F5 **1 red**。
+- **AC-02**：`tests/application/model_relay/test_live_run_record.py` **13 passed**
+  （skip 不是 PASS、必填项缺失降级并点名、provider 项缺失只登记、payload 暴露缺口）；
+  反证 F1 **3 red**、F2 **6 red**。
+- **AC-03/AC-04**：`tests/e2e/test_ec04_live_gate_offline.py` **13 passed**（四种关门情形 +
+  全部未满足条件点名 + 不物化凭据 + **零出站** + skip ≠ PASS + 门控存在性）；
+  `tests/e2e/test_ec04_live_first_run.py` **1 passed / 1 skipped**（跳过的是 live 主判据）；
+  反证 F3 **4 red**。
+- **AC-05**：`tests/architecture/python/test_reproducibility_wording.py` **5 passed**
+  （六个口径面必填 + 全仓无肯定式越级表述 + 规则自检）；反证 F4 **1 red**。
+  **该判据在本轮真的咬到一次**：`docs/integration/LLM_ENDPOINTS.md` 原本**没有**「可重复配置」
+  这一档 ⇒ 判据红 ⇒ 补写 §11（不是改判据）。
+- **AC-06**：F1–F5 全部**先红后复原**，每步 `git diff --quiet` 复核（脚本把它当失败条件）。
+- **AC-07**：定向 `38 passed / 2 skipped`；治理 `validate.py` / `validate_bundle` /
+  `docs_consistency_check` 绿；**m0 全量 23 项 4190 passed / 12 skipped（499.34s，冻结树 `7ce833f`）**。
+- **本地门禁拦下三处**（G1 类型守卫的字面量比较 / G2 两个 >50 行函数 /
+  **G3 跨套件污染：同一测试文件被两个模块名加载 ⇒ SDK Action 子类重复定义**），
+  均按缺陷修（`97380c1`、`7ce833f`、`4f54e53`），未动门禁与断言强度。
+- **live 分支如实 skip**：本机六项候选凭据环境变量全 absent ⇒ **真实 run 未发生**，
+  `NOT_VERIFIED` 记录 + skip 事实登记（**skip 不是 PASS**）。
 
 ## 状态历史
 
@@ -158,6 +181,13 @@ memory_entries: []
   「可重复配置」只有文案没有词表 → probe 有 NOT VERIFIED 占位而 run 没有 →
   指纹落点（manifest）已存在 → runtime 显式配置面已存在 → 形态/URL 拼装已有判据 →
   本机六项候选凭据环境变量全 absent ⇒ 只能 skip）。
+
+- 2026-09-20 实施与复检（WP-A…WP-D）：`status: DONE`，`latest_recheck` 指向
+  RECHECK-20260920-118（**PASS_WITH_WARNINGS**，W-1…W-6）。词表 / run 记录 / 门 /
+  live 用例 / 口径判据五件落地；F1–F5 全部先红后复原；本地门禁拦下三处（G1–G3）
+  并按缺陷修复——其中 **G3（跨套件污染）** 是「直接 import 另一个测试模块」引入的，
+  已抽成单一名共享模块 `tests/e2e/live_run_support.py`。
+  **live 分支因本机无凭据如实 skip：真实 run 一次未跑（W-1）**，本轮绿全部来自离线判据。
 
 ## 影响报告
 
@@ -169,4 +199,6 @@ memory_entries: []
   默认门保持离线（live 用例带 `requires_live_llm`，CI 只走 skip 路径）。
 - **上游版本影响**：无（不引入依赖、不改 pin）。
 - **下一项任务**：EC-04 收口后取 **EC-06（文档与 runbook：登记步骤 / 凭据注入与轮换 /
-  重启重输边界 / Fake↔真实切换与回退 / 「哪些面仍是 demo」清单 + `docs/INDEX.md`）**。
+  重启重输边界 / Fake↔真实切换与回退 / 「哪些面仍是 demo」清单 + `docs/INDEX.md`）**——
+  这也是 GOAL-008 最后一个未收口的 EC；EC-06 收口后 GOAL 进入终止判定（EC-01…EC-06 全 PASS，
+  且 EC-04/EC-05 的 live 分支按 GOAL「终止与收口」的明文：未跑不自动阻塞，但必须如实登记）。

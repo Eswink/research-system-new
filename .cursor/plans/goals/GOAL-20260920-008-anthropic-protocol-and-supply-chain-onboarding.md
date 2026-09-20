@@ -218,12 +218,13 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260920-116-supply-chain-registration-and-credential-discipline.md
   - .cursor/plans/tasks/PLAN-20260920-117-model-drift-visibility-three-states.md
   - .cursor/plans/tasks/PLAN-20260920-118-first-live-gated-real-run.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-117-model-drift-visibility-three-states.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-118-first-live-gated-real-run.md
 memory_entries:
   - MEM-20260920-087
   - MEM-20260920-088
   - MEM-20260920-089
   - MEM-20260920-090
+  - MEM-20260920-091
 ---
 
 # GOAL-20260920-008 — 真实供应链接入（自迭代循环）
@@ -248,7 +249,7 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 | EC-01 | ANTHROPIC 协议执行路径（按 `endpoint.protocol` 选路；未知协议 fail-closed；反证：不再无条件 `openai/` 前缀） | GOAL-007 残余第 7 项 + 用户授权 (1) | **PASS**（RECHECK-20260920-114，W-1…W-9） |
 | EC-02 | 模型参数落库（上下文窗口 512000 + 思考强度 Max 有承载字段、契约、往返、读面、快照；缺字段即红） | 用户授权 (2) + AGENTS.md §1/§4 | **PASS**（RECHECK-20260920-115，W-1…W-7） |
 | EC-03 | 供应链登记与凭据纪律（端点/模型入库；URL 策略放行 https 公网、拒绝本地/私有；明文凭据 grep 反证；重启失效边界如实披露） | 用户授权 (1)(3) + AGENTS.md §9 | **PASS**（RECHECK-20260920-116，W-1…W-7） |
-| EC-04 | 首次真实 run（live-gated：该端点 + `agnes-2.5-flash` 跑到终态；指纹/归账/制品/证据；口径=可重复配置；无凭据则如实 skip） | 用户授权 (1)(3) + AGENTS.md §4 | **PENDING** |
+| EC-04 | 首次真实 run（live-gated：该端点 + `agnes-2.5-flash` 跑到终态；指纹/归账/制品/证据；口径=可重复配置；无凭据则如实 skip） | 用户授权 (1)(3) + AGENTS.md §4 | **PASS（离线判据全绿；live 分支如实 skip —— 真实 run 未发生，见 RECHECK-118 W-1）** |
 | EC-05 | 漂移可见性（probe 返回 model 名 vs 声明值对比，漂移状态进读面；无凭据则如实 skip） | 用户授权 (1) + AGENTS.md §4 | **PASS**（RECHECK-20260920-117，W-1…W-6；live 分支如实 skip） |
 | EC-06 | 文档与 runbook（登记步骤 / 凭据注入与轮换 / 重启重输边界 / Fake↔真实切换与回退 / 「哪些面仍是 demo」清单 + `docs/INDEX.md`） | 用户授权 (2)(3) + AGENTS.md §14 | **PENDING** |
 
@@ -380,19 +381,15 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**cycle 5 进行中（PLAN-20260920-118 = EC-04，`IN_PROGRESS`；derive 已提交）**。
-EC-04 = **首次 live-gated 真实 run**：门控（凭据可解析 + runtime 显式配置）、结论口径词表
-（`REPEATABLE_CONFIGURATION` / `NOT_VERIFIED`，类型上无法表达「完全可复现」）、
-结构化 `NOT_VERIFIED` run 记录（无凭据时点名缺失指纹项）、离线判据（门决策 + **零出站** + 正控 +
-skip ≠ PASS）、口径同源判据（判**肯定式**宣称，豁免既有诚实否定句）。
-**本机无凭据**（cycle 5 复核：`LLM_MAIN_KEY` / `DEV_LLM_API_KEY` / `RESEARCHOS_LIVE_E2E_KEY` /
-`RESEARCHOS_LIVE_E2E_ENDPOINT` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` 全 absent，只看存在性、
-未读值）⇒ **真实 run 本轮不发生**，按判定细则**如实 skip 并登记（skip 不是 PASS）**：
-本轮只交付门控、词表、`NOT_VERIFIED` 记录与离线判据，live 分支的实测留作残余。
-EC-05 已收口（RECHECK-20260920-117 = PASS_WITH_WARNINGS，live 分支如实 skip）。
-cycle 5 收口（CI 终态已记账）后进入 **cycle 6 的 ①：derive EC-06**（文档与 runbook：
-登记步骤 / 凭据注入与轮换 / 重启重输边界 / Fake↔真实切换与回退 / 「哪些面仍是 demo」清单 +
-`docs/INDEX.md`）。
+**当前续点**：**cycle 5 已收口（PLAN-20260920-118 = EC-04，`DONE`；RECHECK-20260920-118 =
+PASS_WITH_WARNINGS，live 分支如实 skip）**，EC-04 **PASS**。
+EC-01 / EC-02 / EC-03 / EC-04 / EC-05 **全 PASS**；唯一未收口的是 **EC-06**（文档与 runbook）。
+下一步 = **cycle 6 的 ①：derive EC-06 子 PLAN**——登记步骤（DB 路径与 YAML 路径）、凭据注入与**轮换**、
+**重启后重输的边界**、**Fake↔真实切换与回退**、以及「**哪些面仍是 demo**」的清单，
+并把该文档登记进 `docs/INDEX.md`；判据要与代码**同源**（文档里每个变量名/路径/命令都必须在代码里真实存在）。
+EC-06 收口后 GOAL 进入终止判定：按「终止与收口」的明文，**EC-04/EC-05 的 live 分支未跑（无凭据）
+不自动阻塞 ACHIEVED，但必须在 EC-04/EC-05 的 `evidence` 与残余里如实登记**（已完成：
+RECHECK-117 W-1、RECHECK-118 W-1）。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -506,9 +503,47 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 | 3 | PLAN-20260920-116（EC-03） | `dd989b7`（derive）、`b6c7386`、`26f93b3`、`eee4728`、`1e16c40`、`40bddd5`、`94db850`、`18794a1`、`5f43b98`、`fdf0281`（收口记录） | m0 **PASS: profile=m0; 23 deterministic checks**（**4131 passed / 11 skipped**，479.71s，冻结树 `5f43b98`；其后仅 `.cursor/**` 记录改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 `tests/api + tests/application + tests/architecture + tests/tooling` **2292 passed / 2 skipped**（2 条需 `RESEARCHOS_POSTGRES_DSN` 钉桩，补桩后 6 passed——已知 DSN 条件，非回归）；`ruff format/check` / `mypy`(951 files) 绿；web `lint`(max-warnings 0)/`typecheck`/e2e 新增 spec **2 passed**、`design-fidelity` **2 passed 且基线零 diff**（新文案在未打开的抽屉里 ⇒ 对设计门不可见）；审计工具实跑四面 0 命中 | **run 35503139831 = success**（`fdf0281`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | **m0 拦下 1 处**（G1：新用例里 `int(object)` + `# type: ignore` 触发 `unused-ignore` / `call-overload` / `attr-defined`；按缺陷修为先断言类型的助手，`5f43b98`，未动门禁与断言强度） | EC-03 **PASS**；EC-04/EC-05/EC-06 PENDING。残余 7 条：W-1 注册面仍不校验 URL、W-2 出站 0 只在 Fakes 上证明、W-3 措辞判据不覆盖渲染、W-4 向导面未加声明、W-5 审计白名单人维护、W-6 本机仍无凭据、W-7 `.env` 不在扫描面内 | cycle 4 = derive **EC-05**（漂移可见性：probe 返回 model 名 vs 声明值三态；live 分支无凭据 ⇒ 如实 skip） |
 
 | 4 | PLAN-20260920-117（EC-05） | `183f588`（derive）、`c6bfdef`、`7b317f6`、`3a955b5`、`3eef7c3`（+收口记录） | 定向：域 `test_model_drift.py` **9 passed**、API `test_models_api.py` **15 passed**、词表同源 **5 passed**、e2e 漂移 spec **4 passed**、`test_openapi_snapshot.py`（快照 +47 行）绿；web `lint`(max-warnings 0)/`typecheck`/unit 绿；`design-fidelity` **2 passed 且基线零 diff**（漂移块只在探测后渲染 ⇒ 对设计门不可见）；`docs_consistency_check` / `validate_bundle` 绿；**m0 全量 23 项**计数见状态历史 cycle 4 段 | **run 35506216814 = success**（`52b4967`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | — | EC-05 **PASS**；EC-04/EC-06 PENDING。残余 6 条：W-1 live 语义未实测（无凭据，真实 probe 一次未跑）、W-2 fingerprint 未纳入漂移判定、W-3 drift 未持久化、W-4 严格口径的噪声代价、W-5 UNKNOWN 三种来源未细分、W-6 指纹只在 provider 给出时构建 | cycle 5 = derive EC-04（首次真实 run；仍无凭据 ⇒ 按「skip 不是 PASS」处置）或 EC-06 |
-| 5 | PLAN-20260920-118（EC-04） | （本行随收口回写） | （本行随收口回写） | （本行随收口回写） | — | EC-04 进行中；**本机无凭据**（cycle 5 复核：`LLM_MAIN_KEY` / `DEV_LLM_API_KEY` / `RESEARCHOS_LIVE_E2E_KEY` / `RESEARCHOS_LIVE_E2E_ENDPOINT` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` 全 absent，只看存在性未读值）⇒ **真实 run 本轮不发生**，只交付门控、`NOT_VERIFIED` 记录、口径词表与离线判据 | cycle 6 = derive EC-06（文档与 runbook） |
+| 5 | PLAN-20260920-118（EC-04） | `8b85f03`（derive）、`08e41f7`、`17464bf`、`8c9d67c`、`97380c1`、`4f54e53`、`7ce833f`（+收口记录） | 定向：域词表 **4 passed**、run 记录 **13 passed**、离线门 **13 passed**、live 用例 **1 passed / 1 skipped**、口径判据 **5 passed**、EC-03 离线全链 **2 passed / 1 skipped**（抽共享模块后复跑）⇒ 合计 **38 passed / 2 skipped**；反证 F1–F5 全部先红后复原；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿；**m0 全量 23 项 4190 passed / 12 skipped（499.34s，冻结树 `7ce833f`；cycle 4 为 4146/11）** | （本轮推送的 run 与六 job 结论在紧随的台账提交登记） | **m0 拦下三处（G1–G3）**：G1 新判据用两个字面量枚举成员比较 ⇒ mypy `comparison-overlap`（cycle 4 同族陷阱再现，改走运行期枚举）；G2 新代码两处函数 >50 行（拆助手）；**G3 跨套件污染**——live 用例直接 import EC-03 测试模块 ⇒ 同一文件被两个模块名加载、SDK `Action` 子类被定义两次 ⇒ 6 条 fork 用例红（抽单一名共享模块 `tests/e2e/live_run_support.py`）。均按缺陷修，未动门禁与断言强度 | EC-04 **PASS（离线判据全绿；live 分支如实 skip —— 真实 run 未发生）**；EC-06 未收口。残余 6 条：W-1 真实 run 未发生（能力边界，六项候选凭据环境变量全 absent）、W-2 live 路径的模型绑定不是 anthropic 面（所有模型绑 `main`）、W-3 门只看 runtime 配置 + 凭据可解析、W-4 口径判据的引用-豁免是行级启发式、W-5 记录的 usage/制品字段靠调用方填（live 判据未跑）、W-6 `NOT_VERIFIED` 同时覆盖「无凭据」与「跑了但没终止」 | cycle 6 = derive **EC-06**（文档与 runbook；GOAL 最后一个未收口 EC） |
 
 ## 状态历史
+
+- 2026-09-20 cycle 5（driver=client-goal / owner=root-agent）：EC-04 **PASS**（离线判据全绿；
+  **live 分支如实 skip —— 真实 run 未发生**；PLAN-20260920-118 / RECHECK-20260920-118 =
+  PASS_WITH_WARNINGS，W-1…W-6）。
+  **交付**：把「一次真实 run」从**可期望**变成**可判、可 skip、且不会说谎**——
+  ①`ModelReproducibilityVerdict`（`REPEATABLE_CONFIGURATION` / `NOT_VERIFIED`，**穷举两态**：
+  「完全可复现」在类型上不可表达）；②`LiveRunRecord`（必填指纹项缺失 ⇒ 降级并**点名缺项**；
+  provider 项缺失只登记不降级；`NOT_VERIFIED` **必须**有理由，构造期就拒空理由）；
+  ③`evaluate_live_run_gate`（两条开门条件：runtime 显式配置 + 凭据**可解析**——只问
+  `CredentialResolver.has`，**不物化明文**；关门时**不碰 socket**，零出站是结构性保证）；
+  ④live 用例 `test_ec04_live_first_run.py`（登记端点 `agnes-anthropic` 的 probe 段 + 生产 runtime 的
+  run 段，四段判据各自可判）；⑤口径同源判据（六个面必填 + 全仓**肯定式**越级表述判红，
+  引用与否定句放行）。
+  **「skip 不是 PASS」由两处独立钉住**：记录层（`is_verified=False` + 理由必填 + F1）与
+  门层（`skip_record_for_gate` 拒绝开着的门 + F3）。**反证 F1–F5 全部先红后复原**
+  （F1 把跳过说成已验证 ⇒ 3 red；F2 缺失项不再点名 ⇒ 6 red；F3 无凭据也放行 ⇒ 4 red；
+  F4 否定改肯定 ⇒ 1 red；F5 删掉口径词 ⇒ 1 red；每步 `git diff --quiet` 复核）。
+  **本地门禁拦下三处，均按缺陷修**：G1 新判据里两个字面量枚举成员比较 ⇒ mypy
+  `comparison-overlap`（**与 cycle 4 的 G1 同族**：连续两轮同一陷阱，改为运行期枚举派生，
+  `97380c1`）；G2 两处函数 >50 行（拆私有助手，`7ce833f`）；**G3 跨套件污染**——
+  live 用例直接 `from tests.e2e.test_ec03_… import …` 让**同一测试文件被两个模块名加载**，
+  SDK 的 `Action` 子类被定义两次 ⇒ 判别联合在同进程后续任何事件 round-trip 上抛
+  `Duplicate class definition` ⇒ 6 条 fork 用例红（`test_fork_override` ×3、
+  `test_full_adapter` ×1、`test_agent_runtime_contract` ×2）；抽成**单一名**共享模块
+  `tests/e2e/live_run_support.py` 后同进程复跑 **57 passed / 8 skipped**（`4f54e53`）。
+  冻结树 m0 **23/23（4190 passed / 12 skipped，499.34s，`7ce833f`；cycle 4 为 4146/11）**。
+  **判据在实施中真的咬到一次**：`docs/integration/LLM_ENDPOINTS.md` 原本**没有**「可重复配置」
+  这一档 ⇒ 口径判据红 ⇒ **补写 §11**（不是改判据）。
+  **沉淀** `MEM-20260920-091`（结论口径要落成穷举词表 + skip 必须有结构 + 枚举守卫走运行期，
+  附「空串是任何字符串的子串」这个把行尾误判成引号的陷阱）。
+  **如实登记的边界**：**W-1 真实 run 未发生**（本机六项候选凭据环境变量全 absent、
+  `RESEARCHOS_AGENT_RUNTIME` 未配置 ⇒ 门两条都关着；EC-04 的靶心要等凭据注入才能命中）、
+  W-2 目录里所有模型绑 `main`（OPENAI_COMPATIBLE 面），登记进目录的 anthropic 端点只由 probe 段驱动、
+  W-3 门只看两个条件（Policy/预算/端点健康由既有 preflight 负责）、
+  W-4 口径判据的引用-豁免是行级启发式、W-5 记录的 usage/制品字段靠调用方填、
+  W-6 `NOT_VERIFIED` 同时覆盖两种来源（无凭据 / 跑了但没终止），靠 `reason` 区分。
+  **未新增依赖、未改 pin、未新增 PG 表、未触碰凭据值；ADR-0031 仍是 Proposed。**
+  **CI 台账**：本轮批量推送的 run 与六 job 结论在紧随其后的台账提交按同口径登记。
 
 - 2026-09-20 cycle 4（driver=client-goal / owner=root-agent）：EC-05 **PASS**
   （PLAN-20260920-117 / RECHECK-20260920-117 = PASS_WITH_WARNINGS，W-1…W-6）。
