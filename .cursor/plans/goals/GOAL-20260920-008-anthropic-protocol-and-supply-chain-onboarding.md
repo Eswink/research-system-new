@@ -216,10 +216,11 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260920-114-anthropic-protocol-execution-path.md
   - .cursor/plans/tasks/PLAN-20260920-115-model-parameter-persistence.md
   - .cursor/plans/tasks/PLAN-20260920-116-supply-chain-registration-and-credential-discipline.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-116-supply-chain-registration-and-credential-discipline.md
 memory_entries:
   - MEM-20260920-087
   - MEM-20260920-088
+  - MEM-20260920-089
 ---
 
 # GOAL-20260920-008 — 真实供应链接入（自迭代循环）
@@ -243,7 +244,7 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 | --- | --- | --- | --- |
 | EC-01 | ANTHROPIC 协议执行路径（按 `endpoint.protocol` 选路；未知协议 fail-closed；反证：不再无条件 `openai/` 前缀） | GOAL-007 残余第 7 项 + 用户授权 (1) | **PASS**（RECHECK-20260920-114，W-1…W-9） |
 | EC-02 | 模型参数落库（上下文窗口 512000 + 思考强度 Max 有承载字段、契约、往返、读面、快照；缺字段即红） | 用户授权 (2) + AGENTS.md §1/§4 | **PASS**（RECHECK-20260920-115，W-1…W-7） |
-| EC-03 | 供应链登记与凭据纪律（端点/模型入库；URL 策略放行 https 公网、拒绝本地/私有；明文凭据 grep 反证；重启失效边界如实披露） | 用户授权 (1)(3) + AGENTS.md §9 | **PENDING** |
+| EC-03 | 供应链登记与凭据纪律（端点/模型入库；URL 策略放行 https 公网、拒绝本地/私有；明文凭据 grep 反证；重启失效边界如实披露） | 用户授权 (1)(3) + AGENTS.md §9 | **PASS**（RECHECK-20260920-116，W-1…W-7） |
 | EC-04 | 首次真实 run（live-gated：该端点 + `agnes-2.5-flash` 跑到终态；指纹/归账/制品/证据；口径=可重复配置；无凭据则如实 skip） | 用户授权 (1)(3) + AGENTS.md §4 | **PENDING** |
 | EC-05 | 漂移可见性（probe 返回 model 名 vs 声明值对比，漂移状态进读面；无凭据则如实 skip） | 用户授权 (1) + AGENTS.md §4 | **PENDING** |
 | EC-06 | 文档与 runbook（登记步骤 / 凭据注入与轮换 / 重启重输边界 / Fake↔真实切换与回退 / 「哪些面仍是 demo」清单 + `docs/INDEX.md`） | 用户授权 (2)(3) + AGENTS.md §14 | **PENDING** |
@@ -376,9 +377,12 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**cycle 3 已 derive（PLAN-20260920-116 = EC-03 供应链登记与凭据纪律，`IN_PROGRESS`）**，
-下一步 = **按该子 PLAN 的 WP-A…WP-F 执行**（URL 策略补严 → 出站 0 判据 → 明文凭据审计 →
-真实端点登记入库 → 重启失效边界同源 → 反证/记录/收口）。
+**当前续点**：**cycle 3 已收口（PLAN-20260920-116 = EC-03，`DONE`；RECHECK-20260920-116 =
+PASS_WITH_WARNINGS）**，EC-03 **PASS**。下一步 = **cycle 4 的 ①：derive EC-05（漂移可见性）
+子 PLAN**——判据须区分「一致 / 漂移（点名差异）/ **未知**（未探到）」三态，`未知` 不得显示为
+「无漂移」；live 探针在无凭据时**如实 skip**（记录 skip 事实），离线判据仍须绿。
+EC-04（首次真实 run）仍受**无凭据**限制（本机候选环境变量全 absent、`endpoint:*` 命名环境变量 0 个），
+按判定细则「skip 不是 PASS」处置；EC-06（文档与 runbook）排在 EC-04 之后。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -488,7 +492,8 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `167bdd3` | 治理 `validate.py` 绿 | run 35490147869 = **success**（六 job 全 success） | — | EC-01…EC-06 全 PENDING；本机**无凭据**（`DEV_LLM_API_KEY` 空）⇒ EC-03/04/05 的 live 分支只能走如实 skip | cycle 1 = derive EC-01 子 PLAN |
 | 1 | PLAN-20260920-114（EC-01） | `7a28799`（PLAN+ALL_PLAN）、`c9a5caa`、`4693e6b`、`fbe6dee`、`d9e4be9`、`cc704e5`、`691414a`、`5f82071`、`0a04520`、`4e28e93`（记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4072 passed / 11 skipped，冻结树 `0a04520`；0 failed checks）；定向 168 passed + probe 判据 3 passed；`ruff`/`format`/`mypy`(945 files) 绿；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35493396918 = success**（`4e28e93`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | m0 拦下四处：format-check / typecheck(7) / 50 行函数门 / validate_bundle（G1–G4，均按缺陷修，未动断言与门禁） | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W-1（真实端点面未实测）、W-6（示例端点未入库）转由 EC-03/EC-04 承接 | cycle 2 = derive EC-02 子 PLAN（模型参数落库：上下文窗口 512000 + 思考强度 Max） |
-| 2 | PLAN-20260920-115（EC-02） | `a6c03bc`（derive）、`3eece38`、`d3eedf7`、`3caf6c2`、`abed221`、`b8f2e9b`、`a0f98bb`、`40fe55d`、`53f4a26`、`1df2e11`（收口记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4097 passed / 11 skipped，461.72s，冻结树 `40fe55d`；其后仅一段文档改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 56 passed、PG 根 + 装配判据 5 passed、web unit 76 passed、web lint/typecheck 绿、design-fidelity 2 passed（基线零 diff）；`ruff`/`format`/`mypy`(949 files) 绿 | **run 35497734881 = success**（`1df2e11`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | — （本轮 m0 全量一次通过，无 G 项：提交前已就地跑格式化与类型门） | EC-02 **PASS**；EC-03…EC-06 PENDING。EC-02 的 W-1（声明值不发送/不生效，需执行侧映射）、W-2（OpenHands 未接线）、W-3（web 类型无自动 drift 门）、W-5（设计门射程）为如实边界 | cycle 3 = derive EC-03 子 PLAN（供应链登记与凭据纪律：端点/模型入库 + URL 策略 + 明文凭据 grep 反证 + 重启失效边界） |
+| 2 | PLAN-20260920-115（EC-02） | `a6c03bc`（derive）、`3eece38`、`d3eedf7`、`3caf6c2`、`abed221`、`b8f2e9b`、`a0f98bb`、`40fe55d`、`53f4a26`、`1df2e11`（收口记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4097 passed / 11 skipped，461.72s，冻结树 `40fe55d`；其后仅一段文档改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 56 passed、PG 根 + 装配判据 5 passed、web unit 76 passed、web lint/typecheck 绿、design-fidelity 2 passed（基线零 diff）；`ruff`/`format`/`mypy`(949 files) 绿 | **run 35497734881 = success**（`1df2e11`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest）；cycle 2 的 CI 台账提交 `105b745` → **run 35498375517 = success**（六 job 全 success，与 35497734881 同批，补记于 cycle 3） | — （本轮 m0 全量一次通过，无 G 项：提交前已就地跑格式化与类型门） | EC-02 **PASS**；EC-03…EC-06 PENDING。EC-02 的 W-1（声明值不发送/不生效，需执行侧映射）、W-2（OpenHands 未接线）、W-3（web 类型无自动 drift 门）、W-5（设计门射程）为如实边界 | cycle 3 = derive EC-03 子 PLAN（供应链登记与凭据纪律：端点/模型入库 + URL 策略 + 明文凭据 grep 反证 + 重启失效边界） |
+| 3 | PLAN-20260920-116（EC-03） | `dd989b7`（derive）、`b6c7386`、`26f93b3`、`eee4728`、`1e16c40`、`40bddd5`、`94db850`、`18794a1`（+收口记录） | 定向 `tests/api + tests/application + tests/architecture + tests/tooling` **2292 passed / 2 skipped**（其中 2 条需 `RESEARCHOS_POSTGRES_DSN` 钉桩，补桩后 6 passed——已知 DSN 条件，非回归）；`ruff format/check` 绿；web `lint`(max-warnings 0)/`typecheck`/e2e 新增 spec **2 passed**、`design-fidelity` **2 passed 且基线零 diff**（新文案在未打开的抽屉里 ⇒ 对设计门不可见）；审计工具实跑四面 0 命中；**m0 全量 23 项**与计数见状态历史 cycle 3 段 | **本次推送的 run 记于状态历史 cycle 3 段**（同一轮：本地 m0 冻结树 → 批量推送 → 轮询到终态；六 job 结论逐条登记） | 实跑揪出 **1 处缺陷**并先修后记：`_host_kind` 里 `is_private` 排在 `is_link_local` 之前 ⇒ `link_local` 分支不可达、`allow_link_local` 是**空开关**、拒因点名错类别（`1e16c40`，F2 钉住）；另补审计工具 `--root` 与「该扫而扫不成即判红」 | EC-03 **PASS**；EC-04/EC-05/EC-06 PENDING。残余 7 条：W-1 注册面仍不校验 URL、W-2 出站 0 只在 Fakes 上证明、W-3 措辞判据不覆盖渲染、W-4 向导面未加声明、W-5 审计白名单人维护、W-6 本机仍无凭据、W-7 `.env` 不在扫描面内 | cycle 4 = derive **EC-05**（漂移可见性：probe 返回 model 名 vs 声明值三态；live 分支无凭据 ⇒ 如实 skip） |
 
 ## 状态历史
 
@@ -544,3 +549,32 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
   （`1df2e11`，六 job 全 success：console-frontend / collector-quality / eval-gate /
   container-quality / quality-ubuntu-latest / quality-windows-latest）。
   收口记录提交的 run 结论在下一轮（cycle 3）按同口径登记。
+- 2026-09-20 cycle 3（driver=client-goal / owner=root-agent）：EC-03 **PASS**
+  （PLAN-20260920-116 / RECHECK-20260920-116 = PASS_WITH_WARNINGS，W-1…W-7）。
+  **交付**：① URL 策略**补严**——`_host_kind` 新增 `reserved` 类（多播 / 未指定 / 保留段 /
+  CGNAT `100.64.0.0/10` / 非全局单播）、环回全段（`127.0.0.0/8`、`::1`）统一归 `localhost`，
+  保留类**不设放行开关**（只走既有 `allowed_hosts` 点名豁免）；② 出站 0 判据
+  （被拒 URL / 缺凭据三情形 `gateway.calls == ()` + 一条对照证明放行时确实进 gateway）；
+  ③ `tools/credential_audit.py` **四面明文审计**（跟踪文件 3146 / 记录 259 / 配置面 DB 1 /
+  日志 147，命中 0；放行项**按值**逐条给理由；`--root` 可审计另一份 checkout；
+  「该扫而扫不成」记 `not_a_git_tree` **判红**）；④ **真实端点与模型登记入库**
+  （经既有 API：端点 `e7f210a2-…` `protocol=ANTHROPIC` / `base_url=https://apihub.agnes-ai.com`、
+  模型 `5bec513d-…` `agnes-2.5-flash` + `context_window_tokens=512000` / `thinking_intensity=MAX`，
+  二跑走复用路径；配置面 blob 只有 `credential_ref` 名字，**无密钥**；**凭据未注入**，
+  `credential=missing`）；⑤ **重启失效边界三面同源**（文档 §9 三层事实表 + 控制台详情抽屉
+  声明 + 解析器 docstring；措辞判据另有**禁止半**：`Secret Store` / `凭据已保存` 不得出现），
+  并把「重启后凭据消失」从措辞变成**生产解析器**的跨装配判据；⑥ 无凭据时 `/test`、`/health`、
+  `/discover-models` 三处**点名失败且不触网**（`CONFIGURATION` / 422 Credential Missing）。
+  **反证 F1–F8 先红后复原**（保留类短路 5 红 / link-local 降序 2 红 / 多播不短路 1 红 /
+  真树注入陌生键 audit exit=1 / 删措辞 + 塞假声明 / 类级注册表 2 红 / 摘掉 UI 挂载 e2e 2 红）。
+  **实跑揪出并修掉 2 处缺陷**：link-local **空开关 + 拒因指错类别**（`1e16c40`）、
+  新用例的类型门失败 G1（`5f43b98`，m0 fail-fast 拦下）。**沉淀** `MEM-20260920-089`
+  （读面谎言抓不到功能测试：要用措辞判据钉；且「文件里有这些字」与「这些字被渲染」是两条判据）。
+  冻结树 m0 **23/23（4131 passed / 11 skipped，479.71s，`5f43b98`）**，其后仅 `.cursor/**` 记录改动
+  并单独复跑 docs 三门。**如实登记的边界**：W-1 注册面仍不校验 URL（存疑 URL 可入库，一跑就被拒）、
+  W-2 出站 0 只在 Fakes 上证明（未做网络级观测）、W-3 措辞判据不覆盖渲染、W-4 录入向导面未加声明、
+  W-5 审计白名单人维护、W-6 本机仍**无凭据**（候选环境变量全 absent、`endpoint:*` 0 个）、
+  W-7 `.env` 不在审计四面内（靠「保持 untracked」兜住）。**未新增依赖、未改 pin、
+  未改 Canonical State 边界、未把真实 runtime 设为默认；ADR-0031 仍是 Proposed。**
+  **CI 台账**：cycle 2 的记录提交 `105b745` → run **35498375517 = success**（六 job 全 success，
+  与本轮一并补记）；cycle 3 攒成一次推送（见下方「cycle 3 CI」行，终态逐条登记）。

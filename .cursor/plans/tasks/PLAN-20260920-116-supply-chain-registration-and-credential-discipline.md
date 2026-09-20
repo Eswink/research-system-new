@@ -2,7 +2,7 @@
 id: PLAN-20260920-116
 slug: supply-chain-registration-and-credential-discipline
 title: 供应链登记与凭据纪律：URL 策略补严 / 明文凭据审计 / 真实端点入库与重启失效边界（EC-03）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-008
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-008 cycle 3 = EC-03（供应链登记与凭据纪律）。授权来源：2026-09-20 用户 goal 模式指令 frontmatter `authorization.ref` 第 (1)(3) 条——登记一个真实端点（anthropic 兼容型，base_url = https://apihub.agnes-ai.com，模型 agnes-2.5-flash）；凭据只从环境变量或 Credential boundary 读取（由用户注入），**不得**写入仓库/数据库/CI/记录/日志，不得回显，本循环**不索取明文**。本 PLAN 遵守：不新造第二套 host 判据、不改 Policy/eligibility、不引入依赖、默认门保持离线、真实端点调用**最小必要次数**。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-116-supply-chain-registration-and-credential-discipline.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-089-read-face-lies-need-wording-gates.md
 ---
 
 # PLAN-20260920-116 — 供应链登记与凭据纪律（GOAL-008 cycle 3 = EC-03）
@@ -152,7 +153,32 @@ memory_entries: []
 
 ## 证据
 
-（实施中登记：每条 AC 的命令 + 实测输出摘要 + 反证前后对照。）
+逐条 AC 的命令与实测输出，以及 F1–F8 反证的注入/观察/复原对照，全部登记在
+`.cursor/plans/rechecks/RECHECK-20260920-116-supply-chain-registration-and-credential-discipline.md`。
+摘要：
+
+- **AC-01**：`tests/application/test_endpoint_policy.py` **31 passed**（新增
+  `TestReservedAndLoopbackClasses` 13 条 + `test_link_local_owns_its_switch` 2 参数）；
+  反证 F1（reserved 分支短路）**5 红**、F2（link_local 判据降序）**2 红**。
+- **AC-02**：`tests/application/test_endpoint_test.py::TestZeroOutbound` **4 passed**
+  （三情形 `gateway.calls == ()` + 一条对照证明放行时确实进 gateway）；反证 F3 让多播不短路 ⇒ **1 红**。
+- **AC-03**：`scratch/ec03-register-real-supply-chain.py` 实跑（日志同名 `.log`）——
+  端点 `e7f210a2-…`（`ANTHROPIC` / `apihub.agnes-ai.com` / `credential=missing`）、
+  模型 `5bec513d-…`（`agnes-2.5-flash` / `512000` / `MAX`），二跑走复用路径；
+  配置面 blob 只含 `credential_ref` 名字。
+- **AC-04**：`tools/credential_audit.py` 实测 `tracked 3146 / 94 hits 全放行 / 0 offenders`、
+  `records 259 / 3 / 0`、`config_db 1 / 0 / 0`、`logs 147 / 0 / 0` ⇒ PASS；
+  `tests/tooling/test_credential_audit.py` **4 passed**；反证 F4（真树注入陌生键）**exit=1 并点名**。
+- **AC-05**：措辞判据 **2 passed** + 重启判据 **14 passed**（`tests/api/test_llm_endpoints_api.py`）
+  + e2e **2 passed**；反证 F5/F6（措辞）与 F7（类级注册表）、F8（摘掉 UI 挂载）全部按预期变红。
+- **AC-06**：同 AC-03 脚本——`POST /test → 200 {"ok": false, "error_category": "CONFIGURATION"}`、
+  `GET /health → 422 Credential Missing`、`POST /discover-models → 422`（三处都是**凭据解析前**短路）。
+- **AC-07**：定向套件 **2292 passed / 2 skipped**（DSN 钉桩后转绿）+ web `lint`/`typecheck`/e2e +
+  `design-fidelity` 2 passed 且基线零 diff + **m0 全量 23 项**（`PASS: profile=m0;
+  23 deterministic checks`，**4131 passed / 11 skipped**，冻结树 `5f43b98`，479.71s；
+  cycle 2 为 4097 ⇒ 本轮净增 34 条判据）。m0 拦下 1 处缺陷（G1：新用例里的
+  `int(object)` + `# type: ignore` 触发 `unused-ignore`/`call-overload`），**按缺陷修**
+  （`5f43b98`，改成先断言类型的助手，未动门禁与断言强度）。
 
 ## 状态历史
 
@@ -160,6 +186,12 @@ memory_entries: []
   只读勘察确认 8 条事实（URL 策略唯一裁决点且注册面不校验 → `_host_kind` 对多播/CGNAT 判 public
   → 凭据两面 + 记录「重启清空」→ 文档 §9 口径不实 → 运行期防泄漏测试已存在但缺仓库/DB/日志审计
   → 无凭据时 configuration_failure → 配置面 DB 位置与 gitignore → 真实端点授权与「无凭据」现状）。
+- 2026-09-20 实施与复检（WP-A…WP-F）：`status: DONE`，`latest_recheck` 指向
+  RECHECK-20260920-116（**PASS_WITH_WARNINGS**，W-1…W-7）。实跑额外揪出并修掉一个
+  **空开关 + 拒因指错类别**缺陷（link-local，提交 `1e16c40`），并把审计工具补上 `--root`
+  与「该扫而扫不成即判红」；m0 又拦下一处类型门缺陷（G1，`5f43b98`）；残留 7 条已逐条登记
+  （注册面不校验 URL、出站 0 只在 Fakes 上证明、措辞判据不覆盖渲染、向导面未加声明、
+  白名单人维护、无凭据现状、`.env` 不在扫描面内）。
 
 ## 影响报告
 
