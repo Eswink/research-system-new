@@ -215,9 +215,11 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260920-114-anthropic-protocol-execution-path.md
   - .cursor/plans/tasks/PLAN-20260920-115-model-parameter-persistence.md
+  - .cursor/plans/tasks/PLAN-20260920-116-supply-chain-registration-and-credential-discipline.md
 latest_recheck: null
 memory_entries:
   - MEM-20260920-087
+  - MEM-20260920-088
 ---
 
 # GOAL-20260920-008 — 真实供应链接入（自迭代循环）
@@ -374,11 +376,9 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**cycle 2 已完成（PLAN-20260920-115 = EC-02 模型参数落库，`DONE` + RECHECK-115
-PASS_WITH_WARNINGS）；EC-02 = PASS**。本轮产品提交与记录提交已攒成一次推送并按 ⑤ 记录 CI 终态
-（见「迭代日志」第 2 行；若该行 CI 列为「见下」，以本文件成文后的最新记录为准）。
-下一步 = **cycle 3 = 按 ① derive EC-03 子 PLAN**（供应链登记与凭据纪律：端点/模型入库、
-URL 策略复用 `validate_endpoint_url`、明文凭据 grep 反证、重启失效边界如实披露）。
+**当前续点**：**cycle 3 已 derive（PLAN-20260920-116 = EC-03 供应链登记与凭据纪律，`IN_PROGRESS`）**，
+下一步 = **按该子 PLAN 的 WP-A…WP-F 执行**（URL 策略补严 → 出站 0 判据 → 明文凭据审计 →
+真实端点登记入库 → 重启失效边界同源 → 反证/记录/收口）。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
