@@ -1,0 +1,431 @@
+---
+id: GOAL-20260920-008
+slug: anthropic-protocol-and-supply-chain-onboarding
+title: 真实供应链接入：anthropic 协议执行路径、模型参数落库、供应链登记与首次真实 run（live-gated）
+status: ACTIVE
+created_at: 2026-09-20
+updated_at: 2026-09-20
+owners:
+  - root-agent
+authorization:
+  source: user-request
+  ref: >-
+    2026-09-20 用户会话指令（goal 模式）：**新建 GOAL-20260920-008（真实供应链接入）**并授权本
+    驱动**自动化循环推进、无需逐轮确认**。四段授权原文如下：
+    (1) **真实供应链接入授权**：用户登记一个真实端点与模型（**anthropic 兼容型**，
+    `base_url = https://apihub.agnes-ai.com`，模型名 `agnes-2.5-flash`），并授权**一次
+    live-gated 真实 run**（最小必要次数；不跑压力/批量、不做模型对比）。协议口径：该端点按
+    anthropic 兼容型声明（域内 `LLMEndpoint.protocol` 既有合法值 `ANTHROPIC`）。
+    (2) **模型参数口径（用户已声明）**：**上下文窗口 512000 tokens**、**思考强度 Max**；
+    必须在文档/读面**如实记录**或**如实登记为不支持**——不得静默丢弃、不得伪称已生效。
+    (3) **凭据纪律**：key **只从环境变量或 Credential boundary 读取**（由用户注入）；
+    **不得**写入仓库、数据库、CI、记录、日志或提示词，不得回显；**本循环不得索取明文**；
+    环境无凭据时，live-gated 路径 **skip 并如实记录，不得伪造**。
+    (4) **默认 runtime 保持 Fake、默认 CI 离线**（AGENTS.md §11）；真实 runtime 仅**显式配置
+    + policy 允许**时启用，两者缺一即拒绝（fail-closed 姿态不得放松，AGENTS.md §9）；
+    **push-to-main-for-CI 授权**沿用 GOAL-001…007 的批准口径：**只推 main、不 force、不重写
+    历史、不推旁支触发 CI**；push 前 `git pull --ff-only origin main`（必要时 --rebase，不 force）。
+    循环预算与纪律以本文件 frontmatter 为准（客户端自带的迭代/重试/超时上限一律让位于此）。
+    GOAL-001…007 全部**只读**（001/002/004/005/006/007 ACHIEVED、003 BLOCKED），本 GOAL 不修改
+    它们；如需指名只允许按只追加补一行事实更正（当前不需要）。
+objective: >
+  把「域里声明了 `protocol: ANTHROPIC` 但没有任何执行路径能跑它」这条**已登记却未收口的边界**
+  变成**有终态结论的事实**：`protocol` 从「只被持久化/摘要/DTO 读取的字符串」变成**真正的执行
+  选路面**（relay 网关与 OpenHands `llm_factory` 按协议分派，未知协议 fail-closed）；用户声明的
+  **模型参数**（上下文窗口 512000、思考强度 Max）有**承载字段 + 契约 + 往返 + 读面 + 快照**，
+  缺失即判红而**不静默丢弃**；真实端点与模型**登记入库**且**凭据纪律可反证**（仓库/DB/记录/日志
+  无明文凭据），凭据「重启后失效」的**诚实边界**写进读面与文档；在**显式配置 + policy 允许**的
+  **live-gated** 路径上跑**一次**真实 run 到终态并记录**运行时指纹**（AGENTS.md §4：结论口径
+  =「可重复配置」，**不得**声称「完全模型可复现」）；漂移可见性（返回 model 名 vs 声明值）进读面；
+  登记步骤、凭据注入与轮换、Fake↔真实切换与回退、以及「**哪些面仍是 demo**」的清单进 runbook。
+  **全程不删测试、不改门禁、不以「未观测到失败」或「扫描没报问题」充当 PASS；不引入新依赖、
+  不改上游 pin、不自行修改 Accepted ADR / 核心安全策略 / Canonical State 边界、不把真实 runtime
+  设为默认 —— 触及即 BLOCKED。环境无凭据时 live-gated 路径如实 skip 并登记为残余，不伪造。**
+exit_criteria:
+  - id: EC-01
+    criterion: >-
+      **ANTHROPIC 协议执行路径（二选一终态，本 GOAL 采取 (a) 实现）**：
+      (a) relay 网关与 OpenHands `llm_factory` **按 `endpoint.protocol` 选路**——`ANTHROPIC`
+      走 Anthropic Messages 形态（请求体 / 响应解析 / 鉴权头按该形态），`OPENAI_COMPATIBLE`
+      保持现有 `api_style` 分派**行为不变**，**未知协议 fail-closed**（拒绝且不发起出站调用）；
+      **判据含反证**：`protocol=ANTHROPIC` ⇒ 走该路由，**不再无条件加 `openai/` 前缀**。
+      (b) 若实测该端点提供 OpenAI 兼容面并决定按 `OPENAI_COMPATIBLE` 登记——须**如实记录实测
+      证据与选择理由**，并把「anthropic 执行路径缺失」作为**一等缺口**写进读面与文档**同源收敛**。
+      **不得停在「域里声明了但跑不通」。**
+    verify: >-
+      结构判据（分派点**按 `protocol` 而非其他字段**裁决；未知协议分支**拒绝**；全仓 `openai/`
+      前缀构造点只出现在**按协议的有条件分支内**）+ mock 传输层用例（`ANTHROPIC` 端点收到
+      **Messages 形态**请求且响应可解析回既有返回值；`OPENAI_COMPATIBLE` 端点收到的
+      chat/completions 形态与响应解析**与改动前一致**）+ 未知协议用例（**拒绝并点名** +
+      **出站调用 0**，用可观测传输层计数器证明）+ **反证**（把分派短路回无条件 `openai/` 前缀
+      ⇒ 对应用例红，先红后复原）+ 受影响套件 + m0 绿。
+    status: PENDING
+    evidence: ""
+  - id: EC-02
+    criterion: >-
+      **模型参数落库**：上下文窗口（**512000 tokens**）与思考强度（**Max**）在域实体上有
+      **承载字段**（**厂商中立命名**，不得出现模型厂商名，AGENTS.md §1）+ 契约 schema +
+      **配置面往返**（写 ⇒ 读，两值可判）+ 读面（DTO/API 响应**可见**）+ OpenAPI 快照同步 +
+      web 类型/渲染；**反证：缺字段 ⇒ 用例红**（**禁止静默丢弃**）。
+    verify: >-
+      往返用例（两值写入后读出可判；**旧行缺键**时解码走**向后兼容**路径——不得因新字段
+      让既有数据读不出）+ 契约 schema 校验用例 + 读面字段断言（API 响应含两值；**页面有渲染
+      分支**，不是「只在 `types.ts` 里存在」）+ OpenAPI 快照 drift 门绿 + **反证**（摘掉字段/
+      摘掉映射 ⇒ 对应用例红，先红后复原）+ 受影响套件 + m0 绿。
+    status: PENDING
+    evidence: ""
+  - id: EC-03
+    criterion: >-
+      **供应链登记与凭据纪律**：端点与模型**登记入库**（DB 行，配置面 `llm_endpoints` /
+      `models`）；端点 **URL 策略语义保持**（https 公网放行；localhost / 环回 / 私有 / 保留
+      地址**一律拒绝**，复用既有 `validate_endpoint_url` / `EndpointUrlPolicy`，不新造第二套）；
+      仓库 / DB / 记录（`.cursor/plans/**`）/ 日志中**无明文凭据**（grep 反证）；凭据只来自
+      **环境变量或 Credential boundary**，且「**重启后凭据失效**」的诚实边界写进 UI/文档
+      （**不伪装 Secret Manager**）；端点健康探针在无凭据环境**如实 skip**（不记 PASS、不伪造）。
+    verify: >-
+      DB 行存在判据（只读查询配置面，端点 + 模型两行可判）+ URL 策略用例（放行 https 公网 /
+      逐个拒绝 localhost、环回、私有、保留；被拒时**出站 0**）+ **明文凭据 grep 反证**（扫描
+      仓库跟踪文件、`.cursor/plans/**` 记录、DB 文件与日志，命中即可用凭据形态 ⇒ 判红）+
+      凭据边界文案**同源**（UI/文档/代码同一口径）+ live-gated 健康探针在无凭据环境**如实
+      skip** 并登记 + m0 绿。
+    status: PENDING
+    evidence: ""
+  - id: EC-04
+    criterion: >-
+      **首次真实 run（live-gated）**：`RESEARCHOS_AGENT_RUNTIME=openhands` + 该端点 +
+      `agnes-2.5-flash` 跑**一次真实 run 到终态**；记录**运行时指纹**（endpoint 配置摘要、
+      返回的 model 名、白名单响应头、probe 套件版本、usage 归账到 `BudgetLedger`、制品与证据
+      落 canonical）；结论口径 =「**可重复配置**」，**不得**声称「完全模型可复现」（AGENTS.md §4）。
+      **环境无凭据时 skip 并如实记录，不得伪造。**
+    verify: >-
+      live-gated 用例/脚本在**无凭据环境如实 skip**（记录 skip 事实，**不记 PASS**）；有凭据时
+      产出 run 记录 + 指纹字段可判 + usage 归账（`MODEL_TOKENS` 正向且归因正确）+ 制品/证据
+      可读；离线可判部分：**门控存在性**（默认门离线可跑、无网络依赖）+ 结论口径文案同源
+      （全仓不得出现把该 run 描述为「完全可复现」的措辞）+ **反证**（把 skip 伪造成 PASS ⇒
+      判据红）+ m0 绿。
+    status: PENDING
+    evidence: ""
+  - id: EC-05
+    criterion: >-
+      **漂移可见性**：probe suite 对该端点跑**一次**，**返回 model 名与声明值对比**、漂移状态
+      进**读面**（当前 vs 基线）；无凭据 ⇒ **skip 并如实记录**（不伪装成「无漂移」）。
+    verify: >-
+      离线可判部分：漂移比较的判据用例（返回名 == 声明值 ⇒ 无漂移；不同 ⇒ **点名差异**；
+      字段缺失 ⇒ 判「未知」而非「无漂移」）+ 读面字段/渲染分支断言 + **反证**（去掉比较 ⇒
+      用例红）；live-gated 实跑（凭据就位时）或**如实 skip** 登记 + m0 绿。
+    status: PENDING
+    evidence: ""
+  - id: EC-06
+    criterion: >-
+      **文档与 runbook**：登记步骤（**DB 路径与 YAML 路径**、凭据注入与**轮换**、**重启后重输
+      的边界**）、**Fake↔真实切换与回退**、以及「**哪些面仍是 demo**」的清单；
+      `docs/INDEX.md` 登记该文档。
+    verify: >-
+      文档存在且**与代码同源**（其中每个变量名 / 路径 / 命令在代码里**真实存在**——引用不存在的
+      字段或变量 ⇒ 判据红）+ DOCS-CHECK 绿 + `docs/INDEX.md` 有对应行 + 上述四类内容逐项可判
+      （缺任一项 ⇒ 判据红）+ m0 绿。
+    status: PENDING
+    evidence: ""
+budget:
+  max_cycles: 20
+  per_cycle_minutes: 120
+  no_progress_stop_cycles: 2
+fix_policy:
+  same_signature_retries: 2
+  cycle_fix_retries: 3
+  forbidden:
+    - 修改 validator/门禁/快照/测试断言使其通过
+    - skip/删除测试或降低断言强度
+    - git push --force / 重写历史 / 推非 main 分支触发 CI
+    - 伪造或夸大验证证据（未实跑不得记 PASS）
+    - git add -A（并发工作树；只加显式路径）
+escalation_triggers:
+  - 需要修改 Accepted ADR / 核心安全策略 / Canonical State 边界
+  - 破坏性数据迁移或不可逆动作
+  - 新依赖/上游版本 pin 变更（含为判据引入新的解析/传输库——优先用现有依赖实现）
+  - 同一失败签名超过 fix_policy 上限
+  - 威胁建模/授权面（BOLA/BFLA）覆盖类决策——需用户或 ADR 拍板，本循环不得自行决定
+  - 依赖 pin 升级（`undici` / `vite` / `yaml` 等有修复版本的包）——上游 pin 变更，需用户或 ADR 拍板
+  - ADR-0031（`tool_pack.*`，Status: Proposed）是否采纳——归用户
+  - 把真实 runtime 设为**默认**（默认必须仍是 Fake；本循环只做「显式配置才启用」）
+  - 新增依赖或改动既有依赖 pin（含为 anthropic 形态引入 SDK——优先用手写 HTTP，见 EC-01 判定细则）
+child_plans: []
+latest_recheck: null
+memory_entries: []
+---
+
+# GOAL-20260920-008 — 真实供应链接入（自迭代循环）
+
+本文件是 **GOAL 记录**（位于 `PLAN-*` 之上的编排层），格式契约见本目录 `README.md`；
+工程事实、验收与复检仍由 PLAN/RECHECK/MEM 体系承载（单一流程权威：
+`.cursor/rules/20-plan-memory-recheck.mdc`）。GOAL 只做编排与记账。
+
+## 目标与退出标准
+
+GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进「终止与收口 · 收口结论」，
+其中第 7 项写着：**真实端点路径与 live 分支**（门控与离线全链已成立，真端点从未跑过）。
+本 GOAL 承接该项，并新增两条用户显式授权的面：**anthropic 协议执行路径**与**模型参数落库**。
+
+**用户已显式授权的边界**（见 frontmatter `authorization.ref`）：真实端点与模型登记
+（`https://apihub.agnes-ai.com` / `agnes-2.5-flash`）、**一次** live-gated 真实 run、
+模型参数口径（上下文窗口 512000、思考强度 Max）、凭据只从环境读取且不得回显。
+**不在授权内**：把真实 runtime 设为默认、引入新依赖、改 Accepted ADR、改 Canonical State 边界。
+
+| EC | 主题 | 来源 | 状态 |
+| --- | --- | --- | --- |
+| EC-01 | ANTHROPIC 协议执行路径（按 `endpoint.protocol` 选路；未知协议 fail-closed；反证：不再无条件 `openai/` 前缀） | GOAL-007 残余第 7 项 + 用户授权 (1) | **PENDING** |
+| EC-02 | 模型参数落库（上下文窗口 512000 + 思考强度 Max 有承载字段、契约、往返、读面、快照；缺字段即红） | 用户授权 (2) + AGENTS.md §1/§4 | **PENDING** |
+| EC-03 | 供应链登记与凭据纪律（端点/模型入库；URL 策略放行 https 公网、拒绝本地/私有；明文凭据 grep 反证；重启失效边界如实披露） | 用户授权 (1)(3) + AGENTS.md §9 | **PENDING** |
+| EC-04 | 首次真实 run（live-gated：该端点 + `agnes-2.5-flash` 跑到终态；指纹/归账/制品/证据；口径=可重复配置；无凭据则如实 skip） | 用户授权 (1)(3) + AGENTS.md §4 | **PENDING** |
+| EC-05 | 漂移可见性（probe 返回 model 名 vs 声明值对比，漂移状态进读面；无凭据则如实 skip） | 用户授权 (1) + AGENTS.md §4 | **PENDING** |
+| EC-06 | 文档与 runbook（登记步骤 / 凭据注入与轮换 / 重启重输边界 / Fake↔真实切换与回退 / 「哪些面仍是 demo」清单 + `docs/INDEX.md`） | 用户授权 (2)(3) + AGENTS.md §14 | **PENDING** |
+
+**优先级**：EC-01 → EC-02 → EC-03 → EC-05 → EC-04 → EC-06（derive 取 EC 表首个 PENDING；
+若某 EC 本轮**部分交付**，其「下一轮输入」优先于表序）。EC-04 / EC-05 的 live 分支依赖
+**凭据就位**（用户注入），不阻塞离线部分推进；**凭据缺失不是 BLOCKED 理由**，而是如实登记的
+残余（frontmatter 授权 (3) 明文允许 skip）。
+
+**不在本 GOAL 的 EC 内**（登记为背景，不伪装成已收口）：ADR-0031 是否采纳、
+威胁建模/授权面（BOLA/BFLA）覆盖、`artifacts/` 明文 token 清理、450 行贴线文件、
+依赖 pin 升级、hook 侧 L3 门 —— 见「不进入循环 / 需人工拍板」节。这些**不因本 GOAL 存在
+而被宣称已解决**。
+
+### 建档时已探明的现状（事实类，用于判定起点；不当作验收依据）
+
+以下由**只读勘察**在 2026-09-20 建档时确认（路径 + 行号可复核）：
+
+1. **`protocol` 是死的**：`LLMEndpoint.protocol`（`packages/domain/models.py:37`，`str`，无默认）
+   在 `__post_init__`（`:51-52`）被校验为 `OPENAI_COMPATIBLE` 或 `ANTHROPIC`，**但没有任何
+   执行路径读它做分派**——全部引用都是持久化 / 摘要 / DTO：`model_relay/fingerprint.py:38`、
+   `adapters/relay/endpoint_store.py:85,122`、`adapters/sqlite/endpoint_store.py:103,135`、
+   `services/api/mappers/endpoints.py:30,71`、`routers/llm_endpoints.py:104,151`。
+   仓库里**不存在** `EndpointProtocol` / `LLMProtocol` 之类的枚举。
+2. **实际的分派键是 `api_style`**：`adapters/relay/completions.py:29-43` 按
+   `endpoint.api_style` 选 `chat_completions`（`POST {base_url}/chat/completions`）或
+   `responses`（`POST {base_url}/responses`）。**不存在任何 anthropic 形态的调用路径**
+   （全仓无 `messages.create`、无 `anthropic` 包依赖；`ANTHROPIC` 在非测试代码里只出现在
+   值校验与 DTO Literal）。
+3. **`openai/` 前缀只有一处，且是无条件的兜底**：`adapters/openhands/llm_factory.py:20-32`
+   `resolve_runtime_model_name()`——`:27-28` 已带 `/` 的名字直通，否则经
+   `LLMProvider.from_model` 取 provider 名，**取不到就 `f"openai/{model_name}"`**（`:31`）。
+   这是 `LLM(` 的唯一非测试构造点（`llm_factory.py:51-58`，不读 `endpoint.protocol`）。
+4. **示例配置里已经有一条跑不通的 ANTHROPIC 端点**：`examples/config/llm_endpoints.yaml:20-28`
+   的 `agnes-anthropic`（`protocol: ANTHROPIC`、同一 `base_url`）——声明合法、**执行必败**
+   （走的是 chat/completions 形态 + `openai/` 前缀）。
+5. **没有任何字段承载「上下文窗口」或「思考强度」**：`context_window` 只存在于前端 mock
+   （`apps/web/src/features/example-console/reference/endpoints-screen/EndpointsSection.tsx:57`）
+   与设计参考稿；`max_context_tokens` 只存在于 **agent 侧** `AgentContextConfig`
+   （`packages/domain/roles.py:74`），**不在** `ModelDefinition` / `ModelProfile` /
+   `LLMEndpoint` / `ModelRuntimeFingerprint` 上；`reasoning_effort` / `reasoning_level` /
+   `thinking_budget` **全仓 0 命中**（`ModelCapability.REASONING` 是**布尔能力**不是强度）。
+6. **`ModelCompatibilityProfile`（AGENTS.md §1 列在 Domain 里）在代码中不存在**：无类、无
+   schema、无 loader，只出现在散文清单（`AGENTS.md:26`、`docs/architecture/DOMAIN_MODEL.md:192`
+   等）。当前由 `ModelProfile.hard_capabilities` + `eligibility.py` 承担其描述的角色。
+7. **配置面是 SQLite JSON blob，且 PG 路径也走它**：`adapters/sqlite/endpoint_store.py:24-30`
+   （`llm_endpoints(endpoint_id, endpoint_json, created_at)`）与 `model_store.py:22-28`
+   （`models(model_id, model_json, created_at)`）；**没有任何 PG 表**承载端点/模型，
+   `services/api/pg_composition.py:214-220,263-264` 明确配置面仍用 SQLite 存储。
+   ⇒ EC-02 的「迁移」在**物理上没有列可加**，其真实含义是**解码向后兼容 + 往返用例**
+   （详见判定细则）。
+8. **凭据面**：`credential_ref` 即环境变量名（`adapters/relay/credential_resolver.py:14-33`
+   `EnvCredentialResolver`，值密封为 `SecretValue`）；`adapters/relay/registry_credential_resolver.py`
+   允许**注册表优先、环境变量回退**。**本机当前状态：`DEV_LLM_API_KEY` 在 gitignored `.env`
+   中存在但为空串，`DEV_LLM_BASE_URL` / `DEV_LLM_MODEL` 为空**；进程环境无该端点相关变量
+   ⇒ **EC-04 / EC-05 的 live 分支在本机只能走「如实 skip」路径**（授权 (3) 明文允许）。
+9. **URL 策略已有唯一裁决点**：`packages/application/model_relay/endpoint_policy.py`
+   （`validate_endpoint_url`；全仓 `ipaddress` 只出现在这一处）——EC-03 必须**复用它**，
+   不得另造第二套 host 判据。
+
+### EC-01 判定细则（ANTHROPIC 协议执行路径）
+
+- **终态选择：本 GOAL 采取 (a) 实现**。理由**如实记录**：(b) 的定义前提是「**实测**该端点
+  提供 OpenAI 兼容面并据此登记」——而本机**无凭据**（现状第 8 条），实测不可得；
+  于是 (b) 无法满足自身判据，而停在「域里声明了但跑不通」被明文禁止。**这不等于断言
+  真实端点不支持 OpenAI 兼容面**——该事实仍**未实测**，必须作为残余登记（EC-03/EC-04 的
+  live 分支就位后由实测回答）。
+- **形态**：Anthropic Messages 面（`POST {base_url}/messages`；鉴权用 `x-api-key` +
+  `anthropic-version` 头；请求体 `model` / `max_tokens`（该形态**必填**）/ `messages` /
+  可选 `system`；响应取 `content[].text` 合并、`model`、`usage.input_tokens`/`output_tokens`）。
+  **实现优先手写 HTTP**（复用既有 `adapters/relay/transport.py` + `parsing.py`）——
+  `tests/architecture/python/test_relay_boundaries.py:4` 已把「relay 适配器不得 import
+  `openai`/`litellm`/`anthropic`」写成结构约束，**新依赖是 escalation**。
+- **OpenHands 侧**：`resolve_runtime_model_name` 增协议入参——`ANTHROPIC` ⇒ `anthropic/`
+  前缀（litellm 既有约定，随 `openhands-sdk` 传递依赖已可用），`OPENAI_COMPATIBLE` ⇒ 现有
+  行为**逐字节不变**。判据必须证明既有分支的**回归对照**（未变），不是只看新分支能过。
+- **未知协议 fail-closed**：不得静默回退到 `openai`（静默回退会让「配了 anthropic」与
+  「跑的是 openai 形态」不可区分——与 GOAL-007 EC-01 对未配置 runtime 的裁定同构）。
+
+### EC-02 判定细则（模型参数落库）
+
+- **承载字段的落点**由子 PLAN 决定（候选：`ModelDefinition` 加两个可选字段，或新建一个
+  声明式参数承载实体；**厂商中立命名**是硬约束）。**本 GOAL 不预先选型**，但要求：
+  ① 命名不得出现厂商名（AGENTS.md §1）；② 两值必须能被**读面**读到并**渲染**；
+  ③ 缺字段时用例**判红**，不得静默丢弃。
+- **「迁移」的真实含义（如实登记）**：配置面是 JSON blob（现状第 7 条）⇒ **没有 SQL 列可加**，
+  也**不得**为此刻意新建 PG canonical 表（那触及 Canonical State 边界 ⇒ escalation）。
+  因此 EC-02 的迁移面 = **旧行缺键时的解码向后兼容**（既有数据不得因新字段读不出）
+  + **往返用例**；若子 PLAN 判断需要 SQL 迁移，必须**先停下来**按 escalation 处置。
+- **「SQLite/PG 往返」的口径**：两个组合根**共用同一配置面**（现状第 7 条）⇒ 判据须证明
+  「PG 组合根下读到的端点/模型仍带这两个值」，而不是新造 PG 表。**不得**把它写成
+  「已在 PG 中持久化模型参数」。
+
+### EC-03 判定细则（供应链登记与凭据纪律）
+
+- 登记路径以**既有 API/存储**为准（`POST /llm-endpoints` + `POST /models`，或既有
+  store 写入路径）；**不新增登记面**。
+- **诚实边界必须写在读面**：凭据值只存在于环境/凭据边界，**进程重启后需要重新注入**——
+  UI/文档不得暗示「已保存到 Secret Manager」。
+- **grep 反证**的射程要写清楚（哪些目录/文件类型被扫描、为什么某些命中不算泄漏——
+  例如不可用的占位串），**不得**用「没扫到」充当 PASS。
+
+### EC-05 判定细则（漂移可见性）
+
+- 判据必须区分**三态**：一致 / 漂移（点名差异）/ **未知**（未探到）。「未知」**不得**
+  显示为「无漂移」——这正是 AGENTS.md §4「无法证明一致时必须标注」的读面落实。
+- live 探针在无凭据时**如实 skip**（记录 skip 事实），离线判据仍须绿。
+
+### EC-04 判定细则（首次真实 run）
+
+- 门控：`requires_live_llm`（或等价既有门）+ **显式配置 runtime + policy 允许**；
+  凭据缺失 ⇒ skip 并登记。**skip 不是 PASS**。
+- 指纹口径：`ModelRuntimeFingerprint` 的既有字段逐项如实填写，**取不到的字段写
+  `NOT_VERIFIED` 或空并在记录里点名**（不得留空冒充「探了没问题」——GOAL-007 EC-01 的裁定）。
+- usage 必须**真的归账**（`BudgetLedger`），制品与证据落 canonical；**不得**只记「跑通了」。
+
+## 循环入口协议
+
+按 README 的 7 步判定执行，一切状态以「文件 + 工作树 + 远端实况」为准：
+
+1. 本文件 `status != ACTIVE` → 只输出终止摘要（ACHIEVED/BLOCKED/ABORTED + 依据），本轮不做改动。
+2. 迭代日志最后一行判定续点：无记录 → 开 cycle 1（执行 ①）；有子 PLAN 在
+   IN_PROGRESS → 继续 ②；本地验证已过、有未推送 commit → ④⑤；CI 未记录结论 →
+   ⑤（等待/判定，禁止猜测绿）；CI 有失败且未达上限 → ⑥。
+3. 每 cycle 收口必须：CI 终态已记录 + 本文件（迭代日志/EC 状态/child_plans/
+   latest_recheck/状态历史）已回写；未收口不得开新 cycle。
+4. 进入 cycle 时在迭代日志声明 `driver=client-goal` / `owner=root-agent`；另一驱动
+   持有未收口 ACTIVE cycle 时等待，不并发双写。
+5. **live 相关的轮次**：EC-04 / EC-05 的 live 分支前，先确认**凭据来自环境或
+   Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
+   ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
+
+**当前续点**：**建档完成（cycle 0）**，下一步 = **cycle 1**：derive EC-01 子 PLAN
+（anthropic 协议执行路径）并按 WP 推进。状态以本文件「迭代日志」末行 + 工作树实况为准；
+不凭记忆假设上一轮状态。
+
+## 驱动
+
+驱动无关（README「驱动适配」）：本实例由客户端 goal 模式驱动（每轮触发 = 一次入口
+协议），亦可换会话/定时驱动；仅当 `status=ACTIVE` 时推进。同一时刻仅一个驱动推进。
+
+## 单 cycle SOP
+
+按 README ①~⑦ 执行。本实例附加约定：
+
+- ① derive 主题顺序：EC 表首个 PENDING（EC-01 → EC-02 → EC-03 → EC-05 → EC-04 → EC-06）；
+  若上一 cycle 部分交付，以其「下一轮输入」为准。子 PLAN 必须独立可验收、独立 RECHECK
+  （`.cursor/plans/rechecks/`），frontmatter 带 `parent_goal: GOAL-20260920-008` 并投影 ALL_PLAN。
+- ② 按子 PLAN 的 WP 推进，**每 WP 独立 commit**（显式路径；并发工作树，禁 `git add -A`）。
+- ③ 本地验证：`make validate-all` 全量 23 项（DSN 固化配方）+ 受影响定向套件 + web 门
+  （lint/typecheck/unit/build/stub e2e/live e2e）；页面改动时按既有流程重生成设计基线
+  与结构签名（`UPDATE_OUTLINES=1 pnpm exec playwright test design-fidelity -g 结构签名`，
+  跨平台一致性用既有容器配方复核）。实现完成后**先自查规模门禁**（50 行函数 / 450 行文件）
+  与快照类门禁（OpenAPI / 设计基线），再跑 m0。本地不绿不得 push。
+- ④ 子 PLAN 收口（RECHECK DONE）后 GOAL 记录 commit 列表。
+- ⑤ `git pull --ff-only origin main`（必要时 --rebase，不 force）→ `git push origin main`
+  → 按本机口径查 m0-quality 最新 run（无 gh CLI：`git credential fill` 取已存令牌走
+  GitHub REST API，按 head_sha 匹配 + `/jobs` 读六个 job 结论）→ 轮询到终态并记录
+  run 链接与结论。只改 `.cursor/**` 的记录提交同样触发六 job CI，按同口径等待。
+- ⑥ 按「CI 失败分类与纠错」处置；修复以独立 commit 落 main 并回到 ⑤。
+- ⑦ 回写本文件：迭代日志（含 driver/owner 声明行）、EC 状态、child_plans、
+  latest_recheck、状态历史；未达终态且未触顶 → 直接进入下一 cycle ①。
+- **未实跑不得记 PASS**；本机无法验证记 PENDING 并停止推进，不猜测绿。
+
+**本 GOAL 特有的执行纪律**（安全面，来自 authorization.ref）：
+
+- **凭据纪律（每轮自检）**：任何文件中不得出现可用凭据字面量；真实调用前确认凭据来自
+  环境或 Credential boundary；**不回显、不写盘、不进日志**；本循环**不得索取明文**。
+- 默认 runtime 保持 **Fake**；**CI 与离线开发不依赖网络**；真实 runtime 必须
+  **显式配置 + policy 允许**（两者缺一即拒绝）。
+- **真实端点调用只走 live-gated 路径**，且**只限用户登记的那一个端点**、**最小必要次数**
+  （不跑压力/批量/模型对比）。真实端点调用**永不进默认 CI**。
+- **Domain 不得出现厂商名**；**OpenHands 类型不得进 Domain**（adapter 层隔离）。
+- **不引入新依赖、不改上游 pin**（EC-01 的 anthropic 形态**手写 HTTP** 实现；需要新依赖即 BLOCKED）。
+- 服务端 URL 仅 http/https 且拒绝 localhost / 环回 / 私有 / 保留地址；DB 查询一律**参数绑定**
+  （禁拼接 / format / f-string）。
+
+## CI 失败分类与纠错
+
+按 README 分类表执行；本仓已知 flake/env 签名（重跑不修，先排除环境干扰）：
+observability OTLP teardown race（stopped receiver 端口）、m0 全量单跑在负载下的 timing
+用例（隔离复跑对照）、DSN 注入（需固化配方：`RESEARCHOS_POSTGRES_DSN` 指向 test DSN、
+其余 DSN 键清空，防 litellm `load_dotenv` 注入 operator `.env`）、
+`framework/run_cursor_framework_evals` 在 Windows 上偶发文件占用（复跑对照）、
+**kill 后台 m0 会留孤儿 pytest**（复跑前先确认无残留进程/容器，否则污染下一轮）、
+`python/dependency-boundaries` 在直接跑 `.venv/Scripts/python.exe` 时会因 `lint-imports`
+不在 PATH 而误红（用仓库既定 `uv run --frozen --no-sync` 启动）、
+draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**隔离必绿**（先隔离复跑对照）。
+
+`.github/workflows/m0-quality.yml` 属治理面：循环内不修改；需要改动即 BLOCKED 提请人工。
+账户级计费阻断（runner_id=0、无 step、2 秒结束）非代码缺陷：不推进 cycle，恢复后先复核
+`runner_id != 0` 再回填结论（GOAL-003 cycle 1 的处置模板）。
+**M0 CI concurrency 口径**：`cancel-in-progress` 会取消在飞的 run ⇒ 一个 cycle 攒成**一次**
+推送；被取消的 run 如实记 `cancelled`，不得记作失败或成功。
+
+**本 GOAL 新增的失败面**：anthropic 形态的离线判据若在 CI 上表现不稳定（例如把 mock 传输层
+写成依赖时序的形态），**优先把用例改成不依赖时序**；若确认是环境相关缺陷而无法在既有边界内修，
+按 README 的 flake/env 与基础设施两行处置，不得靠重跑掩盖。**live-gated 用例在 CI 上必须
+是 skip**（无凭据），若 CI 上出现**真发出了出站调用**，按**产品缺陷**处理并立即修复。
+
+## 终止与收口
+
+- **ACHIEVED**：EC-01…EC-06 全 PASS 且有实跑证据 + 收口 RECHECK（独立复检，
+  `result: PASS` 或 `PASS_WITH_WARNINGS`）+ 本文件 `latest_recheck` 指向该 RECHECK +
+  「终止与收口」写明收口结论（含仍未处理项，如有）。
+  **live 分支未跑（无凭据）不自动阻塞 ACHIEVED**，但必须在 EC-04/EC-05 的 `evidence` 与
+  收口结论里**逐字写明 skip 与原因**，并作为残余登记——**不得**写成「已实测通过」。
+- **BLOCKED**：`budget.max_cycles` 触顶、或 `no_progress_stop_cycles` 连续命中、
+  或命中 `escalation_triggers`（含新增依赖、Accepted ADR、Canonical State 边界、
+  把真实 runtime 设为默认、明文凭据泄露）。写 BLOCKED 记录（原因/EC 状态表/收口复检/
+  安全扫描处置/恢复条件/仍未处理的长程项），恢复条件由用户拍板。
+- **ABORTED**：用户显式终止本目标。
+
+收口时必须把「仍未处理的长程项」如实登记为后继入口（不隐藏缺口），并给出恢复条件
+（新建承接 GOAL 或显式变更 budget 并置回 ACTIVE）。
+
+### 收口结论
+
+（未收口。ACHIEVED / BLOCKED 时在此写结论。）
+
+## 不进入循环 / 需人工拍板
+
+以下项**本循环不做**，也不因本 GOAL 存在而被宣称已解决；触及即 BLOCKED：
+
+1. **ADR-0031（`tool_pack.*` 能力策略，`Status: Proposed`）是否采纳**——归用户拍板；
+   本循环不将其置为 Accepted，也不据此改行为。
+2. **威胁建模 / 授权面覆盖（BOLA / BFLA）**——需用户或 ADR 拍板，本循环不得自行决定。
+3. **`artifacts/` 明文 token 清理**——涉及不可变历史资产与凭据面，需人工确认。
+4. **450 行纪律的贴线文件**——大重构会放大 diff 风险，需人工决定是否在本轮内处理。
+5. **依赖 pin 升级**（`undici` / `vite` / `yaml` 等有修复版本的包）——上游 pin 变更，
+   需用户或 ADR 拍板。
+6. **hook 侧 L3 门**——治理面，需人工决定。
+7. **把真实 runtime 设为默认**——默认必须仍是 Fake；本循环只做「显式配置才启用」。
+8. **为 anthropic 形态引入 SDK / 新依赖**——EC-01 用手写 HTTP；需要新依赖即 BLOCKED。
+9. **`ModelCompatibilityProfile` 是否按 AGENTS.md §1 建为一等域实体**——涉及 Domain 面
+   与可能的 Canonical State 边界，需拍板；本 GOAL 的 EC-02 只在**既有实体**上加承载字段。
+
+## 迭代日志
+
+| # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | （建档，无子 PLAN） | 见下方状态历史 | 治理 `validate.py` 绿 | 见下方状态历史 | — | EC-01…EC-06 全 PENDING；本机**无凭据**（`DEV_LLM_API_KEY` 空）⇒ EC-03/04/05 的 live 分支只能走如实 skip | cycle 1 = derive EC-01 子 PLAN（anthropic 协议执行路径） |
+
+## 状态历史
+
+- 2026-09-20 建档（cycle 0）：`status: ACTIVE`。本文件由用户 goal 模式指令创建
+  （建档幂等判据：`.cursor/plans/goals/GOAL-*-008-*.md` 不存在）。
+  **只读勘察**结论见「建档时已探明的现状」9 条（`protocol` 无执行路径、分派键是 `api_style`、
+  `openai/` 前缀只有一处且无条件、示例里已有跑不通的 `ANTHROPIC` 端点、无字段承载上下文窗口/
+  思考强度、`ModelCompatibilityProfile` 只存在于散文、配置面是 SQLite JSON blob 且 PG 路径共用、
+  `DEV_LLM_API_KEY` 为空、URL 策略唯一裁决点）。GOAL-001…007 全部只读，未做任何修改。
+  **EC-01 终态选择 (a) 实现**并记录理由（无凭据 ⇒ (b) 的实测前提不可满足）；
+  **EC-02 的「迁移」口径按现状收敛为「解码向后兼容 + 往返」**（无 SQL 列可加，不新建 PG 表）。
