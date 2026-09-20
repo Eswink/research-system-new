@@ -8,26 +8,54 @@ API Key
 Model ID(s)
 ```
 
-协议固定为：
+协议取值为（域枚举 `LLMProtocol`，唯一词表）：
 
 ```text
-OPENAI_COMPATIBLE
+OPENAI_COMPATIBLE | ANTHROPIC
 ```
 
-Research OS 不要求用户选择真实厂商。
+Research OS 不要求用户选择真实厂商；协议标识指**线协议族**，不是模型厂商绑定。
+默认 `OPENAI_COMPATIBLE`（API DTO 默认值）。
+
+**执行侧按协议选路**（`adapters/relay/protocols.py` 是唯一分派点）：
+
+| protocol | 线上形态 | 鉴权头 | 备注 |
+| --- | --- | --- | --- |
+| `OPENAI_COMPATIBLE` | `POST {base_url}/chat/completions`，或按 `api_style=responses` 走 `POST {base_url}/responses` | `Authorization: Bearer` | 既有行为，未变 |
+| `ANTHROPIC` | `POST {base_url}/messages`（Messages 形态） | `x-api-key` + `anthropic-version`（**不**发 `Authorization`） | 见下方缺口 |
+
+**未知协议 fail-closed**：`select_wire_shape` 抛分类错误（`MODEL_INCOMPATIBLE`）且
+**不发起任何出站请求**——静默回退会让「配了某种协议」与「实际跑的是另一种形态」不可区分。
+
+**Messages 形态的已知缺口（如实登记，不伪造能力）**：
+
+- **流式未实现**：`stream=True` 点名拒绝（不降级成非流式、不套用 OpenAI SSE 解析）；
+  probe 的 `streaming` 步因此记为 capability failure，**不写 SUPPORTED 断言**；
+- **`response_format` 无对应参数**：非空即点名拒绝（静默丢弃等于声称支持了没支持的能力）；
+- **`max_tokens` 必填**：该形态要求该字段，缺失即点名拒绝；probe 层对它显式给出
+  `PROBE_ANTHROPIC_MAX_TOKENS`（256），**产品流量必须自带自己的值**；
+- **无 `system_fingerprint` 等价字段**：该槽位保持 `None`（不拿别的字段顶替）；
+- **usage** 用 `input_tokens` / `output_tokens`；`total_tokens` 仅在两者都存在时给出。
+
+OpenHands 侧的 runtime model identifier 同样按协议取前缀（`adapters/openhands/llm_factory.py`）：
+`ANTHROPIC` ⇒ `anthropic/`，`OPENAI_COMPATIBLE` ⇒ 既有探测失败后 `openai/` 前缀。
 
 ## 2. LLMEndpoint
 
 ```yaml
 id: main_relay
 name: Main Relay
-protocol: OPENAI_COMPATIBLE
+protocol: OPENAI_COMPATIBLE   # OPENAI_COMPATIBLE | ANTHROPIC
+api_style: chat_completions   # 仅对 OPENAI_COMPATIBLE 生效：chat_completions | responses
 base_url: https://xxx.com/api/v1
 credential_ref: cred_main
 request_timeout_seconds: 120
 max_retries: 2
 concurrency_limit: 8
 enabled: true
+# 可选块（契约 schema 支持；API PATCH 目前不回传，见 API 文档）
+discovery: { enabled: false }
+circuit_breaker: { failure_threshold: 5, open_timeout_seconds: 60, half_open_max_probes: 1 }
 ```
 
 ## 3. URL 处理

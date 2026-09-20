@@ -39,6 +39,9 @@ Adapter：
 runtime provider/model identifier
 ```
 
+identifier 变换按 `endpoint.protocol` 取前缀（`OPENAI_COMPATIBLE` ⇒ 探测失败时 `openai/`；
+`ANTHROPIC` ⇒ `anthropic/`），未知协议点名拒绝——见 `integration/LLM_ENDPOINTS.md` §1。
+
 上游命名不进入 Domain。
 
 ## 4. Eligibility
