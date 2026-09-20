@@ -2,7 +2,7 @@
 id: PLAN-20260920-119
 slug: live-model-runbook
 title: 真实端点 runbook 与「哪些面仍是 demo」清单：登记步骤、凭据注入与轮换、重启边界、Fake↔真实切换与回退（EC-06）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-008
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-008 cycle 6 = EC-06（文档与 runbook）。授权来源：2026-09-20 用户 goal 模式指令 frontmatter `authorization.ref` 第 (2)(3)(4) 条（声明参数如实记录 / 凭据只从环境变量或 Credential boundary 读取、不得写入仓库或记录、不得回显 / 默认 runtime 保持 Fake、真实 runtime 仅显式配置时启用）与 AGENTS.md §11（默认 CI 离线）与 §14（完成任务时的报告义务）。本 PLAN 遵守：不新增依赖、不改 pin、不改 Policy、不改默认 runtime；**文档里不出现任何凭据值、不写可用的凭据字面量**；无凭据时 live 相关步骤如实标注为「需操作者注入」。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-119-live-model-runbook.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-092-new-judges-must-be-pressed-by-falsification.md
 ---
 
 # PLAN-20260920-119 — 真实端点 runbook（GOAL-008 cycle 6 = EC-06）
@@ -121,8 +122,24 @@ memory_entries: []
 
 ## 证据
 
-逐条 AC 与 F1–F5 的注入/观察/复原对照见
-`.cursor/plans/rechecks/RECHECK-20260920-119-live-model-runbook.md`。
+逐条 AC 与 F1–F5 的注入/观察/复原对照、以及反证抓出的两个**判据缺陷**见
+`.cursor/plans/rechecks/RECHECK-20260920-119-live-model-runbook.md`。摘要：
+
+- **AC-01**：`docs/integration/LIVE_MODEL_RUNBOOK.md` 存在；`docs/INDEX.md` 的 Integrations
+  清单有**条目行**（不是「某处提过」）。
+- **AC-02**：五个小节逐条存在；「重启边界」点名 `RegistryCredentialResolver` 与 `_registry`
+  （落到机制而不是口号）；切换小节点名 `RESEARCHOS_AGENT_RUNTIME` / `openhands`。
+- **AC-03**：`tests/architecture/python/test_runbook_same_source.py` **10 passed**
+  ——引用的仓库路径全部存在（含 13 个 `adapters/fakes/*.py`）、大写变量名全部在代码里出现、
+  pytest 目标存在、demo 符号存在。
+- **AC-04**：F1–F5 **先红后复原**（每步 `git diff --quiet` 复核）。**其中 F2/F4 第一次没红**，
+  因为判据自己有洞（跨行反引号配对吞 token；索引判据只判「全文出现过」）——按缺陷修判据
+  （`affc063`），修完立刻红。这条经过写进了 **MEM-092**。
+- **AC-05**：文档只写变量名与边界，不写值、不写示例 key。
+- **AC-06**：定向 `10 passed`；DOCS-CHECK PASS（6 checks）；治理两件绿；
+  **m0 全量 23 项 4201 passed / 12 skipped（489.62s，代码树 `affc063`）**。
+  其后仅 `.cursor/**` 记录改动，`validate.py` / `validate_bundle` / `docs_consistency_check`
+  单独复跑绿（**未**重跑全量 m0，如实登记）。
 
 ## 状态历史
 
@@ -137,5 +154,11 @@ memory_entries: []
 - **安全/凭据变化**：无新凭据面；文档只写变量名与边界，不写值、不写示例 key。
 - **兼容性/迁移风险**：无（纯新增文档与判据）。
 - **上游版本影响**：无（不引入依赖、不改 pin）。
-- **下一项任务**：EC-06 收口后 GOAL-008 进入终止判定与收口（EC-01…EC-06 全 PASS +
-  独立 RECHECK + 残余登记 + 干净 checkout 封印，按 GOAL「终止与收口」小节执行）。
+- **下一项任务**：EC-06 已收口 ⇒ **GOAL-008 进入终止判定与收口**（EC-01…EC-06 全 PASS +
+  独立 RECHECK + 残余登记 + 干净 checkout 封印 + CI 台账，按 GOAL「终止与收口」小节执行）。
+
+- 2026-09-20 实施与复检（WP-A…WP-C）：`status: DONE`，`latest_recheck` 指向
+  RECHECK-20260920-119（**PASS_WITH_WARNINGS**，W-1…W-6）。runbook 五节 + `docs/INDEX.md`
+  登记 + 同源判据落地；F1–F5 全部先红后复原，**且反证抓出判据自身两个洞**（F2 跨行反引号配对、
+  F4 宽判「全文出现过」）并按缺陷修判据。**live 步骤仍未实测**（无凭据 ⇒ 门两条都关着），
+  runbook 里如实标注。EC-06 是本 GOAL 最后一个 EC ⇒ 收口后进入 GOAL 终止判定。
