@@ -57,6 +57,11 @@ probe_version
 
 ## 4. Role Eligibility
 
+声明参数**不参与**本节的判定：`ModelDefinition.context_window_tokens` /
+`thinking_intensity` 是用户声明值，本版本既不发送给 provider，也不参与 capability
+匹配、eligibility 或预算折算；未声明（`null`）与声明某值在读面必须是可区分的两态。
+详见 `DOMAIN_MODEL.md` §5「声明参数」。
+
 示例：
 
 ### ExperimentEngineer
