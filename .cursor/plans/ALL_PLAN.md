@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260920-119](tasks/PLAN-20260920-119-live-model-runbook.md) | IN_PROGRESS |
 | [x] | [PLAN-20260920-118](tasks/PLAN-20260920-118-first-live-gated-real-run.md) | DONE |
 | [x] | [PLAN-20260920-117](tasks/PLAN-20260920-117-model-drift-visibility-three-states.md) | DONE |
 | [x] | [PLAN-20260920-116](tasks/PLAN-20260920-116-supply-chain-registration-and-credential-discipline.md) | DONE |

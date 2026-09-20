@@ -218,6 +218,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260920-116-supply-chain-registration-and-credential-discipline.md
   - .cursor/plans/tasks/PLAN-20260920-117-model-drift-visibility-three-states.md
   - .cursor/plans/tasks/PLAN-20260920-118-first-live-gated-real-run.md
+  - .cursor/plans/tasks/PLAN-20260920-119-live-model-runbook.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-118-first-live-gated-real-run.md
 memory_entries:
   - MEM-20260920-087
@@ -381,15 +382,14 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**cycle 5 已收口（PLAN-20260920-118 = EC-04，`DONE`；RECHECK-20260920-118 =
-PASS_WITH_WARNINGS，live 分支如实 skip）**，EC-04 **PASS**。
-EC-01 / EC-02 / EC-03 / EC-04 / EC-05 **全 PASS**；唯一未收口的是 **EC-06**（文档与 runbook）。
-下一步 = **cycle 6 的 ①：derive EC-06 子 PLAN**——登记步骤（DB 路径与 YAML 路径）、凭据注入与**轮换**、
-**重启后重输的边界**、**Fake↔真实切换与回退**、以及「**哪些面仍是 demo**」的清单，
-并把该文档登记进 `docs/INDEX.md`；判据要与代码**同源**（文档里每个变量名/路径/命令都必须在代码里真实存在）。
-EC-06 收口后 GOAL 进入终止判定：按「终止与收口」的明文，**EC-04/EC-05 的 live 分支未跑（无凭据）
-不自动阻塞 ACHIEVED，但必须在 EC-04/EC-05 的 `evidence` 与残余里如实登记**（已完成：
-RECHECK-117 W-1、RECHECK-118 W-1）。
+**当前续点**：**cycle 6 进行中（PLAN-20260920-119 = EC-06，`IN_PROGRESS`；derive 已提交）**。
+EC-06 = **文档与 runbook**：登记步骤（DB 路径 + YAML 路径）、凭据注入与**轮换**、
+**重启后重输的边界**、**Fake↔真实切换与回退**、以及「**哪些面仍是 demo**」清单，
+并把文档登记进 `docs/INDEX.md`。判据判**同源**：文档里的每个路径 / 环境变量 / 命令 /
+demo 符号都必须在代码里真实存在（运行期产物按逐条白名单豁免并写明理由）。
+EC-01 / EC-02 / EC-03 / EC-04 / EC-05 **全 PASS**（EC-04/EC-05 的 live 分支如实 skip 并已登记）。
+EC-06 收口（CI 终态已记账）后，GOAL 进入**终止判定与收口**：按 GOAL「终止与收口」小节
+做独立复检 + 残余登记 + 干净 checkout 封印。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -504,6 +504,7 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 
 | 4 | PLAN-20260920-117（EC-05） | `183f588`（derive）、`c6bfdef`、`7b317f6`、`3a955b5`、`3eef7c3`（+收口记录） | 定向：域 `test_model_drift.py` **9 passed**、API `test_models_api.py` **15 passed**、词表同源 **5 passed**、e2e 漂移 spec **4 passed**、`test_openapi_snapshot.py`（快照 +47 行）绿；web `lint`(max-warnings 0)/`typecheck`/unit 绿；`design-fidelity` **2 passed 且基线零 diff**（漂移块只在探测后渲染 ⇒ 对设计门不可见）；`docs_consistency_check` / `validate_bundle` 绿；**m0 全量 23 项**计数见状态历史 cycle 4 段 | **run 35506216814 = success**（`52b4967`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | — | EC-05 **PASS**；EC-04/EC-06 PENDING。残余 6 条：W-1 live 语义未实测（无凭据，真实 probe 一次未跑）、W-2 fingerprint 未纳入漂移判定、W-3 drift 未持久化、W-4 严格口径的噪声代价、W-5 UNKNOWN 三种来源未细分、W-6 指纹只在 provider 给出时构建 | cycle 5 = derive EC-04（首次真实 run；仍无凭据 ⇒ 按「skip 不是 PASS」处置）或 EC-06 |
 | 5 | PLAN-20260920-118（EC-04） | `8b85f03`（derive）、`08e41f7`、`17464bf`、`8c9d67c`、`97380c1`、`4f54e53`、`7ce833f`（+收口记录） | 定向：域词表 **4 passed**、run 记录 **13 passed**、离线门 **13 passed**、live 用例 **1 passed / 1 skipped**、口径判据 **5 passed**、EC-03 离线全链 **2 passed / 1 skipped**（抽共享模块后复跑）⇒ 合计 **38 passed / 2 skipped**；反证 F1–F5 全部先红后复原；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿；**m0 全量 23 项 4190 passed / 12 skipped（499.34s，冻结树 `7ce833f`；cycle 4 为 4146/11）** | （本轮推送的 run 与六 job 结论在紧随的台账提交登记） | **m0 拦下三处（G1–G3）**：G1 新判据用两个字面量枚举成员比较 ⇒ mypy `comparison-overlap`（cycle 4 同族陷阱再现，改走运行期枚举）；G2 新代码两处函数 >50 行（拆助手）；**G3 跨套件污染**——live 用例直接 import EC-03 测试模块 ⇒ 同一文件被两个模块名加载、SDK `Action` 子类被定义两次 ⇒ 6 条 fork 用例红（抽单一名共享模块 `tests/e2e/live_run_support.py`）。均按缺陷修，未动门禁与断言强度 | EC-04 **PASS（离线判据全绿；live 分支如实 skip —— 真实 run 未发生）**；EC-06 未收口。残余 6 条：W-1 真实 run 未发生（能力边界，六项候选凭据环境变量全 absent）、W-2 live 路径的模型绑定不是 anthropic 面（所有模型绑 `main`）、W-3 门只看 runtime 配置 + 凭据可解析、W-4 口径判据的引用-豁免是行级启发式、W-5 记录的 usage/制品字段靠调用方填（live 判据未跑）、W-6 `NOT_VERIFIED` 同时覆盖「无凭据」与「跑了但没终止」 | cycle 6 = derive **EC-06**（文档与 runbook；GOAL 最后一个未收口 EC） |
+| 6 | PLAN-20260920-119（EC-06） | （本行随收口回写） | （本行随收口回写） | （本行随收口回写） | — | EC-06 进行中：runbook（登记 / 凭据注入与轮换 / 重启边界 / Fake↔真实切换与回退 / 仍是 demo 的面）+ 同源判据 + `docs/INDEX.md` 登记；**本机仍无凭据** ⇒ live 步骤只能标注为「需操作者注入」 | EC-06 收口后 GOAL 进入终止判定 |
 
 ## 状态历史
 
