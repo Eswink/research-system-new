@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from packages.domain.model_drift import ModelDriftAssessment
 from packages.domain.models import (
     CapabilityAssertion,
     CapabilityProbeFailure,
@@ -12,6 +13,7 @@ from packages.domain.serialization import digest_of
 from services.api.dto.models import (
     CapabilityAssertionDto,
     CapabilityFailureDto,
+    ModelDriftDto,
     ModelReadDto,
     ModelRuntimeFingerprintDto,
 )
@@ -94,4 +96,14 @@ def fingerprint_dto(fingerprint: ModelRuntimeFingerprint) -> ModelRuntimeFingerp
         returned_model_identifier=fingerprint.returned_model_identifier,
         system_fingerprint=fingerprint.system_fingerprint,
         observed_capabilities=sorted(item.value for item in fingerprint.observed_capabilities),
+    )
+
+
+def drift_dto(assessment: ModelDriftAssessment) -> ModelDriftDto:
+    """漂移结论 → DTO（EC-05）。`detail` 只含两个模型标识，无凭据、无原始响应体。"""
+    return ModelDriftDto(
+        state=assessment.state.value,
+        declared_model_name=assessment.declared_model_name,
+        returned_model_name=assessment.returned_model_name,
+        detail=assessment.detail,
     )

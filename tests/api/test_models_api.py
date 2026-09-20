@@ -6,7 +6,9 @@ from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
-from tests.api.conftest import create_endpoint
+from adapters.fakes.model_gateway import FakeModelGateway, FakeModelGatewayOptions
+from services.api.app import create_app
+from tests.api.conftest import create_endpoint, make_app_deps
 
 
 def create_model(client: TestClient, endpoint_id: str, name: str = "model-alpha") -> dict[str, Any]:
@@ -95,6 +97,50 @@ def test_probe_merges_probed_assertions(client: TestClient) -> None:
     stored = client.get(f"/models/{model['id']}").json()
     sources = {item["source"] for item in stored["capabilities"].values()}
     assert "PROBED" in sources
+
+
+def _probe_with_gateway(options: FakeModelGatewayOptions, declared: str) -> dict[str, Any]:
+    """用指定替身形态跑一次 probe，返回结果 DTO（EC-05 漂移判据的三种夹具入口）。"""
+    deps = make_app_deps(gateway=FakeModelGateway(options))
+    with TestClient(create_app(deps)) as client:
+        endpoint = create_endpoint(client)
+        model = create_model(client, str(endpoint["id"]), name=declared)
+        response = client.post(
+            f"/models/{model['id']}/probe", headers={"Idempotency-Key": "k-drift"}
+        )
+        assert response.status_code == 200, response.text
+        return cast(dict[str, Any], response.json())
+
+
+def test_probe_reports_match_when_returned_name_agrees() -> None:
+    result = _probe_with_gateway(
+        FakeModelGatewayOptions(returned_model_name="model-alpha"), "model-alpha"
+    )
+    assert result["drift"]["state"] == "MATCH"
+    assert result["drift"]["declared_model_name"] == "model-alpha"
+    assert result["drift"]["returned_model_name"] == "model-alpha"
+
+
+def test_probe_reports_drift_and_names_both_values() -> None:
+    """中转站在同一 Model ID 后换了模型 ⇒ 读面必须点名两个值，而不是只说「有漂移」。"""
+    result = _probe_with_gateway(
+        FakeModelGatewayOptions(returned_model_name="model-beta"), "model-alpha"
+    )
+    drift = result["drift"]
+    assert drift["state"] == "DRIFT"
+    assert drift["declared_model_name"] == "model-alpha"
+    assert drift["returned_model_name"] == "model-beta"
+    assert "model-alpha" in drift["detail"]
+    assert "model-beta" in drift["detail"]
+
+
+def test_probe_failure_reports_unknown_not_match() -> None:
+    """**未知 ≠ 一致**：探测失败时不得把「未探到」渲染成 MATCH（AGENTS.md §4）。"""
+    result = _probe_with_gateway(FakeModelGatewayOptions(auth_fails=True), "model-alpha")
+    assert result["ok"] is False
+    assert result["drift"]["state"] == "UNKNOWN"
+    assert result["drift"]["state"] != "MATCH"
+    assert result["drift"]["returned_model_name"] is None
 
 
 def test_probe_without_credential_reports_not_verified(client: TestClient) -> None:

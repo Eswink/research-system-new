@@ -20,7 +20,7 @@ from typing import get_args
 
 from pydantic import BaseModel
 
-from packages.domain.enums import LLMProtocol, ThinkingIntensity
+from packages.domain.enums import LLMProtocol, ModelDriftState, ThinkingIntensity
 from services.api.dto import endpoints as endpoints_dto
 from services.api.dto import models as models_dto
 
@@ -91,3 +91,15 @@ def test_thinking_intensity_vocabulary_is_same_across_faces() -> None:
     assert "context_window_tokens" in properties
     assert set(get_args(models_dto.ThinkingIntensityLiteral)) == values
     assert values, "ThinkingIntensity 词表为空"
+
+
+def test_model_drift_vocabulary_is_same_across_faces() -> None:
+    """`ModelDriftState` 的域枚举与 API Literal 必须同源（EC-05）。
+
+    三态是**读面的语义**（未知不得显示为无漂移），漂一个取值就会让前端把
+    「未探到」渲染成别的状态——所以和协议/强度词表一样，按结构判据钉住。
+    """
+    values = {member.value for member in ModelDriftState}
+    assert values == {"MATCH", "DRIFT", "UNKNOWN"}, values
+    assert set(get_args(models_dto.ModelDriftStateLiteral)) == values
+    assert "drift" in models_dto.ProbeResultDto.model_fields

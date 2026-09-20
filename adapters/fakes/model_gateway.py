@@ -28,6 +28,9 @@ class FakeModelGatewayOptions:
     """
 
     model_ids: tuple[str, ...] = ("model-alpha", "model-beta")
+    #: probe / complete 回报的模型标识（EC-05 漂移判据用它造「一致 / 漂移」两种夹具；
+    #: 默认值 = 既有硬编码值，既有用例行为不变）。
+    returned_model_name: str = "model-alpha"
     fail_timeout: bool = False
     fail_transient: bool = False
     malformed_result: bool = False
@@ -52,6 +55,7 @@ class FakeModelGateway(FakeBase):
         super().__init__("model_gateway")
         opts = options or FakeModelGatewayOptions()
         self._model_ids = opts.model_ids
+        self._returned_model_name = opts.returned_model_name
         self._malformed = opts.malformed_result
         self._auth_fails = opts.auth_fails
         self._stream_fails = opts.stream_fails
@@ -84,7 +88,7 @@ class FakeModelGateway(FakeBase):
     def _ok_probe(self) -> EndpointProbeSnapshot:
         return EndpointProbeSnapshot(
             ok=True,
-            returned_model_name="model-alpha",
+            returned_model_name=self._returned_model_name,
             system_fingerprint="fp_1",
             safe_response_metadata={"x-request-id": "req-1"} if not self._no_usage else {},
             usage_reported=not self._no_usage,
@@ -109,7 +113,7 @@ class FakeModelGateway(FakeBase):
             return result
         result = CompletionResult(
             content="pong",
-            returned_model_name="model-alpha",
+            returned_model_name=self._returned_model_name,
             system_fingerprint="fp_1",
             usage_reported=True,
             safe_response_metadata={"x-request-id": "req-1"},

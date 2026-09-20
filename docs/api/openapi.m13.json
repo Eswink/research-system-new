@@ -3760,6 +3760,48 @@
         "title": "ModelCreateDto",
         "type": "object"
       },
+      "ModelDriftDto": {
+        "additionalProperties": false,
+        "description": "漂移三态（EC-05）。`UNKNOWN` = 未探到 —— **不等于**无漂移。\n\n`detail` 由域层给出（只含两个模型标识，已脱敏；不含凭据与 provider 原始响应体）。",
+        "properties": {
+          "declared_model_name": {
+            "title": "Declared Model Name",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "returned_model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Returned Model Name"
+          },
+          "state": {
+            "enum": [
+              "MATCH",
+              "DRIFT",
+              "UNKNOWN"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "declared_model_name",
+          "returned_model_name",
+          "detail"
+        ],
+        "title": "ModelDriftDto",
+        "type": "object"
+      },
       "ModelReadDto": {
         "additionalProperties": false,
         "properties": {
@@ -4283,6 +4325,9 @@
             "title": "Capability Failures",
             "type": "array"
           },
+          "drift": {
+            "$ref": "#/components/schemas/ModelDriftDto"
+          },
           "error_category": {
             "anyOf": [
               {
@@ -4371,7 +4416,8 @@
         "required": [
           "model_id",
           "ok",
-          "provider_fingerprint_available"
+          "provider_fingerprint_available",
+          "drift"
         ],
         "title": "ProbeResultDto",
         "type": "object"

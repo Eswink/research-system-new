@@ -73,6 +73,22 @@ class ModelReadDto(BaseModel):
     version: str = Field(description="resource version（ETag 值，If-Match 用）")
 
 
+#: 与域枚举 `ModelDriftState` 同值（结构判据保证不漂移）。
+ModelDriftStateLiteral = Literal["MATCH", "DRIFT", "UNKNOWN"]
+
+
+class ModelDriftDto(BaseModel):
+    """漂移三态（EC-05）。`UNKNOWN` = 未探到 —— **不等于**无漂移。
+
+    `detail` 由域层给出（只含两个模型标识，已脱敏；不含凭据与 provider 原始响应体）。
+    """
+
+    state: ModelDriftStateLiteral
+    declared_model_name: str
+    returned_model_name: str | None
+    detail: str
+
+
 class ProbeResultDto(BaseModel):
     """capability probe 结果：system_fingerprint=None 时前端必须渲染
     'configuration reproducible / provider fingerprint unavailable'，
@@ -84,6 +100,7 @@ class ProbeResultDto(BaseModel):
     returned_model_name: str | None = None
     system_fingerprint: str | None = None
     provider_fingerprint_available: bool
+    drift: ModelDriftDto
     error_category: str | None = None
     error_message_redacted: str | None = None
     capability_failures: list[CapabilityFailureDto] = Field(default_factory=list)

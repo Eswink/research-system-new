@@ -21,6 +21,7 @@ from packages.domain.enums import (
     ModelCapability,
     ThinkingIntensity,
 )
+from packages.domain.model_drift import assess_model_drift
 from packages.domain.models import (
     CapabilityAssertion,
     EndpointProbeSnapshot,
@@ -44,6 +45,7 @@ from services.api.dto.models import (
 from services.api.errors import ApiError
 from services.api.mappers.models import (
     capability_failures_dto,
+    drift_dto,
     fingerprint_dto,
     model_read_dto,
     model_version,
@@ -146,6 +148,7 @@ def _probe_result_dto(
         returned_model_name=result.returned_model_name,
         system_fingerprint=result.system_fingerprint,
         provider_fingerprint_available=result.system_fingerprint is not None,
+        drift=drift_dto(assess_model_drift(model.model_name, result.returned_model_name)),
         error_category=result.error_category.value if result.error_category else None,
         error_message_redacted=result.error_message,
         capability_failures=capability_failures_dto(result.capability_failures),
