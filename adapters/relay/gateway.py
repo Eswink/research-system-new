@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 import httpx
 
 from adapters.relay.completions import complete_any
+from adapters.relay.protocols import request_headers
 from adapters.relay.transport import (
     RelayHTTPError,
     decode_json,
@@ -137,7 +138,13 @@ class OpenAIChatGateway:
             try:
                 circuit_state = self._consult_circuit(endpoint)
                 response, _attempts = request_with_retries(
-                    self._client, "GET", url, endpoint, credential, telemetry=self._telemetry
+                    self._client,
+                    "GET",
+                    url,
+                    endpoint,
+                    credential,
+                    telemetry=self._telemetry,
+                    headers=request_headers(endpoint.protocol, credential),
                 )
             except CircuitOpenRelayError:
                 op.set_outcome(

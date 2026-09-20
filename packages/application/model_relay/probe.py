@@ -29,6 +29,7 @@ from packages.application.model_relay.suite import (
     basic_request,
     default_probe_suite,
     extended_capability_steps,
+    probe_max_tokens,
 )
 from packages.application.ports import (
     CredentialResolver,
@@ -90,7 +91,13 @@ def _connectivity_and_chat(
     snapshot = gateway.probe_endpoint(
         endpoint,
         credential,
-        basic_request(model_name, with_tools=False, with_structured=False, stream=False),
+        basic_request(
+            model_name,
+            with_tools=False,
+            with_structured=False,
+            stream=False,
+            max_tokens=probe_max_tokens(endpoint.protocol),
+        ),
     )
     if not snapshot.ok:
         return connectivity_error_result(model_name, snapshot)
@@ -164,7 +171,9 @@ def _extended_steps(
 ) -> tuple[set[ModelCapability], list[CapabilityProbeFailure]]:
     observed: set[ModelCapability] = set()
     failures: list[CapabilityProbeFailure] = []
-    for capability, request in extended_capability_steps(model_name):
+    for capability, request in extended_capability_steps(
+        model_name, max_tokens=probe_max_tokens(endpoint.protocol)
+    ):
         snapshot = gateway.probe_endpoint(endpoint, credential, request)
         if snapshot.ok:
             observed.add(capability)
@@ -213,7 +222,13 @@ def _collect_probe(
     chat = gateway.probe_endpoint(
         endpoint,
         credential,
-        basic_request(model.model_name, with_tools=False, with_structured=False, stream=False),
+        basic_request(
+            model.model_name,
+            with_tools=False,
+            with_structured=False,
+            stream=False,
+            max_tokens=probe_max_tokens(endpoint.protocol),
+        ),
     )
     if not chat.ok:
         return _chat_abort(model, chat)

@@ -43,6 +43,9 @@ class CompletionRequest:
     tools: list[dict[str, object]] | None = None
     response_format: dict[str, object] | None = None
     stream: bool = False
+    #: 输出上限。Messages 形态（protocol=ANTHROPIC）**必填**——缺失即点名拒绝，
+    #: 不编造默认值（静默默认会不可见地截断输出）。OpenAI-compatible 形态不发该键。
+    max_tokens: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
