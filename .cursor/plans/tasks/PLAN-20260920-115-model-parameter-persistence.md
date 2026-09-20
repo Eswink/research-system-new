@@ -2,7 +2,7 @@
 id: PLAN-20260920-115
 slug: model-parameter-persistence
 title: 模型参数落库：上下文窗口与思考强度的承载字段 / 契约 / 往返 / 读面 / 快照（EC-02）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-008
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-008 cycle 2 = EC-02（模型参数落库）。授权来源：2026-09-20 用户 goal 模式指令（建档 GOAL-008 并自动化循环推进、无需逐轮确认）；模型参数口径（上下文窗口 512000、思考强度 Max）与「如实记录或如实登记为不支持」的要求见 GOAL-20260920-008 frontmatter `authorization.ref` 第 (2) 条。本 PLAN 遵守：厂商中立命名、不引入新依赖、**不新建 PG canonical 表**（那触及 Canonical State 边界 ⇒ escalation）、默认门保持离线。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-115-model-parameter-persistence.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-088-new-render-branch-may-be-invisible-to-the-design-gate.md
 ---
 
 # PLAN-20260920-115 — 模型参数落库（GOAL-008 cycle 2 = EC-02）
@@ -147,13 +148,56 @@ memory_entries: []
 
 ## 证据
 
-（实施中登记：每条 AC 的命令 + 实测输出摘要 + 反证的前后对照。）
+**AC 实测（每条都有命令 + 输出摘要；反证见 RECHECK-20260920-115 的 F1–F11）**
+
+- **AC-01**：`uv run --frozen --no-sync pytest -q tests/domain/test_model_declared_parameters.py`
+  → **6 passed**（原样携带 / 默认 `None` / `0`、`-1`、`-512000` 被拒 / 词表为级别词）。
+  反证 F1：摘掉两字段 → **5 failed**（`unexpected keyword argument 'context_window_tokens'`）。
+- **AC-02**：`... pytest -q tests/loaders/test_contract_loaders.py` → **23 passed**
+  （含 `test_load_models_carries_declared_parameters`：`agnes_flash` 读出 `512000` /
+  `ThinkingIntensity.MAX`，未声明的模型保持 `None`）。
+  反证 F2：摘掉 schema 两属性 → **2 failed**（`Additional properties are not allowed ...`）。
+- **AC-03a**：`... pytest -q tests/adapters/sqlite/test_model_store_declared_parameters.py`
+  → **3 passed**（往返 / 缺省往返 `None` / 旧行缺键解码不抛）。
+- **AC-03b**：`... pytest -q tests/architecture/python/test_model_config_face_wiring.py`
+  → **3 passed**（AST：`assemble` 仅构造 1 个配置面实例并传给两分支；PG 根从 `config` 取同一
+  实例交给 `PostgresAssembly`；PG 迁移无 `models` 表）。反证 F8 / F9 / F11 各 1 red。
+- **AC-03c**：`RESEARCHOS_POSTGRES_DSN=... pytest -q tests/postgres/test_m14_model_declared_parameters_pg_root.py`
+  → **2 passed**（`deps.model_store is model_store`；POST/GET/PATCH 两值可判、PATCH 后 ETag 变；
+  未声明读回 `null`）。反证 F10：`model_store=None` → **2 failed**。
+- **AC-04**：`... pytest -q tests/api/test_models_api.py tests/contracts/test_openapi_snapshot.py`
+  → **16 passed** + drift 门绿；`tools/gen_openapi.py` 重生成快照 **+91 行**。
+  反证 F3 / F4 / F5 各 1–2 red。
+- **AC-05**：`pnpm --dir apps/web exec playwright test models-declared-parameters` → **3 passed**；
+  `pnpm --dir apps/web run lint` / `typecheck` / `test`（**76 passed**）绿。
+  反证 F6：摘掉 `types.ts` 两字段 → `tsc --noEmit` **11 处**红；F7：去掉挂载 → spec **3 failed**。
+- **AC-06**：四处同源（`DOMAIN_MODEL.md` §5 / `MODEL_COMPATIBILITY.md` §4 / `MODEL_GATEWAY.md` §4 /
+  页面 en+zh 文案），页面文案由 AC-05 的 e2e 断言钉住。
+- **AC-07**：`bash scratch/run-m0-goal008-cycle2.sh` → **PASS: profile=m0; 23 deterministic checks**，
+  **4097 passed / 11 skipped**（461.72s，冻结树 `40fe55d`）；治理 `validate.py` → `Cursor 治理验证通过`。
+
+**设计对照门**：`pnpm --dir apps/web exec playwright test design-fidelity` → **2 passed**、
+`design-outlines.json` 与像素快照 **零 diff**。原因：该路由在默认替身下不渲染数据
+（无 `GET /models` 注册）⇒ 新分支由**自带 stub spec** 覆盖，基线无需重生成。已登记为
+MEM-20260920-088。
+
+**逐条与 EC-02 的对应**：判据表见 `.cursor/plans/rechecks/RECHECK-20260920-115-model-parameter-persistence.md`
+（含 W-1…W-7 的边界登记）。
 
 ## 状态历史
 
 - 2026-09-20 建档（GOAL-008 cycle 2 = EC-02）：`status: IN_PROGRESS`。
   只读勘察确认 6 条事实（无字段承载 → schema `additionalProperties: false` → 加载器显式构造
   → 配置面是 SQLite JSON blob 且 PG 路径共用 → 快照/web 类型手工同步 → PATCH 显式 null 被忽略）。
+- 2026-09-20 WP-A/B/C 完成（`3eece38` / `d3eedf7` / `3caf6c2`，本地，攒一次推送）。
+- 2026-09-20 WP-D 完成（`abed221`）：三 DTO + 映射 + 路由 + 快照重生成；F3/F4/F5 反证通过。
+- 2026-09-20 WP-E 完成（`b8f2e9b`）：`types.ts` + 详情面板 + 目录表列 + 自带 stub e2e（3 条）；
+  设计对照门实测零 diff（射程已登记）。
+- 2026-09-20 补充 AC-03 缺的**装配判据**与 **PG 根运行期判据**（`a0f98bb` / `40fe55d`）：
+  此前 WP-C 只测了 SQLite 一侧，「两组合根共用同一配置面」只是叙述。
+- 2026-09-20 WP-F 完成：文档同源（`a0f98bb` / `53f4a26`）；m0 全量 **23/23 PASS**（`40fe55d`，
+  其后仅一段文档改动，docs 三门单独复跑绿）；复检 `RECHECK-20260920-115` = PASS_WITH_WARNINGS
+  ⇒ `status: DONE`。
 
 ## 影响报告
 

@@ -85,6 +85,7 @@
 | [MEM-20260919-085](entries/MEM-20260919-085-goal-record-drift.md) | ACTIVE | repository | 0.90 | 2027-09-19 | PLAN-20260919-113 |
 | [MEM-20260919-086](entries/MEM-20260919-086-sdk-local-action-subclass-poisons-process.md) | ACTIVE | repository | 0.90 | 2027-09-19 | PLAN-20260919-113 |
 | [MEM-20260920-087](entries/MEM-20260920-087-bundle-scan-flags-test-net-as-old-version.md) | ACTIVE | repository | 0.95 | 2027-09-20 | PLAN-20260920-114 |
+| [MEM-20260920-088](entries/MEM-20260920-088-new-render-branch-may-be-invisible-to-the-design-gate.md) | ACTIVE | repository | 0.90 | 2027-09-20 | PLAN-20260920-115 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

@@ -110,8 +110,33 @@ exit_criteria:
       让既有数据读不出）+ 契约 schema 校验用例 + 读面字段断言（API 响应含两值；**页面有渲染
       分支**，不是「只在 `types.ts` 里存在」）+ OpenAPI 快照 drift 门绿 + **反证**（摘掉字段/
       摘掉映射 ⇒ 对应用例红，先红后复原）+ 受影响套件 + m0 绿。
-    status: PENDING
-    evidence: ""
+    status: PASS
+    evidence: >-
+      RECHECK-20260920-115 = PASS_WITH_WARNINGS（PLAN-20260920-115，子 PLAN 已 DONE）。
+      落点与判据：`ModelDefinition` 加两个**可选**声明字段 `context_window_tokens`（int ≥ 1）
+      与 `thinking_intensity`（新域枚举 `ThinkingIntensity` = MINIMAL/LOW/MEDIUM/HIGH/MAX，
+      **厂商中立级别词**，用户声明的 "Max" 落为 `MAX`）；契约 `schemas/model-definition.schema.json`
+      声明两属性（`additionalProperties: false` ⇒ 不声明就写不进去）；加载器 `load_models` 读取
+      两字段并把强度经枚举转换（未知级别拒绝而非存下）；配置面 `SqliteModelStore` 的 JSON blob
+      承载两字段且**缺键旧行解码为 `None` 不抛**（无 DDL——配置面没有列可加，也**未**新建 PG 表）；
+      读面 = API 三 DTO（create/update/read）+ `model_read_dto` + 路由 create/PATCH 构造与重建 +
+      probe 合并重建 + OpenAPI 快照重生成（**+91 行**，drift 门绿）+ web `types.ts` + 详情面板
+      `model-declared-parameters` + 目录表「参数声明」列；`model_version` 摘要纳入两字段
+      ⇒ 只改这两个字段的 PATCH **会改变 ETag**（否则 If-Match 的丢失更新保护对它们失效）。
+      反证 11 条（先红后复原）：摘字段（域 5 red）/ 摘 schema 属性（加载器 2 red）/
+      摘 create 构造（2 red）/ 摘 probe 合并重建（1 red）/ 摘 `model_version` 两键（1 red，
+      ETag 不变）/ 摘 `types.ts` 两字段（`tsc` 11 处）/ 去掉页面挂载（e2e 3 red）/
+      PG 分支各建一个 store（装配判据 1 red）/ `PostgresAssembly` 不带 store（1+2 red）/
+      `model_store=None`（2 red）/ 迁移里建 `models` 表（1 red）。
+      **两组合根共用同一配置面**有两条独立判据：AST（`assemble` 只构造 1 个实例、PG 根从 `config`
+      取同一实例）+ PG 根**运行期**（`build_postgres_assembly` → `build_postgres_apideps`，
+      POST/GET/PATCH 两值可判）。门禁：定向 56 + PG 5 + web unit 76 passed；`mypy` 949 files；
+      **m0 全量 23/23 PASS**（4097 passed / 11 skipped，冻结树 `40fe55d`；其后仅一段文档改动，
+      docs 三门单独复跑绿）。诚实边界（W-1…W-7）：**两值只是声明，不发送给 provider、
+      不参与 eligibility/capability/预算**（读面 en+zh 文案与三份文档四处同源）；
+      OpenHands 侧未接线（运行时读不到）；`types.ts` 与 OpenAPI 快照**没有**自动比对门
+      （耦合来自 `tsc`）；设计对照门对该分支**不可见**（默认替身无 `GET /models`，该路由渲染
+      错误态 ⇒ 像素/结构基线零 diff），新分支由自带 stub spec 覆盖（MEM-20260920-088）。
   - id: EC-03
     criterion: >-
       **供应链登记与凭据纪律**：端点与模型**登记入库**（DB 行，配置面 `llm_endpoints` /
@@ -215,7 +240,7 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 | EC | 主题 | 来源 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | ANTHROPIC 协议执行路径（按 `endpoint.protocol` 选路；未知协议 fail-closed；反证：不再无条件 `openai/` 前缀） | GOAL-007 残余第 7 项 + 用户授权 (1) | **PASS**（RECHECK-20260920-114，W-1…W-9） |
-| EC-02 | 模型参数落库（上下文窗口 512000 + 思考强度 Max 有承载字段、契约、往返、读面、快照；缺字段即红） | 用户授权 (2) + AGENTS.md §1/§4 | **PENDING** |
+| EC-02 | 模型参数落库（上下文窗口 512000 + 思考强度 Max 有承载字段、契约、往返、读面、快照；缺字段即红） | 用户授权 (2) + AGENTS.md §1/§4 | **PASS**（RECHECK-20260920-115，W-1…W-7） |
 | EC-03 | 供应链登记与凭据纪律（端点/模型入库；URL 策略放行 https 公网、拒绝本地/私有；明文凭据 grep 反证；重启失效边界如实披露） | 用户授权 (1)(3) + AGENTS.md §9 | **PENDING** |
 | EC-04 | 首次真实 run（live-gated：该端点 + `agnes-2.5-flash` 跑到终态；指纹/归账/制品/证据；口径=可重复配置；无凭据则如实 skip） | 用户授权 (1)(3) + AGENTS.md §4 | **PENDING** |
 | EC-05 | 漂移可见性（probe 返回 model 名 vs 声明值对比，漂移状态进读面；无凭据则如实 skip） | 用户授权 (1) + AGENTS.md §4 | **PENDING** |
@@ -349,9 +374,11 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**cycle 2 已 derive（PLAN-20260920-115 = EC-02 模型参数落库，`IN_PROGRESS`）**，
-下一步 = **按该子 PLAN 的 WP-A…WP-F 执行**（域字段与词表 → 契约 schema 与加载器 →
-配置面往返 → API 读面与快照 → web 类型与页面渲染 → 反证/文档/记录）。
+**当前续点**：**cycle 2 已完成（PLAN-20260920-115 = EC-02 模型参数落库，`DONE` + RECHECK-115
+PASS_WITH_WARNINGS）；EC-02 = PASS**。本轮产品提交与记录提交已攒成一次推送并按 ⑤ 记录 CI 终态
+（见「迭代日志」第 2 行；若该行 CI 列为「见下」，以本文件成文后的最新记录为准）。
+下一步 = **cycle 3 = 按 ① derive EC-03 子 PLAN**（供应链登记与凭据纪律：端点/模型入库、
+URL 策略复用 `validate_endpoint_url`、明文凭据 grep 反证、重启失效边界如实披露）。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -461,7 +488,7 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `167bdd3` | 治理 `validate.py` 绿 | run 35490147869 = **success**（六 job 全 success） | — | EC-01…EC-06 全 PENDING；本机**无凭据**（`DEV_LLM_API_KEY` 空）⇒ EC-03/04/05 的 live 分支只能走如实 skip | cycle 1 = derive EC-01 子 PLAN |
 | 1 | PLAN-20260920-114（EC-01） | `7a28799`（PLAN+ALL_PLAN）、`c9a5caa`、`4693e6b`、`fbe6dee`、`d9e4be9`、`cc704e5`、`691414a`、`5f82071`、`0a04520`、`4e28e93`（记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4072 passed / 11 skipped，冻结树 `0a04520`；0 failed checks）；定向 168 passed + probe 判据 3 passed；`ruff`/`format`/`mypy`(945 files) 绿；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35493396918 = success**（`4e28e93`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | m0 拦下四处：format-check / typecheck(7) / 50 行函数门 / validate_bundle（G1–G4，均按缺陷修，未动断言与门禁） | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W-1（真实端点面未实测）、W-6（示例端点未入库）转由 EC-03/EC-04 承接 | cycle 2 = derive EC-02 子 PLAN（模型参数落库：上下文窗口 512000 + 思考强度 Max） |
-| 2 | PLAN-20260920-115（EC-02） | 待执行（derive 提交见状态历史；与 cycle 2 产品提交攒成一次推送） | 待执行 | 待执行 | — | EC-02 已 derive（`IN_PROGRESS`）；EC-02…EC-06 PENDING | 按 PLAN-115 的 WP-A…WP-F 执行（域字段 → 契约/加载器 → 配置面往返 → API 读面与快照 → web 渲染 → 反证/文档/记录） |
+| 2 | PLAN-20260920-115（EC-02） | `a6c03bc`（derive）、`3eece38`、`d3eedf7`、`3caf6c2`、`abed221`、`b8f2e9b`、`a0f98bb`、`40fe55d`、`53f4a26`（+ 收口记录提交；与 cycle 2 攒成一次推送） | m0 **PASS: profile=m0; 23 deterministic checks**（4097 passed / 11 skipped，461.72s，冻结树 `40fe55d`；其后仅一段文档改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 56 passed、PG 根 + 装配判据 5 passed、web unit 76 passed、web lint/typecheck 绿、design-fidelity 2 passed（基线零 diff）；`ruff`/`format`/`mypy`(949 files) 绿 | 见下（本轮推送后登记） | — （本轮 m0 全量一次通过，无 G 项：提交前已就地跑格式化与类型门） | EC-02 **PASS**；EC-03…EC-06 PENDING。EC-02 的 W-1（声明值不发送/不生效，需执行侧映射）、W-2（OpenHands 未接线）、W-3（web 类型无自动 drift 门）、W-5（设计门射程）为如实边界 | cycle 3 = derive EC-03 子 PLAN（供应链登记与凭据纪律：端点/模型入库 + URL 策略 + 明文凭据 grep 反证 + 重启失效边界） |
 
 ## 状态历史
 
@@ -493,3 +520,23 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
   **CI 台账**：建档推送 `167bdd3` → run **35490147869 = success**（六 job 全 success）；
   cycle 1 攒成一次推送 `167bdd3..4e28e93`（10 个提交）→ run **35493396918 = success**
   （六 job 全 success）。只改 `.cursor/**` 的记录提交按同口径等待并记录。
+- 2026-09-20 cycle 2（driver=client-goal / owner=root-agent）：EC-02 **PASS**
+  （PLAN-20260920-115 / RECHECK-20260920-115 = PASS_WITH_WARNINGS）。
+  **交付**：用户声明的两个参数（上下文窗口 **512000 tokens**、思考强度 **Max**）从「只在对话里
+  说过」变成可判事实——域 `ModelDefinition` 两个**可选**字段 + 新域枚举 `ThinkingIntensity`
+  （级别词、厂商中立，`"Max"` 落为 `MAX`）；契约 schema 两属性（`additionalProperties: false`
+  ⇒ 不声明就写不进去）；加载器读取并拒绝未知级别；配置面 JSON blob 往返 + **缺键旧行向后兼容
+  解码**；API 三 DTO + 映射 + 路由构造/PATCH/probe 重建全部携带；**`model_version` 纳入两字段**
+  ⇒ 改这两个字段的 PATCH 会改变 ETag；OpenAPI 快照重生成 **+91 行**；web `types.ts` + 详情面板
+  + 目录表列 + 自带 stub e2e。**11 条反证先红后复原**（域 5 / 加载器 2 / API 2+1+1 /
+  `tsc` 11 处 / e2e 3 / 装配 1+1+2 / 迁移 1）。**补了两条此前只是叙述的判据**：AST 装配判据
+  （`assemble` 只构造一个配置面实例并喂给两个分支；PG 根不自建、从 `config` 取同一实例；
+  PG 迁移无 `models` 表）+ **PG 根运行期**判据（无事后替换，POST/GET/PATCH 两值可判）。
+  冻结树 m0 **23/23（4097 passed / 11 skipped）**，其后仅一段文档改动并单独复跑 docs 三门。
+  **沉淀** `MEM-20260920-088`（新渲染分支可能对设计门**不可见**：默认替身没注册该路由的
+  `GET /models` ⇒ 该路由渲染错误态，像素/结构基线零 diff；要自带 stub spec 钉住分支）。
+  **如实登记的边界**：W-1 **声明值不生效**（不发送给 provider、不参与 eligibility/capability/
+  预算——读面 en+zh 文案与三份文档四处同源）、W-2 OpenHands 侧未接线、W-3 `types.ts` 与
+  OpenAPI 快照**没有**自动比对门（耦合来自 `tsc`）、W-4「迁移」= 解码向后兼容而非 DDL、
+  W-5 设计门射程、W-6 既存「显式 null 被忽略」未改。**未新增依赖、未改 pin、未新建 PG 表、
+  未触碰凭据面；ADR-0031 仍是 Proposed。**
