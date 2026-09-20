@@ -19,6 +19,7 @@ from packages.domain.enums import (
     CapabilityStatus,
     ModelBindingMode,
     ModelCapability,
+    ThinkingIntensity,
 )
 from packages.domain.models import (
     CapabilityAssertion,
@@ -103,11 +104,20 @@ def _capabilities_from_payload(
     return result
 
 
+def _intensity(value: str | None) -> ThinkingIntensity | None:
+    """DTO 字符串 → 声明枚举；None 保持 None（未声明与声明 MINIMAL 不同）。"""
+    return ThinkingIntensity(value) if value is not None else None
+
+
 def _merge_probed(
     model: ModelDefinition,
     assertions: dict[ModelCapability, CapabilityAssertion],
 ) -> ModelDefinition:
-    """PROBED 断言合并（PROBED 优先于 USER_DECLARED，不降级已有 PROBED）。"""
+    """PROBED 断言合并（PROBED 优先于 USER_DECLARED，不降级已有 PROBED）。
+
+    重建 ModelDefinition 时必须带全声明参数（context_window_tokens /
+    thinking_intensity），否则 probe 这个配置操作会静默丢弃它们。
+    """
     merged = dict(model.capabilities)
     for capability, assertion in assertions.items():
         if capability not in merged or merged[capability].source is not CapabilitySource.PROBED:
@@ -119,6 +129,8 @@ def _merge_probed(
         display_name=model.display_name,
         enabled=model.enabled,
         capabilities=merged,
+        context_window_tokens=model.context_window_tokens,
+        thinking_intensity=model.thinking_intensity,
     )
 
 
@@ -157,6 +169,8 @@ async def create_model(
         display_name=payload.display_name,
         enabled=payload.enabled,
         capabilities=_capabilities_from_payload(payload.capabilities),
+        context_window_tokens=payload.context_window_tokens,
+        thinking_intensity=_intensity(payload.thinking_intensity),
     )
     deps.model_store.save_model(model)
     dto = model_read_dto(model)
@@ -203,6 +217,16 @@ async def update_model(
         ),
         enabled=payload.enabled if payload.enabled is not None else model.enabled,
         capabilities=capabilities,
+        context_window_tokens=(
+            payload.context_window_tokens
+            if payload.context_window_tokens is not None
+            else model.context_window_tokens
+        ),
+        thinking_intensity=(
+            _intensity(payload.thinking_intensity)
+            if payload.thinking_intensity is not None
+            else model.thinking_intensity
+        ),
     )
     deps.model_store.save_model(updated)
     dto = model_read_dto(updated)

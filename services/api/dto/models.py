@@ -2,11 +2,19 @@
 
 capabilities 以稳定枚举字符串表达（ModelCapability/CapabilityStatus/
 CapabilitySource），前端不接触 Python Domain 类型。
+声明参数（context_window_tokens / thinking_intensity）同样是**字符串/整数表达**，
+取值与域枚举 `ThinkingIntensity` 的一致性由结构判据钉住
+（`tests/architecture/python/test_protocol_vocabulary.py`）。
 """
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+#: 与域枚举 `ThinkingIntensity` 同值（结构判据保证不漂移）。
+ThinkingIntensityLiteral = Literal["MINIMAL", "LOW", "MEDIUM", "HIGH", "MAX"]
 
 
 class CapabilityAssertionDto(BaseModel):
@@ -38,6 +46,9 @@ class ModelCreateDto(BaseModel):
     display_name: str | None = Field(default=None, max_length=500)
     enabled: bool = True
     capabilities: dict[str, CapabilityAssertionDto] = Field(default_factory=dict)
+    # 声明参数（EC-02）：声明值，本版本不发送给 provider，也不参与 eligibility 判定。
+    context_window_tokens: int | None = Field(default=None, ge=1)
+    thinking_intensity: ThinkingIntensityLiteral | None = None
 
 
 class ModelUpdateDto(BaseModel):
@@ -46,6 +57,8 @@ class ModelUpdateDto(BaseModel):
     display_name: str | None = Field(default=None, max_length=500)
     enabled: bool | None = None
     capabilities: dict[str, CapabilityAssertionDto] | None = None
+    context_window_tokens: int | None = Field(default=None, ge=1)
+    thinking_intensity: ThinkingIntensityLiteral | None = None
 
 
 class ModelReadDto(BaseModel):
@@ -55,6 +68,8 @@ class ModelReadDto(BaseModel):
     display_name: str | None
     enabled: bool
     capabilities: dict[str, CapabilityAssertionDto]
+    context_window_tokens: int | None
+    thinking_intensity: ThinkingIntensityLiteral | None
     version: str = Field(description="resource version（ETag 值，If-Match 用）")
 
 

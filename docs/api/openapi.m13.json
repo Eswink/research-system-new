@@ -3694,6 +3694,18 @@
             "title": "Capabilities",
             "type": "object"
           },
+          "context_window_tokens": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window Tokens"
+          },
           "display_name": {
             "anyOf": [
               {
@@ -3721,6 +3733,24 @@
             "minLength": 1,
             "title": "Model Name",
             "type": "string"
+          },
+          "thinking_intensity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "MINIMAL",
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH",
+                  "MAX"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thinking Intensity"
           }
         },
         "required": [
@@ -3737,6 +3767,17 @@
             "additionalProperties": false,
             "title": "Capabilities",
             "type": "object"
+          },
+          "context_window_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window Tokens"
           },
           "display_name": {
             "anyOf": [
@@ -3765,6 +3806,24 @@
             "title": "Model Name",
             "type": "string"
           },
+          "thinking_intensity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "MINIMAL",
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH",
+                  "MAX"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thinking Intensity"
+          },
           "version": {
             "description": "resource version（ETag 值，If-Match 用）",
             "title": "Version",
@@ -3778,6 +3837,8 @@
           "display_name",
           "enabled",
           "capabilities",
+          "context_window_tokens",
+          "thinking_intensity",
           "version"
         ],
         "title": "ModelReadDto",
@@ -3854,6 +3915,18 @@
             ],
             "title": "Capabilities"
           },
+          "context_window_tokens": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window Tokens"
+          },
           "display_name": {
             "anyOf": [
               {
@@ -3876,6 +3949,24 @@
               }
             ],
             "title": "Enabled"
+          },
+          "thinking_intensity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "MINIMAL",
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH",
+                  "MAX"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thinking Intensity"
           }
         },
         "title": "ModelUpdateDto",

@@ -4,6 +4,9 @@
 API DTO 的 `Literal`；执行侧（relay adapter 与 OpenHands llm_factory）**不得**再出现
 协议字面量——选路必须走枚举，否则「配了某协议」与「跑的是某形态」会脱钩。
 
+同一判据扩展到声明参数词表（EC-02 AC-07）：`ThinkingIntensity` 也必须三面同源，
+否则 JSON schema 能写入一个 domain 构造时会抛错的取值。
+
 判据用 AST 取字符串常量做**精确相等**比较（不是子串匹配）：`ANTHROPIC_VERSION`
 这类常量名/头名不含独立的协议取值，不应误判。
 """
@@ -17,8 +20,9 @@ from typing import get_args
 
 from pydantic import BaseModel
 
-from packages.domain.enums import LLMProtocol
+from packages.domain.enums import LLMProtocol, ThinkingIntensity
 from services.api.dto import endpoints as endpoints_dto
+from services.api.dto import models as models_dto
 
 ROOT = Path(__file__).resolve().parents[3]
 PROTOCOL_VALUES = frozenset(member.value for member in LLMProtocol)
@@ -72,3 +76,18 @@ def test_execution_path_uses_the_enum_not_literals() -> None:
     assert offenders == [], "执行侧出现协议字面量（应改用 domain LLMProtocol）: " + "; ".join(
         offenders
     )
+
+
+def test_thinking_intensity_vocabulary_is_same_across_faces() -> None:
+    """`ThinkingIntensity` 的域枚举 / JSON schema enum / API Literal 必须同源。
+
+    反证：把任一面删掉一个取值（或整体删掉声明）本用例变红——本用例同时断言
+    三面**都存在**该字段，避免「三面都删」也算通过。
+    """
+    values = {member.value for member in ThinkingIntensity}
+    schema = json.loads((ROOT / "schemas" / "model-definition.schema.json").read_text("utf-8"))
+    properties = schema["properties"]
+    assert set(properties["thinking_intensity"]["enum"]) == values
+    assert "context_window_tokens" in properties
+    assert set(get_args(models_dto.ThinkingIntensityLiteral)) == values
+    assert values, "ThinkingIntensity 词表为空"

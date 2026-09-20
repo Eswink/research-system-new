@@ -134,3 +134,92 @@ def test_list_models_filters_by_endpoint(client: TestClient) -> None:
     assert [item["model_name"] for item in filtered] == ["model-a"]
     all_models = client.get("/models").json()
     assert len(all_models) == 2
+
+
+def _create_model_with_parameters(client: TestClient, endpoint_id: str, key: str) -> dict[str, Any]:
+    response = client.post(
+        "/models",
+        json={
+            "endpoint_id": endpoint_id,
+            "model_name": "model-declared",
+            "context_window_tokens": 512000,
+            "thinking_intensity": "MAX",
+        },
+        headers={"Idempotency-Key": key},
+    )
+    assert response.status_code == 201, response.text
+    return cast(dict[str, Any], response.json())
+
+
+def test_declared_parameters_survive_create_read(client: TestClient) -> None:
+    """POST 声明两值 ⇒ 创建响应与 GET 读面都读回（不静默丢失）。"""
+    endpoint = create_endpoint(client)
+    created = _create_model_with_parameters(client, str(endpoint["id"]), "k-param-1")
+    assert created["context_window_tokens"] == 512000
+    assert created["thinking_intensity"] == "MAX"
+    fetched = client.get(f"/models/{created['id']}").json()
+    assert fetched["context_window_tokens"] == 512000
+    assert fetched["thinking_intensity"] == "MAX"
+
+
+def test_declared_parameters_absent_read_back_as_null(client: TestClient) -> None:
+    """未声明 ≠ 声明某值：缺省读回 null（不推断默认）。"""
+    endpoint = create_endpoint(client)
+    model = create_model(client, str(endpoint["id"]), name="model-undeclared")
+    assert model["context_window_tokens"] is None
+    assert model["thinking_intensity"] is None
+
+
+def test_patch_declared_parameters_changes_etag(client: TestClient) -> None:
+    """PATCH 改声明参数 ⇒ 读回新值，且 ETag 必须变（否则 If-Match 保护失效）。"""
+    endpoint = create_endpoint(client)
+    model = _create_model_with_parameters(client, str(endpoint["id"]), "k-param-2")
+    response = client.patch(
+        f"/models/{model['id']}",
+        json={"context_window_tokens": 200000, "thinking_intensity": "LOW"},
+        headers={"Idempotency-Key": "k-param-3", "If-Match": model["version"]},
+    )
+    assert response.status_code == 200, response.text
+    updated = response.json()
+    assert updated["context_window_tokens"] == 200000
+    assert updated["thinking_intensity"] == "LOW"
+    assert updated["version"] != model["version"]
+    fetched = client.get(f"/models/{model['id']}").json()
+    assert fetched["context_window_tokens"] == 200000
+    assert fetched["thinking_intensity"] == "LOW"
+
+
+def test_probe_preserves_declared_parameters(client: TestClient) -> None:
+    """probe 重建 ModelDefinition 时必须带全声明参数（配置操作不得丢字段）。"""
+    endpoint = create_endpoint(client)
+    model = _create_model_with_parameters(client, str(endpoint["id"]), "k-param-4")
+    probed = client.post(f"/models/{model['id']}/probe", headers={"Idempotency-Key": "k-param-5"})
+    assert probed.json()["ok"] is True
+    fetched = client.get(f"/models/{model['id']}").json()
+    assert fetched["context_window_tokens"] == 512000
+    assert fetched["thinking_intensity"] == "MAX"
+
+
+def test_declared_parameter_validation(client: TestClient) -> None:
+    """非法取值在 API 边界被拒（≥1 / 词表内），不落库为坏声明。"""
+    endpoint = create_endpoint(client)
+    zero_window = client.post(
+        "/models",
+        json={
+            "endpoint_id": endpoint["id"],
+            "model_name": "m-zero",
+            "context_window_tokens": 0,
+        },
+        headers={"Idempotency-Key": "k-param-6"},
+    )
+    assert zero_window.status_code == 422
+    bad_intensity = client.post(
+        "/models",
+        json={
+            "endpoint_id": endpoint["id"],
+            "model_name": "m-bad",
+            "thinking_intensity": "TURBO",
+        },
+        headers={"Idempotency-Key": "k-param-7"},
+    )
+    assert bad_intensity.status_code == 422
