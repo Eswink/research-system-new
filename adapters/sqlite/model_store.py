@@ -16,7 +16,12 @@ from typing import Any
 
 from adapters.sqlite.base import SqliteAdapterBase
 from adapters.sqlite.db import connect, now_iso
-from packages.domain.enums import CapabilitySource, CapabilityStatus, ModelCapability
+from packages.domain.enums import (
+    CapabilitySource,
+    CapabilityStatus,
+    ModelCapability,
+    ThinkingIntensity,
+)
 from packages.domain.models import CapabilityAssertion, ModelDefinition
 
 _SCHEMA = """
@@ -103,6 +108,11 @@ def _encode(model: ModelDefinition) -> dict[str, Any]:
         "display_name": model.display_name,
         "enabled": model.enabled,
         "capabilities": capabilities,
+        # 声明参数（EC-02）：显式编码，不依赖 dataclass 自动序列化
+        "context_window_tokens": model.context_window_tokens,
+        "thinking_intensity": (
+            model.thinking_intensity.value if model.thinking_intensity is not None else None
+        ),
     }
 
 
@@ -116,6 +126,7 @@ def _decode(record: dict[str, Any]) -> ModelDefinition:
             last_verified_at=None,
             probe_version=assertion.get("probe_version"),
         )
+    intensity = record.get("thinking_intensity")
     return ModelDefinition(
         id=record["id"],
         endpoint_id=record["endpoint_id"],
@@ -123,4 +134,7 @@ def _decode(record: dict[str, Any]) -> ModelDefinition:
         display_name=record.get("display_name"),
         enabled=record.get("enabled", True),
         capabilities=capabilities,
+        # 旧行不含这两个键 ⇒ 读出 None（向后兼容，不因新字段读不出既有数据）
+        context_window_tokens=record.get("context_window_tokens"),
+        thinking_intensity=ThinkingIntensity(intensity) if intensity is not None else None,
     )
