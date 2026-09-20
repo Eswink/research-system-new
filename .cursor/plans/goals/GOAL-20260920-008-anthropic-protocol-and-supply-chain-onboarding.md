@@ -459,7 +459,7 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `167bdd3` | 治理 `validate.py` 绿 | run 35490147869 = **success**（六 job 全 success） | — | EC-01…EC-06 全 PENDING；本机**无凭据**（`DEV_LLM_API_KEY` 空）⇒ EC-03/04/05 的 live 分支只能走如实 skip | cycle 1 = derive EC-01 子 PLAN |
-| 1 | PLAN-20260920-114（EC-01） | `7a28799`（PLAN+ALL_PLAN）、`c9a5caa`、`4693e6b`、`fbe6dee`、`d9e4be9`、`cc704e5`、`691414a`、`5f82071`、`0a04520`、记录提交见状态历史 | m0 **PASS: profile=m0; 23 deterministic checks**（4072 passed / 11 skipped，冻结树）；定向 168 passed + probe 判据 3 passed；`ruff`/`format`/`mypy`(945 files) 绿；治理 `validate.py` 绿 | run 见状态历史（cycle 1 攒成一次推送；写下本条的那个提交自身的 run 在回合汇报记账） | m0 拦下四处：format-check / typecheck(7) / 50 行函数门 / validate_bundle（G1–G4，均按缺陷修，未动断言与门禁） | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W-1（真实端点面未实测）、W-6（示例端点未入库）转由 EC-03/EC-04 承接 | cycle 2 = derive EC-02 子 PLAN（模型参数落库：上下文窗口 512000 + 思考强度 Max） |
+| 1 | PLAN-20260920-114（EC-01） | `7a28799`（PLAN+ALL_PLAN）、`c9a5caa`、`4693e6b`、`fbe6dee`、`d9e4be9`、`cc704e5`、`691414a`、`5f82071`、`0a04520`、`4e28e93`（记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4072 passed / 11 skipped，冻结树 `0a04520`；0 failed checks）；定向 168 passed + probe 判据 3 passed；`ruff`/`format`/`mypy`(945 files) 绿；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35493396918 = success**（`4e28e93`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | m0 拦下四处：format-check / typecheck(7) / 50 行函数门 / validate_bundle（G1–G4，均按缺陷修，未动断言与门禁） | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W-1（真实端点面未实测）、W-6（示例端点未入库）转由 EC-03/EC-04 承接 | cycle 2 = derive EC-02 子 PLAN（模型参数落库：上下文窗口 512000 + 思考强度 Max） |
 
 ## 状态历史
 
@@ -488,3 +488,6 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
   **如实登记的边界**：W-1 真实端点面**未实测**（本机无凭据，一次出站都没发）、W-2/W-3 流式与
   `response_format` 缺口、W-5 `system_fingerprint` 恒空、W-6 示例端点未入库（属 EC-03）、
   W-8 域值名含厂商词属**既有**取值。**ADR-0031 仍是 Proposed；未新增依赖/未改 pin。**
+  **CI 台账**：建档推送 `167bdd3` → run **35490147869 = success**（六 job 全 success）；
+  cycle 1 攒成一次推送 `167bdd3..4e28e93`（10 个提交）→ run **35493396918 = success**
+  （六 job 全 success）。只改 `.cursor/**` 的记录提交按同口径等待并记录。
