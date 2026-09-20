@@ -217,6 +217,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260920-115-model-parameter-persistence.md
   - .cursor/plans/tasks/PLAN-20260920-116-supply-chain-registration-and-credential-discipline.md
   - .cursor/plans/tasks/PLAN-20260920-117-model-drift-visibility-three-states.md
+  - .cursor/plans/tasks/PLAN-20260920-118-first-live-gated-real-run.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-117-model-drift-visibility-three-states.md
 memory_entries:
   - MEM-20260920-087
@@ -379,13 +380,19 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**cycle 4 已收口（PLAN-20260920-117 = EC-05，`DONE`；RECHECK-20260920-117 =
-PASS_WITH_WARNINGS，live 分支如实 skip）**，EC-05 **PASS**。下一步 = **cycle 5 的 ①：derive EC-04
-（首次真实 run）子 PLAN**——门控 `requires_live_llm` + 显式配置 runtime + policy 允许；
-**本机仍无凭据**（候选环境变量全 absent、`endpoint:*` 0 个）⇒ 按判定细则**如实 skip 并登记
-（skip 不是 PASS）**；EC-06（文档与 runbook）随后。
-EC-04（首次真实 run）仍受**无凭据**限制（cycle 3 实跑复核：候选环境变量全 absent、
-`endpoint:*` 命名环境变量 0 个），按判定细则「skip 不是 PASS」处置；EC-06（文档与 runbook）排在 EC-04 之后。
+**当前续点**：**cycle 5 进行中（PLAN-20260920-118 = EC-04，`IN_PROGRESS`；derive 已提交）**。
+EC-04 = **首次 live-gated 真实 run**：门控（凭据可解析 + runtime 显式配置）、结论口径词表
+（`REPEATABLE_CONFIGURATION` / `NOT_VERIFIED`，类型上无法表达「完全可复现」）、
+结构化 `NOT_VERIFIED` run 记录（无凭据时点名缺失指纹项）、离线判据（门决策 + **零出站** + 正控 +
+skip ≠ PASS）、口径同源判据（判**肯定式**宣称，豁免既有诚实否定句）。
+**本机无凭据**（cycle 5 复核：`LLM_MAIN_KEY` / `DEV_LLM_API_KEY` / `RESEARCHOS_LIVE_E2E_KEY` /
+`RESEARCHOS_LIVE_E2E_ENDPOINT` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` 全 absent，只看存在性、
+未读值）⇒ **真实 run 本轮不发生**，按判定细则**如实 skip 并登记（skip 不是 PASS）**：
+本轮只交付门控、词表、`NOT_VERIFIED` 记录与离线判据，live 分支的实测留作残余。
+EC-05 已收口（RECHECK-20260920-117 = PASS_WITH_WARNINGS，live 分支如实 skip）。
+cycle 5 收口（CI 终态已记账）后进入 **cycle 6 的 ①：derive EC-06**（文档与 runbook：
+登记步骤 / 凭据注入与轮换 / 重启重输边界 / Fake↔真实切换与回退 / 「哪些面仍是 demo」清单 +
+`docs/INDEX.md`）。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
@@ -499,6 +506,7 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 | 3 | PLAN-20260920-116（EC-03） | `dd989b7`（derive）、`b6c7386`、`26f93b3`、`eee4728`、`1e16c40`、`40bddd5`、`94db850`、`18794a1`、`5f43b98`、`fdf0281`（收口记录） | m0 **PASS: profile=m0; 23 deterministic checks**（**4131 passed / 11 skipped**，479.71s，冻结树 `5f43b98`；其后仅 `.cursor/**` 记录改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 `tests/api + tests/application + tests/architecture + tests/tooling` **2292 passed / 2 skipped**（2 条需 `RESEARCHOS_POSTGRES_DSN` 钉桩，补桩后 6 passed——已知 DSN 条件，非回归）；`ruff format/check` / `mypy`(951 files) 绿；web `lint`(max-warnings 0)/`typecheck`/e2e 新增 spec **2 passed**、`design-fidelity` **2 passed 且基线零 diff**（新文案在未打开的抽屉里 ⇒ 对设计门不可见）；审计工具实跑四面 0 命中 | **run 35503139831 = success**（`fdf0281`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | **m0 拦下 1 处**（G1：新用例里 `int(object)` + `# type: ignore` 触发 `unused-ignore` / `call-overload` / `attr-defined`；按缺陷修为先断言类型的助手，`5f43b98`，未动门禁与断言强度） | EC-03 **PASS**；EC-04/EC-05/EC-06 PENDING。残余 7 条：W-1 注册面仍不校验 URL、W-2 出站 0 只在 Fakes 上证明、W-3 措辞判据不覆盖渲染、W-4 向导面未加声明、W-5 审计白名单人维护、W-6 本机仍无凭据、W-7 `.env` 不在扫描面内 | cycle 4 = derive **EC-05**（漂移可见性：probe 返回 model 名 vs 声明值三态；live 分支无凭据 ⇒ 如实 skip） |
 
 | 4 | PLAN-20260920-117（EC-05） | `183f588`（derive）、`c6bfdef`、`7b317f6`、`3a955b5`、`3eef7c3`（+收口记录） | 定向：域 `test_model_drift.py` **9 passed**、API `test_models_api.py` **15 passed**、词表同源 **5 passed**、e2e 漂移 spec **4 passed**、`test_openapi_snapshot.py`（快照 +47 行）绿；web `lint`(max-warnings 0)/`typecheck`/unit 绿；`design-fidelity` **2 passed 且基线零 diff**（漂移块只在探测后渲染 ⇒ 对设计门不可见）；`docs_consistency_check` / `validate_bundle` 绿；**m0 全量 23 项**计数见状态历史 cycle 4 段 | 见状态历史 cycle 4 段（本轮批量推送的 run 与六 job 结论） | — | EC-05 **PASS**；EC-04/EC-06 PENDING。残余 6 条：W-1 live 语义未实测（无凭据，真实 probe 一次未跑）、W-2 fingerprint 未纳入漂移判定、W-3 drift 未持久化、W-4 严格口径的噪声代价、W-5 UNKNOWN 三种来源未细分、W-6 指纹只在 provider 给出时构建 | cycle 5 = derive EC-04（首次真实 run；仍无凭据 ⇒ 按「skip 不是 PASS」处置）或 EC-06 |
+| 5 | PLAN-20260920-118（EC-04） | （本行随收口回写） | （本行随收口回写） | （本行随收口回写） | — | EC-04 进行中；**本机无凭据**（cycle 5 复核：`LLM_MAIN_KEY` / `DEV_LLM_API_KEY` / `RESEARCHOS_LIVE_E2E_KEY` / `RESEARCHOS_LIVE_E2E_ENDPOINT` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` 全 absent，只看存在性未读值）⇒ **真实 run 本轮不发生**，只交付门控、`NOT_VERIFIED` 记录、口径词表与离线判据 | cycle 6 = derive EC-06（文档与 runbook） |
 
 ## 状态历史
 
