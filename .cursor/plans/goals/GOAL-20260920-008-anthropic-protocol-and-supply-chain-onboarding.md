@@ -415,6 +415,9 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
 ② 长程项（ADR-0031 / 威胁建模 / `artifacts/` 明文 token 清理 / 450 行纪律 / 依赖 pin 升级 /
 hook 侧 L3 门）另建承接 GOAL。
 状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
+**CI 已全部记账**：最后一个被本 GOAL 观测的 run = 收口推送 `14a7044` → **35511261614 = success**
+（terminal，六 job 全 success）。写下本条「CI 台账回写」的提交自身触发的 run 按 GOAL-005/006/007
+既定口径**只在回合汇报里给出终态、不再回写本文件**（否则每轮为回写再推一次、无限追加）。
 
 ## 驱动
 
@@ -521,6 +524,24 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
   隔离/整文件复跑均绿，按处置模板重跑 1 次未复现，**两轮都记录**）；
 - CI 台账：每次推送的 run 与六 job 结论逐条记账（cycle 6 = **run 35509830682 = success**）。
 
+**CI 台账（逐 run 逐 job 实查；全部落在 main）**：
+
+| 推送 | 提交 | run | 六 job 结论 |
+| --- | --- | --- | --- |
+| 建档 | `167bdd3` | [35490147869](https://github.com/Eswink/research-system-new/actions/runs/35490147869) | 六 job 全 success |
+| cycle 2（10 提交攒一次推送） | `490ced3..1df2e11` | [35497734881](https://github.com/Eswink/research-system-new/actions/runs/35497734881) | 六 job 全 success |
+| cycle 2 台账 | `105b745` | [35498375517](https://github.com/Eswink/research-system-new/actions/runs/35498375517) | 六 job 全 success |
+| cycle 3 | `fdf0281` | [35503139831](https://github.com/Eswink/research-system-new/actions/runs/35503139831) | 六 job 全 success |
+| cycle 3 收口记录 | `c413131` | [35503858465](https://github.com/Eswink/research-system-new/actions/runs/35503858465) | 六 job 全 success |
+| cycle 4 | `52b4967` | [35506216814](https://github.com/Eswink/research-system-new/actions/runs/35506216814) | 六 job 全 success |
+| cycle 5 | `a5f62eb` | [35508839524](https://github.com/Eswink/research-system-new/actions/runs/35508839524) | 六 job 全 success |
+| cycle 6 | `b3bb96a` | [35509830682](https://github.com/Eswink/research-system-new/actions/runs/35509830682) | 六 job 全 success |
+| cycle 7 收口 | `14a7044` | [35511261614](https://github.com/Eswink/research-system-new/actions/runs/35511261614) | 六 job 全 success（**terminal：status=completed conclusion=success**；逐 job：`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `collector-quality` / `container-quality` / `eval-gate` 均 completed=success） |
+
+**台账尾巴口径**（沿用 GOAL-005/006/007，写死在此）：写下**本条**「CI 台账回写」提交自身触发的
+run **只在回合汇报里给出终态、不再回写文件**——否则每轮都要为回写再推一次、无限追加。
+本 GOAL 至今 **0 次 failure / 0 次 cancelled**（对比 GOAL-007 建档与 cycle 6 各被紧随推送结构性取消 1 次）。
+
 **仍未处理的长程项（如实登记，不因本 GOAL 存在而被宣称已解决）**：
 
 1. **`tool_pack.*` 能力策略（ADR-0031，`Status: Proposed`）**是否采纳——归用户拍板；
@@ -577,9 +598,30 @@ live 分支从「如实 skip」推进到「有样本」；长程项若要继续�
 | 4 | PLAN-20260920-117（EC-05） | `183f588`（derive）、`c6bfdef`、`7b317f6`、`3a955b5`、`3eef7c3`（+收口记录） | 定向：域 `test_model_drift.py` **9 passed**、API `test_models_api.py` **15 passed**、词表同源 **5 passed**、e2e 漂移 spec **4 passed**、`test_openapi_snapshot.py`（快照 +47 行）绿；web `lint`(max-warnings 0)/`typecheck`/unit 绿；`design-fidelity` **2 passed 且基线零 diff**（漂移块只在探测后渲染 ⇒ 对设计门不可见）；`docs_consistency_check` / `validate_bundle` 绿；**m0 全量 23 项**计数见状态历史 cycle 4 段 | **run 35506216814 = success**（`52b4967`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | — | EC-05 **PASS**；EC-04/EC-06 PENDING。残余 6 条：W-1 live 语义未实测（无凭据，真实 probe 一次未跑）、W-2 fingerprint 未纳入漂移判定、W-3 drift 未持久化、W-4 严格口径的噪声代价、W-5 UNKNOWN 三种来源未细分、W-6 指纹只在 provider 给出时构建 | cycle 5 = derive EC-04（首次真实 run；仍无凭据 ⇒ 按「skip 不是 PASS」处置）或 EC-06 |
 | 5 | PLAN-20260920-118（EC-04） | `8b85f03`（derive）、`08e41f7`、`17464bf`、`8c9d67c`、`97380c1`、`4f54e53`、`7ce833f`（+收口记录） | 定向：域词表 **4 passed**、run 记录 **13 passed**、离线门 **13 passed**、live 用例 **1 passed / 1 skipped**、口径判据 **5 passed**、EC-03 离线全链 **2 passed / 1 skipped**（抽共享模块后复跑）⇒ 合计 **38 passed / 2 skipped**；反证 F1–F5 全部先红后复原；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿；**m0 全量 23 项 4190 passed / 12 skipped（499.34s，冻结树 `7ce833f`；cycle 4 为 4146/11）** | **run 35508839524 = success**（`a5f62eb`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | **m0 拦下三处（G1–G3）**：G1 新判据用两个字面量枚举成员比较 ⇒ mypy `comparison-overlap`（cycle 4 同族陷阱再现，改走运行期枚举）；G2 新代码两处函数 >50 行（拆助手）；**G3 跨套件污染**——live 用例直接 import EC-03 测试模块 ⇒ 同一文件被两个模块名加载、SDK `Action` 子类被定义两次 ⇒ 6 条 fork 用例红（抽单一名共享模块 `tests/e2e/live_run_support.py`）。均按缺陷修，未动门禁与断言强度 | EC-04 **PASS（离线判据全绿；live 分支如实 skip —— 真实 run 未发生）**；EC-06 未收口。残余 6 条：W-1 真实 run 未发生（能力边界，六项候选凭据环境变量全 absent）、W-2 live 路径的模型绑定不是 anthropic 面（所有模型绑 `main`）、W-3 门只看 runtime 配置 + 凭据可解析、W-4 口径判据的引用-豁免是行级启发式、W-5 记录的 usage/制品字段靠调用方填（live 判据未跑）、W-6 `NOT_VERIFIED` 同时覆盖「无凭据」与「跑了但没终止」 | cycle 6 = derive **EC-06**（文档与 runbook；GOAL 最后一个未收口 EC） |
 | 6 | PLAN-20260920-119（EC-06） | `099bd62`（derive）、`96d1897`、`affc063`、`77d3c45`（+收口记录） | 定向同源判据 **10 passed**；`docs_consistency_check`（DOCS-CHECK PASS: 6 checks）/ `validate_bundle` / 治理 `validate.py` 绿；反证 F1–F5 全部先红后复原；**m0 全量 23 项 4201 passed / 12 skipped（489.62s，代码树 `affc063`；cycle 5 为 4190/12）**；其后仅 `.cursor/**` 记录改动，三件文档门单独复跑绿（未重跑全量 m0） | **run 35509830682 = success**（`b3bb96a`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | **反证抓出判据自身两个洞并按缺陷修**：F2——跨行反引号配对被代码围栏打乱 ⇒ 变量名 token 被整段吞掉，判据「看着绿其实没看」；F4——索引判据只判「全文出现过」，快捷问答里的一句引用即可蒙混、清单漏项反而放行。两处都改成更严的形态（按行抽 token / 判条目行），未放宽任何断言 | EC-06 **PASS**；**EC-01…EC-06 全 PASS**。残余 6 条：W-1 同源判据只判存在性（不判行为一致）、W-2 大写变量名判据是启发式、W-3 运行期产物白名单人维护、W-4 demo 清单完备性未判、W-5 live 步骤未实测（无凭据）、W-6 runbook 的 HTTP 片段未实跑 | GOAL 进入**终止判定与收口**（独立复检 + 残余登记 + 干净 checkout 封印 + CI 台账） |
-| 7 | PLAN-20260920-120（收口） | `a2d0df7`（derive + 复检脚本）+ 收口记录 | 三层判据 **65 checks PASS**（A=22/B=17/C=26；当前树与干净 checkout 同结论）；六条 EC 判据套件**合并**真跑 **196 passed / 9 skipped**（两棵树同结论）；干净 checkout 封印（clone → `b3bb96a`，`git ls-files` 3170 == 3170，`git status` 干净）；本地 **m0 全量 23 项**：第 1 次 1 failed（Docker 后端审计用例；隔离与整文件复跑均绿 ⇒ 基础设施类）→ 按处置模板重跑 1 次 **PASS 23/23（4201 passed / 12 skipped）**，**两轮都记录** | cycle 6：**run 35509830682 = success**（六 job 全 success）；本收口推送的 run 与六 job 结论在紧随的台账提交登记 | — | **GOAL ACHIEVED**；残余 = 六条 EC 的 W 汇总 + 6 项「不因本 GOAL 存在而被宣称已解决」（ADR-0031 / 威胁建模 / `artifacts/` 明文 token 清理 / 450 行纪律 / 依赖 pin 升级 / hook 侧 L3 门） | 恢复条件：用户注入凭据后按 `docs/integration/LIVE_MODEL_RUNBOOK.md` 跑首次 live run；长程项另建承接 GOAL |
+| 7 | PLAN-20260920-120（收口） | `a2d0df7`（derive + 复检脚本）+ 收口记录 | 三层判据 **65 checks PASS**（A=22/B=17/C=26；当前树与干净 checkout 同结论）；六条 EC 判据套件**合并**真跑 **196 passed / 9 skipped**（两棵树同结论）；干净 checkout 封印（clone → `b3bb96a`，`git ls-files` 3170 == 3170，`git status` 干净）；本地 **m0 全量 23 项**：第 1 次 1 failed（Docker 后端审计用例；隔离与整文件复跑均绿 ⇒ 基础设施类）→ 按处置模板重跑 1 次 **PASS 23/23（4201 passed / 12 skipped）**，**两轮都记录** | cycle 6：**run 35509830682 = success**（六 job 全 success）；本收口推送 `14a7044` → **run 35511261614 = success**（六 job 全 success，逐 job 实查见「收口结论 · CI 台账」） | — | **GOAL ACHIEVED**；残余 = 六条 EC 的 W 汇总 + 6 项「不因本 GOAL 存在而被宣称已解决」（ADR-0031 / 威胁建模 / `artifacts/` 明文 token 清理 / 450 行纪律 / 依赖 pin 升级 / hook 侧 L3 门） | 恢复条件：用户注入凭据后按 `docs/integration/LIVE_MODEL_RUNBOOK.md` 跑首次 live run；长程项另建承接 GOAL |
 
 ## 状态历史
+
+- 2026-09-20 cycle 7 收口：GOAL **ACHIEVED**（PLAN-20260920-120 / RECHECK-20260920-120 =
+  PASS_WITH_WARNINGS，W-1…W-7）。**独立复检不读六条 RECHECK 的结论文本、只读当前树**
+  （`scratch/verify_goal008_closeout.py`，三层判据 A 交付物 / B 判据 / C 登记面）。首轮脚本
+  **FAILED 2 条**——EC-02 的证据映射指向了不存在的路径（真路径在
+  `tests/architecture/python/`），**按「回到证据」改脚本、未放宽任何判据**，复跑 68 checks 全绿。
+  六条 EC 判据套件**合并**真跑 **196 passed / 9 skipped**；**干净 checkout 封印**用
+  `git clone --no-hardlinks` 到仓库外 → `b3bb96a`，`git ls-files` 3170 == 3170、`git status` 干净，
+  **两棵树同结论**；本地 **m0 23/23**（首轮 1 条 Docker 后端审计用例在负载下偶发红，隔离与整文件
+  复跑均绿 ⇒ 基础设施类，按处置模板重跑 1 次未复现，**两轮都记录**）。
+  **本轮最有价值的产出是治理 validator 抓出的 frontmatter EC 漂移**：六条 EC 的 markdown 状态表
+  已全 PASS，而 frontmatter 的 EC-03…EC-06 区块仍写 `PENDING` —— 与 GOAL-006/007 收口时
+  **同一类漏改**（表改了、frontmatter 没改），validator 的 `ACHIEVED GOAL 仍有未通过退出标准`
+  把它钉住，按事实更正后复绿。这条已沉淀为 `MEM-20260920-093`。
+  **CI 台账**：收口推送 `14a7044` → **run 35511261614 = success**（terminal：
+  `status=completed conclusion=success`；六 job 全 success，逐 job 见「收口结论 · CI 台账」）。
+  **残余不因收口消失**：六条 EC 的 W 汇总见各自 RECHECK；6 项长程项（ADR-0031 仍 Proposed、
+  威胁建模/授权覆盖、`artifacts/` 明文 token 清理、450 行纪律、依赖 pin 升级、hook 侧 L3 门）
+  见「收口结论」。**EC-04 / EC-05 的 live 分支在本机从未发生**（六项候选凭据环境变量全 absent）
+  ——如实登记，**未**写成「已实测通过」。
+  **未新增依赖、未改 pin、未改 Policy、未改默认 runtime、未改任何门禁或断言强度。**
 
 - 2026-09-20 cycle 6（driver=client-goal / owner=root-agent）：EC-06 **PASS**
   （PLAN-20260920-119 / RECHECK-20260920-119 = PASS_WITH_WARNINGS，W-1…W-6）。
