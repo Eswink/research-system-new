@@ -196,6 +196,23 @@ ModelBinding
 ModelRuntimeFingerprint
 ```
 
+### 声明参数（context window / thinking intensity）
+
+`ModelDefinition` 携带两个**声明**字段：`context_window_tokens`（整数 ≥ 1）与
+`thinking_intensity`（厂商中立相对词：MINIMAL / LOW / MEDIUM / HIGH / MAX）。
+它们表达「用户对该模型的声明」，**不是**执行参数：
+
+- 不发送给 provider——relay 请求体不含这两个字段（OpenAI 兼容形态仍然不发
+  `max_tokens`，Anthropic Messages 形态的 `max_tokens` 取自探测套件的固定值）；
+- 不参与 capability 判定、不参与 eligibility / 能力匹配、不写入 RunManifest；
+- 未声明是 `null`，与声明某个值不同；读面（API DTO / 控制台）必须把两者渲染成
+  可区分的两态，不得用默认值把 `null` 掩盖掉；
+- 值进入 `model_version` 摘要：只改这两个字段的 PATCH 必须改变 ETag，否则
+  If-Match 的丢失更新保护对它们失效。
+
+词表同源由结构判据把守（`tests/architecture/python/test_protocol_vocabulary.py`）：
+域枚举 / JSON schema enum / API DTO 的 `Literal` 必须是同一集合。
+
 ### ModelRuntimeFingerprint
 
 尽可能记录：

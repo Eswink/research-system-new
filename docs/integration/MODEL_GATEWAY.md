@@ -50,6 +50,12 @@ identifier 变换按 `endpoint.protocol` 取前缀（`OPENAI_COMPATIBLE` ⇒ 探
 
 例如执行型 Agent 不得在 Tool Calling Probe 失败后继续自动运行。
 
+声明参数（`ModelDefinition.context_window_tokens` / `thinking_intensity`）**不参与**
+eligibility 判定：它们是用户对该模型的声明，当前既不发送给 provider，也不参与能力
+匹配或预算折算。把它当作已生效的运行时约束会制造「配了就等于跑到了」的假象；
+同理，读面必须把「未声明」与「声明了某个值」渲染成可区分的两态
+（见 `architecture/DOMAIN_MODEL.md` §5 声明参数）。
+
 ## 5. Fallback
 
 Fallback：
