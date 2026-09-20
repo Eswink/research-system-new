@@ -189,6 +189,7 @@ escalation_triggers:
   - 新增依赖或改动既有依赖 pin（含为 anthropic 形态引入 SDK——优先用手写 HTTP，见 EC-01 判定细则）
 child_plans:
   - .cursor/plans/tasks/PLAN-20260920-114-anthropic-protocol-execution-path.md
+  - .cursor/plans/tasks/PLAN-20260920-115-model-parameter-persistence.md
 latest_recheck: null
 memory_entries:
   - MEM-20260920-087
@@ -348,10 +349,10 @@ GOAL-007 收口（ACHIEVED）时把「仍未处理的长程项」如实登记进
    Credential boundary**（不读取、不回显其值）；发现任何明文凭据落入仓库/记录/日志
    ⇒ **立即停止并 BLOCKED 报告**（授权 (3)）。
 
-**当前续点**：**cycle 1 收口（EC-01 = PASS）**，下一步 = **cycle 2**：derive EC-02 子 PLAN
-（模型参数落库：上下文窗口 512000 + 思考强度 Max 的承载字段 / 契约 / 往返 / 读面 / 快照，
-反证「缺字段 ⇒ 用例红」）。状态以本文件「迭代日志」末行 + 工作树实况为准；
-不凭记忆假设上一轮状态。
+**当前续点**：**cycle 2 已 derive（PLAN-20260920-115 = EC-02 模型参数落库，`IN_PROGRESS`）**，
+下一步 = **按该子 PLAN 的 WP-A…WP-F 执行**（域字段与词表 → 契约 schema 与加载器 →
+配置面往返 → API 读面与快照 → web 类型与页面渲染 → 反证/文档/记录）。
+状态以本文件「迭代日志」末行 + 工作树实况为准；不凭记忆假设上一轮状态。
 
 ## 驱动
 
@@ -460,6 +461,7 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `167bdd3` | 治理 `validate.py` 绿 | run 35490147869 = **success**（六 job 全 success） | — | EC-01…EC-06 全 PENDING；本机**无凭据**（`DEV_LLM_API_KEY` 空）⇒ EC-03/04/05 的 live 分支只能走如实 skip | cycle 1 = derive EC-01 子 PLAN |
 | 1 | PLAN-20260920-114（EC-01） | `7a28799`（PLAN+ALL_PLAN）、`c9a5caa`、`4693e6b`、`fbe6dee`、`d9e4be9`、`cc704e5`、`691414a`、`5f82071`、`0a04520`、`4e28e93`（记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4072 passed / 11 skipped，冻结树 `0a04520`；0 failed checks）；定向 168 passed + probe 判据 3 passed；`ruff`/`format`/`mypy`(945 files) 绿；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35493396918 = success**（`4e28e93`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | m0 拦下四处：format-check / typecheck(7) / 50 行函数门 / validate_bundle（G1–G4，均按缺陷修，未动断言与门禁） | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W-1（真实端点面未实测）、W-6（示例端点未入库）转由 EC-03/EC-04 承接 | cycle 2 = derive EC-02 子 PLAN（模型参数落库：上下文窗口 512000 + 思考强度 Max） |
+| 2 | PLAN-20260920-115（EC-02） | 待执行（derive 提交见状态历史；与 cycle 2 产品提交攒成一次推送） | 待执行 | 待执行 | — | EC-02 已 derive（`IN_PROGRESS`）；EC-02…EC-06 PENDING | 按 PLAN-115 的 WP-A…WP-F 执行（域字段 → 契约/加载器 → 配置面往返 → API 读面与快照 → web 渲染 → 反证/文档/记录） |
 
 ## 状态历史
 
