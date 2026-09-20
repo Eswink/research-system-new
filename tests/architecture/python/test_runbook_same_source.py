@@ -74,7 +74,18 @@ def _runbook() -> str:
 
 
 def _tokens(text: str) -> set[str]:
-    return {match.strip() for match in _BACKTICK.findall(text)}
+    """反引号里的 token——**按行**抽取。
+
+    跨行配对会让代码围栏（```）把反引号配错位，于是文档里明明写着的 token 被整段
+    吞掉、判据「看着绿其实没看」（本判据第一版就这么漏掉了一个变量名，反证 F2 抓到）。
+    行内代码本来就不跨行，按行抽是对的。
+    """
+    tokens: set[str] = set()
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            continue
+        tokens.update(match.strip() for match in _BACKTICK.findall(line))
+    return tokens
 
 
 def _path_like(token: str) -> bool:
@@ -111,10 +122,14 @@ class TestRunbookIsIndexed:
         assert RUNBOOK.is_file(), f"{RUNBOOK.relative_to(REPO_ROOT)} 不存在"
 
     def test_docs_index_registers_the_runbook(self) -> None:
-        rows = [line for line in INDEX.read_text(encoding="utf-8").splitlines() if line.strip()]
-        assert any("integration/LIVE_MODEL_RUNBOOK.md" in line for line in rows), (
-            "docs/INDEX.md 必须**按行**登记该 runbook"
-        )
+        """登记 = Integrations 清单里的**条目行**，不是「某处提过一句」。
+
+        只判「全文出现过」会太松：快捷问答里的一句引用就能让它蒙混过关，
+        而清单漏项正是这份索引最容易漂的地方。
+        """
+        entry = "- `integration/LIVE_MODEL_RUNBOOK.md`"
+        rows = [line.strip() for line in INDEX.read_text(encoding="utf-8").splitlines()]
+        assert entry in rows, f"docs/INDEX.md 的 Integrations 清单缺条目：{entry}"
 
 
 class TestFiveContentClassesArePresent:
