@@ -140,9 +140,10 @@ memory_entries:
   tests/e2e/test_ec04_live_gate_offline.py` ⇒ **145 passed / 1 skipped**；
   判据 + loaders ⇒ **33 passed**。
 - `ruff check` / `ruff format --check` / `mypy` ⇒ 绿（修了 1 处行宽 + 2 处 `str | None` 收窄）。
-- **m0 首次针对本轮的红是 stale**：该轮在我修完行宽/类型**之前**启动，读到的是旧文件
-  ⇒ `python/product-lint` + `python/typecheck` 红，**两条都指向我已修好的行**。
-  如实记录，并按干净树重跑（结果见 GOAL-009 迭代日志）。
+- **m0 两轮如实登记**：第 1 轮（**stale**）在我修完行宽/类型**之前**启动，读到的是旧文件
+  ⇒ `python/product-lint` + `python/typecheck` 红（**两条都指向我已修好的行**），其余 **24 项 PASS**；
+  第 2 轮（干净树）⇒ **PASS：profile=m0; 23 deterministic checks**（**4212 passed / 12 skipped**，592.81s）。
+  **stale 那轮不去改门禁、也不改写结论**——它是「判据读到的文件 ≠ 当前文件」，如实记下并复跑。
 - 治理 `validate.py` 绿。
 
 ### WP6 收口（本 PLAN 自己产出的教训）
