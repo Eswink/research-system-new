@@ -149,7 +149,8 @@ escalation_triggers:
   - 把真实 runtime 设为**默认**（默认必须仍是 Fake；本循环只做「显式配置才启用」）
   - 新增依赖或改动既有依赖 pin（含为 anthropic 形态引入 SDK——优先用手写 HTTP）
   - 明文凭据泄露（**即使是可弃用的免费额度**）——立即停止并报告
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260920-121-first-live-sampling-run.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -352,8 +353,17 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | （见状态历史） | 治理 `validate.py` 绿 + `validate_bundle` / DOCS-CHECK 绿 | （见状态历史） | — | EC-01…EC-06 全 PENDING；凭据**已可用**（F-2/F-3）⇒ live 采样**可以真的跑**（与 GOAL-008 建档时的「六项凭据全 absent」不同） | cycle 1 = derive EC-01 子 PLAN（live 采样第一次） |
+| 1 | PLAN-20260920-121（EC-01） | （执行中） | 离线基线：默认门 **1 passed / 1 skipped**；内联前缀 + `-k closed` ⇒ **SKIPPED（gate is open）** ⇒ 凭据可用且门能开、前缀未被 dotenv 覆盖 | （待记） | — | EC-01 执行中；EC-02…EC-06 PENDING | 执行 WP2：一次真实调用序列（probe + run），样本登进 RECHECK 与 runbook |
 
 ## 状态历史
+
+- 2026-09-20 cycle 1 派生（`driver=client-goal / owner=root-agent`）：derive
+  `PLAN-20260920-121-first-live-sampling-run`（EC-01，投影 ALL_PLAN）。**派生前的离线实跑**
+  （**无网络**，两次）：默认门下 `tests/e2e/test_ec04_live_first_run.py` ⇒ **1 passed / 1 skipped**；
+  以 `RESEARCHOS_AGENT_RUNTIME=openhands` 内联前缀跑 `-k closed` ⇒ 该用例 **SKIPPED**
+  （跳过理由即「gate is open on this machine」）⇒ **两条开门条件在 pytest 进程内同时成立**，
+  且内联前缀**没有被**导入栈的 dotenv 覆盖。据此确认 GOAL-008 的恢复条件**已满足**、
+  EC-01 的 live 采样**可以真的跑**。**本步未发起任何真实调用**（判据只读门，门不自带网络面）。
 
 - 2026-09-20 建档：GOAL **ACTIVE**（`driver=client-goal / owner=root-agent`）。承接 GOAL-008 的
   **恢复条件**——用户已注入凭据 ⇒ 本 GOAL 把 EC-04 / EC-05 的 live 分支从「如实 skip」推进到
