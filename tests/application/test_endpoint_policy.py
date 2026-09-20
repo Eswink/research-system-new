@@ -51,3 +51,68 @@ class TestEndpointUrlPolicy:
 
     def test_domain_not_resolved_here(self) -> None:
         validate_endpoint_url("http://internal.corp.example/v1", EndpointUrlPolicy())
+
+
+class TestReservedAndLoopbackClasses:
+    """GOAL-008 EC-03：保留类地址必须拒绝，且**环回全段**归 localhost 开关。
+
+    改动前 `_host_kind` 把多播（`224.0.0.1`）与 CGNAT（`100.64.0.1`）判成 `public`
+    ⇒ 默认**放行**；`127.0.0.2` 落到 `private` 分支（开关是 `allow_private` 而不是
+    `allow_localhost`）。本类逐条钉住新语义。
+    """
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "http://224.0.0.1/v1",  # IPv4 多播
+            "http://[ff02::1]/v1",  # IPv6 多播（链路本地全节点）
+            "http://100.64.0.1/v1",  # RFC 6598 共享地址空间（CGNAT）
+            "http://198.18.0.5/v1",  # benchmark 段（本机 DNS 走代理时会落到这类地址）
+            "http://203.0.113.9/v1",  # TEST-NET-3
+            "http://198.51.100.7/v1",  # TEST-NET-2
+            "http://240.0.0.1/v1",  # 保留段
+            "http://0.0.0.0/v1",  # 未指定
+        ],
+    )
+    def test_reserved_style_hosts_rejected(self, url: str) -> None:
+        with pytest.raises(ValueError):
+            validate_endpoint_url(url, EndpointUrlPolicy())
+
+    @pytest.mark.parametrize("url", ["http://127.0.0.2/v1", "http://[::1]:8080/v1"])
+    def test_loopback_span_rejected(self, url: str) -> None:
+        with pytest.raises(ValueError):
+            validate_endpoint_url(url, EndpointUrlPolicy())
+
+    def test_loopback_span_uses_the_localhost_switch(self) -> None:
+        validate_endpoint_url("http://127.0.0.2:8080/v1", EndpointUrlPolicy(allow_localhost=True))
+
+    def test_reserved_refusal_names_the_class(self) -> None:
+        with pytest.raises(ValueError, match="reserved/multicast"):
+            validate_endpoint_url("http://224.0.0.1/v1", EndpointUrlPolicy())
+
+    def test_loopback_refusal_names_the_class(self) -> None:
+        with pytest.raises(ValueError, match="localhost base_url not allowed"):
+            validate_endpoint_url("http://127.0.0.2/v1", EndpointUrlPolicy())
+
+    def test_no_policy_flag_enables_the_reserved_class(self) -> None:
+        """保留类**没有**放行开关：三个 allow_* 全开也不放行（豁免只走 allowed_hosts）。"""
+        policy = EndpointUrlPolicy(allow_localhost=True, allow_private=True, allow_link_local=True)
+        with pytest.raises(ValueError):
+            validate_endpoint_url("http://224.0.0.1/v1", policy)
+
+    def test_allowed_hosts_can_exempt_a_reserved_host(self) -> None:
+        validate_endpoint_url(
+            "http://224.0.0.1/v1",
+            EndpointUrlPolicy(allowed_hosts=frozenset({"224.0.0.1"})),
+        )
+
+    def test_public_ipv6_allowed(self) -> None:
+        validate_endpoint_url("https://[2606:4700::1111]/v1", EndpointUrlPolicy())
+
+    def test_private_ipv6_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            validate_endpoint_url("https://[fc00::1]/v1", EndpointUrlPolicy())
+
+    def test_ipv4_mapped_private_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            validate_endpoint_url("https://[::ffff:192.168.1.1]/v1", EndpointUrlPolicy())
