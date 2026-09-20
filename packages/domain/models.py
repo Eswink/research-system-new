@@ -20,6 +20,7 @@ from packages.domain.enums import (
     LLMProtocol,
     ModelBindingMode,
     ModelCapability,
+    ThinkingIntensity,
 )
 
 # 协议合法取值的唯一来源（域枚举 LLMProtocol）；执行侧选路必须与本集合同源。
@@ -91,6 +92,11 @@ class ModelDefinition:
     display_name: str | None = None
     enabled: bool = True
     capabilities: dict[ModelCapability, CapabilityAssertion] = field(default_factory=dict)
+    #: 声明值（由用户/运维登记，**不是探测得来**）：上下文窗口与思考强度。
+    #: 本版本**不向 provider 发送**这两个值，也不参与 eligibility 判定——
+    #: 读面与文档必须如实说明（docs/architecture/MODEL_COMPATIBILITY.md）。
+    context_window_tokens: int | None = None
+    thinking_intensity: ThinkingIntensity | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -99,6 +105,8 @@ class ModelDefinition:
             raise ValueError("model endpoint_id must not be empty")
         if not self.model_name:
             raise ValueError("model_name must not be empty")
+        if self.context_window_tokens is not None and self.context_window_tokens < 1:
+            raise ValueError("context_window_tokens must be >= 1 when set")
 
 
 @dataclass(frozen=True, slots=True)

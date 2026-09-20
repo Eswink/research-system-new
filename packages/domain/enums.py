@@ -138,6 +138,20 @@ class LLMProtocol(StrEnum):
     ANTHROPIC = "ANTHROPIC"
 
 
+class ThinkingIntensity(StrEnum):
+    """模型**声明的**思考强度级别（厂商中立词表）。
+
+    级别是相对词，不是任何 provider 的私有取值：登记方声明意图，由执行侧的
+    协议映射决定怎么落地（未实现的映射**如实登记**，不得假装生效）。
+    """
+
+    MINIMAL = "MINIMAL"
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    MAX = "MAX"
+
+
 class PolicyDecision(StrEnum):
     ALLOW = "ALLOW"
     DENY = "DENY"
