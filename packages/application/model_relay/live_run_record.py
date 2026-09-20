@@ -118,44 +118,19 @@ def build_live_run_record(  # noqa: PLR0913 - 指纹/usage/id 是封闭字段集
     `system_fingerprint` / 白名单响应头**缺失不降级**结论——它们取决于 provider
     是否给出，属「如实的缺口」，登记在 `missing_fields` 里。
     """
-    present: dict[str, object] = {
-        "endpoint_config_digest": endpoint_config_digest,
-        "returned_model_identifier": returned_model_identifier,
-        "probe_suite_digest": probe_suite_digest,
-        "system_fingerprint": system_fingerprint,
-        "safe_response_metadata": safe_response_metadata,
-    }
-    missing = tuple(name for name, value in present.items() if value in _EPSILON)
-    required_missing = tuple(name for name in missing if name in REQUIRED_FINGERPRINT_FIELDS)
-    terminal = terminal_state in ResearchRunState.terminal()
-
-    if required_missing or not terminal:
-        reasons = []
-        if not terminal:
-            reasons.append(f"run state {terminal_state!r} is not terminal")
-        if required_missing:
-            reasons.append(f"missing fingerprint fields: {', '.join(required_missing)}")
-        return LiveRunRecord(
-            run_id=run_id,
-            terminal_state=terminal_state,
-            verdict=ModelReproducibilityVerdict.NOT_VERIFIED,
-            endpoint_config_digest=endpoint_config_digest,
-            returned_model_identifier=returned_model_identifier,
-            system_fingerprint=system_fingerprint,
-            probe_suite_digest=probe_suite_digest,
-            safe_response_metadata=safe_response_metadata,
-            missing_fields=missing,
-            model_tokens=model_tokens,
-            usage_entries=usage_entries,
-            artifact_ids=artifact_ids,
-            evidence_ids=evidence_ids,
-            reason="; ".join(reasons),
-        )
-
+    fingerprint = _fingerprint_facts(
+        endpoint_config_digest,
+        returned_model_identifier,
+        probe_suite_digest,
+        system_fingerprint,
+        safe_response_metadata,
+    )
+    missing = tuple(name for name, value in fingerprint.items() if value in _EPSILON)
+    verdict, reason = _assess(terminal_state, missing)
     return LiveRunRecord(
         run_id=run_id,
         terminal_state=terminal_state,
-        verdict=ModelReproducibilityVerdict.REPEATABLE_CONFIGURATION,
+        verdict=verdict,
         endpoint_config_digest=endpoint_config_digest,
         returned_model_identifier=returned_model_identifier,
         system_fingerprint=system_fingerprint,
@@ -166,7 +141,41 @@ def build_live_run_record(  # noqa: PLR0913 - 指纹/usage/id 是封闭字段集
         usage_entries=usage_entries,
         artifact_ids=artifact_ids,
         evidence_ids=evidence_ids,
+        reason=reason,
     )
+
+
+def _fingerprint_facts(
+    endpoint_config_digest: str | None,
+    returned_model_identifier: str | None,
+    probe_suite_digest: str | None,
+    system_fingerprint: str | None,
+    safe_response_metadata: tuple[tuple[str, str], ...],
+) -> dict[str, object]:
+    return {
+        "endpoint_config_digest": endpoint_config_digest,
+        "returned_model_identifier": returned_model_identifier,
+        "probe_suite_digest": probe_suite_digest,
+        "system_fingerprint": system_fingerprint,
+        "safe_response_metadata": safe_response_metadata,
+    }
+
+
+def _assess(
+    terminal_state: str,
+    missing: tuple[str, ...],
+) -> tuple[ModelReproducibilityVerdict, str | None]:
+    """判定结论与（降级时的）理由：理由必须**点名**缺了什么。"""
+    required_missing = tuple(name for name in missing if name in REQUIRED_FINGERPRINT_FIELDS)
+    terminal = terminal_state in ResearchRunState.terminal()
+    if not required_missing and terminal:
+        return ModelReproducibilityVerdict.REPEATABLE_CONFIGURATION, None
+    reasons = []
+    if not terminal:
+        reasons.append(f"run state {terminal_state!r} is not terminal")
+    if required_missing:
+        reasons.append(f"missing fingerprint fields: {', '.join(required_missing)}")
+    return ModelReproducibilityVerdict.NOT_VERIFIED, "; ".join(reasons)
 
 
 def not_verified_live_run_record(
