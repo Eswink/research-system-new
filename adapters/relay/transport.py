@@ -98,12 +98,21 @@ def request_with_retries(  # noqa: PLR0913 - HTTP 语义参数完整,分组对�
     *,
     json_body: dict[str, Any] | None = None,
     telemetry: TelemetrySink | None = None,
+    headers: dict[str, str] | None = None,
 ) -> tuple[httpx.Response, int]:
-    """执行请求,返回 (response, attempts) 使内部重试对外可见。"""
-    headers = {
-        "Authorization": f"Bearer {credential.value}",
-        "Accept": "application/json",
-    }
+    """执行请求,返回 (response, attempts) 使内部重试对外可见。
+
+    ``headers`` 为 None 时用默认 ``Authorization: Bearer``（既有形态逐字不变）；
+    非 None 时按调用方给定（如 Messages 形态的 ``x-api-key`` + ``anthropic-version``）。
+    """
+    effective_headers = (
+        headers
+        if headers is not None
+        else {
+            "Authorization": f"Bearer {credential.value}",
+            "Accept": "application/json",
+        }
+    )
     retrying = _make_retrying(max(1, endpoint.max_retries + 1))
     attempts = 0
     for attempt in retrying:
@@ -113,7 +122,7 @@ def request_with_retries(  # noqa: PLR0913 - HTTP 语义参数完整,分组对�
                 response = client.request(
                     method,
                     url,
-                    headers=headers,
+                    headers=effective_headers,
                     json=json_body,
                     timeout=endpoint.request_timeout_seconds,
                 )

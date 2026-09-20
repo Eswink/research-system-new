@@ -17,9 +17,13 @@ from packages.domain.enums import (
     CapabilityStatus,
     EndpointHealth,
     FailureCategory,
+    LLMProtocol,
     ModelBindingMode,
     ModelCapability,
 )
+
+# 协议合法取值的唯一来源（域枚举 LLMProtocol）；执行侧选路必须与本集合同源。
+_LEGAL_PROTOCOLS = frozenset(protocol.value for protocol in LLMProtocol)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +52,7 @@ class LLMEndpoint:
     def __post_init__(self) -> None:
         if not self.id:
             raise ValueError("endpoint id must not be empty")
-        if self.protocol not in ("OPENAI_COMPATIBLE", "ANTHROPIC"):
+        if self.protocol not in _LEGAL_PROTOCOLS:
             raise ValueError("endpoint protocol must be OPENAI_COMPATIBLE or ANTHROPIC")
         if self.api_style not in ("chat_completions", "responses"):
             raise ValueError("api_style must be 'chat_completions' or 'responses'")

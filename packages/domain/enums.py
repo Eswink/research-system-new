@@ -123,6 +123,21 @@ class EndpointHealth(StrEnum):
     DISABLED = "DISABLED"
 
 
+class LLMProtocol(StrEnum):
+    """LLMEndpoint 声明的线协议族（唯一词表）。
+
+    - ``OPENAI_COMPATIBLE``：``/chat/completions`` 或 ``/responses``（按 ``api_style``）；
+    - ``ANTHROPIC``：``/messages`` Messages 形态（``x-api-key`` + ``anthropic-version``）。
+
+    取值名指**线协议族**而非模型厂商绑定（AGENTS.md §1 禁止的是把供应商写进 Domain）。
+    执行侧（relay 网关与 OpenHands llm_factory）按本枚举选路，未知取值 fail-closed
+    ——静默回退会让「配了某协议」与「跑的是另一种形态」不可区分。
+    """
+
+    OPENAI_COMPATIBLE = "OPENAI_COMPATIBLE"
+    ANTHROPIC = "ANTHROPIC"
+
+
 class PolicyDecision(StrEnum):
     ALLOW = "ALLOW"
     DENY = "DENY"
