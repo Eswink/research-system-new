@@ -271,11 +271,17 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 - **注入**：`set -a; . ./.env; set +a`（POSIX shell 形态）与「只经环境变量」的纪律复述；
   **必须写明**本机是否自动加载（F-4：由导入栈的 litellm `load_dotenv` 加载 ⇒ 跑 pytest 时**无需**
   手工导出，但**显式导出**是更可移植的形态）。
-- **轮换**：换值即生效的**边界**——`EnvCredentialResolver` 每次读 `os.environ` ⇒ 同一进程内
-  改 `os.environ` 即生效；**但**已注入 `RegistryCredentialResolver._registry` 的内存副本
-  **不会**随环境变量变化（GOAL-008 runbook §3 的机制）⇒ 写明「哪些面不需要重启、哪些面需要」。
-- **撤销**：清空值 ⇒ `has()` 为 `False` ⇒ **门自动关闭**（fail-closed）。**判据**：撤销后
-  `evaluate_live_run_gate` 必须 `open=False` 且理由点名凭据不可解析。
+- **轮换**：换值即生效的**边界**——两个解析器（`EnvCredentialResolver` /
+  `RegistryCredentialResolver`）都在**构造时**拷贝 `os.environ`
+  （`adapters/relay/credential_resolver.py` / `adapters/relay/registry_credential_resolver.py`）。
+  **实测（2026-09-21）：撤销来源后，已构造的同一个实例仍报 `has()=True`；只有新构造的实例才看到变化。**
+  ⇒ 「同一进程内改 `os.environ` 即生效」**不成立**；生效边界是「**新构造 resolver 的时机**」
+  （新进程 / 每次新建实例的路径）⇒ API 面仍需**重启**（§3）。**RegistryCredentialResolver
+  的 `_registry` 副本**（`register()` 注入）**独立于环境变量**：命中注册表时**不**回退环境快照。
+- **撤销**：清空值 ⇒ **新构造**的解析器 `has()` 为 `False` ⇒ **门自动关闭**（fail-closed）。
+  **判据**：撤销后 `evaluate_live_run_gate` 必须 `open=False` 且理由点名凭据不可解析。
+  **边界**：若该 ref 已 `register()` 进注册表，注册表命中**优先于**环境变量 ⇒
+  撤销环境变量**不**关闭这个面的门，必须 `unregister()`。
 - **可弃用额度**：如实写明本 key 为**免费可弃用额度**（用户明示接受泄露风险）**以及**
   「这**不**降低凭据纪律」——值仍**不得**落任何 tracked 文件/DB/记录/日志/回显。
 
@@ -377,6 +383,7 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | 2 | PLAN-20260920-122（EC-02） | `dcbd313`（derive + ALL_PLAN）、`2785e68`（判据 + 文档）、`86e77d8`（**CI 红修复**：MEM-094 改写进暂存） | 判据 `test_anthropic_surface_boundary.py` **10 passed** 且**被压过**（改绑 `research_alpha` ⇒ **RED**，定位精确到 run 腿那一条；复原 ⇒ **GREEN**；`git diff examples/config/models.yaml` **空**）；定向 `tests/architecture tests/loaders tests/e2e/test_ec04_*` ⇒ **145 passed / 1 skipped**；`ruff`/`format`/`mypy` 绿；治理 `validate.py` 绿；m0 两轮如实登记：第 1 轮 **stale**（在我修完行宽/类型之前启动，读旧文件 ⇒ `python/product-lint` + `python/typecheck` 红，两条都指向已修好的行；其余 **24 项 PASS**）、第 2 轮干净树 ⇒ **PASS：profile=m0; 23 deterministic checks（4212 passed / 12 skipped，592.81s）** | **run 35517481162 = failure**（`e16e458`；`quality-ubuntu-latest` / `quality-windows-latest` 红 —— `framework/validate` 报 `MEM-20260920-094` 缺章节；其余四 job success）。**CI 是对的**：本地把该条目改好了但**改写未进暂存区**，提交进去的仍是旧形态，而本地门读的是**未提交**的工作树 ⇒ **本地绿而提交红**。处置：`86e77d8` **修记录**（**不放宽 validator**），沉淀 `MEM-20260920-096`。**cycle 2 自身的推送 `86e77d8` → run 35519644853 = success（六 job 全 success），上条失败已随修复转绿** | — （**未改任何门禁/断言强度**；判据的 `::symbol` 路径处理是**让判据更对**，不是放宽） | EC-02 **PASS（取 (b)）**；EC-03…EC-06 PENDING。残余 W-1…W-6（W-1 run 腿仍走 OPENAI_COMPATIBLE、W-2「会打到 OpenAI 形态 mock」是**强推断非实跑**、W-3 判据**有意过严**、W-4 判据不覆盖执行正确性、W-5 前端列无判据把守、W-6 = 上述 CI 红已修） | cycle 3 = derive **EC-03**（漂移实测样本落到读面/记录；样本已由 cycle 1 的同一次 probe 带出：实测返回标识 == 声明值 ⇒ **一致**，不另发调用） |
 | 3 | PLAN-20260920-123（EC-03） | 见回合汇报（derive + 判据 + 文档 + 收口） | 新判据 `test_live_drift_sample_same_source.py` **8 passed**，与既有 runbook 判据同跑 **18 passed in 0.95s**；**被压过（两条路径）**：①改坏 runbook §6 的返回标识 ⇒ **RED**（`1 failed, 7 passed`，消息把 `declared/returned/两态` 全打出来，定位精确到重算那一条）、复原 ⇒ **GREEN**、`git diff` 只剩意图内改动；②查**不存在的标签** ⇒ 抛错并**点名**（`… no longer has a row labelled '不存在的标签'`），**不静默返回空串**（否则「判据没在看」会伪装成「判据通过」）；定向套件（两道同源判据 + `test_protocol_vocabulary` + `tests/domain/test_model_drift.py` + `tests/api/test_models_api.py`）⇒ **47 passed in 2.03s**；`ruff check` / `format --check` / `mypy` 绿；全量 m0（**CI 同形配置**：`LLM_MAIN_KEY=""` + 测试 DSN pin）⇒ **`PASS: profile=m0; 23 deterministic checks`（4221 passed / 12 skipped，589.50s，FAIL 0 条）**，**一次跑完无 stale、无红**；治理 `validate.py` 绿 | 见回合汇报（**未跑到终态不记账**） | — （**未改任何门禁或断言强度**；**未新增 live 调用**：样本复用 cycle 1 的同一次 probe） | EC-03 **PASS**；EC-04…EC-06 PENDING。残余 W-1…W-6（W-1 单次样本 ≠ 永不漂移、W-2 反证**发现不了自洽的假样本**（由 run id 交叉引用兜住）、W-3 判据与标签行**耦合**（改标签必须同改判据）、W-4「漂移未持久化」只有文档口径无判据把守、W-5 前端 drift 渲染不在判据射程、W-6 CI 台账填写规则） | cycle 4 = derive **EC-04**（失败路径诚实语义 + 至少一条反证） |
 | 4 | PLAN-20260920-124（EC-04） | `d3b8f0f`（derive + ALL_PLAN + cycle 3 CI 台账）、见回合汇报（impl + 收口） | 新判据 `test_live_failure_paths_same_source.py` **16 passed** 且**被压过**（把 §7 行标签「端点拒绝」改成「端点被拒」⇒ **RED**：`2 failed, 14 passed`，消息点名 `§7 no longer has a row labelled '端点拒绝'`；复原 ⇒ **GREEN**，`git diff` 只剩新增 26 insertions / 0 deletions）；**实跑反证（live，出站 2 次，均被拒）**：`RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_FAILURE_CASE=invalid-credential LLM_MAIN_KEY=<故意无效>` 跑 `tests/e2e/test_live_failure_paths.py` ⇒ **`1 passed`**、**1 次出站** `POST https://apihub.agnes-ai.com/v1/chat/completions` ⇒ **`HTTP/1.1 401 Unauthorized`**、观察文件 `{"run_state":"FAILED","failure_count":1,"usage_entries":0,"credential_leaked":false}`；**先断言门开再发起**（否则失败可能来自门关，语义完全不同）；预置条件式反证：默认门 ⇒ **`1 skipped`**（点名开关），带预置条件 ⇒ **`1 passed`**；离线门套件 **22 passed**；`ruff`/`format`/`mypy` 绿；全量 m0 **两轮**：第 1 轮 **`FAILED: 1 check(s): python/tests=1`**（新增用例函数 **58 行** > 本仓 **50 行**上限）⇒ **拆函数**（**不放宽门禁**）⇒ 第 2 轮 **`PASS: profile=m0; 23 deterministic checks`（4239 passed / 13 skipped，558.84s，FAIL 0）**；治理 `validate.py` 绿 | **run 35522167112 = success**（`d3b8f0f` 的 derive 推送；六 job 全 success）；cycle 4 收口推送的 run 在回合汇报里给出终态 | ①**50 行函数上限对 `tests/**` 同样生效**——新增 live 用例写成了长流水线，m0 抓出；处置是**拆函数**（`_assert_gate_is_open` / `_run_with` / `_Reads`），**不是**调阈值。②拆完**重跑**了 live 反证（让证据对应**提交形态**）⇒ 出站共 **2 次**，均被拒、均零计费（如实登记，未凑成「1 次」） | EC-04 **PASS**；EC-05/EC-06 PENDING。残余 W-1…W-7（W-1 端点拒绝那一格是**指向**既有判据而非本 cycle 重测、W-2「模型不存在」只有**装配层**判据、**无** provider 侧实跑样本、W-3 失败消息**未按内容**断言（provider 文案是外部契约）、W-4 预置条件开关是新环境变量、W-5「门开 ≠ 凭据有效」是**设计内**语义、改它是行为变更超出授权、W-6 CI 台账、W-7 出站 2 次） | cycle 5 = derive **EC-05**（凭据生命周期 runbook：注入/轮换/撤销/可弃用额度） |
+| 5 | PLAN-20260920-125（EC-05） | 见回合汇报（derive + GOAL EC-05 更正） | （执行中） | 见回合汇报（**未跑到终态不记账**） | — | EC-05 PENDING；**更正了 GOAL 自己的一条错假设**（EC-05 判定细则原写「`EnvCredentialResolver` 每次读 `os.environ` ⇒ 同进程改环境即生效」，实测**构造时快照**：撤销来源后已构造实例仍报 `has()=True`，只有新构造实例看到变化） | 继续 PLAN-20260920-125 的 WP2…WP5 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
