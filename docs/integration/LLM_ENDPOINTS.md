@@ -64,7 +64,12 @@ circuit_breaker: { failure_threshold: 5, open_timeout_seconds: 60, half_open_max
 - runtime 层做 syntax/TLS validation；
 - 不偷偷拼 `/v1`；
 - Test Connection 以真实行为为准；
-- 默认拒绝 localhost/private IP，除非部署策略允许。
+- **默认拒绝** localhost / 环回（`127.0.0.0/8`、`::1`）/ 私有 / 链路本地 / **保留类**
+  （多播、未指定、保留段、CGNAT `100.64.0.0/10`、非全局单播），除非部署策略允许；
+- 每一类有**自己的**开关：`allow_localhost` / `allow_private` / `allow_link_local`；
+  保留类**没有**开关，只能靠 `allowed_hosts` 点名豁免（唯一判据
+  `packages/application/model_relay/endpoint_policy.py::_host_kind`）；
+- host 是域名时不做 DNS 解析（判定在 adapter 层），因此「放行域名」不等于「可达」。
 
 ## 4. ModelDefinition
 
@@ -149,8 +154,27 @@ circuit_breaker:
 
 ## 9. Credentials
 
-- API Key 加密/Secret Store；
-- Domain 只保存 ref；
+**凭据值现在存在哪里**（如实声明；历史声明与本节的差异见
+`.cursor/plans/rechecks/RECHECK-20260920-116-*.md`）：
+
+| 层 | 事实 | 落点 |
+| --- | --- | --- |
+| Domain | 只保存 `credential_ref`（形如 `endpoint:<id>`），**永不保存密钥值** | `LLMEndpoint.credential_ref` |
+| 进程内注册表 | `POST /llm-endpoints` 的 `api_key` 进 `register()`，只活在**内存**里 | `adapters/relay/registry_credential_resolver.py` |
+| 环境变量 | `resolve()` 先查注册表，未命中再按 `credential_ref` **同名**环境变量回退 | 同上 |
+
+由此得到三条必须写进读面的边界：
+
+- 凭据值**只存在于环境变量或进程内注册表**；注册表随进程消失，**重启后需重新注入**
+  （UI 显示 `credential=missing`，由向导重新输入）。**不伪装 Secret Manager**：
+  没有加密存储层，也**不落盘**、不进数据库/配置面 JSON、不进 CI；
+- 读面只回答存在性：`GET /llm-endpoints*` 回 `credential: configured | missing`，
+  任何响应/日志/错误消息都不回显密钥（映射集中在 `services/api/mappers/endpoints.py`）；
+- 明文凭据不进仓库/记录/日志：判据是 `tools/credential_audit.py`（四面扫描；
+  放行项按**值**白名单逐条给理由，新串仍判红）+ `tests/tooling/test_credential_audit.py`。
+
+其余既有约定不变：
+
 - 不进入 Agent context；
 - 不进入 Tool Provider；
 - 不进入 telemetry/log；

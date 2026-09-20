@@ -204,9 +204,44 @@ function EndpointDetails({
           }}
         />
       )}
-      <hr className="hr" />
-      <ConnectionTest endpoint={view} zh={zh} />
+      <EndpointDiagnostics view={view} zh={zh} />
     </div>
+  );
+}
+
+/** 详情下半区（拆分是为守住 `max-lines-per-function` 的 50 行上限）。 */
+function EndpointDiagnostics({ view, zh }: { view: LlmEndpointReadDto; zh: boolean }) {
+  return (
+    <>
+      <hr className="hr" />
+      <CredentialBoundaryNotice zh={zh} />
+      <ConnectionTest endpoint={view} zh={zh} />
+    </>
+  );
+}
+
+/**
+ * 凭据边界（GOAL-008 EC-03）：读面必须如实说清密钥存在哪里、重启后会怎样。
+ *
+ * 这一块只声明事实，不提供管理入口（不做 Secret Manager 的样子）：
+ * 值在环境变量或进程内注册表里，注册表随进程消失 ⇒ 重启后 `credential=missing`。
+ * 与 `docs/integration/LLM_ENDPOINTS.md` §9 同源（判据
+ * `tests/architecture/python/test_credential_boundary_wording.py`）。
+ */
+function CredentialBoundaryNotice({ zh }: { zh: boolean }) {
+  return (
+    <p className={styles.notice} data-testid="endpoint-credential-boundary">
+      {zh
+        ? [
+            "凭据值只存在于环境变量或进程内注册表：",
+            "重启后需重新注入（不写入数据库，也不是 Secret Manager）。",
+          ].join("")
+        : [
+            "Credential values live only in environment variables or the in-process registry: ",
+            "re-enter after restart (nothing is written to the database, and this is ",
+            "not a Secret Manager).",
+          ].join("")}
+    </p>
   );
 }
 
