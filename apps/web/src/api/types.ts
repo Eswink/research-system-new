@@ -204,6 +204,19 @@ export interface ModelReadDto {
   version: Version;
 }
 
+/**
+ * 漂移三态（GOAL-008 EC-05）。`UNKNOWN` = **未探到**，不得当成「无漂移」渲染。
+ */
+export type ModelDriftState = "MATCH" | "DRIFT" | "UNKNOWN";
+
+export interface ModelDriftDto {
+  state: ModelDriftState;
+  declared_model_name: string;
+  returned_model_name: string | null;
+  /** 由域层给出的人读说明（只含两个模型标识，无凭据、无原始响应体）。 */
+  detail: string;
+}
+
 export interface ProbeResultDto {
   model_id: string;
   ok: boolean;
@@ -216,6 +229,8 @@ export interface ProbeResultDto {
    * 禁止渲染 "Fully reproducible model"（M12 诚实建模，不得美化）。
    */
   provider_fingerprint_available: boolean;
+  /** 登记声明值与 provider 返回标识的三态对比（EC-05）。 */
+  drift: ModelDriftDto;
   error_category: string | null;
   error_message_redacted: string | null;
   capability_failures: CapabilityFailureDto[];

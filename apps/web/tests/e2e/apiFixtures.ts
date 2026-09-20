@@ -117,4 +117,12 @@ export const PROBE: ProbeResultDto = {
   system_fingerprint: null, provider_fingerprint_available: false, error_category: "TIMEOUT",
   error_message_redacted: "Fixture timeout", capability_failures: [], probed_at: RUN.updated_at,
   fingerprint: null,
+  // 未探到模型标识 ⇒ UNKNOWN（**不是**「无漂移」）。
+  drift: {
+    state: "UNKNOWN",
+    declared_model_name: MODEL.model_name,
+    returned_model_name: null,
+    detail: "declared '" + MODEL.model_name + "'; provider did not return a model identifier "
+      + "(unknown is not the same as no drift)",
+  },
 };

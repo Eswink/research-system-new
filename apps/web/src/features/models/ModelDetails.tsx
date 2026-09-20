@@ -1,4 +1,4 @@
-import type { ModelReadDto, ProbeResultDto } from "../../api/types";
+import type { ModelDriftDto, ModelReadDto, ProbeResultDto } from "../../api/types";
 import { Chip } from "../../components/Chip";
 import { PanelSection } from "../../components/PanelSection";
 import { EmptyState } from "../../components/States";
@@ -115,6 +115,7 @@ export function ProbeSummary({ probe }: { probe: ProbeResultDto }) {
         title={zh ? "真实探测结果" : "Actual probe result"}
         extra={<Chip tone={probe.ok ? "success" : "danger"}>{probe.ok ? "OK" : "ERROR"}</Chip>}
       >
+        <ModelDriftNotice drift={probe.drift} zh={zh} />
         <KeyValueList
           fields={[
             { label: "Model ID", value: probe.model_id },
@@ -141,6 +142,47 @@ export function ProbeSummary({ probe }: { probe: ProbeResultDto }) {
         </p>
       </PanelSection>
       <ProbeFailures probe={probe} />
+    </div>
+  );
+}
+
+/**
+ * 漂移三态（GOAL-008 EC-05 / AGENTS.md §4）：登记声明值 vs provider 返回标识。
+ *
+ * **`UNKNOWN` 必须自带反义**——它是「无法证明一致」，不是「已证明一致」；
+ * 只显示一个中性标签会让「没探到」被读成「没问题」，那正是 §4 要禁止的美化。
+ * `DRIFT` 必须点名两个值，让读的人自己判断差在哪。
+ */
+function ModelDriftNotice({ drift, zh }: { drift: ModelDriftDto; zh: boolean }) {
+  const tone = drift.state === "MATCH" ? "success" : drift.state === "DRIFT" ? "danger" : "neutral";
+  const label = zh
+    ? { MATCH: "一致", DRIFT: "漂移", UNKNOWN: "未知" }[drift.state]
+    : { MATCH: "Match", DRIFT: "Drift", UNKNOWN: "Unknown" }[drift.state];
+  const explanation = zh
+    ? {
+        MATCH: "声明值与 provider 返回的模型标识一致（精确匹配）。",
+        DRIFT: "声明值与 provider 返回的模型标识不同：请核对是不是同一底层模型。",
+        UNKNOWN: "未探到模型标识——**未知不等于无漂移**（可能没探到或探测失败）。",
+      }[drift.state]
+    : {
+        MATCH: "Declared value and the identifier returned by the provider agree (exact match).",
+        DRIFT: "Declared value differs from the identifier returned by the provider — " +
+          "check whether this is the same underlying model.",
+        UNKNOWN: "No model identifier was returned — unknown is not the same as no drift " +
+          "(not probed, or the probe failed).",
+      }[drift.state];
+  return (
+    <div data-testid="probe-drift" data-drift-state={drift.state} className={styles.notice}>
+      <p>
+        <strong>{zh ? "模型标识漂移" : "Model identifier drift"}</strong>{" "}
+        <Chip tone={tone}>{label}</Chip>
+      </p>
+      <p>{explanation}</p>
+      <p>
+        {zh ? "声明" : "Declared"}: <code>{drift.declared_model_name}</code>
+        {" · "}
+        {zh ? "返回" : "Returned"}: <code>{drift.returned_model_name ?? "—"}</code>
+      </p>
     </div>
   );
 }
