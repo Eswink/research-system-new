@@ -98,7 +98,7 @@ exit_criteria:
       记录中含**真实样本**（返回 model 名 + 声明值 + 判定结果 + 时间 + run id），且该样本经既有读面
       （模型详情 DTO / 页面三态渲染）可取；判据含「未知 ≠ 无漂移」的钉住（沿用 EC-05 既有用例）。
       样本本身来自 EC-01 的 live 调用，**不额外发起调用**（次数取最小必要）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **失败路径的诚实语义（反证式）**：无效凭据 / 端点拒绝 / 模型不存在三类情形下，门与记录的语义
@@ -157,8 +157,10 @@ escalation_triggers:
   - 明文凭据泄露（**即使是可弃用的免费额度**）——立即停止并报告
 child_plans:
   - .cursor/plans/tasks/PLAN-20260920-121-first-live-sampling-run.md
-latest_recheck: null
-memory_entries: []
+  - .cursor/plans/tasks/PLAN-20260920-122-anthropic-surface-boundary-decision.md
+  - .cursor/plans/tasks/PLAN-20260920-123-live-drift-sample-as-judged-record.md
+latest_recheck: RECHECK-20260920-123
+memory_entries: MEM-097
 ---
 
 # GOAL-20260920-009 — live 采样与 anthropic 面收口（自迭代循环）
@@ -182,7 +184,7 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | --- | --- | --- | --- |
 | EC-01 | live 采样第一次：live 分支四段全中（probe ok / 到终态 / 指纹可判 / usage 归账 / 制品证据可读），口径停在 `REPEATABLE_CONFIGURATION`；样本如实登记 | `RESEARCHOS_AGENT_RUNTIME=openhands … pytest tests/e2e/test_ec04_live_first_run.py -v` ⇒ 该用例 **PASS 非 skip**；落盘 `live-run-record.json` 的 `verdict == REPEATABLE_CONFIGURATION` | **PASS**（**终态 = `FAILED`**，设计内 acceptance-gate 判拒；样本已登记，`RECHECK-20260920-121` = PASS_WITH_WARNINGS） |
 | EC-02 | run 自身消费 anthropic 面的口径（二选一终态）：(a) 改绑使 run 走 ANTHROPIC 到终态，或 (b) 把「run=main / probe=anthropic」写成一等边界 + 改绑草案；决策必须落记录 | (a) live run 记录里 run 端点 `protocol == ANTHROPIC` + 终态 + 归账；(b) 同源判据 PASS + runbook 含改绑步骤/影响面；两条都要求 RECHECK 写明选了哪条与为什么 | **PASS**（取 **(b)**：边界已钉成一等**可判**事实 §12 + 改绑步骤/影响面/判据草案；`RECHECK-20260920-122` = PASS_WITH_WARNINGS） |
-| EC-03 | 漂移实测样本：实测返回 model 名 vs 声明值，三态从「未知」变「实测」；不同则如实记为漂移并给影响面，相同则写明证明力边界 | 记录含真实样本（返回名/声明值/判定/时间/run id）且经既有读面可取；「未知 ≠ 无漂移」钉住用例仍 PASS；**不额外发起调用** | PENDING |
+| EC-03 | 漂移实测样本：实测返回 model 名 vs 声明值，三态从「未知」变「实测」；不同则如实记为漂移并给影响面，相同则写明证明力边界 | 记录含真实样本（返回名/声明值/判定/时间/run id）且经既有读面可取；「未知 ≠ 无漂移」钉住用例仍 PASS；**不额外发起调用** | PASS |
 | EC-04 | 失败路径诚实语义（反证式）：无效凭据/端点拒绝/模型不存在三类可判定；至少一条反证先红后复原，全程不打印值 | 反证的先红后绿证据 + 三类期望语义明文；复原后复跑 EC-01 判据确认无残留 | PENDING |
 | EC-05 | 凭据生命周期 runbook：注入（`set -a; . ./.env; set +a`）/轮换/撤销/可弃用额度说明落成同源判据 | 同源判据套件 PASS；轮换与撤销各有实跑证据；无凭据值出现在任何记录/日志/回显 | PENDING |
 | EC-06 | 收口复检 + 残余登记：独立复检（当前树 + 干净 checkout 同结论）+ m0 23/23 + 治理 validate 绿；六项人工面原样保留 + 本 GOAL 的 W 列表 | 复检脚本三层判据全 PASS 且两树同结论；m0 23/23；`validate.py` 绿；`latest_recheck` 指向 PASS/PASS_WITH_WARNINGS；frontmatter 与状态表一致 | PENDING |
@@ -372,7 +374,8 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | （见状态历史） | 治理 `validate.py` 绿 + `validate_bundle` / DOCS-CHECK 绿 | （见状态历史） | — | EC-01…EC-06 全 PENDING；凭据**已可用**（F-2/F-3）⇒ live 采样**可以真的跑**（与 GOAL-008 建档时的「六项凭据全 absent」不同） | cycle 1 = derive EC-01 子 PLAN（live 采样第一次） |
 | 1 | PLAN-20260920-121（EC-01） | `291224f`（derive + ALL_PLAN）、`dab74b0`（impl：runbook 样本 + MEM-094） | **live 分支真跑 PASS（非 skip）**：`RESEARCHOS_AGENT_RUNTIME=openhands` 内联前缀跑 `tests/e2e/test_ec04_live_first_run.py` ⇒ **1 passed / 1 skipped in 28.69s**（run id `142f7e77-cd4d-4044-a953-79296509fd54`，**终态 `FAILED`** = 设计内 acceptance-gate 判拒，`verdict = REPEATABLE_CONFIGURATION`，tokens 15219，制品 1 / 证据 1，缺项 2 已声明）；离线基线 + 反证：默认门 **1 passed / 1 skipped**、内联前缀 `-k closed` ⇒ **SKIPPED（gate is open）**、去前缀复跑回到 **1 passed / 1 skipped**（无残留）；同源判据 **10 passed**；离线同路径套件 **2 passed / 1 skipped**（独立复现「判拒是链在正常工作」）；独立复检脚本 `scratch/verify_goal009_cycle1.py` **22 checks PASS**（凭据面扫描 tracked 文件 `hits=0`，**未打印值**）；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35514493092 = success**（`47c50d2` 建档推送；六 job 全 success：`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `collector-quality` / `container-quality` / `eval-gate`，逐 job 实查，terminal `status=completed conclusion=success`）；cycle 1 自身的推送 run 在回合汇报里给出终态 | **m0 三轮，全部如实登记，最终 23/23**：第 1 轮 22/23（红：`python/tests` 的单条 `test_start_run_unprovisioned_control_plane_reports_actionable_failure`）、第 2 轮（空 DSN）**同一个红** ⇒ **推翻**了我第一轮的 DSN 归因、第 3 轮（`LLM_MAIN_KEY=""` 复现 CI 的「无凭据」条件）**PASS：profile=m0; 23 deterministic checks（4201 passed / 12 skipped，557.61s）**。**真根因**经反证定位：该用例对**凭据是否可解析**不封闭——前序 import 过 openhands-sdk 后 `.env` 凭据入进程 ⇒ `main` 端点（`discovery.enabled: true`）**真的做端点发现** ⇒ run 走到 `FAILED` 却不再产出 `run.failed` ⇒ 断言空集。**最小复现** `pytest tests/adapters/openhands <该用例>` ⇒ **1 failed / 83 passed** 且日志含 `GET https://apihub.agnes-ai.com/v1/models` **200 OK**；**决定性反证** 同命令加 `LLM_MAIN_KEY=""` ⇒ **84 passed** 且**零出站** ⇒ **红 ⇔ 凭据可得**，而 **CI 无 `.env`、无凭据** ⇒ **CI 不可复现**。**一次真实出站已被捕获**——「本地门离线」**不是**结构保证，作为残余登记（W-7 / MEM-20260920-095）。**未改任何断言/门禁/快照**，只改环境输入且被阻断的正是 CI 不具备的输入 | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W：W-1 终态是 `FAILED` 非 `SUCCEEDED`（设计内，须写明）、W-2 逐条失败消息未捕获、W-3 litellm 无该模型价格映射、W-4 「一致」是单次样本、W-5 缺 `system_fingerprint`、W-6 anthropic 面问题归 EC-02、W-7 全量 m0 时序 | cycle 2 = derive **EC-02**（run 自身消费 anthropic 面的二选一终态） |
-| 2 | PLAN-20260920-122（EC-02） | `dcbd313`（derive + ALL_PLAN）、`2785e68`（判据 + 文档）、`86e77d8`（**CI 红修复**：MEM-094 改写进暂存） | 判据 `test_anthropic_surface_boundary.py` **10 passed** 且**被压过**（改绑 `research_alpha` ⇒ **RED**，定位精确到 run 腿那一条；复原 ⇒ **GREEN**；`git diff examples/config/models.yaml` **空**）；定向 `tests/architecture tests/loaders tests/e2e/test_ec04_*` ⇒ **145 passed / 1 skipped**；`ruff`/`format`/`mypy` 绿；治理 `validate.py` 绿；m0 两轮如实登记：第 1 轮 **stale**（在我修完行宽/类型之前启动，读旧文件 ⇒ `python/product-lint` + `python/typecheck` 红，两条都指向已修好的行；其余 **24 项 PASS**）、第 2 轮干净树 ⇒ **PASS：profile=m0; 23 deterministic checks（4212 passed / 12 skipped，592.81s）** | **run 35517481162 = failure**（`e16e458`；`quality-ubuntu-latest` / `quality-windows-latest` 红 —— `framework/validate` 报 `MEM-20260920-094` 缺章节；其余四 job success）。**CI 是对的**：本地把该条目改好了但**改写未进暂存区**，提交进去的仍是旧形态，而本地门读的是**未提交**的工作树 ⇒ **本地绿而提交红**。处置：`86e77d8` **修记录**（**不放宽 validator**），沉淀 `MEM-20260920-096`。cycle 2 自身的推送 run 在回合汇报里给出终态 | — （**未改任何门禁/断言强度**；判据的 `::symbol` 路径处理是**让判据更对**，不是放宽） | EC-02 **PASS（取 (b)）**；EC-03…EC-06 PENDING。残余 W-1…W-6（W-1 run 腿仍走 OPENAI_COMPATIBLE、W-2「会打到 OpenAI 形态 mock」是**强推断非实跑**、W-3 判据**有意过严**、W-4 判据不覆盖执行正确性、W-5 前端列无判据把守、W-6 = 上述 CI 红已修） | cycle 3 = derive **EC-03**（漂移实测样本落到读面/记录；样本已由 cycle 1 的同一次 probe 带出：实测返回标识 == 声明值 ⇒ **一致**，不另发调用） |
+| 2 | PLAN-20260920-122（EC-02） | `dcbd313`（derive + ALL_PLAN）、`2785e68`（判据 + 文档）、`86e77d8`（**CI 红修复**：MEM-094 改写进暂存） | 判据 `test_anthropic_surface_boundary.py` **10 passed** 且**被压过**（改绑 `research_alpha` ⇒ **RED**，定位精确到 run 腿那一条；复原 ⇒ **GREEN**；`git diff examples/config/models.yaml` **空**）；定向 `tests/architecture tests/loaders tests/e2e/test_ec04_*` ⇒ **145 passed / 1 skipped**；`ruff`/`format`/`mypy` 绿；治理 `validate.py` 绿；m0 两轮如实登记：第 1 轮 **stale**（在我修完行宽/类型之前启动，读旧文件 ⇒ `python/product-lint` + `python/typecheck` 红，两条都指向已修好的行；其余 **24 项 PASS**）、第 2 轮干净树 ⇒ **PASS：profile=m0; 23 deterministic checks（4212 passed / 12 skipped，592.81s）** | **run 35517481162 = failure**（`e16e458`；`quality-ubuntu-latest` / `quality-windows-latest` 红 —— `framework/validate` 报 `MEM-20260920-094` 缺章节；其余四 job success）。**CI 是对的**：本地把该条目改好了但**改写未进暂存区**，提交进去的仍是旧形态，而本地门读的是**未提交**的工作树 ⇒ **本地绿而提交红**。处置：`86e77d8` **修记录**（**不放宽 validator**），沉淀 `MEM-20260920-096`。**cycle 2 自身的推送 `86e77d8` → run 35519644853 = success（六 job 全 success），上条失败已随修复转绿** | — （**未改任何门禁/断言强度**；判据的 `::symbol` 路径处理是**让判据更对**，不是放宽） | EC-02 **PASS（取 (b)）**；EC-03…EC-06 PENDING。残余 W-1…W-6（W-1 run 腿仍走 OPENAI_COMPATIBLE、W-2「会打到 OpenAI 形态 mock」是**强推断非实跑**、W-3 判据**有意过严**、W-4 判据不覆盖执行正确性、W-5 前端列无判据把守、W-6 = 上述 CI 红已修） | cycle 3 = derive **EC-03**（漂移实测样本落到读面/记录；样本已由 cycle 1 的同一次 probe 带出：实测返回标识 == 声明值 ⇒ **一致**，不另发调用） |
+| 3 | PLAN-20260920-123（EC-03） | 见回合汇报（derive + 判据 + 文档 + 收口） | 新判据 `test_live_drift_sample_same_source.py` **8 passed**，与既有 runbook 判据同跑 **18 passed in 0.95s**；**被压过（两条路径）**：①改坏 runbook §6 的返回标识 ⇒ **RED**（`1 failed, 7 passed`，消息把 `declared/returned/两态` 全打出来，定位精确到重算那一条）、复原 ⇒ **GREEN**、`git diff` 只剩意图内改动；②查**不存在的标签** ⇒ 抛错并**点名**（`… no longer has a row labelled '不存在的标签'`），**不静默返回空串**（否则「判据没在看」会伪装成「判据通过」）；定向套件（两道同源判据 + `test_protocol_vocabulary` + `tests/domain/test_model_drift.py` + `tests/api/test_models_api.py`）⇒ **47 passed in 2.03s**；`ruff check` / `format --check` / `mypy` 绿；全量 m0（**CI 同形配置**：`LLM_MAIN_KEY=""` + 测试 DSN pin）⇒ **`PASS: profile=m0; 23 deterministic checks`（4221 passed / 12 skipped，589.50s，FAIL 0 条）**，**一次跑完无 stale、无红**；治理 `validate.py` 绿 | 见回合汇报（**未跑到终态不记账**） | — （**未改任何门禁或断言强度**；**未新增 live 调用**：样本复用 cycle 1 的同一次 probe） | EC-03 **PASS**；EC-04…EC-06 PENDING。残余 W-1…W-6（W-1 单次样本 ≠ 永不漂移、W-2 反证**发现不了自洽的假样本**（由 run id 交叉引用兜住）、W-3 判据与标签行**耦合**（改标签必须同改判据）、W-4「漂移未持久化」只有文档口径无判据把守、W-5 前端 drift 渲染不在判据射程、W-6 CI 台账填写规则） | cycle 4 = derive **EC-04**（失败路径诚实语义 + 至少一条反证） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -380,7 +383,8 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | --- | --- | --- | --- |
 | 建档 | `47c50d2` | [35514493092](https://github.com/Eswink/research-system-new/actions/runs/35514493092) | 六 job 全 **success**（`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `collector-quality` / `container-quality` / `eval-gate`；terminal `status=completed conclusion=success`） |
 | cycle 1 收口 | `e16e458` | [35517481162](https://github.com/Eswink/research-system-new/actions/runs/35517481162) | **failure** —— `quality-ubuntu-latest` / `quality-windows-latest` **红**（`framework/validate`：`MEM-20260920-094` 缺章节），其余四 job **success**。**归类：治理/安全门禁 → 修记录**（`86e77d8`），**不放宽 validator** |
-| cycle 2（含上条修复） | `86e77d8` | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） |
+| cycle 2（含上条修复） | `86e77d8` | [35519644853](https://github.com/Eswink/research-system-new/actions/runs/35519644853) | 六 job 全 **success**（`eval-gate` / `container-quality` / `collector-quality` / `quality-windows-latest` / `quality-ubuntu-latest` / `console-frontend`；terminal `status=completed conclusion=success`）—— **cycle 1 那条失败已随修复转绿** |
+| cycle 3 | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | |
 
 **台账尾巴口径**（沿用 GOAL-005…008，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 **只在回合汇报里给出终态、不再回写文件**——否则每轮都要为回写再推一次、无限追加。
@@ -436,6 +440,36 @@ live 证据只在本地产生并落 RECHECK。
   而本地门绿是因为它读了**未提交**的工作树 ⇒ **本地绿而提交红**。处置是 `86e77d8` **修记录**，
   **没有**放宽 validator；沉淀为 `MEM-20260920-096`。
   **未改任何门禁或断言强度；未新增依赖；未改 pin；未发起真实调用**（取 (b)，判据全部离线可判）。
+  **CI 台账**：收口推送 `86e77d8` → **run 35519644853 = success**（六 job 全 success），
+  cycle 1 的那条失败**已随修复转绿**。
+
+
+- 2026-09-20 cycle 3（`driver=client-goal / owner=root-agent`）：**EC-03 PASS**
+  （PLAN-20260920-123 / RECHECK-20260920-123 = PASS_WITH_WARNINGS，W-1…W-6）。
+  **本轮把漂移样本从「散文」变成「判据能重算的事实」**：cycle 1 那次 probe 的原始观测
+  （返回标识 `agnes-2.5-flash` == 声明值 `agnes-2.5-flash` ⇒ **一致**）此前只活在 runbook §6 的表格
+  与 RECHECK-121 的叙述里——**没有任何东西**会在样本被改错时变红。本轮补上判据
+  `tests/architecture/python/test_live_drift_sample_same_source.py`：从 §6 按**固定标签**解析
+  （声明值 / 返回标识 / 判定 / run id），代入 `assess_model_drift` **重算**并断言相等。
+  **判据被压过两次（这是本轮最要紧的证据）**：①改坏返回标识 ⇒ **RED**（`1 failed, 7 passed`，
+  消息 `the runbook says 'MATCH' but re-deriving from declared='agnes-2.5-flash' /
+  returned='agnes-2.5-flash-drifted' gives 'DRIFT'`），复原 ⇒ **GREEN**（`18 passed`），
+  `git diff` 无残留；②压**解析路径本身**：查不存在的标签 ⇒ 抛错并**点名缺哪个标签**，
+  **不静默返回空串**——这条堵的是「判据没在看」伪装成「判据通过」的腐坏路径。
+  **读面同源被钉住**：`services/api/routers/models.py:151` 的读面 drift **就是**
+  `assess_model_drift(model.model_name, result.returned_model_name)` 的输出（全仓该函数定义**只有一处**），
+  DTO 字面量 `Literal["MATCH","DRIFT","UNKNOWN"]` 与域枚举**逐字一致**，且 `UNKNOWN` **不算**漂移
+  （`is_drift` 只为 `DRIFT` 为真）——三条都由判据断言。
+  **两条证明力边界写在样本旁边**：单次一致 **≠** 永不漂移；以及**漂移判定不持久化**
+  （读面只在**探测过的那个进程**里显示它）。**反证自身的边界也如实登记**：改**一个**值会红，
+  把**两个值同时**改成一对**自洽**的假样本**不会**红——兜住它的是 run id 必须同时出现在
+  `RECHECK-20260920-121` 的交叉引用（判据已断言），**这条仍是「同一 run 的记录」而非新证据**。
+  **本地门禁**：定向 **47 passed**；全量 m0（CI 同形配置）⇒ **23/23**（4221 passed / 12 skipped，
+  FAIL 0），**一次跑完无 stale、无红**。
+  **本轮未发起任何真实调用**（样本复用 cycle 1 的同一次 probe，次数取最小必要）、
+  **未改任何门禁或断言强度、未新增依赖、未改 pin、未改默认 runtime**。
+  沉淀 `MEM-20260920-097`（文档取值型判据的解析契约）。
+  **CI 台账**：收口推送的 run 在回合汇报里给出终态（**台账尾巴口径**）。
 
 - 2026-09-20 cycle 1 派生（`driver=client-goal / owner=root-agent`）：derive
   `PLAN-20260920-121-first-live-sampling-run`（EC-01，投影 ALL_PLAN）。**派生前的离线实跑**

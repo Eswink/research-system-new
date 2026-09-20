@@ -188,7 +188,7 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 | probe 段 | `verified and ok` |
 | 返回 model 名 | `agnes-2.5-flash` |
 | 声明 model 名 | `agnes-2.5-flash`（`examples/config/models.yaml` 的 `agnes_flash.model_name`） |
-| 漂移判定 | **一致**（实测返回标识 == 声明值）——见下「证明力边界」 |
+| 漂移判定 | **`MATCH`**（一致）——实测返回标识 == 声明值；由 `assess_model_drift` **重算**得出，判据见 `tests/architecture/python/test_live_drift_sample_same_source.py` |
 | 终态 | `FAILED`（**设计内**：见下「判拒为什么不是缺陷」） |
 | 口径 | `REPEATABLE_CONFIGURATION`（AGENTS.md §4；**不是**「完全模型可复现」） |
 | usage 归账 | `MODEL_TOKENS` 1 条、合计 15219 tokens |
@@ -206,6 +206,11 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 **证明力边界（别过度解读）**：`一致` 只代表**这一次**一致——它**不**证明该中转站永不漂移，
 也**不**证明底层模型与声明完全同一。单次样本**不能**把三态里的「一致」升级成永久结论；
 按 AGENTS.md §4，结论口径**只能**停在「可重复配置」。
+
+**另一条边界（本节的样本与它无关，但必须一起读）**：漂移判定**不持久化**——
+读面（模型探测结果里的 `drift` 字段）只在**执行过那次探测的那个进程**里存在；
+重启后读面不会「记得」这次 `MATCH`。所以本节表格是**这次观测的记录**，
+不是读面会自动复述的缓存。
 
 **未捕获的一项（如实登记）**：本次运行的**逐条失败消息**产生于该次进程内的 in-memory
 事件库，进程结束即消失，因此**没有**留成文本。上面的归类依据是三条**收敛**证据
