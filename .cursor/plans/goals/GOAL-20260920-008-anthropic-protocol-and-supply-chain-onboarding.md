@@ -502,6 +502,33 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 
 ## 状态历史
 
+- 2026-09-20 cycle 4（driver=client-goal / owner=root-agent）：EC-05 **PASS**
+  （PLAN-20260920-117 / RECHECK-20260920-117 = PASS_WITH_WARNINGS，W-1…W-6）。
+  **交付**：AGENTS.md §4 的「同名漂移必须可见」从原则变成**可判事实**——`ModelDriftState`
+  三态（`MATCH` / `DRIFT` / **`UNKNOWN`**，`packages/domain/enums.py`）+
+  唯一比较点 `assess_model_drift`（纯函数：`strip()` 后精确比较；**大小写/日期后缀差异一律
+  `DRIFT` 并点名两个原值**，因为本仓无法证明同一性）；
+  `ProbeResultDto.drift`（state / declared / returned / detail，detail 只含两个标识）；
+  页面 `probe-drift` 块三套中英文案（`DRIFT` 点名两值，`UNKNOWN` **自带反义**
+  「未知不等于无漂移」）+ 自带 stub e2e 4 条；文档两处（`MODEL_PROBE.md` 漂移判定节、
+  `LLM_ENDPOINTS.md` §8）。
+  **「未知 ≠ 无漂移」由两处独立钉住**：域层（`UNKNOWN` 是独立枚举值；F1 把 `UNKNOWN` 改判
+  `MATCH` ⇒ 3 red）与渲染层（F3 令 `UNKNOWN` 用 `MATCH` 文案 ⇒ 1 red）——缺任一侧，
+  「没探到」都可能被读成「没问题」。**反证 F1–F3 全部先红后复原**（F2 = 从 DTO 摘掉 `drift`
+  ⇒ 3 red；三处注入均逐字节还原并由 `git diff --quiet` 复核）。
+  **m0 拦下 1 处**（G1：`assert ... is not MATCH` 写在 `is UNKNOWN` 之后 ⇒ mypy
+  `comparison-overlap`；按缺陷修，把「不是一致」那条提前，语义不变、F1 复跑仍 3 red，`3308af5`）。
+  冻结树 m0 **23/23（4146 passed / 11 skipped，570.54s，`3308af5`；cycle 3 为 4131 ⇒ 净增 15 条）**。
+  **沉淀** `MEM-20260920-090`（三态判定的「未知」必须在**文案**上与「无/一致」分开，
+  且域层与渲染层各需一条判据；刻意的严格比聪明的归一化诚实）。
+  **如实登记的边界**：W-1 live 语义**未实测**（本机无凭据 ⇒ 真实 probe 一次未跑，
+  **skip 不是 PASS**）、W-2 `system_fingerprint` 未纳入漂移判定（跨次版本变化仍不可见）、
+  W-3 drift **未持久化**（关页即丢，回看不可能）、W-4 严格口径在真实中转站上可能噪声偏多、
+  W-5 `UNKNOWN` 的三种来源未在漂移块内细分、W-6 指纹只在 provider 给出时构建。
+  **未新增依赖、未改 pin、未新建 PG 表、未触碰凭据面；ADR-0031 仍是 Proposed。**
+  **CI 台账**：cycle 3 的收口记录提交 `c413131` → run **35503858465 = success**（六 job 全 success，
+  已在上一条补记）；本轮批量推送的 run 与六 job 结论在紧随其后的台账提交按同口径登记。
+
 - 2026-09-20 建档（cycle 0）：`status: ACTIVE`。本文件由用户 goal 模式指令创建
   （建档幂等判据：`.cursor/plans/goals/GOAL-*-008-*.md` 不存在）。
   **只读勘察**结论见「建档时已探明的现状」9 条（`protocol` 无执行路径、分派键是 `api_style`、
