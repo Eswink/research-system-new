@@ -582,4 +582,5 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
   与本轮一并补记）；cycle 3 攒成一次推送 `dd989b7..fdf0281`（9 个提交）→ run
   **35503139831 = success**（`fdf0281`，六 job 全 success：console-frontend / collector-quality /
   eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest，
-  jobs 逐一核过 `status=completed conclusion=success`）。
+  jobs 逐一核过 `status=completed conclusion=success`）；cycle 3 的收口记录提交 `c413131` →
+  run **35503858465 = success**（六 job 全 success，补记于 cycle 4）。
