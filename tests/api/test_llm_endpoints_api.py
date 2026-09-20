@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
+from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
+from packages.application.ports.errors import InvalidInputError
 from services.api.app import create_app
+from services.api.composition import ApiDeps
 from tests.api.conftest import (
     _FIXTURE_ENDPOINT_KEY,
     create_endpoint,
@@ -176,15 +180,24 @@ def test_credential_does_not_survive_a_restart(tmp_path: Path) -> None:
     「同一配置面文件 + 全新装配（新凭据解析器）」模拟重启：解析器实例即进程级状态，
     换一个实例就是换一个进程的效果——这正是 UI 文案与
     `docs/integration/LLM_ENDPOINTS.md` §9 对本行为的口径。
+
+    本用例断言的是**生产**解析器（`RegistryCredentialResolver`）的语义，因此显式把它装进
+    装配（测试装配默认走 `FakeCredentialResolver`，那是替身，不是被声明的那个机制）。
     """
     db_path = str(tmp_path / "config-face.db")
-    with TestClient(create_app(make_app_deps(db_path=db_path))) as first:
+
+    def production_deps() -> ApiDeps:
+        deps = make_app_deps(db_path=db_path)
+        deps.credentials = RegistryCredentialResolver()
+        return deps
+
+    with TestClient(create_app(production_deps())) as first:
         endpoint = create_endpoint(first, api_key=_FIXTURE_ENDPOINT_KEY)
         assert endpoint["credential"] == "configured"
         endpoint_id = str(endpoint["id"])
         base_url = str(endpoint["base_url"])
 
-    with TestClient(create_app(make_app_deps(db_path=db_path))) as second:
+    with TestClient(create_app(production_deps())) as second:
         reread = second.get(f"/llm-endpoints/{endpoint_id}")
         assert reread.status_code == 200
         body = reread.json()
@@ -192,6 +205,21 @@ def test_credential_does_not_survive_a_restart(tmp_path: Path) -> None:
         assert body["base_url"] == base_url
         assert body["credential"] == "missing"
         assert _FIXTURE_ENDPOINT_KEY not in reread.text
+
+
+def test_registry_resolver_starts_empty_for_each_process() -> None:
+    """生产解析器的进程级语义：新实例看不到**上一实例**注册的键（环境变量仍可回退）。"""
+    first = RegistryCredentialResolver(environment={})
+    first.register("endpoint:restart-probe", _FIXTURE_ENDPOINT_KEY)
+    assert first.has("endpoint:restart-probe") is True
+
+    second = RegistryCredentialResolver(environment={})
+    assert second.has("endpoint:restart-probe") is False
+    with pytest.raises(InvalidInputError):
+        second.resolve("endpoint:restart-probe")
+    # 回退面仍在：同名环境变量存在时，新实例照样能解析（不是「重启后必然无凭据」）。
+    from_env = RegistryCredentialResolver(environment={"endpoint:restart-probe": "from-env"})
+    assert from_env.has("endpoint:restart-probe") is True
 
 
 def test_endpoint_test_missing_credential_reports_ok_false(client: TestClient) -> None:
