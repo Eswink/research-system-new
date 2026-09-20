@@ -168,12 +168,18 @@ export interface ModelRuntimeFingerprintDto {
   observed_capabilities: string[];
 }
 
+export type ThinkingIntensity = "MINIMAL" | "LOW" | "MEDIUM" | "HIGH" | "MAX";
+
 export interface ModelCreateDto {
   endpoint_id: string;
   model_name: string;
   display_name?: string;
   enabled?: boolean;
   capabilities?: Record<string, CapabilityAssertionDto>;
+  /** 声明的上下文窗口（tokens，>=1）。声明值：当前不发送给 provider。 */
+  context_window_tokens?: number;
+  /** 声明的思考强度（厂商中立相对词）。声明值：映射未实现时不代表已生效。 */
+  thinking_intensity?: ThinkingIntensity;
 }
 
 export interface ModelUpdateDto {
@@ -181,6 +187,8 @@ export interface ModelUpdateDto {
   display_name?: string | null;
   enabled?: boolean;
   capabilities?: Record<string, CapabilityAssertionDto>;
+  context_window_tokens?: number;
+  thinking_intensity?: ThinkingIntensity;
 }
 
 export interface ModelReadDto {
@@ -190,6 +198,9 @@ export interface ModelReadDto {
   display_name: string | null;
   enabled: boolean;
   capabilities: Record<string, CapabilityAssertionDto>;
+  /** 未声明时为 null —— null 表示「没有声明」，不是某个默认值。 */
+  context_window_tokens: number | null;
+  thinking_intensity: ThinkingIntensity | null;
   version: Version;
 }
 

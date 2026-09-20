@@ -35,6 +35,8 @@ export const RUN: RunDetailDto = {
 export const MODEL: ModelReadDto = {
   id: "model-one", endpoint_id: ENDPOINT.id, model_name: "test-model", display_name: "Test model",
   enabled: true, capabilities: {}, version: "model-v1",
+  // GOAL-008 EC-02：声明参数是读面字段；夹具带值，渲染分支才被门覆盖。
+  context_window_tokens: 512000, thinking_intensity: "MAX",
 };
 
 export const AGENT: AgentSpecDto = {

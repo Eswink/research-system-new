@@ -75,6 +75,25 @@ function modelColumns(zh: boolean): Column<ModelReadDto>[] {
       sortValue: (model) => Object.keys(model.capabilities).length,
       render: (model) => Object.keys(model.capabilities).length,
     },
+    {
+      key: "declared",
+      header: zh ? "参数声明" : "Declared",
+      render: (model) => <DeclaredParametersCell model={model} />,
+    },
     { key: "version", header: zh ? "版本" : "Version", render: (model) => model.version },
   ];
+}
+
+/** 参数声明列：未声明渲染 "—"（不推断默认值），见 ModelDetails 的说明文案。 */
+function DeclaredParametersCell({ model }: { model: ModelReadDto }) {
+  const parts: string[] = [];
+  if (model.context_window_tokens !== null) {
+    parts.push(`${String(model.context_window_tokens)} tok`);
+  }
+  if (model.thinking_intensity !== null) parts.push(model.thinking_intensity);
+  return (
+    <span data-testid="model-row-declared" className="mono">
+      {parts.length > 0 ? parts.join(" · ") : "—"}
+    </span>
+  );
 }

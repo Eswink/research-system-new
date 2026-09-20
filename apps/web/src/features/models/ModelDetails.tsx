@@ -19,9 +19,56 @@ export function ModelDetails({ model }: { model: ModelReadDto }) {
           { label: "Version", value: model.version },
         ]}
       />
+      <DeclaredParameters model={model} />
       <CapabilityAssertions model={model} />
     </PanelSection>
   );
+}
+
+/** 声明参数（EC-02）：读面可见 + 明说「声明不等于已生效」。 */
+function DeclaredParameters({ model }: { model: ModelReadDto }) {
+  const { language } = useI18n();
+  const zh = language === "zh";
+  const window =
+    model.context_window_tokens === null
+      ? null
+      : `${String(model.context_window_tokens)} tokens`;
+  const declared = window !== null || model.thinking_intensity !== null;
+  return (
+    <div data-testid="model-declared-parameters">
+      <KeyValueList
+        fields={[
+          {
+            label: zh ? "声明上下文窗口" : "Declared context window",
+            value: window ?? undeclaredText(zh),
+          },
+          {
+            label: zh ? "声明思考强度" : "Declared thinking intensity",
+            value: model.thinking_intensity ?? undeclaredText(zh),
+          },
+        ]}
+      />
+      <p className={styles.notice}>{declarationNotice(declared, zh)}</p>
+    </div>
+  );
+}
+
+function undeclaredText(zh: boolean): string {
+  return zh ? "未声明" : "not declared";
+}
+
+function declarationNotice(declared: boolean, zh: boolean): string {
+  if (!declared) {
+    return zh
+      ? "尚无参数声明；未声明不等于使用默认值。"
+      : "No parameter declarations; undeclared does not mean a default is applied.";
+  }
+  return zh
+    ? "声明值：本版本不发送给 provider，也不参与 eligibility 判定。"
+    : [
+        "Declared values: not sent to the provider and not used for eligibility ",
+        "in this version.",
+      ].join("");
 }
 
 function CapabilityAssertions({ model }: { model: ModelReadDto }) {
