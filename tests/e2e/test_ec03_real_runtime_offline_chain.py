@@ -31,46 +31,29 @@ from __future__ import annotations
 import json
 import os
 import threading
-import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from openhands.sdk.tool.schema import Action, Observation
-from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
 
 from packages.domain.budget import ResourceType
 
+# 共享装配见 `live_run_support`：同一文件被两个模块名导入会让 SDK 的 Action
+# 子类被定义两次而毒化同进程事件 round-trip（Duplicate class definition）。
+from tests.e2e.live_run_support import (
+    openhands_deps as _openhands_deps,
+)
+from tests.e2e.live_run_support import (
+    run_failures as _failures,
+)
+from tests.e2e.live_run_support import (
+    start_run as _start,
+)
+
 _PROTOCOL = "console_demo_research_v1.yaml"
-
-
-class _InertAction(Action):
-    """惰性工具的动作（无副作用）；模块级定义的原因见 `_inert_tool_class()`。"""
-
-    note: str = ""
-
-
-class _InertExecutor(ToolExecutor[Any, Observation]):
-    def __call__(self, action: Any, conversation: Any = None) -> Observation:
-        return Observation.from_text("inert")
-
-
-class InertTool(ToolDefinition[Any, Observation]):
-    """测试侧惰性工具：只为让冻结集里的 provider id 在 SDK 注册表里可解析。"""
-
-    @classmethod
-    def create(cls, conv_state: Any = None, **params: Any) -> list[Any]:
-        return [
-            cls(
-                description="Inert test tool",
-                action_type=_InertAction,
-                observation_type=None,
-                executor=_InertExecutor(),
-            )
-        ]
 
 
 class _MockRelayHandler(BaseHTTPRequestHandler):
@@ -128,149 +111,6 @@ def mock_relay() -> Iterator[str]:
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
-
-
-def _inert_tool_class() -> Any:
-    """惰性 SDK 工具（无副作用）：只为让 provider id 在 SDK 注册表里可解析。
-
-    类定义在**模块级**（与 `tests/adapters/openhands/test_spike_e2e.py` 同形态）：
-    SDK 会枚举 `Action` 的全部具体子类来构建判别联合，遇到 `<locals>` 限定名直接
-    抛 "Local classes not supported!" ⇒ 函数内局部类会**毒化同进程后续任何事件
-    round-trip**（fork 路径就会走它）。这是本轮收口独立复检实测到的跨套件污染：
-    `pytest tests/e2e/test_ec03_real_runtime_offline_chain.py
-    tests/contracts/test_agent_runtime_contract.py` 可复现；m0 的字母序下 contracts
-    先跑，所以 CI 与 m0 看不见它。
-    """
-    return InertTool
-
-
-def _register_all(frozen: tuple[str, ...]) -> None:
-    """把冻结 Tool Set 按名注册为惰性工具（测试侧替代 EC-05 的 provider→SDK 映射）。"""
-    from openhands.sdk.tool.registry import register_tool
-
-    tool_class = _inert_tool_class()
-    for name in frozen:
-        register_tool(name, tool_class)
-
-
-def _point_catalog_at(deps: Any, base_url: str) -> None:
-    """把目录里所有 endpoint 的 base_url 指向 `base_url`（其余字段不动）。"""
-    from dataclasses import replace
-
-    context = deps.preflight_override
-    assert context is not None
-    endpoints = {
-        key: replace(endpoint, base_url=base_url)
-        for key, endpoint in context.catalog.endpoints.items()
-    }
-    deps.preflight_override = replace(
-        context, catalog=replace(context.catalog, endpoints=endpoints)
-    )
-
-
-def _register_live_key(deps: Any, live_key: str | None) -> None:
-    """把环境变量里的凭据**值**注册进解析器；本模块不写任何可用凭据字面量。"""
-    if live_key is None:
-        return
-    from adapters.fakes.credential_resolver import FakeCredentialResolver
-
-    # `ApiDeps.credentials` 声明为 Port；run_fixtures 注入的是 Fake 实现。
-    cast(FakeCredentialResolver, deps.credentials).register("LLM_MAIN_KEY", live_key)
-
-
-def _host_shell_workspace(lease: Any, session_id: str) -> Any:
-    """测试侧 workspace 构造：**显式**打开 host shell（生产的默认 deny 不放松）。"""
-    from adapters.openhands.workspace_adapter import build_local_workspace
-
-    return build_local_workspace(lease, session_id, allow_host_shell=True)
-
-
-def _real_runtime(deps: Any, settings: Any, policy: Any, *, map_tools: bool) -> Any:
-    """测试装配的真实 adapter；`map_tools=False` 改走**生产装配**以测量缺映射行为。"""
-    from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
-    from adapters.openhands.session_types import AdapterDependencies
-    from services.api.assembly import policy_bindings
-    from services.api.runtime_support import build_agent_runtime, session_llm_factory
-
-    policy_evaluator = policy_bindings().get("policy_evaluator")
-    assert policy_evaluator is not None, "policy.yaml must be loadable for the real runtime"
-    if not map_tools:
-        # 生产装配的 register_tools 缺省为空操作——保留原样以**如实测量**缺映射时的行为。
-        runtime = build_agent_runtime(
-            settings,
-            credentials=deps.credentials,
-            policy_evaluator=policy_evaluator,
-            budget_ledger=deps.budget,
-        )
-        assert isinstance(runtime, OpenHandsRuntimeAdapter)
-        return runtime
-    return OpenHandsRuntimeAdapter(
-        AdapterDependencies(
-            credential_resolver=deps.credentials,
-            policy_evaluator=policy_evaluator,
-            build_llm=session_llm_factory(deps.credentials, policy),
-            build_workspace=_host_shell_workspace,
-            register_tools=_register_all,  # 测试侧补上 EC-05 的映射
-            budget_ledger=deps.budget,
-        )
-    )
-
-
-def _openhands_deps(
-    base_url: str,
-    *,
-    map_tools: bool,
-    allow_localhost: bool = True,
-    live_key: str | None = None,
-) -> Any:
-    """run-ready 装配 + 真实 adapter + 指向 `base_url` 的目录。
-
-    `live_key` 非空时把它注册进凭据解析器——**值只从环境变量来**（调用方读
-    `RESEARCHOS_LIVE_E2E_KEY`）。
-    """
-    from dataclasses import replace
-
-    from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
-    from packages.application.run_orchestration.service import RunOrchestrationService
-    from services.api.runtime_support import OPENHANDS_RUNTIME, resolve_runtime_selection
-    from services.api.settings import ApiSettings
-    from tests.api.run_fixtures import make_run_ready_deps
-
-    deps = make_run_ready_deps()
-    _point_catalog_at(deps, base_url)
-    _register_live_key(deps, live_key)
-    settings = ApiSettings(
-        agent_runtime=OPENHANDS_RUNTIME,
-        allow_localhost_endpoints=allow_localhost,
-        workspace_allow_host_shell=True,
-    )
-    policy = EndpointUrlPolicy(allow_localhost=allow_localhost)
-    runtime = _real_runtime(deps, settings, policy, map_tools=map_tools)
-    old = deps.runs
-    assert old is not None
-    deps.runs = RunOrchestrationService(replace(old._deps, runtime=runtime))
-    deps.runtime_selection = resolve_runtime_selection(settings)
-    deps.endpoint_url_policy = policy
-    return deps
-
-
-def _start(client: TestClient) -> dict[str, Any]:
-    response = client.post(
-        "/projects/example-project/runs",
-        json={"protocol_path": _PROTOCOL},
-        headers={"Idempotency-Key": f"ec03-{uuid.uuid4()}"},
-    )
-    assert response.status_code == 200, response.text
-    return cast(dict[str, Any], response.json())
-
-
-def _failures(client: TestClient, run_id: str) -> list[str]:
-    events = client.get(f"/runs/{run_id}/events").json()
-    return [
-        event["payload"].get("message", "")
-        for event in events
-        if event["type"] in ("run.failed", "task.failed")
-    ]
 
 
 def test_unmapped_tool_set_is_named_not_silently_dropped(mock_relay: str) -> None:

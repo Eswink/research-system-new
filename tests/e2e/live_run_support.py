@@ -1,0 +1,193 @@
+"""真实 runtime 跑一次 run 的共享装配（EC-03 离线全链 / EC-04 live 首次真实 run 共用）。
+
+抽出来的**原因**（不是偏好整洁）：同一个测试模块被**两个模块名**导入时，SDK 的
+`Action` 子类会被定义两次，判别联合随即拒绝后续任何事件 round-trip
+（`Duplicate class definition for openhands.sdk.tool.schema.Action`）——
+本模块只被 `tests.e2e.*` 这一个名字导入，`Action` 子类因此只定义一次。
+
+本模块**不含** mock 端点与 fixture（那些是 EC-03 离线链的私有件）。
+
+凭据纪律：`live_key` 的值由**调用方**从环境变量读出后传入，本模块只把它注册进
+进程内解析器；不落盘、不回显、不写日志。
+"""
+
+from __future__ import annotations
+
+from typing import Any, cast
+
+from openhands.sdk.tool.schema import Action, Observation
+from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
+
+_PROTOCOL = "console_demo_research_v1.yaml"
+_LIVE_CREDENTIAL_REF = "LLM_MAIN_KEY"
+
+
+class InertAction(Action):
+    """惰性工具的动作（无副作用）；模块级定义的原因见 `inert_tool_class()`。"""
+
+    note: str = ""
+
+
+class InertExecutor(ToolExecutor[Any, Observation]):
+    def __call__(self, action: Any, conversation: Any = None) -> Observation:
+        return Observation.from_text("inert")
+
+
+class InertTool(ToolDefinition[Any, Observation]):
+    """测试侧惰性工具：只为让冻结集里的 provider id 在 SDK 注册表里可解析。"""
+
+    @classmethod
+    def create(cls, conv_state: Any = None, **params: Any) -> list[Any]:
+        return [
+            cls(
+                description="Inert test tool",
+                action_type=InertAction,
+                observation_type=None,
+                executor=InertExecutor(),
+            )
+        ]
+
+
+def inert_tool_class() -> Any:
+    """惰性 SDK 工具（无副作用）：只为让 provider id 在 SDK 注册表里可解析。
+
+    类定义在**模块级**：SDK 会枚举 `Action` 的全部具体子类来构建判别联合，遇到
+    `<locals>` 限定名直接抛 "Local classes not supported!" ⇒ 函数内局部类会**毒化
+    同进程后续任何事件 round-trip**（fork 路径就会走它）。同族的第二种毒化是
+    **同一文件被两个模块名导入**（`test_x` 与 `tests.e2e.test_x`）：类被定义两次，
+    报 "Duplicate class definition" —— 本模块的存在就是为了让共享装配只有一个名字。
+    """
+    return InertTool
+
+
+def register_inert_tools(frozen: tuple[str, ...]) -> None:
+    """把冻结 Tool Set 按名注册为惰性工具（测试侧替代 EC-05 的 provider→SDK 映射）。"""
+    from openhands.sdk.tool.registry import register_tool
+
+    tool_class = inert_tool_class()
+    for name in frozen:
+        register_tool(name, tool_class)
+
+
+def point_catalog_at(deps: Any, base_url: str) -> None:
+    """把目录里所有 endpoint 的 base_url 指向 `base_url`（其余字段不动）。"""
+    from dataclasses import replace
+
+    context = deps.preflight_override
+    assert context is not None
+    endpoints = {
+        key: replace(endpoint, base_url=base_url)
+        for key, endpoint in context.catalog.endpoints.items()
+    }
+    deps.preflight_override = replace(
+        context, catalog=replace(context.catalog, endpoints=endpoints)
+    )
+
+
+def register_live_key(deps: Any, live_key: str | None) -> None:
+    """把环境变量里的凭据**值**注册进解析器；本模块不写任何可用凭据字面量。"""
+    if live_key is None:
+        return
+    from adapters.fakes.credential_resolver import FakeCredentialResolver
+
+    # `ApiDeps.credentials` 声明为 Port；run_fixtures 注入的是 Fake 实现。
+    cast(FakeCredentialResolver, deps.credentials).register(_LIVE_CREDENTIAL_REF, live_key)
+
+
+def host_shell_workspace(lease: Any, session_id: str) -> Any:
+    """测试侧 workspace 构造：**显式**打开 host shell（生产的默认 deny 不放松）。"""
+    from adapters.openhands.workspace_adapter import build_local_workspace
+
+    return build_local_workspace(lease, session_id, allow_host_shell=True)
+
+
+def real_runtime(deps: Any, settings: Any, policy: Any, *, map_tools: bool) -> Any:
+    """测试装配的真实 adapter；`map_tools=False` 改走**生产装配**以测量缺映射行为。"""
+    from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
+    from adapters.openhands.session_types import AdapterDependencies
+    from services.api.assembly import policy_bindings
+    from services.api.runtime_support import build_agent_runtime, session_llm_factory
+
+    policy_evaluator = policy_bindings().get("policy_evaluator")
+    assert policy_evaluator is not None, "policy.yaml must be loadable for the real runtime"
+    if not map_tools:
+        # 生产装配的 register_tools 缺省为空操作——保留原样以**如实测量**缺映射时的行为。
+        runtime = build_agent_runtime(
+            settings,
+            credentials=deps.credentials,
+            policy_evaluator=policy_evaluator,
+            budget_ledger=deps.budget,
+        )
+        assert isinstance(runtime, OpenHandsRuntimeAdapter)
+        return runtime
+    return OpenHandsRuntimeAdapter(
+        AdapterDependencies(
+            credential_resolver=deps.credentials,
+            policy_evaluator=policy_evaluator,
+            build_llm=session_llm_factory(deps.credentials, policy),
+            build_workspace=host_shell_workspace,
+            register_tools=register_inert_tools,  # 测试侧补上 EC-05 的映射
+            budget_ledger=deps.budget,
+        )
+    )
+
+
+def openhands_deps(
+    base_url: str,
+    *,
+    map_tools: bool,
+    allow_localhost: bool = True,
+    live_key: str | None = None,
+) -> Any:
+    """run-ready 装配 + 真实 adapter + 指向 `base_url` 的目录。
+
+    `live_key` 非空时把它注册进凭据解析器——**值只从环境变量来**（调用方读
+    `RESEARCHOS_LIVE_E2E_KEY` 或目录声明的 `credential_ref`）。
+    """
+    from dataclasses import replace
+
+    from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
+    from packages.application.run_orchestration.service import RunOrchestrationService
+    from services.api.runtime_support import OPENHANDS_RUNTIME, resolve_runtime_selection
+    from services.api.settings import ApiSettings
+    from tests.api.run_fixtures import make_run_ready_deps
+
+    deps = make_run_ready_deps()
+    point_catalog_at(deps, base_url)
+    register_live_key(deps, live_key)
+    settings = ApiSettings(
+        agent_runtime=OPENHANDS_RUNTIME,
+        allow_localhost_endpoints=allow_localhost,
+        workspace_allow_host_shell=True,
+    )
+    policy = EndpointUrlPolicy(allow_localhost=allow_localhost)
+    runtime = real_runtime(deps, settings, policy, map_tools=map_tools)
+    old = deps.runs
+    assert old is not None
+    deps.runs = RunOrchestrationService(replace(old._deps, runtime=runtime))
+    deps.runtime_selection = resolve_runtime_selection(settings)
+    deps.endpoint_url_policy = policy
+    return deps
+
+
+def start_run(client: Any) -> dict[str, Any]:
+    """经既有 API 启动一次 run（幂等键每次新生成；协议用 console demo 那份）。"""
+    import uuid
+
+    response = client.post(
+        "/projects/example-project/runs",
+        json={"protocol_path": _PROTOCOL},
+        headers={"Idempotency-Key": f"ec03-{uuid.uuid4()}"},
+    )
+    assert response.status_code == 200, response.text
+    return cast(dict[str, Any], response.json())
+
+
+def run_failures(client: Any, run_id: str) -> list[str]:
+    """从 canonical 事件链读失败原因（`run.failed` / `task.failed` 的 message）。"""
+    events = client.get(f"/runs/{run_id}/events").json()
+    return [
+        event["payload"].get("message", "")
+        for event in events
+        if event["type"] in ("run.failed", "task.failed")
+    ]

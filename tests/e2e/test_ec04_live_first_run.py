@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +41,10 @@ from packages.application.model_relay.live_run_record import build_live_run_reco
 from packages.domain.budget import ResourceType
 from packages.domain.enums import ModelReproducibilityVerdict
 from services.api.runtime_support import OPENHANDS_RUNTIME
-from tests.e2e.test_ec03_real_runtime_offline_chain import _failures, _openhands_deps, _start
+
+# 共享装配见 `live_run_support`：直接 import `test_ec03_*` 会让同一文件被**两个模块名**
+# 加载，SDK 的 Action 子类被定义两次，判别联合随即拒绝后续事件 round-trip（fork 路径就中招）。
+from tests.e2e.live_run_support import openhands_deps, run_failures, start_run
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -69,6 +73,81 @@ def _gate() -> Any:
     )
 
 
+def _live_run_facts(endpoint: Any, model: Any) -> tuple[Any, Any]:
+    """段 1：登记端点上的真实 probe（ANTHROPIC 面由这一段驱动）⇒ 运行时指纹。"""
+    probe = run_live_probe(
+        gateway=OpenAIChatGateway(),
+        credentials=EnvCredentialResolver(),
+        endpoint=endpoint,
+        model=model,
+    )
+    assert probe.verified and probe.ok, probe.to_json()
+    return probe, endpoint
+
+
+@dataclass(frozen=True, slots=True)
+class _RunReads:
+    """段 2 的读面快照：经**既有 API** 取，判据与 operator 看到的一致。"""
+
+    run: dict[str, Any]
+    failures: list[str]
+    usage_entries: list[Any]
+    artifacts: list[dict[str, Any]]
+    evidence: list[dict[str, Any]]
+
+
+def _execute_live_run(base_url: str, credential_ref: str) -> _RunReads:
+    """段 2：真实 runtime 跑一次到终态（凭据值只在进程内传递，不落盘）。"""
+    from services.api.app import create_app
+
+    deps = openhands_deps(
+        base_url,
+        map_tools=True,
+        allow_localhost=False,  # 真端点必须是公网地址：默认 deny 姿态不放松
+        live_key=os.environ.get(credential_ref),
+    )
+    with TestClient(create_app(deps)) as client:
+        created = start_run(client)
+        run = client.get(f"/runs/{created['id']}").json()
+        return _RunReads(
+            run=run,
+            failures=run_failures(client, run["id"]),
+            usage_entries=[
+                entry
+                for entry in deps.budget.snapshot().entries
+                if entry.resource_type is ResourceType.MODEL_TOKENS
+            ],
+            artifacts=client.get(f"/runs/{run['id']}/artifacts").json(),
+            evidence=client.get(f"/runs/{run['id']}/evidence").json(),
+        )
+
+
+def _record_from(probe: Any, reads: _RunReads) -> Any:
+    return build_live_run_record(
+        run_id=reads.run["id"],
+        terminal_state=reads.run["state"],
+        endpoint_config_digest=probe.endpoint_config_digest,
+        returned_model_identifier=probe.returned_model_identifier,
+        probe_suite_digest=probe.probe_suite_digest,
+        system_fingerprint=probe.system_fingerprint,
+        model_tokens=sum(entry.quantity for entry in reads.usage_entries),
+        usage_entries=len(reads.usage_entries),
+        artifact_ids=tuple(str(item["id"]) for item in reads.artifacts),
+        evidence_ids=tuple(str(item["id"]) for item in reads.evidence),
+    )
+
+
+def _assert_four_segments(record: Any, reads: _RunReads) -> None:
+    """四段各自可判（缺哪段，记录里就点名哪段）。"""
+    assert record.reached_terminal_state, (record.to_payload(), reads.failures)
+    assert record.returned_model_identifier, record.reason
+    assert record.usage_entries >= 1, (record.to_payload(), reads.failures)
+    assert record.model_tokens > 0, record.to_payload()
+    assert record.artifact_ids and record.evidence_ids, record.to_payload()
+    # 口径：只能停在「可重复配置」（§4）；system_fingerprint 缺失是如实的缺口，不降级
+    assert record.is_verified, record.to_payload()
+
+
 def test_live_first_run_reaches_a_terminal_state(tmp_path: Path) -> None:
     """首次真实 run：到终态 + 指纹可判 + usage 归账 + 制品/证据可读。"""
     gate = _gate()
@@ -77,60 +156,10 @@ def test_live_first_run_reaches_a_terminal_state(tmp_path: Path) -> None:
         pytest.skip(f"live run skipped: {record.reason}")
 
     endpoint = _registered_endpoint()
-    model = _registered_model()
-    resolver = EnvCredentialResolver()
-
-    # 段 1：登记端点上的真实 probe ⇒ 运行时指纹（ANTHROPIC 面由这一段驱动）
-    probe = run_live_probe(
-        gateway=OpenAIChatGateway(),
-        credentials=resolver,
-        endpoint=endpoint,
-        model=model,
-    )
-    assert probe.verified and probe.ok, probe.to_json()
-
-    # 段 2：真实 runtime 跑一次到终态（凭据值只在进程内传递，不落盘）
-    deps = _openhands_deps(
-        endpoint.base_url,
-        map_tools=True,
-        allow_localhost=False,  # 真端点必须是公网地址：默认 deny 姿态不放松
-        live_key=os.environ.get(endpoint.credential_ref),
-    )
-    from services.api.app import create_app
-
-    with TestClient(create_app(deps)) as client:
-        created = _start(client)
-        run = client.get(f"/runs/{created['id']}").json()
-        failures = _failures(client, run["id"])
-        entries = [
-            entry
-            for entry in deps.budget.snapshot().entries
-            if entry.resource_type is ResourceType.MODEL_TOKENS
-        ]
-        artifacts = client.get(f"/runs/{run['id']}/artifacts").json()
-        evidence = client.get(f"/runs/{run['id']}/evidence").json()
-
-    record = build_live_run_record(
-        run_id=run["id"],
-        terminal_state=run["state"],
-        endpoint_config_digest=probe.endpoint_config_digest,
-        returned_model_identifier=probe.returned_model_identifier,
-        probe_suite_digest=probe.probe_suite_digest,
-        system_fingerprint=probe.system_fingerprint,
-        model_tokens=sum(entry.quantity for entry in entries),
-        usage_entries=len(entries),
-        artifact_ids=tuple(str(item["id"]) for item in artifacts),
-        evidence_ids=tuple(str(item["id"]) for item in evidence),
-    )
-
-    # 判据：指纹/归账/制品/证据四段各自可判（缺哪段，记录里就点名哪段）
-    assert record.reached_terminal_state, (record.to_payload(), failures)
-    assert record.returned_model_identifier, record.reason
-    assert record.usage_entries >= 1, (record.to_payload(), failures)
-    assert record.model_tokens > 0, record.to_payload()
-    assert record.artifact_ids and record.evidence_ids, record.to_payload()
-    # 口径：只能停在「可重复配置」（§4）；system_fingerprint 缺失是如实的缺口，不降级
-    assert record.is_verified, record.to_payload()
+    probe, _ = _live_run_facts(endpoint, _registered_model())
+    reads = _execute_live_run(endpoint.base_url, endpoint.credential_ref)
+    record = _record_from(probe, reads)
+    _assert_four_segments(record, reads)
 
     written = tmp_path / "live-run-record.json"
     written.write_text(
