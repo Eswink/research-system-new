@@ -41,11 +41,15 @@ def _is_reserved(address: _IPAddress) -> bool:
 
 
 def _host_kind(host: str) -> str:
-    """主机分类：localhost / private / link_local / reserved / public / domain。
+    """主机分类：localhost / link_local / private / reserved / public / domain。
 
     环回（含 `127.0.0.0/8` 全段与 `::1`）统一归 `localhost`——此前只有 `127.0.0.1`
     被当字面量识别，其余环回地址落到 `private` 分支；两者默认都被拒，但**豁免开关不同**，
     归并后 `allow_localhost` 是唯一的环回开关。
+
+    `is_link_local` 必须排在 `is_private` **之前**：`ipaddress` 把 `169.254.0.0/16`
+    与 `fe80::/10` 也算私有，先判私有会让 `link_local` 分支不可达——拒绝理由指错类别，
+    且 `allow_link_local` 变成永不生效的空开关（EC-03 实跑发现）。
     """
     lowered = host.lower()
     if lowered == "localhost":
@@ -56,10 +60,10 @@ def _host_kind(host: str) -> str:
         return "domain"
     if address.is_loopback:
         return "localhost"
-    if address.is_private:
-        return "private"
     if address.is_link_local:
         return "link_local"
+    if address.is_private:
+        return "private"
     if _is_reserved(address):
         return "reserved"
     return "public"

@@ -116,3 +116,17 @@ class TestReservedAndLoopbackClasses:
     def test_ipv4_mapped_private_rejected(self) -> None:
         with pytest.raises(ValueError):
             validate_endpoint_url("https://[::ffff:192.168.1.1]/v1", EndpointUrlPolicy())
+
+    @pytest.mark.parametrize("url", ["http://169.254.169.254/v1", "http://[fe80::1]/v1"])
+    def test_link_local_owns_its_switch(self, url: str) -> None:
+        """`allow_link_local` 必须真的管用：链路本地归 `link_local` 而不是 `private`。
+
+        改动前 `is_private` 先命中（`ipaddress` 把 `169.254.0.0/16` 与 `fe80::/10`
+        也算私有）⇒ `link_local` 分支不可达 ⇒ 拒绝理由指错类别，且开关是**空开关**
+        （EC-03 实跑发现）。两类的开关彼此独立，谁都不许顺带放行对方。
+        """
+        with pytest.raises(ValueError, match="link-local base_url not allowed"):
+            validate_endpoint_url(url, EndpointUrlPolicy())
+        validate_endpoint_url(url, EndpointUrlPolicy(allow_link_local=True))
+        with pytest.raises(ValueError):
+            validate_endpoint_url(url, EndpointUrlPolicy(allow_private=True))
