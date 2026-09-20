@@ -2,7 +2,7 @@
 id: PLAN-20260920-120
 slug: goal-008-closeout-recheck
 title: GOAL-008 收口复检：EC-01…EC-06 在当前树与干净 checkout 上的证据 + 终止条款判定
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-008
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-008 cycle 7 = 收口（GOAL「终止与收口」前置）。授权来源：2026-09-20 用户 goal 模式指令（自动化循环推进、无需逐轮确认）；push-to-main-for-CI 授权见 GOAL-20260920-008 frontmatter `authorization.ref` 第 (4) 条（只推 main、不 force、不重写历史、不推旁支）。复检**不新增产品能力**：只做证据复核、登记面收口与**复检实测出的缺陷修复**；不得放松默认 deny / 不改 Accepted ADR / 不改门禁与断言强度 / 不把真实 runtime 设为默认。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-120-goal-008-closeout-recheck.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-093-clean-checkout-seal-and-load-flake.md
 ---
 
 # PLAN-20260920-120 — GOAL-008 收口复检（cycle 7 = 收口）
@@ -78,7 +79,26 @@ memory_entries: []
 
 ## 证据
 
-见 `.cursor/plans/rechecks/RECHECK-20260920-120-goal-008-closeout-recheck.md`。
+见 `.cursor/plans/rechecks/RECHECK-20260920-120-goal-008-closeout-recheck.md`。摘要：
+
+- **AC-01**：`scratch/verify_goal008_closeout.py` 当前树 **65 checks PASS**（A=22 / B=17 / C=26）。
+  脚本第一版因 EC-02 判据路径写错而**当场红**（真实位置在 `tests/architecture/python/`），
+  按事实更正后全绿——「回证据面」确实有效。
+- **AC-02**：六条 EC 判据套件**合并**真跑 **196 passed / 9 skipped**（同一进程；
+  含曾经被污染的 fork 契约用例）。
+- **AC-03**：干净 checkout 封印成立——`git clone --no-hardlinks` → `b3bb96a`，
+  `git status` 干净、`git ls-files` **3170 == 3170**；脚本在克隆树 **65 checks PASS**、
+  合并套件 **196 passed / 9 skipped**，与当前树**同结论**（不引入新绿也不引入新红）。
+- **AC-04**：治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿；
+  本地 **m0 全量 23 项**：第 1 次 1 failed（Docker 后端审计用例，隔离与整文件复跑均绿 ⇒
+  基础设施/负载类），按处置模板**重跑 1 次** → **PASS 23/23，4201 passed / 12 skipped**；
+  **两轮结果都记录**（不抹掉第一轮）。
+- **AC-05**：GOAL 写入「终止与收口 · 收口结论」、`status: ACHIEVED`、`latest_recheck` 指向
+  RECHECK-20260920-120、EC 表逐行 PASS。
+- **AC-06**：残余登记（六条 EC 的 W 汇总 + 「不因本 GOAL 存在而被宣称已解决」的 6 项 + 恢复条件）。
+- **AC-07**：CI 台账尾巴——cycle 6 的 run 35509830682（六 job 全 success）已记账；
+  本收口推送的 run 与六 job 结论在紧随的台账提交登记。
+- **live 分支**：未跑且**逐字登记**（EC-04/EC-05 的残余 W-1），未写成「已实测通过」。
 
 ## 状态历史
 
@@ -96,3 +116,8 @@ memory_entries: []
   （ADR-0031 / 威胁建模 / `artifacts/` 明文 token 清理 / 依赖 pin 升级 / hook 侧 L3 门）；
   真实端点上的第一次 live run 需要用户注入凭据后按
   `docs/integration/LIVE_MODEL_RUNBOOK.md` 执行。
+
+- 2026-09-20 收口执行（WP-A…WP-C）：`status: DONE`，`latest_recheck` 指向
+  RECHECK-20260920-120（**PASS_WITH_WARNINGS**，W-1…W-7）。三层判据 + 合并套件 +
+  干净 checkout 封印都跑通，两棵树结论一致；收口 m0 两轮如实记录（第 1 轮 1 条负载偶发红，
+  重跑未复现）。GOAL 由 ACTIVE 置 **ACHIEVED**。

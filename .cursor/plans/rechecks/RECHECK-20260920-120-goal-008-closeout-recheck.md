@@ -68,6 +68,16 @@ pytest tests/adapters/relay/test_anthropic_messages.py tests/architecture/python
   以及 cycle-6 的 CI 台账提交**不在**该 tip 里（它们产生于克隆之后），与 GOAL-007 收口
   （RECHECK-113）同一情形，**不是证据面缺陷**。
 
+### 本地 m0（收口树，实测两次）
+
+| 轮次 | 结果 | 说明 |
+| --- | --- | --- |
+| 第 1 次 | **1 failed / 4200 passed / 12 skipped**（554.03s） | 失败项 = `tests/application/experiments/test_experiment_e2e.py::TestReproducibilityAuditE2E::test_success_run_produces_pass_audit`（`assert audit.status == "PASS"` 得 `'FAIL'`）。**隔离复跑该用例 1 passed**、**整文件复跑 8 passed** ⇒ 与执行顺序/负载相关，判定为**基础设施类**（Docker 后端 + 负载），非本轮的代码回归（本轮改动不含 experiments / reproducibility 面） |
+| 第 2 次 | **PASS: profile=m0; 23 deterministic checks**（**4201 passed / 12 skipped**，481.69s） | 按本 GOAL 的处置模板「基础设施类失败等窗口重跑 1 次」，重跑未复现 |
+
+⇒ 收口 m0 判 **PASS**，但**两轮结果都如实记录**（不把第一轮抹掉）；
+「Docker 后端的实验/可复现性审计用例在负载下可能偶发」这一条写进残余 W-7。
+
 ### 复检**实测出的缺陷**（已修）
 
 本脚本第一版在 EC-02 的证据映射里指向 `tests/application/test_model_config_face_wiring.py`，
@@ -100,6 +110,11 @@ pytest tests/adapters/relay/test_anthropic_messages.py tests/architecture/python
   ——它们是**已知边界的登记**，不是「已验证」的主张。
 - **W-6 m0 是单机 Windows 结果**：CI（ubuntu + windows 六 job）是另一条独立证据，
   两者都绿才记 PASS；本轮的 m0 数字只代表本机。
+- **W-7 负载相关的偶发红（本轮实测一次）**：收口 m0 第 1 次有 1 条 Docker 后端用例红
+  （`test_success_run_produces_pass_audit`，可复现性审计判 `FAIL`），隔离与整文件复跑均绿、
+  第二次全量 m0 未复现 ⇒ 归为**基础设施/负载**类。**它没有**被修（没有确定的根因可修），
+  而是**如实登记为已知偶发**：将来若重复命中，应按 GOAL 的处置模板继续「重跑 1 次 +
+  记录两轮结果」，而不是把它当成绿灯忽略。
 
 ## 结论
 
