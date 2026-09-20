@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from services.api.app import create_app
@@ -165,6 +167,31 @@ def test_health_reflects_auth_failure() -> None:
         assert healthy.status_code == 200
         assert healthy.json()["ok"] is False
         assert healthy.json()["error_category"] == "MODEL_AUTH"
+
+
+def test_credential_does_not_survive_a_restart(tmp_path: Path) -> None:
+    """EC-03：注册的密钥只活在**进程内**——「重启」后行还在，凭据回到 missing。
+
+    这不是缺陷而是**如实声明的边界**（不落盘 ⇒ 重启需重新注入）。这里用
+    「同一配置面文件 + 全新装配（新凭据解析器）」模拟重启：解析器实例即进程级状态，
+    换一个实例就是换一个进程的效果——这正是 UI 文案与
+    `docs/integration/LLM_ENDPOINTS.md` §9 对本行为的口径。
+    """
+    db_path = str(tmp_path / "config-face.db")
+    with TestClient(create_app(make_app_deps(db_path=db_path))) as first:
+        endpoint = create_endpoint(first, api_key=_FIXTURE_ENDPOINT_KEY)
+        assert endpoint["credential"] == "configured"
+        endpoint_id = str(endpoint["id"])
+        base_url = str(endpoint["base_url"])
+
+    with TestClient(create_app(make_app_deps(db_path=db_path))) as second:
+        reread = second.get(f"/llm-endpoints/{endpoint_id}")
+        assert reread.status_code == 200
+        body = reread.json()
+        # 配置面行仍在（落盘的是配置），但密钥不在（它从不落盘）。
+        assert body["base_url"] == base_url
+        assert body["credential"] == "missing"
+        assert _FIXTURE_ENDPOINT_KEY not in reread.text
 
 
 def test_endpoint_test_missing_credential_reports_ok_false(client: TestClient) -> None:
