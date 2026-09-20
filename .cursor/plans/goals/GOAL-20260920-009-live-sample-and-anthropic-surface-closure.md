@@ -365,7 +365,7 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 
 **GOAL-009 = ACHIEVED。** 六条 EC 全部 PASS 且有实跑证据；收口复检
 `RECHECK-20260920-126` = **PASS_WITH_WARNINGS**，独立复检脚本
-`scratch/verify_goal009_closeout.py` 在**当前树**与**干净 checkout** 上给出**同一结论**。
+`scratch/verify_goal009_closeout.py` 在**当前树**与**干净 checkout** 上给出**同一结论**：收口提交 `778db35` 的两棵树各自 **0 失败**（当前树 91 checks / 封印树 89 checks——差的是干净树没有 `.env`，D 层的值比对如实**跳过**，**不**读成「通过」），合并判据套件（12 个文件）两棵树均 **116 passed / 2 skipped**。
 
 **本 GOAL 消灭的缺口**：GOAL-008 收口时那两条**如实 skip 的 live 分支**现在都有真实样本——
 EC-01 跑出**本仓第一次真实 live run**（run `142f7e77-cd4d-4044-a953-79296509fd54`，probe
@@ -430,7 +430,8 @@ EC-01 跑出**本仓第一次真实 live run**（run `142f7e77-cd4d-4044-a953-79
 | cycle 4 收口 | `3b27bac` | [35524463053](https://github.com/Eswink/research-system-new/actions/runs/35524463053) | 六 job 全 **success**（`eval-gate` / `container-quality` / `collector-quality` / `console-frontend` / `quality-windows-latest` / `quality-ubuntu-latest`；terminal `status=completed conclusion=success`） |
 | cycle 5 derive | `8d443ad` | [35525365307](https://github.com/Eswink/research-system-new/actions/runs/35525365307) | 六 job 全 **success**（`collector-quality` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend`；terminal `status=completed conclusion=success`） |
 | cycle 5 收口 | `337a2ae` | [35527501482](https://github.com/Eswink/research-system-new/actions/runs/35527501482) | 六 job 全 **success**（`collector-quality` / `quality-windows-latest` / `container-quality` / `console-frontend` / `quality-ubuntu-latest` / `eval-gate`；terminal `status=completed conclusion=success`） |
-| cycle 6 收口（GOAL 收官） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | |
+| cycle 6 收口（GOAL 收官） | `778db35` | [35529782578](https://github.com/Eswink/research-system-new/actions/runs/35529782578) | 六 job 全 **success**（`container-quality` / `quality-windows-latest` / `collector-quality` / `console-frontend` / `quality-ubuntu-latest` / `eval-gate`；terminal `status=completed conclusion=success`） |
+| 台账尾巴（记录回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | |
 
 **台账尾巴口径**（沿用 GOAL-005…008，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 **只在回合汇报里给出终态、不再回写文件**——否则每轮都要为回写再推一次、无限追加。
@@ -489,6 +490,29 @@ live 证据只在本地产生并落 RECHECK。
   **CI 台账**：收口推送 `86e77d8` → **run 35519644853 = success**（六 job 全 success），
   cycle 1 的那条失败**已随修复转绿**。
 
+
+- 2026-09-21 cycle 6 / **收口**（`driver=client-goal / owner=root-agent`）：**EC-06 PASS ⇒ GOAL-009 = ACHIEVED**（PLAN-20260920-126 / RECHECK-20260920-126 = PASS_WITH_WARNINGS，W-1…W-6）。
+  **本轮的价值全在「不采信实施叙述」**：独立复检脚本 `scratch/verify_goal009_closeout.py`
+  （四层：A 交付物 / B 判据用例 / C 登记面 / D 凭据面；**只用标准库、不 import 被测代码**，
+  所以它不会与被测代码「同谋通过」）在**当前树**与**干净 checkout** 上跑，
+  **抓到三处没人报过的真问题**：①`latest_recheck` 是**裸 ID** 且**过期**（停在 123）；
+  ②`child_plans` **漂了**（只列到 123，缺 124/125）；③磁盘上除 `.env` 外还有一份凭据副本
+  **`secrets/llm_key.txt`**（**gitignored、untracked**，早于本 GOAL 存在）。
+  ①②已修；③**登记为残余、不删除**（不是本循环该动的资产）——**被跟踪文件命中数 = 0**，
+  所以**不构成 tracked 泄露**。
+  **脚本自己也被改对了两处**（如实登记）：EC 状态列要判**最后一格**（EC-01/EC-02 是
+  `**PASS**（附注）` 形态，不能要求以 `| PASS |` 结尾，也不能让 verify 列的字样蒙混）；
+  ALL_PLAN 的链接文本是**短 ID** 而不是文件名。第一版的凭据面是全盘扫描 ⇒ 命中 `.env` 自身
+  被报成「泄露」⇒ 改成「**被跟踪文件必须 0 命中**（纪律的实际要求）+ 磁盘副本必须都在
+  **已登记集合**内（出现新副本 ⇒ 红）」——这样这层能抓**新增**，而不是恒绿。
+  **m0 两轮**：第 1 轮 **`FAILED: 1 check(s): framework/validate=1`**，红的是**记录措辞**
+  （validator 把正文里的那个状态哨兵词当占位符，而我在正文里引用它），
+  处置是**改写措辞**（`python/tests` 同轮 4260 passed / 13 skipped 无红）——**不是**放宽 validator；
+  第 2 轮 **`PASS: profile=m0; 23 deterministic checks`**（4260 passed / 13 skipped，FAIL 0）。
+  **封印（最终态）**：`git clone --no-hardlinks` 到仓库外，checkout `778db35` ⇒
+  两棵树 **0 失败**（当前树 91 / 封印树 89 checks），合并判据套件两棵树均 **116 passed / 2 skipped**。
+  **本轮不发起任何真实调用**；**未读/未打印/未写入任何真实凭据值**。
+  **未改任何门禁或断言强度、未新增依赖、未改 pin、未改 Policy、未改默认 runtime、未把凭据写进 CI。**
 
 - 2026-09-21 cycle 5（`driver=client-goal / owner=root-agent`）：**EC-05 PASS**
   （PLAN-20260920-125 / RECHECK-20260920-125 = PASS_WITH_WARNINGS，W-1…W-6）。
