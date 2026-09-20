@@ -2,7 +2,7 @@
 id: PLAN-20260920-125
 slug: credential-lifecycle-runbook
 title: 凭据生命周期落成同源判据：注入 / 轮换 / 撤销 / 可弃用额度按「构造时快照」的实测语义写清楚并钉住（EC-05）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-21
 updated_at: 2026-09-21
 parent_goal: GOAL-20260920-009
@@ -13,8 +13,8 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-009 cycle 5 = EC-05（凭据生命周期 runbook）。授权来源：2026-09-20 用户 goal 模式指令 frontmatter `authorization.ref` 第 (2) 条凭据纪律与第 (5) 条（把 `.env` 注入 / `set -a; . ./.env; set +a` / 轮换 / 撤销写成同源判据，含「免费可弃用额度」说明）。**本 PLAN 不发起任何真实调用**：全部判据离线，只用**虚构值**测解析器语义，**不读取、不打印、不写入**真实凭据值；不改 Policy/门禁/断言强度、不新增依赖、不改 pin、不把凭据写进 CI。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-125-credential-lifecycle-runbook.md
+memory_entries: MEM-099
 ---
 
 # PLAN-20260920-125 — 凭据生命周期落成同源判据（GOAL-009 cycle 5 = EC-05）
@@ -80,11 +80,11 @@ memory_entries: []
 
 ## 实施清单
 
-- [ ] WP1 更正 GOAL 的 EC-05 判定细则（按 M-2/M-3 的实测）——**已在 derive 提交内**。
-- [ ] WP2 runbook 补四件事的明文（AC-1/5）。
-- [ ] WP3 同源判据 `tests/architecture/python/test_credential_lifecycle_same_source.py`（AC-1…AC-5）。
-- [ ] WP4 压判据（改坏一条 ⇒ RED；复原 ⇒ GREEN），两次输出留证。
-- [ ] WP5 本地验证（AC-6）→ RECHECK → DONE → ALL_PLAN → 回写 GOAL-009 → commit/push/CI。
+- [x] WP1 更正 GOAL 的 EC-05 判定细则（按 M-2/M-3 的实测）——**已在 derive 提交内**。
+- [x] WP2 runbook 补四件事的明文（AC-1/5）。
+- [x] WP3 同源判据 `tests/architecture/python/test_credential_lifecycle_same_source.py`（AC-1…AC-5）。
+- [x] WP4 压判据（改坏一条 ⇒ RED；复原 ⇒ GREEN），两次输出留证。
+- [x] WP5 本地验证（AC-6）→ RECHECK → DONE → ALL_PLAN → 回写 GOAL-009 → commit/push/CI。
 
 ## 证据
 
@@ -97,20 +97,75 @@ memory_entries: []
 
 ### WP2 明文
 
-（待填）
+`docs/integration/LIVE_MODEL_RUNBOOK.md` 新增 **§8 凭据生命周期**：四行固定标签表
+（`| 注入 |` / `| 轮换 |` / `| 撤销 |` / `| 可弃用额度 |`）+ 三种构造方式的语义表 +
+`set -a; . ./.env; set +a` 的 POSIX 形态逐字给出 + 「名字必须逐字一致」的大小写边界 +
+撤销的两条边界 + 可弃用额度与纪律声明。**新增 59 行，0 删除**（§1–§7 未被触碰）。
 
 ### WP3 判据
 
-（待填）
+`tests/architecture/python/test_live_credential_lifecycle_same_source.py`（新增，**20 个用例，全绿**）：
+
+| 断言 | 用例 |
+| --- | --- |
+| 无参 `EnvCredentialResolver()`（生产路径）是**快照** | `test_the_production_resolver_keeps_its_snapshot` |
+| **配对**：新构造的实例看到撤销 | `test_a_freshly_constructed_resolver_sees_the_revocation` |
+| 传 `environment=` 的形态**按引用**持有（不是快照） | `test_an_injected_mapping_is_held_by_reference` |
+| `RegistryCredentialResolver` 拷贝其映射 | `test_the_registry_resolver_copies_its_mapping` |
+| 名字大小写：拷贝后是普通 dict（大小写敏感） | `test_the_lookup_is_case_sensitive_on_the_copied_mapping` |
+| 来源在 ⇒ 门开；撤销 ⇒ 门关且**点名**；空串 ⇒ 门关 | `TestRevocationClosesTheGateFailClosed`（3 条） |
+| 注册表面：`register()` 优先、`unregister()` 才关、未注册仍回退环境 | `TestTheRegistryFaceNeedsItsOwnRevocation`（3 条） |
+| §8 四行在场 + 各行指向**它的**依据 + POSIX 形态 + 快照边界 + 注册表边界 + 额度与纪律 | `TestTheFourItemsAreWrittenDown`（8 条） |
+| **行内**语义：「轮换」「撤销」两行必须含「新构造」 | `test_the_rotation_and_revocation_rows_carry_the_snapshot_semantics` |
+
+与既有 `test_runbook_same_source.py` 同跑 ⇒ **30 passed in 1.26s**。
 
 ### WP4 压判据
 
-（待填）
+**第一次压测暴露判据太松（本轮最有价值的发现）**：把 §8 的**撤销行**改写成
+「清空或删除来源 ⇒ **每次调用**都读一次环境，所以立即生效」⇒ 判据**仍然全绿**——
+因为当时只断言「§8 里出现过『快照』」，而 §8 别处还有这个词。
+处置是**收紧判据**（`assert "新构造" in _row(label)`，逐行判），**不是**放过改写。
+
+**第二次压测**（收紧后）：同一处改写 ⇒ **RED**：
+`AssertionError: §8 的 '撤销' 行必须写明生效边界是「新构造」…`；复原 ⇒ **GREEN**（`30 passed`），
+`git diff docs/integration/LIVE_MODEL_RUNBOOK.md` = `59 insertions, 0 deletions`。
+
+**判据自己的返工（也如实登记）**：第一版把「快照」写成「传 `environment=` 的形态也是快照」，
+实测**红了**（该形态**按引用**持有 ⇒ 看得到改动）⇒ 把语义按**构造方式**拆成三种，
+并把「大小写敏感」这条也补成断言（第一版用小写名查环境变量，在 Windows 上直接红）。
+两次返工都是**让判据更对**，没有放宽任何断言。
+
+### WP5 本地验证
+
+- 定向套件：本判据 **20 passed**；+ 既有 runbook 判据 **30 passed**；
+  `ruff check` / `ruff format --check` / `mypy` 绿。
+- 全量 m0（**CI 同形配置**）：第一轮 **`FAILED: 1 check(s): framework/validate=1`** ——
+  治理 validator 报 `工程记忆来源不存在: MEM-20260920-099: …RECHECK-20260920-125-….md`
+  （**引用先于记录**）。处置：**把 RECHECK 写出来**（记录先于引用），**不是**删来源字段或放宽 validator。
+  `python/tests` 同轮 **4260 passed / 13 skipped**（无红）。复跑结果见 GOAL 迭代日志。
+- 治理 `validate.py`：补齐记录后**绿**。
+
+
+## 验收条件对照
+
+| AC | 判据 | 结论 |
+| --- | --- | --- |
+| AC-1 四件事有明文 | §8 四行 + POSIX 形态 | ✅ 8 条在场断言 |
+| AC-2 轮换边界可判 | 快照 + 配对（新实例看到新值），按**构造方式**分三种 | ✅ 4 条实测（判据两处返工后） |
+| AC-3 撤销 fail-closed 可判 | 撤销 ⇒ 门关且点名；与「来源在 ⇒ 门开」成对 | ✅ 3 条 |
+| AC-4 注册表面边界可判 | `register()` 优先、`unregister()` 才关 | ✅ 3 条 |
+| AC-5 可弃用额度 + 纪律 | 两句都在场 | ✅ 1 条 |
+| AC-6 本地门禁绿 | 定向 + m0（CI 同形）+ 治理 | ✅ 30 passed；m0 首轮红在「引用先于记录」⇒ 补 RECHECK 后治理绿；`python/tests` 4260 passed / 13 skipped |
 
 ## 状态历史
 
 - 2026-09-21 建档：`driver=client-goal / owner=root-agent`。承接 GOAL-009 cycle 5（EC-05）。
   **不发起任何真实调用**；只用虚构值测语义，不触碰真实凭据值。
+- 2026-09-21 **DONE**：WP1→WP5 全部完成，AC-1…AC-6 全中。
+  `RECHECK-20260920-125` = **PASS_WITH_WARNINGS**（W-1…W-6）。
+  **未改任何门禁或断言强度**（第一次压测的处置是**收紧**判据）；
+  **未读 / 未打印 / 未写入任何真实凭据值**（全部用虚构值）；**未新发真实调用**。
 
 ## 影响报告
 

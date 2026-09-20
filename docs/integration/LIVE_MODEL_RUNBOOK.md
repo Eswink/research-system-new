@@ -242,3 +242,62 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
    但**会话中途不切换模型**：run 的 LLM 装配路径只消费被绑定的那**一个**模型。
    「不回退」指的是**这条路径**的行为，不是「仓库里没有 fallback」。
 
+## 8. 凭据生命周期：注入 / 轮换 / 撤销 / 可弃用额度
+
+§2 与 §3 讲的是**怎么配**与**重启边界**；本节把四件事的**语义**写死，判据
+`tests/architecture/python/test_live_credential_lifecycle_same_source.py` 按**固定标签**读这张表。
+
+| 事项 | 语义 | 依据 |
+| --- | --- | --- |
+| 注入 | 只经**环境变量**：`set -a; . ./.env; set +a`（POSIX 形态） | `adapters/relay/credential_resolver.py` 的 `EnvCredentialResolver` |
+| 轮换 | 换来源 ⇒ **新构造**的解析器看到新值；**已构造的实例是快照** | `adapters/relay/credential_resolver.py`（实测见下） |
+| 撤销 | 清空或删除来源 ⇒ **新构造**的解析器 `has()` 为 `False` ⇒ 门 **fail-closed** 关闭并**点名**该凭据 | `packages/application/model_relay/live_run_gate.py` |
+| 可弃用额度 | 本 key 为**免费可弃用额度**（泄露风险由操作者明示接受）；这**不**降低凭据纪律 | 本仓凭据纪律（§2 首段） |
+
+**注入（两种形态，选一种即可）**：
+
+```bash
+# A. 显式导出（最可移植；适用于任何 shell 与任何启动方式）
+set -a; . ./.env; set +a          # set -a 让 source 进来的键自动导出
+
+# B. 单条命令内联前缀（临时、最小面；不进任何文件，见 §4 的开关写法）
+RESEARCHOS_AGENT_RUNTIME=openhands LLM_MAIN_KEY=… <启动 API 的命令>
+```
+
+**本机是 A 可省的**：pytest 进程里凭据已经可见（由导入栈的 dotenv 加载，判据是
+`EnvCredentialResolver().has('LLM_MAIN_KEY')` 为 `True`），所以**跑 live 用例不必手工导出**；
+但**显式导出是更可移植的形态**，CI 与别的机器上不要指望自动加载。
+
+**轮换的边界（实测，别再按旧假设做）**：解析器**不是在每次调用时读环境**，所以
+**「同一进程内改环境变量即生效」是错的**。精确语义按**构造方式**分三种（实测 2026-09-21）：
+
+| 构造方式 | 来源之后变化时 | 说明 |
+| --- | --- | --- |
+| `EnvCredentialResolver()`（**生产路径**，无参） | **看不到**——构造时已拷贝环境 | 已构造的实例是**快照** |
+| `EnvCredentialResolver(environment=…)` | **看得到**——传入的映射是**按引用**持有 | 测试/注入路径，别拿它推断生产 |
+| `RegistryCredentialResolver(environment=…)` | **看不到**——构造时 `dict(...)` 拷贝 | 另有独立的内存注册表（见下） |
+
+| 动作 | 已构造的**生产**实例 | 新构造的实例 |
+| --- | --- | --- |
+| 换掉来源（轮换） | 仍按**旧**结论回答 | 看到**新**值 |
+| 清空/删除来源（撤销） | **仍报 `has()` 为 `True`** | `has()` 为 `False` |
+
+⇒ **生效边界是「新构造 resolver 的时机」**（新进程、或每次新建实例的路径）。
+API 面因此仍按 §3 处理：**重启后重输**。
+
+**名字必须逐字一致**：端点的 `credential_ref` 要与环境变量名**逐字**相同。`os.environ` 在
+Windows 上按**大小写不敏感**查找，但解析器把它拷贝成**普通字典**，那里是**大小写敏感**的 ⇒
+大小写写错会静默变成「凭据不可解析」（门关，不报错）。
+
+**撤销的两条边界**：
+1. **环境变量面**：清空或删除 ⇒ **新构造**的解析器 `has()` 为 `False` ⇒
+   `packages/application/model_relay/live_run_gate.py` 的门**自动关闭**（fail-closed），
+   理由**点名**该凭据不可解析；
+2. **注册表面**：若该 ref 已经 `register()` 进内存注册表，**注册表命中优先于环境变量** ⇒
+   撤销环境变量**不**关这个面的门，必须 `unregister()`（机制见 §3）。
+
+**可弃用额度（如实）**：本 key 是**免费可弃用额度**——它的泄露风险**由操作者明示接受**。
+但这**只降低追责口径，不放松纪律**：值仍然**不得**写入任何 tracked 文件、数据库、记录
+（PLAN / RECHECK / MEM / GOAL）、日志或命令回显；扫描面见 `tools/credential_audit.py`。
+
+
