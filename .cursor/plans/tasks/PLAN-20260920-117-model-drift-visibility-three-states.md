@@ -2,7 +2,7 @@
 id: PLAN-20260920-117
 slug: model-drift-visibility-three-states
 title: 漂移可见性三态：probe 返回的模型标识 vs 登记声明值（一致 / 漂移点名 / 未知）（EC-05）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-20
 updated_at: 2026-09-20
 parent_goal: GOAL-20260920-008
@@ -13,8 +13,9 @@ authorization:
   source: user-request
   ref: "GOAL-20260920-008 cycle 4 = EC-05（漂移可见性）。授权来源：2026-09-20 用户 goal 模式指令 frontmatter `authorization.ref` 第 (1) 条（登记真实端点与模型、允许一次 live-gated 真实 run，最小必要次数）与 AGENTS.md §4（模型同名漂移必须可见：无法证明底层模型完全一致时必须标注「可重复配置」而非「完全模型可复现」）。本 PLAN 遵守：不改 Policy/eligibility、不引入依赖、默认门保持离线、真实端点调用最小必要次数；**凭据缺失时 live 分支如实 skip，skip 不是 PASS**。"
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-117-model-drift-visibility-three-states.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-090-unknown-must-not-render-as-none.md
 ---
 
 # PLAN-20260920-117 — 漂移可见性三态（GOAL-008 cycle 4 = EC-05）
@@ -128,7 +129,20 @@ memory_entries: []
 
 ## 证据
 
-（实施中登记：每条 AC 的命令 + 实测输出摘要 + 反证前后对照。）
+逐条 AC 与 F1–F3 的注入/观察/复原对照见
+`.cursor/plans/rechecks/RECHECK-20260920-117-model-drift-visibility-three-states.md`。摘要：
+
+- **AC-01**：`tests/domain/test_model_drift.py` **9 passed**；反证 F1（`UNKNOWN` 改判 `MATCH`）**3 red**。
+- **AC-02**：`tests/api/test_models_api.py` **15 passed**（含新增 3 条漂移判据）+
+  `tests/architecture/python/test_protocol_vocabulary.py` **5 passed**（词表同源）+
+  `test_openapi_snapshot.py`（快照 +47 行）；反证 F2（摘掉 `drift`）**3 red**。
+- **AC-03**：`apps/web/tests/e2e/models-drift-visibility.spec.ts` **4 passed**；
+  web `lint`/`typecheck`/unit 绿；反证 F3（UNKNOWN 用 MATCH 文案）**1 red**。
+- **AC-04/AC-05**：三处注入均逐字节还原（`git diff --quiet` 复核）；
+  文档两处 + 页面中英文案同源；live 无凭据 ⇒ **如实 skip**（RECHECK 有专节，
+  **skip 不是 PASS**，真实 probe 未跑）。
+- **AC-06**：`design-fidelity` 2 passed 且基线零 diff（漂移块只在探测后渲染 ⇒ 对设计门不可见）；
+  `docs_consistency_check` / `validate_bundle` 绿；**m0 全量 23 项**计数见 GOAL 迭代日志 cycle 4 行。
 
 ## 状态历史
 
@@ -149,3 +163,9 @@ memory_entries: []
 - **上游版本影响**：无（不引入依赖、不改 pin）。
 - **下一项任务**：EC-05 收口后取 **EC-04（首次真实 run）**——本机仍**无凭据**，
   按判定细则「skip 不是 PASS」处置；EC-06（文档与 runbook）随后。
+
+- 2026-09-20 实施与复检（WP-A…WP-E）：`status: DONE`，`latest_recheck` 指向
+  RECHECK-20260920-117（**PASS_WITH_WARNINGS**，W-1…W-6）。三态在域/API/页面三面落地，
+  「未知 ≠ 无漂移」由域层与页面**两处独立**钉住；F1–F3 全部先红后复原。
+  live 分支因**本机无凭据**如实 skip（真实 probe 一次未跑，skip 不记 PASS）；
+  残余 6 条中 W-1 是能力边界，W-2/W-3（fingerprint 未纳入判定、drift 未持久化）是已知缺口。
