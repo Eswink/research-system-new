@@ -64,6 +64,19 @@ def _faces(report: list[dict[str, object]]) -> dict[str, dict[str, object]]:
     return {str(item["face"]): item for item in report}
 
 
+def _count(item: dict[str, object], key: str) -> int:
+    """JSON 里取出的计数：先断言类型再返回，而不是把 `object` 硬转成 `int`。"""
+    value = item[key]
+    assert isinstance(value, int), f"{key} 不是整数：{value!r}"
+    return value
+
+
+def _offenders(item: dict[str, object]) -> list[str]:
+    value = item["offenders"]
+    assert isinstance(value, list), f"offenders 不是列表：{value!r}"
+    return [str(entry) for entry in value]
+
+
 def test_repository_faces_are_scanned_and_clean() -> None:
     result = _run(["--json"], ROOT)
     assert result.returncode == 0, result.stdout + result.stderr
@@ -72,10 +85,10 @@ def test_repository_faces_are_scanned_and_clean() -> None:
     # 扫描面非空**且状态为 scanned**：两条件一起才排除「没扫还报绿」。
     for face in ("tracked", "records"):
         assert faces[face]["status"] == "scanned", face
-    assert int(faces["tracked"]["files_scanned"]) > 100  # type: ignore[arg-type]
-    assert int(faces["records"]["files_scanned"]) > 10  # type: ignore[arg-type]
+    assert _count(faces["tracked"], "files_scanned") > 100
+    assert _count(faces["records"], "files_scanned") > 10
     for face, item in faces.items():
-        assert item["offenders"] == [], f"{face}: {item['offenders']}"
+        assert _offenders(item) == [], f"{face}: {item['offenders']}"
 
 
 def test_unknown_key_is_flagged(tmp_path: Path) -> None:
@@ -84,13 +97,14 @@ def test_unknown_key_is_flagged(tmp_path: Path) -> None:
     assert result.returncode == 1, result.stdout + result.stderr
     faces = _faces(json.loads(result.stdout))
     logs = faces["logs"]
-    assert int(logs["files_scanned"]) == 1  # type: ignore[arg-type]
-    assert logs["offenders"], "陌生键必须判红"
-    assert any("leak-probe.log" in str(item) for item in logs["offenders"])  # type: ignore[union-attr]
+    assert _count(logs, "files_scanned") == 1
+    hit_lines = _offenders(logs)
+    assert hit_lines, "陌生键必须判红"
+    assert any("leak-probe.log" in entry for entry in hit_lines)
     # 命中只落在探针那一面：其余三面（含跟踪面）不得被牵连。
     for face, item in faces.items():
         if face != "logs":
-            assert item["offenders"] == [], f"{face}: {item['offenders']}"
+            assert _offenders(item) == [], f"{face}: {item['offenders']}"
     assert _UNKNOWN_FAKE_KEY not in result.stdout, "审计不得回声匹配文本"
 
 
@@ -100,11 +114,11 @@ def test_allowlisted_fixture_is_not_an_offender(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     faces = _faces(json.loads(result.stdout))
     logs = faces["logs"]
-    assert int(logs["files_scanned"]) == 1  # type: ignore[arg-type]
-    assert int(logs["hits"]) >= 1  # type: ignore[arg-type]
+    assert _count(logs, "files_scanned") == 1
+    assert _count(logs, "hits") >= 1
     assert logs["allowed"] == logs["hits"], "白名单串应全部放行"
     for face, item in faces.items():
-        assert item["offenders"] == [], f"{face}: {item['offenders']}"
+        assert _offenders(item) == [], f"{face}: {item['offenders']}"
 
 
 def test_non_git_root_is_unscannable_not_clean(tmp_path: Path) -> None:
