@@ -488,7 +488,7 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `167bdd3` | 治理 `validate.py` 绿 | run 35490147869 = **success**（六 job 全 success） | — | EC-01…EC-06 全 PENDING；本机**无凭据**（`DEV_LLM_API_KEY` 空）⇒ EC-03/04/05 的 live 分支只能走如实 skip | cycle 1 = derive EC-01 子 PLAN |
 | 1 | PLAN-20260920-114（EC-01） | `7a28799`（PLAN+ALL_PLAN）、`c9a5caa`、`4693e6b`、`fbe6dee`、`d9e4be9`、`cc704e5`、`691414a`、`5f82071`、`0a04520`、`4e28e93`（记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4072 passed / 11 skipped，冻结树 `0a04520`；0 failed checks）；定向 168 passed + probe 判据 3 passed；`ruff`/`format`/`mypy`(945 files) 绿；治理 `validate.py` / `validate_bundle` / DOCS-CHECK 绿 | **run 35493396918 = success**（`4e28e93`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | m0 拦下四处：format-check / typecheck(7) / 50 行函数门 / validate_bundle（G1–G4，均按缺陷修，未动断言与门禁） | EC-01 **PASS**；EC-02…EC-06 PENDING。EC-01 的 W-1（真实端点面未实测）、W-6（示例端点未入库）转由 EC-03/EC-04 承接 | cycle 2 = derive EC-02 子 PLAN（模型参数落库：上下文窗口 512000 + 思考强度 Max） |
-| 2 | PLAN-20260920-115（EC-02） | `a6c03bc`（derive）、`3eece38`、`d3eedf7`、`3caf6c2`、`abed221`、`b8f2e9b`、`a0f98bb`、`40fe55d`、`53f4a26`（+ 收口记录提交；与 cycle 2 攒成一次推送） | m0 **PASS: profile=m0; 23 deterministic checks**（4097 passed / 11 skipped，461.72s，冻结树 `40fe55d`；其后仅一段文档改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 56 passed、PG 根 + 装配判据 5 passed、web unit 76 passed、web lint/typecheck 绿、design-fidelity 2 passed（基线零 diff）；`ruff`/`format`/`mypy`(949 files) 绿 | 见下（本轮推送后登记） | — （本轮 m0 全量一次通过，无 G 项：提交前已就地跑格式化与类型门） | EC-02 **PASS**；EC-03…EC-06 PENDING。EC-02 的 W-1（声明值不发送/不生效，需执行侧映射）、W-2（OpenHands 未接线）、W-3（web 类型无自动 drift 门）、W-5（设计门射程）为如实边界 | cycle 3 = derive EC-03 子 PLAN（供应链登记与凭据纪律：端点/模型入库 + URL 策略 + 明文凭据 grep 反证 + 重启失效边界） |
+| 2 | PLAN-20260920-115（EC-02） | `a6c03bc`（derive）、`3eece38`、`d3eedf7`、`3caf6c2`、`abed221`、`b8f2e9b`、`a0f98bb`、`40fe55d`、`53f4a26`、`1df2e11`（收口记录） | m0 **PASS: profile=m0; 23 deterministic checks**（4097 passed / 11 skipped，461.72s，冻结树 `40fe55d`；其后仅一段文档改动，`validate_bundle` / `docs_consistency_check` / 治理 `validate.py` 单独复跑绿）；定向 56 passed、PG 根 + 装配判据 5 passed、web unit 76 passed、web lint/typecheck 绿、design-fidelity 2 passed（基线零 diff）；`ruff`/`format`/`mypy`(949 files) 绿 | **run 35497734881 = success**（`1df2e11`，六 job 全 success：console-frontend / collector-quality / eval-gate / container-quality / quality-ubuntu-latest / quality-windows-latest） | — （本轮 m0 全量一次通过，无 G 项：提交前已就地跑格式化与类型门） | EC-02 **PASS**；EC-03…EC-06 PENDING。EC-02 的 W-1（声明值不发送/不生效，需执行侧映射）、W-2（OpenHands 未接线）、W-3（web 类型无自动 drift 门）、W-5（设计门射程）为如实边界 | cycle 3 = derive EC-03 子 PLAN（供应链登记与凭据纪律：端点/模型入库 + URL 策略 + 明文凭据 grep 反证 + 重启失效边界） |
 
 ## 状态历史
 
@@ -540,3 +540,7 @@ draft-contract 排序用例在**合并 m0（Postgres 污染）**下偶红而**�
   OpenAPI 快照**没有**自动比对门（耦合来自 `tsc`）、W-4「迁移」= 解码向后兼容而非 DDL、
   W-5 设计门射程、W-6 既存「显式 null 被忽略」未改。**未新增依赖、未改 pin、未新建 PG 表、
   未触碰凭据面；ADR-0031 仍是 Proposed。**
+  **CI 台账**：cycle 2 攒成一次推送 `490ced3..1df2e11`（10 个提交）→ run **35497734881 = success**
+  （`1df2e11`，六 job 全 success：console-frontend / collector-quality / eval-gate /
+  container-quality / quality-ubuntu-latest / quality-windows-latest）。
+  收口记录提交的 run 结论在下一轮（cycle 3）按同口径登记。
