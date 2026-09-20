@@ -152,6 +152,22 @@ class ThinkingIntensity(StrEnum):
     MAX = "MAX"
 
 
+class ModelDriftState(StrEnum):
+    """模型标识漂移的三态（AGENTS.md §4：同名漂移必须可见）。
+
+    - `MATCH`：probe 返回的模型标识与登记声明值**精确相等**（只忽略首尾空白）；
+    - `DRIFT`：两者都存在但不相等（**任何**差异都算，包括只差大小写——本仓无法证明
+      它们指向同一底层模型，折叠大小写等于替 provider 打包票）；
+    - `UNKNOWN`：**未探到**（没探测 / provider 没回模型名 / 探测失败）。
+
+    `UNKNOWN` **不得**被读成「无漂移」：它是「无法证明一致」，不是「已证明一致」。
+    """
+
+    MATCH = "MATCH"
+    DRIFT = "DRIFT"
+    UNKNOWN = "UNKNOWN"
+
+
 class PolicyDecision(StrEnum):
     ALLOW = "ALLOW"
     DENY = "DENY"
