@@ -2,7 +2,7 @@
 id: GOAL-20260920-009
 slug: live-sample-and-anthropic-surface-closure
 title: live 采样与 anthropic 面收口：把 GOAL-008 如实 skip 的 live 分支推进到有真实样本，并给「run 自身消费哪一面」一个一等终态
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-20
 updated_at: 2026-09-20
 owners:
@@ -130,7 +130,7 @@ exit_criteria:
       复检脚本三层判据全 PASS 且两棵树同结论；m0 **23/23**；治理 `validate.py` 绿；本文件
       `latest_recheck` 指向 PASS/PASS_WITH_WARNINGS 的 RECHECK；frontmatter 的 EC 状态与
       markdown 状态表**一致**（GOAL-006/007/008 收口时同一类漏改，见 MEM-20260920-093）。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -159,8 +159,11 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260920-121-first-live-sampling-run.md
   - .cursor/plans/tasks/PLAN-20260920-122-anthropic-surface-boundary-decision.md
   - .cursor/plans/tasks/PLAN-20260920-123-live-drift-sample-as-judged-record.md
-latest_recheck: RECHECK-20260920-123
-memory_entries: MEM-097
+  - .cursor/plans/tasks/PLAN-20260920-124-live-failure-path-semantics.md
+  - .cursor/plans/tasks/PLAN-20260920-125-credential-lifecycle-runbook.md
+  - .cursor/plans/tasks/PLAN-20260920-126-goal-009-closeout-recheck.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260920-126-goal-009-closeout-recheck.md
+memory_entries: MEM-094, MEM-095, MEM-096, MEM-097, MEM-098, MEM-099
 ---
 
 # GOAL-20260920-009 — live 采样与 anthropic 面收口（自迭代循环）
@@ -187,7 +190,7 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | EC-03 | 漂移实测样本：实测返回 model 名 vs 声明值，三态从「未知」变「实测」；不同则如实记为漂移并给影响面，相同则写明证明力边界 | 记录含真实样本（返回名/声明值/判定/时间/run id）且经既有读面可取；「未知 ≠ 无漂移」钉住用例仍 PASS；**不额外发起调用** | PASS |
 | EC-04 | 失败路径诚实语义（反证式）：无效凭据/端点拒绝/模型不存在三类可判定；至少一条反证先红后复原，全程不打印值 | 反证的先红后绿证据 + 三类期望语义明文；复原后复跑 EC-01 判据确认无残留 | PASS |
 | EC-05 | 凭据生命周期 runbook：注入（`set -a; . ./.env; set +a`）/轮换/撤销/可弃用额度说明落成同源判据 | 同源判据套件 PASS；轮换与撤销各有实跑证据；无凭据值出现在任何记录/日志/回显 | PASS |
-| EC-06 | 收口复检 + 残余登记：独立复检（当前树 + 干净 checkout 同结论）+ m0 23/23 + 治理 validate 绿；六项人工面原样保留 + 本 GOAL 的 W 列表 | 复检脚本三层判据全 PASS 且两树同结论；m0 23/23；`validate.py` 绿；`latest_recheck` 指向 PASS/PASS_WITH_WARNINGS；frontmatter 与状态表一致 | PENDING |
+| EC-06 | 收口复检 + 残余登记：独立复检（当前树 + 干净 checkout 同结论）+ m0 23/23 + 治理 validate 绿；六项人工面原样保留 + 本 GOAL 的 W 列表 | 复检脚本三层判据全 PASS 且两树同结论；m0 23/23；`validate.py` 绿；`latest_recheck` 指向 PASS/PASS_WITH_WARNINGS；frontmatter 与状态表一致 | PASS |
 
 ### 建档时已探明的现状（事实类，用于判定起点；不当作验收依据）
 
@@ -357,6 +360,35 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 
 收口时必须把「仍未处理的长程项」**如实登记**为后继入口（**不隐藏缺口**），并给出恢复条件。
 
+
+### 收口结论（2026-09-21）
+
+**GOAL-009 = ACHIEVED。** 六条 EC 全部 PASS 且有实跑证据；收口复检
+`RECHECK-20260920-126` = **PASS_WITH_WARNINGS**，独立复检脚本
+`scratch/verify_goal009_closeout.py` 在**当前树**与**干净 checkout** 上给出**同一结论**。
+
+**本 GOAL 消灭的缺口**：GOAL-008 收口时那两条**如实 skip 的 live 分支**现在都有真实样本——
+EC-01 跑出**本仓第一次真实 live run**（run `142f7e77-cd4d-4044-a953-79296509fd54`，probe
+`verified and ok`，返回 model 名 `agnes-2.5-flash`，tokens 15219 真归账，口径恰为
+`REPEATABLE_CONFIGURATION`；**终态是 `FAILED`**——协议 acceptance gate 的**设计内判拒**，
+**没有**写成 SUCCEEDED），EC-04 跑出**第一条失败样本**（无效凭据 ⇒ 1 次出站 ⇒ `401 Unauthorized`
+⇒ run `FAILED`、失败记录非空、**tokens 0**、失败文本**不含**凭据值）。
+
+**收口时抓出并处理的三件事**（都由独立复检脚本而非实施叙述发现）：
+
+1. `latest_recheck` 是**裸 ID** 且**过期**（停在 123）⇒ 改为指向本收口 RECHECK 的**仓库相对路径**；
+2. `child_plans` **漂了**（只列到 123，缺 124/125）⇒ 补齐到 126；
+3. 磁盘上除 `.env` 外还有一份凭据副本 **`secrets/llm_key.txt`**（**gitignored、untracked**，
+   早于本 GOAL 存在）⇒ **登记为残余**，**不删除**（不是本循环该动的资产）。
+   **被跟踪文件命中数 = 0** ⇒ 不构成 tracked 泄露。
+
+**残余（不因收口消失）**：GOAL-008 的**六项人工面**原样保留（见下一节），外加本 GOAL 的
+**W 列表**（`RECHECK-121` W-1…W-7 / `122` W-1…W-6 / `123` W-1…W-6 / `124` W-1…W-7 /
+`125` W-1…W-6 / `126` W-1…W-6），逐条写在各 RECHECK 的 W 节。
+**仍未处理的长程项**（后继入口）：ADR-0031 仍 `Proposed`；`ANTHROPIC` 的 **run** 路径仍**无 live 样本**
+（EC-02 取 (b)，改绑步骤与影响面已备但未实跑）；「模型不存在」只有装配层判据、无 provider 侧样本；
+本地门「离线」不是结构保证（W-7 观测到一次真实出站）；前端 drift/设计基线未由判据把守。
+
 ## 不进入循环 / 需人工拍板
 
 以下项**本循环不做**，也不因本 GOAL 存在而被宣称已解决；触及即 BLOCKED
@@ -384,6 +416,7 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | 3 | PLAN-20260920-123（EC-03） | 见回合汇报（derive + 判据 + 文档 + 收口） | 新判据 `test_live_drift_sample_same_source.py` **8 passed**，与既有 runbook 判据同跑 **18 passed in 0.95s**；**被压过（两条路径）**：①改坏 runbook §6 的返回标识 ⇒ **RED**（`1 failed, 7 passed`，消息把 `declared/returned/两态` 全打出来，定位精确到重算那一条）、复原 ⇒ **GREEN**、`git diff` 只剩意图内改动；②查**不存在的标签** ⇒ 抛错并**点名**（`… no longer has a row labelled '不存在的标签'`），**不静默返回空串**（否则「判据没在看」会伪装成「判据通过」）；定向套件（两道同源判据 + `test_protocol_vocabulary` + `tests/domain/test_model_drift.py` + `tests/api/test_models_api.py`）⇒ **47 passed in 2.03s**；`ruff check` / `format --check` / `mypy` 绿；全量 m0（**CI 同形配置**：`LLM_MAIN_KEY=""` + 测试 DSN pin）⇒ **`PASS: profile=m0; 23 deterministic checks`（4221 passed / 12 skipped，589.50s，FAIL 0 条）**，**一次跑完无 stale、无红**；治理 `validate.py` 绿 | 见回合汇报（**未跑到终态不记账**） | — （**未改任何门禁或断言强度**；**未新增 live 调用**：样本复用 cycle 1 的同一次 probe） | EC-03 **PASS**；EC-04…EC-06 PENDING。残余 W-1…W-6（W-1 单次样本 ≠ 永不漂移、W-2 反证**发现不了自洽的假样本**（由 run id 交叉引用兜住）、W-3 判据与标签行**耦合**（改标签必须同改判据）、W-4「漂移未持久化」只有文档口径无判据把守、W-5 前端 drift 渲染不在判据射程、W-6 CI 台账填写规则） | cycle 4 = derive **EC-04**（失败路径诚实语义 + 至少一条反证） |
 | 4 | PLAN-20260920-124（EC-04） | `d3b8f0f`（derive + ALL_PLAN + cycle 3 CI 台账）、见回合汇报（impl + 收口） | 新判据 `test_live_failure_paths_same_source.py` **16 passed** 且**被压过**（把 §7 行标签「端点拒绝」改成「端点被拒」⇒ **RED**：`2 failed, 14 passed`，消息点名 `§7 no longer has a row labelled '端点拒绝'`；复原 ⇒ **GREEN**，`git diff` 只剩新增 26 insertions / 0 deletions）；**实跑反证（live，出站 2 次，均被拒）**：`RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_FAILURE_CASE=invalid-credential LLM_MAIN_KEY=<故意无效>` 跑 `tests/e2e/test_live_failure_paths.py` ⇒ **`1 passed`**、**1 次出站** `POST https://apihub.agnes-ai.com/v1/chat/completions` ⇒ **`HTTP/1.1 401 Unauthorized`**、观察文件 `{"run_state":"FAILED","failure_count":1,"usage_entries":0,"credential_leaked":false}`；**先断言门开再发起**（否则失败可能来自门关，语义完全不同）；预置条件式反证：默认门 ⇒ **`1 skipped`**（点名开关），带预置条件 ⇒ **`1 passed`**；离线门套件 **22 passed**；`ruff`/`format`/`mypy` 绿；全量 m0 **两轮**：第 1 轮 **`FAILED: 1 check(s): python/tests=1`**（新增用例函数 **58 行** > 本仓 **50 行**上限）⇒ **拆函数**（**不放宽门禁**）⇒ 第 2 轮 **`PASS: profile=m0; 23 deterministic checks`（4239 passed / 13 skipped，558.84s，FAIL 0）**；治理 `validate.py` 绿 | **run 35522167112 = success**（`d3b8f0f` 的 derive 推送；六 job 全 success）；cycle 4 收口推送的 run 在回合汇报里给出终态 | ①**50 行函数上限对 `tests/**` 同样生效**——新增 live 用例写成了长流水线，m0 抓出；处置是**拆函数**（`_assert_gate_is_open` / `_run_with` / `_Reads`），**不是**调阈值。②拆完**重跑**了 live 反证（让证据对应**提交形态**）⇒ 出站共 **2 次**，均被拒、均零计费（如实登记，未凑成「1 次」） | EC-04 **PASS**；EC-05/EC-06 PENDING。残余 W-1…W-7（W-1 端点拒绝那一格是**指向**既有判据而非本 cycle 重测、W-2「模型不存在」只有**装配层**判据、**无** provider 侧实跑样本、W-3 失败消息**未按内容**断言（provider 文案是外部契约）、W-4 预置条件开关是新环境变量、W-5「门开 ≠ 凭据有效」是**设计内**语义、改它是行为变更超出授权、W-6 CI 台账、W-7 出站 2 次） | cycle 5 = derive **EC-05**（凭据生命周期 runbook：注入/轮换/撤销/可弃用额度） |
 | 5 | PLAN-20260920-125（EC-05） | `8d443ad`（derive + **GOAL EC-05 更正** + ALL_PLAN）、见回合汇报（runbook §8 + 判据 + 收口） | 新判据 `test_live_credential_lifecycle_same_source.py` **20 passed**（与既有 runbook 判据同跑 **30 passed in 1.26s**）；**被压过两次**：①第一次压测**发现判据自己太松**——把 §8 撤销行改写成「每次调用都读一次环境，所以立即生效」，判据**仍全绿**（当时只断言「§8 里出现过『快照』」，而别处还有这个词）⇒ 处置是**收紧判据**（`assert "新构造" in _row(label)`，**逐行**判），**不是**放过改写；②收紧后同一处改写 ⇒ **RED**（消息点名「§8 的 '撤销' 行必须写明生效边界是「新构造」」），复原 ⇒ **GREEN**，`git diff` = **59 insertions / 0 deletions**；**判据自身两次返工也如实登记**：第一版把「传 `environment=` 也是快照」写错（实测**按引用**持有）⇒ 语义按**构造方式**拆三种；且第一版用小写变量名查环境（Windows 上 `os.environ` 大小写不敏感、拷贝后的普通 dict **敏感**）⇒ 直接红，遂补成一条断言。两次返工都是**让判据更对**，未放宽断言；`ruff`/`format`/`mypy` 绿；全量 m0：首轮 **`FAILED: 1 check(s): framework/validate=1`**——治理报 `工程记忆来源不存在: MEM-20260920-099: …RECHECK-20260920-125`（**引用先于记录**），处置是**把 RECHECK 写出来**（**不是**删字段或放宽 validator），`python/tests` 同轮 **4260 passed / 13 skipped**（无红）；补记录后治理 `validate.py` **绿** | **run 35525365307 = success**（`8d443ad` 的 derive 推送；六 job 全 success）；cycle 5 收口推送的 run 在回合汇报里给出终态 | — （**未改任何门禁或断言强度**；第一次压测的处置是**收紧**判据） | EC-05 **PASS**；EC-06 PENDING。残余 W-1…W-6（W-1 判据把构造语义当**契约**钉住、改它须三处同步、W-2「按引用」只成立于测试/注入路径、W-3 大小写那条只钉住「拷贝后敏感」这一半、W-4 本 cycle **未读/未打印/未写入任何真实凭据值**、代价是不覆盖真实 `.env` 注入链路、W-5 额度声明只判在场、W-6 CI 台账） | cycle 6 = derive **EC-06**（收口复检：当前树 + 干净 checkout 同结论、m0、治理、六项人工面原样保留 + 本 GOAL 的 W 列表） |
+| 6 | PLAN-20260920-126（EC-06） | 见回合汇报（收口 + 复检 + 残余登记） | 独立复检脚本 `scratch/verify_goal009_closeout.py` **四层**（A 交付物 21 / B 判据用例 8 / C 登记面 / D 凭据面），**当前树 90 checks** 与**干净 checkout 88 checks** 跑出**同一组 3 个失败**（`EC-06` 仍 PENDING、`latest_recheck` 是裸 ID 且过期）⇒ **真问题**，本收口已修；同一比对还抓出 `child_plans` 漂了（缺 124/125）与磁盘第二份凭据副本；修后复跑 + 治理 `validate.py` 绿；全量 m0 见回合汇报 | 见回合汇报（**未跑到终态不记账**） | — | **EC-06 PASS ⇒ GOAL ACHIEVED**；残余 = GOAL-008 六项人工面 + 本 GOAL W 列表（121/122/123/124/125/126 各自 W-1…W-n） | —（本 GOAL 收口） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -396,7 +429,8 @@ GOAL-008 把「anthropic 协议执行路径」「模型参数落库」「供应�
 | cycle 4 derive | `d3b8f0f` | [35522167112](https://github.com/Eswink/research-system-new/actions/runs/35522167112) | 六 job 全 **success**（`eval-gate` / `quality-windows-latest` / `collector-quality` / `container-quality` / `quality-ubuntu-latest` / `console-frontend`；terminal `status=completed conclusion=success`） |
 | cycle 4 收口 | `3b27bac` | [35524463053](https://github.com/Eswink/research-system-new/actions/runs/35524463053) | 六 job 全 **success**（`eval-gate` / `container-quality` / `collector-quality` / `console-frontend` / `quality-windows-latest` / `quality-ubuntu-latest`；terminal `status=completed conclusion=success`） |
 | cycle 5 derive | `8d443ad` | [35525365307](https://github.com/Eswink/research-system-new/actions/runs/35525365307) | 六 job 全 **success**（`collector-quality` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend`；terminal `status=completed conclusion=success`） |
-| cycle 5 收口 | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | |
+| cycle 5 收口 | `337a2ae` | [35527501482](https://github.com/Eswink/research-system-new/actions/runs/35527501482) | 六 job 全 **success**（`collector-quality` / `quality-windows-latest` / `container-quality` / `console-frontend` / `quality-ubuntu-latest` / `eval-gate`；terminal `status=completed conclusion=success`） |
+| cycle 6 收口（GOAL 收官） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | |
 
 **台账尾巴口径**（沿用 GOAL-005…008，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 **只在回合汇报里给出终态、不再回写文件**——否则每轮都要为回写再推一次、无限追加。

@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260920-126](tasks/PLAN-20260920-126-goal-009-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260920-125](tasks/PLAN-20260920-125-credential-lifecycle-runbook.md) | DONE |
 | [x] | [PLAN-20260920-124](tasks/PLAN-20260920-124-live-failure-path-semantics.md) | DONE |
 | [x] | [PLAN-20260920-123](tasks/PLAN-20260920-123-live-drift-sample-as-judged-record.md) | DONE |
