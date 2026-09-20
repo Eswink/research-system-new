@@ -126,7 +126,10 @@ def messages_result(
     usage = payload.get("usage")
     prompt_tokens = usage_int(usage, "input_tokens")
     completion_tokens = usage_int(usage, "output_tokens")
-    reported = prompt_tokens is not None and completion_tokens is not None
+    # 该形态不报 total：两项都在时才给出和，否则保持 None（不伪造）。
+    total_tokens: int | None = None
+    if prompt_tokens is not None and completion_tokens is not None:
+        total_tokens = prompt_tokens + completion_tokens
     returned = payload.get("model")
     return CompletionResult(
         content=text_from_content(payload),
@@ -134,14 +137,15 @@ def messages_result(
         returned_model_name=str(returned) if returned else None,
         # Messages 无 system fingerprint 等价字段：保持 None，不拿别的字段顶替。
         system_fingerprint=None,
-        usage_reported=reported,
+        usage_reported=total_tokens is not None,
         safe_response_metadata=safe_headers,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
-        # 该形态不报 total：只有两项都在时才给出和，否则保持 None（不伪造）。
-        total_tokens=(prompt_tokens + completion_tokens if reported else None),
+        total_tokens=total_tokens,
         usage_unavailable_reason=(
-            None if reported else "provider did not return input_tokens/output_tokens"
+            None
+            if total_tokens is not None
+            else "provider did not return input_tokens/output_tokens"
         ),
     )
 

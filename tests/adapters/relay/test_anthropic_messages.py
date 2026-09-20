@@ -14,6 +14,7 @@ from collections.abc import Callable
 import httpx
 import pytest
 
+from adapters.relay.gateway import OpenAIChatGateway
 from adapters.relay.protocols import ANTHROPIC_VERSION, WireShape, select_wire_shape
 from adapters.relay.transport import RelayHTTPError
 from packages.application.ports import CompletionRequest, SecretValue
@@ -60,7 +61,7 @@ def messages_payload(**overrides: object) -> dict[str, object]:
 
 def counting_gateway(
     handler: Callable[[httpx.Request], httpx.Response],
-) -> tuple[object, list[httpx.Request]]:
+) -> tuple[OpenAIChatGateway, list[httpx.Request]]:
     """记录每一次出站请求，用于「拒绝时出站为 0」的判据。"""
     seen: list[httpx.Request] = []
 
@@ -243,13 +244,11 @@ class TestOpenAiShapeRegression:
             assert body["messages"] == [{"role": "user", "content": "hi"}]
             # 关键回归：OpenAI-compatible 请求体**不**携带 max_tokens 键
             assert "max_tokens" not in body
-            return json_response(
-                {
-                    "model": "relay-model-alpha",
-                    "choices": [{"message": {"content": "pong"}}],
-                    "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
-                }
-            )
+            return json_response({
+                "model": "relay-model-alpha",
+                "choices": [{"message": {"content": "pong"}}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            })
 
         result = gateway(handler).complete(
             CHAT_ENDPOINT,
@@ -335,8 +334,7 @@ class TestWireShapeSelection:
         assert select_wire_shape("ANTHROPIC", "chat_completions") is WireShape.ANTHROPIC_MESSAGES
         assert select_wire_shape("ANTHROPIC", "responses") is WireShape.ANTHROPIC_MESSAGES
         assert (
-            select_wire_shape("OPENAI_COMPATIBLE", "chat_completions")
-            is WireShape.CHAT_COMPLETIONS
+            select_wire_shape("OPENAI_COMPATIBLE", "chat_completions") is WireShape.CHAT_COMPLETIONS
         )
         assert select_wire_shape("OPENAI_COMPATIBLE", "responses") is WireShape.RESPONSES
 

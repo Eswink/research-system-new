@@ -80,9 +80,7 @@ def _run(gateway: RecordingGateway, endpoint: LLMEndpoint) -> None:
         gateway=gateway,
         credential_resolver=FakeCredentialResolver({"llm_main_key": "placeholder-token"}),
         endpoint=endpoint,
-        model=ModelDefinition(
-            id="model-alpha", endpoint_id=endpoint.id, model_name="model-alpha"
-        ),
+        model=ModelDefinition(id="model-alpha", endpoint_id=endpoint.id, model_name="model-alpha"),
         options=ProbeOptions(suite=default_probe_suite()),
     )
 

@@ -69,6 +69,6 @@ def test_execution_path_uses_the_enum_not_literals() -> None:
             hit = _string_constants(path) & PROTOCOL_VALUES
             if hit:
                 offenders.append(f"{path.relative_to(ROOT)}: {sorted(hit)}")
-    assert offenders == [], (
-        "执行侧出现协议字面量（应改用 domain LLMProtocol）: " + "; ".join(offenders)
+    assert offenders == [], "执行侧出现协议字面量（应改用 domain LLMProtocol）: " + "; ".join(
+        offenders
     )
