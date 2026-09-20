@@ -238,4 +238,85 @@ RESEARCHOS_AGENT_RUNTIME=openhands LLM_MAIN_KEY=… \
 
 **已知边界**（如实登记）：目录里所有模型当前都绑定 `main`（OPENAI_COMPATIBLE 面），
 登记进目录的 **ANTHROPIC 端点**（`agnes-anthropic`）由 live 用例的 probe 段单独驱动
-——让**一次 run 自身**消费 anthropic 面需要改模型→端点绑定，尚未做。
+——让**一次 run 自身**消费 anthropic 面需要改模型→端点绑定。**这条边界的口径、改绑步骤、
+实测影响面与判据草案见 §12**（由 `tests/architecture/python/test_anthropic_surface_boundary.py`
+把守：口径一变就红）。
+
+---
+
+## 12. run 腿与 probe 腿：现在走哪一面
+
+一次 live 判据（`tests/e2e/test_ec04_live_first_run.py`）里有**两条腿**，它们走的**不是**同一条面。
+这一节把口径写成**可判事实**，判据见 `tests/architecture/python/test_anthropic_surface_boundary.py`。
+
+### 12.1 现在走哪一面
+
+| 腿 | 谁在跑 | 端点 | 协议 |
+| --- | --- | --- | --- |
+| **run 腿** | `POST /projects/{id}/runs` 起的那次真实 run | `main` | `OPENAI_COMPATIBLE` |
+| **probe 腿** | 判据里的 probe 段（取运行时指纹） | `agnes-anthropic` | `ANTHROPIC` |
+
+**run 腿为什么是 `main`**：解析链是
+协议 phase 的 `required_roles` → `examples/config/agents.yaml` 的 agent → 该 agent 的
+`AgentBinding.value` → `examples/config/models.yaml` 的模型 → 该模型的 `endpoint_id` → 端点协议。
+示例协议 `console_demo_research_v1.yaml` 只要 `domain_researcher` 与 `scientific_reviewer`
+两个角色，它们解析到 `domain_a` 与 `reviewer_a`，绑的是 `research_alpha` 与 `reviewer_gamma`
+——两者都在 `main` 上。**注意 `agnes_flash` 不在 run 腿里**：它只被 probe 腿用到，
+所以「把 `agnes_flash` 改绑到 anthropic」**不会**让 run 走 anthropic。
+
+**边界本来就可读**（读面已经暴露，不需要新增字段）：
+
+- 每个模型走哪个端点：`ModelReadDto.endpoint_id`（`services/api/dto/models.py`）；
+- 每个端点是什么协议：`LlmEndpointReadDto.protocol`（`services/api/dto/endpoints.py`）。
+
+### 12.2 改绑步骤
+
+目标：让 **run 腿**走 `ANTHROPIC`。按解析链改，改的是 **run 腿真的会读到的那些模型**：
+
+1. 在 `examples/config/models.yaml` 里，把 run 腿解析到的模型（当前是 `research_alpha` 与
+   `reviewer_gamma`）的 `endpoint` 从 `main` 改成 `agnes-anthropic`；
+2. 在 `examples/config/llm_endpoints.yaml` 确认 `agnes-anthropic` 的 `enabled: true`
+   且 `credential_ref` 可解析（`LLM_MAIN_KEY`）；
+3. **同步更新判据与断言**（这是有意设计成必撞门的，见 §12.3）：
+   `tests/architecture/python/test_anthropic_surface_boundary.py` 与
+   `tests/loaders/test_contract_loaders.py`；
+4. 关闭前先离线核对：`make validate-all` 应绿（跑之前确认环境与 CI 同形，
+   见 `.cursor/plans/rechecks/RECHECK-20260920-121-first-live-sampling-run.md` 的 W-7）；
+5. 需要实证时按 §11 开一次 live run（**显式** `RESEARCHOS_AGENT_RUNTIME=openhands`，
+   次数取最小必要），并核对 run 的端点协议确为 `ANTHROPIC`。
+
+### 12.3 影响面（实测）
+
+下面每一条都是**在仓库里核对过的**耦合点，不是「可能会有影响」：
+
+- **`tests/loaders/test_contract_loaders.py`**——`test_load_models_from_fixture` 断言
+  `models["research_alpha"].endpoint_id == "main"`。改绑必须同步改这条断言，
+  否则它会把**有意的**配置变更报成失败。
+- **`tests/e2e/test_ec03_real_runtime_offline_chain.py`**——它的 `_MockRelayHandler` 自称
+  「最小 **OpenAI-compatible** 端点」（只提供 `GET /models` 与 `POST /v1/chat/completions`），
+  而 `tests/e2e/live_run_support.py` 的 `point_catalog_at` **只换 `base_url`、保留 `protocol`**。
+  ⇒ 改绑到 `ANTHROPIC` 会让这条既有门禁把 **Messages 形态**请求打到 OpenAI 形态的 mock 上。
+  **这是改绑最重的一处影响**：修它需要让 mock 讲 Messages 形态、或让该用例显式指定端点，
+  两件都落在「测试与门禁」的射程内。
+- **读面 DTO**——`services/api/dto/endpoints.py` 的 `LlmEndpointReadDto.protocol` 是断言的
+  来源字段；若哪天它被改名或移除，§12.1 的「边界可读」就不再成立（本判据会红）。
+- **前端读面**——`ModelCatalogTable` / `ModelDetails` / `ModelInspector` 都渲染
+  `endpoint_id`（`apps/web/src/features/models/`）⇒ 改绑会改**读面文案**，可能牵动设计基线。
+- **该路径从未真跑**——`ANTHROPIC` 的**执行**路径（`adapters/openhands/llm_factory.py` 加
+  `anthropic/` 前缀 → OpenHands SDK → litellm）在 live 上**从未被 run 消费过**。
+  已实测的是 `OpenAIChatGateway` 的 **probe** 段（走 ANTHROPIC 形态成功），**不是** run 的 LLM 路径。
+- **本判据自身**——`tests/architecture/python/test_anthropic_surface_boundary.py` 会把
+  run 腿走在非 OpenAI 兼容面报成红。**这是有意的**：改绑是架构决策，应该撞门。
+
+### 12.4 改绑后的判据草案
+
+改绑**之后**，「一次 run 消费哪一面」要用下面两条**一起**判（缺一条都只是半句话）：
+
+- **(A) 配置面**：run 腿解析链上的模型，其端点的 `protocol == "ANTHROPIC"`
+  （把 §12.1 的解析链反过来断言）；
+- **(B) 运行面**：一次 live run 的记录里，run 所用端点的协议为 `ANTHROPIC`，
+  **且** run 到终态（`FAILED` 也算终态，见 §11 与
+  `docs/integration/LIVE_MODEL_RUNBOOK.md` §6 的判据）、**且** usage 真归账。
+
+只满足 (A) 是「配置改了但没跑过」；只满足 (B) 而 (A) 不成立说明解析链没被真的改到
+（例如只改了 `agnes_flash`——它**不在** run 腿上）。
