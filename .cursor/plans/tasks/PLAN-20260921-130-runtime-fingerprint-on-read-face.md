@@ -79,6 +79,9 @@ GOAL-010 EC-04 的两件事，各自可判：
 | E-7 | 模型级读面**已经有**富字段 DTO：`ModelRuntimeFingerprintDto{endpoint_config_digest, probe_suite_digest, returned_model_identifier, system_fingerprint, observed_capabilities}` + 产品侧 builder `build_fingerprint` | `services/api/dto/models.py:33`、`services/api/mappers/models.py:92`、`packages/application/model_relay/fingerprint.py:61` | 「形状」与「builder」都不缺；缺的是**「这一次 run」**这一层 |
 | E-8 | 「模型不存在」今天只有**装配层**判据：固定标签表（无效凭据 / 端点拒绝 / 模型不存在）+ 「run 的 LLM 装配路径只消费**一个**模型」的结构判据；live 失败样本只有**无效凭据 ⇒ 401** 一条 | `tests/architecture/python/test_live_failure_paths_same_source.py:37/133/181`；`tests/e2e/test_live_failure_paths.py:117` | EC-04 verify 的**零回退**那一半**已有结构判据**；缺的是 provider 侧**样本** |
 | E-9 | 冻结门的必填锚点里，指纹只要求「**非空**」（NOT_VERIFIED 占位也算） | `packages/application/run_orchestration/m12_composition.py:158-175`（注释写明「未配置 = NOT VERIFIED 诚实占位，不视为缺口」） | 补四要素**不会**顺手改变冻结门的强度；但**也不要**借机加严（那是另一个 EC 的事） |
+| E-10 | **四要素的现成来源是一次 `run_live_probe`**：GOAL-009 的 live 判据正是从 `probe.endpoint_config_digest` / `probe.returned_model_identifier` / `probe.probe_suite_digest` / `probe.system_fingerprint` 取这四项，再从 run 读面取 usage/制品/证据 | `tests/e2e/test_ec04_live_first_run.py:126-138`；`packages/application/model_relay/live_probe.py`；`packages/application/model_relay/probe.py:107/195`（`returned_model_name` 由 probe 的 **chat** 调用取得） | 「落读面」的**接线**有现成材料；但**provenance 必须如实**：probe 事实来自**那次 probe 调用**，不是本次 run 的响应（取舍 #1 的实质） |
+| E-11 | adapter 今天记的是**请求**的 model id，**不是响应返回的 model 名**：`UsageContext(model_id=entry.spec.model.id …)`，注释明写「缺目标时保持 None——不猜、不回填别的 model」 | `adapters/openhands/session_builder.py:148-167` | 「本次 run 的响应里返回了哪个 model」**今天没有被采集**；要拿到它得改 adapter（摸 SDK 事件树）**或**走 probe（额外一次真实调用）——这是 WP1 必须正面回答的那一刀 |
+| E-12 | `MODEL_PROBED` / `MODEL_RESOLVED` / `MODEL_DRIFT_DETECTED` 三个事件类型**已声明但产品代码里无人发出**（`rg` 只命中定义处） | `packages/domain/events.py:26-28` | 承载面「有坑位没接线」；**复用既有枚举成员**不触 Domain，但也要如实说明「此前从未被发出」 |
 
 ### 已知的**不可回避**取舍（定案必须在其中做出选择并写明代价）
 
