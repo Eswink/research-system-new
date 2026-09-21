@@ -112,7 +112,25 @@ memory_entries: []
       **顺带测得一条事实**：新合约在**默认（Fake）离线装配**下也到 `SUCCEEDED`
       ——声明输入已 seed ⇒ `EVIDENCE_COVERAGE` 被**非模型自述**来源满足，即「可达性」
       在控制面已经成立；**真实执行体**下的可达性由 WP4 单独取样，本文件**不**声称。
-- [ ] WP4 **真实 run**（最小必要次数）：真实 runtime 下用所选协议起 run；终态如实落 RECHECK。
+- [x] WP4 **真实 run（最小必要次数：**1 次**）**（**已完成，终态 `SUCCEEDED`**）。
+  新模块 `tests/e2e/test_real_protocol_run_live.py`：真实执行体
+  （`RESEARCHOS_AGENT_RUNTIME=openhands` 只作**单条命令内联前缀**给出，**未**写进 `.env`）、
+  点名 `real_research_task_v1.yaml`，判据三条（canonical 身份 / 终态**恰为** `SUCCEEDED` /
+  交付物按**新合约声明的名字**登记）。
+  **实测载荷**（测试写到 `tmp_path` 的 `ec03-live-real-protocol.json`，本记录逐字引用）：
+  `run_id f9bef830-0ee3-4f05-8d40-ca57c1f5e643`、`state SUCCEEDED`、
+  `protocol_id real_research_task_v1_0_1`、
+  `protocol_body_digest sha256:06c1c4d64296ae70a78340bbd90cf42f6bfb0c538c0a04158613092db2dc1d2b`、
+  `failures []`、`artifacts [a7f7a896-…:analysis_report, input-brief:real_research_v1]`、
+  `deliverable_id a7f7a896-…:analysis_report`、`declared_artifact analysis_report`、
+  `fact_name session_message`、`contract_id real_research_deliverable`。
+  **一条独立离线核对**：用产品自己的读取器取 `real_research_task_v1.yaml` 的正文再算 sha256
+  ⇒ 与载荷里的 `protocol_body_digest` **逐字相同**，即这次 live run 解析并冻结的就是那份文件。
+  **默认门如实**：不配 runtime 时该模块**skip**（已实测 `1 skipped`），不是静默通过。
+  **诚实边界（登记为 W，未用第二次真实调用补数据）**：载荷**不含**交付物正文与 `message_count`，
+  所以「模型真的产出了正文」是**推论**而不是实测数字——推论链：`ARTIFACT_EXISTS: analysis_report`
+  通过 ⇒ `_deliverable()` 的**非空分支**成立（无消息时 adapter 返回 `{}`）⇒ 会话**至少有一条
+  MESSAGE 事件**。**真实调用总次数：1 次**（本周期内），**未**做第二次。
 - [ ] WP5 **门禁 + 复检 + 收口**：规模门禁自查 → 定向 → m0 23/23 → 治理绿 → RECHECK → GOAL 回写。
 
 ## 证据
@@ -335,3 +353,13 @@ EC-03 的性质又不同：**它是一个「选择」，而选择的代价分布
   **顺带测得**：新合约在 Fake 离线装配下到 `SUCCEEDED`，覆盖门由**已 seed 的声明输入**
   满足——所以 WP4 的真实 run 要跨的只剩「真实执行体 + 真实端点」这一步，
   协议/合约/能力面**不再是未知量**。**本轮仍未发起任何真实调用。**
+
+- 2026-09-21 WP4 **真实 run 落地：1 次，终态 `SUCCEEDED`**。判据的三条（身份 / 终态 / 交付物）
+  一次全过，载荷逐字落在 WP4 条目里。**这次是本仓第二次真实 live run**（第一次是 EC-02 的
+  `a2a1bfbf-…`，跑的是 demo 协议）——两份证据的分工：那一份证明**来源链**（非自述来源真的
+  进了 ledger），这一份证明**真实协议**在真实执行体下可达 `SUCCEEDED`。
+  **纪律**：`RESEARCHOS_AGENT_RUNTIME` 只作单条命令内联前缀（**未**写入 `.env`）、
+  凭据值只从环境读且不回显/不落盘、**只跑一次**（失败也会如实落，但没必要为「多一个样本」再花钱）。
+  **默认门**已实测会 skip（离线跑该模块 = `1 skipped`），所以「没配 runtime 也能过」这种
+  假绿不存在。**本轮新增一处诚实边界**：载荷不含正文/消息条数，「模型真产出正文」是推论
+  （链条写在 WP4 条目里），已登记为 W。
