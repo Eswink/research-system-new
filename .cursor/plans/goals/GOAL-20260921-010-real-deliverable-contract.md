@@ -149,7 +149,8 @@ escalation_triggers:
   - "改动 Canonical State 边界（例如把验收门结果改成可改写已终态的行）——需拍板"
 child_plans:
   - .cursor/plans/tasks/PLAN-20260921-127-real-deliverable-contract.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20260921-128-evidence-chain-truthfulness.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-127-real-deliverable-contract.md
 memory_entries: []
 ---
 
@@ -401,6 +402,7 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 | cycle 1 派生 + WP1/WP2/WP4 | `00368ab` | [35562941912](https://github.com/Eswink/research-system-new/actions/runs/35562941912) | 六 job 全 **success**（`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`；terminal `status=completed conclusion=success`，逐 job 实查） |
 | cycle 1 WP3（同源判据） | `49ed9c3` | **无独立 run**（与 `2f9a501` **同一次推送**；GitHub 只对 tip 触发一个 run ⇒ 该提交的验证由下一行的 run 承担，**不**意味着它没进 CI） |
 | cycle 1 收口（WP5/WP6 + EC-01 置 PASS） | `2f9a501` | [35566880954](https://github.com/Eswink/research-system-new/actions/runs/35566880954) | 六 job 全 **success**（`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`；terminal `status=completed conclusion=success`，逐 job 实查） |
+| 2 | PLAN-20260921-128（EC-02） | 见回合汇报（derive） | 派生时**只读代码、未发起任何调用**：证据面审计得 E-1…E-5；治理 `validate.py` 绿 | 见回合汇报（**未跑到终态不记账**） | — | EC-02 执行中；**derive 的头号发现改变了对本 EC 的估计**：真实 run 链里**根本不存在**非模型来源——`run_orchestration/` 对 `ToolResultRecord` **零命中**（E-3），唯一合格的「工具证据」准入路径 `register_tool_evidence` **无任何生产调用方**（E-4，只在测试里被调）。同时 `evidence_source_count = len(evidence)` 且 evidence **全部**派生自会话输出、`trust_label=GENERATED`（E-1/E-2）⇒ **交付物就是它自己的来源**，`EVIDENCE_COVERAGE ≥ 1` 恒成立。**因此本 cycle 不是「改一行」，而是「在 run 链里开出第一个非模型来源」**——PLAN-128 把**承重墙定为 WP1（先审定案）**，并列出四个候选（A 接工具结果 / B 接真实输入制品 / C 接 workspace 制品 / D 仅收紧口径）与各自代价，其中 **D 单用不可行**（会让真实 run 没有来源且打断 console demo）。爆破面已点出两条声明合约（`domain_discovery` min 10、`console_demo_deliverable` min 1）与两个测试夹具 | cycle 2 续：**WP1**（审计 + 判别性质定案，含爆破面逐项清单）→ WP2（按定案把真实来源接进 run 链）→ WP3（判据 + 被压过）→ WP4（真实 run + 反证）→ WP5（门禁 + RECHECK + 收口） |
 | 台账尾巴（记录回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…009，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
@@ -485,3 +487,24 @@ live 证据只在本地产生并落 RECHECK。
   仍由**模型自述**满足（`EVIDENCE_COVERAGE` 数的就是交付物自己）；「门 PASS」是**代码路径推出的
   蕴含关系**，逐条 criterion 文本**未**取回；取 (ii) ⇒ (i) 路径**未验证**；交付物内容仍是自由
   文本，`ARTIFACT_EXISTS` 只判**存在**、不判**内容合格**（W-7）。
+
+- 2026-09-21 cycle 2 派生（`driver=client-goal / owner=root-agent`）：derive
+  `PLAN-20260921-128-evidence-chain-truthfulness`（EC-02，投影 ALL_PLAN）。
+  **派生时只读代码、未发起任何调用**，审计证据面得到五条事实（E-1…E-5），其中两条**改变了对本
+  EC 的估计**：**E-3** `packages/application/run_orchestration/` 对 `ToolResultRecord`
+  **零命中** ⇒ **真实 run 链里今天不存在任何非模型来源**；**E-4** 唯一合格的「工具证据」准入
+  路径 `register_tool_evidence`（要求 `SUCCEEDED` + 内容 spill + `Digest.of_bytes(content) ==
+  output_digest`，**可重算**）**没有任何生产调用方**，只在测试里被调。
+  加上 **E-1/E-2**（evidence 全部派生自会话输出、`trust_label=GENERATED`、
+  `evidence_source_count = len(evidence)`）⇒ **交付物就是它自己的「来源」**，
+  `EVIDENCE_COVERAGE ≥ 1` **恒成立**。
+  **因此本 cycle 的形状与 EC-01 不同**：EC-01 是在**一处可判事实**（键名）上打开；
+  EC-02 是**在 run 链里开出第一个非模型来源**——PLAN-128 把**承重墙定为 WP1（先审定案）**，
+  理由是：先动代码只会得到两种坏结局之一（接进来的「来源」其实还是自述换个名字，
+  或为了让判据绿而在测试侧造来源——**明文禁止**）。
+  候选（A 接工具结果 / B 接真实输入制品 / C 接 workspace 制品 / D 仅收紧口径）与代价已列表；
+  **D 单用不可行**（真实 run 将没有来源，且会打断 console demo）。
+  **爆破面**已点名两条声明合约（`domain_discovery` min **10**、`console_demo_deliverable` min **1**）
+  与两个测试夹具，并要求 WP1 补全逐项清单（AC-5）。
+  **与 EC-01 的边界写死**：交付物 artifact **仍然是模型自述**——名字换成合约名**不**使它成为来源；
+  这正是 `RECHECK-127` **W-4** 点名未解决的缺口。
