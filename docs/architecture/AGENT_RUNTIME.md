@@ -139,9 +139,14 @@ URL 策略（endpoint_url_refusal，复用唯一 host 判据）
 | 预算归账 | 账本里有正向 `MODEL_TOKENS` 条目，且**归因**到这次 run 的 task 与目录里绑定的 model |
 | 制品与证据 | `GET /runs/{id}/artifacts`、`/evidence` 非空，随后由既有 acceptance gate 对着合约裁决 |
 
-- **链的实测终点是判拒，而不是通过**：合约声明要 `analysis_report`，真实会话交付的是
-  `session_message`，因此 acceptance gate **拒绝**——这是链在正常工作（登记 → 裁决），
-  不是缺陷。"真实模型产出什么"属于模型能力，不属于本节的靶子。
+- **链的实测终点（GOAL-010 EC-01 之后）是两个分支**：合约声明**恰一个** artifact 名时，
+  交付物**用该名**（声明权归合约，见 `runtime_adapter._declared_deliverable_name`），
+  acceptance gate **通过**、run 到 `SUCCEEDED`；合约声明**不唯一**（零个或多个互不相同的
+  名字）时 adapter **不猜**、回落事实名 `session_message`，gate **拒绝**。
+  **判据没有放宽**：gate 仍按**字面名**匹配——改变的是交付物的**键名来源**。
+  两条分支各有专门用例（`test_real_runtime_offline_chain_segments` /
+  `test_real_runtime_offline_chain_rejects_a_non_unique_declaration`），成对存在；
+  GOAL-009 记录的「判拒是链在正常工作」由后者保留。
 - **零出站的反面同样被测量**：URL 被拒 / 缺执行目标时 run 失败消息点名事实，且 mock
   端点**一次请求都没收到**（`test_unmapped_tool_set_is_named_not_silently_dropped` 与
   F1 反证）。

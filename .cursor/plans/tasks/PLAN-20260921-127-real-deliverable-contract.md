@@ -58,16 +58,16 @@ memory_entries: []
 
 ## 实施清单
 
-- [ ] WP1 **D2 定向与记录一致性**：在 ADR-0031 的 D2 节记录「取自用户 GOAL-010 EC-01 定向」
+- [x] WP1 **D2 定向与记录一致性**：在 ADR-0031 的 D2 节记录「取自用户 GOAL-010 EC-01 定向」
       （日期 + 授权指认 + 所选形态 + 仍余 D1），并修正 Consequences 里那条**已不再成立**的
       「必被判拒」，使记录不与事实矛盾；**`Status: Proposed` 保持不变**（D1 未决）。
       同一步核对 ADR 结构判据**未被修改且仍绿**（AC-4）。
-- [ ] WP2 **adapter 声明化命名**：`adapters/openhands/runtime_adapter.py` 的 `_deliverable`
+- [x] WP2 **adapter 声明化命名**：`adapters/openhands/runtime_adapter.py` 的 `_deliverable`
       改为**按 `spec.task_contract` 的声明**命名交付物（声明源与受控边界见「影响报告」）；
       payload 带来源事实（AC-3）；docstring 与「D2」相关的措辞同步（**不得**留下与行为矛盾的句子）。
 - [ ] WP3 **同源判据**：钉住「声明 ⇒ 键名」的绑定与零/多声明的**不猜**边界（AC-1/AC-2），
       并**被压过**（先红后绿）。
-- [ ] WP4 **离线链双分支**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` 的交付物裁决
+- [x] WP4 **离线链双分支**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` 的交付物裁决
       断言改为**同时**覆盖「声明对齐 ⇒ PASS」与「声明不对齐 ⇒ REJECT」（AC-5）；
       **不在**该用例里放过 REJECT 分支的证据。受影响文档（`docs/integration/LIVE_MODEL_RUNBOOK.md`
       §6 样本段 / `docs/integration/OPENHANDS_ADAPTER.md` / `docs/architecture/AGENT_RUNTIME.md`）
@@ -80,17 +80,79 @@ memory_entries: []
 
 ## 证据
 
-### WP1 — D2 定向（进行中）
+### WP1 — D2 定向记录
 
-待本轮执行后回填：ADR 改动范围、结构判据实跑输出、以及「未修改门禁」的核对方式。
+- 改动：`docs/adr/ADR-0031-toolpack-capability-policy.md` 的 D2 节（新增定向方框）与
+  Consequences（修正那条「必被判拒」）。**`Status: Proposed` 原样保留**，
+  文本中**没有**出现 `Status: Accepted`。
+- **门禁未被修改的取证**：`tests/tooling/test_toolpack_capability_policy_pending.py`
+  **10 passed**，`git diff` 对该文件**为空**。其中
+  `test_the_acceptance_gate_still_matches_artifact_names_literally` 仍断言
+  `{session_message: …}` ⇒ `False`、`{analysis_report: …}` ⇒ `True`，
+  且 `session_message` 仍出现在 adapter 源文件里。
 
-### WP2 — adapter 声明化（进行中）
+### WP2 — adapter 声明化命名
 
-待本轮执行后回填：改动函数、**函数行数**（50 行门禁）、以及 payload 的来源事实字段。
+- `adapters/openhands/runtime_adapter.py`：新增 `_declared_deliverable_name(contract)`
+  （合并 `required_artifacts` 与 `ARTIFACT_EXISTS` 两处声明、去重后**恰一个**才返回该名，
+  否则 `None`）；`_deliverable` 的键名改为 `declared or _FACT_NAME`，载荷新增
+  `fact_name` / `declared_artifact` / `contract_id`。
+- 单文件 **+35 / −6**；两个函数都在 **50 行**门禁内（m0 的
+  `python/tests` 与 `python/product-lint` 均通过）。
+- 实跑核对：`_declared_deliverable_name(console_demo_deliverable)` ⇒ `analysis_report`。
 
-### WP3–WP6
+### WP3 — 同源判据（未做，见「剩余差距」）
+
+### WP4 — 离线链双分支
+
+- `tests/e2e/test_ec03_real_runtime_offline_chain.py`：
+  `_assert_deliverable_adjudicated` 拆为 `_assert_deliverable_landed`（两分支共用）+
+  PASS 分支 + 新增 `_assert_deliverable_rejected` 与用例
+  `test_real_runtime_offline_chain_rejects_a_non_unique_declaration`；
+  `_assert_events_mapped` 增加 `expected_suffix` 并钉住载荷的
+  `fact_name` / `declared_artifact` / `contract_id`（**字面量**，不 import adapter 的 helper
+  当判定依据——否则判据与被测实现循环论证）。
+- `tests/e2e/live_run_support.py`：新增 `declare_second_artifact`（测试侧反证预置，
+  只动 `preflight_override` 的目录快照）。
+- 实跑：该文件 **3 passed / 1 skipped**（live 分支如实 skip）；与 ADR 结构判据同跑
+  **13 passed / 1 skipped**。
+- **反证两次被压过（成对）**：
+  | 压测 | 改动 | 观察 |
+  | --- | --- | --- |
+  | ① 去掉声明化 | `declared or _FACT_NAME` ⇒ `_FACT_NAME` | **PASS 分支 RED**：制品回落 `:session_message`、run `FAILED`、失败消息含 `rejected by acceptance gate` |
+  | ② 去掉「不猜」边界 | `len(declared) == 1` ⇒ `declared` | **REJECT 分支 RED**：adapter 猜了 `analysis_report`、制品后缀不再匹配，断言在 `_assert_events_mapped` 命中 |
+  两次压测后均**复原**；复原后 `git diff` 只剩意图内改动。
+- 文档同源：`docs/architecture/AGENT_RUNTIME.md`（链的终点改为双分支）、
+  `docs/integration/OPENHANDS_ADAPTER.md`（载荷与键名来源）、
+  `docs/integration/LIVE_MODEL_RUNBOOK.md` §6（**样本不改写**，加注它描述的是改动前的行为，
+  并修正指向的判据名）。
+- 受影响门禁实跑：`tests/architecture tests/tooling tests/e2e/test_ec03_*` ⇒
+  **1235 passed / 1 skipped**；`DOCS-CHECK PASS: 6 deterministic checks`。
+
+### WP5 — 真实 run
 
 待本轮执行后回填。
+
+### WP6 — 本地门禁 + 复检
+
+本 WP2/WP4 提交时的本地全量 m0（CI 同形配置：测试 DSN pin + `LLM_MAIN_KEY=""`）：
+
+```
+PASS: profile=m0; 23 deterministic checks
+4261 passed, 13 skipped, 64 warnings in 526.66s   （FAIL 0 条）
+```
+
+定向跑（未按 m0 分组）时观察到的 5 条红**全部**是既有环境签名，逐条定性如下
+（**不**记作本 PLAN 的回归）：
+
+| 红项 | 定性 | 取证 |
+| --- | --- | --- |
+| `test_start_run_unprovisioned_control_plane_reports_actionable_failure` | **凭据可得性签名**（`RECHECK-20260920-121` W-7 已登记） | 最小复现 `pytest tests/adapters/openhands <该用例>` ⇒ **1 failed / 83 passed**；**决定性反证** 同命令加 `LLM_MAIN_KEY=""` ⇒ **84 passed**。**红 ⟺ 凭据可得**，与本次改动无关 |
+| `tests/api/test_worker_plane_composition.py` 三例 | **DSN 注入签名**（`.cursor/memory/` 的 `m0-gating-dsn-pinning` 逐条点名这三例） | 按该配方 pin 测试 DSN 后，m0 全量 **23/23 无红**；单跑该文件 **7 passed** |
+| `tests/e2e/test_pg_crash_restart.py` | postgres 面（同上，需测试 DSN） | pin 后 m0 全绿；单跑该文件通过 |
+
+**如实登记**：那次 W-7 最小复现**真的发起了一次出站**（端点发现）——这正是 GOAL-010
+**EC-05** 要把「默认门离线」从约定变成结构判据的原因；本 PLAN 未修它。
 
 ## 影响报告
 

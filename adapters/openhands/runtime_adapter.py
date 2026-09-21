@@ -59,21 +59,45 @@ from packages.application.ports.errors import (
     PortCancelledError,
     PortError,
 )
-from packages.domain.enums import FailureCategory
+from packages.domain.enums import AcceptanceCriterionType, FailureCategory
 from packages.domain.session_state import AgentSessionState
+from packages.domain.tasks import TaskContract
+
+# 真实会话交付物的**事实名**：这是一条会话消息，不是对内容的承诺。
+# 合约声明恰一个 artifact 名时用它之外的名字（见 `_declared_deliverable_name`）。
+_FACT_NAME = "session_message"
+
+
+def _declared_deliverable_name(contract: TaskContract) -> str | None:
+    """合约声明的**唯一** artifact 名；零个或**多个互不相同**的名字 ⇒ `None`（不猜）。
+
+    「多个」这一格是要紧的：一条会话消息**不能**诚实地同时充当多个产物，
+    猜一个名字等于让 adapter 自己变成声明方。`ARTIFACT_EXISTS` 与
+    `required_artifacts` 两处声明合并去重后再判——同一名字在两处重复声明**不算多个**。
+    """
+    declared = set(contract.required_artifacts)
+    declared |= {
+        criterion.artifact
+        for criterion in contract.acceptance_criteria
+        if criterion.type is AcceptanceCriterionType.ARTIFACT_EXISTS and criterion.artifact
+    }
+    return declared.pop() if len(declared) == 1 else None
 
 
 def _deliverable(entry: _SessionEntry, terminal: str) -> dict[str, object]:
-    """真实会话的**最小交付物**（EC-03 / PLAN-20260919-109）。
+    """真实会话的**最小交付物**（EC-03 / PLAN-20260919-109；声明化命名 = GOAL-010 EC-01）。
 
     只有 `SUCCEEDED` 才产出交付物：失败会话没有结论，把它中间的文本当结论登记进
     canonical 会把「没做完」伪装成「有产出」（与 Fake 侧同口径：非成功返回空）。
 
     文本取自**已映射**的 `RuntimeEvent.MESSAGE`——`event_mapping._message_text` 已经
     做过 redact 与截断，因此这里不新开一条绕过脱敏的通道，也不直接读 SDK 对象的
-    原始字段。键名 `session_message` 是**事实名**（这是一条会话消息），不是对内容的
-    承诺；真实交付物与合约声明的 artifact 名之间的映射（谁能声明 `analysis_report`）
-    是下一等的产品决策，本 adapter 不自行发明。
+    原始字段。
+
+    **键名由合约声明决定**：声明**恰一个** artifact 名时用该名，否则回落到事实名
+    `session_message`。名字的声明权归合约，本 adapter 只把声明**读出来**、不发明映射。
+    载荷同时登记 `fact_name` / `declared_artifact` / `contract_id`，使「这个名字是谁
+    声明的」在读面上**可判**（受控、声明化、可审计）。
     """
     if terminal != AgentSessionState.State.SUCCEEDED:
         return {}
@@ -84,12 +108,17 @@ def _deliverable(entry: _SessionEntry, terminal: str) -> dict[str, object]:
     ]
     if not messages:
         return {}
+    contract = entry.spec.task_contract
+    declared = _declared_deliverable_name(contract)
     return {
-        "session_message": {
+        declared or _FACT_NAME: {
             "content": messages[-1],
             "message_count": len(messages),
             "conversation_id": entry.conversation_id,
             "session_id": entry.session_id,
+            "fact_name": _FACT_NAME,
+            "declared_artifact": declared,
+            "contract_id": contract.id,
         }
     }
 

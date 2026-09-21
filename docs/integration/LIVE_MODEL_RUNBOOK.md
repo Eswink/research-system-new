@@ -196,12 +196,15 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 | 证据 | 1 条，`evidence:` 前缀 + 同一 `session_message` 后缀 |
 | 如实缺口 | `system_fingerprint` 与 `safe_response_metadata` 缺失（记录里进 `missing_fields`，**不**留白冒充） |
 
-**判拒为什么不是缺陷**：本示例协议的 task contract 要 `analysis_report`，而真实会话产出的是
-`session_message`，于是 acceptance gate 按合约**判拒**——这正是登记链在正常工作。判据请对照
-`tests/e2e/test_ec03_real_runtime_offline_chain.py` 的 `_assert_deliverable_adjudicated`：
-它把「`FAILED` + 点名 acceptance gate」固定为真实 runtime 路径的**期望**结果，并把
-「出现 `carries no structured output`」当成判红条件（那才说明登记链被跳过）。
-本次样本的制品 id 后缀恰好是 `:session_message`，与该路径一致。
+**判拒为什么不是缺陷**：本示例协议的 task contract 要 `analysis_report`，而该次真实会话产出的是
+`session_message`，于是 acceptance gate 按合约**判拒**——这正是登记链在正常工作。
+**（2026-09-21 更新，GOAL-010 EC-01）**：这条**历史样本**描述的是**改动之前**的行为；
+此后交付物的**键名由合约声明决定**（声明恰一个 artifact 名 ⇒ 用该名），本路径的**期望**
+因此分成**两个分支**，同一文件里的
+`_assert_deliverable_adjudicated`（声明对齐 ⇒ gate PASS ⇒ `SUCCEEDED`）与
+`_assert_deliverable_rejected`（声明不唯一 ⇒ adapter **不猜** ⇒ gate REJECT ⇒ `FAILED`，
+本样本所属的那一支）。两条都把「出现 `carries no structured output`」当成判红条件
+（那才说明登记链被跳过）。**样本本身不改写**——它是**当时**的观测记录。
 
 **证明力边界（别过度解读）**：`一致` 只代表**这一次**一致——它**不**证明该中转站永不漂移，
 也**不**证明底层模型与声明完全同一。单次样本**不能**把三态里的「一致」升级成永久结论；

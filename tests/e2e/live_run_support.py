@@ -183,6 +183,32 @@ def start_run(client: Any) -> dict[str, Any]:
     return cast(dict[str, Any], response.json())
 
 
+def declare_second_artifact(deps: Any, contract_id: str, extra: str) -> None:
+    """测试侧反证预置：把 `contract_id` 改成声明**两个** artifact 名。
+
+    用于 GOAL-010 EC-01 的**反证分支**——合约声明不再唯一时，adapter 必须**不猜**
+    （回落事实名），验收门随之判拒。只动 `preflight_override` 的目录快照，
+    与 `point_catalog_at` 同一手法；不写任何配置文件、不改产品代码路径。
+    """
+    from dataclasses import replace
+
+    from packages.domain.enums import AcceptanceCriterionType
+    from packages.domain.tasks import AcceptanceCriterion
+
+    context = deps.preflight_override
+    assert context is not None
+    catalog = context.catalog
+    contracts = dict(catalog.task_contracts)
+    contract = contracts[contract_id]
+    extra_criterion = AcceptanceCriterion(
+        type=AcceptanceCriterionType.ARTIFACT_EXISTS, artifact=extra
+    )
+    contracts[contract_id] = replace(
+        contract, acceptance_criteria=[*contract.acceptance_criteria, extra_criterion]
+    )
+    deps.preflight_override = replace(context, catalog=replace(catalog, task_contracts=contracts))
+
+
 def run_failures(client: Any, run_id: str) -> list[str]:
     """从 canonical 事件链读失败原因（`run.failed` / `task.failed` 的 message）。"""
     events = client.get(f"/runs/{run_id}/events").json()

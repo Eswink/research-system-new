@@ -56,13 +56,19 @@
 - 事件投影（复审 F-5/F-10 修正）：run() 启动投影 SESSION_STARTED（与
   Fake 对齐）；终端 kind 已由事件映射投影时不重复追加；RuntimeEvent
   message 经 domain redaction 脱敏。
-- 结构化输出（GOAL-007 EC-03）：run() 收敛到 SUCCEEDED 时携带**最小交付物**
-  `{"session_message": {content, message_count, conversation_id, session_id}}`，
-  content 取自**已映射**的 `RuntimeEvent.MESSAGE`（复用同一份 redact 与截断，
-  不新开绕过脱敏的通道）。非成功终态返回空——失败会话没有结论，把它中间的文本
-  登记进 canonical 会把「没做完」伪装成「有产出」（与 Fake 侧同口径）。键名
-  `session_message` 是**事实名**：真实交付物与合约声明的 artifact 名之间的映射
-  （谁能声明 `analysis_report`）是产品决策，adapter 不自行发明。
+- 结构化输出（GOAL-007 EC-03；**键名声明化 = GOAL-010 EC-01**）：run() 收敛到
+  SUCCEEDED 时携带**最小交付物**，载荷为
+  `{content, message_count, conversation_id, session_id, fact_name,
+  declared_artifact, contract_id}`，content 取自**已映射**的 `RuntimeEvent.MESSAGE`
+  （复用同一份 redact 与截断，不新开绕过脱敏的通道）。非成功终态返回空——失败会话
+  没有结论，把它中间的文本登记进 canonical 会把「没做完」伪装成「有产出」
+  （与 Fake 侧同口径）。
+  **外层键名由合约声明决定，不是 adapter 发明的映射**：合约
+  （`AgentSessionSpec.task_contract`）声明**恰一个** artifact 名时用该名，
+  否则回落到事实名 `session_message`。事实名仍**登记在载荷里**（`fact_name`），
+  `declared_artifact` / `contract_id` 让「这个名字是谁声明的」在读面上**可判**。
+  声明权归合约，adapter 只读声明。ADR-0031 的 **D2** 已按此定向（见该 ADR 的
+  「Decision needed」方框）；**D1 仍未决**。
 - Persistence Boundary：OpenHands conversation 持久化仅 runtime 参考，
   不替代 PostgreSQL Run/AgentRun/Manifest/Domain Event。
 

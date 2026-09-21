@@ -19,11 +19,16 @@ workspace 由 `workspace_allow_host_shell=True` **显式**打开（默认 deny �
   真实控制面缺这一环的行为由 `test_unmapped_tool_set_is_named_not_silently_dropped`
   如实测量并记录。
 
-四段的**实测终点**（不是设计意图，是本机实跑结果）：会话真的驱动了 mock 端点、
-事件进了 canonical 链、usage 落了账、交付物经登记链变成 evidence——最后由既有
-acceptance gate 对着合约判**拒绝**（合约声明要 `analysis_report`，真实会话交付的是
-`session_message`）。判拒绝是这条链在正常工作，不是缺陷：本 EC 的靶子是"真实
-runtime 能走完全链并使每一段可判"，不是"演示合约一定通过"。
+四段的**实测终点**（GOAL-010 EC-01 之后）：会话真的驱动了 mock 端点、事件进了 canonical
+链、usage 落了账、交付物经登记链变成 evidence——最后由既有 acceptance gate 对着合约裁决，
+**声明对齐 ⇒ 门 PASS、run 到 `SUCCEEDED`**。
+（GOAL-009 时期这条链的终点是**判拒**——合约要 `analysis_report`，真实会话给 `session_message`。
+判据**没有放宽**：门仍按**字面名**匹配；改变的是**交付物的键名由合约声明决定**，
+见 `runtime_adapter._declared_deliverable_name`。）
+**两个分支成对**：
+`test_real_runtime_offline_chain_segments` = 声明恰一个 ⇒ PASS；
+`test_real_runtime_offline_chain_rejects_a_non_unique_declaration` = 声明不唯一 ⇒ adapter
+**不猜** ⇒ REJECT（GOAL-009 那条判拒证据的保留位）。
 """
 
 from __future__ import annotations
@@ -43,6 +48,9 @@ from packages.domain.budget import ResourceType
 
 # 共享装配见 `live_run_support`：同一文件被两个模块名导入会让 SDK 的 Action
 # 子类被定义两次而毒化同进程事件 round-trip（Duplicate class definition）。
+from tests.e2e.live_run_support import (
+    declare_second_artifact as _declare_second_artifact,
+)
 from tests.e2e.live_run_support import (
     openhands_deps as _openhands_deps,
 )
@@ -164,17 +172,26 @@ def _assert_session_created(deps: Any, reads: _ChainReads) -> None:
     assert any(name in sent_model for name in resolved_names), (sent_model, resolved_names)
 
 
-def _assert_events_mapped(client: TestClient, reads: _ChainReads) -> None:
+def _assert_events_mapped(
+    client: TestClient, reads: _ChainReads, *, expected_suffix: str = ":analysis_report"
+) -> None:
     """段 2：真实 SDK 事件树 → RuntimeEvent 的**映射结果**落 canonical。
 
     判据是 artifact 载荷里的 `message_count`（被映射出来的 MESSAGE 事件数）与真实
     adapter 的 `session_id`——canonical 事件表不落 session 级事件，这里就是映射段
     唯一的可判窗口。断掉映射（不计数）这两条即红。
+
+    交付物的**键名**在这里同时被钉住（GOAL-010 EC-01）：示例合约
+    `console_demo_deliverable` 声明恰一个 artifact 名 `analysis_report`，因此制品 id
+    以它结尾；而载荷里的 `fact_name` 仍是 `session_message`——**名字是合约声明的，
+    事实名只是被登记下来**。两个名字都写成字面量（不 import adapter 的 helper 当
+    判定依据），否则判据会与被测实现循环论证。
+    `expected_suffix` 供**反证分支**用：合约声明不唯一时交付物回落到事实名。
     """
     assert "manifest.frozen" in reads.types
     assert reads.tasks and all(task["status"] for task in reads.tasks)
     session_artifact = next(
-        (item for item in reads.artifacts if str(item["id"]).endswith(":session_message")),
+        (item for item in reads.artifacts if str(item["id"]).endswith(expected_suffix)),
         None,
     )
     assert session_artifact is not None, (
@@ -185,6 +202,11 @@ def _assert_events_mapped(client: TestClient, reads: _ChainReads) -> None:
     mapped = client.get(f"/artifacts/{session_artifact['id']}/content").json()
     assert mapped["message_count"] >= 1, mapped
     assert mapped["session_id"], mapped
+    assert mapped["fact_name"] == "session_message", mapped
+    assert mapped["contract_id"] == "console_demo_deliverable", mapped
+    # 声明恰一个 ⇒ 用该名；声明不唯一 ⇒ `declared_artifact` 为 None（回落到事实名）
+    expected_declared = None if expected_suffix == ":session_message" else "analysis_report"
+    assert mapped["declared_artifact"] == expected_declared, (mapped, expected_suffix)
 
 
 def _assert_usage_attributed(deps: Any, reads: _ChainReads) -> None:
@@ -207,23 +229,48 @@ def _assert_usage_attributed(deps: Any, reads: _ChainReads) -> None:
     assert {entry.model_id for entry in token_entries} <= expected_models, token_entries
 
 
-def _assert_deliverable_adjudicated(reads: _ChainReads) -> None:
-    """段 4：交付物经既有登记链落 canonical，再由 acceptance gate 对着合约裁决。
+def _assert_deliverable_landed(reads: _ChainReads) -> None:
+    """段 4 的前半：交付物经既有登记链落 canonical（两个分支共用）。
 
-    判拒是链在正常工作（合约要 `analysis_report`，真实会话给 `session_message`）；
-    反过来，"carries no structured output"出现即说明登记链被跳过了。
+    "carries no structured output"出现即说明登记链被跳过了——这条在**两个分支**上
+    都必须为假，否则「判拒」可能来自登记链被跳过而不是来自验收门。
     """
     assert reads.evidence, "canonical evidence is empty: the deliverable never landed"
     assert reads.artifacts, "canonical artifacts are empty: the deliverable never landed"
-    assert reads.run["state"] == "FAILED", reads.run
-    assert any("acceptance gate" in message for message in reads.failures), reads.failures
     assert not any("carries no structured output" in message for message in reads.failures), (
         reads.failures
     )
 
 
+def _assert_deliverable_adjudicated(reads: _ChainReads) -> None:
+    """段 4（声明对齐分支）：合约声明恰一个 artifact 名 ⇒ 交付物用该名 ⇒ **门 PASS**。
+
+    这是 GOAL-010 EC-01 的主干证据：**真实 runtime**（本文件用 mock 端点离线跑同一条
+    LLM 路径）的交付物**满足**声明式合约 ⇒ run 到 `SUCCEEDED`。
+    GOAL-009 在本路径上观察到的是判拒（终态 `FAILED`）；**判据没有放宽**——门仍按
+    字面名匹配，改变的是**交付物的键名由合约声明决定**（见 reject 分支的反证）。
+    """
+    _assert_deliverable_landed(reads)
+    assert reads.run["state"] == "SUCCEEDED", (reads.run, reads.failures)
+    assert not reads.failures, reads.failures
+    assert any(str(item["id"]).endswith(":analysis_report") for item in reads.artifacts), [
+        item["id"] for item in reads.artifacts
+    ]
+
+
+def _assert_deliverable_rejected(reads: _ChainReads) -> None:
+    """段 4（声明不对齐分支）：合约声明**两个** artifact 名 ⇒ adapter **不猜** ⇒ 门 REJECT。
+
+    这是 EC-01 的**反证**，也是 GOAL-009 那条「判拒是链在正常工作」证据的**保留位**：
+    一旦有人把「不猜」的边界去掉（改成无论声明几个都挑一个），这条立刻红。
+    """
+    _assert_deliverable_landed(reads)
+    assert reads.run["state"] == "FAILED", (reads.run, reads.failures)
+    assert any("acceptance gate" in message for message in reads.failures), reads.failures
+
+
 def test_real_runtime_offline_chain_segments(mock_relay: str) -> None:
-    """四段：会话创建 / 事件映射 / 预算归账 / 制品与证据。"""
+    """四段：会话创建 / 事件映射 / 预算归账 / 制品与证据（声明对齐 ⇒ 门 PASS）。"""
     from services.api.app import create_app
 
     deps = _openhands_deps(mock_relay, map_tools=True)
@@ -233,6 +280,22 @@ def test_real_runtime_offline_chain_segments(mock_relay: str) -> None:
         _assert_events_mapped(client, reads)
     _assert_usage_attributed(deps, reads)
     _assert_deliverable_adjudicated(reads)
+
+
+def test_real_runtime_offline_chain_rejects_a_non_unique_declaration(mock_relay: str) -> None:
+    """反证：合约声明**两个** artifact 名时，adapter 不得猜一个名字去凑门。
+
+    判据是**同一条链**上的相反终态（`FAILED` + 点名 acceptance gate）——
+    与上面那条用例**成对**，任一条被改成迁就实现都会让另一条失去意义。
+    """
+    from services.api.app import create_app
+
+    deps = _openhands_deps(mock_relay, map_tools=True)
+    _declare_second_artifact(deps, "console_demo_deliverable", "review_verdict")
+    with TestClient(create_app(deps)) as client:
+        reads = _read_chain(client, _start(client))
+        _assert_events_mapped(client, reads, expected_suffix=":session_message")
+    _assert_deliverable_rejected(reads)
 
 
 @pytest.mark.requires_live_llm
