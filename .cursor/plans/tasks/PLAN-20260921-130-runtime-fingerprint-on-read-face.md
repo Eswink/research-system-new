@@ -2,7 +2,7 @@
 id: PLAN-20260921-130
 slug: runtime-fingerprint-on-read-face
 title: 运行时指纹四要素落读面，并把「模型不存在」的样本面如实收口（GOAL-010 EC-04）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-21
 updated_at: 2026-09-21
 parent_goal: GOAL-20260921-010
@@ -21,8 +21,9 @@ authorization:
     **不得**把「没看到 system_fingerprint」冒充「模型可复现」。**触到 Domain / Canonical State
     边界（例如给 Run 加新的域字段）即 BLOCKED**，留人工拍板。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-130-runtime-fingerprint-and-model-absence.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260921-103-model-absence-taxonomy-and-false-green-judges.md
 ---
 
 # PLAN-20260921-130 — 运行时指纹四要素落读面（GOAL-010 EC-04）
@@ -63,8 +64,8 @@ GOAL-010 EC-04 的两件事，各自可判：
   产出：定案 + 代价 + 回退路径 + **不做**边界。**先落记录再改代码**。
 - [x] WP2 **按定案落读面**：DTO/映射/回填源 + 读面判据（含 AC-3 的按压）+ OpenAPI 快照与
   web 类型（若 DTO 变化，按仓库配方同步）。
-- [ ] WP3 **「模型不存在」样本**：按 AC-4 二选一落地（真实调用取最小必要，或如实登记 + 代价）。
-- [ ] WP4 **门禁 + 复检 + 收口**：定向 → m0 23/23 → 治理绿 → RECHECK → GOAL 回写。
+- [x] WP3 **「模型不存在」样本**：按 AC-4 二选一落地（真实调用取最小必要，或如实登记 + 代价）。
+- [x] WP4 **门禁 + 复检 + 收口**：定向 → m0 23/23 → 治理绿 → RECHECK → GOAL 回写。
 
 ## 证据（derive 阶段实测；**只读代码/配置，未发起任何真实调用**）
 
@@ -149,6 +150,88 @@ GOAL-010 EC-04 的两件事，各自可判：
 - 定向：`ruff check` / `ruff format --check` / `mypy` 在产品根（apps/services/packages/adapters/tests）全绿。
 - 前端：stub e2e **96 passed**；live e2e（`live-run-substrate-disclosure`，真 app + Playwright）**1 passed**。
 - 治理：`governance-check/validate.py`、`docs_consistency`、`validate_bundle.py` 全绿。
+
+## WP3 落地（**已完成**：走 AC-4 的**第一条**——provider 侧**真实样本**，不登记为未实测）
+
+### 样本形态
+
+`tests/e2e/test_live_model_absence.py`（`requires_live_llm`，**预置条件式**：未声明
+`RESEARCHOS_LIVE_MODEL_ABSENCE_CASE=1` ⇒ SKIP 并点名；默认门禁下不跑）。
+
+- **只调一次** `run_endpoint_test`（连通性 `GET /models` + 一次 chat），指向已登记真实端点
+  `agnes-anthropic`，用一个**不可能存在**的 model 标识（`research-os-absent-model-v1`）。
+- `url_policy` **不覆盖** ⇒ 走产品默认策略（拒 localhost / 环回 / 私有 / 保留），本样本不放松任何门。
+- 包一层 `_StepRecorder` 在真网关外面记录**每一步**的结果面（ok / 类别 / 消息是否点名模型，
+  **没有正文**）——产品代码一行不改。
+- 观测结果原样打到 stdout 并写进 `tmp_path`（全脱敏：只有布尔与标识）。
+
+### 实测事实（2026-09-21，本机，`-s` 实跑，逐字取自样本自报的 JSON）
+
+| # | 事实 | 读数 |
+| --- | --- | --- |
+| W3-1 | **连通性那一步过了** | `{"step": "connectivity", "ok": true}` ⇒ 端点与凭据都没问题，**这次拒绝不可能是「中转站的 /models 挂了」** |
+| W3-2 | **拒的是那次 chat** | `{"step": "chat", "ok": false, "request_model": "research-os-absent-model-v1"}` |
+| W3-3 | **失败类别 = `MODEL_RELAY_UNAVAILABLE`** | 该类别由 **5xx** 映射而来（`failure_category_of_http_status`）⇒ **中转站用自己的 5xx 表达这次拒绝** |
+| W3-4 | **错误正文点名了请求的标识** | `message_names_the_absent_model: true` ⇒ 判定细则里「点名模型标识」**有实测支撑**，不是修饰语 |
+| W3-5 | **没有静默映射**（AGENTS §4 的漂移反证） | `returned_model_name: null`、`returned_name_differs_from_requested: false`、`ok: false` |
+| W3-6 | 凭据未泄漏 | 断言 `credential not in error_message` 通过 |
+| W3-7 | 快拒，非超时 | 全程 ~8.2s ⇒ 不是「重试到超时」 |
+
+### 由 W3-3 得到的**新增诚实边界**（已写进 RUNBOOK §7，成为第 4 条）
+
+「模型不存在」**没有专属失败类别**：它与「中转站故障」共用 `MODEL_RELAY_UNAVAILABLE`，
+而该类别**在可重试集合里**（`adapters/relay/transport.py` 的 `_RETRYABLE_CATEGORIES`）。
+所以：**按类别读会读错**——这一格唯一能把两者分开的读数面是**消息是否点名模型标识**。
+这条是**实测出来的**，不是推理出来的；它把「点名模型标识」从措辞升级成**判据的必要条件**。
+
+### 文档与判据同步
+
+- `docs/integration/LIVE_MODEL_RUNBOOK.md` §7：「模型不存在」一格补上**实测样本出处 + 实测读数**；
+  边界从三条扩为**四条**（新增上条）。**保留** `adapters/openhands/llm_factory.py`（装配侧那一半）。
+- `tests/architecture/python/test_live_failure_paths_same_source.py`：新增
+  `TestTheModelAbsenceRowPointsAtAMeasuredSample`（4 条）——那一格**必须同时**指到装配层 builder
+  **与**实测样本；样本必须 `requires_live_llm` + 预置条件式。任一侧被摘掉即判红（防止
+  「样本没了但行文照旧」）。
+
+### 按压抓出的**判据缺陷**（本 cycle 自己造成并修好的一条）
+
+第一版的「预置条件式」两条是**文本**判据（`assert "pytest.skip(" in text` +
+`assert 开关名 in text`）。按 WP4 的纪律**按压**（把样本里的开关名改成 `…_CASE_PRESSED`）⇒
+**仍然 20 passed**。原因：被断言的开关名是别名的**前缀**，子串判定不区分。
+
+**改成行为判据**（成对）：删掉开关 ⇒ 样本抛 skip（`pytest.raises(pytest.skip.Exception)`）；
+声明开关 ⇒ **必须不 skip**。第二版第一次写出来仍不红——`_require_case()` 抛的 skip 会把
+**判据自己**变成 skip，而 **skip 不是红**。最终形态加两条防线：
+`样本的开关常量 == 判据里的开关名`（等价性断言）+ 把 skip **转成 `pytest.fail`**。
+**再压**（同一个改名）⇒ **RED（真失败，不是 skip）**；复原 ⇒ 复绿。
+
+### 判据的射程（**不声称**的部分）
+
+- **单次观测**只覆盖**这一次**调用：**不**声称「该 provider 对所有未知模型都如此」，
+  也**不**声称「所有中转站都这么表现」。（这一句同时写在模块 docstring 里。）
+- 样本走的是 **endpoint test**（probe）路径，**不是** run 执行路径：它证明的是
+  「provider 面对未知模型会拒绝并点名」，**不**替代 run 侧的失败语义（那由装配层结构判据钉住）。
+
+### 门禁证据（本轮实跑）
+
+- 样本本身：`1 passed`（预置条件声明时）；**未声明时 `1 skipped`**（默认门禁姿态）。
+- 架构判据：`tests/architecture/python/test_live_failure_paths_same_source.py` **21 passed / 1 skipped**
+  （skip 的那条是样本自己）；**按压**（改开关名）⇒ 真 RED，复原 ⇒ 复绿。
+- `ruff check` / `ruff format --check` / `mypy`：两个文件全绿。
+
+### 门禁自己抓出来的一条（**收口树首跑红**，已修）
+
+把 PLAN 置 `DONE` 后跑**收口树**全量 m0 ⇒ `FAILED: 1 check(s): framework/validate=1`（治理
+`validate.py`），两条都点名本 PLAN：
+
+1. `DONE 任务缺少 latest_recheck: PLAN-20260921-130`——`latest_recheck` 此前是 `null`；
+2. `DONE 任务既无工程记忆引用，也未声明无可复用事实: PLAN-20260921-130`——`memory_entries` 此前是空表。
+
+**处置**（不改校验逻辑、不放宽任何东西）：补 `latest_recheck`（**仓库相对路径**，非裸 ID——
+GOAL-009 收口时抓过的同一类漏改）+ 落一条工程记忆
+`MEM-20260921-103-model-absence-taxonomy-and-false-green-judges.md`（本 cycle 的两条可复用事实：
+「模型不存在」无专属类别；两类「按了不红」的假绿判据）+ 在 `.cursor/memory/INDEX.md` 登记。
+**这条红是本 cycle 自己造成、自己修好的第三条**，如实登记——**首跑红不记成绿**。
 
 ## WP1 定案（**已完成**：取 (a) 的「调用后 canonical 事实 + 读面合并」形态）
 
@@ -249,6 +332,16 @@ EC-01/EC-02/EC-03 的判据都落在**一次 run 之内**（交付物名、来�
 
 ## 状态历史
 
+- 2026-09-21 WP3 **落地**（provider 侧真实样本，走 AC-4 第一条）：
+  `tests/e2e/test_live_model_absence.py` 以**一次**最小真实调用实测「不存在的 model 标识」，
+  读数逐字留在上表 W3-1…W3-7。**本次共 3 次真实调用**（第 1 次验判据可跑通；第 2 次把观测
+  打出来；第 3 次补**步骤轨迹**）——第 3 次是必要的：前两次的记录**分不清**是连通性那步还是
+  chat 那步拒的，而这两件事语义完全不同，不区分就可能把「中转站挂了」写成「provider 拒了
+  未知模型」。**新增实测边界**：这一类失败**没有专属类别**（与中转站故障共用
+  `MODEL_RELAY_UNAVAILABLE`，且**可重试**）⇒ 「点名模型标识」是唯一的区分读数面。
+  文档 + 架构判据同步（§7 第四格与第 4 条边界；4 条新判据两侧都钉住）。
+  **按压抓出并修好一条判据缺陷**：第一版「预置条件式」是文本子串判据，改开关名仍绿 ⇒
+  改成**行为成对** + 等价性断言 + **skip 转 fail**；再压 ⇒ 真 RED，复原 ⇒ 复绿（详见上「按压抓出」）。
 - 2026-09-21 WP2 **落地**（按 WP1 定案接线，见上「WP2 落地」）：
   四要素从「只活在测试的 `tmp_path`」变成**产品路径上的 canonical 事实**——会话观测
   （零额外调用，来源是 adapter 已在读的 `ConversationStats`）→ `model.probed` 事件 →

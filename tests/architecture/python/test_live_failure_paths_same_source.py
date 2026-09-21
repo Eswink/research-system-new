@@ -19,6 +19,8 @@ import re
 from dataclasses import replace
 from pathlib import Path
 
+import pytest
+
 from adapters.relay.credential_resolver import EnvCredentialResolver
 from packages.application.model_relay.live_run_gate import evaluate_live_run_gate
 from services.api.runtime_support import OPENHANDS_RUNTIME
@@ -30,9 +32,11 @@ EGRESS_GATE_SUITE = REPO_ROOT / "tests/api/test_runtime_egress_gate.py"
 LLM_FACTORY = REPO_ROOT / "adapters/openhands/llm_factory.py"
 SESSION_FACTORY = REPO_ROOT / "services/api/runtime_support.py"
 LIVE_FAILURE_SUITE = REPO_ROOT / "tests/e2e/test_live_failure_paths.py"
+LIVE_ABSENCE_SUITE = REPO_ROOT / "tests/e2e/test_live_model_absence.py"
 ENDPOINTS_YAML = REPO_ROOT / "examples/config/llm_endpoints.yaml"
 
 _CREDENTIAL_REF = "llm_main_key"
+_ABSENCE_CASE_ENV = "RESEARCHOS_LIVE_MODEL_ABSENCE_CASE"
 #: §7 表格的**固定标签**（解析只认标签，不猜格式）。
 _LABELS = ("无效凭据", "端点拒绝", "模型不存在")
 
@@ -184,6 +188,71 @@ class TestTheExpectationsAreWrittenDown:
         section = _section_seven()
         for phrase in ("门开", "有界", "不消费"):
             assert phrase in section, f"§7 must state the boundary containing {phrase!r}"
+
+
+class TestTheModelAbsenceRowPointsAtAMeasuredSample:
+    """「模型不存在」那一格**既要**指装配层判据，**也要**指 provider 侧**实测样本**。
+
+    GOAL-010 EC-04 之前，这一格只有装配层结构断言（「只消费一个模型」）——
+    那证明的是「不会回退」，**不**证明 provider 面对未知模型会拒绝。样本落地后，
+    两句话分别有各自的出处；这一组判据把它们**绑在一起**，防止任一侧被悄悄摘掉。
+    """
+
+    def test_the_row_still_points_at_the_builder(self) -> None:
+        assert "adapters/openhands/llm_factory.py" in _row("模型不存在")
+
+    def test_the_row_points_at_the_live_sample(self) -> None:
+        assert "tests/e2e/test_live_model_absence.py" in _row("模型不存在"), (
+            "the row no longer cites the measured provider-side sample — if the sample was "
+            "removed, the row must go back to saying the provider side is unmeasured"
+        )
+        assert LIVE_ABSENCE_SUITE.is_file(), (
+            f"§7 cites {LIVE_ABSENCE_SUITE.relative_to(REPO_ROOT)}, but that file is gone"
+        )
+
+    def test_the_sample_is_marked_requires_live_llm(self) -> None:
+        from tests.e2e import test_live_model_absence
+
+        raw = test_live_model_absence.pytestmark
+        marks = {mark.name for mark in (raw if isinstance(raw, list) else [raw])}
+        assert "requires_live_llm" in marks, (
+            "the absence sample spends a real call and must be skipped by the default gate"
+        )
+
+    def test_the_sample_skips_without_its_precondition(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """预置条件式：**没声明就 skip**（不是恰好通过）。
+
+        **这一条压过一次**（本 cycle 实测）：第一版写成「样本文件里出现开关名」的**文本**判据，
+        把样本里的开关名改成 `…_PRESSED` 仍然**绿**——被断言的字符串是别名的**前缀**，
+        子串判定根本不区分。改成**行为**判据后，改名 ⇒ 下面第二条红（声明的开关点不亮它）。
+        """
+        from tests.e2e import test_live_model_absence
+
+        monkeypatch.delenv(_ABSENCE_CASE_ENV, raising=False)
+        with pytest.raises(pytest.skip.Exception):
+            test_live_model_absence._require_case()
+
+    def test_the_sample_starts_when_its_switch_is_declared(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """配对：声明开关 ⇒ 不再 skip。两条一起才钉住「开关就是这一个名字」。
+
+        **skip 不算红**——所以这里把样本抛出的 skip **转成失败**：否则开关被改名时，
+        这条判据自己也跟着 skip，整组又变成「恰好绿」。
+        """
+        from tests.e2e import test_live_model_absence
+
+        assert test_live_model_absence._CASE_ENV == _ABSENCE_CASE_ENV, (
+            "the sample's precondition switch was renamed — the §7 row and this judge "
+            "would keep citing a switch that no longer starts it"
+        )
+        monkeypatch.setenv(_ABSENCE_CASE_ENV, "1")
+        try:
+            test_live_model_absence._require_case()
+        except pytest.skip.Exception as exc:
+            pytest.fail(f"{_ABSENCE_CASE_ENV} must start the sample, but it skipped: {exc}")
 
 
 class TestTheLiveCounterProofIsPreconditionedNotAlwaysGreen:

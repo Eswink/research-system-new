@@ -256,9 +256,9 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 | --- | --- | --- |
 | 无效凭据 | 门**开**（`has()` 只问存在性，**不**问有效性）⇒ **发起**调用 ⇒ **明确失败**并落终态，点名鉴权；**不**静默成功、**不**无限重试 | `tests/e2e/test_live_failure_paths.py` 的 `test_live_invalid_credential_fails_loudly_without_leaking`（live，需显式预置条件）；门的语义由 `tests/architecture/python/test_live_failure_paths_same_source.py` 钉住 |
 | 端点拒绝 | URL 策略是**门链第一环且先于触网**：拒 localhost / 环回 / 私有 / 保留时 **零出站**，且**点名策略**；链**短路**（同 endpoint 上不再派生 health / credential 的拒绝） | `tests/api/test_runtime_egress_gate.py`（既有套件，**不重复实现**） |
-| 模型不存在 | **明确失败**并落记录（点名模型标识），**不**回退到别的模型 | `adapters/openhands/llm_factory.py` 只接收**一个** `ModelDefinition`；run 的 LLM 装配路径**不消费** fallback（判据：`tests/architecture/python/test_live_failure_paths_same_source.py`） |
+| 模型不存在 | **明确失败**并落记录（**点名模型标识**），**不**回退到别的模型 | 实测样本：`tests/e2e/test_live_model_absence.py`（live，需显式预置条件）。**2026-09-21 实测**（`agnes-anthropic` + 一个不存在的标识）：连通性 `GET /models` **通过** ⇒ 那次 chat 被中转站以 **5xx** 拒（⇒ `MODEL_RELAY_UNAVAILABLE`）且**错误正文点名**了请求的标识，返回 model 名为 `null`——**没有**静默映射。装配侧：`adapters/openhands/llm_factory.py` 只接收**一个** `ModelDefinition`；run 的 LLM 装配路径**不消费** fallback（判据：`tests/architecture/python/test_live_failure_paths_same_source.py`） |
 
-**三条必须一起读的边界**：
+**四条必须一起读的边界**：
 
 1. **「门开」≠「凭据有效」**。门答的是「**此刻能不能发起**」，不是「**会不会成功**」。
    把门改成校验有效性会是行为变更（本仓明文不做）；因此**无效值也开门**是**设计内**的语义，
@@ -269,6 +269,10 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 3. **本仓**有** fallback 概念**（`ModelProfile.fallback` / `plan_fallback`），
    但**会话中途不切换模型**：run 的 LLM 装配路径只消费被绑定的那**一个**模型。
    「不回退」指的是**这条路径**的行为，不是「仓库里没有 fallback」。
+4. **「模型不存在」的失败类别不唯一**（**实测**）：中转站用它自己的 5xx 表达这次拒绝，
+   于是这一类失败与「中转站故障」共用 `MODEL_RELAY_UNAVAILABLE`，而该类别**在可重试集合里**
+   （`adapters/relay/transport.py`）。所以判定细则里的「**点名模型标识**」不是修饰语，
+   而是这一格**唯一**能把它与「中转站挂了」区分开的读数面——按类别读会读错。
 
 ## 8. 凭据生命周期：注入 / 轮换 / 撤销 / 可弃用额度
 

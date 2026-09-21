@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260921-130](tasks/PLAN-20260921-130-runtime-fingerprint-on-read-face.md) | IN_PROGRESS |
+| [x] | [PLAN-20260921-130](tasks/PLAN-20260921-130-runtime-fingerprint-on-read-face.md) | DONE |
 | [x] | [PLAN-20260921-129](tasks/PLAN-20260921-129-real-protocol-availability.md) | DONE |
 | [x] | [PLAN-20260921-128](tasks/PLAN-20260921-128-evidence-chain-truthfulness.md) | DONE |
 | [x] | [PLAN-20260921-127](tasks/PLAN-20260921-127-real-deliverable-contract.md) | DONE |
