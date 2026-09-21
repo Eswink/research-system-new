@@ -150,6 +150,7 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260921-127-real-deliverable-contract.md
   - .cursor/plans/tasks/PLAN-20260921-128-evidence-chain-truthfulness.md
+  - .cursor/plans/tasks/PLAN-20260921-129-real-protocol-availability.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-128-evidence-chain-truthfulness.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260921-100-deliverable-name-declaration-and-gate.md
@@ -406,6 +407,7 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 | 0 | （建档，无子 PLAN） | `17cef9b` | 治理 `validate.py` 绿；`validate_bundle` 绿；DOCS-CHECK `6 deterministic checks` 绿；framework **8/8** | 见下方 CI 台账 | — | EC-01…EC-06 全 PENDING；机制已定位（G-3 键名一处可判事实 / G-4 证据由模型自述满足）⇒ EC-01 是**可落地**的工程任务 | cycle 1 = derive **EC-01** 子 PLAN（真实交付物契约） |
 | 1 | PLAN-20260921-127（EC-01） | `c6dbed5`（derive + ALL_PLAN）、`577eaa2`（WP1：ADR-0031 D2 定向记录）、`00368ab`（WP2+WP4：声明化命名 + 离线链双分支 + 文档同源） | **离线链双分支实跑**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` ⇒ **3 passed / 1 skipped**（live 分支如实 skip）——**声明对齐 ⇒ 门 PASS ⇒ run `SUCCEEDED`**（GOAL-009 时期该路径的终点是 `FAILED`）；与 ADR 结构判据同跑 **13 passed / 1 skipped**；**反证两次被压过**（①去掉声明化 ⇒ PASS 分支 RED、制品回落 `:session_message` + `rejected by acceptance gate`；②去掉「不猜」边界 ⇒ REJECT 分支 RED），两次均复原、`git diff` 只剩意图内改动；**ADR-0031 结构判据未被修改且仍绿**（10 passed，`git diff` 对该文件为空）；受影响门禁 `tests/architecture tests/tooling tests/e2e/test_ec03_*` ⇒ **1235 passed / 1 skipped**；`DOCS-CHECK PASS: 6 deterministic checks`；治理 `validate.py` 绿；**全量 m0（CI 同形配置：测试 DSN pin + `LLM_MAIN_KEY=""`）⇒ `PASS: profile=m0; 23 deterministic checks`（4261 passed / 13 skipped / FAIL 0，526.66s）** | **run 35562941912 = success**（`00368ab`；六 job 全 **success**：`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`，逐 job 实查）；建档推送 `17cef9b` → **run 35560783476 = success**（六 job 全 success；上一条已收口） | — （**未改任何门禁/断言强度**：ADR 结构判据零改动仍绿；离线链是**双分支**——判据**只增不减**，GOAL-009 的 REJECT 证据被保留为反证分支） | **EC-01 PASS（cycle 1 收口）**。**本 cycle 消灭的缺口**：GOAL-009 那条「真实 run 必然被判拒」的宿命——**真实 run 第一次走到 `SUCCEEDED`**（run `f1710564-855c-43f7-9fdd-84966a878cf9`，`failures` 为空，制品按合约声明的 `:analysis_report` 登记），且**判据没有放宽**（`acceptance.py` / 合约 / ADR 判据在整个 PLAN 范围 `git diff` 均为空，可复查）。**残余如实登记**（`RECHECK-127` W-1…W-8）：**W-4 = EC-02 未被触及**——这次成功 run 的证据链**仍由模型自述满足**（`EVIDENCE_COVERAGE` 数的就是交付物自己，`TrustLabel.GENERATED`）；W-1 门 PASS 是**代码路径推出的蕴含关系**而非直读 criterion 文本；W-2 live 调用 **2 次**（第 2 次为取回 run id）；W-5 (i) 路径未验证；W-6 前端读面仍无判据 | cycle 2 = derive **EC-02**（证据链真实性：`EVIDENCE_COVERAGE` 由**真实可查来源**满足，不得由模型自述充当；反证：去掉来源 ⇒ 判拒） |
 | 2 | PLAN-20260921-128（EC-02） | `edd9134`（derive + ALL_PLAN）、`8d3afd4`（WP1：证据面审计 + 判别性质定案）、本 cycle 收口提交（WP2–WP5 + EC-02 置 PASS；**见下方 CI 台账尾巴**） | **WP2–WP5 完成，成对落地 + 三次压制 + 真跑 + 全量门**：`python/tests` ⇒ **4278 passed / 15 skipped / 0 failed（513.38s）**；**全量 m0（`--keep-going`，CI 同形配置）⇒ `PASS: profile=m0; 23 deterministic checks`（exit 0）**；`typescript` 组 ⇒ `PASS: profile=typescript; 9 deterministic checks`；治理 `validate.py` 绿（先在它上面抓到三处真漂移并修掉）；**定向**：`tests/application/evidence` + `tests/e2e` + `tests/integration` + `tests/tooling` ⇒ **1271 passed / 6 skipped**。**反证三次压制全先红后绿**（①去协议声明 ⇒ 同源判据 + vertical slice 6 用例红；②去种入 ⇒ vertical slice 6 用例红；③撤收紧 ⇒ `test_provenance.py` 3 用例红），另**压制 ④**（摘掉 PG 组合根的种入 ⇒ 新结构判据红）。**真跑**：run `a2a1bfbf-fea1-44a5-bfd0-ac3396d5d054` **`SUCCEEDED`**、`failures` 为空、读面 4 条来源（2 自述 `GENERATED` + **2 声明输入 `USER_PROVIDED`**），被引用对象 `created_by=composition-root` | `edd9134` ⇒ **M0 run 35569619396 = success** + CodeQL 35569618570 = success；`8d3afd4` ⇒ **M0 run 35571214930 = success** + CodeQL 35571214533 = success（均逐 job 实查）；本 cycle 收口提交的 run **见回合汇报**（台账尾巴口径） | **未改门禁/断言强度**：`packages/domain/acceptance.py` 与 `examples/contracts/task_contracts.yaml` 的 `minimum_sources` **零改动**；唯一判据面改动是**收紧**（`sort_analysis_review` 补 `ARTIFACT_EXISTS`，见 W-1）。**本 cycle 自己造成并修好两条回归**（两条都是**全量 m0 抓出来的**）：**R-1** PG 组合根漏种声明输入 ⇒ `test_m13_pg_run_e2e` 的 run `FAILED`（修：PG 组合根同职责种入 + **新增结构判据**把「控制面组合根集合」钉住）；**R-2** 前端单测夹具未跟上 `EvidenceDto` 三个新字段 ⇒ `typescript/typecheck` 红（修：夹具补齐，取值与产品语义同形） | EC-02 PASS。**如实登记的射程边界**（`RECHECK-128` W-1…W-11）：**W-1** 判据面唯一改动（`ARTIFACT_EXISTS`）须人工复核；**W-2** live 调用 **4 次**，超「最小必要」（3 次是判据/读面胶水缺陷）；**W-3** 声明输入只证 **grounding**、**不**证「真的读过」；**W-6** 三个 DTO 字段是本次**新增**的读面（此前 `SourceRecord` 在 `services/` 零命中，判据用语当时**无路可走**）；**W-7** `domain_discovery` 的 `min 10` **仍未有 run 路径行使过**；**W-8** `self_artifact_ids` 漏传会退化成旧口径；**W-9** 拒绝落在**登记期**而非 WP2b 写的 **preflight**（实质相同，诊断更钝）；**W-11** 首次本地 m0 漏 `--keep-going` 导致只跑 6/23 | cycle 3 = derive **EC-03**（真实协议的可用性：demo 协议头部注释**自称**「受控 Fake agent loop…**不冒充真实研究执行**」，其语义对真实执行体不适用 ⇒ 选定/新增一份真实协议并登记，判据要求**协议 id 出现在 run 的 canonical 事实里**） |
+| 3 | PLAN-20260921-129（EC-03） | 本 cycle derive 提交（PLAN-129 + ALL_PLAN 投影 + GOAL 回写；**见下方 CI 台账尾巴**） | **derive 阶段只读代码与配置、未发起任何真实调用**；治理 `validate.py` 绿；实测得 E-1…E-8 与候选表 | **见回合汇报**（台账尾巴口径：本条自身的 run 不回写文件） | — | EC-03 执行中；**derive 已把候选面实测收窄并量化**：**E-1** 真实 run 用哪份协议**今天只是测试侧常量**（`tests/e2e/live_run_support.py:_PROTOCOL`），**没有任何产品面决定**；**E-2** 登记面（`examples/config/project.yaml:7`）指向的是**另一份**协议 `ai_ml_research_v0_4_0`（同一字符串还出现在控制台设计基线与模板表 `protocol_drafts.py:55`）⇒ 错配**产品面可见**；**E-4/E-5** 产品面**只登记 4 条合约**（`domain_discovery` / `experiment_execution` / `m12_experiment_execution` / `console_demo_deliverable`）⇒ `sort_analysis_v1` 的两条合约**只活在测试里**（`tests/e2e/scenario_catalog.py`），`task_contract` 不在册的协议**在产品路径上解析不出合约**；**E-6** `phase.strategy` 在产品侧**只有编译器一个消费者**（编排层不读）⇒ `parallel_agents`/`map_reduce`/`population_search` **不是可执行语义**，**phase 数 = 会话数**（登记面那份协议有 **11** 个 phase）；**E-7** canonical 载体已存在（run 记录带 `protocol_id`，实测值 `console_demo_research_v1_0_1`）；**E-8** 换协议有 **6+ 处同源面**（含 **release asset** `FRAMEWORK_MANIFEST.json`、golden 编译计划、**设计基线** `design-outlines.json`） | cycle 3 续：**WP1 定案**（A 对齐到已登记的真实协议 / B 新增一份真实协议并登记——两条路各自必须回答的代价已写死在 PLAN：A 要答「`domain_discovery` 的 10 条来源从哪来」+「11 个 phase 的会话预算」，B 要答「语义/能力/合约都不许空转」）→ WP2 落地 + 登记面同源 → WP3 canonical 判据 + 反证（改回 demo ⇒ 红）→ WP4 真实 run（终态如实）→ WP5 门禁 + RECHECK + 收口 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -556,3 +558,25 @@ live 证据只在本地产生并落 RECHECK。
   **未改任何门禁断言/未放宽验收门、未新增依赖、未改 pin、未改默认 runtime、未把凭据写进 CI。**
   **登记为残余**：`domain_discovery` 的 `min 10` 仍未有 run 路径行使过；`inputs` 只表达
   **外部供应**的输入、不表达 phase 间引用；「真的读过」只有工具观测能证。
+
+- 2026-09-21 cycle 3 派生（`driver=client-goal / owner=root-agent`）：derive
+  `PLAN-20260921-129-real-protocol-availability`（EC-03，投影 ALL_PLAN）。
+  **派生阶段只读代码与配置、未发起任何真实调用**，实测得 E-1…E-8。
+  **本轮最要紧的事实**：真实 run 用哪份协议**今天不是产品面的决定，而是一个测试文件里的字符串**
+  （`tests/e2e/live_run_support.py:_PROTOCOL = "console_demo_research_v1.yaml"`），
+  而**登记面**（`examples/config/project.yaml`）指向的是**另一份**协议 `ai_ml_research_v0_4_0`，
+  同一个字符串还被控制台**设计基线**渲染在团队页、并作为协议草稿模板 ⇒ **错配是产品面可见的**。
+  另外两条把候选面**收窄并量化**的实测：产品面**只登记了 4 条合约**
+  （`domain_discovery` / `experiment_execution` / `m12_experiment_execution` /
+  `console_demo_deliverable`）⇒ `task_contract` 不在册的协议**在产品路径上解析不出合约**
+  （`sort_analysis_v1` 的两条合约**只活在测试里**）；`phase.strategy` 在产品侧**只有编译器一个消费者**、
+  **编排层不读它** ⇒ `parallel_agents`/`map_reduce`/`population_search` 今天**不是可执行语义**，
+  **phase 数 = 会话数**（登记面那份协议有 **11** 个 phase ⇒ 直接决定 live 调用成本）。
+  **换协议的爆破面也实测清楚**：`FRAMEWORK_MANIFEST.json`（**release asset**，
+  `release-assets-immutable` 会比对）、`examples/contracts/compiled_run_plan.yaml`（golden 编译计划）、
+  `services/api/routers/protocol_drafts.py` 模板表、web e2e 的 **设计基线** `design-outlines.json` /
+  `stub-routes.ts` / `apiFixtures.ts`、loader 测试。
+  **承重墙定为 WP1（定案）**，理由是：EC-03 的性质与前两个 EC 不同——它是**一个选择**，
+  而选择的代价分布在**语义 / 可达性 / 成本**三个面；先动那个测试常量只会得到
+  「跑通了但语义还是假的」或「为了跑通而降能力」（后者是本 GOAL 的**明文禁区**）。
+  **本轮未发起任何真实调用、未改任何门禁/断言、未新增依赖、未改 pin、未改默认 runtime。**
