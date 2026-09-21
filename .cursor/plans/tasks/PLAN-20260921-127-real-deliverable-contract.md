@@ -2,7 +2,7 @@
 id: PLAN-20260921-127
 slug: real-deliverable-contract
 title: 真实交付物契约：让真实会话的产出满足合约声明的 artifact 名（GOAL-010 EC-01）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-21
 updated_at: 2026-09-21
 parent_goal: GOAL-20260921-010
@@ -21,8 +21,9 @@ authorization:
     (i)/(ii) 并要求「受控、声明化、可审计」，本 PLAN 取 **(ii) 的声明化形态**（见「影响报告」D2 节）；
     该定向**不等同于**采纳 ADR-0031 整体（D1 仍未决，`Status: Proposed` 保持不变）。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-127-real-deliverable-contract.md
+memory_entries:
+  - MEM-20260921-100
 ---
 
 # PLAN-20260921-127 — 真实交付物契约（GOAL-010 EC-01）
@@ -65,17 +66,17 @@ memory_entries: []
 - [x] WP2 **adapter 声明化命名**：`adapters/openhands/runtime_adapter.py` 的 `_deliverable`
       改为**按 `spec.task_contract` 的声明**命名交付物（声明源与受控边界见「影响报告」）；
       payload 带来源事实（AC-3）；docstring 与「D2」相关的措辞同步（**不得**留下与行为矛盾的句子）。
-- [ ] WP3 **同源判据**：钉住「声明 ⇒ 键名」的绑定与零/多声明的**不猜**边界（AC-1/AC-2），
+- [x] WP3 **同源判据**：钉住「声明 ⇒ 键名」的绑定与零/多声明的**不猜**边界（AC-1/AC-2），
       并**被压过**（先红后绿）。
 - [x] WP4 **离线链双分支**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` 的交付物裁决
       断言改为**同时**覆盖「声明对齐 ⇒ PASS」与「声明不对齐 ⇒ REJECT」（AC-5）；
       **不在**该用例里放过 REJECT 分支的证据。受影响文档（`docs/integration/LIVE_MODEL_RUNBOOK.md`
       §6 样本段 / `docs/integration/OPENHANDS_ADAPTER.md` / `docs/architecture/AGENT_RUNTIME.md`）
       同步为**事实口径**。
-- [ ] WP5 **真实 run**（最小必要次数）：单条命令内联前缀开门跑 live 判据 ⇒ 门 **PASS**、
+- [x] WP5 **真实 run**（最小必要次数）：单条命令内联前缀开门跑 live 判据 ⇒ 门 **PASS**、
       终态**恰为 `SUCCEEDED`**（AC-6）；样本（run id / UTC 时间 / 返回 model 名 / 逐条 criterion
       reason）落 RECHECK 与 runbook，**不含凭据值**。失败**也如实落终态**，**不**写成成功。
-- [ ] WP6 **本地门禁 + 复检 + 收口**：定向套件 → `make validate-all` 23/23 → 治理绿 →
+- [x] WP6 **本地门禁 + 复检 + 收口**：定向套件 → `make validate-all` 23/23 → 治理绿 →
       独立 RECHECK → GOAL 回写（AC-7/AC-8）。
 
 ## 证据
@@ -101,7 +102,22 @@ memory_entries: []
   `python/tests` 与 `python/product-lint` 均通过）。
 - 实跑核对：`_declared_deliverable_name(console_demo_deliverable)` ⇒ `analysis_report`。
 
-### WP3 — 同源判据（未做，见「剩余差距」）
+### WP3 — 同源判据
+
+- 新增 `tests/architecture/python/test_real_deliverable_contract_same_source.py`（**8 passed**）。
+  它把规则同时活在的**四处**互相钉住：合约文件（声明本身）、adapter（读声明）、
+  链用例（端到端行为）、文档（给人读的口径）。断言值全部是**字面量**
+  （`analysis_report` / `session_message`），**不** import adapter 的私有构造或 helper 当判定依据
+  ⇒ 判据**不会与被测实现循环论证**。
+- **被压过两次**（都先红后绿、复原后 `git diff` 只剩新增文件）：
+  ① 把 `len(declared) == 1` 改回 `declared` ⇒ **`test_a_non_unique_declaration_is_not_guessed`
+  RED**（消息把拿到的合约原样打出）；② 把文档里「回落事实名」的措辞改弱 ⇒
+  **`test_the_read_face_documents_the_provenance_fields` RED**。
+- **判据自身两处返工也如实登记**（第一次实跑就红，处置是**让判据更对**而不是放宽）：
+  ① 域模型要求合约**至少一条**验收标准 ⇒ `_contract` 在 `criteria` 为空时补一条
+  `EVIDENCE_COVERAGE`（它不声明 artifact 名，正好让「名字只写在 `required_artifacts` 里」
+  这一格可测）；② 架构文档按名指的是**用例**而不是私有 helper ⇒ 判据改判**用例名**
+  （判据该判文档**真的**承诺了什么）。
 
 ### WP4 — 离线链双分支
 
@@ -129,30 +145,54 @@ memory_entries: []
 - 受影响门禁实跑：`tests/architecture tests/tooling tests/e2e/test_ec03_*` ⇒
   **1235 passed / 1 skipped**；`DOCS-CHECK PASS: 6 deterministic checks`。
 
-### WP5 — 真实 run
+### WP5 — 真实 run（**EC-01 的判据本体，实跑**）
 
-待本轮执行后回填。
+判据文件 `tests/e2e/test_real_deliverable_contract_live.py`（新增；默认门下**如实 skip**
+并点名理由——CI 保持离线）。开门命令（凭据经 `.env` 导出，脚本内**不写值**）：
 
-### WP6 — 本地门禁 + 复检
+```
+set -a; . ./.env; set +a
+RESEARCHOS_AGENT_RUNTIME=openhands uv run --frozen --no-sync python -B -m pytest \
+    tests/e2e/test_real_deliverable_contract_live.py -q -rs
+```
 
-本 WP2/WP4 提交时的本地全量 m0（CI 同形配置：测试 DSN pin + `LLM_MAIN_KEY=""`）：
+跑前自检 `EnvCredentialResolver().has('LLM_MAIN_KEY')` ⇒ **`True`**（只问**存在性**，未物化值）。
+
+| 次 | 结果 | run id |
+| --- | --- | --- |
+| 第 1 次 | **`1 passed`**（32.92s） | （写进会被清理的 `tmp_path`，未取回） |
+| 第 2 次（`--basetemp=scratch/ec01-live`，**为取回记录**） | **`1 passed`**（42.70s） | **`f1710564-855c-43f7-9fdd-84966a878cf9`** |
+
+**判据全中**：终态**恰为 `SUCCEEDED`**、`failures` **为空**（无 `acceptance gate` 消息）、
+两件制品都以 **`:analysis_report`** 结尾、载荷
+`declared_artifact=analysis_report` / `fact_name=session_message` /
+`contract_id=console_demo_deliverable`。**对照 GOAL-009**：同一路径上那是 `FAILED`
+（run `142f7e77-…`，制品后缀 `:session_message`）。
+**调用次数如实登记 = 2**（同形态、同判据、都成功；第 2 次的唯一目的是取回 run id 与记录）。
+
+### WP6 — 本地门禁 + 复检 + 收口
 
 ```
 PASS: profile=m0; 23 deterministic checks
-4261 passed, 13 skipped, 64 warnings in 526.66s   （FAIL 0 条）
+4271 passed, 14 skipped, 64 warnings in 526.66s   (exit 0, FAIL 0)
 ```
 
-定向跑（未按 m0 分组）时观察到的 5 条红**全部**是既有环境签名，逐条定性如下
-（**不**记作本 PLAN 的回归）：
+（CI 同形配置：测试 DSN pin + 另三个 DSN 键置空 + `LLM_MAIN_KEY=""`；新 live 判据在 m0 中
+如实显示为 `s`。）治理 `validate.py` 绿；`DOCS-CHECK PASS: 6 deterministic checks`。
+独立复检：`.cursor/plans/rechecks/RECHECK-20260921-127-real-deliverable-contract.md`
+（`result: PASS_WITH_WARNINGS`，W-1…W-8）。
+工程记忆：`MEM-20260921-100`（交付物键名与验收门的耦合、D2-A 的判据层依据、「不猜」这一格）。
+
+**定向跑观察到的红逐条定性为既有环境签名**（**不**记作本 PLAN 的回归）：
 
 | 红项 | 定性 | 取证 |
 | --- | --- | --- |
-| `test_start_run_unprovisioned_control_plane_reports_actionable_failure` | **凭据可得性签名**（`RECHECK-20260920-121` W-7 已登记） | 最小复现 `pytest tests/adapters/openhands <该用例>` ⇒ **1 failed / 83 passed**；**决定性反证** 同命令加 `LLM_MAIN_KEY=""` ⇒ **84 passed**。**红 ⟺ 凭据可得**，与本次改动无关 |
-| `tests/api/test_worker_plane_composition.py` 三例 | **DSN 注入签名**（`.cursor/memory/` 的 `m0-gating-dsn-pinning` 逐条点名这三例） | 按该配方 pin 测试 DSN 后，m0 全量 **23/23 无红**；单跑该文件 **7 passed** |
+| `test_start_run_unprovisioned_control_plane_reports_actionable_failure` | **凭据可得性签名**（`RECHECK-20260920-121` W-7） | 最小复现 ⇒ **1 failed / 83 passed**；**决定性反证** 加 `LLM_MAIN_KEY=""` ⇒ **84 passed**。**红 ⟺ 凭据可得** |
+| `tests/api/test_worker_plane_composition.py` 三例 | **DSN 注入签名**（`.cursor/memory/` 的 `m0-gating-dsn-pinning` 逐条点名这三例） | pin 测试 DSN 后 m0 **23/23 无红**；单跑该文件 **7 passed** |
 | `tests/e2e/test_pg_crash_restart.py` | postgres 面（同上，需测试 DSN） | pin 后 m0 全绿；单跑该文件通过 |
 
 **如实登记**：那次 W-7 最小复现**真的发起了一次出站**（端点发现）——这正是 GOAL-010
-**EC-05** 要把「默认门离线」从约定变成结构判据的原因；本 PLAN 未修它。
+**EC-05** 要把「默认门离线」变成结构判据的原因；本 PLAN **未修它**。
 
 ## 影响报告
 

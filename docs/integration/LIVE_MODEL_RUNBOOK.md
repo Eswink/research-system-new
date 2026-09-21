@@ -220,6 +220,31 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 （制品 id 后缀为 `:session_message`、usage 已真实归账、probe 段已 `verified and ok`）
 加上同路径离线判据对 `FAILED` 的既有期望——**不是**直接读到的失败字符串。
 
+### 6.1 第二次真实 run（GOAL-010 EC-01）：**契约被满足，终态 `SUCCEEDED`**
+
+上表那次之后，交付物的**键名改由合约声明决定**（见 §6 的更新注与
+`docs/integration/OPENHANDS_ADAPTER.md`），**验收门一字未改**。同一路径上的第二次真实 run：
+
+| 项 | 值 |
+| --- | --- |
+| run id | `f1710564-855c-43f7-9fdd-84966a878cf9` |
+| 终态 | **`SUCCEEDED`**（**不是** `FAILED`——这是与上表最关键的区别） |
+| 失败消息 | **空**（`failures: []`；无 acceptance gate 判拒） |
+| 制品 | 2 条，**都以合约声明的 `:analysis_report` 结尾** |
+| 交付物载荷 | `declared_artifact = analysis_report`、`fact_name = session_message`、`contract_id = console_demo_deliverable` |
+| 判据 | `tests/e2e/test_real_deliverable_contract_live.py`（**`1 passed`**；默认门下**如实 skip**） |
+| 调用次数 | **2**（同形态、同判据、都 `SUCCEEDED`；第 2 次为**取回 run id 与记录**，如实登记） |
+
+**判据**：终态**恰为 `SUCCEEDED`** + `failures` 为空 + 交付物按合约声明的名字登记。
+**「门 PASS」是代码路径推出的蕴含关系**：`task_phase_helpers.register_and_gate` 在门未通过时
+**必然**写 `failure_step("… rejected by acceptance gate")` ⇒ `FAILED`；逐条 criterion 的 reason
+文本活在进程内、**未**取回（与上表「未捕获的一项」同一类限制）。
+
+**证明力边界（别过度解读）**：两次 `SUCCEEDED` 说明**这两次**契约被满足；它**不**证明真实模型
+**稳定**产出可用交付物——`ARTIFACT_EXISTS` 只判**存在**、**不判内容是否合格**，交付物内容仍是
+自由文本。**证据链另说**：该 run 的 `EVIDENCE_COVERAGE` 仍由**模型自述**满足
+（数的是交付物自己）——那是 GOAL-010 **EC-02** 的靶子，**尚未**解决。
+
 ## 7. 失败路径的诚实语义
 
 三类情形各自的**期望**写死在这里。判据

@@ -60,7 +60,7 @@ exit_criteria:
       （`contract_passes(evaluations)` 为真，逐条 criterion 的 reason 一并登记）。
       反证：移除映射/合约对齐 ⇒ 同一命令必须回到 **REJECT / `FAILED`**（先红后绿的成对证据）。
       跑前自检 `EnvCredentialResolver().has('LLM_MAIN_KEY') is True`（**只问存在性，不物化值**）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **证据链真实性**：`EVIDENCE_COVERAGE ≥ 1` 必须由**真实可查的来源**满足（检索 / 制品 / 外部源），
@@ -173,7 +173,7 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 
 | EC | 标准 | 验证命令／证据来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 真实交付物契约（主干）：(i) 模型按结构化 schema 产出，或 (ii) adapter 侧受控/声明化/可审计的「事实名 → 合约名」映射；**一次真实 run 验收门 PASS 且终态恰为 `SUCCEEDED`**；反证：删掉映射/契约 ⇒ 回到 REJECT | live 判据 **PASS（非 skip）** + run canonical 终态恰为 `SUCCEEDED` + 验收门 `PASS`（逐条 criterion reason 登记）；反证成对（先红后绿） | PENDING |
+| EC-01 | 真实交付物契约（主干）：(i) 模型按结构化 schema 产出，或 (ii) adapter 侧受控/声明化/可审计的「事实名 → 合约名」映射；**一次真实 run 验收门 PASS 且终态恰为 `SUCCEEDED`**；反证：删掉映射/契约 ⇒ 回到 REJECT | live 判据 **PASS（非 skip）** + run canonical 终态恰为 `SUCCEEDED` + 验收门 `PASS`（逐条 criterion reason 登记）；反证成对（先红后绿） | **PASS**（取 **(ii)**；run `f1710564-855c-43f7-9fdd-84966a878cf9`，终态**恰为 `SUCCEEDED`**、`failures` 为空、两件制品都按 `:analysis_report` 登记；反证**成对且被压过四次**；`RECHECK-20260921-127` = PASS_WITH_WARNINGS，W-1 登记「门 PASS 是代码路径推出的蕴含关系、未逐条读回 criterion 文本」） |
 | EC-02 | 证据链真实性：`EVIDENCE_COVERAGE ≥ 1` 由**真实可查的来源**（检索/制品/外部源）满足，**不得由模型自述充当**；判据：来源记录可读 + 反证（去掉来源 ⇒ 判拒） | `GET /runs/{id}/evidence` 中满足覆盖的那条 `SourceRecord` 可读且指向非模型自述对象；反证先绿后红再复原 | PENDING |
 | EC-03 | 真实协议的可用性：确定真实 run 用哪份协议；若 demo 协议（注释明写「受控 Fake agent loop」）不适用，则新增/选定真实协议并登记；判据含**协议 id 出现在 run 的 canonical 事实里** | run 的 canonical 事实中协议标识 == 所选真实协议 id；反证：改回 demo 协议 ⇒ 判据红 | PENDING |
 | EC-04 | 漂移与指纹样本补全（承 009 EC-03/EC-05 缺口）：真实 run 的运行时指纹（返回 model 名/端点头/probe 版本/兼容性结论）**落读面**；「模型不存在」补 **provider 侧真实样本** | 读面可取四要素 + 口径停在 `REPEATABLE_CONFIGURATION`；provider 侧样本存在**或**如实登记未实测与代价 | PENDING |
@@ -391,7 +391,7 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `17cef9b` | 治理 `validate.py` 绿；`validate_bundle` 绿；DOCS-CHECK `6 deterministic checks` 绿；framework **8/8** | 见下方 CI 台账 | — | EC-01…EC-06 全 PENDING；机制已定位（G-3 键名一处可判事实 / G-4 证据由模型自述满足）⇒ EC-01 是**可落地**的工程任务 | cycle 1 = derive **EC-01** 子 PLAN（真实交付物契约） |
-| 1 | PLAN-20260921-127（EC-01） | `c6dbed5`（derive + ALL_PLAN）、`577eaa2`（WP1：ADR-0031 D2 定向记录）、`00368ab`（WP2+WP4：声明化命名 + 离线链双分支 + 文档同源） | **离线链双分支实跑**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` ⇒ **3 passed / 1 skipped**（live 分支如实 skip）——**声明对齐 ⇒ 门 PASS ⇒ run `SUCCEEDED`**（GOAL-009 时期该路径的终点是 `FAILED`）；与 ADR 结构判据同跑 **13 passed / 1 skipped**；**反证两次被压过**（①去掉声明化 ⇒ PASS 分支 RED、制品回落 `:session_message` + `rejected by acceptance gate`；②去掉「不猜」边界 ⇒ REJECT 分支 RED），两次均复原、`git diff` 只剩意图内改动；**ADR-0031 结构判据未被修改且仍绿**（10 passed，`git diff` 对该文件为空）；受影响门禁 `tests/architecture tests/tooling tests/e2e/test_ec03_*` ⇒ **1235 passed / 1 skipped**；`DOCS-CHECK PASS: 6 deterministic checks`；治理 `validate.py` 绿；**全量 m0（CI 同形配置：测试 DSN pin + `LLM_MAIN_KEY=""`）⇒ `PASS: profile=m0; 23 deterministic checks`（4261 passed / 13 skipped / FAIL 0，526.66s）** | **run 35562941912 = success**（`00368ab`；六 job 全 **success**：`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`，逐 job 实查）；建档推送 `17cef9b` → **run 35560783476 = success**（六 job 全 success；上一条已收口） | — （**未改任何门禁/断言强度**：ADR 结构判据零改动仍绿；离线链是**双分支**——判据**只增不减**，GOAL-009 的 REJECT 证据被保留为反证分支） | **EC-01 未 PASS**（**live 真跑未发生**，WP5/WP6 未做；WP3 同源判据未做）。**本 cycle 最大的事实变化**：判拒的**机制**已被消除——离线同路径链上**真实 runtime 的交付物第一次满足声明式合约**、门 PASS、run `SUCCEEDED`，且**反证成对**（去掉对齐 ⇒ 回到 REJECT）。**仍未做的两件**：①WP3 的 same-source **结构判据**（把「声明 ⇒ 键名」与「不猜」边界钉成一条可重算的判据，而不是只靠链级用例）；②**WP5 的真实 live run**（最小必要次数）——EC-01 的判据**只能**由它满足，**不得**用离线链代替。**诚实登记的代价**：取 (ii) ⇒ 未验证「模型能否自主产出合约名」这条 (i) 路径 | cycle 1 续：**WP3**（同源判据 + 被压过）→ **WP5**（真实 run ⇒ 门 PASS + 终态恰 `SUCCEEDED`，样本落 RECHECK 与 runbook）→ **WP6**（RECHECK + 收口 + EC-01 置 PASS） |
+| 1 | PLAN-20260921-127（EC-01） | `c6dbed5`（derive + ALL_PLAN）、`577eaa2`（WP1：ADR-0031 D2 定向记录）、`00368ab`（WP2+WP4：声明化命名 + 离线链双分支 + 文档同源） | **离线链双分支实跑**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` ⇒ **3 passed / 1 skipped**（live 分支如实 skip）——**声明对齐 ⇒ 门 PASS ⇒ run `SUCCEEDED`**（GOAL-009 时期该路径的终点是 `FAILED`）；与 ADR 结构判据同跑 **13 passed / 1 skipped**；**反证两次被压过**（①去掉声明化 ⇒ PASS 分支 RED、制品回落 `:session_message` + `rejected by acceptance gate`；②去掉「不猜」边界 ⇒ REJECT 分支 RED），两次均复原、`git diff` 只剩意图内改动；**ADR-0031 结构判据未被修改且仍绿**（10 passed，`git diff` 对该文件为空）；受影响门禁 `tests/architecture tests/tooling tests/e2e/test_ec03_*` ⇒ **1235 passed / 1 skipped**；`DOCS-CHECK PASS: 6 deterministic checks`；治理 `validate.py` 绿；**全量 m0（CI 同形配置：测试 DSN pin + `LLM_MAIN_KEY=""`）⇒ `PASS: profile=m0; 23 deterministic checks`（4261 passed / 13 skipped / FAIL 0，526.66s）** | **run 35562941912 = success**（`00368ab`；六 job 全 **success**：`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`，逐 job 实查）；建档推送 `17cef9b` → **run 35560783476 = success**（六 job 全 success；上一条已收口） | — （**未改任何门禁/断言强度**：ADR 结构判据零改动仍绿；离线链是**双分支**——判据**只增不减**，GOAL-009 的 REJECT 证据被保留为反证分支） | **EC-01 PASS（cycle 1 收口）**。**本 cycle 消灭的缺口**：GOAL-009 那条「真实 run 必然被判拒」的宿命——**真实 run 第一次走到 `SUCCEEDED`**（run `f1710564-855c-43f7-9fdd-84966a878cf9`，`failures` 为空，制品按合约声明的 `:analysis_report` 登记），且**判据没有放宽**（`acceptance.py` / 合约 / ADR 判据在整个 PLAN 范围 `git diff` 均为空，可复查）。**残余如实登记**（`RECHECK-127` W-1…W-8）：**W-4 = EC-02 未被触及**——这次成功 run 的证据链**仍由模型自述满足**（`EVIDENCE_COVERAGE` 数的就是交付物自己，`TrustLabel.GENERATED`）；W-1 门 PASS 是**代码路径推出的蕴含关系**而非直读 criterion 文本；W-2 live 调用 **2 次**（第 2 次为取回 run id）；W-5 (i) 路径未验证；W-6 前端读面仍无判据 | cycle 2 = derive **EC-02**（证据链真实性：`EVIDENCE_COVERAGE` 由**真实可查来源**满足，不得由模型自述充当；反证：去掉来源 ⇒ 判拒） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -461,3 +461,25 @@ live 证据只在本地产生并落 RECHECK。
   **CI 台账**：建档 `17cef9b` → **run 35560783476 = success**；cycle 1 推送 `00368ab` →
   **run 35562941912 = success**（六 job 全 success）。**未改任何门禁/断言强度、未新增依赖、
   未改 pin、未改默认 runtime、未把凭据写进 CI、未放宽验收门。**
+
+- 2026-09-21 cycle 1 收口（`driver=client-goal / owner=root-agent`）：补做 **WP3**（同源判据，
+  8 passed，**被压过两次**）与 **WP5**（**真实 run**），**EC-01 置 PASS**，`PLAN-20260921-127`
+  置 **DONE**，`RECHECK-20260921-127` = **PASS_WITH_WARNINGS**，沉淀 `MEM-20260921-100`。
+  **本轮最要紧的事实：真实 run 第一次走到 `SUCCEEDED`**——run
+  `f1710564-855c-43f7-9fdd-84966a878cf9`，`failures` **为空**，两件制品都以合约声明的
+  **`:analysis_report`** 结尾，载荷 `declared_artifact=analysis_report` /
+  `fact_name=session_message` / `contract_id=console_demo_deliverable`。
+  **对照 GOAL-009**：同一路径上那是 `FAILED`（`142f7e77-…`，后缀 `:session_message`）。
+  **判据没有放宽**（可复查的零差异）：`packages/domain/acceptance.py`、
+  `examples/contracts/task_contracts.yaml`、`tests/tooling/test_toolpack_capability_policy_pending.py`
+  在整个 PLAN 范围（`17cef9b..49ed9c3`）`git diff` **均为空**；离线链由单分支改为**双分支**
+  ——GOAL-009 的判据拒绝证据**被保留**为反证分支，判据**只增不减**。
+  **反证成对且被压过四次**（链级两方向 + 判据级两条），每轮压测后复原。
+  **本地门禁**：全量 m0（CI 同形配置）⇒ **`PASS: profile=m0; 23 deterministic checks`
+  （4271 passed / 14 skipped / FAIL 0）**；治理绿；`DOCS-CHECK` 绿。
+  **凭据纪律**：内联前缀未留在环境或 `.env`；**被跟踪文件里含凭据值的个数 = 0**（只输出命中数）。
+  **如实登记的调用次数 = 2**（第 2 次的唯一目的是取回 run id 与记录；只算一次会更好）。
+  **如实登记的射程边界**（`RECHECK-127` W-1…W-8）：**EC-02 完全未被触及**——成功 run 的证据链
+  仍由**模型自述**满足（`EVIDENCE_COVERAGE` 数的就是交付物自己）；「门 PASS」是**代码路径推出的
+  蕴含关系**，逐条 criterion 文本**未**取回；取 (ii) ⇒ (i) 路径**未验证**；交付物内容仍是自由
+  文本，`ARTIFACT_EXISTS` 只判**存在**、不判**内容合格**（W-7）。
