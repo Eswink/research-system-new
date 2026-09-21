@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260922-132](tasks/PLAN-20260922-132-goal-010-closeout-recheck.md) | IN_PROGRESS |
 | [x] | [PLAN-20260922-131](tasks/PLAN-20260922-131-offline-gate-structural-judge.md) | DONE |
 | [x] | [PLAN-20260921-130](tasks/PLAN-20260921-130-runtime-fingerprint-on-read-face.md) | DONE |
 | [x] | [PLAN-20260921-129](tasks/PLAN-20260921-129-real-protocol-availability.md) | DONE |
