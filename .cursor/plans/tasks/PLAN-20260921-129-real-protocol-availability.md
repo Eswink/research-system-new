@@ -100,8 +100,18 @@ memory_entries: []
       (a) 复用语义不符的**已注册**名（正是 EC-01 抓的那类「名不副实」）。
       **实测**：产品路径编译 PASS（1 条 INFO `DAG_ORPHAN_PHASE`——单 phase 无后继，如实）；
       模板面 4 项含 `real-research-task`；声明输入已 seed（装配内 3 件制品、mark 状态可重入）。
-- [ ] WP3 **canonical 判据 + 反证**：判据钉住「run 的 canonical 协议标识 == 所选 id」；
-      **被压过**（改回 demo ⇒ 红）。
+- [x] WP3 **canonical 判据 + 反证**（**已完成**）：新增
+      `tests/api/test_real_protocol_identity.py`，把三个面钉在一起——**文件自己**声明的 `id:`
+      （从正文里读，不 import 被测实现）、**canonical run** 的 `protocol_id`（经读面回读）、
+      **被解析的那份字节**（`protocol_body_digest` == 该正文的 sha256，且冻结正文里含它自己的 id），
+      并断言 run 走到 `SUCCEEDED`。**成对**：两份协议各起一次 run，身份、正文摘要、正文内容
+      三者都必须互不相同且互不出现对方的名字 ⇒ 判据**不可能是常量**。
+      **按压（AC-5）**：把期望值改成「canonical 事实 = **demo** 协议的 id」⇒ 真实协议那条**红**
+      （`assert 'real_research_task_v1_0_1' == 'console_demo_research_v1_0_1'`，失败信息里带着
+      真实 canonical 事实），**demo 那条仍绿**（证明不是一刀切地红）⇒ 复原 ⇒ **复绿**。
+      **顺带测得一条事实**：新合约在**默认（Fake）离线装配**下也到 `SUCCEEDED`
+      ——声明输入已 seed ⇒ `EVIDENCE_COVERAGE` 被**非模型自述**来源满足，即「可达性」
+      在控制面已经成立；**真实执行体**下的可达性由 WP4 单独取样，本文件**不**声称。
 - [ ] WP4 **真实 run**（最小必要次数）：真实 runtime 下用所选协议起 run；终态如实落 RECHECK。
 - [ ] WP5 **门禁 + 复检 + 收口**：规模门禁自查 → 定向 → m0 23/23 → 治理绿 → RECHECK → GOAL 回写。
 
@@ -314,3 +324,14 @@ EC-03 的性质又不同：**它是一个「选择」，而选择的代价分布
   注册表补登；schema 自身改为 `additionalProperties: false` 并列全 adapter 恒发的 7 个键
   （**没有**放宽 `check_object_boundaries`——它一字未改，且对**这一份文件**刚红过）。
   **本轮仍未发起任何真实调用**；真实 run 在 WP4。
+
+- 2026-09-21 WP3 **判据落地并按压**（canonical 协议身份 + 常驻反证）。
+  判据的形态刻意选成「三个面互相钉死」而不是「回读一个字段」：只回读 `protocol_id`
+  会被「run 记录照抄了入参」这种平凡实现满足，而把**文件自己声明的 id**、
+  **canonical 记录**、**被解析的那份字节的摘要**三者放在一起，
+  E-1/E-2 那种「登记面指向 A、run 装配 B」的分家形态才会被抓出来。
+  **按压如实**：真实协议那条红、demo 那条同时绿——后者是本判据区分力的证据
+  （不是把 `assert True` 换成 `assert False` 那种一刀切）。
+  **顺带测得**：新合约在 Fake 离线装配下到 `SUCCEEDED`，覆盖门由**已 seed 的声明输入**
+  满足——所以 WP4 的真实 run 要跨的只剩「真实执行体 + 真实端点」这一步，
+  协议/合约/能力面**不再是未知量**。**本轮仍未发起任何真实调用。**
