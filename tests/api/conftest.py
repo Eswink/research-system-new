@@ -18,7 +18,7 @@ from services.api.composition import ApiDeps
 _FIXTURE_ENDPOINT_KEY = "fixture-" + "k" * 20
 
 if TYPE_CHECKING:
-    pass
+    from packages.application.ports.agent_runtime import AgentRuntime
 
 
 def make_app_deps(
@@ -26,6 +26,7 @@ def make_app_deps(
     gateway: FakeModelGateway | None = None,
     run_ready: bool = False,
     db_path: str = ":memory:",
+    runtime: AgentRuntime | None = None,
 ) -> ApiDeps:
     """测试装配：Sqlite 配置存储（默认 `:memory:`）+ Fakes + 内存幂等。
 
@@ -33,16 +34,20 @@ def make_app_deps(
     （定义在 run_fixtures.py，避免本文件超行数阈值）。
     `db_path` 传文件路径 ⇒ 控制面走**每线程一条连接**（GOAL-004 cycle 5 = EC-05）；
     默认 `:memory:` 仍共用一条（内存库属于连接）。
+    `runtime` 传受控执行体（GOAL-010 EC-04：驱动「执行体报告了 model 名」的链路）。
     """
     from tests.api.run_fixtures import make_run_ready_deps
 
     if run_ready:
         return make_run_ready_deps(gateway=gateway)
-    return make_base_deps(gateway=gateway, db_path=db_path)
+    return make_base_deps(gateway=gateway, db_path=db_path, runtime=runtime)
 
 
 def make_base_deps(
-    *, gateway: FakeModelGateway | None = None, db_path: str = ":memory:"
+    *,
+    gateway: FakeModelGateway | None = None,
+    db_path: str = ":memory:",
+    runtime: AgentRuntime | None = None,
 ) -> ApiDeps:
     """基础装配（endpoint/model CRUD + probe + run 测试用）。
 
@@ -52,7 +57,7 @@ def make_base_deps(
     """
     from tests.api.base_fixtures import build_base_deps
 
-    return build_base_deps(gateway=gateway, db_path=db_path)
+    return build_base_deps(gateway=gateway, db_path=db_path, runtime=runtime)
 
 
 @pytest.fixture

@@ -58,9 +58,13 @@ from packages.application.run_orchestration.phase_runner import (
 )
 from packages.application.run_orchestration.run_terminals import (
     compensate_failed_resume,
+    preflight_failure_message,
     publish_compensation_failure,
     publish_degraded_run,
     publish_failed_run,
+)
+from packages.application.run_orchestration.runtime_fingerprint import (
+    RuntimeFingerprintCollector,
 )
 from packages.application.run_orchestration.session_resolution import resolve_sessions
 from packages.application.run_orchestration.task_executor import SessionSpecContext
@@ -75,14 +79,6 @@ from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
 
 SessionSpec = tuple[ResearchTask, TaskContract, SessionSpecContext]
-
-
-def _preflight_failure_message(report: Any) -> str:
-    """PA-1 F5: carry failing check codes so an unprovisioned control plane
-    is actionable (which check failed) instead of a bare "preflight failed".
-    Honest FAILED semantics unchanged."""
-    codes = ", ".join(sorted({finding.code for finding in report.findings}))
-    return f"preflight failed: {codes}" if codes else "preflight failed"
 
 
 class RunOrchestrationService:
@@ -144,7 +140,7 @@ class RunOrchestrationService:
         run = run.transition(ResearchRunState.Transition.START_COMPILE)
         plan, report = compile_and_preflight(protocol, catalog, project, preflight_context)
         if plan is None or report.status.value == "FAIL":
-            return self._fail_run(run.id.value, _preflight_failure_message(report), False)
+            return self._fail_run(run.id.value, preflight_failure_message(report), False)
         run = run.transition(ResearchRunState.Transition.COMPILE_OK)
         run = run.transition(ResearchRunState.Transition.PREFLIGHT_OK)
         manifest = freeze_manifest(
@@ -267,7 +263,8 @@ class RunOrchestrationService:
         *,
         pending: tuple[SessionSpec, ...] = (),
     ) -> RunOutcome:
-        outcome = self._execute(context, command, pending=pending)
+        collector = RuntimeFingerprintCollector()
+        outcome = self._execute(context, command, pending=pending, collector=collector)
         outcome = replace(
             outcome,
             pricing_version=context.run.pricing_version,
@@ -279,6 +276,8 @@ class RunOrchestrationService:
             ),
         )
         self._release_if_terminal(context.run.id.value, outcome.state)
+        # GOAL-010 EC-04：调用后才存在的四要素在**这里**落 canonical（没有观测 ⇒ 不发）。
+        collector.publish(self._event_sink, context.run.id.value, context.trace_id, outcome.state)
         return outcome
 
     def _execute(
@@ -287,6 +286,7 @@ class RunOrchestrationService:
         command: StartRunCommand | None,
         *,
         pending: tuple[SessionSpec, ...] = (),
+        collector: RuntimeFingerprintCollector | None = None,
     ) -> RunOutcome:
         """委托 phase_runner 执行；service 负责事件发布、失败收敛与 human-gate 暂存。"""
         paused: list[tuple[SessionSpec, ...]] = []
@@ -305,6 +305,7 @@ class RunOrchestrationService:
                 approvals=self._deps.approvals,
                 human_gated=pending_human_gates(self._deps.approvals, context.plan, run_id),
                 on_pause=paused.append,
+                on_observation=None if collector is None else collector.observe,
                 pause_requested=lambda: self.pause_requested(run_id),
             ),
             PhaseContext(

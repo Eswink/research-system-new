@@ -5926,8 +5926,44 @@
       },
       "RuntimeFingerprintDto": {
         "additionalProperties": false,
-        "description": "运行时指纹槽位的**诚实状态**（AGENTS.md §4 / GOAL-007 EC-04）。\n\n`status` 取 `NOT_VERIFIED` 时 `reason` 点名为什么（默认受控 demo 执行体不发起模型\n调用，§4 的七件事实一件也不存在）。它是**状态**不是**指纹值**：读面不得把它当作\n「已验证的指纹」，也不得在 `status != VERIFIED` 时渲染成指纹结论。",
+        "description": "运行时指纹读面（AGENTS.md §4；GOAL-007 EC-04 建槽，GOAL-010 EC-04 加实测）。\n\n`status` **只有两态**：`REPEATABLE_CONFIGURATION`（配置已被一次真实运行确认）或\n`NOT_VERIFIED`。**没有**、也不接受「模型完全可复现」这类表述——两态穷举由域枚举\n保证，读面只呈现、不另判。\n\n`source` 说明这份事实从哪来：\n\n- `FROZEN_PLACEHOLDER`：冻结快照里的**状态**记录（这次运行没有实测记录）。此时四要素\n  全为空，`missing_fields` 点名全部四项——「没观测到」**不是**「无漂移」。\n- `RUN_OBSERVATION`：run 收敛后落下的**实测**记录。四要素里取不到的项仍点名列在\n  `missing_fields` 里（`system_fingerprint` 给不给取决于 provider，缺失是**如实的\n  缺口**，不降级结论、也不拿它冒充「模型可复现」）。\n\n`returned_model_identifier` 是**本次 run 的 usage 度量报告**的 model 名（不是原始响应\n头、也不是请求里写的那个 id）。观测到**多个不同**值时单值槽位留 `None`（缺项 ⇒\n结论必为 `NOT_VERIFIED`，不挑一个），多值本身在 `observed_model_identifiers` 里。\n\n`missing_fields` = 上面四要素里取值为空的项 ∪ 实测记录自报的缺项（后者可能含\n`safe_response_metadata`——白名单响应头，本 DTO 不作为字段单独呈现，但记录会如实点名）。",
         "properties": {
+          "endpoint_config_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Config Digest"
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Fields",
+            "type": "array"
+          },
+          "observed_model_identifiers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Observed Model Identifiers",
+            "type": "array"
+          },
+          "probe_suite_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Probe Suite Digest"
+          },
           "reason": {
             "anyOf": [
               {
@@ -5938,6 +5974,22 @@
               }
             ],
             "title": "Reason"
+          },
+          "returned_model_identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Returned Model Identifier"
+          },
+          "source": {
+            "default": "FROZEN_PLACEHOLDER",
+            "title": "Source",
+            "type": "string"
           },
           "status": {
             "title": "Status",
@@ -5953,6 +6005,17 @@
               }
             ],
             "title": "Substrate"
+          },
+          "system_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Fingerprint"
           }
         },
         "required": [

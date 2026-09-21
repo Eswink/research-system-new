@@ -32,6 +32,28 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+#: SDK `MetricsSnapshot.model_name` 的默认值。它**不是**模型名（GOAL-010 EC-04 E-14）：
+#: 取到它只能当「没有观测到」处理——当成已观测值等于把哨兵洗成指纹事实。
+_MODEL_NAME_SENTINEL = "default"
+
+
+def observed_model_names(stats: ConversationStats) -> tuple[str, ...]:
+    """provider 侧 usage 度量**报告的** model 名（去重、排序；无观测 ⇒ 空元组）。
+
+    GOAL-010 EC-04：来源就是 adapter 已经在读的那个 `ConversationStats`（同一次调用里
+    取 token/cost），所以这是**零额外调用**的观测——不改 SDK 交互面、不另发 probe。
+
+    注意这里拿的是「**返回的** model 名」：与 `UsageContext.model_id`（请求里写的那个 id）
+    是两件事，同名漂移（AGENTS.md §4）正是靠两者的差才可见。
+    """
+    names: set[str] = set()
+    for metrics in stats.usage_to_metrics.values():
+        name = getattr(metrics, "model_name", None)
+        if isinstance(name, str) and name.strip() and name.strip() != _MODEL_NAME_SENTINEL:
+            names.add(name.strip())
+    return tuple(sorted(names))
+
+
 def _tokens_entry(usage_id: str, total: int, context: UsageContext) -> UsageLedgerEntry:
     return UsageLedgerEntry(
         entry_id=f"{usage_id}:tokens",
@@ -121,4 +143,4 @@ def publish_usage(
     return entries
 
 
-__all__ = ["UsageContext", "usage_entries_from_stats", "publish_usage"]
+__all__ = ["UsageContext", "observed_model_names", "usage_entries_from_stats", "publish_usage"]

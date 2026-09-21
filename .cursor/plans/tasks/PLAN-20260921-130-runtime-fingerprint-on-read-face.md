@@ -58,10 +58,10 @@ GOAL-010 EC-04 的两件事，各自可判：
 
 ## 实施清单
 
-- [ ] WP1 **定案（承重墙，先审后改）**：在下面的**候选面表**上定案——四要素在**读时刻**
+- [x] WP1 **定案（承重墙，先审后改）**：在下面的**候选面表**上定案——四要素在**读时刻**
   分别从哪里来、DTO 长什么样、缺项怎么表达、`REPEATABLE_CONFIGURATION` 由谁判。
   产出：定案 + 代价 + 回退路径 + **不做**边界。**先落记录再改代码**。
-- [ ] WP2 **按定案落读面**：DTO/映射/回填源 + 读面判据（含 AC-3 的按压）+ OpenAPI 快照与
+- [x] WP2 **按定案落读面**：DTO/映射/回填源 + 读面判据（含 AC-3 的按压）+ OpenAPI 快照与
   web 类型（若 DTO 变化，按仓库配方同步）。
 - [ ] WP3 **「模型不存在」样本**：按 AC-4 二选一落地（真实调用取最小必要，或如实登记 + 代价）。
 - [ ] WP4 **门禁 + 复检 + 收口**：定向 → m0 23/23 → 治理绿 → RECHECK → GOAL 回写。
@@ -104,6 +104,51 @@ GOAL-010 EC-04 的两件事，各自可判：
 | (a) 扩 `RuntimeFingerprintDto` | 在 run 级 DTO 上加四要素 + `missing_fields`，回填源 = 冻结后写入的 canonical 事实 | DTO 变更 ⇒ OpenAPI 快照 + web 类型 + e2e 夹具同步 | 冻结**之后**的事实从哪来必须答清楚，否则变成「读面编数」 |
 | (b) 复用模型级读面 + run 只放指针 | run 读面给 endpoint/model 标识，四要素去模型详情页看 | 产品面改动最小 | **不满足** EC-04 的「**这一次 run** 的指纹落读面」——模型级读面是**登记面**的事实，与某次 run 无关 |
 | (c) 新增独立 run 级指纹路由 | 新端点专供指纹 | 新路由 ⇒ OpenAPI/前端/设计基线三处耦合 | 与既有 `execution` 面重复度高；「零 DTO 变更」的既有惯例被打破 |
+
+## WP2 落地（**已完成**）
+
+### 做了什么（一条事实一行）
+
+| # | 事实 | 位置 |
+| --- | --- | --- |
+| W2-1 | 会话结果带回**观测**：`AgentSessionResult.observed_model_identifiers`（Port 加性字段，默认空 = 没观测） | `packages/application/ports/agent_runtime.py` |
+| W2-2 | 观测量取自 adapter **已经在读**的 `ConversationStats`：`observed_model_names(stats)`；SDK 默认哨兵 `"default"` **不算观测**（E-14） | `adapters/openhands/usage_mapping.py` |
+| W2-3 | 会话终态时把观测随结果带出；读不到（stats 缺失/异常）⇒ **空手而归**，不冒充已观测 | `adapters/openhands/session_builder.py`、`runtime_adapter.py` |
+| W2-4 | 观测 = 「这次会话实际用到的端点 digest」+「provider 侧报告的 model 名」；没有 model 名 ⇒ **不产生观测**（无空观测） | `packages/application/model_relay/observation.py`（新） |
+| W2-5 | 执行循环把观测交回 service（`on_observation`，与既有 `on_pause` 同形）；默认不注入 = 不收集 | `packages/application/run_orchestration/phase_runner.py`、`service.py` |
+| W2-6 | run 返回前把观测落成 **`MODEL_PROBED`**（此前只声明、从未发出）；**没有观测 ⇒ 不发事件** | `packages/application/run_orchestration/runtime_fingerprint.py`（新） |
+| W2-7 | 读面在冻结占位之外合并实测记录并标明来源（`source`）；缺项由 `missing_fields` **逐项点名** | `services/api/dto/runs.py`、`run_execution_view.py` |
+| W2-8 | 快照/类型/夹具同步：`openapi.m13.json` 重生成、`apps/web/src/api/types.ts`、stub 夹具、live e2e spec（新增"占位必须点名四项"断言） | 见 diff |
+| W2-9 | 文档回写：`CONTROL_PLANE_API.md`（读面两份事实的合成口径）、`EVENT_MODEL.md`（`model.probed` 真的会发了） | docs |
+| W2-10 | 判据：单元 6 条 + adapter 3 条 + HTTP 成对 3 条（含**先红后绿**） | `tests/application/run_orchestration/test_runtime_fingerprint_fact.py`、`tests/adapters/openhands/test_model_observation.py`、`tests/api/test_run_fingerprint_read_face.py` |
+
+### 对 WP1 定案的两处**有界偏离**（逐条写明理由，均已落进模块 docstring）
+
+1. **payload 少发布四个记录键**（`model_tokens` / `usage_entries` / `artifact_ids` /
+   `evidence_ids`）：本层拿不到「这条 run 的」usage 与制品真值，而记录里这四个的默认值是
+   0/空 —— 发一份带 0 的记录等于把一个**没测过**的数写成实测值（usage 的真值面是 cost/usage
+   读面）。**只减不增**。
+2. **payload 多带一个实测键**（`observed_model_identifiers`）：单值槽位表达不了「一次 run
+   观测到多个不同 model 名」，藏起来等于把「观测到不一致」读成「没观测到」。多值本身是
+   **观测结果**，原样带上；单值槽位仍留 `None`（缺项 ⇒ 结论必为 `NOT_VERIFIED`，**不挑一个**）。
+
+### 判据的射程（**不声称**的部分）
+
+- 离线三条 HTTP 判据用**受控执行体报告 provider 侧 model 名**驱动链路：它判的是**接线**
+  （观测 → canonical 事件 → 读面），**不**声称「真实 provider 真的报告了什么」——那是 WP3。
+- `system_fingerprint` 给不给取决于 provider：缺失**只点名、不降级**（记录自报缺项里还会
+  含 `safe_response_metadata`；DTO 不以字段形式呈现它，但如实转述）。
+- `model.probed` **不**进通知白名单（`services/api/routers/notifications.py`）⇒ 不产生用户
+  可见通知；这是有意的（指纹事实不是通知事件）。
+- 控制台**未**新增渲染分支（EC-04 的判据在 HTTP 读面；类型面已同步）⇒ **不**触发设计基线
+  重生成。
+
+### 门禁证据（本轮全部在本机实跑）
+
+- `m0`：**`PASS: profile=m0; 23 deterministic checks`**（`python/tests` = 4301 passed / 16 skipped）。
+- 定向：`ruff check` / `ruff format --check` / `mypy` 在产品根（apps/services/packages/adapters/tests）全绿。
+- 前端：stub e2e **96 passed**；live e2e（`live-run-substrate-disclosure`，真 app + Playwright）**1 passed**。
+- 治理：`governance-check/validate.py`、`docs_consistency`、`validate_bundle.py` 全绿。
 
 ## WP1 定案（**已完成**：取 (a) 的「调用后 canonical 事实 + 读面合并」形态）
 
@@ -204,6 +249,12 @@ EC-01/EC-02/EC-03 的判据都落在**一次 run 之内**（交付物名、来�
 
 ## 状态历史
 
+- 2026-09-21 WP2 **落地**（按 WP1 定案接线，见上「WP2 落地」）：
+  四要素从「只活在测试的 `tmp_path`」变成**产品路径上的 canonical 事实**——会话观测
+  （零额外调用，来源是 adapter 已在读的 `ConversationStats`）→ `model.probed` 事件 →
+  `GET /runs/{id}` 的 `execution.runtime_fingerprint` 合并呈现（`source` 标明占位还是实测，
+  缺项逐项点名）。两处**有界偏离**已逐条写明理由；离线判据**不**声称 provider 侧真相（WP3 的事）。
+  本轮**未发起任何真实调用**（离线受控执行体驱动；真实样本在 WP3）。门禁：m0 23/23。
 - 2026-09-21 derive：由 GOAL-20260921-010 的 EC-04 派生（`parent_goal` 投影 ALL_PLAN）。
   **只读代码与配置、未发起任何真实调用**，实测得 E-1…E-9 与候选面表 + 三条不可回避取舍。
   **承重墙定为 WP1（定案）**：核心问题是「**调用后**才存在的四要素，如何在**冻结于调用前**的

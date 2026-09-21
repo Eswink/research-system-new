@@ -21,7 +21,15 @@ interface RunDetail {
   id: string;
   execution: {
     execution_backend: string | null;
-    runtime_fingerprint: { status: string; substrate: string | null; reason: string | null } | null;
+    runtime_fingerprint: {
+      status: string;
+      substrate: string | null;
+      reason: string | null;
+      source: string;
+      returned_model_identifier: string | null;
+      probe_suite_digest: string | null;
+      missing_fields: string[];
+    } | null;
   } | null;
 }
 
@@ -38,6 +46,18 @@ test("live: 两种执行体在页面上可区分，且都与读面同值", async
   expect(declared.execution?.execution_backend).toBe("openhands");
   // 指纹只报状态：夹具声明的是未验证 + 原因，不是一个指纹值。
   expect(declared.execution?.runtime_fingerprint?.status).toBe("NOT_VERIFIED");
+  // GOAL-010 EC-04：没有实测记录 ⇒ 冻结占位，且**逐项点名**缺了哪四要素里的哪些
+  // （「没观测到」不是「无漂移」）——真实 app 的读面必须与产品语义同值。
+  const fingerprint = declared.execution?.runtime_fingerprint;
+  expect(fingerprint?.source).toBe("FROZEN_PLACEHOLDER");
+  expect(fingerprint?.returned_model_identifier).toBeNull();
+  expect(fingerprint?.probe_suite_digest).toBeNull();
+  expect(fingerprint?.missing_fields).toEqual([
+    "endpoint_config_digest",
+    "probe_suite_digest",
+    "returned_model_identifier",
+    "system_fingerprint",
+  ]);
 
   const started = await page.request.post("/api/projects/example-project/runs", {
     headers: { "Idempotency-Key": `live-substrate-${String(Date.now())}` },

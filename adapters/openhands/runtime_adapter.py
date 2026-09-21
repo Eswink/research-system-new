@@ -16,6 +16,8 @@ create/run/pause/cancel/stream_events/fork 全同步语义（M5 D2）。
   execute_tool 直通面经 PolicyWrappedToolExecutor 门禁。
 - usage：run() 终态后归一化 ConversationStats 写入 BudgetLedger（signal
   语义，记账失败不阻断结果；复审 F-2）。
+- 观测（EC-04）：同一 ConversationStats 里 provider 侧报告的 model 名随
+  `AgentSessionResult.observed_model_identifiers` 回传（零额外调用；读不到即缺项）。
 - fork：ForkSpec.model_override / tool_set_override 经注入的
   build_llm_for_fork 重建 Agent 后 fork（复审 F-4）。
 - 会话装配与 usage 记录委托 session_builder.SessionBuilder（行数约束）。
@@ -297,6 +299,9 @@ class OpenHandsRuntimeAdapter:
             session_id=entry.session_id,
             status=terminal,
             structured_output=_deliverable(entry, terminal),
+            # GOAL-010 EC-04：会话终态时把 provider 侧报告的 model 名一并带回
+            # （来源与 usage 记账同一个 ConversationStats；读不到 ⇒ 空元组，缺项）
+            observed_model_identifiers=self._builder.observed_model_identifiers(entry),
         )
         entry.terminal_result = result
         return result

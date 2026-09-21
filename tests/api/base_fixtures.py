@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from adapters.fakes.budget_ledger import FakeBudgetLedger
@@ -23,20 +24,28 @@ if TYPE_CHECKING:
     from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
     from adapters.sqlite.run_projection import SqliteRunProjection
     from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
+    from packages.application.ports.agent_runtime import AgentRuntime
     from packages.application.protocol_authoring.service import DraftService
     from packages.application.run_orchestration.service import RunOrchestrationService
 
 
+@dataclass(frozen=True, slots=True)
+class _SharedParts:
+    """`_base_sqlite_parts` 的产物（参数对象：六个部件的元组注解不该占掉函数行数预算）。"""
+
+    events: SqliteOutboxEventPublisher
+    workflow: SqliteWorkflowEngine
+    ledger: SqliteEvidenceLedger
+    budget: FakeBudgetLedger
+    runs: RunOrchestrationService
+    projection: SqliteRunProjection
+
+
 def _base_sqlite_parts(
     connection: sqlite3.Connection,
-) -> tuple[
-    SqliteOutboxEventPublisher,
-    SqliteWorkflowEngine,
-    SqliteEvidenceLedger,
-    FakeBudgetLedger,
-    RunOrchestrationService,
-    SqliteRunProjection,
-]:
+    *,
+    runtime: AgentRuntime | None = None,
+) -> _SharedParts:
     """Build shared SQLite stores + orchestration for base test deps."""
     from adapters.fakes.agent_runtime import FakeAgentRuntime
     from adapters.fakes.artifact_store import FakeArtifactStore
@@ -60,7 +69,9 @@ def _base_sqlite_parts(
     seed_declared_inputs(artifacts)
     runs = RunOrchestrationService(
         OrchestrationDependencies(
-            runtime=FakeAgentRuntime(structured_output=demo_session_output()),
+            # GOAL-010 EC-04：允许调用方换受控执行体（驱动「执行体报告了 model 名」的
+            # 链路）；默认仍是与接线前逐字一致的 demo Fake。
+            runtime=runtime or FakeAgentRuntime(structured_output=demo_session_output()),
             workflow=workflow,
             artifacts=artifacts,
             events=events,
@@ -69,13 +80,30 @@ def _base_sqlite_parts(
         )
     )
     projection = SqliteRunProjection(connection, events)
-    return events, workflow, ledger, budget, runs, projection
+    return _SharedParts(events, workflow, ledger, budget, runs, projection)
 
 
 def build_base_deps(
-    *, gateway: FakeModelGateway | None = None, db_path: str = ":memory:"
+    *,
+    gateway: FakeModelGateway | None = None,
+    db_path: str = ":memory:",
+    runtime: AgentRuntime | None = None,
 ) -> ApiDeps:
     """基础装配（endpoint/model CRUD + probe + run 测试用）。"""
+    from adapters.sqlite.pool import ThreadLocalConnection
+
+    # 代理面与 sqlite3.Connection 同形（execute/cursor/commit/with 块/row_factory），
+    # 但类型上不是它的子类：装配边界显式 cast，覆盖由池单测 + 整库 API 套件提供。
+    connection = cast("sqlite3.Connection", ThreadLocalConnection(db_path))
+    return _base_api_deps(connection, _base_sqlite_parts(connection, runtime=runtime), gateway)
+
+
+def _base_api_deps(
+    connection: sqlite3.Connection,
+    parts: _SharedParts,
+    gateway: FakeModelGateway | None,
+) -> ApiDeps:
+    """共享部件 → ApiDeps（端口逐个接线；从 `build_base_deps` 拆出守 50 行函数上限）。"""
     from adapters.fakes.policy_evaluator import FakePolicyEvaluator
     from adapters.sqlite.agent_store import SqliteAgentStore
     from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
@@ -83,7 +111,6 @@ def build_base_deps(
     from adapters.sqlite.library_store import SqliteLibraryStore
     from adapters.sqlite.model_store import SqliteModelStore
     from adapters.sqlite.ops_store import SqliteOpsStore
-    from adapters.sqlite.pool import ThreadLocalConnection
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
     from adapters.sqlite.schedule_store import SqliteScheduleStore
@@ -91,10 +118,8 @@ def build_base_deps(
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
     from services.api.schedule_support import build_registry
 
-    # 代理面与 sqlite3.Connection 同形（execute/cursor/commit/with 块/row_factory），
-    # 但类型上不是它的子类：装配边界显式 cast，覆盖由池单测 + 整库 API 套件提供。
-    connection = cast("sqlite3.Connection", ThreadLocalConnection(db_path))
-    events, workflow, ledger, budget, runs, projection = _base_sqlite_parts(connection)
+    events, workflow, ledger, budget = parts.events, parts.workflow, parts.ledger, parts.budget
+    runs, projection = parts.runs, parts.projection
     schedule_store = SqliteScheduleStore(connection=connection)
     return ApiDeps(
         endpoint_store=SqliteEndpointStore(connection=connection),

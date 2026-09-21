@@ -39,12 +39,17 @@ class FakeAgentRuntime(FakeBase):
         *,
         outcome: str = AgentSessionState.State.SUCCEEDED,
         structured_output: dict[str, object] | None = None,
+        observed_model_identifiers: tuple[str, ...] = (),
     ) -> None:
         """受控 Fake 会话结局；structured_output 注入会话结果（M13-R1 demo）。
 
         默认 None → 会话结果无结构化输出（register 门禁如实拒绝，
         与既有语义一致）；控制面 demo 装配显式注入可满足验收标准的输出，
         并在 UI 披露"受控 Fake Runtime"。
+
+        `observed_model_identifiers`（GOAL-010 EC-04）：受控执行体**不发起模型调用**，
+        所以默认**空** = 没有观测（读面如实点名缺项）。显式传入只用于驱动「有观测」
+        这条链路的判据——它描述的是 provider 侧报告过的 model 名，不是请求里那个 id。
         """
         super().__init__("agent_runtime")
         self._specs: dict[str, AgentSessionSpec] = {}
@@ -53,6 +58,7 @@ class FakeAgentRuntime(FakeBase):
         self._cancel_requested: set[str] = set()
         self._outcome = outcome
         self._structured_output = dict(structured_output or {})
+        self._observed_model_identifiers = tuple(observed_model_identifiers)
 
     def create_session(self, spec: AgentSessionSpec) -> AgentSessionHandle:
         self._enter("create_session", spec.task_id.value)
@@ -98,6 +104,7 @@ class FakeAgentRuntime(FakeBase):
                 session_id=session_id,
                 status=terminal,
                 structured_output=dict(self._structured_output) if terminal == "SUCCEEDED" else {},
+                observed_model_identifiers=self._observed_model_identifiers,
             )
         if session_id in self._cancel_requested:
             return self._finish(session_id, AgentSessionState.State.CANCELLED)
@@ -123,6 +130,7 @@ class FakeAgentRuntime(FakeBase):
             session_id=session_id,
             status=terminal,
             structured_output=dict(self._structured_output) if terminal == "SUCCEEDED" else {},
+            observed_model_identifiers=self._observed_model_identifiers,
         )
 
     def pause(self, session_id: str) -> None:

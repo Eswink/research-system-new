@@ -19,7 +19,11 @@ from adapters.openhands.policy_enforcing_agent import (
     register_policy_context,
 )
 from adapters.openhands.session_types import _SessionEntry
-from adapters.openhands.usage_mapping import UsageContext, publish_usage
+from adapters.openhands.usage_mapping import (
+    UsageContext,
+    observed_model_names,
+    publish_usage,
+)
 from packages.application.ports.agent_runtime import (
     AgentSessionSpec,
     ForkSpec,
@@ -165,6 +169,17 @@ class SessionBuilder:
                 self._usage_reporter(entries)
         except Exception:  # noqa: BLE001  记账失败不阻断 run 结果
             on_failure(entry.session_id)
+
+    def observed_model_identifiers(self, entry: _SessionEntry) -> tuple[str, ...]:
+        """本次会话观测到的 model 名（GOAL-010 EC-04）；读不到 ⇒ 空元组，不抛错。
+
+        与 `record_usage` 同一条边界：观测失败不阻断 run 结果；但**也不冒充**已观测
+        ——空元组在读面上就是「缺项」，不是「无漂移」。
+        """
+        try:
+            return observed_model_names(entry.conversation.state.stats)
+        except Exception:  # noqa: BLE001  观测失败 ⇒ 如实空手而归
+            return ()
 
     @staticmethod
     def find_error_event(entry: _SessionEntry) -> Any:

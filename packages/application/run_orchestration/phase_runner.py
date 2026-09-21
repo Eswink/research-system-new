@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from packages.application.memory.gate import MemoryGateDeps
+from packages.application.model_relay.observation import RunSessionObservation, observe_session
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import (
     CorrelationRef,
@@ -75,6 +76,9 @@ class PhaseRunnerDeps:
     # PLAN-048：协作式暂停信号（读 canonical run state）。为真时在组边界停止，
     # 不执行该组任何任务；剩余 specs 经 on_pause 交回 service 暂存供 resume 续跑。
     pause_requested: Callable[[], bool] | None = None
+    # GOAL-010 EC-04：会话期的运行时观测交回方（service 收集，run 终止时落 canonical）。
+    # 只在**真的有观测**时被调用——没有观测不是一次空调用，而是不发这条事实。
+    on_observation: Callable[[RunSessionObservation], None] | None = None
 
     def emit(
         self,
@@ -420,6 +424,8 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
             tctx.spec_context,
             trace_id=tctx.ctx.trace_id,
         )
+    # GOAL-010 EC-04：这次会话的运行时观测交回 service（没有观测 ⇒ 什么都不交）。
+    observe_session(deps.on_observation, tctx.spec_context.endpoint, execution.session_result)
     if not execution.succeeded:
         if execution.retry_deferred:
             # 不是终局失败：durable 侧已经排了下一次尝试（带 deadline），由派发方

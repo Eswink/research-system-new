@@ -54,6 +54,15 @@ run.resume_compensation_failed
 语义 digest 必须在事件里：执行期失败收敛的 run 没有 `RunOutcome`
 可读，只能从事件链把 run 行的冻结引用补回来（GOAL-004 cycle 4 = EC-04）。
 
+`model.probed`（GOAL-010 EC-04 起**真的会发出**；此前只是声明过的枚举成员）：run 收敛后，
+若这次执行的会话**观测到** provider 侧报告的 model 名，就把指纹四要素（返回 model 名 /
+端点头 / probe 版本 / 兼容性结论 + 缺项点名）落成一条 `model.probed`。payload 键与
+`GET /runs/{id}` 的 `execution.runtime_fingerprint` 读数一一对应（`verdict` → `status`），
+另带 `observed_model_identifiers`（本次观测到的**全部**名字，去重排序）。**没有观测 ⇒
+不发事件**：读面此时保持冻结占位，而不是拿到一条空记录。usage/制品计数器
+（`model_tokens` / `usage_entries` / `artifact_ids` / `evidence_ids`）**不**随这条事件发布：
+它们的真值面是 cost/usage 读面，记录里的默认 0 不是实测值。
+
 **旧事件形态**（GOAL-005 cycle 6 = EC-06）：早于语义 digest 那一轮的 `manifest.frozen`
 payload **只有 `digest`**（可能另有 `run_id`）。回填路径对缺失键的处理是"当作没有这一项"
 （`FrozenManifestRefs.from_payload` 只认非空字符串）⇒ 这类 run 的

@@ -258,18 +258,26 @@ POST   /projects/{id}/runs                （扩展：{draft_id, draft_revision}
   "输入齐不齐"，不回答"该不该重建"（状态机/策略/预算不在这里），也不承诺"重建必过"
   ——漂移校验与 preflight 仍在 `/resume` 真跑时判。`REFUSED` **不是**"不可回填"的裁决：
   运营侧仍可用 `tools/snapshot_migrate.py`（显式 opt-in）对个别 run 做 re-freeze / fork。
-- **`execution`（执行体读面，GOAL-007 cycle 4 = EC-04）**：`GET /runs/{id}` 给出
-  `execution.execution_backend`（这条 run 是哪个执行体跑的：`fake` = 受控 demo 执行体、
-  `openhands` = 真实 adapter）与 `execution.runtime_fingerprint`（AGENTS.md §4 指纹槽位的
-  **状态**：`status` + `substrate` + `reason`）。**两个 `null` 不是一回事**：
-  `execution` 为 `null` = 这条 run **尚未冻结**；`execution_backend` 为 `null` =
-  **冻结时未声明**（M7 不伪填充口径）——都不代表某个具体执行体。
-  **同源**：事实取自冻结的 `manifest.frozen` 事件 payload（`services/api/run_execution_view.py`
-  回读，不另存副本），与 `GET /runs/{id}/events` 上看到的是同一份值。指纹只报状态：
-  `NOT_VERIFIED` 时连同 `reason` 一起给出（默认受控 demo 执行体不发起模型调用，§4 的七件
-  事实一件也不存在），**不得**被读作"已验证的指纹"。**边界**：列表路径
-  （`GET /projects/{id}/runs`）**不带**这两个字段——避免逐 run 回读冻结事件形成 N+1；
-  列表要披露时另开批量读面。**控制台**：`#/run/timeline` 的「运行身份」面板渲染这两项
+- **`execution`（执行体读面，GOAL-007 cycle 4 = EC-04；GOAL-010 EC-04 补实测四要素）**：
+  `GET /runs/{id}` 给出 `execution.execution_backend`（这条 run 是哪个执行体跑的：`fake` =
+  受控 demo 执行体、`openhands` = 真实 adapter）与 `execution.runtime_fingerprint`
+  （AGENTS.md §4 指纹面）。**两个 `null` 不是一回事**：`execution` 为 `null` = 这条 run
+  **尚未冻结**；`execution_backend` 为 `null` = **冻结时未声明**（M7 不伪填充口径）——
+  都不代表某个具体执行体。
+  **指纹读面由两份 canonical 事实合成**（`services/api/run_execution_view.py`，不另存副本）：
+  冻结的 `manifest.frozen` payload 里的**占位状态**，与 run 收敛后落下的实测记录
+  （`model.probed` 事件；取最近一次）。`source` 标明读的是哪一份：
+  `FROZEN_PLACEHOLDER` = 这条 run 没有实测记录（四要素全空且 `missing_fields` **逐项点名**），
+  `RUN_OBSERVATION` = 实测记录（`endpoint_config_digest` / `returned_model_identifier` /
+  `probe_suite_digest` / `system_fingerprint` + `observed_model_identifiers`）。
+  `status` **只有两态**：`REPEATABLE_CONFIGURATION`（配置已被一次真实运行确认）或
+  `NOT_VERIFIED`；缺必填项时**必为**后者（缺项由 `missing_fields` 点名）。
+  `returned_model_identifier` 取自**本次 run 的 usage 度量**报告的 model 名（不是响应头、
+  也不是请求里写的那个 id）；观测到多个不同值时留 `null`（单值槽位不替多值做主），
+  多值本身在 `observed_model_identifiers` 里。**不得**把 `NOT_VERIFIED` 读作"已验证的指纹"，
+  **也不得**把"没观测到"读成"无漂移"。**边界**：列表路径（`GET /projects/{id}/runs`）
+  **不带**这两个字段——避免逐 run 回读冻结事件形成 N+1；列表要披露时另开批量读面。
+  **控制台**：`#/run/timeline` 的「运行身份」面板渲染这两项
   （`run-execution-backend` / `run-runtime-fingerprint`），stub 与 live 两条 e2e 断言
   "页面值 == 读面返回值"且**两种执行体在页面上可区分**。
 

@@ -65,6 +65,11 @@ class AgentSessionResult:
     status: str
     message: str = ""
     structured_output: dict[str, object] = field(default_factory=dict)
+    # GOAL-010 EC-04：本次会话里 **provider 侧报告的** model 名（去重、排序；无观测 ⇒ 空）。
+    # 它是**观测**不是**配置**：与 spec 里请求的 model id 是两件事，同名漂移（AGENTS.md §4）
+    # 正是靠「请求的」与「返回的」两个事实的差才可见。runtime 读不到就留空——
+    # **不得**拿请求值回填，空值在读面就是「缺项」，不是「无漂移」。
+    observed_model_identifiers: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.session_id:

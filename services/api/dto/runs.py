@@ -101,17 +101,54 @@ class DispatchOwnershipDto(BaseModel):
     holders: list[LeaseHolderDto] = Field(default_factory=list)
 
 
-class RuntimeFingerprintDto(BaseModel):
-    """运行时指纹槽位的**诚实状态**（AGENTS.md §4 / GOAL-007 EC-04）。
+#: 指纹读面的事实来源：**冻结占位**（这次 run 没有实测记录）vs **run 观测**
+#: （调用后落下的实测记录）。两者**都**是 canonical 事实，读面必须分得开。
+FINGERPRINT_SOURCE_FROZEN = "FROZEN_PLACEHOLDER"
+FINGERPRINT_SOURCE_OBSERVED = "RUN_OBSERVATION"
 
-    `status` 取 `NOT_VERIFIED` 时 `reason` 点名为什么（默认受控 demo 执行体不发起模型
-    调用，§4 的七件事实一件也不存在）。它是**状态**不是**指纹值**：读面不得把它当作
-    「已验证的指纹」，也不得在 `status != VERIFIED` 时渲染成指纹结论。
+#: 读面呈现的四要素字段名（GOAL-010 EC-04：返回 model 名 / 端点头 / probe 版本 /
+#: 兼容性结论中的前三个；结论是 `status`）。`missing_fields` 至少要点名这些项里为空的。
+FINGERPRINT_ELEMENT_FIELDS = (
+    "endpoint_config_digest",
+    "returned_model_identifier",
+    "probe_suite_digest",
+    "system_fingerprint",
+)
+
+
+class RuntimeFingerprintDto(BaseModel):
+    """运行时指纹读面（AGENTS.md §4；GOAL-007 EC-04 建槽，GOAL-010 EC-04 加实测）。
+
+    `status` **只有两态**：`REPEATABLE_CONFIGURATION`（配置已被一次真实运行确认）或
+    `NOT_VERIFIED`。**没有**、也不接受「模型完全可复现」这类表述——两态穷举由域枚举
+    保证，读面只呈现、不另判。
+
+    `source` 说明这份事实从哪来：
+
+    - `FROZEN_PLACEHOLDER`：冻结快照里的**状态**记录（这次运行没有实测记录）。此时四要素
+      全为空，`missing_fields` 点名全部四项——「没观测到」**不是**「无漂移」。
+    - `RUN_OBSERVATION`：run 收敛后落下的**实测**记录。四要素里取不到的项仍点名列在
+      `missing_fields` 里（`system_fingerprint` 给不给取决于 provider，缺失是**如实的
+      缺口**，不降级结论、也不拿它冒充「模型可复现」）。
+
+    `returned_model_identifier` 是**本次 run 的 usage 度量报告**的 model 名（不是原始响应
+    头、也不是请求里写的那个 id）。观测到**多个不同**值时单值槽位留 `None`（缺项 ⇒
+    结论必为 `NOT_VERIFIED`，不挑一个），多值本身在 `observed_model_identifiers` 里。
+
+    `missing_fields` = 上面四要素里取值为空的项 ∪ 实测记录自报的缺项（后者可能含
+    `safe_response_metadata`——白名单响应头，本 DTO 不作为字段单独呈现，但记录会如实点名）。
     """
 
     status: str
     substrate: str | None = None
     reason: str | None = None
+    source: str = FINGERPRINT_SOURCE_FROZEN
+    endpoint_config_digest: str | None = None
+    returned_model_identifier: str | None = None
+    probe_suite_digest: str | None = None
+    system_fingerprint: str | None = None
+    observed_model_identifiers: list[str] = Field(default_factory=list)
+    missing_fields: list[str] = Field(default_factory=list)
 
 
 class RunExecutionDto(BaseModel):

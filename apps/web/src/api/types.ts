@@ -409,10 +409,23 @@ export interface RebuildReadinessDto {
   missing: string[];
 }
 
+// GOAL-010 EC-04：指纹四要素落读面。status 只有两态（REPEATABLE_CONFIGURATION /
+// NOT_VERIFIED）；source 说明这份事实从哪来：FROZEN_PLACEHOLDER = 冻结快照里的状态
+// 记录（这次 run 没有实测记录，四要素全为空且 missing_fields 点名全部四项），
+// RUN_OBSERVATION = 调用后落下的实测记录。returned_model_identifier 取自**本次 run 的
+// usage 度量**（不是响应头、也不是请求里写的那个 id）；观测到多个不同值时留 null，
+// 多值本身在 observed_model_identifiers 里。
 export interface RuntimeFingerprintDto {
   status: string;
   substrate: string | null;
   reason: string | null;
+  source: string;
+  endpoint_config_digest: string | null;
+  returned_model_identifier: string | null;
+  probe_suite_digest: string | null;
+  system_fingerprint: string | null;
+  observed_model_identifiers: string[];
+  missing_fields: string[];
 }
 
 // GOAL-007 cycle 4 = EC-04：执行体读面。外层的 null 与 execution_backend 的

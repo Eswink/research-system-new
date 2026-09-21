@@ -25,6 +25,16 @@ from packages.domain.run_state import ResearchRunState
 _Publish = Callable[..., None]
 
 
+def preflight_failure_message(report: Any) -> str:
+    """preflight 失败的 run 消息（PA-1 F5；从 `service.py` 搬来守 450 行硬上限）。
+
+    带上失败的 check 代号：未配置的控制面要说得出**哪一条检查**没过，而不是一句
+    「preflight failed」。FAILED 的诚实语义不变——这只影响消息的可行动性。
+    """
+    codes = ", ".join(sorted({finding.code for finding in report.findings}))
+    return f"preflight failed: {codes}" if codes else "preflight failed"
+
+
 def publish_failed_run(
     publish: _Publish, run_id: str, message: str, system_failure: bool
 ) -> RunOutcome:
