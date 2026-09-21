@@ -2,7 +2,7 @@
 id: GOAL-20260921-010
 slug: real-deliverable-contract
 title: 真实交付物契约：让真实 run 首次走到 SUCCEEDED（交付物名与合约对齐、证据由真实来源满足）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-21
 updated_at: 2026-09-22
 owners:
@@ -98,7 +98,7 @@ exit_criteria:
       读面可取到该 run 的运行时指纹四要素（返回 model 名 / 端点头 / probe 版本 / 兼容性结论），
       口径停在 `REPEATABLE_CONFIGURATION`（AGENTS.md §4）；「模型不存在」**有 provider 侧真实样本**
       （点名模型标识的失败 + 零回退到别的模型），**或**如实登记为未实测并说明代价。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **出站结构判据（承 `RECHECK-20260920-121` W-7）**：把「**默认门离线**」从**约定**变成
@@ -109,7 +109,7 @@ exit_criteria:
       存在一条**结构判据**（测试或 validator 规则）把「默认门离线」钉住，且**被压过**：
       构造一次真实出站 ⇒ **RED**、复原 ⇒ **GREEN**。
       **不得**用「本次没观测到出站」充当判据。
-    status: PENDING
+    status: PASS
   - id: EC-06
     criterion: >-
       **收口复检 + 残余登记**：独立复检脚本（**当前树 + 干净 checkout 同结论**）+ 本地 m0 全量
@@ -120,7 +120,7 @@ exit_criteria:
       `.cursor/skills/governance-check/scripts/validate.py` 绿；本文件 `latest_recheck` 指向
       **仓库相对路径**的 PASS/PASS_WITH_WARNINGS RECHECK；frontmatter 的 EC 状态与 markdown
       状态表**一致**（GOAL-006/007/008/009 收口时都出过这一类漏改）。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -154,13 +154,14 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260921-130-runtime-fingerprint-on-read-face.md
   - .cursor/plans/tasks/PLAN-20260922-131-offline-gate-structural-judge.md
   - .cursor/plans/tasks/PLAN-20260922-132-goal-010-closeout-recheck.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260922-131-offline-gate-structural-judge.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260922-132-goal-010-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260921-100-deliverable-name-declaration-and-gate.md
   - .cursor/memory/entries/MEM-20260921-101-evidence-source-property-and-paired-landing.md
   - .cursor/memory/entries/MEM-20260921-102-output-schema-registration-and-test-assembly.md
   - .cursor/memory/entries/MEM-20260921-103-model-absence-taxonomy-and-false-green-judges.md
   - .cursor/memory/entries/MEM-20260922-104-network-judge-traps-and-egress-sources.md
+  - .cursor/memory/entries/MEM-20260922-105-closeout-recheck-script-shape.md
 ---
 
 # GOAL-20260921-010 — 真实交付物契约（自迭代循环）
@@ -188,7 +189,7 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 | EC-03 | 真实协议的可用性：确定真实 run 用哪份协议；若 demo 协议（注释明写「受控 Fake agent loop」）不适用，则新增/选定真实协议并登记；判据含**协议 id 出现在 run 的 canonical 事实里** | run 的 canonical 事实中协议标识 == 所选真实协议 id；反证：改回 demo 协议 ⇒ 判据红 | **PASS**（取 **(B) 新增一份真实协议并登记**：`real_research_task_v1.yaml` / id `real_research_task_v1_0_1`，1 phase，能力取**已授予**集，**未削能力**、**未改任何既有合约/判据**；(A) 的 10 条非自述来源与 11 个 phase 成本在 WP1 正面回答后否决。判据：`tests/api/test_real_protocol_identity.py` 三面钉死（文件声明的 `id:` / canonical `protocol_id` / 被解析字节的 sha256 + **库**里的冻结正文）+ 常驻成对反证；**被压过**（期望值改成 demo id ⇒ 真实那条红、demo 仍绿 ⇒ 复原复绿）。真跑（**本 cycle 仅 1 次调用**）run `f9bef830-0ee3-4f05-8d40-ca57c1f5e643` **`SUCCEEDED`**、`protocol_id` 逐字为该 id、`protocol_body_digest` 与仓库文件字节**独立重算一致**、交付物按新合约声明的名字登记；`RECHECK-20260921-129` = PASS_WITH_WARNINGS，W-1 登记「规格外的新 schema + 注册表一行须人工复核」、W-2/W-3 登记证明力边界（`output_schema` 惰性、载荷不含正文）） |
 | EC-04 | 漂移与指纹样本补全（承 009 EC-03/EC-05 缺口）：真实 run 的运行时指纹（返回 model 名/端点头/probe 版本/兼容性结论）**落读面**；「模型不存在」补 **provider 侧真实样本** | 读面可取四要素 + 口径停在 `REPEATABLE_CONFIGURATION`；provider 侧样本存在**或**如实登记未实测与代价 | **PASS**（四要素**在产品路径上**闭合：观测取自 adapter **已在读**的 `ConversationStats`（**零额外调用**）→ run 收敛后落 canonical `model.probed` → `GET /runs/{id}` 的 `execution.runtime_fingerprint` 合并呈现，`source` 标明 `FROZEN_PLACEHOLDER` / `RUN_OBSERVATION`、缺项由 `missing_fields` **逐项点名**；结论仍由 `build_live_run_record` 既有两态规则判、**未扩枚举**；`system_fingerprint` 缺失**只点名不降级**。**provider 侧样本已实测**（走 AC-4 第一条）：`agnes-anthropic` + 一个不存在的标识 ⇒ 连通性 `GET /models` **通过**、那次 chat 被 **5xx** 拒（`MODEL_RELAY_UNAVAILABLE`）且**错误正文点名**该标识、返回 model 名 `null`（**零回退/无静默映射**）。判据面 **+69/-0 纯加性**；反证由 RECHECK **亲自按压**（关掉合并 ⇒ 真 RED；复原 ⇒ 绿无残留）；`RECHECK-20260921-130` = PASS_WITH_WARNINGS，W-1 登记**实测发现的既有边界**「「模型不存在」无专属失败类别（与中转站故障共用可重试的 `MODEL_RELAY_UNAVAILABLE`）⇒ 只有**消息点名**能区分」、W-4 登记**真实调用 3 次超最小必要**（第 3 次为**必要**的步骤轨迹）、W-7/W-8 登记工具面与流程面的诚实记录） |
 | EC-05 | 出站结构判据（承 `RECHECK-121` W-7）：把「默认门离线」从约定变成**结构判据**——默认路径/测试出现真实出站即红，**不依赖人工观察** | 结构判据存在且**被压过**（构造一次真实出站 ⇒ RED；复原 ⇒ GREEN） | **PASS**（判据 = `tests/egress_guard.py` + `tests/conftest.py` 接线：**拦**——`socket.socket.connect`/`connect_ex` **与两个具体事件循环类的 `sock_connect`**，先于任何数据包抛 `PublicNetworkBlocked`；**判**——`pytest_sessionfinish` 按**记录**把整轮判红，**即使调用方吞掉异常**。放行面只有既有的 **`requires_live_llm` marker**（无当前用例 = 默认拒、fail-closed，**不依赖环境变量**）；分类**复用** `endpoint_policy.destination_kind`（+11/-0 加性、语义零改动）。**被压过**：撤防 ⇒ 证物 RED / 复原 ⇒ GREEN；**停用会话级红灯 + 吞掉异常 ⇒ 用例全绿但 exit 0（修前形态）**，恢复后同一发 ⇒ 用例仍绿但 **exit 1**；`_loop_classes()` 错版 ⇒ **4 个用例真 FAILED**。**判据上线当天抓到并定位一条真实收集期出站**：`import openhands.sdk` ⇒ litellm 导入期 `httpx.get` 拉 model cost map（`raw.githubusercontent.com`）⇒ 默认门与 CI 在**收集期**一直真的出网；按上游开关在 `tests/conftest.py` 置 `LITELLM_LOCAL_MODEL_COST_MAP=True` **修源头**，两向复测 `judged 0/blocked 0` vs `judged 1/blocked 1` + 归因点名 `test_adapter_core.py:5:<module>`。**独立复检两遍**：第一遍**证伪**头号命题（Windows Proactor 走 `_overlapped.ConnectEx` ⇒ 异步出站完全逃逸，W-1）⇒ 补异步面，第二遍复验通过（selector / anyio / httpx-async / aiohttp 全阻断，环回正对照 200）；第二遍另指出 W-8（第一版异步拦截装的是抽象基类桩、对实际循环不可达）⇒ 改装两个**具体实现** + selector **行为**判据。`RECHECK-20260922-131` = PASS_WITH_WARNINGS（W-1/W-8 **已修并复验**；W-2 环回代理致盲、W-3…W-7、W-9…W-11 逐条登记）。**如实更正**：「文档地址 = 不可路由」经实测**证伪**（本机代理对任意 IP 秒回）⇒ 撤防类按压必然产生一次**受控出站**，证物的安全性只来自「判据先于 SYN 拦下」；**判据在 CI 的干净安装下抓到第二条真实出站**（31 条 `57.150.192.193:443` = litellm 首次导入的 `tiktoken` 词表下载；本机因缓存已热而**不可见**）⇒ 在 **workflow 作业步骤**加预热门修掉、**判据一行未改**，并如实登记「本机 zero ≠ 默认门离线」（残余 R-6） |
-| EC-06 | 收口复检 + 残余登记：独立复检（当前树 + 干净 checkout 同结论）+ m0 **23/23** + 治理 validate 绿 + CI 台账；六项人工面与 009 残余原样保留 + 本 GOAL 的 W 列表 | 复检脚本多层判据两树同结论；`make validate-all` 23/23；`validate.py` 绿；`latest_recheck` 指向 PASS/PASS_WITH_WARNINGS；frontmatter 与状态表一致 | PENDING |
+| EC-06 | 收口复检 + 残余登记：独立复检（当前树 + 干净 checkout 同结论）+ m0 **23/23** + 治理 validate 绿 + CI 台账；六项人工面与 009 残余原样保留 + 本 GOAL 的 W 列表 | 复检脚本多层判据两树同结论；`make validate-all` 23/23；`validate.py` 绿；`latest_recheck` 指向 PASS/PASS_WITH_WARNINGS；frontmatter 与状态表一致 | **PASS**（独立复检脚本 `scratch/verify_goal010_closeout.py`：**只读 / 只用标准库 / 不 import 仓库代码**；五层 —— A 交付物 / B 判据用例 / C 登记面 / D 凭据面 / E 默认姿态。**两棵树同结论**：当前树 **110/112**、干净 checkout（`git clone --depth 1` 到仓外）**108/110**，两树失败的**是同一组同一原因**（当时 EC-06 未收口、`RECHECK-132` 未写），唯一差异是干净树**没有 `.env`** ⇒ D 层两条**如实 SKIP**（不读成通过）；**最终脚本**下收口树 **122/122**，而干净 checkout（仍是收口**之前**的 tip）判 **6 条红**——全部是「收口工作还没做」⇒ 判据**不是空转绿**（反证成立）。**五层逐层按压**（P-1 符号改名 / P-2 用例改名 / P-3 `latest_recheck` 改裸 ID / P-4 仓根放凭据形状文件 / P-5 `ALLOWED_KINDS` 加 `private`）**全部先红后绿**，按压后 `git status` 无痕。**残余不消失**：008/009 的人工面 13 条、`RECHECK-121…126` 的 W 列表、本 GOAL `RECHECK-127…131` 的 W 列表、产品侧 `R-1/R-2/R-5/R-6` 与 `W-13` 逐条在位。`RECHECK-20260922-132` = PASS_WITH_WARNINGS（W-1…W-5 全是「这次复检看不到的面」与脚本自身边界，**无阻断项**） |
 
 ### 建档时已探明的现状（事实类，用于判定起点；不当作验收依据）
 
@@ -376,6 +377,46 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 
 收口时必须把「仍未处理的长程项」**如实登记**为后继入口（**不隐藏缺口**），并给出恢复条件。
 
+### 收口结论（2026-09-22，`status: ACHIEVED`）
+
+**六条退出标准全部 PASS，且每条都有实跑证据**——三条是**真实 run 恰好 `SUCCEEDED`**，
+一条是**provider 侧真实样本**，两条是**判据被按压过**：
+
+| EC | 实跑证据（不可替代的那一条） |
+| --- | --- |
+| EC-01 | run `f1710564-855c-43f7-9fdd-84966a878cf9` 终态**恰为 `SUCCEEDED`**、`failures` 为空、制品按合约声明的 `:analysis_report` 登记；反证成对且被压过四次 |
+| EC-02 | run `a2a1bfbf-fea1-44a5-bfd0-ac3396d5d054` `SUCCEEDED`，读面 4 条来源 = 2 自述 + **2 声明输入 `USER_PROVIDED`**（`created_by=composition-root`、digest 可重算）；反证三次被压过 |
+| EC-03 | run `f9bef830-0ee3-4f05-8d40-ca57c1f5e643` `SUCCEEDED`，`protocol_id` 逐字 `real_research_task_v1_0_1`、`protocol_body_digest` 与仓库文件字节**独立重算一致** |
+| EC-04 | `agnes-anthropic` + 不存在的标识 ⇒ 连通性通过、chat 被 5xx 拒且**错误正文点名**该标识、返回 model 名 `null`（零回退/无静默映射） |
+| EC-05 | 整轮出站判据上线当天抓到**两条**真实收集期出站（litellm cost map；冷环境 tiktoken 词表）并修源头；押过**五个面**；CI 上判据 `judged 678`/`blocked 8`（8 = 自证探针） |
+| EC-06 | 独立复检脚本**两树同结论**（110/112 vs 108/110，失败同一组；差异只有「干净树无 `.env`」的 2 条 SKIP）+ **五层逐层按压先红后绿** + 残余逐条在位 |
+
+**收口文件与台账**：收口 RECHECK = `RECHECK-20260922-132`（**PASS_WITH_WARNINGS**，W-1…W-5 无阻断项）；
+本文件 `latest_recheck` 指向它（**仓库相对路径**）；`child_plans` 6 份（127…132）与实况一致；
+`memory_entries` 5 份与子 PLAN 声明一致；`ALL_PLAN` 投影一致；CI 台账逐 run 逐 job 到终态
+（含 `87208aa` 的**一红**与修复提交 `cf777fb` 的全绿——**红如实记账、未改判据凑绿**）。
+
+**仍未处理的长程项（不因 ACHIEVED 关闭）**：
+
+1. **产品侧残余**：`R-1`（产品进程未置 `LITELLM_LOCAL_MODEL_COST_MAP`）· `R-2`（DNS/UDP/子进程/
+   自定义事件循环不在判据射程）· `R-5`（环回转发代理致盲）· `R-6`（**CI 每轮仍下载一次词表** ⇒
+   「默认 CI 完全离线」**不成立**；要消掉需把词表固化进镜像/私有源）。
+2. **`RECHECK-131` 的 W-13**：本机 `judged 0` **不等于**「默认门离线」——它只等于那台机器那一刻离线
+   （CI 干净安装上一次抓到 31 条，就是这条的实证）。
+3. **`ALLOW_PUBLIC_NETWORK` 仍是零消费者**（判据不看它，产品策略面另议）；
+   **`domain_discovery` 的 `min 10` 仍未有 run 路径行使过**（`RECHECK-128` W-7）。
+4. **13 条「不进入循环 / 需人工拍板」原样有效**——ADR-0031 是否采纳、威胁建模/BOLA-BFLA、
+   `artifacts/` 明文 token 清理、450 行贴线文件、依赖 pin 升级、hook 侧 L3 门、真实 runtime 默认化、
+   anthropic SDK、凭据进 CI、`ModelCompatibilityProfile` 一等实体化、放宽 `AcceptanceCriteria`、
+   `secrets/llm_key.txt` 的删除、**30 条非 ASCII 跟踪路径**（AGENTS §13）。
+5. **`RECHECK-127…131` 的全部 W 条目**继续有效（含 EC-02 的 4 次 live 调用超最小必要、
+   声明输入只证 grounding、`ModelCompatibilityProfile` 面等）。
+6. **可选验证项（ANTHROPIC run 腿）未做**，且**不进**退出标准：本机实测该端点**双协议面都 200**
+   ⇒ 改绑非必需；要做时的前提与耦合面见 `docs/integration/LLM_ENDPOINTS.md` §12.2–12.4。
+
+**恢复条件**：上述任何一项若要做，都需要用户重新授权一轮（本 GOAL 的 push-to-main 授权随 ACHIEVED 结束；
+live 调用授权不自动延续到新目标）。
+
 ## 不进入循环 / 需人工拍板
 
 以下项**本循环不做**，也不因本 GOAL 存在而被宣称已解决；触及即 BLOCKED
@@ -417,7 +458,7 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 
 | 4 | PLAN-20260921-130（EC-04） | `89cfae8`（derive + ALL_PLAN）、`c9b0ebb`（derive 证据补全）、`6e3ddba`（WP1 定案）、`c4a6f7c`（WP2 读面落地）、本 cycle 收口提交（WP3 样本 + WP4 RECHECK-130 + EC-04 置 PASS；**见下方 CI 台账尾巴**） | **m0 全量 3 次**：WP2 树 `PASS: profile=m0; 23 deterministic checks`（4301 passed/16 skipped）；WP3 复跑树 **PASS 23/23**（4306/17，515.93s）；**收口树首跑 `FAILED: 1 check(s): framework/validate=1`**（治理：`latest_recheck` 为 null + `memory_entries` 空表）⇒ 补 `latest_recheck`（仓库相对路径）+ 落 `MEM-20260921-103` + INDEX 登记 ⇒ 末跑 **PASS 23/23**（4307/17）。**第 1 次全量另失败过 1 项**（`framework/run_cursor_framework_evals`，`os.replace` 报 WinError 5）；孤立重跑 PASS、后两次全量 PASS ⇒ 归为**瞬时文件锁**（W-7），且该次**证书作废**（按压窗口与它重叠，W-8）。**定向**：架构判据 21 passed/1 skipped；三套指纹判据 12 passed；`ruff`/`mypy` 全绿。**快照独立复算**：重跑 `gen_openapi.py` ⇒ 零 diff | `89cfae8` ⇒ M0 35604253831 + CodeQL 35604253122；`c9b0ebb` ⇒ M0 35606257297 = **cancelled**（被下一次推送的 `cancel-in-progress` 取消，**如实登记**）+ CodeQL 35606257049 = success；`6e3ddba` ⇒ M0 35606713362（6 job）+ CodeQL 35606712973（3 job）；`c4a6f7c` ⇒ M0 35614561941（6 job）+ CodeQL 35614561942（3 job）；**除 `c9b0ebb` 被取消外全部 success（逐 run 逐 job 实查）**；本 cycle 收口提交的 run **见回合汇报**（台账尾巴口径） | **本 cycle 自己造成并修好三条**：① **判据面缺陷**——新增的「样本必须预置条件式」第一版写成**文本子串**判据，按压（改开关名）**仍绿**；改行为判据后第一版**仍不红**（`_require_case()` 抛的 skip 把判据自己变成 skip，而 **skip 不是红**）⇒ 最终加**等价性断言 + skip 转 `pytest.fail`**，**再压 ⇒ 真 RED**，复原复绿；② **工具/流程面**——首次全量 m0 因 `os.replace` WinError 5 失败 1 项（孤立重跑 PASS），且该次运行期间执行过按压 ⇒ **证书作废、以复跑为准**；③ **收口树首跑红**——治理 `validate.py` 两条（`latest_recheck` 为 null、`memory_entries` 空表）⇒ 补相对路径 + 落 `MEM-20260921-103` + INDEX 登记后复跑绿（**首跑红不记成绿**） | **未削能力、未改任何既有合约、未改门禁校验逻辑、未放宽任何断言语义**：判据面 diff **+69/-0（零删除）**；`build_live_run_record` 的既有语义与测试**零改动**；**未**扩 `ModelReproducibilityVerdict` 枚举、**未**引入「完全可复现」表述。**真实调用 3 次**（WP3，均为小请求；probe 路径不记账）——**超出「最小必要」并已如实登记**（W-4，含第 3 次补步骤轨迹的必要性理由）；`RESEARCHOS_AGENT_RUNTIME` **未**写入 `.env`，凭据全树扫描**未**进入任何 tracked 文件/记录/日志/回显 | EC-04 **PASS**。**实测发现的新边界**：「模型不存在」**没有专属失败类别**（与中转站故障共用可重试的 `MODEL_RELAY_UNAVAILABLE`）⇒ 判定细则里的「点名模型标识」是**唯一**区分读数面（按类别读会读错），已写进 RUNBOOK §7 第 4 条。**下一步**：EC-05（「默认门离线」的**结构**判据：出站发生即红、**被压过**、**不依赖人工观察**）→ EC-06（独立复检脚本两树同结论 + m0 23/23 + 残余登记 + 本文件自检） |
 | 5 | PLAN-20260922-131（EC-05） | `99783e4`（derive + ALL_PLAN）、本 cycle 收口提交（WP2 判据本体 + WP3 测量 + RECHECK-131 + EC-05 置 PASS；**见下方 CI 台账尾巴**） | **m0 全量（收口树、独占运行）`PASS: profile=m0; 23 deterministic checks`**（`python/tests` 4337 passed / 17 skipped，502.97s）；判据自证 **28 passed**；`ruff` / `ruff format --check` / `mypy` 全绿；`validate_bundle` 绿；治理 `validate.py` 绿；边界判据 2 passed；**判据实测**：默认门 `judged 771`、`blocked 8`（**8 条全部是判据自证探针，非探针 0 条**）；**独立复检两遍**（第一遍**证伪**头号命题 W-1 ⇒ 修 ⇒ 第二遍 PASS_WITH_WARNINGS） | `99783e4` ⇒ M0 35626335166（6 job）+ CodeQL 35626334361（3 job）**全部 success（逐 run 逐 job 实查）**；**`87208aa`（EC-05 交付提交）⇒ M0 35635457030**：`quality-windows-latest` **failure**（`egress guard: FAIL — … 31 non-loopback destination(s)`，全部 `57.150.192.193:443`、归因到各测试模块 `import openhands.sdk` 行，`python/tests=1` 被点名），**其余 5 job success**；CodeQL 35635454082 3/3 **success** ⇒ 该红**如实记账、未改判据凑绿**，根因与修法见⑧；**修好后的提交**的 run 见回合汇报（台账尾巴口径） | ① **判据自证抓到真实出站**：`import openhands.sdk` ⇒ litellm 导入期 `httpx.get` 拉 model cost map ⇒ 默认门/CI 在**收集期**一直真的出网；按上游开关在 `tests/conftest.py` 修源头，两向复测 `judged 0/blocked 0` vs `judged 1/blocked 1` + 归因点名 `test_adapter_core.py:5:<module>`；② **独立复检证伪头号命题**（W-1：Windows Proactor 走 `_overlapped.ConnectEx`，绕开 `socket.socket.connect` 补丁）⇒ 补**异步面**（两个具体循环类）+ selector **行为**判据；③ 第二遍复检指出 **W-8**（第一版异步拦截装的是抽象基类桩、对实际循环不可达）⇒ 改装两个**具体实现**，错版按压 **4 用例 RED**；④ **门禁误报**：`validate_bundle` 把 TEST-NET-1 地址读成旧版本号 ⇒ 证物地址改 TEST-NET-2（**不改门禁**）；⑤ **流程面**：`framework evals` 的 `WinError 5` = `.cursor/runtime/evolution_state.json` **无跨进程锁**（**两次并发调用复现**）⇒ m0 必须**独占运行**；⑥ **如实更正**：「文档地址=不可路由」经实测**证伪**（本机代理对任意 IP 秒回 0.02s）⇒ 撤防类按压必然产生一次**受控出站**；⑦ **CI 回灌抓到第二条真实出站**（本机缓存掩盖）：`87208aa` 的 `quality-windows-latest` 判红 **31 条** `57.150.192.193:443`（本机同轮 `judged 771`/`blocked 8` 全为探针）⇒ 定位到 litellm 首次导入的 `tiktoken` 词表下载（三相测量：cold+armed 被拦 / cold+disarmed 落下缓存文件 / warm+armed 零尝试）⇒ 在 **workflow 作业步骤**加预热门（`uv run --frozen --no-sync python -c "import litellm"`），**判据与放行面一行未改**；⑧ **如实登记环境相关性**：本机 `judged 0` **不**等于「默认门离线」（只等于那台机器那一刻离线）⇒ 新增残余 **R-6**：预热门只是把下载挪出判据进程，**CI 每轮仍有一次对外请求**，「默认 CI 完全离线」仍不成立 | R-1 **产品进程**未置 litellm 开关（启用真实 runtime 时会向 GitHub 发一次元数据请求）；R-2 DNS / UDP / 子进程 / 自定义循环实现；R-5 **环回转发代理**致盲；R-6 **CI 每轮仍有一次词表下载**（预热门只把它挪出判据进程，判「默认 CI 完全离线」**不成立**） | EC-06（独立复检脚本**两树同结论** + m0 23/23 + 残余登记 + 本文件自检）——**最后一个 EC**，完成后 GOAL 可判 ACHIEVED |
-| 6 | PLAN-20260922-132（EC-06） | 本 cycle 的 derive 提交（PLAN-132 + ALL_PLAN 投影 + 迭代日志）；收口提交（复检脚本两树结论 + RECHECK-132 + EC-06 置 PASS + `status: ACHIEVED`；**与 derive 同一次推送**，台账尾巴口径） | （待 WP3/WP4 实测填写） | （待 WP5 填：本 cycle 推送的 run 见回合汇报） | — | **本 cycle 是最后一个 EC**：完成后 EC-01…EC-06 全 PASS 且都有实跑证据 ⇒ 按「终止与收口」判 **ACHIEVED**（未处理的长程项逐条登记为后继入口，见「不进入循环」13 条与各 RECHECK 的 W 列表） | — （终止：ACHIEVED 或按预算判 BLOCKED） |
+| 6 | PLAN-20260922-132（EC-06） | `2a09fd6`（derive：PLAN-132 + ALL_PLAN 投影 + 迭代日志）、本 cycle 收口提交（RECHECK-132 + EC-06 置 PASS + `status: ACHIEVED` + 收口结论；**与 derive 同一次推送**，台账尾巴口径） | **独立复检脚本两树同结论**：当前树 **110/112**、干净 checkout（`git clone --depth 1` 到仓外 `D:\research-system-seal-20260922`）**108/110**，两树失败的**是同一组同一原因**（EC-06 未收口 / RECHECK-132 未写），唯一差异 = 干净树无 `.env` ⇒ D 层两条**如实 SKIP**；**最终脚本**下收口树 **122/122（失败 0、跳过 0）**，干净 checkout（收口前 tip）**112/118、6 条红**（全部是收口项）+ 2 条 SKIP。**五层逐层按压全先红后绿**（P-1 `_loop_classes` 改名 ⇒ A 红；P-2 用例改名 ⇒ B 红；P-3 `latest_recheck` 改裸 ID ⇒ C 双红；P-4 仓根放凭据形状文件 ⇒ D 红；P-5 `ALLOWED_KINDS` 加 `private` ⇒ E 红），按压后 `git status` 无痕。**全量 m0（独占、收口树）`PASS: profile=m0; 23 deterministic checks`**（`python/tests` 4337 passed / 17 skipped / 0 failed，498.97s；判据 `judged 770`、`blocked 8` **全部是判据自证探针**）；治理 `validate.py` 绿（收口回写后复跑）；**脚本自身 7 处判据错误全部改准**（不松），见 `RECHECK-132` WP1 | M0 [35639233214](https://github.com/Eswink/research-system-new/actions/runs/35639233214)（`cf777fb`，cycle 5 修复提交）6/6 **success** + CodeQL 35639232242 3/3 **success**；本 cycle 的推送 run 见回合汇报（台账尾巴口径） | — （本 cycle **未改产品代码、未改判据**；唯一非记录改动是循环 5 的 CI 修复，已在上一条登记） | EC-01…EC-06 **全 PASS 且有实跑证据** + 收口 RECHECK = PASS_WITH_WARNINGS + `latest_recheck` 是仓库相对路径 ⇒ 按「终止与收口」判 **ACHIEVED**；仍在处理的长程项已逐条写进「收口结论」与「不进入循环」13 条 | 终止：**ACHIEVED**（不进入 cycle 7；若日后再做，需用户对新目标重新授权） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -708,3 +749,23 @@ live 证据只在本地产生并落 RECHECK。
   同结论 + m0 23/23 + 治理绿 + CI 台账逐 run 到终态 + 残余登记（GOAL-008 六项人工面 / GOAL-009 的
   W 列表 / 本 GOAL 的 W 与 R 列表**原样保留**）+ 本文件自检（`latest_recheck` 相对路径、
   `child_plans`/`memory_entries` 与实况一致）。**只读仓库，未发起任何真实调用**。
+- 2026-09-22 cycle 6 **收口 = 本 GOAL 的终点**（EC-06 PASS；`RECHECK-20260922-132` = PASS_WITH_WARNINGS）：
+  独立复检脚本（**只读 / 标准库 / 不 import 仓库代码**）在**两棵树**上给出同一结论
+  （110/112 vs 108/110，失败同一组；差异只有干净树无 `.env` 的 2 条 **SKIP**，**不读成通过**），
+  收口回写后 **112/112**；**五层逐层按压全部先红后绿**（A 符号 / B 用例 / C `latest_recheck` 裸 ID /
+  D 仓根凭据形状文件 / E `ALLOWED_KINDS` 放宽），按压后树无痕。
+  **脚本自己的 7 处判据错误全部改准而不改松**——最重要的是 A 层第一版用**裸子串**（按压不红、
+  注释里留名即判在），已改成标识符边界；这条与本 GOAL 已登记的「子串不是身份」是**同一个错误类别**，
+  本轮第三次踩到，已写进 `RECHECK-132` W-1。
+  **收口结论**：EC-01…EC-06 全 PASS 且各有实跑证据（三次真实 run 恰为 `SUCCEEDED`、
+  一次 provider 侧真实样本、两次判据按压）⇒ `status: ACHIEVED`；**未处理的长程项 6 组**
+  逐条写在「终止与收口 · 收口结论」里，**不因收口关闭**。**本 cycle 未发起任何真实调用**。
+- 2026-09-22 cycle 6 **收口时的一条实测教训（两道门都要跑）**：独立复检脚本先绿，
+  **治理 `validate.py` 又抓出它漏掉的真漂移**——本文件 frontmatter 的 `EC-04/05/06` 仍是
+  `status: PENDING`（**状态表早已 PASS**，cycle 4/5 收口时只改了表）。治理据此判
+  「ACHIEVED GOAL 仍有未通过退出标准」。**修的是漂移**（frontmatter 置 PASS）**而不是门禁**；
+  复检脚本补上「frontmatter 状态 = PASS」与「frontmatter 与状态表一致」两条对读判据，
+  补完在干净 checkout（收口**之前**的 `2a09fd6`）上当场判出 **6 条红**——全部是「收口工作还没做」，
+  即判据**不是空转绿**。这条盲区记在 `RECHECK-20260922-132` 的 **W-6**：
+  **独立复检绿 ≠ 记录无漂移**（同一份复检另有两处我自己的文档缺陷由治理指出：`checked_head` 里的
+  冒号让 YAML 断句、正文缺 `## 检查结果` 标题——都已改文档，没动 YAML 解析与门禁）。

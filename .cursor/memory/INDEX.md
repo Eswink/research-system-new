@@ -102,6 +102,7 @@
 | [MEM-20260921-102](entries/MEM-20260921-102-output-schema-registration-and-test-assembly.md) | ACTIVE | repository | 0.90 | 2027-09-21 | PLAN-20260921-129 |
 | [MEM-20260921-103](entries/MEM-20260921-103-model-absence-taxonomy-and-false-green-judges.md) | ACTIVE | repository | 0.90 | 2027-09-21 | PLAN-20260921-130 |
 | [MEM-20260922-104](entries/MEM-20260922-104-network-judge-traps-and-egress-sources.md) | ACTIVE | repository | 0.90 | 2027-09-22 | PLAN-20260922-131 |
+| [MEM-20260922-105](entries/MEM-20260922-105-closeout-recheck-script-shape.md) | ACTIVE | repository | 0.90 | 2027-09-22 | PLAN-20260922-132 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |
