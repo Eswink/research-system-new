@@ -82,6 +82,8 @@ GOAL-010 EC-04 的两件事，各自可判：
 | E-10 | **四要素的现成来源是一次 `run_live_probe`**：GOAL-009 的 live 判据正是从 `probe.endpoint_config_digest` / `probe.returned_model_identifier` / `probe.probe_suite_digest` / `probe.system_fingerprint` 取这四项，再从 run 读面取 usage/制品/证据 | `tests/e2e/test_ec04_live_first_run.py:126-138`；`packages/application/model_relay/live_probe.py`；`packages/application/model_relay/probe.py:107/195`（`returned_model_name` 由 probe 的 **chat** 调用取得） | 「落读面」的**接线**有现成材料；但**provenance 必须如实**：probe 事实来自**那次 probe 调用**，不是本次 run 的响应（取舍 #1 的实质） |
 | E-11 | adapter 今天记的是**请求**的 model id，**不是响应返回的 model 名**：`UsageContext(model_id=entry.spec.model.id …)`，注释明写「缺目标时保持 None——不猜、不回填别的 model」 | `adapters/openhands/session_builder.py:148-167` | 「本次 run 的响应里返回了哪个 model」**今天没有被采集**；要拿到它得改 adapter（摸 SDK 事件树）**或**走 probe（额外一次真实调用）——这是 WP1 必须正面回答的那一刀 |
 | E-12 | `MODEL_PROBED` / `MODEL_RESOLVED` / `MODEL_DRIFT_DETECTED` 三个事件类型**已声明但产品代码里无人发出**（`rg` 只命中定义处） | `packages/domain/events.py:26-28` | 承载面「有坑位没接线」；**复用既有枚举成员**不触 Domain，但也要如实说明「此前从未被发出」 |
+| E-13 | **「本次 run 的返回 model 名」可零额外调用拿到**：SDK 的 `Metrics extends MetricsSnapshot`，而 `MetricsSnapshot.model_name` 就是「Name of the model」；adapter 已经在读**同一个** `ConversationStats`（`usage_to_metrics: dict[str, Metrics]`）做记账 | `.venv/.../openhands/sdk/llm/utils/metrics.py:76-92,113`；`conversation/conversation_stats.py:13-20`；`adapters/openhands/session_builder.py:148-167`） | **定案的决定性一条**：不必改 adapter 的 SDK 交互面、不必加 probe 调用——同一对象多读一个字段即可（取舍 #1 **不需要**再花钱） |
+| E-14 | `MetricsSnapshot.model_name` **有默认值 `"default"`** | 同上（`Field(default="default", …)`） | 诚实边界：取到 `"default"` 只能当**缺项**处理（它不是模型名），**不得**当已观测值写进四要素 |
 
 ### 已知的**不可回避**取舍（定案必须在其中做出选择并写明代价）
 
@@ -102,6 +104,55 @@ GOAL-010 EC-04 的两件事，各自可判：
 | (a) 扩 `RuntimeFingerprintDto` | 在 run 级 DTO 上加四要素 + `missing_fields`，回填源 = 冻结后写入的 canonical 事实 | DTO 变更 ⇒ OpenAPI 快照 + web 类型 + e2e 夹具同步 | 冻结**之后**的事实从哪来必须答清楚，否则变成「读面编数」 |
 | (b) 复用模型级读面 + run 只放指针 | run 读面给 endpoint/model 标识，四要素去模型详情页看 | 产品面改动最小 | **不满足** EC-04 的「**这一次 run** 的指纹落读面」——模型级读面是**登记面**的事实，与某次 run 无关 |
 | (c) 新增独立 run 级指纹路由 | 新端点专供指纹 | 新路由 ⇒ OpenAPI/前端/设计基线三处耦合 | 与既有 `execution` 面重复度高；「零 DTO 变更」的既有惯例被打破 |
+
+## WP1 定案（**已完成**：取 (a) 的「调用后 canonical 事实 + 读面合并」形态）
+
+### 逐条回答四个问题
+
+1. **四要素在「读时刻」分别从哪里来**（E-10…E-14 实测支撑）：
+   - **返回 model 名** ← `ConversationStats.usage_to_metrics[*].model_name`（SDK 的 `Metrics` 继承
+     `MetricsSnapshot`，含 `model_name`）。**这是本次 run 自己的度量**，来源就是 adapter 已在读的
+     那个对象 ⇒ **零额外调用**。取到哨兵值 `"default"` 时按**缺项**处理（E-14）。
+   - **端点头** ← `endpoint_config_digest(endpoint)`（产品侧可算，不触网）。
+   - **probe 套件版本/digest** ← `default_probe_suite()` + `probe_suite_digest(...)`（同上，不触网）。
+   - **兼容性结论** ← `build_live_run_record(...)` 的既有两态规则（E-5）：终止状态 + 必填项齐全 ⇒
+     `REPEATABLE_CONFIGURATION`；缺任一项 ⇒ `NOT_VERIFIED` 并**点名缺哪几项**。
+2. **DTO 长什么样（不编造）**：`RuntimeFingerprintDto` 在保留 `status/substrate/reason` 的基础上
+   增加**可选**四要素字段 + `missing_fields`；**取值只能来自上面的实测源**，取不到就是缺项，
+   **绝不**用默认值/占位符填。
+3. **`REPEATABLE_CONFIGURATION` 由谁判**：仍由 `build_live_run_record` 判（既有语义、既有测试），
+   读面**只呈现** `record.verdict.value`——**不新造第二个判据**、**不扩枚举**。
+4. **承载面**：**复用既有事件链**——run 终止后把 `record.to_payload()`（已脱敏、字段封闭）
+   作为 **`MODEL_PROBED`**（E-12：已声明、从未发出、语义贴合「模型被观测到」）的 payload 落进
+   canonical 事件链；读面 `run_execution_dto` 在既有冻结占位之外**读该事实并优先呈现**
+   （冻结事实不可变，占位保持原样；**读面负责合并**，语义写清「占位 vs 实测」两态）。
+
+### 被否的候选与理由
+
+- **(b) 复用模型级读面 + run 只放指针**：模型级读面是**登记面**的事实（E-7），与「这一次 run」
+  无关；用它顶替会违反 EC-04 verify 的「该 run 的指纹」。
+- **(c) 新增独立 run 级指纹路由**：与既有 `execution` 面重复，且打破本仓反复使用的
+  「读面走既有路由、零路由变更」惯例（GOAL-006 EC-06 的原话）。
+- **改 adapter 去摸 SDK 事件树的响应体**：E-13 表明**不需要**——同一 `ConversationStats` 已带
+  model 名；摸事件树只会引入 SDK 内部耦合（AGENTS §5 的上游策略：adapter 优先，但能不改就不改）。
+- **probe-derived（E-10 那条路）**：可与本方案并存为**降级源**（当 usage 度量里拿不到 model 名时），
+  但**必须标注 provenance**（「来自该端点最近一次 probe，非本次 run 的响应」），
+  且**不**为它另发调用（调用纪律）。
+
+### 代价与回退
+
+- 代价：run 级 DTO 变更 ⇒ OpenAPI 快照 + web 类型 + e2e 夹具同步（影响报告里的耦合面）；
+  终止路径多一次事件写入（**同事务**语义与既有 `run.completed` 一致，不新增迁移）。
+- 回退：撤 DTO/映射/事件写入与快照 ⇒ 读面回到今天的 `NOT_VERIFIED` 占位。
+  **不涉及** Domain / Canonical State 字段 / 数据迁移。
+
+### 诚实边界（写死，WP2 不得越过）
+
+- 四要素里 **`system_fingerprint` 仍可能缺**（provider 是否给不取决于我们）⇒ 落 `missing_fields`，
+  **不降级**结论（承 `RECHECK-121` W-5），**也绝不**把缺项写成「无漂移」。
+- 「返回 model 名」取自**本次 run 的 usage 度量**，不是原始响应头；读面措辞必须与这个来源一致
+  （不得写成「provider 声明的响应头」）。
+- 结论只有两态：`REPEATABLE_CONFIGURATION` / `NOT_VERIFIED`；**不得**出现「完全可复现」类表述。
 
 ## 影响报告
 
