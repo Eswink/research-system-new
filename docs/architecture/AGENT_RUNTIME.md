@@ -161,6 +161,32 @@ URL 策略（endpoint_url_refusal，复用唯一 host 判据）
   provider → SDK 工具的映射属 EC-05。缺这一环时控制面**不静默丢工具**，而是让会话
   创建失败并点名未注册的 id（本节的 e2e 用测试侧惰性注册补上这一环，好让四段可测）。
 
+### 3.4 「默认门离线」是整轮结构判据，不是逐用例约定（GOAL-010 EC-05）
+
+上面每一条「零出站」都判的是**某条路径**（该用例 mock 掉自己的出网口）。判据搬到**拦截点**
+之后，命题变成整轮的：**默认测试运行里任何一次非环回目的地连接都会让整轮判红**。
+
+- 判据本体：`tests/egress_guard.py`（由 `tests/conftest.py` 在**导入期**武装，因此**收集期**
+  也在射程内）；目的地分类**复用** `endpoint_policy.destination_kind`，不新造第二套判据。
+  **两个面都装**：同步 `connect`/`connect_ex`，以及 **具体**事件循环类的 `sock_connect`
+  （Windows 的 Proactor 循环走 `_overlapped.ConnectEx`，**不经过**前者；抽象基类那份是
+  `NotImplementedError` 桩，装的是 selector / proactor 两个具体实现——洞与修正都来自独立复检）。
+- 放行面只有带 `requires_live_llm` marker 的用例（与既有 live 门**同源**，**不依赖环境变量**）。
+  其他任何用例、以及**没有当前用例**的收集期/导入期，一律默认拒（fail-closed）。
+- **只抛异常不够**：异常会被调用方当成普通连接失败吞掉。所以每条阻断都会记账，会话收尾
+  （`pytest_sessionfinish`）只要看到**探针之外**的阻断就把**整轮**判红，并列出目的地、类型、
+  发起用例与**调用链摘要**——归因由判据给出，不靠人翻栈。
+- **判据上线当天就抓到一条真实的收集期出站**：`import openhands.sdk` 会拖进 litellm，而 litellm
+  在**导入期**就去公网拉 model cost map（`httpx.get`，上游默认 URL 在
+  `raw.githubusercontent.com/.../model_prices_and_context_window.json`）。默认门（以及 CI）因此
+  一直在收集期真的出网——由守卫点名后按上游开关修掉：`tests/conftest.py` 在任何测试模块导入
+  litellm 之前置 `LITELLM_LOCAL_MODEL_COST_MAP=True`（改用 wheel 自带副本，判据不放宽）。
+- **射程（不假装覆盖）**：只判 TCP 连接点（同步 + 异步两面，`AF_INET`/`AF_INET6`）；
+  **DNS（`getaddrinfo`）/ UDP / 子进程 / 非 python 作业 / 环回转发代理不在射程内**
+  （本地代理下目的地确实是本机，判决只有环回）。
+- **`ALLOW_PUBLIC_NETWORK` 仍未接线**：它在 `.env.example` 里声明、零消费者，语义属产品策略面，
+  与「测试门离线」不是一回事，因此**不**拿它当放行面（如实登记，不用它凑判据）。
+
 ## 4. Adapter Guardrails
 
 ### Resume

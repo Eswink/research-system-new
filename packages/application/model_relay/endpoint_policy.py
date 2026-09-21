@@ -69,6 +69,17 @@ def _host_kind(host: str) -> str:
     return "public"
 
 
+def destination_kind(host: str) -> str:
+    """`_host_kind` 的公开面：localhost / link_local / private / reserved / public / domain。
+
+    存在的理由只有一个（GOAL-010 EC-05）：判定「默认门离线」的守卫在 **socket 层**裁决，
+    手里是**已解析的目的地**，而既有公开面（`validate_endpoint_url` / `endpoint_url_refusal`）
+    只吃 **URL**。把判据**暴露**出来而不是另写一套分类，保证全仓仍然**只有一份** host 判据；
+    本函数**不新增**任何判定语义，实现就是转发 `_host_kind`。
+    """
+    return _host_kind(host)
+
+
 def validate_endpoint_url(base_url: str, policy: EndpointUrlPolicy) -> None:
     """校验 base_url 是否符合策略；违规抛出 ValueError。"""
     parsed = urlparse(base_url)
