@@ -2,7 +2,7 @@
 id: PLAN-20260921-129
 slug: real-protocol-availability
 title: 真实协议的可用性：把「真实执行体跑一份自称 Fake 的 demo 协议」这个错配修掉（GOAL-010 EC-03）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-21
 updated_at: 2026-09-21
 parent_goal: GOAL-20260921-010
@@ -22,8 +22,9 @@ authorization:
     （GOAL frontmatter escalation_triggers 第 11 条）⇒ **触及即 BLOCKED**。
     **不引入新依赖、不新造 URL 判据**（复用既有 `endpoint_policy`）。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-129-real-protocol-availability.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260921-102-output-schema-registration-and-test-assembly.md
 ---
 
 # PLAN-20260921-129 — 真实协议的可用性（GOAL-010 EC-03）
@@ -131,7 +132,15 @@ memory_entries: []
   所以「模型真的产出了正文」是**推论**而不是实测数字——推论链：`ARTIFACT_EXISTS: analysis_report`
   通过 ⇒ `_deliverable()` 的**非空分支**成立（无消息时 adapter 返回 `{}`）⇒ 会话**至少有一条
   MESSAGE 事件**。**真实调用总次数：1 次**（本周期内），**未**做第二次。
-- [ ] WP5 **门禁 + 复检 + 收口**：规模门禁自查 → 定向 → m0 23/23 → 治理绿 → RECHECK → GOAL 回写。
+- [x] WP5 **门禁 + 复检 + 收口**（**已完成**）：规模门禁自查（50 行函数 / 450 行文件）→
+      定向套件 → **m0 全量 23/23 ×3 次**（WP2 `a448fc3`：4278 passed/15 skipped；
+      WP3 `004f916`：4282/15；WP4 `2edb204`：4283/16）→ 治理 `validate.py` 绿 →
+      **RECHECK-129 = PASS_WITH_WARNINGS**（W-1…W-9）→ GOAL 回写（EC-03 置 **PASS**、
+      迭代日志 + CI 台账行、`latest_recheck`、`memory_entries`）→ ALL_PLAN 投影 DONE。
+      **判据强化（本 WP 内，随收口提交落地）**：身份判据从默认装配（读**内存注册表**）
+      搬到 `run_ready` 装配（读**库** `runs_store`），并**重新按压**（期望值改成 demo id ⇒
+      真实协议那条红、demo 仍绿 ⇒ 复原复绿）；可达性拆成独立用例放在默认装配
+      （那里才有 artifact/evidence 读面）。**净效果：更严**（多了「从库里回读」这一面）。
 
 ## 证据
 
@@ -362,4 +371,12 @@ EC-03 的性质又不同：**它是一个「选择」，而选择的代价分布
   凭据值只从环境读且不回显/不落盘、**只跑一次**（失败也会如实落，但没必要为「多一个样本」再花钱）。
   **默认门**已实测会 skip（离线跑该模块 = `1 skipped`），所以「没配 runtime 也能过」这种
   假绿不存在。**本轮新增一处诚实边界**：载荷不含正文/消息条数，「模型真产出正文」是推论
-  （链条写在 WP4 条目里），已登记为 W。
+   （链条写在 WP4 条目里），已登记为 W。
+
+- 2026-09-21 WP5 **收口**：`RECHECK-129` = **PASS_WITH_WARNINGS**（W-1…W-9；
+  W-1 = 受治理文件一行注册表待人工过目，W-2/W-3 = 证明力边界，W-4/W-5 = 更窄的偏差）。
+  **本 WP 内做了一处判据强化**（不是新功能）：身份判据原本经**内存注册表**取冻结正文，
+  现改为经**库**（`runs_store.get_run(...).protocol_body`）——把「重启续跑可恢复」这一半也钉住；
+  同时把「可达性」拆成独立用例（默认装配才有 evidence 读面，artifact 读面在该装配如实 503）。
+  拆分后**重新按压**：期望值改成 demo 协议的 id ⇒ 真实协议那条红、demo 那条仍绿 ⇒ 复原复绿。
+  **本 cycle 真实调用总数 1 次**（WP4），未因收口再发调用。
