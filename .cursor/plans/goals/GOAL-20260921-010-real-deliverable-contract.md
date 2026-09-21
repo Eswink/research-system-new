@@ -399,6 +399,8 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 | --- | --- | --- | --- |
 | 建档 | `17cef9b` | [35560783476](https://github.com/Eswink/research-system-new/actions/runs/35560783476) | 六 job 全 **success**（`eval-gate` / `collector-quality` / `container-quality` / `console-frontend` / `quality-ubuntu-latest` / `quality-windows-latest`；terminal `status=completed conclusion=success`，逐 job 实查） |
 | cycle 1 派生 + WP1/WP2/WP4 | `00368ab` | [35562941912](https://github.com/Eswink/research-system-new/actions/runs/35562941912) | 六 job 全 **success**（`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`；terminal `status=completed conclusion=success`，逐 job 实查） |
+| cycle 1 WP3（同源判据） | `49ed9c3` | **无独立 run**（与 `2f9a501` **同一次推送**；GitHub 只对 tip 触发一个 run ⇒ 该提交的验证由下一行的 run 承担，**不**意味着它没进 CI） |
+| cycle 1 收口（WP5/WP6 + EC-01 置 PASS） | `2f9a501` | [35566880954](https://github.com/Eswink/research-system-new/actions/runs/35566880954) | 六 job 全 **success**（`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`；terminal `status=completed conclusion=success`，逐 job 实查） |
 | 台账尾巴（记录回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…009，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
