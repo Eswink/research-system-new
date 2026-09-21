@@ -176,11 +176,18 @@ URL 策略（endpoint_url_refusal，复用唯一 host 判据）
 - **只抛异常不够**：异常会被调用方当成普通连接失败吞掉。所以每条阻断都会记账，会话收尾
   （`pytest_sessionfinish`）只要看到**探针之外**的阻断就把**整轮**判红，并列出目的地、类型、
   发起用例与**调用链摘要**——归因由判据给出，不靠人翻栈。
-- **判据上线当天就抓到一条真实的收集期出站**：`import openhands.sdk` 会拖进 litellm，而 litellm
-  在**导入期**就去公网拉 model cost map（`httpx.get`，上游默认 URL 在
-  `raw.githubusercontent.com/.../model_prices_and_context_window.json`）。默认门（以及 CI）因此
-  一直在收集期真的出网——由守卫点名后按上游开关修掉：`tests/conftest.py` 在任何测试模块导入
-  litellm 之前置 `LITELLM_LOCAL_MODEL_COST_MAP=True`（改用 wheel 自带副本，判据不放宽）。
+- **判据上线当天就抓到两条真实的收集期出站**（都是第三方导入期行为，不是产品代码调端点）：
+  ① `import openhands.sdk` 会拖进 litellm，而 litellm 在**导入期**就去公网拉 model cost map
+  （`httpx.get`，上游默认 URL 在 `raw.githubusercontent.com/.../model_prices_and_context_window.json`）
+  ——默认门（以及 CI）因此一直在收集期真的出网；按上游开关修掉：`tests/conftest.py` 在任何测试模块
+  导入 litellm 之前置 `LITELLM_LOCAL_MODEL_COST_MAP=True`（改用 wheel 自带副本，判据不放宽）。
+  ② **冷环境**首次 `import litellm` 还会让 tiktoken 下载 `cl100k_base`（litellm 的
+  `compression → token_counter → default_encoding` 链）：本机看不出，是因为那份文件在 9-15 已被
+  下载进 venv（**缓存运气**）；CI 是干净安装 ⇒ 每次运行都真的下载，由**判据在 CI 上判红**才暴露。
+  修法是把环境准备做全：workflow 在 `uv sync` 之后、跑门之前预热一次
+  （`uv run --frozen --no-sync python -c "import litellm"`），**判据本身不放宽**。
+  **如实说明**：预热门只是把这次下载挪到**判据进程之外**，CI 每轮仍有一次对外请求
+  （要连这句也消掉，得把词表固化进镜像或私有源）——所以「默认 CI 完全离线」**不声称成立**。
 - **射程（不假装覆盖）**：只判 TCP 连接点（同步 + 异步两面，`AF_INET`/`AF_INET6`）；
   **DNS（`getaddrinfo`）/ UDP / 子进程 / 非 python 作业 / 环回转发代理不在射程内**
   （本地代理下目的地确实是本机，判决只有环回）。

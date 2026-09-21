@@ -181,10 +181,19 @@ memory_entries:
 | M-7 | **两向复测**（同一棵树，只切那个开关） | `LITELLM_LOCAL_MODEL_COST_MAP=False` + `--collect-only` vs 默认（conftest 置 True） | 关掉固定 ⇒ `judged 1`/`blocked 1`/**exit 1**，归因点名 `test_adapter_core.py:5:<module>`；置上 ⇒ `judged 0`/`blocked 0`/**exit 0** | 「是谁在出网 + 修好了没有」两问都由**判据自己**回答：归因精确到模块级 import 那一行 |
 | M-8 | **环境事实纠正**：文档地址到底可不可路由 | `scratch/measure_doc_address_reachability.py`（**撤防**后测环境本身） | RFC 5737 三个文档网段（TEST-NET-1/2/3）的地址与 `1.1.1.1` **全部** `CONNECTED`（0.02s；async 0.00s） | 本机 fake-IP 代理对**任意** IP 秒回 ⇒ 「文档地址=不可路由」是**错的**；证物的「不真出网」靠**判据先拦**，不靠地址。derive 稿与 P-1 的「不会真的出网」据此更正 |
 | M-9 | **异步面复检（W-1）** | 独立复检的执行记录：`asyncio.open_connection("172.29.96.1", 31356)`（**撤防**等价场景）**成功握手**且 `judged 0` | 洞被证实：Windows Proactor 走 `_overlapped.ConnectEx`，绕开 `socket.socket.connect` | 判据补第二面（事件循环 `sock_connect`），见 P-4 |
+| M-10 | **同一棵树、另一台机器（CI）**：默认门在**干净安装**下跑 | 推送提交 `87208aa` 的 M0 run（CI 作业 `quality-windows-latest`，日志 `scratch/ci-87208aa-win-job.log`） | `egress guard: FAIL — … 31 non-loopback destination(s)`，**全部**是 `57.150.192.193:443`，全部归因到各测试模块的 `import openhands.sdk` 行；本树同一轮是 `judged 771`/`blocked 8`（**8 = 探针**）⇒ **本机绿、CI 红** | 差异不是判据，是**环境**：CI 是全新安装。判据在 CI 上抓到了**第二条真实出站**，而本机因缓存已热**看不见**它 |
+| M-11 | **定位并三相当场测量** | `scratch/probe_tokenizer_egress.py`（三模式：`cold-armed` / `cold-disarmed` / `warm-armed`，日志 `scratch/tokenizer-egress-*.log`） | ①`cold-armed`：`import litellm` 被拦，`PublicNetworkBlocked` 指向 `198.18.1.80:443`，缓存目录**空**；②`cold-disarmed`：导入成功，缓存里**落下一个文件** `9b5ad71b2ce5302211f9c61530b329a4922fc6a4`；③`warm-armed`：同一导入**零尝试**、缓存非空 | 源头 = litellm 首次导入时 `compression → token_counter → default_encoding` 调 `tiktoken.get_encoding("cl100k_base")`，**下载词表**到 litellm 自带的 tokenizers 目录（就是「第一次导入才发生、之后不再发生」的形态） |
+| M-12 | **修源头（不含测试）** | `.github/workflows/m0-quality.yml` 四个 Python 作业在 `uv sync --frozen --dev` 之后加 `Prewarm the offline tokenizer cache`（`uv run --frozen --no-sync python -c "import litellm"`） | 预热门在**判据进程之外**跑（作业步骤，不是 pytest）⇒ 词表在判据装上前就已落地；判据本身**一行未改**、marker 面未动 | 修的是「第一次导入会下载」的条件，**不是**把出站判绿；CI 侧复验见 GOAL 迭代日志第 5 行的 CI 台账尾（本轮推送的 run 终态） |
 
 **如实登记的边界**：M-3 定位到的是**第三方导入期出站**（litellm 元数据），不是产品代码调端点；
 W-7 当初观测到的目标是中转站（`apihub.agnes-ai.com`）而不是 GitHub —— 本条**不声称**解释了 W-7 的
 那一次，只声称：**默认门的收集期确实存在真实出站，且新判据能点名它**。
+
+**M-10…M-12 带来的第二条纠正（比 M-8 更要紧）**：M-5 的 `judged 0` **不是**「默认门离线」的证明——
+它只证明**这台机器此刻**离线。同一棵树在 CI 的干净安装下判据立刻抓到 31 条真实出站（M-10）。
+「判据在本机绿」与「默认门离线」是两回事；**判据的价值恰恰在于它能在别人的机器上把本地缓存
+掩盖掉的出站点出来**。这条也说明：只要那个第一次导入的下载条件还存在（R-6），「零出站」就是
+**环境相关的**，不能写成无条件事实。
 
 **产品侧残余（不在本 PLAN 射程，登记）**：同一开关在**产品进程**里没被置上（adapter 启用真实
 runtime 时同样会 import litellm）⇒ 真实 runtime 的进程启动时会向 GitHub 发起一次元数据请求。
@@ -259,6 +268,7 @@ runtime 时同样会 import litellm）⇒ 真实 runtime 的进程启动时会�
 | R-5 | **环回转发代理**：`HTTP(S)_PROXY=http://127.0.0.1:...` 时目的地确实是本机 ⇒ 判据只看到环回，转发出去的那一跳不可见（复检测到：本地监听器真的收到了 `GET http://example.invalid/ping`） | 「默认门离线」在这条配置下**不再是结构事实**；生产与测试都不该依赖本地代理，但仓里没有任何东西阻止它 | 要覆盖需在**应用层**判（读请求行/CONNECT 目标），或对「默认门进程里存在代理环境变量」做前置断言——两条都超出 socket 拦截点，另行设计 |
 | R-3 | `validate_bundle.py` 的「旧项目版本引用」正则会把 RFC 5737 TEST-NET-1 地址读成旧版本号 | 任何文档/测试里写 `192.0.2.x` 都会判红（本 PLAN 只绕开，不改门禁） | 门禁维护者（误报面：文档网段字面量） |
 | R-4 | `.cursor/runtime/evolution_state.json` **没有跨进程锁**：两个并发进程同时碰它 ⇒ `WinError 5` 或 eval 失败（**已用两次并发调用复现**） | `framework/run_cursor_framework_evals` 会 flake；**m0 必须独占运行**（并发 pytest/hook/同一脚本的另一次调用都是嫌疑共现方） | 框架维护者；本循环的纪律是「m0 独占」 |
+| R-6 | **CI 每次仍要下载一次那个词表**：预热门只是**把下载挪到判据进程之外**，并没有取消下载（M-12） | 判据射程内的出站是零（红门不再误报），但「默认 CI 完全离线」这句仍**不成立**——作业层面每轮仍有一次对外请求；断网环境里 CI 会退化成导入失败而不是判据红 | 要彻底离线需把该 blob **随仓库/镜像固化**（vendor 进镜像或私有源），属 CI 供应面决策；本轮如实登记，**不**声称已离线 |
 
 ## 回退路径（写明）
 
@@ -277,6 +287,16 @@ runtime 时同样会 import litellm）⇒ 真实 runtime 的进程启动时会�
   按上游开关修源头后复测 zero（M-5），凭据态两跑同结论（M-6）。
   **WP1 定案的放行面依实测收窄**（fake-IP 段落在 `private` ⇒ 只放环回），
   这条修订是本循环最重要的实测纠正。
+  **一处可复用的自伤**（写下来免得再犯）：写自证用例时**三次**把子串当身份用
+  （`"egress_guard" in "test_default_egress_guard.py"`、探针里占位名与 `CUSTOM_TIKTOKEN_CACHE_DIR`
+  撞名、`"cold-disarmed".endswith("armed")` 为真）——凡是「名字包含/后缀」这类判据都要改成
+  **身份或显式取值比较**，否则判据会在无提示的情况下判错方向。
 - 2026-09-22 WP4/收口：**两遍独立复检**（第一遍证伪头号命题 ⇒ 补异步面；第二遍复验通过并指出
   W-8 ⇒ 改装具体循环类），`RECHECK-20260922-131` = **PASS_WITH_WARNINGS**（W-1/W-8 已修，其余逐条登记）；
   m0 全量在本树通过（**数字见 GOAL 迭代日志第 5 行**）；GOAL 的 EC-05 置 **PASS**。
+- 2026-09-22 收口后 CI 回灌（M-10…M-12）：推送提交 `87208aa` 的 M0 在 `quality-windows-latest` **红**，
+  判据在**干净安装**下点名 **31 条** `57.150.192.193:443` 真实出站（本机同轮 `judged 771`/`blocked 8`
+  全为探针）⇒ 定位到 litellm 首次导入的 `tiktoken` 词表下载（M-11 三相当场测量），
+  在 **workflow 作业步骤**里预热门修掉（M-12，判据与放行面**一行未改**）。
+  **如实登记**：本机 M-5 的「zero」是**环境相关**的，不能当无条件事实；残余 **R-6**
+  记明「下载只是被挪出判据进程，CI 并未完全离线」。

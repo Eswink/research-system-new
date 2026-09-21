@@ -1,6 +1,6 @@
 ---
 id: MEM-20260922-104
-title: "网络判据的五个现场陷阱（实测）：Proactor 绕开 socket.connect 补丁；本机代理对任意 IP 秒回（「文档地址=不可路由」是错的，撤防即真出网）；litellm 导入期拉 cost map（默认门/CI 收集期真出网）；validate_bundle 把 TEST-NET-1 读成旧版本号；framework evals 共享状态文件无跨进程锁"
+title: "网络判据的六个现场陷阱（实测）：Proactor 绕开 socket.connect 补丁；本机代理对任意 IP 秒回（「文档地址=不可路由」是错的，撤防即真出网）；litellm 导入期拉 cost map；litellm 首次导入下载 tiktoken 词表（本机缓存一热就看不见，CI 上必红）；validate_bundle 把 TEST-NET-1 读成旧版本号；framework evals 共享状态文件无跨进程锁"
 status: ACTIVE
 created_at: 2026-09-22
 updated_at: 2026-09-22
@@ -17,18 +17,21 @@ tags:
   - test-gate
   - windows
   - litellm
+  - tiktoken
+  - ci
   - framework-evals
   - goal-010
 ---
 
-# 网络判据的五个现场陷阱（GOAL-010 EC-05 实测）
+# 网络判据的六个现场陷阱（GOAL-010 EC-05 实测）
 
 ## 做了什么
 
 把「默认测试运行零出站」做成**整轮结构判据**（`tests/egress_guard.py` + `tests/conftest.py` 接线）：
 拦截点**拦**（`socket.socket.connect` / `connect_ex` 与两个具体事件循环类的 `sock_connect`，
 先于任何数据包抛错）+ 会话收尾**判**（按记录把整轮判红，即使调用方吞掉异常）。
-过程中踩到并**用命令复现**了五个**环境/上游**事实，抽出来复用。
+过程中踩到并**用命令复现**了六个**环境/上游**事实，抽出来复用。
+其中第 6 条只在 **CI**（干净安装）上显形，本机看不见——判据的价值有一半在这里。
 
 ## 为什么这样做
 
@@ -68,6 +71,18 @@ tags:
    `run_cursor_framework_evals.py` ⇒ 一次 `PermissionError: [WinError 5]`（同一路径族）＋
    另一次 eval 语义失败；**单次调用 PASS**（本轮实测复现）。推论：**m0 必须独占运行**
    （并发 pytest / hook / 同一脚本的另一次调用都是嫌疑共现方）；这解释了历史上两次 m0 的同名 flake。
+6. **litellm 首次导入还会下载 tiktoken 词表（只在干净安装上发生）**：`compression → token_counter
+   → default_encoding` 调 `tiktoken.get_encoding("cl100k_base")`，把词表下到 litellm 自带的
+   tokenizers 目录。**这一条在作者机器上完全不可见**——缓存文件（`9b5ad71b…`）早在，导入零连接；
+   CI 的 `uv sync` 全新环境 ⇒ 同一棵树被判据点名 **31 条** `57.150.192.193:443` 真实出站
+   （`quality-windows-latest` 红，日志 `scratch/ci-87208aa-win-job.log`）。
+   三相复现（`scratch/probe_tokenizer_egress.py`，三模式）：`cold-armed` ⇒ 被 `PublicNetworkBlocked`
+   拦下且缓存目录空；`cold-disarmed` ⇒ 导入成功且缓存落下一个文件；`warm-armed` ⇒ 零尝试。
+   修法：**在判据进程之外**预热门（CI 作业步骤 `uv run --frozen --no-sync python -c "import litellm"`，
+   放在 `uv sync` 之后、跑门之前），**不要**改判据或加放行面。推论（最要紧的一条）：
+   **「本机 `judged 0`」不等于「默认门离线」**，它只等于那台机器那一刻离线；
+   且预热门只是把下载**挪出判据进程**，CI 每轮仍有一次对外请求（残余 R-6）——
+   「默认 CI 完全离线」在没把词表固化进镜像/私有源之前**不成立**。
 
 ## 适用边界
 
@@ -82,7 +97,9 @@ tags:
 - `tests/egress_guard.py`（判据本体，docstring 记录射程与两处实测纠正）；
   `tests/conftest.py`（导入期武装 + `LITELLM_LOCAL_MODEL_COST_MAP` + 会话级红灯）；
   `tests/architecture/python/test_default_egress_guard.py`（28 条自证与按压判据）。
-- `PLAN-20260922-131`（M-1…M-9 测量表 / P-1…P-5 按压表 / R-1…R-5 残余）；
-  `RECHECK-20260922-131`（两遍独立复检；W-1、W-8 是本条 1/2 的来源）。
+- `PLAN-20260922-131`（M-1…M-12 测量表 / P-1…P-5 按压表 / R-1…R-6 残余）；
+  `RECHECK-20260922-131`（两遍独立复检 + CI 回灌一节；W-1、W-8 是本条 1/2 的来源，W-13 是本条 6 的来源）。
 - 上游：litellm `litellm_core_utils/get_model_cost_map.py`（开关与该 URL 的出处）；
-  `validate_bundle.py:277`（第 4 条的正则）。
+  litellm `compression → token_counter → default_encoding`（第 6 条的下载点）；
+  `validate_bundle.py:277`（第 4 条的正则）；
+  `.github/workflows/m0-quality.yml`（第 6 条的预热门）。

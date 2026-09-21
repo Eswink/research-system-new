@@ -53,6 +53,14 @@ jobs:
       - name: Sync frozen Python environment
         run: uv sync --frozen --dev
 
+      - name: Prewarm the offline tokenizer cache
+        # A fresh install carries no tiktoken cache, so the *first* `import litellm`
+        # (reached through openhands-sdk) downloads cl100k_base from the network -- inside
+        # the test process, where the default gate's egress judge (tests/egress_guard.py,
+        # GOAL-010 EC-05) refuses it. Warming the cache here, in environment preparation,
+        # is what keeps the gate genuinely offline without weakening that judge.
+        run: uv run --frozen --no-sync python -c "import litellm"
+
       - name: Sync frozen Node environment
         run: pnpm install --frozen-lockfile
 
@@ -86,6 +94,14 @@ jobs:
 
       - name: Sync frozen Python environment
         run: uv sync --frozen --dev
+
+      - name: Prewarm the offline tokenizer cache
+        # A fresh install carries no tiktoken cache, so the *first* `import litellm`
+        # (reached through openhands-sdk) downloads cl100k_base from the network -- inside
+        # the test process, where the default gate's egress judge (tests/egress_guard.py,
+        # GOAL-010 EC-05) refuses it. Warming the cache here, in environment preparation,
+        # is what keeps the gate genuinely offline without weakening that judge.
+        run: uv run --frozen --no-sync python -c "import litellm"
 
       - name: Run M11 deterministic eval gate
         run: >-
@@ -125,6 +141,14 @@ jobs:
       - name: Sync frozen Python environment
         run: uv sync --frozen --dev
 
+      - name: Prewarm the offline tokenizer cache
+        # A fresh install carries no tiktoken cache, so the *first* `import litellm`
+        # (reached through openhands-sdk) downloads cl100k_base from the network -- inside
+        # the test process, where the default gate's egress judge (tests/egress_guard.py,
+        # GOAL-010 EC-05) refuses it. Warming the cache here, in environment preparation,
+        # is what keeps the gate genuinely offline without weakening that judge.
+        run: uv run --frozen --no-sync python -c "import litellm"
+
       - name: Build sandbox image
         run: docker build -t research-os-sandbox:m9-test adapters/execution/sandbox
 
@@ -156,6 +180,14 @@ jobs:
 
       - name: Sync frozen Python environment
         run: uv sync --frozen --dev
+
+      - name: Prewarm the offline tokenizer cache
+        # A fresh install carries no tiktoken cache, so the *first* `import litellm`
+        # (reached through openhands-sdk) downloads cl100k_base from the network -- inside
+        # the test process, where the default gate's egress judge (tests/egress_guard.py,
+        # GOAL-010 EC-05) refuses it. Warming the cache here, in environment preparation,
+        # is what keeps the gate genuinely offline without weakening that judge.
+        run: uv run --frozen --no-sync python -c "import litellm"
 
       - name: Start postgres + pinned OTel collector
         run: >-

@@ -132,3 +132,30 @@ selector 循环当时只是**被同步面兜住**。⇒ 改成装两个**具体�
 | W-10 | 登记（工具面） | `validate_bundle.py` 的「旧项目版本引用」正则会把 RFC 5737 TEST-NET-1 地址读成旧版本号（本循环只**绕开**，不改门禁） |
 | W-11 | 登记（工具面） | `.cursor/runtime/evolution_state.json` **无跨进程锁**：两次并发调用 framework evals ⇒ `WinError 5` / eval 失败（已复现）；**m0 必须独占运行** |
 | W-12 | 登记（纠正） | derive 稿与 P-1 的「撤防后不会真出网」经实测**证伪**（本机代理对任意 IP 秒回）；撤防类按压必然产生受控出站，已更正记录 |
+| W-13 | 登记（**环境相关性**，由 CI 回灌发现） | 本复检全部在**作者的机器**上做，而那台机器的 `.venv` 是热的：`import litellm` 的首次 `tiktoken` 词表下载已经发生过。CI（`uv sync` 全新环境）上同一棵树被判红 **31 条**真实出站。⇒ 本 RECHECK 第 4 / 第 6 节引用的「本机 `judged 0`」**只证明那台机器那一刻离线**，不证明「默认门离线」。已在 PLAN-131 M-10…M-12 与 R-6 更正 |
+
+## 追加：收口后 CI 回灌（把本复检的结论放到另一台机器上验）
+
+推送提交 `87208aa` 的 M0 在 `quality-windows-latest` 判**红**，日志 `scratch/ci-87208aa-win-job.log`：
+
+```text
+egress guard: FAIL — the default gate attempted 31 non-loopback destination(s) that no live marker allows:
+BLOCKED 57.150.192.193:443 by tests/adapters/openhands/test_adapter_core.py::<module> :: ...
+FAILED: 1 check(s): python/tests=1
+```
+
+同一棵树在本机同轮是 `judged 771`、`blocked 8`（**8 = 判据自证探针**，非真实出站）。差异不是判据，
+是**安装新鲜度**。定位与三相测量（`scratch/probe_tokenizer_egress.py`）：
+
+1. `cold-armed`：`import litellm` 被拦，`PublicNetworkBlocked` 指向 `198.18.1.80:443`，缓存目录**空**；
+2. `cold-disarmed`：导入成功，缓存里落下 `9b5ad71b2ce5302211f9c61530b329a4922fc6a4`；
+3. `warm-armed`：同一导入**零尝试**。
+
+源头 = litellm 首次导入时 `compression → token_counter → default_encoding` 的
+`tiktoken.get_encoding("cl100k_base")` **下载词表**。修法：`.github/workflows/m0-quality.yml` 四个
+Python 作业在 `uv sync` 之后加一步预热门（`uv run --frozen --no-sync python -c "import litellm"`），
+让这次下载发生**在判据进程之外**；判据本体与放行面**一行未改**。
+
+**对本次判定结论的影响（如实）**：EC-05 的两条核心命题**不因此削弱**，反而被加固——判据在
+一台**干净**机器上抓到了第二条真实出站，而它在作者机器上完全不可见，这正是「不依赖人工观察」
+的实证；同时新增 W-13（环境相关性）与 R-6（「CI 完全离线」仍不成立）两条如实登记。
