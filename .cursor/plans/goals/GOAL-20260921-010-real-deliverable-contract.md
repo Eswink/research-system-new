@@ -152,6 +152,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260921-128-evidence-chain-truthfulness.md
   - .cursor/plans/tasks/PLAN-20260921-129-real-protocol-availability.md
   - .cursor/plans/tasks/PLAN-20260921-130-runtime-fingerprint-on-read-face.md
+  - .cursor/plans/tasks/PLAN-20260922-131-offline-gate-structural-judge.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-130-runtime-fingerprint-and-model-absence.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260921-100-deliverable-name-declaration-and-gate.md
