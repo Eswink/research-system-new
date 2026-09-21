@@ -147,7 +147,8 @@ escalation_triggers:
   - 明文凭据泄露（**即使是可弃用的免费额度**）——立即停止并报告
   - "放宽验收门（AcceptanceCriteria）以凑成功——本 GOAL 明文禁止，触及即 BLOCKED"
   - "改动 Canonical State 边界（例如把验收门结果改成可改写已终态的行）——需拍板"
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260921-127-real-deliverable-contract.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -389,13 +390,15 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 见回合汇报 | 治理 `validate.py` 绿；`validate_bundle` / DOCS-CHECK 绿 | 见回合汇报（**未跑到终态不记账**） | — | EC-01…EC-06 全 PENDING；机制已定位（G-3 键名一处可判事实 / G-4 证据由模型自述满足）⇒ EC-01 是**可落地**的工程任务 | cycle 1 = derive **EC-01** 子 PLAN（真实交付物契约） |
+| 0 | （建档，无子 PLAN） | `17cef9b` | 治理 `validate.py` 绿；`validate_bundle` 绿；DOCS-CHECK `6 deterministic checks` 绿；framework **8/8** | 见下方 CI 台账 | — | EC-01…EC-06 全 PENDING；机制已定位（G-3 键名一处可判事实 / G-4 证据由模型自述满足）⇒ EC-01 是**可落地**的工程任务 | cycle 1 = derive **EC-01** 子 PLAN（真实交付物契约） |
+| 1 | PLAN-20260921-127（EC-01） | derive 见回合汇报 | 见回合汇报 | 见回合汇报（**未跑到终态不记账**） | — | EC-01 执行中；**derive 时抓出一条既有的「待拍板」耦合**：`docs/adr/ADR-0031`（Proposed）的 **D2** 正是「事实名 → 合约名」，其 Consequences 写着「改动它必须先改本 ADR 的状态」。**已核对**：该 ADR 的结构判据钉的是**验收门的字面匹配**（`evaluate_criterion` 的入参由用例手工构造），因此**取 D2-A 形态（门不改、声明侧给出名字）时该判据原样保持绿**、无需修改任何门禁；ADR 自己写明两个决定「**可分别决定**」，D1 未决 ⇒ **整体状态保持 `Proposed`**，D2 的定向在 D2 节内如实记录。该处置写进 PLAN-127 的「影响报告」并列为 WP1、由 RECHECK 独立核对 | cycle 1 续：WP1（D2 定向记录）→ WP2（声明化命名）→ WP3（同源判据）→ WP4（离线链双分支）→ WP5（真实 run）→ WP6（收口） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
-| 建档 | 见回合汇报 | | |
+| 建档 | `17cef9b` | [35560783476](https://github.com/Eswink/research-system-new/actions/runs/35560783476) | 六 job 全 **success**（`eval-gate` / `collector-quality` / `container-quality` / `console-frontend` / `quality-ubuntu-latest` / `quality-windows-latest`；terminal `status=completed conclusion=success`，逐 job 实查） |
+| cycle 1 派生 + WP1/WP2/WP4 | 见回合汇报 | | |
 
 **台账尾巴口径**（沿用 GOAL-005…009，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 **只在回合汇报里给出终态、不再回写文件**——否则每轮都要为回写再推一次、无限追加。
@@ -411,3 +414,21 @@ live 证据只在本地产生并落 RECHECK。
   关键定位：判拒的机制是**结构化输出键名**这一处可判事实（`session_message` ≠ `analysis_report`，
   G-3）；`EVIDENCE_COVERAGE` 目前**由模型自述满足**（G-4，信任标签 `GENERATED`）；
   真实 run 用的协议**语义不适用**（G-5）。**本 GOAL 明文禁止**把凭据写进 CI（CI 保持离线）。
+
+- 2026-09-21 cycle 1 派生（`driver=client-goal / owner=root-agent`）：derive
+  `PLAN-20260921-127-real-deliverable-contract`（EC-01，投影 ALL_PLAN）。**派生时抓出一条
+  既有的「待拍板」耦合并核对到判据层**：`docs/adr/ADR-0031-toolpack-capability-policy.md`
+  （`Status: Proposed`）的 **D2** 恰好就是「**事实名 → 合约名**的声明权」，其 Consequences
+  写着「真实会话交付 `session_message` 必被声明 `analysis_report` 的合约判拒；该行为有专门
+  用例固定，**改动它必须先改本 ADR 的状态**」，而它的结构判据
+  `tests/tooling/test_toolpack_capability_policy_pending.py` 又钉住「不得出现 `Status: Accepted`」。
+  **核对结论（读判据本体）**：该判据的第 4 条（行为没变）判的是
+  **`evaluate_criterion` 的字面匹配**——`CriterionInputs` 由用例**手工构造**，
+  **不经过 adapter** ⇒ 取 **D2-A 形态**（「维持字面判定，映射由合约/计划侧声明」，
+  ADR 原文自己列为**不改 Canonical 语义**的选项）时，**该判据原样保持绿**，
+  **不需要修改任何门禁或断言**。且 ADR 原文写明两个决定「**可分别决定**」⇒ D1 未决
+  ⇒ **ADR 整体状态保持 `Proposed`**，D2 的定向（来自用户 GOAL-010 EC-01 的二选一指令）
+  只在 D2 节内如实记录。该处置写成 PLAN-127 的 WP1 与「影响报告」D2 节，
+  并**要求 RECHECK 独立核对「门禁未被修改且仍绿」**。
+  **本轮未发起任何真实调用、未改任何门禁/断言、未新增依赖、未改 pin、未改默认 runtime。**
+  诚实登记的**代价**：本 PLAN 取 (ii) ⇒ **没有**验证「模型能否自主产出合约名」这条 (i) 路径。
