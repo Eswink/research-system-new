@@ -86,7 +86,7 @@ from services.api.assembly import (
     policy_bindings,
     sqlite_artifact_blob_dir,
 )
-from services.api.demo import _default_events
+from services.api.demo import _default_events, seed_declared_inputs
 from services.api.idempotency import IdempotencyStore
 from services.api.runtime_support import (
     RuntimeSelection,
@@ -270,6 +270,9 @@ def _sqlite_store_parts(
     # 单一实例共享给 orchestration 与控制面读取端点（两个独立实例会让 run
     # 产出的 artifact 对读取端永远为空）。
     artifacts = SqliteArtifactStore(connection=connection, blob_dir=blob_dir)
+    # GOAL-010 EC-02：demo 协议**声明**的输入制品必须真的在库里——`EVIDENCE_COVERAGE`
+    # 收紧后只认非模型自述的来源，声明的输入就是那个来源；不种入 ⇒ 任务点名失败。
+    seed_declared_inputs(artifacts)
     # WP-H：同一审批存储实例（执行循环 register、decide/GET 读取）。
     approvals = SqliteApprovalStore(connection=connection)
     return _SqliteStoreParts(

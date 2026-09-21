@@ -22,14 +22,22 @@ from tests.e2e.scenario_catalog import (
     m7_project,
 )
 
+#: 按合约区分的产出：`sort_analysis_v1` 的 review phase 声明要交 `review_decision`
+#: （合约里的 `ARTIFACT_EXISTS`，GOAL-010 EC-02 补齐），所以 Fake 也得按合约产出——
+#: 单一 `structured_output` 会让 review 拿不到自己的交付物，run 会如实判拒。
+_HAPPY_OUTPUTS: dict[str, dict[str, object]] = {
+    "sort_analysis_execution": {
+        "analysis_report": {"baseline": "O(n^2)", "recommendation": "use TimSort"},
+    },
+    "sort_analysis_review": {
+        "review_decision": {"verdict": "PASS", "score": 0.95},
+    },
+}
+
 
 @pytest.fixture
 def harness() -> Generator[M7Harness, None, None]:
-    runtime = StructuredOutputAgentRuntime(
-        structured_output={
-            "analysis_report": {"baseline": "O(n^2)", "recommendation": "use TimSort"},
-        }
-    )
+    runtime = StructuredOutputAgentRuntime(outputs_by_contract=_HAPPY_OUTPUTS)
     instance = M7Harness(runtime=runtime, ledger=FakeEvidenceLedger())
     yield instance
     instance.close()
@@ -92,9 +100,7 @@ class TestClaimVerificationE2E:
 
 class TestClaimVerificationDegradation:
     def test_without_ledger_claims_stay_proposed(self) -> None:
-        runtime = StructuredOutputAgentRuntime(
-            structured_output={"analysis_report": {"baseline": "O(n^2)"}}
-        )
+        runtime = StructuredOutputAgentRuntime(outputs_by_contract=_HAPPY_OUTPUTS)
         harness = M7Harness(runtime=runtime)
         try:
             outcome = harness.service.start_run(

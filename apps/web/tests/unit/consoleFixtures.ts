@@ -24,6 +24,10 @@ export const evidenceRecord: EvidenceDto = {
   id: "evidence-one", source_ref: "source-one", content_digest: "sha256:content",
   run_id: "run-one", experiment_run_id: null, artifact_id: "artifact-one",
   image_digest: null, environment_digest: null, model_refs: [], manifest_digest: null,
+  // 来源记录读面（GOAL-010 EC-02）：自产 evidence 的 origin 就是它自己的 source_ref，
+  // 信任标签 GENERATED——与后端 register_source 的取值同形。
+  source_origin: "source-one", source_trust_label: "GENERATED",
+  source_access_time: "2026-09-09T00:00:00Z",
 };
 
 export const eventFrame: RunEventDto = {

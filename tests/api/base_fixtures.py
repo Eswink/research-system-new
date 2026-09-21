@@ -48,17 +48,21 @@ def _base_sqlite_parts(
         OrchestrationDependencies,
         RunOrchestrationService,
     )
-    from services.api.demo import demo_session_output
+    from services.api.demo import demo_session_output, seed_declared_inputs
 
     events = SqliteOutboxEventPublisher(connection=connection)
     workflow = SqliteWorkflowEngine(connection=connection)
     ledger = SqliteEvidenceLedger(connection=connection)
     budget = FakeBudgetLedger()
+    # GOAL-010 EC-02：协议**声明**的输入制品必须真的在库里；`EVIDENCE_COVERAGE`
+    # 收紧后只认非模型自述的来源，声明的输入就是那个来源。
+    artifacts = FakeArtifactStore()
+    seed_declared_inputs(artifacts)
     runs = RunOrchestrationService(
         OrchestrationDependencies(
             runtime=FakeAgentRuntime(structured_output=demo_session_output()),
             workflow=workflow,
-            artifacts=FakeArtifactStore(),
+            artifacts=artifacts,
             events=events,
             budget=budget,
             ledger=ledger,

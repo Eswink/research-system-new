@@ -2,7 +2,7 @@
 id: PLAN-20260921-128
 slug: evidence-chain-truthfulness
 title: 证据链真实性：让 `EVIDENCE_COVERAGE` 由真实可查来源满足，而不是由模型自述（GOAL-010 EC-02）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-21
 updated_at: 2026-09-21
 parent_goal: GOAL-20260921-010
@@ -21,8 +21,9 @@ authorization:
     GOAL frontmatter 的 escalation_triggers 处置。**不引入新依赖、不新造 URL 判据**
     （复用既有 `endpoint_policy`）。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-128-evidence-chain-truthfulness.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260921-101-evidence-source-property-and-paired-landing.md
 ---
 
 # PLAN-20260921-128 — 证据链真实性（GOAL-010 EC-02）
@@ -69,12 +70,31 @@ memory_entries: []
       **已定案**（E-1…E-10 + 来源类取舍 + 逐个点名的爆破面 + 成对落地的硬约束）：
       判别性质 = 「来源的对象**不是**本任务自己产出的 artifact」；主来源类 = 契约声明的输入制品；
       工具结果只接链；manifest / 协议 / 端点事实 / **惰性工具的 `"inert"` 观测**列为被拒来源类。
-- [ ] WP2 **把真实来源接进 run 链**（机制由 WP1 定案）。约束：**不得**为了让判据绿而
+- [x] WP2 **把真实来源接进 run 链**（机制由 WP1 定案）。约束：**不得**为了让判据绿而
       在测试侧伪造来源；来源必须由**产品路径**在**真跑**中产生。
-- [ ] WP3 **判据 + 反证**：同源判据钉住判别性质与被排除的那一类；**被压过**（撤掉收紧 ⇒ 红）。
-- [ ] WP4 **真实 run**（最小必要次数）：来源记录可读 + `origin` 不是交付物自身（AC-2）；
+      **已完成**（WP2a…WP2e 全部落地，成对）：声明面用既有无消费者的 `ProtocolPhase.inputs`
+      （`CompiledPhase.inputs` + 编译器透传）；供应面 `services/api/demo.py` 的 `DECLARED_INPUTS`
+      + `seed_declared_inputs()` 把**仓库真文件字节**内容寻址地种入 store 并 `mark(VERIFIED)`；
+      登记面 `register_declared_input_sources` 造 `SourceRecord(USER_PROVIDED)` + `Evidence`
+      （`artifact_id` = **输入制品** id）并挂 `SUPPORTS` relation；计数面
+      `evidence_source_count` 改为 `artifact_id ∉ self_artifact_ids`。**id 命名空间先核对过**：
+      自述 `{task_id}:{name}` / 工具 `tool-result:…` / 输入 `input-corpus:…` 三者不相交。
+- [x] WP3 **判据 + 反证**：同源判据钉住判别性质与被排除的那一类；**被压过**（撤掉收紧 ⇒ 红）。
+      **已完成**：`tests/architecture/python/test_declared_input_sources.py`（3 用例：协议声明 ==
+      `DECLARED_INPUTS`、字节 digest 可重算、`created_by == "composition-root"`）+
+      `tests/application/evidence/test_provenance.py`（自述计 0 / 声明输入计 1 `USER_PROVIDED` /
+      输入缺失 ⇒ `InvalidInputError`）。**三次压制全部先红后绿**（见「WP2–WP5 证据」）。
+- [x] WP4 **真实 run**（最小必要次数）：来源记录可读 + `origin` 不是交付物自身（AC-2）；
       去掉来源 ⇒ 判拒（AC-3）。样本落 RECHECK，**不含凭据值**。
-- [ ] WP5 **本地门禁 + 复检 + 收口**：定向 → m0 23/23 → 治理绿 → RECHECK → GOAL 回写。
+      **已完成**：`tests/e2e/test_evidence_chain_source_live.py` ⇒ run
+      `a2a1bfbf-fea1-44a5-bfd0-ac3396d5d054` **`SUCCEEDED`**、`failures` 为空；读面 4 条来源
+      （2 `GENERATED` 自述 + **2 `USER_PROVIDED` 声明输入**），被引用对象
+      `created_by=composition-root`；样本 `scratch/ec02-live/ec02-live-source.json`。
+      **如实登记：live 调用 4 次**（3 次是判据/读面胶水缺陷，非端点缺陷；仍超出「最小必要」）。
+- [x] WP5 **本地门禁 + 复检 + 收口**：定向 → m0 23/23 → 治理绿 → RECHECK → GOAL 回写。
+      **已完成**：定向套件绿；全量 m0（CI 同形配置）绿；治理 `validate.py` 绿；
+      `RECHECK-20260921-128` = **PASS_WITH_WARNINGS**；GOAL-010 已回写（EC-02 / 迭代日志 /
+      `child_plans` / `latest_recheck` / 状态历史），沉淀 `MEM-20260921-101`。
 
 ## 证据
 
@@ -229,3 +249,47 @@ derive 时已核对（**只读代码，未发起任何调用**）：
 - 2026-09-21 derive：由 GOAL-20260921-010 的 EC-02 派生（`parent_goal` 投影 ALL_PLAN）。
   派生时**只读代码、未发起任何调用**，得到 E-1…E-5；其中 **E-3/E-4**（run 链无工具结果、
   工具证据准入未接线）决定了本 cycle 的形状：**先审后改**，且承重墙是 WP1。
+
+- 2026-09-21 WP1 定案（`8d3afd4` 推送并已入 CI 台账）：判别性质 = 「来源的对象**不是**本任务
+  自己产出的 artifact」；落在**编排**（E-6：门只吃整数 ⇒ 不碰 Domain、不碰 gate）；
+  主来源类 = **契约声明的输入制品**；被拒来源类点名四类（含**惰性工具的 `"inert"` 观测**）。
+  爆破面实测比预估小（`minimum_sources: 10` 无 run 路径行使），并写死硬约束
+  **「收紧与给来源必须同一提交成对落地」**。
+
+- 2026-09-21 WP2–WP5 完成，**本 PLAN 收口 DONE**（`RECHECK-20260921-128` =
+  **PASS_WITH_WARNINGS**）。**成对落地**：来源面（协议声明 → 组合根种入 → 登记为
+  `USER_PROVIDED` 来源 → 挂 relation）与计数收紧（`artifact_id ∉ self_artifact_ids`）
+  **同一提交**。**真跑**：run `a2a1bfbf-fea1-44a5-bfd0-ac3396d5d054` **`SUCCEEDED`**，
+  读面 4 条来源（2 自述 + 2 声明输入），被引用对象 `created_by=composition-root`、
+  digest 可重算。**反证三次被压过**（去声明 / 去种入 / 撤收紧，各自先红后绿）。
+  **如实登记**：live 调用 **4** 次（超「最小必要」，3 次是判据/读面胶水缺陷）；
+  `sort_analysis_review` 合约**新增**一条 `ARTIFACT_EXISTS`（收紧，但属判据面改动，
+  独立复核应重点压它）；`domain_discovery` min 10 **仍未在 run 面上被行使**（残余）；
+  `inputs` 只表达**外部供应**的输入、不表达 phase 间引用。
+
+### WP2–WP5 证据（判据与压制）
+
+**新增/改动的判据**（**没有任何一条被放宽**；`packages/domain/acceptance.py` 与
+`examples/contracts/task_contracts.yaml` 的 `minimum_sources` 数值**零改动**）：
+
+| 判据 | 钉住什么 |
+| --- | --- |
+| `tests/architecture/python/test_declared_input_sources.py`（**新**，3 用例） | 协议 YAML 的 `inputs:` 声明 == `DECLARED_INPUTS` 表；输入制品字节 digest **可重算**；`created_by == "composition-root"`；`services/api/composition.py` **确实**调用 `seed_declared_inputs(` |
+| `tests/application/evidence/test_provenance.py`（重写） | 模型自述计 **0**；声明输入计 **1** 且 `trust_label=USER_PROVIDED`；声明输入**不在 store 里** ⇒ `InvalidInputError`（fail-closed） |
+| `tests/e2e/test_evidence_chain_source_live.py`（**新**） | EC-02 的 live 判断：读面里存在 `source_origin == "input-corpus:console_demo_v1"` 且 `source_trust_label == "USER_PROVIDED"`、被引用对象 `created_by == "composition-root"` |
+| `tests/e2e/test_vertical_slice_happy_path.py`（改） | 制品总数 = 产出 4 + 种入 `len(DECLARED_INPUTS)`；**按 id 分开**并各自断言 `created_by` |
+
+**三次压制（全部先红后绿，复原后 `git diff` 只剩意图内改动）**：
+
+| # | 压制 | 红在哪 |
+| --- | --- | --- |
+| ① | 去掉**协议声明**（`sort_analysis_v1.yaml` 的 `inputs:`） | 同源判据 1 用例 + vertical slice **6 用例**（review 覆盖归零 ⇒ 判拒） |
+| ② | 去掉**种入**（`M7Harness` 的 `seed_run_inputs`） | vertical slice **6 用例**（`declared input artifact … is not in the artifact store`） |
+| ③ | 撤掉**收紧**（`evidence_source_count` 改回 `len(self.evidence)`） | `test_provenance.py` **3 用例**（`1 != 0`） |
+
+**AC-2/AC-3 的真跑与反证**归 WP4：live 判据 PASS（非 skip），run 终态**恰为 `SUCCEEDED`**；
+「去掉来源 ⇒ 判拒」由压制 ①② 在同一路径上取证（remove ⇒ `EVIDENCE_COVERAGE` 判 `False` ⇒
+`rejected by acceptance gate`），复原后复绿。
+
+**证据诚实边界（AC-8）见 `RECHECK-20260921-128` 的 W-1…W-8**，其中 W-1（合约新增
+`ARTIFACT_EXISTS`）与 W-2（live 调用超最小必要）是两处**须人工复核**的登记项。

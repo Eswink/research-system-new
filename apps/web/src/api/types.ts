@@ -494,6 +494,10 @@ export interface EvidenceDto {
   environment_digest: string | null;
   model_refs: string[];
   manifest_digest: string | null;
+  /** 来源记录的可读面（GOAL-010 EC-02）：取不到来源时为 null。 */
+  source_origin: string | null;
+  source_trust_label: string | null;
+  source_access_time: string | null;
 }
 
 export interface RelationDto {

@@ -71,7 +71,12 @@ def test_artifact_survives_reassemble(tmp_path: Path) -> None:
         assert artifacts.get("a-1") == content
         assert artifacts.verify("a-1") is True
         refs = {item.id for item in artifacts.list_refs()}
-        assert refs == {"a-1"}
+        # 装配同时种入协议**声明**的输入制品（GOAL-010 EC-02）——它们是组合根行为，
+        # 所以这条精确集合断言把「a-1 幸存」与「声明输入在装配时被种入」一起钉住
+        # （此前这里只断言 a-1，等于没有覆盖后者）。
+        from services.api.demo import DECLARED_INPUTS
+
+        assert refs == {"a-1", *DECLARED_INPUTS}
     finally:
         restarted.close()
 

@@ -138,6 +138,15 @@ def _execution_contract() -> TaskContract:
 
 
 def _review_contract() -> TaskContract:
+    """独立复核合约。
+
+    `ARTIFACT_EXISTS`（GOAL-010 EC-02 之后补）：F-12 场景（review 只回一个字符串、
+    产不出制品）此前**仅仅**因为 `EVIDENCE_COVERAGE` 的旧口径（`len(evidence)`）才判拒。
+    覆盖判据收紧成「非模型自述的来源」后，本合约声明的输入使覆盖**如实**通过——
+    于是「review 什么都不产出也算过」这个洞暴露出来。它从来不是覆盖判据该管的事，
+    而是本合约**欠声明**：协议写了 `outputs: [review_decision]`，合约却没要求它存在。
+    补上这条是**收紧**不是放宽——空复核仍然判拒，且理由指向它自己没交货。
+    """
     return TaskContract(
         id="sort_analysis_review",
         version="1.0.0",
@@ -145,9 +154,13 @@ def _review_contract() -> TaskContract:
         required_capabilities=["workspace.read", "evidence.read"],
         acceptance_criteria=[
             AcceptanceCriterion(
+                type=AcceptanceCriterionType.ARTIFACT_EXISTS,
+                artifact="review_decision",
+            ),
+            AcceptanceCriterion(
                 type=AcceptanceCriterionType.EVIDENCE_COVERAGE,
                 minimum_sources=1,
-            )
+            ),
         ],
         timeout_seconds=60,
         retry_policy=None,

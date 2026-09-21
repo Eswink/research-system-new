@@ -26,6 +26,13 @@ class EvidenceDto(BaseModel):
     workspace_snapshot_after: str | None = None
     model_refs: list[str] = Field(default_factory=list)
     manifest_digest: str | None = None
+    # GOAL-010 EC-02：来源记录的**可读面**。`EVIDENCE_COVERAGE` 的判据要求
+    # 「其 `origin` / `trust_label` 可取」，而在加这两个字段之前 `SourceRecord`
+    # **没有任何读面**（`services/` 里对 `SourceRecord` 零命中）⇒ 判据只能靠读库
+    # 或读代码间接凑。取不到来源时保持 None（不伪填充）。
+    source_origin: str | None = None
+    source_trust_label: str | None = None
+    source_access_time: str | None = None
 
 
 class RelationDto(BaseModel):

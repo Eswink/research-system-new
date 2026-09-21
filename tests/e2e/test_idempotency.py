@@ -31,6 +31,7 @@ from packages.domain.enums import ArtifactState
 from packages.domain.events import EventEnvelope, EventType, digest_of_payload
 from packages.domain.evidence import Claim, ClaimStatus
 from packages.domain.run_state import ResearchRunState
+from services.api.demo import DECLARED_INPUTS
 from tests.contracts.fixtures import research_task, task_contract
 from tests.e2e.scenario import M7Harness, StructuredOutputAgentRuntime, m7_protocol
 from tests.e2e.scenario_catalog import (
@@ -38,6 +39,10 @@ from tests.e2e.scenario_catalog import (
     m7_preflight_context,
     m7_project,
 )
+
+#: `M7Harness` 装配时种入的协议声明输入制品数（GOAL-010 EC-02）——数制品条数的
+#: 断言必须把它算进去，否则断言的是「除声明输入外还有几个」，而不是仓里真实有几条。
+_SEEDED = len(DECLARED_INPUTS)
 
 
 class TestTaskDeliveryIdempotency:
@@ -69,7 +74,9 @@ class TestArtifactRegistrationIdempotency:
             )
             harness.artifacts.put(artifact, content)
             harness.artifacts.put(artifact, content)
-            assert len(harness.artifacts.list_refs()) == 1
+            # GOAL-010 EC-02：harness 装配时已种入协议声明的输入制品，所以这里数的是
+            # 「原有种入数 + 本用例自己放的那一个」，而不是 1。
+            assert len(harness.artifacts.list_refs()) == _SEEDED + 1
             assert harness.artifacts.verify("a-1") is True
         finally:
             harness.close()
@@ -87,7 +94,7 @@ class TestArtifactRegistrationIdempotency:
                     media_type="text/plain",
                 )
                 harness.artifacts.put(artifact, content)
-            assert len(harness.artifacts.list_refs()) == 3
+            assert len(harness.artifacts.list_refs()) == _SEEDED + 3
         finally:
             harness.close()
 

@@ -17,6 +17,7 @@ from packages.domain.enums import ArtifactState
 from packages.domain.events import EventType
 from packages.domain.manifest import RunManifest
 from packages.domain.run_state import ResearchRunState
+from services.api.demo import DECLARED_INPUTS
 from tests.e2e.scenario import M7Harness, StructuredOutputAgentRuntime, m7_protocol
 from tests.e2e.scenario_catalog import (
     m7_catalog,
@@ -124,12 +125,16 @@ class TestEndToEndHappyPath:
     def test_artifacts_have_provenance(self, harness: M7Harness) -> None:
         _start(harness)
         artifacts = harness.artifacts.list_refs()
-        # 2 tasks × 2 结构化输出 = 4 个内容寻址 Artifact
-        assert len(artifacts) == 4
-        produced_by = {artifact.created_by for artifact in artifacts}
-        assert produced_by == {"engineer-1", "reviewer-1"}
+        # 2 tasks × 2 结构化输出 = 4 个内容寻址 Artifact，**加上**协议声明的输入制品
+        # （GOAL-010 EC-02，由组合根种入）。断言按来源分类，而不是只数总数。
+        assert len(artifacts) == 4 + len(DECLARED_INPUTS)
+        produced = [item for item in artifacts if item.id not in DECLARED_INPUTS]
+        seeded = [item for item in artifacts if item.id in DECLARED_INPUTS]
+        assert {artifact.created_by for artifact in produced} == {"engineer-1", "reviewer-1"}
+        assert {artifact.created_by for artifact in seeded} == {"composition-root"}
         for artifact in artifacts:
             assert artifact.state is ArtifactState.VERIFIED
+        for artifact in produced:
             assert artifact.source_refs and artifact.source_refs[0].startswith("task:")
             content = harness.artifacts.get(artifact.id)
             assert len(content) > 0

@@ -38,7 +38,12 @@ from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import RetryPolicy
 from services.api.catalog import read_protocol_text
 from services.api.protocol_source import parse_frozen_protocol
-from tests.e2e.scenario import PROTOCOL_PATH, StructuredOutputAgentRuntime, m7_protocol
+from tests.e2e.scenario import (
+    PROTOCOL_PATH,
+    StructuredOutputAgentRuntime,
+    m7_protocol,
+    seed_run_inputs,
+)
 from tests.e2e.scenario_catalog import m7_catalog, m7_preflight_context, m7_project
 from tests.e2e.test_retry_park_and_resume import (
     BACKOFF_SECONDS,
@@ -290,6 +295,7 @@ def _two_task_harness() -> tuple[RunOrchestrationService, Any, _ReviewFlakyOnce,
     connection = connect(":memory:")
     engine = SqliteWorkflowEngine(connection=connection, lease_ttl_seconds=60, now=clock)
     artifacts = SqliteArtifactStore(connection=connection)
+    seed_run_inputs(artifacts)  # GOAL-010 EC-02：协议声明的输入须在库（同生产组合根）
     runtime = _ReviewFlakyOnce(
         outputs_by_contract={
             "sort_analysis_execution": {"analysis_report": {"baseline": "O(n^2)"}},

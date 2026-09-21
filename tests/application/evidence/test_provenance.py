@@ -21,8 +21,9 @@ from packages.application.run_orchestration.result_handler import (
     RegistrationDeps,
     register_session_result,
 )
-from packages.domain.core import Timestamp
-from packages.domain.enums import TrustLabel
+from packages.domain.artifacts import Artifact
+from packages.domain.core import Digest, Timestamp
+from packages.domain.enums import ArtifactState, TrustLabel
 from packages.domain.evidence import (
     Claim,
     ClaimStatus,
@@ -117,7 +118,14 @@ class TestClaimPromotionGate:
 
 
 class TestSessionResultRegistration:
-    def test_registration_records_generated_source_and_relation(self) -> None:
+    """GOAL-010 EC-02 之后：`evidence_source_count` **只认非模型自述的来源**。
+
+    本类此前断言 `count == len(evidence)`——那是「交付物是它自己的来源」的旧口径。
+    现在改为断言**收紧后的**事实（自身来源恒不计入），并另加一类用**声明的输入**把
+    计数抬起来的用例；两边都在，收紧才不是「把判据调松」而是调紧。
+    """
+
+    def test_self_report_does_not_count_toward_coverage(self) -> None:
         store = FakeArtifactStore()
         ledger = FakeEvidenceLedger()
         task = research_task()
@@ -127,7 +135,9 @@ class TestSessionResultRegistration:
             task_contract(),
             {"report": {"value": 1}},
         )
-        assert registration.evidence_source_count == 1
+        # 证据仍在（溯源链不变），但它指向交付物自己 ⇒ **不**计入覆盖。
+        assert len(registration.evidence) == 1
+        assert registration.evidence_source_count == 0
         evidence = registration.evidence[0]
         assert ledger.has_source(evidence.source_ref)
         registered_source = ledger.get_source(evidence.source_ref)
@@ -139,6 +149,53 @@ class TestSessionResultRegistration:
         assert len(relations) == 1
         assert relations[0].evidence_id == evidence.id
 
+    def test_declared_input_counts_toward_coverage(self) -> None:
+        store = FakeArtifactStore()
+        ledger = FakeEvidenceLedger()
+        corpus = b'{"corpus_id":"unit-test-input"}'
+        artifact = Artifact(
+            id="input-corpus:unit-test",
+            digest=Digest.of_bytes(corpus),
+            size_bytes=len(corpus),
+            media_type="application/json",
+            storage_uri=None,
+            created_by="composition-root",
+            source_refs=["file:examples/inputs/unit-test.json"],
+            classification="declared_input",
+        )
+        store.put(artifact, corpus)
+        store.mark(artifact.id, ArtifactState.VERIFIED)
+        registration = register_session_result(
+            RegistrationDeps(
+                store=store,
+                agent_id="agent-a",
+                ledger=ledger,
+                declared_inputs=(artifact.id,),
+            ),
+            research_task(),
+            task_contract(),
+            {"report": {"value": 1}},
+        )
+        assert registration.evidence_source_count == 1
+        source = ledger.get_source(artifact.id)
+        assert source.trust_label is TrustLabel.USER_PROVIDED
+        assert source.content_digest == str(artifact.digest)
+
+    def test_declared_input_that_is_absent_fails_loudly(self) -> None:
+        """声明了输入却没有对象 ⇒ **点名失败**，不静默降级成「没有来源也算过」。"""
+        registration_deps = RegistrationDeps(
+            store=FakeArtifactStore(),
+            agent_id="agent-a",
+            declared_inputs=("input-corpus:never-seeded",),
+        )
+        with pytest.raises(InvalidInputError):
+            register_session_result(
+                registration_deps,
+                research_task(),
+                task_contract(),
+                {"report": {"value": 1}},
+            )
+
     def test_registration_merges_multiple_evidences_into_one_claim(self) -> None:
         store = FakeArtifactStore()
         ledger = FakeEvidenceLedger()
@@ -149,7 +206,8 @@ class TestSessionResultRegistration:
             task_contract(),
             {"report": {"a": 1}, "metrics": {"b": 2}},
         )
-        assert registration.evidence_source_count == 2
+        assert len(registration.evidence) == 2
+        assert registration.evidence_source_count == 0
         claim_id = f"claim:{task.id.value}:result"
         claim = ledger.get_claim(claim_id)
         assert len(claim.evidence_relations) == 2
@@ -163,4 +221,5 @@ class TestSessionResultRegistration:
             task_contract(),
             {"report": {"value": 1}},
         )
-        assert registration.evidence_source_count == 1
+        assert len(registration.evidence) == 1
+        assert registration.evidence_source_count == 0

@@ -36,5 +36,9 @@ phases:
       - workspace.read
       - evidence.read
     task_contract: sort_analysis_review
+    # GOAL-010 EC-02：本 phase 声明的输入制品是**被分析的输入材料**（组合根按同一
+    # 制品 id 种入）。刻意**不**声明上游 phase 的 `analysis_report`——那是另一个 agent
+    # 的输出，仍属模型自述，不构成覆盖来源。`EVIDENCE_COVERAGE: 1` 由这份输入满足。
+    inputs: [input-corpus:sort_analysis_v1]
     outputs: [review_decision]
     gate: QUALITY_GATE

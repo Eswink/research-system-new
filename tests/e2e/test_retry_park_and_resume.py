@@ -35,7 +35,7 @@ from packages.domain.events import EventType
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import RetryPolicy
-from tests.e2e.scenario import StructuredOutputAgentRuntime, m7_protocol
+from tests.e2e.scenario import StructuredOutputAgentRuntime, m7_protocol, seed_run_inputs
 from tests.e2e.scenario_catalog import m7_catalog, m7_preflight_context, m7_project
 
 START = datetime(2026, 9, 18, 9, 0, 0, tzinfo=timezone.utc)
@@ -87,6 +87,7 @@ def _harness() -> tuple[
     connection = connect(":memory:")
     engine = SqliteWorkflowEngine(connection=connection, lease_ttl_seconds=60, now=clock)
     artifacts = SqliteArtifactStore(connection=connection)
+    seed_run_inputs(artifacts)  # GOAL-010 EC-02：协议声明的输入须在库（同生产组合根）
     events = SqliteOutboxEventPublisher(connection=connection)
     runtime = _FlakyOnce(outputs_by_contract=OUTPUTS)
     service = RunOrchestrationService(

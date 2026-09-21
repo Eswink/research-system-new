@@ -1,0 +1,22 @@
+{
+  "corpus_id": "sort_analysis_corpus_v1",
+  "title": "Sort-analysis declared input corpus",
+  "purpose": "The declared input material for the sort_analysis_v1 reference scenario. The review phase declares `inputs: [input-corpus:sort_analysis_v1]`; the composition root stores exactly these bytes under that artifact id, and the run chain registers the object as a non-model source whose digest is recomputable from this file (GOAL-010 EC-02).",
+  "scope": [
+    "This scenario is the M7 reliable vertical slice: integration correctness, not research difficulty.",
+    "Phase 1 analyses an input algorithm repository; phase 2 independently reviews phase 1's report.",
+    "An upstream phase's artifact is another agent's output -- still model self-report -- so it is deliberately NOT the source registered for coverage."
+  ],
+  "documents": [
+    {
+      "id": "doc-1",
+      "title": "Subject of the analysis",
+      "text": "A small sorting implementation whose complexity and edge cases are the analysis subject. The review phase is grounded in this same input material rather than in the analysis it is reviewing."
+    },
+    {
+      "id": "doc-2",
+      "title": "Why the input is the registered source",
+      "text": "Coverage must be satisfied by an object the evaluated agent did not produce. The analysed subject qualifies; the analysis and the review do not."
+    }
+  ]
+}

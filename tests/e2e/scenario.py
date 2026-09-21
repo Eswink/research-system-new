@@ -107,6 +107,9 @@ class M7Harness:
         self.connection = connect(":memory:")
         self.engine = SqliteWorkflowEngine(connection=self.connection, lease_ttl_seconds=60)
         self.artifacts = SqliteArtifactStore(connection=self.connection)
+        # GOAL-010 EC-02：协议**声明**的输入制品必须真的在库里（生产组合根装配时
+        # 做同一件事）；`EVIDENCE_COVERAGE` 收紧后只认非模型自述的来源。
+        seed_run_inputs(self.artifacts)
         self.events = SqliteOutboxEventPublisher(connection=self.connection)
         self.budget = FakeBudgetLedger()
         self.ledger = ledger
@@ -129,3 +132,15 @@ class M7Harness:
 
 def blob_root() -> Path:
     return Path(".") / ".m7-blobs"
+
+
+def seed_run_inputs(store: object) -> None:
+    """测试侧种入协议**声明**的输入制品（等价于生产组合根装配时的动作）。
+
+    GOAL-010 EC-02 之后，`EVIDENCE_COVERAGE` 只认非模型自述的来源；声明了输入却
+    不在库里 ⇒ 任务点名失败（`declared input artifact ... is not in the artifact store`），
+    **不**降级成「没有来源也算过」。自建 harness 的测试等于在仿组合根，故须同样种入。
+    """
+    from services.api.demo import seed_declared_inputs
+
+    seed_declared_inputs(store)

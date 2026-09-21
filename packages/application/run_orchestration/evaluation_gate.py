@@ -97,10 +97,18 @@ def evaluate_task_gate(
 
 def verify_claim_with_evidence(
     evaluations: tuple[CriterionEvaluation, ...],
-    evidence_source_count: int | None,
+    evidence_count: int | None,
 ) -> bool:
-    """VERIFIED Claim 的前置：存在 EVIDENCE_COVERAGE 或至少 1 条证据。"""
-    if evidence_source_count is not None and evidence_source_count >= 1:
+    """VERIFIED Claim 的前置：存在 EVIDENCE_COVERAGE 或至少 1 条证据。
+
+    参数是**证据总条数**（含自述证据），**不是** `evidence_source_count`。
+    GOAL-010 EC-02 之前这里传的是后者——当时两者同值，所以看不出问题；覆盖判据
+    收紧成「只数非模型自述的来源」之后，用覆盖数当「有没有证据」的代理就成了
+    **类目错误**：一个只有自述证据的任务覆盖数为 0，但它明明有证据可升级，
+    会被这条前置拦下（实测：vertical slice 的 execution claim 停在 PROPOSED）。
+    本函数问的是「有没有证据」，就该拿证据条数回答。
+    """
+    if evidence_count is not None and evidence_count >= 1:
         return True
     return any(
         item.criterion_type is AcceptanceCriterionType.EVIDENCE_COVERAGE for item in evaluations

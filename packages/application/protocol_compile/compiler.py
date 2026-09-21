@@ -63,6 +63,7 @@ def _compiled_phases(protocol: ProtocolDefinition, ordered: tuple[str, ...]) -> 
             depends_on=tuple(sorted(phases[phase_id].depends_on)),
             task_contract_refs=tuple(phases[phase_id].task_contracts),
             timeout_seconds=phases[phase_id].timeout_seconds,
+            inputs=tuple(phases[phase_id].inputs),
         )
         for phase_id in ordered
     ]

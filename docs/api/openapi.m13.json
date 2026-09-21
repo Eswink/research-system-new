@@ -1984,9 +1984,42 @@
             ],
             "title": "Run Id"
           },
+          "source_access_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Access Time"
+          },
+          "source_origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Origin"
+          },
           "source_ref": {
             "title": "Source Ref",
             "type": "string"
+          },
+          "source_trust_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Trust Label"
           },
           "workspace_snapshot_after": {
             "anyOf": [

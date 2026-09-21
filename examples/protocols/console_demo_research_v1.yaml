@@ -9,6 +9,14 @@ version: 0.4.0
 # 浏览器 UI 如实披露"受控 Fake Runtime"，不冒充真实研究执行）。
 # 真实研究能力边界保持 M12（Docker 实验/真实文献检索按 requires_docker
 # 与 requires_live_llm 标记，不作为默认 CI 依赖）。
+#
+# `inputs`（GOAL-010 EC-02）：本协议两个 phase 都**声明**它读哪份输入制品。
+# 该字段此前只有 schema 与 loader、**没有消费者**，于是
+# `EVIDENCE_COVERAGE` 只能由模型自述满足。现在 phase 声明的输入会在会话结果
+# 注册处被登记为**非模型自述**的来源（对象须在 ArtifactStore 中且内容
+# 可重算，取不到即点名失败）。值是**制品 id**，由组合根以同一 id 种入。
+# 诚实边界：它证明的是「交付物与声明输入之间有可核验的 grounding 关系」，
+# **不**证明会话真的读过它——「真的读过」只有工具观测能证。
 
 phases:
   - id: discovery
@@ -19,6 +27,7 @@ phases:
     required_capabilities:
       - artifact.read
     task_contract: console_demo_deliverable
+    inputs: [input-corpus:console_demo_v1]
     outputs: [demo_report]
     timeout_seconds: 60
 
@@ -31,6 +40,7 @@ phases:
     required_capabilities:
       - artifact.read
     task_contract: console_demo_deliverable
+    inputs: [input-corpus:console_demo_v1]
     outputs: [demo_verdict]
     timeout_seconds: 60
     gate: QUALITY_GATE

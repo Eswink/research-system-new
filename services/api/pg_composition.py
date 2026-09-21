@@ -21,6 +21,7 @@ from packages.application.run_orchestration.service import (
 )
 from services.api.assembly import _endpoint_url_policy, _load_pricing, policy_bindings
 from services.api.composition import ApiDeps
+from services.api.demo import seed_declared_inputs
 from services.api.runtime_support import build_agent_runtime, resolve_runtime_selection
 
 
@@ -151,6 +152,11 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         pg_migrate(pg_dsn)
 
     c = _pg_components(pg_dsn, connection, config.events_sink, config.artifact_blob_dir)
+    # GOAL-010 EC-02：与 SQLite 组合根同一职责——demo 协议**声明**的输入制品必须真的
+    # 在库里。`EVIDENCE_COVERAGE` 收紧后只认非模型自述的来源，声明的输入就是那个来源；
+    # 漏种 ⇒ 每个跑该协议的 run 都在登记输入时点名失败（PG 路径曾因此回归）。
+    # `seed_declared_inputs` 是 put+mark，二者合起来可重入（put 把行重置为 STAGED）。
+    seed_declared_inputs(c["artifacts"])
     runtime_inputs = _pg_runtime_inputs(config)
     orchestration = _build_pg_orchestration(c, config, runtime_inputs)
     return PostgresAssembly(

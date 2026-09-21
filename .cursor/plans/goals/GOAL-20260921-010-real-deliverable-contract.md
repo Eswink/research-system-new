@@ -74,7 +74,7 @@ exit_criteria:
       且其来源指向**可与模型叙述分离核验**的对象（制品 digest 可重算 / 外部源可指认）；
       反证：把该来源摘除后同一 run 的 `EVIDENCE_COVERAGE` **必须判拒**（先绿后红，随后复原）。
       **不得**用「计数 ≥ 1」当作证据真实性的替代判据。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **真实协议的可用性**：确定「真实 run 用哪份协议」。现状（G-5）：真实 run 用的是
@@ -150,8 +150,10 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260921-127-real-deliverable-contract.md
   - .cursor/plans/tasks/PLAN-20260921-128-evidence-chain-truthfulness.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-127-real-deliverable-contract.md
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-128-evidence-chain-truthfulness.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260921-100-deliverable-name-declaration-and-gate.md
+  - .cursor/memory/entries/MEM-20260921-101-evidence-source-property-and-paired-landing.md
 ---
 
 # GOAL-20260921-010 — 真实交付物契约（自迭代循环）
@@ -175,7 +177,7 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 | EC | 标准 | 验证命令／证据来源 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 真实交付物契约（主干）：(i) 模型按结构化 schema 产出，或 (ii) adapter 侧受控/声明化/可审计的「事实名 → 合约名」映射；**一次真实 run 验收门 PASS 且终态恰为 `SUCCEEDED`**；反证：删掉映射/契约 ⇒ 回到 REJECT | live 判据 **PASS（非 skip）** + run canonical 终态恰为 `SUCCEEDED` + 验收门 `PASS`（逐条 criterion reason 登记）；反证成对（先红后绿） | **PASS**（取 **(ii)**；run `f1710564-855c-43f7-9fdd-84966a878cf9`，终态**恰为 `SUCCEEDED`**、`failures` 为空、两件制品都按 `:analysis_report` 登记；反证**成对且被压过四次**；`RECHECK-20260921-127` = PASS_WITH_WARNINGS，W-1 登记「门 PASS 是代码路径推出的蕴含关系、未逐条读回 criterion 文本」） |
-| EC-02 | 证据链真实性：`EVIDENCE_COVERAGE ≥ 1` 由**真实可查的来源**（检索/制品/外部源）满足，**不得由模型自述充当**；判据：来源记录可读 + 反证（去掉来源 ⇒ 判拒） | `GET /runs/{id}/evidence` 中满足覆盖的那条 `SourceRecord` 可读且指向非模型自述对象；反证先绿后红再复原 | PENDING |
+| EC-02 | 证据链真实性：`EVIDENCE_COVERAGE ≥ 1` 由**真实可查的来源**（检索/制品/外部源）满足，**不得由模型自述充当**；判据：来源记录可读 + 反证（去掉来源 ⇒ 判拒） | `GET /runs/{id}/evidence` 中满足覆盖的那条 `SourceRecord` 可读且指向非模型自述对象；反证先绿后红再复原 | **PASS**（判别性质 = 「来源的对象**不是**本任务自产的 artifact」，落在编排、不碰 Domain/门；真跑 run `a2a1bfbf-fea1-44a5-bfd0-ac3396d5d054` **`SUCCEEDED`**，读面 4 条来源 = 2 自述 `GENERATED` + **2 声明输入 `USER_PROVIDED`**（`created_by=composition-root`、digest 可重算）；**反证三次被压过**（去声明/去种入/撤收紧）；`RECHECK-20260921-128` = PASS_WITH_WARNINGS，W-1 登记「判据面唯一改动 = `sort_analysis_review` 新增 `ARTIFACT_EXISTS`」、W-2 登记「live 调用 4 次超最小必要」） |
 | EC-03 | 真实协议的可用性：确定真实 run 用哪份协议；若 demo 协议（注释明写「受控 Fake agent loop」）不适用，则新增/选定真实协议并登记；判据含**协议 id 出现在 run 的 canonical 事实里** | run 的 canonical 事实中协议标识 == 所选真实协议 id；反证：改回 demo 协议 ⇒ 判据红 | PENDING |
 | EC-04 | 漂移与指纹样本补全（承 009 EC-03/EC-05 缺口）：真实 run 的运行时指纹（返回 model 名/端点头/probe 版本/兼容性结论）**落读面**；「模型不存在」补 **provider 侧真实样本** | 读面可取四要素 + 口径停在 `REPEATABLE_CONFIGURATION`；provider 侧样本存在**或**如实登记未实测与代价 | PENDING |
 | EC-05 | 出站结构判据（承 `RECHECK-121` W-7）：把「默认门离线」从约定变成**结构判据**——默认路径/测试出现真实出站即红，**不依赖人工观察** | 结构判据存在且**被压过**（构造一次真实出站 ⇒ RED；复原 ⇒ GREEN） | PENDING |
@@ -403,7 +405,7 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `17cef9b` | 治理 `validate.py` 绿；`validate_bundle` 绿；DOCS-CHECK `6 deterministic checks` 绿；framework **8/8** | 见下方 CI 台账 | — | EC-01…EC-06 全 PENDING；机制已定位（G-3 键名一处可判事实 / G-4 证据由模型自述满足）⇒ EC-01 是**可落地**的工程任务 | cycle 1 = derive **EC-01** 子 PLAN（真实交付物契约） |
 | 1 | PLAN-20260921-127（EC-01） | `c6dbed5`（derive + ALL_PLAN）、`577eaa2`（WP1：ADR-0031 D2 定向记录）、`00368ab`（WP2+WP4：声明化命名 + 离线链双分支 + 文档同源） | **离线链双分支实跑**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` ⇒ **3 passed / 1 skipped**（live 分支如实 skip）——**声明对齐 ⇒ 门 PASS ⇒ run `SUCCEEDED`**（GOAL-009 时期该路径的终点是 `FAILED`）；与 ADR 结构判据同跑 **13 passed / 1 skipped**；**反证两次被压过**（①去掉声明化 ⇒ PASS 分支 RED、制品回落 `:session_message` + `rejected by acceptance gate`；②去掉「不猜」边界 ⇒ REJECT 分支 RED），两次均复原、`git diff` 只剩意图内改动；**ADR-0031 结构判据未被修改且仍绿**（10 passed，`git diff` 对该文件为空）；受影响门禁 `tests/architecture tests/tooling tests/e2e/test_ec03_*` ⇒ **1235 passed / 1 skipped**；`DOCS-CHECK PASS: 6 deterministic checks`；治理 `validate.py` 绿；**全量 m0（CI 同形配置：测试 DSN pin + `LLM_MAIN_KEY=""`）⇒ `PASS: profile=m0; 23 deterministic checks`（4261 passed / 13 skipped / FAIL 0，526.66s）** | **run 35562941912 = success**（`00368ab`；六 job 全 **success**：`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`，逐 job 实查）；建档推送 `17cef9b` → **run 35560783476 = success**（六 job 全 success；上一条已收口） | — （**未改任何门禁/断言强度**：ADR 结构判据零改动仍绿；离线链是**双分支**——判据**只增不减**，GOAL-009 的 REJECT 证据被保留为反证分支） | **EC-01 PASS（cycle 1 收口）**。**本 cycle 消灭的缺口**：GOAL-009 那条「真实 run 必然被判拒」的宿命——**真实 run 第一次走到 `SUCCEEDED`**（run `f1710564-855c-43f7-9fdd-84966a878cf9`，`failures` 为空，制品按合约声明的 `:analysis_report` 登记），且**判据没有放宽**（`acceptance.py` / 合约 / ADR 判据在整个 PLAN 范围 `git diff` 均为空，可复查）。**残余如实登记**（`RECHECK-127` W-1…W-8）：**W-4 = EC-02 未被触及**——这次成功 run 的证据链**仍由模型自述满足**（`EVIDENCE_COVERAGE` 数的就是交付物自己，`TrustLabel.GENERATED`）；W-1 门 PASS 是**代码路径推出的蕴含关系**而非直读 criterion 文本；W-2 live 调用 **2 次**（第 2 次为取回 run id）；W-5 (i) 路径未验证；W-6 前端读面仍无判据 | cycle 2 = derive **EC-02**（证据链真实性：`EVIDENCE_COVERAGE` 由**真实可查来源**满足，不得由模型自述充当；反证：去掉来源 ⇒ 判拒） |
-| 2 | PLAN-20260921-128（EC-02） | `edd9134`（derive + ALL_PLAN）、`8d3afd4`（WP1：证据面审计 + 判别性质定案） | **WP1 已完成（只读代码 + 治理校验，未发起任何调用）**：证据面审计得 E-1…E-10；治理 `validate.py` ⇒ `PASS: Cursor framework 0.4.0 validated; 18 warning(s)`（warning 全是 stale knowledge source，非本 PLAN 引入） | `edd9134` ⇒ **M0 run 35569619396 = success**（六 job 全 success）+ CodeQL 35569618570 = success（3/3）；`8d3afd4` ⇒ **M0 run 35571214930 = success**（六 job 全 success）+ CodeQL 35571214533 = success（3/3）；**均逐 job 实查** | — | EC-02 执行中；**WP1 已定案**：判别性质 = 「来源的对象**不是**本任务自己产出的 artifact」；落在**编排**（门只吃整数，E-6 ⇒ 不碰 Domain、不碰 gate）；主来源类 = **契约声明的输入制品**，工具结果**只接链**；**被拒来源类**点名四类（manifest / 协议 / 端点事实 / **惰性工具的 `"inert"` 观测**，E-10）。**爆破面实测比预估小**：`minimum_sources: 10` 全仓只在**一个 domain 单测**里出现、**没有任何 run 路径行使过它**；真正会改判的只有两条 min-1 路径（`console_demo_deliverable` / `sort_analysis_review`）⇒ **硬约束：收紧与给来源必须同一提交成对落地**，否则会打回 EC-01 刚达成的 `SUCCEEDED`。**WP2 已写明跨层方案**（WP2a 声明面用既有无消费者的 `ProtocolPhase.inputs`；WP2b 供应面按 manifest 的「不伪填充」纪律；WP2c 登记面；WP2d 计数面；WP2e 成对落地），**未开工**——起手前须先确认输入制品与任务产出**不共用 id 命名空间** | cycle 2 续：**WP2**（按 WP2a…WP2e 接上来源 + 同一提交收紧计数）→ WP3（判据 + 被压过）→ WP4（真实 run + 反证）→ WP5（门禁 + RECHECK + 收口） |
+| 2 | PLAN-20260921-128（EC-02） | `edd9134`（derive + ALL_PLAN）、`8d3afd4`（WP1：证据面审计 + 判别性质定案）、本 cycle 收口提交（WP2–WP5 + EC-02 置 PASS；**见下方 CI 台账尾巴**） | **WP2–WP5 完成，成对落地 + 三次压制 + 真跑 + 全量门**：`python/tests` ⇒ **4278 passed / 15 skipped / 0 failed（513.38s）**；**全量 m0（`--keep-going`，CI 同形配置）⇒ `PASS: profile=m0; 23 deterministic checks`（exit 0）**；`typescript` 组 ⇒ `PASS: profile=typescript; 9 deterministic checks`；治理 `validate.py` 绿（先在它上面抓到三处真漂移并修掉）；**定向**：`tests/application/evidence` + `tests/e2e` + `tests/integration` + `tests/tooling` ⇒ **1271 passed / 6 skipped**。**反证三次压制全先红后绿**（①去协议声明 ⇒ 同源判据 + vertical slice 6 用例红；②去种入 ⇒ vertical slice 6 用例红；③撤收紧 ⇒ `test_provenance.py` 3 用例红），另**压制 ④**（摘掉 PG 组合根的种入 ⇒ 新结构判据红）。**真跑**：run `a2a1bfbf-fea1-44a5-bfd0-ac3396d5d054` **`SUCCEEDED`**、`failures` 为空、读面 4 条来源（2 自述 `GENERATED` + **2 声明输入 `USER_PROVIDED`**），被引用对象 `created_by=composition-root` | `edd9134` ⇒ **M0 run 35569619396 = success** + CodeQL 35569618570 = success；`8d3afd4` ⇒ **M0 run 35571214930 = success** + CodeQL 35571214533 = success（均逐 job 实查）；本 cycle 收口提交的 run **见回合汇报**（台账尾巴口径） | **未改门禁/断言强度**：`packages/domain/acceptance.py` 与 `examples/contracts/task_contracts.yaml` 的 `minimum_sources` **零改动**；唯一判据面改动是**收紧**（`sort_analysis_review` 补 `ARTIFACT_EXISTS`，见 W-1）。**本 cycle 自己造成并修好两条回归**（两条都是**全量 m0 抓出来的**）：**R-1** PG 组合根漏种声明输入 ⇒ `test_m13_pg_run_e2e` 的 run `FAILED`（修：PG 组合根同职责种入 + **新增结构判据**把「控制面组合根集合」钉住）；**R-2** 前端单测夹具未跟上 `EvidenceDto` 三个新字段 ⇒ `typescript/typecheck` 红（修：夹具补齐，取值与产品语义同形） | EC-02 PASS。**如实登记的射程边界**（`RECHECK-128` W-1…W-11）：**W-1** 判据面唯一改动（`ARTIFACT_EXISTS`）须人工复核；**W-2** live 调用 **4 次**，超「最小必要」（3 次是判据/读面胶水缺陷）；**W-3** 声明输入只证 **grounding**、**不**证「真的读过」；**W-6** 三个 DTO 字段是本次**新增**的读面（此前 `SourceRecord` 在 `services/` 零命中，判据用语当时**无路可走**）；**W-7** `domain_discovery` 的 `min 10` **仍未有 run 路径行使过**；**W-8** `self_artifact_ids` 漏传会退化成旧口径；**W-9** 拒绝落在**登记期**而非 WP2b 写的 **preflight**（实质相同，诊断更钝）；**W-11** 首次本地 m0 漏 `--keep-going` 导致只跑 6/23 | cycle 3 = derive **EC-03**（真实协议的可用性：demo 协议头部注释**自称**「受控 Fake agent loop…**不冒充真实研究执行**」，其语义对真实执行体不适用 ⇒ 选定/新增一份真实协议并登记，判据要求**协议 id 出现在 run 的 canonical 事实里**） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -520,3 +522,37 @@ live 证据只在本地产生并落 RECHECK。
   与两个测试夹具，并要求 WP1 补全逐项清单（AC-5）。
   **与 EC-01 的边界写死**：交付物 artifact **仍然是模型自述**——名字换成合约名**不**使它成为来源；
   这正是 `RECHECK-127` **W-4** 点名未解决的缺口。
+
+- 2026-09-21 cycle 2 执行 + 收口（`driver=client-goal / owner=root-agent`）：**WP2–WP5 完成**，
+  **EC-02 置 PASS**，`PLAN-20260921-128` 置 **DONE**，`RECHECK-20260921-128` =
+  **PASS_WITH_WARNINGS**，沉淀 `MEM-20260921-101`。
+  **本轮最要紧的事实：证据覆盖第一次由「非模型自述」的对象满足**——判别性质写成
+  「一条 source 计入覆盖，**当且仅当**它的对象**不是**本任务自己产出的 artifact」
+  （`artifact_id ∉ self_artifact_ids`，**集合成员判定**而非 id 前缀启发式）；来源是
+  **契约声明的输入制品**：组合根把仓库真文件字节内容寻址地种入 store
+  （`created_by=composition-root`、`mark(VERIFIED)`），登记成 `trust_label=USER_PROVIDED`
+  的 `SourceRecord` + 一条指向**输入制品**的 `Evidence`。
+  **门与 Domain 零改动**（`acceptance.py` 只吃整数，E-6）⇒ **不触 Canonical State 边界**。
+  **真跑**：run `a2a1bfbf-fea1-44a5-bfd0-ac3396d5d054` **`SUCCEEDED`**、`failures` 为空；
+  `GET /runs/{id}/evidence` 给出 **4** 条来源 = 2 条自述（`GENERATED`）+
+  **2 条 `input-corpus:console_demo_v1`（`USER_PROVIDED`，`created_by=composition-root`，
+  digest 可重算）**；样本 `scratch/ec02-live/ec02-live-source.json`。
+  **成对落地**：收紧（`evidence_source_count` 只数非自身来源）与给来源**同一提交**——
+  这是 WP1 写死的硬约束，否则会打回 EC-01 刚达成的 `SUCCEEDED`。
+  **反证三次压制全先红后绿**（去协议声明 / 去种入 / 撤收紧），另**压制 ④** 钉住新结构判据。
+  **如实登记两条自造回归（都是全量 m0 抓出来的，不是推断）**：**R-1** 共享协议的 `inputs:`
+  声明作用于**所有**组合根，PG 组合根漏种 ⇒ `test_m13_pg_run_e2e` 的 run `FAILED`
+  （`manifest_digest: null`，死在执行前）；修法是「PG 组合根同职责种入」**加上**
+  一条**从文件本身推出**控制面组合根集合的**结构判据**（新增根会变红）。
+  **R-2** 前端单测夹具未跟上 `EvidenceDto` 的三个新字段 ⇒ `typescript/typecheck` 红；
+  夹具补齐（取值与产品语义同形）。**两条都说明：定向套件全绿不等于没有回归，全量 m0 才是门。**
+  **本地门禁**：全量 m0（**`--keep-going`**，CI 同形配置）⇒
+  **`PASS: profile=m0; 23 deterministic checks`（`python/tests` 4278 passed / 15 skipped / 0 failed）**；
+  `typescript` 组 9/9；治理 `validate.py` 绿（先在它上面抓到 `ALL_PLAN` 状态投影与
+  `MEM-20260921-101` 章节缺失三处真漂移并逐条修掉）。
+  **凭据纪律**：被跟踪文件里含凭据值的个数 = **0**；`.env` 不含 `RESEARCHOS_AGENT_RUNTIME`；
+  live 开关只作**单条命令内联前缀**，跑后未留在环境或 `.env`。
+  **如实登记的调用次数 = 4**（超「最小必要」；3 次是判据/读面胶水缺陷，非端点缺陷）。
+  **未改任何门禁断言/未放宽验收门、未新增依赖、未改 pin、未改默认 runtime、未把凭据写进 CI。**
+  **登记为残余**：`domain_discovery` 的 `min 10` 仍未有 run 路径行使过；`inputs` 只表达
+  **外部供应**的输入、不表达 phase 间引用；「真的读过」只有工具观测能证。

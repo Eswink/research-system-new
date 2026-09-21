@@ -47,6 +47,8 @@ from packages.domain.roles import AgentBinding, AgentSpec, RoleDefinition
 from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import AcceptanceCriterion, ResearchTask, TaskContract
 from packages.domain.workspace import Workspace
+from services.api.demo import DECLARED_INPUTS as DECLARED_INPUT_IDS
+from tests.e2e.scenario import seed_run_inputs
 
 _PLAN_ID = ID("3f1c6a8e-9b2d-4f3a-8c5e-1a2b3c4d5e6f")
 _RUN_ID = ID("7a2b3c4d-5e6f-4a5b-9c0d-1e2f3a4b5c6d")
@@ -96,6 +98,10 @@ def _spec_context() -> SessionSpecContext:
             model_binding=AgentBinding(mode=ModelBindingMode.EXPLICIT_MODEL, value="model-1"),
         ),
         frozen_manifest_digest="manifest-digest",
+        # GOAL-010 EC-02：experiment 任务的「非自身来源」同样是**声明的输入制品**——
+        # 它自己的 experiment artifact 属于自产，覆盖判据不认；没有这条声明，
+        # `EVIDENCE_COVERAGE: 1` 会如实判拒（本用例的合约就声明了它）。
+        declared_input_artifacts=tuple(DECLARED_INPUT_IDS),
     )
 
 
@@ -174,6 +180,7 @@ def _make_phase_deps(
     PhaseContext,
 ]:
     artifacts = FakeArtifactStore()
+    seed_run_inputs(artifacts)  # GOAL-010 EC-02：协议声明的输入须在库（同生产组合根）
     ledger = FakeEvidenceLedger()
     memory_store, memory_gate = _make_memory_gate(ledger)
     exp_deps = _make_experiment_deps(tmp_path, artifacts, ledger)

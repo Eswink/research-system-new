@@ -40,7 +40,7 @@ def promote_registered_claims(
     gate: GateOutcome,
 ) -> None:
     """gate PASS 后把 ledger 中已登记（合并 relations）的 Claim 升级。"""
-    if not verify_claim_with_evidence(gate.evaluations, registration.evidence_source_count):
+    if not verify_claim_with_evidence(gate.evaluations, len(registration.evidence)):
         return
     seen: set[str] = set()
     for claim in registration.claims:

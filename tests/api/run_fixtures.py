@@ -128,6 +128,11 @@ def _run_ready_context() -> _RunReadyContext:
         artifacts=FakeArtifactStore(),
         ledger=FakeEvidenceLedger(),
     )
+    # GOAL-010 EC-02：console_demo 协议**声明**的输入制品必须真的在库里，
+    # 否则 `EVIDENCE_COVERAGE`（收紧后只认非模型自述的来源）会如实判拒。
+    from services.api.demo import seed_declared_inputs
+
+    seed_declared_inputs(shared.artifacts)
     budget = FakeBudgetLedger()
     runs = _build_orchestration(connection, events, pricing_store, shared, budget)
     return _RunReadyContext(

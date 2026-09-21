@@ -230,6 +230,9 @@ class CompiledPhase:
     depends_on: tuple[str, ...] = ()
     task_contract_refs: tuple[str, ...] = ()
     timeout_seconds: int | None = None
+    # GOAL-010 EC-02：编译期**原样携带** phase 声明的输入制品 id（`ProtocolPhase.inputs`）。
+    # 编译**不**解析它们——解析要 ArtifactStore，属执行期；这里只保证声明不在这步丢掉。
+    inputs: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

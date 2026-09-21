@@ -34,6 +34,10 @@ secrets/
 .idea/
 .vscode/
 /artifacts/
+# content-addressed artifact store of an in-memory composition
+# (`services/api/assembly.py` resolves it next to the DB, i.e. the repo root
+# when the DB is `:memory:`); runtime bytes, never source.
+/artifact-blobs/
 # local scratch space: ad-hoc debug scripts and throwaway databases.
 # Audit probes cited by rechecks live in tools/probes/ and are tracked.
 scratch/

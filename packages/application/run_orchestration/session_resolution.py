@@ -97,6 +97,10 @@ def resolve_sessions(
                     endpoint=endpoint,
                     model=model,
                     phase_id=phase.id,
+                    # GOAL-010 EC-02：phase **声明**的输入制品随 spec 走到结果注册处，
+                    # 在那里成为「非模型自述」的来源。声明在协议里（产品面），
+                    # 校验在注册处（对象必须在库且内容可重算）——本层只搬运、不解释。
+                    declared_input_artifacts=tuple(phase.inputs),
                 ),
             ))
     return tuple(resolved)

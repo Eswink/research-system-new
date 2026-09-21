@@ -13,7 +13,7 @@ from fastapi import APIRouter, Request
 from packages.application.ports import EvidenceLedger
 from packages.application.ports.budget_ledger import LedgerSnapshot
 from packages.domain.budget import LedgerCostStatus, LedgerQuantityStatus, UsageLedgerEntry
-from packages.domain.evidence import Claim, Evidence, EvidenceRelation
+from packages.domain.evidence import Claim, Evidence, EvidenceRelation, SourceRecord
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.inspection import (
@@ -38,7 +38,16 @@ def _ledger_of(deps: ApiDeps) -> EvidenceLedger:
     return deps.ledger
 
 
-def _evidence_dto(evidence: Evidence) -> EvidenceDto:
+def _source_of(ledger: EvidenceLedger, evidence: Evidence) -> SourceRecord | None:
+    """取该 evidence 的来源记录；取不到返 None（**不**伪填充）。"""
+    try:
+        return ledger.get_source(evidence.source_ref)
+    except Exception:  # noqa: BLE001 — 读面不得因为一条来源缺失而整体 5xx
+        return None
+
+
+def _evidence_dto(evidence: Evidence, ledger: EvidenceLedger) -> EvidenceDto:
+    source = _source_of(ledger, evidence)
     return EvidenceDto(
         id=evidence.id,
         source_ref=evidence.source_ref,
@@ -52,6 +61,9 @@ def _evidence_dto(evidence: Evidence) -> EvidenceDto:
         workspace_snapshot_after=evidence.workspace_snapshot_after,
         model_refs=list(evidence.model_refs),
         manifest_digest=evidence.manifest_digest,
+        source_origin=source.origin if source is not None else None,
+        source_trust_label=source.trust_label.value if source is not None else None,
+        source_access_time=str(source.access_time) if source is not None else None,
     )
 
 
@@ -112,7 +124,7 @@ async def run_evidence(run_id: str, request: Request) -> list[EvidenceDto]:
     deps: ApiDeps = get_deps(request)
     ledger = _ledger_of(deps)
     get_run_or_error(deps, run_id)
-    return [_evidence_dto(item) for item in evidence_of_run(ledger, run_id)]
+    return [_evidence_dto(item, ledger) for item in evidence_of_run(ledger, run_id)]
 
 
 @router.get("/runs/{run_id}/claims", response_model=ClaimMapDto)
@@ -274,7 +286,7 @@ async def run_export(run_id: str, request: Request) -> ExportBundleDto:
         run_id=run_id,
         run_state=run.state,
         manifest_digest=str(run.manifest_digest) if run.manifest_digest else None,
-        evidence=[_evidence_dto(item) for item in evidence_of_run(ledger, run_id)],
+        evidence=[_evidence_dto(item, ledger) for item in evidence_of_run(ledger, run_id)],
         claims=claims.claims,
         usage=usage,
         exported_from="persisted-state",

@@ -1,0 +1,27 @@
+{
+  "corpus_id": "console_demo_corpus_v1",
+  "title": "Console demo declared input corpus",
+  "purpose": "The declared input material for the console demo protocol. It is the run's grounding object: the phase declares `inputs: [input-corpus:console_demo_v1]`, the composition root stores exactly these bytes under that artifact id, and the run chain registers the object as a source whose digest is recomputable from this file (GOAL-010 EC-02).",
+  "scope": [
+    "This corpus describes the controlled demo exercise itself, not a research subject.",
+    "The demo protocol is a controlled Fake agent loop; the browser UI discloses that fact and does not claim real research execution.",
+    "What this object proves: the deliverable has a checkable grounding relation to a declared input. What it does not prove: that the session actually read it -- only a tool observation could show that."
+  ],
+  "documents": [
+    {
+      "id": "doc-1",
+      "title": "Demo protocol shape",
+      "text": "Two linear phases, discovery then review. Both phases carry the console_demo_deliverable contract, require the artifact.read capability, and declare this corpus as their input."
+    },
+    {
+      "id": "doc-2",
+      "title": "Acceptance criteria in force",
+      "text": "ARTIFACT_EXISTS names analysis_report literally, and EVIDENCE_COVERAGE requires at least one source that is not the task's own output."
+    },
+    {
+      "id": "doc-3",
+      "title": "Evidence rule",
+      "text": "A source counts toward coverage only when its object was not produced by the agent under evaluation. Model self-report is therefore excluded by construction, not by convention."
+    }
+  ]
+}

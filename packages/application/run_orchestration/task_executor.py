@@ -85,6 +85,13 @@ class SessionSpecContext:
     # M15 债务清偿:phase 归属(观测 PHASE span 分组/父子链接用);缺省 "" 表示
     # 来源不携带 phase 信息(如 resume 重建路径)——此时 TASK 落回 RUN 父
     phase_id: str = ""
+    # GOAL-010 EC-02：本 phase **声明的输入制品 id**（源头是 `ProtocolPhase.inputs`，
+    # 一个此前无消费者的槽位）。它随 spec 走到会话结果注册处，在那里被登记成
+    # 「**非**模型自述」的来源：内容由 ArtifactStore 复核、digest 可重算。
+    # 缺省空 = 该 phase 未声明输入 ⇒ 不产生来源 ⇒ `EVIDENCE_COVERAGE` **不会**被满足
+    # （这是如实的失败，不是缺陷）。命名空间与模型产出**不相交**：模型产出恒为
+    # `{task_id}:{name}`，工具结果是 `tool-result:...`，本处由组合根以独立前缀种入。
+    declared_input_artifacts: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)
