@@ -21,6 +21,10 @@ _ROOT = Path(__file__).resolve().parents[2]
 DECLARED_INPUTS: dict[str, str] = {
     "input-corpus:console_demo_v1": "examples/inputs/console-demo-corpus-v1.json",
     "input-corpus:sort_analysis_v1": "examples/inputs/sort-analysis-corpus-v1.json",
+    # GOAL-010 EC-03：真实协议 `real_research_task_v1.yaml` 的声明输入。
+    # 前缀是 `input-brief:` 而不是 `input-corpus:`——内容是**操作者提供的任务简报**，
+    # 不是检索结果；把简报冒充成文献来源才是假的（真实检索尚未接线，EC-02 残余 W-7）。
+    "input-brief:real_research_v1": "examples/inputs/real-research-brief-v1.json",
 }
 
 

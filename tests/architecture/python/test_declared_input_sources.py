@@ -26,6 +26,8 @@ _ROOT = Path(__file__).resolve().parents[3]
 _PROTOCOLS = {
     "console_demo_research_v1.yaml": {"input-corpus:console_demo_v1"},
     "sort_analysis_v1.yaml": {"input-corpus:sort_analysis_v1"},
+    # GOAL-010 EC-03：真实协议（真实执行体可如实执行）声明操作者简报作为输入。
+    "real_research_task_v1.yaml": {"input-brief:real_research_v1"},
 }
 
 

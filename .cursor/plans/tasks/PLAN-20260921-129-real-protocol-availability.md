@@ -80,8 +80,26 @@ memory_entries: []
       在真实 policy 下**连 preflight 都过不去**。⇒ 在册 6 份协议里**没有一份**同时满足
       「语义对真实执行体成立」与「合约本轮可达」。**(B) 的规格、四条护栏、代价、诚实边界已写死在
       「WP1 定案」节**（WP2 按规格落地）。
-- [ ] WP2 **按定案落地**（协议文件 / 登记面 / 需要的 contract 与声明输入），
-      基线耦合面**同一提交**处理（release asset + golden 计划 + 设计基线按配方重生成）。
+- [x] WP2 **按定案落地**（**已完成**）。逐条对齐「(B) 的规格」：协议
+      `examples/protocols/real_research_task_v1.yaml`（id `real_research_task_v1_0_1`，
+      1 phase `analysis` / `single_agent` / `domain_researcher` / `artifact.read` /
+      `task_contract: real_research_deliverable` / `inputs: [input-brief:real_research_v1]`，
+      头部写明真实执行体语义**与受控范围**）；合约 `real_research_deliverable`
+      （`ARTIFACT_EXISTS: analysis_report` 恰一个 + `EVIDENCE_COVERAGE minimum_sources: 1`，
+      **不含** `SCHEMA_VALID`／`TEST_PASSES`）；声明输入
+      `examples/inputs/real-research-brief-v1.json` + `services/api/demo.py::DECLARED_INPUTS`
+      同一 id，同源结构判据的协议映射同步；登记面 `services/api/routers/protocol_drafts.py`
+      新增 `real-research-task` 模板（**不动** `project.yaml` 的 `protocol:` 字段 ⇒ 不触发设计基线重生成）。
+      **规格外的一项改动，如实登记**：合约 schema 要求 `output_schema` 必填 ⇒ 新增
+      `schemas/real_research_deliverable_v1.schema.json`（信封字段取自 adapter 实现，不编形状），
+      并在 `validate_bundle.py` 的 JSON Schema 注册表加**一行**。这是仓库**既有**的新 schema 维护路径
+      （先例：提交 `4156238` 在同一提交里新增 `export_bundle_v1`/`reproducibility_audit_v1`
+      两个文件**及其注册行**）。**它不是放宽**：注册表仍是双向一致检查，且**已按压**
+      （删掉该行 ⇒ 该检查红、报出同一条不一致；复原 ⇒ 复绿），`git diff` 显示**只加一行**、
+      校验逻辑一字未改。两个被否的备选：(d) 只声明名字不建文件（留下悬空声明）、
+      (a) 复用语义不符的**已注册**名（正是 EC-01 抓的那类「名不副实」）。
+      **实测**：产品路径编译 PASS（1 条 INFO `DAG_ORPHAN_PHASE`——单 phase 无后继，如实）；
+      模板面 4 项含 `real-research-task`；声明输入已 seed（装配内 3 件制品、mark 状态可重入）。
 - [ ] WP3 **canonical 判据 + 反证**：判据钉住「run 的 canonical 协议标识 == 所选 id」；
       **被压过**（改回 demo ⇒ 红）。
 - [ ] WP4 **真实 run**（最小必要次数）：真实 runtime 下用所选协议起 run；终态如实落 RECHECK。
@@ -285,3 +303,14 @@ EC-03 的性质又不同：**它是一个「选择」，而选择的代价分布
   合约恰一个声明产物 + 覆盖 ≥ 1 / 声明输入 + 登记同源），并配**四条护栏**
   （防「换名字的 demo」、防删空能力、防空壳判据、防声称做不到的语义）。
   **本轮未发起任何真实调用、未改任何产品代码、未改门禁/断言、未改 pin。**
+
+- 2026-09-21 WP2 **落地完成**（产品面改动 + 登记面 + 一处**已按压**的注册表行）。
+  落地面逐条对齐 (B) 的规格，**未动** `project.yaml`（所以设计基线不重生成），
+  **未改任何既有合约/判据/能力集**（新合约是新增，不是改旧）。
+  **规格外新增的 schema 文件与注册表行**是本轮唯一触及受治理文件（`.cursor/skills/.../validate_bundle.py`）
+  的改动：一行注册表条目，跟仓库自己的维护路径（先例 `4156238`），并已**反证按压**
+  （删行 ⇒ 红、复原 ⇒ 绿）。**第一次 m0 全量因此红**（`framework/validate_bundle`：
+  注册表不一致 + `additionalProperties: true`），两条都已按其**规格**修好：
+  注册表补登；schema 自身改为 `additionalProperties: false` 并列全 adapter 恒发的 7 个键
+  （**没有**放宽 `check_object_boundaries`——它一字未改，且对**这一份文件**刚红过）。
+  **本轮仍未发起任何真实调用**；真实 run 在 WP4。

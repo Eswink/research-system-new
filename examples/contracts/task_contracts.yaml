@@ -82,3 +82,22 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  real_research_deliverable:
+    version: 1.0.0
+    purpose: >-
+      GOAL-010 EC-03：真实研究任务的交付物契约。**恰一个**声明产物（`ARTIFACT_EXISTS` 只有一条）
+      ——这是 EC-01 的机制要求：声明唯一时 adapter 才把会话产出登记成合约声明的名字，
+      多产物会回落事实名并判拒。**不加** `SCHEMA_VALID` / `TEST_PASSES`：今天诚实做不到的判据
+      写进来只会让协议不可用（那是另一件事，不是「更严格」）。
+    required_capabilities:
+      - artifact.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: analysis_report
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

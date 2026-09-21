@@ -1,0 +1,40 @@
+id: real_research_task_v1_0_1
+version: 0.4.0
+
+# 真实研究任务协议（GOAL-010 EC-03）：**一份真实执行体可以如实执行的协议**。
+#
+# 为什么要有这一份：真实 run 此前跑的是 `console_demo_research_v1.yaml`，而那份文件
+# 头部**自述**「受控 **Fake** agent loop 快速终态…**不冒充真实研究执行**」——
+# 用真实执行体去跑一份自称不是真实研究的协议，是语义错配。本协议把语义写对：
+#
+#   * **执行体性质是 runtime 的属性，不是协议的自述**。在真实 runtime 下，本协议的
+#     phase 由**真实模型会话**执行，交付物是它真实产出的文本；在 Fake runtime 下，
+#     应由 UI 如实披露「受控 Fake Runtime」——本协议**不替** runtime 宣称任何东西。
+#   * 因此本协议**不需要**「受控 Fake」这类限定语，也**不**声称比执行体更多的东西。
+#
+# 受控范围（写明，不夸大也不缩小）：**1 个 phase、1 件交付物、1 份声明输入**。
+# 它**不代表**完整研究计划：
+#   * 多阶段 / 并行的真实研究今天**不可执行**——`phase.strategy`
+#     （`parallel_agents` / `map_reduce` / `population_search` / `iterative_optimizer`）
+#     在产品侧**只有编译器一个消费者**（`protocol_compile/compiler.py` 透传），
+#     编排层不读它 ⇒ **phase 数 = 会话数**，多阶段只会变成更多串行会话，不是并行。
+#   * 真实**检索**来源尚未接线（需把 `literature.search` 接到真实 provider、
+#     并把 `register_tool_evidence` 接进 run 链；GOAL-010 EC-02 登记的残余 W-7）。
+# 需要完整研究计划时应当新立协议并先解决上面两条，**不要**在协议里写出系统做不到的语义。
+#
+# `inputs`（GOAL-010 EC-02 的机制）：本 phase **声明**它读哪份输入制品。声明的输入会在
+# 会话结果注册处被登记为**非模型自述**的来源（`TrustLabel.USER_PROVIDED`，内容可重算、
+# `created_by=composition-root`），`EVIDENCE_COVERAGE` 正是由它满足；取不到该对象即
+# 点名失败（fail-closed，不降级）。**诚实边界**：它证明的是「交付物与声明输入之间有
+# **可核验的 grounding 关系**」，**不**证明会话真的读过它——后者只有工具观测能证。
+
+phases:
+  - id: analysis
+    name: Real Research Analysis
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+    task_contract: real_research_deliverable
+    inputs: [input-brief:real_research_v1]

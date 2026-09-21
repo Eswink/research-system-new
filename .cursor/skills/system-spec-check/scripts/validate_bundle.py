@@ -739,6 +739,7 @@ def check_json_schemas() -> None:
         "probe-result.schema.json",
         "policy.schema.json",
         "protocol.schema.json",
+        "real_research_deliverable_v1.schema.json",
         "reproducibility_audit_v1.schema.json",
         "role-definition.schema.json",
         "skill.schema.json",

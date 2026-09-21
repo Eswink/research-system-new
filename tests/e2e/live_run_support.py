@@ -19,6 +19,10 @@ from openhands.sdk.tool.schema import Action, Observation
 from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
 
 _PROTOCOL = "console_demo_research_v1.yaml"
+#: GOAL-010 EC-03：真实执行体应当跑的**真实协议**（语义对真实执行体成立；
+#: 头部不再自称「受控 Fake…不冒充真实研究执行」）。它的 id 必须出现在 run 的
+#: canonical 事实里——判据见 `tests/e2e/test_real_protocol_canonical_live.py`。
+REAL_PROTOCOL = "real_research_task_v1.yaml"
 _LIVE_CREDENTIAL_REF = "LLM_MAIN_KEY"
 
 
@@ -170,13 +174,18 @@ def openhands_deps(
     return deps
 
 
-def start_run(client: Any) -> dict[str, Any]:
-    """经既有 API 启动一次 run（幂等键每次新生成；协议用 console demo 那份）。"""
+def start_run(client: Any, protocol: str = _PROTOCOL) -> dict[str, Any]:
+    """经既有 API 启动一次 run（幂等键每次新生成）。
+
+    `protocol` 缺省仍是 demo 协议：EC-01/EC-02 的判据当初就是在它上面取样的，
+    这里**照原样**保留以便它们可复跑、不追溯改写既有证据。GOAL-010 EC-03 的判据
+    显式传 `REAL_PROTOCOL`，让「这一次真实 run 用的是哪份协议」在**调用点**可读。
+    """
     import uuid
 
     response = client.post(
         "/projects/example-project/runs",
-        json={"protocol_path": _PROTOCOL},
+        json={"protocol_path": protocol},
         headers={"Idempotency-Key": f"ec03-{uuid.uuid4()}"},
     )
     assert response.status_code == 200, response.text

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/real_research_deliverable_v1.schema.json",
+  "title": "RealResearchDeliverableV1",
+  "description": "GOAL-010 EC-03：真实研究任务交付物（合约 `real_research_deliverable` 声明 `output_schema`）的实际信封。字段取自 `adapters/openhands/runtime_adapter.py::_deliverable()` 真实登记的内容，不是编出来的形状。**诚实边界**：本 schema 只描述信封（内容 + 它是谁产出的）；交付物的**内容质量不被任何判据把守**——验收门只判 `ARTIFACT_EXISTS`（存在）与 `EVIDENCE_COVERAGE`（来源），这两条**都不读内容**。**耦合**：`required` 列全 adapter 恒发的 7 个键、`additionalProperties: false`，所以 adapter 增删信封字段时本文件必须同改——这条耦合没有任何门禁把守，只有这行字。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "content",
+    "message_count",
+    "conversation_id",
+    "session_id",
+    "fact_name",
+    "declared_artifact",
+    "contract_id"
+  ],
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "会话最后一条消息（已 redact + 截断，AGENTS §10 观测隐私）。交付物正文在这里。"
+    },
+    "message_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "该会话产生的消息条数（traceable 的最小统计量，不含正文以外的模型输入输出）。"
+    },
+    "conversation_id": {
+      "type": ["string", "null"]
+    },
+    "session_id": {
+      "type": ["string", "null"]
+    },
+    "fact_name": {
+      "type": "string",
+      "description": "未经合约声明时的事实名（`session_message`）——登记它是为了让「这个名字是谁声明的」在读面上可判。"
+    },
+    "declared_artifact": {
+      "type": ["string", "null"],
+      "description": "合约声明的 artifact 名；声明不唯一时为 null（adapter 只读声明、不发明映射）。"
+    },
+    "contract_id": {
+      "type": "string",
+      "description": "声明这个名字的合约 id。"
+    }
+  }
+}

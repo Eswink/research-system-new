@@ -52,6 +52,12 @@ _TEMPLATE_SOURCES = (
         "sort_analysis_v1.yaml",
     ),
     ("console-demo", "Console 演示研究", "M13 控制面演示协议", "console_demo_research_v1.yaml"),
+    (
+        "real-research-task",
+        "真实研究任务（单任务）",
+        "GOAL-010 EC-03：真实执行体可如实执行的真实协议",
+        "real_research_task_v1.yaml",
+    ),
     ("ai-ml-research", "AI/ML 研究模板", "多阶段研究协议骨架", "ai_ml_research_v0_4_0.yaml"),
     ("gpu-research", "GPU 研究模板", "M17 单卡 GPU 执行场景", "m17_gpu_research_v1.yaml"),
 )
