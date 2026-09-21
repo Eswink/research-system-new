@@ -68,10 +68,18 @@ memory_entries: []
 
 ## 实施清单
 
-- [ ] WP1 **协议候选与解析链实测 + 定案**（**承重墙，先审后改**）。把每个候选的
+- [x] WP1 **协议候选与解析链实测 + 定案**（**承重墙，先审后改**）。把每个候选的
       角色/能力/合约/preflight/会话成本**实测**完整，据此**二选一**：
       **(A) 对齐到已登记的真实协议**，或 **(B) 新增一份真实协议并登记**。
       产出：候选表（含代价）、定案与理由、回退路径、以及**不做**边界。
+      **已完成**：**取 (B)**。**(A) 的两个必答问题都已正面回答**（A1：10 条非自述来源
+      今天只有「声明输入」（否决——只有计数变真）与「工具结果」（无生产调用方 + live 工具惰性
+      ⇒ 需先做检索接线，属另立 cycle 的 W-7）两条路，**本轮答不了**；A2：phase 数 = 会话数
+      ⇒ 11 次真实会话，与「最小必要」纪律冲突）。**实测**补一条决定性事实：
+      `evidence.read` **未被 `policy.yaml` 授予**（`default_effect: DENY`）⇒ `sort_analysis_v1`
+      在真实 policy 下**连 preflight 都过不去**。⇒ 在册 6 份协议里**没有一份**同时满足
+      「语义对真实执行体成立」与「合约本轮可达」。**(B) 的规格、四条护栏、代价、诚实边界已写死在
+      「WP1 定案」节**（WP2 按规格落地）。
 - [ ] WP2 **按定案落地**（协议文件 / 登记面 / 需要的 contract 与声明输入），
       基线耦合面**同一提交**处理（release asset + golden 计划 + 设计基线按配方重生成）。
 - [ ] WP3 **canonical 判据 + 反证**：判据钉住「run 的 canonical 协议标识 == 所选 id」；
@@ -130,6 +138,91 @@ memory_entries: []
 **(A) 对齐到 `ai_ml_research_v0_4_0`** 若被选，则必须**同时**给出「10 条来源从哪来」与
 「11 个 phase 的会话预算」两个答案——否则它就是「把 run 挂在一条跑不动的协议上」。
 
+## WP1 定案（**已完成**：取 **(B) 新增一份真实协议并登记**）
+
+### 先回答 (A) 必须回答的两个问题（不回避、不用「以后再说」搪塞）
+
+**(A1) `domain_discovery` 的 `minimum_sources: 10`——那 10 条非模型自述来源从哪来？**
+今天只有两条机制能产生非自述来源，**两条都不通**：
+
+- **声明输入**（组合根种入的 `USER_PROVIDED` 制品）：要凑到 10 条就得**声明 10 份输入**。
+  那会让计数达标而**没有任何检索发生**——正是 EC-02 WP1 点名拒绝的形态
+  （「把数字抬上去，而不让 claim 更真」）。**否决。**
+- **工具结果**（`register_tool_evidence`）：EC-02 实测它**没有任何生产调用方**（E-4），
+  且 live 判据里的工具是**惰性**的（恒返回 `inert`，属 EC-02 WP1 的**被拒来源类**）。
+  要诚实满足它必须：把 `literature.search` 接到**真实检索 provider**
+  （`examples/config/tool_providers.yaml` 已登记 `eutils-2026-08-22`；`adapters/research_tools/ncbi.py`
+  会 `spill_large_result`）→ 把 `register_tool_evidence` **接进 run 链** → 让 live 装配使用
+  **真实工具而不是惰性工具** → 新增一个**出网面**与它的证据纪律。
+  **这是一整个 cycle 的接线**，且正是 EC-02 登记为残余的 **W-7**。
+  ⇒ **(A1) 的诚实答案：本轮没有来源可用；要回答它必须先做检索接线（另立 cycle）。**
+
+**(A2) 11 个 phase 的会话预算？**
+E-6 实测「**phase 数 = 会话数**」⇒ `ai_ml_research_v0_4_0` 一次真实 run 至少 **11 次真实模型会话**
+（重试另计），其中 `experiment_execution` 还要 `TEST_PASSES` + `POLICY_COMPLIANT`
+（需要真实 workspace 执行与测试证据）。这与本 GOAL 的「**live 调用取最小必要**」纪律**直接冲突**。
+⇒ **(A2) 的诚实答案：本轮预算不够，而且它不该是第一个真实协议。**
+
+### 实测支撑：**在册的 6 份协议里，没有一份同时满足两个条件**
+
+两个条件是：**①语义对真实执行体成立**（头部不得自称「受控 Fake…不冒充真实研究执行」）、
+**②合约在本轮可达**（`task_contract` 在册**且**逐条 `acceptance_criteria` 能被真实 run 诚实满足）。
+
+| 协议 | ① 语义成立 | ② 合约可达 | 卡在哪 |
+| --- | --- | --- | --- |
+| `console_demo_research_v1` | ❌（头部自称 Fake demo） | ✅ | 本 EC 的起点 |
+| `ai_ml_research_v0_4_0`（**登记面所指**） | ✅ | ❌ | `domain_discovery` 的 10 条来源（A1）+ 11 phase 预算（A2）+ `TEST_PASSES`/`POLICY_COMPLIANT` |
+| `m12_reference_research_v1` | ✅ | ❌ | 同上（7 phase） |
+| `m17_gpu_research_v1` | ✅ | ❌ | `m12_experiment_execution` 的 `TEST_PASSES`/`POLICY_COMPLIANT` + GPU/docker 依赖 |
+| `sort_analysis_v1` | ✅ | ❌ | 两条合约**不在册**（只活在测试里）；且 review phase 要 `evidence.read`——**`policy.yaml` 没有授予它**（`default_effect: DENY`）⇒ 真实 policy 下 **preflight 就过不去** |
+| `human_gate_demo_v1` | ❌（名为 demo） | ❌ | `domain_discovery` 的 10 条来源 |
+
+（`evidence.read` 未授予是**实测**：`rg -n "evidence\.read" examples/config/policy.yaml` ⇒ 无命中；
+授予集为 `artifact.read` / `artifact.write` / `code.execute` / `external.publish` / `literature.read` /
+`literature.search` / `memory.write` / `network.academic` / `network.public` / `package.install` /
+`workspace.delete` / `workspace.read` / `workspace.write.code` / `workspace.write.notes`。）
+
+⇒ **定案：取 (B)。** (A) 不是被否决的坏选项，而是**本轮答不了它的两个前提**；
+它作为「完整研究计划」的终态保留，**登记为后继入口**。
+
+### (B) 的规格（WP2 按此落地，逐条可判）
+
+- **协议**：`examples/protocols/real_research_task_v1.yaml`，id `real_research_task_v1_0_1`
+  （版本后缀沿用既有格式）。**1 个 phase**：`analysis`，`strategy: single_agent`，
+  `required_roles: [domain_researcher]`（`roles.yaml` 在册；与 demo 协议**同一角色**，
+  实测在 live 装配里可解析），`required_capabilities: [artifact.read]`
+  （`policy.yaml` **已授予**、scope `project`；与 EC-01 那条已跑到 `SUCCEEDED` 的路径**同一能力集**）。
+- **头部语义必须诚实**（本协议存在的理由）：写明「**真实研究任务**：由**所选 runtime** 执行，
+  在真实执行体下就是真实模型会话」；**不得**照抄 demo 的自述，**也不得**声称
+  多智能体/并行/检索（E-6／A1 实测它们不是可执行语义）；**受控范围也要写明**——
+  单任务单交付物，**不**代表完整研究计划。
+- **合约**：新登记一条（拟定 `real_research_deliverable`）：
+  `ARTIFACT_EXISTS: analysis_report`（**恰一个**声明产物——EC-01 的机制要求唯一，
+  多产物会回落事实名并判拒）+ `EVIDENCE_COVERAGE minimum_sources: 1`。
+  **不加** `SCHEMA_VALID`／`TEST_PASSES`（今天诚实做不到的判据不写进去——写了就是让协议不可用，
+  与「放宽」是两件不同的事）。
+- **声明输入**：`inputs: [input-brief:real_research_v1]`，内容为**操作者提供的任务简报**
+  （新增 `examples/inputs/real-research-brief-v1.json`；同步 `DECLARED_INPUTS` 表与同源判据
+  `tests/architecture/python/test_declared_input_sources.py` 的协议映射）。
+- **登记同源**：示例目录 + 登记面（`examples/config/project.yaml` 或模板面）指向同一份；
+  受影响的耦合面（E-8：release asset / golden 编译计划 / 设计基线 / 模板表 / loader 测试）
+  **逐个点名处理**，基线类**按配方重生成**而非手改。
+
+**护栏（防「换名字的 demo」，也防放宽）**：
+
+1. **不得只有名字不同**：头部必须写明真实执行体语义与受控范围；
+2. `required_capabilities` 必须是**真实所需**——不是删空以绕过 preflight；
+3. 合约判据**不得为空壳**（至少 `ARTIFACT_EXISTS` + `EVIDENCE_COVERAGE ≥ 1`），
+   且**不得改动任何既有合约**使其变松；
+4. **不得声称系统做不到的语义**（多智能体并行、真实检索——E-6／A1 实测）。
+
+**代价（如实）**：新协议 + 新合约 + 新输入 + 登记面 ≈ 4 处产品面改动；
+若改 `project.yaml` 的 `protocol:` 字段，会触发**设计基线**重生成（控制台团队页渲染协议名）
+与可能的 release asset 更新——**按既有配方做，不手改基线数字**。
+
+**本 EC 的诚实边界**：新协议只覆盖**单任务真实研究**；「完整研究计划」（多阶段/并行/检索）
+仍**不可用**——它需要 A1 的检索接线与 E-6 的策略执行语义，**不在本 PLAN 射程内**，登记为残余。
+
 ### 失败如何落终态
 
 - 真实 run 不能跑通所选协议 ⇒ 按失败面归类（协议面 / 能力面 / 合约面 / 装配面）并按 fix_policy 纠错；
@@ -175,3 +268,20 @@ EC-03 的性质又不同：**它是一个「选择」，而选择的代价分布
   **E-4/E-5**（产品面只登记 4 条合约；`sort_analysis_v1` 的合约只在测试里）与
   **E-6**（`phase.strategy` 只是声明 ⇒ phase 数 = 会话数）把候选面**收窄并量化**。
   本 PLAN 的承重墙定为 **WP1（定案）**，未开工。
+
+- 2026-09-21 WP1 **定案完成**（本 PLAN 的承重墙）：**取 (B) 新增一份真实协议并登记**。
+  **(A) 没有被否决，而是它有两个本轮答不了的前提**，两个都正面回答了、没有用「以后再说」搪塞：
+  **A1** 的 10 条非自述来源今天只有「声明输入」（**否决**：只有计数变真、没有检索发生，
+  正是 EC-02 WP1 点名拒绝的形态）与「工具结果」（**无生产调用方** + live 工具**惰性**
+  ⇒ 必须先做检索接线，那是一个 cycle 的活，正是 EC-02 的残余 **W-7**）；
+  **A2** 的 11 个 phase 在 E-6 的「phase 数 = 会话数」下等于 **11 次真实会话**，
+  与「live 调用取最小必要」冲突。
+  **本轮新增一条决定性实测**：`evidence.read` **未被 `policy.yaml` 授予**
+  （`default_effect: DENY`）⇒ `sort_analysis_v1` 的 review phase 在真实 policy 下
+  **连 preflight 都过不去**（它此前只在 `FakePolicyEvaluator` 下被跑过）。
+  据此得到一条可判结论：**在册 6 份协议里没有一份同时满足「语义对真实执行体成立」
+  与「合约在本轮可达」** ⇒ (B) 是唯一可行路径，而不是偏好。
+  **(B) 的规格已写死**（协议 id / 1 个 phase / 角色与能力都取自**已授予**集 /
+  合约恰一个声明产物 + 覆盖 ≥ 1 / 声明输入 + 登记同源），并配**四条护栏**
+  （防「换名字的 demo」、防删空能力、防空壳判据、防声称做不到的语义）。
+  **本轮未发起任何真实调用、未改任何产品代码、未改门禁/断言、未改 pin。**
