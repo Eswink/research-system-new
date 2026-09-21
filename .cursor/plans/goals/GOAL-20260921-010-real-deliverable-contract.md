@@ -151,6 +151,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260921-127-real-deliverable-contract.md
   - .cursor/plans/tasks/PLAN-20260921-128-evidence-chain-truthfulness.md
   - .cursor/plans/tasks/PLAN-20260921-129-real-protocol-availability.md
+  - .cursor/plans/tasks/PLAN-20260921-130-runtime-fingerprint-on-read-face.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260921-129-real-protocol-availability.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260921-100-deliverable-name-declaration-and-gate.md
@@ -630,3 +631,20 @@ live 证据只在本地产生并落 RECHECK。
   **门禁**：m0 全量 **23/23 ×3 次**（+ 收口提交再一次）+ 治理 `validate.py` 绿 + CI 五个提交全绿。
   **未发起第二次真实调用**；`RESEARCHOS_AGENT_RUNTIME` 只作单条命令内联前缀，**未**写入 `.env`。
   **下一步**：EC-04（指纹四要素落读面 + 「模型不存在」provider 侧样本）与 EC-05（默认门离线的结构判据）。
+
+- 2026-09-21 cycle 4 **derive**（EC-04，子 PLAN `PLAN-20260921-130`，投影 ALL_PLAN 同一提交）：
+  **只读代码与配置、未发起任何真实调用**。实测得 E-1…E-9，其中三条确定本 EC 的形态：
+  - **E-4（缺口本体）**：run 级读面的指纹槽由 `runtime_fingerprints(deps)` 填，而它**恒返回**
+    `{"substrate", "status": "NOT_VERIFIED", "reason"}`——真实 runtime 跑完一次真实会话之后，
+    读面**仍然**写「runtime selected but no model probe fact was collected for this run」；
+  - **E-5/E-6（形状与口径都已存在、只差接线）**：四要素的承载类型
+    `LiveRunRecord`（含 `missing_fields` 与 `endpoint_config_digest` / `returned_model_identifier` /
+    `system_fingerprint` / `probe_suite_digest`）**早已写好**，但 `build_live_run_record` 的调用者
+    **只有测试**，GOAL-009 EC-01 的 live 判据把它写进 `tmp_path/live-run-record.json`
+    ——正是 EC-04 点名的「只活在测试的 `tmp_path` 里」；
+  - **E-8（样本面）**：「模型不存在」今天只有**装配层**判据（固定标签表 + 「run 的 LLM 装配只消费
+    一个模型」的结构判据 ⇒ **零回退那一半已有结构判据**），live 失败样本只有**无效凭据 ⇒ 401** 一条。
+  **承重墙定为 WP1（定案）**：核心是「**调用后**才存在的四要素，如何在**冻结于调用前**的 manifest
+  之外成为可读的 canonical 事实」，以及「缺项怎么表达而**不扩口径枚举**」（两态穷举不得被扩）。
+  候选面 (a)/(b)/(c) 与三条不可回避取舍已写进 PLAN-130；**本轮未改任何产品代码、未改门禁/断言、
+  未发起真实调用**。

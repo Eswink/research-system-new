@@ -160,6 +160,21 @@ run 并重查，本表因此是逐 run 实查的结果。
   `services/api/dto/models.py`）。它们**不在**本 cycle 的任何提交里，本 cycle 也不对它们作任何声称；
   每个提交的**权威证书是 CI 在推送树上的结果**（§6）。
 
+### W-9 的事实更正（**只追加**，2026-09-21 cycle 4 derive 时实测发现）
+
+W-9 原文写「树上同时存在**另一个并发进程**的三处未提交改动」。**该判断是错的**，
+按事实更正如下（不改写 W-9 原文，只追加更正）：
+
+- 三份文件（`apps/web/src/features/models/ModelDetails.tsx`、`packages/domain/model_drift.py`、
+  `services/api/dto/models.py`）的工作副本与 HEAD **逐字节相同**——
+  实测：`git hash-object <f>` == `git rev-parse HEAD:<f>` 三处全部成立，`git diff` 内容为空。
+- 因此它们是**已知的 Windows 工作副本怪象**（`.gitattributes` 的 `eol=lf` 与工作副本 CRLF 不一致
+  让 `git status` 报 ` M`），**不是**并发进程的改动、也不是任何未提交内容。
+- **对本 RECHECK 结论的影响：只有加强，没有削弱**——本地 m0 因此等价于**在提交树上**跑，
+  §6 的门禁表不需要修正；W-9 余下的部分（「每个提交的权威证书是 CI 在推送树上的结果」）仍然成立。
+- 教训（已写入 GOAL-008 时期的仓库知识）：见到这类 ` M` 先用 `hash-object` 对比，**不要**据此
+  宣称「有并发改动」，也**不要** `git add -A`（会把行尾规范化一起提上去）。
+
 ## 结论
 
 **PASS_WITH_WARNINGS**。EC-03 的判据（协议 id 出现在 run 的 **canonical 事实**里）在
