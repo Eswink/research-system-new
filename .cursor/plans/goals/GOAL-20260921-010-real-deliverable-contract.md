@@ -391,14 +391,15 @@ tokens 15219 真归账），归类为**协议设计内的 acceptance-gate 判拒
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `17cef9b` | 治理 `validate.py` 绿；`validate_bundle` 绿；DOCS-CHECK `6 deterministic checks` 绿；framework **8/8** | 见下方 CI 台账 | — | EC-01…EC-06 全 PENDING；机制已定位（G-3 键名一处可判事实 / G-4 证据由模型自述满足）⇒ EC-01 是**可落地**的工程任务 | cycle 1 = derive **EC-01** 子 PLAN（真实交付物契约） |
-| 1 | PLAN-20260921-127（EC-01） | derive 见回合汇报 | 见回合汇报 | 见回合汇报（**未跑到终态不记账**） | — | EC-01 执行中；**derive 时抓出一条既有的「待拍板」耦合**：`docs/adr/ADR-0031`（Proposed）的 **D2** 正是「事实名 → 合约名」，其 Consequences 写着「改动它必须先改本 ADR 的状态」。**已核对**：该 ADR 的结构判据钉的是**验收门的字面匹配**（`evaluate_criterion` 的入参由用例手工构造），因此**取 D2-A 形态（门不改、声明侧给出名字）时该判据原样保持绿**、无需修改任何门禁；ADR 自己写明两个决定「**可分别决定**」，D1 未决 ⇒ **整体状态保持 `Proposed`**，D2 的定向在 D2 节内如实记录。该处置写进 PLAN-127 的「影响报告」并列为 WP1、由 RECHECK 独立核对 | cycle 1 续：WP1（D2 定向记录）→ WP2（声明化命名）→ WP3（同源判据）→ WP4（离线链双分支）→ WP5（真实 run）→ WP6（收口） |
+| 1 | PLAN-20260921-127（EC-01） | `c6dbed5`（derive + ALL_PLAN）、`577eaa2`（WP1：ADR-0031 D2 定向记录）、`00368ab`（WP2+WP4：声明化命名 + 离线链双分支 + 文档同源） | **离线链双分支实跑**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` ⇒ **3 passed / 1 skipped**（live 分支如实 skip）——**声明对齐 ⇒ 门 PASS ⇒ run `SUCCEEDED`**（GOAL-009 时期该路径的终点是 `FAILED`）；与 ADR 结构判据同跑 **13 passed / 1 skipped**；**反证两次被压过**（①去掉声明化 ⇒ PASS 分支 RED、制品回落 `:session_message` + `rejected by acceptance gate`；②去掉「不猜」边界 ⇒ REJECT 分支 RED），两次均复原、`git diff` 只剩意图内改动；**ADR-0031 结构判据未被修改且仍绿**（10 passed，`git diff` 对该文件为空）；受影响门禁 `tests/architecture tests/tooling tests/e2e/test_ec03_*` ⇒ **1235 passed / 1 skipped**；`DOCS-CHECK PASS: 6 deterministic checks`；治理 `validate.py` 绿；**全量 m0（CI 同形配置：测试 DSN pin + `LLM_MAIN_KEY=""`）⇒ `PASS: profile=m0; 23 deterministic checks`（4261 passed / 13 skipped / FAIL 0，526.66s）** | **run 35562941912 = success**（`00368ab`；六 job 全 **success**：`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`，逐 job 实查）；建档推送 `17cef9b` → **run 35560783476 = success**（六 job 全 success；上一条已收口） | — （**未改任何门禁/断言强度**：ADR 结构判据零改动仍绿；离线链是**双分支**——判据**只增不减**，GOAL-009 的 REJECT 证据被保留为反证分支） | **EC-01 未 PASS**（**live 真跑未发生**，WP5/WP6 未做；WP3 同源判据未做）。**本 cycle 最大的事实变化**：判拒的**机制**已被消除——离线同路径链上**真实 runtime 的交付物第一次满足声明式合约**、门 PASS、run `SUCCEEDED`，且**反证成对**（去掉对齐 ⇒ 回到 REJECT）。**仍未做的两件**：①WP3 的 same-source **结构判据**（把「声明 ⇒ 键名」与「不猜」边界钉成一条可重算的判据，而不是只靠链级用例）；②**WP5 的真实 live run**（最小必要次数）——EC-01 的判据**只能**由它满足，**不得**用离线链代替。**诚实登记的代价**：取 (ii) ⇒ 未验证「模型能否自主产出合约名」这条 (i) 路径 | cycle 1 续：**WP3**（同源判据 + 被压过）→ **WP5**（真实 run ⇒ 门 PASS + 终态恰 `SUCCEEDED`，样本落 RECHECK 与 runbook）→ **WP6**（RECHECK + 收口 + EC-01 置 PASS） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档 | `17cef9b` | [35560783476](https://github.com/Eswink/research-system-new/actions/runs/35560783476) | 六 job 全 **success**（`eval-gate` / `collector-quality` / `container-quality` / `console-frontend` / `quality-ubuntu-latest` / `quality-windows-latest`；terminal `status=completed conclusion=success`，逐 job 实查） |
-| cycle 1 派生 + WP1/WP2/WP4 | 见回合汇报 | | |
+| cycle 1 派生 + WP1/WP2/WP4 | `00368ab` | [35562941912](https://github.com/Eswink/research-system-new/actions/runs/35562941912) | 六 job 全 **success**（`collector-quality` / `console-frontend` / `container-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest`；terminal `status=completed conclusion=success`，逐 job 实查） |
+| 台账尾巴（记录回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…009，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 **只在回合汇报里给出终态、不再回写文件**——否则每轮都要为回写再推一次、无限追加。
@@ -432,3 +433,31 @@ live 证据只在本地产生并落 RECHECK。
   并**要求 RECHECK 独立核对「门禁未被修改且仍绿」**。
   **本轮未发起任何真实调用、未改任何门禁/断言、未新增依赖、未改 pin、未改默认 runtime。**
   诚实登记的**代价**：本 PLAN 取 (ii) ⇒ **没有**验证「模型能否自主产出合约名」这条 (i) 路径。
+
+- 2026-09-21 cycle 1 执行（**部分完成，未收口**；`driver=client-goal / owner=root-agent`）：
+  WP1 / WP2 / WP4 落地（`c6dbed5` / `577eaa2` / `00368ab`），**WP3（同源判据）与 WP5（真实 run）
+  未做** ⇒ **EC-01 仍未 PASS**（live 真跑未发生，**不得**用离线链代替）。
+  **本轮最大的事实变化**：**判拒的机制被消除**——离线同路径链上，**真实 runtime 的交付物
+  第一次满足声明式合约**：门 **PASS**、run **`SUCCEEDED`**（GOAL-009 时期同一路径终点是
+  `FAILED`）。`adapters/openhands/runtime_adapter.py` 的交付物键名改为**由合约声明决定**
+  （`AgentSessionSpec.task_contract` 的 `required_artifacts` ∪ `ARTIFACT_EXISTS` 去重后
+  **恰一个**才用该名，否则**不猜**、回落事实名），载荷登记
+  `fact_name` / `declared_artifact` / `contract_id` 使「这个名字是谁声明的」可判。
+  **验收门一字未改**（`packages/domain/acceptance.py` 仍字面匹配）。
+  **反证成对且两次被压过**：去掉声明化 ⇒ PASS 分支 RED（回落 `:session_message` +
+  `rejected by acceptance gate`）；去掉「不猜」边界 ⇒ REJECT 分支 RED。两次均复原。
+  **门禁零改动的取证**：`tests/tooling/test_toolpack_capability_policy_pending.py`
+  **10 passed 且 `git diff` 为空**——它钉的是**验收门的字面匹配**（入参由用例手工构造、
+  不经过 adapter），因此 **D2-A 形态**（门不改、声明侧给名字）下它原样保持绿。
+  **ADR-0031 的处置**：D2 按用户定向记录在 D2 节，Consequences 那条「必被判拒」被修正
+  （否则与事实矛盾）；**`Status: Proposed` 保持不变**（ADR 明文「可分别决定」，**D1 仍未决**）。
+  **本地门禁**：全量 m0（CI 同形配置：测试 DSN pin + `LLM_MAIN_KEY=""`）⇒
+  **`PASS: profile=m0; 23 deterministic checks`（4261 passed / 13 skipped / FAIL 0）**；
+  定向 `tests/architecture tests/tooling tests/e2e/test_ec03_*` ⇒ **1235 passed / 1 skipped**；
+  `DOCS-CHECK PASS: 6 deterministic checks`；治理 `validate.py` 绿。
+  **定向跑时观察到的 5 条红已逐条定性为既有环境签名**（凭据可得性 W-7 ×1、DSN 注入 ×3、
+  postgres ×1），**未**记作回归；其中 W-7 那条用**决定性反证**坐实（`LLM_MAIN_KEY=""` ⇒ 84 passed），
+  并**如实登记它真的发起了一次出站**——这正是 **EC-05** 要把「默认门离线」变成结构判据的理由。
+  **CI 台账**：建档 `17cef9b` → **run 35560783476 = success**；cycle 1 推送 `00368ab` →
+  **run 35562941912 = success**（六 job 全 success）。**未改任何门禁/断言强度、未新增依赖、
+  未改 pin、未改默认 runtime、未把凭据写进 CI、未放宽验收门。**
