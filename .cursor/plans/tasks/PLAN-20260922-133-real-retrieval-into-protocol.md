@@ -238,6 +238,15 @@ EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**�
 - [ ] **WP2 工具观测的持久化与读面**（离线可验）：新增工具观测的存储与**读面**
       （端点 / DTO），使 AC-3 成立。**新模块承载**；贴线文件净零/净负。
       反证：读面**不空转**（无观测时必须能判出「无」）。
+      **WP1 期间的收缩（只减不增，理由实测）**：AC-3 可能**不需要**新建表/端点——
+      `services/api/routers/artifacts.py:72-85` 的 `_run_artifact_ids()` 已经把
+      **evidence 引用到的 artifact** 收进 run 作用域列表，而 `register_tool_evidence` 产出的
+      `Evidence.artifact_id` 正是 spill 出来的 `tool-result:{task_id}:{operation_key}:{tool_id}`
+      ⇒ **工具结果经既有 `/runs/{id}/artifacts` + 内容下载读得到**；`EvidenceDto` 也已暴露
+      `source_origin`（其值形如 `tool:{tool_id}:{task_id}:{operation_key}`）。
+      ⇒ WP2 的最小形态可能是**纯加性**地补一处读面（例如把已持久化但未暴露的
+      `Evidence.tool_refs` 提到 DTO 上），而**不是**新建持久化层。
+      **落笔前先按 D-15 与本节实测确认「哪些面已经够用」**，只补真正缺的那一块。
 - [ ] **WP3 接线**：能力从协议到达 phase；`NcbiEutilsProvider` 在生产装配里被实例化并注册；
       执行经既有 `execute_tool_call`（策略判定在内）；结果经既有 `register_tool_evidence`
       准入并**挂 claim relation**（D-9）⇒ 使 AC-1 与 AC-2 在**离线**（Fake provider）下先成立。

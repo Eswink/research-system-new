@@ -447,7 +447,9 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 | --- | --- | --- | --- |
 | 建档 | `1b3fc2f` | M0 [35678978342](https://github.com/Eswink/research-system-new/actions/runs/35678978342) | 六 job 全 **success**（`console-frontend` / `collector-quality` / `container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate`；terminal `status=completed conclusion=success`，逐 job 实查）；**同一次推送另触发 CodeQL** [35678977687](https://github.com/Eswink/research-system-new/actions/runs/35678977687) = **success**（3/3） |
 | cycle 1 派生（PLAN-133 + ALL_PLAN） | `934f7fc` | 与下一条**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担，**不**意味着它没进 CI |
-| 台账尾巴（WP1 定案 + 记录回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | | |
+| cycle 1 WP1（定案 + GOAL 回写） | `d81ba38` | M0 [35682001003](https://github.com/Eswink/research-system-new/actions/runs/35682001003) | 六 job 全 **success**（`collector-quality` / `quality-windows-latest` / `container-quality` / `eval-gate` / `console-frontend` / `quality-ubuntu-latest`，逐 job 实查）；**CodeQL** [35682000340](https://github.com/Eswink/research-system-new/actions/runs/35682000340) = success（3/3） |
+| cycle 1 P-1 探针（离线，无出网） | `39e7c92` | M0 [35682911157](https://github.com/Eswink/research-system-new/actions/runs/35682911157) | 六 job 全 **success**（逐 job 实查）；**CodeQL** [35682911380](https://github.com/Eswink/research-system-new/actions/runs/35682911380) = success（3/3） |
+| 台账尾巴（本条记录回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…010，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
