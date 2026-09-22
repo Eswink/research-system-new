@@ -29,6 +29,8 @@ from services.api.run_execution import FrozenManifestRefs
 _FAILING_PROTOCOL = "m12_reference_research_v1.yaml"
 _SUCCESS_PROTOCOL = "console_demo_research_v1.yaml"
 _NEVER_FROZEN_PROTOCOL = "sort_analysis_v1.yaml"
+#: 冻结之后**优雅**收敛 FAILED 的协议（失败来自任务结果登记，不是执行期抛 ValueError）。
+_GRACEFUL_FAILURE_PROTOCOL = "real_retrieval_research_v1.yaml"
 
 
 def _deps(client: TestClient) -> Any:
@@ -144,6 +146,23 @@ def test_a_failed_run_without_a_freeze_event_has_no_semantic_digest(
     assert row.state == "FAILED"
     assert row.manifest_digest is None
     assert row.manifest_semantic_digest is None
+
+
+def test_a_graceful_failure_still_carries_the_frozen_refs(run_ready_client: TestClient) -> None:
+    """与上一条成对：失败**优雅**收敛（任务结果登记失败、不抛 ValueError）时同样保住冻结引用。
+
+    两条失败收敛路径对 canonical 行必须给同一个答案：冻结过就是冻结过。缺字节 digest ⇒
+    读面把这条 run 判成「从未冻结」（rebuild REFUSED, missing=[manifest_digest]），
+    `assert_semantics_frozen` 也跟着拒绝重建——那是记录不全，不是没冻结（GOAL-011 cycle 10）。
+    """
+    row = _start(run_ready_client, _GRACEFUL_FAILURE_PROTOCOL)
+
+    assert row.state == "FAILED", "本夹具里该协议冻结成功、随后在执行期收敛 FAILED"
+    _assert_frozen_semantic_digest(row)
+
+    rebuild = run_ready_client.get(f"/runs/{row.id.value}").json()["rebuild"]
+    assert rebuild["status"] == "SELF_CONTAINED", rebuild
+    assert rebuild["missing"] == [], rebuild
 
 
 def test_a_legacy_freeze_event_without_a_semantic_digest_stays_empty() -> None:

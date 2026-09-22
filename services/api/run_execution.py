@@ -121,6 +121,24 @@ def frozen_manifest_refs_of(deps: ApiDeps, run_id: str) -> FrozenManifestRefs:
     return FrozenManifestRefs()
 
 
+def _digest_or_none(value: str | None) -> Digest | None:
+    """空引用 ⇒ None（不伪造）；有值 ⇒ 过域类型校验。"""
+    return Digest.parse(value) if value else None
+
+
+def _with_frozen_refs(deps: ApiDeps, row: ResearchRun) -> ResearchRun:
+    """结局不带冻结引用的 run 行 ⇒ 从事件链补回（与 ValueError 分支同源）。
+
+    两条失败收敛路径（执行期抛错 / 任务结果登记失败）对 canonical 行必须给同一个答案：
+    冻结过就是冻结过。缺字节 digest ⇒ 读面判「从未冻结」（rebuild REFUSED,
+    missing=[manifest_digest]）、`assert_semantics_frozen` 也拒绝重建。未冻结的 run
+    （preflight 被拒）拿到空引用 ⇒ 两个 digest 保持 None，不伪造（GOAL-004 的诚实边界）。
+    """
+    if row.manifest_digest is not None:
+        return row
+    return frozen_manifest_refs_of(deps, row.id.value).apply(row)
+
+
 def _live_preflight(
     deps: ApiDeps, catalog: CatalogSnapshot, project: ProjectSettings
 ) -> PreflightContext:
@@ -192,31 +210,28 @@ def run_from_execution(
     protocol_id: str,
     inputs: ExecutionInputs,
 ) -> ResearchRun:
-    """执行链结果 → run 实体（执行期 ValueError 收敛 FAILED + 保留 frozen digest）。"""
+    """执行链结果 → run 实体（两条失败收敛路径都保留 frozen digest）。"""
     if deps.runs is None:
         raise ApiError(503, "Run Orchestration Unavailable", "run service not configured")
     try:
         outcome = deps.runs.start_run(
             inputs.protocol, inputs.catalog, inputs.project, inputs.preflight, inputs.command
         )
-        return ResearchRun(
+        row = ResearchRun(
             id=run_id,
             project_id=project_id,
             protocol_id=protocol_id,
             state=outcome.state,
-            manifest_digest=Digest.parse(outcome.manifest_digest)
-            if outcome.manifest_digest
-            else None,
+            manifest_digest=_digest_or_none(outcome.manifest_digest),
             # cycle 20：语义 digest 与装配来源都必须过 HTTP 边界——前者是 resume 的
             # 漂移校验输入，后者是重启后重建上下文的唯一入口（丢了就没有续跑入口）。
-            manifest_semantic_digest=Digest.parse(outcome.manifest_semantic_digest)
-            if outcome.manifest_semantic_digest
-            else None,
+            manifest_semantic_digest=_digest_or_none(outcome.manifest_semantic_digest),
             pricing_version=outcome.pricing_version,
             pricing_digest=outcome.pricing_digest,
             protocol_source=inputs.command.protocol_source,
             protocol_body=inputs.protocol_body,
         )
+        return row if row.manifest_digest else _with_frozen_refs(deps, row)
     except ValueError:
         # 失败收敛：执行期的 outcome 不存在，冻结引用只从事件链补回来，落行走与成功
         # 路径同一个域方法（with_manifest）。语义 digest 必须在这条路径上活下来：
