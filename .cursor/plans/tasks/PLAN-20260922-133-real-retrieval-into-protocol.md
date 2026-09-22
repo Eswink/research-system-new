@@ -167,6 +167,53 @@ run 时写入）比对。**测试文件里没有任何 hard-coded 的摘要常�
 - **P-2 投影探针**：按 D-9 验证「只 `register_evidence` 不 `attach_relation`」确实**读不到**，
   再验证补上 relation 后**读得到** ⇒ 反证的口径以此为准。
 
+### 探针结果（本 cycle 实测；只读代码，未发起真实调用）
+
+**P-1 已答一半（关键）**：**既有的 live 判据全部走 `map_tools=True`**，即
+`tests/e2e/live_run_support.py` 在测试侧注入 `register_inert_tools`（把冻结集里每个名字注册成
+**惰性工具**），并在注释里明写「测试侧补上 **EC-05 的映射**」；而同文件另有一个
+`map_tools=False` 分支，注释写明「改走**生产装配**以**如实测量**缺映射行为」。
+
+⇒ **两点结论**：
+1. **GOAL-010 的三次 `SUCCEEDED` 真实 run 是在「有惰性映射」的装配下取得的**，
+   **不**证明生产装配（`register_tools` 空操作）也能让未注册的 `Tool(name="m12_artifact")` 正常初始化。
+   ⇒ 这是一条**既有的、此前未被点名的射程边界**，WP3 必须**如实登记**（不夸大为「已验证」）。
+2. 因此 **P-1 的答案会改变接线的落点**：若生产装配对未注册名字会失败，那么把
+   `literature.search` 声明进 phase（⇒ `ncbi_eutils` 进冻结集）**本身**就会让生产路径的会话起不来。
+   在这个分支下，**必须**同时把既有 `register_tools` 生产 hook 接上（注册一个**真实**的检索工具，
+   复用 `NcbiEutilsProvider`，而不是惰性桩）——这正好把 D-5 的缺口补上，且**不是**新增机制。
+
+**P-1 的剩余半步（留给 cycle 2 的 WP3，离线可做）**：用 `map_tools=False`（生产装配）跑一次
+**不声明新能力**的装配探针，确认「今天生产装配对 `m12_artifact` 这个未注册名字是否已经失败」；
+若**已经**失败 ⇒ 说明这是**既有缺陷**（GOAL-010 未覆盖），EC-01 的接线**必须**顺带修它；
+若**不失败** ⇒ 记录事实，`register_tools` 可不动。
+
+**P-1 前提已实测（本 cycle，离线、无出网）**：探针脚本 `scratch/probe133_frozen_set.py`
+（只读文件 + 纯编译路径 `tool_requirements`，**刻意不碰 preflight**，因为 preflight 会做 provider 健康探测）
+实测输出：
+
+```
+capability -> providers:
+  artifact.read      -> ['m12_artifact']
+  citation.inspect   -> ['ncbi_eutils']
+  literature.read    -> ['ncbi_eutils']
+  literature.search  -> ['ncbi_eutils']
+  ...
+--- as-is ---
+  phase=analysis capability=artifact.read -> ['m12_artifact']
+  frozen_tool_set = ['m12_artifact']
+--- phase 'analysis' plus literature.search/read ---
+  phase=analysis capability=artifact.read      -> ['m12_artifact']
+  phase=analysis capability=literature.read    -> ['ncbi_eutils']
+  phase=analysis capability=literature.search  -> ['ncbi_eutils']
+  frozen_tool_set = ['m12_artifact', 'ncbi_eutils']
+```
+
+⇒ **证实**：在 `analysis` phase 上加两条能力声明，`frozen_tool_set` 从 `['m12_artifact']`
+变成 `['m12_artifact', 'ncbi_eutils']`。⇒ 真实会话会**多拿到一个名字** `Tool(name="ncbi_eutils")`，
+而该名字在生产装配里**从未注册**。**这就是 P-1 要问的那件事的前提，已成立。**
+（相反方向也钉住了：不加声明时冻结集**不含** `ncbi_eutils` ⇒ R-1 反证有一条干净的起点。）
+
 ### 决策 3 —— 反证的精确形态
 
 | 层 | 操作 | 必须观察到的红 | 复原 |
