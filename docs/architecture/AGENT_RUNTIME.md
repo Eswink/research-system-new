@@ -188,6 +188,22 @@ URL 策略（endpoint_url_refusal，复用唯一 host 判据）
   （`uv run --frozen --no-sync python -c "import litellm"`），**判据本身不放宽**。
   **如实说明**：预热门只是把这次下载挪到**判据进程之外**，CI 每轮仍有一次对外请求
   （要连这句也消掉，得把词表固化进镜像或私有源）——所以「默认 CI 完全离线」**不声称成立**。
+  **同源句（GOAL-011 EC-05，逐字，由 `tests/tooling/test_m0_ci_coverage.py` 机器校验）**：
+  **CI 每轮至多有一次受控外部下载**——发生在环境准备阶段（`import litellm` 预热，必须在跑门
+  **之前**）。**实测更正（2026-09-22，不可达代理探请求 + 冷 `TIKTOKEN_CACHE_DIR` 探下载）**：
+  该步请求的是 litellm 的 **model cost map**（`raw.githubusercontent.com`，失败回落本地副本），
+  **没有**观察到 `cl100k_base` 被下载；门内 conftest 置 `LITELLM_LOCAL_MODEL_COST_MAP=True`、
+  非环回目的地在任何数据包之前被 `tests/egress_guard.py` 拦下 ⇒ 这一段「冷装首次 import 会下载
+  词表」的表述**按当前版本收窄为「至多一次，且实测是 cost map」**，不改判据、不放宽放行面。
+- **本机（带操作者 `.env`）跑默认门的同形条件：凭据必须不在进程环境里**（GOAL-011 EC-05 收尾实测）：
+  litellm 导入期 `load_dotenv` 会读仓库根的 `.env`，于是 `LLM_MAIN_KEY` 在**套件中途**进入环境；
+  此后任何**走生产装配**的用例都会让目录里的 endpoint（`examples/config/llm_endpoints.yaml`，
+  两条都 `credential_ref: LLM_MAIN_KEY`）被 `build_endpoint_health` **真的发起连接**
+  （本机 DNS 走代理时解析到 `198.18/15` 的保留网段）⇒ 判据照拒、**整轮判红**——**判据判得对**
+  （「默认门内出现非环回尝试」正是它要拦的事）。CI 的干净安装里**没有** `.env`
+  （gitignored + 未跟踪 + workflow 不生成任何一份）⇒ 无凭据 ⇒ 探测拿 `UNKNOWN`、**不连线**。
+  **在本机复现 CI 的同形条件**：把 `LLM_MAIN_KEY`（与 `DEV_LLM_API_KEY`）**置空**再跑门——
+  `load_dotenv` **不覆盖**已存在的变量，置空因此等效于「没有 `.env`」；**不放宽判据、不改放行面**。
 - **射程（不假装覆盖）**：只判 TCP 连接点（同步 + 异步两面，`AF_INET`/`AF_INET6`）；
   **DNS（`getaddrinfo`）/ UDP / 子进程 / 非 python 作业 / 环回转发代理不在射程内**
   （本地代理下目的地确实是本机，判决只有环回）。

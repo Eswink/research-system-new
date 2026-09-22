@@ -244,7 +244,59 @@ exit_criteria:
       断网（或阻断该单一目的地）跑默认门 ⇒ 结论**可判定且与记录中的措辞一致**；
       若选择固化，则同一条件下默认门**不产生**该外部下载；若选择降级措辞，
       则文档与判据的措辞**逐字对应**事实（每轮一次受控下载）。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-22 cycle 8：**达成**（`PLAN-20260922-137`），走的是**降级措辞 + 判据**这一侧
+      （定案 D-1，理由：固化 `cl100k_base` 要引入**未 pin 的外部二进制资产**，代价远超 EC-05 自称的
+      「成本小」，而收益只有每轮少一次请求；EC-05 原文允许二选一）。**三件事**：
+      ① **声明受判**——新增**离线结构判据**
+      `test_every_job_that_runs_the_python_gate_prewarms_the_tokenizer_first`（按作业切分 workflow
+      步骤：**跑门的作业**必须在**跑门之前**有预热步骤，命令形态要求含 `import litellm` 且含
+      `--frozen`；另有 `gate_jobs >= 4` 的自检，防扫描写错变成空转）。**已按压**：摘掉 `eval-gate`
+      的预热门 ⇒ 逐字红 `eval-gate runs the Python gate without prewarming the tokenizer cache`；
+      复原 ⇒ **5 passed**，且 `git diff --stat .github/workflows/m0-quality.yml` **为空**（复原无残留）。
+      ② **措辞与事实同源且机器可复核**——同源句锁为 **「CI 每轮至多有一次受控外部下载」**，
+      同时在场于**判据自己的家**（`tests/egress_guard.py` 模块 docstring）与
+      `docs/architecture/AGENT_RUNTIME.md`，由
+      `test_the_one_controlled_download_sentence_is_verbatim_in_both_homes` **逐字校验**。
+      **并且把旧措辞按实测改对了**：workflow 四份注释原先写「冷装首次 `import litellm` 会下载
+      `cl100k_base`」，本轮**在冷 `TIKTOKEN_CACHE_DIR` 下未能复现**（导入成功、缓存目录仍空）；
+      用不可达代理探到的**那一次真实请求是 litellm 的 model cost map**
+      （`raw.githubusercontent.com`，失败即回落本地副本）⇒ 同源句按实测写成「**至多一次**」
+      （**不写「恰一次」**），四份注释与架构文档同步改写。**不改任何 workflow 步骤、不放宽判据。**
+      ③ **行为可判定（EC-05 的 verify 句）**——三面实跑（`scratch/goal011-c8-ec05-blocked-destination.py`，
+      结果 `scratch/goal011-c8-ec05/blocked-destination.json`；**脚本自身不出网**：不可达代理是
+      IP 字面量 + RFC 5737 文档保留网段）：**A0 对照（无代理）绿**（`tests/e2e/test_ec03_real_runtime_offline_chain.py`
+      + `tests/application/run_orchestration` ⇒ **81 passed / 1 skipped**、`egress guard: judged 8; blocked 0`、
+      exit 0）；**A1 阻断（同子集 + `HTTP(S)_PROXY` 指向不可达地址）红**（**3 failed / 78 passed / 1 skipped**、
+      `judged 22; blocked 18`、exit 1，三条失败**全部落在真实 runtime 链**
+      `test_declared_run_chain_capabilities_let_production_assembly_start` /
+      `test_real_runtime_offline_chain_segments` / `test_real_runtime_offline_chain_rejects_a_non_unique_declaration`
+      ⇒ 与 A0 成对，红线**可归因于注入的代理**：**代理跳本身就是非环回目的地，判据 fail-closed 照拒**）；
+      **B 进程内触发那次下载**（`guard.arm()` + 关掉 `LITELLM_LOCAL_MODEL_COST_MAP`）⇒ 判据**在任何
+      数据包之前拒绝**并记 `blocking_failures=1`，litellm 逐字回落本地副本。**如实登记两条边界，不粉饰**：
+      （a）**A1 的方向是「红」而不是「绿」**——本轮**不把它改写成绿的**；EC-05 要的是「结论**可判定**」，
+      A0/A1 成对给的正是**可归因的绿与红**；（b）**刻意不跑**「无代理直连」版本——那需要为
+      `raw.githubusercontent.com` 做 DNS 解析，而该域名**不在任何 provider 声明的 `network_domains` 内**，
+      所以「拒绝发生在代理跳」是实测，「直连时在成本表域名处被拒」**未实测**。**残余 W-N（新）**：
+      预热门**当前的必要性未被证实**（两条最可能触发的子集在冷缓存下都没有词表下载），本 PLAN
+      **不因此删掉它**（无复现就删 = 改 CI 行为），只登记为**待复现项**。**W-O（新，本轮实测到，未修）**：
+      **本机带操作者 `.env` 时默认门不密闭**——litellm 导入期 `load_dotenv` 让 `LLM_MAIN_KEY` 在**套件中途**
+      进入进程环境 ⇒ 走**生产装配**的用例（`test_start_run_unprovisioned_control_plane_reports_actionable_failure`）
+      的健康探测**真的发起连接**（本机 DNS 走代理 ⇒ `198.18.0.200:443 (kind=private)`）⇒ **判据照拒、整轮判红**
+      （`4383 passed / 17 skipped` 但 exit 1，零用例失败）。**成对实验**：`LLM_MAIN_KEY=<非空>` ⇒ `blocked 2`；
+      `LLM_MAIN_KEY=` ⇒ `judged 1 / blocked 0`（两次用例都 passed）；CI 无 `.env`（gitignored + 未跟踪 +
+      workflow 不生成）⇒ 结构上不受影响。**判据判得对 ⇒ 本轮不放宽它、也不去改那条既有用例**（它自称 hermetic
+      却只清数据库类环境变量 ⇒ 真实缺口，登记待后续决断）。**本地门（按 CI 同形环境复跑）**：m0 **23/23**
+      （`PASS: profile=m0; 23 deterministic checks`、EXIT=0、`PASS [` **24 行**含资产封印；`python/tests`
+      **4382 passed / 18 skipped / 0 failed**、`egress guard: judged 778; blocked 8`——8 条是判据对
+      `198.51.100.1` 的**故意**探针；DOCS-CHECK 6 项 PASS）。**三次跑的过程如实记**：① 首跑 **22/23**
+      （`python/product-lint=1`：我追加的 docstring 第 41 行 103 字符超 100 上限；当轮 `python/tests` 是绿的）
+      ⇒ **只折行不改内容**；② 复跑 `python/tests` 判红（W-O）⇒ 补 `LLM_MAIN_KEY=""` / `DEV_LLM_API_KEY=""`；
+      ③ 全量复跑 **23/23、EXIT=0**。定向：`pytest tests/architecture tests/tooling -q` **1306 passed**
+      （**在文档段落后重跑**——那段是在 m0 跑到一半时加的）、`pytest tests/tooling -q` **1116 passed**、
+      `pytest tests/architecture -q` **190 passed**（**收尾重测**：初记 195 与该目录无改动矛盾 ⇒ 按实测更正）、
+      `docs_consistency_check.py` **DOCS-CHECK PASS**（6 项）；`ruff check` / `ruff format --check` 全绿。
   - id: EC-06
     criterion: >-
       **收口复检 + 残余登记**：独立复检脚本（**当前树 + 干净 checkout 同结论**）+
@@ -309,7 +361,7 @@ memory_entries: []
 | EC-02 | **证据链升级为「系统取得」**：读面区分 `USER_PROVIDED` 与 `RETRIEVED`，口径诚实不混称；`EVIDENCE_COVERAGE` 由 EC-01 的检索来源满足；判据 = 来源含检索来源 + 可追溯到外部标识 + digest 可重算；反证 = 去掉检索来源 ⇒ 覆盖率判拒 | `GET /runs/{id}/evidence` 来源集合含检索来源且可追溯 + digest 独立重算；反证先绿后红再复原 | **PASS** |
 | EC-03 | **真实实验执行链**（视预算）：真实 LLM 驱动 `sort_analysis_v1` 或 `m12_reference_research_v1` 到终态，实验产物 + 证据 + 预算归账可读（执行体 = 既有 Docker 后端） | run 终态如实记录（只有 `SUCCEEDED` 是成功）+ 读面三项齐备；预算不足则如实登记为下一轮输入，**不得**记 PASS | **PENDING**（cycle 6 落机械，**被既有 pre-freeze 阻断点挡住**，如实登记为下一轮输入——见 `status_note`） |
 | EC-04 | **用户视角端到端验收**：建项目 → 选协议 → 跑真实 run → 看制品/证据/预算/血缘，留可复核记录（`scratch/`，不进仓库）；顺带复核前端 `partial` 页面的诚实标注与实际是否一致（不一致即如实登记） | `scratch/` 下可复核记录覆盖五步；`partial` 核对结论逐条写明 | **PASS**（cycle 7；真实 run `SUCCEEDED` + 五步读面齐 + 5 页逐条核对 + 三条边界如实登记 W-L/W-M——见 `status_note`） |
-| EC-05 | **`R-6` 词表固化**（可选，成本小）：让「默认 CI 离线」**成立或如实降级措辞**（固化 `tiktoken` 词表进镜像/私有源，或在文档与判据里写明「CI 每轮一次受控外部下载」）；判据 = 断网跑默认门 ⇒ 行为可判定；措辞与事实同源 | 断网/阻断单目的地跑默认门 ⇒ 结论可判定且与措辞一致 | **PENDING** |
+| EC-05 | **`R-6` 词表固化**（可选，成本小）：让「默认 CI 离线」**成立或如实降级措辞**（固化 `tiktoken` 词表进镜像/私有源，或在文档与判据里写明「CI 每轮一次受控外部下载」）；判据 = 断网跑默认门 ⇒ 行为可判定；措辞与事实同源 | 断网/阻断单目的地跑默认门 ⇒ 结论可判定且与措辞一致 | **PASS**（cycle 8；取**降级措辞 + 判据**侧：声明受判 + 同源句逐字锁死 + 三面实跑的可判定结论——见 `status_note`） |
 | EC-06 | **收口复检 + 残余登记**：独立复检脚本（当前树 + 干净 checkout 同结论）+ m0 **23/23** + 治理 validate 绿 + CI 台账到终态；13 条人工面原样保留 + 本 GOAL 的 W 列表；`ANTHROPIC` run 腿仍为可选验证项 | 复检两树同结论；`make validate-all` 23/23；`validate.py` 绿；`latest_recheck` 为仓库相对路径；frontmatter 与状态表一致 | **PENDING** |
 
 ### 建档时已探明的现状（事实类，用于判定起点；**不当作验收依据**）
@@ -578,6 +630,7 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 | 6 | PLAN-20260922-135（EC-03） | `457dd39`（derive + ALL_PLAN）、`3ee18b3`（WP1 声明面）、`a4c11f2`（WP2 声明式派发）、`5d5e86f`（WP3 既有 Docker 实验链接入装配 + live 夹具）、`713dce7`（WP4 实验脚本 + 判据）；本 cycle 的收口提交见下方 CI 台账尾巴 | **实验阶段从「按合约 id 特判」变成「按合约声明派发」，并把既有 Docker 实验链首次接进运行编排**。落地四件：① **声明面**——`TaskContract.experiment`（`ExperimentExecutionSpec`：script / image / command / timeout_seconds，构造期拒空 command 与 <1 超时；**缺省 `None` = 会话语义逐字不变**）+ `schemas/task-contract.schema.json` 的 `$defs.experimentExecution` + loader（未知键**点名拒绝**）+ sqlite 往返 + `examples/contracts/task_contracts.yaml` 两份实验合约（`experiment_execution` 空映射 = 脚本由装配上下文给；`m12_experiment_execution` 把脚本/镜像 pin 在契约里）。② **派发面**——`phase_runner` 由字面量 id（`== "experiment_execution"`）改成 **`contract.experiment is not None`** → `dispatch_experiment`（450 → **448** 行，净减）；声明了而缝没接 ⇒ `outcome="FAILED"` + `failure_category=CONFIGURATION` + 消息点名合约 id 与 `no experiment runner is wired`（**fail-closed，不静默回退到会话**）。③ **装配面**——`services/api/experiment_support.py` 用**既有** `ExperimentExecutor` + `GovernedExperimentExecutor` + **既有 `DockerExecutionBackend`**（`research-os-sandbox:m9-test`，M9 已 6 容器 E2E）接进 `OrchestrationDependencies.experiment_task`（`service.py` 450 → **449** 行；**首次有组合根接上这条缝**），live/ops 由 `tests/e2e/live_run_support.py::with_sandbox_experiment` 在**本次 run 的目录**上发声明（协议与共享夹具零字节改动）。④ **实验脚本** `examples/experiments/sort_analysis_baseline.py`（纯标准库、确定性归并排序基准，产出 `analysis_report` + `experiment_result.json` 并按 `EXPERIMENT_RUN_ID` 回显）。**判据**：`tests/application/run_orchestration/test_sandbox_experiment_dispatch.py` **4 passed**（声明 ⇒ 缝被调用 / 声明+未接 ⇒ 点名 FAILED / 声明形状 ValueError / 缺省保持会话语义）+ `tests/e2e/test_sandbox_experiment_reachability.py` **3 passed**（离线，`judged 0 connection attempt(s)`；把阻断点钉成可复核形态）。**阻断点（实测，未修）**：`sort_analysis_v1` 过不了真实的 compile → preflight → freeze——预检报告 **`WARN`**、4 条 `WARNING TOOL_RISK_ELEVATED \| provider openhands_workspace has elevated risk class HIGH`，根因是**无条件**的 `classify_risk(EXECUTE, BUILT_IN) → HIGH`（`packages/domain/tools.py:143-144`，与 trust level 无关）+ `freeze_manifest` 的 `if not report.passed: raise`（`preflight.py:186-187`）⇒ run 在**执行之前**终止：`state: FAILED`、`manifest_digest: null`、`protocol_body_digest` 非空、`/tasks` 与 `/experiments` 均 `[]`、零工具观测；**对照组**（同一装配、`NO_DECL=1` 不发任何声明）**同一签名** ⇒ **既有**，非本 cycle 引入。**为什么不自修**：可选修法（放宽 `classify_risk` 严重级 / 让 `freeze_manifest` 接受 `WARN` / 把 `code.execute` 从合约能力里删掉）**三条都是改门禁凑成功**，明文禁止且命中 `escalation_triggers`。**本地门**：第一轮 **20/23**，三条红**全是本 cycle 自己的**——`python/format-check`（新判据文件 1 个待重排）、`python/typecheck`（同文件 3 条 `attr-defined`：`EffectClass`/`RiskClass`/`TrustLevel` 应从 `packages.domain.enums` 导入）、`python/tests`（**既有判据的真实回归**：`tests/integration/test_ig1_phase_runner.py::test_phase_runner_experiment_promotes_claim_and_memory` 报 `AssertionError: assert 'FAILED' == 'SUCCEEDED'`——它的 fixture 合约**没有**声明，派发判据改动后按会话派发）。三条全部修好（**给 fixture 补声明，断言一字未改**；反方向由新判据钉住）：`ruff format --check apps services packages adapters tests` = **999 files already formatted**、`mypy` = **Success: no issues found in 989 source files**、三文件 `pytest` = **8 passed**；第二轮 m0 = **23/23**（`PASS: profile=m0; 23 deterministic checks`；`python/tests` **4379 passed / 18 skipped / 0 failed**；本轮的 env 配方同既有规矩 `LLM_MAIN_KEY=""` + 钉住测试 DSN + 其余 DSN 键空，**未出现**此前几轮那条本机 fake-IP 出站判红）。治理 `validate.py` exit 0；`phase_runner` 448 / `service.py` 449 / `composition.py` 450（**未增长**）| 见下方 CI 台账尾巴 | **F-d（本 cycle 自伤，m0 抓出）**：派发判据由「按 id」改「按声明」打红了既有 `test_ig1_phase_runner.py` 的 fixture（它自带合约、不读目录）。处置 = 给 fixture 补 `ExperimentExecutionSpec` 声明，**断言逐条保留**；教训与 cycle 5 的 F-c 同形——**三道门与既有判据的回归都是本地 m0 抓出来的，不是自查发现的**。**F-e**：新判据文件同时踩 `ruff format` 与 `mypy attr-defined` 两道门（导入路径应为定义处 `packages.domain.enums`），已修。**F-f（CI 抓到的自伤）**：新判据里的**装配用例**走真实装配 ⇒ 构造 `DockerExecutionBackend`，而 CI 的 windows 跑者**没有 Linux daemon** ⇒ 台账提交 `cdd7b7d` 的 M0 在 `python/tests` 判红（`1 failed, 4136 passed, 260 skipped`，`DockerException: Error while fetching server API version`）。**修法 = 挂既有 `requires_docker` 标记**（判据内容不变、不 skip 产品行为），使它落到既有 `container-quality` 作业（`-m requires_docker`）里**真跑**；本地三向实跑已验（3 passed / `-m requires_docker` 1 passed+2 deselected / `-m "not requires_docker"` 2 passed+1 deselected） | **EC-03 = PENDING**（见 EC-03 `status_note`：机械已落，被既有 pre-freeze 阻断点挡住，如实登记为下一轮输入）。**残余 W**：W-C/W-D/W-F（承 cycle 4）、W-G/W-H/W-I（承 cycle 5）、**W-J（新）**沙箱实验缝只在 run-ready/live 装配上接线（生产组合根未接，与 W-C 同源）、**W-K（新）**`EXECUTE` 类 provider 的 HIGH 风险警告**阻断冻结**这条既有语义交叉需用户/ADR 拍板。live 调用记账：**本 cycle 未发起任何真实检索、未建立任何真实会话、未起任何实验容器**——两次真实 run 尝试（声明组与对照组）都在**冻结之前**终止（零 task / 零实验 / 零工具观测 ⇒ 模型侧零调用）。**只追加的更正**：本行原写「零 LLM 调用、**零出网**」——**「零出网」这一句撤回**：本 cycle 没有对「预检是否发生端点健康探测」做任何观测（前两轮那类「恰 2 次」由判据内的显式计数器给出，本 cycle 无对应计数器）⇒ 只保留**有证据的部分**（无会话、无工具观测、无实验容器），**不声称出网次数** | 下一轮输入**二选一（需拍板）**：**(A)** 拍板「`EXECUTE` 类 provider 的 HIGH 风险警告是否应当阻断冻结」——若按既有 `WARN` 语义「只警示不阻断」，就改**冻结门的输入口径**（那是改门禁，需用户/ADR 授权）；**(B)** 换载体：给 `m12_reference_research_v1` 补 5 份缺的 phase 合约**并**为其 discovery phase 找到诚实的 10 条来源路径（或接受 ≥22 次真实检索出网的代价）。拍板后 EC-03 的真实链（产物 + 证据 + 预算归账三读面）才可能跑到 `SUCCEEDED`；随后 EC-04（用户视角端到端 + `partial` 页诚实核对）/ EC-05（`R-6` 词表 pin，可选）/ EC-06（收口复检） |
 
 | 7 | PLAN-20260922-136（EC-04） | `ae158a6`（derive PLAN-136 + ALL_PLAN + `child_plans`）、`a7bf9e2`（唯一新增判据：把「run 归属跟随执行输入」这条受控态钉成可复核事实）、其余记录见下方 CI 台账尾巴 | **五步在真实数据下走通 + `partial` 标注逐条核对**。① **live 五步**（`scratch/goal011-c7-e2e.py`，控制台调用的同一批 API）：`POST /projects` 建项目 → `GET /protocol-templates`（5 条）+ `POST /protocols/validate` 编译载体协议 **200** → `POST /projects/{id}/runs` 跑真实 run **`SUCCEEDED`**（run `af0fed4b-659d-4ea0-94dc-460e8968f44e`，零失败消息，1 个 task；事件链 `claim.verified → manifest.frozen → model.probed → task.created → task.leased → task.completed → run.completed`；**真实出站恰 2 次**：`esearch` → `efetch`，均在 provider 声明的 `network_domains` 内，第 2 次的 ids 取自第 1 次的返回 `42768236/42767441/42765796`）→ 四项读面齐（制品 6 件；证据 4 条 **`GENERATED`/`USER_PROVIDED`/`RETRIEVED`×2**，检索证据带 `tool_refs`、读取步 id 里逐字含 `42768236`；预算 `forecast_scope=RESERVED_ONLY`、`MODEL_TOKENS consumed=20647`、`unknown_cost_entries=3`；血缘 `degraded=false` 且检索证据在边里）→ 记录落 `scratch/goal011-c7-e2e/`（`steps.json`/`summary.json`/`STEPS.md`，**不进仓库、未上传外部、无凭据值**）。② **`partial` 逐条核对**（5 页）：`portfolio/projects` **删除语义逐字一致**（被引用 ⇒ 409 + `drafts=1`；默认项目 ⇒ 409；未知 ⇒ 404；清干净 ⇒ 204 不级联——离线探针同形）、`govern/budget` **一致**、`library/lineage` **一致**、`plan/protocol` **一致**（full）、`run/timeline` **部分一致**（读面几句与既有判据一致；resume 续跑与跨进程两句未逐条核对）。**不粉饰三条**：**W-L**（`partial` 理由里「runs 按项目归属」在受控装配下对 runs 不成立：run 归 `example-project` 而非 URL 路径 ⇒ 新建项目页看不到刚跑的 run）、**W-M**（浏览器 UI 在真实执行体/真实检索下**没有承载装配**，既有 UI 承载自称 Fake Port ⇒ 本轮不伪造 UI 证据）、`run/timeline` 真实样本仍缺。**本地门**：m0 **23/23**（`PASS: profile=m0; 23 deterministic checks`；`python/tests` **4380 passed / 18 skipped / 0 failed**，**0 条 FAILED**，无出站判红）；新增判据**已按压**（期望改成路径项目 ⇒ 红 `assert 'example-project' == '0880b513-…'`；复原 ⇒ 14 passed）；`ruff check`/`format`/`mypy` 对改动文件全绿；治理 `validate.py` exit 0 | 见下方 CI 台账尾巴 | — （**未改任何门禁/判据强度、未放宽出站判据、未改产品行为**：除新增一条判据外**零产品代码改动**——本轮是验收轮） | **EC-04 = PASS**（见 `status_note`）。**残余 W**：W-C/W-D/W-F（承 cycle 4）、W-G/W-H/W-I（承 cycle 5）、W-J/W-K（承 cycle 6）、**W-L（新）**受控装配下 run 不跟随 URL 项目 ⇒ 前端新建项目页看不到该 run、**W-M（新）**真实执行体/真实检索没有浏览器可达的装配。live 调用记账：**1 次真实 run = 1 次真实会话 + 恰 2 次检索出网**（最小必要）；另有**一次未出网的失败尝试**（首次运行因缺 `Idempotency-Key` 在步骤 1 中止）与**一次路径形态错误**（协议来源写成仓库相对路径被 422 拒——已记入记录的边界说明） | cycle 8 = **EC-05**（`R-6` 词表 pin：让「默认 CI 离线」成立或如实降级措辞；判据 = 断网/阻断单目的地跑默认门 ⇒ 行为可判定、措辞与事实同源；**不得**放宽 `egress_guard`）——它**不依赖** EC-03 的拍板，可先做。EC-03 仍需 (A)/(B) 二选一；EC-06 收口时把 133/134/135/136 一并收口 |
+| 8 | PLAN-20260922-137（EC-05） | `3689014`（derive PLAN-137 + ALL_PLAN + `child_plans`）、`C8FIX`（唯一一处修复：我追加的 docstring 折行超 100 字符 ⇒ **只折行不改内容**）、其余记录见下方 CI 台账尾巴 | **「默认 CI 离线」的措辞与判据同源（EC-05 取「降级措辞 + 判据」侧，定案 D-1）**。① **声明受判**（新增 2 条**离线**判据，并进既有 `tests/tooling/test_m0_ci_coverage.py`，不新建第二个解析同一文件的模块）：`test_every_job_that_runs_the_python_gate_prewarms_the_tokenizer_first`（按作业切分 workflow 步骤：**跑 Python 门的作业**必须在跑门**之前**有预热步骤，命令形态须含 `import litellm` + `--frozen`；另有 `gate_jobs >= 4` 自检防扫描写错成空转）与 `test_the_one_controlled_download_sentence_is_verbatim_in_both_homes`（同源句**逐字**在场）。**已按压**：摘掉 `eval-gate` 的预热门 ⇒ 逐字红 `eval-gate runs the Python gate without prewarming the tokenizer cache`；复原 ⇒ **5 passed**，且 `git diff --stat .github/workflows/m0-quality.yml` **为空**（复原无残留）。② **措辞按实测改对**：同源句锁为 **「CI 每轮至多有一次受控外部下载」**（**不写「恰一次」**）；旧措辞「冷装首次 `import litellm` 会下载 `cl100k_base`」在**冷 `TIKTOKEN_CACHE_DIR` 下未能复现**（导入成功、缓存目录仍空），而不可达代理探到的**那一次真实请求是 litellm 的 model cost map**（`raw.githubusercontent.com`，失败即回落本地副本）⇒ workflow 四份注释 + `docs/architecture/AGENT_RUNTIME.md` 同步改写；**不改任何 workflow 步骤、不放宽判据**。③ **行为可判定（EC-05 的 verify 句，三面实跑）**：**A0 无代理 ⇒ 绿**（`tests/e2e/test_ec03_real_runtime_offline_chain.py` + `tests/application/run_orchestration` ⇒ **81 passed / 1 skipped**、`egress guard: judged 8; blocked 0`、exit 0）；**A1 注入不可达代理 ⇒ 红**（同一子集 ⇒ **3 failed / 78 passed / 1 skipped**、`judged 22; blocked 18`、exit 1，三条失败**全部落在真实 runtime 链** ⇒ 与 A0 成对，红线**可归因于注入的代理**：**代理跳本身即非环回目的地，判据 fail-closed 照拒**）；**B 进程内触发那次下载**（`guard.arm()` + 关掉 `LITELLM_LOCAL_MODEL_COST_MAP`）⇒ 判据**在任何数据包之前拒绝**（`blocking_failures=1`），litellm 逐字回落本地副本。记录落 `scratch/goal011-c8-ec05/`（**不进仓库**；**脚本自身不出网**：不可达代理是 IP 字面量 + RFC 5737 文档保留网段）。**本地门**：m0 **23/23**（`PASS: profile=m0; 23 deterministic checks`、**EXIT=0**、`PASS [` **24 行**含资产封印；`python/tests` **4382 passed / 18 skipped / 0 failed**——比 cycle 7 的 4380 恰多本轮新增的 2 条判据；`egress guard: judged 778; blocked 8`，那 8 条是判据对 `198.51.100.1` 的**故意**探针；DOCS-CHECK 6 项 PASS）。**三次跑的过程如实记**：① 首跑 **22/23**——`python/product-lint=1`（我追加的 docstring 第 41 行 103 字符超 100 上限；当轮 `python/tests` 是绿的）⇒ **只折行、不改内容**；② 复跑 `python/tests` **判红**（`4383 passed / 17 skipped`、`judged 785; blocked 10`、exit 1，**零用例失败**——红来自判据**整轮判决**，根因见「剩余差距」的 **W-O**）⇒ 按 **CI 同形**补 `LLM_MAIN_KEY=""` + `DEV_LLM_API_KEY=""`（dotenv **不覆盖**已存在变量）；③ 全量复跑 ⇒ **23/23、EXIT=0**。定向：`pytest tests/architecture tests/tooling -q` **1306 passed**（**在文档段落后重跑**——那段是在 m0 跑到一半时加的）、`docs_consistency_check.py` **DOCS-CHECK PASS**（6 项）；`ruff check` / `ruff format --check` 全绿 | 见下方 CI 台账尾巴 | **一处自伤**：本机 m0 首跑 `python/product-lint=1`（我追加的 `tests/egress_guard.py` docstring 第 41 行 103 字符超 `ruff` 的 100 上限）⇒ **只折行、不改内容**（同源句与实测口径逐字不动），复绿后**重跑全量门**。（**未放宽任何判据/放行面、未改 workflow 步骤、未改产品代码**） | **EC-05 = PASS**（见 `status_note`）。**新登记 W-N**：预热门**当前必要性未被证实**（两条最可能触发的子集冷缓存下都无词表下载）⇒ **不删、登记为待复现项**。**两条边界**：(a) A1 的方向是**红**（不粉饰成绿），EC-05 要的是「结论**可判定**」，A0/A1 成对给的正是**可归因的绿与红**；(b) **刻意不跑**「无代理直连」版本（需为 `raw.githubusercontent.com` 做 DNS，而该域名**不在任何 provider 声明的 `network_domains` 内**）⇒「拒绝发生在代理跳」是实测、「直连时在成本表域名处被拒」**未实测**。另有**一处自纠**：PLAN-137 初记的 `tests/architecture` **195 passed** 与 E-2 的 **190** 自相矛盾 ⇒ 该目录本轮无改动、两次重测均 **190**，按实测改为 190（不影响结论方向）。**W-O（新，本轮实测到，未修）**：**本机带操作者 `.env` 时默认门不密闭**——litellm 导入期 `load_dotenv` 让 `LLM_MAIN_KEY` 在**套件中途**进入进程环境 ⇒ 走**生产装配**的用例健康探测**真的发起连接**（本机 DNS 走代理 ⇒ `198.18.0.200:443 (kind=private)`）⇒ 判据照拒、整轮判红（**零用例失败**）。**成对实验**：`LLM_MAIN_KEY=<非空>` ⇒ `blocked 2`；`LLM_MAIN_KEY=` ⇒ `judged 1 / blocked 0`（两次用例都 passed）；CI 无 `.env`（gitignored + 未跟踪 + workflow 不生成）⇒ 结构上不受影响 ⇒ **判据判得对，本轮不放宽它、也不改那条既有用例**（它自称 hermetic 却只清数据库类环境变量 ⇒ 真实缺口，登记待后续决断）。**同 cycle 把这条前提写进仓库**（`docs/architecture/AGENT_RUNTIME.md`）+ 本地门配方（本机跑全量门必须同时 pin 三条 DSN **与** `LLM_MAIN_KEY=""`） | cycle 9 = **EC-03**（唯一剩下的实质项：真实实验执行链；**需先就 (A) 种入对齐 / (B) 接受 22 次真实检索出网的代价 二选一取得拍板**——它**不能**由本循环自行决定）；EC-06 收口时把 133/134/135/136/**137** 一并收口 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -597,6 +650,7 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 | cycle 6 台账回写（GOAL 状态历史 + 台账行） | `cdd7b7d` | M0 [35735119552](https://github.com/Eswink/research-system-new/actions/runs/35735119552) = **failure**（**本 cycle 自伤，已修**：`quality-windows-latest` 的 `python/tests` —— `tests/e2e/test_sandbox_experiment_reachability.py::test_the_declaration_and_the_seam_land_on_the_run_assembly` 在**没有 Linux daemon** 的跑者上构造 `DockerExecutionBackend` ⇒ `docker.errors.DockerException: Error while fetching server API version`；`1 failed, 4136 passed, 260 skipped`；其余五 job 全 success）；**CodeQL** [35735119571](https://github.com/Eswink/research-system-new/actions/runs/35735119571) = success（3/3） |
 | cycle 6 尾巴（更正「零出网」+ `requires_docker` 修复 + 台账；**一次推送三个提交**，GitHub 只对 tip 触发一个 run） | tip `b06afa8` | M0 [35738665745](https://github.com/Eswink/research-system-new/actions/runs/35738665745) | 六 job 全 **success**（`quality-ubuntu-latest` / `console-frontend` / `eval-gate` / `collector-quality` / `quality-windows-latest` / `container-quality`，逐 job 实查，终态 `completed`）；**CodeQL** [35738664825](https://github.com/Eswink/research-system-new/actions/runs/35738664825) = success（3/3）。**实查补充（修复生效的正面证据）**：`container-quality` 的日志里出现 `tests/e2e/test_sandbox_experiment_reachability.py .`（该作业 `pytest -m requires_docker`，结果 **40 passed / 19 skipped / 4340 deselected**）⇒ 那条判据在**有 Linux daemon 的作业里真跑**，而 `quality-windows-latest` 由红复绿 |
 | 台账尾巴（cycle 6 收口回写） | 见回合汇报（**台账尾巴口径**同上） | | |
+| cycle 7 WP0–WP2（derive PLAN-136 + live 五步记录 + `partial` 核对 + 唯一新增判据 + GOAL 回写；**一次推送三个提交**，GitHub 只对 tip 触发一个 run） | tip `2b61185`（`ae158a6` → `a7bf9e2` → `2b61185`） | M0 [35745861425](https://github.com/Eswink/research-system-new/actions/runs/35745861425) | 六 job 全 **success**（`quality-ubuntu-latest` / `console-frontend` / `container-quality` / `collector-quality` / `eval-gate` / `quality-windows-latest`，逐 job 实查，终态 `status=completed`、`conclusion=success`）；**CodeQL** [35745860027](https://github.com/Eswink/research-system-new/actions/runs/35745860027) = success（3/3：`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)`） |
 
 **台账尾巴口径**（沿用 GOAL-005…010，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -676,3 +730,20 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
   真实检索下**没有承载装配** ⇒ 本轮**不伪造** UI 证据，走 EC-04 允许的读面快照）、`run/timeline`
   的**真实数据样本仍缺**（离线同形判据 7 passed）。**本 cycle 零产品代码改动**（验收轮；唯一提交是
   一条新增离线判据 `a7bf9e2`）。**CI 终态**：`ae158a6` + `a7bf9e2` + 本回写的推送见台账尾巴。
+  **同 cycle 的 CI 已到终态并回写台账**：tip `2b61185` 的 M0 `35745861425` **六 job 全 success**、
+  CodeQL `35745860027` **3/3 success**（逐 job 实查，见台账表）。
+- 2026-09-22（cycle 8 收口）：**EC-05 = PASS**——取**降级措辞 + 判据**侧（定案 D-1；固化词表要引入
+  **未 pin 的外部二进制资产**，代价远超 EC-05 自称的「成本小」，而收益只有每轮少一次请求）。
+  **同源句锁成「CI 每轮至多有一次受控外部下载」**并由判据在两处**逐字**校验；**四份 workflow 注释
+  的旧理由按实测改写**（那一次请求是 litellm 的 **model cost map**，不是词表——冷缓存下**未能复现**
+  词表下载）。**如实登记三件事**：**W-N**（预热门当前必要性未被证实 ⇒ **不删**，登记为待复现项）、
+  **A1 的方向是红**（注入代理 ⇒ 判据 fail-closed 照拒，18 条阻断；**不粉饰成绿**）、**刻意不跑**
+  无代理直连版本（需为不在 `network_domains` 内的域名做 DNS）。**收尾实测到第四件并登记为 W-O**：
+  **本机带操作者 `.env` 时默认门不密闭**（litellm 导入期 `load_dotenv` 把 `LLM_MAIN_KEY` 带进进程
+  ⇒ 走生产装配的用例健康探测真的发起连接 ⇒ 判据照拒、整轮判红，**零用例失败**；**成对实验**的开关
+  就是「凭据在不在」，两次用例都 passed）。**处置是补 CI 同形前提（`LLM_MAIN_KEY=""`）而不是放宽判据**，
+  并把这条前提写进 `docs/architecture/AGENT_RUNTIME.md`。**一处自伤已修**（docstring 折行超 100 字符
+  ⇒ 只折行）、**一处自纠**（PLAN 里 195 vs 190 的重测更正）、**一处过早记录已更正**（iteration 行初写的
+  「本地门 23/23」实为**首跑的 `python/tests` 绿**——首跑整体是 **22/23**；最终 **23/23、EXIT=0** 来自
+  补上凭据 pin 后的第三次跑）。GOAL **仍 ACTIVE**（**EC-03 待拍板**、EC-06 未做）。**本 cycle 一是判据、
+  二是措辞、三是实验，零产品代码改动、零 workflow 步骤改动、未放宽任何放行面。**

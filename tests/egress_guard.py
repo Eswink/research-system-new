@@ -31,6 +31,16 @@ selector / proactor 两个**具体实现**——两条都是独立复检逼出�
 **不在射程内**：DNS（`getaddrinfo`）、UDP（`sendto`）、子进程、非 python 作业、
 **自实现 `sock_connect` 的第三方循环**（如 uvloop）；
 **环回转发代理**同样看不见（目的地确实是本机，判决只有环回）。逐条登记在 PLAN-131 的残余表。
+
+**这条判据管不到的那一次**（GOAL-011 EC-05 的同源句，逐字，由
+`tests/tooling/test_m0_ci_coverage.py` 机器校验）：**CI 每轮至多有一次受控外部下载**——
+它发生在**环境准备阶段**（`import litellm` 预热，在跑门之前），**不在本判据的进程内**。
+**实测口径**（2026-09-22，用不可达代理探请求、冷 `TIKTOKEN_CACHE_DIR` 探下载）：
+该步请求的是 litellm 的 **model cost map**（`raw.githubusercontent.com`，失败即回落本地副本）；
+**没有**观察到词表 `cl100k_base` 被下载。门内这两条都被处理掉了——conftest 在任何测试模块
+导入 litellm 之前置 `LITELLM_LOCAL_MODEL_COST_MAP=True`，非环回目的地在**任何数据包之前**
+被本判据拦下。
+所以「默认 CI 完全离线」**不声称成立**；要连这一次也消掉，得把上游数据固化进镜像或私有源。
 """
 
 from __future__ import annotations
