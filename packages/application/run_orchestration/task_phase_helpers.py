@@ -21,6 +21,7 @@ from packages.application.run_orchestration.outcomes import TaskOutcome
 from packages.application.run_orchestration.result_handler import (
     RegistrationDeps,
     ResultRegistration,
+    count_retrieved_sources,
     register_declared_input_sources,
     register_session_result,
 )
@@ -138,7 +139,7 @@ def evaluate_gate_experiment(
     tctx: Any,
     registration: ResultRegistration,
     outcome: object,
-) -> GateOutcome | None:
+) -> GateOutcome:
     assert isinstance(outcome, ExperimentExecutionOutcome)
     run = outcome.run
     metrics: dict[str, object] = {}
@@ -204,18 +205,34 @@ def evaluate_gate(
     tctx: Any,
     registration: ResultRegistration,
     session_result: AgentSessionResult,
-) -> GateOutcome | None:
-    gate = evaluate_task_gate(
+) -> GateOutcome:
+    """验收门的求值结果**总是**返回（含被拒时的逐条判词）。
+
+    GOAL-011 EC-02 之前这里把被拒的结局换成 `None`，调用方只能写「rejected by
+    acceptance gate」——**哪一条**判据判的、判词里的数是多少，被丢掉了（GOAL-010
+    收口登记的 W-9「诊断更钝」同源）。反证判据要求读面看得到「覆盖判拒」这一事实，
+    所以求值结果原样交回，由调用方决定怎么落地。
+    """
+    return evaluate_task_gate(
         tctx.task,
         tctx.contract,
         EvaluationInputs(
             structured_output=session_result.structured_output,
             artifacts=artifact_view(registration),
             evidence_source_count=registration.evidence_source_count,
+            # 性质维度（GOAL-011 EC-02）：从 canonical 的 SourceRecord 判**检索来源**数，
+            # 与读面同源；合约没声明 `minimum_retrieved_sources` 时它不参与判定。
+            retrieved_source_count=count_retrieved_sources(deps.ledger, registration.evidence),
         ),
         reviewer=f"gate:{tctx.spec_context.agent.id}",
     )
-    return gate if gate.passed else None
+
+
+def gate_rejection_reason(gate: Any) -> str:
+    """被拒时落进失败消息的**逐条判词**（点名判据与它的数，不写泛泛的「被拒」）。"""
+    failed = [item for item in gate.evaluations if not item.passed]
+    detail = "; ".join(f"{item.criterion_type.value}: {item.reason}" for item in failed)
+    return f"acceptance gate rejected: {detail}" if detail else "acceptance gate rejected"
 
 
 def artifact_view(registration: ResultRegistration) -> dict[str, object]:
@@ -248,11 +265,11 @@ def register_and_gate(
         )
     registration = registered
     gate = evaluate_gate(deps, tctx, registration, session_result)
-    if gate is None:
+    if not gate.passed:
         return failure_step(
             deps,
             tctx,
-            f"task {task.id.value} rejected by acceptance gate",
+            f"task {task.id.value} rejected by acceptance gate ({gate_rejection_reason(gate)})",
             False,
         )
     return _finish_task_step(
@@ -274,11 +291,11 @@ def register_and_gate_experiment(
     assert execution.experiment_outcome is not None
     registration = registration_from_experiment(deps, execution, tctx)
     gate = evaluate_gate_experiment(deps, tctx, registration, execution.experiment_outcome)
-    if gate is None:
+    if not gate.passed:
         return failure_step(
             deps,
             tctx,
-            f"task {task.id.value} rejected by acceptance gate",
+            f"task {task.id.value} rejected by acceptance gate ({gate_rejection_reason(gate)})",
             False,
         )
     kind = (

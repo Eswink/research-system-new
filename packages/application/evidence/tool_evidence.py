@@ -4,7 +4,8 @@
 - ToolResult != Evidence。工具输出只携带 digest（ToolResultRecord.output_digest），
   内容经 ArtifactStore 持久化；任何工具结果都不能直接成为可信 Evidence。
 - 正式准入路径：ToolResult（已 spill 的 artifact）→ 登记
-  SourceRecord(origin="tool:{tool_id}:{task_id}:{operation_key}", trust_label=GENERATED)
+  SourceRecord(origin="tool:{tool_id}:{task_id}:{operation_key}", trust_label=由调用方
+  按 provider 声明性质给值——外部取回 ⇒ `RETRIEVED`，否则 `GENERATED`；GOAL-011 EC-02)
   → 依据 artifact 内容构造 Evidence（content_digest=artifact digest，
   绑定 run_id / tool_refs / manifest_digest）→ EvidenceLedger.register_evidence。
 - 防绕过：本模块是工具证据的**唯一**登记入口；未先登记 Source 的
@@ -29,7 +30,14 @@ from packages.domain.tools import ToolResultRecord
 
 @dataclass(frozen=True, slots=True)
 class ToolEvidenceInput:
-    """一次工具结果准入的输入（参数对象，避免函数参数超限）。"""
+    """一次工具结果准入的输入（参数对象，避免函数参数超限）。
+
+    `trust_label` 是**来源性质**的**唯一**盖章点（GOAL-011 EC-02）：
+    - 内容取自**系统之外**（provider 声明了 `network_domains`，调用真的打到那个域）
+      ⇒ `TrustLabel.RETRIEVED`；
+    - 其他（缺省）⇒ `TrustLabel.GENERATED`：**不**自称「系统取得」。
+    由调用方按 provider 的**声明性质**给值——本模块不猜，读面/验收门也不在别处再推一次。
+    """
 
     result: ToolResultRecord
     run_id: str
@@ -37,6 +45,7 @@ class ToolEvidenceInput:
     evidence_id: str | None = None
     tool_refs: tuple[str, ...] = field(default_factory=tuple)
     extracted_by: str = "system:m12-tool-evidence"
+    trust_label: TrustLabel = TrustLabel.GENERATED
 
 
 def source_origin_for(result: ToolResultRecord) -> str:
@@ -73,7 +82,7 @@ def register_tool_evidence(
     source = SourceRecord(
         origin=origin,
         content_digest=str(result.output_digest),
-        trust_label=TrustLabel.GENERATED,
+        trust_label=input.trust_label,
         access_time=Timestamp.now(),
         parser_version="m12-tool-evidence-v1",
     )

@@ -57,7 +57,7 @@ from packages.application.tool_plane.execution import execute_tool_call, require
 from packages.application.tool_plane.results import fetch_spilled_result
 from packages.domain.artifacts import Artifact
 from packages.domain.core import Digest, Timestamp
-from packages.domain.enums import ToolCallStatus
+from packages.domain.enums import ToolCallStatus, TrustLabel
 from packages.domain.evidence import Evidence
 from packages.domain.tasks import ResearchTask
 from packages.domain.tools import ToolCallRecord, ToolProviderSpec, ToolResultRecord
@@ -208,9 +208,22 @@ def _execute_one(
             run_id=task.run_id.value,
             manifest_digest=spec.frozen_manifest_digest,
             tool_refs=(call.provider_id, call.tool_id),
+            trust_label=_trust_label_for(provider_spec),
         ),
     )
     return _payload(deps, result, call), evidence
+
+
+def _trust_label_for(provider_spec: ToolProviderSpec) -> TrustLabel:
+    """来源性质由 **provider 的声明**决定（GOAL-011 EC-02），不由本步自称。
+
+    声明了外部网络域（`network_domains`）⇒ 内容取自系统之外 ⇒ `RETRIEVED`
+    （`execute_tool_call` 的 URL 策略正是按这份声明在触网前判的）；
+    否则 `GENERATED`：本地计算/读取**不得**冒充「系统取得」。
+    """
+    if provider_spec.network_domains:
+        return TrustLabel.RETRIEVED
+    return TrustLabel.GENERATED
 
 
 def _tool_call(

@@ -34,6 +34,9 @@ class EvaluationInputs:
     structured_output: Mapping[str, Any] = field(default_factory=dict)
     artifacts: Mapping[str, object] = field(default_factory=dict)
     evidence_source_count: int | None = None
+    #: 其中的**检索来源**数（`TrustLabel.RETRIEVED`）。由编排按 canonical 的 SourceRecord
+    #: 判出（`count_retrieved_sources`）；未知即 `None` ⇒ 声明了性质维度的合约 fail-closed。
+    retrieved_source_count: int | None = None
     review_score: Decimal | None = None
     human_approved: bool | None = None
 
@@ -42,6 +45,7 @@ class EvaluationInputs:
             structured_output=dict(self.structured_output),
             artifacts=dict(self.artifacts),
             evidence_source_count=self.evidence_source_count,
+            retrieved_source_count=self.retrieved_source_count,
             review_score=self.review_score,
             human_approved=self.human_approved,
         )

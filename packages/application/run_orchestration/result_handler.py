@@ -349,6 +349,27 @@ def register_session_result(
     )
 
 
+def count_retrieved_sources(
+    ledger: EvidenceLedger | None, evidence: tuple[Evidence, ...]
+) -> int | None:
+    """**检索来源**数：按 canonical 的 `SourceRecord.trust_label` 判**性质**（GOAL-011 EC-02）。
+
+    判据面**不**接受调用方的自称：这个数只从 ledger 的 SourceRecord 读出来，与读面
+    `GET /runs/{id}/evidence` 的 `source_trust_label` **同源** ⇒ 门与读面不会各说一套。
+    没有 ledger（或来源未登记）⇒ 未知（`None`）；声明了 `minimum_retrieved_sources`
+    的合约据此 **fail-closed 判拒**——不把它当成 0，也不当成「没有要求」。
+    """
+    if ledger is None:
+        return None
+    count = 0
+    for item in evidence:
+        if not ledger.has_source(item.source_ref):
+            continue
+        if ledger.get_source(item.source_ref).trust_label is TrustLabel.RETRIEVED:
+            count += 1
+    return count
+
+
 def evidence_digest(evidence: Evidence) -> Digest:
     """Evidence 的确定性 digest（供 lineage 校验）。"""
     return digest_of(evidence)
