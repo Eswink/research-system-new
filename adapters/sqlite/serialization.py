@@ -24,6 +24,7 @@ from packages.domain.events import EventEnvelope, EventType
 from packages.domain.serialization import canonical_json_bytes, digest_of
 from packages.domain.tasks import (
     AcceptanceCriterion,
+    ExperimentExecutionSpec,
     ResearchTask,
     RetryPolicy,
     TaskContract,
@@ -94,6 +95,19 @@ def _decode_task_contract(payload: dict[str, Any]) -> TaskContract:
         retry_policy=_decode_retry_policy(retry) if retry else None,
         failure_policy=payload.get("failure_policy", {}),
         idempotency_scope=payload.get("idempotency_scope", "task"),
+        # GOAL-011 EC-03：`experiment` 声明往返（缺省 None ⇒ 会话语义）。
+        experiment=_decode_experiment(payload.get("experiment")),
+    )
+
+
+def _decode_experiment(payload: dict[str, Any] | None) -> ExperimentExecutionSpec | None:
+    if payload is None:
+        return None
+    return ExperimentExecutionSpec(
+        script=str(payload.get("script", "")),
+        image=str(payload.get("image", "")),
+        command=str(payload.get("command", "python experiment.py")),
+        timeout_seconds=int(payload.get("timeout_seconds", 180)),
     )
 
 

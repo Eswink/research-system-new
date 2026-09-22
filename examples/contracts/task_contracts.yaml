@@ -48,6 +48,12 @@ task_contracts:
       - type: TEST_PASSES
       - type: POLICY_COMPLIANT
     idempotency_scope: experiment_spec_digest
+    # GOAL-011 EC-03：本合约**声明**「这件工作不是一次会话，而是由既有沙箱实验后端跑一次实验」。
+    # 声明化（而不是按合约 id 硬编码派发）是这一轮的重点：把「谁执行」写成**契约事实**，
+    # 派发方才不会因为写死了一个名字而漏掉语义相同的别的合约。
+    # 空映射 = 声明已给出、脚本/镜像由**装配上下文**决定（本合约是通用实验合约，
+    # 跑哪个脚本属调用方的事）；`m12_experiment_execution` 则把两者**pin**在契约里。
+    experiment: {}
     retry_policy:
       max_attempts: 2
       retryable_categories: [WORKER_LOST, MODEL_RATE_LIMIT]
@@ -64,6 +70,13 @@ task_contracts:
       - type: TEST_PASSES
       - type: POLICY_COMPLIANT
     idempotency_scope: experiment_spec_digest
+    # GOAL-011 EC-03：同上——「谁执行」的声明。这一个把**脚本与镜像 pin 在契约里**
+    # （M12 参考实验与 M9 沙箱镜像都是已 E2E 验证的既有资产）：装配方**不得**覆盖。
+    experiment:
+      script: examples/experiments/m12_reference_classification.py
+      image: research-os-sandbox:m9-test
+      command: python experiment.py
+      timeout_seconds: 180
     retry_policy:
       max_attempts: 2
       retryable_categories: [WORKER_LOST, MODEL_RATE_LIMIT]

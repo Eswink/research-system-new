@@ -54,9 +54,21 @@
         ]
       }
     },
-    "idempotency_scope": {"type": "string", "minLength": 1}
+    "idempotency_scope": {"type": "string", "minLength": 1},
+    "experiment": {"$ref": "#/$defs/experimentExecution"}
   },
   "$defs": {
+    "experimentExecution": {
+      "description": "GOAL-011 EC-03: the task runs as a sandboxed experiment, not an agent session. Absent = session semantics; script/image may be left to the assembly context.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "script": {"type": "string", "minLength": 1},
+        "image": {"type": "string", "minLength": 1},
+        "command": {"type": "string", "minLength": 1},
+        "timeout_seconds": {"type": "integer", "minimum": 1}
+      }
+    },
     "acceptanceCriterion": {
       "type": "object",
       "additionalProperties": false,

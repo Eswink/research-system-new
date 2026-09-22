@@ -95,6 +95,35 @@ class AcceptanceCriterion:
 
 
 @dataclass(frozen=True, slots=True)
+class ExperimentExecutionSpec:
+    """契约声明：本任务的工作**不是一次会话**，而是由**既有沙箱实验后端**跑一次实验。
+
+    GOAL-011 EC-03。与 phase 级的 `CapabilityExecution`（「能力由谁执行」）同形，这里声明的
+    是**任务级**的同一个问题：「这件工作由谁执行」。**声明缺席 = 会话**（既有语义逐字保持）。
+
+    声明是**承诺**，不是提示：派发方读到它就**不得**把该任务交给模型会话；装配方没把实验
+    执行链接进来时，该任务以**点名拒绝**收敛（fail-closed），**不**静默回退到会话——
+    否则「声明了实验」与「真的做了实验」会分叉。
+
+    字段只放**装配方无法自行决定**的量（跑哪个脚本、用哪个已 pin 的镜像）；工作区、会话
+    id、种子属于装配上下文，不进契约。`script` / `image` 允许为空：**非空的声明本身就是**
+    「本任务由沙箱实验后端执行」这条事实，具体脚本可由装配上下文给出——但给了就**必须**照用
+    （装配方不得覆盖契约 pin 的量）。
+    """
+
+    script: str = ""
+    image: str = ""
+    command: str = "python experiment.py"
+    timeout_seconds: int = 180
+
+    def __post_init__(self) -> None:
+        if not self.command:
+            raise ValueError("experiment command must not be empty")
+        if self.timeout_seconds < 1:
+            raise ValueError("experiment timeout_seconds must be >= 1")
+
+
+@dataclass(frozen=True, slots=True)
 class TaskContract:
     id: str
     version: str
@@ -109,6 +138,9 @@ class TaskContract:
     retry_policy: RetryPolicy | None = None
     failure_policy: dict[str, str | bool | int | list[str]] = field(default_factory=dict)
     idempotency_scope: str = "task"
+    #: GOAL-011 EC-03：非空 ⇒ 本任务交给**沙箱实验后端**执行（`ExperimentExecutionSpec`）。
+    #: 缺省 `None` ⇒ 会话语义（既有行为逐字不变）。
+    experiment: ExperimentExecutionSpec | None = None
 
     def failure_policy_view(self) -> FailurePolicyView:
         """这份契约声明的失败策略**实际被消费**的部分（GOAL-004 cycle 3 = EC-03）。
