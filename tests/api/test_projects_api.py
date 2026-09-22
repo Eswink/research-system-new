@@ -242,3 +242,29 @@ def test_delete_requires_store(client: TestClient) -> None:
     deps.project_store = None
     response = client.delete(f"/projects/{project_id}", headers=_idem())
     assert response.status_code == 503, response.text
+
+
+def test_runs_started_at_a_path_project_belong_to_the_fixture_project(
+    run_ready_client: TestClient,
+) -> None:
+    """受控测试态**如实钉住**：run 归属跟随**执行输入**，不跟随 URL 路径。
+
+    这不是「产品应该如此」的断言，而是把 run-ready/live 装配的实际语义写成**可复核事实**——
+    否则「在项目 X 下 POST run」很容易被读成该 run 归 X（`GET /projects/X/runs` 会列出它），
+    实际却是 `example-project`。同形事实见 `test_delete_refuses_project_with_persisted_run`
+    的注释（那里刻意**绕开**了夹具归属行为，本用例正是把那条留白补上）。
+    若将来夹具改为跟随路径，本用例与那条注释**须同步更新**。
+    """
+    project_id = _create_project(run_ready_client, "path project")["id"]
+    started = run_ready_client.post(
+        f"/projects/{project_id}/runs",
+        json={"protocol_path": "console_demo_research_v1.yaml"},
+        headers=_idem(),
+    )
+    assert started.status_code == 200, started.text
+    run_id = started.json()["id"]
+    assert started.json()["project_id"] == "example-project"
+    assert run_ready_client.get(f"/projects/{project_id}/runs").json() == []
+    assert run_id in [
+        item["id"] for item in run_ready_client.get("/projects/example-project/runs").json()
+    ]
