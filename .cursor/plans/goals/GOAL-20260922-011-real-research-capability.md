@@ -160,7 +160,8 @@ escalation_triggers:
   - 改动 Canonical State 边界（例如把验收门结果改成可改写已终态的行）——需拍板
   - 为跑通而**放宽出站判据**（`tests/egress_guard.py` / 放行面 / `network_domains` 声明）——触及即 BLOCKED
   - 把凭据写进 CI（哪怕只是为了让 CI 里看到 live 或检索分支）——本 GOAL 明文禁止
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260922-133-real-retrieval-into-protocol.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -437,13 +438,16 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 见回合汇报 | 治理 `validate.py` 绿 | 见下方 CI 台账 | — | EC-01…EC-06 全 PENDING；起点已定位（**F-2…F-6**：能力声明与可执行工具之间**无生产连线**；**F-7…F-11**：证据读面与 `register_tool_evidence` 已存在但零生产调用方、`TrustLabel` 无 `RETRIEVED`）。**附带办结**：第 12 项残余（`secrets/llm_key.txt` 重复副本）已按授权删除（核对后零仓库影响）；第 3 项（`artifacts/` 明文 token）目标**已不在工作树**⇒ 按「目标已不存在」登记；30 条非 ASCII 路径**登记为豁免**（AGENTS §13 口径） | cycle 1 = derive **EC-01** 子 PLAN（真实检索进协议），**先定案 (a) 加阶段 还是 (b) 新建协议**（推荐 (b)：不动被三面钉死的 `real_research_task_v1` 字节，见 F-13） |
+| 0 | （建档，无子 PLAN） | `1b3fc2f` | 治理 `validate.py` 绿 | M0 [35678978342](https://github.com/Eswink/research-system-new/actions/runs/35678978342) 六 job 全 **success** + CodeQL [35678977687](https://github.com/Eswink/research-system-new/actions/runs/35678977687) 3/3 **success**（逐 job 实查，终态 `completed`） | — | EC-01…EC-06 全 PENDING；起点已定位（**F-2…F-6**：能力声明与可执行工具之间**无生产连线**；**F-7…F-11**：证据读面与 `register_tool_evidence` 已存在但零生产调用方、`TrustLabel` 无 `RETRIEVED`）。**附带办结**：第 12 项残余（`secrets/llm_key.txt` 重复副本）已按授权删除（核对后零仓库影响）；第 3 项（`artifacts/` 明文 token）目标**已不在工作树**⇒ 按「目标已不存在」登记；30 条非 ASCII 路径**登记为豁免**（AGENTS §13 口径） | cycle 1 = derive **EC-01** 子 PLAN（真实检索进协议），**先定案 (a) 加阶段 还是 (b) 新建协议** |
+| 1 | PLAN-20260922-133（EC-01，主干） | `934f7fc`（derive：PLAN-133 + ALL_PLAN 投影）、本 cycle 的 WP1 提交（定案 + GOAL 回写；**见下方 CI 台账尾巴**） | 治理 `validate.py` 绿（derive 后） | 见下方 CI 台账 | — （**WP1 只读**：未改产品代码、未发起任何真实/检索调用） | **EC-01 仍 PENDING**（定案已落，接线未落）。**WP1 定案**：① 载体取 **(a) 扩展 `real_research_task_v1`**，且**不新增 phase**、只在其既有 `analysis` phase 上加 `literature.search`/`literature.read` 两条声明（逐字满足 EC 的「analysis 阶段」表述；仍为 **1 次真实会话**；不引入同义协议增殖；与既有三面身份判据兼容）；`m12_reference_research_v1` **不做载体**（4+ phase / parallel_agents / min 10，属「已声明但不可执行」）。② 接线取「**run 链能力步**」而**非**「模型自己调工具」——生产装配 `register_tools` 是空操作、会话里的工具只是 provider ID 字符串 ⇒ 押在模型行为上会红在装配缺失且是概率性的；四个接入点 I-1…I-4 **全部复用既有件**（`resolve_sessions` / `OrchestrationDependencies` / `execute_tool_call` / `register_tool_evidence`），并给出 `phase_runner` **净增 ≤ 7 行**硬预算（`composition.py` **零余量**、`phase_runner.py` **7 行**，源自 `test_python_source_limits.py` 的 450/50 门）。③ 反证四层 R-1…R-4：**R-1 = 从协议删掉能力 ⇒ 该 phase 无工具观测**（EC-01 判据本体）；R-2 = 改协议 `id:` ⇒ 身份判据必须红（判据不空转）；R-3 = 读面查不存在的 run ⇒ 必须**如实报「无」**；R-4 属 EC-02。**同时更正一条 derive 判断**：D-13 担心的「改协议要同步改冻结快照」**实测证伪**——`test_real_protocol_identity.py` 的摘要**运行时现算**（对被测文件）+ 与**该次 run 自己冻结的正文**比对，**无**硬编码摘要常量 ⇒ 改正文该判据自动复绿（但**必须按压**证明它仍在看）。**WP3 先做两个离线探针**：P-1 会话健康（新增的 `ncbi_eutils` 进 `frozen_tool_set` 会不会让真实会话初始化失败）、P-2 投影（只 `register_evidence` 不 `attach_relation` 确实读不到） | cycle 2 = 执行 **WP2**（工具观测的持久化与读面，离线可验）+ **WP3 的 P-1/P-2 探针**（先探后写） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
-| 建档 | 见回合汇报 | | |
+| 建档 | `1b3fc2f` | M0 [35678978342](https://github.com/Eswink/research-system-new/actions/runs/35678978342) | 六 job 全 **success**（`console-frontend` / `collector-quality` / `container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate`；terminal `status=completed conclusion=success`，逐 job 实查）；**同一次推送另触发 CodeQL** [35678977687](https://github.com/Eswink/research-system-new/actions/runs/35678977687) = **success**（3/3） |
+| cycle 1 派生（PLAN-133 + ALL_PLAN） | `934f7fc` | 与下一条**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担，**不**意味着它没进 CI |
+| 台账尾巴（WP1 定案 + 记录回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…010，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。

@@ -90,12 +90,99 @@ memory_entries: []
 ## 定案（WP1）
 
 > 本节为 WP1 的交付物：把「选哪条路」与「为什么」写死，供后续 WP 引用。
+> **WP1 只读：未发起任何真实调用、未改任何产品代码。**
 
-**（待 WP1 填写）**
+### 决策 1 —— 协议载体：取 **(a) 扩展 `real_research_task_v1`**，且**不新增 phase**、只在其既有 `analysis` phase 上**加两条能力声明**
+
+**先更正 derive 阶段的一条判断（只追加，不改 D-13 原文）**：D-13 把「被解析字节 sha256 + 库里的冻结正文」
+读成了「改协议文件就要同步改一处冻结快照」。**实测证伪**：`tests/api/test_real_protocol_identity.py:79-81`
+的判据是
+`detail["protocol_body_digest"] == str(Digest.of_bytes(read_protocol_text(protocol).encode()))`
+——**摘要由被测文件在测试运行时现算**，再与**该次 run 自己冻结的正文**（`store.get_run(id).protocol_body`，
+run 时写入）比对。**测试文件里没有任何 hard-coded 的摘要常量**（`_REAL` / `_DEMO` / `_DECLARED` / `_INPUT_BRIEF`
+四个常量全是字面量路径与名字）。⇒ **改动 `real_research_task_v1.yaml` 的正文，该判据自动复绿，无需改测试、
+无需改快照**。D-13 的风险等级因此从「触及被钉死的快照」降为「**同一条判据继续有效且自动跟随时**」，
+**但判据的强度必须保持**：改完后必须**按压**——把文件 `id:` 改掉 ⇒ 身份判据必须红（证明它仍在看）。
+
+**为什么取 (a) 而不取 (b)（新建协议）**：
+
+1. **EC 的operative要求**是「把能力声明进**一份真实协议**…使一次真实 run 的 **discovery/analysis 阶段**
+   实际调用检索」。`real_research_task_v1` 的既有 phase 正是 `analysis`（`Real Research Analysis`）
+   ⇒ 在它上面声明，**逐字**满足「analysis 阶段」这一表述。
+2. **成本取最小必要**（AC-4）：沿用既有 phase ⇒ 仍是 **1 个 phase = 1 次真实会话**。
+   若新增一个 `discovery` phase（字面 (a)）会变成 **2 次真实 LLM 调用**，而 phase 数 = 会话数
+   （该协议头部自述、且 `phase.strategy` 在产品侧只有编译器一个消费者）⇒ 多出来的那次会话
+   **不带来新能力**，只翻倍成本。
+3. **不引入同义协议的增殖**：取 (b) 会得到一份与 `real_research_task_v1` 高度重叠的
+   「real research + retrieval」协议，两份都要各自维护登记面与判据；而 (a) 让
+   `real_research_task_v1` 成为**唯一**那份「既分析又检索」的真实协议。
+4. **(a) 与既有判据兼容**：`test_the_real_protocol_reaches_succeeded_on_the_product_path` 断言的是
+   「run 终态 `SUCCEEDED` + evidence refs 含 `:analysis_report` 且含 `input-brief:real_research_v1`」，
+   加两条 `required_capabilities` **不改变**这三件事的字面值；`test_the_two_protocols_do_not_collapse_to_one_identity`
+   依赖的「两份 id 不同、正文互不出现对方名字」也不受影响（**前提**：新增的能力名与注释里**不得**出现
+   `console_demo_research_v1` / `console_demo_research_v1_0_1` 字样——WP4 落笔时按此自查）。
+
+**为什么 `m12_reference_research_v1` 不做载体**（尽管它 D-12 已声明了这两个能力）：
+它是 4+ phase、含 `parallel_agents` / `iterative_optimizer`，并绑 `domain_discovery`
+（`minimum_sources: 10`）。按 `real_research_task_v1` 头部的自述「多阶段 / 并行的真实研究今天**不可执行**」，
+拿它当载体等于把一个**已声明但不可执行**的协议拖进验收 ⇒ 判据会红在「协议本身跑不动」，
+而不是红在 EC-01 要看的那件事上。
+
+### 决策 2 —— 接线架构：**检索由 run 链执行（能力步）**，不依赖模型自己调工具
+
+**这条是本 PLAN 最承重的决策，理由是一条实测的装配事实**：会话拿到的「工具」是
+**provider ID 字符串**（`flatten_tool_providers()` 把 provider id 并集冻进 `frozen_tool_set`，
+`session_builder.py:88-94` 组装 `Tool(name=<provider_id>)`），而**生产装配的 `register_tools`
+是空操作**（`services/api/runtime_support.py:208-221` 不传该参数 ⇒ `session_builder.py:45` 回落
+`lambda spec: None`）。⇒ 若把 EC-01 的达成押在「真实模型去调一个工具」上，那个工具在**生产路径上
+根本不存在** ⇒ 判据会红在装配缺失，且是否变绿取决于模型行为（概率性），这正是 GOAL-010 EC-01
+判定细则里点名要避免的形态。
+
+**因此定案为「能力步」**：在 phase 真正起会话**之前**，由 **run 链**按该 phase 声明的能力
+执行一次检索，并把结果接入既有证据准入。这条路径**确定性**、**可反证**、**不依赖模型行为**，
+且**不改变**「谁在执行研究」的语义——检索是系统的取证动作，模型仍然产交付物。
+
+**四个接入点（全部复用既有件，不新造第二套）**：
+
+| # | 接入点 | 落点 | 关键约束 |
+| --- | --- | --- | --- |
+| I-1 | **能力到达 phase** | `CompiledPhase` **不携带** `required_capabilities`（只有 `plan.tool_requirements` 带）。`resolve_sessions()` 是 run 链里**唯一**同时握有 phase 与 catalog 的地方 ⇒ 在那里把该 phase 的能力集合放进 `SessionSpecContext`（`session_resolution.py` 106 行，**有余量**） | 不改 `phase_runner` 的签名 |
+| I-2 | **provider 与 policy 进入 run 链** | 经 `OrchestrationDependencies`（`dependencies.py` 40 行，**有余量**）加两个字段：工具 provider 注册表 + 策略求值器；由 `service.py` 的 `_execute` 透传进 `PhaseRunnerDeps` | 生产装配处**必须**实例化 `NcbiEutilsProvider`（D-15：今天 `ApiDeps.tool_providers` 恒空 ⇒ 健康探测恒 `UNKNOWN`） |
+| I-3 | **形态：一个 hook，≤ 7 行** | 照 `experiment_task` 的既有先例（`phase_runner.py:408-414`）在 `_execute_one_task` 里加一个同形 hook：约 `step = deps.capability_step(tctx)` + `if step is not None: return step`。**重活全部落在新模块**（如 `run_orchestration/phase_capabilities.py`） | **AC-5**：`phase_runner.py` 443/450 ⇒ **净增必须 ≤ 7 行**（含空行）。落笔前先 `wc -l`，超了就先把等量逻辑挪进新模块 |
+| I-4 | **执行 + 准入 + 可见** | 执行走既有 `execute_tool_call()`（策略判定在其中）；准入走既有 `register_tool_evidence()`；**但必须补 `attach_relation`**（D-9：`/runs/{id}/evidence` 只经 claim relations 走），否则出现「判据说绿、读面看不到」 | 不新造证据准入路径；不削弱 `register_tool_evidence` 的 digest 重算校验 |
+
+**落在「不进入循环」面内的两件事，本 PLAN 明确不做**：
+- **不给模型注册一个真实可调用的检索工具**（要动 `register_tools` 生产装配 + ToolDefinition + 依赖模型行为）。
+  记为**后继增强入口**，不在 EC-01 的验收路径上。
+- **不重构贴线文件**（`composition.py` 零余量 / `phase_runner.py` 7 行）。若最终必须重构，
+  按 AC-5 先记入 GOAL 的「需人工拍板」第 4 项再决定。
+
+**WP3 必须先做的两个探针（离线，先探后写）**：
+- **P-1 会话健康探针**：声明 `literature.search` 会让 `ncbi_eutils` 进入 `frozen_tool_set`
+  ⇒ 真实会话会拿到 `Tool(name="ncbi_eutils")`。今天 `real_research_task_v1` 的冻结集已含
+  `m12_artifact`（`artifact.read` 的 provider，`kind: NATIVE`）且真实 run 能到 `SUCCEEDED`。
+  **探针**：离线装配下确认多一个未注册名字**是否**让会话装配/初始化失败。
+  **若失败** ⇒ 就在既有 `register_tools` 生产 hook 上注册一个**真实的**检索工具（复用它而不是新造），
+  这反而是把 D-5 的缺口补上；**若不失败** ⇒ 不动 `register_tools`，把事实写进记录。
+- **P-2 投影探针**：按 D-9 验证「只 `register_evidence` 不 `attach_relation`」确实**读不到**，
+  再验证补上 relation 后**读得到** ⇒ 反证的口径以此为准。
+
+### 决策 3 —— 反证的精确形态
+
+| 层 | 操作 | 必须观察到的红 | 复原 |
+| --- | --- | --- | --- |
+| **R-1（EC-01 主干）** | 从 `real_research_task_v1.yaml` 的 `analysis` phase 删掉 `literature.search`（与 `literature.read`）两条声明 | 该 phase **无工具观测**（工具调用/结果记录为空），且检索来源**不出现**在证据链里 | 加回 ⇒ 复绿 |
+| **R-2（判据不空转）** | 把该协议文件的 `id:` 改掉 | `tests/api/test_real_protocol_identity.py` 的身份判据**必须红**（证明它仍在看，而不是被本次改动变哑） | 复原 ⇒ 复绿 |
+| **R-3（读面不空转）** | 让工具观测**不**落库（或读面查一个不存在的 run） | 读面必须**如实报「无」**，不得静默返回空列表冒充「有」 | 复原 ⇒ 复绿 |
+| **R-4（EC-02 的成对，留给 EC-02）** | 摘掉检索来源 | `EVIDENCE_COVERAGE` **判拒** | 复原 ⇒ 复绿 |
+
+**R-1 是 EC-01 的判据本体**；R-2/R-3 是**判据自身不空转**的证据；R-4 属 EC-02，本 PLAN 只保证
+「检索来源是**可被摘掉**的一个独立来源」（即：不得让覆盖率只有检索来源一条腿，否则摘掉后
+EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**用同一个红同时充当两条 EC 的证据）。
 
 ## 实施清单
 
-- [ ] **WP1 定案**（只读，**不发任何真实调用**）：在「定案」节写死三件事——
+- [x] **WP1 定案**（只读，**不发任何真实调用**）：在「定案」节写死三件事——
       (1) **协议路径 (a) 还是 (b)**（见 D-12/D-13 的取舍）；
       (2) **接线架构**（能力如何到达 phase、provider/policy 如何进入 run 链、hook 形态与
       `phase_runner` 的**净增行数**预算）；
@@ -136,3 +223,16 @@ memory_entries: []
   关键发现：缺口在**执行侧接线**（D-3/D-4/D-5），不在「没人声明过」（D-12）；
   且**规模门禁余量**（D-14：`composition.py` 零余量、`phase_runner.py` 7 行）是
   本 PLAN 的**一等设计约束**。
+- 2026-09-22：**WP1 定案**（只读，未发调用、未改产品代码）。三条决策写死在「定案」节：
+  (1) 载体取 **(a) 扩展 `real_research_task_v1`**，且**不新增 phase**、只在其既有 `analysis`
+  phase 上加 `literature.search` / `literature.read` 两条声明（理由：逐字满足 EC 的
+  「analysis 阶段」表述、成本仍为 **1 次真实会话**、不引入同义协议增殖、与既有三面判据兼容）；
+  (2) 接线取「**run 链能力步**」而非「模型自己调工具」——因为生产装配的 `register_tools`
+  是空操作，会话里的工具只是 provider ID 字符串，把达成押在模型行为上会红在装配缺失且是概率性的；
+  四个接入点 I-1…I-4 全部**复用既有件**，并给出 `phase_runner` **净增 ≤ 7 行**的硬预算；
+  (3) 反证分四层 R-1…R-4，**R-1 是 EC-01 的判据本体**，R-2/R-3 判「判据自身不空转」。
+  **同时更正了一条 derive 判断**：D-13 担心的「改协议要同步改冻结快照」**经实测证伪**——
+  `test_real_protocol_identity.py` 的摘要是**运行时现算**（对被测文件）+ 与**该次 run 自己冻结的正文**
+  比对，测试文件里**没有**硬编码摘要常量 ⇒ 改协议正文该判据自动复绿，但**必须按压**（改 `id:` ⇒ 判红）
+  以证明它仍在看。
+  **本 PLAN 明确不做**：给模型注册真实可调用工具；重构贴线文件。两者都写进记录作为后继入口。
