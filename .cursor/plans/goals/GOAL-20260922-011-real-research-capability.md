@@ -556,6 +556,8 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 | 台账尾巴（cycle 4 回写） | 见回合汇报（**台账尾巴口径**同上） | | |
 | cycle 5 WP0–WP4（derive + Domain + 编排 + 判据 + 文档；**同一次推送**，GitHub 只对 tip 触发一个 run） | tip `acaf3fb` | M0 [35717806500](https://github.com/Eswink/research-system-new/actions/runs/35717806500) | 六 job 全 **success**（`container-quality` / `console-frontend` / `eval-gate` / `quality-ubuntu-latest` / `collector-quality` / `quality-windows-latest`，逐 job 实查，终态 `completed`、`conclusion=success`）；**CodeQL** [35717806354](https://github.com/Eswink/research-system-new/actions/runs/35717806354) = success（3/3：`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)`） |
 | 台账尾巴（cycle 5 收口回写） | 见回合汇报（**台账尾巴口径**同上） | | |
+| cycle 6 WP0–WP4 + 3 条门禁修复 + 记录（**同一次推送**，GitHub 只对 tip 触发一个 run） | tip `9d85862` | M0 [35733068236](https://github.com/Eswink/research-system-new/actions/runs/35733068236) | 六 job 全 **success**（`console-frontend` / `eval-gate` / `quality-windows-latest` / `container-quality` / `collector-quality` / `quality-ubuntu-latest`，逐 job 实查，终态 `completed`、`conclusion=success`）；**CodeQL** [35733067165](https://github.com/Eswink/research-system-new/actions/runs/35733067165) = success（3/3：`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)`） |
+| 台账尾巴（cycle 6 收口回写） | 见回合汇报（**台账尾巴口径**同上） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…010，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -594,3 +596,21 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
   `EVIDENCE_COVERAGE: 0 < 1 retrieved sources (N >= 1 sources)`。**本 cycle 自己撞上并修好的
   两条规模门禁失败**（F-c：e2e 文件 470 行、live 判据函数 63 行）已如实登记在迭代日志里。
   **W-E 关闭**；新增残余 W-G/W-H/W-I。
+- 2026-09-22（cycle 6 收口）：**EC-03 仍未达成，如实登记为下一轮输入**（EC-03 原文允许「视预算；
+  若空间不足则如实登记为下一轮输入」）。本 cycle 把**实验执行阶段**从「按合约 id 特判」做成
+  **按合约声明派发**（`TaskContract.experiment`，缺省 `None` = 会话语义逐字不变；声明了而缝没接
+  ⇒ **点名 fail-closed** 拒绝），并把**既有** `DockerExecutionBackend`（M9 已 6 容器 E2E）
+  **首次**接进 `OrchestrationDependencies.experiment_task`；7 条离线判据（4 + 3）钉住新语义与
+  **阻断点**。**阻断点（实测、既有、未修）**：`sort_analysis_v1` 过不了真实的
+  compile → preflight → freeze——`classify_risk(EXECUTE, BUILT_IN) → HIGH` **无条件**
+  ⇒ `TOOL_RISK_ELEVATED`(WARNING) ⇒ 报告 `WARN` ⇒ `freeze_manifest` 的 `if not report.passed`
+  **拒冻** ⇒ run 在**执行之前**终止（`state: FAILED`、`manifest_digest: null`、零 task / 零实验 /
+  零工具观测 / **零 LLM 调用**）；**对照组**（同一装配、不发任何声明）同一签名 ⇒ **非本 cycle 引入**。
+  可选修法三条都属**改门禁**，明文禁止 ⇒ 交人工拍板（下轮的 (A)/(B) 二选一已写在迭代日志第 6 行）。
+  **GOAL 仍 ACTIVE**（EC-03…EC-06 未完；预算 20 用 6，`no_progress_stop_cycles: 2` 未触）。**本 cycle
+  自伤三条**（`python/format-check` / `python/typecheck` / `python/tests` 的既有判据回归）**全部由本地
+  m0 抓出并修好**（20/23 → 23/23），其中回归的修法是**给既有 fixture 补声明、断言一字未改**。
+  **CI 终态**：tip `9d85862` 的 M0 [35733068236](https://github.com/Eswink/research-system-new/actions/runs/35733068236)
+  六 job 全 success、CodeQL [35733067165](https://github.com/Eswink/research-system-new/actions/runs/35733067165)
+  3/3 success（逐 job 实查，终态 `completed`）。新增残余 **W-J**（实验缝只在 run-ready/live 装配上接线）
+  与 **W-K**（`EXECUTE` 类 provider 的 HIGH 风险警告**阻断冻结**这条既有语义交叉待拍板）。
