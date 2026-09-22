@@ -33,6 +33,10 @@ class EvidenceDto(BaseModel):
     source_origin: str | None = None
     source_trust_label: str | None = None
     source_access_time: str | None = None
+    # GOAL-011 EC-01：**工具观测**的可读面之一。`Evidence.tool_refs` 一直有持久化，
+    # 但直到这里才有读面 ⇒ 判据此前**没法**从读面区分「这条证据是一次工具调用产生的」
+    # 与「它是模型自述」。空列表 = 不是工具来源（**不**伪填充一个工具名）。
+    tool_refs: list[str] = Field(default_factory=list)
 
 
 class RelationDto(BaseModel):

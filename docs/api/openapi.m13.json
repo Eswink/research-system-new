@@ -2021,6 +2021,13 @@
             ],
             "title": "Source Trust Label"
           },
+          "tool_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tool Refs",
+            "type": "array"
+          },
           "workspace_snapshot_after": {
             "anyOf": [
               {

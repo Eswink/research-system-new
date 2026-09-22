@@ -28,6 +28,9 @@ export const evidenceRecord: EvidenceDto = {
   // 信任标签 GENERATED——与后端 register_source 的取值同形。
   source_origin: "source-one", source_trust_label: "GENERATED",
   source_access_time: "2026-09-09T00:00:00Z",
+  // 工具观测读面（GOAL-011 EC-01）：这条是自产 evidence、不是工具来源
+  // ⇒ 空数组，与后端 `Evidence.tool_refs` 的默认值同形。
+  tool_refs: [],
 };
 
 export const eventFrame: RunEventDto = {

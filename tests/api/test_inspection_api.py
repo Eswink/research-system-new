@@ -116,6 +116,75 @@ def test_evidence_from_persisted_truth(client: TestClient) -> None:
     assert items[0]["source_ref"] == "paper://example-2024"
 
 
+def _seed_tool_origin_evidence(ledger: Any, run_id: str) -> None:
+    """登记一条**工具来源**的证据（GOAL-011 EC-01 的形态）。
+
+    与 `_seed_evidence_truth` 的关键差别只有一处：`tool_refs` 点名了产生它的工具，
+    且 `source_ref` 是 `tool:{tool_id}:{task_id}:{operation_key}` 形态——这正是
+    `register_tool_evidence` 的产出形状（`packages/application/evidence/tool_evidence.py`）。
+    """
+    ledger.register_source(
+        SourceRecord(
+            origin="tool:literature_search:task-1:op-1",
+            content_digest="sha256:" + "c" * 64,
+            trust_label=TrustLabel.GENERATED,
+            parser_version="m12-tool-evidence-v1",
+        )
+    )
+    ledger.register_evidence(
+        Evidence(
+            id="ev-tool",
+            source_ref="tool:literature_search:task-1:op-1",
+            content_digest="sha256:" + "d" * 64,
+            run_id=run_id,
+            artifact_id="tool-result:task-1:op-1:literature_search",
+            tool_refs=("literature_search",),
+        )
+    )
+    ledger.register_claim(
+        Claim(
+            id="claim-tool",
+            statement="Retrieved literature supports the analysis",
+            status=ClaimStatus.PROPOSED,
+        )
+    )
+    ledger.attach_relation(
+        EvidenceRelation(
+            claim_id="claim-tool", evidence_id="ev-tool", relation=EvidenceRelationType.SUPPORTS
+        )
+    )
+
+
+def test_evidence_read_face_distinguishes_tool_origin(client: TestClient) -> None:
+    """工具观测的可读面（GOAL-011 EC-01）：读面能区分「工具取得」与「非工具来源」。
+
+    为什么这条判据存在：在 `tool_refs` 有读面之前，读面**没法**把「一次工具调用产生
+    的证据」与「模型自述」分开——两者在 `source_ref` / `trust_label` 上都可能长得一样。
+    EC-01 与 EC-02 都要靠这个区分，所以它必须先成为**可读事实**。
+
+    **非空转**：同一个 run 里两条证据的 `tool_refs` 必须**不同**——一条点名工具、
+    一条是空数组。读面若恒返回空数组、或对两条返回同一个值，本条判红。
+    """
+    from packages.domain.core import ID
+    from packages.domain.run import ResearchRun
+
+    deps = cast(Any, client.app).state.deps
+    run_id = str(ID.generate().value)
+    deps.run_registry[run_id] = ResearchRun(id=ID(run_id), project_id="p", protocol_id="proto")
+    _seed_evidence_truth(client, run_id)
+    _seed_tool_origin_evidence(deps.ledger, run_id)
+
+    response = client.get(f"/runs/{run_id}/evidence")
+    assert response.status_code == 200, response.text
+    by_id = {item["id"]: item for item in response.json()}
+    assert set(by_id) == {"ev-1", "ev-tool"}, by_id
+
+    assert by_id["ev-tool"]["tool_refs"] == ["literature_search"], by_id["ev-tool"]
+    assert by_id["ev-tool"]["source_origin"] == "tool:literature_search:task-1:op-1"
+    # 非工具来源必须是**空**，而不是缺字段或伪造一个工具名。
+    assert by_id["ev-1"]["tool_refs"] == [], by_id["ev-1"]
+
+
 def test_claim_map_marks_unsupported(client: TestClient) -> None:
     """run 级 claim map：relation 命中本 run evidence 的 claim 可见；
     无 relation 的 claim 不归属任何 run（不返回）。"""

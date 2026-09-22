@@ -168,8 +168,23 @@ run 时写入）比对。**测试文件里没有任何 hard-coded 的摘要常�
   **探针**：离线装配下确认多一个未注册名字**是否**让会话装配/初始化失败。
   **若失败** ⇒ 就在既有 `register_tools` 生产 hook 上注册一个**真实的**检索工具（复用它而不是新造），
   这反而是把 D-5 的缺口补上；**若不失败** ⇒ 不动 `register_tools`，把事实写进记录。
-- **P-2 投影探针**：按 D-9 验证「只 `register_evidence` 不 `attach_relation`」确实**读不到**，
-  再验证补上 relation 后**读得到** ⇒ 反证的口径以此为准。
+- **P-2 已答（本 cycle 实测，离线、内存内、无出网）**：探针 `scratch/probe133_evidence_projection.py`
+用 `FakeEvidenceLedger` + **路由用的同一个投影函数** `services/api/run_evidence.py:evidence_of_run`
+实测（不是读代码推断）：
+
+```
+P-2 step 1 (registered, NO relation):
+  evidence_of_run -> []          visible? False
+P-2 step 2 (same evidence, relation attached):
+  evidence_of_run -> ['evidence:probe:op-1']   visible? True
+  tool_refs exposed on the domain object: ('literature_search',)
+  source can be resolved: tool:literature_search:task-1:op-1
+VERDICT: relation required for visibility = True
+```
+
+⇒ **接线必须同时 `attach_relation`**（I-4 由此从"读代码的印象"升级为"实测结论"）。
+同一探针还确认：`tool_refs` 在**领域对象上已经有了**、来源也能解析出
+`tool:literature_search:...` 形态的 origin ⇒ WP2 只需把它**提到读面**，不必新建持久化。
 
 ### 探针结果（本 cycle 实测；只读代码，未发起真实调用）
 
@@ -273,7 +288,7 @@ EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**�
       `phase_runner` 的**净增行数**预算）；
       (3) **反证的精确形态**（移除什么 ⇒ 哪条判据红 ⇒ 复原复绿）。
       产出：本文件「定案」节 + GOAL 迭代日志。
-- [ ] **WP2 工具观测的持久化与读面**（离线可验）：新增工具观测的存储与**读面**
+- [x] **WP2 工具观测的持久化与读面**（离线可验）：新增工具观测的存储与**读面**
       （端点 / DTO），使 AC-3 成立。**新模块承载**；贴线文件净零/净负。
       反证：读面**不空转**（无观测时必须能判出「无」）。
       **WP1 期间的收缩（只减不增，理由实测）**：AC-3 可能**不需要**新建表/端点——
@@ -288,6 +303,22 @@ EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**�
 - [ ] **WP3 接线**：能力从协议到达 phase；`NcbiEutilsProvider` 在生产装配里被实例化并注册；
       执行经既有 `execute_tool_call`（策略判定在内）；结果经既有 `register_tool_evidence`
       准入并**挂 claim relation**（D-9）⇒ 使 AC-1 与 AC-2 在**离线**（Fake provider）下先成立。
+      **WP1/WP2 期间暴露的设计岔路（cycle 3 的 WP3 必须先在此二选一并写明理由）**：
+      映射必须存在（否则声明新能力之日会话全红，见「P-1 第二半步」），但**映射到什么**有两条路：
+      - **(M-1) 逐 provider 造真实 SDK 工具**：为冻结集里每个 provider id 注册一个真实现
+        （`ncbi_eutils` → 检索工具；`m12_artifact` → 读 ArtifactStore 的制品工具）。
+        **优点**：模型真的能用工具（研究能力更真实）。**代价**：每个 provider 都要
+        Action/Executor/ToolDefinition（**必须模块级定义**，SDK 会枚举 `Action` 具体子类，
+        局部类会毒化同进程后续事件 round-trip——见 `tests/e2e/live_run_support.py:36-64` 的实测教训）；
+        且 executor 要拿到 run/task 上下文与 ArtifactStore，集成点尚未探明。
+      - **(M-2) 把「运行链执行的能力」与「会话工具」在声明面分开**：在 provider 声明上加一个
+        「**由运行链执行、不暴露给会话**」的标记，`flatten_tool_providers()` 据此**声明化地**
+        排除它。**优点**：不必为每个 provider 造模型面工具，且与「能力步」设计同源。
+        **代价与红线**：`test_unmapped_tool_set_is_named_not_silently_dropped` 固定的是
+        「**不得静默丢工具**」——(M-2) 只有在**声明化**（不是默认行为、不是静默）时才成立，
+        且**不能修改那条判据的强度**。另外该标记可能触及 provider 规格/Domain 面 ⇒
+        **先判它是不是 Canonical State / 规格边界；是则 BLOCKED（归人工拍板）**。
+      **定案前不得动 `flatten_tool_providers` 或那条判据。**
 - [ ] **WP4 真实协议 + live 判据**：按 WP1 的 (a)/(b) 落地协议与合约（**纯加性**）；
       写 live 判据（挂 `requires_live_llm` 或同一放行面），跑**最小必要**次数的真实检索，
       取回 run 终态 + 工具观测 + 证据链外部标识；**按压**反证（移除能力 ⇒ 无观测）并复原。
@@ -296,6 +327,32 @@ EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**�
       迭代日志、`child_plans`、`latest_recheck`、`memory_entries`）。
 
 ## 影响报告
+
+- **本地 m0 在这台机器上 `python/tests` 判红，且与本 PLAN 的改动无关（**已用基线对照证明**）**。
+  **结论与归因（实测，非推断）**：
+  - 现象：`python/tests` 退出码 1，**但 pytest 自身 0 失败**（`4339 passed, 16 skipped`）。
+  - 真因是**出站结构判据按设计判红**（`tests/egress_guard.py`，GOAL-010 EC-05）：整轮日志里有
+    `egress guard: FAIL — the default gate attempted 2 non-loopback destination(s) that no live
+    marker allows:`，两条都指向 **`198.18.0.178:443`（`kind=private`）**，归因链为
+    `tests/api/test_runs_api.py::test_start_run_unprovisioned_control_plane_reports_actionable_failure`
+    → `preflight_support.py:43:build_endpoint_health` → `_probe_endpoint` → `gateway.probe_connectivity`
+    → `list_models` → `transport.request_with_retries` → `_execute_request`。
+    ⇒ 一次**真实出站尝试**：该用例走真实组合路径探测例示 endpoint 的健康，而**本机 DNS 走
+    fake-IP 代理**（`198.18.0.0/15`）⇒ 域名被解析成私网 fake-IP ⇒ 连接真的发起 ⇒ 判据判红。
+    **判据没有错**，这正是它该做的事；**本 PLAN 一行都没有放宽它**。
+  - **基线对照（决定性）**：把我的三处 Python 改动 `git stash` 掉后**在原始树上跑同一条全量命令**
+    ⇒ **同样的 2 条 `198.18.0.178`、同样的 `egress guard: FAIL`**（该次 `4337 passed, 1 failed`；
+    这 1 failed 就是判据的整轮红灯）。⇒ **本 PLAN 的改动不是原因**，这是**本机环境签名**。
+  - **与 CI 的差异**：CI（干净 runner，无该 fake-IP 代理）同一棵树为绿 ⇒ 按仓库既有口径
+    「每个提交的权威证书是 CI 在推送树上的结果」，本地这一项以**环境签名**如实登记，
+    **不**改判据、**不**放行、**不**skip（否则就是为跑通而放宽出站判据，本 GOAL 明文禁止）。
+  - **无关的对照**：`tests/api` 单独跑 **500 passed / exit 0 / blocked 0**；
+    `tests/observability` 单独跑 **exit 0**（`tests/observability` 里那句
+    `shutdown can only be called once` 是既有噪声）。⇒ 需要**整轮**才出现，属跨文件顺序效应。
+  - **一条被自己证伪的推断（只追加，保留教训）**：我曾据此推断「缺少 otel collector 导致
+    metric exporter 在解释器退出时 flush 失败 ⇒ exit 1」。**该推断是错的**：按仓库既有 compose
+    起了 `research-system-otel-collector-1`（loopback-only，镜像本机已存在、无构建无出网）后
+    **重跑仍是同一条红**，随后基线对照才把真因定到上面的 fake-IP 探测。**collector 不是原因。**
 
 - **Domain / API / schema**：本 PLAN **不**改 `packages/domain/` 的既有字段或语义（AC-6）。
   新建工具观测的读面**会**动 `docs/api/openapi.m13.json` 快照与 `apps/web` 类型
@@ -312,7 +369,7 @@ EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**�
 
 ## 状态历史
 
-- 2026-09-22：derive（cycle 1）。建档 GOAL-011 后派生本 PLAN（EC-01，主干）。
+- 2026-09-22：derive（cycle 1）：建档 GOAL-011 后派生本 PLAN（EC-01，主干）。
   derive 阶段只读代码/配置，**未发起任何真实调用**；证据 D-1…D-16 逐条实测。
   关键发现：缺口在**执行侧接线**（D-3/D-4/D-5），不在「没人声明过」（D-12）；
   且**规模门禁余量**（D-14：`composition.py` 零余量、`phase_runner.py` 7 行）是
@@ -330,3 +387,15 @@ EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**�
   比对，测试文件里**没有**硬编码摘要常量 ⇒ 改协议正文该判据自动复绿，但**必须按压**（改 `id:` ⇒ 判红）
   以证明它仍在看。
   **本 PLAN 明确不做**：给模型注册真实可调用工具；重构贴线文件。两者都写进记录作为后继入口。
+- 2026-09-22：**cycle 2 WP2 落地**（工具观测的**读面**；**不新建持久化**）。
+  实测依据：`Evidence.tool_refs` 早已持久化、`Evidence.source_origin` 早已在读面上，
+  缺的只是把 `tool_refs` **提到 DTO** ⇒ WP2 收缩为一处**纯加性**改动：
+  `EvidenceDto.tool_refs`（+`_evidence_dto` 填充）→ 同步 `docs/api/openapi.m13.json`
+  快照（`tools/gen_openapi.py` 重生成，diff **恰好 7 行、只有新字段**，无其它漂移）
+  → 同步 `apps/web/src/api/types.ts` 与 `apps/web/tests/unit/consoleFixtures.ts`。
+  **判据**：`tests/api/test_inspection_api.py::test_evidence_read_face_distinguishes_tool_origin`
+  —— 同一 run 里两条证据的 `tool_refs` 必须**不同**（一条点名 `literature_search`、一条为空），
+  读面若恒空或恒同值即红。**已按压**：把 `_evidence_dto` 的 `tool_refs` 临时改成 `[]`
+  ⇒ 该用例 **FAILED**（`Right contains one more item: 'literature_search'`），复原 ⇒ 9 passed，
+  且 `git diff` 只剩意图内的 **1 行新增**（无按压残留）。
+  **WP2 之外仍待做**：见下方 WP3 的映射设计岔路。

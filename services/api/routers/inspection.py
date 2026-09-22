@@ -64,6 +64,7 @@ def _evidence_dto(evidence: Evidence, ledger: EvidenceLedger) -> EvidenceDto:
         source_origin=source.origin if source is not None else None,
         source_trust_label=source.trust_label.value if source is not None else None,
         source_access_time=str(source.access_time) if source is not None else None,
+        tool_refs=list(evidence.tool_refs),
     )
 
 

@@ -511,6 +511,12 @@ export interface EvidenceDto {
   source_origin: string | null;
   source_trust_label: string | null;
   source_access_time: string | null;
+  /**
+   * 工具观测的可读面（GOAL-011 EC-01）：产生这条证据的工具引用。
+   * 空数组表示**不是**工具来源（不是"未知"），因此可以拿它区分
+   * 「系统调用工具取得」与「模型自述」。
+   */
+  tool_refs: string[];
 }
 
 export interface RelationDto {
