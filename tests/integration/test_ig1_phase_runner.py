@@ -45,7 +45,12 @@ from packages.domain.experiment_state import ExperimentPlanState
 from packages.domain.experiments import ExperimentPlan
 from packages.domain.roles import AgentBinding, AgentSpec, RoleDefinition
 from packages.domain.run_state import ResearchRunState
-from packages.domain.tasks import AcceptanceCriterion, ResearchTask, TaskContract
+from packages.domain.tasks import (
+    AcceptanceCriterion,
+    ExperimentExecutionSpec,
+    ResearchTask,
+    TaskContract,
+)
 from packages.domain.workspace import Workspace
 from services.api.demo import DECLARED_INPUTS as DECLARED_INPUT_IDS
 from tests.e2e.scenario import seed_run_inputs
@@ -71,6 +76,13 @@ def _contract() -> TaskContract:
         id="experiment_execution",
         version="1",
         purpose="test",
+        # GOAL-011 EC-03：派发判据是**声明**（`contract.experiment is not None`），不是合约 id。
+        # 本用例驱动的是实验缝 ⇒ 合约必须自己声明；不声明则按会话语义派发（另一条判据钉住）。
+        experiment=ExperimentExecutionSpec(
+            script="run.py",
+            image="research-os-sandbox:m9-test",
+            command="python run.py",
+        ),
         acceptance_criteria=[
             AcceptanceCriterion(
                 type=AcceptanceCriterionType.ARTIFACT_EXISTS,

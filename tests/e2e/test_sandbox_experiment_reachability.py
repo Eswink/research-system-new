@@ -28,8 +28,9 @@ from typing import Any
 
 import pytest
 
+from packages.domain.enums import EffectClass, RiskClass, TrustLevel
 from packages.domain.protocols import PreflightStatus
-from packages.domain.tools import EffectClass, RiskClass, TrustLevel, classify_risk
+from packages.domain.tools import classify_risk
 from tests.e2e.live_run_support import (
     EXPERIMENT_CONTRACT,
     EXPERIMENT_IMAGE,
@@ -81,12 +82,10 @@ def test_sort_analysis_is_refused_before_freeze_on_the_risk_warning() -> None:
     plan, report = _preflight()
     assert plan is not None, ("协议应能编译（阻断点是预检/冻结，不是编译）", report.findings)
     assert report.status is PreflightStatus.WARN, report.findings
-    warnings = [
-        finding.code for finding in report.findings if finding.code == "TOOL_RISK_ELEVATED"
-    ]
+    warnings = [finding.code for finding in report.findings if finding.code == "TOOL_RISK_ELEVATED"]
     assert warnings, [finding.code for finding in report.findings]
-    assert any(
-        _PROVIDER in finding.message for finding in report.findings
-    ), [finding.message for finding in report.findings]
+    assert any(_PROVIDER in finding.message for finding in report.findings), [
+        finding.message for finding in report.findings
+    ]
     with pytest.raises(Exception, match="passing preflight"):
         freeze_manifest("run-blocker", plan, report, _deps().preflight_override)
