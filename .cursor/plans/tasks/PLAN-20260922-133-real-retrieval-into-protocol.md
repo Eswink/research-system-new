@@ -152,8 +152,12 @@ run 时写入）比对。**测试文件里没有任何 hard-coded 的摘要常�
 | I-4 | **执行 + 准入 + 可见** | 执行走既有 `execute_tool_call()`（策略判定在其中）；准入走既有 `register_tool_evidence()`；**但必须补 `attach_relation`**（D-9：`/runs/{id}/evidence` 只经 claim relations 走），否则出现「判据说绿、读面看不到」 | 不新造证据准入路径；不削弱 `register_tool_evidence` 的 digest 重算校验 |
 
 **落在「不进入循环」面内的两件事，本 PLAN 明确不做**：
-- **不给模型注册一个真实可调用的检索工具**（要动 `register_tools` 生产装配 + ToolDefinition + 依赖模型行为）。
-  记为**后继增强入口**，不在 EC-01 的验收路径上。
+- ~~**不给模型注册一个真实可调用的检索工具**（要动 `register_tools` 生产装配 + ToolDefinition + 依赖模型行为）。
+  记为**后继增强入口**，不在 EC-01 的验收路径上。~~
+  **【已被下方「P-1 第二半步」的实测更正，2026-09-22 同一 cycle】**
+  这条原本写成"不做"是**错的**：provider → SDK 工具的映射**必须**做，否则声明了新能力之后
+  **会话根本创建不出来**（见「探针结果」的 P-1 第二半步）。**本 PLAN 把它从"不做"改为"必做"**，
+  并明确它**不是**为了"让模型自己调检索"才做，而是**为了让会话能起来**。
 - **不重构贴线文件**（`composition.py` 零余量 / `phase_runner.py` 7 行）。若最终必须重构，
   按 AC-5 先记入 GOAL 的「需人工拍板」第 4 项再决定。
 
@@ -213,6 +217,40 @@ capability -> providers:
 变成 `['m12_artifact', 'ncbi_eutils']`。⇒ 真实会话会**多拿到一个名字** `Tool(name="ncbi_eutils")`，
 而该名字在生产装配里**从未注册**。**这就是 P-1 要问的那件事的前提，已成立。**
 （相反方向也钉住了：不加声明时冻结集**不含** `ncbi_eutils` ⇒ R-1 反证有一条干净的起点。）
+
+**P-1 第二半步 —— 结论已由仓库自己的判据给出（本 cycle 实测查到，**不是**推断）**：
+
+先更正我在上一段写下的一句错话：我写「生产装配对未注册名字的行为**未经验证**」。**这是错的。**
+该行为在本仓**有文档、有判据、且被离线钉死**：
+
+- **判据**：`tests/e2e/test_ec03_real_runtime_offline_chain.py` 的
+  `test_unmapped_tool_set_is_named_not_silently_dropped` —— 用 `map_tools=False`（**生产装配**）
+  起一次 run，断言三件事：`run["state"] == "FAILED"`、
+  失败消息里 **`"is not registered"`**、且 **`_MockRelayHandler.requests == []`**
+  （**工具解析之前不得发生任何 LLM 调用**）。docstring 明写这条是「对**今天真实行为**的固定」。
+- **文档**：`docs/architecture/TOOL_RUNTIME.md`「未覆盖 / 未实现」节逐字写着
+  「**provider id → SDK tool name 的映射不存在**：SDK 侧期望的是类名（如 `TerminalTool`），
+  而冻结集里是 Research OS 的 provider id；**缺映射时会话创建点名失败**（不静默丢工具）」。
+  `docs/architecture/AGENT_RUNTIME.md` 同口径，并写明「provider → SDK 工具的映射**属 EC-05**」。
+- **机制**：`openhands.sdk.tool.registry.resolve_tool()` 对未注册名字 **`raise KeyError`**
+  （`.venv/.../openhands/sdk/tool/registry.py:149-156`）。
+  **本 cycle 实测**：进程启动时 `list_registered_tools() == []`（`import` 后**零**工具注册），
+  且 `m12_artifact` / `ncbi_eutils` **都不在**注册表里。
+
+**⇒ 三条结论（改变了接线范围，必写死）**：
+
+1. **今天生产装配跑不动任何真实会话**——不只是"缺检索"：冻结集里的 `m12_artifact` 本身就未映射
+   ⇒ 缺映射时会话创建**点名失败**（`FAILED`）。GOAL-010 那三次 `SUCCEEDED` 是在
+   `map_tools=True`（测试侧惰性注册）下取得的 ⇒ **它证明的是"有映射时可达"，不是"生产可达"**。
+   这是一条**既有的、由 GOAL-007 EC-05 命名但未落地的**缺口，本 GOAL 的 EC-01 **必须**顺带闭合它。
+2. **因此「provider → SDK 工具映射」从"不做"改成"必做"**（见上文更正）。它**不是**为了
+   让模型自己调检索，而是**为了让会话能创建出来**——否则声明新能力之日就是 run 全红之日。
+3. **对 `ncbi_eutils` 应当注册一个"真实"工具而不是惰性桩**：既然这个映射必须存在，
+   注册惰性桩只是把失败从"装配期点名失败"推迟成"模型调用时失败"；用
+   `NcbiEutilsProvider` 支撑的真实工具才是诚实实现，且与**运行链能力步**共用同一个 provider 实例
+   （两条路径同源，不新造第二套）。
+   **但**：模型是否真的调用它，**不**作为 EC-01 的判据（那仍是概率性的）；EC-01 的证据由
+   **运行链能力步**确定性产出。
 
 ### 决策 3 —— 反证的精确形态
 
