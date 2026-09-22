@@ -27,6 +27,7 @@ from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import WorkflowEngine
 from packages.application.run_orchestration.commands import StartRunCommand
+from packages.application.run_orchestration.experiment_task import dispatch_experiment
 from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome
 from packages.application.run_orchestration.phase_capabilities import execute_run_chain_capabilities
 from packages.application.run_orchestration.task_executor import (
@@ -411,13 +412,10 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
     capability = execute_run_chain_capabilities(deps.capabilities, task, tctx.spec_context)
     if capability.failure_message is not None:
         return failure_step(deps, tctx, capability.failure_message, capability.system_failure)
-    if deps.experiment_task is not None and tctx.contract.id == "experiment_execution":
-        execution = deps.experiment_task(
-            task,
-            tctx.contract,
-            tctx.spec_context,
-            tctx.ctx.trace_id,
-        )
+    # GOAL-011 EC-03：派发按**契约声明**判（`TaskContract.experiment`），不按合约 id 的
+    # 字面量——「谁执行这件工作」是契约事实，写死一个名字会漏掉语义相同的别的合约。
+    if tctx.contract.experiment is not None:
+        execution = dispatch_experiment(deps, tctx)
     else:
         execution = execute_task(
             # budget 必须接进来:失败/重试路径的 attempt 记账在

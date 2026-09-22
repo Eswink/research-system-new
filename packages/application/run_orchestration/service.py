@@ -185,9 +185,7 @@ class RunOrchestrationService:
         run_id = command.run_id.value
         self._deps.workflow.cancel_run(run_id)
         record_cancelled_usage(
-            self._deps.budget,
-            run_id,
-            self._deps.workflow.cancelled_task_ids(run_id),
+            self._deps.budget, run_id, self._deps.workflow.cancelled_task_ids(run_id)
         )
         release_reservation(self._reservation_refs, self._deps.budget, run_id)
 
@@ -304,6 +302,7 @@ class RunOrchestrationService:
                 telemetry=self._deps.telemetry,
                 approvals=self._deps.approvals,
                 capabilities=self._deps.capabilities,
+                experiment_task=self._deps.experiment_task,
                 human_gated=pending_human_gates(self._deps.approvals, context.plan, run_id),
                 on_pause=paused.append,
                 on_observation=None if collector is None else collector.observe,

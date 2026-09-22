@@ -40,6 +40,10 @@ class OrchestrationDependencies:
     # 而 phase 是否属于运行链执行仍由协议侧 `capability_execution` 决定。
     # 注解取 Any：本模块不因此导入 phase_capabilities（依赖方向单向）。
     capabilities: Any | None = None
+    # GOAL-011 EC-03：**沙箱实验**阶段的执行缝（与 `PhaseRunnerDeps.experiment_task` 同型）。
+    # None（缺省）= 没接。此时契约里**声明了** `experiment` 的任务以**点名拒绝**收敛
+    # （fail-closed，不静默回退到会话——否则"声明了实验"与"真的跑了实验"会分叉）。
+    experiment_task: Any | None = None
     default_actor: str = "system:orchestration"
 
 

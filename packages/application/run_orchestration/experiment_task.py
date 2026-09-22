@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, cast
 
 from packages.application.experiments.evidence_admission import (
     ExperimentEvidenceResult,
@@ -52,6 +53,32 @@ class ExperimentTaskDeps:
         | None
     ) = None
     provenance_builder: Callable[[ResearchTask], ExperimentProvenance] | None = None
+
+
+def dispatch_experiment(deps: Any, tctx: Any) -> TaskExecutionResult:
+    """GOAL-011 EC-03：契约**声明了**「由沙箱实验后端执行」⇒ 交给装配方声明的缝。
+
+    声明是承诺：装配方没把实验执行链接进来时**点名拒绝**（fail-closed），**不**静默回退到
+    会话——否则「声明了实验」与「真的跑了实验」会分叉，而 run 仍会显示成功。
+
+    落在本模块（而不是 `phase_runner`）是因为 `phase_runner.py` 恰好 450 行（硬上限），
+    派发分支换成本函数一次调用后它净减；判定与拒绝文案归这里。
+    """
+    runner = deps.experiment_task
+    if runner is None:
+        return TaskExecutionResult(
+            task=tctx.task,
+            outcome="FAILED",
+            message=(
+                f"contract {tctx.contract.id} declares a sandboxed experiment but no "
+                "experiment runner is wired into this assembly"
+            ),
+            failure_category=FailureCategory.CONFIGURATION,
+        )
+    return cast(
+        TaskExecutionResult,
+        runner(tctx.task, tctx.contract, tctx.spec_context, tctx.ctx.trace_id),
+    )
 
 
 def execute_experiment_task(
