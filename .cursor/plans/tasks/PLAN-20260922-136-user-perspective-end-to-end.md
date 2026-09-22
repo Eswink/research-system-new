@@ -92,13 +92,34 @@ EC-04 要的是**用户视角的端到端验收**：真实数据下走完整流�
 
 ## 实施清单
 
-- [ ] **WP1** live 端到端脚本（`scratch/`，**不进仓库**）：以既有 API 面走五步，
-  把每一步的请求/响应落 JSON + 步骤说明。
-- [ ] **WP2** `partial` 页诚实标注逐条核对：五页逐条给「一致 / 不一致 + 证据」，
-  必要时改措辞（只改 `pageSupport.ts` / `CONSOLE_PAGE_MAP.md` 的**文字**）。
-- [ ] **WP3** 判据：若发现「声明与行为会漂」的真空面，补一条**离线**判据钉住（不空转、可按压）；
-  若既有判据已覆盖，如实写明「已覆盖」而**不**重复造判据。
-- [ ] **WP4** GOAL 回写（EC-04 状态 / 迭代日志 / 台账）+ 本轮记录。
+- [x] **WP1** live 端到端脚本（`scratch/goal011-c7-e2e.py`，**不进仓库**）：以既有 API 面走五步，
+  记录落 `scratch/goal011-c7-e2e/{steps.json,summary.json,STEPS.md}`；另加离线行为面探针
+  `scratch/goal011-c7-offline-probes.py`（无凭据、无出网）。
+- [x] **WP2** `partial` 页诚实标注逐条核对：五页逐条给结论（见下「核对结论」）；
+  **未发现需要改措辞的项**，新增两条残余 W-L / W-M。
+- [x] **WP3** 判据：逐项确认既有覆盖（`test_budget_forecast_api.py:200`、
+  `test_project_lineage_api.py:198-200`），**不重复造判据**；只对「**本轮才由人工建立**的那条事实」
+  补一条离线判据并**按压**过：`tests/api/test_projects_api.py::test_runs_started_at_a_path_project_belong_to_the_fixture_project`
+  （按压：把期望改成路径项目 ⇒ 红 `assert 'example-project' == '0880b513-…'`；复原 ⇒ 14 passed）。
+- [x] **WP4** GOAL 回写（EC-04 状态 / 迭代日志 / 台账）+ 本轮记录。
+
+## 核对结论（EC-04 的第二半，逐条）
+
+| 页（`pageSupport.ts`） | 声明的 `partial` 理由（摘） | 核对方式（真实数据优先） | 结论 |
+| --- | --- | --- | --- |
+| `portfolio/projects` | 「删除仅对无引用项目可用（被运行/草稿/实验队列/库资源/运维记录引用时 409 且不级联）」+「runs/settings/drafts 按项目归属」 | 离线行为探针（同一控制面路径，无出网）+ 真实 run 的项目归属 | **删除语义逐字一致**：被草稿引用 ⇒ **409** + 逐项计数 `drafts=1`；默认项目 ⇒ **409**（examples 契约合成，不可删）；未知 ⇒ **404**；清掉引用后 ⇒ **204**。**归属**：`drafts`/`settings` 按项目 ✓；**`runs` 的归属在 run-ready/live 装配下跟随执行输入（`example-project`）而非 URL 路径**（真实 run 与离线探针两次同形）——仓库**已登记**该受控态（`tests/api/test_projects_api.py::test_delete_refuses_project_with_persisted_run` 注释），本轮把它补成**可复核判据**并登记残余 **W-L**（前端在受控装配下看不到「新项目里有 run」） |
+| `plan/protocol` | （`level: full`，无理由） | `GET /protocol-templates` = 5 条；`POST /protocols/validate` 编译载体协议 **200**（0 error，1 条 INFO `DAG_ORPHAN_PHASE`） | **一致**（无 `partial` 声明可核；协议选择与编译校验面可用） |
+| `run/timeline` | pause/resume 为协作式执行协调（PAUSED 停止认领、phase 边界停、resume 恢复派发、无抢占式中断、跨进程暂停上下文不持久化） | 读面字段在场（`paused_dispatch` 在详情 DTO 里）；**离线**同形行为的既有判据 `tests/api/test_run_pause_view_api.py` **7 passed**（停放重试读作自驱、用户暂停读作人工、未暂停 run 无该视图、列表读面同一判据、该视图不写任何东西） | **部分一致**：读面那几句（区分自驱/人工暂停、无视图、列表同判据、不写入）与判据**一致**；理由里「resume 的续跑上下文」与「跨进程不持久化」两句**本轮未逐条核对**；**真实数据下未跑暂停/恢复** ⇒ 真实样本仍缺，**如实标注**，不据此声称真实数据已验证 |
+| `library/lineage` | 项目级血缘 + 「响应内 `reference_recording` 如实标注」+ 库资源只作未连边清单 | 真实 run：`/runs/{id}/lineage` `degraded=false`，边含 `materialized_as`/`supports`，**检索证据（含真实 PMID）在边里**；`/projects/{id}/lineage` 返回 `reference_recording="NOT_RECORDED"` + 逐字理由，`library_resources=[]` | **一致**（既有判据 `tests/api/test_project_lineage_api.py:198-200` 同口径） |
+| `govern/budget` | 「仅已预留额度（不外推）」 | 真实 run：`forecast_scope="RESERVED_ONLY"`、`scope_note` 逐字「…un-reserved future spend is not extrapolated」、`cost_status="MONETARY_UNAVAILABLE"`、`unknown_cost_entries=3`（UNKNOWN **不**当 0）、`MODEL_TOKENS consumed=20647` | **一致**（既有判据 `tests/api/test_budget_forecast_api.py:200` 同口径） |
+
+**本轮如实登记的两条残余**：
+
+- **W-L**：前端 `partial` 理由里「runs 按项目归属」在**受控装配**下对 runs 不成立（run 归 `example-project`）
+  ⇒ 真实数据下「新建项目页面看不到刚跑的 run」。本 PLAN 按 D-5 **不改产品行为**，只补判据钉住事实。
+- **W-M**：**浏览器 UI 在真实执行体/真实检索下没有承载装配**——既有唯一 UI 承载
+  `tests/api/console_api_app.py` 自称「Fake Port 装配…外部模型/工具为确定性替身」；
+  真实 LLM + 运行链检索只在测试侧 live 装配里 ⇒ 本轮**不伪造** UI 证据，走读面快照（EC-04 允许）。
 
 ## 证据
 
@@ -111,6 +132,8 @@ EC-04 要的是**用户视角的端到端验收**：真实数据下走完整流�
 | E-5 | run-ready 夹具下目录仍是夹具项目 | `services/api/routers/runs.py:95-97` 的 docstring 逐字 |
 | E-6 | 五步走通的读面快照 | `scratch/goal011-c7-e2e/`（本轮产出，不进仓库） |
 | E-7 | `partial` 逐条核对结论 | 本 PLAN 的「核对结论」表（下节）+ GOAL 迭代日志 |
+| E-8 | 既有覆盖（本轮**不**重复造判据） | 预算：`tests/api/test_budget_forecast_api.py:200`（`forecast_scope == "RESERVED_ONLY"`）；血缘：`tests/api/test_project_lineage_api.py:198-200`（`NOT_RECORDED` + 理由在场）；暂停读面：`tests/api/test_run_pause_view_api.py` **7 passed** |
+| E-9 | 本轮新增的唯一判据（**已按压**） | `tests/api/test_projects_api.py::test_runs_started_at_a_path_project_belong_to_the_fixture_project`：按压（期望改成路径项目）⇒ 红 `assert 'example-project' == '0880b513-…'`；复原 ⇒ **14 passed**；`ruff check`/`format`/`mypy` 全绿 |
 
 ## 影响报告
 
