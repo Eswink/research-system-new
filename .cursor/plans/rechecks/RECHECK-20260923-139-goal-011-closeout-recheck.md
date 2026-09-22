@@ -8,7 +8,7 @@ created_at: 2026-09-23
 completed_at: 2026-09-23
 reviewer: independent-closeout-script + root-agent-goal-011-ec06
 baseline_ref: 6f5b9fb5
-checked_head: 收口提交（RECHECK-133…139 + EC-06 置 PASS + GOAL 置 BLOCKED 同一次提交落地）
+checked_head: 8f9f7b2（当前树与干净 checkout 同一提交；「四/五」记的干净树数字即在该 clone 上取得）
 ---
 
 # RECHECK-20260923-139 — GOAL-011 收口复检（EC-01…EC-06）
@@ -51,7 +51,7 @@ checked_head: 收口提交（RECHECK-133…139 + EC-06 置 PASS + GOAL 置 BLOCK
 | --- | --- |
 | 治理 `validate.py` | **绿**（本文件落地后复跑；`latest_recheck` 为仓库相对路径、`child_plans` 覆盖 133…139、`ALL_PLAN` 投影一致） |
 | bundle 校验 `validate_bundle.py` | **绿**（schema 注册表随撤回回到 `6f5b9fb5` 的形态） |
-| 本机 m0（`--profile m0 --keep-going`，CI 同形 env） | 见「四、两棵树」下方的 m0 行（**23/23**，`PASS [` 计数与末行） |
+| 本机 m0（`--profile m0 --keep-going`，CI 同形 env） | **绿**：`PASS: profile=m0; 23 deterministic checks`、`EXIT=0`；24 条 `PASS [` 行、零 `FAIL [` / `ERROR` / `SKIP` 行（日志 `scratch/goal011-c10-m0/m0.log`） |
 | 规模门禁 | `tests/tooling/test_python_source_limits.py` 绿（`run_from_execution` 修复第一版 57 行判红 ⇒ 抽 helper 后回到 50 行以内） |
 | 出口判据 | 全部实跑均为 `egress guard: judged N; blocked 0`（零真实出网） |
 
@@ -60,11 +60,17 @@ checked_head: 收口提交（RECHECK-133…139 + EC-06 置 PASS + GOAL 置 BLOCK
 | 树 | 脚本结果 | 说明 |
 | --- | --- | --- |
 | **当前树**（收口回写之后） | **87/87；失败 0；跳过 0**（逐层见「五」） | D 层读到本机 `.env` ⇒ 凭据面**实测**；`scratch/` 不进判定 |
-| **干净 checkout**（`git clone --depth 1 --branch main` 到仓外） | 与当前树**同一组判据、同一结论**；差异只允许是「无 `.env` ⇒ 凭据面报**跳过**」 | 干净树是**真 git 仓库**（D 层的输入是 `git ls-files`） |
+| **干净 checkout**（`git clone --depth 1 --branch main file:///D:/research-system` 到 `D:\goal011-clean`，`HEAD=8f9f7b2`） | **85/85；失败 0；跳过 2**（逐层见「五」） | 与当前树**同一组判据、同一结论**；两处差异**只有**「干净树无 `.env` ⇒ D 层 2 条凭据比对**如实跳过**」（D 层由 3/3 变 1/1 + 2 skip，故合计 87→85、跳过 0→2） |
 
-**干净 checkout 一列在**本文件所在提交**之后用 `git clone --depth 1 --branch main file:///D:/research-system`
-复跑并**追加**到本表（同一收口的后续提交，与 CI 台账行同批）——两层证据（当前树 + 干净树）
-不合并成一句「两树同结论」。
+**复跑记录**（本节数字即这两条命令的**原样输出**，两层证据不合并成一句「两树同结论」）：
+
+```text
+$ git clone --depth 1 --branch main file:///D:/research-system /d/goal011-clean   # HEAD=8f9f7b2
+$ python scratch/verify_goal011_closeout.py --root /d/goal011-clean
+-- 层 A: 34/34 / -- 层 B: 8/8 / -- 层 C: 37/37 / -- 层 D: 1/1 / -- 层 E: 5/5
+-- 跳过 2（SKIP key 值不落入被跟踪文件 :: 干净树无 .env ⇒ 无法比对，**不**读成通过）
+-- 合计 85/85；失败 0；跳过 2
+```
 
 ### 五、脚本计数
 
@@ -77,11 +83,11 @@ checked_head: 收口提交（RECHECK-133…139 + EC-06 置 PASS + GOAL 置 BLOCK
 | 层 | A 交付物 | B 判据用例 | C 登记面 | D 凭据面 | E 默认姿态 | 合计 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 当前树 | 34/34 | 8/8 | 37/37 | 3/3 | 5/5 | **87/87；失败 0；跳过 0** |
+| 干净 checkout（`HEAD=8f9f7b2`，仓外） | 34/34 | 8/8 | 37/37 | **1/1 + 2 skip** | 5/5 | **85/85；失败 0；跳过 2** |
 
-**干净 checkout** 的一列在**本文件所在提交之后**用
-`git clone --depth 1 --branch main file:///D:/research-system` 复跑并**追加**（同一收口的后续提交，
-与 CI 台账行同批）；届时应同样是 **87/87**，且 D 层那条凭据比对**如实报「跳过」**（干净树无 `.env`）
-——两层证据（当前树 + 干净树）不合并成一句「两树同结论」。
+两棵树的**判定集合逐一相同**（A/B/C/E 四层计数一字不差）；唯一差异是 D 层那两条需要读本机
+`.env` 的比对在干净树里**如实报跳过**（`SKIP key 值不落入被跟踪文件`、`SKIP .env 无
+RESEARCHOS_AGENT_RUNTIME 赋值`）——**跳过不是通过**，故合计按 85 而非 87 记。
 
 ## 结论
 
