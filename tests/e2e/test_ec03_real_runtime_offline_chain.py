@@ -62,6 +62,8 @@ from tests.e2e.live_run_support import (
 )
 
 _PROTOCOL = "console_demo_research_v1.yaml"
+#: GOAL-011 EC-01：声明了 `capability_execution: run_chain` 的真实协议（检索由运行链执行）。
+_RETRIEVAL_PROTOCOL = "real_retrieval_research_v1.yaml"
 
 
 class _MockRelayHandler(BaseHTTPRequestHandler):
@@ -136,6 +138,36 @@ def test_unmapped_tool_set_is_named_not_silently_dropped(mock_relay: str) -> Non
     assert run["state"] == "FAILED"
     assert any("is not registered" in message for message in failures), failures
     assert _MockRelayHandler.requests == [], "no LLM call may happen before tools resolve"
+
+
+def test_declared_run_chain_capabilities_let_production_assembly_start(mock_relay: str) -> None:
+    """GOAL-011 EC-01：**声明为 run-chain 的能力不进会话工具列表** ⇒ 生产装配起得来。
+
+    与上一条**成对**，两条合起来才是「声明化排除 ≠ 静默丢弃」的完整句：
+    上一条 = 未声明的未映射名字**点名拒绝**（行为不变，且**用 demo 协议**测——它不声明
+    这个字段）；这一条 = 显式声明 `capability_execution: run_chain` 的协议里，被声明排除的
+    provider 名字**不进会话工具列表**，于是**生产装配**（`map_tools=False`，即
+    `build_agent_runtime` 的真实缺省、register_tools 为空操作）也能把会话建起来。
+
+    判据是**可观测的后果**，不是断言实现细节：mock 端点**收到了补全请求**（会话真的建起来
+    并驱动了 LLM），失败原因里**没有** "is not registered"，且 run 到 `SUCCEEDED`。
+    **反证**：删掉协议里的 `capability_execution` 行 ⇒ 本用例红——实测失败原因为
+    `ToolDefinition 'm12_artifact' is not registered`（会话在建的时候就死），
+    `_MockRelayHandler.requests` 为空。
+    """
+    from services.api.app import create_app
+
+    with TestClient(create_app(_openhands_deps(mock_relay, map_tools=False))) as client:
+        run = _start(client, _RETRIEVAL_PROTOCOL)
+        failures = _failures(client, run["id"])
+
+    assert _MockRelayHandler.requests, (
+        "生产装配下会话没建起来 ⇒ 声明化排除没生效",
+        run,
+        failures,
+    )
+    assert not any("is not registered" in message for message in failures), failures
+    assert run["state"] == "SUCCEEDED", (run, failures)
 
 
 @dataclass(frozen=True, slots=True)

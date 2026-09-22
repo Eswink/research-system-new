@@ -41,6 +41,10 @@ class AgentSessionSpec:
     role: RoleDefinition
     agent: AgentSpec
     frozen_tool_set: tuple[str, ...] = ()
+    # GOAL-011 EC-01：冻结集里**由运行链执行**、因此不作为会话工具装配的 provider id。
+    # 必须是 `frozen_tool_set` 的子集（越界即装配期错误，见 adapter 的 `session_tool_ids`）。
+    # 缺省空 ⇒ 会话工具列表 == 冻结集（既有语义，逐字节不变）。
+    run_chain_tool_ids: tuple[str, ...] = ()
     workspace_lease: WorkspaceLease | None = None
     context_snapshot: ContextSnapshot | None = None
     budget_reservation: BudgetReservation | None = None

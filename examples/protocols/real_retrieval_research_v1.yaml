@@ -1,0 +1,48 @@
+id: real_retrieval_research_v1_0_1
+version: 0.4.0
+
+# 真实**检索**研究协议（GOAL-011 EC-01）：一份真实执行体可以如实执行、且**会真的去检索**
+# 的协议。
+#
+# 为什么另立一份、而不是把检索能力加进 `real_research_task_v1`（EC-01 原文允许二选一，
+# 本文件是**记在案的选择**）：那条路会把**声明 REST provider 的后果**带给一份已经在
+# 4 条既有判据里跑通的协议——实测后果见下。另立一份把影响面**限制在本协议**内。
+#
+# 实测的后果（本 cycle 记录，未修改任何门禁）：把 `literature.search` 声明进 phase
+# ⇒ provider `ncbi_eutils`（`kind: REST`）进 `tool_requirements` 与冻结集 ⇒
+# **默认装配**（无 preflight override、实时健康探测）下 `build_provider_health` 探测不到
+# 可运行的 provider 实例，健康诚实收敛为 `UNKNOWN` ⇒ 触发 `TOOL_HEALTH_UNPROVEN`
+# **WARNING** ⇒ 报告状态为 `WARN` ⇒ `freeze_manifest` 要求 `report.passed`（= PASS）
+# 而**拒绝冻结**，run 于 **预检之后、执行之前** 终止（无 manifest、无会话、无工具观测）。
+# 这一条与服务侧门（`service.py` 只在 `FAIL` 时失败）以及既有口径「UNKNOWN 只警示不阻断」
+# **互相矛盾**，属**既有**的语义不一致（本协议是第一条踩到它的协议）。
+# ⇒ 本协议在**默认装配**下的产品路径**今天跑不动**，如实登记，不在本 GOAL 内改门禁。
+# 可行路径是**测试/运维显式声明的 preflight 上下文**（`run_ready`/live harness 显式给出
+# `provider_health`），那也是 GOAL-009/010 全部真实 run 走过的同一条路径。
+#
+# 受控范围（写明，不夸大也不缩小）：**1 个 phase、1 件交付物、1 份声明输入、2 条检索能力**。
+#   * `capability_execution: run_chain`：本 phase 的能力**由运行链执行**、不作为**会话工具**
+#     暴露给模型。两个面都不减——能力仍在 `tool_requirements`（preflight 的策略/凭据/供应链
+#     pin 检查照旧）、provider 仍在冻结集（越权执行仍被拒），被拿掉的只有「会话工具列表」。
+#   * 检索是**系统的取证动作**：真实标识（PMID/DOI/标题）经 `register_tool_evidence` 落
+#     canonical 证据链，内容寻址、digest 可重算。模型仍产交付物。
+#   * 它**仍不代表**完整研究计划：多阶段 / 并行依旧不可执行（`phase.strategy` 在产品侧
+#     只有编译器一个消费者），phase 数 = 会话数。
+
+phases:
+  - id: analysis
+    name: Real Retrieval Research Analysis
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+    # 由运行链执行、不暴露为会话工具（缺省 = session = 既有语义，见 `CapabilityExecution`）。
+    # 这句话是**必需**的：provider→SDK 工具映射在生产装配里是空操作，缺映射时控制面
+    # 不静默丢工具、而是让会话创建失败并点名未注册的 provider id
+    # （`test_unmapped_tool_set_is_named_not_silently_dropped` 固定该行为）。
+    capability_execution: run_chain
+    task_contract: real_research_deliverable
+    inputs: [input-brief:real_research_v1]

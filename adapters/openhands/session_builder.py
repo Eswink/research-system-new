@@ -19,6 +19,7 @@ from adapters.openhands.policy_enforcing_agent import (
     register_policy_context,
 )
 from adapters.openhands.session_types import _SessionEntry
+from adapters.openhands.tool_mapping import session_tool_ids
 from adapters.openhands.usage_mapping import (
     UsageContext,
     observed_model_names,
@@ -60,9 +61,13 @@ class SessionBuilder:
 
     def build_session(self, session_id: str, spec: AgentSessionSpec) -> _SessionEntry:
         workspace = self._build_workspace(spec.workspace_lease, session_id)
-        self._register_tools(spec.frozen_tool_set)
+        # GOAL-011 EC-01：会话工具列表 = 冻结集 −「由运行链执行」的 provider。
+        # 未声明时逐字节等于冻结集（既有语义）；冻结集本身**不变**——它仍是 manifest
+        # 的冻结事实，`require_frozen_tool_set` 照旧拦住越权执行。
+        tool_ids = session_tool_ids(spec.frozen_tool_set, spec.run_chain_tool_ids)
+        self._register_tools(tool_ids)
         llm = self._build_llm(spec)
-        agent = self.assemble_agent(llm, spec, session_id)
+        agent = self.assemble_agent(llm, spec, session_id, tool_ids)
         # SDK v1.42.0 Conversation.__new__ 工厂返回 LocalConversation，但 mypy
         # 无法解析其实例方法签名（上游类型标注缺陷）；此处用 Any 承载 SDK 对象。
         conversation: Any = Conversation(
@@ -80,21 +85,31 @@ class SessionBuilder:
             events=[RuntimeEvent(session_id, RuntimeEventKind.SESSION_CREATED)],
         )
 
-    def assemble_agent(self, llm: Any, spec: AgentSessionSpec, session_id: str) -> Any:
-        """装配带策略门禁的 Agent（evaluator 经注册表随序列化传递）。"""
+    def assemble_agent(
+        self,
+        llm: Any,
+        spec: AgentSessionSpec,
+        session_id: str,
+        tool_ids: tuple[str, ...] | None = None,
+    ) -> Any:
+        """装配带策略门禁的 Agent（evaluator 经注册表随序列化传递）。
+
+        `tool_ids` 缺省回落到冻结集（既有调用点不变）。
+        """
+        session_tools = tuple(spec.frozen_tool_set) if tool_ids is None else tool_ids
         context_id = register_policy_context(self._policy_evaluator)
         self._policy_context_ids.add(context_id)
         if self._use_default_agent:
             return PolicyEnforcingAgent(
                 llm=llm,
-                tools=[Tool(name=name) for name in spec.frozen_tool_set],
+                tools=[Tool(name=name) for name in session_tools],
                 policy_context_id=context_id,
                 policy_actor=spec.agent.id,
                 policy_scope=session_id,
             )
-        agent = self._build_agent(llm, list(spec.frozen_tool_set))
+        agent = self._build_agent(llm, list(session_tools))
         if isinstance(agent, OpenHandsAgent) and not isinstance(agent, PolicyEnforcingAgent):
-            tools = list(getattr(agent, "tools", None) or spec.frozen_tool_set)
+            tools = list(getattr(agent, "tools", None) or session_tools)
             return PolicyEnforcingAgent(
                 llm=llm,
                 tools=tools,
@@ -119,8 +134,9 @@ class SessionBuilder:
         # 有效 Tool Set 冻结（EC-05）：改它必须显式声明 Manifest Revision；且重建 agent 时
         # 必须用**改写后**的 spec，否则 override 只落到记录里、落不到真在跑的工具集上。
         effective = self.spec_with_overrides(entry.spec, spec)
-        self._register_tools(effective.frozen_tool_set)
-        agent = self.assemble_agent(llm, effective, new_id)
+        tool_ids = session_tool_ids(effective.frozen_tool_set, effective.run_chain_tool_ids)
+        self._register_tools(tool_ids)
+        agent = self.assemble_agent(llm, effective, new_id, tool_ids)
         return entry.conversation.fork(agent=agent)
 
     @staticmethod
@@ -143,6 +159,10 @@ class SessionBuilder:
                 if fork.tool_set_override is not None
                 else spec.frozen_tool_set
             ),
+            # GOAL-011 EC-01：fork 不改「谁执行能力」的声明——它随 spec 一起被继承。
+            # 若 override 把某个 run-chain provider 移出冻结集，`session_tool_ids`
+            # 会点名拒绝（fail-closed），而不是让一份过期的排除名单悄悄生效。
+            run_chain_tool_ids=spec.run_chain_tool_ids,
             workspace_lease=spec.workspace_lease,
             context_snapshot=spec.context_snapshot,
             budget_reservation=spec.budget_reservation,

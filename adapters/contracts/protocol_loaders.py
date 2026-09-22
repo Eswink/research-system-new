@@ -13,6 +13,7 @@ from adapters.contracts.base import (
 from packages.domain.core import Version
 from packages.domain.enums import GateType
 from packages.domain.protocols import (
+    CapabilityExecution,
     PhaseStrategy,
     ProtocolDefinition,
     ProtocolPhase,
@@ -61,6 +62,8 @@ def _phase_from_mapping(raw: dict[str, Any]) -> ProtocolPhase:
         timeout_seconds=raw.get("timeout_seconds"),
         gate=gate,
         stop_conditions=_stop_conditions(raw.get("stop_conditions")),
+        # 缺省 "session"：文档不写该字段 ⇒ 逐字节保持既有语义（会话工具）。
+        capability_execution=CapabilityExecution(raw.get("capability_execution", "session")),
     )
 
 

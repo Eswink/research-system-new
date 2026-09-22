@@ -92,6 +92,11 @@ class SessionSpecContext:
     # （这是如实的失败，不是缺陷）。命名空间与模型产出**不相交**：模型产出恒为
     # `{task_id}:{name}`，工具结果是 `tool-result:...`，本处由组合根以独立前缀种入。
     declared_input_artifacts: tuple[str, ...] = field(default_factory=tuple)
+    # GOAL-011 EC-01：本 phase **由运行链执行**的能力所属 provider id（源头是协议 phase 的
+    # `capability_execution: run_chain`）。它们是冻结集的**子集**，被拿掉的只有「会话工具」
+    # 这一个面：冻结集 / preflight / 策略判定都不变 ⇒ **声明化排除**，不是静默丢弃。
+    # 缺省空 = 未声明 ⇒ 会话工具列表逐字节等于冻结集（既有语义）。
+    run_chain_tool_ids: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)
@@ -327,6 +332,7 @@ def _run_session(
         role=spec_context.role,
         agent=spec_context.agent,
         frozen_tool_set=spec_context.frozen_tool_set,
+        run_chain_tool_ids=spec_context.run_chain_tool_ids,
         manifest_ref=spec_context.frozen_manifest_digest,
         endpoint=spec_context.endpoint,
         model=spec_context.model,

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from packages.domain.core import ID
 from packages.domain.models import LLMEndpoint, ModelDefinition
-from packages.domain.protocols import CompiledRunPlan
+from packages.domain.protocols import CapabilityExecution, CompiledRunPlan
 from packages.domain.tasks import ResearchTask, TaskContract
 from packages.domain.team_plan import PhaseAssignment
 
@@ -31,6 +31,29 @@ def flatten_tool_providers(plan: CompiledRunPlan) -> tuple[str, ...]:
     """冻结 Tool Set：各 phase 全部 ToolRequirement 的 provider 并集。"""
     return tuple(
         sorted({provider for tool in plan.tool_requirements for provider in tool.provider_ids})
+    )
+
+
+def run_chain_tool_ids(plan: CompiledRunPlan, phase_id: str) -> tuple[str, ...]:
+    """该 phase **由运行链执行**（因而不暴露为会话工具）的 provider id（GOAL-011 EC-01）。
+
+    只对显式声明 `capability_execution: run_chain` 的 phase 生效——声明缺席时返回空，
+    会话工具列表因此逐字节等于**冻结集**（既有语义）。
+
+    它**不**缩小任何检查面：这些 provider 仍在 `plan.tool_requirements` 里（preflight 的
+    策略/凭据/健康判定一字不减）、仍在 `frozen_tool_set` 里（`require_frozen_tool_set`
+    仍拦得住越权执行）——被拿掉的只有「会话工具」这一个面。
+    """
+    phase = next((item for item in plan.phases if item.id == phase_id), None)
+    if phase is None or phase.capability_execution is not CapabilityExecution.RUN_CHAIN:
+        return ()
+    return tuple(
+        sorted({
+            provider
+            for tool in plan.tool_requirements
+            if tool.phase_id == phase_id
+            for provider in tool.provider_ids
+        })
     )
 
 
@@ -97,6 +120,9 @@ def resolve_sessions(
                     endpoint=endpoint,
                     model=model,
                     phase_id=phase.id,
+                    # GOAL-011 EC-01：本 phase 由运行链执行的能力所属 provider——
+                    # 它们**不在**会话工具列表里（冻结集与 preflight 判定不受影响）。
+                    run_chain_tool_ids=run_chain_tool_ids(context.plan, phase.id),
                     # GOAL-010 EC-02：phase **声明**的输入制品随 spec 走到结果注册处，
                     # 在那里成为「非模型自述」的来源。声明在协议里（产品面），
                     # 校验在注册处（对象必须在库且内容可重算）——本层只搬运、不解释。

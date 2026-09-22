@@ -39,6 +39,21 @@ class PhaseStrategy(StrEnum):
     SINGLE_AGENT = "single_agent"
 
 
+class CapabilityExecution(StrEnum):
+    """phase 的能力**由谁执行**（GOAL-011 EC-01）。
+
+    - `SESSION`（缺省）：能力作为**会话工具**暴露给模型——这是既有语义，
+      缺省值必须逐字节保持它，否则「文档没写」与「文档写了 session」会分叉。
+    - `RUN_CHAIN`：能力由**运行链**执行、**不**暴露为会话工具。它**仍然**进
+      `tool_requirements` 与 `frozen_tool_set`（preflight 检查、策略判定、
+      冻结面一字不减），只是不进会话的工具列表 ⇒ 这是**声明化排除**，
+      不是静默丢弃：声明缺席的名字依旧会因「未注册」被点名拒绝。
+    """
+
+    SESSION = "session"
+    RUN_CHAIN = "run_chain"
+
+
 class CompileFindingCode(StrEnum):
     DAG_MISSING_DEPENDENCY = "DAG_MISSING_DEPENDENCY"
     DAG_FORWARD_REFERENCE = "DAG_FORWARD_REFERENCE"
@@ -150,6 +165,10 @@ class ProtocolPhase:
     timeout_seconds: int | None = None
     gate: GateType | None = None
     stop_conditions: StopConditions | None = None
+    # GOAL-011 EC-01：本 phase 的能力由谁执行（缺省 = 会话工具，即既有语义）。
+    # 见 `CapabilityExecution`：`run_chain` **不**把能力从任何检查面拿掉，
+    # 只把它从**会话工具列表**里拿掉。
+    capability_execution: CapabilityExecution = CapabilityExecution.SESSION
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -233,6 +252,9 @@ class CompiledPhase:
     # GOAL-010 EC-02：编译期**原样携带** phase 声明的输入制品 id（`ProtocolPhase.inputs`）。
     # 编译**不**解析它们——解析要 ArtifactStore，属执行期；这里只保证声明不在这步丢掉。
     inputs: tuple[str, ...] = ()
+    # GOAL-011 EC-01：编译期**原样携带**「能力由谁执行」。`run_chain` 的 phase，
+    # 其能力仍进 `tool_requirements`（preflight/策略/冻结面不减），只是不进会话工具列表。
+    capability_execution: CapabilityExecution = CapabilityExecution.SESSION
 
 
 @dataclass(frozen=True, slots=True)

@@ -24,6 +24,28 @@ def tools_for_frozen_set(frozen_tool_set: Sequence[str]) -> list[Tool]:
     return [Tool(name=name) for name in frozen_tool_set]
 
 
+def session_tool_ids(
+    frozen_tool_set: Sequence[str],
+    run_chain_tool_ids: Sequence[str] = (),
+) -> tuple[str, ...]:
+    """会话工具列表 = 冻结集 **减去**「由运行链执行」的那部分（GOAL-011 EC-01）。
+
+    - 缺省（`run_chain_tool_ids` 空）⇒ 逐字返回冻结集：**既有语义不变**。
+    - 排除项必须是冻结集的子集：越界即**装配期错误**（点名越界的名字），
+      免得用一份不再描述本次冻结的名单去悄悄缩小工具面。
+    - 排除是**声明化**的：只对协议里显式写了 `capability_execution: run_chain`
+      的 phase 生效。缺席声明的名字**不会**被这里丢掉——它们照旧交给 SDK 解析，
+      未注册时由 SDK 报错，并被
+      `test_unmapped_tool_set_is_named_not_silently_dropped` 固定在「点名拒绝」。
+    """
+    frozen = set(frozen_tool_set)
+    excluded = set(run_chain_tool_ids)
+    outside = sorted(excluded - frozen)
+    if outside:
+        raise ValueError(f"run-chain tool ids not in the frozen tool set: {', '.join(outside)}")
+    return tuple(name for name in frozen_tool_set if name not in excluded)
+
+
 def register_custom_tools(
     definitions: Sequence[tuple[str, type[ToolDefinition[Any, Any]] | ToolDefinition[Any, Any]]],
 ) -> None:
@@ -47,4 +69,9 @@ def normalize_mcp_config(mcp_config: dict[str, object]) -> dict[str, object]:
     return normalized
 
 
-__all__ = ["tools_for_frozen_set", "register_custom_tools", "normalize_mcp_config"]
+__all__ = [
+    "normalize_mcp_config",
+    "register_custom_tools",
+    "session_tool_ids",
+    "tools_for_frozen_set",
+]

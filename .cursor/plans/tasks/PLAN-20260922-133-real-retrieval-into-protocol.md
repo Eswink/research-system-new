@@ -128,6 +128,47 @@ run 时写入）比对。**测试文件里没有任何 hard-coded 的摘要常�
 拿它当载体等于把一个**已声明但不可执行**的协议拖进验收 ⇒ 判据会红在「协议本身跑不动」，
 而不是红在 EC-01 要看的那件事上。
 
+### 决策 1 的更正（cycle 3，**只追加**）——载体由 (a) **改为 (b) 新建一份真实协议**
+
+**触发证据（cycle 3 实测，非推断）**：把两条 `literature.*` 声明加进 `real_research_task_v1`
+的 `analysis` phase 之后，**4 条既有判据立刻转红**（`tests/api/test_real_protocol_identity.py`
+的产品路径可达性 + `tests/api/test_run_fingerprint_read_face.py` 三条），而
+`tests/architecture`/`tests/contracts`/`tests/loaders` 全绿。归因链（逐段实测）：
+
+1. 声明 `literature.search` ⇒ provider `ncbi_eutils`（`kind: REST`）进 `tool_requirements` 与冻结集；
+2. **默认装配**（无 preflight override）走 `_live_preflight` ⇒ `build_provider_health` 对目录里
+   **每个** provider 求健康；`ncbi_eutils` 的**凭据门槛**未声明、`endpoint_env` 未声明、
+   控制面**未注册可探测实例**（D-15） ⇒ 健康**诚实收敛为 `UNKNOWN`**；
+3. `UNKNOWN` ⇒ `TOOL_HEALTH_UNPROVEN`（**WARNING**）⇒ 报告状态 `WARN`；
+4. `service.py` 的门**只在 `FAIL` 时失败**（口径：[枚举注释](../) 与 WP-D 均写「UNKNOWN
+   只警示**不阻断**」），于是 run 继续走到 `freeze_manifest`；
+5. `freeze_manifest` 要求 `report.passed`（= `status is PASS`）⇒ **拒绝冻结**（`ManifestFreezeError`）；
+   实测该 run 的读面形态是 `state=FAILED`、`manifest_digest=null`、`execution=null`、**无事件**
+   ——即在**预检之后、执行之前**终止。
+6. ⇒ 只要协议声明**任何 REST provider**，**默认装配**下它就冻结不了。这是**既有**的语义不一致
+   （本协议是第一条踩到它的），**不是**本次改动引入的；本次改动只是把它暴露出来。
+
+**为什么这足以改载体**：EC-01 的原文**显式允许二选一**；而取 (a) 会让这条新暴露的
+不一致**波及 4 条 GOAL-010 既有判据的既有对象**（它们跑的就是 `real_research_task_v1`），
+也意味着要为了修它去动**门禁语义**——那是 escalation（放宽/收紧验收门）而不是本 PLAN 的活。
+取 (b) 把影响面**限制在新协议之内**，既有 4 条判据逐字保持、逐字复绿（实测：7 passed）。
+
+**新载体**：`examples/protocols/real_retrieval_research_v1.yaml`
+（`id: real_retrieval_research_v1_0_1`，1 phase `analysis`，复用既有合约
+`real_research_deliverable` 与既有声明输入 `input-brief:real_research_v1`，
+能力 = `artifact.read` + `literature.search` + `literature.read`，
+`capability_execution: run_chain`）。文件头**自述**了上面这条实测边界，不夸大也不缩小。
+
+**如实登记的两条边界（W 列表，本 PLAN 内不修）**：
+- **W-A（产品路径）**：新协议在**默认装配**下的产品路径**今天跑不动**（上面第 5 步）。
+  可行且被本 PLAN 采用的路是**测试/运维显式给出 `provider_health` 的 preflight 上下文**
+  （`run_ready`/live harness）——GOAL-009/010 的全部真实 run 走的也是这条。
+  修那条不一致要动门禁语义 ⇒ 归**人工拍板**，不在本 GOAL 内自决。
+- **W-B（编辑器往返）**：`apps/web/src/features/protocol/editor/protocolSerialize.ts`
+  逐键构造 phase body，**没有** `capability_execution` 这一键（`protocolDocument.ts` 也未解析）
+  ⇒ 经协议编辑器**保存草稿**会把该声明**丢掉**，草稿随后跑起来会因 provider 未映射而
+  点名失败（**是点名失败，不是静默**，但声明确实丢了）。本 cycle 只登记，不修。
+
 ### 决策 2 —— 接线架构：**检索由 run 链执行（能力步）**，不依赖模型自己调工具
 
 **这条是本 PLAN 最承重的决策，理由是一条实测的装配事实**：会话拿到的「工具」是
@@ -280,6 +321,60 @@ capability -> providers:
 「检索来源是**可被摘掉**的一个独立来源」（即：不得让覆盖率只有检索来源一条腿，否则摘掉后
 EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**用同一个红同时充当两条 EC 的证据）。
 
+### 决策 4（cycle 3，WP3）—— 映射取 **M-2（声明化分离）**，且**声明落在协议 phase 上**（不是 provider 规格、不是 Domain 全局）
+
+> 本节是 cycle 3 的定案交付物。与决策 1/2 同一纪律：**先写理由、再动代码**；理由全部来自
+> 本 cycle 实测或仓库既有判据，不来自印象。
+
+**先摆一条本 cycle 实测的射程事实（它改变了 M-1 的性价比）**：会话工具调用在
+`PolicyEnforcingAgent._evaluate()` 里以 **`capability=<tool_name>`** 送进 policy
+（`adapters/openhands/policy_enforcing_agent.py:96-111`），而 `tool_name` 是 **provider id**；
+`examples/config/policy.yaml` 的词汇表**全是能力名**（`artifact.read` / `literature.search` /
+`literature.read` …），`default_effect: DENY`。⇒ **今天即便把 provider 注册成真实 SDK 工具，
+模型一调用也会在策略门被 DENY**（`ncbi_eutils` / `m12_artifact` 都不在 allow 名单里）。
+M-1 的收益（「模型真的能用检索」）**不注册就为零、注册了也为零**，除非同时改政策词汇表——
+而那是「把 policy 从说能力改为说 provider」的语义改动，**不在本 EC 内**（GOAL-007 EC-05 已把
+「新增接入面」判为超出其 EC 范围）。⇒ **M-1 的收益侧被证伪，只剩成本。**
+
+**再摆一条同样关键的既有判据约束**：`test_unmapped_tool_set_is_named_not_silently_dropped`
+跑的是**生产组合根**（`build_agent_runtime`，无 `register_tools`），用 demo 协议，断言
+`FAILED` + 「is not registered」+ 未发 LLM 调用。⇒ **任何「让生产装配对未映射名不再失败」的
+全局修法都会直接把这判据打红**。这排除了所有全局形态（provider 规格加标记、组合根补注册表、
+`flatten_tool_providers` 过滤）——除非把判据改掉，而那是 PLAN 明令禁止的。
+
+**⇒ 唯一同时满足「判据保持强度」「收益侧真实」「不新增模型面接入点」的形态**：把「由运行链执行、
+不暴露为会话工具」做成**协议 phase 的显式声明**，默认值 = 今天的行为：
+
+```yaml
+phases:
+  - id: analysis
+    required_capabilities: [artifact.read, literature.search, literature.read]
+    capability_execution: run_chain   # 新增；缺省 session = 今天的行为
+```
+
+- **判据不动**：demo 协议不写该字段 ⇒ 缺省 `session` ⇒ `m12_artifact` 仍是「会话工具但未映射」
+  ⇒ 那条判据的四个断言逐字保持。
+- **不新增接入面**：会话拿到的工具集合只会**变窄**，不会变宽；运行链执行的能力仍留在
+  `frozen_tool_set` 里（`require_frozen_tool_set` 仍拦住越权），所以是**声明化排除**而非静默丢弃。
+- **落点选协议而不是 provider 规格**：provider 规格是全局的（`literature.search` 之于
+  `ncbi_eutils` 在 demo 协议里同样存在），全局标记会把 demo 打红；而且「谁执行这个能力」是
+  **这一次 run 的编排事实**，不是 provider 的固有属性。
+- **不触碰 Domain 的 Canonical State**：新增的是**协议文档的一个可选字段**与其编译透传，
+  不改任何持久化 schema、不改迁移、不改 `validate_bundle` 的注册表（协议 schema 文件本身要
+  加一项，属**规格契约的加性扩展**）。**加性、缺省即旧行为、旧文档逐字节不受影响**——
+  因此不构成 escalation 里的「Canonical State 边界」。
+- **粒度取 phase 级**（不是逐能力）：本协议唯一的 phase 里**每一条**能力都由运行链执行
+  （`artifact.read` 走 GOAL-010 EC-02 的声明输入机制；`literature.*` 走本 PLAN 的能力步），
+  phase 级声明**恰好**表达这件事、不引入重复清单。逐能力粒度留给将来真有混合 phase 时再说，
+  此处**如实登记为边界**，不假装支持。
+
+**由此产生的两条硬约束（写死在实现里）**：
+1. `capability_execution: run_chain` 的 phase，其能力**必须**仍进 `tool_requirements`
+   （preflight/policy/credential/health 判定一字不减）与 `frozen_tool_set`（冻结面不减），
+   只是**不进会话工具列表**。
+2. 运行链**必须**对该 phase 声明的每条 run_chain 能力给出执行体；**给不出就点名失败**
+   （fail-closed），不得出现「声明了 run_chain 却没人执行」的静默空洞。
+
 ## 实施清单
 
 - [x] **WP1 定案**（只读，**不发任何真实调用**）：在「定案」节写死三件事——
@@ -399,3 +494,34 @@ EC-01 也会连带红 ⇒ 那时要重新设计 R-1/R-4 的分工，**不得**�
   ⇒ 该用例 **FAILED**（`Right contains one more item: 'literature_search'`），复原 ⇒ 9 passed，
   且 `git diff` 只剩意图内的 **1 行新增**（无按压残留）。
   **WP2 之外仍待做**：见下方 WP3 的映射设计岔路。
+- 2026-09-22：**cycle 3 WP3 落地（映射 = M-2 声明化分离；接线未落）**。
+  - **定案**：见「决策 4」——M-1（逐 provider 造真实 SDK 工具）**收益侧被实测证伪**
+    （会话工具调用在 `PolicyEnforcingAgent._evaluate` 里以 `capability=<provider id>` 送 policy，
+    而 `policy.yaml` 的词汇表全是**能力名**且 `default_effect: DENY` ⇒ 注册了也一调用就被拒），
+    且任何**全局**形态修法都会直接打红既有判据
+    `test_unmapped_tool_set_is_named_not_silently_dropped`（它跑的就是**生产组合根**）⇒ 取
+    **协议 phase 级、缺省即旧行为**的声明化分离；**未改任何门禁、未动那条判据的一个字**。
+  - **落地面**（Python 侧，全部加性）：`CapabilityExecution`（`packages/domain/protocols.py`）
+    → `ProtocolPhase.capability_execution` + `CompiledPhase.capability_execution`（**原样透传**）
+    → `schemas/protocol.schema.json` 加一项 enum → loader 读成域枚举（缺省 `session`）
+    → `run_orchestration/session_resolution.py::run_chain_tool_ids`（**按 phase 作用域**）
+    → `SessionSpecContext.run_chain_tool_ids` → `AgentSessionSpec.run_chain_tool_ids`
+    → `adapters/openhands/tool_mapping.py::session_tool_ids`（越界**点名拒绝**，fail-closed）
+    → `session_builder`（建会话与 fork **两条**路径都过滤；fork 继承该声明）。
+    **两个面都不减**：能力仍在 `tool_requirements`（pin/策略/凭据检查照旧）、provider 仍在冻结集
+    （`require_frozen_tool_set` 仍拦越权），被拿掉的只有**会话工具列表**。
+  - **判据两条，都**成对**且都被按压过**：
+    ① `tests/architecture/python/test_run_chain_capability_exposure.py`（6 条：文档声明／
+    加载+编译透传／冻结集**不缩小**／会话列表恰为差集／**按 phase 作用域**／越界点名拒绝）
+    —— 删掉协议里的 `capability_execution` 行 ⇒ **4 条红**（会话列表重新等于冻结集），复原 ⇒ 6 passed；
+    ② `tests/e2e/test_ec03_real_runtime_offline_chain.py::test_declared_run_chain_capabilities_let_production_assembly_start`
+    —— **生产装配**（`map_tools=False`）下会话建得起来（mock 端点收到补全请求）、失败原因**无**
+    "is not registered"、run 到 `SUCCEEDED`；删掉声明行 ⇒ **红**，实测失败原因逐字为
+    `ToolDefinition 'm12_artifact' is not registered`（会话在建的时候就死）。它与**未动**的
+    `test_unmapped_tool_set_is_named_not_silently_dropped` 构成完整的一对：
+    「未声明 ⇒ 点名拒绝」对「已声明 ⇒ 声明化排除」。
+  - **同一 cycle 的承载更正**：见「决策 1 的更正」（载体 (a) → (b)，附 4 条既有判据转红的归因链）。
+    **如实登记 W-A（默认装配的产品路径今天跑不动）与 W-B（协议编辑器往返会丢该声明）**。
+  - **仍未落**：**能力步本体**（运行链真的去调 `literature.search` 并把结果登记成证据）——
+    即 I-1…I-4 的执行侧与 `NcbiEutilsProvider` 的生产装配，属 WP3 的后半，**下一轮入口**。
+    **EC-01 仍 PENDING**（本 cycle 只让它**可验**：声明与装配面已落地并被判据钉住）。

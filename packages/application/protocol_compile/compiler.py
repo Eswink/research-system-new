@@ -64,6 +64,8 @@ def _compiled_phases(protocol: ProtocolDefinition, ordered: tuple[str, ...]) -> 
             task_contract_refs=tuple(phases[phase_id].task_contracts),
             timeout_seconds=phases[phase_id].timeout_seconds,
             inputs=tuple(phases[phase_id].inputs),
+            # GOAL-011 EC-01：原样透传（编译不解释它；解释在会话解析处）。
+            capability_execution=phases[phase_id].capability_execution,
         )
         for phase_id in ordered
     ]
