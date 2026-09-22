@@ -25,6 +25,11 @@ _PROTOCOL = "console_demo_research_v1.yaml"
 REAL_PROTOCOL = "real_research_task_v1.yaml"
 #: Live 运行注册进凭据解析器的引用名（= 目录里 endpoint 声明的 `credential_ref`）。
 LIVE_CREDENTIAL_REF = "LLM_MAIN_KEY"
+#: GOAL-011 EC-03：`sort_analysis_v1` 执行阶段的合约（沙箱实验声明落在它上面）。
+EXPERIMENT_CONTRACT = "sort_analysis_execution"
+#: 沙箱实验脚本（仓库相对路径）与**既有**沙箱镜像（M9 已 E2E 验证的那一个）。
+EXPERIMENT_SCRIPT = "examples/experiments/sort_analysis_baseline.py"
+EXPERIMENT_IMAGE = "research-os-sandbox:m9-test"
 
 
 class InertAction(Action):
@@ -86,6 +91,61 @@ def point_catalog_at(deps: Any, base_url: str) -> None:
     }
     deps.preflight_override = replace(
         context, catalog=replace(context.catalog, endpoints=endpoints)
+    )
+
+
+def declare_sandbox_experiment(deps: Any, *, script: str, image: str) -> None:
+    """GOAL-011 EC-03：在**本次 run 的目录**上给执行阶段合约加「沙箱实验」声明。
+
+    为什么在装配面声明、而不写进协议文件或目录文件：`sort_analysis_v1` 是 M7 参考场景，
+    它的执行阶段被 10+ 条已判绿用例按**会话**语义驱动 ⇒ 改协议/改共享目录会让那批语义
+    消失。这里走的是与 GOAL-009/010/011 全部真实 run 同一条路径——**测试/运维显式声明的
+    执行上下文**（`preflight_override` 就是这条路径的既有载体），协议与共享夹具零改动。
+    """
+    from dataclasses import replace
+
+    from packages.domain.tasks import ExperimentExecutionSpec
+
+    context = deps.preflight_override
+    assert context is not None
+    contracts = dict(context.catalog.task_contracts)
+    contracts[EXPERIMENT_CONTRACT] = replace(
+        contracts[EXPERIMENT_CONTRACT],
+        experiment=ExperimentExecutionSpec(script=script, image=image),
+    )
+    deps.preflight_override = replace(
+        context, catalog=replace(context.catalog, task_contracts=contracts)
+    )
+
+
+def with_sandbox_experiment(deps: Any, *, script: str, image: str) -> None:
+    """把**既有**实验执行链接进运行编排的实验缝（同一个装配，同 run-chain 能力步的形态）。"""
+    from dataclasses import replace
+
+    from packages.application.run_orchestration.service import RunOrchestrationService
+    from services.api.assembly import policy_bindings
+    from services.api.experiment_support import (
+        docker_experiment_assembly,
+        sandbox_experiment_runner,
+    )
+
+    declare_sandbox_experiment(deps, script=script, image=image)
+    policy_evaluator = policy_bindings().get("policy_evaluator")
+    assert policy_evaluator is not None, "policy.yaml must be loadable for the sandbox experiment"
+    runner = sandbox_experiment_runner(
+        docker_experiment_assembly(
+            artifacts=deps.artifacts,
+            ledger=deps.ledger,
+            policy=policy_evaluator,
+            script=script,
+            image=image,
+            experiment_store=deps.experiment_store,
+        )
+    )
+    old = deps.runs
+    assert old is not None
+    deps.runs = RunOrchestrationService(
+        replace(old._deps, runtime=old._deps.runtime, experiment_task=runner)
     )
 
 
