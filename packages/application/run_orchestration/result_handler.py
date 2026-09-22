@@ -199,6 +199,11 @@ class RegistrationDeps:
     # GOAL-010 EC-02：本 phase 声明的输入制品 id（`ProtocolPhase.inputs`）。
     # 空 = 未声明 ⇒ 不产生非自身来源 ⇒ 覆盖判据如实判拒。
     declared_inputs: tuple[str, ...] = ()
+    # GOAL-011 EC-01：**运行链自己取得的**证据（run-chain 能力的工具证据，已由
+    # `register_tool_evidence` 登记）。这里只做两件事：并入会话结果 claim 的
+    # relations（读面经 claim relations 投影，不挂就读不到），并进返回值
+    # （覆盖计数只认非自身来源，检索来源不在 `self_artifact_ids` 里）。
+    retrieved_evidence: tuple[Evidence, ...] = ()
 
 
 def _input_evidence(
@@ -312,6 +317,10 @@ def register_session_result(
     **声明输入**（`deps.declared_inputs`）与结构化输出无关地**总是**登记：它是
     本任务的 grounding 对象，无论模型说了什么都在场；正因为它独立于模型产出，
     才能被当作「非模型自述」的来源（GOAL-010 EC-02）。
+
+    **运行链取得**（`deps.retrieved_evidence`，GOAL-011 EC-01）在登记阶段已经写好
+    SourceRecord/Evidence，这里只把它们挂进同一个 claim（relations）并并进返回值：
+    两者少一个，检索来源要么读不到，要么不计入覆盖。
     """
     if not structured_output:
         raise InvalidInputError(
@@ -328,12 +337,13 @@ def register_session_result(
                 evidences=evidences,
                 claims=claims,
                 claim_id=claim_id,
-                extra_evidence_ids=tuple(evidence.id for evidence in inputs),
+                extra_evidence_ids=tuple(evidence.id for evidence in inputs)
+                + tuple(evidence.id for evidence in deps.retrieved_evidence),
             ),
         )
     return ResultRegistration(
         artifacts=tuple(artifacts),
-        evidence=tuple(evidences) + inputs,
+        evidence=tuple(evidences) + inputs + deps.retrieved_evidence,
         claims=tuple(claims),
         self_artifact_ids=frozenset(artifact.id for artifact in artifacts),
     )

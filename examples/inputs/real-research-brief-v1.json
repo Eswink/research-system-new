@@ -1,16 +1,21 @@
 {
   "brief_id": "real_research_brief_v1",
   "kind": "operator_supplied_brief",
-  "title": "Declared input brief for real_research_task_v1",
-  "purpose": "The declared input material for the real_research_task_v1 protocol. Its single `analysis` phase declares `inputs: [input-brief:real_research_v1]`; the composition root stores exactly these bytes under that artifact id, and the run chain registers the object as a NON-MODEL source whose digest is recomputable from this file (GOAL-010 EC-02).",
+  "title": "Declared input brief for the real research protocols",
+  "purpose": "The declared input material for the real protocols whose single `analysis` phase declares `inputs: [input-brief:real_research_v1]` (`real_research_task_v1`, and `real_retrieval_research_v1`). The composition root stores exactly these bytes under that artifact id, and the run chain registers the object as a NON-MODEL source whose digest is recomputable from this file (GOAL-010 EC-02).",
   "what_this_is": [
-    "An operator-supplied brief: it states the task, the deliverable expectation and the constraints.",
-    "It is NOT a retrieval result and does NOT contain literature citations -- real retrieval is not wired into the run chain yet (GOAL-010 EC-02 residual W-7), so claiming sources here would be fabrication."
+    "An operator-supplied brief: it states the task, the deliverable expectation, the constraints, and (since GOAL-011 EC-01) the retrieval parameters that a run-chain retrieval phase reads from here.",
+    "It is NOT a retrieval result and does NOT contain literature citations: the identifiers that enter the evidence chain come from the retrieval call itself, never from this file."
   ],
   "what_this_proves": [
     "A verifiable grounding relation between the deliverable and the material the task was supplied with (the digest is recomputable from this file).",
-    "It does NOT prove the session actually read it -- only a tool observation could prove that, and tools in the live harness are currently inert."
+    "It does NOT prove the session read it -- only a tool observation proves that, and a run-chain retrieval produces exactly such an observation (GOAL-011 EC-01)."
   ],
+  "retrieval": {
+    "note": "Read by the run chain only for protocols whose phase declares `capability_execution: run_chain` (today: real_retrieval_research_v1.yaml). `query` is the operator-declared search term; the identifiers read afterwards come from the search result itself, not from this file.",
+    "query": "reproducibility of computational research",
+    "retmax": 3
+  },
   "documents": [
     {
       "id": "brief-1",
@@ -25,7 +30,7 @@
     {
       "id": "brief-3",
       "title": "Constraints",
-      "text": "Single task, single deliverable, no retrieval: the protocol declares exactly what the system can execute today. Multi-phase and parallel research is a later protocol's problem, not something to assert here."
+      "text": "Single task, single deliverable. The retrieval protocol declares exactly the retrieval it executes (one declared query, its result chained into one read); nothing beyond that is asserted as available. Multi-phase and parallel research is a later protocol's problem, not something to assert here."
     }
   ]
 }

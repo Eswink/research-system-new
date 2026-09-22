@@ -28,6 +28,7 @@ from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import WorkflowEngine
 from packages.application.run_orchestration.commands import StartRunCommand
 from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome
+from packages.application.run_orchestration.phase_capabilities import execute_run_chain_capabilities
 from packages.application.run_orchestration.task_executor import (
     ExecutionDeps,
     SessionSpecContext,
@@ -68,6 +69,8 @@ class PhaseRunnerDeps:
     # 未注入时 `degrade` 仍返回正确的 RunOutcome，只是不发 `run.degraded`）。
     degrade_run: Callable[[PhaseContext, tuple[TaskOutcome, ...], str], RunOutcome] | None = None
     telemetry: TelemetrySink | None = None
+    # GOAL-011 EC-01：运行链能力步装配面（CapabilityDeps；None ⇒ 该步不启用）。
+    capabilities: Any | None = None
     # WP-H：human gate 注册面。approvals 与 human_gated 同源注入（service 仅在
     # store 存在时给出非空 gate 集）；on_pause 把未执行 specs 交回 service 暂存。
     approvals: Any | None = None
@@ -405,6 +408,9 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
         tctx.ctx.trace_id,
         task.id.value,
     )
+    capability = execute_run_chain_capabilities(deps.capabilities, task, tctx.spec_context)
+    if capability.failure_message is not None:
+        return failure_step(deps, tctx, capability.failure_message, capability.system_failure)
     if deps.experiment_task is not None and tctx.contract.id == "experiment_execution":
         execution = deps.experiment_task(
             task,
@@ -440,4 +446,5 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
     if execution.experiment_outcome is not None:
         return register_and_gate_experiment(deps, tctx, execution)
     assert execution.session_result is not None
-    return register_and_gate(deps, tctx, execution.session_result)
+    # GOAL-011 EC-01：运行链取得的证据随会话结果**同一个** claim 登记（读面才看得到）。
+    return register_and_gate(deps, tctx, execution.session_result, capability.evidences)

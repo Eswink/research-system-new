@@ -303,6 +303,7 @@ class RunOrchestrationService:
                 degrade_run=self._degrade_run,
                 telemetry=self._deps.telemetry,
                 approvals=self._deps.approvals,
+                capabilities=self._deps.capabilities,
                 human_gated=pending_human_gates(self._deps.approvals, context.plan, run_id),
                 on_pause=paused.append,
                 on_observation=None if collector is None else collector.observe,

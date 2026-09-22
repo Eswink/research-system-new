@@ -26,7 +26,7 @@ from packages.application.run_orchestration.result_handler import (
 )
 from packages.domain.enums import MemoryType
 from packages.domain.events import EventType
-from packages.domain.evidence import EvidenceRelation, EvidenceRelationType
+from packages.domain.evidence import Evidence, EvidenceRelation, EvidenceRelationType
 from packages.domain.experiment_state import ExperimentRunState
 from packages.domain.failure_policy import OnTaskFailure
 from packages.domain.session_state import AgentSessionState
@@ -180,6 +180,7 @@ def register_or_fail(
     deps: Any,
     tctx: Any,
     session_result: AgentSessionResult,
+    retrieved: tuple[Evidence, ...] = (),
 ) -> ResultRegistration | str:
     try:
         return register_session_result(
@@ -188,6 +189,7 @@ def register_or_fail(
                 agent_id=tctx.spec_context.agent.id,
                 ledger=deps.ledger,
                 declared_inputs=tctx.spec_context.declared_input_artifacts,
+                retrieved_evidence=retrieved,
             ),
             tctx.task,
             tctx.contract,
@@ -228,10 +230,15 @@ def register_and_gate(
     deps: Any,
     tctx: Any,
     session_result: AgentSessionResult,
+    retrieved: tuple[Evidence, ...] = (),
 ) -> PhaseStep:
-    """Register session output, evaluate gate, promote claim/memory, handoff."""
+    """Register session output, evaluate gate, promote claim/memory, handoff.
+
+    `retrieved` = 运行链自己取得的证据（GOAL-011 EC-01）：它随会话结果**同一个** claim
+    登记，读面与覆盖计数因此看得到它（experiment 路径暂不携带——EC-03 的范围）。
+    """
     task = tctx.task
-    registered = register_or_fail(deps, tctx, session_result)
+    registered = register_or_fail(deps, tctx, session_result, retrieved)
     if isinstance(registered, str):
         return failure_step(
             deps,

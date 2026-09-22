@@ -23,7 +23,8 @@ _PROTOCOL = "console_demo_research_v1.yaml"
 #: 头部不再自称「受控 Fake…不冒充真实研究执行」）。它的 id 必须出现在 run 的
 #: canonical 事实里——判据见 `tests/e2e/test_real_protocol_canonical_live.py`。
 REAL_PROTOCOL = "real_research_task_v1.yaml"
-_LIVE_CREDENTIAL_REF = "LLM_MAIN_KEY"
+#: Live 运行注册进凭据解析器的引用名（= 目录里 endpoint 声明的 `credential_ref`）。
+LIVE_CREDENTIAL_REF = "LLM_MAIN_KEY"
 
 
 class InertAction(Action):
@@ -95,7 +96,7 @@ def register_live_key(deps: Any, live_key: str | None) -> None:
     from adapters.fakes.credential_resolver import FakeCredentialResolver
 
     # `ApiDeps.credentials` 声明为 Port；run_fixtures 注入的是 Fake 实现。
-    cast(FakeCredentialResolver, deps.credentials).register(_LIVE_CREDENTIAL_REF, live_key)
+    cast(FakeCredentialResolver, deps.credentials).register(LIVE_CREDENTIAL_REF, live_key)
 
 
 def host_shell_workspace(lease: Any, session_id: str) -> Any:
@@ -147,6 +148,7 @@ def openhands_deps(
 
     `live_key` 非空时把它注册进凭据解析器——**值只从环境变量来**（调用方读
     `RESEARCHOS_LIVE_E2E_KEY` 或目录声明的 `credential_ref`）。
+    运行链能力步另经 `with_run_chain_capabilities` 接（同一个装配，见那里）。
     """
     from dataclasses import replace
 
@@ -226,3 +228,129 @@ def run_failures(client: Any, run_id: str) -> list[str]:
         for event in events
         if event["type"] in ("run.failed", "task.failed")
     ]
+
+
+#: GOAL-011 EC-01：运行链检索的两步（**声明式**：谁、哪个工具、参数从哪来）。
+def _retrieval_calls() -> tuple[Any, ...]:
+    """两步：检索（query 来自声明输入的 `retrieval.query`）→ 读取（ids 来自上一步结果）。
+
+    第 2 步的标识**只可能**来自第 1 步的响应（`ids`），不内置任何厂商知识、也不从
+    夹具凭空生成 ⇒ 证据链里的 PMID 是这次检索真实返回的那一串。
+    """
+    from packages.application.run_orchestration.phase_capabilities import RunChainCall
+
+    return (
+        RunChainCall(
+            provider_id="ncbi_eutils",
+            tool_id="literature_search",
+            capability="literature.search",
+            arguments_from_input=("retrieval.query",),
+            fixed_arguments={"retmax": 3},
+        ),
+        RunChainCall(
+            provider_id="ncbi_eutils",
+            tool_id="literature_read",
+            capability="literature.read",
+            ids_from_previous="ids",
+        ),
+    )
+
+
+#: 离线判据的检索响应（**夹具值**）：esearch 返回两个 id，efetch 回第一个。
+MOCK_PMIDS: tuple[str, ...] = ("38000001", "38000002")
+_MOCK_SEARCH_JSON = {"esearchresult": {"count": "2", "idlist": list(MOCK_PMIDS)}}
+_MOCK_EFETCH_XML = (
+    b'<?xml version="1.0" encoding="UTF-8"?><PubmedArticleSet><PubmedArticle>'
+    b"<MedlineCitation><PMID>38000001</PMID><Article>"
+    b"<ArticleTitle>Frozen embeddings for low-resource classification</ArticleTitle>"
+    b"<Journal><Title>J Test Res</Title></Journal></Article></MedlineCitation>"
+    b"</PubmedArticle></PubmedArticleSet>"
+)
+
+
+def offline_ncbi_http(calls: list[str]) -> Any:
+    """**离线** NCBI 传输（httpx.MockTransport）：测的是链，不是公网可达性。
+
+    live 判据**不**用它（真出网，按 `requires_live_llm` 放行面）；传输层以外的一切
+    都相同——同一个真实 adapter、同一条运行链。
+    """
+    import httpx
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path.rsplit("/", 1)[-1])
+        if request.url.path.endswith("esearch.fcgi"):
+            return httpx.Response(200, json=_MOCK_SEARCH_JSON)
+        if request.url.path.endswith("efetch.fcgi"):
+            return httpx.Response(200, content=_MOCK_EFETCH_XML)
+        return httpx.Response(404, text="not found")
+
+    return httpx.Client(transport=httpx.MockTransport(handler))
+
+
+def run_chain_store_ledger(deps: Any) -> tuple[Any, Any]:
+    """运行链要用的 artifact store 与 evidence ledger（= 该 run 装配持有的同一对实例）。"""
+    inner = deps.runs._deps
+    return inner.artifacts, inner.ledger
+
+
+def ncbi_run_chain_provider(deps: Any, *, http_client: Any = None) -> Any:
+    """运行链用的**真实** NCBI provider。
+
+    离线判据传 `httpx.MockTransport` 的 client（不出网）；live 判据不传（真出网，
+    按 `requires_live_llm` 放行面）。
+    `spill_threshold_bytes=1`：运行链证据要求**内容寻址的内容在场**（
+    `register_tool_evidence` 会重算 digest），而默认阈值 32KiB 会让小响应不落盘 ⇒
+    证据准入 fail closed。
+    """
+    from adapters.research_tools import NcbiEutilsProvider
+
+    store, _ledger = run_chain_store_ledger(deps)
+    return NcbiEutilsProvider(
+        store,
+        credentials=deps.credentials,
+        http_client=http_client,
+        spill_threshold_bytes=1,
+    )
+
+
+def retrieval_capabilities(deps: Any, provider: Any) -> Any:
+    """运行链检索能力步的装配（provider 由调用方给：离线 mock / live 真实）。
+
+    目录里的 provider spec 用**既有那份**（examples/config/tool_providers.yaml 经
+    run-ready 装配读入），不在测试里重写一份。
+    """
+    from packages.application.run_orchestration.phase_capabilities import CapabilityDeps
+    from services.api.assembly import policy_bindings
+
+    context = deps.preflight_override
+    assert context is not None
+    spec = context.catalog.tool_providers["ncbi_eutils"]
+    store, ledger = run_chain_store_ledger(deps)
+    policy = policy_bindings().get("policy_evaluator")
+    assert policy is not None, "policy.yaml must be loadable for the run-chain policy check"
+    return CapabilityDeps(
+        calls=_retrieval_calls(),
+        providers={spec.id: provider},
+        provider_specs={spec.id: spec},
+        policy=policy,
+        artifacts=store,
+        ledger=ledger,
+    )
+
+
+def with_run_chain_capabilities(deps: Any, provider: Any) -> None:
+    """把运行链能力步接到**既有装配**上（provider 由调用方给：离线 mock / live 真实）。
+
+    与 `openhands_deps` 换 runtime 同一手法：重建服务、复用同一批 store/ledger 实例。
+    只对声明了 `capability_execution: run_chain` 的 phase 生效——其余协议行为不变。
+    """
+    from dataclasses import replace
+
+    from packages.application.run_orchestration.service import RunOrchestrationService
+
+    deps.runs = RunOrchestrationService(
+        replace(
+            deps.runs._deps,
+            capabilities=retrieval_capabilities(deps, provider),
+        )
+    )

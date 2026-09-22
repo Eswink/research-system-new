@@ -52,6 +52,15 @@ def _policy_scope(capability: str) -> str | None:
     return _CAPABILITY_SCOPE.get(capability)
 
 
+def policy_scope_for(capability: str) -> str | None:
+    """能力 → 求值 scope（GOAL-011 EC-01：**执行期**复用 preflight 的同一张表）。
+
+    带 scope 的 allow 规则要求请求里的 scope 相等才匹配；执行期若不补这一字段，
+    preflight 放行的能力会在执行期落到 `default_effect`（DENY）——同一能力两处结论。
+    """
+    return _policy_scope(capability)
+
+
 def gate_capability_scopes() -> dict[str, frozenset[str]]:
     """门链能力 → 求值 scope 集合（控制面可见性读取；返回值不就地修改）。"""
     return _GATE_CAPABILITY_SCOPES
