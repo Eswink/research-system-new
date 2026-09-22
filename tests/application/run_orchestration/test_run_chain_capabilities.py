@@ -25,6 +25,10 @@ from packages.application.run_orchestration.phase_capabilities import (
     RunChainCall,
     execute_run_chain_capabilities,
 )
+from packages.application.run_orchestration.result_handler import (
+    ResultRegistration,
+    count_retrieved_sources,
+)
 from packages.application.run_orchestration.task_executor import SessionSpecContext
 from packages.domain.artifacts import Artifact
 from packages.domain.core import ID, Digest
@@ -35,8 +39,10 @@ from packages.domain.enums import (
     PolicyDecision,
     ProviderType,
     RoleCategory,
+    TrustLabel,
     TrustLevel,
 )
+from packages.domain.evidence import Evidence, SourceRecord
 from packages.domain.roles import AgentBinding, AgentSpec, RoleDefinition
 from packages.domain.tasks import ResearchTask
 from packages.domain.tools import ToolProviderSpec
@@ -269,6 +275,74 @@ def test_provider_outside_the_frozen_tool_set_is_refused() -> None:
 
     assert outcome.failure_message is not None and "frozen tool set" in outcome.failure_message
     assert http_calls == []
+
+
+def test_retrieved_evidence_is_stamped_by_the_provider_declaration() -> None:
+    """GOAL-011 EC-02：来源性质**由 provider 的声明**决定，且落在 canonical 的 SourceRecord 上。
+
+    本 provider 声明了 `network_domains`（真实打到 `eutils.ncbi.nlm.nih.gov`）⇒ 两条工具
+    证据的来源都盖 `RETRIEVED`；「检索来源数」按 SourceRecord 判出来是 2 —— 这是覆盖判据
+    的性质维度唯一认的那个数（读面 `source_trust_label` 与它同源）。
+    """
+    store = _store_with_brief()
+    http_calls: list[str] = []
+    deps, ledger = _deps(store, _provider(store, http_calls))
+
+    outcome = execute_run_chain_capabilities(deps, _task(), _spec_context())
+
+    assert outcome.failure_message is None, outcome.failure_message
+    labels = {ledger.get_source(item.source_ref).trust_label for item in outcome.evidences}
+    assert labels == {TrustLabel.RETRIEVED}, labels
+    assert count_retrieved_sources(ledger, outcome.evidences) == 2
+
+
+def test_local_provider_evidence_is_not_stamped_retrieved() -> None:
+    """反向：provider **没有**声明外部网络域 ⇒ 不得自称「系统取得」（`GENERATED`）。"""
+    store = _store_with_brief()
+    http_calls: list[str] = []
+    deps, ledger = _deps(store, _provider(store, http_calls))
+    local = replace(PROVIDER_SPEC, network_domains=[])
+    deps = replace(deps, provider_specs={"ncbi_eutils": local})
+
+    outcome = execute_run_chain_capabilities(deps, _task(), _spec_context())
+
+    assert outcome.failure_message is None, outcome.failure_message
+    labels = {ledger.get_source(item.source_ref).trust_label for item in outcome.evidences}
+    assert labels == {TrustLabel.GENERATED}, labels
+    assert count_retrieved_sources(ledger, outcome.evidences) == 0
+
+
+def test_model_self_report_is_not_counted_as_a_retrieved_source() -> None:
+    """「计数 ≥ 1」不能代替来源性质：模型自述的证据再多，检索来源数仍是 0。
+
+    构造的是**会话自述证据**的形状（`GENERATED` 来源 + 指向它的 evidence），
+    与 `register_session_result` 落盘的那一类同形；本判据证明的是**门看的那个数**
+    只由来源性质决定——证据条数不参与。
+    """
+    ledger = FakeEvidenceLedger()
+    ledger.register_source(
+        SourceRecord(
+            origin="task-1:analysis_report",
+            content_digest="0" * 64,
+            trust_label=TrustLabel.GENERATED,
+        )
+    )
+    self_reported = Evidence(
+        id="evidence:task-1:analysis_report",
+        source_ref="task-1:analysis_report",
+        content_digest="0" * 64,
+        run_id="run-1",
+    )
+    ledger.register_evidence(self_reported)
+
+    assert count_retrieved_sources(ledger, (self_reported,)) == 0
+    # 而同一个门在「总数」这一维上仍然看到它（两维并存，互不顶替）。
+    assert ResultRegistration(evidence=(self_reported,)).evidence_source_count == 1
+
+
+def test_retrieved_count_is_unknown_without_a_ledger() -> None:
+    """没有 ledger ⇒ 性质数**未知**（`None`）：声明了该维度的合约据此 fail-closed 判拒。"""
+    assert count_retrieved_sources(None, ()) is None
 
 
 if __name__ == "__main__":  # pragma: no cover - 手动入口（判据在 pytest 里）

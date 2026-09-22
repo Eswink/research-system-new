@@ -45,20 +45,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from packages.domain.budget import ResourceType
-from tests.e2e.live_run_support import (
-    MOCK_PMIDS as _MOCK_PMIDS,
-)
 
 # 共享装配见 `live_run_support`：同一文件被两个模块名导入会让 SDK 的 Action
 # 子类被定义两次而毒化同进程事件 round-trip（Duplicate class definition）。
 from tests.e2e.live_run_support import (
     declare_second_artifact as _declare_second_artifact,
-)
-from tests.e2e.live_run_support import (
-    ncbi_run_chain_provider as _ncbi_run_chain_provider,
-)
-from tests.e2e.live_run_support import (
-    offline_ncbi_http as _offline_ncbi_http,
 )
 from tests.e2e.live_run_support import (
     openhands_deps as _openhands_deps,
@@ -68,9 +59,6 @@ from tests.e2e.live_run_support import (
 )
 from tests.e2e.live_run_support import (
     start_run as _start,
-)
-from tests.e2e.live_run_support import (
-    with_run_chain_capabilities as _with_run_chain,
 )
 
 _PROTOCOL = "console_demo_research_v1.yaml"
@@ -162,7 +150,14 @@ def test_declared_run_chain_capabilities_let_production_assembly_start(mock_rela
     `build_agent_runtime` 的真实缺省、register_tools 为空操作）也能把会话建起来。
 
     判据是**可观测的后果**，不是断言实现细节：mock 端点**收到了补全请求**（会话真的建起来
-    并驱动了 LLM），失败原因里**没有** "is not registered"，且 run 到 `SUCCEEDED`。
+    并驱动了 LLM），失败原因里**没有** "is not registered"。
+
+    终态这一句在 GOAL-011 EC-02 变了，**如实改判**：本用例**不接**运行链能力步，
+    而 EC-02 之后合约（`real_retrieval_deliverable`）要求覆盖里有**系统取得的检索来源**
+    ⇒ 这条 run 现在收敛到 `FAILED`，且失败落点是**验收门**（不是会话创建）。
+    会话起不起得来这条判据不受影响——`_MockRelayHandler.requests` 非空仍然成立；
+    「接上能力步 ⇒ `SUCCEEDED`」由 `test_run_chain_retrieval_is_observed_and_traceable` 承担。
+
     **反证**：删掉协议里的 `capability_execution` 行 ⇒ 本用例红——实测失败原因为
     `ToolDefinition 'm12_artifact' is not registered`（会话在建的时候就死），
     `_MockRelayHandler.requests` 为空。
@@ -179,7 +174,8 @@ def test_declared_run_chain_capabilities_let_production_assembly_start(mock_rela
         failures,
     )
     assert not any("is not registered" in message for message in failures), failures
-    assert run["state"] == "SUCCEEDED", (run, failures)
+    assert run["state"] == "FAILED", (run, failures)
+    assert any("acceptance gate" in message for message in failures), failures
 
 
 @dataclass(frozen=True, slots=True)
@@ -340,70 +336,6 @@ def test_real_runtime_offline_chain_rejects_a_non_unique_declaration(mock_relay:
         reads = _read_chain(client, _start(client))
         _assert_events_mapped(client, reads, expected_suffix=":session_message")
     _assert_deliverable_rejected(reads)
-
-
-def test_run_chain_retrieval_is_observed_and_traceable(mock_relay: str) -> None:
-    """GOAL-011 EC-01 主干：`analysis` phase 真的执行了检索，且标识**来自检索响应本身**。
-
-    与「谁来调工具」这条岔路相对：本判据测量的不是模型行为（概率性），而是**运行链**
-    的确定性后果。真实协议 `real_retrieval_research_v1.yaml` 的 phase 声明
-    `capability_execution: run_chain` + `literature.search/read`，运行链据声明执行两步
-    （检索 → 读取，读取用的是检索响应里返回的 id），证据经 `register_tool_evidence`
-    **同一个** claim 落 canonical。
-
-    三句合起来才是 EC-01 的判据：① run 到终态 `SUCCEEDED`；② 该 phase 的工具观测
-    **存在且可读**（读面能看到两条工具来源的证据，各带自己的 tool_refs / source_origin）；
-    ③ 检索的**真实标识**在证据链里（读取步的 evidence id 与 source_ref 逐字含检索
-    返回的 PMID）。**看不到器具**（`/runs/{id}/artifacts`）不参与这三句——工具结果的
-    内容由证据的 `artifact_id` 指向，经 `/artifacts/{id}/content` 取。
-
-    **成对的反证**（`test_run_chain_retrieval_absent_without_the_wiring`）：不接能力步 ⇒
-    同样的协议、同样的装配下**零**工具观测。两条一起才说明判据不空转。
-    """
-    from services.api.app import create_app
-
-    http_calls: list[str] = []
-    deps = _openhands_deps(mock_relay, map_tools=False)
-    _with_run_chain(
-        deps, _ncbi_run_chain_provider(deps, http_client=_offline_ncbi_http(http_calls))
-    )
-    with TestClient(create_app(deps)) as client:
-        reads = _read_chain(client, _start(client, _RETRIEVAL_PROTOCOL))
-
-    assert reads.run["state"] == "SUCCEEDED", (reads.run, reads.failures)
-    assert http_calls == ["esearch.fcgi", "efetch.fcgi"], http_calls
-    tool_evidence = [item for item in reads.evidence if item["tool_refs"]]
-    by_tool = {tuple(item["tool_refs"]): item for item in tool_evidence}
-    assert set(by_tool) == {
-        ("ncbi_eutils", "literature_search"),
-        ("ncbi_eutils", "literature_read"),
-    }, (tool_evidence, reads.failures)
-    read_step = by_tool[("ncbi_eutils", "literature_read")]
-    # 来源命名沿用既有口径 `tool:{tool_id}:{task}:{operation_key}`（provider 记在 tool_refs）。
-    assert read_step["source_origin"].startswith("tool:literature_read:"), read_step
-    # 真实标识进证据链：读取步读的就是检索响应里返回的那个 PMID。
-    assert _MOCK_PMIDS[0] in read_step["id"], read_step
-    assert _MOCK_PMIDS[0] in read_step["source_ref"], read_step
-    assert str(read_step["artifact_id"]).startswith("tool-result:"), read_step
-    assert read_step["content_digest"], read_step
-
-
-def test_run_chain_retrieval_absent_without_the_wiring(mock_relay: str) -> None:
-    """EC-01 的反证：**不接**能力步 ⇒ 同一协议零工具观测（而 run 仍到 SUCCEEDED）。
-
-    为什么这条必须存在：主干判据若只看「有两条工具证据」，一个恒返回固定证据的实现
-    也能骗过它。这里把**因果**钉住——观测是这次装配真的执行检索产生的；同时它也说明
-    合约的 `EVIDENCE_COVERAGE` 今天是由**声明输入**满足的，检索来源尚未被要求
-    （那是 EC-02 的靶子，不在这里冒充已解决）。
-    """
-    from services.api.app import create_app
-
-    deps = _openhands_deps(mock_relay, map_tools=False)
-    with TestClient(create_app(deps)) as client:
-        reads = _read_chain(client, _start(client, _RETRIEVAL_PROTOCOL))
-
-    assert reads.run["state"] == "SUCCEEDED", (reads.run, reads.failures)
-    assert [item for item in reads.evidence if item["tool_refs"]] == [], reads.evidence
 
 
 @pytest.mark.requires_live_llm

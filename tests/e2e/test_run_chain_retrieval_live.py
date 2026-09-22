@@ -32,6 +32,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from packages.domain.core import Digest
 from tests.e2e.live_run_support import (
     LIVE_CREDENTIAL_REF,
 )
@@ -119,9 +120,55 @@ def _register_live_http(calls: list[str]) -> Any:
     )
 
 
+def _assert_identifier_landed(
+    store: Any, steps: dict[tuple[str, ...], dict[str, Any]]
+) -> dict[str, Any]:
+    """EC-01 的三句：检索结果里有真实标识、读取步读的**正是这一串**、digest 在场。
+
+    标识从**检索结果 artifact 的字节**里取（不另存期望值）；同时钉住「不是夹具标识」
+    这条非空转锚点——否则传输层被换成 mock 时判据会假绿。
+    """
+    search_step = steps[("ncbi_eutils", "literature_search")]
+    read_step = steps[("ncbi_eutils", "literature_read")]
+    payload = json.loads(store.get(str(search_step["artifact_id"])).decode("utf-8"))
+    returned = [str(item) for item in payload["ids"]]
+    assert returned, payload
+    assert not (set(returned) & set(_FIXTURE_PMIDS)), ("live 判据拿到了夹具标识", returned)
+    brief = json.loads(store.get("input-brief:real_research_v1").decode("utf-8"))
+    assert payload["query"] == brief["retrieval"]["query"], payload
+    read_ids = _read_step_ids(read_step)
+    assert read_ids, read_step
+    assert set(read_ids) <= set(returned), (read_ids, returned)
+    assert read_ids[0] in str(read_step["id"]), read_step
+    assert read_step["content_digest"], read_step
+    return read_step
+
+
+def _assert_source_nature(
+    store: Any,
+    steps: dict[tuple[str, ...], dict[str, Any]],
+    evidence: list[dict[str, Any]],
+) -> None:
+    """EC-02 的三句：性质可区分（`RETRIEVED` vs `USER_PROVIDED`）、覆盖由检索来源满足、
+    digest 可**独立重算**（拿库里的字节重算，不用 evidence 自己的字段自证）。"""
+    assert {item["source_trust_label"] for item in steps.values()} == {"RETRIEVED"}, steps
+    labels = [item["source_trust_label"] for item in evidence]
+    assert "RETRIEVED" in labels and "USER_PROVIDED" in labels, labels
+    for item in steps.values():
+        artifact_id = str(item["artifact_id"])
+        recomputed = Digest.of_bytes(store.get(artifact_id))
+        assert recomputed == Digest.parse(item["content_digest"]), item
+
+
 @pytest.mark.requires_live_llm
 def test_live_run_chain_retrieval_lands_a_real_identifier() -> None:
-    """真实 run 真的检索：run 到终态；工具观测可读；**真实 PMID** 进证据链。"""
+    """真实 run 真的检索：run 到终态；工具观测可读；**真实 PMID** 进证据链（EC-01），
+    且来源性质可区分、覆盖由检索来源满足、digest 可重算（EC-02）。
+
+    覆盖那一句不需要（也**不能**）另写断言：合约 `real_retrieval_deliverable` 声明
+    `minimum_retrieved_sources: 1`，本 run 能到 `SUCCEEDED` 就是这条性质判据被满足的
+    证据（去掉检索 ⇒ 离线判据实测 run 判拒）。
+    """
     credentials = _live_credentials()
     if credentials is None:
         pytest.skip(
@@ -153,19 +200,5 @@ def test_live_run_chain_retrieval_lands_a_real_identifier() -> None:
 
     store, _ledger = _store_and_ledger(deps)
     steps = _by_tool(evidence)
-    search_step = steps[("ncbi_eutils", "literature_search")]
-    read_step = steps[("ncbi_eutils", "literature_read")]
-    payload = json.loads(store.get(str(search_step["artifact_id"])).decode("utf-8"))
-    returned = [str(item) for item in payload["ids"]]
-    assert returned, payload
-    # 非空转锚点：拿到的不能是离线夹具的标识（否则传输层被换成了 mock）。
-    assert not (set(returned) & set(_FIXTURE_PMIDS)), ("live 判据拿到了夹具标识", returned)
-    brief = json.loads(store.get("input-brief:real_research_v1").decode("utf-8"))
-    assert payload["query"] == brief["retrieval"]["query"], payload
-
-    read_ids = _read_step_ids(read_step)
-    assert read_ids, read_step
-    # 读取步读的必须是**这次检索返回的**标识（从检索结果字节里复算，不用期望值）。
-    assert set(read_ids) <= set(returned), (read_ids, returned)
-    assert read_ids[0] in str(read_step["id"]), read_step
-    assert read_step["content_digest"], read_step
+    _assert_identifier_landed(store, steps)
+    _assert_source_nature(store, steps, evidence)

@@ -230,6 +230,65 @@ def test_evidence_coverage_threshold() -> None:
     assert unknown.passed is False
 
 
+def test_evidence_coverage_defaults_ignore_the_nature_dimension() -> None:
+    """没声明 `minimum_retrieved_sources` 的合约：行为**逐字不变**（不需要那个数）。"""
+    criterion = AcceptanceCriterion(
+        type=AcceptanceCriterionType.EVIDENCE_COVERAGE, minimum_sources=1
+    )
+    verdict = evaluate_criterion(criterion, CriterionInputs(evidence_source_count=1))
+    assert verdict.passed is True and verdict.reason == "1 >= 1 sources"
+
+
+def test_evidence_coverage_nature_dimension_requires_a_retrieved_source() -> None:
+    """GOAL-011 EC-02：声明了性质维度 ⇒ **总数够也不能顶替**「有检索来源」。"""
+    criterion = AcceptanceCriterion(
+        type=AcceptanceCriterionType.EVIDENCE_COVERAGE,
+        minimum_sources=1,
+        minimum_retrieved_sources=1,
+    )
+    # 计数够（1 条声明输入）、但一条检索来源都没有 ⇒ 判拒，且原因**点名**缺的性质。
+    no_retrieval = evaluate_criterion(
+        criterion, CriterionInputs(evidence_source_count=1, retrieved_source_count=0)
+    )
+    assert no_retrieval.passed is False
+    assert "0 < 1 retrieved sources" in no_retrieval.reason
+    # 有检索来源 ⇒ 过，原因同时给出两个维度（读面/日志能自证判的是哪两个数）。
+    with_retrieval = evaluate_criterion(
+        criterion, CriterionInputs(evidence_source_count=2, retrieved_source_count=1)
+    )
+    assert with_retrieval.passed is True
+    assert with_retrieval.reason == "2 >= 1 sources; 1 >= 1 retrieved"
+    # 未知性质数 ⇒ fail-closed（不把它当成 0，也不当成「没这条要求」）。
+    unknown = evaluate_criterion(
+        criterion, CriterionInputs(evidence_source_count=2, retrieved_source_count=None)
+    )
+    assert unknown.passed is False
+    assert unknown.reason == "retrieved source count unknown"
+
+
+def test_evidence_coverage_nature_dimension_still_needs_the_total() -> None:
+    """反方向也成立：有检索来源但总数不够 ⇒ 仍然判拒（不是「有一条检索来源就够」）。"""
+    criterion = AcceptanceCriterion(
+        type=AcceptanceCriterionType.EVIDENCE_COVERAGE,
+        minimum_sources=3,
+        minimum_retrieved_sources=1,
+    )
+    verdict = evaluate_criterion(
+        criterion, CriterionInputs(evidence_source_count=1, retrieved_source_count=1)
+    )
+    assert verdict.passed is False
+    assert verdict.reason == "1 < 3 sources"
+
+
+def test_acceptance_criterion_rejects_negative_nature_threshold() -> None:
+    with pytest.raises(ValueError, match="minimum_retrieved_sources must be >= 0"):
+        AcceptanceCriterion(
+            type=AcceptanceCriterionType.EVIDENCE_COVERAGE,
+            minimum_sources=1,
+            minimum_retrieved_sources=-1,
+        )
+
+
 def test_review_score_threshold() -> None:
     criterion = AcceptanceCriterion(
         type=AcceptanceCriterionType.REVIEW_SCORE,

@@ -44,5 +44,8 @@ phases:
     # 不静默丢工具、而是让会话创建失败并点名未注册的 provider id
     # （`test_unmapped_tool_set_is_named_not_silently_dropped` 固定该行为）。
     capability_execution: run_chain
-    task_contract: real_research_deliverable
+    # GOAL-011 EC-02：本协议**不**复用 `real_research_deliverable`——那份契约与没有检索的
+    # `real_research_task_v1` 共用，而本协议要求「覆盖里至少一条来源是**系统取得**」
+    # （`minimum_retrieved_sources: 1`），写进共用契约会把无检索的协议一起判拒。
+    task_contract: real_retrieval_deliverable
     inputs: [input-brief:real_research_v1]
