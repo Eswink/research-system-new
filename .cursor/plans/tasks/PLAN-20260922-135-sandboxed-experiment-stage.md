@@ -165,6 +165,7 @@ run 侧的可观测签名（联机实测，两次同签名）：`state: FAILED`�
 | E-11 | 本地门第一轮 = **20/23**，三条红**全部是本 PLAN 自伤** | `python/format-check`（新判据文件 1 个待重排）· `python/typecheck`（同文件 3 条 `attr-defined`：`EffectClass`/`RiskClass`/`TrustLevel` 必须从 `packages.domain.enums` 导入）· `python/tests`（**既有判据回归**，见 E-12） |
 | E-12 | **派发判据改动打红了既有判据**（先红后绿，实跑记录） | `tests/integration/test_ig1_phase_runner.py::test_phase_runner_experiment_promotes_claim_and_memory`：`AssertionError: assert 'FAILED' == 'SUCCEEDED'`（该用例的 fixture 合约**没有** `experiment` 声明 ⇒ 改判据后按会话语义派发）。**修法 = 给 fixture 补声明**（`ExperimentExecutionSpec(script="run.py", image=…, command="python run.py")`），**断言一字未改**；反方向由 `test_sandbox_experiment_dispatch.py` 的两条判据钉住（无声明 ⇒ 会话语义；有声明未接 ⇒ 点名 `FAILED`） |
 | E-13 | 三条红修好后复跑 | `ruff format --check apps services packages adapters tests` = **999 files already formatted**；`mypy` = **Success: no issues found in 989 source files**；`pytest` 三文件 = **8 passed** |
+| E-14 | **CI 抓到本 PLAN 的第二处自伤**（先红后绿，实跑记录） | tip `9d85862` 的 M0 全绿；紧随的台账提交 `cdd7b7d` 的 M0 [35735119552](https://github.com/Eswink/research-system-new/actions/runs/35735119552) = **failure**（`quality-windows-latest` 的 `python/tests`：`tests/e2e/test_sandbox_experiment_reachability.py::test_the_declaration_and_the_seam_land_on_the_run_assembly` 报 `docker.errors.DockerException: Error while fetching server API version`；`1 failed, 4136 passed, 260 skipped`）。**根因**：该用例走**真实装配**（`with_sandbox_experiment` ⇒ `docker_experiment_assembly` ⇒ 构造 `DockerExecutionBackend`），而 windows 跑者**没有 Linux 可用的 daemon** ⇒ 构造即抛。**修法 = 挂既有 `requires_docker` 标记**（`tests/conftest.py` 无 daemon 时如实 skip、`RESEARCHOS_REQUIRE_DOCKER=1` 时判红），使它落到**既有的 `container-quality` 作业**（`pytest -m requires_docker`，该作业会 build 沙箱镜像）里**真跑**。本地实跑：`-q` 3 passed；`-m requires_docker` **1 passed / 2 deselected**；`-m "not requires_docker"` **2 passed / 1 deselected** |
 
 ## 影响报告
 
@@ -195,6 +196,12 @@ run 侧的可观测签名（联机实测，两次同签名）：`state: FAILED`�
   合约没有声明 ⇒ 按会话派发 ⇒ `assert 'FAILED' == 'SUCCEEDED'`。**修法 = 给 fixture 补声明，
   断言一字未改**；反方向已有判据钉住。三条修好后复跑本地门 **23/23**。
   教训：**规模/类型/格式三道门与既有判据的回归，都是本地 m0 抓出来的，不是自查发现的**。
+- 2026-09-22：**CI 抓到第二处自伤**（E-14）——台账提交 `cdd7b7d` 的 M0 在
+  `quality-windows-latest` 判红：新判据的装配用例在**没有 Linux daemon** 的跑者上构造
+  `DockerExecutionBackend` 抛 `DockerException`。**修法 = 挂既有 `requires_docker` 标记**
+  （不改判据内容、不 skip 产品行为），使它在**既有 `container-quality` 作业**（`-m requires_docker`）
+  里真跑；本地三向实跑已验（3 passed / 1+2deselected / 2+1deselected）。
+  ⇒ 本 PLAN 的**两条自伤都是「门禁/环境」抓出来的**：本地 m0 抓三条、CI 抓这一条。
 - 2026-09-22：WP1…WP4 落地（`3ee18b3` / `a4c11f2` / `5d5e86f` / `713dce7`）。
   **WP5 未达成**：真实 run 被既有的「`EXECUTE` ⇒ HIGH 风险 ⇒ WARN 预检 ⇒ 拒绝冻结」挡住
   （E-8/E-9），按 EC-03 的「如实登记为下一轮输入、不得记 PASS」处置。**EC-03 仍 PENDING。**
