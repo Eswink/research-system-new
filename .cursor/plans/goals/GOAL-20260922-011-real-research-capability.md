@@ -344,6 +344,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260922-135-sandboxed-experiment-stage.md
   - .cursor/plans/tasks/PLAN-20260922-136-user-perspective-end-to-end.md
   - .cursor/plans/tasks/PLAN-20260922-137-offline-gate-tokenizer-declaration.md
+  - .cursor/plans/tasks/PLAN-20260922-138-real-experiment-chain-via-m12.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -656,6 +657,18 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 在**回合汇报**里给出终态，**不再回写文件**。
 
 ## 状态历史
+
+- 2026-09-23（**cycle 9 拍板**）：用户就 EC-03 二选一**拍板 (B)**——「为 `m12_reference_research_v1`
+  补齐 5 份 phase 合约并接受约 22 次真实检索出网」。**明确不取 (A)**：不为 EC-03 去改冻结门对
+  `EXECUTE` 类 `HIGH` 风险警告的处置（放宽 `classify_risk` / 让 `freeze_manifest` 接受 `WARN` /
+  把 `code.execute` 从合约能力里删掉，三条同属「改门禁凑成功」，本 GOAL 明文禁止）。
+  derive `PLAN-20260922-138`（child_plans 已加），起点事实 F-1…F-8 只读实测：
+  m12 的 5 个 phase 缺合约（运行期 `phase declares no task contract` 直接死）；
+  `domain_discovery` 的 `minimum_sources: 10` 是**唯一**硬骨头，而运行链**每声明一次调用就登记
+  1 条来源**（`execute_run_chain_capabilities` 逐条 append、`_operation_key` 不去重）⇒ **不改判据**也能
+  诚实地满足：由**装配方**声明**分页**检索计划（`retstart`/`retmax` 属「量」，放 `fixed_arguments`），
+  discovery 的 2 个会话各 ~10 次 ⇒ 约 20 次真实出网（与用户接受的量级一致）。`QUALITY_GATE`
+  经实测**不阻断**运行（运行期只认 `HUMAN_GATE`）。镜像 `research-os-sandbox:m9-test` 本机在。
 
 - 2026-09-22：建档（`status: ACTIVE`）。承 GOAL-010「收口结论」的残余清单
   （`R-1` / `R-2` / `R-5` / `R-6`、`RECHECK-20260922-131` 的 **W-13**、13 条人工面）
