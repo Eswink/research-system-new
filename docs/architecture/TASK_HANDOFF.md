@@ -84,13 +84,17 @@ HUMAN_APPROVAL
 CUSTOM_EVALUATOR
 ```
 
-结构化参数：`artifact` / `minimum_sources` / `metric` / `operator`（GT/GTE/EQ/LTE/LT）/
-`threshold` / `evaluator` / `description`。
+结构化参数：`artifact` / `minimum_sources` / `minimum_retrieved_sources` / `metric` /
+`operator`（GT/GTE/EQ/LTE/LT）/ `threshold` / `evaluator` / `description`。
+`EVIDENCE_COVERAGE` 因此有两维：`minimum_sources`（非自产来源数）与可选的
+`minimum_retrieved_sources`（其中**系统取得**的那些，判据取自 `SourceRecord.trust_label`）；
+声明了后者就必须满足后者——总数够**不能**顶替「有检索来源」（GOAL-011 EC-02）。
 
 LLM 不能自行宣布验收通过：求值器（`packages/domain/acceptance.py`）只依赖显式注入的
 `CriterionInputs`（structured output、artifacts、tests、metrics、evidence count、
-review score、policy decision、human approval）；SCHEMA_VALID 经 jsonschema 校验
-`output_schema`，未注入校验器时 fail-closed。CUSTOM_EVALUATOR 必须由编排层执行，不自动通过。
+retrieved source count、review score、policy decision、human approval）；SCHEMA_VALID 经
+jsonschema 校验 `output_schema`，未注入校验器时 fail-closed。CUSTOM_EVALUATOR 必须由
+编排层执行，不自动通过。
 
 ## 4. HandoffBundle
 

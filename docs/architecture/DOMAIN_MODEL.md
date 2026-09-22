@@ -158,8 +158,9 @@ failure_policy
 idempotency_scope
 ```
 
-实现：`packages/domain/tasks.py`；结构化验收参数（artifact/minimum_sources/metric/
-operator/threshold/evaluator）与求值器见 `packages/domain/acceptance.py`。
+实现：`packages/domain/tasks.py`；结构化验收参数（artifact/minimum_sources/
+minimum_retrieved_sources/metric/operator/threshold/evaluator）与求值器见
+`packages/domain/acceptance.py`。
 
 ### HandoffBundle
 

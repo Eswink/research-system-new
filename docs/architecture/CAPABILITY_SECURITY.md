@@ -73,7 +73,14 @@ VERIFIED_SOURCE
 UNTRUSTED_EXTERNAL
 GENERATED
 USER_PROVIDED
+RETRIEVED
 ```
+
+`RETRIEVED` = **系统自己取回来**的来源（执行声明的能力时从外部取得，如检索类 provider
+打到它声明的 `network_domains`）。它与 `USER_PROVIDED`（用户交付的输入）、`GENERATED`
+（会话/实验自产，含模型自述）**互不混称**：来源性质在准入时盖章
+（`ToolEvidenceInput.trust_label`），验收门的 `EVIDENCE_COVERAGE` 可据此要求
+「覆盖里至少有一条是系统取得」（GOAL-011 EC-02）。
 
 Web/PDF/MCP 内容不能修改系统指令或权限。
 
