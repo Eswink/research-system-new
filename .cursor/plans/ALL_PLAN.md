@@ -6,12 +6,13 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260922-139](tasks/PLAN-20260922-139-goal-011-closeout-recheck.md) | DONE |
 | [ ] | [PLAN-20260922-138](tasks/PLAN-20260922-138-real-experiment-chain-via-m12.md) | BLOCKED |
-| [ ] | [PLAN-20260922-137](tasks/PLAN-20260922-137-offline-gate-tokenizer-declaration.md) | IN_PROGRESS |
-| [ ] | [PLAN-20260922-136](tasks/PLAN-20260922-136-user-perspective-end-to-end.md) | IN_PROGRESS |
-| [ ] | [PLAN-20260922-135](tasks/PLAN-20260922-135-sandboxed-experiment-stage.md) | IN_PROGRESS |
-| [ ] | [PLAN-20260922-134](tasks/PLAN-20260922-134-retrieved-evidence-nature.md) | IN_PROGRESS |
-| [ ] | [PLAN-20260922-133](tasks/PLAN-20260922-133-real-retrieval-into-protocol.md) | IN_PROGRESS |
+| [x] | [PLAN-20260922-137](tasks/PLAN-20260922-137-offline-gate-tokenizer-declaration.md) | DONE |
+| [x] | [PLAN-20260922-136](tasks/PLAN-20260922-136-user-perspective-end-to-end.md) | DONE |
+| [ ] | [PLAN-20260922-135](tasks/PLAN-20260922-135-sandboxed-experiment-stage.md) | BLOCKED |
+| [x] | [PLAN-20260922-134](tasks/PLAN-20260922-134-retrieved-evidence-nature.md) | DONE |
+| [x] | [PLAN-20260922-133](tasks/PLAN-20260922-133-real-retrieval-into-protocol.md) | DONE |
 | [x] | [PLAN-20260922-132](tasks/PLAN-20260922-132-goal-010-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260922-131](tasks/PLAN-20260922-131-offline-gate-structural-judge.md) | DONE |
 | [x] | [PLAN-20260921-130](tasks/PLAN-20260921-130-runtime-fingerprint-on-read-face.md) | DONE |

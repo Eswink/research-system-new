@@ -2,9 +2,9 @@
 id: PLAN-20260922-133
 slug: real-retrieval-into-protocol
 title: 把真实检索接进协议与执行链：能力声明 → 实际调用 → 工具观测可读 → 证据由系统取得（GOAL-011 EC-01）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-22
-updated_at: 2026-09-22
+updated_at: 2026-09-23
 parent_goal: GOAL-20260922-011
 cursor_plan_uri: null
 owners:
@@ -25,8 +25,9 @@ authorization:
     降低断言强度；新增依赖、改上游 pin；把真实 runtime 设为默认；把凭据写进 CI；
     用 Fake 工具结果充当检索证据。**触到 Domain / Canonical State 边界即 BLOCKED**，留人工拍板。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-133-real-retrieval-into-protocol.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-106-run-chain-evidence-key-and-source-cap.md
 ---
 
 # PLAN-20260922-133 — 真实检索接进协议与执行链（GOAL-011 EC-01）
@@ -395,7 +396,7 @@ phases:
       ⇒ WP2 的最小形态可能是**纯加性**地补一处读面（例如把已持久化但未暴露的
       `Evidence.tool_refs` 提到 DTO 上），而**不是**新建持久化层。
       **落笔前先按 D-15 与本节实测确认「哪些面已经够用」**，只补真正缺的那一块。
-- [ ] **WP3 接线**：能力从协议到达 phase；`NcbiEutilsProvider` 在生产装配里被实例化并注册；
+- [x] **WP3 接线**（cycle 4 完成；勾选在 cycle 10 收口时补齐）：能力从协议到达 phase；`NcbiEutilsProvider` 在生产装配里被实例化并注册；
       执行经既有 `execute_tool_call`（策略判定在内）；结果经既有 `register_tool_evidence`
       准入并**挂 claim relation**（D-9）⇒ 使 AC-1 与 AC-2 在**离线**（Fake provider）下先成立。
       **WP1/WP2 期间暴露的设计岔路（cycle 3 的 WP3 必须先在此二选一并写明理由）**：
@@ -414,10 +415,10 @@ phases:
         且**不能修改那条判据的强度**。另外该标记可能触及 provider 规格/Domain 面 ⇒
         **先判它是不是 Canonical State / 规格边界；是则 BLOCKED（归人工拍板）**。
       **定案前不得动 `flatten_tool_providers` 或那条判据。**
-- [ ] **WP4 真实协议 + live 判据**：按 WP1 的 (a)/(b) 落地协议与合约（**纯加性**）；
+- [x] **WP4 真实协议 + live 判据**（cycle 4 完成；勾选在 cycle 10 收口时补齐）：按 WP1 的 (a)/(b) 落地协议与合约（**纯加性**）；
       写 live 判据（挂 `requires_live_llm` 或同一放行面），跑**最小必要**次数的真实检索，
       取回 run 终态 + 工具观测 + 证据链外部标识；**按压**反证（移除能力 ⇒ 无观测）并复原。
-- [ ] **WP5 收口**：定向套件 + m0 全量 23/23 + 治理 `validate.py` 绿 + 快照类门禁
+- [x] **WP5 收口**（cycle 4 完成；独立复检与 GOAL 回写在 cycle 10 由 `RECHECK-20260923-133` 补齐）：定向套件 + m0 全量 23/23 + 治理 `validate.py` 绿 + 快照类门禁
       （OpenAPI / 设计基线）+ 独立 RECHECK（含 W 列表）+ GOAL 回写（EC-01 置 PASS、
       迭代日志、`child_plans`、`latest_recheck`、`memory_entries`）。
 
@@ -524,7 +525,8 @@ phases:
     **如实登记 W-A（默认装配的产品路径今天跑不动）与 W-B（协议编辑器往返会丢该声明）**。
   - **仍未落**：**能力步本体**（运行链真的去调 `literature.search` 并把结果登记成证据）——
     即 I-1…I-4 的执行侧与 `NcbiEutilsProvider` 的生产装配，属 WP3 的后半，**下一轮入口**。
-    **EC-01 仍 PENDING**（本 cycle 只让它**可验**：声明与装配面已落地并被判据钉住）。
+    **EC-01 当时仍未达成**（本 cycle 只让它**可验**：声明与装配面已落地并被判据钉住；
+    EC-01 由 cycle 4 达成，见 GOAL 的迭代日志）。
 - 2026-09-22：**cycle 4 WP3+WP4 落地（能力步本体 + 离线判据 + live 判据）——EC-01 达成**。
   - **新模块 `packages/application/run_orchestration/phase_capabilities.py`**（311 行）：
     运行链按 phase 的 run-chain 声明执行调用，四段全部**复用既有件**——

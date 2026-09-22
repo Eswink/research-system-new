@@ -2,9 +2,9 @@
 id: GOAL-20260922-011
 slug: real-research-capability
 title: 真实研究能力落地：检索进协议、证据由系统取得（把「真实 run 成功」升级为「真实 run 真的做过研究」）
-status: ACTIVE
+status: BLOCKED
 created_at: 2026-09-22
-updated_at: 2026-09-22
+updated_at: 2026-09-23
 owners:
   - root-agent
 authorization:
@@ -223,6 +223,16 @@ exit_criteria:
       测试事实来源；③`POLICY_COMPLIANT` 接线：把已做过的策略裁决交给验收门；④多调用证据键：让
       `_operation_key` 按调用参数区分；⑤来源数口径：做完④后由装配方声明分面检索，**或**就
       `minimum_sources: 10` 本身做一次决定）——其中 ⑤ 属「改合约」，本 GOAL 明文禁止自行决定。
+      **⑦ cycle 10 撤回（事实更正）**：上述 ①–④ 的载体改动（5 份合约 + 5 份 schema + 两处协议声明）
+      **已从树上撤回**——它们推上 main 后 CI 判红（`python/tests` 11 failed、`console-frontend` 2 failed），
+      逐条溯源为**夹具语义**冲突（m12 的**失败形态**被 8 处判据当夹具：点名判词「task contract」、
+      失败 run 的预留可见性——旧绿靠**泄漏**、以及 `test_run_chain_capability_exposure.py` 的字面寄存器），
+      而纪律**禁止改测试断言使其通过** ⇒ 处置是撤回而不是硬落地（逐字节退回 `6f5b9fb5`，实测 diff 为空）。
+      **顺带抓到的真缺口已修**：优雅收敛（任务结果登记失败 / 验收门拒收）的冻结后失败此前丢掉**字节
+      digest**（读面判成「从未冻结」），已与 ValueError 分支**同源**补回并由新判据钉住（先红后绿）。
+      **结论**：EC-03 今天有**两条**被登记且都需要拍板的路径——(A) 冻结门对 `EXECUTE` 类 HIGH 风险的
+      处置（`sort_analysis_v1` 预检 `WARN` ⇒ `freeze_manifest` 拒冻），(B) 载体路线（**其前提已实测
+      否证**，且落地还要先解决夹具语义与来源数口径）。
   - id: EC-04
     criterion: >-
       **用户视角端到端验收**：真实数据下走完整流程——**建项目 → 选协议 → 跑真实 run →
@@ -379,8 +389,12 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260922-136-user-perspective-end-to-end.md
   - .cursor/plans/tasks/PLAN-20260922-137-offline-gate-tokenizer-declaration.md
   - .cursor/plans/tasks/PLAN-20260922-138-real-experiment-chain-via-m12.md
-latest_recheck: null
-memory_entries: []
+  - .cursor/plans/tasks/PLAN-20260922-139-goal-011-closeout-recheck.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-139-goal-011-closeout-recheck.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-106-run-chain-evidence-key-and-source-cap.md
+  - .cursor/memory/entries/MEM-20260923-107-fixture-failure-shape-is-a-contract.md
+  - .cursor/memory/entries/MEM-20260923-108-frozen-refs-on-both-failure-paths.md
 ---
 
 # GOAL-20260922-011 — 真实研究能力落地（自迭代循环）
@@ -394,10 +408,10 @@ memory_entries: []
 | --- | --- | --- | --- |
 | EC-01 | **真实检索进协议（主干）**：`ncbi_eutils` 的 `literature.search`/`literature.read` 声明进一份真实协议（加阶段 **或** 新建协议，二选一写明）⇒ 一次真实 run 的 discovery/analysis 阶段**实际调用检索**；判据 = run 到终态 + 工具观测存在且可读 + 检索来源的真实标识进入证据链；反证 = 移除该能力 ⇒ 该阶段无工具观测 | live 判据 **PASS（非 skip）** + run 终态 + 工具观测可读 + 外部标识在证据链；反证成对（先红后绿） | **PASS**（cycle 4；**本行 cycle 7 补正**——见「状态历史」里那条只追加的漂移更正） |
 | EC-02 | **证据链升级为「系统取得」**：读面区分 `USER_PROVIDED` 与 `RETRIEVED`，口径诚实不混称；`EVIDENCE_COVERAGE` 由 EC-01 的检索来源满足；判据 = 来源含检索来源 + 可追溯到外部标识 + digest 可重算；反证 = 去掉检索来源 ⇒ 覆盖率判拒 | `GET /runs/{id}/evidence` 来源集合含检索来源且可追溯 + digest 独立重算；反证先绿后红再复原 | **PASS** |
-| EC-03 | **真实实验执行链**（视预算）：真实 LLM 驱动 `sort_analysis_v1` 或 `m12_reference_research_v1` 到终态，实验产物 + 证据 + 预算归账可读（执行体 = 既有 Docker 后端） | run 终态如实记录（只有 `SUCCEEDED` 是成功）+ 读面三项齐备；预算不足则如实登记为下一轮输入，**不得**记 PASS | **PENDING**（cycle 6 落机械、被冻结门挡住；cycle 9 取 (B)：**7 份合约已补齐**、实验在**真实容器**里经产品缝跑通，但 (B) 的来源数前提被**实测否证**且三条验收判据**未接线** ⇒ 载体仍停在 discovery 验收门；**未开 live**、零出网——见 `status_note` 与 `PLAN-20260922-138`） |
+| EC-03 | **真实实验执行链**（视预算）：真实 LLM 驱动 `sort_analysis_v1` 或 `m12_reference_research_v1` 到终态，实验产物 + 证据 + 预算归账可读（执行体 = 既有 Docker 后端） | run 终态如实记录（只有 `SUCCEEDED` 是成功）+ 读面三项齐备；预算不足则如实登记为下一轮输入，**不得**记 PASS | **PENDING**（cycle 6 落机械、被冻结门挡住；cycle 9 取 (B) 补齐 7 份合约并在**真实容器**里跑通实验缝，但 (B) 的来源数前提被**实测否证**；cycle 10 **撤回 (B) 的载体改动**（CI 判红溯源：夹具语义冲突 3 处 + 判据寄存器 1 处），保留其顺带抓到的真缺口修复 ⇒ **停在两条都需要拍板的路径上**（冻结门 vs 载体路线）；**未开 live**、零出网——见 `status_note` 与 `PLAN-20260922-138`） |
 | EC-04 | **用户视角端到端验收**：建项目 → 选协议 → 跑真实 run → 看制品/证据/预算/血缘，留可复核记录（`scratch/`，不进仓库）；顺带复核前端 `partial` 页面的诚实标注与实际是否一致（不一致即如实登记） | `scratch/` 下可复核记录覆盖五步；`partial` 核对结论逐条写明 | **PASS**（cycle 7；真实 run `SUCCEEDED` + 五步读面齐 + 5 页逐条核对 + 三条边界如实登记 W-L/W-M——见 `status_note`） |
 | EC-05 | **`R-6` 词表固化**（可选，成本小）：让「默认 CI 离线」**成立或如实降级措辞**（固化 `tiktoken` 词表进镜像/私有源，或在文档与判据里写明「CI 每轮一次受控外部下载」）；判据 = 断网跑默认门 ⇒ 行为可判定；措辞与事实同源 | 断网/阻断单目的地跑默认门 ⇒ 结论可判定且与措辞一致 | **PASS**（cycle 8；取**降级措辞 + 判据**侧：声明受判 + 同源句逐字锁死 + 三面实跑的可判定结论——见 `status_note`） |
-| EC-06 | **收口复检 + 残余登记**：独立复检脚本（当前树 + 干净 checkout 同结论）+ m0 **23/23** + 治理 validate 绿 + CI 台账到终态；13 条人工面原样保留 + 本 GOAL 的 W 列表；`ANTHROPIC` run 腿仍为可选验证项 | 复检两树同结论；`make validate-all` 23/23；`validate.py` 绿；`latest_recheck` 为仓库相对路径；frontmatter 与状态表一致 | **PENDING** |
+| EC-06 | **收口复检 + 残余登记**：独立复检脚本（当前树 + 干净 checkout 同结论）+ m0 **23/23** + 治理 validate 绿 + CI 台账到终态；13 条人工面原样保留 + 本 GOAL 的 W 列表；`ANTHROPIC` run 腿仍为可选验证项 | 复检两树同结论；`make validate-all` 23/23；`validate.py` 绿；`latest_recheck` 为仓库相对路径；frontmatter 与状态表一致 | **PASS**（cycle 10：`RECHECK-20260923-139` 独立复检脚本两树同结论 + 撤回层；本机 m0 23/23；`validate.py` / `validate_bundle.py` 绿；133…137 一并收口；`latest_recheck` 为仓库相对路径——见 `status_note` 与复检记录） |
 
 ### 建档时已探明的现状（事实类，用于判定起点；**不当作验收依据**）
 
@@ -668,6 +682,7 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 | 8 | PLAN-20260922-137（EC-05） | `3689014`（derive PLAN-137 + ALL_PLAN + `child_plans`）、`C8FIX`（唯一一处修复：我追加的 docstring 折行超 100 字符 ⇒ **只折行不改内容**）、其余记录见下方 CI 台账尾巴 | **「默认 CI 离线」的措辞与判据同源（EC-05 取「降级措辞 + 判据」侧，定案 D-1）**。① **声明受判**（新增 2 条**离线**判据，并进既有 `tests/tooling/test_m0_ci_coverage.py`，不新建第二个解析同一文件的模块）：`test_every_job_that_runs_the_python_gate_prewarms_the_tokenizer_first`（按作业切分 workflow 步骤：**跑 Python 门的作业**必须在跑门**之前**有预热步骤，命令形态须含 `import litellm` + `--frozen`；另有 `gate_jobs >= 4` 自检防扫描写错成空转）与 `test_the_one_controlled_download_sentence_is_verbatim_in_both_homes`（同源句**逐字**在场）。**已按压**：摘掉 `eval-gate` 的预热门 ⇒ 逐字红 `eval-gate runs the Python gate without prewarming the tokenizer cache`；复原 ⇒ **5 passed**，且 `git diff --stat .github/workflows/m0-quality.yml` **为空**（复原无残留）。② **措辞按实测改对**：同源句锁为 **「CI 每轮至多有一次受控外部下载」**（**不写「恰一次」**）；旧措辞「冷装首次 `import litellm` 会下载 `cl100k_base`」在**冷 `TIKTOKEN_CACHE_DIR` 下未能复现**（导入成功、缓存目录仍空），而不可达代理探到的**那一次真实请求是 litellm 的 model cost map**（`raw.githubusercontent.com`，失败即回落本地副本）⇒ workflow 四份注释 + `docs/architecture/AGENT_RUNTIME.md` 同步改写；**不改任何 workflow 步骤、不放宽判据**。③ **行为可判定（EC-05 的 verify 句，三面实跑）**：**A0 无代理 ⇒ 绿**（`tests/e2e/test_ec03_real_runtime_offline_chain.py` + `tests/application/run_orchestration` ⇒ **81 passed / 1 skipped**、`egress guard: judged 8; blocked 0`、exit 0）；**A1 注入不可达代理 ⇒ 红**（同一子集 ⇒ **3 failed / 78 passed / 1 skipped**、`judged 22; blocked 18`、exit 1，三条失败**全部落在真实 runtime 链** ⇒ 与 A0 成对，红线**可归因于注入的代理**：**代理跳本身即非环回目的地，判据 fail-closed 照拒**）；**B 进程内触发那次下载**（`guard.arm()` + 关掉 `LITELLM_LOCAL_MODEL_COST_MAP`）⇒ 判据**在任何数据包之前拒绝**（`blocking_failures=1`），litellm 逐字回落本地副本。记录落 `scratch/goal011-c8-ec05/`（**不进仓库**；**脚本自身不出网**：不可达代理是 IP 字面量 + RFC 5737 文档保留网段）。**本地门**：m0 **23/23**（`PASS: profile=m0; 23 deterministic checks`、**EXIT=0**、`PASS [` **24 行**含资产封印；`python/tests` **4382 passed / 18 skipped / 0 failed**——比 cycle 7 的 4380 恰多本轮新增的 2 条判据；`egress guard: judged 778; blocked 8`，那 8 条是判据对 `198.51.100.1` 的**故意**探针；DOCS-CHECK 6 项 PASS）。**三次跑的过程如实记**：① 首跑 **22/23**——`python/product-lint=1`（我追加的 docstring 第 41 行 103 字符超 100 上限；当轮 `python/tests` 是绿的）⇒ **只折行、不改内容**；② 复跑 `python/tests` **判红**（`4383 passed / 17 skipped`、`judged 785; blocked 10`、exit 1，**零用例失败**——红来自判据**整轮判决**，根因见「剩余差距」的 **W-O**）⇒ 按 **CI 同形**补 `LLM_MAIN_KEY=""` + `DEV_LLM_API_KEY=""`（dotenv **不覆盖**已存在变量）；③ 全量复跑 ⇒ **23/23、EXIT=0**。定向：`pytest tests/architecture tests/tooling -q` **1306 passed**（**在文档段落后重跑**——那段是在 m0 跑到一半时加的）、`docs_consistency_check.py` **DOCS-CHECK PASS**（6 项）；`ruff check` / `ruff format --check` 全绿 | 见下方 CI 台账尾巴 | **一处自伤**：本机 m0 首跑 `python/product-lint=1`（我追加的 `tests/egress_guard.py` docstring 第 41 行 103 字符超 `ruff` 的 100 上限）⇒ **只折行、不改内容**（同源句与实测口径逐字不动），复绿后**重跑全量门**。（**未放宽任何判据/放行面、未改 workflow 步骤、未改产品代码**） | **EC-05 = PASS**（见 `status_note`）。**新登记 W-N**：预热门**当前必要性未被证实**（两条最可能触发的子集冷缓存下都无词表下载）⇒ **不删、登记为待复现项**。**两条边界**：(a) A1 的方向是**红**（不粉饰成绿），EC-05 要的是「结论**可判定**」，A0/A1 成对给的正是**可归因的绿与红**；(b) **刻意不跑**「无代理直连」版本（需为 `raw.githubusercontent.com` 做 DNS，而该域名**不在任何 provider 声明的 `network_domains` 内**）⇒「拒绝发生在代理跳」是实测、「直连时在成本表域名处被拒」**未实测**。另有**一处自纠**：PLAN-137 初记的 `tests/architecture` **195 passed** 与 E-2 的 **190** 自相矛盾 ⇒ 该目录本轮无改动、两次重测均 **190**，按实测改为 190（不影响结论方向）。**W-O（新，本轮实测到，未修）**：**本机带操作者 `.env` 时默认门不密闭**——litellm 导入期 `load_dotenv` 让 `LLM_MAIN_KEY` 在**套件中途**进入进程环境 ⇒ 走**生产装配**的用例健康探测**真的发起连接**（本机 DNS 走代理 ⇒ `198.18.0.200:443 (kind=private)`）⇒ 判据照拒、整轮判红（**零用例失败**）。**成对实验**：`LLM_MAIN_KEY=<非空>` ⇒ `blocked 2`；`LLM_MAIN_KEY=` ⇒ `judged 1 / blocked 0`（两次用例都 passed）；CI 无 `.env`（gitignored + 未跟踪 + workflow 不生成）⇒ 结构上不受影响 ⇒ **判据判得对，本轮不放宽它、也不改那条既有用例**（它自称 hermetic 却只清数据库类环境变量 ⇒ 真实缺口，登记待后续决断）。**同 cycle 把这条前提写进仓库**（`docs/architecture/AGENT_RUNTIME.md`）+ 本地门配方（本机跑全量门必须同时 pin 三条 DSN **与** `LLM_MAIN_KEY=""`） | cycle 9 = **EC-03**（唯一剩下的实质项：真实实验执行链；**需先就 (A) 种入对齐 / (B) 接受 22 次真实检索出网的代价 二选一取得拍板**——它**不能**由本循环自行决定）；EC-06 收口时把 133/134/135/136/**137** 一并收口 |
 
 | 9 | PLAN-20260922-138（EC-03，取 (B)） | `b2aed75`（derive PLAN-138 + ALL_PLAN + `child_plans`）、本 cycle 的功能提交（WP1/WP2 合约与 schema、三处实验缝缺陷修复与判据）见下方 CI 台账尾巴 | **合约面 ✅ + 机械面 ✅（真实容器）+ 来源数前提 ❌（实测否证）**。① **WP1/WP2**：m12 的 **7 个 phase 全部有可解析 `task_contract`**（新增 5 份合约 + 5 份输出 schema + `validate_bundle.py` 注册表登记 + 协议补 `capability_execution: run_chain` 与 `inputs: [input-brief:real_research_v1]`）；离线编译 `SUCCESSFUL: True`、零 findings。② **实验缝三处缺陷（首次派发才暴露，全部修复 + 判据钉住）**：计划 id 用 `experiment_run_id_of("plan-…")` ⇒ `ValueError: invalid UUID`（容器都起不来）→ 改既有 `derived_id`（提为公开名、参数名 `run_id`→`seed`）；`GovernedExperimentExecutor._enforce_policy` 的 `PolicyRequest` **不带 scope** ⇒ 真实 policy.yaml 的 `artifact.write`（`allow + scope: run`）落到 `default_effect: DENY` 被拒 → 补 `policy_scope_for(capability)`（与工具面 `ScopedPolicy` 同一张表）；沙箱工作区没 `create_workspace` ⇒ 取租约 `unknown workspace` → 装配期登记。③ **真实容器跑通**：`m12_experiment_execution` 自己 pin 的脚本/镜像经产品缝在容器里跑完（实验 `SUCCEEDED`、`baseline_accuracy=0.745`/`candidate_accuracy=0.28`/`n_train=500`/`n_test=200`、语义摘要与镜像摘要非空、4 条证据落 canonical、`GET /runs/{id}/experiments` 可读）。④ **否证（(B) 的前提）**：单 task 非自产来源**上限 = 3**，且**同一 task 内操作键重复的第二次调用直接硬失败**（`conflicting source registration`，A/B/C 三种声明全红）⇒「多声明几次检索 = 多几条来源」**不成立**；另三条判据维度在产品路径上**未接线**（`SCHEMA_VALID` 无 `schema_check` 调用方；`TEST_PASSES`/`POLICY_COMPLIANT` 的输入在 `EvaluationInputs` 里没有来源）。**载体终态逐字**：`state: FAILED`；`task <id> rejected by acceptance gate (acceptance gate rejected: SCHEMA_VALID: schema validator unavailable; EVIDENCE_COVERAGE: 3 < 10 sources)`。⑤ **判据**：新增 `tests/api/test_sandbox_experiment_seam.py` **5 passed**（离线、`judged 0`；**先红后绿已验**：`git stash` 三个产品文件 ⇒ 5 failed，复原 ⇒ 5 passed）+ `tests/e2e/test_sandbox_experiment_seam_docker.py` **2 passed**（`requires_docker`，真实容器；含反证面「镜像摘要与 stdout/stderr 制品只能来自容器」）；并更正 `test_sandbox_experiment_dispatch.py` docstring 指向**不存在文件**的注释。**本地门**：定向 `tests/{api,application/experiments,application/run_orchestration,tooling}` **1293 passed**（含 `test_python_source_limits` 抓出的新文件 68 行函数 ⇒ 拆成 helper 后 1008 passed）；`ruff check` / `ruff format --check` 对全部改动文件绿 | 见下方 CI 台账尾巴 | — （**零真实出网、零凭据读取**：全程 `egress guard … blocked 0`；未开 live 开关、未读凭据值。**未放宽任何判据/放行面**；三处产品修复都附「拒绝路径仍 fail-closed」的判据） | **EC-03 仍 PENDING**（如实：机械面达成、载体停在 discovery 验收门；**(B) 的前提被实测否证**）。**新登记 W-P**：`domain_discovery.minimum_sources: 10` 与「单 task 最多 3 条独立来源」的机制不相容（要达标必须先做多调用证据键 + 分面检索，或就判据本身拍板）；**W-Q**：`SCHEMA_VALID` / `TEST_PASSES` / `POLICY_COMPLIANT` 三条判据今天**没有任何产品调用方**（声明了却判不出真值）；**W-R**：实验缝的三处缺陷说明「接线未派发过」这类缺口在 cycle 6 的判据形态下不可见（Fake 后端 + 构造期判据留给真派发去抓）。live 调用记账：**0 次真实会话、0 次真实检索、0 个实验容器**（容器跑的 2 个是**本机 Docker**、容器内纯标准库不出网） | 下一轮输入（**需拍板**）：让 m12 跑到 `SUCCEEDED` 需要**能力面**工作——① `SCHEMA_VALID` 接线（为验收门提供 `schema_check`，需选定 JSON-Schema 实现）、② `TEST_PASSES` 接线（定义实验类合约的测试事实来源）、③ `POLICY_COMPLIANT` 接线（把已做过的策略裁决交给验收门）、④ 多调用证据键（`_operation_key` 按调用参数区分）、⑤ **来源数口径决定**（做完 ④ 后由装配方声明分面检索 ⇒ 成本 ≈ 2×分面数 次真实出网；**或**就 `minimum_sources: 10` 本身拍板）。⑤ 属「改合约」，本 GOAL 明文禁止自行决定 ⇒ **必须用户拍板**；随后 EC-06 收口 |
+| 10 | PLAN-20260922-139（EC-06 收口 + cycle 9 判红溯源与撤回） | 见下方 CI 台账尾巴（功能提交 + 记录提交**同一次推送**） | **cycle 9 的 CI 判红不是"功能坏了"，是"夹具语义被改了"**：逐条溯源（本机复跑 + `6f5b9fb5` / `02a4f47` 两棵 detached worktree 的 A/B）确认 11 + 2 条失败**全部**来自 m12 的**失败形态**变化——① 「重建说明点名 `task contract`」（补合约后该失败**不再发生**，重建甚至重放到执行完）；② API 与 console 各一条「失败 run 仍持有 preflight 预留」（旧绿靠**泄漏**：`_contract_for` 的 ValueError 绕过了 `_fail_run` 的 `release_reservation`；优雅收敛按设计释放）；③ 架构判据的字面寄存器把 m12 列为"未声明 `capability_execution`"的对照协议；④ 顺带实测到**真缺口**：优雅收敛的 `RunOutcome` 不带字节 digest ⇒ 冻结过的 run 被读面判成「从未冻结」（`rebuild REFUSED, missing=[manifest_digest]`）。**处置**：**撤回**载体改动（协议/合约/5 份 schema/bundle 注册行，逐字节退回 `6f5b9fb5`，`git diff` 为空）+ **当场修**第 ④ 条（`_with_frozen_refs` / `_digest_or_none`，与 ValueError 分支**同源**）+ 新判据钉住（**先红后绿已验**：暂存修复 ⇒ 只有新判据红、其余 9 条绿）；①②③ **不改**（纪律禁止改断言使其通过）⇒ 登记为**要一次决定**的项。**实跑**：基线 `6f5b9fb5` 同子集 **11 passed** ⇒ 撤回 + 修复后 **25 passed**（含 2 条架构判据、5 条接缝判据、新判据）；真实容器判据 **2 passed**（撤回后仍绿）。**EC-06 收口**：独立复检脚本（**只读 / 只用标准库 / 不 import 仓库代码**）加**撤回层**（m12 无 run_chain 声明、5 份合约与 5 份 schema 不在、`PLAN-138` 状态 BLOCKED 且正文记撤回）后两树同结论；`133/134/136/137` 置 DONE、`135` 置 **BLOCKED**（其 AC-3 的"真实 LLM 驱动的 run 到终态"未达成）、`138` 保持 BLOCKED；GOAL 置 **BLOCKED** | 见下方 CI 台账尾巴 | **两处自伤/更正**：① 修复第一版让 `run_from_execution` 涨到 **57 行**（50 行硬上限判红）⇒ 抽 `_digest_or_none` + `_with_frozen_refs` 把它压回 50 以内（**只重构、不改语义**）；② `PLAN-138` 影响报告里 cycle 9 写的"均为加性、无行为回归面"**是错的**，按实测改为"净零 + 撤回"（原文保留在 git 历史，正文更正） | **EC-06 = PASS**（见 `status_note`）；**EC-03 仍 PENDING**（两条路径都要拍板）；**GOAL 置 BLOCKED**（EC-01/02/04/05 PASS、EC-03 PENDING、EC-06 PASS） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 推送 | 提交 | run | 六 job 结论 |
@@ -689,6 +704,8 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 
 | cycle 8（EC-05 降级措辞 + 两条判据 + 三面实验；**一次推送**） | tip `6f5b9fb` | M0 [35755589263](https://github.com/Eswink/research-system-new/actions/runs/35755589263) | 六 job 全 **success**（逐 job 实查，终态 `status=completed`、`conclusion=success`）；**CodeQL** [35755587759](https://github.com/Eswink/research-system-new/actions/runs/35755587759) = success（3/3） |
 | 台账尾巴（cycle 8 收口回写） | 见回合汇报（**台账尾巴口径**同上） | | |
+| cycle 9（EC-03 取 (B)：7 份合约 + 5 份 schema + 实验缝三处修复与判据；**一次推送两个提交**） | tip `02a4f47`（`b2aed75` → `02a4f47`） | M0 [35765996603](https://github.com/Eswink/research-system-new/actions/runs/35765996603) = **failure** | **逐 job 实查**：`eval-gate` / `container-quality` / `collector-quality` **success**；`quality-windows-latest` 与 `quality-ubuntu-latest` **failure**（同一步 `Run all M0 gates`；真因 = `python/tests` **11 failed / 4179 passed / 219 skipped**：`test_failed_run_semantic_digest_api.py` 5 条、`test_run_chain_capability_exposure.py` 2 条、`test_budget_forecast_api.py::test_real_run_reservation_visible_then_adjust_takes_effect`、`test_draft_run_linkage.py::test_start_run_from_draft_revision_uses_frozen_text`、`test_operations_api.py::test_telemetry_endpoint_returns_canonical_projection`、`test_runs_api.py::test_start_run_freezes_manifest_and_records_failure`）；`console-frontend` **failure**（`Console live API e2e (Fake Ports)`：`live-api-workflow.spec.ts:434` 预算预留、`live-run-rebuild-readiness.spec.ts:34` 重建就绪，`37 passed / 2 failed`）。**同作业上一 tip `6f5b9fb5` = success** ⇒ 判红可归因到本 tip（cycle 10 逐条溯源并处置，见迭代行 10） |
+| 台账尾巴（cycle 9 回写） | 见回合汇报（**台账尾巴口径**同上） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…010，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -814,3 +831,21 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
   不可见）。**下一轮输入 = 一项拍板**：① SCHEMA_VALID 接线 ② TEST_PASSES 接线 ③ POLICY_COMPLIANT 接线
   ④ 多调用证据键 ⑤ 来源数口径决定（⑤ 属改合约，本 GOAL 明文禁止自行决定）。GOAL **仍 ACTIVE**
   （EC-03 PENDING、EC-06 未做）——**本 cycle 修的是产品缺陷、加的是判据，未放宽任何东西。**
+
+- 2026-09-23（**cycle 10 = EC-06 收口**）：cycle 9 的推送触发 M0 **failure**（`python/tests` 11 failed、
+  `console-frontend` 2 failed）。**逐条溯源后确认：没有一条是功能坏了，全部是 m12 的失败形态被改动后有
+  8 处判据的**夹具语义**失效**（① 点名判词 `task contract`；② 失败 run 的预留可见性——**旧绿靠泄漏**
+  （`_contract_for` 的 ValueError 绕过 `_fail_run` 的 `release_reservation`）；③ 架构判据的字面寄存器）。
+  纪律**禁止改测试断言/门禁使其通过** ⇒ **撤回** cycle 9 的载体改动（协议、合约、5 份 schema、bundle 注册行；
+  逐字节退回 `6f5b9fb5`，`git diff` 为空），而**把顺带抓到的真缺口修掉**：优雅收敛（任务结果登记失败 /
+  验收门拒收）的冻结后失败此前**丢字节 digest** ⇒ 读面把冻结过的 run 判成「从未冻结」（`rebuild REFUSED,
+  missing=[manifest_digest]`）。修复走**同源**路径（`frozen_manifest_refs_of` + `_with_frozen_refs`），
+  未冻结的 run 仍保持两个 digest 为 `None`（**不伪造**），并由新判据钉住（**先红后绿已验**：
+  暂存修复 ⇒ 只有新判据红、其余 9 条绿）。**收口**：独立复检脚本（只读/只用标准库/不 import 仓库代码）
+  **加了撤回层**后两树同结论；本机 m0 **23/23**；治理 `validate.py` 与 bundle 校验绿；
+  `133/134/136/137` 置 **DONE**（各自 RECHECK + 工程记忆），`135` 置 **BLOCKED**（AC-3 的
+  「真实 LLM 驱动的 run 到终态」未达成），`138` 保持 **BLOCKED** 并在正文记下撤回与五条下一轮输入。
+  **GOAL 置 BLOCKED**（EC-01/02/04/05 **PASS**、**EC-03 未达成**、EC-06 **PASS**）——EC-03 停在
+  **两条都要拍板**的路径上：(A) 冻结门对 `EXECUTE` 类 HIGH 风险的处置（`sort_analysis_v1`：预检 `WARN`
+  ⇒ `freeze_manifest` 拒冻），(B) 载体路线（**其来源数前提已实测否证**，且落地前还要先解决夹具语义与
+  `minimum_sources` 口径）。**零真实出网、零凭据读取、未放宽任何判据与放行面。**

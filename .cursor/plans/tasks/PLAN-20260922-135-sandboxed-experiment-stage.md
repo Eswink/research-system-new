@@ -2,9 +2,9 @@
 id: PLAN-20260922-135
 slug: sandboxed-experiment-stage
 title: 沙箱实验阶段：把「实验协议的执行阶段」接进既有 Docker 执行后端（GOAL-011 EC-03）
-status: IN_PROGRESS
+status: BLOCKED
 created_at: 2026-09-22
-updated_at: 2026-09-22
+updated_at: 2026-09-23
 parent_goal: GOAL-20260922-011
 cursor_plan_uri: null
 owners:
@@ -27,8 +27,9 @@ authorization:
     新增依赖或改上游 pin；把真实 runtime 设为默认；把凭据写进 CI；把 `sort_analysis_v1` 的
     M7 参考语义改写掉（那会让 10+ 条已判绿用例的语义消失）。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-135-sandboxed-experiment-stage.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-107-fixture-failure-shape-is-a-contract.md
 ---
 
 # PLAN-20260922-135 — 沙箱实验阶段（GOAL-011 EC-03）

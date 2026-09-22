@@ -2,9 +2,9 @@
 id: PLAN-20260922-137
 slug: offline-gate-tokenizer-declaration
 title: 「默认 CI 离线」的措辞与判据同源：把 tokenizer 预热做成受判的声明（GOAL-011 EC-05）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-22
-updated_at: 2026-09-22
+updated_at: 2026-09-23
 parent_goal: GOAL-20260922-011
 cursor_plan_uri: null
 owners:
@@ -21,8 +21,9 @@ authorization:
     `git add -A`；伪造或夸大验证证据；放宽验收门凑成功；新增依赖或改上游 pin；
     **引入未 pin 的外部二进制资产**（固化词表的代价见「定案」）。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-137-offline-gate-tokenizer-declaration.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260920-095-credential-availability-breaks-hermetic-tests.md
 ---
 
 # PLAN-20260922-137 — 「默认 CI 离线」的措辞与判据同源（GOAL-011 EC-05）

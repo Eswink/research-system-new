@@ -2,9 +2,9 @@
 id: PLAN-20260922-134
 slug: retrieved-evidence-nature
 title: 证据链的「系统取得」性质：TrustLabel 加 RETRIEVED + 覆盖判据按来源性质判（GOAL-011 EC-02）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-22
-updated_at: 2026-09-22
+updated_at: 2026-09-23
 parent_goal: GOAL-20260922-011
 cursor_plan_uri: null
 owners:
@@ -24,8 +24,9 @@ authorization:
     skip/删除测试、降低断言强度；`git add -A`；伪造或夸大验证证据；放宽验收门（AcceptanceCriteria）
     凑成功；**为跑通而放宽出站判据**；新增依赖或改上游 pin；把真实 runtime 设为默认；把凭据写进 CI。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-134-retrieved-evidence-nature.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-106-run-chain-evidence-key-and-source-cap.md
 ---
 
 # PLAN-20260922-134 — 证据链的「系统取得」性质（GOAL-011 EC-02）

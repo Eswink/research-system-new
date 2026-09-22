@@ -2,9 +2,9 @@
 id: PLAN-20260922-136
 slug: user-perspective-end-to-end
 title: 用户视角端到端验收 + `partial` 页诚实标注核对（GOAL-011 EC-04）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-22
-updated_at: 2026-09-22
+updated_at: 2026-09-23
 parent_goal: GOAL-20260922-011
 cursor_plan_uri: null
 owners:
@@ -27,8 +27,9 @@ authorization:
     把真实 runtime 设为默认；把凭据写进 CI；把截图/读面快照提交进仓库；**粉饰 `partial` 页的诚实结论**
     （不一致就记不一致）。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-136-user-perspective-end-to-end.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-107-fixture-failure-shape-is-a-contract.md
 ---
 
 # PLAN-20260922-136 — 用户视角端到端 + `partial` 页诚实标注核对（GOAL-011 EC-04）
