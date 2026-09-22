@@ -525,3 +525,60 @@ phases:
   - **仍未落**：**能力步本体**（运行链真的去调 `literature.search` 并把结果登记成证据）——
     即 I-1…I-4 的执行侧与 `NcbiEutilsProvider` 的生产装配，属 WP3 的后半，**下一轮入口**。
     **EC-01 仍 PENDING**（本 cycle 只让它**可验**：声明与装配面已落地并被判据钉住）。
+- 2026-09-22：**cycle 4 WP3+WP4 落地（能力步本体 + 离线判据 + live 判据）——EC-01 达成**。
+  - **新模块 `packages/application/run_orchestration/phase_capabilities.py`**（311 行）：
+    运行链按 phase 的 run-chain 声明执行调用，四段全部**复用既有件**——
+    `require_frozen_tool_set`（ADR-0004）→ `execute_tool_call`（执行期**唯一**策略裁决点）→
+    provider 执行 → `register_tool_evidence`（工具证据**唯一**准入入口）。
+    声明式调用 `RunChainCall`：`arguments_from_input`（点分路径取**声明输入**的字段，如
+    `retrieval.query`）、`fixed_arguments`（只放量如 `retmax`）、`ids_from_previous`
+    （上一步结果里的 id 列表 → 本步的 `ids`，**真实标识回填**）。操作键按
+    `tool_id` + 该次调用的真实标识命名 ⇒ 外部标识**逐字**出现在 evidence id / source_ref 里。
+  - **一处既有缺口、本模块只补一层薄包装**：`execute_tool_call` 构造的 `PolicyRequest`
+    **不带 scope**，而 `policy.yaml` 里带 scope 的 allow 规则要求 scope 相等 ⇒
+    preflight 放行、执行期落到 `default_effect: DENY`。修法**不是**新造第二套裁决，
+    而是 `ScopedPolicy` 把**同一张表**（`preflight.policy_check._CAPABILITY_SCOPE`，
+    新导出 `policy_scope_for`）补进请求；`execute_tool_call` 仍是唯一裁决点、未被改动。
+  - **证据进 claim**：`TaskContext`→`register_and_gate`→`register_or_fail`→
+    `RegistrationDeps.retrieved_evidence`→`register_session_result` 合并进**同一个** claim 的
+    relations（P-2 实测：只登记不挂 relation 读不到），并进返回值（覆盖计数只认非自身来源）。
+  - **装配面**：`PhaseRunnerDeps.capabilities` / `OrchestrationDependencies.capabilities`
+    （缺省 None ⇒ 该步不启用，既有语义逐字节不变）；`service.py` 透传一行。
+    **`composition.py` 未动**（=450 行硬上限，零余量）⇒ 生产组合根今天不接该步；
+    运行链的 provider 实例来自装配方（离线/live harness 与未来的运维装配）。
+    如实登记 **W-C**（生产根未接线；与 W-A 同源：默认装配今天跑不动该协议）。
+  - **判据四条**（离线 3 + live 1，全部实跑）：
+    ① 机制判据 `tests/application/run_orchestration/test_run_chain_capabilities.py`（7 条）：
+    真实 provider + `httpx.MockTransport`（离线）跑完整两步；含 5 条 fail-closed 面
+    （provider 未注册 / 参数缺字段 / 策略 DENY 且**不触达 provider** / 结果没落盘 /
+    不在冻结集）与 1 条「未声明 ⇒ **一个请求都不发**」。
+    ② e2e 主干 `tests/e2e/test_ec03_real_runtime_offline_chain.py::test_run_chain_retrieval_is_observed_and_traceable`：
+    生产装配（`map_tools=False`）下 run `SUCCEEDED`、**两次**检索请求（esearch→efetch）、
+    读面两条工具证据（`tool_refs` 恰为 `(ncbi_eutils, literature_search/read)`）、
+    读取步的 evidence id 与 source_ref 里**逐字**含检索响应返回的 PMID。
+    ③ 成对反证 `test_run_chain_retrieval_absent_without_the_wiring`：不接能力步 ⇒
+    零工具观测（run 仍 `SUCCEEDED`，因为覆盖今天由声明输入满足——EC-02 的靶子）。
+    ④ live 判据 `tests/e2e/test_run_chain_retrieval_live.py`（`requires_live_llm`）：
+    真 LLM + 真 E-utilities，**PASS（非 skip）**，见下方实测样张。
+  - **按压（先红后绿，全部实测）**：① 删协议里的 `capability_execution: run_chain` 行 ⇒
+    该 run **FAILED**（`ToolDefinition 'm12_artifact' is not registered`）且主干判据红；
+    ② 保留声明、删两条 `literature.*` 能力 ⇒ e2e 主干红在 `AssertionError: []`（**零请求**）；
+    ③ **live 同一条命令**下做 ② 的按压 ⇒ `AssertionError: []`（该 phase 无工具观测），复原 ⇒ PASS。
+  - **live 实测样张**（`scratch/goal011-c4-live-facts.json`，gitignored；凭据不入表）：
+    run `1c8b23bc-c990-4c3e-9236-6afaefd27c25`，终态 **`SUCCEEDED`**、零失败；
+    事件 `manifest.frozen → model.probed → task.created → task.leased → task.completed →
+    claim.verified → run.completed`；真实出站**恰 2 次**（esearch + efetch，均 https、
+    host `eutils.ncbi.nlm.nih.gov`）；esearch 的 `query` = 声明输入里的
+    `retrieval.query`，命中 `count=85908`、返回 `42767441 / 42765796 / 42765769`；
+    两条工具证据（`literature_search`、`literature_read:42767441+42765796+42765769`）
+    经 `GET /runs/{id}/evidence` 可读；`read_evidence_has_returned_id: true`
+    ⇒ 读取步读的就是这次检索返回的那串标识。**trust_label 仍是 `GENERATED`**（EC-02 的靶子）。
+  - **两条实测发现（如实登记，均已处置）**：
+    **(F-a)** `parse_efetch_xml` 的 PA-1 守卫"拒绝一切 DOCTYPE"会拒掉**每一次真实 efetch**
+    （真实响应带外部 DOCTYPE；离线夹具不带 ⇒ 从未被测到）——按**威胁本身**收边界：
+    拒 `<!ENTITY`（唯一合法拼写）与**带内部子集**的 DOCTYPE，放行外部 DOCTYPE；
+    新增 `test_real_external_doctype_is_accepted` 与 `test_internal_dtd_subset_rejected`，
+    既有的两条拒绝用例**仍然拒绝**（只改匹配串）。这条是 live 判据第一次跑就抓到的。
+    **(F-b)** live 判据第一版用 `\d{6,9}` 扫整个 `source_ref` 取 PMID，把 task UUID 的
+    十六进制段（`908144`）当成标识 ⇒ **真实运行里假红**；改为只解 operation_key 一段。
+    （教训与 GOAL-010 的 R-4 同族：判据的取值面必须是**逐字的那一串**。）
