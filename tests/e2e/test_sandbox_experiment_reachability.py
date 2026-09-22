@@ -59,8 +59,15 @@ def _preflight() -> tuple[Any, Any]:
     return plan, report
 
 
+@pytest.mark.requires_docker
 def test_the_declaration_and_the_seam_land_on_the_run_assembly() -> None:
-    """装配面：合约带声明、缝已装、派发判据看得见（判据不空转）。"""
+    """装配面：合约带声明、缝已装、派发判据看得见（判据不空转）。
+
+    挂 `requires_docker`：本用例走**真实装配**（`with_sandbox_experiment`），
+    而该装配会构造 `DockerExecutionBackend`——**没有 Linux 可用的 daemon 时构造即抛**
+    （CI 的 windows 跑者实测 `DockerException: Error while fetching server API version`）。
+    标记让它落到 `container-quality` 那个容器门禁作业里**真跑**，其余作业如实 skip。
+    """
     deps = _deps()
     with_sandbox_experiment(deps, script=EXPERIMENT_SCRIPT, image=EXPERIMENT_IMAGE)
     contract = deps.preflight_override.catalog.task_contracts[EXPERIMENT_CONTRACT]
