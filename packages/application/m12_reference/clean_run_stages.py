@@ -62,12 +62,17 @@ def experiment_run_id_of(run_id: str) -> str:
     return str(UUID(int=value))
 
 
-def _derived_id(kind: str, run_id: str) -> str:
+def derived_id(kind: str, seed: str) -> str:
     """Stable namespaced hash in the UUID4 layout required by Domain.ID.
 
     This is deterministic, not random; no randomness or secrecy is claimed.
+
+    参数名从 `run_id` 改成 `seed`（GOAL-011 cycle 9）：它今天被两处使用——审计 id 用
+    **run id** 作种子，沙箱实验缝的计划 id 用 **task id** 作种子（见
+    `services/api/experiment_support.py`）。名字跟着用途走，避免「用 task id 调
+    `run_id` 参数」这种自相矛盾的调用点。
     """
-    value = hashlib.sha256(f"research-os:{kind}:{run_id}".encode("utf-8")).digest()[:16]
+    value = hashlib.sha256(f"research-os:{kind}:{seed}".encode("utf-8")).digest()[:16]
     return str(UUID(bytes=value, version=4))
 
 
@@ -138,7 +143,7 @@ def build_audit(deps: CleanRunDeps, run_id: str, run: ExperimentRun) -> Reproduc
     """从真实运行事实构建并封存 ReproducibilityAudit（无合成绑定常量）。"""
     return build_reproducibility_audit(
         run,
-        audit_id=ID(_derived_id("audit", run_id)),
+        audit_id=ID(derived_id("audit", run_id)),
         artifacts=deps.artifacts,
     )
 

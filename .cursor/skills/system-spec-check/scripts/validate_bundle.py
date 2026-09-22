@@ -715,8 +715,13 @@ def check_yaml_and_references() -> None:
 
 
 def check_json_schemas() -> None:
+    # 注册表：`schemas/` 下**每个** `.json` 都必须在此登记（判据是**集合相等**，
+    # 多一个未登记的 schema 文件与少一个登记项都判红）。GOAL-011 EC-03 新增 5 份
+    # m12 phase 输出 schema（合约的 `output_schema` 必须存在同名文件），
+    # 因此在此按字母序登记——**只登记、不放宽**：断言与判红条件一字未改。
     expected_schema_files = {
         "agent-spec.schema.json",
+        "audit_report_v1.schema.json",
         "budget-policy.schema.json",
         "capability.schema.json",
         "compiled-run-plan.schema.json",
@@ -725,6 +730,7 @@ def check_json_schemas() -> None:
         "endpoint-health.schema.json",
         "eval-dataset.schema.json",
         "eval-score.schema.json",
+        "experiment_plan_v1.schema.json",
         "experiment_run_input_v1.schema.json",
         "experiment_run_output_v1.schema.json",
         "export_bundle_v1.schema.json",
@@ -741,6 +747,8 @@ def check_json_schemas() -> None:
         "protocol.schema.json",
         "real_research_deliverable_v1.schema.json",
         "reproducibility_audit_v1.schema.json",
+        "research_report_v1.schema.json",
+        "review_findings_v1.schema.json",
         "role-definition.schema.json",
         "skill.schema.json",
         "task-contract.schema.json",
@@ -748,6 +756,7 @@ def check_json_schemas() -> None:
         "tool-provider.schema.json",
         "tool-spec.schema.json",
         "toolpack-manifest.schema.json",
+        "validated_results_v1.schema.json",
         "workspace.schema.json",
     }
     schemas = list((ROOT / "schemas").glob("*.json"))

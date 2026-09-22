@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/review_findings_v1.schema.json",
+  "title": "ReviewFindingsV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "subject_ref",
+    "findings",
+    "recommendation"
+  ],
+  "properties": {
+    "subject_ref": { "type": "string", "minLength": 1 },
+    "findings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "statement"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["INFO", "MINOR", "MAJOR", "BLOCKER"] },
+          "statement": { "type": "string", "minLength": 1 },
+          "evidence_refs": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "recommendation": { "type": "string", "enum": ["ACCEPT", "REVISE", "REJECT"] },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  }
+}

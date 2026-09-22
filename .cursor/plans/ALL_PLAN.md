@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260922-138](tasks/PLAN-20260922-138-real-experiment-chain-via-m12.md) | IN_PROGRESS |
+| [ ] | [PLAN-20260922-138](tasks/PLAN-20260922-138-real-experiment-chain-via-m12.md) | BLOCKED |
 | [ ] | [PLAN-20260922-137](tasks/PLAN-20260922-137-offline-gate-tokenizer-declaration.md) | IN_PROGRESS |
 | [ ] | [PLAN-20260922-136](tasks/PLAN-20260922-136-user-perspective-end-to-end.md) | IN_PROGRESS |
 | [ ] | [PLAN-20260922-135](tasks/PLAN-20260922-135-sandboxed-experiment-stage.md) | IN_PROGRESS |

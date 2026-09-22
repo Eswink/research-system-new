@@ -1,5 +1,11 @@
 id: m12_reference_research_v1_0_0
 version: 0.4.0
+# GOAL-011 EC-03（用户拍板取 (B)）：本协议此前**跑不起来**——7 个 phase 里 5 个没有
+# `task_contract`，运行期 `service._contract_for` 会抛
+# `ValueError("phase declares no task contract")`（编译期**不**报：编译器只对「引用了
+# 不存在的合约」判 `TASK_CONTRACT_MISSING`）。本轮补齐这 5 份合约的**引用**，
+# 合约本体在 `examples/contracts/task_contracts.yaml`。
+# 另外两处声明（见 discovery phase 的注释）：能力**由运行链执行**、以及**声明输入**。
 phases:
   - id: discovery
     name: Domain Discovery
@@ -10,6 +16,15 @@ phases:
     required_capabilities:
       - literature.search
       - literature.read
+    # 能力**由运行链执行**、不作为会话工具（缺省 = `session` = 既有语义）。
+    # 这句话是必需的吗？是：provider→SDK 工具映射在生产装配里是空操作，
+    # 而控制面**不静默丢工具**——没有这句，会话会因未注册的 provider 而创建失败
+    # （`test_unmapped_tool_set_is_not_silently_dropped` 固定该行为）。
+    capability_execution: run_chain
+    # 声明输入：检索的**内容**（`retrieval.query`）来自操作者简报；运行链**只**从这里读
+    # 查询词，检索返回的标识（PMID）则**只**来自检索本身的响应。与两份真协议共用同一份
+    # 简报（`input-brief:real_research_v1`）——它本就是「操作者提供的任务简报」这一角色。
+    inputs: [input-brief:real_research_v1]
     task_contract: domain_discovery
     outputs: [domain_map, source_set]
     timeout_seconds: 180
@@ -20,6 +35,7 @@ phases:
     depends_on: [discovery]
     required_roles:
       - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    task_contract: experiment_design
     outputs: [experiment_plan]
     timeout_seconds: 180
     gate: QUALITY_GATE
@@ -43,6 +59,7 @@ phases:
     depends_on: [execution]
     required_roles:
       - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    task_contract: result_analysis
     outputs: [validated_results]
     timeout_seconds: 180
 
@@ -52,6 +69,7 @@ phases:
     depends_on: [analysis]
     required_roles:
       - {role: scientific_reviewer, min_instances: 1, max_instances: 2}
+    task_contract: peer_review_findings
     outputs: [review_findings]
     timeout_seconds: 180
 
@@ -61,6 +79,7 @@ phases:
     depends_on: [peer_review]
     required_roles:
       - {role: research_writer, min_instances: 1, max_instances: 1}
+    task_contract: m12_research_report
     outputs: [research_report]
     timeout_seconds: 180
     gate: QUALITY_GATE
@@ -71,6 +90,7 @@ phases:
     depends_on: [deliverable]
     required_roles:
       - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    task_contract: m12_final_audit
     outputs: [audit_report]
     timeout_seconds: 180
     gate: QUALITY_GATE

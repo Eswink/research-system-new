@@ -138,3 +138,82 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # ---- m12 参考协议其余 5 个 phase 的合约（GOAL-011 EC-03，用户拍板取 (B)）----
+  # 这 5 条此前**不存在** ⇒ 运行期 `service._contract_for` 抛
+  # `ValueError("phase declares no task contract")`，协议根本跑不起来（F-1）。
+  # 判据一律**只声明本 phase 的输出物**（`ARTIFACT_EXISTS` 恰一个名字，与
+  # `real_research_deliverable` 的先例同源）：声明唯一时 adapter 才把会话产出登记成
+  # 合约声明的名字（GOAL-010 EC-01 的命名契约）；**不加** `SCHEMA_VALID` /
+  # `TEST_PASSES`——今天诚实做不到的判据写进来只会让协议不可用。
+  # `required_capabilities` 只取**已有 provider 且 `effect_class: READ_ONLY`** 的
+  # `artifact.read`（provider `m12_artifact`）：声明 `openhands_workspace` 的
+  # `workspace.*` / `code.execute` 会引出 `EXECUTE ⇒ HIGH` 的 `TOOL_RISK_ELEVATED`
+  # 警告并**阻断冻结**（cycle 6 实测的阻断点）——本 cycle **不去改那个门**。
+
+  experiment_design:
+    version: 1.0.0
+    purpose: m12 design phase：把领域图与来源集转成一份可执行的实验计划。
+    required_capabilities:
+      - artifact.read
+    output_schema: experiment_plan_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: experiment_plan
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  result_analysis:
+    version: 1.0.0
+    purpose: m12 analysis phase：把实验产物读成观察与结论（实验已由既有 Docker 后端跑过）。
+    required_capabilities:
+      - artifact.read
+    output_schema: validated_results_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: validated_results
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  peer_review_findings:
+    version: 1.0.0
+    purpose: m12 peer_review phase：对分析与结论给出逐条发现与处置建议。
+    required_capabilities:
+      - artifact.read
+    output_schema: review_findings_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: review_findings
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  m12_research_report:
+    version: 1.0.0
+    purpose: >-
+      m12 deliverable phase：面向读者的研究报告。**恰一个**声明产物
+      （`ARTIFACT_EXISTS` 只有一条）——多产物会回落事实名并判拒。
+    required_capabilities:
+      - artifact.read
+    output_schema: research_report_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: research_report
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  m12_final_audit:
+    version: 1.0.0
+    purpose: m12 final_audit phase：可复现性审计（逐条检查项 + 三态结论，未知不等于通过）。
+    required_capabilities:
+      - artifact.read
+    output_schema: audit_report_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: audit_report
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

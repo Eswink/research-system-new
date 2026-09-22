@@ -6,8 +6,10 @@
 - 声明非空而缝没接 ⇒ **点名拒绝**（fail-closed；**不**静默回退到会话）；
 - 声明缺席 ⇒ 会话语义（既有行为）。
 
-真实容器那一段由 `tests/e2e/test_sandbox_experiment_live.py`（`requires_docker` +
-`requires_live_llm`）承担——本模块只判派发，不假装跑过容器。
+真实容器那一段由 `tests/e2e/test_sandbox_experiment_seam_docker.py`（`requires_docker`，
+`container-quality` 作业真跑）承担——本模块只判派发，不假装跑过容器。
+（GOAL-011 cycle 9 更正：此处此前指向 `tests/e2e/test_sandbox_experiment_live.py`，
+**该文件当时并不存在**；补真实容器那一段时按实际形态落了文件并改名。）
 """
 
 from __future__ import annotations

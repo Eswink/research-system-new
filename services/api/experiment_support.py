@@ -36,7 +36,7 @@ from packages.application.experiments import (
     ExperimentProvenance,
     GovernedExperimentExecutor,
 )
-from packages.application.m12_reference.clean_run_stages import experiment_run_id_of
+from packages.application.m12_reference.clean_run_stages import derived_id, experiment_run_id_of
 from packages.application.ports.errors import InvalidInputError
 from packages.application.run_orchestration.experiment_task import (
     ExperimentTaskDeps,
@@ -129,6 +129,11 @@ def _governed_executor(assembly: SandboxExperimentAssembly) -> GovernedExperimen
     if assembly.script is not None:
         shutil.copyfile(assembly.script, root / SCRIPT_NAME)
     workspaces = FileWorkspaceBackend(root / "_backend")
+    # 工作区必须先在该后端**登记**：`ExperimentExecutor` 会对 `request.workspace`
+    # 取租约，而后端对没登记过的 id 直接 `unknown workspace`（GOAL-011 cycle 9 实测：
+    # 漏这一步 ⇒ 每次派发都在取租约处失败，一个容器都不起）。M12 clean-run 那条路
+    # 也是先 `create_workspace` 再跑（见 `tools/m12_reference_workflow.py`）。
+    workspaces.create_workspace(_sandbox_workspace())
     inner = ExperimentExecutor(
         execution=assembly.execution,
         workspaces=workspaces,
@@ -169,8 +174,16 @@ def _sandbox_workspace() -> Workspace:
 
 
 def _preregistered_plan(task: ResearchTask) -> ExperimentPlan:
+    """本次任务的实验计划（预注册态）。
+
+    id 必须**合法 UUID** 且**按任务确定性派生**（同一任务重跑得同一个 id，重启后可复算）。
+    这里此前是 `experiment_run_id_of(f"plan-{task.id.value}")`：那个函数要求输入本身是
+    UUID（`UUID(ID(x).value)`），而 `plan-<uuid>` 不是 ⇒ **任何一次真实派发都在这一行抛**
+    `ValueError: invalid UUID`（GOAL-011 cycle 9 实测；cycle 6 接缝时该路径从未被派发过）。
+    改用同一个模块里既有的确定性派生 `derived_id`（审计 id 用的就是它），不新造第二套命名。
+    """
     plan = ExperimentPlan(
-        id=ID(experiment_run_id_of(f"plan-{task.id.value}")),
+        id=ID(derived_id("sandbox-plan", str(task.id.value))),
         name=PLAN_NAME,
         hypothesis=f"sandboxed experiment for task {task.id.value}",
     )

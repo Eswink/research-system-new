@@ -22,6 +22,7 @@ from packages.application.ports.policy_evaluator import (
     PolicyEvaluator,
     PolicyRequest,
 )
+from packages.application.preflight.policy_check import policy_scope_for
 from packages.domain.enums import FailureCategory, PolicyDecision
 
 _CAPABILITIES = ("code.execute", "workspace.write.code", "artifact.write")
@@ -81,6 +82,13 @@ class GovernedExperimentExecutor:
                     capability=capability,
                     action="execute",
                     resource=request.run_id.value,
+                    # 执行期必须补齐 preflight 用的那个 scope。带 scope 的 allow 规则
+                    # （`artifact.write → run`）要求请求里的 scope 相等才匹配；不补就落到
+                    # `default_effect: DENY`，于是同一能力「preflight 放行、执行期拒绝」
+                    # （GOAL-011 cycle 9 实测：真实 policy.yaml 下沙箱实验在这一行被拒）。
+                    # 工具面的同款补法是 `phase_capabilities.ScopedPolicy`；scope 表**同一张**
+                    # （`policy_scope_for`），本处不新造映射。
+                    scope=policy_scope_for(capability),
                 )
             ).decision
             if decision is PolicyDecision.DENY:
