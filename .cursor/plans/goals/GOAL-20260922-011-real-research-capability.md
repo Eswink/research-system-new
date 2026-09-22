@@ -257,6 +257,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260922-133-real-retrieval-into-protocol.md
   - .cursor/plans/tasks/PLAN-20260922-134-retrieved-evidence-nature.md
   - .cursor/plans/tasks/PLAN-20260922-135-sandboxed-experiment-stage.md
+  - .cursor/plans/tasks/PLAN-20260922-136-user-perspective-end-to-end.md
 latest_recheck: null
 memory_entries: []
 ---
