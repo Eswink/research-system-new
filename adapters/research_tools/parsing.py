@@ -9,18 +9,40 @@ import xml.etree.ElementTree as ET
 
 from packages.application.ports.errors import InvalidInputError
 
+#: DOCTYPE 声明的扫描窗口（内部子集标记 `[` 必须出现在这一窗内；声明恒在根元素之前）。
+_DECLARATION_WINDOW = 4096
+
+
+def _reject_unsafe_declarations(content: bytes) -> None:
+    """拒绝**实体声明**与**内部 DTD 子集**——entity-expansion DoS 的真实入口。
+
+    GOAL-011 EC-01 的 live 实测更正了这条口径：真实 efetch 响应**带外部 DOCTYPE**
+    （`<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN"
+    "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">`）。早先"拒绝一切
+    DOCTYPE"的写法会拒掉**每一次真实 efetch**（离线夹具没带 DOCTYPE，所以从未被测到；
+    离线判据全绿而真实读取必红）。风险是实体展开，不是 DOCTYPE 本身，边界因此收到
+    它本身：`<!ENTITY`（唯一合法的实体声明拼写，大小写敏感）一律拒绝；DOCTYPE 带内部
+    子集（`[`，实体定义只能写在那里）一并拒绝；外部 DOCTYPE 交 std ET 处理——ET 不取
+    外部实体。5MB 上限不变。
+    """
+    if b"<!ENTITY" in content:
+        raise InvalidInputError("efetch response must not declare ENTITY")
+    start = content.find(b"<!DOCTYPE")
+    if start != -1:
+        declaration = content[start : start + _DECLARATION_WINDOW].split(b">", 1)[0]
+        if b"[" in declaration:
+            raise InvalidInputError("efetch response must not declare an internal DTD subset")
+
 
 def parse_efetch_xml(content: bytes) -> dict[str, object]:
     """efetch XML → {"articles": [normalized article, ...]}。
 
     PA-1 扫描处置：输入是不可信 HTTP 字节。std ET 展开内部实体
-    （entity-expansion DoS）——输入拒绝 DOCTYPE/ENTITY 声明，并设 5MB 上限。
+    （entity-expansion DoS）——按 `_reject_unsafe_declarations` 的表征拒绝，并设 5MB 上限。
     """
     if len(content) > 5 * 1024 * 1024:
         raise InvalidInputError("efetch response exceeds 5MB limit")
-    head = content.lstrip()[:256].upper()
-    if b"<!DOCTYPE" in head or b"<!ENTITY" in head:
-        raise InvalidInputError("efetch response must not declare DOCTYPE/ENTITY")
+    _reject_unsafe_declarations(content)
     try:
         root = ET.fromstring(content)
     except ET.ParseError as exc:
