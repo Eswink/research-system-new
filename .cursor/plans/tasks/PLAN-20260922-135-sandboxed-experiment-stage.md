@@ -105,18 +105,48 @@ EC-03 要的是**真实实验执行链**：真实 LLM 驱动一条实验协议�
 
 ## 实施清单
 
-- [ ] **WP1** 声明面：`ExperimentExecutionSpec`（Domain）+ `TaskContract.experiment` +
+- [x] **WP1** 声明面：`ExperimentExecutionSpec`（Domain）+ `TaskContract.experiment` +
   `schemas/task-contract.schema.json` + `adapters/contracts/tasks_loaders.py` +
   `adapters/sqlite/serialization.py` 往返 + `examples/contracts/task_contracts.yaml`
-  给 `experiment_execution` 补声明（既有行为逐字保持）。
-- [ ] **WP2** 派发：`phase_runner` 换成 `contract.experiment is not None` → helper
-  （净减行）；helper `dispatch_experiment` 落在 `experiment_task.py`（声明了但没接线 ⇒ 点名拒绝）。
-- [ ] **WP3** 装配：`services/api/experiment_support.py`（`ExperimentTaskDeps` + governed executor +
-  `DockerExecutionBackend` + request/provenance builder + 计划预注册）；run-ready/live 装配接线。
-- [ ] **WP4** 实验脚本 `examples/experiments/sort_analysis_baseline.py`。
-- [ ] **WP5** 判据：离线（默认门：编排器 + Fake 执行后端走真缝 ⇒ 终态 + 三项读面）+ 按压
-  （摘声明 ⇒ 不派发 ⇒ 红）；live/docker（真实 LLM + 真实 Docker + 三个读面 + 终态如实）。
-- [ ] **WP6** 文档同源 + GOAL 回写（EC-03 状态、迭代日志、child_plans、CI 台账）。
+  给两份实验合约补声明（`experiment_execution` 空映射 = 脚本由装配上下文给；
+  `m12_experiment_execution` 把脚本与镜像 pin 在契约里）。提交 `3ee18b3`。
+- [x] **WP2** 派发：`phase_runner` 换成 `contract.experiment is not None` → `dispatch_experiment`
+  （`phase_runner` 450 → **448** 行，净减）；声明了但缝没接 ⇒ **点名拒绝**。
+  提交 `a4c11f2`。
+- [x] **WP3** 装配：`services/api/experiment_support.py` + `OrchestrationDependencies.experiment_task`
+  + `service.py` 透传（450 → **449** 行）+ live/ops 装配 `with_sandbox_experiment`。
+  提交 `5d5e86f`。
+- [x] **WP4** 实验脚本 `examples/experiments/sort_analysis_baseline.py`（确定性、纯标准库、
+  产出 `analysis_report` 与 `experiment_result.json`）+ 两条判据文件。提交 `713dce7`。
+- [ ] **WP5** 真实 LLM 驱动的端到端 run → **被既有阻断点挡住，未达成**（见「阻断点」）。
+  如实登记为下一轮输入；**EC-03 仍 PENDING**。
+- [x] **WP6** 文档同源 + GOAL 回写（EC-03 状态、迭代日志、child_plans、CI 台账）。
+
+## 阻断点（本 PLAN 实测，未修，如实钉住）
+
+`sort_analysis_v1` 今天过不了真实的 **compile → preflight → freeze** 三步：
+
+1. 预检报告状态是 **`WARN`**，findings 逐字为
+   `WARNING TOOL_RISK_ELEVATED | provider openhands_workspace has elevated risk class HIGH`（**4 条**，
+   每个引用它的 phase 一条）；
+2. 根因是**无条件**的分层：`classify_risk(EffectClass.EXECUTE, TrustLevel.BUILT_IN) → RiskClass.HIGH`
+   （`packages/domain/tools.py:143-144`，与 trust level 无关），而该协议的执行阶段要求
+   `code.execute`；
+3. `freeze_manifest` 的 `if not report.passed: raise ManifestFreezeError("cannot freeze manifest
+   before a passing preflight")`（`packages/application/preflight/preflight.py:186-187`）
+   ⇒ 拒绝冻结 ⇒ run 在**执行之前**终止。
+
+run 侧的可观测签名（联机实测，两次同签名）：`state: FAILED`、`manifest_digest: null`、
+`protocol_body_digest` 非空（编译过）、`/runs/{id}/tasks` 为 `[]`、`/runs/{id}/experiments` 为 `[]`、
+零工具观测。
+
+**不是本 PLAN 引入的**：同一装配下**不做**任何沙箱实验声明时实测同一签名。
+
+⇒ 这是**既有**的语义交叉（口径同 `real_retrieval_research_v1` 头部登记的那一条：
+「UNKNOWN 只警示不阻断」与服务侧「只在 FAIL 时失败」互相矛盾，而冻结门要求 PASS）。
+**本 PLAN 不放宽它**（放宽 = 改门禁，属明文禁止）；把它钉成判据
+（`tests/e2e/test_sandbox_experiment_reachability.py`），留给下一轮由用户/ADR 拍板
+「`EXECUTE` 类 provider 的 HIGH 风险警告是否应当阻断冻结」。
 
 ## 证据
 
@@ -129,6 +159,12 @@ EC-03 要的是**真实实验执行链**：真实 LLM 驱动一条实验协议�
 | E-5 | Docker 后端是既有的、已 E2E 验证的 | `docs/roadmap/M12_COMPLETION_RECORD.md` DoD #5；本机 `docker images` 有 `research-os-sandbox:m9-test` |
 | E-6 | 三个读面已存在 | `routers/experiments.py:98`（`/runs/{id}/experiments`）· `routers/inspection.py`（`/runs/{id}/evidence`）· `routers/budget_forecast.py:65`（`/runs/{id}/cost-forecast`） |
 | E-7 | 贴线文件行数 | `wc -l` composition.py / phase_runner.py / service.py 三个 450 |
+| E-8 | 阻断点实测（联机两次同签名） | `state: FAILED` + `manifest_digest: null` + `tasks: []`；`scratch/goal011-c6-debug-run.py`（`NO_DECL=1` 为对照组） |
+| E-9 | 阻断点根因 | preflight probe 逐字：`STATUS: WARN` + 4 × `TOOL_RISK_ELEVATED \| provider openhands_workspace has elevated risk class HIGH`；`scratch/goal011-c6-preflight-probe.py` |
+| E-10 | 判据实跑 | `tests/application/run_orchestration/test_sandbox_experiment_dispatch.py` **4 passed**；`tests/e2e/test_sandbox_experiment_reachability.py` **3 passed**（离线，`judged 0 connection attempt(s)`） |
+| E-11 | 本地门第一轮 = **20/23**，三条红**全部是本 PLAN 自伤** | `python/format-check`（新判据文件 1 个待重排）· `python/typecheck`（同文件 3 条 `attr-defined`：`EffectClass`/`RiskClass`/`TrustLevel` 必须从 `packages.domain.enums` 导入）· `python/tests`（**既有判据回归**，见 E-12） |
+| E-12 | **派发判据改动打红了既有判据**（先红后绿，实跑记录） | `tests/integration/test_ig1_phase_runner.py::test_phase_runner_experiment_promotes_claim_and_memory`：`AssertionError: assert 'FAILED' == 'SUCCEEDED'`（该用例的 fixture 合约**没有** `experiment` 声明 ⇒ 改判据后按会话语义派发）。**修法 = 给 fixture 补声明**（`ExperimentExecutionSpec(script="run.py", image=…, command="python run.py")`），**断言一字未改**；反方向由 `test_sandbox_experiment_dispatch.py` 的两条判据钉住（无声明 ⇒ 会话语义；有声明未接 ⇒ 点名 `FAILED`） |
+| E-13 | 三条红修好后复跑 | `ruff format --check apps services packages adapters tests` = **999 files already formatted**；`mypy` = **Success: no issues found in 989 source files**；`pytest` 三文件 = **8 passed** |
 
 ## 影响报告
 
@@ -142,8 +178,23 @@ EC-03 要的是**真实实验执行链**：真实 LLM 驱动一条实验协议�
 - **安全 / 凭据**：无新增凭据面；实验容器沿用既有边界（network none / 非 privileged /
   capability 全 drop / 只 bind-mount 工作区）。不出网。
 - **上游版本影响**：无（不新增依赖、不改 pin）。
-- **下一项任务**：EC-04（用户视角端到端 + `partial` 页诚实核对）。
+- **下一项任务**：先拍板阻断点（`EXECUTE` ⇒ HIGH 风险警告是否该阻断冻结），再跑真实实验链；
+  之后 EC-04（用户视角端到端 + `partial` 页诚实核对）。
 
 ## 状态历史
 
 - 2026-09-22：derive（WP0）。只读勘察 F 面；定案 D-1…D-5；未改产品代码、未发起任何真实调用。
+- 2026-09-22：WP1–WP4 落地（`3ee18b3` 声明面 / `a4c11f2` 声明式派发 / `5d5e86f` 既有 Docker
+  实验链接入装配 / `713dce7` 实验脚本 + 两条判据文件）。`phase_runner` 450 → **448** 行、
+  `service.py` 450 → **449** 行（净减，AC-5 成立）。
+- 2026-09-22：**WP5 未达成**——真实 LLM 驱动的端到端 run 被**既有** pre-freeze 阻断点挡住
+  （见「阻断点」节与 GOAL 的 EC-03 `status_note`），如实登记为下一轮输入。**本 PLAN 不放宽门禁**。
+- 2026-09-22：本地门第一轮 **20/23**，三条红**全是本 PLAN 自己的**（`python/format-check` /
+  `python/typecheck` / `python/tests`，逐条见 E-11…E-13）。其中 `python/tests` 那条是**既有判据
+  的真实回归**：派发判据改成「按声明」后，`tests/integration/test_ig1_phase_runner.py` 的 fixture
+  合约没有声明 ⇒ 按会话派发 ⇒ `assert 'FAILED' == 'SUCCEEDED'`。**修法 = 给 fixture 补声明，
+  断言一字未改**；反方向已有判据钉住。三条修好后复跑本地门 **23/23**。
+  教训：**规模/类型/格式三道门与既有判据的回归，都是本地 m0 抓出来的，不是自查发现的**。
+- 2026-09-22：WP1…WP4 落地（`3ee18b3` / `a4c11f2` / `5d5e86f` / `713dce7`）。
+  **WP5 未达成**：真实 run 被既有的「`EXECUTE` ⇒ HIGH 风险 ⇒ WARN 预检 ⇒ 拒绝冻结」挡住
+  （E-8/E-9），按 EC-03 的「如实登记为下一轮输入、不得记 PASS」处置。**EC-03 仍 PENDING。**
