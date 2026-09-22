@@ -499,3 +499,10 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
   按 **AGENTS.md §13** 明文「既有历史路径不会仅为满足本规则而批量重命名」的口径，
   这 30 条属**既有历史路径**，本 GOAL **不**批量重命名、**不**自行改判；
   若后续判定需要 ADR，则**产出 ADR 草案**交人工。
+- 2026-09-22（cycle 4 收口）：**EC-01 = PASS**——检索由运行链真实执行并落进证据链
+  （详见下方迭代日志第 4 行与 EC-01 的 `status_note`）。GOAL **仍 ACTIVE**（EC-02…EC-06 未完）。
+  本 cycle 的两条实测发现（F-a 真实 efetch 被 DOCTYPE 守卫全拒、F-b 判据取值面过宽导致假红）
+  已当轮处置并加回归判据；残余 W-C…W-F 与「三份文件同时贴 450 行硬上限」一并登记。
+  **CI 终态**：`42171fa` 的 M0 [35705918737](https://github.com/Eswink/research-system-new/actions/runs/35705918737)
+  六 job 全 success、CodeQL [35705918073](https://github.com/Eswink/research-system-new/actions/runs/35705918073)
+  3/3 success（逐 job 实查，终态 `completed`）。
