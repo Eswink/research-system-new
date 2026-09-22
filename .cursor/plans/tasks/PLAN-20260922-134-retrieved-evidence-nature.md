@@ -116,6 +116,23 @@ EC-01 已经把**检索来源**接进运行链（真实 esearch/efetch、PMID �
 
 （执行中追加，只追加不覆盖。）
 
+- **D-5 新合约 `real_retrieval_deliverable`，不动共用契约**（执行中定案，实测理由）：
+  `examples/contracts/task_contracts.yaml` 的 `real_research_deliverable` 被**没有检索**的
+  `real_research_task_v1`（GOAL-010 的协议）共用；给它加 `minimum_retrieved_sources: 1`
+  会把那份协议的 run 一并判拒 ⇒ 那是**回归**而不是收紧。因此新增一份只给检索协议用的合约，
+  两份的差别**只有这一条性质维度**。实测：`real_research_task_v1` 的既有判据
+  （`tests/api/test_real_protocol_identity.py`、`tests/e2e/test_real_protocol_run_live.py`）
+  **零改动**且仍绿。
+- **D-6 门被拒时落「逐条判词」**（`gate_rejection_reason`）：EC-02 的反证要求从 canonical
+  读面能看出「是**覆盖判据**判的、判词里的数是多少」，而此前 `evaluate_gate` 把被拒结局换成
+  `None`、调用方只写一句 "rejected by acceptance gate"——判词被丢掉（GOAL-010 收口登记的
+  **W-9「诊断更钝」**同源）。改动是**加词**，既有子串断言不受影响：全仓
+  `grep -rn "rejected by acceptance gate" --include=*.py` 只命中**两处生产代码**，
+  无测试断言该消息的精确串。
+- **D-7 两维分工（写死）**：`evidence_source_count`（非自产来源总数）**语义零改动**；
+  性质维度**新增且可选**，只在合约显式声明时参与。两维都过才判过 ⇒「总数够」与
+  「有检索来源」**互相不能顶替**（双向反证都做成了判据）。
+
 ## 证据（derive 阶段实测；**只读代码/配置，未发起任何真实调用**）
 
 | # | 事实 | 位置（实测） |
@@ -134,28 +151,74 @@ EC-01 已经把**检索来源**接进运行链（真实 esearch/efetch、PMID �
 ## 实施清单
 
 - [x] **WP0 derive**：本 PLAN 建档 + `ALL_PLAN` 投影（同一提交）。
-- [ ] **WP1 Domain 面**（离线可验）：`TrustLabel.RETRIEVED`；
+- [x] **WP1 Domain 面**（离线可验）：`TrustLabel.RETRIEVED`；
       `AcceptanceCriterion.minimum_retrieved_sources`（可选，缺省 `None` ⇒ 行为逐字不变）；
       `CriterionInputs.retrieved_source_count` + `_evaluate_evidence_coverage`（性质+计数双判，
       缺一即判拒并点名）；`schemas/task-contract.schema.json` / `adapters/contracts/tasks_loaders.py` /
       `adapters/sqlite/serialization.py` 三处同步（**不改** `minimum_sources` 的任何既有数值与语义）。
-- [ ] **WP2 编排面**（离线可验）：`ToolEvidenceInput.trust_label`（盖章点唯一）；
+- [x] **WP2 编排面**（离线可验）：`ToolEvidenceInput.trust_label`（盖章点唯一）；
       运行链按 provider 的 `network_domains` 声明给 `RETRIEVED`；
       「检索来源数」由 **ledger 的 SourceRecord** 判定（`evidence.source_ref → get_source`），
       经 `EvaluationInputs.retrieved_source_count` 喂进门。
-- [ ] **WP3 合约 + 判据**：`real_research_deliverable` 声明 `minimum_retrieved_sources: 1`；
-      机制判据（盖章 / 读面 / 性质判据 / 自述不算）；e2e 主干（生产装配、离线）；
-      **成对反证**（去掉检索接线 ⇒ 覆盖判拒、run `FAILED` ⇒ 复原）。
-- [ ] **WP4 live 判据**（`requires_live_llm`，最小必要次数）：真实检索 ⇒ `SUCCEEDED`、
-      检索来源 `RETRIEVED`、外部标识可追溯、digest 由 artifact 独立重算；样张落 `scratch/`。
-- [ ] **WP5 本地门**：规模门禁（50/450）+ 快照类门禁（OpenAPI / 设计基线）+ `make validate-all`
-      （m0 全量 23/23）+ 定向套件 + web 门。**默认门一律离线**。
-- [ ] **WP6 回写与收口**：GOAL 的 EC-02 / 迭代日志 / `child_plans` / 状态历史；提交推送 + CI 到终态。
+- [x] **WP3 合约 + 判据**：新合约 `real_retrieval_deliverable` 声明
+      `minimum_retrieved_sources: 1`（D-5），检索协议改绑它；机制判据（domain 5 条 +
+      application 4 条）、e2e 主干加 EC-02 两段（性质可区分 / 检索来源满足覆盖）、
+      成对反证改成「零工具观测 **且** 覆盖判拒 ⇒ run `FAILED`」。
+- [x] **WP4 live 判据**（`requires_live_llm`，最小必要次数）：**PASS（非 skip）**，
+      复原后同命令**再跑一次仍 PASS**；样张 `scratch/goal011-c5-live-facts.json`
+      （run `a93e6b36-619b-4e65-b2af-9865d0c87c7e`：`SUCCEEDED`、三种性质并存、
+      PMID 逐字可追溯、四条证据 digest 全部重算一致）。
+- [x] **WP5 本地门**：规模门禁（50/450，**抓出并修好两条**：e2e 文件 470 行 ⇒ 移出检索判据对；
+      live 判据函数 63 行 ⇒ 拆两个辅助函数）+ 快照类门禁（无 OpenAPI/设计基线变化：DTO 零改动）
+      + `make validate-all`（m0 全量 **23/23 项全跑**，唯一红项＝**本机既有签名** `python/tests`
+      的 fake-IP 出站判红，pytest 自身 4370 passed / 17 skipped / **0 failed**）+ 定向套件
+      （`tests/{api,loaders,contracts,architecture,integration}` 1215 passed；`tests/e2e`+`tests/tooling`
+      1104 passed）+ 治理 `validate.py` 与 DOCS-CHECK 绿。**默认门全程离线**，`egress_guard` 一行未改。
+- [x] **WP6 回写与收口**：GOAL 的 EC-02 置 PASS（含 `status_note`）/ 迭代日志第 5 行 /
+      `child_plans` 加本 PLAN / 状态历史 / CI 台账；提交推送 + CI 到终态（见 GOAL 台账）。
+      **子 PLAN 自身的 RECHECK 与 DONE 收口留到 EC-06**（登记在 GOAL 的下一轮输入里）。
 
 ## 影响报告
 
-（执行中追加：改动文件、Domain/API/schema 影响、安全/凭据影响、兼容性与迁移风险、上游版本影响。）
+**改动文件**（本 cycle，提交按 WP 分组、全部显式路径）：
+
+| 面 | 文件 | 改动 |
+| --- | --- | --- |
+| Domain | `packages/domain/enums.py` | `TrustLabel` 加 `RETRIEVED`（分类枚举加成员；**无迁移**：`trust_label` 两存储面均 `TEXT NOT NULL`、无 CHECK 约束） |
+| Domain | `packages/domain/tasks.py` | `AcceptanceCriterion.minimum_retrieved_sources`（可选；缺省 `None` ⇒ 行为逐字不变；负数点名拒绝） |
+| Domain | `packages/domain/acceptance.py` | `CriterionInputs.retrieved_source_count`；覆盖判据改成**计数 + 性质**双维（缺维度 fail-closed 并点名） |
+| Application | `packages/application/evidence/tool_evidence.py` | `ToolEvidenceInput.trust_label`＝来源性质的**唯一**盖章点 |
+| Application | `packages/application/run_orchestration/phase_capabilities.py` | `_trust_label_for`：provider 声明了 `network_domains` ⇒ `RETRIEVED`，否则 `GENERATED` |
+| Application | `packages/application/run_orchestration/result_handler.py` | `count_retrieved_sources`（按 canonical 的 SourceRecord 判性质，与读面**同源**） |
+| Application | `packages/application/run_orchestration/evaluation_gate.py` | `EvaluationInputs.retrieved_source_count` 透传 |
+| Application | `packages/application/run_orchestration/task_phase_helpers.py` | 喂性质数；`evaluate_gate` 总是返回求值结果；被拒时失败消息带**逐条判词**（D-6） |
+| 契约/协议 | `examples/contracts/task_contracts.yaml`、`examples/protocols/real_retrieval_research_v1.yaml` | 新合约 `real_retrieval_deliverable`；检索协议改绑它（D-5） |
+| Schema | `schemas/task-contract.schema.json` | `acceptanceCriterion` 加 `minimum_retrieved_sources`（该 schema 是 `additionalProperties: false`，必须同步） |
+| 适配器 | `adapters/contracts/tasks_loaders.py`、`adapters/sqlite/serialization.py` | 新字段的加载与解码（编码走既有 `canonical_json_bytes`，自动带上） |
+| 判据 | `tests/domain/test_tasks_acceptance.py`、`tests/application/run_orchestration/test_run_chain_capabilities.py`、`tests/e2e/test_ec03_real_runtime_offline_chain.py`、`tests/e2e/test_run_chain_retrieval_live.py` | 机制 / e2e / 反证 / live 四层 |
+| 文档 | `docs/architecture/TASK_HANDOFF.md`、`docs/architecture/DOMAIN_MODEL.md`、`docs/architecture/CAPABILITY_SECURITY.md` | 结构化参数、覆盖的两维、`RETRIEVED` 的语义与边界 |
+
+**Domain / API / schema 变化**：Domain 加一个枚举成员与一个**可选**判据参数（均**加性**）；
+schema 加一项；**API 面零变化**（`services/` 对 `acceptance_criteria` / `minimum_sources`
+零命中 ⇒ 无 DTO/路由/OpenAPI 快照改动，实测 E-7）。
+
+**安全 / 凭据变化**：无新凭据面、无新出网口；检索仍只在 provider 声明的 `network_domains`
+内（URL 策略在触网前判，未改）；live 只用环境变量，值不入库 / 记录 / 回显。
+
+**兼容性 / 迁移风险**：**无 DB 迁移**；缺省语义不变 ⇒ 既有协议、既有合约、既有 run 记录的
+含义都不变；`real_research_deliverable` 与 `real_research_task_v1.yaml` 逐字未动。
+
+**上游版本影响**：无依赖新增或 pin 变更。
 
 ## 状态历史
 
 - 2026-09-22：derive 建档（`status: IN_PROGRESS`）。定案 D-1…D-4 见上；WP1…WP6 未开始。
+- 2026-09-22（cycle 5 执行）：WP1…WP4 完成（见实施清单），追加 D-5/D-6/D-7。
+  **按压三次全先红后绿**：① 摘掉合约的性质维度 ⇒ 反证用例红（run 回到 `SUCCEEDED`）；
+  ② 盖章规则强制成 `GENERATED` ⇒ 主干红，判词逐字
+  `EVIDENCE_COVERAGE: 0 < 1 retrieved sources (3 >= 1 sources)`（3 条来源在场、0 条检索来源）；
+  ③ **live 同一条命令**摘掉协议里的两条检索能力 ⇒ live 判据红，判词
+  `EVIDENCE_COVERAGE: 0 < 1 retrieved sources (1 >= 1 sources)`（1 条声明输入在场）⇒
+  复原 ⇒ PASS。live 调用记账：**4 次真实运行**（live 判据 2 次 + 样张 1 次 + 按压 1 次），
+  其中 3 次各含**恰 2 次**真实检索出网（`eutils.ncbi.nlm.nih.gov`），1 次（按压）只到 LLM。
+

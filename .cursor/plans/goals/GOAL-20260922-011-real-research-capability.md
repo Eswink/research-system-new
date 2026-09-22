@@ -104,7 +104,45 @@ exit_criteria:
       其来源记录可读、可追溯到**外部标识**、内容 **digest 可独立重算**；
       反证：把检索来源摘除 ⇒ 同一 run 的 `EVIDENCE_COVERAGE` **必须判拒**
       （先红后绿，随后复原）。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-22 cycle 5 达成。**定案（写死）**：① 载体＝`TrustLabel` **加成员** `RETRIEVED`
+      （而非读面另造反推字段：`EvidenceDto.source_trust_label` 本就是那条读面，值直取
+      `SourceRecord.trust_label`；另造就得用前缀启发式，本仓明文拒绝）。边界论证＝**不触及
+      Canonical State 边界**：分类枚举加成员，不改状态机/生命周期、无 CHECK 约束（`trust_label`
+      两存储面均 `TEXT NOT NULL`）⇒ **无迁移**，且 EC-02 是 GOAL frontmatter（最高优先级）逐字要求。
+      ② 覆盖判据＝**新增可选** `minimum_retrieved_sources`，与既有 `minimum_sources` **两维并存**
+      （缺省 `None` ⇒ 既有行为逐字不变）；把计数收窄成「只数检索来源」会**回退** GOAL-010 已判绿的
+      语义并把无检索协议一并打红 ⇒ 那是回归不是收紧。③ 盖章点唯一：`ToolEvidenceInput.trust_label`，
+      由调用方按 **provider 声明的 `network_domains`** 给值（外部域 ⇒ `RETRIEVED`，否则 `GENERATED`）。
+      ④ 新合约 `real_retrieval_deliverable`（`minimum_retrieved_sources: 1`）只绑检索协议；
+      共用契约 `real_research_deliverable` 逐字未动（否则 GOAL-010 的 `real_research_task_v1` 会被判拒）。
+      **判据**：① 读面区分性质——同一次 run 上 `RETRIEVED`（检索）与 `USER_PROVIDED`（声明输入）、
+      `GENERATED`（会话自述）三者并存且不混称；② 覆盖由**检索来源**满足（门判的是
+      `SourceRecord.trust_label`，**不是**证据条数）；③ 可追溯＋可重算——检索标识逐字在
+      evidence id/source_ref 里，四条证据的 digest 全部由库里字节**独立重算一致**。
+      **反证（成对，EC-02 本体）**：去掉检索 ⇒ 同一 run 的 `EVIDENCE_COVERAGE` **判拒**、
+      run 收敛 **`FAILED`**，判词逐字 `EVIDENCE_COVERAGE: 0 < 1 retrieved sources (1 >= 1 sources)`
+      （1 条声明输入在场却不算数 ⇒ 正是「计数 ≥ 1 不能代替来源性质」）。**按压三次全先红后绿**：
+      ① 摘掉合约的性质维度 ⇒ 反证用例红（run 回到 `SUCCEEDED`）；② 盖章强制成 `GENERATED` ⇒
+      主干红（`0 < 1 retrieved sources (3 >= 1 sources)`）；③ **live 同一条命令**摘掉协议里两条检索
+      能力 ⇒ live 判据红（`0 < 1 retrieved sources (1 >= 1 sources)`）⇒ 复原 ⇒ PASS。
+      **live 判据** `tests/e2e/test_run_chain_retrieval_live.py` **PASS（非 skip）**，同命令连跑
+      2 次皆 PASS；样张 `scratch/goal011-c5-live-facts.json`：run
+      `a93e6b36-619b-4e65-b2af-9865d0c87c7e` 终态 **`SUCCEEDED`**、真实出站**恰 2 次**
+      （esearch+efetch）、`trust_labels = [GENERATED, RETRIEVED, USER_PROVIDED]`、返回
+      `42768236/42767441/42765796` 且读取步 id/source_ref 逐字含之、四条证据
+      `digest_recomputed_matches` 全 `true`。**离线判据**（默认门可跑、不出网）：机制 9 条 +
+      e2e 主干 1 条 + 成对反证 1 条。**「模型自述不算外部来源」**由两条判据钉住：只有自述证据时
+      性质计数为 0（`count_retrieved_sources` 按 SourceRecord 判），且门的两维互不顶替。
+      **残余登记（不粉饰）**：W-C（生产组合根仍不接能力步，与 W-A 同源）、W-D（检索内容不进模型
+      上下文）、W-F（失败 run 里已登记的工具证据无 claim 可挂 ⇒ 读面看不到；本 cycle 的按压样张
+      再次实测了这一点）、**W-G（新）**：判词此前只在失败消息里，没有单列的「criterion 判词」读面；
+      **W-H（新）**：性质维度只对**显式声明**它的合约生效，其他协议不受影响（刻意，非缺陷）；
+      **W-I（新）**：`RETRIEVED` 目前只由运行链能力步盖章——将来若有别的外部取得路径，各自准入点
+      必须同样盖章（今天的唯一准入入口仍是 `register_tool_evidence`）。**W-E 就此关闭**（覆盖不再
+      由声明输入满足）。live 调用记账：本 cycle **5 次真实运行**（判据 3 次 + 样张 1 次 + 按压 1 次），
+      其中 4 次各含**恰 2 次**真实检索出网，1 次（按压）只到 LLM。
   - id: EC-03
     criterion: >-
       **真实实验执行链**（视预算；**若空间不足则如实登记为下一轮输入，不得降级 EC-01/EC-02**）：
@@ -182,6 +220,7 @@ escalation_triggers:
   - 把凭据写进 CI（哪怕只是为了让 CI 里看到 live 或检索分支）——本 GOAL 明文禁止
 child_plans:
   - .cursor/plans/tasks/PLAN-20260922-133-real-retrieval-into-protocol.md
+  - .cursor/plans/tasks/PLAN-20260922-134-retrieved-evidence-nature.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -196,7 +235,7 @@ memory_entries: []
 | EC | 标准 | 验证命令／证据来源 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | **真实检索进协议（主干）**：`ncbi_eutils` 的 `literature.search`/`literature.read` 声明进一份真实协议（加阶段 **或** 新建协议，二选一写明）⇒ 一次真实 run 的 discovery/analysis 阶段**实际调用检索**；判据 = run 到终态 + 工具观测存在且可读 + 检索来源的真实标识进入证据链；反证 = 移除该能力 ⇒ 该阶段无工具观测 | live 判据 **PASS（非 skip）** + run 终态 + 工具观测可读 + 外部标识在证据链；反证成对（先红后绿） | **PENDING** |
-| EC-02 | **证据链升级为「系统取得」**：读面区分 `USER_PROVIDED` 与 `RETRIEVED`，口径诚实不混称；`EVIDENCE_COVERAGE` 由 EC-01 的检索来源满足；判据 = 来源含检索来源 + 可追溯到外部标识 + digest 可重算；反证 = 去掉检索来源 ⇒ 覆盖率判拒 | `GET /runs/{id}/evidence` 来源集合含检索来源且可追溯 + digest 独立重算；反证先绿后红再复原 | **PENDING** |
+| EC-02 | **证据链升级为「系统取得」**：读面区分 `USER_PROVIDED` 与 `RETRIEVED`，口径诚实不混称；`EVIDENCE_COVERAGE` 由 EC-01 的检索来源满足；判据 = 来源含检索来源 + 可追溯到外部标识 + digest 可重算；反证 = 去掉检索来源 ⇒ 覆盖率判拒 | `GET /runs/{id}/evidence` 来源集合含检索来源且可追溯 + digest 独立重算；反证先绿后红再复原 | **PASS** |
 | EC-03 | **真实实验执行链**（视预算）：真实 LLM 驱动 `sort_analysis_v1` 或 `m12_reference_research_v1` 到终态，实验产物 + 证据 + 预算归账可读（执行体 = 既有 Docker 后端） | run 终态如实记录（只有 `SUCCEEDED` 是成功）+ 读面三项齐备；预算不足则如实登记为下一轮输入，**不得**记 PASS | **PENDING** |
 | EC-04 | **用户视角端到端验收**：建项目 → 选协议 → 跑真实 run → 看制品/证据/预算/血缘，留可复核记录（`scratch/`，不进仓库）；顺带复核前端 `partial` 页面的诚实标注与实际是否一致（不一致即如实登记） | `scratch/` 下可复核记录覆盖五步；`partial` 核对结论逐条写明 | **PENDING** |
 | EC-05 | **`R-6` 词表固化**（可选，成本小）：让「默认 CI 离线」**成立或如实降级措辞**（固化 `tiktoken` 词表进镜像/私有源，或在文档与判据里写明「CI 每轮一次受控外部下载」）；判据 = 断网跑默认门 ⇒ 行为可判定；措辞与事实同源 | 断网/阻断单目的地跑默认门 ⇒ 结论可判定且与措辞一致 | **PENDING** |
@@ -464,6 +503,7 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 | 3 | PLAN-20260922-133（EC-01，续） | 见下方 CI 台账尾巴（本 cycle 的提交在回合汇报中给出终态） | **WP3 定案（M-2）+ 映射落地 + 两条判据（都按压过）**：① 定案 **M-2 声明化分离**，理由**实测**——M-1（造真实 SDK 工具）收益侧被证伪：会话工具调用在 `PolicyEnforcingAgent._evaluate` 里以 `capability=<provider id>` 送 policy，而 `policy.yaml` 词汇表全是**能力名**且 `default_effect: DENY` ⇒ 注册了也一调用即被拒；且任何**全局**修法都会打红 `test_unmapped_tool_set_is_named_not_silently_dropped`（它跑的就是**生产组合根**）。② 承载**由 (a) 改为 (b)**（EC-01 原文允许二选一）：把两条 `literature.*` 声明进 `real_research_task_v1` 会**立刻打红 4 条既有判据**（产品路径可达性 + 指纹读面 3 条），归因链逐段实测——声明 REST provider ⇒ `ncbi_eutils` 进冻结集 ⇒ 默认装配下健康诚实 `UNKNOWN` ⇒ `TOOL_HEALTH_UNPROVEN`（WARNING）⇒ 报告 `WARN` ⇒ `freeze_manifest` 要求 `PASS` 而**拒绝冻结**（service 侧门却只在 `FAIL` 时失败 ⇒ **既有语义不一致**，本协议是第一条踩到的）⇒ 新载体 = `examples/protocols/real_retrieval_research_v1.yaml`。③ 落地面全部**加性**：`CapabilityExecution` → `ProtocolPhase`/`CompiledPhase` 透传 → protocol schema 一项 enum → loader（缺省 `session` = 旧行为）→ `run_chain_tool_ids`（**按 phase 作用域**）→ `SessionSpecContext`/`AgentSessionSpec` → `tool_mapping.session_tool_ids`（越界**点名拒绝**）→ `session_builder`（建会话与 fork 两条路径都过滤）。**两个面都不减**：能力仍在 `tool_requirements`、provider 仍在冻结集（`require_frozen_tool_set` 仍拦越权），只把「会话工具列表」这一面拿掉。**判据**：新增 `tests/architecture/python/test_run_chain_capability_exposure.py`（6 条；删掉声明行 ⇒ **4 红**，复原 ⇒ 6 passed）+ `tests/e2e/test_ec03_real_runtime_offline_chain.py::test_declared_run_chain_capabilities_let_production_assembly_start`（**生产装配**下会话建得起来、无 "is not registered"、run `SUCCEEDED`；删声明 ⇒ 红，实测原因为 `ToolDefinition 'm12_artifact' is not registered`）。**门**：`tests/api`+`tests/contracts`+`tests/loaders`+`tests/architecture` **1122 passed / 69 skipped**（余 3 条 `test_worker_plane_composition` 经**基线对照**证明与本次改动无关）；`tests/tooling` 1107 passed；`ruff`/`ruff format --check` **全绿**；全量 `mypy` **982 files Success**；本地 m0 **21/23**——一红是本 cycle 判据的 mypy 标注（**已修并用同一命令复验绿**），一红是本机 **fake-IP DNS** 撞出站结构判据（`198.18.0.178:443`，与 cycle 2 同两条同归因链；pytest 自身 **4346 passed / 0 failed**，**未改判据、未放行、未 skip**） | 见下方 CI 台账尾巴 | — （**未改任何门禁语义、未动 `test_unmapped_tool_set_is_named_not_silently_dropped` 一个字、未放宽出站判据**） | **EC-01 仍 PENDING**（本 cycle 只让它**可验**：声明面 + 装配面已落地并被判据钉住；**能力步本体**——运行链真的调检索并登记证据——未落）。**如实登记的 W 列表**：**W-A** 新协议在**默认装配**下的产品路径**今天跑不动**（上面那条既有 `WARN`/`freeze` 不一致）；**W-B** 协议编辑器往返会**丢** `capability_execution`（`protocolSerialize.ts` 逐键构造 phase body、没有这一键；丢的是声明、失败仍是**点名**失败）；**W-C** 4 条既有判据红线已归因并**只追加**记录在 PLAN 的「决策 1 的更正」节 | cycle 4 = **WP3 后半（能力步）**：按 I-1…I-4 把「运行链执行该 phase 的 run-chain 能力」落成确定性步骤（解析 provider → 既有 `execute_tool_call`（策略在其内）→ 既有 `register_tool_evidence` → **必须** `attach_relation`，P-2 已实测），离线（Fake provider）先绿；再 **WP4** live 判据（`requires_live_llm`，最小必要次数的真实检索 + 外部标识进证据链 + 按压 R-1 反证）。**定案已写死，不得回退**；`phase_runner` 净增 ≤ 7 行的预算不变 |
 
 | 4 | PLAN-20260922-133（EC-01，收口） | 见下方 CI 台账尾巴（本 cycle 的提交在回合汇报中给出终态） | **能力步本体落地 + 四条判据全部实跑**。落地：新模块 `phase_capabilities.py`（运行链执行 phase 声明的 run-chain 能力：`require_frozen_tool_set` → 既有 `execute_tool_call` → provider → 既有 `register_tool_evidence`；证据经 `register_and_gate` 并入**同一个** session claim）+ `ScopedPolicy`（把 preflight 那张 capability→scope 表补进执行期策略请求；`execute_tool_call` 未改，仍是唯一裁决点）+ `PhaseRunnerDeps/OrchestrationDependencies.capabilities`（缺省 None ⇒ 不启用）。判据：① 机制 7 条（真实 provider + MockTransport；含 5 条 fail-closed 面与「未声明 ⇒ 零请求」）；② e2e 主干 1 条（生产装配 `map_tools=False` 下 `SUCCEEDED` + **两次**请求 + 读面两条工具证据 + PMID 逐字在 evidence id/source_ref 里）；③ 成对反证 1 条（不接能力步 ⇒ 零观测）；④ **live 判据 PASS（非 skip）**，同命令连跑 3 次皆 PASS。**按压（先红后绿）**：删 `capability_execution` 行 ⇒ run `FAILED`（`ToolDefinition 'm12_artifact' is not registered`）且主干红；保留声明删两条能力 ⇒ e2e 红在 `AssertionError: []`；**live 同一条命令**做同样按压 ⇒ `AssertionError: []`（该 phase 无工具观测），复原 ⇒ PASS。**live 样张**（`scratch/goal011-c4-live-facts.json`）：run `1c8b23bc-c990-4c3e-9236-6afaefd27c25` 终态 **`SUCCEEDED`**、零失败，真实出站**恰 2 次**（esearch+efetch，https/`eutils.ncbi.nlm.nih.gov`），esearch 的 query = 声明输入的 `retrieval.query`（命中 `count=85908`），返回 `42767441/42765796/42765769`，**读取步读的正是这一串**；两条工具证据读面可读；`trust_label` 仍是 **`GENERATED`**（EC-02 的靶子）。**本地门**：`ruff`/`ruff format --check`/`mypy`（984 files）全绿；`tests/{application/run_orchestration,integration,architecture,loaders,contracts}` **718 passed**；`tests/e2e` 全绿；`tests/api` 496 passed + **3 条既有跨套件顺序失败**（`test_worker_plane_composition`，**已用 `git stash` 基线对照证明与本次改动无关**）；m0 **23/23 项全跑**，唯一红项是**既有本机签名** `python/tests`（`egress guard: FAIL … 2 non-loopback destination(s)` → `198.18.0.178:443 (kind=private)`，pytest 自身 **4361 passed, 17 skipped, 0 failed**）——**未改判据、未放行、未 skip** | 见下方 CI 台账尾巴 | **F-a**：`parse_efetch_xml` 的 PA-1 守卫"拒绝一切 DOCTYPE"会拒掉**每一次真实 efetch**（真实响应带外部 DOCTYPE；离线夹具不带 ⇒ 从未被测到）⇒ 按威胁本身收边界（拒 `<!ENTITY` 与带内部子集的 DOCTYPE、放行外部 DOCTYPE），新增两条判据、两条既有拒绝用例**仍然拒绝**；**F-b**：live 判据第一版用正则扫整个 `source_ref` 取标识，把 task UUID 的十六进制段当 PMID ⇒ **真实运行里假红**，改为只解 operation_key 一段 | **EC-01 = PASS**（见 EC-01 `status_note`）。**残余 W**：W-A/W-B（cycle 3）+ 本 cycle **W-C**（生产组合根不接该步：`composition.py` = 450 行硬上限零余量，与 W-A 同源）、**W-D**（检索内容不进模型上下文）、**W-E**（覆盖今天仍由声明输入满足）、**W-F**（失败 run 里已登记的工具证据无 claim 可挂 ⇒ 读面看不到）。**另**：`phase_runner.py` 450 / `service.py` 450 / `composition.py` 450 —— 三份文件同时贴在硬上限（下一轮任何净增都要先拆分）。live 调用计数如实登记：本 cycle 真实检索 **7 次运行 × 2 请求**（含按压与判据复跑），最小必要口径下全部记账 | cycle 5 = **EC-02**：`TrustLabel` 加 `RETRIEVED`（含读面 `source_trust_label` 区分）+ 检索来源**可追溯到外部标识** + `EVIDENCE_COVERAGE` 由**检索来源**满足（反证：去掉检索来源 ⇒ 覆盖率判拒，先绿后红再复原）；不得用模型自述充当外部来源、不得用「计数 ≥ 1」代替来源性质 |
+| 5 | PLAN-20260922-134（EC-02） | `2241087`（derive）、`46dfe82`（WP1 Domain）、`1d4dc85`（WP2 编排）、`3a5f706`（WP3 合约+判据）、`acaf3fb`（WP4 文档）；本 cycle 的收口提交见下方 CI 台账尾巴 | **来源性质成为一等事实 + 覆盖按性质判**。落地：`TrustLabel.RETRIEVED`（分类枚举加成员，**无迁移**）、`AcceptanceCriterion.minimum_retrieved_sources`（**可选**；缺省 `None` ⇒ 既有行为逐字不变）、`CriterionInputs.retrieved_source_count` + 覆盖判据**两维**（计数 + 性质，缺一 fail-closed 且**点名**缺哪一维）、`ToolEvidenceInput.trust_label`（盖章点唯一，按 provider 的 `network_domains` 声明给值）、`count_retrieved_sources`（从 **canonical 的 SourceRecord** 判性质 ⇒ 与读面 `source_trust_label` **同源**）、新合约 `real_retrieval_deliverable` 只绑检索协议、门被拒时失败消息带**逐条判词**（此前被换成 `None` 丢掉，GOAL-010 收口 W-9「诊断更钝」同源）。**判据四层**：机制 9 条（domain 5 + application 4）、e2e 主干 1 条（生产装配、离线）、**成对反证** 1 条（不接能力步 ⇒ 零工具观测 **且** 覆盖判拒 ⇒ run `FAILED`）、**live 判据 PASS（非 skip）×2**。**按压三次全先红后绿**：① 摘合约性质维度 ⇒ 反证用例红（run 回 `SUCCEEDED`）；② 盖章强制 `GENERATED` ⇒ 主干红，判词 `EVIDENCE_COVERAGE: 0 < 1 retrieved sources (3 >= 1 sources)`（3 条来源在场、0 条检索 ⇒ 逐字证明「计数」顶替不了「性质」）；③ **live 同一条命令**摘协议里两条检索能力 ⇒ live 红，判词 `0 < 1 retrieved sources (1 >= 1 sources)`（1 条声明输入在场），复原 ⇒ PASS。**live 样张**（`scratch/goal011-c5-live-facts.json`）：run `a93e6b36-619b-4e65-b2af-9865d0c87c7e` 终态 **`SUCCEEDED`**、真实出站**恰 2 次**（esearch+efetch）、`trust_labels = [GENERATED, RETRIEVED, USER_PROVIDED]`（**三种性质在同一 run 上可区分**）、返回 `42768236/42767441/42765796` 且**读取步 id/source_ref 逐字含之**、四条证据 `digest_recomputed_matches` **全 `true`**（拿库里字节重算，非自证）。**本地门**：`ruff`/`ruff format --check`/`mypy` 全绿；定向 `tests/{api,loaders,contracts,architecture,integration}` **1215 passed / 2 skipped**；`tests/e2e`+`tests/tooling` **1104 passed / 8 skipped**；m0 **23/23 项全跑**，唯一红项是**既有本机签名** `python/tests`（`egress guard: FAIL … 2 non-loopback destination(s)` → `198.18.0.200:443 (kind=private)`，pytest 自身 **4370 passed, 17 skipped, 0 failed**）——**未改判据、未放行、未 skip**；治理 `validate.py` 与 DOCS-CHECK 绿 | 见下方 CI 台账尾巴 | **F-c（本 cycle 自己撞上并修好，两次）**：新增判据把 `tests/e2e/test_ec03_real_runtime_offline_chain.py` 顶到 **470 行**（>450 硬上限）⇒ 把运行链检索两条用例**移出**到 `tests/e2e/test_run_chain_retrieval_offline.py`（原文件回落到 372 行，判据**只增不减**：两条用例原样搬、断言不变）；live 判据的测试函数涨到 **63 行**（>50 函数上限）⇒ 拆成 `_assert_identifier_landed` + `_assert_source_nature` 两个辅助函数，断言逐条保留。两条都是**规模门禁在本地 m0 里抓出来的**，不是自查发现 | **EC-02 = PASS**（见 EC-02 `status_note`）。**残余 W**：W-C/W-D/W-F（承 cycle 4，本 cycle 未动）、**W-G（新）**判词只在失败消息里、没有单列 criterion 判词读面、**W-H（新）**性质维度只对显式声明的合约生效（刻意）、**W-I（新）**`RETRIEVED` 今天只由运行链能力步盖章（将来别的外部取得路径须在各自准入点盖章）。**W-E 关闭**（覆盖不再由声明输入满足）。live 调用记账：**5 次真实运行**（判据 3 + 样张 1 + 按压 1），其中 4 次各含**恰 2 次**检索出网 | cycle 6 = **EC-03**（真实实验执行链）：真实 LLM 驱动 `sort_analysis_v1` **或** `m12_reference_research_v1` 跑到终态，**实验产物 + 证据 + 预算归账**三项可从读面取到；执行体＝**既有 Docker 后端**，不新增后端/依赖；**只有 `SUCCEEDED` 是成功**，预算不足则如实登记为下一轮输入（不得记 PASS）。随后 EC-04（用户视角端到端 + `partial` 页诚实核对）/ EC-05（`R-6` 词表 pin，可选）/ EC-06（收口复检）。**收口待办（登记，不遗漏）**：EC-01/EC-02 的子 PLAN（133/134）在 **EC-06 收口时**一并收口——写 RECHECK（result=PASS/PASS_WITH_WARNINGS）、置 DONE、填 `latest_recheck`，并把可复用事实写成 MEM 条目（GOAL 的 `memory_entries` 同步）；本 cycle 未提前收口子 PLAN，是为了让复检覆盖整段工作而不是逐 cycle 半成品 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -477,6 +517,8 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
 | 台账尾巴（cycle 2 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 不再回写文件） | | |
 | cycle 3 收口（M-2 落地 + 两条判据按压 + GOAL 回写） | `edef420` | M0 [35697806645](https://github.com/Eswink/research-system-new/actions/runs/35697806645) | 六 job 全 **success**（`quality-ubuntu-latest` / `quality-windows-latest` / `container-quality` / `console-frontend` / `collector-quality` / `eval-gate`，逐 job 实查，终态 `completed`）；**CodeQL** [35697806055](https://github.com/Eswink/research-system-new/actions/runs/35697806055) = success（3/3） |
 | 台账尾巴（cycle 4 回写） | 见回合汇报（**台账尾巴口径**同上） | | |
+| cycle 5 WP0–WP4（derive + Domain + 编排 + 判据 + 文档；**同一次推送**，GitHub 只对 tip 触发一个 run） | tip `acaf3fb` | M0 [35717806500](https://github.com/Eswink/research-system-new/actions/runs/35717806500) | 六 job 全 **success**（`container-quality` / `console-frontend` / `eval-gate` / `quality-ubuntu-latest` / `collector-quality` / `quality-windows-latest`，逐 job 实查，终态 `completed`、`conclusion=success`）；**CodeQL** [35717806354](https://github.com/Eswink/research-system-new/actions/runs/35717806354) = success（3/3：`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)`） |
+| 台账尾巴（cycle 5 收口回写） | 见回合汇报（**台账尾巴口径**同上） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…010，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -506,3 +548,12 @@ EC-05（`R-6` 词表固化）**可选**，且**不**阻塞 EC-01…EC-04；但 *
   **CI 终态**：`42171fa` 的 M0 [35705918737](https://github.com/Eswink/research-system-new/actions/runs/35705918737)
   六 job 全 success、CodeQL [35705918073](https://github.com/Eswink/research-system-new/actions/runs/35705918073)
   3/3 success（逐 job 实查，终态 `completed`）。
+- 2026-09-22（cycle 5 收口）：**EC-02 = PASS**——证据链的**来源性质**成为一等事实，
+  `EVIDENCE_COVERAGE` 由**系统取得**的检索来源满足（详见下方迭代日志第 5 行与 EC-02 的
+  `status_note`）。GOAL **仍 ACTIVE**（EC-03…EC-06 未完）。要点：`TrustLabel.RETRIEVED`
+  是**分类枚举加成员**（不触及 Canonical State 边界、无迁移）；覆盖判据新增**可选**性质维度
+  （缺省语义逐字不变）；盖章点唯一且按 provider 的 `network_domains` **声明**给值；判据取自
+  canonical 的 `SourceRecord`，与读面**同源**。**按压三次全先红后绿**，反证判词逐字
+  `EVIDENCE_COVERAGE: 0 < 1 retrieved sources (N >= 1 sources)`。**本 cycle 自己撞上并修好的
+  两条规模门禁失败**（F-c：e2e 文件 470 行、live 判据函数 63 行）已如实登记在迭代日志里。
+  **W-E 关闭**；新增残余 W-G/W-H/W-I。
