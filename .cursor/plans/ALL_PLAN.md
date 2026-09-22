@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260922-134](tasks/PLAN-20260922-134-retrieved-evidence-nature.md) | IN_PROGRESS |
 | [ ] | [PLAN-20260922-133](tasks/PLAN-20260922-133-real-retrieval-into-protocol.md) | IN_PROGRESS |
 | [x] | [PLAN-20260922-132](tasks/PLAN-20260922-132-goal-010-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260922-131](tasks/PLAN-20260922-131-offline-gate-structural-judge.md) | DONE |
