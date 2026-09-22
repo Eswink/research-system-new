@@ -247,6 +247,11 @@ class TrustLabel(StrEnum):
     UNTRUSTED_EXTERNAL = "UNTRUSTED_EXTERNAL"
     GENERATED = "GENERATED"
     USER_PROVIDED = "USER_PROVIDED"
+    # 系统**自己取回来**的来源（GOAL-011 EC-02）：内容不在系统内产生、也不是用户
+    # 交付的输入，而是执行声明的能力时从**外部**取得（如 literature.search/read 打到
+    # 声明的 `network_domains`）。盖章点唯一：`ToolEvidenceInput.trust_label`，由调用方
+    # 按 provider 的声明性质给值；模型自述**不得**盖章成这个成员。
+    RETRIEVED = "RETRIEVED"
 
 
 class QualityGateVerdict(StrEnum):

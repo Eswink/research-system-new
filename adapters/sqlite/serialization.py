@@ -105,6 +105,7 @@ def _decode_criterion(payload: dict[str, Any]) -> AcceptanceCriterion:
         target=payload.get("target"),
         artifact=payload.get("artifact"),
         minimum_sources=payload.get("minimum_sources"),
+        minimum_retrieved_sources=payload.get("minimum_retrieved_sources"),
         metric=payload.get("metric"),
         operator=ComparisonOperator(payload["operator"]) if payload.get("operator") else None,
         threshold=Decimal(threshold) if threshold is not None else None,

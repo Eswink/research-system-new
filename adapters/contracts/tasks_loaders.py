@@ -27,6 +27,7 @@ def _load_criterion(item: dict[str, object]) -> AcceptanceCriterion:
         ),
         artifact=_as_optional_str(item.get("artifact")),
         minimum_sources=_as_optional_int(item.get("minimum_sources")),
+        minimum_retrieved_sources=_as_optional_int(item.get("minimum_retrieved_sources")),
         metric=_as_optional_str(item.get("metric")),
         operator=ComparisonOperator(str(item["operator"])) if item.get("operator") else None,
         threshold=Decimal(str(threshold)) if threshold is not None else None,

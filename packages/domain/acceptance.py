@@ -29,6 +29,9 @@ class CriterionInputs:
     tests: Mapping[str, bool] = field(default_factory=dict)
     metrics: Mapping[str, Decimal] = field(default_factory=dict)
     evidence_source_count: int | None = None
+    #: 其中的**检索来源**数（`TrustLabel.RETRIEVED`，GOAL-011 EC-02）。它是**性质分类下的
+    #: 计数**，由编排从 canonical 的 SourceRecord 判出来，不是由证据条数推的。
+    retrieved_source_count: int | None = None
     review_score: Decimal | None = None
     policy_decision: PolicyDecision | None = None
     human_approved: bool | None = None
@@ -144,15 +147,40 @@ def _compare(value: Decimal, operator: ComparisonOperator, threshold: Decimal) -
 def _evaluate_evidence_coverage(
     criterion: AcceptanceCriterion, inputs: CriterionInputs, schema_check: SchemaCheck | None
 ) -> CriterionEvaluation:
+    """覆盖判据：既有**计数**维度（非自产来源数）＋可选的**性质**维度（GOAL-011 EC-02）。
+
+    性质维度只在合约**显式声明** `minimum_retrieved_sources` 时生效：它要求被计的来源里
+    至少有那么几条是**系统取得**（`TrustLabel.RETRIEVED`）。两个维度**都要过**——
+    「总数够」不能顶替「有检索来源」（反过来也一样，检索来源也计入总数）。
+    缺维度一律 fail-closed 判拒并**点名缺的是哪一维**，不给出一个含糊的 False。
+    """
     minimum = criterion.minimum_sources
     if minimum is None:
         return CriterionEvaluation(criterion.type, False, "minimum_sources not configured")
     count = inputs.evidence_source_count
     if count is None:
         return CriterionEvaluation(criterion.type, False, "evidence source count unknown")
-    if count >= minimum:
+    minimum_retrieved = criterion.minimum_retrieved_sources
+    retrieved: int | None = None
+    if minimum_retrieved is not None:
+        retrieved = inputs.retrieved_source_count
+        if retrieved is None:
+            return CriterionEvaluation(criterion.type, False, "retrieved source count unknown")
+    if count < minimum:
+        return CriterionEvaluation(criterion.type, False, f"{count} < {minimum} sources")
+    if minimum_retrieved is not None and retrieved is not None and retrieved < minimum_retrieved:
+        return CriterionEvaluation(
+            criterion.type,
+            False,
+            f"{retrieved} < {minimum_retrieved} retrieved sources ({count} >= {minimum} sources)",
+        )
+    if minimum_retrieved is None:
         return CriterionEvaluation(criterion.type, True, f"{count} >= {minimum} sources")
-    return CriterionEvaluation(criterion.type, False, f"{count} < {minimum} sources")
+    return CriterionEvaluation(
+        criterion.type,
+        True,
+        f"{count} >= {minimum} sources; {retrieved} >= {minimum_retrieved} retrieved",
+    )
 
 
 def _evaluate_review_score(

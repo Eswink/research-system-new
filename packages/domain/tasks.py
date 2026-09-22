@@ -77,6 +77,11 @@ class AcceptanceCriterion:
     target: str | None = None
     artifact: str | None = None
     minimum_sources: int | None = None
+    # 「满足覆盖的来源里，至少要有几条是**系统取得**（`TrustLabel.RETRIEVED`）」
+    # （GOAL-011 EC-02）。缺省 `None` ⇒ 不加这条要求，`EVIDENCE_COVERAGE` 的既有行为
+    # **逐字不变**；声明了才会多受一条**更严**的性质判据——判的是**性质分类下的计数**，
+    # 不是总数 ⇒「计数 ≥ 1」不能代替来源性质。
+    minimum_retrieved_sources: int | None = None
     metric: str | None = None
     operator: ComparisonOperator | None = None
     threshold: Decimal | None = None
@@ -85,6 +90,8 @@ class AcceptanceCriterion:
     def __post_init__(self) -> None:
         if self.minimum_sources is not None and self.minimum_sources < 0:
             raise ValueError("minimum_sources must be >= 0")
+        if self.minimum_retrieved_sources is not None and self.minimum_retrieved_sources < 0:
+            raise ValueError("minimum_retrieved_sources must be >= 0")
 
 
 @dataclass(frozen=True, slots=True)

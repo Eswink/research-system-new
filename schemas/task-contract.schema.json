@@ -78,6 +78,7 @@
         "description": {"type": "string", "minLength": 1},
         "artifact": {"type": "string", "minLength": 1},
         "minimum_sources": {"type": "integer", "minimum": 0},
+        "minimum_retrieved_sources": {"type": "integer", "minimum": 0},
         "metric": {"type": "string", "minLength": 1},
         "operator": {"enum": ["GT", "GTE", "EQ", "LTE", "LT"]},
         "threshold": {"type": "number"},
