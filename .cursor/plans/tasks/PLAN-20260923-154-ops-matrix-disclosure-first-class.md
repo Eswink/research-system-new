@@ -2,7 +2,7 @@
 id: PLAN-20260923-154
 slug: ops-matrix-disclosure-first-class
 title: EC-04 `ops/matrix` 单独处置：取 (ii)「界面状态说明页（非实时运维状态）」成四处同源的一等事实 + 页面判据
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-24
 updated_at: 2026-09-24
 parent_goal: GOAL-20260923-013
@@ -26,8 +26,9 @@ authorization:
     **真实消费者**，F-3）、**不改**门禁/validator/既有断言、**不改**既有 live spec、零出网、
     零凭据读取。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-155-ops-matrix-disclosure-first-class.md
+memory_entries:
+  - MEM-20260923-123
 ---
 
 # PLAN-20260923-154 — `ops/matrix` 的 (ii) 一等事实化
@@ -88,10 +89,41 @@ memory_entries: []
 
 ## 证据
 
-- 待执行后回写。
+- **四处同源**（独立脚本 A 组）：`pageSupport.reason` / `CONSOLE_PAGE_MAP.md` §`#/ops/matrix` /
+  矩阵第 15 行 / **页面可见文案** `matrix.hint`，四处都含「界面状态说明」+ 否定说法。
+- **「为什么不做」可核对**：点名 `#/ops/observability`、`#/ops/compute`（`FULL`）与
+  `#/ops/data-health`（`partial`，读面已交付）—— 等级**从 `pageSupport.ts` 读**，不是抄文档。
+  **本 PLAN 的一处更正**：起草时写「三页均 FULL」，被我自己的判据判红 ⇒ 回读源码改正
+  （`ops/data-health` 是 `partial`）。
+- **判据**：`apps/web/tests/unit/matrix-disclosure.test.ts`（4 条，离线）⇒ unit
+  **88 passed / 0 failed**；`apps/web/tests/e2e/matrix-states.spec.ts`（2 条，离线 stub）⇒
+  stub 套件 **98 passed**；live 套件 **53 passed**（本 PLAN 未动任何 live spec，仍全绿）。
+- **两条按压先红后绿**（`scratch/`，不进仓库）：按**文档源**（把「不冒充」与「为什么不」都改成
+  肯定式）⇒ 一致性判据 **1 failed**（`goal013-c5-press-doc.txt`）；按**页面**（`matrix.hint`
+  加 `占位：` 前缀）⇒ 页面判据 **1 failed**、同组 identity 判据仍绿（`goal013-c5-press-page.txt`）。
+  **按压 1 第一版太弱**（只改一处否定 ⇒ 判据仍绿，因同节还有第二处否定）⇒ 改标题后转红，
+  说明口径是「本节不得读成运维状态面」。
+- **硬约束**：`pageSupport.reason` 文字与 `level` **逐字未改**（独立脚本 H1/H2）：
+  `"ops/matrix": { level: "gap", reason: "界面状态说明页（非实时运维状态）" }`；
+  `presentationPolicy.ts`、`StateReferencePage.tsx`、`zh.ts/en.ts` 与既有 spec **均未改**（G 组）。
+- **过门过程**：功能提交 `779b8a9` 后本地 `typecheck`/`build` 判红一条
+  （`noUncheckedIndexedAccess` 下 `string | undefined` 传进 `Map.set`）⇒ `168aa48` 加守卫修掉，
+  之后 unit / stub / live / lint / typecheck / build / docs **全部重跑**。
+- **独立复检**：`scratch/verify_goal013_c5.py` 两棵树（主树 `checked=50 failures=0`；
+  干净 checkout `168aa48` `checked=46 failures=2` = 两条「尚未收口」时序项 + 一条具名环境差异）。
+- **本地 m0 = 22/23**（`scratch/goal013-c5-m0.log`）：唯一未绿项 `framework/validate_bundle`
+  与本 PLAN 的改动**无关** —— 并发写者的 gitignored scratch 文档（`R-F3`）被该判据的纯文本
+  链接扫描读成本地链接；**成对实跑**（同一脚本只换 `CURSOR_FRAMEWORK_ROOT`）：主树 `exit 1`
+  （1 条链接错）/ `168aa48` 干净 worktree（无 `scratch/`）`exit 0` 全绿 ⇒ 差异恰好是仓库外文件，
+  CI 检出无 `scratch/`、不受影响。**不删不改外来在制品**。
+- 逐条判据与判词见 `RECHECK-20260923-155`。
 
 ## 状态历史
 
+- 2026-09-24：**DONE**（cycle 5 收口）。取 (ii) 落成四处同源的一等事实 + 一条离线页面判据 +
+  一条离线一致性判据；两条按压先红后绿；硬约束（`reason` 文字 / `level` / 页面组件 / 既有 spec）
+  逐条守住。**本 PLAN 起草时的一处假声明被自己的判据抓出并改正**（「三页均 FULL」→
+  `ops/data-health` 实为 `partial`），教训落 `MEM-20260923-123`。**EC-04 达成。**
 - 2026-09-24：**derive**（cycle 5）。定案 D-1…D-7 写死；起点事实 F1…F7 直接读代码实测。
 
 ## 验收条件
