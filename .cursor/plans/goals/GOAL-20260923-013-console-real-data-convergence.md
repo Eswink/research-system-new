@@ -225,6 +225,7 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260923-150-console-real-data-matrix.md
   - .cursor/plans/tasks/PLAN-20260923-151-live-page-read-face-batch-two.md
+  - .cursor/plans/tasks/PLAN-20260923-152-live-page-read-face-batch-three.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-152-live-page-read-face-batch-two.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md
