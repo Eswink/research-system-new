@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260923-153](tasks/PLAN-20260923-153-frontend-criteria-disclosure-judge.md) | IN_PROGRESS |
 | [x] | [PLAN-20260923-152](tasks/PLAN-20260923-152-live-page-read-face-batch-three.md) | DONE |
 | [x] | [PLAN-20260923-151](tasks/PLAN-20260923-151-live-page-read-face-batch-two.md) | DONE |
 | [x] | [PLAN-20260923-150](tasks/PLAN-20260923-150-console-real-data-matrix.md) | DONE |
