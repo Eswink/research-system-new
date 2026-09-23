@@ -2,7 +2,7 @@
 id: PLAN-20260923-140
 slug: policy-allowed-execute-freeze-gate
 title: 冻结门的显式策略通道：策略允许的 EXECUTE 可冻结算 PASS（留痕 + 点名拒冻）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-23
 updated_at: 2026-09-23
 parent_goal: GOAL-20260923-012
@@ -23,8 +23,9 @@ authorization:
     新增依赖或改上游 pin；改 workflow / 出站判据（`tests/egress_guard.py`）。
     **若本 PLAN 的实现需要放松 AGENTS.md §9 任一条默认 deny 面 ⇒ 立即停止并记 BLOCKED。**
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-141-policy-allowed-execute-freeze-gate.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-109-freeze-gate-policy-allowance-channel.md
 ---
 
 # PLAN-20260923-140 — 冻结门的显式策略通道（GOAL-012 EC-01）
@@ -80,36 +81,41 @@ WARN 可被接受并记为 PASS，且**留痕**（哪条策略、哪个能力、
 
 | # | 条件 | 判据（可复跑命令 + 期望值） | 结论 |
 | --- | --- | --- | --- |
-| AC-1 | **允许通道**：策略显式允许的 EXECUTE 能力 ⇒ 报告仍 `WARN` 但**冻结可完成** | 新判据文件：`report.status is WARN` 且 `report.passed is False` 且 `freeze_manifest(...)` 返回 manifest（不抛） | PENDING |
-| AC-2 | **留痕**：manifest 与 `manifest.frozen` payload 里含「哪条策略 / 哪个能力 / 何时」 | 同文件：`manifest.accepted_policy_exceptions` 非空且每条含七项；`frozen_payload(...)` 同源同值（含 `code.execute` / `phase:execution` / `policy_version` / `accepted_at`） | PENDING |
-| AC-3 | **拒冻反证（成对，先红后绿）**：撤掉策略允许 ⇒ **回到拒冻**且**点名**缺失事实 | 同文件：把 catalog 的 policy 换成「无 `code.execute` 允许」的版本 ⇒ `pytest.raises(ManifestFreezeError)` 且消息含 `code.execute`；复原 ⇒ 复绿 | PENDING |
-| AC-4 | **留痕反证**：去掉留痕 ⇒ 判据红 | 临时把留痕列表改成空（按压）⇒ AC-2 的判据红；复原 ⇒ 绿（按压记录落 RECHECK） | PENDING |
-| AC-5 | **其它警示不可转换**：非 EXECUTE 风险 / 其它 WARNING 仍**一律拒冻** | 同文件新增两条：`BUDGET_RESOURCE_UNMAPPED` ⇒ 拒；`POLICY_APPROVAL_REQUIRED` ⇒ 拒；伪装的 `CRITICAL`（DESTRUCTIVE provider）⇒ 拒 | PENDING |
-| AC-6 | **语义不变**：`classify_risk` / `PreflightStatus` / `passed` / finding 生成**逐字未改** | 既有判据全绿（`tests/application/test_m2_policy_budget.py`、`test_m2_audit.py`、`test_protocol_compiler.py`、`test_m12_manifest_freeze.py`、`tests/e2e/test_orchestration_convergence.py`）+ `test_the_execute_provider_is_high_risk_by_construction` 一字未改 | PENDING |
-| AC-7 | **端到端（离线、run-ready 装配）**：`sort_analysis_v1` 的 run **过冻结** | 新/重钉判据：run 的 `manifest_digest` 非空且事件链里有 `manifest.frozen`、payload 含留痕 | PENDING |
-| AC-8 | **门与治理**：规模门禁（50 行函数 / 450 行文件）+ 定向套件 + m0 23/23 + `validate.py` 绿 | `make validate-all`（DSN 固化 + `LLM_MAIN_KEY=""`）+ `ruff check` / `ruff format --check` / `mypy` + `python .cursor/skills/governance-check/scripts/validate.py` | PENDING |
-| AC-9 | **零出网**：本 PLAN 全程默认门离线 | 每条 pytest 输出 `egress guard: judged N; blocked 0`；未开 live 开关、未读凭据值 | PENDING |
+| AC-1 | **允许通道**：策略显式允许的 EXECUTE 能力 ⇒ 报告仍 `WARN` 但**冻结可完成** | 新判据文件：`report.status is WARN` 且 `report.passed is False` 且 `freeze_manifest(...)` 返回 manifest（不抛） | **达成** |
+| AC-2 | **留痕**：manifest 与 `manifest.frozen` payload 里含「哪条策略 / 哪个能力 / 何时」 | 同文件：`manifest.accepted_policy_exceptions` 非空且每条含七项；`frozen_payload(...)` 同源同值（含 `code.execute` / `phase:execution` / `policy_version` / `accepted_at`） | **达成** |
+| AC-3 | **拒冻反证（成对，先红后绿）**：撤掉策略允许 ⇒ **回到拒冻**且**点名**缺失事实 | 同文件：把 catalog 的 policy 换成「无 `code.execute` 允许」的版本 ⇒ `pytest.raises(ManifestFreezeError)` 且消息含 `code.execute`；复原 ⇒ 复绿 | **达成** |
+| AC-4 | **留痕反证**：去掉留痕 ⇒ 判据红 | 临时把留痕列表改成空（按压）⇒ AC-2 的判据红；复原 ⇒ 绿（按压记录落 RECHECK） | **达成** |
+| AC-5 | **其它警示不可转换**：非 EXECUTE 风险 / 其它 WARNING 仍**一律拒冻** | 同文件新增两条：`BUDGET_RESOURCE_UNMAPPED` ⇒ 拒；`POLICY_APPROVAL_REQUIRED` ⇒ 拒；伪装的 `CRITICAL`（DESTRUCTIVE provider）⇒ 拒 | **达成** |
+| AC-6 | **语义不变**：`classify_risk` / `PreflightStatus` / `passed` / finding 生成**逐字未改** | 既有判据全绿（`tests/application/test_m2_policy_budget.py`、`test_m2_audit.py`、`test_protocol_compiler.py`、`test_m12_manifest_freeze.py`、`tests/e2e/test_orchestration_convergence.py`）+ `test_the_execute_provider_is_high_risk_by_construction` 一字未改 | **达成** |
+| AC-7 | **端到端（离线、run-ready 装配）**：`sort_analysis_v1` 的 run **过冻结** | 新/重钉判据：run 的 `manifest_digest` 非空且事件链里有 `manifest.frozen`、payload 含留痕 | **达成** |
+| AC-8 | **门与治理**：规模门禁（50 行函数 / 450 行文件）+ 定向套件 + m0 23/23 + `validate.py` 绿 | `make validate-all`（DSN 固化 + `LLM_MAIN_KEY=""`）+ `ruff check` / `ruff format --check` / `mypy` + `python .cursor/skills/governance-check/scripts/validate.py` | **达成** |
+| AC-9 | **零出网**：本 PLAN 全程默认门离线 | 每条 pytest 输出 `egress guard: judged N; blocked 0`；未开 live 开关、未读凭据值 | **达成** |
 
 ## 实施清单
 
-- [ ] **WP1** 产品面：`packages/application/preflight/policy_acceptance.py`（通道判定 + 留痕构造 +
+- [x] **WP1** 产品面：`packages/application/preflight/policy_acceptance.py`（通道判定 + 留痕构造 +
       点名拒冻消息）+ `freeze_manifest` 接线 + `RunManifest.accepted_policy_exceptions` +
-      `frozen_payload` 同步。
-- [ ] **WP2** 判据（离线）：新文件 `tests/application/preflight/test_policy_allowed_execute_freeze.py`
-      覆盖 AC-1…AC-5（含按压记录）。
-- [ ] **WP3** 端到端 + 重钉：`tests/e2e/test_sandbox_experiment_reachability.py` 第 3 条按 D-5
-      重钉为**成对**形态（新语义 + 撤允许反证）；必要时把「过冻结」的 e2e 判据落到同一文件。
-- [ ] **WP4** 记录：`RECHECK-*`（cycle 收口）+ GOAL 回写（EC-01 status_note / 迭代日志 / 台账）。
+      `frozen_payload` 同步。提交 `5ae2d56`。
+- [x] **WP2** 判据（离线）：新文件 `tests/application/preflight/test_policy_allowed_execute_freeze.py`
+      覆盖 AC-1…AC-5（含按压记录）。提交 `5ae2d56`；**8 passed**，三处按压
+      （`scratch/goal012-c1-press1|2|3.txt`：2 / 5 / 2 条红）。
+- [x] **WP3** 端到端 + 重钉：`tests/e2e/test_sandbox_experiment_reachability.py` 第 3 条按 D-5
+      重钉为**成对**形态（新语义 + 撤允许反证）；API 级两条夹具同轮重钉
+      （`tests/api/test_runs_api.py`、`tests/api/test_failed_run_semantic_digest_api.py`）。
+      提交 `5ae2d56`。
+- [x] **WP4** 记录：`RECHECK-20260923-141` + `MEM-20260923-109` + GOAL 回写（EC-01 status_note /
+      迭代日志 / 台账）。
 
 ## 证据
 
 | # | 事实 | 取数方式 |
 | --- | --- | --- |
-| E-1 | 阻断点现状（报告 `WARN`、冻结拒） | `pytest tests/e2e/test_sandbox_experiment_reachability.py -q`（改动前：3 passed） |
-| E-2 | 策略已显式允许 `code.execute` | 读 `examples/config/policy.yaml:33-36`（`allow_with_constraints`） |
-| E-3 | 通道判定与留痕 | WP2 新判据的逐条输出（含按压） |
-| E-4 | 规模门与治理 | `make validate-all` 23/23、`validate.py` exit 0、`ruff`/`mypy` 输出 |
-| E-5 | 零出网 | 各 pytest 的 `egress guard: judged N; blocked 0` 行 |
+| E-1 | 阻断点现状（报告 `WARN`、冻结拒） | 改动前 `pytest tests/e2e/test_sandbox_experiment_reachability.py -q` ⇒ 3 passed（第 3 条钉住拒冻）；改动后同文件 **4 passed**（含成对反证） |
+| E-2 | 策略已显式允许 `code.execute` | 读 `examples/config/policy.yaml:33-36`（`allow_with_constraints`）；实测 `NativePolicyEvaluator` 返 `ALLOW_WITH_CONSTRAINTS` |
+| E-3 | 通道判定与留痕 | `pytest tests/application/preflight/test_policy_allowed_execute_freeze.py -q` ⇒ **8 passed**；三处按压 `2 / 5 / 2` 条红（`scratch/goal012-c1-press{1,2,3}.txt`） |
+| E-4 | 规模门与治理 | m0 **23/23**（`scratch/goal012-c1-m0.log`：`python/tests` **4403 passed / 18 skipped / 0 failed**）；`validate.py` exit 0；`ruff` / `ruff format --check` / `mypy` 全绿；`test_python_source_limits.py` 1003 passed |
+| E-5 | 零出网 | 各 pytest 的 `egress guard: judged N; blocked 0` 行（m0 的 8 条 blocked 是判据对 `198.51.100.1` 的故意探针） |
+| E-6 | 独立复检两棵树成对 | `python scratch/verify_goal012_c1.py` ⇒ 当前树 `checked=28 failures=0`；`git worktree` 到 `ccb8f3e` ⇒ `checked=22 failures=19`（判据不空转） |
 
 ## 影响报告
 
@@ -127,3 +133,14 @@ WARN 可被接受并记为 PASS，且**留痕**（哪条策略、哪个能力、
 ## 状态历史
 
 - 2026-09-23：derive（WP0）。定案 D-1…D-6 写死；未改任何产品代码、未发起任何出站。
+- 2026-09-23（WP1–WP3，提交 `5ae2d56`）：产品面 + 判据 + 重钉落地。**两处夹具重钉**（D-5）：
+  `tests/e2e/test_sandbox_experiment_reachability.py`（阻断点 → 通道 + 撤允许反证）与
+  `tests/api/test_runs_api.py`（拒冻 → 冻结 + 事件留痕）；**第三处**是本 cycle 撞到的**真回归**：
+  `tests/api/test_failed_run_semantic_digest_api.py` 拿 `sort_analysis_v1` 当「永不冻结」的载体 ⇒
+  把该 fixture 的允许**撤掉**（`code.execute` 判 `DENY`）后边界语义被更精确地钉住。
+  **新登记 W-A**：真实控制面（`NativePolicyEvaluator` + `examples/config/policy.yaml`）对
+  `sort_analysis_v1` 的 `evidence.read` 判 `DENY` ⇒ 该协议在真实控制面上是 `FAIL`（不是 `WARN`）；
+  **本 PLAN 不自行放宽策略面**（那是放宽安全面，需拍板）。
+- 2026-09-23（WP4 收口）：`RECHECK-20260923-141` = **PASS_WITH_WARNINGS**（独立脚本两棵树成对：
+  当前树 28/28、基线树 19 失败；三处按压 2/5/2；m0 **23/23**）；状态置 **DONE**；
+  工程记忆 `MEM-20260923-109` 落盘。

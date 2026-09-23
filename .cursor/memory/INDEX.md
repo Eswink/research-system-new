@@ -106,6 +106,7 @@
 | [MEM-20260923-106](entries/MEM-20260923-106-run-chain-evidence-key-and-source-cap.md) | ACTIVE | repository | 0.90 | 2027-09-23 | PLAN-20260922-138 |
 | [MEM-20260923-107](entries/MEM-20260923-107-fixture-failure-shape-is-a-contract.md) | ACTIVE | repository | 0.90 | 2027-09-23 | PLAN-20260922-135 |
 | [MEM-20260923-108](entries/MEM-20260923-108-frozen-refs-on-both-failure-paths.md) | ACTIVE | repository | 0.90 | 2027-09-23 | PLAN-20260922-139 |
+| [MEM-20260923-109](entries/MEM-20260923-109-freeze-gate-policy-allowance-channel.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-140 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |

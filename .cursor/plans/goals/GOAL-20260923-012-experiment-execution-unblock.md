@@ -74,6 +74,30 @@ exit_criteria:
       端到端形态（EC-02 的真实 run）：`manifest_digest` **非空** + 事件链里 `manifest.frozen`
       的 payload 含留痕字段 ⇒ 冻结确已发生且可审计。
     status: PENDING
+    status_note: >-
+      2026-09-23 cycle 1（`PLAN-20260923-140`，提交 `5ae2d56`）：**通道本体已落、判据成对**，
+      但按本条 verify 的最后一项（**EC-02 的真实 run 形态**）尚未发生 ⇒ **本 GOAL 不提前记 PASS**。
+      ① **落地**：新模块 `packages/application/preflight/policy_acceptance.py`（接受条件四条 +
+      留痕七键 + 点名拒冻消息），`freeze_manifest` 接线，`RunManifest.accepted_policy_exceptions`
+      （optional，缺省空列表 ⇒ 既有 digest 逐字不变）+ `frozen_payload` 同源同值。
+      **`classify_risk` / `PreflightStatus` / `passed` / `_status()` / finding 生成逐字未动**。
+      ② **判据（离线，8 passed）**：允许通道 / 拒冻反证（撤允许 ⇒ 点名 `code.execute`）/
+      非 EXECUTE 无通道 / 非 `TOOL_RISK_ELEVATED` 不可转换 / PASS 报告不留痕。
+      ③ **三处按压（先红后绿）**：留痕置空 ⇒ **2 红**（恰留痕两条）；停用通道 ⇒ **5 红**
+      （含三条**点名**断言逐字失败于旧消息）；让任意警示可转换 ⇒ **2 红**（恰两条不可转换面）。
+      ④ **端到端（离线、API 级）**：`POST /projects/{id}/runs`（`sort_analysis_v1`）⇒
+      `manifest_digest` 非空、事件链里 `manifest.frozen` 的 payload 含 4 条留痕
+      （`code.execute` / `workspace.read` / `workspace.write.code` / review 的 `workspace.read`）；
+      run 终态仍是 `FAILED`，但**不再死在冻结门**（逐字 `task … produced malformed result:
+      session result … carries no structured output`）⇒ 阻断点已消除，剩下的堵点在会话/结构化输出
+      （**W-B**，EC-02 的输入）。⑤ **独立复检** `scratch/verify_goal012_c1.py`（只读/只用标准库/
+      不 import 仓库代码）**两棵树成对**：当前树 `checked=28 failures=0`；基线树（`ccb8f3e`）
+      `checked=22 failures=19` ⇒ 判据不空转，而「不得放宽」的四条在两棵树都绿。⑥ **门**：
+      本机 m0 **23/23**（`python/tests` **4403 passed / 18 skipped / 0 failed**）、`validate.py` 绿、
+      zero egress（`judged 779; blocked 8` 的 8 条是判据对 `198.51.100.1` 的故意探针）。
+      **新登记**：**W-A**（真实控制面对 `sort_analysis_v1` 的 `evidence.read` 判 `DENY` ⇒ 该协议在
+      真实控制面上是 `FAIL` 而非 `WARN`；本循环**不**自行放宽策略面）、**W-B**（见上）、
+      **W-C**（同一协议在两套装配下结论不同：`FAIL` vs `WARN`，引用时必须写明装配）。
   - id: EC-02
     criterion: >-
       **真实实验执行链**（GOAL-011 EC-03 的原判据）：真实 LLM 驱动 `sort_analysis_v1`
@@ -180,7 +204,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-109-freeze-gate-policy-allowance-channel.md
 ---
 
 # GOAL-20260923-012 — 实验执行链打通（自迭代循环）
@@ -194,7 +219,7 @@ memory_entries: []
 
 | EC | 标准 | 验证命令／证据来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **冻结门通道（路径 A）**：策略**显式允许**该 EXECUTE 能力 ⇒ 预检报告仍含 `WARN` 但冻结**可完成**，且 manifest/事件**留痕**（哪条策略、哪个能力、何时）；策略**未允许** ⇒ **仍拒冻**并点名缺失的策略事实；反证成对（撤允许 ⇒ 拒冻；去留痕 ⇒ 判据红）；**不得**放宽 `classify_risk` / **不得**改 `WARN` 语义 / **不得**让 WARN 无条件可冻 | 离线定向判据三条（允许通道 / 拒冻反证 / 留痕反证，各自先红后绿）+ EC-02 真实 run 的 `manifest_digest` 非空与事件留痕 | **PENDING** |
+| EC-01 | **冻结门通道（路径 A）**：策略**显式允许**该 EXECUTE 能力 ⇒ 预检报告仍含 `WARN` 但冻结**可完成**，且 manifest/事件**留痕**（哪条策略、哪个能力、何时）；策略**未允许** ⇒ **仍拒冻**并点名缺失的策略事实；反证成对（撤允许 ⇒ 拒冻；去留痕 ⇒ 判据红）；**不得**放宽 `classify_risk` / **不得**改 `WARN` 语义 / **不得**让 WARN 无条件可冻 | 离线定向判据三条（允许通道 / 拒冻反证 / 留痕反证，各自先红后绿）+ EC-02 真实 run 的 `manifest_digest` 非空与事件留痕 | **PENDING**（cycle 1 落通道 + 三条离线判据 + 三处按压 + **API 级端到端**已实测；**EC-02 的真实 run 形态**未发生 ⇒ 不提前记 PASS——见 `status_note`） |
 | EC-02 | **真实实验执行链**（GOAL-011 EC-03 原判据）：真实 LLM 驱动 `sort_analysis_v1` 跑到**终态**，**实验产物 + 证据 + 预算归账**三项可读；执行体 = **既有 Docker 后端** | live 判据 **PASS（非 skip）** + 落盘样张（终态恰为 `SUCCEEDED` + 三项读面 + 判词逐字）；反证：撤策略允许 ⇒ 拒冻、run 终止在执行之前 | **PENDING** |
 | EC-03 | **实验产出的证据链**：实验产物与来源记录进 canonical、读面可追溯；反证：**去掉产物** ⇒ 判据红 | 离线 + 真实容器两向判据；按压记录（先红后绿） | **PENDING** |
 | EC-04 | **残余路径 (B) 的诚实处置**：把 GOAL-011 对 (B) 的否证（来源上限 3 / 第二次检索硬失败 / `minimum_sources: 10` 口径 / 三条判据无产品调用方）写成**独立记录**并登记「已否证 / 待重新设计」，**不**抹掉 | 独立记录文件在位且逐条覆盖四项；`W-P`/`W-Q`/`PLAN-138` 状态原样保留 | **PENDING** |
@@ -297,6 +322,19 @@ memory_entries: []
   **「已否证 / 待重新设计」**状态引用，不得读成待办功能。
 - **R-N1（非 ASCII 路径）**：30 条已跟踪路径含非 ASCII（AGENTS.md §13）⇒ 按「既有历史路径
   不批量重命名」**登记为豁免**；若判定需要 ADR，则**产出草案**、不自行改判。
+- **W-A（cycle 1 新，未修）**：**真实控制面**的 preflight 求值是 `NativePolicyEvaluator` +
+  `examples/config/policy.yaml`，而该策略**未放行** `sort_analysis_v1` 的 `evidence.read`
+  ⇒ 该协议在真实控制面上是 **`FAIL`**（不是 `WARN`）⇒ 通道不会被走到。本循环**不**自行放宽
+  策略面（那是放宽安全面，需用户/ADR 拍板）；EC-02 若要走真实控制面必须先处置这一条。
+- **W-B（cycle 1 新，未修）**：run-ready 装配下 `sort_analysis_v1` 冻结**之后**收敛 `FAILED`，
+  逐字判词 `task … produced malformed result: session result for task … carries no structured
+  output` ⇒ **冻结门已不再是阻断点**；剩下的堵点在「会话结果的结构化输出」这条路上。
+- **W-C（cycle 1 新，登记口径差异）**：同一个协议在**两套装配**下结论不同——run-ready/live 装配
+  （`preflight_override` + 默认放行的 Fake 求值器）给 `WARN`；真实控制面给 `FAIL`。引用
+  「该协议今天是 WARN/FAIL」时**必须写明是哪一套装配**（`MEM-20260923-109` 记了这条）。
+- **W-D（cycle 1 新，登记）**：4 条**跨套件顺序**失败（`test_worker_plane_composition`×3 +
+  `test_pg_crash_restart`）在合并跑里出现、**单独跑全绿**；与本次改动无关（既有签名，
+  GOAL-011 亦登记过同类），本 GOAL 不改它们。
 
 ## 循环入口协议
 
@@ -420,11 +458,14 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `<建档提交>`（见下方 CI 台账尾巴） | 治理 `validate.py` 绿（建档后实跑） | 见下方 CI 台账 | — | EC-01…EC-06 全 PENDING；起点已定位（**F-1…F-11**：堵点是「冻结门只认 PASS」×「`EXECUTE → HIGH` 风险提示」的**口径交叉**，而**策略面早已显式允许 `code.execute`**；实验缝与镜像**都已就绪**）。**建档时登记的残余**：`R-M1`（Mimosa `scanner_enobufs` 未得完整结论 ⇒ 不得宣称安全）、`R-D1`（23 条 Dependabot 告警：4 high / 13 moderate / 6 low，既有未处置）、`R-B1`（路径 (B) 已否证，待 EC-04 落独立记录）、`R-N1`（30 条非 ASCII 路径登记豁免） | cycle 1 = derive **EC-01** 子 PLAN（冻结门通道）：先定案「策略事实的判据形态」（哪条 allow 规则算数、scope 如何匹配）+「留痕的落点」（manifest 字段 / 事件 payload）+「拒冻消息如何点名」，再落判据与按压 |
 
-| 1 | PLAN-20260923-140（EC-01） | derive 提交见下方 CI 台账 | 待执行 | 见下方 CI 台账 | — | **EC-01 进行中**：derive 完成，定案 D-1…D-6 写死（通道条件四条 / 留痕两处同源 / 点名拒冻 / 既有判据的处置 / 零依赖零出网） | **WP1** 产品面（`policy_acceptance.py` + `freeze_manifest` 接线 + manifest 字段 + payload）→ **WP2** 离线判据（AC-1…AC-5 含按压）→ **WP3** 端到端重钉 → **WP4** 记录 |
+| 1 | PLAN-20260923-140（EC-01） | `5085bc2`（derive：PLAN-140 + ALL_PLAN + `child_plans`）、`5ae2d56`（WP1–WP3：通道本体 + 判据 + 三处夹具重钉）、本 cycle 的收口回写见台账尾巴 | **离线判据 8 passed**（新文件，含按压）；**三处按压** 2 / 5 / 2 条红（`scratch/goal012-c1-press{1,2,3}.txt`）；**端到端（API 级）**：`sort_analysis_v1` 的 run 冻结成功（`manifest.frozen` payload 含 4 条留痕）且终态不再死在冻结门；**独立复检** `scratch/verify_goal012_c1.py` 两棵树成对（**当前树 28/28；基线树 19 失败**）；**m0 23/23**（`python/tests` **4403 passed / 18 skipped / 0 failed**，`judged 779; blocked 8` 的 8 条是故意探针）；`validate.py` / `ruff` / `ruff format --check` / `mypy` / 规模门禁全绿；**零出网** | 见下方 CI 台账 | **一处真回归**（本 cycle 自己撞到并处置）：`test_failed_run_semantic_digest_api.py` 拿 `sort_analysis_v1` 当「永不冻结」的载体 ⇒ 把该 fixture 的允许**撤掉**（`code.execute` 判 `DENY`）⇒ 边界语义（没有 `manifest.frozen` ⇒ 引用必须是 None）被**更精确**地钉住，而不是删掉它。另 4 条红（`test_worker_plane_composition`×3 + `test_pg_crash_restart`）**单独跑 7 passed** ⇒ 既有跨套件顺序签名，与本 cycle 无关 | **EC-01 仍 PENDING**（只差 EC-02 的真实 run 形态；不提前记 PASS）。**新登记 W-A/W-B/W-C**（见残余节）。**既有判据的处置**：`test_runs_api` 与 `test_sandbox_experiment_reachability` 按 D-5 **重钉为新语义 + 原位保留成对反证**——**不是**「改断言迁就」（被测行为本身是被授权的目标） | cycle 2 = **EC-02**（真实实验执行链）：以 `sort_analysis_v1` + `with_sandbox_experiment` 跑真实 LLM（最小必要次数）+ **既有** Docker 后端到终态，判据 = 终态如实（只有 `SUCCEEDED` 是成功）+ 三项读面齐备；**先解 W-B**（会话/结构化输出那条堵点），**W-A 若挡路则登记为需拍板项、不自行放宽策略面** |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）| 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
-| 建档（GOAL-012 落地） | 见回合汇报 | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | |
+| 建档（GOAL-012 落地） | `ccb8f3e` | M0 [35817237386](https://github.com/Eswink/research-system-new/actions/runs/35817237386) | 六 job 全 **success**（`console-frontend` / `container-quality` / `collector-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35817236465](https://github.com/Eswink/research-system-new/actions/runs/35817236465) = **success**（3/3） |
+| cycle 1 派生（PLAN-140 + ALL_PLAN + `child_plans`） | `5085bc2` | 与下一条**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 |
+| cycle 1 WP1–WP3（通道本体 + 判据 + 三处夹具重钉） | tip `5ae2d56` | M0 [35820350936](https://github.com/Eswink/research-system-new/actions/runs/35820350936) | 六 job 全 **success**（`container-quality` / `console-frontend` / `quality-windows-latest` / `collector-quality` / `eval-gate` / `quality-ubuntu-latest`，逐 job 实查，终态 `completed`）；**CodeQL** [35820350713](https://github.com/Eswink/research-system-new/actions/runs/35820350713) = **success**（3/3：`Analyze (javascript-typescript)` / `Analyze (actions)` / `Analyze (python)`） |
+| 台账尾巴（cycle 1 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…011，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -442,3 +483,26 @@ memory_entries: []
   **建档时登记的残余**：`R-M1` Mimosa 钩子侧 `scanner_enobufs` 未得完整结论（**不得**宣称项目安全）、
   `R-D1` 23 条 Dependabot 告警（4 high / 13 moderate / 6 low，既有未处置、本 GOAL 不处置）、
   `R-B1` 路径 (B) 已否证待 EC-04 落独立记录、`R-N1` 30 条非 ASCII 路径按 AGENTS §13 登记豁免。
+- 2026-09-23（**cycle 1 收口**）：**EC-01 的通道本体落地**（`PLAN-20260923-140` → **DONE**，
+  提交 `5085bc2`（derive）+ `5ae2d56`（WP1–WP3）；复检 `RECHECK-20260923-141` = **PASS_WITH_WARNINGS**；
+  工程记忆 `MEM-20260923-109`）。
+  **落地形态**：新模块 `packages/application/preflight/policy_acceptance.py`（接受条件**四条**
+  + 留痕**七键** + 点名拒冻消息），`freeze_manifest` 接线；`RunManifest.accepted_policy_exceptions`
+  是 **optional 字段**（缺省空列表 ⇒ 既有 manifest 的字节与 digest **逐字不变**），
+  `frozen_payload` 带**同一份**留痕（读面回读的就是它）。
+  **授权边界逐条实测未动**：`classify_risk`（EXECUTE ⇒ HIGH 无条件）、`PreflightStatus`、
+  `PreflightReport.passed`、`_status()`、finding 生成与严重级。
+  **判据与反证**：离线判据 **8 passed**；三处按压 **2 / 5 / 2** 条红（留痕置空 / 停用通道 /
+  任意警示可转换），其中停用通道那一次是三条**点名**断言逐字失败于旧消息 ⇒ 「拒绝语义点名缺哪条
+  策略事实」真的被判据看着；独立复检脚本 `scratch/verify_goal012_c1.py`（只读/只用标准库/
+  不 import 仓库代码）**两棵树成对**：当前树 **28/28**、基线树（`ccb8f3e`） **19 失败**。
+  **端到端（离线、API 级）**：`sort_analysis_v1` 的 run 冻结成功、`manifest.frozen` payload 含
+  **4 条**留痕（`code.execute` 在列）；run 终态仍 `FAILED` 但**不再死在冻结门**。
+  **如实登记四处残余**：**W-A** 真实控制面对该协议的 `evidence.read` 判 `DENY` ⇒ 真实控制面上
+  是 `FAIL` 而非 `WARN`（**本循环不自行放宽策略面**）；**W-B** 冻结后的堵点移到「会话结果的结构化
+  输出」；**W-C** 同一协议在两套装配下结论不同（引用必须写明装配）；**W-D** 4 条跨套件顺序失败
+  单独跑全绿（既有签名）。**本 cycle 未放宽任何判据/放行面、零真实出网、零凭据读取。**
+  **CI 终态**：tip `5ae2d56` 的 M0 [35820350936](https://github.com/Eswink/research-system-new/actions/runs/35820350936)
+  **六 job 全 success**、CodeQL [35820350713](https://github.com/Eswink/research-system-new/actions/runs/35820350713)
+  **3/3 success**（逐 job 实查，终态 `completed`）。**GOAL 仍 ACTIVE**（**EC-01 PENDING**——
+  只差 EC-02 的真实 run 形态；EC-02…EC-06 未完）。
