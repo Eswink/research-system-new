@@ -21,7 +21,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
-import { CRITERIA_DISCLOSURE, CRITERIA_SPECS } from "./frontendCriteriaDisclosure";
+import { CRITERIA_DISCLOSURE, CRITERIA_SPECS } from "./frontend-criteria-disclosure";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WEB_ROOT = path.join(HERE, "../..");

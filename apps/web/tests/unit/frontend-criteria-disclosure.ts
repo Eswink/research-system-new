@@ -150,15 +150,13 @@ export const CRITERIA_DISCLOSURE: readonly CriterionDisclosure[] = [
   live({
     spec: "tests/e2e/live-insights-reports.spec.ts",
     suite: "insights-reports",
-    testTitle:
-      "live: 交付物读面非空时，" + "报告页渲染的是读面的值（页面 == 读面）",
+    testTitle: "live: 交付物读面非空时，" + "报告页渲染的是读面的值（页面 == 读面）",
     evidence: ["scratch/goal013-c3-press-reports.txt"],
   }),
   live({
     spec: "tests/e2e/live-insights-reports.spec.ts",
     suite: "insights-reports",
-    testTitle:
-      "live: 无交付物的 run 显示读面给出的原因，" + "且不渲染来源区块（成对反证）",
+    testTitle: "live: 无交付物的 run 显示读面给出的原因，" + "且不渲染来源区块（成对反证）",
     evidence: ["scratch/goal013-c4-press-reports-empty.txt"],
   }),
   live({
