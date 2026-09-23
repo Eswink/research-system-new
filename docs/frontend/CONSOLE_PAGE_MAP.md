@@ -307,6 +307,12 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 - 设计：`screens/States.jsx`。等级：GAP（说明性质）。
 - 交付明确标注"界面状态说明"：呈现加载/空/错误/权限/未知等组件状态，
   不冒充实时运维状态。
+- **为什么不做实时运维状态**：实时运维状态有它自己的读面与页面 ——
+  `#/ops/observability`、`#/ops/compute`（均 `FULL`，各有具名读面）与
+  `#/ops/data-health`（`partial`：`GET /projects/{id}/ops/data-health` 已交付，
+  未建的是聚合质量报告）；本页只陈述**组件状态词表**，不重复那些页面。
+- 身份可见性：默认（`auto`）落在示例面并标示例身份；`?source=live` 渲染本说明面，
+  可见 `reason` 横幅与页面文案（判据：`apps/web/tests/e2e/matrix-states.spec.ts`）。
 
 ### `#/ops/compute` — 计算节点（兼容页，无设计稿）
 - 保留现有能力：`GET /cluster/workers`（worker_ref 短 digest、state、
