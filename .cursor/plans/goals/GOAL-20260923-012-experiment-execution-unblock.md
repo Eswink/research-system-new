@@ -177,7 +177,8 @@ escalation_triggers:
     arbitrary credential forwarding / unpinned plugin / package install / destructive workspace
     action / external publish）⇒ **立即 BLOCKED**（本 GOAL 的授权只覆盖冻结门的**接受口径**，
     不覆盖安全默认面）
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -419,9 +420,9 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `<建档提交>`（见下方 CI 台账尾巴） | 治理 `validate.py` 绿（建档后实跑） | 见下方 CI 台账 | — | EC-01…EC-06 全 PENDING；起点已定位（**F-1…F-11**：堵点是「冻结门只认 PASS」×「`EXECUTE → HIGH` 风险提示」的**口径交叉**，而**策略面早已显式允许 `code.execute`**；实验缝与镜像**都已就绪**）。**建档时登记的残余**：`R-M1`（Mimosa `scanner_enobufs` 未得完整结论 ⇒ 不得宣称安全）、`R-D1`（23 条 Dependabot 告警：4 high / 13 moderate / 6 low，既有未处置）、`R-B1`（路径 (B) 已否证，待 EC-04 落独立记录）、`R-N1`（30 条非 ASCII 路径登记豁免） | cycle 1 = derive **EC-01** 子 PLAN（冻结门通道）：先定案「策略事实的判据形态」（哪条 allow 规则算数、scope 如何匹配）+「留痕的落点」（manifest 字段 / 事件 payload）+「拒冻消息如何点名」，再落判据与按压 |
 
-### CI 台账（逐 run 逐 job 实查；全部落在 main）
+| 1 | PLAN-20260923-140（EC-01） | derive 提交见下方 CI 台账 | 待执行 | 见下方 CI 台账 | — | **EC-01 进行中**：derive 完成，定案 D-1…D-6 写死（通道条件四条 / 留痕两处同源 / 点名拒冻 / 既有判据的处置 / 零依赖零出网） | **WP1** 产品面（`policy_acceptance.py` + `freeze_manifest` 接线 + manifest 字段 + payload）→ **WP2** 离线判据（AC-1…AC-5 含按压）→ **WP3** 端到端重钉 → **WP4** 记录 |
 
-| 推送 | 提交 | run | 六 job 结论 |
+### CI 台账（逐 run 逐 job 实查；全部落在 main）| 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-012 落地） | 见回合汇报 | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | |
 
