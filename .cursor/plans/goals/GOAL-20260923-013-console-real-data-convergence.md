@@ -206,7 +206,8 @@ escalation_triggers:
     路径 (B) 的「重新设计需要什么」（`docs/roadmap/PATH_B_REFUTATION_RECORD.md` 的 5 条）
     被判定需要重启时——**需拍板**，本循环不自行重启该路线
   - 前端设计基线（`design-outlines.json` / 快照）因页面改动而判红且**无法**按既有流程重生成并目检通过
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260923-150-console-real-data-matrix.md
 latest_recheck: null
 memory_entries: []
 ---
