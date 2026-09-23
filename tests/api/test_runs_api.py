@@ -39,9 +39,24 @@ def test_start_run_freezes_manifest_and_records_failure(run_ready_client: TestCl
     assert "manifest.frozen" in {item["type"] for item in events}
 
 
-def test_start_run_warn_preflight_refuses_freeze(run_ready_client: TestClient) -> None:
-    """preflight WARN（TOOL_RISK_ELEVATED）→ freeze 门禁拒绝（M2 语义），
-    状态 FAILED 且无 manifest digest（不伪造冻结）。"""
+def test_start_run_warn_preflight_freezes_on_the_explicit_policy_allowance(
+    run_ready_client: TestClient,
+) -> None:
+    """GOAL-012 EC-01：报告 `WARN`（`TOOL_RISK_ELEVATED`）但该 EXECUTE 风险已被策略
+    **显式允许** ⇒ 冻结**可完成**，且留痕进 `manifest.frozen` 事件（读面回读的就是它）。
+
+    历史：GOAL-011 cycle 6 在这里实测的是**阻断点**（`manifest_digest: null`、状态
+    `FAILED`）；cycle 10 把它登记为「需要一次拍板」的项。GOAL-012 建档当日用户拍板
+    路径 (A) ⇒ 旧语义（WARN 一律拒冻）由**显式、留痕、可审计**的通道取代。
+    反方向（撤掉显式允许 ⇒ 回到拒冻并点名 `code.execute`）钉在
+    `tests/e2e/test_sandbox_experiment_reachability.py` 与
+    `tests/application/preflight/test_policy_allowed_execute_freeze.py`。
+
+    本用例**只**钉「过没过冻结门」：run 的终态仍是 `FAILED`，但**不再**死在冻结门——
+    实测逐字为 `task … produced malformed result: session result for task … carries no
+    structured output`（Fake 会话不产结构化输出 ⇒ 任务结果登记失败按设计优雅收敛，
+    manifest digest 保留）。本用例**不**断言终态，终态归 EC-02 的真实链。
+    """
     response = run_ready_client.post(
         "/projects/example-project/runs",
         json={"protocol_path": "sort_analysis_v1.yaml"},
@@ -49,8 +64,15 @@ def test_start_run_warn_preflight_refuses_freeze(run_ready_client: TestClient) -
     )
     assert response.status_code == 200, response.text
     run = response.json()
-    assert run["state"] == "FAILED"
-    assert run["manifest_digest"] is None
+    assert run["manifest_digest"] is not None, run
+    assert run["manifest_digest"].startswith("sha256:"), run
+    events = run_ready_client.get(f"/runs/{run['id']}/events").json()
+    frozen = [item for item in events if item["type"] == "manifest.frozen"]
+    assert frozen, [item["type"] for item in events]
+    trace = frozen[-1]["payload"]["accepted_policy_exceptions"]
+    assert trace, frozen[-1]["payload"]
+    assert "code.execute" in {item["capability"] for item in trace}, trace
+    assert all(item["accepted_at"] for item in trace), trace
 
 
 def test_start_run_without_pins_fails_honestly(client: TestClient) -> None:

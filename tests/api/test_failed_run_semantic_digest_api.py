@@ -138,10 +138,28 @@ def test_the_run_row_is_replayable_from_the_event_chain(run_ready_client: TestCl
 
 
 def test_a_failed_run_without_a_freeze_event_has_no_semantic_digest(
-    run_ready_client: TestClient,
+    run_ready_deps: Any,
 ) -> None:
-    """诚实边界：preflight 被拒 ⇒ 从未冻结 ⇒ 语义 digest 保持 None（不伪造引用）。"""
-    row = _start(run_ready_client, _NEVER_FROZEN_PROTOCOL)
+    """诚实边界：preflight 被拒 ⇒ 从未冻结 ⇒ 语义 digest 保持 None（不伪造引用）。
+
+    GOAL-012 EC-01：`sort_analysis_v1` 在**策略显式允许**下今天会冻结（见
+    `tests/api/test_runs_api.py::test_start_run_warn_preflight_freezes_on_the_explicit_policy_allowance`）。
+    本用例把该允许**撤掉**（`code.execute` 判 `DENY`）⇒ 回到「预检拒 ⇒ 永不冻结」的形态，
+    这条边界语义因此被**更精确**地钉住（而不是删掉它）。
+    """
+    from dataclasses import replace
+
+    from adapters.fakes.policy_evaluator import FakePolicyEvaluator
+    from packages.domain.enums import PolicyDecision
+    from services.api.app import create_app
+
+    evaluator = FakePolicyEvaluator()
+    evaluator.set_decision("code.execute", PolicyDecision.DENY)
+    override = run_ready_deps.preflight_override
+    assert override is not None, "run-ready 装配必须注入 preflight override"
+    run_ready_deps.preflight_override = replace(override, policy_evaluator=evaluator)
+    with TestClient(create_app(run_ready_deps)) as client:
+        row = _start(client, _NEVER_FROZEN_PROTOCOL)
 
     assert row.state == "FAILED"
     assert row.manifest_digest is None

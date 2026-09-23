@@ -78,6 +78,12 @@ class RunManifest:
     # "pricing 未冻结"，绝不静默回落读时当期表）。digest() 自动覆盖。
     pricing_version: str | None = None
     pricing_digest: str | None = None
+    # --- GOAL-012 EC-01 扩展：显式策略通道的留痕（空 = 未使用该通道） ---
+    # 每条记录一次「策略已显式允许的 EXECUTE 风险」被冻结门接受的事实；键集与
+    # 构造点见 `packages/application/preflight/policy_acceptance.py`：
+    # capability / phase_id / provider_id / policy_version / decision / constraints /
+    # accepted_at。空列表 = 未走该通道 ⇒ 既有 manifest 的字节与 digest 逐字不变。
+    accepted_policy_exceptions: list[dict[str, object]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if not self.run_id:

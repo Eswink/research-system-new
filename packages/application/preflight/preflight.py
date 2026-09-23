@@ -21,6 +21,11 @@ from packages.application.preflight.dry_run import (
 from packages.application.preflight.dry_run import (
     dry_run_projection as dry_run_projection,
 )
+from packages.application.preflight.policy_acceptance import (
+    FreezeAcceptance,
+    evaluate_freeze_acceptance,
+    freeze_refusal_message,
+)
 from packages.application.preflight.policy_check import check_policy
 from packages.application.preflight.role_checks import check_team
 from packages.application.protocol_compile.compiler import compile_protocol
@@ -183,16 +188,34 @@ def freeze_manifest(
     A non-empty pricing pair is fail-closed: the pricing reference and the
     snapshot must be written together so later projections never fall back to
     the table loaded at read time.
+
+    GOAL-20260923-012 EC-01：`WARN` 报告在**唯一**一条通道下也可冻结——当且仅当
+    报告里只有 `TOOL_RISK_ELEVATED`，且那些 provider 的 EXECUTE 风险已被**显式策略声明**
+    允许（见 `policy_acceptance`）。接受会随 `accepted_policy_exceptions` **留痕**；
+    未声明允许时仍拒冻，消息**点名**缺哪条策略事实。`report.passed` 的语义未改。
     """
-    if not report.passed:
-        raise ManifestFreezeError("cannot freeze manifest before a passing preflight")
+    frozen_at = Timestamp.now()
+    acceptance = evaluate_freeze_acceptance(
+        plan, report, context, accepted_at=frozen_at.value.isoformat()
+    )
+    if not acceptance.accepted:
+        raise ManifestFreezeError(freeze_refusal_message(acceptance))
     return _manifest_of(
         run_id,
         plan,
         report,
         context,
-        _release_pricing(pricing_freeze),
+        _FreezeCarrier(_release_pricing(pricing_freeze), acceptance, frozen_at),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class _FreezeCarrier:
+    """`_manifest_of` 的载荷：定价引用 + 通道留痕 + 冻结时刻（同一次冻结同源）。"""
+
+    pricing: _PricingRefs
+    acceptance: FreezeAcceptance
+    frozen_at: Timestamp
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,7 +243,7 @@ def _manifest_of(
     plan: CompiledRunPlan,
     report: PreflightReport,
     context: PreflightContext,
-    pricing: _PricingRefs,
+    carrier: _FreezeCarrier,
 ) -> RunManifest:
     policy_version = context.catalog.policy.version.text if context.catalog.policy else None
     frozen_contracts: dict[str, object] = {
@@ -250,9 +273,12 @@ def _manifest_of(
         # None —— M7 的「不伪填充」口径不变，只是以前无来源、现在有来源。
         execution_backend=context.execution_substrate,
         budget_reservation_ref=report.reserved_budget_ref,
-        frozen_at=Timestamp.now(),
-        pricing_version=pricing.version,
-        pricing_digest=pricing.digest,
+        frozen_at=carrier.frozen_at,
+        pricing_version=carrier.pricing.version,
+        pricing_digest=carrier.pricing.digest,
+        # GOAL-20260923-012 EC-01：走显式策略通道时的**留痕**（空 = 未使用通道，
+        # 既有 manifest 的字节与 digest 逐字不变）。
+        accepted_policy_exceptions=list(carrier.acceptance.exceptions),
     )
 
 

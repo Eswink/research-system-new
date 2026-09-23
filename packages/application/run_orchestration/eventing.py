@@ -76,6 +76,10 @@ def frozen_payload(run: ResearchRun, manifest: RunManifest) -> dict[str, object]
         # 进读面。空 dict = 冻结时未声明该面，与 `execution_backend` 的 None 同口径；
         # 有值时是 `{substrate, status, reason}` 的**状态**记录，不是指纹值本身。
         "runtime_fingerprint": dict(manifest.model_runtime_fingerprints),
+        # GOAL-20260923-012 EC-01：冻结门走**显式策略通道**时的留痕，与 manifest 的
+        # `accepted_policy_exceptions` **同源同值**（读面回读的仍是本 payload）。
+        # 空列表 = 未走该通道；有值时逐条给出「哪条策略 / 哪个能力 / 何时」。
+        "accepted_policy_exceptions": [dict(item) for item in manifest.accepted_policy_exceptions],
     }
 
 
