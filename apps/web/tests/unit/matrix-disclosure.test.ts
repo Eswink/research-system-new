@@ -65,7 +65,11 @@ function opsLevels(source: string): Map<string, string> {
   const levels = new Map<string, string>();
   const pattern = /"(ops\/[a-z-]+)":\s*\{[^}]*?level:\s*"([a-z]+)"/g;
   for (const found of source.matchAll(pattern)) {
-    levels.set(found[1], found[2]);
+    const route = found[1];
+    const level = found[2];
+    if (route !== undefined && level !== undefined) {
+      levels.set(route, level);
+    }
   }
   return levels;
 }
