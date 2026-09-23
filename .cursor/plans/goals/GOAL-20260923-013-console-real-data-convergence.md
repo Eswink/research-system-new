@@ -252,6 +252,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260923-151-live-page-read-face-batch-two.md
   - .cursor/plans/tasks/PLAN-20260923-152-live-page-read-face-batch-three.md
   - .cursor/plans/tasks/PLAN-20260923-153-frontend-criteria-disclosure-judge.md
+  - .cursor/plans/tasks/PLAN-20260923-154-ops-matrix-disclosure-first-class.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-154-frontend-criteria-disclosure.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md
