@@ -108,6 +108,26 @@ LIVE_SNAPSHOT_FILES_AFTER: tuple[tuple[str, bytes], ...] = (
     ("src/util.py", b"def helper():\n    return 1\n"),
 )
 
+# GOAL-013 EC-02 第三批（`#/insights/reports`）：受控**持久化交付物**。
+#
+# live app 的 Fake 链**不跑 M12 参考链**，因此实测四条 run 的 `/runs/{id}/deliverable`
+# 全部 `available: false` ⇒ 无法演示「非空读面 → 非空渲染」。这里按本文件既有的夹具模式
+# （`Artifact` + `Digest.of_bytes`，digest 由**域代码**生成）为**既有** run 落一份
+# `"{run_id}:deliverable.json"`，让读面 `available: true`。
+#
+# 挂在既有 run 上（而不是新建 run）：新建 run 会改动 `run_count` 等既有读面数字，
+# 干扰别的 live 用例；挂既有 run 则读面只多一个字段。
+#
+# **诚实边界**：这份交付物是**受控夹具**，不是一次真实 M12 参考链的产出。用例只判
+# 「读面 → DTO → 页面」这一段，**不声称**「页面上是真实研究运行产出的报告」。
+LIVE_DELIVERABLE_RUN_ID = LIVE_SNAPSHOT_RUN_ID
+LIVE_DELIVERABLE_PAYLOAD: dict[str, object] = {
+    "run_id": LIVE_DELIVERABLE_RUN_ID,
+    "objective": "live deliverable fixture: confirm the report read face renders",
+    "final_answer": "fixture summary line consumed by the report page",
+    "citation_count": 2,
+}
+
 
 def _seed_artifact(
     artifact_id: str, payload: bytes, *, media_type: str = "application/json"
@@ -129,6 +149,32 @@ def _with_artifacts(deps: ApiDeps) -> ApiDeps:
         return deps
     for artifact_id, payload in LIVE_DIFF_ARTIFACTS:
         store.put(_seed_artifact(artifact_id, payload), payload)
+    return deps
+
+
+def _with_deliverable(deps: ApiDeps) -> ApiDeps:
+    """为既有 run 落一份受控 `deliverable.json`，让 `/runs/{id}/deliverable` 非空。
+
+    路径与域侧一致：`services/api/routers/deliverable.py` 按
+    `f"{run_id}:deliverable.json"` 查 store，`packages/application/m12_reference/persistence.py`
+    也用同名产物 ⇒ 夹具只决定**内容**，不复制任何读写逻辑。
+    """
+    store = deps.artifacts
+    if store is None:
+        return deps
+    payload = json.dumps(LIVE_DELIVERABLE_PAYLOAD, ensure_ascii=False).encode("utf-8")
+    artifact = _seed_artifact(f"{LIVE_DELIVERABLE_RUN_ID}:deliverable.json", payload)
+    store.put(
+        Artifact(
+            id=artifact.id,
+            digest=artifact.digest,
+            size_bytes=artifact.size_bytes,
+            media_type=artifact.media_type,
+            source_refs=artifact.source_refs,
+            classification="research_deliverable",
+        ),
+        payload,
+    )
     return deps
 
 
@@ -416,7 +462,9 @@ def _with_substrate_disclosure(deps: ApiDeps) -> ApiDeps:
 app = create_app(
     _with_tool_pack_policy(
         _with_experiment_catalog(
-            _with_substrate_disclosure(_with_snapshots(_with_artifacts(make_run_ready_deps())))
+            _with_substrate_disclosure(
+                _with_snapshots(_with_deliverable(_with_artifacts(make_run_ready_deps())))
+            )
         )
     )
 )
