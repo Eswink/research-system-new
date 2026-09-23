@@ -145,7 +145,32 @@ exit_criteria:
       （抽查的红/绿对照落 `scratch/`）。治理层面：新增工程记忆（`MEM-*`）承载这条性质口径，
       且该记忆被 RECHECK 引用（**同一提交**内，防 GOAL-012 cycle 5 的「引用落在下一个提交」
       判红复发）。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-24 cycle 4 收口（`PLAN-20260923-153` → **DONE**；复检
+      `RECHECK-20260923-154` = **PASS**；工程记忆 `MEM-20260923-121`）。交付：披露登记册
+      `apps/web/tests/unit/frontend-criteria-disclosure.ts`（**16 条**：12 条页面级 live +
+      4 条离线矩阵判据，每条两栏 = 按压对象 + **不敏感面**）、机械判据
+      `apps/web/tests/unit/frontend-criteria-disclosure.test.ts`（4 条：**双向**完备
+      [解析各 spec 的 test 名 ↔ 登记册]、字段非空且非空话、披露与红证一致、
+      人读文档同源）、人读视图 `docs/frontend/CONSOLE_FRONTEND_CRITERIA_DISCLOSURE.md`。
+      实现证据：unit **84 passed / 0 failed**（含新判据 4 条）、stub e2e **96 passed**、
+      live e2e **53 passed**、web `lint`/`typecheck`/`build` 全绿。**披露为真**由**抽查实跑**
+      证明（成对）：把 provider id 在 `tool_providers.yaml` 改名（**按数据**，读面与页面同源）
+      ⇒ **2 passed**；把 `providerColumns` 的 `health` 渲染钉成常量（**按页面**）⇒ **2 failed**
+      （`scratch/goal013-c4-spotcheck-data.txt` / `-page.txt`）。**16 条每条都有红证**，
+      含 cycle 1–3 遗留、本 cycle 补按压的 4 条（矩阵判据 ①/④、`govern/audit` 空态、
+      `insights/reports` 空态）；判据自身也各按一次（空话披露 2 failed、删登记册一条 1 failed、
+      删文档一行 1 failed）。**独立复检** `scratch/verify_goal013_c4.py` 两棵树：
+      主树 `checked=49 failures=0`；干净 checkout `5b9f2c2` `checked=43 failures=3`
+      （**全部**是「尚未收口」时序项）+ **一条具名环境差异**（干净树无 `scratch/`，
+      按压证据按策略只存本机、不进仓库；主树仍强制校验两份日志）。
+      **两处复检脚本自身缺陷当轮查出并修掉**：① A4 的 git 口径只在**提交后**生效，
+      提交瞬间把两个**机器件**当判据点名 ⇒ 按名排除后**重新按压**（临时 worktree 里加新测试
+      文件并提交 ⇒ A4 判红点名它）证明未削弱；② E 组把「本机证据策略」误记成失败 ⇒ 改记
+      具名环境差异，避免它被读成「两树不同结论」。**诚实边界（两条）**：A4 是**读 git 历史**
+      的结构判据 ⇒ 只对**已提交**改动敏感；披露本身**不能**替代语义正确性 —— 语义由各条
+      live 用例承载（其敏感面是**页面那一段**）。
   - id: EC-04
     criterion: >-
       **`gap` 项 `ops/matrix` 单独处置**：二选一且**不留含糊**——
@@ -227,7 +252,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260923-151-live-page-read-face-batch-two.md
   - .cursor/plans/tasks/PLAN-20260923-152-live-page-read-face-batch-three.md
   - .cursor/plans/tasks/PLAN-20260923-153-frontend-criteria-disclosure-judge.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-153-live-page-read-face-batch-three.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-154-frontend-criteria-disclosure.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md
   - .cursor/memory/entries/MEM-20260923-116-local-m0-green-recipe.md
@@ -235,6 +260,7 @@ memory_entries:
   - .cursor/memory/entries/MEM-20260923-118-governance-token-ban-in-closed-records.md
   - .cursor/memory/entries/MEM-20260923-119-live-read-face-ownership-and-fixture-anchoring.md
   - .cursor/memory/entries/MEM-20260923-120-recheck-root-must-follow-cwd.md
+  - .cursor/memory/entries/MEM-20260923-121-criterion-disclosure-as-first-class-asset.md
 ---
 
 ## 目标与退出标准
@@ -246,7 +272,7 @@ memory_entries:
 | --- | --- | --- | --- |
 | EC-01 | 20 条逐页矩阵：每条终态 ∈ {收敛, 保持}，零条待定；(a) 有具名 live 用例，(b) 点名缺哪条 API/字段；三方同源 | `docs/frontend/CONSOLE_REAL_DATA_MATRIX.md` 完备性判据 + `pageSupport.ts` 差集判据 + `CONSOLE_PAGE_MAP.md` 一致性判据（离线、零出网） | PENDING |
 | EC-02 | ≥6 条 live e2e，覆盖 6 域各 ≥1，判据形态统一「页面 == 读面」+ 成对反证（空读面 ⇒ 诚实空态） | `RESEARCHOS_AGENT_RUNTIME=openhands pnpm run test:e2e:live`（真实数据）+ 离线 `pnpm run test:e2e` 仍绿 | **PASS（6/6）**：`plan/overview`、`portfolio/experiments`、`library/lineage`、`insights/reports`、`ops/integrations`、`govern/audit` 六域各一条；live 全套 **53 passed**、stub **96 passed** |
-| EC-03 | 每条新增前端判据写明能被什么按压 / 不能被什么按压；同源数据面须按页面那一段 | 反证表落 RECHECK + 抽查实跑红/绿对照（`scratch/`）+ `MEM-*` 同提交 | PENDING |
+| EC-03 | 每条新增前端判据写明能被什么按压 / 不能被什么按压；同源数据面须按页面那一段 | 反证表落 RECHECK + 抽查实跑红/绿对照（`scratch/`）+ `MEM-*` 同提交 | **PASS**：**16 条**判据（12 live + 4 离线）逐条在册、两字段非空、各自有红证；抽查成对（按数据 **2 passed** / 按页面 **2 failed**）证披露为真；机械判据四条各按压转红 |
 | EC-04 | `ops/matrix` 单独处置：真实消费者并收敛，或「界面状态说明页（非实时运维状态）」成三处同源一等事实 | 三处措辞一致性判据 + 页面文案断言（先红后绿可演示） | PENDING |
 | EC-05 | 独立复检脚本两树同结论 + m0 23/23 + validate 绿 + CI 台账终态 + 残余 13 条原样保留 + `W` 列表登记 | `scratch/verify_goal013_c<N>.py` + `make validate-all` + `validate.py` + `scratch/poll_ci_all.sh <sha>` | PENDING |
 
@@ -305,6 +331,13 @@ memory_entries:
   收窄方式：把「渲染正确」**操作化**为「页面 == 读面（逐值）+ 该页有成对反证」，不留自由裁量。
 - `R-F2`｜**本 GOAL 的诚实边界**：EC-02 的 live 用例若因真实数据**规模不足**（例如某读面天然为空）
   无法演示非空渲染，则该条**不得**计入 ≥6，须在记录里如实标注并改用其他页。
+- `R-F3`｜**环境型残余（cycle 4 实测，非本 GOAL 改动）**：本机 m0 的
+  `framework/validate_bundle` 会被**并发写者的 gitignored scratch 文档**判红
+  （`scratch/self-governance-bootstrap-prompt.md` 正文里的正则字面量被纯文本链接扫描读成本地链接）。
+  **成对归因**：同一脚本换 `CURSOR_FRAMEWORK_ROOT`，主树 `exit 1`（只此一条）、
+  `7d3eecf` 干净 worktree（无 `scratch/`）`exit 0` 全绿；CI 检出无 `scratch/` ⇒ **CI 不受影响**。
+  处置：**不删不改外来在制品**（并发工作树纪律）；EC-05 的本地 **23/23** 在该文件修复或消失后重测，
+  未转绿前**不得**声称本地全绿。
 
 ## 循环入口协议
 
@@ -438,6 +471,8 @@ memory_entries:
 
 | 3 | PLAN-20260923-152（EC-02 第三批） | `27bf317`（derive：PLAN-152 + ALL_PLAN + `child_plans`）、收口回写见台账尾巴 | **live 全套 53 passed**（cycle 2 的 47 + 本批 6）、**stub 96 passed**、web `lint` / `typecheck` / `build` 全绿、`validate.py` 绿、`DOCS-CHECK PASS: 6`；**三处按页面按压先红后绿**（`scratch/goal013-c3-press-experiments.txt` 2 failed、`-press-reports.txt` 1 failed、`-press-integrations.txt` 2 failed）；**独立复检** `scratch/verify_goal013_c3.py` 两棵树成对（当前树 `checked=50 failures=0`；干净 checkout `@78e60cf` `checked=49 failures=4`＝全部「尚未收口」时序项）；**并查出并修掉前两个 cycle 的复检方法缺陷**：三个脚本初版用 `Path(__file__).parents[1]` 定 ROOT ⇒ 从干净 checkout 调用主树脚本时「两棵树」实为**同一棵树跑两次** ⇒ 改为由**调用目录**定 ROOT（`MEM-20260923-120`），`RECHECK-151`/`-152` 已就地补更正说明（前两 cycle 的**结论不变**，证据方法已更正）；**m0 23/23**（`scratch/goal013-c3-m0.log`，沿用 `MEM-20260923-116` 的配方、收口记录**先落盘再跑**；首轮两红均**当轮修掉**，见下）| 见下方 CI 台账 | **① 第一版用例的缺陷当轮查出并修掉**：`#/portfolio/experiments` 消费的是 **per-run** 读面 `GET /runs/{id}/experiments`（要 `?run=`），第一版按**项目级** `/projects/{id}/experiments` 写 ⇒ 实测红（无 `?run=` 时页面渲染「未选择运行」空态，表**不在 DOM 里**）⇒ 改按 per-run 读面 + `?run=` 后转绿；教训落 `MEM-20260923-119`（**同名读面存在 ≠ 页面消费它**）。**② `insights/reports` 的非空方向需要受控夹具**（如实登记）：实测四条 run 的 `/runs/{id}/deliverable` 全部 `available: false`（live app 的 Fake 链不跑 M12 参考链）⇒ 按 D-4 补一份受控交付物，**挂在既有 run** `1111…1111` 上而非新建 run（新建会改 `run_count` 等既有读面数字、扰动别的 live 用例）；夹具身份在代码注释与本记录里如实标注，**不声称**报告来自真实研究运行 | **EC-02 PASS（6/6）**：`plan/overview`、`portfolio/experiments`、`library/lineage`、`insights/reports`、`ops/integrations`、`govern/audit` 六域各一条，每条都「页面级 + 读面先行 + 成对反证」。**EC-03/04/05 未动**；`W-A` / `W-C` / `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` 与 13 条人工面**原样保留** | cycle 4 = **EC-03 判据性质披露的全面落地**：把三个 cycle 新增的**每条**前端判据逐条写明「能被什么按压 / 不能被什么按压」，并落成**机械判据**（抽取判据 → 检查披露字段非空 → 抽查实跑证披露为真）；（EC-04 = `ops/matrix` 单独处置：页面文案与文档同源成三处一等事实；EC-05 = 收口复检）|
 
+| 4 | PLAN-20260923-153（EC-03） | `a09a0fa`（derive：PLAN-153 + ALL_PLAN + `child_plans`）、`5b9f2c2`（WP1–WP3：登记册 + 机械判据 + 人读文档）、`7d3eecf`（两条本地门红的修复：kebab-case 命名 + 文档房规引用）、收口回写见台账尾巴 | **unit 84 passed / 0 failed**（cycle 1 的 80 + 新判据 4 条）、**stub e2e 96 passed**、**live e2e 53 passed**、web `lint`（`--max-warnings 0`）/ `typecheck` / `build` 全绿、`validate.py` 绿、`DOCS-CHECK PASS: 6`；**16 条判据每条都有红证**（含本 cycle 补按压的 4 条遗留：矩阵判据 ①/④、`govern/audit` 空态、`insights/reports` 空态）；**判据自身按压 3 次**（空话披露 ⇒ 2 failed、删登记册一条 ⇒ 1 failed、删文档一行 ⇒ 1 failed）；**抽查成对实跑**（按数据 `2 passed` / 按页面 `2 failed`）证明披露为真；**独立复检** `scratch/verify_goal013_c4.py` 两棵树（主树 `checked=49 failures=0`；干净 checkout `7d3eecf` `checked=43 failures=3` = 全部「尚未收口」时序项 + 一条**具名环境差异**）；**m0 22/23**（`scratch/goal013-c4-m0.log`，沿用 `MEM-20260923-116` 配方）；**唯一未绿项 `framework/validate_bundle` 与本 GOAL 的改动无关**——判词只有一条：`scratch/self-governance-bootstrap-prompt.md` 是**并发写者**今日落进 `scratch/` 的 **gitignored** 文档，正文里的正则字面量恰好长成 Markdown 链接形状，而该判据的链接扫描是纯文本正则（不识别围栏块）⇒ 成对实跑归因：同一脚本换 `CURSOR_FRAMEWORK_ROOT`，主树 **exit 1（只此一条）**、`7d3eecf` 干净 worktree（无 `scratch/`）**exit 0 全绿**；CI 检出无 `scratch/`，不受影响。**本 GOAL 不处置该外来在制品**，登记为环境型残余（`R-F3`），本地 23/23 留给 EC-05 复测 | 见下方 CI 台账 | **本 cycle 的缺陷全部落在自己新增的装置/脚本或自己新增的文件上，无一条落在产品代码、既有判据上**：① **按压未跟踪的新文件** `git checkout --` 不还原（文件不在索引里）⇒ 按压后改动留在盘上、判据随即判红 ⇒ 改**手工还原 + 重跑确认 `# fail 0`**；② 复检 A4 的 git 口径只在**提交后**生效 ⇒ 提交瞬间把登记册模块与它的机械判据当判据点名（**这两条红同时也是 A4 非恒真的实测证据**）⇒ **按名**排除两个机器件，并**在临时 worktree 里加新测试文件 + 提交重新按压**证明未削弱（A4 判红点名它）；③ E 组把「本机证据策略」误记成失败（干净树永不可能转绿）⇒ 改记**具名环境差异**，主树口径不变。**另两处**：cycle 4 的 lint 首轮报 `max-params` / `max-len` 三条 ⇒ 改单对象入参 + 多行数组后转绿；**本地 m0 首轮 `python/tests` 判红两条（`2 failed, 4411 passed`），两条都落在本 cycle 新增的文件上** —— ① `tests/` 下的测试/夹具 TS 文件名必须 **kebab-case**（既有 camelCase 属**基线豁免**，注释写明「新文件仍受约束」）⇒ 登记册模块改名，**不加豁免**（加豁免即「改门禁使其通过」）；② 新文档的 7 条 `[backtick-ref]` 把 spec 路径写成相对 `apps/web` 的 `tests/...`，而该门按**仓根**解析 ⇒ 改齐房规 `apps/web/tests/...`。修复合并进 `7d3eecf` 后 unit / stub / live / typecheck / build / docs **全部重跑**（记录里的数字均取自修复后的树）；**唯一一条非本 GOAL 的未绿项是环境型残余 `R-F3`（并发写者的 gitignored scratch 文档），已如实登记、不当已解决** | **EC-03 PASS**：16 条判据（12 live + 4 离线）逐条在册、两字段非空非空话、各自有红证，披露经抽查实跑证明为真，且由**机械判据双向**强制（登记册 ↔ spec test 名 ↔ 人读文档）。**EC-04/EC-05 未动**；`W-A` / `W-C` / `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` 与 13 条人工面**原样保留** | cycle 5 = **EC-04 `ops/matrix` 单独处置**：按 F-6 的既有文档基础取 **(ii) 一等事实**——页面**可见**文案 + `pageSupport.reason` + `CONSOLE_PAGE_MAP.md` 小节 + 矩阵行**四处同源**，并落一条**页面文案断言**（可复跑、先红后绿可演示）；**注意 F-3**：`resolveDataSource` 对 `gap` 落 `example` 的语义是**真实消费者**，EC-04 若触及它须一并给出消费者与页面为证 |
+
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
@@ -504,12 +539,51 @@ memory_entries:
 
 - 2026-09-23：**cycle 3 收口**（`status: ACTIVE` 不变）。PLAN-20260923-152 **DONE**，`RECHECK-20260923-153` **PASS**。三条新的**页面级**「页面 == 读面」用例（`portfolio/experiments`、`insights/reports`、`ops/integrations`）实跑并**按页面**先红后绿（live 全套 **53 passed**、stub **96 passed**）⇒ **EC-02 判 PASS（6/6，六域各一条）**。**第一版用例的缺陷当轮查出并修掉**：`#/portfolio/experiments` 消费 per-run 读面（`GET /runs/{id}/experiments`，要 `?run=`），按项目级读面写实测红 ⇒ 改后转绿（落 `MEM-119`）。**`insights/reports` 的非空方向补了一份受控夹具**（挂既有 run，如实标注为夹具）。**m0 23/23**，首轮吃两红并当轮修掉：① 受控交付物夹具最初直接写进 `console_api_app.py`，把文件推到 470 行、越过 **450 行硬上限** ⇒ m0 `python/tests` 判红（`1 failed, 4411 passed`）⇒ 拆成独立模块 `tests/api/live_deliverable_fixture.py` 后 **427 行**转绿；② 复检加更正小节时**顶掉了必需标题 `## 检查结果`** ⇒ `framework/validate` 判红 ⇒ 恢复标题。两条**都落在本 cycle 自己新增的夹具位置与记录结构上**，不是产品代码、不是既有判据、不是环境。**EC-03/04/05 未动**；`W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1`/`R-F1`/`R-F2` 与 13 条人工面**原样保留**。
 
+- 2026-09-24：**cycle 4 收口**（`status: ACTIVE` 不变）。PLAN-20260923-153 **DONE**，
+  `RECHECK-20260923-154` **PASS**，工程记忆 `MEM-20260923-121`（与复检**同一提交**）。
+  **EC-03 判 PASS**：本 GOAL 新增的 **16 条**前端判据（12 条页面级 live + 4 条离线矩阵判据）
+  逐条写入披露登记册（按压对象 + **不敏感面**两栏），由机械判据**双向**强制并与人读文档
+  `docs/frontend/CONSOLE_FRONTEND_CRITERIA_DISCLOSURE.md` 同源；unit **84 passed**、
+  stub e2e **96 passed**、live e2e **53 passed**、`lint`/`typecheck`/`build` 全绿。
+  **披露为真由抽查实跑证明**（成对）：按数据（读面与页面同源）⇒ **2 passed**，
+  按页面（钉住渲染值）⇒ **2 failed**。cycle 1–3 遗留的 4 条无红证判据（矩阵判据 ①/④、
+  `govern/audit` 空态、`insights/reports` 空态）本 cycle **补按压**补齐；
+  判据自身也各按一次（防恒真）。**两处复检脚本自身缺陷当轮查出并修掉**：
+  ① A4 的 git 口径只在**提交后**生效 ⇒ 提交瞬间把两个**机器件**当判据点名（**那两条红同时
+  就是 A4 非恒真的证据**）⇒ 按名排除后**在临时 worktree 里加新测试文件 + 提交重新按压**
+  证明未削弱；② E 组把「本机证据策略」误记成失败 ⇒ 改记**具名环境差异**（干净树无
+  `scratch/` 是策略所致，主树仍强制校验两份日志）。**一处操作陷阱**：按压**未跟踪**的新文件
+  时 `git checkout --` **不还原**（不在索引里）⇒ 改手工还原 + 重跑确认。
+  **m0 首轮两条真红**（`python/tests` ⇒ `2 failed, 4411 passed`）**都落在本 cycle 新增的文件上**：
+  ① 命名门要求 `tests/` 下的测试/夹具 TS 文件 **kebab-case**（既有 camelCase 是**基线豁免**，
+  注释明写「新文件仍受约束」）⇒ 登记册改名，**不动门禁、不加豁免**；② 文档 `[backtick-ref]`
+  7 条 —— 该门按**仓根**解析 `tests/` 前缀，新文档写成 app 相对路径 ⇒ 改齐房规
+  `apps/web/tests/...`（既有矩阵/页面地图文档即此写法）。两条修复合并 `7d3eecf` 后
+  unit / stub / live / typecheck / build / docs **全部重跑**。**一处口径更正**：本 cycle 早先单跑
+  `docs_consistency_check.py` 得到的 `DOCS-CHECK PASS: 6` 是**文档落盘之前**的结论，
+  不作过门证据（真实门在文档落盘后判红 7 条，修后重跑为
+  `DOCS-CHECK PASS: 6 deterministic checks`）。
+  **本地 m0 = 22/23**：唯一未绿项 `framework/validate_bundle` 的红**不是本 GOAL 的改动** ——
+  并发写者今日落进 `scratch/` 的 gitignored 文档里，一段正则字面量恰好长成 Markdown 链接形状，
+  而该判据的链接扫描是**纯文本正则、不识别围栏块**；**成对实跑归因**（同一脚本只换
+  `CURSOR_FRAMEWORK_ROOT`）：主树 `exit 1`（判词只有这一条）/ `7d3eecf` 干净 worktree（无
+  `scratch/`）`exit 0` 全绿；CI 检出无 `scratch/` ⇒ **CI 不受影响**。**不删不改外来在制品**
+  （并发工作树纪律），登记为环境型残余 `R-F3`；本地 23/23 留给 EC-05 复测，未转绿前
+  **不得**声称本地全绿。
+  **EC-04/EC-05 未动**；`W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1`/`R-F1`/`R-F2`
+  与 13 条人工面**原样保留**。
+
 ## 当前续点
 
-- **续点**：cycle 3 已收口（PLAN-152 DONE，`RECHECK-153` PASS，`MEM-119` 已落），
-  台账尾巴提交见回合汇报。**EC-02 已 PASS（6/6）**。**下一轮 = cycle 4**：**EC-03 判据性质披露的
-  全面落地** —— 把三个 cycle 新增的**每条**前端判据逐条写明「能被什么按压 / 不能被什么按压」，
-  并落**机械判据**（抽取判据 → 检查披露字段非空 → **抽查实跑**证明披露为真），披露需被 `MEM-*` 承载且同提交引用。
+- **续点**：cycle 4 已收口（PLAN-153 DONE，`RECHECK-154` PASS，`MEM-121` 已落，功能提交
+  `5b9f2c2`），台账尾巴提交见回合汇报。**EC-01 / EC-02 / EC-03 已 PASS**。
+  **下一轮 = cycle 5**：**EC-04 `ops/matrix` 单独处置** —— 取 **(ii) 一等事实**：
+  页面**可见**说明文案 + `pageSupport.reason` + `CONSOLE_PAGE_MAP.md` 的 `#/ops/matrix` 小节
+  + 矩阵行**四处同源**，并落一条**页面文案断言**（可复跑，先红后绿可演示）。
+  **必读注意**：① `pageSupport.reason` 的文本被**设计基线** `design-outlines.json` 渲染
+  （cycle 1 实测）⇒ 改 `reason` **文字**等于改设计基线，须按既有流程强制重生成 + 目检，
+  **不得调容差**；② `resolveDataSource` 对 `gap` 落 `example` 是**真实消费者** ⇒
+  若 EC-04 触及 `level`，须一并给出消费者与页面为证（F-3/F-4）。
 - **注意（承 cycle 2 的实测）**：本批两条判据的写法纪律已落 `MEM-20260923-117` ——
   空态/否定性断言**必须两端锚定** `^…$`；CSS 属性选择器**不做候选**，要写成选择器列表。
 - **注意（承 cycle 1 的实测）**：`live-project-lineage` 与 `live-project-cost-forecast`
