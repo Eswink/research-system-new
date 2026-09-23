@@ -2,7 +2,7 @@
 id: PLAN-20260923-146
 slug: path-b-refutation-record
 title: 路径 (B) 的独立否证记录：把 GOAL-011 的四项实测事实落成「已否证 / 待重新设计」（GOAL-012 EC-04）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-23
 updated_at: 2026-09-23
 parent_goal: GOAL-20260923-012
@@ -21,7 +21,7 @@ authorization:
     **若「记录 (B) 的否证」这一动作本身需要重新设计 (B)（即需要改合约/门禁/协议）⇒ 立即停止并记
     BLOCKED**：重新设计属**需拍板**项，不是本 GOAL 的授权范围。
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-146-path-b-refutation-record.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260923-112-verifier-token-drift-after-amend.md
 ---
@@ -69,7 +69,8 @@ GOAL-011 既有登记（`W-P` / `W-Q` / `W-R`）和 `PLAN-20260922-138` 的 BLOC
 - [x] **WP1** 载体与投影：本 PLAN + `ALL_PLAN` 行 + GOAL `child_plans`（同一提交）。
 - [x] **WP2** 记录正文：`docs/roadmap/PATH_B_REFUTATION_RECORD.md`（四项事实 + 关系声明 + 待重新设计）。
 - [x] **WP3** 登记：GOAL-012 残余节指向该文件；迭代日志写明载体。
-- [ ] **WP4** 门与收口：`docs_consistency_check` + m0 + `validate.py`；`RECHECK-*` + GOAL 回写。
+- [x] **WP4** 门与收口：`docs_consistency_check` + m0 + `validate.py`；`RECHECK-20260923-146`（PASS）+ GOAL 回写
+  （EC-04 状态、迭代日志第 4 行、状态历史、`memory_entries`）。
 
 ## 证据
 
@@ -105,3 +106,11 @@ m0 的 50 行/函数门禁驱动）里被**纯重构**成一行式 ⇒ 记录里
 - 2026-09-23：记录正文 + 投影 + 登记落盘（WP1–WP3）；`docs_consistency_check` 与 `validate.py`
   双绿；两棵树复检 `scratch/verify_goal012_c4.py`（当前树 24/24、基线树 `ea06b77` 14 红＝全部新面）。
   核对中另查出 `RECHECK-145` 的一处**时序错误**（数字测于 amend 之前）并就地勘误（E-5）。
+
+## 收口（cycle 4）
+
+- **复检**：`RECHECK-20260923-146` = **PASS**（独立脚本两棵树成对 + 逐条 AC + 只读证明 + 门）。
+- **状态**：`DONE`；`latest_recheck` 指向该复检（仓库相对路径）。
+- **工程记忆**：`MEM-20260923-112`（复检脚本不要钉被检对象的中间形态字面量；amend 之后必须复测）。
+- **零改动确认**：本 PLAN 未改任何产品代码、协议、合约、测试、门禁、策略面；未改 GOAL-011 与
+  `PLAN-20260922-138`（`git diff --stat` 两次为空）。零出网、零凭据读取。

@@ -203,7 +203,26 @@ exit_criteria:
       独立记录文件在位（仓库相对路径，由子 PLAN 定案并在 GOAL 迭代日志写明载体）；
       其正文**逐条**覆盖四项否证（各带机制与实测出处）；GOAL-011 的 `W-P` / `W-Q` / `PLAN-138`
       的 BLOCKED 状态**原样保留**（不被本 GOAL 改写）；本文件的残余节登记该记录路径。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-23 cycle 4（`PLAN-20260923-146`，提交 `830a72c`）：**PASS**。
+      ① **载体**（子 PLAN 定案 D-1，迭代日志已写明）：`docs/roadmap/PATH_B_REFUTATION_RECORD.md`
+      ——状态逐字「**已否证（refuted）/ 待重新设计（needs redesign）**」+「**不是待办功能，也不是
+      已完成**」。② **四项事实逐条**各带「机制」+「实测出处」（**实测出处恰 4 处**）：①上限 3
+      ②`conflicting source registration` 硬失败 ③`minimum_sources: 10` 不相容 ④三条判据无产品
+      调用方；出处指向 `PLAN-20260922-138` 的 `E-3`/`E-4`/`E-5` 与两个 `scratch/` 探针脚本。
+      ③ **只读历史**（两棵树成对证明）：`git diff --stat` 相对 `HEAD` 与相对基线树 `ea06b77`
+      **两次都空**（`GOAL-20260922-011` / `PLAN-20260922-138` / `RECHECK-20260923-139`）；
+      `W-P`/`W-Q` 原文可查；`PLAN-138` 仍 `status: BLOCKED`。④ **残余节**：`R-B1` 已指向该记录
+      （含四项事实摘要 + 「原样保留」句 + 「不得读成待办功能」）。⑤ **两道检查**：
+      `docs_consistency_check` ⇒ `DOCS-CHECK PASS: 6 deterministic checks`；`validate.py` ⇒
+      `Cursor 治理验证通过`；m0 **23/23**（`python/tests` 4411 passed / 19 skipped，与 cycle 3 同数
+      ⇒ 只加文档）。⑥ **独立复检** `scratch/verify_goal012_c4.py` 两棵树成对：当前树
+      `checked=24 failures=0`；基线树 `14 红`**全部**是本 cycle 新增面 ⇒ **零产品改动、零改写历史**。
+      ⑦ **顺带查出并处置**一处既有记录缺陷：`RECHECK-145` 的「当前树 24/24」测于一次 amend
+      **之前**，且复检脚本 B2 钉了判据的中间形态字面量 ⇒ B2 改判语义（四 token，强度只增）、
+      复测同结论同数字、`RECHECK-145` 就地追加「勘误」节、事实进 `MEM-20260923-112`。
+      **本 cycle 未改任何产品代码/协议/合约/测试/门禁/策略面**；零出网、零凭据读取。
   - id: EC-05
     criterion: >-
       **前端消费实验读面**（**可选**，视预算）：实验页在**真实数据**下渲染实验产物 / 指标。
@@ -269,6 +288,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md
 latest_recheck: null
 memory_entries:
+  - .cursor/memory/entries/MEM-20260923-112-verifier-token-drift-after-amend.md
   - .cursor/memory/entries/MEM-20260923-111-experiment-evidence-traceability-judge-shape.md
   - .cursor/memory/entries/MEM-20260923-110-multi-provider-session-judge.md
   - .cursor/memory/entries/MEM-20260923-109-freeze-gate-policy-allowance-channel.md
@@ -285,10 +305,10 @@ memory_entries:
 
 | EC | 标准 | 验证命令／证据来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **冻结门通道（路径 A）**：策略**显式允许**该 EXECUTE 能力 ⇒ 预检报告仍含 `WARN` 但冻结**可完成**，且 manifest/事件**留痕**（哪条策略、哪个能力、何时）；策略**未允许** ⇒ **仍拒冻**并点名缺失的策略事实；反证成对（撤允许 ⇒ 拒冻；去留痕 ⇒ 判据红）；**不得**放宽 `classify_risk` / **不得**改 `WARN` 语义 / **不得**让 WARN 无条件可冻 | 离线定向判据三条（允许通道 / 拒冻反证 / 留痕反证，各自先红后绿）+ EC-02 真实 run 的 `manifest_digest` 非空与事件留痕 | **PENDING**（cycle 1 落通道 + 三条离线判据 + 三处按压 + **API 级端到端**已实测；**EC-02 的真实 run 形态**未发生 ⇒ 不提前记 PASS——见 `status_note`） |
-| EC-02 | **真实实验执行链**（GOAL-011 EC-03 原判据）：真实 LLM 驱动 `sort_analysis_v1` 跑到**终态**，**实验产物 + 证据 + 预算归账**三项可读；执行体 = **既有 Docker 后端** | live 判据 **PASS（非 skip）** + 落盘样张（终态恰为 `SUCCEEDED` + 三项读面 + 判词逐字）；反证：撤策略允许 ⇒ 拒冻、run 终止在执行之前 | **PENDING** |
-| EC-03 | **实验产出的证据链**：实验产物与来源记录进 canonical、读面可追溯；反证：**去掉产物** ⇒ 判据红 | 离线 + 真实容器两向判据；按压记录（先红后绿） | **PENDING** |
-| EC-04 | **残余路径 (B) 的诚实处置**：把 GOAL-011 对 (B) 的否证（来源上限 3 / 第二次检索硬失败 / `minimum_sources: 10` 口径 / 三条判据无产品调用方）写成**独立记录**并登记「已否证 / 待重新设计」，**不**抹掉 | 独立记录文件在位且逐条覆盖四项；`W-P`/`W-Q`/`PLAN-138` 状态原样保留 | **PENDING** |
+| EC-01 | **冻结门通道（路径 A）**：策略**显式允许**该 EXECUTE 能力 ⇒ 预检报告仍含 `WARN` 但冻结**可完成**，且 manifest/事件**留痕**（哪条策略、哪个能力、何时）；策略**未允许** ⇒ **仍拒冻**并点名缺失的策略事实；反证成对（撤允许 ⇒ 拒冻；去留痕 ⇒ 判据红）；**不得**放宽 `classify_risk` / **不得**改 `WARN` 语义 / **不得**让 WARN 无条件可冻 | 离线定向判据三条（允许通道 / 拒冻反证 / 留痕反证，各自先红后绿）+ EC-02 真实 run 的 `manifest_digest` 非空与事件留痕 | **PASS**（cycle 2 收口：真实 run 的 `manifest_digest` 非空 + `manifest.frozen` 留痕 **4 条**——见 `status_note`） |
+| EC-02 | **真实实验执行链**（GOAL-011 EC-03 原判据）：真实 LLM 驱动 `sort_analysis_v1` 跑到**终态**，**实验产物 + 证据 + 预算归账**三项可读；执行体 = **既有 Docker 后端** | live 判据 **PASS（非 skip）** + 落盘样张（终态恰为 `SUCCEEDED` + 三项读面 + 判词逐字）；反证：撤策略允许 ⇒ 拒冻、run 终止在执行之前 | **PASS**（cycle 2：真实一次 run 终态**恰为 `SUCCEEDED`**、三项读面齐备（实验 / 证据 / 预算）、反证成对——见 `status_note`） |
+| EC-03 | **实验产出的证据链**：实验产物与来源记录进 canonical、读面可追溯；反证：**去掉产物** ⇒ 判据红 | 离线 + 真实容器两向判据；按压记录（先红后绿） | **PASS**（cycle 3：两读面同源 + 证据条目与来源记录**两条**的 digest 可重算 + 镜像摘要独立复核 + 语义摘要跨重跑稳定 + 成对反证红且点名——见 `status_note`） |
+| EC-04 | **残余路径 (B) 的诚实处置**：把 GOAL-011 对 (B) 的否证（来源上限 3 / 第二次检索硬失败 / `minimum_sources: 10` 口径 / 三条判据无产品调用方）写成**独立记录**并登记「已否证 / 待重新设计」，**不**抹掉 | 独立记录文件在位且逐条覆盖四项；`W-P`/`W-Q`/`PLAN-138` 状态原样保留 | **PASS**（cycle 4：`docs/roadmap/PATH_B_REFUTATION_RECORD.md` + `RECHECK-20260923-146`；四项事实各带机制与实测出处；两棵树成对证明 GOAL-011 / PLAN-138 **一字未改**——见 `status_note`） |
 | EC-05 | **前端消费实验读面**（**可选**）：实验页在真实数据下渲染产物/指标；空间不足则**如实**登记为下一轮输入，**不得**降级 EC-01…EC-03 | web 门绿 + 读面快照落 `scratch/`（不进仓库）；未做 ⇒ 有如实登记 | **PENDING** |
 | EC-06 | **收口复检 + 残余登记**：独立复检脚本（当前树 + 干净 checkout 同结论）+ m0 **23/23** + 治理 validate 绿 + CI 台账到终态（M0 六 job + CodeQL）；13 条人工面原样保留 + 本 GOAL 的 W 列表；`ANTHROPIC` run 腿仍为可选 | 复检两树同结论；`make validate-all` 23/23；`validate.py` 绿；`latest_recheck` 为仓库相对路径；frontmatter 与状态表一致 | **PENDING** |
 
@@ -542,6 +562,7 @@ memory_entries:
 | 2 | PLAN-20260923-142（EC-02） | `dcade8c`（同一提交：PLAN-142 + ALL_PLAN 投影 + `child_plans` + 两个判据 + 两件 provider 的会话面修复）、本 cycle 的收口回写见台账尾巴 | **离线全链 2 passed**（主判据 + 成对反证；`requires_docker`，零出网）；**真实一次 run 1 passed**（`judged 2; blocked 0`，样张 `scratch/goal012-c2-live-sample.json`：终态**恰为 `SUCCEEDED`**、4 条留痕、1 次实验含 `analysis_report` + 镜像 `sha256:e95de2424c65…`、6 条证据含 `USER_PROVIDED` 声明输入、`MODEL_TOKENS 9738`）；**离线复现 live 死法**（两件 provider 的会话面，按压逐字红：`Duplicate tool names found: {'inert'}` + mock 端点零请求）；**m0 终局 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c2-m0-final.log`：24 条 `PASS [` 行 = 23 项 + 计数之外的 `release-assets-immutable`，无 `FAILED` 行）；**独立复检** `scratch/verify_goal012_c2.py` 两棵树成对（**当前树 29/29；基线树 10 失败**，红项恰为本 cycle 新增面；「不得放宽」七条两棵树同结论）；`tests/e2e` 116 passed / 10 skipped、`tests/api`+`tests/application` 1212 passed / 1 skipped、`python/tests` **4408 passed / 19 skipped / 0 failed**、`mypy` 995 files 干净；**零出网** | 见下方 CI 台账 | **一处真缺陷（本 cycle 一次真实取样换来的）**：测试侧惰性工具替身把两件 provider 注册成同一个类，而 SDK 由**类名**派生工具名 ⇒ 两件同名 ⇒ 会话建不起来（冻结成功、实验已跑完，死在 review 会话）。处置 = 按注册名分名 + **新增离线判据**钉住（mock 端点 + `map_tools=True`），**不是**改断言迁就。**首轮 m0 另有一处红**：新判据的 `dict[str, dict[str, str]]` 与 `dict[str, object] \| None` 类型不兼容 ⇒ 加显式标注（`mypy` 995 files 干净）。离线判据第一次失败也如实保留：指标名按**被执行的脚本**（`sort_analysis_baseline.py` 的 `corpus_size` / `worst_case_comparisons`）重钉 | **EC-01 / EC-02 双双 PASS**（EC-01 的最后一项 = 真实 run 的留痕形态，已由本 cycle 的 live 样张满足）。**W-B 闭合**（空交付物仍如实拒绝；改的是判据显式声明交付物 + `with_sandbox_experiment` 的可选 `runtime` 参数）。**W-A 仍登记**（真实控制面对 `evidence.read` 判 `DENY`；本 cycle 未改策略面）→ 需拍板。**W-C 口径提醒**保留 | cycle 3 = **EC-03**（实验产出的证据链 + 成对反证：去掉产物 ⇒ 判据红）：把 live 样张里的实验产物 / 来源记录 / 镜像摘要做成**可在两棵树上复跑的判据**，并让「来源可独立复核」这一条有独立脚本；EC-04 的路径 (B) 记录与 EC-06 的收口重检在其后 |
 | 3 | PLAN-20260923-144（EC-03） | `6ccdf46`（同一提交：PLAN-144 + ALL_PLAN 投影 + `child_plans` + EC-03 判据）、本 cycle 的收口回写见台账尾巴 | **EC-03 判据 2 passed**（离线 + 真实容器；`judged 2; blocked 0`）；**四处按压全红**（`scratch/goal012-c3-press{1,2a,2b,3}.txt`）后产品代码逐字复原；**独立复检** `scratch/verify_goal012_c3.py` 两棵树成对（**当前树 24/24；基线树 6 红＝判据文件不存在**；**产品件两树同指纹 ⇒ 未改产品代码**）；**m0 `PASS: profile=m0; 23 deterministic checks`**（`python/tests` **4411 passed / 19 skipped / 0 failed**）；`tests/e2e` 118 passed / 10 skipped；`mypy` 996 files 干净；零出网 | 见下方 CI 台账 | **两处判据自身的问题当轮修掉并如实记录**：①「两读面相等」写错（实测是**子集**关系：run 级面还含 review 会话的 `review_decision` 与组合根种入的声明输入）⇒ 改子集方向；②「只看证据 digest、不看来源记录」的盲点**由按压暴露** ⇒ 判据**加强**为两条记录各算一遍；首轮 m0 两红（未使用的 `import json`、50 行/函数门被 80 行主干函数触发）⇒ 删 import + 主干拆成 4 个 ≤50 行判据函数（断言逐条未减） | **EC-03 PASS**（产物 + 来源进 canonical、读面可追溯、镜像摘要可独立复核、语义摘要跨重跑稳定；成对反证红且点名）。**本 cycle 纯判据、未改产品代码**。**W-A/W-C 仍登记**（真实控制面 `evidence.read` 判 `DENY` ⇒ 需拍板） | cycle 4 = **EC-04**（路径 (B) 的独立否证记录）：把 GOAL-011 对 (B) 的四项实测事实（单 task 非自产来源上限 3、第二次检索调用硬失败、`minimum_sources: 10` 口径、三项无产品调用方的判据）落成**独立记录**并登记「已否证 / 待重新设计」；其后 EC-05（可选前端）与 EC-06（收口重检 + 干净 checkout 同结论 + CI 台账终态） |
 
+| 4 | PLAN-20260923-146（EC-04） | `830a72c`（同一提交：PLAN-146 + `ALL_PLAN` 投影 + `child_plans` + 记录正文 + 残余节登记 + `RECHECK-145` 勘误 + `MEM-20260923-112`）、本 cycle 的收口回写见台账尾巴 | **记录正文**：`docs/roadmap/PATH_B_REFUTATION_RECORD.md`（状态逐字「已否证 / 待重新设计」，标明**不是**待办功能、也**不是**已完成；四项事实各带「机制」+「实测出处」，`**实测出处**` 恰 4 处）；**只读证明**：相对 `HEAD` 与相对基线树 `ea06b77`，`GOAL-20260922-011` / `PLAN-20260922-138` / `RECHECK-20260923-139` 的 `git diff --stat` **两次都空**，`W-P`/`W-Q` 原文可查、`PLAN-138` 仍 `status: BLOCKED`（`scratch/goal012-c4-readonly.txt`）；**独立复检** `scratch/verify_goal012_c4.py` 两棵树成对（**当前树 24/24；基线树 `ea06b77` 14 红＝**全部**是本 cycle 新增面**）；**m0 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c4-m0.log`；`python/tests` **4411 passed / 19 skipped / 0 failed**，与 cycle 3 同数 ⇒ 只加文档）；`DOCS-CHECK PASS: 6 deterministic checks`；`validate.py` ⇒ `Cursor 治理验证通过`；出站 `judged 787; blocked 8`（**8 条全部**来自故意探针 `tests/architecture/python/test_default_egress_guard.py`） | 见下方 CI 台账 | **顺带查出并处置的既有记录缺陷**（勘误；**不是**本 cycle 引入）：`RECHECK-145` 的「当前树 24/24」是**在 amend 之前**测的，而 cycle 3 的复检脚本把判据的**中间形态字面量**钉住（`"Digest.of_bytes(content)"`）——amend（`919ad2c` → `6ccdf46`，由 m0 的 **50 行/函数**门禁驱动的**纯重构**：内容 digest 两行并一行）之后该检查变红。处置：B2 改判**语义**（四个 token 同时在场，强度**只增不减**）、复测**同结论同数字**（当前树 24/24、基线树 `31dfbd4` 6 红）、`RECHECK-145` 就地追加「勘误」节（**保留原行** + 标明测量时点）、事实进 `MEM-20260923-112`；**被检的判据文件一字未改**，cycle 3 的 PASS 结论不变 | **EC-04 PASS**（(B) 的否证已**独立成文**：四项事实逐条 + 与 `W-P`/`W-Q`/`W-R` 及 `PLAN-138` 的 BLOCKED **原样保留**的关系 + 「重新设计需要什么」5 条列为**需拍板**项）。**本 cycle 只加文档与登记**：零产品代码/协议/合约/测试/门禁改动、零出网、零凭据读取。**W-A/W-C 仍登记**（真实控制面对 `evidence.read` 判 `DENY` ⇒ 需拍板） | cycle 5 = **EC-05**（可选前端：实验读面在**真实数据**下渲染产物/指标；空间不足则**如实**登记为下一轮输入，**不得**为它降级 EC-01…EC-04）；随后 cycle 6 = **EC-06** 收口重检（当前树 + **干净 checkout** 同结论 + m0 **23/23** + CI 台账到终态 + 13 条人工面与本 GOAL 的 W 列表**原样保留**） |
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）| 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-012 落地） | `ccb8f3e` | M0 [35817237386](https://github.com/Eswink/research-system-new/actions/runs/35817237386) | 六 job 全 **success**（`console-frontend` / `container-quality` / `collector-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35817236465](https://github.com/Eswink/research-system-new/actions/runs/35817236465) = **success**（3/3） |
@@ -552,6 +573,8 @@ memory_entries:
 | 台账尾巴（cycle 2 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
 | cycle 3 派生 + WP1–WP2（EC-03 判据 + 四处按压） | `6ccdf46` | 与下面 cycle 3 回写**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 | |
 | 台账尾巴（cycle 3 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
+| cycle 4 记录（记录正文 + `ALL_PLAN` 投影 + `child_plans` + 残余节登记 + `RECHECK-145` 勘误 + `MEM-112`） | `830a72c` | M0 [35840577534](https://github.com/Eswink/research-system-new/actions/runs/35840577534) | 六 job 全 **success**（`container-quality` / `console-frontend` / `quality-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `eval-gate`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35840577991](https://github.com/Eswink/research-system-new/actions/runs/35840577991) = **success**（3/3：`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)`） |
+| 台账尾巴（cycle 4 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…011，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -629,3 +652,25 @@ memory_entries:
   **`PASS: profile=m0; 23 deterministic checks`**（`python/tests` **4411 passed / 19 skipped / 0 failed**）、
   `tests/e2e` 118 passed / 10 skipped、`mypy` 996 files 干净、**零出网、零 live 调用**。
   **GOAL 仍 ACTIVE**（EC-04…EC-06 未完）。
+
+- 2026-09-23（**cycle 4 收口**）：**EC-04 PASS**（`PLAN-20260923-146` → **DONE**，提交 `830a72c`；
+  复检 `RECHECK-20260923-146` = **PASS**）。路径 (B) 的否证**已独立成文**：
+  `docs/roadmap/PATH_B_REFUTATION_RECORD.md`——状态逐字「**已否证（refuted）/ 待重新设计（needs redesign）**」
+  并写明「**不是待办功能，也不是已完成**」；四项实测事实（① 单 task 非自产来源上限 **3**
+  ② 同一 task 内**第二次检索调用硬失败** `conflicting source registration` ③ `minimum_sources: 10`
+  与机制**不相容** ④ `SCHEMA_VALID` / `TEST_PASSES` / `POLICY_COMPLIANT` **无产品调用方**）
+  **逐条**各带「机制」与「实测出处」（`PLAN-20260922-138` 的 `E-3`/`E-4`/`E-5` + 两个 `scratch/` 探针脚本）；
+  「重新设计需要什么」5 条**只列不做**并标明属**需拍板**项。**只读历史**：相对 `HEAD` 与相对基线树
+  `ea06b77`，`GOAL-20260922-011` / `PLAN-20260922-138` / `RECHECK-20260923-139` 的 `git diff --stat`
+  **两次都空**；`W-P` / `W-Q` 原文可查；`PLAN-138` 仍 `status: BLOCKED`——**本 GOAL 没有把 (B) 写成
+  已完成或抹掉**。**残余节** `R-B1` 已登记该记录路径（含四项事实摘要 + 「原样保留」句 + 「不得读成待办功能」）。
+  **本 cycle 只加文档与登记**：零产品代码/协议/合约/测试/门禁/策略面改动（两棵树成对复检
+  `scratch/verify_goal012_c4.py`：当前树 **24/24**、基线树 **14 红且全部是新面**）。
+  **顺带查出并处置一处既有记录缺陷（勘误）**：cycle 3 的复检脚本把判据的**中间形态字面量**钉住，
+  而判据在 m0 的 50 行/函数门禁下被**纯重构**过（`919ad2c` → `6ccdf46`）⇒ `RECHECK-145` 里的
+  「当前树 24/24」实为**amend 之前**的测量。处置：B2 改判**语义**（四 token，强度只增不减）、
+  复测**同结论同数字**、`RECHECK-145` 就地追加「勘误」节（保留原行 + 标明时点）、事实进
+  `MEM-20260923-112`；**被检的判据文件一字未改**。**门**：m0 **`PASS: profile=m0; 23 deterministic
+  checks`**（`python/tests` **4411 passed / 19 skipped / 0 failed**，与 cycle 3 同数）、
+  `DOCS-CHECK PASS: 6 deterministic checks`、`validate.py` ⇒ `Cursor 治理验证通过`、
+  出站 `judged 787; blocked 8`（8 条全是故意探针）。**GOAL 仍 ACTIVE**（EC-05…EC-06 未完）。
