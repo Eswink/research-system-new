@@ -224,6 +224,7 @@ escalation_triggers:
   - 前端设计基线（`design-outlines.json` / 快照）因页面改动而判红且**无法**按既有流程重生成并目检通过
 child_plans:
   - .cursor/plans/tasks/PLAN-20260923-150-console-real-data-matrix.md
+  - .cursor/plans/tasks/PLAN-20260923-151-live-page-read-face-batch-two.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-151-console-real-data-matrix.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md
