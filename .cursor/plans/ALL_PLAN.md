@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260923-147](tasks/PLAN-20260923-147-experiments-read-face-in-browser.md) | IN_PROGRESS |
+| [x] | [PLAN-20260923-147](tasks/PLAN-20260923-147-experiments-read-face-in-browser.md) | DONE |
 | [x] | [PLAN-20260923-146](tasks/PLAN-20260923-146-path-b-refutation-record.md) | DONE |
 | [x] | [PLAN-20260923-144](tasks/PLAN-20260923-144-experiment-evidence-chain-traceability.md) | DONE |
 | [x] | [PLAN-20260923-142](tasks/PLAN-20260923-142-live-experiment-chain-to-terminal.md) | DONE |
