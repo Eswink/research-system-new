@@ -2,7 +2,7 @@
 id: GOAL-20260923-012
 slug: experiment-execution-unblock
 title: 实验执行链打通：策略显式允许的 EXECUTE 可冻结（留痕通道）并让实验协议真实跑到终态
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-23
 updated_at: 2026-09-23
 owners:
@@ -269,7 +269,35 @@ exit_criteria:
       不读成通过）；`make validate-all` ⇒ **23/23**；治理 `validate.py` 绿；本文件
       `latest_recheck` 指向**仓库相对路径**的 PASS/PASS_WITH_WARNINGS RECHECK；
       frontmatter 的 EC 状态与 markdown 状态表**一致**（GOAL-006…011 收口时都出过这一类漏改）。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-23 cycle 6（`PLAN-20260923-149`，收口提交）：**PASS**。
+      ① **独立复检脚本** `scratch/verify_goal012_c6.py`（**只读 / 只用标准库 / 不 import 仓库代码**
+      ⇒ 可用主树解释器在干净树里跑）六组判据：A 五个 EC 的判定面（frontmatter `status` +
+      `status_note` + **正文状态表一致**）、B 每个 EC 的载体件在位、C 子 PLAN 全 `DONE` 且
+      `latest_recheck` 是**仓库相对路径**且复检通过、D 残余不得消失、E 只读历史不动、
+      F 姿态不变（`.env` **只看键名**）。② **两棵树同结论**：干净 checkout（仓外 `git worktree`
+      到 `01bd789`）`checked=70 failures=1`，唯一那条红**恰是**「EC-06 = PENDING」（收口记录正是在
+      收口提交里落盘）；收口记录落盘后当前树 `checked=70 failures=0` ⇒ **同一判据、同一结论**。
+      ③ **门**：本地 m0 **`PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c6-m0.log`：
+      24 条 `PASS [` 行、无 `FAILED` 行、`python/tests` **4411 passed / 19 skipped / 0 failed**）、
+      治理 `validate.py` 绿、`DOCS-CHECK PASS: 6 deterministic checks`、出站 `judged 788; blocked 8`
+      （8 条全部来自故意探针）。④ **CI 台账到终态**（逐 run 逐 job 实查）：`d5baf05` 的 M0
+      [35847860197](https://github.com/Eswink/research-system-new/actions/runs/35847860197) **red**
+      （`quality-windows-latest` / `quality-ubuntu-latest`：`MEM-113` 引用的复检落在下一个提交 ⇒
+      治理判据报「工程记忆来源不存在」；**提交切分错误**，不是产品缺陷也不是判据缺陷）
+      ⇒ 回写提交 `0584276` 的 M0
+      [35849811097](https://github.com/Eswink/research-system-new/actions/runs/35849811097)
+      **六 job 全 success**（含 `console-frontend` 在 Linux 上跑新增的 live spec）
+      + CodeQL [35849810499](https://github.com/Eswink/research-system-new/actions/runs/35849810499)
+      **3/3 success**；事实进 `MEM-20260923-114`，**判据未放宽**。
+      ⑤ **残余原样保留**：13 条人工面 + 本 GOAL 的 `W-A`/`W-C` + `R-M1`/`R-D1`/`R-B1`/`R-N1`
+      全在；GOAL-011 的 `W-P`/`W-Q` 与 `PLAN-20260922-138` 的 `BLOCKED` **一字未改**。
+      ⑥ **收口形态**：`status: ACHIEVED` + `latest_recheck` 为仓库相对路径 +
+      frontmatter 与状态表一致 + `child_plans` 六项 / `memory_entries` 五项（`MEM-109`…`MEM-114`）。
+      **如实边界**：本复检**不重跑**五个 EC 的判据本身（那五份子复检各自做了实跑与按压），
+      它判的是判定面 / 载体 / 登记 / 残余 / 姿态在收口时仍成立；本 cycle 零真实出网、零凭据读取、
+      零产品面改动（`ANTHROPIC` run 腿仍记为可选）。
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -313,7 +341,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260923-144-experiment-evidence-chain-traceability.md
   - .cursor/plans/tasks/PLAN-20260923-142-live-experiment-chain-to-terminal.md
   - .cursor/plans/tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-150-goal-012-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260923-114-citations-land-with-their-artifacts.md
   - .cursor/memory/entries/MEM-20260923-113-live-page-equals-read-face-judge.md
@@ -339,7 +367,7 @@ memory_entries:
 | EC-03 | **实验产出的证据链**：实验产物与来源记录进 canonical、读面可追溯；反证：**去掉产物** ⇒ 判据红 | 离线 + 真实容器两向判据；按压记录（先红后绿） | **PASS**（cycle 3：两读面同源 + 证据条目与来源记录**两条**的 digest 可重算 + 镜像摘要独立复核 + 语义摘要跨重跑稳定 + 成对反证红且点名——见 `status_note`） |
 | EC-04 | **残余路径 (B) 的诚实处置**：把 GOAL-011 对 (B) 的否证（来源上限 3 / 第二次检索硬失败 / `minimum_sources: 10` 口径 / 三条判据无产品调用方）写成**独立记录**并登记「已否证 / 待重新设计」，**不**抹掉 | 独立记录文件在位且逐条覆盖四项；`W-P`/`W-Q`/`PLAN-138` 状态原样保留 | **PASS**（cycle 4：`docs/roadmap/PATH_B_REFUTATION_RECORD.md` + `RECHECK-20260923-146`；四项事实各带机制与实测出处；两棵树成对证明 GOAL-011 / PLAN-138 **一字未改**——见 `status_note`） |
 | EC-05 | **前端消费实验读面**（**可选**）：实验页在真实数据下渲染产物/指标；空间不足则**如实**登记为下一轮输入，**不得**降级 EC-01…EC-03 | web 门绿 + 读面快照落 `scratch/`（不进仓库）；未做 ⇒ 有如实登记 | **PASS**（cycle 5：live e2e **2 passed** + 成对反证 + m0 **23/23** + stub 套件 96 passed；快照与截图落 `scratch/goal012-c5/`——见 `status_note`） |
-| EC-06 | **收口复检 + 残余登记**：独立复检脚本（当前树 + 干净 checkout 同结论）+ m0 **23/23** + 治理 validate 绿 + CI 台账到终态（M0 六 job + CodeQL）；13 条人工面原样保留 + 本 GOAL 的 W 列表；`ANTHROPIC` run 腿仍为可选 | 复检两树同结论；`make validate-all` 23/23；`validate.py` 绿；`latest_recheck` 为仓库相对路径；frontmatter 与状态表一致 | **PENDING** |
+| EC-06 | **收口复检 + 残余登记**：独立复检脚本（当前树 + 干净 checkout 同结论）+ m0 **23/23** + 治理 validate 绿 + CI 台账到终态（M0 六 job + CodeQL）；13 条人工面原样保留 + 本 GOAL 的 W 列表；`ANTHROPIC` run 腿仍为可选 | 复检两树同结论；`make validate-all` 23/23；`validate.py` 绿；`latest_recheck` 为仓库相对路径；frontmatter 与状态表一致 | **PASS**（cycle 6 收口：独立脚本两棵树同结论（干净树唯一那条红＝「EC-06 = PENDING」，落盘后当前树 70/70）；m0 **23/23**；治理 + 文档检查绿；CI 台账到终态（含一次判红及其修复）；13 条人工面与 `W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1` 原样保留——见 `status_note`） |
 
 ### 建档时已探明的现状（事实类，用于判定起点；**不当作验收依据**）
 
@@ -593,6 +621,7 @@ memory_entries:
 
 | 4 | PLAN-20260923-146（EC-04） | `830a72c`（同一提交：PLAN-146 + `ALL_PLAN` 投影 + `child_plans` + 记录正文 + 残余节登记 + `RECHECK-145` 勘误 + `MEM-20260923-112`）、本 cycle 的收口回写见台账尾巴 | **记录正文**：`docs/roadmap/PATH_B_REFUTATION_RECORD.md`（状态逐字「已否证 / 待重新设计」，标明**不是**待办功能、也**不是**已完成；四项事实各带「机制」+「实测出处」，`**实测出处**` 恰 4 处）；**只读证明**：相对 `HEAD` 与相对基线树 `ea06b77`，`GOAL-20260922-011` / `PLAN-20260922-138` / `RECHECK-20260923-139` 的 `git diff --stat` **两次都空**，`W-P`/`W-Q` 原文可查、`PLAN-138` 仍 `status: BLOCKED`（`scratch/goal012-c4-readonly.txt`）；**独立复检** `scratch/verify_goal012_c4.py` 两棵树成对（**当前树 24/24；基线树 `ea06b77` 14 红＝**全部**是本 cycle 新增面**）；**m0 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c4-m0.log`；`python/tests` **4411 passed / 19 skipped / 0 failed**，与 cycle 3 同数 ⇒ 只加文档）；`DOCS-CHECK PASS: 6 deterministic checks`；`validate.py` ⇒ `Cursor 治理验证通过`；出站 `judged 787; blocked 8`（**8 条全部**来自故意探针 `tests/architecture/python/test_default_egress_guard.py`） | 见下方 CI 台账 | **顺带查出并处置的既有记录缺陷**（勘误；**不是**本 cycle 引入）：`RECHECK-145` 的「当前树 24/24」是**在 amend 之前**测的，而 cycle 3 的复检脚本把判据的**中间形态字面量**钉住（`"Digest.of_bytes(content)"`）——amend（`919ad2c` → `6ccdf46`，由 m0 的 **50 行/函数**门禁驱动的**纯重构**：内容 digest 两行并一行）之后该检查变红。处置：B2 改判**语义**（四个 token 同时在场，强度**只增不减**）、复测**同结论同数字**（当前树 24/24、基线树 `31dfbd4` 6 红）、`RECHECK-145` 就地追加「勘误」节（**保留原行** + 标明测量时点）、事实进 `MEM-20260923-112`；**被检的判据文件一字未改**，cycle 3 的 PASS 结论不变 | **EC-04 PASS**（(B) 的否证已**独立成文**：四项事实逐条 + 与 `W-P`/`W-Q`/`W-R` 及 `PLAN-138` 的 BLOCKED **原样保留**的关系 + 「重新设计需要什么」5 条列为**需拍板**项）。**本 cycle 只加文档与登记**：零产品代码/协议/合约/测试/门禁改动、零出网、零凭据读取。**W-A/W-C 仍登记**（真实控制面对 `evidence.read` 判 `DENY` ⇒ 需拍板） | cycle 5 = **EC-05**（可选前端：实验读面在**真实数据**下渲染产物/指标；空间不足则**如实**登记为下一轮输入，**不得**为它降级 EC-01…EC-04）；随后 cycle 6 = **EC-06** 收口重检（当前树 + **干净 checkout** 同结论 + m0 **23/23** + CI 台账到终态 + 13 条人工面与本 GOAL 的 W 列表**原样保留**） |
 | 5 | PLAN-20260923-147（EC-05） | `d5baf05`（同一提交：PLAN-147 + `ALL_PLAN` 投影 + `child_plans` + 受控夹具 + live spec + suite 登记 + `MEM-113`）、本 cycle 的收口回写见台账尾巴 | **live e2e 2 passed**（真实 HTTP + 真实浏览器；`apps/web/tests/e2e/live-experiments.spec.ts`）；**成对反证**：另一条 run 的实验只有非 JSON 制品 ⇒ 读面 metrics 为空 ⇒ 同一组件显示空态；**两处按压先红后绿**（`scratch/goal012-c5-press{1,2}.txt`）：按页面 ⇒ 主干红在 `toHaveText(...)` 而反证仍绿；按数据 ⇒ 只红在夹具自检（**数据按压对「页面 == 读面」不敏感**，两边同源）；**独立复检** `scratch/verify_goal012_c5.py` 两棵树成对（**当前树 32/32；基线树 `2e5b218` 15 红＝全部新面**；**产品面两树同指纹 ⇒ 本 cycle 零产品面改动**）；**stub 套件 96 passed**（新 live spec 被 `testIgnore` 正确排除）；**m0 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c5-m0-rerun.log`；`python/tests` **4411 passed / 19 skipped / 0 failed**）；`validate.py` 绿；出站 `judged 788; blocked 8`（8 条全是故意探针） | 见下方 CI 台账 | **首轮 m0 4 红，全部当轮修掉并如实记录**：① `python/typecheck`（准入函数第 3 实参 `ArtifactStore \| None` 未收窄 + `MetricValue(value=int)` 与 `Decimal` 不兼容）② `python/tests` 规模门禁抓到 51 行的夹具函数 ⇒ 拆出 `_controlled_experiment`（语义未变）③ `typescript/lint`（dot-notation + 两行超 100 字符）④ `framework/validate`（`subagent_parallel_limit` 必须是 **3**）。另有一处**判据性质**如实记下：**数据按压对「页面 == 读面」不敏感**（两边同源），判这条判据要按**页面**那一段 | **EC-05 PASS**（读了就做，不是登记为下一轮）。**诚实边界**：夹具执行体不是真容器 ⇒ 本判据只覆盖「读面 → DTO → 页面」，真实容器全链在 EC-02/EC-03 的 pytest 层。**本 cycle 零产品面改动、零真实出网**（浏览器只打 127.0.0.1）。**W-A/W-C 仍登记** | cycle 6 = **EC-06** 收口重检（独立复检脚本**当前树 + 干净 checkout 同结论** + m0 **23/23** + 治理 validate 绿 + **CI 台账到终态**（M0 六 job + CodeQL）+ **13 条人工面与本 GOAL 的 W 列表原样保留** + `ANTHROPIC` run 腿仍为可选） |
+| 6 | PLAN-20260923-149（EC-06 收口） | `01bd789`（derive：PLAN-149 + `ALL_PLAN` + `child_plans`）、本 cycle 的收口回写见台账尾巴 | **独立复检** `scratch/verify_goal012_c6.py`（只读/标准库/不 import 仓库代码）两棵树：干净 checkout `01bd789` `checked=70 failures=1`（唯一那条红恰是「EC-06 尚未判定」）⇒ 收口记录落盘后当前树 `checked=70 failures=0` ⇒ **同判据同结论**；**m0 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c6-m0.log`；`python/tests` 4411 passed / 19 skipped / 0 failed）；治理 `validate.py` 绿；`DOCS-CHECK PASS: 6 deterministic checks`；出站 `judged 788; blocked 8`（8 条全是故意探针） | 见下方 CI 台账 | **一处判据自身的问题当轮修掉**：`RECHECK-150` 初稿在**通过的复检正文**里出现未决字样 ⇒ 治理判据「通过的复检仍有未决项」判红（这是它该拦的）⇒ 改用中文表述，**判词与实测数字不变** | **EC-06 PASS ⇒ GOAL-012 收为 `ACHIEVED`**（EC-01…EC-05 此前已 PASS；残余 13 条人工面 + `W-A`/`W-C` + `R-M1`/`R-D1`/`R-B1`/`R-N1` 原样保留） | —（本 GOAL 已收口；下一轮若继续，输入是残余面：`W-A`（真实控制面对 `sort_analysis_v1` 的 `evidence.read` 仍 `DENY`，需拍板）、`W-C`（同一协议在两套装配下结论不同的口径提醒）、`R-M1`（Mimosa 钩子侧未得完整结论）、`R-D1`（23 条依赖告警）、`R-N1`（30 条非 ASCII 路径豁免）；以及路径 (B) 的「重新设计需要什么」5 条**需拍板**项） |
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）| 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-012 落地） | `ccb8f3e` | M0 [35817237386](https://github.com/Eswink/research-system-new/actions/runs/35817237386) | 六 job 全 **success**（`console-frontend` / `container-quality` / `collector-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35817236465](https://github.com/Eswink/research-system-new/actions/runs/35817236465) = **success**（3/3） |
@@ -606,7 +635,9 @@ memory_entries:
 | cycle 4 记录（记录正文 + `ALL_PLAN` 投影 + `child_plans` + 残余节登记 + `RECHECK-145` 勘误 + `MEM-112`） | `830a72c` | M0 [35840577534](https://github.com/Eswink/research-system-new/actions/runs/35840577534) | 六 job 全 **success**（`container-quality` / `console-frontend` / `quality-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `eval-gate`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35840577991](https://github.com/Eswink/research-system-new/actions/runs/35840577991) = **success**（3/3：`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)`） |
 | 台账尾巴（cycle 4 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
 | cycle 5 功能提交（受控夹具 + live spec + suite 登记 + `PLAN-147` + `MEM-113`） | `d5baf05` | M0 [35847860197](https://github.com/Eswink/research-system-new/actions/runs/35847860197) | **red**：`quality-windows-latest` / `quality-ubuntu-latest` **失败**（根因同一条：`framework/validate` ⇒ `工程记忆来源不存在: MEM-20260923-113: …RECHECK-20260923-148…`——**记忆与它引用的复检被拆到两个提交**，功能提交自身不自洽；本地 `validate.py` 因那份复检已在工作树里而一直绿）；其余四 job **success**（`eval-gate` / `collector-quality` / `container-quality` / **`console-frontend`**——新增 live spec 在 CI 上也跑绿）；**同一次推送的 CodeQL** [35847859779](https://github.com/Eswink/research-system-new/actions/runs/35847859779) = **success**（3/3） |
-| 台账尾巴（cycle 5 回写：`RECHECK-148` + `MEM-114` + `PLAN-147` DONE + GOAL 回写） | 见回合汇报（**台账尾巴口径**）——本条修复上一条的红（复检落盘后同一判据转绿；**判据未放宽**，事实进 `MEM-20260923-114`） | | |
+| 台账尾巴（cycle 5 回写：`RECHECK-148` + `MEM-114` + `PLAN-147` DONE + GOAL 回写） | `0584276` | M0 [35849811097](https://github.com/Eswink/research-system-new/actions/runs/35849811097) | **六 job 全 success**（`console-frontend` / `quality-windows-latest` / `quality-ubuntu-latest` / `container-quality` / `collector-quality` / `eval-gate`，逐 job 实查，终态 `completed`）——修复上一条的红；**同一次推送的 CodeQL** [35849810499](https://github.com/Eswink/research-system-new/actions/runs/35849810499) = **success**（3/3） |
+| cycle 6 派生（PLAN-149 收口子计划 + 投影） | `01bd789` | 与下面 cycle 6 收口**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 | |
+| 台账尾巴（cycle 6 收口：PLAN-149 DONE + `RECHECK-150` + GOAL `ACHIEVED`） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…011，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -729,3 +760,23 @@ memory_entries:
   EC-02/EC-03 的 pytest 层。**快照与截图落 `scratch/goal012-c5/`（不进仓库、不上传外部服务）**。
   **CI 一处判红（如实记录）**：功能提交 `d5baf05` 的两个 quality job 因**自身不自洽**失败（`MEM-113` 引用的 `RECHECK-148` 落在下一个提交 ⇒ `framework/validate` 报「工程记忆来源不存在」；本地因工作树里已有那份复检而看不出来）⇒ 回写提交把复检与 `MEM-114` 落盘即转绿，**判据未放宽**；其余四 job（含 `console-frontend`：新 live spec 在 CI 上跑绿）与同次推送的 CodeQL 均 **success**。
   **GOAL 仍 ACTIVE**（只差 EC-06 收口重检）。
+
+- 2026-09-23（**cycle 6 收口 / GOAL ACHIEVED**）：**EC-06 PASS**（`PLAN-20260923-149` → **DONE**，
+  收口提交；复检 `RECHECK-20260923-150` = **PASS**）。**GOAL-012 收为 `ACHIEVED`**
+  （EC-01…EC-06 全 PASS；`latest_recheck` 为仓库相对路径）。收口判据四层：
+  ① **独立复检**（`scratch/verify_goal012_c6.py`，只读 / 只用标准库 / 不 import 仓库代码）在
+  **当前树**与**干净 checkout**（仓外 worktree 到 `01bd789`）上各跑一遍 ⇒ 干净树
+  `checked=70 failures=1`，唯一那条红**恰是**「EC-06 尚未判定」（收口记录正是在收口提交里落盘），
+  落盘后当前树 `checked=70 failures=0` ⇒ **同判据同结论**；判据覆盖五个 EC 的判定面与
+  **正文状态表一致**、载体件在位、子 PLAN 全 `DONE` + `latest_recheck` 相对路径且复检通过、
+  残余不得消失、只读历史（GOAL-011 的 `W-P`/`W-Q`、`PLAN-138` 的 BLOCKED）不动、
+  姿态不变（`.env` 里没有真实 runtime 开关——**只看键名**）。② **门**：m0
+  **`PASS: profile=m0; 23 deterministic checks`**（`python/tests` **4411 passed / 19 skipped / 0 failed**）、
+  治理 `validate.py` 绿、`DOCS-CHECK PASS: 6 deterministic checks`、出站 `judged 788; blocked 8`。
+  ③ **CI 台账到终态**：cycle 5 的 `d5baf05` M0 **red**（两个 quality job 因**记录不自洽**——
+  工程记忆引用的复检落在下一个提交）⇒ `0584276`（回写）M0 **六 job 全 success**（含
+  `console-frontend` 在 Linux 上跑新增的 live spec）+ CodeQL **3/3 success**；事实进
+  `MEM-20260923-114`，**判据未放宽**。④ **残余原样保留**：13 条人工面 + 本 GOAL 的 `W-A`/`W-C` +
+  `R-M1`/`R-D1`/`R-B1`/`R-N1` 全在，**不因收口消失**；`ANTHROPIC` run 腿仍记为**可选**。
+  **本 cycle 零产品面改动、零真实出网、零凭据读取**（本 GOAL 的真实调用只在 EC-02 做过
+  **最小必要次数**：一次真实 run）。

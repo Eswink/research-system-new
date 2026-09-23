@@ -2,7 +2,7 @@
 id: PLAN-20260923-149
 slug: goal-012-closeout-recheck
 title: GOAL-012 收口重检：两棵树同结论 + 门到终态 + 残余与本 GOAL 的 W 列表原样保留（EC-06）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-23
 updated_at: 2026-09-23
 parent_goal: GOAL-20260923-012
@@ -19,7 +19,7 @@ authorization:
     13 条人工面与本 GOAL 的 W 列表原样保留 + `latest_recheck` 为仓库相对路径 + frontmatter 与状态表一致。
     **若任何一条不成立 ⇒ 如实记 RED/BLOCKED，不把 GOAL 收成 ACHIEVED。**
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-150-goal-012-closeout-recheck.md
 memory_entries: []
 ---
 
@@ -55,19 +55,19 @@ memory_entries: []
 
 | # | 条件 | 判据（可复跑命令 + 期望值） | 结论 |
 | --- | --- | --- | --- |
-| AC-1 | 两棵树同结论 | `python scratch/verify_goal012_c6.py <root>` 在当前树与干净 checkout 上 `checked`/`failures` 与逐条判词一致 | 待跑 |
-| AC-2 | 五份子复检 + 收口复检在位 | 五份 `RECHECK-14x` 与收口 `RECHECK-150` 文件存在、`result` 为 PASS，且各子 PLAN 的 `latest_recheck` 指向它们 | 待跑 |
-| AC-3 | 门 | 本地 m0 **23/23** + `validate.py` 绿 + `docs_consistency_check` 绿 | 待跑 |
-| AC-4 | CI 台账到终态 | cycle 5 的两个提交逐 run 逐 job 结论在册（含判红那条及其修复） | 待跑 |
-| AC-5 | 残余原样保留 | 13 条人工面 + `W-A`/`W-C` + `R-M1`/`R-D1`/`R-B1`/`R-N1` 仍在 GOAL 正文；GOAL-011 的 `W-P`/`W-Q` 与 `PLAN-138` 的 BLOCKED 未动 | 待跑 |
-| AC-6 | 收口形态 | GOAL `status: ACHIEVED`、`latest_recheck` 为仓库相对路径、frontmatter 与状态表一致 | 待跑 |
+| AC-1 | 两棵树同结论 | `python scratch/verify_goal012_c6.py <root>` 在当前树与干净 checkout 上 `checked`/`failures` 与逐条判词一致 | **通过**：干净 checkout（`01bd789`）`checked=70 failures=1`，唯一那条红恰是「EC-06 尚未判定」；收口记录落盘后当前树 `checked=70 failures=0` ⇒ 同判据同结论 |
+| AC-2 | 五份子复检 + 收口复检在位 | 五份 `RECHECK-14x` 与收口 `RECHECK-150` 文件存在、`result` 为 PASS，且各子 PLAN 的 `latest_recheck` 指向它们 | **通过**：脚本 C 组 25 条（五份子 PLAN 全 `DONE`、`latest_recheck` 全是仓库相对路径、复检 `result: PASS`） |
+| AC-3 | 门 | 本地 m0 **23/23** + `validate.py` 绿 + `docs_consistency_check` 绿 | **通过**：m0 `PASS: profile=m0; 23 deterministic checks`（`scratch/goal012-c6-m0.log`；`python/tests` 4411 passed / 19 skipped）、治理绿、`DOCS-CHECK PASS: 6 deterministic checks` |
+| AC-4 | CI 台账到终态 | cycle 5 的两个提交逐 run 逐 job 结论在册（含判红那条及其修复） | **通过**：`d5baf05` = M0 red（两个 quality job，根因入册）+ CodeQL success；`0584276` = M0 六 job 全 success + CodeQL 3/3 success |
+| AC-5 | 残余原样保留 | 13 条人工面 + `W-A`/`W-C` + `R-M1`/`R-D1`/`R-B1`/`R-N1` 仍在 GOAL 正文；GOAL-011 的 `W-P`/`W-Q` 与 `PLAN-138` 的 BLOCKED 未动 | **通过**：脚本 D/E 组 10 条全绿 |
+| AC-6 | 收口形态 | GOAL `status: ACHIEVED`、`latest_recheck` 为仓库相对路径、frontmatter 与状态表一致 | **通过**：脚本 A/C 组；治理 `validate.py` 绿（`child_plans` 六项、`latest_recheck` 相对路径） |
 
 ## 实施清单
 
-- [ ] **WP1** 独立复检脚本 + 两棵树各跑一遍（干净 checkout 在仓外）。
-- [ ] **WP2** 门：m0 23/23 + `validate.py` + `docs_consistency_check`。
-- [ ] **WP3** 收口：EC-06 判定 + GOAL `ACHIEVED` + 迭代日志/状态历史/台账；本 PLAN + `ALL_PLAN` + `child_plans`（同一提交）。
-- [ ] **WP4** 复检落盘（`RECHECK-150`）+ 推送 + CI 台账尾巴。
+- [x] **WP1** 独立复检脚本 + 两棵树各跑一遍（干净 checkout 在仓外）。
+- [x] **WP2** 门：m0 23/23 + `validate.py` + `docs_consistency_check`。
+- [x] **WP3** 收口：EC-06 判定 + GOAL `ACHIEVED` + 迭代日志/状态历史/台账；本 PLAN + `ALL_PLAN` + `child_plans`（同一提交）。
+- [x] **WP4** 复检落盘（`RECHECK-150`）+ 推送 + CI 台账尾巴。
 
 ## 证据
 
@@ -91,3 +91,12 @@ memory_entries: []
 ## 状态历史
 
 - 2026-09-23：derive（EC-06 收口子计划）。定案 D-1…D-5 写死。
+
+## 收口（cycle 6）
+
+- **复检**：`RECHECK-20260923-150` = **PASS**（两棵树同结论 + 门 + 治理 + CI 台账 + 残余保留）。
+- **状态**：`DONE`；`latest_recheck` 指向该复检（仓库相对路径）。GOAL-012 ⇒ **ACHIEVED**。
+- **工程记忆**：**无可复用事实**——本 PLAN 是纯验证与登记（两棵树复检脚本的形态已由
+  `MEM-20260905-105-closeout-recheck-script-shape` 承载；本 cycle 唯一新教训「引用方与产物必须
+  同一次提交落地」产生于 cycle 5 并已进 `MEM-20260923-114`）。**不创建伪记忆**。
+- **零改动**：本 PLAN 未改任何产品代码 / 协议 / 合约 / 测试 / 门禁 / 策略面。
