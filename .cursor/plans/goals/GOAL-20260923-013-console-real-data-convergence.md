@@ -430,9 +430,8 @@ memory_entries:
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-013 落地） | `50afb3b` | M0 [35858450019](https://github.com/Eswink/research-system-new/actions/runs/35858450019) | 六 job 全 **success**（`console-frontend` / `collector-quality` / `quality-ubuntu-latest` / `container-quality` / `quality-windows-latest` / `eval-gate`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35858448220](https://github.com/Eswink/research-system-new/actions/runs/35858448220) = **success**（3/3：`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)`） |
-| cycle 1 派生（PLAN-150 + ALL_PLAN + `child_plans`） | `0eb09f1` | 与下一条**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 | |
-| cycle 1 WP1–WP3+WP4（页面级 live + 白名单 + 注记收敛 + 矩阵 + 离线判据） | tip `f45d6ec` | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在**回合汇报**里给出终态，**不再回写文件**） | |
-| 台账尾巴（cycle 1 回写：PLAN-150 DONE + `RECHECK-151` + `MEM-114` + GOAL 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在**回合汇报**里给出终态，**不再回写文件**） | | |
+| cycle 1 派生 + WP1–WP4 + lint 修复 + 收口回写 | `0eb09f1`（derive）、`6849776`（WP1）、`0c8f220`（WP2）、`f45d6ec`（WP3+WP4）、`f60b7b0`（lint 修复 + 复检补记）、`6d62494`（收口回写，**推送 tip**） | M0 [35869227139](https://github.com/Eswink/research-system-new/actions/runs/35869227139) | **六 job 全 success**（`container-quality` / `quality-windows-latest` / `eval-gate` / `quality-ubuntu-latest` / `collector-quality` / `console-frontend`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35869226411](https://github.com/Eswink/research-system-new/actions/runs/35869226411) = **success**（3/3：`Analyze (javascript-typescript)` / `Analyze (python)` / `Analyze (actions)`）。**这同时证实本地 m0 的那条红是环境项**：CI 的 `python/tests` 在**逐字节相同**的 Python 树上通过 |
+| 台账尾巴（本条 CI 台账回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在**回合汇报**里给出终态，**不再回写文件**） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…012，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -466,7 +465,11 @@ memory_entries:
   ⇒ `pageSupport` 等级收敛为 `full`，注记文字**逐字未改**（设计基线会渲染该文本）。
   **两处判据自身的问题当轮修掉**：「收敛有证」初版被 spec 注释骗过 ⇒ 改为要求
   `page.goto` + DOM 断言 + 反向要求收敛行确为 `full`；独立脚本的归一化写错导致一条假红 ⇒
-  改用 `re.sub` 后转绿。**EC-02…EC-05 未达成**；`W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1`
+  改用 `re.sub` 后转绿。**m0 首轮两红也当轮处置**：`typescript/lint`（web 包内 lint 只覆盖
+  `src`，测试面归根 `eslint .`）两条真缺陷已修；`python/tests` 的 exit 1 是本机 fake-IP DNS
+  触发出站判据（**该 check 自身 `4413 passed / 0 failed`**，且 Python 树与 CI 全绿的建档提交
+  **逐字节相同**）——**不改判据**，由 CI 承担权威判定，**CI 六 job 全 success 已证实**。
+  **EC-02…EC-05 未达成**；`W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1`
   与 13 条人工面**原样保留**。
 
 ## 当前续点
