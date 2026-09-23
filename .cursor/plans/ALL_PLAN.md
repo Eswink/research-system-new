@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260923-151](tasks/PLAN-20260923-151-live-page-read-face-batch-two.md) | IN_PROGRESS |
+| [x] | [PLAN-20260923-151](tasks/PLAN-20260923-151-live-page-read-face-batch-two.md) | DONE |
 | [x] | [PLAN-20260923-150](tasks/PLAN-20260923-150-console-real-data-matrix.md) | DONE |
 | [x] | [PLAN-20260923-149](tasks/PLAN-20260923-149-goal-012-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260923-147](tasks/PLAN-20260923-147-experiments-read-face-in-browser.md) | DONE |

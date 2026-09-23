@@ -111,6 +111,9 @@
 | [MEM-20260923-111](entries/MEM-20260923-111-experiment-evidence-traceability-judge-shape.md) | ACTIVE | repository | 0.92 | 2027-03-23 | PLAN-20260923-144 |
 | [MEM-20260923-112](entries/MEM-20260923-112-verifier-token-drift-after-amend.md) | ACTIVE | repository | 0.94 | 2027-03-23 | PLAN-20260923-146 |
 | [MEM-20260923-113](entries/MEM-20260923-113-live-page-equals-read-face-judge.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-147 |
+| [MEM-20260923-117](entries/MEM-20260923-117-live-page-equals-read-face-writing-traps.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-151 |
+| [MEM-20260923-118](entries/MEM-20260923-118-governance-token-ban-in-closed-records.md) | ACTIVE | repository | 0.95 | 2027-03-23 | PLAN-20260923-151 |
+| [MEM-20260923-116](entries/MEM-20260923-116-local-m0-green-recipe.md) | ACTIVE | repository | 0.88 | 2027-03-23 | PLAN-20260923-151 |
 | [MEM-20260923-115](entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-150 |
 | [MEM-20260923-114](entries/MEM-20260923-114-citations-land-with-their-artifacts.md) | ACTIVE | repository | 0.93 | 2027-03-23 | PLAN-20260923-147 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |

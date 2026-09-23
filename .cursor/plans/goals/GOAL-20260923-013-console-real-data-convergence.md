@@ -225,9 +225,11 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260923-150-console-real-data-matrix.md
   - .cursor/plans/tasks/PLAN-20260923-151-live-page-read-face-batch-two.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-151-console-real-data-matrix.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-152-live-page-read-face-batch-two.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md
+  - .cursor/memory/entries/MEM-20260923-116-local-m0-green-recipe.md
+  - .cursor/memory/entries/MEM-20260923-117-live-page-equals-read-face-writing-traps.md
 ---
 
 ## 目标与退出标准
@@ -238,7 +240,7 @@ memory_entries:
 | EC | 标准（摘要） | 验证命令 / 证据来源 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 20 条逐页矩阵：每条终态 ∈ {收敛, 保持}，零条待定；(a) 有具名 live 用例，(b) 点名缺哪条 API/字段；三方同源 | `docs/frontend/CONSOLE_REAL_DATA_MATRIX.md` 完备性判据 + `pageSupport.ts` 差集判据 + `CONSOLE_PAGE_MAP.md` 一致性判据（离线、零出网） | PENDING |
-| EC-02 | ≥6 条 live e2e，覆盖 6 域各 ≥1，判据形态统一「页面 == 读面」+ 成对反证（空读面 ⇒ 诚实空态） | `RESEARCHOS_AGENT_RUNTIME=openhands pnpm run test:e2e:live`（真实数据）+ 离线 `pnpm run test:e2e` 仍绿 | PENDING |
+| EC-02 | ≥6 条 live e2e，覆盖 6 域各 ≥1，判据形态统一「页面 == 读面」+ 成对反证（空读面 ⇒ 诚实空态） | `RESEARCHOS_AGENT_RUNTIME=openhands pnpm run test:e2e:live`（真实数据）+ 离线 `pnpm run test:e2e` 仍绿 | PENDING（**进度 3/6**：`plan/overview`、`library/lineage`、`govern/audit` 已计入；余 `portfolio/*`、`insights/*`、`ops/*`） |
 | EC-03 | 每条新增前端判据写明能被什么按压 / 不能被什么按压；同源数据面须按页面那一段 | 反证表落 RECHECK + 抽查实跑红/绿对照（`scratch/`）+ `MEM-*` 同提交 | PENDING |
 | EC-04 | `ops/matrix` 单独处置：真实消费者并收敛，或「界面状态说明页（非实时运维状态）」成三处同源一等事实 | 三处措辞一致性判据 + 页面文案断言（先红后绿可演示） | PENDING |
 | EC-05 | 独立复检脚本两树同结论 + m0 23/23 + validate 绿 + CI 台账终态 + 残余 13 条原样保留 + `W` 列表登记 | `scratch/verify_goal013_c<N>.py` + `make validate-all` + `validate.py` + `scratch/poll_ci_all.sh <sha>` | PENDING |
@@ -427,6 +429,8 @@ memory_entries:
 | 0 | （建档，无子 PLAN） | `<建档提交>`（见下方 CI 台账） | 治理 `validate.py` 绿（建档后实跑） | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-7**：20 条名单与分布、14 个既有 live suite、`gap` 的唯一性是 `presentationPolicy` 的 `resolveDataSource` 行为、`pageSupport` 有真实消费者、G1…G16 缺口表提供 (b) 类点名来源、`ops/matrix` 文档基础、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1`（「渲染正确」须操作化）+ `R-F2`（live 用例数据不足时不得计入 ≥6） | cycle 1 = derive **EC-01** 子 PLAN（逐页矩阵）：先定案「**终态判定表**」（20 条逐条的 (a)/(b) 初判 + 依据来源 + 哪些条要 live 用例、哪些条点名缺口）与「**矩阵文档结构**」（列定义 + 与 `pageSupport.ts`/`CONSOLE_PAGE_MAP.md` 的三方同源机制），再落**离线完备性判据**（20 行 / 无待定 / 差集为空 / 无混写）+ 成对反证；EC-02 的真实 live 链在其后按域分批 |
 
 | 1 | PLAN-20260923-150（EC-01） | `0eb09f1`（derive：PLAN-150 + ALL_PLAN + `child_plans`）、`6849776`（WP1：页面级 live + 白名单）、`0c8f220`（WP2：注记收敛 + page map 写实）、`f45d6ec`（WP3+WP4：矩阵 + 离线判据）；本 cycle 的收口回写见台账尾巴 | **离线判据 4 条全绿**（`pnpm run test` ⇒ **80 passed / 0 failed**，含新判据文件）；**页面级 live 2 passed**、**live 全套 43 passed**、**stub 96 passed**、`lint` / `typecheck` / `build` 全绿；**三处按压先红后绿**（`scratch/goal013-c1-pressA-page.txt` 2 failed、`goal013-c1-press-matrix.txt` 2 failed、`goal013-c1-press-live-route.txt` 1 failed）；**独立复检** `scratch/verify_goal013_c1.py` 两棵树成对（**当前树 `checked=218 failures=0`；干净 checkout `f45d6ec` `failures=3`＝全部是「尚未收口」时序项**）；`validate.py` 绿；`DOCS-CHECK PASS: 6`；**零出网**（浏览器只打 127.0.0.1）、零凭据读取 | 见下方 CI 台账 | **两处判据自身的问题当轮修掉并如实记录**：① 初版「收敛有证」用 `spec.includes("#/" + route)` 判路由，**被 spec 文件头注释里的一句路由骗过**（按压仍绿）⇒ 改为「路由串前 300 字符内有 `page.goto(`」+ 要求 DOM 断言 + **反向**要求收敛行在代码里确为 `full`，同一按压随即变红；② 独立脚本初版把 `pageSupport.ts` 的字符串拼接归一化写错（漏了 `+`）⇒ **假红**一条 `D2 row 13`，改用 `re.sub` 后转绿（判据测试用的正则一开始就对，**不是**矩阵的事实问题）。**顺带查出的一处事实**：设计基线 `design-outlines.json` 会渲染 `pageSupport.reason` 文本 ⇒ 收敛时**注记文字逐字未改**（改文字等于改设计基线，而本次是等级口径收敛）⇒ 基线**无需重生成**，`design-fidelity` 结构签名判据实测保持绿 | **EC-01 PASS**（20 行、已收敛 1 / 保持 19 / 待定 0；三条离线判据 + 两条成对反证实跑）。**EC-02…EC-05 未达成**：真实数据 live 链还需覆盖 `library/lineage`、`govern/*` 等域的**页面级**用例；判据性质披露需随每条新判据落地；`ops/matrix` 的单独处置与收口复检在其后。**W-A / W-C / R-M1 / R-D1 / R-B1 / R-N1 原样保留**（本 cycle 未触及） | cycle 2 = **EC-02 第二批真实数据页链**：按域补齐**页面级**「页面 == 读面」用例（优先 `library/lineage`、`govern/budget`、`govern/audit`），每条配成对反证且**按页面**按压；同时把 EC-03 的性质披露随判据一起落（结构判据 vs 语义判据分开写）。**注意**：既有 `live-project-lineage` / `live-project-cost-forecast` 是**纯读面**用例（只 `page.request`），**不构成**页面级证据 ⇒ 若要它们支撑 (a) 收敛，必须先补 DOM 断言 |
+| 2 | PLAN-20260923-151（EC-02 第二批） | `0e0d67a`（derive：PLAN-151 + ALL_PLAN + `child_plans`）、`168d69b`（WP1+WP2：两条页面级 live + 白名单）、`59c0329`（空态锚定回填 cycle 1 的 spec）、`08daf1e`（行长修复）；本 cycle 的收口回写见台账尾巴 | **live 全套 47 passed**（cycle 1 的 43 + 本批 4）、**stub 96 passed**（新 spec 被 `testIgnore` 正确排除）、`lint` / `typecheck` / `build` 全绿；**三处按页面按压先红后绿**（`scratch/goal013-c2-press-lineage-rows.txt` 1 failed `Expected: 18, Received: 1`、`-press-audit-rows.txt` 1 failed `Expected: 1, Received: 0`、`-press-empty-text.txt` 1 failed）；**独立复检** `scratch/verify_goal013_c2.py` 两棵树成对（**当前树 `checked=32 failures=0`；干净 checkout `08daf1e` `failures=3`＝全部是「尚未收口」时序项**）；`validate.py` 绿；`DOCS-CHECK PASS: 6`；**零出网**（浏览器只打 127.0.0.1）、零凭据读取、零真实 LLM 调用 | 见下方 CI 台账 | **① cycle 1 的 22/23 缺口被真正消除（不是继续归因）**：定位到那条 fake-IP 红的注入源是本机 `.env` 的 `LLM_MAIN_KEY` / `RESEARCHOS_DATABASE_URL` 被 `litellm.load_dotenv()` 注进进程 ⇒ 显式清空这两个键后 `python/tests` ⇒ `4412 passed, 18 skipped, 0 failed`、出站判据零 blocked ⇒ **m0 23/23**（`scratch/goal013-c2-m0-green.log` 的终局行 `PASS: profile=m0; 23 deterministic checks`）；配方落 `MEM-20260923-116`。**m0 为拿到终局行跑了三轮**：第 1 轮的红是本复检的时序项（`MEM-116/117` 起跑后才落盘、引用的复检当时未落盘），第 2 轮的红是**两条真违规** —— `validate.py:705/723` 禁止 `DONE` 的 task plan 与 `PASS` 的复检正文出现占位 token（任意位置，含引文），而我把 GOAL 侧 EC 的状态取值原样抄进了收口记录 ⇒ 改自然语言后转绿（落 `MEM-20260923-118`；**同一坑随后又踩一次**：折写前「逐字引用判词」又把禁令触发）。**没有任何一条红落在本 cycle 的代码或判据上**。**② 顺带查出一处更实质的事实**：同一个注入源让 `tests/e2e/test_run_chain_retrieval_live.py`（凭据门读 `LLM_MAIN_KEY`）在**上一轮本地默认离线的 m0 里真跑了一次联网检索**（c1 日志该文件 `.`、c2 日志 `s`；总数 4430 不变、恰好一条 passed→skipped）⇒ 清空键是把本地门从「偷偷联网」改回「默认离线」，**不是**放宽。**③ 两处判据自身的缺陷当轮修掉**：空态断言 `getByText(/…/)` 未锚定 ⇒ 按压实测把文案改成 `项目内无库资源占位` **仍然绿**（子串匹配）⇒ 两端锚定 `^…$` 并回填 cycle 1 的 spec；`table[aria-label="a|b"]` 在 CSS 属性选择器里**不做候选**、被当字面量 ⇒ 行数读到 0 ⇒ 改选择器列表。两处落 `MEM-20260923-117` | **EC-02 从 1/6 推进到 3/6，仍 PENDING**（`plan/overview` + `library/lineage` + `govern/audit` 已计入；余 `portfolio/*`、`insights/*`、`ops/*`）。**`govern/budget` 按 R-F2 明确不做**：三条读面实测全空（`entries: []` / `cost_status: NO_DATA` / `days: []`）⇒ 无法演示「非空读面 → 非空渲染」，**不为它建凑数用例**，需带 usage 的受控 run 夹具。**EC-03/04/05 未动**。**W-A / W-C / R-M1 / R-D1 / R-B1 / R-N1 / R-F1 / R-F2 原样保留**（本 cycle 未触及） | cycle 3 = **EC-02 第三批**：`portfolio/*`、`insights/*`、`ops/*` 三域各一条页面级「页面 == 读面」+ 成对反证（`ops/*` 需**新补**一条——既有 `live-schedules-write` 虽 `goto` 并断言 DOM，但未先取读面，按 D-1 不计入）⇒ 满 6/6 后 EC-02 可判 PASS。判据形态与按压口径沿用 `MEM-20260923-117` 的两条写法纪律 |
+
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
@@ -473,11 +477,32 @@ memory_entries:
   **EC-02…EC-05 未达成**；`W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1`
   与 13 条人工面**原样保留**。
 
+- 2026-09-23：**cycle 2 收口**（`status: ACTIVE` 不变）。PLAN-20260923-151 **DONE**，
+  `RECHECK-20260923-152` **PASS**。两条**页面级**「页面 == 读面」用例（`library/lineage`、
+  `govern/audit`）实跑并**按页面**先红后绿（live 全套 **47 passed**、stub **96 passed**）；
+  **EC-02 由 1/6 推进到 3/6（仍 PENDING）**。
+  **cycle 1 的 m0 22/23 缺口本轮被真正消除**：那条 fake-IP 红的注入源是本机 `.env` 的
+  `LLM_MAIN_KEY` / `RESEARCHOS_DATABASE_URL` 被 `litellm.load_dotenv()` 注进进程
+  ⇒ 显式清空后 `python/tests` ⇒ `4412 passed, 18 skipped, 0 failed`、出站判据零 blocked
+  ⇒ **本地 m0 23/23**（配方落 `MEM-116`）。**顺带查出一处更实质的事实**：同一注入源让
+  `tests/e2e/test_run_chain_retrieval_live.py` 在**上一轮的本地默认离线 m0 里真跑了一次联网检索**
+  （c1 日志该文件 `.`、c2 日志 `s`，总数 4430 不变、恰好一条 passed→skipped）
+  ⇒ 清空键是把本地门从「偷偷联网」改回「默认离线」，**不是**放宽判据。
+  **两处判据自身的缺陷当轮修掉**：空态断言未锚定 ⇒ 被 `…占位` 前缀文案骗过（按压实测仍绿）；
+  CSS 属性选择器 `a|b` 不做候选 ⇒ 行数读到 0。两处落 `MEM-117`。
+  **`govern/budget` 按 R-F2 明确不做**并落证据（三条读面全空）。**EC-03/04/05 未动**；
+  `W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1`/`R-F1`/`R-F2` 与 13 条人工面**原样保留**。
+
 ## 当前续点
 
-- **续点**：cycle 1 已收口（EC-01 PASS，PLAN-150 DONE，`RECHECK-151` PASS，`MEM-114` 已落），
-  台账尾巴提交见回合汇报。**下一轮 = cycle 2**：EC-02 第二批**页面级**真实数据页链
-  （优先 `library/lineage`、`govern/budget`、`govern/audit`），每条配成对反证并按**页面**按压；
-  EC-03 的性质披露随每条新判据一起落。
+- **续点**：cycle 2 已收口（PLAN-151 DONE，`RECHECK-152` PASS，`MEM-116`/`MEM-117` 已落），
+  台账尾巴提交见回合汇报。**下一轮 = cycle 3**：EC-02 第三批 —— `portfolio/*`、`insights/*`、
+  `ops/*` 三域各一条**页面级**「页面 == 读面」+ 成对反证，满 **6/6** 后 EC-02 可判 PASS。
+  `ops/*` 需**新补**一条（既有 `live-schedules-write` 虽 `goto` 并断言 DOM，但未先取读面，
+  按 D-1 不计入）。
+- **注意（承 cycle 2 的实测）**：本批两条判据的写法纪律已落 `MEM-20260923-117` ——
+  空态/否定性断言**必须两端锚定** `^…$`；CSS 属性选择器**不做候选**，要写成选择器列表。
 - **注意（承 cycle 1 的实测）**：`live-project-lineage` 与 `live-project-cost-forecast`
   是**纯读面**用例（只 `page.request`，不断言 DOM）⇒ 按 D-2 **不构成**页面级证据。
+- **注意（承 cycle 2 的实测）**：本地跑全量 m0 必须用 `MEM-20260923-116` 的配方
+  （清空 `LLM_MAIN_KEY` / `RESEARCHOS_DATABASE_URL`），否则既会假红、又会**偷偷跑一条 live 检索**。

@@ -2,7 +2,7 @@
 id: PLAN-20260923-151
 slug: live-page-read-face-batch-two
 title: EC-02 第二批页面级「页面 == 读面」live 用例：library/lineage 与 govern/audit（含成对反证）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-23
 updated_at: 2026-09-23
 parent_goal: GOAL-20260923-013
@@ -22,8 +22,11 @@ authorization:
     既有断言、**不改**设计基线、**不改** `pageSupport` 标注。
     零出网（浏览器只打本机 127.0.0.1 的 live app 与 vite dev）、零凭据读取、零真实 LLM 调用。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-152-live-page-read-face-batch-two.md
+memory_entries:
+  - MEM-20260923-116
+  - MEM-20260923-117
+  - MEM-20260923-118
 ---
 
 # PLAN-20260923-151 — EC-02 第二批页面级 live（library/lineage、govern/audit）
@@ -69,41 +72,58 @@ memory_entries: []
 
 ## 验收条件
 
-- [ ] `apps/web/tests/e2e/live-library-lineage.spec.ts`：正向判据 = 项目级合并图的摘要
+- [x] `apps/web/tests/e2e/live-library-lineage.spec.ts`：正向判据 = 项目级合并图的摘要
       （运行 / 节点 / 边）与三张表的行数**逐值等于** `GET /projects/{id}/lineage` 的响应；
       成对反证 = `library_resources: 0` ⇒ 库资源面板显示诚实空态文案（不渲染空表）。
-- [ ] `apps/web/tests/e2e/live-govern-audit.spec.ts`：正向判据 = Audit 页的事件行数**等于**
+- [x] `apps/web/tests/e2e/live-govern-audit.spec.ts`：正向判据 = Audit 页的事件行数**等于**
       `GET /runs/{id}/events` 的长度；成对反证 = 另一条 run 读面为 0 ⇒ 显示空态文案。
-- [ ] 两条 spec 的 suite 名加入 `live-specs.ts`；`pnpm run test:e2e`（stub）仍绿
+- [x] 两条 spec 的 suite 名加入 `live-specs.ts`；`pnpm run test:e2e`（stub）仍绿
       （证明被 `testIgnore` 正确排除）。
-- [ ] **按页面**按压：分别把两个组件渲染的值钉成常量 ⇒ 对应判据**红**；复原 ⇒ **绿**。
+- [x] **按页面**按压：分别把两个组件渲染的值钉成常量 ⇒ 对应判据**红**；复原 ⇒ **绿**。
       红/绿证据落 `scratch/goal013-c2-press*.txt`，并在 RECHECK 里写明
       「能被什么按压 / 不能被什么按压」。
-- [ ] 本地门全绿：web lint / typecheck / unit / build / stub e2e / live e2e（全套）+
+- [x] 本地门全绿：web lint / typecheck / unit / build / stub e2e / live e2e（全套）+
       根 `eslint .`（测试面）+ `validate.py` + docs-check；m0 按既有配方（含 pinned OTel collector）。
-- [ ] **不改**产品 UI/API/DTO/门禁/既有断言/设计基线/`pageSupport` 标注（用 `git diff --stat` 证明
+- [x] **不改**产品 UI/API/DTO/门禁/既有断言/设计基线/`pageSupport` 标注（用 `git diff --stat` 证明
       改动面只在 `apps/web/tests/e2e/` 与记录）。
 
 ## 实施清单
 
 ### WP1 — `library/lineage` 页面级 live
-- [ ] 新 spec：读面先行（`GET /api/projects/example-project/lineage`）→ `goto #/library/lineage`
+- [x] 新 spec：读面先行（`GET /api/projects/example-project/lineage`）→ `goto #/library/lineage`
       → 断言合并摘要与三张表行数与读面一致；库资源为 0 时断言空态文案。
-- [ ] 白名单加 `library-lineage`。
+- [x] 白名单加 `library-lineage`。
 
 ### WP2 — `govern/audit` 页面级 live
-- [ ] 新 spec：读面先行（`GET /api/runs/{id}/events`）→ `goto #/govern/audit?run=…`
+- [x] 新 spec：读面先行（`GET /api/runs/{id}/events`）→ `goto #/govern/audit?run=…`
       → 断言 `[data-testid="run-timeline"]` 内的事件行数等于读面长度；
       另一条 run（读面 0 条）⇒ 断言空态文案。
-- [ ] 白名单加 `govern-audit`。
+- [x] 白名单加 `govern-audit`。
 
 ### WP3 — 按压与记录
-- [ ] 两处**按页面**按压先红后绿，证据落 `scratch/`。
-- [ ] RECHECK 记录性质披露（能被什么按压 / 不能被什么按压）+ 两棵树成对复检。
+- [x] 两处**按页面**按压先红后绿，证据落 `scratch/`。
+- [x] RECHECK 记录性质披露（能被什么按压 / 不能被什么按压）+ 两棵树成对复检。
 
 ## 证据
 
-- 待补（执行后回写）。
+- **实现**：`apps/web/tests/e2e/live-library-lineage.spec.ts`、
+  `apps/web/tests/e2e/live-govern-audit.spec.ts`（提交 `168d69b`）；
+  `apps/web/tests/e2e/live-specs.ts` 加 `library-lineage` / `govern-audit`（同一提交）；
+  空态锚定回填 `live-plan-overview.spec.ts`（`59c0329`）；行长修复（`08daf1e`）。
+- **live 实跑**：`pnpm run test:e2e:live` ⇒ **47 passed**（cycle 1 的 43 + 本批 4）；
+  `pnpm run test:e2e`（stub）⇒ **96 passed**（新 spec 被 `testIgnore` 正确排除）。
+- **按页面按压先红后绿**（证据落 `scratch/`，目录不进仓库）：
+  `goal013-c2-press-lineage-rows.txt`（`Expected: 18, Received: 1`）、
+  `goal013-c2-press-audit-rows.txt`（`Expected: 1, Received: 0`）、
+  `goal013-c2-press-empty-text.txt`（空态文案改 `…占位` ⇒ 锚定前绿、锚定后红）。
+- **本地门**：m0 **23/23**（`scratch/goal013-c2-m0-green.log` 的终局行
+  `PASS: profile=m0; 23 deterministic checks`；前两轮各一红均为本复检自己的记录问题，
+  逐轮成因见 `RECHECK-20260923-152` 第五之二节）；
+  `validate.py` 绿；`DOCS-CHECK PASS: 6`；web `lint` / `typecheck` / `build` 全绿。
+- **独立复检**：`scratch/verify_goal013_c2.py` 两棵树成对 ——
+  当前树 `checked=33 failures=0`；干净 checkout `08daf1e` `failures=3`（全部是「尚未收口」时序项）。
+- **本批未做并落理由**：`govern/budget`（三条读面全空，按 R-F2 不为它建凑数用例）。
+- 逐条判据与判词见 `RECHECK-20260923-152`。
 
 ## 状态历史
 
@@ -112,12 +132,18 @@ memory_entries: []
   library_resources=0 / reference_recording=NOT_RECORDED`；`govern/audit` 的事件读面实测
   run `44444444` = 1 条、run `55555555` = 0 条；`govern/budget` 的三条读面**全空**
   （`entries: []` / `cost_status: NO_DATA` / `days: []`）⇒ 按 D-3 本批不做，理由落证据。
+- 2026-09-23：**DONE**（cycle 2 收口）。两条 spec 实跑 47 passed；三处按页面按压先红后绿；
+  本地 m0 **23/23**（cycle 1 的 `python/tests` 假红已按配方真正消除，不是继续归因）；
+  独立复检两树同结论。**当轮修掉两处判据自身的缺陷**（空态断言未锚定 ⇒ 被前缀文案骗过；
+  CSS 属性选择器 `a|b` 不做候选 ⇒ 行数读到 0），并回填 cycle 1 的 spec。**EC-02 进度 3/6，域覆盖未满 6 ⇒ 仍未达成**。
 
 ## 影响报告
 
 - **Domain/API/schema**：无改动。
 - **前端**：仅 `apps/web/tests/e2e/` 新增 2 个 live spec + 白名单 2 项。产品代码**零改动**。
-- **文档**：本 PLAN + RECHECK（执行后）。
+- **文档**：本 PLAN + `RECHECK-20260923-152` + `MEM-116` / `MEM-117`。
 - **安全/凭据**：零真实出网（浏览器只打 127.0.0.1）、零凭据读取、零真实 LLM 调用。
 - **兼容性/迁移**：无。
 - **上游版本影响**：无新增依赖、无 pin 变更。
+- **下一项任务**：cycle 3 = EC-02 剩余域（`portfolio/*`、`insights/*`、`ops/*`）的页面级
+  「页面 == 读面」用例；`ops/*` 需新补一条（既有 `live-schedules-write` 按 D-1 不计入）。
