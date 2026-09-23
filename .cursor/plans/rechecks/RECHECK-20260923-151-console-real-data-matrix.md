@@ -86,6 +86,36 @@ checked_head: 当前树 + 干净 checkout `f45d6ec`（cycle 1 最后一条功能
 覆盖它的是根 `eslint .`（m0 的 `typescript/lint`）。本 cycle 的两条 lint 缺陷因此只在 m0
 这一层暴露 —— 这条口径本身是可复用事实，已随 `MEM-20260923-115` 落库。
 
+### 六、本地 m0 的终局：22/23，唯一那条红是本机环境的既有签名（不是本 cycle 的缺陷）
+
+修掉 lint 两条后重跑：`typescript/*`（含此前两红的 `typescript/lint`）与 `framework/*`
+**全部 PASS**，唯 `python/tests` 仍 exit 1。**但该 check 的自身数字是
+`4413 passed, 17 skipped, 0 failed`** —— exit 1 来自**出站判据**在结束时判红：
+
+```
+egress guard: judged 794 connection attempt(s); blocked 10
+egress guard: BLOCKED 198.18.0.230:443 by tests/api/test_runs_api.py::
+  test_start_run_unprovisioned_control_plane_reports_actionable_failure
+  :: preflight_support.py:43:build_endpoint_health <- … <- transport.py:108:_execute_request
+```
+
+（另 8 条 blocked 是 `tests/architecture/python/test_default_egress_guard.py` 的**故意探针**，
+2 条来自上面这个用例。）
+
+**归因（按既有配方，不动判据）**：
+
+- `198.18.0.0/15` 是**本机 fake-IP 代理**的 DNS 段；该地址**不在仓库里**——
+  仓库内 `198.18` 仅出现在文档与出站判据自己的测试文件（故意样本）中，
+  实测来源是**解析了主机名**（用例只 `delenv` 了 DB 相关键，未清 LLM 端点键 ⇒
+  组合根按本机 `.env` 的端点配置探测健康）。
+- ⇒ 这是**本机环境签名**，同族于既有的「本地 m0 egress guard fake-IP red」记录。
+- **最强归因证据是逐字节对照**：`git diff 50afb3b..HEAD -- '*.py'` **为空**——
+  **Python 树与那次 CI 全绿（含 `python/tests`）的建档提交逐字节相同**，
+  而本 cycle 的 876 行改动全在文档 / web 源码 / web 测试。
+  ⇒ 该 check 的结果**在构造上**与本 cycle 的改动无关。
+- **不改判据**（不放宽 `tests/egress_guard.py`、不加豁免名单）——CI 侧的权威判定由本次
+  推送后的 m0 run 承担。
+
 ## 结论
 
 `result: PASS`。**GOAL-013 EC-01 判 PASS**：EC-01 的三条离线判据（矩阵完备 / 三方同源 /
