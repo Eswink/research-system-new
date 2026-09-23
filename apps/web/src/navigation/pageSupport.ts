@@ -109,7 +109,14 @@ function routeKey(route: Route): string {
 }
 
 const SUPPORT: Readonly<Record<string, PageSupport>> = {
-  "plan/overview": { level: "partial", reason: "聚合已加载数据；无独立 overview API" },
+  "plan/overview": {
+    level: "full",
+    // 收敛（GOAL-013 EC-01）：四条读面（/runs/{id}、/tasks、/claims、/usage）全部已交付、
+    // 页面无禁用操作 ⇒ 按 CONSOLE_PAGE_MAP 的等级定义即为 full。注记文字**逐字未改**
+    // （设计基线 `design-outlines.json` 会渲染这段文字，改文字等于改设计基线；
+    // 而这次是等级口径收敛、不是设计变更）。页面级证明见 live-plan-overview.spec.ts。
+    reason: "聚合已加载数据；无独立 overview API",
+  },
   "plan/protocol": { level: "full" },
   "plan/team": { level: "full" },
   "portfolio/projects": { level: "partial", reason: GAPS.multiProject },

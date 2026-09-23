@@ -26,11 +26,16 @@ API 路径为后端真实路径；浏览器经同源 `/api` 前缀访问（vite 
 
 ### `#/plan/overview` — 概览
 - 设计：`components/AppShell.jsx` `PlanOverview`。
-- 子视图：摘要头（manifest/目标数/团队/自治级）、预检/进度/论断三卡、研究目标、快捷跳转。
-- 数据：聚合已加载的 Run 详情、tasks、claims、usage 与有效预检报告；无独立 overview API。
-- 等级：PARTIAL。无运行/无预检时显示"未选择/未执行"，不自动发起预检探测。
-- 缺口：原型 manifest 摘要字段（objectives/autonomy）无对应 DTO——映射到真实
-  RunDetailDto/协议字段，缺失显示未提供。
+- 数据：聚合已加载的四条读面——`GET /runs/{id}`、`GET /runs/{id}/tasks`、
+  `GET /runs/{id}/claims`、`GET /runs/{id}/usage`；无独立 overview API（按设计聚合）。
+- 等级：**FULL**（GOAL-20260923-013 EC-01 收敛）。页面无禁用操作，四张指标卡
+  （任务/论断/成本/运行状态）与「计划与冻结身份」字段全部由上述读面取值；读面缺失时
+  显示 `—`／「金额未知」，不推断。页面级证明：
+  `apps/web/tests/e2e/live-plan-overview.spec.ts`（含成对反证）。
+- **与原型设计的偏差（不是未建功能）**：设计稿的摘要头含「目标数／团队／自治级」，
+  实现按真实 DTO 渲染（Run/Protocol/Project/Manifest + 创建／更新时间），**不呈现**
+  objectives／autonomy 两字段——页面上没有消费它们的代码路径。该偏差在此登记为
+  **已实现面的一部分**，不再记作缺口；若将来要呈现该摘要头，需先给这两字段定读面契约。
 
 ### `#/plan/protocol` — 协议 & 预检
 - 设计：`screens/DryRun.jsx` + `ProtocolEditor.jsx/.parts/.sections`；子包 README。
