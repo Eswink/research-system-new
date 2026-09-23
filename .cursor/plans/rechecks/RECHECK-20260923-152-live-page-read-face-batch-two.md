@@ -44,6 +44,23 @@ checked_head: 当前树 + 干净 checkout `08daf1e`（cycle 2 最后一条功能
 不是分歧。收口提交只增加记录，**不含任何产品面改动**（脚本 G 组：`d01ce1e..HEAD` 无
 `services/` / `packages/` / `adapters/` / `apps/web/src/`（除 `pageSupport.ts`）改动）。
 
+### 一之二、**本节此前的方法是错的，已更正**（2026-09-23，cycle 3 发现并修复）
+
+原文写的「干净 checkout（`08daf1e`）`checked=32 failures=3`」**方法不成立**：
+`scratch/verify_goal013_c2.py` 初版用 `ROOT = Path(__file__).resolve().parents[1]`，
+而从干净 checkout 里调用的是**主树路径**的脚本 ⇒ `ROOT` 仍指向主树
+⇒ 那次「干净树」运行**实际是主树又跑了一次**。两棵树输出一致不是「同结论」，是**同一棵树**。
+
+修好后（`ROOT = Path(os.environ.get("VERIFY_ROOT") or Path.cwd()).resolve()`）实测：
+
+| 树 | 结果 |
+| --- | --- |
+| 主树（当前） | `checked=33 failures=0` |
+| 干净 checkout `08daf1e` | `checked=32 failures=3`（`F2` / `F3` / `F6` —— 具名 PLAN-151 未收口） |
+
+⇒ **本复检的结论不变**（干净树多出的三条红**内容**仍是「尚未收口」时序项），
+但**证据方法已更正**；本节表述以更正后的实测为准。教训落 `MEM-20260923-120`。
+
 ### 二、判据**能被什么按压、不能被什么按压**（GOAL-013 EC-03 的口径披露，第 2 批）
 
 本批每条判据按 **D-6** 都做了**按页面**按压（把组件渲染的值钉成常量 ⇒ 判据必须红）：

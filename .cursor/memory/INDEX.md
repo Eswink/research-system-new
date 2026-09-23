@@ -113,6 +113,8 @@
 | [MEM-20260923-113](entries/MEM-20260923-113-live-page-equals-read-face-judge.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-147 |
 | [MEM-20260923-117](entries/MEM-20260923-117-live-page-equals-read-face-writing-traps.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-151 |
 | [MEM-20260923-118](entries/MEM-20260923-118-governance-token-ban-in-closed-records.md) | ACTIVE | repository | 0.95 | 2027-03-23 | PLAN-20260923-151 |
+| [MEM-20260923-119](entries/MEM-20260923-119-live-read-face-ownership-and-fixture-anchoring.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-152 |
+| [MEM-20260923-120](entries/MEM-20260923-120-recheck-root-must-follow-cwd.md) | ACTIVE | repository | 0.95 | 2027-03-23 | PLAN-20260923-152 |
 | [MEM-20260923-116](entries/MEM-20260923-116-local-m0-green-recipe.md) | ACTIVE | repository | 0.88 | 2027-03-23 | PLAN-20260923-151 |
 | [MEM-20260923-115](entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-150 |
 | [MEM-20260923-114](entries/MEM-20260923-114-citations-land-with-their-artifacts.md) | ACTIVE | repository | 0.93 | 2027-03-23 | PLAN-20260923-147 |

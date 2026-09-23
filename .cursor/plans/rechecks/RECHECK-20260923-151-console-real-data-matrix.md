@@ -41,6 +41,23 @@ checked_head: 当前树 + 干净 checkout `f45d6ec`（cycle 1 最后一条功能
 不是分歧。收口提交只增加记录（PLAN 状态 + 本复检 + GOAL 回写 + 工程记忆），
 **不含任何产品面改动**。
 
+### 一之二、**本节此前的方法是错的，已更正**（2026-09-23，cycle 3 发现并修复）
+
+原文写的「干净 checkout（`f45d6ec`）`checked=218 failures=3`」**方法不成立**：
+`scratch/verify_goal013_c1.py` 初版用 `ROOT = Path(__file__).resolve().parents[1]`，
+而从干净 checkout 里调用的是**主树路径**的脚本 ⇒ `ROOT` 仍指向主树
+⇒ 那次「干净树」运行**实际是主树又跑了一次**。两棵树输出一致不是「同结论」，是**同一棵树**。
+
+修好后（`ROOT = Path(os.environ.get("VERIFY_ROOT") or Path.cwd()).resolve()`）实测：
+
+| 树 | 结果 |
+| --- | --- |
+| 主树（当前） | `checked=219 failures=0` |
+| 干净 checkout `f45d6ec` | `checked=218 failures=3`（`F2` / `F3` / `F6` —— 具名 PLAN-150 未收口） |
+
+⇒ **本复检的结论不变**（干净树多出的三条红**内容**仍是「尚未收口」时序项），
+但**证据方法已更正**；本节表述以更正后的实测为准。教训落 `MEM-20260923-120`。
+
 ### 二、独立复检脚本自己撞到并修掉的一处问题（如实记录）
 
 脚本初版用 `text.replace('"\n    "', "")` 把 `pageSupport.ts` 的**字符串拼接**接回整句，

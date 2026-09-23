@@ -2,7 +2,7 @@
 id: PLAN-20260923-152
 slug: live-page-read-face-batch-three
 title: EC-02 第三批页面级「页面 == 读面」live 用例：portfolio/experiments、insights/reports、ops/integrations（满 6/6）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-23
 updated_at: 2026-09-23
 parent_goal: GOAL-20260923-013
@@ -24,8 +24,10 @@ authorization:
     validator/既有断言、**不改**设计基线、**不改** `pageSupport` 标注。
     零出网（浏览器只打本机 127.0.0.1 的 live app 与 vite dev）、零凭据读取、零真实 LLM 调用。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-153-live-page-read-face-batch-three.md
+memory_entries:
+  - MEM-20260923-119
+  - MEM-20260923-120
 ---
 
 # PLAN-20260923-152 — EC-02 第三批页面级 live（满 6/6）
@@ -83,54 +85,72 @@ memory_entries: []
 
 ## 验收条件
 
-- [ ] `apps/web/tests/e2e/live-portfolio-experiments.spec.ts`：正向 = 实验表行数**等于**
+- [x] `apps/web/tests/e2e/live-portfolio-experiments.spec.ts`：正向 = 实验表行数**等于**
       `GET /projects/example-project/experiments` 的 `experiments.length`，且至少一条的
       `experiment_run_id` 出现在页面上；反证 = `LIVE_EXPERIMENT_BARE_RUN_ID` 的读面
       `metrics` 为空 ⇒ 页面对该条**不渲染指标值**（不伪造指标）。
-- [ ] `apps/web/tests/e2e/live-insights-reports.spec.ts`：正向 = `available: true` 的读面
+- [x] `apps/web/tests/e2e/live-insights-reports.spec.ts`：正向 = `available: true` 的读面
       ⇒ 页面渲染 `deliverable.objective` 与 `Provenance` 里的 `run_id` / `artifact_id`
       （值均来自读面）；反证 = `available: false` 的读面 ⇒ 页面显示读面 `reason` **逐字**，
       且**不**渲染 `Provenance` 区块。
-- [ ] `apps/web/tests/e2e/live-ops-integrations.spec.ts`：正向 = provider 行数**等于**
+- [x] `apps/web/tests/e2e/live-ops-integrations.spec.ts`：正向 = provider 行数**等于**
       `providers.length`，且 `ncbi_eutils` 的 `health` 显示为读面值；反证 = `UNKNOWN` 必须
       如实显示，页面**不得**把该条显示为 `HEALTHY`。
-- [ ] 三条 spec 的 suite 名加入 `live-specs.ts`；`pnpm run test:e2e`（stub）仍绿
+- [x] 三条 spec 的 suite 名加入 `live-specs.ts`；`pnpm run test:e2e`（stub）仍绿
       （证明被 `testIgnore` 正确排除）。
-- [ ] `tests/api/console_api_app.py` 只**增**受控 deliverable 夹具（D-4），不改任何既有夹具语义。
-- [ ] **按页面**按压：分别把三条用例各自断言的页面值钉成常量 ⇒ 对应判据**红**；复原 ⇒ **绿**。
+- [x] `tests/api/console_api_app.py` 只**增**受控 deliverable 夹具（D-4），不改任何既有夹具语义。
+- [x] **按页面**按压：分别把三条用例各自断言的页面值钉成常量 ⇒ 对应判据**红**；复原 ⇒ **绿**。
       红/绿证据落 `scratch/goal013-c3-press*.txt`，并在 RECHECK 里写明
       「能被什么按压 / 不能被什么按压」。
-- [ ] 本地门全绿：web lint / typecheck / build / stub e2e / live e2e（全套）+ 根 `eslint .`
+- [x] 本地门全绿：web lint / typecheck / build / stub e2e / live e2e（全套）+ 根 `eslint .`
       （测试面）+ `validate.py` + docs-check；m0 按 `MEM-20260923-116` 的配方跑（含 pinned
       OTel collector），终局行 `PASS: profile=m0; 23 deterministic checks`。
-- [ ] **不改**产品 UI/API/DTO/门禁/既有断言/设计基线/`pageSupport` 标注（用 `git diff --stat` 证明
+- [x] **不改**产品 UI/API/DTO/门禁/既有断言/设计基线/`pageSupport` 标注（用 `git diff --stat` 证明
       改动面只在 `apps/web/tests/e2e/`、`tests/api/console_api_app.py` 与记录）。
 
 ## 实施清单
 
 ### WP1 — `portfolio/experiments` 页面级 live
-- [ ] 新 spec：读面先行（`GET /api/projects/example-project/experiments`）→ `goto #/portfolio/experiments`
+- [x] 新 spec：读面先行（`GET /api/projects/example-project/experiments`）→ `goto #/portfolio/experiments`
       → 断言实验表行数 == 读面长度、`experiment_run_id` 可见；bare run 的指标不渲染。
-- [ ] 白名单加 `portfolio-experiments`。
+- [x] 白名单加 `portfolio-experiments`。
 
 ### WP2 — `insights/reports` 页面级 live（含受控夹具）
-- [ ] `console_api_app.py`：为 `LIVE_SNAPSHOT_RUN_ID` 持久化受控 `deliverable.json`。
-- [ ] 新 spec：读面先行（`GET /api/runs/{id}/deliverable`）→ `goto #/insights/reports?run=…`
+- [x] `console_api_app.py`：为 `LIVE_SNAPSHOT_RUN_ID` 持久化受控 `deliverable.json`。
+- [x] 新 spec：读面先行（`GET /api/runs/{id}/deliverable`）→ `goto #/insights/reports?run=…`
       → 断言 objective / provenance 值来自读面；`available: false` 的 run ⇒ 显示 `reason` 逐字。
-- [ ] 白名单加 `insights-reports`。
+- [x] 白名单加 `insights-reports`。
 
 ### WP3 — `ops/integrations` 页面级 live
-- [ ] 新 spec：读面先行（`GET /api/tool-providers`）→ `goto #/ops/integrations`
+- [x] 新 spec：读面先行（`GET /api/tool-providers`）→ `goto #/ops/integrations`
       → 断言行数 == `providers.length`、`ncbi_eutils` 的 `health` 如实为 `UNKNOWN`。
-- [ ] 白名单加 `ops-integrations`。
+- [x] 白名单加 `ops-integrations`。
 
 ### WP4 — 按压与记录
-- [ ] 三处**按页面**按压先红后绿，证据落 `scratch/`。
-- [ ] RECHECK 记录性质披露（能被什么按压 / 不能被什么按压）+ 两棵树成对复检。
+- [x] 三处**按页面**按压先红后绿，证据落 `scratch/`。
+- [x] RECHECK 记录性质披露（能被什么按压 / 不能被什么按压）+ 两棵树成对复检。
 
 ## 证据
 
-- 待执行后回写。
+- **实现**：`apps/web/tests/e2e/live-portfolio-experiments.spec.ts`、
+  `live-insights-reports.spec.ts`、`live-ops-integrations.spec.ts`；
+  `apps/web/tests/e2e/live-specs.ts` 加 `portfolio-experiments` / `insights-reports` /
+  `ops-integrations`；受控交付物夹具落 **`tests/api/live_deliverable_fixture.py`**
+  （D-4：`with_deliverable(deps, run_id)` 挂既有 run `1111…1111`，由 `console_api_app` 导入调用）。
+  **该夹具最初直接写进 `console_api_app.py`，把文件推到 470 行、越过 450 行硬上限**
+  ⇒ m0 首轮 `python/tests` 判红 ⇒ 拆成独立模块后 `console_api_app.py` 为 **427 行**，尺寸门转绿。
+- **live 实跑**：`pnpm run test:e2e:live` ⇒ **53 passed**（cycle 2 的 47 + 本批 6）；
+  `pnpm run test:e2e`（stub）⇒ **96 passed**（三条新 spec 被 `testIgnore` 正确排除）。
+- **按页面按压先红后绿**（证据落 `scratch/`，目录不进仓库）：
+  `goal013-c3-press-experiments.txt`（`metrics` 列钉成 `7` ⇒ 2 failed）、
+  `goal013-c3-press-reports.txt`（`objective` 钉成常量 ⇒ 正向 1 failed、反证保持绿）、
+  `goal013-c3-press-integrations.txt`（`health` 钉成 `HEALTHY` ⇒ 2 failed）。
+- **本地门**：m0 **23/23**（`scratch/goal013-c3-m0.log` 的终局行
+  `PASS: profile=m0; 23 deterministic checks`，首轮两红均已当轮修掉，见 `RECHECK-153` 第五节）；`validate.py` 绿；
+  `DOCS-CHECK PASS: 6`；web `lint` / `typecheck` / `build` 全绿。
+- **独立复检**：`scratch/verify_goal013_c3.py` 两棵树成对 —— 当前树 `checked=50 failures=0`；
+  干净 checkout `78e60cf` `checked=49 failures=4`（全部是「尚未收口」时序项）。
+- 逐条判据与判词见 `RECHECK-20260923-153`。
 
 ## 状态历史
 
@@ -140,6 +160,12 @@ memory_entries: []
   `/tool-providers` = 3 条且健康态含一条 `UNKNOWN`（`ncbi_eutils`）；
   `/projects/example-project/ops/data-health` = 7 条 metrics 但 `aggregate_available: false`；
   `/ops/schedules` = 5 条 + 5 个 job 词表 + `management_available: true`。
+- 2026-09-23：**DONE**（cycle 3 收口）。三条 spec 实跑（live 53 passed / stub 96 passed）；
+  三处**按页面**按压先红后绿；m0 一次通过 **23/23**；独立复检两树同结论。
+  **当轮查出并修掉的第一版用例缺陷（如实记录）**：`#/portfolio/experiments` 消费的是
+  **per-run** 读面 `GET /runs/{id}/experiments`（要 `?run=`），第一版按**项目级**
+  `/projects/{id}/experiments` 写 ⇒ 实测红（无 `?run=` 时页面渲染「未选择运行」，表不在 DOM 里）。
+  该事实落 `MEM-20260923-119`。**EC-02 域覆盖 6/6。**
 
 ## 影响报告
 
