@@ -2,9 +2,9 @@
 id: GOAL-20260923-013
 slug: console-real-data-convergence
 title: 前端真实数据接通：19 条 partial + 1 条 gap 页面逐页验收，每条给终态（收敛或点名缺口）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-23
-updated_at: 2026-09-23
+updated_at: 2026-09-24
 owners:
   - root-agent
 authorization:
@@ -232,7 +232,25 @@ exit_criteria:
       `--keep-going`，DSN 按既有配方固化：`RESEARCHOS_POSTGRES_DSN` pin 到 test DSN、
       其余 DSN 键清空）；`scratch/verify_goal013_c<N>.py` 两棵树成对输出；
       CI 台账按 `scratch/poll_ci_all.sh <sha>` 取 M0 六 job + CodeQL 的真实终态。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-24 cycle 6 收口（复检 `RECHECK-20260923-156` = **PASS_WITH_WARNINGS**）。
+      ① **独立复检脚本** `scratch/verify_goal013_final.py`（只读、标准库、不 import 仓库代码）
+      在**主树**与**干净 checkout `f8276f4`** 两处同判据同结论：都是 `checked=73 failures=1`，
+      唯一一条是「EC-05 尚未置 PASS」的**收口时序项**（本提交把它归零）。
+      ② **m0 终局行 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal013-c6-m0.log`）：
+      as-is 跑法为 **22/23**，唯一未绿项是**仓库外**文件造成的 `framework/validate_bundle`
+      （`R-F3`，并发写者的 gitignored 在制品）⇒ 把该文件**临时移出仓库**跑完整 m0 得到终局行，
+      跑完**立即移回**并逐项复核 `sha256` / `size` / `mtime` **全部一致**（未删未改一个字节）；
+      移出前确认无其他写者活动。**错掉的变体也记下来**：`CURSOR_FRAMEWORK_ROOT` 是**整个 runner**
+      的根（不是单个 check 的旋钮），用它跑全量会把所有 check 指到无依赖的 worktree ⇒ 该变体作废。
+      ③ `validate.py` = **Cursor 治理验证通过**；`docs_consistency_check.py` =
+      `DOCS-CHECK PASS: 6 deterministic checks`。④ **CI 台账到终态**（逐 run 逐 job 实查，
+      见下表）。⑤ **13 条人工面 + `W` 列表 + 承继残余逐条登记**（本文件「不进入循环 / 需人工拍板」
+      与残余登记节、`RECHECK-156` 第五节）。⑥ 本文件的 `latest_recheck` 为**仓库相对路径**。
+      **警告一条**：`R-F3` 仍在（文件已还原）⇒ 后续 as-is 本地 m0 仍会显示 22/23，
+      这是**本复检判 PASS_WITH_WARNINGS 的唯一原因**，不隐藏。
+
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -277,7 +295,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260923-152-live-page-read-face-batch-three.md
   - .cursor/plans/tasks/PLAN-20260923-153-frontend-criteria-disclosure-judge.md
   - .cursor/plans/tasks/PLAN-20260923-154-ops-matrix-disclosure-first-class.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-154-frontend-criteria-disclosure.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-156-goal-013-closeout.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md
   - .cursor/memory/entries/MEM-20260923-116-local-m0-green-recipe.md
@@ -301,7 +319,7 @@ memory_entries:
 | EC-02 | ≥6 条 live e2e，覆盖 6 域各 ≥1，判据形态统一「页面 == 读面」+ 成对反证（空读面 ⇒ 诚实空态） | `RESEARCHOS_AGENT_RUNTIME=openhands pnpm run test:e2e:live`（真实数据）+ 离线 `pnpm run test:e2e` 仍绿 | **PASS（6/6）**：`plan/overview`、`portfolio/experiments`、`library/lineage`、`insights/reports`、`ops/integrations`、`govern/audit` 六域各一条；live 全套 **53 passed**、stub **96 passed** |
 | EC-03 | 每条新增前端判据写明能被什么按压 / 不能被什么按压；同源数据面须按页面那一段 | 反证表落 RECHECK + 抽查实跑红/绿对照（`scratch/`）+ `MEM-*` 同提交 | **PASS**：**16 条**判据（12 live + 4 离线）逐条在册、两字段非空、各自有红证；抽查成对（按数据 **2 passed** / 按页面 **2 failed**）证披露为真；机械判据四条各按压转红 |
 | EC-04 | `ops/matrix` 单独处置：真实消费者并收敛，或「界面状态说明页（非实时运维状态）」成三处同源一等事实 | 三处措辞一致性判据 + 页面文案断言（先红后绿可演示） | **PASS**：取 (ii)，**四处**同源（reason / page map / 矩阵行 / 页面可见文案），「为什么不做」可核对（点名 `observability`/`compute` `FULL`、`data-health` `partial`）；一致性判据 4 条 + 页面判据 2 条（离线）；两条按压先红后绿；`reason` 文字与 `level` 逐字未改 |
-| EC-05 | 独立复检脚本两树同结论 + m0 23/23 + validate 绿 + CI 台账终态 + 残余 13 条原样保留 + `W` 列表登记 | `scratch/verify_goal013_c<N>.py` + `make validate-all` + `validate.py` + `scratch/poll_ci_all.sh <sha>` | PENDING |
+| EC-05 | 独立复检脚本两树同结论 + m0 23/23 + validate 绿 + CI 台账终态 + 残余 13 条原样保留 + `W` 列表登记 | `scratch/verify_goal013_c<N>.py` + `make validate-all` + `validate.py` + `scratch/poll_ci_all.sh <sha>` | **PASS（带一条警告）**：`RECHECK-156` = PASS_WITH_WARNINGS；两树 `checked=73 failures=1`（唯一一条是收口时序项）；**m0 终局行 `PASS: profile=m0; 23 deterministic checks`**（as-is 22/23 的唯一红是仓库外的 `R-F3`，移出→跑→移回并复核 sha256/size/mtime 一致）；validate 绿；CI 台账终态；残余逐条登记 |
 
 ### 建档时已探明的现状（事实类，用于判定起点；**不当作验收依据**）
 
@@ -444,6 +462,39 @@ memory_entries:
 
 收口时必须把「仍未处理的长程项」**如实登记**为后继入口（**不隐藏缺口**），并给出恢复条件。
 
+## 收口结论（终止与收口）
+
+**2026-09-24 判定：`ACHIEVED`。** 五个 EC **全部达成且有实跑证据**，
+收口复检 `RECHECK-20260923-156` = **PASS_WITH_WARNINGS**（唯一警告是环境型残余 `R-F3`，
+见下），`latest_recheck` 为仓库相对路径。
+
+| EC | 终态 | 一句话证据 |
+| --- | --- | --- |
+| EC-01 | **PASS** | 20 行矩阵：**已收敛 1 / 保持 19 / 待定 0**；离线判据 4 条 + 两条成对反证 |
+| EC-02 | **PASS** | 6 域各一条**页面级**「页面 == 读面」live 用例；live 全套 **53 passed**、stub 96 |
+| EC-03 | **PASS** | **16 条**判据的按压披露 + 抽查成对实跑（按数据绿 / 按页面红）证明披露为真 |
+| EC-04 | **PASS** | `ops/matrix` 取 (ii)：四处同源、页面可见、理由**可核对**（点名真实页面与等级） |
+| EC-05 | **PASS（带警告）** | 两树同结论 `73 项`；m0 终局行逐字匹配；validate/文档门绿；CI 台账终态；残余逐条登记 |
+
+**承用户指示（goal 模式）的 20 条页面终态**：**(a) 收敛 1 条**（`plan/overview`）、
+**(b) 保持并点名缺口 19 条**（含 `ops/matrix` 的「按设计不消费读面 + 为什么不做」口径）、
+**待定 0 条**；(a)/(b) 不混写。
+
+**仍未处理项（不隐藏，作为后继入口）**：
+
+- **`R-F3`（本 GOAL 唯一警告）**：本机 m0 的 as-is 跑法停在 22/23，未绿项是**仓库外**文件
+  `scratch/self-governance-bootstrap-prompt.md`（**并发写者的在制品**）造成的
+  `framework/validate_bundle`。**恢复条件**：该文件被其作者修正或移除后，as-is 本地 m0
+  即为 23/23（本 GOAL 已用「移出→跑→移回」给出同提交上的终局行，并复核字节与时间戳一致）。
+  **CI 不受影响**：`scratch/` 在 `.gitignore` 内，CI 检出没有它。
+- **需拍板**：`W-A`（真实控制面对 `sort_analysis_v1` 的 `evidence.read` 判 `DENY`）、
+  `W-C`、路径 (B) 的「重新设计需要什么」5 条、13 条人工面里仍未处理者
+  （第 3/12 项已完成、第 13 项豁免）。
+- **不得宣称项目安全**：`R-M1`（Mimosa 钩子侧未得完整结论）。
+- `R-D1`（23 条 Dependabot 告警，本 GOAL 不处置）、`R-N1`（30 条非 ASCII 路径登记豁免）。
+- **本 GOAL 自己的诚实边界**：`R-F1`（「渲染正确」已操作化为「页面 == 读面 + 成对反证」）、
+  `R-F2`（数据规模不足的页不计入 ≥6）。
+
 ## 不进入循环 / 需人工拍板
 
 以下项**本循环不做**，也不因本 GOAL 存在而被宣称已解决；触及即 BLOCKED
@@ -501,6 +552,8 @@ memory_entries:
 | 4 | PLAN-20260923-153（EC-03） | `a09a0fa`（derive：PLAN-153 + ALL_PLAN + `child_plans`）、`5b9f2c2`（WP1–WP3：登记册 + 机械判据 + 人读文档）、`7d3eecf`（两条本地门红的修复：kebab-case 命名 + 文档房规引用）、收口回写见台账尾巴 | **unit 84 passed / 0 failed**（cycle 1 的 80 + 新判据 4 条）、**stub e2e 96 passed**、**live e2e 53 passed**、web `lint`（`--max-warnings 0`）/ `typecheck` / `build` 全绿、`validate.py` 绿、`DOCS-CHECK PASS: 6`；**16 条判据每条都有红证**（含本 cycle 补按压的 4 条遗留：矩阵判据 ①/④、`govern/audit` 空态、`insights/reports` 空态）；**判据自身按压 3 次**（空话披露 ⇒ 2 failed、删登记册一条 ⇒ 1 failed、删文档一行 ⇒ 1 failed）；**抽查成对实跑**（按数据 `2 passed` / 按页面 `2 failed`）证明披露为真；**独立复检** `scratch/verify_goal013_c4.py` 两棵树（主树 `checked=49 failures=0`；干净 checkout `7d3eecf` `checked=43 failures=3` = 全部「尚未收口」时序项 + 一条**具名环境差异**）；**m0 22/23**（`scratch/goal013-c4-m0.log`，沿用 `MEM-20260923-116` 配方）；**唯一未绿项 `framework/validate_bundle` 与本 GOAL 的改动无关**——判词只有一条：`scratch/self-governance-bootstrap-prompt.md` 是**并发写者**今日落进 `scratch/` 的 **gitignored** 文档，正文里的正则字面量恰好长成 Markdown 链接形状，而该判据的链接扫描是纯文本正则（不识别围栏块）⇒ 成对实跑归因：同一脚本换 `CURSOR_FRAMEWORK_ROOT`，主树 **exit 1（只此一条）**、`7d3eecf` 干净 worktree（无 `scratch/`）**exit 0 全绿**；CI 检出无 `scratch/`，不受影响。**本 GOAL 不处置该外来在制品**，登记为环境型残余（`R-F3`），本地 23/23 留给 EC-05 复测 | 见下方 CI 台账 | **本 cycle 的缺陷全部落在自己新增的装置/脚本或自己新增的文件上，无一条落在产品代码、既有判据上**：① **按压未跟踪的新文件** `git checkout --` 不还原（文件不在索引里）⇒ 按压后改动留在盘上、判据随即判红 ⇒ 改**手工还原 + 重跑确认 `# fail 0`**；② 复检 A4 的 git 口径只在**提交后**生效 ⇒ 提交瞬间把登记册模块与它的机械判据当判据点名（**这两条红同时也是 A4 非恒真的实测证据**）⇒ **按名**排除两个机器件，并**在临时 worktree 里加新测试文件 + 提交重新按压**证明未削弱（A4 判红点名它）；③ E 组把「本机证据策略」误记成失败（干净树永不可能转绿）⇒ 改记**具名环境差异**，主树口径不变。**另两处**：cycle 4 的 lint 首轮报 `max-params` / `max-len` 三条 ⇒ 改单对象入参 + 多行数组后转绿；**本地 m0 首轮 `python/tests` 判红两条（`2 failed, 4411 passed`），两条都落在本 cycle 新增的文件上** —— ① `tests/` 下的测试/夹具 TS 文件名必须 **kebab-case**（既有 camelCase 属**基线豁免**，注释写明「新文件仍受约束」）⇒ 登记册模块改名，**不加豁免**（加豁免即「改门禁使其通过」）；② 新文档的 7 条 `[backtick-ref]` 把 spec 路径写成相对 `apps/web` 的 `tests/...`，而该门按**仓根**解析 ⇒ 改齐房规 `apps/web/tests/...`。修复合并进 `7d3eecf` 后 unit / stub / live / typecheck / build / docs **全部重跑**（记录里的数字均取自修复后的树）；**唯一一条非本 GOAL 的未绿项是环境型残余 `R-F3`（并发写者的 gitignored scratch 文档），已如实登记、不当已解决**；④ **CI 首轮判红一条**（`quality-ubuntu-latest` 的 `validate_bundle`：记录里的链接形状 target = `...`，**Win32 剥尾点 ⇒ 本地假绿**）⇒ 当轮修掉，落 `MEM-20260923-122` + 复检脚本 H1 判组** | **EC-03 PASS**：16 条判据（12 live + 4 离线）逐条在册、两字段非空非空话、各自有红证，披露经抽查实跑证明为真，且由**机械判据双向**强制（登记册 ↔ spec test 名 ↔ 人读文档）。**EC-04/EC-05 未动**；`W-A` / `W-C` / `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` 与 13 条人工面**原样保留** | cycle 5 = **EC-04 `ops/matrix` 单独处置**：按 F-6 的既有文档基础取 **(ii) 一等事实**——页面**可见**文案 + `pageSupport.reason` + `CONSOLE_PAGE_MAP.md` 小节 + 矩阵行**四处同源**，并落一条**页面文案断言**（可复跑、先红后绿可演示）；**注意 F-3**：`resolveDataSource` 对 `gap` 落 `example` 的语义是**真实消费者**，EC-04 若触及它须一并给出消费者与页面为证 |
 
 | 5 | PLAN-20260923-154（EC-04） | `c990ec1`（derive：PLAN-154 + ALL_PLAN + `child_plans`）、`779b8a9`（WP1–WP3：四处同源文档 + 一致性判据 + 页面判据）、`168aa48`（typecheck 守卫修复）、收口回写见台账尾巴 | **unit 88 passed / 0 failed**（cycle 4 的 84 + 新判据 4 条）、**stub e2e 98 passed**（+2）、**live e2e 53 passed**、根 `eslint .` / `typecheck` / `build` 全绿、`validate.py` 绿、`DOCS-CHECK PASS: 6`；**m0 22/23**（`scratch/goal013-c5-m0.log`；唯一未绿项 `framework/validate_bundle` = 环境型残余 `R-F3`，**与本 cycle 改动无关** —— 成对实跑：同一脚本换 `CURSOR_FRAMEWORK_ROOT`，主树 `exit 1`（1 条链接错）/ `168aa48` 干净 worktree（无 `scratch/`）`exit 0` 全绿；CI 检出无 `scratch/`）；**两条按压先红后绿**（按文档源 ⇒ 一致性判据 `1 failed`，`scratch/goal013-c5-press-doc.txt`；按页面 ⇒ 页面判据 `1 failed`、同组 identity 仍绿，`-press-page.txt`）；**独立复检** `scratch/verify_goal013_c5.py` 两棵树（主树 `checked=50 failures=0`；干净 checkout `168aa48` `checked=46 failures=2` = 两条「尚未收口」时序项 + 一条具名环境差异） | 见下方 CI 台账 | **本 cycle 的三处问题全部由我自己的判据/门抓出，全部当轮修掉**：① **起草时的假声明**「`data-health`/`observability`/`compute` 三页均 `FULL`」被一致性判据判红 ⇒ 回读 `pageSupport.ts` 确认 `ops/data-health` 是 **`partial`**，四处文档与 PLAN 一并改对（落 `MEM-20260923-123`）；② 功能提交后本地 `typecheck`/`build` 判红一条（`noUncheckedIndexedAccess` 下 `string \| undefined` 传进 `Map.set`）⇒ `168aa48` 加两行守卫修掉（**不是**改断言、**不是**放宽 tsconfig），之后 unit/stub/live/lint/typecheck/build/docs **全部重跑**；③ **按压 1 第一版太弱**（只把「不冒充」改成肯定式 ⇒ 判据仍绿，因为同小节还有「为什么不」第二处否定）⇒ 把标题也改成肯定式后转红，据此把口径写清为「本节不得读成运维状态面」而非「某个词必须在」。**另**：`git checkout --` 会把**未提交**的文档改动一并还原（cycle 4 的「未跟踪文件」坑的兄弟坑）⇒ 改为**先提交文档、再按压**。**无一条红落在产品代码或既有判据上** | **EC-04 PASS**：`ops/matrix` 取 **(ii) 一等事实** —— 四处同源、「为什么不做」可核对（点名真实页面与等级）、页面可见文案有离线判据；**硬约束守住**：`reason` 文字与 `level` 逐字未改（H1/H2）、`presentationPolicy` / 页面组件 / i18n / 既有 spec 未动（G 组）。**EC-05 未动**；`W-A` / `W-C` / `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3` 与 13 条人工面**原样保留** | cycle 6 = **EC-05 收口复检**：独立复检脚本在**当前树**与**干净 checkout** 两处同判据同结论 + 本地 **m0 23/23**（先复测 `R-F3` 那条外来 scratch 是否仍在；若仍在，如实记录并**不得**声称本地全绿）+ **CI 台账到终态** + 13 条人工面与 `W` 列表逐条登记 + 收口 RECHECK 的 `latest_recheck` 为**仓库相对路径**；`ACHIEVED` 需 EC-01…EC-05 全 PASS 且有实跑证据 |
+
+| 6 | （收口 cycle，无新子 PLAN） | 收口回写见台账尾巴 | **独立复检** `scratch/verify_goal013_final.py`：主树与干净 checkout `f8276f4` **同结论**（`checked=73 failures=1`，唯一一条是「EC-05 尚未置 PASS」的收口时序项）；**m0 终局行 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal013-c6-m0.log`）；`validate.py` = Cursor 治理验证通过；`DOCS-CHECK PASS: 6` | 见下方 CI 台账 | **收口过程如实记录**：① as-is 本地 m0 = **22/23**，唯一未绿 `framework/validate_bundle` 是**仓库外**文件（`R-F3`）造成 ⇒ 把该文件**临时移出仓库**跑完整 m0 取得终局行，**立即移回**并复核 `sha256`/`size`/`mtime` **全部一致**（未删未改一个字节；移出前确认无其他写者活动）；② **一次失败的变体也记下来**：`CURSOR_FRAMEWORK_ROOT` 是**整个 runner 的根**（每个 check 的子进程都继承）⇒ 用它跑全量等于把所有 check 指到无依赖的 worktree，实测 **10 项红**，该变体作废；③ 复检脚本自身四处修正（待定词误扫全文 / 等级解析串条目 / 白名单登记的是 suite 名 / 三方同源差集应允许收敛行）—— 全部是脚本的错，不是产品与文档的错 | **GOAL `ACHIEVED`**：EC-01…EC-05 全 PASS（EC-05 带一条已登记警告 `R-F3`）。20 条页面终态：**收敛 1 / 保持 19 / 待定 0** | —（本 GOAL 已收口；后继入口见「收口结论」节的「仍未处理项」） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 推送 | 提交 | run | 六 job 结论 |
@@ -627,27 +680,36 @@ memory_entries:
   **EC-05 未动**；`W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1`/`R-F1`/`R-F2`/`R-F3`
   与 13 条人工面**原样保留**。
 
+- 2026-09-24：**cycle 6 收口（终止判定）**：`status: ACHIEVED`。收口复检
+  `RECHECK-20260923-156` = **PASS_WITH_WARNINGS**；`latest_recheck` 指向它（仓库相对路径）。
+  **EC-01…EC-05 全 PASS**（EC-05 带一条环境型警告 `R-F3`）。独立复检脚本
+  `scratch/verify_goal013_final.py` 在**主树**与**干净 checkout `f8276f4`** 两处**同判据同结论**
+  （`checked=73 failures=1`，唯一一条是收口时序项，本提交归零）；**m0 终局行**
+  `PASS: profile=m0; 23 deterministic checks`；`validate.py` 与文档门绿；CI 台账到终态
+  （逐 run 逐 job 实查）；13 条人工面 + `W` 列表 + `R-M1`/`R-D1`/`R-B1`/`R-N1`/`R-F1`/`R-F2`/`R-F3`
+  逐条登记、不隐藏。**20 条页面终态**：**(a) 收敛 1**（`plan/overview`）、**(b) 保持并点名缺口 19**
+  （含 `ops/matrix` 的 (ii) 口径）、**待定 0**。
+  **收口过程的三件事如实记录**：① as-is 本地 m0 = 22/23（唯一红来自**仓库外**的并发写者文件
+  `R-F3`）⇒ 临时移出该文件跑出终局行、移回后复核 `sha256`/`size`/`mtime` 一致，未删未改；
+  ② 一次**失败**的变体（用 `CURSOR_FRAMEWORK_ROOT` 跑全量 ⇒ 10 项红）也记进台账，教训是
+  **该变量是整个 runner 的根**，不是单 check 的旋钮；③ 复检脚本自身四处修正（全是脚本的错）。
+
 ## 当前续点
 
-- **续点**：cycle 5 已收口（PLAN-154 DONE，`RECHECK-155` PASS，`MEM-123` 已落，功能提交
-  `779b8a9` + `168aa48`），台账尾巴提交见回合汇报。**EC-01 / EC-02 / EC-03 / EC-04 已 PASS**，
-  **只剩 EC-05**。**下一轮 = cycle 6（EC-05 收口复检）**：① 独立复检脚本在**当前树**与
-  **干净 checkout** 两处**同判据同结论**（差异项只允许是「尚未收口」时序项）；
-  ② 本地 **m0 23/23** —— **先复测 `R-F3`**（并发写者的 gitignored scratch 文档
-  `scratch/self-governance-bootstrap-prompt.md` 是否仍在；若仍在，`framework/validate_bundle`
-  会继续判红，**如实记录并不得声称本地全绿**，可给出「去掉该外来文件后全绿」的成对证据）；
-  ③ `validate.py` 绿；④ **CI 台账到终态**（M0 六 job + CodeQL，逐 run 逐 job 实查）；
-  ⑤ 13 条人工面 + 本 GOAL 的 `W`/`R` 列表逐条登记、不隐藏；⑥ 收口 RECHECK 的
-  `result` ∈ {PASS, PASS_WITH_WARNINGS} 且 `latest_recheck` 为**仓库相对路径**。
-  **ACHIEVED 的硬条件**：EC-01…EC-05 全 PASS 且**有实跑证据**；EC-01 的「20 条零待定」与
-  EC-02 的真实数据实跑**不可替代**。
-  **必读注意**：① `pageSupport.reason` 的文字被**设计基线** `design-outlines.json` 渲染
-  （cycle 1 实测）⇒ 收口**不得**顺手改它；② `resolveDataSource` 对 `gap` 落 `example` 是
-  **真实消费者**；③ 收口提交前先跑**根** `eslint .` 与 `typecheck`（`apps/web` 包内 lint 不覆盖
-  `tests/**`）；④ 文档引用按**仓根**解析且 `tests/` 前缀会被解析 —— 写 `apps/web/tests/...`。
-- **注意（承 cycle 2 的实测）**：本批两条判据的写法纪律已落 `MEM-20260923-117` ——
-  空态/否定性断言**必须两端锚定** `^…$`；CSS 属性选择器**不做候选**，要写成选择器列表。
-- **注意（承 cycle 1 的实测）**：`live-project-lineage` 与 `live-project-cost-forecast`
-  是**纯读面**用例（只 `page.request`，不断言 DOM）⇒ 按 D-2 **不构成**页面级证据。
-- **注意（承 cycle 2 的实测）**：本地跑全量 m0 必须用 `MEM-20260923-116` 的配方
-  （清空 `LLM_MAIN_KEY` / `RESEARCHOS_DATABASE_URL`），否则既会假红、又会**偷偷跑一条 live 检索**。
+- **本 GOAL 已收口（`ACHIEVED`，2026-09-24）**。五个 EC 全部达成；收口复检
+  `RECHECK-20260923-156`（PASS_WITH_WARNINGS）。下表是后继入口，**不是**本循环的待办：
+
+| 后继入口 | 性质 | 恢复条件 |
+| --- | --- | --- |
+| `R-F3`：本机 as-is m0 = 22/23（红来自**仓库外**的并发写者文件） | 环境型 | 该文件被其作者修正或移除 ⇒ as-is 即为 23/23（CI 一直不受影响） |
+| `W-A`：真实控制面对 `sort_analysis_v1` 的 `evidence.read` 判 `DENY` | **需拍板** | 用户或 ADR 决定策略面 |
+| 路径 (B)「重新设计需要什么」5 条 | **需拍板** | 用户决定是否重启该路线 |
+| 13 条人工面（第 3/12 已完成、第 13 豁免） | 承继 | 逐条由用户拍板 |
+| `R-M1` Mimosa 钩子侧未得完整结论 | 承继 | **不得宣称项目安全**；待完整审计 |
+| `R-D1` 23 条 Dependabot 告警（4 high / 13 moderate / 6 low） | 承继 | 依赖 pin 变更需拍板 |
+| `R-N1` 30 条非 ASCII 路径登记豁免 | 承继 | AGENTS §13 明文豁免 |
+| `W-C` | 需拍板 | 见 RECHECK-156 第五节 |
+
+**若要在本仓继续做前端真实数据面**，下一步的自然方向是：把仍为 (b) 的 19 条里
+**有真实读面但缺聚合/外推口径**的那几条（如 `govern/budget` 的未预留开销外推、
+`ops/data-health` 的聚合质量报告）单独立 GOAL —— 它们都卡在**口径拍板**而非实现。
