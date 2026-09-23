@@ -307,6 +307,7 @@ escalation_triggers:
     action / external publish）⇒ **立即 BLOCKED**（本 GOAL 的授权只覆盖冻结门的**接受口径**，
     不覆盖安全默认面）
 child_plans:
+  - .cursor/plans/tasks/PLAN-20260923-149-goal-012-closeout-recheck.md
   - .cursor/plans/tasks/PLAN-20260923-147-experiments-read-face-in-browser.md
   - .cursor/plans/tasks/PLAN-20260923-146-path-b-refutation-record.md
   - .cursor/plans/tasks/PLAN-20260923-144-experiment-evidence-chain-traceability.md
