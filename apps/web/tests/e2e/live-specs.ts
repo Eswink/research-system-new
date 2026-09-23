@@ -11,6 +11,7 @@ const LIVE_SUITES = [
   "artifact-diff",
   "experiment-queue",
   "experiments",
+  "plan-overview",
   "project-lineage",
   "project-cost-forecast",
   "project-registry",
