@@ -2,7 +2,7 @@
 id: PLAN-20260923-144
 slug: experiment-evidence-chain-traceability
 title: 实验产出的证据链可追溯：产物/来源进 canonical + 内容 digest 可重算 + 镜像摘要可独立复核（GOAL-012 EC-03）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-23
 updated_at: 2026-09-23
 parent_goal: GOAL-20260923-012
@@ -25,8 +25,9 @@ authorization:
     **若本 PLAN 必须在「放宽默认 deny / 放宽出站判据 / 放宽验收门」三者中择一才能走通 ⇒ 立即
     停止并记 BLOCKED。**
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-145-experiment-evidence-chain-traceability.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-111-experiment-evidence-traceability-judge-shape.md
 ---
 
 # PLAN-20260923-144 — 实验产出的证据链可追溯（GOAL-012 EC-03）
@@ -73,24 +74,23 @@ memory_entries: []
 
 | # | 条件 | 判据（可复跑命令 + 期望值） | 结论 |
 | --- | --- | --- | --- |
-| AC-1 | **产物进 canonical 且两读面同源** | `pytest tests/e2e/test_ec03_experiment_evidence_chain.py -q` ⇒ 主判据里 `experiments` 与 `artifacts` 两面的制品 id 一致且覆盖四件产物 | 待跑 |
-| AC-2 | **内容 digest 可重算** | 同文件：对每件产物 `Digest.of_bytes(content)` == 证据 `content_digest`（逐件断言） | 待跑 |
-| AC-3 | **来源可独立复核** | 同文件：`image_digest` == 独立 `docker image inspect` 的 Id；`environment_digest` 非空；两次执行 `semantic_metrics_digest` 相同 | 待跑 |
-| AC-4 | **反证（成对）**：去掉声明产物 ⇒ 判据红且**点名** | 同文件第 2 条：run `FAILED`（判词含 `analysis_report`）、产物读面无 `analysis_report`、其它产物仍在 | 待跑 |
-| AC-5 | **不得用模型自述冒充**（D-4） | 同文件：四件产物的证据来源指向实验路径（`<experiment_run_id>:<name>`），非会话交付物 | 待跑 |
-| AC-6 | **按压**：去掉「登记产物」那一步 ⇒ 判据红 ⇒ 复原绿 | 按压记录落 `scratch/goal012-c3-press-*.txt` + RECHECK | 待跑 |
-| AC-7 | **门与治理**：m0 23/23 + 定向套件 + `validate.py` 绿 + `mypy`/`ruff` 干净 | `run_all_checks.py --profile m0 --keep-going`（DSN 固化 + `LLM_MAIN_KEY=""`）+ 治理校验 | 待跑 |
-| AC-8 | **零出网 + 凭据纪律** | 逐条 `egress guard: judged N; blocked 0`；无任何凭据读取（本 PLAN 不需要 live key） | 待跑 |
-| AC-9 | **真实 run 侧**（EC-02 样张） | 独立脚本对 `scratch/goal012-c2-live-sample.json` 断言「产物与证据同时在场且指向同一 run」 | 待跑 |
+| AC-1 | **产物进 canonical 且两读面同源** | 同文件 ⇒ **2 passed**；四件产物在两读面都可见（判据用**子集**方向：run 级面还含别的阶段的产物与声明输入） | **达成** |
+| AC-2 | **内容 digest 可重算** | 同文件：**证据条目**与**来源记录**两条记录的 digest 都从内容字节重算（实测 6 件制品逐件通过） | **达成** |
+| AC-3 | **来源可独立复核** | 同文件：`image_digest` == 独立 `docker image inspect` 的 Id（CLI 不可用时如实跳过该断言）；`environment_digest` 非空；两次执行 `semantic_metrics_digest` 与指标相同 | **达成** |
+| AC-4 | **反证（成对）**：去掉声明产物 ⇒ 判据红且**点名** | 同文件第 2 条：run `FAILED`（判词含 `acceptance gate` 与 `analysis_report`）、读面无 `analysis_report`、`report.txt` / `experiment_result.json` 仍在 | **达成** |
+| AC-5 | **不得用模型自述冒充**（D-4） | 同文件：`extracted_by == experiment:<run id>` + `source_origin` 前缀 + 信任标签 `GENERATED`（实验路径），三者逐条断言 | **达成** |
+| AC-6 | **按压**：去掉「登记产物」那一步 ⇒ 判据红 ⇒ 复原绿 | **四处按压**全红（`scratch/goal012-c3-press{1,2a,2b,3}.txt`），产品代码按 `git diff` 逐字复原；按压另暴露判据盲点（只看证据 digest、没看来源记录）⇒ 判据**加强**为两条记录各算一遍 | **达成** |
+| AC-7 | **门与治理**：m0 23/23 + 定向套件 + `validate.py` 绿 + `mypy`/`ruff` 干净 | 第 2 轮 m0 **`PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c3-m0-rerun.log`；`python/tests` **4411 passed / 19 skipped / 0 failed**）；首轮两红（未用 import / 50 行函数门）当轮修掉；`tests/e2e` 118 passed / 10 skipped；`mypy` 996 files 干净 | **达成** |
+| AC-8 | **零出网 + 凭据纪律** | 逐条 `egress guard: judged N; blocked 0`；本 cycle **未做任何 live 调用、未读凭据值** | **达成** |
+| AC-9 | **真实 run 侧**（EC-02 样张） | 独立脚本 C 组 5 条全绿：四件产物各有证据、`experiment_run_id` 与 `run_id` 一致、样张不含凭据值 | **达成** |
 
 ## 实施清单
 
-- [ ] **WP1** 判据（离线 + 容器）：`tests/e2e/test_ec03_experiment_evidence_chain.py`
-  （主判据 3 条 + 成对反证 1 条 + 来源非自述 1 条）。
-- [ ] **WP2** 按压：临时去掉产物登记/收集那一步 ⇒ 判据红 ⇒ 复原绿（记录落 `scratch/`）。
-- [ ] **WP3** 独立复检脚本 `scratch/verify_goal012_c3.py`（只读 / 只用标准库 / 不 import 仓库代码；
-  当前树 + 基线树成对），含对 EC-02 样张的数据层断言。
-- [ ] **WP4** 门与收口：m0 23/23 + 定向套件 + `validate.py`；`RECHECK-*` +（如需）`MEM-*` + GOAL 回写。
+- [x] **WP1** 判据（离线 + 容器）：`tests/e2e/test_ec03_experiment_evidence_chain.py`
+  （主干 4 组断言 + 成对反证 1 条）。提交 `6ccdf46`；**2 passed**。
+- [x] **WP2** 四处按压全红并复原（`scratch/goal012-c3-press{1,2a,2b,3}.txt`）；按压暴露的判据盲点已**加强判据**修掉。
+- [x] **WP3** 独立复检脚本 `scratch/verify_goal012_c3.py`（当前树 **24/24**；基线树 `31dfbd4` **6 红**＝判据文件不存在；产品件两树同指纹）。
+- [x] **WP4** 门与收口：m0 **23/23** + 定向套件 + `validate.py`；`RECHECK-20260923-145`（PASS）+ GOAL 回写。
 
 ## 证据
 
@@ -100,7 +100,8 @@ memory_entries: []
 | E-2 | 产品缝已把实验产物登记进 canonical | `services/api/experiment_support.py`（`register_experiment_evidence` 经 `execute_experiment_task`）+ EC-02 的样张（4 件产物 + 6 条证据） |
 | E-3 | 镜像摘要是 daemon 的镜像 Id（可独立复核） | `adapters/execution/docker_backend.py:_resolve_image_digest`（`inspect_image(...)["Id"]`） |
 | E-4 | 语义摘要是 cross-rerun 稳定的 canonical 事实 | `packages/application/experiments/metric_extraction.py:90-92`（`semantic_metrics_digest`：非观测性子集的 canonical digest） |
-| E-5 | 判据结果 | 待跑（落 `scratch/goal012-c3-*.txt`） |
+| E-5 | 判据结果 | `pytest tests/e2e/test_ec03_experiment_evidence_chain.py -q` ⇒ **2 passed**；四处按压 `1 failed` ×4 |
+| E-6 | 两棵树成对 | 当前树 `checked=24 failures=0`；基线树 `checked=24 failures=6`（B 组）；产品件指纹两树一致 |
 
 ## 影响报告
 
@@ -118,3 +119,7 @@ memory_entries: []
 ## 状态历史
 
 - 2026-09-23：derive（EC-03 子计划）。定案 D-1…D-6 写死；判据与反证在本 cycle 落地。
+- 2026-09-23（WP1–WP4，提交 `6ccdf46`）：判据 + 成对反证 + 四处按压落地；两处**判据自身**的问题
+  在 cycle 内修掉并如实记录 —— ①「两面相等」的断言错（实测两面是子集关系）⇒ 改子集方向；
+  ②「只看证据 digest、不看来源记录」的盲点由按压暴露 ⇒ 判据加强为两条记录各算一遍。
+  产品代码**一字未改**（独立脚本两树产品件指纹一致）。复检 `RECHECK-20260923-145` = **PASS**。

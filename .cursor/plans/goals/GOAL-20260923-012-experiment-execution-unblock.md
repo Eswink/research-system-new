@@ -162,7 +162,34 @@ exit_criteria:
       定向判据（离线 + 真实容器两向）：产物随 canonical 落库且读面可取（含 digest 可重算）；
       反证：按压掉产物登记 ⇒ 判据红 ⇒ 复原 ⇒ 绿（按压记录落 RECHECK）。
       真实 run 侧：EC-02 的样张里实验产物与证据**同时**在场且指向同一个 run。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-23 cycle 3（`PLAN-20260923-144`，提交 `6ccdf46`）：**PASS**，三条各有实跑证据。
+      ① **产物进 canonical 且读面可追溯**（判据 `tests/e2e/test_ec03_experiment_evidence_chain.py`，
+      离线 + 真实容器，**2 passed**）：四件产物（`analysis_report` / `experiment_result.json` /
+      `stdout.log` / `stderr.log`）在 `GET /runs/{id}/experiments` 与 `GET /runs/{id}/artifacts`
+      两面都可见；`GET /artifacts/{id}/content` 的字节经 `Digest.of_bytes` 必须等于**证据条目**与
+      **来源记录**两条记录各自登记的 `content_digest`（实测 6 件制品逐件通过）；实验记录的
+      `image_digest` == **独立查 daemon**（`docker image inspect`，不经产品适配器）的镜像 Id；
+      `environment_digest` 非空；canonical **语义摘要**与指标跨两次执行相同（同 seed / 同镜像 ⇒ 同语义）。
+      ② **不得用模型自述冒充**：四件产物的证据 `extracted_by == experiment:<run id>`、
+      `source_origin` 以 `<experiment_run_id>:` 起头、信任标签是实验路径的 `GENERATED`。
+      ③ **成对反证（先红后绿）**：同构脚本改写成**别名字的产物**（`report.txt`）⇒ run `FAILED`、
+      判词**点名** `analysis_report` 与 `acceptance gate`、读面上没有 `analysis_report` 而
+      `report.txt` / `experiment_result.json` **仍在** ⇒ 红的理由恰是「声明产物缺失」。
+      **四处按压全红**（`scratch/goal012-c3-press{1,2a,2b,3}.txt`：去掉产物登记那一步 / 来源记录
+      digest 造假 / 证据 digest 造假 / 反证脚本改回写声明产物），产品代码按 `git diff` **逐字复原**。
+      **两处判据自身的问题在 cycle 内修掉并如实记录**：先写成「两读面相等」（实测是**子集**关系：
+      run 级面还含别的阶段的产物与声明输入）；「只看证据 digest、不看来源记录」的盲点由按压暴露
+      ⇒ 判据**加强**为两条记录各算一遍（加强判据，不是放松）。
+      ④ **独立复检** `scratch/verify_goal012_c3.py`（只读/只用标准库/不 import 仓库代码）两棵树成对：
+      当前树 **24/24**；基线树（`31dfbd4`）**6 红**（恰为判据文件不存在）；**产品件在两棵树同指纹**
+      ⇒ 本 cycle **未改任何产品代码**（纯判据 cycle）。样张侧另判「四件产物各有证据 + 指向同一 run」
+      （EC-02 的 live 样张，**未重跑真实端点**）。
+      ⑤ **门**：m0 **`PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c3-m0-rerun.log`：
+      24 条 `PASS [` 行、无 `FAILED` 行；`python/tests` **4411 passed / 19 skipped / 0 failed**）；
+      `tests/e2e` 118 passed / 10 skipped；`mypy` 996 files 干净；首轮两红（未使用的 `import json`、
+      50 行/函数门被 80 行主干函数触发）当轮修掉。**零 live 调用、零出网、零凭据读取。**
   - id: EC-04
     criterion: >-
       **残余路径 (B) 的诚实处置**：把 GOAL-011 对路径 (B) 的**否证**写成一份**独立记录**并登记为
@@ -241,6 +268,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md
 latest_recheck: null
 memory_entries:
+  - .cursor/memory/entries/MEM-20260923-111-experiment-evidence-traceability-judge-shape.md
   - .cursor/memory/entries/MEM-20260923-110-multi-provider-session-judge.md
   - .cursor/memory/entries/MEM-20260923-109-freeze-gate-policy-allowance-channel.md
 ---
@@ -507,6 +535,7 @@ memory_entries:
 | 1 | PLAN-20260923-140（EC-01） | `5085bc2`（derive：PLAN-140 + ALL_PLAN + `child_plans`）、`5ae2d56`（WP1–WP3：通道本体 + 判据 + 三处夹具重钉）、本 cycle 的收口回写见台账尾巴 | **离线判据 8 passed**（新文件，含按压）；**三处按压** 2 / 5 / 2 条红（`scratch/goal012-c1-press{1,2,3}.txt`）；**端到端（API 级）**：`sort_analysis_v1` 的 run 冻结成功（`manifest.frozen` payload 含 4 条留痕）且终态不再死在冻结门；**独立复检** `scratch/verify_goal012_c1.py` 两棵树成对（**当前树 28/28；基线树 19 失败**）；**m0 23/23**（`python/tests` **4403 passed / 18 skipped / 0 failed**，`judged 779; blocked 8` 的 8 条是故意探针）；`validate.py` / `ruff` / `ruff format --check` / `mypy` / 规模门禁全绿；**零出网** | 见下方 CI 台账 | **一处真回归**（本 cycle 自己撞到并处置）：`test_failed_run_semantic_digest_api.py` 拿 `sort_analysis_v1` 当「永不冻结」的载体 ⇒ 把该 fixture 的允许**撤掉**（`code.execute` 判 `DENY`）⇒ 边界语义（没有 `manifest.frozen` ⇒ 引用必须是 None）被**更精确**地钉住，而不是删掉它。另 4 条红（`test_worker_plane_composition`×3 + `test_pg_crash_restart`）**单独跑 7 passed** ⇒ 既有跨套件顺序签名，与本 cycle 无关 | **EC-01 仍 PENDING**（只差 EC-02 的真实 run 形态；不提前记 PASS）。**新登记 W-A/W-B/W-C**（见残余节）。**既有判据的处置**：`test_runs_api` 与 `test_sandbox_experiment_reachability` 按 D-5 **重钉为新语义 + 原位保留成对反证**——**不是**「改断言迁就」（被测行为本身是被授权的目标） | cycle 2 = **EC-02**（真实实验执行链）：以 `sort_analysis_v1` + `with_sandbox_experiment` 跑真实 LLM（最小必要次数）+ **既有** Docker 后端到终态，判据 = 终态如实（只有 `SUCCEEDED` 是成功）+ 三项读面齐备；**先解 W-B**（会话/结构化输出那条堵点），**W-A 若挡路则登记为需拍板项、不自行放宽策略面** |
 
 | 2 | PLAN-20260923-142（EC-02） | `dcade8c`（同一提交：PLAN-142 + ALL_PLAN 投影 + `child_plans` + 两个判据 + 两件 provider 的会话面修复）、本 cycle 的收口回写见台账尾巴 | **离线全链 2 passed**（主判据 + 成对反证；`requires_docker`，零出网）；**真实一次 run 1 passed**（`judged 2; blocked 0`，样张 `scratch/goal012-c2-live-sample.json`：终态**恰为 `SUCCEEDED`**、4 条留痕、1 次实验含 `analysis_report` + 镜像 `sha256:e95de2424c65…`、6 条证据含 `USER_PROVIDED` 声明输入、`MODEL_TOKENS 9738`）；**离线复现 live 死法**（两件 provider 的会话面，按压逐字红：`Duplicate tool names found: {'inert'}` + mock 端点零请求）；**m0 终局 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c2-m0-final.log`：24 条 `PASS [` 行 = 23 项 + 计数之外的 `release-assets-immutable`，无 `FAILED` 行）；**独立复检** `scratch/verify_goal012_c2.py` 两棵树成对（**当前树 29/29；基线树 10 失败**，红项恰为本 cycle 新增面；「不得放宽」七条两棵树同结论）；`tests/e2e` 116 passed / 10 skipped、`tests/api`+`tests/application` 1212 passed / 1 skipped、`python/tests` **4408 passed / 19 skipped / 0 failed**、`mypy` 995 files 干净；**零出网** | 见下方 CI 台账 | **一处真缺陷（本 cycle 一次真实取样换来的）**：测试侧惰性工具替身把两件 provider 注册成同一个类，而 SDK 由**类名**派生工具名 ⇒ 两件同名 ⇒ 会话建不起来（冻结成功、实验已跑完，死在 review 会话）。处置 = 按注册名分名 + **新增离线判据**钉住（mock 端点 + `map_tools=True`），**不是**改断言迁就。**首轮 m0 另有一处红**：新判据的 `dict[str, dict[str, str]]` 与 `dict[str, object] \| None` 类型不兼容 ⇒ 加显式标注（`mypy` 995 files 干净）。离线判据第一次失败也如实保留：指标名按**被执行的脚本**（`sort_analysis_baseline.py` 的 `corpus_size` / `worst_case_comparisons`）重钉 | **EC-01 / EC-02 双双 PASS**（EC-01 的最后一项 = 真实 run 的留痕形态，已由本 cycle 的 live 样张满足）。**W-B 闭合**（空交付物仍如实拒绝；改的是判据显式声明交付物 + `with_sandbox_experiment` 的可选 `runtime` 参数）。**W-A 仍登记**（真实控制面对 `evidence.read` 判 `DENY`；本 cycle 未改策略面）→ 需拍板。**W-C 口径提醒**保留 | cycle 3 = **EC-03**（实验产出的证据链 + 成对反证：去掉产物 ⇒ 判据红）：把 live 样张里的实验产物 / 来源记录 / 镜像摘要做成**可在两棵树上复跑的判据**，并让「来源可独立复核」这一条有独立脚本；EC-04 的路径 (B) 记录与 EC-06 的收口重检在其后 |
+| 3 | PLAN-20260923-144（EC-03） | `6ccdf46`（同一提交：PLAN-144 + ALL_PLAN 投影 + `child_plans` + EC-03 判据）、本 cycle 的收口回写见台账尾巴 | **EC-03 判据 2 passed**（离线 + 真实容器；`judged 2; blocked 0`）；**四处按压全红**（`scratch/goal012-c3-press{1,2a,2b,3}.txt`）后产品代码逐字复原；**独立复检** `scratch/verify_goal012_c3.py` 两棵树成对（**当前树 24/24；基线树 6 红＝判据文件不存在**；**产品件两树同指纹 ⇒ 未改产品代码**）；**m0 `PASS: profile=m0; 23 deterministic checks`**（`python/tests` **4411 passed / 19 skipped / 0 failed**）；`tests/e2e` 118 passed / 10 skipped；`mypy` 996 files 干净；零出网 | 见下方 CI 台账 | **两处判据自身的问题当轮修掉并如实记录**：①「两读面相等」写错（实测是**子集**关系：run 级面还含 review 会话的 `review_decision` 与组合根种入的声明输入）⇒ 改子集方向；②「只看证据 digest、不看来源记录」的盲点**由按压暴露** ⇒ 判据**加强**为两条记录各算一遍；首轮 m0 两红（未使用的 `import json`、50 行/函数门被 80 行主干函数触发）⇒ 删 import + 主干拆成 4 个 ≤50 行判据函数（断言逐条未减） | **EC-03 PASS**（产物 + 来源进 canonical、读面可追溯、镜像摘要可独立复核、语义摘要跨重跑稳定；成对反证红且点名）。**本 cycle 纯判据、未改产品代码**。**W-A/W-C 仍登记**（真实控制面 `evidence.read` 判 `DENY` ⇒ 需拍板） | cycle 4 = **EC-04**（路径 (B) 的独立否证记录）：把 GOAL-011 对 (B) 的四项实测事实（单 task 非自产来源上限 3、第二次检索调用硬失败、`minimum_sources: 10` 口径、三项无产品调用方的判据）落成**独立记录**并登记「已否证 / 待重新设计」；其后 EC-05（可选前端）与 EC-06（收口重检 + 干净 checkout 同结论 + CI 台账终态） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）| 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
@@ -516,6 +545,8 @@ memory_entries:
 | 台账尾巴（cycle 1 回写） | 见 cycle 1 回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**；cycle 1 尾巴 `c6cf330` 的 M0/CodeQL 均 success） | | |
 | cycle 2 派生 + WP1–WP3（两个 EC-02 判据 + 两件 provider 的会话面修复） | `dcade8c` | 与下面 cycle 2 回写**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 | |
 | 台账尾巴（cycle 2 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
+| cycle 3 派生 + WP1–WP2（EC-03 判据 + 四处按压） | `6ccdf46` | 与下面 cycle 3 回写**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 | |
+| 台账尾巴（cycle 3 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…011，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -579,3 +610,17 @@ memory_entries:
   `tests/application` 1212 passed / 1 skipped、`python/tests` **4408 passed / 19 skipped / 0 failed**、
   `mypy` 995 files 干净、`judged N; blocked 0`（零出网）；**m0 终局 `PASS: profile=m0; 23 deterministic
   checks`**（`scratch/goal012-c2-m0-final.log`）。**GOAL 仍 ACTIVE**（EC-03…EC-06 未完）。
+- 2026-09-23（**cycle 3 收口**）：**EC-03 PASS**（`PLAN-20260923-144` → **DONE**，提交 `6ccdf46`；
+  复检 `RECHECK-20260923-145` = **PASS**）。判据 `tests/e2e/test_ec03_experiment_evidence_chain.py`
+  （离线 + 真实容器，**2 passed**）判四条：① 四件产物在两读面都可见；② 内容 digest 在**证据条目**
+  与**来源记录**两条记录上都可从内容字节重算（实测 6 件制品）；③ `image_digest` 由**独立查 daemon**
+  复核、`environment_digest` 非空、**语义摘要与指标跨两次执行相同**；④ 四件产物的证据
+  `extracted_by == experiment:<run id>`（实验路径，不是会话自述）。**成对反证**：同构脚本写别名字的
+  产物 ⇒ 门拒收且**点名** `analysis_report`，读面上没有它而 `report.txt` / `experiment_result.json`
+  仍在 ⇒ 红的理由恰是「声明产物缺失」。**四处按压全红**并复原（产品代码 `git diff` 逐字回到 HEAD）；
+  其中一次按压**暴露判据盲点**（只看证据 digest、没看来源记录）⇒ 判据**加强**为两条记录各算一遍。
+  **独立复检两棵树成对**：当前树 **24/24**、基线树（`31dfbd4`）**6 红**（恰为判据文件不存在）、
+  **产品件两树同指纹 ⇒ 本 cycle 未改产品代码**（纯判据 cycle）。**门**：m0
+  **`PASS: profile=m0; 23 deterministic checks`**（`python/tests` **4411 passed / 19 skipped / 0 failed**）、
+  `tests/e2e` 118 passed / 10 skipped、`mypy` 996 files 干净、**零出网、零 live 调用**。
+  **GOAL 仍 ACTIVE**（EC-04…EC-06 未完）。
