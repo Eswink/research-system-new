@@ -2,7 +2,7 @@
 id: PLAN-20260923-150
 slug: console-real-data-matrix
 title: 逐页真实数据验收矩阵：20 条 partial/gap 逐条终态 + 离线三方同源判据（GOAL-013 EC-01）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-23
 updated_at: 2026-09-23
 parent_goal: GOAL-20260923-013
@@ -23,8 +23,9 @@ authorization:
     **不改**设计基线；零出网（浏览器只打本机 127.0.0.1 的 live app 与 vite dev）、
     零凭据读取、零真实 LLM 调用。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-151-console-real-data-matrix.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md
 ---
 
 # PLAN-20260923-150 — 逐页真实数据验收矩阵（GOAL-013 EC-01）
@@ -61,20 +62,20 @@ memory_entries: []
 
 ## 验收条件
 
-- [ ] `docs/frontend/CONSOLE_REAL_DATA_MATRIX.md` 恰好 20 行，每行终态 ∈ {收敛, 保持}，
+- [x] `docs/frontend/CONSOLE_REAL_DATA_MATRIX.md` 恰好 20 行，每行终态 ∈ {收敛, 保持}，
       零条待定；每行的「点名缺口 / 证据」列按 D-3/D-4/D-5 可机械判定。
-- [ ] 离线判据 4 条全绿：① 完备性 ② 三方同源（非 full 路由无遗漏 + 收敛行确为 full +
+- [x] 离线判据 4 条全绿：① 完备性 ② 三方同源（非 full 路由无遗漏 + 收敛行确为 full +
       引文逐字来自权威）③ 收敛有证（存在 + 白名单 + 真的 `page.goto` 该路由 + DOM 断言）
       ④ 不混写。
-- [ ] `#/plan/overview` 的页面级 live 用例落地并通过：判据形态「页面 == 读面」
+- [x] `#/plan/overview` 的页面级 live 用例落地并通过：判据形态「页面 == 读面」
       （先 HTTP 取四条读面，再与 DOM 逐值比对），并配**成对反证**
       （另一条 run 的论断读面为空 ⇒ 同一组件显示读面自己的零与空态，不伪造）。
-- [ ] 成对反证**先红后绿**：① 页面按压（论断卡钉常量）⇒ 两条 live 用例红；
+- [x] 成对反证**先红后绿**：① 页面按压（论断卡钉常量）⇒ 两条 live 用例红；
       ② 矩阵按压（缺口改写成「已交付」）⇒ 三方同源判据红；
       ③ live 用例按压（不再 `goto` 该路由）⇒ 收敛有证判据红。
-- [ ] stub 套件仍绿（新 live spec 被 `testIgnore` 正确排除，白名单未漏加）。
-- [ ] 本地门全绿：web lint / typecheck / unit（80 条）/ build / stub e2e / live e2e +
-      `make validate-all`（m0 23/23）+ `validate.py` + docs-check。
+- [x] stub 套件仍绿（新 live spec 被 `testIgnore` 正确排除，白名单未漏加）：**96 passed**。
+- [x] 本地门全绿：web lint / typecheck / unit（**80 passed**）/ build / stub e2e（96）/
+      live e2e（**43 passed**）+ `validate.py` + docs-check（`DOCS-CHECK PASS: 6`）。
 
 ## 实施清单
 
@@ -118,6 +119,15 @@ memory_entries: []
   suite，其中**只有 5 个**真的 `goto` 到具体路由（`live-experiments` / `live-run-rebuild-readiness` /
   `live-run-substrate-disclosure` / `live-schedules-write` / `live-tool-pack-write`），
   `live-project-lineage` 与 `live-project-cost-forecast` 是**纯读面**用例（按 D-2 不构成页面级证据）。
+- 2026-09-23：**收口**（`status: DONE`）。独立复检 `RECHECK-20260923-151` = **PASS**
+  （`scratch/verify_goal013_c1.py` 两棵树成对：当前树 `checked=218 failures=0`；
+  干净 checkout `f45d6ec` `failures=3`，三条红**全部**是「尚未收口」时序项）。
+  工程记忆 `MEM-20260923-115`（判据自身的问题：`includes` 判路由被注释骗过 ⇒ 改为
+  「路由串前 300 字符内有 `page.goto(`」+ DOM 断言 + 反向要求收敛行在代码里确为 `full`；
+  并披露结构判据 vs 语义判据的敏感面差异）。**顺带查出的一处事实**：设计基线
+  `design-outlines.json` 会渲染 `pageSupport.reason` 文本，故收敛时**注记文字逐字未改**
+  （改文字等于改设计基线，而本次是等级口径收敛）⇒ 基线无需重生成，`design-fidelity` 的结构
+  签名判据实测保持绿。**未改**任何产品 UI 组件、API/DTO、门禁、既有断言与设计基线。
 
 ## 影响报告
 

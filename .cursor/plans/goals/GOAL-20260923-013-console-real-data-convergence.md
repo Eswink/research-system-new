@@ -88,7 +88,23 @@ exit_criteria:
       点名的 live 用例文件**存在**且在 `live-specs.ts` 白名单内。
       成对反证各自**先红后绿**可复跑（按压记录落 RECHECK）。**不得**为凑 20 行而把某条
       同时标 (a) 与 (b)，**不得**用「聚合已加载数据」这类含糊话替代点名缺口。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-23 cycle 1 收口（`PLAN-20260923-150` → **DONE**；复检
+      `RECHECK-20260923-151` = **PASS**）。矩阵
+      `docs/frontend/CONSOLE_REAL_DATA_MATRIX.md`：**20 行**，**已收敛 1 / 保持 19 / 待定 0**，
+      (a)/(b) 不混写。三条离线判据落地为 `apps/web/tests/unit/console-real-data-matrix.test.ts`
+      （完备 / 三方同源 / 收敛有证）并加第四条「不混写」；**独立复检**
+      `scratch/verify_goal013_c1.py`（只读、标准库、不 import 仓库代码）两棵树成对：
+      当前树 `checked=218 failures=0`；干净 checkout `f45d6ec` `failures=3`，三条红**全部**
+      是「尚未收口」时序项。两条成对反证**先红后绿**实跑：②「把某条 (b) 的缺口改写成
+      「已交付」」⇒ 判据红（判词点名 `held row 2 … must name a gap token`）；
+      ①「把某条 (a) 的 live 用例的 `page.goto` 换成别的路由」⇒ 判据红
+      （判词点名 `live spec never navigates to plan/overview`）。**唯一收敛项** `plan/overview`：
+      `pageSupport` 实测收敛为 `full`，页面级 live 用例 `live-plan-overview.spec.ts`
+      两条实跑通过（判据形态「页面 == 读面」+ 成对反证）。**诚实边界**：本判据是**结构判据**
+      （存在/白名单/驱动路由/有 DOM 断言），**改 spec 的断言强度不会让它红**；
+      语义正确性由 live 用例承载（其敏感面是**页面那一段**）——披露全文见 RECHECK-151 第四节。
   - id: EC-02
     criterion: >-
       **真实数据 live 链**（承 GOAL-012 EC-05 的做法）：至少 **6 条** live e2e 用例，
@@ -208,8 +224,9 @@ escalation_triggers:
   - 前端设计基线（`design-outlines.json` / 快照）因页面改动而判红且**无法**按既有流程重生成并目检通过
 child_plans:
   - .cursor/plans/tasks/PLAN-20260923-150-console-real-data-matrix.md
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-151-console-real-data-matrix.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md
 ---
 
 ## 目标与退出标准
@@ -408,10 +425,14 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `<建档提交>`（见下方 CI 台账） | 治理 `validate.py` 绿（建档后实跑） | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-7**：20 条名单与分布、14 个既有 live suite、`gap` 的唯一性是 `presentationPolicy` 的 `resolveDataSource` 行为、`pageSupport` 有真实消费者、G1…G16 缺口表提供 (b) 类点名来源、`ops/matrix` 文档基础、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1`（「渲染正确」须操作化）+ `R-F2`（live 用例数据不足时不得计入 ≥6） | cycle 1 = derive **EC-01** 子 PLAN（逐页矩阵）：先定案「**终态判定表**」（20 条逐条的 (a)/(b) 初判 + 依据来源 + 哪些条要 live 用例、哪些条点名缺口）与「**矩阵文档结构**」（列定义 + 与 `pageSupport.ts`/`CONSOLE_PAGE_MAP.md` 的三方同源机制），再落**离线完备性判据**（20 行 / 无待定 / 差集为空 / 无混写）+ 成对反证；EC-02 的真实 live 链在其后按域分批 |
 
+| 1 | PLAN-20260923-150（EC-01） | `0eb09f1`（derive：PLAN-150 + ALL_PLAN + `child_plans`）、`6849776`（WP1：页面级 live + 白名单）、`0c8f220`（WP2：注记收敛 + page map 写实）、`f45d6ec`（WP3+WP4：矩阵 + 离线判据）；本 cycle 的收口回写见台账尾巴 | **离线判据 4 条全绿**（`pnpm run test` ⇒ **80 passed / 0 failed**，含新判据文件）；**页面级 live 2 passed**、**live 全套 43 passed**、**stub 96 passed**、`lint` / `typecheck` / `build` 全绿；**三处按压先红后绿**（`scratch/goal013-c1-pressA-page.txt` 2 failed、`goal013-c1-press-matrix.txt` 2 failed、`goal013-c1-press-live-route.txt` 1 failed）；**独立复检** `scratch/verify_goal013_c1.py` 两棵树成对（**当前树 `checked=218 failures=0`；干净 checkout `f45d6ec` `failures=3`＝全部是「尚未收口」时序项**）；`validate.py` 绿；`DOCS-CHECK PASS: 6`；**零出网**（浏览器只打 127.0.0.1）、零凭据读取 | 见下方 CI 台账 | **两处判据自身的问题当轮修掉并如实记录**：① 初版「收敛有证」用 `spec.includes("#/" + route)` 判路由，**被 spec 文件头注释里的一句路由骗过**（按压仍绿）⇒ 改为「路由串前 300 字符内有 `page.goto(`」+ 要求 DOM 断言 + **反向**要求收敛行在代码里确为 `full`，同一按压随即变红；② 独立脚本初版把 `pageSupport.ts` 的字符串拼接归一化写错（漏了 `+`）⇒ **假红**一条 `D2 row 13`，改用 `re.sub` 后转绿（判据测试用的正则一开始就对，**不是**矩阵的事实问题）。**顺带查出的一处事实**：设计基线 `design-outlines.json` 会渲染 `pageSupport.reason` 文本 ⇒ 收敛时**注记文字逐字未改**（改文字等于改设计基线，而本次是等级口径收敛）⇒ 基线**无需重生成**，`design-fidelity` 结构签名判据实测保持绿 | **EC-01 PASS**（20 行、已收敛 1 / 保持 19 / 待定 0；三条离线判据 + 两条成对反证实跑）。**EC-02…EC-05 未达成**：真实数据 live 链还需覆盖 `library/lineage`、`govern/*` 等域的**页面级**用例；判据性质披露需随每条新判据落地；`ops/matrix` 的单独处置与收口复检在其后。**W-A / W-C / R-M1 / R-D1 / R-B1 / R-N1 原样保留**（本 cycle 未触及） | cycle 2 = **EC-02 第二批真实数据页链**：按域补齐**页面级**「页面 == 读面」用例（优先 `library/lineage`、`govern/budget`、`govern/audit`），每条配成对反证且**按页面**按压；同时把 EC-03 的性质披露随判据一起落（结构判据 vs 语义判据分开写）。**注意**：既有 `live-project-lineage` / `live-project-cost-forecast` 是**纯读面**用例（只 `page.request`），**不构成**页面级证据 ⇒ 若要它们支撑 (a) 收敛，必须先补 DOM 断言 |
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
-| 建档（GOAL-013 落地） | 见回合汇报 | 见回合汇报 | 见回合汇报（**台账尾巴口径**：建档提交自身触发的 run 在**回合汇报**里给出终态，**不再回写文件**） |
+| 建档（GOAL-013 落地） | `50afb3b` | M0 [35858450019](https://github.com/Eswink/research-system-new/actions/runs/35858450019) | 六 job 全 **success**（`console-frontend` / `collector-quality` / `quality-ubuntu-latest` / `container-quality` / `quality-windows-latest` / `eval-gate`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35858448220](https://github.com/Eswink/research-system-new/actions/runs/35858448220) = **success**（3/3：`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)`） |
+| cycle 1 派生（PLAN-150 + ALL_PLAN + `child_plans`） | `0eb09f1` | 与下一条**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 | |
+| cycle 1 WP1–WP3+WP4（页面级 live + 白名单 + 注记收敛 + 矩阵 + 离线判据） | tip `f45d6ec` | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在**回合汇报**里给出终态，**不再回写文件**） | |
+| 台账尾巴（cycle 1 回写：PLAN-150 DONE + `RECHECK-151` + `MEM-114` + GOAL 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在**回合汇报**里给出终态，**不再回写文件**） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…012，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -435,3 +456,24 @@ memory_entries: []
   `R-F2`（live 用例因数据规模不足无法演示非空渲染时不得计入 ≥6）。
   13 条人工面**原样保留**（第 3/12 项已完成、第 13 项豁免），另加 `W-A`（真实控制面对
   `evidence.read` 判 `DENY`，需拍板）与路径 (B) 的「重新设计需要什么」5 条（需拍板）。
+- 2026-09-23（**cycle 1 收口**）：**EC-01 PASS**。子 PLAN `PLAN-20260923-150` → **DONE**；
+  复检 `RECHECK-20260923-151` = **PASS**；工程记忆 `MEM-20260923-115`。
+  交付：`docs/frontend/CONSOLE_REAL_DATA_MATRIX.md`（**20 行，已收敛 1 / 保持 19 / 待定 0**）+
+  离线判据 `apps/web/tests/unit/console-real-data-matrix.test.ts`（4 条：完备 / 三方同源 /
+  收敛有证 / 不混写）+ 页面级 live `apps/web/tests/e2e/live-plan-overview.spec.ts`
+  （判据形态「页面 == 读面」+ 成对反证，2 passed；live 全套 **43 passed**、stub **96 passed**、
+  web unit **80 passed**）。唯一收敛项 `plan/overview`：四条读面全已交付、无禁用操作
+  ⇒ `pageSupport` 等级收敛为 `full`，注记文字**逐字未改**（设计基线会渲染该文本）。
+  **两处判据自身的问题当轮修掉**：「收敛有证」初版被 spec 注释骗过 ⇒ 改为要求
+  `page.goto` + DOM 断言 + 反向要求收敛行确为 `full`；独立脚本的归一化写错导致一条假红 ⇒
+  改用 `re.sub` 后转绿。**EC-02…EC-05 未达成**；`W-A`/`W-C`/`R-M1`/`R-D1`/`R-B1`/`R-N1`
+  与 13 条人工面**原样保留**。
+
+## 当前续点
+
+- **续点**：cycle 1 已收口（EC-01 PASS，PLAN-150 DONE，`RECHECK-151` PASS，`MEM-114` 已落），
+  台账尾巴提交见回合汇报。**下一轮 = cycle 2**：EC-02 第二批**页面级**真实数据页链
+  （优先 `library/lineage`、`govern/budget`、`govern/audit`），每条配成对反证并按**页面**按压；
+  EC-03 的性质披露随每条新判据一起落。
+- **注意（承 cycle 1 的实测）**：`live-project-lineage` 与 `live-project-cost-forecast`
+  是**纯读面**用例（只 `page.request`，不断言 DOM）⇒ 按 D-2 **不构成**页面级证据。
