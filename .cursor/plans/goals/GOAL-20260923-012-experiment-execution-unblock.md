@@ -263,6 +263,7 @@ escalation_triggers:
     action / external publish）⇒ **立即 BLOCKED**（本 GOAL 的授权只覆盖冻结门的**接受口径**，
     不覆盖安全默认面）
 child_plans:
+  - .cursor/plans/tasks/PLAN-20260923-146-path-b-refutation-record.md
   - .cursor/plans/tasks/PLAN-20260923-144-experiment-evidence-chain-traceability.md
   - .cursor/plans/tasks/PLAN-20260923-142-live-experiment-chain-to-terminal.md
   - .cursor/plans/tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md
@@ -383,8 +384,12 @@ memory_entries:
 - **R-D1（依赖告警）**：`push` 输出暴露 **23 条 Dependabot 告警**（**4 high / 13 moderate / 6 low**），
   **既有未处置**。本 GOAL **不**处置（依赖 pin 变更命中 `escalation_triggers`），只如实登记；
   若后续需要处置，走用户/ADR 拍板。
-- **R-B1（路径 (B)）**：GOAL-011 对 (B) 的否证 → 由 EC-04 落成独立记录；在那之前按
-  **「已否证 / 待重新设计」**状态引用，不得读成待办功能。
+- **R-B1（路径 (B)）**：GOAL-011 对 (B) 的否证 → **已由 EC-04 落成独立记录**：
+  `docs/roadmap/PATH_B_REFUTATION_RECORD.md`（载体由 `PLAN-20260923-146` 定案）。逐条覆盖四项实测事实
+  （单 task 非自产来源上限 3 / 第二次检索调用硬失败 `conflicting source registration` /
+  `minimum_sources: 10` 与机制不相容 / `SCHEMA_VALID`·`TEST_PASSES`·`POLICY_COMPLIANT` 无产品调用方），
+  并声明与 GOAL-011 的 `W-P` / `W-Q` / `PLAN-138` 的 BLOCKED **原样保留**的关系。
+  引用时仍按 **「已否证 / 待重新设计」**，不得读成待办功能。
 - **R-N1（非 ASCII 路径）**：30 条已跟踪路径含非 ASCII（AGENTS.md §13）⇒ 按「既有历史路径
   不批量重命名」**登记为豁免**；若判定需要 ADR，则**产出草案**、不自行改判。
 - **W-A（cycle 1 新，未修）**：**真实控制面**的 preflight 求值是 `NativePolicyEvaluator` +

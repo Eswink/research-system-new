@@ -33,6 +33,10 @@ checked_head: 6ccdf46
 | **当前树**（`6ccdf46`） | `checked=24 failures=0`（exit 0） | 24 条断言全绿（A 产品件两树同指纹 9 条 + B 判据在位 5 条 + C 样张数据层 5 条 + D 环境/按压 5 条） |
 | **基线树**（`31dfbd4`） | `checked=24 failures=6`（exit 1） | **判据不空转**：6 条红**恰是 EC-03 判据文件不存在**（B 组 5 条 + 文件缺失 1 条）；**A 组（产品件两树同指纹）在基线树上也绿** ⇒ 本 cycle 的产品代码**一字未改**（这是「纯判据 cycle」的独立证明） |
 
+> **勘误（2026-09-23，GOAL-012 cycle 4 复测时发现）**：上表「当前树」那一行的数字**当时是在
+> amend 之前的判据上测的**；B2 把判据的中间形态当字面量钉住，纯重构后复检脚本会自己变红。
+> 详见文末「勘误」节——**结论不变**，复测在同一棵树上得同样数字。
+
 ### 二、判据（离线 + 真实容器，`requires_docker`，零出网）
 
 `uv run --frozen --no-sync python -B -m pytest tests/e2e/test_ec03_experiment_evidence_chain.py -q -rs`
@@ -97,3 +101,38 @@ checked_head: 6ccdf46
 产物出自实验路径而非模型自述）；**成对反证**「去掉产物 ⇒ 判据红」（写别的名字的脚本被判拒绝
 并点名，且读面上其余产物仍在）。四处按压 + 两棵树成对（当前树 24/24、基线树 6 红，且产品件
 两树同指纹）⇒ 判据不空转、**本 cycle 未改任何产品代码**。
+
+## 勘误（2026-09-23，GOAL-012 cycle 4 复测时发现）
+
+**发现方式**：cycle 4 为做两棵树成对复检，重跑了本记录所引的 `scratch/verify_goal012_c3.py`，
+**在当前树上得到 `checked=24 failures=1`**（红的是 B2），与本记录上表「当前树 24/24」不符。
+
+**根因（可证明，不是推测）**：
+
+1. 本 cycle 的判据文件在 m0 的 50 行/函数门禁下被**纯重构**过：内容 digest 从
+   「先取字节、再 `Digest.of_bytes(content)`」并成一行
+   （`digest = Digest.of_bytes(client.get(f"/artifacts/{artifact_id}/content").content)`），
+   断言逐条未减。amend 之前的提交仍在 reflog 里：
+   `git diff 919ad2c 6ccdf46 -- tests/e2e/test_ec03_experiment_evidence_chain.py` 可见
+   `-        content = client.get(...).content` / `-        digest = Digest.of_bytes(content)`。
+2. 复检脚本的 B2 当时把 `"Digest.of_bytes(content)"` 这个**中间形态的字面量**当判据 ⇒
+   只对 amend 之前的判据成立。**上表「当前树」那一行的数字因此是在 amend 之前的判据上测的**
+   （判据的语义三条都在，只是写法变了）。
+
+**处置**：B2 改为判**语义**且**更强**（四个 token 同时在场：`Digest.of_bytes(`、
+`/artifacts/{artifact_id}/content`、`get_source(`、`extracted_by == f"experiment:{experiment_run_id}"`）。
+复测：
+
+| 树 | 复测结果 |
+| --- | --- |
+| 当前树（同 `6ccdf46`，判据文件此后一字未改） | `checked=24 failures=0`（exit 0） |
+| 基线树 `31dfbd4` | `checked=24 failures=6`（B 组 5 条 + 文件缺失 1 条） |
+
+⇒ 与原记录**同一结论与同一组数字**，只是测量对象换成了 amend 之后的那棵树。
+
+**边界（不掩饰）**：
+
+- 这不是「判据被削弱」：改的是**复检脚本**对判据的**读法**（语义 vs 中间形态字面量），
+  判据文件本身未改；断言强度只增不减（四个 token 取代原来的三个）。
+- 这是一次**记录早于 amend**的时序错误：先测、后改、未复测就落记录。**教训**（已进工程记忆）：
+  ①复检脚本不要钉被检对象的中间形态字面量；②**任何 amend/重跑之后，此前写下的验证数字必须复测**。

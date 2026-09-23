@@ -109,6 +109,7 @@
 | [MEM-20260923-109](entries/MEM-20260923-109-freeze-gate-policy-allowance-channel.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-140 |
 | [MEM-20260923-110](entries/MEM-20260923-110-multi-provider-session-judge.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-142 |
 | [MEM-20260923-111](entries/MEM-20260923-111-experiment-evidence-traceability-judge-shape.md) | ACTIVE | repository | 0.92 | 2027-03-23 | PLAN-20260923-144 |
+| [MEM-20260923-112](entries/MEM-20260923-112-verifier-token-drift-after-amend.md) | ACTIVE | repository | 0.94 | 2027-03-23 | PLAN-20260923-146 |
 | [MEM-20260814-012](entries/MEM-20260814-012-m8-research-capability-plane.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-012 |
 | [MEM-20260814-011](entries/MEM-20260814-011-m7-quality-gate-closure.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-011 |
 | [MEM-20260814-010](entries/MEM-20260814-010-m7-vertical-slice-retrospective.md) | ACTIVE | repository | 0.90 | 2026-11-14 | PLAN-20260814-010 |
