@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260923-144](tasks/PLAN-20260923-144-experiment-evidence-chain-traceability.md) | IN_PROGRESS |
 | [x] | [PLAN-20260923-142](tasks/PLAN-20260923-142-live-experiment-chain-to-terminal.md) | DONE |
 | [x] | [PLAN-20260923-140](tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md) | DONE |
 | [x] | [PLAN-20260922-139](tasks/PLAN-20260922-139-goal-011-closeout-recheck.md) | DONE |
