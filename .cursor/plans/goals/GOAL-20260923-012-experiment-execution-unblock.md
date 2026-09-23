@@ -202,6 +202,7 @@ escalation_triggers:
     action / external publish）⇒ **立即 BLOCKED**（本 GOAL 的授权只覆盖冻结门的**接受口径**，
     不覆盖安全默认面）
 child_plans:
+  - .cursor/plans/tasks/PLAN-20260923-142-live-experiment-chain-to-terminal.md
   - .cursor/plans/tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md
 latest_recheck: null
 memory_entries:

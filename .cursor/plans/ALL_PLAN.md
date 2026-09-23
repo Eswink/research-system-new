@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260923-142](tasks/PLAN-20260923-142-live-experiment-chain-to-terminal.md) | IN_PROGRESS |
 | [x] | [PLAN-20260923-140](tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md) | DONE |
 | [x] | [PLAN-20260922-139](tasks/PLAN-20260922-139-goal-011-closeout-recheck.md) | DONE |
 | [ ] | [PLAN-20260922-138](tasks/PLAN-20260922-138-real-experiment-chain-via-m12.md) | BLOCKED |

@@ -64,6 +64,8 @@ from tests.e2e.live_run_support import (
 _PROTOCOL = "console_demo_research_v1.yaml"
 #: GOAL-011 EC-01：声明了 `capability_execution: run_chain` 的真实协议（检索由运行链执行）。
 _RETRIEVAL_PROTOCOL = "real_retrieval_research_v1.yaml"
+#: GOAL-012 EC-02：每个阶段冻结集**两件 provider** 的协议（M7 参考场景）。
+_TWO_PROVIDER_PROTOCOL = "sort_analysis_v1.yaml"
 
 
 class _MockRelayHandler(BaseHTTPRequestHandler):
@@ -176,6 +178,30 @@ def test_declared_run_chain_capabilities_let_production_assembly_start(mock_rela
     assert not any("is not registered" in message for message in failures), failures
     assert run["state"] == "FAILED", (run, failures)
     assert any("acceptance gate" in message for message in failures), failures
+
+
+def test_a_two_provider_frozen_set_starts_a_session(mock_relay: str) -> None:
+    """GOAL-012 EC-02：冻结集里**两件 provider** 时会话必须起得来（离线，先红后绿）。
+
+    为什么要单钉一条：`sort_analysis_v1` 的每个阶段冻结集都是两件
+    （execution：`openhands_workspace` 供 workspace/code 三能力 + `m12_artifact` 供
+    `artifact.write`；review：同一件 workspace provider + `evidence.read`）。测试侧的惰性
+    替身曾把两件都解析成**同一个类** ⇒ SDK 由**类名**派生工具名 ⇒ 两件同名，agent 初始化
+    直接抛 `Duplicate tool names found: {'inert'}`。**实测**：EC-02 第一次 live 取样就是这个
+    死法（冻结成功、实验真跑了，死在 review 会话建不起来）。那是惰性替身自己的命名问题，
+    不是产品缺陷（真实 provider→SDK 映射属 EC-05）。
+
+    判据看**可观测后果**，不看实现细节：mock 端点**收到补全请求**（会话真的建起来了），
+    且失败原因里**没有**名字冲突。
+    """
+    from services.api.app import create_app
+
+    with TestClient(create_app(_openhands_deps(mock_relay, map_tools=True))) as client:
+        run = _start(client, _TWO_PROVIDER_PROTOCOL)
+        failures = _failures(client, run["id"])
+
+    assert _MockRelayHandler.requests, ("会话没建起来", run, failures)
+    assert not any("Duplicate tool names" in message for message in failures), failures
 
 
 @dataclass(frozen=True, slots=True)

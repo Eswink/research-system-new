@@ -70,13 +70,34 @@ def inert_tool_class() -> Any:
     return InertTool
 
 
+def inert_tool_class_for(registry_name: str) -> Any:
+    """按**注册名**给一个**独有类名**的惰性工具类（`name` 由类名派生，见下）。
+
+    为什么必须按名分：一个会话的冻结集里可以有多件 provider（`sort_analysis_v1` 的 review
+    阶段有两件：`openhands_workspace` + `m12_artifact`），而 SDK 的 `ToolDefinition.name`
+    是**类名派生的常量**（`InertTool` ⇒ `inert`）——两件同名会在 agent 初始化时直接抛
+    `Duplicate tool names found: {'inert'}`。这是**本惰性替身自己的命名问题**，不是产品缺陷：
+    真实的 provider→SDK 映射由 EC-05 承担。
+
+    类只造一次并放进模块全局（`type()` + 显式 `__qualname__`/`__module__`）：SDK 会枚举
+    `Action` 的具体子类来构建判别联合，`<locals>` 限定名会毒化同进程后续事件 round-trip
+    （见 `inert_tool_class()`）；重复造类则触发 "Duplicate class definition"。
+    """
+    class_name = "Inert" + "".join(part.title() for part in registry_name.split("_")) + "Tool"
+    existing = globals().get(class_name)
+    if existing is not None:
+        return existing
+    created = type(class_name, (InertTool,), {"__module__": __name__, "__qualname__": class_name})
+    globals()[class_name] = created
+    return created
+
+
 def register_inert_tools(frozen: tuple[str, ...]) -> None:
     """把冻结 Tool Set 按名注册为惰性工具（测试侧替代 EC-05 的 provider→SDK 映射）。"""
     from openhands.sdk.tool.registry import register_tool
 
-    tool_class = inert_tool_class()
     for name in frozen:
-        register_tool(name, tool_class)
+        register_tool(name, inert_tool_class_for(name))
 
 
 def point_catalog_at(deps: Any, base_url: str) -> None:
@@ -118,8 +139,15 @@ def declare_sandbox_experiment(deps: Any, *, script: str, image: str) -> None:
     )
 
 
-def with_sandbox_experiment(deps: Any, *, script: str, image: str) -> None:
-    """把**既有**实验执行链接进运行编排的实验缝（同一个装配，同 run-chain 能力步的形态）。"""
+def with_sandbox_experiment(
+    deps: Any, *, script: str, image: str, runtime: Any | None = None
+) -> None:
+    """把**既有**实验执行链接进运行编排的实验缝（同一个装配，同 run-chain 能力步的形态）。
+
+    `runtime` 缺省 `None` ⇒ 沿用装配里既有的执行体（真实 adapter 路径）；离线判据需要
+    **会话侧交付物**时显式传入（受控执行体必须**自己声明**它交付了什么——冻结后的
+    `register_session_result` 对空交付物如实拒绝，本函数不替它伪造）。
+    """
     from dataclasses import replace
 
     from packages.application.run_orchestration.service import RunOrchestrationService
@@ -145,7 +173,11 @@ def with_sandbox_experiment(deps: Any, *, script: str, image: str) -> None:
     old = deps.runs
     assert old is not None
     deps.runs = RunOrchestrationService(
-        replace(old._deps, runtime=old._deps.runtime, experiment_task=runner)
+        replace(
+            old._deps,
+            runtime=runtime if runtime is not None else old._deps.runtime,
+            experiment_task=runner,
+        )
     )
 
 
