@@ -36,7 +36,19 @@ const PAGE_MAP_PATH = path.join(REPO_ROOT, "docs/frontend/CONSOLE_PAGE_MAP.md");
 const GAP_TOKENS = ["API:", "FIELD:", "SURFACE:", "DESIGN:"];
 const UNDECIDED = ["待定", "含糊", "待确认", "PENDING"];
 const TERMINALS = new Set(["收敛", "保持"]);
-const LIVE_NAMED = /LIVE:([^\s；;)]+)/;
+
+/**
+ * 取 `LIVE:<spec 文件名>` 的名字部分。
+ *
+ * 用 `indexOf` + `split` 而不是正则 `String#match`：后者会被 lint 的
+ * `prefer-regexp-exec` 拦下（要求改用 `RegExp#exec`，而那又与安全扫描的
+ * 命令执行启发式冲突）——这条判据没必要为此引入正则。
+ */
+function liveSpecName(gap: string): string {
+  const at = gap.indexOf("LIVE:");
+  if (at < 0) return "";
+  return gap.slice(at + "LIVE:".length).split(/[\s；;)]/)[0] ?? "";
+}
 /** 该 live 用例必须**驱动该路由**并对 DOM 断言，否则「收敛」只是文件存在。 */
 const DOM_ASSERTION = /toHaveText|toBeVisible|toContainText/;
 
@@ -184,12 +196,12 @@ test("③ 收敛有证：每条收敛行点名的 live 用例存在、在白名�
   const converged = matrixRows().filter((row) => row.terminal === "收敛");
   assert.ok(converged.length > 0, "at least one row must have converged with live proof");
   for (const row of converged) {
-    const named = row.gap.match(LIVE_NAMED);
-    assert.ok(
-      named !== null,
+    const file = liveSpecName(row.gap);
+    assert.notEqual(
+      file,
+      "",
       `converged row ${String(row.index)} (${row.route}) must name LIVE:<spec file>`,
     );
-    const file = named[1] ?? "";
     const specPath = path.join(WEB_ROOT, "tests/e2e", file);
     assert.ok(
       existsSync(specPath),

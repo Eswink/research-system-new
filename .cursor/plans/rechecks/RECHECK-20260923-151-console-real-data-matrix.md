@@ -72,6 +72,20 @@ checked_head: 当前树 + 干净 checkout `f45d6ec`（cycle 1 最后一条功能
 ⇒ **本 PLAN 新增的判据里，只有 live 用例是语义判据；矩阵那四条都是结构判据。**
 结构判据负责「三处不可能各自漂移」，语义正确性由 live 用例与既有 live 套件承载。
 
+### 五、m0 首轮的两次红与处置（如实记录：本复检初稿判 PASS 之后才跑 m0）
+
+本复检的判据（A–G 组）与 web 门先跑；`make validate-all` 这一轮**首跑两红**，
+两条都在本 cycle 的改动面内，处置如下：
+
+| 红 | 判词 | 处置 |
+| --- | --- | --- |
+| `typescript/lint`（`eslint .`，覆盖 `apps/web/tests/**`） | `live-plan-overview.spec.ts:31` `["EC13_SNAPSHOT_DIR"] is better written in dot notation`；`console-real-data-matrix.test.ts:187` `Use the RegExp#exec() method instead` | **真缺陷、当轮修掉**：① 改点号取值（与既有 `live-experiments.spec.ts` 同写法）；② `LIVE:` 名字提取改用 `indexOf` + `split` —— 不用正则就不用 `String#match`，从而既不触 lint 的 `prefer-regexp-exec`，也不触安全扫描对 `.exec(` 的启发式（这两条规则在同一处直接冲突，绕开是唯一同时满足的写法） |
+| `python/tests` | `MaxRetryError: HTTPConnectionPool(host='127.0.0.1', port=4318)` —— OTLP collector 未起 | **环境项、非代码缺陷**：CI 的 m0 在跑测试前用 `infra/compose/otel-evidence.yaml` 起 **pinned OTel collector**，本地首跑沿用了早前只起 postgres 的 compose。按 CI 的同一配方补起 collector 并以同一组环境变量（`RESEARCHOS_OTEL_COLLECTOR_ENDPOINT` / `RESEARCHOS_REQUIRE_COLLECTOR` / `RESEARCHOS_REQUIRE_POSTGRES` / DSN）重跑 |
+
+**注意**：web 门里的 `pnpm run lint`（只 lint `src`）**不会**覆盖 `apps/web/tests/**`；
+覆盖它的是根 `eslint .`（m0 的 `typescript/lint`）。本 cycle 的两条 lint 缺陷因此只在 m0
+这一层暴露 —— 这条口径本身是可复用事实，已随 `MEM-20260923-115` 落库。
+
 ## 结论
 
 `result: PASS`。**GOAL-013 EC-01 判 PASS**：EC-01 的三条离线判据（矩阵完备 / 三方同源 /

@@ -28,7 +28,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 const RICH_RUN_ID = "55555555-5555-4555-8555-555555555555";
 const EMPTY_RUN_ID = "44444444-4444-4444-8444-444444444444";
 
-const SNAPSHOT_DIR = process.env["EC13_SNAPSHOT_DIR"] ?? "scratch/goal013-c1";
+const SNAPSHOT_DIR = process.env.EC13_SNAPSHOT_DIR ?? "scratch/goal013-c1";
 
 interface RunDetailView {
   id: string;

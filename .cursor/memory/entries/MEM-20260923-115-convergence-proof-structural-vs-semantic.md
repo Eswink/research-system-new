@@ -68,6 +68,17 @@ GOAL-20260923-013 EC-01 要求「收敛项必须有**页面级** live 为证」�
   `.cursor/memory/entries/MEM-20260923-113-live-page-equals-read-face-judge.md`。
 - 换到别的「必须驱动某个界面并断言」的判据上也成立；但若被测面本身没有 DOM
   （纯 API 判据），第 ③ 组不适用，应改用读面级的独立判据。
+- **两条 lint 规则在同一处冲突**：`@typescript-eslint/prefer-regexp-exec` 要求把
+  `String#match(正则字面量)` 改成 `RegExp#exec()`，而安全扫描把 `.exec(` 当作命令执行
+  启发式拦下 ⇒ 提取 `LIVE:<名字>` 这类**简单取值**应改用 `indexOf` + `split` 绕开正则。
+- **lint 覆盖面**：`pnpm run lint`（web 包内）只覆盖 `src`，**不覆盖** `apps/web/tests/**`；
+  覆盖测试面的是 m0 的 `typescript/lint`（根 `eslint .`）。所以新增/改测试文件必须跑
+  **根 `eslint .`** 或 m0，不能只看 `pnpm run lint` 绿。
+- **m0 的 `python/tests` 需要 pinned OTel collector**：只在本地起 postgres 不够，
+  否则会以 `MaxRetryError … 127.0.0.1:4318` 收场（与 `tests/observability` 停收端口的
+  已知签名同族）。CI 的配方是 `infra/compose/otel-evidence.yaml` +
+  `RESEARCHOS_OTEL_COLLECTOR_ENDPOINT` / `RESEARCHOS_REQUIRE_COLLECTOR` /
+  `RESEARCHOS_REQUIRE_POSTGRES` / `RESEARCHOS_POSTGRES_DSN` 一并给全。
 
 ## 来源
 
