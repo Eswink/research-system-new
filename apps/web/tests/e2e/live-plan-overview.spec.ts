@@ -149,6 +149,9 @@ test("live: 读面为空时页面显示诚实空态（成对反证，不伪造�
   await expect(metricValue(page, ["论断", "Claims"])).toHaveText("0");
 
   // 空任务读面 ⇒ 段落显示空态文案（同一个组件在富读面下显示的是任务卡列表）。
-  await expect(page.getByText(/没有已读取的执行任务|No loaded execution tasks/)).toBeVisible();
+  // 锚定匹配：不加 `^…$` 时前缀扩展文案也会绿（GOAL-013 cycle 2 的按压实测撞到过）。
+  await expect(
+    page.getByText(/^(没有已读取的执行任务|No loaded execution tasks)$/),
+  ).toBeVisible();
   await expect(page.getByText(EMPTY_RUN_ID, { exact: false }).first()).toBeVisible();
 });
