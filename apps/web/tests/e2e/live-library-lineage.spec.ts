@@ -65,8 +65,8 @@ test("live: 血缘页的三张表与合并摘要 == 读面（页面 == 读面）
   await expect(page.getByTestId("lineage-page")).toBeVisible();
 
   // 合并摘要：三个数逐值来自读面。
-  const summary = `${String(view.run_count)} / ${String(view.nodes.length)} / ${String(view.edges.length)}`;
-  await expect(page.getByText(summary, { exact: false }).first()).toBeVisible();
+  const counts = [view.run_count, view.nodes.length, view.edges.length].map(String);
+  await expect(page.getByText(counts.join(" / "), { exact: false }).first()).toBeVisible();
 
   // 两张非空表的行数 == 读面数组长度。
   await expect(tableRows(page, ["项目血缘节点", "Project lineage nodes"])).toHaveCount(
@@ -91,7 +91,10 @@ test("live: 库资源读面为空时显示诚实空态，且不渲染空表（�
     await expect(
       page.getByText(/^(项目内无库资源|No library resources in this project)$/),
     ).toBeVisible();
-    await expect(page.locator('table[aria-label="未连边库资源"], table[aria-label="Unlinked library resources"]')).toHaveCount(0);
+    const resourceTables = page.locator(
+      'table[aria-label="未连边库资源"], table[aria-label="Unlinked library resources"]',
+    );
+    await expect(resourceTables).toHaveCount(0);
   } else {
     // 非空 ⇒ 行数必须等于读面长度（本夹具当前为空，此分支备而不用）。
     await expect(tableRows(page, ["未连边库资源", "Unlinked library resources"])).toHaveCount(
@@ -100,6 +103,7 @@ test("live: 库资源读面为空时显示诚实空态，且不渲染空表（�
   }
   // 引用面无记录：后端如实标注，页面原样呈现（不画猜测的边）。
   if (view.reference_recording !== "RECORDED") {
-    await expect(page.getByText(view.reference_recording_reason, { exact: false }).first()).toBeVisible();
+    const noticed = page.getByText(view.reference_recording_reason, { exact: false });
+    await expect(noticed.first()).toBeVisible();
   }
 });
