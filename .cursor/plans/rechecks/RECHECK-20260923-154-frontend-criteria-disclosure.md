@@ -146,6 +146,10 @@ checked_head: 当前树 + 干净 checkout（cycle 4 最后一条功能提交）
 两条修复合并在 `7d3eecf`；修复后 unit / stub / live / typecheck / build / docs 全部**重跑**
 （上表数字均取自修复后的树）。
 
+**H1（本 cycle 新加的判组，防同类复发）**：复检脚本扫**已跟踪**的 `.md`，报 basename
+会被 Win32 归一化的链接 target（`...` / 尾点）⇒ 主树实测 `checked=50 failures=0`。
+口径与跨平台边界见 `MEM-20260923-122`。
+
 **一处必须更正的口径**：第三节之前在本表记过的 `DOCS-CHECK PASS: 6` 是**文档落盘之前**跑的，
 不能当作过门证据 —— 文档落盘后该门判红 7 条（上面第 2 条）。改齐后重跑为
 `DOCS-CHECK PASS: 6 deterministic checks`。这条更正落在此处，不改旧句不留假绿。
@@ -155,8 +159,16 @@ checked_head: 当前树 + 干净 checkout（cycle 4 最后一条功能提交）
 [A-Za-z]:\|/(home|mnt|data|Users`。该文件是**并发写者**今天 02:17 落进 `scratch/` 的
 **gitignored** 文档（作者与主题都不属于本 GOAL），它的正文里有一段**正则字面量**恰好长成
 Markdown 链接形状；而该判据的链接扫描是**纯文本正则、不识别围栏代码块**
-（`validate_bundle.py` 的 `(?<!!)\[[^\]]+\]\(([^)]+)\)` 直接吃全文）⇒ 把 `[...](...)`
-读成一条本地链接。**归因证据（同一脚本、同一命令、只换 `CURSOR_FRAMEWORK_ROOT`）**：
+（`validate_bundle.py` 的 `(?<!!)\[[^\]]+\]\(([^)]+)\)` 直接吃全文）⇒ 把「方括号紧接
+圆括号」的形状（`[...]` 紧跟 `(...)`）读成一条本地链接。**归因证据（同一脚本、同一命令、只换 `CURSOR_FRAMEWORK_ROOT`）**：
+
+**CI 首轮判红的第三条（同一判据，但根因不同 —— 本 cycle 自己的记录）**：CI 的
+`quality-ubuntu-latest` 判红，判词是 `Markdown 本地链接不存在:
+.cursor/plans/rechecks/RECHECK-20260923-154-frontend-criteria-disclosure.md -> ...`——
+本文件上一行**原文**里我写了链接形状的字面量，其 target 是 `...`。
+**为什么本地 m0 看不见**：Win32 会**剥掉尾随的点**，`...` 归一化成「本目录」⇒ `exists()` 为真
+⇒ 本地假绿；Linux 上它是普通名字 ⇒ 判红。⇒ 这是一条**平台相关的假绿**，
+已落 `MEM-20260923-122`，并把「尾点 target」扫进本复检脚本（见第六节的扫描口径）。
 
 | 跑法 | 结果 |
 | --- | --- |

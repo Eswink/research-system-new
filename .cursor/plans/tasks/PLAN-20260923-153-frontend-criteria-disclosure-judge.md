@@ -140,6 +140,12 @@ memory_entries:
   的 7 条 `[backtick-ref]` —— 新文档把 spec 路径写成相对 `apps/web` 的 `tests/...`，而该门按
   **仓根**解析 ⇒ 改齐房规 `apps/web/tests/...`。两条修复在 `7d3eecf` 合并，之后
   unit / stub / live / typecheck / build / docs **全部重跑**（上面数字均取自修复后的树）。
+- **CI 首轮判红一条（本 cycle 自己的记录，当轮修掉）**：`quality-ubuntu-latest` 报
+  `Markdown 本地链接不存在: .cursor/plans/rechecks/RECHECK-20260923-154-…md -> ...` ——
+  记录正文里我写了「方括号紧接圆括号」的链接形状，其 target 是 `...`；**本地 m0 看不见**
+  是因为 Win32 会剥掉尾随的点（`...` 归一化成「本目录」⇒ `exists()` 为真）⇒ 平台相关假绿。
+  修法：把该形状拆成两段并写进复检脚本的 H1 判组（扫已跟踪 `.md` 的尾点 target）；
+  教训落 `MEM-20260923-122`。其余六 job / CodeQL 全绿。
 - **独立复检**：`scratch/verify_goal013_c4.py` 两棵树成对（主树 `checked=49 failures=0`；
   干净 checkout `7d3eecf` `checked=43 failures=3` = 全部「尚未收口」时序项 + 一条具名环境差异）。
 - 逐条判据与判词见 `RECHECK-20260923-154`。
