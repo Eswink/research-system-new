@@ -73,8 +73,14 @@ exit_criteria:
       去掉留痕字段 ⇒ 对应判据红。三条各自**先红后绿**可复跑（按压记录落 RECHECK）。
       端到端形态（EC-02 的真实 run）：`manifest_digest` **非空** + 事件链里 `manifest.frozen`
       的 payload 含留痕字段 ⇒ 冻结确已发生且可审计。
-    status: PENDING
+    status: PASS
     status_note: >-
+      2026-09-23 cycle 2 收口：本条 verify 的**最后一项**（EC-02 的真实 run 形态）已由真实一次 run
+      满足 ⇒ **PASS**。样张 `scratch/goal012-c2-live-sample.json`：`manifest_digest` 非空，且
+      `manifest.frozen` 事件 payload 的 `accepted_policy_exceptions` **4 条**（`code.execute` /
+      `workspace.read` / `workspace.write.code` / review 的 `workspace.read`；`decision=ALLOW`、
+      `accepted_at` 非空）——冻结确已发生且可审计。
+      以下为 cycle 1 的落地与判据记录（保留，不追溯改写）：
       2026-09-23 cycle 1（`PLAN-20260923-140`，提交 `5ae2d56`）：**通道本体已落、判据成对**，
       但按本条 verify 的最后一项（**EC-02 的真实 run 形态**）尚未发生 ⇒ **本 GOAL 不提前记 PASS**。
       ① **落地**：新模块 `packages/application/preflight/policy_acceptance.py`（接受条件四条 +
@@ -116,7 +122,35 @@ exit_criteria:
       `EnvCredentialResolver().has('LLM_MAIN_KEY') is True`（**只问存在性，不物化值**）。
       反证（先红后绿）：撤掉策略允许 ⇒ 同一路径**拒冻**、run 终止在**执行之前**（零 task /
       零实验 / 零工具观测）。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-23 cycle 2（`PLAN-20260923-142`，提交 `dcade8c`）：**PASS**，四条各有实跑证据。
+      ① **真实一次 run 到终态**：`set -a; . ./.env; set +a` + 内联
+      `RESEARCHOS_AGENT_RUNTIME=openhands` 跑 `tests/e2e/test_ec02_experiment_live.py` ⇒
+      **1 passed（非 skip；`judged 2; blocked 0`）**，样张 `scratch/goal012-c2-live-sample.json`：
+      `sort_analysis_v1_0_1` / 终态**恰为 `SUCCEEDED`** / 失败面为空；跑前自检
+      `EnvCredentialResolver().has('LLM_MAIN_KEY') is True`（只问存在性，未物化值）。
+      ② **三项读面齐备**：`GET /runs/{id}/experiments` 取到**恰 1 次实验**（镜像
+      `sha256:e95de2424c65…` = 本机 `research-os-sandbox:m9-test`、环境摘要在场、产物
+      `analysis_report` / `experiment_result.json` / `stdout.log` / `stderr.log`、指标
+      `corpus_size=2048` / `worst_case_comparisons=19960`）；`/evidence` **6 条**（4 条实验制品
+      `GENERATED` + review 会话交付物 + **`USER_PROVIDED`** 的声明输入 `sort_analysis_v1`）；
+      `/usage` 归账 `MODEL_TOKENS 9738` / `MODEL_REQUESTS 2`（成本如实 `UNKNOWN`，不补 0）。
+      ③ **反证（成对，离线可复跑）**：`tests/e2e/test_ec02_experiment_chain_offline.py` 第 2 条——
+      撤掉 `code.execute` 的显式允许 ⇒ **拒冻**（`manifest_digest is None`）且**执行前终止**
+      （零 task / 零 experiment）。同文件主判据（`requires_docker`，零出网）另把整条链跑到
+      `SUCCEEDED` ⇒ 真实 run 不是孤证。
+      ④ **本 cycle 撞到并修掉的真缺陷**（一次真实取样换来的）：第一次 live 取样**冻结成功、实验
+      真跑了**，却死在 review 会话——`Duplicate tool names found: {'inert'}`（测试侧惰性工具替身
+      把两件 provider 注册成同一个类，而 SDK 由**类名**派生工具名）。修法 = 按注册名分名
+      （`inert_tool_class_for`），并**新增离线判据** `test_a_two_provider_frozen_set_starts_a_session`
+      钉住；**按压**逐字复现 live 死法（`scratch/goal012-c2-press-duplicate.txt`）。
+      **W-B 闭合**（空交付物仍如实拒绝：门禁**一字未改**，改的是判据**显式声明**交付物 +
+      `with_sandbox_experiment` 的可选 `runtime` 参数，缺省行为逐字不变）。**W-A/W-C 如实保留**
+      （真实控制面 `evidence.read` 判 `DENY` ⇒ 该协议在真实控制面上仍是 `FAIL`；本 cycle **未**改
+      策略面，脚本 A4 两棵树同结论）。独立复检 `scratch/verify_goal012_c2.py` 两棵树成对：
+      当前树 `checked=29 failures=0`；基线树（`c6cf330`）`checked=29 failures=10`（红项恰为本
+      cycle 新增面）。
   - id: EC-03
     criterion: >-
       **实验产出的证据链**：实验产物（`stdout.log` / `stderr.log` / metrics / 语义摘要等）
@@ -206,6 +240,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260923-140-policy-allowed-execute-freeze-gate.md
 latest_recheck: null
 memory_entries:
+  - .cursor/memory/entries/MEM-20260923-110-multi-provider-session-judge.md
   - .cursor/memory/entries/MEM-20260923-109-freeze-gate-policy-allowance-channel.md
 ---
 
@@ -327,9 +362,18 @@ memory_entries:
   `examples/config/policy.yaml`，而该策略**未放行** `sort_analysis_v1` 的 `evidence.read`
   ⇒ 该协议在真实控制面上是 **`FAIL`**（不是 `WARN`）⇒ 通道不会被走到。本循环**不**自行放宽
   策略面（那是放宽安全面，需用户/ADR 拍板）；EC-02 若要走真实控制面必须先处置这一条。
-- **W-B（cycle 1 新，未修）**：run-ready 装配下 `sort_analysis_v1` 冻结**之后**收敛 `FAILED`，
+- **W-B（cycle 2 闭合）**：run-ready 装配下 `sort_analysis_v1` 冻结**之后**曾收敛 `FAILED`，
   逐字判词 `task … produced malformed result: session result for task … carries no structured
-  output` ⇒ **冻结门已不再是阻断点**；剩下的堵点在「会话结果的结构化输出」这条路上。
+  output`。根因已定位为**共享夹具的受控执行体不声明任何交付物**，而 `register_session_result`
+  对空交付物**如实拒绝**（既有语义，**一字未改**）。处置：离线判据**显式声明**交付物；
+  `with_sandbox_experiment` 增**可选** `runtime` 参数（缺省沿用既有执行体）；
+  `make_run_ready_deps` 的缺省 runtime **未动** ⇒ 共享夹具的失败形态不变。
+  **本条闭合**（真实一次 run 已跑到 `SUCCEEDED`）。
+- **W-E（cycle 2 新，已修）**：冻结集含**两件** provider 时，测试侧惰性工具替身把两者注册成
+  同一个类，而 SDK 由**类名**派生工具名 ⇒ 会话创建即失败（`Duplicate tool names found:
+  {'inert'}`，零模型调用）。修法 = 按注册名分名 + 新增离线判据（mock 端点 + `map_tools=True`）
+  钉住；**按压**逐字复现 live 死法（`scratch/goal012-c2-press-duplicate.txt`）。
+  详见 `MEM-20260923-110`。
 - **W-C（cycle 1 新，登记口径差异）**：同一个协议在**两套装配**下结论不同——run-ready/live 装配
   （`preflight_override` + 默认放行的 Fake 求值器）给 `WARN`；真实控制面给 `FAIL`。引用
   「该协议今天是 WARN/FAIL」时**必须写明是哪一套装配**（`MEM-20260923-109` 记了这条）。
@@ -461,12 +505,16 @@ memory_entries:
 
 | 1 | PLAN-20260923-140（EC-01） | `5085bc2`（derive：PLAN-140 + ALL_PLAN + `child_plans`）、`5ae2d56`（WP1–WP3：通道本体 + 判据 + 三处夹具重钉）、本 cycle 的收口回写见台账尾巴 | **离线判据 8 passed**（新文件，含按压）；**三处按压** 2 / 5 / 2 条红（`scratch/goal012-c1-press{1,2,3}.txt`）；**端到端（API 级）**：`sort_analysis_v1` 的 run 冻结成功（`manifest.frozen` payload 含 4 条留痕）且终态不再死在冻结门；**独立复检** `scratch/verify_goal012_c1.py` 两棵树成对（**当前树 28/28；基线树 19 失败**）；**m0 23/23**（`python/tests` **4403 passed / 18 skipped / 0 failed**，`judged 779; blocked 8` 的 8 条是故意探针）；`validate.py` / `ruff` / `ruff format --check` / `mypy` / 规模门禁全绿；**零出网** | 见下方 CI 台账 | **一处真回归**（本 cycle 自己撞到并处置）：`test_failed_run_semantic_digest_api.py` 拿 `sort_analysis_v1` 当「永不冻结」的载体 ⇒ 把该 fixture 的允许**撤掉**（`code.execute` 判 `DENY`）⇒ 边界语义（没有 `manifest.frozen` ⇒ 引用必须是 None）被**更精确**地钉住，而不是删掉它。另 4 条红（`test_worker_plane_composition`×3 + `test_pg_crash_restart`）**单独跑 7 passed** ⇒ 既有跨套件顺序签名，与本 cycle 无关 | **EC-01 仍 PENDING**（只差 EC-02 的真实 run 形态；不提前记 PASS）。**新登记 W-A/W-B/W-C**（见残余节）。**既有判据的处置**：`test_runs_api` 与 `test_sandbox_experiment_reachability` 按 D-5 **重钉为新语义 + 原位保留成对反证**——**不是**「改断言迁就」（被测行为本身是被授权的目标） | cycle 2 = **EC-02**（真实实验执行链）：以 `sort_analysis_v1` + `with_sandbox_experiment` 跑真实 LLM（最小必要次数）+ **既有** Docker 后端到终态，判据 = 终态如实（只有 `SUCCEEDED` 是成功）+ 三项读面齐备；**先解 W-B**（会话/结构化输出那条堵点），**W-A 若挡路则登记为需拍板项、不自行放宽策略面** |
 
+| 2 | PLAN-20260923-142（EC-02） | `dcade8c`（同一提交：PLAN-142 + ALL_PLAN 投影 + `child_plans` + 两个判据 + 两件 provider 的会话面修复）、本 cycle 的收口回写见台账尾巴 | **离线全链 2 passed**（主判据 + 成对反证；`requires_docker`，零出网）；**真实一次 run 1 passed**（`judged 2; blocked 0`，样张 `scratch/goal012-c2-live-sample.json`：终态**恰为 `SUCCEEDED`**、4 条留痕、1 次实验含 `analysis_report` + 镜像 `sha256:e95de2424c65…`、6 条证据含 `USER_PROVIDED` 声明输入、`MODEL_TOKENS 9738`）；**离线复现 live 死法**（两件 provider 的会话面，按压逐字红：`Duplicate tool names found: {'inert'}` + mock 端点零请求）；**m0 终局 `PASS: profile=m0; 23 deterministic checks`**（`scratch/goal012-c2-m0-final.log`：24 条 `PASS [` 行 = 23 项 + 计数之外的 `release-assets-immutable`，无 `FAILED` 行）；**独立复检** `scratch/verify_goal012_c2.py` 两棵树成对（**当前树 29/29；基线树 10 失败**，红项恰为本 cycle 新增面；「不得放宽」七条两棵树同结论）；`tests/e2e` 116 passed / 10 skipped、`tests/api`+`tests/application` 1212 passed / 1 skipped、`python/tests` **4408 passed / 19 skipped / 0 failed**、`mypy` 995 files 干净；**零出网** | 见下方 CI 台账 | **一处真缺陷（本 cycle 一次真实取样换来的）**：测试侧惰性工具替身把两件 provider 注册成同一个类，而 SDK 由**类名**派生工具名 ⇒ 两件同名 ⇒ 会话建不起来（冻结成功、实验已跑完，死在 review 会话）。处置 = 按注册名分名 + **新增离线判据**钉住（mock 端点 + `map_tools=True`），**不是**改断言迁就。**首轮 m0 另有一处红**：新判据的 `dict[str, dict[str, str]]` 与 `dict[str, object] \| None` 类型不兼容 ⇒ 加显式标注（`mypy` 995 files 干净）。离线判据第一次失败也如实保留：指标名按**被执行的脚本**（`sort_analysis_baseline.py` 的 `corpus_size` / `worst_case_comparisons`）重钉 | **EC-01 / EC-02 双双 PASS**（EC-01 的最后一项 = 真实 run 的留痕形态，已由本 cycle 的 live 样张满足）。**W-B 闭合**（空交付物仍如实拒绝；改的是判据显式声明交付物 + `with_sandbox_experiment` 的可选 `runtime` 参数）。**W-A 仍登记**（真实控制面对 `evidence.read` 判 `DENY`；本 cycle 未改策略面）→ 需拍板。**W-C 口径提醒**保留 | cycle 3 = **EC-03**（实验产出的证据链 + 成对反证：去掉产物 ⇒ 判据红）：把 live 样张里的实验产物 / 来源记录 / 镜像摘要做成**可在两棵树上复跑的判据**，并让「来源可独立复核」这一条有独立脚本；EC-04 的路径 (B) 记录与 EC-06 的收口重检在其后 |
+
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）| 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-012 落地） | `ccb8f3e` | M0 [35817237386](https://github.com/Eswink/research-system-new/actions/runs/35817237386) | 六 job 全 **success**（`console-frontend` / `container-quality` / `collector-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate`，逐 job 实查，终态 `completed`）；**同一次推送另触发 CodeQL** [35817236465](https://github.com/Eswink/research-system-new/actions/runs/35817236465) = **success**（3/3） |
 | cycle 1 派生（PLAN-140 + ALL_PLAN + `child_plans`） | `5085bc2` | 与下一条**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 |
 | cycle 1 WP1–WP3（通道本体 + 判据 + 三处夹具重钉） | tip `5ae2d56` | M0 [35820350936](https://github.com/Eswink/research-system-new/actions/runs/35820350936) | 六 job 全 **success**（`container-quality` / `console-frontend` / `quality-windows-latest` / `collector-quality` / `eval-gate` / `quality-ubuntu-latest`，逐 job 实查，终态 `completed`）；**CodeQL** [35820350713](https://github.com/Eswink/research-system-new/actions/runs/35820350713) = **success**（3/3：`Analyze (javascript-typescript)` / `Analyze (actions)` / `Analyze (python)`） |
-| 台账尾巴（cycle 1 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
+| 台账尾巴（cycle 1 回写） | 见 cycle 1 回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**；cycle 1 尾巴 `c6cf330` 的 M0/CodeQL 均 success） | | |
+| cycle 2 派生 + WP1–WP3（两个 EC-02 判据 + 两件 provider 的会话面修复） | `dcade8c` | 与下面 cycle 2 回写**同一次推送**（GitHub 只对 tip 触发一个 run）⇒ 该提交的验证由下一行承担 | |
+| 台账尾巴（cycle 2 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | | |
 
 **台账尾巴口径**（沿用 GOAL-005…011，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -507,3 +555,26 @@ memory_entries:
   **六 job 全 success**、CodeQL [35820350713](https://github.com/Eswink/research-system-new/actions/runs/35820350713)
   **3/3 success**（逐 job 实查，终态 `completed`）。**GOAL 仍 ACTIVE**（**EC-01 PENDING**——
   只差 EC-02 的真实 run 形态；EC-02…EC-06 未完）。
+- 2026-09-23（**cycle 2 收口**）：**EC-01 与 EC-02 双双 PASS**（`PLAN-20260923-142` → **DONE**，
+  提交 `dcade8c`；复检 `RECHECK-20260923-143` = **PASS**；工程记忆 `MEM-20260923-110`）。
+  **真实一次 run**（`set -a; . ./.env; set +a` + 内联 `RESEARCHOS_AGENT_RUNTIME=openhands`；
+  跑前自检 `LLM_MAIN_KEY` 存在性 = True，**未物化值**）：`sort_analysis_v1` 的 run **恰为
+  `SUCCEEDED`**，样张 `scratch/goal012-c2-live-sample.json` 记录四项：① 冻结留痕 4 条
+  （`code.execute` 在列）；② 实验**恰 1 次**（镜像 `sha256:e95de2424c65…` = 本机
+  `research-os-sandbox:m9-test`、产物 `analysis_report` / `experiment_result.json` / 日志、
+  指标 `corpus_size=2048` / `worst_case_comparisons=19960`）；③ 证据 6 条（含 `USER_PROVIDED`
+  的声明输入 `sort_analysis_v1`）；④ 归账 `MODEL_TOKENS 9738` / `MODEL_REQUESTS 2`（成本如实
+  `UNKNOWN`）。**第一次取样失败如实保留**：冻结成功、实验真跑了，却死在 review 会话
+  （`Duplicate tool names found: {'inert'}`）——测试侧惰性工具替身把两件 provider 注册成同一个
+  类，而 SDK 由**类名**派生工具名；修法 = 按注册名分名 + **新增离线判据**（mock 端点 +
+  `map_tools=True`，按压逐字复现 live 死法，`scratch/goal012-c2-press-duplicate.txt`）。
+  **W-B 闭合**：空交付物仍被如实拒绝（`register_session_result` 一字未改），改的是判据
+  **显式声明**交付物 + `with_sandbox_experiment` 的可选 `runtime` 参数（缺省行为逐字不变，
+  `make_run_ready_deps` 的缺省 runtime **未动**）。**W-A/W-C 如实保留**：真实控制面对
+  `sort_analysis_v1` 的 `evidence.read` 判 `DENY` ⇒ 该协议在真实控制面上仍是 `FAIL`，
+  **本 cycle 未改策略面**（独立脚本 A 组在两棵树同结论）⇒ **需拍板项**。**独立复检**
+  `scratch/verify_goal012_c2.py` 两棵树成对：当前树 **29/29**、基线树（`c6cf330`） **10 失败**
+  （红项恰为本 cycle 新增面）。**门**：`tests/e2e` 116 passed / 10 skipped、`tests/api` +
+  `tests/application` 1212 passed / 1 skipped、`python/tests` **4408 passed / 19 skipped / 0 failed**、
+  `mypy` 995 files 干净、`judged N; blocked 0`（零出网）；**m0 终局 `PASS: profile=m0; 23 deterministic
+  checks`**（`scratch/goal012-c2-m0-final.log`）。**GOAL 仍 ACTIVE**（EC-03…EC-06 未完）。

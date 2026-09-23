@@ -2,7 +2,7 @@
 id: PLAN-20260923-142
 slug: live-experiment-chain-to-terminal
 title: 真实实验执行链跑到终态：sort_analysis_v1 + 声明式沙箱实验 + 既有 Docker 后端（GOAL-012 EC-02）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-23
 updated_at: 2026-09-23
 parent_goal: GOAL-20260923-012
@@ -25,8 +25,9 @@ authorization:
     伪造或夸大验证证据。**若本 PLAN 必须在「放宽默认 deny / 放宽出站判据 / 把 live 开关写进
     默认配置」三者中择一才能走通 ⇒ 立即停止并记 BLOCKED。**
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260923-143-live-experiment-chain-to-terminal.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260923-110-multi-provider-session-judge.md
 ---
 
 # PLAN-20260923-142 — 真实实验执行链跑到终态（GOAL-012 EC-02）
@@ -73,21 +74,23 @@ memory_entries: []
 | AC-1 | **离线链**：声明式沙箱实验经真实 preflight/冻结/编排跑到 `SUCCEEDED` | `pytest tests/e2e/test_ec02_experiment_chain_offline.py -q` ⇒ **2 passed**（第二条为成对反证） | **达成** |
 | AC-2 | **三项读面**：实验产物 / 证据 / 预算都从既有 API 可读 | 同文件：`GET /runs/{id}/experiments`（镜像+环境摘要、`analysis_report`、脚本指标）、`/evidence`（非空且指向本 run 制品）、`/usage` | **达成** |
 | AC-3 | **反证（先红后绿）**：撤掉显式允许 ⇒ **拒冻**、执行前终止 | 同文件第 2 条：`state=FAILED`、`manifest_digest is None`、`tasks == []`、`experiments == []` | **达成** |
-| AC-4 | **真实一次 run 到终态**：真实执行体 + 容器实验 | `set -a; . ./.env; set +a; RESEARCHOS_AGENT_RUNTIME=openhands pytest tests/e2e/test_ec02_experiment_live.py -q -rs` ⇒ **1 passed（非 skip）** | **待跑** |
-| AC-5 | **冻结留痕在场**（EC-01 的端到端形态） | 同 live 判据：`manifest_digest` 非空；`manifest.frozen` payload 的 `accepted_policy_exceptions` 含 `code.execute` 且 `accepted_at` 非空 | **待跑** |
-| AC-6 | **门与治理**：规模门禁 + 定向套件 + m0 23/23 + `validate.py` 绿 | `run_all_checks.py --profile m0 --keep-going`（DSN 固化 + `LLM_MAIN_KEY=""`）+ `ruff` / `ruff format --check` / `mypy` + governance `validate.py` | **待跑** |
-| AC-7 | **零出网（默认门）**：live 用例默认 skip，其余离线 | 定向 pytest 输出 `egress guard: judged N; blocked 0`；未开 live 开关时 live 判据逐字 skip | **达成** |
-| AC-8 | **真实端点上的一次成功终态** | 样张（`scratch/`，**不进仓库**）记录 canonical 终态恰为 `SUCCEEDED`、三项读面可读、判词逐字 | **待跑** |
+| AC-4 | **真实一次 run 到终态**：真实执行体 + 容器实验 | `set -a; . ./.env; set +a; RESEARCHOS_AGENT_RUNTIME=openhands pytest tests/e2e/test_ec02_experiment_live.py -q -rs` ⇒ **1 passed**（`judged 2; blocked 0`） | **达成** |
+| AC-5 | **冻结留痕在场**（EC-01 的端到端形态） | 同 live 判据 + 样张：`manifest_digest` 非空；`accepted_policy_exceptions` **4 条**含 `code.execute`，`decision=ALLOW`、`accepted_at` 非空 | **达成** |
+| AC-6 | **门与治理**：规模门禁 + 定向套件 + m0 23/23 + `validate.py` 绿 | m0 第 3 轮 **`PASS: profile=m0; 23 deterministic checks`**（第 1 轮红在 typecheck、第 2 轮红在 `framework/validate`＝文档尚未落盘，均在当轮修掉）；`tests/e2e` 116 passed / 10 skipped、`tests/api`+`tests/application` 1212 passed / 1 skipped、`mypy` 995 files 干净 | **达成** |
+| AC-7 | **零出网（默认门）**：live 用例默认 skip，其余离线 | 定向 pytest 逐条 `egress guard: judged N; blocked 0`；未开 live 开关时 live 判据逐字 skip（已实测：`agent runtime is not configured … credential 'LLM_MAIN_KEY' is not resolvable`） | **达成** |
+| AC-8 | **真实端点上的一次成功终态** | `scratch/goal012-c2-live-sample.json`：终态恰为 `SUCCEEDED`、失败面为空、六条证据（含声明输入）、`MODEL_TOKENS 9738` | **达成** |
 
 ## 实施清单
 
-- [ ] **WP1** 判据（离线）：`tests/e2e/test_ec02_experiment_chain_offline.py`（主判据 + 成对反证）+
-  `with_sandbox_experiment` 的可选 `runtime` 参数（D-3）。
-- [ ] **WP2** 判据（真实）：`tests/e2e/test_ec02_experiment_live.py`（`requires_live_llm`，
-  默认门如实 skip；一次 run 取样）。
-- [ ] **WP3** 真实取样：`set -a; . ./.env; set +a` + 内联 `RESEARCHOS_AGENT_RUNTIME=openhands`
-  跑 WP2 到终态；样张落 `scratch/`；**如实**记录终态与判词。
-- [ ] **WP4** 门与收口：m0 23/23 + 定向套件 + `validate.py`；`RECHECK-*` + `MEM-*` + GOAL 回写。
+- [x] **WP1** 判据（离线）：`tests/e2e/test_ec02_experiment_chain_offline.py`（主判据 + 成对反证）+
+  `with_sandbox_experiment` 的可选 `runtime` 参数（D-3）。提交 `dcade8c`；**2 passed**。
+- [x] **WP2** 判据（真实）：`tests/e2e/test_ec02_experiment_live.py`（`requires_live_llm`，
+  默认门如实 skip；一次 run 取样）。提交 `dcade8c`。
+- [x] **WP3** 真实取样：`set -a; . ./.env; set +a` + 内联 `RESEARCHOS_AGENT_RUNTIME=openhands`
+  跑 WP2 到终态 ⇒ **1 passed**，样张 `scratch/goal012-c2-live-sample.json`（`SUCCEEDED`）。
+  **第一次取样失败**（`Duplicate tool names found: {'inert'}`）⇒ 修惰性替身的命名 + 新增离线判据
+  （按压逐字复现），见 RECHECK §四。
+- [x] **WP4** 门与收口：m0 + 定向套件 + `validate.py`；`RECHECK-20260923-143` + `MEM-110` + GOAL 回写。
 
 ## 证据
 
@@ -97,7 +100,9 @@ memory_entries: []
 | E-2 | 实验脚本**已经**产出验收门要的那件产物 | `examples/experiments/sort_analysis_baseline.py` 写 `analysis_report`（文件名即合约声明的 artifact 名，`artifact_view` 按 `:` 后最后一段匹配） |
 | E-3 | 执行阶段不再起会话 | `phase_runner` 按 `tctx.contract.experiment is not None` 派发实验（声明化，非按 id 硬编码） |
 | E-4 | 离线链结果 | `pytest tests/e2e/test_ec02_experiment_chain_offline.py -q` ⇒ 2 passed；第一次尝试的失败逐字记录（指标名断言按**脚本实际产出**重钉，不是放宽） |
-| E-5 | 真实一次 run | 待 WP3 |
+| E-5 | 真实一次 run | `tests/e2e/test_ec02_experiment_live.py` ⇒ **1 passed**；样张 `scratch/goal012-c2-live-sample.json`：`SUCCEEDED` + 4 条留痕 + 1 次实验（`analysis_report` 等 4 件产物、镜像 `sha256:e95de2424c65…`）+ 6 条证据（含 `USER_PROVIDED` 声明输入）+ `MODEL_TOKENS 9738` |
+| E-6 | 两件 provider 的会话面 | `test_ec03_real_runtime_offline_chain.py::test_a_two_provider_frozen_set_starts_a_session`（离线）绿；按压（共用惰性类）⇒ 逐字红（`scratch/goal012-c2-press-duplicate.txt`） |
+| E-7 | 独立复检两棵树成对 | `python scratch/verify_goal012_c2.py` ⇒ 当前树 `checked=29 failures=0`；`git worktree` 到 `c6cf330` ⇒ `checked=29 failures=10`（红项恰为本 cycle 新增面） |
 
 ## 影响报告
 
