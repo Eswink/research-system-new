@@ -10,6 +10,7 @@ const LIVE_SUITES = [
   "api-workflow",
   "artifact-diff",
   "experiment-queue",
+  "experiments",
   "project-lineage",
   "project-cost-forecast",
   "project-registry",

@@ -16,8 +16,10 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 
 from adapters.workspace.bundle import tree_digest
@@ -38,6 +40,14 @@ from packages.domain.evidence import (
     EvidenceRelationType,
     SourceRecord,
 )
+from packages.domain.experiment_state import ExperimentRunState
+from packages.domain.experiments import (
+    ExperimentRun,
+    ExperimentRunResult,
+    ExperimentRunSpec,
+    Metric,
+    MetricValue,
+)
 from packages.domain.run import ResearchRun
 from services.api.app import create_app
 from services.api.composition import ApiDeps
@@ -57,6 +67,37 @@ LIVE_SNAPSHOT_RUN_ID = "11111111-1111-4111-8111-111111111111"
 # 取值必须是别处**没有**被当作「不存在的 run」用的 UUID——它一旦存在，那些 404 断言
 # 就会变成 200（首跑实测：撞上 live-workspace-snapshots 的未知 run 用例）。
 LIVE_SUBSTRATE_RUN_ID = "44444444-4444-4444-8444-444444444444"
+# live 实验目录链的受控 run（GOAL-012 EC-05）：读面由**产品自己的准入路径**写下的 canonical
+# 记录回答（`register_experiment_evidence`，run 链调用的同一个函数），不是手写 DTO JSON。
+# 同一条 UUID 纪律：这两个 id 不得在别处被当作「不存在的 run」使用。
+LIVE_EXPERIMENT_RUN_ID = "55555555-5555-4555-8555-555555555555"
+LIVE_EXPERIMENT_ID = "55555555-5555-4555-8555-000000000001"
+# 成对反证用的第二条 run：实验**只有非 JSON 制品** ⇒ 读面 metrics 为空。
+LIVE_EXPERIMENT_BARE_RUN_ID = "66666666-6666-4666-8666-666666666666"
+LIVE_EXPERIMENT_BARE_ID = "66666666-6666-4666-8666-000000000002"
+# 受控实验的制品：`experiment_result.json` 承载指标（读面 `_metrics_for` 读的就是它），
+# `analysis_report` 是同一实验的第二件产物（非 JSON ⇒ 不贡献指标）。
+LIVE_EXPERIMENT_METRICS: dict[str, int] = {"corpus_size": 2048, "worst_case_comparisons": 19960}
+LIVE_EXPERIMENT_IMAGE_DIGEST = "sha256:" + "e95de2424c65" + "0" * 52
+LIVE_EXPERIMENT_ENVIRONMENT_DIGEST = "sha256:" + "a1b2c3d4e5f6" + "0" * 52
+LIVE_EXPERIMENT_PRODUCTS: tuple[tuple[str, bytes], ...] = (
+    (
+        "live-exp:analysis_report",
+        b"# live experiment fixture\n\n| size | comparisons |\n| --- | --- |\n| 2048 | 19960 |\n",
+    ),
+    (
+        "live-exp:experiment_result.json",
+        json.dumps(
+            {"artifact_refs": ["live-exp:analysis_report"], "metrics": LIVE_EXPERIMENT_METRICS},
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ).encode("utf-8"),
+    ),
+)
+LIVE_EXPERIMENT_BARE_PRODUCTS: tuple[tuple[str, bytes], ...] = (
+    ("live-exp-bare:stdout.log", b"live experiment fixture: no json payload, hence no metrics\n"),
+)
 LIVE_SNAPSHOT_FILES: tuple[tuple[str, bytes], ...] = (
     ("notes.md", b"# live snapshot fixture\n"),
     ("src/main.py", b"print('before')\n"),
@@ -68,12 +109,14 @@ LIVE_SNAPSHOT_FILES_AFTER: tuple[tuple[str, bytes], ...] = (
 )
 
 
-def _seed_artifact(artifact_id: str, payload: bytes) -> Artifact:
+def _seed_artifact(
+    artifact_id: str, payload: bytes, *, media_type: str = "application/json"
+) -> Artifact:
     return Artifact(
         id=artifact_id,
         digest=Digest.of_bytes(payload),
         size_bytes=len(payload),
-        media_type="application/json",
+        media_type=media_type,
         source_refs=["task:live-fixture"],
         classification="execution_result",
     )
@@ -160,6 +203,118 @@ class _ConsoleToolPackPolicy:
         if request.capability in _CONSOLE_TOOL_PACK_CAPABILITIES:
             return PolicyEvaluation(PolicyDecision.ALLOW, reason="console live fixture allowance")
         return self.real.evaluate(request)
+
+
+def _seed_experiment_products(
+    deps: ApiDeps, products: tuple[tuple[str, bytes], ...]
+) -> tuple[str, ...]:
+    """放入受控产物并返回它们的 id（内容寻址；digest 由内容算出）。"""
+    store = deps.artifacts
+    assert store is not None, "experiment fixture needs an artifact store"
+    for artifact_id, payload in products:
+        media_type = "application/json" if artifact_id.endswith(".json") else "text/plain"
+        store.put(_seed_artifact(artifact_id, payload, media_type=media_type), payload)
+    return tuple(artifact_id for artifact_id, _ in products)
+
+
+def _controlled_experiment(
+    *,
+    experiment_id: str,
+    artifact_ids: tuple[str, ...],
+    metrics: tuple[MetricValue, ...],
+) -> ExperimentRun:
+    """受控的终态实验（spec + result 齐备 ⇒ 可走准入函数）。"""
+    return ExperimentRun(
+        id=ID(experiment_id),
+        plan_id=ID("99999999-9999-4999-8999-999999999999"),
+        spec=ExperimentRunSpec(
+            input_digest=Digest.of_bytes(b"live-experiment-fixture-input"),
+            command="python experiment.py",
+            environment_digest=Digest.of_bytes(LIVE_EXPERIMENT_ENVIRONMENT_DIGEST.encode()),
+            seed=7,
+        ),
+        result=ExperimentRunResult(
+            execution_run_id=f"container:{experiment_id}",
+            image_digest=LIVE_EXPERIMENT_IMAGE_DIGEST,
+            elapsed_seconds=3,
+            metrics=metrics,
+            artifact_refs=artifact_ids,
+        ),
+        state=ExperimentRunState.State.SUCCEEDED,
+    )
+
+
+def _admit_controlled_experiment(
+    deps: ApiDeps,
+    *,
+    run_id: str,
+    experiment_id: str,
+    artifact_ids: tuple[str, ...],
+    metrics: tuple[MetricValue, ...],
+) -> None:
+    """把一个终态实验经**产品准入路径**写进 canonical，并登记它的 run。
+
+    走 `register_experiment_evidence`（run 链同一个函数）⇒ 读面（claim → relation →
+    evidence）与生产同路径；夹具只决定**数据内容**，不复制任何读写逻辑。
+    """
+    from packages.application.experiments import (
+        ExperimentProvenance,
+        register_experiment_evidence,
+    )
+
+    ledger = deps.ledger
+    store = deps.artifacts
+    assert ledger is not None, "experiment fixture needs an evidence ledger"
+    assert store is not None, "experiment fixture needs an artifact store"
+    save_run(
+        deps,
+        ResearchRun(id=ID(run_id), project_id="example-project", protocol_id="proto"),
+    )
+    register_experiment_evidence(
+        ledger,
+        _controlled_experiment(
+            experiment_id=experiment_id, artifact_ids=artifact_ids, metrics=metrics
+        ),
+        store,
+        provenance=ExperimentProvenance(run_id=run_id, manifest_digest=None),
+        claim_statement="live experiment fixture: sandboxed experiment reached a terminal state",
+    )
+
+
+def _with_experiment_catalog(deps: ApiDeps) -> ApiDeps:
+    """实验目录链的受控输入（GOAL-012 EC-05，live e2e 专用）。
+
+    两条 run，差别只在**数据**：
+
+    - `LIVE_EXPERIMENT_RUN_ID`：实验有 2 件产物，其中 `experiment_result.json` 是 JSON
+      且带 `metrics` ⇒ 读面给出指标（页面据此渲染指标字段与原始投影）；
+    - `LIVE_EXPERIMENT_BARE_RUN_ID`：实验只有 1 件**非 JSON** 产物 ⇒ 读面 `metrics` 为空
+      （成对反证：同一页面/同一组件，数据不同就该渲染不同）。
+
+    **诚实边界**：这里判的是「读面 → DTO → 页面」这一段，执行体仍是受控夹具而不是真容器
+    ——真实容器的实验全链在 pytest 层（`tests/e2e/test_ec02_experiment_chain_offline.py`、
+    `test_ec03_experiment_evidence_chain.py`）。
+    """
+    rich_ids = _seed_experiment_products(deps, LIVE_EXPERIMENT_PRODUCTS)
+    _admit_controlled_experiment(
+        deps,
+        run_id=LIVE_EXPERIMENT_RUN_ID,
+        experiment_id=LIVE_EXPERIMENT_ID,
+        artifact_ids=rich_ids,
+        metrics=tuple(
+            MetricValue(metric=Metric(name=name), value=Decimal(value))
+            for name, value in LIVE_EXPERIMENT_METRICS.items()
+        ),
+    )
+    bare_ids = _seed_experiment_products(deps, LIVE_EXPERIMENT_BARE_PRODUCTS)
+    _admit_controlled_experiment(
+        deps,
+        run_id=LIVE_EXPERIMENT_BARE_RUN_ID,
+        experiment_id=LIVE_EXPERIMENT_BARE_ID,
+        artifact_ids=bare_ids,
+        metrics=(),
+    )
+    return deps
 
 
 def _with_tool_pack_policy(deps: ApiDeps) -> ApiDeps:
@@ -260,6 +415,8 @@ def _with_substrate_disclosure(deps: ApiDeps) -> ApiDeps:
 # 单一进程内装配：SQLite in-memory + Fake runtime/gateway/ledger。
 app = create_app(
     _with_tool_pack_policy(
-        _with_substrate_disclosure(_with_snapshots(_with_artifacts(make_run_ready_deps())))
+        _with_experiment_catalog(
+            _with_substrate_disclosure(_with_snapshots(_with_artifacts(make_run_ready_deps())))
+        )
     )
 )
