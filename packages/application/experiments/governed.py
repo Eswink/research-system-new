@@ -16,6 +16,7 @@ from packages.application.experiments.execute import ExperimentExecutor
 from packages.application.experiments.types import (
     ExperimentExecutionOutcome,
     ExperimentExecutionRequest,
+    with_policy_decisions,
 )
 from packages.application.ports.errors import PermanentPortError, PortCancelledError
 from packages.application.ports.policy_evaluator import (
@@ -59,12 +60,12 @@ class GovernedExperimentExecutor:
             existing = self._idempotency_check(request)
             if existing is not None:
                 return existing
-        self._enforce_policy(request)
+        evaluated = self._enforce_policy(request)
         if self._budget_check is not None:
             self._budget_check()
         if self._credential_check is not None:
             self._credential_check()
-        outcome = self._inner.execute(request)
+        outcome = with_policy_decisions(self._inner.execute(request), evaluated)
         self._check_cancelled()
         if self._usage_recorder is not None:
             self._usage_recorder(outcome)
@@ -74,7 +75,9 @@ class GovernedExperimentExecutor:
         if self._cancellation_check is not None and self._cancellation_check():
             raise PortCancelledError("experiment execution cancelled before/during execution")
 
-    def _enforce_policy(self, request: ExperimentExecutionRequest) -> None:
+    def _enforce_policy(self, request: ExperimentExecutionRequest) -> dict[str, PolicyDecision]:
+        """逐能力求值并**强制**；把求值结果原样返回（供调用方**如实记录**，不在这里再判）。"""
+        evaluated: dict[str, PolicyDecision] = {}
         for capability in _CAPABILITIES:
             decision = self._policy.evaluate(
                 PolicyRequest(
@@ -102,3 +105,5 @@ class GovernedExperimentExecutor:
                     f"execution-time policy requires approval for {capability}",
                     failure_category=FailureCategory.APPROVAL_REJECTED,
                 )
+            evaluated[capability] = decision
+        return evaluated

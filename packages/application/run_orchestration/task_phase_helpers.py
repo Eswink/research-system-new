@@ -13,6 +13,11 @@ from packages.application.run_orchestration.evaluation_gate import (
     GateOutcome,
     evaluate_task_gate,
 )
+from packages.application.run_orchestration.experiment_gate_inputs import (
+    metric_inputs,
+    recorded_policy_decision,
+    reported_tests,
+)
 from packages.application.run_orchestration.memory_promotion import (
     MemoryPromotionContext,
     promote_memory_from_registration,
@@ -31,7 +36,7 @@ from packages.domain.evidence import Evidence, EvidenceRelation, EvidenceRelatio
 from packages.domain.experiment_state import ExperimentRunState
 from packages.domain.failure_policy import OnTaskFailure
 from packages.domain.session_state import AgentSessionState
-from packages.domain.tasks import ResearchTask
+from packages.domain.tasks import ResearchTask, TaskContract
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,7 +165,7 @@ def evaluate_gate_experiment(
         status=AgentSessionState.State.SUCCEEDED,
         structured_output=structured_output,
     )
-    return evaluate_gate(deps, tctx, registration, session_result)
+    return evaluate_gate(deps, tctx, registration, session_result, experiment=outcome)
 
 
 def promote_memory(
@@ -205,6 +210,8 @@ def evaluate_gate(
     tctx: Any,
     registration: ResultRegistration,
     session_result: AgentSessionResult,
+    *,
+    experiment: Any | None = None,
 ) -> GateOutcome:
     """验收门的求值结果**总是**返回（含被拒时的逐条判词）。
 
@@ -212,6 +219,10 @@ def evaluate_gate(
     acceptance gate」——**哪一条**判据判的、判词里的数是多少，被丢掉了（GOAL-010
     收口登记的 W-9「诊断更钝」同源）。反证判据要求读面看得到「覆盖判拒」这一事实，
     所以求值结果原样交回，由调用方决定怎么落地。
+
+    `experiment` 非空（= 本次任务由**沙箱实验**执行）时，把实验侧**已经产生的事实**
+    一起送进门（GOAL-014 EC-02 / F-11 的四维接线）：自报指标 / 自报测试 / 执行期
+    **已经执行过的**策略决定。会话路径不传 ⇒ 这三项维持既有的 fail-closed 判词。
     """
     return evaluate_task_gate(
         tctx.task,
@@ -223,9 +234,34 @@ def evaluate_gate(
             # 性质维度（GOAL-011 EC-02）：从 canonical 的 SourceRecord 判**检索来源**数，
             # 与读面同源；合约没声明 `minimum_retrieved_sources` 时它不参与判定。
             retrieved_source_count=count_retrieved_sources(deps.ledger, registration.evidence),
+            schema_check=_output_schema_check(deps, tctx.contract),
+            **_experiment_facts(deps, experiment),
         ),
         reviewer=f"gate:{tctx.spec_context.agent.id}",
     )
+
+
+def _output_schema_check(deps: Any, contract: TaskContract) -> Any:
+    """按**合约自己声明的** `output_schema` 向装配方取校验回调（GOAL-014 EC-02 / a）。
+
+    取不到（装配方没接、或合约没声明 schema、或该 schema 不在目录里）⇒ `None` ⇒
+    `SCHEMA_VALID` 维持既有的 `schema validator unavailable`（**不是**算过）。
+    """
+    factory = getattr(deps, "output_schema_validator", None)
+    if factory is None:
+        return None
+    return factory(contract.output_schema)
+
+
+def _experiment_facts(deps: Any, experiment: Any | None) -> dict[str, Any]:
+    """实验侧三项事实（GOAL-014 EC-02 / F-11；来源见 `experiment_gate_inputs`）。"""
+    if experiment is None:
+        return {}
+    return {
+        "metrics": metric_inputs(experiment.run.result),
+        "tests": reported_tests(experiment, deps.artifacts),
+        "policy_decision": recorded_policy_decision(experiment.policy_decisions),
+    }
 
 
 def gate_rejection_reason(gate: Any) -> str:

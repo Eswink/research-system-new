@@ -18,11 +18,12 @@ from typing import Any, Mapping
 from packages.domain.acceptance import (
     CriterionEvaluation,
     CriterionInputs,
+    SchemaCheck,
     contract_passes,
     evaluate_contract,
 )
 from packages.domain.core import Timestamp
-from packages.domain.enums import AcceptanceCriterionType
+from packages.domain.enums import AcceptanceCriterionType, PolicyDecision
 from packages.domain.evidence import Decision, ReviewFinding
 from packages.domain.tasks import ResearchTask, TaskContract
 
@@ -39,14 +40,31 @@ class EvaluationInputs:
     retrieved_source_count: int | None = None
     review_score: Decimal | None = None
     human_approved: bool | None = None
+    #: 实验**自报**的测试结果（名 → 通过与否）。生产者是实验产物
+    #: （`experiment_result.json` / `stdout.log` / `stderr.log` 与 `ExperimentRunResult`
+    #: 既有字段）**算出来**的逐项事实（GOAL-014 EC-02 / F-11 的四维之一）。
+    #: 缺省空映射 ⇒ `TEST_PASSES` 维持 `no test results provided`（fail-closed）。
+    tests: Mapping[str, bool] = field(default_factory=dict)
+    #: 实验**自报**的数值指标（`ExperimentRunResult.metrics` 的 NUMBER 类投影）；
+    #: 缺省空映射 ⇒ `METRIC_THRESHOLD` 维持 `metric … missing`（fail-closed）。
+    metrics: Mapping[str, Decimal] = field(default_factory=dict)
+    #: **执行期已经发生**的那次策略求值的如实记录（不是门自己再判一次）；
+    #: 未知即 `None` ⇒ `POLICY_COMPLIANT` 维持 `policy decision unknown`（fail-closed）。
+    policy_decision: PolicyDecision | None = None
+    #: `SCHEMA_VALID` 要用的校验回调：按**合约自己声明的** `output_schema` 由装配方给出
+    #: （应用层不读 schema 文件）；未注入 ⇒ 维持 `schema validator unavailable`（fail-closed）。
+    schema_check: SchemaCheck | None = None
 
     def to_criterion_inputs(self) -> CriterionInputs:
         return CriterionInputs(
             structured_output=dict(self.structured_output),
             artifacts=dict(self.artifacts),
+            tests=dict(self.tests),
+            metrics=dict(self.metrics),
             evidence_source_count=self.evidence_source_count,
             retrieved_source_count=self.retrieved_source_count,
             review_score=self.review_score,
+            policy_decision=self.policy_decision,
             human_approved=self.human_approved,
         )
 
@@ -72,8 +90,17 @@ def evaluate_task_gate(
     *,
     reviewer: str,
 ) -> GateOutcome:
-    """对一次任务的全部验收标准求值，产出 ReviewFinding 与 Decision。"""
-    evaluations = evaluate_contract(contract.acceptance_criteria, inputs.to_criterion_inputs())
+    """对一次任务的全部验收标准求值，产出 ReviewFinding 与 Decision。
+
+    `schema_check` 随 `EvaluationInputs` 一起进来（GOAL-014 EC-02 / F-11 的四维之一）：
+    它是**按合约声明的 `output_schema` 由装配方给出**的校验回调；未注入时域函数维持
+    既有的 fail-closed 判词（`schema validator unavailable`）。
+    """
+    evaluations = evaluate_contract(
+        contract.acceptance_criteria,
+        inputs.to_criterion_inputs(),
+        schema_check=inputs.schema_check,
+    )
     passed = contract_passes(evaluations)
     verdict = "PASS" if passed else "REJECT"
     finding = ReviewFinding(

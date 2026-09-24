@@ -303,6 +303,7 @@ class RunOrchestrationService:
                 approvals=self._deps.approvals,
                 capabilities=self._deps.capabilities,
                 experiment_task=self._deps.experiment_task,
+                output_schema_validator=self._deps.output_schema_validator,
                 human_gated=pending_human_gates(self._deps.approvals, context.plan, run_id),
                 on_pause=paused.append,
                 on_observation=None if collector is None else collector.observe,

@@ -15,6 +15,7 @@ from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.pricing_snapshot_store import PricingSnapshotStore
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import WorkflowEngine
+from packages.application.run_orchestration.output_schema_check import output_schema_check_for
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +45,11 @@ class OrchestrationDependencies:
     # None（缺省）= 没接。此时契约里**声明了** `experiment` 的任务以**点名拒绝**收敛
     # （fail-closed，不静默回退到会话——否则"声明了实验"与"真的跑了实验"会分叉）。
     experiment_task: Any | None = None
+    # GOAL-014 EC-02（A/a）：`SCHEMA_VALID` 的**产品路径**校验回调工厂
+    # （`output_schema` 名 → `SchemaCheck`）。缺省就是产品实现（按合约声明的 schema 名从
+    # 仓内 `schemas/` 取；见 `output_schema_check`）——装配方可以换，但**不接**不等于
+    # 「这项算过」：取不到回调时该判据仍是既有的 `schema validator unavailable`（fail-closed）。
+    output_schema_validator: Any | None = output_schema_check_for
     default_actor: str = "system:orchestration"
 
 

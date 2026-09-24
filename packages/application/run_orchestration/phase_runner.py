@@ -63,6 +63,7 @@ class PhaseRunnerDeps:
     experiment_task: (
         Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult] | None
     ) = None
+    output_schema_validator: Any | None = None
     memory_gate: MemoryGateDeps | None = None
     publish: Callable[[EventType, dict[str, object], str, str, str | None], None] | None = None
     fail_run: Callable[[str, str, bool], RunOutcome] | None = None
