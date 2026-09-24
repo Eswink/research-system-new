@@ -185,7 +185,8 @@ escalation_triggers:
     读类能力是否**成类预放行**（承 GOAL-014 EC-03 的唯一需拍板项）——本循环**只登记不扩大**，
     触及即 BLOCKED
   - 明文凭据泄露（**即使是可弃用的免费额度**）——立即停止并报告
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260925-161-cross-suite-isolation-census-and-fix.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -366,7 +367,8 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 见回合汇报 | 治理 `validate.py` 绿；`DOCS-CHECK` 绿 | 见回合汇报 | — | EC-01…EC-04 全 PENDING；起点已定位（`W-D` 顺序签名 4 条 / `R-F3` 外来文件实测仍在且 `sha256` 已记 / 本机 fake-IP DNS 致 egress_guard 判红两条探针 / 450 行贴线**四个零余量** / 13 条人工面 + 承继残余）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 普查**：把已知签名 + m0 全量实跑红项一起列表，每个红给**可复现最小命令**；再定根因与修法 |
+| 0 | （建档，无子 PLAN） | `1d8fe1f`（**推送 tip**，推送区间 `414f2e5..1d8fe1f`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36036419844](https://github.com/Eswink/research-system-new/actions/runs/36036419844) **六 job 全 success** + CodeQL [36036419719](https://github.com/Eswink/research-system-new/actions/runs/36036419719) **3/3 success** | — | EC-01…EC-04 全 PENDING；起点已定位（`W-D` 顺序签名 4 条 / `R-F3` 外来文件实测仍在且 `sha256` 已记 / 本机 fake-IP DNS 致 egress_guard 判红两条探针 / 450 行贴线**四个零余量** / 13 条人工面 + 承继残余）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 普查 + 修真实来源**（见下一行） |
+| 1 | PLAN-20260925-161（EC-01） | derive：本条 + `ALL_PLAN` 投影 + `child_plans` | **普查（已实测，as-is m0 = 21/23）**：`python/tests` 与 `framework/validate_bundle` 两项红，逐条拆成 **3 类**：**R-1 草稿列表序 tie**（`test_list_orders_by_recency_and_filters_project`；合并跑红、单独跑 9 passed；**最小命令**：`pytest tests/contracts/test_protocol_draft_store_contract.py -q`；根因 = `ORDER BY created_at DESC, draft_id`（**升序** tie-break）与「按新近」语义相反，`created_at` 同刻即回退到插入序 ⇒ 三个实现**全 RED**，由冻结时钟探针**确定性**复现）；**R-2 默认门凭据泄漏**（出站判据整轮红，点名 `198.18.0.83:443` 由 `test_runs_api.py::test_start_run_unprovisioned_control_plane_reports_actionable_failure` 发起；**最小命令**：`LLM_MAIN_KEY=<任意> pytest tests/api/test_runs_api.py -q` ⇒ `blocked 2` 判红，**2.75s** 替代 569s 全量；根因 = `litellm/__init__.py:27` 导入期 `load_dotenv()` 把 gitignored `.env` 的凭据键注入进程环境 ⇒ 该用例从「未配置控制面诚实失败」变成**真的探端点**。**修真实来源、判据一字不动**）；**R-3 `framework/validate_bundle`** = 环境型残余 `R-F3`（仓库外并发写者文件，`69944` B / `sha256:7af32093…` 实测仍在；CI 检出无 `scratch/` ⇒ 不受影响）→ 归 EC-02 的具名起点 | 见下方 CI 台账 | — | **EC-01 未收口**（WP2/WP3 修复与两轮全绿待做）；`W-D` 的**历史最小组合已实测不再复现**（`pytest tests/api/test_worker_plane_composition.py tests/e2e/test_pg_crash_restart.py` = **7 passed**）⇒ 普查表中该签名改记「已由后续改动消解（形态不再可复现）」 | WP2 = R-1 三实现 tie-break 与「按新近」一致 + 新判据（先红后绿）；WP3 = R-2 夹具隔离（默认门不得看见 live 凭据）+ 与出厂目录双向对齐判据 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -382,14 +384,14 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 
 ## 当前续点
 
-- **本轮（cycle 1）目标 = EC-01 普查**：把「已知签名 + m0 全量实跑实际红项」一起列出，
-  **每个红给可复现最小命令**（含 DSN 固化 / 前置条件），再逐条定根因与修法。
-  **普查优先于修**：先有事实表，再动手，避免臆断根因（MEM 既有教训：
-  「多个失败来源要先枚举再修」）。
+- **cycle 1 进行中（owner: root-agent）**：子 PLAN `PLAN-20260925-161`（`IN_PROGRESS`）。
+  已完成 **WP1 普查**（事实表见迭代日志第 1 行；装置与输出在 `scratch/goal015-c1-*`）。
+  **下一步 = WP2**（R-1 tie-break 修复 + 新判据）→ **WP3**（R-2 夹具隔离 + 对齐判据）
+  → **WP4**（两轮全绿 + 全量 m0）→ **WP5**（成对反证 + 记录）。
 - **开局已核实的文件层事实（决定可行性）**：
   1. `scratch/self-governance-bootstrap-prompt.md` **仍在**（`69944` B、
      `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）⇒
-     as-is 本地 m0 预计仍是 **22/23** 形态（`framework/validate_bundle`）；
+     as-is 本地 m0 停在 **21/23** 形态（`python/tests` + `framework/validate_bundle`）；
      CI 检出无 `scratch/` ⇒ 不受影响。
   2. 工作树有**并发写者**的未提交改动（`apps/web/src/features/models/ModelDetails.tsx`、
      `packages/domain/model_drift.py`、`services/api/dto/models.py`）⇒ **本 GOAL 不碰、不提交**
