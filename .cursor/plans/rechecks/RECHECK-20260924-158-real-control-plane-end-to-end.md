@@ -88,6 +88,25 @@ cycle 1 放行的那条 allow 在**产品路径**上是**承重**的，且撤掉
 - 真实调用**最小必要**：1 次真实 LLM 会话（1 个 phase、`quantity = 1` turns）+ 2 次
   NCBI 调用（`retmax = 3`）；无重试、无批量。
 
+### 六、本地 m0 与用例数归因（先红后绿，两轮都在册）
+
+- **第一轮**（`scratch/goal014-c2-m0.log`）：**判红 5 项**——`python/product-lint` /
+  `python/format-check` / `python/typecheck` / `python/tests` / `framework/validate_bundle`。
+  前四项**是本 cycle 自己的**（新增两个文件：一条超长行 + import 未排序 + 两条
+  `Optional` 未收窄；`python/tests` 的另一项经**孤立复跑**判为既有偶发
+  `tests/observability/test_collector_evidence.py`（OTLP 拆除竞态，重跑即绿））。
+  **同一批问题在 CI 上复现**（`quality-ubuntu-latest` / `quality-windows-latest` 两个 job 判红）
+  ——成因是**流程**：本地 m0 在后台跑时我就推送了，违反 SOP 的「先本地 m0、再提交推送」次序。
+- **第二轮**（纠错提交 `6d574c7` 后，`scratch/goal014-c2-m0-after-fix.log`）：**22 PASS / 1 FAILED**，
+  唯一未绿 = **环境型残余 `R-F3`**（并发写者的 gitignored `scratch/*.md` 被纯文本链接扫描读成本地链接；
+  判词块**只有这一条**）；`python/tests` **4421 passed / 19 skipped / 0 failed**。
+  **CI 同 tip 全绿**（M0 六 job + CodeQL 3/3）。
+- **用例数归因（逐用例 ID 差集，不靠总数反推）**：`scratch/g014-collect-c2.txt` vs
+  `scratch/g014-collect-now.txt` ⇒ **+3、零删除**：1 条 = 本 cycle 新增的 live 判据
+  （离线 **skipped**，故计入 skipped 而非 passed）、2 条 = 源文件规模门禁对**两个新 `.py`** 的参数化。
+  与 m0 的计数变动**逐项吻合**：`4419 passed / 18 skipped` → `4421 passed / 19 skipped`
+  （+2 passed + 1 skipped = 收集面 +3）。
+
 ## 判据性质披露（必须读的一段）
 
 - **本判据只覆盖 EC-02 的一半**：检索 + 证据面 + 预算面 + 「控制面是产品自己的」。

@@ -108,6 +108,16 @@ memory_entries:
   （`metrics` 在场 ⇒ `ARTIFACT_EXISTS` **OK**）时，两份声明了 `experiment` 的出厂合约
   （`experiment_execution` / `m12_experiment_execution`）仍判 **`passed=False`**：
   `TEST_PASSES → "no test results provided"`、`POLICY_COMPLIANT → "policy decision unknown"`。
+- **本地 m0（两轮）**：第一轮 `scratch/goal014-c2-m0.log` **判红 5 项**，其中
+  `python/product-lint` / `format-check` / `typecheck` **是本 cycle 自己的**（新增文件），
+  `python/tests` 另一项经孤立复跑判为既有偶发（`tests/observability/test_collector_evidence.py`
+  的 OTLP 拆除竞态）；**同一批问题 CI 复现**（两个 job 判红）——成因是本地 m0 还在后台跑时
+  我就推送了（**违反 SOP 次序**，已如实登记）。纠错提交 `6d574c7` 后第二轮
+  `scratch/goal014-c2-m0-after-fix.log` = **22 PASS / 1 FAILED**（唯一未绿 = 环境型残余
+  `R-F3`，判词块只有这一条），`python/tests` **4421 passed / 19 skipped / 0 failed**，
+  **CI 同 tip 六 job + CodeQL 全绿**。
+- **用例数归因**（逐用例 ID 差集）：**+3、零删除** = 1 条新判据（离线 skipped）+ 2 条源文件
+  规模门禁参数化；与 m0 的 `+2 passed / +1 skipped` 逐项吻合。
 
 ## 阻断（EC-02 的判据本体为什么不可达）
 

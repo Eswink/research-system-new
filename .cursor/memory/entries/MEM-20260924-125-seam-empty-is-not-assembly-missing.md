@@ -70,6 +70,14 @@ RESEARCHOS_OTEL_ENABLED=0 RESEARCHOS_AGENT_RUNTIME=openhands \
    是最划算的反证形态。
 3. **Windows 上别把结论放在 `TemporaryDirectory` 之外打印**：SQLite 连接可能仍占着文件，
    退出清理抛 `PermissionError` 会把结论吞掉（探针要在 `with` 内打印或写文件）。
+4. **定向套件绿 ≠ m0 绿；而且顺序不能颠倒**：本次新增两个判据文件，`tests/e2e` 定向跑
+   `137 passed`，但**全量 m0** 判红三项（`python/product-lint` / `python/format-check` /
+   `python/typecheck`：一条超长行 + import 未排序 + 两条 `Optional` 未收窄）。
+   **真正的错是流程**：我把本地 m0 放到**后台**跑、然后在它出结果**之前**就推送了
+   ⇒ CI 判红同样两个 job（`quality-ubuntu-latest` / `quality-windows-latest`）。
+   ⇒ 纪律：**先等本地门到终态，再提交推送**；m0 在后台跑时不要顺手 push。
+   另：m0 的 `python/tests` 里 `tests/observability/test_collector_evidence.py` 会**偶发**
+   红一次（OTLP 接收端拆除竞态，孤立重跑即绿）——归因前先孤立复跑，别把它算进自己的改动。
 
 ## 适用边界
 
