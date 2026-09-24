@@ -160,7 +160,14 @@ checked_head: 当前树（cycle 6 实施 + 收口记录）
 
 ### 七、CI 台账与残余
 
-- CI 到终态：见 GOAL-014 的 CI 台账尾巴（本条 cycle 的推送 tip）。
+- CI 到终态（`b9c687d`，推送区间 `af05b6a..b9c687d`）：M0
+  [36023332433](https://github.com/Eswink/research-system-new/actions/runs/36023332433)
+  **六 job 全 success**（`quality-windows-latest` / `collector-quality` /
+  `quality-ubuntu-latest` / `eval-gate` / `container-quality` / `console-frontend`）；
+  同次推送另触发 CodeQL
+  [36023332464](https://github.com/Eswink/research-system-new/actions/runs/36023332464)
+  = **success**（3/3）。**这条同时是第六节那项归因的仲裁**：同一 tip 在无 fake-IP DNS 的
+  CI 上 `python/tests` 全绿 ⇒ 本机那次判红确属环境型。
 - **承继残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3` 与
   13 条人工面**原样保留**（本 cycle 未处置、未降级）。
 - **本 cycle 新登记的边界（不粉饰）**：① `TEST_PASSES` 的来源是**实验自报**

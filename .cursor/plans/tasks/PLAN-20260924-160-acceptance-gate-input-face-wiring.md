@@ -171,7 +171,7 @@ run 到终态 `SUCCEEDED`，三读面齐备。
   **本机 fake-IP DNS** 把产品 endpoint 域名解析到 198.18/15），**同一形态在干净基线树
   @ `140dcec` 上复现**（`scratch/goal014-c6-baseline-pytests.log`）⇒ 环境型、与本轮改动无关、
   判据未动。故**本机 as-is m0 = 22 PASS / 1 FAILED，不写成 23/23**；CI 是该项仲裁
-  （结论见 GOAL 的 CI 台账尾巴与「证据」段）。
+  （结论见 GOAL 的 CI 台账尾巴）。**CI 已到终态**：M0 [36023332433](https://github.com/Eswink/research-system-new/actions/runs/36023332433) 六 job 全 success + CodeQL [36023332464](https://github.com/Eswink/research-system-new/actions/runs/36023332464) 3/3 ⇒ 该项（本机环境型判红）由 CI 仲裁为过。
 
 ## 状态历史
 
