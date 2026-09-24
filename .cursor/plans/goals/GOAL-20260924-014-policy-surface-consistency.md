@@ -1,0 +1,434 @@
+---
+id: GOAL-20260924-014
+slug: policy-surface-consistency
+title: 策略面一致性：放行 evidence.read，消灭「测试绿 / 生产红」的同协议两套装配结论漂移
+status: ACTIVE
+created_at: 2026-09-24
+updated_at: 2026-09-24
+owners:
+  - root-agent
+authorization:
+  source: user-request
+  ref: >-
+    2026-09-24 用户会话指令（goal 模式）：**建档 GOAL-20260924-014 并授权本驱动自动化循环推进、
+    无需逐轮确认**。authorization 原文要点如下：
+    (1) **用户已拍板：放行 `evidence.read`（方案 (A)）**。授权范围**严格限于**：
+    a) 在 `examples/config/policy.yaml` 的 **`allow`** 列表新增 **`evidence.read`** 一条，`scope`
+    按其性质定（对齐已放行的同类读能力 `artifact.read` 的 `scope: project`；`evidence.read` 的
+    provider 是 `m12_artifact`（`trust_level: BUILT_IN`、`effect_class: READ_ONLY`），与
+    `artifact.read` **同级** ⇒ **建议** `scope: project`，**最终取值以真实求值路径验证为准**）；
+    b) **同步**更新镜像契约 `_CAPABILITY_SCOPE`（`packages/application/preflight/policy_check.py`）
+    ——两处不同步会被 `tests/application/test_m2_audit.py` 的镜像一致性判据判红，
+    **这是既有门禁的正确行为，不得绕过、不得改该判据**；
+    c) **`default_effect: DENY` 不变、`deny` 列表不变、`require_approval` 不变、
+    `allow_with_constraints` 不变**；本授权**只**新增这一条读能力的 allow。
+    **`W-A` 之外的任何策略面放宽都需另行拍板**（见「不进入循环 / 需人工拍板」节）。
+    (2) **live 真实调用授权（承 GOAL-009…013，本 GOAL 继续有效）**：授权在**真实端点**上做
+    live-gated 真实调用（**最小必要次数**，不做压测、批量或重复重跑）；端点/模型已登记
+    （`ANTHROPIC` + `agnes-2.5-flash`）。凭据**仅**在本机 **gitignored `.env`**（键名
+    `LLM_MAIN_KEY`），其值为**可弃用的免费额度**。**授权真实检索出网**
+    （限 `eutils.ncbi.nlm.nih.gov`，见 `examples/config/tool_providers.yaml` 的 `ncbi_eutils`
+    项 `network_domains` 声明内）**与真实实验执行**（Docker 后端、本机容器
+    `research-os-sandbox:m9-test`；不挂 docker socket、不 privileged、不 host home）。
+    (3) **凭据纪律（不得放松）**：值**不得写入任何 tracked 文件、DB、记录（PLAN/RECHECK/MEM/GOAL）、
+    日志或命令回显**（含片段）。**不得把 `RESEARCHOS_AGENT_RUNTIME` 写进 `.env`**——它
+    **只作为单条命令的内联前缀**；否则默认门会切到真实 runtime、破坏 CI 语义。
+    (4) **默认姿态不变**：默认 runtime 保持 **Fake**、默认 CI **离线**（AGENTS.md §11）；
+    live 分支必须**显式** `RESEARCHOS_AGENT_RUNTIME=openhands` 才开门（fail-closed，AGENTS.md §9）。
+    **不得为了跑通而放宽出站判据**（`tests/egress_guard.py` 是结构判据：默认门出现非环回目的
+    即判红）；真实调用类用例**必须**挂 `requires_live_llm` 才可出网。
+    (5) **push-to-main-for-CI 授权**：只推 `main`、**不 force**、**不重写历史**、**不推旁支**触发 CI；
+    push 前 `git pull --ff-only origin main`。循环预算与纪律以本文件 frontmatter 为准
+    （客户端自带的迭代/重试/超时上限**一律让位于**此）。
+    (6) **文档与门禁纪律**：**改 `test_m2_audit.py` 的镜像一致性判据**、把 validator / 门禁 /
+    快照 / 测试断言改成通过、skip/删除测试、降低断言强度、`git add -A`、伪造或夸大验证证据、
+    为跑通而放宽出站判据、在授权范围外放宽任何策略面——**均明文禁止**。
+    GOAL-001…013 全部**只读**（003 / 011 BLOCKED，其余 ACHIEVED），本 GOAL 不修改它们；
+    如需指名只允许按**只追加**补一行事实更正。
+objective: >
+    消灭 GOAL-012 登记、GOAL-013 原样承继的 **`W-A` / `W-C` 装配漂移**：同一个协议
+    （`sort_analysis_v1`）在**真实控制面**（`NativePolicyEvaluator` + `examples/config/policy.yaml`，
+    **不带任何 `preflight_override`**）因 `evidence.read` 落在 `default_effect: DENY` 上而判
+    **`FAIL`**，在 **run-ready / live 装配**下却判 **`WARN`** —— **同一协议两套装配两个结论**。
+    在**用户已拍板放行 `evidence.read` 一条读能力**的授权范围内，把这条漂移**从根上消除**：
+    让**真实控制面**成为可跑、可冻结、可完成研究闭环的产品路径，并证明**两套装配结论一致**。
+    同时把 `W-A` 暴露的**那一类**问题（声明的能力面与策略面之间的差集）做成**双向差集审计**，
+    逐条给出终态（该放行 / 该拒绝 / 该登记），证明没有第二、三个同类缺口埋在声明面里。
+    **硬约束**：只新增 `evidence.read` 这一条 allow；`default_effect: DENY`、`deny`、
+    `require_approval`、`allow_with_constraints` **一律不动**；镜像契约**两处真同步**而非绕过；
+    **不改镜像一致性判据**、不放宽出站判据、不把真实 runtime 设为默认、不新增依赖、
+    不改上游 pin、不动 Accepted ADR / 核心安全策略 / Canonical State 边界
+    —— 触及即 BLOCKED。
+exit_criteria:
+  - id: EC-01
+    criterion: >-
+      **策略面一致性（主干，`W-C` 的消灭是本 EC 的核心交付）**：放行 `evidence.read` 之后，
+      **同一协议在两套装配下结论一致**——
+      ① **真实控制面**（`NativePolicyEvaluator` + `examples/config/policy.yaml`，
+      **不带任何 `preflight_override`**）对 `sort_analysis_v1` 的 preflight **不再是 `FAIL`**；
+      ② **live / run-ready 装配**的结论与之一致（**同为 `WARN` + 可冻结** 或 **同为 `PASS`**），
+      **不再一处 `FAIL` 一处 `WARN`**；
+      ③ 两处结论**逐字落盘可比**（同一份判据脚本同时求两套装配，输出可 diff）。
+      **判据**：一份**离线、零出网**的判据脚本同时求两套装配的 preflight 判定，断言
+      两者结论**相等**且**不含 `FAIL`**；判词（`findings` 的 `code` + `detail`）逐字记入记录。
+      **反证（成对，先红后绿，各自可复跑）**：① **撤掉 allow 规则** ⇒ 真实控制面**回到 `FAIL`**
+      （证明这条 allow 是真实求值路径上的因果，不是装饰）；② **`_CAPABILITY_SCOPE` 与
+      `policy.yaml` 不同步** ⇒ `tests/application/test_m2_audit.py` 的镜像一致性判据**判红**
+      （证明镜像契约门禁**仍然有效**、**未**被绕过）。两条反证的按压记录落 RECHECK。
+      **不得**只让真实控制面变绿而留着「两套装配不同结论」；**不得**改镜像一致性判据本身。
+    verify: >-
+      离线判据（默认门可跑、零出网）：
+      `pytest tests/application/preflight -q` 中本 EC 新增/指定的两装配同结论判据 +
+      `pytest tests/application/test_m2_audit.py -q`（镜像契约判据**原件未改**且绿）；
+      反证①：把 `evidence.read` 从 `policy.yaml` 的 `allow` 撤掉（判据与
+      `_CAPABILITY_SCOPE` 相应撤回）⇒ 真实控制面判据**红**且判词含 `FAIL`/`POLICY_DENIED`；
+      反证②：只改一处（policy.yaml 或 `_CAPABILITY_SCOPE` 二者之一）⇒
+      `test_policy_scope_mapping_matches_policy_yaml` **红**。红/绿对照落 `scratch/`。
+    status: PENDING
+  - id: EC-02
+    criterion: >-
+      **真实控制面端到端**：**不带任何 `preflight_override`** 跑一次真实 run
+      （真实 LLM + 真实检索 + 真实实验）到终态，且**三项读面齐备**——实验面、证据面、预算面。
+      **判据**：终态**恰为** `SUCCEEDED`（`FAILED` **不得**写成成功），三项读面各有点名读面
+      （实验读面 / 证据读面 / 预算读面）且**非空有据**；判词与样张**逐字**落 `scratch/`
+      （**不进仓库**）。本 EC 证明的是**产品路径**（而非测试装配）能完成研究闭环。
+      **反证**：撤 allow（或等价地让真实控制面判 `DENY`）⇒ 该 run 在**冻结前终止**，
+      证据形态 = **零 task / 零实验 / 零工具观测**（成对，可复跑）。
+      **诚实边界**：真实调用次数取**最小必要**；若某次真实调用失败，**如实**记录失败形态与
+      终态类型，**不得**改判据、不得用测试装配的结果冒充产品路径的结果。
+    verify: >-
+      `set -a; . ./.env; set +a` 后以**单条命令内联前缀**开 live：
+      `RESEARCHOS_AGENT_RUNTIME=openhands pytest <本 EC 的 live 判据> -q -rs`
+      （跑前确认 `EnvCredentialResolver().has('LLM_MAIN_KEY')` 为 True；
+      跑后**不得**把开关留在环境或 `.env`）。三项读面取证命令与样张路径落 RECHECK；
+      反证按压记录（冻结前终止的形态）落 `scratch/`。
+    status: PENDING
+  - id: EC-03
+    criterion: >-
+      **策略面审计（双向差集）**：把 `examples/config/policy.yaml` 的每条
+      `allow` / `allow_with_constraints` / `require_approval` / `deny` 规则，与
+      `roles.yaml` / `skills.yaml` / `tool_providers.yaml` / `examples/protocols/*.yaml`
+      **实际声明**的能力做**双向差集**，逐条判定**三选一**且**互斥**：
+      **该放行**（同类已放行的读能力，附理由）/ **该拒绝**（如实保留）/
+      **该登记**（口径待拍板，点名为什么现在不能判）。
+      **判据**：差集表**完备**——两侧差集里的**每个能力都有终态**，**零条**停留在
+      「待定 / 待确认 / 含糊」；每条判定的**依据可核对**（该放行 ⇒ 指向真实求值路径的
+      实证或已放行的同类；该拒绝 ⇒ 指向机制理由；该登记 ⇒ 指向需拍板的决策项）。
+      本 EC 负责证明 `W-A` 暴露的是**一类**问题，且没有第二、三个同类缺口埋着。
+      **判据实现纪律**：差集脚本必须**排除非能力的声明项**（例如 `network_domains` 里的
+      域名串——建档时实测正则并集会把它（`eutils.ncbi.nlm.nih.gov`）误收为能力）；
+      差集表落**仓库内文档**（人读）+ **机械判据**（可复跑、双向完备、零待定）。
+      **反证（可复跑）**：把某条判为「该放行」的能力改成「待定」⇒ 完备性判据**红**；
+      在声明面新增一条**未登记**的能力 ⇒ 差集判据**红**（证明它对新缺口敏感）。
+    verify: >-
+      离线机械判据（零出网）：解析 `policy.yaml` 四段规则 + 四个声明面，机械求**双向差集**，
+      断言每个能力恰有一个终态且无待定 token；差集表文档与判据**同源**（判据从文档读终态，
+      或用双向完备断言锁死文档 ↔ 声明面）。按压红/绿对照落 `scratch/`。
+    status: PENDING
+  - id: EC-04
+    criterion: >-
+      **残余清账（可选，视预算）**：对承继的三项残余做**分类处置**并给终态——
+      ① `R-D1` 的 23 条 Dependabot 告警（4 high / 13 moderate / 6 low）分类；
+      ② hook 侧 L3 门；③ 450 行贴线文件。
+      **判据**：每一项有**终态**（已处置 / 如实登记为需拍板 / 点名为什么不属于本循环）
+      且依据可核对。**诚实边界**：**空间不足时如实登记为下一轮输入**，
+      **不得**为它**降级** EC-01 / EC-02 / EC-03；**不得**为清账而升级依赖 pin
+      （那是 `escalation_triggers`）。
+    verify: >-
+      分类处置表落 RECHECK（每项一行：ID / 类别 / 终态 / 依据 / 证据路径）；
+      如取「已处置」须有对应 commit 与实跑证据；如取「登记为需拍板」须指向
+      「不进入循环」节的具体条目。
+    status: PENDING
+  - id: EC-05
+    criterion: >-
+      **收口复检 + 残余登记**：① **独立复检脚本**（只读、标准库、**不 import 仓库代码**）
+      在**当前树**与**干净 checkout**（`git worktree` / 临时克隆）两处**同判据同结论**；
+      ② 本地 **m0 = 23/23**（终局行逐字 `PASS: profile=m0; 23 deterministic checks`）；
+      ③ 治理 `validate.py` **绿**（`Cursor 治理验证通过`）；
+      ④ **CI 台账到终态**（M0 六 job + CodeQL，逐 run 逐 job 实查，记 run id / 链接）；
+      ⑤ **13 条人工面原样保留**（第 3 / 12 项已完成、第 13 项已豁免，按事实标注）
+      + 本 GOAL 的 `W` 列表 + 承继残余（`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` /
+      `R-F2` / `R-F3`）**逐条登记、不隐藏**；
+      ⑥ 收口 RECHECK 的 `result` = `PASS` 或 `PASS_WITH_WARNINGS`，且本文件的
+      `latest_recheck` 为**仓库相对路径**（不是裸 ID）。
+      **判据**：复检脚本两树**同结论**（差异项必须是「收口记录尚未落盘」这一类时序项，
+      落盘后归零，或已具名的环境差异）；m0 终局行**逐字**匹配；CI 台账**无未记账 run**。
+    verify: >-
+      `python .cursor/skills/governance-check/scripts/validate.py` ⇒ 治理验证通过；
+      `make validate-all` ⇒ `PASS: profile=m0; 23 deterministic checks`（本地须照抄 Makefile 的
+      `--keep-going`，DSN 按既有配方固化：`RESEARCHOS_POSTGRES_DSN` pin 到 test DSN、
+      其余 DSN 键清空）；`scratch/verify_goal014_c<N>.py` 两棵树成对输出；
+      CI 台账按 `scratch/poll_ci_all.sh <sha>` 取 M0 六 job + CodeQL 的真实终态。
+    status: PENDING
+budget:
+  max_cycles: 20
+  per_cycle_minutes: 120
+  no_progress_stop_cycles: 2
+fix_policy:
+  same_signature_retries: 2
+  cycle_fix_retries: 3
+  forbidden:
+    - 修改 validator/门禁/快照/测试断言使其通过
+    - 改 `tests/application/test_m2_audit.py` 的镜像一致性判据使其通过
+    - skip/删除测试或降低断言强度
+    - git push --force / 重写历史 / 推非 main 分支触发 CI
+    - 伪造或夸大验证证据（未实跑不得记 PASS）
+    - git add -A（并发工作树；只加显式路径）
+    - 为跑通而放宽出站判据（`tests/egress_guard.py` / 放行面 / `network_domains` 声明）
+    - 在授权范围外放宽任何策略面（本 GOAL 只授权 `evidence.read` 一条 allow）
+escalation_triggers:
+  - 需要修改 Accepted ADR / 核心安全策略 / Canonical State 边界
+  - 破坏性数据迁移或不可逆动作
+  - 新依赖/上游版本 pin 变更（含为判据引入新的解析/传输库——优先用现有依赖实现）
+  - 同一失败签名超过 fix_policy 上限
+  - 威胁建模/授权面（BOLA/BFLA）覆盖类决策——需用户或 ADR 拍板，本循环不得自行决定
+  - 依赖 pin 升级（`undici` / `vite` / `yaml` 等有修复版本的包）——上游 pin 变更，需用户或 ADR 拍板
+  - ADR-0031（`tool_pack.*`，Status: Proposed）是否采纳——归用户
+  - 把真实 runtime 设为**默认**（默认必须仍是 Fake；本循环只做「显式配置才启用」）
+  - 明文凭据泄露（**即使是可弃用的免费额度**）——立即停止并报告
+  - 放宽验收门（`AcceptanceCriteria`）以凑成功——本 GOAL 明文禁止，触及即 BLOCKED
+  - 改动 Canonical State 边界——需拍板
+  - >-
+    放宽 §9 默认 deny 的**任一条**（host shell / Docker socket / privileged /
+    无限制公网 / secret enumeration / arbitrary credential forwarding / unpinned plugin /
+    package install / destructive workspace / external publish）——**立即 BLOCKED**
+  - >-
+    **`W-A` 之外的策略面放宽**（本 GOAL 只授权 `evidence.read` 一条 allow）——
+    其余任何放宽（含 `default_effect`、`deny`、`require_approval`、
+    `allow_with_constraints` 的任何改动）**需另行拍板**，触及即 BLOCKED
+  - >-
+    路径 (B) 的「重新设计需要什么」（`docs/roadmap/PATH_B_REFUTATION_RECORD.md` 的 5 条）
+    被判定需要重启时——**需拍板**，本循环不自行重启该路线
+child_plans: []
+latest_recheck: null
+memory_entries: []
+---
+
+## 目标与退出标准
+
+消灭 `W-A` / `W-C`：同一个协议 `sort_analysis_v1` 在**真实控制面**判 `FAIL`（`evidence.read`
+落在 `default_effect: DENY` 上）、在 **run-ready / live 装配**判 `WARN` —— 同一协议两套装配
+**两个结论**（GOAL-012 cycle 1 登记，GOAL-013 原样承继）。在**用户已拍板放行 `evidence.read`
+一条读能力**的授权范围内，把这条漂移**从根上消除**，并把 `W-A` 暴露的**那一类**问题
+（声明能力面 ↔ 策略面的双向差集）审成**零待定**的账面。
+
+| EC | 标准（摘要） | 验证命令 / 证据来源 | 状态 |
+| --- | --- | --- | --- |
+| EC-01 | **策略面一致性（主干）**：真实控制面（无 `preflight_override`）对 `sort_analysis_v1` 不再 `FAIL`；live 装配结论与之一致（同 `WARN`+可冻 或 同 `PASS`）；成对反证（撤 allow ⇒ 回到 `FAIL`；镜像不同步 ⇒ 镜像判据判红） | 两装配同结论判据（离线、零出网）+ `pytest tests/application/test_m2_audit.py -q` | PENDING |
+| EC-02 | **真实控制面端到端**：无 `preflight_override` 的真实 run（真实 LLM + 真实检索 + 真实实验）终态恰为 `SUCCEEDED`，实验 / 证据 / 预算**三项读面齐备**；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测） | `RESEARCHOS_AGENT_RUNTIME=openhands pytest <live 判据> -q -rs`（最小必要次数） | PENDING |
+| EC-03 | **策略面审计（双向差集）**：policy.yaml 四段规则 ↔ 四个声明面双向差集，逐条终态三选一（该放行 / 该拒绝 / 该登记），**零待定**，依据可核对 | 离线机械判据（双向完备 + 零待定）+ 仓内差集表文档；按压红/绿对照 | PENDING |
+| EC-04 | **残余清账（可选）**：`R-D1` 23 条告警 / hook 侧 L3 门 / 450 行贴线文件分类处置给终态；空间不足则如实登记为下一轮输入，**不得降级 ①②③** | 分类处置表落 RECHECK（每项一行：ID / 类别 / 终态 / 依据 / 证据） | PENDING |
+| EC-05 | **收口复检 + 残余登记**：独立复检脚本两树同结论 + m0 **23/23** + `validate.py` 绿 + CI 台账到终态（M0 六 job + CodeQL）+ 13 条人工面原样保留 + `W` 列表逐条登记 | `scratch/verify_goal014_c<N>.py` + `make validate-all` + `validate.py` + `scratch/poll_ci_all.sh <sha>` | PENDING |
+
+### 建档时已探明的现状（事实类，用于判定起点；**不当作验收依据**）
+
+以下是建档当日**直接读文件**核对的起点事实，供 cycle 定位续点用，**不构成 EC 通过证据**：
+
+- **F-1｜`policy.yaml` 现状**（`examples/config/policy.yaml`）：`default_effect: DENY`；
+  `allow` **10 条**规则覆盖 **9 个能力**（`workspace.read`/`project`、
+  `artifact.read`/`project`、`artifact.write`/`run`、`literature.search`/`approved_tool_providers`、
+  `literature.read`/`approved_tool_providers`、`network.academic`/`approved_domains`、
+  `memory.write`×4 个 tier）；`allow_with_constraints` **3 条**（`workspace.write.notes`、
+  `workspace.write.code`、`code.execute`）；`require_approval` **3 能力 + 2 action**；
+  `deny` **1 能力 + 2 action**。**`evidence.read` 一条都不在** ⇒ 落在 `default_effect: DENY`。
+- **F-2｜镜像契约现状**（`packages/application/preflight/policy_check.py`）：
+  `_CAPABILITY_SCOPE` = **6 条**（`workspace.read` / `artifact.read` / `artifact.write` /
+  `literature.search` / `literature.read` / `network.academic`）；
+  `_GATE_CAPABILITY_SCOPES` = `memory.write` × 4 tier。两张表**并集** == `policy.yaml`
+  四段里**带 scope 的规则**（`default_effect` 除外），这是镜像契约的精确口径。
+- **F-3｜镜像一致性判据的门禁语义**（`tests/application/test_m2_audit.py` 的
+  `test_policy_scope_mapping_matches_policy_yaml`，建档当日实测位于该文件 **243 行**）：
+  ① `mapped == declared`（并集相等）；② `single == declared` 去掉 `memory.write`
+  （**`evidence.read` 只能进 `_CAPABILITY_SCOPE`，不得进 `_GATE_CAPABILITY_SCOPES`**）；
+  ③ 表内 capability 必须能在 `examples/config/capabilities.yaml` 溯源
+  （`evidence.read` **已登记**，该文件第 12 行 ⇒ 无需新增注册）。
+  **⇒ 只改 `policy.yaml` 或只改 `_CAPABILITY_SCOPE` 都会被这条判据判红**（这正是 EC-01 反证②）。
+- **F-4｜`evidence.read` 的声明面**：`roles.yaml` **14 处**、`skills.yaml` **3 处**、
+  `tool_providers.yaml` **1 处**（provider **`m12_artifact`**：`kind: NATIVE`、
+  `trust_level: BUILT_IN`、`effect_class: READ_ONLY`，与 `artifact.read` / `artifact.write` /
+  `evidence.write` 同一 provider）、`examples/protocols/sort_analysis_v1.yaml`
+  （phase `review` 的 `required_capabilities`）。**声明面很宽、策略面一条不给** ⇒ `W-A` 不是
+  `sort_analysis_v1` 一个协议的孤例，这是 EC-03 要证明的那「一类」。
+- **F-5｜执行期复用同一张表**：`policy_check.policy_scope_for()`（GOAL-011 EC-01 的产物）让
+  **执行期**复用 preflight 的同一张 scope 表。⇒ `evidence.read` 的 allow 必须在
+  **preflight 与执行期两处**都可见；只放行 preflight 会让同一能力在门链处落回 `DENY`
+  （这是「同一能力两处结论」的第二形态，本 GOAL 必须一并验证）。
+- **F-6｜两套装配的分岔点**：真实控制面由 `services/api/preflight_support.py` 的
+  `build_policy_evaluator()` 接线 `NativePolicyEvaluator`（policy 目录存在时）；
+  而 live / run-ready 装配经由 `services/api/run_execution.py` 的 `deps.preflight_override`
+  （`tests/e2e/live_run_support.py` 在场改写它）⇒ **`preflight_override` 就是 `W-C` 的载体**，
+  EC-01 的「两套装配」指的就是「带 override」与「不带 override」两条路径。
+- **F-7｜双向差集的起点数字**（建档当日实测，用四声明面并集 vs `policy.yaml` 提及面）：
+  声明面并集 **41** 项 / `policy.yaml` 提及 **14** 个能力 / 两者**交集 10** /
+  **声明但策略未提及 31** / **策略提及但声明面没有 4**（`memory.write`、`network.academic`、
+  `network.public`、`package.install`——这 4 个是**门链/基础设施类**，不进角色、技能、
+  provider 与协议的声明面）。**⚠️ 判据陷阱（实测）**：朴素正则并集会**误收** provider 的
+  `network_domains` 域名串（实测把 `eutils.ncbi.nlm.nih.gov` 当成能力收到第 31 项里）⇒
+  EC-03 的判据必须**按 YAML 结构**取 `capabilities:` 列表，**不得**用行级正则扫全文。
+- **F-8｜承继残余**：GOAL-013 收口（`ACHIEVED`）保留 **13 条人工面** +
+  `W-A` / `W-C` + `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3`。本 GOAL **原样承继**。
+
+### 建档时登记的残余（不得因本 GOAL 存在而被读成已解决）
+
+- `R-M1`｜Mimosa 钩子侧 `scanner_enobufs` 未得完整结论 ⇒ **不得**宣称项目安全。
+- `R-D1`｜23 条 Dependabot 告警（4 high / 13 moderate / 6 low），既有未处置；
+  本 GOAL 只在 EC-04 **分类**，**不升级 pin**（升级命中 `escalation_triggers`）。
+- `R-B1`｜路径 (B) 已**否证**（`docs/roadmap/PATH_B_REFUTATION_RECORD.md`），
+  「重新设计需要什么」5 条为**需拍板**项，本循环不自行重启。
+- `R-N1`｜30 条已跟踪路径含非 ASCII 文件名，违反 AGENTS.md §13，按该节明文**登记豁免**，
+  不批量重命名。
+- `R-F1`｜**GOAL-013 的性质登记（本 GOAL 不重开）**：判定含**主观面**时须先**操作化**
+  （GOAL-013 把「渲染正确」操作化为「页面 == 读面 + 成对反证」）。
+  **本 GOAL 的类比要求**：EC-01 的「结论一致」必须操作化为**同一判据脚本同求两套装配、
+  输出可 diff**，不留自由裁量。
+- `R-F2`｜**GOAL-013 的诚实边界（本 GOAL 不重开）**：真实数据**规模不足**时不得为了让判据
+  好看而凑数，须如实标注并改口径。**本 GOAL 的类比要求**：EC-02 若某次真实调用失败，
+  如实记录失败形态与终态类型，**不得**用测试装配结果冒充产品路径结果。
+- `R-F3`｜**环境型残余（GOAL-013 cycle 4 实测，非本 GOAL 改动）**：本机 m0 的
+  `framework/validate_bundle` 会被**并发写者的 gitignored `scratch/` 文档**判红
+  （正文里的正则字面量被纯文本链接扫描读成本地链接）。**成对归因**：同一脚本换
+  `CURSOR_FRAMEWORK_ROOT`，主树 `exit 1`（只此一条）、干净 worktree（无 `scratch/`）
+  `exit 0` 全绿；CI 检出无 `scratch/` ⇒ **CI 不受影响**。
+  **⇒ 本 GOAL 的 as-is 本地 m0 可能仍停在 22/23**；未转绿前**不得**声称本地全绿
+  （GOAL-013 的处置：临时移出该文件跑终局行 → 立即移回 → 复核 `sha256`/`size`/`mtime` 一致）。
+
+## 循环入口协议
+
+驱动方（会话 / 定时自动化 / 客户端 goal 模式）进入时，按**迭代日志最后一行 + 工作树 + 远端实况**
+判定续点，**禁止凭记忆假设上一轮状态**：
+
+1. 最后一 cycle 无记录 → 开 cycle 1：执行 ①。
+2. 有子 PLAN 但仍在 IN_PROGRESS → 继续该 PLAN 的执行（②）。
+3. 本地验证已过、有未推送 commit → 执行 ④⑤（push + CI）。
+4. CI 在跑或未记录结论 → 执行 ⑤（等待/判定），**禁止猜测绿**。
+5. CI 有失败且修复次数未达上限 → 执行 ⑥（纠错）。
+6. 最后一 cycle 的 commit + CI 全绿且 EC 未满足 → 执行 ①（生成下一子 PLAN）。
+7. 判定条件按「终止与收口」：ACHIEVED / BLOCKED / 超预算。
+
+任何一步完成后立即回写本文件（状态历史 / 迭代日志），保证任意时刻崩溃后重入可续。
+
+## 单 cycle SOP
+
+- **① derive**：从剩余 EC + 上一轮「剩余差距」圈定一个可独立验收的最小主题；
+  用 Plan Mode 流程写子 PLAN（`.cursor/plans/tasks/PLAN-…`，frontmatter 增加
+  `parent_goal: GOAL-20260924-014` 并投影 `ALL_PLAN`，**同一提交**）。GOAL 迭代日志登记子 PLAN 路径。
+- **② 执行**：子 PLAN 按自身 WP 提交纪律推进（每 WP 独立 commit，**显式路径**）。
+- **③ 本地验证**：先自查**规模门禁**（50 行/函数、450 行/文件）与**快照类门禁**
+  （OpenAPI / 设计基线），再跑 `make validate-all`（m0 全量 **23 项**）+ 受影响定向套件 + web 门
+  （tsc / eslint / unit / build / stub / live e2e）。**默认门一律离线**
+  （`tests/egress_guard.py` 是**结构判据**：默认门出现非环回目的即判红——**不得**为跑真实调用
+  放宽它）；真实调用类用例**必须**挂 `requires_live_llm` 才可出网。**本地不绿不得 push**。
+  live 步骤只以**单条命令内联前缀**开：`set -a; . ./.env; set +a` 后
+  `RESEARCHOS_AGENT_RUNTIME=openhands pytest <目标> -q -rs`；跑前确认
+  `EnvCredentialResolver().has('LLM_MAIN_KEY')` 为 True；**跑后不得把开关留在环境或 `.env`**。
+- **④ commit**：子 PLAN 收口（RECHECK 完成后 DONE），GOAL 记录 commit 列表。
+  提交纪律承 GOAL-011…013：**绝不用 `git add -A`**（并发工作树，
+  建档当日工作树已有他人未提交改动）；只加**显式路径**。
+- **⑤ push + CI**：`git push origin main`（仅限 main；授权见 frontmatter）→
+  轮询至终态；失败时取失败 job 日志为证据。记录 run id / 链接 / **M0 六 job + CodeQL** 结论。
+  CI 台账沿用既有**闭合**约定：写下本条的那个提交自身的 run 只在回合汇报记账。
+- **⑥ 纠错**：按「CI 失败分类与纠错」处置；修复以独立 commit 落 main 并回到 ⑤。
+  超过 fix_policy 上限或命中 escalation_triggers → status=BLOCKED。
+  **撤回纪律（承 GOAL-011/012/013 教训）**：改动**共享契约 / 夹具 / 策略面**时先数清
+  谁拿它的失败形态当夹具；CI 判红且根因是**夹具语义冲突** ⇒ **优先撤回载体改动**，
+  不改那批夹具迁就；撤回复核用逐字节 `git diff` 证明。
+  **记录自洽**：新增 MEM / RECHECK 引用时确保被引用文件在**同一提交**内
+  （GOAL-012 的 CI 判红根因正是引用落在下一个提交）。
+  **本地假绿**：`...` 形式的链接在 Win32 上会**剥尾点**（GOAL-013 的 CI 判红根因）
+  ——涉及路径/链接的判据必须在 **Linux 侧复验**。
+- **⑦ 记录 + 下一轮**：更新 EC 状态、迭代日志、`child_plans`、状态历史；
+  未达终态 → 回到 ①（cycle+1）；触顶预算 → BLOCKED。
+  **`child_plans` 与 `memory_entries` 每轮与实际派生对齐**。
+
+## CI 失败分类与纠错
+
+| 类别 | 识别 | 处置 |
+| --- | --- | --- |
+| lint/format/typecheck | job 报 ruff/eslint/tsc/mypy | 直接修复 → fix commit → 重推 |
+| 产品测试失败 | pytest/playwright 断言 | 读失败输出定位缺陷（产品或测试各半）；修产品优先，**禁改断言迁就** |
+| 策略面判据失败 | `test_m2_audit.py` 镜像一致性判据 / preflight 判据红 | **先查是否只改了一处**（policy.yaml 与 `_CAPABILITY_SCOPE` 必须**同一提交**内真同步）；**不得**改判据、不得加豁免 |
+| flake/env | 已知签名（observability OTLP 端口、teardown race、DSN 注入、compose 环境、跨套件顺序） | 按 `docs` / 记忆中的既有配方重跑；配方不覆盖 → 归类下一行 |
+| 基础设施 | runner 挂 / 网络 / 依赖源不可达 | 等窗口重跑 1 次；仍败 → BLOCKED（infra 非代码缺陷） |
+| 治理/安全门禁 | Mimosa / validator 命中新增项 | 按各处置文档修或登记误报；**不得绕过**；**不得宣称安全** |
+
+## 终止与收口
+
+- **ACHIEVED**：EC-01…EC-05 **全部 PASS** 且有**实跑证据** + 独立 RECHECK
+  `PASS` / `PASS_WITH_WARNINGS` + 本文件收口（`latest_recheck` 为**仓库相对路径**）
+  + CI 台账到终态。**未实跑不得记 PASS**；本机无法验证记 PENDING 并停止推进。
+- **BLOCKED**：命中任一 `escalation_triggers`（尤其**授权范围外的策略面放宽**）、
+  同一失败签名超过 `fix_policy` 上限、`max_cycles` 触顶、或连续
+  `no_progress_stop_cycles` 个 cycle 未推进任何 EC ⇒ `status: BLOCKED`，
+  **留人工决策**，并逐条写明卡在哪、需要拍板什么。
+- **ABORTED**：用户撤销目标或授权。
+- 收口动作：① RECHECK 定稿（`PASS` / `PASS_WITH_WARNINGS`）；② 本文件 EC 置终态 +
+  状态历史追加 + 迭代日志补全；③ `child_plans` / `memory_entries` 对齐；④ 残余逐条登记；
+  ⑤ CI 台账终态；⑥ `validate.py` 绿。
+
+## 不进入循环 / 需人工拍板
+
+以下项**本循环不做**，也不因本 GOAL 存在而被宣称已解决；触及即 BLOCKED
+（承自 GOAL-008…013，作为残余保留；**第 3 项与第 12 项已在 GOAL-011 之前执行完毕，
+第 13 项已登记豁免**，按事实标注）：
+
+1. **ADR-0031（`tool_pack.*` 能力策略，`Status: Proposed`）是否采纳**——归用户拍板。
+2. **威胁建模 / 授权面覆盖（BOLA / BFLA）**——需用户或 ADR 拍板。
+3. **`artifacts/` token 清理**——涉及不可变历史资产与凭据面，需人工确认。
+   **【已完成】**（GOAL-011 获删授权；建档当日实测：`artifacts/钻孔官方API_v12` 不存在、
+   `git ls-files artifacts/` = 0）⇒ **本项无待办**。
+4. **450 行纪律的贴线文件**——大重构会放大 diff 风险，需人工决定。
+   （**本 GOAL 相关性**：EC-04 只**分类**；改任何文件时若触线**只做拆分、不改语义**。）
+5. **依赖 pin 升级**（`undici` / `vite` / `yaml` 等）——上游 pin 变更，需用户或 ADR 拍板
+   （含 `R-D1` 的 23 条 Dependabot 告警；本 GOAL 只**分类**不升级）。
+6. **hook 侧 L3 门**——治理面，需人工决定（EC-04 只**分类**）。
+7. **把真实 runtime 设为默认**——默认必须仍是 Fake；本循环只做「显式配置才启用」。
+8. **为 anthropic 形态引入 SDK / 新依赖**——优先用手写 HTTP；需要新依赖即 BLOCKED。
+9. **把凭据写进 CI**（哪怕是为了让 CI 里看到 live 或检索分支）——**本循环明文禁止**；
+   CI 必须保持离线。
+10. **`ModelCompatibilityProfile` 是否按 AGENTS.md §1 建为一等域实体**——涉及 Domain 面与
+    可能的 Canonical State 边界，需拍板。
+11. **放宽 `AcceptanceCriteria`（或改合约）使其通过**——本 GOAL 明文禁止；
+    这是「把门改成不挡路」。
+12. **`secrets/llm_key.txt`（gitignored、untracked 的第二份凭据副本）**——**【已完成】**
+    （GOAL-011 获删授权并在建档当日执行完毕，核对后零仓库影响）⇒ **本项无待办**。
+13. **30 条已跟踪路径含非 ASCII（中文）文件名，违反 AGENTS.md §13**——**【已登记豁免】**：
+    按 AGENTS.md §13 明文「既有历史路径不会仅为满足本规则而批量重命名」的口径，
+    **不**批量重命名；若判定需要 ADR，则**产出 ADR 草案**、**不自行改判**。
+
+**本 GOAL 特有的项（需用户拍板 / 明文不重启）**：
+
+- **路径 (B) 的 5 条重设计项**（`docs/roadmap/PATH_B_REFUTATION_RECORD.md`）——**需拍板**。
+  本循环**不自行重启**该路线；该记录的状态词「已否证 / 待重新设计」**原样保留**，
+  不得读成待办功能、也不得读成已完成。
+- **`W-A` 之外的策略面放宽**——本 GOAL **只授权 `evidence.read` 一条** allow。
+  其余任何放宽（`default_effect`、`deny`、`require_approval`、`allow_with_constraints`、
+  其他能力的 allow）**都需另行拍板**；本循环不得自行放宽。
+  若 EC-03 的差集审计判出「该放行」的条目，**只登记为需拍板项**，**不在本循环执行**。
+
+**承继的诚实边界（如实保留，不是待办）**：
+
+- `R-F1`｜收敛/一致性判定含主观面时必须先**操作化**（本 GOAL 的落实见 EC-01）。
+- `R-F2`｜真实数据/调用规模不足时的**诚实边界**（本 GOAL 的落实见 EC-02）。
+- `R-F3`｜仓库外并发写者文件致 **as-is 本地 m0 可能停在 22/23**（`framework/validate_bundle`）；
+  CI 检出无 `scratch/` ⇒ **CI 不受影响**。未转绿前**不得**声称本地全绿。
+
+**承继的口径提醒（不是待办，是判定时必须遵守的既有事实）**：
+
+- **`W-C`｜同一协议在两套装配下结论不同**——本 GOAL 正是要**消灭**它（EC-01）。
+  在它被 EC-01 判 PASS 之前，读到「某协议在 A 处通过、在 B 处失败」时**必须写明装配**。
+- **`R-M1`｜Mimosa 钩子侧 `scanner_enobufs` 未得完整结论**——**不得**宣称项目安全。
+
+## 迭代日志
+
+| # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | （建档，无子 PLAN） | `<建档提交>`（见下方 CI 台账） | 治理 `validate.py` 绿（建档后实跑） | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-8**：policy.yaml 现状、镜像契约 6+4、镜像判据的三条断言口径、`evidence.read` 的四处声明面、执行期复用同一张表、`preflight_override` 是 `W-C` 的载体、双向差集起点数字 41/14/10/31/4 + 域名误收陷阱、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1` / `R-F2` / `R-F3`（承继，其中 `R-F3` 影响本地 m0 口径） | cycle 1 = derive **EC-01** 子 PLAN（策略面一致性主干）：先定案「**两套装配同结论判据**」的形态（同一脚本同求带/不带 `preflight_override` 两条路径、输出可 diff）+ 落 `evidence.read` 的 allow（**`policy.yaml` 与 `_CAPABILITY_SCOPE` 同一提交内真同步**，`scope` 取值以真实求值路径验证为准）+ 成对反证①②；EC-02 的真实端到端在其后 |
+
+## 状态历史
+
+- 2026-09-24：**建档**（`status: ACTIVE`）。本文件落 `.cursor/plans/goals/`，
+  `child_plans: []`、`latest_recheck: null`（尚无子 PLAN 与复检）。
+  **承继关系**：`W-A` / `W-C` 来自 GOAL-012 cycle 1 登记、GOAL-013 原样承继；
+  本 GOAL 是**用户就 `W-A` 拍板（方案 (A)：放行 `evidence.read`）之后的执行落点**。
+  GOAL-001…013 全部只读（003 / 011 BLOCKED，其余 ACHIEVED）。
+  建档当日的**授权边界**：只新增 `evidence.read` 一条 allow；其余策略面一律不动。
