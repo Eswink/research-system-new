@@ -180,7 +180,54 @@ exit_criteria:
       离线机械判据（零出网）：解析 `policy.yaml` 四段规则 + 四个声明面，机械求**双向差集**，
       断言每个能力恰有一个终态且无待定 token；差集表文档与判据**同源**（判据从文档读终态，
       或用双向完备断言锁死文档 ↔ 声明面）。按压红/绿对照落 `scratch/`。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-24 cycle 3 收口（`PLAN-20260924-157` → **DONE**；复检
+      `RECHECK-20260924-159` = **PASS_WITH_WARNINGS**；工程记忆 `MEM-20260924-126`）。
+      **口径（写死，判据与文档两处一致）**：① 策略面只取每条规则的 `capability:`（`action:`
+      是门面动作、`scope:` 的值与 provider 的 `network_domains` 域名串都不是能力 ⇒ 不收）；
+      ② 声明面 = roles / skills / tool_providers / 协议 phase 四个**使用面**，
+      **词表 `capabilities.yaml` 不参与**（并入会让差集退化成空集）；③ 判定基准是
+      **协议可达**（phase ∪ 所引合约的 `required_capabilities`，与
+      `protocol_compile/requirements.py::phase_capabilities()` 同口径）—— 只有它才变成
+      `ToolRequirement` 交给 `PolicyEvaluator`；④ 读类 = 末段 ∈ {read, inspect, validate}
+      且被 provider 声明时 `effect_class` 为 `READ_ONLY`；⑤ 终态只判差集内的条目
+      （交集 9 条不进表，另立显式取值 `OUTSIDE_DIFF`）。
+      **结果（实测，`scratch/goal014-c3-diffset-probe.txt` / `-classify-probe.txt`）**：
+      差集 **35 条** = 策略面独有 **6** + 声明面独有 **29**；
+      **该放行 0 / 该拒绝 20 / 该登记 15**，**零待定**。
+      **该放行 = 0 ⇒ 协议可达面上没有第二个 `W-A`**：8 条协议可达能力
+      （`artifact.read` / `artifact.write` / `code.execute` / `evidence.read` /
+      `literature.read` / `literature.search` / `workspace.read` / `workspace.write.code`）
+      **全部**被非 `deny` 规则覆盖（6 条 `allow` + 2 条 `allow_with_constraints`）。
+      **该登记 15 条** = 声明面在用、协议尚不要求的**读类**能力（`citation.inspect` /
+      `experiment.read` / `provenance.read` … 全表见 `docs/architecture/POLICY_SURFACE_AUDIT.md`）
+      —— **不是已修**，是把**唯一一条需拍板的口径**显式登记下来：
+      **读类能力是否成类预放行**（(a) 成类 / (b) 维持逐条 / (c) 不动）；本 GOAL 的授权
+      **只**覆盖 `evidence.read` 一条 ⇒ **只登记、不扩大**（属「授权外策略面放宽」）。
+      **交付物**：仓内文档 `docs/architecture/POLICY_SURFACE_AUDIT.md`（35 行表 + 口径 +
+      三个终态的机械判定条件 + 复跑方式）+ 离线判据
+      `tests/application/preflight/test_policy_surface_difference_set.py`（**7 条**，重算差集后
+      与文档逐行比对；含双向完备、终态闭环、词表护栏、核心断言、`W-A` 修复面护栏）。
+      **成对按压 4 组**（`scratch/goal014-c3-press-final.txt`，全部先红后绿、按压后
+      `git diff --stat` **为空**）：press1 文档终态改 `待定` ⇒ 2 failed；press2 声明面加
+      **词表外**能力 ⇒ 2 failed（双向完备 + 词表护栏）；**press3 声明面加词表内未声明能力
+      ⇒ 只 1 failed（双向完备）**（隔离按压：证明两条断言各自有内容、不互相顶替）；
+      press4 文档多出陈旧行 ⇒ 2 failed（覆盖「表有而差集无」那一向）。
+      **提交前自查改掉的两处判据缺陷**（如实登记）：① 词表护栏初稿
+      `not (vocabulary_only & difference_set())` 因两侧本就可能有交集（那 6 条策略面独有
+      恰在词表内）而**恒真**＝空断言 ⇒ 重写为「两向都不许混进来」；
+      ② `expected_state()` 对**交集**能力返回「该拒绝」，而文档的该拒绝条件只覆盖差集条目
+      ⇒ 改为显式 `OUTSIDE_DIFF`，文档口径补第 5 条。
+      **判据离线**：`7 passed`、`egress guard: judged 0 connection attempt(s); blocked 0`；
+      `DOCS-CHECK PASS: 6 deterministic checks`。**零产品代码改动、零策略面改动、
+      零合约/快照/门禁/既有断言改动**。**用例数归因**（逐用例 ID 差集）：
+      **+8、零删除** = 7 条本判据 + 1 条源文件规模门禁对新增 `.py` 的参数化。**m0**：
+      **22 PASS / 1 FAILED**（`scratch/goal014-c3-m0.log`）—— 唯一未绿 = **环境型残余 `R-F3`**
+      （`framework/validate_bundle`：并发写者的 gitignored `scratch/self-governance-bootstrap-prompt.md`
+      被判成本地链接；**不是**本 cycle 的产物，CI 检出无 `scratch/` ⇒ 不受影响）；
+      `python/tests` **4429 passed / 19 skipped / 0 failed**（较 cycle 2 的 4421 / 19 恰 **+8**，
+      与逐用例 ID 差集吻合）；`DOCS-CHECK PASS: 6 deterministic checks`；治理 `validate.py` 绿。
   - id: EC-04
     criterion: >-
       **残余清账（可选，视预算）**：对承继的三项残余做**分类处置**并给终态——
@@ -258,10 +305,13 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260924-155-policy-surface-consistency-main-trunk.md
   - .cursor/plans/tasks/PLAN-20260924-156-real-control-plane-end-to-end.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260924-158-real-control-plane-end-to-end.md
+  - .cursor/plans/tasks/PLAN-20260924-157-policy-surface-difference-set-audit.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260924-159-policy-surface-difference-set-audit.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260924-124-multiple-fail-sources-enumerate-before-fixing.md
   - .cursor/memory/entries/MEM-20260924-125-seam-empty-is-not-assembly-missing.md
+  - .cursor/memory/entries/MEM-20260924-126-reachable-surface-vs-declaration-surface.md
+  - .cursor/memory/entries/MEM-20260924-127-press-restore-needs-byte-check.md
 ---
 
 ## 目标与退出标准
@@ -276,7 +326,7 @@ memory_entries:
 | --- | --- | --- | --- |
 | EC-01 | **策略面一致性（主干）**：真实控制面（无 `preflight_override`）对 `sort_analysis_v1` 不再 `FAIL`；live 装配结论与之一致（同 `WARN`+可冻 或 同 `PASS`）；成对反证（撤 allow ⇒ 回到 `FAIL`；镜像不同步 ⇒ 镜像判据判红） | 两装配同结论判据（离线、零出网）+ `pytest tests/application/test_m2_audit.py -q` | **PASS**（cycle 1）：`FAIL` → `WARN`、策略维度清零、`SAME_STATUS=False→True`、两套都可冻结（各 4 对留痕）；两条反证先红后绿且按压逐字节还原；判据 5 条离线全绿；m0 22/23（唯一未绿 = `R-F3`）；独立复检 `checked=45 failures=0` |
 | EC-02 | **真实控制面端到端**：无 `preflight_override` 的真实 run（真实 LLM + 真实检索 + 真实实验）终态恰为 `SUCCEEDED`，实验 / 证据 / 预算**三项读面齐备**；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测） | `RESEARCHOS_AGENT_RUNTIME=openhands pytest <live 判据> -q -rs`（最小必要次数） | PENDING |
-| EC-03 | **策略面审计（双向差集）**：policy.yaml 四段规则 ↔ 四个声明面双向差集，逐条终态三选一（该放行 / 该拒绝 / 该登记），**零待定**，依据可核对 | 离线机械判据（双向完备 + 零待定）+ 仓内差集表文档；按压红/绿对照 | PENDING |
+| EC-03 | **策略面审计（双向差集）**：policy.yaml 四段规则 ↔ 四个声明面双向差集，逐条终态三选一（该放行 / 该拒绝 / 该登记），**零待定**，依据可核对 | 离线机械判据（双向完备 + 零待定）+ 仓内差集表文档；按压红/绿对照 | **PASS**（cycle 3）：差集 **35 条**（策略面独有 6 + 声明面独有 29）；**该放行 0 / 该拒绝 20 / 该登记 15**，零待定；**协议可达 8/8 全部有非 `deny` 覆盖 ⇒ 无第二个 `W-A`**；判据 7 条离线全绿（`judged 0`）；4 组按压先红后绿（含隔离按压）、逐字节还原；文档 = `docs/architecture/POLICY_SURFACE_AUDIT.md` |
 | EC-04 | **残余清账（可选）**：`R-D1` 23 条告警 / hook 侧 L3 门 / 450 行贴线文件分类处置给终态；空间不足则如实登记为下一轮输入，**不得降级 ①②③** | 分类处置表落 RECHECK（每项一行：ID / 类别 / 终态 / 依据 / 证据） | PENDING |
 | EC-05 | **收口复检 + 残余登记**：独立复检脚本两树同结论 + m0 **23/23** + `validate.py` 绿 + CI 台账到终态（M0 六 job + CodeQL）+ 13 条人工面原样保留 + `W` 列表逐条登记 | `scratch/verify_goal014_c<N>.py` + `make validate-all` + `validate.py` + `scratch/poll_ci_all.sh <sha>` | PENDING |
 
@@ -528,6 +578,7 @@ memory_entries:
 | 0 | （建档，无子 PLAN） | `f6ce099`（**推送 tip**） | 治理 `validate.py` 绿（`Cursor 治理验证通过`）；`DOCS-CHECK PASS: 6 deterministic checks` | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-8**：policy.yaml 现状、镜像契约 6+4、镜像判据的三条断言口径、`evidence.read` 的四处声明面、执行期复用同一张表、`preflight_override` 是 `W-C` 的载体、双向差集起点数字 41/14/10/31/4 + 域名误收陷阱、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1` / `R-F2` / `R-F3`（承继，其中 `R-F3` 影响本地 m0 口径） | cycle 1 = derive **EC-01** 子 PLAN（策略面一致性主干）：先定案「**两套装配同结论判据**」的形态（同一脚本同求带/不带 `preflight_override` 两条路径、输出可 diff）+ 落 `evidence.read` 的 allow（**`policy.yaml` 与 `_CAPABILITY_SCOPE` 同一提交内真同步**，`scope` 取值以真实求值路径验证为准）+ 成对反证①②；EC-02 的真实端到端在其后 |
 | 1 | PLAN-20260924-155（EC-01） | `add2c37`（derive：PLAN-155 + ALL_PLAN + `child_plans`）、`4d9925a`（WP1 判据）、`5cde986`（WP2 放行 `evidence.read`）、`9bba68d`（WP3 出厂目录补全）、`538effc`（WP4 陈述对齐 + 反证）、`4bfa6d0`（可冻结面判据）、本 cycle 的收口回写见台账尾巴 | **判据 5 passed**（改前 4 failed，`scratch/goal014-c1-criterion-red.txt`）；`tests/application/preflight/` + `test_m2_audit.py` **28 passed**；受影响套件 **81 passed**；e2e 离线 **9 passed / 1 skipped**；**出站全部 `blocked 0`、判据自身 `judged 0`**（零出网）；**两装配同结论** `SAME_STATUS = True A=WARN B=WARN`；**两套都可冻结**（各 4 对留痕）；**成对反证先红后绿**（`scratch/goal014-c1-press1-allow-withdrawn.txt` / `-press2-mirror-desync.txt`），按压后 `git diff --stat` **为空**；**m0 22 PASS / 1 FAILED**（判红 = `framework/validate_bundle`，**两条原因**：环境残余 `R-F3` **加上**本 cycle 首版自造的 `output_schema` 名——**CI 判红暴露了后者**，已由纠错提交修掉；`python/tests` **4419 passed / 18 skipped / 0 failed**，差 **+6** = 5 条新判据 + 1 个源文件规模门禁用例（逐用例 ID 差集归因，见 RECHECK-157 的「用例数归因」条）；**独立复检** `scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`；`validate.py` 绿 | 见下方 CI 台账 | **本 cycle 实测新发现（`F-9`，已登记）**：真实控制面的 `FAIL` 有**两个独立来源**——`POLICY_DENIED`（授权覆盖）**与**两份 `TASK_CONTRACT_MISSING`（`sort_analysis_*` 契约只在测试夹具、不在出厂目录，而该协议是**产品面可选模板**）⇒ 只放行策略**不足以**达成 EC-01/EC-02 ⇒ 处置 = **声明补全**（把夹具的运行期注入提升为出厂声明，与 W-B 同类），**具名登记**在 PLAN-155 的 `authorization.ref`、回退面 = `9bba68d`，**不碰任何策略面**。录制性陈述两处**就地改对**（`_protocol_execute_freeze` 的 docstring、`test_ec02_experiment_live` 的边界段），**断言一字未改** | **EC-01 PASS**。**`W-A` / `W-C` 由本 cycle 消灭**（判据在册、反证成对、按压逐字节还原）。**EC-02/03/04/05 未动**；`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3` 与 13 条人工面**原样保留** | cycle 2 = **EC-02 真实控制面端到端**：**不带任何 `preflight_override`** 跑一次真实 run（真实 LLM + 真实检索 + 真实实验）到终态 `SUCCEEDED`、三项读面（实验 / 证据 / 预算）齐备；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测）。**起点已备**：真实控制面现在 `WARN` + **可冻结**（已实测），正是 EC-02 的前置条件 |
 | 2 | PLAN-20260924-156（EC-02） | 判据与支持模块 + 本 cycle 的收口回写，提交见回合汇报 | **live 判据离线 `1 skipped` / `judged 0`**（零出网）；**真实 run 实测**：产品组合根（`preflight_override = None`）+ 真适配器 ⇒ `real_retrieval_research_v1` **`SUCCEEDED`**、manifest 冻结、证据面 **2 条 `RETRIEVED`（真 PMID）**、预算面 1 条（`scratch/goal014-c2-real-plane-sample.json`）；**控制面矩阵**（`scratch/goal014-c2-real-control-plane-probe.txt`）：不注册适配器 ⇒ 检索类协议 `WARN` + **拒冻**；注册 ⇒ **`PASS` + 可冻结**；**验收门探针**（`scratch/goal014-c2-acceptance-probe.txt`，纯离线）：两份带 `experiment` 的出厂合约在「实验跑成功、`metrics` 在场」时仍判 `passed=False`（`TEST_PASSES` / `POLICY_COMPLIANT`）；**成对反证两条**（`scratch/goal014-c2-press-allow-withdrawn.txt` / `-press-literature-withdrawn.txt`）均 `FAILED` / `manifest_digest: null` / **零 task / 零实验 / 零证据**，按压后 `git diff --stat` 为空 | 见下方 CI 台账 | **实测新发现 `F-10` / `F-11`**（已登记）；**未改任何产品代码 / 合约 / 策略面 / 门禁 / 既有断言**；真实调用最小必要（1 会话 + 2 次检索）。**一处流程失误已如实登记**：本地 m0 在后台跑时我就推送了 ⇒ CI 判红两个 job（本 cycle 新增两个文件的 ruff/mypy），纠错提交 `6d574c7` 已修；教训并入 `MEM-20260924-125`（先等本地门到终态再推送） | **EC-02 = BLOCKED**（判据本体不可达：M-1 执行体缝 / M-2 缺配对声明 / M-3 验收门输入缺口；**可达半边已实测达成**）。**EC-03/04/05 未动** | cycle 3 = **EC-03 策略面双向差集审计**（完全授权内、离线）：四段规则 × 四个声明面，每个能力**一个终态、零待定**；差集表落仓库文档 + 机械判据 + 按压红/绿 |
+| 3 | PLAN-20260924-157（EC-03） | 本 cycle 的产物 + 收口回写，提交见回合汇报 | **判据离线 7 passed**、`egress guard judged 0 / blocked 0`（零出网）；**差集实测 35 条**（策略面独有 6 + 声明面独有 29）⇒ **该放行 0 / 该拒绝 20 / 该登记 15**、零待定；**协议可达 8/8 全部被非 `deny` 覆盖 ⇒ 无第二个 `W-A`**；**成对按压 4 组**（`scratch/goal014-c3-press-final.txt`）全部先红后绿，含**隔离按压**（加词表内未声明能力 ⇒ **只**双向完备判红、词表护栏仍绿 ⇒ 两条断言各自有内容）+ **反向按压**（文档多陈旧行 ⇒ 「表有而差集无」判红）；按压后 `git diff --stat` **为空**（逐字节还原）；`DOCS-CHECK PASS: 6 deterministic checks`；**用例数归因**（逐用例 ID 差集）**+8、零删除** = 7 条本判据 + 1 条源文件规模门禁参数化；**m0 = 22 PASS / 1 FAILED**（唯一未绿 = 环境型残余 `R-F3`） | 见下方 CI 台账 | **提交前自查改掉两处判据缺陷**（如实登记）：① 词表护栏初稿是**空断言**（`not (vocabulary_only & difference_set())` 因两侧本就可能有交集而恒真）⇒ 重写为「声明面/策略面读到的名字必须都在词表内」+「词表里必须存在仅词表的名字」两向护栏；② `expected_state()` 对**交集**能力返回「该拒绝」，与文档的该拒绝条件（只覆盖差集条目）**不符** ⇒ 立显式取值 `OUTSIDE_DIFF` + 文档口径补第 5 条。**未改任何产品代码 / 策略面 / 合约 / 快照 / 门禁 / 既有断言** | **EC-03 = PASS**（该放行 0 ⇒ 无第二个 `W-A`）。**唯一需拍板项**：读类能力是否**成类预放行**（(a) 成类 / (b) 逐条 / (c) 不动）——本 GOAL 授权只覆盖 `evidence.read`，**只登记不扩大**。EC-02 仍 `BLOCKED`（`F-10` / `F-11`），EC-04 / EC-05 未动 | cycle 4 = **EC-04 残余清账（可选，视预算）**：`R-D1` 23 条 Dependabot 告警（4 high / 13 moderate / 6 low）分类 / hook 侧 L3 门 / 450 行贴线文件，每项一个终态（已处置 / 登记为需拍板 / 点名不属于本循环）；**不得为清账升级 pin、不得降级 ①②③**。若空间紧则如实登记为下一轮输入，随即转 cycle 5 = EC-05 收口复检 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 推送 | 提交 | run | 六 job 结论 |
@@ -545,6 +596,14 @@ memory_entries:
 
 ## 状态历史
 
+- 2026-09-24（cycle 3）：**EC-03 置 `PASS`**。差集 **35 条**逐条终态（**该放行 0 / 该拒绝 20 /
+  该登记 15**，零待定）；**该放行 = 0 ⇒ 协议可达面上没有第二个 `W-A`**（8/8 已被非 `deny`
+  规则覆盖）。交付物 = 仓内文档 `docs/architecture/POLICY_SURFACE_AUDIT.md` + 离线判据
+  `tests/application/preflight/test_policy_surface_difference_set.py`（7 条，重算差集并与文档
+  逐行比对）；**4 组成对按压**（含隔离按压）先红后绿、逐字节还原；**零产品代码 / 策略面 /
+  合约 / 快照 / 门禁 / 既有断言改动**。**唯一需拍板项**：读类能力是否**成类预放行**
+  （本 GOAL 授权只覆盖 `evidence.read` ⇒ 只登记不扩大）。
+  **GOAL 仍 `ACTIVE`**（EC-04 / EC-05 未动；EC-02 仍 `BLOCKED` 待拍板）。
 - 2026-09-24（cycle 2）：**EC-02 置 `BLOCKED`**（判据本体不可达，三重阻断实测：`F-10` / `F-11`）；
   **可达半边实测达成**（真实控制面 + 真适配器 ⇒ `real_retrieval_research_v1` 到 `SUCCEEDED`，
   证据面 2 条 `RETRIEVED`）；成对反证两条、逐字节还原。**GOAL 仍 `ACTIVE`**（EC-03 完全在
@@ -573,11 +632,29 @@ memory_entries:
 
 ## 当前续点
 
-- **当前 cycle**：3（cycle 0 建档 `f6ce099`；cycle 1 EC-01 `4bfa6d0` + 纠错 `21ac2ea`；
-  归因更正 `334c9ab` ——三者均已推送并 CI 全绿；cycle 2 EC-02 见回合汇报）。
+- **当前 cycle**：4（cycle 0 建档 `f6ce099`；cycle 1 EC-01 `4bfa6d0` + 纠错 `21ac2ea`；
+  归因更正 `334c9ab`；cycle 2 EC-02 `6503ace` + 纠错 `6d574c7` —— 均已推送并 CI 全绿；
+  cycle 3 EC-03 见回合汇报）。
 - **EC 状态**：**EC-01 = PASS**；**EC-02 = BLOCKED**（判据本体不可达，可达半边已实测达成，
-  拍板项见 EC-02 的 `status_note` 与 `F-10` / `F-11`）；EC-03 / EC-04 / EC-05 = PENDING。
-- **下一动作**：derive **EC-03** 子 PLAN（策略面双向差集审计，**完全在授权内、离线、零出网**）。
+  拍板项见 EC-02 的 `status_note` 与 `F-10` / `F-11`）；**EC-03 = PASS**；
+  EC-04 / EC-05 = PENDING。
+- **下一动作**：**cycle 4 = EC-04 残余清账（可选，视预算）** —— `R-D1` 的 23 条 Dependabot
+  告警分类 / hook 侧 L3 门 / 450 行贴线文件，每项给终态（已处置 / 登记为需拍板 /
+  点名为什么不属于本循环）；**不得为清账升级依赖 pin**（命中 `escalation_triggers`）、
+  **不得降级 ①②③**。空间不足 ⇒ 如实登记为下一轮输入，随即转 cycle 5 = EC-05 收口复检
+  （独立脚本两树同结论 + m0 23/23 + `validate.py` 绿 + CI 台账到终态）。
+- **cycle 3 留下的可复用事实**（详见 `MEM-20260924-126`）：
+  1. **「协议可达」≠「有人声明」**：只有 phase（∪ 其所引合约）的 `required_capabilities`
+     才会变成 `ToolRequirement` 被 `PolicyEvaluator` 判；roles / skills / tool_providers
+     是**供给声明**、本身不构成一次策略求值。把两者混成一张表 ⇒ 会把跑不到的名字报成活缺口。
+  2. **词表 `capabilities.yaml` 必须排除**，且护栏要有内容（本 cycle 的第一版是**空断言**，
+     提交前重写）；**隔离按压**（加词表内未声明能力 ⇒ 只双向完备判红）是验证「两条断言
+     各自有内容」的手法。
+  3. **判词与机制必须逐字对齐**：交集能力要有一个**文档定义过**的取值（`OUTSIDE_DIFF`），
+     不要复用三选一里的词 —— 否则判词看起来与机制不符。
+  4. 实测落在**两侧之外**的名字有 2 个（`git.commit` / `gpu.use`，只在词表）——本表不判它们；
+     `action:` 形状的规则（`TOOL_PACK_INSTALL_OR_UPDATE` / `MOUNT_DOCKER_SOCKET`）
+     与能力不同命名空间，另起一张表才谈得上审计。
 - **cycle 2 留下的可复用事实**：
   1. **控制面矩阵**：真实控制面（产品组合根，无 override）对检索类协议，**不注册**适配器 ⇒
      `WARN`（`TOOL_HEALTH_UNPROVEN`）+ **拒冻**；**注册真适配器** ⇒ **`PASS` + 可冻结**。
