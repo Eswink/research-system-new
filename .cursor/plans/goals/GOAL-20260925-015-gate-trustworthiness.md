@@ -436,7 +436,8 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 | 建档（GOAL-015 落地） | `1d8fe1f` | M0 [36036419844](https://github.com/Eswink/research-system-new/actions/runs/36036419844) / CodeQL [36036419719](https://github.com/Eswink/research-system-new/actions/runs/36036419719) | **六 job 全 success** / **CodeQL 3/3 success** |
 | cycle 1 实施（`7c32961`） | `7c32961` | M0 [36048265860](https://github.com/Eswink/research-system-new/actions/runs/36048265860) | **红**：`quality-ubuntu-latest` + `quality-windows-latest` 失败 ⇒ 根因 = 本 cycle 自己的隔离判据在**模块导入期**注入凭据键、泄漏给整个 pytest 会话 ⇒ live 用例不再 skip、带无效令牌真调端点（`AuthenticationError`）。**修复见 cycle 2**（run `36048265860` 的失败 job 逐条已查） |
 | cycle 2 实施 + 记录（`4479a71`） | `4479a71` | M0 [36057139147](https://github.com/Eswink/research-system-new/actions/runs/36057139147) / CodeQL [36057138005](https://github.com/Eswink/research-system-new/actions/runs/36057138005) | **六 job 全 success**（含前一红的两个 job）/ **CodeQL 3/3 success** ⇒ CI 红的修复在 CI 上得到验证 |
-| cycle 2 装置加固（`e575554`）+ 收口记录 | 见台账尾巴 | 见台账尾巴 | 见台账尾巴 |
+| cycle 2 装置加固 + 收口记录（`e575554` + `3f95545`） | `3f95545`（推送区间 `4479a71..3f95545`） | M0 [36062175451](https://github.com/Eswink/research-system-new/actions/runs/36062175451) / CodeQL [36062173662](https://github.com/Eswink/research-system-new/actions/runs/36062173662) | **六 job 全 success** / **CodeQL 3/3 success** |
+| 台账尾巴（本行所在提交） | 见回合汇报 | 由 **cycle 3** 回写（按本 GOAL 既有口径：一行台账的 run 在**下一次推送**的提交里回写；本轮该推送的终态已在回合汇报中给出，**不留未轮询的 run**） | — |
 
 ## 状态历史
 
@@ -448,24 +449,29 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 
 ## 当前续点
 
-- **cycle 1 已收口（EC-01 = PASS）**：子 PLAN `PLAN-20260925-161`（`DONE`）、复检
-  `RECHECK-20260925-163`（`PASS_WITH_WARNINGS`，警告 = `R-3` 未消 + `R-4` 排后）、记忆
-  `MEM-20260925-130` / `-131`。**下一轮 = cycle 2（EC-02 本地判定确定性）**：
-  ① 跑法协议 `docs/architecture/LOCAL_GATE_PROTOCOL.md`（canonical m0 调用 + DSN 固化 +
-  工作树前置条件 + 外部文件存在性处理 + **三分类**判定条件与归因命令）；
-  ② 两条具名起点各拿唯一终态：`R-F3`（= 本 GOAL 的 `R-3`，门禁 scoping ⇒ 只登记，进 EC-03）
-  与 fake-IP 出站判据（已由 `R-2` 修复归零 ⇒ 归因命令 = `LLM_MAIN_KEY=<任意值> pytest
-  tests/api/test_runs_api.py -q`，修前 `blocked 2` / 修后 `blocked 0`）；
-  ③ **实施 R-4**（把 postgres 跳过守卫提为加载无关，消除定向跑挂死）；
-  ④ 把「代管 → 跑 → 还原」脚本化（EC-02 明文要求）。
-- **cycle 1 的可复用事实（按需回看）**：
-  1. **最小复现法**：顺序 / 时序类红 ⇒ 冻结共享输入（时钟 / 环境变量）。冻结时钟探针见
-     `scratch/goal015_c1_order_tie_probe.py`；凭据注入复现见 `MEM-20260925-130`。
-  2. **既有归因的一处更正**：出站判据的红**不是** fake-IP DNS 造成的（放行面只有
-     `localhost`），根因是凭据可解析 ⇒ 见 `MEM-20260925-131`。
-  3. **DSN 固化配方**：`RESEARCHOS_POSTGRES_DSN` pin 到 postgres-test DSN、
-     `DATABASE_URL` / `POSTGRES_DSN` 清空（`scratch/goal015_m0_run.sh`）。
-  4. **m0 必须独占**；记录未写完会让 `framework/validate` 判红（本 cycle 实测两次返工都属此类）。
+- **cycle 2 已收口（EC-02 = PASS / EC-03 = PASS）**：子 PLAN `PLAN-20260925-164`（`DONE`）、
+  复检 `RECHECK-20260925-165`（`PASS_WITH_WARNINGS`，警告 = `R-3` 只登记 + live 开门条件登记
+  + 起点 (b) 归因更正 + 人工面原样保留）、记忆 `MEM-20260925-132` / `-133`。
+  **EC-01 / EC-02 / EC-03 全 PASS；只剩 EC-04。**
+- **下一轮 = cycle 3（EC-04 收口复检 + 残余登记）**：
+  ① **独立复检脚本**（只读、标准库、**不 import 仓库代码**）在**当前树**与**干净 checkout**
+     两处**同判据同结论**（差异只允许「收口记录尚未落盘」这类时序项，落盘后归零，或**已具名**
+     的环境差异）；脚本落 `scratch/verify_goal015_c3.py`（口径照 `MEM` 既有复检脚本）。
+  ② m0 到**可支持的终态行**：as-is = **22/23**（唯一未绿 `framework/validate_bundle` = `R-3`）；
+     代管后 = `PASS: profile=m0; 23 deterministic checks`（`tools/quarantine_and_run_m0.py`
+     + 逐字节复核）。**不得**把代管后写成 as-is。
+  ③ 治理 `validate.py` 绿；④ CI 台账**到终态**（本行上方最后一条「台账尾巴」的 run 由 cycle 3
+     回写，按本 GOAL 既有口径）；⑤ **13 条人工面 + 全部承继残余 + 本 GOAL 的 W 列表**逐条登记；
+  ⑥ 收口 RECHECK 的 `result` = `PASS` / `PASS_WITH_WARNINGS`，`latest_recheck` 为**仓库相对路径**。
+- **cycle 2 的可复用事实（按需回看）**：
+  1. **跑法层**：m0 与代管脚本**一律**走 `uv run --frozen --no-sync python -B …`（用系统解释器
+     会产出「没有 mypy / lint-imports」的假红）；归因脚本的**跑法层签名**命中即 exit 4。
+  2. **判据的副作用面 = 断言面**：判据里的 `os.environ[...] = …` 必须搬进子进程（`MEM-133`）。
+  3. **跳过守卫必须与收集面无关**：放根 `tests/conftest.py`，别放子目录 conftest（`MEM-132`）。
+  4. **记录面的两个易撞门**：DONE 计划正文不得含治理脚本的占位词（含**文件名子串**）；
+     通过的复检必须有 `## 检查结果` **与** `## 结论` 两个标题。
+  5. **AI 决策入口**：`docs/roadmap/OPEN_DECISIONS_BRIEFING.md`（12 条 D-NN，六要素；由
+     `tests/tooling/test_pending_decisions_briefing.py` 与人工面**双向对齐**）。
 - **开局已核实的文件层事实（决定可行性）**：
   1. `scratch/self-governance-bootstrap-prompt.md` **仍在**（`69944` B、
      `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）⇒
