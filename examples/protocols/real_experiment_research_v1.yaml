@@ -1,0 +1,63 @@
+id: real_experiment_research_v1_0_0
+version: 0.4.0
+
+# 真实**检索 + 实验**研究协议（GOAL-014 EC-02 的配对声明）。
+#
+# 为什么必须有这一份（`M-2`，登记在 GOAL-20260924-014 的 EC-02 `status_note`）：
+# EC-02 要求在**不带任何 `preflight_override`** 的控制面上跑出「真实 LLM + 真实检索 +
+# 真实实验」到 `SUCCEEDED`，而**实验只能由出厂目录声明**（装配面的 `declare_sandbox_experiment`
+# 必须经 override，那正是 EC-02 禁止的东西）。今天没有任何出厂协议同时具备这两件事：
+#   * `real_retrieval_research_v1.yaml` 有 run-chain 检索，**没有**实验阶段；
+#   * `m12_reference_research_v1.yaml` 有实验阶段（`m12_experiment_execution`），但它的
+#     检索是**会话工具**（不是 run-chain），且它的 `discovery` 相位另有一条真事实判据
+#     `EVIDENCE_COVERAGE: 3 < 10` 先拦；该协议同时被
+#     `tests/architecture/python/test_run_chain_capability_exposure.py` 的 `_UNDECLARED`
+#     字面量钉住（改它会直接判红那条判据）。
+# ⇒ 配对需要**新增一份出厂声明**：本文件。它**只做配对**：
+#   * 两份合约都是**既有的出厂合约**，判据**一字不改**
+#     （`real_retrieval_deliverable` / `experiment_execution`）；
+#   * 策略面、`default_effect`、`deny` / `require_approval` / `allow_with_constraints`
+#     一律**未动**；
+#   * 回退面 = 删除本文件（单 WP 提交）。
+#
+# 受控范围（写明，不夸大也不缩小）：**2 个 phase、1 次真实 LLM 会话、2 次真实检索调用
+# （`retmax=3`），外加 1 次真实沙箱实验**。phase 数 = 会话数（phase 间并行仍不可执行）。
+phases:
+  - id: analysis
+    name: Real Retrieval Research Analysis
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+      # 本 run 的**冻结集是 plan 级的**（`flatten_tool_providers(plan)`），而某个 phase 的
+      # 会话工具列表 = 冻结集 − 该 phase 的 run-chain provider（`session_tool_ids`）。
+      # 实验相位引入的 workspace provider（`openhands_workspace`）若不在这里被声明，
+      # 就会落进**本相位**的会话工具列表；而生产装配今天没有 provider→SDK 映射
+      # （EC-05 的缺口），会话会在创建时**点名失败**（实测：`ToolDefinition
+      # 'openhands_workspace' is not registered`）。声明 `workspace.read` 让本相位的
+      # run-chain 覆盖本 run 的冻结集 —— 与 `real_retrieval_research_v1` 同一条既有语义
+      # （那里 `artifact.read` 也从不被运行链真正执行，它的作用是「不暴露为会话工具」）。
+      - workspace.read
+    # 由运行链执行、不暴露为会话工具（缺省 = session = 既有语义，见 `CapabilityExecution`）。
+    capability_execution: run_chain
+    # 与 `real_retrieval_research_v1` 同一份**既有**合约（交付物 + 覆盖里至少一条
+    # **系统取得**的来源），本协议不复用也不改它的判据。
+    task_contract: real_retrieval_deliverable
+    inputs: [input-brief:real_research_v1]
+
+  - id: execution
+    name: Controlled Experiment
+    strategy: deterministic
+    depends_on: [analysis]
+    required_roles:
+      - {role: experiment_engineer, min_instances: 1, max_instances: 1}
+    # 本任务的执行体**不是会话**：合约（既有的 `experiment_execution`）声明了
+    # 「由既有沙箱实验后端跑一次实验」（`experiment: {}` ⇒ 脚本/镜像由装配上下文给出）。
+    # 它的判据一条不改：`ARTIFACT_EXISTS(metrics)` + `TEST_PASSES` + `POLICY_COMPLIANT`
+    # —— 三条正是 GOAL-014 EC-02 要接通验收门输入面之后**才**能真判的判据。
+    task_contract: experiment_execution
+    outputs: [experiment_runs]
+    timeout_seconds: 300

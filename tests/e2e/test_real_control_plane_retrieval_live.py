@@ -6,14 +6,19 @@
 **真适配器真探测**得出（不是夹具给出的常量）。到终态 `SUCCEEDED`，检索真的打到
 provider 声明的 `network_domains`，证据面 / 预算面可读。
 
-**不判什么**（如实边界，不夸大）：**实验面**。带真实实验的 run 今天在**验收门**上到不了
-`SUCCEEDED`——出厂目录里两份声明了 `experiment` 的合约（`experiment_execution` /
-`m12_experiment_execution`）都带 `TEST_PASSES` + `POLICY_COMPLIANT`，而产品路径的
-`EvaluationInputs`（`evaluation_gate.py`）**没有** `tests` / `policy_decision` 两个维度
-⇒ 两条判据 fail-closed（实测：`scratch/goal014_c2_acceptance_probe.py` 的输出）。
-那条缺口正是 GOAL-011 登记的下一轮拍板项 ①②③，本判据**不**绕过它、也**不**为此造
-一份判据更弱的合约（那会变成「放宽验收门以强行成功」）⇒ EC-02 本体 BLOCKED，
-证据与选项见 `GOAL-20260924-014` 的 EC-02 段与 `F-10` / `F-11`。
+**不判什么**（如实边界，不夸大）：**实验面**——本文件跑的是纯检索协议
+（`real_retrieval_research_v1`，没有 `experiment` 声明），实验那半边是
+`tests/e2e/test_real_control_plane_experiment_live.py` 的活儿。
+
+**这条边界的历史**（此处曾如实记录过一条当时的缺口，现按实际状态改写）：写这段时带真实
+实验的 run 在**验收门**上到不了 `SUCCEEDED`——出厂目录里两份声明了 `experiment` 的合约
+（`experiment_execution` / `m12_experiment_execution`）都带 `TEST_PASSES` +
+`POLICY_COMPLIANT`，而产品路径的 `EvaluationInputs`（`evaluation_gate.py`）**没有**
+`tests` / `metrics` / `policy_decision` / `schema_check` 这四个维度 ⇒ 四条判据 fail-closed
+（当时实测：`scratch/goal014_c2_acceptance_probe.py`）。那条缺口即 F-11 的四维饥饿面，
+用户判词「取 A」后由 `PLAN-20260924-160` 接通**输入面**（合约判据一字未改、策略词表未
+放宽），四维改由实验自报事实 + 既已发生的策略判词填。当年「不绕过、不放宽」的立场没变，
+变的只是缺口被填了：实验面的真实 run 现在由上面那个文件判。
 
 **跑法**（凭据只在 gitignored `.env`；单条命令内联前缀开真实执行体；跑完不留开关）：
 

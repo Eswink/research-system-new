@@ -14,13 +14,17 @@
   这段缝的用途就是注册实例；空着时 `build_provider_health` 对 REST provider 诚实判
   `UNKNOWN`（既有注释写死了这一行为）。注入实例后健康是**真探测**出来的结果。
 - ✅ 注入运行链能力步装配（`CapabilityDeps`：谁来执行本 phase 的 run-chain 能力）。
+- ✅ 注入沙箱实验执行体（`with_contract_declared_experiment`：脚本/镜像仍取**合约自己**
+  的声明，只是把「谁来执行」接到既有 `DockerExecutionBackend`；见该函数 docstring）。
 - ❌ **不**注入 `provider_health` / `endpoint_health` / `policy_evaluator` / 任何
   `PreflightContext` 字段——那些是判词，注入它们就等于换一套控制面（那正是
   `preflight_override` 做的事，本 GOAL 的判据不得那么做）。
 
-产品组合根今天**不**自己接这两段缝（`tool_providers` 生产为空、`OrchestrationDependencies`
+产品组合根今天**不**自己接这三段缝（`tool_providers` 生产为空、`OrchestrationDependencies`
 的 `capabilities` / `experiment_task` 缺省 `None`）——这是如实登记的缺口，见
-`GOAL-20260924-014` 的 `F-10`；本模块用装配方身份补上，**不改产品代码**。
+`GOAL-20260924-014` 的 `F-10`；本模块用装配方身份补上，**不改产品代码**（装配方补执行体
+是本 GOAL 认下的处置；`output_schema_validator` 另说：它在 cycle 6 由应用层给出**缺省**
+实现，产品路径本来就带，不算缝）。
 """
 
 from __future__ import annotations
@@ -75,3 +79,44 @@ def capability_step(deps: Any, provider: Any, spec: Any) -> Any:
         artifacts=deps.artifacts,
         ledger=deps.ledger,
     )
+
+
+def with_contract_declared_experiment(deps: Any, *, script: str, image: str) -> None:
+    """接上**第三段**执行体缝：合约声明的沙箱实验（GOAL-014 EC-02）。
+
+    与 `live_run_support.with_sandbox_experiment` 的分工**是本质的**：那条路要走
+    `declare_sandbox_experiment`，即**改写本次 run 的目录快照**（`preflight_override`）
+    ——EC-02 明文禁止的东西。本函数**只接执行体**：
+
+    * 「本任务由沙箱实验执行」这条声明来自**出厂目录**
+      （`examples/contracts/task_contracts.yaml` 的 `experiment_execution`；它的
+      `experiment: {}` = 声明已给出、脚本由装配上下文决定，见 `ExperimentExecutionSpec`）；
+    * 装配方给出的只有**脚本与镜像**（谁去干）与既有 `DockerExecutionBackend`；
+    * 契约自己 pin 了的量（`m12_experiment_execution` 的脚本/镜像/命令）不在此被覆盖——
+      本函数只服务「合约不 pin、由装配上下文给」的那一份出厂合约。
+
+    产品组合根今天**不**自己接这段缝（`OrchestrationDependencies.experiment_task` 缺省
+    `None`）——这是 `F-10` 如实登记的缺口；本函数以装配方身份补上，**不改产品代码**。
+    """
+    from packages.application.run_orchestration.service import RunOrchestrationService
+    from services.api.assembly import policy_bindings
+    from services.api.experiment_support import (
+        docker_experiment_assembly,
+        sandbox_experiment_runner,
+    )
+
+    policy_evaluator = policy_bindings().get("policy_evaluator")
+    assert policy_evaluator is not None, "policy.yaml must be loadable for the sandbox experiment"
+    runner = sandbox_experiment_runner(
+        docker_experiment_assembly(
+            artifacts=deps.artifacts,
+            ledger=deps.ledger,
+            policy=policy_evaluator,
+            script=script,
+            image=image,
+            experiment_store=deps.experiment_store,
+        )
+    )
+    old = deps.runs
+    assert old is not None
+    deps.runs = RunOrchestrationService(replace(old._deps, experiment_task=runner))

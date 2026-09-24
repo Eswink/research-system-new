@@ -15,10 +15,12 @@
 **如实写明的两条边界**：
 
 - 本文件判的是**机械面**（实验真的跑了、产物/证据/可读面齐备）。**carrier 协议本身**
-  （m12 的 7 个 phase 跑到 `SUCCEEDED`）今天仍止步于 discovery 的验收门
-  （`SCHEMA_VALID` 未接线 + `EVIDENCE_COVERAGE: 3 < 10`），那是 GOAL-011 EC-03 登记在案的
-  缺口，本文件**不**粉饰、也不放宽任何判据。启动 carrier run 只为取得一个**真实存在**的
-  run 行，好让 run 级读面对得上（该 run 的终态如实为 `FAILED`，下面显式断言）。
+  （m12 的 7 个 phase 跑到 `SUCCEEDED`）今天仍止步于 discovery 的验收门。这条边界原记载
+  理由是「`SCHEMA_VALID` 未接线 + `EVIDENCE_COVERAGE: 3 < 10`」：前者已由 GOAL-014
+  cycle 6（`PLAN-20260924-160`）接通输入面，故不再适用；后者属该合约**自带**的判据，
+  本轮一字未改（`examples/contracts/task_contracts.yaml` 不在本轮改动面内）。本文件
+  **不**粉饰、也不放宽任何判据：启动 carrier run 只为取得一个**真实存在**的 run 行，
+  好让 run 级读面对得上，该 run 的终态仍如实为 `FAILED`（下面显式断言）。
 - 容器内不触网（纯标准库脚本）；本机 Docker daemon 可用即可，故挂 `requires_docker`：
   非 Linux 容器的守护进程下如实 skip（`tests/conftest.py` 的守卫），
   `container-quality` 作业（`-m requires_docker`）真跑。

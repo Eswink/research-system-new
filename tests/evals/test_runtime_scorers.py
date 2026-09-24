@@ -158,7 +158,9 @@ def test_gate_outcome_pass_and_reject() -> None:
         review_score=Decimal("0.9"),
         human_approved=True,
     )
-    # METRIC_THRESHOLD 不可由 EvaluationInputs 注入 → 恒不通过（M7 语义）
+    # 未给出 metric ⇒ METRIC_THRESHOLD 仍不通过。该维度自 GOAL-014 cycle 6 起**可以**
+    # 由 `EvaluationInputs.metrics` 注入（判据本身未改，M7 语义未变）；本用例判的是
+    # 「没给就是缺」的那一半。
     assert (
         scorer(_context(case, task=task, contract=contract, inputs=passing, reviewer="g")).status
         is EvalFindingStatus.FAIL
