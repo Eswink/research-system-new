@@ -34,6 +34,30 @@ TEST_DSN = "postgresql://research_os:research_os_m14_test@localhost:15432/resear
 _GREEN = "PASS: profile=m0; 23 deterministic checks"
 
 
+def _venv_python() -> Path | None:
+    for candidate in (REPO / ".venv" / "Scripts" / "python.exe", REPO / ".venv" / "bin" / "python"):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _resolve_python() -> Path:
+    """m0 必须用**仓库自己的解释器**跑。
+
+    本脚本曾被系统解释器调用（`python -B tools/…py` 时 `sys.executable` 就是系统 Python）
+    ⇒ m0 在**没有 mypy / lint-imports / 正确 pytest 版本**的解释器里跑，产出三条**假红**
+    （2026-09-25 实测：`No module named mypy` + `lint-imports executable is unavailable`）。
+    这里优先用仓库 `.venv`，找不到就拒跑而不是替一个假绿/假红。
+    """
+    python = _venv_python()
+    if python is None:
+        raise SystemExit(
+            f"拒跑：找不到仓库虚拟环境解释器（{REPO / '.venv'}）。"
+            "请用 canonical 调用：`uv run --frozen --no-sync python -B tools/quarantine_and_run_m0.py …`"
+        )
+    return python
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -56,7 +80,7 @@ def _is_tracked(path: Path) -> bool:
 
 def _m0_command() -> list[str]:
     return [
-        sys.executable,
+        str(_resolve_python()),
         "-B",
         RUNNER,
         "--profile",

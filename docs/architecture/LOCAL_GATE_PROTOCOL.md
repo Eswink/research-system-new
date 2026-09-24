@@ -40,6 +40,7 @@ make validate-all           # = run_all_checks.py --profile m0 --keep-going
 | 上述 + `tools/quarantine_and_run_m0.py`（代管仓库外文件） | ✅ | 唯一允许的「as-is 不可达」补偿手法，逐字节复核见第 4 节 |
 | 单一 check 直跑（`python -B <script>`、`pytest <file>`） | ✅ | 用于**归因**；不作为「门已过」的证据 |
 | `CURSOR_FRAMEWORK_ROOT` 指到别处跑**全量** | ❌ | 该变量是**整个 runner 的根**（每个 check 的子进程都继承）⇒ 所有 check 指向无依赖的树，结论无效；只可用于**单条** framework check 的对照 |
+| 用**系统解释器**跑 m0（`python -B …run_all_checks.py`、`python -B tools/quarantine_and_run_m0.py`） | ❌ | `sys.executable` 是调用方解释器 ⇒ mypy / lint-imports / pytest 版本全错，产出**假红**（2026-09-25 实测三条：`No module named mypy`、`lint-imports executable is unavailable`、`platform win32 -- Python 3.11 …pytest-8.`）。**一律走 `uv run --frozen --no-sync python -B …`**；`tools/quarantine_and_run_m0.py` 现在优先用仓库 `.venv` 并在缺失时**拒跑** |
 | 并发跑两个 m0 / 在门跑着时改工作树的被测文件 | ❌ | 会产生无法归因的红 |
 
 ## 2. 三分类判定条件（机械可判）

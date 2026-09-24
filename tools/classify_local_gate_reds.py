@@ -28,7 +28,11 @@ BY_CHECK: dict[str, tuple[str, str, str]] = {
         "pytest --ignore=tests/architecture/python/test_dependency_boundaries.py -q",
         "按子签名逐条处置；挂死/超时类走 postgres 守卫判据",
     ),
-    "python/typecheck": ("(i) 真实缺陷", "python -m mypy", "改类型，不改配置"),
+    "python/typecheck": (
+        "(i) 真实缺陷 —— **但先看子签名**",
+        "python -m mypy",
+        "改类型，不改配置；若判词是 `No module named mypy` ⇒ 看下一条子签名（跑法错误）",
+    ),
     "python/product-lint": ("(i) 真实缺陷", "python -m ruff check <roots>", "改代码"),
     "python/format-check": ("(i) 真实缺陷", "python -m ruff format --check", "跑 ruff format"),
     "python/dependency-boundaries": (
@@ -76,9 +80,44 @@ SUB_SIGNATURES: tuple[tuple[str, str, str, str], ...] = (
     ),
 )
 
+#: **跑法层**签名（与具体 check 无关）：命中即说明「这一轮的解释器 / 依赖面不对」，
+#: 此时任何红都不可作为判定依据 —— 必须先用 canonical 调用重跑。
+RUN_METHOD_SIGNATURES: tuple[tuple[str, str, str], ...] = (
+    (
+        r"No module named mypy",
+        "mypy 不在该解释器里",
+        "uv run --frozen --no-sync python -B "
+        ".cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going",
+    ),
+    (
+        r"lint-imports executable is unavailable",
+        "lint-imports 不在该解释器里",
+        "uv run --frozen --no-sync python -B "
+        ".cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going",
+    ),
+    (
+        r"platform win32 -- Python 3\.11.*pytest-8\.",
+        "跑的是系统解释器（非仓库 `.venv`）",
+        "uv run --frozen --no-sync python -B "
+        ".cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going",
+    ),
+)
+
 _FAILED_CHECK = re.compile(r"^FAILED \[(?P<name>[^\]]+)\]", re.M)
 _SUMMARY = re.compile(r"^FAILED: .*$", re.M)
 _GREEN = re.compile(r"^PASS: profile=m0; 23 deterministic checks$", re.M)
+
+
+def _report_run_method(text: str) -> bool:
+    hits = [(token, why, command) for token, why, command in RUN_METHOD_SIGNATURES if re.search(token, text)]
+    if not hits:
+        return False
+    print("!! 跑法可疑——本轮的红**不可作为判定依据**，先用 canonical 调用重跑：")
+    for token, why, command in hits:
+        print(f"   命中 `{token}` ⇒ {why}")
+        print(f"   重跑命令：{command}")
+    print()
+    return True
 
 
 def _report_check(name: str, text: str, unexplained: list[str]) -> None:
@@ -122,6 +161,8 @@ def main(argv: list[str] | None = None) -> int:
         print("终态：无 FAILED 检查项，但也没有全绿行——请核对是否用了 --keep-going、门是否跑完")
         return 1
 
+    suspicious_run = _report_run_method(text)
+
     unexplained: list[str] = []
     print("\n分类（只按 FAILED 检查项；先命中者胜）：")
     for name in failed:
@@ -132,6 +173,9 @@ def main(argv: list[str] | None = None) -> int:
         for name in unexplained:
             print(f"- {name}")
         return 3
+    if suspicious_run:
+        print("\n终态：**跑法可疑** ⇒ 本轮分类仅供归因参考，判定必须用 canonical 调用重跑后的日志。")
+        return 4
     return 0
 
 
