@@ -3,14 +3,16 @@ id: MEM-20260918-067
 title: "审计残留的三条可复核终态：advisory 要署名、干净 checkout 用导出树、hook enobufs 根因是检测层缺失"
 status: ACTIVE
 created_at: 2026-09-18
-updated_at: 2026-09-18
+updated_at: 2026-09-24
 scope: repository
 confidence: 0.9
-review_after: 2027-09-18
+review_after: 2027-03-24
 source_plans:
   - .cursor/plans/tasks/PLAN-20260918-093-security-audit-residual-recheck.md
+  - .cursor/plans/tasks/PLAN-20260924-158-residual-accounting-three-faces.md
 source_rechecks:
   - .cursor/plans/rechecks/RECHECK-20260918-093-security-audit-residual-recheck.md
+  - .cursor/plans/rechecks/RECHECK-20260924-160-residual-accounting-three-faces.md
 supersedes: []
 tags:
   - security-audit
@@ -43,6 +45,34 @@ GOAL-005 cycle 1（EC-01）把 GOAL-004 收口时登记的三条审计残留做�
    `cli.js semgrep status --json` ⇒ `installed:false` / `reason:install_metadata_missing`，
    `~/.zcode/mimosa-runtime/semgrep-1.136.0` 不存在 ⇒ **L3 门的检测层没装**，扫描器无输出，
    门按 `open` 失败开放。宿主会话里显示的 `scanner_enobufs` 就是它。
+
+## 2026-09-24 复核（GOAL-014 cycle 4：三项残余现测）
+
+cycle 4 把这三面**重新现测**一遍（不引用上文数字），结论与上文一致 —— 都仍是
+「登记为需拍板」，**零处置动作**：
+
+1. **依赖告警：改口径用 Dependabot API 现测**（上文是自建 OSV 探针）：`open` **23 条**
+   = **4 high / 13 medium / 6 low**，包分布 **vite 14 / undici 8 / yaml 1**，
+   **每条都有 `first_patched_version`**（high `6.4.2`/`6.4.3`）。当前直连 pin 仍是
+   `apps/web/package.json` 的 `vite 6.3.5` / `yaml 2.8.1`；**`undici` 只在 `pnpm-lock.yaml`**
+   ⇒ 修它要靠 overrides。修复 = **依赖 pin 升级** ⇒ 命中 `escalation_triggers`（人工项 5）。
+2. **hook 侧 L3 门：现场复现其形态**（上文是手工喂 payload 复现）：cycle 4 的
+   `git commit` 与 `git push` **各自**收到 `Mimosa … 未得到完整扫描结论（scanner_enobufs）…
+   按兼容策略继续` ⇒ **失败开放**与根因（`semgrep` 检测层未安装）**均未变**；
+   `.cursor/hooks/*.py` 里**零处** `L3` 字面量 —— 「L3」是**外部分析器的层级名**，
+   不是本仓 hook 自己的命名（找它别去 grep 仓库）。
+3. **450 行贴线：按门禁同口径现测**（`tests/tooling/test_python_source_limits.py`）：
+   根 `apps/services/packages/adapters/tests` 内 `.py` **1011 个**，**3 个正好 450
+   （零余量）**（`services/api/composition.py`、`adapters/postgres/workflow_engine.py`、
+   `adapters/execution/docker_backend.py`），400–449 行 **10 个**，软阈值（>300）**70 个**。
+   `tools/PA1R运行演练v1.py`（433 行）**不在门禁根内**（门禁不扫 `tools/`）。
+4. **探针出网的安全写法（本轮新学）**：读 GitHub API 的探针初稿用
+   `urllib.request.urlopen(<拼出来的 URL>)` 被 **Mimosa 判 SSRF 高危并拦截写入**；
+   改写为「**写死主机常量** + `http.client.HTTPSConnection(<常量>)` + 路径先做结构校验
+   （必须匹配前缀、禁 `://` / `..` / `@`）」即通过 —— 触发条件是**动态 URL 进请求汇**，
+   不是「Python 出网」本身。同口径的探针见 `scratch/goal014_c4_residual_probe.py`。
+
+**这三个数字是当日快照**，引用时要带测量时间与探针路径（`scratch/goal014-c4-residual-probe.txt`）。
 
 ## 为什么这样做
 

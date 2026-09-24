@@ -241,7 +241,36 @@ exit_criteria:
       分类处置表落 RECHECK（每项一行：ID / 类别 / 终态 / 依据 / 证据路径）；
       如取「已处置」须有对应 commit 与实跑证据；如取「登记为需拍板」须指向
       「不进入循环」节的具体条目。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-24 cycle 4 收口（`PLAN-20260924-158` → **DONE**；复检
+      `RECHECK-20260924-160` = **PASS**）。**三项残余全部按当前实测分类、各给唯一终态，
+      三项都 = 「登记为需拍板」**（本 cycle **零处置动作**，也**不该**有处置动作）：
+      ① **`R-D1`**：现测 **23 条 open**（4 high / 13 medium / 6 low），包分布
+      **vite 14 / undici 8 / yaml 1**，**每条都有** `first_patched_version`；
+      修复动作 = **依赖 pin 升级**（`apps/web/package.json` 现 pin `vite 6.3.5` /
+      `yaml 2.8.1`；`undici` 只在 `pnpm-lock.yaml` ⇒ 传递依赖，需 overrides）⇒ 命中
+      `escalation_triggers`「依赖 pin 升级」+「不进入循环」人工项 **5**；
+      ② **hook 侧 L3 门**：`.cursor/hooks/*.py` **零处** `L3` 字面量 ⇒ 「L3」是
+      **外部分析器（Mimosa）的检测层级**；根因（`semgrep` 检测层未安装）取既有审计记录
+      `docs/audits/MIMOSA_POST_CLOSURE_AUDIT_20260918.md`，形态由**本 cycle 现场复现**
+      （本次 `git commit` 与 `git push` 均收到 `scanner_enobufs … 按兼容策略继续`
+      = **失败开放**）⇒ 人工项 **6**（治理面；修法涉及安装检测层 = 环境/依赖变更）；
+      ③ **450 行贴线**：门禁同口径扫描（根 `apps/services/packages/adapters/tests`，
+      硬上限 450 / 软阈值 300 / 函数 50）⇒ 根内 `.py` **1011 个**，**3 个正好 450
+      （零余量）**（`services/api/composition.py`、`adapters/postgres/workflow_engine.py`、
+      `adapters/execution/docker_backend.py`），400–449 行 **10 个**，300–449 **70 个**
+      ⇒ 人工项 **4**（大重构放大 diff 风险，需人工决定；本 GOAL 明文 EC-04 **只分类**）。
+      **依据可核对**：逐条告警编号/严重度/包/manifest/修复版本、hook 面扫描结果与
+      本次 commit/push 的 hook 提示原文、门禁同口径行数统计，全部落
+      `scratch/goal014-c4-residual-probe.txt`（探针 `scratch/goal014_c4_residual_probe.py`，
+      只读、可复跑）。
+      **边界**：`tools/PA1R运行演练v1.py`（433 行）**不在门禁根内**且其非 ASCII 文件名属
+      §13 已登记豁免面 ⇒ 不构成新残余。**本 cycle 零产品代码 / 零策略面 / 零依赖 pin /
+      零 hook 面 / 零判据改动**，**未降级** EC-01 / EC-02 / EC-03（三者的 `status` 与判据
+      一字未动）。**探针自身一处安全修正已登记**：初稿 `urllib.request.urlopen(动态 URL)`
+      被 Mimosa 判 **SSRF 高危并拦截写入** ⇒ 改写为「**写死主机常量** + `http.client` +
+      路径结构校验（禁 `://` / `..` / `@`）」。**结论是「分类完成」而非「残余已解决」**。
   - id: EC-05
     criterion: >-
       **收口复检 + 残余登记**：① **独立复检脚本**（只读、标准库、**不 import 仓库代码**）
@@ -306,7 +335,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260924-155-policy-surface-consistency-main-trunk.md
   - .cursor/plans/tasks/PLAN-20260924-156-real-control-plane-end-to-end.md
   - .cursor/plans/tasks/PLAN-20260924-157-policy-surface-difference-set-audit.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260924-159-policy-surface-difference-set-audit.md
+  - .cursor/plans/tasks/PLAN-20260924-158-residual-accounting-three-faces.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260924-160-residual-accounting-three-faces.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260924-124-multiple-fail-sources-enumerate-before-fixing.md
   - .cursor/memory/entries/MEM-20260924-125-seam-empty-is-not-assembly-missing.md
@@ -327,7 +357,7 @@ memory_entries:
 | EC-01 | **策略面一致性（主干）**：真实控制面（无 `preflight_override`）对 `sort_analysis_v1` 不再 `FAIL`；live 装配结论与之一致（同 `WARN`+可冻 或 同 `PASS`）；成对反证（撤 allow ⇒ 回到 `FAIL`；镜像不同步 ⇒ 镜像判据判红） | 两装配同结论判据（离线、零出网）+ `pytest tests/application/test_m2_audit.py -q` | **PASS**（cycle 1）：`FAIL` → `WARN`、策略维度清零、`SAME_STATUS=False→True`、两套都可冻结（各 4 对留痕）；两条反证先红后绿且按压逐字节还原；判据 5 条离线全绿；m0 22/23（唯一未绿 = `R-F3`）；独立复检 `checked=45 failures=0` |
 | EC-02 | **真实控制面端到端**：无 `preflight_override` 的真实 run（真实 LLM + 真实检索 + 真实实验）终态恰为 `SUCCEEDED`，实验 / 证据 / 预算**三项读面齐备**；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测） | `RESEARCHOS_AGENT_RUNTIME=openhands pytest <live 判据> -q -rs`（最小必要次数） | PENDING |
 | EC-03 | **策略面审计（双向差集）**：policy.yaml 四段规则 ↔ 四个声明面双向差集，逐条终态三选一（该放行 / 该拒绝 / 该登记），**零待定**，依据可核对 | 离线机械判据（双向完备 + 零待定）+ 仓内差集表文档；按压红/绿对照 | **PASS**（cycle 3）：差集 **35 条**（策略面独有 6 + 声明面独有 29）；**该放行 0 / 该拒绝 20 / 该登记 15**，零待定；**协议可达 8/8 全部有非 `deny` 覆盖 ⇒ 无第二个 `W-A`**；判据 7 条离线全绿（`judged 0`）；4 组按压先红后绿（含隔离按压）、逐字节还原；文档 = `docs/architecture/POLICY_SURFACE_AUDIT.md` |
-| EC-04 | **残余清账（可选）**：`R-D1` 23 条告警 / hook 侧 L3 门 / 450 行贴线文件分类处置给终态；空间不足则如实登记为下一轮输入，**不得降级 ①②③** | 分类处置表落 RECHECK（每项一行：ID / 类别 / 终态 / 依据 / 证据） | PENDING |
+| EC-04 | **残余清账（可选）**：`R-D1` 23 条告警 / hook 侧 L3 门 / 450 行贴线文件分类处置给终态；空间不足则如实登记为下一轮输入，**不得降级 ①②③** | 分类处置表落 RECHECK（每项一行：ID / 类别 / 终态 / 依据 / 证据） | **PASS**（cycle 4）：三项**全部现测分类**、各给唯一终态（三项均 = **登记为需拍板**：告警 ⇒ 人工项 5 + `escalation_triggers`；L3 门 ⇒ 人工项 6；450 行 ⇒ 人工项 4）；依据可核对（23 条告警逐条编号/修复版本、hook 提示原文 + 审计根因、门禁同口径行数）；**零处置动作、未降级 ①②③** |
 | EC-05 | **收口复检 + 残余登记**：独立复检脚本两树同结论 + m0 **23/23** + `validate.py` 绿 + CI 台账到终态（M0 六 job + CodeQL）+ 13 条人工面原样保留 + `W` 列表逐条登记 | `scratch/verify_goal014_c<N>.py` + `make validate-all` + `validate.py` + `scratch/poll_ci_all.sh <sha>` | PENDING |
 
 ### 建档时已探明的现状（事实类，用于判定起点；**不当作验收依据**）
@@ -578,7 +608,8 @@ memory_entries:
 | 0 | （建档，无子 PLAN） | `f6ce099`（**推送 tip**） | 治理 `validate.py` 绿（`Cursor 治理验证通过`）；`DOCS-CHECK PASS: 6 deterministic checks` | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-8**：policy.yaml 现状、镜像契约 6+4、镜像判据的三条断言口径、`evidence.read` 的四处声明面、执行期复用同一张表、`preflight_override` 是 `W-C` 的载体、双向差集起点数字 41/14/10/31/4 + 域名误收陷阱、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1` / `R-F2` / `R-F3`（承继，其中 `R-F3` 影响本地 m0 口径） | cycle 1 = derive **EC-01** 子 PLAN（策略面一致性主干）：先定案「**两套装配同结论判据**」的形态（同一脚本同求带/不带 `preflight_override` 两条路径、输出可 diff）+ 落 `evidence.read` 的 allow（**`policy.yaml` 与 `_CAPABILITY_SCOPE` 同一提交内真同步**，`scope` 取值以真实求值路径验证为准）+ 成对反证①②；EC-02 的真实端到端在其后 |
 | 1 | PLAN-20260924-155（EC-01） | `add2c37`（derive：PLAN-155 + ALL_PLAN + `child_plans`）、`4d9925a`（WP1 判据）、`5cde986`（WP2 放行 `evidence.read`）、`9bba68d`（WP3 出厂目录补全）、`538effc`（WP4 陈述对齐 + 反证）、`4bfa6d0`（可冻结面判据）、本 cycle 的收口回写见台账尾巴 | **判据 5 passed**（改前 4 failed，`scratch/goal014-c1-criterion-red.txt`）；`tests/application/preflight/` + `test_m2_audit.py` **28 passed**；受影响套件 **81 passed**；e2e 离线 **9 passed / 1 skipped**；**出站全部 `blocked 0`、判据自身 `judged 0`**（零出网）；**两装配同结论** `SAME_STATUS = True A=WARN B=WARN`；**两套都可冻结**（各 4 对留痕）；**成对反证先红后绿**（`scratch/goal014-c1-press1-allow-withdrawn.txt` / `-press2-mirror-desync.txt`），按压后 `git diff --stat` **为空**；**m0 22 PASS / 1 FAILED**（判红 = `framework/validate_bundle`，**两条原因**：环境残余 `R-F3` **加上**本 cycle 首版自造的 `output_schema` 名——**CI 判红暴露了后者**，已由纠错提交修掉；`python/tests` **4419 passed / 18 skipped / 0 failed**，差 **+6** = 5 条新判据 + 1 个源文件规模门禁用例（逐用例 ID 差集归因，见 RECHECK-157 的「用例数归因」条）；**独立复检** `scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`；`validate.py` 绿 | 见下方 CI 台账 | **本 cycle 实测新发现（`F-9`，已登记）**：真实控制面的 `FAIL` 有**两个独立来源**——`POLICY_DENIED`（授权覆盖）**与**两份 `TASK_CONTRACT_MISSING`（`sort_analysis_*` 契约只在测试夹具、不在出厂目录，而该协议是**产品面可选模板**）⇒ 只放行策略**不足以**达成 EC-01/EC-02 ⇒ 处置 = **声明补全**（把夹具的运行期注入提升为出厂声明，与 W-B 同类），**具名登记**在 PLAN-155 的 `authorization.ref`、回退面 = `9bba68d`，**不碰任何策略面**。录制性陈述两处**就地改对**（`_protocol_execute_freeze` 的 docstring、`test_ec02_experiment_live` 的边界段），**断言一字未改** | **EC-01 PASS**。**`W-A` / `W-C` 由本 cycle 消灭**（判据在册、反证成对、按压逐字节还原）。**EC-02/03/04/05 未动**；`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3` 与 13 条人工面**原样保留** | cycle 2 = **EC-02 真实控制面端到端**：**不带任何 `preflight_override`** 跑一次真实 run（真实 LLM + 真实检索 + 真实实验）到终态 `SUCCEEDED`、三项读面（实验 / 证据 / 预算）齐备；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测）。**起点已备**：真实控制面现在 `WARN` + **可冻结**（已实测），正是 EC-02 的前置条件 |
 | 2 | PLAN-20260924-156（EC-02） | 判据与支持模块 + 本 cycle 的收口回写，提交见回合汇报 | **live 判据离线 `1 skipped` / `judged 0`**（零出网）；**真实 run 实测**：产品组合根（`preflight_override = None`）+ 真适配器 ⇒ `real_retrieval_research_v1` **`SUCCEEDED`**、manifest 冻结、证据面 **2 条 `RETRIEVED`（真 PMID）**、预算面 1 条（`scratch/goal014-c2-real-plane-sample.json`）；**控制面矩阵**（`scratch/goal014-c2-real-control-plane-probe.txt`）：不注册适配器 ⇒ 检索类协议 `WARN` + **拒冻**；注册 ⇒ **`PASS` + 可冻结**；**验收门探针**（`scratch/goal014-c2-acceptance-probe.txt`，纯离线）：两份带 `experiment` 的出厂合约在「实验跑成功、`metrics` 在场」时仍判 `passed=False`（`TEST_PASSES` / `POLICY_COMPLIANT`）；**成对反证两条**（`scratch/goal014-c2-press-allow-withdrawn.txt` / `-press-literature-withdrawn.txt`）均 `FAILED` / `manifest_digest: null` / **零 task / 零实验 / 零证据**，按压后 `git diff --stat` 为空 | 见下方 CI 台账 | **实测新发现 `F-10` / `F-11`**（已登记）；**未改任何产品代码 / 合约 / 策略面 / 门禁 / 既有断言**；真实调用最小必要（1 会话 + 2 次检索）。**一处流程失误已如实登记**：本地 m0 在后台跑时我就推送了 ⇒ CI 判红两个 job（本 cycle 新增两个文件的 ruff/mypy），纠错提交 `6d574c7` 已修；教训并入 `MEM-20260924-125`（先等本地门到终态再推送） | **EC-02 = BLOCKED**（判据本体不可达：M-1 执行体缝 / M-2 缺配对声明 / M-3 验收门输入缺口；**可达半边已实测达成**）。**EC-03/04/05 未动** | cycle 3 = **EC-03 策略面双向差集审计**（完全授权内、离线）：四段规则 × 四个声明面，每个能力**一个终态、零待定**；差集表落仓库文档 + 机械判据 + 按压红/绿 |
-| 3 | PLAN-20260924-157（EC-03） | 本 cycle 的产物 + 收口回写，提交见回合汇报 | **判据离线 7 passed**、`egress guard judged 0 / blocked 0`（零出网）；**差集实测 35 条**（策略面独有 6 + 声明面独有 29）⇒ **该放行 0 / 该拒绝 20 / 该登记 15**、零待定；**协议可达 8/8 全部被非 `deny` 覆盖 ⇒ 无第二个 `W-A`**；**成对按压 4 组**（`scratch/goal014-c3-press-final.txt`）全部先红后绿，含**隔离按压**（加词表内未声明能力 ⇒ **只**双向完备判红、词表护栏仍绿 ⇒ 两条断言各自有内容）+ **反向按压**（文档多陈旧行 ⇒ 「表有而差集无」判红）；按压后 `git diff --stat` **为空**（逐字节还原）；`DOCS-CHECK PASS: 6 deterministic checks`；**用例数归因**（逐用例 ID 差集）**+8、零删除** = 7 条本判据 + 1 条源文件规模门禁参数化；**m0 = 22 PASS / 1 FAILED**（唯一未绿 = 环境型残余 `R-F3`） | 见下方 CI 台账 | **提交前自查改掉两处判据缺陷**（如实登记）：① 词表护栏初稿是**空断言**（`not (vocabulary_only & difference_set())` 因两侧本就可能有交集而恒真）⇒ 重写为「声明面/策略面读到的名字必须都在词表内」+「词表里必须存在仅词表的名字」两向护栏；② `expected_state()` 对**交集**能力返回「该拒绝」，与文档的该拒绝条件（只覆盖差集条目）**不符** ⇒ 立显式取值 `OUTSIDE_DIFF` + 文档口径补第 5 条。**未改任何产品代码 / 策略面 / 合约 / 快照 / 门禁 / 既有断言** | **EC-03 = PASS**（该放行 0 ⇒ 无第二个 `W-A`）。**唯一需拍板项**：读类能力是否**成类预放行**（(a) 成类 / (b) 逐条 / (c) 不动）——本 GOAL 授权只覆盖 `evidence.read`，**只登记不扩大**。EC-02 仍 `BLOCKED`（`F-10` / `F-11`），EC-04 / EC-05 未动 | cycle 4 = **EC-04 残余清账（可选，视预算）**：`R-D1` 23 条 Dependabot 告警（4 high / 13 moderate / 6 low）分类 / hook 侧 L3 门 / 450 行贴线文件，每项一个终态（已处置 / 登记为需拍板 / 点名不属于本循环）；**不得为清账升级 pin、不得降级 ①②③**。若空间紧则如实登记为下一轮输入，随即转 cycle 5 = EC-05 收口复检 |
+| 3 | PLAN-20260924-157（EC-03） | `bf3ecdc`（**推送 tip**，推送区间 `933e1d1..bf3ecdc`） | **判据离线 7 passed**、`egress guard judged 0 / blocked 0`（零出网）；**差集实测 35 条**（策略面独有 6 + 声明面独有 29）⇒ **该放行 0 / 该拒绝 20 / 该登记 15**、零待定；**协议可达 8/8 全部被非 `deny` 覆盖 ⇒ 无第二个 `W-A`**；**成对按压 4 组**（`scratch/goal014-c3-press-final.txt`）全部先红后绿，含**隔离按压**（加词表内未声明能力 ⇒ **只**双向完备判红、词表护栏仍绿 ⇒ 两条断言各自有内容）+ **反向按压**（文档多陈旧行 ⇒ 「表有而差集无」判红）；按压后 `git diff --stat` **为空**（逐字节还原）；`DOCS-CHECK PASS: 6 deterministic checks`；**用例数归因**（逐用例 ID 差集）**+8、零删除** = 7 条本判据 + 1 条源文件规模门禁参数化；**m0 = 22 PASS / 1 FAILED**（唯一未绿 = 环境型残余 `R-F3`） | 见下方 CI 台账 | **提交前自查改掉两处判据缺陷**（如实登记）：① 词表护栏初稿是**空断言**（`not (vocabulary_only & difference_set())` 因两侧本就可能有交集而恒真）⇒ 重写为「声明面/策略面读到的名字必须都在词表内」+「词表里必须存在仅词表的名字」两向护栏；② `expected_state()` 对**交集**能力返回「该拒绝」，与文档的该拒绝条件（只覆盖差集条目）**不符** ⇒ 立显式取值 `OUTSIDE_DIFF` + 文档口径补第 5 条。**未改任何产品代码 / 策略面 / 合约 / 快照 / 门禁 / 既有断言** | **EC-03 = PASS**（该放行 0 ⇒ 无第二个 `W-A`）。**唯一需拍板项**：读类能力是否**成类预放行**（(a) 成类 / (b) 逐条 / (c) 不动）——本 GOAL 授权只覆盖 `evidence.read`，**只登记不扩大**。EC-02 仍 `BLOCKED`（`F-10` / `F-11`），EC-04 / EC-05 未动 | cycle 4 = **EC-04 残余清账（可选，视预算）**：`R-D1` 23 条 Dependabot 告警（4 high / 13 moderate / 6 low）分类 / hook 侧 L3 门 / 450 行贴线文件，每项一个终态（已处置 / 登记为需拍板 / 点名不属于本循环）；**不得为清账升级 pin、不得降级 ①②③**。若空间紧则如实登记为下一轮输入，随即转 cycle 5 = EC-05 收口复检 |
+| 4 | PLAN-20260924-158（EC-04） | 见回合汇报 | **三项残余全部现测分类**：`R-D1` **23 条 open**（4 high / 13 medium / 6 low；vite 14 / undici 8 / yaml 1；每条都有 `first_patched_version`）；**hook 侧 L3 门** 根因取既有审计（`semgrep` 检测层缺失）+ **本 cycle 现场复现** `scanner_enobufs` 失败开放；**450 行贴线** 门禁同口径：根内 `.py` 1011 个、**3 个正好 450（零余量）**、400–449 **10 个**、300–449 **70 个**。证据 `scratch/goal014-c4-residual-probe.txt`（只读探针，令牌仅内存） | 见下方 CI 台账 | **零处置动作**（不升 pin / 不动 hook / 不改源码 —— 三项分别命中人工项 5 / 6 / 4）⇒ 三项终态都是**登记为需拍板**；**未降级** EC-01/02/03（状态与判据一字未动）。探针初稿 `urllib.request.urlopen(动态 URL)` 被 Mimosa 判 **SSRF** 拦截 ⇒ 改为**写死主机 + `http.client` + 路径结构校验**（已并入既有记忆 `mimosa-scanner-false-positives`） | **EC-04 = PASS**（分类完成，**不是**「残余已解决」）。EC-01/03 PASS、EC-02 BLOCKED、EC-05 未动 | cycle 5 = **EC-05 收口复检**：独立复检脚本（`scratch/verify_goal014_c5.py`，只读/标准库/不 import 仓库代码）在**当前树**与**干净 checkout** 两处同结论 + 本地 **m0 = 23/23**（终局行逐字）+ `validate.py` 绿 + CI 台账到终态 + 残余逐条登记 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 推送 | 提交 | run | 六 job 结论 |
@@ -590,12 +621,21 @@ memory_entries:
 | cycle 2（EC-02：判据 + 支持模块 + 回写） | `6503ace`（**推送 tip**，推送区间 `334c9ab..6503ace`） | M0 [35961486144](https://github.com/Eswink/research-system-new/actions/runs/35961486144) | **判红两个 job**：`quality-ubuntu-latest` / `quality-windows-latest` = **failure**（同一根因，见下行），其余四个（`eval-gate` / `console-frontend` / `collector-quality` / `container-quality`）**success**；同次推送另触发 CodeQL [35961485363](https://github.com/Eswink/research-system-new/actions/runs/35961485363) = **success**（3/3）。**失败根因 = 本 cycle 新增的两个判据文件**：`ruff` 一条超长行 + 一段 import 未排序、`mypy` 两条 `Optional` 未收窄（`ApiDeps.artifacts` / `.runs`）。**成因是流程**：本地 m0 是**后台**起的，我在它出结果**之前**就推送了——**违反本 GOAL SOP 的「先本地 m0、再提交推送」次序**（本机 m0 随后抓到同一批问题，证据 `scratch/goal014-c2-m0.log`）|
 | cycle 2 纠错（ruff/mypy ⇒ 收窄 Optional + 排序 import） | `6d574c7`（**推送 tip**，推送区间 `6503ace..6d574c7`） | M0 [35962534435](https://github.com/Eswink/research-system-new/actions/runs/35962534435) | **六 job 全 success**（`console-frontend` / `container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `collector-quality` / `eval-gate`，逐 job 实查、终态 `completed`）；**同一次推送另触发 CodeQL** [35962533806](https://github.com/Eswink/research-system-new/actions/runs/35962533806) = **success**（3/3）⇒ `6503ace` 判红的两个 job **全部复绿** | **修法**：两处 `assert … is not None`（同时如实表达「产品根必须给制品店与编排服务」）+ import 分行；**零行为改动**（live 判据在改前已复验绿，本提交只过风格/类型门）。**本地 m0 复跑** `scratch/goal014-c2-m0-after-fix.log` = **22 PASS / 1 FAILED**（唯一未绿 = 环境型残余 `R-F3`；`python/tests` 4421 passed / 19 skipped）。教训并入 `MEM-20260924-125` |
 | cycle 2 收口回写（m0 终态 + 用例数归因入册） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | 见回合汇报 | **改动面**：`RECHECK-158` 补「本地 m0 与用例数归因」一节（两轮 m0 + 逐用例 ID 差集 +3/0）、`PLAN-156` 证据段补 m0 两轮与归因数、本文件台账补 `6503ace` 判红与 `6d574c7` 复绿两行。**判据 / 断言 / 策略面一字未动** |
+| cycle 3（EC-03：差集表文档 + 判据 + 4 组按压 + 回写） | `bf3ecdc`（**推送 tip**，推送区间 `933e1d1..bf3ecdc`） | M0 [35969958027](https://github.com/Eswink/research-system-new/actions/runs/35969958027) | **六 job 全 success**（`eval-gate` / `console-frontend` / `container-quality` / `quality-ubuntu-latest` / `collector-quality` / `quality-windows-latest`，逐 job 实查、终态 `completed`）；**同一次推送另触发 CodeQL** [35969957120](https://github.com/Eswink/research-system-new/actions/runs/35969957120) = **success**（3/3：`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)`）。**新增的两个文件在 CI 上同样通过**（Linux 侧复验，覆盖 Win32 假绿风险面） |
+| cycle 4（EC-04：三项残余分类处置 + 回写） | 见回合汇报 | 见回合汇报 | **改动面**：新增 `PLAN-20260924-158` + `RECHECK-20260924-160` + `ALL_PLAN` 投影 + 本文件（EC-04 `PASS` / 进度表 / 迭代日志 / 台账 / 续点）+ 上表 cycle 3 的台账行。**零产品代码 / 零策略面 / 零依赖 pin / 零 hook 面改动**；探针只读（令牌仅内存） |
 
 **台账尾巴口径**（沿用 GOAL-005…013，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
 
 ## 状态历史
 
+- 2026-09-24（cycle 4）：**EC-04 置 `PASS`**（三项残余**全部现测分类**、各给唯一终态：
+  `R-D1` 23 条告警 ⇒ **登记为需拍板**（人工项 5 + `escalation_triggers` 的依赖 pin 升级）；
+  hook 侧 L3 门 ⇒ **登记为需拍板**（人工项 6；根因 = `semgrep` 检测层缺失，**本 cycle 现场
+  复现** `scanner_enobufs` 失败开放）；450 行贴线 ⇒ **登记为需拍板**（人工项 4；
+  3 个文件正好 450、零余量）。**零处置动作**（不升 pin / 不动 hook / 不改源码）；
+  **未降级** EC-01/02/03。**本 RECHECK 的结论是「分类完成」，不是「残余已解决」**。
+  **GOAL 仍 `ACTIVE`**（EC-05 收口复检未动）。
 - 2026-09-24（cycle 3）：**EC-03 置 `PASS`**。差集 **35 条**逐条终态（**该放行 0 / 该拒绝 20 /
   该登记 15**，零待定）；**该放行 = 0 ⇒ 协议可达面上没有第二个 `W-A`**（8/8 已被非 `deny`
   规则覆盖）。交付物 = 仓内文档 `docs/architecture/POLICY_SURFACE_AUDIT.md` + 离线判据
@@ -632,18 +672,29 @@ memory_entries:
 
 ## 当前续点
 
-- **当前 cycle**：4（cycle 0 建档 `f6ce099`；cycle 1 EC-01 `4bfa6d0` + 纠错 `21ac2ea`；
-  归因更正 `334c9ab`；cycle 2 EC-02 `6503ace` + 纠错 `6d574c7` —— 均已推送并 CI 全绿；
-  cycle 3 EC-03 见回合汇报）。
+- **当前 cycle**：5（cycle 0 建档 `f6ce099`；cycle 1 EC-01 `4bfa6d0` + 纠错 `21ac2ea` +
+  归因更正 `334c9ab`；cycle 2 EC-02 `6503ace` + 纠错 `6d574c7`；cycle 3 EC-03 `bf3ecdc`
+  —— 均已推送并 **CI 全绿**；cycle 4 EC-04 见回合汇报）。
 - **EC 状态**：**EC-01 = PASS**；**EC-02 = BLOCKED**（判据本体不可达，可达半边已实测达成，
-  拍板项见 EC-02 的 `status_note` 与 `F-10` / `F-11`）；**EC-03 = PASS**；
-  EC-04 / EC-05 = PENDING。
-- **下一动作**：**cycle 4 = EC-04 残余清账（可选，视预算）** —— `R-D1` 的 23 条 Dependabot
-  告警分类 / hook 侧 L3 门 / 450 行贴线文件，每项给终态（已处置 / 登记为需拍板 /
-  点名为什么不属于本循环）；**不得为清账升级依赖 pin**（命中 `escalation_triggers`）、
-  **不得降级 ①②③**。空间不足 ⇒ 如实登记为下一轮输入，随即转 cycle 5 = EC-05 收口复检
-  （独立脚本两树同结论 + m0 23/23 + `validate.py` 绿 + CI 台账到终态）。
-- **cycle 3 留下的可复用事实**（详见 `MEM-20260924-126`）：
+  拍板项见 EC-02 的 `status_note` 与 `F-10` / `F-11`）；**EC-03 = PASS**；**EC-04 = PASS**
+  （分类完成）；**EC-05 = PENDING**（收口复检）。
+- **下一动作**：**cycle 5 = EC-05 收口复检** —— ① 独立复检脚本
+  `scratch/verify_goal014_c5.py`（只读 / 标准库 / **不 import 仓库代码**，`VERIFY_ROOT`
+  决定复检哪棵树）在**当前树**与**干净 checkout** 两处**同结论**；② 本地 **m0 = 23/23**
+  （终局行逐字 `PASS: profile=m0; 23 deterministic checks`；本机 `R-F3` 那条环境残余的
+  处置按既有口径：干净检出侧天然无 `scratch/` ⇒ 那一侧才是 23/23 的判据面）；
+  ③ 治理 `validate.py` 绿；④ CI 台账到终态；⑤ 13 条人工面 + `W` 列表 + 承继残余逐条登记。
+- **cycle 4 留下的可复用事实**：
+  1. **三项残余的现测数字**（2026-09-24 快照）：告警 23 = 4 high / 13 medium / 6 low
+     （vite 14 / undici 8 / yaml 1，**每条都有修复版本**；`vite` 直连 pin 6.3.5、
+     `undici` 只在 lockfile ⇒ 升 pin 要 overrides）；450 行门禁根内 1011 个 `.py`、
+     **正好 450 三个**、400–449 十个、软阈值 70 个；hook 面零处 `L3` 字面量
+     （「L3」= Mimosa 的检测层级）。
+  2. **探针出网的安全写法**（已并入既有记忆）：写死主机常量 + `http.client` +
+     路径结构校验；**不要**把拼出来的 URL 交给 `urllib.request`（Mimosa 判 SSRF 直接拦）。
+  3. **「分类完成」≠「已处置」**：EC-04 的交付物是分类表，三项终态全部是「登记为需拍板」，
+     不得被读成残余已解决。
+- **cycle 3 留下的可复用事实**（详见 `MEM-20260924-126` / `MEM-20260924-127`）：
   1. **「协议可达」≠「有人声明」**：只有 phase（∪ 其所引合约）的 `required_capabilities`
      才会变成 `ToolRequirement` 被 `PolicyEvaluator` 判；roles / skills / tool_providers
      是**供给声明**、本身不构成一次策略求值。把两者混成一张表 ⇒ 会把跑不到的名字报成活缺口。
