@@ -157,12 +157,27 @@ memory_entries:
 - **m0**：`scratch/goal014-c1-m0.log` ⇒ **22/23**（判红 = `framework/validate_bundle`，
   当时有**两条**原因：环境型残余 `R-F3` **加上**本 cycle 首版自造的 `output_schema` 名
   ——后者已由纠错提交改为既有的 `real_research_deliverable_v1` 修掉，**归因勘误见
-  `RECHECK-20260924-157` 的「勘误」节**）；`python/tests` **4418 passed / 18 skipped /
-  0 failed**，较上一基线（4413 / 18）差 **+5** = 本 PLAN 新增的正好 5 条判据。
+  `RECHECK-20260924-157` 的「勘误」节**）。
+- **用例数归因（纠错提交后在**当前树**复跑，`scratch/goal014-c1-m0-after-fix.log`）**：
+  `python/tests` **4419 passed / 18 skipped / 0 failed**，较上一基线（GOAL-013 c6，
+  4413 / 18）差 **+6**，按**逐用例 ID 差集**（`scratch/g014-collect-now.txt` vs 基线分离
+  worktree @ `7373e56` 的 `scratch/g014-collect-base.txt`）分解为：**+5** = 本 PLAN 新增的
+  5 条判据（`tests/application/preflight/test_policy_surface_consistency.py`）、**+1** =
+  `tests/tooling/test_python_source_limits.py::test_python_source_size_limits
+  [...test_policy_surface_consistency.py]`——该门禁对 `tests/` 下**每个 `.py`** 参数化
+  （`PRODUCT_ROOTS` 含 `tests`），故每新增一个测试文件恰好 +1 用例；**删除 0 条**。
+  改前那一轮（`scratch/goal014-c1-m0.log` 的 4418）同式分解为 **+4 + 1**（当时判据文件
+  只有 4 条）⇒ 本节早先写的「差 +5 = 新增判据数」**算术上凑巧、分解上是错的**，按实测更正
+  （勘误留档见 `RECHECK-20260924-157` 的「勘误」节第二处）。
 - **独立复检**：`scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`。
 
 ## 状态历史
 
+- 2026-09-24（纠错轮后补记）：两处**归因**更正（**判据与断言一字未动**）——
+  ① 本地 m0 判红当时有**两个**原因（环境残余 `R-F3` + 本 PLAN 首版自造的 `output_schema`
+  名），已在证据段与 AC-8 写明，并留档在 `RECHECK-20260924-157` 的「勘误」节；
+  ② 用例数差按**逐用例 ID 差集**重新归因为 **+6 = 5 条新判据 + 1 个源文件规模门禁用例**
+  （原写的「+5 = 新增判据数」分解有误）。两条均**未改变 PLAN 的完成判定**。
 - 2026-09-24：derive（GOAL-014 cycle 1）。起点事实已实测：真实控制面 `FAIL`
   （`[POLICY_DENIED] phase:review: policy denied capability evidence.read: used default policy effect`
   + 两份 `TASK_CONTRACT_MISSING`），live 装配 `WARN`（仅 4 条 `TOOL_RISK_ELEVATED`）

@@ -113,8 +113,17 @@ packages/application/preflight/policy_check.py` **为空**（两个被按压的�
   scratch\self-governance-bootstrap-prompt.md -> [A-Za-z]:\\|/(home|mnt|data|Users`
   （并发写者的 gitignored 在制品；CI 检出无 `scratch/` ⇒ 那边不受影响），
   **以及**本 cycle 自造的 `output_schema` 名不存在（**已由纠错提交修掉**）。
-- **用例数归因（不留未解释的差）**：上一基线（GOAL-013 c6）4413 passed / 18 skipped
-  ⇒ 本轮 **4418 / 18**，差 **+5** = 本 cycle 新增的**正好 5 条**判据；skipped 数不变。
+- **用例数归因（不留未解释的差；本行已按逐用例 ID 差集更正，勘误见下）**：
+  上一基线（GOAL-013 c6）4413 passed / 18 skipped ⇒ 纠错提交后**当前树**复跑
+  （`scratch/goal014-c1-m0-after-fix.log`）**4419 / 18**，差 **+6**；按
+  **逐用例 ID 差集**（`scratch/g014-collect-now.txt` vs 基线 worktree @ `7373e56` 的
+  `scratch/g014-collect-base.txt`）分解为：**+5** = `test_policy_surface_consistency.py`
+  新增的 5 条判据、**+1** = `tests/tooling/test_python_source_limits.py::
+  test_python_source_size_limits[tests\application\preflight\
+  test_policy_surface_consistency.py]`（该门禁对 `tests/` 下**每个 `.py`** 参数化，
+  `PRODUCT_ROOTS` 含 `tests` ⇒ 每新增一个测试文件恰好 +1 用例）；**删除 0 条**，
+  skipped 数不变。改前那一轮（`scratch/goal014-c1-m0.log` 的 4418）同式分解为
+  **+4 + 1**（当时判据文件只有 4 条）。
 - **独立复检脚本**：`scratch/verify_goal014_c1.py`（只读、标准库、不 import 仓库代码、
   由**调用目录**定 ROOT）⇒ `checked=45 failures=0`。
 
@@ -153,6 +162,19 @@ packages/application/preflight/policy_check.py` **为空**（两个被按压的�
 - **教训**（并入 `MEM-20260924-124`）：`framework/validate_bundle` 的判词块**会同时列出多条
   错误**，**读第一条就归因**会把「自己的原因」盖在「环境原因」下面；归因前必须把整个判词块
   读完，并且用**CI（无 `scratch/`）**这条独立面交叉验证环境归因是否自洽。
+
+**第二处勘误：用例数差的分解。**
+
+- **原文**（保留在其上第六节，不回改）：「上一基线 4413 / 18 ⇒ 4418 / 18，差 **+5**
+  = 本 cycle 新增的**正好 5 条**判据」。
+- **实测事实**：那轮跑的是**改前**的树，判据文件当时**只有 4 条**（第 5 条可冻结面判据是
+  之后才加的，两轮 m0 的逐文件点差实测只有这一个文件从 4 变 5）。所以那一轮的
+  4418 = 4413 **+4 +1**，**不是** +5 条判据。写下的「+5」是**从算术差反推**的，
+  凑巧与「5 条判据」同值，**分解上是错的**。
+- **怎么被发现的**：纠错提交后当前树复跑得 **4419**，与「+5 条判据」对不上（应为 4418）
+  ⇒ 差 1 未解释 ⇒ 用**逐用例 ID 差集**定位（不再用总数反推）。
+- **处置**：第六节该行就地改为按 ID 差集分解的 **+5 +1**（见上），并在此留档。
+  **对本复检结论无影响**（判据、反证、按压、独立复检均不依赖用例总数）。
 
 ## 判据性质披露（必须读的一段）
 

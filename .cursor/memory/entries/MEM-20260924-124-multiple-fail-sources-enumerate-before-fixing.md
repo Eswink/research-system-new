@@ -83,9 +83,25 @@ uv run --frozen --no-sync python -B scratch/goal014_c1_probe.py
 
 同批实测的两个附带事实（可复用）：
 
-- **`python/tests` 用例数归因法**：改判据/夹具后要能**逐条解释**用例数的差。
-  本次 4413 → 4418（skipped 18 不变），差 **+5** = 新增的正好 5 条判据 ⇒ 无隐藏变化。
-  数不上就说明改了别的东西 —— 拿上一轮的 m0 日志（`scratch/goal013-c6-m0.log`）当基线。
+- **`python/tests` 用例数归因法（**已修正：不要从总数反推**）**：改判据/夹具后要能
+  **逐条解释**用例数的差。**踩过的坑**：本次先写成「4413 → 4418，差 **+5** = 新增的正好
+  5 条判据」——那是**从算术差反推**的，凑巧与 5 同值；纠错提交后当前树复跑得 **4419**，
+  才暴露出对不上（改前那轮判据文件其实**只有 4 条**，4418 = 4413 **+4 +1**）。
+  **正确手法 = 逐用例 ID 差集**（总数只用来核对，不用来归因）：
+
+  ```bash
+  # 基线（分离 worktree，不污染工作树；注意用主仓的 venv/project）
+  git worktree add /tmp/<name> <baseline-sha> --detach
+  uv run --frozen --no-sync python -B -m pytest tests --collect-only -q \
+    | grep "::" | sort > scratch/<base>.txt     # 在基线 worktree 内跑
+  # 当前树同法收集，然后
+  diff scratch/<base>.txt scratch/<now>.txt     # 多/少哪几条用例一目了然
+  ```
+
+  **本仓的隐藏 +1**：`tests/tooling/test_python_source_limits.py` 对 `tests/` 下**每个
+  `.py`** 参数化（`PRODUCT_ROOTS` 含 `tests`）⇒ **每新增一个测试文件都 +1 用例**，
+  与「新增了几条判据」无关。所以 `4419 = 4413 +5（新判据）+1（该门禁用例）`。
+  收集完记得 `git worktree remove <path>`。
 - **本机 as-is m0 = 22/23 的形状**：唯一未绿项 `framework/validate_bundle` 会被
   并发写者的 gitignored `scratch/` 文档判红（纯文本链接扫描把正则字面量读成本地链接）。
   与 GOAL-013 cycle 6 的 as-is 跑法**同形**（同一项、同一原因）⇒ 归因可复现，
@@ -99,7 +115,9 @@ uv run --frozen --no-sync python -B scratch/goal014_c1_probe.py
   `status` 就不会变——但**枚举本身不构成处置授权**。本仓的授权边界由 GOAL 的
   `authorization.ref` 定；枚举出授权外的来源时**登记、不自行放宽**。
 - 用例数归因法只对**静态收集**的测试有效；`pytest` 的 skip/parametrize 变化会让
-  数字动，归因前先确认 skipped 数是否也变了（本次 skipped 不变才敢下「差 = 新增数」）。
+  数字动，归因前先确认 skipped 数是否也变了（本次 skipped 不变才有归因的前提），
+  **但 skipped 不变也不代表能靠总数归因** —— 总数只能核对，归因必须落到**逐个用例 ID**
+  （本次的 +1 就藏在参数化门禁里，任何按总数反推的写法都会漏）。
 - `R-F3` 那条环境事实**只对本机成立**：CI 检出无 `scratch/`，不要把它读成 CI 现象。
 
 ## 来源

@@ -106,9 +106,11 @@ exit_criteria:
       （逐字节还原）。**m0 22 PASS / 1 FAILED**（判红 = `framework/validate_bundle`，
       **当时有两条原因**：环境型残余 `R-F3` **加上**本 cycle 首版自造的 `output_schema` 名
       ——后者被 CI 判红暴露、已由纠错提交改为既有的 `real_research_deliverable_v1` 修掉，
-      **归因勘误见 `RECHECK-20260924-157` 的「勘误」节**；`python/tests`
-      **4418 passed / 18 skipped / 0 failed**，较上一基线 4413/18 差 **+5**
-      = 新增的正好 5 条判据）。**独立复检** `scratch/verify_goal014_c1.py` ⇒
+      **归因勘误见 `RECHECK-20260924-157` 的「勘误」节**；`python/tests` 纠错后在**当前树**
+      复跑 **4419 passed / 18 skipped / 0 failed**，较上一基线 4413/18 差 **+6** =
+      新增 5 条判据 **+** 源文件规模门禁为新测试文件多出的 1 个参数化用例，
+      **按逐用例 ID 差集归因**——详见 `RECHECK-20260924-157` 的「用例数归因」条与
+      该节第二处勘误）。**独立复检** `scratch/verify_goal014_c1.py` ⇒
       `checked=45 failures=0`。**本 EC 尚未覆盖**：真实控制面能否真的**跑完**研究闭环
       ——那由 EC-02 承载（未开始）。**一处具名授权扩展**：出厂目录补全（`F-9`），
       理由与回退面见 RECHECK-157 的「授权面的一处如实登记」节。
@@ -469,15 +471,15 @@ memory_entries:
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `f6ce099`（**推送 tip**） | 治理 `validate.py` 绿（`Cursor 治理验证通过`）；`DOCS-CHECK PASS: 6 deterministic checks` | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-8**：policy.yaml 现状、镜像契约 6+4、镜像判据的三条断言口径、`evidence.read` 的四处声明面、执行期复用同一张表、`preflight_override` 是 `W-C` 的载体、双向差集起点数字 41/14/10/31/4 + 域名误收陷阱、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1` / `R-F2` / `R-F3`（承继，其中 `R-F3` 影响本地 m0 口径） | cycle 1 = derive **EC-01** 子 PLAN（策略面一致性主干）：先定案「**两套装配同结论判据**」的形态（同一脚本同求带/不带 `preflight_override` 两条路径、输出可 diff）+ 落 `evidence.read` 的 allow（**`policy.yaml` 与 `_CAPABILITY_SCOPE` 同一提交内真同步**，`scope` 取值以真实求值路径验证为准）+ 成对反证①②；EC-02 的真实端到端在其后 |
-| 1 | PLAN-20260924-155（EC-01） | `add2c37`（derive：PLAN-155 + ALL_PLAN + `child_plans`）、`4d9925a`（WP1 判据）、`5cde986`（WP2 放行 `evidence.read`）、`9bba68d`（WP3 出厂目录补全）、`538effc`（WP4 陈述对齐 + 反证）、`4bfa6d0`（可冻结面判据）、本 cycle 的收口回写见台账尾巴 | **判据 5 passed**（改前 4 failed，`scratch/goal014-c1-criterion-red.txt`）；`tests/application/preflight/` + `test_m2_audit.py` **28 passed**；受影响套件 **81 passed**；e2e 离线 **9 passed / 1 skipped**；**出站全部 `blocked 0`、判据自身 `judged 0`**（零出网）；**两装配同结论** `SAME_STATUS = True A=WARN B=WARN`；**两套都可冻结**（各 4 对留痕）；**成对反证先红后绿**（`scratch/goal014-c1-press1-allow-withdrawn.txt` / `-press2-mirror-desync.txt`），按压后 `git diff --stat` **为空**；**m0 22 PASS / 1 FAILED**（判红 = `framework/validate_bundle`，**两条原因**：环境残余 `R-F3` **加上**本 cycle 首版自造的 `output_schema` 名——**CI 判红暴露了后者**，已由纠错提交修掉；`python/tests` **4418 passed / 18 skipped / 0 failed**，差 +5 = 新增判据数）；**独立复检** `scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`；`validate.py` 绿 | 见下方 CI 台账 | **本 cycle 实测新发现（`F-9`，已登记）**：真实控制面的 `FAIL` 有**两个独立来源**——`POLICY_DENIED`（授权覆盖）**与**两份 `TASK_CONTRACT_MISSING`（`sort_analysis_*` 契约只在测试夹具、不在出厂目录，而该协议是**产品面可选模板**）⇒ 只放行策略**不足以**达成 EC-01/EC-02 ⇒ 处置 = **声明补全**（把夹具的运行期注入提升为出厂声明，与 W-B 同类），**具名登记**在 PLAN-155 的 `authorization.ref`、回退面 = `9bba68d`，**不碰任何策略面**。录制性陈述两处**就地改对**（`_protocol_execute_freeze` 的 docstring、`test_ec02_experiment_live` 的边界段），**断言一字未改** | **EC-01 PASS**。**`W-A` / `W-C` 由本 cycle 消灭**（判据在册、反证成对、按压逐字节还原）。**EC-02/03/04/05 未动**；`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3` 与 13 条人工面**原样保留** | cycle 2 = **EC-02 真实控制面端到端**：**不带任何 `preflight_override`** 跑一次真实 run（真实 LLM + 真实检索 + 真实实验）到终态 `SUCCEEDED`、三项读面（实验 / 证据 / 预算）齐备；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测）。**起点已备**：真实控制面现在 `WARN` + **可冻结**（已实测），正是 EC-02 的前置条件 |
+| 1 | PLAN-20260924-155（EC-01） | `add2c37`（derive：PLAN-155 + ALL_PLAN + `child_plans`）、`4d9925a`（WP1 判据）、`5cde986`（WP2 放行 `evidence.read`）、`9bba68d`（WP3 出厂目录补全）、`538effc`（WP4 陈述对齐 + 反证）、`4bfa6d0`（可冻结面判据）、本 cycle 的收口回写见台账尾巴 | **判据 5 passed**（改前 4 failed，`scratch/goal014-c1-criterion-red.txt`）；`tests/application/preflight/` + `test_m2_audit.py` **28 passed**；受影响套件 **81 passed**；e2e 离线 **9 passed / 1 skipped**；**出站全部 `blocked 0`、判据自身 `judged 0`**（零出网）；**两装配同结论** `SAME_STATUS = True A=WARN B=WARN`；**两套都可冻结**（各 4 对留痕）；**成对反证先红后绿**（`scratch/goal014-c1-press1-allow-withdrawn.txt` / `-press2-mirror-desync.txt`），按压后 `git diff --stat` **为空**；**m0 22 PASS / 1 FAILED**（判红 = `framework/validate_bundle`，**两条原因**：环境残余 `R-F3` **加上**本 cycle 首版自造的 `output_schema` 名——**CI 判红暴露了后者**，已由纠错提交修掉；`python/tests` **4419 passed / 18 skipped / 0 failed**，差 **+6** = 5 条新判据 + 1 个源文件规模门禁用例（逐用例 ID 差集归因，见 RECHECK-157 的「用例数归因」条）；**独立复检** `scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`；`validate.py` 绿 | 见下方 CI 台账 | **本 cycle 实测新发现（`F-9`，已登记）**：真实控制面的 `FAIL` 有**两个独立来源**——`POLICY_DENIED`（授权覆盖）**与**两份 `TASK_CONTRACT_MISSING`（`sort_analysis_*` 契约只在测试夹具、不在出厂目录，而该协议是**产品面可选模板**）⇒ 只放行策略**不足以**达成 EC-01/EC-02 ⇒ 处置 = **声明补全**（把夹具的运行期注入提升为出厂声明，与 W-B 同类），**具名登记**在 PLAN-155 的 `authorization.ref`、回退面 = `9bba68d`，**不碰任何策略面**。录制性陈述两处**就地改对**（`_protocol_execute_freeze` 的 docstring、`test_ec02_experiment_live` 的边界段），**断言一字未改** | **EC-01 PASS**。**`W-A` / `W-C` 由本 cycle 消灭**（判据在册、反证成对、按压逐字节还原）。**EC-02/03/04/05 未动**；`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3` 与 13 条人工面**原样保留** | cycle 2 = **EC-02 真实控制面端到端**：**不带任何 `preflight_override`** 跑一次真实 run（真实 LLM + 真实检索 + 真实实验）到终态 `SUCCEEDED`、三项读面（实验 / 证据 / 预算）齐备；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测）。**起点已备**：真实控制面现在 `WARN` + **可冻结**（已实测），正是 EC-02 的前置条件 |
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-014 落地） | `f6ce099`（**推送 tip**，推送区间 `df29915..f6ce099`） | M0 [35952434115](https://github.com/Eswink/research-system-new/actions/runs/35952434115) | **六 job 全 success**（`eval-gate` / `console-frontend` / `collector-quality` / `quality-windows-latest` / `quality-ubuntu-latest` / `container-quality`，逐 job 实查、终态 `completed`）；**同一次推送另触发 CodeQL** [35952433763](https://github.com/Eswink/research-system-new/actions/runs/35952433763) = **success**（3/3：`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)`） |
 | cycle 1 收口回写（EC-01 PASS + `RECHECK-157`） | `add2c37`…`5abddee`（**推送 tip**，推送区间 `ea803e1..5abddee`） | M0 [35956753055](https://github.com/Eswink/research-system-new/actions/runs/35956753055) | **判红两个 job**：`quality-ubuntu-latest` / `quality-windows-latest` = **failure**（同一根因），其余四个（`collector-quality` / `console-frontend` / `eval-gate` / `container-quality`）**success**；同次推送另触发 CodeQL [35956752245](https://github.com/Eswink/research-system-new/actions/runs/35956752245) = **success**（3/3）。**失败根因（取失败 job 日志为证，`scratch/goal014-c1-ci-ubuntu.log`）**：`framework/validate_bundle` 判 `TaskContract sort_analysis_execution / sort_analysis_review 输出 Schema 不存在` —— **本 cycle 首版自造的 `output_schema` 名**。**CI 无 `scratch/` ⇒ 它同时证明了本地那条红不是环境单因**（我原先把本地 red 归因成 `R-F3` 一项，是**错的**）|
-| cycle 1 纠错（自造 schema 名 → 改用既有 schema） | 见回合汇报（**本条自身触发的 run 在回合汇报里给终态**） | 见回合汇报 | **修法**：两份契约的 `output_schema` 改为**既有的** `real_research_deliverable_v1`（**不新造 schema 文件**）；本地 `validate_bundle` 此后只剩 `R-F3` 那条环境项；受影响套件 **70 passed**；三处归因措辞（`RECHECK-157` 勘误节 + `PLAN-155` AC-8/证据 + 本文件）**一并更正**，教训并入 `MEM-20260924-124` |
-| 台账尾巴（本条 CI 台账回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在**回合汇报**里给出终态，**不再回写文件**） | | |
+| cycle 1 纠错（自造 schema 名 → 改用既有 schema） | `21ac2ea`（**推送 tip**，推送区间 `5abddee..21ac2ea`） | M0 [35957938701](https://github.com/Eswink/research-system-new/actions/runs/35957938701) | **六 job 全 success**（`eval-gate` / `console-frontend` / `collector-quality` / `quality-windows-latest` / `quality-ubuntu-latest` / `container-quality`，逐 job 实查、终态 `completed`）；**同一次推送另触发 CodeQL** [35957938387](https://github.com/Eswink/research-system-new/actions/runs/35957938387) = **success**（3/3）。**修法**：两份契约的 `output_schema` 改为**既有的** `real_research_deliverable_v1`（**不新造 schema 文件**）；本地 `validate_bundle` 此后只剩 `R-F3` 那条环境项；受影响套件 **70 passed**；三处归因措辞（`RECHECK-157` 勘误节 + `PLAN-155` AC-8/证据 + 本文件）**一并更正**，教训并入 `MEM-20260924-124` |
+| cycle 1 归因更正（用例数按逐用例 ID 差集重算 + `g013final` 登记） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | 见回合汇报 | **改动面**：`RECHECK-20260924-157`（用例数归因条就地更正 + 第二处勘误）、`PLAN-20260924-155`（证据段 + 状态历史）、`GOAL-014`（EC-01 status_note + 迭代日志 + 续点）、`MEM-20260924-124`（归因纪律换成逐用例 ID 差集）。**判据、断言、策略面一字未动**；`4419 = 4413 + 5 + 1`；临时 worktree `/tmp/g014base` 已移除 |
 
 **台账尾巴口径**（沿用 GOAL-005…013，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
@@ -499,14 +501,17 @@ memory_entries:
   不在出厂目录，而该协议是**产品面可选模板** ⇒ 处置 = **声明补全**（与 W-B 同类），
   已在 `PLAN-20260924-155` 的 `authorization.ref` **具名登记**（回退面 = `9bba68d`），
   **不碰任何策略面**。**本地 m0 = 22 PASS / 1 FAILED**（唯一未绿 = 环境型残余 `R-F3`；
-  `python/tests` 4418 passed / 18 skipped / 0 failed，差 +5 = 新增判据数，已完整归因）；
+  `python/tests` 4419 passed / 18 skipped / 0 failed，差 **+6** = 5 条新判据 + 1 个源文件
+  规模门禁用例（**逐用例 ID 差集**归因，已完整归因，见 `RECHECK-20260924-157` 的
+  「用例数归因」条与其第二处勘误）；
   独立复检 `scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`。
   **EC-02/03/04/05 未动**；`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3`
   与 13 条人工面**原样保留**。
 
 ## 当前续点
 
-- **当前 cycle**：2（cycle 0 建档 `f6ce099`、cycle 1 EC-01 `4bfa6d0`，两者均已推送并 CI 到终态）。
+- **当前 cycle**：2（cycle 0 建档 `f6ce099`；cycle 1 EC-01 `4bfa6d0` + 纠错 `21ac2ea`
+  ——两者均已推送并 CI 全绿；归因更正见下方续点）。
 - **EC 状态**：**EC-01 = PASS**；EC-02 / EC-03 / EC-04 / EC-05 = PENDING。
 - **下一动作**：derive **EC-02** 子 PLAN（真实控制面端到端 run）。
 - **起点已备（cycle 2 直接可用）**：真实控制面（`deps.preflight_override = None`）现在对
@@ -526,4 +531,12 @@ memory_entries:
   （`scope` 取值、两套装配的分岔点、共享夹具的失败形态与撤回纪律检查点、执行期同源、
   反证②的按压口径）已**落地为代码与判据**；过程与判词见
   `PLAN-20260924-155` 的「证据」节与 `RECHECK-20260924-157`。
+- **cycle 1 之后的归因更正**（纠错提交 `21ac2ea` 已推送并 CI 全绿）：① 本地 m0 判红的
+  双重原因归因（勘误见 RECHECK-157）；② 用例数差按**逐用例 ID 差集**重算为
+  **+6 = 5 条新判据 + 1 个源文件规模门禁用例**（`4419 / 18 / 0`）。两处**只改记录、
+  不动判据与断言**；教训并入 `MEM-20260924-124`。
+- **housekeeping（非本 GOAL 产物，仅登记）**：`git worktree list` 里残留
+  `C:/Users/googl/AppData/Local/Temp/g013final`（GOAL-013 收口的分离检出 @ `f8276f4`，
+  内含一个被改动的 `docs/api/openapi.m13.json`）。本 cycle 自己的 `/tmp/g014base`
+  **已移除**；`g013final` 属 GOAL-013 的收口痕迹，**本 GOAL 不动它**，留给人工处置。
 
