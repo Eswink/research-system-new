@@ -199,7 +199,8 @@ escalation_triggers:
   - >-
     路径 (B) 的「重新设计需要什么」（`docs/roadmap/PATH_B_REFUTATION_RECORD.md` 的 5 条）
     被判定需要重启时——**需拍板**，本循环不自行重启该路线
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260924-155-policy-surface-consistency-main-trunk.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -267,6 +268,23 @@ memory_entries: []
   EC-03 的判据必须**按 YAML 结构**取 `capabilities:` 列表，**不得**用行级正则扫全文。
 - **F-8｜承继残余**：GOAL-013 收口（`ACHIEVED`）保留 **13 条人工面** +
   `W-A` / `W-C` + `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3`。本 GOAL **原样承继**。
+- **F-9｜cycle 1 实测新发现（`W-A` 之外的第二来源，同一「声明与现实漂移」类）**：
+  `W-A` 只是真实控制面 `FAIL` 的**一个**来源。实测（`scratch/goal014_c1_probe.py`，走产品入口
+  `services/api/run_execution.py` 的 `execution_inputs()`）真实控制面的 `FAIL` 报告含**三条 ERROR**
+  分属**两个独立来源**：① `[POLICY_DENIED] phase:review: … evidence.read: used default policy effect`
+  （本 GOAL 授权覆盖）；② **两份 `TASK_CONTRACT_MISSING`**（`task-contract:sort_analysis_execution`
+  与 `task-contract:sort_analysis_review`）。根因：`sort_analysis_v1.yaml` 的两个 phase 引用
+  `task_contract: sort_analysis_execution` / `sort_analysis_review`，而**出厂目录**
+  `examples/contracts/task_contracts.yaml` 只声明 `domain_discovery` / `experiment_execution` /
+  `console_demo_deliverable` / `real_research_deliverable` / `real_retrieval_deliverable`
+  ——**这两份契约只存在于测试夹具**（`tests/api/run_fixtures.py` 的
+  `replace_catalog_with_pins()` 用 `setdefault` 运行期注入）。而 `sort_analysis_v1.yaml` 是
+  **产品面可选模板**（`services/api/routers/protocol_drafts.py` 的 `_TEMPLATE_SOURCES` 第 1 条
+  =「Sort 分析（2-phase 参考）」）⇒ **产品提供的模板在真实控制面上必 FAIL**。
+  两套装配的基线因此是 `A=FAIL` / `B=WARN`（`SAME_STATUS = False`，`W-A`/`W-C` 双双复现）。
+  **⇒ EC-01 / EC-02 只靠放行策略无法达成**，必须同时把这两份契约补进**出厂目录**
+  （**声明补全**，与 W-B 的处置同类；**不碰任何策略面**）。该扩展已在
+  `PLAN-20260924-155` 的 `authorization.ref` 具名登记，回退面 = 单 WP 的提交。
 
 ### 建档时登记的残余（不得因本 GOAL 存在而被读成已解决）
 

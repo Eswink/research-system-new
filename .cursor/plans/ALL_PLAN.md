@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260924-155](tasks/PLAN-20260924-155-policy-surface-consistency-main-trunk.md) | IN_PROGRESS |
 | [x] | [PLAN-20260923-154](tasks/PLAN-20260923-154-ops-matrix-disclosure-first-class.md) | DONE |
 | [x] | [PLAN-20260923-153](tasks/PLAN-20260923-153-frontend-criteria-disclosure-judge.md) | DONE |
 | [x] | [PLAN-20260923-152](tasks/PLAN-20260923-152-live-page-read-face-batch-three.md) | DONE |
