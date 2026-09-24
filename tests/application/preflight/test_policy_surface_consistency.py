@@ -56,11 +56,8 @@ def _deps() -> Any:
     return make_run_ready_deps()
 
 
-def _preflight_under(deps: Any, run_id: str) -> tuple[Any, Any]:
-    """走**产品入口**求一次 preflight；返回 (context, report)。
-
-    装配由 `deps.preflight_override` 的在场与否决定——本判据不在产品入口之外另开一条路。
-    """
+def _execution_inputs(deps: Any, run_id: str) -> Any:
+    """走**产品入口**解析一次运行输入（`context` 由装配决定，本判据不另开一条路）。"""
     from packages.domain.core import ID
 
     request = ExecutionRequest(
@@ -71,7 +68,15 @@ def _preflight_under(deps: Any, run_id: str) -> tuple[Any, Any]:
         draft_ref=None,
         project_id=_PROJECT_ID,
     )
-    inputs = execution_inputs(request)
+    return execution_inputs(request)
+
+
+def _preflight_under(deps: Any, run_id: str) -> tuple[Any, Any]:
+    """走**产品入口**求一次 preflight；返回 (context, report)。
+
+    装配由 `deps.preflight_override` 的在场与否决定——本判据不在产品入口之外另开一条路。
+    """
+    inputs = _execution_inputs(deps, run_id)
     context = inputs.preflight
     plan, report = _run_preflight(context)
     assert plan is not None, _verdict(report)
@@ -145,6 +150,47 @@ def test_the_real_control_plane_really_is_the_real_policy() -> None:
     assert policy.default_effect is PolicyDecision.DENY, policy.default_effect
     allowed = {rule.capability for rule in policy.allow}
     assert _CAPABILITY in allowed, sorted(allowed)
+
+
+def test_the_real_control_plane_warn_is_freezable() -> None:
+    """EC-01 ②「同为 `WARN`+**可冻结**」的冻结面：真实控制面的 `WARN` **能冻**。
+
+    只断言 `status` 相等是不够的——「可跑」还要求 `freeze_manifest` 能完成：
+    `TOOL_RISK_ELEVATED` 的 EXECUTE 风险必须由**策略显式允许**才可转换
+    （GOAL-012 EC-01 的通道）。本 EC 要的正是**真实控制面**上这条路能走通
+    （此前它死在 `POLICY_DENIED`，从未被走到过）。
+
+    留痕只断言 **(phase, capability) 对集合**，**不**断言 `decision`：
+    两套装配用的是**不同的求值器**，各自记各自的判定（真实控制面是
+    `ALLOW_WITH_CONSTRAINTS`（`code.execute` / `workspace.write.code` 带约束），
+    live 装配的 Fake 求值器全放行记 `ALLOW`）——那是**装配差异的正确表现**，
+    不是不一致；本判据的射程是**结论**（可冻、留痕覆盖同一批对）。
+    """
+    from adapters.contracts.protocol_loaders import load_protocol
+    from packages.application.preflight.preflight import (
+        ManifestFreezeError,
+        compile_and_preflight,
+        freeze_manifest,
+    )
+
+    deps = replace(_deps(), preflight_override=None)
+    inputs = _execution_inputs(deps, _REAL_RUN)
+    context = inputs.preflight
+    protocol = load_protocol(_PROTOCOL_PATH)
+    plan, report = compile_and_preflight(protocol, context.catalog, context.project, context)
+    assert plan is not None, _verdict(report)
+    try:
+        manifest = freeze_manifest(_REAL_RUN, plan, report, context)
+    except ManifestFreezeError as exc:  # pragma: no cover - 失败即判据红
+        raise AssertionError(f"真实控制面的 WARN 不可冻结：{exc}\n{_verdict(report)}") from exc
+    assert manifest.frozen_at is not None
+    pairs = {(item["phase_id"], item["capability"]) for item in manifest.accepted_policy_exceptions}
+    assert pairs == {
+        ("execution", "code.execute"),
+        ("execution", "workspace.read"),
+        ("execution", "workspace.write.code"),
+        ("review", "workspace.read"),
+    }, sorted(pairs)
 
 
 def test_the_capability_is_allowed_at_execution_time_too() -> None:
