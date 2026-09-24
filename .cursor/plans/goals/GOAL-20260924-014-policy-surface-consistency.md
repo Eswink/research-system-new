@@ -422,7 +422,17 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | `<建档提交>`（见下方 CI 台账） | 治理 `validate.py` 绿（建档后实跑） | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-8**：policy.yaml 现状、镜像契约 6+4、镜像判据的三条断言口径、`evidence.read` 的四处声明面、执行期复用同一张表、`preflight_override` 是 `W-C` 的载体、双向差集起点数字 41/14/10/31/4 + 域名误收陷阱、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1` / `R-F2` / `R-F3`（承继，其中 `R-F3` 影响本地 m0 口径） | cycle 1 = derive **EC-01** 子 PLAN（策略面一致性主干）：先定案「**两套装配同结论判据**」的形态（同一脚本同求带/不带 `preflight_override` 两条路径、输出可 diff）+ 落 `evidence.read` 的 allow（**`policy.yaml` 与 `_CAPABILITY_SCOPE` 同一提交内真同步**，`scope` 取值以真实求值路径验证为准）+ 成对反证①②；EC-02 的真实端到端在其后 |
+| 0 | （建档，无子 PLAN） | `f6ce099`（**推送 tip**） | 治理 `validate.py` 绿（`Cursor 治理验证通过`）；`DOCS-CHECK PASS: 6 deterministic checks` | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-8**：policy.yaml 现状、镜像契约 6+4、镜像判据的三条断言口径、`evidence.read` 的四处声明面、执行期复用同一张表、`preflight_override` 是 `W-C` 的载体、双向差集起点数字 41/14/10/31/4 + 域名误收陷阱、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1` / `R-F2` / `R-F3`（承继，其中 `R-F3` 影响本地 m0 口径） | cycle 1 = derive **EC-01** 子 PLAN（策略面一致性主干）：先定案「**两套装配同结论判据**」的形态（同一脚本同求带/不带 `preflight_override` 两条路径、输出可 diff）+ 落 `evidence.read` 的 allow（**`policy.yaml` 与 `_CAPABILITY_SCOPE` 同一提交内真同步**，`scope` 取值以真实求值路径验证为准）+ 成对反证①②；EC-02 的真实端到端在其后 |
+
+### CI 台账（逐 run 逐 job 实查；全部落在 main）
+
+| 推送 | 提交 | run | 六 job 结论 |
+| --- | --- | --- | --- |
+| 建档（GOAL-014 落地） | `f6ce099`（**推送 tip**，推送区间 `df29915..f6ce099`） | M0 [35952434115](https://github.com/Eswink/research-system-new/actions/runs/35952434115) | **六 job 全 success**（`eval-gate` / `console-frontend` / `collector-quality` / `quality-windows-latest` / `quality-ubuntu-latest` / `container-quality`，逐 job 实查、终态 `completed`）；**同一次推送另触发 CodeQL** [35952433763](https://github.com/Eswink/research-system-new/actions/runs/35952433763) = **success**（3/3：`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)`） |
+| 台账尾巴（本条 CI 台账回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在**回合汇报**里给出终态，**不再回写文件**） | | |
+
+**台账尾巴口径**（沿用 GOAL-005…013，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
+在**回合汇报**里给出终态，**不再回写文件**。
 
 ## 状态历史
 
@@ -432,3 +442,31 @@ memory_entries: []
   本 GOAL 是**用户就 `W-A` 拍板（方案 (A)：放行 `evidence.read`）之后的执行落点**。
   GOAL-001…013 全部只读（003 / 011 BLOCKED，其余 ACHIEVED）。
   建档当日的**授权边界**：只新增 `evidence.read` 一条 allow；其余策略面一律不动。
+
+## 当前续点
+
+- **当前 cycle**：1（建档 cycle 已收口：`f6ce099` 推送并 CI 全绿）。
+- **下一动作**：derive **EC-01** 子 PLAN（策略面一致性主干）。
+- **已探明的实现要点（供 cycle 1 直接用，均来自建档当日的文件核对）**：
+  1. `evidence.read` 只需在 `examples/config/policy.yaml` 的 `allow` 新增一条
+     （建议 `scope: project`，与同 provider 的 `artifact.read` 对齐）+ 在
+     `_CAPABILITY_SCOPE` 加**同一对**（`{"evidence.read": "project"}`）；**不得**进
+     `_GATE_CAPABILITY_SCOPES`；`examples/config/capabilities.yaml` **无需**改动（已登记）。
+  2. **两套装配**的分岔点是 `preflight_override`：不带 override 的路径由
+     `services/api/preflight_support.py` 的 `build_policy_evaluator()` 接
+     `NativePolicyEvaluator`（真实控制面）；带 override 的路径是 live / run-ready 装配。
+  3. **共享夹具的失败形态（撤回纪律的检查点）**：`tests/application/preflight/
+     test_policy_allowed_execute_freeze.py` 的 `_protocol_policy()` 在 `evidence.read`
+     尚未被放行时**运行期注入**该 allow，并在 docstring 里点名「那是另一条独立的既有缺口」；
+     `tests/e2e/test_ec02_experiment_live.py` 的 docstring 也把「真实控制面判 `DENY`」
+     写成**如实边界**。⇒ 放行之后这两处**陈述变成假**，必须**同一提交内**改成与新事实一致
+     （**不是**削弱判据：`_protocol_policy` 的 `if any(...)` 分支会自然走到「直接用策略」，
+     留痕断言不变；live 文件的边界段落改为「已由 GOAL-014 EC-01 消除」）。
+     改动前先数清还有谁拿这条 `DENY` 当夹具（建档当日实测：`grep -rn "evidence.read" tests/`
+     的命中里，仅上述两处把 `DENY` 当**陈述/前提**，其余是能力名的正常使用）。
+  4. **执行期面（F-5）**：`policy_check.policy_scope_for()` 复用同一张表 ⇒ EC-01 的判据
+     必须**同时**验证 preflight 与执行期两处都放行（只放行 preflight 会让同一能力在门链处
+     落回 `DENY`）。
+  5. **反证②**：镜像不同步 ⇒ `tests/application/test_m2_audit.py` 的
+     `test_policy_scope_mapping_matches_policy_yaml` 判红；按压时**只改一处**、验红后**逐字还原**。
+
