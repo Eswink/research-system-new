@@ -154,6 +154,15 @@ task_contracts:
   # `retry_policy` 取 `max_attempts: 1` + 空类别：夹具的域对象该字段为 `None`，而
   # `task_executor._retry_policy()` 对 `None` 的读法就是 `RetryPolicy(max_attempts=1)`
   # ⇒ 这是**同义**声明，不引入新的重试语义。
+  #
+  # `output_schema` 指向**既有的** `real_research_deliverable_v1`（会话交付物信封），
+  # **不新造 schema 名**：那份额度的说明写死了它的口径——「字段取自
+  # `adapters/openhands/runtime_adapter.py::_deliverable()` 真实登记的内容，**不是编出来的
+  # 形状**」。这两份契约的 phase 是会话语义（未声明 `experiment`），运行期登记的就是这个
+  # 信封（含 `contract_id` / `declared_artifact`，因此与合约无关、可被多份合约共用——
+  # `console_demo_deliverable` 与 `real_retrieval_deliverable` 共用同一份 schema 是既有先例）。
+  # 首版曾自造两个 schema 名，被 `framework/validate_bundle` 判红
+  # （`TaskContract … 输出 Schema 不存在`）——那道门挡住的正是「声明了不存在的形状」。
   sort_analysis_execution:
     version: 1.0.0
     purpose: Analyze the input repository and produce a report artifact.
@@ -161,7 +170,7 @@ task_contracts:
       - workspace.read
       - workspace.write.code
       - code.execute
-    output_schema: sort_analysis_execution_output_v1
+    output_schema: real_research_deliverable_v1
     acceptance_criteria:
       - type: ARTIFACT_EXISTS
         artifact: analysis_report
@@ -176,7 +185,7 @@ task_contracts:
     required_capabilities:
       - workspace.read
       - evidence.read
-    output_schema: sort_analysis_review_output_v1
+    output_schema: real_research_deliverable_v1
     acceptance_criteria:
       - type: EVIDENCE_COVERAGE
         minimum_sources: 1

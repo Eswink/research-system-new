@@ -48,6 +48,28 @@ EC-02 的真实 run 也会死在冻结前。
 uv run --frozen --no-sync python -B scratch/goal014_c1_probe.py
 ```
 
+### 归因纪律（cycle 1 纠错轮实测，代价真实）
+
+**同一个检查的判词块会同时列出多条错误** —— 只读第一条就归因，会把「自己的原因」
+盖在「环境原因」下面。实测：`framework/validate_bundle` 判红时，本地判词块里
+`R-F3`（并发写者的 gitignored scratch 文档被读成本地链接）与**我自造的
+`output_schema` 名不存在**两条**逐行并列**；我只读了第一行就写下「唯一未绿 = R-F3」，
+并把它推送了出去 ⇒ CI 判红**同一个检查**（CI 检出**没有 `scratch/`** ⇒ `R-F3` 在那边
+不可能成立 ⇒ 那个归因**自相矛盾**）。
+
+两条可复用手法：
+
+1. **归因前把整个判词块读完**，逐条列出，不要停在第一条；
+2. **用一条独立面交叉验证环境归因是否自洽**：本仓最方便的是 CI（检出里没有
+   `scratch/`）。「这个红交付物只在本地存在」这类归因，一旦 CI 也红在同一检查上，
+   就说明归因错了 —— **不要**再去调整环境叙述，回到判词块里找自己那条。
+
+另一个同类陷阱：给 `TaskContract` 补 `output_schema` 时**不要自造名字** ——
+`framework/validate_bundle` 要求 `schemas/<name>.schema.json` **存在**，
+而本仓既有口径是「schema 描述适配器**真实登记**的内容，不是编出来的形状」
+（`real_research_deliverable_v1` 的说明写死了这句）。合约可以**共用**已有的 schema
+（`console_demo_deliverable` / `real_retrieval_deliverable` 共用是既有先例）。
+
 要点：
 
 1. **走产品入口**，不要手工拼 `PreflightContext`：装配由 `deps.preflight_override`

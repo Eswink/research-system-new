@@ -109,13 +109,17 @@ memory_entries:
       test_policy_allowed_execute_freeze.py` 的 `_protocol_policy()` docstring、
       `tests/e2e/test_ec02_experiment_live.py` 的「如实边界」段。
 - [x] **AC-8**：m0 **全量 23 项已跑**（`scratch/goal014-c1-m0.log`）+ 治理 `validate.py` 绿。
-      **实测 22 PASS / 1 FAILED** —— 唯一未绿项是 `framework/validate_bundle`，根因是
-      **仓库外**并发写者的 gitignored 在制品（环境型残余 `R-F3`，判词点名
-      `scratch\self-governance-bootstrap-prompt.md`），与本 PLAN 的改动无关；
+      **实测 22 PASS / 1 FAILED** —— **⚠️ 该判红当时有两条原因，其中一条是本周期的**
+      （首版 WP3 自造了 `output_schema` 名，`framework/validate_bundle` 要求
+      `schemas/<name>.schema.json` 存在 ⇒ 判 `TaskContract … 输出 Schema 不存在`）。
+      **已由纠错提交修掉**：两份契约的 `output_schema` 改为**既有的**
+      `real_research_deliverable_v1`（**不新造 schema**），改后本地该检查只剩环境那一条。
+      另一条是**仓库外**并发写者的 gitignored 在制品（环境型残余 `R-F3`，判词点名
+      `scratch\self-governance-bootstrap-prompt.md`），与本 PLAN 的改动无关。
       其余 22 项（含 `python/lint` / `format-check` / `typecheck` / `dependency-boundaries` /
       `tests`、`typescript/*` 全部、`framework/validate` 等）全绿。
-      **如实登记**：本地**不是** 23/23；CI 检出无 `scratch/` ⇒ 不受影响。
-      本地 23/23 的终局行留给 EC-05 收口复检（按 GOAL-013 的既有处置）。
+      **如实登记**：本地**不是** 23/23；本地 23/23 的终局行留给 EC-05 收口复检
+      （按 GOAL-013 的既有处置）。**归因勘误见 `RECHECK-20260924-157` 的「勘误」节。**
 - [x] **AC-9**：RECHECK 定稿（`PASS` / `PASS_WITH_WARNINGS`），PLAN 转 `DONE`，
       `ALL_PLAN` 投影同提交，`latest_recheck` 为**仓库相对路径**。
 
@@ -150,10 +154,11 @@ memory_entries:
   镜像仍绿）、`scratch/goal014-c1-press2-mirror-desync.txt`（只改镜像一处 ⇒ 镜像判据红，
   `Extra items in the right set: ('evidence.read', 'project')` @ `test_m2_audit.py:268`）。
   按压后 `git diff --stat` 两个被按压文件**为空**（逐字节还原），还原后复跑全绿。
-- **m0**：`scratch/goal014-c1-m0.log` ⇒ **22/23**（唯一未绿 = 环境型残余 `R-F3` 的
-  `framework/validate_bundle`，判词点名 `scratch\self-governance-bootstrap-prompt.md`）；
-  `python/tests` **4418 passed / 18 skipped / 0 failed**，较上一基线（4413 / 18）差 **+5**
-  = 本 PLAN 新增的正好 5 条判据（差已完整归因，无隐藏变化）。
+- **m0**：`scratch/goal014-c1-m0.log` ⇒ **22/23**（判红 = `framework/validate_bundle`，
+  当时有**两条**原因：环境型残余 `R-F3` **加上**本 cycle 首版自造的 `output_schema` 名
+  ——后者已由纠错提交改为既有的 `real_research_deliverable_v1` 修掉，**归因勘误见
+  `RECHECK-20260924-157` 的「勘误」节**）；`python/tests` **4418 passed / 18 skipped /
+  0 failed**，较上一基线（4413 / 18）差 **+5** = 本 PLAN 新增的正好 5 条判据。
 - **独立复检**：`scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`。
 
 ## 状态历史

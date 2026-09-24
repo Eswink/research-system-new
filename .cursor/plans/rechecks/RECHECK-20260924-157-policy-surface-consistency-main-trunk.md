@@ -107,15 +107,52 @@ packages/application/preflight/policy_check.py` **为空**（两个被按压的�
   `catalog_merge` + `sandbox_experiment_seam`）**81 passed**；e2e 离线三条 **9 passed / 1 skipped**。
 - **出站**：全部判据轮次 `blocked 0`；判据自身 `judged 0`（零出网）。
 - **m0**：`scratch/goal014-c1-m0.log` —— **22/23**，`python/tests` **4418 passed / 18 skipped /
-  0 failed**，其余 21 项全 `PASS`。唯一未绿项 `framework/validate_bundle` = **环境型残余
-  `R-F3`**（并发写者的 gitignored `scratch/self-governance-bootstrap-prompt.md` 被纯文本
-  链接扫描读成本地链接），判词逐字：`Markdown 本地链接不存在:
-  scratch\self-governance-bootstrap-prompt.md -> [A-Za-z]:\\|/(home|mnt|data|Users`。
-  与 GOAL-013 cycle 6 的 as-is 跑法**同形**（同一项、同一原因）。
+  0 failed**，其余 21 项全 `PASS`。唯一未绿的检查是 `framework/validate_bundle`。
+  **⚠️ 该判词块里当时有两条错误（一条环境、一条本 cycle 引入）——归因见下方「勘误」节，
+  本节原措辞保留、不回改**：`R-F3` 的 `Markdown 本地链接不存在:
+  scratch\self-governance-bootstrap-prompt.md -> [A-Za-z]:\\|/(home|mnt|data|Users`
+  （并发写者的 gitignored 在制品；CI 检出无 `scratch/` ⇒ 那边不受影响），
+  **以及**本 cycle 自造的 `output_schema` 名不存在（**已由纠错提交修掉**）。
 - **用例数归因（不留未解释的差）**：上一基线（GOAL-013 c6）4413 passed / 18 skipped
   ⇒ 本轮 **4418 / 18**，差 **+5** = 本 cycle 新增的**正好 5 条**判据；skipped 数不变。
 - **独立复检脚本**：`scratch/verify_goal014_c1.py`（只读、标准库、不 import 仓库代码、
   由**调用目录**定 ROOT）⇒ `checked=45 failures=0`。
+
+## 勘误（cycle 1 纠错轮，2026-09-24）
+
+**本复检第六节关于本地 m0 那条红的归因是不完整的，这里如实更正。**
+
+- **原文**（保留在上，不回改）：「唯一未绿项 `framework/validate_bundle` = **环境型残余
+  `R-F3`**（并发写者的 gitignored …）… 与 GOAL-013 cycle 6 的 as-is 跑法**同形**（同一项、
+  同一原因）」。
+- **实测事实**：本地那条红的判词块里**有两条**错误 —— `R-F3` 的
+  `Markdown 本地链接不存在: scratch\self-governance-bootstrap-prompt.md`（**环境**）
+  **加上我自己的**两条
+  `TaskContract sort_analysis_execution 输出 Schema 不存在: sort_analysis_execution_output_v1`
+  与 `TaskContract sort_analysis_review 输出 Schema 不存在: sort_analysis_review_output_v1`
+  （**本 cycle 引入**）。两者在**同一个** `framework/validate_bundle` 判词块里逐行并列；
+  我只读了第一行就写下归因（`scratch/goal014-c1-m0.log` 第 1561–1565 行，原文俱在）。
+- **怎么被发现的**：CI 在该提交上判红**同一个检查**（`quality-ubuntu-latest` /
+  `quality-windows-latest`），而 CI 检出**没有 `scratch/`** ⇒ `R-F3` 在那边不可能成立
+  ⇒ 「同一项、同一原因」这个结论**自相矛盾**。取失败 job 日志得到上面那两条 schema 判词
+  （`scratch/goal014-c1-ci-ubuntu.log`）。
+- **根因**：我在 WP3 里给两份契约**自造了 `output_schema` 名**
+  （`sort_analysis_*_output_v1`），而 `framework/validate_bundle` 要求该名对应的
+  `schemas/<name>.schema.json` **存在**。夹具里这两份契约是**域对象**，`output_schema` 是
+  `None`，所以补进 YAML 时该字段**必填**，我却编了两个形状。
+  这违背了本仓既有的写法：`real_research_deliverable_v1` 的说明写死了口径——
+  「字段取自 `runtime_adapter._deliverable()` 真实登记的内容，**不是编出来的形状**」。
+- **处置（纠错提交）**：把两份契约的 `output_schema` 改成**既有的**
+  `real_research_deliverable_v1`（会话交付物信封，含 `contract_id` / `declared_artifact`，
+  与合约无关、可共用；`console_demo_deliverable` 与 `real_retrieval_deliverable` 共用同一份
+  schema 是**既有先例**）。**不新造 schema 文件**——那会把「声明」变成「再编一个形状」。
+  改后本地 `validate_bundle` 只剩 `R-F3` 那一条；受影响套件 **70 passed**。
+- **对本复检结论的影响**：**EC-01 的 PASS 不受影响**（它由判据、成对反证、按压与独立复检
+  承载，与 `output_schema` 无关）；受影响的是**收口记录里对本地 m0 红的归因**，
+  以及 `PLAN-20260924-155` 的 AC-8 / `GOAL-20260924-014` 的对应措辞——**三处一并更正**。
+- **教训**（并入 `MEM-20260924-124`）：`framework/validate_bundle` 的判词块**会同时列出多条
+  错误**，**读第一条就归因**会把「自己的原因」盖在「环境原因」下面；归因前必须把整个判词块
+  读完，并且用**CI（无 `scratch/`）**这条独立面交叉验证环境归因是否自洽。
 
 ## 判据性质披露（必须读的一段）
 
