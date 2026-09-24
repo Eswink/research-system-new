@@ -45,7 +45,7 @@ FROM protocol_drafts d JOIN protocol_draft_revisions r
   ON r.draft_id = d.draft_id AND r.revision = (
     SELECT MAX(revision) FROM protocol_draft_revisions WHERE draft_id = d.draft_id)
 WHERE d.project_id = %s
-ORDER BY d.created_at DESC, d.draft_id LIMIT %s OFFSET %s
+ORDER BY d.created_at DESC, d.draft_id DESC LIMIT %s OFFSET %s
 """
 
 _SELECT_CURRENT_REVISION = """

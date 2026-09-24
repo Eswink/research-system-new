@@ -82,7 +82,7 @@ class InMemoryProtocolDraftStore:
                 for draft_id, state in self._drafts.items()
                 if state.project_id == query.project_id
             ),
-            key=lambda item: item[1].created_at,
+            key=lambda item: (item[1].created_at, item[0]),
             reverse=True,
         )
         window = matched[query.offset : query.offset + query.limit]
