@@ -13,6 +13,8 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260925-131](entries/MEM-20260925-131-default-gate-must-not-see-live-credentials.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-161 |
+| [MEM-20260925-130](entries/MEM-20260925-130-order-red-needs-a-frozen-input.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-161 |
 | [MEM-20260822-016](entries/MEM-20260822-016-m12-first-real-research-workflow.md) | ACTIVE | repository | 0.90 | 2026-12-22 | PLAN-20260822-016 |
 | [MEM-20260908-017](entries/MEM-20260908-017-litellm-dotenv-gating.md) | ACTIVE | repository | 0.95 | 2026-12-08 | PLAN-20260908-033 |
 | [MEM-20260910-018](entries/MEM-20260910-018-quality-gate-mechanics.md) | ACTIVE | repository | 0.90 | 2026-12-10 | PLAN-20260909-035 |

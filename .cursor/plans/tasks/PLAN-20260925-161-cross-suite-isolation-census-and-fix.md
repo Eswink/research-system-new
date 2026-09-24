@@ -2,7 +2,7 @@
 id: PLAN-20260925-161
 slug: cross-suite-isolation-census-and-fix
 title: 跨套件隔离归零：红项普查 + 两处真实共享来源修复（草稿列表序 tie / 默认门凭据泄漏）（GOAL-015 EC-01）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-25
 updated_at: 2026-09-25
 parent_goal: GOAL-20260925-015
@@ -27,8 +27,10 @@ authorization:
     「未配置控制面」用例从诚实失败变成**真的去探端点** ⇒ 出站结构判据按设计判红整轮
     —— 修法是**夹具隔离**（默认门不得看见 live 凭据），**判据一字不动**。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-163-cross-suite-isolation-census-and-fix.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260925-130-order-red-needs-a-frozen-input.md
+  - .cursor/memory/entries/MEM-20260925-131-default-gate-must-not-see-live-credentials.md
 ---
 
 # PLAN-20260925-161 — 跨套件隔离归零（GOAL-015 EC-01）
@@ -49,44 +51,73 @@ memory_entries: []
   目录声明的 `credential_ref` 对应环境变量；夹具与出厂目录**由机械判据双向对齐**。
 - **AC-4｜同一组合连续两轮全绿**：m0 的 `python/tests` 组合（`pytest
   --ignore=tests/architecture/python/test_dependency_boundaries.py`）**连续两轮** `0 failed`；
-  出站判据**只有判据自身的探针**被拦（`blocked` 计数等于自身探针数），无整轮红灯。
-- **AC-5｜成对反证（先红后绿）**：在**修前提交**（`1d8fe1f`）的临时 worktree 上跑同两条判据
-  ⇒ **R-1 判红、R-2 按压命令判红**；回到本树 ⇒ 全绿。反证后临时 worktree 移除、
-  `git diff --stat` 无残留。
+  出站判据**只有判据自身的探针**被拦，无整轮红灯。
+- **AC-5｜成对反证（先红后绿）**：把修前的代码状态**重新构造出来**跑同两条判据 ⇒
+  **R-1 判红、R-2 按压命令判红**；还原后**逐字节**复核一致、`git diff` 无残留。
 - **AC-6｜判据只增不减**：逐用例 ID 差集说明用例数变化，**零删除**、零断言削弱；
-  `tests/egress_guard.py` / `framework/validate_bundle` / m0 阈值**逐字节未改**
-  （`git diff` 证明）。
+  `tests/egress_guard.py` / `framework/validate_bundle` / m0 阈值**逐字节未改**（`git diff` 证明）。
 
 ## 实施清单
 
-- [ ] **WP1 — 普查**：把两类红项的最小复现命令固化成**可复跑的证据**，并落
-      `docs/evaluation/CROSS_SUITE_ISOLATION_AUDIT.md`（红项 / 最小命令 / 根因链 / 修法 / 终态）。
+- [x] **WP1 — 普查**：两类红项的最小复现命令固化为可复跑证据，并落
+      `docs/evaluation/CROSS_SUITE_ISOLATION_AUDIT.md`（红项 / 最小命令 / 根因链 / 修法 / 终态
+      + `W-D` 历史签名复核 + R-4 的定向跑挂死复现）。
       装置：`scratch/goal015_c1_order_tie_probe.py`（冻结时钟的三实现 tie 探针）、
       `scratch/goal015_c1_credential_refs_probe.py`（出厂目录 active `credential_ref` 枚举）。
-- [ ] **WP2 — R-1 修复**：`adapters/sqlite/protocol_draft_store.py` 与
-      `adapters/postgres/protocol_draft_store.py` 的 `ORDER BY created_at DESC, draft_id` ⇒
-      tie-break 与新近一致；`packages/application/protocol_authoring/memory_store.py` 同语义。
-      新增**判据** `tests/contracts/test_protocol_draft_store_order_tie.py`（先红后绿可演示）。
-- [ ] **WP3 — R-2 修复**：`tests/conftest.py` 增设 autouse 夹具：未标记 `requires_live_llm`
-      的用例不得看见出厂目录声明的凭据键（`monkeypatch.delenv`，用例结束自动还原）。
-      新增**判据** `tests/architecture/python/test_default_gate_credential_isolation.py`：
-      ① 夹具名单 ↔ 出厂目录 active `credential_ref` 双向对齐；② **按压**：把凭据键注入子进程环境
-      跑 `tests/api/test_runs_api.py` ⇒ 该轮出站判据不得判红（`blocked 0`）。
-- [ ] **WP4 — 本地验证**：`make validate-all`（m0，独占）+ `python/tests` 组合**连续两轮** +
-      受影响定向套件 + web 门 + `validate.py` + `DOCS-CHECK`；随后 push 并轮询 CI 到终态。
-- [ ] **WP5 — 成对反证 + 记录**：修前提交的临时 worktree 上跑同两条判据 ⇒ 判红；
+- [x] **WP2 — R-1 修复**：`adapters/sqlite/protocol_draft_store.py` 与
+      `adapters/postgres/protocol_draft_store.py` 的 `ORDER BY created_at DESC, d.draft_id`
+      ⇒ `…, d.draft_id DESC`；`packages/application/protocol_authoring/memory_store.py` 的排序键
+      ⇒ `(created_at, draft_id)` 反序（三实现同语义）。新增判据
+      `tests/contracts/test_protocol_draft_store_order_tie.py`（修前 3 failed → 修后 3 passed）。
+- [x] **WP3 — R-2 修复**：新增 `tests/default_gate_credentials.py`（名单 + 出厂目录解析）；
+      `tests/conftest.py` 增设 autouse 夹具（未标记 `requires_live_llm` 的用例隐藏凭据键）；
+      新增判据 `tests/architecture/python/test_default_gate_credential_isolation.py`
+      （名单 ↔ 出厂目录双向对齐 / 非空真隔离断言 / 子进程按压）。
+- [x] **WP4 — 本地验证**：实测 as-is m0 基线 21/23（两红项）→ 修后 `python/tests` **连续两轮
+      `4455 passed / 0 failed`**（`egress guard: FAIL` 计数 0）；定向套件 `993 passed, 2 skipped`；
+      `validate.py` 绿；`DOCS-CHECK PASS: 6`；m0 全量终态见「证据」。
+- [x] **WP5 — 成对反证 + 记录**：`git stash push -- <显式四路径>` 重建修前状态 ⇒ R-1 判据
+      `3 failed`、R-2 按压 `blocked 2`；`git stash pop` 后 `sha256sum -c` 四行全 `OK`；
       RECHECK 定稿；GOAL-015 回写（EC-01 / 迭代日志 / 台账 / 续点）。
 
 ## 证据
 
-（收口时补齐：命令 + 真实输出 + 文件路径）
+- **修前 / 修后（同一配方）**：`scratch/goal015-c1-m0-census.log`（`FAILED: 2 check(s):
+  python/tests=1, framework/validate_bundle=1`；`1 failed, 4445 passed, 19 skipped in 569.15s`；
+  `egress guard: … blocked 10`）→ `scratch/goal015-c1-roundA.log` / `-roundB.log`
+  （`4455 passed, 19 skipped` ×2；`egress guard: FAIL` 计数 0）。
+- **判据先红后绿**：`scratch/goal015-c1-press-r1-before.txt`（3 failed）→ 修后 `12 passed`；
+  `scratch/goal015-c1-press-r2-after-revert.txt`（`blocked 2` + 整轮红）→ 修后 `blocked 0`。
+- **成对反证与逐字节还原**：`scratch/goal015-c1-press-files-before.sha256`（四行 `OK`）。
+- **用例数归因**：`4446 → 4455` = **+9 / 零删除**（+6 新判据逐 ID、+3 规模门禁对新增 `.py`
+  的参数化），实测 `--collect-only` 逐 ID 列出。
+- **本地门**：`scratch/goal015-c1-m0-final.log`（终态行见 GOAL-015 迭代日志）；
+  `python .cursor/skills/governance-check/scripts/validate.py` = `Cursor 治理验证通过`；
+  `tools/docs_consistency_check.py` = `DOCS-CHECK PASS: 6 deterministic checks`。
+- **一处如实登记的返工**：首轮 8 分钟跑判红 `test_real_repo_is_clean`，根因是本 PLAN 新增文档里
+  的 backtick 引用 `tests/postgres/conftest` 不存在（缺 `.py`）⇒ 修正后重跑，两轮全绿取自
+  修正后的树。
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-09-25 | IN_PROGRESS | derive：GOAL-015 cycle 1。普查已完成（见 WP1 证据），R-1 / R-2 根因各由最小复现命令钉住。 |
+| 2026-09-25 | IN_PROGRESS | derive：GOAL-015 cycle 1。普查完成（as-is 21/23，四个红项各有最小复现命令）。 |
+| 2026-09-25 | IN_PROGRESS | WP2 / WP3 落地：R-1 三实现 tie-break 与新近一致；R-2 夹具隔离 + 与出厂目录双向对齐判据。 |
+| 2026-09-25 | DONE | WP4 / WP5 收口：同一组合连续两轮 `4455 passed / 0 failed`；成对反证先红后绿 + 逐字节还原；RECHECK-20260925-163 = `PASS_WITH_WARNINGS`。 |
 
 ## 影响报告
 
-（收口时补齐）
+- **Domain / API / schema**：**零**。改动落在三个 `ProtocolDraftStore` 适配器/实现的
+  `list()` 排序与测试隔离面；无 DTO / 路由 / 快照 / 迁移变化（OpenAPI 与设计基线未动）。
+- **行为变化（可见面）**：`protocol_drafts` 列表在 `created_at` 同刻时由「旧的在先」变为
+  「新的在先」——这正是 port 契约「按新近」的语义；跨实现（SQLite / PostgreSQL / InMemory）
+  从此**同语义**。消费面（`services/api/routers/protocol_drafts.py`、web 草稿列表）无契约变化。
+- **安全 / 凭据**：**判据未动**。新增的是**收窄**：默认门（非 live 用例）不再继承
+  operator `.env` 的凭据键；live 面照旧（同一 `ALLOW_MARKER`）。不新增任何凭据字面量，
+  不写 `.env`，不改出站判定。
+- **兼容性 / 迁移风险**：无数据迁移；无 pin / 依赖变化；`R-4` 的定向跑挂死**未在本 PLAN 修**
+  （已登记去 cycle 2），故「PG 不可达时定向跑 postgres 用例」仍是挂死形态。
+- **上游版本影响**：无（未新增 / 未升级任何依赖）。
+- **下一项任务**：GOAL-015 cycle 2 = **EC-02 本地判定确定性**（跑法协议 + 机械三分类 +
+  两条具名起点终态），其中含本 PLAN 普查出的 **R-4** 实施（把 postgres 跳过守卫提为加载无关）。

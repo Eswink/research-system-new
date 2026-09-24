@@ -84,7 +84,46 @@ exit_criteria:
       修法 / 终态），每条可复跑；② 修后**同一套件组合连续两轮**全绿（两轮输出都留档，
       命令逐字相同）；③ **成对反证**：以最小改动把修前顺序 / 组合重新构造成可复现的最小
       命令 ⇒ 判红，且判词与普查登记的失败签名**逐字对应**；撤销构造后 `git diff` 为空。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-25 cycle 1 收口（`PLAN-20260925-161` → **DONE**；复检
+      `RECHECK-20260925-163` = **PASS_WITH_WARNINGS**；工程记忆 `MEM-20260925-130` / `-131`）。
+      **普查（先于修）**：as-is 本机 m0 = **21/23**，两条未绿项拆成**四个红项**，表落
+      `docs/evaluation/CROSS_SUITE_ISOLATION_AUDIT.md`：**R-1** 草稿列表序 tie
+      （`test_list_orders_by_recency_and_filters_project`；**最小复现**
+      `pytest tests/contracts/test_protocol_draft_store_order_tie.py -q` ⇒ 修前 **3 failed in 0.34s**，
+      三实现全红；根因 = `ORDER BY created_at DESC, draft_id`（**升序** tie-break）与「按新近」
+      相反 + InMemory 稳定排序退化为插入序）；**R-2** 默认门凭据泄漏（**最小复现**
+      `LLM_MAIN_KEY=<任意值> pytest tests/api/test_runs_api.py -q` ⇒ 修前 `blocked 2` + 整轮红，
+      **2.24s** 取代 569s；根因 = `litellm/__init__.py:27` 导入期 `load_dotenv()` 把 gitignored
+      `.env` 的凭据键注入进程环境 ⇒ `preflight_support.py:92` 凭据可解析 ⇒ 真的探出厂端点）；
+      **R-3** `framework/validate_bundle`（= 环境型残余 `R-F3`，仓库外并发写者文件，实测仍在
+      `69944` B / `sha256:7af32093…`；分类 **(iii) 门禁 scoping** ⇒ **只登记**，进 EC-03）；
+      **R-4** postgres 标记的跳过只在收集到 `tests/postgres` 时生效（定向跑在 PG 不可达时
+      **挂死**：120s 无输出 / exit 143；同文件 + 收集 `tests/postgres` ⇒ `16 passed, 93 skipped
+      in 4.22s`）⇒ **(i) 真实缺陷**，实施登记去 cycle 2。
+      **修法（真实来源，判据一字未动）**：① 三实现 tie-break 与新近一致（`draft_id DESC` /
+      排序键 `(created_at, draft_id)` 反序）；② 新增 `tests/default_gate_credentials.py` +
+      `tests/conftest.py` autouse 夹具（未标记 `requires_live_llm` 的用例隐藏出厂目录声明的
+      凭据键）+ 双向对齐判据（含子进程按压）。
+      **判据先红后绿**：R-1 `3 failed` → `12 passed`；R-2 `blocked 2`（exit 1）→ `blocked 0`
+      / `16 passed`。
+      **AC-4 连续两轮全绿**（同一组合命令、DSN 固化）：`4455 passed, 19 skipped` ×2
+      （`egress guard: FAIL` 计数 **0**；阻断只来自判据自身探针）；对照修前
+      `1 failed, 4445 passed …` + `blocked 10` ⇒ **两条红项归零**。
+      **成对反证**：`git stash push -- <四显式路径>` 重建修前状态 ⇒ R-1 判据 `3 failed`、
+      R-2 按压 `egress guard: FAIL … blocked 2`；`git stash pop` 后 `sha256sum -c` **四行全
+      `OK`**（`f7b4eb0c…` / `ac6ac960…` / `c3ee0307…` / `148ac42c…`）。
+      **用例数归因**：`4446 → 4455` = **+9、零删除**（+6 新判据逐 ID、+3 规模门禁对新增 `.py`
+      的参数化）。
+      **一轮如实登记的返工**：首次 8 分钟跑判红 `test_real_repo_is_clean`（本 cycle 新增文档里
+      backtick 引用 `tests/postgres/conftest` 缺 `.py`）⇒ 修正后重跑，两轮全绿取自修正后的树；
+      **另一次**：首次全量 m0 判红 `framework/validate`（本 cycle 的 MEM 条目缺章节/未入 INDEX）
+      ⇒ 补齐后重跑取终态。
+      **残余（不隐藏）**：`R-3` 未消 ⇒ as-is 本地 m0 **不是** 23/23（按授权只登记不改门禁）；
+      `R-4` 只普查未实施（排 cycle 2）。
+      **本 cycle 零真实出网调用**；未动 `tests/egress_guard.py` / `framework/validate_bundle` /
+      `tests/application/test_m2_audit.py` / m0 阈值 / 快照。
   - id: EC-02
     criterion: >-
       **本地判定的确定性**：产出并落地一份**本地跑法协议**（canonical 的 m0 调用方式，
@@ -368,7 +407,7 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `1d8fe1f`（**推送 tip**，推送区间 `414f2e5..1d8fe1f`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36036419844](https://github.com/Eswink/research-system-new/actions/runs/36036419844) **六 job 全 success** + CodeQL [36036419719](https://github.com/Eswink/research-system-new/actions/runs/36036419719) **3/3 success** | — | EC-01…EC-04 全 PENDING；起点已定位（`W-D` 顺序签名 4 条 / `R-F3` 外来文件实测仍在且 `sha256` 已记 / 本机 fake-IP DNS 致 egress_guard 判红两条探针 / 450 行贴线**四个零余量** / 13 条人工面 + 承继残余）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 普查 + 修真实来源**（见下一行） |
-| 1 | PLAN-20260925-161（EC-01） | derive：本条 + `ALL_PLAN` 投影 + `child_plans` | **普查（已实测，as-is m0 = 21/23）**：`python/tests` 与 `framework/validate_bundle` 两项红，逐条拆成 **3 类**：**R-1 草稿列表序 tie**（`test_list_orders_by_recency_and_filters_project`；合并跑红、单独跑 9 passed；**最小命令**：`pytest tests/contracts/test_protocol_draft_store_contract.py -q`；根因 = `ORDER BY created_at DESC, draft_id`（**升序** tie-break）与「按新近」语义相反，`created_at` 同刻即回退到插入序 ⇒ 三个实现**全 RED**，由冻结时钟探针**确定性**复现）；**R-2 默认门凭据泄漏**（出站判据整轮红，点名 `198.18.0.83:443` 由 `test_runs_api.py::test_start_run_unprovisioned_control_plane_reports_actionable_failure` 发起；**最小命令**：`LLM_MAIN_KEY=<任意> pytest tests/api/test_runs_api.py -q` ⇒ `blocked 2` 判红，**2.75s** 替代 569s 全量；根因 = `litellm/__init__.py:27` 导入期 `load_dotenv()` 把 gitignored `.env` 的凭据键注入进程环境 ⇒ 该用例从「未配置控制面诚实失败」变成**真的探端点**。**修真实来源、判据一字不动**）；**R-3 `framework/validate_bundle`** = 环境型残余 `R-F3`（仓库外并发写者文件，`69944` B / `sha256:7af32093…` 实测仍在；CI 检出无 `scratch/` ⇒ 不受影响）→ 归 EC-02 的具名起点 | 见下方 CI 台账 | — | **EC-01 未收口**（WP2/WP3 修复与两轮全绿待做）；`W-D` 的**历史最小组合已实测不再复现**（`pytest tests/api/test_worker_plane_composition.py tests/e2e/test_pg_crash_restart.py` = **7 passed**）⇒ 普查表中该签名改记「已由后续改动消解（形态不再可复现）」 | WP2 = R-1 三实现 tie-break 与「按新近」一致 + 新判据（先红后绿）；WP3 = R-2 夹具隔离（默认门不得看见 live 凭据）+ 与出厂目录双向对齐判据 |
+| 1 | PLAN-20260925-161（EC-01） | derive `d472b7f`（PLAN-161 + `ALL_PLAN` 投影 + `child_plans`）；WP1–WP5 实施与收口回写见回合汇报 | **普查**：as-is m0 = **21/23**（两红项拆成 R-1…R-4，各有最小复现命令；表落 `docs/evaluation/CROSS_SUITE_ISOLATION_AUDIT.md`）。**修后**：同一组合命令**连续两轮** `4455 passed, 19 skipped`（`egress guard: FAIL` 计数 **0**；阻断只来自判据自身探针）；定向套件 `993 passed, 2 skipped` / `blocked 0`；`validate.py` = `Cursor 治理验证通过`；`DOCS-CHECK PASS: 6 deterministic checks`；m0 全量终态见台账行 | 见下方 CI 台账 | **一次返工如实登记**：首轮判红 `test_real_repo_is_clean`（新增文档的 backtick 引用缺 `.py`）⇒ 修正后重跑取两轮；**另一次**：首次 m0 判红 `framework/validate`（本 cycle MEM 条目缺章节 / 未入 INDEX）⇒ 补齐后重跑取终态 | **EC-01 = PASS**。红项归零进度：**R-1 已归零 / R-2 已归零 / R-3 只登记（(iii) 门禁 scoping ⇒ 去 EC-03）/ R-4 只普查（(i) ⇒ 排 cycle 2）**；`W-D` 历史签名实测不再复现 | cycle 2 = **EC-02 本地判定确定性**：跑法协议 + 机械三分类 + 两条具名起点终态 + **R-4 实施**（postgres 跳过守卫提为加载无关） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -381,17 +420,32 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-09-25 | ACTIVE | 建档：用户会话指令（goal 模式）授权修测试隔离与本地判定确定性（不改判据强度、不放宽门禁），四 EC 设计（跨套件隔离主干 / 本地判定确定性 / 决策简报 / 收口复检）。零代码改动。 |
+| 2026-09-25 | ACTIVE | cycle 1：**EC-01 = PASS**（普查四红项 + 两处真实来源修复 + 连续两轮全绿 + 成对反证逐字节还原）。红项归零进度：R-1 / R-2 已归零；R-3 只登记（去 EC-03）；R-4 只普查（排 cycle 2）。 |
 
 ## 当前续点
 
-- **cycle 1 进行中（owner: root-agent）**：子 PLAN `PLAN-20260925-161`（`IN_PROGRESS`）。
-  已完成 **WP1 普查**（事实表见迭代日志第 1 行；装置与输出在 `scratch/goal015-c1-*`）。
-  **下一步 = WP2**（R-1 tie-break 修复 + 新判据）→ **WP3**（R-2 夹具隔离 + 对齐判据）
-  → **WP4**（两轮全绿 + 全量 m0）→ **WP5**（成对反证 + 记录）。
+- **cycle 1 已收口（EC-01 = PASS）**：子 PLAN `PLAN-20260925-161`（`DONE`）、复检
+  `RECHECK-20260925-163`（`PASS_WITH_WARNINGS`，警告 = `R-3` 未消 + `R-4` 排后）、记忆
+  `MEM-20260925-130` / `-131`。**下一轮 = cycle 2（EC-02 本地判定确定性）**：
+  ① 跑法协议 `docs/architecture/LOCAL_GATE_PROTOCOL.md`（canonical m0 调用 + DSN 固化 +
+  工作树前置条件 + 外部文件存在性处理 + **三分类**判定条件与归因命令）；
+  ② 两条具名起点各拿唯一终态：`R-F3`（= 本 GOAL 的 `R-3`，门禁 scoping ⇒ 只登记，进 EC-03）
+  与 fake-IP 出站判据（已由 `R-2` 修复归零 ⇒ 归因命令 = `LLM_MAIN_KEY=<任意值> pytest
+  tests/api/test_runs_api.py -q`，修前 `blocked 2` / 修后 `blocked 0`）；
+  ③ **实施 R-4**（把 postgres 跳过守卫提为加载无关，消除定向跑挂死）；
+  ④ 把「代管 → 跑 → 还原」脚本化（EC-02 明文要求）。
+- **cycle 1 的可复用事实（按需回看）**：
+  1. **最小复现法**：顺序 / 时序类红 ⇒ 冻结共享输入（时钟 / 环境变量）。冻结时钟探针见
+     `scratch/goal015_c1_order_tie_probe.py`；凭据注入复现见 `MEM-20260925-130`。
+  2. **既有归因的一处更正**：出站判据的红**不是** fake-IP DNS 造成的（放行面只有
+     `localhost`），根因是凭据可解析 ⇒ 见 `MEM-20260925-131`。
+  3. **DSN 固化配方**：`RESEARCHOS_POSTGRES_DSN` pin 到 postgres-test DSN、
+     `DATABASE_URL` / `POSTGRES_DSN` 清空（`scratch/goal015_m0_run.sh`）。
+  4. **m0 必须独占**；记录未写完会让 `framework/validate` 判红（本 cycle 实测两次返工都属此类）。
 - **开局已核实的文件层事实（决定可行性）**：
   1. `scratch/self-governance-bootstrap-prompt.md` **仍在**（`69944` B、
      `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）⇒
-     as-is 本地 m0 停在 **21/23** 形态（`python/tests` + `framework/validate_bundle`）；
+     as-is 本地 m0 停在 **22/23** 形态（唯一未绿 = `framework/validate_bundle`）；
      CI 检出无 `scratch/` ⇒ 不受影响。
   2. 工作树有**并发写者**的未提交改动（`apps/web/src/features/models/ModelDetails.tsx`、
      `packages/domain/model_drift.py`、`services/api/dto/models.py`）⇒ **本 GOAL 不碰、不提交**
@@ -399,4 +453,3 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
   3. 规模门禁贴线：**四个正好 450 行零余量**（见「单 cycle SOP」③）。
   4. `make validate-all` = `.cursor/skills/cursor-framework-check/scripts/run_all_checks.py
      --profile m0 --keep-going`；m0 = python 6 + typescript 9 + framework 8 = **23** 项。
-- **不在本轮**：EC-02/03/04（EC-02 消费 EC-01 的普查口径；EC-03 消费「门禁 scoping」类条目）。

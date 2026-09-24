@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260925-161](tasks/PLAN-20260925-161-cross-suite-isolation-census-and-fix.md) | IN_PROGRESS |
+| [x] | [PLAN-20260925-161](tasks/PLAN-20260925-161-cross-suite-isolation-census-and-fix.md) | DONE |
 | [x] | [PLAN-20260924-160](tasks/PLAN-20260924-160-acceptance-gate-input-face-wiring.md) | DONE |
 | [x] | [PLAN-20260924-159](tasks/PLAN-20260924-159-goal-014-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260924-158](tasks/PLAN-20260924-158-residual-accounting-three-faces.md) | DONE |
