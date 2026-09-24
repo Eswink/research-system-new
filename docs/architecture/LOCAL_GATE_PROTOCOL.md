@@ -102,8 +102,13 @@ make validate-all           # = run_all_checks.py --profile m0 --keep-going
 当某条红属 (ii)/(iii) 且由**仓库外文件**造成时，允许**代管**该文件取得终态行：
 
 ```bash
-python -B tools/quarantine_and_run_m0.py --path <仓库外或 gitignored 的判红文件>
+uv run --frozen --no-sync python -B tools/quarantine_and_run_m0.py \
+  --path <仓库外或 gitignored 的判红文件>
 ```
+
+> 必须走 `uv run …`：脚本用**仓库 `.venv`** 跑 m0（缺 `.venv` 时**拒跑**）。用系统解释器
+> 直接跑 `python -B tools/…py` 会让 m0 在没有 mypy / lint-imports 的解释器里跑出**假红**
+> （2026-09-25 实测三条）；归因脚本的**跑法层签名**会点名这种轮次。
 
 脚本的三条纪律（缺一不可）：
 
@@ -131,6 +136,10 @@ python -B tools/quarantine_and_run_m0.py --path <仓库外或 gitignored 的判�
   CURSOR_FRAMEWORK_ROOT=<干净的同 commit worktree> python -B .cursor/skills/system-spec-check/scripts/validate_bundle.py
   ```
 - **as-is 影响**：本机全量 m0 = **22/23**（唯一未绿即此项）；CI 检出无 `scratch/` ⇒ 不受影响。
+- **代管后实测（`scratch/goal015-c2-m0-quarantined2.log`，2026-09-25）**：
+  `PASS: profile=m0; 23 deterministic checks`；归还后 `size=69944` /
+  `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2` /
+  `mtime_ns=1790187424185178900` **全等**。该终态行**取自代管后的树**。
 
 **起点 B｜本机 fake-IP DNS 与出站判据（两条探针）**
 

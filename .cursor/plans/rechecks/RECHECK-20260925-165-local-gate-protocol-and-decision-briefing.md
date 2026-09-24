@@ -105,13 +105,20 @@ checked_head: 当前树（WP1–WP7 实施 + 收口记录）
 - `tests/application/test_m2_audit.py`：**逐字节未改**。
 - m0 的 check 阈值（450 行 / 50 行规模门禁）：**未改**——本 cycle 反而**被它抓到一次**
   （见下）。
-- **本 cycle 自己撞到、并如实登记的一次红**：新增的 `_problems` 同时触发 ① `ruff`
-  `complex-structure（20 > 10）`、② `line-too-long`、③ `tests/tooling/test_python_source_limits.py`
-  的 **50 行函数门禁** ⇒ 重构为 6 个小函数（语义不变），`ruff format` + `ruff check` 全绿、
-  规模门禁 `1028 passed`。**未加任何豁免、未改任何阈值。**
-- **另一次**：探针初版命名 `default_gate_isolation_probe.py`（不以 `test_` 开头）⇒
-  `tests/architecture/test_module_file_naming.py` 判红（m0 全量轮实测）⇒ 改名
-  `test_default_gate_isolation_probe.py`，三者合计 `33 passed`。**未加豁免名单。**
+- **本 cycle 自己撞到、并如实登记的**三**次红**（全部落在**本 cycle 自己的文件 / 装置**上，
+  无一条落在产品代码或既有判据上）：
+  1. 新增判据的 `_problems` 同时触发 ① `ruff` `complex-structure（20 > 10）`、
+     ② `line-too-long`、③ `tests/tooling/test_python_source_limits.py` 的 **50 行函数门禁**
+     ⇒ 重构为 6 个小函数（语义不变），`ruff format` + `ruff check` 全绿、规模门禁 `1028 passed`。
+     **未加任何豁免、未改任何阈值。**
+  2. 探针初版命名 `default_gate_isolation_probe.py`（不以 `test_` 开头）⇒
+     `tests/architecture/test_module_file_naming.py` 判红（m0 全量轮实测）⇒ 改名
+     `test_default_gate_isolation_probe.py`，三者合计 `33 passed`。**未加豁免名单。**
+  3. **代管脚本曾用调用方的解释器跑 m0** ⇒ 被系统 Python（`D:\environment\Python\Python311`）
+     调用时产出**三条假红**（`No module named mypy`、`lint-imports executable is unavailable`、
+     `platform win32 -- Python 3.11 …pytest-8.`）。**处置**：脚本改为优先用仓库 `.venv`、缺失即
+     拒跑；归因脚本新增**跑法层签名**（命中即 exit 4 并明示「本轮红不可作为判定依据」）；
+     协议文档「不支持的跑法」补一行。**本 GOAL 自己的装置问题**，不是判据问题。
 
 ### 八、m0 终态（as-is 与代管后）
 
@@ -129,8 +136,19 @@ checked_head: 当前树（WP1–WP7 实施 + 收口记录）
     `OPEN_DECISIONS_BRIEFING.md`（**不改治理脚本的任何检查项**——它是对的，是我的文件名落进了
     它的口径）+ 补 `## 结论`。
   - `framework/validate_bundle` ＝ `R-3`（**唯一**与本 GOAL 无关、且按授权**只登记**的红）。
-- **代管后**：终态行与逐字节复核记录见下方「结论」节；执行脚本
-  `tools/quarantine_and_run_m0.py`（日志由脚本落盘）。
+- **as-is 第三轮（记录闭环 + 装置加固后的最终树，`scratch/goal015-c2-m0-asis3.log`）**：
+  见第 9 节。
+- **代管后（`scratch/goal015-c2-m0-quarantined2.log`，由 `tools/quarantine_and_run_m0.py`
+  执行）**：见第 9 节（含逐字节复核记录）。
+
+### 九、终态行（逐字）
+
+- **as-is（最终树）**：`FAILED: 1 check(s): framework/validate_bundle=1`，即 **22/23**
+  —— 唯一未绿项是 `R-3`（仓库外文件），与 **EC-01 的普查口径一致**；CI 检出无 `scratch/`
+  ⇒ CI 不受影响（已由 `4479a71` 的六 job 全绿实证）。
+- **代管后**：`PASS: profile=m0; 23 deterministic checks` + 逐字节复核（`size` / `mtime_ns` /
+  `sha256` 全等）+ 脚本自带口径声明「本终态行取自**代管后的树**」。
+  ⇒ **不得**读成「as-is 本机一直 23/23」。
 
 ## 警告与残余（本 cycle 不处置）
 
