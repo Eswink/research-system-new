@@ -84,7 +84,13 @@ checked_head: 收口轮冻结树（PLAN-166 + 本记录 + GOAL 收口 + ALL_PLAN
   —— **全部原样保留**。
 - **本 GOAL 的 `W` 列表**：`W-1`（as-is 不可能 23/23，`R-3` 只登记）/ `W-2`（live 判据开门
   条件只登记，D-11）/ `W-3`（起点 (b) 承继归因被实测否证 ⇒ 真实缺陷已修，判据未动）/
-  `W-4`（人工面原样保留）/ 本轮新增 `W-5`（**m0 跑着时写记录会判红**，见第 4 节）。
+  `W-4`（人工面原样保留）/ `W-5`（**m0 跑着时写记录会判红**，见第 4 节）/ **`W-6`（新增｜CI 资源
+  阈值型判据的负载敏感性）**：收口推送的 `quality-windows-latest` **第 1 次尝试**判红
+  （`AssertionError: RSS grew 174.0 MiB (leak suspected)`，
+  `tests/observability/test_telemetry_overhead.py:150`），**同一 run `run_attempt=2` 全绿**；
+  同提交的 `quality-ubuntu-latest` 与 CodeQL 全绿、同一测试在本机 m0 两轮全绿
+  ⇒ 分类 **(ii) 环境 / 负载专属**；**判据与阈值一字未动**（改阈值即 `fix_policy.forbidden`），
+  处置 = 「偶发红 ⇒ 复跑 + 登记」并登记为决策简报 **D-13**。
 
 ### 六、收口记录（AC-6）
 

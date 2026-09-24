@@ -224,6 +224,9 @@ exit_criteria:
       **一处如实登记的装置教训（`W-5`）**：首次代管跑在「m0 跑着时写记录」的状态下判红
       `framework/validate=1` ⇒ 该轮不作终态证据，改在**冻结树**上重跑（实证了协议第 1 节的
       「m0 独占 + 不并发改工作树」）。
+      **一处如实登记的 CI 偶发红（新增 `W-6`）**：收口推送的 `quality-windows-latest` 第 1 次
+      尝试判红（RSS 阈值型判据，`RSS grew 174.0 MiB`），`run_attempt=2` 全绿 ⇒ **(ii) 负载敏感**，
+      判据与阈值**一字未动**；处置 = 「偶发红 ⇒ 复跑 + 登记」，并登记为决策简报 **D-13**。
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -450,6 +453,13 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
   令牌让 live 用例不再 skip、真去调端点 ⇒ `AuthenticationError`（详见 D-11 的证据出处）。
   是否改成显式开关**需拍板**；本循环**不得**改判据、**不得**改 live 用例的 skip 条件
   ⇒ 只登记为决策简报条目 **D-11**。
+- **CI 资源阈值型判据的负载敏感性**（cycle 3 实测新增，**只登记不实施**）：
+  `tests/observability/test_telemetry_overhead.py` 的「整进程 RSS 增长 < 128 MiB」在 CI 上
+  **偶发判红**（2026-09-25：push `f4d98e6` 的 `quality-windows-latest`
+  `AssertionError: RSS grew 174.0 MiB`；**同一 run 的 `run_attempt=2` 该 job 全绿**；
+  同一提交的 ubuntu job 与 CodeQL 全绿；同一测试在本机 m0 两轮全绿）。
+  **判据与阈值一字不动**（改阈值即 `fix_policy.forbidden`）⇒ 只登记为决策简报条目 **D-13**，
+  并按「偶发红 ⇒ 复跑 + 登记」处置（本轮实测建立）。
 
 **承继的诚实边界（如实保留，不是待办）**：
 
@@ -482,7 +492,8 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 | cycle 2 实施 + 记录（`4479a71`） | `4479a71` | M0 [36057139147](https://github.com/Eswink/research-system-new/actions/runs/36057139147) / CodeQL [36057138005](https://github.com/Eswink/research-system-new/actions/runs/36057138005) | **六 job 全 success**（含前一红的两个 job）/ **CodeQL 3/3 success** ⇒ CI 红的修复在 CI 上得到验证 |
 | cycle 2 装置加固 + 收口记录（`e575554` + `3f95545`） | `3f95545`（推送区间 `4479a71..3f95545`） | M0 [36062175451](https://github.com/Eswink/research-system-new/actions/runs/36062175451) / CodeQL [36062173662](https://github.com/Eswink/research-system-new/actions/runs/36062173662) | **六 job 全 success** / **CodeQL 3/3 success** |
 | cycle 2 台账尾巴（`208d37b`） | `208d37b` | M0 [36064224244](https://github.com/Eswink/research-system-new/actions/runs/36064224244) / CodeQL [36064223683](https://github.com/Eswink/research-system-new/actions/runs/36064223683) | **六 job 全 success** / **CodeQL 3/3 success**（该行由 cycle 3 回写，符合本 GOAL「下一推送回写」的口径） |
-| 收口（`6f12842`，EC-04） | `6f12842` | 见回合汇报（收口推送） | 六 job + CodeQL 终态见回合汇报；**在此之前本 GOAL 的每一次推送都已逐行登记**（`36036419844` / `36036419719` / `36048265860` 红→根因已修 / `36057139147` / `36057138005` / `36062175451` / `36062173662` / `36064224244` / `36064223683`） |
+| 收口（`6f12842` + `f4d98e6`，EC-04） | `f4d98e6`（推送区间 `208d37b..f4d98e6`） | M0 [36071654181](https://github.com/Eswink/research-system-new/actions/runs/36071654181) / CodeQL [36071653920](https://github.com/Eswink/research-system-new/actions/runs/36071653920) | M0：`quality-ubuntu-latest` / `eval-gate` / `console-frontend` / `collector-quality` / `container-quality` **success**；`quality-windows-latest`**第 1 次尝试红**（`AssertionError: RSS grew 174.0 MiB (leak suspected)`，`tests/observability/test_telemetry_overhead.py:150`）⇒ **`run_attempt=2` 该 job 全绿**（同代码同 job 不同结论 ⇒ **(ii) 负载敏感的偶发红**，判据与阈值**一字未动**，登记为 **W-6 / 决策简报 D-13**）。CodeQL **3/3 success** |
+| EC-04 记录回写（台账尾巴） | 见回合汇报 | 由**下一次回写**（本 GOAL 口径）；该推送的终态在回合汇报给出 | —（**本 GOAL 此前每次推送的 run 均已逐行登记并轮询到终态**） |
 
 ## 状态历史
 

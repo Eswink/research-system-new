@@ -41,8 +41,9 @@ REQUIRED_GOAL_TOPICS = (
     "门禁 scoping 的自我修正",
     "`M-1`",
     "live 判据的开门条件",
+    "CI 资源阈值型判据的负载敏感性",
 )
-EXPECTED_STRAY_IDS = {"特-1", "特-2", "特-3", "特-4", "残-1"}
+EXPECTED_STRAY_IDS = {"特-1", "特-2", "特-3", "特-4", "特-5", "残-1"}
 
 Row = tuple[str, str, str, str]
 
