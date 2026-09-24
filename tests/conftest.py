@@ -20,6 +20,7 @@ from pathlib import Path
 
 import pytest
 
+from tests import postgres_guard
 from tests.default_gate_credentials import LIVE_CREDENTIAL_KEYS
 from tests.egress_guard import ALLOW_MARKER, guard
 
@@ -111,6 +112,10 @@ def _gpu_available() -> bool:
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    # PostgreSQL 守卫装在这里（**加载无关**）：它原先只在 tests/postgres / tests/distributed
+    # 的 conftest 里，而那两个 conftest 只有在被收集到时才加载 ⇒ 定向跑（例如只跑 tests/api）
+    # 里跨目录的 `postgres` 标记既不跳过也不快失败（实测挂死）。见 tests/postgres_guard.py。
+    postgres_guard.apply_reachability_skips(items)
     need_docker = any(item.get_closest_marker("requires_docker") for item in items)
     need_gpu = any(item.get_closest_marker("requires_gpu") for item in items)
     docker_ok = _docker_available() if need_docker else True

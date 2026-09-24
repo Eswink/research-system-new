@@ -16,9 +16,9 @@ import pytest
 
 from packages.application.ports.workflow_engine import ClaimRequest
 from packages.domain.workers import WorkerState
-from tests.distributed.conftest import _postgres_dsn
 from tests.distributed.net_proxy import NetProxy
 from tests.distributed.worker_harness import WorkerHarness
+from tests.postgres_guard import postgres_dsn
 
 pytestmark = [pytest.mark.distributed, pytest.mark.postgres]
 
@@ -28,7 +28,7 @@ _WAIT_SECONDS = 45
 def _harness() -> WorkerHarness:
     # Realistic lease/stale windows: renewal keeps healthy in-flight jobs alive,
     # while failover scenarios still converge fast via kill / explicit expiry.
-    return WorkerHarness(_postgres_dsn(), lease_ttl_seconds=6, stale_seconds=4.0)
+    return WorkerHarness(postgres_dsn(), lease_ttl_seconds=6, stale_seconds=4.0)
 
 
 def _wait_until(check: Callable[[], bool], timeout: float = _WAIT_SECONDS) -> bool:

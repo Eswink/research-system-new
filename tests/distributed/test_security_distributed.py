@@ -17,15 +17,15 @@ import httpx
 import pytest
 
 from adapters.workspace.bundle import BundleError
-from tests.distributed.conftest import _postgres_dsn
 from tests.distributed.worker_harness import _ENROLLMENT, WorkerHarness
+from tests.postgres_guard import postgres_dsn
 
 pytestmark = [pytest.mark.distributed, pytest.mark.postgres]
 
 
 @pytest.fixture()
 def harness(clean_worker_plane: str) -> Generator[WorkerHarness, None, None]:
-    h = WorkerHarness(_postgres_dsn())
+    h = WorkerHarness(postgres_dsn())
     h.start_gateway()
     yield h
     h.close()

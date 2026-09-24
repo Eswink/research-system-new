@@ -5,14 +5,14 @@ from __future__ import annotations
 import psycopg
 import pytest
 
-from tests.postgres.conftest import _postgres_dsn
+from tests.postgres_guard import postgres_dsn
 
 pytestmark = pytest.mark.postgres
 
 
 @pytest.mark.parametrize("peak_bytes", [2**31, 8 * 1024**3])
 def test_canonical_peak_gpu_memory_column_can_represent_single_card_vram(peak_bytes: int) -> None:
-    with psycopg.connect(_postgres_dsn()) as conn:
+    with psycopg.connect(postgres_dsn()) as conn:
         row = conn.execute(
             "SELECT data_type FROM information_schema.columns WHERE table_schema='public' "
             "AND table_name='execution_jobs' AND column_name='peak_gpu_memory_bytes'"

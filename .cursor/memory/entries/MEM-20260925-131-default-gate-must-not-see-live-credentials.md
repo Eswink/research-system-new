@@ -32,9 +32,12 @@ tags: [test-isolation, credentials, litellm-dotenv, egress-guard, default-gate]
   `monkeypatch.delenv`（用例结束自动还原）。**放行面与出站判据同源**（同一个
   `ALLOW_MARKER`），live 用例照旧能读到真实凭据。
 - `tests/architecture/python/test_default_gate_credential_isolation.py`：① 名单 ↔ 出厂目录
-  **双向对齐**（新增凭据漏登记即判红）；② 本模块**导入期**把凭据键放进进程环境（模拟那次
-  泄漏）⇒ 同文件的未标记用例**看不到**它（非空真断言）；③ **子进程按压**：注入凭据键跑
-  `tests/api/test_runs_api.py` ⇒ 必须 `blocked 0`。
+  **双向对齐**（新增凭据漏登记即判红）；② **子进程按压**：把凭据键只放进**子进程的 `env`**，
+  在同一次子进程里跑探针 `tests/architecture/python/test_default_gate_isolation_probe.py` 与
+  `tests/api/test_runs_api.py` ⇒ 探针**看不到**凭据键、默认门必须 `blocked 0`。
+  **注入只能发生在子进程内**——初版在**模块导入期**注入，结果泄漏给整个 pytest 会话，
+  让 live 用例不再 skip、在 CI 上真去调端点（run `36048265860` 判红）；细节与复现见
+  `MEM-20260925-133`。
 
 ## 为什么这样做
 
@@ -71,3 +74,4 @@ tags: [test-isolation, credentials, litellm-dotenv, egress-guard, default-gate]
 - `docs/evaluation/CROSS_SUITE_ISOLATION_AUDIT.md` 第 2 节（根因链与事实更正）
 - 证据：`scratch/goal015-c1-press-r2-after-revert.txt`（修前 `blocked 2`）、
   `scratch/goal015-c1-roundA.log` / `-roundB.log`（修后 `egress guard: FAIL` 计数 0）
+- 后续：`MEM-20260925-133`（判据的注入必须限定在子进程，含 CI 红 run `36048265860` 的归因）

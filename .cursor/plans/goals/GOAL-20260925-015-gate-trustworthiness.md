@@ -226,8 +226,13 @@ escalation_triggers:
   - 明文凭据泄露（**即使是可弃用的免费额度**）——立即停止并报告
 child_plans:
   - .cursor/plans/tasks/PLAN-20260925-161-cross-suite-isolation-census-and-fix.md
-latest_recheck: null
-memory_entries: []
+  - .cursor/plans/tasks/PLAN-20260925-164-local-gate-protocol-and-decision-briefing.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-165-local-gate-protocol-and-decision-briefing.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260925-130-order-red-needs-a-frozen-input.md
+  - .cursor/memory/entries/MEM-20260925-131-default-gate-must-not-see-live-credentials.md
+  - .cursor/memory/entries/MEM-20260925-132-skip-guards-must-be-load-independent.md
+  - .cursor/memory/entries/MEM-20260925-133-judge-injection-must-be-subprocess-scoped.md
 ---
 
 ## 目标与退出标准
@@ -251,15 +256,23 @@ memory_entries: []
   与 `live-run-enablement-recipe`）：本机 DNS 走 fake-IP 代理（`198.18.0.0/15`）⇒ 自写
   「地址须全球单播」类检查会拒绝**所有**域名出网，含产品端点域名。**判据正确、机器环境特殊**
   —— 处置只能是**归因 + 登记**，**不得**豁免该网段。
+  - **【2026-09-25 事实更正（cycle 1/2 实测，本 GOAL 的普查与本轮 CI 红各一次）】**：把该红
+    归因为「fake-IP 环境」**不成立**。`tests/egress_guard.py` 的放行面只有 `localhost`
+    （`ALLOWED_KINDS`，`tests/egress_guard.py:59`；其头注 `:22` 已显式预置 fake-IP 情形），
+    任何**可解析**的非环回目的地都会被拦；本机 DNS 只让判词里的 `kind` 显示为 `private`。
+    **判红的原因在 cycle 1 实测为「凭据在场」**（未标记 live 的用例解析到出厂目录声明的
+    `credential_ref` ⇒ 真的去探端点）⇒ 那是**真实缺陷 R-2**（已修：夹具隔离），
+    **不是环境项**。⇒ 起点 (b) 的唯一终态 = **判据正确 + 不改判据 + 不改机器网络配置**；
+    归因命令**零出网**（只读已落盘判词，见 `LOCAL_GATE_PROTOCOL.md` 第 5 节）。
 - **已知同类历史修法**（`MEM` 既有教训，本 GOAL 按此口径修真实来源）：每线程连接
   （`psycopg-shared-connection-thread-nesting`）、夹具隔离、显式 DSN 固化、容器清理；
   GOAL-007 修过一例「函数内定义 SDK Action 子类污染判别联合 ⇒ 提为模块级」。
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 跨套件顺序依赖**归零** + 成对反证 | 普查表 + 修法 + 两轮全绿 + 反证 | PENDING |
-| EC-02 | 本地判定**机械三分类** | 跑法协议 + 归因脚本 + 两条具名起点终态 | PENDING |
-| EC-03 | 决策简报（**零实施**） | 六要素简报 + 一致性判据 | PENDING |
+| EC-01 | 跨套件顺序依赖**归零** + 成对反证 | 普查表 + 修法 + 两轮全绿 + 反证 | **PASS** |
+| EC-02 | 本地判定**机械三分类** | 跑法协议 + 归因脚本 + 两条具名起点终态 | **PASS** |
+| EC-03 | 决策简报（**零实施**） | 六要素简报 + 一致性判据 | **PASS** |
 | EC-04 | 收口复检 + 残余登记 | 复检脚本两树 + m0 终态行 + CI 台账 | PENDING |
 
 **依赖关系**：EC-01 与 EC-02 共用同一批「普查 / 归因」证据面（普查表先行）；
@@ -388,6 +401,12 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 - **本机环境的 DNS / 代理特殊性**（fake-IP `198.18.0.0/15`）——**不改机器网络配置**，
   也不改判据；只做归因与登记。
 - **`M-1`（出厂组合根是否自己接执行体缝 `ApiDeps.tool_providers`）**——本循环**只登记不实施**。
+- **live 判据的开门条件**（cycle 1 实测新增，**只登记不实施**）：`requires_live_llm` 用例当前的
+  开门条件是「出厂端点目录声明 + 环境里**恰好存在** `LLM_MAIN_KEY`」——于是默认门的结论取决于
+  环境里有什么，而不取决于跑门的人想要什么。CI 红 run `36048265860` 正是这个形状：一个**无效**
+  令牌让 live 用例不再 skip、真去调端点 ⇒ `AuthenticationError`（详见 D-11 的证据出处）。
+  是否改成显式开关**需拍板**；本循环**不得**改判据、**不得**改 live 用例的 skip 条件
+  ⇒ 只登记为决策简报条目 **D-11**。
 
 **承继的诚实边界（如实保留，不是待办）**：
 

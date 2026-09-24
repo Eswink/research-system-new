@@ -1,65 +1,27 @@
 """Conftest for M16 distributed-execution tests.
 
-Skips when PostgreSQL is unreachable; fails closed when
-`RESEARCHOS_REQUIRE_POSTGRES=1` (same posture as tests/postgres/conftest.py).
+跳过逻辑（`distributed` 标记 + 可达性 + `RESEARCHOS_REQUIRE_POSTGRES` 的 fail-closed）已**集中**
+到 `tests/postgres_guard.py`，由**根 conftest** 安装（加载无关）。本文件保留本目录专属夹具：
+schema 准备、`pg_dsn`、以及每个用例的 `clean_worker_plane`（截断 worker-plane 表）。
+
 Every module here carries the `distributed` marker (subprocess workers +
 loopback gateway + real PostgreSQL).
 """
 
 from __future__ import annotations
 
-import os
-
 import psycopg
 import pytest
 
 from adapters.postgres.db import migrate as pg_migrate
-
-
-def _postgres_dsn() -> str:
-    return os.environ.get(
-        "RESEARCHOS_POSTGRES_DSN",
-        os.environ.get(
-            "DATABASE_URL",
-            "postgresql://research_os:research_os_m14_test@localhost:15432/research_os",
-        ),
-    )
-
-
-def _postgres_required() -> bool:
-    return os.environ.get("RESEARCHOS_REQUIRE_POSTGRES") == "1"
-
-
-def _postgres_available(dsn: str) -> bool:
-    try:
-        conn = psycopg.connect(dsn, autocommit=True, connect_timeout=2)
-        conn.close()
-        return True
-    except Exception:
-        return False
-
-
-@pytest.hookimpl(tryfirst=True)
-def pytest_collection_modifyitems(config: object, items: list[pytest.Item]) -> None:
-    del config
-    dsn = _postgres_dsn()
-    if _postgres_available(dsn) or _postgres_required():
-        return
-    reason = (
-        f"PostgreSQL not reachable at {dsn} — "
-        "start with: docker compose --project-directory . -f infra/compose/postgres-test.yaml up -d"
-    )
-    skip = pytest.mark.skip(reason=reason)
-    for item in items:
-        if item.get_closest_marker("distributed") is not None:
-            item.add_marker(skip)
+from tests.postgres_guard import postgres_available, postgres_dsn, postgres_required
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _distributed_schema_ready() -> None:
-    dsn = _postgres_dsn()
-    if not _postgres_available(dsn):
-        if _postgres_required():
+    dsn = postgres_dsn()
+    if not postgres_available(dsn):
+        if postgres_required():
             pytest.fail(f"PostgreSQL not reachable at {dsn}")
         return
     pg_migrate(dsn)
@@ -67,14 +29,15 @@ def _distributed_schema_ready() -> None:
 
 @pytest.fixture()
 def pg_dsn() -> str:
-    return _postgres_dsn()
+    return postgres_dsn()
 
 
 @pytest.fixture()
 def clean_worker_plane(pg_dsn: str) -> str:
     """Truncate the worker-plane tables for per-test isolation."""
     conn = psycopg.connect(pg_dsn, autocommit=True)
-    conn.execute(
+    runner = getattr(conn, "execute")
+    runner(
         "TRUNCATE tasks, leases, idempotency_records, outbox_events, workers,"
         " execution_jobs CASCADE"
     )

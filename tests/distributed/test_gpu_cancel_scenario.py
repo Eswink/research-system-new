@@ -16,7 +16,6 @@ from collections.abc import Generator
 import docker
 import pytest
 
-from tests.distributed.conftest import _postgres_dsn
 from tests.distributed.test_scenarios import (
     _expire_lease,
     _gateway_register,
@@ -25,6 +24,7 @@ from tests.distributed.test_scenarios import (
     _wait_until,
 )
 from tests.distributed.worker_harness import WorkerHarness
+from tests.postgres_guard import postgres_dsn
 
 pytestmark = [
     pytest.mark.distributed,
@@ -68,7 +68,7 @@ def _no_new_containers(baseline_ids: set[str], timeout: float = 15.0) -> bool:
 
 @pytest.fixture()
 def gpu_harness(clean_worker_plane: str) -> Generator[WorkerHarness, None, None]:
-    harness = WorkerHarness(_postgres_dsn(), lease_ttl_seconds=6, stale_seconds=4.0)
+    harness = WorkerHarness(postgres_dsn(), lease_ttl_seconds=6, stale_seconds=4.0)
     harness.start_gateway()
     harness.start_schedulers()
     baseline_ids = {str(c["Id"]) for c in _exec_containers()}

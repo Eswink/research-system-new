@@ -13,6 +13,8 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260925-133](entries/MEM-20260925-133-judge-injection-must-be-subprocess-scoped.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-164 |
+| [MEM-20260925-132](entries/MEM-20260925-132-skip-guards-must-be-load-independent.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-164 |
 | [MEM-20260925-131](entries/MEM-20260925-131-default-gate-must-not-see-live-credentials.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-161 |
 | [MEM-20260925-130](entries/MEM-20260925-130-order-red-needs-a-frozen-input.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-161 |
 | [MEM-20260822-016](entries/MEM-20260822-016-m12-first-real-research-workflow.md) | ACTIVE | repository | 0.90 | 2026-12-22 | PLAN-20260822-016 |
