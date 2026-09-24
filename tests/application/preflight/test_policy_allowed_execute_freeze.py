@@ -45,9 +45,14 @@ def _deps() -> Any:
 
 
 def _protocol_policy() -> PolicyDefinition:
-    """`examples/config/policy.yaml` + 这份协议声明但**产品策略尚未放行**的
-    `evidence.read`（那是另一条独立的既有缺口，不属本判据的射程；本判据要的是
-    「一份把该协议所需能力都显式允许、**含 `code.execute`** 的策略」这个前提）。"""
+    """`examples/config/policy.yaml`（本判据要的是「一份把该协议所需能力都显式允许、
+    **含 `code.execute`** 的策略」这个前提）。
+
+    GOAL-20260924-014 EC-01 之前，这份协议声明的 `evidence.read` **不在产品策略的
+    allow 里**，本函数因此在运行期把它补进一份副本（当时那条缺口是**另一个**独立问题，
+    不属本判据的射程）。放行之后该分支成为**幂等兜底**：策略面已含 `evidence.read`，
+    这里直接返回策略本体、**不再注入**——留痕断言因此读的是产品策略本身。
+    """
     context = _deps().preflight_override
     base: PolicyDefinition | None = context.catalog.policy
     assert base is not None, "夹具目录必须带 policy（examples/config/policy.yaml）"

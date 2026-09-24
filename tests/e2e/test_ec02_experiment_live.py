@@ -25,10 +25,14 @@ runtime **显式配置**为 `openhands` + 登记端点的凭据**可解析**。�
 **如实写明的两处边界**（不夸大这次的证明力）：
 
 - 留痕里的 `decision: ALLOW` 来自**本次装配面**的策略求值器（`preflight_override` 的载体，
-  与 GOAL-009/010/011 全部真实 run 同一条路径）。**真实控制面**（`NativePolicyEvaluator` +
-  `examples/config/policy.yaml`）对 `sort_analysis_v1` 的 `evidence.read` 判 `DENY` ⇒ 该协议在
-  真实控制面上是 `FAIL`——那是**已登记、需拍板**的缺口（W-A），本文件**不**放宽它，
-  也没有改动 `examples/config/policy.yaml`。
+  与 GOAL-009/010/011 全部真实 run 同一条路径）。
+  **【GOAL-20260924-014 EC-01 更新】**：本条此前登记的是「`evidence.read` 在真实控制面判
+  `DENY` ⇒ 该协议在真实控制面上是 `FAIL`（`W-A`）」。用户已拍板放行 `evidence.read`
+  （方案 (A)），且 `sort_analysis_v1` 引用的两份 task contract 已补进出厂目录 ⇒
+  **真实控制面现在对该协议判 `WARN`、可冻结**，与本节装配结论**一致**（`W-C` 已消灭；
+  判据 `tests/application/preflight/test_policy_surface_consistency.py`）。
+  本节仍如实标注：**留痕来自 override 这一侧的求值器**——本文件本身不因上述修复而改变
+  它证明的东西。
 - 实验那一步**另经真实策略求值器**的执行期检查（`GovernedExperimentExecutor._enforce_policy`，
   `policy_bindings()` 的 `NativePolicyEvaluator`）：`code.execute` 在 `policy.yaml` 里是
   `allow_with_constraints`（`sandbox_required` / `max_seconds`）⇒ 这一环确由**产品策略**放行。
