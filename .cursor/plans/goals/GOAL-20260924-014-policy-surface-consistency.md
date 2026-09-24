@@ -131,7 +131,34 @@ exit_criteria:
       （跑前确认 `EnvCredentialResolver().has('LLM_MAIN_KEY')` 为 True；
       跑后**不得**把开关留在环境或 `.env`）。三项读面取证命令与样张路径落 RECHECK；
       反证按压记录（冻结前终止的形态）落 `scratch/`。
-    status: PENDING
+    status: BLOCKED
+    status_note: >-
+      **可达半边已达成并实测；判据本体（带真实实验到 `SUCCEEDED`）不可达，三重阻断逐条实测**
+      ⇒ 置 `BLOCKED`。**已达成的半边**：产品组合根（`assemble()`，`preflight_override = None`）
+      + 真适配器 ⇒ `real_retrieval_research_v1` 真实控制面 **`PASS` + 可冻结**，经既有 API 跑到
+      **`SUCCEEDED`**（manifest 冻结；证据面 2 条 `RETRIEVED`、真 PMID；预算面 1 条），判据在册
+      `tests/e2e/test_real_control_plane_retrieval_live.py`，样张
+      `scratch/goal014-c2-real-plane-sample.json`。
+      **M-1（执行体缝）**：出厂组合根不接 `ApiDeps.tool_providers`（生产空 dict，既有注释写死）
+      与 `OrchestrationDependencies.capabilities` / `.experiment_task`（缺省 `None`）
+      ⇒ 产品路径自己执行不了检索与实验（`F-10`）。
+      **M-2（缺配对声明）**：没有出厂协议同时声明「运行链检索」与「已 pin 的沙箱实验」
+      （`real_retrieval_research_v1` 无实验阶段；`m12_reference_research_v1` 的检索不是
+      run_chain）⇒ 配对需新增出厂声明。
+      **M-3（验收门输入缺口，决定性）**：两份声明了 `experiment` 的出厂合约都带 `TEST_PASSES` +
+      `POLICY_COMPLIANT`，而 `EvaluationInputs` **没有** `tests` / `policy_decision` 两维 ⇒
+      实验**跑成功、`metrics` 制品在场**时仍判拒（`ARTIFACT_EXISTS` 却是 OK）
+      ⇒ 带真实实验的 run 到不了 `SUCCEEDED`（`F-11`）。M-3 **正是** GOAL-011 登记的下一轮拍板项
+      ①②③ ⇒ 触及「不进入循环 / 需人工拍板」⇒ **不**绕过、**不**新造判据更弱的合约
+      （那是「放宽验收门以强行成功」）⇒ 本 EC `BLOCKED`。
+      **成对反证（两条，均止于冻结前、零真实 LLM 调用）**：撤 `evidence.read` 的 allow ⇒
+      `sort_analysis_v1` `FAILED` / `manifest_digest: null` / `POLICY_DENIED, TOOL_RISK_ELEVATED`
+      / 零 task / 零实验 / 零证据；撤 `literature.*` 的 allow ⇒ `real_retrieval_research_v1`
+      同形（`POLICY_DENIED`）；两处按压后**逐字节还原**（`git diff --stat` 为空）。
+      **可拍板的选项**（三选一或组合）：(a) 接线 `tests` / `policy_decision` 进
+      `EvaluationInputs`（GOAL-011 ①②③）；(b) 由出厂组合根接执行体缝（`F-10`）；
+      (c) 明确 EC-02 的实验半**降级**为「装配方补执行体 + 无实验的检索闭环」
+      （即本 cycle 已实测的那条）。
   - id: EC-03
     criterion: >-
       **策略面审计（双向差集）**：把 `examples/config/policy.yaml` 的每条
@@ -230,9 +257,11 @@ escalation_triggers:
     被判定需要重启时——**需拍板**，本循环不自行重启该路线
 child_plans:
   - .cursor/plans/tasks/PLAN-20260924-155-policy-surface-consistency-main-trunk.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260924-157-policy-surface-consistency-main-trunk.md
+  - .cursor/plans/tasks/PLAN-20260924-156-real-control-plane-end-to-end.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260924-158-real-control-plane-end-to-end.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260924-124-multiple-fail-sources-enumerate-before-fixing.md
+  - .cursor/memory/entries/MEM-20260924-125-seam-empty-is-not-assembly-missing.md
 ---
 
 ## 目标与退出标准
@@ -315,6 +344,32 @@ memory_entries:
   **⇒ EC-01 / EC-02 只靠放行策略无法达成**，必须同时把这两份契约补进**出厂目录**
   （**声明补全**，与 W-B 的处置同类；**不碰任何策略面**）。该扩展已在
   `PLAN-20260924-155` 的 `authorization.ref` 具名登记，回退面 = 单 WP 的提交。
+
+- **F-10｜cycle 2 实测新发现（出厂组合根不接执行体缝，「声明与现实漂移」的同一类）**：
+  产品路径（`preflight_override = None`）今天**自己**执行不了检索与实验——
+  `ApiDeps.tool_providers` 生产为**空 dict**（`services/api/composition.py` 的字段注释写死
+  「生产未注册时空 dict」）、`OrchestrationDependencies.capabilities` 与 `.experiment_task`
+  缺省 `None`（两处 docstring 都写「缺省 = 不启用 / 没接」）。**实测对照**：同一棵树、同一份
+  目录，**不注册**适配器 ⇒ `ncbi_eutils` 健康 `UNKNOWN` ⇒ 检索类协议 `WARN`
+  （`TOOL_HEALTH_UNPROVEN`）+ **拒冻**；**注册真适配器** ⇒ `PASS` + **可冻结**
+  （`scratch/goal014-c2-real-control-plane-probe.txt`）。⇒ 这一条**不是**策略面问题，
+  而是「目录声明了 REST provider、而产品不注册它的实例」的**声明-实现漂移**，与 `F-9` 同类、
+  换了一层（声明面 → 装配面）。**处置**：本 GOAL 由装配方补执行体实测（判据在册），
+  **是否由出厂组合根自己接**留给用户拍板。
+
+- **F-11｜cycle 2 实测新发现（验收门输入缺口，**决定性**且**已在用户拍板清单上**）**：
+  出厂目录里**两份**声明了 `experiment` 的合约（`experiment_execution` /
+  `m12_experiment_execution`）都带 `TEST_PASSES` + `POLICY_COMPLIANT`；而产品路径的
+  `EvaluationInputs`（`packages/application/run_orchestration/evaluation_gate.py`）
+  **没有** `tests` / `policy_decision` 两个维度 ⇒ 两条判据**永远** fail-closed。
+  **实测**（`scratch/goal014_c2_acceptance_probe.py`，纯离线）：把「实验跑成功」时产品路径
+  **能**给出的事实喂进既有求值器，`ARTIFACT_EXISTS` 判 **OK**、`TEST_PASSES` 判
+  「no test results provided」、`POLICY_COMPLIANT` 判「policy decision unknown」
+  ⇒ 两份合约都 `passed=False`。**⇒ 带真实实验的 run 在产品路径上到不了 `SUCCEEDED`**
+  （实验任务走 `register_and_gate_experiment` → `evaluate_gate_experiment` → `evaluate_gate`）。
+  **这一条正是 GOAL-011 登记的下一轮拍板项 ①②③**（`SCHEMA_VALID` / `TEST_PASSES` /
+  `POLICY_COMPLIANT` 接线）⇒ 触及「不进入循环 / 需人工拍板」⇒ **本 GOAL 不自行接线、
+  也不新造一份判据更弱的出厂合约**（那等于「放宽验收门以强行成功」）。
 
 ### 建档时登记的残余（不得因本 GOAL 存在而被读成已解决）
 
@@ -472,20 +527,26 @@ memory_entries:
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `f6ce099`（**推送 tip**） | 治理 `validate.py` 绿（`Cursor 治理验证通过`）；`DOCS-CHECK PASS: 6 deterministic checks` | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-8**：policy.yaml 现状、镜像契约 6+4、镜像判据的三条断言口径、`evidence.read` 的四处声明面、执行期复用同一张表、`preflight_override` 是 `W-C` 的载体、双向差集起点数字 41/14/10/31/4 + 域名误收陷阱、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1` / `R-F2` / `R-F3`（承继，其中 `R-F3` 影响本地 m0 口径） | cycle 1 = derive **EC-01** 子 PLAN（策略面一致性主干）：先定案「**两套装配同结论判据**」的形态（同一脚本同求带/不带 `preflight_override` 两条路径、输出可 diff）+ 落 `evidence.read` 的 allow（**`policy.yaml` 与 `_CAPABILITY_SCOPE` 同一提交内真同步**，`scope` 取值以真实求值路径验证为准）+ 成对反证①②；EC-02 的真实端到端在其后 |
 | 1 | PLAN-20260924-155（EC-01） | `add2c37`（derive：PLAN-155 + ALL_PLAN + `child_plans`）、`4d9925a`（WP1 判据）、`5cde986`（WP2 放行 `evidence.read`）、`9bba68d`（WP3 出厂目录补全）、`538effc`（WP4 陈述对齐 + 反证）、`4bfa6d0`（可冻结面判据）、本 cycle 的收口回写见台账尾巴 | **判据 5 passed**（改前 4 failed，`scratch/goal014-c1-criterion-red.txt`）；`tests/application/preflight/` + `test_m2_audit.py` **28 passed**；受影响套件 **81 passed**；e2e 离线 **9 passed / 1 skipped**；**出站全部 `blocked 0`、判据自身 `judged 0`**（零出网）；**两装配同结论** `SAME_STATUS = True A=WARN B=WARN`；**两套都可冻结**（各 4 对留痕）；**成对反证先红后绿**（`scratch/goal014-c1-press1-allow-withdrawn.txt` / `-press2-mirror-desync.txt`），按压后 `git diff --stat` **为空**；**m0 22 PASS / 1 FAILED**（判红 = `framework/validate_bundle`，**两条原因**：环境残余 `R-F3` **加上**本 cycle 首版自造的 `output_schema` 名——**CI 判红暴露了后者**，已由纠错提交修掉；`python/tests` **4419 passed / 18 skipped / 0 failed**，差 **+6** = 5 条新判据 + 1 个源文件规模门禁用例（逐用例 ID 差集归因，见 RECHECK-157 的「用例数归因」条）；**独立复检** `scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`；`validate.py` 绿 | 见下方 CI 台账 | **本 cycle 实测新发现（`F-9`，已登记）**：真实控制面的 `FAIL` 有**两个独立来源**——`POLICY_DENIED`（授权覆盖）**与**两份 `TASK_CONTRACT_MISSING`（`sort_analysis_*` 契约只在测试夹具、不在出厂目录，而该协议是**产品面可选模板**）⇒ 只放行策略**不足以**达成 EC-01/EC-02 ⇒ 处置 = **声明补全**（把夹具的运行期注入提升为出厂声明，与 W-B 同类），**具名登记**在 PLAN-155 的 `authorization.ref`、回退面 = `9bba68d`，**不碰任何策略面**。录制性陈述两处**就地改对**（`_protocol_execute_freeze` 的 docstring、`test_ec02_experiment_live` 的边界段），**断言一字未改** | **EC-01 PASS**。**`W-A` / `W-C` 由本 cycle 消灭**（判据在册、反证成对、按压逐字节还原）。**EC-02/03/04/05 未动**；`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3` 与 13 条人工面**原样保留** | cycle 2 = **EC-02 真实控制面端到端**：**不带任何 `preflight_override`** 跑一次真实 run（真实 LLM + 真实检索 + 真实实验）到终态 `SUCCEEDED`、三项读面（实验 / 证据 / 预算）齐备；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测）。**起点已备**：真实控制面现在 `WARN` + **可冻结**（已实测），正是 EC-02 的前置条件 |
-### CI 台账（逐 run 逐 job 实查；全部落在 main）
+| 2 | PLAN-20260924-156（EC-02） | 判据与支持模块 + 本 cycle 的收口回写，提交见回合汇报 | **live 判据离线 `1 skipped` / `judged 0`**（零出网）；**真实 run 实测**：产品组合根（`preflight_override = None`）+ 真适配器 ⇒ `real_retrieval_research_v1` **`SUCCEEDED`**、manifest 冻结、证据面 **2 条 `RETRIEVED`（真 PMID）**、预算面 1 条（`scratch/goal014-c2-real-plane-sample.json`）；**控制面矩阵**（`scratch/goal014-c2-real-control-plane-probe.txt`）：不注册适配器 ⇒ 检索类协议 `WARN` + **拒冻**；注册 ⇒ **`PASS` + 可冻结**；**验收门探针**（`scratch/goal014-c2-acceptance-probe.txt`，纯离线）：两份带 `experiment` 的出厂合约在「实验跑成功、`metrics` 在场」时仍判 `passed=False`（`TEST_PASSES` / `POLICY_COMPLIANT`）；**成对反证两条**（`scratch/goal014-c2-press-allow-withdrawn.txt` / `-press-literature-withdrawn.txt`）均 `FAILED` / `manifest_digest: null` / **零 task / 零实验 / 零证据**，按压后 `git diff --stat` 为空 | 见下方 CI 台账 | **实测新发现 `F-10` / `F-11`**（已登记）；**未改任何产品代码 / 合约 / 策略面 / 门禁 / 既有断言**；真实调用最小必要（1 会话 + 2 次检索） | **EC-02 = BLOCKED**（判据本体不可达：M-1 执行体缝 / M-2 缺配对声明 / M-3 验收门输入缺口；**可达半边已实测达成**）。**EC-03/04/05 未动** | cycle 3 = **EC-03 策略面双向差集审计**（完全授权内、离线）：四段规则 × 四个声明面，每个能力**一个终态、零待定**；差集表落仓库文档 + 机械判据 + 按压红/绿 |
 
+### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-014 落地） | `f6ce099`（**推送 tip**，推送区间 `df29915..f6ce099`） | M0 [35952434115](https://github.com/Eswink/research-system-new/actions/runs/35952434115) | **六 job 全 success**（`eval-gate` / `console-frontend` / `collector-quality` / `quality-windows-latest` / `quality-ubuntu-latest` / `container-quality`，逐 job 实查、终态 `completed`）；**同一次推送另触发 CodeQL** [35952433763](https://github.com/Eswink/research-system-new/actions/runs/35952433763) = **success**（3/3：`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)`） |
 | cycle 1 收口回写（EC-01 PASS + `RECHECK-157`） | `add2c37`…`5abddee`（**推送 tip**，推送区间 `ea803e1..5abddee`） | M0 [35956753055](https://github.com/Eswink/research-system-new/actions/runs/35956753055) | **判红两个 job**：`quality-ubuntu-latest` / `quality-windows-latest` = **failure**（同一根因），其余四个（`collector-quality` / `console-frontend` / `eval-gate` / `container-quality`）**success**；同次推送另触发 CodeQL [35956752245](https://github.com/Eswink/research-system-new/actions/runs/35956752245) = **success**（3/3）。**失败根因（取失败 job 日志为证，`scratch/goal014-c1-ci-ubuntu.log`）**：`framework/validate_bundle` 判 `TaskContract sort_analysis_execution / sort_analysis_review 输出 Schema 不存在` —— **本 cycle 首版自造的 `output_schema` 名**。**CI 无 `scratch/` ⇒ 它同时证明了本地那条红不是环境单因**（我原先把本地 red 归因成 `R-F3` 一项，是**错的**）|
 | cycle 1 纠错（自造 schema 名 → 改用既有 schema） | `21ac2ea`（**推送 tip**，推送区间 `5abddee..21ac2ea`） | M0 [35957938701](https://github.com/Eswink/research-system-new/actions/runs/35957938701) | **六 job 全 success**（`eval-gate` / `console-frontend` / `collector-quality` / `quality-windows-latest` / `quality-ubuntu-latest` / `container-quality`，逐 job 实查、终态 `completed`）；**同一次推送另触发 CodeQL** [35957938387](https://github.com/Eswink/research-system-new/actions/runs/35957938387) = **success**（3/3）。**修法**：两份契约的 `output_schema` 改为**既有的** `real_research_deliverable_v1`（**不新造 schema 文件**）；本地 `validate_bundle` 此后只剩 `R-F3` 那条环境项；受影响套件 **70 passed**；三处归因措辞（`RECHECK-157` 勘误节 + `PLAN-155` AC-8/证据 + 本文件）**一并更正**，教训并入 `MEM-20260924-124` |
-| cycle 1 归因更正（用例数按逐用例 ID 差集重算 + `g013final` 登记） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | 见回合汇报 | **改动面**：`RECHECK-20260924-157`（用例数归因条就地更正 + 第二处勘误）、`PLAN-20260924-155`（证据段 + 状态历史）、`GOAL-014`（EC-01 status_note + 迭代日志 + 续点）、`MEM-20260924-124`（归因纪律换成逐用例 ID 差集）。**判据、断言、策略面一字未动**；`4419 = 4413 + 5 + 1`；临时 worktree `/tmp/g014base` 已移除 |
+| cycle 1 归因更正（用例数按逐用例 ID 差集重算 + `g013final` 登记） | `334c9ab`（**推送 tip**，推送区间 `21ac2ea..334c9ab`） | M0 [35959638959](https://github.com/Eswink/research-system-new/actions/runs/35959638959) | **六 job 全 success**（`console-frontend` / `quality-ubuntu-latest` / `container-quality` / `eval-gate` / `collector-quality` / `quality-windows-latest`，逐 job 实查、终态 `completed`）；**同一次推送另触发 CodeQL** [35959638543](https://github.com/Eswink/research-system-new/actions/runs/35959638543) = **success**（3/3：`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)`）。**改动面**：`RECHECK-20260924-157`（用例数归因条就地更正 + 第二处勘误）、`PLAN-20260924-155`（证据段 + 状态历史）、`GOAL-014`（EC-01 status_note + 迭代日志 + 续点）、`MEM-20260924-124`（归因纪律换成逐用例 ID 差集）。**判据、断言、策略面一字未动**；`4419 = 4413 + 5 + 1`；临时 worktree `/tmp/g014base` 已移除 |
+| cycle 2（EC-02：判据 + 支持模块 + 回写） | 见回合汇报（**台账尾巴口径**：本条自身触发的 run 在回合汇报里给出终态，**不再回写文件**） | 见回合汇报 | **改动面**：新增 `tests/e2e/live_control_plane_support.py` 与 `tests/e2e/test_real_control_plane_retrieval_live.py`；`PLAN-156`（`BLOCKED`）+ `RECHECK-158`（`PASS_WITH_WARNINGS`）+ `MEM-20260924-125` + `ALL_PLAN` 投影 + 本文件回写。**零产品代码 / 合约 / 策略面改动**（两条按压逐字节还原） |
 
 **台账尾巴口径**（沿用 GOAL-005…013，写死在此）：写下**本条**「CI 台账回写」提交自身触发的 run
 在**回合汇报**里给出终态，**不再回写文件**。
 
 ## 状态历史
 
+- 2026-09-24（cycle 2）：**EC-02 置 `BLOCKED`**（判据本体不可达，三重阻断实测：`F-10` / `F-11`）；
+  **可达半边实测达成**（真实控制面 + 真适配器 ⇒ `real_retrieval_research_v1` 到 `SUCCEEDED`，
+  证据面 2 条 `RETRIEVED`）；成对反证两条、逐字节还原。**GOAL 仍 `ACTIVE`**（EC-03 完全在
+  授权内且可做，下一 cycle 起做；EC-02 的拍板项已逐条写明）。
 - 2026-09-24：**建档**（`status: ACTIVE`）。本文件落 `.cursor/plans/goals/`，
   `child_plans: []`、`latest_recheck: null`（尚无子 PLAN 与复检）。
   **承继关系**：`W-A` / `W-C` 来自 GOAL-012 cycle 1 登记、GOAL-013 原样承继；
@@ -510,17 +571,24 @@ memory_entries:
 
 ## 当前续点
 
-- **当前 cycle**：2（cycle 0 建档 `f6ce099`；cycle 1 EC-01 `4bfa6d0` + 纠错 `21ac2ea`
-  ——两者均已推送并 CI 全绿；归因更正见下方续点）。
-- **EC 状态**：**EC-01 = PASS**；EC-02 / EC-03 / EC-04 / EC-05 = PENDING。
-- **下一动作**：derive **EC-02** 子 PLAN（真实控制面端到端 run）。
-- **起点已备（cycle 2 直接可用）**：真实控制面（`deps.preflight_override = None`）现在对
-  `sort_analysis_v1` 判 **`WARN` 且可冻结**（实测，各 4 对留痕）——这正是 EC-02 的前置条件。
-  EC-02 要用**真实 LLM + 真实检索 + 真实实验**跑完一次到 `SUCCEEDED`，并且**不带任何
-  `preflight_override`**：注意 `tests/e2e/live_run_support.py` 的三个辅助（`point_catalog_at` /
-  `declare_sandbox_experiment` / `with_sandbox_experiment`）**都是改 `preflight_override` 的**
-  ⇒ EC-02 需要一条**不经 override** 的装配路径（协议声明 / 目录文件 / 组合根配置），
-  这是 cycle 2 的第一个设计点。
+- **当前 cycle**：3（cycle 0 建档 `f6ce099`；cycle 1 EC-01 `4bfa6d0` + 纠错 `21ac2ea`；
+  归因更正 `334c9ab` ——三者均已推送并 CI 全绿；cycle 2 EC-02 见回合汇报）。
+- **EC 状态**：**EC-01 = PASS**；**EC-02 = BLOCKED**（判据本体不可达，可达半边已实测达成，
+  拍板项见 EC-02 的 `status_note` 与 `F-10` / `F-11`）；EC-03 / EC-04 / EC-05 = PENDING。
+- **下一动作**：derive **EC-03** 子 PLAN（策略面双向差集审计，**完全在授权内、离线、零出网**）。
+- **cycle 2 留下的可复用事实**：
+  1. **控制面矩阵**：真实控制面（产品组合根，无 override）对检索类协议，**不注册**适配器 ⇒
+     `WARN`（`TOOL_HEALTH_UNPROVEN`）+ **拒冻**；**注册真适配器** ⇒ **`PASS` + 可冻结**。
+  2. **「补执行体 ≠ 换控制面」的分界线**落 `MEM-20260924-125`（补的是「谁去干」还是
+     「干成了没有」）；装配支持模块 = `tests/e2e/live_control_plane_support.py`。
+  3. **按压要选承重的那条规则**：`evidence.read` 的 allow 对**检索协议不承重**
+     （它只用 `artifact.read` + `literature.*`）——撤它压不动检索协议。
+  4. Windows 上探针**别把结论放在 `TemporaryDirectory` 之外打印**（SQLite 占用会让清理抛错吞掉输出）。
+- **cycle 2 的收尾（旧「起点已备」条目已被本 cycle 用掉，原文不再保留）**：`preflight_override = None`
+  这条产品入口已实测可跑、可冻结、可到 `SUCCEEDED`；`tests/e2e/live_run_support.py` 的三个辅助
+  （`point_catalog_at` / `declare_sandbox_experiment` / `with_sandbox_experiment`）**都改
+  `preflight_override`** 这一事实仍是本 GOAL 的判据纪律来源（EC-02 的判据因此另立支持模块，
+  只补执行体、不补判词）。
 - **cycle 1 留下的可复用事实**：
   1. `evidence.read` 的 `scope` 实测取 `project` 有效（`ALLOW`，且 `ALLOW_WITH_CONSTRAINTS`
      只出现在带约束的 `code.execute` / `workspace.write.code` 上）。

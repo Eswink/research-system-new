@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260924-156](tasks/PLAN-20260924-156-real-control-plane-end-to-end.md) | BLOCKED |
 | [x] | [PLAN-20260924-155](tasks/PLAN-20260924-155-policy-surface-consistency-main-trunk.md) | DONE |
 | [x] | [PLAN-20260923-154](tasks/PLAN-20260923-154-ops-matrix-disclosure-first-class.md) | DONE |
 | [x] | [PLAN-20260923-153](tasks/PLAN-20260923-153-frontend-criteria-disclosure-judge.md) | DONE |
