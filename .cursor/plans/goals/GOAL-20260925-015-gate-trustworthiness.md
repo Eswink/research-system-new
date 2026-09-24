@@ -471,7 +471,7 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 | 0 | （建档，无子 PLAN） | `1d8fe1f`（**推送 tip**，推送区间 `414f2e5..1d8fe1f`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36036419844](https://github.com/Eswink/research-system-new/actions/runs/36036419844) **六 job 全 success** + CodeQL [36036419719](https://github.com/Eswink/research-system-new/actions/runs/36036419719) **3/3 success** | — | EC-01…EC-04 全 PENDING；起点已定位（`W-D` 顺序签名 4 条 / `R-F3` 外来文件实测仍在且 `sha256` 已记 / 本机 fake-IP DNS 致 egress_guard 判红两条探针 / 450 行贴线**四个零余量** / 13 条人工面 + 承继残余）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 普查 + 修真实来源**（见下一行） |
 | 1 | PLAN-20260925-161（EC-01） | derive `d472b7f`（PLAN-161 + `ALL_PLAN` 投影 + `child_plans`）；WP1–WP5 实施与收口回写见回合汇报 | **普查**：as-is m0 = **21/23**（两红项拆成 R-1…R-4，各有最小复现命令；表落 `docs/evaluation/CROSS_SUITE_ISOLATION_AUDIT.md`）。**修后**：同一组合命令**连续两轮** `4455 passed, 19 skipped`（`egress guard: FAIL` 计数 **0**；阻断只来自判据自身探针）；定向套件 `993 passed, 2 skipped` / `blocked 0`；`validate.py` = `Cursor 治理验证通过`；`DOCS-CHECK PASS: 6 deterministic checks`；m0 全量终态见台账行 | **红**：M0 [36048265860](https://github.com/Eswink/research-system-new/actions/runs/36048265860)（`quality-ubuntu-latest` + `quality-windows-latest`）—— 根因见「修复」列，cycle 2 修 | **一次返工如实登记**：首轮判红 `test_real_repo_is_clean`（新增文档的 backtick 引用缺 `.py`）⇒ 修正后重跑取两轮；**另一次**：首次 m0 判红 `framework/validate`（本 cycle MEM 条目缺章节 / 未入 INDEX）⇒ 补齐后重跑取终态。**CI 红的根因是本 cycle 自己的判据**（模块导入期注入凭据键 ⇒ 泄漏给整个 pytest 会话 ⇒ live 用例不再 skip、带无效令牌真调端点） | **EC-01 = PASS**。红项归零进度：**R-1 已归零 / R-2 已归零 / R-3 只登记（(iii) 门禁 scoping ⇒ 去 EC-03）/ R-4 只普查（(i) ⇒ 排 cycle 2）**；`W-D` 历史签名实测不再复现 | cycle 2 = **EC-02 本地判定确定性**：跑法协议 + 机械三分类 + 两条具名起点终态 + **R-4 实施**（postgres 跳过守卫提为加载无关） |
 | 2 | PLAN-20260925-164（EC-02 + EC-03） | `4479a71`（装置 + 判据 + 简报 + 记录）、`e575554`（代管/归因脚本改用仓库解释器）+ 台账尾巴（收口记录） | **判据**：EC-03 双向对齐 `5 passed`（含 3 变体按压）、隔离判据 + 探针 + 命名门 `33 passed`、R-4 两方向 `2 passed`、集中化回归 `143 passed`、定向合集 `50 passed`、`validate.py` = **治理验证通过**、`DOCS-CHECK PASS: 6`。**m0**：as-is 第一轮 19/23（5 红：4 条本 cycle 自身 + R-3）⇒ 第二轮 22/23（仅 `validate` 未闭环 + R-3）⇒ **最终树 as-is = 22/23**（唯一未绿 = `R-3`）；**代管后 = `PASS: profile=m0; 23 deterministic checks`** + 逐字节复核（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2` 全等） | **绿**：M0 [36057139147](https://github.com/Eswink/research-system-new/actions/runs/36057139147) **六 job 全 success** + CodeQL [36057138005](https://github.com/Eswink/research-system-new/actions/runs/36057138005) **3/3 success**（含上一轮红的两个 job ⇒ CI 红修复在 CI 上实证）；`e575554`+`3f95545` 推送 M0 [36062175451](https://github.com/Eswink/research-system-new/actions/runs/36062175451) 六 job 全 success + CodeQL [36062173662](https://github.com/Eswink/research-system-new/actions/runs/36062173662) 3/3 | **三次自身红如实登记（无一条落在产品代码 / 既有判据上）**：① 新判据函数撞 `ruff complex-structure` + `line-too-long` + **50 行函数门禁** ⇒ 重构为 6 个小函数（**未加豁免、未改阈值**）；② 探针初版不以 `test_` 开头 ⇒ `test_module_file_naming.py` 判红 ⇒ 改名（**未加豁免名单**）；③ **代管脚本曾用调用方解释器跑 m0** ⇒ 系统 Python 3.11 产出**三条假红**（`No module named mypy` / `lint-imports executable is unavailable` / `Python 3.11 …pytest-8.`）⇒ 脚本优先用仓库 `.venv`、缺失即拒跑 + 归因脚本新增**跑法层签名**（exit 4）+ 协议文档补「不支持的跑法」 | **EC-02 = PASS**（跑法协议 + 只读归因脚本 + 逐字节代管脚本 + R-4 加载无关守卫；起点 A = (iii) 只登记、代管后 23/23；起点 B = **承继归因被实测否证** ⇒ 真实缺陷 R-2 已修、判据未动）。**EC-03 = PASS**（12 条六要素简报 + 双向对齐判据 + 3 变体按压，**零实施**）。**R-1 / R-2 / R-4 全归零；R-3 只登记（D-10）** | cycle 3 = **EC-04 收口复检**：独立复检脚本两棵树同结论 + m0 可支持终态行 + 人工面/残余逐条登记 + CI 台账到终态 |
-| 3 | PLAN-20260925-166（EC-04） | 收口轮：只读复检脚本 `tools/verify_goal015_closeout.py` + PLAN-166 + RECHECK-167 + GOAL 收口（`ACHIEVED`）+ ALL_PLAN 投影 + 台账尾巴，见回合汇报 | **两树成对复检（同判据同结论）**：主树 `checked=121 failures=0`；`git worktree add --detach HEAD` 的干净 checkout 同判据同结论（收口记录落盘前两树各差一条**时序项**「产物 / 收口记录尚未落盘」，落盘后归零）。**m0 两个终态行分开**：as-is = `FAILED: 1 check(s): framework/validate_bundle=1`（22/23，唯一未绿 = `R-3`）；代管后 = `PASS: profile=m0; 23 deterministic checks` + 逐字节复核（`size` / `mtime_ns` / `sha256` 全等）。治理 `validate.py` = 治理验证通过；`DOCS-CHECK PASS: 6` | 见下方 CI 台账（收口推送） | **一次如实登记的装置教训（新增 `W-5`）**：首次代管跑在「**m0 跑着时写记录**」的状态下判红 `framework/validate=1`（治理读到「任务未入 ALL_PLAN / 复检不存在」）⇒ 该轮**不作终态证据**，改在**冻结树**上重跑；这实证了协议第 1 节的「m0 独占 + 不并发改工作树」 | **EC-04 = PASS**。四 EC 全 PASS；**红项归零**：R-1 / R-2 / R-4 已归零、R-3 = (iii) 只登记（决策简报 D-10）；13 条人工面 + 7 条承继残余 + `W-1…W-5` 原样保留 | **GOAL-015 = ACHIEVED**（待拍板项见 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 的 12 条 D-NN） |
+| 3 | PLAN-20260925-166（EC-04） | 收口轮：只读复检脚本 `tools/verify_goal015_closeout.py` + PLAN-166 + RECHECK-167 + GOAL 收口（`ACHIEVED`）+ ALL_PLAN 投影 + 台账尾巴，见回合汇报 | **两树成对复检（收口提交 `6f12842` 上实跑，同判据同结论）**：主树 `checked=123 failures=0`；干净 checkout（`git worktree add --detach 6f12842`）`checked=123 failures=0`，**无 `TIMING` 行** ⇒ 时序项**已归零**（落盘前干净树多一条「产物尚未落盘」）。**m0 两个终态行分开（冻结树）**：as-is = `FAILED: 1 check(s): framework/validate_bundle=1`（22/23，唯一未绿 = `R-3`）；代管后 = `PASS: profile=m0; 23 deterministic checks` + 逐字节复核（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2` 全等）。治理 `validate.py` = 治理验证通过；`DOCS-CHECK PASS: 6`。日志：`scratch/goal015-c3-m0-asis-final.log` / `-quarantined-final.log` | 见下方 CI 台账（收口推送） | **一次如实登记的装置教训（新增 `W-5`）**：首次代管跑在「**m0 跑着时写记录**」的状态下判红 `framework/validate=1`（治理读到「任务未入 ALL_PLAN / 复检不存在」）⇒ 该轮**不作终态证据**，改在**冻结树**上重跑；这实证了协议第 1 节的「m0 独占 + 不并发改工作树」 | **EC-04 = PASS**。四 EC 全 PASS；**红项归零**：R-1 / R-2 / R-4 已归零、R-3 = (iii) 只登记（决策简报 D-10）；13 条人工面 + 7 条承继残余 + `W-1…W-5` 原样保留 | **GOAL-015 = ACHIEVED**（终止：全 EC PASS + 收口复检 `PASS_WITH_WARNINGS`）。**下一轮输入 = 用户拍板**：`docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 的 12 条 D-NN（其中 D-10 与 `R-3` 同源、D-11 为 live 判据开门条件） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -481,7 +481,8 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 | cycle 1 实施（`7c32961`） | `7c32961` | M0 [36048265860](https://github.com/Eswink/research-system-new/actions/runs/36048265860) | **红**：`quality-ubuntu-latest` + `quality-windows-latest` 失败 ⇒ 根因 = 本 cycle 自己的隔离判据在**模块导入期**注入凭据键、泄漏给整个 pytest 会话 ⇒ live 用例不再 skip、带无效令牌真调端点（`AuthenticationError`）。**修复见 cycle 2**（run `36048265860` 的失败 job 逐条已查） |
 | cycle 2 实施 + 记录（`4479a71`） | `4479a71` | M0 [36057139147](https://github.com/Eswink/research-system-new/actions/runs/36057139147) / CodeQL [36057138005](https://github.com/Eswink/research-system-new/actions/runs/36057138005) | **六 job 全 success**（含前一红的两个 job）/ **CodeQL 3/3 success** ⇒ CI 红的修复在 CI 上得到验证 |
 | cycle 2 装置加固 + 收口记录（`e575554` + `3f95545`） | `3f95545`（推送区间 `4479a71..3f95545`） | M0 [36062175451](https://github.com/Eswink/research-system-new/actions/runs/36062175451) / CodeQL [36062173662](https://github.com/Eswink/research-system-new/actions/runs/36062173662) | **六 job 全 success** / **CodeQL 3/3 success** |
-| 台账尾巴（本行所在提交） | 见回合汇报 | 由 **cycle 3** 回写（按本 GOAL 既有口径：一行台账的 run 在**下一次推送**的提交里回写；本轮该推送的终态已在回合汇报中给出，**不留未轮询的 run**） | — |
+| cycle 2 台账尾巴（`208d37b`） | `208d37b` | M0 [36064224244](https://github.com/Eswink/research-system-new/actions/runs/36064224244) / CodeQL [36064223683](https://github.com/Eswink/research-system-new/actions/runs/36064223683) | **六 job 全 success** / **CodeQL 3/3 success**（该行由 cycle 3 回写，符合本 GOAL「下一推送回写」的口径） |
+| 收口（`6f12842`，EC-04） | `6f12842` | 见回合汇报（收口推送） | 六 job + CodeQL 终态见回合汇报；**在此之前本 GOAL 的每一次推送都已逐行登记**（`36036419844` / `36036419719` / `36048265860` 红→根因已修 / `36057139147` / `36057138005` / `36062175451` / `36062173662` / `36064224244` / `36064223683`） |
 
 ## 状态历史
 
@@ -494,21 +495,20 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 
 ## 当前续点
 
-- **cycle 2 已收口（EC-02 = PASS / EC-03 = PASS）**：子 PLAN `PLAN-20260925-164`（`DONE`）、
-  复检 `RECHECK-20260925-165`（`PASS_WITH_WARNINGS`，警告 = `R-3` 只登记 + live 开门条件登记
-  + 起点 (b) 归因更正 + 人工面原样保留）、记忆 `MEM-20260925-132` / `-133`。
-  **EC-01 / EC-02 / EC-03 全 PASS；只剩 EC-04。**
-- **下一轮 = cycle 3（EC-04 收口复检 + 残余登记）**：
-  ① **独立复检脚本**（只读、标准库、**不 import 仓库代码**）在**当前树**与**干净 checkout**
-     两处**同判据同结论**（差异只允许「收口记录尚未落盘」这类时序项，落盘后归零，或**已具名**
-     的环境差异）；脚本落 `scratch/verify_goal015_c3.py`（口径照 `MEM` 既有复检脚本）。
-  ② m0 到**可支持的终态行**：as-is = **22/23**（唯一未绿 `framework/validate_bundle` = `R-3`）；
-     代管后 = `PASS: profile=m0; 23 deterministic checks`（`tools/quarantine_and_run_m0.py`
-     + 逐字节复核）。**不得**把代管后写成 as-is。
-  ③ 治理 `validate.py` 绿；④ CI 台账**到终态**（本行上方最后一条「台账尾巴」的 run 由 cycle 3
-     回写，按本 GOAL 既有口径）；⑤ **13 条人工面 + 全部承继残余 + 本 GOAL 的 W 列表**逐条登记；
-  ⑥ 收口 RECHECK 的 `result` = `PASS` / `PASS_WITH_WARNINGS`，`latest_recheck` 为**仓库相对路径**。
-- **cycle 2 的可复用事实（按需回看）**：
+- **GOAL-015 = ACHIEVED（2026-09-25）**：**EC-01 / EC-02 / EC-03 / EC-04 全 `PASS`**，
+  收口复检 `RECHECK-20260925-167` = `PASS_WITH_WARNINGS`，`latest_recheck` 为**仓库相对路径**。
+  子 PLAN：`PLAN-20260925-161`（普查 + 两处真实来源）/ `-164`（跑法协议 + 三分类 + 简报）/
+  `-166`（收口复检）；记忆：`MEM-20260925-130…133`。
+- **终止口径（已满足）**：全 EC `PASS` 且收口 RECHECK ∈ {`PASS`, `PASS_WITH_WARNINGS`} ⇒
+  **不再开新 cycle**；`status: ACHIEVED`。
+- **本轮做了什么（一句话）**：把「本地质量门的结论」变成**可复跑的事实**——跨套件顺序依赖
+  归零（R-1 / R-2 / R-4 真修；R-3 只登记）、本地红的**机械三分类**协议 + 逐字节代管脚本、
+  以及一份**零实施**的 12 条待拍板决策简报。
+- **留给用户的入口（唯一剩下的动作）**：`docs/roadmap/OPEN_DECISIONS_BRIEFING.md`
+  —— 12 条 `D-NN`，每条六要素；其中 **`D-10`**（门禁 scoping：`validate_bundle` 是否应排除
+  gitignored 工作区，与 `R-3` 同源）与 **`D-11`**（live 判据的开门条件 = 环境里恰好有凭据）
+  是本轮**实测新发现并只登记未实施**的两条。
+- **可复用事实（按需回看）**：
   1. **跑法层**：m0 与代管脚本**一律**走 `uv run --frozen --no-sync python -B …`（用系统解释器
      会产出「没有 mypy / lint-imports」的假红）；归因脚本的**跑法层签名**命中即 exit 4。
   2. **判据的副作用面 = 断言面**：判据里的 `os.environ[...] = …` 必须搬进子进程（`MEM-133`）。

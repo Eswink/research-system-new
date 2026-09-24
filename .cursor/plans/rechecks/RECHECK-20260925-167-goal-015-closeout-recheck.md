@@ -31,7 +31,13 @@ checked_head: 收口轮冻结树（PLAN-166 + 本记录 + GOAL 收口 + ALL_PLAN
   CI 台账（每行带 run 链接）。
 - **实现约束**：标准库（`argparse` / `subprocess` / `pathlib`）+ `git diff --quiet`；
   **不 import 任何仓库模块**、不读写网络、不产出任何文件。
-- **两树成对**：主树与 `git worktree add --detach HEAD` 的干净 checkout 各跑一次。
+- **两树成对（收口提交 `6f12842` 上实跑，**同判据同结论**）**：
+  - 主树：`checked=123 failures=0`（exit 0）；
+  - 干净 checkout（`git worktree add --detach 6f12842`）：`checked=123 failures=0`（exit 0），
+    **无 `TIMING` 行**（即 EC-04 已 `PASS`）。
+  - **时序项归零的实测**：收口记录落盘**前**，干净树会多一条「产物尚未落盘」（`tools/
+    verify_goal015_closeout.py` 未提交）的差异；落盘后两树**逐项一致**。这正是 EC-04 允许的
+    那一类差异，且**已验证归零**。
 
 ### 二、判据面逐字节未改（AC-2，脚本内判据）
 
