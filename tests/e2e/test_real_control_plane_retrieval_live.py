@@ -42,7 +42,11 @@ from packages.application.model_relay.live_run_gate import (
     skip_record_for_gate,
 )
 from services.api.runtime_support import OPENHANDS_RUNTIME
-from tests.e2e.live_control_plane_support import ENDPOINT_ID, PROVIDER_ID, product_control_plane_deps
+from tests.e2e.live_control_plane_support import (
+    ENDPOINT_ID,
+    PROVIDER_ID,
+    product_control_plane_deps,
+)
 
 pytestmark = pytest.mark.requires_live_llm
 

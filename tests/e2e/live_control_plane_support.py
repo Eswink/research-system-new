@@ -46,6 +46,8 @@ def product_control_plane_deps(db_path: str) -> Any:
 
     deps = assemble(ApiSettings(db_path=db_path))
     assert deps.preflight_override is None, "本支持模块只用于无 override 的产品装配"
+    assert deps.artifacts is not None, "产品组合根必须给出制品店（运行链证据要内容寻址）"
+    assert deps.runs is not None, "产品组合根必须给出编排服务"
     provider = NcbiEutilsProvider(
         deps.artifacts,
         credentials=deps.credentials,
