@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260925-166](tasks/PLAN-20260925-166-goal-015-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260925-164](tasks/PLAN-20260925-164-local-gate-protocol-and-decision-briefing.md) | DONE |
 | [x] | [PLAN-20260925-161](tasks/PLAN-20260925-161-cross-suite-isolation-census-and-fix.md) | DONE |
 | [x] | [PLAN-20260924-160](tasks/PLAN-20260924-160-acceptance-gate-input-face-wiring.md) | DONE |
