@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260924-160](tasks/PLAN-20260924-160-acceptance-gate-input-face-wiring.md) | IN_PROGRESS |
 | [x] | [PLAN-20260924-159](tasks/PLAN-20260924-159-goal-014-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260924-158](tasks/PLAN-20260924-158-residual-accounting-three-faces.md) | DONE |
 | [x] | [PLAN-20260924-157](tasks/PLAN-20260924-157-policy-surface-difference-set-audit.md) | DONE |
