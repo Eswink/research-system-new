@@ -6,6 +6,15 @@ policy:
       scope: project
     - capability: artifact.read
       scope: project
+    # GOAL-20260924-014 EC-01（用户已拍板方案 (A)）：放行这一条**读能力**，
+    # 消灭「同一协议两套装配两个结论」（真实控制面对 sort_analysis_v1 的
+    # evidence.read 落 default_effect ⇒ FAIL，live 装配 ⇒ WARN）。scope 与同级
+    # 读能力 artifact.read 对齐：evidence.read 的 provider 是 m12_artifact
+    # （BUILT_IN / READ_ONLY），与 artifact.read 同一个 provider。
+    # 本改动**只**新增这一条 allow；default_effect / deny / require_approval /
+    # allow_with_constraints 一律未动。
+    - capability: evidence.read
+      scope: project
     - capability: artifact.write
       scope: run
     - capability: literature.search

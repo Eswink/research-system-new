@@ -33,6 +33,7 @@ def _info(code: str, message: str, subject: str | None = None) -> PreflightFindi
 _CAPABILITY_SCOPE: dict[str, str] = {
     "workspace.read": "project",
     "artifact.read": "project",
+    "evidence.read": "project",
     "artifact.write": "run",
     "literature.search": "approved_tool_providers",
     "literature.read": "approved_tool_providers",
