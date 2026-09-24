@@ -138,3 +138,49 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # GOAL-20260924-014 EC-01（cycle 1）：**声明补全**。
+  #
+  # `examples/protocols/sort_analysis_v1.yaml` 的两个 phase 引用
+  # `task_contract: sort_analysis_execution` / `sort_analysis_review`，而这两份契约
+  # 此前**只存在于测试夹具**（`tests/api/run_fixtures.py` 的
+  # `replace_catalog_with_pins()` 用 `setdefault` 在运行期注入）。该协议是**产品面
+  # 可选模板**（`services/api/routers/protocol_drafts.py` 的 `_TEMPLATE_SOURCES`
+  # 第 1 条 =「Sort 分析（2-phase 参考）」）⇒ 出厂即不可用：任何走**真实控制面**
+  # （`preflight_override` 缺席）的预检都会以两份 `TASK_CONTRACT_MISSING` 判 `FAIL`。
+  #
+  # 声明内容**逐字取自**夹具既有定义（`required_capabilities` / 验收判据 /
+  # `timeout_seconds`），夹具那一行**未改**（补全后 `setdefault` 自然成为幂等兜底）。
+  # `retry_policy` 取 `max_attempts: 1` + 空类别：夹具的域对象该字段为 `None`，而
+  # `task_executor._retry_policy()` 对 `None` 的读法就是 `RetryPolicy(max_attempts=1)`
+  # ⇒ 这是**同义**声明，不引入新的重试语义。
+  sort_analysis_execution:
+    version: 1.0.0
+    purpose: Analyze the input repository and produce a report artifact.
+    required_capabilities:
+      - workspace.read
+      - workspace.write.code
+      - code.execute
+    output_schema: sort_analysis_execution_output_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: analysis_report
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  sort_analysis_review:
+    version: 1.0.0
+    purpose: Independently review the analysis report.
+    required_capabilities:
+      - workspace.read
+      - evidence.read
+    output_schema: sort_analysis_review_output_v1
+    acceptance_criteria:
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
