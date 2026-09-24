@@ -2,7 +2,7 @@
 id: PLAN-20260924-155
 slug: policy-surface-consistency-main-trunk
 title: 策略面一致性主干：放行 evidence.read + 关门禁用面缺口，两套装配同结论（GOAL-014 EC-01）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-24
 updated_at: 2026-09-24
 parent_goal: GOAL-20260924-014
@@ -35,8 +35,9 @@ authorization:
     真实调用（LLM / 检索 / 实验）在 EC-02 的 cycle 才发生，本 PLAN **只做离线判据**：
     零出网、零容器、零凭据读取。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260924-157-policy-surface-consistency-main-trunk.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260924-124-multiple-fail-sources-enumerate-before-fixing.md
 ---
 
 # PLAN-20260924-155 — 策略面一致性主干（GOAL-014 EC-01）
@@ -86,46 +87,74 @@ memory_entries: []
 
 ## 验收条件
 
-- [ ] **AC-1**：`examples/config/policy.yaml` 的 `allow` 新增 `evidence.read`（`scope: project`），
+- [x] **AC-1**：`examples/config/policy.yaml` 的 `allow` 新增 `evidence.read`（`scope: project`），
       且 `packages/application/preflight/policy_check.py` 的 `_CAPABILITY_SCOPE` **同一提交内**
       加同一对；`_GATE_CAPABILITY_SCOPES` **未改**（`evidence.read` 不得进它）。
-- [ ] **AC-2**：`tests/application/test_m2_audit.py` 的镜像一致性判据**原件未改**且**绿**。
-- [ ] **AC-3**：`examples/contracts/task_contracts.yaml` 补入两份 `sort_analysis_*` 契约；
+- [x] **AC-2**：`tests/application/test_m2_audit.py` 的镜像一致性判据**原件未改**且**绿**。
+- [x] **AC-3**：`examples/contracts/task_contracts.yaml` 补入两份 `sort_analysis_*` 契约；
       `test_example_contracts_declare_only_honored_failure_policy_keys` 仍绿。
-- [ ] **AC-4**：新增离线判据（默认门可跑、零出网）断言两套装配**同 `status`**、
+- [x] **AC-4**：新增离线判据（默认门可跑、零出网）断言两套装配**同 `status`**、
       **均非 `FAIL`**、**均无 `POLICY_DENIED`**；并断言执行期 `policy_scope_for` 与
       真实求值器对该能力的判定为放行（D-4）。
-- [ ] **AC-5**：**成对反证（先红后绿，各可复跑）**——
+- [x] **AC-5**：**成对反证（先红后绿，各可复跑）**——
       ① 撤掉 `allow` 规则（`_CAPABILITY_SCOPE` 相应撤回）⇒ 真实控制面判据**红**
       且判词点名 `POLICY_DENIED`；
       ② 只改一处（policy.yaml 或 `_CAPABILITY_SCOPE` 二者之一）⇒ 镜像判据**红**。
       红/绿对照落 `scratch/`，按压后**逐字还原**并复跑确认绿。
-- [ ] **AC-6**：受影响既有判据**全部复跑**：`tests/application/test_m2_audit.py`、
+- [x] **AC-6**：受影响既有判据**全部复跑**：`tests/application/test_m2_audit.py`、
       `tests/application/preflight/`、`tests/e2e/test_ec02_experiment_chain_offline.py`、
       `tests/api/test_sandbox_experiment_seam.py`、`tests/loaders/`、
       `tests/architecture/python/test_run_chain_capability_exposure.py`。
-- [ ] **AC-7**：两处**记录性陈述**与新事实对齐（**不是**改断言）：`tests/application/preflight/
+- [x] **AC-7**：两处**记录性陈述**与新事实对齐（**不是**改断言）：`tests/application/preflight/
       test_policy_allowed_execute_freeze.py` 的 `_protocol_policy()` docstring、
       `tests/e2e/test_ec02_experiment_live.py` 的「如实边界」段。
-- [ ] **AC-8**：`make validate-all`（m0 全量 23 项）+ 治理 `validate.py` 绿。
-- [ ] **AC-9**：RECHECK 定稿（`PASS` / `PASS_WITH_WARNINGS`），PLAN 转 `DONE`，
+- [x] **AC-8**：m0 **全量 23 项已跑**（`scratch/goal014-c1-m0.log`）+ 治理 `validate.py` 绿。
+      **实测 22 PASS / 1 FAILED** —— 唯一未绿项是 `framework/validate_bundle`，根因是
+      **仓库外**并发写者的 gitignored 在制品（环境型残余 `R-F3`，判词点名
+      `scratch\self-governance-bootstrap-prompt.md`），与本 PLAN 的改动无关；
+      其余 22 项（含 `python/lint` / `format-check` / `typecheck` / `dependency-boundaries` /
+      `tests`、`typescript/*` 全部、`framework/validate` 等）全绿。
+      **如实登记**：本地**不是** 23/23；CI 检出无 `scratch/` ⇒ 不受影响。
+      本地 23/23 的终局行留给 EC-05 收口复检（按 GOAL-013 的既有处置）。
+- [x] **AC-9**：RECHECK 定稿（`PASS` / `PASS_WITH_WARNINGS`），PLAN 转 `DONE`，
       `ALL_PLAN` 投影同提交，`latest_recheck` 为**仓库相对路径**。
 
 ## 实施清单
 
-- [ ] **WP1｜判据先行（先红）**：落离线判据（两装配同结论 + 策略维度清零 + 执行期 scope），
+- [x] **WP1｜判据先行（先红）**：落离线判据（两装配同结论 + 策略维度清零 + 执行期 scope），
       在**当前树**上确认它**红**（真实控制面 `FAIL` / `POLICY_DENIED`）；证据落 `scratch/`。
-- [ ] **WP2｜放行 `evidence.read`**：`policy.yaml` 的 `allow` 新增一条 +
+- [x] **WP2｜放行 `evidence.read`**：`policy.yaml` 的 `allow` 新增一条 +
       `_CAPABILITY_SCOPE` 同一提交加同一对；复跑判据 ⇒ 策略维度清零。
-- [ ] **WP3｜补全出厂目录**：`examples/contracts/task_contracts.yaml` 补两份 `sort_analysis_*`
+- [x] **WP3｜补全出厂目录**：`examples/contracts/task_contracts.yaml` 补两份 `sort_analysis_*`
       契约（内容取自夹具既有声明，D-5）；复跑判据 ⇒ 两套装配同 `status` 且非 `FAIL`。
-- [ ] **WP4｜记录性陈述对齐 + 成对反证**：改两处 docstring/边界段落；跑反证 ①②（先红后绿）。
-- [ ] **WP5｜本地验证 + RECHECK**：AC-6 的受影响套件 + m0 23/23 + 治理 validate；
-      写 RECHECK-20260924-157；PLAN 转 DONE + `ALL_PLAN` 投影。
+- [x] **WP4｜记录性陈述对齐 + 成对反证**：改两处 docstring/边界段落；跑反证 ①②（先红后绿）。
+- [x] **WP5｜本地验证 + RECHECK**：AC-6 的受影响套件 + m0 全量 23 项（实测 **22 PASS /
+      1 FAILED**，唯一未绿 = 环境型残余 `R-F3`，见 AC-8）+ 治理 validate；写
+      RECHECK-20260924-157；PLAN 转 DONE + `ALL_PLAN` 投影。
 
 ## 证据
 
-（逐 WP 回填：命令、终态、判词、红/绿对照路径。）
+- **WP1（先红）**：判据在基线树上 **4 failed**，判词逐字含 2× `TASK_CONTRACT_MISSING` +
+  1× `[POLICY_DENIED] phase:review: policy denied capability evidence.read: used default
+  policy effect` ⇒ `scratch/goal014-c1-criterion-red.txt`（出站 `judged 0`）。
+- **WP2/WP3（转绿）**：判据 **5 passed**；`tests/application/preflight/` + `test_m2_audit.py`
+  **28 passed**；受影响套件（`tests/loaders/` + `run_chain_capability_exposure` +
+  `dry_run_no_side_effect` + `catalog_merge` + `sandbox_experiment_seam`）**81 passed**；
+  e2e 离线三条 **9 passed / 1 skipped**；全部轮次出站 `blocked 0`。
+- **两套装配同结论**：`scratch/goal014-c1-both-assemblies-after.txt` ⇒
+  `SAME_STATUS = True   A=WARN  B=WARN`（改前为 `A=FAIL  B=WARN`）。
+- **可冻结面**：`scratch/goal014-c1-freeze-both-arms.txt` ⇒ 两套装配都冻结成功、留痕各 4 对
+  `(phase_id, capability)`；真实控制面逐条 `decision` = `ALLOW_WITH_CONSTRAINTS`
+  （`code.execute` / `workspace.write.code`）/ `ALLOW`（`workspace.read`×2）。
+- **成对反证**：`scratch/goal014-c1-press1-allow-withdrawn.txt`（撤 allow ⇒ 真实控制面判据红、
+  镜像仍绿）、`scratch/goal014-c1-press2-mirror-desync.txt`（只改镜像一处 ⇒ 镜像判据红，
+  `Extra items in the right set: ('evidence.read', 'project')` @ `test_m2_audit.py:268`）。
+  按压后 `git diff --stat` 两个被按压文件**为空**（逐字节还原），还原后复跑全绿。
+- **m0**：`scratch/goal014-c1-m0.log` ⇒ **22/23**（唯一未绿 = 环境型残余 `R-F3` 的
+  `framework/validate_bundle`，判词点名 `scratch\self-governance-bootstrap-prompt.md`）；
+  `python/tests` **4418 passed / 18 skipped / 0 failed**，较上一基线（4413 / 18）差 **+5**
+  = 本 PLAN 新增的正好 5 条判据（差已完整归因，无隐藏变化）。
+- **独立复检**：`scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`。
 
 ## 状态历史
 
@@ -134,6 +163,11 @@ memory_entries: []
   + 两份 `TASK_CONTRACT_MISSING`），live 装配 `WARN`（仅 4 条 `TOOL_RISK_ELEVATED`）
   ⇒ `SAME_STATUS = False`（`W-A` / `W-C` 双双复现）。**新发现的第二来源**（出厂目录缺两份契约）
   已落 D-5 与授权的如实扩展段。
+- 2026-09-24：**收口（DONE）**。WP1–WP5 全部完成，AC-1…AC-9 全绿；复检
+  `RECHECK-20260924-157` = **PASS_WITH_WARNINGS**（唯一警告 = 环境型残余 `R-F3`，
+  本机 as-is m0 = 22/23；CI 检出无 `scratch/` ⇒ 不受影响）；工程记忆 `MEM-20260924-124`。
+  `W-A` / `W-C` **由本 PLAN 消灭**（判据在册、反证成对、按压逐字节还原）。
+  **未做**：EC-02 的真实控制面端到端 run（下一 cycle）。
 
 ## 影响报告
 

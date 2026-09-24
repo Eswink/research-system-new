@@ -84,7 +84,31 @@ exit_criteria:
       `_CAPABILITY_SCOPE` 相应撤回）⇒ 真实控制面判据**红**且判词含 `FAIL`/`POLICY_DENIED`；
       反证②：只改一处（policy.yaml 或 `_CAPABILITY_SCOPE` 二者之一）⇒
       `test_policy_scope_mapping_matches_policy_yaml` **红**。红/绿对照落 `scratch/`。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-24 cycle 1 收口（`PLAN-20260924-155` → **DONE**；复检
+      `RECHECK-20260924-157` = **PASS_WITH_WARNINGS**；工程记忆 `MEM-20260924-124`）。
+      **改动**：① `policy.yaml` 的 `allow` 新增一条 `evidence.read`（`scope: project`，
+      与同 provider 的 `artifact.read` 对齐）+ `_CAPABILITY_SCOPE` **同一提交**加同一对
+      （镜像判据**原件未改**且绿）；② 出厂目录 `examples/contracts/task_contracts.yaml`
+      补入两份 `sort_analysis_*` 契约（**声明补全**；具名登记在 PLAN-155 的
+      `authorization.ref`，回退面 = `9bba68d`）；③ 新增离线判据
+      `tests/application/preflight/test_policy_surface_consistency.py`（**5 条**）；
+      ④ 两处因此变成假的**记录性陈述**就地改对（**不是**改断言）。
+      **结果（实测）**：真实控制面 `FAIL` → **`WARN`**、策略维度清零；live 装配 `WARN`；
+      `SAME_STATUS` **`False` → `True`**（`scratch/goal014-c1-both-assemblies-after.txt`）；
+      两套装配**都可冻结**、留痕各 4 对 `(phase_id, capability)`
+      （`scratch/goal014-c1-freeze-both-arms.txt`）。**`W-C` 消灭**。
+      **成对反证（先红后绿）**：① 撤 allow ⇒ 真实控制面判据红且判词点名
+      `[POLICY_DENIED] … used default policy effect`，镜像仍绿；② 只改镜像一处 ⇒
+      镜像判据红（`Extra items in the right set: ('evidence.read', 'project')`
+      @ `test_m2_audit.py:268`）；按压后 `git diff --stat` 两个被按压文件**为空**
+      （逐字节还原）。**m0 22 PASS / 1 FAILED**（唯一未绿 = 环境型残余 `R-F3`；`python/tests`
+      **4418 passed / 18 skipped / 0 failed**，较上一基线 4413/18 差 **+5**
+      = 新增的正好 5 条判据）。**独立复检** `scratch/verify_goal014_c1.py` ⇒
+      `checked=45 failures=0`。**本 EC 尚未覆盖**：真实控制面能否真的**跑完**研究闭环
+      ——那由 EC-02 承载（未开始）。**一处具名授权扩展**：出厂目录补全（`F-9`），
+      理由与回退面见 RECHECK-157 的「授权面的一处如实登记」节。
   - id: EC-02
     criterion: >-
       **真实控制面端到端**：**不带任何 `preflight_override`** 跑一次真实 run
@@ -201,8 +225,9 @@ escalation_triggers:
     被判定需要重启时——**需拍板**，本循环不自行重启该路线
 child_plans:
   - .cursor/plans/tasks/PLAN-20260924-155-policy-surface-consistency-main-trunk.md
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260924-157-policy-surface-consistency-main-trunk.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260924-124-multiple-fail-sources-enumerate-before-fixing.md
 ---
 
 ## 目标与退出标准
@@ -215,7 +240,7 @@ memory_entries: []
 
 | EC | 标准（摘要） | 验证命令 / 证据来源 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **策略面一致性（主干）**：真实控制面（无 `preflight_override`）对 `sort_analysis_v1` 不再 `FAIL`；live 装配结论与之一致（同 `WARN`+可冻 或 同 `PASS`）；成对反证（撤 allow ⇒ 回到 `FAIL`；镜像不同步 ⇒ 镜像判据判红） | 两装配同结论判据（离线、零出网）+ `pytest tests/application/test_m2_audit.py -q` | PENDING |
+| EC-01 | **策略面一致性（主干）**：真实控制面（无 `preflight_override`）对 `sort_analysis_v1` 不再 `FAIL`；live 装配结论与之一致（同 `WARN`+可冻 或 同 `PASS`）；成对反证（撤 allow ⇒ 回到 `FAIL`；镜像不同步 ⇒ 镜像判据判红） | 两装配同结论判据（离线、零出网）+ `pytest tests/application/test_m2_audit.py -q` | **PASS**（cycle 1）：`FAIL` → `WARN`、策略维度清零、`SAME_STATUS=False→True`、两套都可冻结（各 4 对留痕）；两条反证先红后绿且按压逐字节还原；判据 5 条离线全绿；m0 22/23（唯一未绿 = `R-F3`）；独立复检 `checked=45 failures=0` |
 | EC-02 | **真实控制面端到端**：无 `preflight_override` 的真实 run（真实 LLM + 真实检索 + 真实实验）终态恰为 `SUCCEEDED`，实验 / 证据 / 预算**三项读面齐备**；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测） | `RESEARCHOS_AGENT_RUNTIME=openhands pytest <live 判据> -q -rs`（最小必要次数） | PENDING |
 | EC-03 | **策略面审计（双向差集）**：policy.yaml 四段规则 ↔ 四个声明面双向差集，逐条终态三选一（该放行 / 该拒绝 / 该登记），**零待定**，依据可核对 | 离线机械判据（双向完备 + 零待定）+ 仓内差集表文档；按压红/绿对照 | PENDING |
 | EC-04 | **残余清账（可选）**：`R-D1` 23 条告警 / hook 侧 L3 门 / 450 行贴线文件分类处置给终态；空间不足则如实登记为下一轮输入，**不得降级 ①②③** | 分类处置表落 RECHECK（每项一行：ID / 类别 / 终态 / 依据 / 证据） | PENDING |
@@ -441,7 +466,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `f6ce099`（**推送 tip**） | 治理 `validate.py` 绿（`Cursor 治理验证通过`）；`DOCS-CHECK PASS: 6 deterministic checks` | 见下方 CI 台账 | — | EC-01…EC-05 全 PENDING；起点已定位（**F-1…F-8**：policy.yaml 现状、镜像契约 6+4、镜像判据的三条断言口径、`evidence.read` 的四处声明面、执行期复用同一张表、`preflight_override` 是 `W-C` 的载体、双向差集起点数字 41/14/10/31/4 + 域名误收陷阱、承继残余）。**建档时登记的残余**：`R-M1` / `R-D1` / `R-B1` / `R-N1`（承继）+ `R-F1` / `R-F2` / `R-F3`（承继，其中 `R-F3` 影响本地 m0 口径） | cycle 1 = derive **EC-01** 子 PLAN（策略面一致性主干）：先定案「**两套装配同结论判据**」的形态（同一脚本同求带/不带 `preflight_override` 两条路径、输出可 diff）+ 落 `evidence.read` 的 allow（**`policy.yaml` 与 `_CAPABILITY_SCOPE` 同一提交内真同步**，`scope` 取值以真实求值路径验证为准）+ 成对反证①②；EC-02 的真实端到端在其后 |
-
+| 1 | PLAN-20260924-155（EC-01） | `add2c37`（derive：PLAN-155 + ALL_PLAN + `child_plans`）、`4d9925a`（WP1 判据）、`5cde986`（WP2 放行 `evidence.read`）、`9bba68d`（WP3 出厂目录补全）、`538effc`（WP4 陈述对齐 + 反证）、`4bfa6d0`（可冻结面判据）、本 cycle 的收口回写见台账尾巴 | **判据 5 passed**（改前 4 failed，`scratch/goal014-c1-criterion-red.txt`）；`tests/application/preflight/` + `test_m2_audit.py` **28 passed**；受影响套件 **81 passed**；e2e 离线 **9 passed / 1 skipped**；**出站全部 `blocked 0`、判据自身 `judged 0`**（零出网）；**两装配同结论** `SAME_STATUS = True A=WARN B=WARN`；**两套都可冻结**（各 4 对留痕）；**成对反证先红后绿**（`scratch/goal014-c1-press1-allow-withdrawn.txt` / `-press2-mirror-desync.txt`），按压后 `git diff --stat` **为空**；**m0 22 PASS / 1 FAILED**（唯一未绿 = 环境型残余 `R-F3` 的 `framework/validate_bundle`；`python/tests` **4418 passed / 18 skipped / 0 failed**，差 +5 = 新增判据数）；**独立复检** `scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`；`validate.py` 绿 | 见下方 CI 台账 | **本 cycle 实测新发现（`F-9`，已登记）**：真实控制面的 `FAIL` 有**两个独立来源**——`POLICY_DENIED`（授权覆盖）**与**两份 `TASK_CONTRACT_MISSING`（`sort_analysis_*` 契约只在测试夹具、不在出厂目录，而该协议是**产品面可选模板**）⇒ 只放行策略**不足以**达成 EC-01/EC-02 ⇒ 处置 = **声明补全**（把夹具的运行期注入提升为出厂声明，与 W-B 同类），**具名登记**在 PLAN-155 的 `authorization.ref`、回退面 = `9bba68d`，**不碰任何策略面**。录制性陈述两处**就地改对**（`_protocol_execute_freeze` 的 docstring、`test_ec02_experiment_live` 的边界段），**断言一字未改** | **EC-01 PASS**。**`W-A` / `W-C` 由本 cycle 消灭**（判据在册、反证成对、按压逐字节还原）。**EC-02/03/04/05 未动**；`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3` 与 13 条人工面**原样保留** | cycle 2 = **EC-02 真实控制面端到端**：**不带任何 `preflight_override`** 跑一次真实 run（真实 LLM + 真实检索 + 真实实验）到终态 `SUCCEEDED`、三项读面（实验 / 证据 / 预算）齐备；反证 = 撤 allow ⇒ 冻结前终止（零 task / 零实验 / 零工具观测）。**起点已备**：真实控制面现在 `WARN` + **可冻结**（已实测），正是 EC-02 的前置条件 |
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
@@ -460,31 +485,40 @@ memory_entries: []
   本 GOAL 是**用户就 `W-A` 拍板（方案 (A)：放行 `evidence.read`）之后的执行落点**。
   GOAL-001…013 全部只读（003 / 011 BLOCKED，其余 ACHIEVED）。
   建档当日的**授权边界**：只新增 `evidence.read` 一条 allow；其余策略面一律不动。
+- 2026-09-24：**cycle 1 收口**（`status: ACTIVE` 不变）。`PLAN-20260924-155` **DONE**，
+  复检 `RECHECK-20260924-157` = **PASS_WITH_WARNINGS**，工程记忆 `MEM-20260924-124`。
+  **`W-A` / `W-C` 消灭**：真实控制面 `FAIL` → `WARN`、策略维度清零、与 live 装配
+  `SAME_STATUS = True`、两套都可冻结（各 4 对留痕）。**成对反证先红后绿、按压逐字节还原**。
+  **本 cycle 实测新发现 `F-9`**：`FAIL` 有**两个独立来源**（`POLICY_DENIED` +
+  两份 `TASK_CONTRACT_MISSING`），后者根因是 `sort_analysis_*` 契约只在测试夹具、
+  不在出厂目录，而该协议是**产品面可选模板** ⇒ 处置 = **声明补全**（与 W-B 同类），
+  已在 `PLAN-20260924-155` 的 `authorization.ref` **具名登记**（回退面 = `9bba68d`），
+  **不碰任何策略面**。**本地 m0 = 22 PASS / 1 FAILED**（唯一未绿 = 环境型残余 `R-F3`；
+  `python/tests` 4418 passed / 18 skipped / 0 failed，差 +5 = 新增判据数，已完整归因）；
+  独立复检 `scratch/verify_goal014_c1.py` ⇒ `checked=45 failures=0`。
+  **EC-02/03/04/05 未动**；`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `R-F3`
+  与 13 条人工面**原样保留**。
 
 ## 当前续点
 
-- **当前 cycle**：1（建档 cycle 已收口：`f6ce099` 推送并 CI 全绿）。
-- **下一动作**：derive **EC-01** 子 PLAN（策略面一致性主干）。
-- **已探明的实现要点（供 cycle 1 直接用，均来自建档当日的文件核对）**：
-  1. `evidence.read` 只需在 `examples/config/policy.yaml` 的 `allow` 新增一条
-     （建议 `scope: project`，与同 provider 的 `artifact.read` 对齐）+ 在
-     `_CAPABILITY_SCOPE` 加**同一对**（`{"evidence.read": "project"}`）；**不得**进
-     `_GATE_CAPABILITY_SCOPES`；`examples/config/capabilities.yaml` **无需**改动（已登记）。
-  2. **两套装配**的分岔点是 `preflight_override`：不带 override 的路径由
-     `services/api/preflight_support.py` 的 `build_policy_evaluator()` 接
-     `NativePolicyEvaluator`（真实控制面）；带 override 的路径是 live / run-ready 装配。
-  3. **共享夹具的失败形态（撤回纪律的检查点）**：`tests/application/preflight/
-     test_policy_allowed_execute_freeze.py` 的 `_protocol_policy()` 在 `evidence.read`
-     尚未被放行时**运行期注入**该 allow，并在 docstring 里点名「那是另一条独立的既有缺口」；
-     `tests/e2e/test_ec02_experiment_live.py` 的 docstring 也把「真实控制面判 `DENY`」
-     写成**如实边界**。⇒ 放行之后这两处**陈述变成假**，必须**同一提交内**改成与新事实一致
-     （**不是**削弱判据：`_protocol_policy` 的 `if any(...)` 分支会自然走到「直接用策略」，
-     留痕断言不变；live 文件的边界段落改为「已由 GOAL-014 EC-01 消除」）。
-     改动前先数清还有谁拿这条 `DENY` 当夹具（建档当日实测：`grep -rn "evidence.read" tests/`
-     的命中里，仅上述两处把 `DENY` 当**陈述/前提**，其余是能力名的正常使用）。
-  4. **执行期面（F-5）**：`policy_check.policy_scope_for()` 复用同一张表 ⇒ EC-01 的判据
-     必须**同时**验证 preflight 与执行期两处都放行（只放行 preflight 会让同一能力在门链处
-     落回 `DENY`）。
-  5. **反证②**：镜像不同步 ⇒ `tests/application/test_m2_audit.py` 的
-     `test_policy_scope_mapping_matches_policy_yaml` 判红；按压时**只改一处**、验红后**逐字还原**。
+- **当前 cycle**：2（cycle 0 建档 `f6ce099`、cycle 1 EC-01 `4bfa6d0`，两者均已推送并 CI 到终态）。
+- **EC 状态**：**EC-01 = PASS**；EC-02 / EC-03 / EC-04 / EC-05 = PENDING。
+- **下一动作**：derive **EC-02** 子 PLAN（真实控制面端到端 run）。
+- **起点已备（cycle 2 直接可用）**：真实控制面（`deps.preflight_override = None`）现在对
+  `sort_analysis_v1` 判 **`WARN` 且可冻结**（实测，各 4 对留痕）——这正是 EC-02 的前置条件。
+  EC-02 要用**真实 LLM + 真实检索 + 真实实验**跑完一次到 `SUCCEEDED`，并且**不带任何
+  `preflight_override`**：注意 `tests/e2e/live_run_support.py` 的三个辅助（`point_catalog_at` /
+  `declare_sandbox_experiment` / `with_sandbox_experiment`）**都是改 `preflight_override` 的**
+  ⇒ EC-02 需要一条**不经 override** 的装配路径（协议声明 / 目录文件 / 组合根配置），
+  这是 cycle 2 的第一个设计点。
+- **cycle 1 留下的可复用事实**：
+  1. `evidence.read` 的 `scope` 实测取 `project` 有效（`ALLOW`，且 `ALLOW_WITH_CONSTRAINTS`
+     只出现在带约束的 `code.execute` / `workspace.write.code` 上）。
+  2. 「一个 `FAIL` 多个来源」的枚举手法与用例数归因法落 `MEM-20260924-124`。
+  3. `sort_analysis_v1` 的两份契约现已在出厂目录（`examples/contracts/task_contracts.yaml`），
+     `tests/api/run_fixtures.py` 的 `setdefault` 是幂等兜底。
+- **（cycle 1 的「已探明的实现要点」已执行完毕，原文不再保留在此处）**：那些要点
+  （`scope` 取值、两套装配的分岔点、共享夹具的失败形态与撤回纪律检查点、执行期同源、
+  反证②的按压口径）已**落地为代码与判据**；过程与判词见
+  `PLAN-20260924-155` 的「证据」节与 `RECHECK-20260924-157`。
 
