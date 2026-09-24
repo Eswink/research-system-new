@@ -122,6 +122,8 @@
 | [MEM-20260924-125](entries/MEM-20260924-125-seam-empty-is-not-assembly-missing.md) | ACTIVE | repository | 0.90 | 2027-03-24 | PLAN-20260924-156 |
 | [MEM-20260924-126](entries/MEM-20260924-126-reachable-surface-vs-declaration-surface.md) | ACTIVE | repository | 0.90 | 2027-03-24 | PLAN-20260924-157 |
 | [MEM-20260924-127](entries/MEM-20260924-127-press-restore-needs-byte-check.md) | ACTIVE | repository | 0.95 | 2027-03-24 | PLAN-20260924-157 |
+| [MEM-20260924-128](entries/MEM-20260924-128-run-chain-declaration-must-cover-plan-wide-tool-set.md) | ACTIVE | repository | 0.95 | 2027-03-24 | PLAN-20260924-160 |
+| [MEM-20260924-129](entries/MEM-20260924-129-press-scripts-need-an-arming-guard.md) | ACTIVE | repository | 0.90 | 2027-03-24 | PLAN-20260924-160 |
 | [MEM-20260923-116](entries/MEM-20260923-116-local-m0-green-recipe.md) | ACTIVE | repository | 0.88 | 2027-03-23 | PLAN-20260923-151 |
 | [MEM-20260923-115](entries/MEM-20260923-115-convergence-proof-structural-vs-semantic.md) | ACTIVE | repository | 0.90 | 2027-03-23 | PLAN-20260923-150 |
 | [MEM-20260923-114](entries/MEM-20260923-114-citations-land-with-their-artifacts.md) | ACTIVE | repository | 0.93 | 2027-03-23 | PLAN-20260923-147 |
