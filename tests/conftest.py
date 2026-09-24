@@ -20,6 +20,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.default_gate_credentials import LIVE_CREDENTIAL_KEYS
 from tests.egress_guard import ALLOW_MARKER, guard
 
 #: litellm 在**导入期**就会去公网拉 model cost map（`httpx.get`，上游 URL 是
@@ -32,6 +33,24 @@ from tests.egress_guard import ALLOW_MARKER, guard
 os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
 
 guard.arm()
+
+
+@pytest.fixture(autouse=True)
+def _default_gate_hides_live_credentials(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """未标记 `requires_live_llm` 的用例不得看见出厂目录声明的凭据键（夹具隔离）。
+
+    本机 gitignored `.env` 会被 litellm **导入期**的 `load_dotenv()` 注入进程环境；若凭据
+    可解析，「未配置控制面」的诚实失败路径会变成**真的去探端点** ⇒ 默认门的出站结构判据
+    判红整轮。隔离放在这里（而不是改某一个用例或放宽判据），名单与出厂目录的同步由
+    `tests/architecture/python/test_default_gate_credential_isolation.py` 机器强制。
+    """
+    if request.node.get_closest_marker(ALLOW_MARKER) is not None:
+        return
+    for key in LIVE_CREDENTIAL_KEYS:
+        monkeypatch.delenv(key, raising=False)
+
 
 _DOCKER_SKIP_REASON = (
     "no Linux-capable docker daemon available — requires_docker tests skipped "
