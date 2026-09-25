@@ -493,7 +493,8 @@ EC-03 消费 EC-01/EC-02 判出的「门禁 scoping」类条目（若有）；EC
 | cycle 2 装置加固 + 收口记录（`e575554` + `3f95545`） | `3f95545`（推送区间 `4479a71..3f95545`） | M0 [36062175451](https://github.com/Eswink/research-system-new/actions/runs/36062175451) / CodeQL [36062173662](https://github.com/Eswink/research-system-new/actions/runs/36062173662) | **六 job 全 success** / **CodeQL 3/3 success** |
 | cycle 2 台账尾巴（`208d37b`） | `208d37b` | M0 [36064224244](https://github.com/Eswink/research-system-new/actions/runs/36064224244) / CodeQL [36064223683](https://github.com/Eswink/research-system-new/actions/runs/36064223683) | **六 job 全 success** / **CodeQL 3/3 success**（该行由 cycle 3 回写，符合本 GOAL「下一推送回写」的口径） |
 | 收口（`6f12842` + `f4d98e6`，EC-04） | `f4d98e6`（推送区间 `208d37b..f4d98e6`） | M0 [36071654181](https://github.com/Eswink/research-system-new/actions/runs/36071654181) / CodeQL [36071653920](https://github.com/Eswink/research-system-new/actions/runs/36071653920) | M0：`quality-ubuntu-latest` / `eval-gate` / `console-frontend` / `collector-quality` / `container-quality` **success**；`quality-windows-latest`**第 1 次尝试红**（`AssertionError: RSS grew 174.0 MiB (leak suspected)`，`tests/observability/test_telemetry_overhead.py:150`）⇒ **`run_attempt=2` 该 job 全绿**（同代码同 job 不同结论 ⇒ **(ii) 负载敏感的偶发红**，判据与阈值**一字未动**，登记为 **W-6 / 决策简报 D-13**）。CodeQL **3/3 success** |
-| EC-04 记录回写（台账尾巴） | 见回合汇报 | 由**下一次回写**（本 GOAL 口径）；该推送的终态在回合汇报给出 | —（**本 GOAL 此前每次推送的 run 均已逐行登记并轮询到终态**） |
+| EC-04 记录回写（`5ced04c`，W-6 / D-13 登记） | `5ced04c` | M0 [36074819737](https://github.com/Eswink/research-system-new/actions/runs/36074819737) / CodeQL [36074819615](https://github.com/Eswink/research-system-new/actions/runs/36074819615) | **六 job 全 success**（含 `quality-windows-latest`，即上一轮偶发红的那个 job）/ **CodeQL 3/3 success** ⇒ `W-6` 的「偶发红 ⇒ 复跑」口径在 CI 上再次得到验证 |
+| 台账尾巴（本行所在提交） | 见回合汇报 | 由**下一次回写**（本 GOAL 口径）；该推送的终态在回合汇报给出 | —（**本 GOAL 此前每次推送的 run 均已逐行登记并轮询到终态**） |
 
 ## 状态历史
 
