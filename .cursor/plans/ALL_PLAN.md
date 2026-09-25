@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20260925-178](tasks/PLAN-20260925-178-goal-016-closeout-recheck.md) | IN_PROGRESS |
 | [x] | [PLAN-20260925-176](tasks/PLAN-20260925-176-authorization-surface-threat-model-draft.md) | DONE |
 | [x] | [PLAN-20260925-174](tasks/PLAN-20260925-174-landed-decisions-are-citable.md) | DONE |
 | [x] | [PLAN-20260925-172](tasks/PLAN-20260925-172-upgrade-high-dependency-vite.md) | DONE |

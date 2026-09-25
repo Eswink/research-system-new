@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260925-139](entries/MEM-20260925-139-closeout-needs-two-trees-and-two-terminal-lines.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-178 |
 | [MEM-20260925-138](entries/MEM-20260925-138-threat-model-draft-needs-a-scope-fence.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-176 |
 | [MEM-20260925-137](entries/MEM-20260925-137-exemption-needs-an-adr-and-a-counter.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-174 |
 | [MEM-20260925-136](entries/MEM-20260925-136-pin-bump-needs-a-resolved-version-and-a-full-gate.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-172 |
