@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260925-137](entries/MEM-20260925-137-exemption-needs-an-adr-and-a-counter.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-174 |
 | [MEM-20260925-136](entries/MEM-20260925-136-pin-bump-needs-a-resolved-version-and-a-full-gate.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-172 |
 | [MEM-20260925-135](entries/MEM-20260925-135-negative-criteria-need-a-pressable-detector.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-170 |
 | [MEM-20260925-134](entries/MEM-20260925-134-naming-contract-needs-a-pair-and-a-single-source.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-168 |

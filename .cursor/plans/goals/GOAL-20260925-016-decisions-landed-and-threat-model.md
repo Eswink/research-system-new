@@ -182,7 +182,28 @@ exit_criteria:
       ② `docs/INDEX.md` 的 ADR 清单登记 ADR-0032（若既有格式要求）；
       ③ **`Status` 不变的反证**：逐字节对照 ADR-0031 的 `Status:` 行；
       ④ 规模门禁自查（450 / 50 行）与治理 `validate.py` 绿。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-25 cycle 4 / PLAN-20260925-174 / RECHECK-20260925-175（`PASS_WITH_WARNINGS`）。
+      ① `ADR-0031` 增 `## 否证条件（什么证据会否证本 ADR / 何时该改判）`（三个出口：
+      取消两个 D 依赖后仍成立 ⇒ 转 `Status`；事实消失 ⇒ 撤回；维持条件不变 ⇒ 保持），
+      **`Status` 仍为 `Proposed`**（第 3 行逐字未动；全文无 `Status: Accepted`）；
+      ② `MODEL_COMPATIBILITY.md` §9 记下 D-08(b) 决定（维持派生视图 + 三条理由 + 代价登记 +
+      `### 若要改成一等域实体（选项 (a)）的前置条件` 要求 **`必须先出 ADR`** 写明迁移 / 回滚 /
+      一致性判据），`DOMAIN_MODEL.md` §5 加一段指回；
+      ③ **`ADR-0032-legacy-non-ascii-path-exemption.md`** 新建（`Status: Accepted`，
+      30 条逐条清单、引用 `AGENTS.md` §13、记下 `core.quotepath` 枚举陷阱），并登记
+      `docs/INDEX.md`（同时给 `ADR-0031` 行加注「补否证条件、`Status` 仍未变」）；
+      ④ 判据 `tests/tooling/test_landed_decisions_are_citable.py` **`6 passed`**（含
+      非 ASCII 现实↔清单**双向**比对、枚举陷阱双数断言、按压态）；
+      ⑤ `docs_consistency_check` 首跑 2 条 `[backtick-ref]` 假路径 ⇒ 改为指向真实对象 ⇒
+      **`DOCS-CHECK PASS: 6 deterministic checks`**（**未**动门禁）；
+      ⑥ `ruff` / `ruff format --check` / `mypy`（1016 files）与 `tests/tooling` +
+      同源判据 **`1162 passed`** 全绿；`egress guard` = `blocked 0`（本 EC 零出网）。
+      **零越界**：diff 仅 5 个 docs 文件 + 1 个新判据；不含 `AGENTS.md`、策略面、产品代码、
+      门禁脚本、任何 rename、任何 `Status` 改动。**警告**：W-1 = D-07 的 `Proposed`
+      **仍是未拍板项**（补否证条件 ≠ 拍板）；W-2 = D-09 的豁免**只管既有 30 条**，
+      新建非 ASCII 仍判红（且本 EC 未验证「新路径确实被拦」）。
   - id: EC-05
     criterion: >-
       **D-12 威胁模型草案**：在 `docs/security/THREAT_MODEL.md` **增量补** BOLA / BFLA /
@@ -256,11 +277,13 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260925-168-missing-executor-must-be-named.md
   - .cursor/plans/tasks/PLAN-20260925-170-read-grant-stays-per-item.md
   - .cursor/plans/tasks/PLAN-20260925-172-upgrade-high-dependency-vite.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-173-upgrade-high-dependency-vite.md
+  - .cursor/plans/tasks/PLAN-20260925-174-landed-decisions-are-citable.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-175-landed-decisions-are-citable.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260925-134-naming-contract-needs-a-pair-and-a-single-source.md
   - .cursor/memory/entries/MEM-20260925-135-negative-criteria-need-a-pressable-detector.md
   - .cursor/memory/entries/MEM-20260925-136-pin-bump-needs-a-resolved-version-and-a-full-gate.md
+  - .cursor/memory/entries/MEM-20260925-137-exemption-needs-an-adr-and-a-counter.md
 ---
 
 ## 目标与退出标准
@@ -311,7 +334,7 @@ memory_entries:
 | EC-01 | **D-01(b)** 缺执行体 ⇒ 逐字点名（机械判据） | 判据测试 + 反向搜索 + 成对反证 + `checks.py` 零改动 | **PASS** |
 | EC-02 | **D-02(b)** 读能力逐条授权、不成类放行 | 逐条存在性判据 + 「无类别级规则」否定判据 + 15 条差集表引用 | **PASS** |
 | EC-03 | **D-03(b)** 4 条 high 升级（patch/minor） | lockfile 版本对照 + 全量 web 门 + m0 + CI 六 job | **PASS** |
-| EC-04 | **D-07 + D-08 + D-09** 决定固化 | ADR-0031「否证条件」节 + D-08 依据 + ADR-0032 + INDEX 登记 | **PENDING** |
+| EC-04 | **D-07 + D-08 + D-09** 决定固化 | ADR-0031「否证条件」节 + D-08 依据 + ADR-0032 + INDEX 登记 | **PASS** |
 | EC-05 | **D-12** 威胁模型草案（**零代码 / 零门禁**） | BOLA / BFLA / 授权面章节（覆盖 / 未覆盖 / (a) 代价） | **PENDING** |
 | EC-06 | 收口复检 + 残余登记 | 两树复检 + m0 可支持终态行 + 13 项 `D-NN` 终态表 + CI 台账 | **PENDING** |
 
@@ -504,7 +527,8 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
 | 0 | （建档，无子 PLAN） | `4afb314`（**推送 tip**，推送区间 `a3b2cf3..4afb314`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36092961923](https://github.com/Eswink/research-system-new/actions/runs/36092961923) **六 job 全 success** + CodeQL [36092961168](https://github.com/Eswink/research-system-new/actions/runs/36092961168) **3/3 success**（`run_attempt=1`） | — | EC-01…EC-06 全 PENDING；七项判词已落 frontmatter；起点已定位（点名逻辑已在树 / 该登记 15 条 / 4 条 high 全是 `vite` 且修复版本在 6.x minor / `undici` 主版本跳跃 / ADR-0031 补节且 `Status` 不变 / ADR-0032 编号 / THREAT_MODEL 106 行零 BOLA-BFLA）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 D-01(b) 判据化** |
 | 1 | PLAN-20260925-168（EC-01） | `1e2af55`（推送区间 `4afb314..1e2af55`） | 判据 `tests/application/preflight/test_missing_executor_is_named.py` **`4 passed`**（正向逐条点名 / 成对反证 / 单一来源 / 按压）；探针 `scratch/goal016_c1_probe.py`（只读、零出网）实证两条同码链与「恢复 provider ⇒ 计数 0」；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化；规模 + 命名门禁 = `1054 passed`；`egress guard` = `blocked 0`。**m0 两个终态行分开（冻结树）**：**代管后**（`R-3` 文件临时移出）= `PASS: profile=m0; 23 deterministic checks` + 逐字节复核一致（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）；**as-is** = **22/23**，唯一红项 = `framework/validate_bundle`，单条直跑复现的判词只有一条（`Markdown 本地链接不存在: scratch\self-governance-bootstrap-prompt.md`）⇒ 归因 = **`R-3`**（与本题改动无关）。日志：`scratch/goal016-c1-m0-quarantined.log` / `-quarantine-run.txt` | 见回合汇报（本 cycle 的推送 run 在其台账行；flake 判定按同一代码复跑对照） | **一次判据自身缺陷如实登记**：首版按**能力名**配对 ⇒ 被 `workspace.read`（**两个 phase** 都需要）判红 ⇒ 改成按 `(phase_id, capability)` 配对（**未**改产品代码） | **EC-01 = PASS**（`RECHECK-20260925-169` = `PASS_WITH_WARNINGS`；W-1 = 另两条同码链不在判据面内、W-2 = `R-3` 仍是本机 as-is 的预置红）。其余五个 EC 仍 PENDING；`M-1` / `D-10` / `D-13` 原样保留 | cycle 2 = **EC-02 D-02(b) 口径判据**（读能力逐条授权、不成类放行；零策略面改动） |
 | 2 | PLAN-20260925-170（EC-02） | `c2bc8a4`（推送区间 `1e2af55..c2bc8a4`；`git pull --ff-only` 首次因 `SSL: unexpected eof while reading` 失败、重试成功） | 判据 `tests/application/preflight/test_read_grant_is_per_item.py` **`4 passed`**（逐条形态 / 否定判据可按压 / 15 条证据面 / 读类放行逐条可枚举）；**零策略面改动**取证：两个策略面文件的 `git status` 输出行数 = **0**、`git diff --stat` **为空**；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化；规模 + 命名门禁 + 定向回归 = **`1083 passed`**；`egress guard` = `blocked 0`。**m0 三跑（冻结树，代管 `R-3` 文件）**：第 1 跑 = `FAILED: 2 check(s): python/typecheck=1, python/tests=1`；第 2 跑 = `FAILED: 1 check(s): python/tests=1`；**第 3 跑 = `PASS: profile=m0; 23 deterministic checks`** + 逐字节复核一致（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）。日志：`scratch/goal016-c2-m0-quarantined.log` / `-c2b-` / `-c2c-` | **绿**：M0 [36099521368](https://github.com/Eswink/research-system-new/actions/runs/36099521368) **六 job 全 success** + CodeQL [36099519976](https://github.com/Eswink/research-system-new/actions/runs/36099519976) **3/3 success**（`run_attempt=1`） | **三处红如实登记（性质不同）**：① **本 cycle 自己的缺陷（已修）**——新判据 `policy_body()` 触发 `mypy [no-any-return]` ⇒ 改为 `.get("policy")` + `assert isinstance(body, dict)`（**加**形状守卫，**未**加豁免）；修后 `mypy` = `Success: no issues found in 1015 source files`。**教训**：定向套件绿不等于全量绿（`mypy` 只在全量门里跑）。② **环境 / 上游非确定（判据与代码均未动，两跑两签名）**——`tests/e2e/test_run_chain_retrieval_live.py::test_live_run_chain_retrieval_lands_a_real_identifier`：第 1 跑 `eutils connection failure: [SSL: UNEXPECTED_EOF_WHILE_READING]`、第 2 跑 `run-chain capability step failed: previous step carries no 'ids' ids for run-chain tool literature_read`；**成对对照**：隔离跑 **`1 passed` ×2**（`14.81s` / `37.31s`）、`git diff 1e2af55 -- tests/e2e packages adapters services examples` **为空**，且 `1e2af55` 的 m0 中它**通过**；**同一会话内 `git pull` 也命中同一 TLS 签名** ⇒ 归类 **(ii) 环境专属**（三条判定条件逐条成立）⇒ 复跑取终态（**未**动判据 / skip 条件 / 阈值），登记为 **`W-7`** | **EC-02 = PASS**（`RECHECK-20260925-171` = `PASS_WITH_WARNINGS`；W-1 = 本判据只判放行**形态**、不判「该不该放行」；W-2 = `R-3` 仍是本机 as-is 的预置红；**W-7 = live 判据会真出网且结论随环境变**，新登记）。其余四个 EC 仍 PENDING | cycle 3 = **EC-03 D-03(b) 4 条 high 依赖升级**（`vite` 6.3.5 → 6.4.3，minor；`undici` 主版本跳跃不做；`yaml` 非 high 排下一批）+ 全量 web 门 + m0 |
-| 3 | PLAN-20260925-172（EC-03） | 见回合汇报 | **解析版本对照**：`pnpm-lock.yaml` 的 `vite@6.3.5` → `vite@6.4.3`（diff **9 增 9 删**，只含 `vite` 与 `@vitejs/plugin-react` 的 peer 引用行）；实际安装 = `6.4.3`。**全量 web 门**：根 `pnpm run check` = **exit 0**；web `lint`/`typecheck`/`test`/`build` = **全 PASS**；**stub e2e `98 passed`**（含结构签名门 ⇒ **设计基线零漂移**）；**live e2e `53 passed`**。**`R-2` 复查** = `3 passed` + `egress guard judged 0 / blocked 0`。**告警面留档**（升级前）：`scratch/goal016-c3-alerts-before.txt` = open 23（4 high / 13 medium / 6 low）。**m0（冻结树，代管 `R-3` 文件）= `PASS: profile=m0; 23 deterministic checks`**（退出码 0，**首次即过**；`PASS [` = 24 行 = 23 项 + 计数外的 `release-assets-immutable`）+ 逐字节复核一致（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）。日志：`scratch/goal016-c3-m0-quarantined.log` / `-quarantine-run.txt` | 见回合汇报（本 cycle 的推送 run 在其台账行） | **无需返工**：本 cycle 两道格式 / 门禁（`pnpm run check` 全链、web 四项、两个 e2e）**一次通过**；`pnpm install --lockfile-only` 期间有一次 `registry.npmjs.org` 的 `ECONNRESET`（重试成功，属本机网络面，同 `W-7` 一类） | **EC-03 = PASS**（`RECHECK-20260925-173` = `PASS_WITH_WARNINGS`；W-1 = 4 条 high 只是告警面的 1/6，**不得**读成「依赖告警已清零」；W-2 = `W-7` 继续有效；W-3 = `R-3` 仍在）。**越界项登记**：`undici`（主版本跳跃）、`yaml`（非 high）、剩余 19 条。其余三个 EC 仍 PENDING | cycle 4 = **EC-04 D-07 + D-08 + D-09 三处文档固化**（ADR-0031「否证条件」节 + D-08 依据 + ADR-0032 非 ASCII 路径豁免） |
+| 3 | PLAN-20260925-172（EC-03） | `8814b49`（推送区间 `c2bc8a4..8814b49`） | **解析版本对照**：`pnpm-lock.yaml` 的 `vite@6.3.5` → `vite@6.4.3`（diff **9 增 9 删**，只含 `vite` 与 `@vitejs/plugin-react` 的 peer 引用行）；实际安装 = `6.4.3`。**全量 web 门**：根 `pnpm run check` = **exit 0**；web `lint`/`typecheck`/`test`/`build` = **全 PASS**；**stub e2e `98 passed`**（含结构签名门 ⇒ **设计基线零漂移**）；**live e2e `53 passed`**。**`R-2` 复查** = `3 passed` + `egress guard judged 0 / blocked 0`。**告警面留档**（升级前）：`scratch/goal016-c3-alerts-before.txt` = open 23（4 high / 13 medium / 6 low）。**m0（冻结树，代管 `R-3` 文件）= `PASS: profile=m0; 23 deterministic checks`**（退出码 0，**首次即过**；`PASS [` = 24 行 = 23 项 + 计数外的 `release-assets-immutable`）+ 逐字节复核一致（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）。日志：`scratch/goal016-c3-m0-quarantined.log` / `-quarantine-run.txt` | **绿（CodeQL 3/3 已终态；M0 六 job 中 4 个已 success、2 个写入时仍在飞）**：CodeQL [36101609690](https://github.com/Eswink/research-system-new/actions/runs/36101609690) **3/3 success**（`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)`，`run_attempt=1`）；M0 [36101609755](https://github.com/Eswink/research-system-new/actions/runs/36101609755)（`run_attempt=1`，`created_at 2026-09-25T06:09:22Z`）：`eval-gate` / `container-quality` / `collector-quality` / `console-frontend` = **`success`**；**`quality-windows-latest` / `quality-ubuntu-latest` = `in_progress`**（多次轮询后 `updated_at` 仍停在 `06:09:35Z` ⇒ 表现为**托管 runner 排队**、非本 cycle 改动引发的红）。**该 run 的终态尚未取得** ⇒ 本行**不宣称**「六 job 全绿」；终态由 **cycle 6 收口时回填**（`run_attempt` 一并记）。**说明**：本 cycle 的**本地** m0 已在冻结树上取到 `PASS: profile=m0; 23 deterministic checks`（见上一列），故 CI 侧的排队不阻塞本 cycle 的判据 | **无需返工**：本 cycle 两道格式 / 门禁（`pnpm run check` 全链、web 四项、两个 e2e）**一次通过**；`pnpm install --lockfile-only` 期间有一次 `registry.npmjs.org` 的 `ECONNRESET`（重试成功，属本机网络面，同 `W-7` 一类）。**Dependabot 自身的两个 run 一并登记（非本仓门禁）**：`npm_and_yarn in / for vite, yaml ×2` [36101702449](https://github.com/Eswink/research-system-new/actions/runs/36101702449) = `success`、`npm_and_yarn in /. for undici…yaml` [36101631156](https://github.com/Eswink/research-system-new/actions/runs/36101631156) = `failure`——后者是 **Dependabot 更新分支 / PR 的例行动作**（非质量门、非本 cycle 改动产物），**不计入本 GOAL 的门禁判据**，如实登记为仓库外的 bot 状态 | **EC-03 = PASS**（`RECHECK-20260925-173` = `PASS_WITH_WARNINGS`；W-1 = 4 条 high 只是告警面的 1/6，**不得**读成「依赖告警已清零」；W-2 = `W-7` 继续有效；W-3 = `R-3` 仍在）。**越界项登记**：`undici`（主版本跳跃）、`yaml`（非 high）、剩余 19 条。其余三个 EC 仍 PENDING | cycle 4 = **EC-04 D-07 + D-08 + D-09 三处文档固化**（ADR-0031「否证条件」节 + D-08 依据 + ADR-0032 非 ASCII 路径豁免） |
+| 4 | PLAN-20260925-174（EC-04） | 见回合汇报 | **判据** `tests/tooling/test_landed_decisions_are_citable.py` = **`6 passed`**（非 ASCII 现实↔清单**双向**比对 / 枚举陷阱**双数**断言（朴素 0 且 `\3` 形态存在 + 关转义 30）/ `ADR-0032` 结构与 `INDEX` 登记 / **可按压**（删一条 ⇒ 报出、塞一条 ⇒ 报出）/ `ADR-0031` 第 3 行仍 `Proposed` 且含否证条件节 / `MODEL_COMPATIBILITY` 四个关键词）；**枚举事实**：`git ls-files` 朴素非 ASCII = **0**、`git -c core.quotepath=false ls-files` = 3389 中 **30**；**`ADR-0031` 未越权**：`grep -c "Status: Accepted"` = **0**、既有「待拍板 / 可分别决定」判据 **`18 passed`**；**doc 一致性门**：首跑 `DOCS-CHECK FAILED: 2 finding(s)`（两条 `[backtick-ref]` 假路径）⇒ 改为指向真实对象 ⇒ **`DOCS-CHECK PASS: 6 deterministic checks`**（**未**动门禁）；`ruff check` = `All checks passed!` / `ruff format --check` = 已格式化 / `mypy` = `Success: no issues found in 1016 source files`；`tests/tooling` + 同源判据 = **`1162 passed`**；`egress guard` = `judged 0 / blocked 0`（**本 EC 零出网**）。**m0**（冻结树，代管 `R-3` 文件）= 见台账行与 `RECHECK-175`：**`PASS: profile=m0; 23 deterministic checks`**。日志：`scratch/goal016-c4-m0-quarantined.log` / `-quarantine-run.txt` | 见回合汇报（本 cycle 的推送 run 在其台账行） | **两处红都是文档措辞、判据未放宽**：① §13 引文在 `ADR-0032` 里被**断行** ⇒ 连续子串匹配不到 ⇒ 把引文收进**同一行**；② 文档写「必须先出**一份** ADR」而判据期望「必须先出 ADR」⇒ 改文档为 `**必须先出 ADR**（且该 ADR 至少写清三件事）`。判据侧**未**加 `in` / 未去空白 / 未降为前缀匹配。另有两处 `[backtick-ref]` 假路径（省略号缩写 `010…012`、臆想文件名 `test_legacy_non_ascii_paths_are_exempt.py`）⇒ 改为真实对象 | **EC-04 = PASS**（`RECHECK-20260925-175` = `PASS_WITH_WARNINGS`；**W-1 = D-07 的 `Proposed` 仍是未拍板项**（补否证条件 ≠ 拍板，**不得**读成「`tool_pack.*` 已获准」）；**W-2 = D-09 的豁免只管既有 30 条**，新建非 ASCII 仍判红且本 EC **未**验证新路径被拦；W-3 = `R-3` 仍在）。其余两个 EC 仍 PENDING | cycle 5 = **EC-05 D-12 文档级威胁模型草案**（BOLA / BFLA / 授权面；**diff 必须只含 docs**） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -513,7 +537,7 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
 | 建档（GOAL-016 落地） | `4afb314` | M0 [36092961923](https://github.com/Eswink/research-system-new/actions/runs/36092961923) / CodeQL [36092961168](https://github.com/Eswink/research-system-new/actions/runs/36092961168) | **六 job 全 success** / **CodeQL 3/3 success**（`run_attempt=1`） |
 | cycle 1 实施（`1e2af55`） | `1e2af55` | M0 [36095270268](https://github.com/Eswink/research-system-new/actions/runs/36095270268) / CodeQL [36095270579](https://github.com/Eswink/research-system-new/actions/runs/36095270579) | **六 job 全 success**（`eval-gate` / `quality-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `console-frontend` / `container-quality`）/ **CodeQL 3/3 success**（`run_attempt=1`） |
 | cycle 2 实施（`c2bc8a4`） | `c2bc8a4` | M0 [36099521368](https://github.com/Eswink/research-system-new/actions/runs/36099521368) / CodeQL [36099519976](https://github.com/Eswink/research-system-new/actions/runs/36099519976) | **六 job 全 success** / **CodeQL 3/3 success**（`run_attempt=1`） |
-| cycle 3 实施（本行所在提交） | 见回合汇报 | 由**下一次回写**（本 GOAL 口径）；该推送的终态在回合汇报给出 | —（**本 GOAL 此前每次推送的 run 均已逐行登记并轮询到终态**） |
+| cycle 3 实施（`8814b49`） | `8814b49` | M0 [36101609755](https://github.com/Eswink/research-system-new/actions/runs/36101609755) / CodeQL [36101609690](https://github.com/Eswink/research-system-new/actions/runs/36101609690) | **绿（六 job 全 success + CodeQL 3/3）** —— 轮询到终态：M0 `conclusion=success`，逐 job `console-frontend` / `quality-windows-latest` / `quality-ubuntu-latest` / `eval-gate` / `container-quality` / `collector-quality` **全 `success`**（`run_attempt=1`）；CodeQL `Push on main` `conclusion=success`、3/3 `success`（`run_attempt=1`）。**过程如实登记**：cycle 4 首次写入本行时，`quality-windows-latest` / `quality-ubuntu-latest` 仍 `in_progress`（`created_at 06:09:22Z`，`updated_at` 停在 `06:09:35Z` ⇒ 表现为托管 runner 排队），当时**未**写「全绿」；现由**同一 run 的终态**回填（轮询日志 `scratch/goal016-c3-ci-poll.log` 第 37–56 行）。**Dependabot bot 自身的两个 run**（非本仓门禁）：`vite, yaml ×2` [36101702449](https://github.com/Eswink/research-system-new/actions/runs/36101702449) = `success`、`undici…yaml` [36101631156](https://github.com/Eswink/research-system-new/actions/runs/36101631156) = `failure`（更新分支 / PR 例行动作，**不计入**本 GOAL 判据） |
 
 ## 状态历史
 
@@ -523,19 +547,23 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
 | 2026-09-25 | ACTIVE | cycle 1：**EC-01 = PASS**（D-01(b) 判据化）——判据走**产品入口 + 出厂目录**，缝为空时 6 条工具需求**逐条**被逐字点名，恢复 provider ⇒ 点名消失且计数归零（成对反证），模板在生产源里**单一来源**，按压非空；**产品代码零改动**。一次判据自身缺陷如实登记（按能力名配对 ⇒ `workspace.read` 跨两 phase 判红 ⇒ 改按 `(phase_id, capability)`）。其余五 EC 仍 PENDING。 |
 | 2026-09-25 | ACTIVE | cycle 2：**EC-02 = PASS**（D-02(b) 口径判据）——逐条形态（每条规则只命名一个具体能力、无段前缀规则）+ 否定判据（无通配 / 前缀形态，且检测器**可被按压**）+ 证据面（「该登记」**恰好 15 条**、全为读类、**一条都没被放行**）+ 读类放行逐条可枚举。**零策略面改动**（两个策略面文件的 `git status` 输出行数 = 0、`git diff --stat` 为空）。m0 三跑取到绿（两处红如实登记：自己的 `mypy` 缺陷已修；live 检索用例的上游非确定 = (ii) 类，判据未动，登记 **`W-7`**）。其余四 EC 仍 PENDING。 |
 | 2026-09-25 | ACTIVE | cycle 3：**EC-03 = PASS**（D-03(b) 4 条 high 依赖升级）——`vite` `6.3.5 → 6.4.3`（6.x 内 minor，一次覆盖全部 4 条 high；lockfile diff 9 增 9 删只含 `vite` 与 peer 引用行）。全量 web 门全绿（根 `check` exit 0 / web 四项 PASS / **stub e2e 98 passed**（设计基线**零漂移**）/ **live e2e 53 passed**）；`R-2` 复查 `3 passed` + `blocked 0`。**越界项登记**（`undici` 主版本跳跃、`yaml` 非 high、剩余 19 条）。其余三 EC 仍 PENDING。 |
+| 2026-09-25 | ACTIVE | cycle 4：**EC-04 = PASS**（D-07(b) + D-08(b) + D-09(a) 三处文档固化）——`ADR-0031` 补 **`## 否证条件`**（三个出口：依赖消失 ⇒ 转 `Status`；事实消失 ⇒ 撤回；维持条件不变 ⇒ 保持），**`Status` 逐字仍 `Proposed`**（判据硬断言全文无 `Status: Accepted`）；`MODEL_COMPATIBILITY.md` §9 记下 **`ModelCompatibilityProfile` 维持派生视图** 的决定 + 「若要 (a) **必须先出 ADR**」前置条件，`DOMAIN_MODEL.md` §5 加指针；**`ADR-0032`** 记录 **30 条非 ASCII 历史路径豁免**（`Status: Accepted`、**零 rename**、引用 §13、记下 `core.quotepath` 枚举陷阱）并登记 `docs/INDEX.md`。判据 `tests/tooling/test_landed_decisions_are_citable.py` = **`6 passed`**（含现实↔清单双向比对、枚举陷阱**双数**断言、按压态）；`DOCS-CHECK` 首跑 2 条 `[backtick-ref]` 假路径 ⇒ 改为指向真实对象 ⇒ **PASS**（**未**动门禁）；`ruff` / `format` / `mypy`（1016 files）/ `1162 passed` 全绿；**diff 零越界**（5 docs + 1 判据；不含 `AGENTS.md`、策略面、产品代码、门禁脚本、rename、任何 `Status` 改动）。其余两 EC 仍 PENDING。 |
 
 ## 当前续点
 
 - **GOAL-016 = ACTIVE（2026-09-25 建档）**：cycle 0 建档；cycle 1 = **EC-01 PASS**；
-  cycle 2 = **EC-02 PASS**；cycle 3 = **EC-03 PASS**。`child_plans` = PLAN-168 / PLAN-170 /
-  PLAN-172；`latest_recheck` = `RECHECK-20260925-173`；
-  `memory_entries` = MEM-134 / MEM-135 / MEM-136。
+  cycle 2 = **EC-02 PASS**；cycle 3 = **EC-03 PASS**；cycle 4 = **EC-04 PASS**。
+  `child_plans` = PLAN-168 / PLAN-170 / PLAN-172 / PLAN-174；
+  `latest_recheck` = `RECHECK-20260925-175`；
+  `memory_entries` = MEM-134 / MEM-135 / MEM-136 / MEM-137。
 - **续点判定**：以「迭代日志最后一行」+ 工作树 / 远端实况为准；下一轮进入
-  **cycle 4 = EC-04（D-07 + D-08 + D-09 三处文档固化）**。
-- **进度**：**EC-01 / EC-02 / EC-03 PASS**；EC-04 / EC-05 / EC-06 仍 PENDING。
-  剩余差距 = 「ADR-0031 补「否证条件」节（`Status` 不变）+ D-08 维持依据 + **ADR-0032**
-  非 ASCII 路径豁免 + `docs/INDEX.md` 登记」「D-12 威胁模型草案」「收口复检 +
-  13 项 `D-NN` 终态表」。
+  **cycle 5 = EC-05（D-12 文档级威胁模型草案：BOLA / BFLA / 授权面）**。
+- **进度**：**EC-01 / EC-02 / EC-03 / EC-04 PASS**；EC-05 / EC-06 仍 PENDING。
+  剩余差距 = 「D-12 威胁模型草案（**diff 只含 docs**，写明覆盖 / 未覆盖 / (a) 的范围与代价）」
+  「收口复检 + 13 项 `D-NN` 终态表」。
+- **待回填**：（无）cycle 3 推送（`8814b49`）的 M0 run [36101609755](https://github.com/Eswink/research-system-new/actions/runs/36101609755)
+  **已轮询到终态 = 六 job 全 `success`**（CodeQL [36101609690](https://github.com/Eswink/research-system-new/actions/runs/36101609690) `3/3 success`），
+  已回填台账行。**cycle 4 自身推送的 CI 终态**（`child` 提交）由本 cycle 推送后轮询，并在 **cycle 6 收口**时补记。
 - **依赖面**：`vite` 已升到 `6.4.3`（4 条 high 全清）；**其余 pin 变更仍越界**
   （`undici` 主版本跳跃、`yaml` 非 high）⇒ **不得**在后续 cycle 顺带动 pin。
 - **开局已核实的文件层事实（决定可行性）**：

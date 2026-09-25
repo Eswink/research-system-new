@@ -197,6 +197,11 @@ ModelBinding
 ModelRuntimeFingerprint
 ```
 
+> 其中 `ModelCompatibilityProfile` 是**派生视图、不是一等域实体**（2026-09-25 拍板 D-08(b)）：
+> 它由 `ModelProbeResult` / `ModelDefinition` 的声明字段 / `ModelCapability` 词表**现算**，
+> 不建表、不进 Canonical State。若要改成实体，**必须先出 ADR** 说明迁移与回滚——
+> 见 `architecture/MODEL_COMPATIBILITY.md` 第 9 节。
+
 ### 声明参数（context window / thinking intensity）
 
 `ModelDefinition` 携带两个**声明**字段：`context_window_tokens`（整数 ≥ 1）与

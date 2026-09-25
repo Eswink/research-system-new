@@ -132,6 +132,36 @@ TOOL_PACK_INSTALL_OR_UPDATE` 这条**不可匹配**的规则是删除、是改�
 - 任何"把 `tool_pack.*` 写进词表或策略"的改动之前（否则会先撞上不可匹配的 `action:` 规则，
   或直接放松默认姿态）。
 
+## 否证条件（什么证据会否证本 ADR / 何时该改判）
+
+本 ADR 挂着 `Proposed` 是**待拍板**，不是**可长期悬空**。下面给出**机械可判的出口**，
+使「它到底还是不是一份草案」不再取决于谁记得它：
+
+**①「D1 事实上已被决定」⇒ 应把本 ADR 转为已接受**。下列事实**同时**成立时：
+
+1. `examples/config/policy.yaml` 出现任一 `tool_pack.*` 能力的**显式规则**
+   （allow / allow_with_constraints / require_approval / deny 都算），
+   **或** `ToolPackLifecycle` 的求值路径开始携带 `action=`（即那条 `action:` 规则变为可匹配）；
+   **且**
+2. 上述形态各有一条**判据**把守（策略面判据 + 行为判据，先红后绿）；
+   **且**
+3. D1 的四个子决定（词表是否收录 / 策略效果 / REQUIRE_APPROVAL 是否阻断并登记 /
+   那条不可匹配规则的去留）都在 `docs/INDEX.md` 与三处声明面**同源**登记。
+   ⇒ 到那时改本文件 `Status` 行，并把四个子决定逐条钉成引文。
+
+**②「事实面消失」⇒ 应显式撤回**：ToolPack 写面被**整体移除**（控制台入口、生命周期、
+读面一起下线），或产品明确决定**永不**在生产默认下开放该写面 ⇒ 本 ADR 针对的事实面
+不再存在，应撤回而不是继续挂着。
+
+**③「维持草案」的条件（= 今天）**：①② 都不成立 —— 策略面**仍无** `tool_pack.*` 规则、
+求值**仍不**携带 `action=`、写面**仍在树且只在夹具层可用**。这三条本身就是**可实跑**的
+判据（见 `tests/tooling/test_toolpack_capability_policy_pending.py` 的第 4 条「行为没变」）。
+
+> **本节的来由**：`GOAL-20260925-016` 的 **D-07 → 取 (b)**（用户 2026-09-25 按
+> `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 建议列拍板）：**本 ADR 维持 `Proposed`**，
+> **不实施其内容**，并**补本节**以免它变成永远悬空的决策。
+> 本节**不改 `Status` 行**、**不改任何行为**、**不加任何策略面规则**。
+
 ## Consequences（本 ADR 处于 Proposed 期间）
 
 - 平台策略维持 `default_effect: DENY`，无 `tool_pack.*` 规则 ⇒ 控制台写面在真实默认下
