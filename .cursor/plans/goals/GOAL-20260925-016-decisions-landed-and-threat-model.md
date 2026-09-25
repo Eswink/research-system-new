@@ -604,7 +604,8 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
 | cycle 4 实施（`d67f324`） | `d67f324` | M0 [36103914936](https://github.com/Eswink/research-system-new/actions/runs/36103914936) / CodeQL [36103914401](https://github.com/Eswink/research-system-new/actions/runs/36103914401) | **绿（六 job 全 success + CodeQL 3/3）** —— 轮询到 `ALL_TERMINAL`：M0 `conclusion=success`，逐 job `quality-windows-latest` / `eval-gate` / `quality-ubuntu-latest` / `console-frontend` / `container-quality` / `collector-quality` **全 `success`**；CodeQL `Push on main` `conclusion=success`，3/3 `success`。轮询日志 `scratch/goal016-c4-ci-poll.log`（第 36 轮 `completed=2/2`） |
 | cycle 5 实施（`2293af9`） | `2293af9` | M0 [36106406335](https://github.com/Eswink/research-system-new/actions/runs/36106406335) / CodeQL [36106405593](https://github.com/Eswink/research-system-new/actions/runs/36106405593) | **绿（六 job 全 success + CodeQL 3/3）**（`run_attempt=1`）：M0 `conclusion=success`，逐 job `console-frontend` / `eval-gate` / `container-quality` / `quality-ubuntu-latest` / `collector-quality` / `quality-windows-latest` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)` **3/3 `success`**。轮询日志 `scratch/goal016-c5-ci-poll.log`（`ALL_TERMINAL`；其中 CodeQL 的 run 详情由 REST 直查补全——轮询脚本那次 JSON 截断，**如实登记**） |
 | cycle 6 实施（`c50ee97`，收口） | `c50ee97` | M0 [36109914494](https://github.com/Eswink/research-system-new/actions/runs/36109914494) / CodeQL [36109913562](https://github.com/Eswink/research-system-new/actions/runs/36109913562) | **绿（六 job 全 success + CodeQL 3/3）**（`run_attempt=1`）：M0 `conclusion=success`，逐 job `quality-windows-latest` / `console-frontend` / `collector-quality` / `eval-gate` / `quality-ubuntu-latest` / `container-quality` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)` **3/3 `success`**。轮询日志 `scratch/goal016-c6-ci-poll.log`（`ALL_TERMINAL`；轮询脚本对 M0 的 run 详情那次 JSON 截断 ⇒ 由 REST 直查补全，**如实登记**） |
-| cycle 6 收口（本行所在提交 = 台账尾巴） | 见回合汇报 | 由**回合汇报**给出终态（本 GOAL 口径：最后一次推送的 run 终态在回合汇报给出） | —（**本 GOAL 全部推送的 run 均逐行登记；除最后一行的终态在回合汇报外，其余全部轮询到终态**） |
+| cycle 6 收口（`fcedc98`） | `fcedc98` | M0 [36112241400](https://github.com/Eswink/research-system-new/actions/runs/36112241400) / CodeQL [36112241129](https://github.com/Eswink/research-system-new/actions/runs/36112241129) | **绿（六 job 全 success + CodeQL 3/3）**（`run_attempt=1`）：M0 `conclusion=success`，逐 job `console-frontend` / `quality-ubuntu-latest` / `eval-gate` / `quality-windows-latest` / `container-quality` / `collector-quality` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)` **3/3 `success`** |
+| 台账尾巴（本行所在提交） | 见回合汇报 | 由**回合汇报**给出终态（本 GOAL 口径：最后一次推送的 run 终态在回合汇报给出） | —（**本 GOAL 全部推送的 run 均逐行登记；除台账尾巴这一行的终态在回合汇报外，其余 7 次推送全部轮询到终态且全绿**） |
 
 ## 状态历史
 
@@ -660,8 +661,9 @@ GOAL-016 的六个 EC 里**实际做了什么**（未授权项一律「未实施
   13 项 `D-NN` 终态表的「未实施」六项。
 - **进度**：**EC-01 … EC-06 全部 PASS** ⇒ **约 6 个 cycle 内收口**（budget `max_cycles: 20`，
   用掉 6；`no_progress_stop_cycles: 2` **未触发**）。
-- **待回填**：**cycle 6 推送（`c50ee97`）与其后收口提交的 CI 终态** ⇒ 见「CI 台账」的这两行
-  与**台账尾巴**（收口提交后回填）。此前 6 行台账（建档 / cycle 1–5）**均已轮询到终态且全绿**。
+- **待回填**：**台账尾巴那一行（本行所在提交）的 CI 终态**在**回合汇报**给出。
+  此前 **8 行台账**（建档 / cycle 1–6 含 `c50ee97` 与 `fcedc98` 两次推送）**全部已轮询到终态且全绿**
+  （每次均 = M0 六 job 全 `success` + CodeQL **3/3** `success`，`run_attempt=1`）。
 - **依赖面**：`vite` 已升到 `6.4.3`（4 条 high 全清）；**其余 pin 变更仍越界**
   （`undici` 主版本跳跃、`yaml` 非 high）⇒ **不得**在后续 cycle 顺带动 pin。
 - **开局已核实的文件层事实（决定可行性）**：
