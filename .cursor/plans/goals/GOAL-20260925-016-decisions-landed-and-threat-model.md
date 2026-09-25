@@ -97,7 +97,20 @@ exit_criteria:
       巧合），把搜索命令与输出留档；③ **按压判据自身**：把消息模板改坏（临时变体，
       不改仓库文件）⇒ 判据判红；④ `git diff` 证明 `checks.py` 与 `policy_check.py`
       **零改动**。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-25 cycle 1 收口（`PLAN-20260925-168` → **DONE**；复检
+      `RECHECK-20260925-169` = **PASS_WITH_WARNINGS**；工程记忆 `MEM-20260925-134`）。
+      判据 `tests/application/preflight/test_missing_executor_is_named.py` **`4 passed`**：
+      走**产品入口 + 出厂目录**（`services.api.catalog` + `compile_and_preflight`），
+      缝为空（`tool_providers={}` = D-01(b) 的生产形态）时 6 条 `ToolRequirement`
+      **逐条**被 `no provider is available for capability {能力名}` 点名（归属
+      `phase:{phase_id}`）；恢复出厂 provider ⇒ **点名全部消失且该码计数归零**（成对反证）；
+      **反向搜索**该模板在生产源里**只命中**
+      `packages/application/preflight/checks.py` 一处（排除测试 / 夹具目录，理由写进判据）；
+      按压（内存内改坏模板）⇒ 匹配器判空。**产品代码零改动**（`checks.py` 一字未动）。
+      **残余**：另两条同码链（编译面的 `no tool provider exposes capability …`、
+      健康 / 信任面的 `no healthy provider is available …`）**不**在本判据面内。
   - id: EC-02
     criterion: >-
       **D-02(b) 口径判据**：钉住「读能力**逐条授权**、**不成类放行**」。判据口径 =
@@ -213,9 +226,11 @@ escalation_triggers:
   - 改 `ADR-0031` 的 `Status`（D-07 明文维持 `Proposed`）—— **立即 BLOCKED**
   - 本 GOAL 出现真实出网调用（依赖升级只允许 pnpm 网络）—— 需要真实端点的判据不属于本目标
   - 明文凭据泄露（**即使是可弃用的免费额度**）—— 立即停止并报告
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260925-168-missing-executor-must-be-named.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-169-missing-executor-must-be-named.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260925-134-naming-contract-needs-a-pair-and-a-single-source.md
 ---
 
 ## 目标与退出标准
@@ -263,7 +278,7 @@ memory_entries: []
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **D-01(b)** 缺执行体 ⇒ 逐字点名（机械判据） | 判据测试 + 反向搜索 + 成对反证 + `checks.py` 零改动 | **PENDING** |
+| EC-01 | **D-01(b)** 缺执行体 ⇒ 逐字点名（机械判据） | 判据测试 + 反向搜索 + 成对反证 + `checks.py` 零改动 | **PASS** |
 | EC-02 | **D-02(b)** 读能力逐条授权、不成类放行 | 逐条存在性判据 + 「无类别级规则」否定判据 + 15 条差集表引用 | **PENDING** |
 | EC-03 | **D-03(b)** 4 条 high 升级（patch/minor） | lockfile 版本对照 + 全量 web 门 + m0 + CI 六 job | **PENDING** |
 | EC-04 | **D-07 + D-08 + D-09** 决定固化 | ADR-0031「否证条件」节 + D-08 依据 + ADR-0032 + INDEX 登记 | **PENDING** |
@@ -443,7 +458,8 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 见回合汇报 | 治理 `validate.py` = 待跑 | 见回合汇报 | — | EC-01…EC-06 全 PENDING；七项判词已落 frontmatter；起点已定位（点名逻辑已在树 / 该登记 15 条 / 4 条 high 全是 `vite` 且修复版本在 6.x minor / `undici` 主版本跳跃 / ADR-0031 补节且 `Status` 不变 / ADR-0032 编号 / THREAT_MODEL 106 行零 BOLA-BFLA）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 D-01(b) 判据化** |
+| 0 | （建档，无子 PLAN） | `4afb314`（**推送 tip**，推送区间 `a3b2cf3..4afb314`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36092961923](https://github.com/Eswink/research-system-new/actions/runs/36092961923) **六 job 全 success** + CodeQL [36092961168](https://github.com/Eswink/research-system-new/actions/runs/36092961168) **3/3 success**（`run_attempt=1`） | — | EC-01…EC-06 全 PENDING；七项判词已落 frontmatter；起点已定位（点名逻辑已在树 / 该登记 15 条 / 4 条 high 全是 `vite` 且修复版本在 6.x minor / `undici` 主版本跳跃 / ADR-0031 补节且 `Status` 不变 / ADR-0032 编号 / THREAT_MODEL 106 行零 BOLA-BFLA）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 D-01(b) 判据化** |
+| 1 | PLAN-20260925-168（EC-01） | 见回合汇报 | 判据 `tests/application/preflight/test_missing_executor_is_named.py` **`4 passed`**（正向逐条点名 / 成对反证 / 单一来源 / 按压）；探针 `scratch/goal016_c1_probe.py`（只读、零出网）实证两条同码链与「恢复 provider ⇒ 计数 0」；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化；规模 + 命名门禁 = `1054 passed`；`egress guard` = `blocked 0`。**m0 两个终态行分开（冻结树）**：**代管后**（`R-3` 文件临时移出）= `PASS: profile=m0; 23 deterministic checks` + 逐字节复核一致（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）；**as-is** = **22/23**，唯一红项 = `framework/validate_bundle`，单条直跑复现的判词只有一条（`Markdown 本地链接不存在: scratch\self-governance-bootstrap-prompt.md`）⇒ 归因 = **`R-3`**（与本题改动无关）。日志：`scratch/goal016-c1-m0-quarantined.log` / `-quarantine-run.txt` | 见回合汇报（本 cycle 的推送 run 在其台账行；flake 判定按同一代码复跑对照） | **一次判据自身缺陷如实登记**：首版按**能力名**配对 ⇒ 被 `workspace.read`（**两个 phase** 都需要）判红 ⇒ 改成按 `(phase_id, capability)` 配对（**未**改产品代码） | **EC-01 = PASS**（`RECHECK-20260925-169` = `PASS_WITH_WARNINGS`；W-1 = 另两条同码链不在判据面内、W-2 = `R-3` 仍是本机 as-is 的预置红）。其余五个 EC 仍 PENDING；`M-1` / `D-10` / `D-13` 原样保留 | cycle 2 = **EC-02 D-02(b) 口径判据**（读能力逐条授权、不成类放行；零策略面改动） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -456,6 +472,7 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-09-25 | ACTIVE | 建档：用户会话指令（goal 模式）按 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 建议列拍板七项（D-01b / D-02b / D-03b / D-07b / D-08b / D-09a / D-12b）并授权实施；六 EC 设计（D-01 判据化 / D-02 口径判据 / D-03 high 升级 / D-07+D-08+D-09 固化 / D-12 威胁模型 / 收口复检）。明确不授权 D-10 / D-13 与 D-04 / D-05 / D-06 / D-11 的实施。**建档时零代码改动**（只增本文件）。 |
+| 2026-09-25 | ACTIVE | cycle 1：**EC-01 = PASS**（D-01(b) 判据化）——判据走**产品入口 + 出厂目录**，缝为空时 6 条工具需求**逐条**被逐字点名，恢复 provider ⇒ 点名消失且计数归零（成对反证），模板在生产源里**单一来源**，按压非空；**产品代码零改动**。一次判据自身缺陷如实登记（按能力名配对 ⇒ `workspace.read` 跨两 phase 判红 ⇒ 改按 `(phase_id, capability)`）。其余五 EC 仍 PENDING。 |
 
 ## 当前续点
 

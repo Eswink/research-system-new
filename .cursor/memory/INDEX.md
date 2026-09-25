@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260925-134](entries/MEM-20260925-134-naming-contract-needs-a-pair-and-a-single-source.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-168 |
 | [MEM-20260925-133](entries/MEM-20260925-133-judge-injection-must-be-subprocess-scoped.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-164 |
 | [MEM-20260925-132](entries/MEM-20260925-132-skip-guards-must-be-load-independent.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-164 |
 | [MEM-20260925-131](entries/MEM-20260925-131-default-gate-must-not-see-live-credentials.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-161 |
