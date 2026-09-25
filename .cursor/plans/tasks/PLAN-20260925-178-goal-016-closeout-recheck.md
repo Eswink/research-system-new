@@ -2,7 +2,7 @@
 id: PLAN-20260925-178
 slug: goal-016-closeout-recheck
 title: GOAL-016 收口复检：两棵树同判据同结论 + m0 双终态行 + 13 项 D-NN 终态表 + 承继残余
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-25
 updated_at: 2026-09-25
 parent_goal: GOAL-20260925-016
@@ -22,6 +22,7 @@ authorization:
     未授权项（D-04 / D-05 / D-06 / D-10 / D-11 / D-13）**一律原样保留**。
     push-to-main-for-CI（只推 main、不 force、不重写历史、不推旁支）。
 subagent_parallel_limit: 3
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-179-goal-016-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260925-139-closeout-needs-two-trees-and-two-terminal-lines.md
 ---
@@ -61,7 +62,8 @@ memory_entries:
 - [x] WP3：13 项 `D-NN` 终态表落进 GOAL-016（含「已实施 4 / 部分 2 / 未实施 6 + 1」汇总）。
 - [x] WP4：当前树复检 ⇒ `CONCLUSION failures=0`（六 EC 全 PASS）。
 - [x] WP5：as-is m0 ⇒ 如实终态行；代管 m0 ⇒ 23/23 终态行。
-- [x] WP6：干净 `git worktree` checkout 复检 ⇒ 同结论；CI 台账到终态；承继残余清点。
+- [x] WP6：干净 `git worktree` checkout（`c50ee97`）复检 ⇒ **同结论**（去掉 pytest 耗时后
+  `diff` 为空，两树都 `CONCLUSION failures=0` / `REALITY non_ascii=30`）；CI 台账到终态；承继残余清点。
 
 ## 证据（本地）
 
@@ -82,6 +84,13 @@ memory_entries:
   ⇒ **22/23**，唯一红项 = `R-3`。日志 `scratch/goal016-c6-m0-as-is.log`。
 - **代管 m0**：`PASS: profile=m0; 23 deterministic checks`（逐字节复核一致）。
   日志 `scratch/goal016-c6-m0-quarantined.log`。
+- **干净 checkout 复检**：`git worktree add <tmp> c50ee97`（`HEAD is now at c50ee97`）⇒
+  `--root <checkout>` 跑同一脚本 ⇒ `CONCLUSION failures=0`，
+  留档 `scratch/goal016-c6-recheck-clean-checkout.txt`；与工作树的输出
+  **去掉 pytest 耗时后 `diff` 为空**。收口后 `git worktree remove --force` 清理。
+  **前提**（为什么这不假绿）：`.venv` 里**没有**本项目的 editable 安装、也**没有**指向仓库的
+  `.pth` ⇒ 导入只能经 `pyproject.toml` 的 `pythonpath = ["."]`（rootdir）⇒
+  checkout 里跑的就是**那棵树自己的代码**。
 - **m0 双行的判据**：`PASS [` 行数在 as-is = **23**（22 项过 + 计数外的
   `release-assets-immutable`）、在代管后 = **24**（23 项过 + 计数外的那一项）
   ⇒ 两个终态行**分别**对应 22/23 与 23/23，**不可互换**。
@@ -111,7 +120,7 @@ memory_entries:
 | 2026-09-25 | IN_PROGRESS | derive：从 GOAL-016 的 EC-06 圈定收口范围，本文件 + `ALL_PLAN` 投影 + `parent_goal` 同提交。 |
 | 2026-09-25 | IN_PROGRESS | WP1–WP3：复检脚本落盘；先红取证（13 条缺失）；13 项终态表落 GOAL-016。 |
 | 2026-09-25 | IN_PROGRESS | WP4–WP5：当前树复检 `failures=0`；m0 双终态行取到（as-is 22/23 = `R-3`；代管 23/23）。 |
-| 2026-09-25 | IN_PROGRESS | WP6（**进行中**）：**AC-1 的「干净 `git worktree` checkout」那一半尚未跑** —— 它必须先有本 cycle 的提交才能检出 ⇒ 按「未实跑不得记 PASS」，**本 PLAN 不记 DONE**；待该半取到同结论后连同 `latest_recheck` 一起补齐（复检 `RECHECK-20260925-179`）。当前树那一半已取到 `CONCLUSION failures=0`。 |
+| 2026-09-25 | DONE | WP6：**AC-1 两棵树同结论**（工作树与 `c50ee97` 的干净 `git worktree` checkout；去掉 pytest 耗时后 `diff` **为空**）⇒ 7 条 AC 全成立。复检 `RECHECK-20260925-179` 见 `latest_recheck`。 |
 
 ## 影响报告
 

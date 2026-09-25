@@ -2,29 +2,27 @@
 id: RECHECK-20260925-179
 plan_id: PLAN-20260925-178
 attempt: 1
-status: VERIFYING
+status: COMPLETED
+result: PASS_WITH_WARNINGS
 created_at: 2026-09-25
-completed_at: null
+completed_at: 2026-09-25
 reviewer: root-agent-goal-016-cycle6 + 独立复检脚本（scratch/goal016-ec06-closeout-recheck.py）
 baseline_ref: cycle 5 推送 tip `2293af9`
-checked_head: 当前树（记录面 + gitignored 的 scratch/ 复检脚本；**无产品代码改动**）
+checked_head: cycle 6 提交 `c50ee97`（两棵树：工作树 + 该提交的干净 `git worktree` checkout）
 ---
 
 # RECHECK-20260925-179 — GOAL-016 收口复检（cycle 6）
 
-> **状态说明**：本复检**尚未完成**。7 条 AC 里 **5 条已实跑取到结论**（AC-2 / AC-3 / AC-4 /
-> AC-5 / AC-6 / AC-7），**AC-1（两棵树同结论）只完成了「当前树」那一半** —— 「干净
-> `git worktree` checkout」那一半**必须先有本 cycle 的提交**才能检出并运行 ⇒
-> 按「未实跑不得记 PASS」，本文件保持 `status: VERIFYING`、**不写 `result`**，
-> 待该半取到同结论后补全。
+> **状态**：**已完成**。7 条 AC 全部成立（AC-1 的两棵树在 `c50ee97` 上补齐）。
+> 结论见文末「结论」。
 
 ## 检查范围
 
-① 独立复检脚本在两棵树上同判据同结论（AC-1，**进行中**）；② 脚本**非恒真**（AC-2）；
+① 独立复检脚本在两棵树上同判据同结论（AC-1）；② 脚本**非恒真**（AC-2）；
 ③ m0 **双终态行**且身份明确（AC-3）；④ 13 项 `D-NN` 终态表（AC-4）；
 ⑤ 治理与文档门（AC-5）；⑥ 承继残余原样保留（AC-6）；⑦ 零越界（AC-7）。
 
-## 检查结果（已取到的部分）
+## 检查结果
 
 ### 一、AC-2｜复检脚本**非恒真**（已成立）
 
@@ -41,10 +39,13 @@ checked_head: 当前树（记录面 + gitignored 的 scratch/ 复检脚本；**�
   `TypeError: Path.walk() got an unexpected keyword argument 'followlinks'` ⇒ 改用
   `os.walk(path, followlinks=False)`（`node_modules` 里的悬空 pnpm 链接会让 `Path.rglob` 直接炸）。
 
-### 二、AC-1｜当前树已取到结论（**干净 checkout 那一半待补**）
+### 二、AC-1｜**两棵树同结论**（已成立）
 
-- 命令：`.venv/Scripts/python.exe -B scratch/goal016-ec06-closeout-recheck.py --root .`；
-  留档 `scratch/goal016-c6-recheck-worktree.txt`：
+- 命令（同一脚本、同一判据，`--root` 指向不同的树）：
+  `.venv/Scripts/python.exe -B scratch/goal016-ec06-closeout-recheck.py --root <tree>`；
+  留档 `scratch/goal016-c6-recheck-worktree.txt`（工作树）与
+  `scratch/goal016-c6-recheck-clean-checkout.txt`（干净 checkout）。
+- **树 ①（当前工作树）**：
   ```
   # tree = D:\research-system
   EC-01 PASS :: 4 passed in 0.31s
@@ -56,6 +57,35 @@ checked_head: 当前树（记录面 + gitignored 的 scratch/ 复检脚本；**�
   CONCLUSION failures=0
   REALITY non_ascii=30
   ```
+- **树 ②（干净 `git worktree` checkout）**：`git worktree add <tmp> c50ee97`
+  （`HEAD is now at c50ee97`，检出 3403 个文件），`--root` 指向它：
+  ```
+  # tree = D:\research-system-closure
+  EC-01 PASS :: 4 passed in 0.30s
+  EC-02 PASS :: 4 passed in 0.27s
+  EC-03 PASS :: 7 passed in 5.20s
+  EC-04 PASS :: 6 passed in 0.21s
+  EC-05 PASS :: （无判据文件：本 EC 的结论由结构断言承载）
+  EC-06 PASS :: （无判据文件：本 EC 的结论由结构断言承载）
+  CONCLUSION failures=0
+  REALITY non_ascii=30
+  ```
+- **逐字比对**：`diff` 两输出（去掉 `# tree` 行后）**只差 pytest 的耗时秒数**；
+  再去掉耗时后 **`diff` 为空** ⇒ **逐 EC 结论逐字相同**。收口后已
+  `git worktree remove --force` 清理。
+- **为什么「在 checkout 里跑」是有意义的（本仓特有）**：`.venv/Lib/site-packages`
+  里**没有**本项目的 editable 安装、也**没有**指向仓库的 `.pth`
+  （只有 `_virtualenv.pth` / `pywin32.pth`）⇒ `packages` / `services` / `adapters`
+  **只能**经 `pyproject.toml` 的 `[tool.pytest.ini_options] pythonpath = ["."]`
+  把 **rootdir** 入 `sys.path` 才可导入 ⇒ 在 checkout 里跑就是跑**那棵树自己的代码**。
+  （若将来改成 editable 安装指向工作树，这个验证会退化成假的——已记进 `MEM-20260925-139`。）
+- **干净 checkout 没有 `.venv`** ⇒ 脚本回落到**调用它的**解释器（本仓 `.venv`），
+  但 `cwd` 仍是被测树 ⇒ rootdir 与 `pythonpath` 仍指向被测树。这一回落**已写进脚本注释**。
+- **一处观察（非本 GOAL 产物）**：`git worktree list` 显示还有两处**其它 GOAL** 遗留的
+  临时检出在系统 Temp（`g013final` @ `f8276f4`、`goal015-c3-clean` @ `6f12842`）。
+  它们在**仓库目录之外**、且**不是**本 GOAL 创建的 ⇒ **未清理**，如实登记为观察项。
+
+### 三、AC-1 的「当前树」那一半的独立性口径
 - **脚本的独立性口径**（为什么它不只是把 GOAL 的话重念一遍）：每个 EC 的 PASS 由
   **两路同时成立**给出 —— ① 脚本自己**重新读树**断言结构事实（生产根里点名模板的
   **单一来源**、策略面相对基线 `a3b2cf3` 的 `git diff --name-only` **为空**、
@@ -65,11 +95,8 @@ checked_head: 当前树（记录面 + gitignored 的 scratch/ 复检脚本；**�
   朴素枚举**看不到**非 ASCII（转义陷阱方向）、`MODEL_COMPATIBILITY` 含
   「维持派生视图 / 必须先出 ADR」、威胁模型含 `BOLA` / `BFLA` / `未覆盖范围` / `M18`
   与 `## 6.`、六份记录与终态表 13 行在位）；② 该 EC 的判据文件在**被测树**里以
-  子进程 `pytest` 实跑（`cwd = 被测树`）。
-- **在干净 checkout 上必须同结论**的原因（本仓特有）：`pyproject.toml` 的
-  `[tool.pytest.ini_options]` 设了 `pythonpath = ["."]` ⇒ pytest 把 **rootdir** 入
-  `sys.path` ⇒ 在 checkout 里跑就是跑**那棵树自己的代码**（若项目改成 editable 安装
-  指向工作树，这个验证就会退化成假的）。
+  子进程 `pytest` 实跑（`cwd = 被测树`）。（为什么这等于跑**那棵树自己的代码**：
+  见第二节末尾的 `pythonpath` 说明。）
 
 ### 三、AC-3｜m0 **双终态行**（已成立，两行身份不同、**不可互换**）
 
@@ -125,11 +152,28 @@ checked_head: 当前树（记录面 + gitignored 的 scratch/ 复检脚本；**�
 - **不含**：产品代码、门禁脚本、策略面（`policy.yaml` / `_CAPABILITY_SCOPE`）、
   判据口径、阈值、依赖 pin、运行时默认值；**未**动三个并发写者的文件。
 
-## 结论（**部分**）
+## 结论
 
-- **AC-2 … AC-7 成立**；**AC-1 的「干净 checkout」那一半尚未跑**。
-- ⇒ **本复检不给出最终结论**（`status: VERIFYING`，无 `result`）；
-  **GOAL-016 EC-06 亦保持 `IN_PROGRESS`**，**不记 PASS**。
-- 待办（本 cycle 内完成）：在本 cycle 的提交上 `git worktree add` 出干净 checkout，
-  用 `--root <checkout>` 跑同一脚本 ⇒ 期望 `CONCLUSION failures=0` 且逐 EC 结论逐字一致；
-  取到后补齐本节与 GOAL-016 的 EC-06 / 台账尾巴。
+- **AC-1 … AC-7 全部成立** ⇒ **GOAL-016 EC-06 = PASS**，
+  **GOAL-016 六个 EC 全 PASS ⇒ ACHIEVED**。
+- **PASS_WITH_WARNINGS 的五条警告**：
+  - **W-1｜「收口」不是「清零」**：六项未授权决定（D-04 / D-05 / D-06 / D-10 / D-11 / D-13）
+    **原样保留**；`R-3`（as-is m0 **22/23**）、`R-M1`、`R-D1`（open 告警 **9**：0 high /
+    7 medium / 2 low）、`R-B1`、`R-N1`、`W-7` 全部**在**。**不得**把 ACHIEVED 读成
+    「这些缺口已处理」。
+  - **W-2｜as-is 与代管后的两行不可互换**：**22/23 是 as-is 的**（`framework/validate_bundle`
+    扫到仓库外的 `scratch/` 文件），**23/23 是代管后的**。任何场合**只写一个「23/23」**
+    就是藏起 as-is 的红。
+  - **W-3｜干净 checkout 的复检有前提**：它成立的理由是本仓**没有**本项目的 editable
+    安装、导入靠 `pythonpath = ["."]`。**若**将来改成 editable 安装指向工作树，
+    这个验证会退化为假绿（已记 `MEM-20260925-139`）。
+  - **W-4｜复检脚本本身**会随被测面漂移**：它硬编码了路径与期望值（非 ASCII = 30、
+    `vite` = `6.4.3`、基线 `a3b2cf3`）。这些值变了脚本要跟着改，而
+    **改脚本去迁就现实**必须按「改判据」同等级别审——否则它会变成一条看起来永远绿的门。
+  - **W-5｜两处遗留观察项**：① 系统 Temp 里还有**其它 GOAL** 遗留的临时检出
+    （`g013final` / `goal015-c3-clean`），在仓库外、非本 GOAL 创建 ⇒ **未**清理；
+    ② `FRAMEWORK_MANIFEST.json` 的发布快照继续过期（D-12 的 W-4），刷新属**发布动作**。
+- **未改动**：产品代码、策略面、门禁、阈值、判据口径、依赖 pin、运行时默认值、
+  任何 `Status`、任何路径名。
+- **口径**：本 GOAL 的六个 EC 都**只**做到各自明文授权的范围；ACHIEVED 表示
+  「本轮承诺的交付物齐备且实跑取证」，**不表示**系统在任何维度上更安全。
