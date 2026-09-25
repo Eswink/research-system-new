@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260926-188](tasks/PLAN-20260926-188-goal-018-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260926-186](tasks/PLAN-20260926-186-yaml-patch-upgrade-and-undici-research.md) | DONE |
 | [x] | [PLAN-20260925-184](tasks/PLAN-20260925-184-goal-017-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260925-182](tasks/PLAN-20260925-182-live-switch-and-observability-job-isolation.md) | DONE |

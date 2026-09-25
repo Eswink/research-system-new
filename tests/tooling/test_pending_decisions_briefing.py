@@ -47,7 +47,10 @@ TERMINAL_TABLE_MARKER = "## 13 项 `D-NN` 终态表"
 
 _ITEM_HEADING = re.compile(r"^#{2,3} (D-\d\d)｜(.+?)$", re.M)
 _ELEMENT = re.compile(r"^- \*\*(" + "|".join(ELEMENTS) + r")\*\*：(.+?)$", re.M)
-_GOAL_SECTION = re.compile(r"^## .*不进入循环.*?^## ", re.M | re.S)
+# 「不进入循环 / 需人工拍板」节。**标题行自身必须含该短语**——否则前面那个宽松的 `.*`
+# 会让匹配从文件里**更早的** `##` 起算（实测：从「目标与退出标准」起），把别处的编号项与
+# `**D-NN 终态 = …**` 声明一并吸进来 ⇒ 「13 条声明」就不再是绑在这一节上了。
+_GOAL_SECTION = re.compile(r"^## [^\n]*不进入循环[^\n]*\n.*?^## ", re.M | re.S)
 _GOAL_NUMBERED = re.compile(r"^(\d+)\. \*\*", re.M)
 _ALIGNMENT_ROW = re.compile(r"^\| ([^|]+?) \| ([^|]+?) \| ([^|]+?) \| ([^|]+?) \|$", re.M)
 _INT_ID = re.compile(r"^\d+$")

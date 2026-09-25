@@ -2,7 +2,7 @@
 id: GOAL-20260926-018
 slug: residual-closeout-and-decision-register
 title: 收尾轮：`yaml` patch 升级 + `undici` 前置调研（零升级）+ 13 项 `D-NN` 决案结清
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-26
 updated_at: 2026-09-26
 owners:
@@ -110,7 +110,7 @@ exit_criteria:
       ⑤ 设计基线判据（`apps/web/tests/e2e/design-outline-guard.spec.ts`）绿；
       **若判红** ⇒ 按既有配方 `UPDATE_OUTLINES=1` 重生成 + win32 单路由像素 + Linux 侧
       `verify_linux_outlines` 复验 + 目检，并**逐字节证明容差未动**。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **`undici` 前置调研（零升级）**：产出一份**可拍板**结论，三问各有答案与依据：
@@ -127,7 +127,7 @@ exit_criteria:
       ③ `git diff -- package.json` 中**不得**出现 `pnpm` / `overrides` / `resolutions` 字段；
       ④ 结论必须**可拍板**：给出「可升 / 不可升」的明确判词 + 若可升的**前置条件**与
       **归属方**（若升级面在本仓之外 ⇒ 点名归属方）。**零升级动作**取证如上。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **13 项 `D-NN` 决案结清**：把 13 项逐条给**唯一终态**（只能取
@@ -148,7 +148,7 @@ exit_criteria:
       把某格改成词汇表外的模糊表述（如「待定」）⇒ 红；把 GOAL 侧某条的终态改成与简报
       **不一致** ⇒ 红；把对齐行删掉 ⇒ 红；**逐字节复原** ⇒ 绿。
       ⑤ 汇总判词：`已实施 + 部分实施 + 已拍板为维持现状 = 13`，**零「未授权待拍板」**。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **收口复检 + 残余登记**：① **独立复检脚本**（不复用本 GOAL 的叙述）在**当前树**与
@@ -167,7 +167,7 @@ exit_criteria:
       ③ `validate.py` 输出 `Cursor 治理验证通过`（含 `DOCS-CHECK`）；
       ④ 台账逐 run 逐 job 记录（含 `run_attempt`；flake 判定**必须**靠**同一代码的复跑对照**）；
       ⑤ 残余清单在 GOAL 内**逐条**出现且措辞与判词一致。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -229,7 +229,8 @@ escalation_triggers:
   - 明文凭据泄露（**即使是可弃用的免费额度**）—— 立即停止并报告
 child_plans:
   - .cursor/plans/tasks/PLAN-20260926-186-yaml-patch-upgrade-and-undici-research.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20260926-188-goal-018-closeout-recheck.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260926-189-goal-018-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260926-142-patch-means-latest-patch-and-a-research-needs-a-verdict.md
 ---
@@ -242,10 +243,24 @@ memory_entries:
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **`yaml` `2.8.1 → 2.8.4`**（最新 patch）+ 全量 web 门 + m0 + CI 八 job 全绿 | 两处版本变化 + 六道 web 门证据 + m0 终态行 + 基线判据 | **PENDING** |
-| EC-02 | **`undici` 前置调研**（三问各有答案与依据），**零升级** | 结论文档 + `undici@5.29.0` 未改动反证 | **PENDING** |
-| EC-03 | **13 项 `D-NN` 唯一终态**（四值词汇表）| 简报终态表 + GOAL 人工面 13 条 + 可按压判据 + 反证 | **PENDING** |
-| EC-04 | 收口复检 + 残余登记 | 两树复检脚本 + as-is m0 **23/23** + CI 台账 + 残余逐条 | **PENDING** |
+| EC-01 | **`yaml` `2.8.1 → 2.8.4`**（最新 patch）+ 全量 web 门 + m0 + CI 八 job 全绿 | 两处版本变化 + 六道 web 门证据 + m0 终态行 + 基线判据 | **PASS** |
+| EC-02 | **`undici` 前置调研**（三问各有答案与依据），**零升级** | 结论文档 + `undici@5.29.0` 未改动反证 | **PASS** |
+| EC-03 | **13 项 `D-NN` 唯一终态**（四值词汇表）| 简报终态表 + GOAL 人工面 13 条 + 可按压判据 + 反证 | **PASS** |
+| EC-04 | 收口复检 + 残余登记 | 两树复检脚本 + as-is m0 **23/23** + CI 台账 + 残余逐条 | **PASS** |
+
+**收口判词（EC-04 要求的三问，逐条给出）**：
+
+1. **as-is 本机 m0 的终态行** = **`PASS: profile=m0; 23 deterministic checks`**
+   （`PASS [` = 24、`FAILED`/`ERROR` 零命中、退出码 0；**不再需要任何代管跑法**；
+   日志 `scratch/goal018-c2-m0-as-is.log`）。跑法 = canonical：`uv run --frozen --no-sync python -B
+   .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going`
+   （= `make validate-all` 的展开；本机 `make` 不在 PATH ⇒ 逐字用展开式），独占 + DSN 固化。
+2. **`undici` 调研结论** = **不可在本仓正确升级**（1.x 全线 `undici ^5`、2.x 起不再依赖 undici
+   但为**破坏性主版本**、`@cursor/sdk` 最新版仍锁 `^1.6.1` ⇒ 归属方在上游）⇒ **维持现状并登记**；
+   **零升级动作**已由两条反证 + 外部告警面（剩余 8 条**全是** undici）钉住。
+3. **EC-01 是否真的只升了 patch** = **是**：`2.8.1 → 2.8.4` 同属 `2.8.x`；
+   `git diff --name-only` 的依赖面**恰为** `apps/web/package.json` + `pnpm-lock.yaml`
+   两个文件，且 lockfile 里**只有** `yaml` 一个包的解析项变化；设计基线**逐字节未改**。
 
 **依赖关系**：EC-01 / EC-02 / EC-03 **互相独立**（一个依赖 pin / 一份调研文档 / 一张决策面），
 三者的**判据都不依赖**另外两项；EC-04 **最后**做，且**必须**在 EC-01 落地后重跑 m0
@@ -512,14 +527,16 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `869f815`（推送 tip，推送区间 `2208dd5..869f815`） | 治理 `validate.py` = `Cursor 治理验证通过`（`DOCS-CHECK PASS`） | M0 [36185808007](https://github.com/Eswink/research-system-new/actions/runs/36185808007) **八 job 全 success** + CodeQL [36185807208](https://github.com/Eswink/research-system-new/actions/runs/36185807208) **3/3 success**（`run_attempt=1`，轮询 `ALL_TERMINAL`；日志 `scratch/goal018-c0-ci-poll.log`）。上游同时返回 **9 条**告警（7 moderate + 2 low），与 `/dependabot/alerts?state=open` 实测一致 | — | EC-01…EC-04 全 PENDING；授权与边界已落 frontmatter；起点已定位（`yaml` 首个修复版本 `2.8.3`、**`2.8.x` 最新 patch = `2.8.4`**；Dependabot 实际 9 条 = `undici` 8 + `yaml` 1；`undici@5.29.0` 依赖链 = `@cursor/sdk@1.0.30` → `@connectrpc/connect-node@1.7.0` → `undici@5.29.0`，**唯一入边 1 条**；`connect-node` 对 undici 的唯一用法 = `node-headers-polyfill.js` 的 `Headers` 且 **Node ≥ 18 下不可达**；1.x 全线带 `undici ^5`、2.x 起**不再依赖 undici** 但为**破坏性主版本**；`@cursor/sdk` 最新 `1.0.32` **仍锁 `^1.6.1`**） | cycle 1 = **EC-01 `yaml` patch 升级** + **EC-02 `undici` 调研** + **EC-03 13 项决案结清** |
-| 1 | PLAN-20260926-186（EC-01 + EC-02 + EC-03） | 待回写（本 cycle 的推送 tip） | **EC-01**：`yaml` `2.8.1 → 2.8.4` 且 `git diff` 逐 hunk 证明**只有这一个包**变化（823 字节同长）；web 六门全绿 = `lint` 0 / `typecheck` 0 / unit **88 passed** / `build` 成功 / stub e2e **98 passed** / live e2e **53 passed**（无开关 ⇒ 无 LLM 出网）+ 根 `check` 0；**设计基线无漂移**（`design-outline-guard` **6 passed**、`design-outlines.json` 逐字节未改 ⇒ 未重生成、容差未动）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、`FAILED`/`ERROR` 零命中、日志 `scratch/goal018-c1-m0.log`）。**EC-02**：`docs/roadmap/UNDICI_TRANSITIVE_DEPENDENCY_RESEARCH.md` 在位（三问各有答案与依据 + 复现命令 + 授权清单）；**反证** = `grep -n "undici: 5.29.0" pnpm-lock.yaml` 仍**恰好 1 条**、两个 `package.json` 均无 `overrides` / `resolutions`。**EC-03**：简报终态表 **13 行** + GOAL 人工面 **13 条同词声明**（已实施 9 + 部分实施 1 + 已拍板为维持现状 3 = 13，**未授权待拍板 0**）；判据 `tests/tooling/test_pending_decisions_briefing.py` **14 passed**（1 现状 + 13 按压，日志 `scratch/goal018-c1-ec03-press.log`）；`tests/tooling` = **1169 passed**；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化、规模门禁 = **1029 passed**；治理 `validate.py` + `DOCS-CHECK` 绿 | 待轮询（本 cycle 推送 tip 的 M0 八 job + CodeQL） | **一次判据缺陷（当场发现并修）**：EC-03 的按压第一版用「按行首删一行」，命中的是简报里**同形状的索引表**（也以 `| D-05 | …` 开头）⇒ **判据没被触碰**（看着红其实没动判据）。改为 **只在终态表块内替换 + 块内未命中即断言失败**后，按压才生效 ⇒ 记入 `MEM-20260926-142`（`MEM-141` 的同类新形态）。**一次 `yaml` 目标版修正**：授权写「最新 patch」而建模档一度按**首个修复版本 `2.8.3`** 写；实测 `2.8.x` 版本表为 `2.8.0/1/2/3/4` ⇒ **落地目标改为 `2.8.4`**（仍 patch 面内，且覆盖修复版本），记录已同步 | **EC-01 / EC-02 / EC-03 本地证据齐**（CI 证据待本 cycle 的 run 终态后在 cycle 2 一并登账并翻 PASS）；`RECHECK-20260926-187` = `PASS_WITH_WARNINGS`（W-1 按压打偏 / W-2 CI 证据在 GOAL 侧登账 / W-3 可利用性评估有前提 / W-4 `undici` 8 条仍挂 / W-5 engines 上限 `7.30.0` / W-6 `R-M1` 原样）。EC-04 仍 PENDING | cycle 2 = **EC-04 收口复检**（两树复检 + m0 终态行 + 13 项终态表 + CI 台账到终态 + 承继残余） |
+| 1 | PLAN-20260926-186（EC-01 + EC-02 + EC-03） | `411ee25`（WP1 = `yaml`）+ `cfd9a4e`（WP2 = 调研文档 + 简报）+ `83b782c`（WP3 = 判据 + 记录；**推送 tip**，推送区间 `869f815..83b782c`） | **EC-01**：`yaml` `2.8.1 → 2.8.4` 且 `git diff` 逐 hunk 证明**只有这一个包**变化（823 字节同长）；web 六门全绿 = `lint` 0 / `typecheck` 0 / unit **88 passed** / `build` 成功 / stub e2e **98 passed** / live e2e **53 passed**（无开关 ⇒ 无 LLM 出网）+ 根 `check` 0；**设计基线无漂移**（`design-outline-guard` **6 passed**、`design-outlines.json` 逐字节未改 ⇒ 未重生成、容差未动）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、`FAILED`/`ERROR` 零命中、日志 `scratch/goal018-c1-m0.log`）。**EC-02**：`docs/roadmap/UNDICI_TRANSITIVE_DEPENDENCY_RESEARCH.md` 在位（三问各有答案与依据 + 复现命令 + 授权清单）；**反证** = `grep -n "undici: 5.29.0" pnpm-lock.yaml` 仍**恰好 1 条**、两个 `package.json` 均无 `overrides` / `resolutions`。**EC-03**：简报终态表 **13 行** + GOAL 人工面 **13 条同词声明**（已实施 9 + 部分实施 1 + 已拍板为维持现状 3 = 13，**未授权待拍板 0**）；判据 `tests/tooling/test_pending_decisions_briefing.py` **14 passed**（1 现状 + 13 按压，日志 `scratch/goal018-c1-ec03-press.log`）；`tests/tooling` = **1169 passed**；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化、规模门禁 = **1029 passed**；治理 `validate.py` + `DOCS-CHECK` 绿 | M0 [**36191382569**](https://github.com/Eswink/research-system-new/actions/runs/36191382569) **八 job 全 success**（`run_attempt=1`，一次成功）：`quality-ubuntu-latest` / `console-frontend` / `quality-windows-latest` / `observability-overhead-windows-latest` / `observability-overhead-ubuntu-latest` / `container-quality` / `eval-gate` / `collector-quality` **全 `success`**；CodeQL [**36191381460**](https://github.com/Eswink/research-system-new/actions/runs/36191381460) **3/3 success**（`run_attempt=1`）；另有一条 **Dependabot run** [**36191504926**](https://github.com/Eswink/research-system-new/actions/runs/36191504926)（`npm_and_yarn in / for yaml`，`success`）。轮询日志 `scratch/goal018-c1-ci-poll.log`（`ALL_TERMINAL`）。**外部旁证**：`?state=open` 告警 **9 → 8**，剩余**全部**是 `undici`（6 medium + 2 low）⇒ 既证明 `yaml` 那条已清、又独立印证 `undici` 一字未升 | **一次判据缺陷（当场发现并修）**：EC-03 的按压第一版用「按行首删一行」，命中的是简报里**同形状的索引表**（也以 `| D-05 | …` 开头）⇒ **判据没被触碰**（看着红其实没动判据）。改为 **只在终态表块内替换 + 块内未命中即断言失败**后，按压才生效 ⇒ 记入 `MEM-20260926-142`（`MEM-141` 的同类新形态）。**一次 `yaml` 目标版修正**：授权写「最新 patch」而建模档一度按**首个修复版本 `2.8.3`** 写；实测 `2.8.x` 版本表为 `2.8.0/1/2/3/4` ⇒ **落地目标改为 `2.8.4`**（仍 patch 面内，且覆盖修复版本），记录已同步 | **EC-01 / EC-02 / EC-03 = PASS**（CI 证据已在下方台账登账：M0 八 job + CodeQL 3/3 + Dependabot 全 `success`，`run_attempt=1`）；`RECHECK-20260926-187` = `PASS_WITH_WARNINGS`（W-1 按压打偏 / W-2 CI 证据在 GOAL 侧登账 / W-3 可利用性评估有前提 / W-4 `undici` 8 条仍挂 / W-5 engines 上限 `7.30.0` / W-6 `R-M1` 原样）。EC-04 当时仍 PENDING | cycle 2 = **EC-04 收口复检**（两树复检 + m0 终态行 + 13 项终态表 + CI 台账到终态 + 承继残余） |
+| 2 | PLAN-20260926-188（EC-04 收口） | **收口提交**（记录面 + GOAL `ACTIVE → ACHIEVED`）：**本行由该提交写入** ⇒ 依「固定口径」其 SHA **只在回合汇报记账、不回写文件** | **两树复检**（`scratch/goal018-ec04-recheck.py`，**不含任何进程执行**：改动面由 git 清单喂入、判据由调用方实跑）：结构半 **14 条** ⇒ `FAILED=[]` / `RECHECK: PASS`；**两树同结论** = 工作树 vs 干净 `git worktree`（`D:\rs-goal018-clean`，detached HEAD `83b782c`）**判词列 14/14 相同**且**整份输出逐字节相同**（`diff` 无输出）；**非恒真 6/6 判红**（`yaml-pin` / `undici-upgrade` / `terminal-row` / `terminal-state` / `goal-decl` / `residual`）；判据面两树同结论 = **14 passed** / **1029 passed** / `Cursor 治理验证通过` / `DOCS-CHECK PASS`；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、`FAILED` 零命中、退出码 0；`scratch/goal018-c2-m0-as-is.log`）；13 项终态表 13 行 + 人工面 13 条同词；残余 `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `W-4` / `W-5` / `W-6` **逐条在人工面节内**。**本 cycle 只动记录面 + 一条判据口径收紧**（见「修复」列） | 待轮询（**收口提交自身的 run 依「固定口径」只在回合汇报记账**，沿用既有闭合约定） | **两次同类缺陷（当场发现并修）**：① `terminal-row` 与 `residual` 第一版**没判红**——简报里有一张**同形状的索引表**（也以 `| D-05 | …` 开头）导致整份替换命中错表；残余检查当时扫**整份 GOAL** 而 `R-M1` 在别处还有一处提及 ⇒ 修法：按压加**作用域**（`terminal-block` 块内替换 + 块内未命中即断言失败）、残余检查收到**人工面节内**。② **节边界缺陷（同一根因）**：`_GOAL_SECTION` 的前置 `.*` 是**贪婪**的，匹配会从文件里**更早的** `##`（实测「目标与退出标准」）起算，把别处的编号项与 `**D-NN 终态 = …**` 声明一并吸进来 ⇒「13 条声明」**不是**绑在人工面节上；收紧为**标题行自身必须含该短语**后重新通过（这是**加强**，不是放宽） | **GOAL-018 收口：EC-01…EC-04 全 PASS**。**残余（原样保留，未收口也未掩盖）** = `R-M1`（Mimosa 钩子侧结论未得，**不得**宣称项目安全）+ `R-D1`（**`yaml` 已升、`undici` 已调研未升** ⇒ 告警面 **8 条**全为 `undici`）+ `R-B1` / `R-N1` + `R-F1` / `R-F2` + `W-4` / `W-5` / `W-6`；**D-04 重启前置 = 先修误报面** | —（**终态，无下一轮输入**）；**下一轮 = 甲（主体模型 + 最小认证面，需用户另行授权）** |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-018 落地） | `869f815` | M0 [36185808007](https://github.com/Eswink/research-system-new/actions/runs/36185808007) / CodeQL [36185807208](https://github.com/Eswink/research-system-new/actions/runs/36185807208) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，一次成功）：M0 `conclusion=success`，逐 job `quality-ubuntu-latest` / `console-frontend` / `observability-overhead-windows-latest` / `observability-overhead-ubuntu-latest` / `container-quality` / `collector-quality` / `quality-windows-latest` / `eval-gate` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)` **3/3 `success`**。轮询日志 `scratch/goal018-c0-ci-poll.log`（第 38 轮 `completed=2/2`、`ALL_TERMINAL`）。上游 push 回执同时报 **9 条**告警（7 moderate + 2 low） |
-| cycle 1 实施（EC-01 + EC-02 + EC-03） | 待回写（推送 tip） | 待轮询 | 待轮询（写下本条的那个提交自身的 run 只在**回合汇报**记账） |
+| cycle 1 实施（EC-01 + EC-02 + EC-03） | `411ee25` + `cfd9a4e` + `83b782c`（tip） | M0 [36191382569](https://github.com/Eswink/research-system-new/actions/runs/36191382569) / CodeQL [36191381460](https://github.com/Eswink/research-system-new/actions/runs/36191381460) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，一次成功）：M0 `conclusion=success`，逐 job `quality-ubuntu-latest` / `console-frontend` / `quality-windows-latest` / `observability-overhead-windows-latest` / `observability-overhead-ubuntu-latest` / `container-quality` / `eval-gate` / `collector-quality` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (javascript-typescript)` / `Analyze (actions)` / `Analyze (python)` **3/3 `success`**。同 SHA 另有 **Dependabot run** [36191504926](https://github.com/Eswink/research-system-new/actions/runs/36191504926)（`npm_and_yarn in / for yaml - Update`，`success`）。轮询日志 `scratch/goal018-c1-ci-poll.log`（`ALL_TERMINAL`）。**外部旁证**：`/dependabot/alerts?state=open` **9 → 8**，剩余**全部**是 `undici`（6 medium + 2 low），留档 `scratch/goal018-gh-alerts-after.json` |
+| cycle 2 实施（EC-04 收口） | **收口提交**（记录面 + GOAL `ACTIVE → ACHIEVED`）：**本行由该提交写入** | 依「固定口径」**只在回合汇报记账、不回写文件** | 依「固定口径」其自身 run **只在回合汇报记账**（其余全部推送提交的 run 已在上面两行登账到终态） |
 
 ## 状态历史
 
@@ -527,3 +544,4 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 | --- | --- | --- |
 | 2026-09-26 | ACTIVE | 建档：用户会话指令（goal 模式）「**先收尾，然后再甲**」⇒ 本轮做**收尾轮**。授权实施严格限于两项：**`yaml` patch 升级**（`2.8.1 → 2.8.4`）+ **`undici` 前置调研（零升级）**；授权登记三条：**D-06 取 (c) 维持** / **D-05 取 (b) 维持** / **D-04 本 GOAL 拍板为 (c) 维持 + 重启前置 = 先修误报面**。四 EC 设计（yaml 升级 / undici 调研 / 13 项 `D-NN` 结清 / 收口复检）。**明确不授权**：`undici` 升级（含 overrides）、hook 检测层安装、**甲的全部内容**（鉴权 / 中间件 / 路由保护）、D-01(a) / D-02(a) / D-12(a)、`ADR-0031` 的 `Status`、`yaml` 跨 minor。**建档时零代码改动**（只增本文件）。建档提交 `869f815` 的 CI = **八 job 全 success + CodeQL 3/3**（`run_attempt=1`）。 |
 | 2026-09-26 | ACTIVE | cycle 1：派生 **PLAN-20260926-186**（EC-01 + EC-02 + EC-03 合并为一个可独立验收的主题面）。**EC-01**：`yaml` `2.8.1 → 2.8.4`（`2.8.x` 最新 patch；首个修复版本 `2.8.3` 被覆盖）——lockfile **只有这一个包**变化，web 六门 + 根 `check` 全绿，**设计基线逐字节未改**（无漂移 ⇒ 未重生成、容差未动），**as-is m0 = 23/23**。**EC-02**：`undici` 三问结论文档在位（**不可在本仓正确升级**，归属方 = `@cursor/sdk` 上游），**零升级**由两条反证钉住。**EC-03**：13 项终态表 + GOAL 侧 13 条同词声明 + 对齐表封闭词汇表，**零「待定」**；判据扩到 **14 passed**，含 **13 条按压**（其中一次「按压打偏」当场修：简报里有**同形状的索引表**）。EC-04 仍 PENDING。 |
+| 2026-09-26 | ACHIEVED | cycle 2（收口）：派生 **PLAN-20260926-188**（EC-04 收口复检）。**两树复检**（`scratch/goal018-ec04-recheck.py`，**不含任何进程执行**）：结构半 **14/14 PASS**，工作树 vs 干净 `git worktree`（`D:\rs-goal018-clean`，detached `83b782c`）**判词列 14/14 相同**；**非恒真 6/6 判红**（`yaml-pin` / `undici-upgrade` / `terminal-row` / `terminal-state` / `goal-decl` / `residual`）；判据面两树同结论 = **14 passed** / **1029 passed** / `Cursor 治理验证通过` / `DOCS-CHECK PASS`；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、`FAILED` 零命中、退出码 0）。**当场修掉两处同类缺陷**：按压作用域（简报里有**同形状的索引表** ⇒ 整份替换会打偏）与 `_GOAL_SECTION` 的**贪婪**节边界（原会从更早的 `##` 起算，把别处的编号项与声明吸进来）⇒ 后者是**判据加强**。**13 项 `D-NN` 终态齐**（已实施 9 + 部分实施 1 + 已拍板为维持现状 3，**未授权待拍板 0**）。承继残余 `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `W-4` / `W-5` / `W-6` 逐条在人工面登记。**EC-01 / EC-02 / EC-03 / EC-04 全 PASS。** |
