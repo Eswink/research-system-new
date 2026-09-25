@@ -68,7 +68,8 @@ authorization:
 objective: >
     把 GOAL-017 遗留的**收尾面**一次做完，使 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 的
     13 项 `D-NN` **全部结案、零「待定」**：(1) **`yaml` patch 升级**：`apps/web` 的
-    `yaml` `2.8.1 → 最新 patch`（实测修复版本 = **2.8.3**，对应
+    `yaml` `2.8.1 → 最新 patch`（实测：首个修复版本 = **`2.8.3`**，而 `2.8.x` 的**最新 patch
+    = `2.8.4`** ⇒ 落地目标 = **`2.8.4`**；对应
     `GHSA-48c2-rrv3-qjmp` / `CVE-2026-33532`，severity = **medium**、修复在 **2.8.x 内**），
     升后**全量 web 门 + m0 + CI 八 job** 全绿；**设计基线漂移 ⇒ 强制重生成 + 目检**
     （**不得**调容差）；(2) **`undici` 前置调研（零升级）**：产出一份**可拍板**结论，
@@ -87,15 +88,17 @@ objective: >
 exit_criteria:
   - id: EC-01
     criterion: >-
-      **`yaml` patch 升级**：`apps/web/package.json` 的 `yaml` 从 `2.8.1` 升到**最新 patch**
-      （实测可用的修复版本 = **`2.8.3`**，仍属 `2.8.x` ⇒ 是 patch，不需要跨 minor）。
+      **`yaml` patch 升级**：`apps/web/package.json` 的 `yaml` 从 `2.8.1` 升到**最新 patch**。
+      **建档当日实测**：`2.8.x` 的可用版本 = `2.8.0/2.8.1/2.8.2/2.8.3/2.8.4` ⇒ **最新 patch = `2.8.4`**；
+      告警的首个修复版本是 `2.8.3` ⇒ 目标 `2.8.4` **既是最新 patch 又 ≥ 修复版本**（仍属 `2.8.x`，
+      不需要跨 minor）。
       交付 = ①`apps/web/package.json` 与 `pnpm-lock.yaml` 两处的版本变化；②**全量 web 门**
       （lint / typecheck / unit / build / stub e2e / live e2e）全绿；③**m0 全绿**；
       ④**CI 八 job 全绿** + CodeQL；⑤**设计基线**：无漂移；**若漂移 ⇒ 强制重生成 + 目检**，
       **不得**调容差。**若非 patch（需跨 minor / major）⇒ 不做并如实登记**（本项不强制升级）。
     verify: >-
-      ① `git diff` 逐行证明只有 `yaml` 一处 specifier 变化（`2.8.1 → 2.8.3`）+
-      `pnpm-lock.yaml` 的 `yaml@2.8.1` 解析项变为 `yaml@2.8.3`（**其余包零变化**——
+      ① `git diff` 逐行证明只有 `yaml` 一处 specifier 变化（`2.8.1 → 2.8.4`）+
+      `pnpm-lock.yaml` 的 `yaml@2.8.1` 解析项变为 `yaml@2.8.4`（**其余包零变化**——
       `git diff --stat` 与逐 hunk 复核，**不得**出现第二个包的版本变化）；
       ② 逐条实跑：`pnpm --dir apps/web lint` / `typecheck` / `test` / `build` /
       `test:e2e` / `test:e2e:live`（**live e2e 在本 GOAL 的口径下是「默认离线 ⇒ 如实 skip」**，
@@ -224,9 +227,11 @@ escalation_triggers:
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
   - 明文凭据泄露（**即使是可弃用的免费额度**）—— 立即停止并报告
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260926-186-yaml-patch-upgrade-and-undici-research.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20260926-142-patch-means-latest-patch-and-a-research-needs-a-verdict.md
 ---
 
 ## 目标与退出标准
@@ -237,7 +242,7 @@ memory_entries: []
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **`yaml` `2.8.1 → 2.8.3`**（patch）+ 全量 web 门 + m0 + CI 八 job 全绿 | 两处版本变化 + 六道 web 门证据 + m0 终态行 + 基线判据 | **PENDING** |
+| EC-01 | **`yaml` `2.8.1 → 2.8.4`**（最新 patch）+ 全量 web 门 + m0 + CI 八 job 全绿 | 两处版本变化 + 六道 web 门证据 + m0 终态行 + 基线判据 | **PENDING** |
 | EC-02 | **`undici` 前置调研**（三问各有答案与依据），**零升级** | 结论文档 + `undici@5.29.0` 未改动反证 | **PENDING** |
 | EC-03 | **13 项 `D-NN` 唯一终态**（四值词汇表）| 简报终态表 + GOAL 人工面 13 条 + 可按压判据 + 反证 | **PENDING** |
 | EC-04 | 收口复检 + 残余登记 | 两树复检脚本 + as-is m0 **23/23** + CI 台账 + 残余逐条 | **PENDING** |
@@ -252,8 +257,9 @@ memory_entries: []
    - 现状 `apps/web/package.json` `devDependencies.yaml = "2.8.1"`；`pnpm-lock.yaml`
      有 `yaml@2.8.1`（入边来自 `apps/web` 以及 `vite` 的 peer 后缀 `vite@6.4.3(...)(yaml@2.8.1)`）。
    - 告警：`GHSA-48c2-rrv3-qjmp` / `CVE-2026-33532`（`yaml` **Stack Overflow via deeply nested
-     YAML collections**），severity = **medium**，`first_patched_version = 2.8.3`
-     ⇒ **修复在 `2.8.x` 内 ⇒ patch 升级**（`2.8.1 → 2.8.3`）。
+     YAML collections**），severity = **medium**，`first_patched_version = 2.8.3`；
+     而 `2.8.x` 的**最新 patch = `2.8.4`**（实测版本表 `2.8.0/2.8.1/2.8.2/2.8.3/2.8.4`）
+     ⇒ **修复在 `2.8.x` 内 ⇒ patch 升级**，落地目标 = **`2.8.4`**（`2.8.1 → 2.8.4`）。
    - 该告警**不是 high**（与简报「D-03：非 high、patch 可升」一致）。
 2. **Dependabot 的权威告警计数（实测，`/dependabot/alerts?state=open`，2026-09-26）= 9 条**：
    `undici` **8 条**（6 medium + 2 low）+ `yaml` **1 条**（medium）。
@@ -380,7 +386,7 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 | lint/format/typecheck | job 报 ruff/eslint/tsc/mypy | 直接修复 → fix commit → 重推 |
 | 产品测试失败 | pytest/playwright 断言 | 读失败输出定位缺陷（产品或测试各半）；修产品优先，**禁改断言迁就** |
 | **设计基线漂移**（EC-01 主场） | `design-outline-guard` 判红 / 结构签名不一致 | **按既有配方重生成**（`UPDATE_OUTLINES=1` + win32 单路由像素 + Linux 侧 `verify_linux_outlines`）+ **目检**；**不得**调容差 |
-| **`yaml` 语义变化**（EC-01 主场） | web 构建 / vite 配置解析 / e2e 启动失败 | 判「是否 `2.8.1→2.8.3` 引入」：是 ⇒ 复核是否**只升 patch**（若非 patch ⇒ 撤回并如实登记）；否 ⇒ 真红，修产品或夹具 |
+| **`yaml` 语义变化**（EC-01 主场） | web 构建 / vite 配置解析 / e2e 启动失败 | 判「是否 `2.8.1→2.8.4` 引入」：是 ⇒ 复核是否**只升 patch**（若非 patch ⇒ 撤回并如实登记）；否 ⇒ 真红，修产品或夹具 |
 | **判据结构变化**（EC-03 主场） | `tests/tooling/test_pending_decisions_briefing.py` 判红 | 判「是本 GOAL 要改的**口径**还是既有断言」：是口径 ⇒ 使改动**更强**并补按压；是既有断言 ⇒ **不得**为迁就而放宽，回头改简报 |
 | flake/env | 已知签名（observability OTLP 端口、teardown race、DSN 注入、compose 环境、`W-7` live 上游瞬时） | 按 `docs/architecture/LOCAL_GATE_PROTOCOL.md` 归因；**资源阈值型**判红 ⇒ **(ii) 类 + 复跑对照**，**判据与阈值一字不动** |
 | 基础设施 | runner 挂 / 网络 / 依赖源不可达 | 等窗口重跑 1 次；仍败 → BLOCKED（infra 非代码缺陷） |
@@ -420,17 +426,17 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 
 1. **ADR-0031（`tool_pack.*` 能力策略，`Status: Proposed`）是否采纳**——**已拍板：D-07 取 (b)**
    ⇒ 维持 `Proposed` + 已有「否证条件」节（GOAL-016 EC-04 已实施）；
-   **本 GOAL 不动它的 `Status`**。
+   **本 GOAL 不动它的 `Status`**。⇒ **D-07 终态 = 已实施**。
 2. **威胁建模 / 授权面覆盖（BOLA / BFLA）**——**已拍板：D-12 取 (b)** ⇒ 文档级草案已在位
    （GOAL-016 EC-05 已实施）；**本 GOAL 不做 (a)**（专项测试与门）。
-   ⇒ **D-12 终态 = 已实施（面 (a) 未授权）**。
+   ⇒ **D-12 终态 = 已实施**（面 (a) 未授权）。
 3. **`artifacts/` token 清理**——**【已完成】**（GOAL-011 建档实测 `git ls-files artifacts/` = 0）
    ⇒ **本项无待办**。
 4. **450 行纪律的贴线文件**——**本轮决案：D-05 取 (b) 维持「触线即拆」**；
    **本 GOAL 不专项拆分**（本 GOAL 的授权动作不要求改那四个文件）。
    ⇒ **D-05 终态 = 已拍板为维持现状**；决定**固化**进简报 D-05 与索引，**下轮不再重复提问**。
 5. **依赖 pin 升级**（`undici` / `yaml`）——**本轮决案：D-03 继续「分批升」**：
-   `yaml` **本轮 patch 升到 `2.8.3`**（EC-01）；`undici` **只调研不升**（EC-02），
+   `yaml` **本轮 patch 升到 `2.8.4`**（EC-01）；`undici` **只调研不升**（EC-02），
    升级面**不在本仓**（依赖链经 `@cursor/sdk`）⇒ 若将来要升，**需单独授权**。
    ⇒ **D-03 终态 = 部分实施**（`vite` 已升 + `yaml` 本轮已升；`undici` 已调研未升）。
 6. **hook 侧 L3 门**——**本轮决案：D-04 取 (c) 维持现状**。理由（写进记录供后续引用）：
@@ -438,17 +444,19 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
    URL 形状 / 大文件写盘被拒）**仍在发生**，在误报面未修的情况下安装**阻塞型**检测层会让
    **每轮提交被噪声拦住** ⇒ **本轮维持现状**，并把「**先修误报面**」登记为
    **重启 D-04 的前置条件**。**不安装检测层、不改 hook 面、不改 `MIMOSA_GIT_GATE_MODE`**。
-   ⇒ **D-04 终态 = 已拍板为维持现状（重启前置 = 先修误报面）**。
+   ⇒ **D-04 终态 = 已拍板为维持现状**（重启前置 = 先修误报面）。
 7. **把真实 runtime 设为默认**——**标准禁令（无需拍板）**：默认必须仍是 Fake。
 8. **为 anthropic 形态引入 SDK / 新依赖**——**标准禁令（无需拍板）**：需要新依赖即 BLOCKED。
 9. **把凭据写进 CI**——**标准禁令（无需拍板）**：CI 必须保持离线。
 10. **`ModelCompatibilityProfile` 是否按 AGENTS.md §1 建为一等域实体**——**已拍板：D-08 取 (b)**
     ⇒ 维持**派生视图**（GOAL-016 EC-04 已把依据写成可引用文档）；**本 GOAL 不碰**。
+    ⇒ **D-08 终态 = 已实施**。
 11. **放宽 `AcceptanceCriteria`（或改合约）使其通过**——**标准禁令（无需拍板）**：明文禁止。
 12. **`secrets/llm_key.txt`（gitignored、untracked 的第二份凭据副本）**——**【已完成】**
     （GOAL-011 获删授权并执行完毕）⇒ **本项无待办**。
 13. **30 条已跟踪路径含非 ASCII（中文）文件名，违反 AGENTS.md §13**——**已拍板：D-09 取 (a)**
     ⇒ `ADR-0032` 已在位（GOAL-016 EC-04）；**不重命名**、不触碰不可变历史资产。
+    ⇒ **D-09 终态 = 已实施**。
 
 **GOAL-016 / 017 特有的项（原样承继 + 本 GOAL 决案结果）**：
 
@@ -457,18 +465,22 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
   **不重启、不改记录状态词**。⇒ **D-06 终态 = 已拍板为维持现状**。
 - **`W-A` 之外的策略面放宽**——**已拍板：D-02 取 (b)** ⇒ **维持逐条**、
   **不成类预放行**、**不新增任何 allow**；**本 GOAL 零策略面改动**。
+  ⇒ **D-02 终态 = 已实施**（面 (a) 未授权）。
 - **门禁 scoping 的自我修正**（`R-3`）——**已拍板：D-10 取 (a)** 且**已实施**
-  （GOAL-017 EC-01）⇒ 本 GOAL 只做**复检**（EC-04）。
+  （GOAL-017 EC-01）⇒ 本 GOAL 只做**复检**（EC-04）。⇒ **D-10 终态 = 已实施**。
 - **本机环境的 DNS / 代理特殊性**（fake-IP `198.18.0.0/15`）——**不改机器网络配置**，
   也不改判据；只做归因与登记。**本 GOAL 的 URL 校验一律复用 `endpoint_policy`**，
   **不另写**「地址须全球单播」这类会拒绝所有域名的判据。
 - **`M-1`（出厂组合根是否自己接执行体缝 `ApiDeps.tool_providers`）**——**已拍板：D-01 取 (b)**
   ⇒ 维持装配方补执行体；判据已由 GOAL-016 EC-01 落地。
   **D-01 的 (a) 明确不取** ⇒ **本 GOAL 不碰执行体缝语义**。
+  ⇒ **D-01 终态 = 已实施**（面 (a) 未授权）。
 - **live 判据的开门条件**——**已拍板：D-11 取 (a)** 且**已实施**（GOAL-017 EC-02）⇒
   本 GOAL 的 **live e2e** 在默认门（无开关）下**如实 skip**，**不引入凭据**。
+  ⇒ **D-11 终态 = 已实施**。
 - **CI 资源阈值型判据的负载敏感性**——**已拍板：D-13 取 (a)+(b)** 且**已实施**
   （GOAL-017 EC-03）⇒ 本 GOAL 只做**复检**，**作业结构与阈值一律不动**。
+  ⇒ **D-13 终态 = 已实施**。
 
 **承继的诚实边界（如实保留，不是待办）**：
 
@@ -479,7 +491,7 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 - **`R-M1`｜Mimosa 钩子侧 `scanner_enobufs` 未得完整结论**——**不得**宣称项目安全。
   **本 GOAL 原样保留**（D-04 维持现状使其**继续存在**）。
 - **`R-D1`｜Dependabot 告警**——**本轮更新**：`vite` 4 条 high 已由 GOAL-016 EC-03 清除；
-  **`yaml` 1 条（medium）由本 GOAL EC-01 升到 `2.8.3` 清掉**；
+  **`yaml` 1 条（medium）由本 GOAL EC-01 升到 `2.8.4` 清掉**；
   **`undici` 8 条（6 medium + 2 low）原样保留**，**本 GOAL 只调研不升**
   ⇒ 终态表述 = 「`yaml` 已升、`undici` 已调研未升」。
 - **`R-B1` / `R-N1`**——承继残余 / 非 ASCII 路径豁免，**原样保留**。
@@ -499,16 +511,19 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 待回写 | 治理 `validate.py` 待跑 | 待轮询 | — | EC-01…EC-04 全 PENDING；授权与边界已落 frontmatter；起点已定位（`yaml` 修复版本 = `2.8.3`（patch）；Dependabot 实际 9 条 = `undici` 8 + `yaml` 1；`undici@5.29.0` 依赖链 = `@cursor/sdk@1.0.30` → `@connectrpc/connect-node@1.7.0` → `undici@5.29.0`，**唯一入边 1 条**；`connect-node` 对 undici 的唯一用法 = `node-headers-polyfill.js` 的 `Headers` 且 **Node ≥ 18 下不可达**；1.x 全线带 `undici ^5`、2.x 起**不再依赖 undici** 但为**破坏性主版本**；`@cursor/sdk` 最新 `1.0.32` **仍锁 `^1.6.1`**） | cycle 1 = **EC-01 `yaml` patch 升级** + **EC-02 `undici` 调研** |
+| 0 | （建档，无子 PLAN） | `869f815`（推送 tip，推送区间 `2208dd5..869f815`） | 治理 `validate.py` = `Cursor 治理验证通过`（`DOCS-CHECK PASS`） | M0 [36185808007](https://github.com/Eswink/research-system-new/actions/runs/36185808007) **八 job 全 success** + CodeQL [36185807208](https://github.com/Eswink/research-system-new/actions/runs/36185807208) **3/3 success**（`run_attempt=1`，轮询 `ALL_TERMINAL`；日志 `scratch/goal018-c0-ci-poll.log`）。上游同时返回 **9 条**告警（7 moderate + 2 low），与 `/dependabot/alerts?state=open` 实测一致 | — | EC-01…EC-04 全 PENDING；授权与边界已落 frontmatter；起点已定位（`yaml` 首个修复版本 `2.8.3`、**`2.8.x` 最新 patch = `2.8.4`**；Dependabot 实际 9 条 = `undici` 8 + `yaml` 1；`undici@5.29.0` 依赖链 = `@cursor/sdk@1.0.30` → `@connectrpc/connect-node@1.7.0` → `undici@5.29.0`，**唯一入边 1 条**；`connect-node` 对 undici 的唯一用法 = `node-headers-polyfill.js` 的 `Headers` 且 **Node ≥ 18 下不可达**；1.x 全线带 `undici ^5`、2.x 起**不再依赖 undici** 但为**破坏性主版本**；`@cursor/sdk` 最新 `1.0.32` **仍锁 `^1.6.1`**） | cycle 1 = **EC-01 `yaml` patch 升级** + **EC-02 `undici` 调研** + **EC-03 13 项决案结清** |
+| 1 | PLAN-20260926-186（EC-01 + EC-02 + EC-03） | 待回写（本 cycle 的推送 tip） | **EC-01**：`yaml` `2.8.1 → 2.8.4` 且 `git diff` 逐 hunk 证明**只有这一个包**变化（823 字节同长）；web 六门全绿 = `lint` 0 / `typecheck` 0 / unit **88 passed** / `build` 成功 / stub e2e **98 passed** / live e2e **53 passed**（无开关 ⇒ 无 LLM 出网）+ 根 `check` 0；**设计基线无漂移**（`design-outline-guard` **6 passed**、`design-outlines.json` 逐字节未改 ⇒ 未重生成、容差未动）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、`FAILED`/`ERROR` 零命中、日志 `scratch/goal018-c1-m0.log`）。**EC-02**：`docs/roadmap/UNDICI_TRANSITIVE_DEPENDENCY_RESEARCH.md` 在位（三问各有答案与依据 + 复现命令 + 授权清单）；**反证** = `grep -n "undici: 5.29.0" pnpm-lock.yaml` 仍**恰好 1 条**、两个 `package.json` 均无 `overrides` / `resolutions`。**EC-03**：简报终态表 **13 行** + GOAL 人工面 **13 条同词声明**（已实施 9 + 部分实施 1 + 已拍板为维持现状 3 = 13，**未授权待拍板 0**）；判据 `tests/tooling/test_pending_decisions_briefing.py` **14 passed**（1 现状 + 13 按压，日志 `scratch/goal018-c1-ec03-press.log`）；`tests/tooling` = **1169 passed**；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化、规模门禁 = **1029 passed**；治理 `validate.py` + `DOCS-CHECK` 绿 | 待轮询（本 cycle 推送 tip 的 M0 八 job + CodeQL） | **一次判据缺陷（当场发现并修）**：EC-03 的按压第一版用「按行首删一行」，命中的是简报里**同形状的索引表**（也以 `| D-05 | …` 开头）⇒ **判据没被触碰**（看着红其实没动判据）。改为 **只在终态表块内替换 + 块内未命中即断言失败**后，按压才生效 ⇒ 记入 `MEM-20260926-142`（`MEM-141` 的同类新形态）。**一次 `yaml` 目标版修正**：授权写「最新 patch」而建模档一度按**首个修复版本 `2.8.3`** 写；实测 `2.8.x` 版本表为 `2.8.0/1/2/3/4` ⇒ **落地目标改为 `2.8.4`**（仍 patch 面内，且覆盖修复版本），记录已同步 | **EC-01 / EC-02 / EC-03 本地证据齐**（CI 证据待本 cycle 的 run 终态后在 cycle 2 一并登账并翻 PASS）；`RECHECK-20260926-187` = `PASS_WITH_WARNINGS`（W-1 按压打偏 / W-2 CI 证据在 GOAL 侧登账 / W-3 可利用性评估有前提 / W-4 `undici` 8 条仍挂 / W-5 engines 上限 `7.30.0` / W-6 `R-M1` 原样）。EC-04 仍 PENDING | cycle 2 = **EC-04 收口复检**（两树复检 + m0 终态行 + 13 项终态表 + CI 台账到终态 + 承继残余） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
-| （建档提交） | 待回写 | 待回写 | 待轮询（写下本条的那个提交自身的 run 只在**回合汇报**记账） |
+| 建档（GOAL-018 落地） | `869f815` | M0 [36185808007](https://github.com/Eswink/research-system-new/actions/runs/36185808007) / CodeQL [36185807208](https://github.com/Eswink/research-system-new/actions/runs/36185807208) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，一次成功）：M0 `conclusion=success`，逐 job `quality-ubuntu-latest` / `console-frontend` / `observability-overhead-windows-latest` / `observability-overhead-ubuntu-latest` / `container-quality` / `collector-quality` / `quality-windows-latest` / `eval-gate` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)` **3/3 `success`**。轮询日志 `scratch/goal018-c0-ci-poll.log`（第 38 轮 `completed=2/2`、`ALL_TERMINAL`）。上游 push 回执同时报 **9 条**告警（7 moderate + 2 low） |
+| cycle 1 实施（EC-01 + EC-02 + EC-03） | 待回写（推送 tip） | 待轮询 | 待轮询（写下本条的那个提交自身的 run 只在**回合汇报**记账） |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-09-26 | ACTIVE | 建档：用户会话指令（goal 模式）「**先收尾，然后再甲**」⇒ 本轮做**收尾轮**。授权实施严格限于两项：**`yaml` patch 升级**（`2.8.1 → 2.8.3`）+ **`undici` 前置调研（零升级）**；授权登记三条：**D-06 取 (c) 维持** / **D-05 取 (b) 维持** / **D-04 本 GOAL 拍板为 (c) 维持 + 重启前置 = 先修误报面**。四 EC 设计（yaml 升级 / undici 调研 / 13 项 `D-NN` 结清 / 收口复检）。**明确不授权**：`undici` 升级（含 overrides）、hook 检测层安装、**甲的全部内容**（鉴权 / 中间件 / 路由保护）、D-01(a) / D-02(a) / D-12(a)、`ADR-0031` 的 `Status`、`yaml` 跨 minor。**建档时零代码改动**（只增本文件）。 |
+| 2026-09-26 | ACTIVE | 建档：用户会话指令（goal 模式）「**先收尾，然后再甲**」⇒ 本轮做**收尾轮**。授权实施严格限于两项：**`yaml` patch 升级**（`2.8.1 → 2.8.4`）+ **`undici` 前置调研（零升级）**；授权登记三条：**D-06 取 (c) 维持** / **D-05 取 (b) 维持** / **D-04 本 GOAL 拍板为 (c) 维持 + 重启前置 = 先修误报面**。四 EC 设计（yaml 升级 / undici 调研 / 13 项 `D-NN` 结清 / 收口复检）。**明确不授权**：`undici` 升级（含 overrides）、hook 检测层安装、**甲的全部内容**（鉴权 / 中间件 / 路由保护）、D-01(a) / D-02(a) / D-12(a)、`ADR-0031` 的 `Status`、`yaml` 跨 minor。**建档时零代码改动**（只增本文件）。建档提交 `869f815` 的 CI = **八 job 全 success + CodeQL 3/3**（`run_attempt=1`）。 |
+| 2026-09-26 | ACTIVE | cycle 1：派生 **PLAN-20260926-186**（EC-01 + EC-02 + EC-03 合并为一个可独立验收的主题面）。**EC-01**：`yaml` `2.8.1 → 2.8.4`（`2.8.x` 最新 patch；首个修复版本 `2.8.3` 被覆盖）——lockfile **只有这一个包**变化，web 六门 + 根 `check` 全绿，**设计基线逐字节未改**（无漂移 ⇒ 未重生成、容差未动），**as-is m0 = 23/23**。**EC-02**：`undici` 三问结论文档在位（**不可在本仓正确升级**，归属方 = `@cursor/sdk` 上游），**零升级**由两条反证钉住。**EC-03**：13 项终态表 + GOAL 侧 13 条同词声明 + 对齐表封闭词汇表，**零「待定」**；判据扩到 **14 passed**，含 **13 条按压**（其中一次「按压打偏」当场修：简报里有**同形状的索引表**）。EC-04 仍 PENDING。 |

@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260926-142](entries/MEM-20260926-142-patch-means-latest-patch-and-a-research-needs-a-verdict.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-186 |
 | [MEM-20260925-141](entries/MEM-20260925-141-one-switch-one-reader-and-one-job-per-threshold.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-182 |
 | [MEM-20260925-140](entries/MEM-20260925-140-gate-input-face-needs-an-authority-and-a-pair.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-180 |
 | [MEM-20260925-139](entries/MEM-20260925-139-closeout-needs-two-trees-and-two-terminal-lines.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-178 |
