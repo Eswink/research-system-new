@@ -2,7 +2,7 @@
 id: GOAL-20260925-017
 slug: gate-scoping-live-switch-and-observability-job
 title: 三条已授权决策落地：门禁 scoping（git 决定输入面）+ live 显式开关 + 观测作业隔离
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-25
 updated_at: 2026-09-25
 owners:
@@ -295,7 +295,30 @@ exit_criteria:
       ⑥ 治理 `validate.py` = 通过、`DOCS-CHECK PASS`；⑦ 13 项终态表逐行在位；⑧ 承继残余
       （`R-F1` / `R-F2` / `R-F3` / `R-M1` / `R-D1` / `R-B1` / `R-N1` / `W-1…W-7`）
       逐条在位。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      **四件交付物全部在**（`RECHECK-20260925-185` = `PASS_WITH_WARNINGS`，8 条 AC 逐条复核）。
+      ① **两树复检** `scratch/goal017-ec04-closeout-recheck.py`（295 行，不提交）**不复用本 GOAL
+      的叙述**：结构半 **14 条全 PASS**（脚本自己重读树）+ 判据半 5 个目标子进程实跑
+      = `3 / 14 / 18 / 3 / 5 passed`；工作树与干净 `git worktree`（`D:\rs-ec04-clean`，detached
+      HEAD = cycle 2 推送 tip `505f2ab`）**判词列 19/19 相同**（14 结构 + 5 判据；只比判词列的
+      `diff` = `scratch/goal017-ec04-twotree-verdicts.diff` = **0 字节**）；整份输出的唯一差异
+      = EC 状态那行的**明细文字**（干净树的 GOAL 仍是 EC-04 `PENDING`）⇒
+      `scratch/goal017-ec04-twotree.diff` = **243 字节 / 一行**，**无一条判据在两树间结论不同**。
+      ② **非恒真**：5 处按压（`dnn-table` / `switch-name` / `job-structure` / `threshold` /
+      `git-face`，**只改内存**）**5/5 `PRESS-RED-OK`** 且各点名不同的一条检查；其中 `git-face`
+      第一次是 **GREEN-BAD**——原检查写「文中出现过 `GIT_FACE_UNAVAILABLE`」，而 docstring 里
+      **引用**着这个词 ⇒ 恒真；改绑**声明行**后判红（与 cycle 2 的「唯一读取点第一版按文本判」
+      是**同一个病**，见 `MEM-20260925-141`）。③ **as-is 本机 m0 终态行
+      = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24；`scratch/goal017-c3-m0-as-is.log`）
+      ⇒ **`R-3` 已消除、不再需要代管跑法**；口径补充：本机 Git Bash **无 `make`**，跑的是
+      `Makefile` 中 `validate-all` 的**展开命令**（同一 runner / `--keep-going` / `.venv`，
+      判据面相同但不是 `make` 这一层——`W-1`）。④ **13 项 `D-NN` 终态表** 13 行逐行在位
+      （`D-10` / `D-11` / `D-13` = 已实施；未授权 4 项原样保留）；**承继残余**
+      `R-F1` / `R-F2` / `R-F3` / `R-M1` / `R-D1` / `R-B1` / `R-N1` / `W-1…W-7` 逐条在位。
+      治理 `validate.py` = 通过 + `DOCS-CHECK PASS`；CI 台账补到终态（四行：建档 / cycle 1 /
+      cycle 2 / cycle 3；**本收口提交所在 run 的终态在回合汇报给出**，沿用收口惯例）。
+      **本 cycle 零产品代码改动**（只动记录面 + `ALL_PLAN` 投影）。
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -351,7 +374,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260925-180-gate-input-face-is-git-decided.md
   - .cursor/plans/tasks/PLAN-20260925-182-live-switch-and-observability-job-isolation.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-183-live-switch-and-observability-job-isolation.md
+  - .cursor/plans/tasks/PLAN-20260925-184-goal-017-closeout-recheck.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-185-goal-017-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260925-140-gate-input-face-needs-an-authority-and-a-pair.md
   - .cursor/memory/entries/MEM-20260925-141-one-switch-one-reader-and-one-job-per-threshold.md
@@ -368,7 +392,7 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 | EC-01 | **D-10(a)** Markdown 链接扫描的输入面由 **git** 决定 | 判据（成对 + 硬失败）+ 反证留档 + `git diff` 零放宽 + as-is m0 **23/23** | **PASS** |
 | EC-02 | **D-11(a)** live 开门 = **开关 + 凭据**，全部判据**同源** | 单一开关读取点 + 消除第二套判据 + 三态实跑 + runbook 同源 | **PASS** |
 | EC-03 | **D-13(a)+(b)** 观测阈值判据的**作业隔离**（或如实登记「不改 + 证据」） | 现状核实 + 最小 workflow 改动 + 失败传播取证 + 阈值零改动 | **PASS** |
-| EC-04 | 收口复检 + 残余登记 | 两树复检脚本 + m0 可支持终态行 + 13 项 `D-NN` 终态表 + CI 台账 | PENDING |
+| EC-04 | 收口复检 + 残余登记 | 两树复检脚本 + m0 可支持终态行 + 13 项 `D-NN` 终态表 + CI 台账 | **PASS** |
 
 **依赖关系**：EC-01 / EC-02 / EC-03 **互相独立**（一个门禁脚本 / 一个门开关 / 一个 workflow
 作业结构），三者的**判据都不依赖**另外两项；EC-04 **最后**做，且**必须**在三项落地后
@@ -630,7 +654,8 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `25d802b`（推送 tip，推送区间 `f1ca9ed..25d802b`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36156959548](https://github.com/Eswink/research-system-new/actions/runs/36156959548) **六 job 全 success** + CodeQL [36156958765](https://github.com/Eswink/research-system-new/actions/runs/36156958765) **3/3 success**（`run_attempt=1`，轮询 `ALL_TERMINAL`） | — | EC-01…EC-04 全 PENDING；三条授权判词已落 frontmatter；起点已定位（D-10：`NON_SOURCE_DIRS` + 全工作区 `os.walk` + 链接扫描；`scratch/` 被 `.gitignore:43` 忽略且未跟踪、`--others --exclude-standard` = 0、tracked = 3403；D-11：既有单一门 `live_run_gate.py` 无开关，`_live_credentials()` 等至少 5 处**第二套判据**待消除，`egress_guard` 放行面 = marker，runbook 同源判据已在树；D-13：`collector-quality` 虽为独立 job 且命令行列出 `tests/observability`，但该步骤带 `-m "requires_collector or postgres or distributed"` ⇒ **无标记的阈值判据在那里被反选**，其唯一 CI 执行点就是 `quality-*` 的 4400+ 全量进程）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 D-10 门禁 scoping**（git 决定的输入面 + 成对判据 + 硬失败） |
 | 1 | PLAN-20260925-180（EC-01） | `9cfba09`（推送区间 `25d802b..9cfba09`，本 cycle 的推送 tip） | 判据 `tests/tooling/test_validate_bundle_git_decided_input_face.py` = **`3 passed`**（`egress guard` = `judged 0 / blocked 0`）；**反证**（独立 worktree，同一坏文件）：`OLD_EXIT=1`（点名 `scratch/self-governance-bootstrap-prompt.md`）→ `NEW_EXIT=0` → force-add 成已跟踪后**又红** `WT_TRACKED_EXIT=1`；**按压**：改动前 `TOTAL 4` → 改动后 `TOTAL 3`；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化（534 files）、`mypy` = `Success: no issues found in 1017 source files`、`tests/tooling` = **`1158 passed`**、治理 `validate.py` = 通过、`DOCS-CHECK PASS`；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`M0_EXIT=0`、`PASS [` = 24；`R-3` 消失、**不再需要代管**、证人文件 `69944` 字节仍在场） | M0 [36163737079](https://github.com/Eswink/research-system-new/actions/runs/36163737079)：`run_attempt=1` **`quality-windows-latest` 红**（本条**不是**本 cycle 引入：唯一失败 = `tests/observability/test_telemetry_overhead.py::test_telemetry_on_overhead_is_bounded_and_shutdown_clean`，`AssertionError: RSS grew 175.3 MiB (leak suspected)`，`assert 175.3046875 < 128.0`；**结构证人**：`collector-quality` 的 `-m` 反选掉了这条无标记判据 ⇒ 唯一执行点就是 4400+ 用例进程）⇒ 同代码 **`run_attempt=2` 六 job 全 `success`**（`conclusion=success`）⇒ 归类 `LOCAL_GATE_PROTOCOL` 的 **(ii) 负载敏感**，**判据与阈值一字未动**；**这已是同类第二次**（GOAL-015 的 run `36071654181` 是 174.0 MiB）⇒ 正好构成 D-13 的升级依据。CodeQL [36163735853](https://github.com/Eswink/research-system-new/actions/runs/36163735853) **3/3 success** | — | **EC-01 = PASS**（`RECHECK-20260925-181` = `PASS_WITH_WARNINGS`；`W-1` = 版本号两段**仍扫全工作区**（属另一次授权）、`W-2` = 跨平台以 CI 为权威证书、`W-3` = 名字无关性是契约、`W-4` = `validate_bundle.py` 不在 450 行覆盖面内、`W-5` = `(ii)` 类红靠复跑）。工程记忆 `MEM-20260925-140`。其余三个 EC 仍 PENDING | cycle 2 = **EC-02 D-11 live 显式开关**（开关 + 凭据 = 开门；全部 live 判据**同源**；runbook 逐字同源） |
-| 2 | PLAN-20260925-182（EC-02 + EC-03） | 见回合汇报（推送区间 `9cfba09..` + 本 cycle 的推送 tip；**下一 cycle 回填**） | **新判据** `tests/architecture/python/test_live_switch_is_single_source.py` = **`14 passed`**（`egress guard` = `judged 0 / blocked 0`）；**按压** `scratch/goal017-d11-press.py` = **`pressed=6 failures=[]`**（6/6 `RED-OK`：常量改名 / 漏开开关 / 第二读取点 / 配置面预设 / runbook 异名 / guard 被塞开关；每次 sha256 核对**逐字节还原**）；**三态**：① 开关关（凭据在场 + runtime 配好）⇒ live 用例 **skip 且点名开关**、`blocked 0`；② 开关开 + 凭据空 ⇒ **skip 且点名 `LLM_MAIN_KEY`**、`blocked 0`；③ 开关 + 凭据 + runtime ⇒ 门**开**、真实 run 到终态、live 用例 **`1 passed`**（`judged 3 connection attempt(s); blocked 0`，26.50s）——**本 GOAL 唯一一次真实出网**；**定向套件** = `92 passed, 1 skipped`；`ruff check` = `All checks passed!`、`ruff format --check` = `1028 files already formatted`、`mypy` = `Success: no issues found in 1018 source files`；**D-13 判据零改动** = `git diff -- tests/observability/test_telemetry_overhead.py` **空**；**机制取证** `--collect-only` 计数 `3 → 0`、**隔离进程实跑** = `3 passed in 2.71s`；`tests/tooling/test_m0_ci_coverage.py` = `5 passed`、`validate_cursor_framework.py` = `PASS`；治理 `validate.py` = 通过；**as-is 本机 m0 第 1 跑红（真缺陷、本 cycle 引入并当场处置）** = `FAILED: 1 check(s): python/tests=1`（`tests\e2e\live_run_support.py` **477 > 450** ⇒ 拆出 `tests/e2e/live_switch_support.py` + 12 处 import 改指向，**未动阈值**）⇒ **第 2 跑 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24；`scratch/goal017-c2b-m0-as-is.log`） | 见回合汇报（本 cycle 的推送 run 在其台账行） | **一次判据误红（实测发现并修）**：`tests/e2e/test_ec04_live_first_run.py` 的离线判据原写「`not configured` **或** 凭据名」二选一——在「只配 `RESEARCHOS_AGENT_RUNTIME=openhands`、忘开 live 开关」时两条都不在理由里 ⇒ **误红**（门的行为是对的）。改为**独立重算哪几条未满足并逐条核对**（比原判据更严）。**一次判据自身漏检（按压抓出）**：第一版「唯一读取点」用**文本**判 ⇒ 按压 P3 看着绿；改 **AST**（按开关名取映射项）后 P3 红 | **EC-02 = PASS**（`RECHECK-20260925-183` = `PASS_WITH_WARNINGS`；`W-1` = skip 文案双重前缀（既有形态）、`W-2` = 历史 MEM 仍写「两条」不回改、`W-3` = absence 样本两道门、`W-4` = 本机 m0 仍同进程跑阈值判据、`W-5` = 新作业多一次冷装）；**EC-03 = PASS**（阈值零改动 + 作业 6→7 + 无豁免键 ⇒ 传播路径不变 + 平台覆盖不减）；工程记忆 `MEM-20260925-141`。**EC-04 仍 PENDING** | cycle 3 = **EC-04 收口复检**（两树复检 + m0 终态行 + 13 项 `D-NN` 终态表 + CI 台账） |
+| 2 | PLAN-20260925-182（EC-02 + EC-03） | `958c321`（WP1 = D-11）+ `505f2ab`（WP2 = D-13 + 记录；**推送 tip**，推送区间 `9cfba09..505f2ab`） | **新判据** `tests/architecture/python/test_live_switch_is_single_source.py` = **`14 passed`**（`egress guard` = `judged 0 / blocked 0`）；**按压** `scratch/goal017-d11-press.py` = **`pressed=6 failures=[]`**（6/6 `RED-OK`：常量改名 / 漏开开关 / 第二读取点 / 配置面预设 / runbook 异名 / guard 被塞开关；每次 sha256 核对**逐字节还原**；**搬迁后复跑仍 6/6**）；**三态（最终修订版复跑）**：① 开关关（凭据在场 + runtime 配好）⇒ live 用例 **skip 且点名开关**、`blocked 0`、离线判据 `1 passed`；② 开关开 + 凭据空 ⇒ **skip 且点名 `LLM_MAIN_KEY`**、`blocked 0`、离线判据 `1 passed`；③ 开关 + 凭据 + runtime ⇒ 门**开**、真实 run 到终态、live 用例 **`1 passed`**（`judged 3 connection attempt(s); blocked 0`，**81.14s**；日志 `scratch/goal017-c2b-state3-live.log`）——**本 GOAL 唯一一次真实出网**（③ 跑 2 次：搬迁前 26.50s + 搬迁后 81.14s，同一结论）；**定向套件** = `92 passed, 1 skipped`；`ruff check` = `All checks passed!`、`ruff format --check` = `1029 files already formatted`、`mypy` = `Success: no issues found in 1019 source files`；**D-13 判据零改动** = `git diff -- tests/observability/test_telemetry_overhead.py` **空**；**机制取证** `--collect-only` 计数 `3 → 0`、**隔离进程实跑** = `3 passed in 2.71s`；`tests/tooling/test_m0_ci_coverage.py` = `5 passed`、`validate_cursor_framework.py` = `PASS`；**规模门禁** `tests/tooling/test_python_source_limits.py` = `1029 passed`；治理 `validate.py` = 通过；**as-is 本机 m0 第 1 跑红（真缺陷、本 cycle 引入并当场处置）** = `FAILED: 1 check(s): python/tests=1`（`tests\e2e\live_run_support.py` **477 > 450** ⇒ 拆出单一职责模块 `tests/e2e/live_switch_support.py`（43 行）+ 12 处 import 改指向，该文件回到 **449 行**，**未动阈值**）⇒ **第 2 跑 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24；`scratch/goal017-c2b-m0-as-is.log`） | M0 [**36172112981**](https://github.com/Eswink/research-system-new/actions/runs/36172112981) **八 job 全 success**（`run_attempt=1`）：`quality-ubuntu-latest` / `quality-windows-latest` / **`observability-overhead-ubuntu-latest`** / **`observability-overhead-windows-latest`** / `eval-gate` / `container-quality` / `collector-quality` / `console-frontend` **全 `success`** —— 新作业**首次实跑即绿**（**windows 也绿**，正是此前两次判红的平台）；CodeQL [**36172112740**](https://github.com/Eswink/research-system-new/actions/runs/36172112740) **3/3 success**。轮询日志 `scratch/goal017-c2-ci-poll.log`（第 39 轮 `completed=2/2`、`ALL_TERMINAL`） | **一次判据误红（实测发现并修）**：`tests/e2e/test_ec04_live_first_run.py` 的离线判据原写「`not configured` **或** 凭据名」二选一——在「只配 `RESEARCHOS_AGENT_RUNTIME=openhands`、忘开 live 开关」时两条都不在理由里 ⇒ **误红**（门的行为是对的）。改为**独立重算哪几条未满足并逐条核对**（比原判据更严）。**一次判据自身漏检（按压抓出）**：第一版「唯一读取点」用**文本**判 ⇒ 按压 P3 看着绿；改 **AST**（按开关名取映射项）后 P3 红。**一次规模门禁红（真缺陷）**：见左栏 m0 第 1 跑 | **EC-02 = PASS**（`RECHECK-20260925-183` = `PASS_WITH_WARNINGS`；`W-1` = skip 文案双重前缀（既有形态）、`W-2` = 历史 MEM 仍写「两条」不回改、`W-3` = absence 样本两道门、`W-4` = 本机 m0 仍同进程跑阈值判据、`W-5` = 新作业多一次冷装、`W-6` = `live_run_support.py` 只剩 1 行余量）；**EC-03 = PASS**（阈值零改动 + 作业 6→7 + 无豁免键 ⇒ 传播路径不变 + 平台覆盖不减 + 新作业首跑即绿）；工程记忆 `MEM-20260925-141`。**EC-04 仍 PENDING** | cycle 3 = **EC-04 收口复检**（两树复检 + m0 终态行 + 13 项 `D-NN` 终态表 + CI 台账） |
+| 3 | PLAN-20260925-184（EC-04 收口） | 见回合汇报（推送区间 `505f2ab..` + 本 cycle 的推送 tip；**收口提交**，含 GOAL 转 `ACHIEVED`） | **两树复检脚本** `scratch/goal017-ec04-closeout-recheck.py`（**不复用 GOAL 叙述**）：结构半 **14 条全 PASS** + 判据半 5 个目标 = **`3 / 14 / 18 / 3 / 5 passed`** ⇒ `EC04-RECHECK: PASS`（`scratch/goal017-ec04-worktree.out`）；**非恒真** `scratch/goal017-ec04-press.log` = **`5/5 PRESS-RED-OK`**（`dnn-table` ⇒ 红在「13 项终态表在位」、`switch-name` ⇒ 红在「常量一个声明点」、`job-structure` ⇒ 红在「判据跑在专用作业里」、`threshold` ⇒ 红在「阈值与语义未动」、`git-face` ⇒ 红在「不可用时点名硬失败」；**只改内存、零文件写入**）；**两树同结论** = 工作树 vs 干净 `git worktree`（`D:\rs-ec04-clean`，detached HEAD `505f2ab`）**判词列 19/19 相同**（只比判词列的 `diff` = **0 字节**）、整份输出差异**恰一行**且只在 EC 状态那行的**明细文字**（干净树仍是 `PENDING`）⇒ **无一条判据结论不同**（`scratch/goal017-ec04-{worktree,clean}.out` + `…-twotree.diff`）；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24；`Makefile` 展开命令 + **独占**、跑门期间未改工作树；`scratch/goal017-c3-m0-as-is.log`）；治理 `validate.py` = `Cursor 治理验证通过` + `DOCS-CHECK PASS`；13 项 `D-NN` 表 **13 行**逐行在位；承继残余 `R-F1` / `R-F2` / `R-F3` / `R-M1` / `R-D1` / `R-B1` / `R-N1` / `W-1…W-7` 逐条在位。**本 cycle 零产品代码改动**（只动记录面 + `ALL_PLAN` 投影） | 见回合汇报（本 cycle 的推送 run 在其台账行） | **一次按压抓出判据自身恒真**：`git-face` 按压第一版 **GREEN-BAD**——原检查写「文中出现过 `GIT_FACE_UNAVAILABLE`」，而 `validate_bundle.py` 的 docstring 里**引用**着这个词 ⇒ 恒真；改为**绑到声明行**（`GIT_FACE_UNAVAILABLE = "not_a_git_tree"`）后判红。**同类第二次**（cycle 2 的「唯一读取点」第一版按**文本**判、被按压 P3 抓出后改 AST）⇒ 「某处必须存在 X」的判据要问：**文档/注释里出现这个词算不算**（已记入 `MEM-20260925-141`） | **GOAL-017 收口**：EC-01…EC-04 = **全 PASS**。**残余（原样保留，未收口也未掩盖）** = 未授权 4 项（`D-04` hook 侧 L3 / `D-05` 450 行贴线 / `D-06` 路径 (B) 重设计，以及 `D-01(a)` / `D-02(a)` / `D-12(a)` 面）+ `R-M1`（Mimosa 侧结论未得，不得宣称项目安全）+ `R-D1`（`undici` 8 条 + `yaml` 1 条，升级明文未授权）+ `W-4`（本机 m0 仍同进程跑阈值判据）/ `W-5`（新作业多一次冷装）/ `W-6`（`live_run_support.py` 只剩 1 行余量） | —（**终态，无下一轮输入**；后续轮次按 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 重新拍板） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -638,7 +663,8 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 | --- | --- | --- | --- |
 | 建档（GOAL-017 落地） | `25d802b` | M0 [36156959548](https://github.com/Eswink/research-system-new/actions/runs/36156959548) / CodeQL [36156958765](https://github.com/Eswink/research-system-new/actions/runs/36156958765) | **绿（六 job 全 success + CodeQL 3/3）**（`run_attempt=1`）：M0 `conclusion=success`，逐 job `eval-gate` / `console-frontend` / `quality-windows-latest` / `container-quality` / `quality-ubuntu-latest` / `collector-quality` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)` **3/3 `success`**。轮询日志 `scratch/goal017-c0-ci-poll.log`（第 39 轮 `completed=2/2`、`ALL_TERMINAL`） |
 | cycle 1 实施（EC-01） | `9cfba09` | M0 [36163737079](https://github.com/Eswink/research-system-new/actions/runs/36163737079) / CodeQL [36163735853](https://github.com/Eswink/research-system-new/actions/runs/36163735853) | **`run_attempt=1` 红 ⇒ `run_attempt=2` 绿**：attempt 1 里 `quality-windows-latest` **failure**（`AssertionError: RSS grew 175.3 MiB (leak suspected)`，`tests/observability/test_telemetry_overhead.py:150`），其余 5 job `success`；同代码 **attempt 2 六 job 全 `success`** ⇒ run `conclusion=success`（**同代码同 job 不同结论 = `(ii)` 负载敏感偶发红**，判据与阈值**一字未动**；同类第二次，G-015 是 174.0 MiB ⇒ D-13 的升级依据）。CodeQL `Push on main` `conclusion=success`，`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)` **3/3 `success`**。轮询日志 `scratch/goal017-c1-ci-poll.log`（第 37 轮 `completed=2/2`、`ALL_TERMINAL`）+ 复跑 `scratch/goal017-c1-ci-rerun.log`；失败 job 全量日志 `scratch/goal017-c1-win-full.log`（第 1477 行 = 唯一失败用例） |
-| cycle 2 实施（EC-02 + EC-03） | 见回合汇报 | 见回合汇报 | —（台账尾巴：本行所在提交的 run 终态在**回合汇报**给出；本 cycle 把该阈值判据拆进 `observability-overhead` 专用作业 ⇒ 下一行起该 job 成为六 job 之外的**第七**个受查作业） |
+| cycle 2 实施（EC-02 + EC-03） | `958c321` + `505f2ab`（tip） | M0 [36172112981](https://github.com/Eswink/research-system-new/actions/runs/36172112981) / CodeQL [36172112740](https://github.com/Eswink/research-system-new/actions/runs/36172112740) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，一次成功）：M0 `conclusion=success`，逐 job `quality-ubuntu-latest` / `quality-windows-latest` / **`observability-overhead-ubuntu-latest`** / **`observability-overhead-windows-latest`** / `eval-gate` / `container-quality` / `collector-quality` / `console-frontend` **全 `success`**——**新拆出的专用作业首跑即绿**（含此前两次判红的 windows 平台，且该 job 的判据与阈值一字未动 ⇒ 归因只能落在**进程边界**上）。CodeQL `Push on main` `conclusion=success`，`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)` **3/3 `success`**。轮询日志 `scratch/goal017-c2-ci-poll.log`（第 39 轮 `completed=2/2`、`ALL_TERMINAL`） |
+| cycle 3 实施（EC-04 收口） | 见回合汇报（收口提交：记录面 + GOAL `ACTIVE → ACHIEVED`） | 见回合汇报 | —（台账尾巴：本行所在提交的 run 终态在**回合汇报**给出；收口惯例——写入台账那一行的提交，其 run 要在推送后才知其结论） |
 
 ## 状态历史
 
@@ -647,6 +673,7 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 | 2026-09-25 | ACTIVE | 建档：用户会话指令（goal 模式）按 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 的**建议列**拍板三条并**授权实施**（D-10(a) / D-11(a) / D-13(a)+(b)）；四 EC 设计（D-10 门禁 scoping / D-11 live 显式开关 / D-13 观测作业隔离 / 收口复检）。**明确不授权**：`undici` 与 `yaml` 升级、D-01(a)、D-02(a)、D-04、D-05、D-06、`ADR-0031` 的 `Status`、D-12(a)。**建档时零代码改动**（只增本文件）。 |
 | 2026-09-25 | ACTIVE | cycle 1：**EC-01 = PASS**（D-10(a) 门禁 scoping）——输入面改由 **git 决定**（已跟踪 ∪ 未跟踪未忽略），**跟踪文件照旧全扫**（判据 ②③ 取证），**git 面不可用当场点名硬失败**（`not_a_git_tree`）；判据 **`3 passed`**，反证（worktree 先红后绿 + force-add 后**又红**）与按压（`TOTAL 4 → 3`）留档；**零放宽**（判据面逐字未改、`NON_SOURCE_DIRS` 零新增、版本号两段未改）；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`R-3` 消失、不再需要代管、证人文件仍在场）。一次环境红（Docker OOM 注入）如实登记为 `(ii)` 类、判据未动。其余三 EC 仍 PENDING。 |
 | 2026-09-25 | ACTIVE | cycle 2：**EC-02 = PASS**（D-11(a) live 显式开关）——`live_run_gate.py` 增产品常量 `LIVE_RUN_SWITCH` + **必填**参数 `live_switch`（门从两条变**三条**，凭据由充分降为**必要**）；环境读取**全仓一个点**（`live_e2e_switch_enabled`，值恰为 `1`）；12 个 live 模块**全部**同源（8 经门 / 4 经谓词）；4 个既有门判据**只收紧**，新判据 14 条 + **6 次按压全红**（含一次**判据自身漏检**被按压抓出 ⇒ 改 AST）；**三态实跑**（①skip 点名开关 ②skip 点名凭据 ③门开、真实 run 到终态 = 本 GOAL 唯一一次真实出网）；runbook §4/§7/§8 逐字同源。**EC-03 = PASS**（D-13(a)+(b) 作业隔离）——`observability-overhead` 专用作业（矩阵 ubuntu + windows 保平台覆盖）+ `quality-*` 侧 `PYTEST_ADDOPTS` 排除；**判据与阈值零改动**（`git diff` 空）、机制取证 `3 → 0`、隔离进程 `3 passed`、无豁免键 ⇒ 传播路径不变。cycle 1 的 CI 尾巴：attempt 1 红在该阈值判据、attempt 2 全绿（`(ii)` 类，判据未动）。EC-04 仍 PENDING。 |
+| 2026-09-25 | **ACHIEVED** | cycle 3：**EC-04 = PASS**（收口复检 + 残余登记）——独立复检脚本（**不复用本 GOAL 的叙述**）在**当前树**与**干净 checkout** 两路同结论（**14 条结构断言 + 5 个判据目标 `3/14/18/3/5 passed`**；**判词列 19/19 两树相同**——整份输出差异**恰一行**且只在 EC 状态那行的**明细文字**上（干净树停在 `505f2ab`，其 GOAL 仍写 `PENDING`）），**5/5 按压 `RED-OK`**（非恒真）；**as-is 本机 m0 终态行 = `PASS: profile=m0; 23 deterministic checks`**（`R-3` 已消除、**不再需要代管跑法**）；13 项 `D-NN` 终态表 13 行在位（D-10 / D-11 / D-13 = 已实施）；治理 `validate.py` + `DOCS-CHECK` 绿；CI 台账补到终态。**本 GOAL 三条授权决定（D-10 / D-11 / D-13）全部落地**，**零**放宽判据 / 阈值 / 策略面，**零**新依赖，**未**触碰四条明文不授权项。承继残余 **原样保留**（`R-M1` / `R-D1` / `W-1…W-7` 等）。 |
 
 ## 13 项 `D-NN` 终态表（EC-04④）
 
@@ -674,45 +701,62 @@ GOAL-017 的四个 EC 里**实际做了什么**（未授权项一律「未实施
 | D-12 | 威胁建模 / 授权面覆盖（BOLA / BFLA） | 取 (b)：文档级草案；**(a) 仍需另行拍板** | **已实施 (b)**（GOAL-016 EC-05）；**本 GOAL 不做 (a)** | `docs/security/THREAT_MODEL.md` 第 6 节（含 6.3 未覆盖范围 / 6.4 与 M18 边界）；**diff 只含 docs** | 授权面覆盖缺系统性论证；`R-M1` 无法据此收口 |
 | D-13 | CI 上「资源阈值型判据」的负载敏感性 | **本轮拍板：取 (a) 的协议 + 授权接近 (b) 的作业隔离**——判据与阈值一字不动，只改**作业结构** | **已实施**（**本 GOAL 的 EC-03** / PLAN-182） | 授权原文见 `authorization.ref` (3)（边界 a–d）；as-is 证人 = GOAL-015 的 run `36071654181`（174.0 MiB）**与**本 GOAL cycle 1 的 run `36163737079`（175.3 MiB），两次都靠 `run_attempt=2` 转绿 ⇒ 同类**第二次**；落地 = 新作业 `observability-overhead`（矩阵 ubuntu + windows）+ `quality-*` 的 `PYTEST_ADDOPTS: --ignore=…`；**判据/阈值零改动**（`git diff` 空）、机制取证 `3 → 0`、隔离进程 `3 passed`、无 `continue-on-error` ⇒ 传播不变 | 同类判据会继续在**负载高**的运行器上偶发判红，每次都要人工复跑 + 归因，且**红绿不一致会削弱结论可信度** |
 
-**汇总（cycle 2 后）**：**已实施 9 项**（D-01 / D-02 / D-03 部分 / D-07 / D-08 / D-09 / D-12
+**汇总（cycle 3 收口后）**：**已实施 9 项**（D-01 / D-02 / D-03 部分 / D-07 / D-08 / D-09 / D-12
 + **D-10** + **D-11** + **D-13**）**+ 未授权 4 项**（D-04 / D-05 / D-06 与 D-01(a) / D-02(a) /
-D-12(a) 的 (a) 面）——即：**三条本轮授权的决定全部已实施**。
+D-12(a) 的 (a) 面）——即：**三条本轮授权的决定全部已实施**，并经
+`RECHECK-20260925-185`（收口复检，8 条 AC）独立复核：两树同结论 + 5/5 按压非恒真 +
+as-is 本机 m0 **23/23** 终态行。
 **未授权项一律原样保留**，其红 / 缺口**未**被本 GOAL 收口，也**未**被本 GOAL 掩盖。
 
 ## 当前续点
 
-- **GOAL-017 = ACTIVE（2026-09-25）**：cycle 0 = 建档（**零代码改动**）；cycle 1 = **EC-01 PASS**
-  （D-10 门禁 scoping，as-is 本机 m0 **23/23**）；cycle 2 = **EC-02 PASS + EC-03 PASS**
-  （D-11 live 显式开关；D-13 观测作业隔离）；cycle 3 = **EC-04 收口复检 + 残余登记**。
-- **续点判定**：cycle 2 的 commit + CI 到终态后 ⇒ **下一步 = cycle 3（EC-04）**；
-  EC-04 的四件交付物：① `scratch/` 两树复检脚本（干净 checkout 封印）② **as-is 本机 m0 终态行**
-  ③ 13 项 `D-NN` 终态表（本表，收口时逐行确认）④ CI 台账补到终态（含**第七**个作业
-  `observability-overhead` 的首次实跑结论）。
-- **进度**：EC-01 / EC-02 / EC-03 = **PASS**；EC-04 = PENDING（budget `max_cycles: 20`，
-  用掉 2；`no_progress_stop_cycles: 2` 未触发）。
-- **依赖面**：**本 GOAL 不做任何 pin 变更**（`undici` / `yaml` 明文未授权）；
+- **GOAL-017 = ACHIEVED（2026-09-25，**终态**）**：cycle 0 = 建档（**零代码改动**）；
+  cycle 1 = **EC-01 PASS**（D-10 门禁 scoping）；cycle 2 = **EC-02 PASS + EC-03 PASS**
+  （D-11 live 显式开关；D-13 观测作业隔离）；cycle 3 = **EC-04 PASS**（收口复检 + 残余登记）
+  ⇒ **四 EC 全 PASS，`status: ACHIEVED`**。
+- **收口判词（一句话）**：用户拍板的三条决定（**D-10 门禁 scoping / D-11 live 显式开关 /
+  D-13 观测作业隔离**）已全部落地为**可复核的工程事实**——**判据 / 阈值 / 策略面零放宽**、
+  **零新依赖**、**零** domain / DTO / migration 变化；`R-3` 消除；**as-is 本机 m0 终态行
+  = `PASS: profile=m0; 23 deterministic checks`**；**D-13 的落地形态是「改了作业结构」**
+  （判据与阈值一字未动，`git diff` 空）。
+- **不再有循环续点**：本 GOAL 的 `no_progress_stop_cycles` / `max_cycles` 已无意义
+  （budget 用掉 3 / 20）。**下一步的处理方式**：按 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md`
+  对**未授权 4 项 + 承继残余**重新拍板，另开 GOAL；**不要再在本文件上继续推进**。
+- **末次遗留（如实登记，不是待办）**：`W-1`（本机无 `make`，m0 走 `Makefile` 的展开命令）、
+  `W-2`（两树 `diff` 覆盖的是复检脚本输出面，不含记录面文字）、`W-3`（判据的「词出现 ≠ 声明在位」
+  已两次被抓）、`W-4`（本机 m0 仍同进程跑阈值判据）、`W-5`（新作业多一次冷装）、
+  `W-6`（`tests/e2e/live_run_support.py` 只剩 1 行余量）；干净树 `D:\rs-ec04-clean` 待清理
+  （另有 `g013final` / `goal015-c3-clean` 两个更早的遗留 worktree，不属本 GOAL）。
+- **依赖面**：**本 GOAL 未做任何 pin 变更**（`undici` / `yaml` 明文未授权）；
   `vite` 已由 GOAL-016 EC-03 停在 `6.4.3`。
-- **开局已核实的文件层事实（决定可行性）**：
-  1. **D-10 已完成**：`git_decided_inputs()` 只服务**链接扫描**；`check_versions()` 的两段
-     **仍扫全工作区**（刻意围栏，见 `RECHECK-181` 的 `W-1`）。
-  2. **`R-3` 已消失**：as-is 本机 m0 = 23/23（`scratch/goal017-c1b-m0-as-is.log`）。
-  3. **D-11 已完成**：门三条条件（开关 / runtime / 凭据）；开关名**一个声明点**、
-     环境**一个读取点**；12 个 live 模块同源；**新加 live 模块必须在判据的 `LIVE_MODULES`
-     清单里露头**（否则判据红）。
-  4. **D-11 的口径（写给下一轮读的人）**：开关**恰为 `1`** 才算开；**开关开、凭据缺 ⇒ 如实
-     skip 并点名**（不是失败、也不是通过）；凭据值**永不**进记录（判词 + 计数是唯一读数面）。
-  5. **runbook 同源判据已在树且已按新口径更新**：`tests/architecture/python/test_runbook_same_source.py`
+- **实现层事实（写给下一轮读的人）**：
+  1. **D-10**：`git_decided_inputs()` 只服务**链接扫描**；`check_versions()` 的两段
+     **仍扫全工作区**（刻意围栏，见 `RECHECK-181` 的 `W-1`）；git 面不可用 = **点名
+     `not_a_git_tree` + 硬失败**（永不静默通过）。
+  2. **`R-3` 已消失**：as-is 本机 m0 = 23/23（`scratch/goal017-c1b-m0-as-is.log`、
+     收口版 `scratch/goal017-c3-m0-as-is.log`）。
+  3. **D-11**：门三条条件（开关 / runtime / 凭据）；开关名**一个声明点**（产品常量
+     `LIVE_RUN_SWITCH`）、环境**一个读取点**（`tests/e2e/live_switch_support.py`）；
+     12 个 live 模块同源；**新加 live 模块必须在判据的 `LIVE_MODULES` 清单里露头**（否则判据红）。
+  4. **D-11 的口径**：开关**恰为 `1`** 才算开；**开关开、凭据缺 ⇒ 如实 skip 并点名**（不是失败、
+     也不是通过）；凭据值**永不**进记录（判词 + 计数是唯一读数面）；开关**永不**持久化
+     （判据扫 `examples/**` 与 `.env*`）。
+  5. **runbook 同源判据已在树**：`tests/architecture/python/test_runbook_same_source.py`
      （反引号里的仓库路径 / ENV 名 / pytest 目标必须真实存在）+ 新判据按**导入的常量**比对 §4。
-  6. **D-13 的关键事实**：`collector-quality` 的 `-m "requires_collector or postgres or distributed"`
-     **反选**掉了无标记的阈值判据 ⇒ 它的 CI 执行点**现在**是专用作业 `observability-overhead`
-     （矩阵 ubuntu + windows）；本机 m0 **仍**在同一进程里跑它（授权面是 CI 作业结构，见 `W-4`）。
+     **反引号里不要写 glob**（判据会当成路径）。
+  6. **D-13**：`collector-quality` 的 `-m "requires_collector or postgres or distributed"`
+     **反选**掉了无标记的阈值判据 ⇒ 它的 CI 执行点是专用作业 `observability-overhead`
+     （矩阵 ubuntu + windows，**保平台覆盖**）；本机 m0 **仍**在同一进程里跑它（授权面是
+     CI 作业结构，见 `W-4`）。
   7. **CI 结构判据在树**：`tests/tooling/test_m0_ci_coverage.py` ⇒ 任何新 job 必须满足
      「跑 Python 门之前先预热 tokenizer」且不得让 `gate_jobs >= 4` 的反证失效
-     （本 cycle 后 `gate_jobs` = **5**）；`validate_cursor_framework.py` 另有一组 workflow token 判据
-     （`ubuntu-latest` / `windows-latest` / `--profile m0` / `--keep-going` / `contents: read` … 全在）。
+     （收口时 `gate_jobs` = **5**，总作业 **8**）；`validate_cursor_framework.py` 另有一组 workflow
+     token 判据（`ubuntu-latest` / `windows-latest` / `--profile m0` / `--keep-going` /
+     `contents: read` … 全在）。
   8. **跑法**：m0 与代管脚本**一律**走 `uv run --frozen --no-sync python -B …`；
-     m0 全量**独占运行**、用**仓库 `.venv`**；**写记录时不要跑 m0**。
-  9. **全局编号**：下一个 `PLAN` / `RECHECK` = **184** / **185**；`MEM` 下一个 = **142**。
+     m0 全量**独占运行**、用**仓库 `.venv`**；**写记录时不要跑 m0**（会撞 framework 检查）。
+  9. **全局编号**：下一个 `PLAN` / `RECHECK` = **186** / **187**；`MEM` 下一个 = **142**
+     （本 GOAL 收口**未**新增 MEM：cycle 2 的 `MEM-141` 已含本次的「词出现 ≠ 声明在位」教训）。
  10. **工作树并发写者**：`apps/web/src/features/models/ModelDetails.tsx` /
-     `packages/domain/model_drift.py` / `services/api/dto/models.py`（内容 diff 为空）
-     ⇒ **不碰、不提交**。
+     `packages/domain/model_drift.py` / `services/api/dto/models.py`
+     ⇒ **不碰、不提交**（本 GOAL 全程如此）。
