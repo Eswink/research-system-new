@@ -2,6 +2,10 @@
 
 这些判据**不开网络、不需要凭据**，是默认 CI 能跑的那一半。live 那一半在
 `tests/e2e/test_ec04_live_first_run.py`（`requires_live_llm`，无凭据如实 skip）。
+
+**门的条件数在 GOAL-017 EC-02（D-11）从两条变成三条**：显式开关 / runtime 显式配置 /
+凭据可解析。本文件把三条件各自的**必要性**与合取的**充分性**都钉成判据；
+`switch=` 在每个调用点**显式写出**——不给「忘了传就当它开着」留形态。
 """
 
 from __future__ import annotations
@@ -14,6 +18,7 @@ import pytest
 
 from adapters.relay.credential_resolver import EnvCredentialResolver
 from packages.application.model_relay.live_run_gate import (
+    LIVE_RUN_SWITCH,
     evaluate_live_run_gate,
     skip_record_for_gate,
 )
@@ -29,50 +34,112 @@ def _resolver(**values: str) -> EnvCredentialResolver:
     return EnvCredentialResolver(environment=dict(values))
 
 
-def _gate(*, runtime: str, resolver: EnvCredentialResolver) -> object:
+def _gate(*, runtime: str, resolver: EnvCredentialResolver, switch: bool) -> object:
     return evaluate_live_run_gate(
         credentials=resolver,
         endpoint=replace(endpoint(), credential_ref=_CREDENTIAL_REF),
         agent_runtime=runtime,
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=switch,
     )
 
 
 class TestGateIsClosedByDefault:
-    """默认门是关的：默认 runtime 是 Fake，默认无凭据。"""
+    """默认门是关的：默认 runtime 是 Fake，默认无凭据，默认无显式开关。"""
 
     def test_unset_runtime_closes_the_gate_even_with_a_credential(self) -> None:
-        gate = _gate(runtime="", resolver=_resolver(**{_CREDENTIAL_REF: "present"}))
+        gate = _gate(runtime="", resolver=_resolver(**{_CREDENTIAL_REF: "present"}), switch=True)
         assert gate.open is False  # type: ignore[attr-defined]
         assert "not configured" in gate.reason  # type: ignore[attr-defined]
 
     def test_fake_runtime_closes_the_gate(self) -> None:
         """Fake 跑出来的不是 live run：显式配 Fake 也必须关门。"""
-        gate = _gate(runtime=FAKE_RUNTIME, resolver=_resolver(**{_CREDENTIAL_REF: "present"}))
+        gate = _gate(
+            runtime=FAKE_RUNTIME, resolver=_resolver(**{_CREDENTIAL_REF: "present"}), switch=True
+        )
         assert gate.open is False  # type: ignore[attr-defined]
         assert FAKE_RUNTIME in gate.reason  # type: ignore[attr-defined]
 
     def test_missing_credential_closes_the_gate_and_names_the_ref(self) -> None:
-        gate = _gate(runtime=OPENHANDS_RUNTIME, resolver=_resolver())
+        gate = _gate(runtime=OPENHANDS_RUNTIME, resolver=_resolver(), switch=True)
         assert gate.open is False  # type: ignore[attr-defined]
         assert _CREDENTIAL_REF in gate.reason  # type: ignore[attr-defined]
         assert gate.credential_ref == _CREDENTIAL_REF  # type: ignore[attr-defined]
 
     def test_empty_credential_value_closes_the_gate(self) -> None:
         """变量存在但为空 == 不可解析（与 `has` 的语义一致）。"""
-        gate = _gate(runtime=OPENHANDS_RUNTIME, resolver=_resolver(**{_CREDENTIAL_REF: ""}))
+        gate = _gate(
+            runtime=OPENHANDS_RUNTIME, resolver=_resolver(**{_CREDENTIAL_REF: ""}), switch=True
+        )
         assert gate.open is False  # type: ignore[attr-defined]
 
     def test_closed_gate_names_every_unmet_condition(self) -> None:
         """只报一条会让操作者多跑一个来回 ⇒ 未满足的条件必须都点名。"""
-        gate = _gate(runtime="", resolver=_resolver())
+        gate = _gate(runtime="", resolver=_resolver(), switch=True)
         assert "not configured" in gate.reason  # type: ignore[attr-defined]
         assert _CREDENTIAL_REF in gate.reason  # type: ignore[attr-defined]
 
 
-class TestGateOpensOnlyWithBothConditions:
-    def test_open_with_live_runtime_and_resolvable_credential(self) -> None:
-        gate = _gate(runtime=OPENHANDS_RUNTIME, resolver=_resolver(**{_CREDENTIAL_REF: "present"}))
+class TestTheSwitchIsAnIndependentCondition:
+    """D-11：**显式开关**是独立条件 ⇒ 凭据从**充分**条件降为**必要**条件。
+
+    成对判据（只判一条都不算数——单条能同时兼容「开关是摆设」与「开关是唯一判据」
+    两种实现）：同样的 runtime + 同样的凭据，`switch=False` **关门**、`switch=True` **开门**。
+    """
+
+    def test_switch_off_closes_the_gate_even_with_runtime_and_credential(self) -> None:
+        gate = _gate(
+            runtime=OPENHANDS_RUNTIME,
+            resolver=_resolver(**{_CREDENTIAL_REF: "present"}),
+            switch=False,
+        )
+        assert gate.open is False  # type: ignore[attr-defined]
+        assert LIVE_RUN_SWITCH in gate.reason  # type: ignore[attr-defined]
+
+    def test_the_same_inputs_open_once_the_switch_is_on(self) -> None:
+        gate = _gate(
+            runtime=OPENHANDS_RUNTIME,
+            resolver=_resolver(**{_CREDENTIAL_REF: "present"}),
+            switch=True,
+        )
+        assert gate.open is True  # type: ignore[attr-defined]
+
+    def test_the_default_posture_is_closed_and_names_all_three(self) -> None:
+        """默认姿态（开关未声明 / runtime 未配置 / 凭据不可解析）⇒ 关门且**逐条点名**。
+
+        这条是「默认门离线、不跑 live 用例」的可判形态：三个条件一个都不满足。
+        """
+        gate = _gate(runtime="", resolver=_resolver(), switch=False)
+        assert gate.open is False  # type: ignore[attr-defined]
+        assert LIVE_RUN_SWITCH in gate.reason  # type: ignore[attr-defined]
+        assert "not configured" in gate.reason  # type: ignore[attr-defined]
+        assert _CREDENTIAL_REF in gate.reason  # type: ignore[attr-defined]
+
+    def test_the_switch_is_named_before_the_other_conditions(self) -> None:
+        """理由顺序：开关排最前。操作者第一眼该看到「开关没开」，而不是别的条件。"""
+        gate = _gate(runtime=OPENHANDS_RUNTIME, resolver=_resolver(), switch=False)
+        assert gate.reason.index(LIVE_RUN_SWITCH) < gate.reason.index(_CREDENTIAL_REF)  # type: ignore[attr-defined]
+
+    def test_switch_off_skip_record_names_the_switch(self) -> None:
+        """skip 记录的措辞**同源**：门关着 ⇒ 记录里点名**开关**（skip 不是 PASS）。"""
+        gate = _gate(
+            runtime=OPENHANDS_RUNTIME,
+            resolver=_resolver(**{_CREDENTIAL_REF: "present"}),
+            switch=False,
+        )
+        record = skip_record_for_gate(_RUN_ID, gate)  # type: ignore[arg-type]
+        assert record.is_verified is False
+        assert record.verdict is ModelReproducibilityVerdict.NOT_VERIFIED
+        assert LIVE_RUN_SWITCH in (record.reason or "")
+
+
+class TestGateOpensOnlyWithAllThreeConditions:
+    def test_open_with_live_runtime_resolvable_credential_and_switch(self) -> None:
+        gate = _gate(
+            runtime=OPENHANDS_RUNTIME,
+            resolver=_resolver(**{_CREDENTIAL_REF: "present"}),
+            switch=True,
+        )
         assert gate.open is True  # type: ignore[attr-defined]
 
     def test_gate_never_materialises_the_credential(self) -> None:
@@ -90,6 +157,7 @@ class TestGateOpensOnlyWithBothConditions:
             endpoint=replace(endpoint(), credential_ref=_CREDENTIAL_REF),
             agent_runtime=OPENHANDS_RUNTIME,
             live_agent_runtime=OPENHANDS_RUNTIME,
+            live_switch=True,
         )
         assert gate.open is True
 
@@ -102,7 +170,7 @@ class TestZeroOutboundWhileClosed:
             raise AssertionError("the closed gate must not open a socket")
 
         with mock.patch.object(socket, "socket", _no_network):
-            gate = _gate(runtime="", resolver=_resolver())
+            gate = _gate(runtime="", resolver=_resolver(), switch=False)
             record = skip_record_for_gate(_RUN_ID, gate)  # type: ignore[arg-type]
 
         assert gate.open is False  # type: ignore[attr-defined]
@@ -111,20 +179,24 @@ class TestZeroOutboundWhileClosed:
 
 class TestSkipIsNotAPass:
     def test_skip_record_is_not_verified_and_names_the_credential(self) -> None:
-        gate = _gate(runtime=OPENHANDS_RUNTIME, resolver=_resolver())
+        gate = _gate(runtime=OPENHANDS_RUNTIME, resolver=_resolver(), switch=True)
         record = skip_record_for_gate(_RUN_ID, gate)  # type: ignore[arg-type]
         assert record.is_verified is False
         assert record.verdict is ModelReproducibilityVerdict.NOT_VERIFIED
         assert _CREDENTIAL_REF in (record.reason or "")
 
     def test_skip_record_registers_every_fingerprint_field_as_missing(self) -> None:
-        gate = _gate(runtime="", resolver=_resolver())
+        gate = _gate(runtime="", resolver=_resolver(), switch=False)
         record = skip_record_for_gate(_RUN_ID, gate)  # type: ignore[arg-type]
         assert "endpoint_config_digest" in record.missing_fields
         assert record.model_tokens == 0 and record.usage_entries == 0
 
     def test_open_gate_is_not_a_skip(self) -> None:
-        gate = _gate(runtime=OPENHANDS_RUNTIME, resolver=_resolver(**{_CREDENTIAL_REF: "present"}))
+        gate = _gate(
+            runtime=OPENHANDS_RUNTIME,
+            resolver=_resolver(**{_CREDENTIAL_REF: "present"}),
+            switch=True,
+        )
         with pytest.raises(ValueError, match="not a skip"):
             skip_record_for_gate(_RUN_ID, gate)  # type: ignore[arg-type]
 

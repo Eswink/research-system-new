@@ -37,7 +37,12 @@ from packages.application.model_relay.live_run_gate import (
     skip_record_for_gate,
 )
 from services.api.runtime_support import OPENHANDS_RUNTIME
-from tests.e2e.live_run_support import openhands_deps, run_failures, start_run
+from tests.e2e.live_run_support import (
+    openhands_deps,
+    run_failures,
+    start_run,
+)
+from tests.e2e.live_switch_support import live_e2e_switch_enabled
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -117,6 +122,7 @@ def test_the_real_run_covers_evidence_with_a_declared_input(tmp_path: Path) -> N
         endpoint=load_llm_endpoints(_ENDPOINTS)[_ENDPOINT],
         agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=live_e2e_switch_enabled(),
     )
     if not gate.open:
         pytest.skip(f"live run skipped: {skip_record_for_gate(_RUN_ID, gate).reason}")

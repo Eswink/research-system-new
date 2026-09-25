@@ -67,11 +67,14 @@ def _row(label: str) -> str:
 
 
 def _gate(resolver: object) -> object:
+    #: 本判据的靶子是**凭据生命周期**（快照 / 撤销）⇒ 另外两条开门条件（显式开关 /
+    #: live runtime）**显式置为满足**，否则「撤销 ⇒ 关门」会被「开关没开」掩盖成恰好绿。
     return evaluate_live_run_gate(
         credentials=resolver,  # type: ignore[arg-type]
         endpoint=replace(endpoint(), credential_ref=_CREDENTIAL_REF),
         agent_runtime=OPENHANDS_RUNTIME,
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=True,
     )
 
 

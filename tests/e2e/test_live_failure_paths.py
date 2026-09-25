@@ -33,7 +33,12 @@ from adapters.relay.credential_resolver import EnvCredentialResolver
 from packages.application.model_relay.live_run_gate import evaluate_live_run_gate
 from packages.domain.budget import ResourceType
 from services.api.runtime_support import OPENHANDS_RUNTIME
-from tests.e2e.live_run_support import openhands_deps, run_failures, start_run
+from tests.e2e.live_run_support import (
+    openhands_deps,
+    run_failures,
+    start_run,
+)
+from tests.e2e.live_switch_support import live_e2e_switch_enabled
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -65,6 +70,11 @@ def _declared_case() -> str:
             f"{_CASE_ENV} is not set to {_INVALID_CREDENTIAL_CASE!r} — this counter-proof "
             "expects failure by construction and must not run in a normal live suite"
         )
+    if not live_e2e_switch_enabled():
+        pytest.skip(
+            "the live run switch is off — this counter-proof never runs in the default gate "
+            "(it expects failure by construction)"
+        )
     return case
 
 
@@ -79,6 +89,7 @@ def _assert_gate_is_open() -> Any:
         endpoint=endpoint,
         agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=live_e2e_switch_enabled(),
     )
     assert gate.open is True, (
         "the gate must answer the presence question even for an invalid value; "

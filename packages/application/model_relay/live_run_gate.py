@@ -1,14 +1,21 @@
-"""live run 的门（GOAL-008 EC-04）。
+"""live run 的门（GOAL-008 EC-04；开门条件收紧见 GOAL-017 EC-01）。
 
-门回答一个问题：**此刻能不能跑一次真实 run？** 两个条件，都不满足就不开门：
+门回答一个问题：**此刻能不能跑一次真实 run？** 三个条件，任一不满足就不开门：
 
-1. **runtime 显式配置**：默认 runtime 是 Fake（AGENTS.md §11 / 用户授权 (4)）——
+1. **显式开关**：`RESEARCHOS_LIVE_E2E=1`（D-11）。**凭据在场从此只是必要条件**——
+   环境里恰好有一个凭据（哪怕无效）不再足以让默认门真的出网；
+2. **runtime 显式配置**：默认 runtime 是 Fake（AGENTS.md §11 / 用户授权 (4)）——
    Fake 跑出来的不是真实 run，所以门看的是「配置项等于 live runtime」；
-2. **凭据可解析**：用 `CredentialResolver.has()`——它是**存在性检查**，
+3. **凭据可解析**：用 `CredentialResolver.has()`——它是**存在性检查**，
    **不物化明文**（`resolve` 才要值）。门只需要知道「能不能」，不需要知道「是什么」。
 
+**开关名在这里声明、值由调用方传入**（`LIVE_RUN_SWITCH` + 必填参数 `live_switch`）：
+本层**不读环境**（`packages/application/**` 保持 env-free，env 在操作者边界读），
+而参数**必填** ⇒ 调用点漏传是 `TypeError`，不会静默开门。
+唯一的环境读取点在 `tests/e2e/live_run_support.py` 的 `live_e2e_switch_enabled()`。
+
 门不开时**不发起任何网络请求**：本模块不接收 gateway、不构造 URL、不碰 socket，
-只做上面两条判断。因此「门关着 ⇒ 零出站」是**结构性**保证，并由离线判据实测钉住。
+只做上面三条判断。因此「门关着 ⇒ 零出站」是**结构性**保证，并由离线判据实测钉住。
 
 门不开的产物是一条如实的 `NOT_VERIFIED` 记录（`skip_record_for_gate`）——
 **skip 不是 PASS**。
@@ -24,6 +31,9 @@ from packages.application.model_relay.live_run_record import (
 )
 from packages.application.ports import CredentialResolver
 from packages.domain.models import LLMEndpoint
+
+#: live run 的显式开关名（**唯一声明点**；值必须在操作者的环境里恰为 `1`）。
+LIVE_RUN_SWITCH = "RESEARCHOS_LIVE_E2E"
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,12 +55,16 @@ def evaluate_live_run_gate(
     endpoint: LLMEndpoint,
     agent_runtime: str,
     live_agent_runtime: str,
+    live_switch: bool,
 ) -> LiveRunGate:
     """判定 live run 的门（无网络、无凭据值）。
 
     理由里列出**全部**未满足条件：只报一条会让操作者多跑一个来回。
+    `live_switch` **必填**：漏传即 `TypeError`，不存在「忘了传就默认开门」的形态。
     """
     unmet: list[str] = []
+    if not live_switch:
+        unmet.append(f"live run switch is not on (set {LIVE_RUN_SWITCH}=1 to open)")
     if not agent_runtime:
         unmet.append(
             f"agent runtime is not configured (need {live_agent_runtime!r}; default stays fake)"
@@ -83,4 +97,4 @@ def skip_record_for_gate(run_id: str, gate: LiveRunGate) -> LiveRunRecord:
     )
 
 
-__all__ = ["LiveRunGate", "evaluate_live_run_gate", "skip_record_for_gate"]
+__all__ = ["LIVE_RUN_SWITCH", "LiveRunGate", "evaluate_live_run_gate", "skip_record_for_gate"]

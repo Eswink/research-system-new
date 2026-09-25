@@ -13,11 +13,12 @@
 esearch + 一次 efetch（`literature_read` 的 ids 来自检索结果本身），本判据把请求数
 钉成 2 —— 多一次就红。
 
-操作者口令（值只在环境变量里，永不落盘/回显）：
+操作者口令（值只在环境变量里，永不落盘/回显；**开关 + 凭据缺一不可**，D-11）：
 
 ```bash
 set -a; . ./.env; set +a
-RESEARCHOS_AGENT_RUNTIME=openhands pytest tests/e2e/test_run_chain_retrieval_live.py -q -rs
+RESEARCHOS_LIVE_E2E=1 RESEARCHOS_AGENT_RUNTIME=openhands \
+  pytest tests/e2e/test_run_chain_retrieval_live.py -q -rs
 ```
 """
 
@@ -57,6 +58,7 @@ from tests.e2e.live_run_support import (
 from tests.e2e.live_run_support import (
     with_run_chain_capabilities as _with_run_chain,
 )
+from tests.e2e.live_switch_support import live_e2e_switch_enabled, live_run_switch_off_reason
 
 #: GOAL-011 EC-01 的真实协议（`analysis` phase 声明 run_chain 检索能力）。
 RETRIEVAL_PROTOCOL = "real_retrieval_research_v1.yaml"
@@ -169,6 +171,8 @@ def test_live_run_chain_retrieval_lands_a_real_identifier() -> None:
     `minimum_retrieved_sources: 1`，本 run 能到 `SUCCEEDED` 就是这条性质判据被满足的
     证据（去掉检索 ⇒ 离线判据实测 run 判拒）。
     """
+    if not live_e2e_switch_enabled():
+        pytest.skip(live_run_switch_off_reason())
     credentials = _live_credentials()
     if credentials is None:
         pytest.skip(

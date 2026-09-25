@@ -34,6 +34,7 @@ from adapters.relay.credential_resolver import EnvCredentialResolver
 from adapters.relay.gateway import OpenAIChatGateway
 from packages.application.model_relay.live_probe import run_live_probe
 from packages.application.model_relay.live_run_gate import (
+    LIVE_RUN_SWITCH,
     evaluate_live_run_gate,
     skip_record_for_gate,
 )
@@ -44,7 +45,12 @@ from services.api.runtime_support import OPENHANDS_RUNTIME
 
 # 共享装配见 `live_run_support`：直接 import `test_ec03_*` 会让同一文件被**两个模块名**
 # 加载，SDK 的 Action 子类被定义两次，判别联合随即拒绝后续事件 round-trip（fork 路径就中招）。
-from tests.e2e.live_run_support import openhands_deps, run_failures, start_run
+from tests.e2e.live_run_support import (
+    openhands_deps,
+    run_failures,
+    start_run,
+)
+from tests.e2e.live_switch_support import live_e2e_switch_enabled
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -70,6 +76,7 @@ def _gate() -> Any:
         endpoint=_registered_endpoint(),
         agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=live_e2e_switch_enabled(),
     )
 
 
@@ -171,13 +178,29 @@ def test_live_first_run_reaches_a_terminal_state(tmp_path: Path) -> None:
 
 
 def test_live_gate_stays_closed_without_configuration() -> None:
-    """门的存在性：本机默认（无 runtime 配置、无凭据）**必须**是关的。"""
+    """门的存在性：只要**三条**开门条件缺任一，门就是关的，且理由**逐条点名**缺的那些。
+
+    D-11 之后条件是三条（显式开关 / runtime / 凭据），所以断言不能写成「点名 runtime
+    或凭据」的二选一：**只用 runtime 开关、忘了 live 开关**是一个真实的操作者状态，
+    那时两条都不在理由里，二选一判据会红——而门的行为是对的。
+    这里**独立重算**当前哪些条件不满足，再要求理由把它们**全部**点名（比原判据更严）。
+    """
     gate = _gate()
     if gate.open:
         pytest.skip("gate is open on this machine: the live branch above is the meaningful one")
     record = skip_record_for_gate(_RUN_ID, gate)
     assert record.is_verified is False
     assert record.verdict is ModelReproducibilityVerdict.NOT_VERIFIED
-    # 关门理由点名未满足的条件：runtime 未配置，或缺哪个凭据
+
+    endpoint = _registered_endpoint()
+    expected_absent: list[str] = []
+    if not live_e2e_switch_enabled():
+        expected_absent.append(LIVE_RUN_SWITCH)
+    if os.environ.get("RESEARCHOS_AGENT_RUNTIME", "") != OPENHANDS_RUNTIME:
+        expected_absent.append("not configured")
+    if not EnvCredentialResolver().has(endpoint.credential_ref):
+        expected_absent.append(endpoint.credential_ref)
     reason = record.reason or ""
-    assert "not configured" in reason or _registered_endpoint().credential_ref in reason, reason
+    assert expected_absent, "门是关的 ⇒ 至少有一条条件不满足（判据非空转）"
+    for needle in expected_absent:
+        assert needle in reason, (needle, reason)

@@ -40,7 +40,13 @@ from packages.application.model_relay.live_run_gate import (
     skip_record_for_gate,
 )
 from services.api.runtime_support import OPENHANDS_RUNTIME
-from tests.e2e.live_run_support import REAL_PROTOCOL, openhands_deps, run_failures, start_run
+from tests.e2e.live_run_support import (
+    REAL_PROTOCOL,
+    openhands_deps,
+    run_failures,
+    start_run,
+)
+from tests.e2e.live_switch_support import live_e2e_switch_enabled
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -65,6 +71,7 @@ def _gate() -> Any:
         endpoint=_registered_endpoint(),
         agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=live_e2e_switch_enabled(),
     )
 
 

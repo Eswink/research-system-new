@@ -63,6 +63,7 @@ from tests.e2e.live_run_support import (
     start_run,
     with_sandbox_experiment,
 )
+from tests.e2e.live_switch_support import live_e2e_switch_enabled
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -86,6 +87,7 @@ def _gate() -> Any:
         endpoint=_registered_endpoint(),
         agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=live_e2e_switch_enabled(),
     )
 
 

@@ -49,6 +49,7 @@ from tests.e2e.live_control_plane_support import (
     product_control_plane_deps,
     with_contract_declared_experiment,
 )
+from tests.e2e.live_switch_support import live_e2e_switch_enabled
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -73,6 +74,7 @@ def _gate() -> Any:
         endpoint=_endpoint(),
         agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=live_e2e_switch_enabled(),
     )
 
 

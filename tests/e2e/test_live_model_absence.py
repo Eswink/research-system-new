@@ -10,10 +10,12 @@ provider 侧的真实样本只有「无效凭据 ⇒ 401」那一条。本模块
 
 **预置条件（显式开关，单条命令内联前缀，不写任何文件）**：
 
-    RESEARCHOS_LIVE_MODEL_ABSENCE_CASE=1 LLM_MAIN_KEY=<值> \
+    RESEARCHOS_LIVE_E2E=1 RESEARCHOS_LIVE_MODEL_ABSENCE_CASE=1 LLM_MAIN_KEY=<值> \
       pytest tests/e2e/test_live_model_absence.py -s
 
-未声明 ⇒ **SKIP 并点名**：本用例会发起真实调用，不该被顺手跑掉。
+**两道门都关着就跑不成**：`RESEARCHOS_LIVE_E2E=1` 是 live run 的通用显式开关（D-11），
+`RESEARCHOS_LIVE_MODEL_ABSENCE_CASE=1` 是本**反证样本**自己的预置条件（它会故意失败，
+不该被顺手跑掉）。任一未声明 ⇒ **SKIP 并点名**缺的是哪一个。
 
 **它判什么 / 不判什么**：
 
@@ -50,6 +52,7 @@ from packages.application.ports import (
     SecretValue,
 )
 from packages.domain.models import EndpointProbeSnapshot, LLMEndpoint
+from tests.e2e.live_switch_support import live_e2e_switch_enabled, live_run_switch_off_reason
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -110,6 +113,8 @@ def _step(
 
 
 def _require_case() -> None:
+    if not live_e2e_switch_enabled():
+        pytest.skip(live_run_switch_off_reason())
     if os.environ.get(_CASE_ENV, "") != "1":
         pytest.skip(f"{_CASE_ENV} is not set to '1' — this sample spends a real call")
 

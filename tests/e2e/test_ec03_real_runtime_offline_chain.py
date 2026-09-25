@@ -60,6 +60,7 @@ from tests.e2e.live_run_support import (
 from tests.e2e.live_run_support import (
     start_run as _start,
 )
+from tests.e2e.live_switch_support import live_e2e_switch_enabled, live_run_switch_off_reason
 
 _PROTOCOL = "console_demo_research_v1.yaml"
 #: GOAL-011 EC-01：声明了 `capability_execution: run_chain` 的真实协议（检索由运行链执行）。
@@ -368,8 +369,10 @@ def test_real_runtime_offline_chain_rejects_a_non_unique_declaration(mock_relay:
 def test_live_endpoint_is_exercised_only_when_credentials_are_configured() -> None:
     """真端点全链的门控用例：无凭据环境**如实 skip**（skip 不是 PASS）。
 
-    要跑它，操作者需同时给出（只经环境变量，永不硬编码、不落盘）：
+    要跑它，操作者需**同时**给出开关与凭据（只经环境变量，永不硬编码、不落盘）：
 
+    - `RESEARCHOS_LIVE_E2E=1`：live run 的显式开关（D-11）——凭据在场从此只是**必要**
+      条件，不再是充分条件；
     - `RESEARCHOS_LIVE_E2E_ENDPOINT`：OpenAI-compatible Base URL（含版本段，
       如 `https://<host>/v1`）；目录里声明的模型须由该端点提供。
     - `RESEARCHOS_LIVE_E2E_KEY`：该端点的 API Key。
@@ -377,6 +380,8 @@ def test_live_endpoint_is_exercised_only_when_credentials_are_configured() -> No
     判据是「真端点被真实调用、usage 真落账」——不是「run 一定成功」：合约层的
     通过与否取决于真实模型产出什么，那属于模型能力，不属于本 EC 的靶子。
     """
+    if not live_e2e_switch_enabled():
+        pytest.skip(live_run_switch_off_reason())
     base_url = os.environ.get("RESEARCHOS_LIVE_E2E_ENDPOINT")
     api_key = os.environ.get("RESEARCHOS_LIVE_E2E_KEY")
     if not base_url or not api_key:

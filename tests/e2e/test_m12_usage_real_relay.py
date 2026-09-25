@@ -4,9 +4,9 @@
 1. 离线（默认 CI）：httpx.MockTransport 脚本化 relay 响应驱动
    `OpenAIChatGateway.complete` → `collect_usage` → `FakeBudgetLedger`，
    证明"真实 relay 响应的 usage 明细 → BudgetLedger"完整代码路径可达。
-2. 手动（`requires_live_llm`，默认 skip）：真实 endpoint + 真实凭据 →
-   probe → 一次最小模型调用 → 断言 ledger 出现真实 usage entry。
-   真实凭据只经环境变量 `RESEARCHOS_LIVE_E2E_ENDPOINT` /
+2. 手动（`requires_live_llm`，默认 skip）：**显式开关 `RESEARCHOS_LIVE_E2E=1`**（D-11）
+   + 真实 endpoint + 真实凭据 → probe → 一次最小模型调用 → 断言 ledger 出现真实
+   usage entry。真实凭据只经环境变量 `RESEARCHOS_LIVE_E2E_ENDPOINT` /
    `RESEARCHOS_LIVE_E2E_KEY` 注入，永不硬编码、不落盘。
 
 诚实标注：真实生产成功路径（wizard 注册凭据 + relay 可达 + 真实模型调用）
@@ -31,6 +31,7 @@ from packages.application.ports.model_gateway import CompletionRequest
 from packages.domain.budget import ResourceType
 from packages.domain.models import LLMEndpoint
 from tests.contracts.fixtures import endpoint
+from tests.e2e.live_switch_support import live_e2e_switch_enabled, live_run_switch_off_reason
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -121,6 +122,8 @@ class TestLiveRelayUsageE2E:
     """真实 relay 路径（requires_live_llm，默认 skip）。"""
 
     def test_live_completion_records_usage(self) -> None:
+        if not live_e2e_switch_enabled():
+            pytest.skip(live_run_switch_off_reason())
         endpoint_url = os.environ.get("RESEARCHOS_LIVE_E2E_ENDPOINT")
         api_key = os.environ.get("RESEARCHOS_LIVE_E2E_KEY")
         if not endpoint_url or not api_key:

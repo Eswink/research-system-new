@@ -22,7 +22,10 @@ from pathlib import Path
 import pytest
 
 from adapters.relay.credential_resolver import EnvCredentialResolver
-from packages.application.model_relay.live_run_gate import evaluate_live_run_gate
+from packages.application.model_relay.live_run_gate import (
+    LIVE_RUN_SWITCH,
+    evaluate_live_run_gate,
+)
 from services.api.runtime_support import OPENHANDS_RUNTIME
 from tests.contracts.fixtures import endpoint
 
@@ -64,11 +67,14 @@ def _row(label: str) -> str:
 
 
 def _gate_with(resolver: object) -> object:
+    #: 本判据的靶子是**凭据语义**（存在性 vs 有效性）⇒ 另外两条开门条件（显式开关 /
+    #: live runtime）**显式置为满足**，否则「无效值也开门」会被开关的缺失掩盖。
     return evaluate_live_run_gate(
         credentials=resolver,  # type: ignore[arg-type]
         endpoint=replace(endpoint(), credential_ref=_CREDENTIAL_REF),
         agent_runtime=OPENHANDS_RUNTIME,
         live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=True,
     )
 
 
@@ -224,20 +230,46 @@ class TestTheModelAbsenceRowPointsAtAMeasuredSample:
     ) -> None:
         """预置条件式：**没声明就 skip**（不是恰好通过）。
 
-        **这一条压过一次**（本 cycle 实测）：第一版写成「样本文件里出现开关名」的**文本**判据，
+        **这一条压过一次**（GOAL-010 实测）：第一版写成「样本文件里出现开关名」的**文本**判据，
         把样本里的开关名改成 `…_PRESSED` 仍然**绿**——被断言的字符串是别名的**前缀**，
         子串判定根本不区分。改成**行为**判据后，改名 ⇒ 下面第二条红（声明的开关点不亮它）。
+
+        **GOAL-017 EC-02 后的修法**：live 的**显式开关**（D-11）是本样本的**上游**条件，
+        不置位时这条判据会因「开关没开」而 skip ⇒ 恰好绿（它就不再区分样本自己的预置条件）。
+        所以这里把上游开关**显式置位**，让本判据只测样本自己的那一格。
         """
         from tests.e2e import test_live_model_absence
 
+        monkeypatch.setenv(LIVE_RUN_SWITCH, "1")
         monkeypatch.delenv(_ABSENCE_CASE_ENV, raising=False)
-        with pytest.raises(pytest.skip.Exception):
+        with pytest.raises(pytest.skip.Exception) as exc:
             test_live_model_absence._require_case()
+        assert _ABSENCE_CASE_ENV in str(exc.value), (
+            "the skip reason must name the sample's own precondition, not something else"
+        )
 
-    def test_the_sample_starts_when_its_switch_is_declared(
+    def test_the_sample_skips_without_the_live_switch(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """配对：声明开关 ⇒ 不再 skip。两条一起才钉住「开关就是这一个名字」。
+        """D-11 的**独立条件**：样本自己的预置条件声明了，live 开关没开 ⇒ 仍然 skip。
+
+        与上一条**成对**：缺哪一条就点名哪一条。只判一条的话，「开关被改名/被绕过」
+        在默认门上不可见（那正是 D-11 要修的形态）。
+        """
+        from tests.e2e import test_live_model_absence
+
+        monkeypatch.delenv(LIVE_RUN_SWITCH, raising=False)
+        monkeypatch.setenv(_ABSENCE_CASE_ENV, "1")
+        with pytest.raises(pytest.skip.Exception) as exc:
+            test_live_model_absence._require_case()
+        assert LIVE_RUN_SWITCH in str(exc.value), (
+            "the skip reason must name the live switch when that is what is missing"
+        )
+
+    def test_the_sample_starts_when_both_switches_are_declared(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """配对：两条预置条件都声明 ⇒ 不再 skip。
 
         **skip 不算红**——所以这里把样本抛出的 skip **转成失败**：否则开关被改名时，
         这条判据自己也跟着 skip，整组又变成「恰好绿」。
@@ -248,6 +280,7 @@ class TestTheModelAbsenceRowPointsAtAMeasuredSample:
             "the sample's precondition switch was renamed — the §7 row and this judge "
             "would keep citing a switch that no longer starts it"
         )
+        monkeypatch.setenv(LIVE_RUN_SWITCH, "1")
         monkeypatch.setenv(_ABSENCE_CASE_ENV, "1")
         try:
             test_live_model_absence._require_case()

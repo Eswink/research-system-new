@@ -106,7 +106,14 @@ curl -X POST http://127.0.0.1:8000/models/<model_id>/probe
 
 ## 4. Fake ↔ 真实：切换与回退
 
-**开关是环境变量 `RESEARCHOS_AGENT_RUNTIME`**（`services/api/settings.py`）：
+**两个开关管两件事**——别把它们当成一个（D-11 之后，凭据**不再是充分条件**）：
+
+| 开关 | 管什么 | 取值 |
+| --- | --- | --- |
+| `RESEARCHOS_AGENT_RUNTIME` | **装配哪一个 runtime**（`services/api/settings.py`） | 见下表 |
+| `RESEARCHOS_LIVE_E2E` | **这一次要不要真的进 live run** | 恰为 `1` 才开；其余任何取值一律算**关** |
+
+**runtime 开关**（`services/api/settings.py`）：
 
 | 取值 | 行为 |
 | --- | --- |
@@ -114,25 +121,42 @@ curl -X POST http://127.0.0.1:8000/models/<model_id>/probe
 | `openhands` | 真实 Agent runtime（`OPENHANDS_RUNTIME`，OpenHands SDK adapter） |
 | 其他任何值 | **装配期 fail-closed 并点名该取值**（不会静默回退 Fake） |
 
-```bash
-# 切到真实 runtime（凭据同时注入；只经环境变量）
-RESEARCHOS_AGENT_RUNTIME=openhands LLM_MAIN_KEY=… <启动 API 的命令>
+**live run 的门**（`packages/application/model_relay/live_run_gate.py`）在真正开跑前判**三条**，
+任一不满足即关门、**逐条点名**未满足的条件：
 
-# 回退到默认 Fake：去掉这一个变量即可（其余不动）
+1. **显式开关** `RESEARCHOS_LIVE_E2E` 恰为 `1`；
+2. runtime **显式**配成 live runtime；
+3. 端点凭据**可解析**（只问 `CredentialResolver.has`，**不物化明文**）。
+
+门关着时**不发起任何真实调用**，并产出一条 `NOT_VERIFIED` 记录（`live_run_record.py`）——
+**skip 不是 PASS**。**开关开着但凭据缺**的口径是**如实 skip 并点名缺哪个凭据**（既不是通过，
+也不当成失败）——两种缺法（开关没开 / 凭据不可解析）在同一句理由里都能读到。
+
+```bash
+# 一次 live run 的最小命令形态（开关 + runtime + 凭据三样齐备；值只经环境变量）
+set -a; . ./.env; set +a
+RESEARCHOS_LIVE_E2E=1 RESEARCHOS_AGENT_RUNTIME=openhands \
+  pytest tests/e2e/test_ec04_live_first_run.py -q -rs
+
+# 回退到默认：去掉这两个变量即可（其余不动）
 <启动 API 的命令>
 ```
 
-**live run 的门**（`packages/application/model_relay/live_run_gate.py`）在真正开跑前再判一次：
-runtime 必须**显式**配成 live runtime，且端点凭据**可解析**（只问
-`CredentialResolver.has`，**不物化明文**）。门关着时**不发起任何真实调用**，
-并产出一条 `NOT_VERIFIED` 记录（`live_run_record.py`）——**skip 不是 PASS**。
+**开关为什么是「值恰为 `1`」**：它必须能**一眼判**——`true` / `yes` / `0` 一律算**关**，
+不做真值解析（与 `RESEARCHOS_REQUIRE_DOCKER` / `RESEARCHOS_REQUIRE_GPU` 同形态）。
+
+**开关不得被持久化**：它**不许**出现在示例配置目录或 `.env*` 文件里，判据
+`tests/architecture/python/test_live_switch_is_single_source.py` 会读这两处；否则「默认离线」
+会被一份配置文件悄悄掀掉。环境读取点**全仓一个**（`tests/e2e/live_switch_support.py` 的
+`live_e2e_switch_enabled`），产品层（`packages/application`）**零**环境读取——
+开关由调用方作为**必填参数**传入，漏传即报错，不存在「忘了传就默认开门」。
 
 跑一次的方式与判据见 [LLM_ENDPOINTS.md](LLM_ENDPOINTS.md) §11；live 用例是
 `tests/e2e/test_ec04_live_first_run.py`（带 `requires_live_llm`，默认门只走 skip 路径）。
 
 **回退要检查的三件事**：
 
-1. `RESEARCHOS_AGENT_RUNTIME` 已去掉（`GET` 读面应回到 Fake runtime 的披露）；
+1. `RESEARCHOS_AGENT_RUNTIME` 与 `RESEARCHOS_LIVE_E2E` 都已去掉（`GET` 读面应回到 Fake runtime 的披露）；
 2. 端点 `credential` 显示 `missing`（凭据不再可解析——这是**预期**，不是故障）；
 3. 重启后 **usage 不再新增** `MODEL_TOKENS`（没有任何真实调用）。
 
@@ -254,15 +278,17 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 
 | 情形 | 期望语义 | 证据在哪 |
 | --- | --- | --- |
-| 无效凭据 | 门**开**（`has()` 只问存在性，**不**问有效性）⇒ **发起**调用 ⇒ **明确失败**并落终态，点名鉴权；**不**静默成功、**不**无限重试 | `tests/e2e/test_live_failure_paths.py` 的 `test_live_invalid_credential_fails_loudly_without_leaking`（live，需显式预置条件）；门的语义由 `tests/architecture/python/test_live_failure_paths_same_source.py` 钉住 |
+| 无效凭据 | 门**开**（`has()` 只问存在性，**不**问有效性）⇒ **发起**调用 ⇒ **明确失败**并落终态，点名鉴权；**不**静默成功、**不**无限重试 | `tests/e2e/test_live_failure_paths.py` 的 `test_live_invalid_credential_fails_loudly_without_leaking`（live，需显式预置条件：live 开关 `RESEARCHOS_LIVE_E2E=1` + 该样本自己的预置条件）；门的语义由 `tests/architecture/python/test_live_failure_paths_same_source.py` 钉住 |
 | 端点拒绝 | URL 策略是**门链第一环且先于触网**：拒 localhost / 环回 / 私有 / 保留时 **零出站**，且**点名策略**；链**短路**（同 endpoint 上不再派生 health / credential 的拒绝） | `tests/api/test_runtime_egress_gate.py`（既有套件，**不重复实现**） |
-| 模型不存在 | **明确失败**并落记录（**点名模型标识**），**不**回退到别的模型 | 实测样本：`tests/e2e/test_live_model_absence.py`（live，需显式预置条件）。**2026-09-21 实测**（`agnes-anthropic` + 一个不存在的标识）：连通性 `GET /models` **通过** ⇒ 那次 chat 被中转站以 **5xx** 拒（⇒ `MODEL_RELAY_UNAVAILABLE`）且**错误正文点名**了请求的标识，返回 model 名为 `null`——**没有**静默映射。装配侧：`adapters/openhands/llm_factory.py` 只接收**一个** `ModelDefinition`；run 的 LLM 装配路径**不消费** fallback（判据：`tests/architecture/python/test_live_failure_paths_same_source.py`） |
+| 模型不存在 | **明确失败**并落记录（**点名模型标识**），**不**回退到别的模型 | 实测样本：`tests/e2e/test_live_model_absence.py`（live，需显式预置条件：live 开关 `RESEARCHOS_LIVE_E2E=1` + 样本自己的预置条件）。**2026-09-21 实测**（`agnes-anthropic` + 一个不存在的标识）：连通性 `GET /models` **通过** ⇒ 那次 chat 被中转站以 **5xx** 拒（⇒ `MODEL_RELAY_UNAVAILABLE`）且**错误正文点名**了请求的标识，返回 model 名为 `null`——**没有**静默映射。装配侧：`adapters/openhands/llm_factory.py` 只接收**一个** `ModelDefinition`；run 的 LLM 装配路径**不消费** fallback（判据：`tests/architecture/python/test_live_failure_paths_same_source.py`） |
 
-**四条必须一起读的边界**：
+**五条必须一起读的边界**：
 
 1. **「门开」≠「凭据有效」**。门答的是「**此刻能不能发起**」，不是「**会不会成功**」。
    把门改成校验有效性会是行为变更（本仓明文不做）；因此**无效值也开门**是**设计内**的语义，
    不是缺陷——它把「值错了」这件事**推迟到调用结果**里如实暴露。
+   （D-11 之后门的条件从两条变三条：**显式开关** / runtime / 凭据。这一条讲的是**凭据那一格**，
+   开关没开时门根本不开——那是另一格，见 §4。）
 2. **重试是**有界**的**：`num_retries` 来自 `endpoint` 的 `max_retries`
    （示例配置 = `2`），不是 SDK 默认、也不是无上限——所以「不重试到超时」是**配置保证**，
    不是「恰好没重试」。
@@ -285,6 +311,10 @@ acceptance gate 判拒**，**不是** SUCCEEDED，也**不是**端点/协议/装
 | 轮换 | 换来源 ⇒ **新构造**的解析器看到新值；**已构造的实例是快照** | `adapters/relay/credential_resolver.py`（实测见下） |
 | 撤销 | 清空或删除来源 ⇒ **新构造**的解析器 `has()` 为 `False` ⇒ 门 **fail-closed** 关闭并**点名**该凭据 | `packages/application/model_relay/live_run_gate.py` |
 | 可弃用额度 | 本 key 为**免费可弃用额度**（泄露风险由操作者明示接受）；这**不**降低凭据纪律 | 本仓凭据纪律（§2 首段） |
+
+**撤销只关掉三条件里的一格**（D-11 之后门的条件是：显式开关 / runtime / 凭据）：
+上表说的「门 fail-closed」是**凭据那一格**；开关与 runtime 两格不受轮换/撤销影响，
+所以「清空凭据」**不会**让一个本来就不该跑的 live run 变成可跑——两件事互不顶替。
 
 **注入（两种形态，选一种即可）**：
 

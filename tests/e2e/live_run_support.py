@@ -25,6 +25,7 @@ _PROTOCOL = "console_demo_research_v1.yaml"
 REAL_PROTOCOL = "real_research_task_v1.yaml"
 #: Live 运行注册进凭据解析器的引用名（= 目录里 endpoint 声明的 `credential_ref`）。
 LIVE_CREDENTIAL_REF = "LLM_MAIN_KEY"
+
 #: GOAL-011 EC-03：`sort_analysis_v1` 执行阶段的合约（沙箱实验声明落在它上面）。
 EXPERIMENT_CONTRACT = "sort_analysis_execution"
 #: 沙箱实验脚本（仓库相对路径）与**既有**沙箱镜像（M9 已 E2E 验证的那一个）。
