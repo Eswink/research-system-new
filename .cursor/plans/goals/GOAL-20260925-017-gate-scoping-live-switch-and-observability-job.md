@@ -118,7 +118,32 @@ exit_criteria:
       `PASS: profile=m0; 23 deterministic checks`（as-is，**不再需要代管**）。
       **Linux 侧复验**：链接 / 路径判据属「Win32 会剥尾点」的假绿面 ⇒ 由 CI 的
       `quality-ubuntu-latest` 复验（本 GOAL 的 CI 台账即该复验证据）。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-25 cycle 1 收口（`PLAN-20260925-180` → **DONE**；复检
+      `RECHECK-20260925-181` = **PASS_WITH_WARNINGS**；工程记忆 `MEM-20260925-140`）。
+      实现 = `git_decided_inputs()`（`git ls-files -z --cached --others --exclude-standard`
+      的**并集**，即「已跟踪 ∪ 未跟踪且未被忽略」）+ 链接扫描消费它；git 面不可用 ⇒
+      **当场点名** `not_a_git_tree` + `SystemExit(1)`（攒进 `ERRORS` 会被别的检查先崩埋掉
+      —— 实测过）。判据 `tests/tooling/test_validate_bundle_git_decided_input_face.py`
+      **`3 passed`**：① gitignored 坏文件**不**判红；② 同内容**已跟踪** ⇒ **仍**判红；
+      ③ 被忽略目录里 **force-add** 的已跟踪文件 ⇒ **仍**判红（安全边界）；④ 未跟踪未忽略
+      ⇒ 仍判红；⑤ 夹具是工作树 ⇒ 不得出现「输入面不可用」（排除「靠罢工变绿」）；
+      ⑥ 非 git 根 ⇒ 点名 + 非 0。夹具的被忽略目录**刻意用任意名字** `ignored-area/`
+      （按目录名特判的实现会红）。**反证（先红后绿，同一个坏文件）**：独立 `git worktree`
+      上 `OLD_EXIT=1`（点名 `scratch/self-governance-bootstrap-prompt.md`）/ `NEW_EXIT=0` /
+      worktree 3a 红 3b 绿 / 3c force-add 后**又红**（`WT_TRACKED_EXIT=1`）。
+      **按压**：改动前 `TOTAL 4` → 改动后 `TOTAL 3`（那条从出现变缺席，其余三条仍在）。
+      **零放宽**：判据面逐字未改、`NON_SOURCE_DIRS` 零新增、`check_versions()` 两段未改。
+      **as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`M0_EXIT=0`、
+      `PASS [` = 24；证人文件 `69944` 字节**仍在场** ⇒ 不是靠删证人变绿；**不再需要代管**）。
+      **如实登记一次环境红**：第 1 跑 `FAILED: 1 check(s): python/tests=1`，
+      唯一失败 = `test_docker_backend_e2e.py::TestFaultInjection::test_oom_is_failed`；
+      隔离跑 `1 passed` / 模块 `89 passed` / 改动集不含 `adapters/execution` ⇒
+      **`(ii)` 环境专属**（判据描述的行为是对的，**未动判据**）⇒ 复跑取终态。
+      **残余**：`RECHECK-181` 的 `W-1`（另两处 `repository_files()` 消费**仍扫全工作区**，
+      属**另一次授权**）、`W-2`（跨平台以 CI 为权威证书）、`W-3`（名字无关性是契约而非证明）、
+      `W-4`（`validate_bundle.py` 不在 450 行门禁覆盖面内）、`W-5`（`(ii)` 类红的处置是复跑）。
   - id: EC-02
     criterion: >-
       **D-11 live 显式开关**：live 开门条件 = **显式开关 + 凭据**（+ 各模块既有的更强条件），
@@ -243,9 +268,11 @@ escalation_triggers:
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复不开门**，**不得**放宽放行面
   - 明文凭据泄露（**即使是可弃用的免费额度**）—— 立即停止并报告
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260925-180-gate-input-face-is-git-decided.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-181-gate-input-face-is-git-decided.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260925-140-gate-input-face-needs-an-authority-and-a-pair.md
 ---
 
 ## 目标与退出标准
@@ -256,7 +283,7 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **D-10(a)** Markdown 链接扫描的输入面由 **git** 决定 | 判据（成对 + 硬失败）+ 反证留档 + `git diff` 零放宽 + as-is m0 **23/23** | PENDING |
+| EC-01 | **D-10(a)** Markdown 链接扫描的输入面由 **git** 决定 | 判据（成对 + 硬失败）+ 反证留档 + `git diff` 零放宽 + as-is m0 **23/23** | **PASS** |
 | EC-02 | **D-11(a)** live 开门 = **开关 + 凭据**，全部判据**同源** | 单一开关读取点 + 消除第二套判据 + 三态实跑 + runbook 同源 | PENDING |
 | EC-03 | **D-13(a)+(b)** 观测阈值判据的**作业隔离**（或如实登记「不改 + 证据」） | 现状核实 + 最小 workflow 改动 + 失败传播取证 + 阈值零改动 | PENDING |
 | EC-04 | 收口复检 + 残余登记 | 两树复检脚本 + m0 可支持终态行 + 13 项 `D-NN` 终态表 + CI 台账 | PENDING |
@@ -519,19 +546,22 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 见回合汇报 | 治理 `validate.py` = 通过 | 见回合汇报（台账尾巴） | — | EC-01…EC-04 全 PENDING；三条授权判词已落 frontmatter；起点已定位（D-10：`NON_SOURCE_DIRS` + 全工作区 `os.walk` + 链接扫描；`scratch/` 被 `.gitignore:43` 忽略且未跟踪、`--others --exclude-standard` = 0、tracked = 3403；D-11：既有单一门 `live_run_gate.py` 无开关，`_live_credentials()` 等至少 5 处**第二套判据**待消除，`egress_guard` 放行面 = marker，runbook 同源判据已在树；D-13：`collector-quality` 已独立 job 且显式跑 `tests/observability`，但 `quality-*` 的全量套件**同进程**也跑它 ⇒ 最小改动面待 EC-03 核实）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 D-10 门禁 scoping**（git 决定的输入面 + 成对判据 + 硬失败） |
+| 0 | （建档，无子 PLAN） | `25d802b`（推送 tip，推送区间 `f1ca9ed..25d802b`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36156959548](https://github.com/Eswink/research-system-new/actions/runs/36156959548) **六 job 全 success** + CodeQL [36156958765](https://github.com/Eswink/research-system-new/actions/runs/36156958765) **3/3 success**（`run_attempt=1`，轮询 `ALL_TERMINAL`） | — | EC-01…EC-04 全 PENDING；三条授权判词已落 frontmatter；起点已定位（D-10：`NON_SOURCE_DIRS` + 全工作区 `os.walk` + 链接扫描；`scratch/` 被 `.gitignore:43` 忽略且未跟踪、`--others --exclude-standard` = 0、tracked = 3403；D-11：既有单一门 `live_run_gate.py` 无开关，`_live_credentials()` 等至少 5 处**第二套判据**待消除，`egress_guard` 放行面 = marker，runbook 同源判据已在树；D-13：`collector-quality` 虽为独立 job 且命令行列出 `tests/observability`，但该步骤带 `-m "requires_collector or postgres or distributed"` ⇒ **无标记的阈值判据在那里被反选**，其唯一 CI 执行点就是 `quality-*` 的 4400+ 全量进程）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 D-10 门禁 scoping**（git 决定的输入面 + 成对判据 + 硬失败） |
+| 1 | PLAN-20260925-180（EC-01） | 见回合汇报（推送区间 `25d802b..` + 本 cycle 的推送 tip；**下一 cycle 回填**） | 判据 `tests/tooling/test_validate_bundle_git_decided_input_face.py` = **`3 passed`**（`egress guard` = `judged 0 / blocked 0`）；**反证**（独立 worktree，同一坏文件）：`OLD_EXIT=1`（点名 `scratch/self-governance-bootstrap-prompt.md`）→ `NEW_EXIT=0` → force-add 成已跟踪后**又红** `WT_TRACKED_EXIT=1`；**按压**：改动前 `TOTAL 4` → 改动后 `TOTAL 3`；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化（534 files）、`mypy` = `Success: no issues found in 1017 source files`、`tests/tooling` = **`1158 passed`**、治理 `validate.py` = 通过、`DOCS-CHECK PASS`；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`M0_EXIT=0`、`PASS [` = 24；`R-3` 消失、**不再需要代管**、证人文件 `69944` 字节仍在场） | 见回合汇报（本 cycle 的推送 run 在其台账行） | **一次环境红如实登记（判据未动）**：m0 第 1 跑 `FAILED: 1 check(s): python/tests=1`，唯一失败 = `tests/adapters/execution/test_docker_backend_e2e.py::TestFaultInjection::test_oom_is_failed`（Docker OOM 故障注入）；**成对对照** = 隔离跑 `1 passed`（1.82s）+ 模块 `tests/adapters/execution` **`89 passed`** + 改动集不含 `adapters/execution` ⇒ 归类 `LOCAL_GATE_PROTOCOL` 的 **(ii) 环境专属**（OOM 容器就该判 `FAILED`，判据描述的行为是对的）⇒ **复跑取终态**（第 2 跑 `M0_EXIT=0`） | **EC-01 = PASS**（`RECHECK-20260925-181` = `PASS_WITH_WARNINGS`；`W-1` = 版本号两段**仍扫全工作区**（属另一次授权）、`W-2` = 跨平台以 CI 为权威证书、`W-3` = 名字无关性是契约、`W-4` = `validate_bundle.py` 不在 450 行覆盖面内、`W-5` = `(ii)` 类红靠复跑）。工程记忆 `MEM-20260925-140`。其余三个 EC 仍 PENDING | cycle 2 = **EC-02 D-11 live 显式开关**（开关 + 凭据 = 开门；全部 live 判据**同源**；runbook 逐字同源） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
-| 建档（GOAL-017 落地） | 见回合汇报 | 见回合汇报 | —（台账尾巴：本行所在提交的 run 终态在**回合汇报**给出） |
+| 建档（GOAL-017 落地） | `25d802b` | M0 [36156959548](https://github.com/Eswink/research-system-new/actions/runs/36156959548) / CodeQL [36156958765](https://github.com/Eswink/research-system-new/actions/runs/36156958765) | **绿（六 job 全 success + CodeQL 3/3）**（`run_attempt=1`）：M0 `conclusion=success`，逐 job `eval-gate` / `console-frontend` / `quality-windows-latest` / `container-quality` / `quality-ubuntu-latest` / `collector-quality` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)` **3/3 `success`**。轮询日志 `scratch/goal017-c0-ci-poll.log`（第 39 轮 `completed=2/2`、`ALL_TERMINAL`） |
+| cycle 1 实施（EC-01） | 见回合汇报 | 见回合汇报 | —（台账尾巴：本行所在提交的 run 终态在**回合汇报**给出） |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-09-25 | ACTIVE | 建档：用户会话指令（goal 模式）按 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 的**建议列**拍板三条并**授权实施**（D-10(a) / D-11(a) / D-13(a)+(b)）；四 EC 设计（D-10 门禁 scoping / D-11 live 显式开关 / D-13 观测作业隔离 / 收口复检）。**明确不授权**：`undici` 与 `yaml` 升级、D-01(a)、D-02(a)、D-04、D-05、D-06、`ADR-0031` 的 `Status`、D-12(a)。**建档时零代码改动**（只增本文件）。 |
+| 2026-09-25 | ACTIVE | cycle 1：**EC-01 = PASS**（D-10(a) 门禁 scoping）——输入面改由 **git 决定**（已跟踪 ∪ 未跟踪未忽略），**跟踪文件照旧全扫**（判据 ②③ 取证），**git 面不可用当场点名硬失败**（`not_a_git_tree`）；判据 **`3 passed`**，反证（worktree 先红后绿 + force-add 后**又红**）与按压（`TOTAL 4 → 3`）留档；**零放宽**（判据面逐字未改、`NON_SOURCE_DIRS` 零新增、版本号两段未改）；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`R-3` 消失、不再需要代管、证人文件仍在场）。一次环境红（Docker OOM 注入）如实登记为 `(ii)` 类、判据未动。其余三 EC 仍 PENDING。 |
 
 ## 13 项 `D-NN` 终态表（EC-04④）
 
@@ -554,45 +584,57 @@ GOAL-017 的四个 EC 里**实际做了什么**（未授权项一律「未实施
 | D-07 | `ADR-0031`（`tool_pack.*`）是否采纳 | 取 (b)：维持 `Proposed`，补「否证条件」，**不改 `Status`** | **已实施**（GOAL-016 EC-04）；**本 GOAL 不碰** | `ADR-0031` 有 `## 否证条件` 节；`Status` 逐字仍 `Proposed`；判据硬断言全文无 `Status: Accepted` | 「何时该改判」无人可查 |
 | D-08 | `ModelCompatibilityProfile` 是否一等域实体 | 取 (b)：维持**派生视图** | **已实施**（GOAL-016 EC-04）；**本 GOAL 不碰** | `MODEL_COMPATIBILITY.md` §9 记下决定 + 「若要 (a) **必须先出 ADR**」；**Domain 边界零改动** | 现状可用，属**登记**而非缺口 |
 | D-09 | 非 ASCII 路径豁免是否需 ADR | 取 (a)：出 ADR 记录豁免（30 条，**不重命名**） | **已实施**（GOAL-016 EC-04） | `docs/adr/ADR-0032-legacy-non-ascii-path-exemption.md`（`Status: Accepted`）+ 判据「现实 ↔ 清单」**双向**比对 | 豁免继续以「口径」形式存在 |
-| D-10 | 门禁 scoping：`validate_bundle` 扫描 gitignored 工作区（`R-3`） | **本轮拍板：取 (a) 并授权实施**——Markdown 链接扫描的**输入面由 git 决定**，跟踪文件照旧全扫 | **已授权、待实施**（**本 GOAL 的 EC-01**） | 授权原文见本文件 `authorization.ref` (1)（边界 a–e）；as-is 事实：`scratch/` 被 `.gitignore:43` 忽略且未跟踪、`--others --exclude-standard` = 0、tracked = 3403 | as-is 本机 m0 停在 **22/23**，且红项来自**别人**的未跟踪文件；CI 不受影响（检出无 `scratch/`） |
+| D-10 | 门禁 scoping：`validate_bundle` 扫描 gitignored 工作区（`R-3`） | **本轮拍板：取 (a) 并授权实施**——Markdown 链接扫描的**输入面由 git 决定**，跟踪文件照旧全扫 | **已实施**（**本 GOAL 的 EC-01** / PLAN-180） | 授权原文见 `authorization.ref` (1)（边界 a–e）；实现 `git_decided_inputs()`（`--cached` ∪ `--others --exclude-standard`）+ 不可用**当场点名**硬失败；判据 `tests/tooling/test_validate_bundle_git_decided_input_face.py`（`3 passed`）；反证留档 `scratch/goal017-c1-pair-proof.txt`；**as-is 本机 m0 = 23/23**（`R-3` 消失） | ~~as-is 本机 m0 停在 22/23~~ ⇒ **已消除**（红项来自**别人**未跟踪文件；CI 本就不受影响） |
 | D-11 | live 判据的开门条件 = 环境恰好有凭据 | **本轮拍板：取 (a) 并授权实施**——显式开关 + 凭据（凭据由**充分**降为**必要**） | **已授权、待实施**（**本 GOAL 的 EC-02**） | 授权原文见 `authorization.ref` (2)（边界 a–e）；as-is 第二套判据 ≥5 处（见「目标与退出标准」第 4 条实测） | 默认门结论继续取决于**环境里有没有凭据**；CI 上过期 secret 会让默认门**真出网**并判红 |
 | D-12 | 威胁建模 / 授权面覆盖（BOLA / BFLA） | 取 (b)：文档级草案；**(a) 仍需另行拍板** | **已实施 (b)**（GOAL-016 EC-05）；**本 GOAL 不做 (a)** | `docs/security/THREAT_MODEL.md` 第 6 节（含 6.3 未覆盖范围 / 6.4 与 M18 边界）；**diff 只含 docs** | 授权面覆盖缺系统性论证；`R-M1` 无法据此收口 |
 | D-13 | CI 上「资源阈值型判据」的负载敏感性 | **本轮拍板：取 (a) 的协议 + 授权接近 (b) 的作业隔离**——判据与阈值一字不动，只改**作业结构** | **已授权、待实施**（**本 GOAL 的 EC-03**；若判定现状已足够 ⇒ 登记不改） | 授权原文见 `authorization.ref` (3)（边界 a–d）；as-is 证人 = run `36071654181` 的 `quality-windows-latest` 判红、同 run `run_attempt=2` success | 同类判据会继续在**负载高**的运行器上偶发判红，每次都要人工复跑 + 归因，且**红绿不一致会削弱结论可信度** |
 
-**汇总（建档时）**：**已实施 6 项**（D-01 / D-02 / D-03 部分 / D-07 / D-08 / D-09 / D-12）
-**+ 已授权待实施 3 项**（D-10 / D-11 / D-13 = 本 GOAL 的 EC-01…EC-03）
+**汇总（cycle 1 后）**：**已实施 7 项**（D-01 / D-02 / D-03 部分 / D-07 / D-08 / D-09 / D-12
++ **D-10**）**+ 已授权待实施 2 项**（D-11 / D-13 = 本 GOAL 的 EC-02 / EC-03）
 **+ 未授权 4 项**（D-04 / D-05 / D-06 与 D-01(a) / D-02(a) / D-12(a) 的 (a) 面）。
 **未授权项一律原样保留**，其红 / 缺口**未**被本 GOAL 收口，也**未**被本 GOAL 掩盖。
 
 ## 当前续点
 
-- **GOAL-017 = ACTIVE（2026-09-25 建档）**：cycle 0 = 建档（本文件，**零代码改动**）；
-  cycle 1 = **EC-01 D-10 门禁 scoping**；cycle 2 = **EC-02 D-11 live 显式开关**；
+- **GOAL-017 = ACTIVE（2026-09-25）**：cycle 0 = 建档（**零代码改动**）；cycle 1 = **EC-01 PASS**
+  （D-10 门禁 scoping，as-is 本机 m0 **23/23**）；cycle 2 = **EC-02 D-11 live 显式开关**；
   cycle 3 = **EC-03 D-13 观测作业隔离**（先核实现状，允许「登记不改」）；
   cycle 4 = **EC-04 收口复检 + 残余登记**。
-- **续点判定**：cycle 0 完成后 ⇒ **下一步 = cycle 1（EC-01）**。
-- **进度**：EC-01…EC-04 全 **PENDING**（budget `max_cycles: 20`，用掉 0；
-  `no_progress_stop_cycles: 2` 未触发）。
+- **续点判定**：cycle 1 的 commit + CI 到终态后 ⇒ **下一步 = cycle 2（EC-02）**。
+- **进度**：EC-01 = **PASS**；EC-02 / EC-03 / EC-04 = PENDING（budget `max_cycles: 20`，
+  用掉 1；`no_progress_stop_cycles: 2` 未触发）。
 - **依赖面**：**本 GOAL 不做任何 pin 变更**（`undici` / `yaml` 明文未授权）；
   `vite` 已由 GOAL-016 EC-03 停在 `6.4.3`。
 - **开局已核实的文件层事实（决定可行性）**：
-  1. **D-10 的改动点是单点**：`validate_bundle.py` 的 `validate_local_markdown_links()`
-     与 `repository_files()`；**同一遍历还被 `check_versions()` 的两处消费** ⇒ 本 GOAL
-     **只**把链接扫描的输入面收窄（**刻意围栏**，见「目标与退出标准」第 1 条）。
-  2. **R-3 的证人与终态**：`scratch/self-governance-bootstrap-prompt.md`（gitignored、未跟踪）
-     是本机 m0 唯一红项的来源 ⇒ EC-01 落地后 as-is 应到 **23/23**。
-  3. **D-11 的单一门已在树**：`live_run_gate.py` 被 ≥8 个 live 模块复用 ⇒ 把开关放这里
-     是**最小同源改动**；**要消除的第二套判据** ≥5 处（清单见第 4 条实测）。
+  1. **D-10 已完成**：`git_decided_inputs()` 只服务**链接扫描**；`check_versions()` 的两段
+     **仍扫全工作区**（刻意围栏，见 `RECHECK-181` 的 `W-1`）。
+  2. **`R-3` 已消失**：as-is 本机 m0 = 23/23（`scratch/goal017-c1b-m0-as-is.log`）。
+  3. **D-11 的单一门已在树**：`packages/application/model_relay/live_run_gate.py` 被
+     **12 处测试调用点**复用 ⇒ 把开关放这里/经它注入是**最小同源改动**；
+     **要消除的第二套判据** = `tests/e2e/test_run_chain_retrieval_live.py` 的
+     `_live_credentials()` + `test_ec03_real_runtime_offline_chain.py` /
+     `test_m12_usage_real_relay.py`（`RESEARCHOS_LIVE_E2E_ENDPOINT`+`_KEY`）+
+     `test_live_model_absence.py`（`_CASE_ENV`）+ `test_live_failure_paths.py`
+     （`RESEARCHOS_LIVE_FAILURE_CASE`）。
+     **架构约束（实测）**：`packages/application/**` **零处** `os.environ` ⇒ 开关的**名称**由
+     产品侧常量声明、**读取**放在操作者边界（测试侧支持模块），gate 收**必填**布尔参数
+     （必填 ⇒ 调用点漏传会直接 `TypeError`，不会静默开门）。
   4. **runbook 同源判据已在树**：`tests/architecture/python/test_runbook_same_source.py`
-     ⇒ EC-02(e) 的「逐字同源」可机器强制（并可按压）。
-  5. **D-13 的两类执行点**：`collector-quality`（独立 job、显式步骤）vs
-     `quality-*`（全量套件**同进程**）⇒ EC-03 先核实「偶发红属于哪一类」再决定最小改动。
-  6. **CI 结构判据在树**：`tests/tooling/test_m0_ci_coverage.py` ⇒ 任何新 job 必须满足
-     「跑 Python 门之前先预热 tokenizer」且不得让 `gate_jobs >= 4` 的反证失效。
-  7. **跑法**：m0 与代管脚本**一律**走 `uv run --frozen --no-sync python -B …`；
+     （反引号里的每个仓库路径 / ENV 名 / pytest 目标都必须真实存在；`CODE_ROOTS` 含 `tests/`）
+     ⇒ EC-02(e) 的「逐字同源」可机器强制，并可**按压**。
+  5. **要一并更新的既有判据（收紧而非放宽）**：`tests/e2e/test_ec04_live_gate_offline.py`
+     的「两条件即开门」两条 + `tests/architecture/python/test_live_failure_paths_same_source.py`
+     的门助手与 `_CASE_ENV` 两条 ⇒ 都要**加上开关前提**，并**新增**「无开关即关门」的判据。
+  6. **D-13 的关键事实（cycle 0 已核实，纠正简报的推断）**：`collector-quality` **虽然**在命令行
+     列出 `tests/observability`，但该步骤的 `-m "requires_collector or postgres or distributed"`
+     **反选**掉了无标记的 `test_telemetry_overhead.py` ⇒ 该阈值判据在 CI 上的**唯一**执行点
+     就是 `quality-*` 的 4400+ 全量进程（这正是 D-13 指向的负载竞争面）⇒「现状已足够」**不成立**。
+  7. **CI 结构判据在树**：`tests/tooling/test_m0_ci_coverage.py` ⇒ 任何新 job 必须满足
+     「跑 Python 门之前先预热 tokenizer」且不得让 `gate_jobs >= 4` 的反证失效；
+     还要保住 `collector-quality` / `container-quality` 的既有断言。
+  8. **跑法**：m0 与代管脚本**一律**走 `uv run --frozen --no-sync python -B …`；
      m0 全量**独占运行**、用**仓库 `.venv`**；**写记录时不要跑 m0**。
-  8. **全局编号**：下一个 `PLAN` / `RECHECK` = **180** 起（PLAN 偶、RECHECK 奇）；
-     `MEM` 下一个 = **140**。
-  9. **工作树并发写者**：`apps/web/src/features/models/ModelDetails.tsx` /
+  9. **全局编号**：下一个 `PLAN` / `RECHECK` = **182** / **183**；`MEM` 下一个 = **141**。
+ 10. **工作树并发写者**：`apps/web/src/features/models/ModelDetails.tsx` /
      `packages/domain/model_drift.py` / `services/api/dto/models.py`（内容 diff 为空）
      ⇒ **不碰、不提交**。

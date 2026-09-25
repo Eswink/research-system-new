@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import tomllib
 from collections.abc import Iterator
 from pathlib import Path
@@ -58,6 +59,46 @@ def repository_files() -> Iterator[Path]:
         child_dirs[:] = [name for name in child_dirs if name not in NON_SOURCE_DIRS]
         current = Path(directory)
         yield from (current / filename for filename in filenames)
+
+
+#: git 面不可用时的署名（承 `tools/credential_audit.py` 的 `not_a_git_tree` 口径：
+#: 「该扫却扫不成」**不算通过**，必须点名）。
+GIT_FACE_UNAVAILABLE = "not_a_git_tree"
+
+
+def git_decided_inputs() -> frozenset[str] | None:
+    """git 决定的输入面：**已跟踪 ∪ 未跟踪且未被忽略**（POSIX 相对路径）。
+
+    为什么由 git 决定（D-10）：门禁的输入面必须是**本仓的产物**，而不是「此刻磁盘上
+    恰好有什么」——别人的未跟踪在制品（例如 gitignored 的 `scratch/`）不该让本机门判红。
+    判定只用 git 自己，**不**在这里维护任何目录名名单。
+
+    两条实现约束：
+
+    - `-z`：非 ASCII 路径在默认 `core.quotepath` 下会被转义成八进制形式，与 `Path`
+      算出的相对路径对不上（本仓有 30 条非 ASCII 已跟踪路径，见
+      `docs/adr/ADR-0032-legacy-non-ascii-path-exemption.md`）；NUL 分隔的输出从不转义。
+    - **已跟踪优先于忽略**：取 `--cached` 与 `--others --exclude-standard` 的并集 ⇒
+      即使某文件落在被忽略的目录里，只要它已跟踪就**照旧被扫**（本项的安全边界）。
+
+    返回 `None` 表示 **git 面不可用**（git 缺失 / 扫描根不在工作树内）⇒ 调用方**硬失败**。
+    """
+    try:
+        completed = subprocess.run(
+            ("git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"),
+            cwd=ROOT,
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if completed.returncode != 0:
+        return None
+    return frozenset(
+        entry.decode("utf-8", errors="surrogateescape")
+        for entry in completed.stdout.split(b"\0")
+        if entry
+    )
 
 
 def load_yaml(rel: str) -> Any:
@@ -1145,9 +1186,31 @@ def check_manifest_if_present() -> None:
 
 
 def validate_local_markdown_links() -> None:
+    """Markdown 本地链接扫描；**输入面由 git 决定**（D-10 / GOAL-017 EC-01）。
+
+    被扫范围 = 工作区里的 `.md` 文件 ∩ git 决定的输入面（已跟踪 ∪ 未跟踪且未被忽略）
+    ⇒ 别人的 gitignored 在制品不进判据，而**已跟踪文件一律照扫**。
+    git 面不可用 ⇒ **硬失败并点名**（`not_a_git_tree`），**不得**静默通过。
+    被判内容（链接存在性）与其余检查项**一字未动**。
+
+    为什么不可用时要**当场**报出而不是攒进 `ERRORS`：攒着只有 `main()` 走到最后才会打印，
+    而根不可用时别的检查会先崩（实测：`check_index_links()` 在缺 `docs/INDEX.md` 的根上
+    抛 `FileNotFoundError`）⇒ 点名的那条会被埋掉。「该扫却扫不成」必须在**任何**后续检查
+    之前就可见地失败。
+    """
+    inputs = git_decided_inputs()
+    if inputs is None:
+        print("验证失败:")
+        print(
+            f"- 门禁输入面不可用: {GIT_FACE_UNAVAILABLE}"
+            "（无法用 git 判定被扫路径；扫描根必须在一个 git 工作树内）"
+        )
+        raise SystemExit(1)
     link_re = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
     for doc in repository_files():
         if doc.suffix.lower() != ".md":
+            continue
+        if doc.relative_to(ROOT).as_posix() not in inputs:
             continue
         text = doc.read_text(encoding="utf-8")
         for raw_target in link_re.findall(text):
