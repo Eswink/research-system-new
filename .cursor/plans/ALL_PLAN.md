@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260925-170](tasks/PLAN-20260925-170-read-grant-stays-per-item.md) | DONE |
 | [x] | [PLAN-20260925-168](tasks/PLAN-20260925-168-missing-executor-must-be-named.md) | DONE |
 | [x] | [PLAN-20260925-166](tasks/PLAN-20260925-166-goal-015-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260925-164](tasks/PLAN-20260925-164-local-gate-protocol-and-decision-briefing.md) | DONE |

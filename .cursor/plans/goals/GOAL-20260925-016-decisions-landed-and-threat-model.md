@@ -125,7 +125,21 @@ exit_criteria:
       「不存在类别级 / 通配 capability」；② **按压**：以临时变体（内存内构造，不改仓库文件）
       注入一条 `read.*` 规则 ⇒ 判据判红；③ 差集表 15 条与判据同源（引用计数一致）；
       ④ `git diff --name-only` 证明两个策略面文件**不在**本 GOAL 的改动集里。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-25 cycle 2 收口（`PLAN-20260925-170` → **DONE**；复检
+      `RECHECK-20260925-171` = **PASS_WITH_WARNINGS**；工程记忆 `MEM-20260925-135`）。
+      判据 `tests/application/preflight/test_read_grant_is_per_item.py` **`4 passed`**：
+      ① **逐条形态**——策略面每个 `capability:` 都是词表（46 项）的**精确成员**，且**没有**
+      任何规则的能力是另一条的**段前缀**（`read` 覆盖 `read.x` = 成类放行的结构特征）；
+      ② **否定判据可被按压**——注入 `read.*` / `literature.` ⇒ 检测器**必须命中**；
+      ③ **证据面**——差集表的「该登记」行**恰好 15 条**、全为读类、且**一条都没被放行**；
+      ④ 读类放行逐条可枚举。**零策略面改动**：`examples/config/policy.yaml` 与
+      `packages/application/preflight/policy_check.py` 的 `git status` 输出行数 = 0、
+      `git diff --stat` 为空（判据只读，按压用内存内字典）。
+      **m0 首跑两处红已逐条归因**：① 本 cycle 自己的 `mypy [no-any-return]`（已修：
+      `.get("policy")` + 形状守卫）；② live 检索用例的上游 TLS 瞬时红（归类 (ii)
+      环境专属 ⇒ 复跑，**判据未动**），并登记为 **`W-7`**。
   - id: EC-03
     criterion: >-
       **D-03(b) high 依赖升级**：**4 条 high** 升到已修复版本（**限 patch / minor**；
@@ -228,9 +242,11 @@ escalation_triggers:
   - 明文凭据泄露（**即使是可弃用的免费额度**）—— 立即停止并报告
 child_plans:
   - .cursor/plans/tasks/PLAN-20260925-168-missing-executor-must-be-named.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-169-missing-executor-must-be-named.md
+  - .cursor/plans/tasks/PLAN-20260925-170-read-grant-stays-per-item.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-171-read-grant-stays-per-item.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260925-134-naming-contract-needs-a-pair-and-a-single-source.md
+  - .cursor/memory/entries/MEM-20260925-135-negative-criteria-need-a-pressable-detector.md
 ---
 
 ## 目标与退出标准
@@ -279,7 +295,7 @@ memory_entries:
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | **D-01(b)** 缺执行体 ⇒ 逐字点名（机械判据） | 判据测试 + 反向搜索 + 成对反证 + `checks.py` 零改动 | **PASS** |
-| EC-02 | **D-02(b)** 读能力逐条授权、不成类放行 | 逐条存在性判据 + 「无类别级规则」否定判据 + 15 条差集表引用 | **PENDING** |
+| EC-02 | **D-02(b)** 读能力逐条授权、不成类放行 | 逐条存在性判据 + 「无类别级规则」否定判据 + 15 条差集表引用 | **PASS** |
 | EC-03 | **D-03(b)** 4 条 high 升级（patch/minor） | lockfile 版本对照 + 全量 web 门 + m0 + CI 六 job | **PENDING** |
 | EC-04 | **D-07 + D-08 + D-09** 决定固化 | ADR-0031「否证条件」节 + D-08 依据 + ADR-0032 + INDEX 登记 | **PENDING** |
 | EC-05 | **D-12** 威胁模型草案（**零代码 / 零门禁**） | BOLA / BFLA / 授权面章节（覆盖 / 未覆盖 / (a) 代价） | **PENDING** |
@@ -453,19 +469,35 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
 - **`R-B1` / `R-N1`**——承继残余 / 非 ASCII 路径豁免，原样保留（`R-N1` 由 EC-04 的 ADR-0032
   固化为**可引用依据**，**不改变**「不重命名」的事实）。
 - **`W-1…W-6`**（GOAL-015 的观察项，含 `W-6` = CI RSS 阈值偶发红）——原样保留。
+- **`W-7`（本 GOAL cycle 2 实测新增，只登记不改）｜live 判据在「环境里恰好有凭据」时会**
+  **真的出网**：`tests/e2e/test_run_chain_retrieval_live.py` 的 skip 条件只判「凭据在不在」
+  ⇒ 本机持有有效凭据 ⇒ 全量 m0 里该用例**不 skip**，真的调 NCBI eutils（与出厂 LLM 端点）。
+  cycle 2 的 m0 首跑即因上游 TLS 瞬时故障判红
+  （`eutils connection failure: [SSL: UNEXPECTED_EOF_WHILE_READING]`），
+  同一代码路径在 cycle 1 的 m0 **通过** ⇒ 归类 **(ii) 环境专属 / 上游瞬时**，
+  处置 = 复跑 + 登记（**判据一字未动**）。
+  **这是 `D-11` 证据面上的第二个数据点**（第一个 = GOAL-015 的 CI 红 run `36048265860`：
+  CI 上放了一个**无效**凭据 ⇒ live 用例不再 skip ⇒ `AuthenticationError`）。
+  **`D-11` 明文不在本 GOAL 授权内**（改判据语义需另行拍板）⇒ 本 GOAL **只登记**，
+  **不得**改 skip 条件、**不得**改判据、**不得**把默认门变成「不出网」而不拍板。
+  **本 GOAL 的口径**：本机全量 m0 的终态行因此**不是纯离线**的；如实标注，
+  并在终态行里区分「哪条是环境红、哪条是代码红」。
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `4afb314`（**推送 tip**，推送区间 `a3b2cf3..4afb314`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36092961923](https://github.com/Eswink/research-system-new/actions/runs/36092961923) **六 job 全 success** + CodeQL [36092961168](https://github.com/Eswink/research-system-new/actions/runs/36092961168) **3/3 success**（`run_attempt=1`） | — | EC-01…EC-06 全 PENDING；七项判词已落 frontmatter；起点已定位（点名逻辑已在树 / 该登记 15 条 / 4 条 high 全是 `vite` 且修复版本在 6.x minor / `undici` 主版本跳跃 / ADR-0031 补节且 `Status` 不变 / ADR-0032 编号 / THREAT_MODEL 106 行零 BOLA-BFLA）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 D-01(b) 判据化** |
-| 1 | PLAN-20260925-168（EC-01） | 见回合汇报 | 判据 `tests/application/preflight/test_missing_executor_is_named.py` **`4 passed`**（正向逐条点名 / 成对反证 / 单一来源 / 按压）；探针 `scratch/goal016_c1_probe.py`（只读、零出网）实证两条同码链与「恢复 provider ⇒ 计数 0」；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化；规模 + 命名门禁 = `1054 passed`；`egress guard` = `blocked 0`。**m0 两个终态行分开（冻结树）**：**代管后**（`R-3` 文件临时移出）= `PASS: profile=m0; 23 deterministic checks` + 逐字节复核一致（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）；**as-is** = **22/23**，唯一红项 = `framework/validate_bundle`，单条直跑复现的判词只有一条（`Markdown 本地链接不存在: scratch\self-governance-bootstrap-prompt.md`）⇒ 归因 = **`R-3`**（与本题改动无关）。日志：`scratch/goal016-c1-m0-quarantined.log` / `-quarantine-run.txt` | 见回合汇报（本 cycle 的推送 run 在其台账行；flake 判定按同一代码复跑对照） | **一次判据自身缺陷如实登记**：首版按**能力名**配对 ⇒ 被 `workspace.read`（**两个 phase** 都需要）判红 ⇒ 改成按 `(phase_id, capability)` 配对（**未**改产品代码） | **EC-01 = PASS**（`RECHECK-20260925-169` = `PASS_WITH_WARNINGS`；W-1 = 另两条同码链不在判据面内、W-2 = `R-3` 仍是本机 as-is 的预置红）。其余五个 EC 仍 PENDING；`M-1` / `D-10` / `D-13` 原样保留 | cycle 2 = **EC-02 D-02(b) 口径判据**（读能力逐条授权、不成类放行；零策略面改动） |
+| 1 | PLAN-20260925-168（EC-01） | `1e2af55`（推送区间 `4afb314..1e2af55`） | 判据 `tests/application/preflight/test_missing_executor_is_named.py` **`4 passed`**（正向逐条点名 / 成对反证 / 单一来源 / 按压）；探针 `scratch/goal016_c1_probe.py`（只读、零出网）实证两条同码链与「恢复 provider ⇒ 计数 0」；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化；规模 + 命名门禁 = `1054 passed`；`egress guard` = `blocked 0`。**m0 两个终态行分开（冻结树）**：**代管后**（`R-3` 文件临时移出）= `PASS: profile=m0; 23 deterministic checks` + 逐字节复核一致（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）；**as-is** = **22/23**，唯一红项 = `framework/validate_bundle`，单条直跑复现的判词只有一条（`Markdown 本地链接不存在: scratch\self-governance-bootstrap-prompt.md`）⇒ 归因 = **`R-3`**（与本题改动无关）。日志：`scratch/goal016-c1-m0-quarantined.log` / `-quarantine-run.txt` | 见回合汇报（本 cycle 的推送 run 在其台账行；flake 判定按同一代码复跑对照） | **一次判据自身缺陷如实登记**：首版按**能力名**配对 ⇒ 被 `workspace.read`（**两个 phase** 都需要）判红 ⇒ 改成按 `(phase_id, capability)` 配对（**未**改产品代码） | **EC-01 = PASS**（`RECHECK-20260925-169` = `PASS_WITH_WARNINGS`；W-1 = 另两条同码链不在判据面内、W-2 = `R-3` 仍是本机 as-is 的预置红）。其余五个 EC 仍 PENDING；`M-1` / `D-10` / `D-13` 原样保留 | cycle 2 = **EC-02 D-02(b) 口径判据**（读能力逐条授权、不成类放行；零策略面改动） |
+| 2 | PLAN-20260925-170（EC-02） | 见回合汇报 | 判据 `tests/application/preflight/test_read_grant_is_per_item.py` **`4 passed`**（逐条形态 / 否定判据可按压 / 15 条证据面 / 读类放行逐条可枚举）；**零策略面改动**取证：两个策略面文件的 `git status` 输出行数 = **0**、`git diff --stat` **为空**；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化；规模 + 命名门禁 + 定向回归 = **`1083 passed`**；`egress guard` = `blocked 0`。**m0 三跑（冻结树，代管 `R-3` 文件）**：第 1 跑 = `FAILED: 2 check(s): python/typecheck=1, python/tests=1`；第 2 跑 = `FAILED: 1 check(s): python/tests=1`；**第 3 跑 = `PASS: profile=m0; 23 deterministic checks`** + 逐字节复核一致（`size=69944` / `mtime_ns=1790187424185178900` / `sha256:7af3209304a73d10afbfab3bf70eda29eb1982cc1aac076ff8914e05324f12c2`）。日志：`scratch/goal016-c2-m0-quarantined.log` / `-c2b-` / `-c2c-` | 见回合汇报（本 cycle 的推送 run 在其台账行） | **三处红如实登记（性质不同）**：① **本 cycle 自己的缺陷（已修）**——新判据 `policy_body()` 触发 `mypy [no-any-return]`（`Returning Any from function declared to return dict[str, Any]`）⇒ 改为 `.get("policy")` + `assert isinstance(body, dict)`（**加**形状守卫，**未**加豁免）；修后 `mypy` = `Success: no issues found in 1015 source files`。**教训**：定向套件绿不等于全量绿（`mypy` 只在全量门里跑）。② **环境 / 上游非确定（判据与代码均未动，两跑两签名）**——`tests/e2e/test_run_chain_retrieval_live.py::test_live_run_chain_retrieval_lands_a_real_identifier` 判红：第 1 跑 `eutils connection failure: [SSL: UNEXPECTED_EOF_WHILE_READING]`、第 2 跑 `run-chain capability step failed: previous step carries no 'ids' ids for run-chain tool literature_read`；**成对对照**：隔离跑 **`1 passed` ×2**（`14.81s` / `37.31s`）、`git diff 1e2af55 -- tests/e2e packages adapters services examples` **为空**（该用例与本 cycle 无关），而 `1e2af55` 的 m0 中它**通过** ⇒ 归类 **(ii) 环境专属**（三条判定条件逐条成立）⇒ 按既有配方复跑取终态（**未**动判据 / skip 条件 / 阈值），并登记为 **`W-7`** | **EC-02 = PASS**（`RECHECK-20260925-171` = `PASS_WITH_WARNINGS`；W-1 = 本判据只判放行**形态**、不判「该不该放行」；W-2 = `R-3` 仍是本机 as-is 的预置红；**W-7 = live 判据会真出网且结论随环境变**，新登记）。其余四个 EC 仍 PENDING | cycle 3 = **EC-03 D-03(b) 4 条 high 依赖升级**（`vite` 6.3.5 → 6.4.3，minor；`undici` 主版本跳跃不做；`yaml` 非 high 排下一批）+ 全量 web 门 + m0 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
-| 建档（本行所在提交） | 见回合汇报 | 由**下一次回写**（本 GOAL 口径）；该推送的终态在回合汇报给出 | — |
+| 建档（GOAL-016 落地） | `4afb314` | M0 [36092961923](https://github.com/Eswink/research-system-new/actions/runs/36092961923) / CodeQL [36092961168](https://github.com/Eswink/research-system-new/actions/runs/36092961168) | **六 job 全 success** / **CodeQL 3/3 success**（`run_attempt=1`） |
+| cycle 1 实施（`1e2af55`） | `1e2af55` | M0 [36095270268](https://github.com/Eswink/research-system-new/actions/runs/36095270268) / CodeQL [36095270579](https://github.com/Eswink/research-system-new/actions/runs/36095270579) | **六 job 全 success**（`eval-gate` / `quality-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `console-frontend` / `container-quality`）/ **CodeQL 3/3 success**（`run_attempt=1`） |
+| cycle 2 实施（本行所在提交） | 见回合汇报 | 由**下一次回写**（本 GOAL 口径）；该推送的终态在回合汇报给出 | —（**本 GOAL 此前每次推送的 run 均已逐行登记并轮询到终态**） |
 
 ## 状态历史
 
@@ -473,19 +505,25 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
 | --- | --- | --- |
 | 2026-09-25 | ACTIVE | 建档：用户会话指令（goal 模式）按 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 建议列拍板七项（D-01b / D-02b / D-03b / D-07b / D-08b / D-09a / D-12b）并授权实施；六 EC 设计（D-01 判据化 / D-02 口径判据 / D-03 high 升级 / D-07+D-08+D-09 固化 / D-12 威胁模型 / 收口复检）。明确不授权 D-10 / D-13 与 D-04 / D-05 / D-06 / D-11 的实施。**建档时零代码改动**（只增本文件）。 |
 | 2026-09-25 | ACTIVE | cycle 1：**EC-01 = PASS**（D-01(b) 判据化）——判据走**产品入口 + 出厂目录**，缝为空时 6 条工具需求**逐条**被逐字点名，恢复 provider ⇒ 点名消失且计数归零（成对反证），模板在生产源里**单一来源**，按压非空；**产品代码零改动**。一次判据自身缺陷如实登记（按能力名配对 ⇒ `workspace.read` 跨两 phase 判红 ⇒ 改按 `(phase_id, capability)`）。其余五 EC 仍 PENDING。 |
+| 2026-09-25 | ACTIVE | cycle 2：**EC-02 = PASS**（D-02(b) 口径判据）——逐条形态（每条规则只命名一个具体能力、无段前缀规则）+ 否定判据（无通配 / 前缀形态，且检测器**可被按压**）+ 证据面（「该登记」**恰好 15 条**、全为读类、**一条都没被放行**）+ 读类放行逐条可枚举。**零策略面改动**（两个策略面文件的 `git status` 输出行数 = 0、`git diff --stat` 为空）。其余四 EC 仍 PENDING。 |
 
 ## 当前续点
 
-- **GOAL-016 = ACTIVE（2026-09-25 建档）**：cycle 0 完成建档（本文件）。
-  `child_plans: []`、`latest_recheck: null`、`memory_entries: []` 待后续 cycle 填充。
-- **续点判定**：以「迭代日志最后一行」+ 工作树 / 远端实况为准；建档轮之后进入
-  **cycle 1 = EC-01（D-01(b) 判据化）**。
+- **GOAL-016 = ACTIVE（2026-09-25 建档）**：cycle 0 建档；cycle 1 = **EC-01 PASS**；
+  cycle 2 = **EC-02 PASS**。`child_plans` = PLAN-168 / PLAN-170；
+  `latest_recheck` = `RECHECK-20260925-171`；`memory_entries` = MEM-134 / MEM-135。
+- **续点判定**：以「迭代日志最后一行」+ 工作树 / 远端实况为准；下一轮进入
+  **cycle 3 = EC-03（D-03(b) 4 条 high 依赖升级）**。
+- **进度**：**EC-01 PASS / EC-02 PASS**；EC-03 / EC-04 / EC-05 / EC-06 仍 PENDING。
+  剩余差距 = 「D-03 的 high 升级 + 全量门」「D-07+D-08+D-09 的三处文档」
+  「D-12 的威胁模型草案」「收口复检 + 13 项 `D-NN` 终态表」。
 - **开局已核实的文件层事实（决定可行性）**：
   1. **D-01 点名逻辑已在树**：`packages/application/preflight/checks.py` 的 `check_tools`
      在 `not requirement.provider_ids` 时产出 `TOOL_UNAVAILABLE` +
-     `"no provider is available for capability {…}"` ⇒ 判据**不改实现**。
+     `"no provider is available for capability {…}"` ⇒ 判据**不改实现**（cycle 1 已证）。
   2. **D-02 证据面已在树**：`docs/architecture/POLICY_SURFACE_AUDIT.md` 的「该登记 = 15 条」+
-     `tests/application/preflight/test_policy_surface_difference_set.py` 同源比对。
+     `tests/application/preflight/test_policy_surface_difference_set.py` 同源比对
+     （cycle 2 已把它接进判据）。
   3. **D-03 可执行范围**：4 条 high 全是 `vite`（as-is `6.3.5`，修复版本 `6.4.3` = minor）⇒
      **可升级**；`undici`（`5.29.0 → 6.24.0+`）= **主版本跳跃 ⇒ 不做**；`yaml`（patch，非 high）
      排下一批。
@@ -497,8 +535,13 @@ EC，其 web 门与 m0 证据面会被 EC-06 复用；EC-04 三处文档独立�
   7. 工作树有**并发写者**的未提交条目（`apps/web/src/features/models/ModelDetails.tsx`、
      `packages/domain/model_drift.py`、`services/api/dto/models.py`，建档实测**内容 diff 为空**、
      仅行尾差异）⇒ **本 GOAL 不碰、不提交**这三处；只按显式路径提交本 GOAL 自己的产物。
+     **EC-03 尤其要注意**：`apps/web/src/features/models/ModelDetails.tsx` 在该清单里，
+     升级 `vite` 时**不得**把它卷进来。
   8. 规模门禁贴线：**四个正好 450 行零余量**（见「单 cycle SOP」③）⇒ 改动它们必须先搬代码。
   9. `make validate-all` = `.cursor/skills/cursor-framework-check/scripts/run_all_checks.py
      --profile m0 --keep-going`；m0 = python 6 + typescript 9 + framework 8 = **23** 项。
-  10. **全局编号**：建档当日 `PLAN` / `RECHECK` 最大 = `166` / `167` ⇒ 下一个子 PLAN 从
-      **`PLAN-20260925-168`** 起；`MEM` 最大 = `133`。
+  10. **全局编号**：下一批可用编号 = `PLAN` / `RECHECK` **`172`** 起（已用 `168` = PLAN、
+      `169` = RECHECK、`170` = PLAN、`171` = RECHECK）；`MEM` 下一个 = **`136`**。
+  11. **跑法**：m0 与代管脚本**一律**走 `uv run --frozen --no-sync python -B …`；
+      `R-3` 的取证用 `tools/quarantine_and_run_m0.py`（本轮实测代管后
+      `PASS: profile=m0; 23 deterministic checks` + 逐字节复核一致）。
