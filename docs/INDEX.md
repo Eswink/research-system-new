@@ -96,7 +96,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 
 ## Security
 
-- `security/THREAT_MODEL.md`
+- `security/THREAT_MODEL.md`（**2026-09-25 增第 6 节：授权面 BOLA / BFLA 文档级草案**，D-12 取 (b)；含「未覆盖范围」与 M18 边界关系，**零代码 / 零门禁改动**，**不得**引作安全结论）
 - `security/PLUGIN_TOOL_SUPPLY_CHAIN.md`
 - `security/SECRET_MANAGEMENT.md`
 - `security/IDENTITY_AND_ACCESS.md`

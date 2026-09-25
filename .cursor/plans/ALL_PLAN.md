@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260925-176](tasks/PLAN-20260925-176-authorization-surface-threat-model-draft.md) | DONE |
 | [x] | [PLAN-20260925-174](tasks/PLAN-20260925-174-landed-decisions-are-citable.md) | DONE |
 | [x] | [PLAN-20260925-172](tasks/PLAN-20260925-172-upgrade-high-dependency-vite.md) | DONE |
 | [x] | [PLAN-20260925-170](tasks/PLAN-20260925-170-read-grant-stays-per-item.md) | DONE |
