@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260925-182](tasks/PLAN-20260925-182-live-switch-and-observability-job-isolation.md) | DONE |
 | [x] | [PLAN-20260925-180](tasks/PLAN-20260925-180-gate-input-face-is-git-decided.md) | DONE |
 | [x] | [PLAN-20260925-178](tasks/PLAN-20260925-178-goal-016-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260925-176](tasks/PLAN-20260925-176-authorization-surface-threat-model-draft.md) | DONE |

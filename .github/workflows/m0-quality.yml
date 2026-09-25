@@ -74,6 +74,60 @@ jobs:
         env:
           PYTHONUTF8: "1"
           PYTHONIOENCODING: utf-8
+          # D-13 / GOAL-017：**整进程资源阈值**判据（`tests/observability/test_telemetry_overhead.py`
+          # 的 `_MAX_RSS_GROWTH_MIB` 与线程上限）移出本进程，改由 `observability-overhead` 作业
+          # 单独执行。理由（两次实测）：4400+ 用例同进程留下的水位会把它顶到阈值之上——
+          # 2026-09-25 `quality-windows-latest` 两次红都是这一条（174.0 MiB / 175.3 MiB，
+          # 阈值 128 MiB），同代码复跑又绿。**判据与阈值一字未动**，只换执行进程。
+          PYTEST_ADDOPTS: --ignore=tests/observability/test_telemetry_overhead.py
+
+  observability-overhead:
+    # D-13 / GOAL-017：整进程 RSS/线程阈值判据的**专用作业**。矩阵与 `quality` 一致 ⇒ 平台覆盖
+    # 不减（windows 正是观察到这类红的地方）；判据本身、阈值、测量语义**均未改动**，
+    # 且本作业失败 ⇒ 整个 workflow 失败（与拆分前同一条传播路径）。
+    name: observability-overhead-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: "0.11.18"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Validate Python lock
+        run: uv lock --check
+
+      - name: Sync frozen Python environment
+        run: uv sync --frozen --dev
+
+      - name: Prewarm the offline tokenizer cache
+        # Environment preparation, not the gate (GOAL-011 EC-05).  Measured 2026-09-22 with an
+        # unreachable proxy: the first `import litellm` requests the remote *model cost map*
+        # and falls back to the bundled copy; a cold TIKTOKEN_CACHE_DIR showed no vocabulary
+        # download.  Inside the gate, tests/conftest.py sets LITELLM_LOCAL_MODEL_COST_MAP before
+        # any test module imports litellm, and tests/egress_guard.py refuses anything
+        # non-loopback -- so this step keeps the gate genuinely offline without weakening it.
+        # Same-source sentence (judged): "CI 每轮至多有一次受控外部下载".
+        run: uv run --frozen --no-sync python -c "import litellm"
+
+      - name: Run the whole-process resource-threshold judge alone
+        run: >-
+          uv run --frozen --no-sync python -B -m pytest
+          tests/observability/test_telemetry_overhead.py
+          -q
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: utf-8
 
   eval-gate:
     name: eval-gate

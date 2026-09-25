@@ -172,7 +172,54 @@ exit_criteria:
       且**可按压**（把 runbook 里的开关名删掉 ⇒ 判红）。
       ⑥ 定向套件（`tests/e2e` + `tests/architecture`）+ `tests/tooling/` + `egress guard`
       = `blocked 0` 绿。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-25 cycle 2 收口（`PLAN-20260925-182` → **DONE**；复检
+      `RECHECK-20260925-183` = **PASS_WITH_WARNINGS**；工程记忆 `MEM-20260925-141`）。
+      **实现**：产品常量 `LIVE_RUN_SWITCH = "RESEARCHOS_LIVE_E2E"`（**唯一声明点**）+
+      `evaluate_live_run_gate(...)` 收**必填**参数 `live_switch: bool`（漏传 = `TypeError`，
+      不会静默开门）⇒ 门从两条条件变**三条**（开关 / runtime / 凭据），**凭据由充分降为必要**；
+      理由**逐条点名**未满足条件（开关排最前）。**与 EC 原文的一处口径修正（如实登记）**：
+      EC-02 的 `verify ③` 写的是「读取点唯一（`live_run_gate.py`）」——实现按**架构约束**
+      拆成两件事：**名字**由产品常量声明（`live_run_gate.py`），**环境读取**放在操作者边界
+      `tests/e2e/live_switch_support.py::live_e2e_switch_enabled`（**全仓唯一**；值**恰为** `"1"`
+      才算开；**单一职责小模块**，理由见下）。原因是 `packages/application/**` 实测**零**
+      `os.environ`（判据已把这一层环境自由钉成绝对断言）——把 env 读进产品层会破坏这条边界。
+      **m0 第 1 跑抓出的真缺陷（当场处置，未动阈值）**：第一次把两个开关函数放进
+      `tests/e2e/live_run_support.py`（448 → **477 行**）⇒ 撞 450 行硬上限，
+      `FAILED: 1 check(s): python/tests=1`（`test_python_source_size_limits[tests\e2e\live_run_support.py]`）
+      ⇒ 拆出 `tests/e2e/live_switch_support.py`（43 行）+ 12 处 import 改指向，
+      `live_run_support.py` 回到 **449 行**；`tests/tooling/test_python_source_limits.py` = `1029 passed`。
+      **未**动 450 / 50 这两个阈值（那是放宽）。
+      **判据**：`tests/architecture/python/test_live_switch_is_single_source.py` **`14 passed`**
+      ——① 常量在产品层**只赋值一次**；② 含常量/字面量的文件是**显式清单**；③ **AST** 找
+      「按开关名取映射项」⇒ 读取点**恰为**一个模块（文本判据曾漏检，见下）；④ 12 个带
+      `requires_live_llm` 的模块**逐条列出**且**全部**经同一道逻辑；⑤ 配置面**不得**预设开关
+      （`examples/**` + `.env*`）；⑥ runbook §4 的名字与命令按**导入的常量**比对；
+      ⑦ `tests/egress_guard.py` **不提**开关（放行面未拓宽）；⑧ 开关真值表（`1` 开、其余全关）。
+      **按压 6/6 全红**（`scratch/goal017-d11-press.py`：常量改名 / 漏开开关 / 第二读取点 /
+      配置面预设 / runbook 异名 / guard 被塞开关；每次 **sha256 逐字节还原**）。
+      **一次判据自身漏检被按压抓出**：第一版「唯一读取点」用**文本**判（`os.environ` 与开关名
+      同现）⇒ 按压 P3（`_os.environ.get('RESEARCHOS_LIVE_E2E')` + 别名）**看着绿**；
+      改 **AST** 后 P3 红。
+      **三态实跑**：① 开关关（凭据在场 + runtime 配好）⇒ live 用例 **skip 且点名开关**、
+      `blocked 0`；② 开关开 + 凭据空 ⇒ **skip 且点名 `LLM_MAIN_KEY`**（口径 = **如实 skip
+      并点名**，不是 PASS 也不是失败）、`blocked 0`；③ 开关 + 凭据 + runtime ⇒ 门**开**、
+      真实 run 到终态、live 用例 **`1 passed`**（`judged 3 connection attempt(s); blocked 0`，
+      **81.14s**；日志 `scratch/goal017-c2b-state3-live.log`，搬迁前的同结论在
+      `scratch/goal017-c2-state3-live.log`）——**本 GOAL 唯一一次真实出网**（③ 在最终修订版上
+      **复跑一次**以把证据绑到被提交的修订，共 2 次），
+      凭据值**未**进任何记录，开关**未**留在环境或 `.env`（命令级内联前缀）。
+      **同源**：12/12 模块（8 经门 / 4 经谓词）；runbook §4（两个开关的分工 + 三条条件 +
+      操作者命令 + 不得持久化 + 单读取点 + 回退三件事）/ §7（两行 live 证据行点名开关 + 边界 1
+      补「这一条讲的是凭据那一格」）/ §8（撤销只关三条件里的一格）。
+      **门禁面**：`git diff tests/egress_guard.py` **空**；放行面仍是 `requires_live_llm` 一个 marker。
+      **一次判据误红（实测发现并修）**：`tests/e2e/test_ec04_live_first_run.py` 的离线判据原写
+      「`not configured` **或** 凭据名」二选一 ⇒ 在「只配 runtime、忘开开关」时两条都不在理由里
+      ⇒ 误红（门的行为是对的）⇒ 改为**独立重算哪几条未满足并逐条核对**（比原判据更严）。
+      **残余**：`RECHECK-183` 的 `W-1`（skip 文案双重前缀，既有形态）、`W-2`（历史 MEM 仍写
+      「两条开门条件」，不回改历史）、`W-3`（absence 样本两道门）、`W-4`（本机 m0 仍同进程跑
+      阈值判据）、`W-5`（新作业多一次冷装）。
   - id: EC-03
     criterion: >-
       **D-13 观测作业隔离**：先**核实现状**再按**最小改动**实现——**阈值与测量语义一字不动**
@@ -196,7 +243,40 @@ exit_criteria:
       （无 `continue-on-error` / 无 `if: always()` 吞失败；run 结论由**任一** job 失败决定），
       并在 CI 台账里记录该 job 的真实结论。
       ⑤ 定向套件（`tests/observability` 独立跑 + `tests/tooling/test_m0_ci_coverage.py`）绿。
-    status: PENDING
+    status: PASS
+    status_note: >-
+      2026-09-25 cycle 2 收口（`PLAN-20260925-182` → **DONE**；复检
+      `RECHECK-20260925-183` = **PASS_WITH_WARNINGS**；工程记忆 `MEM-20260925-141`）。
+      **① 现状核实（先做）**：把 `tests/observability` 在 workflow 里的执行点**逐一实查**——
+      `collector-quality` 虽以 `tests/observability` 为独立步骤，但该步骤带
+      `-m "requires_collector or postgres or distributed"`，而阈值判据**无 marker** ⇒ 在那里被
+      **反选**；`quality-*` 经 `Run all M0 gates` 的 `python/tests` 全量套件**同进程**跑它 ⇒
+      **CI 上唯一执行点 = 4400+ 用例的那个进程** ⇒「现状已足够」**不成立**（这是对简报
+      推断的纠正，cycle 0 已核实）。**同类第二次的实证**：GOAL-015 的 run `36071654181`
+      （174.0 MiB）+ 本 GOAL cycle 1 的 run `36163737079`（175.3 MiB），两次都在
+      `quality-windows-latest`、都靠 `run_attempt=2` 转绿 ⇒ `(ii)` 负载敏感。
+      **② 判据零改动**：`git diff -- tests/observability/test_telemetry_overhead.py` **空**、
+      `git status --porcelain` 对该文件无输出 ⇒ 阈值（`_MAX_RSS_GROWTH_MIB = 128.0` /
+      `_MAX_TELEMETRY_THREADS = 4` / `_PEAK_ALLOC_LIMIT_BYTES`）与测量语义（整进程 RSS 增量）
+      **逐字未改**；**未**改成 warning / 非阻断。
+      **③ 作业结构（最小改动，逐行理由）**：`quality` 的「Run all M0 gates」步骤 env 增
+      **一条** `PYTEST_ADDOPTS: --ignore=tests/observability/test_telemetry_overhead.py`
+      （理由写在注释里：4400+ 用例同进程的水位把它顶到阈值之上，判据与阈值一字未动）；
+      **新增**作业 `observability-overhead`（矩阵 `ubuntu-latest` + `windows-latest`、
+      `timeout-minutes: 15`、步骤 = checkout / uv / `uv lock --check` / `uv sync --frozen --dev` /
+      **预热 tokenizer** / `pytest tests/observability/test_telemetry_overhead.py -q`）。
+      **矩阵与拆前一致 ⇒ 平台覆盖不减**（windows 正是观察到这类红的地方）。
+      `tests/tooling/test_m0_ci_coverage.py` **`5 passed`**（新作业按序**先预热**；
+      `gate_jobs` = **5** ⇒ `>= 4` 反证仍成立；`collector-quality` / `container-quality` 断言未破）；
+      `validate_cursor_framework.py` = `PASS`（workflow token 判据全在）。
+      **④ 失败传播**：`grep -cE "continue-on-error|^\s+if:" .github/workflows/m0-quality.yml`
+      = **0** ⇒ 新作业与既有作业**同形态**（无豁免键）⇒「本作业红 ⇒ 整体 CI 红」与拆前**同一条**
+      路径；实证 = cycle 1 的 run `36163737079`（单 job 红 ⇒ run `conclusion=failure`）。
+      **⑤ 定向套件**：机制取证 `pytest tests/observability --collect-only` 计数 **`3 → 0`**
+      （带 `PYTEST_ADDOPTS`）；隔离进程实跑 `pytest tests/observability/test_telemetry_overhead.py`
+      = **`3 passed in 2.71s`**（同一台机器、独立进程远低于阈值）。
+      **残余**：`W-4`（本机 m0 **仍**同进程跑该判据——授权面是 CI 作业结构）、
+      `W-5`（新作业多一次冷装）。
   - id: EC-04
     criterion: >-
       **收口复检 + 残余登记**：独立复检脚本（**不复用本 GOAL 的叙述**）在**当前树**与
@@ -270,9 +350,11 @@ escalation_triggers:
   - 明文凭据泄露（**即使是可弃用的免费额度**）—— 立即停止并报告
 child_plans:
   - .cursor/plans/tasks/PLAN-20260925-180-gate-input-face-is-git-decided.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-181-gate-input-face-is-git-decided.md
+  - .cursor/plans/tasks/PLAN-20260925-182-live-switch-and-observability-job-isolation.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260925-183-live-switch-and-observability-job-isolation.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260925-140-gate-input-face-needs-an-authority-and-a-pair.md
+  - .cursor/memory/entries/MEM-20260925-141-one-switch-one-reader-and-one-job-per-threshold.md
 ---
 
 ## 目标与退出标准
@@ -284,8 +366,8 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | **D-10(a)** Markdown 链接扫描的输入面由 **git** 决定 | 判据（成对 + 硬失败）+ 反证留档 + `git diff` 零放宽 + as-is m0 **23/23** | **PASS** |
-| EC-02 | **D-11(a)** live 开门 = **开关 + 凭据**，全部判据**同源** | 单一开关读取点 + 消除第二套判据 + 三态实跑 + runbook 同源 | PENDING |
-| EC-03 | **D-13(a)+(b)** 观测阈值判据的**作业隔离**（或如实登记「不改 + 证据」） | 现状核实 + 最小 workflow 改动 + 失败传播取证 + 阈值零改动 | PENDING |
+| EC-02 | **D-11(a)** live 开门 = **开关 + 凭据**，全部判据**同源** | 单一开关读取点 + 消除第二套判据 + 三态实跑 + runbook 同源 | **PASS** |
+| EC-03 | **D-13(a)+(b)** 观测阈值判据的**作业隔离**（或如实登记「不改 + 证据」） | 现状核实 + 最小 workflow 改动 + 失败传播取证 + 阈值零改动 | **PASS** |
 | EC-04 | 收口复检 + 残余登记 | 两树复检脚本 + m0 可支持终态行 + 13 项 `D-NN` 终态表 + CI 台账 | PENDING |
 
 **依赖关系**：EC-01 / EC-02 / EC-03 **互相独立**（一个门禁脚本 / 一个门开关 / 一个 workflow
@@ -547,14 +629,16 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `25d802b`（推送 tip，推送区间 `f1ca9ed..25d802b`） | 治理 `validate.py` = `Cursor 治理验证通过` | M0 [36156959548](https://github.com/Eswink/research-system-new/actions/runs/36156959548) **六 job 全 success** + CodeQL [36156958765](https://github.com/Eswink/research-system-new/actions/runs/36156958765) **3/3 success**（`run_attempt=1`，轮询 `ALL_TERMINAL`） | — | EC-01…EC-04 全 PENDING；三条授权判词已落 frontmatter；起点已定位（D-10：`NON_SOURCE_DIRS` + 全工作区 `os.walk` + 链接扫描；`scratch/` 被 `.gitignore:43` 忽略且未跟踪、`--others --exclude-standard` = 0、tracked = 3403；D-11：既有单一门 `live_run_gate.py` 无开关，`_live_credentials()` 等至少 5 处**第二套判据**待消除，`egress_guard` 放行面 = marker，runbook 同源判据已在树；D-13：`collector-quality` 虽为独立 job 且命令行列出 `tests/observability`，但该步骤带 `-m "requires_collector or postgres or distributed"` ⇒ **无标记的阈值判据在那里被反选**，其唯一 CI 执行点就是 `quality-*` 的 4400+ 全量进程）。**建档时零代码改动**（只增本文件） | cycle 1 = **EC-01 D-10 门禁 scoping**（git 决定的输入面 + 成对判据 + 硬失败） |
-| 1 | PLAN-20260925-180（EC-01） | 见回合汇报（推送区间 `25d802b..` + 本 cycle 的推送 tip；**下一 cycle 回填**） | 判据 `tests/tooling/test_validate_bundle_git_decided_input_face.py` = **`3 passed`**（`egress guard` = `judged 0 / blocked 0`）；**反证**（独立 worktree，同一坏文件）：`OLD_EXIT=1`（点名 `scratch/self-governance-bootstrap-prompt.md`）→ `NEW_EXIT=0` → force-add 成已跟踪后**又红** `WT_TRACKED_EXIT=1`；**按压**：改动前 `TOTAL 4` → 改动后 `TOTAL 3`；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化（534 files）、`mypy` = `Success: no issues found in 1017 source files`、`tests/tooling` = **`1158 passed`**、治理 `validate.py` = 通过、`DOCS-CHECK PASS`；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`M0_EXIT=0`、`PASS [` = 24；`R-3` 消失、**不再需要代管**、证人文件 `69944` 字节仍在场） | 见回合汇报（本 cycle 的推送 run 在其台账行） | **一次环境红如实登记（判据未动）**：m0 第 1 跑 `FAILED: 1 check(s): python/tests=1`，唯一失败 = `tests/adapters/execution/test_docker_backend_e2e.py::TestFaultInjection::test_oom_is_failed`（Docker OOM 故障注入）；**成对对照** = 隔离跑 `1 passed`（1.82s）+ 模块 `tests/adapters/execution` **`89 passed`** + 改动集不含 `adapters/execution` ⇒ 归类 `LOCAL_GATE_PROTOCOL` 的 **(ii) 环境专属**（OOM 容器就该判 `FAILED`，判据描述的行为是对的）⇒ **复跑取终态**（第 2 跑 `M0_EXIT=0`） | **EC-01 = PASS**（`RECHECK-20260925-181` = `PASS_WITH_WARNINGS`；`W-1` = 版本号两段**仍扫全工作区**（属另一次授权）、`W-2` = 跨平台以 CI 为权威证书、`W-3` = 名字无关性是契约、`W-4` = `validate_bundle.py` 不在 450 行覆盖面内、`W-5` = `(ii)` 类红靠复跑）。工程记忆 `MEM-20260925-140`。其余三个 EC 仍 PENDING | cycle 2 = **EC-02 D-11 live 显式开关**（开关 + 凭据 = 开门；全部 live 判据**同源**；runbook 逐字同源） |
+| 1 | PLAN-20260925-180（EC-01） | `9cfba09`（推送区间 `25d802b..9cfba09`，本 cycle 的推送 tip） | 判据 `tests/tooling/test_validate_bundle_git_decided_input_face.py` = **`3 passed`**（`egress guard` = `judged 0 / blocked 0`）；**反证**（独立 worktree，同一坏文件）：`OLD_EXIT=1`（点名 `scratch/self-governance-bootstrap-prompt.md`）→ `NEW_EXIT=0` → force-add 成已跟踪后**又红** `WT_TRACKED_EXIT=1`；**按压**：改动前 `TOTAL 4` → 改动后 `TOTAL 3`；`ruff check` = `All checks passed!`、`ruff format --check` = 已格式化（534 files）、`mypy` = `Success: no issues found in 1017 source files`、`tests/tooling` = **`1158 passed`**、治理 `validate.py` = 通过、`DOCS-CHECK PASS`；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`M0_EXIT=0`、`PASS [` = 24；`R-3` 消失、**不再需要代管**、证人文件 `69944` 字节仍在场） | M0 [36163737079](https://github.com/Eswink/research-system-new/actions/runs/36163737079)：`run_attempt=1` **`quality-windows-latest` 红**（本条**不是**本 cycle 引入：唯一失败 = `tests/observability/test_telemetry_overhead.py::test_telemetry_on_overhead_is_bounded_and_shutdown_clean`，`AssertionError: RSS grew 175.3 MiB (leak suspected)`，`assert 175.3046875 < 128.0`；**结构证人**：`collector-quality` 的 `-m` 反选掉了这条无标记判据 ⇒ 唯一执行点就是 4400+ 用例进程）⇒ 同代码 **`run_attempt=2` 六 job 全 `success`**（`conclusion=success`）⇒ 归类 `LOCAL_GATE_PROTOCOL` 的 **(ii) 负载敏感**，**判据与阈值一字未动**；**这已是同类第二次**（GOAL-015 的 run `36071654181` 是 174.0 MiB）⇒ 正好构成 D-13 的升级依据。CodeQL [36163735853](https://github.com/Eswink/research-system-new/actions/runs/36163735853) **3/3 success** | — | **EC-01 = PASS**（`RECHECK-20260925-181` = `PASS_WITH_WARNINGS`；`W-1` = 版本号两段**仍扫全工作区**（属另一次授权）、`W-2` = 跨平台以 CI 为权威证书、`W-3` = 名字无关性是契约、`W-4` = `validate_bundle.py` 不在 450 行覆盖面内、`W-5` = `(ii)` 类红靠复跑）。工程记忆 `MEM-20260925-140`。其余三个 EC 仍 PENDING | cycle 2 = **EC-02 D-11 live 显式开关**（开关 + 凭据 = 开门；全部 live 判据**同源**；runbook 逐字同源） |
+| 2 | PLAN-20260925-182（EC-02 + EC-03） | 见回合汇报（推送区间 `9cfba09..` + 本 cycle 的推送 tip；**下一 cycle 回填**） | **新判据** `tests/architecture/python/test_live_switch_is_single_source.py` = **`14 passed`**（`egress guard` = `judged 0 / blocked 0`）；**按压** `scratch/goal017-d11-press.py` = **`pressed=6 failures=[]`**（6/6 `RED-OK`：常量改名 / 漏开开关 / 第二读取点 / 配置面预设 / runbook 异名 / guard 被塞开关；每次 sha256 核对**逐字节还原**）；**三态**：① 开关关（凭据在场 + runtime 配好）⇒ live 用例 **skip 且点名开关**、`blocked 0`；② 开关开 + 凭据空 ⇒ **skip 且点名 `LLM_MAIN_KEY`**、`blocked 0`；③ 开关 + 凭据 + runtime ⇒ 门**开**、真实 run 到终态、live 用例 **`1 passed`**（`judged 3 connection attempt(s); blocked 0`，26.50s）——**本 GOAL 唯一一次真实出网**；**定向套件** = `92 passed, 1 skipped`；`ruff check` = `All checks passed!`、`ruff format --check` = `1028 files already formatted`、`mypy` = `Success: no issues found in 1018 source files`；**D-13 判据零改动** = `git diff -- tests/observability/test_telemetry_overhead.py` **空**；**机制取证** `--collect-only` 计数 `3 → 0`、**隔离进程实跑** = `3 passed in 2.71s`；`tests/tooling/test_m0_ci_coverage.py` = `5 passed`、`validate_cursor_framework.py` = `PASS`；治理 `validate.py` = 通过；**as-is 本机 m0 第 1 跑红（真缺陷、本 cycle 引入并当场处置）** = `FAILED: 1 check(s): python/tests=1`（`tests\e2e\live_run_support.py` **477 > 450** ⇒ 拆出 `tests/e2e/live_switch_support.py` + 12 处 import 改指向，**未动阈值**）⇒ **第 2 跑 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24；`scratch/goal017-c2b-m0-as-is.log`） | 见回合汇报（本 cycle 的推送 run 在其台账行） | **一次判据误红（实测发现并修）**：`tests/e2e/test_ec04_live_first_run.py` 的离线判据原写「`not configured` **或** 凭据名」二选一——在「只配 `RESEARCHOS_AGENT_RUNTIME=openhands`、忘开 live 开关」时两条都不在理由里 ⇒ **误红**（门的行为是对的）。改为**独立重算哪几条未满足并逐条核对**（比原判据更严）。**一次判据自身漏检（按压抓出）**：第一版「唯一读取点」用**文本**判 ⇒ 按压 P3 看着绿；改 **AST**（按开关名取映射项）后 P3 红 | **EC-02 = PASS**（`RECHECK-20260925-183` = `PASS_WITH_WARNINGS`；`W-1` = skip 文案双重前缀（既有形态）、`W-2` = 历史 MEM 仍写「两条」不回改、`W-3` = absence 样本两道门、`W-4` = 本机 m0 仍同进程跑阈值判据、`W-5` = 新作业多一次冷装）；**EC-03 = PASS**（阈值零改动 + 作业 6→7 + 无豁免键 ⇒ 传播路径不变 + 平台覆盖不减）；工程记忆 `MEM-20260925-141`。**EC-04 仍 PENDING** | cycle 3 = **EC-04 收口复检**（两树复检 + m0 终态行 + 13 项 `D-NN` 终态表 + CI 台账） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 六 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-017 落地） | `25d802b` | M0 [36156959548](https://github.com/Eswink/research-system-new/actions/runs/36156959548) / CodeQL [36156958765](https://github.com/Eswink/research-system-new/actions/runs/36156958765) | **绿（六 job 全 success + CodeQL 3/3）**（`run_attempt=1`）：M0 `conclusion=success`，逐 job `eval-gate` / `console-frontend` / `quality-windows-latest` / `container-quality` / `quality-ubuntu-latest` / `collector-quality` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)` **3/3 `success`**。轮询日志 `scratch/goal017-c0-ci-poll.log`（第 39 轮 `completed=2/2`、`ALL_TERMINAL`） |
-| cycle 1 实施（EC-01） | 见回合汇报 | 见回合汇报 | —（台账尾巴：本行所在提交的 run 终态在**回合汇报**给出） |
+| cycle 1 实施（EC-01） | `9cfba09` | M0 [36163737079](https://github.com/Eswink/research-system-new/actions/runs/36163737079) / CodeQL [36163735853](https://github.com/Eswink/research-system-new/actions/runs/36163735853) | **`run_attempt=1` 红 ⇒ `run_attempt=2` 绿**：attempt 1 里 `quality-windows-latest` **failure**（`AssertionError: RSS grew 175.3 MiB (leak suspected)`，`tests/observability/test_telemetry_overhead.py:150`），其余 5 job `success`；同代码 **attempt 2 六 job 全 `success`** ⇒ run `conclusion=success`（**同代码同 job 不同结论 = `(ii)` 负载敏感偶发红**，判据与阈值**一字未动**；同类第二次，G-015 是 174.0 MiB ⇒ D-13 的升级依据）。CodeQL `Push on main` `conclusion=success`，`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)` **3/3 `success`**。轮询日志 `scratch/goal017-c1-ci-poll.log`（第 37 轮 `completed=2/2`、`ALL_TERMINAL`）+ 复跑 `scratch/goal017-c1-ci-rerun.log`；失败 job 全量日志 `scratch/goal017-c1-win-full.log`（第 1477 行 = 唯一失败用例） |
+| cycle 2 实施（EC-02 + EC-03） | 见回合汇报 | 见回合汇报 | —（台账尾巴：本行所在提交的 run 终态在**回合汇报**给出；本 cycle 把该阈值判据拆进 `observability-overhead` 专用作业 ⇒ 下一行起该 job 成为六 job 之外的**第七**个受查作业） |
 
 ## 状态历史
 
@@ -562,6 +646,7 @@ D-13 观测作业隔离）落地为**可复核的工程事实**，且**只动**�
 | --- | --- | --- |
 | 2026-09-25 | ACTIVE | 建档：用户会话指令（goal 模式）按 `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 的**建议列**拍板三条并**授权实施**（D-10(a) / D-11(a) / D-13(a)+(b)）；四 EC 设计（D-10 门禁 scoping / D-11 live 显式开关 / D-13 观测作业隔离 / 收口复检）。**明确不授权**：`undici` 与 `yaml` 升级、D-01(a)、D-02(a)、D-04、D-05、D-06、`ADR-0031` 的 `Status`、D-12(a)。**建档时零代码改动**（只增本文件）。 |
 | 2026-09-25 | ACTIVE | cycle 1：**EC-01 = PASS**（D-10(a) 门禁 scoping）——输入面改由 **git 决定**（已跟踪 ∪ 未跟踪未忽略），**跟踪文件照旧全扫**（判据 ②③ 取证），**git 面不可用当场点名硬失败**（`not_a_git_tree`）；判据 **`3 passed`**，反证（worktree 先红后绿 + force-add 后**又红**）与按压（`TOTAL 4 → 3`）留档；**零放宽**（判据面逐字未改、`NON_SOURCE_DIRS` 零新增、版本号两段未改）；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`R-3` 消失、不再需要代管、证人文件仍在场）。一次环境红（Docker OOM 注入）如实登记为 `(ii)` 类、判据未动。其余三 EC 仍 PENDING。 |
+| 2026-09-25 | ACTIVE | cycle 2：**EC-02 = PASS**（D-11(a) live 显式开关）——`live_run_gate.py` 增产品常量 `LIVE_RUN_SWITCH` + **必填**参数 `live_switch`（门从两条变**三条**，凭据由充分降为**必要**）；环境读取**全仓一个点**（`live_e2e_switch_enabled`，值恰为 `1`）；12 个 live 模块**全部**同源（8 经门 / 4 经谓词）；4 个既有门判据**只收紧**，新判据 14 条 + **6 次按压全红**（含一次**判据自身漏检**被按压抓出 ⇒ 改 AST）；**三态实跑**（①skip 点名开关 ②skip 点名凭据 ③门开、真实 run 到终态 = 本 GOAL 唯一一次真实出网）；runbook §4/§7/§8 逐字同源。**EC-03 = PASS**（D-13(a)+(b) 作业隔离）——`observability-overhead` 专用作业（矩阵 ubuntu + windows 保平台覆盖）+ `quality-*` 侧 `PYTEST_ADDOPTS` 排除；**判据与阈值零改动**（`git diff` 空）、机制取证 `3 → 0`、隔离进程 `3 passed`、无豁免键 ⇒ 传播路径不变。cycle 1 的 CI 尾巴：attempt 1 红在该阈值判据、attempt 2 全绿（`(ii)` 类，判据未动）。EC-04 仍 PENDING。 |
 
 ## 13 项 `D-NN` 终态表（EC-04④）
 
@@ -585,56 +670,49 @@ GOAL-017 的四个 EC 里**实际做了什么**（未授权项一律「未实施
 | D-08 | `ModelCompatibilityProfile` 是否一等域实体 | 取 (b)：维持**派生视图** | **已实施**（GOAL-016 EC-04）；**本 GOAL 不碰** | `MODEL_COMPATIBILITY.md` §9 记下决定 + 「若要 (a) **必须先出 ADR**」；**Domain 边界零改动** | 现状可用，属**登记**而非缺口 |
 | D-09 | 非 ASCII 路径豁免是否需 ADR | 取 (a)：出 ADR 记录豁免（30 条，**不重命名**） | **已实施**（GOAL-016 EC-04） | `docs/adr/ADR-0032-legacy-non-ascii-path-exemption.md`（`Status: Accepted`）+ 判据「现实 ↔ 清单」**双向**比对 | 豁免继续以「口径」形式存在 |
 | D-10 | 门禁 scoping：`validate_bundle` 扫描 gitignored 工作区（`R-3`） | **本轮拍板：取 (a) 并授权实施**——Markdown 链接扫描的**输入面由 git 决定**，跟踪文件照旧全扫 | **已实施**（**本 GOAL 的 EC-01** / PLAN-180） | 授权原文见 `authorization.ref` (1)（边界 a–e）；实现 `git_decided_inputs()`（`--cached` ∪ `--others --exclude-standard`）+ 不可用**当场点名**硬失败；判据 `tests/tooling/test_validate_bundle_git_decided_input_face.py`（`3 passed`）；反证留档 `scratch/goal017-c1-pair-proof.txt`；**as-is 本机 m0 = 23/23**（`R-3` 消失） | ~~as-is 本机 m0 停在 22/23~~ ⇒ **已消除**（红项来自**别人**未跟踪文件；CI 本就不受影响） |
-| D-11 | live 判据的开门条件 = 环境恰好有凭据 | **本轮拍板：取 (a) 并授权实施**——显式开关 + 凭据（凭据由**充分**降为**必要**） | **已授权、待实施**（**本 GOAL 的 EC-02**） | 授权原文见 `authorization.ref` (2)（边界 a–e）；as-is 第二套判据 ≥5 处（见「目标与退出标准」第 4 条实测） | 默认门结论继续取决于**环境里有没有凭据**；CI 上过期 secret 会让默认门**真出网**并判红 |
+| D-11 | live 判据的开门条件 = 环境恰好有凭据 | **本轮拍板：取 (a) 并授权实施**——显式开关 + 凭据（凭据由**充分**降为**必要**） | **已实施**（**本 GOAL 的 EC-02** / PLAN-182） | 授权原文见 `authorization.ref` (2)（边界 a–e）；产品常量 `LIVE_RUN_SWITCH = "RESEARCHOS_LIVE_E2E"` + 门收**必填** `live_switch`（三条条件）；环境**唯一**读取点 `tests/e2e/live_run_support.py::live_e2e_switch_enabled`；12 个 live 模块同源；判据 `tests/architecture/python/test_live_switch_is_single_source.py`（`14 passed`）+ 6 次按压；**三态实跑**（③ = 真实 run 到终态、`1 passed`）；runbook §4/§7/§8 逐字同源；`egress_guard` 放行面**未**拓宽（判据 + 按压 P6） | 默认门结论继续取决于**环境里有没有凭据**；CI 上过期 secret 会让默认门**真出网**并判红 |
 | D-12 | 威胁建模 / 授权面覆盖（BOLA / BFLA） | 取 (b)：文档级草案；**(a) 仍需另行拍板** | **已实施 (b)**（GOAL-016 EC-05）；**本 GOAL 不做 (a)** | `docs/security/THREAT_MODEL.md` 第 6 节（含 6.3 未覆盖范围 / 6.4 与 M18 边界）；**diff 只含 docs** | 授权面覆盖缺系统性论证；`R-M1` 无法据此收口 |
-| D-13 | CI 上「资源阈值型判据」的负载敏感性 | **本轮拍板：取 (a) 的协议 + 授权接近 (b) 的作业隔离**——判据与阈值一字不动，只改**作业结构** | **已授权、待实施**（**本 GOAL 的 EC-03**；若判定现状已足够 ⇒ 登记不改） | 授权原文见 `authorization.ref` (3)（边界 a–d）；as-is 证人 = run `36071654181` 的 `quality-windows-latest` 判红、同 run `run_attempt=2` success | 同类判据会继续在**负载高**的运行器上偶发判红，每次都要人工复跑 + 归因，且**红绿不一致会削弱结论可信度** |
+| D-13 | CI 上「资源阈值型判据」的负载敏感性 | **本轮拍板：取 (a) 的协议 + 授权接近 (b) 的作业隔离**——判据与阈值一字不动，只改**作业结构** | **已实施**（**本 GOAL 的 EC-03** / PLAN-182） | 授权原文见 `authorization.ref` (3)（边界 a–d）；as-is 证人 = GOAL-015 的 run `36071654181`（174.0 MiB）**与**本 GOAL cycle 1 的 run `36163737079`（175.3 MiB），两次都靠 `run_attempt=2` 转绿 ⇒ 同类**第二次**；落地 = 新作业 `observability-overhead`（矩阵 ubuntu + windows）+ `quality-*` 的 `PYTEST_ADDOPTS: --ignore=…`；**判据/阈值零改动**（`git diff` 空）、机制取证 `3 → 0`、隔离进程 `3 passed`、无 `continue-on-error` ⇒ 传播不变 | 同类判据会继续在**负载高**的运行器上偶发判红，每次都要人工复跑 + 归因，且**红绿不一致会削弱结论可信度** |
 
-**汇总（cycle 1 后）**：**已实施 7 项**（D-01 / D-02 / D-03 部分 / D-07 / D-08 / D-09 / D-12
-+ **D-10**）**+ 已授权待实施 2 项**（D-11 / D-13 = 本 GOAL 的 EC-02 / EC-03）
-**+ 未授权 4 项**（D-04 / D-05 / D-06 与 D-01(a) / D-02(a) / D-12(a) 的 (a) 面）。
+**汇总（cycle 2 后）**：**已实施 9 项**（D-01 / D-02 / D-03 部分 / D-07 / D-08 / D-09 / D-12
++ **D-10** + **D-11** + **D-13**）**+ 未授权 4 项**（D-04 / D-05 / D-06 与 D-01(a) / D-02(a) /
+D-12(a) 的 (a) 面）——即：**三条本轮授权的决定全部已实施**。
 **未授权项一律原样保留**，其红 / 缺口**未**被本 GOAL 收口，也**未**被本 GOAL 掩盖。
 
 ## 当前续点
 
 - **GOAL-017 = ACTIVE（2026-09-25）**：cycle 0 = 建档（**零代码改动**）；cycle 1 = **EC-01 PASS**
-  （D-10 门禁 scoping，as-is 本机 m0 **23/23**）；cycle 2 = **EC-02 D-11 live 显式开关**；
-  cycle 3 = **EC-03 D-13 观测作业隔离**（先核实现状，允许「登记不改」）；
-  cycle 4 = **EC-04 收口复检 + 残余登记**。
-- **续点判定**：cycle 1 的 commit + CI 到终态后 ⇒ **下一步 = cycle 2（EC-02）**。
-- **进度**：EC-01 = **PASS**；EC-02 / EC-03 / EC-04 = PENDING（budget `max_cycles: 20`，
-  用掉 1；`no_progress_stop_cycles: 2` 未触发）。
+  （D-10 门禁 scoping，as-is 本机 m0 **23/23**）；cycle 2 = **EC-02 PASS + EC-03 PASS**
+  （D-11 live 显式开关；D-13 观测作业隔离）；cycle 3 = **EC-04 收口复检 + 残余登记**。
+- **续点判定**：cycle 2 的 commit + CI 到终态后 ⇒ **下一步 = cycle 3（EC-04）**；
+  EC-04 的四件交付物：① `scratch/` 两树复检脚本（干净 checkout 封印）② **as-is 本机 m0 终态行**
+  ③ 13 项 `D-NN` 终态表（本表，收口时逐行确认）④ CI 台账补到终态（含**第七**个作业
+  `observability-overhead` 的首次实跑结论）。
+- **进度**：EC-01 / EC-02 / EC-03 = **PASS**；EC-04 = PENDING（budget `max_cycles: 20`，
+  用掉 2；`no_progress_stop_cycles: 2` 未触发）。
 - **依赖面**：**本 GOAL 不做任何 pin 变更**（`undici` / `yaml` 明文未授权）；
   `vite` 已由 GOAL-016 EC-03 停在 `6.4.3`。
 - **开局已核实的文件层事实（决定可行性）**：
   1. **D-10 已完成**：`git_decided_inputs()` 只服务**链接扫描**；`check_versions()` 的两段
      **仍扫全工作区**（刻意围栏，见 `RECHECK-181` 的 `W-1`）。
   2. **`R-3` 已消失**：as-is 本机 m0 = 23/23（`scratch/goal017-c1b-m0-as-is.log`）。
-  3. **D-11 的单一门已在树**：`packages/application/model_relay/live_run_gate.py` 被
-     **12 处测试调用点**复用 ⇒ 把开关放这里/经它注入是**最小同源改动**；
-     **要消除的第二套判据** = `tests/e2e/test_run_chain_retrieval_live.py` 的
-     `_live_credentials()` + `test_ec03_real_runtime_offline_chain.py` /
-     `test_m12_usage_real_relay.py`（`RESEARCHOS_LIVE_E2E_ENDPOINT`+`_KEY`）+
-     `test_live_model_absence.py`（`_CASE_ENV`）+ `test_live_failure_paths.py`
-     （`RESEARCHOS_LIVE_FAILURE_CASE`）。
-     **架构约束（实测）**：`packages/application/**` **零处** `os.environ` ⇒ 开关的**名称**由
-     产品侧常量声明、**读取**放在操作者边界（测试侧支持模块），gate 收**必填**布尔参数
-     （必填 ⇒ 调用点漏传会直接 `TypeError`，不会静默开门）。
-  4. **runbook 同源判据已在树**：`tests/architecture/python/test_runbook_same_source.py`
-     （反引号里的每个仓库路径 / ENV 名 / pytest 目标都必须真实存在；`CODE_ROOTS` 含 `tests/`）
-     ⇒ EC-02(e) 的「逐字同源」可机器强制，并可**按压**。
-  5. **要一并更新的既有判据（收紧而非放宽）**：`tests/e2e/test_ec04_live_gate_offline.py`
-     的「两条件即开门」两条 + `tests/architecture/python/test_live_failure_paths_same_source.py`
-     的门助手与 `_CASE_ENV` 两条 ⇒ 都要**加上开关前提**，并**新增**「无开关即关门」的判据。
-  6. **D-13 的关键事实（cycle 0 已核实，纠正简报的推断）**：`collector-quality` **虽然**在命令行
-     列出 `tests/observability`，但该步骤的 `-m "requires_collector or postgres or distributed"`
-     **反选**掉了无标记的 `test_telemetry_overhead.py` ⇒ 该阈值判据在 CI 上的**唯一**执行点
-     就是 `quality-*` 的 4400+ 全量进程（这正是 D-13 指向的负载竞争面）⇒「现状已足够」**不成立**。
+  3. **D-11 已完成**：门三条条件（开关 / runtime / 凭据）；开关名**一个声明点**、
+     环境**一个读取点**；12 个 live 模块同源；**新加 live 模块必须在判据的 `LIVE_MODULES`
+     清单里露头**（否则判据红）。
+  4. **D-11 的口径（写给下一轮读的人）**：开关**恰为 `1`** 才算开；**开关开、凭据缺 ⇒ 如实
+     skip 并点名**（不是失败、也不是通过）；凭据值**永不**进记录（判词 + 计数是唯一读数面）。
+  5. **runbook 同源判据已在树且已按新口径更新**：`tests/architecture/python/test_runbook_same_source.py`
+     （反引号里的仓库路径 / ENV 名 / pytest 目标必须真实存在）+ 新判据按**导入的常量**比对 §4。
+  6. **D-13 的关键事实**：`collector-quality` 的 `-m "requires_collector or postgres or distributed"`
+     **反选**掉了无标记的阈值判据 ⇒ 它的 CI 执行点**现在**是专用作业 `observability-overhead`
+     （矩阵 ubuntu + windows）；本机 m0 **仍**在同一进程里跑它（授权面是 CI 作业结构，见 `W-4`）。
   7. **CI 结构判据在树**：`tests/tooling/test_m0_ci_coverage.py` ⇒ 任何新 job 必须满足
-     「跑 Python 门之前先预热 tokenizer」且不得让 `gate_jobs >= 4` 的反证失效；
-     还要保住 `collector-quality` / `container-quality` 的既有断言。
+     「跑 Python 门之前先预热 tokenizer」且不得让 `gate_jobs >= 4` 的反证失效
+     （本 cycle 后 `gate_jobs` = **5**）；`validate_cursor_framework.py` 另有一组 workflow token 判据
+     （`ubuntu-latest` / `windows-latest` / `--profile m0` / `--keep-going` / `contents: read` … 全在）。
   8. **跑法**：m0 与代管脚本**一律**走 `uv run --frozen --no-sync python -B …`；
      m0 全量**独占运行**、用**仓库 `.venv`**；**写记录时不要跑 m0**。
-  9. **全局编号**：下一个 `PLAN` / `RECHECK` = **182** / **183**；`MEM` 下一个 = **141**。
+  9. **全局编号**：下一个 `PLAN` / `RECHECK` = **184** / **185**；`MEM` 下一个 = **142**。
  10. **工作树并发写者**：`apps/web/src/features/models/ModelDetails.tsx` /
      `packages/domain/model_drift.py` / `services/api/dto/models.py`（内容 diff 为空）
      ⇒ **不碰、不提交**。

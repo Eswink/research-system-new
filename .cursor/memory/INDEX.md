@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260925-141](entries/MEM-20260925-141-one-switch-one-reader-and-one-job-per-threshold.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-182 |
 | [MEM-20260925-140](entries/MEM-20260925-140-gate-input-face-needs-an-authority-and-a-pair.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-180 |
 | [MEM-20260925-139](entries/MEM-20260925-139-closeout-needs-two-trees-and-two-terminal-lines.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-178 |
 | [MEM-20260925-138](entries/MEM-20260925-138-threat-model-draft-needs-a-scope-fence.md) | ACTIVE | repository | 0.90 | 2027-03-25 | PLAN-20260925-176 |
