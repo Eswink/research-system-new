@@ -148,8 +148,14 @@ GOAL-017 的终态表 **13 行**（`D-01`…`D-13`）逐行在位（结构半的
 ### AC-7 实测
 
 本 GOAL 的 CI 台账四行（建档 `25d802b` / cycle 1 `9cfba09` / cycle 2 `958c321`+`505f2ab` /
-cycle 3 = 本收口提交）逐行在位；**cycle 3 行所在提交的 run 终态在回合汇报给出**
-（收口惯例：写入台账那一行的提交，其 run 在其自身推送后才知道结论）。
+cycle 3 = 收口提交 `e0f1720`）逐行在位，**每行都有 run id + 链接 + 逐 job 结论 + `run_attempt`**：
+收口提交的 M0 = [36177836179](https://github.com/Eswink/research-system-new/actions/runs/36177836179)
+（`run_attempt=1`、**八 job 全 `success`**：`quality-*` 两平台 + `observability-overhead-*`
+两平台 + `eval-gate` / `container-quality` / `collector-quality` / `console-frontend`）、
+CodeQL = [36177836020](https://github.com/Eswink/research-system-new/actions/runs/36177836020)
+（`3/3 success`）；轮询 `scratch/goal017-c3-ci-poll.log`（第 42 轮 `completed=2/2`、`ALL_TERMINAL`）。
+**收口惯例**：写入台账那一行的是**收口尾巴提交**，其自身 run 的终态在**回合汇报**给出
+（与 GOAL-016 同一条惯例）。
 
 ## 结论
 
