@@ -110,7 +110,7 @@ exit_criteria:
       ④ **向后兼容对照**：认证关闭时，同一路径产出的 `actor` 与基线**逐字相同**
       （对照证据须是**实测取值**，不是「套件绿」）；⑤ 取证用 `git diff` 说明
       `default_actor` 的**缺省值语义未被改**（或改了则以对照证明等价）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **认证面（写面 token 保护，三态 + 凭据纪律）**：mutating 端点受 token 保护，
@@ -136,7 +136,7 @@ exit_criteria:
       搜 token **字面值** ⇒ **零命中**（token 值只在运行进程的环境变量里）；
       日志 / 事件 / 遥测面同样零命中；⑥ **反证成对**：去掉校验 ⇒ 带错 token 放行 ⇒ 红；
       逐字节复原 ⇒ 绿。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **既有链路零回归（认证关闭 = 基线）**：前端全部页面、stub e2e、live e2e、
@@ -159,7 +159,7 @@ exit_criteria:
       这类加性变化，且须逐字节证明原有代码块未变）；④ **快照类门禁**：
       OpenAPI 快照若漂移 ⇒ **按既有流程重生成**（`tools/gen_openapi.py`）并说明原因，
       **不得**手改快照使其通过。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **文档与威胁模型同源（零夸大）**：四处文档同源更新——
@@ -291,9 +291,11 @@ escalation_triggers:
   - >-
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260926-190-principal-model-and-write-face-auth.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260926-191-principal-model-and-write-face-auth-recheck.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260926-143-auth-face-reuses-the-one-classification.md
 ---
 
 ## 目标与退出标准
@@ -305,9 +307,9 @@ memory_entries: []
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **主体模型 + 请求主体落 canonical**（替换硬编码占位；向后兼容对照） | `Principal` 值对象 + 端到端实跑 + 配对反证 + 对照判据 | **PENDING** |
-| EC-02 | **认证面**（写面 token 保护，三态实跑 + 凭据纪律 grep 反证） | 中间件 + 启动警告 + 401/403 点名 + 读面反证 | **PENDING** |
-| EC-03 | **既有链路零回归**（认证关闭 = 基线**逐字**一致） | 全门实跑 + 显式对照 + `Idempotency-Key` 零改动取证 | **PENDING** |
+| EC-01 | **主体模型 + 请求主体落 canonical**（替换硬编码占位；向后兼容对照） | `Principal` 值对象 + 端到端实跑 + 配对反证 + 对照判据 | **PASS** |
+| EC-02 | **认证面**（写面 token 保护，三态实跑 + 凭据纪律 grep 反证） | 中间件 + 启动警告 + 401/403 点名 + 读面反证 | **PASS** |
+| EC-03 | **既有链路零回归**（认证关闭 = 基线**逐字**一致） | 全门实跑 + 显式对照 + `Idempotency-Key` 零改动取证 | **PASS** |
 | EC-04 | **四处文档 + 威胁模型同源**（含「未覆盖范围」节，**零夸大**） | 四文档更新 + 可按压结构判据 + 同源机器判据 | **PENDING** |
 | EC-05 | 收口复检 + 残余登记 | 两树复检 + as-is m0 **23/23** + CI 台账 + 残余逐条 | **PENDING** |
 
@@ -598,10 +600,12 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | `（建档提交 SHA 待本轮回填）` | 治理 `.cursor/skills/governance-check/scripts/validate.py` 待跑 | 待轮询（本行由建档提交写入 ⇒ 依「固定口径」其自身 run **只在回合汇报记账**，下轮回填结论） | — | EC-01…EC-05 全 PENDING；授权与边界已落 frontmatter；起点已定位（**写面 60 条 mutating / 29 个 router 文件 / 124 条路由**；分类面 = `_MUTATING_METHODS`（`middleware.py:23`）；主体占位 = `dependencies.py:53` + `routers/approvals.py:124`，产品侧共 **6 处** actor 字面量；canonical 落点 = `outbox_events.envelope_json.actor`，读面 `routers/run_events.py:42`；**两个 450 行零余量文件正压在 EC-01 缝上**；`console_api_app.py:390` 是「无认证=基线」的现成探针） | cycle 1 = **EC-01 + EC-02**（主体模型 + 认证面；同一层两半）或先 **EC-02**（若 EC-01 需要动零余量文件，先搬代码）|
+| 0 | （建档，无子 PLAN） | `d4e559e`（**建档提交**，推送区间 `f8f6a8c..d4e559e`） | 治理 `validate.py` = `Cursor 治理验证通过` + `DOCS-CHECK PASS: 6 deterministic checks`；**判据按压**：把 GOAL 的 `## 状态历史` 标题改名 ⇒ `validate.py` 判红（`GOAL 缺少章节 ## 状态历史: GOAL-20260926-019`）⇒ 证明**新建的 GOAL 确实被载入判据**；逐字节复原 ⇒ 绿 | M0 [**36206487801**](https://github.com/Eswink/research-system-new/actions/runs/36206487801) **八 job 全 success** + CodeQL [**36206486979**](https://github.com/Eswink/research-system-new/actions/runs/36206486979) **3/3 success**（`run_attempt=1`，轮询 `ALL_TERMINAL`；日志 `scratch/goal019-c0-ci-poll.log`）。**外部旁证**：push 回执报 **8 条**告警（6 moderate + 2 low），与 GOAL-018 收口时的残留面一致（全为 `undici`）⇒ 本轮**零依赖改动** | — | EC-01…EC-05 全 PENDING；授权与边界已落 frontmatter；起点已定位（写面 **60 条 mutating** / 29 个 router 文件 / 124 条路由；分类面 = `_MUTATING_METHODS`（`middleware.py:23`）；主体占位 = `dependencies.py:53` + `routers/approvals.py:124`，产品侧共 **6 处** actor 字面量；canonical 落点 = `outbox_events.envelope_json.actor`，读面 `routers/run_events.py:42`；**两个 450 行零余量文件正压在 EC-01 缝上**；`console_api_app.py:390` 是「无认证=基线」的现成探针） | cycle 1 = **EC-01 + EC-02**（主体模型 + 认证面） |
+| 1 | PLAN-20260926-190（EC-01 + EC-02，并产出 EC-03 的证据面） | `（本轮回写提交 = 本行所在的提交；推送 tip 见回合汇报）` | **18 条新判据全绿**（`tests/api/test_principal_auth.py`）：三态（关闭⇒**200** 且端点回报 `actor=None`；不带/带错⇒**401** 且 `detail` 点名 `Bearer` / `does not match`；带对⇒**200** 且端点内 `current_principal().actor == service:fixture-principal`）+ **读面反证**（`GET /health` 与 `GET /runs/{id}` 在设了 token 但不带 token 下仍 **200**）+ **主体落 canonical**（`POST /approvals/{id}/decide` ⇒ `GET /runs/{id}/events` 的 `approval.decided` actor == 配置主体，且 `"user:console" not in actors`）+ **配对反证**（不带/带错 ⇒ 401 且决策事件**零条**、run 仍在 `WAITING_FOR_APPROVAL`）+ **向后兼容实测对照**（认证关闭 ⇒ `actors == ["user:console"]` **逐字**）。**三次按压**：A 去校验 ⇒ **2 failed**、B 强制回退常量 ⇒ **1 failed**（判词 `['user:console'] == ['service:fixture-principal']`）、C 读面也拦 ⇒ **5 failed**；全部逐字节复原。**`Idempotency-Key` 一字未动**：AST 源码段 + `sha256[:16]` 对 HEAD 比较 `IdempotencyMiddleware`/`.dispatch`/`_is_analysis_post`/`_problem` **四个哈希全等**（`78072fb10f633ffe` / `621b1605c11d18b7` / `7740b6009048f164` / `9ddb50204466a888`），两个常量字面量逐字相同。**凭据纪律四条反证全零命中**：变量名全工作树**恰好 1 次**（名字常量）、`…TOKEN\s*=` **零命中**、唯一比较是 `hmac.compare_digest`、`token ==` 形态零命中；`.env.example` 未改。**定向**：`tests/api`+`tests/contracts` **924 passed / 73 skipped**（含 **OpenAPI 快照绿 ⇒ 无漂移**）、`tests/architecture/python`（canonical `uv run`）**175 passed**、`ruff check` = `All checks passed!`、`ruff format --check` = **1032 files already formatted**、规模门禁 **1032 passed**。**全量 m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、`python/tests` = **4538 passed / 20 skipped**、`FAILED`/`ERROR` 零命中；日志 `scratch/goal019-c1-m0-rerun.log`）。**前端 e2e**（认证关闭）：stub **98 passed**、live **53 passed**（与 GOAL-018 基线**计数一致**）。治理 `validate.py` 绿 + `DOCS-CHECK PASS` | 待轮询（本行由回写提交写入 ⇒ 依「固定口径」其自身 run **只在回合汇报记账**） | **本轮内被全量 m0 抓到两处真红（已修）**：① `python/format-check` —— 新测试文件**未**纳入我先前的 `ruff format --check` 文件清单（3 处该折叠的签名/调用）；② `python/tests::…[services\api\app.py]` —— 新增 6 行把 **`create_app` 从 47 行推到 53 行**、越过 **50 行函数门禁**（该文件此前只剩 1 行余量）⇒ 抽 `_install_write_face_auth(app)` 后回到 48 行。**两处定向套件当时全绿** ⇒「受影响套件全绿」**不能**替代全量门。**实施期新增 D-9**：**不**复用 worker 网关的 `extract_bearer`（其包 `__init__` 急切导入 `create_worker_app`/`WorkerGatewayDeps`/`WorkerGatewaySettings` ⇒ 会把 **worker 信任域**拉进控制面导入图），改为自带 7 行解析器、只沿用同一原语与不变量 | **EC-01 / EC-02 = PASS**；**EC-03 = PASS**（全量 m0 + 两条 e2e 计数一致 + 显式对照 + `Idempotency-Key` 逐字节未动）；`RECHECK-20260926-191` = `PASS_WITH_WARNINGS`（W-1…W-9）。**EC-04（四处文档同源）与 EC-05（收口复检）仍 PENDING** | cycle 2 = **EC-04**（`IDENTITY_AND_ACCESS.md` / `THREAT_MODEL.md` 第 6 节 / `CONTROL_PLANE_API.md` / `LIVE_MODEL_RUNBOOK.md` 四处同源 + 可按压结构判据 + 零夸大），随后 **EC-05** 收口 |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-09-26 | ACTIVE | 建档：用户会话指令（goal 模式）判词**「甲」** ⇒ **主体模型 + 最小认证面（谁在调用）**，**不碰多租户**。**建档方式 = 新建 GOAL-019**（不是复活 GOAL-018；理由：新范围 + GOAL-018 的取证要求是「鉴权 / 中间件 / 路由保护零改动」，两者互相顶替）。**三条口径**（判词 (i)(ii)(iii)）与边界、push 授权一并落 frontmatter：**(i) 只保护写面**（复用 `_MUTATING_METHODS` 同一分类）、**(ii) 认证可关**（环境变量留空 ⇒ 关闭 + 启动显式警告；CI 与 live 夹具不受影响）、**(iii) 主体归因落 canonical**（替换 `default_actor` 占位，**向后兼容**）。五 EC 设计（主体模型 / 认证面 / 零回归 / 文档同源 / 收口复检）。**明确不做**：多租户、RBAC、读面认证、改 `Idempotency-Key` 语义、把 token 写进任何地方、新增依赖、D-12(a)。**建档时零代码改动**（只增本文件）。 |
+| 2026-09-26 | ACTIVE | 建档：用户会话指令（goal 模式）判词**「甲」** ⇒ **主体模型 + 最小认证面（谁在调用）**，**不碰多租户**。**建档方式 = 新建 GOAL-019**（不是复活 GOAL-018；理由：新范围 + GOAL-018 的取证要求是「鉴权 / 中间件 / 路由保护零改动」，两者互相顶替）。**三条口径**（判词 (i)(ii)(iii)）与边界、push 授权一并落 frontmatter：**(i) 只保护写面**（复用 `_MUTATING_METHODS` 同一分类）、**(ii) 认证可关**（环境变量留空 ⇒ 关闭 + 启动显式警告；CI 与 live 夹具不受影响）、**(iii) 主体归因落 canonical**（替换 `default_actor` 占位，**向后兼容**）。五 EC 设计（主体模型 / 认证面 / 零回归 / 文档同源 / 收口复检）。**明确不做**：多租户、RBAC、读面认证、改 `Idempotency-Key` 语义、把 token 写进任何地方、新增依赖、D-12(a)。**建档时零代码改动**（只增本文件）。**判据按压**：GOAL 标题改名 ⇒ `validate.py` 判红 ⇒ 逐字节复原 ⇒ 绿。建档提交 `d4e559e` 的 CI = **八 job 全 success + CodeQL 3/3**（`run_attempt=1`）。 |
+| 2026-09-26 | ACTIVE | cycle 1（PLAN-20260926-190）：**EC-01 + EC-02 落地并 PASS**，EC-03 的完整证据面同时产出并 **PASS**。交付 = `packages/domain/principal.py`（`Principal` + `PrincipalKind`；**无**租户/角色字段）+ `packages/application/principal_context.py`（请求级主体上下文）+ 写面认证中间件（并入 `services/api/middleware.py`，**复用** `_MUTATING_METHODS`）+ `eventing.publish_event` 读点回退 + 审批路径归因（回退历史常量）。**认证三态 + 读面反证 + 主体落 canonical + 配对反证 + 向后兼容实测对照**全部实跑；**三次按压**判红并逐字节复原；`Idempotency-Key` **AST 哈希对 HEAD 全等**；凭据纪律四条反证全零命中；**全量 m0 = 23/23**；前端 e2e = 98 / 53（与基线计数一致）。**本轮内被 m0 抓到并修掉两处真红**（format-check / `create_app` 撞 50 行函数门禁）⇒ 再次证明全量门不可被定向套件替代。**EC-04 / EC-05 仍 PENDING** ⇒ GOAL 维持 **ACTIVE**，下一 cycle 做四处文档同源。 |
