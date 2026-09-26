@@ -1,3 +1,4 @@
+import { authorizationHeaderValue } from "./controlPlaneToken";
 import type { ProblemDto, Version } from "./types";
 
 /** HTTP/Problem 细节（client 内部拆分，保持各 client 规模阈值）。 */
@@ -21,6 +22,13 @@ export class ApiError extends Error implements ApiErrorBody {
 
 export const API_BASE = "/api";
 
+/**
+ * 控制面**写面**的方法分类（与后端 `_MUTATING_METHODS` 同一语义：
+ * `POST` / `PATCH` / `PUT` / `DELETE`）。**读面（GET/HEAD）永不携带凭据**——
+ * 后端读面不认证，前端也就不该把 token 发到读请求上。
+ */
+const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
+
 export interface RequestOptions {
   idempotencyKey?: string;
   ifMatch?: Version;
@@ -38,6 +46,12 @@ function buildHeaders(init: RequestInit, options?: RequestOptions): Headers {
   }
   if (options?.ifMatch !== undefined) {
     headers.set("If-Match", options.ifMatch);
+  }
+  // 仅在**写请求 + 已配置 token** 时注入；未配置时**不加空头**（关闭态逐字不变）。
+  const method = (init.method ?? "GET").toUpperCase();
+  const authorization = authorizationHeaderValue();
+  if (authorization !== null && MUTATING_METHODS.has(method)) {
+    headers.set("Authorization", authorization);
   }
   return headers;
 }

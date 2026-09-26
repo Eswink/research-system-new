@@ -7,6 +7,7 @@ import { pageSupport, isOperationDisabled } from "../../navigation/pageSupport";
 import type { Route } from "../../navigation/registry";
 import shared from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
+import { ConnectionSection } from "./ConnectionSection";
 import { PreferencesSection } from "./PreferencesSection";
 import styles from "./SettingsPage.module.css";
 import { WorkspaceSection } from "./WorkspaceSection";
@@ -16,10 +17,13 @@ const SETTINGS_ROUTE: Route = { domain: "settings", page: "settings" };
 const SECTIONS = [
   { id: "preferences", labelKey: "settings.preferences" },
   { id: "workspace", labelKey: "settings.workspace" },
+  { id: "connection", labelKey: "settings.connection" },
   { id: "account", labelKey: "settings.account" },
   { id: "security", labelKey: "settings.security" },
   { id: "billing", labelKey: "settings.billing" },
 ] as const;
+
+type SectionId = (typeof SECTIONS)[number]["id"];
 
 export function SettingsPage({
   preferences,
@@ -41,9 +45,7 @@ interface SettingsPageTitleProps {
   t: (key: TranslationKey) => string;
   language: string;
   section: string;
-  setSection: Dispatch<
-    SetStateAction<"preferences" | "workspace" | "account" | "security" | "billing">
-  >;
+  setSection: Dispatch<SetStateAction<SectionId>>;
   preferences: ConsolePreferences;
   onPreferencesChange: (next: ConsolePreferences) => void;
 }
@@ -80,9 +82,7 @@ function SettingsPageTitle({
 interface SettingsPageLockedProps {
   language: string;
   section: string;
-  setSection: Dispatch<
-    SetStateAction<"preferences" | "workspace" | "account" | "security" | "billing">
-  >;
+  setSection: Dispatch<SetStateAction<SectionId>>;
   t: (key: TranslationKey) => string;
   preferences: ConsolePreferences;
   onPreferencesChange: (next: ConsolePreferences) => void;
@@ -121,6 +121,7 @@ function SettingsPageLocked({
           <PreferencesSection preferences={preferences} onChange={onPreferencesChange} />
         )}
         {section === "workspace" && <WorkspaceSection />}
+        {section === "connection" && <ConnectionSection />}
         {isOperationDisabled(SETTINGS_ROUTE, section) && (
           <UnavailableState
             title={t("settings.locked")}

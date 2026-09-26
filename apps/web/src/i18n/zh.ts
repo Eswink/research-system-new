@@ -213,11 +213,28 @@ export const zh = {
 
   "settings.preferences": "界面偏好",
   "settings.workspace": "工作区",
+  "settings.connection": "控制面连接",
   "settings.account": "账户",
   "settings.security": "安全",
   "settings.billing": "账单",
   "settings.locked": "该分区无后端能力",
   "settings.lastWrite": "项目设置无版本契约：保存为最后写入覆盖。",
+
+  "connection.title": "控制面写面 token",
+  "connection.statusConfigured": "已配置（仅本次会话）",
+  "connection.statusMissing": "未配置",
+  "connection.hint":
+    "仅当服务端开启了写面认证（RESEARCHOS_CONTROL_PLANE_TOKEN 非空）时填写；未开启时留空即可。" +
+    "token 只保存在本页内存里：刷新或关闭标签页即失效，需要重新粘贴。",
+  "connection.label": "Token",
+  "connection.placeholder": "粘贴控制面 token",
+  "connection.save": "保存到本次会话",
+  "connection.clear": "清除",
+  "connection.note":
+    "不写入浏览器存储、cookie、URL 或日志；本页面不会回显已保存的 token。" +
+    "本输入面不是访问控制——服务端的写面认证才是唯一控制点。",
+  "connection.required":
+    "该写操作被服务端拒绝（401）：请在上方填入控制面 token 后重试。",
 
   "prompts.version": "版本",
   "prompts.versions": "版本与 A/B",

@@ -216,11 +216,30 @@ export const en: Record<TranslationKey, string> = {
 
   "settings.preferences": "Preferences",
   "settings.workspace": "Workspace",
+  "settings.connection": "Control plane connection",
   "settings.account": "Account",
   "settings.security": "Security",
   "settings.billing": "Billing",
   "settings.locked": "This section has no backend capability",
   "settings.lastWrite": "Project settings have no version contract: save is last-write-wins.",
+
+  "connection.title": "Control-plane write-face token",
+  "connection.statusConfigured": "Configured (this session only)",
+  "connection.statusMissing": "Not configured",
+  "connection.hint":
+    "Fill this in only when the server has enabled write-face authentication " +
+    "(RESEARCHOS_CONTROL_PLANE_TOKEN non-empty); leave it empty otherwise. " +
+    "The token lives in page memory only: refreshing or closing the tab clears it.",
+  "connection.label": "Token",
+  "connection.placeholder": "Paste the control-plane token",
+  "connection.save": "Keep for this session",
+  "connection.clear": "Clear",
+  "connection.note":
+    "Never written to browser storage, cookies, URLs or logs; this page never echoes " +
+    "a saved token. This input is not access control — the server-side write-face " +
+    "authentication is the only control point.",
+  "connection.required":
+    "The server rejected this write (401): enter the control-plane token above and retry.",
 
   "prompts.version": "Version",
   "prompts.versions": "Versions & A/B",
