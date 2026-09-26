@@ -32,6 +32,36 @@ make validate-all           # = run_all_checks.py --profile m0 --keep-going
   `FAILED: N check(s): …`。**只有前者才算全绿**；`PASS [` 行数比 23 多 1
   （`release-assets-immutable` 在计数之外）属正常。
 
+### 记录面覆盖（GOAL-020 EC-02）：门必须在记录写入**之后**跑
+
+**为什么**：`.cursor/plans` 与 `.cursor/memory/entries` **本来就在**门的扫描面内
+（`test_reproducibility_wording.py` 的 `_SCAN_ROOTS`、`tools/credential_audit.py` 的
+`RECORDS_DIR`、`validate_bundle` 的版本串与链接检查、治理 `validate.py` 的
+plan / recheck / goal 结构检查）。缺陷**不在扫描面，而在时刻**：本地旧 SOP 把全量门跑在
+**记录写入之前**，于是那次结论只覆盖**当时还不存在**的记录内容——GOAL-019 cycle 2 的记录提交
+`75155b2` 就是这样只在 CI 判红的（本地那次门是绿的）。
+
+**顺序（canonical，不得颠倒）**：
+
+```text
+写记录（PLAN / RECHECK / MEM / GOAL 回写）
+  → 跑记录面判据（tests/architecture/python + tests/tooling）
+  → 跑全量 make validate-all
+```
+
+**机械复核**：`tests/architecture/python/test_record_face_is_covered_by_the_gate.py`
+把「记录面在受判集合内」变成机器事实——它读**符号值**与**行为**（`_SCAN_ROOTS`、
+`_scan_files()` 的实际产出、`credential_audit.RECORDS_DIR`、治理
+`iter_cursor_text_files()` 的实际产出、runner 的收集面常量），
+并绑定**本节的顺序条款**所点名的**两个**判据文件：受判的记录面判据
+`test_reproducibility_wording.py`，以及覆盖的机械保证
+`test_record_face_is_covered_by_the_gate.py`
+（改名即判红，条款不得悬空）。任何人删掉扫描根、换掉 walker、或把记录面判据挪出门的
+收集面，该判据都会红。
+
+**注意**：写记录时**不要**跑 m0（m0 运行中改工作树会让 `framework/validate` 判红，
+见 `W-5`）⇒ 正确顺序是「记录写完 → 记录面判据 → 全量门」，不是「门跑到一半去写记录」。
+
 ### 支持的跑法 / 不支持的跑法
 
 | 跑法 | 支持 | 说明 |

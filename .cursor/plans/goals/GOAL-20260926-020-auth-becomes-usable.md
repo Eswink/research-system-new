@@ -117,7 +117,7 @@ exit_criteria:
       ④ `test_reproducibility_wording.py` **零改动**（`git diff` 取证）；
       ⑤ **终态行仍 23**；⑥ **扫描面清单**与实测逐一相符（含**未覆盖面**明写）；
       ⑦ **`git diff` 反证**：本轮**未**放宽任何阈值 / 门禁 / 放行面。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **认证运维面（开启 / 轮换 / 关闭 + 401 验证 + 部署面）**：三处文档
@@ -265,9 +265,11 @@ escalation_triggers:
   - >-
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260926-196-record-face-is-covered-by-the-gate.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260926-197-record-face-coverage-recheck.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260926-146-record-face-defect-is-timing-not-scan-surface.md
 ---
 
 ## 目标与退出标准
@@ -280,7 +282,7 @@ memory_entries: []
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | **前端 token 输入与携带**（三态实跑 + 存储决策 + 凭据纪律） | 前端输入面 + 请求层携带 + 三态证据 + 成对反证 | **PENDING** |
-| EC-02 | **记录面门禁覆盖**（先红后绿 + 按压 + 判据零改动 + m0 仍 23） | 顺序 / 覆盖机制 + 扫描面清单（收口 `W-14`） | **PENDING** |
+| EC-02 | **记录面门禁覆盖**（先红后绿 + 按压 + 判据零改动 + m0 仍 23） | 顺序 / 覆盖机制 + 扫描面清单（收口 `W-14`） | **PASS** |
 | EC-03 | **认证运维面**（开启 / 轮换 / 关闭 / 401 验证 / 部署面） | 三处文档补齐 + 同源判据零改动 + 部署面终态 | **PENDING** |
 | EC-04 | **收口复检 + 残余登记** | 两树复检 + as-is m0 **23/23**（覆盖记录面）+ CI 台账 + 残余逐条 | **PENDING** |
 
@@ -629,16 +631,19 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | `（建档提交；推送 tip 见回合汇报）` | 治理 `validate.py` = `Cursor 治理验证通过` + `DOCS-CHECK PASS`；**判据按压**：改本文件一处章节标题 ⇒ `validate.py` 判红（`GOAL 缺少章节 …: GOAL-20260926-020`）⇒ 证明新建的 GOAL **确实被载入判据**；逐字节复原 ⇒ 绿。**记录面自查**：本文件落在 `test_reproducibility_wording.py` 的扫描面内且**零命中**其词表；`credential_audit` 五类形态零命中（只登记**变量名**，不留值） | `（见下方 CI 台账）` | — | EC-01…EC-04 全 PENDING；授权与边界已落 frontmatter；起点已定位（前端**单一注入点** = `http.ts` 的 `buildHeaders`/`send`，60 处写请求全覆盖；**两处 GET 例外**不需 token；**存储方式被 `test_security_scan.py:79-91` 收窄为内存**；**m0 的 23 被三处硬编码** ⇒ EC-02 机制须落在既有 check 内；**记录面扫描面 = 11 条**已逐一核实，可收口 `W-14`） | cycle 1 = **EC-02**（方法论面最先做：它决定后续所有结论的可信度） |
+| 0 | （建档，无子 PLAN） | `6cc7561`（**建档提交**，推送区间 `89c3170..6cc7561`） | 治理 `validate.py` = `Cursor 治理验证通过` + `DOCS-CHECK PASS`；**判据按压**：改本文件一处章节标题 ⇒ `validate.py` 判红（`GOAL 缺少章节 ## 状态历史: GOAL-20260926-020`）⇒ 证明新建的 GOAL **确实被载入判据**；逐字节复原（sha256 校验）⇒ 绿。**按压方法学附带发现**：`validate.py` 的章节判据是**子串包含** ⇒ 把标题**追加**后缀（`## 状态历史-按压`）**不会**判红（子串仍在）；必须**整个抹掉**字面才判红。**记录面自查**：本文件落在 `test_reproducibility_wording.py` 的扫描面内且**零命中**其词表；`credential_audit` 五类形态零命中（只登记**变量名**，不留值） | M0 [**36246070820**](https://github.com/Eswink/research-system-new/actions/runs/36246070820) **八 job 全 success**（`console-frontend` / `container-quality` / `eval-gate` / `collector-quality` / `quality-ubuntu-latest` / `observability-overhead-ubuntu-latest` / `quality-windows-latest` / `observability-overhead-windows-latest`）+ CodeQL [**36246070729**](https://github.com/Eswink/research-system-new/actions/runs/36246070729) **3/3 success**（`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)`；`run_attempt=1`，**一次成功、无 flake**；日志 `scratch/` 轮询 `ALL_TERMINAL`）。**外部旁证**：push 回执报 **8 条**告警（6 moderate + 2 low，全为 `undici`），与 GOAL-018/019 收口一致 ⇒ 本轮**零依赖改动** | — | EC-01 / EC-03 / EC-04 全 PENDING；EC-02 = PASS。起点已定位（前端**单一注入点** = `http.ts` 的 `buildHeaders`/`send`，60 处写请求全覆盖；**两处 GET 例外**不需 token；**存储方式被 `test_security_scan.py:79-91` 收窄为内存**；**m0 的 23 被三处硬编码** ⇒ EC-02 机制须落在既有 check 内；**记录面扫描面 = 11 条**已逐一核实，可收口 `W-14`） | cycle 1 = **EC-02**（方法论面最先做：它决定后续所有结论的可信度） |
+| 1 | PLAN-20260926-196（EC-02） | `（实施提交见回合汇报）` | **记录面覆盖 = 机械事实**。交付 = 新判据 `tests/architecture/python/test_record_face_is_covered_by_the_gate.py`（**215 行 / 8 例**）+ `LOCAL_GATE_PROTOCOL.md` 新增 `### 记录面覆盖（GOAL-020 EC-02）` 顺序节 + `RECHECK-197` + `MEM-146`。**先红（机制性）**：临时向记录面写一条含禁用形态的记录 ⇒ `test_reproducibility_wording.py` **单独判红**（`exit=1`，`test_no_affirmative_fully_reproducible_claim`）⇒ **记录面本来就在扫描面内** ⇒ 缺陷是**时刻**（门跑在记录写入之前），**不是**没扫；删除 ⇒ `5 passed`。**后绿（完整门）**：探针在树时跑 **canonical 全量门** ⇒ `FAILED: 3 check(s): python/format-check=1, python/tests=1, framework/validate=1`，**其中 `python/tests` 的红就是探针**（记录面违规 ⇒ 门判红 = EC-02 要的结论）；另**两条红是本轮真缺陷并已修**（①新判据 1 处该折叠的 assert ⇒ `ruff format --check` 判红；②`MEM-146` 引用的 `RECHECK-197` 未存在 + 未入 INDEX）⇒ **定向套件当时全绿，全量门抓到两处真红**。**按压矩阵 7/7 符合预期**（6 红 + 1 期望不红），每轮报**实际判红集合**，逐字节 sha256 还原、终态复跑 `exit=0`。**判据零改动**：`git diff --stat -- tests/architecture/python/test_reproducibility_wording.py` = 空。**m0 条数不变**：按压轮 `PASS [` = 21 + `FAILED` = 3 ⇒ **24 = 23 + 1**（不计数项）。**终态全量门（记录写完之后）** = `PASS: profile=m0; 23 deterministic checks`（`PASS [` = **24**、`python/tests` = **4559 passed / 20 skipped**、`FAILED`/`ERROR` **0**；日志 `scratch/goal020-c1-m0.log`）。治理 `validate.py` 绿 | `（见回合汇报）` | **两处真红（已修）**：① `python/format-check`（新判据 1 处该折叠的 assert）；② `framework/validate`（记录自洽：`MEM-146` 引用的 `RECHECK-197` 必须**同提交**在位 + `INDEX.md` 登记）。**按压方法学教训（已入 `RECHECK-197` / `MEM-146`）**：①条款类判据必须**按小节**判履行——首版按整篇文档判，而判据名在文档里出现两次 ⇒ 删一处仍满足 ⇒ 改为取小节文本后才判红；②按压探针**不得含自己的意图词**——首版探针写了「本行含禁止形态」，其中「禁止」是 `NEGATION_MARKERS` 之一 ⇒ 被**否定标记豁免**而**没红**（判据按设计工作，是探针写错）；③「按压打偏」必须记为**失败** | **EC-02 = PASS**（先红后绿 + 按压 7/7 + 判据零改动 + m0 仍 23）；`W-14` **已收口**（11 条扫描面清单逐行核实，含未覆盖面：`.cursor/memory/entries` 不在话术判据与凭据审计的记录面内）；`RECHECK-20260926-197` = `PASS_WITH_WARNINGS`。**未覆盖范围**：8 条内容依赖判据中**只有 4 条**各建了断言（其余在清单里登记但未各建断言）；「每次门都跑在记录之后」仍是**人的顺序** | cycle 2 = **EC-01**（前端 token 输入与携带 + 三态实跑 + 成对反证） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
-| 建档（GOAL-020 落地） | 本行所在的记录提交 | 见回合汇报 | 依「固定口径」：写下某条记录的那个提交自身的 run **只在回合汇报记账**、不再回写文件 |
+| 建档（GOAL-020 落地） | `6cc7561` | M0 [**36246070820**](https://github.com/Eswink/research-system-new/actions/runs/36246070820) / CodeQL [**36246070729**](https://github.com/Eswink/research-system-new/actions/runs/36246070729) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，**一次成功、无 flake**）：M0 `conclusion=success`，逐 job `console-frontend` / `container-quality` / `eval-gate` / `collector-quality` / `quality-ubuntu-latest` / `observability-overhead-ubuntu-latest` / `quality-windows-latest` / `observability-overhead-windows-latest` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)` **3/3 `success`**。上游 push 回执报 **8 条**告警（6 moderate + 2 low，全为 `undici`） |
+| cycle 1 实施（EC-02 记录面覆盖） | `（实施提交见回合汇报）` | **依「固定口径」：写下某条记录的那个提交自身的 run 只在回合汇报记账**（不重复回写文件） | 同上 |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-09-26 | ACTIVE | **建档**：用户会话指令（goal 模式）授权把 GOAL-019 的写面认证从「能开启但开启后不可用」推进到「可真正启用」，三条授权 = **前端 token 输入与携带** / **记录面门禁覆盖（方法论；最要紧）** / **认证运维面**。四 EC 设计（前端三态 / 记录面机制 / 运维文档 / 收口复检），budget = 20 / 120 / 2，`fix_policy` 与 `escalation_triggers` 承 GOAL-019 全套并**新增**：不得改 `test_reproducibility_wording.py` 与 `test_control_plane_auth_same_source.py`、不得改 401 形态、不得改 m0 条数、不得用惰性访问器绕过前端持久层安全断言。**明确不做**：读面认证、多租户 / RBAC / organization scope、BOLA·BFLA、调用方自报身份、新增依赖、token 落任何地方、改 `Idempotency-Key` 语义、改 401 形态。**建档时零产品代码改动**（只增本文件）。**建档当日实测并写入的判据形态约束**：①前端**单一注入点**存在（`buildHeaders`）且 60 处写请求全覆盖；②`tests/api/test_security_scan.py:79-91` 把 token 存储**收窄为内存**（选 `localStorage` / `sessionStorage` 都需放宽或绕过既有安全判据 ⇒ 命中 BLOCKED）；③**m0 的 `23` 被三处硬编码** ⇒ EC-02 的机制**必须**落在既有 check 内（`tests/**` 属 `python/tests` 收集面）；④**缺陷的真实形状**是**时间性**的（记录面**已**被扫，但本地 SOP 的门跑在记录写入**之前**）⇒ 「全量门包含记录面判据」字面上已成立却不足以修复，机制必须把**结论**与**记录面内容状态**绑定；⑤**记录面扫描面 = 11 条**（内容依赖 8 + 名称依赖 3），可**收口 `W-14`**。 |
+| 2026-09-26 | ACTIVE | **建档**：用户会话指令（goal 模式）授权把 GOAL-019 的写面认证从「能开启但开启后不可用」推进到「可真正启用」，三条授权 = **前端 token 输入与携带** / **记录面门禁覆盖（方法论；最要紧）** / **认证运维面**。四 EC 设计（前端三态 / 记录面机制 / 运维文档 / 收口复检），budget = 20 / 120 / 2，`fix_policy` 与 `escalation_triggers` 承 GOAL-019 全套并**新增**：不得改 `test_reproducibility_wording.py` 与 `test_control_plane_auth_same_source.py`、不得改 401 形态、不得改 m0 条数、不得用惰性访问器绕过前端持久层安全断言。**明确不做**：读面认证、多租户 / RBAC / organization scope、BOLA·BFLA、调用方自报身份、新增依赖、token 落任何地方、改 `Idempotency-Key` 语义、改 401 形态。**建档时零产品代码改动**（只增本文件）。**建档当日实测并写入的判据形态约束**：①前端**单一注入点**存在（`buildHeaders`）且 60 处写请求全覆盖；②`tests/api/test_security_scan.py:79-91` 把 token 存储**收窄为内存**（选 `localStorage` / `sessionStorage` 都需放宽或绕过既有安全判据 ⇒ 命中 BLOCKED）；③**m0 的 `23` 被三处硬编码** ⇒ EC-02 的机制**必须**落在既有 check 内（`tests/**` 属 `python/tests` 收集面）；④**缺陷的真实形状**是**时间性**的（记录面**已**被扫，但本地 SOP 的门跑在记录写入**之前**）⇒ 「全量门包含记录面判据」字面上已成立却不足以修复，机制必须把**结论**与**记录面内容状态**绑定；⑤**记录面扫描面 = 11 条**（内容依赖 8 + 名称依赖 3），可**收口 `W-14`**。建档提交 `6cc7561` 的 CI = **八 job 全 success + CodeQL 3/3**（`run_attempt=1`）。 |
+| 2026-09-26 | ACTIVE | cycle 1（PLAN-20260926-196）：**EC-02 = PASS**（本节最要紧的一条）。交付 = 覆盖判据（215 行 / 8 例）+ `LOCAL_GATE_PROTOCOL.md` 顺序节 + `RECHECK-197` + `MEM-146`。**先红**：探针写入记录面 ⇒ 话术判据**单独判红** ⇒ 记录面**本来就在**扫描面内，缺陷是**时刻**（条④得到实测确认）；**后绿**：探针在树时跑 canonical 全量门 ⇒ `python/tests` 判红（= EC-02 要的结论）。**按压 7/7**（6 红 + 1 期望不红，逐字节还原，报实际判红集合）。**判据零改动** + **m0 条数不变**。**终态全量门（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、`4559 passed / 20 skipped`、零 FAILED；日志 `scratch/goal020-c1-m0.log`）。**本轮被全量门抓到两处真红并已修**（format-check / 治理引用自洽）⇒ 定向全绿 ≠ 全量绿，再次实测。`W-14` 已收口。**EC-01 / EC-03 / EC-04 仍 PENDING** ⇒ GOAL 维持 **ACTIVE**，下一 cycle 做前端 token 面。 |

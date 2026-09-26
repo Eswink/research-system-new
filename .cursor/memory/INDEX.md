@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260926-146](entries/MEM-20260926-146-record-face-defect-is-timing-not-scan-surface.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-196 |
 | [MEM-20260926-145](entries/MEM-20260926-145-writing-records-is-itself-gated-so-run-the-gate-last.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-194 |
 | [MEM-20260926-144](entries/MEM-20260926-144-same-source-docs-need-a-pressable-declaration.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-192 |
 | [MEM-20260926-143](entries/MEM-20260926-143-auth-face-reuses-the-one-classification.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-190 |
