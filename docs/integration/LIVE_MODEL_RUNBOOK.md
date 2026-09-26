@@ -87,6 +87,51 @@ curl -X POST http://127.0.0.1:8000/models/<model_id>/probe
 （`services/api/mappers/endpoints.py`），任何响应/日志/错误消息都不回显密钥。
 「明文凭据不进仓库/记录/日志」由 `tools/credential_audit.py` 四面扫描把守。
 
+### 2.1 控制面写面 token（另一条凭据面，与 LLM 凭据无关）
+
+**认证覆盖**：写面（POST / PATCH / PUT / DELETE）已认证；读面（GET / HEAD）未认证；多租户与 RBAC 未实现。
+
+这一项**不是** LLM 凭据：它属于**另一个信任域**（控制面自己），保护的是**写面**
+（建项目、发 run、改配置、处置审批）。名字的唯一读取点是 `services/api/middleware.py`。
+
+**怎么设**（值只活在环境变量里，与 §2 的两套 LLM 注入方式相互独立）：
+
+```bash
+# A. 显式导出（适用于任何 shell 与任何启动方式）
+export RESEARCHOS_CONTROL_PLANE_TOKEN='<操作者自选的长随机串>'
+# 可选：认证通过后落 canonical 的主体标识（缺省控制面服务主体）
+export RESEARCHOS_CONTROL_PLANE_PRINCIPAL_ID='<主体标识>'
+
+# B. 单条命令内联前缀（临时、最小面；不进任何文件）
+RESEARCHOS_CONTROL_PLANE_TOKEN='<…>' python -m uvicorn services.api.app:create_app --factory
+```
+
+设了之后：**写请求**必须带 `Authorization: Bearer <token>`，否则 **401**（ProblemDetail）；
+**读请求**（含 `GET /health`）**不需要** token。
+
+**怎么关**（本地开发）：
+
+```bash
+unset RESEARCHOS_CONTROL_PLANE_TOKEN
+```
+
+留空 ⇒ **认证关闭**，并且**启动时打印显式警告**：文案里写明 `CONTROL PLANE AUTH IS DISABLED`
+与「任何能连上本进程的调用方都能写」。**这条警告不得被读成「已认证」，也不得被读成任何
+安全结论**——它同时点名未覆盖范围（读面未认证 / 多租户与 RBAC 未实现 / 对象级授权未做）。
+
+**CI 怎么保持关闭**：项目 CI（`.github/workflows/`）**不设**该变量 ⇒ 默认门与 `console-frontend`
+的 e2e 都在「认证关闭」的基线上跑。**不要**把它加进 workflow、`.env`、`.env.example`、
+夹具或任何 tracked 文件——**仓库里只登记变量名，绝不留值**。本机若要复现 CI 的默认姿态，
+`unset` 即可。
+
+**轮换**：换掉环境变量值 → **重启 API**（原因见 §3）。没有别的地方要改，
+也**没有**持久化副本需要清理（本面不伪装 Secret Manager）。
+
+**未覆盖范围（不得读成更强结论）**：读面未认证；多租户与 RBAC 未实现；对象级授权
+（BOLA / BFLA）未做；**单一共享 token ⇒ 单一主体**——能回答「是不是经过认证的调用方」，
+**不能**回答「是哪一个调用方」（本实现**不接受**调用方自报身份）；反代与 TLS 行为未验证。
+详细边界见 `docs/security/IDENTITY_AND_ACCESS.md`。
+
 ---
 
 ## 3. 重启后重输的边界

@@ -1,11 +1,26 @@
 # Control Plane API Sketch v0.4.0
 
+**认证覆盖**：写面（POST / PATCH / PUT / DELETE）已认证；读面（GET / HEAD）未认证；多租户与 RBAC 未实现。
+
 所有 mutating request 支持：
 
 ```text
+Authorization: Bearer <控制面 token>      （写面；读面不需要）
 Idempotency-Key
 If-Match / resource version
 ```
+
+- token 只从环境变量 `RESEARCHOS_CONTROL_PLANE_TOKEN` 读取（可选
+  `RESEARCHOS_CONTROL_PLANE_PRINCIPAL_ID` 声明主体标识，缺省 `control-plane`）；
+  **不落盘、不进日志 / 遥测**；比较是常数时间的。
+- 变量**留空 ⇒ 认证关闭**（启动时打印显式警告：当前无认证，任何能连上本进程的调用方都能写）。
+- 未通过认证的写请求 ⇒ **401** ProblemDetail，`detail` 点名「缺 Bearer 头」或「token 不匹配」。
+- 认证通过后，请求主体落 canonical（事件 `actor`；读面 `GET /runs/{id}/events` 可见）。
+  无主体时**沿用**调用方既有常量（如 `system:orchestration` / `user:console`）。
+- **未覆盖范围**：读面认证 / 多租户与 RBAC / 对象级授权（BOLA/BFLA）/ 逐调用方身份
+  （单一共享 token ⇒ 单一主体，且**不接受**调用方自报身份）/ 反代与 TLS 行为
+  —— 均**未做**。详细边界见 `docs/security/IDENTITY_AND_ACCESS.md` 与
+  `docs/security/THREAT_MODEL.md` 第 6 节。
 
 ## Models
 
@@ -519,8 +534,13 @@ WS  /runs/{id}/ws           # 未提供：无交互通道；投影轮询即 even
 
 ## Identity / Governance（未提供；M18 deferred）
 
+以下端点**均未提供**。注意区分：控制面**已有**「请求级主体」概念
+（写面认证通过后落 canonical 的事件 `actor`，见文首「认证覆盖」），
+但**没有**「查询我是谁」的读面——因为单一共享 token 认证出的主体是**配置而来的服务主体**，
+不代表某个可查询的调用者身份。organization / membership / data-policy 仍属 M18。
+
 ```text
-GET  /me                                   （未提供：单用户控制面无 principal 概念）
+GET  /me                                   （未提供：无逐调用方身份可查；主体来自配置）
 GET  /organizations/{id}/members           （未提供）
 POST /projects/{id}/memberships            （未提供）
 GET  /projects/{id}/data-policy            （未提供）
