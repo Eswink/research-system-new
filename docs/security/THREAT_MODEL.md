@@ -287,3 +287,8 @@ tenant isolation 需求」（`docs/roadmap/MILESTONES.md:980`，另见
   可引用的口径见 §6.6。
 - 外部审计记录沿用同一口径：`docs/audits/MIMOSA_POST_CLOSURE_AUDIT_20260918.md:75`
   已写明 threatModel 阶段仍为 `partial`（0 入口 / 0 主体 / 0 授权面）。
+- **运维面（GOAL-020 EC-03 落地）**：开启 / 轮换 / 关闭 / **验证 401 四步**（读面带与不带
+  均 200；写面不带与带错均 401 且 `detail` 各自点名成因；带对 2xx）写在
+  `docs/integration/LIVE_MODEL_RUNBOOK.md` §2.2；**部署面**注意事项写在 §2.3——
+  反代须透传 `Authorization`、TLS 在反代终止、多副本须同值（**未在本机验证**）。
+  ⇒ 这些是**运维检查项**，**不是**安全结论；反代 / TLS / 多副本行为**仍未验证**。

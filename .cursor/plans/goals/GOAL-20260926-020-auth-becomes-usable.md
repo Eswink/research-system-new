@@ -140,7 +140,7 @@ exit_criteria:
       的既有词表）到肯定语境；⑤ `docs/INDEX.md` 既有条目判据仍满足；
       ⑥ **未覆盖范围**逐条保留并**据实更新**（读面 / 多租户 / BOLA-BFLA / `R-M1` /
       部署面**终态**）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **收口复检 + 残余登记**：① **独立复检脚本**（不复用本 GOAL 的叙述）在**当前树**与
@@ -268,10 +268,12 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20260926-196-record-face-is-covered-by-the-gate.md
   - .cursor/plans/tasks/PLAN-20260926-197-console-token-input-and-write-face-carry.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260926-198-console-token-three-states-recheck.md
+  - .cursor/plans/tasks/PLAN-20260926-198-auth-ops-face-enable-rotate-disable-and-401-verification.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260926-199-auth-ops-face-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260926-146-record-face-defect-is-timing-not-scan-surface.md
   - .cursor/memory/entries/MEM-20260926-147-frontend-credential-storage-and-app-path-driving.md
+  - .cursor/memory/entries/MEM-20260926-148-auth-ops-face-401-verification-and-deployment-checks.md
 ---
 
 ## 目标与退出标准
@@ -285,7 +287,7 @@ memory_entries:
 | --- | --- | --- | --- |
 | EC-01 | **前端 token 输入与携带**（三态实跑 + 存储决策 + 凭据纪律） | 前端输入面 + 请求层携带 + 三态证据 + 成对反证 | **PASS** |
 | EC-02 | **记录面门禁覆盖**（先红后绿 + 按压 + 判据零改动 + m0 仍 23） | 顺序 / 覆盖机制 + 扫描面清单（收口 `W-14`） | **PASS** |
-| EC-03 | **认证运维面**（开启 / 轮换 / 关闭 / 401 验证 / 部署面） | 三处文档补齐 + 同源判据零改动 + 部署面终态 | **PENDING** |
+| EC-03 | **认证运维面**（开启 / 轮换 / 关闭 / 401 验证 / 部署面） | 三处文档补齐 + 同源判据零改动 + 部署面终态 | **PASS** |
 | EC-04 | **收口复检 + 残余登记** | 两树复检 + as-is m0 **23/23**（覆盖记录面）+ CI 台账 + 残余逐条 | **PENDING** |
 
 **依赖关系**：EC-02 是**方法论**面，独立于 EC-01 / EC-03（它判的是「门禁结论是否覆盖记录面」，
@@ -638,6 +640,8 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 
 | 2 | PLAN-20260926-197（EC-01） | `（实施提交见回合汇报）` | **三态实跑 5/5**（对**真实** FastAPI + **真实** vite；写操作经**应用自己的请求层**）：**甲（关闭）** `PUT …/settings` **200** 且 `authorization=null` + 状态位「未配置」；**乙（开启 + 无 token）** **401** + 设置页/token 输入面可见、说明可读、**零 `pageerror`**（非空白/非崩溃）；**丙（开启 + 经界面填 token）** 前置 401 → 保存 → 状态位「已配置」→ `PUT` **200** 且 `authorization` **非空**、输入框清空、页面 HTML 不含明文。**成对反证**：把注入条件改成 `if (false && …)`（锚点唯一命中）⇒ 丙态 **401**、退出码 1 ⇒ **红由「去掉注入」引起**；sha256 `e4b004a3fe23f9e5` 逐字节还原 ⇒ 复跑丙 **200**。**存储决策 = 内存**（三选一，理由与代价落 `MEM-147`：浏览器持久层被 `test_security_scan.py:79-91` 的无条件字面量断言收窄；代价 = 刷新即失）。**凭据纪律零命中**：全仓只有变量名、`apps/web/src` 无 `Bearer <长串>` 字面量、无 `localStorage.setItem`/`sessionStorage.setItem`、凭据审计四面 `offenders=0`、`test_security_scan.py` **6 passed 且零改动**。**关闭态对照**：stub e2e **98 passed**（与基线**同计数**）、live e2e **53 passed**（同计数）。**web 六门全绿**（lint / typecheck / **94 unit** / build / stub e2e / live e2e）。**设计基线**：结构签名**仅 `settings` 一条**漂移（`nav kids=5→6` + 新增「控制面连接」按钮），按既有流程 `UPDATE_OUTLINES=1` 重生成 + **目检 diff**，**未调容差**；像素基线 **68 张未漂移** | `（见回合汇报）` | **本轮内被门禁抓到并修掉的真问题**：①`test_security_scan.py` 判红——**模块文档注释**里为说明「为什么不选 localStorage」而写出了被禁的**调用形态**字面量（该判据是**子串**扫描、不解析注释）⇒ 改**说明措辞**而非改判据；②`eslint` 3 处（`max-lines-per-function` 52>50、i18n 两行超 100 字符）⇒ 抽 `TokenActions` + 折行；③驱动侧两处**假红/假绿**教训：裸 `fetch` 绕过请求层（丙态必失败）⇒ 改为经**界面**驱动；抓页面文案判失败会读到**残留**错误 ⇒ 改为监听 `page.on("response")` 的一手状态码 | **EC-01 = PASS**（三态 + 成对反证 + 存储决策 + 凭据纪律 + 关闭态同计数 + 基线按流程重生成）；`W-13` **已收口**；`RECHECK-20260926-198` = `PASS_WITH_WARNINGS`（W-1…W-6）。**未覆盖范围**：三态是**本机**实跑，CI 的 `console-frontend` 跑的是**关闭态**（既有 stub + live 套件），**开启态**证据未进 CI 判据；前端输入面**不是**访问控制 | cycle 3 = **EC-03**（认证运维面文档：开启/轮换/关闭 + 401 验证 + 部署面） |
 
+| 3 | PLAN-20260926-198（EC-03） | `（实施提交见回合汇报）` | **五面各处在位**（4 文件 / **115 插入 / 1 删除**；**产品代码零改动**）：`LIVE_MODEL_RUNBOOK.md` **+66**（新增 `### 2.2` 四步验证 + 读法表、`### 2.3` 部署面四条检查项）、`IDENTITY_AND_ACCESS.md` **+37**（运维面小节 + 未覆盖第 5 条据实更新）、`CONTROL_PLANE_API.md` **+8**、`THREAT_MODEL.md` §6.7 **+5**（追加在 `零夸大` **之后**，该措辞 offset 1054 仍在 1200 字窗内）。**401 实测（真实进程，token 现场生成、只走 env、不落盘）**：关闭态 `GET /health` **200** / `POST /projects` **201** / 启动警告**在场**；开启态 **200 / 401 / 401 / 201**，两个 401 的 `detail` **各自点名**（「缺 Bearer 头」/「token 不匹配」）⇒ `A=OK B=OK`。**既有判据零改动且全绿**：`test_control_plane_auth_same_source.py` **11 passed** + `test_runbook_same_source.py` **10 passed** = **21 passed**；四份文档 canonical 同源句**各恰好 1 次**；runbook `## 1.`…`## 5.` 节名未动（新增只走 `###`）。治理 `validate.py` 绿 | `（见回合汇报）` | **本轮修掉两处驱动侧假象**：①探针发**空载荷** ⇒ 关闭态得 **422**（载荷非法），把「认证是否放行」与「载荷是否合法」混在一起 ⇒ 改发**合法**载荷；②断言按大写 `Bearer` 匹配正文而正文是小写 `bearer` ⇒ 改为断言**两个拒绝的成因各自被点名** | **EC-03 = PASS**；`W-12`（部署面未验证）**收口**为「可复核检查项 + 明确未验证登记」；`RECHECK-20260926-199` = `PASS_WITH_WARNINGS`（W-1…W-5）。**未覆盖范围**：部署面**仍未验证**（本机无真实反代/TLS/多副本拓扑）；多副本「须同值」是**设计推论**、未实测；401 实测是本机单进程、CI 不跑 | cycle 4 = **EC-04**（收口复检 + 残余逐条 + 两树同结论 + as-is m0 **23/23**） |
+
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
@@ -652,3 +656,4 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 | 2026-09-26 | ACTIVE | **建档**：用户会话指令（goal 模式）授权把 GOAL-019 的写面认证从「能开启但开启后不可用」推进到「可真正启用」，三条授权 = **前端 token 输入与携带** / **记录面门禁覆盖（方法论；最要紧）** / **认证运维面**。四 EC 设计（前端三态 / 记录面机制 / 运维文档 / 收口复检），budget = 20 / 120 / 2，`fix_policy` 与 `escalation_triggers` 承 GOAL-019 全套并**新增**：不得改 `test_reproducibility_wording.py` 与 `test_control_plane_auth_same_source.py`、不得改 401 形态、不得改 m0 条数、不得用惰性访问器绕过前端持久层安全断言。**明确不做**：读面认证、多租户 / RBAC / organization scope、BOLA·BFLA、调用方自报身份、新增依赖、token 落任何地方、改 `Idempotency-Key` 语义、改 401 形态。**建档时零产品代码改动**（只增本文件）。**建档当日实测并写入的判据形态约束**：①前端**单一注入点**存在（`buildHeaders`）且 60 处写请求全覆盖；②`tests/api/test_security_scan.py:79-91` 把 token 存储**收窄为内存**（选 `localStorage` / `sessionStorage` 都需放宽或绕过既有安全判据 ⇒ 命中 BLOCKED）；③**m0 的 `23` 被三处硬编码** ⇒ EC-02 的机制**必须**落在既有 check 内（`tests/**` 属 `python/tests` 收集面）；④**缺陷的真实形状**是**时间性**的（记录面**已**被扫，但本地 SOP 的门跑在记录写入**之前**）⇒ 「全量门包含记录面判据」字面上已成立却不足以修复，机制必须把**结论**与**记录面内容状态**绑定；⑤**记录面扫描面 = 11 条**（内容依赖 8 + 名称依赖 3），可**收口 `W-14`**。建档提交 `6cc7561` 的 CI = **八 job 全 success + CodeQL 3/3**（`run_attempt=1`）。 |
 | 2026-09-26 | ACTIVE | cycle 1（PLAN-20260926-196）：**EC-02 = PASS**（本节最要紧的一条）。交付 = 覆盖判据（215 行 / 8 例）+ `LOCAL_GATE_PROTOCOL.md` 顺序节 + `RECHECK-197` + `MEM-146`。**先红**：探针写入记录面 ⇒ 话术判据**单独判红** ⇒ 记录面**本来就在**扫描面内，缺陷是**时刻**（条④得到实测确认）；**后绿**：探针在树时跑 canonical 全量门 ⇒ `python/tests` 判红（= EC-02 要的结论）。**按压 7/7**（6 红 + 1 期望不红，逐字节还原，报实际判红集合）。**判据零改动** + **m0 条数不变**。**终态全量门（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、`4559 passed / 20 skipped`、零 FAILED；日志 `scratch/goal020-c1-m0.log`）。**本轮被全量门抓到两处真红并已修**（format-check / 治理引用自洽）⇒ 定向全绿 ≠ 全量绿，再次实测。`W-14` 已收口。**EC-01 / EC-03 / EC-04 仍 PENDING** ⇒ GOAL 维持 **ACTIVE**，下一 cycle 做前端 token 面。 |
 | 2026-09-26 | ACTIVE | cycle 2（PLAN-20260926-197）：**EC-01 = PASS**。前端拿到 token 输入面（设置页「控制面连接」）+ 唯一请求层对**写请求**注入 `Authorization`（读面永不携带）。**三态实跑 5/5**（真实 FastAPI + 真实 vite，写操作经应用自己的请求层）：关闭 ⇒ **200 且不带凭据**；开启 + 无 token ⇒ **401 且页面如实呈现**（非空白/非崩溃）；开启 + 经界面填 token ⇒ **200 且携带凭据、不回显**。**成对反证**去掉注入 ⇒ **401 判红**、sha256 逐字节还原 ⇒ 复绿。**存储方式 = 内存**（三选一；浏览器持久层被既有安全判据的无条件字面量断言收窄，代价 = 刷新即失，理由落 `MEM-147`）。**凭据纪律零命中** + `test_security_scan.py` 零改动且绿。**关闭态与基线同计数**（stub 98 / live 53）。**web 六门全绿**；设计基线仅 `settings` 一条漂移，按流程重生成 + 目检、**未调容差**。`W-13` 已收口。**本轮被门禁抓到并修掉的真问题**：文档注释写出被禁调用形态（子串判据）⇒ 改措辞；eslint 3 处；驱动侧「裸 fetch 绕过请求层」与「抓残留文案」两处假象 ⇒ 改为经界面驱动 + 观测响应。**EC-03 / EC-04 仍 PENDING** ⇒ GOAL 维持 **ACTIVE**，下一 cycle 做运维文档。 |
+| 2026-09-26 | ACTIVE | cycle 3（PLAN-20260926-198）：**EC-03 = PASS**。**开启 / 轮换 / 关闭 / 验证 401 / 部署面**五个面写进三处文档（runbook 新增 `### 2.2` 四步验证与 `### 2.3` 部署检查项）+ `THREAT_MODEL.md` §6.7 同步一条。**401 实测**：关闭态 **200/201/警告在场**；开启态 **200/401/401/201**，两个 401 **各自点名**成因。**既有判据零改动且 21 passed**（同源判据 11 + runbook 判据 10）；同源句各恰好 1 次；runbook 五个固定节名未动。**产品代码零改动**。`W-12`（部署面未验证）**收口**为「可复核检查项 + 明确未验证登记」——**未**把部署面变成已验证。**EC-04 仍 PENDING** ⇒ GOAL 维持 **ACTIVE**，下一 cycle 收口。 |

@@ -17,6 +17,14 @@ If-Match / resource version
 - 未通过认证的写请求 ⇒ **401** ProblemDetail，`detail` 点名「缺 Bearer 头」或「token 不匹配」。
 - 认证通过后，请求主体落 canonical（事件 `actor`；读面 `GET /runs/{id}/events` 可见）。
   无主体时**沿用**调用方既有常量（如 `system:orchestration` / `user:console`）。
+- **运维面**：**开启** = 设该变量并**重启**；**轮换** = 换值 + **重启**（无持久化副本要清）；
+  **关闭** = `unset` + 重启（打印显式警告，警告不是安全结论）。
+  **验证 401**：读面不带 token 仍 **200**；写面不带 / 带错 token **401** 且 `detail` 点名成因；
+  带对 token **2xx**。命令与读法见 `docs/integration/LIVE_MODEL_RUNBOOK.md` §2.2。
+- **部署面**：反代须**透传** `Authorization`（不得与上游认证共用同一个头）；
+  **TLS 在反代终止**（明文 HTTP 上 bearer 凭据等于公开）；**多副本须同值**
+  （本实现无共享会话 ⇒ 不一致表现为间歇 401，此条**未在本机验证**）；
+  反代 / TLS / 多副本行为**未验证**——只给检查项。
 - **未覆盖范围**：读面认证 / 多租户与 RBAC / 对象级授权（BOLA/BFLA）/ 逐调用方身份
   （单一共享 token ⇒ 单一主体，且**不接受**调用方自报身份）/ 反代与 TLS 行为
   —— 均**未做**。详细边界见 `docs/security/IDENTITY_AND_ACCESS.md` 与

@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260926-148](entries/MEM-20260926-148-auth-ops-face-401-verification-and-deployment-checks.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-198 |
 | [MEM-20260926-147](entries/MEM-20260926-147-frontend-credential-storage-and-app-path-driving.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-197 |
 | [MEM-20260926-146](entries/MEM-20260926-146-record-face-defect-is-timing-not-scan-surface.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-196 |
 | [MEM-20260926-145](entries/MEM-20260926-145-writing-records-is-itself-gated-so-run-the-gate-last.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-194 |
