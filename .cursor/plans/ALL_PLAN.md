@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260926-199](tasks/PLAN-20260926-199-goal-020-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260926-198](tasks/PLAN-20260926-198-auth-ops-face-enable-rotate-disable-and-401-verification.md) | DONE |
 | [x] | [PLAN-20260926-197](tasks/PLAN-20260926-197-console-token-input-and-write-face-carry.md) | DONE |
 | [x] | [PLAN-20260926-196](tasks/PLAN-20260926-196-record-face-is-covered-by-the-gate.md) | DONE |

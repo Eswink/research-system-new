@@ -2,7 +2,7 @@
 id: GOAL-20260926-020
 slug: auth-becomes-usable
 title: 认证可启用（前端 token 输入与携带 / 记录面门禁覆盖 / 认证运维面）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-26
 updated_at: 2026-09-26
 owners:
@@ -166,7 +166,7 @@ exit_criteria:
       ⑤ 残余清单在本文件**逐条**出现且措辞与判词一致；⑥ **未覆盖范围**逐条明写：
       **读面未认证** / **多租户未做** / **D-12(a) 未做** / **R-M1 未收口** /
       **部署面**（`W-12`）的**终态**。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -269,7 +269,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260926-196-record-face-is-covered-by-the-gate.md
   - .cursor/plans/tasks/PLAN-20260926-197-console-token-input-and-write-face-carry.md
   - .cursor/plans/tasks/PLAN-20260926-198-auth-ops-face-enable-rotate-disable-and-401-verification.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20260926-199-auth-ops-face-recheck.md
+  - .cursor/plans/tasks/PLAN-20260926-199-goal-020-closeout-recheck.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260926-200-goal-020-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260926-146-record-face-defect-is-timing-not-scan-surface.md
   - .cursor/memory/entries/MEM-20260926-147-frontend-credential-storage-and-app-path-driving.md
@@ -288,7 +289,7 @@ memory_entries:
 | EC-01 | **前端 token 输入与携带**（三态实跑 + 存储决策 + 凭据纪律） | 前端输入面 + 请求层携带 + 三态证据 + 成对反证 | **PASS** |
 | EC-02 | **记录面门禁覆盖**（先红后绿 + 按压 + 判据零改动 + m0 仍 23） | 顺序 / 覆盖机制 + 扫描面清单（收口 `W-14`） | **PASS** |
 | EC-03 | **认证运维面**（开启 / 轮换 / 关闭 / 401 验证 / 部署面） | 三处文档补齐 + 同源判据零改动 + 部署面终态 | **PASS** |
-| EC-04 | **收口复检 + 残余登记** | 两树复检 + as-is m0 **23/23**（覆盖记录面）+ CI 台账 + 残余逐条 | **PENDING** |
+| EC-04 | **收口复检 + 残余登记** | 两树复检 + as-is m0 **23/23**（覆盖记录面）+ CI 台账 + 残余逐条 | **PASS** |
 
 **依赖关系**：EC-02 是**方法论**面，独立于 EC-01 / EC-03（它判的是「门禁结论是否覆盖记录面」，
 不判产品行为）⇒ **应当最先做**（用户判词明写「本 EC 是本节最要紧的一条」，因为它决定
@@ -642,12 +643,17 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 
 | 3 | PLAN-20260926-198（EC-03） | `（实施提交见回合汇报）` | **五面各处在位**（4 文件 / **115 插入 / 1 删除**；**产品代码零改动**）：`LIVE_MODEL_RUNBOOK.md` **+66**（新增 `### 2.2` 四步验证 + 读法表、`### 2.3` 部署面四条检查项）、`IDENTITY_AND_ACCESS.md` **+37**（运维面小节 + 未覆盖第 5 条据实更新）、`CONTROL_PLANE_API.md` **+8**、`THREAT_MODEL.md` §6.7 **+5**（追加在 `零夸大` **之后**，该措辞 offset 1054 仍在 1200 字窗内）。**401 实测（真实进程，token 现场生成、只走 env、不落盘）**：关闭态 `GET /health` **200** / `POST /projects` **201** / 启动警告**在场**；开启态 **200 / 401 / 401 / 201**，两个 401 的 `detail` **各自点名**（「缺 Bearer 头」/「token 不匹配」）⇒ `A=OK B=OK`。**既有判据零改动且全绿**：`test_control_plane_auth_same_source.py` **11 passed** + `test_runbook_same_source.py` **10 passed** = **21 passed**；四份文档 canonical 同源句**各恰好 1 次**；runbook `## 1.`…`## 5.` 节名未动（新增只走 `###`）。治理 `validate.py` 绿 | `（见回合汇报）` | **本轮修掉两处驱动侧假象**：①探针发**空载荷** ⇒ 关闭态得 **422**（载荷非法），把「认证是否放行」与「载荷是否合法」混在一起 ⇒ 改发**合法**载荷；②断言按大写 `Bearer` 匹配正文而正文是小写 `bearer` ⇒ 改为断言**两个拒绝的成因各自被点名** | **EC-03 = PASS**；`W-12`（部署面未验证）**收口**为「可复核检查项 + 明确未验证登记」；`RECHECK-20260926-199` = `PASS_WITH_WARNINGS`（W-1…W-5）。**未覆盖范围**：部署面**仍未验证**（本机无真实反代/TLS/多副本拓扑）；多副本「须同值」是**设计推论**、未实测；401 实测是本机单进程、CI 不跑 | cycle 4 = **EC-04**（收口复检 + 残余逐条 + 两树同结论 + as-is m0 **23/23**） |
 
+| 4 | PLAN-20260926-199（EC-04 收口） | 收口提交（**本行由该提交写入** ⇒ 依「固定口径」其 SHA **只在回合汇报记账、不回写文件**） | **独立复检 32/32**（`scratch/goal020-ec04-closeout-recheck.py`；六面）：交付面 6 件在位 / 请求层行为 2 / token 模块**代码面**不碰持久化 API 3（剥注释后判）/ **运维面五标志三处各自在位** 3 / 残余 `W-10`…`W-14` 5 / 未覆盖范围 3 / **受保护判据零改动 3**（三个文件 `git diff` 全空）/ **按压 2**（删话术判据的 `.cursor/plans` 扫描根 ⇒ 覆盖判据 **2 failed** ⇒ 判红；sha256 `eb5cd6289de31710` **逐字节还原**）/ **两树同结论 3**（干净 checkout **1368 passed** ↔ 当前树 **1368 passed**，判词行一致）。**as-is 本机 m0（记录写完之后）** = `PASS: profile=m0; 23 deterministic checks`（`PASS [` = **24**、**4365 passed / 214 skipped**、`FAILED`/`ERROR` **0**；日志 `scratch/goal020-c4-m0-as-is.log`）。治理 `validate.py` = `Cursor 治理验证通过` + `DOCS-CHECK PASS: 6 deterministic checks` | 本行所在的记录提交（依固定口径只在回合汇报记账） | **本轮修掉两处复检脚本自身的假象**：①两树对照里干净 checkout 的 `.venv` 由 `uv` **现场创建**（首次装依赖 ⇒ 超时）⇒ 改为两树**共用主树解释器**，否则比的是两份环境；②判词比对**含耗时** ⇒ 逐字比会把同结论误判成不一致 ⇒ 改为只比「通过/失败数与结论」（`_verdict()`） | **EC-01 / EC-02 / EC-03 / EC-04 全 PASS** ⇒ GOAL 置 **ACHIEVED**。**残余终态**：`W-13`（前端无 token 输入面）**已收口**、`W-14`（记录面扫描面未逐一核实）**已收口**、`W-12`（部署面未验证）**部分收口**（检查项 + 不可验证登记，**仍未**变成已验证）；`W-10` / `W-11` **原样保留**（需另行授权）。**未覆盖范围**：读面未认证 / 多租户与 RBAC 未做 / BOLA·BFLA 未做 / `R-M1` 未收口（**不得**宣称项目安全）/ 部署面未验证 / 前端 token 面**不是**访问控制 | —（**终态，无下一轮输入**）。后续若要推进：BOLA·BFLA 与逐调用方身份 **需另行授权**；部署面验证需要真实拓扑 |
+
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-020 落地） | `6cc7561` | M0 [**36246070820**](https://github.com/Eswink/research-system-new/actions/runs/36246070820) / CodeQL [**36246070729**](https://github.com/Eswink/research-system-new/actions/runs/36246070729) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，**一次成功、无 flake**）：M0 `conclusion=success`，逐 job `console-frontend` / `container-quality` / `eval-gate` / `collector-quality` / `quality-ubuntu-latest` / `observability-overhead-ubuntu-latest` / `quality-windows-latest` / `observability-overhead-windows-latest` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)` **3/3 `success`**。上游 push 回执报 **8 条**告警（6 moderate + 2 low，全为 `undici`） |
-| cycle 1 实施（EC-02 记录面覆盖） | `（实施提交见回合汇报）` | **依「固定口径」：写下某条记录的那个提交自身的 run 只在回合汇报记账**（不重复回写文件） | 同上 |
+| cycle 1 实施（EC-02 记录面覆盖） | `41c81e3` | M0 [**36252399295**](https://github.com/Eswink/research-system-new/actions/runs/36252399295) / CodeQL [**36252398986**](https://github.com/Eswink/research-system-new/actions/runs/36252398986) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，**一次成功、无 flake**）：M0 `conclusion=success`，逐 job `console-frontend` / `quality-windows-latest` / `observability-overhead-windows-latest` / `container-quality` / `eval-gate` / `observability-overhead-ubuntu-latest` / `collector-quality` / `quality-ubuntu-latest` **全 `success`**；CodeQL **3/3 `success`**。上游 push 回执 **8 条**告警（全为 `undici`）⇒ 零依赖改动。轮询日志 `scratch/goal020-c1-ci-poll.log` |
+| cycle 2 实施（EC-01 前端 token 面） | `e1e20a6` | M0 [**36261915272**](https://github.com/Eswink/research-system-new/actions/runs/36261915272) / CodeQL [**36261914950**](https://github.com/Eswink/research-system-new/actions/runs/36261914950) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，**一次成功、无 flake**）：逐 job `collector-quality` / `observability-overhead-ubuntu-latest` / `container-quality` / `eval-gate` / `quality-windows-latest` / `console-frontend` / `observability-overhead-windows-latest` / `quality-ubuntu-latest` **全 `success`**；CodeQL **3/3 `success`**。轮询日志 `scratch/goal020-c2-ci-poll.log` |
+| cycle 3 实施（EC-03 运维面文档） | `c12af0c` | M0 [**36264448948**](https://github.com/Eswink/research-system-new/actions/runs/36264448948) / CodeQL [**36264448739**](https://github.com/Eswink/research-system-new/actions/runs/36264448739) | **绿（八 job 全 success + CodeQL 3/3）**（`run_attempt=1`，**一次成功、无 flake**）：逐 job `container-quality` / `console-frontend` / `collector-quality` / `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` **全 `success`**；CodeQL **3/3 `success`**。轮询日志 `scratch/goal020-c3-ci-poll.log` |
+| 收口（EC-04） | 本行所在的记录提交 | **依「固定口径」：写下某条记录的那个提交自身的 run 只在回合汇报记账**（不重复回写文件） | 见回合汇报 |
 
 ## 状态历史
 
@@ -657,3 +663,4 @@ CI 判红且根因是夹具语义冲突 ⇒ **优先撤回载体改动**；撤�
 | 2026-09-26 | ACTIVE | cycle 1（PLAN-20260926-196）：**EC-02 = PASS**（本节最要紧的一条）。交付 = 覆盖判据（215 行 / 8 例）+ `LOCAL_GATE_PROTOCOL.md` 顺序节 + `RECHECK-197` + `MEM-146`。**先红**：探针写入记录面 ⇒ 话术判据**单独判红** ⇒ 记录面**本来就在**扫描面内，缺陷是**时刻**（条④得到实测确认）；**后绿**：探针在树时跑 canonical 全量门 ⇒ `python/tests` 判红（= EC-02 要的结论）。**按压 7/7**（6 红 + 1 期望不红，逐字节还原，报实际判红集合）。**判据零改动** + **m0 条数不变**。**终态全量门（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、`4559 passed / 20 skipped`、零 FAILED；日志 `scratch/goal020-c1-m0.log`）。**本轮被全量门抓到两处真红并已修**（format-check / 治理引用自洽）⇒ 定向全绿 ≠ 全量绿，再次实测。`W-14` 已收口。**EC-01 / EC-03 / EC-04 仍 PENDING** ⇒ GOAL 维持 **ACTIVE**，下一 cycle 做前端 token 面。 |
 | 2026-09-26 | ACTIVE | cycle 2（PLAN-20260926-197）：**EC-01 = PASS**。前端拿到 token 输入面（设置页「控制面连接」）+ 唯一请求层对**写请求**注入 `Authorization`（读面永不携带）。**三态实跑 5/5**（真实 FastAPI + 真实 vite，写操作经应用自己的请求层）：关闭 ⇒ **200 且不带凭据**；开启 + 无 token ⇒ **401 且页面如实呈现**（非空白/非崩溃）；开启 + 经界面填 token ⇒ **200 且携带凭据、不回显**。**成对反证**去掉注入 ⇒ **401 判红**、sha256 逐字节还原 ⇒ 复绿。**存储方式 = 内存**（三选一；浏览器持久层被既有安全判据的无条件字面量断言收窄，代价 = 刷新即失，理由落 `MEM-147`）。**凭据纪律零命中** + `test_security_scan.py` 零改动且绿。**关闭态与基线同计数**（stub 98 / live 53）。**web 六门全绿**；设计基线仅 `settings` 一条漂移，按流程重生成 + 目检、**未调容差**。`W-13` 已收口。**本轮被门禁抓到并修掉的真问题**：文档注释写出被禁调用形态（子串判据）⇒ 改措辞；eslint 3 处；驱动侧「裸 fetch 绕过请求层」与「抓残留文案」两处假象 ⇒ 改为经界面驱动 + 观测响应。**EC-03 / EC-04 仍 PENDING** ⇒ GOAL 维持 **ACTIVE**，下一 cycle 做运维文档。 |
 | 2026-09-26 | ACTIVE | cycle 3（PLAN-20260926-198）：**EC-03 = PASS**。**开启 / 轮换 / 关闭 / 验证 401 / 部署面**五个面写进三处文档（runbook 新增 `### 2.2` 四步验证与 `### 2.3` 部署检查项）+ `THREAT_MODEL.md` §6.7 同步一条。**401 实测**：关闭态 **200/201/警告在场**；开启态 **200/401/401/201**，两个 401 **各自点名**成因。**既有判据零改动且 21 passed**（同源判据 11 + runbook 判据 10）；同源句各恰好 1 次；runbook 五个固定节名未动。**产品代码零改动**。`W-12`（部署面未验证）**收口**为「可复核检查项 + 明确未验证登记」——**未**把部署面变成已验证。**EC-04 仍 PENDING** ⇒ GOAL 维持 **ACTIVE**，下一 cycle 收口。 |
+| 2026-09-26 | **ACHIEVED** | cycle 4（PLAN-20260926-199）：**EC-04 = PASS** ⇒ **四个 EC 全部达成**，GOAL 置 **ACHIEVED**。**独立复检 32/32**：交付面在位（6）/ 请求层行为（2）/ token 模块**代码面**不碰持久化 API（3）/ **运维面五标志三处各自在位**（3）/ 残余 `W-10`…`W-14`（5）/ 未覆盖范围（3）/ **受保护判据零改动**（3，三个文件 `git diff` 全空）/ **按压**（删扫描根 ⇒ 覆盖判据 **2 failed** 判红 ⇒ sha256 逐字节还原）/ **两树同结论**（干净 checkout **1368 passed** ↔ 当前树 **1368 passed**）。**as-is 本机 m0（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、**4365 passed / 214 skipped**、零 FAILED；`scratch/goal020-c4-m0-as-is.log`）。治理 `validate.py` 绿 + `DOCS-CHECK PASS`。**CI 四次推送全绿、`run_attempt=1` ×4**（八 job + CodeQL 3/3）。**残余终态**：`W-13` / `W-14` **已收口**；`W-12` **部分收口**（检查项 + 不可验证登记）；`W-10` / `W-11` **原样保留**。**不得宣称项目安全**（`R-M1` 未收口）。 |
