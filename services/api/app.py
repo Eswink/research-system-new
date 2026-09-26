@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator
@@ -12,7 +13,12 @@ from services.api.composition import ApiDeps, assemble
 from services.api.errors import register_error_handlers
 from services.api.experiment_queue import ExperimentQueueDispatcher
 from services.api.lease_recovery import LeaseRecoveryScheduler
-from services.api.middleware import IdempotencyMiddleware
+from services.api.middleware import (
+    IdempotencyMiddleware,
+    PrincipalAuthMiddleware,
+    auth_disabled_warning,
+    control_plane_auth_from_env,
+)
 from services.api.routers import (
     approvals,
     artifacts,
@@ -53,6 +59,20 @@ from services.api.scheduler import (
     WorkerReaperScheduler,
 )
 from services.api.settings import ApiSettings
+
+_log = logging.getLogger(__name__)
+
+
+def _install_write_face_auth(app: FastAPI) -> None:
+    """写面认证（GOAL-019 EC-02）：注册在 `IdempotencyMiddleware` **之后**。
+
+    Starlette 1.6 的 `build_middleware_stack` **逆序**包裹 `user_middleware` ⇒
+    后注册者在**外层**先执行 ⇒ 未认证的写请求**不**消耗 `Idempotency-Key` 槽位、
+    **不**写响应缓存。配置在装配期快照（不随进程内环境变化）。
+    """
+    config = control_plane_auth_from_env()
+    app.state.control_plane_auth = config
+    app.add_middleware(PrincipalAuthMiddleware, config=config)
 
 
 def _register_health_route(app: FastAPI, deps: ApiDeps, version: str) -> None:
@@ -228,7 +248,13 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     M16 re-audit F-3: the worker reaper daemon joins the production lifecycle.
     GOAL-003 cycle 19: the retry-dispatch daemon joins it too（停车中的 run 需要
     一个派发方，否则声明的重排只能等人工）。
+    GOAL-019 EC-02：控制面写面认证在**启动时**自报状态——认证关闭时打印**显式警告**
+    （文案明确说「无认证，任何人可写」，见 `auth_disabled_warning`）；认证开启时不打印
+    该警告（也不回显 token）。
     """
+    auth = getattr(app.state, "control_plane_auth", None)
+    if auth is not None and not auth.enabled:
+        _log.warning("%s", auth_disabled_warning())
     deps: ApiDeps | None = getattr(app.state, "deps", None)
     lease_sched: LeaseRecoveryScheduler | None = None
     outbox_sched: OutboxRelayScheduler | None = None
@@ -274,6 +300,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     _register_health_route(app, resolved, version)
     register_error_handlers(app)
     app.add_middleware(IdempotencyMiddleware)
+    _install_write_face_auth(app)
     app.include_router(llm_endpoints.router)
     app.include_router(models.router)
     app.include_router(team_protocol.router)

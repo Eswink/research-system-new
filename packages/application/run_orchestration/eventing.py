@@ -6,6 +6,7 @@ import uuid
 from dataclasses import dataclass
 
 from packages.application.ports.event_publisher import EventPublisher
+from packages.application.principal_context import current_principal
 from packages.domain.core import Timestamp
 from packages.domain.events import EventEnvelope, EventType, digest_of_payload
 from packages.domain.manifest import RunManifest
@@ -31,6 +32,18 @@ class EventTarget:
     task_id: str | None = None
 
 
+def _event_actor(sink: EventSink) -> str:
+    """本次事件的 actor：**请求级主体优先，缺则回退 `sink._actor`**（GOAL-019 EC-01）。
+
+    `sink._actor` 来自 `OrchestrationDependencies.default_actor`（缺省
+    `"system:orchestration"`）。`None` 主体**必须**被解释为「本次调用没有请求主体」
+    并沿用该常量 ⇒ **未启用认证时行为与基线逐字一致**（向后兼容硬约束；
+    这条路径不是「请求」时——如后台派发线程——主体本就缺失，回退是**正确**语义）。
+    """
+    principal = current_principal()
+    return principal.actor if principal is not None else sink._actor
+
+
 def publish_event(
     sink: EventSink,
     event_type: EventType,
@@ -43,7 +56,7 @@ def publish_event(
         event_type=event_type,
         schema_version="1",
         occurred_at=Timestamp.now(),
-        actor=sink._actor,
+        actor=_event_actor(sink),
         scope=f"run:{target.run_id}" + (f" task:{target.task_id}" if target.task_id else ""),
         payload=payload,
         payload_digest=digest_of_payload(payload),

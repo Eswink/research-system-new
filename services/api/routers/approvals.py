@@ -14,6 +14,7 @@ from fastapi import APIRouter, Request
 from packages.application.ports import ApprovalStore
 from packages.application.ports.approval_store import ApprovalRecord
 from packages.application.ports.errors import InvalidInputError
+from packages.application.principal_context import current_principal
 from packages.application.run_orchestration.budget_adjust import (
     AdjustmentCommand,
     AdjustmentLine,
@@ -42,6 +43,20 @@ from services.api.run_resume import rebuild_and_resume
 router = APIRouter(tags=["approvals"])
 
 _ACTION_LABEL = "policy-required-action"
+
+#: 无请求主体时的审批 actor（历史常量）。认证关闭时**逐字**沿用 ⇒ 离线基线不变；
+#: 认证开启时改用请求主体（GOAL-019 EC-01）。**不得**改写成别的字符串。
+_DEFAULT_APPROVAL_ACTOR = "user:console"
+
+
+def _decide_actor() -> str:
+    """`approval.decided` 的 actor：**请求级主体优先，缺则回退历史常量**。
+
+    审批处置是**请求级动作**（谁按下了裁决）⇒ 这里替换的是**占位**而不是语义。
+    回退分支与 `_DEFAULT_APPROVAL_ACTOR` 逐字相同 ⇒ 未启用认证时行为不变。
+    """
+    principal = current_principal()
+    return principal.actor if principal is not None else _DEFAULT_APPROVAL_ACTOR
 
 
 def _approval_dto(approval: ApprovalRecord) -> ApprovalDto:
@@ -121,7 +136,7 @@ async def decide(approval_id: str, payload: ApprovalDecideDto, request: Request)
     except ValueError as exc:
         raise ApiError(409, "Invalid Transition", str(exc)) from exc
     save_run(deps, updated_run)
-    event = build_approval_event(decided, actor="user:console")
+    event = build_approval_event(decided, actor=_decide_actor())
     deps.events.publish(event)
     if payload.decision == "approve":
         _resume_after_approval(deps, run_id, updated_run)
