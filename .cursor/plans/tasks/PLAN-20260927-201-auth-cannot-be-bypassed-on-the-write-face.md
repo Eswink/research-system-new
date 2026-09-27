@@ -2,7 +2,7 @@
 id: PLAN-20260927-201
 slug: auth-cannot-be-bypassed-on-the-write-face
 title: GOAL-021 cycle 1（EC-01）：认证不可绕过——枚举来自代码 + 豁免不继承 + 顺序钉住 + 读面按设计放行
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-27
 updated_at: 2026-09-27
 parent_goal: GOAL-20260927-021
@@ -24,8 +24,9 @@ authorization:
     （既有同源判据；AC-4 / AC-5 已覆盖本 EC 的 (b) 结构与 (c) 顺序面 ⇒ 本 PLAN 的新判据
     只补**它没覆盖的**面，**不**重复、**不**顶替）；**不得**宣称项目安全（`R-M1` 未收口）。
 subagent_parallel_limit: 3
-latest_recheck: null
-memory_entries: [无可复用事实（本 PLAN 的判据设计事实由 RECHECK 承载；收口时对齐）]
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260927-202-auth-cannot-be-bypassed-recheck.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260927-149-enumeration-must-come-from-code-and-be-pressable.md
 ---
 
 # PLAN-20260927-201 — 认证不可绕过（GOAL-021 EC-01）
@@ -51,57 +52,92 @@ AC-5 已断言注册顺序 ⇒ 本 PLAN 的判据**不重复**这些断言，而
 
 ## 验收条件
 
-- [ ] **AC-1（枚举来自代码 · 可复核）**：新判据内**调用 `create_app()`** 并遍历其
+- [x] **AC-1（枚举来自代码 · 可复核）**：新判据内**调用 `create_app()`** 并遍历其
       OpenAPI / 路由表取得 mutating 端点集合——**不得**出现手写的端点列表或手写计数
       （审查判据源码可据此取反证：把某个端点从保护面移出后，判据**不必改**就能发现）。
-- [ ] **AC-2（行为全覆盖 · 先红后绿）**：认证开启 + 枚举出的**每一个** mutating 端点
+- [x] **AC-2（行为全覆盖 · 先红后绿）**：认证开启 + 枚举出的**每一个** mutating 端点
       发无 token 请求 ⇒ **全部 401**；实测计数 **60**（建档期两口径互证）写入判据断言。
       **按压见 AC-5**。
-- [ ] **AC-3（豁免不被继承 · 结构 + 行为成对）**：**结构**面复用既有 AC-4 的结论
+- [x] **AC-3（豁免不被继承 · 结构 + 行为成对）**：**结构**面复用既有 AC-4 的结论
       （**不改该文件**，在 RECHECK 里引其证据）；**行为**面新增：分析类端点
       （`POST /protocol-drafts/validate`、`POST /projects/{id}/validate` /
       `compile` / `preflight` / `dry-run`，以及 model 的 `test` / `probe` /
       `discover-models`）在认证开启、无 token 时 **401**。
       ⇒ 证明「**幂等面放行 ⟹ 认证面放行**」这一推理为**假**。
-- [ ] **AC-4（读面与探活按设计放行 · 显式断言）**：`GET /health` 与若干普通 GET 在
+- [x] **AC-4（读面与探活按设计放行 · 显式断言）**：`GET /health` 与若干普通 GET 在
       认证**开启**、不带 token 时放行（2xx），且判据**显式断言「这是设计」**——
       绑定 `_MUTATING_METHODS` 这个**符号**（读面不放行只可能因为分类被改），
       而不是「碰巧返回 200」。
-- [ ] **AC-5（按压矩阵 · 逐轮报实际判红集合）**：至少两种按压各让判据**判红**，
+- [x] **AC-5（按压矩阵 · 逐轮报实际判红集合）**：至少两种按压各让判据**判红**，
       **已实测可证伪**（建档期探针 `scratch/goal021-ec01-probe-press-shape.py`）：
       **按压①** 把 `DELETE` 移出 `_MUTATING_METHODS` ⇒ DELETE 端点得 **404**（非 401）
       ⇒ AC-2 判红；**按压②** 让认证面对分析类 POST 放行 ⇒ 该端点得 **422**（非 401）
       ⇒ AC-3 判红。**逐字节复原**（sha256）⇒ 复跑绿。按压打偏（探针自身写错导致没红）
       **记为失败**。
-- [ ] **AC-6（既有判据零改动）**：`git diff` 取证
+- [x] **AC-6（既有判据零改动）**：`git diff` 取证
       `test_control_plane_auth_same_source.py` / `test_reproducibility_wording.py` /
       `test_record_face_is_covered_by_the_gate.py` / `test_security_scan.py`
       **四个文件零改动**。
-- [ ] **AC-7（规模与收集面）**：新判据文件 **≤ 450 行**（> 450 硬失败）、单函数 **≤ 50 行**；
+- [x] **AC-7（规模与收集面）**：新判据文件 **≤ 450 行**（> 450 硬失败）、单函数 **≤ 50 行**；
       放在 `tests/**` ⇒ 属既有 `python/tests` 收集面 ⇒ **不新增 m0 check**
       （终态行仍 `PASS: profile=m0; 23 deterministic checks`）。
-- [ ] **AC-8（凭据纪律）**：判据中的 token 一律为**测试内构造的合成假值**；
+- [x] **AC-8（凭据纪律）**：判据中的 token 一律为**测试内构造的合成假值**；
       全仓 token **值**零命中（只允许**变量名**）；`credential_audit.py` 四面 `offenders=0`。
-- [ ] **AC-9（记录面顺序）**：按 MEM-145 —— 先写记录（本 PLAN + RECHECK + MEM + GOAL 回写）
+- [x] **AC-9（记录面顺序）**：按 MEM-145 —— 先写记录（本 PLAN + RECHECK + MEM + GOAL 回写）
       ⇒ 跑记录面判据 ⇒ 再跑完整 `make validate-all`（独占、`uv run`、`--keep-going`）；
       **门禁结论覆盖记录面**。
 
 ## 实施清单
 
-- [ ] **WP-A（先红）：确认判据真能红** —— 复用并留档
-      `scratch/goal021-ec01-probe-press-shape.py`（**已跑通**：按压①⇒404、按压②⇒422、
-      基线 401、复原 401）⇒ 证明本 EC 的两个按压**可证伪**。
-- [ ] **WP-B（判据）**：新增 `tests/api/test_write_face_cannot_be_bypassed.py`：
-      (a) 枚举来自代码 + 逐个 401；(b) 分析类端点无 token 401；(d) 读面 / 探活按设计放行
-      （显式绑定 `_MUTATING_METHODS` 符号）。**不复制**既有 AC-4 / AC-5 的断言。
-- [ ] **WP-C（后绿+复原）：按压 2/2** + 逐字节复原 + 报**实际判红集合**；
-      定向套件（新增判据 + 既有认证判据）复跑绿。
-- [ ] **WP-D（记录）**：`RECHECK-20260927-202` + `MEM-20260927-149` + GOAL-021 回写
+- [x] **WP-A（先红）：确认判据真能红** —— `scratch/goal021-ec01-probe-press-shape.py`
+      （**已跑通**：按压①⇒404、按压②⇒422、基线 401、复原 401）⇒ 证明本 EC 的按压
+      **可证伪**。另 `scratch/goal021-ec01-probe-enumeration.py` 取证**枚举两口径一致**
+      （AST 装饰器 = OpenAPI paths = **60**，覆盖 **17** 个 router 文件）。
+- [x] **WP-B（判据）**：新增 `tests/api/test_write_face_cannot_be_bypassed.py`
+      （**285 行 / 18 例**，零超长函数）：(a) 枚举来自代码 + 逐个 401（缺 token / 错 token
+      各一轮）；(b) 分析类端点无 token 401（8 条参数化）+ 带对 token 的**配对对照**；
+      (d) 读面 / 探活按设计放行（含「**写面路径上的 GET** 不被挑战」这条最锋利形态）。
+      **不复制**既有 AC-4 / AC-5 的断言——它们的结构面与顺序面在
+      `test_control_plane_auth_same_source.py` 里，本文件**引用**而不**顶替**。
+- [x] **WP-C（后绿+复原）：按压 3/3 符合预期** + 逐字节复原 + **报实际判红集合**；
+      定向套件（新增判据 + 既有认证判据 + 安全扫描）复跑 **53 passed**。
+      **PRESS-3 在判据最终版（285 行）上复跑，红集合逐条相同（10 failed）**。
+- [x] **WP-D（记录）**：`RECHECK-20260927-202` + `MEM-20260927-149` + GOAL-021 回写
       （EC-01 → PASS、迭代日志、child_plans、状态历史）。
 
 ## 证据
 
-- （待填：按压矩阵、定向套件输出、m0 终态行、CI run）
+**本轮被全量门抓到并修掉的一处真红（`python/typecheck`）**：`TestClient.app` 的静态类型是
+ASGI callable（**不是** `FastAPI`）⇒ 直接 `.openapi()` / `.state` 被 mypy 判错 **7 处**。
+**修法**：收敛一处 `_app_of(client) -> FastAPI`（内部按本仓既有约定
+`cast(FastAPI, cast(Any, client.app))`，同 `test_memory_api.py`），而**不是**散落 7 个
+`cast` 或加 `# type: ignore` 抑制。修后定向 `mypy` **Success: no issues found**、
+`ruff check` / `ruff format --check` 全过、判据 **18 passed**。
+**⇒ 教训（与 GOAL-020 cycle 1 同形）**：**定向套件绿 ≠ 全量门绿**——本轮的
+`python/typecheck` 只有全量门会跑到。
+
+**按压矩阵（3/3 红，每轮报实际判红集合；全部逐字节复原，sha256
+`ca03dac36982d5509e34ae719e352fbc84cd70189a526bd3389621597c82691a`）**：
+
+| 按压 | 改了什么 | 期望 | **实际判红集合** |
+| --- | --- | --- | --- |
+| **PRESS-1** | `_MUTATING_METHODS` 去掉 `DELETE` | 枚举行为面红 | **3 failed**：`test_every_mutating_endpoint_rejects_a_missing_token` / `..._a_wrong_token` / `test_the_protected_set_is_exactly_the_mutating_classification` |
+| **PRESS-2** | `_MUTATING_METHODS` 加入 `GET` | 读面设计面红 | **4 failed**：`test_the_protected_set_is_exactly_...` / `test_health_and_read_endpoints_are_reachable_without_a_token` / `test_the_read_face_is_open_because_it_is_not_in_the_write_classification` / `test_a_read_request_is_never_challenged_even_on_a_mutating_route` |
+| **PRESS-3** | 让认证面继承 `_is_analysis_post` 豁免 | 豁免行为面红 | **10 failed**：2 条枚举行为面 + **8 条** `test_analysis_endpoints_still_require_a_token[...]`（8 个分析类路径**逐个**红）；**在判据最终版上复跑，红集合逐条相同** |
+
+- **复原复核**：三轮按压后 `sha256(middleware.py)` 与按压前**逐字相同**，
+  `git diff --quiet services/api/middleware.py` ⇒ **IDENTICAL TO HEAD**。
+- **终态定向套件**：`tests/api/test_write_face_cannot_be_bypassed.py` +
+  `tests/api/test_principal_auth.py` + `tests/architecture/python/test_control_plane_auth_same_source.py`
+  + `tests/api/test_security_scan.py` ⇒ **53 passed**（零失败）。
+- **判据规模**：285 行（≤ 450 硬上限）、无 > 40 行的函数、`ruff check` + `ruff format --check`
+  + `mypy` 全过。
+- **零产品代码改动**：本 PLAN 的判据**未证明**任何缺陷 ⇒ 无产品缺陷可修；
+  `git diff services/api/middleware.py` 为空（三轮按压已复原）。
+- **as-is 本机 m0（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**
+  （`PASS [` = **24**、**4577 passed / 21 skipped**、零 `FAILED`/`ERROR`；
+  日志 `scratch/goal021-c1-m0-final.log`）。首跑 `python/typecheck` 判红（见上），
+  修复后复跑全绿 ⇒ **新增判据落在既有 `python/tests` 收集面内，m0 条数仍为 23**。
 
 ## 影响报告
 

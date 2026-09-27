@@ -78,7 +78,7 @@ exit_criteria:
       ⑥ 读面 / 探活放行的**显式断言**在位（断言的是「放行是设计」这件事，不只是「200」）；
       ⑦ **按压矩阵**逐轮留档：每一轮报**实际判红的集合**（不是只看红没红），
       sha256 **逐字节复原**后复跑绿；按压打偏（探针自身写错导致没红）**记为失败**。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **token 不泄漏**（AGENTS.md §10 观测隐私面），五个出口各自可判：**(i) 日志**、
@@ -264,7 +264,8 @@ escalation_triggers:
   - >-
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260927-201-auth-cannot-be-bypassed-on-the-write-face.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -281,7 +282,7 @@ memory_entries: []
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **认证不可绕过**（枚举来自代码 + 豁免面不被继承 + 顺序钉住 + 读面按设计放行） | 枚举式对抗测试 + 结构判据 + 按压矩阵 | **PENDING** |
+| EC-01 | **认证不可绕过**（枚举来自代码 + 豁免面不被继承 + 顺序钉住 + 读面按设计放行） | 枚举式对抗测试 + 结构判据 + 按压矩阵 | **PASS** |
 | EC-02 | **token 不泄漏**（日志 / 遥测 / 响应 / 事件 / 前端持久层 / 记录面） | 结构判据 + 行为判据 + 反证 | **PENDING** |
 | EC-03 | **主体归因不可伪造**（不能自报 + 读面不污染 + 不串） | 可证伪形态判据 + 反证（no-op reset）+ 并发补充 | **PENDING** |
 | EC-04 | **前端 token 面不是访问控制**（仅内存 + 后端独立成立） | 结构判据 + 行为判据 + 文档同源 | **PENDING** |
@@ -511,6 +512,8 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `8d36605`（**建档提交**，推送区间 `75cb667..8d36605`） | 治理 `validate.py` = `Cursor 治理验证通过` + `DOCS-CHECK PASS`；**判据按压**：临时抹掉本文件一处章节标题字面（`## 状态历史` ⇒ `## TAMPERPROBE`）⇒ `validate.py` 判红（`GOAL 缺少章节 ## 状态历史: GOAL-20260927-021`）⇒ 证明新建的 GOAL **确实被载入判据**（报的是**本 GOAL 的 ID**，不是碰巧）；逐字节复原（sha256 `8f758379e1cf2f71…` 前后一致）⇒ 绿。**按压方法学（承 GOAL-020 的既有发现）**：该章节判据是**子串包含** ⇒ 必须**整个抹掉**字面才判红，追加后缀**不会**判红。**建档当日实测（六项，写入上文「事实层结论」）**：mutating 端点 **60**（两口径互证）/ 无 token **60/60 全 401** / 未知路径 POST **先 401 后路由**（**带 token 才 422**）/ `PrincipalAuthMiddleware` AST **不引用** `_ANALYSIS_ACTIONS` / `user_middleware` 顺序 **认证在外层** / 401 body **不含** token。**最要紧**：**EC-03 的反证形态实测修正**——`asyncio.gather` 并发形态**不可证伪**（no-op reset 后仍 **0 violations**；contextvar 按 Task 隔离），**可证伪形态 = 同一任务内顺序**（no-op reset 后读请求看到写请求的主体）。**记录面自查**：本文件落在 `test_reproducibility_wording.py` 扫描面内且**零命中**其词表；**零** token 值（只登记**变量名**）；`credential_audit.py` 四面 **offenders=0**。**as-is 本机 m0（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、**4558 passed / 21 skipped**、零 `FAILED`/`ERROR`；日志 `scratch/goal021-c0-m0-final.log`）。**建档轮实测并修掉一处调用侧假红**：首跑直接调 `.venv/Scripts/python.exe` ⇒ `tests/architecture/python/test_dependency_boundaries.py` 抛 `RuntimeError: lint-imports executable is unavailable`，**连坐 12 条**边界套件（`dependency-boundaries` 1 + `domain/otel/relay/services-api/worker` 11）⇒ 改用 **canonical `uv run --frozen --no-sync python -B`**（`uv run` 才把 `.venv/Scripts` 放进子进程 `PATH`）后**同一条命令全绿** ⇒ 那 12 条是**调用错误**、**零**产品缺陷 | M0 [**36298094585**](https://github.com/Eswink/research-system-new/actions/runs/36298094585) **八 job 全 success**（`container-quality` / `observability-overhead-ubuntu-latest` / `collector-quality` / `quality-windows-latest` / `eval-gate` / `quality-ubuntu-latest` / `observability-overhead-windows-latest` / `console-frontend`）+ CodeQL [**36298094168**](https://github.com/Eswink/research-system-new/actions/runs/36298094168) **3/3 success**（`Analyze (javascript-typescript)` / `Analyze (actions)` / `Analyze (python)`）；**两者 `run_attempt=1`，一次成功、无 flake**；日志 `scratch/goal021-c0-ci-poll.log`（`ALL_TERMINAL sha=8d366050a214debc24835a4a96f40d784fecee39`）。**外部旁证**：push 回执报 **8 条**告警（6 moderate + 2 low，全为 `undici`），与 GOAL-018/019/020 收口**一致** ⇒ 本轮**零依赖改动** | — | EC-01…EC-05 全 PENDING。起点已定位：枚举面**两个可达口径**（AST 装饰器 / OpenAPI paths，均为 60）；判据须落 `tests/**`（属 `python/tests` 收集面）以免动 m0 的 23；反证形态**必须**先实测可证伪性 | cycle 1 = **EC-01**（认证不可绕过：枚举来自代码 + 豁免不继承 + 顺序 + 读面设计，四条一次做完；它是其余 EC 的**枚举夹具来源**） |
 
+| 1 | PLAN-20260927-201（EC-01） | `96508dc`（derive）；实施 + 记录见回合汇报 | **EC-01 四条全部成立且有实跑证据**。交付 = 新判据 `tests/api/test_write_face_cannot_be_bypassed.py`（**285 行 / 18 例**，零超长函数）+ `RECHECK-20260927-202`（`PASS_WITH_WARNINGS`）+ `MEM-20260927-149`。**枚举来自代码**：两口径互证 **60**（AST 装饰器 = OpenAPI paths；覆盖 **17** 个 router 文件；任务书写「约 62 处、29 router」⇒ **如实更正**：60 处，29 是 router 模块总数）。**(a) 全覆盖 401**：60 个端点无 token **全 401**、错 token **全 401**（`leaked == []`）。**(b) 豁免不被继承**：结构面由既有 AC-4 判（**未改该文件**）+ **行为面新增**：8 条分析类 POST（`validate` ×2 / `compile` / `preflight` / `dry-run` / `test` / `discover-models` / `probe`）无 token **全 401**，并有带对 token 的**配对对照**。**(c) 顺序**：由既有 AC-5 判（**未改该文件**）。**(d) 读面按设计放行**：`/health` + 读面不带 token 放行，且断言的是**机制**（分类不含 GET/HEAD）而非观察值；另有「**写面路径上的 GET 不被挑战**」这条最锋利形态（区分「按方法分类」与「按路径保护」）。**按压矩阵 3/3 红**（逐轮报**实际判红集合**）：PRESS-1 删 `DELETE` ⇒ **3 failed**；PRESS-2 加 `GET` ⇒ **4 failed**；PRESS-3 继承 `_is_analysis_post` 豁免 ⇒ **10 failed**（8 个分析类路径**逐个**红）。三轮 `sha256` 复原一致（`ca03dac3…`）+ `git diff` **IDENTICAL TO HEAD**；定向套件 **53 passed**。**既有判据零改动**（四个受保护文件 `git diff --quiet` 全 UNCHANGED）。**零产品代码改动**（判据**未证明**任何缺陷 ⇒ **边界成立**，不是「修好了」）。**本轮被全量门抓到并修掉一处真红**：`python/typecheck` 判红 **7 处**——`TestClient.app` 静态类型是 ASGI callable（非 `FastAPI`）⇒ 收敛一处 `_app_of()` 类型收窄（按本仓既有 `cast(Any, client.app)` 约定），**不是**加 `# type: ignore` 抑制；⇒ **定向套件绿 ≠ 全量门绿**（该 check 只有全量门跑到）。**as-is 本机 m0（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、**4577 passed / 21 skipped**、零 `FAILED`；日志 `scratch/goal021-c1-m0-final.log`） | `（见回合汇报）` | **零真缺陷**（自检结论 = 边界成立）。**如实登记五条警告**（`RECHECK-202` 的 `W-1`…`W-5`）：①`_MEASURED_MUTATING_COUNT = 60` 是**会失效的告警线**（增删端点会红以提示复核，非保护面定义 ⇒ 只误报不漏洞）；②本轮覆盖**只限控制面 app**（worker 网关是独立 app、未挂载 ⇒ 实测控制面 35 条路由**零** worker 路由）；③枚举覆盖的是 **app 声明过的**端点——绕过 FastAPI 路由的写（SSE 内副作用 / 调度器触发）**不覆盖**；④按压是**内存态**破坏，证明「判据对这类破坏敏感」，不证明「CI 会拦住提交」（后者由判据本身在 CI 中覆盖）；⑤合成假 token ⇒ **不**验证真实 token 的熵 / 轮换 | **EC-01 = PASS**（四条 + 按压 3/3 + 判据零改动 + 零产品缺陷）。**未覆盖范围**原样保留：读面未认证 / 多租户未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 不得宣称项目安全 | cycle 2 = **EC-02**（token 不泄漏：日志 / 遥测 / span / 401 body / 事件 payload / 前端持久层 / 记录面；结构判据 + 行为判据 + 反证） |
+
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
@@ -524,3 +527,4 @@ memory_entries: []
 | --- | --- | --- |
 | 2026-09-27 | ACTIVE | **建档**：用户会话指令（goal 模式）授权对 GOAL-019 / 020 已落地的**写面认证**做**对抗性自检**——**只新增证明边界的判据**（并修被证明为真的缺陷），**不加新能力、不放宽任何判据、不改安全策略**。**明确不做**：读面认证、多租户 / RBAC / organization scope、BOLA·BFLA 专项实现、调用方自报身份、新增依赖、改既有判据 / 门禁 / 阈值、token 进任何地方、改 401 形态或 `Idempotency-Key` 语义、部署面验证。五 EC 设计（不可绕过 / 不泄漏 / 不可伪造 / 前端非访问控制 / 收口复检），budget = 20 / 120 / 2，`fix_policy` 与 `escalation_triggers` 承 GOAL-020 全套并**新增**：不得做 BOLA·BFLA 实现、不得把 token 写进**判据源码**、不得改 `test_record_face_is_covered_by_the_gate.py`。**建档时零产品代码改动**（只增本文件）。**建档当日实测六项事实**（见「目标与退出标准」）：①mutating 端点 **60 处**（两口径互证；任务书的「约 62 处、29 router」中 29 是**router 模块总数**，有 mutating 端点的 router 为 **17**）；②无 token **60/60 全 401**；③**认证先于路由**（未知路径 POST 得 401 而非 404）；④认证面 **AST 层面不继承** `_ANALYSIS_ACTIONS` 豁免；⑤`user_middleware` 顺序**认证在外层**；⑥401 body **不含** token。**最要紧的方法学修正**：**EC-03 的反证形态**——原拟「去掉 `finally: reset` ⇒ **并发**判据红」**实测不可证伪**（`asyncio.gather` 形态下 no-op reset 仍 **0 violations**，contextvar 按 Task 隔离）⇒ 改为**同一任务内顺序**形态（no-op reset 后读请求看到写请求的主体 = 污染 ⇒ **可判红**）；并据此确立本 GOAL 的执行纪律：**写「删掉 X ⇒ 判据红」之前必须先实测该反证真的会红**。**as-is 本机 m0（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、`4558 passed / 21 skipped`、零 `FAILED`；日志 `scratch/goal021-c0-m0-final.log`）；首跑的 **12 条边界假红**确认为**调用侧错误**（`uv run` 才把 `.venv/Scripts` 放进 `PATH` ⇒ `lint-imports` 可解析），**非**产品缺陷。**建档提交 `8d36605` 的 CI = 八 job 全 success + CodeQL 3/3**（`run_attempt=1`）。 |
 | 2026-09-27 | ACTIVE | **建档 cycle 0 完成**，进入循环：EC-01…EC-05 全 PENDING，下一 cycle 做 **EC-01**（认证不可绕过）。**本条记录提交**依「固定口径」其 CI run 只在回合汇报记账（见迭代日志末行）。 |
+| 2026-09-27 | ACTIVE | cycle 1（PLAN-20260927-201）：**EC-01 = PASS**（认证不可绕过，四条全成立）。交付 = 新判据（274 行 / 18 例）+ `RECHECK-202`（`PASS_WITH_WARNINGS`，`W-1`…`W-5`）+ `MEM-149`。**枚举来自代码**（两口径互证 **60**，覆盖 17 个 router）；**60/60 端点**无 token 与错 token **全 401**；**8 条分析类 POST** 无 token 全 401（豁免**结构 + 行为**双证不继承）；读面放行断言的是**机制**（分类）而非观察值。**按压 3/3 红**（3 / 4 / 10 failed，逐轮报实际判红集合），三轮逐字节复原（`ca03dac3…` + `IDENTICAL TO HEAD`），定向套件 **53 passed**，**既有判据零改动**。**零产品缺陷** ⇒ 该 EC 的判词是「**边界成立**」而非「已修复」。**如实更正任务书数字**：写面端点实测 **60 处**（任务书「约 62 处、29 router」中 29 是 router 模块总数、有写面端点的为 17）。 |
