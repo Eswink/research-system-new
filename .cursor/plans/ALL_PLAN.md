@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260927-209](tasks/PLAN-20260927-209-goal-021-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260927-207](tasks/PLAN-20260927-207-frontend-token-face-is-not-access-control.md) | DONE |
 | [x] | [PLAN-20260927-205](tasks/PLAN-20260927-205-principal-attribution-cannot-be-forged.md) | DONE |
 | [x] | [PLAN-20260927-203](tasks/PLAN-20260927-203-control-plane-token-never-leaks.md) | DONE |
