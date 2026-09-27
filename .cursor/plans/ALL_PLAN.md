@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260928-211](tasks/PLAN-20260928-211-goal-022-ec01-two-tree-recheck-entry.md) | DONE |
 | [x] | [PLAN-20260927-209](tasks/PLAN-20260927-209-goal-021-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260927-207](tasks/PLAN-20260927-207-frontend-token-face-is-not-access-control.md) | DONE |
 | [x] | [PLAN-20260927-205](tasks/PLAN-20260927-205-principal-attribution-cannot-be-forged.md) | DONE |
