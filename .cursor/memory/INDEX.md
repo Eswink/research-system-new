@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260927-151](entries/MEM-20260927-151-testclient-hides-contextvar-bleed.md) | ACTIVE | repository | 0.95 | 2027-03-27 | PLAN-20260927-205 |
 | [MEM-20260927-150](entries/MEM-20260927-150-credential-leak-is-per-exit-and-shape-based.md) | ACTIVE | repository | 0.90 | 2027-03-27 | PLAN-20260927-203 |
 | [MEM-20260927-149](entries/MEM-20260927-149-enumeration-must-come-from-code-and-be-pressable.md) | ACTIVE | repository | 0.90 | 2027-03-27 | PLAN-20260927-201 |
 | [MEM-20260926-148](entries/MEM-20260926-148-auth-ops-face-401-verification-and-deployment-checks.md) | ACTIVE | repository | 0.90 | 2027-03-26 | PLAN-20260926-198 |
