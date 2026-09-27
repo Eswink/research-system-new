@@ -38,7 +38,7 @@ CLAUSE_SECTION = "## 收口复检必须两树"
 #: 该条款内**必须点名**的文件（改名 / 移动即判红 ⇒ 条款不得悬空）。
 CLAUSE_NAMED_FILES: tuple[str, ...] = ("tools/two_tree_recheck.py", SELF_RELATIVE)
 
-_MARKER_PROBE = '''
+_MARKER_PROBE = """
 import argparse
 from pathlib import Path
 
@@ -50,9 +50,9 @@ marker = Path(args.root) / "marker.txt"
 value = marker.read_text(encoding="utf-8").strip() if marker.is_file() else "absent"
 print(f"PASS probe-marker value={value}")
 print("PASS probe-shape stable")
-'''
+"""
 
-_IMPURE_PROBE = '''
+_IMPURE_PROBE = """
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -61,9 +61,9 @@ parser.add_argument("--verdict-only", action="store_true")
 parser.parse_args()
 print("PASS probe-impure first")
 print("elapsed 0.0001s")
-'''
+"""
 
-_PATHY_PROBE = '''
+_PATHY_PROBE = """
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -71,9 +71,9 @@ parser.add_argument("--root", required=True)
 parser.add_argument("--verdict-only", action="store_true")
 args = parser.parse_args()
 print(f"PASS probe-pathy root={args.root}")
-'''
+"""
 
-_INTERPRETER_PROBE = '''
+_INTERPRETER_PROBE = """
 import argparse
 import sys
 from pathlib import Path
@@ -84,9 +84,9 @@ parser.add_argument("--verdict-only", action="store_true")
 args = parser.parse_args()
 (Path(args.root) / "interpreter.txt").write_text(sys.executable, encoding="utf-8")
 print("PASS probe-interpreter recorded")
-'''
+"""
 
-_FAILING_PROBE = '''
+_FAILING_PROBE = """
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -95,7 +95,7 @@ parser.add_argument("--verdict-only", action="store_true")
 parser.parse_args()
 print("FAIL probe-always-red")
 raise SystemExit(1)
-'''
+"""
 
 
 def _write_probe(directory: Path, name: str, body: str) -> Path:

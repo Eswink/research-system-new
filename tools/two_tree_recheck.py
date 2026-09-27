@@ -159,7 +159,9 @@ def run_one_tree(
         terminate_process_tree(process)
         raise RecheckError(f"复检超时（{timeout}s）：{tree}") from None
     if process.returncode != 0 and not stdout.strip():
-        raise RecheckError(f"复检脚本未产出判词即失败（exit={process.returncode}）：{stderr.strip()}")
+        raise RecheckError(
+            f"复检脚本未产出判词即失败（exit={process.returncode}）：{stderr.strip()}"
+        )
     return TreeRun(root=tree, exit_code=process.returncode, lines=verdict_lines(stdout))
 
 
@@ -227,7 +229,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--root", required=True, help="当前树（主树）根目录")
     parser.add_argument("--clean-root", default=None, help="已存在的干净 checkout；缺省则新建")
     parser.add_argument("--base-ref", default="HEAD", help="干净 checkout 的提交（缺省 HEAD）")
-    parser.add_argument("--worktree-dir", default=None, help="干净 checkout 落点（缺省 <root>/../<name>-clean-tree）")
+    parser.add_argument(
+        "--worktree-dir",
+        default=None,
+        help="干净 checkout 落点（缺省 <root>/../<name>-clean-tree）",
+    )
     parser.add_argument("--script-mode", choices=("tree", "shared"), default="tree")
     parser.add_argument("--verdict-current", default=None, help="当前树判词落点")
     parser.add_argument("--verdict-clean", default=None, help="干净树判词落点")
