@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260927-207](tasks/PLAN-20260927-207-frontend-token-face-is-not-access-control.md) | DONE |
 | [x] | [PLAN-20260927-205](tasks/PLAN-20260927-205-principal-attribution-cannot-be-forged.md) | DONE |
 | [x] | [PLAN-20260927-203](tasks/PLAN-20260927-203-control-plane-token-never-leaks.md) | DONE |
 | [x] | [PLAN-20260927-201](tasks/PLAN-20260927-201-auth-cannot-be-bypassed-on-the-write-face.md) | DONE |
