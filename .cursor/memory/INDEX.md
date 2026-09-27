@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260927-153](entries/MEM-20260927-153-every-declared-recheck-path-needs-its-own-evidence.md) | ACTIVE | repository | 0.95 | 2027-03-27 | PLAN-20260927-209 |
 | [MEM-20260927-152](entries/MEM-20260927-152-press-restore-must-use-binary-io.md) | ACTIVE | repository | 0.95 | 2027-03-27 | PLAN-20260927-209 |
 | [MEM-20260927-151](entries/MEM-20260927-151-testclient-hides-contextvar-bleed.md) | ACTIVE | repository | 0.95 | 2027-03-27 | PLAN-20260927-205 |
 | [MEM-20260927-150](entries/MEM-20260927-150-credential-leak-is-per-exit-and-shape-based.md) | ACTIVE | repository | 0.90 | 2027-03-27 | PLAN-20260927-203 |

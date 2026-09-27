@@ -23,6 +23,7 @@ subagent_parallel_limit: 3
 latest_recheck: .cursor/plans/rechecks/RECHECK-20260927-210-goal-021-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260927-152-press-restore-must-use-binary-io.md
+  - .cursor/memory/entries/MEM-20260927-153-every-declared-recheck-path-needs-its-own-evidence.md
 ---
 
 # PLAN-20260927-209 — GOAL-021 收口复检（EC-05）
@@ -83,6 +84,33 @@ memory_entries:
    （中间件 + 两处安全文档，3/3 在位）。
 
 **⇒ 本轮修掉的缺陷 = 复检脚本自身 2 处**，**非**产品缺陷。
+
+### 两树同结论（EC-05 的显式条款；**补跑并留档**）
+
+**条款**：复检脚本须对「**当前树** + **干净 checkout**」跑出**同结论**（判词列逐行相同）。
+
+**如实登记**：本条款在**首轮**被**跳过**（当时只跑了当前树，却随 EC-05 一起记 PASS）
+⇒ 由完成核验判为**未达成**，本轮**补跑**并留档。**该跳过本身记为过程缺陷**（不是产品缺陷）。
+
+**补跑做法（两处环境口径必须一致）**：
+
+1. `git worktree add --detach ../goal021-clean-tree HEAD`（同 tip、**独立目录**、无工作树改动）；
+2. **两树共用主树解释器**（`_INTERPRETER = <主树>/.venv/.../python`）——
+   干净 checkout 没有自己的 `.venv`，现场建会超时且**比的是两套环境**（承 GOAL-020 的既有教训）；
+3. 脚本新增 `--root <path>`（跑指定树）与 `--verdict-only`（只输出**判词行**，
+   不含耗时 / 路径 ⇒ 可逐行比对）；
+4. 两路输出落 `scratch/goal021-c5-verdict-{current,clean}.txt`。
+
+**结果**：
+
+| # | 观察 | 结果 |
+| --- | --- | --- |
+| T1 | 当前树 `--verdict-only` | **28 行判词，全 PASS** |
+| T2 | 干净 checkout `--root ../goal021-clean-tree --verdict-only` | **28 行判词，全 PASS** |
+| T3 | 逐行比对 `diff` | **IDENTICAL**（无差异行） |
+| T4 | 两个判词文件的 `sha256` | **相同**：`5bb9bc08398eac789f9a07814b71b0586f7b1b34252a3c3cbb797efe119487f3` |
+| T5 | 干净 checkout 完整输出 | **`28/28 通过`** |
+| T6 | 按压后两树是否干净 | 干净 checkout `git status --short` **空**；主树 `middleware.py` `git diff --numstat` **空** ⇒ 逐字节复原在两树都成立 |
 
 ## 影响报告
 
