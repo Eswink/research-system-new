@@ -86,6 +86,14 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `architecture/EVENT_MODEL.md`
 - `architecture/EVALUATION.md`
 - `architecture/POLICY_SURFACE_AUDIT.md`
+- `architecture/LOCAL_GATE_PROTOCOL.md`（**2026-09-28 补登记**：本地门跑法协议 —— canonical 调用、
+  工作树前置、DSN 固化、三分类判定；GOAL-022 EC-03 要求「复检 / 质量门相关文档在 INDEX 登记」时
+  发现它尚未登记，一并补上，**未改该文档内容**）
+- `architecture/RECHECK_SCRIPT_CONVENTIONS.md`（**2026-09-28 增（GOAL-022 EC-03）**：
+  复检脚本编写规范 —— 「**收口复检必须两树**」条款 + **六条环境口径**（共用解释器 /
+  `--verdict-only` 纯度 / 文本 vs 二进制读写 / 落点断言 / 进程卫生 / 路径无关输出），
+  每条附判据或可复跑检查；条款由 `tests/architecture/python/test_recheck_script_conventions_are_pinned.py`
+  钉住（改名即判红），**不得**引作安全结论）
 
 ## Roles / Configuration
 
