@@ -97,7 +97,7 @@ exit_criteria:
       （既有 `test_security_scan.py` 已覆盖 ⇒ **不得**改它；新增判据只补**别的**面）；
       ⑤ **记录面**：`.cursor/plans` 与 `.cursor/memory` 中 token **值**零命中（只允许**变量名**）；
       ⑥ **反证**：临时注入一处泄漏 ⇒ 判据红 ⇒ sha256 逐字节复原 ⇒ 复跑绿。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **主体归因不可伪造**，三条各自可判：
@@ -111,6 +111,10 @@ exit_criteria:
       `finally: reset_current_principal`，并发判据**仍 0 violations** ⇒ 该形态**不可证伪**；
       **可证伪的形态 = 同一任务内的顺序**（带 token 的写请求之后，紧接一个**不带 token 的读请求**
       ——后者必须看不到前者的主体）。判据**必须**采可证伪形态，并**保留**并发用例作为补充覆盖。
+      **（cycle 3 设计期实测补强）** 并发形态**不能**作为唯一判据：其实测结果**取决于父任务上下文**
+      （干净 ⇒ **0 violations**；已被污染 ⇒ **20 violations**，子任务继承父上下文）
+      ⇒「并发 0 violations」在干净父上下文下可能是**假绿**（只证明「本次没被继承污染」）。
+      **顺序形态才是唯一可判红的判据**；并发用例的断言**必须写明前提**（父上下文干净）。
       **反证**：把 `reset_current_principal` 换成 no-op（等价于删掉 `finally` 收尾）⇒
       **可证伪形态判据判红**（读请求看到写请求的主体）⇒ **逐字节复原** ⇒ 绿。
     verify: >-
@@ -266,6 +270,7 @@ escalation_triggers:
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
 child_plans:
   - .cursor/plans/tasks/PLAN-20260927-201-auth-cannot-be-bypassed-on-the-write-face.md
+  - .cursor/plans/tasks/PLAN-20260927-203-control-plane-token-never-leaks.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -283,7 +288,7 @@ memory_entries: []
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | **认证不可绕过**（枚举来自代码 + 豁免面不被继承 + 顺序钉住 + 读面按设计放行） | 枚举式对抗测试 + 结构判据 + 按压矩阵 | **PASS** |
-| EC-02 | **token 不泄漏**（日志 / 遥测 / 响应 / 事件 / 前端持久层 / 记录面） | 结构判据 + 行为判据 + 反证 | **PENDING** |
+| EC-02 | **token 不泄漏**（日志 / 遥测 / 响应 / 事件 / 前端持久层 / 记录面） | 结构判据 + 行为判据 + 反证 | **PASS** |
 | EC-03 | **主体归因不可伪造**（不能自报 + 读面不污染 + 不串） | 可证伪形态判据 + 反证（no-op reset）+ 并发补充 | **PENDING** |
 | EC-04 | **前端 token 面不是访问控制**（仅内存 + 后端独立成立） | 结构判据 + 行为判据 + 文档同源 | **PENDING** |
 | EC-05 | **收口复检 + 残余登记** | 两树复检 + as-is m0 **23/23** + CI 台账 + 未覆盖范围 | **PENDING** |
@@ -324,6 +329,17 @@ memory_entries: []
    并发用例保留为**补充覆盖**并**明写其不可证伪的边界**（**不得**写成「已证明并发安全」）。
    **这条修正同时是一条方法学结论**：把「删掉某行 ⇒ 判据红」写进退出标准**之前**，
    必须**先实测该反证真的会红**，否则该 EC **不可证伪**、会卡死循环。
+   **cycle 3 设计期进一步实测（把上面「并发不可证伪」一句说准）**：
+   `asyncio.gather` 形态的结果**取决于父任务上下文状态**——
+   `scratch/goal021-ec03-probe-concurrency-precondition.py` 实测：
+   **父上下文干净 ⇒ 0 violations**；**父上下文已被泄漏污染 ⇒ 20 violations**
+   （子任务**继承**父上下文）。⇒ 结论：**并发形态不能作为唯一判据**——
+   它的「0 violations」在**干净父上下文**下可能是**假绿**（看上去像「并发安全」，
+   其实只证明了「本次没被继承污染」）。**EC-03 的判据组合**：
+   **① 顺序形态（可证伪，唯一可判红的判据）** + **② 并发形态（补充覆盖，
+   且必须在断言里写明前提「父上下文干净」）**；**③ 自报不可生效**（实测：
+   带对 token 时 `X-Principal-Id` / `X-Actor` / query 参数 / body 字段全部无效，
+   请求照常 201 ⇒ 身份不变）。
 8. **主体上下文在读面正确回退**（实测）：认证开启时无 token 的 `GET` ⇒ 主体 `None`；
    带 token 的写请求 ⇒ 主体 `Principal(id=<配置>, kind=SERVICE)`（`actor` = `service:<id>`）。
 9. **记录面 / 凭据审计面**：`tools/credential_audit.py` 是本仓既有凭据审计入口（五类形态）；
@@ -514,6 +530,8 @@ memory_entries: []
 
 | 1 | PLAN-20260927-201（EC-01） | `96508dc`（derive）；实施 + 记录见回合汇报 | **EC-01 四条全部成立且有实跑证据**。交付 = 新判据 `tests/api/test_write_face_cannot_be_bypassed.py`（**285 行 / 18 例**，零超长函数）+ `RECHECK-20260927-202`（`PASS_WITH_WARNINGS`）+ `MEM-20260927-149`。**枚举来自代码**：两口径互证 **60**（AST 装饰器 = OpenAPI paths；覆盖 **17** 个 router 文件；任务书写「约 62 处、29 router」⇒ **如实更正**：60 处，29 是 router 模块总数）。**(a) 全覆盖 401**：60 个端点无 token **全 401**、错 token **全 401**（`leaked == []`）。**(b) 豁免不被继承**：结构面由既有 AC-4 判（**未改该文件**）+ **行为面新增**：8 条分析类 POST（`validate` ×2 / `compile` / `preflight` / `dry-run` / `test` / `discover-models` / `probe`）无 token **全 401**，并有带对 token 的**配对对照**。**(c) 顺序**：由既有 AC-5 判（**未改该文件**）。**(d) 读面按设计放行**：`/health` + 读面不带 token 放行，且断言的是**机制**（分类不含 GET/HEAD）而非观察值；另有「**写面路径上的 GET 不被挑战**」这条最锋利形态（区分「按方法分类」与「按路径保护」）。**按压矩阵 3/3 红**（逐轮报**实际判红集合**）：PRESS-1 删 `DELETE` ⇒ **3 failed**；PRESS-2 加 `GET` ⇒ **4 failed**；PRESS-3 继承 `_is_analysis_post` 豁免 ⇒ **10 failed**（8 个分析类路径**逐个**红）。三轮 `sha256` 复原一致（`ca03dac3…`）+ `git diff` **IDENTICAL TO HEAD**；定向套件 **53 passed**。**既有判据零改动**（四个受保护文件 `git diff --quiet` 全 UNCHANGED）。**零产品代码改动**（判据**未证明**任何缺陷 ⇒ **边界成立**，不是「修好了」）。**本轮被全量门抓到并修掉一处真红**：`python/typecheck` 判红 **7 处**——`TestClient.app` 静态类型是 ASGI callable（非 `FastAPI`）⇒ 收敛一处 `_app_of()` 类型收窄（按本仓既有 `cast(Any, client.app)` 约定），**不是**加 `# type: ignore` 抑制；⇒ **定向套件绿 ≠ 全量门绿**（该 check 只有全量门跑到）。**as-is 本机 m0（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、**4577 passed / 21 skipped**、零 `FAILED`；日志 `scratch/goal021-c1-m0-final.log`） | M0 [**36304309642**](https://github.com/Eswink/research-system-new/actions/runs/36304309642) **八 job 全 success** + CodeQL [**36304309147**](https://github.com/Eswink/research-system-new/actions/runs/36304309147) **3/3 success**（`run_attempt=1`，一次成功、无 flake） | **零真缺陷**（自检结论 = 边界成立）。**如实登记五条警告**（`RECHECK-202` 的 `W-1`…`W-5`）：①`_MEASURED_MUTATING_COUNT = 60` 是**会失效的告警线**（增删端点会红以提示复核，非保护面定义 ⇒ 只误报不漏洞）；②本轮覆盖**只限控制面 app**（worker 网关是独立 app、未挂载 ⇒ 实测控制面 35 条路由**零** worker 路由）；③枚举覆盖的是 **app 声明过的**端点——绕过 FastAPI 路由的写（SSE 内副作用 / 调度器触发）**不覆盖**；④按压是**内存态**破坏，证明「判据对这类破坏敏感」，不证明「CI 会拦住提交」（后者由判据本身在 CI 中覆盖）；⑤合成假 token ⇒ **不**验证真实 token 的熵 / 轮换 | **EC-01 = PASS**（四条 + 按压 3/3 + 判据零改动 + 零产品缺陷）。**未覆盖范围**原样保留：读面未认证 / 多租户未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 不得宣称项目安全 | cycle 2 = **EC-02**（token 不泄漏：日志 / 遥测 / span / 401 body / 事件 payload / 前端持久层 / 记录面；结构判据 + 行为判据 + 反证） |
 
+| 2 | PLAN-20260927-203（EC-02） | `（见回合汇报）` | **EC-02 六出口全部成立且有实跑证据**。交付 = 新判据 `tests/api/test_control_plane_token_never_leaks.py`（**312 行 / 12 例**）+ `RECHECK-20260927-204`（`PASS_WITH_WARNINGS`，`W-1`…`W-5`）+ `MEM-20260927-150`。**逐出口判**（不笼统断言）：**日志**三类请求捕获 ⇒ token 零命中，**且捕获装置自证有效**（哨兵记录能被截到 ⇒ 排除「没捕到」的假绿）；**遥测**未知键（`authorization` / `raw_headers` / `request_body`）**整个丢弃**（闭集 allow-list）+ 允许键 + bearer 形态**必被脱敏** + 允许键 + **裸不透明串会留下**（**如实断言现状**）；**401 body** 两个 401 零命中且成因**各自点名**；**成功响应**不回显；**事件 payload** 零命中且 `actor` 是**标识**；**记录面** 凭据值零命中且**变量名**在位（排除扫描面选错）。**反证 1/1 红**（中间件里记一条含 `provided` 的日志 ⇒ `test_no_log_record_contains_the_token` **1 failed**）⇒ `sha256` 复原一致（`ca03dac3…`）+ `git diff` **IDENTICAL TO HEAD** ⇒ 复跑 **12 passed**。**既有判据零改动**（五个文件 `git diff --quiet` 全空）。**受影响套件 745 passed / 4 skipped**。**本轮修掉的缺陷 = 判据自身 1 处**（记录面判据首版用 `__next__()` 取任意文件 ⇒ 自己判红且理由错），**零产品代码改动** | `（见回合汇报）` | **零真缺陷**（自检结论 = 边界成立）。**如实登记五条警告**：**`W-1`（最要紧）** 脱敏是**形态匹配**而非**值匹配** ⇒ **裸不透明串**在**允许键内会被原样导出**（已独立复现）——这要求「允许键的值不得承载凭据」靠**上游纪律**保证，**未收口**；②日志面只覆盖**本进程捕获到的记录**（外部采集链不在范围）；③记录面判据依赖「变量名至少出现一次」⇒ 记录归档后会红（属提示）；④前端持久层是**引用**既有判据（该文件未改）而非独立复验；⑤合成假 token ⇒ 不验证真实 token 的形态分布 | **EC-02 = PASS**（六出口 + 反证 1/1 + 判据零改动 + 零产品缺陷）。**未覆盖范围**原样保留：读面未认证 / 多租户未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 不得宣称项目安全 | cycle 3 = **EC-03**（主体归因不可伪造：不能自报 + 读面不污染 + 不串；**注意**用**可证伪的顺序形态**，并发形态已实测**不可证伪**） |
+
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
@@ -529,3 +547,4 @@ memory_entries: []
 | 2026-09-27 | ACTIVE | **建档**：用户会话指令（goal 模式）授权对 GOAL-019 / 020 已落地的**写面认证**做**对抗性自检**——**只新增证明边界的判据**（并修被证明为真的缺陷），**不加新能力、不放宽任何判据、不改安全策略**。**明确不做**：读面认证、多租户 / RBAC / organization scope、BOLA·BFLA 专项实现、调用方自报身份、新增依赖、改既有判据 / 门禁 / 阈值、token 进任何地方、改 401 形态或 `Idempotency-Key` 语义、部署面验证。五 EC 设计（不可绕过 / 不泄漏 / 不可伪造 / 前端非访问控制 / 收口复检），budget = 20 / 120 / 2，`fix_policy` 与 `escalation_triggers` 承 GOAL-020 全套并**新增**：不得做 BOLA·BFLA 实现、不得把 token 写进**判据源码**、不得改 `test_record_face_is_covered_by_the_gate.py`。**建档时零产品代码改动**（只增本文件）。**建档当日实测六项事实**（见「目标与退出标准」）：①mutating 端点 **60 处**（两口径互证；任务书的「约 62 处、29 router」中 29 是**router 模块总数**，有 mutating 端点的 router 为 **17**）；②无 token **60/60 全 401**；③**认证先于路由**（未知路径 POST 得 401 而非 404）；④认证面 **AST 层面不继承** `_ANALYSIS_ACTIONS` 豁免；⑤`user_middleware` 顺序**认证在外层**；⑥401 body **不含** token。**最要紧的方法学修正**：**EC-03 的反证形态**——原拟「去掉 `finally: reset` ⇒ **并发**判据红」**实测不可证伪**（`asyncio.gather` 形态下 no-op reset 仍 **0 violations**，contextvar 按 Task 隔离）⇒ 改为**同一任务内顺序**形态（no-op reset 后读请求看到写请求的主体 = 污染 ⇒ **可判红**）；并据此确立本 GOAL 的执行纪律：**写「删掉 X ⇒ 判据红」之前必须先实测该反证真的会红**。**as-is 本机 m0（记录写完之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、`4558 passed / 21 skipped`、零 `FAILED`；日志 `scratch/goal021-c0-m0-final.log`）；首跑的 **12 条边界假红**确认为**调用侧错误**（`uv run` 才把 `.venv/Scripts` 放进 `PATH` ⇒ `lint-imports` 可解析），**非**产品缺陷。**建档提交 `8d36605` 的 CI = 八 job 全 success + CodeQL 3/3**（`run_attempt=1`）。 |
 | 2026-09-27 | ACTIVE | **建档 cycle 0 完成**，进入循环：EC-01…EC-05 全 PENDING，下一 cycle 做 **EC-01**（认证不可绕过）。**本条记录提交**依「固定口径」其 CI run 只在回合汇报记账（见迭代日志末行）。 |
 | 2026-09-27 | ACTIVE | cycle 1（PLAN-20260927-201）：**EC-01 = PASS**（认证不可绕过，四条全成立）。交付 = 新判据（274 行 / 18 例）+ `RECHECK-202`（`PASS_WITH_WARNINGS`，`W-1`…`W-5`）+ `MEM-149`。**枚举来自代码**（两口径互证 **60**，覆盖 17 个 router）；**60/60 端点**无 token 与错 token **全 401**；**8 条分析类 POST** 无 token 全 401（豁免**结构 + 行为**双证不继承）；读面放行断言的是**机制**（分类）而非观察值。**按压 3/3 红**（3 / 4 / 10 failed，逐轮报实际判红集合），三轮逐字节复原（`ca03dac3…` + `IDENTICAL TO HEAD`），定向套件 **53 passed**，**既有判据零改动**。**零产品缺陷** ⇒ 该 EC 的判词是「**边界成立**」而非「已修复」。**如实更正任务书数字**：写面端点实测 **60 处**（任务书「约 62 处、29 router」中 29 是 router 模块总数、有写面端点的为 17）。**本轮被全量门抓到并修掉一处真红**（`python/typecheck`）：判据自身对 `TestClient.app` 的静态类型写法有误 ⇒ 收敛一处类型收窄；⇒ 再次实测「**定向套件绿 ≠ 全量门绿**」。**cycle 1 CI 到终态**：M0 `36304309642` 八 job 全 success + CodeQL `36304309147` 3/3（`run_attempt=1`）。 |
+| 2026-09-27 | ACTIVE | cycle 2（PLAN-20260927-203）：**EC-02 = PASS**（token 不泄漏，六出口）。交付 = 新判据（312 行 / 12 例）+ `RECHECK-202`（`W-1`…`W-5`）+ `MEM-150`。**逐出口**判定（日志含**捕获装置自证**/ 遥测三档 / 401 两个点名文案 / 成功响应 / 事件 `actor` 是标识 / 记录面变量名在位）。**反证 1/1 红** + 逐字节复原（`ca03dac3…`）+ 既有判据**零改动** + 受影响套件 **745 passed**。**零产品缺陷**；修掉**判据自身** 1 处（记录面判据首版取任意文件）。**最要紧的诚实边界（`W-1`）**：脱敏是**形态匹配** ⇒ **裸不透明串**在**允许键内会原样导出**（已独立复现）⇒ 该风险由**上游纪律**兜底，**未收口**、如实保留。 |

@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260927-203](tasks/PLAN-20260927-203-control-plane-token-never-leaks.md) | DONE |
 | [x] | [PLAN-20260927-201](tasks/PLAN-20260927-201-auth-cannot-be-bypassed-on-the-write-face.md) | DONE |
 | [x] | [PLAN-20260926-199](tasks/PLAN-20260926-199-goal-020-closeout-recheck.md) | DONE |
 | [x] | [PLAN-20260926-198](tasks/PLAN-20260926-198-auth-ops-face-enable-rotate-disable-and-401-verification.md) | DONE |
