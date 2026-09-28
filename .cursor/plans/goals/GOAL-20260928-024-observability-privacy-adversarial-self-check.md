@@ -2,7 +2,7 @@
 id: GOAL-20260928-024
 slug: observability-privacy-adversarial-self-check
 title: 观测隐私面对抗性自检（端到端内容金丝雀：出口清单显式分类 + 零命中取证 + 反证按压 + 边界条款与未覆盖面登记）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-28
 updated_at: 2026-09-28
 owners:
@@ -111,7 +111,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B tools/two_tree_recheck.py --script tools/verify_goal024_closeout.py
       --script-mode tree` ⇒ 两树判词逐行相同 + `sha256` 相同 + `TWO-TREE PASS` / `EXIT=0`；
       两路留档二进制一致（`cmp`）；m0 终态行实测；CI 台账逐 run 逐 job 实查（`run_attempt` 由 REST API）。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -199,7 +199,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20260928-229-goal-024-ec02-content-canary-end-to-end.md
   - .cursor/plans/tasks/PLAN-20260928-231-goal-024-ec02-read-face-canary.md
   - .cursor/plans/tasks/PLAN-20260928-233-goal-024-ec03-boundary-clauses-pinned.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20260928-235-goal-024-ec04-closeout-two-tree-self-bootstrap.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260928-236-goal-024-ec04-closeout-two-tree.md
 memory_entries:
   - .cursor/memory/entries/MEM-20260928-161-exit-census-must-be-a-partition-with-reasons.md
   - .cursor/memory/entries/MEM-20260928-162-read-face-zero-hit-needs-a-bounded-whitelist.md
@@ -466,6 +467,18 @@ memory_entries:
 （形如：豁免条目的时效性 / debug 采样未验证 / 真实 collector 与部署面未验证 /
 CI 产物面不在射程）。
 
+
+### 本轮新增残余（GOAL-024 收口登记）
+
+| ID | 残余 | 处置 |
+| --- | --- | --- |
+| `G24-1` | **四个金丝雀源在默认离线链上没有注入面**（`task_input` / `tool_arguments` / `tool_output` / `failure_message`）⇒ 这四源「不出现在非 canonical 出口」**未验证** | 原样登记；真实 runtime / 工具面启用后需重新取证 |
+| `G24-2` | 读面扫描**只扫响应体、响应头不在面**（`Content-Disposition` 文件名 / `ETag` 等未证伪） | 原样登记 |
+| `G24-3` | 读面**白名单是人工判定 + 机械自审**（上下界 + 实取核对），不是从契约自动推导 | 原样登记（`RECHECK-232` 的 `W-6`） |
+| `G24-4` | `LineageNodeDto.label` 字段名与内容语义不一致（实测承载 claim 正文） | 原样登记（`RECHECK-232` 的 `W-1`）；**未改产品** |
+| `G24-5` | 文档**条款是文档 + 判据形态**，**不是运行时拦截器** | 原样登记（`RECHECK-234` 的 `W-3`） |
+| `G24-6` | 6 条声明载体本轮无正控制（模板 ×2 / 记忆 / 交付物 / 库 ×2）、3 条路由取不到 | 原样登记（`RECHECK-232` 的 `W-3`/`W-4`） |
+
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
@@ -478,6 +491,7 @@ CI 产物面不在射程）。
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 | 4 | PLAN-20260928-233（EC-03） | 本行所在的**实施提交**（文档两节 + 新判据 + INDEX）+ 本行所在的**记录提交** | **条款落文档并由判据钉住**（EC-03 记 PASS）。交付 = `docs/architecture/OBSERVABILITY.md` 追加「观测隐私边界与受判面（GOAL-024，2026-09-28）」节（两条条款 + 6 条受判出口 + 读面白名单口径 + 5 个被点名判据文件 + 四条未覆盖面逐条）；`docs/security/THREAT_MODEL.md` 追加第 7 节（同源两条条款 + 钉点 + 未覆盖面同口径 + 不得宣称项目安全）；`docs/INDEX.md` 两处登记；`tests/observability/test_privacy_boundary_clauses_are_pinned.py`（**145 行 / 9 例**）。**判据形态**：条款锚点**逐字**同时出现在两份文档（缺一处判红）；受判面与口径锚点；四条未覆盖面逐条在位；零夸大锚点各一份；**被点名的 5 个判据文件存在性**（改名即判红，含判据点名自己）；INDEX 登记；两条按压（改名判红、条款被改写判红）。**实跑**：钉点判据 **9 passed**（0.06s）；`tools/docs_consistency_check.py` = `DOCS-CHECK PASS: 6 deterministic checks`；`ruff format --check` / `ruff check` = `All checks passed!`；规模 145 行、最长函数 **10 行**；`mypy` = `Success`；既有文档只**追加**（§6 授权面草案与 M15/M16 段一字未动）；`tests/observability/` 全目录 **100 passed, 1 skipped**。**as-is 本机 m0（记录写入之后）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、**4715 passed / 21 skipped**、`EXIT=0`；日志 `scratch/goal024-c4-m0.log`；较 cycle 3 的 4705 passed **+10** = 本轮新判据 9 例 + 新判据文件进规模门等参数化面 1 项）。 | 本行所在的**记录提交**（依固定口径其 CI run 只在回合汇报记账） | 零真缺陷；未改任何既有判据 | **四条未覆盖面逐条登记**（文档内 `未覆盖面 1..4`）：debug mode 受控内容采样**未验证**；真实 collector / 生产部署面**未验证**；CI 产物面**不在射程**；`R-M1` **未收口**。`RECHECK-20260928-234` 四条警告留位（`W-1` 锚点逐字 ⇒ 文档措辞变动需同步判据；`W-2` 未覆盖面只承诺「未验证」、不承诺「将来也不会」；`W-3` 条款是文档 + 判据形态、**不是运行时拦截器**；`W-4` 承 `RECHECK-232` 的 `W-1`…`W-7`）。 | cycle 5 = **EC-04**（自举收口：`tools/verify_goal024_closeout.py` 进树并入 `IN_SCOPE` 必备清单 + 两树复检逐字节一致 + 终态台账） |
 
+| 5 | PLAN-20260928-235（EC-04，**收口**） | 本行所在的**实施提交**（`tools/verify_goal024_closeout.py` + `IN_SCOPE` + 4 个记录文件）+ 收口补记提交 | **自举收口**（EC-04 记 PASS）。交付 = `tools/verify_goal024_closeout.py`（**431 行**、最长函数 **44 行**：公共面直接调 `tools/closeout_recheck_assertions.py`（`Verdict`/`emit`/`standard_verdicts`），本文件只写 GOAL-024 特有断言 —— 受判出口**恰好六条** / 读面上下界与分区 / 七源矩阵 / 条款锚点 / 未覆盖面 / 被点名判据存在性 / 残余与未覆盖**登记在位** / 自身规模）；`IN_SCOPE` **3 → 4 条**（加入本验证器，**纯收紧**：下界断言单调）。**实跑**：`tools/verify_goal024_closeout.py --root . --verdict-only` = **38 PASS / 0 FAIL**（定稿前如实判红 2 条：`latest_recheck` 为 null 与两条残余短语缺位，记录补齐后转绿 —— 不是放宽断言）；验证器自身四道门（`ruff format --check` / `ruff check` = `All checks passed!`、规模 431 行 / 最长 44 行、`mypy` = `Success`）；`tests/tooling/test_tooling_scripts_meet_product_gates.py` **8 passed**（新脚本真的被四道门管住）；治理 `validate.py` 绿。**两树复检**（`tools/two_tree_recheck.py --script-mode shared`，`verify_paths` = 2 路：当前树 + 干净 checkout）**结果与 `sha256` 见收口补记**。**as-is 本机 m0（记录写入之后）见收口补记**。 | 本行与其**收口补记**提交（依固定口径其 CI run 只在回合汇报记账） | 零真缺陷；`IN_SCOPE` 为纯收紧 | **残余登记**：承继 12 条（`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `W-4` / `W-5` / `W-6` / `W-10` / `W-11` / `W-12`）**原样保留** + 本轮新增 **6 条**（`G24-1` 四个金丝雀源没有注入面 / `G24-2` 只扫响应体、响应头不在面 / `G24-3` 白名单是人工判定 + 机械自审 / `G24-4` `label` 字段名与内容语义不一致 / `G24-5` 条款是文档 + 判据形态、不是运行时拦截器 / `G24-6` 6 条声明载体无正控制 + 3 条路由取不到）。`RECHECK-20260928-236` 三条警告留位（两树同结论 ≠ 跨平台同结论 / 验证器是读树判据、不重跑取证 / 承继残余一条不消解）。 | — |
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
 | 建档（GOAL-024 落地） | `354e657` | M0 [**36413604236**](https://github.com/Eswink/research-system-new/actions/runs/36413604236) / CodeQL [**36413604077**](https://github.com/Eswink/research-system-new/actions/runs/36413604077) | **绿（八 job 全 success + CodeQL 3/3）**（两者 `run_attempt=1`，**一次成功、无 flake**）：M0 `conclusion=success`，逐 job `quality-windows-latest` / `observability-overhead-ubuntu-latest` / `container-quality` / `eval-gate` / `collector-quality` / `observability-overhead-windows-latest` / `console-frontend` / `quality-ubuntu-latest` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)` **3/3 `success`**（逐 job 由 `/actions/runs/<id>/jobs` 实查；`run_attempt` 由 REST API 逐 run 实查）。轮询日志 `scratch/goal024-c0-ci-poll.log`（`ALL_TERMINAL sha=354e657e0c1b1cd2a9c8ab72fdf088bb8330fa4b`，45 轮轮询）。上游 push 回执报 **8 条**告警（6 moderate + 2 low，全为 `undici`）⇒ **零依赖改动**，与 GOAL-018…023 收口一致 |
@@ -485,6 +499,39 @@ CI 产物面不在射程）。
 | cycle 2 实施 + 记录（EC-02 **部分**：`d7f190d` 判据文件 / `e69ef28` 记录，批量一次推送） | `e69ef28` | M0 [**36427168132**](https://github.com/Eswink/research-system-new/actions/runs/36427168132) / CodeQL [**36427168186**](https://github.com/Eswink/research-system-new/actions/runs/36427168186) | **绿（八 job 全 success + CodeQL 3/3）**（两者 `run_attempt=1`，**一次成功、无 flake**）：M0 `conclusion=success`，逐 job `quality-windows-latest` / `console-frontend` / `observability-overhead-windows-latest` / `eval-gate` / `collector-quality` / `observability-overhead-ubuntu-latest` / `container-quality` / `quality-ubuntu-latest` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (javascript-typescript)` / `Analyze (actions)` / `Analyze (python)` **3/3 `success`**（逐 job 由 `/actions/runs/<id>/jobs` 实查；`run_attempt` 由 REST API 逐 run 实查）。轮询日志 `scratch/goal024-c2-ci-e69ef28.log`（`ALL_TERMINAL sha=e69ef288fae5894fb3dfbc1d66a5d0d588f2ab79`，31 轮轮询）。**同批实查**：中间提交 `d7f190d` **没有任何 run**（`runs=none` ⇒ 该提交未被独立判过，受判的是 tip）—— 如实登记，不假装两提交各自被判 |
 | cycle 3 实施 + 记录（EC-02 余下 / 读面：`3866e5d` 判据文件 / `81c1e28` 记录，批量一次推送） | `81c1e28` | M0 [**36434731622**](https://github.com/Eswink/research-system-new/actions/runs/36434731622) / CodeQL [**36434731085**](https://github.com/Eswink/research-system-new/actions/runs/36434731085) | **绿（八 job 全 success + CodeQL 3/3）**（两者 `run_attempt=1`，**一次成功、无 flake**）：M0 `conclusion=success`，逐 job `container-quality` / `quality-windows-latest` / `eval-gate` / `console-frontend` / `observability-overhead-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `observability-overhead-ubuntu-latest` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)` **3/3 `success`**（逐 job 由 `/actions/runs/<id>/jobs` 实查；`run_attempt` 由 REST API 逐 run 实查）。轮询日志 `scratch/goal024-c3-ci-tip.log`（`ALL_TERMINAL sha=81c1e289cba79d4fc416c2e9bfc623546ac75715`，37 轮轮询）。**同批实查**：中间提交 `3866e5d` **没有任何 run**（`runs=none`）—— 与 cycle 2 同形，受判的是 tip |
 | 本条台账的**记录提交** | 本行所在的记录提交 | **依「固定口径」：写台账的那一步自身的 run 只在回合汇报记账**（不重复回写文件 —— 否则每写一行就产生一个待记账的新提交，台账永远追不上自己） | 见回合汇报 |
+
+
+## 收口判词（GOAL-024，2026-09-28）
+
+收口条件：EC-01…EC-04 **全部 PASS** 且每条有实跑证据。逐项如下（**数字全部来自实跑**）：
+
+1. **受判出口清单（受判 / 豁免逐条与其理由）**：受判 **6 条** —— `otlp-traces-wire` /
+   `otlp-metrics-wire` / `application-log`（stdlib logging，本仓**不存在** OTLP logs 信号）/
+   `read-face-http` / `failure-payload` / `disk-run-artifacts`；豁免 **1 条** —— `stdout-stderr`
+   （默认进程内路径**零生产点**，理由写在判据源码里）。候选 **113** 个发射点全部被恰好一条显式
+   分类认领；未机械枚举的形态 **4** 条带理由登记（`UNCOVERED_SHAPES`）。
+2. **金丝雀零命中与反证红的实跑证据**：编排层（cycle 2）—— `egress guard: judged 168
+   connection attempt(s); blocked 0`（全 loopback）；traces / metrics wire、应用日志（本次 4 条）、
+   失败载荷、stdout+stderr **零命中**；每条通道可见性正控制全绿；反证两向（内容进允许键
+   `endpoint_id` ⇒ 判红并**点名键名与出口**；内容进日志行 ⇒ 判红并点名 `application-log`）；
+   措辞无关（同 token 三种措辞 ⇒ 结论不变）。读面（cycle 3）—— 68 条读路由**逐条**分区
+   （声明载体 15 / 零命中 53），canonical 侧确有 `prompt` / `artifactbody` / `evidencebody`
+   三种金丝雀，零命中面 **51/53** 条取到非空响应且**零越界**，声明载体 **9** 条正控制全绿；
+   两向反证 + 两向按压（真实应用新增未登记路由 `/__press-probe` ⇒ 分区判红点名；登记里出现
+   树里没有的路径 ⇒ 陈旧判红）。
+3. **两树实跑证据（逐行 + `sha256`）**：见「收口补记」（`tools/two_tree_recheck.py
+   --script-mode shared`，当前树 + 干净 checkout，`verify_paths` = 2 路）。
+4. **按压与逐字节复原记录（raw `sha256`）**：EC-01 四向按压（真实产品根新增 `print` 模块 /
+   受判面删一行 / 豁免理由抽空 / 下界加非受判 id）全部**先红后绿**、逐字节复原（raw `sha256`
+   回到 `076fad378c48c794df3fa4e672614a7e379f10bc69f2e81d7eb5e7ce42aac74f`；`tools/observability/`
+   的既有判据文件**逐字节未改**）。
+5. **as-is 本机 m0 的终态行与「门在记录之后」的时刻证据**：见「收口补记」。
+6. **未覆盖范围（五条）与未覆盖面登记（四条）**：读面未认证 / 多租户未做 / BOLA·BFLA 未做 /
+   部署面未验证 / `R-M1` 未收口；文档内 `未覆盖面 1..4`（debug mode 受控采样 / 真实 collector
+   与生产部署面 / CI 产物面 / `R-M1`）逐条在位。
+7. **新增残余登记**：`G24-1`…`G24-6`（见「本轮新增残余」表）。
+
+**不得**据此宣称项目安全（`R-M1` 未收口）；本判词只覆盖被点名判据**在本机默认离线链上**跑到的那几面。
 
 ## 状态历史
 
@@ -494,6 +541,7 @@ CI 产物面不在射程）。
 | 2026-09-28 | ACTIVE | **建档 cycle 0 完成，进入循环**：EC-01…EC-04 全 PENDING，下一 cycle 做 **EC-01**（金丝雀源与出口清单：显式分类 + 未分类判红）。**本地验证**：治理 `Cursor 治理验证通过` + 记录面判据 **24 passed** + **as-is m0 23/23**（`PASS [` = 24、`4665 passed / 21 skipped`、`EXIT=0`；日志 `scratch/goal024-c0-m0.log`，文件时刻 `19:00:54` **晚于**本文件最后写入 `18:44:26` ⇒ 门在记录之后）；进程卫生零泄漏。**本机无 `make`** ⇒ 直跑 `run_all_checks.py --profile m0 --keep-going`（canonical 等价）。**建档提交 `354e657` 的 CI 到终态**：M0 `36413604236` 八 job 全 success + CodeQL `36413604077` 3/3，两者 `run_attempt=1`（逐 run 由 REST API 实查）。**本条记录提交**依「固定口径」其 CI run 只在回合汇报记账。 |
 | 2026-09-28 | ACTIVE | cycle 1（PLAN-20260928-227）：**EC-01 = PASS**（非 canonical 出口清单显式分类）。交付 = `tests/observability/privacy_exit_census.py`（259 行）+ `tests/observability/test_privacy_exit_census.py`（407 行 / 13 例）+ `RECHECK-20260928-228`（`PASS_WITH_WARNINGS`）+ `MEM-20260928-161`。**普查 113 候选全覆盖**（受判出口 6 / 豁免出口 1 / 豁免生产者 25 / 未覆盖面 4 条带理由），**没有第三种状态**：未分类 / 重复分类 / 登记陈旧 / 空理由 / 受判面无观测方式或无生产者**各自判红**。**四向按压先红后绿**（含**真实产品根**新增出口被点名）且 raw `sha256` 逐字节复原（`076fad378c…`）；**判据自跑抓到两处自己的错**（重复分类 + 形态自检样本位形）并当场修掉。**四道门绿**；既有 `test_privacy_canary.py` **逐字节未改**且合跑 20 passed。**as-is 本机 m0 与 CI 台账**：见补记（记录写入之后跑）。 |
 | 2026-09-28 | ACTIVE | **cycle 1 补记**：**as-is 本机 m0（记录写入之后、冻结树上独占跑、仓库 `.venv`、DSN 固化 + `LLM_MAIN_KEY=""` + `--keep-going`）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、**4680 passed / 21 skipped**、`EXIT=0`；日志 `scratch/goal024-c1-m0.log`，耗时 `576.02s`，**文件时刻 `20:07:51` 晚于**记录写入时刻 `19:54:27` ⇒ 门在记录之后；跑完 python 进程 **0**）。**记录面判据 + 工具面判据** 7 个文件合跑 **53 passed**；治理 `validate.py` 绿（含 `ALL_PLAN / Task Plan / Recheck / Memory 交叉引用一致`）。**按压留档**：`scratch/goal024-ec01-press-matrix.log`（四向按压原始输出 + 基线 raw `sha256`）。**本 cycle 的 CI 到终态**：M0 `36420689426` 八 job 全 success + CodeQL `36420687981` 3/3，两者 `run_attempt=1`（REST API 逐 run 实查）。 |
+| 2026-09-28 | ACHIEVED | **cycle 5（PLAN-20260928-235，EC-04）**：收口验证器进树（431 行 / 38 判词全绿）并入 `IN_SCOPE`（3 → 4，纯收紧）；两树复检与 as-is m0 见收口补记；残余承继 12 条原样保留 + 本轮新增 6 条。**EC-01…EC-04 全 PASS ⇒ GOAL ACHIEVED**。 |
 | 2026-09-28 | ACTIVE | **cycle 4（PLAN-20260928-233，EC-03）**：两条条款逐字落两份文档 + 四条未覆盖面逐条登记 + 受判面与读面白名单口径 + INDEX 登记，并由新判据钉住（**被点名的 5 个判据文件改名即判红**）。钉点判据 9 例全绿；DOCS-CHECK 绿；既有文档只追加。**EC-03 记 PASS**。 |
 | 2026-09-28 | ACTIVE | **cycle 3（PLAN-20260928-231，EC-02 余下 / 读面）**：读面从 `NOT_YET_OBSERVED` 变成**实取判据**（68 条读路由逐条分区；声明载体 15 / 零命中 53；canonical 确有内容的前提下 51/53 条实取零越界；9 条声明载体正控制全绿；两向反证 + 两向按压）。**EC-02 记 PASS**。七源注入面逐条登记（注入 3 / 无注入面 4）。四道门绿；`tests/observability/` 91 passed / 1 skipped；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（24 个 `PASS [`、4705 passed / 21 skipped、EXIT=0；日志 `scratch/goal024-c3-m0.log`）。 |
 | 2026-09-28 | ACTIVE | **cycle 2（PLAN-20260928-229，EC-02 部分）**：交付 `content_canary_support.py`（212 行）+ 判据（246 行 / 10 例）。绝对面零命中 + 载体白名单 + 每通道可见性正控制 + 两向反证 + 措辞无关；两个分支终态如实登记为 `FAILED`（门未被放宽）。**读面未观测 ⇒ EC-02 未达成**。四道门绿；`tests/observability/` 81 passed / 1 skipped；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（24 个 `PASS [`、4692 passed / 21 skipped、EXIT=0；日志 `scratch/goal024-c2-m0.log`）。 |
