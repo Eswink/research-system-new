@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import ast
 import os
+import re
 import subprocess
 import sys
 from collections.abc import Iterator, Sequence
@@ -35,6 +36,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONVENTIONS_DOC = ROOT / "docs" / "architecture" / "RECHECK_SCRIPT_CONVENTIONS.md"
 TOOLS_DIR = "tools"
+
+#: 规范页里「点名一个脚本」的合法形态（**通配写法不算点名**）。
+_SCRIPT_PATH = re.compile(r"tools/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.py")
 
 #: 规模的既有计数口径（与 `tests/tooling/test_python_source_limits.py` 同源）。
 MAX_FILE_LINES = 450
@@ -109,12 +113,17 @@ def tools_python_scripts() -> tuple[str, ...]:
 
 
 def doc_named_scripts() -> tuple[str, ...]:
-    """规范页点名的 `tools/**.py`（推导出射程，不需手改清单）。"""
+    """规范页点名的 `tools/**.py`（推导出射程，不需手改清单）。
+
+    只认**真实路径形态**（字母 / 数字 / `_` / `.` / `-` / `/`）——
+    像 `tools/**.py` 这样的**通配写法**是散文里的泛指，**不是**点名；
+    把它当路径会让射程里出现一个不存在的文件（本判据的第一次自跑就抓到了这一点）。
+    """
     text = CONVENTIONS_DOC.read_text(encoding="utf-8") if CONVENTIONS_DOC.is_file() else ""
     named: set[str] = set()
     for token in text.replace("`", " ").split():
         cleaned = token.strip("()[]<>,.;:\"'")
-        if cleaned.startswith("tools/") and cleaned.endswith(".py"):
+        if _SCRIPT_PATH.fullmatch(cleaned):
             named.add(cleaned)
     return tuple(sorted(named))
 
