@@ -296,3 +296,24 @@ tenant isolation 需求」（`docs/roadmap/MILESTONES.md:980`，另见
   `docs/integration/LIVE_MODEL_RUNBOOK.md` §2.2；**部署面**注意事项写在 §2.3——
   反代须透传 `Authorization`、TLS 在反代终止、多副本须同值（**未在本机验证**）。
   ⇒ 这些是**运维检查项**，**不是**安全结论；反代 / TLS / 多副本行为**仍未验证**。
+
+## 7. 观测隐私（内容出口）—— 条款与未覆盖面（GOAL-024，2026-09-28）
+
+**本节不是安全结论**：它只固化两条**条款**，并把**未覆盖面逐条登记**；可引用的口径以
+`docs/architecture/OBSERVABILITY.md` 的「观测隐私边界与受判面」节为准（两处同源）。
+
+```text
+条款 ①（canonical 允许持有用户输入）：canonical state（PG 域实体 / SQLite 域表）允许持有
+  用户自己的任务输入与产出 —— 那是业务真相，不是泄漏。
+条款 ②（非 canonical 出口不得含内容）：非 canonical 出口不得含用户内容；内容只允许出现在
+  「契约声明返回/保存它」的载体上，其余出口一律零命中。
+```
+
+- **钉点**：两条条款与下面的未覆盖面由
+  `tests/observability/test_privacy_boundary_clauses_are_pinned.py` 钉住
+  （**被点名的判据文件改名即判红**）；受判出口与读面白名单口径的机器可读形态见
+  `tests/observability/read_face_route_registry.py`。
+- **未覆盖面（与 OBSERVABILITY 同口径，逐条保留）**：debug mode 的受控内容采样**未验证**；
+  真实 collector / 生产部署面**未验证**；**CI 产物面不在射程**；**`R-M1` 未收口**。
+- **零夸大**：**不得**据此宣称「项目安全」或「内容出口已证明干净」——本轮判据只覆盖被点名的
+  那些出口**在本机进程内（默认离线链）**的观测；未列出的面一律视为未验证。
