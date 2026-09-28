@@ -87,3 +87,9 @@ uv run --frozen --no-sync python -B tools/closeout_recheck_assertions.py --root 
 - `tools/` **不在** `PRODUCT_ROOTS` 内 ⇒ 落在 `tools/` 的脚本**不被**
   ruff / mypy / 规模门禁覆盖。因此入口的**行为**必须由 `tests/tooling/` 的判据钉住，
   并且入口**自愿**遵守同样的规模与风格约束（无人检查不代表可以放松）。
+- **有界射程的机器门**（GOAL-023 EC-02）：上一条**仍然成立**（`PRODUCT_ROOTS` 未改），
+  但**被点名的**脚本现在由 `tests/tooling/test_tooling_scripts_meet_product_gates.py`
+  执行与产品同款的四道检查（`ruff format --check` / `ruff check` / 规模 / `mypy`）。
+  射程 = **判据源码里的必备清单**（`IN_SCOPE`）∪ **本页点名的 `tools/**.py`** ——
+  所以**本页点名的脚本会被纳入射程**；其余历史遗留以「清单 + 理由」逐条登记（不纳入射程）。
+  整体口径不变：这是**有界射程里有机器门**，**不是**「`tools/` 已被门覆盖」。
