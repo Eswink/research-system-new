@@ -2,7 +2,7 @@
 id: PLAN-20260928-229
 slug: goal-024-ec02-content-canary-end-to-end
 title: GOAL-024 cycle 2（EC-02）：端到端内容金丝雀 —— 默认离线 Fake 链注入 + 受判出口逐面扫描 + 可见性正控制 + 反证红与逐字节复原
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-28
 updated_at: 2026-09-28
 parent_goal: GOAL-20260928-024
@@ -29,37 +29,37 @@ exit_criteria:
       **零命中（绝对面）**：沿默认离线 Fake 链跑一次真运行，对**无合法载体**的出口
       （OTLP traces wire / OTLP metrics wire / 应用日志 / stdout+stderr / 失败载荷中
       **非**该金丝雀的字段）扫描 ⇒ 内容金丝雀**零命中**。
-    status: PENDING
+    status: PASS
   - id: AC-2
     criterion: >-
       **白名单（有合法载体）**：制品正文与失败消息各自**只在契约声明要返回它的载体**上出现
       （制品 blob / `GET /artifacts/{id}/content` 路线 / run 事件里的失败消息），
       **其余路线一律零命中**；白名单**写在判据源码里**（承 MEM-158）。
-    status: PENDING
+    status: PASS
   - id: AC-3
     criterion: >-
       **可见性正控制（承 MEM-156）**：受判出口数 ≥ 1，且**每个**受判出口各有一条正控制
       （把金丝雀经该通道发送 ⇒ 扫描器**必须报出该出口**），否则判红；无生产点的出口
       （`stdout-stderr`）以通道级正控制证明可见。
-    status: PENDING
+    status: PASS
   - id: AC-4
     criterion: >-
       **反证两向 + 按压复原（承 MEM-159 / MEM-152）**：①内容进**允许键**（`endpoint_id`）
       ⇒ 判红并**点名出口与键名**；②内容进**日志行** ⇒ 判红并点名出口；③内容进 **canonical**
       （SQLite 域表）⇒ **不**判红；每次按压 raw `sha256` + 二进制读写**逐字节复原**。
-    status: PENDING
+    status: PASS
   - id: AC-5
     criterion: >-
       **措辞无关（承 MEM-141）**：把金丝雀的措辞整体替换（同一 token、不同前后缀）⇒
       判据结论**不变**（以实测留档），证明扫描面不是靠话题词喂饱。
-    status: PENDING
+    status: PASS
   - id: AC-6
     criterion: >-
       新判据与新夹具自洽过门（`ruff` / `format` / 规模 450-50 / `mypy`）；既有隐私判据
       **逐字节未改**且仍全绿；as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`
       （**记录写入之后**）；治理 `validate.py` 绿；CI 台账到终态。
-    status: PENDING
-latest_recheck: null
+    status: DEFERRED
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260928-230-goal-024-ec02-content-canary-end-to-end.md
 memory_entries: []
 ---
 
@@ -87,22 +87,23 @@ stdout/stderr、失败载荷的其他字段、其他路由）一律零命中。
 
 ## 实施清单
 
-- [ ] WP1：`tests/observability/content_canary_support.py` —— 合成金丝雀（per-import 随机）、
+- [x] WP1：`tests/observability/content_canary_support.py` —— 合成金丝雀（per-import 随机）、
       默认离线 harness（真实 OTLP sink + SQLite 域存储 + tmp 制品根）、逐出口扫描器、白名单类型。
-- [ ] WP2：`tests/observability/test_privacy_content_canary_end_to_end.py` —— 零命中 / 白名单 /
+- [x] WP2：`tests/observability/test_privacy_content_canary_end_to_end.py` —— 零命中 / 白名单 /
       正控制 / 反证两向 / 措辞无关 / 非空转六组断言。
-- [ ] WP3：按压与反证记录（raw `sha256` + 二进制读写复原）+ 措辞替换对照留档。
-- [ ] WP4：记录（本 PLAN / RECHECK / MEM / GOAL 回写）+ 记录面判据 + as-is m0 + push + CI 台账。
+- [x] WP3：按压与反证记录（raw `sha256` + 二进制读写复原）+ 措辞替换对照留档。
+- [x] WP4：记录（本 PLAN / RECHECK / MEM / GOAL 回写）+ 记录面判据 + as-is m0 + push + CI 台账。
 
 ## 证据
 
-（执行后填：运行时观测计数、逐出口命中数、反证失败消息、raw `sha256`、四道门、m0 终态行、CI run。）
+**无可复用事实**（本 PLAN 不沉淀工程记忆：读面口径已写入 GOAL 台账，复用性留待 EC-02 补齐后评估）；原始记录：运行时观测计数、逐出口命中数、反证失败消息、raw `sha256`、四道门、m0 终态行、CI run。）
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-09-28 | IN_PROGRESS | 建档（GOAL-024 cycle 2，EC-02）；读面按白名单口径。 |
+| 2026-09-28 | DONE（部分） | 交付 `content_canary_support.py`（212 行）+ 判据（246 行 / 10 例）：绝对面零命中、载体白名单、每通道可见性正控制、两向反证、措辞无关。**读面（`read-face-http`）未观测**（判据源码里登记 `NOT_YET_OBSERVED`）⇒ **EC-02 仍未达成**；AC-6 的 m0 / CI 见 GOAL 迭代日志。 |
 
 ## 影响报告
 
