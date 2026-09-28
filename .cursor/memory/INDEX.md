@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260928-157](entries/MEM-20260928-157-a-naming-can-be-satisfied-twice-inside-one-section.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-219 |
 | [MEM-20260928-156](entries/MEM-20260928-156-empty-subject-set-means-the-judge-is-not-yet-in-force.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-217 |
 | [MEM-20260928-155](entries/MEM-20260928-155-pressing-a-record-face-judge-means-injecting-a-record.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-213 |
 | [MEM-20260928-154](entries/MEM-20260928-154-quote-exemption-takes-quote-characters-not-backticks.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-211 |

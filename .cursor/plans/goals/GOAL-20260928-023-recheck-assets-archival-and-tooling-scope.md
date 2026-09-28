@@ -83,7 +83,7 @@ exit_criteria:
       ③ 规范页条款小节点名该文件，判据按文件面 / AST 复核（改名即判红）；
       ④ 按压：抽走 / 改名 ⇒ 判红；raw `sha256` 逐字节复原 ⇒ 绿；
       ⑤ 跨提交形态**如实登记**（含入口原样报出的 `DIFF` / `NOT-GREEN` 行）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **`tools/` 受判面收口**（收 GOAL-022 EC-01 的 `W-1`：入口无格式 / 类型 / 规模门）。
@@ -265,9 +265,11 @@ escalation_triggers:
   - >-
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260928-219-goal-023-ec01-standard-closeout-assertions-in-tree.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260928-220-goal-023-ec01-standard-closeout-assertions.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260928-157-a-naming-can-be-satisfied-twice-inside-one-section.md
 ---
 
 ## 目标与退出标准
@@ -532,11 +534,13 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 本行所在的**建档提交** | **治理** `validate.py` = `Cursor 治理验证通过`（8 行结论，含「GOAL 循环记录结构合规；push 授权显式登记」）；**记录面判据**（`test_reproducibility_wording.py` + `test_record_face_is_covered_by_the_gate.py` + `test_control_plane_auth_same_source.py`）= **24 passed**（与 GOAL-022 基线同值）；**as-is 本机 m0（记录写完之后、独占运行、仓库 `.venv`、DSN 固化）= `PASS: profile=m0; 23 deterministic checks`**，`PASS [` = **24**、**4642 passed**、零 `FAILED` / `ERROR`（日志 `scratch/goal023-c0-m0.log`，**文件时刻 `12:45:16` 晚于**本文件建档写入时刻 `12:27:39` ⇒ 门在记录之后，可用 `ls -l` 复核）；**进程卫生**：跑完后 `tasklist` python 进程 **0**。**本机无 `make`** ⇒ 用 Makefile 的同一命令直跑 `run_all_checks.py --profile m0 --keep-going`（同解释器、同 DSN 固化、同 `--keep-going`，与 canonical 调用等价）。 | 本行所在的**建档提交**（依固定口径其 CI run 只在回合汇报记账） | 建档轮**零产品代码改动**（只新增本文件） | EC-01…EC-04 全 PENDING。起点已定位：`tools/` 射程**必须有界**（既有 73 条 lint 错误 / 10 个待重排文件）；`mypy` **可机械执行**（实测）⇒ 无豁免理由 | cycle 1 = **EC-01**（标准收口断言集进树；它是 EC-02 必备清单的前置） |
+| 1 | PLAN-20260928-219（EC-01） | `743297d`（断言集）+ `da6e904`（判据）+ `a895093`（规范页小节）+ 本行所在的**记录提交** | **EC-01 六条验收全部成立且有实跑证据**。交付 = `tools/closeout_recheck_assertions.py`（**388 行 / 18 条公共判词**）+ 判据 `tests/tooling/test_closeout_assertions_are_in_tree.py`（**145 行 / 6 例**）+ 规范页 `## 标准收口断言集` 小节 + `RECHECK-20260928-220`（`PASS_WITH_WARNINGS`，`W-1`…`W-5`）+ `MEM-20260928-157`。**① 两树同结论（`--script-mode tree` ⇒ 两树各取自己 checkout 里的同一份断言集字节）**：18 条判词**逐行相同**、`sha256` **同为** `b6ae3dac32b8ed54905b81a65605a71ebddea8d8599146f1c517e1f15597a0e5`、两路各自落盘且 `cmp` **一致**、`TWO-TREE PASS` / `EXIT=0`；落档 `scratch/goal023-ec01-verdict-{current,clean}.txt`、运行记录 `scratch/goal023-ec01-two-tree.log`。**② 规范页点名且条款不悬空**：小节点名断言集与其判据；判据按 **AST** 复核被点名文件真的声明 `standard_verdicts`。**③ 按压两处 + 逐字节复原**：① 公开入口 `standard_verdicts` **改名** ⇒ **`3 failed, 3 passed`**；② 小节点名**两处**全抽走 ⇒ **`2 failed, 4 passed`**（**注意：第一次只抽一处 ⇒ `6 passed`，按压无效 —— 谓词说「存在一处」，按压就得让所有出现消失；教训已沉淀 `MEM-20260928-157`**）；两次 raw `sha256` **逐字节复原**（`dc18919b…` / `5ec43a99…`）⇒ 复绿。**④ 空树不空转（承 MEM-156）**：判据在空树上要求 **≥ 5 条判红**且退出码非 `0`。**⑤ 跨提交形态实测（承 `W-2`，只作登记）**：`--base-ref 743297d`（**非 HEAD**，那棵树上还没判据与规范页小节）⇒ 干净树 `exit=1`、`sha256=09f01ace…`、`COMPARE identical=False`、**3 条 `DIFF`**、**2 条 `NOT-GREEN`**、`TWO-TREE RED` / `EXIT=1` —— **入口原样报出，未归一化**。**自查全绿**：`ruff check` + `ruff format --check` + `mypy`（`strict`）；388 / 145 行、无超 50 行函数；定向套件 **32 passed**（新 6 + 入口 11 + 规范钉条款 6 + 多路证据 9）。**零产品代码改动、零既有判据改动、零依赖**；**m0 条数仍 23**（断言集自跑的第 5 条判词就由**门运行器自己算出 23**）。**as-is 本机 m0（记录写完之后、独占、仓库 `.venv`、DSN 固化）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、**4649 passed / 21 skipped**、零 `FAILED` / `ERROR`；日志 `scratch/goal023-c1-m0.log`，文件时刻 `13:24:29` **晚于**记录写入 `13:07:28` ⇒ 门在记录之后；进程卫生零泄漏）。用例数较交付前 **+7** = 新判据 6 例 + 新文件进入既有规模门判据的参数化面 1 项。 | 本行所在的**记录提交**（依固定口径其 CI run 只在回合汇报记账）；`743297d` / `da6e904` / `a895093` 与本行**批量一次推送** | **零真缺陷**；**按压第一次无效**已按实登记并沉淀 MEM | **EC-01 = PASS**。**如实登记五条警告**（`RECHECK-220`）：`W-1` 断言集只判**结构性事实**，不判交付物实质质量；`W-2` 两树比的是**同 tip** ⇒ 跨提交那一跑只是**形态实测**，**不是**一致性保证，跨平台**未复验**；**`W-3`（最要紧）`tools/` 仍逃脱 ruff / mypy / 规模门**（本条收的是「断言集不可归档」，**不是**「`tools/` 无机器门」——后者归 **EC-02**）；`W-4` 对**被追踪文件真实删除 / 改名**的按压未做（「抽走」由**空树**覆盖）；`W-5` 本条不含任何授权面 / 认证面新结论 | cycle 2 = **EC-02**（`tools/` 受判面以**新增判据**收口。**首个受判对象现在就红**：`tools/two_tree_recheck.py` 的 `main` = **53 行**、`ruff check` 报 `complex-structure 14 > 10` ⇒ **第一步是修入口**，且 `tests/tooling/test_two_tree_recheck_entry.py` 的 **11 例必须保持全绿**） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
+| 建档（GOAL-023 落地） | `6bf3c9c` | M0 [**36379693650**](https://github.com/Eswink/research-system-new/actions/runs/36379693650) / CodeQL [**36379695232**](https://github.com/Eswink/research-system-new/actions/runs/36379695232) | **绿（八 job 全 success + CodeQL 3/3）**（两者 `run_attempt=1`，**一次成功、无 flake**）：M0 `conclusion=success`，逐 job `collector-quality` / `observability-overhead-ubuntu-latest` / `eval-gate` / `quality-windows-latest` / `console-frontend` / `container-quality` / `quality-ubuntu-latest` / `observability-overhead-windows-latest` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)` **3/3 `success`**。上游 push 回执报 **8 条**告警（6 moderate + 2 low，全为 `undici`）⇒ **零依赖改动**，与 GOAL-018…022 收口一致。轮询日志 `scratch/goal023-c0-ci-poll.log`（`ALL_TERMINAL sha=6bf3c9c332b8e1a42b1a0c774b4c083988ef7c20`） |
 | 本条台账的**记录提交** | 本行所在的记录提交 | **依「固定口径」：写下某条记录的那个提交自身的 run 只在回合汇报记账**（不重复回写文件） | 见回合汇报 |
 
 ## 状态历史
@@ -545,3 +549,4 @@ memory_entries: []
 | --- | --- | --- |
 | 2026-09-28 | ACTIVE | **建档**：用户会话指令（goal 模式）授权把 GOAL-022 收口时**如实登记的三条决策-free 缺口**收口 —— **① 收口断言集进树**（`W-3`）、**② `tools/` 的「自愿纪律」升级为机械判据**（`W-1` / `W-4`）、**③ 受判射程边界机械化**（`RECHECK-218` 的 `W-1`）。**明确不做**：读面认证、多租户 / RBAC / organization scope、BOLA·BFLA 实现、逐调用方身份、修改任何既有判据 / 门禁 / 阈值、改 `PRODUCT_ROOTS` / m0 条数 / 作业结构、新增依赖、token 进任何地方、改 401 形态或 `Idempotency-Key` 语义、部署面验证、动 `undici`、改 `ADR-0031` 的 `Status`、把历史遗留 `tools/` 脚本纳入射程、宣称项目安全。四 EC 设计（断言集进树 / 受判面收口 / 射程边界 / 自举收口），budget = 20 / 120 / 2。**建档当日实测十四条事实**（见「目标与退出标准」），其中三条决定判据形态：**① 入口 `main` = 53 行 + `ruff check` 复杂度 14 > 10 ⇒ EC-02 的首个受判对象现在就红**（真红 → 绿的取证不是空真）；**② `mypy` 对被测脚本可稳定机械执行 ⇒ 无豁免理由**；**③ `tools/` 既有 73 条 lint 错误 + 10 个待重排文件 ⇒ 射程必须有界（固化清单 + 规范页点名），不得整目录扫**。**建档时零产品代码改动**（只增本文件）。 |
 | 2026-09-28 | ACTIVE | **建档 cycle 0 完成**，进入循环：EC-01…EC-04 全 PENDING，下一 cycle 做 **EC-01**（标准收口断言集进树）。**本地验证**：治理 `Cursor 治理验证通过` + 记录面判据 **24 passed** + **as-is m0 23/23**（`PASS [` = 24、4642 passed、零 `FAILED` / `ERROR`；日志 `scratch/goal023-c0-m0.log`，其文件时刻**晚于**建档写入时刻 ⇒ 门在记录之后）；进程卫生零泄漏。**本机无 `make`** ⇒ 直跑 `run_all_checks.py --profile m0 --keep-going`（canonical 等价）。**本条记录提交**依「固定口径」其 CI run 只在回合汇报记账（见迭代日志末行）。 |
+| 2026-09-28 | ACTIVE | cycle 1（PLAN-20260928-219）：**EC-01 = PASS**（标准收口断言集进树）。交付 = `tools/closeout_recheck_assertions.py`（388 行 / **18 条公共判词**）+ 判据（145 行 / **6 例**）+ 规范页 `## 标准收口断言集` 小节 + `RECHECK-20260928-220` + `MEM-20260928-157`。**两树实跑**（`--script-mode tree`）⇒ 18 条判词逐行相同、`sha256` 同为 `b6ae3dac…`、两路落档 `cmp` 一致、`TWO-TREE PASS` / `EXIT=0`。**跨提交形态实测**（`--base-ref 743297d`，非 HEAD）⇒ `COMPARE identical=False` + **3 条 `DIFF`** + **2 条 `NOT-GREEN`** + `TWO-TREE RED` / `EXIT=1`，**原样报出未归一化**。**按压两处逐字节复原**（`dc18919b…` / `5ec43a99…`）；**第一次按压无效**（只抽一处点名仍 `6 passed`）已如实登记，教训 = **谓词说「存在一处」，按压就得让所有出现消失**（`MEM-20260928-157`）。**空树不空转**（≥ 5 条判红 + 退出码非 0）。**零产品代码改动、零既有判据改动、零依赖**；m0 条数仍 23（断言集自己算出）。**as-is 本机 m0（记录写完之后、独占）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24、4649 passed / 21 skipped、零 `FAILED` / `ERROR`；日志 `scratch/goal023-c1-m0.log` 时刻晚于记录写入）；治理绿。 |

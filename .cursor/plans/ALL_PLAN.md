@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260928-219](tasks/PLAN-20260928-219-goal-023-ec01-standard-closeout-assertions-in-tree.md) | DONE |
 | [x] | [PLAN-20260928-217](tasks/PLAN-20260928-217-goal-022-ec04-closeout-two-tree-self-bootstrap.md) | DONE |
 | [x] | [PLAN-20260928-215](tasks/PLAN-20260928-215-goal-022-ec03-recheck-script-conventions-are-pinned.md) | DONE |
 | [x] | [PLAN-20260928-213](tasks/PLAN-20260928-213-goal-022-ec02-declared-paths-need-their-own-evidence.md) | DONE |
