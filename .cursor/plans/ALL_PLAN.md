@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260928-233](tasks/PLAN-20260928-233-goal-024-ec03-boundary-clauses-pinned.md) | DONE |
 | [x] | [PLAN-20260928-231](tasks/PLAN-20260928-231-goal-024-ec02-read-face-canary.md) | DONE |
 | [x] | [PLAN-20260928-229](tasks/PLAN-20260928-229-goal-024-ec02-content-canary-end-to-end.md) | DONE |
 | [x] | [PLAN-20260928-227](tasks/PLAN-20260928-227-goal-024-ec01-privacy-exit-census.md) | DONE |
