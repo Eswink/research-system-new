@@ -35,7 +35,9 @@ owners:
 
 ### 3. 两树一致（AC-3）
 - 入口：`tools/two_tree_recheck.py --script-mode shared`（与 GOAL-022/023 同机器）。
-- 结论与 `sha256`：**见 GOAL 收口判词 ③**（本文件不重复数字，避免两处漂移）。
+- 两棵树各 **38** 条判词、逐行相同，`sha256` **均为** `cab69defa74a70a39d273ca082323e9d8100403e58edc380ec56fcc67d5fed00`，`COMPARE identical=True`、
+  `TWO-TREE PASS`（日志 `scratch/goal024-c5-two-tree.log`）；**记录写入后复跑同值**
+  （`scratch/goal024-c5-two-tree-rerun.log`）。
 - `verify_paths ≥ 2` 路声明在位（当前树 + 干净 checkout）。
 
 ### 4. 终态与登记（AC-4）
@@ -47,7 +49,9 @@ owners:
 - 残余：承继 12 条（`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `W-4` / `W-5` / `W-6` /
   `W-10` / `W-11` / `W-12`）+ 本轮新增 6 条（`G24-1`…`G24-6`）逐条在位；未覆盖范围五条
   （读面未认证 / 多租户 / BOLA·BFLA / 部署面未验证 / `R-M1`）逐条在位。
-- as-is 本机 m0（记录之后）：见 GOAL 收口判词 ⑤。
+- as-is 本机 m0（记录之后）= `PASS: profile=m0; 23 deterministic checks`（24 个 `PASS [`、
+  4715 passed / 21 skipped、`EXIT=0`；日志 `scratch/goal024-c5-m0.log`；记录提交 `c493570`
+  `22:56:44` → m0 日志 `23:08:51` ⇒ 门在记录之后）。
 
 ## 结论
 
