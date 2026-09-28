@@ -1,0 +1,479 @@
+---
+id: GOAL-20260928-024
+slug: observability-privacy-adversarial-self-check
+title: 观测隐私面对抗性自检（端到端内容金丝雀：出口清单显式分类 + 零命中取证 + 反证按压 + 边界条款与未覆盖面登记）
+status: ACTIVE
+created_at: 2026-09-28
+updated_at: 2026-09-28
+owners:
+  - root-agent
+authorization:
+  source: user-request
+  ref: >-
+    2026-09-28 用户会话指令（goal 模式）：**建档 GOAL-024（观测隐私面对抗性自检：端到端内容金丝雀）
+    并授权本驱动自动化循环推进、无需逐轮确认**。authorization 原文要点如下：
+    (0) **用户要求「可自我迭代且无需拍板」** ⇒ 本 GOAL 的范围**严格限定**为三件事，**越界即 BLOCKED**：
+    **(i) 新增金丝雀判据与夹具**（一律落 `tests/**`，落在既有 `python/tests` 收集面内 ⇒ m0 条数仍 `23`）、
+    **(ii) 修被这些判据证明为真缺陷的问题**（**只允许收紧记录面**；**不得**借此改认证 / 策略 / 门禁语义）、
+    **(iii) 文档同源更新**（`docs/architecture/OBSERVABILITY.md` / `docs/security/THREAT_MODEL.md` 等 +
+    `docs/INDEX.md` 登记）。**不加新能力、不放宽任何判据、不改安全策略、不改任何既有判据。**
+    (1) **明确不做（命中即 BLOCKED）**：**给读面（GET/HEAD）加认证**；**多租户 / RBAC /
+    organization scope**；**BOLA / BFLA 实现**；**逐调用方身份**；**修改任何既有判据 / 门禁 /
+    阈值 / 放行面**（点名：`tests/observability/test_privacy_canary.py`、三道记录面判据、
+    多路证据判据、射程边界判据、`tests/tooling/test_tooling_scripts_meet_product_gates.py`、
+    `tests/egress_guard.py`）—— **新增**判据可以，**修改**既有判据不行；
+    **改 `PRODUCT_ROOTS` / m0 任一 check / 作业结构 / m0 条数**（终态行必须仍是 `23`）；
+    **新增依赖**（标准库 + 现有栈）；**做真实出网调用**（本 GOAL 全离线；走 Fake runtime /
+    Fake model gateway；真实端点面 / 真实 collector / 部署面只允许「登记为不可在本机验证 +
+    给出可复核检查项」）；**让金丝雀携带真实内容**（金丝雀**必须**是测试内构造的合成串；
+    **不得**把真实 prompt / token / 凭据写进夹具、记录、日志或输出）；
+    **改认证的 401 形态或 `Idempotency-Key` 语义**、**动 `undici`**、**改 `ADR-0031` 的 `Status`**、
+    **把真实 runtime 设为默认**；**宣称项目安全**（`R-M1` 仍在）。
+    (2) **来源与授权口径**：来源 = **用户授权** + **push-to-main-for-CI 口径**（只推 `main`、
+    **不 force**、**不重写历史**、**不推旁支**；push 前 `git pull --ff-only origin main`）
+    + **默认姿态不变**（默认 runtime 保持 **Fake**、默认 CI **离线**，AGENTS.md §11）
+    + **默认门一律离线**（`tests/egress_guard.py` 是结构判据，**不得**为本地变绿而放宽）。
+    (3) **不做真实出网**：本 GOAL **不做真实出网调用**（全离线）；SQL 一律**参数绑定**；
+    凭据**只从环境变量**读取；观测隐私按 AGENTS.md §10 —— **默认不记录完整 Prompt、不记录
+    模型输入输出、不记录 Tool 敏感参数**（只记录 digest / size / type / latency / token /
+    status / redacted metadata）⇒ 本 GOAL 自己的产物**同样**受此约束。
+    (4) **边界（必须写清，否则判据会自伤）**：**canonical state（PG 域实体）允许持有用户
+    自己的任务输入** —— 那是业务真相，**不是泄漏**；受判面是**非 canonical 出口**：
+    telemetry（span / metric / log 三信号）、应用日志、运行目录与证据目录制品、读面响应、
+    失败载荷（ProblemDetail / `failure_category` / 异常消息）。**不得**用「金丝雀出现在 DB 里」判红。
+    (5) **边界（承继）**：GOAL-001…023 全部**只读**（003 / 011 BLOCKED，其余 ACHIEVED）；
+    GOAL-018 的**全部 13 项 `D-NN`** 已结清、**本 GOAL 不重开**；
+    GOAL-019…023 的**未覆盖范围原样保留**。
+    (6) **driver** = client-goal、**owner** = root-agent；**另一驱动持有未收口 ACTIVE cycle 时等待**。
+objective: >
+    对「观测隐私」（AGENTS.md §10）做一次**对抗性自检**：证明「沿**默认（离线 Fake 链）
+    运行路径**注入的用户内容金丝雀**不出现在任何**非 canonical 出口**」，把**扫描面**做成
+    **可复跑判据**，并把**做不到的部分逐条登记**。
+    **硬约束**：**不放宽 / 削弱任何判据、门禁、放行面或阈值**；**不修改任何既有判据**
+    （只**新增**判据）；**零**新依赖；**零**策略面 allow；**不得**给读面加认证；
+    **不得**改 401 形态或 `Idempotency-Key` 语义；**不得**宣称项目安全（`R-M1` 仍在）；
+    金丝雀一律**测试内构造的合成串**；**全离线**（无真实出网）；m0 条数**仍是 23**。
+exit_criteria:
+  - id: EC-01
+    criterion: >-
+      **金丝雀源与出口清单（显式分类，承 MEM-158）**：把「用户内容」在默认（离线 Fake 链）
+      运行路径上打上**唯一合成金丝雀**（至少覆盖：任务输入 / prompt、工具参数、工具输出、
+      制品正文、证据正文、失败消息），并枚举**全部非 canonical 出口**，逐条**显式分类**为
+      **受判** 或 **登记豁免（必须有非空理由）**；分类清单**写在判据源码里**（不靠散文），
+      **未分类的新出口判红**（否则新出口会静默逃逸）；登记陈旧（清单里的生产者已消失）同样判红。
+    verify: >-
+      `uv run --frozen --no-sync python -B -m pytest tests/observability/test_privacy_exit_census.py -q`
+      ⇒ 全绿；判据源码内含机器可读的出口登记表（kind / producer / classification / reason /
+      observation）；按压（新增一个未登记的生产者 ⇒ 判红）与（豁免条目理由抽空 ⇒ 判红）先红后绿，
+      逐字节复原（raw `sha256` + 二进制读写）。
+    status: PENDING
+  - id: EC-02
+    criterion: >-
+      **端到端取证 + 反证 + 按压（主干）**：(a) 跑一次默认运行（离线、Fake runtime）⇒ 对
+      **全部受判出口**扫描 ⇒ **金丝雀零命中**；本期至少覆盖 OTLP wire（traces + metrics）、
+      **应用日志**（`caplog` 口径）、运行 / 证据目录制品（指向 `tmp_path`）、读面响应、
+      失败载荷；(b) **反证必须有牙齿**：人为把金丝雀塞进一个**允许键**（如 `endpoint_id`）
+      或写进一条日志行 ⇒ 判据**判红**且失败消息**点名出口与键名** ⇒ 逐字节复原（raw `sha256`
+      + 二进制读写）⇒ 复绿；(c) **受判面非空**（承 MEM-156）：断言「受判出口数 ≥ 1 且每个受判
+      出口在**本次运行中真的被观测到**（非空集）」，否则判红；并证明扫描面**不是**靠话题词喂饱
+      （承 MEM-141）：改措辞**不改变**判据结论（实测留档）。
+    verify: >-
+      `uv run --frozen --no-sync python -B -m pytest tests/observability/test_privacy_content_canary_end_to_end.py -q`
+      ⇒ 全绿；配套留档：零命中扫描证据（逐出口命中数）、反证红（点名出口与键名的失败消息）、
+      复原后 raw `sha256` 回到原值、非空取证（每个受判出口的观测计数）、措辞替换对照结论。
+    status: PENDING
+  - id: EC-03
+    criterion: >-
+      **边界条款 + 未覆盖面登记（条款不得悬空）**：把两条界线写成**文档条款**并由**判据钉住**
+      （被点名判据文件**必须存在**，改名即判红）：① **canonical 允许持有用户输入**（业务真相，
+      不算泄漏）；② **非 canonical 出口不得含内容**。同时**逐条登记未覆盖面**：debug mode 的
+      受控采样（§10 允许、受 retention 管理）**未验证**、真实 collector / 生产部署面**未验证**、
+      CI 产物面**不在射程**、`R-M1` 未收口 ⇒ **不得**宣称项目安全。
+    verify: >-
+      `uv run --frozen --no-sync python -B -m pytest tests/observability/test_privacy_boundary_clauses_are_pinned.py -q`
+      ⇒ 全绿（含被点名判据文件存在性 + 条款锚点 + 未覆盖面四条逐条在位）；文档同源更新落在
+      `docs/architecture/OBSERVABILITY.md` / `docs/security/THREAT_MODEL.md`（+ `docs/INDEX.md` 登记），
+      治理 `validate.py` 的 `DOCS-CHECK` 绿。
+    status: PENDING
+  - id: EC-04
+    criterion: >-
+      **自举收口（复用 022 / 023 的机器）**：① 本轮收口验证器**进树**
+      （`tools/verify_goal024_closeout.py`，**复用** `tools/closeout_recheck_assertions.py` 的公共判词，
+      只写本轮特有断言），并**显式加入** `tools/` 受判面的**必备清单**；② 用
+      `tools/two_tree_recheck.py` 跑**当前树 + 干净 checkout** ⇒ 两树同结论（逐行相同 +
+      `sha256` 相同；**留档一律二进制写盘**）；③ **as-is 本机 m0 到 23/23**
+      （终态行 `PASS: profile=m0; 23 deterministic checks`），**运行发生在记录写入之后**（承 MEM-145）；
+      ④ 治理 `validate.py` 绿（含 `DOCS-CHECK`）；⑤ CI 台账到终态（八 job + CodeQL + `run_attempt`）；
+      ⑥ 承继残余逐条在位（`R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` / `W-4` / `W-5` /
+      `W-6` / `W-10` / `W-11` / `W-12`）+ 本轮新增残余；⑦ **未覆盖范围五条逐条明写**
+      （读面未认证 / 多租户未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口）。
+    verify: >-
+      `uv run --frozen --no-sync python -B tools/two_tree_recheck.py --script tools/verify_goal024_closeout.py
+      --script-mode tree` ⇒ 两树判词逐行相同 + `sha256` 相同 + `TWO-TREE PASS` / `EXIT=0`；
+      两路留档二进制一致（`cmp`）；m0 终态行实测；CI 台账逐 run 逐 job 实查（`run_attempt` 由 REST API）。
+    status: PENDING
+budget:
+  max_cycles: 20
+  per_cycle_minutes: 120
+  no_progress_stop_cycles: 2
+fix_policy:
+  same_signature_retries: 2
+  cycle_fix_retries: 3
+  forbidden:
+    - 修改 validator/门禁/快照/测试断言使其通过
+    - skip/删除测试或降低断言强度（含 `xfail` / 条件跳过式规避）
+    - git push --force / 重写历史 / 推非 main 分支触发 CI
+    - 伪造或夸大验证证据（未实跑不得记 PASS）
+    - git add -A（并发工作树；只加显式路径）
+    - >-
+      **修改**任何既有判据 / 门禁 / 阈值 / 放行面（点名：`tests/observability/test_privacy_canary.py`、
+      三道记录面判据、多路证据判据、射程边界判据、`tests/tooling/test_tooling_scripts_meet_product_gates.py`、
+      `tests/egress_guard.py`）—— **新增**判据不受此限
+    - >-
+      把**真实** prompt / token / 凭据 / 用户内容写进夹具、记录、日志、遥测或以任何形式留档
+      （金丝雀一律**测试内构造的合成串**；凭据只登记变量名、绝不留值）
+    - >-
+      用**真实出网**换取更强取证（真实端点 / 真实 collector / 真实中转站一律**不得**成为本
+      GOAL 的取证手段；不可在本机验证者**登记 + 给可复核检查项**）
+    - >-
+      **给读面（GET/HEAD）加认证**，或改动读面放行语义（GOAL-019 判词 (i) 不变：
+      保护范围只有写面）
+    - >-
+      引入**多租户 / organization scope / RBAC / 角色权限矩阵**或任何 M18 内容；
+      或做 **BOLA / BFLA 的专项实现**
+    - >-
+      新增**任何**依赖（含为判据引入第三方库；一律标准库 + 现有栈；
+      判据**可调用**既有 `ruff` / `mypy`）
+    - >-
+      **改认证的 401 响应形态**（`title` / `detail` / ProblemDetail 结构与点名文本）
+    - >-
+      改 `Idempotency-Key` 语义，或改 `IdempotencyMiddleware` 的方法分类 / replay / conflict /
+      record 行为
+    - >-
+      把**新判据**写成「被文档引用 / 字面量喂饱」的形态（承 MEM-141：判据必须绑定
+      **声明行 / 行为 / 文件面**），或让新判据**跳过按压**
+    - >-
+      用「金丝雀出现在 **canonical state（PG 域实体 / SQLite 域表）**」判红
+      （canonical 允许持有用户自己的任务输入：那是业务真相，**不是泄漏**）
+    - >-
+      宣称「项目安全」「授权面已覆盖」或任何形式的安全结论（`R-M1` 未收口）；
+      把前端 token 输入面当作访问控制
+escalation_triggers:
+  - 需要修改 Accepted ADR / 核心安全策略 / Canonical State 边界
+  - 破坏性数据迁移或不可逆动作
+  - 同一失败签名超过 fix_policy 上限
+  - >-
+    **给读面加认证** —— **立即 BLOCKED**（GOAL-019 判词 (i)：保护范围**只有写面**）
+  - >-
+    **引入多租户 / organization scope / RBAC / 角色权限矩阵**或任何 M18 内容，
+    或做 **BOLA / BFLA 的专项实现** —— **立即 BLOCKED**
+  - >-
+    **新增依赖** —— **立即 BLOCKED**（判据只能用标准库 + 既有 `ruff` / `mypy`）
+  - >-
+    **把 token / 真实凭据 / 真实用户内容写进任何地方**（CI / 文件 / 记录 / 日志 / 遥测 /
+    夹具 / 示例 / 前端源码 / **判据源码**）—— **立即 BLOCKED**；真实凭据泄露（即使可弃用）
+    ⇒ 立即停止并报告
+  - >-
+    **改认证的 401 响应形态**，或改 `Idempotency-Key` 语义 —— **立即 BLOCKED**
+  - >-
+    **放宽 / 削弱任一既有判据 / 门禁 / 阈值 / 放行面**，或**修改**任何既有判据
+    （**新增**判据不受此限）—— **立即 BLOCKED**
+  - >-
+    **改 `PRODUCT_ROOTS` / m0 条数 / 作业结构**（`23` 这一终态条数；把 `tools` 纳入
+    `PRODUCT_ROOTS` 属另行授权）—— **立即 BLOCKED**
+  - >-
+    **放宽 §9 默认 deny**，或新增任何策略面 allow / 类别级规则 —— **立即 BLOCKED**
+  - >-
+    **Canonical State 边界**（改「PostgreSQL Domain Entity 是业务真相」的口径 /
+    把「金丝雀出现在 canonical」当成泄漏并据此改域模型）—— **立即 BLOCKED**
+  - >-
+    **宣称项目安全**或据此收口 `R-M1` —— **立即 BLOCKED**（Mimosa 钩子
+    `scanner_enobufs` 未得完整结论）
+  - 把真实 runtime 设为**默认**（默认必须仍是 Fake）—— **立即 BLOCKED**
+  - 改 `ADR-0031` 的 `Status`（D-07 明文维持 `Proposed`）—— **立即 BLOCKED**
+  - >-
+    默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
+    若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
+child_plans: []
+latest_recheck: null
+memory_entries: []
+---
+
+## 目标与退出标准
+
+**一句话**：对 AGENTS.md §10（观测隐私）做一次**对抗性自检** —— 沿**默认（离线 Fake 链）**
+运行路径注入**唯一合成内容金丝雀**，证明它**不出现在任何非 canonical 出口**；把这件事做成
+**可复跑的判据**（出口清单显式分类 + 零命中扫描 + 反证按压 + 非空取证），把**做不到的部分
+逐条登记**，并把两条边界写成**不悬空的条款**。
+
+**本 GOAL 不加新能力、不改安全策略、不放宽任何判据、不修改任何既有判据。**
+若新判据**证明**某处是真缺陷 ⇒ **只允许按授权收紧记录面**（**不得**借此改认证 / 策略 /
+门禁语义）；若某条**本机无法验证** ⇒ **登记为 PENDING**，**不得**记 PASS。
+
+| EC | 标准（简） | 主要交付物 | 状态 |
+| --- | --- | --- | --- |
+| EC-01 | **出口清单显式分类**（金丝雀源 + 全出口 `受判/豁免` + 未分类判红 + 陈旧判红） | 新判据（登记表在源码里）+ 新夹具 + 按压 | **PENDING** |
+| EC-02 | **端到端取证 + 反证 + 按压**（零命中 + 反证红 + 逐字节复原 + 非空取证） | 端到端金丝雀判据 + 扫描证据 + 反证记录 | **PENDING** |
+| EC-03 | **边界条款 + 未覆盖面登记**（被点名判据存在 + 条款锚点 + 四条未覆盖面） | 文档条款 + 钉住判据 + `docs/INDEX.md` | **PENDING** |
+| EC-04 | **自举收口**（进树验证器 + 两树 + m0 23/23 + 台账 + 残余） | `tools/verify_goal024_closeout.py` + 两树留档 + 台账 | **PENDING** |
+
+**依赖关系**：EC-01 → EC-02（出口清单是扫描面与「受判出口非空」断言的输入）→ EC-03（条款
+点名 EC-01 / EC-02 的判据文件）→ EC-04（**依赖 EC-01 + EC-02 + EC-03**：收口验证器要断言
+前三者的终态与登记面）。EC-04 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
+
+**建档当日已核实的事实层结论（全部实测，非推测；决定可行性与判据形态）**：
+
+1. **既有判据与其交出的那一半（实测复核）**：`tests/observability/test_privacy_canary.py`
+   = **212 行**（`wc -l`）；其 docstring 第 17–19 行把「把内容硬塞进 identity 字段
+   （例如往 `endpoint_id` 里写 prompt）」判为**调用方误用**、词汇层无法在不使自身失效的前提下
+   消除 ⇒ **产品代码会不会这么做，从未被验证** —— 这正是本 GOAL 的**主靶**。
+   **既有判据与夹具**（`test_privacy_canary.py` / `canary_support.py` / `otlp_receiver.py`）
+   **只读**（`fix_policy.forbidden` 已点名）。
+2. **「日志面几乎空白」实测成立**：`rg -ln "caplog|capsys" tests` **只命中 1 个文件**
+   （就是上面那个 `test_privacy_canary.py`）⇒ 全仓的**应用日志面几乎无内容扫描**。
+3. **既有夹具的规模余量很薄**：`tests/observability/canary_support.py` = **349 行**
+   （规模门：硬上限 450、>300 软告警）⇒ 它是**只读**的既有夹具，**新夹具必须落新文件**
+   （不得把 349 推向 450）。
+4. `tests/observability/otlp_receiver.py` = **120 行**；只接受 `POST /v1/traces` 与
+   `POST /v1/metrics`（其他路径 404）—— 它是本仓**证据级** OTLP 接收器（loopback + 真实
+   protobuf 解码），**不需要外部 collector**。
+5. **本仓不存在 OTLP logs 信号（实测，且与用户口径不同，必须改述）**：
+   repo-wide `rg "LoggerProvider|OTLPLogExporter|v1/logs"` **零命中**；依赖里只有
+   `opentelemetry-exporter-otlp-proto-http` 的 trace/metric 面 ⇒ 本 GOAL 的「三信号」口径
+   **必须**写成 **OTLP traces（wire）+ OTLP metrics（wire）+ stdlib 应用日志（进程内）**；
+   第三面**不是** OTLP logs 通道。判据**不得**按「OTLP logs 出口」建面（会落在空集上）。
+6. **默认 telemetry 是 `NullTelemetrySink`**（`OtelSettings.enabled=False`）⇒ **as-is 默认
+   路径上根本没有 OTLP wire**；判据**必须显式注入**真实 OTLP sink（配 `otlp_receiver.py`）
+   才能让该出口**非空**（承 MEM-156：受判集合非空是交付前提）。
+7. **应用日志出口的生产者有界（实测）**：产品根下 `logging.getLogger` 恰 **2 处**
+   （`services/api/app.py:63`、`services/api/experiment_queue.py:40`）；全仓**无**
+   `basicConfig` / `dictConfig` / `fileConfig` ⇒ 日志面是一个**小而可枚举**的普查面。
+8. **一个必须实测的真候选（不预设结论）**：`services/api/experiment_queue.py:175` 的 warning
+   把 `_short_reason(exc)`（`str(exc)`，上限 500 字符）写进日志行，而该异常来自 run 启动 /
+   协议解析路径 ⇒ **调用方提供的文本有路径进入应用日志面**。判据必须**先测**再判；
+   若判据证明它收进了内容金丝雀 ⇒ 按授权**只允许收紧记录面**（登记为真缺陷）。
+9. **stdout/stderr 出口有界（实测）**：产品根内 `packages/` 与 `services/api/` 的 `print(...)`
+   **各 0 处**；14 处只在 worker 进程 / CLI / 容器内探针（非默认运行路径的进程内面）。
+10. **失败载荷面有两处形态差异（实测，重点受判）**：`services/api/errors.py` 的**通用** handler
+    对 `str(exc)` 走 `redact_text`；而 **`ApiError` handler 不再脱敏** `api_error.detail`
+    ⇒ 路由里以 `str(exc)` 填充的 `detail` 会**原样**进 `ProblemDetail` ⇒ 判据必须覆盖它。
+11. **读面出口以运行时路由表为准（实测）**：`services/api/routers/` 下 **30 个模块**；
+    判据应枚举**应用自身路由**（`create_app(...).routes`）而不是散文清单 —— 这样**新增路由**
+    会自然进入扫描面。
+12. **默认（离线 Fake）全链驱动点至少两个（实测）**：(a) `tests/api/run_fixtures.py`
+    的 `make_run_ready_deps()`（Fake runtime + FakeModelGateway + SQLite `:memory:`；`run_ready_client`
+    起 `TestClient`，run 收敛到终态 `FAILED`）；(b) `tests/e2e/scenario.py` 的
+    `StructuredOutputAgentRuntime` + `M7Harness`（可离线跑到 `SUCCEEDED`，把**合成的**结构化输出
+    落成**制品正文**）⇒ 内容金丝雀可走「任务输入 → LLM 响应 → 制品 → 读面」整链。
+13. **磁盘出口必须被指到 `tmp_path`（实测风险）**：`SqliteArtifactStore` 无 `blob_dir` 时落
+    `cwd/.artifacts`（仓库里 `.artifacts/` 已存在）；默认 SQLite 装配落
+    `data/artifact-blobs/<digest[:2]>/<hex>` ⇒ 判据**不得**在仓库根留写盘面。
+14. **`tools/` 受判面的下界断言是单调的（实测，决定 EC-04 可行）**：
+    `tests/tooling/test_tooling_scripts_meet_product_gates.py`（283 行）断言
+    `required ⊆ IN_SCOPE` 且 `IN_SCOPE ⊆ scope()`（`IN_SCOPE` 现为 **3** 条）⇒
+    把 `tools/verify_goal024_closeout.py` **加进必备清单是纯收紧、无需改既有断言**
+    （承 MEM-160：下界必须由**源码清单**给出，文档点名只是并集的一半）。
+15. **规模门禁对 `tests/**` 生效（实测）**：`PRODUCT_ROOTS` 含 `tests` ⇒ 新判据与新夹具同样
+    受 **450 行文件 / 50 行函数** 门（>300 行软告警）；`tools/verify_goal024_closeout.py`
+    还受 EC-02 判据的**四道门**（格式 / `ruff` / 规模 / `mypy`）。
+16. **记录面话术判据的扫描面含 `.cursor/plans`** ⇒ 本文件与后续记录**不得**出现肯定式的
+    越级表述（口径词是「**可重复配置**」；`test_reproducibility_wording.py` 认引号字符，
+    反引号不算引用）。
+17. **工作树现状（实测，供驱动遵守）**：`git status` 有 **4 个与本 GOAL 无关**的并发改动
+    （`apps/web/src/features/models/ModelDetails.tsx`、`packages/domain/model_drift.py`、
+    `services/api/dto/models.py`、`services/api/middleware.py`），其 worktree 与 index
+    **内容哈希相同**（`git hash-object` = index blob；`git diff --numstat` 为空）⇒ 只是行尾态
+    差异。**本 GOAL 一律只用显式路径提交**，**绝不** `git add -A`，**绝不**碰这 4 个文件。
+
+**预算**：`max_cycles: 20`、`per_cycle_minutes: 120`（软）、`no_progress_stop_cycles: 2`。
+**本 GOAL 默认门一律离线**（不需要 `.env` 凭据；**不做真实出网调用**）。
+
+## 循环入口协议
+
+驱动方（会话 / 定时自动化 / 客户端 goal 模式）进入时，按**迭代日志最后一行** +
+**工作树 / 远端实况**判定续点；**禁止凭记忆假设上一轮状态**：
+
+1. 最后一 cycle 无记录 → 开 cycle 1：执行 ①（先 derive 子 PLAN）。
+2. 有子 PLAN 但仍在 `IN_PROGRESS` → 继续该 PLAN 的执行（②）。
+3. 本地验证已过、有未推送 commit → 执行 ④⑤（push + CI）。
+4. CI 在跑或未记录结论 → 执行 ⑤（等待 / 判定），**禁止猜测绿**。
+5. CI 有失败且修复次数未达上限 → 执行 ⑥（纠错）。
+6. 最后一 cycle 的 commit + CI 全绿且 EC 未满足 → 执行 ①（生成下一子 PLAN）。
+7. 判定条件按「终止与收口」：ACHIEVED / BLOCKED / 超预算。
+
+任何一步完成后**立即回写本文件**（状态历史 / 迭代日志），保证任意时刻崩溃后重入可续。
+同时只允许一个驱动持有 ACTIVE cycle 的推进权；**另一驱动持有未收口 ACTIVE cycle 时等待**。
+
+**每轮只读入口必需的最小集**（`per_cycle_minutes=120` 是硬预算）：本文件 + 当前子 PLAN +
+其引用的判据 / 证据；不整目录通读。
+
+**幂等建档**：`glob .cursor/plans/goals/GOAL-*-024-*.md` 已存在 ⇒ 跳过建档，直接进循环。
+**建档方式**：本 GOAL 采用「**新建 GOAL-024**」（**不是**把任何既有 GOAL 置回 ACTIVE）。
+理由：观测隐私的**对抗性自检**（内容金丝雀沿默认路径端到端取证）在 GOAL-001…023 里
+**从未**作为交付面出现过 —— M15 WP4 交付的是**词汇层**（无内容通道 + 键集闭合），并**明文**
+把「内容被塞进允许键」这一半交给调用方；本 GOAL 正是去**验证那个空白**。
+
+## 单 cycle SOP
+
+- **① derive**：从剩余 EC + 上一轮「剩余差距」圈定一个可独立验收的最小主题；
+  用 Plan Mode 流程写子 PLAN（`.cursor/plans/tasks/PLAN-…`，frontmatter 增加
+  `parent_goal: GOAL-20260928-024` 并投影 ALL_PLAN）。GOAL 迭代日志登记子 PLAN 路径。
+- **② 执行**：子 PLAN 按自身 WP 提交纪律推进（每 WP 独立 commit，**只用显式路径**，
+  **绝不 `git add -A`**）。
+- **③ 本地验证（承 MEM-145 的顺序，不得颠倒）**：
+  (a) **先写记录**（PLAN / RECHECK / MEM / GOAL 回写）；
+  (b) **跑记录面判据**（写入记录 ⇒ 记录面判据必须参与，且**结论覆盖记录面**）；
+  (c) **再跑完整 `make validate-all`**（m0 全量 **23 项**、**独占运行**、**用仓库 `.venv`**、
+      经 `uv run --frozen --no-sync python -B` 走 canonical 调用口径、**不接管道**以免缓冲）
+  + 受影响定向套件 + web 门（tsc / eslint / unit / build / stub e2e / live e2e）。
+  **本地不绿不得 push**（承 MEM-125）。
+  规模门禁自查（**50 行函数 / 450 行文件**——新判据与新夹具同样受门）；
+  快照类门禁（OpenAPI / 设计基线：**若漂移按既有流程重生成 + 目检，不调容差**）；
+  **默认门一律离线**（`tests/egress_guard.py` 不得放宽）。
+- **④ commit**：子 PLAN 收口（RECHECK 完成后 DONE），GOAL 记录 commit 列表。
+- **⑤ push + CI**：`git pull --ff-only origin main` → `git push origin main`（**仅限 main**）
+  → 用 `scratch/poll_ci_all.sh <sha>` 走 GitHub REST API 轮询到终态
+  （M0 **八 job** + CodeQL + `run_attempt`）；**禁止猜测绿**。
+- **⑥ 纠错**：按「CI 失败分类与纠错」处置；修复以独立 commit 落 main 并回到 ⑤。
+  超过 fix_policy 上限或命中 escalation_triggers → status=BLOCKED。
+- **⑦ 记录 + 下一轮**：更新 EC 状态、迭代日志、child_plans、状态历史；
+  未达终态 → 回到 ①（cycle+1）；触顶预算 → BLOCKED。
+
+**本 GOAL 特有的执行纪律**：
+
+- **受判对象非空（承 MEM-156）**：EC-02 的判据**必须**在**本次运行**里真的观测到**每个**
+  受判出口（逐出口观测计数非空），否则判红；交付时**不得**出现「受判集合为空」的空真。
+- **反证两向（承 MEM-159）**：既证「**该判红时会红**」（内容进允许键 / 进日志行 ⇒ 判红且
+  点名出口与键名），也证「**不该红时不红**」（把内容放进 **canonical** ⇒ **不**判红）。
+- **射程不得靠并集掩蔽（承 MEM-160）**：出口清单的**下界**必须由**判据源码里的必备清单**给出，
+  并有专门断言钉住它；文档点名只作并集的一半。
+- **按压 → 逐字节复原必须 raw `sha256` + 二进制读写**（承 MEM-152）：任何留档（判词 / 日志 /
+  证据）**都不得**用文本模式写盘；按压 / 复原**一律用 Edit 工具**（不用 Bash 写源码）。
+- **判据自身恒真（承 MEM-141）**：新判据**不得**被文档引用 / 字面量喂饱——出口面绑**运行时
+  路由表 / 真实发射点 / 文件面（AST）**，且**必须被按压过**（先红后绿 + 逐字节复原）。
+- **改工具先数夹具**：EC-04 若要动 `tools/two_tree_recheck.py` 或其契约，先确认
+  `tests/tooling/test_two_tree_recheck_entry.py`（11 例）与
+  `tests/tooling/test_closeout_assertions_are_in_tree.py`（6 例）**断言一字不改且全绿**。
+- **记录自洽**：新增 MEM / RECHECK 引用时确保被引用文件在**同一提交**内。
+- **进程卫生（承 GOAL-020 的 96 孤儿教训）**：起子进程的脚本 teardown **必须连整棵树**
+  （Windows 用 `taskkill /T /F`），跑完复验**零泄漏**。
+- **本地假绿**：`...` 形式链接在 Win32 会剥尾点 ⇒ 涉及路径 / 链接的判据**必须在 Linux 侧复验**
+  （由 CI 承担；本地按同一形态自查）。
+- **记录 / 门先后（承 GOAL-021 的澄清）**：本地门**不可能**跑在「记录**最后一次**编辑之后」；
+  本地门跑在「当时记录已写完」的状态，**记录面的最终覆盖由 CI 承担**；
+  **不得**预先声明尚未跑出的结论（承 GOAL-023 的「见补记」做法）。
+- **批量推送（承 MEM：`cancel-in-progress`）**：一个 cycle 攒成**一次**推送，
+  避免取消在飞的 M0 run；被取消的 run **如实记 `cancelled`**。
+
+## CI 失败分类与纠错
+
+| 类别 | 识别 | 处置 |
+| --- | --- | --- |
+| lint/format/typecheck | job 报 ruff/eslint/tsc/mypy | 直接修复 → fix commit → 重推 |
+| 产品测试失败 | pytest/playwright 断言 | 读失败输出定位缺陷（产品或测试各半）；**修产品优先，禁改断言迁就**；若红的是**本轮新增判据**且根因是判据自身写错 ⇒ 改判据（并**按压**复验） |
+| flake/env | 已知签名（observability OTLP 端口、teardown race、DSN 注入、compose 环境、RSS 阈值型、`evolution_state.json` 的 WinError 5） | 按既有配方重跑；**flake 判定必须靠同一代码的复跑对照**；配方不覆盖 → 归类下一行 |
+| 基础设施 | runner 挂/网络/依赖源不可达 | 等窗口重跑 1 次；仍败 → BLOCKED（infra 非代码缺陷） |
+| 治理/安全门禁 | Mimosa/validator 命中新增项 | 按各处置文档修或登记误报；**不得绕过**；**不得宣称安全** |
+
+## 终止与收口
+
+- **ACHIEVED**：EC-01…EC-04 **全部 PASS** 且有**实跑证据**（每条含**先红后绿**或
+  **边界成立**的证据）+ 独立 RECHECK `PASS` / `PASS_WITH_WARNINGS` + 本文件收口
+  （`latest_recheck` 为**仓库相对路径**）+ CI 台账到终态 + **未覆盖范围逐条明写**。
+  **未实跑不得记 PASS**；本机无法验证记 PENDING 并停止推进。
+  本 GOAL 的收口判词**必须**写明：**① 受判出口清单（受判 / 豁免逐条与其理由）**、
+  **② 金丝雀零命中与反证红的实跑证据（含点名出口与键名的失败消息）**、
+  **③ 两树实跑证据（逐行 + `sha256`）**、**④ 按压与逐字节复原记录（raw `sha256`）**、
+  **⑤ as-is 本机 m0 的终态行与「门在记录之后」的时刻证据**、
+  **⑥ 未覆盖范围（五条）与未覆盖面登记（四条）**、**⑦ 新增残余登记**。
+- **BLOCKED**：命中任一 `escalation_triggers`（尤其**给读面加认证**、**引入多租户 / RBAC**、
+  **做 BOLA·BFLA 实现**、**新增依赖**、**把真实内容 / token 写进任何地方**、**改 401 形态或
+  `Idempotency-Key` 语义**、**放宽或修改任何既有判据 / 门禁 / 阈值**、
+  **改 `PRODUCT_ROOTS` / m0 条数 / 作业结构**、**放宽 §9 默认 deny**、**宣称项目安全**、
+  **Canonical State 边界**、**真实 runtime 设为默认**）、
+  同一失败签名超过 `fix_policy` 上限、`max_cycles` 触顶、或连续 `no_progress_stop_cycles`
+  个 cycle 未推进任何 EC ⇒ `status: BLOCKED`，**留人工决策**，逐条写明卡在哪、需要拍板什么。
+- **ABORTED**：用户撤销目标或授权。
+- 收口动作：① RECHECK 定稿；② 本文件 EC 置终态 + 状态历史追加 + 迭代日志补全；
+  ③ `child_plans` / `memory_entries` 对齐；④ 残余逐条登记（含**未覆盖范围**）；
+  ⑤ CI 台账终态；⑥ `validate.py` 绿。
+
+## 不进入循环 / 需人工拍板
+
+以下项**本循环不做**，也不因本 GOAL 存在而被宣称已解决；触及即 BLOCKED。
+
+**承继：GOAL-016 / 017 / 018 的 13 项 `D-NN` —— 已全部结清，本轮不重开**
+
+终态表引用 GOAL-018 的收口结论（`.cursor/plans/goals/GOAL-20260926-018-residual-closeout-and-decision-register.md`
+的「不进入循环 / 需人工拍板」节 + `docs/roadmap/OPEN_DECISIONS_BRIEFING.md` 的终态表）：
+**已实施 9 项**、**部分实施 1 项**（`D-03`：`undici` 已调研未升）、
+**已拍板为维持现状 3 项**、**未授权待拍板 0 项**。⇒ 本 GOAL **不重开任何一项**。
+
+**承继：GOAL-019 / 020 / 021 / 022 / 023 的残余 —— 原样保留（本 GOAL 只登记现状，不改其状态）**
+
+| 残余 | 内容 | 本 GOAL 的姿态 |
+| --- | --- | --- |
+| `W-10` | 单一共享 token ⇒ 单一主体，**不接受**调用方自报身份 | **原样保留**（本 GOAL 不碰认证面） |
+| `W-11` | 对象级授权（BOLA / BFLA）**一个都没做** | **原样保留** |
+| `W-12` | **部署面未验证**（反代 / TLS / 多副本） | **原样保留**（本轮**不**把它变成已验证；真实 collector / 部署面同样只登记） |
+| `W-4` / `W-5` / `W-6` | 本机 m0 同进程跑阈值判据 / 新作业多一次冷装 / `live_run_support.py` 零余量 | **原样保留** |
+| `R-M1` / `R-D1` / `R-B1` / `R-N1` / `R-F1` / `R-F2` | Mimosa 结论未完整 / `undici` 归上游 / 非 ASCII 路径豁免 / 主观面先操作化 / 规模不足的诚实边界 | **原样保留** |
+| 历史遗留 **37** 个 `tools/` 脚本仍无机器门 | GOAL-023 `W-1` 的有界射程 | **原样保留**（本 GOAL 只把**本轮新增的**验证器加入必备清单） |
+| 四条历史收口复检**不可回填** | GOAL-023 新增② | **原样保留** |
+| 可复跑性 ≠ 跨平台复验 | GOAL-023 新增③ | **原样保留**（本机只在 Windows 实跑；跨平台由 CI 承担） |
+| `W-1`（GOAL-021） | 脱敏是**形态匹配而非值匹配** ⇒ 裸不透明串放在允许键内会原样导出 | **本 GOAL 的主靶之一**：EC-02(b) 用「内容进允许键 ⇒ 判红」把这条**变成机械事实**（条款本身不收口） |
+
+**本 GOAL 特有边界（= 用户判词的「明确不做」清单，命中即 BLOCKED）**：
+
+1. **读面认证（GET / HEAD）**——**不做**（GOAL-019 判词 (i) 不变：保护范围**只有写面**）；
+2. **多租户隔离 / organization scope**——**不做**；
+3. **RBAC / 角色 / 权限矩阵**——**不做**；
+4. **BOLA / BFLA 的专项实现**——**不做**；
+5. **逐调用方身份**（caller-declared identity）——**不做**（单 token ⇒ 单主体）；
+6. **新增依赖**——**不做**（一律标准库 + 现有栈；判据**可调用**既有 `ruff` / `mypy`）；
+7. **修改任何既有判据 / 门禁 / 阈值 / 放行面**——**不做**（`fix_policy.forbidden` 已点名）；
+   **新增**判据**可以**；
+8. **改 `PRODUCT_ROOTS` / m0 条数 / 作业结构**——**不做**（终态行仍是 `23`）；
+9. **改认证的 401 响应形态**、**改 `Idempotency-Key` 语义**——**不做**；
+10. **把真实 prompt / token / 凭据 / 用户内容写进任何地方**——**不做**；金丝雀一律
+    **测试内构造的合成串**；
+11. **用真实出网换取更强取证**——**不做**（真实端点 / 真实 collector / 真实中转站
+    一律登记为「不可在本机验证 + 给出可复核检查项」）；
+12. **部署面验证**（需真实环境）——**只允许**「登记 + 可复核检查项」；
+13. **`R-M1`（Mimosa 钩子 `scanner_enobufs` 未得完整结论）**——**不得**据此宣称项目安全；
+14. **`ADR-0031` 的 `Status`**——**不动**（维持 `Proposed`）；
+15. **`undici` 的 pin**——**不动**（归属上游）；
+16. **默认 runtime**——**必须仍是 Fake**；**默认 CI 必须离线**；
+17. **把新判据写成「被文档引用 / 字面量喂饱」的形态**——**不做**（承 MEM-141）；
+18. **用「金丝雀出现在 canonical」判红**——**不做**（canonical 允许持有用户自己的任务输入）；
+19. **宣称项目安全**（`R-M1` 仍在）——**不做**。
+
+**本 GOAL 交付的是「观测隐私的对抗性自检证据 + 可复跑扫面」，不是「隐私已完备」**：
+
+- EC-01 让**出口面显式分类**，但**不**证明每个豁免条目的豁免永远成立（豁免是**有理由的
+  登记**，不是证明）；
+- EC-02 只覆盖**默认（离线 Fake）路径**上与**本次注入**的金丝雀形态可达的出口；
+  **debug mode 的受控采样**（§10 允许、受 retention 管理）**不在射程**；
+- EC-03 的条款只把**两条界线**钉住，**不**替代 `R-M1`，**不**等于「数据不会泄漏」。
+
+**本轮新增残余（收口登记；如实保留，不是待办）**：收口时逐条写入
+（形如：豁免条目的时效性 / debug 采样未验证 / 真实 collector 与部署面未验证 /
+CI 产物面不在射程）。
+
+## 迭代日志
+
+| # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | （建档，无子 PLAN） | 本行所在的**建档提交** | 治理 `validate.py` = 绿（含 `GOAL 循环记录结构合规`）；**记录面判据** + **as-is 本机 m0（记录写完之后、独占运行、仓库 `.venv`、DSN 固化）= `PASS: profile=m0; 23 deterministic checks`**（见随后的补记行） | 本行所在的**建档提交**（依固定口径其 CI run 只在回合汇报记账） | 建档轮**零产品代码改动**（只新增本文件） | EC-01…EC-04 全 PENDING。起点已定位：**本仓无 OTLP logs 信号** ⇒ 三信号口径必须改述为 traces + metrics（wire）+ stdlib 应用日志（进程内）；**默认 telemetry 是 `NullTelemetrySink`** ⇒ 判据必须显式注入真实 sink 才能让该出口非空；`canary_support.py` **349 行**（只读、余量薄）⇒ 新夹具落**新文件**；日志面生产者在产品根下**仅 2 处** ⇒ 可枚举 | cycle 1 = **EC-01**（出口清单显式分类；它是 EC-02 扫描面与非空断言的输入） |
+
+### CI 台账（逐 run 逐 job 实查；全部落在 main）
+
+| 推送 | 提交 | run | 八 job 结论 |
+| --- | --- | --- | --- |
+| 建档（GOAL-024 落地） | 本行所在的建档提交 | 见回合汇报 | **依「固定口径」：写台账的那一步自身的 run 只在回合汇报记账** |
+
+## 状态历史
+
+| 时间 | 状态 | 说明 |
+| --- | --- | --- |
+| 2026-09-28 | ACTIVE | **建档**：用户会话指令（goal 模式）授权对「观测隐私」（AGENTS.md §10）做一次**对抗性自检** —— 沿**默认（离线 Fake 链）**运行路径注入**唯一合成内容金丝雀**，证明它不出现在任何**非 canonical 出口**；把扫描面做成**可复跑判据**；把做不到的部分**逐条登记**。**明确不做**：读面认证、多租户 / RBAC / organization scope、BOLA·BFLA 实现、逐调用方身份、修改任何既有判据 / 门禁 / 阈值 / 放行面、改 `PRODUCT_ROOTS` / m0 条数 / 作业结构、新增依赖、真实出网、真实内容进夹具或记录、改 401 形态或 `Idempotency-Key` 语义、动 `undici`、改 `ADR-0031` 的 `Status`、宣称项目安全。四 EC 设计（出口清单显式分类 / 端到端取证 + 反证 + 按压 / 边界条款 + 未覆盖面登记 / 自举收口），budget = 20 / 120 / 2。**建档当日实测十七条事实**（见「目标与退出标准」），其中四条决定判据形态：**① 本仓不存在 OTLP logs 信号**（repo-wide 零命中）⇒「三信号」必须改述为 traces + metrics（wire）+ stdlib 应用日志（进程内），否则判据会落在空集上；**② 默认 telemetry 是 `NullTelemetrySink`** ⇒ 判据必须**显式注入**真实 OTLP sink 才能让该出口**非空**（承 MEM-156）；**③ 既有夹具 `canary_support.py` 已 349 行且只读**（硬上限 450）⇒ 新夹具必须落**新文件**；**④ `tools/` 受判面的下界断言是单调的**（`required ⊆ IN_SCOPE`）⇒ EC-04 把新验证器加入必备清单是**纯收紧**、无需改既有断言。**建档时零产品代码改动**（只增本文件）；工作树另有 4 个**与本 GOAL 无关**的并发改动（仅行尾态差异），本 GOAL 一律只用**显式路径**提交。 |
