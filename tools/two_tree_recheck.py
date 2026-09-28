@@ -242,59 +242,87 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def resolve_worktree_dir(args: argparse.Namespace, root: Path) -> Path:
+    """干净 checkout 的落点（缺省 `<root>/../<name>-clean-tree`）。"""
+    if args.worktree_dir:
+        return Path(args.worktree_dir).resolve()
+    return root.parent / f"{root.name}-clean-tree"
+
+
+def prepare_clean_tree(args: argparse.Namespace, root: Path) -> tuple[Path, bool]:
+    """确定干净树：已存在就用（判据的 hermetic 用法），否则新建。返回 (树, 是否本入口创建)。"""
+    if args.clean_root:
+        clean_root = Path(args.clean_root).resolve()
+        if not clean_root.is_dir():
+            raise RecheckError(f"干净树不存在：{clean_root}")
+        return clean_root, False
+    return materialize_clean_tree(root, args.base_ref, resolve_worktree_dir(args, root))
+
+
+def run_assertions(
+    args: argparse.Namespace, root: Path, clean_root: Path
+) -> tuple[TreeRun, TreeRun]:
+    """两棵树跑**同一份**断言（字节必须相同），并复核判词与路径无关。"""
+    shared = args.script_mode == "shared"
+    current_script = resolve_script(root, args.script, shared)
+    clean_script = resolve_script(clean_root, args.script, shared)
+    if script_sha256(current_script) != script_sha256(clean_script):
+        raise RecheckError("两树的复检脚本字节不同 ⇒ 比的不是同一组断言")
+    current = run_one_tree(root, current_script, args.script_args, args.timeout)
+    clean = run_one_tree(clean_root, clean_script, args.script_args, args.timeout)
+    assert_path_independent((*current.lines, *clean.lines), (root, clean_root))
+    return current, clean
+
+
+def dump_verdicts(args: argparse.Namespace, current: TreeRun, clean: TreeRun) -> None:
+    """两路判词**各自落档**（`newline=""` ⇒ 二进制安全的逐行形态）。"""
+    for run, dest in ((current, args.verdict_current), (clean, args.verdict_clean)):
+        if dest:
+            Path(dest).write_text(run.verdict_text, encoding="utf-8", newline="")
+
+
+def report(current: TreeRun, clean: TreeRun) -> int:
+    """打印两树摘要 + 逐行比对 + 不绿理由，并以退出码表达结论。"""
+    identical, differences = compare_runs(current, clean)
+    reasons = failing_reasons(current, clean)
+    for run, label in ((current, "current"), (clean, "clean")):
+        print(
+            f"TREE {label}={run.root} exit={run.exit_code} "
+            f"verdicts={len(run.lines)} sha256={run.sha256}"
+        )
+    print(f"COMPARE identical={identical}")
+    for line in differences:
+        print(f"DIFF {line}")
+    for line in reasons:
+        print(f"NOT-GREEN {line}")
+    if identical and not reasons:
+        print("TWO-TREE PASS")
+        return EXIT_GREEN
+    print("TWO-TREE RED")
+    return EXIT_RED
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     root = Path(args.root).resolve()
     if not root.is_dir():
         print(f"SETUP 当前树不存在：{root}")
         return EXIT_SETUP
-    default_dir = root.parent / f"{root.name}-clean-tree"
-    worktree_dir = Path(args.worktree_dir).resolve() if args.worktree_dir else default_dir
-    shared = args.script_mode == "shared"
     created = False
     try:
-        if args.clean_root:
-            clean_root = Path(args.clean_root).resolve()
-            if not clean_root.is_dir():
-                raise RecheckError(f"干净树不存在：{clean_root}")
-        else:
-            clean_root, created = materialize_clean_tree(root, args.base_ref, worktree_dir)
-        current_script = resolve_script(root, args.script, shared)
-        clean_script = resolve_script(clean_root, args.script, shared)
-        if script_sha256(current_script) != script_sha256(clean_script):
-            raise RecheckError("两树的复检脚本字节不同 ⇒ 比的不是同一组断言")
-        current = run_one_tree(root, current_script, args.script_args, args.timeout)
-        clean = run_one_tree(clean_root, clean_script, args.script_args, args.timeout)
-        assert_path_independent((*current.lines, *clean.lines), (root, clean_root))
+        clean_root, created = prepare_clean_tree(args, root)
+        current, clean = run_assertions(args, root, clean_root)
     except RecheckError as error:
         print(f"SETUP 入口失败：{error}")
         if created:
-            remove_clean_tree(root, worktree_dir)
+            remove_clean_tree(root, resolve_worktree_dir(args, root))
         return EXIT_SETUP
     try:
-        for run, dest in ((current, args.verdict_current), (clean, args.verdict_clean)):
-            if dest:
-                Path(dest).write_text(run.verdict_text, encoding="utf-8", newline="")
-        identical, differences = compare_runs(current, clean)
-        reasons = failing_reasons(current, clean)
-        for run, label in ((current, "current"), (clean, "clean")):
-            print(
-                f"TREE {label}={run.root} exit={run.exit_code} "
-                f"verdicts={len(run.lines)} sha256={run.sha256}"
-            )
-        print(f"COMPARE identical={identical}")
-        for line in differences:
-            print(f"DIFF {line}")
-        for line in reasons:
-            print(f"NOT-GREEN {line}")
-        if identical and not reasons:
-            print("TWO-TREE PASS")
-            return EXIT_GREEN
-        print("TWO-TREE RED")
-        return EXIT_RED
+        dump_verdicts(args, current, clean)
+        return report(current, clean)
     finally:
         if created:
-            remove_clean_tree(root, worktree_dir)
+            remove_clean_tree(root, resolve_worktree_dir(args, root))
 
 
 if __name__ == "__main__":
