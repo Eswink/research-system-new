@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260929-237](tasks/PLAN-20260929-237-goal-025-ec01-response-header-face-in-scan.md) | DONE |
 | [x] | [PLAN-20260928-235](tasks/PLAN-20260928-235-goal-024-ec04-closeout-two-tree-self-bootstrap.md) | DONE |
 | [x] | [PLAN-20260928-233](tasks/PLAN-20260928-233-goal-024-ec03-boundary-clauses-pinned.md) | DONE |
 | [x] | [PLAN-20260928-231](tasks/PLAN-20260928-231-goal-024-ec02-read-face-canary.md) | DONE |
