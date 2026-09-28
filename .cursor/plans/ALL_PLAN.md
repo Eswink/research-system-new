@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260928-221](tasks/PLAN-20260928-221-goal-023-ec02-tooling-scripts-meet-product-gates.md) | DONE |
 | [x] | [PLAN-20260928-219](tasks/PLAN-20260928-219-goal-023-ec01-standard-closeout-assertions-in-tree.md) | DONE |
 | [x] | [PLAN-20260928-217](tasks/PLAN-20260928-217-goal-022-ec04-closeout-two-tree-self-bootstrap.md) | DONE |
 | [x] | [PLAN-20260928-215](tasks/PLAN-20260928-215-goal-022-ec03-recheck-script-conventions-are-pinned.md) | DONE |
