@@ -76,6 +76,10 @@ uv run --frozen --no-sync python -B tools/closeout_recheck_assertions.py --root 
 收口复检脚本 import 它的 `standard_verdicts(root)` / `emit(verdicts)`，再拼上自己的判词；
 判词行**只有 `PASS` / `FAIL`**且**不含任何树的绝对路径**（第 ② / ⑥ 条口径由它自己遵守）。
 
+**参考实现**：`tools/verify_goal023_closeout.py` —— 它**只写 GOAL-023 特有的断言**
+（公共面一行都不重写），自带 `--root` / `--verdict-only`，并作为**受判对象**列在
+`tests/tooling/test_tooling_scripts_meet_product_gates.py` 的必备清单里。
+
 **判据**：`tests/tooling/test_closeout_assertions_are_in_tree.py`。
 
 ## 与既有门禁的关系

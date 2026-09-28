@@ -13,7 +13,8 @@
 
 **射程有界、且射程写在判据源码里**（承 MEM-141：只靠文档取射程会被改文案绕过）：
 
-- **必备清单** `IN_SCOPE`（源码里固化，至少含两树入口与标准收口断言集）；
+- **必备清单** `IN_SCOPE`（源码里固化，至少含两树入口、标准收口断言集，以及
+  收口验证器本身）—— 每加一个脚本都要**显式**加进来（见下方分区判据）；
 - **加**规范页点名的脚本（`docs/architecture/RECHECK_SCRIPT_CONVENTIONS.md` 里出现的
   `tools/**.py`）—— 这条是**推导**，不是手改；
 - **不得**是「扫整个 `tools/`」：实测既有 `ruff check` **73 条**错误、
@@ -48,6 +49,7 @@ MAX_FUNCTION_LINES = 50
 IN_SCOPE: tuple[str, ...] = (
     "tools/two_tree_recheck.py",
     "tools/closeout_recheck_assertions.py",
+    "tools/verify_goal023_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
