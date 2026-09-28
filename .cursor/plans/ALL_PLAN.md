@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260929-243](tasks/PLAN-20260929-243-goal-025-ec04-closeout-two-tree-self-bootstrap.md) | DONE |
 | [x] | [PLAN-20260929-241](tasks/PLAN-20260929-241-goal-025-ec03-whitelist-contract-derivation.md) | DONE |
 | [x] | [PLAN-20260929-239](tasks/PLAN-20260929-239-goal-025-ec02-positive-controls-and-uninjected-sources.md) | DONE |
 | [x] | [PLAN-20260929-237](tasks/PLAN-20260929-237-goal-025-ec01-response-header-face-in-scan.md) | DONE |
