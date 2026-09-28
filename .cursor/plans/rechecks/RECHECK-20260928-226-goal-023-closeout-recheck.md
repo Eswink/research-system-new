@@ -58,6 +58,11 @@ TWO-TREE PASS
 - 干净 checkout 由入口 `git worktree add --detach @ b5a83b5` 建立、**用后自行移除** ⇒
   复核 `git worktree list` 只剩工作树与三条**历史遗留** worktree（属 GOAL-013/015/018，
   **不在本 GOAL 范围、原样保留**）；`ls -d ../*-clean-tree` **无残留**。
+- **记录写入之后复跑一次**（提交 `c2d5a01` 的冻结树上）：仍是 `TWO-TREE PASS` / `EXIT=0`，
+  两树 `sha256` **仍为** `8b65f78e…`，且判词落档与记录写入前那一跑 **逐字节相同**
+  （`cmp` = `SAME_AS_PRE_RECORDS`）⇒ **判词字节只随事实变、不随记录文本变**
+  （落档 `scratch/goal023-ec04-verdict-{current,clean}-postrecords.txt`、
+  `scratch/goal023-ec04-two-tree-postrecords.log`）。
 
 ### 三、按压矩阵（**先红后绿**，每次 raw `sha256` 逐字节复原）
 
@@ -130,8 +135,11 @@ TWO-TREE PASS
 
 **顺序纪律**：记录先落盘 ⇒ 记录面判据 ⇒ **独占**跑全量 m0（仓库 `.venv` + DSN 固化 +
 Makefile 的 `--keep-going`，跑门期间**不改工作树**），跑完 `tasklist` 确认 python 进程 **0**。
-**实测的终态行与日志时刻**（`scratch/goal023-ec04-m0.log`）在**紧随其后的补记提交**里逐字追加
-—— 本行**不预先声明**未跑出的结论（承「未实跑不得记 PASS」）。
+**实测（补记）**：终态行 `PASS: profile=m0; 23 deterministic checks`、`PASS [` = **24**、
+**4665 passed / 21 skipped**、零 `FAILED` / `ERROR`、`EXIT=0`；日志 `scratch/goal023-c4-m0.log`
+（`608.03s`），其**文件时刻 `15:38:17` 晚于**本轮记录写入时刻 `15:21:24`（`PLAN-225` 的 `ls -l`）
+⇒ **门在记录之后**；跑完 python 进程 **0**。
+（本行原先只写「在补记里追加」——**不预先声明**未跑出的结论；终态值是这一跑实测后补上的。）
 
 ### 九、本次复检**未**复核的面（如实登记）
 
@@ -161,7 +169,9 @@ Makefile 的 `--keep-going`，跑门期间**不改工作树**），跑完 `taskl
 4. **受判射程边界（起点 + 四条 + 计数）**：起点 `2026-09-28`、射程外**恰好四条**
    （`goal-018` / `019` / `020` / `021-closeout-recheck`）、射程内计数 ≥ 1 且两集互斥 ——
    由 EC-03 判据**机械**断言（本轮新增本记录后，射程内**1 → 2**：`RECHECK-218` + 本记录）。
-5. **as-is 本机 m0 的终态行**：**在记录写入之后**独占跑；实测终态行与日志时刻见补记（第八节）。
+5. **as-is 本机 m0 的终态行**：**在记录写入之后**独占跑 ⇒
+   `PASS: profile=m0; 23 deterministic checks`（4665 passed / 21 skipped、零 `FAILED` / `ERROR`、
+   `EXIT=0`；日志 `scratch/goal023-c4-m0.log` 时刻 **15:38:17** 晚于记录写入 **15:21:24**）。
 6. **未覆盖范围**：第六节逐条明写。
 7. **新增残余登记**：第五节三条逐条登记。
 

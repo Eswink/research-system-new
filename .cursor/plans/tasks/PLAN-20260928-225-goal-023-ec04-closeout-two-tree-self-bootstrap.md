@@ -104,10 +104,10 @@ memory_entries:
 | E1 | `tools/verify_goal023_closeout.py`（**283 行 / 14 函数**，最长函数 31 行） | 收口验证器；`--root` 参数化、`--verdict-only`；判词行**只有 `PASS` / `FAIL`** 且**不含绝对路径** |
 | E2 | `scratch/goal023-ec04-verdict-current.txt` | **当前树**判词留档；raw `sha256` = `8b65f78e…`（33 条判词） |
 | E3 | `scratch/goal023-ec04-verdict-clean.txt` | **干净 checkout**判词留档；raw `sha256` = `8b65f78e…`（与 E2 一致是**结论**，不是同一份文件；`cmp` = `IDENTICAL`） |
-| E4 | `scratch/goal023-ec04-two-tree.log` | 入口运行记录：两 `TREE` 行 + `COMPARE identical=True` + `TWO-TREE PASS` |
+| E4 | `scratch/goal023-ec04-two-tree.log` + `…-postrecords.log` | 入口运行记录：两 `TREE` 行 + `COMPARE identical=True` + `TWO-TREE PASS`；**记录写入后复跑一次** ⇒ 判词落档与写入前**逐字节相同**（`sha256` 仍为 `8b65f78e…`） |
 | E5 | `scratch/goal023-ec04-press{1,2,3}.txt` | 三次按压的判词留档（各含 1 条 `FAIL`，逐字点名被按压的事实） |
 | E6 | `scratch/goal023-ec04-empty-tree.txt` | 空树取证：`FAIL goal023-standard-assertions-loadable` + `EXIT=2`（**fail-closed**，不假绿） |
-| E7 | `scratch/goal023-ec04-m0.log` | as-is 本机 m0 日志（终态行 + 运行时刻晚于记录写入） |
+| E7 | `scratch/goal023-c4-m0.log` | as-is 本机 m0 日志：终态行 `PASS: profile=m0; 23 deterministic checks`、4665 passed / 21 skipped、零 `FAILED` / `ERROR`；文件时刻 `15:38:17` **晚于**记录写入 `15:21:24` |
 | E8 | `RECHECK-20260928-226`（本目录同批） | 独立收口复检；`verify_paths` 声明**两路** ⇒ 它同时是 EC-02 判据的**第二条真实受判记录**（第一条是 `RECHECK-218`） |
 | E9 | `MEM-20260928-160` | 可复用事实：「并集型射程会掩盖必备清单的收缩」—— 只有专门断言清单下界的判据才看得见 |
 
@@ -135,7 +135,7 @@ TWO-TREE PASS
 | 2026-09-28 | IN_PROGRESS | WP1 验证器落地（复用断言集 + 5 组特有断言） |
 | 2026-09-28 | IN_PROGRESS | WP3 自跑抓到自己的真缺陷（`ClassDef` 漏判）并修掉；四道门复绿 |
 | 2026-09-28 | IN_PROGRESS | WP4 按压 3/3 红 + 逐字节复原；WP5 两树 `TWO-TREE PASS`（33 条，`sha256` 相同） |
-| 2026-09-28 | DONE | WP6 记录写入后跑记录面判据 + 独占全量 m0；治理绿；CI 到终态；GOAL-023 置 ACHIEVED |
+| 2026-09-28 | DONE | WP6 记录写入后跑记录面判据 + 独占全量 m0 = `PASS: profile=m0; 23 deterministic checks`（4665 passed / 21 skipped；日志 `scratch/goal023-c4-m0.log` 时刻晚于记录写入）；治理绿；CI 到终态；GOAL-023 置 ACHIEVED |
 
 ## 影响报告
 
