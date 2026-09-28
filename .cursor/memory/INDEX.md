@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260928-162](entries/MEM-20260928-162-read-face-zero-hit-needs-a-bounded-whitelist.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-231 |
 | [MEM-20260928-161](entries/MEM-20260928-161-exit-census-must-be-a-partition-with-reasons.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-227 |
 | [MEM-20260928-160](entries/MEM-20260928-160-union-scope-hides-a-shrinking-required-list.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-225 |
 | [MEM-20260928-159](entries/MEM-20260928-159-mechanizing-a-scope-claim-needs-two-way-reverse-proof.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-223 |
