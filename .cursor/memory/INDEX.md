@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260929-165](entries/MEM-20260929-165-manual-whitelist-needs-a-derivability-check.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-241 |
 | [MEM-20260929-164](entries/MEM-20260929-164-positive-control-means-the-carrier-shows-its-content.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-239 |
 | [MEM-20260929-163](entries/MEM-20260929-163-response-headers-are-a-separate-judged-face.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-237 |
 | [MEM-20260928-162](entries/MEM-20260928-162-read-face-zero-hit-needs-a-bounded-whitelist.md) | ACTIVE | repository | 0.90 | 2027-03-28 | PLAN-20260928-231 |
