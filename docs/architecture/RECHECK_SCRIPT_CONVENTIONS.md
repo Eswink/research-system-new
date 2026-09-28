@@ -57,6 +57,27 @@ tasklist | grep -i python || echo "no python processes"
 
 判据侧的对应要求：入口在**超时**路径上必须连整棵树杀，而不是只 kill 直接子进程。
 
+## 标准收口断言集
+
+**条款**：任何**收口复检**都要断言的**公共事实**（受保护判据在位、规模门上限、产品根形态、
+m0 条数、两树入口与其反证用例、规范页条款、**记录自洽**）**不写第二遍** ——
+它们收在 `tools/closeout_recheck_assertions.py`，收口复检**只写自己特有的断言**。
+
+**为什么**：GOAL-022 的收口复检把那 12 条判词写在 gitignored 的 `scratch/` 里
+⇒ **可复跑但不可归档**（`RECHECK-20260928-218` 的 `W-3`：他人 clone 仓库后无法直接复核）。
+断言集**进树**后，同一份字节既是执行体也是**可归档的判据**。
+
+**用法**（与两树入口的协议一致，`--root` 参数化 ⇒ 不硬编码仓库根）：
+
+```bash
+uv run --frozen --no-sync python -B tools/closeout_recheck_assertions.py --root . --verdict-only
+```
+
+收口复检脚本 import 它的 `standard_verdicts(root)` / `emit(verdicts)`，再拼上自己的判词；
+判词行**只有 `PASS` / `FAIL`**且**不含任何树的绝对路径**（第 ② / ⑥ 条口径由它自己遵守）。
+
+**判据**：`tests/tooling/test_closeout_assertions_are_in_tree.py`。
+
 ## 与既有门禁的关系
 
 - 本页的条款**不改动**任何既有判据、门禁、阈值或放行面；它只**新增**过程要求与判据。
