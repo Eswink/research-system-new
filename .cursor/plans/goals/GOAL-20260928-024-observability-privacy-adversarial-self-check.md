@@ -66,7 +66,7 @@ exit_criteria:
       ⇒ 全绿；判据源码内含机器可读的出口登记表（kind / producer / classification / reason /
       observation）；按压（新增一个未登记的生产者 ⇒ 判红）与（豁免条目理由抽空 ⇒ 判红）先红后绿，
       逐字节复原（raw `sha256` + 二进制读写）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **端到端取证 + 反证 + 按压（主干）**：(a) 跑一次默认运行（离线、Fake runtime）⇒ 对
@@ -194,9 +194,11 @@ escalation_triggers:
   - >-
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260928-227-goal-024-ec01-privacy-exit-census.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20260928-161-exit-census-must-be-a-partition-with-reasons.md
 ---
 
 ## 目标与退出标准
@@ -212,7 +214,7 @@ memory_entries: []
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **出口清单显式分类**（金丝雀源 + 全出口 `受判/豁免` + 未分类判红 + 陈旧判红） | 新判据（登记表在源码里）+ 新夹具 + 按压 | **PENDING** |
+| EC-01 | **出口清单显式分类**（金丝雀源 + 全出口 `受判/豁免` + 未分类判红 + 陈旧判红） | 新判据（登记表在源码里）+ 新夹具 + 按压 | **PASS** |
 | EC-02 | **端到端取证 + 反证 + 按压**（零命中 + 反证红 + 逐字节复原 + 非空取证） | 端到端金丝雀判据 + 扫描证据 + 反证记录 | **PENDING** |
 | EC-03 | **边界条款 + 未覆盖面登记**（被点名判据存在 + 条款锚点 + 四条未覆盖面） | 文档条款 + 钉住判据 + `docs/INDEX.md` | **PENDING** |
 | EC-04 | **自举收口**（进树验证器 + 两树 + m0 23/23 + 台账 + 残余） | `tools/verify_goal024_closeout.py` + 两树留档 + 台账 | **PENDING** |
@@ -465,6 +467,7 @@ CI 产物面不在射程）。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 本行所在的**建档提交** `354e657` + 本行所在的**记录提交** | 治理 `validate.py` = `Cursor 治理验证通过`（8 行结论，含「GOAL 循环记录结构合规；push 授权显式登记」）；**记录面判据**（`test_reproducibility_wording.py` + `test_record_face_is_covered_by_the_gate.py` + `test_control_plane_auth_same_source.py`）= **24 passed**（与 GOAL-023 基线同值）；**as-is 本机 m0（记录写完之后、独占运行、仓库 `.venv`、DSN 固化 + `LLM_MAIN_KEY=""` + `--keep-going`）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、`4665 passed / 21 skipped`、`EXIT=0`；日志 `scratch/goal024-c0-m0.log`，耗时 `618.83s`，**文件时刻 `19:00:54` 晚于**本文件最后一次写入 `18:44:26` ⇒ 门在记录之后，可用 `ls -l` 复核）；**进程卫生**：跑完后 `tasklist` python 进程 **0**。**本机无 `make`** ⇒ 用 Makefile 的同一命令直跑 `run_all_checks.py --profile m0 --keep-going`（同解释器、同 DSN 固化、同 `--keep-going`，与 canonical 调用等价）。 | 本行所在的**记录提交**（依固定口径其 CI run 只在回合汇报记账）；建档提交 `354e657` 的台账见下表 | 建档轮**零产品代码改动**（只新增本文件） | EC-01…EC-04 全 PENDING。起点已定位：**本仓无 OTLP logs 信号** ⇒ 三信号口径必须改述为 traces + metrics（wire）+ stdlib 应用日志（进程内）；**默认 telemetry 是 `NullTelemetrySink`** ⇒ 判据必须显式注入真实 sink 才能让该出口非空；`canary_support.py` **349 行**（只读、余量薄）⇒ 新夹具落**新文件**；日志面生产者在产品根下**仅 2 处** ⇒ 可枚举 | cycle 1 = **EC-01**（出口清单显式分类；它是 EC-02 扫描面与非空断言的输入） |
+| 1 | PLAN-20260928-227（EC-01） | 本行所在的**实施提交**（2 个进树判据文件）+ 本行所在的**记录提交** | **EC-01 全部验收成立且有实跑证据**。交付 = `tests/observability/privacy_exit_census.py`（**259 行**：AST 形态谓词 + 扫描根 + 分区/清单/下界机械部分）+ `tests/observability/test_privacy_exit_census.py`（**407 行**：`EXIT_SURFACES` / `EXEMPT_PRODUCERS` / `REQUIRED_JUDGED_EXITS` / `CANARY_SOURCES` / `UNCOVERED_SHAPES` **全在判据源码里**，**13 例**）+ `RECHECK-20260928-228`（`PASS_WITH_WARNINGS`，`W-1`…`W-6`）+ `MEM-20260928-161`。**普查剖面（实跑）**：**113 个候选**（`application_log` 2 / `stdout` 4 / `otlp_span` 12 / `otlp_metric` 11 / `disk_write` 8 / `read_face` 29 / `failure_payload` 47）**全部被恰好一条显式分类认领** —— 受判出口 **6** + 豁免出口 **1**（`stdout-stderr`：默认进程内路径**零生产点**）+ 豁免生产者 **25**（逐条带理由）；未机械枚举的形态 **4** 条带理由登记。**四向按压全部先红后绿 + 逐字节复原**：P1 **真实产品根**新建只含 `print` 的模块 ⇒ `未分类的非 canonical 出口:packages/application/observability/press_probe_module.py [stdout]`；P2 受判面生产者清单删一行 ⇒ `未分类…services/api/scheduler.py [otlp_span]`；P3 `_REASON_CLI` 抽空 ⇒ 两条 `缺少理由`；P4 下界加一条非受判 id ⇒ `必备受判出口缺失:['stdout-stderr']`；四条均 `1 failed, 12 passed`，复原后 raw `sha256` **回到** `076fad378c48c794df3fa4e672614a7e379f10bc69f2e81d7eb5e7ce42aac74f`（`MATCHES_BASELINE True`）⇒ **13 passed**；P1 复原后 `git status` 对该路径**为空**。**判据自跑抓到两处自己的真错并当场修掉**：重复分类（`adapters/otel/failsafe.py` 同时被受判面与豁免面认领）与形态自检样本位形写错（`read_face` 写成赋值式而非装饰器）。**四道门**：`ruff format --check` = `2 files already formatted`；`ruff check` = `All checks passed!`；规模 259 / 407 行、超 50 行函数 **0**（407 > 300 触发软告警，如实登记）；`mypy` = `Success`。**既有隐私判据逐字节未改**且合跑 **20 passed**（13 新 + 7 既有）。**零改动面**：`PRODUCT_ROOTS` / m0 条数（**仍 23**）/ 作业结构 / 依赖 / 产品代码 / 既有判据**全部零改动**。**as-is 本机 m0（记录写入之后、独占运行、仓库 `.venv`、DSN 固化 + `LLM_MAIN_KEY=""` + `--keep-going`）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、**4680 passed / 21 skipped**、`EXIT=0`；日志 `scratch/goal024-c1-m0.log`，耗时 `576.02s`，**文件时刻 `20:07:51` 晚于**记录最后写入 `19:54:27`（RECHECK）⇒ 门在记录之后；跑完 `tasklist` python 进程 **0**。用例较交付前 **+15** = 新判据 **13** 例 + 两个新文件进入既有规模门判据的参数化面 **2** 项；日志里可见新判据的 13 个点与 `407 行 > 300` 的**软告警**（非失败，如实登记））。 | 本行所在的**记录提交**（依固定口径其 CI run 只在回合汇报记账） | **零真缺陷**；修掉的是**本判据自己清单里的两处错**（重复分类 / 样本位形），由判据自跑抓到 | **EC-01 = PASS**。**如实登记六条警告**（`RECHECK-228`）：**`W-1`（最要紧）普查是「形态驱动」的**（`UNCOVERED_SHAPES` 四条不判；`disk-run-artifacts` 受判生产者**只有 1 条**）⇒ 磁盘面射程**窄**；`W-2` `stdout-stderr` 是**豁免**出口，「对内容可见」只能靠 EC-02 的正控制证明；`W-3` 豁免理由是**有理由的登记而非证明**（没有机械证明它们**永不**进入默认路径）；`W-4` 射程只看 `(module, kind)` ⇒ **同模块内新增同形态发射点**不产生新的分类需求（漏的是**位置**而非形态）；`W-5` 407 行触发规模软告警（非失败）；`W-6` 本条不含任何认证面 / 授权面结论 | cycle 2 = **EC-02**（端到端取证 + 反证 + 按压：沿默认离线 Fake 链注入内容金丝雀 ⇒ 对 6 条受判出口逐面扫描零命中 + 每个受判出口给出**可见性正控制** + 反证红并点名出口与键名 + 逐字节复原） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -479,3 +482,5 @@ CI 产物面不在射程）。
 | --- | --- | --- |
 | 2026-09-28 | ACTIVE | **建档**：用户会话指令（goal 模式）授权对「观测隐私」（AGENTS.md §10）做一次**对抗性自检** —— 沿**默认（离线 Fake 链）**运行路径注入**唯一合成内容金丝雀**，证明它不出现在任何**非 canonical 出口**；把扫描面做成**可复跑判据**；把做不到的部分**逐条登记**。**明确不做**：读面认证、多租户 / RBAC / organization scope、BOLA·BFLA 实现、逐调用方身份、修改任何既有判据 / 门禁 / 阈值 / 放行面、改 `PRODUCT_ROOTS` / m0 条数 / 作业结构、新增依赖、真实出网、真实内容进夹具或记录、改 401 形态或 `Idempotency-Key` 语义、动 `undici`、改 `ADR-0031` 的 `Status`、宣称项目安全。四 EC 设计（出口清单显式分类 / 端到端取证 + 反证 + 按压 / 边界条款 + 未覆盖面登记 / 自举收口），budget = 20 / 120 / 2。**建档当日实测十七条事实**（见「目标与退出标准」），其中四条决定判据形态：**① 本仓不存在 OTLP logs 信号**（repo-wide 零命中）⇒「三信号」必须改述为 traces + metrics（wire）+ stdlib 应用日志（进程内），否则判据会落在空集上；**② 默认 telemetry 是 `NullTelemetrySink`** ⇒ 判据必须**显式注入**真实 OTLP sink 才能让该出口**非空**（承 MEM-156）；**③ 既有夹具 `canary_support.py` 已 349 行且只读**（硬上限 450）⇒ 新夹具必须落**新文件**；**④ `tools/` 受判面的下界断言是单调的**（`required ⊆ IN_SCOPE`）⇒ EC-04 把新验证器加入必备清单是**纯收紧**、无需改既有断言。**建档时零产品代码改动**（只增本文件）；工作树另有 4 个**与本 GOAL 无关**的并发改动（仅行尾态差异），本 GOAL 一律只用**显式路径**提交。 |
 | 2026-09-28 | ACTIVE | **建档 cycle 0 完成，进入循环**：EC-01…EC-04 全 PENDING，下一 cycle 做 **EC-01**（金丝雀源与出口清单：显式分类 + 未分类判红）。**本地验证**：治理 `Cursor 治理验证通过` + 记录面判据 **24 passed** + **as-is m0 23/23**（`PASS [` = 24、`4665 passed / 21 skipped`、`EXIT=0`；日志 `scratch/goal024-c0-m0.log`，文件时刻 `19:00:54` **晚于**本文件最后写入 `18:44:26` ⇒ 门在记录之后）；进程卫生零泄漏。**本机无 `make`** ⇒ 直跑 `run_all_checks.py --profile m0 --keep-going`（canonical 等价）。**建档提交 `354e657` 的 CI 到终态**：M0 `36413604236` 八 job 全 success + CodeQL `36413604077` 3/3，两者 `run_attempt=1`（逐 run 由 REST API 实查）。**本条记录提交**依「固定口径」其 CI run 只在回合汇报记账。 |
+| 2026-09-28 | ACTIVE | cycle 1（PLAN-20260928-227）：**EC-01 = PASS**（非 canonical 出口清单显式分类）。交付 = `tests/observability/privacy_exit_census.py`（259 行）+ `tests/observability/test_privacy_exit_census.py`（407 行 / 13 例）+ `RECHECK-20260928-228`（`PASS_WITH_WARNINGS`）+ `MEM-20260928-161`。**普查 113 候选全覆盖**（受判出口 6 / 豁免出口 1 / 豁免生产者 25 / 未覆盖面 4 条带理由），**没有第三种状态**：未分类 / 重复分类 / 登记陈旧 / 空理由 / 受判面无观测方式或无生产者**各自判红**。**四向按压先红后绿**（含**真实产品根**新增出口被点名）且 raw `sha256` 逐字节复原（`076fad378c…`）；**判据自跑抓到两处自己的错**（重复分类 + 形态自检样本位形）并当场修掉。**四道门绿**；既有 `test_privacy_canary.py` **逐字节未改**且合跑 20 passed。**as-is 本机 m0 与 CI 台账**：见补记（记录写入之后跑）。 |
+| 2026-09-28 | ACTIVE | **cycle 1 补记**：**as-is 本机 m0（记录写入之后、冻结树上独占跑、仓库 `.venv`、DSN 固化 + `LLM_MAIN_KEY=""` + `--keep-going`）= `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、**4680 passed / 21 skipped**、`EXIT=0`；日志 `scratch/goal024-c1-m0.log`，耗时 `576.02s`，**文件时刻 `20:07:51` 晚于**记录写入时刻 `19:54:27` ⇒ 门在记录之后；跑完 python 进程 **0**）。**记录面判据 + 工具面判据** 7 个文件合跑 **53 passed**；治理 `validate.py` 绿（含 `ALL_PLAN / Task Plan / Recheck / Memory 交叉引用一致`）。**按压留档**：`scratch/goal024-ec01-press-matrix.log`（四向按压原始输出 + 基线 raw `sha256`）。 |

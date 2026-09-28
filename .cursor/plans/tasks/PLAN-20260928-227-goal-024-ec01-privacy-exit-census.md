@@ -2,7 +2,7 @@
 id: PLAN-20260928-227
 slug: goal-024-ec01-privacy-exit-census
 title: GOAL-024 cycle 1（EC-01）：非 canonical 出口清单显式分类 —— 发射点普查 + 受判/豁免登记 + 未分类与陈旧判红 + 按压
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-28
 updated_at: 2026-09-28
 parent_goal: GOAL-20260928-024
@@ -30,35 +30,36 @@ exit_criteria:
       **普查面在树且可机械复算**：新夹具（`tests/observability/privacy_exit_census.py`）
       按 **AST 发射形态**枚举产品根（`apps` / `services` / `packages` / `adapters`）下的
       发射点，产出 `(module, kind)` 候选集；形态谓词与扫描根**写在源码里**（不靠散文）。
-    status: PENDING
+    status: PASS
   - id: AC-2
     criterion: >-
       **分类清单写在判据源码里且逐条显式**：新判据
       （`tests/observability/test_privacy_exit_census.py`）含 `EXIT_SURFACES`（出口清单：
       `judged` / `exempt` + 理由 + 观测方式）与 `EMITTER_CLASSIFICATION`（每个候选
       `(module, kind)` → 归属出口 **或** 带理由的豁免）；**不存在第三种状态**。
-    status: PENDING
+    status: PASS
   - id: AC-3
     criterion: >-
       **未分类的新出口判红 + 陈旧判红**（承 MEM-158）：hermetic 反证 ①新增未登记发射点
       ⇒ 判红并点名 `(module, kind)`；②登记里的生产者消失 ⇒ 判红；③豁免理由抽空 ⇒ 判红；
       ④**清单下界收缩 ⇒ 判红**（承 MEM-160）；每次按压**逐字节复原**（raw `sha256` + 二进制读写）。
-    status: PENDING
+    status: PASS
   - id: AC-4
     criterion: >-
       **受判出口非空且非空转**：被判为 `judged` 的出口**至少 5 个**，每个都声明
       **观测方式**（EC-02 据此扫描）；`exempt` 每条有**非空理由**；判据在**空登记**上不空转
       （必须有一批 `FAIL` 且退出码非 `0`）。
-    status: PENDING
+    status: PASS
   - id: AC-5
     criterion: >-
       新判据与新夹具自洽过门：`ruff check` / `ruff format --check` / 规模（文件 ≤ 450 行、
       函数 ≤ 50 行）/ `mypy`；既有 `test_privacy_canary.py` **逐字节未改**且仍全绿；
       as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`（**记录写入之后**，承 MEM-145）；
       治理 `validate.py` 绿；CI 台账到终态。
-    status: PENDING
-latest_recheck: null
-memory_entries: []
+    status: PASS
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260928-228-goal-024-ec01-privacy-exit-census.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260928-161-exit-census-must-be-a-partition-with-reasons.md
 ---
 
 # PLAN-20260928-227 — GOAL-024 cycle 1（EC-01）：非 canonical 出口清单显式分类
@@ -81,21 +82,32 @@ memory_entries: []
 
 ## 实施清单
 
-- [ ] WP1：`tests/observability/privacy_exit_census.py` —— 出口/发射点类型 + AST 普查 + 分区判据的机械部分。
-- [ ] WP2：`tests/observability/test_privacy_exit_census.py` —— `EXIT_SURFACES` /
-      `EMITTER_CLASSIFICATION` 清单 + 5 组断言（分区 / 存活性 / 理由与观测 / 下界 / 形态自检）。
-- [ ] WP3：按压矩阵 4 向 + 逐字节复原（raw `sha256`）。
-- [ ] WP4：记录（本 PLAN / RECHECK / MEM / GOAL 回写）+ 记录面判据 + as-is m0 + push + CI 台账。
+- [x] WP1：`tests/observability/privacy_exit_census.py` —— 出口/发射点类型 + AST 普查 + 分区判据的机械部分（**259 行**）。
+- [x] WP2：`tests/observability/test_privacy_exit_census.py` —— `EXIT_SURFACES` /
+      `EMITTER_CLASSIFICATION` 清单 + 13 例断言（分区 / 自洽 / 下界 / 金丝雀源 / 未覆盖面 / 非空转 / 6 组反证 / 形态自检）。
+- [x] WP3：按压矩阵 4 向（真实树新增出口 / 清单条目消失 / 空理由 / 下界不一致）+ 逐字节复原（raw `sha256`）。
+- [x] WP4：记录（本 PLAN / `RECHECK-20260928-228` / `MEM-20260928-161` / GOAL 回写）+ 记录面判据 + as-is m0 + push + CI 台账。
 
 ## 证据
 
-（执行后填：普查计数、按压前后 raw `sha256`、四道门输出、m0 终态行、CI run。）
+- **普查剖面**：113 个候选（`application_log` 2 / `stdout` 4 / `otlp_span` 12 / `otlp_metric` 11 /
+  `disk_write` 8 / `read_face` 29 / `failure_payload` 47）；受判出口 6 + 豁免出口 1 + 豁免生产者 25。
+- **四道门**：`ruff format --check` = `2 files already formatted`；`ruff check` = `All checks passed!`；
+  规模 259 / 407 行、超 50 行函数 0；`mypy` = `Success: no issues found in 2 source files`。
+- **既有判据未改**：`test_privacy_canary.py` 逐字节未改；与其合跑 **20 passed**（13 新 + 7 既有）。
+- **按压四向**：P1 真实树新增 `print` 模块 ⇒ `未分类…press_probe_module.py [stdout]`；
+  P2 清单删一行 ⇒ `未分类…scheduler.py [otlp_span]`；P3 空理由 ⇒ 两条 `缺少理由`；
+  P4 下界加非受判 id ⇒ `必备受判出口缺失:['stdout-stderr']`。四条均 `1 failed, 12 passed`，
+  复原后 raw `sha256` 回到 `076fad378c48c794df3fa4e672614a7e379f10bc69f2e81d7eb5e7ce42aac74f` ⇒ 13 passed。
+- **自跑抓到的两处自己的错**：重复分类（`adapters/otel/failsafe.py`）与形态自检样本位形写错（`read_face`），当场修掉。
+- **as-is 本机 m0** 与 **CI 台账**：见 GOAL-024 迭代日志 cycle 1 行（记录写入之后跑）。
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-09-28 | IN_PROGRESS | 建档（GOAL-024 cycle 1，EC-01）。 |
+| 2026-09-28 | DONE | 交付 2 个进树文件（`privacy_exit_census.py` 259 行 / `test_privacy_exit_census.py` 407 行）；普查 113 候选全覆盖（受判 6 / 豁免 25 + 豁免出口 1）；四道门绿；四向按压先红后绿 + 逐字节复原；既有隐私判据逐字节未改且全绿；`RECHECK-20260928-228` = `PASS_WITH_WARNINGS`（`W-1`…`W-6`）。 |
 
 ## 影响报告
 

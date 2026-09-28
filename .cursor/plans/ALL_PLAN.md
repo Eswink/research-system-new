@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260928-227](tasks/PLAN-20260928-227-goal-024-ec01-privacy-exit-census.md) | IN_PROGRESS |
+| [x] | [PLAN-20260928-227](tasks/PLAN-20260928-227-goal-024-ec01-privacy-exit-census.md) | DONE |
 | [x] | [PLAN-20260928-225](tasks/PLAN-20260928-225-goal-023-ec04-closeout-two-tree-self-bootstrap.md) | DONE |
 | [x] | [PLAN-20260928-223](tasks/PLAN-20260928-223-goal-023-ec03-recheck-scope-boundary-is-mechanical.md) | DONE |
 | [x] | [PLAN-20260928-221](tasks/PLAN-20260928-221-goal-023-ec02-tooling-scripts-meet-product-gates.md) | DONE |
