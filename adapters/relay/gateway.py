@@ -98,7 +98,9 @@ class OpenAIChatGateway:
         """consult + tick;返回当前状态串(未配置断路器返回 "")。
 
         OPEN → 抛 `CircuitOpenRelayError`(请求不触达网络)。HALF_OPEN 进入
-        计一次探测名额;探测名额耗尽的再次 consult 视为拒绝(迁移错误吞掉)。
+        计一次探测名额;**名额耗尽的再次 consult 同样拒绝**(GOAL-026 EC-03
+        判据实测:吞掉迁移异常会让状态停在 HALF_OPEN、`is_open` 为假 ⇒ 请求被放行,
+        名额上限形同虚设 ⇒ 改为 fail-closed 拒绝)。
         """
         config: CircuitBreakerConfig | None = endpoint.circuit_breaker
         if config is None:
@@ -108,7 +110,10 @@ class OpenAIChatGateway:
         try:
             state = apply_tick(state, config, moment)
         except CircuitBreakerTransitionError:
-            pass  # HALF_OPEN 探测名额耗尽:本次 consult 拒绝
+            raise CircuitOpenRelayError(
+                FailureCategory.MODEL_RELAY_UNAVAILABLE,
+                "circuit half-open probe budget exhausted: request denied",
+            ) from None
         self._store_breaker(endpoint.id, state)
         if state.is_open:
             raise CircuitOpenRelayError(

@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260929-249](tasks/PLAN-20260929-249-goal-026-ec03-breaker-dead-letter-cancel.md) | DONE |
 | [x] | [PLAN-20260929-247](tasks/PLAN-20260929-247-goal-026-ec02-lease-heartbeat-retry-backoff.md) | DONE |
 | [x] | [PLAN-20260929-245](tasks/PLAN-20260929-245-goal-026-ec01-idempotency-and-dedup.md) | DONE |
 | [x] | [PLAN-20260929-243](tasks/PLAN-20260929-243-goal-025-ec04-closeout-two-tree-self-bootstrap.md) | DONE |

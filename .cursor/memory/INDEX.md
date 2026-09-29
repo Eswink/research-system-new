@@ -13,6 +13,8 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260929-170](entries/MEM-20260929-170-swallowed-transition-error-is-fail-open.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-249 |
+| [MEM-20260929-169](entries/MEM-20260929-169-cancel-side-effect-suppression-anchors-on-lease-deletion.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-249 |
 | [MEM-20260929-168](entries/MEM-20260929-168-reliability-clock-seam-trajectory-and-heartbeat-two-way.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-247 |
 | [MEM-20260929-167](entries/MEM-20260929-167-replay-criteria-need-production-store-and-row-tamper-proof.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-245 |
 | [MEM-20260929-166](entries/MEM-20260929-166-closeout-verifier-must-be-in-scope-and-pressable.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-243 |
