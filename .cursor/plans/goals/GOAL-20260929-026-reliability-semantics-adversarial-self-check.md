@@ -56,16 +56,19 @@ exit_criteria:
       ③ **无键 ⇒ 拒**（422 `Idempotency-Key Required`）；④ **域级去重**：同一 `idempotency_key`
       在 canonical 层**不产生第二条业务事实**（按存储行计数断言，不靠文本）；
       ⑤ **跨会话重放**（同一 store 文件、新 store 实例 + 新应用 + 新客户端）三件套结论一致。
-      **两向反证**：把去重键换成随机值 ⇒ 判红（重复写入被观察为第二条事实）；**不同键 ⇒ 不判红**
-      （第二条事实**应当**出现，证明断言非空转）；复原 ⇒ 绿。
+      **两向反证**：把去重键换成随机值 ⇒ 判红（重复写入被观察为第二条事实）；
+      **不同键 ⇒ 不判红**（第二条事实**应当**出现，证明断言非空转）；复原 ⇒ 绿。
+      **另一条路径（重放来源）**：篡改**持久化行**（状态码 + 正文 + `ETag`）后重放 ⇒
+      若重放**原样跟随**被篡改的值，则「同一结果」的来源是**读持久化行**而**不是**路由被重新执行的幂等假象。
       **注意**：`IdempotencyMiddleware` 与 `Idempotency-Key` 的**语义不得改动**（承 GOAL-019 判词），
       本 EC **只加判据**。**登记面**：store 是**节点本地**（PG 模式亦为 SQLite）/ check-then-act
       无 in-flight 标记（并发同键）⇒ 逐条登记为残余，**不得**宣称跨副本保证。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api/test_idempotency_sqlite_semantics.py
-      tests/e2e/test_idempotency_canonical_dedup.py -q` ⇒ 全绿；配套留档：重放三件套实测值、
-      计数证据（canonical 行数 1 / 异键 2）、按压先红后绿 + raw `sha256` 逐字节复原。
-    status: PENDING
+      tests/e2e/test_idempotency_canonical_dedup.py -q` ⇒ 全绿（**实测 6 passed**）；配套留档：
+      重放三件套实测值、计数证据（canonical 行数 1 / 异键 2）、按压先红后绿 + raw `sha256` 逐字节复原、
+      第二条路径（篡改持久化行 ⇒ 重放原样跟随 ⇒ 来源是 store 行）。
+    status: PASS
   - id: EC-02
     criterion: >-
       **租约 / 心跳 / 重试分类 / 退避（lease + heartbeat + retry classification + backoff）**：
@@ -274,9 +277,11 @@ escalation_triggers:
   - >-
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260929-245-goal-026-ec01-idempotency-and-dedup.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260929-246-goal-026-ec01-idempotency-and-dedup.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260929-167-replay-criteria-need-production-store-and-row-tamper-proof.md
 ---
 
 ## 目标与退出标准
@@ -304,7 +309,7 @@ memory_entries: []
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **幂等与去重**（生产 store 上的三件套 + 域级计数 + 跨会话） | 两个新判据文件 + 按压/复原留档 | **PENDING** |
+| EC-01 | **幂等与去重**（生产 store 上的三件套 + 域级计数 + 跨会话） | 两个新判据文件 + 按压/复原留档 | **PASS**（cycle 1） |
 | EC-02 | **租约 / 心跳 / 重试分类 / 退避**（时钟注入两向 + 引擎路径轨迹） | 三个新判据文件 + 轨迹留档 | **PENDING** |
 | EC-03 | **断路器 / 死信 / 取消**（三态 + 终止面 + 取消后无新副作用） | 四个新判据文件 + 边界登记 | **PENDING** |
 | EC-04 | **补偿 / 发件箱**（失败注入原子性 + 去重边界 + 话术机械判据） | 三个新判据文件 + 分类表 | **PENDING** |
@@ -667,6 +672,7 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 本行所在的**建档 + 记录提交**（同一提交：新增本文件 + 回填门结果；建档轮的「记录」就是本文件自身，故不拆两笔） | 治理 `validate.py` = `Cursor 治理验证通过`（8 行结论，含 GOAL 结构合规与 push 授权登记）；**记录面判据**（`test_reproducibility_wording.py` + `test_record_face_is_covered_by_the_gate.py` + `test_control_plane_auth_same_source.py`）= **24 passed in 10.83s**（`egress guard: judged 0 connection attempt(s); blocked 0`）；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、`FAIL [` = 0、`4755 passed / 21 skipped`、`EXIT=0`；日志 `scratch/goal026-c0-m0.log`，python/tests 段 `in 696.28s`，**日志文件时刻 `12:54:49` 晚于**本文件最后一次写入 `12:38:25`（`ls -l` 实测）⇒ 门跑在「本文件已写完」的状态）；**本机无 `make`** ⇒ 直跑 Makefile 的同一命令（canonical 等价：`.venv` 经 `uv run --frozen --no-sync python -B`、DSN 固化、`--keep-going`、不接管道）；**独占运行**（跑前零 python 进程、`research-system-postgres-1` healthy）；**进程卫生**：跑完 python 进程 **0**。**本行数字写于门之后** ⇒ 记录面最终覆盖由 CI 承担 | 见下方 CI 台账（建档提交的 run 在台账行回填） | 建档轮**零产品代码改动**（只新增本文件） | EC-01…EC-05 全 PENDING。起点已定位：见「事实层结论」22 条（其中 **5 条**决定 EC 形状：第 1 / 9 / 10 / 13 / 19 条 —— 生产 store 的 HTTP 语义无判据 / 工具面断路器空壳 + 半开预算被吞 / 死信恢复路径不存在 / 发件箱无失败注入判据 / 台账脚本对空集合打 OK） | cycle 1 = **EC-01**（幂等与去重：生产 store 上的三件套 + 域级计数 + 跨会话） |
+| 1 | PLAN-20260929-245（EC-01） | 本行所在的**实施 + 记录提交**（2 个新增判据文件 + PLAN / RECHECK / MEM / ALL_PLAN / GOAL 回写；批量一次推送） | **EC-01 全部验收成立且有实跑证据**。交付 = `tests/api/test_idempotency_sqlite_semantics.py`（**4 例**：重放三件套 / 同键异载荷 422 / 无键 422 / 跨会话）+ `tests/e2e/test_idempotency_canonical_dedup.py`（**2 例**：同键恰 1 行 / 异键 2 行两向控制）+ `RECHECK-20260929-246`（`PASS_WITH_WARNINGS`，`W-1`…`W-6`）+ `MEM-20260929-167`。**实跑**：新判据 **6 passed**；受影响套件（既有 4 文件 + 新 2 文件）**35 passed**（`egress guard: blocked 0`）。**判据打在生产实现上**：`deps.idempotency` 由 `InMemoryIdempotencyStore` 换成 **`SqliteIdempotencyStore`（文件库）**；`_assert_etag_is_real` 守住「受判面非空」（否则两次 `None` 相等会退化成空真）。**按压先红后绿 + 逐字节复原**：**P1** 去重键 → 随机值 ⇒ `assert 2 == 1`（`1 failed, 1 passed`）；**P2** 重放键 → 异键 ⇒ `At index 1 diff: {'id': '0afe552e-…'} != {'id': '68c79bf0-…'}`（`1 failed, 3 passed`）；复原后 raw `sha256` 回到 `fd0e1128…4f89` / `34c7bef2…147a`（两者 `MATCHES_BASELINE True`）⇒ **6 passed**；留档 `scratch/goal026-ec01-press-matrix.log`（二进制写盘 / `CR` 计数 0）。**第二条路径（重放来源）**：篡改持久化行（`299` + 篡改正文 + 篡改 `ETag`）⇒ 重放**原样跟随**且 canonical 端点仍为 1 ⇒ 重放来源是**持久化行**，**不是**路由被重新执行的假象。**四道门**：`ruff format --check` = `2 files already formatted`；`ruff check` = `All checks passed!`；`mypy` = `Success: no issues found in 2 source files`；规模门参数化 **8 passed**。**既有判据逐字节未改**（`git status --porcelain -- tests/` 只有两个 `??`）。**零产品代码改动**；m0 与 CI 台账见下方（记录写入之后才跑） | 见下方 CI 台账 | **零真缺陷** | **EC-01 = PASS**（`R26-6` 原样保留：节点本地 store / check-then-act 未取证）。**如实登记六条警告**（`RECHECK-246`）：`W-1` 单节点射程（PG 模式 store 仍是 SQLite ⇒ 跨副本未取证）；`W-2` 并发同键未取证（`get → call_next → put` 无 in-flight 标记，改语义属禁止面）；`W-3` 两次按压是**判据源码级**、未在产品侧按压；`W-4` 跨会话是**同进程顺序会话 + 文件库**、非跨进程；`W-5` `ETag` 相等依赖路由发 `ETag`（仅重放 / 跨会话两例守住非空）；`W-6` 计数只证行数、不证是哪条分支去重；`R-M1` 未收口 | cycle 2 = **EC-02**（租约 / 心跳 / 重试分类 / 退避：时钟注入两向 + 引擎路径轨迹） |
 
 ### 建档轮本地验证
 
@@ -697,7 +703,7 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
-| 建档（GOAL-026 落地） | 见下方回填 | 见下方回填 | 见下方回填 |
+| 建档（GOAL-026 落地） | `3e54564` | M0 [**36524348598**](https://github.com/Eswink/research-system-new/actions/runs/36524348598) / CodeQL [**36524349477**](https://github.com/Eswink/research-system-new/actions/runs/36524349477) | **绿（八 job 全 success + CodeQL 3/3）**（两者 `run_attempt=1`，**一次成功、无 flake**）：M0 `conclusion=success`，逐 job `console-frontend` / `eval-gate` / `observability-overhead-windows-latest` / `collector-quality` / `quality-windows-latest` / `observability-overhead-ubuntu-latest` / `quality-ubuntu-latest` / `container-quality` **全 `success`**；CodeQL `Push on main` `conclusion=success`，`Analyze (javascript-typescript)` / `Analyze (python)` / `Analyze (actions)` **3/3 `success`**。轮询日志 `scratch/goal026-c0-ci-poll.log`（`ALL_TERMINAL sha=3e545648a23b0d95ff797064645a3c9b15032fdf`，**37 轮**）。**台账审计口径**：第 28–32 轮出现 5 次「unparseable API response」⇒ 按口径**单独取原始 JSON 复核**（`/actions/runs/<id>/jobs` 落盘 `scratch/goal026-c0-run-36524348598-jobs.json` / `…-36524349477-jobs.json`）：`jobs=8 ok=8 bad=[]` 与 `jobs=3 ok=3 bad=[]`，逐 run 的 `status=completed` / `conclusion=success` / `run_attempt=1` 亦由 REST API 实查 ⇒ **未把解析打嗝写成不一致，也未把不一致读成打嗝**。上游 push 回执报 **8 条**告警（6 moderate + 2 low，全为 `undici`）⇒ **零依赖改动** |
 | 本条台账的**记录提交** | 本行所在的记录提交 | **依「固定口径」：写台账的那一步自身的 run 只在回合汇报记账**（不重复回写文件 —— 否则每写一行就产生一个待记账的新提交，台账永远追不上自己） | 见回合汇报 |
 
 ## 状态历史
@@ -705,4 +711,6 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-09-29 | ACTIVE | **建档 cycle 0 完成，进入循环**：EC-01…EC-05 全 PENDING，下一 cycle 做 **EC-01**（幂等与去重）。**本地验证（顺序承 MEM-145）**：记录（本文件）先写完（`12:38:25`）→ 治理 `Cursor 治理验证通过` → 记录面判据 **24 passed**（egress `judged 0 / blocked 0`）→ **as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、`FAIL [` = 0、`4755 passed / 21 skipped`、`EXIT=0`；日志 `scratch/goal026-c0-m0.log`，**日志时刻 `12:54:49` 晚于**本文件写入 `12:38:25`）；独占运行 + 进程卫生零泄漏；**本机无 `make`** ⇒ 直跑 Makefile 的同一命令（canonical 等价）。**本行数字写于门之后** ⇒ 记录面最终覆盖由 CI 承担。**建档提交**的 CI 到终态后在下方台账回填。 |
+| 2026-09-29 | ACTIVE | **cycle 1（PLAN-20260929-245）：EC-01 = PASS**（§7 义务「idempotency key + deduplication」的对抗性自检）。交付 = `tests/api/test_idempotency_sqlite_semantics.py`（4 例）+ `tests/e2e/test_idempotency_canonical_dedup.py`（2 例）+ `RECHECK-246`（`PASS_WITH_WARNINGS`，`W-1`…`W-6`）+ `MEM-167`。**判据打在生产实现**（`SqliteIdempotencyStore` 文件库，替换测试用的内存实现）；**按压 P1/P2 先红后绿 + raw `sha256` 逐字节复原**；**第二条路径**证明重放来源是持久化行（篡改行 ⇒ 重放原样跟随）。新判据 6 passed / 受影响套件 35 passed / 四道门绿 / 既有判据逐字节未改。**零产品代码改动**。 |
+| 2026-09-29 | ACTIVE | **cycle 1 本地 m0（as-is，记录写入之后）**：`PASS: profile=m0; 23 deterministic checks`（`PASS [` = **24**、`FAIL [` = 0、**4763 passed / 21 skipped**、`EXIT=0`；日志 `scratch/goal026-c1-m0.log`，python/tests 段 `in 568.41s`）。**时刻证据**：**日志文件时刻 `13:24:04` 晚于全部记录文件**（GOAL `13:10:50`、PLAN `13:09:58`、RECHECK `13:09:29`、MEM `13:11:59`、INDEX `13:11:51`、ALL_PLAN `13:10:05`，`ls -l` 实测）⇒ 门跑在「记录已写完」的状态。**用例数 +8 = 本轮新判据 6 例 + 规模门按文件参数化 2 例**（`test_python_source_limits.py` 对 `PRODUCT_ROOTS` 下**每个** `.py` 参数化 ⇒ 新增两个文件各 +1）。**独占运行**（跑前 `tasklist` 零 python 进程、`research-system-postgres-1` healthy）；**进程卫生**：跑完 python 进程 **0**。解释器 / 口径与 canonical 一致（仓库 `.venv` 经 `uv run --frozen --no-sync python -B`、`--profile m0 --keep-going`、DSN 固化 + `LLM_MAIN_KEY=""`；**本机无 `make`** ⇒ 直跑 Makefile 的同一命令）。**本行数字写于门之后** ⇒ 依 GOAL-021 的澄清，**不**声称本地门覆盖了本行的最终文本；**记录面最终覆盖由 CI 承担**。 |
 | 2026-09-29 | ACTIVE | **建档**：用户会话指令（goal 模式）授权对 AGENTS.md §7 的**九项义务**（idempotency key / Task lease + heartbeat / retry classification / exponential backoff / circuit breaker / dead-letter · manual recovery / cancellation semantics / compensation for non-idempotent actions / transactional outbox）做**对抗性自检** —— 从「代码里有」推进到「有判据证明成立」或「逐条登记为 PENDING + 理由」，并授权本驱动自动化循环推进、无需逐轮确认。**明确不做**：假装 / 宣称 exactly-once、新增能力（死信恢复 / 工具面断路器 / 在飞取消 / 应用级消费者）、修改任何既有判据 / 门禁 / 阈值 / 放行面、改 `IdempotencyMiddleware` / `Idempotency-Key` 语义、改 `PRODUCT_ROOTS` / m0 条数 / 作业结构、新增依赖（含真实 broker / 外部队列）、真实出网 / 真实 runtime / 真实凭据、读面认证 / 多租户 / RBAC / BOLA·BFLA、`G24-4` / `G24-5`、动 `undici`、改 `ADR-0031` 的 `Status`、宣称项目安全。五 EC 设计（幂等与去重 / 租约心跳重试退避 / 断路器死信取消 / 补偿与发件箱 / 自举收口），budget = 20 / 120 / 2。**建档当日实测 22 条事实层结论**（见「目标与退出标准」），其中五条决定 EC 形状：**① 幂等的 HTTP 判据至今只打在 `InMemoryIdempotencyStore` 上**（生产 store 无判据）；**② 工具面断路器是空壳且 `gateway.py:108-111` 的半开探针预算被吞（候选真缺陷）**；**③ 死信的恢复路径不存在且 `ADR-0030` 明文承认（⇒ 只收窄 + 需拍板）**；**④ 发件箱的原子性判据缺失（既有两条同名判据都是全绿路径，无失败注入）**；**⑤ `scratch/audit_goal025_ledger.sh` 对空 `jobs` 无条件打 OK（本轮必须给下界判定）**。**建档时零产品代码改动**（只增本文件）；工作树另有 4 个**与本 GOAL 无关**的并发改动（仅行尾态差异，`git diff --stat` 为空），本 GOAL 一律只用**显式路径**提交。 |

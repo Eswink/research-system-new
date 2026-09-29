@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260929-167](entries/MEM-20260929-167-replay-criteria-need-production-store-and-row-tamper-proof.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-245 |
 | [MEM-20260929-166](entries/MEM-20260929-166-closeout-verifier-must-be-in-scope-and-pressable.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-243 |
 | [MEM-20260929-165](entries/MEM-20260929-165-manual-whitelist-needs-a-derivability-check.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-241 |
 | [MEM-20260929-164](entries/MEM-20260929-164-positive-control-means-the-carrier-shows-its-content.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-239 |
