@@ -139,3 +139,26 @@ Resume 前验证：
 - 恢复链：心跳过期 -> LOST -> recover_expired_leases -> QUEUED -> 其他
   worker claim（fence 递增）-> 旧 worker 迟到结果被 fence 拒绝；重连不恢复
   旧权威（session 作废，必须新 generation 重注册）。
+
+## 10. 九项义务的判定落点（GOAL-026 对抗性自检）
+
+本节只登记**判据的落点**，不改变上文任何语义。九项义务逐条的「判定 / 正控制 / 反证」
+表在 `.cursor/plans/goals/GOAL-20260929-026-reliability-semantics-adversarial-self-check.md`；
+判定按**判据文件**读，不按本节的散文读。
+
+- **全绿**：`idempotency key` + `deduplication`（生产 store `SqliteIdempotencyStore`）、
+  Task lease + heartbeat（注入时钟）、retry classification（结构化字段）、
+  exponential backoff（轨迹常量 `[30, 60, 100, 100]` 被收口验证器钉住）、
+  circuit breaker（**模型端点面**）、cancellation semantics（协作式）、
+  transactional outbox（引擎路径 all-or-nothing，失败注入实测）。
+- **只有半边成立**：`dead-letter · manual recovery`（可枚举、可处置的终态成立，
+  **人工恢复动作无产品路径** ⇒ 已登记为需拍板项）、
+  `compensation for non-idempotent actions`（恢复失败的 canonical 回滚成立，
+  **非幂等副作用的补偿只在文档**）。
+- **明确否认**：本仓不实现、也不宣称 **exactly-once**（口径固定为 at-least-once +
+  idempotency + deduplication）；该面由机械判据逐条分类
+  （`tests/architecture/python/test_delivery_semantics_wording.py`），
+  且**只证到有界面**，不宣称全仓无肯定式表述。
+- **可复跑**：`tools/verify_goal026_closeout.py`（收口复检，48 条判词）
+  与 `tools/audit_goal026_ledger.py`（CI 台账审计：空集合 / 低于下界 ⇒ **未取证**，
+  不是 OK）。

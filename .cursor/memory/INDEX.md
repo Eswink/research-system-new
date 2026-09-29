@@ -13,6 +13,8 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260929-173](entries/MEM-20260929-173-mimosa-git-gate-is-client-side-and-repo-wide.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-253 |
+| [MEM-20260929-172](entries/MEM-20260929-172-closeout-tools-reuse-standard-face-and-behavioural-floor.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-253 |
 | [MEM-20260929-171](entries/MEM-20260929-171-outbox-has-two-write-paths-with-different-atomicity.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-251 |
 | [MEM-20260929-170](entries/MEM-20260929-170-swallowed-transition-error-is-fail-open.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-249 |
 | [MEM-20260929-169](entries/MEM-20260929-169-cancel-side-effect-suppression-anchors-on-lease-deletion.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-249 |
