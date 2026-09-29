@@ -50,10 +50,16 @@ class SqliteOutboxEventPublisher(SqliteAdapterBase):
         # a second connection (API restart) could not read it. Every sibling
         # sqlite store self-commits on each write (`with self._conn:` across
         # the whole tree), so self-commit here matches the established
-        # semantics — including rolling back together with other writes when a
-        # LATER operation in the same caller-managed `with conn:` block fails
-        # (conn-level rollback is all-or-nothing; nothing in the tree relies
-        # on deferred visibility of outbox events).
+        # semantics.
+        #
+        # The cost of that choice, measured (GOAL-026 EC-04,
+        # tests/adapters/sqlite/test_outbox_atomicity.py): once committed, a
+        # LATER failure in the same caller-managed `with conn:` block does NOT
+        # take this event with it — the row stays visible on every connection.
+        # A caller that needs the event to live or die with its business write
+        # must use the engine's `OutboxWriter` (writes inside the caller's
+        # transaction, all-or-nothing) rather than this self-committing
+        # publisher.
         with self._conn:
             cursor = self._conn.execute(
                 "INSERT OR IGNORE INTO outbox_events (event_id, envelope_json, created_at)"

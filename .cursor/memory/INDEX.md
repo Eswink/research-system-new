@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260929-171](entries/MEM-20260929-171-outbox-has-two-write-paths-with-different-atomicity.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-251 |
 | [MEM-20260929-170](entries/MEM-20260929-170-swallowed-transition-error-is-fail-open.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-249 |
 | [MEM-20260929-169](entries/MEM-20260929-169-cancel-side-effect-suppression-anchors-on-lease-deletion.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-249 |
 | [MEM-20260929-168](entries/MEM-20260929-168-reliability-clock-seam-trajectory-and-heartbeat-two-way.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-247 |
