@@ -76,7 +76,7 @@ exit_criteria:
       `examples/contracts/toolpack_europe_pmc.yaml` 在树；
       `uv run --frozen --no-sync python -B -m pytest <新增判据文件> -q` ⇒ 全绿；
       配套留档：真标识与 digest 实测值、反证两向的先红后绿、按压后 raw `sha256` 逐字节复原。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **MCP 真实接入（本轮主打；建档勘察结论选定路线 (A) 自建科研 MCP server）**：把 MCP 从
@@ -276,9 +276,11 @@ escalation_triggers:
   - >-
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20260929-255-goal-027-ec01-real-literature-source-expansion.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20260929-256-goal-027-ec01-europe-pmc-literature-source.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20260929-174-provider-capability-reuse-widens-the-pin-face.md
 ---
 
 ## 目标与退出标准
@@ -297,7 +299,7 @@ MCP server、修实现过程中发现的真缺陷。**但**：不改任何既有
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **真实文献能力扩容**（新 provider + pin + 登记 + 反证 + 离线实跑） | 新适配器 + `toolpack_europe_pmc.yaml` + 新判据 | **PENDING** |
+| EC-01 | **真实文献能力扩容**（新 provider + pin + 登记 + 反证 + 离线实跑） | 新适配器 + `toolpack_europe_pmc.yaml` + 新判据 | **PASS**（cycle 1 / PLAN-255 / RECHECK-256） |
 | EC-02 | **MCP 真实接入**（自建 server + 真回环 + 注册面 + 三反证 + 空参数缺陷修复） | `tools/` MCP server + 新判据 + 缺陷修复 | **PENDING** |
 | EC-03 | **能力接进运行链**（run-chain 声明 + 真标识 + 读面可见 + `trust_label`） | 协议扩展 + 离线判据 | **PENDING** |
 | EC-04 | **多 role 科研子迭代**（≥3 phase × ≥3 role + Handoff + 评审真判定 + 四维 + 终态） | 新协议 + 离线判据 | **PENDING** |
@@ -607,6 +609,7 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `8bb7d75`（建档提交，1 文件 = 本文件） | 见左侧（治理绿 + 记录面 30 passed + as-is m0 = 23/23、4807 passed） | M0 [**36568655997**](https://github.com/Eswink/research-system-new/actions/runs/36568655997) / CodeQL [**36568655008**](https://github.com/Eswink/research-system-new/actions/runs/36568655008) | 建档轮**零产品代码改动**（只新增本文件）；**零真缺陷**（门抓到的两处是**本人记录**里的措辞缺词，非产品缺陷） | EC-01…EC-05 全 PENDING。起点已定位：见「事实层结论」22 条（其中 **5 条**决定 EC 形状：第 **4** 条 MCP 空参数真缺陷 / 第 **12** 条 `network_domains` 无运行时出口执法 / 第 **13** 条 policy 三处镜像本轮零改动 / 第 **17** 条 四维输入只在带实验的 phase 上填充 / 第 **20** 条 `verify_goal026` 已 449/450 行） | cycle 1 = **EC-01**（真实文献能力扩容：Europe PMC 适配器 + pin + 登记 + 反证两向 + 离线实跑） |
+| 1 | `PLAN-20260929-255`（EC-01） | （本 cycle 收口提交 = 本条回写所在提交） | 见「状态历史」：四道静态门全绿（ruff / format / mypy 1067 files）+ `tests/contracts` 455 passed / `tests/api` 580 passed / 定向消费者全绿；**按压四条**先红后绿 + 逐字节复原；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAIL [` = 0 / EXIT=0 / 4866 passed，日志 `scratch/goal027-c1c-m0.log`） | 见「CI 台账」（本条回写后推送，终态在状态历史登记） | 首版 4 处本人代码判红（未 import / 6 参 / unused ignore / arg-type）+ 1 处规模门超行 ⇒ 全部按形态修（未用 noqa / type: ignore 掩盖）；P4 首轮**按压假绿** ⇒ 改判据侧复压 | EC-01 收口；**残余**：`W-1` 出口执法只覆盖本 provider / `W-2` `digest` 是声明值 / `W-4` Europe PMC 只做 search + 按 id 取记录 / `W-5` `execute` 语句级绑定 / `W-6` 按压面有限 | cycle 2 = **EC-02**（MCP 真实接入 + `McpToolProvider` 空参数真缺陷修复） |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
@@ -618,5 +621,6 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-09-29 | ACTIVE | **cycle 1（EC-01）收口**：新增**第二个真实文献源 Europe PMC**（适配器三文件 + pin 契约 + 登记 + 三份新判据），AC-1…AC-6 全 PASS，`RECHECK-20260929-256` = `PASS_WITH_WARNINGS`，`MEM-20260929-174` 落档。**真标识实测**（线上取回、逐字进判据）：PMID `38000001` / DOI `10.1177/0310057x231212211` / 期刊 Anaesth Intensive Care；第二条 PMID `31452104` / DOI `10.1007/978-1-4939-9752-7_10`；内容寻址 digest 由 `Digest.of_bytes` **双向重算**相等。**URL 策略触网前**（EC-01 的净增量）：13 条反证**每条断言 transport 请求计数 == 0** + 正控制（真发出真解析）+ 反向控制（声明内即放行 ⇒ 判的是**声明**）；保留类判据**只有** `endpoint_url_refusal` 一处。**pin 记成声明值**（配方写进文件注释，实测既有 pack 的声明同样既不等于文件字节也不等于任何重算值）。**最大杀伤半径按预测命中并处置**：复用能力名 ⇒ 5 份协议 `provider_ids` 扩宽 ⇒ 夹具 `_PROVIDERS` **单行追加**，`tests/api` 由 3 failed 转 **580 passed**；新增**下界断言**（目录内非 NATIVE provider ⊆ 夹具 pin 源，受判集合非空）防静默落后。**按压四条**（P1 策略整体 / P2 白名单单点 / P3 夹具 pin 面 / P4 参数防篡改）全部先红后绿且逐字节复原；**P4 首轮假绿**（篡改值本身非法 ⇒ 断言被另一分支满足）⇒ **改判据侧复压**，未改产品代码、未放宽断言。**本地门**：ruff / format / mypy（1067 files）全绿；`tests/contracts` 455 passed、`tests/api` 580 passed、`tests/adapters` 553 passed。**一条环境类干扰已归因**：`test_worker_plane_composition` 的 3 个 postgres 用例首跑失败于 `.env` 的 `RESEARCHOS_DATABASE_URL` 覆盖测试 DSN（既有 DSN pinning 类）⇒ 按 canonical 口径 pin 后 580 passed，**未改门禁 / 断言 / 阈值**。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口）；**不得**据此宣称项目安全，**不得**宣称 exactly-once（口径只能是 at-least-once + idempotency + deduplication）。下一 cycle = **EC-02**（MCP 真实接入）。 |
 | 2026-09-29 | ACTIVE | **建档 cycle 0 完成，进入循环**：EC-01…EC-05 全 PENDING，下一 cycle 做 **EC-01**（真实文献能力扩容）。**本地验证（顺序承 MEM-145）**：治理 `validate.py` = `Cursor 治理验证通过`（8 行）；记录面判据 **24 passed**（补禁令词后复跑 **30 passed in 3.81s**，`egress guard: judged 0 connection attempt(s); blocked 0`）；**as-is 本机 m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = **24**、`FAIL [` = 0、**4807 passed / 21 skipped / 95 warnings**（python/tests 段 `in 556.25s`）、`EXIT=0`；日志 `scratch/goal027-c0b-m0.log`，**日志时刻 `20:23:05` 晚于**本文件写入 `20:10:28`）；独占运行 + 进程卫生零泄漏；**本机无 `make`** ⇒ 直跑 Makefile 的同一命令（canonical 等价）。**门抓到本人两处记录措辞错**（缺「否认」禁令词 ⇒ `assert not ['否认']`）并**改记录复绿，未动判据**。**CI 到终态**：推送 `8bb7d75` ⇒ M0 `36568655997` **八 job 全 `success`** + CodeQL `36568655008` **3/3 `success`**，两者 `run_attempt=1`（**一次成功、无 flake**；原始 JSON 实查 `jobs=8 ok=8` / `jobs=3 ok=3`）。 |
 | 2026-09-29 | ACTIVE | **建档**：用户会话指令（goal 模式）授权**方向切换为真实科研能力** —— 把仓库里已有但没接通的科研件接成一次真实的科研子迭代闭环，并授权本驱动自动化循环推进、无需逐轮确认。五 EC 设计（文献扩容 / MCP 真实接入 / 接进运行链 / 多 role 子迭代 / 自举收口），budget = 20 / 120 / 2。**建档当日实测 22 条事实层结论**（见「目标与退出标准」），其中五条决定 EC 形状：**① `adapters/mcp/provider.py:173` 以空参数 `{}` 调用 MCP 工具且不读 ArtifactStore 参数 ⇒ 任何 MCP 工具收不到 query / ids，EC-03 在其上不可能成立（真缺陷，授权范围内必修）**；**② `network_domains` 没有运行时出口执法（`endpoint_url_refusal` 只服务 LLM 端点与探针）⇒ EC-01 ④ 的反证必须由新适配器自己在触网前实现**；**③ policy 三处（词表 / `_CAPABILITY_SCOPE` / `policy.yaml`）由既有测试锁死并集 ⇒ 复用既有能力名，三处一律不动**；**④ 四维验收输入（`tests`/`metrics`/`policy_decision`/`schema_check`）只在带实验事实的 phase 上被填充 ⇒ EC-04 的实跑必须含真实实验 phase**；**⑤ `tools/verify_goal026_closeout.py` 已 449/450 行 ⇒ 本轮验证器必须复用 `standard_verdicts` 并保持精简**。**建档时零产品代码改动**（只增本文件）；工作树另有 4 个**与本 GOAL 无关**的并发改动（仅行尾态差异，`git diff --stat` 为空），本 GOAL 一律只用**显式路径**提交。 |

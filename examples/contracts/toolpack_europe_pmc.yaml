@@ -1,0 +1,31 @@
+id: europe_pmc_v1
+version: 1.0.0
+source: https://europepmc.org/RestfulWebService
+resolved_revision: "2026-09-29-europepmc-rest-6.9"
+# pin 的**声明值**（并非「内容寻址」）：按本文件 `id` / `version` / `source` /
+# `resolved_revision` / `license` / `tools` / `skills` / `requested_capabilities` /
+# `network_domains` / `credentials` 十个字段的规范化 JSON
+# （`sort_keys=True, separators=(",",":"), ensure_ascii=False`）取 UTF-8 字节的 sha256。
+# 全仓没有任何调用方重算它：`services/api/catalog.py::_load_tool_pack_digests` 只读值，
+# preflight 的 `_is_pinned_digest` 只做 `Digest.parse` 形状校验；内容重算只发生在
+# install 生命周期（`packages/application/tool_plane/lifecycle.py`）。
+# 与 `toolpack_ncbi_eutils.yaml` 同口径：那份声明的 947cbb22… 同样既不等于文件字节
+# sha256（d127e4dd…）也不等于任何重算值——两个文件都是**声明**，不是内容寻址。
+digest: sha256:ed1f2d09716a53f6fa162178a2635b60080a21242ce16cf4fdd2885d8e7c6523
+signature: null
+license: SEE-ARTICLE
+tools:
+  - literature.search
+  - literature.read
+skills: []
+requested_capabilities:
+  - literature.search
+  - literature.read
+network_domains:
+  - www.ebi.ac.uk
+credentials: []
+compatibility:
+  research_os: 0.4.0
+  mcp_protocol: null
+  python: null
+  node: null

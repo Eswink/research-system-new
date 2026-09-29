@@ -41,6 +41,30 @@ tool_providers:
       - eutils.ncbi.nlm.nih.gov
     health_check: true
 
+  # GOAL-20260927-027 EC-01：第二个真实文献源（Europe PMC REST）。
+  # 与 `ncbi_eutils` 的三点差别，逐条写明理由：
+  # - **无凭据**：Europe PMC 的 search / 按 id 取记录都是公开端点，匿名可用 ⇒ 不声明
+  #   `credential_ref`（声明即「没有它不可用」，而它不是）；适配器也不解析任何凭据，
+  #   因此不存在把别域令牌转发出去的通道。
+  # - **无 `endpoint_env`**：适配器自带 Europe PMC 默认端点（同 `ncbi_eutils` 的理由）。
+  # - **能力名复用** `literature.search` / `literature.read`：能力词表不动
+  #   （`_CAPABILITY_SCOPE` 镜像与 `policy.yaml` 由既有判据锁死并集，本轮零改动）。
+  # `network_domains` 是**运行时出口白名单的权威声明**：适配器在**触网之前**要求
+  # 目标 host 落在本列表内（复用全仓唯一保留类判据 `endpoint_url_refusal`，
+  # 不新造第二个 host 谓词）。
+  europe_pmc:
+    kind: REST
+    trust_level: VERIFIED
+    transport: rest
+    protocol_version: europepmc-rest-6.9
+    capabilities:
+      - literature.search
+      - literature.read
+    effect_class: READ_ONLY
+    network_domains:
+      - www.ebi.ac.uk
+    health_check: true
+
   # 参考形态（未启用）：需要凭据才能工作的 provider 才写 credential_ref。
   # MCP streamable_http 就是这种——适配器构造期即要求 credential_ref，
   # 只是那条要求此前进不了 spec（注册面/读面看不见）。取消注释即生效：

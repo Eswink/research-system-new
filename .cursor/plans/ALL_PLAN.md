@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260929-255](tasks/PLAN-20260929-255-goal-027-ec01-real-literature-source-expansion.md) | DONE |
 | [x] | [PLAN-20260929-253](tasks/PLAN-20260929-253-goal-026-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20260929-251](tasks/PLAN-20260929-251-goal-026-ec04-compensation-and-transactional-outbox.md) | DONE |
 | [x] | [PLAN-20260929-249](tasks/PLAN-20260929-249-goal-026-ec03-breaker-dead-letter-cancel.md) | DONE |
