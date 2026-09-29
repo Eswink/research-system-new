@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20260929-253](tasks/PLAN-20260929-253-goal-026-ec05-self-bootstrap-closeout.md) | IN_PROGRESS |
+| [x] | [PLAN-20260929-253](tasks/PLAN-20260929-253-goal-026-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20260929-251](tasks/PLAN-20260929-251-goal-026-ec04-compensation-and-transactional-outbox.md) | DONE |
 | [x] | [PLAN-20260929-249](tasks/PLAN-20260929-249-goal-026-ec03-breaker-dead-letter-cancel.md) | DONE |
 | [x] | [PLAN-20260929-247](tasks/PLAN-20260929-247-goal-026-ec02-lease-heartbeat-retry-backoff.md) | DONE |

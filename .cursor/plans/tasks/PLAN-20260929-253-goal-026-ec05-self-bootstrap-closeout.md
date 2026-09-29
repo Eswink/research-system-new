@@ -2,7 +2,7 @@
 id: PLAN-20260929-253
 slug: goal-026-ec05-self-bootstrap-closeout
 title: GOAL-026 cycle 5（EC-05）：自举收口 — 收口验证器 + 台账审计下界（行为判据）+ IN_SCOPE 纯收紧 + 两树复检
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-09-29
 updated_at: 2026-09-29
 parent_goal: GOAL-20260929-026
@@ -107,9 +107,11 @@ GOAL-025 暴露的那条缺口：**空集合 = 未取证**（旧脚本 `scratch/
 - [x] **AC-5 射程纯收紧 + 与树根无关 + 两件工具自身过四道门**。
 - [x] **AC-6 记录自洽与残余在位**（含九项义务判定表）。
 - [x] **AC-7 两树复检 + as-is m0 23/23 + 治理 + CI 台账到终态**。
-      前三项已成立（as-is m0 实跑 23/23、治理绿、`DOCS-CHECK` 绿）；
-      **后两项进行中**：提交曾一度被环境级安全门禁拒绝（已按用户拍板解除，见「阻塞与解除」节），
-      解除后按顺序补做两树复检与 CI 台账 —— 在本文件 `status` 走到 `DONE` 之前不得记为完成。
+      全部成立：as-is m0 = `PASS: profile=m0; 23 deterministic checks`（推送后、记录写完之后跑）；
+      治理 `validate.py` 与 `DOCS-CHECK` 绿；**两树复检 `TWO-TREE PASS`**（48 判词、
+      两路 `sha256` 同为 `6da43133…a731`、留档逐字节相同）；**CI 到终态**
+      （M0 `36550736379` 八 job 全 `success` + CodeQL `36550735603` 3/3、`run_attempt=1`）
+      并按台账审计（本轮 `--expect-sha 6508d9d…` = `runs=2 failed=0`；全量 c0…c5 = `runs=12 failed=0`）。
 
 ## 实施清单
 
@@ -194,9 +196,9 @@ GOAL-20260923-012 / PLAN-142 / RECHECK-143 的留档资产）⇒ 改写会改掉
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-09-29 | IN_PROGRESS | AC-1…AC-6 成立（48 判词全绿 / 按压 P1·P2 两向 + 逐字节复原 / 四道门 / `IN_SCOPE` 纯收紧 / 台账行为判据）；AC-7 前三项成立、后两项（两树复检 + CI 台账）在门禁解除后补做中。 |
+| 2026-09-29 | DONE | AC-1…AC-7 全部成立且有实跑证据。交付 = `tools/verify_goal026_closeout.py`（449 行）+ `tools/audit_goal026_ledger.py`（201 行）+ `IN_SCOPE` 追加两行（纯收紧）+ `WORKFLOW_RELIABILITY.md` §10；`RECHECK-20260929-254` = `PASS_WITH_WARNINGS`（`W-1`…`W-6`）；沉淀 `MEM-20260929-172` / `MEM-20260929-173`。提交 `6508d9d`（本文件所在的**实施 + 记录提交**，批量一次推送）。**零产品代码改动**。 |
 | 2026-09-29 | BLOCKED | （历史行）AC-7 后两项因**提交被环境级安全门禁拒绝**而不可达；工件全部留在工作树、未提交、未推送。本文件初稿曾写 `DONE` + `PASS_WITH_WARNINGS`，在**同一工作树内**按「未实跑不得记 PASS」改为 `BLOCKED` + `BLOCK`（该更正发生在任何提交之前）。 |
-| 2026-09-29 | BLOCKED→IN_PROGRESS | 用户拍板处置两个高危 scratch 资产 ⇒ 采用**清理归档**（策略豁免一路经实测无效且有害，已回退）⇒ 门禁放行，恢复推进。 |
+| 2026-09-29 | BLOCKED→IN_PROGRESS→DONE | 用户拍板处置两个高危 scratch 资产 ⇒ 采用**清理归档**（策略豁免一路经实测无效且有害，已回退）⇒ 门禁放行 ⇒ 推送 `6508d9d`、CI 到终态、两树复检补齐 ⇒ 恢复为 `DONE`。 |
 
 ## 影响报告
 
@@ -214,4 +216,5 @@ GOAL-20260923-012 / PLAN-142 / RECHECK-143 的留档资产）⇒ 改写会改掉
 - **未覆盖范围与残余**：台账审计**不覆盖** `scratch/` 之外的部署面与**跨副本**语义；
   收口复检的 48 条判词**只证明本 GOAL 声明的面**成立，不证明「可靠性已完备」；
   九项义务中四项（`R26-1`…`R26-4`）的实现仍是**未做**（需拍板）；`R-M1` 未收口。
-- **下一项任务**：GOAL-026 收口 —— 两树复检 + 补记提交（CI 台账尾巴），随后 `status: ACHIEVED`。
+- **下一项任务**：GOAL-026 **收口**（`status: ACHIEVED`）—— 本 PLAN 与 `RECHECK-254` 已定稿；
+  EC-01…EC-05 全 `PASS`；九项义务判定表、残余与未覆盖范围逐条在位。

@@ -3,8 +3,8 @@ id: RECHECK-20260929-254
 slug: goal-026-ec05-self-bootstrap-closeout
 title: GOAL-026 EC-05 复检：收口验证器（48 判词 / 复用标准断言集）+ 台账审计的「空集 ⇒ 未取证」行为下界 + 射程纯收紧
 plan_id: PLAN-20260929-253
-status: VERIFYING
-result: BLOCK
+status: COMPLETED
+result: PASS_WITH_WARNINGS
 created_at: 2026-09-29
 completed_at: 2026-09-29
 owners:
@@ -127,13 +127,53 @@ GOAL-20260923-012 / PLAN-142 / RECHECK-143 的留档资产）⇒ 改写会改掉
 **残余**：解除后一次提交报「Mimosa 在 git commit 前没有得到完整扫描结论（`scanner_enobufs`），
 本次按兼容策略继续」—— 即 `R-M1` 仍在；**不得**据此宣称项目安全。
 
+### 9. AC-7 后两项补齐（门禁解除后，2026-09-29）
+
+**两树复检**：`uv run --frozen --no-sync python -B tools/two_tree_recheck.py
+--script tools/verify_goal026_closeout.py --script-mode shared --root .
+--base-ref 6508d9d --worktree-dir /d/research-system-goal026-clean
+--verdict-current scratch/goal026-c5-two-tree/current.txt
+--verdict-clean scratch/goal026-c5-two-tree/clean.txt --timeout 900 -- --verdict-only`
+⇒ **`TWO-TREE PASS`、`EXIT=0`**：
+
+```text
+TREE current=... exit=0 verdicts=48 sha256=6da43133d77a3a9741035b59a7cef4193d01a0db96361ede363f3c45b594a731
+TREE clean=...   exit=0 verdicts=48 sha256=6da43133d77a3a9741035b59a7cef4193d01a0db96361ede363f3c45b594a731
+COMPARE identical=True
+```
+
+两路留档 `scratch/goal026-c5-two-tree/{current,clean}.txt` **逐字节相同**（`cmp` 通过、
+`sha256` 同为 `6da43133…a731`、各 1395 字节）⇒ 「当前树 + 干净 checkout」**同结论**。
+
+**CI 台账到终态**：推送 `6508d9d`（`4cbe16d..6508d9d  main -> main`）后轮询至终态
+（日志 `scratch/goal026-c5-ci-poll.log`，`ALL_TERMINAL sha=6508d9d9a4c178d7d4534c0b8b49f52bf517ce49`）：
+
+| run | workflow | 逐 job | attempt |
+| --- | --- | --- | --- |
+| [36550736379](https://github.com/Eswink/research-system-new/actions/runs/36550736379) | M0 Quality Gates | `console-frontend` / `eval-gate` / `container-quality` / `collector-quality` / `observability-overhead-{windows,ubuntu}-latest` / `quality-{windows,ubuntu}-latest` **8/8 `success`** | 1 |
+| [36550735603](https://github.com/Eswink/research-system-new/actions/runs/36550735603) | Push on main (CodeQL) | `Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)` **3/3 `success`** | 1 |
+
+**台账审计（本轮工具实跑）**：原始 JSON 落盘
+`scratch/goal026-c5-run-36550736379{,-jobs}.json`、`…-36550735603{,-jobs}.json`
+（REST 实查 `http=200`；`size` 16330 / 33961 / 16221 / 11044）⇒
+`tools/audit_goal026_ledger.py --runs-dir scratch --prefix goal026-c5-
+--expect-sha 6508d9d9a4c178d7d4534c0b8b49f52bf517ce49` = **`PASS ledger-audit runs=2 failed=0`**；
+全量 c0…c5 = **`PASS ledger-audit runs=12 failed=0`**（逐 run `run_attempt=1`）。
+**空集合未被记成 OK**：审计器对空 `jobs` / 低于下界一律判「未取证」（行为判据见 §4）。
+
+**as-is 本机 m0（记录写入之后）**：`PASS: profile=m0; 23 deterministic checks`
+（`PASS [` = 24、`FAIL [` = 0、`EXIT=0`；日志 `scratch/goal026-c5b-m0.log`，跑在推送后、
+记录已写完的状态）。**治理** `validate.py` 绿、**`DOCS-CHECK`** `PASS: 6 deterministic checks`。
+
 ## 结论
 
-**`BLOCK`（进行中；门禁已解除，AC-7 后两项补做中）**。本节的判定口径是
-「**未实跑的不记通过**」：AC-1…AC-6 与 AC-7 前三项已成立且证据齐全（见 §1–§7），
-但 AC-7 的后两项 —— **两树复检**与 **CI 台账到终态** —— 在提交被门禁拒绝期间不可达。
-门禁已于 §8 按用户拍板解除（清理归档）；其后一旦补齐这两项，本文件改判
-`PASS_WITH_WARNINGS`（`W-1`…`W-6` 保留为对已成立部分的限定）。
+**`PASS_WITH_WARNINGS`**。七条 AC **全部成立且有实跑证据**：AC-1…AC-6 与 AC-7 前三项见 §1–§7；
+AC-7 的后两项（两树复检、CI 台账到终态）在门禁解除后已补齐，见 §9。全程遵守
+「**未实跑的不记通过**」：中途曾因门禁不可达而如实置 `BLOCK`（§8），解除并补齐后才改判。
+
+**已验证的关键不变量**：收口复检 48 判词全绿且公共面零重写；台账审计的「空集 ⇒ 未取证」
+是**行为**判据；EC-03 的 fail-closed 修复被 AST 钉住并按压两向；`IN_SCOPE` 纯收紧；
+两树逐行 + `sha256` 完全相同。
 
 **已成立的部分（实跑证据齐全，可复核）**：AC-1…AC-5 全部成立 —— 收口复检 48 判词全绿
 （`rc=0`）且公共面零重写；逐 EC 判据面与常量钉住；EC-03 的 fail-closed 修复被 AST 钉住并
