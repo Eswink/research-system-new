@@ -251,6 +251,25 @@ uv run --frozen --no-sync python -B   .cursor/skills/cursor-framework-check/scri
 **运行顺序**：本节的 m0 跑在「记录（PLAN-255 / 本文件 / MEM-174 / GOAL 回写）已写完」之后
 （承 MEM-145）—— 本地门跑在**当时**记录已写完的状态；记录面的最终覆盖由 CI 承担。
 
+### 13. CI 台账到终态（推送 `83f5150`；原始 JSON 实查）
+
+轮询日志 `scratch/goal027-c1-ci-poll.log`（`ALL_TERMINAL sha=83f515019cdc19b3637dd30ab9c4eec531a830b5`，**44 轮**）：
+
+| run | workflow | 逐 job | attempt |
+| --- | --- | --- | --- |
+| [36606591243](https://github.com/Eswink/research-system-new/actions/runs/36606591243) | M0 Quality Gates | `eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest` / `collector-quality` / `container-quality` / `observability-overhead-ubuntu-latest` / `console-frontend` / `observability-overhead-windows-latest` **8/8 `success`** | 1 |
+| [36606590109](https://github.com/Eswink/research-system-new/actions/runs/36606590109) | Push on main (CodeQL) | `Analyze (javascript-typescript)` / `Analyze (actions)` / `Analyze (python)` **3/3 `success`** | 1 |
+
+**原始 JSON 复核（不靠摘要）**：`scratch/goal027-c1-run-36606591243{,-jobs}.json`、
+`…-36606590109{,-jobs}.json` ⇒ `status=completed` / `conclusion=success` / `run_attempt=1` /
+`head_sha=83f51501…`；`jobs=8 ok=8 bad=[]` 与 `jobs=3 ok=3 bad=[]`。
+
+**如实登记一次本人的取材失误**：首轮复核用了错的 JSON 键名（读 `workflow_jobs`，实际响应键是
+`jobs`）⇒ 得到 `jobs=0`。按 GOAL 的「空集合 / 空字段一律按**未取证**处理」口径，
+**没有**把它读成通过；改按真实键名重取后才落盘。⇒ 「空集合 = 未取证」这条口径在本轮**实际生效过一次**。
+
+**零依赖改动**：上游 push 回执报 8 条依赖告警（6 moderate + 2 low），与本轮无关（本轮未动依赖清单）。
+
 ## 结论
 
 **`PASS_WITH_WARNINGS`**。AC-1…AC-6 **全部成立且有实跑证据**：AC-1/AC-5 见 §1–§2（真标识逐字 +

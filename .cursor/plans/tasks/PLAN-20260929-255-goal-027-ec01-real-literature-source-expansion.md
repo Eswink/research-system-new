@@ -347,6 +347,13 @@ uv run --frozen --no-sync python -B   .cursor/skills/cursor-framework-check/scri
 
 用例数 **4866**（基线 GOAL-026 收口为 4807）⇒ **只增不减**，与「新增判据 ⇒ m0 条数仍 23」一致。
 
+### ⑪ CI 台账到终态（推送 `83f5150`）
+
+M0 **[36606591243](https://github.com/Eswink/research-system-new/actions/runs/36606591243)** 八 job 全 `success`；
+CodeQL **[36606590109](https://github.com/Eswink/research-system-new/actions/runs/36606590109)** 3/3 `success`；
+两者 `run_attempt=1`（一次成功、无 flake）。原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，
+`head_sha=83f51501…` 与推送 sha 一致。轮询日志 `scratch/goal027-c1-ci-poll.log`（44 轮）。
+
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
