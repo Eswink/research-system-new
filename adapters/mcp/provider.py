@@ -10,6 +10,15 @@
 执行模型：每次操作独立会话（stateless per-op），同步 Port 方法内部
 以 asyncio.run 桥接 MCP SDK 异步 API；连接失败归类 transient，
 协议/schema 类失败归类 permanent。
+
+**工具参数**与 REST 适配器同形：经 ArtifactStore 的
+`tool-args:{task_id}:{operation_key}` 传递，读回后**重算 digest** 与
+`call.argument_digest` 比对（内容寻址防篡改）。此前的实现以**空参数**调用工具
+（`session.call_tool(tool_name, {})`），任何 MCP 工具都收不到 query / ids
+⇒ 运行链在其上不可能成立（GOAL-027 EC-02 修的真实缺陷）。
+**唯一与 REST 不同的分支**：制品**缺席**时，仅当声明值恰为 `{}` 的 canonical
+序列化才回落到空参数（既有契约套件声明空参数且不落制品，逐字节未改）；
+声明了非空参数却没有制品 ⇒ **fail closed**，不静默降级。
 """
 
 from __future__ import annotations
@@ -34,7 +43,7 @@ from packages.application.ports.errors import (
     TransientPortError,
 )
 from packages.application.tool_plane.results import spill_large_result
-from packages.domain.core import Timestamp
+from packages.domain.core import Digest, Timestamp
 from packages.domain.enums import (
     EndpointHealth,
     FailureCategory,
@@ -50,6 +59,12 @@ from packages.domain.tools import (
     ToolResultRecord,
     ToolSpec,
 )
+
+#: 工具参数制品的 id 前缀（与 `adapters/research_tools/ncbi.py` 同源）。
+ARGS_ARTIFACT_PREFIX = "tool-args:"
+#: 空参数对象的 canonical 序列化（`json.dumps({}, sort_keys=True)`）——
+#: 调用方**声明**空参数时允许不落 args 制品。
+EMPTY_ARGS_PAYLOAD = b"{}"
 
 
 class McpToolProvider:
@@ -167,10 +182,37 @@ class McpToolProvider:
             )
         return spec
 
+    def _read_args(self, call: ToolCallRecord) -> dict[str, object]:
+        """读参（防篡改）→ MCP 工具的参数对象。
+
+        与 REST 适配器同形：制品 id 为 `tool-args:{task_id}:{operation_key}`，
+        读回后**重算 digest** 与 `call.argument_digest` 比对。
+
+        **缺席分支是两者唯一的差别**（且是 fail-closed 的）：制品不在时，仅当
+        声明值恰为 `{}` 的 canonical 序列化才回落到空参数；声明了非空参数却没有
+        制品 ⇒ `InvalidInputError`（调用方 bug，不猜、不编造、不静默降级）。
+        本方法在**打开会话之前**调用 ⇒ 参数不合法时**零子进程 / 零请求**。
+        """
+        artifact_id = f"{ARGS_ARTIFACT_PREFIX}{call.task_id}:{call.operation_key}"
+        if self._artifact_store.meta(artifact_id) is None:
+            if call.argument_digest == Digest.of_bytes(EMPTY_ARGS_PAYLOAD):
+                return {}
+            raise InvalidInputError(
+                "mcp tool args artifact is missing but the declared arguments are not empty"
+            )
+        content = self._artifact_store.get(artifact_id)
+        if Digest.of_bytes(content) != call.argument_digest:
+            raise InvalidInputError("tool args digest mismatch")
+        parsed = json.loads(content.decode("utf-8"))
+        if not isinstance(parsed, dict):
+            raise InvalidInputError("tool args must be a JSON object")
+        return parsed
+
     async def _execute_async(self, call: ToolCallRecord) -> ToolResultRecord:
+        args = self._read_args(call)
         spec = self._resolved_spec()
         async with open_mcp_session(spec) as session:
-            result = await call_tool_with_timeout(session, call.tool_id, {}, spec.timeout_seconds)
+            result = await call_tool_with_timeout(session, call.tool_id, args, spec.timeout_seconds)
         payload = _serialize_call_tool_result(result)
         if result.isError:
             return ToolResultRecord(

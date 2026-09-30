@@ -76,7 +76,9 @@ class RunChainCall:
 
     - `arguments_from_input`：声明输入制品 JSON 里的字段（点分路径，如 `retrieval.query`）；
     - `fixed_arguments`：协议/操作者决定的量（如 `retmax`）——只放量，不放内容；
-    - `ids_from_previous`：**上一步结果**里的 id 列表字段（如 `ids`）→ 本步的 `ids`
+    - `ids_from_previous`：**上一步结果**里的 id 列表字段（如 `ids`；支持点分路径，
+      如 `structured.ids` —— MCP provider 的溢出内容是一层信封，机器可读的一半在
+      `structured` 下，链式传参因此需要路径而不仅是顶层键）→ 本步的 `ids`
       （检索→读取的真实链条：读取的是**检索结果里真实出现的**标识）。
     """
 
@@ -290,7 +292,13 @@ def _arguments(
         # 点分路径的最后一段就是 provider 看到的参数名（`retrieval.query` → `query`）。
         args[path.rsplit(".", 1)[-1]] = _lookup(inputs.material, path)
     if call.ids_from_previous is not None:
-        ids = (inputs.previous or {}).get(call.ids_from_previous)
+        if "." in call.ids_from_previous:
+            # 点分路径：与 `arguments_from_input` 同一取法（`_lookup`），用于信封形
+            # 结果（如 MCP 的 `structured.ids`）。非点分名字走**原样**分支，既有行为
+            # 逐字节不变（`test_run_chain_capabilities` 未改一行）。
+            ids = _lookup(inputs.previous or {}, call.ids_from_previous)
+        else:
+            ids = (inputs.previous or {}).get(call.ids_from_previous)
 
         if not isinstance(ids, list) or not ids:
             raise InvalidInputError(

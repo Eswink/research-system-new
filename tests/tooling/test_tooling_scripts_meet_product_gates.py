@@ -46,6 +46,8 @@ MAX_FILE_LINES = 450
 MAX_FUNCTION_LINES = 50
 
 #: **必备清单**（源码里固化）：射程的下界由它给出，不由文档给出。
+#: `tools/research_mcp_server.py` 由 GOAL-20260927-027 EC-02 显式加入（纯收紧：
+#: 新增受判文件，不删任何条目）；它是交付型产品件（MCP server 本体），必须过四道门。
 IN_SCOPE: tuple[str, ...] = (
     "tools/two_tree_recheck.py",
     "tools/closeout_recheck_assertions.py",
@@ -54,6 +56,7 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal025_closeout.py",
     "tools/verify_goal026_closeout.py",
     "tools/audit_goal026_ledger.py",
+    "tools/research_mcp_server.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
