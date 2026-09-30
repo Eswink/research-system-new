@@ -100,3 +100,5 @@ run=36686123873 name='Push on main' conclusion=success attempt=1 head=93fa7f71 j
 
 `PASS_WITH_WARNINGS`。五条 AC 的判定见 GOAL 的 EC 表与迭代日志；本文件给出可复核观察面。
 残余与未覆盖范围见 GOAL 的对应节（逐条在位）。
+
+**M0 [`36689189596`](https://github.com/Eswink/research-system-new/actions/runs/36689189596) 八 job 全 `success` + Push-on-main（CodeQL）[`36689188628`](https://github.com/Eswink/research-system-new/actions/runs/36689188628) 3/3 `success`**；两者 `run_attempt=1`（原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=f55a5cdb…`；轮询日志 `scratch/goal027-c5b-ci-poll.log`）。**GOAL-027 收口的最终提交（`ACHIEVED` 回写）也在终态上核实。**
