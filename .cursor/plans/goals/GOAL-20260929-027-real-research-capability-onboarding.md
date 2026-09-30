@@ -2,7 +2,7 @@
 id: GOAL-20260929-027
 slug: real-research-capability-onboarding
 title: 真实科研能力落地（文献链扩容 + MCP 真实接入 + 多 role 子迭代闭环）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-09-29
 updated_at: 2026-09-30
 owners:
@@ -107,7 +107,7 @@ exit_criteria:
       ⇒ 全绿（**既有 MCP 契约套件逐字节未改**）；
       配套留档：真回环调用的工具名 / 真标识 / digest 实测值、三条反证的点名拒绝消息、
       空参数缺陷修复前后的先红后绿 + raw `sha256` 逐字节复原。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **能力接进运行链（让系统真去取数）**：为**新 provider** 声明 `capability_execution: run_chain`
@@ -128,7 +128,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest <新增判据文件> -q` ⇒ 全绿；
       配套留档：两条真标识进证据链的实测 JSON（`id` / `source_ref` / `content_digest` /
       `source_trust_label` 四列）、读面证据行、反证（去掉 run-chain 声明 ⇒ 零工具观测 ⇒ 门判拒）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **多 role 科研子迭代（本 GOAL 的目标形态）**：让一次 run 覆盖**多个 role × 多能力**，
@@ -152,7 +152,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest <新增判据文件> -q` ⇒ 全绿；
       配套留档：run 终态、逐 phase 的 role / digest / 结构化字段实测表、评审「不通过」用例的判词、
       四维输入的实测值、HandoffBundle 的 digest 序列。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**：① 本轮收口验证器进树（`tools/verify_goal027_closeout.py`，
@@ -171,7 +171,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/tooling/test_tooling_scripts_meet_product_gates.py -q`
       ⇒ `IN_SCOPE` 含本轮新脚本且必备清单**下界单调**；
       m0 终态行实测、CI 台账逐 run 逐 job 实查（原始 JSON 复核）。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -621,12 +621,13 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | 2 | `PLAN-20260929-257`（EC-02） | （本 cycle 收口提交 = 本条回写所在提交） | 见「状态历史」：四道静态门全绿（ruff / format / mypy）；**三份新判据 + 既有 MCP 契约 = 55 passed**；`tests/contracts` 492 passed / `tests/application`+capability plane+`tests/tooling` 2002 passed / `tests/api`+离线 e2e+arch 799 passed（canonical DSN pin）；**按压四条**（空参数回退 / 空名字把关 / digest 比对 / 点分路径）全部先红后绿且 raw `sha256` 逐字节复原；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAIL [` = 0 / EXIT=0 / **4908 passed** / 21 skipped；日志 `scratch/goal027-c2-m0.log`，记录写入后独占运行、canonical DSN pin、不接管道、零进程残留；**首跑即终态**） | **M0 [`36668265638`](https://github.com/Eswink/research-system-new/actions/runs/36668265638) 八 job 全 `success` + Push-on-main（CodeQL）[`36668265126`](https://github.com/Eswink/research-system-new/actions/runs/36668265126) 3/3 `success`**；两者 `run_attempt=1`（原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=5f44fa56…` 与推送 sha 一致；轮询日志 `scratch/goal027-c2-ci-poll.log`） | 首版 5 处本人代码判红（一行 101 字符 / `run_tool` 6 参 / import 排序 ×2 / mypy 类型收窄 ×2）⇒ 全部按形态修（`ToolInvocation` dataclass，未用 `noqa`）；**一条判据类别断言按实测校准**（MCP `InvalidInputError → CONFIGURATION` 是既有映射，错的是我的假定 ⇒ 改判据侧） | EC-02 收口；**残余**：`W-1` 注册消费面只到编译产物（执行面实例仍由装配注入）/ `W-2` 冻结语料是快照 / `W-3` 契约套件参数面分工靠注释 / `W-4` 点分路径单层 / `W-5` 第三方 MCP 未证明 / `W-6` 策略 DENY 面未重测 | cycle 3 = **EC-03**（能力接进运行链：run_chain 声明 + 真标识 + 读面可见 + `trust_label`） |
 | 3 | `PLAN-20260929-259`（EC-03） | （本 cycle 收口提交 = 本条回写所在提交） | 见「状态历史」：新增协议 + 判据 11 passed；`tests/e2e`+`loaders`+`arch`+`tooling` **1644 passed / 12 skipped**（canonical DSN pin）；**按压三条**（声明 / relation 投影 / 性质判定点）先红后绿且 raw `sha256` 逐字节复原；**既有三份 run-chain 判据一字未改**；四道静态门 + `validate_bundle` 绿；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAIL [` = 0 / EXIT=0 / **4921 passed** / 21 skipped；日志 `scratch/goal027-c3-m0.log`，跑在记录写完**之后**、独占运行、canonical DSN pin、不接管道、**零进程残留**；**首跑即终态**） | **M0 [`36674564892`](https://github.com/Eswink/research-system-new/actions/runs/36674564892) 八 job 全 `success` + Push-on-main（CodeQL）[`36674564604`](https://github.com/Eswink/research-system-new/actions/runs/36674564604) 3/3 `success`**；两者 `run_attempt=1`（**一次成功、无 flake**；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=dd8bafe3…` 与推送 sha 一致；轮询日志 `scratch/goal027-c3-ci-poll.log`） | 首版一条判据按**普遍化断言**写红（「不声明网络域 ⇒ GENERATED」对 `europe_pmc` 为假：它触网前拒绝）⇒ 改判据侧把两种真实语义分开钉住（产品代码未动） | EC-03 收口；**残余**：`W-1` 新协议与既有检索协议并存（无机器判据防策略漂移）/ `W-2` 点分路径单层 / `W-3` 性质两向由两个 adapter 取证 / `W-4` 本协议未重测策略 DENY 面 | cycle 4 = **EC-04**（多 role 科研子迭代：≥3 phase × ≥3 role + Handoff + 评审真判定 + 四维 + 终态） |
 | 4 | `PLAN-20260930-261`（EC-04） | （本 cycle 收口提交 = 本条回写所在提交） | 见「状态历史」：新增协议（3 phase × 3 role）+ 2 份契约 + 判据 **6 passed**；`tests/e2e`+`loaders`+`application/run_orchestration`+`arch`+`tooling` **1739 passed / 12 skipped**（canonical DSN pin）；**修一处真缺陷**（`handoff_digests` 装 task id）；**按压 P-I / P-K 先红后绿且 raw `sha256` 复原**（P-J 未判红 = 按压设计不足，如实登记）；**既有判据一字未改**；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAIL [` = 0 / EXIT=0 / **4928 passed** / 21 skipped；日志 `scratch/goal027-c4-m0.log`，跑在记录写完**之后**、独占运行、canonical DSN pin、不接管道、**零进程残留**；**首跑即终态**） | **M0 [`36680932995`](https://github.com/Eswink/research-system-new/actions/runs/36680932995) 八 job 全 `success` + Push-on-main（CodeQL）[`36680932701`](https://github.com/Eswink/research-system-new/actions/runs/36680932701) 3/3 `success`**；两者 `run_attempt=1`（**一次成功、无 flake**；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=9d29c045…` 与推送 sha 一致；轮询日志 `scratch/goal027-c4-ci-poll.log`） | 首版判据 5 处按实测校准（任务投影只列会话任务 / 覆盖只数本任务来源 / 评审不得声明性质维度 / 实验任务在另一读面 / digest 形态） | EC-04 收口；**残余**：`W-1` 评审契约不声明性质维度 / `W-2` 生产装缺 provider→SDK 映射 / `W-3` 实验任务不在任务投影 / `W-4` 策略 DENY 面未重测 / `W-5` P-J 无区分度 | cycle 5 = **EC-05**（自举收口：验证器进树 + 两树复检 + m0 + 治理 + 台账 + 残余） |
-| 5 | `PLAN-20260930-263`（EC-05） | （本 cycle 收口提交 = 本条回写所在提交） | 见「状态历史」：验证器进树（复用 `standard_verdicts`，只写本轮特有断言）+ `IN_SCOPE` 纯收紧；**两树逐行相同 + `sha256` 相同 + `TWO-TREE PASS`**（48 条判词、两份文件 `sha256=1c732c54…`）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAIL [` = 0 / EXIT=0 / **4928 passed** / 21 skipped；日志 `scratch/goal027-c5-m0.log`，记录写入之后、独占运行、零进程残留）；治理 + 记录面绿 | **见回填行**（推送后逐 run 逐 job 实查） | 首版验证器 6 处 mypy 类型面判红（结构性 Protocol 收窄）⇒ 按形态修（未用 `ignore`）；一处记录用词撞治理门（`PENDING` 占位符检测）⇒ 改自然语言 | GOAL-027 收口；**残余**：见 GOAL 的残余与未覆盖节（逐条在位） | 无后续 cycle（GOAL 收口）；未覆盖范围逐条明写 |
+| 5 | `PLAN-20260930-263`（EC-05） | （本 cycle 收口提交 = 本条回写所在提交） | 见「状态历史」：验证器进树（复用 `standard_verdicts`，只写本轮特有断言）+ `IN_SCOPE` 纯收紧；**两树逐行相同 + `sha256` 相同 + `TWO-TREE PASS`**（48 条判词、两份文件 `sha256=1c732c54…`）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAIL [` = 0 / EXIT=0 / **4928 passed** / 21 skipped；日志 `scratch/goal027-c5-m0.log`，记录写入之后、独占运行、零进程残留）；治理 + 记录面绿 | **M0 [`36686124759`](https://github.com/Eswink/research-system-new/actions/runs/36686124759) 八 job 全 `success` + Push-on-main（CodeQL）[`36686123873`](https://github.com/Eswink/research-system-new/actions/runs/36686123873) 3/3 `success`**；两者 `run_attempt=1`（**一次成功、无 flake**；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=93fa7f71…` 与推送 sha 一致；轮询日志 `scratch/goal027-c5-ci-poll.log`） | 首版验证器 6 处 mypy 类型面判红（结构性 Protocol 收窄）⇒ 按形态修（未用 `ignore`）；一处记录用词撞治理门（`PENDING` 占位符检测）⇒ 改自然语言 | GOAL-027 收口；**残余**：见 GOAL 的残余与未覆盖节（逐条在位） | 无后续 cycle（GOAL 收口）；未覆盖范围逐条明写 |
 
 ### CI 台账（逐 run 逐 job 实查；全部落在 main）
 
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
+| cycle 5（EC-05 收口：验证器 1 + `IN_SCOPE` 1 + 记录 5） | `6e27a14` + `edd4de8` + `a603267` + `93fa7f7` | M0 [**36686124759**](https://github.com/Eswink/research-system-new/actions/runs/36686124759) / Push-on-main [**36686123873**](https://github.com/Eswink/research-system-new/actions/runs/36686123873) | **绿（八 job 全 `success` + 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`；`head_sha=93fa7f71…` 与推送一致。轮询日志 `scratch/goal027-c5-ci-poll.log`。 |
 | cycle 4（EC-04 多 role：协议 1 + 契约 2 + 缺陷修复 2 文件 + 判据 1 + 记录 5） | `9d29c04` | M0 [**36680932995**](https://github.com/Eswink/research-system-new/actions/runs/36680932995) / Push-on-main [**36680932701**](https://github.com/Eswink/research-system-new/actions/runs/36680932701) | **绿（八 job 全 `success` + 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`；`head_sha=9d29c045…` 与推送一致。轮询日志 `scratch/goal027-c4-ci-poll.log`。 |
 | cycle 3（EC-03 运行链：协议 1 + 判据 2 + 记录 6） | `dd8bafe` | M0 [**36674564892**](https://github.com/Eswink/research-system-new/actions/runs/36674564892) / Push-on-main [**36674564604**](https://github.com/Eswink/research-system-new/actions/runs/36674564604) | **绿（八 job 全 `success` + 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`；`head_sha=dd8bafe3…` 与推送一致。轮询日志 `scratch/goal027-c3-ci-poll.log`。 |
 | cycle 2（EC-02 MCP：server + 夹具 + 产品修复 2 + 判据 4 + `IN_SCOPE` 1 + 记录 5） | `5f44fa5` | M0 [**36668265638**](https://github.com/Eswink/research-system-new/actions/runs/36668265638) / Push-on-main [**36668265126**](https://github.com/Eswink/research-system-new/actions/runs/36668265126) | **绿（八 job 全 `success` + 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）。原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`；`head_sha=5f44fa56…` 与推送一致。轮询日志 `scratch/goal027-c2-ci-poll.log`。**一次 flake 已按既有配方处置（如实登记）**：该 run 的 `run_attempt=1` 时 `console-frontend` 判红于 `tests/e2e/live-schedules-write.spec.ts:48` 实测 `2 次 · 2026-09-30 04:43 · OK`（期望 `1 次`）—— 该 spec 以 120s 间隔登记后立刻手动触发，在负载下守护线程的定时 tick 与手动触发**同时**落账 ⇒ 双计数。该提交是**纯记录提交**（3 个 markdown，零产品文件），同一 job 在上一个代码提交 `5f44fa5` 上绿 ⇒ 归类**定时竞态 flake**，未改 spec、未动阈值；`rerun-failed-jobs` ⇒ `run_attempt=2` **八 job 全 `success`**（`jobs=8 ok=8 bad=[]`）。取证：`scratch/goal027-c2b-cf.log`（原始 job 日志）/`scratch/goal027-c2b-run-jobs2.json`（重跑后逐 job 结论）。 |

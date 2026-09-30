@@ -87,6 +87,15 @@ uv run --frozen --no-sync python -B \n  .cursor/skills/cursor-framework-check/sc
 
 **首跑即终态**（无红点）。用例数 4928（与 cycle 4 收口同值：本 cycle 只加 1 个 `tools/` 验证器，判据数未变 ⇒ 用例数不变符合预期）。
 
+### 7. CI 台账到终态（推送 `93fa7f7`；原始 JSON 实查）
+
+```text
+run=36686124759 name='M0 Quality Gates' conclusion=success attempt=1 head=93fa7f71 jobs=8 ok=8 bad=[]
+run=36686123873 name='Push on main' conclusion=success attempt=1 head=93fa7f71 jobs=3 ok=3 bad=[]
+```
+
+轮询日志 `scratch/goal027-c5-ci-poll.log`；取值文件 `scratch/goal027-c5-run-{36686124759,36686123873}{,-jobs}.json`。空集合 / 空字段一律按「未取证」处理（本轮到终态，无 cancelled）。
+
 ## 结论
 
 `PASS_WITH_WARNINGS`。五条 AC 的判定见 GOAL 的 EC 表与迭代日志；本文件给出可复核观察面。
