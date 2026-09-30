@@ -215,6 +215,8 @@ run=36668265126 name='Push on main' status=completed conclusion=success attempt=
 
 轮询日志 `scratch/goal027-c2-ci-poll.log`；取值文件 `scratch/goal027-c2-run-{36668265638,36668265126}{,-jobs}.json`。空集合 / 空字段一律按「未取证」处理（本轮到终态，无 cancelled）。
 
+**一次 flake 已按既有配方处置（如实登记）**：该 run 的 `run_attempt=1` 时 `console-frontend` 判红于 `tests/e2e/live-schedules-write.spec.ts:48` 实测 `2 次 · 2026-09-30 04:43 · OK`（期望 `1 次`）—— 该 spec 以 120s 间隔登记后立刻手动触发，在负载下守护线程的定时 tick 与手动触发**同时**落账 ⇒ 双计数。该提交是**纯记录提交**（3 个 markdown，零产品文件），同一 job 在上一个代码提交 `5f44fa5` 上绿 ⇒ 归类**定时竞态 flake**，未改 spec、未动阈值；`rerun-failed-jobs` ⇒ `run_attempt=2` **八 job 全 `success`**（`jobs=8 ok=8 bad=[]`）。取证：`scratch/goal027-c2b-cf.log`（原始 job 日志）/`scratch/goal027-c2b-run-jobs2.json`（重跑后逐 job 结论）。
+
 ### 13. 未覆盖范围（明写，不夸大）
 
 - **不证明**任何**第三方** MCP server 可 pin 可用（自建 server 走通了治理链，第三方未测）。

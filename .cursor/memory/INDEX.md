@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20260930-176](entries/MEM-20260930-176-run-chain-declaration-is-the-only-deterministic-retrieval-door.md) | ACTIVE | repository | 0.90 | 2027-03-30 | PLAN-20260929-259 |
 | [MEM-20260930-175](entries/MEM-20260930-175-mcp-envelope-needs-a-path-for-chained-ids.md) | ACTIVE | repository | 0.90 | 2027-03-30 | PLAN-20260929-257 |
 | [MEM-20260929-174](entries/MEM-20260929-174-provider-capability-reuse-widens-the-pin-face.md) | ACTIVE | repository | 0.92 | 2027-03-29 | PLAN-20260929-255 |
 | [MEM-20260929-173](entries/MEM-20260929-173-mimosa-git-gate-is-client-side-and-repo-wide.md) | ACTIVE | repository | 0.90 | 2027-03-29 | PLAN-20260929-253 |

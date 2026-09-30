@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260929-259](tasks/PLAN-20260929-259-goal-027-ec03-capability-into-the-run-chain.md) | DONE |
 | [x] | [PLAN-20260929-257](tasks/PLAN-20260929-257-goal-027-ec02-mcp-real-onboarding.md) | DONE |
 | [x] | [PLAN-20260929-255](tasks/PLAN-20260929-255-goal-027-ec01-real-literature-source-expansion.md) | DONE |
 | [x] | [PLAN-20260929-253](tasks/PLAN-20260929-253-goal-026-ec05-self-bootstrap-closeout.md) | DONE |

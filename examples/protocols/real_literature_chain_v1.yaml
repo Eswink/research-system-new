@@ -1,0 +1,51 @@
+id: real_literature_chain_v1_0_0
+version: 0.4.0
+
+# 真实**文献链**研究协议（GOAL-20260927-027 EC-03）：把**新接入的文献能力**接进运行链。
+#
+# 与 `real_retrieval_research_v1.yaml`（GOAL-011）的关系 —— 不是替代，是**新增的第二个
+# 消费面**：
+#   * 那份协议接的是 `ncbi_eutils`（既有 REST provider），它证明「运行链能检索」这件事
+#     在**一个** provider 上成立；
+#   * 本协议接的是 **`europe_pmc`**（GOAL-027 EC-01 新增的第二个真实文献源），并且
+#     同时声明 `literature.search` **与** `literature.read` 两步链（`ids_from_previous`
+#     把检索结果里的真实标识带进读取步）⇒ 证明「新能力**接进运行链**」不是一句登记话，
+#     而是可执行、可取证、可读回的事实。
+#
+# 与 EC-02 的衔接：EC-02 修掉的 `McpToolProvider` 空参数缺陷与本协议无关（本协议走
+# REST provider），但**同一条运行链的取参路径**（`tool-args:` 制品 + `argument_digest`
+# 重算）是两者共用的；MCP 那条路的进链证据在 `test_mcp_registration_and_refutations.py`
+# 的 `TestExecutionAfterApproval`（同一条 `execute_run_chain_capabilities`）。
+#
+# 受控范围（写明，不夸大也不缩小）：**1 个 phase、1 件交付物、1 份声明输入、2 条检索能力**。
+#   * `capability_execution: run_chain`：本 phase 的能力**由运行链执行**、不作为**会话工具**
+#     暴露给模型。两个面都不减——能力仍在 `tool_requirements`（preflight 的策略/凭据/供应链
+#     pin 检查照旧）、provider 仍在冻结集（越权执行仍被拒），被拿掉的只有「会话工具列表」。
+#   * 检索是**系统的取证动作**：真实标识（PMID/DOI/标题）经 `register_tool_evidence` 落
+#     canonical 证据链，内容寻址、digest 可重算；**读面**（`GET /runs/{id}/evidence`）经
+#     claim relation 投影读到它们（本 EC 的判据主面）。模型仍产交付物。
+#   * 它**仍不代表**完整研究计划：多阶段 / 并行依旧不可执行（`phase.strategy` 在产品侧
+#     只有编译器一个消费者），phase 数 = 会话数。
+
+phases:
+  - id: analysis
+    name: Real Literature Chain Analysis
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+    # 由运行链执行、不暴露为会话工具（缺省 = session = 既有语义，见 `CapabilityExecution`）。
+    # 这句话是**必需**的：provider→SDK 工具映射在生产装配里是空操作，缺映射时控制面
+    # 不静默丢工具、而是让会话创建失败并点名未注册的 provider id
+    # （`test_unmapped_tool_set_is_named_not_silently_dropped` 固定该行为）。
+    capability_execution: run_chain
+    # 覆盖判据**两维**（GOAL-011 EC-02 的口径，本协议沿用同一份契约）：
+    # `minimum_sources: 1` 数非自产来源；`minimum_retrieved_sources: 1` 要求其中至少一条
+    # 是**系统取得**（`TrustLabel.RETRIEVED` = provider 声明了 `network_domains`）。
+    # 本协议**不**复用 `real_research_deliverable`——那份契约与没有检索的协议共用，
+    # 加性质维度会把它们一起判拒。
+    task_contract: real_retrieval_deliverable
+    inputs: [input-brief:real_research_v1]
