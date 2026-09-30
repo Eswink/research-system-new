@@ -260,6 +260,35 @@ def with_capabilities(deps: Any, capability_deps: CapabilityDeps) -> None:
     deps.runs = RunOrchestrationService(replace(deps.runs._deps, capabilities=capability_deps))
 
 
+@dataclass(slots=True)
+class OutcomeRecorder:
+    """记录每次 `start_run` 的 `RunOutcome`（EC-04 要读 HandoffBundle digest 序列）。
+
+    这是**装配方**的包装（与 `with_capabilities` 同一层）：`RunOutcome` 是产品对象，
+    但 HTTP 边界不持久化 `handoff_digests` ⇒ 判据若只看读面就取证不到。包装不改产品
+    代码：它把同一个 `start_run` 的返回值原样透传，同时留一份引用。
+    """
+
+    outcomes: list[Any]
+
+    def install(self, deps: Any) -> None:
+        service = deps.runs
+        original = service.start_run
+
+        def recorded(*args: Any, **kwargs: Any) -> Any:
+            outcome = original(*args, **kwargs)
+            self.outcomes.append(outcome)
+            return outcome
+
+        service.start_run = recorded
+
+    def handoff_digests(self) -> tuple[str, ...]:
+        """最后一次 run 的 HandoffBundle digest 序列（没有记录 ⇒ 空元组）。"""
+        if not self.outcomes:
+            return ()
+        return tuple(str(item) for item in self.outcomes[-1].handoff_digests)
+
+
 __all__ = [
     "BRIEF_QUERY",
     "DECLARED_BRIEF",
@@ -272,6 +301,7 @@ __all__ = [
     "LITERATURE_SEARCH",
     "MCP_PROVIDER_ID",
     "OfflineEuropePmc",
+    "OutcomeRecorder",
     "REAL_DOI_PRIMARY",
     "REAL_DOI_SECONDARY",
     "REAL_PMID_PRIMARY",

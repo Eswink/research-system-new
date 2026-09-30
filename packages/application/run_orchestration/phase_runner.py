@@ -28,7 +28,7 @@ from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import WorkflowEngine
 from packages.application.run_orchestration.commands import StartRunCommand
 from packages.application.run_orchestration.experiment_task import dispatch_experiment
-from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome
+from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome, handoff_digests
 from packages.application.run_orchestration.phase_capabilities import execute_run_chain_capabilities
 from packages.application.run_orchestration.task_executor import (
     ExecutionDeps,
@@ -129,7 +129,7 @@ class PhaseRunnerDeps:
             message=message,
             tasks=(*tolerated,),
             manifest_digest=ctx.frozen_manifest_digest,
-            handoff_digests=tuple(sorted(handoffs)),
+            handoff_digests=handoff_digests(handoffs),
             system_failure=False,
         )
 
@@ -187,7 +187,7 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
         message="run completed",
         tasks=tuple(outcomes),
         manifest_digest=ctx.frozen_manifest_digest,
-        handoff_digests=tuple(sorted(handoffs)),
+        handoff_digests=handoff_digests(handoffs),
         system_failure=False,
     )
 

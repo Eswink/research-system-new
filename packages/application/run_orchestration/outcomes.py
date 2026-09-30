@@ -40,3 +40,22 @@ class RunOutcome:
     pricing_digest: str | None = None
     handoff_digests: tuple[str, ...] = ()
     system_failure: bool = False
+
+
+def handoff_digests(handoffs: dict[str, object]) -> tuple[str, ...]:
+    """各任务 HandoffBundle 的 **digest** 序列（确定性排序）。
+
+    修复（GOAL-027 EC-04）：`RunOutcome.handoff_digests` 此前填的是
+    `tuple(sorted(handoffs))` —— `handoffs` 的键是 **task id**，于是名叫
+    `handoff_digests` 的字段装的其实是任务 id（实测：三条 UUID）。全仓没有消费者，
+    所以这个错名从未被暴露；EC-04 要求「HandoffBundle 的 digest 序列」可取证，
+    故修正为真 digest：取每个 bundle 的 `digest`（`build_handoff` 的
+    `digest_of(content)`），按 digest 确定性排序（沿用既有排序口径）。
+    缺 `digest` 属性的对象（测试里传的裸 dict）**跳过**而不是伪造一个值。
+    """
+    digests: list[str] = []
+    for bundle in handoffs.values():
+        digest = getattr(bundle, "digest", None)
+        if digest is not None:
+            digests.append(str(digest))
+    return tuple(sorted(digests))

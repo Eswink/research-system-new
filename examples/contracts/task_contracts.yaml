@@ -193,3 +193,58 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # GOAL-20260927-027 EC-04（多 role 科研子迭代）：新增两份契约，**不改**上面任何一份。
+  #
+  # 为什么需要它们：`sort_analysis_*` 两份契约服务 M7 那条 2-phase 参考场景（执行 + 复核），
+  # 而 EC-04 的协议要**三个会话 phase、三个不同 role**，且评审要能对**上游留下的
+  # 检索来源**作出真判定。复用既有契约会把 EC-04 的形状塞进 M7 场景的语义里
+  # （`sort_analysis_review` 的 `minimum_sources: 1` 只数条数、不看性质）。
+  #
+  # 两份都指向**既有的** `real_research_deliverable_v1`（会话交付物信封），不新造 schema 名
+  # （首版自造 schema 名会被 `framework/validate_bundle` 判红，见上面 `sort_analysis_*` 的注释）。
+  multi_role_scouting:
+    version: 1.0.0
+    purpose: >-
+      EC-04 侦察 phase 的交付物契约：产物存在 + 覆盖里至少一条**系统取得**的来源
+      （运行链的两条 `europe_pmc` 检索证据满足性质维）。
+    required_capabilities:
+      - artifact.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: scouting_report
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+        # 性质维度：总数够还不够，**得有一条是系统取回来的**（与 GOAL-011 同口径）。
+        minimum_retrieved_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  multi_role_review:
+    version: 1.0.0
+    purpose: >-
+      EC-04 评审 phase 的交付物契约：独立复核**以自己的判定依据为准** ——
+      评审交付物存在，且它声明输入的那份材料在场、可复核（`EVIDENCE_COVERAGE:
+      minimum_sources` 数的是**本任务**能看到的非自产来源）。
+      **为什么这里不声明 `minimum_retrieved_sources`**（如实边界）：性质维度数的是
+      **本任务自己**的系统取得来源，而评审 phase 不做检索 —— 要求它就等于要求评审者
+      为自己没做的事背书。检索那一维由**侦察 phase** 的契约（`multi_role_scouting`）
+      承担，那里才有 `minimum_retrieved_sources: 1`。评审「评为不通过」的实测用例见
+      `tests/e2e/test_multi_role_research_offline.py` 的反证分支（去掉声明输入 ⇒
+      评审 phase 判 `0 < 1 sources` 并点名）。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: review_decision
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

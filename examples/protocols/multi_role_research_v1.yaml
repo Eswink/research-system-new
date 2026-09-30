@@ -1,0 +1,88 @@
+id: multi_role_research_v1_0_0
+version: 0.4.0
+
+# 多 role 科研子迭代协议（GOAL-20260927-027 EC-04）：一次 run 覆盖**多个 role × 多能力**，
+# 产出可审的科研交付物。
+#
+# 三个会话 phase 各绑**不同 role**（`phase.required_roles` 一个 role），加上一个由**合约
+# 声明**的沙箱实验 phase —— phase 之间经 `HandoffBundle` 传递结构化结果
+# （`handoff_builder.build_handoff` 是既有构造点），**不依赖聊天记录作为唯一上下文**：
+# 每个 phase 的产出都落 Artifact / Evidence / Claim，读面可复核。
+#
+#   1. scouting（`literature_scout`）—— 本 phase 的文献能力**由运行链执行**
+#      （`capability_execution: run_chain`，provider `europe_pmc`）：系统确定性检索两条
+#      真实记录并把它们落进证据链（`RETRIEVED`）。
+#   2. experiment（`experiment_engineer`）—— 由**既有出厂合约** `experiment_execution`
+#      声明「本任务由沙箱实验后端执行」（`experiment: {}` ⇒ 脚本/镜像由装配上下文给出）。
+#      这一 phase 是**四维验收输入**里三条（`tests` / `metrics` / `policy_decision`）的
+#      唯一来源：`task_phase_helpers._experiment_facts` 只对**带实验事实**的 phase 填充它们
+#      （无实验时该三维**缺席而非伪造**，fail-closed 语义不变）⇒ 本协议的实跑因此必须含它。
+#   3. review（`scientific_reviewer`）—— 独立复核：它的验收判据（`multi_role_review`）
+#      要求覆盖里至少一条**系统取得**的来源，于是「评审」不是走过场：判据在**读到上游
+#      留下的证据**时通过，读不到时**判拒**（`REJECT` + 逐条判词），run 收敛 `FAILED`。
+#      （评审「评为不通过」的实测用例见 `tests/e2e/test_multi_role_research_offline.py` 的
+#      反证分支：把上游证据摘掉 ⇒ 同一份协议、同一套装配 ⇒ 评审 phase 判负。）
+#
+# 受控范围（写明，不夸大也不缩小）：**3 个 phase、3 个 role、2 次真实检索调用、
+# 1 次真实沙箱实验**。phase 数 = 会话数（phase 间并行仍不可执行）。
+# 本协议**不**复用 `real_retrieval_deliverable`（那份要求单一交付物契约的语义），
+# 也不改任何既有合约的判据。
+
+phases:
+  - id: scouting
+    name: Literature Scouting
+    strategy: single_agent
+    required_roles:
+      - {role: literature_scout, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+      # 本 run 的**冻结集是 plan 级的**；某个 phase 的会话工具列表 = 冻结集 − 该 phase 的
+      # run-chain provider。实验相位引入的 `openhands_workspace` / `m12_artifact` 若不在这里
+      # 被覆盖，就会落进**本相位**的会话工具列表，而生产装配今天没有 provider→SDK 映射
+      # ⇒ 会话创建**点名失败**（既有边界，见 `real_experiment_research_v1.yaml` 的同名注释）。
+      - workspace.read
+      - evidence.read
+    # 由运行链执行、不暴露为会话工具（缺省 = session = 既有语义，见 `CapabilityExecution`）。
+    capability_execution: run_chain
+    # 本 phase 的交付物契约：产物存在 + 覆盖里至少一条**系统取得**的来源
+    # （运行链的两条检索证据满足它）。
+    task_contract: multi_role_scouting
+    inputs: [input-brief:real_research_v1]
+    outputs: [scouting_report]
+    timeout_seconds: 120
+
+  - id: experiment
+    name: Controlled Experiment
+    strategy: deterministic
+    depends_on: [scouting]
+    required_roles:
+      - {role: experiment_engineer, min_instances: 1, max_instances: 1}
+    # 本任务的执行体**不是会话**：合约声明了「由既有沙箱实验后端跑一次实验」
+    # （`experiment: {}` ⇒ 脚本/镜像由装配上下文给出）。三条判据
+    # （`ARTIFACT_EXISTS(metrics)` + `TEST_PASSES` + `POLICY_COMPLIANT`）一条不改。
+    task_contract: experiment_execution
+    outputs: [experiment_runs]
+    timeout_seconds: 300
+
+  - id: review
+    name: Independent Scientific Review
+    strategy: single_agent
+    depends_on: [scouting, experiment]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    # 评审的**判定依据**是它自己声明输入的那份材料（与 `sort_analysis_v1` 的 review
+    # 同一条既有语义）：`EVIDENCE_COVERAGE: minimum_sources` 只数**本任务**能看到的
+    # 非自产来源 ⇒ 声明输入在场则过、缺席则**判拒并点名**（「评为不通过」的实测用例见
+    # `tests/e2e/test_multi_role_research_offline.py` 的反证分支：同一份协议、只把这一行
+    # 声明去掉 ⇒ 评审 phase 的验收门判 `0 < 1 sources`）。
+    task_contract: multi_role_review
+    inputs: [input-brief:real_research_v1]
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 120
