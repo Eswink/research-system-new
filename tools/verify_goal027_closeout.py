@@ -60,7 +60,7 @@ EUROPE_PMC_PIN = "examples/contracts/toolpack_europe_pmc.yaml"
 PROVIDERS_YAML = "examples/config/tool_providers.yaml"
 RUN_FIXTURES = "tests/api/run_fixtures.py"
 
-#: 逐 EC：判据文件 + **例数下界**（下界是契约，不是「现在有多少」）。
+#: 逐 EC：判据文件 + **例数下界**（下界 = 本轮实测的 `def test_` 计数；删例即判红）。
 EC_FILES: dict[str, tuple[tuple[str, ...], tuple[int, ...]]] = {
     "ec01": (
         (
@@ -68,7 +68,7 @@ EC_FILES: dict[str, tuple[tuple[str, ...], tuple[int, ...]]] = {
             "tests/contracts/test_europe_pmc_url_policy.py",
             "tests/contracts/test_europe_pmc_pin_and_registration.py",
         ),
-        (8, 10, 8),
+        (16, 9, 15),
     ),
     "ec02": (
         (
@@ -76,15 +76,15 @@ EC_FILES: dict[str, tuple[tuple[str, ...], tuple[int, ...]]] = {
             "tests/contracts/test_mcp_research_server_loopback.py",
             "tests/contracts/test_mcp_registration_and_refutations.py",
         ),
-        (8, 8, 10),
+        (13, 11, 13),
     ),
     "ec03": (
         ("tests/e2e/test_literature_chain_run_offline.py",),
-        (10,),
+        (11,),
     ),
     "ec04": (
         ("tests/e2e/test_multi_role_research_offline.py",),
-        (5,),
+        (6,),
     ),
 }
 
@@ -167,14 +167,31 @@ def _defines(text: str, name: str) -> bool:
 
 
 def _references_attr(text: str, attribute: str) -> bool:
-    """AST 里是否出现 `something.<attribute>`（用于「digest 被真的取用了」这类断言）。"""
+    """AST 里是否**取用**了某个属性名（两种形态都认）。
+
+    - 属性访问：`something.digest`
+    - 字符串取法：`getattr(something, "digest", None)`
+
+    两者的语义都是「真的读了那个属性」；只认前一种会让实现改用 `getattr`（更防御的写法）
+    时给出**假红** —— 本验证器首跑就踩了这一点（实测），故两种都认。
+    """
     try:
         tree = ast.parse(text)
     except SyntaxError:
         return False
-    return any(
-        isinstance(node, ast.Attribute) and node.attr == attribute for node in ast.walk(tree)
-    )
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute) and node.attr == attribute:
+            return True
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "getattr"
+            and len(node.args) >= 2
+            and isinstance(node.args[1], ast.Constant)
+            and node.args[1].value == attribute
+        ):
+            return True
+    return False
 
 
 def ec_file_verdicts(root: Path) -> list[VerdictLike]:
