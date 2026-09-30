@@ -63,11 +63,29 @@ uv run --frozen --no-sync python -B tools/verify_goal027_closeout.py --root . --
 
 ## 两树
 
-（回填：两树入口的两份判词文件路径 + 逐行相同结论 + `sha256` + `TWO-TREE PASS` / EXIT）
+```text
+uv run --frozen --no-sync python -B tools/two_tree_recheck.py \n  --script tools/verify_goal027_closeout.py --script-mode shared --root . \n  --verdict-current scratch/goal027-c5-verdict-current.txt \n  --verdict-clean scratch/goal027-c5-verdict-clean.txt
+⇒ TREE current exit=0 verdicts=48 sha256=1c732c5452b358077879617dc94611641f90fe0832dfee3eb0f5a2e92cae38a5
+⇒ TREE clean   exit=0 verdicts=48 sha256=1c732c5452b358077879617dc94611641f90fe0832dfee3eb0f5a2e92cae38a5
+⇒ COMPARE identical=True
+⇒ TWO-TREE PASS（EXIT=0）
+```
+
+两份判词文件**逐字节相同**（`sha256` 相等，均为 48 行的判词集合）；判词行只有 `PASS` / `FAIL` 前缀且不含任何树的绝对路径（纯度与路径无关由入口自己强制）。日志 `scratch/goal027-c5-two-tree.log`；判词文件 `scratch/goal027-c5-verdict-{current,clean}.txt`。
+
+**首跑的两处判红是验证器自身的缺陷（如实登记）**：① 我给 `test_europe_pmc_url_policy.py` 写的例数下界是 10，实测 **9**（下界必须取实测值，不能拍脑袋）；② `outcomes.py` 用`getattr(bundle, "digest", None)` 取属性，而我的 AST 断言只认 `Attribute` 节点 ⇒ 假红。两处都改**验证器**（不是产品、不是判据），第二次两树跑即 `TWO-TREE PASS`。
 
 ## m0
 
-（回填：终态行 + `PASS [` / `FAIL [` 计数 + 用例数 + 日志路径 + 进程卫生）
+```text
+uv run --frozen --no-sync python -B \n  .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going
+⇒ PASS: profile=m0; 23 deterministic checks      ← 终态行（条数仍是 23）
+⇒ PASS [ 行数 = 24、FAIL [ 行数 = 0、EXIT=0
+⇒ 4928 passed, 21 skipped（python/tests 段 in 594.30s）
+⇒ 日志 scratch/goal027-c5-m0.log（记录写完**之后**跑、独占运行、canonical DSN pin、不接管道、零 python 残留）
+```
+
+**首跑即终态**（无红点）。用例数 4928（与 cycle 4 收口同值：本 cycle 只加 1 个 `tools/` 验证器，判据数未变 ⇒ 用例数不变符合预期）。
 
 ## 结论
 

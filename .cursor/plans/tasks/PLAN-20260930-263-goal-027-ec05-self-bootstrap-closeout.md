@@ -111,7 +111,40 @@ GOAL-027 的 **EC-05**：用**本 GOAL 自己的机器**（GOAL-023 起建立的
 
 ## 证据
 
-见「状态历史」收口行与 `RECHECK-20260930-264`。
+### ① 验证器判词（本树）
+
+```text
+uv run --frozen --no-sync python -B tools/verify_goal027_closeout.py --root . --verdict-only
+⇒ 48 条判词全部 PASS、EXIT=0（标准断言集 + GOAL-027 特有断言）
+```
+
+### ② 两树（当前树 + 干净 checkout）
+
+```text
+⇒ TREE current exit=0 verdicts=48 sha256=1c732c54…cae38a5
+⇒ TREE clean   exit=0 verdicts=48 sha256=1c732c54…cae38a5
+⇒ COMPARE identical=True / TWO-TREE PASS（EXIT=0）
+```
+
+首跑两处判红是**验证器自身**的缺陷（例数下界拍脑袋取 10 而实测 9；AST 只认 `Attribute` 节点而实现用 `getattr`）；修改的是验证器，第二次即两树 PASS。
+
+### ③ 四道门与 `IN_SCOPE`
+
+`ruff check` / `ruff format --check` / `mypy`（strict）全绿；`tests/tooling/test_tooling_scripts_meet_product_gates.py` + `test_python_source_limits.py` ⇒ **1093 passed**（`IN_SCOPE` 含本轮验证器）。
+
+### ④ as-is 本机 m0（记录写入之后，独占运行，首跑即终态）
+
+```text
+uv run --frozen --no-sync python -B \n  .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going
+⇒ PASS: profile=m0; 23 deterministic checks      ← 终态行（条数仍是 23）
+⇒ PASS [ 行数 = 24、FAIL [ 行数 = 0、EXIT=0
+⇒ 4928 passed, 21 skipped（python/tests 段 in 594.30s）
+⇒ 日志 scratch/goal027-c5-m0.log（canonical DSN pin、不接管道、零 python 残留）
+```
+
+### ⑤ CI 台账
+
+推送后逐 run 逐 job 实查（原始 JSON），台账回填在「状态历史」收口行。
 
 ## 状态历史
 
