@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20260930-263](tasks/PLAN-20260930-263-goal-027-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20260930-261](tasks/PLAN-20260930-261-goal-027-ec04-multi-role-research-subiteration.md) | DONE |
 | [x] | [PLAN-20260929-259](tasks/PLAN-20260929-259-goal-027-ec03-capability-into-the-run-chain.md) | DONE |
 | [x] | [PLAN-20260929-257](tasks/PLAN-20260929-257-goal-027-ec02-mcp-real-onboarding.md) | DONE |
