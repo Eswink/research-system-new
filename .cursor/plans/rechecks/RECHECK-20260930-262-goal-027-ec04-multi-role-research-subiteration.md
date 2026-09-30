@@ -104,6 +104,28 @@ uv run --frozen --no-sync python -B -m pytest tests/e2e/test_multi_role_research
 - **不宣称**项目安全（`R-M1` 未收口）；**不宣称**投递语义为「恰好一次」
   （**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。
 
+### 9. as-is 本机 m0 与 CI 台账（推送 `9d29c04`；原始 JSON 实查）
+
+```text
+uv run --frozen --no-sync python -B \n  .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going
+⇒ PASS: profile=m0; 23 deterministic checks      ← 终态行（条数仍是 23）
+⇒ PASS [ 行数 = 24、FAIL [ 行数 = 0、EXIT=0
+⇒ 4928 passed, 21 skipped（python/tests 段 in 649.76s）
+⇒ 日志 scratch/goal027-c4-m0.log（canonical DSN pin、不接管道、零 python 残留）
+```
+
+用例数 4928（cycle 3 收口 4921）⇒ **只增不减**，与「新增判据 ⇒ m0 条数仍 23」一致。
+**首跑即终态**（无红点）。
+
+M0 [**36680932995**](https://github.com/Eswink/research-system-new/actions/runs/36680932995) 八 job 全 `success`；Push-on-main（CodeQL）[**36680932701**](https://github.com/Eswink/research-system-new/actions/runs/36680932701) 3/3 `success`。两者 `run_attempt=1`。
+
+```text
+run=36680932995 name='M0 Quality Gates' conclusion=success attempt=1 head=9d29c045 jobs=8 ok=8 bad=[]
+run=36680932701 name='Push on main' conclusion=success attempt=1 head=9d29c045 jobs=3 ok=3 bad=[]
+```
+
+轮询日志 `scratch/goal027-c4-ci-poll.log`；取值文件 `scratch/goal027-c4-run-{36680932995,36680932701}{,-jobs}.json`。
+
 ## 结论
 
 `PASS_WITH_WARNINGS`。五条 AC 全部 PASS：三 phase 三 role（文档 + 编译产物，AC-1）；

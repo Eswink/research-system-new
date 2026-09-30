@@ -187,9 +187,23 @@ mypy（strict；新判据 + 支持件 + outcomes + phase_runner）        ⇒ Su
 validate_bundle.py                                               ⇒ 验证通过（含 Task / Protocol 引用一致）
 ```
 
-### ⑥ as-is 本机 m0 与 CI
+### ⑥ as-is 本机 m0（记录写入之后，独占运行，首跑即终态）
 
-见「状态历史」收口行。
+```text
+uv run --frozen --no-sync python -B \n  .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going
+⇒ PASS: profile=m0; 23 deterministic checks      ← 终态行（条数仍是 23）
+⇒ PASS [ 行数 = 24、FAIL [ 行数 = 0、EXIT=0
+⇒ 4928 passed, 21 skipped（python/tests 段 in 649.76s）
+⇒ 日志 scratch/goal027-c4-m0.log（canonical DSN pin、不接管道、零 python 残留）
+```
+
+用例数 4928（cycle 3 收口 4921）⇒ **只增不减**，与「新增判据 ⇒ m0 条数仍 23」一致。
+**首跑即终态**（无红点）。
+
+### ⑦ CI 台账
+
+**M0 [`36680932995`](https://github.com/Eswink/research-system-new/actions/runs/36680932995) 八 job 全 `success` + Push-on-main（CodeQL）[`36680932701`](https://github.com/Eswink/research-system-new/actions/runs/36680932701) 3/3 `success`**；两者 `run_attempt=1`（**一次成功、无 flake**；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=9d29c045…` 与推送 sha 一致；轮询日志 `scratch/goal027-c4-ci-poll.log`）。
+
 
 ## 状态历史
 
