@@ -202,7 +202,20 @@ uv run --frozen --no-sync python -B \n  .cursor/skills/cursor-framework-check/sc
 **首跑即终态**（无红点）。用例数 4908（cycle 1 收口 4866）⇒ 只增不减。
 环境口径：`RESEARCHOS_POSTGRES_DSN`=test DSN + `DATABASE_URL` / `POSTGRES_DSN` / `RESEARCHOS_DATABASE_URL` 置空 + `LLM_MAIN_KEY=""`（复现 CI 的「无凭据」条件）。
 
-### 12. 未覆盖范围（明写，不夸大）
+### 12. CI 台账到终态（推送 `5f44fa5`；原始 JSON 实查）
+
+M0 [**36668265638**](https://github.com/Eswink/research-system-new/actions/runs/36668265638) 八 job 全 `success`；Push-on-main（CodeQL）[**36668265126**](https://github.com/Eswink/research-system-new/actions/runs/36668265126) 3/3 `success`。两者 `run_attempt=1`（一次成功、无 flake）。原始 JSON 实查：
+
+```text
+run=36668265638 name='M0 Quality Gates' status=completed conclusion=success attempt=1 head=5f44fa56
+  jobs=8 ok=8 bad=[]
+run=36668265126 name='Push on main' status=completed conclusion=success attempt=1 head=5f44fa56
+  jobs=3 ok=3 bad=[]
+```
+
+轮询日志 `scratch/goal027-c2-ci-poll.log`；取值文件 `scratch/goal027-c2-run-{36668265638,36668265126}{,-jobs}.json`。空集合 / 空字段一律按「未取证」处理（本轮到终态，无 cancelled）。
+
+### 13. 未覆盖范围（明写，不夸大）
 
 - **不证明**任何**第三方** MCP server 可 pin 可用（自建 server 走通了治理链，第三方未测）。
 - 冻结语料是**快照**（非实时检索）；MCP server **不触网**（stdio 离线路径）。

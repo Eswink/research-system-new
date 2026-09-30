@@ -285,7 +285,7 @@ uv run --frozen --no-sync python -B   .cursor/skills/cursor-framework-check/scri
 
 ### ⑧ CI 台账
 
-推送后逐 run 逐 job 实查（原始 JSON），台账回填在「状态历史」收口行。
+**M0 [`36668265638`](https://github.com/Eswink/research-system-new/actions/runs/36668265638) 八 job 全 `success` + Push-on-main（CodeQL）[`36668265126`](https://github.com/Eswink/research-system-new/actions/runs/36668265126) 3/3 `success`**；两者 `run_attempt=1`（原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=5f44fa56…` 与推送 sha 一致；轮询日志 `scratch/goal027-c2-ci-poll.log`）。
 
 ## 状态历史
 
