@@ -284,7 +284,8 @@ escalation_triggers:
   - >-
     默认门出现**非环回**出站（`tests/egress_guard.py` 判红整轮）—— 先归因再处置；
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261001-267-goal-028-ec01-declarative-provider-to-sdk-tool-mapping.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -669,6 +670,30 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `003a78e`（建档提交，1 文件 = 本文件） | 治理 `validate.py` = `Cursor 治理验证通过`（8 行）；记录面判据 **33 passed in 6.58s**（`egress guard: judged 0 connection attempt(s); blocked 0`）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAILED [` = 0 / EXIT=0 / **4928 passed / 21 skipped / 106 warnings**，python 段 `in 595.99s`；日志 `scratch/goal028-c0c-m0.log`，记录已写完、独占运行、canonical DSN pin、不接管道、**零进程残留**；**首跑即终态**） | 见下方「CI 台账」（本行结论由后续回填提交补记） | **两处如实登记的取材失误**：① 首跑 m0 的 `RESEARCHOS_POSTGRES_DSN` **端口写错**（写 55432，实际容器映射 **15432**）⇒ 193 条 postgres 用例**静默转 skip**（总数 4949 不变、终态行**仍显示 23/23**），靠与 GOAL-027 基线计数对照（4735 passed vs 4928）发现并改用 canonical DSN 复跑；② 首跑撞 `framework/run_cursor_framework_evals` 的 **`PermissionError WinError 5`**（`evolution_state.json.tmp` 残留）⇒ 按既有 flake 配方单跑取证（`FRAMEWORK EVAL PASS`）后独占复跑，**未改 check** | EC-01…EC-05 全 PENDING。起点已定位：见「事实层结论」22 条，其中**六条**决定 EC 形状：第 **3/4** 条（缺映射今天是**点名失败**、且由既有判据固定 ⇒ 映射必须**声明作用域**）/ 第 **6** 条（出厂 provider id 集被既有判据锁死 ⇒ 活检索不得加出厂 id）/ 第 **10** 条（SDK 自带工具极少 ⇒ 实现须由装配方提供）/ 第 **13** 条（MCP 冻结语料被三份判据钉死 ⇒ 活检索只能**加**路径）/ 第 **16** 条（GOAL-027 台账缺口已用原始 API 复核属实） | cycle 1 = **EC-01**（provider→SDK 声明式映射 + 接进生产组合根 + 点名失败反证两向 + 默认装配实跑） |
+
+### CI 台账（逐 run 逐 job 实查；**逐提交**登记 `sha` ↔ run id）
+
+**登记口径（本 GOAL 起适用，含 EC-04 的新判据）**：**每一次推送的每一个提交**都必须在本表里有行；
+`total_count=0` 的提交**不得**记 `OK`，必须写「其 run 被同批推送的哪个提交覆盖 + 由谁承担绿」；
+`cancelled` 如实登记；**空集合 / 空字段 = 未取证**。
+
+| 推送批 | 提交 | 该提交自带的 run | 结论 |
+| --- | --- | --- | --- |
+| cycle 0（建档 + 记录回填，一次推送） | `003a78e`（建档：本文件 1 个文件） | **无**（`total_count=0`） | **被同批 `3e05fd6` 的 run 覆盖**（两次提交在同一 `git push` 中上行，GitHub 只为首个触发面之后的 head 建 run）；**由 `3e05fd6` 的绿承担** |
+| cycle 0（同上批） | `3e05fd6`（记录回填：本文件 1 个文件） | M0 [`36867097655`](https://github.com/Eswink/research-system-new/actions/runs/36867097655) / Push-on-main [`36867096306`](https://github.com/Eswink/research-system-new/actions/runs/36867096306) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查（`scratch/goal028-c0b-run-36867097655{,-jobs}.json` / `…-36867096306{,-jobs}.json`）⇒ `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=3e05fd6e1017…` 与推送一致；轮询日志 `scratch/goal028-c0b-ci-poll.log`（`ALL_TERMINAL sha=3e05fd6e1017a3b419a347341c6c67c626b6e632`）。上游 push 回执报 **8 条**依赖告警（6 moderate + 2 low）⇒ **零依赖改动**。 |
+
+**GOAL-027 台账缺口如实补记（EC-04(a)：只追加，不改历史行）**——实测（原始 REST API 复核）：
+
+| 被 GOAL-027 合并行覆盖的提交 | 该提交自带的 run | 实际结论（**与合并行的「无 cancelled」不一致**） |
+| --- | --- | --- |
+| `6e27a14` | **无**（`total_count=0`） | 其 run 被同批 `93fa7f7` 覆盖；**由 `93fa7f7` 的绿承担** |
+| `edd4de8` | **无**（`total_count=0`） | 同上 |
+| `a603267` | M0 [`36685047472`](https://github.com/Eswink/research-system-new/actions/runs/36685047472) / Push-on-main [`36685046965`](https://github.com/Eswink/research-system-new/actions/runs/36685046965) | M0 = **`cancelled`**（`run_attempt=1`）；Push-on-main = `success`。⇒ **该行写「无 cancelled」与该提交的实际结论不符**（真正被取消的是 `a603267` 的 M0 作业，而非 `93fa7f7`；`93fa7f7` 的 M0 `36686124759` 确为 `success`）。同批绿由 `93fa7f7` 承担。 |
+| `93fa7f7` | M0 [`36686124759`](https://github.com/Eswink/research-system-new/actions/runs/36686124759) / Push-on-main [`36686123873`](https://github.com/Eswink/research-system-new/actions/runs/36686123873) | **绿**（两者 `success`、`run_attempt=1`）—— 合并行记录的正是这一条 |
+
+**为什么 `6e27a14` / `edd4de8` / `a603267` 无自带 run**：三次提交与 `93fa7f7` 在**同一次推送**里上行，
+GitHub 只为该批的**最终 head** 建 run（`cancel-in-progress` 语义下的既有行为）⇒ 「无自带 run」
+**不等于**「未受门覆盖」，但**必须**在台账里写明「被谁覆盖 + 由谁承担绿」——EC-04(b) 的判据即为此。
 
 ## 状态历史
 
