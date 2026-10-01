@@ -214,6 +214,8 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `audits/MIMOSA_DEEP_SCAN_20260917.md` — Mimosa 密封深扫终态记录（2026-09-17，GOAL-004 cycle 8 = EC-07；scanId + seal + 逐件摘要复核 + 36 条 findings 逐条处置 + 未覆盖范围；**不主张项目安全**）
 - `audits/MIMOSA_POST_CLOSURE_AUDIT_20260918.md` — 收口后安全复核（2026-09-18，GOAL-005 cycle 1 = EC-01；干净 checkout 重扫封印 + 依赖 advisory 联网复核署名 + hook 侧 `scanner_enobufs` 根因 + 25 条 findings 逐条处置 + 动态 SQL 结构判据更正；**不主张项目安全**）
 - `audits/MIMOSA_DEPENDENCY_ADVISORIES_20260918.json` — 依赖 advisory 复核证据（413 个锁定包的 OSV 查询：3 包 20 条，含 CVE 别名 / CVSS / 修复版本 / 来源与复跑命令）
+- `audits/MIMOSA_DEEP_SCAN_20261001.md` — Mimosa 深扫终态记录（2026-10-01，PLAN-20261001-265；scanId + seal + 36 条 findings 逐类处置 + 四个点名文件校验 + 未覆盖范围；**不主张项目安全**）
+- `audits/MIMOSA_DEPENDENCY_ADVISORIES_20261001.json` — 依赖 advisory 复核证据（413 个锁定包的 OSV 查询：4 包 32 条；含 pyjwt / urllib3 / brace-expansion 三包**新出现**面与 CVE 别名 / severity / 修复版本 / 来源与复跑命令）
 - `versioning/VERSION_POLICY.md`
 
 ## 阶段工程记录（Plan / Recheck）

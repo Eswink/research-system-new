@@ -1,0 +1,507 @@
+{
+  "schemaVersion": "researchos-dependency-advisory-evidence/v1",
+  "queriedAt": "2026-10-01T08:02:25.476332+00:00",
+  "endpoint": "https://api.osv.dev/v1/querybatch",
+  "reproduce": [
+    "python tools/probes/probe_dependency_advisories.py --root . > batches.jsonl",
+    "curl -s -X POST https://api.osv.dev/v1/querybatch -H 'Content-Type: application/json' --data @batch-1.json > response-1.json",
+    "python tools/probes/probe_dependency_advisories.py --root . --responses response-1.json",
+    "# per-advisory detail (aliases / CVSS / fixed versions): curl -s https://api.osv.dev/v1/vulns/<GHSA-id>"
+  ],
+  "lockfiles": {
+    "uv.lock": {
+      "sha256": "sha256:98af1c423afe114cba173502674b9f3340763ad9f0ca50a550f0f61cf5f33390",
+      "packages": 149
+    },
+    "pnpm-lock.yaml": {
+      "sha256": "sha256:f857c70b269e589e2a3f3daa0459285cc61184bf19af265205c0b25b24585cca",
+      "packages": 264
+    }
+  },
+  "queries": {
+    "total": 413,
+    "byEcosystem": {
+      "PyPI": 149,
+      "npm": 264
+    }
+  },
+  "hitCount": 4,
+  "hits": [
+    {
+      "ecosystem": "PyPI",
+      "package": "pyjwt",
+      "version": "2.13.0",
+      "provenance": "transitive dependency of mcp 1.29.0 (PyPI)",
+      "advisories": [
+        {
+          "id": "GHSA-2gx3-rcp4-g85q",
+          "aliases": [
+            "CVE-2026-101917"
+          ],
+          "summary": "PyJWT: PyJWKClient still amplifies unauthenticated JWKS fetches on unknown kid values (incomplete fix of CVE-2026-48524)",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-2gx3-rcp4-g85q",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "id": "GHSA-42vr-xj54-vc7v",
+          "aliases": [
+            "CVE-2026-101918"
+          ],
+          "summary": "PyJWT: Unauthenticated RecursionError DoS in pre-verification payload parse (PyJWKClient.get_signing_key_from_jwt / verify_signature=False)",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "2.15.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-42vr-xj54-vc7v",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "id": "GHSA-8wjv-2p76-3863",
+          "aliases": [
+            "CVE-2026-102265"
+          ],
+          "summary": "PyJWT: Uncaught RecursionError in jwt.decode() on deeply nested token header",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-8wjv-2p76-3863",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "id": "GHSA-9j54-fg26-wv3r",
+          "aliases": [
+            "CVE-2026-102266"
+          ],
+          "summary": "PyJWT: PyJWK accepts empty HMAC keys, bypassing PyJWT's empty-key validation",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-9j54-fg26-wv3r",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "id": "GHSA-9v7f-9g4p-ffgj",
+          "aliases": [
+            "CVE-2026-102267"
+          ],
+          "summary": "PyJWT: PyJWKClient follows redirects when fetching JWKS",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-9v7f-9g4p-ffgj",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "id": "GHSA-ffc3-869f-jxw9",
+          "aliases": [
+            "CVE-2026-102268"
+          ],
+          "summary": "PyJWT: Asymmetric-PEM detection bypass: whitespace/line-ending-mutated public keys skip the HS/asymmetric confusion guard",
+          "databaseSeverity": "CRITICAL",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-ffc3-869f-jxw9",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "id": "GHSA-gvp8-978c-rx2q",
+          "aliases": [
+            "CVE-2026-103001"
+          ],
+          "summary": "PyJWT.decode() reintroduces options-dict mutation, enabling silent claim-verification bypass on dict reuse",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [],
+          "url": "https://osv.dev/vulnerability/GHSA-gvp8-978c-rx2q",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:H/A:N"
+        },
+        {
+          "id": "GHSA-hxm8-2xgr-2p9m",
+          "aliases": [
+            "CVE-2026-102269"
+          ],
+          "summary": "PyJWT: Non-canonical signature segments enable raw-token revocation bypass",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-hxm8-2xgr-2p9m",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "id": "GHSA-jwrc-g2q2-pq5p",
+          "aliases": [
+            "CVE-2026-102270"
+          ],
+          "summary": "PyJWT: ReDoS vulnerability when calling the `is_pem_format` function.",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-jwrc-g2q2-pq5p",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "id": "GHSA-p4g4-x82p-q773",
+          "aliases": [
+            "CVE-2026-102271"
+          ],
+          "summary": "PyJWT: Public keys in DER form are accepted as HMAC secrets, bypassing the CVE-2022-29217 guard",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-p4g4-x82p-q773",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "id": "GHSA-r6x4-923q-g947",
+          "aliases": [
+            "CVE-2026-102272"
+          ],
+          "summary": "PyJWT BOM Bypass",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-r6x4-923q-g947",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "id": "GHSA-w2cx-738m-mc7w",
+          "aliases": [
+            "CVE-2026-102273"
+          ],
+          "summary": "PyJWT accepts public JWK containers as HMAC secrets",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-w2cx-738m-mc7w",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "id": "GHSA-w6j9-cwv2-h6wq",
+          "aliases": [
+            "CVE-2026-102274"
+          ],
+          "summary": "PyJWT: Malformed RSA JWK aborts parsing of an entire JWK Set",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "2.14.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-w6j9-cwv2-h6wq",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        }
+      ]
+    },
+    {
+      "ecosystem": "PyPI",
+      "package": "urllib3",
+      "version": "2.7.0",
+      "provenance": "transitive dependency of docker 7.2.0 and requests 2.34.2 (PyPI)",
+      "advisories": [
+        {
+          "id": "GHSA-8988-9cw3-xx77",
+          "aliases": [
+            "CVE-2026-97687"
+          ],
+          "summary": "urllib3: HTTPS proxy TLS configuration may be ignored or overridden",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "2.8.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-8988-9cw3-xx77",
+          "cvssV4": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        },
+        {
+          "id": "GHSA-gh4c-6fx4-qh6g",
+          "aliases": [
+            "CVE-2026-97688"
+          ],
+          "summary": "urllib3: Chunked Deflate streaming can enter an infinite loop",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "2.8.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-gh4c-6fx4-qh6g",
+          "cvssV4": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N"
+        },
+        {
+          "id": "GHSA-vxq7-64xx-v4gw",
+          "aliases": [
+            "CVE-2026-97689"
+          ],
+          "summary": "urllib3: HTTPResponse.stream()/read_chunked() buffers an unbounded chunk-size line into memory",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "2.8.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-vxq7-64xx-v4gw",
+          "cvssV4": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "package": "brace-expansion",
+      "version": "5.0.9",
+      "provenance": "transitive dev-chain dependency via minimatch 10.2.6 (@eslint/config-array 0.23.5 / @typescript-eslint / eslint)",
+      "advisories": [
+        {
+          "id": "GHSA-6j4f-fj2g-mc7p",
+          "aliases": [
+            "CVE-2026-102276"
+          ],
+          "summary": "brace-expansion: DoS via uncontrolled recursion in parseCommaParts causing stack exhaustion",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "1.1.19",
+            "2.1.5",
+            "3.0.7",
+            "5.0.10"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-6j4f-fj2g-mc7p",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "id": "GHSA-q2hr-2g5m-vwhr",
+          "aliases": [
+            "CVE-2026-102277"
+          ],
+          "summary": "brace-expansion: Quadratic-time expansion of the `{a},b}` rewrite causes CPU denial of service",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "1.1.21",
+            "2.1.7",
+            "3.0.9",
+            "5.0.12"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-q2hr-2g5m-vwhr",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "id": "GHSA-qhr7-859c-m2p7",
+          "aliases": [
+            "CVE-2026-102278"
+          ],
+          "summary": "brace-expansion: DoS via uncontrolled recursion on nested brace groups causing stack exhaustion",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "1.1.20",
+            "2.1.6",
+            "3.0.8",
+            "5.0.11"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-qhr7-859c-m2p7",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        }
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "package": "undici",
+      "version": "5.29.0",
+      "provenance": "transitive dependency of @cursor/sdk 1.0.30 (root devDependency)",
+      "advisories": [
+        {
+          "id": "GHSA-2mjp-6q6p-2qxm",
+          "aliases": [
+            "CVE-2026-1525"
+          ],
+          "summary": "Undici has an HTTP Request/Response Smuggling issue",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "6.24.0",
+            "7.24.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-2mjp-6q6p-2qxm",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+        },
+        {
+          "id": "GHSA-35p6-xmwp-9g52",
+          "aliases": [
+            "CVE-2026-6733"
+          ],
+          "summary": "undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse",
+          "databaseSeverity": "LOW",
+          "fixedVersions": [
+            "6.27.0",
+            "7.28.0",
+            "8.5.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-35p6-xmwp-9g52",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "id": "GHSA-4992-7rv2-5pvq",
+          "aliases": [
+            "CVE-2026-1527"
+          ],
+          "summary": "Undici has CRLF Injection in undici via `upgrade` option",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "6.24.0",
+            "7.24.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-4992-7rv2-5pvq",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N"
+        },
+        {
+          "id": "GHSA-8xcm-r25x-g524",
+          "aliases": [
+            "CVE-2026-16728"
+          ],
+          "summary": "undici vulnerable to downstream response desynchronization via retry interceptor",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "6.28.0",
+            "7.29.0",
+            "8.9.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-8xcm-r25x-g524",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "id": "GHSA-g8m3-5g58-fq7m",
+          "aliases": [
+            "CVE-2026-11525"
+          ],
+          "summary": "undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching",
+          "databaseSeverity": "LOW",
+          "fixedVersions": [
+            "6.27.0",
+            "7.28.0",
+            "8.5.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-g8m3-5g58-fq7m",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "id": "GHSA-g9mf-h72j-4rw9",
+          "aliases": [
+            "CVE-2026-22036"
+          ],
+          "summary": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "6.23.0",
+            "7.18.2"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-g9mf-h72j-4rw9",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "id": "GHSA-m8rv-5g2x-5cg5",
+          "aliases": [
+            "CVE-2026-15157"
+          ],
+          "summary": "undici vulnerable to CRLF Injection via blob-like body 'type' property",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "6.28.0",
+            "7.29.0",
+            "8.9.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-m8rv-5g2x-5cg5",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:N"
+        },
+        {
+          "id": "GHSA-p88m-4jfj-68fv",
+          "aliases": [
+            "CVE-2026-9679"
+          ],
+          "summary": "undici vulnerable to HTTP header injection via Set-Cookie percent-decoding",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "6.27.0",
+            "7.28.0",
+            "8.5.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-p88m-4jfj-68fv",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N"
+        },
+        {
+          "id": "GHSA-r53p-7pc4-xj5r",
+          "aliases": [
+            "CVE-2026-18540"
+          ],
+          "summary": "undici vulnerable to downstream response splitting via retry interceptor",
+          "databaseSeverity": "LOW",
+          "fixedVersions": [
+            "6.28.1",
+            "7.29.1",
+            "8.10.2"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-r53p-7pc4-xj5r",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        {
+          "id": "GHSA-v3r7-h72x-cjcm",
+          "aliases": [
+            "CVE-2026-16729"
+          ],
+          "summary": "undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields",
+          "databaseSeverity": "MODERATE",
+          "fixedVersions": [
+            "6.28.0",
+            "7.29.0",
+            "8.9.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-v3r7-h72x-cjcm",
+          "cvssV3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        },
+        {
+          "id": "GHSA-v9p9-hfj2-hcw8",
+          "aliases": [
+            "CVE-2026-2229"
+          ],
+          "summary": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "6.24.0",
+            "7.24.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-v9p9-hfj2-hcw8",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "id": "GHSA-vrm6-8vpv-qv8q",
+          "aliases": [
+            "CVE-2026-1526"
+          ],
+          "summary": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "6.24.0",
+            "7.24.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-vrm6-8vpv-qv8q",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "id": "GHSA-vxpw-j846-p89q",
+          "aliases": [
+            "CVE-2026-12151"
+          ],
+          "summary": "undici WebSocket client vulnerable to denial of service via fragment count bypass",
+          "databaseSeverity": "HIGH",
+          "fixedVersions": [
+            "6.27.0",
+            "7.28.0",
+            "8.5.0"
+          ],
+          "url": "https://osv.dev/vulnerability/GHSA-vxpw-j846-p89q",
+          "cvssV3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261001-179](entries/MEM-20261001-179-raw-advisory-dumps-belong-outside-the-tree.md) | ACTIVE | repository | 0.90 | 2027-04-01 | PLAN-20261001-265 |
 | [MEM-20260930-178](entries/MEM-20260930-178-closeout-verifier-reuses-the-standard-face-and-bites-two-ways.md) | ACTIVE | repository | 0.90 | 2027-03-30 | PLAN-20260930-263 |
 | [MEM-20260930-177](entries/MEM-20260930-177-handoff-digests-carried-task-ids-and-the-same-field-was-never-consumed.md) | ACTIVE | repository | 0.90 | 2027-03-30 | PLAN-20260930-261 |
 | [MEM-20260930-176](entries/MEM-20260930-176-run-chain-declaration-is-the-only-deterministic-retrieval-door.md) | ACTIVE | repository | 0.90 | 2027-03-30 | PLAN-20260929-259 |
