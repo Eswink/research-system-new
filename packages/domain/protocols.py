@@ -54,6 +54,31 @@ class CapabilityExecution(StrEnum):
     RUN_CHAIN = "run_chain"
 
 
+@dataclass(frozen=True, slots=True)
+class SessionToolBinding:
+    """phase 声明的**会话工具绑定**：某个 provider 的会话工具用哪个 SDK 工具名装配。
+
+    为什么需要显式声明（而不是拿 provider id 直接当工具名）：会话工具名会被 SDK 的
+    registry 按名解析，而 registry 里的名字来自**工具实现自己**（`ToolDefinition.name`
+    由类名派生）。provider id（如 `m12_artifact`）与 SDK 工具名（如 `artifact_read`）
+    是**两个不同的名字空间**；把前者直接当后者用，只会得到「未注册」的点名失败
+    ——这正是 GOAL-028 建档时实测到的生产缺口。所以绑定必须是**显式事实**，
+    由本声明承载，并在缺声明时**点名失败**而不是猜。
+
+    边界（AGENTS.md §5）：本类型只装**字符串**，OpenHands/sdk 的类型不进 Domain；
+    「哪个工具名对应哪个实现」是装配方的事（见 `AdapterDependencies` 的工具实现表）。
+    """
+
+    provider_id: str
+    tool_name: str
+
+    def __post_init__(self) -> None:
+        if not self.provider_id:
+            raise ValueError("session tool binding provider_id must not be empty")
+        if not self.tool_name:
+            raise ValueError("session tool binding tool_name must not be empty")
+
+
 class CompileFindingCode(StrEnum):
     DAG_MISSING_DEPENDENCY = "DAG_MISSING_DEPENDENCY"
     DAG_FORWARD_REFERENCE = "DAG_FORWARD_REFERENCE"
@@ -169,6 +194,10 @@ class ProtocolPhase:
     # 见 `CapabilityExecution`：`run_chain` **不**把能力从任何检查面拿掉，
     # 只把它从**会话工具列表**里拿掉。
     capability_execution: CapabilityExecution = CapabilityExecution.SESSION
+    # GOAL-028 EC-01：本 phase 的**会话工具绑定**（provider id → SDK 工具名）。
+    # 缺省空 ⇒ 会话工具列表逐字等于（冻结集 − run-chain 排除），即既有语义：
+    # 未绑定的 provider id 仍直接交给 SDK，未注册时点名失败。
+    session_tool_bindings: list[SessionToolBinding] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -255,6 +284,8 @@ class CompiledPhase:
     # GOAL-011 EC-01：编译期**原样携带**「能力由谁执行」。`run_chain` 的 phase，
     # 其能力仍进 `tool_requirements`（preflight/策略/冻结面不减），只是不进会话工具列表。
     capability_execution: CapabilityExecution = CapabilityExecution.SESSION
+    # GOAL-028 EC-01：编译期**原样携带**会话工具绑定（编译不解释它；解释在会话解析处）。
+    session_tool_bindings: tuple[SessionToolBinding, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

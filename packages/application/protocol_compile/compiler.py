@@ -66,6 +66,8 @@ def _compiled_phases(protocol: ProtocolDefinition, ordered: tuple[str, ...]) -> 
             inputs=tuple(phases[phase_id].inputs),
             # GOAL-011 EC-01：原样透传（编译不解释它；解释在会话解析处）。
             capability_execution=phases[phase_id].capability_execution,
+            # GOAL-028 EC-01：会话工具绑定同样原样透传（解释在会话解析处）。
+            session_tool_bindings=tuple(phases[phase_id].session_tool_bindings),
         )
         for phase_id in ordered
     ]

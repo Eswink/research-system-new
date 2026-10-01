@@ -18,8 +18,25 @@ from packages.domain.protocols import (
     ProtocolDefinition,
     ProtocolPhase,
     RoleRequirement,
+    SessionToolBinding,
     StopConditions,
 )
+
+
+def _session_tool_bindings(raw_bindings: list[dict[str, Any]]) -> list[SessionToolBinding]:
+    """读取 phase 的会话工具绑定（provider id → SDK 工具名）。
+
+    **只读不解释**：绑定是否指向真实存在的工具、provider 是否在冻结集内，
+    都在会话解析处判定（那里能看到冻结集与装配方提供的实现表）；
+    本层只保证声明不在这步丢掉，且字段缺失即**空**（既有语义）。
+    """
+    return [
+        SessionToolBinding(
+            provider_id=item["provider_id"],
+            tool_name=item["tool_name"],
+        )
+        for item in raw_bindings
+    ]
 
 
 def _role_requirements(raw_roles: list[dict[str, Any]]) -> list[RoleRequirement]:
@@ -64,6 +81,8 @@ def _phase_from_mapping(raw: dict[str, Any]) -> ProtocolPhase:
         stop_conditions=_stop_conditions(raw.get("stop_conditions")),
         # 缺省 "session"：文档不写该字段 ⇒ 逐字节保持既有语义（会话工具）。
         capability_execution=CapabilityExecution(raw.get("capability_execution", "session")),
+        # 缺省空：文档不写绑定 ⇒ 既有语义（provider id 直接交给 SDK，未注册即点名失败）。
+        session_tool_bindings=_session_tool_bindings(raw.get("session_tool_bindings", [])),
     )
 
 
