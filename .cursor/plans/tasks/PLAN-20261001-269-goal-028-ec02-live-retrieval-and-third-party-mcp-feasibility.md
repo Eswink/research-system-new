@@ -2,11 +2,12 @@
 id: PLAN-20261001-269
 slug: goal-028-ec02-live-retrieval-and-third-party-mcp-feasibility
 title: GOAL-028 cycle 2（EC-02）：活检索 — 第三方 MCP 勘察结论 + 自建 server 真上游模式 + 非预置语料判据
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-01
 updated_at: 2026-10-01
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261001-270-goal-028-ec02-live-retrieval-and-third-party-mcp-feasibility.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20261001-181-tools-is-not-a-package-so-load-by-path.md
 parent_goal: GOAL-20261001-028
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -85,25 +86,63 @@ exit_criteria:
 
 ## 实施清单
 
-- [ ] **WP-A 勘察**：第三方 MCP 可行性结论（许可 / pin / 凭据 / 稳定性），落
-      `docs/integration/MCP_LIVE_RETRIEVAL.md`（新文件；既有 MCP 文档同源更新）。
-- [ ] **WP-B 真实上游模式**：`tools/research_mcp_server.py` 新增活检索模式（显式开关 +
-      复用既有 provider 语义 + httpx.MockTransport 可注入），默认路径逐字不变。
-- [ ] **WP-C 判据**：非预置语料正反两向 + 离线零出站 + 触网前 URL 策略；既有三份判据
-      `git diff` 为零。
-- [ ] **WP-D 记录 + 门 + 提交**：先写记录 → 记录面判据 → 全量 m0（独占、canonical DSN）
-      → 显式路径提交 → push → 轮询 CI 到终态 → 台账**逐提交**。
+- [x] **WP-A 勘察**：第三方 MCP 可行性结论（许可 / pin / 凭据 / 稳定性），落
+      `docs/integration/MCP_TOOL_PROVIDERS.md` §6.4；结论 = **不可行**（今天无满足四条的候选），
+      活检索走 §6.5 的自建 server 扩展。⇒ commit `19d52f7`
+- [x] **WP-B 真实上游模式**：`tools/research_mcp_live.py`（149 行）+ server 的
+      `build_server(live=None)` 缺省不变 + 显式开关 + 按路径加载（`tools/` 不是包）。⇒ commit `19d52f7`
+- [x] **WP-C 判据**：非预置语料正反两向 + 两模式同形 + 触网前策略零请求（含正控制）+
+      默认零出站 + **协议往返**（in-memory 会话真 `call_tool`）。⇒ commit `9b53c21`
+- [x] **WP-D 记录 + 门 + 提交**：本回写提交 + `RECHECK-20261001-270`。
 
 ## 证据
 
-（执行中回填。）
+**交付物**
+
+| 面 | 文件 | 作用 |
+| --- | --- | --- |
+| 勘察结论 | `docs/integration/MCP_TOOL_PROVIDERS.md` §6.4 / §6.5 | 四维判定表 + 综合判定 + 活检索模式说明 |
+| 活检索 | `tools/research_mcp_live.py`（149 行） | 真打 Europe PMC REST；复用既有 provider 零件；触网前策略 |
+| 模式开关 | `tools/research_mcp_server.py`（294 行） | `build_server(live=None)`；开关 `RESEARCHOS_MCP_LIVE_RETRIEVAL=1`；按路径加载 |
+| 判据 | `tests/contracts/test_mcp_live_retrieval_offline.py`（298 行） | 14 passed |
+| 射程 | `tests/tooling/test_tooling_scripts_meet_product_gates.py` | `IN_SCOPE` **纯追加**一条 |
+
+**实测结果**
+
+- 新判据：**14 passed**；
+- `tests/contracts` 全量：**1596 passed / 69 skipped**（既有三份 MCP 判据**一字未改**）；
+- `tests/tooling` 四道门：**8 passed**；
+- MockTransport 冒烟：真解析取回 `{pmid: 99000001, doi: 10.9999/goal028.live.1, ...}`
+  与内容寻址 digest，请求计数 1。
+
+**非预置语料正反两向（原文口径）**：正向 —— 专属 PMID `99000001`（**不在** `CORPUS` 里）
+经真协议栈取回，digest 重算相等；反向 —— 冻结模式下同一 id 落 `missing` 被**点名**；
+另断言两模式**字段集逐字相同**（同一条记录经两条路产出相等）。
+
+**离线取证**：全部用例在 `httpx.MockTransport` 上；未开关 ⇒ `_live_settings()` 返回 `None`
+（**不构造 client**）；开关值 `true`/`yes`/`0`/`''` 一律不启用；声明外 host / 空声明 ⇒
+拒绝且 **`settings.requests == []`**；**正控制**：合法 host ⇒ 请求真发出。
+
+**按压 P-2（先红后绿 + 逐字节复原）**：架空 `assert_url_allowed` ⇒ 两条零请求判据
+**2 failed**；恢复后 `sha256sum -c` 逐字节一致（`research_mcp_live.py` = `8049c2a6…`、
+`research_mcp_server.py` = `c1b8381c…`）且 14 passed。
 
 ## 影响报告
 
-（收口时回填。）
+- **Domain/schema 变化**：无（未动域类型、未动 schema）。
+- **API 变化**：无新路由、无 DTO 变化。
+- **安全/凭据变化**：活检索**不解析任何凭据**（Europe PMC 检索无需凭据 ⇒ 不声明
+  `credential_ref`，也就不可能转发别的域的令牌）；出站走**既有** `assert_url_allowed`
+  （仅 http/https + 保留类拒绝 + host ∈ 声明域名），触网前判定。
+- **网络姿态**：**默认门仍离线**（未开关不构造 client）；`tests/egress_guard.py` 未改；
+  真实出网按既有 `requires_live_llm` 口径，本轮**未开**（`W-1`）。
+- **兼容性/迁移风险**：无迁移。默认路径（未开关）行为逐字节不变，由既有三份 MCP 判据守住。
+- **上游版本影响**：无依赖改动（`mcp`/`httpx` 均为既有依赖）。
+- **下一项任务**：GOAL-028 **EC-03**（默认装配上的完整闭环）。
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-01 | IN_PROGRESS | cycle 2 派生：EC-02（活检索 + 第三方 MCP 勘察结论）。 |
+| 2026-10-01 | DONE | 四件 WP 全部落树；判据 14 passed、`tests/contracts` 1596 passed、既有 MCP 判据一字未改；按压 P-2 先红后绿 + 逐字节复原；`RECHECK-20261001-270` = `PASS_WITH_WARNINGS`（六条 WARNING 如实登记，尤以 `W-1`「机制成立 ≠ 已实跑联网」）。 |

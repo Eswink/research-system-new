@@ -56,6 +56,20 @@ def live_module() -> Any:
     return _load(_LIVE_PATH, "goal028_live_under_test")
 
 
+def _text_payload(result: Any) -> dict[str, object]:
+    """从 `call_tool` 结果里取第一个**文本**内容并解析成 JSON。
+
+    `content` 是 SDK 的联合类型（文本 / 图片 / 音频 / 资源链接 / 内嵌资源）⇒ 不能直接
+    取 `.text`：先按 `type == "text"` 找，找不到即**如实判错**（本 server 只产文本，
+    出现别的种类说明界面变了）。
+    """
+    texts = [item.text for item in result.content if getattr(item, "type", None) == "text"]
+    assert texts, [type(item).__name__ for item in result.content]
+    parsed: object = json.loads(texts[0])
+    assert isinstance(parsed, dict), parsed
+    return parsed
+
+
 def _upstream_payload(pmid: str, doi: str, title: str) -> dict[str, object]:
     """上游响应的**真形状**（Europe PMC `resultList.result[]`；字段名逐字对齐官方文档）。"""
     return {
@@ -261,24 +275,22 @@ class TestTheLivePathGoesThroughTheMcpProtocol:
         built = server.build_server(live=settings)
 
         async def _round_trip() -> tuple[list[str], dict[str, object]]:
-            async with create_connected_server_and_client_session(
-                built._mcp_server
-            ) as session:
+            async with create_connected_server_and_client_session(built._mcp_server) as session:
                 await session.initialize()
                 listing = await session.list_tools()
                 result = await session.call_tool(
                     "literature_search", {"query": "live upstream only", "limit": 5}
                 )
-                return [tool.name for tool in listing.tools], json.loads(result.content[0].text)
+                return [tool.name for tool in listing.tools], _text_payload(result)
 
         names, payload = asyncio.run(_round_trip())
         assert names == ["literature_search", "literature_read"], names
         assert payload["ids"] == [_LIVE_ONLY_PMID], payload
-        assert payload["articles"][0]["doi"] == _LIVE_ONLY_DOI, payload
+        articles = payload["articles"]
+        assert isinstance(articles, list), payload
+        assert articles[0]["doi"] == _LIVE_ONLY_DOI, payload
 
-    def test_the_frozen_server_keeps_the_same_tool_surface(
-        self, live_module: Any
-    ) -> None:
+    def test_the_frozen_server_keeps_the_same_tool_surface(self, live_module: Any) -> None:
         """对照：**冻结**模式（缺省）的工具面与活模式**逐字相同** —— 只是数据来源不同。"""
         import asyncio
 
@@ -288,9 +300,7 @@ class TestTheLivePathGoesThroughTheMcpProtocol:
         built = server.build_server()
 
         async def _tools() -> list[str]:
-            async with create_connected_server_and_client_session(
-                built._mcp_server
-            ) as session:
+            async with create_connected_server_and_client_session(built._mcp_server) as session:
                 await session.initialize()
                 listing = await session.list_tools()
                 return [tool.name for tool in listing.tools]
