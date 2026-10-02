@@ -82,6 +82,11 @@ class AdapterDependencies:
     build_llm: Any
     build_workspace: Any
     register_tools: Any = None
+    # GOAL-028 EC-01：装配方提供的 **SDK 工具实现表**（工具名 → 实现）。
+    # phase 的 `session_tool_bindings` 声明「哪个 provider 用哪个工具名装配」，
+    # 这张表回答「那个名字由哪个实现承载」。缺省 None ⇒ 任何绑定都无处可落，
+    # `bind_session_tools` 会**点名**说清缺哪个工具名的实现（不静默降级）。
+    tool_impls: Any = None
     build_agent: Any = None
     build_llm_for_fork: Any = None  # fork model_override 时构建新 LLM（缺省回退 build_llm）
     budget_ledger: Any = None

@@ -97,6 +97,11 @@ class SessionSpecContext:
     # 这一个面：冻结集 / preflight / 策略判定都不变 ⇒ **声明化排除**，不是静默丢弃。
     # 缺省空 = 未声明 ⇒ 会话工具列表逐字节等于冻结集（既有语义）。
     run_chain_tool_ids: tuple[str, ...] = field(default_factory=tuple)
+    # GOAL-028 EC-01：本 phase 的**会话工具绑定** `(provider_id, tool_name)`（源头是协议
+    # phase 的 `session_tool_bindings`，唯一解释点在 `session_resolution`）。它只描述
+    # 「哪个 provider 用哪个 SDK 工具名装配」——「那个名字对应哪个实现」是装配方的事。
+    # 缺省空 = 未声明 ⇒ provider id 直接交给 SDK（既有语义，未注册即点名失败）。
+    session_tool_bindings: tuple[tuple[str, str], ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)
@@ -333,6 +338,7 @@ def _run_session(
         agent=spec_context.agent,
         frozen_tool_set=spec_context.frozen_tool_set,
         run_chain_tool_ids=spec_context.run_chain_tool_ids,
+        session_tool_bindings=spec_context.session_tool_bindings,
         manifest_ref=spec_context.frozen_manifest_digest,
         endpoint=spec_context.endpoint,
         model=spec_context.model,
