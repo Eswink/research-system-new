@@ -683,6 +683,20 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | --- | --- | --- | --- |
 | cycle 0（建档 + 记录回填，一次推送） | `003a78e`（建档：本文件 1 个文件） | **无**（`total_count=0`） | **被同批 `3e05fd6` 的 run 覆盖**（两次提交在同一 `git push` 中上行，GitHub 只为首个触发面之后的 head 建 run）；**由 `3e05fd6` 的绿承担** |
 | cycle 0（同上批） | `3e05fd6`（记录回填：本文件 1 个文件） | M0 [`36867097655`](https://github.com/Eswink/research-system-new/actions/runs/36867097655) / Push-on-main [`36867096306`](https://github.com/Eswink/research-system-new/actions/runs/36867096306) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查（`scratch/goal028-c0b-run-36867097655{,-jobs}.json` / `…-36867096306{,-jobs}.json`）⇒ `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=3e05fd6e1017…` 与推送一致；轮询日志 `scratch/goal028-c0b-ci-poll.log`（`ALL_TERMINAL sha=3e05fd6e1017a3b419a347341c6c67c626b6e632`）。上游 push 回执报 **8 条**依赖告警（6 moderate + 2 low）⇒ **零依赖改动**。 |
+| cycle 0 收口（GOAL 台账 + 子 PLAN + ALL_PLAN，3 文件） | `2e2fd3e` | M0 [`36870448644`](https://github.com/Eswink/research-system-new/actions/runs/36870448644) / Push-on-main [`36870447320`](https://github.com/Eswink/research-system-new/actions/runs/36870447320) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`；原始 JSON 实查（`scratch/goal028-c0c-run-…`，见轮询日志 `scratch/goal028-c0c-ci-poll.log` 的 `ALL_TERMINAL sha=2e2fd3e0b77e…`）⇒ `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=2e2fd3e0b77e…` 与推送一致。 |
+| cycle 1（EC-01：声明面 1 + 解释点 6 + 实现与组合根 6 + 判据 1 + 同源判据 1 + 收口 11） | `60e0303`（WP-A） | **无**（`total_count=0`） | 其 run 被同批 `724b74b` 覆盖；**由 `724b74b` 的绿承担** |
+| cycle 1（同上批） | `1c5ad78`（WP-B） | **无**（`total_count=0`） | 同上 |
+| cycle 1（同上批） | `50a58c4`（WP-C） | **无**（`total_count=0`） | 同上 |
+| cycle 1（同上批） | `234fb06`（WP-D） | **无**（`total_count=0`） | 同上 |
+| cycle 1（同上批） | `cb5c26f`（WP-D2） | **无**（`total_count=0`） | 同上 |
+| cycle 1（同上批） | `724b74b`（收口） | M0 [`36984630729`](https://github.com/Eswink/research-system-new/actions/runs/36984630729) / Push-on-main [`36984629590`](https://github.com/Eswink/research-system-new/actions/runs/36984629590) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查（`scratch/goal028-c1-run-36984630729{,-jobs}.json` / `…-36984629590{,-jobs}.json`）⇒ `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=724b74bb5134…` 与推送一致；轮询日志 `scratch/goal028-c1-ci-poll.log`（`ALL_TERMINAL sha=724b74bb5134121bca2c9c99b3de8cc30de52e96`，**44 轮**）。 |
+
+**本轮自身的逐提交覆盖情况（EC-04(b) 的判据口径在 cycle 1 上已生效）**：本批推送 **6** 个提交，
+逐条经 REST API 原始 JSON 复核 —— 前 **5** 个（`60e0303` / `1c5ad78` / `50a58c4` / `234fb06` /
+`cb5c26f`）`total_count=0`，其 run **被同批 head `724b74b` 覆盖、由它的绿承担**；
+`724b74b` 自带 M0 + Push-on-main 两个 run，八 job 与 CodeQL 3/3 全 `success`（`run_attempt=1`）。
+**无 `cancelled`**。（这正是 GOAL-027 合并行缺口的同一形状 —— 本 GOAL 按新口径**逐条写明覆盖关系**
+而不是合并成一行。）
 
 **GOAL-027 台账缺口如实补记（EC-04(a)：只追加，不改历史行）**——实测（原始 REST API 复核）：
 
