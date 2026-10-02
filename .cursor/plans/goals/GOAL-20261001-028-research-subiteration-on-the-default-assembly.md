@@ -82,7 +82,7 @@ exit_criteria:
       tests/e2e/test_multi_role_research_offline.py <新增判据文件> -q` ⇒ 全绿（既有两份判据**逐字节未改**）；
       配套留档：缺映射 / 错误映射两向的点名判词原文、默认装配实跑的 run 终态与逐 phase 产出、
       按压前后 raw `sha256` 逐字节复原。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **活检索（收限制 ②；含限制 ③ 的勘察结论）**：
@@ -286,8 +286,9 @@ escalation_triggers:
     若是本 GOAL 引入的 ⇒ 修复方向是**恢复离线**，**不得**放宽放行面
 child_plans:
   - .cursor/plans/tasks/PLAN-20261001-267-goal-028-ec01-declarative-provider-to-sdk-tool-mapping.md
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261001-268-goal-028-ec01-declarative-provider-to-sdk-tool-mapping.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20261001-180-sdk-tool-registry-is-process-global.md
 ---
 
 ## 目标与退出标准
@@ -307,7 +308,7 @@ memory_entries: []
 
 | EC | 标准（简） | 主要交付物 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | **provider→SDK 声明式映射**（映射层 + 接进组合根 + 点名失败反证 + 默认装配实跑） | 声明层 + 解析层 + 装配面 + 新判据 | **PENDING** |
+| EC-01 | **provider→SDK 声明式映射**（映射层 + 接进组合根 + 点名失败反证 + 默认装配实跑） | 声明层 + 解析层 + 装配面 + 新判据 | **PASS**（cycle 1 / PLAN-267 / RECHECK-268） |
 | EC-02 | **活检索**（第三方勘察结论 + 自建 server 真上游 + 非预置语料判据 + 离线仍绿） | 勘察结论 + server 扩展 + 新判据 | **PENDING** |
 | EC-03 | **默认装配完整闭环**（真标识 + 真 metrics + 评审反证 + 读面四列 + Handoff digest） | 新判据 + 实跑留档 | **PENDING** |
 | EC-04 | **台账合并行不漏记**（缺口补记 + 新判据 + 反证两向） | GOAL-027 台账补记 + 新判据 | **PENDING** |
@@ -670,6 +671,7 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | `003a78e`（建档提交，1 文件 = 本文件） | 治理 `validate.py` = `Cursor 治理验证通过`（8 行）；记录面判据 **33 passed in 6.58s**（`egress guard: judged 0 connection attempt(s); blocked 0`）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAILED [` = 0 / EXIT=0 / **4928 passed / 21 skipped / 106 warnings**，python 段 `in 595.99s`；日志 `scratch/goal028-c0c-m0.log`，记录已写完、独占运行、canonical DSN pin、不接管道、**零进程残留**；**首跑即终态**） | 见下方「CI 台账」（本行结论由后续回填提交补记） | **两处如实登记的取材失误**：① 首跑 m0 的 `RESEARCHOS_POSTGRES_DSN` **端口写错**（写 55432，实际容器映射 **15432**）⇒ 193 条 postgres 用例**静默转 skip**（总数 4949 不变、终态行**仍显示 23/23**），靠与 GOAL-027 基线计数对照（4735 passed vs 4928）发现并改用 canonical DSN 复跑；② 首跑撞 `framework/run_cursor_framework_evals` 的 **`PermissionError WinError 5`**（`evolution_state.json.tmp` 残留）⇒ 按既有 flake 配方单跑取证（`FRAMEWORK EVAL PASS`）后独占复跑，**未改 check** | EC-01…EC-05 全 PENDING。起点已定位：见「事实层结论」22 条，其中**六条**决定 EC 形状：第 **3/4** 条（缺映射今天是**点名失败**、且由既有判据固定 ⇒ 映射必须**声明作用域**）/ 第 **6** 条（出厂 provider id 集被既有判据锁死 ⇒ 活检索不得加出厂 id）/ 第 **10** 条（SDK 自带工具极少 ⇒ 实现须由装配方提供）/ 第 **13** 条（MCP 冻结语料被三份判据钉死 ⇒ 活检索只能**加**路径）/ 第 **16** 条（GOAL-027 台账缺口已用原始 API 复核属实） | cycle 1 = **EC-01**（provider→SDK 声明式映射 + 接进生产组合根 + 点名失败反证两向 + 默认装配实跑） |
+| 1 | `PLAN-20261001-267`（EC-01） | `60e0303`（WP-A 声明面）+ `1c5ad78`（WP-B 解释点）+ `50a58c4`（WP-C 实现与组合根）+ `234fb06`（WP-D 判据）+ `cb5c26f`（WP-D2 同源判据）+ 本条回写提交 | 治理 `validate.py` = `Cursor 治理验证通过`；记录面判据 **31 passed**；判据 **13 + 9 passed**；既有判据 `git diff` 为空、连同新判据 **166 passed / 1 skipped**；**按压 P-1 先红后绿 + 逐字节复原**（`session_builder.py` = `00591f58…`、`tool_mapping.py` = `9dbc95b6…`）；ruff / `mypy --strict` / `validate_bundle` 绿；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` = 24 / `FAILED [` = 0 / EXIT=0 / **4954 passed / 21 skipped / 109 warnings**，python 段 `in 597.05s`；日志 `scratch/goal028-c1c-m0.log`，记录写入后独占运行、canonical DSN pin、不接管道、**零进程残留**） | 见下方「CI 台账」（**逐提交**登记） | **三处判据侧自伤 + 两处规模门超限（全部已修，产品语义未因此改动）**：① 反证二「换实现表」实测 SUCCEEDED（SDK registry **进程级且只增不减**）⇒ 改用**专属名字**；② 反证一**单跑绿、全量 m0 判红**（同根因反向：`map_tools=True` 的判据已把 `openhands_workspace` 注册成惰性替身 ⇒ 「未注册」断言假绿）⇒ 用例内**显式摘除**该名字；③ 协议 fixture 起初只给一个 phase 声明绑定 ⇒ 另一 phase 仍点名失败；④ `_openhands_runtime` 54 行 / `resolve_sessions` 51 行超 50 行门 ⇒ 按仓内形态**抽出小函数**（首版抽出后 mypy 报类型收窄丢失 ⇒ 改为让守卫返回收窄后的二元组）；⑤ `bind_session_tools` 的准入判定从「翻译点查实现表」**移到** SDK registry 的可观测后果（设计更正）。 | EC-01 收口；**残余**：`W-1` 映射目标须装配方提供（默认配置下多 role 协议仍不可跑 = **机制成立 ≠ 出厂即可跑**）/ `W-2` 绑定是 phase 级非全局表 / `W-3` 桥的 policy 拦截由代码路径保证、未单钉 / `W-4` 不支持一 provider 多工具名 / `W-5` 第三方 MCP 未验证（属 EC-02） | cycle 2 = **EC-02**（活检索 + 第三方 MCP 勘察结论） |
 
 ### CI 台账（逐 run 逐 job 实查；**逐提交**登记 `sha` ↔ run id）
 
@@ -696,6 +698,10 @@ GitHub 只为该批的**最终 head** 建 run（`cancel-in-progress` 语义下�
 **不等于**「未受门覆盖」，但**必须**在台账里写明「被谁覆盖 + 由谁承担绿」——EC-04(b) 的判据即为此。
 
 ## 状态历史
+
+| 时间 | 状态 | 说明 |
+| --- | --- | --- |
+| 2026-10-01 | ACTIVE | **cycle 1（EC-01）收口**：把 provider→SDK 工具映射从「测试侧恒等替身」推进到「**显式声明 + 生产组合根消费**」。**落地形态 = 声明化分离**（照 `CapabilityExecution.RUN_CHAIN` 的先例）：域内 `SessionToolBinding`（**纯字符串**，OpenHands 类型不进 Domain）→ loader 只读不解释（缺省空 ⇒ 既有语义逐字节不变）→ 编译器原样透传 → `session_resolution` 是**唯一解释点**（`session_tool_face` / `session_tool_bindings`，越界与一 provider 两名字各自**点名**）→ adapter `bind_session_tools`（缺声明逐字返回；位置保持替换；不增减工具数）→ `register_tools` 注册面 + `BoundSessionTool` 真实实现（`session_tools.py`）→ 调用桥 `session_tool_invocation.py` 复用**同一个** `execute_tool_call` 走策略+执行门（参数经 `tool-args` 制品 + `argument_digest` 重算，与运行链 / REST / MCP 同口径）。**生产组合根**：`build_agent_runtime(..., register_session_tools=)`（缺省 `None` ⇒ 生产行为逐字不变），复用**既有** `AdapterDependencies.register_tools`（此前全仓零调用方的死缝），**未新增字段**。**判据**：`tests/e2e/test_tool_binding_on_the_default_assembly.py`（292 行，**13 passed**）+ `tests/architecture/python/test_session_tool_bindings_exposure.py`（**9 passed**）+ 三份成对协议（完整 / 只少一条 / 绑到未实现名，差别只有声明行 ⇒ 失败可归因）。**默认装配实跑**：走 `build_agent_runtime` 的真实缺省（**非** `map_tools=True`），run 到 `SUCCEEDED`、`protocol_id=tool_binding_research_v1_0_0`、mock 端点被真实驱动。**两向点名失败（原文）**：删一条绑定 ⇒ `ToolDefinition 'openhands_workspace' is not registered`；绑到未实现名 ⇒ `ToolDefinition 'workspace.read.unwired' is not registered`；**两向的 mock 端点请求数均为 0**（失败在任何 LLM 调用之前）。**既有判据逐字节未改**（`git diff` 对 `test_ec03_real_runtime_offline_chain` / `test_multi_role_research_offline` / `test_run_chain_capability_exposure` / `tests/application/run_orchestration` / `preflight` / `run_fixtures` / `egress_guard` 均为空），连同新判据 **105 passed / 1 skipped**。**按压 P-1**：架空绑定翻译 ⇒ 三条主判据 3 failed（点名的正是 provider id）；恢复后 `sha256sum -c` 逐字节一致（`session_builder.py` = `00591f58…`、`tool_mapping.py` = `9dbc95b6…`）且 13 passed。**三处判据侧自伤已如实处置**（产品代码未因此改动）：① 反证二起初「换实现表 + 复用 `workspace.read`」实测 SUCCEEDED —— 根因是 **SDK registry 进程级且只增不减**（`register_tool` 无撤销入口）⇒ 断言依赖用例顺序；改用**专属名字** `workspace.read.unwired`，单跑与合跑均已复验；该教训沉淀为 `MEM-20261001-180`。② 协议 fixture 起初只给一个 phase 声明绑定 ⇒ 另一 phase 仍点名失败。③ 示例协议误留占位键 ⇒ `validate_bundle` schema 判红。**设计更正**：`bind_session_tools` 起初在翻译点判「实现是否存在」，但注册发生在翻译**之后** ⇒ 判定会与事实分叉；改为只判「绑定是否落在会话工具面内」，准入由 **SDK registry 的可观测后果**承担。`RECHECK-20261001-268` = **`PASS_WITH_WARNINGS`**（五条 `W-NN` 如实登记，**尤以 `W-1`**：映射目标须由装配方提供 ⇒ 默认配置下多 role 协议仍不可跑，**本 EC 证的是机制成立，不是出厂即可跑**）。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。下一 cycle = **EC-02**（活检索 + 第三方 MCP 勘察结论）。 |
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |

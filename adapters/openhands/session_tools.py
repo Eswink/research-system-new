@@ -26,8 +26,10 @@ from openhands.sdk.tool.schema import Action, Observation
 from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
 from pydantic import Field
 
-#: 调用桥：工具参数 → 结果文本。抛错即视为工具失败（observation 带 `is_error`）。
-SessionToolInvoker = Callable[[dict[str, object]], str]
+#: 调用桥：`(工具参数, 会话上下文) → 结果文本`。抛错即视为工具失败（observation 带
+#: `is_error`）。`conversation` 由 SDK 在执行点传入（可能是 None），桥用它取
+#: **会话级**标识——同一会话内的两次调用因此共享同一命名空间，不同会话互不串台。
+SessionToolInvoker = Callable[[dict[str, object], Any], str]
 
 
 class SessionToolAction(Action):
@@ -50,7 +52,9 @@ class _BridgeExecutor(ToolExecutor[SessionToolAction, SessionToolObservation]):
         self, action: SessionToolAction, conversation: Any = None
     ) -> SessionToolObservation:
         try:
-            return SessionToolObservation.from_text(self._invoker(dict(action.arguments)))
+            return SessionToolObservation.from_text(
+                self._invoker(dict(action.arguments), conversation)
+            )
         except Exception as exc:  # noqa: BLE001 - 失败必须变成可读 observation，不炸会话
             return SessionToolObservation.from_text(f"{type(exc).__name__}: {exc}", is_error=True)
 

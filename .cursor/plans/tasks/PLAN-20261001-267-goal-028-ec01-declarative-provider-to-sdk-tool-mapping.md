@@ -2,11 +2,12 @@
 id: PLAN-20261001-267
 slug: goal-028-ec01-declarative-provider-to-sdk-tool-mapping
 title: GOAL-028 cycle 1（EC-01）：provider→SDK 工具映射 — 声明式绑定 + 接进生产组合根 + 点名失败反证两向
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-01
 updated_at: 2026-10-01
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261001-268-goal-028-ec01-declarative-provider-to-sdk-tool-mapping.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20261001-180-sdk-tool-registry-is-process-global.md
 parent_goal: GOAL-20261001-028
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -82,44 +83,74 @@ exit_criteria:
 
 ## 实施清单
 
-- [ ] **WP-A（域内声明 + loader + 编译透传 + schema 纯新增）**
-  - [ ] 域内新增声明类型（纯字符串对：`provider_id → sdk tool name`），落
-        `packages/domain/protocols.py`；`CompiledPhase` 同字段原样透传。
-  - [ ] `adapters/contracts/protocol_loaders.py` 读入（缺省空 ⇒ 既有语义逐字节不变）。
-  - [ ] `schemas/protocol.schema.json` 的 `$defs.phase` **纯新增**该字段
-        （既有字段与枚举一字不动）。
-  - [ ] 判据：协议文档面 / 加载面 / 编译面三面逐字一致（照
-        `tests/architecture/python/test_run_chain_capability_exposure.py` 的形态，**新文件**）。
-- [ ] **WP-B（应用层唯一解释点 + adapter 消费）**
-  - [ ] `session_resolution` 新增解析函数：冻结集 + run-chain 排除 + 绑定 ⇒ 会话工具名序列；
-        越界（绑定的 provider id 不在冻结集内）⇒ **点名 ValueError**。
-  - [ ] `adapters/openhands/tool_mapping.py` 新增消费函数（**不修改** `session_tool_ids`）；
-        `session_builder` 用绑定后的名字装配 `Tool(name=...)`。
-- [ ] **WP-C（装配面可注入缝 + 两个组合根接入）**
-  - [ ] `AdapterDependencies` 新增「装配方提供的 SDK 工具实现表」（缺省 `None` ⇒ 今天的行为）。
-  - [ ] `_openhands_runtime` / `build_agent_runtime` 接收并下传；
-        `composition.py` / `pg_composition.py` 接入。
-  - [ ] 缺少实现 ⇒ **点名失败**（消息含工具名与 provider id），发生在会话创建期、LLM 调用之前。
-- [ ] **WP-D（新增判据 + 反证两向 + 默认装配实跑）**
-  - [ ] 新判据文件：绑定解析三面一致 + 越界点名 + 两向反证（点名 + 零请求）+
-        默认装配下 `multi_role_research_v1` 跑到 `SUCCEEDED`。
-  - [ ] 既有五处判据 `git diff` 零改动取证。
-- [ ] **WP-E（记录 + 门 + 提交）**
-  - [ ] 先写记录（本 PLAN / RECHECK / GOAL 回写）→ 记录面判据 → 全量 m0（独占、canonical DSN）。
-  - [ ] 显式路径提交 → push → 轮询 CI 到终态 → 回填台账（**逐提交**）。
+- [x] **WP-A（域内声明 + loader + 编译透传 + schema 纯新增）** ⇒ commit `60e0303`
+- [x] **WP-B（应用层唯一解释点 + adapter 消费）** ⇒ commit `1c5ad78`
+- [x] **WP-C（装配面可注入缝 + 生产组合根接入 + 真实实现）** ⇒ commit `50a58c4`
+- [x] **WP-D（新增判据 + 反证两向 + 默认装配实跑）** ⇒ commit `234fb06`
+- [x] **WP-D2（同源判据：五面一致 + adapter 减法则对齐）** ⇒ commit `cb5c26f`
+- [x] **WP-E（记录 + 门 + 提交）** ⇒ 本回写提交
 
 ## 证据
 
-（执行中回填：判据输出、反证两向的判词原文、默认装配实跑的 run 终态、按压前后 raw `sha256`。）
+**交付物**（全部在树）
+
+| 面 | 文件 | 作用 |
+| --- | --- | --- |
+| 声明 | `packages/domain/protocols.py`（`SessionToolBinding`） | 纯字符串的 `provider_id → tool_name`（OpenHands 类型不进 Domain） |
+| 读入 | `adapters/contracts/protocol_loaders.py` | 只读不解释；字段缺失 ⇒ 空（既有语义逐字节不变） |
+| 透传 | `packages/application/protocol_compile/compiler.py` | 原样携带（编译不解释） |
+| schema | `schemas/protocol.schema.json` | `$defs.sessionToolBinding` **纯新增**（既有字段与枚举一字未动） |
+| 解释 | `packages/application/run_orchestration/session_resolution.py` | **唯一解释点**：`session_tool_face` / `session_tool_bindings`（越界、一 provider 两名字各自点名） |
+| 消费 | `adapters/openhands/tool_mapping.py`（`bind_session_tools`） | 缺声明逐字返回；位置保持替换；不增减工具数 |
+| 实现 | `adapters/openhands/session_tools.py` | `BoundSessionTool` + 注册面（按名绑定调用桥） |
+| 桥 | `adapters/openhands/session_tool_invocation.py` | 经**同一个** `execute_tool_call` 走策略+执行门；参数经 `tool-args` 制品（digest 防篡改） |
+| 组合根 | `services/api/runtime_support.py` | `register_session_tools` 可选缝（缺省 `None` ⇒ 生产行为逐字不变） |
+| 判据 | `tests/e2e/test_tool_binding_on_the_default_assembly.py`（292 行） | 三面一致 + 默认装配实跑 + 两向反证 + 两向点名 |
+| 判据 | `tests/architecture/python/test_session_tool_bindings_exposure.py` | 五面一致 + application/adapter 减法则逐字对齐 |
+| 协议 | `examples/protocols/tool_binding_{research,partial,unwired}_v1.yaml` | 成对（差别只有声明行 ⇒ 失败可归因） |
+
+**实测结果**
+
+- `tests/e2e/test_tool_binding_on_the_default_assembly.py`：**13 passed**；
+- `tests/architecture/python/test_session_tool_bindings_exposure.py`：**9 passed**；
+- 既有判据（`test_ec03_real_runtime_offline_chain` / `test_multi_role_research_offline` /
+  `test_run_chain_capability_exposure` / `tests/application/run_orchestration`）连同新判据
+  **105 passed / 1 skipped**；`git diff` 对既有判据文件**为空**。
+
+**两向点名失败（原文）**
+
+- 反证一（删一条绑定）：`tool "ToolDefinition 'openhands_workspace' is not registered"`；
+- 反证二（绑到没有实现的工具名）：`ToolDefinition 'workspace.read.unwired' is not registered`；
+- **两向的 mock 端点请求数均为 0**（失败发生在任何 LLM 调用之前）。
+
+**默认装配实跑留档**：`build_agent_runtime` 的真实缺省（**非** `map_tools=True`）+
+`register_session_tools` 注入实现 ⇒ run `state=SUCCEEDED`、`protocol_id=tool_binding_research_v1_0_0`、
+mock 端点被真实驱动（请求账非空）。
+
+**按压 P-1（先红后绿 + 逐字节复原）**：架空 `session_builder` 的绑定翻译 ⇒ 三条主判据
+**3 failed**（点名 provider id）；恢复后 `sha256sum -c` 逐字节一致
+（`session_builder.py` = `00591f58…`、`tool_mapping.py` = `9dbc95b6…`）且 13 passed。
+
+**同源更新**：`RECHECK-20261001-268`（`PASS_WITH_WARNINGS`，五条 `W-NN` 如实登记）。
 
 ## 影响报告
 
-（收口时回填：Domain/API/schema 变化、安全/凭据变化、兼容性/迁移风险、上游版本影响、下一项任务。
-执行中如需预判：本 PLAN 预期新增一个协议 phase 字段（schema 纯新增，Loader 缺省空 ⇒ 既有协议
-逐字节不变）、新增装配面可注入缝（缺省 `None` ⇒ 生产行为不变）、新增判据文件与绑定层模块。）
+- **Domain/schema 变化**：新增 `SessionToolBinding` 值对象与两个 dataclass 字段
+  （`ProtocolPhase.session_tool_bindings` / `CompiledPhase.session_tool_bindings`），
+  **均为带缺省的纯新增** ⇒ 既有协议、既有构造点逐字节不变；
+  `schemas/protocol.schema.json` 纯新增字段与 `$defs`，既有字段与枚举一字未动。
+- **API 变化**：无新路由、无 DTO 变化；`build_agent_runtime` 新增**可选**关键字参数
+  （`register_session_tools`，缺省 `None`）⇒ 既有三个调用点无需改动。
+- **安全/凭据变化**：零凭据改动；桥的凭据面仍只经既有 `CredentialResolver`；
+  桥不新增出网路径（provider 自己声明的 `network_domains` 判据不变）。
+- **兼容性/迁移风险**：无迁移。缺省路径（未声明绑定 / 未注入注册面）行为**逐字节不变**，
+  由三条既有判据 + 新判据的「未声明协议面等于冻结集」用例共同守住。
+- **上游版本影响**：无依赖改动（`mcp` 未动，零新增依赖）。
+- **下一项任务**：GOAL-028 **EC-02**（活检索 + 第三方 MCP 勘察结论）。
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-01 | IN_PROGRESS | cycle 1 派生：EC-01 主干（映射层 + 组合根 + 两向反证 + 默认装配实跑）。 |
+| 2026-10-01 | DONE | 六件 WP 全部落树；13 + 9 判据 passed、既有判据逐字节未改；按压 P-1 先红后绿 + 逐字节复原；`RECHECK-20261001-268` = `PASS_WITH_WARNINGS`（五条 WARNING 如实登记）。 |

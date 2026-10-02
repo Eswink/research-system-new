@@ -216,7 +216,17 @@ class TestTheDefaultAssemblyActuallyRuns:
     def test_dropping_one_binding_fails_by_name_before_any_llm_call(
         self, mock_relay: str, relay_requests: list[dict[str, Any]]
     ) -> None:
-        """反证一：跑反证协议（只少一条声明）⇒ provider id 直落 SDK ⇒ 点名 + 零 LLM 请求。"""
+        """反证一：跑反证协议（只少一条声明）⇒ provider id 直落 SDK ⇒ 点名 + 零 LLM 请求。
+
+        **为什么先摘掉 registry 里的名字**：SDK 的 registry 是**进程级、只增不减**的
+        （`register_tool` 无撤销入口），而别的判据（`test_ec03_real_runtime_offline_chain.py`
+        的 `map_tools=True` 路径）会把同样这几个 provider id 注册成惰性替身 ⇒ 全量跑时
+        名字**已经**在表里，本反证会「通过」而其实没测到东西（**假绿**）。所以这里显式
+        摘掉它，让「未注册」成为**本用例确定的事实**，而不是用例顺序的函数。
+        （同族教训见 `MEM-20261001-180-sdk-tool-registry-is-process-global`；
+        摘除是**瞬态**的：任何需要它的装配会在会话装配时重新注册。）
+        """
+        _unregister("openhands_workspace")
         deps = _production_deps(mock_relay, impls=tuple(_BINDINGS.values()))
         with TestClient(create_app(deps)) as client:
             run = start_run(client, _PARTIAL_PROTOCOL)
@@ -250,6 +260,19 @@ class TestTheDefaultAssemblyActuallyRuns:
             for message in reads.failures
         ), reads.failures
         assert relay_requests == [], "失败必须发生在任何 LLM 调用之前"
+
+
+def _unregister(tool_name: str) -> None:
+    """把某个名字从 SDK 的**进程级** registry 里摘掉（只服务反证的确定性）。
+
+    registry 是只增不减的（`register_tool` 无撤销入口）⇒ 「未注册」这条事实会被同进程里
+    别的用例抹掉。摘除只影响**本进程后续**按名解析：真正的装配会在会话装配时按声明重新
+    注册它需要的名字，所以这不是「改产品行为」，而是**让判据的事实成立**。
+    """
+    from openhands.sdk.tool import registry
+
+    registry._REG.pop(tool_name, None)  # noqa: SLF001 - 判据侧清理，非产品路径
+    registry._USABILITY_REG.pop(tool_name, None)  # noqa: SLF001
 
 
 def _production_deps(mock_relay_url: str, *, impls: tuple[str, ...]) -> Any:

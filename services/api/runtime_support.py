@@ -191,21 +191,9 @@ def _openhands_runtime(
     """
     from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
     from adapters.openhands.session_types import AdapterDependencies
-    from adapters.openhands.workspace_adapter import build_local_workspace
     from services.api.assembly import _endpoint_url_policy
 
-    if credentials is None or policy_evaluator is None:
-        missing = [
-            name
-            for name, present in (
-                ("credential_resolver", credentials is not None),
-                ("policy_evaluator", policy_evaluator is not None),
-            )
-            if not present
-        ]
-        raise RuntimeConfigurationError(
-            "agent runtime 'openhands' requires " + " and ".join(missing)
-        )
+    credentials, policy_evaluator = _required_policy_faces(credentials, policy_evaluator)
     deps = AdapterDependencies(
         credential_resolver=credentials,
         policy_evaluator=policy_evaluator,
@@ -215,9 +203,7 @@ def _openhands_runtime(
         # `settings.workspace_allow_host_shell is False` 即保持拒绝，只有操作者显式
         # 打开（`RESEARCHOS_WORKSPACE_ALLOW_HOST_SHELL=1`）才会得到 workspace。
         # 「可装配」与「可运行」因此仍然分开：装配不因缺开关而失败，创建会话才会。
-        build_workspace=lambda lease, session_id: build_local_workspace(
-            lease, session_id, allow_host_shell=settings.workspace_allow_host_shell
-        ),
+        build_workspace=_workspace_builder(settings),
         budget_ledger=budget_ledger,
         # GOAL-028 EC-01：装配方提供的**会话工具注册面**（工具名 → SDK 工具实现）。
         # 缺省 None ⇒ 会话装配回落到空操作：未声明绑定的协议逐字保持既有语义
@@ -225,6 +211,37 @@ def _openhands_runtime(
         register_tools=register_session_tools,
     )
     return OpenHandsRuntimeAdapter(deps)
+
+
+def _required_policy_faces(
+    credentials: CredentialResolver | None, policy_evaluator: PolicyEvaluator | None
+) -> tuple[CredentialResolver, PolicyEvaluator]:
+    """真实 runtime 的两件必需事实；缺一即**点名**拒绝（见 `_openhands_runtime` 的 docstring）。
+
+    返回收窄后的二元组：类型收窄因此留在**这一处**，调用点不必重复断言。
+    """
+    missing = [
+        name
+        for name, present in (
+            ("credential_resolver", credentials is not None),
+            ("policy_evaluator", policy_evaluator is not None),
+        )
+        if not present
+    ]
+    if missing or credentials is None or policy_evaluator is None:
+        raise RuntimeConfigurationError(
+            "agent runtime 'openhands' requires " + " and ".join(missing)
+        )
+    return credentials, policy_evaluator
+
+
+def _workspace_builder(settings: ApiSettings) -> Any:
+    """workspace 构造闭包（单列以守住函数长度门；语义见 `_openhands_runtime` 的注释）。"""
+    from adapters.openhands.workspace_adapter import build_local_workspace
+
+    return lambda lease, session_id: build_local_workspace(
+        lease, session_id, allow_host_shell=settings.workspace_allow_host_shell
+    )
 
 
 def build_agent_runtime(  # noqa: PLR0913 - keyword-only composition inputs（既有五参 + 注册面）

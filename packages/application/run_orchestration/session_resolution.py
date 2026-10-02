@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING
 
 from packages.domain.core import ID
 from packages.domain.models import LLMEndpoint, ModelDefinition
-from packages.domain.protocols import CapabilityExecution, CompiledRunPlan
+from packages.domain.protocols import CapabilityExecution, CompiledPhase, CompiledRunPlan
+from packages.domain.roles import AgentSpec, RoleDefinition
 from packages.domain.tasks import ResearchTask, TaskContract
 from packages.domain.team_plan import PhaseAssignment
 
@@ -130,14 +131,45 @@ def execution_target(
     return endpoint, model
 
 
+def _spec_context(  # noqa: PLR0913 - 装配面：context + phase/agent/role/目标，逐项来自调用点
+    context: "RunContext",
+    *,
+    phase: CompiledPhase,
+    agent: AgentSpec,
+    role: RoleDefinition,
+    endpoint: LLMEndpoint | None,
+    model: ModelDefinition | None,
+) -> "SessionSpecContext":
+    """本 phase 的 `SessionSpecContext`（`resolve_sessions` 的装配细节，单列以守住函数长度门）。"""
+    from packages.application.run_orchestration.task_executor import SessionSpecContext
+
+    return SessionSpecContext(
+        role=role,
+        agent=agent,
+        frozen_manifest_digest=context.frozen_manifest_digest,
+        frozen_tool_set=flatten_tool_providers(context.plan),
+        endpoint=endpoint,
+        model=model,
+        phase_id=phase.id,
+        # GOAL-011 EC-01：本 phase 由运行链执行的能力所属 provider——
+        # 它们**不在**会话工具列表里（冻结集与 preflight 判定不受影响）。
+        run_chain_tool_ids=run_chain_tool_ids(context.plan, phase.id),
+        # GOAL-028 EC-01：本 phase 的会话工具绑定（唯一解释点在这里；adapter 侧消费）。
+        # 越界 / 一 provider 两名字 ⇒ 点名的 ValueError。
+        session_tool_bindings=session_tool_bindings(context.plan, phase.id),
+        # GOAL-010 EC-02：phase **声明**的输入制品随 spec 走到结果注册处，在那里成为
+        # 「非模型自述」的来源。声明在协议里（产品面），校验在注册处（对象必须在库且
+        # 内容可重算）——本层只搬运、不解释。
+        declared_input_artifacts=tuple(phase.inputs),
+    )
+
+
 def resolve_sessions(
     context: "RunContext",
     *,
     contract_for: _ContractFor,
 ) -> "tuple[SessionSpec, ...]":
     """M4 team resolution：phase assignments → ResearchTask + session spec。"""
-    from packages.application.run_orchestration.task_executor import SessionSpecContext
-
     resolved: list[SessionSpec] = []
     assignments = {item.phase_id: item for item in context.plan.phase_assignments}
     for phase in context.plan.phases:
@@ -160,24 +192,8 @@ def resolve_sessions(
             resolved.append((
                 task,
                 contract,
-                SessionSpecContext(
-                    role=role,
-                    agent=agent,
-                    frozen_manifest_digest=context.frozen_manifest_digest,
-                    frozen_tool_set=flatten_tool_providers(context.plan),
-                    endpoint=endpoint,
-                    model=model,
-                    phase_id=phase.id,
-                    # GOAL-011 EC-01：本 phase 由运行链执行的能力所属 provider——
-                    # 它们**不在**会话工具列表里（冻结集与 preflight 判定不受影响）。
-                    run_chain_tool_ids=run_chain_tool_ids(context.plan, phase.id),
-                    # GOAL-028 EC-01：本 phase 的会话工具绑定（唯一解释点在这里；
-                    # adapter 侧消费）。越界 / 一 provider 两名字 ⇒ 点名的 ValueError。
-                    session_tool_bindings=session_tool_bindings(context.plan, phase.id),
-                    # GOAL-010 EC-02：phase **声明**的输入制品随 spec 走到结果注册处，
-                    # 在那里成为「非模型自述」的来源。声明在协议里（产品面），
-                    # 校验在注册处（对象必须在库且内容可重算）——本层只搬运、不解释。
-                    declared_input_artifacts=tuple(phase.inputs),
+                _spec_context(
+                    context, phase=phase, agent=agent, role=role, endpoint=endpoint, model=model
                 ),
             ))
     return tuple(resolved)

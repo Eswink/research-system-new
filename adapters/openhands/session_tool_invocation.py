@@ -20,9 +20,10 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass
 
+from adapters.openhands.session_tools import SessionToolInvoker
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.policy_evaluator import PolicyEvaluator
@@ -51,31 +52,33 @@ class SessionToolSpec:
     capability: str
 
 
-def make_tool_invoker(  # noqa: PLR0913 - 装配面：provider/tool/能力 + 四个依赖
+def make_tool_invoker(  # noqa: PLR0913 - 装配面：tool 三件事实 + 四个依赖
     tool: SessionToolSpec,
     *,
     providers: Mapping[str, ToolProvider],
     provider_specs: Mapping[str, ToolProviderSpec],
     artifacts: ArtifactStore,
     policy: PolicyEvaluator,
-    task_id: Callable[[], str],
     actor: str = "system:session-tool",
-) -> Callable[[dict[str, object]], str]:
-    """构造一个工具名的调用桥（每次调用只服务**一次**会话工具调用）。
+) -> SessionToolInvoker:
+    """构造一个工具名的调用桥。
 
-    `task_id` 是**取当前 task id 的可调用对象**（会话工具不是在 task 构造时执行，
-    所以 task id 必须在调用时刻取；提前绑死会让两次会话共用同一个参数制品）。
+    会话标识取自 SDK 传入的 `conversation`（`conversation.id`）；SDK 没给上下文
+    （直接调 executor 的场景）⇒ 退化为**按工具名**的固定标识。两者都只是
+    **参数制品的命名空间**——它不影响谁能执行（策略与冻结面照旧判定）。
     """
     provider_id = tool.provider_id
 
-    def _invoke(arguments: dict[str, object]) -> str:
+    def _invoke(arguments: dict[str, object], conversation: object = None) -> str:
         provider = providers.get(provider_id)
         provider_spec = provider_specs.get(provider_id)
         if provider is None or provider_spec is None:
             raise InvalidInputError(
                 f"session tool provider {provider_id!r} has no registered instance in this assembly"
             )
-        record = _tool_call(task_id(), tool, artifacts, arguments, actor)
+        record = _tool_call(
+            _scope_id(conversation, tool.tool_id), tool, artifacts, arguments, actor
+        )
         outcome = execute_tool_call(provider, provider_spec, record, policy, actor)
         result = outcome.result
         if result is None:
@@ -89,6 +92,14 @@ def make_tool_invoker(  # noqa: PLR0913 - 装配面：provider/tool/能力 + 四
         return _as_text(payload)
 
     return _invoke
+
+
+def _scope_id(conversation: object, tool_id: str) -> str:
+    """参数制品的命名空间：优先会话 id，退化时按工具名。"""
+    conversation_id = getattr(conversation, "id", None)
+    if conversation_id:
+        return f"session-{conversation_id}"
+    return f"session-tool-{tool_id}"
 
 
 def _tool_call(
@@ -133,4 +144,4 @@ def _as_text(payload: object) -> str:
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)
 
 
-__all__ = ["ARGS_ARTIFACT_PREFIX", "make_tool_invoker"]
+__all__ = ["ARGS_ARTIFACT_PREFIX", "SessionToolSpec", "make_tool_invoker"]

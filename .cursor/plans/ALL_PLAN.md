@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20261001-267](tasks/PLAN-20261001-267-goal-028-ec01-declarative-provider-to-sdk-tool-mapping.md) | IN_PROGRESS |
+| [x] | [PLAN-20261001-267](tasks/PLAN-20261001-267-goal-028-ec01-declarative-provider-to-sdk-tool-mapping.md) | DONE |
 | [x] | [PLAN-20261001-265](tasks/PLAN-20261001-265-mimosa-deep-scan-disposition.md) | DONE |
 | [x] | [PLAN-20260930-263](tasks/PLAN-20260930-263-goal-027-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20260930-261](tasks/PLAN-20260930-261-goal-027-ec04-multi-role-research-subiteration.md) | DONE |
