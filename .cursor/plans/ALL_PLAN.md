@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20261001-269](tasks/PLAN-20261001-269-goal-028-ec02-live-retrieval-and-third-party-mcp-feasibility.md) | IN_PROGRESS |
 | [x] | [PLAN-20261001-267](tasks/PLAN-20261001-267-goal-028-ec01-declarative-provider-to-sdk-tool-mapping.md) | DONE |
 | [x] | [PLAN-20261001-265](tasks/PLAN-20261001-265-mimosa-deep-scan-disposition.md) | DONE |
 | [x] | [PLAN-20260930-263](tasks/PLAN-20260930-263-goal-027-ec05-self-bootstrap-closeout.md) | DONE |

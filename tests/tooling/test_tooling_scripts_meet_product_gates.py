@@ -58,6 +58,7 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal026_closeout.py",
     "tools/audit_goal026_ledger.py",
     "tools/research_mcp_server.py",
+    "tools/research_mcp_live.py",
     "tools/verify_goal027_closeout.py",
 )
 

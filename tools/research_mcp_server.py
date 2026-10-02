@@ -11,8 +11,16 @@
 
 **为什么冻结（而不是在线转发）**：默认 CI 与默认门必须离线（AGENTS.md §9 默认 deny
 外网；EC-02 选 stdio 传输就是为离线优先）。冻结语料让"Run 复现"不依赖对端可用性：
-server 侧只读本地常量，无网络、无时钟、无随机 -- 同输入恒同输出。**不得**把它叙述成
-"实时检索"或"第三方 MCP server 可用性"的证明（那是本 GOAL 明写的「不证明」范围）。
+server 侧只读本地常量，无网络、无时钟、无随机 -- 同输入恒同输出。
+
+**活检索模式（GOAL-20261001-028 EC-02）**：同一个 server 另有一条**去真的取**的路
+（`tools/research_mcp_live.py`），只在显式开关（`RESEARCHOS_MCP_LIVE_RETRIEVAL=1`，
+或装配方直接给 `build_server(live=...)`）下启用；它真打 Europe PMC REST、复用既有
+provider 的限速与归一化、遵守**触网前** URL 策略，归一化形状与冻结语料**逐字同形**。
+**默认（未开关）仍是冻结语料、逐字节不变**。两条路都**不**构成"第三方 MCP server
+可用性"的证明 —— 第三方可 pin 性的勘察结论见
+`docs/integration/MCP_TOOL_PROVIDERS.md` §6.4（结论：以本仓现有 pin 规则衡量，
+未登记的第三方 server 目前不可 pin）。
 
 **协议面**：由 `mcp` SDK（仓库既有的 `mcp>=1.28,<2` 依赖，零新增）的 FastMCP 承载；
 传输仅 stdio。本文件**不 import 仓库内任何模块**（server 是独立进程，经 stdio 契约与
@@ -33,6 +41,7 @@ adapter 相接）；模块可被 `python -B tools/research_mcp_server.py` 直接
 from __future__ import annotations
 
 from collections.abc import Mapping
+from typing import Any, Protocol, cast
 
 from mcp.server.fastmcp import FastMCP
 
@@ -184,18 +193,95 @@ def _read_records(ids: list[str]) -> dict[str, object]:
     }
 
 
-def build_server() -> FastMCP:
-    """构建 server 并注册两个工具（工具名 = 能力名的下划线形态）。"""
+class _LiveModule(Protocol):
+    """活检索模块的**结构面**（`tools/` 不是包 ⇒ 只能按路径加载，故用 Protocol 定形）。"""
+
+    def LiveSettings(self, *, client: object = ...) -> Any: ...  # noqa: N802 - 类名即构造器
+
+    def live_search(self, settings: Any, query: str, limit: int) -> dict[str, object]: ...
+
+    def live_read(self, settings: Any, ids: list[str]) -> dict[str, object]: ...
+
+
+def _load_live_module() -> _LiveModule | None:
+    """按**路径**加载活检索模块（`tools/` 不是包 ⇒ 静态 `tools.` 导入会让同一文件
+    有两个模块身份；仓内既有先例用 `spec_from_file_location`，见
+    `tools/verify_goal027_closeout.py::load_standard`）。取不到 ⇒ None（缺件，交由调用点点名）。
+    """
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    name = "research_os_mcp_live"
+    existing = sys.modules.get(name)
+    if existing is not None:
+        return cast(_LiveModule, existing)
+    target = Path(__file__).resolve().parent / "research_mcp_live.py"
+    spec = importlib.util.spec_from_file_location(name, target)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:  # noqa: BLE001 - 加载失败 ⇒ 缺件，如实交由调用点处理
+        sys.modules.pop(name, None)
+        return None
+    return cast(_LiveModule, module)
+
+
+def _live_settings() -> object | None:
+    """活检索模式（GOAL-028 EC-02）：**显式开关**打开时才返回设置，否则 None。
+
+    开关 = 环境变量 `RESEARCHOS_MCP_LIVE_RETRIEVAL=1`（值必须恰为 `"1"`，与仓内
+    `live_e2e_switch_enabled` 的口径一致）。**默认（未设置）返回 None ⇒ 全程冻结语料**，
+    既有判据的确定性与标签语义因此一字不变。
+    """
+    import os
+
+    if os.environ.get("RESEARCHOS_MCP_LIVE_RETRIEVAL") != "1":
+        return None
+    module = _load_live_module()
+    if module is None:
+        return None
+    try:
+        import httpx
+
+        client: object | None = httpx.Client(timeout=30.0)
+    except Exception:  # noqa: BLE001 - 取不到 client ⇒ 缺件，交由 LiveSettings 点名
+        client = None
+    settings: object = module.LiveSettings(client=client)
+    return settings
+
+
+def build_server(*, live: object | None = None) -> FastMCP:
+    """构建 server 并注册两个工具（工具名 = 能力名的下划线形态）。
+
+    `live`（GOAL-028 EC-02）：非 None ⇒ 检索/读取改走**真实上游**（仍走同一对工具名与
+    同一份归一化形状）；None（缺省）⇒ 冻结语料，行为逐字节不变。缺省 None 时**不读**
+    任何环境变量（纯函数式入口，判据可确定地构造两种模式）。
+    """
+    settings = live if live is not None else _live_settings()
     server = FastMCP(SERVER_NAME, json_response=True)
 
     @server.tool()
     def literature_search(query: str, limit: int = DEFAULT_LIMIT) -> dict[str, object]:
         """Search the frozen real-literature corpus (token AND over record fields)."""
+        if settings is not None:
+            module = _load_live_module()
+            if module is None:
+                raise RuntimeError("live retrieval mode requires research_mcp_live.py")
+            return module.live_search(settings, query, limit)
         return _search_records(query, limit)
 
     @server.tool()
     def literature_read(ids: list[str]) -> dict[str, object]:
         """Fetch records by exact PMID from the frozen real-literature corpus."""
+        if settings is not None:
+            module = _load_live_module()
+            if module is None:
+                raise RuntimeError("live retrieval mode requires research_mcp_live.py")
+            return module.live_read(settings, ids)
         return _read_records(ids)
 
     return server

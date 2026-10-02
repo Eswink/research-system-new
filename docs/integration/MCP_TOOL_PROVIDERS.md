@@ -118,6 +118,44 @@ tool provider 的出站 host 是否落在它自己声明的 `network_domains` �
 同一 `network_domains` 也是 pin 契约（`examples/contracts/toolpack_europe_pmc.yaml`）与
 登记条目（`examples/config/tool_providers.yaml`）的**同集合**声明，两份漂移会被判据抓住。
 
+### 6.4 第三方 MCP server 可行性（GOAL-20260927-027 限制 ③ 的勘察结论）
+
+**结论：以本仓**现有规则**衡量，第三方 MCP server 目前**不可 pin ⇒ 本轮判「不可行」**；
+落地的活检索走**扩展自建 server**（§6.5）。判据不是「第三方不好」，而是**四道既有门槛
+里有三道无法对未登记的第三方 server 满足**。
+
+| 维度 | 本仓的既有规则（可复核位置） | 对第三方 server 的判定 |
+| --- | --- | --- |
+| **许可证** | 逐组件登记在 `UPSTREAM_COMPONENTS.yaml`，每件带 `license.spdx` + `upgrade_gate.explicit_approval: true`（实测 `mcp` 条目：`spdx: MIT` + 四项 required_checks）。**仓内没有任何第三方 MCP server 的 qualification 记录** | **不可行**：许可审查**尚未做过** —— 它是前置条件，不是形式 |
+| **可 pin 性（动态面）** | `ProviderRegistration.pinned_revision` 被 `Digest.parse` 强制为 **`sha256:<64hex>`**（`packages/domain/tool_registry.py:117-121`，注释明写「分支名 / tag 这类可漂移字面量一律拒绝」） | **不可行**：git-only checkout 给不出 `sha256:` 制品 digest；托管 HTTP 端点更给不出 |
+| **可 pin 性（静态面）** | `examples/contracts/toolpack_*.yaml` 的 `digest` 是**声明值**（无人重算） | 对能给出 sdist / wheel / 镜像 index digest 的**打包型** server **可行**（与 `mcp` 自身同一形态） |
+| **凭据需求** | 凭据只经 `CredentialResolver`（TOOL 域）、禁止 token passthrough；`credential_ref` 声明即必需（§6.2）；默认门按 `tests/default_gate_credentials.py` 的键名隔离 | **可行**（架构已就绪），但**每个 server 的实际接线 + 隔离名单同轮补**是未做的工作 |
+| **稳定性** | 双 transport 硬超时、schema drift（`observed_schema_digest`）、健康探测、错误分类（`TOOL_UNAVAILABLE` / `TOOL_TIMEOUT` / `TOOL_SCHEMA_MISMATCH`）**都已在 adapter 里** | **可行**：形为（backpressure / 故障分类）已具备；版本与可用性**逐 server 各自 qualification**，本仓今天一个都没有 |
+
+**综合判定**：**「可行」的对象是「能满足上表四条（尤其 `sha256:` 制品 digest + 许可登记）
+的打包型 server」**，而**今天仓内没有这样的对象** ⇒ 本 GOAL 的 EC-02 判
+「第三方 MCP 不可 pin」（作为**结论**），活检索改走自建 server 扩展。若将来引入第三方，
+需要：① `UPSTREAM_COMPONENTS.yaml` 新增条目（含 `spdx` 与 `upgrade_gate`）；
+② 一个能给出 `sha256:<64hex>` 的制品来源；③ `credential_ref` 与默认门隔离名单同轮对齐；
+④ 上表四条的复检记录。
+
+### 6.5 活检索模式（自建 server 的真实上游，GOAL-20261001-028 EC-02）
+
+`tools/research_mcp_server.py` 有两种模式，**由显式开关选择**：
+
+- **冻结模式（默认）**：只读树内冻结语料（7 条 2026-09-30 经 Europe PMC REST 实取的
+  真实记录），**无网络、无时钟、无随机** ⇒ 同输入恒同输出。既有 MCP 判据钉的就是它。
+- **活检索模式（`RESEARCHOS_MCP_LIVE_RETRIEVAL=1`）**：真去取上游（复用
+  `EuropePmcProvider` 的限速 / 429⇒transient / 4xx⇒permanent / 字段归一化 / 内容寻址
+  digest 语义），**仍走 MCP 协议往返**（同一个 server、同一对工具名）。
+
+**它证什么、不证什么**：证「**路径存在且语料非预置**」（判据喂入与树内语料**不相交**的
+上游响应，断言取到的是**上游那条**，并断言该标识**不在**树内冻结语料里；反向臂在冻结
+模式下取不到它）；**不**证检索质量 / 覆盖面。**默认门仍离线**：活检索只在显式开关下，
+默认门用 `httpx.MockTransport` 走真协议栈 + 真解析，`tests/egress_guard.py` 不放宽。
+**URL 策略在触网之前**：复用 `assert_url_allowed`（仅 http/https + 保留类拒绝 +
+host ∈ 声明的 `network_domains`），任一条不过即**抛错且零请求**。
+
 这条策略是**适配器自带的**，不是运行时的全局出口网关：默认门依旧离线，
 `tests/egress_guard.py` 未放宽，真实出网只在显式开关下按既有 `requires_live_llm` 口径放行。
 
