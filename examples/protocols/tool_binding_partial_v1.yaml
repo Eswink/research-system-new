@@ -1,0 +1,43 @@
+id: tool_binding_partial_v1_0_0
+version: 0.1.0
+
+# GOAL-20261001-028 EC-01 **反证协议**：与 `tool_binding_research_v1.yaml` 逐字相同，
+# **只少一条绑定**（`openhands_workspace` 那行）。
+#
+# 它服务反证一：「删掉一条绑定 ⇒ 该 provider id 直落 SDK ⇒ 会话创建点名失败」。
+# 两份文件的差别**只有声明行本身** ⇒ 失败可归因到「绑定缺席」，而不是别的装配差异。
+# 判据断言失败文本点名 `ToolDefinition 'openhands_workspace' is not registered`
+# 且 mock 端点**零请求**（失败发生在任何 LLM 调用之前）。
+
+phases:
+  - id: analysis
+    name: Bound Analysis
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - workspace.read
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+    task_contract: console_demo_deliverable
+    inputs: [input-corpus:console_demo_v1]
+    outputs: [binding_report]
+    timeout_seconds: 60
+
+  - id: verdict
+    name: Bound Verdict
+    strategy: single_agent
+    depends_on: [analysis]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - workspace.read
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+    task_contract: console_demo_deliverable
+    inputs: [input-corpus:console_demo_v1]
+    outputs: [binding_verdict]
+    timeout_seconds: 60
+    gate: QUALITY_GATE

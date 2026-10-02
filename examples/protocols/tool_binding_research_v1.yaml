@@ -1,0 +1,56 @@
+id: tool_binding_research_v1_0_0
+version: 0.1.0
+
+# GOAL-20261001-028 EC-01 判据专用协议：**会话工具绑定**的声明面。
+#
+# 它证的是「声明 → 编译 → 会话解析 → adapter 装配」这条链在**生产装配**
+# （`build_agent_runtime` 的真实缺省，`register_tools` 不再是空操作）下真的成立：
+# 两个会话 phase 都把两件 NATIVE provider 显式绑到它们的**能力名**
+# （`m12_artifact → artifact.read`、`openhands_workspace → workspace.read`）。
+#
+# 为什么绑定必须显式（而不是拿 provider id 当 SDK 工具名）：provider id 与 SDK 工具名
+# 是两个名字空间 —— registry 里的名字来自工具实现自己（`ToolDefinition.name` 由类名
+# 派生）。把前者直接交给 registry 只会得到 `ToolDefinition '<id>' is not registered`，
+# 这正是 GOAL-027 留下的「多 role 协议只在测试装配能跑」的成因。
+#
+# 能力名与 `examples/config/policy.yaml` 的 allow 列表同源（`artifact.read` /
+# `workspace.read` 均已 `scope: project` 放行）—— 会话工具名因此与策略求值看到的名字
+# 是**同一个**，不会出现「放行的是一个名字、执行的是另一个」。
+#
+# 成对的**反证协议**是 `tool_binding_partial_v1.yaml`（每个 phase 只声明一条）。
+# 两份文件的差别**只有**声明行本身，所以「删掉一条绑定 ⇒ 点名失败」是可归因的。
+
+phases:
+  - id: analysis
+    name: Bound Analysis
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - workspace.read
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+      - {provider_id: openhands_workspace, tool_name: workspace.read}
+    task_contract: console_demo_deliverable
+    inputs: [input-corpus:console_demo_v1]
+    outputs: [binding_report]
+    timeout_seconds: 60
+
+  - id: verdict
+    name: Bound Verdict
+    strategy: single_agent
+    depends_on: [analysis]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - workspace.read
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+      - {provider_id: openhands_workspace, tool_name: workspace.read}
+    task_contract: console_demo_deliverable
+    inputs: [input-corpus:console_demo_v1]
+    outputs: [binding_verdict]
+    timeout_seconds: 60
+    gate: QUALITY_GATE

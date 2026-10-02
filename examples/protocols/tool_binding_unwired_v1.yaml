@@ -1,0 +1,49 @@
+id: tool_binding_unwired_v1_0_0
+version: 0.1.0
+
+# GOAL-20261001-028 EC-01 **反证协议之二**：声明一条绑定，指向装配方**没有实现**的工具名
+# （`workspace.read.unwired`）。它与 `tool_binding_research_v1.yaml` 逐字相同，**只有**
+# `openhands_workspace` 的目标名不同。
+#
+# 为什么需要一个**专属的、别处从不使用**的名字：SDK 的工具 registry 是**进程级、只增不减**的
+# （`register_tool` 只写入，没有撤销入口）⇒ 在同一进程里先后跑两个用例时，前一个用例注册过
+# 的名字对后一个仍然可解析。若反证沿用 `workspace.read`，断言就会**依赖用例执行顺序**
+# ——那不是判据，是巧合。本名字刻意不与任何别的装配重合，因此失败是确定的。
+#
+# 它证的是 EC-01(d) 的第二向：「映射到不存在的工具 ⇒ 同样点名失败」，且点的是**工具名**
+# （与「provider id 未注册」可区分）。
+
+phases:
+  - id: analysis
+    name: Bound Analysis
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - workspace.read
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+      - {provider_id: openhands_workspace, tool_name: workspace.read.unwired}
+    task_contract: console_demo_deliverable
+    inputs: [input-corpus:console_demo_v1]
+    outputs: [binding_report]
+    timeout_seconds: 60
+
+  - id: verdict
+    name: Bound Verdict
+    strategy: single_agent
+    depends_on: [analysis]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - workspace.read
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+      - {provider_id: openhands_workspace, tool_name: workspace.read.unwired}
+    task_contract: console_demo_deliverable
+    inputs: [input-corpus:console_demo_v1]
+    outputs: [binding_verdict]
+    timeout_seconds: 60
+    gate: QUALITY_GATE
