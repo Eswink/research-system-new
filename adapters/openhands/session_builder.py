@@ -44,10 +44,6 @@ class SessionBuilder:
         self._build_llm_for_fork = deps.build_llm_for_fork
         self._build_workspace = deps.build_workspace
         self._register_tools = deps.register_tools or (lambda spec: None)
-        # GOAL-028 EC-01：装配方的 SDK 工具实现表（工具名 → 实现）。缺省 None ⇒
-        # 绑定无处可落：声明了绑定的 phase 会在 `bind_session_tools` 点名失败，
-        # 未声明绑定的 phase 逐字保持既有语义。
-        self._tool_impls = deps.tool_impls
         self._use_default_agent = deps.build_agent is None
         self._build_agent = deps.build_agent
         self._budget_ledger = deps.budget_ledger
@@ -69,9 +65,10 @@ class SessionBuilder:
         # 未声明时逐字节等于冻结集（既有语义）；冻结集本身**不变**——它仍是 manifest
         # 的冻结事实，`require_frozen_tool_set` 照旧拦住越权执行。
         tool_ids = session_tool_ids(spec.frozen_tool_set, spec.run_chain_tool_ids)
-        # GOAL-028 EC-01：把**声明过的**绑定翻译成 SDK 工具名（缺声明 ⇒ 逐字不变）。
-        # 名字不在装配方的实现表里 ⇒ **点名拒绝**（不静默丢工具、不自动造名）。
-        tool_ids = bind_session_tools(tool_ids, spec.session_tool_bindings, self._tool_impls)
+        # GOAL-028 EC-01：按声明把 provider id 翻译成 SDK 工具名（缺声明 ⇒ 逐字不变）。
+        # 名字能不能解析由**下一步的注册面 + SDK registry** 决定：没实现的名字
+        # 照样点名失败（`ToolDefinition '<名>' is not registered`），不静默丢工具。
+        tool_ids = bind_session_tools(tool_ids, spec.session_tool_bindings)
         self._register_tools(tool_ids)
         llm = self._build_llm(spec)
         agent = self.assemble_agent(llm, spec, session_id, tool_ids)

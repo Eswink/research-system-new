@@ -177,6 +177,7 @@ def _openhands_runtime(
     credentials: CredentialResolver | None,
     policy_evaluator: PolicyEvaluator | None,
     budget_ledger: Any | None,
+    register_session_tools: Any | None = None,
 ) -> AgentRuntime:
     """真实 adapter 装配（只构造，不出网）。
 
@@ -218,22 +219,31 @@ def _openhands_runtime(
             lease, session_id, allow_host_shell=settings.workspace_allow_host_shell
         ),
         budget_ledger=budget_ledger,
+        # GOAL-028 EC-01：装配方提供的**会话工具注册面**（工具名 → SDK 工具实现）。
+        # 缺省 None ⇒ 会话装配回落到空操作：未声明绑定的协议逐字保持既有语义
+        # （provider id 直接交给 SDK ⇒ 未注册即点名失败）。
+        register_tools=register_session_tools,
     )
     return OpenHandsRuntimeAdapter(deps)
 
 
-def build_agent_runtime(
+def build_agent_runtime(  # noqa: PLR0913 - keyword-only composition inputs（既有五参 + 注册面）
     settings: ApiSettings,
     *,
     selection: RuntimeSelection | None = None,
     credentials: CredentialResolver | None = None,
     policy_evaluator: PolicyEvaluator | None = None,
     budget_ledger: Any | None = None,
+    register_session_tools: Any | None = None,
 ) -> AgentRuntime:
     """按选择结果装配 AgentRuntime（两个组合根的唯一装配入口）。
 
     `selection` 允许调用方传入已经解析过的结果——组合根解析一次、装配与披露共用
     同一个对象（避免"装配用的是 A、读面写的是 B"这类不可见的漂移）。
+
+    `register_session_tools`（GOAL-028 EC-01）：装配方提供的会话工具注册面
+    （`(工具名序列) -> None`），供 phase 的 `session_tool_bindings` 落位。
+    **缺省 None ⇒ 生产行为逐字不变**。
     """
     resolved = selection if selection is not None else resolve_runtime_selection(settings)
     if resolved.kind == FAKE_RUNTIME:
@@ -243,6 +253,7 @@ def build_agent_runtime(
         credentials=credentials,
         policy_evaluator=policy_evaluator,
         budget_ledger=budget_ledger,
+        register_session_tools=register_session_tools,
     )
 
 

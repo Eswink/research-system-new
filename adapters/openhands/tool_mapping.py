@@ -7,7 +7,7 @@ custom tool 经 register_tool 注册（S3 模式）；MCP 配置仅做形状归�
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import Any
 
 from openhands.sdk.tool.registry import register_tool
@@ -57,7 +57,6 @@ def register_custom_tools(
 def bind_session_tools(
     session_tool_ids: Sequence[str],
     bindings: Sequence[tuple[str, str]],
-    tool_impls: Mapping[str, Any] | None,
 ) -> tuple[str, ...]:
     """会话工具列表的**绑定翻译**（GOAL-028 EC-01）。
 
@@ -66,30 +65,26 @@ def bind_session_tools(
     - **缺声明 ⇒ 逐字返回入参**：未绑定的名字**不会**被这里改写——它们照旧交给 SDK 解析，
       未注册时点名失败（既有语义，由 `test_unmapped_tool_set_is_named_not_silently_dropped`
       固定）。**不得**在这里给未声明的名字自动造一个工具名。
-    - **声明的绑定必须可用**：绑定的 provider id 必须在会话工具列表里（越界即点名），
-      且目标工具名必须在装配方的实现表 `tool_impls` 里（表里没有 ⇒ **点名**说清
-      「哪个工具名没有实现」——这是新增路径的失败形态，与「provider id 未注册」区分）。
-    - **替换是位置保持的**：绑定名按 provider id 所在的**原位置**替换，不重排、不去重、
-      不新增：会话工具数不因绑定而增减。
+    - **声明的绑定必须落在会话工具列表内**：越界即**点名**拒绝（拿一份不描述本次装配的
+      声明去改工具面是不允许的）。
+    - **替换是位置保持的**：按 provider id 所在的**原位置**替换，不重排、不去重、不新增：
+      会话工具数不因绑定而增减。
 
-    为什么需要这张表：registry 里的名字来自工具实现自己（`ToolDefinition.name` 由类名
-    派生），与 provider id 是两个名字空间；把后者直接当前者用只会得到「未注册」。
+    **为什么这里不判「实现是否存在」**：名字最终能不能解析由 SDK 的 registry 决定，
+    而注册发生在**本函数之后**（`SessionBuilder` 先翻译、再 `register_tools`）——
+    在翻译点提前判会与「注册面才知道自己有哪些实现」的事实分叉。准入的判据是
+    **可观测的后果**：名字没有实现 ⇒ registry 里没有它 ⇒ SDK 在 agent 初始化时
+    **点名**说 `ToolDefinition '<工具名>' is not registered`（点的是**工具名**，
+    与「provider id 未注册」形成可区分的两条失败路径）。
     """
     if not bindings:
         return tuple(session_tool_ids)
     mapping = dict(bindings)
-    impls = tool_impls or {}
     outside = sorted(set(mapping) - set(session_tool_ids))
     if outside:
         raise ValueError(
             "session tool bindings reference providers outside the session tool list: "
             f"{', '.join(outside)}"
-        )
-    missing = sorted({mapping[name] for name in mapping} - set(impls))
-    if missing:
-        raise ValueError(
-            "no SDK tool implementation is wired for bound session tool name(s): "
-            f"{', '.join(missing)}"
         )
     return tuple(mapping.get(name, name) for name in session_tool_ids)
 
