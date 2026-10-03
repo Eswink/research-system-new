@@ -60,6 +60,7 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/research_mcp_server.py",
     "tools/research_mcp_live.py",
     "tools/verify_goal027_closeout.py",
+    "tools/audit_goal028_ledger.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
