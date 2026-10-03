@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261001-271](tasks/PLAN-20261001-271-goal-028-ec03-multi-role-subiteration-on-the-default-assembly.md) | DONE |
 | [x] | [PLAN-20261001-269](tasks/PLAN-20261001-269-goal-028-ec02-live-retrieval-and-third-party-mcp-feasibility.md) | DONE |
 | [x] | [PLAN-20261001-267](tasks/PLAN-20261001-267-goal-028-ec01-declarative-provider-to-sdk-tool-mapping.md) | DONE |
 | [x] | [PLAN-20261001-265](tasks/PLAN-20261001-265-mimosa-deep-scan-disposition.md) | DONE |

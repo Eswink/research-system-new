@@ -65,10 +65,13 @@ _BINDINGS = {
     "m12_artifact": "artifact.read",
     "openhands_workspace": "workspace.read",
 }
-#: 既有协议（不声明绑定）⇒ 会话工具面逐字等于（冻结集 − run-chain 排除）。
+#: 既有协议（**不**声明绑定）⇒ 会话工具面逐字等于（冻结集 − run-chain 排除）。
+#: `multi_role_research_v1.yaml` 在 GOAL-028 **EC-03** 里按授权**新增**了绑定（它的
+#: review phase 要真的在默认装配下开会话）⇒ 它已从本清单移出，改由
+#: `tests/e2e/test_multi_role_on_the_default_assembly.py` 断言（那条判据钉的是
+#: 「声明之后就起得来」，与本文件钉的「没声明就逐字不变」互补）。
 _UNDECLARED = (
     "console_demo_research_v1.yaml",
-    "multi_role_research_v1.yaml",
     "sort_analysis_v1.yaml",
 )
 

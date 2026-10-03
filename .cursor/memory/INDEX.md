@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261001-182](entries/MEM-20261001-182-run-chain-exclusion-is-per-phase.md) | ACTIVE | repository | 0.95 | 2027-04-01 | PLAN-20261001-271 |
 | [MEM-20261001-181](entries/MEM-20261001-181-tools-is-not-a-package-so-load-by-path.md) | ACTIVE | repository | 0.95 | 2027-04-01 | PLAN-20261001-269 |
 | [MEM-20261001-180](entries/MEM-20261001-180-sdk-tool-registry-is-process-global.md) | ACTIVE | repository | 0.95 | 2027-04-01 | PLAN-20261001-267 |
 | [MEM-20261001-179](entries/MEM-20261001-179-raw-advisory-dumps-belong-outside-the-tree.md) | ACTIVE | repository | 0.90 | 2027-04-01 | PLAN-20261001-265 |

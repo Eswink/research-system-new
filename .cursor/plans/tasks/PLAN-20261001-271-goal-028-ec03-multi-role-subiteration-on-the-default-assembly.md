@@ -2,11 +2,12 @@
 id: PLAN-20261001-271
 slug: goal-028-ec03-multi-role-subiteration-on-the-default-assembly
 title: GOAL-028 cycle 3（EC-03）：默认装配上的完整科研子迭代 — 真标识 + 真 metrics + 评审反证 + 读面四列 + Handoff digest
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-01
 updated_at: 2026-10-01
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261001-272-goal-028-ec03-multi-role-subiteration-on-the-default-assembly.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20261001-182-run-chain-exclusion-is-per-phase.md
 parent_goal: GOAL-20261001-028
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -68,24 +69,53 @@ exit_criteria:
 
 ## 实施清单
 
-- [ ] **WP-A 协议补绑定**：给 `multi_role_research_v1.yaml` 的**会话 phase** 补
-      `session_tool_bindings`（`review` 的四个 provider → 能力名）；`scouting` 是
-      run-chain（会话工具面为空，无需绑定）；`experiment` 是 deterministic（无会话）。
-      phase 的其它字段**一字不改**。
-- [ ] **WP-B 判据**：新增默认装配实跑判据（五件事逐条 + 反证分支）。
-- [ ] **WP-C 记录 + 门 + 提交**：先写记录 → 记录面判据 → 全量 m0（独占、canonical DSN）
-      → 显式路径提交 → push → 轮询 CI 到终态 → 台账**逐提交**。
+- [x] **WP-A 协议补绑定**（**纯新增 12 行 / 0 删除**）：`review` phase 补
+      `session_tool_bindings` 四条。**实测纠错**：首版只绑三条 ⇒ `europe_pmc` 未绑
+      —— run-chain 排除是 **per-phase** 的（只对声明 `run_chain` 的 scouting 生效），
+      review 相位里它仍在工具面内。⇒ commit `2849666`
+- [x] **WP-B 判据**：`tests/e2e/test_multi_role_on_the_default_assembly.py`（**4 passed**），
+      五件事逐条 + 反证臂 + 绑定覆盖断言（按 strategy 分流）。⇒ commit `2849666`
+- [x] **WP-C 记录 + 门 + 提交**：本回写提交 + `RECHECK-20261001-272`。
 
 ## 证据
 
-（执行中回填。）
+**交付物**
+
+| 面 | 文件 | 变化 |
+| --- | --- | --- |
+| 协议 | `examples/protocols/multi_role_research_v1.yaml` | **+12 / −0**（只加绑定与注释） |
+| 判据 | `tests/e2e/test_multi_role_on_the_default_assembly.py` | 新增，4 passed |
+
+**实测结果（五件事）**
+
+- 默认装配（`build_agent_runtime` 真实缺省 + `register_session_tools`）⇒
+  `state=SUCCEEDED`、`protocol_id=multi_role_research_v1_0_0`、`manifest_digest` 在场、
+  失败列表无 `is not registered`；
+- 检索：`source_trust_label` 集合 == `{RETRIEVED}`，拼接串含真 PMID（`39284801` / `40601758`）；
+- 实验：`image_digest` 在场 + `metrics` 制品在；
+- 读面四列（`id` / `source_ref` / `content_digest` / `source_trust_label`）逐条非空；
+- Handoff：三条 `sha256:<64hex>`、互不相同；
+- 反证：摘检索接线 ⇒ run `FAILED`、判词点名 `retrieved sources`、工具证据为空。
+
+**按压 P-3（先红后绿 + 逐字节复原）**：删掉 `europe_pmc` 绑定 ⇒ **3 failed**，失败文本
+正是 `ToolDefinition 'europe_pmc' is not registered`；恢复后 `sha256sum -c` 逐字节一致
+（`multi_role_research_v1.yaml` = `3134b3c8…`）且连同既有判据 10 passed。
+
+**既有判据逐字节未改**：`git diff` 对既有六处判据/门禁文件为空。
 
 ## 影响报告
 
-（收口时回填。）
+- **Domain/schema 变化**：无（只用了 EC-01 已落地的 `session_tool_bindings` 字段）。
+- **API 变化**：无。
+- **安全/凭据变化**：无（未动凭据面、未动策略面）。
+- **网络姿态**：默认门仍离线（全部离线夹具 + 真容器实验段）。
+- **兼容性/迁移风险**：无迁移；协议改动**纯新增** ⇒ 既有读取方逐字节不受影响。
+- **上游版本影响**：无依赖改动。
+- **下一项任务**：GOAL-028 **EC-04**（台账合并行中间提交不漏记 + 新判据 + 反证两向）。
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-01 | IN_PROGRESS | cycle 3 派生：EC-03（默认装配上的完整闭环）。 |
+| 2026-10-01 | DONE | 协议 +12/−0；新判据 4 passed（五件事逐条）；按压 P-3 先红后绿 + 逐字节复原；既有判据一字未改；`RECHECK-20261001-272` = `PASS_WITH_WARNINGS`（五条 WARNING）。 |

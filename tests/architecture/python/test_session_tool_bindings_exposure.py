@@ -44,16 +44,18 @@ from services.api.catalog import load_catalog_snapshot, load_project_settings
 _ROOT = Path(__file__).resolve().parents[3]
 _PROTOCOLS = _ROOT / "examples" / "protocols"
 
-#: 声明了绑定的协议 → 它的哪个 phase 声明了哪两条（**字面量**写在判据里，不 import
-#: 产品常量当预言机）。
+#: 声明了绑定的协议 → 它的哪个 phase 声明了绑定（**字面量**写在判据里，不 import
+#: 产品常量当预言机）。`multi_role_research_v1.yaml` 在 GOAL-028 **EC-03** 里按授权新增了
+#: 绑定（review phase 四条）⇒ 它从本文件的「未声明」清单移到这里，期望值见
+#: `_EXPECTED_DECLARED`。
 _BOUND = {
     "tool_binding_research_v1.yaml": "analysis",
+    "multi_role_research_v1.yaml": "review",
 }
 #: 未声明该字段的协议 ⇒ 绑定为空、会话工具面逐字等于（冻结集 − run-chain 排除）。
 _UNDECLARED = (
     "real_research_task_v1.yaml",
     "console_demo_research_v1.yaml",
-    "multi_role_research_v1.yaml",
     "sort_analysis_v1.yaml",
 )
 
@@ -70,14 +72,29 @@ def _compiled(name: str) -> Any:
     return result.plan
 
 
+#: 每个「声明了绑定的」协议的**期望声明**（逐字写死在判据里 ⇒ 文档改一个字这里就红）。
+_EXPECTED_DECLARED: dict[str, list[dict[str, str]]] = {
+    # EC-01 的判据自带协议：两件 NATIVE provider。
+    "tool_binding_research_v1.yaml": [
+        {"provider_id": "m12_artifact", "tool_name": "artifact.read"},
+        {"provider_id": "openhands_workspace", "tool_name": "workspace.read"},
+    ],
+    # EC-03 的真实协议：review phase 四条（run-chain 排除是 per-phase 的 ⇒
+    # europe_pmc 在这一相位仍在会话工具面内，必须绑）。
+    "multi_role_research_v1.yaml": [
+        {"provider_id": "m12_artifact", "tool_name": "artifact.read"},
+        {"provider_id": "openhands_workspace", "tool_name": "workspace.read"},
+        {"provider_id": "ncbi_eutils", "tool_name": "literature.search"},
+        {"provider_id": "europe_pmc", "tool_name": "literature.read"},
+    ],
+}
+
+
 def test_the_document_itself_declares_the_bindings() -> None:
     """第 1 面：**文档自己**写了绑定（不靠产品代码转述）。"""
     for name, phase_id in _BOUND.items():
         declared = _raw_phases(name)[phase_id]["session_tool_bindings"]
-        assert declared == [
-            {"provider_id": "m12_artifact", "tool_name": "artifact.read"},
-            {"provider_id": "openhands_workspace", "tool_name": "workspace.read"},
-        ], (name, declared)
+        assert declared == _EXPECTED_DECLARED[name], (name, declared)
 
 
 def test_the_loader_and_the_compiler_agree_with_the_document() -> None:
