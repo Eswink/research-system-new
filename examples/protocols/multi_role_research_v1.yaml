@@ -76,6 +76,18 @@ phases:
       - artifact.read
       - evidence.read
       - workspace.read
+    # 会话工具绑定（GOAL-028 EC-01 的声明面）：把本 phase 会话工具面里的 provider 绑到
+    # 它们的**能力名**。provider id 与 SDK 工具名是两个名字空间（registry 的名字来自工具
+    # 实现自己）⇒ 不绑就会在会话创建时点名 `ToolDefinition '<provider id>' is not registered`。
+    # 四个 provider 都要绑：冻结集是 plan 级的（见 scouting 的注释），而本 phase 只把
+    # `europe_pmc`（run-chain）排除在外 ⇒ 其余三件 + `ncbi_eutils` 都在工具面内。
+    # 绑到的能力名与 `examples/config/policy.yaml` 的 allow 列表同源 ⇒ 策略求值看到的名字
+    # 与工具名是同一个（否则会出现「放行的是一个名字、执行的是另一个」）。
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+      - {provider_id: openhands_workspace, tool_name: workspace.read}
+      - {provider_id: ncbi_eutils, tool_name: literature.search}
+      - {provider_id: europe_pmc, tool_name: literature.read}
     # 评审的**判定依据**是它自己声明输入的那份材料（与 `sort_analysis_v1` 的 review
     # 同一条既有语义）：`EVIDENCE_COVERAGE: minimum_sources` 只数**本任务**能看到的
     # 非自产来源 ⇒ 声明输入在场则过、缺席则**判拒并点名**（「评为不通过」的实测用例见
