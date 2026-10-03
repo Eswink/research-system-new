@@ -19,6 +19,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -56,8 +57,11 @@ def audit_module() -> Any:
     return _load()
 
 
-def _run(ledger: dict[str, object]) -> list[Any]:
-    return _load().audit(ledger)
+def _run(ledger: Mapping[str, object]) -> list[Any]:
+    """喂一份**合成台账**给被测审计（`Mapping` 而非 `dict`：dict 的值类型是不变的，
+    字面量会被推断成更窄的嵌套类型 ⇒ 传参处 mypy 报 arg-type）。"""
+    verdicts: list[Any] = _load().audit(ledger)
+    return verdicts
 
 
 def _failed(verdicts: list[Any]) -> list[str]:
