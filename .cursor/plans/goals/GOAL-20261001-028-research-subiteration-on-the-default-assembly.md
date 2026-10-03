@@ -694,7 +694,19 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | cycle 1（同上批） | `cb5c26f`（WP-D2） | **无**（`total_count=0`） | 同上 |
 | cycle 1（同上批） | `724b74b`（收口） | M0 [`36984630729`](https://github.com/Eswink/research-system-new/actions/runs/36984630729) / Push-on-main [`36984629590`](https://github.com/Eswink/research-system-new/actions/runs/36984629590) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查（`scratch/goal028-c1-run-36984630729{,-jobs}.json` / `…-36984629590{,-jobs}.json`）⇒ `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=724b74bb5134…` 与推送一致；轮询日志 `scratch/goal028-c1-ci-poll.log`（`ALL_TERMINAL sha=724b74bb5134121bca2c9c99b3de8cc30de52e96`，**44 轮**）。 |
 
-**本轮自身的逐提交覆盖情况（EC-04(b) 的判据口径在 cycle 1 上已生效）**：本批推送 **6** 个提交，
+| cycle 2（EC-02：勘察 1 + live 模块 1 + server 1 + 文档 1 + 判据 1 + `IN_SCOPE` 1 + 记录 6） | `19d52f7`（WP-A/WP-B） | **无**（`total_count=0`） | 其 run 被同批 `66e5489` 覆盖；**由 `66e5489` 的绿承担** |
+| cycle 2（同上批） | `9b53c21`（WP-C 判据） | **无**（`total_count=0`） | 同上 |
+| cycle 2（同上批） | `66e5489`（收口） | M0 [`37086422253`](https://github.com/Eswink/research-system-new/actions/runs/37086422253) / Push-on-main [`37086421530`](https://github.com/Eswink/research-system-new/actions/runs/37086421530) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查（`scratch/goal028-c2-run-37086422253{,-jobs}.json` / `…-37086421530{,-jobs}.json`）⇒ `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=66e5489665b9…` 与推送一致；轮询日志 `scratch/goal028-c2-ci-poll.log`（`ALL_TERMINAL sha=66e5489665b9487a922abac20cf6a413f2cd6c64`，**47 轮**）。**无 `cancelled`**。逐提交覆盖：前两个 `total_count=0`（同批 head 承担绿），已逐条写明。 |
+
+**cycle 1 批次（6 提交）与 cycle 2 批次（3 提交）的逐提交覆盖情况（EC-04(b) 的口径在本轮自身生效）**：
+两批共 **9** 个提交，逐条经 REST API 原始 JSON 复核 —— cycle 1 的前 **5** 个
+（`60e0303` / `1c5ad78` / `50a58c4` / `234fb06` / `cb5c26f`）与 cycle 2 的前 **2** 个
+（`19d52f7` / `9b53c21`）`total_count=0`，其 run **被同批 head 覆盖**（分别由 `724b74b`
+与 `66e5489` 的绿承担）；两个 head 各自自带 M0 + Push-on-main 两个 run，八 job 与
+CodeQL 3/3 全 `success`（`run_attempt=1`）。**两批均无 `cancelled`**。
+（这正是 GOAL-027 合并行缺口的同一形状 —— 本 GOAL 按新口径**逐条写明覆盖关系**而不是合并成一行。）
+
+本批推送 **6** 个提交，
 逐条经 REST API 原始 JSON 复核 —— 前 **5** 个（`60e0303` / `1c5ad78` / `50a58c4` / `234fb06` /
 `cb5c26f`）`total_count=0`，其 run **被同批 head `724b74b` 覆盖、由它的绿承担**；
 `724b74b` 自带 M0 + Push-on-main 两个 run，八 job 与 CodeQL 3/3 全 `success`（`run_attempt=1`）。
