@@ -711,14 +711,16 @@ EC-05 的 as-is m0 **必须**在记录写入**之后**跑（承 MEM-145）。
 | cycle 4（EC-04：工具 1 + 判据 1 + `IN_SCOPE` 1 + 台账 1 + 记录 2） | `c8a3c3f` | **无**（`total_count=0`） | 其 run 被同批 `0904d7a` 覆盖；**由 `0904d7a` 的绿承担** |
 | cycle 4（同上批） | `f073b92` | **无**（`total_count=0`） | 同上 |
 | cycle 4（同上批） | `0904d7a`（收口） | M0 [`37116976736`](https://github.com/Eswink/research-system-new/actions/runs/37116976736) / Push-on-main [`37116976190`](https://github.com/Eswink/research-system-new/actions/runs/37116976190) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`（**一次成功、无 flake**）；原始 JSON 实查（轮询日志 `scratch/goal028-c4-ci-poll.log` 的 `ALL_TERMINAL sha=0904d7a5b575…`；**本批经新工具 `tools/audit_goal028_ledger.py` 实跑**：`scratch/goal028-c4-ledger.json` ⇒ `checks=6 failed=0 exit=0`，两个被覆盖提交各自有结构化 `covered_by` + `coverage_note`）⇒ `head_sha=0904d7a5b575…` 与推送一致。**无 `cancelled`**。 |
+| cycle 5（EC-05：验证器 1 + `IN_SCOPE` 1 + 记录 5） | `10c7ced` | M0 [`37119719823`](https://github.com/Eswink/research-system-new/actions/runs/37119719823) / Push-on-main [`37119719825`](https://github.com/Eswink/research-system-new/actions/runs/37119719825) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`；轮询日志 `scratch/goal028-c5-ci-poll.log`（`ALL_TERMINAL sha=10c7ceda7a95…`）。**无 `cancelled`**。 |
+| cycle 5 收口（GOAL `ACHIEVED` + 五 EC 置 PASS + 记录 4 + 验证器随收口更新 1） | `dd70b33` | M0 [`37134710447`](https://github.com/Eswink/research-system-new/actions/runs/37134710447) / Push-on-main [`37134710081`](https://github.com/Eswink/research-system-new/actions/runs/37134710081) | **绿（八 job 全 `success` + CodeQL 3/3 `success`）**，两者 `run_attempt=1`；原始 JSON 实查 `jobs=8 ok=8 bad=[]` / `jobs=3 ok=3 bad=[]`，`head_sha=dd70b331279d…` 与推送一致；轮询日志 `scratch/goal028-c5b-ci-poll.log`（`ALL_TERMINAL sha=dd70b331279df31bc3d84eb271872e041b97e1dd`）。**无 `cancelled`**。 |
 
 
-四批共 **14** 个提交，逐条经 REST API 原始 JSON 复核 —— cycle 1 的前 **5** 个
+五批共 **16** 个提交，逐条经 REST API 原始 JSON 复核 —— cycle 1 的前 **5** 个
 （`60e0303` / `1c5ad78` / `50a58c4` / `234fb06` / `cb5c26f`）、cycle 2 的前 **2** 个
 （`19d52f7` / `9b53c21`）、cycle 3 的前 **1** 个（`2849666`）与 cycle 4 的前 **2** 个
 （`c8a3c3f` / `f073b92`）`total_count=0`，
 其 run **被同批 head 覆盖**（分别由 `724b74b` / `66e5489` / `3e70fbf` / `0904d7a` 的绿承担）；
-四个 head 各自自带 M0 + Push-on-main 两个 run，八 job 与
+cycle 5 的两个提交（`10c7ced` / `dd70b33`）**各自** `total_count=2`（本批两次提交分别在两次推送里上行 ⇒ 各自带自己的 run）；五个 head 各自自带 M0 + Push-on-main 两个 run，八 job 与
 CodeQL 3/3 全 `success`（`run_attempt=1`）。**四批均无 `cancelled`**。
 （这正是 GOAL-027 合并行缺口的同一形状 —— 本 GOAL 按新口径**逐条写明覆盖关系**而不是合并成一行；
 cycle 4 起该口径由 `tools/audit_goal028_ledger.py` **机器复核**，本批实测 `checks=6 failed=0`。）
