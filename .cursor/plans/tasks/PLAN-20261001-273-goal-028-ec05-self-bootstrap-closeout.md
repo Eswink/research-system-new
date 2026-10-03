@@ -2,12 +2,12 @@
 id: PLAN-20261001-273
 slug: goal-028-ec05-self-bootstrap-closeout
 title: GOAL-028 cycle 5（EC-05）：自举收口 — 收口验证器进树 + 两树复检 + IN_SCOPE 纯收紧 + 残余与未覆盖逐条
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-01
 updated_at: 2026-10-01
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261001-274-goal-028-ec05-self-bootstrap-closeout.md
 memory_entries:
-  - .cursor/memory/entries/MEM-20261001-172-closeout-tools-reuse-standard-face-and-behavioural-floor.md
+  - .cursor/memory/entries/MEM-20260929-172-closeout-tools-reuse-standard-face-and-behavioural-floor.md
 parent_goal: GOAL-20261001-028
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -78,23 +78,28 @@ exit_criteria:
       `standard_verdicts`，只写本轮特有断言：主干交付物 AST 判定 / 判据专用协议在树 /
       `IN_SCOPE` / 逐 EC 例数下界 / 记录面残余与未覆盖 / 新增文件规模 / 文档同源）。
 - [x] **WP-B `IN_SCOPE` 纯收紧**：追加本验证器一条。
-- [ ] **WP-C 两树复检**：提交推送后跑（干净树是**已推送** HEAD 的 checkout）。
-- [ ] **WP-D 记录 + 门 + 提交**：记录面判据 → 全量 m0（独占、canonical DSN）→
-      显式路径提交 → push → 轮询 CI 到终态 → 台账**逐提交**。
+- [x] **WP-C 两树复检**：提交推送后跑 ⇒ **`TWO-TREE PASS` / `EXIT=0`**，两树各 46 判词、
+      `sha256` 相同（`e43cb3b0d718a078885ce46d2e93263a7b759b3ee9030962664569c35c74f2e1`）；
+      留档 `scratch/goal028-c5b-twotree.log`。
+- [x] **WP-D 记录 + 门 + 提交**：本回写提交 + `RECHECK-20261001-274`；m0 见 GOAL 迭代日志 cycle 5 行。
 
 ## 证据
 
 **验证器在树跑出的判词**：**46 PASS / 0 FAIL**（标准集 + 本轮特有断言；`--verdict-only`）。
 
-**首版三处判红（全在验证器自身，已修）**：
+**两树复检**：`TREE current` / `TREE clean` 各 **46** 判词、`sha256` **相同**、
+`COMPARE identical=True`、**`TWO-TREE PASS`**、`EXIT=0`。
+
+**首版三处判红 + 一处规模门（全在验证器自身，已修）**：
 ① 例数下界按 `pytest` **收集**数写（参数化让收集数更大）⇒ 与 `def test_` **声明**数
 不是一个量 ⇒ 改按声明数（docstring 写明区别）；
 ② `IN_SCOPE` 尚未含本文件（自举时序）⇒ 追加；
-③ 子计划/复检路径写的是旧 `RECHECK-20261001-270` ⇒ 改指本轮 `RECHECK-20261001-272`。
+③ 子计划/复检路径写的是旧 `RECHECK-20261001-270` ⇒ 改指 `RECHECK-20261001-272`；
+④ `deliverable_verdicts` >50 行 ⇒ 拆成 `_binding_face_verdicts` + `_retrieval_and_ledger_verdicts`。
 
 **两树首跑 RED = 正确行为**：干净树是**已推送** HEAD 的 checkout，还不含未提交的验证器
-⇒ 两条判词判红（`new-scripts-in-scope` / `new-files-within-size`，都点名
-`tools/verify_goal028_closeout.py` 不存在）。提交推送后复跑。
+⇒ 两条判词判红（`new-scripts-in-scope` / `new-files-within-size`，都点名文件不存在）。
+提交推送后**复跑 ⇒ PASS**（同时是两树入口有效性的正控制）。
 
 ## 影响报告
 

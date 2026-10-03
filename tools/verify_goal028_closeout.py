@@ -363,7 +363,7 @@ def record_verdicts(root: Path) -> list[VerdictLike]:
         _verdict(
             "child-plans-and-recheck-in-record",
             ".cursor/plans/tasks/PLAN-20261001-267" in goal
-            and ".cursor/plans/rechecks/RECHECK-20261001-272" in goal,
+            and ".cursor/plans/rechecks/RECHECK-20261001-274" in goal,
             "子计划或复检未登记进 GOAL",
         ),
     ]
