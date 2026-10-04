@@ -95,10 +95,15 @@ EC_FILES: dict[str, tuple[tuple[str, ...], tuple[int, ...]]] = {
         (
             "tests/adapters/openhands/test_session_tool_reaches_executor.py",
             "tests/adapters/canonical/test_canonical_read_provider.py",
+            "tests/adapters/canonical/test_canonical_read_carried_later.py",
             "tests/e2e/test_session_tool_call_on_the_default_assembly.py",
             "tests/api/test_production_session_tool_registration.py",
         ),
-        (7, 17, 12, 13),
+        # 承接面判据在 cycle 4 因**规模门**（450 行硬上限）拆成两个文件：
+        # `test_canonical_read_provider.py`（最初的读面 + 共享夹具，7 例）
+        # + `test_canonical_read_carried_later.py`（后续 cycle 新增的能力组，13 例）。
+        # **下界按拆分后的实际例数取**（两文件合计 20，与原下界 17 的单调性一致：只增不减）。
+        (7, 7, 13, 12, 13),
     ),
     "ec02": (
         ("tests/architecture/python/test_capability_coverage_is_implemented.py",),
