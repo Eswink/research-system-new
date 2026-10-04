@@ -41,7 +41,9 @@ pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 _ROOT = Path(__file__).resolve().parents[3]
 _CAPABILITIES = "examples/config/capabilities.yaml"
 _PROVIDERS = "examples/config/tool_providers.yaml"
-_READ_PROVIDER = "adapters/canonical/read_provider.py"
+#: 工具面描述子所在的模块（**拆分后**：能力↔工具的对应表在 surface 模块，
+#: 执行实现在 `read_provider.py`；判据读的是**声明面**，所以指向前者）。
+_READ_PROVIDER = "adapters/canonical/read_surface.py"
 
 #: 射程**内**的能力（本 GOAL 承接的）：逐条写死 —— 下界由本清单给出（承 MEM-160）。
 #: 每加一条都要在这里显式加（清单本身就是「已承接」的判词）。
@@ -52,14 +54,14 @@ _IN_SCOPE: tuple[str, ...] = (
     "workspace.read",
     "budget.read",
     "deliverable.read",
+    "experiment.read",
+    "experiment_plan.read",
 )
 
 #: 射程**外**的能力 → (组别, 理由)。46 条能力里**除 _IN_SCOPE 与已承接的 12 条之外**的
 #: 每一条都必须在此登记；未登记者由 `test_every_capability_is_classified` 判红。
 _OUT_OF_SCOPE_REASONS: dict[str, str] = {
     # --- A 组：零依赖读能力，但**放行需用户拍板**（D-02(b) 未决口径）---
-    "experiment.read": "A 组零依赖读：同上（放行需拍板）",
-    "experiment_plan.read": "A 组零依赖读：同上（放行需拍板）",
     "agent_run.read": (
         "A 组零依赖读：域里**没有 AgentRun 实体**（最近的是 task+agent_id）⇒ 无可读对象"
     ),
@@ -145,7 +147,7 @@ _DECLARED_WITHOUT_IMPLEMENTATION: dict[str, str] = {
 
 #: 本轮**新承接**的五条（下界由它给出；`_IN_SCOPE` 是它的超集说明）。
 #: 承 MEM-160：清单本身要有下界断言，且下界**写死**（不随文档漂移）。
-_MIN_NEWLY_承接 = 6
+_MIN_NEWLY_承接 = 8
 
 
 def _load(path: str) -> dict[str, Any]:

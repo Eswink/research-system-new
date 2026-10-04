@@ -1,36 +1,33 @@
-"""Canonical 读面 ToolProvider：把 PG/域实体（canonical state）接成**可执行**的工具。
+"""Canonical 读面 ToolProvider：把 canonical state（PG 域实体）接成**可执行**的工具。
 
-**它解决什么**：`examples/config/tool_providers.yaml` 声明了两件 NATIVE provider
-（`m12_artifact`：`artifact.read` / `artifact.write` / `evidence.read` / `evidence.write`；
-`openhands_workspace`：`workspace.read` / …），但**全仓没有任何实现**
+**它解决什么**：`examples/config/tool_providers.yaml` 声明了 NATIVE provider 的读能力
+（`artifact.read` / `evidence.read` / `workspace.read` / `budget.read` / `deliverable.read` /
+`claim.read` / `experiment.read` / `experiment_plan.read`），但**全仓没有实现**
 （只有 `FakeToolProvider` 与两个 REST adapter）⇒ 声明了能力却没有可执行的承接面。
-本模块补上**读面**那一半：把 canonical 里**已经有**的数据（ArtifactStore 的制品、
-EvidenceLedger 的 claim/evidence/relation）接成真去读的 provider。
+本模块补上**读面**：把 canonical 里**已经有**的数据接成真去读的 provider。
+**为什么读面先做**：数据都在 canonical（AGENTS.md §6），读它零新增依赖、零凭据、零许可风险。
 
-**为什么读面先做**（GOAL-029 的 A 组口径）：数据都在 canonical（PostgreSQL Domain Entity
-是业务真相，AGENTS.md §6），读它**零新增外部依赖、零凭据、零许可风险**；写面要动
-canonical 路径属另一类决定。
-
-**边界**：
-- 参数经 `tool-args` 制品传递（与 `ncbi` / `europe_pmc` / MCP 同一口径；provider 按
-  `argument_digest` 重算校验，防篡改）——本模块不新开一条参数通道。
-- 结果经 `spill_large_result` 落 ArtifactStore（TOOL_RUNTIME.md §7 的阈值分流）。
-- **不**判定能力是否被允许（那是 `execute_tool_call` 的策略面）；本模块只执行。
-- **不**编造数据：读不到就按未知 id 点名拒绝（不返回空壳冒充"查到了但没内容"）。
+**边界**：参数经 `tool-args` 制品传递（与 `ncbi` / MCP 同口径，`argument_digest` 重算校验）；
+结果经 `spill_large_result` 落盘；**不**判定能力是否被允许（那是策略面）；**不**编造数据
+（读不到就按未知 id 点名拒绝）。工具面描述子在 `read_surface.py`（本文件只管执行）。
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
 from typing import Any
 
+# 工具面描述子（纯声明；与执行实现分列以守住文件规模门）
+from adapters.canonical.read_surface import (
+    _DELIVERABLE_ARTIFACT,
+    _TOOL_CAPABILITIES,
+    describe_tools,
+    read_tool_args,
+    spill_tool_result,
+)
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.evidence_ledger import EvidenceLedger
-from packages.application.tool_plane.results import spill_large_result
-from packages.domain.core import Digest
-from packages.domain.enums import ProviderType
 from packages.domain.tools import (
     ToolCallRecord,
     ToolHealthReport,
@@ -38,58 +35,6 @@ from packages.domain.tools import (
     ToolResultRecord,
     ToolSpec,
 )
-
-ARGS_ARTIFACT_PREFIX = "tool-args:"
-
-#: provider 侧 tool id → 说明。**能力的名字空间是能力名**（与 `policy.yaml` 同源）。
-_TOOL_DESCRIPTIONS: dict[str, str] = {
-    "artifact_read": "Read an artifact (metadata + content) from the canonical artifact store.",
-    "evidence_read": "Read claims / evidence / relations for a run from the canonical ledger.",
-    "claim_read": "Read claims (with their evidence relations) from the canonical ledger.",
-    "workspace_read": "Read the canonical workspace/run view exposed to the session.",
-    "budget_read": "Read the canonical budget ledger snapshot (reservations + usage entries).",
-    "deliverable_read": "Read the persisted research deliverable for a run (deliverable.json).",
-}
-
-#: tool id → 它承载的能力名。**承接 = 声明 + 实现**：两者必须同时在，工具名与策略面同源。
-_TOOL_CAPABILITIES: dict[str, str] = {
-    "artifact_read": "artifact.read",
-    "evidence_read": "evidence.read",
-    "claim_read": "claim.read",
-    "workspace_read": "workspace.read",
-    "budget_read": "budget.read",
-    "deliverable_read": "deliverable.read",
-}
-
-#: deliverable 的 canonical 落点（与 `services/api/routers/deliverable.py` 同一约定：
-#: `persist_completion` 写的 `f"{run_id}:deliverable.json"`）。读面不新造第二个名字。
-_DELIVERABLE_ARTIFACT = "deliverable.json"
-
-
-def tool_ids() -> list[str]:
-    """声明的工具 id（排序后，供 schema digest 稳定复用）。"""
-    return sorted(_TOOL_DESCRIPTIONS)
-
-
-def describe_tools(
-    provider: ToolProviderSpec, *, capabilities: Mapping[str, str]
-) -> tuple[ToolSpec, ...]:
-    """把声明的工具面映射成 `ToolSpec` 元组（与 `ncbi.py::list_tools` 同形）。
-
-    `capabilities` 给每个 tool id 对应的**能力名**（本 provider 的若干工具可能承载不同能力，
-    如 `artifact_read` → `artifact.read`、`evidence_read` → `evidence.read`）。
-    """
-    return tuple(
-        ToolSpec(
-            id=tool_id,
-            name=tool_id,
-            effect_class=provider.effect_class,
-            provider_kind=ProviderType.NATIVE,
-            capabilities=[capabilities[tool_id]] if tool_id in capabilities else [],
-            description=description,
-        )
-        for tool_id, description in _TOOL_DESCRIPTIONS.items()
-    )
 
 
 class CanonicalReadProvider:
@@ -105,6 +50,7 @@ class CanonicalReadProvider:
         ledger: EvidenceLedger | None = None,
         *,
         budget_ledger: Any | None = None,
+        experiment_store: Any | None = None,
         spill_threshold_bytes: int = 1,
     ) -> None:
         """构造读面 provider。
@@ -128,21 +74,28 @@ class CanonicalReadProvider:
         #: 预算账本（`budget.read` 的**真实**来源）。缺省 None ⇒ 该工具**点名**不可用，
         #: 不返回空账本冒充「没有用量」。
         self._budget = budget_ledger
+        #: 实验域存储（`experiment.read` / `experiment_plan.read` 的**真实**来源）。
+        #: 缺省 None ⇒ 这两个工具**点名**不可用，不返回空列表冒充「没有实验」。
+        self._experiments = experiment_store
         self._spill_threshold = spill_threshold_bytes
 
     def execute(self, provider: ToolProviderSpec, call: ToolCallRecord) -> ToolResultRecord:
-        args = self._read_args(call)
+        args = read_tool_args(self._artifacts, call)
         handler = {
             "artifact_read": self._artifact_read,
             "evidence_read": self._evidence_read,
             "claim_read": self._claim_read,
             "workspace_read": self._workspace_read,
             "budget_read": self._budget_read,
+            "experiment_read": self._experiment_read,
+            "experiment_plan_read": self._experiment_plan_read,
             "deliverable_read": self._deliverable_read,
         }.get(call.tool_id)
         if handler is None:
             raise InvalidInputError(f"unknown tool id: {call.tool_id}")
-        return self._to_record(call, handler(args))
+        return spill_tool_result(
+            self._artifacts, call, handler(args), threshold_bytes=self._spill_threshold
+        )
 
     def list_tools(self, provider: ToolProviderSpec) -> tuple[ToolSpec, ...]:
         """只列**本 provider 真声明了**的能力对应的工具（未声明的不进工具面）。"""
@@ -371,6 +324,97 @@ class CanonicalReadProvider:
             "claims": sorted(claims, key=lambda item: str(item["id"])),
         }
 
+    def _experiment_plan_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读 canonical 的实验计划（`ExperimentStore.list_plans`；可按状态过滤）。
+
+        与 HTTP 读面同源：`GET /experiment-plans` 走同一个 store 方法（本工具不新造第二套
+        查询口径）。store 缺失 ⇒ 点名拒绝（不返回空列表冒充「没有计划」）。
+        """
+        if self._experiments is None:
+            raise InvalidInputError(
+                "experiment_plan_read requires an ExperimentStore, which is not in this assembly"
+            )
+        state = str(args.get("state") or "").strip() or None
+        plans = self._experiments.list_plans(state=state)
+        return {
+            "state": state,
+            "plans": [
+                {
+                    "id": str(plan.id),
+                    "name": plan.name,
+                    "state": str(plan.state),
+                    "hypothesis": plan.hypothesis,
+                    "task_contract_ref": plan.task_contract_ref,
+                    "created_at": str(plan.created_at),
+                }
+                for plan in sorted(plans, key=lambda item: str(item.id))
+            ],
+        }
+
+    def _experiment_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读某 run 的**实验执行记录**（与 HTTP 读面 `GET /runs/{id}/experiments` 同源）。
+
+        同源的含义是**两步一致**（HTTP 面就是这么做的）：
+        ① `EvidenceLedger` 的证据里发现 `experiment_run_id`（哪次实验与这个 run 有关）；
+        ② `ExperimentStore.get_run(...)` 取该次执行的**域事实**（state / plan_id）。
+        本工具不新造第三个查询面，也不替代 HTTP 面已有的 metrics 投影
+        （那要读 metrics artifact，属运行链已完成的部分；这里如实**不含** metrics）。
+        """
+        if self._ledger is None:
+            raise InvalidInputError(
+                "experiment_read requires an EvidenceLedger, which is not in this assembly"
+            )
+        if self._experiments is None:
+            raise InvalidInputError(
+                "experiment_read requires an ExperimentStore, which is not in this assembly"
+            )
+        run_id = str(args.get("run_id") or "").strip()
+        if not run_id:
+            raise InvalidInputError("experiment_read requires a non-empty run_id")
+        return {"run_id": run_id, "experiments": self._experiments_of_run(run_id)}
+
+    def _experiments_of_run(self, run_id: str) -> list[dict[str, object]]:
+        """证据里发现 `experiment_run_id` → store 取域事实（缺 store 记录则如实标注）。"""
+        assert self._ledger is not None and self._experiments is not None
+        discovered: list[dict[str, object]] = []
+        seen: set[str] = set()
+        for claim in self._ledger.claims():
+            for relation in self._ledger.relations_for_claim(claim.id):
+                try:
+                    evidence = self._ledger.get_evidence(relation.evidence_id)
+                except Exception:  # noqa: BLE001 - 引用可能已删除（视觉态）
+                    continue
+                experiment_run_id = evidence.experiment_run_id
+                if evidence.run_id != run_id or not experiment_run_id:
+                    continue
+                if experiment_run_id in seen:
+                    continue
+                seen.add(experiment_run_id)
+                discovered.append(self._experiment_fact(experiment_run_id, evidence))
+        return sorted(discovered, key=lambda item: str(item["experiment_run_id"]))
+
+    def _experiment_fact(self, experiment_run_id: str, evidence: Any) -> dict[str, object]:
+        """一次实验的可读事实：证据侧（artifact/镜像摘要）+ 域侧（state/plan_id）。"""
+        assert self._experiments is not None
+        fact: dict[str, object] = {
+            "experiment_run_id": experiment_run_id,
+            "artifact_id": evidence.artifact_id,
+            "image_digest": evidence.image_digest,
+            "environment_digest": evidence.environment_digest,
+        }
+        try:
+            run = self._experiments.get_run(experiment_run_id)
+        except Exception:  # noqa: BLE001 - store 无此记录时如实标注，不编造域字段
+            fact["domain_record"] = None
+            fact["domain_record_reason"] = "no ExperimentRun in the canonical store for this id"
+            return fact
+        fact["domain_record"] = {
+            "id": str(run.id),
+            "plan_id": str(run.plan_id),
+            "state": str(run.state),
+        }
+        return fact
+
     def _workspace_read(self, args: dict[str, object]) -> dict[str, object]:
         """读 canonical 的 run/工作区视图（当前是 run 的存续事实，不含文件内容）。
 
@@ -387,31 +431,5 @@ class CanonicalReadProvider:
         ]
         return {"run_id": run_id, "artifacts": sorted(artifacts, key=lambda item: str(item["id"]))}
 
-    # --- 公共骨架 ---------------------------------------------------------------
 
-    def _read_args(self, call: ToolCallRecord) -> dict[str, object]:
-        artifact_id = f"{ARGS_ARTIFACT_PREFIX}{call.task_id}:{call.operation_key}"
-        try:
-            content = self._artifacts.get(artifact_id)
-        except Exception as exc:  # noqa: BLE001 - 未知制品按 args 缺失收敛
-            raise InvalidInputError(f"tool args missing for {call.operation_key}") from exc
-        if Digest.of_bytes(content) != call.argument_digest:
-            raise InvalidInputError("tool args digest mismatch")
-        parsed = json.loads(content.decode("utf-8"))
-        if not isinstance(parsed, dict):
-            raise InvalidInputError("tool args must be a JSON object")
-        return parsed
-
-    def _to_record(self, call: ToolCallRecord, payload: dict[str, object]) -> ToolResultRecord:
-        raw = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
-        return spill_large_result(
-            self._artifacts, call, raw, threshold_bytes=self._spill_threshold
-        ).record
-
-
-__all__ = [
-    "ARGS_ARTIFACT_PREFIX",
-    "CanonicalReadProvider",
-    "describe_tools",
-    "tool_ids",
-]
+__all__ = ["CanonicalReadProvider"]

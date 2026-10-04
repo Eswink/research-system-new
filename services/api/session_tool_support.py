@@ -46,6 +46,8 @@ DEFAULT_SESSION_TOOL_BINDINGS: tuple[tuple[str, str, str], ...] = (
     ("claim.read", "m12_artifact", "claim_read"),
     ("evidence.read", "m12_artifact", "evidence_read"),
     ("budget.read", "m12_artifact", "budget_read"),
+    ("experiment.read", "m12_artifact", "experiment_read"),
+    ("experiment_plan.read", "m12_artifact", "experiment_plan_read"),
     ("deliverable.read", "m12_artifact", "deliverable_read"),
     ("workspace.read", "openhands_workspace", "workspace_read"),
 )
@@ -107,10 +109,20 @@ def session_tool_register(
     )
 
 
-def session_tool_face(artifacts: Any, ledger: Any, policy: Any, budget_ledger: Any = None) -> Any:
+def session_tool_face(
+    artifacts: Any,
+    ledger: Any,
+    policy: Any,
+    budget_ledger: Any = None,
+    experiment_store: Any = None,
+) -> Any:
     """位置参数形式的出厂注册面（组合根侧读起来最短；语义见 `canonical_read_register`）。"""
     return canonical_read_register(
-        artifacts=artifacts, ledger=ledger, policy=policy, budget_ledger=budget_ledger
+        artifacts=artifacts,
+        ledger=ledger,
+        policy=policy,
+        budget_ledger=budget_ledger,
+        experiment_store=experiment_store,
     )
 
 
@@ -125,15 +137,17 @@ def sqlite_session_tools(faces: Any, ports: Any) -> Any:
         ledger=ports.ledger,
         policy=faces.policy_evaluator,
         budget_ledger=ports.budget,
+        experiment_store=ports.experiment_store,
     )
 
 
-def canonical_read_register(
+def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件（齐了才叫承接）
     *,
     artifacts: Any,
     ledger: Any,
     policy: Any,
     budget_ledger: Any | None = None,
+    experiment_store: Any | None = None,
     bindings: Sequence[tuple[str, str, str]] = DEFAULT_SESSION_TOOL_BINDINGS,
 ) -> Any:
     """**出厂形态**的注册回调：用 canonical 读面当 provider 实例（两个组合根共用）。
@@ -150,7 +164,9 @@ def canonical_read_register(
     from adapters.canonical import CanonicalReadProvider
     from services.api.catalog import load_catalog_snapshot
 
-    canonical_reader = CanonicalReadProvider(artifacts, ledger, budget_ledger=budget_ledger)
+    canonical_reader = CanonicalReadProvider(
+        artifacts, ledger, budget_ledger=budget_ledger, experiment_store=experiment_store
+    )
     instance_for = {
         "m12_artifact": canonical_reader,
         "openhands_workspace": canonical_reader,

@@ -211,7 +211,11 @@ def _build_pg_orchestration(
                 policy_evaluator=inputs.policy_bindings["policy_evaluator"],
                 budget_ledger=c["budget"],
                 register_session_tools=session_tool_face(
-                    c["artifacts"], c["ledger"], inputs.policy_bindings.get("policy_evaluator")
+                    c["artifacts"],
+                    c["ledger"],
+                    inputs.policy_bindings.get("policy_evaluator"),
+                    c["budget"],
+                    c["experiment_store"],
                 ),
             ),
             workflow=c["workflow"],

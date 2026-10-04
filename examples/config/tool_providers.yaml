@@ -24,14 +24,15 @@ tool_providers:
       # **承接 ≠ 放行**：执行仍由 `policy.yaml` 裁决 —— 未放行的能力点名
       # `POLICY_DENIED`（见 `tests/architecture/python/test_capability_coverage_...`）。
       #
-      # **声明必须伴实现**（收口审计教训）：`experiment.read` / `experiment_plan.read`
-      # 起初也写在这里，但它们**没有**实现（实验读面今天是 HTTP 路由与运行链能力步，
-      # 接成工具需要 ExperimentStore 进入 provider 依赖面）⇒ 那是 GOAL-028 `W-1` 的原形
-      # （「声明了但没有可执行的承接面」）。**已从声明面移除**，改由判据的
-      # `_DECLARED_WITHOUT_IMPLEMENTATION` 登记理由、并在结论里写明为下一批候选。
+      # **声明必须伴实现**（收口审计教训）：本清单里的每一条都在
+      # `adapters/canonical/read_provider.py` 有真实现；曾经声明过而无实现的条目
+      # （`experiment.read` / `experiment_plan.read` 的**第一版**）已被移除过一次 ——
+      # 后来又**补上了实现**（ExperimentStore 接进 provider 依赖面）才重新声明。
       - claim.read
       - budget.read
       - deliverable.read
+      - experiment.read
+      - experiment_plan.read
     effect_class: READ_ONLY
 
   ncbi_eutils:

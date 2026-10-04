@@ -60,6 +60,8 @@ _PROVIDER = ToolProviderSpec(
         "workspace.read",
         "budget.read",
         "deliverable.read",
+        "experiment.read",
+        "experiment_plan.read",
     ],
     effect_class=EffectClass.READ_ONLY,
 )
@@ -96,6 +98,8 @@ def _call(
             "evidence_read": "evidence.read",
             "workspace_read": "workspace.read",
             "budget_read": "budget.read",
+            "experiment_read": "experiment.read",
+            "experiment_plan_read": "experiment_plan.read",
             "deliverable_read": "deliverable.read",
         }[tool_id],
         argument_digest=Digest.of_bytes(content),

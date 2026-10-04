@@ -249,6 +249,7 @@ class _SqliteStoreParts:
     pricing_store: SqlitePricingSnapshotStore
     artifacts: Any
     approvals: Any
+    experiment_store: Any  # GOAL-029 EC-01：experiment(.plan).read 的来源
 
 
 def _sqlite_store_parts(
@@ -256,7 +257,7 @@ def _sqlite_store_parts(
     telemetry: TelemetrySink,
     blob_dir: str,
 ) -> _SqliteStoreParts:
-    """SQLite 共享连接的 store 部分（helper 控制函数长度）。"""
+    """SQLite 共享连接的 store 部分（helper 控制函数长度；实例**共享**给编排与会话工具）。"""
     events = SqliteOutboxEventPublisher(connection=connection)
     workflow = SqliteWorkflowEngine(connection=connection, telemetry=telemetry)
     from adapters.sqlite.run_projection import SqliteRunProjection
@@ -264,17 +265,15 @@ def _sqlite_store_parts(
     projection = SqliteRunProjection(connection, events)
     ledger = SqliteEvidenceLedger(connection=connection)
     budget = SqliteBudgetLedger(connection=connection)
-    pricing = _load_pricing()
-    pricing_store = SqlitePricingSnapshotStore(connection=connection)
-    # WP-A（PLAN-040）：内容寻址持久存储替换进程内 FakeArtifactStore；
-    # 单一实例共享给 orchestration 与控制面读取端点（两个独立实例会让 run
+    pricing, pricing_store = _load_pricing(), SqlitePricingSnapshotStore(connection=connection)
+    # WP-A（PLAN-040）：内容寻址持久存储替换进程内 FakeArtifactStore；单一实例共享给
+    # orchestration 与控制面读取端点（两个独立实例会让 run
     # 产出的 artifact 对读取端永远为空）。
     artifacts = SqliteArtifactStore(connection=connection, blob_dir=blob_dir)
     # GOAL-010 EC-02：demo 协议**声明**的输入制品必须真的在库里——`EVIDENCE_COVERAGE`
     # 收紧后只认非模型自述的来源，声明的输入就是那个来源；不种入 ⇒ 任务点名失败。
     seed_declared_inputs(artifacts)
-    # WP-H：同一审批存储实例（执行循环 register、decide/GET 读取）。
-    approvals = SqliteApprovalStore(connection=connection)
+    approvals = SqliteApprovalStore(connection=connection)  # WP-H：与 decide/GET 同一实例
     return _SqliteStoreParts(
         events=events,
         workflow=workflow,
@@ -285,6 +284,7 @@ def _sqlite_store_parts(
         pricing_store=pricing_store,
         artifacts=artifacts,
         approvals=approvals,
+        experiment_store=SqliteExperimentStore(connection=connection),
     )
 
 

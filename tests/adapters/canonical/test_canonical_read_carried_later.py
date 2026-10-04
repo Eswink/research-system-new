@@ -186,6 +186,93 @@ class TestClaimReadCarriesTheAGroupRead:
             provider.execute(_PROVIDER, record)
 
 
+class TestTheExperimentReadsAreStoreBacked:
+    """`experiment.read` / `experiment_plan.read`（A 组补足到 5 条的两条）。"""
+
+    def _store(self) -> Any:
+        """一个真装了计划的 store（用 `ID.generate()` —— `ID` 强制 UUID4 规范形态）。"""
+        from adapters.fakes.experiment_store import FakeExperimentStore
+        from packages.domain.core import ID
+        from packages.domain.experiments import ExperimentPlan
+
+        store = FakeExperimentStore()
+        store.save_plan(ExperimentPlan(id=ID.generate(), name="probe plan", hypothesis="h1"))
+        return store
+
+    def test_experiment_plan_read_lists_the_canonical_plans(self) -> None:
+        artifacts = FakeArtifactStore()
+        provider = CanonicalReadProvider(artifacts, None, experiment_store=self._store())
+        record = _call("experiment_plan_read", {}, artifacts)
+
+        payload = _spilled_content(artifacts, provider.execute(_PROVIDER, record))
+        assert isinstance(payload, dict), payload
+        assert [item["name"] for item in payload["plans"]] == ["probe plan"], payload
+        assert payload["plans"][0]["id"], payload  # 真 id 在场（不写死字面量）
+
+    def test_experiment_plan_read_without_a_store_is_named(self) -> None:
+        """store 缺失 ⇒ 点名（**不**返回空列表冒充「没有计划」）。"""
+        artifacts = FakeArtifactStore()
+        provider = CanonicalReadProvider(artifacts, None, experiment_store=None)
+        record = _call("experiment_plan_read", {}, artifacts)
+        with pytest.raises(InvalidInputError, match="ExperimentStore"):
+            provider.execute(_PROVIDER, record)
+
+    def test_experiment_read_projects_from_evidence_like_the_http_face(self) -> None:
+        """与 HTTP 读面**同源**：证据里发现 `experiment_run_id` → store 取域事实。"""
+        from packages.domain.evidence import (
+            Claim,
+            Evidence,
+            EvidenceRelation,
+            EvidenceRelationType,
+            SourceRecord,
+        )
+
+        artifacts = FakeArtifactStore()
+        ledger = FakeEvidenceLedger()
+        ledger.register_source(
+            SourceRecord(origin="probe:exp", content_digest="sha256:" + "e" * 64)
+        )
+        ledger.register_evidence(
+            Evidence(
+                id="ev-exp",
+                source_ref="probe:exp",
+                content_digest="sha256:" + "f" * 64,
+                run_id=_RUN_ID,
+                experiment_run_id="exp-run-1",
+                artifact_id="metrics-artifact",
+            )
+        )
+        ledger.register_claim(Claim(id="cl-exp", statement="exp claim"))
+        ledger.attach_relation(
+            EvidenceRelation(
+                claim_id="cl-exp",
+                evidence_id="ev-exp",
+                relation=EvidenceRelationType.SUPPORTS,
+            )
+        )
+        provider = CanonicalReadProvider(artifacts, ledger, experiment_store=self._store())
+        record = _call("experiment_read", {"run_id": _RUN_ID}, artifacts)
+
+        payload = _spilled_content(artifacts, provider.execute(_PROVIDER, record))
+        assert isinstance(payload, dict), payload
+        assert len(payload["experiments"]) == 1, payload
+        item = payload["experiments"][0]
+        assert item["experiment_run_id"] == "exp-run-1", item
+        assert item["artifact_id"] == "metrics-artifact", item
+        # store 里没有这个 run 域记录 ⇒ 如实标注（不编造 state/plan_id）
+        assert item["domain_record"] is None, item
+        assert "no ExperimentRun" in str(item["domain_record_reason"]), item
+
+    def test_experiment_read_requires_a_run_id(self) -> None:
+        artifacts = FakeArtifactStore()
+        provider = CanonicalReadProvider(
+            artifacts, FakeEvidenceLedger(), experiment_store=self._store()
+        )
+        record = _call("experiment_read", {}, artifacts)
+        with pytest.raises(InvalidInputError, match="run_id"):
+            provider.execute(_PROVIDER, record)
+
+
 class TestTheRealBridgeReturnsContent:
     """**端到端**：canonical 读面 → 会话工具桥 → 内容回到调用方（真链条，非空壳）。
 
