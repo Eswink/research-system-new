@@ -87,7 +87,17 @@ exit_criteria:
       `MEM-20261001-180`：SDK registry **进程级且只增不减**，两条反证**单跑都会假绿且方向相反**；
       (d) **实跑**：默认装配（`build_agent_runtime` 真实缺省）下 run 到 `SUCCEEDED`，
       且**工具 executor 真被触达**（可观测证据，不是「没报错」）。
-      **判据**：缺陷修复在位 + 两组合根接线 + 两条反证合跑 + 默认装配实跑且 executor 触达。
+      (f) **A 组 ≥5 条**（EC-01 原文的硬门槛）：A 组**读**能力为 `claim.read` /
+      `deliverable.read` / `experiment.read` / `experiment_plan.read` / `budget.read`
+      （`agent_run.read` 无域实体；`deliverable.write` / `deliverable.edit` /
+      `experiment_plan.write` / `audit.write` 是**写面**，属 EC-03 的判定面向）。
+      **承接 5/5**（逐条）：`claim.read` / `deliverable.read` / `budget.read` 由
+      `CanonicalReadProvider` 读 canonical store；`experiment.read` / `experiment_plan.read`
+      经 **`ExperimentStore`** 接入 —— `experiment_plan_read` 用 `list_plans`（与 HTTP 读面
+      `GET /experiment-plans` 同一 store 方法），`experiment_read` 按 HTTP 读面**同源两步**
+      （证据里发现 `experiment_run_id` → `get_run` 取域事实）。
+      **判据**：缺陷修复在位 + 两组合根接线 + 两条反证合跑 + 默认装配实跑且 executor 触达
+      + **A 组承接 5/5**。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters/openhands/test_policy_enforcement.py
       tests/e2e/<新增判据> -q` ⇒ 全绿（既有判据**逐字节未改**）；
@@ -660,10 +670,19 @@ GOAL-028 的留档落在 `scratch/`（`.gitignore` 第 43 行）⇒ 他人 clone
 | `6e0b78c`（cycle 3 收口记录） | [`37222948928`](https://github.com/Eswink/research-system-new/actions/runs/37222948928)（M0）+ [`37222948421`](https://github.com/Eswink/research-system-new/actions/runs/37222948421)（CodeQL） | **两 run 全 `success`**（M0 **八 job 全绿**、`non-success: none`） | **本条同时承担 `95c4506` 与 `72b29ef` 的绿**（两条的覆盖关系已各自在其行显式声明） |
 | `ebb6101`（建档轮台账回填） | [`37204488763`](https://github.com/Eswink/research-system-new/actions/runs/37204488763)（M0）+ [`37204488695`](https://github.com/Eswink/research-system-new/actions/runs/37204488695)（CodeQL） | 两 run 全 `success` | `run_attempt=1`；该 SHA 下 `total_count=2` |
 
+| `3fb624c`（审计批台账回写 — 收口审计批的最后一条） | [`37236781839`](https://github.com/Eswink/research-system-new/actions/runs/37236781839)（M0）+ [`37236781726`](https://github.com/Eswink/research-system-new/actions/runs/37236781726)（CodeQL） | **两 run 全 `success`**（M0 八 job 全绿） | `run_attempt=1`；该 SHA 下 `total_count=2`，逐 run 遍历 |
+
+**台账的自我指涉边界（明写）**：本表**逐提交**登记每个把工作树推进过的提交的 CI 终态；但**登记这个动作本身**发生在**后续的文档提交**里，那些文档提交同样有（或可能没有）自己的 run。因此存在一条**无法在表内自我闭环**的边界：
+
+- **末条提交**（本表最后一行所指之后新产生的收口文档提交）**必然没有本表自己的行** —— 写它需要再一次提交，而那一次同样会缺行（无限回退）。
+- **处置（不是掩盖）**：末条提交的 CI 终态由**本 GOAL 的收口回写行**（「状态历史」的对应行）如实写明（run id + `status`/`conclusion` + `run_attempt`），**并**在 `latest_recheck` 指向的复检里同样登记；查询口径与表内一致（`/actions/runs?head_sha=<40 位 SHA>` 遍历全部 run，**空集合 = 未取证**）。
+- **不得**把「最后一次文档提交没有表内行」当成台账漏记：它是**指涉结构**的边界，两侧（表内逐提交 + 表外末条回写）都有据可查即视为取证完整。
+
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-05 | **ACHIEVED** | **完成核验纠偏 ⇒ A 组承接补足到 5/5（`9206ca8`）**。核验指出 EC-01 的原文硬门槛是「A 组的 **≥5 条**读能力接成会话工具」，而当时只承接 3 条（`claim.read` / `deliverable.read` / `budget.read`）—— `experiment.read` / `experiment_plan.read` 被我判为「需 ExperimentStore 进入 provider 依赖面 ⇒ 下一批候选」。**这个判断偏保守**：`ExperimentStore` 本就在两个组合根的 Port 面上（SQLite 根 `_SqliteStoreParts` / PG 根 `c["experiment_store"]`），接进去是**装配改动**而不是新依赖。**本轮补上**：`experiment_plan_read`（`list_plans`，可按 state 过滤；与 HTTP 读面同一 store 方法）与 `experiment_read`（与 `GET /runs/{id}/experiments` **同源两步**：证据里发现 `experiment_run_id` → `get_run` 取域事实；store 无记录时如实标注 `domain_record=None` + 理由，不编造）；两者 store 缺失 ⇒ **点名拒绝**。**接线**：绑定表 + `canonical_read_register` / `session_tool_face` 接收 `experiment_store`，**两个组合根**各自传自己的 Port 实例。**声明面同轮**：`tool_providers.yaml` 重新声明这两条（**这次有实现** —— 上一轮它们因「声明了却没实现」被移除过）+ 审计文档声明面列同轮更新。**判据**：新增 4 条；EC-02 的射程内清单 6 → **8 条**（下界同步）。**按压**：删掉实现映射 ⇒ **3 failed**。**文件拆分**（规模门触发）：`read_provider.py` 518 行 ⇒ 拆出 `read_surface.py`（工具面描述子 + 共享读盘口径），provider 回到 **435 行**、`composition.py` 恰守 **450 行**。**如实读数：承接面 12/46 → 17/46（每条都真有实现），A 组 5/5**。本地门：ruff / format / mypy（1094 files）/ 规模门绿；`tests/adapters + architecture/python + application + api + 该 e2e` **2111 passed / 8 skipped**；验证器本树 **55 PASS / 0 FAIL**。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-05 | **ACHIEVED** | **流程自省（本轮违反本仓既有纪律一次，如实登记）**：收口阶段的五个提交（`c15614f` / `c040202` / `8f65ef5` / `5908ff3` / `5c70548`）**逐个推送** ⇒ 每次都触发`cancel-in-progress` 取消在飞的 M0 ⇒ 前四个的 M0 全为 `cancelled`（**只有 HEAD 那批真跑绿**）。这**正是本仓已登记的教训**（`MEM-20260925-…`「M0 并发：一个 cycle 攒成一次推送」）——我在同一个 GOAL 的前几轮遵守了它（把多个改动攒成一批），收口阶段却退回逐提交推送。**成本**：三条 `cancelled` 会计入台账（已逐条登记原因与承担者），但不构成证据缺口（HEAD 的 M0 八 job 全绿覆盖全批）。**纪律重申**：收口/修复阶段的多个提交应**攒批推送**，否则每条都会留下一个 `cancelled` 行与一条覆盖声明。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-05 | **ACHIEVED** | **收口审计（完成核对）抓到 EC-02 主判据的掩蔽缺陷 ⇒ 已修（`c15614f`）**。核对时读判据源码发现：`test_every_declared_capability_has_an_implementation` 首版把受判面写成 `declared & implemented` —— 那让「**声明了但没实现**」**在构造上不可能被报出来**（交集天然排除缺实现者），正是 `MEM-160` 明令禁止的掩蔽形态。**修法**：受判面改为 provider 声明的**每一条**；每条要么有可注册实现、要么在 `_DECLARED_WITHOUT_IMPLEMENTATION` 里**逐条点名**理由；登记表另断言不得含幽灵条目。**修好后它立刻报出三条真实缺口**：`claim.read`（声明了但没实现 ⇒ **本轮补上真实现**，读 canonical ledger 的 claim + 其 evidence relation，与 `evidence_read` 共用同一份 run 归属口径，并接进出厂绑定表 + 新增 3 条判据）；`experiment.read` / `experiment_plan.read`（同样声明了却没实现 ⇒ **从出厂声明面移除** —— 保留声明而没有可执行承接面正是 GOAL-028 `W-1` 的原形；改由登记表说明理由、并列为下一批候选）。**同轮对齐**：`POLICY_SURFACE_AUDIT.md` 的两行声明面列 + canonical 判据的 provider 夹具能力列表。**修正后的诚实读数：承接面 12/46 → 15/46**（此前报的 17/46 **含两条假计数**）；A 组读能力实承接 **6 条**（`artifact.read` / `claim.read` / `deliverable.read` / `evidence.read` / `workspace.read` / `budget.read`）。**按压**：删掉 `claim.read` 的实现 ⇒ **2 failed**（主判据 + 下界断言）。本地门：`ruff` / `format` / `mypy`（1093 files）/ 治理绿；`tests/adapters + architecture/python + application/preflight + api + 该 e2e` **1394 passed / 7 skipped**；**as-is m0 在修正后复跑 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` 24 / `FAILED [` **0** / **5085 passed / 21 skipped / 117 warnings**，python 段 `in 642.25s`；日志 `scratch/goal029-m0-c6.log`；记录写入之后、独占、canonical DSN pin、不接管道、**零 python 残留**）；**两树复检**（修正后复跑）⇒ 两树各 **55 判词**、`sha256` 相同（`143900c8f9229cf5…`）、**`TWO-TREE PASS`**。**这条同时是「完成核对不是走过场」的实证**：五个 EC 的判据都跑绿了，但**判据自己的受判面**仍可能被写窄 —— 只有回头核对其覆盖范围才抓得到。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-05 | **ACHIEVED** | **收口后 CI 补记**：`e1f2b4b` / `dcd8387` 的 M0 `quality-ubuntu-latest` **failure** —— 根因**同一**：`test_text_mode_and_binary_mode_differ` 断言「文本模式必与二进制模式产生不同 `sha256`」，而**行尾转换是平台相关的**（Windows 转 CRLF、Linux 不转）⇒ 在 Linux 上**假红**（本地 Windows 全绿 = **假绿**，承 `MEM-20260928-152` 同族）。**修法**（`ada7721`，不放宽）：拆两档 —— 跨平台硬断言（入口写法必产纯 LF）+ 平台事实（按 `os.name` 断言转换是否发生）；判据 13 → **14 passed**；沉淀为 `RECHECK-20261005-282` 的 **`W-7`**（与 `W-4` 同族：对象没变，是断言覆盖的**条件集**错了）。**终态 CI**：`ada7721` / `7345f2f` 的 M0 八 job + CodeQL 全 `success`（`run_attempt=1`）。台账逐提交登记：`e1f2b4b` failure（真红，已修）/ `c8e0cd5` cancelled（同批推送）/`dcd8387` failure（同根因）/ `94be025` 无自带 run（`covered_by: 7345f2f` + 说明）/ `656ae37` cancelled（首跑曾真红，修复推送后被取消）/ `ada7721` 与 `7345f2f` 全绿。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / RBAC 未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口 / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |

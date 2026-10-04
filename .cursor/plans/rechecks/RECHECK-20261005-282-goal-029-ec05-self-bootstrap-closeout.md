@@ -104,6 +104,54 @@ owners:
 与 `MEM-20260922-160`（不得靠**并集**掩蔽）是镜像形态（这里是**交集**把本该受判的排出去）。
 沉淀为 `MEM-20261005-187`。
 
+## 复检补充（完成核验纠偏）：**A 组承接补足到 5/5**（`9206ca8`）
+
+完成核验指出 EC-01 的原文硬门槛「A 组的 **≥5 条**读能力接成会话工具」未满足（当时只 3 条），
+且我把 `experiment.read` / `experiment_plan.read` 判为「需 ExperimentStore 进入 provider 依赖面
+⇒ 下一批候选」。**该判断偏保守且已纠正**：`ExperimentStore` **本就在两个组合根的 Port 面上**
+（SQLite 根 `_SqliteStoreParts` / PG 根 `c["experiment_store"]`）⇒ 接进去是**装配改动**，
+不是新依赖、也不是新能力面。
+
+**本轮补上（A 组 5/5）**：
+
+| A 组读能力 | 实现 | 来源 |
+| --- | --- | --- |
+| `claim.read` | `CanonicalReadProvider._claim_read` | `EvidenceLedger`（claim + relation） |
+| `deliverable.read` | `CanonicalReadProvider._deliverable_read` | `ArtifactStore`（`{run_id}:deliverable.json`） |
+| `budget.read` | `CanonicalReadProvider._budget_read` | `BudgetLedger.snapshot()` |
+| `experiment_plan.read` | `CanonicalReadProvider._experiment_plan_read` | **`ExperimentStore.list_plans`**（与 `GET /experiment-plans` 同一方法） |
+| `experiment.read` | `CanonicalReadProvider._experiment_read` | **`ExperimentStore.get_run`** + 证据侧 `experiment_run_id`（与 `GET /runs/{id}/experiments` 同源两步） |
+
+**接线**：绑定表 + `canonical_read_register` / `session_tool_face` 接收 `experiment_store`；
+**两个组合根**各自传自己的 Port 实例（同一实例贯穿编排与工具面，避免两套状态）。
+**声明面同轮**：`tool_providers.yaml` 重新声明这两条（**这次有实现**）+ 审计文档同轮更新。
+**判据**：新增 4 条；EC-02 射程内清单 6 → **8 条**（下界同步）。
+**按压**：删掉实现映射 ⇒ **3 failed**（主判据 + 下界 + 工具面）。
+
+**如实读数：承接面 12/46 → 17/46（每条都真有实现）；A 组 5/5。**
+
+## 下一批可真实现的能力清单（§七 要求，逐条）
+
+按「零新增依赖 / 零凭据 / 有 canonical 或既有 Port 来源」的标准，从当前未承接的 29 条里筛：
+
+| 能力 | 组 | 可实现的依据 | 阻力 |
+| --- | --- | --- | --- |
+| `citation.validate` | B | `ncbi_eutils` 已有 `citation.inspect`（elink），validate 是其**判定层**（同一响应上加判定语义） | 需先定义「何为验证通过」的判据（属产品口径） |
+| `run.read` | B | run 的真相在 `RunStore`（既有 Port），读面今天只在 HTTP 层 | 需决定会话工具返回的 run 视图形状 |
+| `dataset.read` | B | 需先有 canonical **数据集实体**（今天没有） | **先建实体**，非本轮射程 |
+| `provenance.read` | B | 证据链投影已有（`evidence.read` 就是它的一半） | 需区分与 `evidence.read` 的口径 |
+| `research_map.read` / `research_state.read` | B | 需先有对应实体 | **先建实体** |
+| `review.read` | B | 评审走 task/handoff 面 | 需决定投影口径 |
+| `target.read` | B | 需先有目标实体 | **先建实体** |
+| `agent_run.read` | A（无实体） | 域里没有 `AgentRun`（最近的是 task + agent_id） | **先建实体**，否则无对象可读 |
+| 各 `*.write`（`deliverable.write` / `experiment_plan.write` / `audit.write` / `idea.*` / `review.write`） | C | 有 canonical 路径（`persist_completion` / `save_plan`） | **写面**：给写能力开工具面需**用户拍板**（策略面判「该拒绝」） |
+| `external.publish` / `package.install` / `git.commit` / `workspace.delete` | D | `policy.yaml` 现为 `require_approval` | **接通审批通道需拍板** |
+| `network.public` | D | `policy.yaml` 显式 deny | 维持现状 |
+
+**最短路径（B 组）**：`citation.validate`（复用既有 elink 响应 + 定义判定口径）与 `run.read`
+（`RunStore` 已在 Port 面上，与 `experiment_store` 同一形态）—— 两者都不需要新依赖，
+只差**声明 + 实现 + 放行口径**。
+
 ## 结论
 
 `PLAN-20261005-281` 的 **AC-1…AC-6 全 PASS**；

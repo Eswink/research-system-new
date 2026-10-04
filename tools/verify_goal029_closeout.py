@@ -82,6 +82,8 @@ POLICY_AGENT = "adapters/openhands/policy_enforcing_agent.py"
 SESSION_TOOL_INVOCATION = "adapters/openhands/session_tool_invocation.py"
 SESSION_TOOLS = "adapters/openhands/session_tools.py"
 READ_PROVIDER = "adapters/canonical/read_provider.py"
+#: 工具面描述子（能力↔工具的对应表）在拆分后的 surface 模块（GOAL-029 规模门触发）。
+READ_SURFACE = "adapters/canonical/read_surface.py"
 SESSION_TOOL_SUPPORT = "services/api/session_tool_support.py"
 SQLITE_ROOT = "services/api/composition.py"
 PG_ROOT = "services/api/pg_composition.py"
@@ -123,13 +125,16 @@ EC_FILES: dict[str, tuple[tuple[str, ...], tuple[int, ...]]] = {
 VERDICT_CURRENT = ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-current.txt"
 VERDICT_CLEAN = ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt"
 
-#: A 组射程内的五条读能力（出厂绑定表必须覆盖）。
+#: 承接面（出厂绑定表必须覆盖）：A 组五条读 + 三条既有读（**逐条**，含 `claim.read`）。
 IN_SCOPE_CAPABILITIES: tuple[str, ...] = (
     "artifact.read",
+    "claim.read",
     "evidence.read",
     "workspace.read",
     "budget.read",
     "deliverable.read",
+    "experiment.read",
+    "experiment_plan.read",
 )
 
 #: 子计划 / 复检 / 记忆（记录面逐条在位）。
@@ -217,6 +222,7 @@ def _core_face_verdicts(root: Path) -> list[VerdictLike]:
 def _carrying_face_verdicts(root: Path) -> list[VerdictLike]:
     """④ ⑤ ⑥：承接面（读 provider / 出厂装配决策 / 两个组合根接线）。"""
     provider = TOOLBOX.text(root, READ_PROVIDER)
+    surface = TOOLBOX.text(root, READ_SURFACE)
     support = TOOLBOX.text(root, SESSION_TOOL_SUPPORT)
     sqlite_root = TOOLBOX.text(root, SQLITE_ROOT)
     pg_root = TOOLBOX.text(root, PG_ROOT)
@@ -225,8 +231,8 @@ def _carrying_face_verdicts(root: Path) -> list[VerdictLike]:
         TOOLBOX.verdict(
             "canonical-read-provider-present",
             TOOLBOX.defines(provider, "CanonicalReadProvider")
-            and TOOLBOX.defines(provider, "tool_ids")
-            and "_TOOL_CAPABILITIES" in provider,
+            and TOOLBOX.defines(surface, "tool_ids")
+            and "_TOOL_CAPABILITIES" in surface,
             "canonical 读面 provider 或其工具表缺失",
         ),
         TOOLBOX.verdict(
