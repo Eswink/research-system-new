@@ -27,6 +27,7 @@ PASS provider-catalog-declares-the-in-scope-capabilities
 PASS capability-vocabulary-intact
 PASS ec01-judge-present:tests/adapters/openhands/test_session_tool_reaches_executor.py
 PASS ec01-judge-present:tests/adapters/canonical/test_canonical_read_provider.py
+PASS ec01-judge-present:tests/adapters/canonical/test_canonical_read_carried_later.py
 PASS ec01-judge-present:tests/e2e/test_session_tool_call_on_the_default_assembly.py
 PASS ec01-judge-present:tests/api/test_production_session_tool_registration.py
 PASS ec02-judge-present:tests/architecture/python/test_capability_coverage_is_implemented.py
