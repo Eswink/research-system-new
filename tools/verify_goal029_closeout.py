@@ -15,9 +15,17 @@
      `session_tool_face` / `sqlite_session_tools` / `DEFAULT_SESSION_TOOL_BINDINGS`；
   ⑥ **两个组合根**都传 `register_session_tools`（W-1 的装配面缺口已闭）；
 - **承接面读数**：出厂绑定表覆盖五条 A 组读能力 + provider 声明与之同源；
-- **EC-04 的两份判词归档在树**（含 `sha256` 相同与无 CR）；
+- ~~EC-04 的两份判词归档~~（**已移出**：见下方「为什么本验证器不检查归档」）；
 - **`IN_SCOPE` 纯收紧**（本轮新增 `tools/verify_goal029_closeout.py`）；
 - **记录面**：五个 EC 的终态、复检路径、子计划与记忆、残余与未覆盖逐条。
+
+**为什么本验证器不检查 EC-04 的判词归档**（本轮实测到的**循环依赖**）：
+两树入口在跑完两棵树后把判词**写回** `--verdict-current/--verdict-clean` 指定的路径。
+若本验证器同时**读**那两个路径做断言，就会出现「输入即输出」：前一次失败留下的不等归档
+会让这一次继续判红，而这一次写回的内容又成为下一次的输入 ⇒ **永不收敛**（实测：首跑
+current 判红、clean 判绿，两棵树读到的是不同的历史残留）。
+⇒ 归档的形态与一致性由**专属判据** `tests/tooling/test_two_tree_verdicts_are_archived.py`
+负责（它跑在门禁里、在两树写入**之后**），本验证器只判 GOAL 自己的交付物。
 
 用法：`python tools/verify_goal029_closeout.py --root <树根> --verdict-only`；判词行只有
 `PASS` / `FAIL` 且不含任何树的绝对路径（否则两树入口会（正确地）拒绝）。
@@ -29,7 +37,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
 import sys
 from collections.abc import Callable, Iterable, Sequence
@@ -256,32 +263,6 @@ def _declaration_verdicts(root: Path) -> list[VerdictLike]:
     ]
 
 
-def _archived_verdicts(root: Path) -> list[VerdictLike]:
-    """EC-04：两份判词归档在树 + `sha256` 相同 + 无 CR。"""
-    current = TOOLBOX.tree(root, VERDICT_CURRENT)
-    clean = TOOLBOX.tree(root, VERDICT_CLEAN)
-    both = current.is_file() and clean.is_file()
-    if not both:
-        return [
-            TOOLBOX.verdict("ec04-both-verdict-archives-present", False, "两份判词归档缺一"),
-        ]
-    current_bytes = current.read_bytes()
-    clean_bytes = clean.read_bytes()
-    return [
-        TOOLBOX.verdict("ec04-both-verdict-archives-present", True),
-        TOOLBOX.verdict(
-            "ec04-archives-have-the-same-sha256",
-            hashlib.sha256(current_bytes).hexdigest() == hashlib.sha256(clean_bytes).hexdigest(),
-            "两份归档的 sha256 不同",
-        ),
-        TOOLBOX.verdict(
-            "ec04-archives-are-lf-only",
-            b"\r" not in current_bytes and b"\r" not in clean_bytes,
-            "归档含 CR（文本模式写盘的痕迹）",
-        ),
-    ]
-
-
 def ec_file_verdicts(root: Path) -> list[VerdictLike]:
     """逐 EC：判据文件在树 + 例数下界（缺文件、掉下界，两向判红）。"""
     verdicts: list[VerdictLike] = []
@@ -395,7 +376,6 @@ def deliverable_verdicts(root: Path) -> list[VerdictLike]:
         *_core_face_verdicts(root),
         *_carrying_face_verdicts(root),
         *_declaration_verdicts(root),
-        *_archived_verdicts(root),
         *ec_file_verdicts(root),
         *in_scope_verdicts(root),
         *scale_verdicts(root),
