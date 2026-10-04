@@ -34,6 +34,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from openhands.sdk.tool.schema import Action, Observation
+from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
 
 from adapters.fakes import FakeCredentialResolver
 from adapters.openhands.runtime_adapter import OpenHandsRuntimeAdapter
@@ -60,33 +62,42 @@ def _real_evaluator() -> NativePolicyEvaluator:
     return NativePolicyEvaluator(policy)
 
 
+class _ProbeAction(Action):
+    """探针工具的调用参数（**模块级**：见下）。"""
+
+    text: str = ""
+
+
+class _ProbeObservation(Observation):
+    """具体 Observation 子类（判别联合要求具体 kind）。"""
+
+
+class _ProbeExecutor(ToolExecutor[Any, Observation]):
+    """executor 被调用即记录 —— 本判据读的就是**这个**事实（不是 run 终态）。"""
+
+    def __call__(self, action: Any, conversation: Any = None) -> Observation:
+        _REACHED.append(str(getattr(action, "text", "x")))
+        return _ProbeObservation.from_text("probe-ok")
+
+
 def _make_tool(name: str) -> Any:
     """专属名字的探针工具（`executor` 被调用即记录）。
 
-    类名与 `__qualname__` 显式给：SDK 会枚举 `Action` 的具体子类构建判别联合，
-    `<locals>` 限定名会毒化同进程后续事件 round-trip（同族教训见
-    `tests/e2e/live_run_support.py` 的 `inert_tool_class`）。
+    **`Action` / `Observation` 子类必须在模块级**（本文件的 `_ProbeAction` /
+    `_ProbeObservation` 就是）：SDK 会枚举它们的**具体子类**来构建判别联合，
+    `<locals>` 限定名会让**同进程后续所有事件 round-trip** 直接抛
+    `Local classes not supported!` —— 实测代价是 CI 上
+    `tests/contracts/test_agent_runtime_contract.py` 两条 fork 判据整轮判红
+    （本地单跑看不见，只有全量 `python/tests` 合跑才暴露）。
+    同族教训与正确写法见 `tests/e2e/live_run_support.py` 的 `inert_tool_class`。
     """
-    from openhands.sdk.tool.schema import Action, Observation
-    from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
-
-    class _ProbeAction(Action):
-        text: str = ""
-
-    class _ProbeObservation(Observation):
-        """具体 Observation 子类（判别联合要求具体 kind）。"""
-
-    class _ProbeExecutor(ToolExecutor[Any, Observation]):
-        def __call__(self, action: Any, conversation: Any = None) -> Observation:
-            _REACHED.append(str(getattr(action, "text", "x")))
-            return _ProbeObservation.from_text("probe-ok")
-
+    class_name = "Probe" + "".join(part.title() for part in name.replace(".", "_").split("_"))
     return type(
-        "Probe" + "".join(part.title() for part in name.replace(".", "_").split("_")),
+        class_name,
         (ToolDefinition[Any, Observation],),
         {
             "__module__": __name__,
-            "__qualname__": "ProbeTool",
+            "__qualname__": class_name,
             "name": name,
             "create": classmethod(
                 lambda cls, conv_state=None, **params: [

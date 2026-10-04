@@ -2,11 +2,12 @@
 id: PLAN-20261004-275
 slug: goal-029-ec01-session-tool-actually-executes
 title: GOAL-029 cycle 1（EC-01）：会话工具**真被触达** — 修 F-6 策略面 scope 缺陷 + 两组合根接注册面 + 两向反证合跑
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-04
 updated_at: 2026-10-04
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261004-276-goal-029-ec01-session-tool-actually-executes.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20261004-183-session-tool-scope-must-be-the-capability-scope.md
 parent_goal: GOAL-20261004-029
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -110,17 +111,29 @@ GOAL-029 建档轮的只读勘察（GOAL 文件「事实层结论」F-6）**实�
 
 ## 实施清单
 
-- [ ] **WP-A**：`adapters/openhands/policy_enforcing_agent.py` 的 `_evaluate` 改用
+- [x] **WP-A**：`adapters/openhands/policy_enforcing_agent.py` 的 `_evaluate` 改用
       `policy_scope_for(tool_name)`（既有唯一那张表）；`adapters/openhands/session_tool_invocation.py`
       的桥复用既有 `ScopedPolicy` 包装（不新造映射）。
-- [ ] **WP-A**：四向实测取证（已放行 ⇒ 触达 / 未放行 ⇒ 拒 / 需审批 ⇒ 拒 / 桥面同形）。
-- [ ] **WP-B**：新增判据 `tests/adapters/openhands/test_session_tool_reaches_executor.py`；
+- [x] **WP-A**：四向实测取证（已放行 ⇒ 触达 / 未放行 ⇒ 拒 / 需审批 ⇒ 拒 / 桥面同形）。
+- [x] **WP-B**：新增判据 `tests/adapters/openhands/test_session_tool_reaches_executor.py`；
       按压（把 scope 还原成 `self.policy_scope`）⇒ 判红；复原 ⇒ 逐字节一致且绿。
-- [ ] **WP-C**：GOAL 迭代日志 / 状态历史 / `ALL_PLAN` 投影 / 本 PLAN 收口。
+- [x] **WP-C**：GOAL 迭代日志 / 状态历史 / `ALL_PLAN` 投影 / 本 PLAN 收口。
 
 ## 证据
 
-（收口时逐条回填：commit / 实测读数 / 判据例数 / m0 终态行 / CI run。）
+- **commit**：`e52a82c`（WP-A + WP-B + WP-C 同提交；显式路径）。
+- **实测读数（四向，真实 `NativePolicyEvaluator(policy.yaml)`）**：
+  修复前 `artifact.read`（已放行）`SUCCEEDED` 但 `executor_reached=[]`；修复后
+  `artifact.read` / `workspace.read` / `literature.search` ⇒ `executor_reached=['hi']`；
+  `claim.read`（未放行，`D-02(b)` 未决）与 `external.publish`（`require_approval`）⇒ 仍 `[]`。
+- **判据例数**：新增 `tests/adapters/openhands/test_session_tool_reaches_executor.py` **7 passed**；
+  `tests/adapters/openhands/` **93 passed**；`tests/architecture/python/` **230 passed**；
+  三份 e2e **22 passed / 1 skipped**；规模门 **1100 passed**。
+- **按压（两处，各自独立）**：P-1 撤 agent 门补齐 ⇒ **2 failed**；P-2 撤桥补齐器 ⇒ **1 failed**；
+  两次均按 `sha256` 逐字节复原（`bdc1f818…` / `f629d302…`）后复绿。
+- **既有判据**：`git diff` 对全部被点名的既有判据**为空**。
+- **CI**：见 GOAL「CI 台账」（本提交 `e52a82c` 的 run 行）。
+- **未收完的 EC-01 部分**：见 `RECHECK-20261004-276` 的 `W-1`（两组合根未接线）/ `W-2`（两向反证未合跑）/ `W-3`（默认装配实跑未做）。
 
 ## 状态历史
 

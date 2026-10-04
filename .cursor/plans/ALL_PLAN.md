@@ -6,7 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20261004-275](tasks/PLAN-20261004-275-goal-029-ec01-session-tool-actually-executes.md) | IN_PROGRESS |
+| [x] | [PLAN-20261004-275](tasks/PLAN-20261004-275-goal-029-ec01-session-tool-actually-executes.md) | DONE |
 | [x] | [PLAN-20261001-273](tasks/PLAN-20261001-273-goal-028-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261001-271](tasks/PLAN-20261001-271-goal-028-ec03-multi-role-subiteration-on-the-default-assembly.md) | DONE |
 | [x] | [PLAN-20261001-269](tasks/PLAN-20261001-269-goal-028-ec02-live-retrieval-and-third-party-mcp-feasibility.md) | DONE |
