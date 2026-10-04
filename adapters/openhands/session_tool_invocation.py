@@ -28,6 +28,7 @@ from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.policy_evaluator import PolicyEvaluator
 from packages.application.ports.tool_provider import ToolProvider
+from packages.application.run_orchestration.phase_capabilities import ScopedPolicy
 from packages.application.tool_plane.execution import execute_tool_call
 from packages.application.tool_plane.results import fetch_spilled_result
 from packages.domain.artifacts import Artifact
@@ -68,6 +69,11 @@ def make_tool_invoker(  # noqa: PLR0913 - 装配面：tool 三件事实 + 四个
     **参数制品的命名空间**——它不影响谁能执行（策略与冻结面照旧判定）。
     """
     provider_id = tool.provider_id
+    # 执行期求值 scope：复用**既有**那一个补齐器（`ScopedPolicy`），不新造第二张表。
+    # `execute_tool_call` 构造的 `PolicyRequest` 不带 scope，而带 scope 的 allow 规则
+    # 要求 scope 相等才匹配 ⇒ 不补就落 `default_effect: DENY`，于是「preflight 放行、
+    # 会话期拒绝」（与运行链 `phase_capabilities` 修过的是同一类分裂）。
+    scoped_policy = ScopedPolicy(policy)
 
     def _invoke(arguments: dict[str, object], conversation: object = None) -> str:
         provider = providers.get(provider_id)
@@ -79,7 +85,7 @@ def make_tool_invoker(  # noqa: PLR0913 - 装配面：tool 三件事实 + 四个
         record = _tool_call(
             _scope_id(conversation, tool.tool_id), tool, artifacts, arguments, actor
         )
-        outcome = execute_tool_call(provider, provider_spec, record, policy, actor)
+        outcome = execute_tool_call(provider, provider_spec, record, scoped_policy, actor)
         result = outcome.result
         if result is None:
             raise InvalidInputError(f"session tool {tool.tool_id} returned no result record")

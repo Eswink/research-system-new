@@ -34,6 +34,7 @@ from pydantic import Field, PrivateAttr
 
 from packages.application.ports.agent_runtime import RuntimeEvent, RuntimeEventKind
 from packages.application.ports.policy_evaluator import PolicyEvaluator, PolicyRequest
+from packages.application.preflight.policy_check import policy_scope_for
 from packages.domain.enums import PolicyDecision
 
 _POLICY_REGISTRY: dict[str, PolicyEvaluator] = {}
@@ -101,7 +102,17 @@ class PolicyEnforcingAgent(OpenHandsAgent):
             actor=self.policy_actor,
             capability=tool_name,
             action="execute",
-            scope=self.policy_scope,
+            # 求值 scope 取**能力自己的声明 scope**（与 preflight / 运行链
+            # `ScopedPolicy` / 沙箱实验同**一张**表 `policy_scope_for`）。
+            #
+            # 曾经的形态是把 `self.policy_scope`（= 会话 id）当 scope 传进来：带 scope 的
+            # allow 规则要求 scope **相等**才匹配，而会话 id 永不等于 `project` /
+            # `run` / `approved_tool_providers` ⇒ **每一条**会话工具调用都落
+            # `default_effect: DENY`，工具 executor **一次也不会被触达**（实测：
+            # 连已放行的 `artifact.read` 都是 `executor_reached=[]`）。会话 id 仍是
+            # 会话身份的真相（见 `_queue_approval` 的 `session_id`），但它**不是**求值
+            # scope —— 两者混用会让「preflight 放行」与「会话期执行」永远分叉。
+            scope=policy_scope_for(tool_name),
             resource=tool_name,
         )
         with self._ros_policy_lock:
