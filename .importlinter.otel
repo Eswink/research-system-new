@@ -16,6 +16,7 @@ source_modules =
     adapters.mcp
     adapters.execution
     adapters.research_tools
+    adapters.canonical
     adapters.index
     adapters.workspace
     adapters.cli

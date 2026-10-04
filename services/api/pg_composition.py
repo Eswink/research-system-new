@@ -186,6 +186,33 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
     )
 
 
+def _pg_session_tool_register(c: dict[str, Any], inputs: _PgRuntimeInputs) -> Any:
+    """PG 根的会话工具注册面（与 SQLite 根共用 `session_tool_support` 的装配决策）。
+
+    **只差 Port 实例**：这里用 PG 根的 `artifacts` / `ledger`。声明取自出厂目录
+    （`tool_providers.yaml`）；目录里没有的 id **不进表** ⇒ SDK 在 agent init 时点名。
+    """
+    from adapters.canonical import CanonicalReadProvider
+    from services.api.catalog import load_catalog_snapshot
+    from services.api.session_tool_support import session_tool_register
+
+    canonical_reader = CanonicalReadProvider(c["artifacts"], c["ledger"])
+    providers = {
+        "m12_artifact": canonical_reader,
+        "openhands_workspace": canonical_reader,
+    }
+    declared = load_catalog_snapshot().tool_providers
+    specs = {
+        provider_id: declared[provider_id] for provider_id in providers if provider_id in declared
+    }
+    return session_tool_register(
+        providers=providers,
+        provider_specs=specs,
+        artifacts=c["artifacts"],
+        policy=inputs.policy_bindings.get("policy_evaluator"),
+    )
+
+
 def _build_pg_orchestration(
     c: dict[str, Any], config: PgAssemblyConfig, inputs: _PgRuntimeInputs
 ) -> RunOrchestrationService:
@@ -194,6 +221,10 @@ def _build_pg_orchestration(
     PLAN-20260919-107（EC-01）：runtime 不再在此硬编码——与 SQLite 根同侧，经
     选择面 `build_agent_runtime(...)` 装配；凭据/policy 面经 `inputs` 与 ApiDeps 共用
     （见 `PostgresAssembly.runtime_inputs`）。
+
+    GOAL-20261004-029 EC-01(b)：**会话工具实现注册面**与 SQLite 根同侧（同一份
+    `session_tool_support` 装配决策，两边只差 Port 实例）——收 GOAL-028 `W-1` 的
+    装配面缺口：缺了它，出厂路径上「声明的绑定」永远解析不到实现。
     """
     return RunOrchestrationService(
         OrchestrationDependencies(
@@ -203,6 +234,7 @@ def _build_pg_orchestration(
                 credentials=inputs.credentials,
                 policy_evaluator=inputs.policy_bindings["policy_evaluator"],
                 budget_ledger=c["budget"],
+                register_session_tools=_pg_session_tool_register(c, inputs),
             ),
             workflow=c["workflow"],
             artifacts=c["artifacts"],
