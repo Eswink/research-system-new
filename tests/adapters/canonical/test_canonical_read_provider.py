@@ -55,6 +55,7 @@ _PROVIDER = ToolProviderSpec(
     # `budget_read` / `deliverable_read` 承载）。
     capabilities=[
         "artifact.read",
+        "claim.read",
         "evidence.read",
         "workspace.read",
         "budget.read",
@@ -91,6 +92,7 @@ def _call(
         tool_id=tool_id,
         capability={
             "artifact_read": "artifact.read",
+            "claim_read": "claim.read",
             "evidence_read": "evidence.read",
             "workspace_read": "workspace.read",
             "budget_read": "budget.read",
@@ -355,6 +357,71 @@ class TestTheTwoNewlyCarriedReads:
         provider = CanonicalReadProvider(artifacts)
         record = _call("deliverable_read", {"run_id": "run-without-deliverable"}, artifacts)
         with pytest.raises(InvalidInputError, match="no persisted deliverable"):
+            provider.execute(_PROVIDER, record)
+
+
+class TestClaimReadCarriesTheAGroupRead:
+    """`claim.read`（cycle 2 收口审计补上的第二条 A 组读；此前**声明了却没实现**）。"""
+
+    def _ledger(self) -> Any:
+        from adapters.fakes import FakeEvidenceLedger
+        from packages.domain.evidence import (
+            Claim,
+            Evidence,
+            EvidenceRelation,
+            EvidenceRelationType,
+            SourceRecord,
+        )
+
+        ledger = FakeEvidenceLedger()
+        ledger.register_source(
+            SourceRecord(origin="probe:src", content_digest="sha256:" + "a" * 64)
+        )
+        ledger.register_evidence(
+            Evidence(
+                id="ev-claim",
+                source_ref="probe:src",
+                content_digest="sha256:" + "b" * 64,
+                run_id=_RUN_ID,
+            )
+        )
+        ledger.register_claim(Claim(id="cl-1", statement="probe statement"))
+        ledger.attach_relation(
+            EvidenceRelation(
+                claim_id="cl-1",
+                evidence_id="ev-claim",
+                relation=EvidenceRelationType.SUPPORTS,
+            )
+        )
+        return ledger
+
+    def test_claims_come_back_with_their_relations(self) -> None:
+        artifacts = FakeArtifactStore()
+        provider = CanonicalReadProvider(artifacts, self._ledger())
+        record = _call("claim_read", {"run_id": _RUN_ID}, artifacts)
+
+        payload = _spilled_content(artifacts, provider.execute(_PROVIDER, record))
+        assert isinstance(payload, dict), payload
+        assert [item["id"] for item in payload["claims"]] == ["cl-1"], payload
+        claim = payload["claims"][0]
+        assert claim["statement"] == "probe statement", claim
+        assert claim["relations"] == [{"evidence_id": "ev-claim", "relation": "SUPPORTS"}], claim
+
+    def test_a_run_filter_excludes_claims_without_its_evidence(self) -> None:
+        """给了 `run_id` ⇒ 只列**引用到该 run 证据**的 claim（与 evidence_read 同一口径）。"""
+        artifacts = FakeArtifactStore()
+        provider = CanonicalReadProvider(artifacts, self._ledger())
+        record = _call("claim_read", {"run_id": "some-other-run"}, artifacts)
+
+        raw = _spilled_content(artifacts, provider.execute(_PROVIDER, record))
+        assert isinstance(raw, dict), raw
+        assert raw["claims"] == [], raw
+
+    def test_without_a_ledger_it_is_named(self) -> None:
+        artifacts = FakeArtifactStore()
+        provider = CanonicalReadProvider(artifacts, None)
+        record = _call("claim_read", {"run_id": _RUN_ID}, artifacts)
+        with pytest.raises(InvalidInputError, match="EvidenceLedger"):
             provider.execute(_PROVIDER, record)
 
 

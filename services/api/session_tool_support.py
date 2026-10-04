@@ -43,6 +43,7 @@ from adapters.openhands.session_tools import SessionToolInvoker, build_session_t
 DEFAULT_SESSION_TOOL_BINDINGS: tuple[tuple[str, str, str], ...] = (
     # (工具名 / 能力名, provider_id, provider 侧 tool_id)
     ("artifact.read", "m12_artifact", "artifact_read"),
+    ("claim.read", "m12_artifact", "claim_read"),
     ("evidence.read", "m12_artifact", "evidence_read"),
     ("budget.read", "m12_artifact", "budget_read"),
     ("deliverable.read", "m12_artifact", "deliverable_read"),

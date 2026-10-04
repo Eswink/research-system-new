@@ -47,6 +47,7 @@ _READ_PROVIDER = "adapters/canonical/read_provider.py"
 #: 每加一条都要在这里显式加（清单本身就是「已承接」的判词）。
 _IN_SCOPE: tuple[str, ...] = (
     "artifact.read",
+    "claim.read",
     "evidence.read",
     "workspace.read",
     "budget.read",
@@ -57,7 +58,6 @@ _IN_SCOPE: tuple[str, ...] = (
 #: 每一条都必须在此登记；未登记者由 `test_every_capability_is_classified` 判红。
 _OUT_OF_SCOPE_REASONS: dict[str, str] = {
     # --- A 组：零依赖读能力，但**放行需用户拍板**（D-02(b) 未决口径）---
-    "claim.read": ("A 组零依赖读：承接需策略面放行，而放行会打红既有判据 ⇒ 需用户拍板（D-02(b)）"),
     "experiment.read": "A 组零依赖读：同上（放行需拍板）",
     "experiment_plan.read": "A 组零依赖读：同上（放行需拍板）",
     "agent_run.read": (
@@ -113,9 +113,39 @@ _OUT_OF_SCOPE_REASONS: dict[str, str] = {
     "evidence.write": "已承接（m12_artifact）—— 写面，属既有射程",
 }
 
+#: **声明了、但实现由本 provider 之外的组件承担**的能力 → 理由（逐条点名，不静默放行）。
+#:
+#: 为什么需要这张表：主判据要求「provider 声明的每一条要么有本 provider 的可注册实现、
+#: 要么在此登记理由」。收口审计（GOAL-029 的完成核对）实测到：首版主判据把受判面写成
+#: `declared & implemented` ⇒ **「声明了但没实现」在构造上不可能被报出来**
+#: （承 MEM-160：不得靠交集/并集掩蔽）。修好后它立刻报出三条真实缺口，其中
+#: `experiment.read` / `experiment_plan.read` **没有**实现 ⇒ 已从出厂声明面**移除**
+#: （保留声明而没有可执行承接面正是 GOAL-028 `W-1` 的原形）。
+#:
+#: 仍在此登记的是「**实现由既有 adapter 承担**」的那些（REST provider / 工作区 adapter /
+#: 沙箱执行缝）以及本 GOAL 判定**不该**有工具面的写能力（EC-03）。
+_DECLARED_WITHOUT_IMPLEMENTATION: dict[str, str] = {
+    "artifact.write": (
+        "写能力：canonical 路径经 `persist_completion` 的 `_put_json_artifact`"
+        "（不经 ToolProvider）；是否给写能力开工具面属 EC-03 判定（策略面判「该拒绝」）"
+    ),
+    "evidence.write": (
+        "写能力：同上（证据写入经 application 层的证据登记面，不走 ToolProvider 工具面）"
+    ),
+    "code.execute": (
+        "执行能力：由 openhands_workspace 的**沙箱执行缝**承担（不经本读 provider 的工具面）"
+    ),
+    "git.diff": "工作区能力：由 openhands_workspace 的 adapter 承担（不在本读 provider 的工具面）",
+    "workspace.write.notes": "工作区写：由 openhands_workspace 的 adapter 承担（要 lease，属写面）",
+    "workspace.write.code": "工作区写：同上",
+    "literature.search": "由 ncbi_eutils / europe_pmc 的 REST adapter 承担（GOAL-027 射程）",
+    "literature.read": "由 ncbi_eutils / europe_pmc 的 REST adapter 承担（GOAL-027 射程）",
+    "citation.inspect": "由 ncbi_eutils 的 REST adapter 承担（GOAL-027 射程）",
+}
+
 #: 本轮**新承接**的五条（下界由它给出；`_IN_SCOPE` 是它的超集说明）。
 #: 承 MEM-160：清单本身要有下界断言，且下界**写死**（不随文档漂移）。
-_MIN_NEWLY_承接 = 5
+_MIN_NEWLY_承接 = 6
 
 
 def _load(path: str) -> dict[str, Any]:
@@ -158,31 +188,39 @@ def _provider_capabilities() -> set[str]:
 
 
 def test_every_declared_capability_has_an_implementation() -> None:
-    """**主判据**（EC-02(a)）：声明了 ⇒ 一定有实现注册（缺一即点名）。"""
+    """**主判据**（EC-02(a)）：声明了 ⇒ 一定有实现注册（缺一即点名）。
+
+    **本条曾有一个掩蔽缺陷（收口审计抓到，已修）**：首版把受判面写成
+    `declared & implemented` —— 那让「**声明了但没实现**」**在构造上不可能被报出来**
+    （交集天然排除了缺实现的那些）。实测后果：它漏掉了 `experiment.read` /
+    `experiment_plan.read` / `claim.read` 三条**自己声明却没实现**的能力
+    （承 MEM-160：不得靠并集/交集掩蔽）。
+
+    **现形态**：受判面 = **provider 声明的每一条**（`_provider_capabilities()`），
+    每条要么有可注册的实现，要么**在 `_DECLARED_WITHOUT_IMPLEMENTATION` 里登记了理由**
+    （登记项也要**逐条点名**，不是静默放行）。
+    """
     canonical = _read_provider_tools()
     bound_tool_names = {tool_name for tool_name, _p, _t in DEFAULT_SESSION_TOOL_BINDINGS}
-    implemented = set(canonical.values())
     declared = _provider_capabilities()
+    assert declared, "受判面非空是交付前提（本判据不得在空集上恒真）"
 
-    # 只对本轮承接面（canonical 读 provider 承载的那些）要求「有实现」——
-    # 既有的 REST provider（ncbi/europe_pmc）与工作区 provider 由各自的 adapter 承载，
-    # 它们不在本判据的射程内（见 `_OUT_OF_SCOPE_REASONS` 的「属既有射程」条目）。
-    mine = declared & implemented
-    assert mine, "受判面非空是交付前提（本判据不得在空集上恒真）"
+    def _has_implementation(capability: str) -> bool:
+        return any(cap == capability and cap in bound_tool_names for cap in canonical.values())
 
     missing_impl = sorted(
         capability
-        for capability in mine
-        if not [
-            tool_id
-            for tool_id, cap in canonical.items()
-            if cap == capability and cap in bound_tool_names
-        ]
+        for capability in declared
+        if not _has_implementation(capability)
+        and capability not in _DECLARED_WITHOUT_IMPLEMENTATION
     )
     assert missing_impl == [], (
-        "声明了承接但没有可注册的实现（缺实现必须点名能力名与工具名）",
+        "声明了承接但既没有实现、也没有登记理由（缺实现必须点名能力名与工具名）",
         missing_impl,
     )
+    # 登记表里的每条也必须在**声明面**里（防幽灵条目）
+    ghosts = sorted(set(_DECLARED_WITHOUT_IMPLEMENTATION) - declared)
+    assert ghosts == [], ("登记表里有未声明的能力（幽灵条目，请复核）", ghosts)
 
 
 def test_a_declared_but_unimplemented_capability_is_named() -> None:

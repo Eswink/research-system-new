@@ -45,6 +45,7 @@ ARGS_ARTIFACT_PREFIX = "tool-args:"
 _TOOL_DESCRIPTIONS: dict[str, str] = {
     "artifact_read": "Read an artifact (metadata + content) from the canonical artifact store.",
     "evidence_read": "Read claims / evidence / relations for a run from the canonical ledger.",
+    "claim_read": "Read claims (with their evidence relations) from the canonical ledger.",
     "workspace_read": "Read the canonical workspace/run view exposed to the session.",
     "budget_read": "Read the canonical budget ledger snapshot (reservations + usage entries).",
     "deliverable_read": "Read the persisted research deliverable for a run (deliverable.json).",
@@ -54,6 +55,7 @@ _TOOL_DESCRIPTIONS: dict[str, str] = {
 _TOOL_CAPABILITIES: dict[str, str] = {
     "artifact_read": "artifact.read",
     "evidence_read": "evidence.read",
+    "claim_read": "claim.read",
     "workspace_read": "workspace.read",
     "budget_read": "budget.read",
     "deliverable_read": "deliverable.read",
@@ -133,6 +135,7 @@ class CanonicalReadProvider:
         handler = {
             "artifact_read": self._artifact_read,
             "evidence_read": self._evidence_read,
+            "claim_read": self._claim_read,
             "workspace_read": self._workspace_read,
             "budget_read": self._budget_read,
             "deliverable_read": self._deliverable_read,
@@ -325,6 +328,47 @@ class CanonicalReadProvider:
             "artifact_id": artifact_id,
             "artifact_digest": str(meta.digest),
             "deliverable": payload,
+        }
+
+    def _claim_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读 canonical 的 claim 及其 evidence relation（**只读**）。
+
+        与 `evidence_read` 的分工：那条以**证据**为主体（按 run 过滤 evidence），
+        本条以**命题**为主体（列出 claim 与它引用的证据 id / 关系类型）。
+        两条共用同一份 relation 投影口径（不新造第二套）。
+
+        `run_id` 可选：给了就只列**引用到该 run 证据**的 claim；不给列全部 claim
+        （claim 是全局命题，run 只是证据的采集上下文）。
+        """
+        if self._ledger is None:
+            raise InvalidInputError(
+                "claim_read requires an EvidenceLedger, which is not in this assembly"
+            )
+        run_id = str(args.get("run_id") or "").strip()
+        claims: list[dict[str, object]] = []
+        for claim in self._ledger.claims():
+            relations: list[dict[str, object]] = []
+            for relation in self._ledger.relations_for_claim(claim.id):
+                evidence_id = relation.evidence_id
+                if run_id:
+                    try:
+                        item = self._ledger.get_evidence(evidence_id)
+                    except Exception:  # noqa: BLE001 - 引用可能已删除（视觉态）
+                        continue
+                    if item.run_id != run_id:
+                        continue
+                relations.append({"evidence_id": evidence_id, "relation": str(relation.relation)})
+            if run_id and not relations:
+                continue
+            claims.append({
+                "id": claim.id,
+                "statement": claim.statement,
+                "status": str(claim.status),
+                "relations": sorted(relations, key=lambda item: str(item["evidence_id"])),
+            })
+        return {
+            "run_id": run_id or None,
+            "claims": sorted(claims, key=lambda item: str(item["id"])),
         }
 
     def _workspace_read(self, args: dict[str, object]) -> dict[str, object]:
