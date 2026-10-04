@@ -1,0 +1,111 @@
+"""生产装配的**会话工具注册面**（GOAL-029 EC-01(b)：收 GOAL-028 `W-1` 的装配面缺口）。
+
+**它解决什么**：GOAL-028 建成了「provider id → SDK 工具名」的声明式映射与
+`build_session_tools` 的实现注册面，但**两个组合根本体都没接线**
+（`services/api/composition.py::_sqlite_orchestration` /
+`services/api/pg_composition.py::_build_pg_orchestration` 调
+`build_agent_runtime(...)` 时都不传 `register_session_tools`）⇒ 生产路径上注册面是
+`None`，回落空操作；只有**判据侧**会接。本模块把这条缝补成**出厂形态**：
+装配方按「工具名 → 调用桥」造出注册函数，交给 `build_agent_runtime`。
+
+**它与 `adapters/openhands/session_tools.py` 的分工**：那个模块提供**机制**
+（`BoundSessionTool` / `build_session_tools`，SDK 类型都在 adapter 内）；
+本模块是**装配决策**——「出厂时哪些工具名有实现、它们各自桥到哪个 provider 的哪个
+tool_id」这件事必须在组合层说清楚（照 `runtime_support.build_agent_runtime` 的先例，
+取值词表与装配决策都归组合层，不进 ports / domain）。
+
+**默认行为逐字不变**：`session_tool_invokers()` 只对**显式登记的绑定**造桥；
+没有登记的装配（含默认的 Fake runtime 路径、以及所有未声明绑定的协议）拿到的还是
+今天的空操作注册面 —— 未注册的名字照旧由 SDK **点名**
+（`ToolDefinition '<名>' is not registered`），不静默丢工具。
+
+**边界**：
+- 参数经 `tool-args` 制品传递、策略与执行走**同一个** `execute_tool_call`
+  （桥内已保证；见 `session_tool_invocation` 的 docstring）——本模块不另开执行路径。
+- 不判定能力是否被允许（那是 `policy.yaml` 与求值器的事）；本模块只说「这个名字有实现」。
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+from adapters.openhands.session_tool_invocation import SessionToolSpec, make_tool_invoker
+from adapters.openhands.session_tools import SessionToolInvoker, build_session_tools
+
+#: 出厂绑定：SDK 工具名（= **能力名**，与 `policy.yaml` 同源）→ (provider id, provider 侧 tool id)。
+#:
+#: 为什么键是能力名而不是 provider id：会话工具名会被 `PolicyEnforcingAgent` 当作
+#: **capability** 求值（`_evaluate(action_event.tool_name)`），而 registry 里的名字来自
+#: 工具实现自己 —— 两者必须是**同一个**名字空间，否则「放行的是一个名字、执行的是另一个」。
+#: 因此工具名照 `session_tool_bindings` 的 `tool_name` 取（能力名），provider 侧 tool id
+#: 另列（它属于 provider 的接口契约，例：`m12_artifact` 的 `artifact_read`）。
+DEFAULT_SESSION_TOOL_BINDINGS: tuple[tuple[str, str, str], ...] = (
+    # (工具名 / 能力名, provider_id, provider 侧 tool_id)
+    ("artifact.read", "m12_artifact", "artifact_read"),
+    ("evidence.read", "m12_artifact", "evidence_read"),
+    ("workspace.read", "openhands_workspace", "workspace_read"),
+)
+
+
+def session_tool_invokers(
+    *,
+    providers: Mapping[str, Any],
+    provider_specs: Mapping[str, Any],
+    artifacts: Any,
+    policy: Any,
+    bindings: Sequence[tuple[str, str, str]] = DEFAULT_SESSION_TOOL_BINDINGS,
+) -> dict[str, SessionToolInvoker]:
+    """按出厂绑定造「工具名 → 调用桥」表（只有**实例与声明都在场**的条目才进表）。
+
+    **缺一即不进表、不静默顶替**：provider 实例缺失或 provider spec 缺失时，该工具名
+    **不**出现在返回的表里 ⇒ 会话装配时它不会被注册 ⇒ SDK 在 agent 初始化时**点名**
+    未注册。这与「provider id 未绑定」共用同一条可观测路径（都点名字），
+    而不是让一个没有后端的工具名假装可用。
+    """
+    invokers: dict[str, SessionToolInvoker] = {}
+    for tool_name, provider_id, tool_id in bindings:
+        provider = providers.get(provider_id)
+        provider_spec = provider_specs.get(provider_id)
+        if provider is None or provider_spec is None:
+            continue
+        invokers[tool_name] = make_tool_invoker(
+            SessionToolSpec(provider_id=provider_id, tool_id=tool_id, capability=tool_name),
+            providers={provider_id: provider},
+            provider_specs={provider_id: provider_spec},
+            artifacts=artifacts,
+            policy=policy,
+        )
+    return invokers
+
+
+def session_tool_register(
+    *,
+    providers: Mapping[str, Any],
+    provider_specs: Mapping[str, Any],
+    artifacts: Any,
+    policy: Any,
+    bindings: Sequence[tuple[str, str, str]] = DEFAULT_SESSION_TOOL_BINDINGS,
+) -> Any:
+    """出厂形态的 `register_session_tools` 回调（`(工具名序列) -> None`）。
+
+    接 `build_agent_runtime(..., register_session_tools=...)`；缺省绑定见
+    `DEFAULT_SESSION_TOOL_BINDINGS`。**只注册表里的名字**，表外的名字交给 SDK 按既有语义
+    点名拒绝（`build_session_tools` 的固有行为）。
+    """
+    return build_session_tools(
+        session_tool_invokers(
+            providers=providers,
+            provider_specs=provider_specs,
+            artifacts=artifacts,
+            policy=policy,
+            bindings=bindings,
+        )
+    )
+
+
+__all__ = [
+    "DEFAULT_SESSION_TOOL_BINDINGS",
+    "session_tool_invokers",
+    "session_tool_register",
+]
