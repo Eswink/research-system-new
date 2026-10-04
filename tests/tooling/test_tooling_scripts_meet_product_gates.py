@@ -62,6 +62,9 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal027_closeout.py",
     "tools/audit_goal028_ledger.py",
     "tools/verify_goal028_closeout.py",
+    # GOAL-029 EC-05：收口验证器 + 它复用的只读工具集（纯收紧 ⇒ 只增不删）。
+    "tools/closeout_recheck_tools.py",
+    "tools/verify_goal029_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
