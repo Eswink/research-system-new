@@ -24,7 +24,7 @@ from typing import Any, ClassVar
 from openhands.sdk.tool.registry import register_tool
 from openhands.sdk.tool.schema import Action, Observation
 from openhands.sdk.tool.tool import ToolDefinition, ToolExecutor
-from pydantic import Field
+from pydantic import ConfigDict
 
 #: 调用桥：`(工具参数, 会话上下文) → 结果文本`。抛错即视为工具失败（observation 带
 #: `is_error`）。`conversation` 由 SDK 在执行点传入（可能是 None），桥用它取
@@ -33,9 +33,28 @@ SessionToolInvoker = Callable[[dict[str, object], Any], str]
 
 
 class SessionToolAction(Action):
-    """会话工具的调用参数（自由形状：各 provider 的参数字段不同，桥负责解释）。"""
+    """会话工具的调用参数：**自由形状、平铺在顶层**（各 provider 的参数字段不同）。
 
-    arguments: dict[str, Any] = Field(default_factory=dict)
+    为什么是 `extra="allow"` 而**不是**一个 `arguments: dict` 包装字段（GOAL-029 EC-01 实测）：
+    SDK 把 action 的字段**渲染成模型看到的参数 schema**（`model_json_schema()` 的
+    `properties`）。带一个 `arguments` 字段时，模型看到的是「一个叫 arguments 的对象」⇒
+    它必须把真实参数嵌进那一层；而任何按常理构造的工具调用（`artifact_id=...` 平铺）
+    都会撞 `extra="forbid"` 得到
+    `Error validating tool '...': Extra inputs are not permitted` ——
+    **工具调用到达了桥，却在校验处被拒**（实测：错误 observation 逐字如此）。
+    SDK 自己的内建工具也一律平铺（`ThinkAction.thought` / `FinishAction.message` /
+    `InvokeSkillAction.name`），`additionalProperties: true` 才是这类「参数由 provider 契约
+    决定」的工具的正确形状。
+
+    参数经 `model_extra` 读回（`extra="allow"` 把非声明字段收在那里），桥侧仍是
+    `dict[str, object]`，与既有 `SessionToolInvoker` 契约逐字一致。
+    """
+
+    model_config = ConfigDict(extra="allow", frozen=True)
+
+    def arguments(self) -> dict[str, Any]:
+        """本次调用的真实参数（平铺在顶层的那些，不含判别键 `kind`）。"""
+        return dict(self.model_extra or {})
 
 
 class SessionToolObservation(Observation):
@@ -52,9 +71,7 @@ class _BridgeExecutor(ToolExecutor[SessionToolAction, SessionToolObservation]):
         self, action: SessionToolAction, conversation: Any = None
     ) -> SessionToolObservation:
         try:
-            return SessionToolObservation.from_text(
-                self._invoker(dict(action.arguments), conversation)
-            )
+            return SessionToolObservation.from_text(self._invoker(action.arguments(), conversation))
         except Exception as exc:  # noqa: BLE001 - 失败必须变成可读 observation，不炸会话
             return SessionToolObservation.from_text(f"{type(exc).__name__}: {exc}", is_error=True)
 
