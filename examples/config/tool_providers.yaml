@@ -18,6 +18,16 @@ tool_providers:
       - artifact.write
       - evidence.read
       - evidence.write
+      # GOAL-029 EC-01：A 组零依赖读能力的**承接**（声明 + 实现在
+      # `adapters/canonical/read_provider.py`）。这五条读的全部是 canonical state
+      # （ArtifactStore / EvidenceLedger / BudgetLedger），零新增外部依赖、零凭据。
+      # **承接 ≠ 放行**：执行仍由 `policy.yaml` 裁决 —— 未放行的能力点名
+      # `POLICY_DENIED`（见 `tests/architecture/python/test_capability_coverage_...`）。
+      - claim.read
+      - budget.read
+      - deliverable.read
+      - experiment.read
+      - experiment_plan.read
     effect_class: READ_ONLY
 
   ncbi_eutils:

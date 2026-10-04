@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
+from typing import Any
 
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.errors import InvalidInputError
@@ -40,12 +41,27 @@ from packages.domain.tools import (
 
 ARGS_ARTIFACT_PREFIX = "tool-args:"
 
-#: provider 侧 tool id → (能力名, 说明)。**能力的名字空间是能力名**（与 `policy.yaml` 同源）。
+#: provider 侧 tool id → 说明。**能力的名字空间是能力名**（与 `policy.yaml` 同源）。
 _TOOL_DESCRIPTIONS: dict[str, str] = {
     "artifact_read": "Read an artifact (metadata + content) from the canonical artifact store.",
     "evidence_read": "Read claims / evidence / relations for a run from the canonical ledger.",
     "workspace_read": "Read the canonical workspace/run view exposed to the session.",
+    "budget_read": "Read the canonical budget ledger snapshot (reservations + usage entries).",
+    "deliverable_read": "Read the persisted research deliverable for a run (deliverable.json).",
 }
+
+#: tool id → 它承载的能力名。**承接 = 声明 + 实现**：两者必须同时在，工具名与策略面同源。
+_TOOL_CAPABILITIES: dict[str, str] = {
+    "artifact_read": "artifact.read",
+    "evidence_read": "evidence.read",
+    "workspace_read": "workspace.read",
+    "budget_read": "budget.read",
+    "deliverable_read": "deliverable.read",
+}
+
+#: deliverable 的 canonical 落点（与 `services/api/routers/deliverable.py` 同一约定：
+#: `persist_completion` 写的 `f"{run_id}:deliverable.json"`）。读面不新造第二个名字。
+_DELIVERABLE_ARTIFACT = "deliverable.json"
 
 
 def tool_ids() -> list[str]:
@@ -86,6 +102,7 @@ class CanonicalReadProvider:
         artifacts: ArtifactStore,
         ledger: EvidenceLedger | None = None,
         *,
+        budget_ledger: Any | None = None,
         spill_threshold_bytes: int = 1,
     ) -> None:
         """构造读面 provider。
@@ -106,6 +123,9 @@ class CanonicalReadProvider:
         """
         self._artifacts = artifacts
         self._ledger = ledger
+        #: 预算账本（`budget.read` 的**真实**来源）。缺省 None ⇒ 该工具**点名**不可用，
+        #: 不返回空账本冒充「没有用量」。
+        self._budget = budget_ledger
         self._spill_threshold = spill_threshold_bytes
 
     def execute(self, provider: ToolProviderSpec, call: ToolCallRecord) -> ToolResultRecord:
@@ -114,20 +134,19 @@ class CanonicalReadProvider:
             "artifact_read": self._artifact_read,
             "evidence_read": self._evidence_read,
             "workspace_read": self._workspace_read,
+            "budget_read": self._budget_read,
+            "deliverable_read": self._deliverable_read,
         }.get(call.tool_id)
         if handler is None:
             raise InvalidInputError(f"unknown tool id: {call.tool_id}")
         return self._to_record(call, handler(args))
 
     def list_tools(self, provider: ToolProviderSpec) -> tuple[ToolSpec, ...]:
+        """只列**本 provider 真声明了**的能力对应的工具（未声明的不进工具面）。"""
         declared = set(provider.capabilities)
         capability_of = {
             tool_id: capability
-            for tool_id, capability in (
-                ("artifact_read", "artifact.read"),
-                ("evidence_read", "evidence.read"),
-                ("workspace_read", "workspace.read"),
-            )
+            for tool_id, capability in _TOOL_CAPABILITIES.items()
             if capability in declared
         }
         return describe_tools(provider, capabilities=capability_of)
@@ -238,6 +257,74 @@ class CanonicalReadProvider:
             "run_id": run_id,
             "claims": sorted(claims, key=lambda item: str(item["id"])),
             "evidence": sorted(evidence, key=lambda item: str(item["id"])),
+        }
+
+    def _budget_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读 canonical 预算账本快照（预留 + 用量条目；**只读**，不动账）。
+
+        账本缺失 ⇒ 点名拒绝（不返回空账本冒充「没有用量」—— 那会让「没接账本」与
+        「真没有用量」不可区分）。可按 `run_id` 过滤：**预留按其 `scope` 归 run**
+        （实测：reservation ref 是内容摘要 `budget-reservation:<hex>`，**不含** run 标识
+        —— 归属信息只在 `BudgetReservation.scope`，如 `run:<id>`），用量按条目里出现的
+        run 标识归 run。两者都读既有字段，不新造第二套归属口径。
+        """
+        if self._budget is None:
+            raise InvalidInputError(
+                "budget_read requires a BudgetLedger, which is not in this assembly"
+            )
+        run_id = str(args.get("run_id") or "").strip()
+        snapshot = self._budget.snapshot()
+        reservations = [
+            {
+                "reservation_ref": ref,
+                "reservation_id": item.id,
+                "scope": item.scope,
+                "resource_type": str(item.resource_type),
+                "quantity": str(item.quantity),
+            }
+            for ref, items in snapshot.reservations_by_ref.items()
+            for item in items
+            if not run_id or run_id in item.scope
+        ]
+        entries = [
+            {
+                "entry_id": entry.entry_id,
+                "resource_type": str(entry.resource_type),
+                "quantity": str(entry.quantity),
+                "unit": entry.unit,
+                "cost_status": str(entry.cost_status),
+            }
+            for entry in snapshot.entries
+            if not run_id or getattr(entry, "run_id", None) == run_id
+        ]
+        return {
+            "run_id": run_id or None,
+            "reservations": sorted(reservations, key=lambda item: str(item["reservation_ref"])),
+            "entries": sorted(entries, key=lambda item: str(item["entry_id"])),
+        }
+
+    def _deliverable_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读 run 的持久化交付物（`persist_completion` 写的 `{run_id}:deliverable.json`）。
+
+        **与读面路由同一个落点**（`services/api/routers/deliverable.py` 的 `_artifact_ref`）
+        —— 本工具不新造第二个名字、也不生成空报告冒充。未产出 ⇒ 点名拒绝（读面路由那边
+        用 `available=false` 表达同一事实，两者**同源**）。
+        """
+        run_id = str(args.get("run_id") or "").strip()
+        if not run_id:
+            raise InvalidInputError("deliverable_read requires a non-empty run_id")
+        artifact_id = f"{run_id}:{_DELIVERABLE_ARTIFACT}"
+        meta = self._artifacts.meta(artifact_id)
+        if meta is None:
+            raise InvalidInputError(
+                f"run {run_id!r} has no persisted deliverable at {artifact_id!r}"
+            )
+        payload: object = json.loads(self._artifacts.get(artifact_id).decode("utf-8"))
+        return {
+            "run_id": run_id,
+            "artifact_id": artifact_id,
+            "artifact_digest": str(meta.digest),
+            "deliverable": payload,
         }
 
     def _workspace_read(self, args: dict[str, object]) -> dict[str, object]:

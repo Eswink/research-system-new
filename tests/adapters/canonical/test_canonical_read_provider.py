@@ -50,7 +50,16 @@ _PROVIDER = ToolProviderSpec(
     id=_PROVIDER_ID,
     kind=ProviderType.NATIVE,
     trust_level=TrustLevel.BUILT_IN,
-    capabilities=["artifact.read", "evidence.read", "workspace.read"],
+    # GOAL-029 EC-01（cycle 2）：承接面扩到五条 A 组读能力
+    # （budget.read / deliverable.read 由 `CanonicalReadProvider` 的
+    # `budget_read` / `deliverable_read` 承载）。
+    capabilities=[
+        "artifact.read",
+        "evidence.read",
+        "workspace.read",
+        "budget.read",
+        "deliverable.read",
+    ],
     effect_class=EffectClass.READ_ONLY,
 )
 
@@ -84,6 +93,8 @@ def _call(
             "artifact_read": "artifact.read",
             "evidence_read": "evidence.read",
             "workspace_read": "workspace.read",
+            "budget_read": "budget.read",
+            "deliverable_read": "deliverable.read",
         }[tool_id],
         argument_digest=Digest.of_bytes(content),
         status=ToolCallStatus.REQUESTED,
@@ -282,6 +293,69 @@ class TestWorkspaceReadStaysRunScoped:
         _write_artifact(artifacts, f"{_RUN_ID}:deliverable.json", {"ok": True})
         _write_artifact(artifacts, "other-run:deliverable.json", {"ok": False})
         assert len(artifacts.list_refs()) >= 2, "夹具必须真的写入了两个 run 的制品"
+
+
+class TestTheTwoNewlyCarriedReads:
+    """cycle 2 承接的两条：`budget.read` / `deliverable.read`（都读 canonical state）。"""
+
+    def test_budget_read_returns_the_ledger_snapshot(self) -> None:
+        """账本在场 ⇒ 读出预留与用量（字段取自真实 `LedgerSnapshot`）。"""
+        from adapters.fakes import FakeBudgetLedger
+        from packages.domain.budget import BudgetPolicy, BudgetReservation, ResourceType
+
+        artifacts = FakeArtifactStore()
+        budget = FakeBudgetLedger()
+        budget.reserve(
+            (
+                BudgetReservation(
+                    id="res-goal029",
+                    scope="run:run-goal029-probe",
+                    resource_type=ResourceType.MODEL_TOKENS,
+                    quantity=1000,
+                    unit="tokens",
+                ),
+            ),
+            BudgetPolicy(id="goal029-probe"),
+        )
+        provider = CanonicalReadProvider(artifacts, None, budget_ledger=budget)
+        record = _call("budget_read", {"run_id": "run-goal029-probe"}, artifacts)
+
+        payload = _spilled_content(artifacts, provider.execute(_PROVIDER, record))
+        assert isinstance(payload, dict), payload
+        assert payload["reservations"], ("预留必须被读到（受判面非空）", payload)
+        assert payload["reservations"][0]["resource_type"] == ResourceType.MODEL_TOKENS.value, (
+            payload
+        )
+
+    def test_budget_read_without_a_ledger_is_named(self) -> None:
+        """账本缺失 ⇒ 点名拒绝（**不**返回空账本冒充「没有用量」）。"""
+        artifacts = FakeArtifactStore()
+        provider = CanonicalReadProvider(artifacts, None, budget_ledger=None)
+        record = _call("budget_read", {"run_id": "r"}, artifacts)
+        with pytest.raises(InvalidInputError, match="BudgetLedger"):
+            provider.execute(_PROVIDER, record)
+
+    def test_deliverable_read_returns_the_persisted_payload(self) -> None:
+        """交付物在场 ⇒ 读出 payload 与 digest（落点与读面路由**同一**约定）。"""
+        artifacts = FakeArtifactStore()
+        payload = {"summary": "probe deliverable", "claims": ["c1"]}
+        _write_artifact(artifacts, f"{_RUN_ID}:deliverable.json", payload)
+        provider = CanonicalReadProvider(artifacts)
+        record = _call("deliverable_read", {"run_id": _RUN_ID}, artifacts)
+
+        read_back = _spilled_content(artifacts, provider.execute(_PROVIDER, record))
+        assert isinstance(read_back, dict), read_back
+        assert read_back["artifact_id"] == f"{_RUN_ID}:deliverable.json", read_back
+        assert read_back["deliverable"] == payload, read_back
+        assert read_back["artifact_digest"].startswith("sha256:"), read_back
+
+    def test_deliverable_read_names_a_missing_deliverable(self) -> None:
+        """未产出 ⇒ 点名（不生成空报告冒充；与读面路由的 `available=false` 同一事实）。"""
+        artifacts = FakeArtifactStore()
+        provider = CanonicalReadProvider(artifacts)
+        record = _call("deliverable_read", {"run_id": "run-without-deliverable"}, artifacts)
+        with pytest.raises(InvalidInputError, match="no persisted deliverable"):
+            provider.execute(_PROVIDER, record)
 
 
 class TestTheRealBridgeReturnsContent:

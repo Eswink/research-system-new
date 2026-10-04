@@ -67,20 +67,20 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | `agent_run.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `audit.write` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
-| `budget.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
+| `budget.read` | 声明面独有 | roles、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `citation.inspect` | 声明面独有 | roles、skills、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `citation.validate` | 声明面独有 | roles、skills | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
-| `claim.read` | 声明面独有 | roles、skills | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
+| `claim.read` | 声明面独有 | roles、skills、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `dataset.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `decision.propose` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `deliverable.edit` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
-| `deliverable.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
+| `deliverable.read` | 声明面独有 | roles、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `deliverable.write` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `evidence.propose` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `evidence.write` | 声明面独有 | roles、tool_providers | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `experiment.execute` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
-| `experiment.read` | 声明面独有 | roles、skills | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
-| `experiment_plan.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
+| `experiment.read` | 声明面独有 | roles、skills、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
+| `experiment_plan.read` | 声明面独有 | roles、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `experiment_plan.write` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `external.publish` | 策略面独有 | （无） | 否 | 否 | 该拒绝 | 策略面有规则而四个声明面无人使用；未使用的护栏/门面规则，现状即正确 |
 | `git.diff` | 声明面独有 | roles、tool_providers | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
