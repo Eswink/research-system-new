@@ -6,7 +6,8 @@ status: DONE
 created_at: 2026-10-05
 updated_at: 2026-10-05
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261005-278-goal-029-ec01-session-tool-called-end-to-end.md
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261005-184-sdk-action-fields-become-the-model-facing-parameter-schema.md
 parent_goal: GOAL-20261004-029
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -111,6 +112,16 @@ cycle 2 的勘察发现：**全仓 e2e 的 mock 端点没有一处会发 `tool_c
   复原后 12 passed。
 - **既有判据**：`git diff` 对既有 e2e / 适配器判据为空。
 - **CI**：见 GOAL「CI 台账」（本提交 `f64a1cf` 的行）。
+
+## 实施清单
+
+- [x] **WP-A**：`SessionToolAction` 改参数**平铺**（`ConfigDict(extra="allow")` + `arguments()`
+      读 `model_extra`）；模型可见 schema 变成 `additionalProperties: true` 且无包装字段。
+- [x] **WP-B**：新增 `tests/e2e/test_session_tool_call_on_the_default_assembly.py`
+      （仓内**唯一**会发 `tool_calls` 的夹具）：端到端执行 + 两条反证合跑 + 缺口取证。
+- [x] **按压**：把包装字段放回 ⇒ 5 failed；复原后 12 passed。
+- [x] **记录**：本 PLAN 收口（`DONE`）+ `RECHECK-20261005-278` + `ALL_PLAN` 投影 +
+      GOAL 迭代日志与状态历史。
 
 ## 状态历史
 

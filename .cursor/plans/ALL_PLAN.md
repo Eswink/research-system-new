@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261005-277](tasks/PLAN-20261005-277-goal-029-ec01-session-tool-called-end-to-end.md) | DONE |
 | [x] | [PLAN-20261004-275](tasks/PLAN-20261004-275-goal-029-ec01-session-tool-actually-executes.md) | DONE |
 | [x] | [PLAN-20261001-273](tasks/PLAN-20261001-273-goal-028-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261001-271](tasks/PLAN-20261001-271-goal-028-ec03-multi-role-subiteration-on-the-default-assembly.md) | DONE |

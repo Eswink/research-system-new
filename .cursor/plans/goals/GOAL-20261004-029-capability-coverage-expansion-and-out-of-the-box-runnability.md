@@ -4,7 +4,7 @@ slug: capability-coverage-expansion-and-out-of-the-box-runnability
 title: 能力承接面扩容（A 组零依赖能力 + 出厂可跑性）—— 收 GOAL-028 的 `W-1`
 status: ACTIVE
 created_at: 2026-10-04
-updated_at: 2026-10-04
+updated_at: 2026-10-05
 owners:
   - root-agent
 authorization:
@@ -93,7 +93,7 @@ exit_criteria:
       tests/e2e/<新增判据> -q` ⇒ 全绿（既有判据**逐字节未改**）；
       配套留档：修复前后同一装配的对照（`executor_reached` 两值）、两条反证的**合跑**判词原文
       （点名串逐字）、默认装配实跑终态 + executor 触达证据、按压前后 raw `sha256` 逐字节复原。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **「出厂即可跑」机械化 + A 组承接面扩容（收 `W-1` 的可复核面）**。
@@ -127,7 +127,7 @@ exit_criteria:
       tests/application/preflight -q` ⇒ 全绿（既有判据**逐字节未改**）；
       配套留档：46 条能力的**逐条分类表**（射程内 / 登记在案 + 理由）、缺实现与缺声明的两向判红
       判词原文、清单下界读数、A 组「已承接但未放行」的 `POLICY_DENIED` 点名原文。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **写能力的 canonical 路径与旁路风险（如实判定）**。
@@ -354,6 +354,7 @@ child_plans:
 latest_recheck: null
 memory_entries:
   - .cursor/memory/entries/MEM-20261004-183-session-tool-scope-must-be-the-capability-scope.md
+  - .cursor/memory/entries/MEM-20261005-184-sdk-action-fields-become-the-model-facing-parameter-schema.md
 ---
 
 ## 目标与退出标准
@@ -490,8 +491,8 @@ GOAL-028 的留档落在 `scratch/`（`.gitignore` 第 43 行）⇒ 他人 clone
 
 | EC | 标准 | 验证命令 | 证据来源 | 状态 |
 | --- | --- | --- | --- | --- |
-| EC-01 | 「出厂即可跑」真形态：会话工具**真被触达**（修 F-6 两层 + 两组合根接线 + 两向反证**合跑** + 默认装配实跑） | 见 frontmatter `exit_criteria[0].verify` | 前后对照读数 + 合跑判词 + 实跑终态 | PENDING |
-| EC-02 | 「出厂即可跑」机械化 + A 组承接面：一条判据 + 两向反证 + 射程**逐条**分类 + 下界断言 + 「已承接/未放行」可区分 | 见 frontmatter `exit_criteria[1].verify` | 分类表 + 两向判红原文 + 下界读数 | PENDING |
+| EC-01 | 「出厂即可跑」真形态：会话工具**真被触达**（修 F-6 两层 + 两组合根接线 + 两向反证**合跑** + 默认装配实跑） | 见 frontmatter `exit_criteria[0].verify` | 前后对照读数 + 合跑判词 + 实跑终态 | PASS |
+| EC-02 | 「出厂即可跑」机械化 + A 组承接面：一条判据 + 两向反证 + 射程**逐条**分类 + 下界断言 + 「已承接/未放行」可区分 | 见 frontmatter `exit_criteria[1].verify` | 分类表 + 两向判红原文 + 下界读数 | PASS |
 | EC-03 | 写能力判定在树 + canonical 唯一性 + 写后读得到 + 旁路反证 + 漏斗缺口残余登记 | 见 frontmatter `exit_criteria[2].verify` | 检索读数 + 读面读数 + 反证原文 | PENDING |
 | EC-04 | 两树两份判词落档 + `sha256` 断言 + LF 断言 + 两向反证 | 见 frontmatter `exit_criteria[3].verify` | 两份归档 + `sha256` + `\r` 扫描读数 | PENDING |
 | EC-05 | 自举收口（验证器进树 + 两树 + m0 23/23 + 治理 + 台账逐提交 + 残余/未覆盖逐条） | 见 frontmatter `exit_criteria[4].verify` | 两树 `TWO-TREE PASS` + m0 终态行 + 治理 + 台账 | PENDING |
@@ -616,6 +617,7 @@ GOAL-028 的留档落在 `scratch/`（`.gitignore` 第 43 行）⇒ 他人 clone
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | `PLAN-20261004-275`（EC-01：F-6 修复 + A 组承接 + 组合根接线） | `e52a82c`（F-6 scope 修复 + 判据）+ `fc9314c`（CI 双红修复：探针类提到模块级）+ `53a944e`（canonical 读面 ToolProvider + 出厂绑定表）+ `ea08716`（两组合根接注册面 + 出厂注册面判据 13 例）+ `fd0dbb8`（CI 双红修复：规模门 —— composition 450 行 / read_provider 函数拆分）+ 本条回写提交 | 新增判据 **33 passed**（适配器 7 + canonical 13 + 出厂注册面 13）；`tests/api + tests/adapters + tests/tooling + tests/architecture/python` **2612 passed / 7 skipped**；规模门 **1098 passed**（`composition.py` 恰 450 行）；`ruff` / `format` / `mypy`（1088 files）绿；治理 `validate.py` 绿 | 见「CI 台账」 | **六处按压（全部两向、按 `sha256` 逐字节复原）**：① 撤 agent 门 scope 补齐 ⇒ 2 failed（`bdc1f818…`）；② 撤桥补齐器 ⇒ 1 failed（`f629d302…`）；③ 阈值改回 32 KiB ⇒ 7 failed（`10eae581…`）；④ 删 SQLite 根 wiring ⇒ 1 failed；⑤ 坏版本 `git show e52a82c:…` 与合约文件**合跑** ⇒ 2 failed 逐字复现 CI 签名；⑥ 判据的探针类放函数内 ⇒ 打红**别的文件**（本地单跑看不见）⇒ 已改模块级并**合跑**验证 | EC-01 **仍未收口**（`RECHECK-20261004-276` 的 `W-2`/`W-3`）：两条反证尚未在**默认装配实跑**里合跑一次；默认装配下 run 到 `SUCCEEDED` 且 executor 真被触达（端到端）未做 | cycle 2 = 收 EC-01 的 `W-2`/`W-3`（默认装配端到端实跑） |
+| 2 | `PLAN-20261005-277`（EC-01 收口 + EC-02） | `f64a1cf`（action 参数平铺修复 + 端到端判据）+ `df4ddd9`（A 组承接扩到五条 + EC-02 机械化判据）+ 本条回写提交 | 新增判据 **20 passed**（端到端 12 + 承接面 8）；`tests/adapters + architecture/python + application + e2e + api + loaders` **2291 passed / 21 skipped**；`ruff` / `format` / `mypy`（1090 files）绿；治理 `validate.py` 绿 | 见「CI 台账」 | **两处按压（各自独立、两向）**：① 把 action 的 `arguments` 包装字段放回 ⇒ **5 failed**（executor 未触达 + schema 有包装 + 平铺不可校验）；② 删掉 `budget_read` 的实现 ⇒ **2 failed**（下界断言 + 工具面）。两处均复原后全绿 | 承接面 **12/46 → 17/46**；A 组射程内五条（`artifact.read` / `evidence.read` / `workspace.read` / `budget.read` / `deliverable.read`）**EC-01 与 EC-02 双双收口**；余下 EC-03（写能力判定）/ EC-04（判词归档）/ EC-05（自举收口） | cycle 3 = **EC-03**（写能力的 canonical 路径与旁路风险） |
 | 0 | （建档轮，无子 PLAN——交付物是 GOAL 文件本身） | `ff6e0c4` + `ebb6101` | 治理 `validate.py` 绿；勘察脚本与读数留档 `scratch/goal029-recon.md`（**树外**，`.gitignore` 覆盖，承 `R26-7`）；勘察打过的补丁按 `sha256sum -c` **逐字节复原**（`tool_providers.yaml` = `55c302c1…`、`POLICY_SURFACE_AUDIT.md` = `7372c6a4…`）；记录面判据 **45 passed**；`tests/tooling` 全量 **1273 passed**；`DOCS-CHECK PASS: 6 deterministic checks`；`validate_bundle` = `验证通过` | **M0 [`37203151559`](https://github.com/Eswink/research-system-new/actions/runs/37203151559) 八 job 全 `success`**（container-quality / observability-overhead-ubuntu-latest / quality-ubuntu-latest / observability-overhead-windows-latest / eval-gate / console-frontend / collector-quality / quality-windows-latest）+ **Push-on-main [`37203151156`](https://github.com/Eswink/research-system-new/actions/runs/37203151156) 3/3 `success`**（CodeQL：javascript-typescript / actions / python）；两者 `run_attempt=1`；该 SHA 下 `total_count=2`、**无 `cancelled`** | 无（勘察轮不动产品代码） | 五 EC 全 `PENDING`；**F-5 / F-6 / F-7 三条实测结论推翻了 prompt 起点的表述**，已写入「事实层结论」 | cycle 1 = **EC-01**（会话工具真被触达：修 F-6 + 两组合根接线） |
 
 ### CI 台账（逐提交）
@@ -636,5 +638,7 @@ GOAL-028 的留档落在 `scratch/`（`.gitignore` 第 43 行）⇒ 他人 clone
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-05 | ACTIVE | **cycle 2（EC-01 收口 + EC-02 收口）**：把 EC-01 从「策略面不再无条件拒绝」推进到「**模型真的调了这个工具、executor 真的跑了**」，并把「出厂即可跑」变成机械事实。**① 第五个真缺陷（本轮实测）**：`SessionToolAction` 声明了 `arguments: dict` **包装字段**，而 SDK 把 action 字段渲染成**模型可见的参数 schema** —— 模型按常理平铺发 `{"artifact_id": "x"}` 撞 base `Schema` 的 `extra="forbid"` ⇒ `Error validating tool 'artifact.read': Extra inputs are not permitted`（**调用到了桥、却在校验处被拒**）。SDK 自己的内建工具一律平铺（`ThinkAction.thought` / `FinishAction.message`）⇒ 改为 `ConfigDict(extra="allow")` + `arguments()` 读 `model_extra`，schema 随之为 `additionalProperties: true`。**② 端到端判据**（新文件 `tests/e2e/test_session_tool_call_on_the_default_assembly.py`，12 passed）：勘察发现**全仓 e2e 的 mock 端点没有一处会发 `tool_calls`** ⇒「会话起得来」与「工具跑得动」的落差**从未被任何东西看着**（这正是 `W-3` 长期开着的原因）；补上唯一会发工具调用的夹具后实测：executor 触达记录 **逐字等于** 模型发出的平铺参数、结果经 `role=tool` 消息回到模型。判据另含**两条反证合跑**（承 MEM-20261001-180：registry 进程级只增不减 ⇒ 带**显式摘除** +
+「合跑证据」断言）与**缺口取证**（断言本文件是仓内唯一发 `tool_calls` 的夹具，出现第二个即判红）。**③ A 组承接面扩到五条**（EC-01 的 AC 要求 ≥5；cycle 1 只落 3 条）：新增 `budget_read` / `deliverable_read` 两条**真实现**（都读 canonical state）⇒ **12/46 → 17/46**；出厂目录同轮声明五条 A 组读能力 + 同轮更新 `POLICY_SURFACE_AUDIT.md` 的声明面列（F-5 已实测：扩能力只打红那一列，属**文档同源**而非放宽判据）。**④ EC-02 机械化**（新判据 `test_capability_coverage_is_implemented.py`，8 passed）：主判据「声明了 ⇒ 一定有实现」（缺一即点名能力名 + 工具名）+ **反证两向**（声明了没实现 / 实现了没声明各判红）+ **射程逐条分类**（46 条逐条要么在射程内、要么登记在案带组别与理由；空理由与自相矛盾各判红）+ **下界断言**（承 MEM-160）+ **并集恰好等于词表**。判据当场抓到我的两处疏漏（`gpu.use` 未分类、射程内条目重复登记）。**⑤ 顺带修掉一条真缺陷**：`budget_read` 的 run 归属过滤起初按 reservation_ref 匹配，实测该 ref 是内容摘要（`budget-reservation:<hex>`）、**不含** run 标识 —— 归属只在 `BudgetReservation.scope`；已改读既有字段，不新造第二套归属口径。**按压两处（各自独立）**：包装字段放回 ⇒ 5 failed；删 `budget_read` 实现 ⇒ 2 failed；均复原后全绿。**EC-01 与 EC-02 双双 PASS**；`RECHECK-20261005-278` = PASS_WITH_WARNINGS（六条 W-NN：端到端那半用**已放行**能力名（专属名会被策略面正确拒绝）/ `arguments` 由字段变方法是对外形状变化 / 端到端不驱动 run 编排 / 不覆盖多轮与并行工具调用 / 装配面按压未在本轮重做 / 缺口取证是方法论提示）。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / RBAC 未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口 / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |
 | 2026-10-04 | ACTIVE | **cycle 1（EC-01 主干，未收口）**：修掉建档轮实测到的 **F-6 真缺陷** —— 会话工具的求值 scope 曾用会话 id（`PolicyEnforcingAgent._evaluate`），而 `policy.yaml` 的带 scope `allow` 规则要求 scope 相等 ⇒ **每一条**会话工具调用都落 `default_effect: DENY`、executor 一次也不会被触达（run 终态却是 `SUCCEEDED`）。**实测对照**（真实 `NativePolicyEvaluator`、同一装配只差一个字段）：`artifact.read`（已放行）修复前 `executor_reached=[]` → 修复后 `['hi']`；`claim.read`（未放行）与 `external.publish`（需审批）修复后仍 `[]`。**修法**：两条执行期门复用**既有那一张** `policy_scope_for` 表（桥复用既有 `ScopedPolicy`），不新造表、不动任何 allow。**从零到一**：`tool_providers.yaml` 声明的两件 NATIVE provider（`m12_artifact` / `openhands_workspace`）此前**全仓零实现** ⇒ 本轮新增 `adapters/canonical/read_provider.py`（canonical 读面接成可执行工具）；两个组合根本体此前都**不传** `register_session_tools` ⇒ 本轮接上（`session_tool_support` 收拢装配决策，两树只差 Port 实例）。**实测**：`assemble()`（真实 SQLite 生产路径）⇒ 按工具名注册后 `artifact.read` / `evidence.read` / `workspace.read` **全部可解析**。**顺带修掉两条真缺陷**：① 会话桥**永远取不到**小结果（`spill_large_result` 缺省阈值 32 KiB ⇒ 低于阈值不落盘，而桥必须交回内容）⇒ 按消费者要求把阈值设为 1（与运行链 `literature_chain_support.py` 同源约定）；② `composition.py` 恰在 450 行硬上限上，wiring 必须净增 0 行。**六处按压（全部两向、`sha256` 逐字节复原）**：撤 agent 门补齐 ⇒ 2 failed（`bdc1f818…`）；撤桥补齐器 ⇒ 1 failed（`f629d302…`）；阈值改回 32 KiB ⇒ 7 failed（`10eae581…`）；删 SQLite 根 wiring ⇒ 1 failed；坏版本与合约文件**合跑** ⇒ 2 failed 逐字复现 CI 签名。**两轮 CI 双红（均为判据侧自伤，已修）**：① `e52a82c` 探针 `Action`/`Observation` 子类写在函数内（`<locals>`）⇒ SDK 枚举具体子类时毒化**同进程后续所有**事件 round-trip ⇒ 打红 `tests/contracts/test_agent_runtime_contract.py` 两条 fork 判据（**本地单跑看不见**，全量收集才暴露；这正是我在该文件 docstring 里**引用过**的同族教训）⇒ 提到模块级 + 合跑两向取证；② `ea08716` 规模门：`composition.py` 超 450 行 + `read_provider.py` 51 行函数 ⇒ 拆函数 + wiring 压成一行。新增判据 **33 passed**（适配器 7 / canonical 13 / 出厂注册面 13）；`tests/api + tests/adapters + tests/tooling + tests/architecture/python` **2612 passed / 7 skipped**；规模门 1098 passed；`ruff` / `format` / `mypy`（1088 files）绿。**终态 CI**：`b158451` 的 M0 八 job + CodeQL 全 `success`（`run_attempt=1`）。**EC-01 未收口**（`RECHECK-20261004-276` 的 `W-2`/`W-3`：两条反证尚未在默认装配实跑里合跑一次；默认装配下 run 到 `SUCCEEDED` 且 executor 真被触达未做）。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / RBAC 未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口 / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |
 | 2026-10-04 | ACTIVE | **建档（cycle 0）**：读 `README.md` 的 GOAL 格式契约 + 只读勘察。**只读勘察推翻了三处起点表述**，逐条实测：**① 承接面 12/46 复核通过**（46 条能力中 12 条被四个 provider 承接）；**② 【F-6】会话工具今天根本不可能被执行** —— `policy_enforcing_agent._evaluate` 用 `scope=session_id` 而 `policy.yaml` 的带 scope allow 规则要求 scope 相等 ⇒ 每条会话工具调用都落 `default_effect: DENY`；桥侧 `execute_tool_call` 同样不带 scope（运行链有 `ScopedPolicy` 补、会话面没有）。**实测对照**（真实 `NativePolicyEvaluator(policy.yaml)`、同一装配只差一个字段）：`artifact.read`（已放行）今天 `status=SUCCEEDED` 但 **`executor_reached=[]`**；换成 `policy_scope_for` 后 **`executor_reached=['hi']`**。⇒ **GOAL-028 EC-03 的「默认装配实跑」证的是会话起得来，不是工具跑得动**；**③ 【F-7】A 组能力「协议可达」撞两条钉死判据**（`test_no_protocol_reachable_capability_lacks_a_rule` 与 `test_each_row_state_matches_the_mechanical_rule` 实测判红），而放行会打红 `test_read_grant_is_per_item` 的 `EXPECTED_REGISTERED = 15` ⇒ **放行需用户拍板**（`D-02(b)`），本 GOAL 只做**承接**并把「已承接/未放行」做成**可区分**的判据；**④ 【F-5】`tool_providers.yaml` 的 id 集被精确钉死**（新增 id 实测打红 `test_existing_providers_are_untouched`）⇒ 承接面只能靠**扩展既有 provider**（实测可行）；**⑤ 【F-3】写能力**：域里**没有** `Deliverable` 实体、无写面、差集判「该拒绝」，canonical 唯一 writer 是 `persist_completion`；`ExperimentStore.save_plan` 是**无条件 upsert** 且两处生产写入无共同漏斗（**残余**）；**⑥ 【F-4】SDK registry 进程级只增不减**（源码实测 `register_tool` 无撤销入口、`resolve_tool` 未命中点名）⇒ 两条反证**必须合跑**。**EC-01…EC-05 全 `PENDING`**；五 EC 的判据与验证命令已按实测事实重写（**不照抄 prompt 起点**）。**CI 台账（逐提交）**：`ff6e0c4` 自带两 run —— M0 `37203151559` **八 job 全绿** + Push-on-main `37203151156` **CodeQL 3/3 全绿**，均 `run_attempt=1`（该 SHA 下 `total_count=2`，无 `cancelled`）。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / RBAC 未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口 / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |

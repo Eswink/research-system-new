@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261005-184](entries/MEM-20261005-184-sdk-action-fields-become-the-model-facing-parameter-schema.md) | ACTIVE | repository | 0.95 | 2027-04-05 | PLAN-20261005-277 |
 | [MEM-20261004-183](entries/MEM-20261004-183-session-tool-scope-must-be-the-capability-scope.md) | ACTIVE | repository | 0.95 | 2027-04-04 | PLAN-20261004-275 |
 | [MEM-20261001-182](entries/MEM-20261001-182-run-chain-exclusion-is-per-phase.md) | ACTIVE | repository | 0.95 | 2027-04-01 | PLAN-20261001-271 |
 | [MEM-20261001-181](entries/MEM-20261001-181-tools-is-not-a-package-so-load-by-path.md) | ACTIVE | repository | 0.95 | 2027-04-01 | PLAN-20261001-269 |
