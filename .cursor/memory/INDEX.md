@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261005-187](entries/MEM-20261005-187-verdict-scope-must-be-the-declared-set.md) | ACTIVE | repository | 0.95 | 2027-04-05 | PLAN-20261005-277 |
 | [MEM-20261005-186](entries/MEM-20261005-186-two-tree-verdict-write-is-input-output.md) | ACTIVE | repository | 0.95 | 2027-04-05 | PLAN-20261005-281 |
 | [MEM-20261005-185](entries/MEM-20261005-185-verdict-scope-must-be-pressed-too.md) | ACTIVE | repository | 0.95 | 2027-04-05 | PLAN-20261005-279 |
 | [MEM-20261005-184](entries/MEM-20261005-184-sdk-action-fields-become-the-model-facing-parameter-schema.md) | ACTIVE | repository | 0.95 | 2027-04-05 | PLAN-20261005-277 |
