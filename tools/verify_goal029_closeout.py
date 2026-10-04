@@ -236,7 +236,7 @@ def _carrying_face_verdicts(root: Path) -> list[VerdictLike]:
             "canonical 读面 provider 或其工具表缺失",
         ),
         TOOLBOX.verdict(
-            "factory-table-covers-the-five-in-scope-capabilities",
+            "factory-table-covers-every-in-scope-capability",
             set(IN_SCOPE_CAPABILITIES) <= bindings,
             f"出厂绑定表缺 A 组射程内能力：{sorted(set(IN_SCOPE_CAPABILITIES) - bindings)}",
         ),
