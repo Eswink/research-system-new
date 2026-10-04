@@ -201,14 +201,19 @@ class CanonicalReadProvider:
         run_id = str(args.get("run_id") or "").strip()
         if not run_id:
             raise InvalidInputError("evidence_read requires a non-empty run_id")
+        return self._project_run(self._ledger, run_id)
+
+    @staticmethod
+    def _project_run(ledger: EvidenceLedger, run_id: str) -> dict[str, object]:
+        """把 ledger 里属于 `run_id` 的 claim/evidence 投影出来（按 relation 走）。"""
         claims: list[dict[str, object]] = []
         evidence: list[dict[str, object]] = []
         seen: set[str] = set()
-        for claim in self._ledger.claims():
+        for claim in ledger.claims():
             matched: list[str] = []
-            for relation in self._ledger.relations_for_claim(claim.id):
+            for relation in ledger.relations_for_claim(claim.id):
                 try:
-                    item = self._ledger.get_evidence(relation.evidence_id)
+                    item = ledger.get_evidence(relation.evidence_id)
                 except Exception:  # noqa: BLE001 - 引用可能已删除（视觉态：missing evidence）
                     continue
                 if item.run_id != run_id:

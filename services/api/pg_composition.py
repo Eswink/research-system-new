@@ -186,31 +186,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
     )
 
 
-def _pg_session_tool_register(c: dict[str, Any], inputs: _PgRuntimeInputs) -> Any:
-    """PG 根的会话工具注册面（与 SQLite 根共用 `session_tool_support` 的装配决策）。
-
-    **只差 Port 实例**：这里用 PG 根的 `artifacts` / `ledger`。声明取自出厂目录
-    （`tool_providers.yaml`）；目录里没有的 id **不进表** ⇒ SDK 在 agent init 时点名。
-    """
-    from adapters.canonical import CanonicalReadProvider
-    from services.api.catalog import load_catalog_snapshot
-    from services.api.session_tool_support import session_tool_register
-
-    canonical_reader = CanonicalReadProvider(c["artifacts"], c["ledger"])
-    providers = {
-        "m12_artifact": canonical_reader,
-        "openhands_workspace": canonical_reader,
-    }
-    declared = load_catalog_snapshot().tool_providers
-    specs = {
-        provider_id: declared[provider_id] for provider_id in providers if provider_id in declared
-    }
-    return session_tool_register(
-        providers=providers,
-        provider_specs=specs,
-        artifacts=c["artifacts"],
-        policy=inputs.policy_bindings.get("policy_evaluator"),
-    )
+from services.api.session_tool_support import session_tool_face  # noqa: E402
 
 
 def _build_pg_orchestration(
@@ -234,7 +210,9 @@ def _build_pg_orchestration(
                 credentials=inputs.credentials,
                 policy_evaluator=inputs.policy_bindings["policy_evaluator"],
                 budget_ledger=c["budget"],
-                register_session_tools=_pg_session_tool_register(c, inputs),
+                register_session_tools=session_tool_face(
+                    c["artifacts"], c["ledger"], inputs.policy_bindings.get("policy_evaluator")
+                ),
             ),
             workflow=c["workflow"],
             artifacts=c["artifacts"],

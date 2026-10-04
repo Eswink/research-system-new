@@ -1,9 +1,8 @@
 """Control Plane API composition root。
 
-仅本模块装配具体 adapter（依赖方向：services/api → packages/application
-→ packages/domain；具体实现只由此处注入，routers 只消费 Port）。
-SQLite 配置存储与 outbox 共享连接；凭据永不落盘；Run 编排用 Fake 全链（CI 一致）。
-M14: database_url 指向 PostgreSQL 时自动选用 Postgres 引擎（同 Port）。
+仅本模块装配具体 adapter（依赖方向：services/api → packages/application → packages/domain；
+具体实现只由此处注入，routers 只消费 Port）。SQLite 配置存储与 outbox 共享连接；凭据永不落盘；
+Run 编排用 Fake 全链（CI 一致）。M14: `database_url` 为 postgresql 时自动选 Postgres 引擎。
 """
 
 from __future__ import annotations
@@ -86,7 +85,6 @@ from services.api.assembly import (
     policy_bindings,
     sqlite_artifact_blob_dir,
 )
-from services.api.catalog import load_catalog_snapshot
 from services.api.demo import _default_events, seed_declared_inputs
 from services.api.idempotency import IdempotencyStore
 from services.api.runtime_support import (
@@ -94,6 +92,7 @@ from services.api.runtime_support import (
     build_agent_runtime,
     resolve_runtime_selection,
 )
+from services.api.session_tool_support import sqlite_session_tools
 from services.api.settings import ApiSettings
 from services.api.telemetry import build_api_telemetry, exporter_config_digest
 
@@ -289,58 +288,20 @@ def _sqlite_store_parts(
     )
 
 
-def _production_session_tool_register(faces: _ControlFaces, ports: _SqliteStoreParts) -> Any:
-    """出厂形态的会话工具注册面（GOAL-029 EC-01(b)）：canonical 读面 → SDK 工具实现。
-
-    实现在 `services/api/session_tool_support.py`（装配决策归组合层）；本函数只提供
-    三个依赖（canonical artifacts / ledger / policy 求值面）——
-    与编排服务**同一实例**，避免「装配用 A、执行读 B」的漂移。
-
-    **provider 实例**：`m12_artifact` 声明的读能力此前全仓**零实现** ⇒ 本装配用
-    `CanonicalReadProvider` 顶上；`openhands_workspace` 的**读**面同样桥到 canonical
-    artifacts（文件系统写面要 lease，不在本轮读出范围内）。两者都只在**能力名**上被求值，
-    策略面照旧按 `policy.yaml` 裁决。
-    """
-    from adapters.canonical import CanonicalReadProvider
-    from services.api.session_tool_support import session_tool_register
-
-    canonical_reader = CanonicalReadProvider(ports.artifacts, ports.ledger)
-    providers = {
-        "m12_artifact": canonical_reader,
-        "openhands_workspace": canonical_reader,
-    }
-    declared = load_catalog_snapshot().tool_providers
-    specs = {
-        provider_id: declared[provider_id] for provider_id in providers if provider_id in declared
-    }
-    return session_tool_register(
-        providers=providers,
-        provider_specs=specs,
-        artifacts=ports.artifacts,
-        policy=faces.policy_evaluator,
-    )
-
-
 def _sqlite_orchestration(
     faces: _ControlFaces, ports: _SqliteStoreParts, telemetry: TelemetrySink
 ) -> RunOrchestrationService:
     """编排服务装配：runtime 经选择面（EC-01），其余 Port 显式注入。
 
-    PLAN-20260919-107：runtime 不再硬编码——两个组合根同侧、都经
-    `build_agent_runtime(faces.settings, ...)`；凭据/policy 面与 ApiDeps 同一实例。
-
-    GOAL-20261004-029 EC-01(b)：**会话工具实现注册面**（收 GOAL-028 `W-1` 的装配面缺口）。
-    此前两个组合根本体都不传 `register_session_tools` ⇒ 生产路径上注册面是 `None`、回落空操作，
-    「出厂即可跑」因此只是**判据侧**的事实。现在装配方按出厂绑定表造出实现并接进来；
-    没有实现的名字照旧由 SDK **点名**未注册（不静默丢工具）。
-    """
+    PLAN-20260919-107：runtime 不再硬编码——两个组合根同侧都经 `build_agent_runtime(...)`，
+    凭据/policy 面与 ApiDeps 同一实例；GOAL-029 EC-01(b) 接 `register_session_tools`。"""
     runtime = build_agent_runtime(
         faces.settings,
         selection=faces.selection,
         credentials=faces.credentials,
         policy_evaluator=faces.policy_evaluator,
         budget_ledger=ports.budget,
-        register_session_tools=_production_session_tool_register(faces, ports),
+        register_session_tools=sqlite_session_tools(faces, ports),
     )
     return RunOrchestrationService(
         OrchestrationDependencies(
@@ -362,8 +323,8 @@ def _sqlite_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     """dev 路径配置/注册面 store（PLAN-040 WP-A / PLAN-041 WP-A；PG canonical
     仍是研究数据真相；store=None → 诚实 503 的边界保持）。
 
-    PLAN-066（EC-03）：`schedule_registry` 与 `schedule_store` 一起装配——守护线程
-    与 HTTP 写面必须共用同一个实例，否则 `trigger` 找不到执行体。
+    PLAN-066（EC-03）：`schedule_registry` 与 `schedule_store` 一起装配——守护线程与 HTTP
+    写面必须共用同一个实例，否则 `trigger` 找不到执行体。
     """
     from services.api.schedule_support import build_registry
 

@@ -104,8 +104,67 @@ def session_tool_register(
     )
 
 
+def session_tool_face(artifacts: Any, ledger: Any, policy: Any) -> Any:
+    """位置参数形式的出厂注册面（组合根侧读起来最短；语义见 `canonical_read_register`）。"""
+    return canonical_read_register(artifacts=artifacts, ledger=ledger, policy=policy)
+
+
+def sqlite_session_tools(faces: Any, ports: Any) -> Any:
+    """SQLite 组合根的位置参数入口（`faces.policy_evaluator` + ports 的 canonical store）。
+
+    单列一个两行包装而不是让组合根写三个关键字：`composition.py` 恰好卡在 450 行硬上限上，
+    而 wiring 本身是一行 —— 包装把「读哪三个依赖」的决策留在本模块（装配决策面）。
+    """
+    return canonical_read_register(
+        artifacts=ports.artifacts, ledger=ports.ledger, policy=faces.policy_evaluator
+    )
+
+
+def canonical_read_register(
+    *,
+    artifacts: Any,
+    ledger: Any,
+    policy: Any,
+    bindings: Sequence[tuple[str, str, str]] = DEFAULT_SESSION_TOOL_BINDINGS,
+) -> Any:
+    """**出厂形态**的注册回调：用 canonical 读面当 provider 实例（两个组合根共用）。
+
+    为什么实例在这儿造而不是在各组合根里各造一份：`m12_artifact` / `openhands_workspace`
+    声明的**读**能力此前全仓零实现，本轮的承接面统一用 `CanonicalReadProvider`
+    （它读的是 canonical state：ArtifactStore + EvidenceLedger）。两个组合根**只差 Port 实例**
+    （SQLite 根与 PG 根各自的 artifacts/ledger），装配决策因此收在这一处 ——
+    多一个入口就多一次漂移机会（与 `runtime_support` 收拢 runtime 选择同一个理由）。
+
+    provider 的**声明**取自出厂目录（`tool_providers.yaml`）：目录里没有的 id **不进表**
+    ⇒ 该名字不会被注册 ⇒ SDK 在 agent init 时点名 `ToolDefinition '<名>' is not registered`。
+    """
+    from adapters.canonical import CanonicalReadProvider
+    from services.api.catalog import load_catalog_snapshot
+
+    canonical_reader = CanonicalReadProvider(artifacts, ledger)
+    instance_for = {
+        "m12_artifact": canonical_reader,
+        "openhands_workspace": canonical_reader,
+    }
+    declared = load_catalog_snapshot().tool_providers
+    return session_tool_register(
+        providers=instance_for,
+        provider_specs={
+            provider_id: declared[provider_id]
+            for provider_id in instance_for
+            if provider_id in declared
+        },
+        artifacts=artifacts,
+        policy=policy,
+        bindings=bindings,
+    )
+
+
 __all__ = [
     "DEFAULT_SESSION_TOOL_BINDINGS",
+    "canonical_read_register",
+    "session_tool_face",
+    "sqlite_session_tools",
     "session_tool_invokers",
     "session_tool_register",
 ]
