@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261005-281](tasks/PLAN-20261005-281-goal-029-ec04-05-two-tree-archives-and-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261005-279](tasks/PLAN-20261005-279-goal-029-ec03-write-capability-canonical-path.md) | DONE |
 | [x] | [PLAN-20261005-277](tasks/PLAN-20261005-277-goal-029-ec01-session-tool-called-end-to-end.md) | DONE |
 | [x] | [PLAN-20261004-275](tasks/PLAN-20261004-275-goal-029-ec01-session-tool-actually-executes.md) | DONE |
