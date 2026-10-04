@@ -88,21 +88,47 @@ class TestTheEntryWritesBinarySafely:
 
 
 class TestTheTextModeHazardIsReal:
-    """反证的地基：文本模式在 Windows 会写入 CRLF ⇒ `sha256` 变（实测，不是推理）。"""
+    """反证的地基：文本模式**在本平台**是否改字节（Windows 会 ⇒ `sha256` 变）。
 
-    def test_text_mode_and_binary_mode_differ(self, tmp_path: Path) -> None:
+    **平台口径**（CI 首跑实测）：`Path.write_text` 的行尾转换是**平台相关**的 ——
+    Windows 把 `\n` 写成 `\r\n`，**Linux / macOS 不转换**。因此
+    「文本模式必须与二进制模式产生不同 `sha256`」这条断言**只在 Windows 成立**；
+    在 Linux 上写死它会让判据**假红**（实测：CI 的 `quality-ubuntu-latest` 报
+    `文本模式必须与二进制模式产生不同 sha256`，而本地 Windows 全绿）。
+
+    本类因此分两档（都不放宽，只是**各自说各自平台的事实**）：
+
+    - **跨平台硬断言**：入口那种写法（`newline=""`）**必须**产出纯 LF —— 这是归档纪律的载体；
+    - **平台事实**：`\r\n` 转换是否发生**按平台断言**。非 Windows 上如实断言「不转换」，
+      并说明**归档一律用二进制写盘**这条纪律**不因平台而异**（复检脚本要跨平台可比）。
+    """
+
+    def test_the_entry_style_is_lf_only(self, tmp_path: Path) -> None:
+        """跨平台硬断言：入口那种写法产出纯 LF（归档纪律的载体）。"""
+        binary = tmp_path / "binary.txt"
+        _write_like_the_entry("PASS a\nPASS b\n", binary)
+        assert not _has_cr(binary), ("入口写法必须产出纯 LF", binary.read_bytes())
+
+    def test_text_mode_hazard_matches_this_platform(self, tmp_path: Path) -> None:
+        """平台事实：Windows 上文本模式写 CRLF（`sha256` 因而不同）；其他平台**不转换**。"""
+        import os
+
         payload = "PASS a\nPASS b\n"
         binary = tmp_path / "binary.txt"
         text = tmp_path / "text.txt"
         _write_like_the_entry(payload, binary)
         text.write_text(payload, encoding="utf-8")  # 文本模式
 
-        assert not _has_cr(binary), ("入口写法必须产出纯 LF", binary.read_bytes())
-        assert _sha256(binary) != _sha256(text), (
-            "文本模式必须与二进制模式产生不同 sha256（否则本判据的两向反证无能）"
-        )
-        if binary.read_bytes() != text.read_bytes():
+        if os.name == "nt":
+            assert _sha256(binary) != _sha256(text), (
+                "Windows 上文本模式必须改字节（否则本判据的两向反证无能）"
+            )
             assert _has_cr(text), "差异的来源应当是 CRLF（否则本判据的归因错了）"
+        else:
+            assert not _has_cr(text), (
+                "非 Windows 平台不应出现 CRLF 转换（若出现，本判据的归因假设要更新）",
+                text.read_bytes(),
+            )
 
     def test_git_normalization_would_hide_it(self) -> None:
         """**为什么 `git diff` 不足**：`.gitattributes` 把行尾归一化 ⇒ 差异被静默吞掉。"""
