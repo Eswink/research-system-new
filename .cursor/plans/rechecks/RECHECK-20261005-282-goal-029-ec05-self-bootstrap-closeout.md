@@ -53,8 +53,33 @@ owners:
 - **`W-5`**：本文件（RECHECK）与 GOAL 的迭代日志/状态历史里的 `sha256` 是**本轮那次运行**的读数；
   两树入口每次运行都会**重写**归档（内容随树的状态变化）⇒ 引用时必须写明是哪一次
   （本轮的 `db4faa07…` 对应 `dcd8387` 提交后的那次运行）。
+- **`W-7`**：CI 首跑判红（**只在 Linux 暴露**）：文本模式行尾转换是平台相关的，
+  判据按平台分档断言（详见下节）。
 - **`W-6`**：收口验证器只覆盖本轮交付物与标准面，**不**覆盖产品运行语义（承 GOAL-023 的有界射程）；
   前四轮的 `W-NN` 族**原样保留**。
+
+## 复检补充：CI 首跑判红（已修，**只在 Linux 暴露**的判据缺陷）
+
+`656ae37` 的 M0 首跑 `quality-ubuntu-latest` 判红：
+`tests/tooling/test_two_tree_verdicts_are_archived.py::test_text_mode_and_binary_mode_differ`
+报 `文本模式必须与二进制模式产生不同 sha256` —— **本地 Windows 全绿**。
+
+**根因**：`Path.write_text` 的行尾转换是**平台相关**的 —— Windows 把 `
+` 写成 `
+`，
+**Linux / macOS 不转换**（`newline=None` 时 `
+` → `os.linesep` = `
+`）。
+我那条断言把 Windows 行为写成了跨平台事实 ⇒ Linux 上假红。
+
+**修法（不放宽，只是各自说各自平台的事实）**：
+- **跨平台硬断言** `test_the_entry_style_is_lf_only`：入口那种写法（`newline=""`）
+  必须产出纯 LF —— 归档纪律的载体，两平台都成立；
+- **平台事实** `test_text_mode_hazard_matches_this_platform`：按 `os.name` 分档断言。
+
+**这条与 `W-4` 同族**（判据射程要按压/要按真实条件说事实），登记为 **`W-7`**：
+本判据原先把「本机平台的行为」当成「普适行为」—— 与「只扫 `ast.Name`」同类的
+**射程错配**（对象没变，是断言覆盖的条件集错了）。
 
 ## 结论
 
