@@ -352,7 +352,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261004-275-goal-029-ec01-session-tool-actually-executes.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261004-183-session-tool-scope-must-be-the-capability-scope.md
 ---
 
 ## 目标与退出标准
@@ -614,7 +615,7 @@ GOAL-028 的留档落在 `scratch/`（`.gitignore` 第 43 行）⇒ 他人 clone
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `PLAN-20261004-275`（EC-01，**进行中**） | 待收口（本行先记 derive + WP-A/WP-B 已落地） | 新增判据 **7 passed**；受影响既有套件全绿且 `git diff` 为空：`tests/adapters/openhands/` **93 passed**、`tests/architecture/python/` **230 passed**、三份 e2e 绑定/多 role/离线链 **22 passed / 1 skipped**；规模门 **1100 passed**；`ruff check` / `ruff format --check` / `mypy`（1083 files）全绿 | 待收口提交后登记 | **两处按压（两向，各自独立）**：撤 `policy_enforcing_agent` 的 scope 补齐 ⇒ **2 failed**（`test_a_granted_capability_tool_reaches_its_executor` + `test_the_agent_loop_gate_uses_the_declared_scope`）；撤 `session_tool_invocation` 的补齐器 ⇒ **1 failed**（`test_the_bridge_gate_uses_the_declared_scope`）。两次均按 `sha256` **逐字节复原**（`bdc1f818…` / `f629d302…`）后复绿 | EC-01 的 **F-6 策略面缺陷**已修并取证；**剩余**：装配面缺口（两组合根本体没传 `register_session_tools`）、两向反证**合跑**、默认装配实跑 | 继续 EC-01 剩余 WP（组合根接线 + 反证合跑判据） |
+| 1 | `PLAN-20261004-275`（EC-01 **部分收口**） | `e52a82c`（WP-A/WP-B/WP-C）+ `fc9314c`（CI 双红修复） | 新增判据 **7 passed**；受影响既有套件全绿且 `git diff` 为空：`tests/adapters/openhands/` **93 passed**、`tests/architecture/python/` **230 passed**、`tests/tooling/` **1504 passed(连同)**、三份 e2e 绑定/多 role/离线链 **22 passed / 1 skipped**；规模门 **1100 passed**；`ruff check` / `ruff format --check` / `mypy`（1083 files）全绿；治理 `validate.py` 绿（含 MEM/RECHECK 交叉引用） | `e52a82c` M0 **双红**（`quality-ubuntu-latest` / `quality-windows-latest`）⇒ `fc9314c` 修复后重推（run 见「CI 台账」） | **两处按压（两向，各自独立）**：撤 `policy_enforcing_agent` 的 scope 补齐 ⇒ **2 failed**（`test_a_granted_capability_tool_reaches_its_executor` + `test_the_agent_loop_gate_uses_the_declared_scope`）；撤 `session_tool_invocation` 的补齐器 ⇒ **1 failed**（`test_the_bridge_gate_uses_the_declared_scope`）。两次均按 `sha256` **逐字节复原**（`bdc1f818…` / `f629d302…`）后复绿。**CI 双红根因 = 判据侧自伤**：探针 `Action`/`Observation` 子类定义在函数内（`<locals>`）⇒ SDK 枚举具体子类时毒化**同进程后续所有**事件 round-trip ⇒ 打红 `tests/contracts/test_agent_runtime_contract.py` 两条 fork 判据（本地单跑看不见，全量收集才暴露）；修法 = 提到模块级，**两向取证**（坏版本合跑 ⇒ 2 failed 逐字复现 CI 签名；修好 ⇒ 121 passed） | EC-01 的 **F-6 策略面缺陷**已修并取证；**EC-01 仍未完成**（`RECHECK-20261004-276` 的 `W-1`/`W-2`/`W-3`）：装配面缺口（两组合根本体没传 `register_session_tools`）、两向反证**合跑**、默认装配实跑且 executor 触达 | 继续 EC-01（组合根接线 + 反证合跑 + 默认装配实跑） |
 | 0 | （建档轮，无子 PLAN——交付物是 GOAL 文件本身） | `ff6e0c4` + `ebb6101` | 治理 `validate.py` 绿；勘察脚本与读数留档 `scratch/goal029-recon.md`（**树外**，`.gitignore` 覆盖，承 `R26-7`）；勘察打过的补丁按 `sha256sum -c` **逐字节复原**（`tool_providers.yaml` = `55c302c1…`、`POLICY_SURFACE_AUDIT.md` = `7372c6a4…`）；记录面判据 **45 passed**；`tests/tooling` 全量 **1273 passed**；`DOCS-CHECK PASS: 6 deterministic checks`；`validate_bundle` = `验证通过` | **M0 [`37203151559`](https://github.com/Eswink/research-system-new/actions/runs/37203151559) 八 job 全 `success`**（container-quality / observability-overhead-ubuntu-latest / quality-ubuntu-latest / observability-overhead-windows-latest / eval-gate / console-frontend / collector-quality / quality-windows-latest）+ **Push-on-main [`37203151156`](https://github.com/Eswink/research-system-new/actions/runs/37203151156) 3/3 `success`**（CodeQL：javascript-typescript / actions / python）；两者 `run_attempt=1`；该 SHA 下 `total_count=2`、**无 `cancelled`** | 无（勘察轮不动产品代码） | 五 EC 全 `PENDING`；**F-5 / F-6 / F-7 三条实测结论推翻了 prompt 起点的表述**，已写入「事实层结论」 | cycle 1 = **EC-01**（会话工具真被触达：修 F-6 + 两组合根接线） |
 
 ### CI 台账（逐提交）
