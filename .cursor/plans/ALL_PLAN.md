@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261005-289](tasks/PLAN-20261005-289-goal-030-ec04-criterion-scope-self-check.md) | DONE |
 | [x] | [PLAN-20261005-287](tasks/PLAN-20261005-287-goal-030-ec03-scientific-action-depth.md) | DONE |
 | [x] | [PLAN-20261005-285](tasks/PLAN-20261005-285-goal-030-ec02-b-group-onboarding-run-read.md) | DONE |
 | [x] | [PLAN-20261005-283](tasks/PLAN-20261005-283-goal-030-ec01-capabilities-actually-used-in-a-run.md) | DONE |
