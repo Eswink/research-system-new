@@ -250,6 +250,7 @@ class _SqliteStoreParts:
     artifacts: Any
     approvals: Any
     experiment_store: Any  # GOAL-029 EC-01：experiment(.plan).read 的来源
+    runs_store: Any  # GOAL-030 EC-02：run.read 的来源（与 ApiDeps.runs_store 同一实例）
 
 
 def _sqlite_store_parts(
@@ -267,11 +268,9 @@ def _sqlite_store_parts(
     budget = SqliteBudgetLedger(connection=connection)
     pricing, pricing_store = _load_pricing(), SqlitePricingSnapshotStore(connection=connection)
     # WP-A（PLAN-040）：内容寻址持久存储替换进程内 FakeArtifactStore；单一实例共享给
-    # orchestration 与控制面读取端点（两个独立实例会让 run
-    # 产出的 artifact 对读取端永远为空）。
+    # orchestration 与控制面读取端点（两个独立实例会让 run 产出的 artifact 对读取端永远为空）。
     artifacts = SqliteArtifactStore(connection=connection, blob_dir=blob_dir)
-    # GOAL-010 EC-02：demo 协议**声明**的输入制品必须真的在库里——`EVIDENCE_COVERAGE`
-    # 收紧后只认非模型自述的来源，声明的输入就是那个来源；不种入 ⇒ 任务点名失败。
+    # GOAL-010 EC-02：声明输入必须真的在库里（覆盖收紧后只认非模型自述的来源）。
     seed_declared_inputs(artifacts)
     approvals = SqliteApprovalStore(connection=connection)  # WP-H：与 decide/GET 同一实例
     return _SqliteStoreParts(
@@ -285,6 +284,7 @@ def _sqlite_store_parts(
         artifacts=artifacts,
         approvals=approvals,
         experiment_store=SqliteExperimentStore(connection=connection),
+        runs_store=SqliteRunStore(connection=connection),
     )
 
 
@@ -402,7 +402,7 @@ def _sqlite_apideps(  # noqa: PLR0913 - composition root 装配参数
         approvals=parts.approvals,
         runs=_sqlite_orchestration(faces, parts, telemetry),
         workflow=parts.workflow,
-        runs_store=SqliteRunStore(connection=connection),
+        runs_store=parts.runs_store,
         artifacts=parts.artifacts,
         ledger=parts.ledger,
         budget=parts.budget,

@@ -33,6 +33,11 @@ tool_providers:
       - deliverable.read
       - experiment.read
       - experiment_plan.read
+      # GOAL-20261005-030 EC-02：`run.read` 的承接 —— 读 `RunStore`（既有 Port，
+      # 两个组合根都持有实例），与 HTTP 读面 `GET /runs/{id}` 同一个 `get_run`。
+      # 实现在 `adapters/canonical/run_read.py`（`read_provider.py` 恰守 450 行上限）。
+      # **承接 ≠ 放行**：无 `allow` ⇒ 调用点名 `POLICY_DENIED`。
+      - run.read
     effect_class: READ_ONLY
 
   ncbi_eutils:

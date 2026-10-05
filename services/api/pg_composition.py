@@ -216,6 +216,7 @@ def _build_pg_orchestration(
                     inputs.policy_bindings.get("policy_evaluator"),
                     c["budget"],
                     c["experiment_store"],
+                    c["runs_store"],
                 ),
             ),
             workflow=c["workflow"],

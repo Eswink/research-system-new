@@ -42,11 +42,12 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
 from adapters.canonical import CanonicalReadProvider
+from packages.application.ports.tool_provider import ToolProvider
 from packages.application.run_orchestration.phase_capabilities import (
     CapabilityDeps,
     RunChainCall,
@@ -148,8 +149,12 @@ def _assembled_deps(mock_relay_url: str, *, omit_provider: bool = False) -> Any:
     assert policy is not None, "policy.yaml must be loadable for the run-chain policy check"
     capabilities = CapabilityDeps(
         calls=_calls(),
-        providers={} if omit_provider else {spec.id: provider},
-        provider_specs={spec.id: spec},
+        # `providers` 声明为 `Mapping[str, ToolProvider]`，而 `CanonicalReadProvider` 是
+        # 结构实现（没有显式继承 Port）⇒ mypy 不认。这里按**契约**显式标注：本判据测的
+        # 就是这个结构实现能被运行链当 provider 用（它是 `execute`/`list_tools`/
+        # `check_health` 三件套的实现者）。
+        providers={} if omit_provider else {str(spec.id): cast("ToolProvider", provider)},
+        provider_specs={str(spec.id): spec},
         policy=policy,
         artifacts=store,
         ledger=ledger,
@@ -366,7 +371,10 @@ class TestTheJudgeItselfBites:
 
     def test_omitting_one_capability_is_detectable(self) -> None:
         """反证两向之一：少一条能力的声明 ⇒ 本判据的「逐条在场」断言能抓到它。"""
-        by_tool = {_TOOL_IDS["artifact.read"]: {}, _TOOL_IDS["evidence.read"]: {}}
+        by_tool: dict[str, dict[str, Any]] = {
+            _TOOL_IDS["artifact.read"]: {},
+            _TOOL_IDS["evidence.read"]: {},
+        }
         missing = [
             capability for capability in _CAPABILITIES if _TOOL_IDS[capability] not in by_tool
         ]

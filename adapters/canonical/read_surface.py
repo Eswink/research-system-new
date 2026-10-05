@@ -34,6 +34,7 @@ _TOOL_DESCRIPTIONS: dict[str, str] = {
     "experiment_read": "Read runs of a plan recorded in the canonical experiment store.",
     "experiment_plan_read": "Read canonical experiment plans (preregistered; filterable by state).",
     "deliverable_read": "Read the persisted research deliverable for a run (deliverable.json).",
+    "run_read": "Read a canonical research run (state / protocol / manifest digests).",
 }
 
 #: tool id → 它承载的能力名。**承接 = 声明 + 实现**：两者必须同时在，工具名与策略面同源。
@@ -46,6 +47,7 @@ _TOOL_CAPABILITIES: dict[str, str] = {
     "experiment_read": "experiment.read",
     "experiment_plan_read": "experiment_plan.read",
     "deliverable_read": "deliverable.read",
+    "run_read": "run.read",
 }
 
 #: deliverable 的 canonical 落点（与 `services/api/routers/deliverable.py` 同一约定：

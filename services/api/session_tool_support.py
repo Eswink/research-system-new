@@ -49,6 +49,9 @@ DEFAULT_SESSION_TOOL_BINDINGS: tuple[tuple[str, str, str], ...] = (
     ("experiment.read", "m12_artifact", "experiment_read"),
     ("experiment_plan.read", "m12_artifact", "experiment_plan_read"),
     ("deliverable.read", "m12_artifact", "deliverable_read"),
+    # GOAL-20261005-030 EC-02：`run.read` 的承接 —— 读 `RunStore`（既有 Port，两个组合根
+    # 都持有实例），与 HTTP 读面 `GET /runs/{id}` 同一个 `get_run`（不新造第二套查询口径）。
+    ("run.read", "m12_artifact", "run_read"),
     ("workspace.read", "openhands_workspace", "workspace_read"),
 )
 
@@ -109,12 +112,13 @@ def session_tool_register(
     )
 
 
-def session_tool_face(
+def session_tool_face(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件（齐了才叫承接）
     artifacts: Any,
     ledger: Any,
     policy: Any,
     budget_ledger: Any = None,
     experiment_store: Any = None,
+    run_store: Any = None,
 ) -> Any:
     """位置参数形式的出厂注册面（组合根侧读起来最短；语义见 `canonical_read_register`）。"""
     return canonical_read_register(
@@ -123,6 +127,7 @@ def session_tool_face(
         policy=policy,
         budget_ledger=budget_ledger,
         experiment_store=experiment_store,
+        run_store=run_store,
     )
 
 
@@ -138,6 +143,7 @@ def sqlite_session_tools(faces: Any, ports: Any) -> Any:
         policy=faces.policy_evaluator,
         budget_ledger=ports.budget,
         experiment_store=ports.experiment_store,
+        run_store=ports.runs_store,
     )
 
 
@@ -148,6 +154,7 @@ def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么
     policy: Any,
     budget_ledger: Any | None = None,
     experiment_store: Any | None = None,
+    run_store: Any | None = None,
     bindings: Sequence[tuple[str, str, str]] = DEFAULT_SESSION_TOOL_BINDINGS,
 ) -> Any:
     """**出厂形态**的注册回调：用 canonical 读面当 provider 实例（两个组合根共用）。
@@ -165,7 +172,11 @@ def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么
     from services.api.catalog import load_catalog_snapshot
 
     canonical_reader = CanonicalReadProvider(
-        artifacts, ledger, budget_ledger=budget_ledger, experiment_store=experiment_store
+        artifacts,
+        ledger,
+        budget_ledger=budget_ledger,
+        experiment_store=experiment_store,
+        run_store=run_store,
     )
     instance_for = {
         "m12_artifact": canonical_reader,

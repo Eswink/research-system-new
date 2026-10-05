@@ -56,6 +56,7 @@ _IN_SCOPE: tuple[str, ...] = (
     "deliverable.read",
     "experiment.read",
     "experiment_plan.read",
+    "run.read",
 )
 
 #: 射程**外**的能力 → (组别, 理由)。46 条能力里**除 _IN_SCOPE 与已承接的 12 条之外**的
@@ -74,7 +75,6 @@ _OUT_OF_SCOPE_REASONS: dict[str, str] = {
     "research_map.read": "B 组：需要研究地图实体（今天没有）",
     "research_state.read": "B 组：需要研究状态实体（今天没有）",
     "review.read": "B 组：需要评审实体（今天的评审走 task/handoff 面）",
-    "run.read": "B 组：run 的读面在 **HTTP 层**（`/runs/{id}`）而不在工具面；承接它要新增读实现",
     "target.read": "B 组：需要目标实体（今天没有 canonical 目标）",
     # --- C 组：写 / 执行 / 提议类（非读）---
     "protocol.propose": "C 组：提议类（写面）⇒ 需策略面与 canonical 路径决定",

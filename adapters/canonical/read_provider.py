@@ -44,13 +44,14 @@ class CanonicalReadProvider:
     能力集合由 `ToolProviderSpec` 声明，运行期语义由 `execute_tool_call` 的策略面约束。
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - provider 的 Port 依赖就这么几件（齐了才叫承接）
         self,
         artifacts: ArtifactStore,
         ledger: EvidenceLedger | None = None,
         *,
         budget_ledger: Any | None = None,
         experiment_store: Any | None = None,
+        run_store: Any | None = None,
         spill_threshold_bytes: int = 1,
     ) -> None:
         """构造读面 provider。
@@ -77,6 +78,9 @@ class CanonicalReadProvider:
         #: 实验域存储（`experiment.read` / `experiment_plan.read` 的**真实**来源）。
         #: 缺省 None ⇒ 这两个工具**点名**不可用，不返回空列表冒充「没有实验」。
         self._experiments = experiment_store
+        #: run 存储（`run.read` 的**真实**来源；`RunStore` 是既有 Port，两个组合根都持有）。
+        #: 缺省 None ⇒ 该工具**点名**不可用，不返回空壳冒充「没有这个 run」。
+        self._runs = run_store
         self._spill_threshold = spill_threshold_bytes
 
     def execute(self, provider: ToolProviderSpec, call: ToolCallRecord) -> ToolResultRecord:
@@ -90,6 +94,7 @@ class CanonicalReadProvider:
             "experiment_read": self._experiment_read,
             "experiment_plan_read": self._experiment_plan_read,
             "deliverable_read": self._deliverable_read,
+            "run_read": self._run_read,
         }.get(call.tool_id)
         if handler is None:
             raise InvalidInputError(f"unknown tool id: {call.tool_id}")
@@ -430,6 +435,12 @@ class CanonicalReadProvider:
             if meta.id.startswith(f"{run_id}:")
         ]
         return {"run_id": run_id, "artifacts": sorted(artifacts, key=lambda item: str(item["id"]))}
+
+    def _run_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读一个 canonical run（实现见 `adapters/canonical/run_read.py`，本行只委派）。"""
+        from adapters.canonical.run_read import run_read
+
+        return run_read(self._runs, args)
 
 
 __all__ = ["CanonicalReadProvider"]
