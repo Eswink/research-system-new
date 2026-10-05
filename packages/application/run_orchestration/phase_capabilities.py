@@ -72,14 +72,21 @@ ARGS_ARTIFACT_PREFIX = "tool-args:"
 class RunChainCall:
     """运行链要执行的一次工具调用（**装配方**声明；应用层不内置任何厂商工具知识）。
 
-    参数来源三类，全部**声明式**、缺一即 fail closed（不猜、不编造）：
+    参数来源四类，全部**声明式**、缺一即 fail closed（不猜、不编造）：
 
     - `arguments_from_input`：声明输入制品 JSON 里的字段（点分路径，如 `retrieval.query`）；
     - `fixed_arguments`：协议/操作者决定的量（如 `retmax`）——只放量，不放内容；
     - `ids_from_previous`：**上一步结果**里的 id 列表字段（如 `ids`；支持点分路径，
       如 `structured.ids` —— MCP provider 的溢出内容是一层信封，机器可读的一半在
       `structured` 下，链式传参因此需要路径而不仅是顶层键）→ 本步的 `ids`
-      （检索→读取的真实链条：读取的是**检索结果里真实出现的**标识）。
+      （检索→读取的真实链条：读取的是**检索结果里真实出现的**标识）；
+    - `run_id_argument`：本步要不要拿到**本次 run 的标识**（GOAL-20261005-030）。
+      canonical 读面的若干工具以 `run_id` 为查询键（`evidence_read` / `workspace_read` /
+      `experiment_read` / `deliverable_read`），而 run id **只在执行期存在**
+      （`ResearchTask.run_id`，由编排生成）——协议/装配方**无从**在声明里写死它。
+      这个字段因此不是「值」而是「**取值的来源**」：置真 ⇒ 运行时把 `task.run_id.value`
+      作为该参数注入，名字就叫 `run_id`（与 provider 侧参数名同源）。
+      缺省 `False` ⇒ 该参数不注入，既有行为**逐字节不变**。
     """
 
     provider_id: str
@@ -88,6 +95,7 @@ class RunChainCall:
     arguments_from_input: tuple[str, ...] = ()
     fixed_arguments: Mapping[str, object] = field(default_factory=dict)
     ids_from_previous: str | None = None
+    run_id_argument: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,7 +163,11 @@ def execute_run_chain_capabilities(
         material = _input_material(deps, spec)
         for call in planned:
             previous, evidence = _execute_one(
-                deps, task, spec, call, _StepInputs(material=material, previous=previous)
+                deps,
+                task,
+                spec,
+                call,
+                _StepInputs(material=material, previous=previous, run_id=task.run_id.value),
             )
             evidences.append(evidence)
     except (InvalidInputError, PermanentPortError, TransientPortError) as error:
@@ -168,10 +180,15 @@ def execute_run_chain_capabilities(
 
 @dataclass(frozen=True, slots=True)
 class _StepInputs:
-    """一步的输入材料：声明输入制品的字段 + 上一步的结果（链式传参用参数对象）。"""
+    """一步的输入材料：声明输入制品的字段 + 上一步的结果 + 本次 run 的标识。
+
+    `run_id` 是 `run_id_argument` 的取值来源（**只在执行期存在**的标识；见
+    `RunChainCall.run_id_argument`）。缺省 `None` ⇒ 该参数不注入。
+    """
 
     material: Mapping[str, object]
     previous: Mapping[str, object] | None = None
+    run_id: str | None = None
 
 
 def _execute_one(
@@ -185,8 +202,11 @@ def _execute_one(
     provider = deps.providers.get(call.provider_id)
     provider_spec = deps.provider_specs.get(call.provider_id)
     if provider is None or provider_spec is None:
+        # 点名到**能力**与**工具**，不只是 provider：缺实现的可观测后果必须能指回
+        # 「哪条声明没人承接」（GOAL-20261005-030 EC-01 的反证要求点名缺哪条）。
         raise InvalidInputError(
-            f"run-chain provider {call.provider_id!r} has no registered instance in this assembly"
+            f"run-chain provider {call.provider_id!r} has no registered instance in this "
+            f"assembly (capability {call.capability!r}, tool {call.tool_id!r})"
         )
     require_frozen_tool_set(spec.frozen_tool_set, call.provider_id)
     record = _tool_call(deps, task, call, _arguments(call, inputs))
@@ -306,6 +326,14 @@ def _arguments(
                 f"for run-chain tool {call.tool_id}"
             )
         args["ids"] = [str(item) for item in ids]
+    if call.run_id_argument:
+        # 本次 run 的标识（**执行期才存在**）：缺它 ⇒ 点名拒绝，不猜一个。
+        if not inputs.run_id:
+            raise InvalidInputError(
+                f"run-chain tool {call.tool_id} declares run_id_argument but no run id "
+                "is available in this step context"
+            )
+        args["run_id"] = inputs.run_id
     return args
 
 

@@ -248,3 +248,59 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # GOAL-20261005-030 EC-01：**承接能力真的被一次 run 用上**的成对契约。
+  #
+  # 两份契约的分工（缺一不可）：
+  #   * `capabilities_used_probe`  —— 上游：三条承接读能力（`artifact.read` /
+  #     `evidence.read` / `workspace.read`）由**运行链**执行，产出落 canonical。
+  #   * `capabilities_used_review` —— 下游：**消费**上游留下的东西 —— 它经运行链读
+  #     本 run 的证据投影，而那份投影里含有上游工具调用登记的证据（同源两步：证据
+  #     按 claim relation 投影）。「调了但没人用」因此不成立。
+  #
+  # `required_capabilities` **逐条列举**是与 `policy.yaml` 同源的要求（`policy_scope_for`
+  # 按能力给出求值 scope）：只有列在这里的能力才会进 `tool_requirements`（preflight 的
+  # 策略/健康/pin 判定面），也只列**已放行**的那些 —— GOAL-029 承接的另五条读能力
+  # 没有 `allow` 规则，列进来会让差集判据判红（属 `D-02(b)` 待拍板，见 GOAL 记录）。
+
+  capabilities_used_probe:
+    version: 1.0.0
+    purpose: >-
+      EC-01 上游 phase 的交付物契约：三条承接读能力的运行链调用产出可复核的探针交付物。
+      验收只判「产物存在」与「覆盖里至少一条非自产来源」——**不**判内容质量
+      （与既有真实契约同一条诚实边界：今天做不到的判据写进来只会让协议不可用）。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: probe_report
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  capabilities_used_review:
+    version: 1.0.0
+    purpose: >-
+      EC-01 下游 phase 的交付物契约：独立复核以上游留下的 canonical 事实为依据。
+      它声明与上游**同一组**三条读能力（同一份改写：会话工具面因此为空，生产装配
+      无需 provider→SDK 映射即可起会话），并**真的读回**上游的工具证据。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: review_decision
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

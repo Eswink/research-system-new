@@ -1,0 +1,77 @@
+id: capabilities_used_in_a_run_v1_0_0
+version: 0.1.0
+
+# GOAL-20261005-030 EC-01：**承接能力真的被一次 run 用上**。
+#
+# 为什么另立一份协议（而不是改 `real_retrieval_research_v1` 或 `multi_role_research_v1`）：
+# 那两份的 `capability_execution` 与能力集被既有判据**逐字**钉死
+# （`test_run_chain_capability_exposure.py` 的 `_RUN_CHAIN` / `_UNDECLARED` 两张表），
+# 改它们会同时改动那些判据的取样对象。另立一份把影响面**限制在本协议**内。
+#
+# **它证什么**：一次 run 真的把三条承接读能力用起来，且**上游产出被下游 phase 消费**。
+#
+#   * `probe`（run-chain）：`artifact.read` 读**声明输入**（操作者简报制品，内容非空）
+#     + `workspace.read` 读本 run 的工作区视图。两条都**由运行链确定性执行**
+#     （`capability_execution: run_chain`）⇒ 不押在「模型恰好调了工具」上。
+#   * `review`（run-chain）：`evidence.read` 读**本 run 的证据投影**。这一 phase 的
+#     运行链步在 **probe 会话完成并登记之后**才跑 ⇒ 它读到的投影里必然含有 probe 那两条
+#     工具证据（同源两步：证据按 claim relation 投影，`evidence_of_run` 与读面同一口径）
+#     ⇒ **「调了但没人用」不成立**：上游调用登记的证据 id 逐字出现在下游工具的返回内容里。
+#
+# **三条能力各被调用一次，互不顶替**（承 MEM-159：判据不互相顶替）：三条各有自己的
+# 调用证据（工具证据的 `tool_refs` = (provider_id, tool_id)），三条都读 canonical state。
+#
+# **为什么恰好是这三条**（如实登记，不是悄悄缩小范围）：GOAL-029 把承接面扩到 8 条读
+# 能力，其中**只有三条**在 `examples/config/policy.yaml` 里有 `allow` 规则
+# （`artifact.read` / `evidence.read` / `workspace.read`，scope `project`）。另五条
+# （`claim.read` / `budget.read` / `deliverable.read` / `experiment.read` /
+# `experiment_plan.read`）**没有放行**：把它们写进 `required_capabilities` 会同时打红
+# `test_no_protocol_reachable_capability_lacks_a_rule` 与
+# `test_each_row_state_matches_the_mechanical_rule`（实测，见 GOAL 的「事实层结论」第 2 条），
+# 而消红必须改既有判据 —— 属 `D-02(b)`（读类能力是否成类预放行）**待用户拍板**。
+# 本协议因此只用已放行的三条；受限面逐条登记在 GOAL 记录里，**不以「已承接」冒充「已跑通」**。
+#
+# **受控范围（写明，不夸大也不缩小）**：2 个 phase、2 个 role、3 条承接读能力的运行链调用。
+# 三条读的都是**本次 run 自己的 canonical 状态**，不是外部检索 —— 本协议**不**声称做过
+# 文献检索，也**不**声称这些读结果影响了交付物的科学结论（交付物契约只判产物存在与
+# 来源覆盖，不判内容质量 —— 与既有真实契约同一条诚实边界）。
+
+phases:
+  - id: probe
+    name: Canonical Read Probe
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      # 三条承接读能力：都在 GOAL-029 的射程内、都有真实现、都在 policy.yaml 的 allow 内。
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    # 由运行链执行、不暴露为会话工具：provider→SDK 工具映射在生产装配里是空操作，
+    # 缺映射时会话创建**点名失败**（`test_unmapped_tool_set_is_named_not_silently_dropped`
+    # 固定该行为）。声明化排除把这三条从会话工具列表里拿掉 —— 能力仍在 `tool_requirements`
+    # （preflight 照判）、provider 仍在冻结集（越权执行仍被拒）。
+    capability_execution: run_chain
+    task_contract: capabilities_used_probe
+    inputs: [input-brief:real_research_v1]
+    outputs: [probe_report]
+    timeout_seconds: 120
+
+  - id: review
+    name: Independent Review Of The Probe
+    strategy: single_agent
+    depends_on: [probe]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    # 同一组能力、同一条执行方式：本 phase 的运行链步在 probe **登记之后**跑 ⇒
+    # `evidence.read` 的返回内容里含有 probe 的工具证据 id（下游消费的可复核形态）。
+    capability_execution: run_chain
+    task_contract: capabilities_used_review
+    inputs: [input-brief:real_research_v1]
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 120

@@ -93,7 +93,11 @@ exit_criteria:
       配套留档：三条能力的**调用证据**（工具调用记录 + 证据 `tool_refs` 逐字）、**下游消费证据**
       （下游 claim relation 的 `evidence_id` 与上游产出的对应关系）、反证判红原文（点名串逐字）、
       实跑终态与读面读数、按压前后 raw `sha256` 逐字节复原。
-    status: PENDING
+      **收口记录（cycle 1）**：`PLAN-20261005-283` + `RECHECK-20261005-284`
+      （PASS_WITH_WARNINGS，五条 W-NN）；判据 `tests/e2e/test_capabilities_really_used_in_a_run.py`
+      **8 passed**；顺带修掉一处**真缺陷**（同 run 两 phase 调同一工具 ⇒ evidence id 相撞）。
+      受限面（五条未放行读能力）逐条登记在「残余与受限面」节。
+    status: PASS
   - id: EC-02
     criterion: >-
       **B 组承接（以核实为准，不得为凑数硬接）**。
@@ -480,14 +484,54 @@ rg -o -N "\b(artifact|claim|evidence|budget|experiment|deliverable|workspace|cit
   **不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once +
   idempotency + deduplication）。
 
+## 残余与受限面
+
+### 受限面：五条已承接但**未放行**的读能力（逐条登记，不以「已承接」冒充「已跑通」）
+
+`claim.read` / `budget.read` / `deliverable.read` / `experiment.read` /
+`experiment_plan.read` —— 五条都有**真实现**（GOAL-029 承接）、都在**出厂绑定表**内，
+但在 `examples/config/policy.yaml` 里**没有 `allow` 规则**：
+
+| 能力 | 承接面 | 放行 | 为什么不能进协议 |
+| --- | --- | --- | --- |
+| `claim.read` | ✅ `CanonicalReadProvider._claim_read` | ❌ | 写进 `required_capabilities` ⇒ 协议可达 ∧ 无放行规则 ⇒ 差集判据判红（实测） |
+| `budget.read` | ✅ `_budget_read` | ❌ | 同上 |
+| `deliverable.read` | ✅ `_deliverable_read` | ❌ | 同上 |
+| `experiment.read` | ✅ `_experiment_read` | ❌ | 同上 |
+| `experiment_plan.read` | ✅ `_experiment_plan_read` | ❌ | 同上 |
+
+**解除条件**（不是本 GOAL 能自行决定的）：`D-02(b)`「读类能力是否成类预放行」需
+**用户拍板**。三条消红路径**全部命中明文不做**：① 加 `allow` ⇒ 打红
+`test_read_grant_is_per_item.py` 的 `EXPECTED_REGISTERED = 15` 与「一条都没被放行」两条断言；
+② 减 `EXPECTED_REGISTERED` ⇒ **改既有判据**；③ 绕过差集 ⇒ 不可能（判据直接对机制断言）。
+
+### 本轮新增残余
+
+- **`W-1`｜判据侧 phase 归属靠交付物名推断**（`_phase_of_task`）：两 phase 交付物同名即失效
+  （当前不同，判据自己也断言了）。见 `RECHECK-20261005-284`。
+- **`W-2`｜运行链按 provider id 过滤（不是能力级）**：`RunChainCall.capability` 不参与筛选
+  ⇒ 「三条能力各一次」由**装配方的 call 列表**保证，不由执行层保证（已单列自检用例固定）。
+- **`W-3`｜`run_id_argument` 是新取参来源，仅本协议一个消费者**：有界（缺 run id 点名拒绝），
+  但一般性未被第二个消费者证明。
+- **`W-4`｜同一 task 内两次调同名工具会撞制品 id**（`operation_key` 相同）：当前每 phase
+  各调一次，未触该边界。
+- **`W-5`｜不改既有判据是「未改」而非「不可改」**：受限面的解法仍待拍板。
+
+### 承继残余（原样保留）
+
+`R-M1` 未收口；`R26-*` / `W27-*` / `W10-12` / `G24-4` / `G24-5`；历史 `tools/` 目录仍有
+无机器门的旧脚本。
+
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档轮，无子 PLAN —— 交付物是 GOAL 文件本身） | 见下方回写提交 | 治理 `validate.py` 绿；勘察留档 `scratch/goal030-recon.md`（树外）；探针协议跑完即删（`git status` 零残留） | 见下方「CI 台账」 | 无（勘察轮不动产品代码） | 五 EC 全 `PENDING` | cycle 1 = **EC-01**（承接能力进入真实 run） |
+| 1 | `PLAN-20261005-283`（EC-01） | 见下方回写提交 | 新增判据 **8 passed**；`tests/application/preflight + architecture/python + loaders + tooling + application/evidence + application/run_orchestration` **1746 passed**；`tests/e2e + tests/api` **770 passed / 17 skipped**；`ruff` / `format` / `mypy` 绿 | 见下方「CI 台账」 | **两处按压（各自独立、两向、逐字节复原）**：① 撤回缺陷修复（evidence id 去 `task_id`）⇒ **2 failed**，判词逐字复现 `conflicting evidence registration`；② 协议改回会话语义 ⇒ **4 failed**（含判据自检那条） | **EC-01 收口**；**受限面**：五条未放行读能力仍不可协议可达（`D-02(b)` 待拍板）。`RECHECK-20261005-284` = PASS_WITH_WARNINGS（五条 W-NN） | cycle 2 = **EC-02**（B 组承接：`citation.validate` 判定语义 + `run.read` 接线） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-05 | ACTIVE | **建档（cycle 0）**：读 `README.md` 的 GOAL 格式契约 + 只读勘察。**只读勘察推翻了起点的一处表述、并把一处「不可达」变成可复核的机械事实**，逐条实测：**① 承接面 17/46 正确**（provider 声明口径去重 = 17；`capabilities.yaml` 的 46 是词表、不是声明面）—— 起点所述「实测 15 条」**不成立**；**② ⚠️ EC-01(a) 的原始表述不可达**：把 `claim.read` 写进某 phase 的 `required_capabilities`（临时协议文件，未动树）⇒ `test_no_protocol_reachable_capability_lacks_a_rule` 与 `test_each_row_state_matches_the_mechanical_rule` **同时判红**（判词逐字留档）；消红的两条路（加 `allow` / 减 `EXPECTED_REGISTERED`）**都命中明文不做**（改既有判据）⇒ 该子集属 `D-02(b)` 待拍板 ⇒ EC-01 重构为**可达子集**（`artifact.read` / `evidence.read` / `workspace.read`，三条都在射程内且已放行）+ **受限面逐条登记**；**③ B 组核实**：`run.read` 的 `RunStore` **确在 Port 面**且两组合根都持有（承接可行；但「与 `experiment_store` 同形」不成立）、`citation.validate` 取数面可复用（判定语义新增）、`agent_run.read` 域无实体（不列入）；**④ 使用面逐条分类**：GOAL-029 承接的 5 条读能力**使用面 = 0**，3 条已放行读能力**只在会话面「可能被模型调用」**、从无「产出被下游消费」的证据 —— 这正是本 GOAL 要收的落差；**⑤ run-chain 按 provider id 过滤**（不是能力级）⇒ EC-01 的协议仍须逐条声明能力；**⑥ 记录面门**：`.cursor/plans` 在措辞判据扫描面内、GOAL 面是 exactly-once 的规则文本面（本文件已含六个禁令词）。五 EC 全 `PENDING`。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / RBAC 未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口 / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |
+| 2026-10-05 | ACTIVE | **cycle 1（EC-01 收口）**：让一次 run **真的用上**三条已放行的承接读能力，并把「用到了」变成可复核证据。**新增协议** `capabilities_used_in_a_run_v1.yaml`（2 phase，均 `capability_execution: run_chain`，逐条声明 `artifact.read` / `evidence.read` / `workspace.read`）+ 两份契约（`capabilities_used_probe` / `capabilities_used_review`）。**产品改动两处**：① `RunChainCall` 新增取参来源 `run_id_argument`（**执行期才存在**的 run 标识：协议/装配方无从写死，既有三类取值都不覆盖）+ `_StepInputs.run_id` + 缺它点名拒绝；② **真缺陷修复** —— `register_tool_evidence` 的 evidence id 省略了 `result.task_id`（而 `source_origin_for` 与 `_spilled_artifact_id` 都带它）⇒ **同一 run 的两个 phase 调同一工具时相撞**（实测 `conflicting evidence registration`）；修法 = id 与另两者**同粒度**。**判据** `tests/e2e/test_capabilities_really_used_in_a_run.py`（**8 passed**）五件事：调用证据（三条**逐条**在场，且**逐 phase** 各查一遍）/ 产出可复核（`tool-result:` + digest）/ **下游消费**（`review` 的 `evidence_read` **返回内容**里含 `probe` 三条工具证据 id —— 「调了但没人用」不成立）/ 反证点名（不给实例 ⇒ `FAILED` + 点名 provider/能力/工具）/ 判据自检。**判据初版的一处自查缺陷（实测抓到并修）**：`_tool_evidence` 单键索引在**两 phase 同名工具**时**后写覆盖前写** ⇒ 上游/下游被这个覆盖**掩蔽**（正是 `MEM-160` 的形态）⇒ 改为**按 phase 分索引**。**两处按压**（各自独立、两向、逐字节复原）：① 撤回缺陷修复 ⇒ **2 failed**，判词逐字复现缺陷签名；② 协议改回会话语义 ⇒ **4 failed**。**受限面逐条登记**（见「残余与受限面」：五条已承接未放行读能力 + 解除条件 `D-02(b)` 拍板）。`RECHECK-20261005-284` = **PASS_WITH_WARNINGS**（五条 W-NN）。本地门：`ruff` / `format` / `mypy` 绿；`tests/application/preflight + architecture/python + loaders + tooling + application/evidence + application/run_orchestration` **1746 passed**；`tests/e2e + tests/api` **770 passed / 17 skipped**。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / RBAC 未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口 / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |

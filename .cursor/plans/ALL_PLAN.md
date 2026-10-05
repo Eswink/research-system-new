@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261005-283](tasks/PLAN-20261005-283-goal-030-ec01-capabilities-actually-used-in-a-run.md) | DONE |
 | [x] | [PLAN-20261005-281](tasks/PLAN-20261005-281-goal-029-ec04-05-two-tree-archives-and-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261005-279](tasks/PLAN-20261005-279-goal-029-ec03-write-capability-canonical-path.md) | DONE |
 | [x] | [PLAN-20261005-277](tasks/PLAN-20261005-277-goal-029-ec01-session-tool-called-end-to-end.md) | DONE |

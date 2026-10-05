@@ -87,8 +87,10 @@ def register_tool_evidence(
         parser_version="m12-tool-evidence-v1",
     )
     ledger.register_source(source)
+    # id 与 `source_origin_for` / `_spilled_artifact_id` 同粒度：都带 `result.task_id`。
+    # 省略它在**一次 run 的两个 phase 调同一个工具**时相撞（GOAL-030 EC-01 实测）。
     evidence = Evidence(
-        id=input.evidence_id or f"evidence:{input.run_id}:{result.operation_key}",
+        id=input.evidence_id or f"evidence:{input.run_id}:{result.task_id}:{result.operation_key}",
         source_ref=origin,
         content_digest=str(result.output_digest),
         extracted_by=input.extracted_by,
