@@ -295,7 +295,10 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261005-287-goal-030-ec03-scientific-action-depth.md
   - .cursor/plans/tasks/PLAN-20261005-289-goal-030-ec04-criterion-scope-self-check.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261005-291-goal-030-closeout.md
-memory_entries: []
+memory_entries:
+  - goal-030-achieved
+  - capability-coverage-18-of-46
+  - three-judge-disciplines
 ---
 
 # GOAL-20261005-030 — 承接能力的真实使用与科研闭环加深
