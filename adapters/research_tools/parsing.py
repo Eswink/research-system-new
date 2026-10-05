@@ -129,4 +129,64 @@ def normalize_elink(payload: dict[str, object], pmid: str) -> dict[str, object]:
     return {"pmid": str(pmid), "pmc_links": links}
 
 
+#: `citation.validate` 的三态判词（GOAL-20261006-031 EC-02）。**逐条写明语义**：
+#:
+#: * `SUPPORTED` —— 来源解析出 linkset 且 **≥1 条** PMC 链接 ⇒ 引用被来源支持；
+#: * `UNSUPPORTED` —— 来源解析出 linkset 但**零链接** ⇒ 引用**不被来源支持**；
+#: * `UNDETERMINED` —— 来源**没有** linkset（含 `linksets` 缺失 / 空列表 / 结构不可用）
+#:   ⇒ **无法判定**；**不得**当成 `SUPPORTED`，也**不得**读成 `UNSUPPORTED`
+#:   （「说了零条」与「没说话」是两件事）。
+#:
+#: 为什么三态而不是布尔：`pmc_links == []` 这一个读数把后两种来源合并了 —— 二值化的
+#: 判定会把「来源没有这条引用的信息」谎报成「引用不被支持」。
+CITATION_SUPPORTED = "SUPPORTED"
+CITATION_UNSUPPORTED = "UNSUPPORTED"
+CITATION_UNDETERMINED = "UNDETERMINED"
+CITATION_VERDICTS = (CITATION_SUPPORTED, CITATION_UNSUPPORTED, CITATION_UNDETERMINED)
+
+
+def validate_citation_support(payload: dict[str, object], pmid: str) -> dict[str, object]:
+    """elink payload → 三态判定 `{pmid, pmc_links, verdict, reason}`。
+
+    **取数只有一套**：本函数调 `normalize_elink`（与 `citation.inspect` **同一个**
+    归一化实现）—— 三态是**在其之上**的判定层，不另解析一遍 linksets，也不新造第二个
+    取数面（授权 2 明文要求）。结构非法（`linksets` 不是列表）由 `normalize_elink`
+    照旧抛 `InvalidInputError`。
+    """
+    normalized = normalize_elink(payload, pmid)
+    raw_links = normalized["pmc_links"]
+    assert isinstance(raw_links, list)
+    links = [str(item) for item in raw_links]
+    linksets = payload.get("linksets", [])
+    has_linkset = isinstance(linksets, list) and len(linksets) > 0
+    if not has_linkset:
+        verdict = CITATION_UNDETERMINED
+        reason = "no linkset from the source: cannot decide whether the citation is supported"
+    elif links:
+        verdict = CITATION_SUPPORTED
+        reason = f"{len(links)} PMC link(s) support the citation"
+    else:
+        verdict = CITATION_UNSUPPORTED
+        reason = "linkset present but zero PMC links: the citation is not supported by the source"
+    return {
+        "pmid": str(pmid),
+        "pmc_links": links,
+        "verdict": verdict,
+        "reason": reason,
+    }
+
+
+__all__ = [
+    "CITATION_SUPPORTED",
+    "CITATION_UNDETERMINED",
+    "CITATION_UNSUPPORTED",
+    "CITATION_VERDICTS",
+    "extract_article",
+    "normalize_elink",
+    "normalize_esearch",
+    "parse_efetch_xml",
+    "validate_citation_support",
+]
+
+
 __all__ = ["extract_article", "normalize_elink", "normalize_esearch", "parse_efetch_xml"]

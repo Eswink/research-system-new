@@ -1,8 +1,9 @@
 """GOAL-20261006-031 EC-01 判据：**放行面扩容的三条机械事实 + 两向反证**（授权 1）。
 
-**它把什么变成机械事实**：`examples/config/policy.yaml` 的 `allow` 本轮**新增了 6 条只读
-能力**（`run.read` / `claim.read` / `deliverable.read` / `budget.read` / `experiment.read` /
-`experiment_plan.read`，「已承接但未放行」的承接面收口）。放行是一次**有界放宽**——
+**它把什么变成机械事实**：`examples/config/policy.yaml` 的 `allow` **新增了 7 条只读
+能力** —— EC-01 的 6 条（`run.read` / `claim.read` / `deliverable.read` / `budget.read` /
+`experiment.read` / `experiment_plan.read`，「已承接但未放行」的承接面收口）+ EC-02 的
+`citation.validate`（判定层，本 GOAL 第二次逐条放行）。放行是一次**有界放宽**——
 本文件把这条边界的**三个面**逐条钉住，且**不得**被写成任何形式的交集 / 过滤
 （承 `MEM-20260922-160`；受判面就是**声明集本身**：本文件里逐字写死的 6 条能力名）。
 
@@ -22,8 +23,8 @@
    （即 `used default policy effect`）—— 这条把「文件里写了 DENY」与「DENY 真的生效」
    分成两句断言（前者不蕴含后者）。
 4. **未放行的护栏仍在**（`TestTheUnreleasedSideStaysDenied`）：`citation.inspect` /
-   `citation.validate` / `dataset.read` / `provenance.read` / `research_map.read` /
-   `research_state.read` / `review.read` / `target.read` / `agent_run.read` 九条读能力
+   `dataset.read` / `provenance.read` / `research_map.read` /
+   `research_state.read` / `review.read` / `target.read` / `agent_run.read` 八条读能力
    **仍未被放行**，三件套（`package.install` / `workspace.delete` / `external.publish`）
    仍 `REQUIRE_APPROVAL`，`network.public` 仍 `DENY`。
 
@@ -57,7 +58,9 @@ POLICY_FILE = ROOT / "examples" / "config" / "policy.yaml"
 VOCABULARY_FILE = ROOT / "examples" / "config" / "capabilities.yaml"
 PROVIDERS_FILE = ROOT / "examples" / "config" / "tool_providers.yaml"
 
-#: 本轮**新增的放行项**（逐字写死；受判面 = 这份声明集本身，不做任何交集 / 过滤）。
+#: **本 GOAL 新增的放行项**（逐字写死；受判面 = 这份声明集本身，不做任何交集 / 过滤）。
+#: EC-01 = 前 6 条（只读读能力）；EC-02 = `citation.validate`（判定层，末段 `validate`
+#: 属只读后缀 —— 谓词对它的判定与另六条**同一套**，不另开口子）。
 _RELEASED: tuple[str, ...] = (
     "run.read",
     "claim.read",
@@ -65,6 +68,7 @@ _RELEASED: tuple[str, ...] = (
     "budget.read",
     "experiment.read",
     "experiment_plan.read",
+    "citation.validate",
 )
 
 #: 只读后缀（与差集口径同一组）。
@@ -94,7 +98,6 @@ _BASELINE_DENY: tuple[tuple[str, str], ...] = (
 _UNRELEASED_READS: tuple[str, ...] = (
     "agent_run.read",
     "citation.inspect",
-    "citation.validate",
     "dataset.read",
     "provenance.read",
     "research_map.read",
@@ -242,8 +245,23 @@ class TestTheExpansionIsReadOnly:
             violations,
         )
 
-    def test_each_release_rule_carries_the_aligned_project_scope(self) -> None:
-        """scope 对齐既有读能力（`project`）——逐条断言，不是「看起来像」。"""
+    def test_each_release_rule_carries_the_aligned_scope(self) -> None:
+        """scope 对齐**同级既有放行形态**——逐条断言，不是「看起来像」。
+
+        两条不同的对齐基准（都不是本判据的偏好，而是该能力在既有放行面上的**邻居**）：
+        EC-01 的 6 条读能力与 `artifact.read` / `evidence.read` 同级 ⇒ `project`；
+        EC-02 的 `citation.validate` 是**取数面**能力 ⇒ 与同 provider 形态的
+        `literature.search` / `literature.read` 同级 = `approved_tool_providers`。
+        """
+        expected = {
+            "run.read": "project",
+            "claim.read": "project",
+            "deliverable.read": "project",
+            "budget.read": "project",
+            "experiment.read": "project",
+            "experiment_plan.read": "project",
+            "citation.validate": "approved_tool_providers",
+        }
         scopes: dict[str, set[str]] = {}
         for rule in policy_body().get("allow") or []:
             if rule.get("capability"):
@@ -251,9 +269,9 @@ class TestTheExpansionIsReadOnly:
         wrong = {
             name: sorted(scopes.get(name, set()))
             for name in _RELEASED
-            if scopes.get(name) != {"project"}
+            if scopes.get(name) != {expected[name]}
         }
-        assert wrong == {}, ("放行项的 scope 必须逐条等于 project", wrong)
+        assert wrong == {}, ("放行项的 scope 必须逐条等于其对齐基准", wrong, expected)
 
 
 class TestTheDenyFaceIsByteIdentical:

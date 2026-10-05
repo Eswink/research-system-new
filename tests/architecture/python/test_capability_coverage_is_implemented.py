@@ -67,9 +67,7 @@ _OUT_OF_SCOPE_REASONS: dict[str, str] = {
         "A 组零依赖读：域里**没有 AgentRun 实体**（最近的是 task+agent_id）⇒ 无可读对象"
     ),
     # --- B 组：有依赖或需要判定层 ---
-    "citation.validate": (
-        "B 组：ncbi_eutils 已有 citation.inspect，validate 是其判定层（需新增判定语义）"
-    ),
+    "citation.validate": ("已承接（ncbi_citation，REST adapter）—— GOAL-20261006-031 EC-02 射程"),
     "dataset.read": "B 组：需要数据集存储面（今天没有 canonical 数据集实体）",
     "provenance.read": "B 组：需要 provenance 投影面（今天的证据链投影走 evidence.read）",
     "research_map.read": "B 组：需要研究地图实体（今天没有）",
@@ -143,6 +141,10 @@ _DECLARED_WITHOUT_IMPLEMENTATION: dict[str, str] = {
     "literature.search": "由 ncbi_eutils / europe_pmc 的 REST adapter 承担（GOAL-027 射程）",
     "literature.read": "由 ncbi_eutils / europe_pmc 的 REST adapter 承担（GOAL-027 射程）",
     "citation.inspect": "由 ncbi_eutils 的 REST adapter 承担（GOAL-027 射程）",
+    "citation.validate": (
+        "由 ncbi_citation 的 REST adapter 承担（GOAL-20261006-031 EC-02 承接；"
+        "取数复用 ncbi_eutils 的 elink 面，三态判定在其之上）"
+    ),
 }
 
 #: 本轮**新承接**的五条（下界由它给出；`_IN_SCOPE` 是它的超集说明）。

@@ -46,6 +46,9 @@ _CAPABILITY_SCOPE: dict[str, str] = {
     "artifact.write": "run",
     "literature.search": "approved_tool_providers",
     "literature.read": "approved_tool_providers",
+    # GOAL-20261006-031 EC-02（授权 2）：`citation.validate` 放行的镜像条目（与
+    # `policy.yaml` 的同一组规则同源；并集相等由既有 `test_m2_audit` 判据锁死）。
+    "citation.validate": "approved_tool_providers",
     "network.academic": "approved_domains",
 }
 

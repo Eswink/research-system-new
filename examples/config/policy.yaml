@@ -41,6 +41,12 @@ policy:
       scope: approved_tool_providers
     - capability: literature.read
       scope: approved_tool_providers
+    # GOAL-20261006-031 EC-02（授权 2）：`citation.validate` 的放行。scope 与**同一取数
+    # provider 的既有放行形态**对齐（`approved_tool_providers` —— `literature.search` /
+    # `literature.read` 就是这一组）；`citation.validate` 是 `citation.inspect` 的**判定层**，
+    # 取数仍走同一个 elink 面。本改动只新增这一条 allow。
+    - capability: citation.validate
+      scope: approved_tool_providers
     - capability: network.academic
       scope: approved_domains
     # Memory 写入按 tier 显式放行（PLAN-20260914-049，G16）：默认保持既有行为

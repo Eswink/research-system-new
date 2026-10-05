@@ -52,6 +52,9 @@ DEFAULT_SESSION_TOOL_BINDINGS: tuple[tuple[str, str, str], ...] = (
     # GOAL-20261005-030 EC-02：`run.read` 的承接 —— 读 `RunStore`（既有 Port，两个组合根
     # 都持有实例），与 HTTP 读面 `GET /runs/{id}` 同一个 `get_run`（不新造第二套查询口径）。
     ("run.read", "m12_artifact", "run_read"),
+    # GOAL-20261006-031 EC-02：`citation.validate` 的承接 —— provider 侧工具 id 是
+    # `citation_validate`（与既有 `citation.inspect` 的 `citation_inspect` **不同名**）。
+    ("citation.validate", "ncbi_citation", "citation_validate"),
     ("workspace.read", "openhands_workspace", "workspace_read"),
 )
 

@@ -1,0 +1,23 @@
+== (c) citation.validate 放行 + 镜像 scope ==
+  decision = ALLOW | reason = matched allow rule
+  policy_scope_for('citation.validate') = 'approved_tool_providers'
+
+== (b) 单一取数点（结构取证） ==
+  'elink.fcgi' 在 adapters/research_tools/ncbi.py 出现 1 次（取数点唯一：1）
+
+== (d) pin 夹具最小追加：numstat（删除行读数，逐文件） ==
+  + 13 -  9  docs/architecture/POLICY_SURFACE_AUDIT.md
+  +  6 -  0  examples/config/policy.yaml
+  +  3 -  0  packages/application/preflight/policy_check.py
+  +  8 -  1  tests/api/run_fixtures.py
+  +  4 -  4  tests/application/preflight/test_read_grant_is_per_item.py
+  + 29 - 11  tests/application/preflight/test_release_expansion_is_read_only.py
+  +  5 -  1  tests/architecture/python/test_capability_coverage_is_implemented.py
+  +  2 -  0  tests/contracts/test_europe_pmc_pin_and_registration.py
+
+== (d) 断言逐字节对照（受影响的 pin 判据文件：只有列表变长） ==
+  tests/contracts/test_europe_pmc_pin_and_registration.py: 删除行 0 条 []
+  tests/contracts/test_mcp_registration_and_refutations.py: 删除行 0 条 []
+
+== 三态规则（常量 + 语义） ==
+  CITATION_VERDICTS = ('SUPPORTED', 'UNSUPPORTED', 'UNDETERMINED')

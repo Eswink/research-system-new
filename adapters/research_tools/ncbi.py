@@ -24,7 +24,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Any, Mapping
 
 import httpx
 
@@ -32,6 +32,7 @@ from adapters.research_tools.parsing import (
     normalize_elink,
     normalize_esearch,
     parse_efetch_xml,
+    validate_citation_support,
 )
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.credential_resolver import CredentialResolver
@@ -91,11 +92,7 @@ class NcbiEutilsProvider:
     def execute(self, provider: ToolProviderSpec, call: ToolCallRecord) -> ToolResultRecord:
         try:
             args = self._read_args(call)
-            handler = {
-                "literature_search": self._esearch,
-                "literature_read": self._efetch,
-                "citation_inspect": self._elink,
-            }.get(call.tool_id)
+            handler = self._handlers().get(call.tool_id)
             if handler is None:
                 raise InvalidInputError(f"unknown tool id: {call.tool_id}")
             payload = handler(args)
@@ -119,6 +116,7 @@ class NcbiEutilsProvider:
             ) from exc
 
     def list_tools(self, provider: ToolProviderSpec) -> tuple[ToolSpec, ...]:
+        descriptions = self._tool_descriptions()
         return tuple(
             ToolSpec(
                 id=tool_id,
@@ -128,10 +126,11 @@ class NcbiEutilsProvider:
                 capabilities=list(provider.capabilities),
                 description=description,
             )
-            for tool_id, description in _TOOL_DESCRIPTIONS.items()
+            for tool_id, description in descriptions.items()
         )
 
     def check_health(self, provider: ToolProviderSpec) -> ToolHealthReport:
+        descriptions = self._tool_descriptions()
         try:
             payload = self._get("einfo.fcgi", {"retmode": "json"})
             dbinfo = payload.get("dbinfo", [])
@@ -144,12 +143,12 @@ class NcbiEutilsProvider:
                 status=EndpointHealth.OPEN_CIRCUIT,
                 detail="ncbi einfo probe failed",
             )
-        schema_digest = digest_of({"tools": sorted(_TOOL_DESCRIPTIONS), "dbs": db_count})
+        schema_digest = digest_of({"tools": sorted(descriptions), "dbs": db_count})
         return ToolHealthReport(
             provider_id=provider.id,
             status=EndpointHealth.HEALTHY,
             observed_schema_digest=schema_digest,
-            detail=f"{len(_TOOL_DESCRIPTIONS)} tools, {db_count} dbs",
+            detail=f"{len(descriptions)} tools, {db_count} dbs",
         )
 
     def close(self) -> None:
@@ -234,11 +233,31 @@ class NcbiEutilsProvider:
         pmid = args.get("id")
         if pmid is None:
             raise InvalidInputError("citation_inspect requires an id")
-        payload = self._get(
+        return normalize_elink(self._fetch_elink_payload(pmid), str(pmid))
+
+    def _fetch_elink_payload(self, pmid: object) -> dict[str, object]:
+        """取 elink 的**原始** JSON（全仓唯一一处 elink 取数）。
+
+        `citation.inspect` 与 `citation.validate` 都从这里取数 ⇒ 两个能力的**取数面是同一
+        个 HTTP 调用与同一条端点参数**（GOAL-20261006-031 EC-02(b) 的「不得新造第二套取数」
+        在实现上落成这一点：新增一条 elink 请求只有改本方法一途）。
+        """
+        return self._get(
             "elink.fcgi",
             {"dbfrom": "pubmed", "db": "pmc", "id": str(pmid), "retmode": "json"},
         )
-        return normalize_elink(payload, str(pmid))
+
+    def _handlers(self) -> dict[str, Any]:
+        """tool id → 处理函数（子类**扩展**这张表，不改 `execute` 的分派逻辑）。"""
+        return {
+            "literature_search": self._esearch,
+            "literature_read": self._efetch,
+            "citation_inspect": self._elink,
+        }
+
+    def _tool_descriptions(self) -> dict[str, str]:
+        """tool id → 描述（子类覆盖它即换工具面，`list_tools` 本体不动）。"""
+        return _TOOL_DESCRIPTIONS
 
     def _to_record(self, call: ToolCallRecord, payload: dict[str, object]) -> ToolResultRecord:
         raw = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -256,3 +275,39 @@ _TOOL_DESCRIPTIONS = {
     "literature_read": "Fetch PubMed records via E-utilities efetch.",
     "citation_inspect": "List PMC links for a PubMed id via E-utilities elink.",
 }
+
+#: `citation.validate` 的工具面（与 `citation.inspect` **不同**的一条工具 id）。
+_CITATION_VALIDATE_DESCRIPTION = (
+    "Decide whether a PubMed citation is supported by its PMC link data "
+    "(three-state: SUPPORTED / UNSUPPORTED / UNDETERMINED)."
+)
+
+
+class NcbiCitationValidationProvider(NcbiEutilsProvider):
+    """`citation.validate` 的真实承接：**复用** `NcbiEutilsProvider` 的取数。
+
+    为什么是子类而不是第二个 provider 实现（GOAL-20261006-031 EC-02(b)）：
+    - **取数只有一套**：`_fetch_elink_payload` 是唯一 elink 取数点，`citation.inspect`
+      （父类 `_elink`）与本类 `citation_validate` 都调它 —— 「不新造第二套取数」在
+      **实现上**成立，而不是靠散文声明；
+    - **错误映射 / 凭据解析 / 限速 / 健康探测逐字继承**（父类的四个面都未覆盖）。
+
+    判定层用 `parsing.validate_citation_support`（三态）—— 判定语义是**显式常量**
+    （`CITATION_SUPPORTED` / `CITATION_UNSUPPORTED` / `CITATION_UNDETERMINED`），
+    不是布尔收窄，也不是「非空即真」。
+    """
+
+    def _handlers(self) -> dict[str, Any]:
+        return {
+            "citation_validate": self._citation_validate,
+        }
+
+    def _tool_descriptions(self) -> dict[str, str]:
+        return {"citation_validate": _CITATION_VALIDATE_DESCRIPTION}
+
+    def _citation_validate(self, args: dict[str, object]) -> dict[str, object]:
+        pmid = args.get("id")
+        if pmid is None:
+            raise InvalidInputError("citation_validate requires an id")
+        payload = self._fetch_elink_payload(pmid)
+        return validate_citation_support(payload, str(pmid))

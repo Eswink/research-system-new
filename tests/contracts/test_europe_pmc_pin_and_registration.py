@@ -175,6 +175,8 @@ class TestRegistration:
             "m12_artifact",
             "ncbi_eutils",
             "europe_pmc",
+            # GOAL-20261006-031 EC-02：新增承接 provider（纯追加；既有四条逐字未改）
+            "ncbi_citation",
         }
         ncbi = catalog["ncbi_eutils"]
         assert ncbi.capabilities == ["literature.search", "literature.read", "citation.inspect"]

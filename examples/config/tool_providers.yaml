@@ -61,6 +61,25 @@ tool_providers:
       - eutils.ncbi.nlm.nih.gov
     health_check: true
 
+  # GOAL-20261006-031 EC-02（授权 2）：`citation.validate` 的承接面。
+  # **为什么另立一条 provider 而不是扩 `ncbi_eutils`**（路线 F，建档实测的判红面）：
+  # 扩既有 provider 会改它的工具名集合与能力列表，而那是 `test_ncbi_provider_contract` /
+  # `test_contract_loaders` 逐字钉死的既有事实（改它 = 改既有判据断言 ⇒ 命中全局禁令）。
+  # 另立一条把影响面限制在本新增条目内：既有 `ncbi_eutils` 的工具面与能力列表**逐字不变**。
+  # **同一个上游域与同一份取数实现**：端点、限速、凭据解析、错误映射与 `ncbi_eutils` 同源
+  # （适配器侧是子类复用同一个 elink 取数点，不是第二套 HTTP 客户端）。
+  ncbi_citation:
+    kind: REST
+    trust_level: VERIFIED
+    transport: rest
+    protocol_version: eutils-2026-08-22
+    capabilities:
+      - citation.validate
+    effect_class: READ_ONLY
+    network_domains:
+      - eutils.ncbi.nlm.nih.gov
+    health_check: true
+
   # GOAL-20260927-027 EC-01：第二个真实文献源（Europe PMC REST）。
   # 与 `ncbi_eutils` 的三点差别，逐条写明理由：
   # - **无凭据**：Europe PMC 的 search / 按 id 取记录都是公开端点，匿名可用 ⇒ 不声明

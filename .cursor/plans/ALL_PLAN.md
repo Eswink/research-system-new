@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261006-295](tasks/PLAN-20261006-295-goal-031-ec02-citation-validate-full-chain.md) | DONE |
 | [x] | [PLAN-20261006-293](tasks/PLAN-20261006-293-goal-031-ec01-read-capability-release.md) | DONE |
 | [x] | [PLAN-20261005-289](tasks/PLAN-20261005-289-goal-030-ec04-criterion-scope-self-check.md) | DONE |
 | [x] | [PLAN-20261005-287](tasks/PLAN-20261005-287-goal-030-ec03-scientific-action-depth.md) | DONE |

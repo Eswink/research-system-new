@@ -43,11 +43,11 @@ GRANTING_SECTIONS = ("allow", "allow_with_constraints")
 READ_SUFFIXES = ("read", "inspect", "validate")
 REGISTERED_STATE = "该登记"
 #: 差集表里终态为「该登记」的条数（**精确计数**——谓词形态一字未改，只有这个期望值随
-#: GOAL-20261006-031 EC-01 的逐条放行从 15 重新定基到 9：`run.read` / `claim.read` /
+#: GOAL-20261006-031 的逐条放行重新定基：EC-01 从 15 → 9（`run.read` / `claim.read` /
 #: `deliverable.read` / `budget.read` / `experiment.read` / `experiment_plan.read` 六条
-#: 已逐条放行、离开差集。**不成类**这一点由本文件其余三条断言（逐条命名 / 无通配 / 无段前缀）
-#: 继续钉住，强度未降。
-EXPECTED_REGISTERED = 9
+#: 已逐条放行、离开差集）；EC-02 从 9 → 8（`citation.validate` 已放行并承接）。
+#: **不成类**这一点由本文件其余三条断言（逐条命名 / 无通配 / 无段前缀）继续钉住，强度未降。
+EXPECTED_REGISTERED = 8
 WILDCARDS = ("*", "?")
 
 
