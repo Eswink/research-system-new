@@ -2,7 +2,7 @@
 id: GOAL-20261005-030
 slug: capabilities-actually-used-in-a-research-run
 title: 承接能力的**真实使用**与科研闭环加深 —— 从「接上了」到「真的被用」
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-05
 updated_at: 2026-10-05
 owners:
@@ -226,7 +226,16 @@ exit_criteria:
       `TWO-TREE PASS`；as-is m0 ⇒ `PASS: profile=m0; 23 deterministic checks`；
       `uv run --frozen --no-sync python .cursor/skills/governance-check/scripts/validate.py` ⇒ 绿；
       配套留档：m0 终态行、两树判词归档（两份 + `sha256`）、CI 台账（逐提交 run URL + 结论）。
-    status: PENDING
+      **收口记录（cycle 5）**：① 验证器 `tools/verify_goal030_closeout.py`（**429 行** ≤450，
+      **复用** `closeout_recheck_tools` + `closeout_recheck_assertions.standard_verdicts`，
+      只写本轮特有断言）进 `IN_SCOPE`（**纯收紧**）；四道门 **8 passed**；本树
+      `--verdict-only` ⇒ **56 PASS / 0 FAIL**（`SUMMARY total=56 failed=0`）。② **两树复检**
+      （`--script-mode shared`）⇒ 两树各 **56 判词**、`sha256` **相同**（`4b16afb0fcce3707…`）、
+      `COMPARE identical=True`、**`TWO-TREE PASS`**（两树 exit=0）；判词**归档进树**
+      `.cursor/plans/goals/evidence/GOAL-20261005-030-verdict-{current,clean}.txt`
+      （各 2387 字节，二进制写盘）。③ as-is m0 **23/23**，**在记录写入之后**。
+      ④ 治理 `validate.py` 绿。⑤ CI 台账逐提交。⑥ 残余与未覆盖逐条明写。
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -280,8 +289,12 @@ escalation_triggers:
   - 需要把某条**未放行**能力变为协议可达（= 改既有判据；属 `D-02(b)` 待拍板）
   - 宣称项目安全 / 宣称投递语义为「恰好一次」
   - 同一失败签名超过 fix_policy 上限
-child_plans: []
-latest_recheck: null
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261005-283-goal-030-ec01-capabilities-actually-used-in-a-run.md
+  - .cursor/plans/tasks/PLAN-20261005-285-goal-030-ec02-b-group-onboarding-run-read.md
+  - .cursor/plans/tasks/PLAN-20261005-287-goal-030-ec03-scientific-action-depth.md
+  - .cursor/plans/tasks/PLAN-20261005-289-goal-030-ec04-criterion-scope-self-check.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261005-291-goal-030-closeout.md
 memory_entries: []
 ---
 
@@ -299,7 +312,7 @@ GOAL-029 承接的读能力**只有测试判据在调用**，**没有一次真�
 | EC-02 | B 组承接（以核实为准：`run.read` 已承接；`citation.validate` 判不可行）+ 反证两向 + 射程同源 + 承接/放行可区分 | 见 frontmatter `exit_criteria[1].verify` | PASS |
 | EC-03 | 真科研动作（结果分析与统计）：结构化产出 + canonical 落盘 + 读面 + 反证点名 | 见 frontmatter `exit_criteria[2].verify` | PASS |
 | EC-04 | 判据射程自查：自查表 + 每条判据按压 + **掩蔽形态的可判红用例** | 见 frontmatter `exit_criteria[3].verify` | PASS |
-| EC-05 | 自举收口（验证器进树 + 两树复检 + 判词归档进树 + m0 23/23 + 治理 + 台账逐提交 + 残余/未覆盖逐条） | 见 frontmatter `exit_criteria[4].verify` | PENDING |
+| EC-05 | 自举收口（验证器进树 + 两树复检 + 判词归档进树 + m0 23/23 + 治理 + 台账逐提交 + 残余/未覆盖逐条） | 见 frontmatter `exit_criteria[4].verify` | PASS |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -590,10 +603,14 @@ rg -o -N "\b(artifact|claim|evidence|budget|experiment|deliverable|workspace|cit
 | `6223c9c`（EC-01） | **M0 红 3 job，已修于 `bf0919d`** | M0 `37299158676`：`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` **`failure`**；其余 5 job `success`。**根因（真红，非 flake）**：`python/typecheck` 报 `tests/e2e/test_capabilities_really_used_in_a_run.py` **两条 mypy 错误**（`Dict entry` 类型不匹配 + `Need type annotation`）。**本地为何漏过**：我在本地只对**改动的产品文件**跑 mypy，没跑**全量** `python -m mypy`（CI 跑全量）⇒ **判据侧的类型错误在本地不可见**。修法：`cast("ToolProvider", …)` + 显式注解 + 补 import；`bf0919d` 同批覆盖。 |
 | `bf0919d`（EC-02） | **全绿** | M0 `37304322494` 八 job 全 `success`（含 `container-quality`）；Push-on-main `37304322495` CodeQL `success`；无 `cancelled`。**该批同时覆盖 `6223c9c` 的修复** |
 | `9d61d79`（EC-03） | **全绿** | M0 `37307077789` 八 job 全 `success`（含 `container-quality`）；Push-on-main `37307077824` CodeQL `success`；无 `cancelled` |
+| `97a9db4`（EC-04） | **M0 3 job `cancelled`** | M0 `37309746387`：`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` **`cancelled`**；其余 5 job `success`；Push-on-main `37309745659` CodeQL `success`。**原因（如实登记）**：本批推送后**紧接着**推了 `fda5b64`，`cancel-in-progress` 取消了在飞的 M0。**`covered_by: fda5b64`**（`fda5b64` 的 M0 `37310398905` 八 job 全 `success` 覆盖同一工作树 + `97a9db4` 的增量仅一个新增判据文件） |
+| `fda5b64`（EC-05(a) 验证器） | **全绿** | M0 `37310398905` 八 job 全 `success`（含 `container-quality`）；Push-on-main `37310398426` CodeQL 3/3 `success`；无 `cancelled` |
 
 **台账边界（如实）**：`6223c9c` 的 M0 红**不是**环境抖动，而是**判据侧真缺陷**（本地漏跑全量
 mypy）；修复随下一批推送，`bf0919d` 全绿即覆盖。**注意两个 run id 分属两个 SHA**：
 `37304322494` / `37304322495` 属 `bf0919d`。
+
+**`97a9db4` 的三条 `cancelled` 是**流程问题**（本 GOAL 的纪律明文要求「一个 cycle 攒成一次推送」）**：`97a9db4`（EC-04）推完立刻推 `fda5b64`（EC-05），后者触发 `cancel-in-progress` 把前者的 M0 取消。**这不是代码缺陷**，但**违反本仓既有纪律**（承 `MEM-20260925` 同族教训与 GOAL-029 的流程自省）⇒ 如实登记 `cancelled` + 原因 + `covered_by: fda5b64`。
 
 ## 迭代日志
 
@@ -604,6 +621,7 @@ mypy）；修复随下一批推送，`bf0919d` 全绿即覆盖。**注意两个 
 | 2 | `PLAN-20261005-285`（EC-02） | 见下方回写提交 | 新增判据 **10 passed**；`tests/architecture/python + application/preflight + application/evidence + contracts + loaders + tooling + adapters + e2e + api` **3471 passed / 89 skipped**；`ruff` / `format` / `mypy`（1097 files）绿；`composition.py` 恰 **450 行** | 见下方「CI 台账」 | **按压（两向）**：撤回 `run_read` 能力映射 ⇒ **3 failed**（各自点名 `run.read`）；复原 `sha256` 全 `OK` | **EC-02 收口**；`run.read` 已承接**未放行**（与另五条同）⇒ 不可协议可达；`citation.validate` **不可行** ⇒ 受限面（解除条件 = 两处 pin 同轮同步授权）。`RECHECK-20261005-286` = PASS_WITH_WARNINGS（五条 W-NN） | cycle 3 = **EC-03**（科研动作深度：结构化产出 + canonical 落盘 + 读面 + 反证） |
 | 3 | `PLAN-20261005-287`（EC-03） | 见下方回写提交 | 新增判据 **9 passed**；`tests/architecture/python + application + contracts + loaders + tooling + adapters + e2e + api` **4142 passed / 90 skipped**；`ruff` / `format` / `mypy`（1098 files）绿 | 见下方「CI 台账」 | **三处按压（逐字节复原）**：① 抬高阈值 ⇒ 判拒并点名（主反证）；② **改小出厂目录阈值 ⇒ 最初未抓到** ⇒ 补齐射程判据后复压判红；③ 实验实测值越阈值（非空真） | **EC-03 收口**；残余：`metrics` 判据**不跨 phase**（下游消费的是 run 级证据投影）/ `requires_docker` 下本地 skip / 实验科学价值射程有限。`RECHECK-20261005-288` = PASS_WITH_WARNINGS（五条 W-NN） | cycle 4 = **EC-04**（判据射程自查表 + 掩蔽形态的可判红用例） |
 | 4 | `PLAN-20261005-289`（EC-04） | 见下方回写提交 | 新增判据 **10 passed**；`tests/tooling` **1314 passed**；`tests/architecture/python + application + adapters + e2e + api + loaders` **2334 passed / 21 skipped**；`ruff` / `format` / `mypy`（1099 files）/ 规模门（439 行）绿 | 见下方「CI 台账」 | **三处按压（逐字节复原）**：① 合成 GOAL-029 原形 ⇒ 报出；② 端到端按压 EC-01 真实判据 ⇒ 判红并点名行号；③ 按压**自查器自身**的修复 ⇒ 单列用例判红 | **EC-04 收口**；残余：观察器是**形态检测**不是语义证明 / 射程面只覆盖本轮新增判据 / `min_assertions` 是手写常量。`RECHECK-20261005-290` = PASS_WITH_WARNINGS（五条 W-NN） | cycle 5 = **EC-05**（自举收口：验证器 + 两树 + m0 + 治理 + 台账逐提交） |
+| 5 | （EC-05 收口：验证器 + 两树 + m0 + 治理 + 台账；无独立子 PLAN —— 交付物是 `tools/verify_goal030_closeout.py` 与两份归档） | `fda5b64`（验证器进树 + IN_SCOPE 纯收紧） + 本条回写提交 | 验证器本树 **56 PASS / 0 FAIL**；四道门 **8 passed**；`ruff` / `format` / `mypy`（1099 files）绿；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5132 passed / 21 skipped**，python 段 `665.46s`；记录写入**之后**、独占、canonical DSN pin、不接管道、零 python 残留） | **M0 `37310398905` 八 job 全 `success`** + CodeQL `37310398426` 3/3 `success`；`97a9db4` 的三条 `cancelled` 如实登记（`covered_by: fda5b64`） | 无（收口轮不动产品代码） | **无剩余差距**（五 EC 全 PASS）；受限面与残余原样保留（见「残余与受限面」节） | GOAL 收口（`ACHIEVED`） |
 
 ## 状态历史
 
@@ -615,3 +633,4 @@ mypy）；修复随下一批推送，`bf0919d` 全绿即覆盖。**注意两个 
 | 2026-10-05 | ACTIVE | **cycle 3（EC-03 收口）**：在 EC-01 的读能力之上加一个**产生新知识**的动作 —— **真实容器里**跑确定性重复检测基准（800 条语料、注入 40 对重复；两两比较 O(n²) vs 哈希索引 O(n)），并给它的结论下一道**可否证**的判据（`METRIC_THRESHOLD: comparison_reduction_ratio GTE 100`；脚本另自校验 `agreement` 与 `duplicates_found`，不一致即非零退出）。**新增协议** `scientific_action_depth_v1.yaml`（3 phase：`probe` 读 / `experiment` 真动作 / `verdict` 下游消费）+ 三份契约。**判据** `tests/e2e/test_scientific_action_depth.py`（**9 passed**）：容器产出（`image_digest`）/ 六字段逐条结构化断言 / 三读面（artifacts + experiments + evidence）/ **下游消费**（`verdict` 的 `evidence.read` 返回内容含实验证据 id）/ **反证点名**。**本轮抓到并闭合了自己判据的一处射程缺口**：反证臂改的是**运行时快照**（`preflight_override`），它证明「阈值被判了」，但**目录里那个数值本身**若被改小（实测 100 → 1）**判据全绿** —— 「本协议对科学结论下了可否证的判据」这句话**没有受判**。补齐 `TestTheFalsifiableCriterionIsPinnedInTheCatalog`（目录判据在场 / 指标名 / 算子 / **阈值逐字** + 实验**实测值确实越阈值**（非空真））后复压**判红**。**三处按压**（逐字节复原）：① 抬高阈值 ⇒ 判拒并点名（主反证）；② 改小目录阈值 ⇒ **修正前未抓到**、修正后判红；③ 实验实测值越阈值。`RECHECK-20261005-288` = **PASS_WITH_WARNINGS**（五条 W-NN）。本地门：`ruff` / `format` / `mypy`（1098 files）/ 规模门绿；`tests/architecture/python + application + contracts + loaders + tooling + adapters + e2e + api` **4142 passed / 90 skipped**。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |
 | 2026-10-05 | ACTIVE | **CI 真红与修复（如实登记，承「本地假绿」纪律）**：`6223c9c`（EC-01）的 M0 `37299158676` 有 **3 job `failure`** —— `quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend`。取证（REST API 取 job 日志）得**根因 = `python/typecheck` 真红**：`tests/e2e/test_capabilities_really_used_in_a_run.py` 两条 mypy 错误（`Dict entry 0 has incompatible type "str": "CanonicalReadProvider"` / `Need type annotation for "by_tool"`）。**本地为何漏过**：我在本地只对**改动的产品文件**跑 mypy，**没跑全量** `python -m mypy`（CI 跑全量）⇒ **判据侧的类型错误在本地不可见**（这不是环境抖动，是判据侧真缺陷）。修法：`cast("ToolProvider", …)` + 显式注解 + 补 import（`bf0919d` 同批覆盖）；修后本地跑**全量** mypy = `Success: no issues found in 1098 source files`。**该批的终态**：M0 `37304322494` 八 job 全 `success`。**沉淀 `W-8`**：涉及 `tests/**` 的改动必须跑全量 mypy。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-05 | ACTIVE | **cycle 2（EC-02 收口）**：按核实结论推进 B 组，**可行才接、不可行如实登记**。**`run.read` 可行 ⇒ 已承接**：`RunStore` **确在 Port 面**（`list_runs` / `get_run` / `save_run`），**两个组合根都持有实例**；新增 `adapters/canonical/run_read.py`（读 `get_run`，逐字段；缺 store / 缺 id / 未知 id 一律**点名拒绝**，不返回空壳），与 HTTP 读面 `GET /runs/{id}` **同一个查询口径**。**装配**：绑定表 + 四个入口（`session_tool_face` / `sqlite_session_tools` / `canonical_read_register` / 组合根）透传 `run_store`；`_SqliteStoreParts.runs_store` **复用同一实例**给 `ApiDeps`（消灭第二个 store 实例）⇒ `composition.py` **净增 0 行**（恰 450）。**判据** `tests/adapters/canonical/test_run_read_onboarding.py`（**10 passed**）四条：声明+实现+绑定 / 真读得到（逐字段，未冻结回 `null`）/ 缺依赖与未知 id 点名 / **承接≠放行可区分**（同一用例内同时断言「目录声明」与「真实 `NativePolicyEvaluator(policy.yaml)` 判 `DENY` + `used default policy effect`」）。**射程四面同轮同步**（`tool_providers.yaml` / `_IN_SCOPE`+陈旧条目移除 / `POLICY_SURFACE_AUDIT.md` 声明面列 / provider 夹具）。**`citation.validate` 经实测判定不可行 ⇒ 受限面，不硬接**：取数面（`_elink`）与判定规则都可写，但**声明它**会同时打红两条既有 pin 判据 —— `tests/contracts/test_ncbi_provider_contract.py::…::test_list_tools_schema`（实测 `Left contains one more item: 'citation.validate'`）与 `tests/contracts/test_europe_pmc_pin_and_registration.py::…::test_existing_providers_are_untouched`（实测 `assert ['literature....ion.validate'] == ['literature....tion.inspect']`），两条都在 `tests/contracts/**`（**明文禁改面**）⇒ 命中「**不得为凑数硬接**」；**解除条件** = 该两处 pin 的同轮同步**需用户拍板**。**按压（两向）**：撤回 `run_read` 的能力映射 ⇒ **3 failed**（实现面 / 声明-实现落差 / 射程下界，三条各自点名 `run.read`）；复原 `sha256sum -c` 三文件全 `OK`。`RECHECK-20261005-286` = **PASS_WITH_WARNINGS**（五条 W-NN，含 `runs_store` 共享实例属行为面变化、`composition.py` 结构性压力未解）。本地门：`ruff` / `format` / `mypy`（1097 files）/ 规模门绿；`tests/architecture/python + application/preflight + application/evidence + contracts + loaders + tooling + adapters + e2e + api` **3471 passed / 89 skipped**。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / RBAC 未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口 / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |
+| 2026-10-05 | **ACHIEVED** | **cycle 5（EC-05 收口）⇒ GOAL 收口**。**① 验证器进树**：`tools/verify_goal030_closeout.py`（**429 行** ≤450，**复用** `closeout_recheck_tools` + `closeout_recheck_assertions.standard_verdicts`，只写本轮特有断言）进 `IN_SCOPE`（**纯收紧**）；四道门 **8 passed**；本树 `--verdict-only` ⇒ **56 PASS / 0 FAIL**（`SUMMARY total=56 failed=0`）。**② 两树复检 + 判词归档进树**：`--script-mode shared` ⇒ 两树各 **56 判词**、`sha256` **相同**（`4b16afb0fcce37074d2b3011934aad738c84f444690c05f24269d81e409ca2f4`）、`COMPARE identical=True`、**`TWO-TREE PASS`**（两树 exit=0）；两份归档落 `.cursor/plans/goals/evidence/GOAL-20261005-030-verdict-{current,clean}.txt`（各 2387 字节，二进制写盘）。**③ as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5132 passed / 21 skipped / 140 warnings**，python 段 `in 665.46s`；日志 `scratch/goal030-m0-c5.log`；**记录写入之后**、独占、仓库 `.venv`、canonical DSN pin、不接管道、`EXIT=0`、零 python 残留）。**④ 治理 `validate.py` 绿**。**⑤ CI 台账逐提交**（含如实登记 `97a9db4` 的三条 `cancelled` + 原因 + `covered_by: fda5b64`）。**⑥⑦ 残余与未覆盖逐条明写**。**流程自省（如实登记）**：我在 `97a9db4`（EC-04）推完**立刻**推 `fda5b64`（EC-05）⇒ `cancel-in-progress` 取消前者在飞的 M0（**这正是本洞察点纪律明文要求「一个 cycle 攒成一次推送」所禁止的**；承 `MEM-20260925` 同族与 GOAL-029 的流程自省）—— 未造成证据缺口（`fda5b64` 八 job 全 `success` 覆盖同一工作树）。**GOAL 收口**：五 EC 全 PASS + `RECHECK-20261005-291` = **PASS_WITH_WARNINGS**（六条 W-NN）+ 治理绿 + as-is m0 23/23 + CI 台账逐提交。**承继残余原样保留**（`R-M1` / `R26-*` / `W27-*` / `W10-12` / `G24-4/-5` / 历史 `tools/` 无机器门）；**本轮新增残余** `W-1`…`W-8`（逐条见「残余与受限面」节）；**受限面**：`run.read` + 五条未放行读能力（`D-02(b)` 待拍板）与 `citation.validate`（pin 同步待拍板）。**未覆盖范围原样保留**（读面未认证 / 多租户未做 / RBAC 未做 / BOLA·BFLA 未做 / 部署面未验证 / `R-M1` 未收口 / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |
