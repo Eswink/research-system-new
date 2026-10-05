@@ -611,6 +611,13 @@ rg -o -N "\b(artifact|claim|evidence|budget|experiment|deliverable|workspace|cit
 | `f13ee2d`（EC-05 收口回写） | **全绿** | M0 `37313492752` 八 job 全 `success`（含 `container-quality`）；Push-on-main `37313491453` CodeQL `success`；无 `cancelled`。**本批是 GOAL 收口的末条提交** —— 表内没有它自己的行是**自我指涉边界**（由本行 + `latest_recheck` 双向登记；**空集合 = 未取证**） |
 | `81a049a`（memory_entries 回填） | **全绿** | M0 `37319048021` 八 job 全 `success`（含 `container-quality`）；Push-on-main `37319046533` CodeQL `success`；无 `cancelled`。**本条是 GOAL-030 的最后一条提交** —— 台账由此收在「逐提交登记」口径上（末条自己的行同样由本行 + `latest_recheck` 双向登记） |
 | `1a774ac`（台账收尾回写） | **全绿** | M0 `37322364099` 八 job 全 `success`（`eval-gate` / `container-quality` / `console-frontend` / `collector-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / 两个 `observability-overhead-*`）；Push-on-main `37322363755` CodeQL `success`；无 `cancelled` |
+| `051aafa`（台账终局回写） | **全绿** | M0 `37324719806` 八 job 全 `success`；Push-on-main `37324720971` CodeQL `success`；无 `cancelled` |
+
+**自我指涉边界的显式封闭（承 GOAL-029 的同款登记）**：台账的每一次回写都产生**一条新提交**，
+而那条新提交**必然**不会出现在本次回写的内容里 —— 若为此再回写一次，就进入无限回归。
+本台账因此**显式停止**在 `051aafa`（它的 CI 结论已在上表最后一行）；此后**不再**为「登记台账
+自己的行」追加提交。判据口径：**表内每个 commit 都有真实的 run 与终态**；末条由本段 + GOAL 的
+`latest_recheck` 双向登记 —— **空集合 / 空字段 = 未取证**。
 
 **台账边界（如实）**：`6223c9c` 的 M0 红**不是**环境抖动，而是**判据侧真缺陷**（本地漏跑全量
 mypy）；修复随下一批推送，`bf0919d` 全绿即覆盖。**注意两个 run id 分属两个 SHA**：
