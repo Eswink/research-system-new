@@ -609,6 +609,7 @@ rg -o -N "\b(artifact|claim|evidence|budget|experiment|deliverable|workspace|cit
 | `97a9db4`（EC-04） | **M0 3 job `cancelled`** | M0 `37309746387`：`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` **`cancelled`**；其余 5 job `success`；Push-on-main `37309745659` CodeQL `success`。**原因（如实登记）**：本批推送后**紧接着**推了 `fda5b64`，`cancel-in-progress` 取消了在飞的 M0。**`covered_by: fda5b64`**（`fda5b64` 的 M0 `37310398905` 八 job 全 `success` 覆盖同一工作树 + `97a9db4` 的增量仅一个新增判据文件） |
 | `fda5b64`（EC-05(a) 验证器） | **全绿** | M0 `37310398905` 八 job 全 `success`（含 `container-quality`）；Push-on-main `37310398426` CodeQL 3/3 `success`；无 `cancelled` |
 | `f13ee2d`（EC-05 收口回写） | **全绿** | M0 `37313492752` 八 job 全 `success`（含 `container-quality`）；Push-on-main `37313491453` CodeQL `success`；无 `cancelled`。**本批是 GOAL 收口的末条提交** —— 表内没有它自己的行是**自我指涉边界**（由本行 + `latest_recheck` 双向登记；**空集合 = 未取证**） |
+| `81a049a`（memory_entries 回填） | **全绿** | M0 `37319048021` 八 job 全 `success`（含 `container-quality`）；Push-on-main `37319046533` CodeQL `success`；无 `cancelled`。**本条是 GOAL-030 的最后一条提交** —— 台账由此收在「逐提交登记」口径上（末条自己的行同样由本行 + `latest_recheck` 双向登记） |
 
 **台账边界（如实）**：`6223c9c` 的 M0 红**不是**环境抖动，而是**判据侧真缺陷**（本地漏跑全量
 mypy）；修复随下一批推送，`bf0919d` 全绿即覆盖。**注意两个 run id 分属两个 SHA**：
