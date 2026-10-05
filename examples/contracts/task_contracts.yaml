@@ -304,3 +304,84 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # GOAL-20261005-030 EC-03：**科研动作深度**的成对契约。
+  #
+  # 与 EC-01 那两份的差别**只有一条**：中间多一个**真科研动作**（沙箱实验）并给它下
+  # 一道**可否证**的判据。前两 phase 的读能力与 EC-01 同一组（只用已放行的三条）。
+
+  scientific_action_probe:
+    version: 1.0.0
+    purpose: >-
+      EC-03 上游 phase：把本 run 的 grounding 读进来（声明输入 + 证据投影 + 工作区视图），
+      为后面的真实实验留下可复核的起点。三条读能力由运行链执行。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: probe_report
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  scientific_action_experiment:
+    version: 1.0.0
+    purpose: >-
+      EC-03 的**真科研动作**：在隔离容器里跑一次确定性基准实验（精确重复检测：
+      两两比较 vs 哈希索引），产出的 `metrics` 是结构化科学指标。
+    required_capabilities:
+      - workspace.read
+      - workspace.write.code
+      - code.execute
+      - artifact.write
+    input_schema: experiment_run_input_v1
+    output_schema: experiment_run_output_v1
+    # `experiment: {}` = 声明已给出、脚本/镜像由**装配上下文**决定（与既有
+    # `experiment_execution` 同一条既有语义；本合约不 pin 那两个量）。
+    experiment: {}
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: metrics
+      - type: TEST_PASSES
+      - type: POLICY_COMPLIANT
+      # **可否证的科研判据**（本 EC 的核心）：哈希索引必须把比较次数至少降两个数量级。
+      # 度量取自实验产物**自报**的 `comparison_reduction_ratio`（`experiment_gate_inputs`
+      # 的既有投影）；本合约对该量下**真实阈值** —— 实验若真没把比较次数降下来，
+      # 这道判据**判拒并点名那个数**（`metric … missing` 或
+      # `comparison_reduction_ratio=<值> GTE 100` 的逐条判词）。阈值不是装饰：
+      # 语料规模 800 条、注入 40 对重复 ⇒ 两两比较 319,600 次而索引桶内比较极少，
+      # 数量级差距是这条实验**本来就该有**的结论。
+      - type: METRIC_THRESHOLD
+        metric: comparison_reduction_ratio
+        operator: GTE
+        threshold: 100
+    timeout_seconds: 300
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  scientific_action_verdict:
+    version: 1.0.0
+    purpose: >-
+      EC-03 下游 phase：在实验**之后**读本 run 的证据投影 —— 返回内容里因此含实验那次
+      工具证据（`experiment_run_id` 在证据上）⇒ 「跑完没人看」不成立。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: review_decision
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

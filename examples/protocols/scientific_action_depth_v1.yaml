@@ -1,0 +1,87 @@
+id: scientific_action_depth_v1_0_0
+version: 0.1.0
+
+# GOAL-20261005-030 EC-03：**让研究更像研究** —— 一个真正的科研动作 + 可复核的深度。
+#
+# **它比 EC-01 多什么**：EC-01 证的是「承接的读能力真的被用上」，那三条读的是**已经存在**的
+# canonical 状态。本协议加一个**产生新知识**的动作 —— 在真实容器里跑一次确定性实验，
+# 并对它的结论下一道**可否证的判据**。
+#
+# 三个 phase 的分工：
+#
+#   1. `probe`（run-chain）—— 读本 run 的证据投影（`evidence.read`）与工作区视图
+#      （`workspace.read`），并把**操作者简报**作为声明输入读进来
+#      （`artifact.read`）。三条都在 GOAL-029 的承接射程内、都已放行。
+#
+#   2. `experiment`（**真科研动作**，合约声明沙箱实验）—— 在真实容器里跑
+#      `examples/experiments/exact_match_index_benchmark.py`：在一份**确定性语料**上做精确
+#      重复检测，比较「两两比较 O(n^2)」与「哈希索引 O(n)」在**结果一致**的前提下的比较次数。
+#      产出的 `metrics` 是**结构化**科学指标（不是自由文本），落 canonical 制品与实验域存储。
+#      **它为什么是科学动作而不是计算**：这条实验有一个**可否证的结论** ——
+#      合约的 `METRIC_THRESHOLD` 对 `comparison_reduction_ratio` 下了一道**真实阈值**
+#      （`>= 100`）⇒ 若索引法真没把比较次数降下来，这道判据会**判拒并点名那个数**。
+#      结论不是自证的：语料含**注入的**重复项（40 对），脚本自己校验 `agreement`
+#      与 `duplicates_found`，不一致就非零退出（实验失败），不给「跑完了但没结论」留后门。
+#
+#   3. `verdict`（**下游消费**，run-chain）—— 在 experiment **之后**读本 run 的证据投影：
+#      返回内容里因此含 experiment 那次工具证据（`experiment_run_id` 在证据上，
+#      见 `Evidence.experiment_run_id`）⇒ 「跑完没人看」不成立。
+#      它的合约判 `EVIDENCE_COVERAGE`，判据来源是它自己声明的输入（操作者简报）。
+#
+# **受控范围（写明，不夸大也不缩小）**：3 个 phase、一个真实容器实验、一条可否证的指标判据。
+#   * 实验**不出网**（纯标准库、语料脚本内生成），不违反默认离线纪律；
+#   * 本协议**不**声称「模型从实验学到了什么」—— 交付物契约只判产物存在与来源覆盖，
+#     不判内容质量（与全仓既有真实契约同一条诚实边界）；
+#   * 本协议**不**声称跨 phase 的指标传播：`metrics` 判据落在**执行它的那个 phase**
+#      （既有语义，见 `task_phase_helpers._experiment_facts`）；下游 `verdict` 消费的是
+#      **证据投影**（run 级），不是 `metrics` 字段。这条边界如实登记在 GOAL 残余里。
+#
+# **为什么三条读能力与 EC-01 同一组**（不是偷懒）：五条 GOAL-029 新增读能力在
+# `policy.yaml` 里没有 `allow` ⇒ 写进 `required_capabilities` 会打红既有差集判据
+# （属 `D-02(b)` 待拍板，见 GOAL 的「事实层结论」第 2 条）。本协议因此只用**已放行**的三条。
+
+phases:
+  - id: probe
+    name: Grounded Read Of The Run
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    capability_execution: run_chain
+    task_contract: scientific_action_probe
+    inputs: [input-brief:real_research_v1]
+    outputs: [probe_report]
+    timeout_seconds: 120
+
+  - id: experiment
+    name: Deterministic Duplicate Detection Benchmark
+    strategy: deterministic
+    depends_on: [probe]
+    required_roles:
+      - {role: experiment_engineer, min_instances: 1, max_instances: 1}
+    # 本 phase 的执行体**不是会话**：合约 `scientific_action_experiment` 声明了
+    # 「由既有沙箱实验后端跑一次实验」（`experiment: {}` ⇒ 脚本/镜像由装配上下文给出），
+    # 且**自己**对 `comparison_reduction_ratio` 下了可否证的阈值。
+    task_contract: scientific_action_experiment
+    outputs: [experiment_runs]
+    timeout_seconds: 300
+
+  - id: verdict
+    name: Downstream Verdict On The Run Evidence
+    strategy: single_agent
+    depends_on: [probe, experiment]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    capability_execution: run_chain
+    task_contract: scientific_action_verdict
+    inputs: [input-brief:real_research_v1]
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 120
