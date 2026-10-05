@@ -1,0 +1,78 @@
+id: granted_reads_used_in_a_run_v1_0_0
+version: 0.1.0
+
+# GOAL-20261006-031 EC-01(e)：**本轮放行的读能力真的被一次 run 用上**。
+#
+# 为什么另立一份协议（而不是改 `capabilities_used_in_a_run_v1`）：那份的
+# `capability_execution` 与能力集被既有判据**逐字**钉死（`test_run_chain_capability_exposure.py`
+# 的 `_RUN_CHAIN` / `_UNDECLARED` 两张表）；改它会同时改动那些判据的取样对象。另立一份把
+# 影响面**限制在本协议**内，与 GOAL-030 EC-01 的处理同一手法。
+#
+# **它证什么**：本轮**逐条放行**的只读能力里，至少 3 条在默认装配的一次 run 里
+# **真的被调用**且**产出被下游消费** —— 不是「注册了」，也不是「返回成功」。
+#
+#   * `probe`（run-chain，先跑）：`run.read` 读一个**既存的 canonical run 行**、
+#     `budget.read` 读 canonical 预算账本快照（含本 run 的 phase 预留）。
+#     两条都**由运行链确定性执行**（`capability_execution: run_chain`）⇒ 不押在
+#     「模型恰好调了工具」上。
+#   * `review`（run-chain，后跑）：`claim.read` 读**本 run 的 claim 与它的 evidence
+#     relation**、`evidence.read` 读**本 run 的证据投影**。这一 phase 的运行链步在 probe
+#     会话完成并登记之后才跑 ⇒ 它读到的 claim / 证据里必然含有 probe 那两条工具证据
+#     （同源两步：证据按 claim relation 投影）⇒ **「调了但没人用」不成立**。
+#
+# **建档实测的两条结构事实（写进协议，因为它决定用法）**：
+#   1. `run.read` **读不到本 run 自己** —— canonical 的 run 行是在编排（含执行）**返回之后**
+#      才由控制面写入的（`services/api/run_execution.py::run_from_execution` → `save_run`）。
+#      因此本协议读的是**既存 run 行**，不把「读到自己」当前提（那会是一条假断言）。
+#   2. 预算预留的 `scope` 是 `phase:<id>`（见 `protocol_compile/requirements.py`），
+#      **不含 run 标识** ⇒ `budget.read` 不带 `run_id` 过滤时读到的正是本 run 的 phase 预留；
+#      带 `run_id` 过滤只会把预留过滤空（工具的归属口径如实写在 `_budget_read` 的 docstring）。
+#
+# **受控范围（写明，不夸大也不缩小）**：2 个 phase、2 个 role、4 条读能力的运行链调用
+# （3 条本轮新放行 + 1 条既有放行做下游消费者）。其余 3 条新放行能力
+# （`deliverable.read` / `experiment.read` / `experiment_plan.read`）本轮**不进这条协议**
+# —— 它们的**放行面**由 `tests/application/preflight/test_release_expansion_is_read_only.py`
+# 逐条受判；本协议**不声称**「6 条全部被用」（如实登记在 GOAL 的 `W31-1`）。
+#
+# **本协议不声称**：读结果影响了交付物的科学结论（验收门只判产物存在与来源覆盖，
+# 不判内容质量 —— 与既有真实契约同一条诚实边界）。
+
+phases:
+  - id: probe
+    name: Granted Read Probe
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      # 两条本轮新放行的只读能力：都有真实现、都在出厂绑定表内、都在 `policy.yaml` 的
+      # `allow` 里（scope `project`）。
+      - run.read
+      - budget.read
+    # 由运行链执行、不暴露为会话工具（provider→SDK 工具映射在生产装配里是空操作，
+    # 缺映射时会话创建**点名失败**）。声明化排除把这两条从会话工具列表里拿掉 ——
+    # 能力仍在 `tool_requirements`（preflight 照判）、provider 仍在冻结集（越权执行仍被拒）。
+    capability_execution: run_chain
+    task_contract: granted_reads_probe
+    inputs: [input-brief:real_research_v1]
+    outputs: [probe_report]
+    timeout_seconds: 120
+
+  - id: review
+    name: Downstream Consumption Of The Probe
+    strategy: single_agent
+    depends_on: [probe]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      # 下游**消费**面（本条新放行）+ 既有放行的证据投影（消费的可复核形态）。
+      - claim.read
+      - evidence.read
+    # 同一组执行方式：本 phase 的运行链步在 probe **登记之后**跑 ⇒ `claim.read` 的返回
+    # 内容里含 probe 的工具证据 id（以及引用它们的 claim）、`evidence.read` 的返回内容里
+    # 含同批证据 id。两条各是一次**下游消费**的读数。
+    capability_execution: run_chain
+    task_contract: granted_reads_review
+    inputs: [input-brief:real_research_v1]
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 120

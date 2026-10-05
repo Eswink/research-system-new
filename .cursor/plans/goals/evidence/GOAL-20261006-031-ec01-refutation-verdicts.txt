@@ -1,0 +1,12 @@
+### arm-1 non-read in release set
+workspace.delete: 末段不是只读后缀 ('read', 'inspect', 'validate')
+
+### arm-2 expansion set with injection
+['budget.read', 'claim.read', 'deliverable.read', 'experiment.read', 'experiment_plan.read', 'run.read', 'workspace.delete']
+
+### arm-3 evaluator after removing the grant
+DENY: used default policy effect
+
+### arm-4 preflight status=FAIL
+[POLICY_DENIED] phase:probe: policy denied capability budget.read: used default policy effect
+

@@ -1,0 +1,32 @@
+== (a) 本轮新增的放行项（能力名, scope）逐条 ==
+  run.read                 scope=['project']
+  claim.read               scope=['project']
+  deliverable.read         scope=['project']
+  budget.read              scope=['project']
+  experiment.read          scope=['project']
+  experiment_plan.read     scope=['project']
+
+== (b) 镜像表逐条（packages/application/preflight/policy_check.py） ==
+  run.read                 policy_scope_for -> project
+  claim.read               policy_scope_for -> project
+  deliverable.read         policy_scope_for -> project
+  budget.read              policy_scope_for -> project
+  experiment.read          policy_scope_for -> project
+  experiment_plan.read     policy_scope_for -> project
+
+== (c)② deny 面基线片段 sha256（LF 归一化，require_approval 段起到文件末） ==
+  建档基线（HEAD 0e99dbe）: bf04fa4efdbbafb8449c4f0248f4e4dc6ed9daae1f3dc7125f20fc2d4ad537a4
+  当前工作树            : bf04fa4efdbbafb8449c4f0248f4e4dc6ed9daae1f3dc7125f20fc2d4ad537a4
+  逐字节相等            : True
+
+== (c)③ default_effect ==
+  default_effect = 'DENY'
+
+== (d) 反证两向（判词原文见 refutation-verdicts.txt） ==
+  ① 删掉 budget.read 放行 ⇒ run 判 FAILED + `preflight failed: POLICY_DENIED`；
+      逐能力点名在 preflight 面：`policy denied capability budget.read: used default policy effect`
+  ② 非只读能力代入/插入 ⇒ `workspace.delete: 末段不是只读后缀 (...)` 判红
+
+== (e) 实跑使用证据（判词原文见 run-usage-evidence.txt） ==
+  run.read / budget.read / claim.read 三条被调用；probe 的 2 条工具证据被
+  claim.read 与 evidence.read 各消费一次；run=SUCCEEDED

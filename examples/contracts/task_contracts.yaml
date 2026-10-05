@@ -385,3 +385,49 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # GOAL-20261006-031 EC-01(e)：**本轮放行的读能力真的被用**的成对契约。
+  #
+  # 与 `capabilities_used_*` 那两份的关系：后者证「GOAL-029 的三条已放行读能力被用」；
+  # 本对证「**本轮新放行的读能力**被用」（三条由运行链执行 + 下游消费它们的产出）。
+  # `required_capabilities` **逐条列举**（`policy_scope_for` 按能力给出求值 scope）；
+  # 只列**已放行**的能力 —— 这是本协议可被 preflight 放行的前提。
+
+  granted_reads_probe:
+    version: 1.0.0
+    purpose: >-
+      EC-01(e) 上游 phase：本轮放行的两条只读能力（`run.read` / `budget.read`）由
+      **运行链**执行，产出落 canonical（工具证据 + 内容寻址制品）。
+    required_capabilities:
+      - run.read
+      - budget.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: probe_report
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  granted_reads_review:
+    version: 1.0.0
+    purpose: >-
+      EC-01(e) 下游 phase：**消费**上游留下的东西 —— `claim.read` 读本 run 的 claim 与
+      relation、`evidence.read` 读本 run 的证据投影；两者都由运行链在 probe 登记**之后**
+      执行 ⇒ 返回内容里含上游工具证据（「调了但没人用」不成立）。
+    required_capabilities:
+      - claim.read
+      - evidence.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: review_decision
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

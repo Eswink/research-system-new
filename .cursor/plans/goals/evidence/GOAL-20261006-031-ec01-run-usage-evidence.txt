@@ -1,0 +1,17 @@
+run_id=ea53355b-d725-4ce7-9dc1-0455e928354b
+state=SUCCEEDED
+manifest_digest=sha256:0e61a74629868effe2401a755ce79a88a6c96a19f96b43dda4c911f20f35018f
+failures=[]
+
+== 调用证据（tool_refs 逐条点名）==
+phase=probe capability=run.read tool_refs=('m12_artifact', 'run_read') evidence_id=evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:run_read artifact_id=tool-result:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:run_read:run_read digest=sha256:9c6ae0edfb2af6e2ca2287a8d65585221cd28ea807c045c63f774fcb65172212 source_origin=tool:run_read:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:run_read
+phase=probe capability=budget.read tool_refs=('m12_artifact', 'budget_read') evidence_id=evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:budget_read artifact_id=tool-result:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:budget_read:budget_read digest=sha256:ad16f33d8de4d2ca885721270f182f258edbfb5c0b8f542555fd83881d77c1f0 source_origin=tool:budget_read:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:budget_read
+phase=review capability=claim.read tool_refs=('m12_artifact', 'claim_read') evidence_id=evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:1a26f903-e09b-4203-9f5e-b1b8de3c342b:claim_read artifact_id=tool-result:1a26f903-e09b-4203-9f5e-b1b8de3c342b:claim_read:claim_read digest=sha256:4a94cf766df5b84e867e4facc8b3dd7f5c8aa92103b47a794f2df5ce4ed3f6c9 source_origin=tool:claim_read:1a26f903-e09b-4203-9f5e-b1b8de3c342b:claim_read
+
+probe evidence ids = ['evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:budget_read', 'evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:run_read']
+
+== 下游消费证据 ==
+consumer=claim.read returned_ids=6 probe_evidence_ids_consumed=['evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:budget_read', 'evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:run_read']
+consumer=evidence.read returned_ids=6 probe_evidence_ids_consumed=['evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:budget_read', 'evidence:ea53355b-d725-4ce7-9dc1-0455e928354b:79e0b506-6c7b-429d-ac80-2c3c3a3d3304:run_read']
+
+VERDICT: 3 newly granted capabilities called + 2 upstream evidences consumed downstream; run SUCCEEDED

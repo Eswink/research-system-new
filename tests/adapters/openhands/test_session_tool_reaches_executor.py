@@ -51,7 +51,11 @@ _REACHED: list[str] = []
 
 #: 字面量（与 `examples/config/policy.yaml` 同源，不 import 产品常量当预言机）。
 _GRANTED = "artifact.read"
-_REGISTERED_NOT_GRANTED = "claim.read"
+#: 「已注册但未放行」的示例能力。GOAL-20261006-031 EC-01 把原示例 `claim.read` **逐条放行**
+#: ⇒ 这里换成**仍未被放行**的 `citation.inspect`（同一形态：在 provider 目录里声明、
+#: 在 `policy.yaml` 里无 `allow` ⇒ 落 `default_effect: DENY`）。三态归属谓词与断言强度
+#: 一字未改，只有这个**示例名字**随授权状态重新定基。
+_REGISTERED_NOT_GRANTED = "citation.inspect"
 _REQUIRES_APPROVAL = "external.publish"
 
 

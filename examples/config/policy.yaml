@@ -15,6 +15,26 @@ policy:
     # allow_with_constraints 一律未动。
     - capability: evidence.read
       scope: project
+    # GOAL-20261006-031 EC-01（授权 1）：**已承接但未放行**的 6 条**只读**能力逐条放行。
+    # 它们都有真实现（`adapters/canonical/read_provider.py` / `run_read.py`）、都在出厂
+    # 绑定表内，此前落 `default_effect: DENY` ⇒ 写进任何协议的 `required_capabilities`
+    # 都会被判成「协议可达却无放行规则」（GOAL-030 实测的受限面）。
+    # 逐条放行、**不成类**（承 GOAL-016 EC-02 的 D-02(b) 口径：一条规则只命名一个具体能力）；
+    # scope 与同级读能力 `artifact.read` / `evidence.read` 对齐 = `project`。
+    # **本改动只新增这 6 条 allow**：`default_effect` / `deny` / `require_approval` /
+    # `allow_with_constraints` 一律未动（由新增判据逐条钉住）。
+    - capability: run.read
+      scope: project
+    - capability: claim.read
+      scope: project
+    - capability: deliverable.read
+      scope: project
+    - capability: budget.read
+      scope: project
+    - capability: experiment.read
+      scope: project
+    - capability: experiment_plan.read
+      scope: project
     - capability: artifact.write
       scope: run
     - capability: literature.search

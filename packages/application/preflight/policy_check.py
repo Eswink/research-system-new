@@ -34,6 +34,15 @@ _CAPABILITY_SCOPE: dict[str, str] = {
     "workspace.read": "project",
     "artifact.read": "project",
     "evidence.read": "project",
+    # GOAL-20261006-031 EC-01（授权 1）：同轮同步的 6 条只读放行（与 policy.yaml 的
+    # allow 同源；两张表的并集由 `tests/application/test_m2_audit.py` 的既有判据锁死，
+    # 改一侧不改另一侧即判红）。
+    "run.read": "project",
+    "claim.read": "project",
+    "deliverable.read": "project",
+    "budget.read": "project",
+    "experiment.read": "project",
+    "experiment_plan.read": "project",
     "artifact.write": "run",
     "literature.search": "approved_tool_providers",
     "literature.read": "approved_tool_providers",

@@ -104,7 +104,21 @@ exit_criteria:
       6 条放行项的（能力名, scope）逐条清单、deny 面基线片段 `sha256` 前后对比、
       `EXPECTED_REGISTERED` 等钉定值的 before/after 逐字节对照与「强度未降」自证、
       两向反证判红原文（点名串逐字）、实跑使用证据（≥3 条，调用 + 下游消费）。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      cycle 1（PLAN-20261006-293 / `RECHECK-20261006-293` = PASS_WITH_WARNINGS）。
+      判词归档：`.cursor/plans/goals/evidence/GOAL-20261006-031-ec01-{release-ledger,
+      refutation-verdicts,run-usage-evidence}.txt`。**实测**：(a) 6 条放行逐条 scope=project；
+      (b) 镜像表同轮同步、`test_m2_audit` 镜像判据未改且绿；(c) 三条新判据在场（
+      `test_release_expansion_is_read_only.py` 16 条）；deny 面基线 `bf04fa4e…` 前后**逐字节相等**；
+      `default_effect` 仍 `DENY`；(d) 两向反证判词原文：`workspace.delete: 末段不是只读后缀` / 删
+      `budget.read` 后 `DENY: used default policy effect` + preflight `[POLICY_DENIED] phase:probe:
+      policy denied capability budget.read: …`（run 面 `preflight failed: POLICY_DENIED`）；
+      (e) 实跑 `SUCCEEDED`：`run.read` / `budget.read` / `claim.read` 三条被调用、probe 的 2 条工具
+      证据被 `claim.read` 与 `evidence.read` 各消费一次。EC-01 verify ⇒ 93 passed；定向回归
+      `tests/application+adapters+architecture+loaders` ⇒ 1607 passed / 4 skipped。
+      残余：`W31-1`（未放行的 3 条未被一次 run 使用）/ `W-2`（run 级消息只带代号，逐能力点名在
+      preflight 面）。
   - id: EC-02
     criterion: >-
       **`citation.validate` 全链（授权 2）**。
@@ -252,7 +266,8 @@ escalation_triggers:
   - 需要改（同步集以外的）任何既有判据的断言
   - 宣称项目安全 / 宣称投递语义为「恰好一次」
   - 同一失败签名超过 fix_policy 上限
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261006-293-goal-031-ec01-read-capability-release.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -564,6 +579,11 @@ apps/web/src/features/lineage -g '*.ts' -g '*.tsx'`
   EC-02 收口时用 `numstat` + 逐字节对照**如实出示**该读数，不得伪称删除为 0。
 - `W31-4`｜EC-03 的「触发/跳过」声明面是**新机制**（在既有 `RunChainCall` 上追加声明式
   触发条件）；其一般性只由本协议的用例证明，未被第二个消费者证明。
+- `W31-5`｜**CI 全绿未取得**（cycle 1 归档时）：`0e99dbe` 的 M0 在 GitHub Actions
+  `major_outage`（runner 供给）窗口内红了两次（首跑五 job `cancelled`；重跑 attempt 2
+  转绿一个、另四仍同 annotation `cancelled`）。**基础设施原因、非代码缺陷**，但**不得**
+  当成「已通过」——解除条件 = Actions 恢复后对**批次提交**取到全绿结论（cycle 2 的推送会
+  自然覆盖，若届时仍 outage 则继续如实登记）。
 
 ### 未覆盖范围（逐条明写，不得据此宣称安全）
 
@@ -583,16 +603,19 @@ apps/web/src/features/lineage -g '*.ts' -g '*.tsx'`
 
 | commit | 结论 | run / 说明 |
 | --- | --- | --- |
-| （建档提交，见迭代日志 cycle 0） | 待轮询 | 建档提交推送后逐 SHA 轮询登记 |
+| `0e99dbe`（建档） | **Push-on-main 全绿 / M0 红（基础设施，非代码）** | **Push-on-main `37365192974`**：CodeQL 3/3 `success`。**M0 `37365193558`**：`container-quality` / `eval-gate` / `collector-quality` **`success`**；`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` **`cancelled`**。**原因（如实登记，取证链三条）**：① 五个 job 的 check-run annotation **逐条**为 `The job was not acquired by Runner of type hosted even after multiple attempts`（`runner_name` 全空 = 从未拿到 runner）；② 五者**同时**在 `19:58:05–06Z` 终止（起点 `19:43:04Z`，即排队 15 分钟后被平台放弃）；③ GitHub 状态页 incident「Incident with Actions」（`created 2026-10-05T19:11:58Z`，**covering 该窗口且仍在 investigating**）：*delays in assigning GitHub-hosted runners*，Actions 组件 `degraded_performance`。⇒ 分类 **(iv) 基础设施**（runner 供给不足，非代码缺陷、非 flake、非并发取消——本例 `run conclusion=failure` + 五 job `cancelled`，与 `cancel-in-progress` 的 `run conclusion=cancelled` 形态不同）。**处置**：按 fix_policy (iv)「等窗口重跑 1 次」执行 `rerun-failed-jobs`（HTTP 201，`run_attempt=2`）；重跑结论见下一行。**覆盖面**：该提交**只**含一个 GOAL 建档文件（`git diff --stat 9c81244..0e99dbe` = 1 file / 598 insertions，零产品改动）⇒ 三个已完成 job 的绿覆盖了「树本身是好的」这一半，五个未跑 job 覆盖当日树上无新签名的改动。 |
+| `0e99dbe`（重跑 attempt 2） | **仍红：`quality-windows-latest` 转绿，其余 4 job `cancelled`（同一基础设施原因）** | 同一 run `37365193558` 的 `run_attempt=2`（`rerun-failed-jobs`）：`quality-windows-latest` **`success`**（runner `GitHub Actions 1000015611`）；`quality-ubuntu-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` **仍 `cancelled`**，四者 `runner_name=''`（仍未拿到 runner）且终止时刻**同为** `20:47:41Z`（起点 `20:32:39Z` ⇒ 又是 15 分钟后被平台放弃），annotation **逐条同文**：`The job was not acquired by Runner of type hosted even after multiple attempts`。**状态页在取证时刻已升级**：incident「Incident with Actions」由 `degraded_performance` 升为 Actions 组件 **`major_outage`**（`2026-10-05T20:50Z` 读数：「Actions is experiencing degraded availability. We are continuing to investigate.」）。⇒ 同一基础设施原因**持续中**；fix_policy (iv) 的「等窗口重跑 1 次」**已用完且仍败** ⇒ 按 (iv) 的下一句登记为**基础设施阻塞**（非代码缺陷；树侧证据见下）。**本地覆盖**：五个未跑 job 中，`quality-{ubuntu,windows}` 的 m0 判据面在本机 as-is m0 跑（见「迭代日志」cycle 1 的 m0 终局行）＋定向回归 **1607 passed**；`observability-overhead-*` 的 RSS/线程阈值判据属既有 D-13 专用作业，本轮**零改动**其判据与阈值；`console-frontend` 面本轮**零改动** `apps/web`（`git diff` 零命中）。**不得**把本条读成「全绿」——它是**未取得 CI 全绿**的如实登记。 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 见状态历史 | 只读勘察（隔离 worktree 按压 2 组；主树零改动）+ 治理 `validate.py` | 待轮询 | — | 五 EC 未开启 | cycle 1 = EC-01（放行面扩容的同步集与三条新判据已由建档实测标定） |
+| 0 | （建档，无子 PLAN） | `0e99dbe`（见「CI 台账」） | 只读勘察（隔离 worktree 按压 2 组；主树零改动）+ 治理 `validate.py` | `0e99dbe` 两 run 结论见「CI 台账」首两行（Push-on-main 绿 / M0 基础设施红 + 重跑读数） | — | 五 EC 未开启 | cycle 1 = EC-01（放行面扩容的同步集与三条新判据已由建档实测标定） |
+| 1 | `PLAN-20261006-293`（EC-01） | cycle 1 批次待推送（记录同提交） | EC-01 verify **93 passed**；定向回归 **1607 passed / 4 skipped**；规模门 **1112 passed**；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（第三次跑，独占、记录定稿后；首跑 4 红 = 2 处真 lint/format + 1 处协议旧版本字面量 + 1 处已知 `evolution_state` flake，逐条处置见 `RECHECK-20261006-293`）；两向反证按压 4 臂（判词归档进树）；实跑使用证据（3 条调用 + 2 条上游消费，`SUCCEEDED`） | `0e99dbe` 建档提交：Push-on-main 绿；M0 五 job `cancelled`（**GitHub runner 供给事件**，非代码）⇒ 按 (iv) 重跑 1 次。**重跑 attempt 2 仍红**：`quality-windows-latest` 转绿，另 4 job 仍同一 annotation `cancelled`（Actions 组件已 `major_outage`）⇒ (iv) 用尽，登记为**基础设施阻塞**（详见「CI 台账」行） | 判据自缺口 `W-1`（受判面初版=写法清单）已修 + 注入臂；e2e 判据 535 行触规模门 ⇒ 拆支持件 | EC-02…EC-05 未开启；`W31-1`（3 条未用）/ `W31-2`（同步集结构性成本）/ `W-2`（run 级消息不点名能力） | cycle 2 = EC-02（`citation.validate` 全链：新 provider `ncbi_citation` + 三态 + pin 最小追加） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-06 | ACTIVE | **cycle 1（EC-01 放行面扩容）落地**：6 条只读能力逐条放行（scope `project`）+ 镜像表同轮同步；三条新判据（只读面 / deny 面字节零改动 / `default_effect` 仍 `DENY` / 未放行护栏）+ 两向反证 + **实跑使用证据**（`run.read` / `budget.read` / `claim.read` 被真实调用、上游 2 条工具证据被两个下游各消费一次、run `SUCCEEDED`）。**判词归档进树**（三份 evidence 文件）。同步集四条既有钉定值按授权重新定基并逐条附「强度未降」自证（`RECHECK-20261006-293` = PASS_WITH_WARNINGS）。**判据自缺口抓修**：只读面判据初版只校验写法清单（14 条断言在注入 `workspace.delete` 后全绿）⇒ 改为**从文件算扩集**并加注入臂。`deny` 面基线 `bf04fa4e…` 前后逐字节相等。EC-01 = **PASS**。归档台账：`0e99dbe` 的 M0 五 job `cancelled` 系 **GitHub runner 供给事件**（annotation + 同时终止 + 状态页 incident 三条取证），按 (iv) 重跑 1 次。 |
 | 2026-10-06 | ACTIVE | **建档（cycle 0）**：读 `goals/README.md` 的 GOAL 格式契约 + 只读勘察（隔离 worktree `D:/rs-goal031-probe`，主树零改动；后用 `git worktree remove` 清理）。**勘察把起点表述逐条复核并产出三组决定性实测**：**① 6 条读能力的放行后果与调用面**（预检策略 / 运行链 / 会话工具桥三处；「放行 ≠ 被用」）；**② 放行 6 条能力会移动 6 条既有判据的钉定值**（probe 实测 `6 failed / 4428 passed`，逐条点名；同步集落地后 `60 passed` —— 该同步集因此写进 fix_policy 的点名例外并带「强度未降」自证要求）；**③ `citation.validate` 的两条路线及其 pin 碰撞**（逐条点名 6 条判据；**路线决定 = 新增 provider `ncbi_citation`**，使既有 ncbi 工具面逐字不变）。另：EC-03 的既有声明式链式传参面与「触发/跳过」缺口（实测判词）、EC-04 的消费者普查、建档基线 `sha256`（含 `deny`/`require_approval` 片段 `bf04fa4e…`）全部就位。**决策登记 16 项**（⑤ 授权开工 / ⑪ 决定不做）逐条写明。五 EC 全 `PENDING`。**未覆盖范围原样保留**（读面认证 / 多租户 / RBAC / BOLA·BFLA / 部署面 / `R-M1` / D 组审批通道未接通）；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |

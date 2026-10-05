@@ -48,39 +48,39 @@
   `literature.search`、`workspace.read`、`workspace.write.code`）**全部**已被非 `deny` 规则覆盖
   （6 条 `allow` + 2 条 `allow_with_constraints`）。
 - **该拒绝 = 20 条**：14 条声明面独有的写/执行/提议类 + 6 条策略面独有的未使用护栏/门面规则。
-- **该登记 = 15 条**：声明面在用、协议不可达的**读类**能力（`agent_run.read`、`budget.read`、
-  `citation.inspect`、`citation.validate`、`claim.read`、`dataset.read`、`deliverable.read`、
-  `experiment.read`、`experiment_plan.read`、`provenance.read`、`research_map.read`、
-  `research_state.read`、`review.read`、`run.read`、`target.read`）。
+- **该登记 = 9 条**：声明面在用、协议不可达的**读类**能力（`agent_run.read`、
+  `citation.inspect`、`citation.validate`、`dataset.read`、`provenance.read`、
+  `research_map.read`、`research_state.read`、`review.read`、`target.read`）。
+  **2026-10-06 变更（GOAL-20261006-031 EC-01，授权 1）**：`budget.read` / `claim.read` /
+  `deliverable.read` / `experiment.read` / `experiment_plan.read` / `run.read` 六条**已逐条
+  放行**（scope `project`），因此**离开差集**、进入下方交集清单 —— 终态由「该登记」变为
+  「已处理」，不再登记在此。放行形态仍是**逐条**（`D-02(b)` 的口径：一条规则命名一个具体
+  能力，不成类）。
 
-**需拍板的一条口径**（不是本 GOAL 能自行决定的）：**读类能力是否成类预放行**——
-(a) 成类预放行（一次 `allow` 覆盖整类读能力，`W-A` 不会再以同一形态发生）；
-(b) 维持逐条放行（`W-A` 的先例就是逐条拍板放行）；
-(c) 保持 fail-closed 不动（协议要用时再放行，代价是每次都要一次拍板）。
-本 GOAL 的授权**只**覆盖 `evidence.read` 一条，**不**自行扩大。
+**关于「读类能力是否成类预放行」的口径（`D-02(b)`）**：2026-09-25 用户拍板
+「维持逐条放行、不成类预放行」；2026-10-06 GOAL-20261006-031 的授权变更（用户下放全部权限
+给驱动）后，驱动沿同一口径**逐条**放行 `run.read` / `claim.read` / `deliverable.read` /
+`budget.read` / `experiment.read` / `experiment_plan.read` 六条**已承接**的只读能力
+（scope `project`），**没有**引入任何成类 / 通配规则 —— 判据
+`tests/application/preflight/test_read_grant_is_per_item.py` 的逐条形态断言仍逐字节在场。
 
 ---
 
-## 差集表（35 行 = 策略面独有 6 + 声明面独有 29）
+## 差集表（29 行 = 策略面独有 6 + 声明面独有 23）
 
 | 能力 | 差集侧 | 声明面 | 协议可达 | 读类 | 终态 | 依据 |
 | --- | --- | --- | --- | --- | --- | --- |
 | `agent_run.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `audit.write` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
-| `budget.read` | 声明面独有 | roles、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `citation.inspect` | 声明面独有 | roles、skills、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `citation.validate` | 声明面独有 | roles、skills | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
-| `claim.read` | 声明面独有 | roles、skills、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `dataset.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `decision.propose` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `deliverable.edit` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
-| `deliverable.read` | 声明面独有 | roles、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `deliverable.write` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `evidence.propose` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `evidence.write` | 声明面独有 | roles、tool_providers | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `experiment.execute` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
-| `experiment.read` | 声明面独有 | roles、skills、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
-| `experiment_plan.read` | 声明面独有 | roles、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `experiment_plan.write` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `external.publish` | 策略面独有 | （无） | 否 | 否 | 该拒绝 | 策略面有规则而四个声明面无人使用；未使用的护栏/门面规则，现状即正确 |
 | `git.diff` | 声明面独有 | roles、tool_providers | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
@@ -96,16 +96,17 @@
 | `research_state.read` | 声明面独有 | roles、skills | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `review.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `review.write` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
-| `run.read` | 声明面独有 | roles、tool_providers | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `statistics.execute` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `target.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `workspace.delete` | 策略面独有 | （无） | 否 | 否 | 该拒绝 | 策略面有规则而四个声明面无人使用；未使用的护栏/门面规则，现状即正确 |
 
-**两侧都有（交集，不在差集内，9 条）**：`artifact.read`、`artifact.write`、`code.execute`、
-`evidence.read`、`literature.read`、`literature.search`、`workspace.read`、
-`workspace.write.code`、`workspace.write.notes` —— 它们已被 `policy.yaml` 的
-`allow` / `allow_with_constraints` 覆盖，属于「已经处理过」的那一类
-（`evidence.read` 正是 `W-A` 被拍板放行后的结果）。
+**两侧都有（交集，不在差集内，15 条）**：`artifact.read`、`artifact.write`、
+`budget.read`、`claim.read`、`code.execute`、`deliverable.read`、`evidence.read`、
+`experiment.read`、`experiment_plan.read`、`literature.read`、`literature.search`、
+`run.read`、`workspace.read`、`workspace.write.code`、`workspace.write.notes` —— 它们已被
+`policy.yaml` 的 `allow` / `allow_with_constraints` 覆盖，属于「已经处理过」的那一类
+（`evidence.read` 是 `W-A` 被拍板放行后的结果；另 6 条读能力是 GOAL-20261006-031 EC-01
+逐条放行的结果）。
 
 ## 复跑方式（零出网）
 

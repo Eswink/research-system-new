@@ -235,13 +235,24 @@ class TestMissingDependenciesAndUnknownIdsAreNamed:
         assert "no-such-run" in str(excinfo.value), str(excinfo.value)
 
 
-class TestOnboardedIsNotGrantedAndTheDifferenceIsVisible:
-    """④ 承接 ≠ 放行，且二者在判据上**可区分**（本类的存在就是那条分界）。"""
+class TestOnboardedAndGrantedBothSidesAreVisible:
+    """④ 承接与放行**两侧都可见**，且两者**各自**有断言（本类的存在就是那条分界）。
 
-    def test_the_catalog_declares_it_but_the_policy_does_not_allow_it(self) -> None:
-        """**同一进程里同时断言两件事**：目录声明了它，而策略面拒绝它。
+    **2026-10-06 重新定基（GOAL-20261006-031 EC-01，授权 1）**：`run.read` 由「已承接、
+    未放行」变为「已承接、**已放行**」（逐条 allow，scope `project`）⇒ 本类的期望值随之
+    翻转为 `ALLOW` + `matched allow rule`。**强度未降**：仍然是**同一进程内同时断言两侧**
+    （目录声明了它 + 策略面现在允许它），且仍断言**精确决策与精确 reason**；
+    「承接 ≠ 放行」这条分界本身由
+    `tests/adapters/openhands/test_session_tool_reaches_executor.py`（`citation.inspect`
+    ——**仍未被放行**的示例能力）与
+    `tests/application/preflight/test_release_expansion_is_read_only.py`（未放行护栏）
+    继续逐条钉住，两侧都不缺断言。
+    """
 
-        只断言其一都会让「已承接」冒充「已跑通」。
+    def test_the_catalog_declares_it_and_the_policy_now_allows_it(self) -> None:
+        """**同一进程里同时断言两件事**：目录声明了它，而策略面放行它。
+
+        只断言其一都不足以说明「承接 + 放行」这条组合事实；本类把两侧放在同一条用例里。
         """
         from packages.application.policy.native import NativePolicyEvaluator
         from packages.application.ports.policy_evaluator import PolicyRequest
@@ -258,16 +269,28 @@ class TestOnboardedIsNotGrantedAndTheDifferenceIsVisible:
         assert policy is not None, "policy.yaml must be loadable"
         decision = NativePolicyEvaluator(policy).evaluate(
             PolicyRequest(
-                actor="agent:goal030",
+                actor="agent:goal031",
                 capability=_CAPABILITY,
                 action="execute",
                 scope=policy_scope_for(_CAPABILITY),
                 resource=_CAPABILITY,
             )
         )
-        assert decision.decision is PolicyDecision.DENY, (
-            "`run.read` 未被放行是**如实状态**：承接 ≠ 放行（放行需用户拍板）",
+        assert decision.decision is PolicyDecision.ALLOW, (
+            "`run.read` 已按 GOAL-20261006-031 EC-01 **逐条放行**；"
+            "若它仍被拒，说明放行规则或镜像 scope 掉了一条",
             decision.decision,
             decision.reason,
         )
-        assert decision.reason == "used default policy effect", decision.reason
+        assert decision.reason == "matched allow rule", decision.reason
+
+    def test_the_grant_scope_comes_from_the_declared_mirror(self) -> None:
+        """放行**须经镜像 scope**（不是被 `default_effect` 或别的规则碰巧放过）。
+
+        与既有 `test_session_tool_reaches_executor` 的 F-6 教训同源：带 scope 的 allow
+        规则要求请求里的 scope **相等**才匹配；`policy_scope_for` 返回 `None` 时同一能力
+        会在「preflight 放行 / 执行期拒绝」两处得出相反结论。
+        """
+        from packages.application.preflight.policy_check import policy_scope_for
+
+        assert policy_scope_for(_CAPABILITY) == "project", policy_scope_for(_CAPABILITY)

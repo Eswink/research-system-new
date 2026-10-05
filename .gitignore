@@ -47,6 +47,7 @@ scratch/
 # local agent-tool state (security scans / CLI sessions) — not engineering assets
 .mimosa/
 .zcode/
+.zcodeignore
 docs/history-session
 # Playwright e2e transient artifacts (baselines live in *-snapshots dirs)
 apps/web/test-results/
