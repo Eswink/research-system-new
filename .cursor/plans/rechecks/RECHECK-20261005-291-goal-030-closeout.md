@@ -57,9 +57,13 @@ owners:
    `.cursor/plans/goals/evidence/GOAL-20261005-030-verdict-{current,clean}.txt`（各 2387 字节，
    二进制写盘）。
 3. **as-is m0 = `PASS: profile=m0; 23 deterministic checks`**：`PASS [` **24** / `FAILED [` **0** /
-   **5132 passed / 21 skipped / 140 warnings**，python 段 `in 665.46s`；日志
-   `scratch/goal030-m0-c5.log`。**在记录写入之后**、独占运行、仓库 `.venv`、
-   `uv run --frozen --no-sync python -B`、canonical DSN pin、**不接管道**、`EXIT=0`、零 python 残留。
+   **5132 passed / 21 skipped / 140 warnings**。**跑了两轮**（如实登记）：
+   - 第一轮（`scratch/goal030-m0-c5.log`，python 段 `in 665.46s`）：在**主体记录**写入之后；
+   - **第二轮（`scratch/goal030-m0-c5b.log`，python 段 `in 694.08s`）**：在**全部记录**
+     （含 CI 台账终局行与自我指涉封闭段）写入之后重跑，终态行**同为**
+     `PASS: profile=m0; 23 deterministic checks`、`FAILED [` **0** / `PASS [` **24** / **5132 passed**。
+   两轮均：独占运行、仓库 `.venv`、`uv run --frozen --no-sync python -B`、canonical DSN pin、
+   **不接管道**、`EXIT=0`、零 python 残留。**第二轮的时序才是收口口径**（记录 → 门）。
 
 ## 复检发现（W-NN，如实登记）
 

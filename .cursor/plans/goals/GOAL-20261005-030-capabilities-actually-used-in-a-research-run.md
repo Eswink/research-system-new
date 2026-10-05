@@ -233,7 +233,9 @@ exit_criteria:
       （`--script-mode shared`）⇒ 两树各 **56 判词**、`sha256` **相同**（`4b16afb0fcce3707…`）、
       `COMPARE identical=True`、**`TWO-TREE PASS`**（两树 exit=0）；判词**归档进树**
       `.cursor/plans/goals/evidence/GOAL-20261005-030-verdict-{current,clean}.txt`
-      （各 2387 字节，二进制写盘）。③ as-is m0 **23/23**，**在记录写入之后**。
+      （各 2387 字节，二进制写盘）。③ as-is m0 **23/23**，**在记录写入之后**（**跑了两轮**：主体记录之后 `in 665.46s`、
+      全部记录之后 `in 694.08s`，两轮终态行同为 `PASS: profile=m0; 23 deterministic checks`，
+      `FAILED [` 0 / `5132 passed / 21 skipped`；日志 `scratch/goal030-m0-c5{,b}.log`）。
       ④ 治理 `validate.py` 绿。⑤ CI 台账逐提交。⑥ 残余与未覆盖逐条明写。
     status: PASS
 budget:
