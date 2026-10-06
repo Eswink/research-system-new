@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261006-301](tasks/PLAN-20261006-301-goal-031-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261006-299](tasks/PLAN-20261006-299-goal-031-ec04-lineage-label-rename.md) | DONE |
 | [x] | [PLAN-20261006-297](tasks/PLAN-20261006-297-goal-031-ec03-two-round-derived-research-loop.md) | DONE |
 | [x] | [PLAN-20261006-295](tasks/PLAN-20261006-295-goal-031-ec02-citation-validate-full-chain.md) | DONE |
