@@ -13,6 +13,9 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261006-190](entries/MEM-20261006-190-release-surface-change-drags-a-sync-set.md) | ACTIVE | repository | 0.92 | 2027-04-06 | PLAN-20261006-293 |
+| [MEM-20261006-189](entries/MEM-20261006-189-field-rename-zero-hit-scope-and-property-reads.md) | ACTIVE | repository | 0.94 | 2027-04-06 | PLAN-20261006-299 |
+| [MEM-20261006-188](entries/MEM-20261006-188-declarative-trigger-needs-an-observable-skip-fact.md) | ACTIVE | repository | 0.93 | 2027-04-06 | PLAN-20261006-297 |
 | [MEM-20261005-187](entries/MEM-20261005-187-verdict-scope-must-be-the-declared-set.md) | ACTIVE | repository | 0.95 | 2027-04-05 | PLAN-20261005-277 |
 | [MEM-20261005-186](entries/MEM-20261005-186-two-tree-verdict-write-is-input-output.md) | ACTIVE | repository | 0.95 | 2027-04-05 | PLAN-20261005-281 |
 | [MEM-20261005-185](entries/MEM-20261005-185-verdict-scope-must-be-pressed-too.md) | ACTIVE | repository | 0.95 | 2027-04-05 | PLAN-20261005-279 |

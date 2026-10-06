@@ -349,7 +349,10 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261006-299-goal-031-ec04-lineage-label-rename.md
   - .cursor/plans/tasks/PLAN-20261006-301-goal-031-ec05-self-bootstrap-closeout.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261006-301-goal-031-closeout.md
-memory_entries: []
+memory_entries:
+  - declarative-trigger-needs-an-observable-skip-fact
+  - field-rename-zero-hit-scope-and-property-reads
+  - release-surface-change-drags-a-sync-set
 ---
 
 # GOAL-20261006-031 — 放行面扩容 + citation.validate 接通 + 科研真成环
