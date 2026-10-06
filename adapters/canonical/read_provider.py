@@ -18,6 +18,7 @@ import json
 from typing import Any
 
 # 工具面描述子（纯声明；与执行实现分列以守住文件规模门）
+from adapters.canonical.read_projection import project_run
 from adapters.canonical.read_surface import (
     _DELIVERABLE_ARTIFACT,
     _TOOL_CAPABILITIES,
@@ -181,44 +182,7 @@ class CanonicalReadProvider:
         run_id = str(args.get("run_id") or "").strip()
         if not run_id:
             raise InvalidInputError("evidence_read requires a non-empty run_id")
-        return self._project_run(self._ledger, run_id)
-
-    @staticmethod
-    def _project_run(ledger: EvidenceLedger, run_id: str) -> dict[str, object]:
-        """把 ledger 里属于 `run_id` 的 claim/evidence 投影出来（按 relation 走）。"""
-        claims: list[dict[str, object]] = []
-        evidence: list[dict[str, object]] = []
-        seen: set[str] = set()
-        for claim in ledger.claims():
-            matched: list[str] = []
-            for relation in ledger.relations_for_claim(claim.id):
-                try:
-                    item = ledger.get_evidence(relation.evidence_id)
-                except Exception:  # noqa: BLE001 - 引用可能已删除（视觉态：missing evidence）
-                    continue
-                if item.run_id != run_id:
-                    continue
-                matched.append(relation.evidence_id)
-                if relation.evidence_id in seen:
-                    continue
-                seen.add(relation.evidence_id)
-                evidence.append({
-                    "id": item.id,
-                    "source_ref": item.source_ref,
-                    "content_digest": item.content_digest,
-                    "relation": str(relation.relation),
-                })
-            if matched:
-                claims.append({
-                    "id": claim.id,
-                    "status": str(claim.status),
-                    "evidence_ids": sorted(matched),
-                })
-        return {
-            "run_id": run_id,
-            "claims": sorted(claims, key=lambda item: str(item["id"])),
-            "evidence": sorted(evidence, key=lambda item: str(item["id"])),
-        }
+        return project_run(self._ledger, run_id)
 
     def _budget_read(self, args: dict[str, object]) -> dict[str, object]:
         """读 canonical 预算账本快照（预留 + 用量条目；**只读**，不动账）。

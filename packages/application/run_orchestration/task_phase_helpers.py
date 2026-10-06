@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from packages.application.experiments.types import ExperimentExecutionOutcome
@@ -52,6 +52,10 @@ class PhaseStep:
     # GOAL-004 cycle 3（EC-03）：终局失败但契约声明了 `on_task_failure: CONTINUE`
     # ⇒ 失败被记账（消息在这里）但不返回 RunOutcome，run 继续跑剩余工作。
     tolerated_failure: str | None = None
+    # GOAL-20261006-031 EC-03：本任务的能力步里**带理由跳过的调用**（声明式触发的
+    # 「不触发」臂）。任务**照常成功**（跳过不是失败），但跳过这件事必须落在读面上
+    # ——理由逐字点名「哪条工具因上一步的哪个字段而没跑」。
+    skipped: tuple[str, ...] = ()
 
 
 def tolerated_outcome(task: ResearchTask, message: str) -> TaskOutcome:
@@ -284,11 +288,15 @@ def register_and_gate(
     tctx: Any,
     session_result: AgentSessionResult,
     retrieved: tuple[Evidence, ...] = (),
+    skipped: tuple[str, ...] = (),
 ) -> PhaseStep:
     """Register session output, evaluate gate, promote claim/memory, handoff.
 
     `retrieved` = 运行链自己取得的证据（GOAL-011 EC-01）：它随会话结果**同一个** claim
     登记，读面与覆盖计数因此看得到它（experiment 路径暂不携带——EC-03 的范围）。
+
+    `skipped` = 运行链里**声明式跳过**的调用（GOAL-031 EC-03）：原样进 `PhaseStep`，
+    由执行循环记到任务终局读面上（跳过不是失败，但必须可见）。
     """
     task = tctx.task
     registered = register_or_fail(deps, tctx, session_result, retrieved)
@@ -308,13 +316,16 @@ def register_and_gate(
             f"task {task.id.value} rejected by acceptance gate ({gate_rejection_reason(gate)})",
             False,
         )
-    return _finish_task_step(
+    step = _finish_task_step(
         deps,
         tctx,
         registration,
         gate,
         producer=f"agent:{tctx.spec_context.agent.id}",
     )
+    if not skipped:
+        return step
+    return replace(step, skipped=skipped)
 
 
 def register_and_gate_experiment(

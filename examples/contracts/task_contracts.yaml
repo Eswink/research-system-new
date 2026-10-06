@@ -431,3 +431,58 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # GOAL-20261006-031 EC-03：**两轮派生**（`two_round_research_loop_v1`）的两份契约。
+  #
+  # 与 `granted_reads_*` 那两份的关系：那对证「本轮新放行的读能力被用」；本对证
+  # 「**第二轮的问题由第一轮的结果派生**」—— round2 的运行链步先经**读面**拿到
+  # round1 的产出制品，再按声明路径从中取标识做第二次检索/读取。
+  #
+  # 两轮的 `required_capabilities` **逐条列举**（`policy_scope_for` 按能力给出求值
+  # scope），全部是**已放行**能力 —— 这是本协议可被 preflight 放行的前提。
+  # `output_schema` 指向**既有**的 `real_research_deliverable_v1`（会话交付物信封，
+  # 与 `granted_reads_*` / `sort_analysis_*` 共用同一份既有多用途 schema 是既有先例）。
+  #
+  # 覆盖判据只判**产物存在 + 来源覆盖**（不判内容质量）：两轮的来源都来自各自的
+  # 声明输入与运行链取得的证据 —— 与全仓既有真实契约同一条诚实边界。
+
+  two_round_round_one:
+    version: 1.0.0
+    purpose: >-
+      EC-03 第一轮：读本 run 的证据投影（`evidence.read`）并做一次真实检索
+      （`literature.search`，`query` 取自声明输入）—— 检索结果成为**第二轮的派生来源**。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - literature.search
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: round_one_findings
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  two_round_round_two:
+    version: 1.0.0
+    purpose: >-
+      EC-03 第二轮：经**读面**（`evidence.read` → `artifact.read`）读到第一轮的
+      检索产出，再按声明路径取标识做第二次读取（`literature.read`）—— 第二轮的问题
+      因此**派生自第一轮的结果**（不是操作者手写）。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - literature.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: round_two_followup
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

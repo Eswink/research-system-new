@@ -53,6 +53,12 @@ from packages.application.ports.policy_evaluator import (
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.preflight.policy_check import policy_scope_for
+from packages.application.run_orchestration.phase_capability_triggers import (
+    planned_in_this_phase,
+    select_artifact_id,
+    should_skip,
+    skip_reason,
+)
 from packages.application.tool_plane.execution import execute_tool_call, require_frozen_tool_set
 from packages.application.tool_plane.results import fetch_spilled_result
 from packages.domain.artifacts import Artifact
@@ -87,6 +93,35 @@ class RunChainCall:
       这个字段因此不是「值」而是「**取值的来源**」：置真 ⇒ 运行时把 `task.run_id.value`
       作为该参数注入，名字就叫 `run_id`（与 provider 侧参数名同源）。
       缺省 `False` ⇒ 该参数不注入，既有行为**逐字节不变**。
+    - `requires_previous_ids`：本步是否**要求**上一步真的给出 id 列表
+      （GOAL-20261006-031 EC-03 的**声明式触发面**）。
+
+      语义（两种情况**都点名**，没有第三种走向）：
+      * `True`（缺省）：上一步没给 id 列表 ⇒ **失败**并点名（既有行为，逐字节不变）；
+      * `False`：上一步没给 id 列表 ⇒ 本步**跳过**（不执行工具），跳过**带理由**回传
+        （`CapabilityStepOutcome.skipped`），由调用方登记 —— 这是「派生链的第二轮
+        按第一轮结果决定跑不跑」的声明式形态：**判断依据是声明字段的在场性**，
+        不是应用层硬编码「如果就」。
+
+      为什么放在这里而不是编译期：触发条件读的是**上一步的结果**（执行期才知道），
+      编译期无从判定；这个字段因此与 `ids_from_previous` 同层 —— 都是「取值的来源 /
+      条件」，不是值本身。缺省 `True` ⇒ 既有行为**逐字节不变**。
+    - `phase_id`：本调用属于**哪个 phase**（GOAL-20261006-031 EC-03）。
+      既有过滤只按 **provider**（`call.provider_id in spec.run_chain_tool_ids`）——一次 run
+      的多个 phase 若声明**同一个 provider 的不同调用**，两个 phase 都会执行**全部**调用：
+      第一轮 phase 因此会去跑第二轮的调用（实测：跳过臂的判定会落在错误的 phase 上，
+      且「第二轮没跑」这件事无法从任务归属上判）。本字段把过滤细化到 **phase 级**：
+      非空 ⇒ 只在本 phase 执行；缺省 `None` ⇒ 沿用 provider 级过滤（既有行为逐字节不变）。
+    - `artifact_from_previous`：本步读**哪一个制品**由**上一步的读面结果**决定
+      （GOAL-20261006-031 EC-03 的**派生**面）：值是制品 id 的**声明后缀**
+      （如 `discovery_report`，合约声明的产出名）；运行时从上一步结果的 `evidence[]`
+      里按 `source_ref` 后缀选中**恰好一条**（零条 / 多条 ⇒ 点名失败），把该
+      `source_ref` 作为本步的 `artifact_id` 参数。
+
+      为什么是「后缀选择」而不是写死 id：制品 id 含**执行期才生成**的 task id，
+      装配方无从写死；而「产出名」是**声明事实**。这个字段因此与 `ids_from_previous`
+      同层 —— 都是「**取值的来源**」（一个从 id 列表取，一个从证据列表选），不是值本身。
+      缺省 `None` ⇒ 该参数不注入（既有行为逐字节不变）。
     """
 
     provider_id: str
@@ -96,6 +131,9 @@ class RunChainCall:
     fixed_arguments: Mapping[str, object] = field(default_factory=dict)
     ids_from_previous: str | None = None
     run_id_argument: bool = False
+    requires_previous_ids: bool = True
+    phase_id: str | None = None
+    artifact_from_previous: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,11 +152,18 @@ class CapabilityDeps:
 
 @dataclass(frozen=True, slots=True)
 class CapabilityStepOutcome:
-    """一次能力步的结果：证据（挂到 claim 用）或失败消息（**不**静默降级）。"""
+    """一次能力步的结果：证据（挂到 claim 用）/ 失败消息 / **声明式跳过**。
+
+    `skipped`（GOAL-20261006-031 EC-03）：某一步的 `requires_previous_ids=False` 且上一步
+    没给 id 列表时**带理由跳过**（不执行工具、不产出证据）。它是**可观测事实**而不是
+    静默降级：理由逐字说明「哪条工具因上一步的哪个字段而没跑」，由调用方登记。
+    缺省 `None` ⇒ 没有任何跳过（既有行为逐字节不变）。
+    """
 
     evidences: tuple[Evidence, ...] = ()
     failure_message: str | None = None
     system_failure: bool = True
+    skipped: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,14 +199,18 @@ def execute_run_chain_capabilities(
     """
     if deps is None:
         return CapabilityStepOutcome()
-    planned = tuple(call for call in deps.calls if call.provider_id in spec.run_chain_tool_ids)
+    planned = tuple(call for call in deps.calls if _planned_in_this_phase(call, spec))
     if not planned:
         return CapabilityStepOutcome()
     evidences: list[Evidence] = []
+    skipped: list[str] = []
     previous: Mapping[str, object] | None = None
     try:
         material = _input_material(deps, spec)
         for call in planned:
+            if _should_skip(call, previous):
+                skipped.append(skip_reason(call))
+                continue
             previous, evidence = _execute_one(
                 deps,
                 task,
@@ -175,7 +224,17 @@ def execute_run_chain_capabilities(
             failure_message=f"run-chain capability step failed: {error}",
             system_failure=isinstance(error, TransientPortError),
         )
-    return CapabilityStepOutcome(evidences=tuple(evidences))
+    return CapabilityStepOutcome(evidences=tuple(evidences), skipped=tuple(skipped))
+
+
+def _planned_in_this_phase(call: RunChainCall, spec: SessionSpecContext) -> bool:
+    """本 phase 是否该执行这条调用（判定见 `phase_capability_triggers`）。"""
+    return planned_in_this_phase(call, spec)
+
+
+def _should_skip(call: RunChainCall, previous: Mapping[str, object] | None) -> bool:
+    """声明式触发判定（见 `phase_capability_triggers.should_skip`）。"""
+    return should_skip(call, previous, lookup=_lookup)
 
 
 @dataclass(frozen=True, slots=True)
@@ -326,6 +385,11 @@ def _arguments(
                 f"for run-chain tool {call.tool_id}"
             )
         args["ids"] = [str(item) for item in ids]
+    if call.artifact_from_previous is not None:
+        # 派生面：本步读哪个制品由**上一步的读面结果**决定（见 `artifact_from_previous`）。
+        args["artifact_id"] = select_artifact_id(
+            inputs.previous, call.artifact_from_previous, call.tool_id
+        )
     if call.run_id_argument:
         # 本次 run 的标识（**执行期才存在**）：缺它 ⇒ 点名拒绝，不猜一个。
         if not inputs.run_id:

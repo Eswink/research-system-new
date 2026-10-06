@@ -1,0 +1,68 @@
+id: two_round_research_loop_v1_0_0
+version: 0.1.0
+
+# GOAL-20261006-031 EC-03：**科研真成环** —— 一次 run 含**两轮**研究，第二轮的问题
+# 由**第一轮的结果**派生（不是操作者手写），且两条臂（触发 / 不触发）都实测、可区分。
+#
+# **两轮的分工与派生链**（派生声明在执行装配里，逐条见 `RunChainCall` 的四个字段）：
+#
+#   1. `round1`（run-chain）：读本 run 的证据投影（`evidence.read`，执行期注入的 run
+#      标识），再用操作者简报里的检索词做一次真实检索（`literature.search`，
+#      `query` 来自声明输入的 `retrieval.query`）。产出 `round_one_findings`。
+#
+#   2. `round2`（run-chain，**派生**）：**第一步再读一次证据投影**（`evidence.read`），
+#      从中**按声明的后缀**（`artifact_from_previous: literature_search`）选出
+#      **第一轮检索结果**那个制品，**读它的内容**（`artifact.read`，经读面拿到第一轮的
+#      产出 —— 不是内存传递），再从该内容里**按声明的路径**取标识
+#      （`ids_from_previous: content.ids`）做一次真实读取（`literature.read`）。
+#      ⇒ 第二轮读的标识**只可能**来自第一轮检索响应本身。
+#
+#   **声明式触发**（`requires_previous_ids: false`，只在 `round2` 的读取步上）：
+#   第一轮检索**没有**返回任何标识 ⇒ 读取步**带理由跳过**（不执行工具），
+#   理由进 canonical 事件链（`run.completed` 的 `skipped`）——跳过**点名**到工具与字段，
+#   不是静默。**派生是声明的**：判断依据是「声明字段的在场性」，不是代码里的「如果就」。
+#
+# **受控范围（写明，不夸大也不缩小）**：2 个 phase、2 份交付物、1 份声明输入、4 条能力
+# （2 条检索 + 2 条 canonical 读）。它**不声称**：模型读懂了第一轮的结论（交付物契约只判
+# 产物存在与来源覆盖，不判内容质量）；也**不声称**多轮迭代的上限/收敛（两轮是本轮射程）。
+#
+# **两个 phase 都是 run-chain**：会话工具面因此为空集（本仓生产装配里 provider→SDK 工具的
+# 映射是空操作，缺映射时会话创建点名失败）。两个 phase 的能力声明里都含两条 canonical 读
+# —— 这是**冻结面的形状**决定的：运行链排除按 phase 的 tool_requirements 算，两轮都由
+# 运行链执行 ⇒ 交集不落进会话工具面（声明化排除，不是静默丢弃：provider 仍在冻结集里，
+# 越权执行仍被 `require_frozen_tool_set` 拦）。
+
+phases:
+  - id: round1
+    name: First Research Round (Search From The Declared Brief)
+    strategy: single_agent
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - literature.search
+    capability_execution: run_chain
+    task_contract: two_round_round_one
+    inputs: [input-brief:real_research_v1]
+    outputs: [round_one_findings]
+    timeout_seconds: 120
+
+  - id: round2
+    name: Second Research Round (Derived From The First Round)
+    strategy: single_agent
+    depends_on: [round1]
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - literature.read
+    # 与 round1 同一组执行方式：本 phase 的运行链步在 round1 **登记之后**跑 ⇒ 它的
+    # `evidence.read` 读到的投影里含有 round1 的工具证据与产出制品（读面证据，非内存传递）。
+    capability_execution: run_chain
+    task_contract: two_round_round_two
+    inputs: [input-brief:real_research_v1]
+    outputs: [round_two_followup]
+    gate: QUALITY_GATE
+    timeout_seconds: 120

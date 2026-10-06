@@ -21,6 +21,9 @@ class TaskOutcome:
     # GOAL-004 cycle 3：这条终局失败是**哪条策略允许的**（None = 成功 / 未走策略；
     # "CONTINUE" = 契约声明容忍 ⇒ 失败被记账但没停住 run）。
     failure_policy: str | None = None
+    # GOAL-20261006-031 EC-03：本任务里**声明式跳过**的调用（逐字带理由）。任务照常
+    # 成功——跳过不是失败；这条字段是「不触发」臂在读面上的可判形态（缺省 = 没跳过）。
+    skipped: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

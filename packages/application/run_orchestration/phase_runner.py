@@ -20,7 +20,6 @@ from packages.application.observability.signals import (
     OperationScope,
 )
 from packages.application.ports.agent_runtime import AgentRuntime
-from packages.application.ports.approval_store import ApprovalSpec
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.evidence_ledger import EvidenceLedger
@@ -30,6 +29,10 @@ from packages.application.run_orchestration.commands import StartRunCommand
 from packages.application.run_orchestration.experiment_task import dispatch_experiment
 from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome, handoff_digests
 from packages.application.run_orchestration.phase_capabilities import execute_run_chain_capabilities
+from packages.application.run_orchestration.phase_pause import (
+    pause_for_human_gate,
+    pause_if_requested,
+)
 from packages.application.run_orchestration.task_executor import (
     ExecutionDeps,
     SessionSpecContext,
@@ -163,10 +166,10 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
     specs = ctx.pending or ctx.resolve_sessions()
     groups = list(_phase_groups(specs))
     for index, group in enumerate(groups):
-        paused = _pause_for_human_gate(deps, ctx, group, groups[index:], outcomes)
+        paused = pause_for_human_gate(deps, ctx, group, groups[index:], outcomes)
         if paused is not None:
             return paused
-        held = _pause_if_requested(deps, ctx, groups[index:], outcomes)
+        held = pause_if_requested(deps, ctx, groups[index:], outcomes)
         if held is not None:
             return held
         failure = _execute_phase_group(
@@ -180,7 +183,18 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
     tolerating = tuple(outcome for outcome in outcomes if outcome.failure_policy is not None)
     if tolerating:
         return deps.degrade(ctx, tolerating, handoffs)
-    deps.emit(EventType.RUN_COMPLETED, {"run_id": ctx.run_id}, ctx.run_id, ctx.trace_id, None)
+    payload: dict[str, object] = {"run_id": ctx.run_id}
+    # GOAL-20261006-031 EC-03：声明式跳过的调用进**既有读面**（事件链）——
+    # 任务照常成功，但「哪条工具因上一步的哪个字段没跑」必须可读。
+    # 无跳过 ⇒ 不带该键（既有 payload 逐字节不变）。
+    skips = [
+        {"task_id": outcome.task.id.value, "reasons": list(outcome.skipped)}
+        for outcome in outcomes
+        if outcome.skipped
+    ]
+    if skips:
+        payload["skipped"] = skips
+    deps.emit(EventType.RUN_COMPLETED, payload, ctx.run_id, ctx.trace_id, None)
     return RunOutcome(
         run_id=ctx.run_id,
         state=ResearchRunState.State.SUCCEEDED,
@@ -189,75 +203,6 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
         manifest_digest=ctx.frozen_manifest_digest,
         handoff_digests=handoff_digests(handoffs),
         system_failure=False,
-    )
-
-
-def _pause_if_requested(
-    deps: PhaseRunnerDeps,
-    ctx: PhaseContext,
-    remaining: "list[tuple[SessionSpec, ...]]",
-    outcomes: "list[TaskOutcome]",
-) -> RunOutcome | None:
-    """协作式暂停（PLAN-20260914-048）：组边界观测到暂停信号 → **零任务执行**
-    返回 PAUSED，剩余 specs（含当前组）经 on_pause 交回 service 暂存。
-
-    只读 canonical run state（service 注入谓词），不自己造暂停事实；
-    已持租约的任务不受影响（不在本函数职责内撤销）。
-    """
-    if deps.pause_requested is None or not deps.pause_requested():
-        return None
-    if deps.on_pause is not None:
-        deps.on_pause(tuple(spec for group in remaining for spec in group))
-    return RunOutcome(
-        run_id=ctx.run_id,
-        state=ResearchRunState.State.PAUSED,
-        message="paused at phase boundary (cooperative pause)",
-        tasks=tuple(outcomes),
-        manifest_digest=ctx.frozen_manifest_digest,
-        system_failure=False,
-    )
-
-
-def _pause_for_human_gate(
-    deps: PhaseRunnerDeps,
-    ctx: PhaseContext,
-    group: "tuple[SessionSpec, ...]",
-    remaining: "list[tuple[SessionSpec, ...]]",
-    outcomes: "list[TaskOutcome]",
-) -> RunOutcome | None:
-    """声明的 human gate：注册 ApprovalRecord + APPROVAL_REQUESTED 事件 +
-    WAITING_FOR_APPROVAL outcome（剩余 specs 经 on_pause 交回 service 暂存）。
-    没有 approvals store 时 service 不会给出 human_gated 集（fail-closed）。"""
-    phase_id = group[0][2].phase_id
-    if not phase_id or phase_id not in deps.human_gated or deps.approvals is None:
-        return None
-    approval = deps.approvals.register(
-        ApprovalSpec(
-            run_id=ctx.run_id,
-            action=f"human-gate:{phase_id}",
-            risk="HUMAN_GATE",
-            context=phase_id,
-            policy_source="protocol-gate",
-            # requested_event_id 关联本应指向 approval.requested 事件，但发布在
-            # register 之后且 publish 不回传 id；留空（审批记录本身即真相源）。
-            requested_event_id="",
-        )
-    )
-    deps.emit(
-        EventType.APPROVAL_REQUESTED,
-        {"run_id": ctx.run_id, "phase_id": phase_id, "approval_id": approval.id},
-        ctx.run_id,
-        ctx.trace_id,
-        None,
-    )
-    if deps.on_pause is not None:
-        deps.on_pause(tuple(spec for chunk in remaining for spec in chunk))
-    return RunOutcome(
-        run_id=ctx.run_id,
-        state=ResearchRunState.State.WAITING_FOR_APPROVAL,
-        message=f"awaiting human approval for phase {phase_id} (approval {approval.id})",
-        tasks=tuple(outcomes),
-        manifest_digest=ctx.frozen_manifest_digest,
     )
 
 
@@ -329,6 +274,28 @@ class _GroupFrame:
     phase_op: Any
 
 
+def _dispatch_task_execution(deps: PhaseRunnerDeps, tctx: TaskContext) -> TaskExecutionResult:
+    """按**契约声明**选执行体：沙箱实验或会话（自 `_execute_one_task` 拆出守 50 行门）。
+
+    「谁执行这件工作」是契约事实（`TaskContract.experiment`），不按合约 id 的字面量——
+    写死一个名字会漏掉语义相同的别的合约。判定与幅度逐字不变（纯搬运）。
+    """
+    task = tctx.task
+    if tctx.contract.experiment is not None:
+        return dispatch_experiment(deps, tctx)
+    return execute_task(
+        # budget 必须接进来:失败/重试路径的 attempt 记账在
+        # `record_attempt_usage` 里以 `budget is None` 提前返回,原先这里
+        # 漏传导致生产 run 的失败尝试**从不落账**——"失败消耗不丢失"无从成立
+        # (M15 复审 BLOCKER-5 的第二半)。
+        ExecutionDeps(deps.workflow, deps.runtime, budget=deps.budget),
+        task,
+        tctx.contract,
+        tctx.spec_context,
+        trace_id=tctx.ctx.trace_id,
+    )
+
+
 def _run_group_task(
     frame: _GroupFrame,
     group: tuple[SessionSpec, ...],
@@ -368,7 +335,9 @@ def _run_group_task(
         frame.phase_op.set_outcome(OperationOutcome.FAILED, "task_failed")
         return step.failure  # type: ignore[no-any-return]
     run.handoffs[task.id.value] = step.handoff
-    run.outcomes.append(TaskOutcome(task=task, outcome="SUCCEEDED", verdict=step.verdict))
+    run.outcomes.append(
+        TaskOutcome(task=task, outcome="SUCCEEDED", verdict=step.verdict, skipped=step.skipped)
+    )
     return None
 
 
@@ -413,22 +382,7 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
     capability = execute_run_chain_capabilities(deps.capabilities, task, tctx.spec_context)
     if capability.failure_message is not None:
         return failure_step(deps, tctx, capability.failure_message, capability.system_failure)
-    # GOAL-011 EC-03：派发按**契约声明**判（`TaskContract.experiment`），不按合约 id 的
-    # 字面量——「谁执行这件工作」是契约事实，写死一个名字会漏掉语义相同的别的合约。
-    if tctx.contract.experiment is not None:
-        execution = dispatch_experiment(deps, tctx)
-    else:
-        execution = execute_task(
-            # budget 必须接进来:失败/重试路径的 attempt 记账在
-            # `record_attempt_usage` 里以 `budget is None` 提前返回,原先这里
-            # 漏传导致生产 run 的失败尝试**从不落账**——"失败消耗不丢失"无从成立
-            # (M15 复审 BLOCKER-5 的第二半)。
-            ExecutionDeps(deps.workflow, deps.runtime, budget=deps.budget),
-            task,
-            tctx.contract,
-            tctx.spec_context,
-            trace_id=tctx.ctx.trace_id,
-        )
+    execution = _dispatch_task_execution(deps, tctx)
     # GOAL-010 EC-04：这次会话的运行时观测交回 service（没有观测 ⇒ 什么都不交）。
     observe_session(deps.on_observation, tctx.spec_context.endpoint, execution.session_result)
     if not execution.succeeded:
@@ -446,4 +400,10 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
         return register_and_gate_experiment(deps, tctx, execution)
     assert execution.session_result is not None
     # GOAL-011 EC-01：运行链取得的证据随会话结果**同一个** claim 登记（读面才看得到）。
-    return register_and_gate(deps, tctx, execution.session_result, capability.evidences)
+    return register_and_gate(
+        deps,
+        tctx,
+        execution.session_result,
+        capability.evidences,
+        skipped=capability.skipped,
+    )

@@ -1,0 +1,36 @@
+GOAL-20261006-031 EC-03 判词归档（两臂实测 + 派生链 + 两向反证）
+生成：scratch/goal031-cycle3/gen_ec03_evidence.py（实跑一次 run，逐字抄读数）
+
+== (a) 触发臂（检索响应非空）==
+state=SUCCEEDED
+failures=[]
+http_endpoints=['esearch.fcgi', 'efetch.fcgi']
+round1_tools=['evidence_read', 'literature_search']
+round2_tools=['artifact_read', 'evidence_read', 'literature_read']
+skipped=[]
+round1_search_ids=['39000001', '39000002']
+round1_search_artifact=tool-result:3897ad97-1c1e-4d66-b040-95e570523a34:literature_search:literature_search
+round2_read_artifact=tool-result:3b7f3ba9-cc0c-41c3-93f3-eaa534dd658b:literature_read:39000001+39000002:literature_read
+round2_read_source_ref=tool:literature_read:3b7f3ba9-cc0c-41c3-93f3-eaa534dd658b:literature_read:39000001+39000002
+round2_read_task=3b7f3ba9-cc0c-41c3-93f3-eaa534dd658b
+round2_pmids_expected=['39000001', '39000002']
+round2_artifact_content_ids=['39000001', '39000002']
+
+== (b) 不触发臂（同一协议/装配，检索响应零命中）==
+state=SUCCEEDED
+failures=[]
+http_endpoints=['esearch.fcgi']
+round1_tools=['evidence_read', 'literature_search']
+round2_tools=['artifact_read', 'evidence_read']
+skipped=[{"reasons": ["run-chain tool literature_read skipped: previous step carried no 'content.ids' ids and this call declares requires_previous_ids=False"], "task_id": "f2b6c130-05c2-476a-a680-d13f1b003468"}]
+round1_search_ids=[]
+round1_search_artifact=tool-result:3dd2854b-9d1d-436b-9431-8bfc2bceced4:literature_search:literature_search
+round2_artifact_content_ids=[]
+
+== (d) 反证① 派生规则改坏（ids_from_previous -> content.no_such_field）==
+state=FAILED
+failures=["run-chain capability step failed: run-chain tool literature_read: previous step's result carries no 'content.no_such_field' (declared input carries no 'content.no_such_field')"]
+
+== (d) 反证② 读面抓手摘掉（artifact_from_previous -> no_such_artifact）==
+state=FAILED
+failures=["run-chain capability step failed: run-chain tool artifact_read: expected exactly one evidence artifact_id ending with 'no_such_artifact', found [] (candidates: ['d1d8040f-6e81-4422-8427-ad811564287b:round_one_findings', 'input-brief:real_research_v1', 'tool-result:d1d8040f-6e81-4422-8427-ad811564287b:evidence_read:evidence_read', 'tool-result:d1d8040f-6e81-4422-8427-ad811564287b:literature_search:literature_search'])"]
