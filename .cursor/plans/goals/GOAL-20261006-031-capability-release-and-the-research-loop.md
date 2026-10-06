@@ -274,9 +274,10 @@ exit_criteria:
       `COMPARE identical=True`）；判词归档进树（各 3495 字节、CR=0）
       （`.cursor/plans/goals/evidence/GOAL-20261006-031-verdict-{current,clean}.txt`，二进制写盘）；
       ④ as-is m0 = `PASS: profile=m0; 23 deterministic checks`（**全部记录写入之后**、独占、
-      仓库 `.venv`、canonical DSN pin、不接管道；`PASS [` **24** / `FAILED [` **0** /
-      **5210 passed / 21 skipped**，python 段 `679.98s`；日志
-      `scratch/goal031-cycle5/m0-final.log`）；⑤ 治理 `validate.py` 绿；
+      仓库 `.venv`、canonical DSN pin、不接管道；**定稿读数**在全部内容与记录提交之后跑
+      （日志 `scratch/goal031-cycle5/m0-post-backfill.log`，`c69e4c1` 定稿树）：
+      `PASS [` **24** / `FAILED [` **0** / **5210 passed / 21 skipped**，python 段 `675.84s`）；
+      ⑤ 治理 `validate.py` 绿；
       ⑥ CI 台账逐提交（见「CI 台账」节；`cancelled` 如实登记 + 原因 + `covered_by`；
       自我指涉边界明写并封闭）；⑦ 承继残余逐条在位 + 决策登记 16 项 + 未覆盖范围逐条明写。
       警告 `W-EC05-1/2/3` 登记（首跑两树 RED 是预期：干净树缺未提交增量 ⇒ 先提交再重跑）。
@@ -697,6 +698,7 @@ apps/web/src/features/lineage -g '*.ts' -g '*.tsx'`
 | `9bfbec9`（cycle 2 / EC-02） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle2/poll.log`，47 轮轮询至 `ALL_TERMINAL`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37386777893` CodeQL 3/3 `success`（`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)`）；M0 `37386776742` **八 job 全 `success`**（`console-frontend` / `observability-overhead-windows-latest` / `eval-gate` / `quality-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `observability-overhead-ubuntu-latest` / `container-quality`）。无 `cancelled`、无 `failure`（`run_attempt=1`）。**覆盖面**：该批次 = EC-02 三态判据 + `ncbi_citation` provider + pin 夹具最小追加（记录同提交）⇒ 该树在 CI 上全绿。 |
 | `0c870e4`（cycle 3 / EC-03） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle3/poll.log`，轮询至 `ALL_TERMINAL sha=0c870e48…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37418259208` CodeQL 3/3 `success`（`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)`）；M0 `37418259577` **八 job 全 `success`**（`quality-windows-latest` / `quality-ubuntu-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `collector-quality` / `eval-gate` / `container-quality`）。无 `cancelled`、无 `failure`。**覆盖面**：该批次 = EC-03 声明式触发/跳过 + 两轮协议 + 13 例判据 + 三处规模门拆分（记录同提交）⇒ 该树在 CI 上全绿。 |
 | `cc762b3`（cycle 4 / EC-04） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle4/poll.log`，轮询至 `ALL_TERMINAL sha=cc762b3c…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37422584353` CodeQL 3/3 `success`（`Analyze (javascript-typescript)` / `Analyze (python)` / `Analyze (actions)`）；M0 `37422584649` **八 job 全 `success`**（`container-quality` / `console-frontend` / `quality-ubuntu-latest` / `collector-quality` / `quality-windows-latest` / `eval-gate` / `observability-overhead-windows-latest` / `observability-overhead-ubuntu-latest`）。无 `cancelled`、无 `failure`。**覆盖面**：该批次 = EC-04 改名 + 四处同步 + 全仓零命中判据 + m0 两处真缺陷修复（记录同提交）⇒ 该树在 CI 上全绿。 |
+| `c69e4c1`（cycle 5 / EC-05 收口，**批次末条**） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle5/poll.log`，轮询至 `ALL_TERMINAL sha=c69e4c1a…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37427387472` CodeQL 3/3 `success`（`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)`）；M0 `37427388419` **八 job 全 `success`**（`collector-quality` / `observability-overhead-ubuntu-latest` / `quality-windows-latest` / `quality-ubuntu-latest` / `eval-gate` / `console-frontend` / `container-quality` / `observability-overhead-windows-latest`）。无 `cancelled`、无 `failure`。**覆盖面**：该提交 = 收口验证器 + 断言集 + `IN_SCOPE` + 两树判词归档 + 收口记录 + memory_entries 回填（本条为批次末条，其前两条 `3542741` / `e9b5dce` 属同一批次、结论由本条合并覆盖 —— 同一工作树 + 逐条增量，按 GOAL-030 的流程自省口径「一个 cycle 攒成一次推送」执行，未推中间提交）。**自我指涉边界（本 GOAL 封闭）**：本台账由**本条提交**写入 ⇒ 本行自身的 CI 结论来自**同一 SHA 的运行**（非未来提交）⇒ **不循环**：`c69e4c1` 的结论取自该 SHA 的实际 run 读数，写入发生在 poll 取到 `ALL_TERMINAL` **之后**；本行写入后的任何记录提交（若还有）按其自身 SHA 另行登记，且**不得**用本行结论代替。 |
 
 ## 迭代日志
 

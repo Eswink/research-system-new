@@ -94,9 +94,11 @@ uv run --frozen --no-sync python -B tools/two_tree_recheck.py --script tools/ver
 - 治理：`uv run --frozen --no-sync python -B .cursor/skills/governance-check/scripts/validate.py`
   ⇒ 绿（无 error 行）。
 - 四道门：`tests/tooling/test_tooling_scripts_meet_product_gates.py` ⇒ 8 passed。
-- as-is m0：`PASS: profile=m0; 23 deterministic checks`（日志 `scratch/goal031-cycle5/m0-final.log`；
-  `PASS [` **24** / `FAILED [` **0** / **5210 passed / 21 skipped / 180 warnings**，
-  python 段 `679.98s`；独占、仓库 `.venv`、canonical DSN pin、不接管道、`EXIT=0`）。
+- as-is m0：`PASS: profile=m0; 23 deterministic checks`（**定稿读数**：日志
+  `scratch/goal031-cycle5/m0-post-backfill.log` —— 在**全部内容与记录提交之后**
+  （`c69e4c1` 定稿树）跑；`PASS [` **24** / `FAILED [` **0** / **5210 passed / 21 skipped /
+  180 warnings**，python 段 `675.84s`；独占、仓库 `.venv`、canonical DSN pin、不接管道、
+  `EXIT=0`。此前两次同值跑：`m0-final.log` `679.98s` / `m0-closeout.log` `679.49s`）。
 
 ## 警告（如实登记，不掩盖）
 
