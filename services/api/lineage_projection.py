@@ -26,8 +26,8 @@ def run_lineage_nodes_edges(
     nodes: dict[str, LineageNodeDto] = {}
     edges: list[LineageEdgeDto] = []
 
-    def add_node(node_id: str, kind: str, label: str) -> None:
-        nodes.setdefault(node_id, LineageNodeDto(id=node_id, kind=kind, label=label, run_id=run_id))
+    def add_node(node_id: str, kind: str, text: str) -> None:
+        nodes.setdefault(node_id, LineageNodeDto(id=node_id, kind=kind, text=text, run_id=run_id))
 
     evidence_items = _evidence_of_run(ledger, run_id)
     evidence_ids = {item.id for item in evidence_items}

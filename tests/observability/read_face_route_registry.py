@@ -78,13 +78,14 @@ DECLARED_CONTENT: tuple[ReadRouteRule, ...] = (
     ReadRouteRule(
         "/runs/{run_id}/lineage",
         DECLARED,
-        "**实测**:`LineageNodeDto.label` 取自 claim statement(字段名叫 label,值就是正文)",
+        "**实测**:`LineageNodeDto.text` 取自 claim statement"
+        "(GOAL-20261006-031 EC-04 改名:`label`->`text`;值就是正文)",
         ("evidencebody",),
     ),
     ReadRouteRule(
         "/projects/{project_id}/lineage",
         DECLARED,
-        "同上(项目级血缘图,label 同样取自 claim statement)",
+        "同上(项目级血缘图,`text` 同样取自 claim statement)",
         ("evidencebody",),
     ),
     ReadRouteRule(

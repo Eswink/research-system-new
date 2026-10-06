@@ -1,0 +1,34 @@
+GOAL-20261006-031 EC-04 判词归档（改名落地 + 四处同步 + 旧名零命中 + 两向反证）
+生成：scratch/goal031-cycle4 内联脚本（实跑一次扫描 + 两次反证注入，逐字抄读数）
+
+== (a) 改名：DTO 字段（AST 读声明）==
+  LineageNodeDto: ['id', 'kind', 'text', 'run_id']
+  ProjectLineageNodeDto: ['id', 'kind', 'text', 'run_ids', 'shared']
+
+== (b) 旧名零命中：全仓血缘上下文扫描 ==
+  受判面（承载血缘 DTO 的文件）: 11 个
+    - services/api/dto/inspection.py
+    - services/api/lineage_projection.py
+    - services/api/project_lineage.py
+    - services/api/routers/lineage.py
+    - apps/web/src/api/types.ts
+    - apps/web/src/features/lineage/lineageColumns.tsx
+    - apps/web/src/features/lineage/LineageProjection.tsx
+    - apps/web/src/features/lineage/projectLineageColumns.tsx
+    - tests/api/test_project_lineage_api.py
+    - tests/observability/read_face_route_registry.py
+    - docs/api/openapi.m13.json
+  旧名命中: 0
+
+== (c) 反证① 把旧名放回 lineage_projection.py（生产构造点）==
+  exit=1
+  FAILED tests/tooling/test_lineage_label_rename_is_complete.py::TestTheOldFieldNameHasZeroHits::test_no_surface_file_carries_the_old_field_name
+  FAILED tests/tooling/test_lineage_label_rename_is_complete.py::TestTheOldFieldNameHasZeroHits::test_no_lineage_context_file_carries_the_old_field_name
+  2 failed, 9 passed in 0.54s
+
+== (c) 反证② 把旧名放回 lineageColumns.tsx（web 渲染读取点）==
+  exit=1
+  FAILED tests/tooling/test_lineage_label_rename_is_complete.py::TestTheOldFieldNameHasZeroHits::test_no_surface_file_carries_the_old_field_name
+  FAILED tests/tooling/test_lineage_label_rename_is_complete.py::TestTheOldFieldNameHasZeroHits::test_no_lineage_context_file_carries_the_old_field_name
+  FAILED tests/tooling/test_lineage_label_rename_is_complete.py::TestTheConsumersOutsideTheSurface::test_the_consumers_outside_the_surface_do_not_read_the_old_field
+  3 failed, 8 passed in 0.51s

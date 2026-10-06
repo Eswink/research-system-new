@@ -3240,10 +3240,6 @@
             "title": "Kind",
             "type": "string"
           },
-          "label": {
-            "title": "Label",
-            "type": "string"
-          },
           "run_id": {
             "anyOf": [
               {
@@ -3254,12 +3250,16 @@
               }
             ],
             "title": "Run Id"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "kind",
-          "label"
+          "text"
         ],
         "title": "LineageNodeDto",
         "type": "object"
@@ -4841,10 +4841,6 @@
             "title": "Kind",
             "type": "string"
           },
-          "label": {
-            "title": "Label",
-            "type": "string"
-          },
           "run_ids": {
             "items": {
               "type": "string"
@@ -4856,12 +4852,16 @@
             "default": false,
             "title": "Shared",
             "type": "boolean"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "kind",
-          "label"
+          "text"
         ],
         "title": "ProjectLineageNodeDto",
         "type": "object"

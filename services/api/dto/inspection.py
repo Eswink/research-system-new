@@ -117,7 +117,7 @@ class DeliverableDto(BaseModel):
 class LineageNodeDto(BaseModel):
     id: str
     kind: str
-    label: str
+    text: str
     run_id: str | None = None
 
 
@@ -151,7 +151,7 @@ class ProjectLineageNodeDto(BaseModel):
 
     id: str
     kind: str
-    label: str
+    text: str
     run_ids: list[str] = Field(default_factory=list)
     shared: bool = False
 

@@ -876,7 +876,7 @@ export interface ToolProviderRegistrationListDto {
 export interface LineageNodeDto {
   id: string;
   kind: string;
-  label: string;
+  text: string;
   run_id: string | null;
 }
 
@@ -898,7 +898,7 @@ export interface LineageDto {
 export interface ProjectLineageNodeDto {
   id: string;
   kind: string;
-  label: string;
+  text: string;
   run_ids: string[];
   shared: boolean;
 }

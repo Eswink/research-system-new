@@ -54,12 +54,12 @@ export const LINEAGE_ROUTES: readonly StubRoute[] = [
         project_id: url.pathname.split("/")[2] ?? "",
         run_count: 2,
         nodes: [
-          { id: "run:r-1", kind: "run", label: "r-1", run_ids: ["r-1"], shared: false },
-          { id: "run:r-2", kind: "run", label: "r-2", run_ids: ["r-2"], shared: false },
+          { id: "run:r-1", kind: "run", text: "r-1", run_ids: ["r-1"], shared: false },
+          { id: "run:r-2", kind: "run", text: "r-2", run_ids: ["r-2"], shared: false },
           {
             id: `source:${SHARED_SOURCE}`,
             kind: "source",
-            label: SHARED_SOURCE,
+            text: SHARED_SOURCE,
             run_ids: ["r-1", "r-2"],
             shared: true,
           },

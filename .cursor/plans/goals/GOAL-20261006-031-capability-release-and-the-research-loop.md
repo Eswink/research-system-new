@@ -223,7 +223,27 @@ exit_criteria:
       tests/contracts/test_openapi_snapshot.py tests/api/test_reports_integrations_lineage_api.py
       tests/api/test_project_lineage_api.py -q` ⇒ 全绿；`cd apps/web && npx tsc -b` 绿；
       配套留档：消费者普查读数（逐文件）、旧名零命中扫描命令与读数、反证判红原文。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      cycle 4（PLAN-20261006-299 / `RECHECK-20261006-299` = PASS）。
+      判词归档：`.cursor/plans/goals/evidence/GOAL-20261006-031-ec04-rename-and-zero-hit-ledger.txt`。
+      **实测**：(a) 新名落地 `LineageNodeDto: ['id','kind','text','run_id']` /
+      `ProjectLineageNodeDto: ['id','kind','text','run_ids','shared']`（AST 读类体注解名）；
+      (b) 四处同步 = DTO + 快照（`gen_openapi.py` 再生成，10 行增删）+ web 两类 DTO +
+      e2e 夹具 + 两个渲染列定义（**逐文件**在场）；
+      (c) **全仓血缘上下文扫描：受判面 11 个文件、旧名命中 0**（逐条列出，
+      `label` 属性读 / 构造点 / JSON 键三种形态；`trust_label` / `aria-label` 不误报）；
+      (d) 既有 `test_openapi_snapshot.py` **一字未改**且绿（`git diff --numstat` 为空）；
+      (e) 两向反证判红：反证①（放回 `lineage_projection.py` 构造点）2 FAILED 点名该文件；
+      反证②（放回 `lineageColumns.tsx` 渲染读取点）3 FAILED 点名该文件。
+      **兼容性实测**（不是推定）：受判面之外的 `provenanceModel.ts` / `ProvenanceGraph.tsx`
+      用**自己的视图模型** `label`（值取自 `ClaimDto.statement` / `EvidenceDto.id`），
+      不 import 血缘 DTO ⇒ 不破坏兼容；本仓不对外发布该 DTO。
+      判据 **11 passed**；定向回归 **2573 passed / 76 skipped**；`tests/tooling` **1335 passed**；
+      web 门 typecheck / lint / test（94 pass）/ build 全绿。
+      **判据自缺口两处（自己发现、自己修，强度未降）**：① 扫描模式首版排除 `.` ⇒ 对
+      `row.label` 不报（反证臂首跑判绿 = 空转）⇒ 属性读算命中；② 全仓扫描收进隐藏目录的
+      会话状态文件（受判集不稳定）⇒ 明写排除隐藏目录。
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**：① 收口验证器进树（复用 `tools/closeout_recheck_tools`
@@ -309,6 +329,7 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261006-293-goal-031-ec01-read-capability-release.md
   - .cursor/plans/tasks/PLAN-20261006-295-goal-031-ec02-citation-validate-full-chain.md
   - .cursor/plans/tasks/PLAN-20261006-297-goal-031-ec03-two-round-derived-research-loop.md
+  - .cursor/plans/tasks/PLAN-20261006-299-goal-031-ec04-lineage-label-rename.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -650,6 +671,7 @@ apps/web/src/features/lineage -g '*.ts' -g '*.tsx'`
 | `03c2d5b`（cycle 1 / EC-01） | **全绿** | M0 `37381070426` **八 job 全 `success`**（`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `container-quality` / `collector-quality` / `eval-gate` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest`）；Push-on-main `37381069457` CodeQL 3/3 `success`；`run_attempt=1`，无 `cancelled`。**该批同时覆盖 `0e99dbe` 的基础设施红**（同一工作树 + cycle 1 增量；Actions 恢复后首次推送即全绿）⇒ `W31-5` 的解除条件达成：**CI 全绿已取得**（`0e99dbe` 本身的基础设施红保留为历史事实，不追溯改写）。 |
 | `0e99dbe`（重跑 attempt 2） | **仍红：`quality-windows-latest` 转绿，其余 4 job `cancelled`（同一基础设施原因）** | 同一 run `37365193558` 的 `run_attempt=2`（`rerun-failed-jobs`）：`quality-windows-latest` **`success`**（runner `GitHub Actions 1000015611`）；`quality-ubuntu-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` **仍 `cancelled`**，四者 `runner_name=''`（仍未拿到 runner）且终止时刻**同为** `20:47:41Z`（起点 `20:32:39Z` ⇒ 又是 15 分钟后被平台放弃），annotation **逐条同文**：`The job was not acquired by Runner of type hosted even after multiple attempts`。**状态页在取证时刻已升级**：incident「Incident with Actions」由 `degraded_performance` 升为 Actions 组件 **`major_outage`**（`2026-10-05T20:50Z` 读数：「Actions is experiencing degraded availability. We are continuing to investigate.」）。⇒ 同一基础设施原因**持续中**；fix_policy (iv) 的「等窗口重跑 1 次」**已用完且仍败** ⇒ 按 (iv) 的下一句登记为**基础设施阻塞**（非代码缺陷；树侧证据见下）。**本地覆盖**：五个未跑 job 中，`quality-{ubuntu,windows}` 的 m0 判据面在本机 as-is m0 跑（见「迭代日志」cycle 1 的 m0 终局行）＋定向回归 **1607 passed**；`observability-overhead-*` 的 RSS/线程阈值判据属既有 D-13 专用作业，本轮**零改动**其判据与阈值；`console-frontend` 面本轮**零改动** `apps/web`（`git diff` 零命中）。**不得**把本条读成「全绿」——它是**未取得 CI 全绿**的如实登记。 |
 | `9bfbec9`（cycle 2 / EC-02） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle2/poll.log`，47 轮轮询至 `ALL_TERMINAL`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37386777893` CodeQL 3/3 `success`（`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)`）；M0 `37386776742` **八 job 全 `success`**（`console-frontend` / `observability-overhead-windows-latest` / `eval-gate` / `quality-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `observability-overhead-ubuntu-latest` / `container-quality`）。无 `cancelled`、无 `failure`（`run_attempt=1`）。**覆盖面**：该批次 = EC-02 三态判据 + `ncbi_citation` provider + pin 夹具最小追加（记录同提交）⇒ 该树在 CI 上全绿。 |
+| `0c870e4`（cycle 3 / EC-03） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle3/poll.log`，轮询至 `ALL_TERMINAL sha=0c870e48…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37418259208` CodeQL 3/3 `success`（`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)`）；M0 `37418259577` **八 job 全 `success`**（`quality-windows-latest` / `quality-ubuntu-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `collector-quality` / `eval-gate` / `container-quality`）。无 `cancelled`、无 `failure`。**覆盖面**：该批次 = EC-03 声明式触发/跳过 + 两轮协议 + 13 例判据 + 三处规模门拆分（记录同提交）⇒ 该树在 CI 上全绿。 |
 
 ## 迭代日志
 
@@ -660,10 +682,12 @@ apps/web/src/features/lineage -g '*.ts' -g '*.tsx'`
 | 2 | `PLAN-20261006-295`（EC-02） | `9bfbec9`（记录同提交） | 三态判据 **12 passed**（两向反证 + 自检）；受判面 **586 passed / 69 skipped**；扩展 **1157 passed / 72 skipped**；会话注册 **18 passed** | `9bfbec9` 两 run 全绿（M0 八 job + CodeQL 3/3；详见「CI 台账」行） | **判据初版构造缺陷（自己修）**：`__new__` 克隆 provider 不可靠 + 小结果不落盘（默认 32 KiB 阈值 ⇒ 读不回判定）⇒ 改为直接构造 + `spill_threshold_bytes=1`（与 cycle 1 同配方） | EC-03…EC-05 未开启；`W-EC02-1/2/3` 登记 | cycle 3 = EC-03（两轮派生：触发/跳过声明面 + 两臂实测） |
 
 | 3 | `PLAN-20261006-297`（EC-03） | cycle 3 批次待推送（记录同提交） | 判据 **13 passed**（两臂 + 两向反证 + 自检）；定向回归 **2125 passed / 73 skipped**；`tests/tooling` **1323 passed**（规模门：`phase_runner` 449→402 / `read_provider` 452→411 / `phase_capabilities` 461→441，两处拆分逐行搬运）；判词归档**实跑**生成；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（记录定稿后、独占、仓库 `.venv`、canonical DSN pin、不接管道；`PASS [` **24** / `FAILED [` **0** / **5198 passed / 21 skipped**，python 段 `781.74s`；日志 `scratch/goal031-cycle3/m0.log`，`EXIT=0`）**—— 本行 m0 读数写入于该次运行之后**，按 CI 台账同款自我指涉边界处置：其覆盖由 EC-05 收口的 as-is m0（**全部记录之后**）封闭 | 随批次推送后登记 | **三处规模门判红（自己修）**：① `phase_capabilities` 461 行 ⇒ 判定逻辑拆出 `phase_capability_triggers.py`；② `phase_runner` 449 行且 `_execute_one_task` 53 行 ⇒ parking 路径拆出 `phase_pause.py` + 派发拆出 `_dispatch_task_execution`；③ `read_provider` 452 行 ⇒ 投影拆出 `read_projection.py`。**判据初版构造缺陷**：AST 跳过 docstring（首版扫全文被自己例子误伤） | EC-04 / EC-05 未开启；`W-EC03-1/2` 登记（`W31-4` 延续） | cycle 4 = EC-04（`LineageNodeDto.label` 改名 + 四处同步 + 旧名零命中 + 兼容性实测） |
+| 4 | `PLAN-20261006-299`（EC-04） | cycle 4 批次待推送（记录同提交） | 判据 **11 passed**（含两条自检）；定向回归 **2573 passed / 76 skipped**；`tests/tooling` **1335 passed**；web 门 typecheck / lint / test（94 pass）/ build 全绿；**全仓血缘上下文扫描：受判面 11 文件、旧名命中 0**；两向反证判红原文归档；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（记录定稿后、独占、仓库 `.venv`、canonical DSN pin、不接管道；`PASS [` **24** / `FAILED [` **0** / **5210 passed / 21 skipped**，python 段 `682.38s`；日志 `scratch/goal031-cycle4/m0-final2.log`，`EXIT=0`。**首跑判红 2 条（真缺陷，自己修）**：`python/product-lint` 行超长（canary 注记改写换行）+ `python/typecheck` `no-any-return`（判据的 `_snapshot_schema`）—— 修后复跑全绿；本行 m0 读数写入于该次运行之后，按同款自我指涉边界处置：其覆盖由 EC-05 收口的 as-is m0（**全部记录之后**）封闭） | 随批次推送后登记 | **判据自缺口两处（自己修）**：① 扫描模式排除 `.` ⇒ 对 `row.label` 不报（反证臂首跑判绿 = 空转）⇒ 属性读算命中；② 全仓扫描收进隐藏目录会话状态文件（受判集不稳定）⇒ 明写排除隐藏目录。**web 侧一次操作失误（自己修）**：用 `tsc -b` 生成类型 ⇒ 在源树落 787 个 `.d.ts` 产物 ⇒ 全部清理，改用仓库既有 `tsc --noEmit`（`pnpm run typecheck`） | EC-05 未开启 | cycle 5 = EC-05（自举收口：验证器进树 + 两树复检 + 判词归档 + as-is m0 + 治理 + CI 台账逐提交） |
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-06 | ACTIVE | **cycle 4（EC-04 读面字段语义修正）落地**：`LineageNodeDto.label` / `ProjectLineageNodeDto.label` → `text`（值从来不是「标签」——`G24-4` 实测承载 claim 正文 / `source_ref` / id/ref）＋**四处同轮同步**（DTO + OpenAPI 快照再生成 + web 两类 DTO + e2e 夹具 + 两个渲染列定义；列头文案「标签 / Label」**逐字保留**——它是 UI 文案且被 `design-outlines.json` 结构签名钉住）＋**全仓血缘上下文零命中**（受判面 11 文件、命中 0；属性读/构造点/JSON 键三种形态逐条扫）＋**两向反证**（放回生产构造点 / web 渲染点 ⇒ 各判红并点名文件）＋**兼容性实测**（受判面之外的两个血缘前端件用**自己的视图模型** `label`，不 import 血缘 DTO ⇒ 不破坏兼容；本仓不对外发布该 DTO）。EC-04 = **PASS**（`RECHECK-20261006-299` = PASS，零警告）。**判据自缺口两处已修**（扫描模式误排除 `.` ⇒ 空转；全仓扫描收进隐藏目录状态文件 ⇒ 受判集不稳定）。既有判据（含 OpenAPI 快照判据）**一字未改**。 |
 | 2026-10-06 | ACTIVE | **cycle 3（EC-03 科研真成环）落地**：两轮派生链（第二轮经**读面**读到第一轮检索产出 —— `artifact.read` 返回内容与第一轮检索结果逐字相等）＋**声明式触发**（`requires_previous_ids` / `phase_id` / `artifact_from_previous` 三个声明字段，缺省行为逐字节不变）＋**两臂实测且可区分**（触发臂读取步 operation key 含第一轮 PMID；不触发臂 `run.completed.skipped` 逐字点名工具/字段，零请求零证据）＋**两向反证**（改坏派生路径 ⇒ FAILED 点名路径；摘掉读面抓手 ⇒ 第二轮判负并列出候选）。EC-03 = **PASS**（`RECHECK-20261006-297` = PASS_WITH_WARNINGS；`W-EC03-1/2` 登记）。为守 450 行硬上限与 50 行函数门，三处拆分（`phase_capability_triggers` / `phase_pause` / `read_projection`）全部逐行搬运、既有判据一字未改。 |
 | 2026-10-06 | ACTIVE | **cycle 2（EC-02 `citation.validate` 全链）落地**：三态判定（成立 / 不成立 / 无法判定 —— **两两不等**）+ 取数面**唯一**（`elink.fcgi` 调用点== 1）+ 承接（provider `ncbi_citation`）+ 放行（scope `approved_tool_providers`）+ pin 最小追加（判据文件删除行 0）。EC-02 = **PASS**。**cycle 1 的 CI 全绿已取得**（`03c2d5b` M0 八 job + CodeQL 3/3）⇒ `W31-5`（CI 基础设施阻塞）**解除**。 |
 | 2026-10-06 | ACTIVE | **cycle 1（EC-01 放行面扩容）落地**：6 条只读能力逐条放行（scope `project`）+ 镜像表同轮同步；三条新判据（只读面 / deny 面字节零改动 / `default_effect` 仍 `DENY` / 未放行护栏）+ 两向反证 + **实跑使用证据**（`run.read` / `budget.read` / `claim.read` 被真实调用、上游 2 条工具证据被两个下游各消费一次、run `SUCCEEDED`）。**判词归档进树**（三份 evidence 文件）。同步集四条既有钉定值按授权重新定基并逐条附「强度未降」自证（`RECHECK-20261006-293` = PASS_WITH_WARNINGS）。**判据自缺口抓修**：只读面判据初版只校验写法清单（14 条断言在注入 `workspace.delete` 后全绿）⇒ 改为**从文件算扩集**并加注入臂。`deny` 面基线 `bf04fa4e…` 前后逐字节相等。EC-01 = **PASS**。归档台账：`0e99dbe` 的 M0 五 job `cancelled` 系 **GitHub runner 供给事件**（annotation + 同时终止 + 状态页 incident 三条取证），按 (iv) 重跑 1 次。 |

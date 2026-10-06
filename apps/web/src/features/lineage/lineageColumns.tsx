@@ -5,7 +5,7 @@ import type { Column } from "../../components/Table";
 export function nodeColumns(zh: boolean): Column<LineageNodeDto>[] {
   return [
     { key: "kind", header: zh ? "类型" : "Kind", width: "120px", render: (row) => row.kind },
-    { key: "label", header: zh ? "标签" : "Label", render: (row) => row.label },
+    { key: "text", header: zh ? "标签" : "Label", render: (row) => row.text },
     {
       key: "id",
       header: "ID",

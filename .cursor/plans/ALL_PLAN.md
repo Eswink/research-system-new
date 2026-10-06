@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261006-299](tasks/PLAN-20261006-299-goal-031-ec04-lineage-label-rename.md) | DONE |
 | [x] | [PLAN-20261006-297](tasks/PLAN-20261006-297-goal-031-ec03-two-round-derived-research-loop.md) | DONE |
 | [x] | [PLAN-20261006-295](tasks/PLAN-20261006-295-goal-031-ec02-citation-validate-full-chain.md) | DONE |
 | [x] | [PLAN-20261006-293](tasks/PLAN-20261006-293-goal-031-ec01-read-capability-release.md) | DONE |

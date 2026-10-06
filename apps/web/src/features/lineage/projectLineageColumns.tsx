@@ -13,7 +13,7 @@ import type {
 export function projectNodeColumns(zh: boolean): Column<ProjectLineageNodeDto>[] {
   return [
     { key: "kind", header: zh ? "类型" : "Kind", width: "110px", render: (row) => row.kind },
-    { key: "label", header: zh ? "标签" : "Label", render: (row) => row.label },
+    { key: "text", header: zh ? "标签" : "Label", render: (row) => row.text },
     {
       key: "id",
       header: "ID",

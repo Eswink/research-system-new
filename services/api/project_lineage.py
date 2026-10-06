@@ -43,7 +43,7 @@ class _MergedNode:
 
     id: str
     kind: str
-    label: str
+    text: str
     run_ids: list[str] = field(default_factory=list)
 
 
@@ -86,7 +86,7 @@ def _merge_runs(
             degraded = True
             continue
         for node in run_nodes:
-            _merge(nodes, node.id, node.kind, node.label, run_id)
+            _merge(nodes, node.id, node.kind, node.text, run_id)
         for edge in run_edges:
             edges[(edge.source, edge.target, edge.relation)] = edge
     return nodes, edges, degraded
@@ -97,7 +97,7 @@ def _node_dtos(nodes: dict[str, _MergedNode]) -> list[ProjectLineageNodeDto]:
         ProjectLineageNodeDto(
             id=node.id,
             kind=node.kind,
-            label=node.label,
+            text=node.text,
             run_ids=sorted(node.run_ids),
             shared=len(node.run_ids) > 1,
         )
@@ -117,10 +117,10 @@ def _resource_dtos(resources: list[LibraryResource]) -> list[ProjectLineageResou
     ]
 
 
-def _merge(nodes: dict[str, _MergedNode], node_id: str, kind: str, label: str, run_id: str) -> None:
+def _merge(nodes: dict[str, _MergedNode], node_id: str, kind: str, text: str, run_id: str) -> None:
     existing = nodes.get(node_id)
     if existing is None:
-        nodes[node_id] = _MergedNode(id=node_id, kind=kind, label=label, run_ids=[run_id])
+        nodes[node_id] = _MergedNode(id=node_id, kind=kind, text=text, run_ids=[run_id])
         return
     if run_id not in existing.run_ids:
         existing.run_ids.append(run_id)
