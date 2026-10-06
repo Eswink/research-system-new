@@ -269,11 +269,14 @@ exit_criteria:
       本轮断言集 `tools/goal031_closeout_assertions.py` 368 行；**公共面一行不重写** ——
       直接调 `closeout_recheck_assertions.standard_verdicts`）并加入 `IN_SCOPE`（**纯收紧**），
       两文件过四道门；② 本树 `--verdict-only` = **80 PASS / 0 FAIL**；③ 两树复检
-      （`--script-mode shared`）= **`TWO-TREE PASS`**（两树各 80 判词、逐行相同、`sha256` 相同、
-      `COMPARE identical=True`）；判词归档进树
+      （`--script-mode shared`）= **`TWO-TREE PASS`**（两树各 80 判词、逐行相同、
+      `sha256` **同为** `38bd17d342c236f2c336a0627e5de880737bb334617d52d9bdc5589e3470ba88`、
+      `COMPARE identical=True`）；判词归档进树（各 3495 字节、CR=0）
       （`.cursor/plans/goals/evidence/GOAL-20261006-031-verdict-{current,clean}.txt`，二进制写盘）；
       ④ as-is m0 = `PASS: profile=m0; 23 deterministic checks`（**全部记录写入之后**、独占、
-      仓库 `.venv`、canonical DSN pin、不接管道）；⑤ 治理 `validate.py` 绿；
+      仓库 `.venv`、canonical DSN pin、不接管道；`PASS [` **24** / `FAILED [` **0** /
+      **5210 passed / 21 skipped**，python 段 `679.98s`；日志
+      `scratch/goal031-cycle5/m0-final.log`）；⑤ 治理 `validate.py` 绿；
       ⑥ CI 台账逐提交（见「CI 台账」节；`cancelled` 如实登记 + 原因 + `covered_by`；
       自我指涉边界明写并封闭）；⑦ 承继残余逐条在位 + 决策登记 16 项 + 未覆盖范围逐条明写。
       警告 `W-EC05-1/2/3` 登记（首跑两树 RED 是预期：干净树缺未提交增量 ⇒ 先提交再重跑）。
@@ -690,6 +693,7 @@ apps/web/src/features/lineage -g '*.ts' -g '*.tsx'`
 | `0e99dbe`（重跑 attempt 2） | **仍红：`quality-windows-latest` 转绿，其余 4 job `cancelled`（同一基础设施原因）** | 同一 run `37365193558` 的 `run_attempt=2`（`rerun-failed-jobs`）：`quality-windows-latest` **`success`**（runner `GitHub Actions 1000015611`）；`quality-ubuntu-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` **仍 `cancelled`**，四者 `runner_name=''`（仍未拿到 runner）且终止时刻**同为** `20:47:41Z`（起点 `20:32:39Z` ⇒ 又是 15 分钟后被平台放弃），annotation **逐条同文**：`The job was not acquired by Runner of type hosted even after multiple attempts`。**状态页在取证时刻已升级**：incident「Incident with Actions」由 `degraded_performance` 升为 Actions 组件 **`major_outage`**（`2026-10-05T20:50Z` 读数：「Actions is experiencing degraded availability. We are continuing to investigate.」）。⇒ 同一基础设施原因**持续中**；fix_policy (iv) 的「等窗口重跑 1 次」**已用完且仍败** ⇒ 按 (iv) 的下一句登记为**基础设施阻塞**（非代码缺陷；树侧证据见下）。**本地覆盖**：五个未跑 job 中，`quality-{ubuntu,windows}` 的 m0 判据面在本机 as-is m0 跑（见「迭代日志」cycle 1 的 m0 终局行）＋定向回归 **1607 passed**；`observability-overhead-*` 的 RSS/线程阈值判据属既有 D-13 专用作业，本轮**零改动**其判据与阈值；`console-frontend` 面本轮**零改动** `apps/web`（`git diff` 零命中）。**不得**把本条读成「全绿」——它是**未取得 CI 全绿**的如实登记。 |
 | `9bfbec9`（cycle 2 / EC-02） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle2/poll.log`，47 轮轮询至 `ALL_TERMINAL`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37386777893` CodeQL 3/3 `success`（`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)`）；M0 `37386776742` **八 job 全 `success`**（`console-frontend` / `observability-overhead-windows-latest` / `eval-gate` / `quality-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `observability-overhead-ubuntu-latest` / `container-quality`）。无 `cancelled`、无 `failure`（`run_attempt=1`）。**覆盖面**：该批次 = EC-02 三态判据 + `ncbi_citation` provider + pin 夹具最小追加（记录同提交）⇒ 该树在 CI 上全绿。 |
 | `0c870e4`（cycle 3 / EC-03） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle3/poll.log`，轮询至 `ALL_TERMINAL sha=0c870e48…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37418259208` CodeQL 3/3 `success`（`Analyze (python)` / `Analyze (javascript-typescript)` / `Analyze (actions)`）；M0 `37418259577` **八 job 全 `success`**（`quality-windows-latest` / `quality-ubuntu-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `collector-quality` / `eval-gate` / `container-quality`）。无 `cancelled`、无 `failure`。**覆盖面**：该批次 = EC-03 声明式触发/跳过 + 两轮协议 + 13 例判据 + 三处规模门拆分（记录同提交）⇒ 该树在 CI 上全绿。 |
+| `cc762b3`（cycle 4 / EC-04） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal031-cycle4/poll.log`，轮询至 `ALL_TERMINAL sha=cc762b3c…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37422584353` CodeQL 3/3 `success`（`Analyze (javascript-typescript)` / `Analyze (python)` / `Analyze (actions)`）；M0 `37422584649` **八 job 全 `success`**（`container-quality` / `console-frontend` / `quality-ubuntu-latest` / `collector-quality` / `quality-windows-latest` / `eval-gate` / `observability-overhead-windows-latest` / `observability-overhead-ubuntu-latest`）。无 `cancelled`、无 `failure`。**覆盖面**：该批次 = EC-04 改名 + 四处同步 + 全仓零命中判据 + m0 两处真缺陷修复（记录同提交）⇒ 该树在 CI 上全绿。 |
 
 ## 迭代日志
 

@@ -80,10 +80,13 @@ uv run --frozen --no-sync python -B tools/two_tree_recheck.py --script tools/ver
   --script-mode shared --root . --base-ref HEAD \
   --verdict-current scratch/goal031-cycle5/verdict-current.txt \
   --verdict-clean   scratch/goal031-cycle5/verdict-clean.txt
-⇒ TREE current=… exit=0 verdicts=80 sha256=<A>
-  TREE clean=…  exit=0 verdicts=80 sha256=<A>
+⇒ TREE current=D:esearch-system exit=0 verdicts=80 sha256=38bd17d3…
+  TREE clean=<干净 checkout>        exit=0 verdicts=80 sha256=38bd17d3…
   COMPARE identical=True
   TWO-TREE PASS
+
+（`sha256` 全文：`38bd17d342c236f2c336a0627e5de880737bb334617d52d9bdc5589e3470ba88`；
+两份归档各 3495 字节、CR=0、`sha256` **相同**；日志 `scratch/goal031-cycle5/two-tree2.log`）
 ```
 
 ### 补充门
@@ -92,7 +95,8 @@ uv run --frozen --no-sync python -B tools/two_tree_recheck.py --script tools/ver
   ⇒ 绿（无 error 行）。
 - 四道门：`tests/tooling/test_tooling_scripts_meet_product_gates.py` ⇒ 8 passed。
 - as-is m0：`PASS: profile=m0; 23 deterministic checks`（日志 `scratch/goal031-cycle5/m0-final.log`；
-  `PASS [` 24 / `FAILED [` 0）。
+  `PASS [` **24** / `FAILED [` **0** / **5210 passed / 21 skipped / 180 warnings**，
+  python 段 `679.98s`；独占、仓库 `.venv`、canonical DSN pin、不接管道、`EXIT=0`）。
 
 ## 警告（如实登记，不掩盖）
 
