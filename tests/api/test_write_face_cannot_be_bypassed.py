@@ -51,7 +51,11 @@ _READ_ONLY = frozenset({"GET", "HEAD"})
 #: 在建档日实测：写面端点数。它**不是**保护面的定义（定义来自代码枚举），
 #: 而是「枚举面是否被人为改动」的**告警线**——若树里新增/删除写面端点，
 #: 本判据会红，提示复核（而不是静默漏掉或静默放行）。
-_MEASURED_MUTATING_COUNT = 60
+#: 2026-10-08（GOAL-20261008-033 EC-01）：`POST /tasks/{task_id}/retry`
+#: （死信人工恢复的产品入口）⇒ 60 → 61。**纯同步**：保护面的定义（方法分类）与
+#: 断言强度未动；新端点自动落在枚举面内，`test_every_mutating_endpoint_rejects_a_missing_token`
+#: 当场覆盖它（本文件不需要为新端点登记路径）。
+_MEASURED_MUTATING_COUNT = 61
 
 
 def _placeholder_path(path: str) -> str:

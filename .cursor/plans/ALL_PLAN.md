@@ -6,6 +6,8 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261008-313](tasks/PLAN-20261008-313-goal-033-ec02-dead-letter-run-coordination.md) | DONE |
+| [x] | [PLAN-20261008-311](tasks/PLAN-20261008-311-goal-033-ec01-dead-letter-product-entry.md) | DONE |
 | [x] | [PLAN-20261007-309](tasks/PLAN-20261007-309-goal-032-ec04-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261007-307](tasks/PLAN-20261007-307-goal-032-ec03-research-continuity-coverage.md) | DONE |
 | [x] | [PLAN-20261007-305](tasks/PLAN-20261007-305-goal-032-ec02-outbox-relay-evidence.md) | DONE |

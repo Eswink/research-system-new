@@ -13,6 +13,8 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261008-195](entries/MEM-20261008-195-a-product-entry-is-not-the-port-it-wraps.md) | ACTIVE | repository | 0.9 | 2027-04-08 | PLAN-20261008-311 |
+| [MEM-20261008-194](entries/MEM-20261008-194-a-masked-claim-cannot-be-falsified-by-one-variable.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-313 |
 | [MEM-20261007-193](entries/MEM-20261007-193-continuity-coverage-is-a-matrix-not-a-claim.md) | ACTIVE | repository | 0.9 | 2027-04-07 | PLAN-20261007-307 |
 | [MEM-20261007-192](entries/MEM-20261007-192-a-stale-registration-needs-a-forensic-judge-not-a-note.md) | ACTIVE | repository | 0.9 | 2027-04-07 | PLAN-20261007-305 |
 | [MEM-20261007-191](entries/MEM-20261007-191-manual-recovery-keeps-the-terminal-read-and-the-budget.md) | ACTIVE | repository | 0.93 | 2027-04-07 | PLAN-20261007-303 |

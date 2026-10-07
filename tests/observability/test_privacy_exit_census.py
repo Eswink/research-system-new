@@ -167,6 +167,7 @@ EXIT_SURFACES: tuple[ExitSurface, ...] = (
             "services/api/routers/protocol_drafts.py",
             "services/api/routers/run_events.py",
             "services/api/routers/runs.py",
+            "services/api/routers/tasks.py",
             "services/api/routers/team_custom.py",
             "services/api/routers/team_protocol.py",
             "services/api/routers/tool_packs.py",

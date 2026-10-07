@@ -390,7 +390,18 @@ GET    /health                             （status/version/composition/pricing
 ```text
 GET    /runs/{id}/tasks
 GET    /tasks/{id}                         （未提供：任务详情走 /runs/{id}/tasks 投影）
-POST   /tasks/{id}/retry                   （未提供：retry 属 WorkflowEngine 内部策略）
+POST   /tasks/{id}/retry                   （GOAL-20261008-033 EC-01：**死信人工恢复**的
+                                            产品入口。恢复一条 `DEAD_LETTER` 任务 ⇒ 回
+                                            `QUEUED`（"回到可交付面"），下一次派发
+                                            （claim / run 级重建续跑）可再取到它。
+                                            实现体是既有 Port `WorkflowEngine.requeue`
+                                            （ADR-0033），本层不判状态、不重置尝试预算、
+                                            不回退 `fence_seq`。任务不存在 → 404；
+                                            状态不是 `DEAD_LETTER`（含「已恢复」）→ 409
+                                            （两类消息均点名任务 id 与实际状态）；
+                                            workflow 面未装配 → 503。直接对**任务**动作，
+                                            不改 run 状态；run 级入口仍是
+                                            `POST /runs/{id}/resume`）
 POST   /tasks/{id}/fork                    （未提供：同 runs fork）
 GET    /approvals
 POST   /approvals/{id}/decide

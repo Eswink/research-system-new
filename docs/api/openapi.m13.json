@@ -6296,6 +6296,34 @@
         "title": "TaskDto",
         "type": "object"
       },
+      "TaskRetryDto": {
+        "additionalProperties": false,
+        "description": "人工恢复一条死信任务的结论（ADR-0033 的产品入口）。\n\n`result` 是**引擎的权威结论**（成功时逐字为 `restored`；三实现同判，由\n`tests/contracts/test_dead_letter_manual_recovery_contract.py` 钉住）。本端点不\n追加第二套结论词表 —— 引擎说什么就带回什么。",
+        "properties": {
+          "note": {
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "result": {
+            "minLength": 1,
+            "title": "Result",
+            "type": "string"
+          },
+          "task_id": {
+            "minLength": 1,
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "result",
+          "note"
+        ],
+        "title": "TaskRetryDto",
+        "type": "object"
+      },
       "TeamTemplateDto": {
         "additionalProperties": false,
         "description": "Lean / Standard / Rigorous 模板视图。",
@@ -12914,6 +12942,49 @@
         "summary": "Run Workspace Snapshots",
         "tags": [
           "workspace"
+        ]
+      }
+    },
+    "/tasks/{task_id}/retry": {
+      "post": {
+        "description": "人工恢复一条 `DEAD_LETTER` 任务（ADR-0033 的产品入口）。\n\n成功 ⇒ 任务回 `QUEUED`（\"回到可交付面\"），下一次派发（claim / run 级重建续跑）就能\n再取到它。本端点**不**提供「重置尝试预算」这类语义：恢复是\"把这条任务放回交付面\"，\n不是\"把计数器清零\"（ADR-0033 决定 4）。",
+        "operationId": "retry_task_tasks__task_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRetryDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retry Task",
+        "tags": [
+          "tasks"
         ]
       }
     },

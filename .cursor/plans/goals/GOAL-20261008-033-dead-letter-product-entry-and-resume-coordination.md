@@ -91,7 +91,11 @@ exit_criteria:
       的写面清单（**输入登记面**）；② OpenAPI 快照 `docs/api/openapi.m13.json`（由
       `tools/gen_openapi.py` 重新生成，**不是手改**）+ `tests/contracts/test_openapi_snapshot.py`
       的路径断言（**追加**一行，纯扩张）；③ 写面告警线计数（见 (d)，纯同步）；
-      ④ 前端类型/客户端（若 `types.ts` 由快照生成则同步生成物；若为手写则**如实登记**不动）。
+      ④ 前端类型/客户端（若 `types.ts` 由快照生成则同步生成物；若为手写则**如实登记**不动）；
+      **⑤ `tests/observability/test_privacy_exit_census.py` 的 `failure-payload` 受判出口
+      producer 清单（cycle 1 实测追加：新端点的 `raise ApiError(...)` 属既有**受判**出口，
+      清单口径要求显式认领 —— **纯扩张，零豁免、零断言改动**；建档时未预计到，由门先抓到，
+      如实登记并追加为第 5 条）**。
       **上述以外的任何既有判据改动 ⇒ BLOCKED**；每条同步都要在记录内给出 before/after 与
       「强度未降」自证。
       **判据**：端点 + 三态 + 幂等两层 + 认证面自动覆盖 + 调用证据 + 两向反证 + 实跑 + 同步集自证。
@@ -101,7 +105,28 @@ exit_criteria:
       全绿；`tests/api/test_write_face_cannot_be_bypassed.py` 全绿（新端点自动入枚举面）；
       配套留档：产品调用方清单读数、端点契约逐条、三类拒绝判词逐字、两向反证判红原文、
       实跑状态转移序列、同步集四条 before/after 与「强度未降」自证。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      cycle 1（PLAN-20261008-311 / `RECHECK-20261008-312` = PASS_WITH_WARNINGS）。
+      **实现形态**：新增 `services/api/routers/tasks.py` + `services/api/dto/tasks.py`，
+      端点 `POST /tasks/{task_id}/retry` 只做三件事（找 Port / 调 `requeue` / 翻译 HTTP 语义），
+      **不判状态、不写任务行**（源码断言 + 行为断言配对）。
+      **三态点名拒绝**：不存在 ⇒ 404 `unknown task: <id>`；状态不符（含「已恢复」）⇒ 409
+      `task <id> is in state <S>; only DEAD_LETTER can be requeued`；workflow 面未装配 ⇒ 503。
+      **幂等两层**：控制面 `Idempotency-Key` 重放复用首次响应且**事件计数不增**（取样在重放
+      之前）；新 key 打在已恢复任务上 ⇒ 409 且零新副作用。
+      **下游消费证据**：恢复后 `acquire_lease` 成功（不只是「状态写回了」）。
+      **认证面自动覆盖**：写面端点 60 → 61，既有对抗性判据从 `app.openapi()` 枚举
+      ⇒ 新端点无需登记即被两个 401 断言覆盖。
+      **两向反证**：`P1_RED exit=1 8 failed`（摘掉端点）/ `P2_RED exit=1 4 failed`（点名拒绝
+      改静默）/ `RESTORED True`（sha 归因）/ `FINAL_MATCHES_BASELINE True`；留档
+      `scratch/goal033-cycle1/press-matrix.log`（260 B、CR=0）。
+      **判据**：`tests/api/test_task_retry_api.py` **9 passed**；受判面套件 **3235 passed /
+      79 skipped**（api+contracts+domain+adapters/sqlite+tooling+observability）。
+      **同步集五条**（建档预估 4 条 + 门抓到的第 5 条 `test_privacy_exit_census.py` 的
+      `failure-payload` **受判**出口 producer 清单，纯扩张零豁免）。
+      残余：`W-1`…`W-5`（见 `RECHECK-20261008-312`；含「自动恢复/批量/审批门/前端类型面未覆盖」
+      「按压脚本首跑一次无归因读数已加 sha 归因面」）/ `R-M1` 未收口。
   - id: EC-02
     criterion: >-
       **死信恢复 ↔ run 续跑的协同（实现或如实登记，二者必居其一且有判据）**。
@@ -128,7 +153,28 @@ exit_criteria:
       tests/adapters/sqlite -q` ⇒ 全绿；新增判据文件（三面读数 / 所选路径的行为 / 反证）
       全绿；配套留档：三面实测逐条读数、A/B 选择理由与「为什么不是另一条」、
       反证判红原文。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      cycle 2（PLAN-20261008-313 / `RECHECK-20261008-314` = PASS_WITH_WARNINGS）。
+      **三面实测**（探针 + 判据两条独立路径各跑一次）：① run 状态面 —— 默认契约
+      （`max_attempts=1`）⇒ 死信与 run **`FAILED`** 同现；容忍契约
+      （`on_task_failure: CONTINUE`）⇒ 死信与 run **`DEGRADED`**（非终态）同现
+      ⇒ 「死信 ⇒ run 终态」**不是**普遍规律；② 派发方 —— `RetryDispatchScheduler`
+      **连考虑都不考虑**死信 run（spy 记录 `due_retry_task_ids` 的询问；正向对照：
+      同一条 run 改 `PAUSED` ⇒ **被问到**）；③ 任务面 —— worker 面
+      （`kind=EXECUTION`）恢复后 `claim_next` **直接取到**（协同**已存在**），编排面
+      （`kind=AGENT_SESSION`）worker 面够不着但会话面取得回来（「能力在，只缺谁驱动 run」）。
+      **机制边界**：`FAILED --RESUME-->` **非法**；对照 `DEGRADED --RESUME--> RUNNING` 合法。
+      **A/B 决策 = B（如实登记）**：A 的前置条件「恢复后无任何自动交付方」被证伪了一半
+      （worker 面本来就有）；编排面自动继续要么改 run 级状态机（终态语义须 ADR）、要么新增
+      扫非 `PAUSED` run 的派发面 ⇒ **两条都是新机制**，登记为下一轮输入。
+      **返工（我自己的缺陷，已修）**：首版 ③ 用 `dispatched == 0`，被三重门掩蔽 ⇒
+      **无法被单变量证伪**（按压改状态过滤后仍是 0）；改 spy 读数 + 正向对照后同一次按压
+      `P1_RED exit=1 1 failed`。按压脚本改**二进制安全读写**（首版文本模式把 LF 写成 CRLF
+      ⇒ `RESTORED False`）。留档 `scratch/goal033-cycle2/press-matrix.log`（CR=0）。
+      **零产品改动**（`git diff --numstat` 对 `adapters/` `services/` `packages/` 无条目）。
+      残余：`W-1`…`W-5`（`RECHECK-20261008-314`；含「判据假绿实例」「B 是登记不是实现」
+      「worker 面只覆盖 EXECUTION」「容忍契约未展开」）/ `R-M1` 未收口。
   - id: EC-03
     criterion: >-
       **续跑覆盖矩阵机械化（受判面 = 声明集，不得是交集 / 过滤 / 空集恒真）**。
@@ -223,9 +269,13 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同步集四条以外**的既有判据断言
   - 死信自动协同（EC-02 路径 A）需要新审批通道或 run 级状态机变更
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261008-311-goal-033-ec01-dead-letter-product-entry.md
+  - .cursor/plans/tasks/PLAN-20261008-313-goal-033-ec02-dead-letter-run-coordination.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - a-product-entry-is-not-the-port-it-wraps
+  - a-masked-claim-cannot-be-falsified-by-one-variable
 ---
 
 # GOAL-20261008-033 — 死信恢复的产品入口 + 与 run 续跑的自动协同 + 续跑覆盖矩阵机械化
@@ -240,8 +290,8 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 死信恢复产品入口（主干） | 端点 + 三态 + 幂等两层 + 认证面自动覆盖 + 调用证据 + 两向反证 + 实跑 + 同步集自证 | PENDING |
-| EC-02 | 死信恢复 ↔ run 续跑协同 | 三面实测 + 按实测选 A（实现）或 B（如实登记边界）+ 判据 + 反证 | PENDING |
+| EC-01 | 死信恢复产品入口（主干） | 端点 + 三态 + 幂等两层 + 认证面自动覆盖 + 调用证据 + 两向反证 + 实跑 + 同步集自证 | PASS |
+| EC-02 | 死信恢复 ↔ run 续跑协同 | 三面实测 + 按实测选 B（如实登记边界）+ 判据 + 反证 | PASS |
 | EC-03 | 续跑覆盖矩阵机械化 | 受判面 = 声明集（穷尽）+ 每条三选一 + 反掩蔽自证 + 两向反证 | PENDING |
 | EC-04 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
 
@@ -466,9 +516,13 @@ idempotency + deduplication）；不得**静默改 `terminal()` 语义**（必�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | （本文件所在提交） | 只读勘察；`tests/tooling/test_mainline_program_is_intact.py` 新增并绿（8 passed）；`ruff` / `format` / `mypy` 绿 | PENDING | — | 四条 EC 全 PENDING；EC-02 的 A/B 待实测 | cycle 1 = EC-01（死信恢复产品入口） |
+| 1 | `PLAN-20261008-311` | 见「CI 台账」 | 新判据 **9 passed**；受判面套件 **3235 passed / 79 skipped**；四道门绿（mypy 1121 files）；两向按压 `P1_RED 8 failed` / `P2_RED 4 failed` / `RESTORED True` | PENDING | `W-1`…`W-5`；同步集第 5 条由门抓到并登记 | cycle 2 | **EC-01 收口**（`RECHECK-20261008-312`） |
+| 2 | `PLAN-20261008-313` | 见「CI 台账」 | 新判据 **6 passed**；单变量按压 `P1_RED 1 failed` / `RESTORED True`（sha 归因）；**返工一次**（首版 ③ 被三重门掩蔽 ⇒ 无法单变量证伪；已改 spy + 正向对照）；零产品改动 | PENDING | `W-1`…`W-5`；B 路径的边界已逐条登记 | cycle 3 | **EC-02 收口**（`RECHECK-20261008-314`） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 2 落地 + EC-02 收口**：三面实测（run 状态两条组合 / 派发方 spy / 任务面两路）+ 机制边界；按实测走 **B 路径**（run 级自动继续需改状态机或新增调度面，逐条登记为下一轮输入）。**返工一次**：首版 ③ 的 `dispatched == 0` 被三重门掩蔽、**无法被单变量证伪**（按压改状态过滤后仍为 0）⇒ 改 spy 读数 + 正向对照后按压判红；按压脚本改二进制安全读写。**零产品改动**。EC-02 = **PASS**（`RECHECK-20261008-314` = PASS_WITH_WARNINGS）。 |
+| 2026-10-08 | ACTIVE | **cycle 1 落地 + EC-01 收口**：新增 `POST /tasks/{task_id}/retry`（死信人工恢复的**产品**入口）+ DTO + 9 例判据；三类点名拒绝（404/409/503）；幂等两层（控制面 key + 引擎侧点名称，事件计数为判据）；**下游消费证据**（恢复后 `acquire_lease` 成功）；认证面**自动覆盖**（写面 60 → 61，判据从 `app.openapi()` 枚举）；两向按压判红且逐字节复原；**同步集五条**（建档预估 4 条 + 门抓到的第 5 条 `failure-payload` 受判出口 producer 清单，纯扩张零豁免）。EC-01 = **PASS**（`RECHECK-20261008-312` = PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 宪章 + `goals/README.md` 格式契约 + GOAL-032 全文；只读勘察**复核了提示词的起点表述**（`requeue` 产品面零命中 / 无 HTTP 路由 / `RetryDispatchScheduler` 只扫 `PAUSED` / run `FAILED` 是真终态 / 两轮协议不声称上界）；标定了 EC-01 的**同轮同步集四条**（写面清单 / OpenAPI 生成物 / 快照路径断言追加 / 写面告警线计数）；四条 EC 全 `PENDING`。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

@@ -43,6 +43,7 @@ from services.api.routers import (
     protocol_drafts,
     run_events,
     runs,
+    tasks,
     team_custom,
     team_protocol,
     tool_packs,
@@ -307,6 +308,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(team_custom.router)
     app.include_router(runs.router)
     app.include_router(runs.projects_router)
+    app.include_router(tasks.router)
     app.include_router(projects.router)
     app.include_router(run_events.router)
     app.include_router(approvals.router)

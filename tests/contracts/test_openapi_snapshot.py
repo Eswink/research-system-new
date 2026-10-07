@@ -59,6 +59,8 @@ def test_openapi_contains_control_plane_paths() -> None:
     assert "/runs/{run_id}/telemetry" in paths
     assert "/runs/{run_id}/cost" in paths
     assert "/evaluations/trend" in paths
+    # 死信人工恢复的产品入口（GOAL-20261008-033 EC-01；此前登记为「未提供」）
+    assert "/tasks/{task_id}/retry" in paths
     # Protocol drafts（PLAN-20260908-033）
     assert "/protocol-templates" in paths
     assert "/protocol-drafts/validate" in paths
