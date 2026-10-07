@@ -193,14 +193,34 @@ def execute_rounds(deps: Any, ctx: Any) -> "RunOutcome":
         if not decision.stop:
             continue
         payload = driver.state.stop_payload()
-        deps.emit(
-            EventType.RUN_COMPLETED,
-            {"run_id": ctx.run_id, "rounds": payload},
-            ctx.run_id,
-            ctx.trace_id,
-            None,
-        )
+        # **把单遍载荷原样带上**（含声明式跳过的 `skipped`）再追加 `rounds` ——
+        # 否则跑循环的 run 会**丢掉**跳过事实（那正是 EC-03 禁止的「静默」形态）；
+        # 单遍路径不受影响（它自己那条 `run.completed` 逐字节不变）。
+        carried: dict[str, object] = {"run_id": ctx.run_id}
+        if outcome.rounds is None:
+            carried = _single_pass_payload(deps, ctx, outcome)
+        carried["rounds"] = payload
+        deps.emit(EventType.RUN_COMPLETED, carried, ctx.run_id, ctx.trace_id, None)
         return _replace(outcome, rounds=payload)
+
+
+def _single_pass_payload(deps: Any, ctx: Any, outcome: Any) -> dict[str, object]:
+    """单遍执行那条 `run.completed` 的载荷（**逐字重建**，与既有构造同形）。
+
+    为什么要重建而不是从事件里读：那条事件是本轮循环**上一轮**发出的，而本函数在
+    循环收尾时执行 —— 从事件流回读会依赖「上一轮确实发过」这一时序（实测脆弱）。
+    重建的口径与 `_execute_one_pass` 里那把构造**同一份**字段清单（`run_id` + 有跳过
+    才带的 `skipped`）。
+    """
+    payload: dict[str, object] = {"run_id": ctx.run_id}
+    skips = [
+        {"task_id": task_outcome.task.id.value, "reasons": list(task_outcome.skipped)}
+        for task_outcome in outcome.tasks
+        if task_outcome.skipped
+    ]
+    if skips:
+        payload["skipped"] = skips
+    return payload
 
 
 def round_loop_fields(

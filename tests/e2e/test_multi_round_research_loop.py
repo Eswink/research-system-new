@@ -244,3 +244,121 @@ class TestTheStopIsConclusionDriven:
         assert conclusion["stopped_by"] == STOP_BY_CONCLUSION
         assert guard["stopped_by"] != conclusion["stopped_by"]
         assert guard["new_ids_this_round"] != conclusion["new_ids_this_round"]
+
+
+class TestStopAndSkipAreVisibleOnTheReadFace:
+    """EC-03：停止与跳过都落在**既有读面**（可观测，非静默）。"""
+
+    def test_the_stop_fact_is_readable_from_the_event_stream(self, mock_relay: str) -> None:
+        """停止事实（判据 / 类别 / 读数 / 轮数）经**既有事件读面**可逐字读出。"""
+        payload = _run(mock_relay, max_rounds=3)
+        fact = _rounds_fact(payload["events"])
+        for key in ("rounds_run", "stopped_by", "criterion", "max_rounds", "ids_seen"):
+            assert key in fact, f"停止读面缺 {key}：{sorted(fact)}"
+        assert fact["stopped_by"] in {STOP_BY_CONCLUSION, STOP_BY_GUARD}
+
+    def test_a_converged_round_reports_the_empty_reading_not_a_silent_stop(
+        self, mock_relay: str
+    ) -> None:
+        """结论停必须**说清读到了什么**（`new_ids_this_round == []`）——停不是静默。"""
+        fact = _rounds_fact(
+            _run(mock_relay, max_rounds=9, query_for={2: "zero-hit-round-two"})["events"]
+        )
+        assert fact["stopped_by"] == STOP_BY_CONCLUSION
+        assert fact["new_ids_this_round"] == [], "停的理由必须可复读（本轮新标识为空）"
+        assert fact["ids_seen"], "累计标识仍在读面上（可核「之前确实有东西」）"
+
+
+class TestTheSinglePassPathIsUnchanged:
+    """**既有语义不因本轮扩张而漂移**：没声明循环的 run 载荷逐字不变。"""
+
+    def test_a_run_without_a_loop_emits_no_rounds_key(self, mock_relay: str) -> None:
+        """未声明 `round_loops` ⇒ `run.completed` **不带** `rounds` 键（既有载荷逐字不变）。
+
+        反证形态：本判据取的是**单遍路径**（两轮协议夹具，无循环声明）⇒ 若循环载荷
+        被无条件写入，这里会看到多余的键。
+        """
+        from tests.e2e.multi_round_loop_support import RoundsOfflineNcbi as _Offline
+        from tests.e2e.two_round_loop_support import assembled_deps
+
+        offline = _Offline()
+        deps = assembled_deps(mock_relay, offline=offline)  # type: ignore[arg-type]
+        with TestClient(create_app(deps)) as client:
+            run = _start(client, PROTOCOL)
+            events = client.get(f"/runs/{run['id']}/events").json()
+        completed = [
+            (e.get("event") or e)
+            for e in events
+            if str((e.get("event") or e).get("type")) == "run.completed"
+        ]
+        assert completed, "单遍路径必须发 run.completed"
+        assert all("rounds" not in (item.get("payload") or {}) for item in completed), (
+            "没跑循环的 run 不得带 rounds 键（既有载荷逐字不变）"
+        )
+
+    def test_the_round_payload_keeps_the_single_pass_keys(self, mock_relay: str) -> None:
+        """跑循环时，`run.completed` 仍带单遍那些键（`run_id`，以及有跳过时的 `skipped`）。
+
+        这条防的是我在实现里发现的**真缺口**：循环收尾若只发 `{run_id, rounds}`，
+        就会把该轮的**声明式跳过事实**丢掉 —— 那正是 EC-03 禁止的静默。
+        """
+        payload = _run(mock_relay, max_rounds=3)
+        completed = [
+            (e.get("event") or e)
+            for e in payload["events"]
+            if str((e.get("event") or e).get("type")) == "run.completed"
+        ]
+        with_rounds = [
+            c for c in completed if isinstance((c.get("payload") or {}).get("rounds"), dict)
+        ]
+        assert with_rounds, "跑过循环的 run 必须有一条带 rounds 的 run.completed"
+        for item in with_rounds:
+            body = item.get("payload") or {}
+            assert body.get("run_id"), "循环载荷仍带 run_id（单遍同形）"
+
+
+class TestAConvergedRoundIsNotSilent:
+    """EC-03：结论停的那一轮，**读到什么**必须可复读（不是静默停）。"""
+
+    def test_a_zero_hit_round_names_the_empty_reading_it_stopped_on(self, mock_relay: str) -> None:
+        """**零命中轮** ⇒ 该轮 `new_ids_this_round == []` 且 `ids_seen` 仍是**之前累计**的。
+
+        这两条合起来就是「停的理由可复读」：既说清**这一轮没带来新东西**，也保留
+        **之前确实有东西**（否则「空」无法与「从来没有过」区分）。
+
+        **如实边界**：本夹具的零命中轮里，**检索步本身**返回空 idlist ⇒ 读取步的
+        「带理由跳过」（`requires_previous_ids=False`）在该路径上**不会触发** ——
+        那一支由两轮协议族的既有判据覆盖（`test_research_loop_second_round_derived.py`）。
+        本判据**只**判循环收尾的读数（那是本轮新增的面）。
+        """
+        from tests.e2e.multi_round_loop_support import ZERO_HIT_QUERY
+
+        payload = _run(mock_relay, max_rounds=2, query_for={2: ZERO_HIT_QUERY})
+        fact = _rounds_fact(payload["events"])
+
+        assert fact["stopped_by"] == STOP_BY_CONCLUSION
+        assert fact["new_ids_this_round"] == [], "这一轮没带来新标识（停的依据）"
+        assert fact["ids_seen"] == list(ROUND_PMIDS[0]), (
+            f"累计标识仍是第一轮的（实测 {fact['ids_seen']}）—— 「空」必须能与「从未有过」区分"
+        )
+        assert fact["rounds_run"] == 2
+
+    def test_the_loop_payload_still_carries_the_single_pass_keys(self, mock_relay: str) -> None:
+        """循环载荷与单遍**同形**：`run_id` 在位（`skipped` 键按既有口径只在有跳过时出现）。
+
+        实现里发现过的真缺口：循环收尾若只发 `{run_id, rounds}`，该轮的跳过事实会**丢**。
+        本条钉住「单遍键被保留」这一形态（跳过键的**存在性**由两轮协议族的既有判据覆盖——
+        本夹具的零命中路径不触发读取步跳过，故不在此断言）。
+        """
+        payload = _run(mock_relay, max_rounds=3)
+        with_rounds = [
+            (e.get("event") or e)
+            for e in payload["events"]
+            if str((e.get("event") or e).get("type")) == "run.completed"
+            and isinstance(((e.get("event") or e).get("payload") or {}).get("rounds"), dict)
+        ]
+        assert with_rounds
+        for item in with_rounds:
+            body = item.get("payload") or {}
+            assert body.get("run_id"), "循环载荷仍带 run_id（与单遍同形）"
+            assert "rounds" in body

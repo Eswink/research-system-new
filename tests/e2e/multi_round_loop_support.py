@@ -35,6 +35,8 @@ from tests.e2e.two_round_loop_support import (
 LOOPED_PHASE = "round1"
 #: 每轮的检索词（带轮次 ⇒ 每轮离线响应返回**不同**的 PMID ⇒ 有「新标识」）。
 QUERIES: tuple[str, ...] = ("multi-round-1", "multi-round-2", "multi-round-3")
+#: **零命中**检索词（该轮返回空 idlist ⇒ 读取步**带理由跳过**；EC-03 的跳过夹具）。
+ZERO_HIT_QUERY = "zero-hit-round-two"
 #: 每轮离线检索返回的标识（与 `QUERIES` 一一对应）。
 ROUND_PMIDS: tuple[tuple[str, ...], ...] = (
     ("39500001", "39500002"),
@@ -61,6 +63,9 @@ class RoundsOfflineNcbi:
             query = str(request.url.params.get("term", ""))
             self.requests.append((endpoint, str(request.url.query)))
             if endpoint == "esearch.fcgi":
+                if query == ZERO_HIT_QUERY:
+                    # **零命中**：检索成功但没有标识 ⇒ 读取步带理由跳过（真实跳过路径）。
+                    return httpx.Response(200, json={"esearchresult": {"count": "0", "idlist": []}})
                 index = QUERIES.index(query) if query in QUERIES else 0
                 pmids = ROUND_PMIDS[index]
                 return httpx.Response(
@@ -156,6 +161,7 @@ __all__ = [
     "ROUND_PMIDS",
     "SEARCH_ARTIFACT_SUFFIX",
     "TOOL_IDS",
+    "ZERO_HIT_QUERY",
     "RoundsOfflineNcbi",
     "deps_with_loop",
     "looped_calls",
