@@ -432,7 +432,10 @@ GOAL-019…033 的未覆盖范围原样保留。
 | `93b21b5`（建档） | 见「自我指涉边界」（同批推送的 HEAD 承担） | 建档提交与其后的修复同批 |
 | `f19425c`（声明面 + 停止判据第一段） | 无自己的 run（`total_count=0`） | **原因如实登记**：与 `ce34208` 同批推送 ⇒ HEAD 是 `ce34208`。`covered_by: ce34208` |
 | `ce34208`（回填 m0 读数） | M0 `37686863622`（见下条覆盖说明）+ Push on main **success** | 该批 HEAD；M0 见下 |
-| `8e9d9a6`（AC-4 状态机判据） | M0 + Push on main | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
+| `8e9d9a6`（AC-4 状态机判据） | M0 [`37686863622`](https://github.com/Eswink/research-system-new/actions/runs/37686863622) **success**（八 job 全绿）+ Push on main **success** | 该批 HEAD；两 run 全 `success` |
+| `343419f`（cycle 1 台账回填） | M0 **`cancelled`** + Push on main **success** | **原因如实登记**：该 M0 尚在飞行时我推送了 `2e2e26b` ⇒ `cancel-in-progress` 取消。`covered_by: 2e2e26b` |
+| `2e2e26b`（AC-5 约束登记） | M0 [`37690197320`](https://github.com/Eswink/research-system-new/actions/runs/37690197320) **success**（八 job 全绿）+ Push on main **success** | 该批 HEAD；**本条承担 `343419f` 的绿** |
+| （收口提交） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
 
 **自我指涉边界（明写并封闭）**：本节的「回顾性台账」提交自身**不产生**可引用的 CI 结论
 （它进入 CI 时其结论尚无）—— 以「**末条提交 + 覆盖说明**」封闭，**不得循环引用**。
