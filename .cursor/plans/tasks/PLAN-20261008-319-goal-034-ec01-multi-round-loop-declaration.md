@@ -2,11 +2,12 @@
 id: PLAN-20261008-319
 slug: goal-034-ec01-multi-round-loop-declaration
 title: GOAL-034 cycle 1（EC-01/EC-02 声明面）：多轮循环的声明与停止判据 —— 纯逻辑面落地 + 执行接线待续
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-08
 updated_at: 2026-10-08
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-320-goal-034-ec01-02-multi-round-loop.md
+memory_entries:
+  - a-round-changes-identity-not-the-phase-id
 parent_goal: GOAL-20261008-034
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -74,9 +75,12 @@ exit_criteria:
       按轮**懒展开**该轮 specs（判「停」就**不再解析**下一轮，否则判据只是装饰）；
       第 N>1 轮的 phase/任务 id 带轮次后缀 ⇒ 派生链读到**上一轮**的产出。
     verify: >-
-      待做：`tests/e2e/test_multi_round_research_loop.py`（三轮触发臂 + 派生可追 +
-      结论驱动停止臂 + 上界护栏臂 + 反证）。
-    status: PENDING
+      `uv run --frozen --no-sync python -B -m pytest
+      tests/e2e/test_multi_round_research_loop.py -q` ⇒ **9 passed**（三轮跑满 / 每轮各用
+      自己的检索词 / 三轮在任务面可数 / 护栏臂与结论臂互斥 / 结论与上界重合时读成结论）；
+      按压 `scratch/goal034-cycle1b-press.py` ⇒ `P1_RED 1 failed` / `P2_RED 7 failed` /
+      `RESTORED True`。
+    status: PASS
 ---
 
 # PLAN-20261008-319 — GOAL-034 cycle 1：多轮循环的声明面与停止判据
@@ -92,7 +96,7 @@ AC-4/AC-5 是**执行接线**，留待下一步——**不把未做的记成已�
 | AC-2 | 停止判据 + **顺序**（结论优先于护栏） | PASS |
 | AC-3 | 事实读取（集合差 / 空轮语义） | PASS |
 | AC-4 | 执行面的循环控制状态机 | PASS（6 例：逐轮推进 / 结论停 / 护栏停 / 载荷可复读 / 停止前拒答 / 未知 phase 点名） |
-| AC-5 | 执行接线（三轮真跑） | PENDING |
+| AC-5 | 执行接线（三轮真跑，e2e） | PASS（9 passed；两向按压判红且逐字节复原） |
 
 ## 实施清单
 
@@ -104,7 +108,7 @@ AC-4/AC-5 是**执行接线**，留待下一步——**不把未做的记成已�
       （逐轮事实 + 判定 + 停止载荷）+ `validate_loops`。
 - [x] `tests/application/run_orchestration/test_round_loop_declaration.py`（14 例）。
 - [x] AC-4 的判据（`TestTheLoopStateMachine`，6 例）。
-- [ ] 执行接线（AC-5）+ e2e 三轮判据。
+- [x] 执行接线（AC-5）：`execute_rounds` 按轮懒展开 + 三轮 e2e 判据（9 例）。
 
 ## 证据
 
@@ -161,4 +165,5 @@ tests/application + tests/e2e                                             997 pa
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-10-08 | IN_PROGRESS | cycle 1 第一段落地：声明面 + 纯逻辑停止判据（14 例全绿）+ 执行面状态机模块进树。**执行接线未做**（AC-4/AC-5 = PENDING，如实登记）。门抓到我自己的一处措辞违规（产品面禁用中文短语）⇒ 已改。 |
+| 2026-10-08 | IN_PROGRESS | cycle 1 第一段落地：声明面 + 纯逻辑停止判据（14 例全绿）+ 执行面状态机模块进树；**执行接线当时未做**（如实登记）。门抓到我自己的 处措辞违规（产品面禁用的中文短语）⇒ 已改。 |
+| 2026-10-08 | DONE | cycle 1 第二/三段落地：**执行接线 + 三轮实跑**。三处真机制缺口先量后改（轮次不得改 phase id / 必须换任务 id / 三轮起制品选择要收窄到上一轮）；`tests/e2e/test_multi_round_research_loop.py` **9 passed**；两向按压 `P1_RED 1 failed` / `P2_RED 7 failed` / `RESTORED True`。AC-1…AC-5 全 PASS（`RECHECK-20261008-320`）。 |

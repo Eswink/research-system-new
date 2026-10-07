@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261008-198](entries/MEM-20261008-198-a-round-changes-identity-not-the-phase-id.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-319 |
 | [MEM-20261008-197](entries/MEM-20261008-197-run-the-governance-gate-before-committing-a-new-record.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-317 |
 | [MEM-20261008-196](entries/MEM-20261008-196-a-declared-set-needs-an-explicit-binding-not-prose-matching.md) | ACTIVE | repository | 0.92 | 2027-04-08 | PLAN-20261008-315 |
 | [MEM-20261008-195](entries/MEM-20261008-195-a-product-entry-is-not-the-port-it-wraps.md) | ACTIVE | repository | 0.9 | 2027-04-08 | PLAN-20261008-311 |
