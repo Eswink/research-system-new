@@ -2,11 +2,12 @@
 id: PLAN-20261008-317
 slug: goal-033-ec04-self-bootstrap-closeout
 title: GOAL-033 cycle 4（EC-04）：自举收口 —— 验证器进树 + 两树复检 + 判词归档 + as-is m0 23/23 + CI 台账逐提交
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-08
 updated_at: 2026-10-08
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-318-goal-033-ec04-self-bootstrap-closeout.md
+memory_entries:
+  - run-the-governance-gate-before-committing-a-new-record
 parent_goal: GOAL-20261008-033
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -38,7 +39,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal033_closeout.py --root .
       --verdict-only` ⇒ 判词计数 + 0 FAIL（除归档两份的**首轮**预期红，见 AC-4）。
-    status: PENDING
+    status: PASS
   - id: AC-2
     criterion: >-
       **`IN_SCOPE` 纯收紧**：两个新脚本加入必备清单（只增不删），并过四道门
@@ -48,14 +49,14 @@ exit_criteria:
       tests/tooling/test_tooling_scripts_meet_product_gates.py -q` ⇒ 全绿；
       `git diff --numstat -- tests/tooling/test_tooling_scripts_meet_product_gates.py`
       ⇒ 只有新增行。
-    status: PENDING
+    status: PASS
   - id: AC-3
     criterion: >-
       **两树复检 `TWO-TREE PASS`**：`tools/two_tree_recheck.py --script-mode shared`
       + `--base-ref <建档基线>` ⇒ 两路判词逐字节相同（`sha256` 相同）。
     verify: >-
       入口输出含 `TWO-TREE PASS`；两份判词 `sha256` 相同。
-    status: PENDING
+    status: PASS
   - id: AC-4
     criterion: >-
       **判词归档进树**（两份，二进制写盘、`CR=0`）。**时序须如实说明**：归档由两树入口
@@ -65,7 +66,7 @@ exit_criteria:
     verify: >-
       `.cursor/plans/goals/evidence/GOAL-20261008-033-verdict-{current,clean}.txt` 在树、
       逐字节相同、`CR=0`；第二轮 `--verdict-only` ⇒ 0 FAIL。
-    status: PENDING
+    status: PASS
   - id: AC-5
     criterion: >-
       **as-is m0 23/23**（在**全部记录写入之后**、独占、仓库 `.venv`、
@@ -73,7 +74,7 @@ exit_criteria:
       `PASS: profile=m0; 23 deterministic checks`。
     verify: >-
       m0 日志终局行 + `PASS [` 行数（24 = 23 + `release-assets-immutable`）。
-    status: PENDING
+    status: PASS
   - id: AC-6
     criterion: >-
       **治理绿 + 宪章判据绿 + 记录自洽**：`validate.py` 绿；
@@ -83,7 +84,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B .cursor/skills/governance-check/scripts/validate.py`
       ⇒ 绿；`uv run --frozen --no-sync python -B -m pytest
       tests/tooling/test_mainline_program_is_intact.py -q` ⇒ 全绿。
-    status: PENDING
+    status: PASS
   - id: AC-7
     criterion: >-
       **CI 台账逐提交**（本 GOAL 的每个 commit 一行：run 链接 + 结论；
@@ -91,10 +92,24 @@ exit_criteria:
       自我指涉边界**明写并封闭**）。
     verify: >-
       GOAL 的「CI 台账」节逐行在位；末条提交的边界明写。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261008-317 — GOAL-033 cycle 4（EC-04）：自举收口
+
+## 验收条件
+
+见 frontmatter `exit_criteria`（AC-1…AC-7，官方口径以那里为准）。本节只做导览：
+
+| AC | 主题 | 状态 |
+| --- | --- | --- |
+| AC-1 | 验证器进树且可跑（复用标准断言集 + 判词纯度/路径无关） | PASS（63 判词 / 0 FAIL / 纯度与路径无关均成立） |
+| AC-2 | `IN_SCOPE` 纯收紧 + 过四道门 | PASS（8 passed；门抓到两处我自己的缺陷已修） |
+| AC-3 | 两树复检 `TWO-TREE PASS` | PASS（两路 sha256 相同 a16bda97…） |
+| AC-4 | 判词归档进树（两份 / 逐字节相同 / CR=0） | PASS（2388 B / 63 行 / CR=0） |
+| AC-5 | as-is m0 23/23（全部记录写入之后） | PASS |
+| AC-6 | 治理绿 + 宪章判据绿 + 记录自洽 | PASS（首跑红已修，见 RECHECK-318 W-1） |
+| AC-7 | CI 台账逐提交（自我指涉边界明写） | PASS |
 
 ## 实施清单
 
@@ -102,13 +117,43 @@ exit_criteria:
       EC-03 声明集下界 / MAINLINE 宪章 / 判据例数下界 / 判词归档形态）。
 - [x] `tools/verify_goal033_closeout.py`（复用 `standard_verdicts` + 记录面）。
 - [x] `IN_SCOPE` 纯收紧（`+3 / -0`）。
-- [ ] 两树复检 + 判词归档进树。
-- [ ] as-is m0 23/23。
-- [ ] 治理绿 + 宪章判据绿 + CI 台账逐提交。
+- [x] 两树复检 `TWO-TREE PASS` + 判词归档进树（63 判词 / 2388 B / CR=0 / 两份逐字节相同）。
+- [x] as-is m0 23/23（全部记录写入之后）。
+- [x] 治理绿 + 宪章判据绿 + CI 台账逐提交（含首条真红与一次 `cancelled` 的如实登记）。
 
 ## 证据
 
-（随收口完成逐条回填。）
+### 收口读数（本树）
+
+| 项 | 读数 |
+| --- | --- |
+| 验证器 `--verdict-only` | **63 判词 / 0 FAIL**（纯度与路径无关两条契约成立） |
+| 两树复检 | **`TWO-TREE PASS`**（两路 63 判词、`sha256` 相同 `a16bda97…`） |
+| 判词归档 | 两份 / 2388 B / 63 行 / **CR=0** / 逐字节相同 |
+| as-is m0 | `PASS: profile=m0; 23 deterministic checks`（`PASS [` **24** / `FAILED [` **0** / **5286 passed / 21 skipped**） |
+| 治理 | 绿（**首跑红已修** —— 见 `RECHECK-20261008-318` 的 `W-1`） |
+| 宪章判据 | `tests/tooling/test_mainline_program_is_intact.py` **8 passed** |
+| 记录面判据 | `tests/architecture/python` + `tests/tooling` **1616 passed** |
+
+### bootstrap 时序（如实登记）
+
+| 轮次 | base-ref | 读数 |
+| --- | --- | --- |
+| 首轮 | `4e59e1f` | 两路判词**逐字节相同**（`a56aa015…`），红项**仅**两份归档缺失（归档由入口写出） |
+| 次轮 | `8cfe6fa` | **`TWO-TREE PASS`**（两路 `sha256` 相同） |
+
+### 返工（两处，都是**我自己的**缺陷）
+
+1. 门抓到 `assertion_verdicts` **58 行** > 50 行上限 ⇒ 拆成 6 个分区函数（断言一条未改）。
+2. **先提交后校验** ⇒ CI 真红（`PLAN-20261008-317` 缺 `## 验收条件` + 未入 `ALL_PLAN`）
+   ⇒ 补齐 + 复跑绿；沉淀记忆 `run-the-governance-gate-before-committing-a-new-record`。
+
+### 宪章判据抓到我的一次违宪
+
+初版 MAINLINE **进展记录**行里我写了「四条 EC 全 PASS」⇒
+`test_no_goal_or_criterion_status_is_mirrored_in_the_charter` **当场判红**
+（宪章明文：本文件不得镜像/复述/缓存任何 GOAL 的状态）⇒ 改为只写结论、不写状态。
+**这条判据在正常工作**（它防的正是我把状态顺手抄进宪章）。
 
 ## 影响报告
 

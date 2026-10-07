@@ -2,7 +2,7 @@
 id: GOAL-20261008-033
 slug: dead-letter-product-entry-and-resume-coordination
 title: 死信恢复的产品入口 + 与 run 续跑的自动协同 + 续跑覆盖矩阵机械化 —— 把「引擎会做」推进到「产品能走通且有判据」
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-08
 updated_at: 2026-10-08
 owners:
@@ -245,7 +245,30 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest
       tests/tooling/test_mainline_program_is_intact.py -q` ⇒ 全绿；配套留档：
       两路判词 sha256 相同的归档、m0 日志、CI 台账逐提交行。
-    status: PENDING
+    evidence: >-
+      cycle 4（PLAN-20261008-317 / `RECHECK-20261008-318` = PASS_WITH_WARNINGS）。
+      **验证器进树**：`tools/verify_goal033_closeout.py` + `tools/goal033_closeout_assertions.py`；
+      复用 `tools/closeout_recheck_assertions.standard_verdicts`（**一行未重写**）；已加入 `IN_SCOPE`
+      （**纯收紧**，`+2 / -0`）。本树 `--verdict-only` = **63 判词 / 0 FAIL**；判词纯度与路径无关两条契约成立。
+      **门抓到我自己的两处缺陷**（已修）：`assertion_verdicts` 58 行 > 50 行上限 ⇒ 拆 6 个分区函数；文件待重排。
+      **两树复检**：`TWO-TREE PASS`（两路 63 判词、`sha256` 相同 `a16bda97…`）；
+      **bootstrap 时序如实登记**：首轮（base-ref `4e59e1f`）两路判词**逐字节相同**（`a56aa015…`），
+      红项**仅**两份归档缺失（归档由入口写出）⇒ 次轮（base-ref `8cfe6fa`）全绿；
+      **未**为让首轮变绿而删掉那两条存在性断言。
+      **判词归档进树**：`.cursor/plans/goals/evidence/GOAL-20261008-033-verdict-{current,clean}.txt`
+      （2388 B / 63 行 / **CR=0** / 两份逐字节相同）。
+      **as-is m0**：终局行 `PASS: profile=m0; 23 deterministic checks`（**24 条 `PASS [`** =
+      23 + `release-assets-immutable`；`FAILED [` **0**；测试面 **5286 passed / 21 skipped**；
+      独占、仓库 `.venv`、`uv run --frozen --no-sync python -B`、不接管道、**零 python 残留**；
+      日志 `scratch/goal033-m0-final.log`；在**全部记录写入之后**跑）。
+      **治理**：首跑**红**（CI 实测：`PLAN-20261008-317` 缺 `## 验收条件` + 未入 `ALL_PLAN`
+      ⇒ 我**先提交后校验**造成的真红）⇒ 补齐 + 复跑 **绿**；
+      `tests/tooling/test_mainline_program_is_intact.py` **8 passed**。
+      **CI 台账逐提交**（见下节）。
+      残余：`W-1`…`W-6`（`RECHECK-20261008-318`；含「先提交后校验的一次真红」
+      「bootstrap 时序是固有形态」「`cancel-in-progress` 两次实证」「未覆盖范围逐条保持」
+      「自我指涉边界」「不得宣称安全 / 恰好一次」）/ `R-M1` 未收口。
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -294,11 +317,13 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261008-311-goal-033-ec01-dead-letter-product-entry.md
   - .cursor/plans/tasks/PLAN-20261008-313-goal-033-ec02-dead-letter-run-coordination.md
   - .cursor/plans/tasks/PLAN-20261008-315-goal-033-ec03-resume-coverage-declaration.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20261008-317-goal-033-ec04-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-318-goal-033-ec04-self-bootstrap-closeout.md
 memory_entries:
   - a-product-entry-is-not-the-port-it-wraps
   - a-masked-claim-cannot-be-falsified-by-one-variable
   - a-declared-set-needs-an-explicit-binding-not-prose-matching
+  - run-the-governance-gate-before-committing-a-new-record
 ---
 
 # GOAL-20261008-033 — 死信恢复的产品入口 + 与 run 续跑的自动协同 + 续跑覆盖矩阵机械化
@@ -316,7 +341,7 @@ memory_entries:
 | EC-01 | 死信恢复产品入口（主干） | 端点 + 三态 + 幂等两层 + 认证面自动覆盖 + 调用证据 + 两向反证 + 实跑 + 同步集自证 | PASS |
 | EC-02 | 死信恢复 ↔ run 续跑协同 | 三面实测 + 按实测选 B（如实登记边界）+ 判据 + 反证 | PASS |
 | EC-03 | 续跑覆盖矩阵机械化 | 受判面 = 声明集（14 条 / 三面）+ 与源码按字段对账 + 反掩蔽自证 + 两向反证 | PASS |
-| EC-04 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-04 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**宣称项目安全**
 （`R-M1`）；不得宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once +
@@ -545,7 +570,16 @@ idempotency + deduplication）；不得**静默改 `terminal()` 语义**（必�
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| （cycle 1 起逐条追加） | | |
+| `04e0bf9`（建档：MAINLINE + GOAL-033 + 宪章判据） | M0 [`37657668744`](https://github.com/Eswink/research-system-new/actions/runs/37657668744) **success**（八 job 全绿）+ Push on main [`37657667627`](https://github.com/Eswink/research-system-new/actions/runs/37657667627) **success**（CodeQL 3/3） | 两 run 全 `success`，`run_attempt=1`，该 SHA 下 `total_count=2` |
+| `7ef1ac5`（cycle 1 + cycle 2） | M0 [`37668384057`](https://github.com/Eswink/research-system-new/actions/runs/37668384057) **`cancelled`** + Push on main [`37668384284`](https://github.com/Eswink/research-system-new/actions/runs/37668384284) **success** | **原因如实登记**：该 M0 尚在飞行时我推送了 `4e59e1f` ⇒ `cancel-in-progress` 取消。`covered_by: 4e59e1f`（其 failure 修复后的提交承担绿） |
+| `4e59e1f`（cycle 4 开工：验证器 + IN_SCOPE） | M0 [`37670494548`](https://github.com/Eswink/research-system-new/actions/runs/37670494548) **failure** + Push on main [`37670496683`](https://github.com/Eswink/research-system-new/actions/runs/37670496683) **success** | **真红，如实登记**：`framework/validate` 报 `PLAN-20261008-317` 缺 `## 验收条件` + 未加入 `ALL_PLAN`（我**先提交后校验**）。**红因已修**（下一条提交承担绿）；Ubuntu/Windows 两个 quality job 同因 |
+| `8cfe6fa`（两树判词归档进树） | M0（见下条覆盖说明）+ Push on main | 与收口提交同批；**绿由含修复的后续提交承担** |
+| （收口提交） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
+
+**自我指涉边界（明写并封闭）**：本节的「回顾性台账」提交自身**不产生**可引用的 CI 结论
+（它进入 CI 时其结论尚无）—— 以「**末条提交 + 覆盖说明**」封闭：`4e59e1f` 的 failure 由
+**修复它的后续提交**承担绿；`7ef1ac5` 的 `cancelled` 由 `4e59e1f` 承担。**不得循环引用**。
+**空集合 / 空字段 = 未取证**（本节的每条都有 run 链接与真实终态）。
 
 ## 迭代日志
 
@@ -555,11 +589,13 @@ idempotency + deduplication）；不得**静默改 `terminal()` 语义**（必�
 | 1 | `PLAN-20261008-311` | 见「CI 台账」 | 新判据 **9 passed**；受判面套件 **3235 passed / 79 skipped**；四道门绿（mypy 1121 files）；两向按压 `P1_RED 8 failed` / `P2_RED 4 failed` / `RESTORED True` | PENDING | `W-1`…`W-5`；同步集第 5 条由门抓到并登记 | cycle 2 | **EC-01 收口**（`RECHECK-20261008-312`） |
 | 2 | `PLAN-20261008-313` | 见「CI 台账」 | 新判据 **6 passed**；单变量按压 `P1_RED 1 failed` / `RESTORED True`（sha 归因）；**返工一次**（首版 ③ 被三重门掩蔽 ⇒ 无法单变量证伪；已改 spy + 正向对照）；零产品改动 | PENDING | `W-1`…`W-5`；B 路径的边界已逐条登记 | cycle 3 | **EC-02 收口**（`RECHECK-20261008-314`） |
 | 3 | `PLAN-20261008-315` | 见「CI 台账」 | 新判据 **6 passed**；`tests/tooling` **1364 passed**；四道门绿；两向按压 `P1_RED 1 failed` / `P2_RED 3 failed` / `RESTORED True`（sha 归因）；**返工两处**（判据形态：散文对账 → 字段绑定；按压脚本：字符串切片 → AST 定位）；既有判据零改动 | PENDING | `W-1`…`W-5`；声明集完备性不由本判据证明 | cycle 4（收口） | **EC-03 收口**（`RECHECK-20261008-316`） |
+| 4 | `PLAN-20261008-317` | 见「CI 台账」 | 验证器 **63 判词 / 0 FAIL**；两树 **TWO-TREE PASS**（sha256 相同）；归档进树（2388 B/CR=0）；as-is m0 **23/23**；治理绿（**首跑红已修**）；宪章判据 8 passed | 见「CI 台账」（含一次真红 + 一次 cancelled） | **两处我自己的缺陷已修**（验证器函数 58 行超限 / 先提交后校验） | 四条 EC 全 PASS | **GOAL 收口**（`RECHECK-20261008-318`） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACHIEVED | **cycle 4（EC-04 自举收口）落地 + GOAL 收口**：验证器 + 本轮断言集进树（复用标准断言集**一行未重写**，`IN_SCOPE` **纯收紧**）+ 本树 **63 判词 / 0 FAIL** + 两树 **`TWO-TREE PASS`**（两路 sha256 相同，bootstrap 时序如实登记）+ 判词归档进树（CR=0）+ as-is m0 **23/23**（全部记录写入之后）+ 治理绿（**首跑红已修**）+ CI 台账逐提交（含一次真红与一次 `cancelled`）。**四条 EC 全 PASS**（EC-01 / EC-02 / EC-03 / EC-04）；`latest_recheck` = `RECHECK-20261008-318`（PASS_WITH_WARNINGS）。**收口后不再推进**；未覆盖范围与承继残余逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 3 落地 + EC-03 收口**：把「不处理清单是代表而非穷尽」推进到**声明集穷尽枚举**（14 条 / 三面 2-6-6）+ 与入口源码**按字段**对账 + 幽灵引用自查。**判据自身两次假信号均轮内修**：首版按散文关键词对账（换措辞即误判）⇒ 改 `source_literals` 字段；按压首版字符串切片产出语法错 ⇒ `exit=2`（收集错，不是判红）⇒ 改 AST 定位。**既有判据一字未动**。EC-03 = **PASS**（`RECHECK-20261008-316` = PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 2 落地 + EC-02 收口**：三面实测（run 状态两条组合 / 派发方 spy / 任务面两路）+ 机制边界；按实测走 **B 路径**（run 级自动继续需改状态机或新增调度面，逐条登记为下一轮输入）。**返工一次**：首版 ③ 的 `dispatched == 0` 被三重门掩蔽、**无法被单变量证伪**（按压改状态过滤后仍为 0）⇒ 改 spy 读数 + 正向对照后按压判红；按压脚本改二进制安全读写。**零产品改动**。EC-02 = **PASS**（`RECHECK-20261008-314` = PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 1 落地 + EC-01 收口**：新增 `POST /tasks/{task_id}/retry`（死信人工恢复的**产品**入口）+ DTO + 9 例判据；三类点名拒绝（404/409/503）；幂等两层（控制面 key + 引擎侧点名称，事件计数为判据）；**下游消费证据**（恢复后 `acquire_lease` 成功）；认证面**自动覆盖**（写面 60 → 61，判据从 `app.openapi()` 枚举）；两向按压判红且逐字节复原；**同步集五条**（建档预估 4 条 + 门抓到的第 5 条 `failure-payload` 受判出口 producer 清单，纯扩张零豁免）。EC-01 = **PASS**（`RECHECK-20261008-312` = PASS_WITH_WARNINGS）。 |

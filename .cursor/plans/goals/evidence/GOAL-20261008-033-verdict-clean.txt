@@ -37,8 +37,8 @@ PASS prior-suite-test_research_continuity_coverage_matrix
 PASS prior-suite-test_restart_rebuild_resume
 PASS prior-suite-test_retry_park_and_resume
 PASS prior-suite-test_workflow_restart_recovery
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
 PASS goal-text-readable
 PASS goal-declares-four-ecs
 PASS goal-ec01-status
