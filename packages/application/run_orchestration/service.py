@@ -1,12 +1,10 @@
 """RunOrchestrationService：Compile → Preflight → Freeze → Execute → Complete。
 
-把 M2（compile/preflight/freeze）、M4（team resolution）、M6（AgentRuntime）、
-M5（WorkflowEngine/ArtifactStore/EventPublisher）与领域产物链串成端到端
-ResearchRun 执行。Preflight 不可绕过（ManifestFreezeError 阻断）；RunManifest
-在执行前冻结，resume/retry 基于冻结 snapshot；OpenHands Conversation 状态
-不替代 ResearchRun 状态（AGENTS.md §6）。执行循环见 phase_runner；
-resume 语义守卫与预算释放见 convergence；team resolution 辅助见
-session_resolution。
+把 M2/M4/M5/M6 与领域产物链串成端到端 ResearchRun 执行。Preflight 不可绕过；
+RunManifest 执行前冻结，resume/retry 基于冻结 snapshot；OpenHands Conversation
+状态不替代 ResearchRun 状态（AGENTS.md §6）。执行循环见 phase_runner；resume
+守卫见 convergence；team resolution 见 session_resolution；多轮循环见
+round_loop_runner。
 """
 
 from __future__ import annotations
@@ -56,6 +54,7 @@ from packages.application.run_orchestration.phase_runner import (
     PhaseRunnerDeps,
     execute_phases,
 )
+from packages.application.run_orchestration.round_loop_runner import round_loop_fields
 from packages.application.run_orchestration.run_terminals import (
     compensate_failed_resume,
     preflight_failure_message,
@@ -308,6 +307,7 @@ class RunOrchestrationService:
                 on_pause=paused.append,
                 on_observation=None if collector is None else collector.observe,
                 pause_requested=lambda: self.pause_requested(run_id),
+                **round_loop_fields(self._deps.round_loops, self._resolve_sessions(context)),
             ),
             PhaseContext(
                 command=command,

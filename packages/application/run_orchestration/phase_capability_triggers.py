@@ -133,6 +133,73 @@ def select_artifact_id(
     return matched[0]
 
 
+def consumed_ids(
+    previous: Mapping[str, object] | None,
+    prefix: str,
+) -> tuple[str, ...]:
+    """上一步读面结果里**已消费**的那些制品 id（按声明前缀识别）。
+
+    为什么按**前缀**而不是按完整 id：制品 id 含执行期才生成的 task id
+    （`tool-result:{task_id}:{op}:{tool_id}`），装配方无从写死；而前缀
+    （装配方给出的形态，如 `tool-result:`）是**声明事实**，且「已消费」这条事实
+    在多轮里的语义就是「**早先**那些轮次产生的同后缀制品」——它们与本轮候选共享前缀、
+    区别在 task id 段。缺省不调用本函数（单轮语义逐字节不变）。
+    """
+    entries = (previous or {}).get("evidence")
+    if not isinstance(entries, list):
+        return ()
+    return tuple(
+        str(item.get("artifact_id"))
+        for item in entries
+        if isinstance(item, Mapping)
+        and item.get("artifact_id")
+        and str(item.get("artifact_id")).startswith(prefix)
+    )
+
+
+def select_artifact_id_excluding(
+    previous: Mapping[str, object] | None,
+    suffix: str,
+    tool_id: str,
+    *,
+    exclude: tuple[str, ...],
+) -> str:
+    """按后缀选中**恰好一条**制品，并可**排除**已消费的若干条（多轮循环用）。
+
+    为什么多轮需要它（实测的机制缺口）：`select_artifact_id` 要求后缀匹配**恰好一条**。
+    两轮时每一轮只产生一份该后缀的制品 ⇒ 成立；**三轮起**同一后缀会匹配到**多份**
+    （第 2 轮读时第 1 轮的还在，第 3 轮读时前两轮的都在）⇒ 既有函数会 fail closed 点名
+    「found 多份」。那不是判据缺陷，而是**单轮语义不适用于多轮**。
+
+    本函数把「已经消费过哪些」显式带进来（`exclude`），从候选里扣掉它们再要求恰好一条：
+    第 N 轮因此稳定选中**第 N-1 轮**那一份，且**零条 / 仍多条仍然点名失败**（不放宽）。
+
+    与 `select_artifact_id` 的关系：两者**同源**（同样的 `evidence` 列表、同样的后缀
+    判据、同样的 fail-closed 形态），差别只有「是否扣掉已消费的」——既有函数逐字未动，
+    单轮调用方行为**逐字节不变**。
+    """
+    entries = (previous or {}).get("evidence")
+    if not isinstance(entries, list):
+        raise InvalidInputError(
+            f"run-chain tool {tool_id} declares an evidence source_ref suffix but the "
+            "previous step carries no 'evidence' list to select from"
+        )
+    ids = [
+        str(item.get("artifact_id"))
+        for item in entries
+        if isinstance(item, Mapping) and item.get("artifact_id")
+    ]
+    consumed = set(exclude)
+    matched = [item for item in ids if item.endswith(suffix) and item not in consumed]
+    if len(matched) != 1:
+        raise InvalidInputError(
+            f"run-chain tool {tool_id}: expected exactly one unconsumed evidence artifact_id "
+            f"ending with {suffix!r}, found {sorted(matched)} "
+            f"(candidates: {sorted(ids)}; excluded: {sorted(consumed)})"
+        )
+    return matched[0]
+
+
 def skip_reason(call: RunChainCall) -> str:
     """跳过理由（**逐字点名**工具与字段 —— 跳过不是静默）。"""
     return (
@@ -143,9 +210,11 @@ def skip_reason(call: RunChainCall) -> str:
 
 __all__ = [
     "Lookup",
+    "consumed_ids",
     "planned_in_this_phase",
     "previous_ids",
     "select_artifact_id",
+    "select_artifact_id_excluding",
     "should_skip",
     "skip_reason",
 ]

@@ -50,6 +50,11 @@ class OrchestrationDependencies:
     # 仓内 `schemas/` 取；见 `output_schema_check`）——装配方可以换，但**不接**不等于
     # 「这项算过」：取不到回调时该判据仍是既有的 `schema validator unavailable`（fail-closed）。
     output_schema_validator: Any | None = output_schema_check_for
+    # GOAL-20261008-034 EC-01：**多轮循环**的装配声明（`round_loop.RoundLoop` 元组）。
+    # 空元组（缺省）= 既有单遍语义**逐字节不变**；非空 = 这些 phase 按声明重复执行到
+    # 停止判据（结论驱动）或上界护栏为止。与 `capabilities` 同层：**装配知识**，
+    # 不改协议 schema、不改 `PhaseStrategy` 枚举语义。
+    round_loops: tuple[Any, ...] = ()
     default_actor: str = "system:orchestration"
 
 

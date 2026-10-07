@@ -33,6 +33,7 @@ from packages.application.run_orchestration.phase_pause import (
     pause_for_human_gate,
     pause_if_requested,
 )
+from packages.application.run_orchestration.round_loop_runner import execute_rounds
 from packages.application.run_orchestration.task_executor import (
     ExecutionDeps,
     SessionSpecContext,
@@ -40,6 +41,7 @@ from packages.application.run_orchestration.task_executor import (
     execute_task,
 )
 from packages.application.run_orchestration.task_phase_helpers import (
+    ChainCarry,
     PhaseStep,
     failure_step,
     register_and_gate,
@@ -87,6 +89,12 @@ class PhaseRunnerDeps:
     # GOAL-010 EC-04：会话期的运行时观测交回方（service 收集，run 终止时落 canonical）。
     # 只在**真的有观测**时被调用——没有观测不是一次空调用，而是不发这条事实。
     on_observation: Callable[[RunSessionObservation], None] | None = None
+    # GOAL-20261008-034 EC-01：**多轮循环**的驱动面（service 注入；None ⇒ 单遍语义
+    # 逐字节不变）。它提供两个能力：`next_round()`（还有没有下一轮）与
+    # `resolve(round_index)`（**懒展开**：该轮的 specs），以及 `record(...)` 记一轮事实。
+    round_driver: Any | None = None
+    #: 单遍执行的**原始** specs 解析器（无循环时用它；有循环时由驱动按轮调用）。
+    resolve_round: Callable[[int], tuple["SessionSpec", ...]] | None = None
 
     def emit(
         self,
@@ -160,10 +168,26 @@ class TaskContext:
 
 
 def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
-    """按 phase DAG 拓扑序执行任务；human gate 前注册审批并进入 WAITING。"""
+    """按 phase DAG 拓扑序执行任务；human gate 前注册审批并进入 WAITING。
+
+    **多轮循环**（GOAL-20261008-034 EC-01）：注入了 `round_driver` 时按轮重复执行
+    （见 `round_loop_runner.execute_rounds` —— 那段循环控制**不在本模块**，本模块
+    只暴露单遍执行这一具备复用价值的原语）。**无注入路径逐字节不变**。
+    """
+    if deps.round_driver is not None and deps.resolve_round is not None:
+        outcome: RunOutcome = execute_rounds(deps, ctx)
+        return outcome
+    return _execute_one_pass(deps, ctx, ctx.pending or ctx.resolve_sessions())
+
+
+def _execute_one_pass(
+    deps: PhaseRunnerDeps,
+    ctx: PhaseContext,
+    specs: tuple["SessionSpec", ...],
+) -> RunOutcome:
+    """**单遍**执行（循环体的原样搬迁；既有调用方语义与载荷逐字节不变）。"""
     outcomes: list[TaskOutcome] = []
     handoffs: dict[str, object] = {}
-    specs = ctx.pending or ctx.resolve_sessions()
     groups = list(_phase_groups(specs))
     for index, group in enumerate(groups):
         paused = pause_for_human_gate(deps, ctx, group, groups[index:], outcomes)
@@ -198,6 +222,7 @@ def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
     return RunOutcome(
         run_id=ctx.run_id,
         state=ResearchRunState.State.SUCCEEDED,
+        chain_outputs=tuple(item for outcome in outcomes for item in outcome.chain_outputs),
         message="run completed",
         tasks=tuple(outcomes),
         manifest_digest=ctx.frozen_manifest_digest,
@@ -336,7 +361,13 @@ def _run_group_task(
         return step.failure  # type: ignore[no-any-return]
     run.handoffs[task.id.value] = step.handoff
     run.outcomes.append(
-        TaskOutcome(task=task, outcome="SUCCEEDED", verdict=step.verdict, skipped=step.skipped)
+        TaskOutcome(
+            task=task,
+            outcome="SUCCEEDED",
+            verdict=step.verdict,
+            skipped=step.skipped,
+            chain_outputs=step.chain_outputs,
+        )
     )
     return None
 
@@ -404,6 +435,9 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
         deps,
         tctx,
         execution.session_result,
-        capability.evidences,
-        skipped=capability.skipped,
+        ChainCarry(
+            retrieved=capability.evidences,
+            skipped=capability.skipped,
+            chain_outputs=capability.outputs,
+        ),
     )

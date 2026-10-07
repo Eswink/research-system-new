@@ -83,33 +83,40 @@ def evaluate_stop(
     return StopDecision(stop=False, kind="", criterion="", fact=fact)
 
 
-def ids_from_step_outputs(outputs: Iterable[Mapping[str, Any]]) -> tuple[str, ...]:
-    """从本轮各步的运行链产出的**内容**里取标识（去重保序）。
+def ids_at_path(output: Mapping[str, Any], path: str) -> tuple[str, ...]:
+    """按**声明的点分路径**从一个运行链步的产出里取标识列表（缺路径 ⇒ 空元组）。
 
-    形态与既有派生链一致：`literature.search` / `literature.read` 的返回是
-    `{"content": {...}, ...}`，标识在 `content.ids`（点分路径由**声明**给出，
-    这里只处理本判据读的那一种事实 —— 别的形态要点名而不是静默当成空）。
+    产出形态由工具决定，所以路径是**声明的**（`RoundLoop.ids_path`）：检索型产出
+    （`{"count":..,"ids":[..]}`）路径是 `ids`；读面型产出（`{"content":{"ids":[..]}}`）
+    路径是 `content.ids`。取不到 ⇒ 空（**不是**错误：该产出不是标识型）。
+    """
+    current: object = output
+    for part in path.split("."):
+        if not isinstance(current, Mapping) or part not in current:
+            return ()
+        current = current[part]
+    if not isinstance(current, list):
+        return ()
+    return tuple(str(item) for item in current if str(item))
 
-    取不到 `content.ids` 的产出**跳过**（它本轮的产出不是标识型）；**整轮都没有**
-    标识 ⇒ 返回空元组 ⇒ 判据判「无新标识」⇒ 停（这正是「这一轮没带来新东西」的语义）。
+
+def ids_from_step_outputs(outputs: Iterable[Mapping[str, Any]], path: str) -> tuple[str, ...]:
+    """本轮各步产出里按声明路径取标识（去重保序）。
+
+    **整轮都取不到** ⇒ 空元组 ⇒ 判据判「无新标识」⇒ 停。这正是「这一轮没带来新东西」
+    的语义（不是失败）。
     """
     out: list[str] = []
     for item in outputs:
-        content = item.get("content")
-        if not isinstance(content, Mapping):
-            continue
-        raw = content.get("ids")
-        if not isinstance(raw, list):
-            continue
-        for value in raw:
-            text = str(value)
-            if text and text not in out:
-                out.append(text)
+        for value in ids_at_path(item, path):
+            if value not in out:
+                out.append(value)
     return tuple(out)
 
 
 __all__ = [
     "RoundFact",
+    "ids_at_path",
     "StopDecision",
     "evaluate_stop",
     "ids_from_step_outputs",

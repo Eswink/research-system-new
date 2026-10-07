@@ -53,9 +53,14 @@ from packages.application.ports.policy_evaluator import (
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.preflight.policy_check import policy_scope_for
+from packages.application.run_orchestration.phase_call_arguments import (
+    arguments_for,
+)
+from packages.application.run_orchestration.phase_call_arguments import (
+    lookup_path as _lookup,
+)
 from packages.application.run_orchestration.phase_capability_triggers import (
     planned_in_this_phase,
-    select_artifact_id,
     should_skip,
     skip_reason,
 )
@@ -134,6 +139,11 @@ class RunChainCall:
     requires_previous_ids: bool = True
     phase_id: str | None = None
     artifact_from_previous: str | None = None
+    #: **多轮循环**里"已经消费过哪些同后缀制品"的**声明面**（GOAL-20260808-034 AC-5）。
+    #: 值是 `artifact_id` 的**前缀**（执行期才知道的 task id 由它前缀化）：运行时把
+    #: 上一步结果里**以该前缀开头**的候选记为已消费，`artifact_from_previous` 的选择
+    #: 因此落到**未消费**的那一份上。缺省 `None` ⇒ 不排除（单轮语义逐字节不变）。
+    consumed_artifact_prefix: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,6 +174,9 @@ class CapabilityStepOutcome:
     failure_message: str | None = None
     system_failure: bool = True
     skipped: tuple[str, ...] = ()
+    # GOAL-20261008-034 EC-01：各步**返回内容**（`_payload` 的解析结果，按声明顺序）。
+    # 多轮循环的停止判据读它（"本轮结论"的可观察事实）；缺省空 = 既有行为逐字节不变。
+    outputs: tuple[Mapping[str, object], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,6 +217,7 @@ def execute_run_chain_capabilities(
         return CapabilityStepOutcome()
     evidences: list[Evidence] = []
     skipped: list[str] = []
+    outputs: list[Mapping[str, object]] = []
     previous: Mapping[str, object] | None = None
     try:
         material = _input_material(deps, spec)
@@ -219,12 +233,15 @@ def execute_run_chain_capabilities(
                 _StepInputs(material=material, previous=previous, run_id=task.run_id.value),
             )
             evidences.append(evidence)
+            outputs.append(previous)
     except (InvalidInputError, PermanentPortError, TransientPortError) as error:
         return CapabilityStepOutcome(
             failure_message=f"run-chain capability step failed: {error}",
             system_failure=isinstance(error, TransientPortError),
         )
-    return CapabilityStepOutcome(evidences=tuple(evidences), skipped=tuple(skipped))
+    return CapabilityStepOutcome(
+        evidences=tuple(evidences), skipped=tuple(skipped), outputs=tuple(outputs)
+    )
 
 
 def _planned_in_this_phase(call: RunChainCall, spec: SessionSpecContext) -> bool:
@@ -268,7 +285,7 @@ def _execute_one(
             f"assembly (capability {call.capability!r}, tool {call.tool_id!r})"
         )
     require_frozen_tool_set(spec.frozen_tool_set, call.provider_id)
-    record = _tool_call(deps, task, call, _arguments(call, inputs))
+    record = _tool_call(deps, task, call, arguments_for(call, inputs))
 
     outcome = execute_tool_call(
         provider,
@@ -350,55 +367,6 @@ def _operation_key(call: RunChainCall, args: Mapping[str, object]) -> str:
     if isinstance(ids, list) and ids:
         return f"{call.tool_id}:{'+'.join(str(item) for item in ids)}"
     return call.tool_id
-
-
-def _lookup(material: Mapping[str, object], path: str) -> object:
-    """点分路径取值（如 `retrieval.query`）；任一层缺失 ⇒ 抛错（fail closed，不猜）。"""
-    current: object = material
-    for part in path.split("."):
-        if not isinstance(current, Mapping) or part not in current:
-            raise InvalidInputError(f"declared input carries no {path!r}")
-        current = current[part]
-    return current
-
-
-def _arguments(
-    call: RunChainCall,
-    inputs: _StepInputs,
-) -> dict[str, object]:
-    args: dict[str, object] = dict(call.fixed_arguments)
-    for path in call.arguments_from_input:
-        # 点分路径的最后一段就是 provider 看到的参数名（`retrieval.query` → `query`）。
-        args[path.rsplit(".", 1)[-1]] = _lookup(inputs.material, path)
-    if call.ids_from_previous is not None:
-        if "." in call.ids_from_previous:
-            # 点分路径：与 `arguments_from_input` 同一取法（`_lookup`），用于信封形
-            # 结果（如 MCP 的 `structured.ids`）。非点分名字走**原样**分支，既有行为
-            # 逐字节不变（`test_run_chain_capabilities` 未改一行）。
-            ids = _lookup(inputs.previous or {}, call.ids_from_previous)
-        else:
-            ids = (inputs.previous or {}).get(call.ids_from_previous)
-
-        if not isinstance(ids, list) or not ids:
-            raise InvalidInputError(
-                f"previous step carries no {call.ids_from_previous!r} ids "
-                f"for run-chain tool {call.tool_id}"
-            )
-        args["ids"] = [str(item) for item in ids]
-    if call.artifact_from_previous is not None:
-        # 派生面：本步读哪个制品由**上一步的读面结果**决定（见 `artifact_from_previous`）。
-        args["artifact_id"] = select_artifact_id(
-            inputs.previous, call.artifact_from_previous, call.tool_id
-        )
-    if call.run_id_argument:
-        # 本次 run 的标识（**执行期才存在**）：缺它 ⇒ 点名拒绝，不猜一个。
-        if not inputs.run_id:
-            raise InvalidInputError(
-                f"run-chain tool {call.tool_id} declares run_id_argument but no run id "
-                "is available in this step context"
-            )
-        args["run_id"] = inputs.run_id
-    return args
 
 
 def _input_material(deps: CapabilityDeps, spec: SessionSpecContext) -> dict[str, object]:

@@ -56,6 +56,9 @@ class PhaseStep:
     # 「不触发」臂）。任务**照常成功**（跳过不是失败），但跳过这件事必须落在读面上
     # ——理由逐字点名「哪条工具因上一步的哪个字段而没跑」。
     skipped: tuple[str, ...] = ()
+    # GOAL-20261008-034 EC-01：本任务的运行链**返回内容**（多轮循环的停止判据读它）。
+    # 缺省空 = 既有行为逐字节不变。
+    chain_outputs: tuple[object, ...] = ()
 
 
 def tolerated_outcome(task: ResearchTask, message: str) -> TaskOutcome:
@@ -283,23 +286,37 @@ def artifact_view(registration: ResultRegistration) -> dict[str, object]:
     return view
 
 
+@dataclass(frozen=True, slots=True)
+class ChainCarry:
+    """随会话结果一起登记/回传的**运行链产物**（参数对象：守住 5 参数上限）。
+
+    三件事同源（都是「运行链这一步产出了什么」）：`retrieved` 证据随会话结果进同一个
+    claim（读面才看得到）；`skipped` 是声明式跳过的理由（进事件链）；`chain_outputs` 是
+    各步**返回内容**（多轮循环的停止判据读它）。缺省全空 ⇒ 既有行为逐字节不变。
+    """
+
+    retrieved: tuple[Evidence, ...] = ()
+    skipped: tuple[str, ...] = ()
+    chain_outputs: tuple[object, ...] = ()
+
+
 def register_and_gate(
     deps: Any,
     tctx: Any,
     session_result: AgentSessionResult,
-    retrieved: tuple[Evidence, ...] = (),
-    skipped: tuple[str, ...] = (),
+    carry: ChainCarry | None = None,
 ) -> PhaseStep:
     """Register session output, evaluate gate, promote claim/memory, handoff.
 
-    `retrieved` = 运行链自己取得的证据（GOAL-011 EC-01）：它随会话结果**同一个** claim
+    `carry.retrieved` = 运行链自己取得的证据（GOAL-011 EC-01）：它随会话结果**同一个** claim
     登记，读面与覆盖计数因此看得到它（experiment 路径暂不携带——EC-03 的范围）。
 
-    `skipped` = 运行链里**声明式跳过**的调用（GOAL-031 EC-03）：原样进 `PhaseStep`，
+    `carry.skipped` = 运行链里**声明式跳过**的调用（GOAL-031 EC-03）：原样进 `PhaseStep`，
     由执行循环记到任务终局读面上（跳过不是失败，但必须可见）。
     """
     task = tctx.task
-    registered = register_or_fail(deps, tctx, session_result, retrieved)
+    carry = carry or ChainCarry()
+    registered = register_or_fail(deps, tctx, session_result, carry.retrieved)
     if isinstance(registered, str):
         return failure_step(
             deps,
@@ -323,9 +340,7 @@ def register_and_gate(
         gate,
         producer=f"agent:{tctx.spec_context.agent.id}",
     )
-    if not skipped:
-        return step
-    return replace(step, skipped=skipped)
+    return replace(step, skipped=carry.skipped, chain_outputs=carry.chain_outputs)
 
 
 def register_and_gate_experiment(

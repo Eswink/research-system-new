@@ -24,6 +24,9 @@ class TaskOutcome:
     # GOAL-20261006-031 EC-03：本任务里**声明式跳过**的调用（逐字带理由）。任务照常
     # 成功——跳过不是失败；这条字段是「不触发」臂在读面上的可判形态（缺省 = 没跳过）。
     skipped: tuple[str, ...] = ()
+    # GOAL-20261008-034 EC-01：本任务运行链的**返回内容**（多轮循环的停止判据读它）。
+    # 缺省空 = 既有行为逐字节不变。
+    chain_outputs: tuple[object, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +45,12 @@ class RunOutcome:
     pricing_version: str | None = None
     pricing_digest: str | None = None
     handoff_digests: tuple[str, ...] = ()
+    # GOAL-20261008-034 EC-01：多轮循环的**停止事实**（判据 / 类别 / 读数 / 轮数）。
+    # 缺省 `None` = 这条 run 没跑循环 ⇒ 既有读面与载荷逐字节不变。
+    rounds: dict[str, object] | None = None
+    #: 本次执行里各任务运行链的**返回内容**（多轮循环的停止判据读它）。
+    #: 缺省空 = 既有行为逐字节不变。
+    chain_outputs: tuple[object, ...] = ()
     system_failure: bool = False
 
 

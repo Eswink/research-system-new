@@ -47,14 +47,20 @@ class RoundLoop:
     """一组 phase 重复执行到「停」为止的装配声明。
 
     `phases` 是本轮要跑的 phase id 序列（按执行序；通常就是一个 phase，也可以是
-    「检索 → 分析」这样的一小段）。展开后第 N 轮的 phase id 形如 `{phase}@{N}`
-    —— 任务 idempotency key 由 `{run}:{phase}:{agent}` 派生 ⇒ **每轮是不同的任务**
-    （否则第二轮的 submit 会被既有按 key 去重直接吞掉，那是静默停）。
+    「检索 → 分析」这样的一小段）。
+
+    **轮次只改任务幂等键，不改 phase id**（实测发现的关键约束）：任务幂等键由
+    `{run}:{phase}:{agent}` 派生 ⇒ 每轮必须是**不同的任务**（否则第二轮的 submit 会被
+    既有按 key 去重**静默吞掉**）。但 phase id **不能**带轮次后缀 —— 运行链的 phase 级
+    过滤（`planned_in_this_phase`）拿 spec 的 phase id 去编译计划里查表，带后缀就查不到
+    ⇒ 第 2 轮起**所有运行链调用都会被静默跳过**。⇒ 后缀加在幂等键上（见 `round_key`）。
     """
 
     phases: tuple[str, ...]
     max_rounds: int
     stop_when: str = CONVERGED_NO_NEW_IDS
+    #: 结论事实的**声明路径**（本轮产出 JSON 里标识列表的键；默认 `ids`）。
+    ids_path: str = "ids"
 
     def __post_init__(self) -> None:
         if not self.phases:
@@ -70,37 +76,36 @@ class RoundLoop:
                 f"unknown stop criterion {self.stop_when!r}; known: {sorted(STOP_CRITERIA)}"
             )
 
-    def round_phase_id(self, phase_id: str, round_index: int) -> str:
-        """第 `round_index` 轮（从 1 起）里 `phase_id` 的**展开 id**。
+    def round_key(self, base_key: str, round_index: int) -> str:
+        """第 `round_index` 轮（从 1 起）里任务幂等键的名字。
 
-        后缀形态 `@{n}` 与既有 phase id 命名空间不相交（`schemas` 不允许 `@`），
-        因此展开不会与协议里真实声明的 phase 撞名。
+        **第 1 轮保持基键逐字不变** ⇒ 既有单轮语义（以及「重排 / 续跑按幂等键对齐」）
+        逐字不动；N>1 加 `@{n}` 后缀。后缀形态与既有键空间不相交（键里的 phase 段
+        由协议声明，`schemas` 不允许 `@`）。
         """
         if round_index < 1:
             raise ValueError("round index starts at 1")
-        return f"{phase_id}@{round_index}"
+        return base_key if round_index == 1 else f"{base_key}@{round_index}"
 
-    def expanded_phases(self) -> tuple[str, ...]:
-        """全部轮次的展开序列（第 1 轮的**原始 id** 保持不变 —— 既有单轮语义逐字不动）。"""
-        out: list[str] = []
-        for index in range(1, self.max_rounds + 1):
-            out.extend(
-                phase if index == 1 else self.round_phase_id(phase, index) for phase in self.phases
-            )
-        return tuple(out)
+    def owns_every_phase(self, phase_ids: tuple[str, ...]) -> bool:
+        """本循环是否覆盖了给定的**全部** phase（v1 的适用范围；不是则点名拒绝）。
+
+        为什么要求全覆盖：循环控制包在既有单遍执行之外（约束④「不把单遍改成嵌套循环」），
+        若循环只覆盖一部分 phase，就得决定「循环外的 phase 与轮次的先后关系」——
+        那是一条**新语义**，本轮不做（如实登记为未覆盖，而不是悄悄选一种）。**
+        """
+        return set(self.phases) == set(phase_ids)
 
 
-def find_loop(loops: tuple[RoundLoop, ...], phase_id: str) -> tuple[RoundLoop, int] | None:
-    """该 phase id 属于哪个循环的第几轮（`phase_id` 可能是展开 id）。
+def find_loop(loops: tuple[RoundLoop, ...], phase_id: str) -> RoundLoop | None:
+    """该 phase id 属于哪个循环（phase id **不带**轮次后缀 ⇒ 每轮反查同一结果）。
 
-    返回 `(loop, round_index)`；不属于任何循环 ⇒ `None`。第 1 轮用原始 id，
-    第 N>1 轮用 `{phase}@{N}` ⇒ 反查必须**先剥后缀再比对**（否则第二轮会认不出来）。
+    多条循环声明同一个 phase ⇒ 装配期即点名拒绝（见 `validate_loops`），
+    因此这里的「第一条命中」不会掩盖歧义。
     """
-    base, _, suffix = phase_id.partition("@")
-    index = int(suffix) if suffix.isdigit() else 1
     for loop in loops:
-        if base in loop.phases:
-            return loop, index
+        if phase_id in loop.phases:
+            return loop
     return None
 
 

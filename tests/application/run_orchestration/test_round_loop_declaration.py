@@ -24,6 +24,7 @@ from packages.application.run_orchestration.round_loop import (
 from packages.application.run_orchestration.round_loop_facts import (
     RoundFact,
     evaluate_stop,
+    ids_at_path,
     ids_from_step_outputs,
 )
 
@@ -31,22 +32,26 @@ _LOOP = RoundLoop(phases=("round",), max_rounds=4)
 
 
 class TestTheDeclarationFace:
-    def test_expansion_keeps_the_first_round_id_untouched(self) -> None:
-        """**第 1 轮用原始 id** —— 既有单轮语义逐字不动（展开只在 N>1 时加后缀）。"""
-        assert RoundLoop(phases=("a", "b"), max_rounds=3).expanded_phases() == (
-            "a",
-            "b",
-            "a@2",
-            "b@2",
-            "a@3",
-            "b@3",
-        )
+    def test_round_one_keeps_the_base_key_untouched(self) -> None:
+        """**第 1 轮用基键逐字不变** —— 既有单轮语义与「续跑按幂等键对齐」逐字不动。"""
+        loop = RoundLoop(phases=("a", "b"), max_rounds=3)
+        assert loop.round_key("run:a:agent", 1) == "run:a:agent"
 
-    def test_expansion_produces_distinct_ids_per_round(self) -> None:
-        """**每轮 id 必须不同**：任务 idempotency key 由 `{run}:{phase}:{agent}` 派生，
-        同 id ⇒ 第二轮 submit 被既有按 key 去重吞掉 ⇒ **静默停**（最危险的失败形态）。"""
-        expanded = RoundLoop(phases=("round",), max_rounds=3).expanded_phases()
-        assert len(set(expanded)) == len(expanded) == 3
+    def test_later_rounds_get_distinct_keys(self) -> None:
+        """**每轮键必须不同**：幂等键由 `{run}:{phase}:{agent}` 派生，同键 ⇒ 第二轮
+        submit 被既有按 key 去重吞掉 ⇒ **静默停**（最危险的失败形态）。"""
+        loop = RoundLoop(phases=("round",), max_rounds=3)
+        keys = {loop.round_key("run:round:agent", index) for index in (1, 2, 3)}
+        assert len(keys) == 3
+        assert "run:round:agent@2" in keys and "run:round:agent@3" in keys
+
+    def test_the_phase_id_itself_is_never_suffixed(self) -> None:
+        """**phase id 不带轮次后缀**（实测发现的关键约束）：运行链的 phase 级过滤
+        （`planned_in_this_phase`）拿 spec 的 phase id 去编译计划里查表 —— 带后缀就查不到
+        ⇒ 第 2 轮起**所有运行链调用被静默跳过**（不是报错，是安静地什么都不做）。"""
+        loop = RoundLoop(phases=("round",), max_rounds=3)
+        assert not hasattr(loop, "round_phase_id"), "phase id 不得有展开形态"
+        assert not hasattr(loop, "expanded_phases"), "不得提供整体展开（会让停止判据变成装饰）"
 
     def test_a_single_round_loop_is_refused(self) -> None:
         """一轮的「循环」不是循环 ⇒ 构造期点名拒绝。"""
@@ -57,10 +62,9 @@ class TestTheDeclarationFace:
         with pytest.raises(ValueError, match="unknown stop criterion"):
             RoundLoop(phases=("a",), max_rounds=2, stop_when="whatever")
 
-    def test_find_loop_resolves_both_the_plain_and_the_expanded_id(self) -> None:
-        """反查必须**剥后缀**：第 2 轮用的是 `round@2`，不剥就认不出来。"""
-        assert find_loop((_LOOP,), "round") == (_LOOP, 1)
-        assert find_loop((_LOOP,), "round@3") == (_LOOP, 3)
+    def test_find_loop_resolves_the_plain_phase_id_every_round(self) -> None:
+        """反查用**原始 phase id**（它是每轮同一个）——不是展开后的字符串。"""
+        assert find_loop((_LOOP,), "round") is _LOOP
         assert find_loop((_LOOP,), "other") is None
 
 
@@ -135,21 +139,26 @@ class TestTheStopDecision:
 
 class TestTheFactReader:
     def test_ids_are_taken_from_the_declared_path(self) -> None:
-        outputs = (
-            {"content": {"ids": ["39000001", "39000002"]}, "artifact_id": "x"},
-            {"content": {"title": "no ids here"}},
-            {"no_content": True},
-        )
-        assert ids_from_step_outputs(outputs) == ("39000001", "39000002")
+        """两条**真实产出形态**各按自己的声明路径取：检索型 `ids`、读面型 `content.ids`。"""
+        search = {"count": 2, "ids": ["39000001", "39000002"], "query": "x"}
+        read = {"artifact_id": "a", "content": {"ids": ["39000001"]}}
+        assert ids_at_path(search, "ids") == ("39000001", "39000002")
+        assert ids_at_path(read, "content.ids") == ("39000001",)
+
+    def test_a_missing_path_reads_as_empty_not_an_error(self) -> None:
+        """取不到路径 ⇒ 空（该产出不是标识型）——**不是**错误、不是点名拒绝。"""
+        assert ids_at_path({"articles": []}, "ids") == ()
+        assert ids_at_path({"content": {"title": "x"}}, "content.ids") == ()
+        assert ids_at_path({"content": "not-a-mapping"}, "content.ids") == ()
 
     def test_the_reading_is_deduplicated_and_order_preserving(self) -> None:
-        outputs = ({"content": {"ids": ["a", "b"]}}, {"content": {"ids": ["b", "c"]}})
-        assert ids_from_step_outputs(outputs) == ("a", "b", "c")
+        outputs = ({"ids": ["a", "b"]}, {"ids": ["b", "c"]})
+        assert ids_from_step_outputs(outputs, "ids") == ("a", "b", "c")
 
     def test_a_round_with_no_id_typed_output_reads_as_empty(self) -> None:
         """整轮没有标识型产出 ⇒ 空元组 ⇒ 判据判「无新标识」⇒ 停（语义：这轮没带来新东西）。"""
-        assert ids_from_step_outputs(({"content": {"note": "x"}},)) == ()
-        assert ids_from_step_outputs(()) == ()
+        assert ids_from_step_outputs(({"note": "x"},), "ids") == ()
+        assert ids_from_step_outputs((), "ids") == ()
 
     def test_new_ids_is_a_set_difference_not_a_count(self) -> None:
         """「新」是**集合差**：同一批标识重来一遍**不算新**（计数相同会误判成「有进展」）。"""
@@ -170,7 +179,7 @@ class TestTheLoopStateMachine:
 
     def test_new_ids_keep_the_loop_going(self) -> None:
         state = self._state()
-        state.record_round(1, [{"content": {"ids": ["a"]}}])
+        state.record_round(1, [{"ids": ["a"]}])
         decision = state.decide()
         assert decision.stop is False
         assert state.rounds_run == 1
@@ -178,9 +187,9 @@ class TestTheLoopStateMachine:
 
     def test_a_round_without_new_ids_stops_by_conclusion(self) -> None:
         state = self._state()
-        state.record_round(1, [{"content": {"ids": ["a"]}}])
+        state.record_round(1, [{"ids": ["a"]}])
         assert state.decide().stop is False
-        state.record_round(2, [{"content": {"ids": ["a"]}}])  # 同一批 ⇒ 无新
+        state.record_round(2, [{"ids": ["a"]}])  # 同一批 ⇒ 无新
         decision = state.decide()
         assert decision.stop is True
         assert decision.kind == STOP_BY_CONCLUSION
@@ -190,7 +199,7 @@ class TestTheLoopStateMachine:
     def test_the_guard_stops_a_never_converging_loop(self) -> None:
         state = self._state(max_rounds=3)
         for index in range(1, 4):
-            state.record_round(index, [{"content": {"ids": [f"id{index}"]}}])
+            state.record_round(index, [{"ids": [f"id{index}"]}])
             decision = state.decide()
         assert decision.stop is True
         assert decision.kind == STOP_BY_GUARD
@@ -199,9 +208,9 @@ class TestTheLoopStateMachine:
     def test_the_stop_payload_is_readable_and_names_the_criterion(self) -> None:
         """停止载荷必须**可复读**：判据名 / 类别 / 本轮新标识 / 累计标识 / 上界。"""
         state = self._state(max_rounds=2)
-        state.record_round(1, [{"content": {"ids": ["a"]}}])
+        state.record_round(1, [{"ids": ["a"]}])
         state.decide()
-        state.record_round(2, [{"content": {"ids": ["a"]}}])
+        state.record_round(2, [{"ids": ["a"]}])
         state.decide()
         payload = state.stop_payload()
         assert payload["rounds_run"] == 2
