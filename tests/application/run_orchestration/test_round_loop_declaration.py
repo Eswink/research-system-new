@@ -10,6 +10,8 @@ vs `MAX_ROUNDS`）是 EC-02 的核心 —— 它们必须在**纯函数**层面�
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from packages.application.run_orchestration.round_loop import (
@@ -153,3 +155,70 @@ class TestTheFactReader:
         """「新」是**集合差**：同一批标识重来一遍**不算新**（计数相同会误判成「有进展」）。"""
         fact = RoundFact(round_index=3, ids=("a", "b"), seen_before=("b", "a"))
         assert fact.new_ids == ()
+
+
+class TestTheLoopStateMachine:
+    """执行面的循环控制状态机（AC-4）：逐轮记事实 → 判定 → 可复读的停止载荷。
+
+    本类只判**状态机本身**（不跑编排）；「三轮真的跑起来」由 e2e 覆盖（AC-5）。
+    """
+
+    def _state(self, *, max_rounds: int = 4) -> Any:
+        from packages.application.run_orchestration.round_loop_runner import RoundLoopState
+
+        return RoundLoopState(loop=RoundLoop(phases=("round",), max_rounds=max_rounds))
+
+    def test_new_ids_keep_the_loop_going(self) -> None:
+        state = self._state()
+        state.record_round(1, [{"content": {"ids": ["a"]}}])
+        decision = state.decide()
+        assert decision.stop is False
+        assert state.rounds_run == 1
+        assert state.seen_ids == ("a",)
+
+    def test_a_round_without_new_ids_stops_by_conclusion(self) -> None:
+        state = self._state()
+        state.record_round(1, [{"content": {"ids": ["a"]}}])
+        assert state.decide().stop is False
+        state.record_round(2, [{"content": {"ids": ["a"]}}])  # 同一批 ⇒ 无新
+        decision = state.decide()
+        assert decision.stop is True
+        assert decision.kind == STOP_BY_CONCLUSION
+        assert state.stopped_by == STOP_BY_CONCLUSION
+        assert state.stop_criterion == CONVERGED_NO_NEW_IDS
+
+    def test_the_guard_stops_a_never_converging_loop(self) -> None:
+        state = self._state(max_rounds=3)
+        for index in range(1, 4):
+            state.record_round(index, [{"content": {"ids": [f"id{index}"]}}])
+            decision = state.decide()
+        assert decision.stop is True
+        assert decision.kind == STOP_BY_GUARD
+        assert state.rounds_run == 3, "上界到点即停（不跑到第 4 轮）"
+
+    def test_the_stop_payload_is_readable_and_names_the_criterion(self) -> None:
+        """停止载荷必须**可复读**：判据名 / 类别 / 本轮新标识 / 累计标识 / 上界。"""
+        state = self._state(max_rounds=2)
+        state.record_round(1, [{"content": {"ids": ["a"]}}])
+        state.decide()
+        state.record_round(2, [{"content": {"ids": ["a"]}}])
+        state.decide()
+        payload = state.stop_payload()
+        assert payload["rounds_run"] == 2
+        assert payload["stopped_by"] == STOP_BY_CONCLUSION
+        assert payload["criterion"] == CONVERGED_NO_NEW_IDS
+        assert payload["new_ids_this_round"] == []
+        assert payload["ids_seen"] == ["a"]
+        assert payload["max_rounds"] == 2
+
+    def test_the_state_refuses_to_report_before_it_actually_stopped(self) -> None:
+        state = self._state()
+        with pytest.raises(AssertionError):
+            state.stop_payload()
+
+    def test_validate_loops_names_an_unknown_phase(self) -> None:
+        from packages.application.run_orchestration.round_loop_runner import validate_loops
+
+        with pytest.raises(ValueError, match="unknown phases"):
+            validate_loops((RoundLoop(phases=("ghost",), max_rounds=3),), ["real"])
+        validate_loops((RoundLoop(phases=("real",), max_rounds=3),), ["real"])

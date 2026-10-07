@@ -64,10 +64,10 @@ exit_criteria:
       载荷（判据名 / 类别 / 本轮新标识 / 累计标识 / 上界）；装配期 `validate_loops`
       对未知 phase **点名拒绝**。
     verify: >-
-      `uv run --frozen --no-sync python -B -m mypy
-      packages/application/run_orchestration/round_loop_runner.py` ⇒ 绿；
-      `RoundLoopState` 的逐轮行为由 **AC-5 的接线** 覆盖（本 PLAN 只到状态机本身）。
-    status: PENDING
+      `uv run --frozen --no-sync python -B -m pytest
+      tests/application/run_orchestration/test_round_loop_declaration.py -q` ⇒
+      `TestTheLoopStateMachine`（6 例）绿；`mypy` 对三个新模块绿。
+    status: PASS
   - id: AC-5
     criterion: >-
       **执行接线（三轮真的跑起来）**：`RoundLoop` 声明经装配面注入 ⇒ `execute_phases`
@@ -91,7 +91,7 @@ AC-4/AC-5 是**执行接线**，留待下一步——**不把未做的记成已�
 | AC-1 | 声明面（展开 / 反查 / 构造期点名拒绝） | PASS |
 | AC-2 | 停止判据 + **顺序**（结论优先于护栏） | PASS |
 | AC-3 | 事实读取（集合差 / 空轮语义） | PASS |
-| AC-4 | 执行面的循环控制状态机 | PENDING（模块已进树，行为待接线覆盖） |
+| AC-4 | 执行面的循环控制状态机 | PASS（6 例：逐轮推进 / 结论停 / 护栏停 / 载荷可复读 / 停止前拒答 / 未知 phase 点名） |
 | AC-5 | 执行接线（三轮真跑） | PENDING |
 
 ## 实施清单
@@ -103,7 +103,8 @@ AC-4/AC-5 是**执行接线**，留待下一步——**不把未做的记成已�
 - [x] `packages/application/run_orchestration/round_loop_runner.py`：`RoundLoopState`
       （逐轮事实 + 判定 + 停止载荷）+ `validate_loops`。
 - [x] `tests/application/run_orchestration/test_round_loop_declaration.py`（14 例）。
-- [ ] 执行接线（AC-4 / AC-5）+ e2e 三轮判据。
+- [x] AC-4 的判据（`TestTheLoopStateMachine`，6 例）。
+- [ ] 执行接线（AC-5）+ e2e 三轮判据。
 
 ## 证据
 
@@ -133,7 +134,7 @@ preflight / 前端表单四处同步，而收益只是把同一件事换个地�
 ### 判据
 
 ```
-tests/application/run_orchestration/test_round_loop_declaration.py .............. [100%]  14 passed
+tests/application/run_orchestration/test_round_loop_declaration.py .................... [100%]  20 passed
 tests/application + tests/e2e                                             997 passed, 14 skipped
 ```
 
