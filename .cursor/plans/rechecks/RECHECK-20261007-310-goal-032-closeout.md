@@ -77,4 +77,5 @@ authorization:
 
 `PASS_WITH_WARNINGS`。四条 AC 全 PASS，两路复检（本树 64 判词 + 两树同结论）与
 as-is m0 齐备；`W-1`…`W-6` 如实登记。**未**改任何既有判据（`IN_SCOPE` 纯收紧）；
-**未**宣称项目安全；**未**宣称 exactly-once。
+**未**宣称项目安全（`R-M1`）；**不得**宣称投递语义为「恰好一次」（**明确否认**；
+口径只能是 at-least-once + idempotency + deduplication）。
