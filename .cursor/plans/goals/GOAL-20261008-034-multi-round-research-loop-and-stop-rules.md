@@ -389,6 +389,17 @@ GOAL-019…033 的未覆盖范围原样保留。
   （`iterative_optimizer` 相关的多轮语义）；`population_search` / `map_reduce` 若同样零消费，
   **如实登记**而不是顺手全实现（广度不是一条轴）。
 - （建档时登记）**承接面读数待复核**：提示词的 19/46 未在本轮重新实测。
+- （cycle 1 登记）**AC-5（执行接线）的已勘明约束**（供下一轮直接开工，免重新推导）：
+  ① **懒展开是硬要求**：解析期就把 N 轮全展开会让停止判据变成装饰（任务全提交了，轮次照跑）
+  ⇒ 每轮**开始时**才解析该轮 specs，判「停」后**不再解析**下一轮；
+  ② **`service.py` 恰在 450 行硬上限**、`phase_runner.py` 409 行 ⇒ 接线逻辑必须落在
+  `round_loop_runner.py`（或新模块），**不得**塞进这两处；
+  ③ **`_remaining_specs` 按 idempotency key 对齐**（`{run}:{phase}:{agent}`）⇒ 展开 id 带
+  `@N` 后缀后，续跑重算会**自然识别**各轮任务（这是选后缀而非改 key 结构的原因）；
+  ④ **既有 `execute_phases` 单遍语义不动**：循环控制应**包一层**（按轮调用），
+  而不是把 `for index, group in enumerate(groups)` 改成嵌套循环；
+  ⑤ 载荷落点：`RoundLoopState.stop_payload()` 已给出可复读的停止事实 ⇒ 接线时把它接进
+  既有 `run.completed` 事件（承 GOAL-031 EC-03 的 `skipped` 形态：**无停无跳时载荷逐字节不变**）。
 
 ### 未覆盖范围（逐条明写，不得据此宣称安全）
 
