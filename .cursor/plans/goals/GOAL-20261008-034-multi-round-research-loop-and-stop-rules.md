@@ -153,7 +153,26 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e tests/observability
       tests/api -q` ⇒ 全绿；新增判据文件全绿；配套留档：读面读出的事件逐条、反证判红原文。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      cycle 2（本 GOAL cycle 1 的第二段一并落地，见 `RECHECK-20261008-320`）。
+      **停止事实落既有读面**：`{rounds_run, stopped_by, criterion, max_rounds,
+      new_ids_this_round, ids_seen}` 经既有 `run.completed` 事件逐字可读，
+      **词表零扩张**（承 GOAL-031 EC-03 的 `skipped` 手法）。
+      **结论停必须说清读到什么**：`new_ids_this_round == []` 且 `ids_seen`
+      保留之前累计 ⇒「空」能与「从未有过」区分（判据逐条断言）。
+      **实现里发现的真缺口（已修）**：循环收尾若只发 `{run_id, rounds}` 会
+      **丢掉该轮的声明式跳过事实**（正是 EC-03 禁止的静默）⇒ 载荷改为保留
+      单遍那些键再追加 `rounds`。
+      **单遍回归判据**：未声明循环的 run，`run.completed` **不带** `rounds` 键
+      （既有载荷逐字不变）。
+      **一次判据自证伪的返工（如实登记）**：首版「跳过不丢」判据**按压没判红**
+      （退回旧载荷仍 13 passed）—— 因为当时的循环夹具从不产生跳过，断言在空集上
+      恒真；首版还留了一句 `assert ... or True`（我自己写的假判据）。补齐夹具的
+      **零命中轮**后重写，并写清边界：该路径下读取步跳过不触发（那一支由两轮
+      协议族既有判据覆盖）。
+      **判据**：`tests/e2e/test_multi_round_research_loop.py` **15 passed**。
+
   - id: EC-04
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树（复用 `tools/closeout_recheck_tools` +
@@ -463,7 +482,8 @@ GOAL-019…033 的未覆盖范围原样保留。
 | `8e9d9a6`（AC-4 状态机判据） | M0 [`37686863622`](https://github.com/Eswink/research-system-new/actions/runs/37686863622) **success**（八 job 全绿）+ Push on main **success** | 该批 HEAD；两 run 全 `success` |
 | `343419f`（cycle 1 台账回填） | M0 **`cancelled`** + Push on main **success** | **原因如实登记**：该 M0 尚在飞行时我推送了 `2e2e26b` ⇒ `cancel-in-progress` 取消。`covered_by: 2e2e26b` |
 | `2e2e26b`（AC-5 约束登记） | M0 [`37690197320`](https://github.com/Eswink/research-system-new/actions/runs/37690197320) **success**（八 job 全绿）+ Push on main **success** | 该批 HEAD；**本条承担 `343419f` 的绿** |
-| （收口提交） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
+| `76f7725` / `a86ee54`（cycle 1 记录 + m0 读数更正） | M0 + Push on main（`a86ee54`）**均 success** | `76f7725` 与 `a86ee54` 同批；HEAD `a86ee54` 的 M0 **success**（八 job） |
+| `8c1c7aa`（EC-03 读面 + 返工） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
 
 **自我指涉边界（明写并封闭）**：本节的「回顾性台账」提交自身**不产生**可引用的 CI 结论
 （它进入 CI 时其结论尚无）—— 以「**末条提交 + 覆盖说明**」封闭，**不得循环引用**。
