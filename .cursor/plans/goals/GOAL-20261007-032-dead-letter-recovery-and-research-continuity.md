@@ -683,6 +683,21 @@ GOAL-019…031 的未覆盖范围原样保留。
 （`consumer_offsets` 只在文档）；**不得**据此宣称项目安全；**不得**宣称投递语义为
 「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。
 
+### 本轮三项的「已收口 vs 未覆盖」分界（逐条明写）
+
+- **EC-01 死信人工恢复**：**已收口** = 人工、单条、显式的恢复路径（含幂等与点名拒绝）；
+  **未覆盖** = 自动恢复（超时自动重生/指数再入队）、按 run 批量恢复、恢复的审批门、
+  恢复后 run 的**自动**继续（run 级入口仍是人工 `POST /runs/{id}/resume`）。
+- **EC-02 `R26-5` 追认**：**已收口** = relay 的投递/mark/崩溃重投/消费端去重/启用面
+  （9 条判据）；**未覆盖** = **真实进程 kill**（本轮的崩溃语义是注入式）、
+  `consumer_offsets` 类「按偏移量物化业务事实」的应用级消费者（仍不存在）、
+  SQLite 路径上事件最终由谁投递（既有面，不在本 EC）。
+- **EC-03 研究连续性**：**已收口** = 覆盖度八行矩阵（处理面引用既有判据 + 边界四项新增读数）、
+  幂等计数读数、反证；**未覆盖** = 跨进程重启的**真产品路径**（本轮守护线程一例用替身替换
+  来源解析层）、「不处理」清单的**穷尽枚举**（死信是代表，不是全部）、
+  `recover_expired_leases` 的 **LOST-worker 支**（M16 面）。
+
+
 ## CI 台账（逐提交）
 
 > 口径：无 `gh` CLI ⇒ 以 `git credential fill` 取已存令牌走 REST API，按 `head_sha`
@@ -693,9 +708,19 @@ GOAL-019…031 的未覆盖范围原样保留。
 
 | commit | 结论 | run / 说明 |
 | --- | --- | --- |
+| `f675dd7`（EC-04 记录措辞修正，**末条实测提交**） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal032-cycle4/poll3.log`，轮询至 `ALL_TERMINAL sha=f675dd7…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37600811203` CodeQL 3/3 `success`（`Analyze (javascript-typescript)` / `Analyze (actions)` / `Analyze (python)`）；M0 `37600813176` **八 job 全 `success`**（`container-quality` / `eval-gate` / `quality-ubuntu-latest` / `observability-overhead-ubuntu-latest` / `collector-quality` / `console-frontend` / `quality-windows-latest` / `observability-overhead-windows-latest`）。无 `cancelled`、无 `failure`。**覆盖面**：该提交 = `c0d1381` 之上一条记录措辞修正（清空的 `cancel-in-progress` 取消 + 同树覆盖）⇒ 同时是本 GOAL 的**末条实测提交**。**注意**：本行与「末条实测提交」注**不得**被其后任何提交**循环引用**（见下方终局注）。 |
+| `c0d1381`（EC-04 收口 + 归档定稿，**中间提交**） | **Push-on-main 全绿 / M0 被取消（`cancel-in-progress`，非代码缺陷）** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal032-cycle4/poll2.log`，轮询至 `ALL_TERMINAL sha=c0d1381…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37599745667` CodeQL 3/3 `success`；M0 `37599745621` **`run conclusion=cancelled`**（`collector-quality` / `eval-gate` / `container-quality` / `observability-overhead-ubuntu-latest` / `console-frontend` / `observability-overhead-windows-latest` 六个 job `success`；`quality-windows-latest` / `quality-ubuntu-latest` 两个 job `cancelled`）。**原因（如实登记）**：本批次在其后**立即**推送了 `f675dd7`（记录措辞修正）⇒ GitHub 的 `cancel-in-progress` 取消了仍在飞的 M0 —— 形态与「基础设施红」**可区分**（后者 `run conclusion=failure` + 逐 job annotation `The job was not acquired by Runner…`；本例 `run conclusion=cancelled`、六个 job 正常 `success`、被取消的两个 job 与后续推送同秒级）。**`covered_by`**：`f675dd7`（同一工作树 + 一条记录措辞修正）的 M0 `37600813176` **八 job 全 `success`** + CodeQL 3/3 ⇒ 覆盖成立。 |
 | `de928ac`（cycle 2+3 / EC-02+EC-03） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal032-cycle23/poll.log`，轮询至 `ALL_TERMINAL sha=de928ac…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37596093620` CodeQL 3/3 `success`（`Analyze (python)` / `Analyze (actions)` / `Analyze (javascript-typescript)`）；M0 `37596093041` **八 job 全 `success`**（`collector-quality` / `console-frontend` / `observability-overhead-ubuntu-latest` / `container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `observability-overhead-windows-latest` / `eval-gate`）。无 `cancelled`、无 `failure`。**覆盖面**：该批次 = EC-02 的 9 条 relay/启用面判据 + EC-03 的覆盖度矩阵判据 + 记录（同提交）⇒ 该树在 CI 上全绿。 |
 | `547c12a`（cycle 1 / EC-01） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal032-cycle1/poll.log`，轮询至 `ALL_TERMINAL sha=547c12a…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37591112266` CodeQL 3/3 `success`（`Analyze (actions)` / `Analyze (javascript-typescript)` / `Analyze (python)`）；M0 `37591090534` **八 job 全 `success`**（`eval-gate` / `observability-overhead-ubuntu-latest` / `container-quality` / `collector-quality` / `quality-windows-latest` / `quality-ubuntu-latest` / `observability-overhead-windows-latest` / `console-frontend`）。无 `cancelled`、无 `failure`（`run_attempt=1`）。**覆盖面**：该批次 = ADR-0033 + 恢复路径（域/Port/三实现）+ 三条判据文件 + 五条同步集 + 记录（同提交）⇒ 该树在 CI 上全绿。 |
 | `7eef4bf`（建档） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal032-cycle0/poll.log`，轮询至 `ALL_TERMINAL sha=7eef4bf…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37572927694` CodeQL 3/3 `success`（`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)`）；M0 `37572928450` **八 job 全 `success`**（`observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `eval-gate` / `collector-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `container-quality`）。无 `cancelled`、无 `failure`。**覆盖面**：该提交 = GOAL-032 建档文件（单文件、零产品改动）⇒ 树本身健康由八 job 覆盖。 |
+
+> **台账终局（自我指涉边界的封闭形态）**：最后一条**含 CI 结论**的行 = `f675dd7`
+> （其自身 2 条 run 全绿，读数即该 SHA 实测）。**本注所在的这一次回顾性提交**
+> （把 `c0d1381` / `f675dd7` 登记进台账的那一次）按本节开头的口径**不产生自己的行**：
+> 它进入 CI 时其结论尚无 —— 以「**末条提交 + 覆盖说明**」封闭（覆盖 = 与 `f675dd7`
+> 同批次的一次推送；记录提交不改产品代码，树侧证据即该批次的 M0 八 job + CodeQL 3/3 读数）；
+> **不得**用 `f675dd7` 的结论代替，也不得据此循环引用。**台账到此封闭**（进一步追链只会
+> 把边界往后推一格，不产生新信息）。
 
 ## 迭代日志
 
@@ -705,7 +730,7 @@ GOAL-019…031 的未覆盖范围原样保留。
 | 1 | `PLAN-20261007-303`（EC-01） | `547c12a`（记录同提交） | 引擎面 **8 passed** / 契约面 **7 passed, 3 skipped**（含 PG 则 **12 passed**）/ e2e **1 passed**；受判面合跑 **1150 passed, 72 skipped**（domain+sqlite+contracts）；**1255 passed, 14 skipped**（e2e+application+architecture）；`ruff check` = All checks passed / `ruff format --check` = 1124 files already formatted / `mypy` = Success 1107 files / 规模门 **1125 passed**；两向反证 `P1_RED 3 failed` + `P2_RED 5 failed` + `FINAL_MATCHES_BASELINE True`（留档进 `scratch/`，CR=0）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（**第三轮**跑，全部记录定稿后、独占、仓库 `.venv`、canonical DSN pin、不接管道；`PASS [` **24** / `FAILED [` **0** / **5234 passed / 21 skipped**，python 段 `793.00s`；日志 `scratch/goal032-cycle1/m0-final2.log`，`EXIT=0`） | `547c12a` 两 run 全绿（M0 八 job + CodeQL 3/3；见「CI 台账」行） | **三处真缺陷（自己修）**：① PG 引擎加 `requeue` 后 **472 行 > 450** ⇒ 按本仓拆分先例抽出 `adapters/postgres/workflow_requeue.py`（mixin，逐行搬运）；② e2e 主用例 **73 行 > 50 行函数门** ⇒ 拆四个命名步骤助手；③ **m0 首跑 `python/tests` 判红**（隐私出口普查：新 PG 模块发射 `otlp_span` 未分类）⇒ 按兄弟模块同形追加一行豁免（`+3 / -0`，断言一字未改；已登记为同步集第 ⑤ 条）。**按压首版假绿（自己修）**：LF 模式匹配 CRLF 文件 ⇒ 替换静默未命中 ⇒ `P1` 报 "8 passed"；改行尾自适应 + `assert pattern in original` 后真判红（沉淀 `MEM-20261007-191`） | EC-02…EC-04 未开启；`W-1`…`W-8`（`RECHECK-20261007-304`） | cycle 2 = EC-02（`R26-5` 取证追认：实现面 + 启用面实测 + 四条判据 + 两向反证 + 记录更正只追加） |
 | 2 | `PLAN-20261007-305`（EC-02） | `de928ac`（cycle 2+3 同批次推送；记录同提交） | relay 取证 **4 passed**（PG 实体：一轮投递并 mark / 崩溃注入 ⇒ 重投同一条 / 去重两臂 / 守护线程同一 pass）；启用面 **5 passed**（PG 根恰一处 `True` / 产品根无扩散 / 默认 `False` 显式 / 门控**两向** / 单一读取点）；反证 `P1_RED 1 failed` + `P2_RED 1 failed, 3 passed` + `FINAL_MATCHES_BASELINE True`（留档 `scratch/goal032-cycle2/press-matrix.log`，CR=0）；`ruff check` / `ruff format --check` / `mypy`（2 files）全绿；**零产品改动** | `de928ac` 两 run 全绿（M0 八 job + CodeQL 3/3；见「CI 台账」行） | **两处自己的错（已修）**：① 判据 `_ROOT` 取 `parents[2]`（应为 `parents[3]`，`tests/architecture/python/` 是三层）；② 全仓扫描收进 gitignored 的 `scratch/`（BOM 文件 ⇒ SyntaxError）⇒ 收窄到产品根 + AST 容忍非 UTF-8。**另登记一条探针缺陷（不改）**：`tools/probes/probe_outbox.py` 场景 D 的 `>= 0` 恒真断言（`W-2`） | EC-03 / EC-04 未开启；`W-1`…`W-5`（`RECHECK-20261007-306`） | cycle 3 = EC-03（研究连续性覆盖度矩阵：①–⑤ 五条逐条实测 + 反证） |
 | 3 | `PLAN-20261007-307`（EC-03） | `de928ac`（cycle 2+3 同批次推送；记录同提交） | 新文件 **4 passed**（自动派发 / 租约过期 / 死信不捞 / 不重跑计数）；既有四连续性套件合跑全绿；反证 `PRESS_RED 1 failed` + `RESTORED True` + `FINAL_MATCHES_BASELINE True`（留档 CR=0）；`ruff`/`format`/`mypy`/规模门（**1131 passed**）全绿；**既有判据零改动** | `de928ac` 两 run 全绿（同一批次；见「CI 台账」行） | 无（本循环未发现新缺陷；`W-1`…`W-4` 已登记）。**批次 m0 = `PASS: profile=m0; 23 deterministic checks`**（cycle 2+3 记录定稿后、独占、仓库 `.venv`、canonical DSN pin、不接管道；`EXIT=0`；日志 `scratch/goal032-cycle23/m0.log`）。该读数写入于 m0 运行之后（本行是对它的实测记录），按 self-reference 口径处置：**其覆盖由 EC-04 收口的 as-is m0（全部记录之后）封闭**，不循环引用 | EC-04 未开启；`W-1`…`W-4`（`RECHECK-20261007-308`） | cycle 4 = EC-04（自举收口：验证器进树 + 两树复检 + 判词归档 + as-is m0 + 治理 + CI 台账） |
-| 4 | `PLAN-20261007-309`（EC-04 收口） | cycle 4 批次待推送（记录同提交） | 本树 `--verdict-only` = **64 判词 / 0 FAIL**；两树 `TWO-TREE PASS` + 判词归档进树（CR=0）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（全部记录定稿后、独占、仓库 `.venv`、canonical DSN pin、不接管道）；治理 `validate.py` 绿；`IN_SCOPE` 纯收紧（`+3 / -0`）；两脚本过四道门 | 随批次推送后登记 | **四处自己的错（全部按门修）**：断言集调用了工具箱没有的 `ast_module`；`_dict_keys` 只读模块级而 `_TRANSITIONS` 在**类体内**；例数下界按参数化例数写（应为函数 def 数）；两处 mypy + 一处超长行 | — | —（收口 cycle；GOAL 收口后本轮结束） |
+| 4 | `PLAN-20261007-309`（EC-04 收口） | `c1f68ce` / `2891a3e` / `c0d1381` / `f675dd7`（cycle 4 批次；记录同提交） | 本树 `--verdict-only` = **64 判词 / 0 FAIL**；两树 `TWO-TREE PASS` + 判词归档进树（CR=0、64 行、2506 B）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（`EXIT=0`；**第四轮**跑 —— 前两轮判红逐条处置见「修复」列；全部记录定稿后、独占、仓库 `.venv`、canonical DSN pin、不接管道；日志 `scratch/goal032-cycle4/m0-final2.log`）；治理 `validate.py` 绿；`IN_SCOPE` 纯收紧（`+3 / -0`）；两脚本过四道门 | `c1f68ce` / `c0d1381` / `f675dd7` 逐条见「CI 台账」行（`f675dd7` = **末条实测提交**，全绿） | **四处自己的错（全部按门修）**：① 断言集调用了工具箱没有的 `ast_module`（它按 `text_body` 工作）；② `_dict_keys` 只读模块级而 `_TRANSITIONS` 在**类体内**（判据形态是「恰为 `REQUEUE`」⇒ 抓住 `none`，未静默假绿）；③ 例数下界按参数化例数写（应为函数 def 数）；④ 两处 mypy + 一处超长行。**两轮 m0 判红逐条处置**：第一轮 = 收口记录措辞（同段落缺禁令词 ⇒ 修记录，**未**动判据）；第二轮 = `framework/run_cursor_framework_evals` 的 `evolution_state.json` **WinError 5**（**已知 flake 类**：并发/残留 tmp；证据 = CI 上同一 check **全绿** + 独占重跑全绿）⇒ 按既有配方独占重跑，**未**动 check 与产品代码 | — | —（收口 cycle；GOAL 收口后本轮结束） |
 
 ## 状态历史
 
