@@ -573,8 +573,8 @@ idempotency + deduplication）；不得**静默改 `terminal()` 语义**（必�
 | `04e0bf9`（建档：MAINLINE + GOAL-033 + 宪章判据） | M0 [`37657668744`](https://github.com/Eswink/research-system-new/actions/runs/37657668744) **success**（八 job 全绿）+ Push on main [`37657667627`](https://github.com/Eswink/research-system-new/actions/runs/37657667627) **success**（CodeQL 3/3） | 两 run 全 `success`，`run_attempt=1`，该 SHA 下 `total_count=2` |
 | `7ef1ac5`（cycle 1 + cycle 2） | M0 [`37668384057`](https://github.com/Eswink/research-system-new/actions/runs/37668384057) **`cancelled`** + Push on main [`37668384284`](https://github.com/Eswink/research-system-new/actions/runs/37668384284) **success** | **原因如实登记**：该 M0 尚在飞行时我推送了 `4e59e1f` ⇒ `cancel-in-progress` 取消。`covered_by: 4e59e1f`（其 failure 修复后的提交承担绿） |
 | `4e59e1f`（cycle 4 开工：验证器 + IN_SCOPE） | M0 [`37670494548`](https://github.com/Eswink/research-system-new/actions/runs/37670494548) **failure** + Push on main [`37670496683`](https://github.com/Eswink/research-system-new/actions/runs/37670496683) **success** | **真红，如实登记**：`framework/validate` 报 `PLAN-20261008-317` 缺 `## 验收条件` + 未加入 `ALL_PLAN`（我**先提交后校验**）。**红因已修**（下一条提交承担绿）；Ubuntu/Windows 两个 quality job 同因 |
-| `8cfe6fa`（两树判词归档进树） | M0（见下条覆盖说明）+ Push on main | 与收口提交同批；**绿由含修复的后续提交承担** |
-| （收口提交） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
+| `8cfe6fa`（两树判词归档进树） | **该 SHA 下 `total_count=0`（无自己的 run）** | **原因如实登记**：它与收口提交 `c920523` 同一批推送 ⇒ 被 `cancel-in-progress` 的批次语义覆盖（HEAD 是 `c920523`）。`covered_by: c920523` |
+| `c920523`（**收口提交**：GOAL 收口 + 台账 + 残余/未覆盖逐条） | M0 [`37678936918`](https://github.com/Eswink/research-system-new/actions/runs/37678936918) **success**（**八 job 全绿**）+ Push on main [`37678937359`](https://github.com/Eswink/research-system-new/actions/runs/37678937359) **success** | 该 SHA 下 `total_count=2`，两 run 全 `success`；**本条承担 `8cfe6fa` 的绿**（后者无自己的 run，原因已登记） |
 
 **自我指涉边界（明写并封闭）**：本节的「回顾性台账」提交自身**不产生**可引用的 CI 结论
 （它进入 CI 时其结论尚无）—— 以「**末条提交 + 覆盖说明**」封闭：`4e59e1f` 的 failure 由
