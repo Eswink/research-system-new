@@ -189,7 +189,8 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
   - 多轮循环需要改动 `PhaseStrategy` 的语义（枚举值含义变更）而无法只靠新增类型承载
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261008-319-goal-034-ec01-multi-round-loop-declaration.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -424,6 +425,7 @@ GOAL-019…033 的未覆盖范围原样保留。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | （本文件所在提交） | 只读勘察（0 改动）；四条 EC 全 PENDING | PENDING | — | 四条 EC 全 PENDING；EC-02 的停止判据事实待定 | cycle 1（EC-01 勘察 + 三轮实现） |
+| 1 | `PLAN-20261008-319` | 见「CI 台账」 | 声明面 + 纯逻辑停止判据 **14 passed**；`tests/application + tests/e2e` **997 passed / 14 skipped**；四道门绿（mypy 三新模块）；记录面判据首跑抓到我的措辞违规（产品面禁用中文短语）⇒ 已改 | PENDING | **执行接线未做**（AC-4/AC-5 = PENDING，如实登记）；零协议改动 | 下一步：执行接线（懒展开 + 三轮 e2e） | cycle 1 第二段（接线） |
 
 ## 状态历史
 
