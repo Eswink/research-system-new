@@ -13,6 +13,8 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261007-193](entries/MEM-20261007-193-continuity-coverage-is-a-matrix-not-a-claim.md) | ACTIVE | repository | 0.9 | 2027-04-07 | PLAN-20261007-307 |
+| [MEM-20261007-192](entries/MEM-20261007-192-a-stale-registration-needs-a-forensic-judge-not-a-note.md) | ACTIVE | repository | 0.9 | 2027-04-07 | PLAN-20261007-305 |
 | [MEM-20261007-191](entries/MEM-20261007-191-manual-recovery-keeps-the-terminal-read-and-the-budget.md) | ACTIVE | repository | 0.93 | 2027-04-07 | PLAN-20261007-303 |
 | [MEM-20261006-190](entries/MEM-20261006-190-release-surface-change-drags-a-sync-set.md) | ACTIVE | repository | 0.92 | 2027-04-06 | PLAN-20261006-293 |
 | [MEM-20261006-189](entries/MEM-20261006-189-field-rename-zero-hit-scope-and-property-reads.md) | ACTIVE | repository | 0.94 | 2027-04-06 | PLAN-20261006-299 |
