@@ -39,8 +39,8 @@ PASS cases-test_dead_letter_recovery_full_loop.py
 PASS cases-test_outbox_relay_forensics.py
 PASS cases-test_outbox_relay_enablement_is_explicit.py
 PASS cases-test_research_continuity_coverage_matrix.py
-FAIL evidence-GOAL-20261007-032-verdict-current.txt -> 不在树
-FAIL evidence-GOAL-20261007-032-verdict-clean.txt -> 不在树
+PASS evidence-GOAL-20261007-032-verdict-current.txt
+PASS evidence-GOAL-20261007-032-verdict-clean.txt
 PASS new-scripts-in-scope
 PASS goal-declares-four-ecs
 PASS goal-ec01-status
