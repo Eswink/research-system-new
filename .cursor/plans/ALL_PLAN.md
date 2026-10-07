@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261007-303](tasks/PLAN-20261007-303-goal-032-ec01-dead-letter-manual-recovery.md) | DONE |
 | [x] | [PLAN-20261006-301](tasks/PLAN-20261006-301-goal-031-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261006-299](tasks/PLAN-20261006-299-goal-031-ec04-lineage-label-rename.md) | DONE |
 | [x] | [PLAN-20261006-297](tasks/PLAN-20261006-297-goal-031-ec03-two-round-derived-research-loop.md) | DONE |

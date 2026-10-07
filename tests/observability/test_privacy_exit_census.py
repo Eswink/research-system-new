@@ -225,6 +225,9 @@ EXEMPT_PRODUCERS: tuple[ExemptProducer, ...] = (
         "adapters/postgres/workflow_engine.py", EmitterKind.otlp_metric, _REASON_POSTGRES
     ),
     ExemptProducer("adapters/postgres/workflow_engine.py", EmitterKind.otlp_span, _REASON_POSTGRES),
+    ExemptProducer(
+        "adapters/postgres/workflow_requeue.py", EmitterKind.otlp_span, _REASON_POSTGRES
+    ),
     ExemptProducer("adapters/relay/gateway.py", EmitterKind.otlp_span, _REASON_REAL_RELAY),
     ExemptProducer("adapters/relay/transport.py", EmitterKind.otlp_metric, _REASON_REAL_RELAY),
     ExemptProducer(

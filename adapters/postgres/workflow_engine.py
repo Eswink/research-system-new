@@ -12,30 +12,14 @@ import psycopg.errors
 from adapters.postgres.base import PostgresAdapterBase
 from adapters.postgres.db import resolve_connection, server_now
 from adapters.postgres.outbox import PgOutboxWriter
-from adapters.postgres.projections import (
-    cancelled as proj_cancelled,
-)
-from adapters.postgres.projections import (
-    completed as proj_completed,
-)
-from adapters.postgres.projections import (
-    deliveries as proj_deliveries,
-)
-from adapters.postgres.projections import (
-    due_retries as proj_due_retries,
-)
-from adapters.postgres.projections import (
-    list_tasks as proj_list_tasks,
-)
-from adapters.postgres.projections import (
-    mark_outbox_published as proj_mark_published,
-)
-from adapters.postgres.projections import (
-    pending_outbox as proj_pending_outbox,
-)
-from adapters.postgres.projections import (
-    retry_schedule as proj_retry_schedule,
-)
+from adapters.postgres.projections import cancelled as proj_cancelled
+from adapters.postgres.projections import completed as proj_completed
+from adapters.postgres.projections import deliveries as proj_deliveries
+from adapters.postgres.projections import due_retries as proj_due_retries
+from adapters.postgres.projections import list_tasks as proj_list_tasks
+from adapters.postgres.projections import mark_outbox_published as proj_mark_published
+from adapters.postgres.projections import pending_outbox as proj_pending_outbox
+from adapters.postgres.projections import retry_schedule as proj_retry_schedule
 from adapters.postgres.serialization import TaskRow, encode_task
 from adapters.postgres.telemetry_notes import note_queue_lag, note_task_duration
 from adapters.postgres.workflow_acquire import AcquirePayload, acquire_lease_impl
@@ -50,6 +34,7 @@ from adapters.postgres.workflow_ops import (
     recover_impl,
     renew_lease_impl,
 )
+from adapters.postgres.workflow_requeue import PostgresRequeueOps
 from adapters.postgres.workflow_submit import SubmitPayload, submit_task
 from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
 from packages.application.observability.scope import operation, record_metric_safely
@@ -76,8 +61,12 @@ from packages.domain.events import EventEnvelope
 from packages.domain.tasks import ResearchTask, TaskContract
 
 
-class PostgresWorkflowEngine(PostgresAdapterBase):
-    """PostgreSQL WorkflowEngine; `now` injectable for deterministic tests."""
+class PostgresWorkflowEngine(PostgresRequeueOps, PostgresAdapterBase):
+    """PostgreSQL WorkflowEngine; `now` injectable for deterministic tests.
+
+    `requeue`（人工恢复，ADR-0033）在 `workflow_requeue.py`（拆分守 450 行硬上限）；
+    其余方法在本文件与 `workflow_{submit,acquire,claim,dispatch,ops}.py`。
+    """
 
     def __init__(
         self,

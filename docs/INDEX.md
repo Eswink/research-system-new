@@ -190,6 +190,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 - `adr/ADR-0030-validation-failure-consumption.md` — 验收门拒收的处置（**Proposed / 待拍板**：`on_validation_failure` 的消费为何仍未做、选项 A–E 的代价与收益、触发条件；GOAL-20260918-006 EC-02 草案）
 - `adr/ADR-0031-toolpack-capability-policy.md` — ToolPack 能力策略与「事实名 → 合约名」声明（**Proposed / 待拍板**：`tool_pack.*` 为何默认 DENY、`action: TOOL_PACK_INSTALL_OR_UPDATE` 为何按构造不可匹配、`session_message` 与 `analysis_report` 的声明权归谁；选项与代价、触发条件；GOAL-20260919-007 EC-06 草案。**2026-09-25 补「否证条件」节**：什么证据会否证它 / 何时该改判，**Status 仍为 Proposed**）
 - `adr/ADR-0032-legacy-non-ascii-path-exemption.md` — 既有非 ASCII 路径豁免（**Accepted**：30 条已跟踪历史路径**不重命名**，依据 AGENTS.md §13「既有历史路径不会仅为满足本规则而批量重命名」；新路径仍受 §13 约束；含 `git -c core.quotepath=false ls-files` 的枚举陷阱与逐条清单；GOAL-20260925-016 D-09）
+- `adr/ADR-0033-dead-letter-manual-recovery.md` — 死信的人工恢复（**Accepted**：`DEAD_LETTER` 新增**唯一**出边 `REQUEUE → QUEUED`，只由人工入口 `WorkflowEngine.requeue` 触发；`terminal()` 语义收紧为「对**自动路径**终态」；恢复不重置尝试预算；事件复用 `task.retry_scheduled(reason=manual_requeue)`；满足 AGENTS.md §7 的 `dead-letter / manual recovery`；GOAL-20261007-032 EC-01 / `R26-1`）
 
 ## Roadmap / Versioning
 

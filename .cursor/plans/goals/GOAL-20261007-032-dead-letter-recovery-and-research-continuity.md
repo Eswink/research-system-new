@@ -97,7 +97,37 @@ exit_criteria:
       两向反证）全绿；配套留档：ADR（既有或新增）的选择理由、`terminal()` 影响逐条清单、
       恢复前后状态转移序列、副作用计数读数、三种不可恢复输入的判词逐字、两向反证判红原文、
       同步集四条 before/after 对照与「强度未降」自证。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      cycle 1（PLAN-20261007-303 / `RECHECK-20261007-304` = PASS_WITH_WARNINGS）。
+      **ADR 依据**：新增 `docs/adr/ADR-0033-dead-letter-manual-recovery.md`
+      （`Status: Accepted`，对照 ADR-0030 的 A–E 与机制观察写明「为什么不是别的选项」；
+      ADR-0030 **仍是 Proposed**、三处同源指针未断 ⇒ 那条既有判据一字未改且绿）。
+      **实现形态**：`(DEAD_LETTER, Transition.REQUEUE) → QUEUED` 为**唯一**出边
+      （新事件名，不重用 `ENQUEUE`）；Port 新增 `requeue(task_id) -> str`；三实现同判
+      （SQLite `adapters/sqlite/requeue.py` / PG `adapters/postgres/workflow_requeue.py`
+      mixin + `workflow_ops.requeue_impl` / Fake `requeue` + `mark_dead_letter`）。
+      **`terminal()` 逐字未动**，语义收紧为「对**自动路径**终态」。
+      **判据**：引擎面 8 例（含参数化三态）/ 契约面 7 例（含 PG：12 passed）/ e2e 1 例；
+      受判面合跑 **1150 passed, 72 skipped**（domain+sqlite+contracts）；
+      **1255 passed, 14 skipped**（e2e+application+architecture）。
+      **幂等**：第二次恢复被点名拒绝且事件计数不增（取样在第二次**之前**）。
+      **点名拒绝**：不存在 / 已恢复 / 其它终态三类判词逐字（`unknown task: …` /
+      `… is in state QUEUED; only DEAD_LETTER can be requeued`）。
+      **两向反证**：`P1_RED 3 failed, 5 passed`（摘掉出边）/ `P2_RED 5 failed, 10 passed,
+      3 skipped`（点名拒绝改静默）/ `FINAL_MATCHES_BASELINE True`；留档
+      `scratch/goal032-cycle1/press-matrix.log`（249 B / CR=0）。
+      **实跑**：`max_attempts=1` ⇒ 真编排 `FAILED` + `DEAD_LETTER`(attempt=1) ⇒ 恢复前自动
+      入口点名拒绝 ⇒ `requeue` 回 `QUEUED` ⇒ 重建续跑 `SUCCEEDED`（代次前进、
+      `execution_attempts == 2`、事件链含 `task.retry_scheduled`）。
+      **同步集逐条**：① `RUN_STATE_MACHINE.md`（迁移表行 + 终态读法注）；
+      ② 既有「无出边」判据**重新定基**为「**恰有** `REQUEUE->QUEUED`、其余仍非法」
+      （受判面**扩大**：`+22 / -6`，仍逐一遍历全部事件）；③ `test_state_machines.py` 的
+      `DEAD_LETTER+ENQUEUE` 参数行**逐字未动**（新事件名不在该行）；④ `_DRIVEN_BY` 增列
+      人工入口。**其余 `tests/**` 既有文件零改动**。
+      残余：`W-1`…`W-8`（见 `RECHECK-20261007-304`；含「恢复 ≠ 重置尝试预算」「run 级
+      自动继续不在本 EC」「Fake 无死信到达路径」「按压 CRLF 假绿已修」）/
+      `R-M1` 未收口。
   - id: EC-02
     criterion: >-
       **`R26-5` 取证追认（不是新实现）**。
@@ -206,8 +236,15 @@ fix_policy:
       `tests/domain/test_state_machines.py` 的 `terminal → DEAD_LETTER + ENQUEUE` 参数行
       （仅当恢复事件取 `ENQUEUE` 名时按新事实定基；取别的事件名 ⇒ 该行**逐字不动**）；④
       `tests/domain/test_task_state_drivers.py` 的 `_DRIVEN_BY` 登记（`DEAD_LETTER` 增列
-      人工恢复入口，**只增不改**其余行）。**上述以外的任何既有判据改动 ⇒ BLOCKED**；
-      每条同步都要在记录内给出 before/after 逐字节对照与「强度未降」自证。
+      人工恢复入口，**只增不改**其余行）；⑤ **（cycle 1 实测追加）**
+      `tests/observability/test_privacy_exit_census.py` 的**出口分类清单**：新增的 PG 模块
+      `adapters/postgres/workflow_requeue.py` 发射 `otlp_span` ⇒ 该判据要求**每个新发射点
+      ​被显式分类**（未分类即判红，这正是它存在的意义）⇒ 按**同类既有条目**的最小形态
+      **追加一行 `ExemptProducer(..., otlp_span, _REASON_POSTGRES)`**（与兄弟模块
+      `adapters/postgres/workflow_engine.py` 的既有分类**同形同理由**：PG 组合根不在默认
+      路径上）；`git diff --numstat` = **+3 / -0**，**断言一字未改**。**上述以外的任何既有
+      判据改动 ⇒ BLOCKED**；每条同步都要在记录内给出 before/after 逐字节对照与「强度未降」
+      自证。
     - >-
       **放宽任何既有判据的断言**（含把受判面收窄成交集、删断言、改期望值使其通过）；
       **把 `terminal()` 语义静默改掉而不留 ADR**（改它 = 改产品语义 ⇒ 必须按 ADR-0030
@@ -234,9 +271,11 @@ escalation_triggers:
   - 需要把 `terminal()` 语义改掉而无 ADR 依据（静默改语义）
   - 宣称项目安全 / 宣称投递语义为「恰好一次」
   - 同一失败签名超过 fix_policy 上限
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261007-303-goal-032-ec01-dead-letter-manual-recovery.md
 latest_recheck: null
-memory_entries: []
+memory_entries:
+  - manual-recovery-keeps-the-terminal-read-and-the-budget
 ---
 
 # GOAL-20261007-032 — 死信人工恢复 + outbox 取证追认 + 研究连续性
@@ -544,6 +583,19 @@ GOAL-019…031 的未覆盖范围原样保留。
 - （建档时登记）**恢复迁移的语义边界**：`terminal()` 若修订为「终态但可人工恢复」，
   需逐条审查 5 个 adapter 守卫点；本轮**只覆盖** `DEAD_LETTER` 的人工恢复这一条路径，
   **不**覆盖「自动恢复」（重排由 dispatcher 管，属既有面）。
+  **→ cycle 1 收口读数**：`terminal()` **逐字未动**（改的是语义**读法**，不是集合），
+  5 个守卫点全部未动；自动恢复仍不在本轮。
+- （cycle 1 登记）`W-1`…`W-8`（见 `RECHECK-20261007-304`）逐条：
+  `W-1` 恢复是人工/单条/显式（无自动复活、无批量、无审批门）；
+  `W-2` 恢复后 run 的自动继续不在本 EC（run 级入口仍要人工 `POST /runs/{id}/resume`）；
+  `W-3` e2e 的「恢复前捞不回」是机制级证据（打自动交付入口的终态守卫，未逐字复现完整
+  `resume_rebuilt` 失败路径 ⇒ 属 EC-03 射程）；
+  `W-4` 唯一既有判据改动的强度自证（受判面**扩大**，`+22 / -6`）；
+  `W-5` Fake 无死信到达路径 ⇒ 新增测试装配面 `mark_dead_letter` + 显式断言该差异；
+  `W-6` 「恢复 ≠ 重置尝试预算」是**新增决定**（若用户期望重置 ⇒ 另一条语义）；
+  `W-7` 按压的首版 CRLF 假绿已修 + 沉淀记忆；
+  `W-8` m0 首跑的 `python/tests` 红（新 PG 模块的 `otlp_span` 出口未分类 ⇒ 按兄弟模块
+  同形追加一行豁免，`+3 / -0`、断言一字未改；**红是判据在正常工作**）。
 - （建档时登记）**`run_resume` 是 run 级**：task 级的死信恢复（EC-01）与 run 级的重建续跑
   （EC-03）是两条不同入口；两者的**协同**（死信恢复后 run 是否需要 resume）在本轮**只登记
   读数**，不实现自动协同（属新机制）。
@@ -568,16 +620,18 @@ GOAL-019…031 的未覆盖范围原样保留。
 
 | commit | 结论 | run / 说明 |
 | --- | --- | --- |
-| （待首个提交） | — | — |
+| `7eef4bf`（建档） | **全绿** | 该 `head_sha` 的**全部** run 遍历取证（`scratch/goal032-cycle0/poll.log`，轮询至 `ALL_TERMINAL sha=7eef4bf…`；run 列表 = 该 SHA 的 2 条，无遗漏）：Push-on-main `37572927694` CodeQL 3/3 `success`（`Analyze (actions)` / `Analyze (python)` / `Analyze (javascript-typescript)`）；M0 `37572928450` **八 job 全 `success`**（`observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `eval-gate` / `collector-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `container-quality`）。无 `cancelled`、无 `failure`。**覆盖面**：该提交 = GOAL-032 建档文件（单文件、零产品改动）⇒ 树本身健康由八 job 覆盖。 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 待推送 | 只读勘察（三项起点事实逐条实测 + 同步集标定 + 基线 `sha256`；主树零改动）+ 治理 `validate.py` | 随建档提交登记 | — | 四 EC 未开启 | cycle 1 = EC-01（死信人工恢复：ADR 依据已定候选 I + 新 ADR；同步集四条已标定） |
+| 0 | （建档，无子 PLAN） | `7eef4bf` | 只读勘察（三项起点事实逐条实测 + 同步集标定 + 基线 `sha256`；主树零改动）+ 治理 `validate.py` | `7eef4bf` 两 run 全绿（M0 八 job + CodeQL 3/3；见「CI 台账」行） | — | 四 EC 未开启 | cycle 1 = EC-01（死信人工恢复：ADR 依据已定候选 I + 新 ADR；同步集四条已标定） |
+| 1 | `PLAN-20261007-303`（EC-01） | cycle 1 批次待推送（记录同提交） | 引擎面 **8 passed** / 契约面 **7 passed, 3 skipped**（含 PG 则 **12 passed**）/ e2e **1 passed**；受判面合跑 **1150 passed, 72 skipped**（domain+sqlite+contracts）；**1255 passed, 14 skipped**（e2e+application+architecture）；`ruff check` = All checks passed / `ruff format --check` = 1124 files already formatted / `mypy` = Success 1107 files / 规模门 **1125 passed**；两向反证 `P1_RED 3 failed` + `P2_RED 5 failed` + `FINAL_MATCHES_BASELINE True`（留档进 `scratch/`，CR=0）；**as-is m0 = `PASS: profile=m0; 23 deterministic checks`**（**第三轮**跑，全部记录定稿后、独占、仓库 `.venv`、canonical DSN pin、不接管道；`PASS [` **24** / `FAILED [` **0** / **5234 passed / 21 skipped**，python 段 `793.00s`；日志 `scratch/goal032-cycle1/m0-final2.log`，`EXIT=0`） | 随批次推送后登记 | **三处真缺陷（自己修）**：① PG 引擎加 `requeue` 后 **472 行 > 450** ⇒ 按本仓拆分先例抽出 `adapters/postgres/workflow_requeue.py`（mixin，逐行搬运）；② e2e 主用例 **73 行 > 50 行函数门** ⇒ 拆四个命名步骤助手；③ **m0 首跑 `python/tests` 判红**（隐私出口普查：新 PG 模块发射 `otlp_span` 未分类）⇒ 按兄弟模块同形追加一行豁免（`+3 / -0`，断言一字未改；已登记为同步集第 ⑤ 条）。**按压首版假绿（自己修）**：LF 模式匹配 CRLF 文件 ⇒ 替换静默未命中 ⇒ `P1` 报 "8 passed"；改行尾自适应 + `assert pattern in original` 后真判红（沉淀 `MEM-20261007-191`） | EC-02…EC-04 未开启；`W-1`…`W-8`（`RECHECK-20261007-304`） | cycle 2 = EC-02（`R26-5` 取证追认：实现面 + 启用面实测 + 四条判据 + 两向反证 + 记录更正只追加） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-07 | ACTIVE | **cycle 1（EC-01 死信人工恢复路径）落地**：新增 **ADR-0033**（`Status: Accepted`；对照 ADR-0030 的候选与机制观察写明取舍，**不改** ADR-0030 的 `Proposed`）＋ 状态机**唯一**出边 `DEAD_LETTER --REQUEUE--> QUEUED`（新事件名，不重用 `ENQUEUE`）＋ Port `requeue` ＋ **三实现同判**（SQLite / PG / Fake）＋ `terminal()` **逐字未动**、语义收紧为「对**自动路径**终态」。**判据**：引擎面 8 例 + 契约面 7 例（含 PG）+ e2e 1 例；受判面合跑 **1150 passed**／**1255 passed**（e2e+application+architecture）＋四道门全绿＋规模门 1125 passed。**两向反证**：摘掉出边 ⇒ 3 failed；点名拒绝改静默 ⇒ 5 failed；两臂**逐字节复原**（`FINAL_MATCHES_BASELINE True`）。**实跑**：真实 `max_attempts=1` 失败 ⇒ 死信 ⇒ 恢复前自动入口点名拒绝 ⇒ 人工恢复 ⇒ 重建续跑 `SUCCEEDED`。**同步集四条**逐条自证（唯一既有判据改动 = 那条「无出边」判据按新事实**重新定基**，受判面**扩大**）；`test_state_machines.py` 的 `ENQUEUE` 参数行与 `test_cancel_is_terminal_in_the_state_machine` **均一字未动**（后者的预期判红**未发生** —— 因为 `terminal()` 集合没动，这是设计选择带来的收益）。EC-01 = **PASS**（`RECHECK-20261007-304` = PASS_WITH_WARNINGS；`W-1`…`W-8`）。 |
 | 2026-10-07 | ACTIVE | **建档（cycle 0）**：读 `goals/README.md` 的 GOAL 格式契约 + 只读勘察（主树零改动）。**三项起点事实逐条复核**：**① `R26-5` 的实现与启用均已在树**（`PgOutboxRelay` 自 `ed2fa0e` 起、`OutboxRelayScheduler` 5s、`pg_composition.py:318` 生产启用、SQLite 根未启用）⇒ **GOAL-026 的登记被推翻**，本轮只**追加**事实更正；**② `R26-1` 是真缺口**（`DEAD_LETTER` 在 `terminal()` 且无出边；`terminal()` 的全部消费点 = 5 个 adapter + 2 条既有判据，逐条点名）；**③ `run_resume` 覆盖矩阵**（run 级重建续跑 ✅ / 重启后重排续跑 ✅ / 租约过期 ✅（任务级）/ **死信捞回 ❌**）。**同步集实测标定**（EC-01 会打红 `test_dead_letter_has_no_outgoing_transition` 与 `test_cancel_is_terminal_in_the_state_machine` 等，逐条列入 fix_policy 点名例外）；**决策登记 18 项**（5 授权开工 / 11 决定不做 / 2 授权决定含「改终态语义留 ADR」）。四 EC 全 `PENDING`。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。 |

@@ -24,7 +24,8 @@ _DRIVEN_BY = {
     "RETRY_SCHEDULED": "adapters/*/workflow_ops.py（可重试失败的重排）",
     "SUCCEEDED": "adapters/*/workflow_ops.py（成功完成）",
     "FAILED": "adapters/*/workflow_ops.py（不可重试失败）",
-    "DEAD_LETTER": "adapters/*/workflow_ops.py（重试次数用尽的失败）",
+    "DEAD_LETTER": "adapters/*/workflow_ops.py（重试次数用尽的失败）+ adapters/*/requeue*"
+    "（人工恢复：ADR-0033 的 REQUEUE 出边，唯一的人工入口）",
     "CANCELLED": "adapters/sqlite/workflow_ops.py + postgres/cancel_run.py（取消传播）",
 }
 

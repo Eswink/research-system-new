@@ -150,11 +150,15 @@ Resume 前验证：
   Task lease + heartbeat（注入时钟）、retry classification（结构化字段）、
   exponential backoff（轨迹常量 `[30, 60, 100, 100]` 被收口验证器钉住）、
   circuit breaker（**模型端点面**）、cancellation semantics（协作式）、
-  transactional outbox（引擎路径 all-or-nothing，失败注入实测）。
-- **只有半边成立**：`dead-letter · manual recovery`（可枚举、可处置的终态成立，
-  **人工恢复动作无产品路径** ⇒ 已登记为需拍板项）、
-  `compensation for non-idempotent actions`（恢复失败的 canonical 回滚成立，
-  **非幂等副作用的补偿只在文档**）。
+  transactional outbox（引擎路径 all-or-nothing，失败注入实测）、
+  `dead-letter · manual recovery`（**2026-10-07 起两半都成立**：ADR-0033 落地了人工恢复
+  入口 `WorkflowEngine.requeue` —— 死信可被**人工显式**恢复到 `QUEUED` 并再次交付，
+  重复恢复被点名拒绝、恢复不重置尝试预算；自动路径仍不碰它。判据：
+  `tests/adapters/sqlite/test_workflow_dead_letter_manual_recovery.py`、
+  `tests/contracts/test_dead_letter_manual_recovery_contract.py`、
+  `tests/e2e/test_dead_letter_recovery_full_loop.py`）。
+- **只有半边成立**：`compensation for non-idempotent actions`（恢复失败的 canonical
+  回滚成立，**非幂等副作用的补偿只在文档**）。
 - **明确否认**：本仓不实现、也不宣称 **exactly-once**（口径固定为 at-least-once +
   idempotency + deduplication）；该面由机械判据逐条分类
   （`tests/architecture/python/test_delivery_semantics_wording.py`），

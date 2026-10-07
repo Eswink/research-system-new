@@ -2,18 +2,25 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta, timezone
 from typing import Any, cast
 
 from adapters.postgres.db import db_time_expr, server_now
 from adapters.postgres.leases import new_lease
-from adapters.postgres.serialization import decode_contract_json, decode_timestamp_pg
+from adapters.postgres.serialization import (
+    decode_contract_json,
+    decode_task,
+    decode_timestamp_pg,
+    encode_task,
+    task_json_text,
+)
 from adapters.sqlite.completion import RetryNotice, publish_completion_outcome
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.workflow_engine import TaskCompletion, TaskLease
 from packages.domain.core import Timestamp
 from packages.domain.events import EventType
+from packages.domain.state_base import InvalidTransitionError
 from packages.domain.task_state import ResearchTaskState
 
 
@@ -221,3 +228,49 @@ def recover_impl(conn: Any, record: Any, outbox: Any, now: Any) -> int:
             recovered += 1
         record("recover_expired_leases", f"{recovered} recovered")
         return recovered
+
+
+def requeue_impl(conn: Any, record: Any, outbox: Any, task_id: str) -> str:
+    """人工恢复一条 `DEAD_LETTER` 任务（ADR-0033）；成功返回 `restored`。
+
+    与 SQLite 侧同判据（`adapters/sqlite/requeue.py`）：目标状态由 domain 状态机给出
+    （`Transition.REQUEUE` 是那条出边唯一的机械事实源）；状态写回与事件同事务。
+    `fence_seq` 不回退（M16 §8 单调性）；`attempt` 不在恢复时重写（下一次交付照常
+    推进代次）。点名失败：不存在 / 状态不是 `DEAD_LETTER`（含「已恢复」）。
+    """
+    with conn.transaction():
+        row: Any = conn.execute(
+            "SELECT run_id, status, task_json, contract_json FROM tasks"
+            " WHERE task_id = %s FOR UPDATE",
+            (task_id,),
+        ).fetchone()
+        if row is None:
+            record("requeue", task_id, error="InvalidInputError")
+            raise InvalidInputError(f"unknown task: {task_id}")
+        status = str(row["status"])
+        try:
+            target = ResearchTaskState.transition(status, ResearchTaskState.Transition.REQUEUE)
+        except InvalidTransitionError as error:
+            record("requeue", task_id, error="InvalidInputError")
+            raise InvalidInputError(
+                f"task {task_id} is in state {status}; only DEAD_LETTER can be requeued"
+            ) from error
+        entry = decode_task(task_json_text(row["task_json"]), task_json_text(row["contract_json"]))
+        queued = replace(entry.task, status=target)
+        task_json = encode_task(queued, entry.contract)[0]
+        conn.execute(
+            "UPDATE tasks SET status = %s, retry_at = NULL, task_json = %s::jsonb"
+            " WHERE task_id = %s",
+            (target, task_json, task_id),
+        )
+        # 防御性清租约（与 SQLite 侧同一理由）：陈旧租约行会让 acquire 把它当"重放"
+        # 返回（陈旧 fence）⇒ 恢复就白做了。
+        conn.execute("DELETE FROM leases WHERE task_id = %s", (task_id,))
+        outbox.publish(
+            EventType.TASK_RETRY_SCHEDULED,
+            {"task_id": task_id, "reason": "manual_requeue", "previous_status": status},
+            run_id=str(row["run_id"]),
+            task_id=task_id,
+        )
+        record("requeue", task_id, result="restored")
+        return "restored"

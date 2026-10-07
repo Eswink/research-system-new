@@ -15,8 +15,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
-import pytest
-
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from packages.application.ports.workflow_engine import ClaimRequest, TaskCompletion, TaskLease
 from packages.domain.core import ID
@@ -131,8 +129,13 @@ def test_dead_letter_completion_replay_is_idempotent() -> None:
     assert len(engine.pending_outbox()) == before, "重放不得产生新事件"
 
 
-def test_dead_letter_has_no_outgoing_transition() -> None:
-    """**机械事实**：`DEAD_LETTER` 在状态机里**没有出边**（人工恢复路径不存在）。"""
+def test_dead_letter_has_exactly_one_manual_outgoing_transition() -> None:
+    """**机械事实**：`DEAD_LETTER` 的**唯一**出边是 `REQUEUE`（人工恢复，ADR-0033）。
+
+    GOAL-026 建档时这条判据断言「无出边」；ADR-0033 落地后事实**变了**，判据按新事实
+    **重新定基**（受判面从「所有事件都非法」扩为「**恰有** `REQUEUE` 一条合法，其余
+    仍非法」——**扩大**而不是缩小）。仍逐一遍历**全部**迁移事件 ⇒ 新增第二条出边会判红。
+    """
     # 结构化枚举：迁移事件就是 `Transition` 上声明的那些常量（同名类属性）。
     events = [
         value
@@ -140,7 +143,16 @@ def test_dead_letter_has_no_outgoing_transition() -> None:
         if not name.startswith("_") and isinstance(value, str)
     ]
     assert len(events) >= 8, f"受判面非空：迁移事件必须被真的枚举到（实测 {len(events)}）"
+    legal: list[str] = []
     for event in events:
-        with pytest.raises(InvalidTransitionError):
-            ResearchTaskState.transition(ResearchTaskState.State.DEAD_LETTER, event)
-    assert ResearchTaskState.State.DEAD_LETTER in ResearchTaskState.terminal()
+        try:
+            target = ResearchTaskState.transition(ResearchTaskState.State.DEAD_LETTER, event)
+        except InvalidTransitionError:
+            continue
+        legal.append(f"{event}->{target}")
+    assert legal == [f"{ResearchTaskState.Transition.REQUEUE}->{ResearchTaskState.State.QUEUED}"], (
+        f"DEAD_LETTER 的出边必须恰为 REQUEUE->QUEUED（实测 {legal}）"
+    )
+    assert ResearchTaskState.State.DEAD_LETTER in ResearchTaskState.terminal(), (
+        "终态语义不变：DEAD_LETTER 仍对**自动路径**终态（人工恢复是唯一出边）"
+    )

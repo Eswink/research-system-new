@@ -20,6 +20,7 @@ from packages.application.ports.workflow_engine import (
 from packages.domain.core import Timestamp
 from packages.domain.enums import TaskKind
 from packages.domain.run_state import ResearchRunState
+from packages.domain.state_base import InvalidTransitionError
 from packages.domain.task_state import ResearchTaskState
 from packages.domain.tasks import ResearchTask, TaskContract
 
@@ -349,6 +350,43 @@ class FakeWorkflowEngine(FakeBase):
         self._enter("recover_expired_leases", "")
         self._record("recover_expired_leases", "", result="0 recovered")
         return 0
+
+    def mark_dead_letter(self, task_id: str) -> None:
+        """测试装配：把一条任务置为 `DEAD_LETTER`（Fake 的唯一死信入口）。
+
+        Fake 的 `complete` 只记完成、不跑 `TaskContract.disposition` ⇒ 它**没有**
+        生产意义上的死信到达路径（与 `due_retry_task_ids` 同源的既有边界：Fake 无写
+        重排/死信的路径）。恢复语义的**行为**判据因此必须打在两个持久化 adapter 上；
+        本方法只为 Fake 提供一个可复现的起态，供契约套件（三实现同判）使用。
+        """
+        self._enter("mark_dead_letter", task_id)
+        task = self._tasks.get(task_id)
+        if task is None:
+            self._record("mark_dead_letter", task_id, error="InvalidInputError")
+            raise InvalidInputError(f"unknown task: {task_id}")
+        self._tasks[task_id] = replace(task, status=ResearchTaskState.State.DEAD_LETTER)
+        self._leases.pop(task_id, None)
+        self._record("mark_dead_letter", task_id)
+
+    def requeue(self, task_id: str) -> str:
+        """人工恢复（ADR-0033）：与两个持久化实现同判据 —— 目标状态取自 domain
+        状态机；状态不是 `DEAD_LETTER`（含「已恢复」）⇒ 点名拒绝；成功返回 `restored`。
+        """
+        self._enter("requeue", task_id)
+        task = self._tasks.get(task_id)
+        if task is None:
+            self._record("requeue", task_id, error="InvalidInputError")
+            raise InvalidInputError(f"unknown task: {task_id}")
+        try:
+            target = ResearchTaskState.transition(task.status, ResearchTaskState.Transition.REQUEUE)
+        except InvalidTransitionError as error:
+            self._record("requeue", task_id, error="InvalidInputError")
+            raise InvalidInputError(
+                f"task {task_id} is in state {task.status}; only DEAD_LETTER can be requeued"
+            ) from error
+        self._tasks[task_id] = replace(task, status=target)
+        self._record("requeue", task_id, result="restored")
+        return "restored"
 
     @property
     def deliveries(self) -> dict[str, int]:

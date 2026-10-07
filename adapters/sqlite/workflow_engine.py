@@ -34,10 +34,12 @@ from adapters.sqlite.projections import (
 )
 from adapters.sqlite.projections import retry_schedules as select_retry_schedules
 from adapters.sqlite.projections import task_identities as select_task_identities
+from adapters.sqlite.requeue import requeue_task
 from adapters.sqlite.serialization import TaskRow, decode_timestamp
 from adapters.sqlite.workflow_ops import SqliteWorkflowOps
 from packages.application.observability.scope import operation
 from packages.application.observability.signals import CorrelationRef, OperationScope
+from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import (
     ClaimRequest,
@@ -241,6 +243,28 @@ class SqliteWorkflowEngine(SqliteAdapterBase, SqliteWorkflowOps):
         state = None if row is None else row["state"]
         self._record("run_state", run_id, result=str(state))
         return str(state) if state is not None else None
+
+    def requeue(self, task_id: str) -> str:
+        """人工恢复一条 `DEAD_LETTER` 任务（ADR-0033 / AGENTS.md §7）；成功返回 `restored`。
+
+        唯一从终态出发的路径，且只由本入口走：目标状态取自 domain 状态机
+        （`Transition.REQUEUE`），落库与事件在 `requeue.py`（与 `cancel_run` 同形的拆分）。
+        任务不存在 / 状态不是 `DEAD_LETTER`（含「已恢复」）⇒ 点名拒绝。
+        """
+        with operation(
+            self._telemetry,
+            scope=OperationScope.WORKFLOW_QUEUE,
+            name="workflow.requeue",
+            correlation=CorrelationRef(task_id=task_id),
+        ):
+            self._ensure_open()
+            try:
+                outcome = requeue_task(self._conn, self._outbox, task_id)
+            except InvalidInputError:
+                self._record("requeue", task_id, error="InvalidInputError")
+                raise
+            self._record("requeue", task_id, result=outcome)
+            return outcome
 
     def recover_expired_leases(self) -> int:
         """超时 lease 任务置回 QUEUED（EXPIRE_LEASE 转换，非绕过状态机）；返回恢复数。"""

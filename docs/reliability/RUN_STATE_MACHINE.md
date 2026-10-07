@@ -133,6 +133,7 @@ CANCELLED
 | RUNNING | FAIL | FAILED |
 | RETRY_SCHEDULED | FAIL | FAILED |
 | RETRY_SCHEDULED | DEAD_LETTER | DEAD_LETTER |
+| DEAD_LETTER | REQUEUE | QUEUED |
 | WAITING_FOR_APPROVAL | FAIL | FAILED |
 | CREATED | CANCEL | CANCELLED |
 | QUEUED | CANCEL | CANCELLED |
@@ -143,6 +144,13 @@ CANCELLED
 | RETRY_SCHEDULED | CANCEL | CANCELLED |
 
 Terminal: SUCCEEDED / FAILED / DEAD_LETTER / CANCELLED。
+
+**`DEAD_LETTER` 的「终态」读法**（ADR-0033 / `R26-1`，2026-10-07）：它是**自动路径的
+终态**——claim / acquire / 租约恢复 / 退避派发都不会再碰它；但它有**一条**出边
+（`REQUEUE → QUEUED`），只由**人工恢复入口**（`WorkflowEngine.requeue`）触发。
+「终态」与「可人工恢复」不矛盾：前者描述**谁不会再自动动它**，后者描述**人可以
+显式动它**。恢复不重置尝试预算（`fence_seq` 不可回退）：下一次交付照常推进代次，
+再次失败仍按 `decide_failure` 落回死信。
 
 ## AgentSession
 

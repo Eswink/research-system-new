@@ -375,4 +375,28 @@ class WorkflowEngine(Protocol):
         无 key 的任务行（既有/异常数据）不参与回答。
         """
 
+    def requeue(self, task_id: str) -> str:
+        """**人工恢复**一条 `DEAD_LETTER` 任务（ADR-0033，AGENTS.md §7）。
+
+        `max_attempts` 打满且类别可重试 ⇒ 任务落 `DEAD_LETTER`（`terminal()` 成员，
+        自动路径不再碰它：claim / acquire / 租约恢复 / 退避派发都不认它）。恢复是**人工、
+        单条、显式**的动作：把状态写回 `QUEUED`（"任务回到可交付面"，事件复用
+        `task.retry_scheduled` + `reason=manual_requeue`，词表不扩张），下一次派发
+        （claim / run 级重建续跑）就能再取到它。
+
+        **尝试预算不被重置**：`fence_seq` 是租约代次（M16 §8 单调性），不因人工动作回退；
+        下一次交付照常推进代次，若再次失败仍按 `decide_failure` 落回死信（可再恢复）。
+
+        契约（三实现同判，由契约用例钉住）：
+
+        - **重复恢复零第二次副作用**：第二次调用时状态已不是 `DEAD_LETTER` ⇒ 不写库、
+          不发事件（在途重放由控制面 `Idempotency-Key` 承担）；
+        - **点名失败**：任务不存在 / 状态不是 `DEAD_LETTER`（**含「已恢复」**与其它终态）
+          ⇒ `InvalidInputError`，消息含任务 id 与实际状态（**不得**静默）；
+        - 成功返回 `"restored"`；
+        - 终态语义不变：`DEAD_LETTER` **仍在** `terminal()`（对自动路径终态）；
+          这是它唯一的出边，且只有本方法走它。
+        """
+        ...
+
     def recover_expired_leases(self) -> int: ...

@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261007-191](entries/MEM-20261007-191-manual-recovery-keeps-the-terminal-read-and-the-budget.md) | ACTIVE | repository | 0.93 | 2027-04-07 | PLAN-20261007-303 |
 | [MEM-20261006-190](entries/MEM-20261006-190-release-surface-change-drags-a-sync-set.md) | ACTIVE | repository | 0.92 | 2027-04-06 | PLAN-20261006-293 |
 | [MEM-20261006-189](entries/MEM-20261006-189-field-rename-zero-hit-scope-and-property-reads.md) | ACTIVE | repository | 0.94 | 2027-04-06 | PLAN-20261006-299 |
 | [MEM-20261006-188](entries/MEM-20261006-188-declarative-trigger-needs-an-observable-skip-fact.md) | ACTIVE | repository | 0.93 | 2027-04-06 | PLAN-20261006-297 |

@@ -38,9 +38,13 @@ registry 同步）。Port 由 Research OS 拥有（inward-owned）；adapter
 
 - 职责：任务分发（at-least-once + idempotency 去重）、lease 获取/心跳、
   取消传播、recover_expired_leases（过期 lease 收敛，返回恢复数量；
-  orchestration 在 start_run 前懒触发，见 WORKFLOW_RELIABILITY.md §2）。
+  orchestration 在 start_run 前懒触发，见 WORKFLOW_RELIABILITY.md §2）、
+  requeue（**人工恢复**一条 `DEAD_LETTER` 任务，成功返回 `restored`；
+  死信对**自动路径**终态，恢复是唯一出边，见 ADR-0033 与 RUN_STATE_MACHINE.md
+  的「`DEAD_LETTER` 的终态读法」；三实现同判，未死信/不存在 ⇒ 点名拒绝）。
 - 非职责：不执行 Agent 循环（AgentRuntime）；不持久化
-  （M7 PostgreSQL task queue/outbox，见 BACKLOG.md M7）。
+  （M7 PostgreSQL task queue/outbox，见 BACKLOG.md M7）；不做"自动恢复"
+  （超时自动重生 / 批量恢复 / 审批门都不在 `requeue` 里）。
 - 幂等语义：重复 submit（同 task.id 或同 idempotency_key）静默幂等——
   返回首次结果、不抛错、不覆盖首次契约（M5 复审修正）。
 

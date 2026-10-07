@@ -1,6 +1,11 @@
 """ResearchTask 状态机。
 
 状态集合来自 `docs/reliability/RUN_STATE_MACHINE.md` 迁移表。
+
+`DEAD_LETTER` 的语义（ADR-0033，R26-1）：它仍在 `terminal()` 里 ——
+**对自动路径终态**（claim / acquire / 恢复面都不会碰它），但**可以人工显式恢复**：
+唯一出边 `DEAD_LETTER --REQUEUE--> QUEUED` 只由恢复入口（`requeue`）触发，
+自动派发链**不**引用 `Transition.REQUEUE`。
 """
 
 from __future__ import annotations
@@ -39,6 +44,9 @@ class ResearchTaskState:
         FAIL = "FAIL"
         DEAD_LETTER = "DEAD_LETTER"
         CANCEL = "CANCEL"
+        # ADR-0033（R26-1）：唯一从 DEAD_LETTER 出发的迁移事件，**只由人工恢复入口**
+        # （`WorkflowEngine.requeue`）消费；自动派发链不引用它。
+        REQUEUE = "REQUEUE"
 
     # fmt: off
     _TRANSITIONS: dict[tuple[str, str], str] = {
@@ -58,6 +66,10 @@ class ResearchTaskState:
         (State.RUNNING, Transition.FAIL): State.FAILED,
         (State.RETRY_SCHEDULED, Transition.FAIL): State.FAILED,
         (State.RETRY_SCHEDULED, Transition.DEAD_LETTER): State.DEAD_LETTER,
+        # ADR-0033（R26-1）：**唯一**从终态出发的迁移 —— 人工恢复一条死信任务。
+        # 只由恢复入口（`WorkflowEngine.requeue`）触发；自动路径（claim / acquire /
+        # 退避派发 / 租约恢复）不引用 `Transition.REQUEUE`。
+        (State.DEAD_LETTER, Transition.REQUEUE): State.QUEUED,
         (State.WAITING_FOR_APPROVAL, Transition.FAIL): State.FAILED,
         (State.CREATED, Transition.CANCEL): State.CANCELLED,
         (State.QUEUED, Transition.CANCEL): State.CANCELLED,
