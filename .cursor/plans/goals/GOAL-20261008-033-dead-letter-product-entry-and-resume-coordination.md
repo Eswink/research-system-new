@@ -197,7 +197,28 @@ exit_criteria:
       tests/application/run_orchestration -q` ⇒ 全绿；新增覆盖矩阵判据全绿（含 (c) 的
       受判面自证与 (d) 的两向反证）；配套留档：声明集逐条（情形 / 判定 / 判据落点或理由）、
       声明集规模读数、两向反证判红原文。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      cycle 3（PLAN-20261008-315 / `RECHECK-20261008-316` = PASS_WITH_WARNINGS）。
+      **声明集 14 条**（`tests/tooling/resume_coverage_declaration.py`）：成功面 2
+      （自包含重建 / 来源依赖重建）/ 本入口拒绝面 6（无来源 / 无冻结 digest / 来源不可解析 /
+      preflight 不过 / 语义漂移 / 服务未装配）/ 不归本入口管 6（租约过期 / 死信 / 已成功不重跑 /
+      重启后自动派发 / run 级自动继续 / 装配面差异 —— 最后一条走 `reason` 面，理由非空）。
+      三面各有下界（2/6/5），声明集规模下界 14。
+      **判据自身抓到的第一次错（最有价值的读数）**：建档首版 `evidence` 里我凭印象写了
+      **7 个不存在的用例名** ⇒ 存在性判据（AST 找函数定义）**一次全抓出**
+      ⇒ 受判面**非空**、且「声明」与「判据」真的对上了账。
+      **第二次错（判据形态）**：首版按**散文关键词**对账（中文词匹配英文口径）⇒ 换成别的
+      措辞就会误判 ⇒ 改为 `source_literals` **字段**显式绑定（漏认领 / 重复认领 / 绑定字面量
+      不存在各判红）。
+      **两向反证**：`P1_RED exit=1 1 failed`（幽灵条目）/ `P2_RED exit=1 3 failed`（规模 +
+      三面 + 字面量归属）/ `RESTORED True`（sha 归因）/ `FINAL_MATCHES_BASELINE True`；
+      **按压脚本自身返工一次**：首版 P2 用字符串切片删条目 ⇒ 被多行 `reason=(...)` 的 `),`
+      骗到 ⇒ 产出**语法错** ⇒ `exit=2`（**收集错，不是判红**，读数不可用）⇒ 改 **AST 定位**
+      后 `exit=1`。留档 `scratch/goal033-cycle3/press-matrix.log`（235 B、CR=0）。
+      **既有判据零改动**（`tests/e2e/test_research_continuity_coverage_matrix.py` 一字未动）。
+      残余：`W-1`…`W-5`（`RECHECK-20261008-316`；含「判据自身两次假信号」「完备性边界
+      不由本判据证明」「异常路径不做逐字面量对账」「不覆盖行为重跑」）/ `R-M1` 未收口。
   - id: EC-04
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树（复用 `tools/closeout_recheck_tools` +
@@ -272,10 +293,12 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261008-311-goal-033-ec01-dead-letter-product-entry.md
   - .cursor/plans/tasks/PLAN-20261008-313-goal-033-ec02-dead-letter-run-coordination.md
+  - .cursor/plans/tasks/PLAN-20261008-315-goal-033-ec03-resume-coverage-declaration.md
 latest_recheck: null
 memory_entries:
   - a-product-entry-is-not-the-port-it-wraps
   - a-masked-claim-cannot-be-falsified-by-one-variable
+  - a-declared-set-needs-an-explicit-binding-not-prose-matching
 ---
 
 # GOAL-20261008-033 — 死信恢复的产品入口 + 与 run 续跑的自动协同 + 续跑覆盖矩阵机械化
@@ -292,7 +315,7 @@ memory_entries:
 | --- | --- | --- | --- |
 | EC-01 | 死信恢复产品入口（主干） | 端点 + 三态 + 幂等两层 + 认证面自动覆盖 + 调用证据 + 两向反证 + 实跑 + 同步集自证 | PASS |
 | EC-02 | 死信恢复 ↔ run 续跑协同 | 三面实测 + 按实测选 B（如实登记边界）+ 判据 + 反证 | PASS |
-| EC-03 | 续跑覆盖矩阵机械化 | 受判面 = 声明集（穷尽）+ 每条三选一 + 反掩蔽自证 + 两向反证 | PENDING |
+| EC-03 | 续跑覆盖矩阵机械化 | 受判面 = 声明集（14 条 / 三面）+ 与源码按字段对账 + 反掩蔽自证 + 两向反证 | PASS |
 | EC-04 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**宣称项目安全**
@@ -518,11 +541,13 @@ idempotency + deduplication）；不得**静默改 `terminal()` 语义**（必�
 | 0 | —（建档） | （本文件所在提交） | 只读勘察；`tests/tooling/test_mainline_program_is_intact.py` 新增并绿（8 passed）；`ruff` / `format` / `mypy` 绿 | PENDING | — | 四条 EC 全 PENDING；EC-02 的 A/B 待实测 | cycle 1 = EC-01（死信恢复产品入口） |
 | 1 | `PLAN-20261008-311` | 见「CI 台账」 | 新判据 **9 passed**；受判面套件 **3235 passed / 79 skipped**；四道门绿（mypy 1121 files）；两向按压 `P1_RED 8 failed` / `P2_RED 4 failed` / `RESTORED True` | PENDING | `W-1`…`W-5`；同步集第 5 条由门抓到并登记 | cycle 2 | **EC-01 收口**（`RECHECK-20261008-312`） |
 | 2 | `PLAN-20261008-313` | 见「CI 台账」 | 新判据 **6 passed**；单变量按压 `P1_RED 1 failed` / `RESTORED True`（sha 归因）；**返工一次**（首版 ③ 被三重门掩蔽 ⇒ 无法单变量证伪；已改 spy + 正向对照）；零产品改动 | PENDING | `W-1`…`W-5`；B 路径的边界已逐条登记 | cycle 3 | **EC-02 收口**（`RECHECK-20261008-314`） |
+| 3 | `PLAN-20261008-315` | 见「CI 台账」 | 新判据 **6 passed**；`tests/tooling` **1364 passed**；四道门绿；两向按压 `P1_RED 1 failed` / `P2_RED 3 failed` / `RESTORED True`（sha 归因）；**返工两处**（判据形态：散文对账 → 字段绑定；按压脚本：字符串切片 → AST 定位）；既有判据零改动 | PENDING | `W-1`…`W-5`；声明集完备性不由本判据证明 | cycle 4（收口） | **EC-03 收口**（`RECHECK-20261008-316`） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 3 落地 + EC-03 收口**：把「不处理清单是代表而非穷尽」推进到**声明集穷尽枚举**（14 条 / 三面 2-6-6）+ 与入口源码**按字段**对账 + 幽灵引用自查。**判据自身两次假信号均轮内修**：首版按散文关键词对账（换措辞即误判）⇒ 改 `source_literals` 字段；按压首版字符串切片产出语法错 ⇒ `exit=2`（收集错，不是判红）⇒ 改 AST 定位。**既有判据一字未动**。EC-03 = **PASS**（`RECHECK-20261008-316` = PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 2 落地 + EC-02 收口**：三面实测（run 状态两条组合 / 派发方 spy / 任务面两路）+ 机制边界；按实测走 **B 路径**（run 级自动继续需改状态机或新增调度面，逐条登记为下一轮输入）。**返工一次**：首版 ③ 的 `dispatched == 0` 被三重门掩蔽、**无法被单变量证伪**（按压改状态过滤后仍为 0）⇒ 改 spy 读数 + 正向对照后按压判红；按压脚本改二进制安全读写。**零产品改动**。EC-02 = **PASS**（`RECHECK-20261008-314` = PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 1 落地 + EC-01 收口**：新增 `POST /tasks/{task_id}/retry`（死信人工恢复的**产品**入口）+ DTO + 9 例判据；三类点名拒绝（404/409/503）；幂等两层（控制面 key + 引擎侧点名称，事件计数为判据）；**下游消费证据**（恢复后 `acquire_lease` 成功）；认证面**自动覆盖**（写面 60 → 61，判据从 `app.openapi()` 枚举）；两向按压判红且逐字节复原；**同步集五条**（建档预估 4 条 + 门抓到的第 5 条 `failure-payload` 受判出口 producer 清单，纯扩张零豁免）。EC-01 = **PASS**（`RECHECK-20261008-312` = PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 宪章 + `goals/README.md` 格式契约 + GOAL-032 全文；只读勘察**复核了提示词的起点表述**（`requeue` 产品面零命中 / 无 HTTP 路由 / `RetryDispatchScheduler` 只扫 `PAUSED` / run `FAILED` 是真终态 / 两轮协议不声称上界）；标定了 EC-01 的**同轮同步集四条**（写面清单 / OpenAPI 生成物 / 快照路径断言追加 / 写面告警线计数）；四条 EC 全 `PENDING`。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
