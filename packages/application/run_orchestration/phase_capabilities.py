@@ -139,11 +139,14 @@ class RunChainCall:
     requires_previous_ids: bool = True
     phase_id: str | None = None
     artifact_from_previous: str | None = None
-    #: **多轮循环**里"已经消费过哪些同后缀制品"的**声明面**（GOAL-20260808-034 AC-5）。
-    #: 值是 `artifact_id` 的**前缀**（执行期才知道的 task id 由它前缀化）：运行时把
-    #: 上一步结果里**以该前缀开头**的候选记为已消费，`artifact_from_previous` 的选择
-    #: 因此落到**未消费**的那一份上。缺省 `None` ⇒ 不排除（单轮语义逐字节不变）。
-    consumed_artifact_prefix: str | None = None
+    #: **读上一轮（而非本次链内上一步）的产出**（GOAL-20261008-034 EC-01）。
+    #:
+    #: 为什么需要：`artifact_from_previous` 的后缀判据要求"恰好一条" —— 两轮时成立；
+    #: **三轮起**同一后缀会匹配到**多份**（前几轮的产出都还在证据投影里）⇒ fail closed。
+    #: 本字段把选择收窄到**上一轮**：运行时用上一轮的**任务 id**（执行期才知道 ——
+    #: 与 `run_id_argument` 同层：声明的是"取值的来源"而不是值）挑出那一份。
+    #: 缺省 `False` ⇒ 走既有后缀判据（单轮 / 两轮语义**逐字节不变**）。
+    artifact_from_previous_round: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,36 +212,56 @@ def execute_run_chain_capabilities(
     没有装配（`deps is None`）或本 phase 没有 run-chain 声明 ⇒ 什么都不做（既有语义
     逐字节不变）。任何失败**如实上报**：`failure_message` 由调用方交给
     `failure_step`（容忍策略/失败分类与既有失败路径同一个分叉点）。
+
+    **本轮声明优先**（GOAL-20261008-034 EC-01）：`spec.round_calls` 非空时用它替代
+    装配面那一批 —— 多轮循环因此可以让**每一轮**用不同的调用声明（其余判定逐字不变：
+    仍按 phase 与 provider 过滤、仍过冻结集与策略）。
     """
     if deps is None:
         return CapabilityStepOutcome()
-    planned = tuple(call for call in deps.calls if _planned_in_this_phase(call, spec))
+    declared = spec.round_calls or deps.calls
+    planned = tuple(call for call in declared if _planned_in_this_phase(call, spec))
     if not planned:
         return CapabilityStepOutcome()
-    evidences: list[Evidence] = []
-    skipped: list[str] = []
-    outputs: list[Mapping[str, object]] = []
-    previous: Mapping[str, object] | None = None
     try:
-        material = _input_material(deps, spec)
-        for call in planned:
-            if _should_skip(call, previous):
-                skipped.append(skip_reason(call))
-                continue
-            previous, evidence = _execute_one(
-                deps,
-                task,
-                spec,
-                call,
-                _StepInputs(material=material, previous=previous, run_id=task.run_id.value),
-            )
-            evidences.append(evidence)
-            outputs.append(previous)
+        return _run_planned_calls(deps, task, spec, planned)
     except (InvalidInputError, PermanentPortError, TransientPortError) as error:
         return CapabilityStepOutcome(
             failure_message=f"run-chain capability step failed: {error}",
             system_failure=isinstance(error, TransientPortError),
         )
+
+
+def _run_planned_calls(
+    deps: CapabilityDeps,
+    task: ResearchTask,
+    spec: SessionSpecContext,
+    planned: tuple[RunChainCall, ...],
+) -> CapabilityStepOutcome:
+    """逐步执行（前一步结果带入下一步）；跳过**带理由**记下，不静默。"""
+    evidences: list[Evidence] = []
+    skipped: list[str] = []
+    outputs: list[Mapping[str, object]] = []
+    previous: Mapping[str, object] | None = None
+    material = _input_material(deps, spec)
+    for call in planned:
+        if _should_skip(call, previous):
+            skipped.append(skip_reason(call))
+            continue
+        previous, evidence = _execute_one(
+            deps,
+            task,
+            spec,
+            call,
+            _StepInputs(
+                material=material,
+                previous=previous,
+                run_id=task.run_id.value,
+                previous_round_task_prefixes=spec.previous_round_task_prefixes,
+            ),
+        )
+        evidences.append(evidence)
+        outputs.append(previous)
     return CapabilityStepOutcome(
         evidences=tuple(evidences), skipped=tuple(skipped), outputs=tuple(outputs)
     )
@@ -265,6 +288,8 @@ class _StepInputs:
     material: Mapping[str, object]
     previous: Mapping[str, object] | None = None
     run_id: str | None = None
+    #: **上一轮**任务的制品前缀（`artifact_from_previous_round` 的收窄条件；执行期才知道）。
+    previous_round_task_prefixes: tuple[str, ...] = ()
 
 
 def _execute_one(

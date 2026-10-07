@@ -133,50 +133,28 @@ def select_artifact_id(
     return matched[0]
 
 
-def consumed_ids(
-    previous: Mapping[str, object] | None,
-    prefix: str,
-) -> tuple[str, ...]:
-    """上一步读面结果里**已消费**的那些制品 id（按声明前缀识别）。
-
-    为什么按**前缀**而不是按完整 id：制品 id 含执行期才生成的 task id
-    （`tool-result:{task_id}:{op}:{tool_id}`），装配方无从写死；而前缀
-    （装配方给出的形态，如 `tool-result:`）是**声明事实**，且「已消费」这条事实
-    在多轮里的语义就是「**早先**那些轮次产生的同后缀制品」——它们与本轮候选共享前缀、
-    区别在 task id 段。缺省不调用本函数（单轮语义逐字节不变）。
-    """
-    entries = (previous or {}).get("evidence")
-    if not isinstance(entries, list):
-        return ()
-    return tuple(
-        str(item.get("artifact_id"))
-        for item in entries
-        if isinstance(item, Mapping)
-        and item.get("artifact_id")
-        and str(item.get("artifact_id")).startswith(prefix)
-    )
-
-
-def select_artifact_id_excluding(
+def select_artifact_id_for_prefixes(
     previous: Mapping[str, object] | None,
     suffix: str,
     tool_id: str,
     *,
-    exclude: tuple[str, ...],
+    task_prefixes: tuple[str, ...],
 ) -> str:
-    """按后缀选中**恰好一条**制品，并可**排除**已消费的若干条（多轮循环用）。
+    """按后缀选中**恰好一条**制品，并限定它属于给定的**任务前缀**之一（多轮循环用）。
 
-    为什么多轮需要它（实测的机制缺口）：`select_artifact_id` 要求后缀匹配**恰好一条**。
-    两轮时每一轮只产生一份该后缀的制品 ⇒ 成立；**三轮起**同一后缀会匹配到**多份**
-    （第 2 轮读时第 1 轮的还在，第 3 轮读时前两轮的都在）⇒ 既有函数会 fail closed 点名
-    「found 多份」。那不是判据缺陷，而是**单轮语义不适用于多轮**。
+    为什么多轮需要它（实测的机制缺口）：`select_artifact_id` 要求后缀匹配**恰好一条** ——
+    两轮时成立；**三轮起**同一后缀会匹配到**多份**（前几轮的产出都还在证据投影里）
+    ⇒ 既有函数 fail closed 点名「found 多份」。那不是判据缺陷，而是**两轮语义不适用于三轮**。
 
-    本函数把「已经消费过哪些」显式带进来（`exclude`），从候选里扣掉它们再要求恰好一条：
-    第 N 轮因此稳定选中**第 N-1 轮**那一份，且**零条 / 仍多条仍然点名失败**（不放宽）。
+    `task_prefixes` 是**上一轮**的制品标识前缀（由调用方按该轮的任务 id 声明/推导）：
+    候选先按它收窄，再要求恰好一条 ⇒ 第 N 轮稳定选中**第 N-1 轮**那一份。
 
-    与 `select_artifact_id` 的关系：两者**同源**（同样的 `evidence` 列表、同样的后缀
-    判据、同样的 fail-closed 形态），差别只有「是否扣掉已消费的」——既有函数逐字未动，
-    单轮调用方行为**逐字节不变**。
+    fail closed 形态**不放宽**：收窄后零条 / 仍多条 ⇒ 点名，并把候选与收窄条件一并列出
+    （可诊断）。
+
+    与 `select_artifact_id` 的关系：两者同源（同样的 `evidence` 列表、同样的后缀判据、
+    同样的 fail-closed 形态），差别只有「是否按任务前缀收窄」——既有函数逐字未动，
+    单轮/两轮调用方**逐字节不变**。
     """
     entries = (previous or {}).get("evidence")
     if not isinstance(entries, list):
@@ -189,13 +167,13 @@ def select_artifact_id_excluding(
         for item in entries
         if isinstance(item, Mapping) and item.get("artifact_id")
     ]
-    consumed = set(exclude)
-    matched = [item for item in ids if item.endswith(suffix) and item not in consumed]
+    narrowed = [item for item in ids if any(prefix in item for prefix in task_prefixes)]
+    matched = [item for item in narrowed if item.endswith(suffix)]
     if len(matched) != 1:
         raise InvalidInputError(
-            f"run-chain tool {tool_id}: expected exactly one unconsumed evidence artifact_id "
-            f"ending with {suffix!r}, found {sorted(matched)} "
-            f"(candidates: {sorted(ids)}; excluded: {sorted(consumed)})"
+            f"run-chain tool {tool_id}: expected exactly one evidence artifact_id ending with "
+            f"{suffix!r} in the previous round, found {sorted(matched)} "
+            f"(candidates: {sorted(ids)}; narrowed by: {sorted(task_prefixes)})"
         )
     return matched[0]
 
@@ -210,11 +188,10 @@ def skip_reason(call: RunChainCall) -> str:
 
 __all__ = [
     "Lookup",
-    "consumed_ids",
     "planned_in_this_phase",
     "previous_ids",
     "select_artifact_id",
-    "select_artifact_id_excluding",
+    "select_artifact_id_for_prefixes",
     "should_skip",
     "skip_reason",
 ]

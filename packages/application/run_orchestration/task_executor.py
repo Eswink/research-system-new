@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import timedelta
+from typing import Any
 
 from packages.application.experiments.evidence_admission import ExperimentEvidenceResult
 from packages.application.experiments.types import ExperimentExecutionOutcome
@@ -102,6 +103,11 @@ class SessionSpecContext:
     # 「哪个 provider 用哪个 SDK 工具名装配」——「那个名字对应哪个实现」是装配方的事。
     # 缺省空 = 未声明 ⇒ provider id 直接交给 SDK（既有语义，未注册即点名失败）。
     session_tool_bindings: tuple[tuple[str, str], ...] = field(default_factory=tuple)
+    # GOAL-20261008-034 EC-01：**本轮**的运行链调用声明（多轮循环按轮替换；空 = 沿用
+    # 装配面那一批，既有语义逐字节不变）。
+    round_calls: tuple[Any, ...] = field(default_factory=tuple)
+    #: **上一轮**任务的制品前缀（`artifact_from_previous_round` 的收窄条件；执行期才知道）。
+    previous_round_task_prefixes: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)

@@ -28,6 +28,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 #: 结论驱动停止的**声明式判据名**（词表；每次判定读一个**本轮结论的可观察事实**）。
 #: 新增判据 = 新增一个词 + 一个读事实的纯函数（见 `round_loop_facts`），不得让调用方传 lambda。
@@ -61,6 +62,19 @@ class RoundLoop:
     stop_when: str = CONVERGED_NO_NEW_IDS
     #: 结论事实的**声明路径**（本轮产出 JSON 里标识列表的键；默认 `ids`）。
     ids_path: str = "ids"
+    #: **每轮的运行链声明**（下标 `round_index - 1`；`None` = 各轮同一批声明）。
+    #: 为什么需要：轮次之间的**差异**必须由某个声明面承担 —— 若各轮声明完全相同，
+    #: 第 2 轮通常立刻判「无新标识」而停（**判据在正确工作**，但测不到多轮）。
+    #: 本字段把「这一轮用哪批调用」写成声明，而不是在代码里按轮「如果就」。
+    calls_by_round: tuple[tuple[Any, ...], ...] = ()
+
+    def calls_for(self, round_index: int) -> tuple[Any, ...] | None:
+        """该轮的调用声明（未声明 ⇒ `None`，调用方沿用既有那一批）。"""
+        if not self.calls_by_round:
+            return None
+        if round_index <= len(self.calls_by_round):
+            return self.calls_by_round[round_index - 1]
+        return self.calls_by_round[-1]
 
     def __post_init__(self) -> None:
         if not self.phases:

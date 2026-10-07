@@ -11,9 +11,8 @@ from typing import TYPE_CHECKING
 
 from packages.application.ports.errors import InvalidInputError
 from packages.application.run_orchestration.phase_capability_triggers import (
-    consumed_ids,
     select_artifact_id,
-    select_artifact_id_excluding,
+    select_artifact_id_for_prefixes,
 )
 
 if TYPE_CHECKING:  # 只为类型：避免导入环
@@ -55,18 +54,18 @@ def arguments_for(
         args["ids"] = [str(item) for item in ids]
     if call.artifact_from_previous is not None:
         # 派生面：本步读哪个制品由**上一步的读面结果**决定（见 `artifact_from_previous`）。
-        # 声明了 `consumed_artifact_prefix`（多轮循环）⇒ 扣掉已消费的那几份再要求恰好一条；
-        # 未声明 ⇒ 走既有函数（单轮语义**逐字节不变**）。
-        if call.consumed_artifact_prefix is None:
-            args["artifact_id"] = select_artifact_id(
-                inputs.previous, call.artifact_from_previous, call.tool_id
-            )
-        else:
-            args["artifact_id"] = select_artifact_id_excluding(
+        # 声明了 `artifact_from_previous_round`（多轮循环）⇒ 收窄到**上一轮**那一份；
+        # 未声明 ⇒ 走既有后缀判据（单轮 / 两轮语义**逐字节不变**）。
+        if call.artifact_from_previous_round:
+            args["artifact_id"] = select_artifact_id_for_prefixes(
                 inputs.previous,
                 call.artifact_from_previous,
                 call.tool_id,
-                exclude=consumed_ids(inputs.previous, call.consumed_artifact_prefix),
+                task_prefixes=inputs.previous_round_task_prefixes,
+            )
+        else:
+            args["artifact_id"] = select_artifact_id(
+                inputs.previous, call.artifact_from_previous, call.tool_id
             )
     if call.run_id_argument:
         # 本次 run 的标识（**执行期才存在**）：缺它 ⇒ 点名拒绝，不猜一个。

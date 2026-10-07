@@ -31,6 +31,7 @@ from packages.application.run_orchestration.round_loop_facts import (
     evaluate_stop,
     ids_from_step_outputs,
 )
+from packages.domain.core import ID
 
 if TYPE_CHECKING:
     from packages.application.run_orchestration.outcomes import RunOutcome
@@ -182,7 +183,13 @@ def execute_rounds(deps: Any, ctx: Any) -> "RunOutcome":
         outcome = _execute_one_pass(deps, ctx, deps.resolve_round(round_index))
         if outcome.state != ResearchRunState.State.SUCCEEDED:
             return outcome
-        decision = driver.record(RoundPass(round_index=round_index, outputs=outcome.chain_outputs))
+        decision = driver.record(
+            RoundPass(
+                round_index=round_index,
+                outputs=outcome.chain_outputs,
+                task_ids=tuple(t.task.id.value for t in outcome.tasks),
+            )
+        )
         if not decision.stop:
             continue
         payload = driver.state.stop_payload()
@@ -209,9 +216,13 @@ def round_loop_fields(
     if not declared:
         return {}
     loop = declared[0]
+    driver = RoundDriver.start(loop)
     return {
-        "round_driver": RoundDriver.start(loop),
-        "resolve_round": lambda index: round_specs(loop, index, specs),
+        "round_driver": driver,
+        # 闭包读 `driver` 的当前值 ⇒ 每轮拿到的都是**上一轮**记下的前缀（懒展开）。
+        "resolve_round": lambda index: round_specs(
+            loop, index, specs, previous_prefixes=driver.previous_prefixes
+        ),
     }
 
 
@@ -219,22 +230,39 @@ def round_specs(
     loop: RoundLoop,
     round_index: int,
     specs: Sequence[Any],
+    *,
+    previous_prefixes: tuple[str, ...] = (),
 ) -> tuple[Any, ...]:
     """第 `round_index` 轮的 specs（**懒展开**的展开点）。
 
-    phase id **不变**（运行链的 phase 级过滤拿它查表，带后缀就查不到）；变的只有
-    **任务幂等键**：第 1 轮逐字保留，N>1 加 `@{n}`。⇒ 每轮是**不同的任务**
-    （否则第二轮的 submit 被既有按 key 去重吞掉 = 静默停），而续跑重算剩余工作时
-    `_remaining_specs` 按同一批键对齐 ⇒ 各轮任务**天然可续**。
+    phase id **不变**（运行链的 phase 级过滤拿它查表，带后缀就查不到）。
 
-    specs 形态是 `(task, contract, spec_context)`；只替换 `task.idempotency_key`。
+    两处按轮替换（**实测各对应一个真缺口**）：
+
+    1. **任务 id 与幂等键**：每轮必须是**不同的任务**。幂等键同 ⇒ 第二轮的 submit 被既有
+       按 key 去重**静默吞掉**（安静地不跑，不报错）；任务 **id** 同 ⇒ 同一条任务上重复
+       跑运行链会以**不同 digest** 重登记同一 `source_ref`（origin 含 task id 与操作键）
+       ⇒ 撞 `conflicting source registration`（实测：第一轮成功、第二轮 FAILED）。
+       两条都是「静默或半静默地做错事」，所以两处都必须按轮区分。
+    2. **本轮的运行链声明**（`loop.calls_for`）—— 轮次差异的声明面。
+
+    第 1 轮**逐字保留**任务 id 与幂等键（既有单轮语义与「续跑按 key 对齐」逐字不动）。
     """
-    if round_index == 1:
-        return tuple(specs)
+    calls = loop.calls_for(round_index)
     out: list[Any] = []
     for task, contract, spec_context in specs:
-        keyed = loop.round_key(task.idempotency_key or "", round_index)
-        out.append((replace(task, idempotency_key=keyed), contract, spec_context))
+        keyed = replace(
+            task,
+            idempotency_key=loop.round_key(task.idempotency_key or "", round_index),
+        )
+        if round_index > 1:
+            keyed = replace(keyed, id=ID.generate())
+        if calls is not None:
+            # 该轮的运行链声明（每轮差异的**声明面**）：只换这一项，其余逐字不动。
+            spec_context = replace(spec_context, round_calls=calls)
+        if previous_prefixes:
+            spec_context = replace(spec_context, previous_round_task_prefixes=previous_prefixes)
+        out.append((keyed, contract, spec_context))
     return tuple(out)
 
 
@@ -244,10 +272,15 @@ RoundResolver = Callable[[int], "tuple[Any, ...]"]
 
 @dataclass(frozen=True, slots=True)
 class RoundPass:
-    """一轮的结论：`outputs` 是该轮**全部任务**的运行链产出（停止判据的输入）。"""
+    """一轮的结论：该轮**全部任务**的运行链产出（停止判据的输入）与它们的任务 id。
+
+    `task_ids` 是**下一轮**收窄「上一轮产出」的依据（制品 id 形如
+    `tool-result:{task_id}:{op}:{tool}` ⇒ 前缀 `tool-result:{task_id}:`）。
+    """
 
     round_index: int
     outputs: tuple[Any, ...]
+    task_ids: tuple[str, ...] = ()
 
 
 @dataclass(slots=True)
@@ -264,6 +297,9 @@ class RoundDriver:
     loop: RoundLoop
     state: RoundLoopState
     rounds: list[int] = field(default_factory=list)
+    #: 上一轮各任务的制品前缀（`tool-result:{task_id}:`）—— 下一轮的
+    #: `artifact_from_previous_round` 用它收窄到**上一轮**的产出（执行期才知道）。
+    previous_prefixes: tuple[str, ...] = ()
 
     @classmethod
     def start(cls, loop: RoundLoop) -> "RoundDriver":
@@ -277,6 +313,7 @@ class RoundDriver:
         """记一轮的产出并判定（返回 `StopDecision`；调用方据此决定要不要再来一轮）。"""
         self.state.record_round(pass_.round_index, _mappings(pass_.outputs))
         self.rounds.append(pass_.round_index)
+        self.previous_prefixes = tuple(f"tool-result:{task_id}:" for task_id in pass_.task_ids)
         return self.state.decide()
 
     def next_round(self) -> int:
