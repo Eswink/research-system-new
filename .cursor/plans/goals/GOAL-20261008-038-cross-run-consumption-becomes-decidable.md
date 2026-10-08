@@ -363,7 +363,10 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | --- | --- | --- |
 | `bf7e61f`（GOAL-037 台账尾巴，本轮首行） | M0 `37836787244` **cancelled**（后续推送触发 `cancel-in-progress`）+ CodeQL `37836786093` **success**（3 分析） | GOAL-037 的最后一个提交（仅 `.cursor/**` 记录改动；本地 `--profile framework` **8/8**）；**取消原因如实登记** ⇒ 其改动由后续批次覆盖（同时**封闭 GOAL-037 台账的自我指涉边界**） |
 | `6c42c6f`（cycle 0 建档） | **无自己的 run**（同批推送） | 建档提交（仅 `.cursor/**`）；与 `4090015` 同一次 push ⇒ `covered_by 4090015` |
-| `4090015`（cycle 1 = EC-01/02/03 收口） | 读数在台账尾回填 | 声明式消费 + 编排层求值 + 门接线；本地 `tests/application + tests/domain` **2412 passed, 1 skipped** |
+| `4090015`（cycle 1 = EC-01/02/03 收口） | `37838098594` **M0 success**（8 job 全 success）+ `37838097216` **Push on main / CodeQL success**（3 分析全 success） | 声明式消费 + 编排层求值 + 门接线；本地 `tests/application + tests/domain` **2412 passed, 1 skipped**（**实测取证**） |
+| `760acf6`（cycle 2 = EC-04 收口） | `37843815939` **M0 success**（8 job 全 success）+ `37843815417` **Push on main / CodeQL success**（3 分析全 success） | 跨轮消费在运行路径上被判定；它**单独推送**（`total_count=2`，**实测取证**）⇒ 有自己的 run，不需要覆盖 |
+| `a0f3a9e` / `7c45849`（cycle 3 提交 A/B） | **无自己的 run**（同批推送） | EC-05：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮 / 次轮定格）；同批 ⇒ `covered_by 4dc5f0c`（**实测取证**） |
+| `4dc5f0c`（cycle 3 · GOAL 收口 = 本批 HEAD） | `37846735919` **M0 success**（8 job 全 success）+ `37846734881` **Push on main / CodeQL success**（3 分析全 success） | **GOAL 收口提交**（EC-05 `PASS` + `status: ACHIEVED` + m0 读数 + MAINLINE 进展行）；`a0f3a9e` / `7c45849` 的结论由此行覆盖（**实测取证**：两条 `total_count=0`）—— **上一行的自我指涉边界已由此行封闭** |
 | （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴 + **cycle 2 起点**：其结论由**下一个 cycle / GOAL 的台账**取证，**不得循环引用** |
 
 ## 迭代日志
