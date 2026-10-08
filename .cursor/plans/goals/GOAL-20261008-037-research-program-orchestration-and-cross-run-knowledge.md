@@ -406,7 +406,9 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | `7c0da21`（cycle 2 WP-1：驱动） | M0 `37781594902` **failure**（`quality-ubuntu-latest` + `quality-windows-latest` 双平台红：规模门判 `advance_program` 108 > 50 行）+ CodeQL `37781597682` **success**（3 分析） | **真红并修**：处置 = **拆函数**（`_evaluate` / `_after_hit` / 调度三件，各 ≤ 50 行），修在后一条 `efddc86`；本提交的改动由 **`efddc86` 的 M0 覆盖**（`covered_by efddc86`） |
 | `efddc86`（规模门修复 = 本批 HEAD） | `37784058017` **M0 success**（8 job 全 success）+ `37784058978` **Push on main / CodeQL success**（3 分析全 success） | 修复提交；**前两条（`86fd5b7` / `7c0da21`）的结论由此行覆盖**（实测取证） |
 | `73d13e3`（台账尾 1） | `37786734211` **M0 success**（8 job 全 success）+ `37786731671` **Push on main / CodeQL success**（3 分析全 success） | 只改 GOAL-037 记录的提交；**实测取证**（原先写作「由下一个 GOAL 的台账取证」，现以本行自身读数封闭） |
-| （本行所在提交：台账尾 2） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 只改 `.cursor/plans/goals/GOAL-20261008-037-*.md`（记录改动以 `--profile framework` 补全终态）；其结论由**下一个 GOAL 的台账**取证，**不得循环引用** |
+| `b189549`（台账尾 2） | 读数在本表下一行封闭（同批语义） | 只改 GOAL-037 记录（run id 对调更正）；本地治理绿 |
+| `dbaa318`（cycle 2 = EC-02 收口） | `37815108373` **M0 success**（8 job 全 success）+ `37815107567` **Push on main / CodeQL success**（3 分析全 success） | 三路由 + 启动面接线 + 双 run 实跑 + 同轮同步（四条登记面）；本地 as-is m0 **23/23**（5408 passed, 20 skipped）；**实测取证** ⇒ **`b189549` 的结论由此行覆盖** |
+| （本行所在提交：台账尾 3） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 只改 `.cursor/plans/goals/GOAL-20261008-037-*.md`；其结论由**下一个 cycle / GOAL 的台账**取证，**不得循环引用** |
 
 ## 迭代日志
 
