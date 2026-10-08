@@ -98,18 +98,43 @@ exit_criteria:
 
 # PLAN-20261008-329 — GOAL-035 cycle 4（EC-04）自举收口
 
-## 工作包
+## 验收条件
+
+见 frontmatter `exit_criteria`。
+
+| AC | 主题 | 状态 |
+| --- | --- | --- |
+| AC-1 | 验证器进树（复用标准断言集一行未重写；判词纯且与路径无关） | PASS |
+| AC-2 | `IN_SCOPE` 纯收紧 + 两脚本过四道门 | PASS |
+| AC-3 | 两树复检 `TWO-TREE PASS` + 判词归档进树（`CR=0`；bootstrap 时序如实登记） | PASS |
+| AC-4 | as-is m0 23/23（在全部记录写入之后） | PASS |
+| AC-5 | 治理 `validate.py` 绿 + MAINLINE 宪章判据绿 | PASS |
+| AC-6 | 承继残余与未覆盖范围逐条在位（`N-1`…`N-6` 定格） | PASS |
+| AC-7 | CI 台账逐提交（含自我指涉边界封闭） | PASS |
+
+## 实施清单
+
+- [x] `tools/verify_goal035_closeout.py`：入口（标准断言集 + 本轮断言 + 记录面）。
+- [x] `tools/goal035_closeout_assertions.py`：本轮特有断言（三条产品轴 + 判据面 + 归档面 + 射程面）。
+- [x] `tests/tooling/test_tooling_scripts_meet_product_gates.py`：`IN_SCOPE` **纯收紧** +2 行。
+- [x] `.cursor/plans/goals/evidence/GOAL-20261008-035-verdict-{current,clean}.txt`：两树判词归档。
+- [x] 记录面：本 PLAN、`RECHECK-20261008-330`、`MEM-20261008-203`、GOAL 收口面（EC 终态 +
+      导览表 + 残余 `N-1`…`N-6` + 迭代日志 + 状态历史 + CI 台账）、MAINLINE 进展行、`ALL_PLAN`。
+
+## 证据
+
+### 交付面（WP）
 
 | # | WP | 交付面 |
 | --- | --- | --- |
 | WP-1 | 验证器进树 | `tools/verify_goal035_closeout.py`（入口：标准断言集 + 本轮断言 + 记录面）、`tools/goal035_closeout_assertions.py`（本轮特有断言） |
 | WP-2 | `IN_SCOPE` 纯收紧 | `tests/tooling/test_tooling_scripts_meet_product_gates.py`（+2 行，只增不删） |
-| WP-3 | 两树 + 归档 | `tools/two_tree_recheck.py --script-mode shared`（首轮 bootstrap / 次轮 `TWO-TREE PASS`）；`.cursor/plans/goals/evidence/GOAL-20261008-035-verdict-{current,clean}.txt` |
+| WP-3 | 两树 + 归档 | `tools/two_tree_recheck.py --script-mode shared`（首轮 bootstrap 红 / 次轮 `TWO-TREE PASS`）；`.cursor/plans/goals/evidence/GOAL-20261008-035-verdict-{current,clean}.txt` |
 | WP-4 | as-is m0 | `--profile m0 --keep-going`（在全部记录写入之后） |
 | WP-5 | 治理 + 宪章 | `validate.py`；`tests/tooling/test_mainline_program_is_intact.py`；MAINLINE 进展记录追加一行 |
 | WP-6 | 记录面 | 本 PLAN、`RECHECK-20261008-330`、GOAL 收口（EC-04 + 导览表 + 残余/未覆盖逐条 + 迭代日志 + 状态历史 + CI 台账） |
 
-## 判据（本轮特有断言 → 每条都能被单变量按压判红）
+### 判据（本轮特有断言 → 每条都能被单变量按压判红）
 
 | 轴 | 断言（摘要） | 落点 |
 | --- | --- | --- |
@@ -120,7 +145,7 @@ exit_criteria:
 | 归档面 | 两份归档在树、非空、`CR=0`（**不读内容**做断言 —— 输入即输出） | `.cursor/plans/goals/evidence/**` |
 | 射程面 | `IN_SCOPE` 含本轮两脚本且**仍钉住**入口与标准断言集 | `tests/tooling/test_tooling_scripts_meet_product_gates.py` |
 
-## 四道门（本轮两个新脚本）
+### 门（实测读数）
 
 | 门 | 读数 |
 | --- | --- |
@@ -128,6 +153,14 @@ exit_criteria:
 | `ruff format --check` | `2 files already formatted` |
 | `mypy`（strict） | `Success: no issues found in 2 source files` |
 | 规模（450 行 / 函数 50 行） | `238` / `191` 行（函数均在 50 行内，由判据参数化复核） |
+| `tests/tooling/test_tooling_scripts_meet_product_gates.py` | **8 passed** |
+| `tools/verify_goal035_closeout.py --root . --verdict-only` | **70 判词 / 0 FAIL**（本树收口态） |
+| 两树复检 | 首轮 bootstrap 红（读数见 `RECHECK-20261008-330` 第 3 节）；次轮 **`TWO-TREE PASS`**（两路 70 判词、`sha256` 相同） |
+| as-is m0 | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` 24 / `FAILED [` 0 / **5358 passed, 20 skipped**；收集数 +0 —— 本轮只新增 `tools/` 下两脚本（不在产品根参数化面）与记录；`skipped` 20 未升） |
+
+> **一次真红并修（如实登记）**：m0 首跑 `framework/validate` 判红 —— 本 PLAN 缺少
+> `## 验收条件` / `## 实施清单` / `## 证据` 三个章节（治理校验器的 PLAN 格式契约）。
+> **修记录而不是修判据**：补齐三节后**重跑**全量 m0（终局行为上面的读数，取自重跑日志）。
 
 ## 影响报告
 
@@ -142,5 +175,5 @@ exit_criteria:
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-10-08 | IN_PROGRESS | WP-1/WP-2 落地（两脚本进树 + `IN_SCOPE` 纯收紧 + 四道门绿）。 |
-| 2026-10-08 | DONE | WP-3…WP-6 全部落地：两树 `TWO-TREE PASS`（首轮 bootstrap 时序如实登记）、归档进树（`CR=0`）、as-is m0 23/23（记录之后）、治理 + 宪章判据绿、CI 台账逐提交。`RECHECK-20261008-330` 独立复检。 |
+| 2026-10-08 | IN_PROGRESS | WP-1/WP-2 落地（两脚本进树 + `IN_SCOPE` 纯收紧 + 四道门绿）；WP-3 首轮 bootstrap 红（归档未生成，属预期时序）。 |
+| 2026-10-08 | DONE | WP-3…WP-6 全部落地：两树次轮 `TWO-TREE PASS`（首轮 bootstrap 时序如实登记）、归档进树（`CR=0`）、治理 + 宪章判据绿、CI 台账逐提交。**m0 首跑 `framework/validate` 判红**（本 PLAN 缺三个格式章节）⇒ 修记录后重跑为 23/23（如实登记，未改判据）。`RECHECK-20261008-330` 独立复检。 |

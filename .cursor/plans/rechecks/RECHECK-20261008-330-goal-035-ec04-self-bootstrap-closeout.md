@@ -80,8 +80,22 @@ TWO-TREE PASS
 
 ### 5. as-is m0（AC-5）
 
-在**全部记录写入之后**独占跑：终局行与 `passed/skipped` 读数**回填**（见 GOAL 迭代日志
-cycle 4 行与 m0 日志）。
+在**全部记录写入之后**独占跑（`--profile m0 --keep-going`、仓库 `.venv`、
+`uv run --frozen --no-sync python -B`、不接管道）：终局行
+**`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** /
+**5358 passed, 20 skipped**；收集数 +0 —— 本轮只新增 `tools/` 下两脚本（不在产品根参数化面）
+与记录；`skipped` 20 未升）。日志 `scratch/m0-goal035-cycle4-rerun.log`。
+
+**一次真红并修（如实登记）**：m0 **首跑**在 `framework/validate` 判红 —— 本轮的
+`PLAN-20261008-329` 缺少治理校验器要求的三个章节（`## 验收条件` / `## 实施清单` / `## 证据`）。
+处置是**修记录而不是修判据**（补齐三节后重跑全量 m0，终局行取自重跑日志）；**未**改动
+`validate.py` 或任何断言。
+
+**一次已知类 flake（如实登记）**：收口记录写入之后补跑 `--profile framework` 时，
+`framework/run_cursor_framework_evals` **首跑红一次**（未改任何 check 与产品代码）；
+按既有配方处置 —— **单跑两次均 `FRAMEWORK EVAL PASS`**、随后**整档重跑**
+**`PASS: profile=framework; 8 deterministic checks`**（专断整档通过）。归档形态与两树判词
+不受影响（它们不读这项）。
 
 ### 6. 治理与宪章（AC-6）
 
@@ -111,3 +125,6 @@ cycle 4 行与 m0 日志）。
   （**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。
 - **W-4（自我指涉边界）**：本节的收口提交自身不产生可引用的 CI 结论 ⇒ 以「末条提交 +
   覆盖说明」封闭，**不得循环引用**（承 GOAL-032…034 同款）。
+- **W-5（m0 首跑在记录格式上真红一次）**：`framework/validate` 抓到本轮的 `PLAN-20261008-329`
+  缺 `## 验收条件` / `## 实施清单` / `## 证据` 三节 ⇒ 修记录后重跑通过。处置**未**触碰
+  `validate.py` 与任何断言；首跑红与重跑读数逐条登记在第 5 节。

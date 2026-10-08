@@ -2,7 +2,7 @@
 id: GOAL-20261008-035
 slug: research-quality-decidable-and-review-linked
 title: 研究质量三类可判定（来源支持 / 可复现 / 覆盖充分）+ 与评审联动 —— 把「判据存在」推进到「研究循环里真的被判定」
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-08
 updated_at: 2026-10-08
 owners:
@@ -152,7 +152,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest
       tests/tooling/test_mainline_program_is_intact.py -q` ⇒ 全绿；配套留档：
       两路判词 sha256 相同的归档、m0 日志、CI 台账逐提交行。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -217,7 +217,7 @@ memory_entries:
 | EC-01 | 来源支持可判定 | 两维覆盖判据在**研究循环里真的被判定** + 读面关系 + 两向反证 | PASS |
 | EC-02 | 可复现可判定 | run 路径上产出**可复核的结论**（复用既有域类型）+ 反证点名 | PASS |
 | EC-03 | 覆盖充分 + 评审联动 | `review_score` 在**产品路径**赋值 + `REVIEW_SCORE` 三态可判 + 反证 | PASS |
-| EC-04 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-04 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**宣称项目安全**
 （`R-M1`）；不得宣称投递语义为「恰好一次」（**明确否认**）；不得用「加计数或阈值」
@@ -437,7 +437,11 @@ GOAL-019…034 的未覆盖范围原样保留。
 | `c1cd752` | `37726029644` **M0 success**（8 job 全 success）+ `37726029238` **Push/CodeQL success**（3 分析全 success） | **cycle 1（EC-01）**：代码 + 记录同批；本地 as-is m0 **23/23** |
 | `26cfa63` | `37739875935` **M0 success**（8 job 全 success）+ `37739876177`-族 **Push/CodeQL success**（3 分析全 success） | **cycle 2（EC-02）**：可复现结论在 run 路径产出并进读面；本地 as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / 5354 passed, 20 skipped）|
 | `5219c4b` | `37727602180` **M0 success** + Push/CodeQL **success** | cycle 1 台账尾巴（仅 `.cursor/**` 记录改动；本地 `--profile framework` 8/8 补全终态）⇒ **上一行的自我指涉边界已由此行封闭**（实测取证，非循环引用）|
-| （本行所在提交） | **无自己的 run**（自我指涉边界的下一条） | 台账尾巴：本表末行的提交自身在进入 CI 时其结论尚未产生 ⇒ 以「**末条已取证提交**（`c1cd752`）+ **仅台账改动**（`.cursor/**`，按 `MEM: local-gate-protocol-and-flake-classes` 第 6 条只需 `--profile framework` 补全）」封闭，**不得循环引用** |
+| `4da55ab` | `37741630969` **M0 success**（8 job 全 success）+ `37741630658` **Push/CodeQL success**（3 分析全 success） | cycle 2 台账尾巴（仅 `.cursor/**` 记录改动；本地 `--profile framework` 补全）⇒ **`26cfa63` 一行的自我指涉边界已由此行封闭** |
+| `8a744f7` | `37745442100` **M0 success**（8 job 全 success）+ `37745441519` **Push/CodeQL success**（3 分析全 success） | **cycle 3（EC-03）**：评审联动（合约声明分数路径 + 三态判词 + 反证）；本地 as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / 5358 passed, 20 skipped） |
+| `c499722` | **无自己的 run**（同批推送） | cycle 4（EC-04）：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮 bootstrap）——与 `c80beca`、本批 HEAD **同一次 push** ⇒ 只有 HEAD 产生 run；`covered_by` 本批 HEAD（下表末行） |
+| `c80beca` | **无自己的 run**（同批推送） | cycle 4：两树次轮 `TWO-TREE PASS` + 归档定格 ——同批，`covered_by` 本批 HEAD |
+| （本批 HEAD = 本行所在提交） | **无自己的 run 的下一形态**（自我指涉边界） | cycle 4 收口提交（GOAL `ACHIEVED` + m0 读数 + 本表前两行）：它与 `c499722`/`c80beca` **同一次 push**，其 CI 结论在本行写入时尚未产生 ⇒ 以「**末条已取证提交**（`8a744f7`）+ **仅记录改动**（`.cursor/**`，按 `MEM: local-gate-protocol-and-flake-classes` 第 6 条只需 `--profile framework` 补全）」封闭，**不得循环引用**；其结果由**下一条台账尾巴**取证 |
 
 ## 迭代日志
 
@@ -447,12 +451,13 @@ GOAL-019…034 的未覆盖范围原样保留。
 | 1 | `PLAN-20261008-323` | （见 CI 台账 cycle 1 行） | EC-01 六条 AC 全 PASS：`tests/e2e/test_two_dimensional_coverage_and_claim_relation.py` **5 passed**；`tests/contracts/test_review_finding_store_contracts.py` 3 passed；PG 8 passed；`python` profile **6 项确定性检查全绿**（mypy 1139 文件 0 错）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5350 passed, 20 skipped**；收集数 +19 逐文件分解：3+5+3 新判据 + 8 源文件参数化；skipped 未升）；按压 P-1 **4 failed** / P-2 **1 failed** 且复原 | （见 CI 台账） | 首跑两处红并修：判据文件 2 处 `no-any-return`（mypy）、新读面未登记隐私清单（observability ×2）；规模门：`composition.py` 457 行、`service.py` 451 行 ⇒ 搬迁 + 归组（418 / 450） | EC-01 收口；**下一轮 EC-02**（可复现可判定：审计只在遗留 M12 链，run 路径零调用） |
 | 2 | `PLAN-20261008-325` | （见 CI 台账 cycle 2 行） | EC-02 五条 AC 全 PASS：`tests/e2e/test_reproducibility_conclusion_on_the_run_path.py` **3 passed**；`tests/application/experiments` + 既有离线链 **96 passed**；`tests/e2e` **252 passed**；`tests/observability` **133 passed**；mypy 1140 文件 0 错；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5354 passed, 20 skipped**，收集数 +4 逐文件分解）；按压 P-1 **3 failed** / P-2 **1 failed** 且复原 | （见 CI 台账） | 首版**自写可审态门**与既有 `is_auditable_state` 分叉 ⇒ 同轮改为复用；断言从「空发现列表」改为「零 FAIL」（域口径里 WARNING 是诚实标注）；首版 import 顺序错 ⇒ `UnboundLocalError` 39 failed，判据当场抓到 | EC-02 收口；**下一轮 EC-03**（评审联动：`review_score` 产品路径赋值 + `REVIEW_SCORE` 三态） |
 | 3 | `PLAN-20261008-327` | （见 CI 台账 cycle 3 行） | EC-03 四条 AC 全 PASS：`tests/e2e/test_review_score_linkage_on_the_run_path.py` **3 passed**；`tests/loaders+contracts+domain+application+api` **2372 passed**；`tests/e2e`+`tests/tooling` **1636 passed**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5358 passed, 20 skipped**，收集数 +4 逐文件分解：新判据 3 例 + 源文件参数化 +1；`skipped` 20 未升）；按压 P-1 **1 failed** 且复原 | （见 CI 台账） | 首版判据多写了一个无用的 runtime 包装类 ⇒ 已简化；设计上**新增**合约与协议而不是给 `sort_analysis_review` 加判据（后者会让既有夹具连环判负） | EC-03 收口；**下一轮 EC-04**（自举收口：验证器 + 两树 + 归档 + m0 + 治理 + 台账） |
-| 4 | `PLAN-20261008-329` | （见 CI 台账 cycle 4 行） | EC-04 七条 AC：**AC-1** 验证器进树（复用标准断言集**一行未重写**；收口态 **70 判词 / 0 FAIL**，非判词行 0 / 绝对路径 0；中途态 65 PASS / 5 FAIL 逐条为「归档未生成 + 记录声明先行 + 残余标记待定格」）+ **AC-2** `IN_SCOPE` 纯收紧（+2 行；判据 8 passed；两脚本四道门绿：ruff/format/mypy/规模 238·191 行）+ **AC-5** 治理 `validate.py` 绿 + 宪章判据绿 + **AC-6** 残余 `N-1`…`N-6` 与未覆盖逐条在位；**AC-3（两树 + 归档形态）与 AC-4（as-is m0 终局行）读数在 `RECHECK-20261008-330` 逐条回填** | （见 CI 台账） | — | 四条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-330`） |
+| 4 | `PLAN-20261008-329` | （见 CI 台账 cycle 4 行） | EC-04 七条 AC 全 PASS：**AC-1** 验证器进树（复用标准断言集**一行未重写**；收口态 **70 判词 / 0 FAIL**，非判词行 0 / 绝对路径 0）+ **AC-2** `IN_SCOPE` 纯收紧（+2 行；判据 8 passed；四道门绿：ruff/format/mypy/规模 238·191 行）+ **AC-3** 两树 **`TWO-TREE PASS`**（次轮 `--base-ref c499722`：两路 70 判词、`sha256` 相同 `ae0fd81b…`；首轮 bootstrap 红如实登记）+ **AC-4** 归档两份各 **2723 B / 70 行 / `CR=0` / FAIL 0**、`sha256` 相同 + **AC-5** as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5358 passed, 20 skipped**，收集数 +0）+ 治理 `validate.py` 绿 + 宪章判据绿 + **AC-6** 残余 `N-1`…`N-6` 与未覆盖逐条在位 + **AC-7** CI 台账逐提交 | （见 CI 台账） | **m0 首跑 `framework/validate` 真红一次**：本 PLAN 缺 `## 验收条件` / `## 实施清单` / `## 证据` 三节 ⇒ **修记录**（未动 `validate.py` 与任何断言）后**重跑**全量 m0 通过；两树**首轮 bootstrap 红**（归档由被归档的入口写出，属固有时序，未删存在性断言） | 四条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-330`） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACHIEVED | **GOAL 收口（cycle 4 = EC-04 自举收口）**：四条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、`IN_SCOPE` **纯收紧**、两树 **`TWO-TREE PASS`**（70 判词 / 两路 `sha256` 相同 `ae0fd81b…`）、判词归档进树（2723 B / `CR=0`）、as-is m0 **23/23**（记录写完之后）、治理 + 宪章判据绿、CI 台账逐提交。**两处真红如实登记**：两树首轮 bootstrap 红（固有时序）、m0 首跑治理抓到本 PLAN 缺三节 ⇒ 修记录后重跑。**收口后不再推进本 GOAL**；残余 `N-1`…`N-6` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。独立复检：`RECHECK-20261008-330`（PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 4（EC-04 自举收口）落地**：收口验证器 + 本轮断言集进树（复用标准断言集**一行未重写**），`IN_SCOPE` **纯收紧**（+2 行），两脚本过四道门；两树复检（`--script-mode shared`）与判词归档进树、as-is m0、治理 + 宪章判据、CI 台账逐提交 —— 读数逐条在 `RECHECK-20261008-330`（bootstrap 时序如实登记）。GOAL 收口。未覆盖范围与残余 `N-1`…`N-6` 逐条明写；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 3（EC-03）**：**评审结论进入判据面**。`REVIEW_SCORE` 此前产品路径从不喂分（`review_score=` 只在 tests）、出厂合约零声明 ⇒ 本轮让**合约自己声明分数的结构化输出路径**（`metric: review_decision.score`，schema 既有字段，零 schema 改动），产品路径按该路径取数，判定仍走既有 `_evaluate_review_score`。三态判词逐字：判过 `review score 0.95 GTE 0.8` / 判负点名分数 `review score 0.5 GTE 0.8` / 缺来源 `review score unknown`（**不回落默认分**）；判词经 EC-01 的既有读面读。**新增**合约与协议（既有受判面一字不动）。EC-03 `PASS`；EC-04 待收口。未覆盖：异构评审的分数聚合仍未接线。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 2（EC-02）**：**可复现结论在 run 路径产出并进读面**。实验跑到科学终态时封存 `ReproducibilityAudit` 并**随实验落库**（复用既有 use case / 既有可审态谓词 `is_auditable_state` / 既有 id 派生，**未建第二套**）；读面 `GET /runs/{id}/experiments` 给出 `audit_digest` / `audit_status` / **重算的** `audit_verified` / 逐条 `audit_findings`（无审计则 honest unavailable）；主干判据**独立重算**与读面一致；反证两向（篡改载荷 ⇒ 重算判红；换掉引用 ⇒ 发现里点名制品 id）。EC-02 `PASS`；EC-03/EC-04 仍待收口。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
