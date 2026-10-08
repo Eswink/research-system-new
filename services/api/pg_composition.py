@@ -230,6 +230,8 @@ def _build_pg_orchestration(
                     c["runs_store"],
                     # GOAL-20261008-036 EC-02：`review.read` 的来源（与 ApiDeps 同一实例）。
                     c["review_findings"],
+                    # GOAL-20261008-037 EC-03：`research_state.read` 的程序面来源。
+                    c["program_store"],
                 ),
             ),
             workflow=c["workflow"],

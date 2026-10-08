@@ -68,6 +68,9 @@ _PROVIDER = ToolProviderSpec(
         # GOAL-20261008-036 EC-02：`review.read` 的承接（读 GOAL-035 EC-01 的 canonical
         # 评审结论记录）—— 同上，夹具与出厂目录同轮同步。
         "review.read",
+        # GOAL-20261008-037 EC-03：`research_state.read` 的承接（读程序内**前序 run** 的
+        # 落库结论）—— 同上，夹具与出厂目录同轮同步。
+        "research_state.read",
     ],
     effect_class=EffectClass.READ_ONLY,
 )

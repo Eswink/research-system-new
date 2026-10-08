@@ -37,6 +37,12 @@ _TOOL_DESCRIPTIONS: dict[str, str] = {
     "run_read": "Read a canonical research run (state / protocol / manifest digests).",
     # GOAL-20261008-036 EC-02：`review.read` 的描述子（实现在 `review_read.py`）。
     "review_read": "Read recorded acceptance review findings (per-criterion verdicts) for a run.",
+    # GOAL-20261008-037 EC-03：`research_state.read` 的描述子（实现在
+    # `research_state_read.py`）——读**程序内前序 run** 的落库结论（入口是程序归属）。
+    "research_state_read": (
+        "Read the recorded state of a research program's prior runs (their terminal state"
+        " and verbatim review verdicts); the entry is the program, not this run."
+    ),
 }
 
 #: tool id → 它承载的能力名。**承接 = 声明 + 实现**：两者必须同时在，工具名与策略面同源。
@@ -52,6 +58,9 @@ _TOOL_CAPABILITIES: dict[str, str] = {
     "run_read": "run.read",
     # GOAL-20261008-036 EC-02：`review.read` 的承载（工具名与策略面同源）。
     "review_read": "review.read",
+    # GOAL-20261008-037 EC-03：`research_state.read` 的承载 —— 读**程序内前序 run**
+    # 的落库结论（入口是程序归属，不是本 run 的标识）。
+    "research_state_read": "research_state.read",
 }
 
 #: deliverable 的 canonical 落点（与 `services/api/routers/deliverable.py` 同一约定：

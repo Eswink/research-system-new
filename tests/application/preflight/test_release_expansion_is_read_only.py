@@ -75,6 +75,10 @@ _RELEASED: tuple[str, ...] = (
     # （只读后缀 `read`；承接 provider `m12_artifact` 的 `effect_class: READ_ONLY`）。
     # 登记表随本轮放行**新增一条**；谓词与其余断言一字未改。
     "review.read",
+    # GOAL-20261008-037 EC-03：第 9 条逐条放行 —— `research_state.read`
+    # （只读后缀 `read`；承接 provider `m12_artifact` 的 `effect_class: READ_ONLY`）。
+    # 登记表随本轮放行**新增一条**；谓词与其余断言一字未改。
+    "research_state.read",
 )
 
 #: 只读后缀（与差集口径同一组）。
@@ -107,7 +111,6 @@ _UNRELEASED_READS: tuple[str, ...] = (
     "dataset.read",
     "provenance.read",
     "research_map.read",
-    "research_state.read",
     "target.read",
 )
 
@@ -269,6 +272,8 @@ class TestTheExpansionIsReadOnly:
             # GOAL-20261008-036 EC-02：与同级读能力（`artifact.read` / `evidence.read` /
             # `run.read`）对齐 = `project`。
             "review.read": "project",
+            # GOAL-20261008-037 EC-03：与同级读能力对齐 = `project`。
+            "research_state.read": "project",
         }
         scopes: dict[str, set[str]] = {}
         for rule in policy_body().get("allow") or []:

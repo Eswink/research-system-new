@@ -101,21 +101,21 @@
 | `protocol.propose` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `provenance.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `research_map.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
-| `research_state.read` | 声明面独有 | roles、skills | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `review.write` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `statistics.execute` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `target.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `workspace.delete` | 策略面独有 | （无） | 否 | 否 | 该拒绝 | 策略面有规则而四个声明面无人使用；未使用的护栏/门面规则，现状即正确 |
 
-**两侧都有（交集，不在差集内，17 条）**：`artifact.read`、`artifact.write`、
+**两侧都有（交集，不在差集内，18 条）**：`artifact.read`、`artifact.write`、
 `budget.read`、`citation.validate`、`claim.read`、`code.execute`、`deliverable.read`、
 `evidence.read`、`experiment.read`、`experiment_plan.read`、`literature.read`、
-`literature.search`、`review.read`、`run.read`、`workspace.read`、`workspace.write.code`、
+`literature.search`、`research_state.read`、`review.read`、`run.read`、`workspace.read`、
+`workspace.write.code`、
 `workspace.write.notes` —— 它们已被
 `policy.yaml` 的 `allow` / `allow_with_constraints` 覆盖，属于「已经处理过」的那一类
 （`evidence.read` 是 `W-A` 被拍板放行后的结果；`citation.validate` 由 GOAL-20261006-031 EC-02（授权 2）放行并承接（provider `ncbi_citation`）；另 6 条读能力是 GOAL-20261006-031 EC-01
 逐条放行的结果；`review.read` 由 GOAL-20261008-036 EC-02（授权承继 (0)）逐条放行并承接
-（provider `m12_artifact` 的工具 `review_read`））。
+（provider `m12_artifact` 的工具 `review_read`）；`research_state.read` 由 GOAL-20261008-037 EC-03 逐条放行并承接（provider `m12_artifact` 的工具 `research_state_read`））。
 
 ## 复跑方式（零出网）
 

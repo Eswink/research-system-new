@@ -43,6 +43,12 @@ policy:
     # `allow_with_constraints` 一律未动（由新增判据逐条钉住）。
     - capability: review.read
       scope: project
+    # GOAL-20261008-037 EC-03：`research_state.read` 的放行 —— 只读（聚合读**程序内
+    # 前序 run** 的落库结论）。scope 与同级读能力（review.read / run.read / artifact.read）
+    # 对齐 = `project`。**本改动只新增这一条 allow**：`default_effect` / `deny` /
+    # `require_approval` / `allow_with_constraints` 一律未动。
+    - capability: research_state.read
+      scope: project
     - capability: artifact.write
       scope: run
     - capability: literature.search

@@ -52,6 +52,9 @@ _CAPABILITY_SCOPE: dict[str, str] = {
     # GOAL-20261008-036 EC-02（授权承继 (0)）：`review.read` 放行的镜像条目（与
     # `policy.yaml` 的同一条规则同源；并集相等同上由既有 `test_m2_audit` 判据锁死）。
     "review.read": "project",
+    # GOAL-20261008-037 EC-03：`research_state.read` 放行的镜像条目（与 policy.yaml 的
+    # allow 同源；scope 与同级读能力对齐 = project）。
+    "research_state.read": "project",
     "network.academic": "approved_domains",
 }
 

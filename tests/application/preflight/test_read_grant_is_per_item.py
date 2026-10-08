@@ -47,8 +47,10 @@ REGISTERED_STATE = "该登记"
 #: `deliverable.read` / `budget.read` / `experiment.read` / `experiment_plan.read` 六条
 #: 已逐条放行、离开差集）；EC-02 从 9 → 8（`citation.validate` 已放行并承接）；
 #: GOAL-20261008-036 EC-02 从 8 → 7（`review.read` 已逐条放行并承接）。
+#: 2026-10-08（GOAL-20261008-037 EC-03）：`research_state.read` 已逐条放行并承接
+#: ⇒ 8 → 6（该行离开差集、进交集清单）。
 #: **不成类**这一点由本文件其余三条断言（逐条命名 / 无通配 / 无段前缀）继续钉住，强度未降。
-EXPECTED_REGISTERED = 7
+EXPECTED_REGISTERED = 6
 WILDCARDS = ("*", "?")
 
 

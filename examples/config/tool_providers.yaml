@@ -42,6 +42,10 @@ tool_providers:
       # 评审结论记录（`ReviewFindingStore.for_run`，与读面 `GET /runs/{id}/reviews` 同口径）。
       # 实现在 `adapters/canonical/review_read.py`（同一条 450 行理由）。
       - review.read
+      # GOAL-20261008-037 EC-03：`research_state.read` 的承接 —— 读**程序内前序 run**
+      # 的落库结论（入口是程序归属：`RunStore.for_program` + `ReviewFindingStore.for_run`）。
+      # 实现在 `adapters/canonical/research_state_read.py`（同一条 450 行理由）。
+      - research_state.read
     effect_class: READ_ONLY
 
   ncbi_eutils:

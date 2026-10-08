@@ -61,6 +61,9 @@ _IN_SCOPE: tuple[str, ...] = (
     # task/handoff 面」—— GOAL-035 EC-01 已把验收结论落 canonical）**移入射程**。
     # 纯收紧：本清单是「已承接」的判词，只增不减。
     "review.read",
+    # GOAL-20261008-037 EC-03：`research_state.read` 的射程内登记 —— 理由（「需要研究
+    # 状态实体，今天没有」）已被 GOAL-037 EC-01/EC-02 推翻（程序实体 + 前序 run 结论可读）。
+    "research_state.read",
 )
 
 #: 射程**外**的能力 → (组别, 理由)。46 条能力里**除 _IN_SCOPE 与已承接的 12 条之外**的
@@ -75,7 +78,6 @@ _OUT_OF_SCOPE_REASONS: dict[str, str] = {
     "dataset.read": "B 组：需要数据集存储面（今天没有 canonical 数据集实体）",
     "provenance.read": "B 组：需要 provenance 投影面（今天的证据链投影走 evidence.read）",
     "research_map.read": "B 组：需要研究地图实体（今天没有）",
-    "research_state.read": "B 组：需要研究状态实体（今天没有）",
     "target.read": "B 组：需要目标实体（今天没有 canonical 目标）",
     # --- C 组：写 / 执行 / 提议类（非读）---
     "protocol.propose": "C 组：提议类（写面）⇒ 需策略面与 canonical 路径决定",

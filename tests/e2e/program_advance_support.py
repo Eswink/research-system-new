@@ -30,7 +30,12 @@ CONSUME_OUTPUT: dict[str, object] = {"meta_review": {"covers": "recorded-review-
 PROJECT = "example-project"
 
 
-def program_deps(*, output: dict[str, object] | None = None) -> Any:
+def program_deps(
+    *,
+    output: dict[str, object] | None = None,
+    consume_contract: str = CONSUME_CONTRACT,
+    consume_output: dict[str, object] | None = None,
+) -> Any:
     """run-ready 装配 + 受控执行体 + 运行链能力步（程序面实跑的全部依赖）。
 
     执行体输出的**分数**决定验收门判词 ⇒ 程序推进的结论面读到的就是它。
@@ -51,7 +56,7 @@ def program_deps(*, output: dict[str, object] | None = None) -> Any:
     runtime = StructuredOutputAgentRuntime(
         outputs_by_contract={
             PRODUCE_CONTRACT: output if output is not None else PASS_OUTPUT,
-            CONSUME_CONTRACT: CONSUME_OUTPUT,
+            consume_contract: consume_output if consume_output is not None else CONSUME_OUTPUT,
         }
     )
     context = deps.preflight_override
@@ -74,16 +79,61 @@ def program_deps(*, output: dict[str, object] | None = None) -> Any:
     return deps
 
 
+def deps_for_capabilities(
+    deps: Any, *, calls: tuple[Any, ...], provider_instance: Any | None
+) -> Any:
+    """把**任意**运行链调用集 + provider 实例接进一个新编排服务（EC-03 的跨 run 装配用）。
+
+    与 `program_deps` 的区别只有一处：能力步的声明与 provider 实例由调用方给
+    （EC-03 的技能名/工具 id 与 GOAL-036 那份不同），其余（受控执行体 / 策略面 /
+    artifacts / ledger）沿用同一批产品对象。
+    """
+    from packages.application.run_orchestration.phase_capabilities import CapabilityDeps
+    from packages.application.run_orchestration.service import RunOrchestrationService
+    from services.api.assembly import policy_bindings
+
+    inner = deps.runs._deps
+    ledger = inner.ledger
+    assert ledger is not None, "运行链要落证据 ⇒ 装配必须带 ledger"
+    context = deps.preflight_override
+    assert context is not None
+    spec = context.catalog.tool_providers["m12_artifact"]
+    policy = policy_bindings().get("policy_evaluator")
+    assert policy is not None
+    deps.runs = RunOrchestrationService(
+        replace(
+            inner,
+            capabilities=CapabilityDeps(
+                calls=calls,
+                providers={} if provider_instance is None else {str(spec.id): provider_instance},
+                provider_specs={str(spec.id): spec},
+                policy=policy,
+                artifacts=inner.artifacts,
+                ledger=ledger,
+            ),
+        )
+    )
+    return deps
+
+
 def create_program(
-    client: Any, *, max_runs: int, continue_on: list[str] | None = None
+    client: Any,
+    *,
+    max_runs: int,
+    continue_on: list[str] | None = None,
+    protocol: str | None = None,
 ) -> dict[str, Any]:
-    """建程序（经既有 HTTP 面；协议按启动 run 的同一校验解析）。"""
+    """建程序（经既有 HTTP 面；协议按启动 run 的同一校验解析）。
+
+    `protocol` 缺省 = 本文件的 `PROTOCOL`；EC-03 的跨 run 判据传它自己那份协议
+    （**同一入口、不同声明** —— 不复制第二个建程序路径）。
+    """
     import uuid
 
     response = client.post(
         f"/projects/{PROJECT}/programs",
         json={
-            "protocol_path": PROTOCOL,
+            "protocol_path": protocol if protocol is not None else PROTOCOL,
             "max_runs": max_runs,
             "continue_on_verdicts": continue_on if continue_on is not None else ["PASS"],
         },

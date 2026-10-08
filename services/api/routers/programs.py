@@ -34,6 +34,7 @@ from packages.domain.program import (
     ProgramDecision,
     ResearchProgram,
 )
+from packages.domain.run import ResearchRun
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.programs import (
@@ -97,6 +98,18 @@ def _start_run_for_program(deps: ApiDeps, program: ResearchProgram, index: int) 
         program_index=index,
     )
     inputs = execution_inputs(req)
+    # 先落 run 行（含程序归属）再执行：读链里的工具可能在**执行期**回读本 run 的行
+    # （`research_state.read` 由 run_id 反查程序归属 ⇒ 没有这一行就点不到程序）。
+    # 行先落 = 与 HTTP 面的写序同侧（那里是执行后落），此处**必须**反过来，否则
+    # 「本 run 是自己的程序成员」这件事实在执行期不可见。
+    provisional = ResearchRun(
+        id=run_id,
+        project_id=inputs.project.project_id,
+        protocol_id=inputs.protocol.id,
+        program_id=program.id,
+        program_index=index,
+    )
+    save_run(deps, provisional)
     run = run_from_execution(deps, run_id, inputs.project.project_id, inputs.protocol.id, inputs)
     save_run(deps, run)
     return run_id.value

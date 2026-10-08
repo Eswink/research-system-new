@@ -1,0 +1,45 @@
+id: cross_run_knowledge_v1_0_0
+version: 0.1.0
+
+# GOAL-20261008-037 EC-03：**跨 run 知识累积** —— 程序内**后一轮**经能力面读到**前一轮**
+# 落库的结论（逐字判词），并把读到的东西**用上**（写进自己的交付物）。
+#
+# **为什么另立一份协议**：`review_consumption_v1`（GOAL-036 EC-03）证的是**同一 run 内**
+# 后续 phase 读前序 phase 的结论；本协议证的是**跨 run**：本 run 的结论面读的是**同一程序
+# 的前一轮**（`program_id` 相同、`program_index` 更小）。
+#
+# **它证什么（三段可复核的事实）**：
+# 1. `prior` phase 由运行链执行 `research_state.read` —— 读**前序 run** 的落库判词；
+# 2. 工具结果的**内容**里出现前一轮那一条落库判词的**逐字**行（下游消费，不是"调了两遍工具"）；
+# 3. 判词来自**前一轮 run**（不同 run id）—— 按 run id 区分，不靠顺序猜。
+#
+# **本协议不声称**：读到的结论改变了后续 run 的**科学结论**（验收门只判交付物存在 ——
+# 与既有协议的诚实边界同一条）。
+
+phases:
+  - id: produce
+    name: Produce This Round's Review Decision
+    strategy: single_agent
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.write
+    task_contract: review_scored_deliverable
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 120
+
+  - id: consume
+    name: Consume Prior Runs' Recorded Findings
+    strategy: single_agent
+    depends_on: [produce]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      # GOAL-20261008-037 EC-03 承接的只读能力：读程序内**前序 run** 的落库结论。
+      - research_state.read
+    capability_execution: run_chain
+    task_contract: cross_run_consumption_deliverable
+    outputs: [meta_review]
+    gate: QUALITY_GATE
+    timeout_seconds: 120

@@ -54,6 +54,7 @@ class CanonicalReadProvider:
         experiment_store: Any | None = None,
         run_store: Any | None = None,
         review_store: Any | None = None,
+        program_store: Any | None = None,
         spill_threshold_bytes: int = 1,
     ) -> None:
         """构造读面 provider。
@@ -86,6 +87,10 @@ class CanonicalReadProvider:
         #: 评审结论存储（`review.read` 的**真实**来源；GOAL-035 EC-01 的 canonical 记录面）。
         #: 缺省 None ⇒ 该工具**点名**不可用，不返回空列表冒充「没有评审结论」。
         self._reviews = review_store
+        #: 程序存储（`research_state.read` 的**入口**来源之一；GOAL-037 EC-01 的 canonical
+        #: 记录面）。本读面用 `RunStore.for_program` 取前序 run，program_store 只作装配
+        #: 标记位（在场 = 该装配认得「程序」这个概念）。
+        self._programs = program_store
         self._spill_threshold = spill_threshold_bytes
 
     def execute(self, provider: ToolProviderSpec, call: ToolCallRecord) -> ToolResultRecord:
@@ -101,6 +106,7 @@ class CanonicalReadProvider:
             "deliverable_read": self._deliverable_read,
             "run_read": self._run_read,
             "review_read": self._review_read,
+            "research_state_read": self._research_state_read,
         }.get(call.tool_id)
         if handler is None:
             raise InvalidInputError(f"unknown tool id: {call.tool_id}")
@@ -416,6 +422,12 @@ class CanonicalReadProvider:
         from adapters.canonical.review_read import review_read
 
         return review_read(self._reviews, args)
+
+    def _research_state_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读程序内**前序** run 的落库结论（实现见 `research_state_read.py`，本行只委派）。"""
+        from adapters.canonical.research_state_read import research_state_read
+
+        return research_state_read(self._runs, self._reviews, args)
 
 
 __all__ = ["CanonicalReadProvider"]
