@@ -376,7 +376,12 @@ deduplication）。
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
 | `b8c96e3`（GOAL-038 台账尾巴，本轮首行） | 读数在本表回填（**取证中**） | GOAL-038 的最后一个提交（仅 `.cursor/**` 记录改动）—— **GOAL-038 台账的自我指涉边界由本行封闭** |
-| （本行所在提交：replan + 建档） | **自身结论尚未产生**（自我指涉边界） | replan（程序表序 7 新增）+ 本 GOAL 五 EC + 事实层读数；其结论由 **cycle 1 的台账行**取证 |
+| `2992512`（replan + 建档） | `37849388908` **M0 success**（8 job）+ `37849387584` **Push on main / CodeQL success**（3 分析） | replan（程序表序 7 新增）+ 五 EC + 事实层读数；**单独推送**（`total_count=2`，实测）⇒ 有自己的 run |
+| `fd9bbc7`（cycle 1 提交 A） | `37852014818` **M0 cancelled**（后续推送触发 `cancel-in-progress`）+ `37852014733` **Push on main / CodeQL success** | EC-02/03/04 收口；**取消原因如实登记** ⇒ 其改动由 `d4fa620` / `c8481ad` 覆盖 |
+| `d4fa620`（cycle 1 提交 B） | `37853295613` **M0 success**（8 job）+ `37853295455` **Push on main / CodeQL success** | PG 往返判据 + 规模门第四次真红并修；**单独推送**（`total_count=2`，实测）⇒ 有自己的 run |
+| `02dc278`（cycle 2 提交 A） | **无自己的 run**（同批推送） | EC-05：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮）；与 `c8481ad` 同一次 push ⇒ `covered_by c8481ad`（**实测取证**：`total_count=0`） |
+| `c8481ad`（cycle 2 · GOAL 收口 = 本批 HEAD） | `37855791111` **M0 success**（8 job 全 success）+ `37855790279` **Push on main / CodeQL success**（3 分析全 success） | **GOAL 收口提交**（EC-05 `PASS` + `status: ACHIEVED` + m0 读数 + MAINLINE 进展行）；`02dc278` 的结论由此行覆盖（**实测取证**：`total_count=0`）—— **上一行的自我指涉边界已由此行封闭** |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/plans/goals/GOAL-20261008-039-*.md`；其结论由**下一个 GOAL 的台账**取证 |
 
 ## 迭代日志
 
