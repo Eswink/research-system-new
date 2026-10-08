@@ -52,7 +52,10 @@ owners:
 
 **归档形态（次轮定格）**：两份各 **2544 B / 73 行 / `CR=0`（逐字节判）/ `FAIL` 0 条**；两份 `sha256` **相同** `df5a064e1be9cd8fa68ee5c08325b97c20967c2461b3b5a2503dd10eb743f197`。首轮形态：current 2544 B / 0 FAIL、clean 2582 B / 4 FAIL（由首轮自己写出，次轮被同字节改写）。
 
-**as-is m0（在全部记录写入之后）**：读数在收口提交回填。
+**as-is m0（在全部记录写入之后）**：**`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5462 passed, 20 skipped**；`skipped` 20 未升）。日志 `scratch/m0-goal039-cycle2.log`（gitignored）。
+
+**收口后的复跑取证（实测）**：GOAL 状态翻转与读数回填**之后**在当前树再跑一次验证器，
+判词与归档**逐字节相同**（`sha256` 同为 `df5a064e…`、73 判词 / 0 FAIL）。
 
 ### 5. 治理与宪章（AC-5）
 
