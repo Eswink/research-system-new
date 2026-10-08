@@ -25,6 +25,7 @@ from adapters.sqlite.experiment_store import SqliteExperimentStore
 from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
 from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
+from adapters.sqlite.program_store import SqliteProgramStore
 from adapters.sqlite.review_finding_store import SqliteReviewFindingStore
 from adapters.sqlite.run_store import SqliteRunStore
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
@@ -160,6 +161,8 @@ class ApiDeps:
     workspace_snapshots: WorkspaceSnapshotReader | None = field(default=None, repr=False)
     # GOAL-20261008-035 EC-01：验收门求值结论的读面（写面在编排侧，同一实例）。
     review_findings: Any | None = field(default=None, repr=False)
+    # GOAL-20261008-037 EC-01：研究程序的声明与推进决策（canonical；两组成同侧）。
+    program_store: Any | None = field(default=None, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)
@@ -244,6 +247,7 @@ class _SqliteStoreParts:
     experiment_store: Any  # GOAL-029 EC-01：experiment(.plan).read 的来源
     runs_store: Any  # GOAL-030 EC-02：run.read 的来源（与 ApiDeps.runs_store 同一实例）
     review_findings: Any  # GOAL-035 EC-01：验收门结论的写面（编排）与读面（API）同一实例
+    program_store: Any  # GOAL-037 EC-01：研究程序声明 + 推进决策（canonical，两组合根同侧）
 
 
 def _sqlite_store_parts(
@@ -279,6 +283,7 @@ def _sqlite_store_parts(
         experiment_store=SqliteExperimentStore(connection=connection),
         runs_store=SqliteRunStore(connection=connection),
         review_findings=SqliteReviewFindingStore(connection=connection),
+        program_store=SqliteProgramStore(connection=connection),
     )
 
 
@@ -373,6 +378,7 @@ def _sqlite_apideps(  # noqa: PLR0913 - composition root 装配参数
         artifacts=parts.artifacts,
         ledger=parts.ledger,
         review_findings=parts.review_findings,
+        program_store=parts.program_store,
         budget=parts.budget,
         **config_store_parts(connection),
         protocol_draft_service=build_sqlite_draft_service(connection),

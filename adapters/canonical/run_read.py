@@ -44,6 +44,8 @@ def run_read(runs: Any | None, args: dict[str, object]) -> dict[str, object]:
         "manifest_semantic_digest": (
             str(run.manifest_semantic_digest) if run.manifest_semantic_digest else None
         ),
+        "program_id": run.program_id,
+        "program_index": run.program_index,
     }
 
 

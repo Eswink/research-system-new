@@ -456,6 +456,10 @@ export interface RunDetailDto {
   rebuild: RebuildReadinessDto;
   // GOAL-007 cycle 4 = EC-04：执行体读面（仅详情路径给；列表路径为 null）。
   execution: RunExecutionDto | null;
+  // GOAL-20261008-037 EC-01：研究程序归属（程序内第几轮）。两者同生同灭；
+  // null = 该 run 不属于任何程序（独立 run）。
+  program_id: string | null;
+  program_index: number | null;
   created_at: string;
   updated_at: string;
 }

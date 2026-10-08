@@ -49,6 +49,8 @@ class PostgresAssembly:
     pricing_snapshot_store: Any = None
     worker_registry: Any = None
     review_findings_store: Any = None
+    # GOAL-20261008-037 EC-01：研究程序的声明与推进决策（canonical）。
+    program_store: Any = None
     gateway_override: Any = None
     credentials_override: Any = None
     preflight_override: Any = None
@@ -93,6 +95,7 @@ def _pg_components(
     from adapters.postgres.experiment_store import PostgresExperimentStore
     from adapters.postgres.memory_store import PostgresMemoryStore
     from adapters.postgres.pricing_snapshot_store import PostgresPricingSnapshotStore
+    from adapters.postgres.program_store import PostgresProgramStore
     from adapters.postgres.review_finding_store import PostgresReviewFindingStore
     from adapters.postgres.run_projection import PostgresRunProjection
     from adapters.postgres.run_store import PostgresRunStore
@@ -122,6 +125,8 @@ def _pg_components(
         "worker_registry": PostgresWorkerRegistry(connection=pg_conn),
         # GOAL-035 EC-01：验收门结论（写面=编排、读面=API，同一实例）
         "review_findings": PostgresReviewFindingStore(connection=pg_conn),
+        # GOAL-037 EC-01：研究程序声明 + 推进决策（canonical，两组合根同侧）
+        "program_store": PostgresProgramStore(connection=pg_conn),
     }
 
 
@@ -184,6 +189,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         pricing_snapshot_store=c["pricing_store"],
         worker_registry=c["worker_registry"],
         review_findings_store=c["review_findings"],
+        program_store=c["program_store"],
         gateway_override=getattr(config, "gateway_override", None),
         credentials_override=getattr(config, "credentials_override", None),
         preflight_override=getattr(config, "preflight_override", None),
@@ -307,6 +313,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         ledger=assembly.ledger,
         budget=assembly.budget,
         review_findings=assembly.review_findings_store,
+        program_store=assembly.program_store,
         memory=assembly.memory_store,
         preflight_override=assembly.preflight_override,
         telemetry=assembly.telemetry,

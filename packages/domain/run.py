@@ -50,6 +50,12 @@ class ResearchRun:
     # GOAL-004 cycle 1：被解析的协议正文（自足续跑的输入）。同一纪律：三个显式
     # 重建函数都必须复制它，否则迁移一次就静默退回"依赖外部文件"。
     protocol_body: ProtocolBody | None = None
+    # GOAL-20261008-037 EC-01：研究程序归属（多轮 run 的程序级编排）。
+    # 两者**同生同灭**：program_id 为 None ⇒ 独立 run（既有语义，零回归）；
+    # program_id 非空 ⇒ program_index 必须 ≥ 1（程序内第几轮，从 1 起）。
+    # 归属必须与 run 的写入**同一次**落 canonical（不设「先起 run 后绑定」的窗口）。
+    program_id: str | None = None
+    program_index: int | None = None
     created_at: Timestamp = field(default_factory=Timestamp.now)
     updated_at: Timestamp = field(default_factory=Timestamp.now)
 
@@ -58,6 +64,14 @@ class ResearchRun:
             raise ValueError("project_id must not be empty")
         if not self.protocol_id:
             raise ValueError("protocol_id must not be empty")
+        if (self.program_id is None) != (self.program_index is None):
+            raise ValueError("program_id and program_index must be set together")
+        if self.program_id is not None:
+            if not self.program_id:
+                raise ValueError("program_id must not be empty when set")
+            assert self.program_index is not None
+            if self.program_index < 1:
+                raise ValueError("program_index must be >= 1")
 
     def transition(self, event: str) -> ResearchRun:
         """应用状态机迁移，返回携带新状态的新实例。
@@ -78,6 +92,8 @@ class ResearchRun:
             pricing_digest=self.pricing_digest,
             protocol_source=self.protocol_source,
             protocol_body=self.protocol_body,
+            program_id=self.program_id,
+            program_index=self.program_index,
             created_at=self.created_at,
             updated_at=Timestamp.now(),
         )
@@ -108,6 +124,8 @@ class ResearchRun:
             pricing_digest=pricing_digest if pricing_digest is not None else self.pricing_digest,
             protocol_source=self.protocol_source,
             protocol_body=self.protocol_body,
+            program_id=self.program_id,
+            program_index=self.program_index,
             created_at=self.created_at,
             updated_at=Timestamp.now(),
         )
@@ -125,6 +143,8 @@ class ResearchRun:
             pricing_digest=self.pricing_digest,
             protocol_source=source if source is not None else self.protocol_source,
             protocol_body=self.protocol_body,
+            program_id=self.program_id,
+            program_index=self.program_index,
             created_at=self.created_at,
             updated_at=Timestamp.now(),
         )

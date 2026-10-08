@@ -70,6 +70,10 @@ class _FakeRunStore:
     def save_run(self, run: ResearchRun) -> None:
         self._runs[run.id.value] = run
 
+    def for_program(self, program_id: str) -> tuple[ResearchRun, ...]:
+        runs = [r for r in self._runs.values() if r.program_id == program_id]
+        return tuple(sorted(runs, key=lambda r: (r.program_index or 0, r.id.value)))
+
 
 def _refreeze(run: ResearchRun) -> tuple[str, str]:
     """Deterministic refreeze: digests derived from run/protocol (test seam)."""

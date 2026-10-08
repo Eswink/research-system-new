@@ -40,6 +40,10 @@ class _RunStore:
     def save_run(self, run: ResearchRun) -> None:
         self.runs[run.id.value] = run
 
+    def for_program(self, program_id: str) -> tuple[ResearchRun, ...]:
+        runs = [r for r in self.runs.values() if r.program_id == program_id]
+        return tuple(sorted(runs, key=lambda r: (r.program_index or 0, r.id.value)))
+
 
 @dataclass(frozen=True, slots=True)
 class _Persistence:

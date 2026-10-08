@@ -197,9 +197,11 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
   - 编排需要动写面 / 执行面 / 审批面的放行（本轮范围外）
   - 程序 ↔ run 关联被要求落在 canonical 之外（触犯即 BLOCKED）
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261008-337-goal-037-ec01-canonical-program-skeleton.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-338-goal-037-ec01-canonical-program-skeleton.md
+memory_entries:
+  - jsonb-decodes-must-accept-parsed-objects
 ---
 
 # GOAL-20261008-037 — 研究程序级编排（多轮 run + 跨 run 知识累积）
@@ -397,16 +399,19 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
 | `ae1a52c`（GOAL-036 台账尾巴，本轮首行） | `37771735734` **M0 success**（8 job 全 success）+ `37771735588` **Push on main / CodeQL success**（3 分析全 success） | GOAL-036 的最后一个提交（仅 `.cursor/**` 记录改动；本地 `--profile framework` **8/8**）—— **实测取证**；**GOAL-036 台账的自我指涉边界由本行封闭** |
-| `（本行所在提交：建档）` | **自身结论尚未产生**（自我指涉边界） | cycle 0 建档：程序表序 5 定稿 + 本轮五 EC + 事实层读数 + 首行台账；其结论由 **cycle 1 的台账行**取证，**不得循环引用** |
+| `b30ffda`（cycle 0 建档） | `37773456975` **M0 success**（8 job）+ `37773457341` **Push on main / CodeQL success**（3 分析） | 建档提交（仅 `.cursor/**`）：程序表序 5 replan + 五 EC + 事实层读数；本地治理 + 宪章判据绿（**实测取证**） |
+| `（cycle 1 提交）` | **自身结论尚未产生**（自我指涉边界） | cycle 1：程序骨架（域 / 存储 / 迁移 017 / 接线 / 同轮同步 / 判据）；其结论由**收口或下一 cycle 的台账行**取证，**不得循环引用** |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | （见 CI 台账） | 只读勘察（0 改动）；五条 EC 全 PENDING；MAINLINE 序 5 replan（`replan_every_goals: 3` 到期） | （见 CI 台账） | — | 五条 EC 全 PENDING；程序 ↔ run 的关联形态（①）与编排落点（②）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 程序编排落地） |
+| 1 | `PLAN-20261008-337` | （见 CI 台账） | EC-01 决策定稿 + **canonical 骨架**：`ResearchRun` 增两字段（同生同灭 + 三个重建函数逐字段复制）、`RunStore.for_program`（SQLite `json_extract` / PG `->>`）、程序域类型 + 端口 + 两个适配器 + **迁移 017**（live PG 实测 `migration_version`=17）+ 两组合根接线；同轮同步（读面 / DTO / OpenAPI 重生成 +22 行 / `types.ts`）；新判据 **15 例全绿**（domain 9 / sqlite 4 / pg 2）；广面 `1590 passed, 5 skipped`（domain+adapters+contracts）/ `1063 passed, 1 skipped`（application+architecture）/ `2516 passed, 76 skipped`（contracts+api+tooling）；四道门绿（mypy 1151 files）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5389 passed, 20 skipped**；首跑真红于前端型检查 ⇒ 同轮同步 e2e 夹具后重跑取值） | `37773456975` M0 success + `37773457341` Push on main success（cycle 0 建档批，实测） | **门链抓到一次真红并修**（e2e TS 夹具缺两个新字段 ⇒ 同轮同步）；PG JSONB 解码（`str(dict)` 伪 JSON ⇒ 两形态都接住，`MEM-20261008-207`）；**mypy `arg-type` 点名 3 个测试假 RunStore** 缺 `for_program` ⇒ 补假实现（不给 Port 加默认实现、不加 `type: ignore`）；**落地形态修订**：关联查询走 JSON 抽取、不动 `runs` DDL（决策 ① 修订，爆炸半径压到零） | 骨架收口；**下一轮 EC-02**（驱动 + advance 入口 + 双 run 实跑） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 1（EC-01 决策定稿 + canonical 骨架）落地**：程序 ↔ run 的关联落 canonical（run 载荷内的 `program_id` / `program_index` + `RunStore.for_program`）、程序域类型与存储（SQLite + PG + 迁移 017）、两组合根接线、同轮同步（读面 / DTO / OpenAPI / 前端类型）；新判据 15 例全绿；四道门绿。**一次真红并修**（PG JSONB 解码 ⇒ 两形态都接住，`MEM-20261008-207`）+ **mypy 点名三处假 RunStore** ⇒ 补假实现。**落地形态修订**：按 JSON 抽取查程序内 run、不动 `runs` DDL。EC-01 收口；EC-02…05 仍待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 程序表序 5 + GOAL-036 收口面；只读勘察把「研究程序级编排：多轮 run + 跨 run 知识累积」落成**两条实测缺口** —— ① run 之间零关联（`ResearchRun` 零关联字段 / 单发启动 / `RUN_FORKED` 死名字 / 多轮止于 run 边界）；② 跨 run 知识**有写入、无读取**（memory 无项目维度 + run 路径零 memory 读取；结论本来就在 canonical）。五条 EC 全 `PENDING`；**程序表序 5 按实测 sharpen 并替换**（原文移入 MAINLINE 修订记录）。**不做数量目标**；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

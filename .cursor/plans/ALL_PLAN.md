@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261008-337](tasks/PLAN-20261008-337-goal-037-ec01-canonical-program-skeleton.md) | DONE |
 | [x] | [PLAN-20261008-335](tasks/PLAN-20261008-335-goal-036-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-333](tasks/PLAN-20261008-333-goal-036-ec03-04-consumption-and-registry.md) | DONE |
 | [x] | [PLAN-20261008-331](tasks/PLAN-20261008-331-goal-036-ec01-02-review-read-onboarding.md) | DONE |

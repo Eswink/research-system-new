@@ -187,6 +187,10 @@ class RunDetailDto(BaseModel):
     # GOAL-007 cycle 4 = EC-04：执行体读面（**仅详情路径**给）。列表路径不带它：那是批量
     # 读面，逐 run 回读冻结事件会变成 N+1；列表要披露时另开批量读面，不在这里静默省略。
     execution: RunExecutionDto | None = None
+    # GOAL-20261008-037 EC-01：研究程序归属（程序内第几轮）。两者同生同灭；
+    # None = 该 run 不属于任何程序（独立 run，既有语义）。
+    program_id: str | None = None
+    program_index: int | None = None
     created_at: str
     updated_at: str
 

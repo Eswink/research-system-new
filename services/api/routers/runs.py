@@ -78,6 +78,8 @@ def _detail_dto(
         dispatch=dispatch,
         rebuild=rebuild_readiness_dto(run),
         execution=execution,
+        program_id=run.program_id,
+        program_index=run.program_index,
         created_at=run.created_at.value.isoformat(),
         updated_at=run.updated_at.value.isoformat(),
     )

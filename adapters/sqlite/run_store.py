@@ -83,6 +83,24 @@ class SqliteRunStore(SqliteAdapterBase):
             )
         self._record("save_run", run.id.value)
 
+    def for_program(self, program_id: str) -> tuple[ResearchRun, ...]:
+        """某程序的全部 run，按 program_index 升序（GOAL-20261008-037 EC-01）。
+
+        关联就在 run 载荷的 `program_id` / `program_index` 上（与 run 同一次落库），
+        查询走 JSON 抽取 —— 不另设「程序 → run」侧表（避免第二套真相）。
+        """
+        self._ensure_open()
+        rows = self._conn.execute(
+            "SELECT run_json FROM runs"
+            " WHERE json_extract(run_json, '$.program_id') = ?"
+            " ORDER BY json_extract(run_json, '$.program_index'), run_id",
+            (program_id,),
+        ).fetchall()
+        # 行按整数下标读：`sqlite3.Row` 与 tuple 两种形态都成立（不赌 row_factory）。
+        runs = [_decode(json.loads(row[0])) for row in rows]
+        self._record("for_program", program_id, result=str(len(runs)))
+        return tuple(runs)
+
 
 def _encode(run: ResearchRun) -> dict[str, Any]:
     return {
@@ -98,6 +116,8 @@ def _encode(run: ResearchRun) -> dict[str, Any]:
         "pricing_digest": run.pricing_digest,
         "protocol_source": _encode_source(run.protocol_source),
         "protocol_body": _encode_body(run.protocol_body),
+        "program_id": run.program_id,
+        "program_index": run.program_index,
         "created_at": run.created_at.value.isoformat(),
         "updated_at": run.updated_at.value.isoformat(),
     }
@@ -158,6 +178,8 @@ def _decode(record: dict[str, Any]) -> ResearchRun:
         pricing_digest=record.get("pricing_digest"),
         protocol_source=_decode_source(record.get("protocol_source")),
         protocol_body=_decode_body(record.get("protocol_body")),
+        program_id=record.get("program_id"),
+        program_index=record.get("program_index"),
         created_at=Timestamp(datetime.fromisoformat(record["created_at"])),
         updated_at=Timestamp(datetime.fromisoformat(record["updated_at"])),
     )

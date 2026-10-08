@@ -23,3 +23,11 @@ class RunStore(Protocol):
     def get_run(self, run_id: str) -> ResearchRun: ...
 
     def save_run(self, run: ResearchRun) -> None: ...
+
+    def for_program(self, program_id: str) -> tuple[ResearchRun, ...]: ...
+
+    """某研究程序的全部 run，按 `program_index` **升序**（GOAL-20261008-037 EC-01）。
+
+    它是「程序推进到第几轮」的唯一 canonical 查询面：驱动据此判序号与去重，
+    不依赖任何侧表（关联就在 run 自身的 `program_id` / `program_index` 上）。
+    """
