@@ -60,7 +60,9 @@ owners:
 
 ### 5. as-is m0（AC-5）
 
-在**全部记录写入之后**独占跑：终局行与 `passed/skipped` 读数在收口提交回填。
+在**全部记录写入之后**独占跑（`--profile m0 --keep-going`、仓库 `.venv`、不接管道）：
+终局行 **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** /
+**5443 passed, 20 skipped**；日志 `scratch/m0-goal038-cycle3.log`）。
 
 ### 6. 治理与宪章（AC-6）
 

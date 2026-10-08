@@ -45,6 +45,7 @@
 
 | 日期 | GOAL | 一句话结论 | RECHECK |
 | --- | --- | --- | --- |
+| 2026-10-08 | GOAL-20261008-038 | 质量轴续推：**跨轮消费成为可判定** —— `CUSTOM_EVALUATOR` 从「恒判负、由编排层执行」到**真被求值**（合约用既有 `metric` 声明消费路径；编排层按**结构化比对**判定：取值与前序 run 落库结论**逐字**比）；两轮实跑（第 1 轮判据**不适用**并点名 / 第 2 轮**消费成立**且点名来源 run id）；两向反证（另一值 ⇒ 判负并点名两侧；路径缺失 ⇒ 点名配置错误）；域层与 schema 零改动 | [RECHECK-20261008-350](../rechecks/RECHECK-20261008-350-goal-038-ec05-self-bootstrap-closeout.md) |
 | 2026-10-08 | GOAL-20261008-037 | 深度+质量轴落地：**研究程序级编排** —— 程序 ↔ run 的关联落 canonical（run 载荷内字段 + `for_program`）、推进**由上一轮落库结论驱动**（六判定可区分：START/CONTINUE/STOP_RULE/STOP_GUARDRAIL/WAIT/DEDUP；先结论后护栏）、**跨 run 知识累积**（`research_state.read` 承接：后一轮读到前一轮的判决值逐字，按 run id 归属）、编排步 **at-least-once + 幂等**（同键重放逐字节相同 / 崩溃窗口不产生第二个 run / 重启从 canonical 重建）；每轴两向反证；收口用本 GOAL 的验证器自举跑两树 | [RECHECK-20261008-346](../rechecks/RECHECK-20261008-346-goal-037-ec05-self-bootstrap-closeout.md) |
 | 2026-10-08 | GOAL-20261008-036 | 广度轴落地：按研究循环**实际需要**承接**一条**能力（`review.read`）并**端到端真跑** —— 声明 + 实现 + 绑定 + 两组合根接线 + **一条只读放行**五件事齐；一次实跑里后续 phase 经运行链**读到前序 phase 落库的逐字判词**（下游消费证据），两向反证（缺实现 / 未放行）点名；登记面清单纯收紧、覆盖读数 19/46 → 20/46 逐条；收口用本 GOAL 的验证器自举跑两树 | [RECHECK-20261008-336](../rechecks/RECHECK-20261008-336-goal-036-ec05-self-bootstrap-closeout.md) |
 | 2026-10-08 | GOAL-20261008-034 | 深度轴落地：多轮研究循环（三轮实跑，每轮不同的声明面）+ 结论驱动的停止（与上界护栏**可区分**、顺序固定为先结论后护栏）+ 停止/跳过落既有读面；三处真机制缺口先量后改（轮次不得改 phase id / 必须换任务 id / 三轮起制品选择收窄到上一轮） | [RECHECK-20261008-322](../rechecks/RECHECK-20261008-322-goal-034-ec04-self-bootstrap-closeout.md) |

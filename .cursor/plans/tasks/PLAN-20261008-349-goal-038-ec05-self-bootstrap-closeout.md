@@ -114,11 +114,11 @@ exit_criteria:
 | --- | --- |
 | `ruff check` / `format --check` | 绿 |
 | `mypy`（strict） | 绿（1164 files） |
-| 规模（450 行 / 函数 50 行） | `tools/goal038_closeout_assertions.py` **228** 行 / `tools/verify_goal038_closeout.py` **~205** 行（函数均 ≤ 50） |
+| 规模（450 行 / 函数 50 行） | `tools/goal038_closeout_assertions.py` **228** 行 / `tools/verify_goal038_closeout.py` **205** 行（函数均 ≤ 50） |
 | `tests/tooling/test_tooling_scripts_meet_product_gates.py` | **8 passed** |
 | `tools/verify_goal038_closeout.py --root . --verdict-only` | 起草中间态 **71 PASS / 2 FAIL**（逐条：本轮两份记录未写）⇒ 记录落地后收口态 **73 判词 / 0 FAIL** |
-| 两树复检 | 首轮 bootstrap 红（读数见 `RECHECK-20261008-350`）；次轮 **`TWO-TREE PASS`** |
-| as-is m0 | 读数见 GOAL 迭代日志 cycle 3 行 |
+| 两树复检 | 首轮 bootstrap 红（实测：current 73 判词 / 0 FAIL、clean 73 判词 / 3 FAIL（缺本轮记录与残余标记））；次轮 `--base-ref a0f3a9e` ⇒ **`TWO-TREE PASS`**（两路 73 判词、`sha256` 相同 `d6c0e160…`） |
+| as-is m0 | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5443 passed, 20 skipped**；`skipped` 20 未升）。日志 `scratch/m0-goal038-cycle3.log`（gitignored） |
 
 ## 影响报告
 

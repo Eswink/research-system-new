@@ -2,7 +2,7 @@
 id: GOAL-20261008-038
 slug: cross-run-consumption-becomes-decidable
 title: 跨轮消费**成为可判定** —— 把「读到前一轮结论」推进到「读到的结论**真的影响**本轮产出」（交付物声明 + 编排层求值）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-08
 updated_at: 2026-10-08
 owners:
@@ -134,7 +134,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest
       tests/tooling/test_mainline_program_is_intact.py -q` ⇒ 全绿；配套留档：
       两路判词 sha256 相同的归档、m0 日志、CI 台账逐提交行。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -197,7 +197,7 @@ memory_entries: []
 | EC-02 | 交付物声明消费 | 合约用既有 `metric` 声明「哪条路径承载前序结论」；解析器 fail-closed 三态 | PASS |
 | EC-03 | 编排层求值 | 结构化比对（声明路径取值 vs 前序落库结论）；相等判过留痕 / 不等点名 / 缺席点名 | PASS |
 | EC-04 | 真的被用上（跨轮） | 两轮实跑判词可复核 + 两向反证（不带 ⇒ 判负点名；路径不存在 ⇒ 点名配置错） | PASS |
-| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**把「影响」判成文本子串
 巧合**（必须结构化比对）；不得**把「没有前序」当成「判过」**；不得**宣称项目安全**（`R-M1`）；
@@ -370,7 +370,7 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 3 | `PLAN-20261008-349` | （见 CI 台账） | EC-05 七条 AC：验证器进树（复用标准断言集**一行未重写**；起草中间态 **71 PASS / 2 FAIL** 逐条为本轮记录未写 ⇒ 收口态 **73 判词 / 0 FAIL**）+ `IN_SCOPE` 纯收紧（+2 行；判据 8 passed）+ 治理 + 宪章判据 + 承继残余与本轮 `P-1`…`P-3` 逐条定格；**两树与 m0 读数在 `RECHECK-20261008-350` 回填** | （见 CI 台账） | — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-350`） |
+| 3 | `PLAN-20261008-349` | （见 CI 台账） | EC-05 七条 AC | EC-05 七条 AC：验证器进树（复用标准断言集**一行未重写**；起草中间态 **71 PASS / 2 FAIL** 逐条为本轮记录未写 ⇒ 收口态 **73 判词 / 0 FAIL**）+ `IN_SCOPE` 纯收紧（+2 行；判据 8 passed）+ 治理 + 宪章判据 + 承继残余与本轮 `P-1`…`P-3` 逐条定格；**AC-3** 次轮 `--base-ref a0f3a9e` **`TWO-TREE PASS`**（两路 73 判词 / `sha256` 相同 `d6c0e160…`；首轮 bootstrap 红如实登记）+ 归档定格 **2554 B / 73 行 / CR=0 / 0 FAIL** + **AC-4** as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5443 passed, 20 skipped**） | （见 CI 台账） | — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-350`） |
 | 2 | `PLAN-20261008-347`（续） | （见 CI 台账） | EC-04 全 PASS：**合约声明消费路径**（`metric: meta_review.prior_verdict`）+ **编排层求值**在运行路径上真的执行 —— 两轮实跑：第 1 轮判据**不适用**（结构上无前序，判过+点名）、第 2 轮**消费成立**（判词点名来源 run id 与逐字值）；**两向反证**（带另一个值 ⇒ 判负且**两侧值点名**；声明路径缺失 ⇒ **点名配置错误**）；**接线**：`OrchestrationDependencies.prior_conclusion` → `fact_stores()` → `PhaseRunnerDeps`（同一桥，组合根与 run-ready 夹具同侧）；判据 4 例全绿；受影响套件 **5054 passed, 95 skipped** | （见 CI 台账） | **两次真红并修**：① 规模门（`resolve_consumption` 53 行 / `task_phase_helpers.py` 463 行）⇒ 拆函数 + 移函数；② **首版语义把「无前序」一律判负 ⇒ 每个程序第一轮必然失败**（判据不可用）⇒ 改为**两形态区分**（结构上无前序 = 不适用；有前序但读不到 = 判负）| EC-04 收口；**下一轮 EC-05**（自举收口） |
 | 1 | `PLAN-20261008-347` | （见 CI 台账） | EC-01/02/03 全 PASS：**声明式消费**（合约 `metric` 路径 + fail-closed 三态 + 未知求值器点名）+ **编排层求值**（结构化比对；相等判过含来源 run id / 不等两侧点名 / 前序缺席点名；**整段文本含来源串不算**）+ **门接线**（`EvaluationInputs.consumption` 贴回判据下标；未注入 ⇒ 域层判词逐字保留）；判据 **12 例全绿**；受影响套件 **2412 passed, 1 skipped**；四道门绿（mypy 1163 files） | （见 CI 台账） | 两处构造面按实际字段名修正（`TaskContract` 无 `trust_level`、`ResearchTask` 无 `title`）—— 属测试夹具写法，非产品缺陷 | EC-01/02/03 收口；**下一轮 EC-04**（两轮实跑 + 两向反证） |
 | 0 | —（建档） | （见 CI 台账） | 只读勘察（0 改动）；五条 EC 全 PENDING；MAINLINE 序 6 保留槽换成真实 id | （见 CI 台账） | — | 五条 EC 全 PENDING；求值器落点（②）与声明载体（③）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 声明面） |
@@ -379,6 +379,7 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACHIEVED | **GOAL 收口（cycle 3 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、`IN_SCOPE` **纯收紧**、两树 **`TWO-TREE PASS`**（73 判词 / 两路 `sha256` 相同 `d6c0e160…`）、判词归档进树（两份各 2554 B / 73 行 / `CR=0` / 0 FAIL）、as-is m0 **23/23**（记录写完之后：`PASS [` 24 / `FAILED [` 0 / **5443 passed, 20 skipped**）、治理 + 宪章判据绿、CI 台账逐提交。**一处时序如实登记**：两树首轮 bootstrap 红（固有时序）。**收口后不再推进本 GOAL**；残余 `P-1`…`P-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。独立复检：`RECHECK-20261008-350`（PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 2（EC-04）收口**：跨轮消费在**运行路径上**被判定 —— 合约声明路径 + 编排层求值；两轮实跑（第 1 轮不适用 / 第 2 轮消费成立且点名来源）、两向反证（另一值 ⇒ 两侧点名；路径缺失 ⇒ 点名配置错）；接线经 `fact_stores()` 同一桥到两个组合根与 run-ready 夹具。**两次真红并修**（规模门拆/移函数；首版「无前序一律判负」会让第一轮必然失败 ⇒ 改为两形态区分）。EC-04 `PASS`；EC-05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 1（EC-01/02/03）收口**：`CUSTOM_EVALUATOR` 从「恒判负、由编排层执行」推进到**真的被求值** —— 合约用既有 `metric` 声明消费路径（fail-closed 三态）、编排层按**结构化比对**（声明路径取值 vs 前序落库结论逐字）判定并留痕、结论经注入位贴回**判据下标**且**未注入时域层判词逐字保留**（域层与 schema **零改动**）；判据 12 例全绿。EC-01/02/03 `PASS`；EC-04/05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 程序表序 6（保留槽）+ GOAL-037 收口面；只读勘察把「跨轮消费成为可判定」落成**一条已实测的缺口** —— `AcceptanceCriterionType.CUSTOM_EVALUATOR` 与 `AcceptanceCriterion.evaluator` **已声明**（域类型 + 合约字段），但 `_evaluate_custom_evaluator` **恒判负**且明说「must be executed by the orchestration layer」，而**全仓零命中**任何编排层求值器 ⇒ 本轮补这一环（立题依据 = GOAL-037 残余 `O-4`「读到 ≠ 影响科学结论」）。五条 EC 全 `PENDING`；**程序表序 6 保留槽换成真实 id**。**不做数量目标**；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
