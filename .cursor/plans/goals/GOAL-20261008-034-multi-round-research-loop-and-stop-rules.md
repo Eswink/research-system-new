@@ -518,7 +518,8 @@ GOAL-019…033 的未覆盖范围原样保留。
 | `b136cc8`（cycle 3 开工：收口验证器 + 残余字面化） | **该 SHA 下 `total_count=0`（无自己的 run）** | **原因如实登记**：它与 `280bdf7`、`5de20ce`、`170d8c1` 等同一批推送 ⇒ 只有 HEAD 产生 run。`covered_by: 170d8c1` |
 | `280bdf7`（两树判词归档进树） | **无自己的 run**（同批） | 同上；`covered_by: 170d8c1` |
 | `5de20ce` / `8c1c7aa` 之后的记录提交 | **无自己的 run**（同批） | 同上；`covered_by: 170d8c1` |
-| `170d8c1`（**GOAL 收口**：status ACHIEVED + m0 读数） | M0 + Push on main | 该批 HEAD；其结论在**写入本行时**尚未产生 ⇒ 见「自我指涉边界」 |
+| `170d8c1`（**GOAL 收口**：status ACHIEVED + m0 读数） | M0 **`cancelled`** + Push on main **success** | **原因如实登记**：该 M0 尚在飞行时我推送了 `a6a6f6c`（台账回填）⇒ `cancel-in-progress` 取消。`covered_by: a6a6f6c` |
+| `a6a6f6c`（台账回填收口批次） | M0 + Push on main | 该批 HEAD；见「自我指涉边界」 |
 | `643889e`（MAINLINE 进展记录行） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
 
 **自我指涉边界（明写并封闭）**：本节的「回顾性台账」提交自身**不产生**可引用的 CI 结论
