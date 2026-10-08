@@ -198,7 +198,21 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest
       tests/tooling/test_mainline_program_is_intact.py -q` ⇒ 全绿；配套留档：
       两路判词 sha256 相同的归档、m0 日志、CI 台账逐提交行。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      cycle 3（PLAN-20261008-321 / `RECHECK-20261008-322` = PASS_WITH_WARNINGS）。
+      **验证器进树**：`tools/verify_goal034_closeout.py` + `tools/goal034_closeout_assertions.py`；
+      复用 `standard_verdicts`（**一行未重写**）；`IN_SCOPE` **纯收紧**（`+2`）。
+      本树 `--verdict-only` = **59 判词 / 0 FAIL**；纯度与路径无关成立。
+      **两树**：`TWO-TREE PASS`（两路 59 判词、`sha256` 相同 `9b05e6d5…`）；
+      **bootstrap 时序如实登记**：首轮（base-ref `b136cc8`）两路判词逐字节相同、
+      红项仅归档缺失（归档由入口写出）⇒ 次轮全绿；**未**为让首轮变绿而删断言。
+      **归档进树**：两份 / 2039 B / 59 行 / **CR=0** / 逐字节相同。
+      **as-is m0** 23/23（全部记录写入之后）；**治理绿**；宪章判据 8 passed。
+      **门抓到我自己的缺陷**：`assertion_verdicts` 77 行 > 50 行上限 ⇒ 拆 4 区（纯搬迁）。
+      **CI 台账逐提交**（见下节；含真红与取消的如实登记）。
+      残余：`W-1`…`W-4`（`RECHECK-20261008-322`）。
+
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -237,7 +251,8 @@ escalation_triggers:
   - 多轮循环需要改动 `PhaseStrategy` 的语义（枚举值含义变更）而无法只靠新增类型承载
 child_plans:
   - .cursor/plans/tasks/PLAN-20261008-319-goal-034-ec01-multi-round-loop-declaration.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20261008-321-goal-034-ec04-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-322-goal-034-ec04-self-bootstrap-closeout.md
 memory_entries:
   - a-round-changes-identity-not-the-phase-id
 ---

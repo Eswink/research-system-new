@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261008-321](tasks/PLAN-20261008-321-goal-034-ec04-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-319](tasks/PLAN-20261008-319-goal-034-ec01-multi-round-loop-declaration.md) | DONE |
 | [x] | [PLAN-20261008-317](tasks/PLAN-20261008-317-goal-033-ec04-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-315](tasks/PLAN-20261008-315-goal-033-ec03-resume-coverage-declaration.md) | DONE |
