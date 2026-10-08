@@ -88,7 +88,7 @@ exit_criteria:
       `rg -n "RUN_FORKED" .` ⇒ 仅枚举声明；`rg -n "project_id" services/api/routers/memory.py`
       ⇒ 显式 `del`；`rg -n "memory" packages/application/run_orchestration/{task_executor,
       phase_call_arguments,handoff_builder}.py` ⇒ 零命中；`ResearchRun` 字段表逐条读数。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **程序编排（深度轴）**。(a) 程序 ↔ run 的关联**落 canonical**（域事实，可读面复核；
@@ -202,7 +202,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261008-339-goal-037-ec02-program-advance-entry.md
   - .cursor/plans/tasks/PLAN-20261008-341-goal-037-ec03-cross-run-knowledge-read-in.md
   - .cursor/plans/tasks/PLAN-20261008-343-goal-037-ec04-idempotent-advance-and-restart.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-344-goal-037-ec04-idempotent-advance-and-restart.md
+  - .cursor/plans/tasks/PLAN-20261008-345-goal-037-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-346-goal-037-ec05-self-bootstrap-closeout.md
 memory_entries:
   - jsonb-decodes-must-accept-parsed-objects
   - a-new-write-route-updates-the-measured-warning-lines
@@ -353,7 +354,9 @@ memory_entries:
 
 ### 承继残余（原样保留，不重开）
 
-`R-M1`（未宣称项目安全）；`G24-5`；GOAL-036 的 `M-1`…`M-5`；GOAL-035 的 `N-1`…`N-6`；
+`R-M1`（未宣称项目安全）；`G24-5`；GOAL-036 的 `M-1`（登记表余量）/ `M-2`（多评审者
+聚合）/ `M-3`（读面未认证）/ `M-4`（跨 run 读取未实跑 —— **本轮已由 EC-03 收口**，
+标记保留以见来源）/ `M-5`（结论影响科学决策）；GOAL-035 的 `N-1`…`N-6`；
 GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`W-8`；历史 `tools/`
 目录仍有旧 lint 与无机器门的旧脚本；GOAL-019…036 的未覆盖范围原样保留。
 
@@ -366,14 +369,21 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | `R26-2` / `R26-3` / `R26-4` / `R26-6` | **保持** | 条件不满足 |
 | `R26-7` / `R26-8` | **保持** | 树外证据 / GOAL 正文投影 —— 属记录面结构 |
 
-### 本轮新增残余（随 cycle 增补）
+### 本轮新增残余（收口时逐条定格；`O-1`…`O-5`）
 
-- （建档时登记）**memory 的项目维度仍缺**（决策 ④）：跨 run 知识本轮走「程序内前序 run 的
+- `O-1`（**memory 的项目维度仍缺**，未覆盖；决策 ④）：跨 run 知识走「程序内前序 run 的
   canonical 结论」；`MemoryRecord` / `m12_memory` / `GET /projects/{id}/memory` 的
   项目语义**不动**（那是另一条线）。
-- （建档时登记）**程序级人工闸门未接线**：编排的暂停/人工介入（D 组审批通道）仍不触动。
-- （建档时登记）**跨项目 / 跨程序的知识共享不在本轮**：知识面按**程序**（= 项目内的一条
-  研究程序）划界。
+- `O-2`（**程序级人工闸门未接线**，未覆盖）：编排的暂停/人工介入（D 组审批通道）不触动；
+  程序推进是**全自动**的（`advance` 无人工确认面）。
+- `O-3`（**跨项目 / 跨程序的知识共享不在本轮**，未覆盖）：知识面按**程序**划界 ——
+  `research_state.read` 的入口是本 run 的程序归属，读不到别的程序。
+- `O-4`（**读到 ≠ 影响科学结论**，未覆盖）：本轮证的是「后一轮**读到**前一轮的结论」
+  （下游消费 = 判决值逐字 + 按 run id 归属）；「读到的结论**改变**了后续轮的产出」不在范围
+  （那是协议与合约作者的责任）。
+- `O-5`（**编排的 crash-safe 只到「不重复副作用」**，未覆盖）：同键重放 / 崩溃窗口 `DEDUP` /
+  重启重入三项已证；**进程在「决策未落」的中间态被杀**（决策缺失而副作用已发生）不在本轮
+  判据面（at-least-once 的语义边界 —— 由既有幂等键与人工重试承接）。
 
 ### 未覆盖范围（逐条明写，不得据此宣称安全）
 
@@ -418,7 +428,7 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | （见 CI 台账） | 只读勘察（0 改动）；五条 EC 全 PENDING；MAINLINE 序 5 replan（`replan_every_goals: 3` 到期） | （见 CI 台账） | — | 五条 EC 全 PENDING；程序 ↔ run 的关联形态（①）与编排落点（②）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 程序编排落地） |
-| 4 | `PLAN-20261008-343` | （见 CI 台账） | EC-04 全 PASS：**编排步的 at-least-once + 幂等**落成可复核事实 —— 同键重放**逐字节相同**且 run 数 / 决策数不变；不同键按**新事实**再判一次（`CONTINUE`）；**崩溃窗口**（决策已落、run 未落库）⇒ `DEDUP` 且不产生第二个 run；**重启重入**（新应用实例）从 canonical 重建；口径守卫绿（**明确否认**「恰好一次」）。**本 cycle 零产品改动**（机制已在，判据把它变成事实）；判据 5 例全绿；四道门绿（mypy 1161 files）| （见 CI 台账） | — | EC-04 收口；**下一轮 EC-05**（自举收口 + GOAL 收口）| EC-03 全落地：**承接链五件事齐** —— `research_state.read`（读本 run 所属程序内**前序 run** 的落库结论）+ 新协议 `cross_run_knowledge_v1.yaml` + 合约 `cross_run_consumption_deliverable`；**两轮实跑 6 例全绿**（第 2 轮读到第 1 轮的判决值逐字 + 按 run id 归属 + 第 1 轮构造性空集 + 两组结果不同制品 + 两向反证）；同步面（覆盖判据搬迁 / 夹具 +1 / 差集文档 7→6 与 17→18 / 两处登记计数）；四道门绿（mypy 1160 files）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5417 passed, 20 skipped**；首跑真红于 format-check ⇒ 格式化后重跑） | （见 CI 台账） | **实现期一次真红并修**：起 run 需**先落行**（读链工具执行期靠它反查程序归属；实测不先落行 ⇒ `KeyError: run not found`）；`cross_run_support.py` 函数 54 行超限 ⇒ 拆 `_trim_the_grant` | EC-03 收口；**下一轮 EC-04**（幂等与中断）| **EC-02 全落地**：程序推进驱动 `advance_program`（六条判定：`START` / `CONTINUE` / `STOP_RULE` / `STOP_GUARDRAIL` / `WAIT` / `DEDUP`；启动面**注入**、缺省点名；`cited_facts` 是判词/状态**原文**；护栏停与结论停**种类可区分**；崩溃窗口 ⇒ `DEDUP` 不产生第二个 run）+ **7 例判据全绿**；四道门绿（mypy 1153 files） | 见 CI 台账（本 cycle 的提交批次） | **规模门真红并修**（`advance_program` 108 行 ⇒ 拆 `_evaluate`/`_after_hit`/调度三件）；**四条登记面同轮同步**（写面告警线 61→63 / 读面登记 +2 / 出口普查 +2 / `create_app` 51 行 ⇒ 拆 `_register_routers`）；**已知类 flake** 一次（OTLP teardown race，单跑两次通过，如实登记） | 三路由 + DTO + 启动面接线（程序归属与 run **同一次**落库）+ 同轮同步 + 双 run 实跑 6 例 + 驱动 7 例全绿；广面 **3209 passed, 91 skipped**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5408 passed, 20 skipped**，收集数 +19 逐文件分解） | EC-02 收口；**下一轮 EC-03**（跨 run 知识的**读入**：承接 `research_state.read` + 下游消费 + 两向反证） |
+| 5 | `PLAN-20261008-345` | （见 CI 台账） | EC-05 七条 AC：**AC-1** 验证器进树（复用标准断言集**一行未重写**；起草中间态 **75 PASS / 4 FAIL** 且逐条为记录未写 + 归档未生成 ⇒ 收口态 **79 判词 / 0 FAIL**）+ **AC-2** `IN_SCOPE` 纯收紧（+2 行；判据 8 passed；四道门绿：规模 278·202 行）+ **AC-5** 治理 `validate.py` 绿 + 宪章判据绿 + **AC-6** 承继残余 `M-1`…`M-5` 与本轮 `O-1`…`O-5` 逐条定格 + **AC-7** CI 台账逐提交；**AC-3（两树 + 归档形态）与 AC-4（as-is m0 终局行）读数在 `RECHECK-20261008-346` 逐条回填** | （见 CI 台账） | — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-346`） | EC-04 全 PASS：**编排步的 at-least-once + 幂等**落成可复核事实 —— 同键重放**逐字节相同**且 run 数 / 决策数不变；不同键按**新事实**再判一次（`CONTINUE`）；**崩溃窗口**（决策已落、run 未落库）⇒ `DEDUP` 且不产生第二个 run；**重启重入**（新应用实例）从 canonical 重建；口径守卫绿（**明确否认**「恰好一次」）。**本 cycle 零产品改动**（机制已在，判据把它变成事实）；判据 5 例全绿；四道门绿（mypy 1161 files）| （见 CI 台账） | — | EC-04 收口；**下一轮 EC-05**（自举收口 + GOAL 收口）| EC-03 全落地：**承接链五件事齐** —— `research_state.read`（读本 run 所属程序内**前序 run** 的落库结论）+ 新协议 `cross_run_knowledge_v1.yaml` + 合约 `cross_run_consumption_deliverable`；**两轮实跑 6 例全绿**（第 2 轮读到第 1 轮的判决值逐字 + 按 run id 归属 + 第 1 轮构造性空集 + 两组结果不同制品 + 两向反证）；同步面（覆盖判据搬迁 / 夹具 +1 / 差集文档 7→6 与 17→18 / 两处登记计数）；四道门绿（mypy 1160 files）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5417 passed, 20 skipped**；首跑真红于 format-check ⇒ 格式化后重跑） | （见 CI 台账） | **实现期一次真红并修**：起 run 需**先落行**（读链工具执行期靠它反查程序归属；实测不先落行 ⇒ `KeyError: run not found`）；`cross_run_support.py` 函数 54 行超限 ⇒ 拆 `_trim_the_grant` | EC-03 收口；**下一轮 EC-04**（幂等与中断）| **EC-02 全落地**：程序推进驱动 `advance_program`（六条判定：`START` / `CONTINUE` / `STOP_RULE` / `STOP_GUARDRAIL` / `WAIT` / `DEDUP`；启动面**注入**、缺省点名；`cited_facts` 是判词/状态**原文**；护栏停与结论停**种类可区分**；崩溃窗口 ⇒ `DEDUP` 不产生第二个 run）+ **7 例判据全绿**；四道门绿（mypy 1153 files） | 见 CI 台账（本 cycle 的提交批次） | **规模门真红并修**（`advance_program` 108 行 ⇒ 拆 `_evaluate`/`_after_hit`/调度三件）；**四条登记面同轮同步**（写面告警线 61→63 / 读面登记 +2 / 出口普查 +2 / `create_app` 51 行 ⇒ 拆 `_register_routers`）；**已知类 flake** 一次（OTLP teardown race，单跑两次通过，如实登记） | 三路由 + DTO + 启动面接线（程序归属与 run **同一次**落库）+ 同轮同步 + 双 run 实跑 6 例 + 驱动 7 例全绿；广面 **3209 passed, 91 skipped**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5408 passed, 20 skipped**，收集数 +19 逐文件分解） | EC-02 收口；**下一轮 EC-03**（跨 run 知识的**读入**：承接 `research_state.read` + 下游消费 + 两向反证） |
 | 1 | `PLAN-20261008-337` | （见 CI 台账） | EC-01 决策定稿 + **canonical 骨架**：`ResearchRun` 增两字段（同生同灭 + 三个重建函数逐字段复制）、`RunStore.for_program`（SQLite `json_extract` / PG `->>`）、程序域类型 + 端口 + 两个适配器 + **迁移 017**（live PG 实测 `migration_version`=17）+ 两组合根接线；同轮同步（读面 / DTO / OpenAPI 重生成 +22 行 / `types.ts`）；新判据 **15 例全绿**（domain 9 / sqlite 4 / pg 2）；广面 `1590 passed, 5 skipped`（domain+adapters+contracts）/ `1063 passed, 1 skipped`（application+architecture）/ `2516 passed, 76 skipped`（contracts+api+tooling）；四道门绿（mypy 1151 files）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5389 passed, 20 skipped**；首跑真红于前端型检查 ⇒ 同轮同步 e2e 夹具后重跑取值） | `37773456975` M0 success + `37773457341` Push on main success（cycle 0 建档批，实测） | **门链抓到一次真红并修**（e2e TS 夹具缺两个新字段 ⇒ 同轮同步）；PG JSONB 解码（`str(dict)` 伪 JSON ⇒ 两形态都接住，`MEM-20261008-207`）；**mypy `arg-type` 点名 3 个测试假 RunStore** 缺 `for_program` ⇒ 补假实现（不给 Port 加默认实现、不加 `type: ignore`）；**落地形态修订**：关联查询走 JSON 抽取、不动 `runs` DDL（决策 ① 修订，爆炸半径压到零） | 骨架收口；**下一轮 EC-02**（驱动 + advance 入口 + 双 run 实跑） |
 
 ## 状态历史
@@ -426,6 +436,7 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-08 | ACTIVE | **cycle 2 的 CI 真红并修 + 全绿**：`7c0da21` 的 M0 双平台判红于规模门（`advance_program` 108 > 50 行）⇒ **拆函数**修复（`efddc86`），其 M0 `37784058017` **8/8 success** + CodeQL success ⇒ `86fd5b7`（M0 被 `cancel-in-progress` 取消，如实登记）与 `7c0da21` 的结论**由 `efddc86` 覆盖**。EC-02 仍未收口（WP-2…WP-5 未落地）。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
+| 2026-10-08 | ACTIVE | **cycle 5（EC-05 自举收口）落地**：收口验证器 + 本轮断言集进树（复用标准断言集**一行未重写**），`IN_SCOPE` **纯收紧**（+2 行），两脚本过四道门；两树复检（`--script-mode shared`）与判词归档进树、as-is m0、治理 + 宪章判据、CI 台账逐提交 —— 读数逐条在 `RECHECK-20261008-346`（bootstrap 时序如实登记）。GOAL 收口。残余 `O-1`…`O-5` 与未覆盖范围逐条明写；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 4（EC-04）收口**：编排步的**幂等与中断**成为机械事实 —— 同键重放逐字节相同（run 数 / 决策数不变）、不同键按新事实推进、崩溃窗口 `DEDUP` 不产生第二个 run、重启重入从 canonical 重建；口径守卫绿（**明确否认**「恰好一次」；只允许 at-least-once + idempotency + deduplication）。**零产品改动**。EC-04 `PASS`；EC-05 待收口。**不得**宣称安全。 |
 | 2026-10-08 | ACTIVE | **cycle 3（EC-03）收口**：**跨 run 知识累积**落地 —— `research_state.read` 五件事齐（实现 / 声明 / 绑定 / 两组合根 / 一条只读放行）；程序跑**两轮 run**，第 2 轮经能力面读到第 1 轮落库的**判决值逐字**（按 run id 归属区分、第 1 轮构造性空集、两组结果不同制品）；两向反证（撤 provider 点名 / 删 allow ⇒ preflight 点名 `POLICY_DENIED`）。EC-03 `PASS`；EC-04/05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 2（EC-02）收口**：程序编排放到「真的跑起来」—— 三路由（建程序 / 推进 / 读面）+ DTO、**启动面接线（程序归属与 run 同一次落 canonical）**、双 run 实跑（`START` / `CONTINUE` / `STOP_RULE` / `STOP_GUARDRAIL` / 缺启动面点名 / 404）6 例 + 驱动 7 例全绿；**四条登记面同轮同步**（写面告警线 / 读面登记 / 出口普查 / `create_app` 拆函数）。EC-02 `PASS`；EC-03…05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
