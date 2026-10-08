@@ -416,8 +416,11 @@ GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`W-8`；历史 `tools/` 目录
 | `18a078a`（**建档**） | **无自己的 run**（同批推送） | cycle 0 建档；它与 GOAL-035 的台账尾巴 `512360a` **同一次 push** ⇒ 只有 HEAD 产生 run ⇒ `covered_by 512360a`（实测取证：两个 SHA 的 `head_sha` 查询 `total_count=0`） |
 | `512360a`（GOAL-035 台账尾巴，本批 HEAD） | `37753132183` **M0 success**（8 job 全 success）+ `37753131400` **Push/CodeQL success**（3 分析全 success） | 该批 HEAD；**同时承担** `18a078a` 的绿 + **封闭 GOAL-035 台账的自我指涉边界**（两条同批路径都有实测读数） |
 | `14a5ac2`（cycle 1） | `37759493180` **M0 success**（8 job 全 success）+ `37759492764` **Push on main / CodeQL success**（3 分析全 success） | EC-01/EC-02：`review.read` 承接链 + 同轮同步面 5 处 + 记录；本地 as-is m0 23/23（**实测取证**） |
-| `43a8e80`（cycle 2） | 读数在收口提交回填（本行写入时该批次 CI 轮询中：run 族 `37765785794` / `37765785834`） | EC-03/EC-04：真用判据（6 passed + 按压）+ 登记面搬迁 + 覆盖读数 19/46 → 20/46；本地 as-is m0 23/23（`PASS [` 24 / `FAILED [` 0 / 5367 passed, 20 skipped） |
-| （cycle 3 提交批次）`1551d2f` / `aa65640` / （本批 HEAD = 本行所在提交） | 读数在台账尾提交回填 | EC-05：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮 bootstrap `1551d2f`）→ 次轮 `TWO-TREE PASS` + 归档定格（`aa65640`）→ GOAL 收口（本提交：EC-05 `PASS` + m0 读数）；三条**同一次 push** ⇒ 以本批 HEAD 的 run 覆盖（逐条 `total_count=0` 实测取证在台账尾） |
+| `43a8e80`（cycle 2） | `37765785794` **M0 success**（8 job 全 success）+ `37765785834` **Push on main / CodeQL success**（3 分析全 success） | EC-03/EC-04：真用判据（6 passed + 按压）+ 登记面搬迁 + 覆盖读数 19/46 → 20/46；本地 as-is m0 23/23（`PASS [` 24 / `FAILED [` 0 / 5367 passed, 20 skipped）；**实测取证** |
+| `1551d2f`（cycle 3 · 提交 A） | **无自己的 run**（同批推送） | EC-05：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮 bootstrap）；与 `aa65640`、本批 HEAD **同一次 push** ⇒ 只有 HEAD 产生 run；`covered_by 51bd550`（**实测取证**：`head_sha` 查询 `total_count=0`） |
+| `aa65640`（cycle 3 · 提交 B） | **无自己的 run**（同批推送） | 两树次轮 `TWO-TREE PASS` + 归档定格；同批，`covered_by 51bd550`（**实测取证**：`total_count=0`） |
+| `51bd550`（cycle 3 · 提交 C = **本批 HEAD**） | `37769197385` **M0 success**（8 job 全 success）+ `37769197648` **Push on main / CodeQL success**（3 分析全 success） | **GOAL 收口提交**（EC-05 `PASS` + `status: ACHIEVED` + m0 读数）；A/B 两条的结论**由此行覆盖**；**上一行的自我指涉边界已由此行封闭** |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：本行只改 `.cursor/plans/goals/GOAL-20261008-036-*.md`（按 `MEM: local-gate-protocol-and-flake-classes` 第 6 条，记录改动以 `--profile framework` 补全终态）；其结论由**下一个 GOAL 的台账**取证（推送后本轮随即可查，但**不得**写回本行循环引用） |
 
 ## 迭代日志
 
