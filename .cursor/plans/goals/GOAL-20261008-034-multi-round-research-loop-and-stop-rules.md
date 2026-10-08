@@ -519,7 +519,8 @@ GOAL-019…033 的未覆盖范围原样保留。
 | `280bdf7`（两树判词归档进树） | **无自己的 run**（同批） | 同上；`covered_by: 170d8c1` |
 | `5de20ce` / `8c1c7aa` 之后的记录提交 | **无自己的 run**（同批） | 同上；`covered_by: 170d8c1` |
 | `170d8c1`（**GOAL 收口**：status ACHIEVED + m0 读数） | M0 **`cancelled`** + Push on main **success** | **原因如实登记**：该 M0 尚在飞行时我推送了 `a6a6f6c`（台账回填）⇒ `cancel-in-progress` 取消。`covered_by: a6a6f6c` |
-| `a6a6f6c`（台账回填收口批次） | M0 + Push on main | 该批 HEAD；见「自我指涉边界」 |
+| `a6a6f6c`（台账回填收口批次） | M0 **success**（八 job）+ Push on main **success** | 该批 HEAD；**本条承担 `170d8c1` 的绿**（后者 M0 `cancelled`，原因已登记） |
+| `abcbe39`（登记那次 cancelled） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
 | `643889e`（MAINLINE 进展记录行） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
 
 **自我指涉边界（明写并封闭）**：本节的「回顾性台账」提交自身**不产生**可引用的 CI 结论
