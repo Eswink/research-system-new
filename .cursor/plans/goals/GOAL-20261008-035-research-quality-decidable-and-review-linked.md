@@ -441,7 +441,8 @@ GOAL-019…034 的未覆盖范围原样保留。
 | `8a744f7` | `37745442100` **M0 success**（8 job 全 success）+ `37745441519` **Push/CodeQL success**（3 分析全 success） | **cycle 3（EC-03）**：评审联动（合约声明分数路径 + 三态判词 + 反证）；本地 as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / 5358 passed, 20 skipped） |
 | `c499722` | **无自己的 run**（同批推送） | cycle 4（EC-04）：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮 bootstrap）——与 `c80beca`、本批 HEAD **同一次 push** ⇒ 只有 HEAD 产生 run；`covered_by` 本批 HEAD（下表末行） |
 | `c80beca` | **无自己的 run**（同批推送） | cycle 4：两树次轮 `TWO-TREE PASS` + 归档定格 ——同批，`covered_by` 本批 HEAD |
-| （本批 HEAD = 本行所在提交） | **无自己的 run 的下一形态**（自我指涉边界） | cycle 4 收口提交（GOAL `ACHIEVED` + m0 读数 + 本表前两行）：它与 `c499722`/`c80beca` **同一次 push**，其 CI 结论在本行写入时尚未产生 ⇒ 以「**末条已取证提交**（`8a744f7`）+ **仅记录改动**（`.cursor/**`，按 `MEM: local-gate-protocol-and-flake-classes` 第 6 条只需 `--profile framework` 补全）」封闭，**不得循环引用**；其结果由**下一条台账尾巴**取证 |
+| （本批 HEAD）`36ef4a2` | `37751409648` **M0 success**（8 job 全 success）+ `37751409362` **Push/CodeQL success**（3 分析全 success） | **cycle 4 收口提交**（GOAL `ACHIEVED` + m0 读数 + 本表前两行）；它与 `c499722`/`c80beca` **同一次 push** ⇒ 那两条的结论**由此行覆盖**（实测取证：两个 SHA 的 `head_sha` 查询 `total_count=0`）。**上一行的自我指涉边界已由此行封闭** |
+| （本行所在提交：台账尾巴） | **无自己的 run 的下一形态**（自我指涉边界） | 台账尾巴：本行只改 `.cursor/plans/goals/GOAL-20261008-035-*.md`（按 `MEM: local-gate-protocol-and-flake-classes` 第 6 条，记录改动以 `--profile framework` 补全终态）；它与 GOAL-036 的建档提交**同批推送** ⇒ 其结论由 **GOAL-036 的台账**取证，**不得循环引用** |
 
 ## 迭代日志
 
