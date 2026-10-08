@@ -193,12 +193,14 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261008-323-goal-035-ec01-finding-store-and-two-dimensional-coverage.md
   - .cursor/plans/tasks/PLAN-20261008-325-goal-035-ec02-reproducibility-conclusion-on-the-run-path.md
   - .cursor/plans/tasks/PLAN-20261008-327-goal-035-ec03-review-score-linkage-on-the-run-path.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-328-goal-035-ec03-review-score-linkage.md
+  - .cursor/plans/tasks/PLAN-20261008-329-goal-035-ec04-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-330-goal-035-ec04-self-bootstrap-closeout.md
 memory_entries:
   - a-judged-verdict-needs-a-recorded-read-face-not-a-recomputation
   - existing-judges-decide-where-a-new-read-face-may-land
   - an-unpersisted-conclusion-does-not-exist-for-the-read-face
   - no-score-is-not-a-low-score
+  - verdict-archive-is-written-by-the-entry-it-archives
 ---
 
 # GOAL-20261008-035 — 研究质量三类可判定 + 与评审联动
@@ -384,13 +386,22 @@ GOAL-019…034 的未覆盖范围原样保留。
 | `R26-2` / `R26-3` / `R26-4` / `R26-6` | **保持** | 条件不满足 |
 | `R26-7` / `R26-8` | **保持** | 树外证据 / GOAL 正文投影 —— 属记录面结构 |
 
-### 本轮新增残余（随 cycle 增补）
+### 本轮新增残余（收口时逐条定格；`N-1`…`N-6`）
 
-- （建档时登记）**三类判定的出厂协议落点未定**：哪条协议/合约承担「研究循环里真的用到」
-  由 cycle 1 derive 时定（决策登记 ②③④）。
-- （建档时登记）**`ReviewPanel` 与运行路径的关系未实测**：域里有类型；是否接线、接到哪一层
-  由 cycle 1 勘察后定。
-- （建档时登记）**承接面读数待复核**：提示词的 19/46 未在本轮重新实测。
+- `N-1`（**已收口**）三类判定的**出厂协议落点**：cycle 1 定为**既有研究协议 + 既有合约**
+  （`real_literature_chain_v1` 等，两维覆盖）与本次**新增**的 `review_scored_deliverable`
+  （评审分数）；判定全部落在实跑路径上（决策登记 ②③ 已由 cycle 1/3 落地）。
+- `N-2`（**已收口，口径已收窄**）`ReviewPanel` 与运行路径的关系：实测 = 异构评审的
+  **角色面**只在 preflight 的 `role_checks` 里有线；评审**分数**的来源由合约声明
+  （EC-03）⇒ 运行路径上可判，但那是**单评审者交付物自述分数**。
+- `N-3`（**未覆盖**）**多评审者分数聚合**：`ReviewPanelRole`/异构评审的分数**聚合**在 run
+  路径上仍未接线；EC-03 只证「评审结论能进判据面且三态可判」。
+- `N-4`（**未覆盖**）**承接面读数**：提示词的「19/46」未在本轮重新实测（本轮不以该数为
+  判据，也不据此宣称能力面扩大）。
+- `N-5`（**未覆盖**）**跨机器位级复现**：本仓只声称「可重复配置」（EC-02 的已收口/未覆盖
+  分界逐条写在下面）。
+- `N-6`（**未覆盖**）**结论内容正确性**：EC-01 只判「结论 ↔ 证据的关系 + 覆盖两维」，
+  不判结论内容真假。
 
 ### 未覆盖范围（逐条明写，不得据此宣称安全）
 
@@ -436,11 +447,13 @@ GOAL-019…034 的未覆盖范围原样保留。
 | 1 | `PLAN-20261008-323` | （见 CI 台账 cycle 1 行） | EC-01 六条 AC 全 PASS：`tests/e2e/test_two_dimensional_coverage_and_claim_relation.py` **5 passed**；`tests/contracts/test_review_finding_store_contracts.py` 3 passed；PG 8 passed；`python` profile **6 项确定性检查全绿**（mypy 1139 文件 0 错）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5350 passed, 20 skipped**；收集数 +19 逐文件分解：3+5+3 新判据 + 8 源文件参数化；skipped 未升）；按压 P-1 **4 failed** / P-2 **1 failed** 且复原 | （见 CI 台账） | 首跑两处红并修：判据文件 2 处 `no-any-return`（mypy）、新读面未登记隐私清单（observability ×2）；规模门：`composition.py` 457 行、`service.py` 451 行 ⇒ 搬迁 + 归组（418 / 450） | EC-01 收口；**下一轮 EC-02**（可复现可判定：审计只在遗留 M12 链，run 路径零调用） |
 | 2 | `PLAN-20261008-325` | （见 CI 台账 cycle 2 行） | EC-02 五条 AC 全 PASS：`tests/e2e/test_reproducibility_conclusion_on_the_run_path.py` **3 passed**；`tests/application/experiments` + 既有离线链 **96 passed**；`tests/e2e` **252 passed**；`tests/observability` **133 passed**；mypy 1140 文件 0 错；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5354 passed, 20 skipped**，收集数 +4 逐文件分解）；按压 P-1 **3 failed** / P-2 **1 failed** 且复原 | （见 CI 台账） | 首版**自写可审态门**与既有 `is_auditable_state` 分叉 ⇒ 同轮改为复用；断言从「空发现列表」改为「零 FAIL」（域口径里 WARNING 是诚实标注）；首版 import 顺序错 ⇒ `UnboundLocalError` 39 failed，判据当场抓到 | EC-02 收口；**下一轮 EC-03**（评审联动：`review_score` 产品路径赋值 + `REVIEW_SCORE` 三态） |
 | 3 | `PLAN-20261008-327` | （见 CI 台账 cycle 3 行） | EC-03 四条 AC 全 PASS：`tests/e2e/test_review_score_linkage_on_the_run_path.py` **3 passed**；`tests/loaders+contracts+domain+application+api` **2372 passed**；`tests/e2e`+`tests/tooling` **1636 passed**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5358 passed, 20 skipped**，收集数 +4 逐文件分解：新判据 3 例 + 源文件参数化 +1；`skipped` 20 未升）；按压 P-1 **1 failed** 且复原 | （见 CI 台账） | 首版判据多写了一个无用的 runtime 包装类 ⇒ 已简化；设计上**新增**合约与协议而不是给 `sort_analysis_review` 加判据（后者会让既有夹具连环判负） | EC-03 收口；**下一轮 EC-04**（自举收口：验证器 + 两树 + 归档 + m0 + 治理 + 台账） |
+| 4 | `PLAN-20261008-329` | （见 CI 台账 cycle 4 行） | EC-04 七条 AC：**AC-1** 验证器进树（复用标准断言集**一行未重写**；收口态 **70 判词 / 0 FAIL**，非判词行 0 / 绝对路径 0；中途态 65 PASS / 5 FAIL 逐条为「归档未生成 + 记录声明先行 + 残余标记待定格」）+ **AC-2** `IN_SCOPE` 纯收紧（+2 行；判据 8 passed；两脚本四道门绿：ruff/format/mypy/规模 238·191 行）+ **AC-5** 治理 `validate.py` 绿 + 宪章判据绿 + **AC-6** 残余 `N-1`…`N-6` 与未覆盖逐条在位；**AC-3（两树 + 归档形态）与 AC-4（as-is m0 终局行）读数在 `RECHECK-20261008-330` 逐条回填** | （见 CI 台账） | — | 四条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-330`） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 4（EC-04 自举收口）落地**：收口验证器 + 本轮断言集进树（复用标准断言集**一行未重写**），`IN_SCOPE` **纯收紧**（+2 行），两脚本过四道门；两树复检（`--script-mode shared`）与判词归档进树、as-is m0、治理 + 宪章判据、CI 台账逐提交 —— 读数逐条在 `RECHECK-20261008-330`（bootstrap 时序如实登记）。GOAL 收口。未覆盖范围与残余 `N-1`…`N-6` 逐条明写；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 3（EC-03）**：**评审结论进入判据面**。`REVIEW_SCORE` 此前产品路径从不喂分（`review_score=` 只在 tests）、出厂合约零声明 ⇒ 本轮让**合约自己声明分数的结构化输出路径**（`metric: review_decision.score`，schema 既有字段，零 schema 改动），产品路径按该路径取数，判定仍走既有 `_evaluate_review_score`。三态判词逐字：判过 `review score 0.95 GTE 0.8` / 判负点名分数 `review score 0.5 GTE 0.8` / 缺来源 `review score unknown`（**不回落默认分**）；判词经 EC-01 的既有读面读。**新增**合约与协议（既有受判面一字不动）。EC-03 `PASS`；EC-04 待收口。未覆盖：异构评审的分数聚合仍未接线。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 2（EC-02）**：**可复现结论在 run 路径产出并进读面**。实验跑到科学终态时封存 `ReproducibilityAudit` 并**随实验落库**（复用既有 use case / 既有可审态谓词 `is_auditable_state` / 既有 id 派生，**未建第二套**）；读面 `GET /runs/{id}/experiments` 给出 `audit_digest` / `audit_status` / **重算的** `audit_verified` / 逐条 `audit_findings`（无审计则 honest unavailable）；主干判据**独立重算**与读面一致；反证两向（篡改载荷 ⇒ 重算判红；换掉引用 ⇒ 发现里点名制品 id）。EC-02 `PASS`；EC-03/EC-04 仍待收口。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 1（EC-01）**：两维覆盖判据与读面 claim↔evidence 关系**在同一次实跑**成立且可复核。产品面新增：验收结论**落 canonical**（`ReviewFindingStore` + SQLite/PG 实现 + 迁移 `016` + 组合根写读同实例）+ **只读路由** `GET /runs/{run_id}/reviews`（503/404 **不假装**）。判据 5 例（主角 + 计数维反证 + 性质维两式反证 + 读面边界）；两向反证判词逐字留档。**设计改变过一次并如实登记**：首版把判词放进新事件 payload，实测撞既有内容隐私金丝雀 ⇒ **改设计而非改判据**（制品面同样被既有条数断言挡下）。EC-01 `PASS`；EC-02/03/04 仍 `PENDING`。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |

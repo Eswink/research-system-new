@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261008-329](tasks/PLAN-20261008-329-goal-035-ec04-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-327](tasks/PLAN-20261008-327-goal-035-ec03-review-score-linkage-on-the-run-path.md) | DONE |
 | [x] | [PLAN-20261008-325](tasks/PLAN-20261008-325-goal-035-ec02-reproducibility-conclusion-on-the-run-path.md) | DONE |
 | [x] | [PLAN-20261008-323](tasks/PLAN-20261008-323-goal-035-ec01-finding-store-and-two-dimensional-coverage.md) | DONE |

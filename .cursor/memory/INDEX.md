@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261008-203](entries/MEM-20261008-203-verdict-archive-is-written-by-the-entry-it-archives.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-329 |
 | [MEM-20261008-202](entries/MEM-20261008-202-no-score-is-not-a-low-score.md) | ACTIVE | repository | 0.92 | 2027-04-08 | PLAN-20261008-327 |
 | [MEM-20261008-201](entries/MEM-20261008-201-an-unpersisted-conclusion-does-not-exist-for-the-read-face.md) | ACTIVE | repository | 0.92 | 2027-04-08 | PLAN-20261008-325 |
 | [MEM-20261008-200](entries/MEM-20261008-200-existing-judges-decide-where-a-new-read-face-may-land.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-323 |
