@@ -38,6 +38,10 @@ tool_providers:
       # 实现在 `adapters/canonical/run_read.py`（`read_provider.py` 恰守 450 行上限）。
       # **承接 ≠ 放行**：无 `allow` ⇒ 调用点名 `POLICY_DENIED`。
       - run.read
+      # GOAL-20261008-036 EC-02：`review.read` 的承接 —— 读 GOAL-035 EC-01 的 canonical
+      # 评审结论记录（`ReviewFindingStore.for_run`，与读面 `GET /runs/{id}/reviews` 同口径）。
+      # 实现在 `adapters/canonical/review_read.py`（同一条 450 行理由）。
+      - review.read
     effect_class: READ_ONLY
 
   ncbi_eutils:

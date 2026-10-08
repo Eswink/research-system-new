@@ -1,9 +1,11 @@
 """GOAL-20261006-031 EC-01 判据：**放行面扩容的三条机械事实 + 两向反证**（授权 1）。
 
-**它把什么变成机械事实**：`examples/config/policy.yaml` 的 `allow` **新增了 7 条只读
+**它把什么变成机械事实**：`examples/config/policy.yaml` 的 `allow` **新增了 8 条只读
 能力** —— EC-01 的 6 条（`run.read` / `claim.read` / `deliverable.read` / `budget.read` /
 `experiment.read` / `experiment_plan.read`，「已承接但未放行」的承接面收口）+ EC-02 的
-`citation.validate`（判定层，本 GOAL 第二次逐条放行）。放行是一次**有界放宽**——
+`citation.validate`（判定层，本 GOAL 第二次逐条放行）+ GOAL-20261008-036 EC-02 的
+`review.read`（第 8 条，承接 provider `m12_artifact` 的 `review_read` 工具）。
+放行是一次**有界放宽**——
 本文件把这条边界的**三个面**逐条钉住，且**不得**被写成任何形式的交集 / 过滤
 （承 `MEM-20260922-160`；受判面就是**声明集本身**：本文件里逐字写死的 6 条能力名）。
 
@@ -24,7 +26,7 @@
    分成两句断言（前者不蕴含后者）。
 4. **未放行的护栏仍在**（`TestTheUnreleasedSideStaysDenied`）：`citation.inspect` /
    `dataset.read` / `provenance.read` / `research_map.read` /
-   `research_state.read` / `review.read` / `target.read` / `agent_run.read` 八条读能力
+   `research_state.read` / `target.read` / `agent_run.read` 七条读能力
    **仍未被放行**，三件套（`package.install` / `workspace.delete` / `external.publish`）
    仍 `REQUIRE_APPROVAL`，`network.public` 仍 `DENY`。
 
@@ -69,6 +71,10 @@ _RELEASED: tuple[str, ...] = (
     "experiment.read",
     "experiment_plan.read",
     "citation.validate",
+    # GOAL-20261008-036 EC-02（授权承继 (0)）：第 8 条逐条放行 —— `review.read`
+    # （只读后缀 `read`；承接 provider `m12_artifact` 的 `effect_class: READ_ONLY`）。
+    # 登记表随本轮放行**新增一条**；谓词与其余断言一字未改。
+    "review.read",
 )
 
 #: 只读后缀（与差集口径同一组）。
@@ -102,7 +108,6 @@ _UNRELEASED_READS: tuple[str, ...] = (
     "provenance.read",
     "research_map.read",
     "research_state.read",
-    "review.read",
     "target.read",
 )
 
@@ -261,6 +266,9 @@ class TestTheExpansionIsReadOnly:
             "experiment.read": "project",
             "experiment_plan.read": "project",
             "citation.validate": "approved_tool_providers",
+            # GOAL-20261008-036 EC-02：与同级读能力（`artifact.read` / `evidence.read` /
+            # `run.read`）对齐 = `project`。
+            "review.read": "project",
         }
         scopes: dict[str, set[str]] = {}
         for rule in policy_body().get("allow") or []:

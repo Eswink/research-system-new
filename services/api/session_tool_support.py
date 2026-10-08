@@ -56,6 +56,9 @@ DEFAULT_SESSION_TOOL_BINDINGS: tuple[tuple[str, str, str], ...] = (
     # `citation_validate`（与既有 `citation.inspect` 的 `citation_inspect` **不同名**）。
     ("citation.validate", "ncbi_citation", "citation_validate"),
     ("workspace.read", "openhands_workspace", "workspace_read"),
+    # GOAL-20261008-036 EC-02：`review.read` 的承接 —— 读 GOAL-035 EC-01 的 canonical
+    # 评审结论记录（`ReviewFindingStore.for_run`，与读面 `GET /runs/{id}/reviews` 同口径）。
+    ("review.read", "m12_artifact", "review_read"),
 )
 
 
@@ -122,6 +125,7 @@ def session_tool_face(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件
     budget_ledger: Any = None,
     experiment_store: Any = None,
     run_store: Any = None,
+    review_store: Any = None,
 ) -> Any:
     """位置参数形式的出厂注册面（组合根侧读起来最短；语义见 `canonical_read_register`）。"""
     return canonical_read_register(
@@ -131,6 +135,7 @@ def session_tool_face(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件
         budget_ledger=budget_ledger,
         experiment_store=experiment_store,
         run_store=run_store,
+        review_store=review_store,
     )
 
 
@@ -147,6 +152,7 @@ def sqlite_session_tools(faces: Any, ports: Any) -> Any:
         budget_ledger=ports.budget,
         experiment_store=ports.experiment_store,
         run_store=ports.runs_store,
+        review_store=ports.review_findings,
     )
 
 
@@ -158,6 +164,7 @@ def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么
     budget_ledger: Any | None = None,
     experiment_store: Any | None = None,
     run_store: Any | None = None,
+    review_store: Any | None = None,
     bindings: Sequence[tuple[str, str, str]] = DEFAULT_SESSION_TOOL_BINDINGS,
 ) -> Any:
     """**出厂形态**的注册回调：用 canonical 读面当 provider 实例（两个组合根共用）。
@@ -180,6 +187,7 @@ def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么
         budget_ledger=budget_ledger,
         experiment_store=experiment_store,
         run_store=run_store,
+        review_store=review_store,
     )
     instance_for = {
         "m12_artifact": canonical_reader,

@@ -49,6 +49,9 @@ _CAPABILITY_SCOPE: dict[str, str] = {
     # GOAL-20261006-031 EC-02（授权 2）：`citation.validate` 放行的镜像条目（与
     # `policy.yaml` 的同一组规则同源；并集相等由既有 `test_m2_audit` 判据锁死）。
     "citation.validate": "approved_tool_providers",
+    # GOAL-20261008-036 EC-02（授权承继 (0)）：`review.read` 放行的镜像条目（与
+    # `policy.yaml` 的同一条规则同源；并集相等同上由既有 `test_m2_audit` 判据锁死）。
+    "review.read": "project",
     "network.academic": "approved_domains",
 }
 

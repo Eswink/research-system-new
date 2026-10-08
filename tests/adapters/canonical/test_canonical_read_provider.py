@@ -65,6 +65,9 @@ _PROVIDER = ToolProviderSpec(
         # GOAL-030 EC-02：`run.read` 的承接（读 `RunStore`）。夹具与出厂目录**同轮同步** ——
         # 夹具少列一条会让「绑定表 ⇒ provider 侧工具承载」那条判据假红（实测）。
         "run.read",
+        # GOAL-20261008-036 EC-02：`review.read` 的承接（读 GOAL-035 EC-01 的 canonical
+        # 评审结论记录）—— 同上，夹具与出厂目录同轮同步。
+        "review.read",
     ],
     effect_class=EffectClass.READ_ONLY,
 )

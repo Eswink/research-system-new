@@ -83,7 +83,7 @@ exit_criteria:
     verify: >-
       `rg -n "review.read" examples/ services/ adapters/` ⇒ 只在词表与分类表；覆盖读数命令
       （词表 46 / 声明面 19 distinct）与 `policy.yaml` 逐条读数。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **端到端承接链（声明 + 实现 + 绑定 + 接线 + 放行）**。(a) 实现：canonical 读面的新工具
@@ -98,7 +98,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters/canonical tests/api
       tests/architecture -q` ⇒ 全绿；`rg` 逐条读数（声明 / 绑定 / 两组合根接线 / allow）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **真的被一次实跑用上（+ 两向反证）**。(a) 新协议（新增，**既有协议一字不动**）：
@@ -170,11 +170,25 @@ fix_policy:
       **把未放行能力先写进协议再补放行**（先放行再声明，否则差集判据红是**真红**）
     - >-
       **修改**任何既有判据 / 门禁 / 阈值（点名：`tests/egress_guard.py`、三道记录面判据、
-      两树入口判据、规模门禁、`tests/application/preflight/**`、`tests/contracts/**`、
-      `tests/adapters/**`、`tests/e2e/**` **既有文件**）—— **新增**判据与新增文件不受此限；
-      例外且**仅限**同轮同步面：`tests/adapters/canonical/` 的**出厂形态夹具**与
-      `tests/architecture/python/test_capability_coverage_is_implemented.py` 的**分类清单**
-      （**纯收紧**：目标条目从「登记」移入「射程」，其余条目一字不动）
+      两树入口判据、规模门禁、`tests/contracts/**`、`tests/adapters/**`、`tests/e2e/**`
+      **既有文件**）—— **新增**判据与新增文件不受此限
+    - >-
+      **同轮同步面（例外，且逐条枚举；断言强度不变的纪律见下）**。**修正登记（cycle 1
+      实测发现，如实登记）**：建档时只列了两个同步面；实跑门链后实测到「**放行一条读能力**
+      必然牵动**策略面登记表**」这一族 —— 它们不是「另一条判据」，而是**同一件事的登记面**。
+      例外**仅限**下列五处，每处只做**加法 / 搬迁登记**，**谓词、阈值、受判形态一字未改**：
+      ① `tests/adapters/canonical/` 的**出厂形态夹具**（capabilities **加一条**）；
+      ② `tests/architecture/python/test_capability_coverage_is_implemented.py` 的**分类清单**
+      （目标条目从「登记」移入「射程」）；
+      ③ `examples/config/policy.yaml` 的 `allow`（**新增一条**；其余三段与
+      `default_effect` 零变化，由 `test_release_expansion_is_read_only.py` 的段指纹钉住）；
+      ④ `packages/application/preflight/policy_check.py::_CAPABILITY_SCOPE`
+      （策略面**镜像表**加一条；并集相等由既有 `test_m2_audit` 判据锁死）；
+      ⑤ `docs/architecture/POLICY_SURFACE_AUDIT.md` 的差集表（该行**离开差集**、
+      进交集清单、计数 + 日期化变更注）+ `tests/application/preflight/` 的两处**登记计数**
+      （`EXPECTED_REGISTERED` 8→7、`_RELEASED` +1 / `_UNRELEASED_READS` −1 / scope 期望表 +1）。
+      **清单外的既有判据仍禁改，触达即 BLOCKED**；本例外**不得**被读成「可以改断言」——
+      任何**谓词 / 阈值 / 受判形态**的改动都在禁令内。
     - >-
       **把 destructive / 写 / 执行 / 审批类能力改成 allow**（本轮只放行**只读**能力一条）
     - >-
@@ -187,9 +201,11 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
   - 扩容需要动写面 / 执行面 / 审批面（本轮范围外）
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261008-331-goal-036-ec01-02-review-read-onboarding.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-332-goal-036-ec01-02-review-read-onboarding.md
+memory_entries:
+  - releasing-a-read-capability-moves-registry-pins
 ---
 
 # GOAL-20261008-036 — 承接面按研究循环实际需要扩容（`review.read`）
@@ -205,8 +221,8 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | 为什么是 `review.read`：词表里有、声明面零承接、policy 零放行、分类理由已被 GOAL-035 推翻 | PENDING |
-| EC-02 | 端到端承接链 | 声明 + 实现 + 绑定 + 接线 + 放行（五件缺一不可） | PENDING |
+| EC-01 | 勘察定稿 | 为什么是 `review.read`：词表里有、声明面零承接、policy 零放行、分类理由已被 GOAL-035 推翻 | PASS |
+| EC-02 | 端到端承接链 | 声明 + 实现 + 绑定 + 接线 + 放行（五件缺一不可） | PASS |
 | EC-03 | 真被用上 | 一次实跑里后续 phase 通过它**读到前序 phase 落库的逐条判词** + 两向反证点名 | PENDING |
 | EC-04 | 登记面与读数 | 分类清单纯收紧 + 夹具同轮 + 覆盖 19/46 → 20/46 **逐条** | PENDING |
 | EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
@@ -257,10 +273,11 @@ memory_entries: []
 | # | 决策 | 状态 |
 | --- | --- | --- |
 | ① | 本轮承接**几条**能力 | **一条**（`review.read`）—— 「不做数量目标」；代价是必须端到端真跑 |
-| ② | 工具实现落点 | **cycle 1 勘察后定**（`read_provider.py` 410 行 ⇒ 倾向另立 `review_read.py`，与 `run_read.py` 同形） |
+| ② | 工具实现落点 | **已定（cycle 1）**：另立 `adapters/canonical/review_read.py`（68 行），`read_provider.py` 只留一行委派（**421 / 450**） |
 | ③ | 放行的 scope | **已定**：与同级读能力对齐（`artifact.read` / `evidence.read` / `run.read` = `project`） |
-| ④ | 「读到」的判据形态 | cycle 1 derive 时定：读到的判词必须与**前序 phase 落库的逐字一致**（下游消费证据，不是「调了两遍工具」） |
+| ④ | 「读到」的判据形态 | cycle 2 定：读到的判词必须与**前序落库的逐字一致**（下游消费证据，不是「调了两遍工具」） |
 | ⑤ | 覆盖面继续扩容 | **不做**（MAINLINE：广度不是一条轴，不做数量目标） |
+| ⑥ | **同轮同步面清单修正**（cycle 1 实测发现） | **已定**：放行一条读能力会牵动**策略面登记表族**（5 处，逐条枚举进 `fix_policy`）；处置 = **加法/搬迁登记**、**谓词阈值不变**；清单外仍禁改（触达即 BLOCKED） |
 
 ## 循环入口协议（幂等重入）
 
@@ -386,16 +403,20 @@ GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`W-8`；历史 `tools/` 目录
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| （本行所在提交） | **无自己的 run**（建档提交） | cycle 0 建档；与 GOAL-035 的台账尾巴**同批推送** ⇒ `covered_by` 该批 HEAD；其结论由下一条台账尾巴取证 |
+| `18a078a`（**建档**） | **无自己的 run**（同批推送） | cycle 0 建档；它与 GOAL-035 的台账尾巴 `512360a` **同一次 push** ⇒ 只有 HEAD 产生 run ⇒ `covered_by 512360a`（实测取证：两个 SHA 的 `head_sha` 查询 `total_count=0`） |
+| `512360a`（GOAL-035 台账尾巴，本批 HEAD） | `37753132183` **M0 success**（8 job 全 success）+ `37753131400` **Push/CodeQL success**（3 分析全 success） | 该批 HEAD；**同时承担** `18a078a` 的绿 + **封闭 GOAL-035 台账的自我指涉边界**（两条同批路径都有实测读数） |
+| （cycle 1 提交） | 待推送 | EC-01/EC-02 承接链 + 同轮同步面 5 处 + 记录（本 cycle） |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（建档） | （本文件所在提交） | 只读勘察（0 改动）；五条 EC 全 PENDING | PENDING | — | 五条 EC 全 PENDING；实现落点（②）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 实现面） |
+| 0 | —（建档） | `18a078a`（与 GOAL-035 台账尾巴同批） | 只读勘察（0 改动）；五条 EC 全 PENDING | （见 CI 台账） | — | 五条 EC 全 PENDING；实现落点（②）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 实现面） |
+| 1 | `PLAN-20261008-331` | （见 CI 台账 cycle 1 行） | EC-01 + EC-02 落地：四道门（ruff/format/mypy/规模 68·421 行）绿；**全量 python 套件 5361 passed, 20 skipped**（相对建档基线收集数 +1 = 新模块进源文件参数化面）；`tests/application/preflight` **60 passed**（同步面改完）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5359 passed, 20 skipped**，收集数 +1 逐文件分解） | （见 CI 台账） | **门链抓到策略面 4 处登记表**（差集表 / `_CAPABILITY_SCOPE` / 两处登记计数）⇒ 同轮同步（加法/搬迁，谓词不变）并**修正 `fix_policy` 的同步面清单**（决策 ⑥，如实登记） | EC-01/EC-02 收口；**下一轮 EC-03**（真用判据 + 两向反证） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 1（EC-01/EC-02）**：勘察定稿 + **承接链五件事齐** —— 实现 `adapters/canonical/review_read.py`（读 `ReviewFindingStore.for_run`，缺依赖**点名**不可用）、描述子/能力映射、provider 依赖位与 handler、会话绑定表、装配回调与**两个组合根接线**、出厂目录声明、`policy.yaml` **新增一条只读 `allow`**（scope `project`）。**门链抓到策略面 4 处登记表**（差集表 / `_CAPABILITY_SCOPE` / 「该登记」计数 / 放行集合）⇒ 同轮**加法/搬迁**同步（谓词、阈值、受判形态一字未改），并据此**修正本 GOAL 的 `fix_policy` 同轮同步面清单**（决策 ⑥）。EC-01/EC-02 `PASS`；EC-03/04/05 仍待收口。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 程序表序 4 + GOAL-035 收口面；只读勘察把「按研究循环实际需要扩容承接面」落成**一条**可实测的目标 —— `review.read`（词表 46 条里有、声明面 19 条里**零**承接、`policy.yaml` 零放行、分类理由已被 GOAL-035 EC-01 推翻；真需要的证据 = 跨轮「结论驱动」读不到上一轮评审结论，且它是 GOAL-035 `N-3` 的前置）。五条 EC 全 `PENDING`。**不做数量目标**（MAINLINE 明文）；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

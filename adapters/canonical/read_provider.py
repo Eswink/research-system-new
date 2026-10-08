@@ -53,6 +53,7 @@ class CanonicalReadProvider:
         budget_ledger: Any | None = None,
         experiment_store: Any | None = None,
         run_store: Any | None = None,
+        review_store: Any | None = None,
         spill_threshold_bytes: int = 1,
     ) -> None:
         """构造读面 provider。
@@ -82,6 +83,9 @@ class CanonicalReadProvider:
         #: run 存储（`run.read` 的**真实**来源；`RunStore` 是既有 Port，两个组合根都持有）。
         #: 缺省 None ⇒ 该工具**点名**不可用，不返回空壳冒充「没有这个 run」。
         self._runs = run_store
+        #: 评审结论存储（`review.read` 的**真实**来源；GOAL-035 EC-01 的 canonical 记录面）。
+        #: 缺省 None ⇒ 该工具**点名**不可用，不返回空列表冒充「没有评审结论」。
+        self._reviews = review_store
         self._spill_threshold = spill_threshold_bytes
 
     def execute(self, provider: ToolProviderSpec, call: ToolCallRecord) -> ToolResultRecord:
@@ -96,6 +100,7 @@ class CanonicalReadProvider:
             "experiment_plan_read": self._experiment_plan_read,
             "deliverable_read": self._deliverable_read,
             "run_read": self._run_read,
+            "review_read": self._review_read,
         }.get(call.tool_id)
         if handler is None:
             raise InvalidInputError(f"unknown tool id: {call.tool_id}")
@@ -405,6 +410,12 @@ class CanonicalReadProvider:
         from adapters.canonical.run_read import run_read
 
         return run_read(self._runs, args)
+
+    def _review_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读一次 run 的评审结论（实现见 `adapters/canonical/review_read.py`，本行只委派）。"""
+        from adapters.canonical.review_read import review_read
+
+        return review_read(self._reviews, args)
 
 
 __all__ = ["CanonicalReadProvider"]

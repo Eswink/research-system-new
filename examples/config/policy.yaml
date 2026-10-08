@@ -35,6 +35,14 @@ policy:
       scope: project
     - capability: experiment_plan.read
       scope: project
+    # GOAL-20261008-036 EC-02（授权 承继 (0) 的「可以决定」面）：`review.read` 的放行 ——
+    # 它读的是 GOAL-035 EC-01 落 canonical 的**验收结论**（逐条判词），与读面
+    # `GET /runs/{id}/reviews` 同一内容面；scope 与同级读能力（`artifact.read` /
+    # `evidence.read` / `run.read`）对齐 = `project`。
+    # **本改动只新增这一条 allow**：`default_effect` / `deny` / `require_approval` /
+    # `allow_with_constraints` 一律未动（由新增判据逐条钉住）。
+    - capability: review.read
+      scope: project
     - capability: artifact.write
       scope: run
     - capability: literature.search

@@ -48,9 +48,9 @@
   `literature.search`、`workspace.read`、`workspace.write.code`）**全部**已被非 `deny` 规则覆盖
   （6 条 `allow` + 2 条 `allow_with_constraints`）。
 - **该拒绝 = 20 条**：14 条声明面独有的写/执行/提议类 + 6 条策略面独有的未使用护栏/门面规则。
-- **该登记 = 8 条**：声明面在用、协议不可达的**读类**能力（`agent_run.read`、
+- **该登记 = 7 条**：声明面在用、协议不可达的**读类**能力（`agent_run.read`、
   `citation.inspect`、`dataset.read`、`provenance.read`、
-  `research_map.read`、`research_state.read`、`review.read`、`target.read`）。
+  `research_map.read`、`research_state.read`、`target.read`）。
   **2026-10-06 变更（GOAL-20261006-031 EC-01，授权 1）**：`budget.read` / `claim.read` /
   `deliverable.read` / `experiment.read` / `experiment_plan.read` / `run.read` 六条**已逐条
   放行**（scope `project`），因此**离开差集**、进入下方交集清单 —— 终态由「该登记」变为
@@ -60,6 +60,11 @@
   **已放行**（scope 与同一取数 provider 的既有放行形态对齐 = `approved_tool_providers`；
   承接面 = 新增 provider `ncbi_citation`，取数复用既有 elink 面）⇒ 同样离开差集、
   进入交集清单。
+  **2026-10-08 第三次变更（GOAL-20261008-036 EC-02，授权承继 (0)）**：`review.read`
+  **已逐条放行**（scope `project`，与同级读能力对齐）并**已承接**（provider `m12_artifact`
+  的新工具 `review_read`，读 GOAL-035 EC-01 落 canonical 的验收结论）⇒
+  它同时出现在策略面与声明面 ⇒ **离开差集**、进入交集清单，终态由「该登记」变为
+  「已处理」。放行形态仍是**逐条**（一条规则命名一个具体能力，不成类）。
 
 **关于「读类能力是否成类预放行」的口径（`D-02(b)`）**：2026-09-25 用户拍板
 「维持逐条放行、不成类预放行」；2026-10-06 GOAL-20261006-031 的授权变更（用户下放全部权限
@@ -70,7 +75,7 @@
 
 ---
 
-## 差集表（28 行 = 策略面独有 6 + 声明面独有 22）
+## 差集表（27 行 = 策略面独有 6 + 声明面独有 21）
 
 | 能力 | 差集侧 | 声明面 | 协议可达 | 读类 | 终态 | 依据 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -97,20 +102,20 @@
 | `provenance.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `research_map.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `research_state.read` | 声明面独有 | roles、skills | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
-| `review.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `review.write` | 声明面独有 | roles、skills | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `statistics.execute` | 声明面独有 | roles | 否 | 否 | 该拒绝 | 声明面有、协议不可达；写/执行/提议类 ⇒ 落 `default_effect: DENY` 即正确 |
 | `target.read` | 声明面独有 | roles | 否 | 是 | 该登记 | 声明面在读、协议尚不要求；**读类**是否成类预放行需拍板（`W-A` 的先例是逐条放行） |
 | `workspace.delete` | 策略面独有 | （无） | 否 | 否 | 该拒绝 | 策略面有规则而四个声明面无人使用；未使用的护栏/门面规则，现状即正确 |
 
-**两侧都有（交集，不在差集内，16 条）**：`artifact.read`、`artifact.write`、
+**两侧都有（交集，不在差集内，17 条）**：`artifact.read`、`artifact.write`、
 `budget.read`、`citation.validate`、`claim.read`、`code.execute`、`deliverable.read`、
 `evidence.read`、`experiment.read`、`experiment_plan.read`、`literature.read`、
-`literature.search`、`run.read`、`workspace.read`、`workspace.write.code`、
+`literature.search`、`review.read`、`run.read`、`workspace.read`、`workspace.write.code`、
 `workspace.write.notes` —— 它们已被
 `policy.yaml` 的 `allow` / `allow_with_constraints` 覆盖，属于「已经处理过」的那一类
 （`evidence.read` 是 `W-A` 被拍板放行后的结果；`citation.validate` 由 GOAL-20261006-031 EC-02（授权 2）放行并承接（provider `ncbi_citation`）；另 6 条读能力是 GOAL-20261006-031 EC-01
-逐条放行的结果）。
+逐条放行的结果；`review.read` 由 GOAL-20261008-036 EC-02（授权承继 (0)）逐条放行并承接
+（provider `m12_artifact` 的工具 `review_read`））。
 
 ## 复跑方式（零出网）
 
