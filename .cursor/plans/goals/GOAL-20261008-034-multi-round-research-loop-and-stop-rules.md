@@ -515,7 +515,11 @@ GOAL-019…033 的未覆盖范围原样保留。
 | `76f7725` / `a86ee54`（cycle 1 记录 + m0 读数更正） | M0 + Push on main（`a86ee54`）**均 success** | `76f7725` 与 `a86ee54` 同批；HEAD `a86ee54` 的 M0 **success**（八 job） |
 | `8c1c7aa`（EC-03 读面 + 返工） | M0 **success**（八 job）+ Push on main **success** | 该批两 run 全 `success` |
 | `f07b0ab`（EC-03 记录 + 台账） | M0 **success** + Push on main **success** | 该批两 run 全 `success` |
-| `b136cc8`（cycle 3 开工：收口验证器 + 残余字面化） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
+| `b136cc8`（cycle 3 开工：收口验证器 + 残余字面化） | **该 SHA 下 `total_count=0`（无自己的 run）** | **原因如实登记**：它与 `280bdf7`、`5de20ce`、`170d8c1` 等同一批推送 ⇒ 只有 HEAD 产生 run。`covered_by: 170d8c1` |
+| `280bdf7`（两树判词归档进树） | **无自己的 run**（同批） | 同上；`covered_by: 170d8c1` |
+| `5de20ce` / `8c1c7aa` 之后的记录提交 | **无自己的 run**（同批） | 同上；`covered_by: 170d8c1` |
+| `170d8c1`（**GOAL 收口**：status ACHIEVED + m0 读数） | M0 + Push on main | 该批 HEAD；其结论在**写入本行时**尚未产生 ⇒ 见「自我指涉边界」 |
+| `643889e`（MAINLINE 进展记录行） | 见「自我指涉边界」 | 本节的**末条**：其自身 CI 结论在写入时尚未产生 |
 
 **自我指涉边界（明写并封闭）**：本节的「回顾性台账」提交自身**不产生**可引用的 CI 结论
 （它进入 CI 时其结论尚无）—— 以「**末条提交 + 覆盖说明**」封闭，**不得循环引用**。
