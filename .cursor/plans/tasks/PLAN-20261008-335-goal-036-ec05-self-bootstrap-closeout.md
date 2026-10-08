@@ -163,7 +163,7 @@ exit_criteria:
 | `tests/tooling/test_tooling_scripts_meet_product_gates.py` | **8 passed** |
 | `tools/verify_goal036_closeout.py --root . --verdict-only` | 起草中间态 **65 PASS / 6 FAIL**（逐条：例数下界起草错误 ×1、归档未生成 ×2、本轮两份记录未写 ×2、残余标记未定格 ×1）⇒ 修正与记录落地后 **71 判词 / 0 FAIL**（本树收口态，归档生成后实测） |
 | 两树复检 | 首轮 bootstrap 红（**实测**：current 71 判词 / 2 FAIL 仅归档缺失、clean 71 判词 / 5 FAIL（另有本轮交付面四项未提交）⇒ `COMPARE identical=False`；归档由此写出）；次轮 `--base-ref 1551d2f` ⇒ **`TWO-TREE PASS`**（两路 71 判词、`sha256` 相同 `8ad58ebc…`） |
-| as-is m0 | 读数在收口提交回填（`--profile m0 --keep-going`、独占、不接管道；判据：终局行 `PASS: profile=m0; 23 deterministic checks`、`PASS [` 24 / `FAILED [` 0） |
+| as-is m0 | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5367 passed, 20 skipped**；收集数 **+0** —— 本轮只新增 `tools/` 下两脚本（不在产品根参数化面）与记录；`skipped` 20 未升）。日志 `scratch/m0-goal036-cycle3.log`（gitignored）。跑在**全部记录写入之后**（提交 B 定格后、提交 C 的读数回填之前） |
 
 ## 影响报告
 

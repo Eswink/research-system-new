@@ -2,7 +2,7 @@
 id: GOAL-20261008-036
 slug: review-read-capability-onboarding
 title: 承接面按研究循环实际需要扩容 —— 评审结论的**可读承接**（`review.read`）：从「登记在案」到「端到端真跑」
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-08
 updated_at: 2026-10-08
 owners:
@@ -150,7 +150,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest
       tests/tooling/test_mainline_program_is_intact.py -q` ⇒ 全绿；配套留档：
       两路判词 sha256 相同的归档、m0 日志、CI 台账逐提交行。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -229,7 +229,7 @@ memory_entries:
 | EC-02 | 端到端承接链 | 声明 + 实现 + 绑定 + 接线 + 放行（五件缺一不可） | PASS |
 | EC-03 | 真被用上 | 一次实跑里后续 phase 通过它**读到前序 phase 落库的逐条判词** + 两向反证点名 | PASS |
 | EC-04 | 登记面与读数 | 分类清单纯收紧 + 夹具同轮 + 覆盖 19/46 → 20/46 **逐条** | PASS |
-| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**为了凑数**声明没有实现的
 能力；不得**先声明未放行能力**（先放行再声明）；不得把 destructive / 写 / 执行 / 审批类能力
@@ -417,7 +417,7 @@ GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`W-8`；历史 `tools/` 目录
 | `512360a`（GOAL-035 台账尾巴，本批 HEAD） | `37753132183` **M0 success**（8 job 全 success）+ `37753131400` **Push/CodeQL success**（3 分析全 success） | 该批 HEAD；**同时承担** `18a078a` 的绿 + **封闭 GOAL-035 台账的自我指涉边界**（两条同批路径都有实测读数） |
 | `14a5ac2`（cycle 1） | `37759493180` **M0 success**（8 job 全 success）+ `37759492764` **Push on main / CodeQL success**（3 分析全 success） | EC-01/EC-02：`review.read` 承接链 + 同轮同步面 5 处 + 记录；本地 as-is m0 23/23（**实测取证**） |
 | `43a8e80`（cycle 2） | 读数在收口提交回填（本行写入时该批次 CI 轮询中：run 族 `37765785794` / `37765785834`） | EC-03/EC-04：真用判据（6 passed + 按压）+ 登记面搬迁 + 覆盖读数 19/46 → 20/46；本地 as-is m0 23/23（`PASS [` 24 / `FAILED [` 0 / 5367 passed, 20 skipped） |
-| （cycle 3 提交批次） | 读数在收口提交回填 | EC-05：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮 bootstrap）→ 次轮 `TWO-TREE PASS` → GOAL 收口；同批推送时只有 HEAD 产生 run（逐行 `covered_by` 登记） |
+| （cycle 3 提交批次）`1551d2f` / `aa65640` / （本批 HEAD = 本行所在提交） | 读数在台账尾提交回填 | EC-05：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮 bootstrap `1551d2f`）→ 次轮 `TWO-TREE PASS` + 归档定格（`aa65640`）→ GOAL 收口（本提交：EC-05 `PASS` + m0 读数）；三条**同一次 push** ⇒ 以本批 HEAD 的 run 覆盖（逐条 `total_count=0` 实测取证在台账尾） |
 
 ## 迭代日志
 
@@ -426,12 +426,13 @@ GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`W-8`；历史 `tools/` 目录
 | 0 | —（建档） | `18a078a`（与 GOAL-035 台账尾巴同批） | 只读勘察（0 改动）；五条 EC 全 PENDING | （见 CI 台账） | — | 五条 EC 全 PENDING；实现落点（②）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 实现面） |
 | 1 | `PLAN-20261008-331` | （见 CI 台账 cycle 1 行） | EC-01 + EC-02 落地：四道门（ruff/format/mypy/规模 68·421 行）绿；**全量 python 套件 5361 passed, 20 skipped**（相对建档基线收集数 +1 = 新模块进源文件参数化面）；`tests/application/preflight` **60 passed**（同步面改完）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5359 passed, 20 skipped**，收集数 +1 逐文件分解） | （见 CI 台账） | **门链抓到策略面 4 处登记表**（差集表 / `_CAPABILITY_SCOPE` / 两处登记计数）⇒ 同轮同步（加法/搬迁，谓词不变）并**修正 `fix_policy` 的同步面清单**（决策 ⑥，如实登记） | EC-01/EC-02 收口；**下一轮 EC-03**（真用判据 + 两向反证） |
 | 2 | `PLAN-20261008-333` | （见 CI 台账 cycle 2 行） | EC-03/EC-04 全 PASS：`tests/e2e/test_review_read_on_the_run_path.py` **6 passed**（主路 + 两向反证 + 报告面）；**按压 P-1**（空结果）⇒ 1 failed 且**只有下游消费那条**判红；广面套件（e2e+contracts+loaders+application+architecture）**1887 passed, 86 skipped**；覆盖读数 词表 46（未改）/ 声明面 distinct **19 → 20**（`review.read → ['m12_artifact']`，逐条）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5367 passed, 20 skipped**，收集数 +8 逐文件分解） | （见 CI 台账） | 首版协议按语义选了 `meta_reviewer` ⇒ preflight `AGENT_MISSING`（离线池无该角色实例）⇒ 按**实际在场**的池改用另一位 `scientific_reviewer`（**未**为判据过而往夹具塞 agent）；工具载荷字段名把两层分开（`reviews[].verdicts`）| EC-03/EC-04 收口；**下一轮 EC-05**（自举收口） |
-| 3 | `PLAN-20261008-335` | （见 CI 台账 cycle 3 行） | EC-05 七条 AC：**AC-1** 验证器进树（复用标准断言集**一行未重写**；收口态 **71 判词 / 0 FAIL**，非判词行 0 / 绝对路径 0；**起草中间态 65 PASS / 6 FAIL** 且**逐条为起草缺陷**）+ **AC-2** `IN_SCOPE` 纯收紧（+2 行；判据 8 passed；两脚本四道门绿：ruff/format/mypy/规模 250·192 行）+ **AC-5** 治理 `validate.py` 绿 + 宪章判据绿 + **AC-6** 承继残余 `N-1`…`N-6` / `R26-*` / 未覆盖逐条在位且**本轮残余 `M-1`…`M-5` 逐条定格**；**AC-3（两树 + 归档形态）与 AC-4（as-is m0 终局行）读数在 `RECHECK-20261008-336` 逐条回填** | （见 CI 台账） | **起草期两条自纠（门链自己抓到）**：① 例数下界取了未实测的 `10`（实测 **7** 例）⇒ 判据永红 —— 下界改取**实测例数**；② 残余标记用裸子串 `M-1` ⇒ 被 `MEM-160` / `MEM-20261008-197` **偶然命中而假绿** —— 收紧为**回引号形态** `` `M-1` ``（同一中间态随即逐条判红）。两条都**只收紧本轮新断言**，既有判据一字未动 | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-336`） |
+| 3 | `PLAN-20261008-335` | （见 CI 台账 cycle 3 行） | EC-05 七条 AC：**AC-1** 验证器进树（复用标准断言集**一行未重写**；收口态 **71 判词 / 0 FAIL**，非判词行 0 / 绝对路径 0；**起草中间态 65 PASS / 6 FAIL** 且**逐条为起草缺陷**）+ **AC-2** `IN_SCOPE` 纯收紧（+2 行；判据 8 passed；两脚本四道门绿：ruff/format/mypy/规模 250·192 行）+ **AC-3** 两树 **`TWO-TREE PASS`**（次轮 `--base-ref 1551d2f`：两路 71 判词、`sha256` 相同 `8ad58ebc…`；首轮 bootstrap 红如实登记）+ **AC-4** 归档两份各 **2566 B / 71 行 / `CR=0` / 0 FAIL** + as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5367 passed, 20 skipped**，收集数 +0；记录写完之后）+ **AC-5** 治理 `validate.py` 绿 + 宪章判据绿 + **AC-6** 承继残余 `N-1`…`N-6` / `R26-*` / 未覆盖逐条在位且**本轮残余 `M-1`…`M-5` 逐条定格** + **AC-7** CI 台账逐提交 | （见 CI 台账） | **起草期两条自纠（门链自己抓到）**：① 例数下界取了未实测的 `10`（实测 **7** 例）⇒ 判据永红 —— 下界改取**实测例数**；② 残余标记用裸子串 `M-1` ⇒ 被 `MEM-160` / `MEM-20261008-197` **偶然命中而假绿** —— 收紧为**回引号形态** `` `M-1` ``（同一中间态随即逐条判红）。两条都**只收紧本轮新断言**，既有判据一字未动 | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-336`） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACHIEVED | **GOAL 收口（cycle 3 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、`IN_SCOPE` **纯收紧**、两树 **`TWO-TREE PASS`**（71 判词 / 两路 `sha256` 相同 `8ad58ebc…`）、判词归档进树（两份各 2566 B / 71 行 / `CR=0` / 0 FAIL）、as-is m0 **23/23**（记录写完之后：`PASS [` 24 / `FAILED [` 0 / **5367 passed, 20 skipped**，收集数 +0）、治理 + 宪章判据绿、CI 台账逐提交。**两处真红/自纠如实登记**：两树首轮 bootstrap 红（固有时序）、起草期两条自纠（例数下界取实测 7；残余标记改回引号形态以免 `MEM-160` 偶然命中而假绿）。**收口后不再推进本 GOAL**；残余 `M-1`…`M-5` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**；口径只能是 at-least-once + idempotency + deduplication）。独立复检：`RECHECK-20261008-336`（PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 3（EC-05 自举收口）落地**：收口验证器 + 本轮断言集进树（复用标准断言集**一行未重写**），`IN_SCOPE` **纯收紧**（+2 行），两脚本过四道门；两树复检（`--script-mode shared`）与判词归档进树、as-is m0、治理 + 宪章判据、CI 台账逐提交 —— 读数逐条在 `RECHECK-20261008-336`（bootstrap 时序如实登记）。**起草期两条自纠**（例数下界取实测 7；残余标记改回引号形态以免 `MEM-160` 偶然命中而假绿）只收紧本轮新断言。GOAL 收口。未覆盖范围与残余 `M-1`…`M-5` 逐条明写；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 2（EC-03/EC-04）**：`review.read` **真的被一次实跑用上** —— 新协议两 phase 都由运行链执行（`produce` 落库逐条判词 ⇒ `consume` 经 `review.read` 读**本 run 自己**的结论），**下游消费**证据 = 工具结果里出现落库的**逐字**判词；两向反证（缺实现 / 未放行）逐条点名；按压「空结果」只咬住下游消费那条。登记面**纯收紧** + 夹具同轮；**覆盖读数 19/46 → 20/46**（逐条）。EC-03/EC-04 `PASS`；EC-05 待收口。未覆盖：读到的结论是否影响科学结论 / 多评审者聚合仍未接线。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 1（EC-01/EC-02）**：勘察定稿 + **承接链五件事齐** —— 实现 `adapters/canonical/review_read.py`（读 `ReviewFindingStore.for_run`，缺依赖**点名**不可用）、描述子/能力映射、provider 依赖位与 handler、会话绑定表、装配回调与**两个组合根接线**、出厂目录声明、`policy.yaml` **新增一条只读 `allow`**（scope `project`）。**门链抓到策略面 4 处登记表**（差集表 / `_CAPABILITY_SCOPE` / 「该登记」计数 / 放行集合）⇒ 同轮**加法/搬迁**同步（谓词、阈值、受判形态一字未改），并据此**修正本 GOAL 的 `fix_policy` 同轮同步面清单**（决策 ⑥）。EC-01/EC-02 `PASS`；EC-03/04/05 仍待收口。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
