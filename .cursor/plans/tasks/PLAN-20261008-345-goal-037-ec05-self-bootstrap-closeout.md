@@ -157,7 +157,7 @@ exit_criteria:
 | 规模（450 行 / 函数 50 行） | `tools/goal037_closeout_assertions.py` **278** 行 / `tools/verify_goal037_closeout.py` **202** 行（函数均在 50 行内，由判据参数化复核） |
 | `tests/tooling/test_tooling_scripts_meet_product_gates.py` | **8 passed** |
 | `tools/verify_goal037_closeout.py --root . --verdict-only` | 起草中间态 **75 PASS / 4 FAIL**（逐条：归档未生成 ×2、本轮两份记录未写 ×2）⇒ 记录落地后收口态 **79 判词 / 0 FAIL** |
-| 两树复检 | 首轮 bootstrap 红（读数见 `RECHECK-20261008-346` 第 3 节）；次轮 **`TWO-TREE PASS`** |
+| 两树复检 | 首轮 bootstrap 红（**实测**：current 79 判词 / 2 FAIL 仅归档缺失、clean 79 判词 / 8 FAIL（另有本轮交付面六项未提交）；归档由此写出）；次轮 `--base-ref 339d78f` ⇒ **`TWO-TREE PASS`**（两路 79 判词、`sha256` 相同 `ffcce304…`） |
 | as-is m0 | **`PASS: profile=m0; 23 deterministic checks`**（读数见 GOAL 迭代日志 cycle 5 行） |
 
 ## 无可复用事实

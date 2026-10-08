@@ -50,7 +50,7 @@ owners:
 | 轮次 | `--base-ref` | 读数 |
 | --- | --- | --- |
 | 首轮 | `bb5443d`（本轮交付面未提交、归档尚未生成） | **`TWO-TREE RED`**（bootstrap 时序，非失败）：current **79 判词 / 2 FAIL**（只有两份归档缺失）、clean **79 判词 / 8 FAIL**（另有本轮交付面六项未提交）⇒ `COMPARE identical=False`；**两份归档由此写出**（current 3027 B / clean 3171 B，各 79 行、`CR=0`） |
-| 次轮 | （本轮交付面提交） | 读数在收口提交回填 |
+| 次轮 | `339d78f`（本轮交付面与归档已提交） | **`TWO-TREE PASS`**，两路 **79 判词**、`sha256` **相同** `ffcce304…`、`COMPARE identical=True` |
 
 **bootstrap 时序如实登记**：判词归档由**被归档的那个入口**写出 ⇒ 首轮必然红于「归档不存在」；
 次轮（`--base-ref` 指向**含归档**的提交）才 `TWO-TREE PASS`。**未**为让首轮变绿而删掉
@@ -61,7 +61,8 @@ owners:
 | 读法 | 读数 |
 | --- | --- |
 | 落点（在树） | `.cursor/plans/goals/evidence/GOAL-20261008-037-verdict-current.txt`（当前树）与 `.cursor/plans/goals/evidence/GOAL-20261008-037-verdict-clean.txt`（干净树） |
-| 形态 | 读数在收口提交回填（字节数 / 行数 / 逐字节判 `CR=0` / `FAIL` 条数 / 两份 `sha256`） |
+| 形态（**次轮定格**） | 两份各 **2993 B / 79 行 / `CR=0`（逐字节判）/ `FAIL` 0 条**；两份 `sha256` **相同** `ffcce304dccb75e8009e56c6c195258ad77f3d53cd4a81a3a270cb11c336112d` |
+| 首轮（bootstrap）形态 | 两份各 79 行（current 3027 B / clean 3171 B）—— 由**首轮自己**写出，次轮被**同字节**改写为上面的定格形态 |
 
 （归档的**内容**不做一致性断言 —— 输入即输出；一致性由入口的 `COMPARE` 回答，见第 3 节。）
 

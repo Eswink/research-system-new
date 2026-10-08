@@ -46,8 +46,8 @@ PASS prior-judge-test_capability_coverage_is_implemented
 PASS prior-judge-test_release_expansion_is_read_only
 PASS prior-judge-test_read_grant_is_per_item
 PASS prior-judge-test_delivery_semantics_wording
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
 PASS scope-declares-this-rounds-scripts
 PASS scope-still-pins-the-entry
 PASS goal-declares-five-ecs

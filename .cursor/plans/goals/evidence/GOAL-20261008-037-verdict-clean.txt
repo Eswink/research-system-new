@@ -46,12 +46,12 @@ PASS prior-judge-test_capability_coverage_is_implemented
 PASS prior-judge-test_release_expansion_is_read_only
 PASS prior-judge-test_read_grant_is_per_item
 PASS prior-judge-test_delivery_semantics_wording
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
-FAIL scope-declares-this-rounds-scripts -> tools/verify_goal037_closeout.py,tools/goal037_closeout_assertions.py
+PASS verdict-archive-current
+PASS verdict-archive-clean
+PASS scope-declares-this-rounds-scripts
 PASS scope-still-pins-the-entry
 PASS goal-declares-five-ecs
-FAIL goal-ec01-status -> PENDING
+PASS goal-ec01-status
 PASS goal-ec02-status
 PASS goal-ec03-status
 PASS goal-ec04-status
@@ -60,12 +60,12 @@ PASS record-PLAN-20261008-337-goal-037-ec01-canonical-program-skeleton.md
 PASS record-PLAN-20261008-339-goal-037-ec02-program-advance-entry.md
 PASS record-PLAN-20261008-341-goal-037-ec03-cross-run-knowledge-read-in.md
 PASS record-PLAN-20261008-343-goal-037-ec04-idempotent-advance-and-restart.md
-FAIL record-PLAN-20261008-345-goal-037-ec05-self-bootstrap-closeout.md ->
+PASS record-PLAN-20261008-345-goal-037-ec05-self-bootstrap-closeout.md
 PASS record-RECHECK-20261008-338-goal-037-ec01-canonical-program-skeleton.md
 PASS record-RECHECK-20261008-340-goal-037-ec02-program-advance-entry.md
 PASS record-RECHECK-20261008-342-goal-037-ec03-cross-run-knowledge-read-in.md
 PASS record-RECHECK-20261008-344-goal-037-ec04-idempotent-advance-and-restart.md
-FAIL record-RECHECK-20261008-346-goal-037-ec05-self-bootstrap-closeout.md ->
+PASS record-RECHECK-20261008-346-goal-037-ec05-self-bootstrap-closeout.md
 PASS record-README.md
 PASS record-MAINLINE.md
 PASS r26-R26-1-registered
@@ -75,5 +75,5 @@ PASS r26-R26-4-registered
 PASS r26-R26-5-registered
 PASS r26-R26-6-registered
 PASS uncovered-scope-enumerated
-FAIL residuals-enumerated -> `O-1`,`O-2`,`O-3`,`O-4`,`O-5`
-FAIL prior-residuals-kept -> `M-2`,`M-3`,`M-4`
+PASS residuals-enumerated
+PASS prior-residuals-kept
