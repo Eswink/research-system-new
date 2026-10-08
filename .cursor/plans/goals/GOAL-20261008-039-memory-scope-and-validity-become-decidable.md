@@ -81,7 +81,7 @@ exit_criteria:
       `rg -n "review_after|expires_at|scope" packages/domain/memory.py
       adapters/{sqlite,postgres}/memory_store.py packages/application/memory/` 逐条读数；
       `rg -n "scope" adapters/postgres/memory_store.py` ⇒ 零命中（从不落库）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **适用范围落库（canonical 一等字段）**：`MemoryRecord` 增 `scope` 字段（缺省
@@ -180,7 +180,8 @@ escalation_triggers:
   - 需要对既有记忆记录做**破坏性**改写（本轮只加列与缺省；不改既有行的语义）
 child_plans:
   - .cursor/plans/tasks/PLAN-20261008-351-goal-039-ec02-04-memory-scope-and-validity.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-352-goal-039-ec02-04-memory-scope-and-validity.md
+  - .cursor/plans/tasks/PLAN-20261008-353-goal-039-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-354-goal-039-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -196,7 +197,7 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | `scope` 从不落库、两时效列从不被写/被判定、`query` 无时效过滤、§8 明文要求 | PENDING |
+| EC-01 | 勘察定稿 | `scope` 从不落库、两时效列从不被写/被判定、`query` 无时效过滤、§8 明文要求 | PASS |
 | EC-02 | 适用范围落库 | `scope` 成为 canonical 一等字段（迁移 018 + 两适配器往返 + 读面披露） | PASS |
 | EC-03 | 声明式时效 | 提案可声明两时点；缺省路径**逐字不变**（判据钉住） | PASS |
 | EC-04 | 到期可观测 | 按**调用方给的时点**逐条判定（expired / review_due / None）+ 三反证 | PASS |
@@ -340,14 +341,14 @@ GOAL-019…038 的未覆盖范围原样保留。
 | `R26-2` / `R26-3` / `R26-4` / `R26-6` | **保持** | 条件不满足 |
 | `R26-7` / `R26-8` | **保持** | 树外证据 / GOAL 正文投影 |
 
-### 本轮新增残余（随 cycle 增补）
+### 本轮新增残余（收口时逐条定格；`Q-1`…`Q-3`）
 
-- （建档时登记）**「时效」只到「事实可读」，不到「自动处置」**：本轮让到期/待复核成为
-  **可观测事实**（读面披露 + 判定可复核）；**不**自动删除 / 自动降权 / 自动重建索引
-  （AGENTS.md §8 的另外两条由既有 `deactivate` / `delete` 承担）。
-- （建档时登记）**跨项目 / 跨组织的 scope 语义不在本轮**：`scope` 落库并往返一致，
-  但「按 scope 过滤查询」「scope 的鉴权含义」不动（多租户 deferred）。
-- （建档时登记）**向量索引侧不在本轮**：索引是 derived（§6），本轮不动它。
+- `Q-1`（**只到「事实可读」不到「自动处置」**，未覆盖）：本轮让到期/待复核成为**可观测事实**
+  （读面披露 + 判定可复核）；**不**自动删除 / 自动降权 / 自动重建索引（§8 的另外两条由既有
+  `deactivate` / `delete` 承担）。
+- `Q-2`（**跨项目 / 跨组织的 scope 语义不在本轮**，未覆盖）：`scope` 落库且往返一致，
+  但「按 scope 过滤查询」「scope 的鉴权含义」**不动**（多租户 deferred）。
+- `Q-3`（**向量索引侧不在本轮**，未覆盖）：索引是 derived（AGENTS.md §6），本轮不动它。
 
 ### 未覆盖范围（逐条明写，不得据此宣称安全）
 
@@ -381,6 +382,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | `PLAN-20261008-353` | （见 CI 台账） | EC-05 七条 AC：验证器进树（复用标准断言集**一行未重写**；起草中间态 **70 PASS / 3 FAIL** ⇒ 收口态 **73 判词 / 0 FAIL**）+ `IN_SCOPE` 纯收紧（+2 行；判据 8 passed）+ 治理 + 宪章判据 + 承继残余与本轮 `Q-1`…`Q-3` 逐条定格；**两树与 m0 读数在 `RECHECK-20261008-354` 回填** | （见 CI 台账） | — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-354`） |
 | 1 | `PLAN-20261008-351` | （见 CI 台账） | EC-02/03/04 全 PASS：**`scope` 落库**（域 + 迁移 018 只加列 + 三实现同契约 + 读面披露；判据 11 例）+ **声明式时效**（声明 ⇒ 真实值 / 未声明 ⇒ None）+ **到期可观测**（三态纯函数**不读挂钟** + 边界含等号 + `GET .../memory/validity?at=` 读面；三反证）；广面 **4379 passed, 179 skipped**；隐私读面 **133 passed, 2 skipped**；四道门绿（mypy 1166 files） | （见 CI 台账） | **三处真红并修**：① SQLite `INSERT` 硬编码 12 个占位符（加列后 13 列）⇒ 按列数生成；② 新路由首版 POST ⇒ 写面告警线 63→64，复核后判定它是**读面** ⇒ 改 GET（写面回 63）；③ 读面登记首版放错「声明内容」档 ⇒ 撞上界（16>15）⇒ 更正为零命中档 | EC-02/03/04 收口；**下一轮 EC-05**（自举收口） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 7**（replan 留痕） | （见 CI 台账） | — | 五条 EC 全 PENDING；判定落点（②）与迁移形态（④）待 cycle 1 实现 | cycle 1（EC-02 落库 + EC-03 声明式时效） |
 
