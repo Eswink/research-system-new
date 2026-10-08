@@ -59,6 +59,10 @@ class OrchestrationDependencies:
     # None（缺省）= 该装配**不记录**验收结论（读面因此读不到它）——生产组合根总是接上；
     # 与 `ledger` 同层的可选装配面。注解取 Any：本模块不因此导入 ports 的实现类型。
     review_findings: Any | None = None
+    # GOAL-20261008-038 EC-04：**本 run 的前序结论**读取器（`(run_id) -> (结论, run_id)`）。
+    # None（缺省）= 装配不提供前序面 ⇒ 声明了 `cross_run_consumption` 的合约按 fail-closed
+    # 点名「没有前序结论」（**不**当作判过）。
+    prior_conclusion: Any | None = None
     default_actor: str = "system:orchestration"
 
     def fact_stores(self) -> dict[str, Any]:
@@ -68,4 +72,9 @@ class OrchestrationDependencies:
         什么」的写面，而读面（`GET /runs/{id}/evidence|reviews`）读的正是它们 —— 两层各自
         取名会让写面与读面分叉（读面永远读不到刚判过的那一条）。
         """
-        return {"ledger": self.ledger, "review_findings": self.review_findings}
+        return {
+            "ledger": self.ledger,
+            "review_findings": self.review_findings,
+            # GOAL-20261008-038 EC-04：跨轮消费的前序结论读取器（同层事实面）。
+            "prior_conclusion": self.prior_conclusion,
+        }

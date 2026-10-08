@@ -277,7 +277,11 @@ def _build_orchestration(
     """装配正式编排链（Fake runtime + SQLite workflow/outbox，共享连接）。"""
     from sqlite3 import Connection
 
+    from adapters.sqlite.run_store import SqliteRunStore
     from packages.application.ports import EventPublisher
+    from packages.application.run_orchestration.declared_consumption import (
+        prior_conclusion_reader,
+    )
 
     assert isinstance(connection, Connection)
     assert isinstance(events, EventPublisher)
@@ -295,6 +299,11 @@ def _build_orchestration(
             pricing_store=pricing_store,
             approvals=shared.registry,
             review_findings=shared.review_findings,
+            # GOAL-20261008-038 EC-04：前序结论读取器（与两个生产组合根同侧）。
+            # run 行落在共享连接上 ⇒ 这里另建的 SqliteRunStore 读的是**同一份 canonical**。
+            prior_conclusion=prior_conclusion_reader(
+                SqliteRunStore(connection=connection), shared.review_findings
+            ),
         )
     )
 

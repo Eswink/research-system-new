@@ -26,7 +26,12 @@ CAPABILITY = "research_state.read"
 TOOL_ID = "research_state_read"
 #: `consume` 的合约（与 `review_consumption_deliverable` **不同名** ⇒ 交付物可区分）。
 CONSUME_CONTRACT = "cross_run_consumption_deliverable"
-CONSUME_OUTPUT: dict[str, object] = {"meta_review": {"covers": "prior-run-recorded-verdicts"}}
+#: `consume` 的交付物：**声明并携带**前序结论（`meta_review.prior_verdict` 与合约声明的
+#: `metric` 路径逐字对齐 —— GOAL-20261008-038 EC-04 的受控执行体声明）。第 1 轮没有前序
+#: run（结构上无可消费 ⇒ 判据不适用）；第 2 轮携带的是第 1 轮落库的判决值 `PASS`。
+CONSUME_OUTPUT: dict[str, object] = {
+    "meta_review": {"covers": "prior-run-recorded-verdicts", "prior_verdict": "PASS"}
+}
 
 
 def calls(omit: str | None = None) -> tuple[Any, ...]:

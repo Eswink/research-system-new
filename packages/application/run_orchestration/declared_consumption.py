@@ -18,8 +18,9 @@
 
 - 没声明路径（`metric` 空）⇒ 点名「未声明消费路径」；
 - 声明了但本轮产物里**没有**那条路径 ⇒ 点名「声明路径缺失」；
-- 前序结论**不存在**（`prior_conclusion is None`）⇒ 点名「没有前序结论可比」——
-  **不得**把「没有前序」当成「判过」。
+- 有前序 run 但**读不到落库结论** ⇒ 点名（fail-closed：不得把「没有结论」当成「判过」）；
+- **本轮结构上就没有前序 run**（程序的第一轮）⇒ 判据**不适用**（判过 + 点名）——
+  与「有前序但未携带」严格区分；判成判负会让每个程序的第 1 轮必然失败。
 
 **为什么在这里而不是域层**：域层的既有返回值语义**逐字不动**（它有既有判据把守，且它
 明说该由编排层执行）；本模块是**唯一**编排层实现，由验收门求值点调用。
@@ -78,6 +79,28 @@ def declared_consumption_criteria(contract: TaskContract) -> tuple[AcceptanceCri
     )
 
 
+def _absent_source(observed: str | None, prior_run_id: str | None) -> ConsumptionVerdict:
+    """前序结论缺席时的两种形态（**严格区分**；与「有前序但未携带」也不同）。
+
+    - **结构上无前序**（程序的第一轮）⇒ 判据**不适用**（判过 + 点名理由）。判成判负会让
+      **每个程序的第 1 轮**必然失败 —— 那不是更严，那是把判据做成噪声；
+    - **有前序但读不到结论** ⇒ 判负（fail-closed：不得把「没有结论」当成「判过」）。
+    """
+    if prior_run_id is None:
+        return ConsumptionVerdict(
+            True,
+            f"custom evaluator {EVALUATOR_ID}: 本轮没有前序 run（结构上无可消费）"
+            f"⇒ 判据不适用（已点名；{SOURCE_LABEL} 缺席不是「未携带」）",
+            observed=observed,
+        )
+    return ConsumptionVerdict(
+        False,
+        f"custom evaluator {EVALUATOR_ID}: 有前序 run {prior_run_id} 但**读不到落库结论**"
+        f"（{SOURCE_LABEL} 缺席）⇒ 不得把「没有结论」当成「判过」（fail-closed）",
+        observed=observed,
+    )
+
+
 def resolve_consumption(
     criterion: AcceptanceCriterion,
     *,
@@ -100,12 +123,7 @@ def resolve_consumption(
             "（点名：配置错误或产物未带该字段；不回落到默认值）",
         )
     if prior_conclusion is None:
-        return ConsumptionVerdict(
-            False,
-            f"custom evaluator {EVALUATOR_ID}: 没有前序结论可比"
-            f"（{SOURCE_LABEL} 缺席）⇒ 不得把「没有前序」当成「判过」（fail-closed）",
-            observed=observed,
-        )
+        return _absent_source(observed, prior_run_id)
     source = f"{SOURCE_LABEL}" + (f" (run {prior_run_id})" if prior_run_id else "")
     if observed == prior_conclusion:
         return ConsumptionVerdict(
@@ -153,11 +171,71 @@ def resolve_consumption_evaluations(
     return resolved
 
 
+def prior_conclusion_reader(runs: Any, findings: Any) -> Any:
+    """造一个「本 run 的前序结论」读取器（组合根接线用；GOAL-20261008-038 EC-04）。
+
+    返回的闭包 `(run_id) -> (prior_conclusion, prior_run_id)` 读的是**同一程序内序号
+    最大的那个前序 run** 的落库评审结论（逐字；取不到 ⇒ `(None, None)`，由求值器点名）。
+    与 GOAL-037 的 `research_state_read` 同一入口（run_id → 程序归属 → 前序 run），
+    区别只是把结论**取成文本**交给门（那里是整份读面载荷）。
+
+    缺依赖（`RunStore` / `ReviewFindingStore` / 程序归属）⇒ 一律给 `(None, None)`：
+    「读不到前序」是**事实**，由求值器按 fail-closed 点名 —— 不在这里猜、不在这里断。
+    """
+
+    def _read(run_id: str) -> tuple[str | None, str | None]:
+        if runs is None or findings is None or not run_id:
+            return (None, None)
+        try:
+            run = runs.get_run(run_id)
+        except KeyError:
+            return (None, None)
+        program_id = getattr(run, "program_id", None)
+        if not program_id:
+            return (None, None)
+        prior = [item for item in runs.for_program(program_id) if item.id.value != run_id]
+        if not prior:
+            return (None, None)
+        last = prior[-1]
+        for record in findings.for_run(last.id.value):
+            verdict = getattr(record.finding, "verdict", None)
+            if verdict:
+                return (str(verdict), last.id.value)
+        return (None, last.id.value)
+
+    return _read
+
+
+def consumption_inputs(deps: Any, tctx: Any, session_result: Any) -> dict[int, Any]:
+    """合约声明了跨轮消费判据时，算好编排层结论（否则给空映射 ⇒ 域层既有判词保留）。
+
+    从 `task_phase_helpers` 移到这里：那个模块卡在 450 行硬上限上（GOAL-037 也因同一理由
+    把运行链实现分列出去）。本函数是**声明面**的一部分，与求值器同居是自然切法。
+    """
+    contract = tctx.contract
+    if not declared_consumption_criteria(contract):
+        return {}
+    reader = getattr(deps, "prior_conclusion", None)
+    run_id = getattr(getattr(tctx, "task", None), "run_id", None)
+    prior_conclusion: str | None = None
+    prior_run_id: str | None = None
+    if reader is not None and run_id is not None:
+        prior_conclusion, prior_run_id = reader(run_id.value)
+    return resolve_consumption_evaluations(
+        contract,
+        session_result.structured_output,
+        prior_conclusion,
+        prior_run_id,
+    )
+
+
 __all__ = [
     "EVALUATOR_ID",
     "SOURCE_LABEL",
     "ConsumptionVerdict",
+    "consumption_inputs",
     "declared_consumption_criteria",
+    "prior_conclusion_reader",
     "resolve_consumption",
     "resolve_consumption_evaluations",
 ]

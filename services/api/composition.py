@@ -60,6 +60,7 @@ from packages.application.ports.tool_provider_registry import ToolProviderRegist
 from packages.application.ports.worker_registry import WorkerRegistry
 from packages.application.ports.workspace_snapshot import WorkspaceSnapshotReader
 from packages.application.run_orchestration.context import RunContext
+from packages.application.run_orchestration.declared_consumption import prior_conclusion_reader
 from packages.application.run_orchestration.service import (
     OrchestrationDependencies,
     RunOrchestrationService,
@@ -311,6 +312,8 @@ def _sqlite_orchestration(
             budget=ports.budget,
             ledger=ports.ledger,
             review_findings=ports.review_findings,
+            # GOAL-20261008-038 EC-04：前序 run 结论读取器（声明了跨轮消费判据的合约用它）。
+            prior_conclusion=prior_conclusion_reader(ports.runs_store, ports.review_findings),
             telemetry=telemetry,
             pricing=ports.pricing,
             pricing_store=ports.pricing_store,

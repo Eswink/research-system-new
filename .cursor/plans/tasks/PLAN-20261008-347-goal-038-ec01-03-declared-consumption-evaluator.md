@@ -125,6 +125,21 @@ exit_criteria:
 本 cycle 的机制（声明路径的 fail-closed 三态）与 GOAL-035 EC-03 的
 `declared_review_score` 同一口径，其可复用事实已由既有记录承载；本轮未产生新的可复用事实。
 
+### 门（EC-04 落地后的补充读数）
+
+| 门 | 读数 |
+| --- | --- |
+| `tests/e2e/test_cross_run_consumption_is_decidable.py` | **4 passed**（消费成立且点名来源 run id / 第 1 轮判据不适用 / 反证①两侧值点名 / 反证②路径缺失点名） |
+| 受影响套件（e2e + application + domain + contracts + loaders + tooling + api + observability + architecture + adapters） | **5054 passed, 95 skipped**（唯一一次红为**已知类 flake**：OTLP teardown race —— 单跑该文件 4 passed 取证） |
+| `tests/application/run_orchestration/test_declared_consumption.py` | **13 passed**（含新加的第 1 轮「不适用」用例） |
+| `mypy`（strict） | `Success: no issues found in 1164 source files` |
+
+> **两次真红并修（本地，如实登记）**：① `declared_consumption.py` 的 `resolve_consumption`
+> **53 行**、`task_phase_helpers.py` **463 行**（超 450 硬上限）⇒ **拆函数**（`_absent_source`）
+> 与**移函数**（`consumption_inputs` 移进 `declared_consumption`）—— 不调阈值。
+> ② 首版语义把所有「无前序结论」都判负 ⇒ 实测**每个程序的第一轮必然失败**（判据不可用）；
+> 修正为**区分两形态**：结构上无前序 ⇒ **不适用**（判过 + 点名）；有前序但读不到结论 ⇒ 判负。
+
 ## 影响报告
 
 - **Domain / API / schema 变化**：**零**（域层与 schema **一字未动**；本轮只在编排层新增

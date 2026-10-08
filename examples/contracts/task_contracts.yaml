@@ -524,13 +524,21 @@ task_contracts:
     version: 1.0.0
     purpose: >-
       交付一件「基于**程序内前序 run 落库的结论**作出的元评审」—— 跨 run 消费面
-      （`research_state.read`，GOAL-20261008-037 EC-03）真的被用上的那件交付物。
+        （`research_state.read`，GOAL-20261008-037 EC-03）真的被用上的那件交付物。
+      **GOAL-20261008-038 EC-04**：本合约**声明它消费了什么** —— `CUSTOM_EVALUATOR`
+      判据用 `metric` 指明「本轮产物里哪条路径承载前序结论」，由编排层求值器按
+      **结构化比对**判定（相等 ⇒ 消费成立并留痕；不等 ⇒ 判负并点名两侧值）。
     required_capabilities:
       - artifact.write
     output_schema: real_research_deliverable_v1
     acceptance_criteria:
       - type: ARTIFACT_EXISTS
         artifact: meta_review
+      # 声明的**消费**判据：本轮的 `meta_review` 交付物必须携带前序 run 的落库结论
+      # （路径 `metric` 逐字给出；求值器 id `evaluator` 逐字给出）。
+      - type: CUSTOM_EVALUATOR
+        evaluator: cross_run_consumption
+        metric: meta_review.prior_verdict
     timeout_seconds: 120
     retry_policy:
       max_attempts: 1

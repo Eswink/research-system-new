@@ -12,6 +12,7 @@ from packages.application.run_orchestration.acceptance_observation import (
     criterion_line,
     record_acceptance_evaluation,
 )
+from packages.application.run_orchestration.declared_consumption import consumption_inputs
 from packages.application.run_orchestration.evaluation_gate import (
     EvaluationInputs,
     GateOutcome,
@@ -246,6 +247,10 @@ def evaluate_gate(
             # 与读面同源；合约没声明 `minimum_retrieved_sources` 时它不参与判定。
             retrieved_source_count=count_retrieved_sources(deps.ledger, registration.evidence),
             schema_check=_output_schema_check(deps, tctx.contract),
+            # GOAL-20261008-038 EC-04：合约声明了 `cross_run_consumption` 时，按**前序 run
+            # 的落库结论**先算好求值器结论（域层不执行外部求值器 —— 那是它的设计）；
+            # 没有该声明 / 没有前序面 ⇒ 不算（域层既有判词逐字保留或按 fail-closed 点名）。
+            consumption=consumption_inputs(deps, tctx, session_result),
             **_experiment_facts(deps, experiment),
         ),
         reviewer=f"gate:{tctx.spec_context.agent.id}",

@@ -197,6 +197,9 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
     )
 
 
+from packages.application.run_orchestration.declared_consumption import (  # noqa: E402
+    prior_conclusion_reader,
+)
 from services.api.session_tool_support import session_tool_face  # noqa: E402
 
 
@@ -240,6 +243,8 @@ def _build_pg_orchestration(
             budget=c["budget"],
             ledger=c["ledger"],
             review_findings=c["review_findings"],
+            # GOAL-20261008-038 EC-04：前序结论读取器（与 SQLite 根同侧，同一实现）。
+            prior_conclusion=prior_conclusion_reader(c["runs_store"], c["review_findings"]),
             telemetry=config.telemetry,
             pricing=_load_pricing(),
             pricing_store=c["pricing_store"],

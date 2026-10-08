@@ -114,15 +114,31 @@ def test_a_missing_declared_path_is_named() -> None:
     assert "缺失" in verdict.reason and PATH in verdict.reason
 
 
-def test_an_absent_prior_conclusion_is_never_a_pass() -> None:
-    """fail-closed③：**没有前序结论** ⇒ 点名（不得当成「判过」）。"""
+def test_a_prior_run_without_a_recorded_conclusion_is_never_a_pass() -> None:
+    """fail-closed③：**有前序 run 但读不到结论** ⇒ 判负并点名（不得当成「判过」）。"""
     verdict = resolve_consumption(
         _criterion(),
         structured_output={"meta_review": {"prior_verdict": PRIOR_VERDICT}},
         prior_conclusion=None,
+        prior_run_id=PRIOR_RUN,
     )
     assert verdict.passed is False
-    assert "没有前序结论" in verdict.reason
+    assert "读不到落库结论" in verdict.reason and PRIOR_RUN in verdict.reason
+
+
+def test_the_first_round_has_no_prior_to_consume_so_the_criterion_does_not_apply() -> None:
+    """**结构上无前序**（程序第一轮）⇒ 判据不适用（判过 + 点名理由，与「未携带」区分）。
+
+    判成判负会让**每个程序的第一轮**必然失败 —— 那不是更严，是把判据做成噪声。
+    """
+    verdict = resolve_consumption(
+        _criterion(),
+        structured_output={"meta_review": {"prior_verdict": PRIOR_VERDICT}},
+        prior_conclusion=None,
+        prior_run_id=None,
+    )
+    assert verdict.passed is True
+    assert "不适用" in verdict.reason
 
 
 def test_an_unknown_evaluator_id_is_named_not_ignored() -> None:
