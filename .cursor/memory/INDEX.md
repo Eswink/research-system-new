@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261008-205](entries/MEM-20261008-205-offline-agent-pool-decides-the-protocol-roles.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-333 |
 | [MEM-20261008-204](entries/MEM-20261008-204-releasing-a-read-capability-moves-registry-pins.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-331 |
 | [MEM-20261008-203](entries/MEM-20261008-203-verdict-archive-is-written-by-the-entry-it-archives.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-329 |
 | [MEM-20261008-202](entries/MEM-20261008-202-no-score-is-not-a-low-score.md) | ACTIVE | repository | 0.92 | 2027-04-08 | PLAN-20261008-327 |

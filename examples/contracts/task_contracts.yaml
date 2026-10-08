@@ -513,3 +513,25 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # GOAL-20261008-036 EC-03（承接面真用）：**消费已落库评审结论**的那件交付物。
+  #
+  # 为什么新增而不是改 `review_scored_deliverable`：那份契约的判据（`ARTIFACT_EXISTS`
+  # + `REVIEW_SCORE`）被 GOAL-035 EC-03 的判据与夹具逐字复用；给它加判据会改动那份
+  # 受判面。本契约只加一条「它确实交付了一件元评审」的存在性判据（**不判内容质量** ——
+  # 与 `real_research_deliverable_v1` 的诚实边界同一条）。
+  review_consumption_deliverable:
+    version: 1.0.0
+    purpose: >-
+      交付一件「基于**本 run 已落库的验收结论**作出的元评审」—— 消费面（`review.read`）
+      真的被用上的那件交付物。
+    required_capabilities:
+      - artifact.write
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: meta_review
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

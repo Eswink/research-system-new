@@ -111,7 +111,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e -q` ⇒ 全绿；新增判据文件
       全绿；配套留档：三态（用上 / 缺实现 / 未放行）判词逐字。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **登记面与读数（纯收紧）**。(a) 分类判据 `_IN_SCOPE` += `review.read`、从
@@ -124,7 +124,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/architecture/python/test_capability_coverage_is_implemented.py
       tests/architecture/python/test_policy_surface_difference_set.py tests/contracts -q`
       ⇒ 全绿；读数命令与名单。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树（复用 `tools/closeout_recheck_tools` +
@@ -203,9 +203,11 @@ escalation_triggers:
   - 扩容需要动写面 / 执行面 / 审批面（本轮范围外）
 child_plans:
   - .cursor/plans/tasks/PLAN-20261008-331-goal-036-ec01-02-review-read-onboarding.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-332-goal-036-ec01-02-review-read-onboarding.md
+  - .cursor/plans/tasks/PLAN-20261008-333-goal-036-ec03-04-consumption-and-registry.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-334-goal-036-ec03-04-consumption-and-registry.md
 memory_entries:
   - releasing-a-read-capability-moves-registry-pins
+  - offline-agent-pool-decides-the-protocol-roles
 ---
 
 # GOAL-20261008-036 — 承接面按研究循环实际需要扩容（`review.read`）
@@ -223,8 +225,8 @@ memory_entries:
 | --- | --- | --- | --- |
 | EC-01 | 勘察定稿 | 为什么是 `review.read`：词表里有、声明面零承接、policy 零放行、分类理由已被 GOAL-035 推翻 | PASS |
 | EC-02 | 端到端承接链 | 声明 + 实现 + 绑定 + 接线 + 放行（五件缺一不可） | PASS |
-| EC-03 | 真被用上 | 一次实跑里后续 phase 通过它**读到前序 phase 落库的逐条判词** + 两向反证点名 | PENDING |
-| EC-04 | 登记面与读数 | 分类清单纯收紧 + 夹具同轮 + 覆盖 19/46 → 20/46 **逐条** | PENDING |
+| EC-03 | 真被用上 | 一次实跑里后续 phase 通过它**读到前序 phase 落库的逐条判词** + 两向反证点名 | PASS |
+| EC-04 | 登记面与读数 | 分类清单纯收紧 + 夹具同轮 + 覆盖 19/46 → 20/46 **逐条** | PASS |
 | EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**为了凑数**声明没有实现的
@@ -405,6 +407,7 @@ GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`W-8`；历史 `tools/` 目录
 | --- | --- | --- |
 | `18a078a`（**建档**） | **无自己的 run**（同批推送） | cycle 0 建档；它与 GOAL-035 的台账尾巴 `512360a` **同一次 push** ⇒ 只有 HEAD 产生 run ⇒ `covered_by 512360a`（实测取证：两个 SHA 的 `head_sha` 查询 `total_count=0`） |
 | `512360a`（GOAL-035 台账尾巴，本批 HEAD） | `37753132183` **M0 success**（8 job 全 success）+ `37753131400` **Push/CodeQL success**（3 分析全 success） | 该批 HEAD；**同时承担** `18a078a` 的绿 + **封闭 GOAL-035 台账的自我指涉边界**（两条同批路径都有实测读数） |
+| `14a5ac2`（cycle 1） | 待取证（本行写入时 CI 在飞） | EC-01/EC-02：`review.read` 承接链 + 同轮同步面 5 处 + 记录；本地 as-is m0 23/23 |
 | （cycle 1 提交） | 待推送 | EC-01/EC-02 承接链 + 同轮同步面 5 处 + 记录（本 cycle） |
 
 ## 迭代日志
@@ -413,10 +416,12 @@ GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`W-8`；历史 `tools/` 目录
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | `18a078a`（与 GOAL-035 台账尾巴同批） | 只读勘察（0 改动）；五条 EC 全 PENDING | （见 CI 台账） | — | 五条 EC 全 PENDING；实现落点（②）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 实现面） |
 | 1 | `PLAN-20261008-331` | （见 CI 台账 cycle 1 行） | EC-01 + EC-02 落地：四道门（ruff/format/mypy/规模 68·421 行）绿；**全量 python 套件 5361 passed, 20 skipped**（相对建档基线收集数 +1 = 新模块进源文件参数化面）；`tests/application/preflight` **60 passed**（同步面改完）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5359 passed, 20 skipped**，收集数 +1 逐文件分解） | （见 CI 台账） | **门链抓到策略面 4 处登记表**（差集表 / `_CAPABILITY_SCOPE` / 两处登记计数）⇒ 同轮同步（加法/搬迁，谓词不变）并**修正 `fix_policy` 的同步面清单**（决策 ⑥，如实登记） | EC-01/EC-02 收口；**下一轮 EC-03**（真用判据 + 两向反证） |
+| 2 | `PLAN-20261008-333` | （见 CI 台账 cycle 2 行） | EC-03/EC-04 全 PASS：`tests/e2e/test_review_read_on_the_run_path.py` **6 passed**（主路 + 两向反证 + 报告面）；**按压 P-1**（空结果）⇒ 1 failed 且**只有下游消费那条**判红；广面套件（e2e+contracts+loaders+application+architecture）**1887 passed, 86 skipped**；覆盖读数 词表 46（未改）/ 声明面 distinct **19 → 20**（`review.read → ['m12_artifact']`，逐条）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5367 passed, 20 skipped**，收集数 +8 逐文件分解） | （见 CI 台账） | 首版协议按语义选了 `meta_reviewer` ⇒ preflight `AGENT_MISSING`（离线池无该角色实例）⇒ 按**实际在场**的池改用另一位 `scientific_reviewer`（**未**为判据过而往夹具塞 agent）；工具载荷字段名把两层分开（`reviews[].verdicts`）| EC-03/EC-04 收口；**下一轮 EC-05**（自举收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 2（EC-03/EC-04）**：`review.read` **真的被一次实跑用上** —— 新协议两 phase 都由运行链执行（`produce` 落库逐条判词 ⇒ `consume` 经 `review.read` 读**本 run 自己**的结论），**下游消费**证据 = 工具结果里出现落库的**逐字**判词；两向反证（缺实现 / 未放行）逐条点名；按压「空结果」只咬住下游消费那条。登记面**纯收紧** + 夹具同轮；**覆盖读数 19/46 → 20/46**（逐条）。EC-03/EC-04 `PASS`；EC-05 待收口。未覆盖：读到的结论是否影响科学结论 / 多评审者聚合仍未接线。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 1（EC-01/EC-02）**：勘察定稿 + **承接链五件事齐** —— 实现 `adapters/canonical/review_read.py`（读 `ReviewFindingStore.for_run`，缺依赖**点名**不可用）、描述子/能力映射、provider 依赖位与 handler、会话绑定表、装配回调与**两个组合根接线**、出厂目录声明、`policy.yaml` **新增一条只读 `allow`**（scope `project`）。**门链抓到策略面 4 处登记表**（差集表 / `_CAPABILITY_SCOPE` / 「该登记」计数 / 放行集合）⇒ 同轮**加法/搬迁**同步（谓词、阈值、受判形态一字未改），并据此**修正本 GOAL 的 `fix_policy` 同轮同步面清单**（决策 ⑥）。EC-01/EC-02 `PASS`；EC-03/04/05 仍待收口。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 程序表序 4 + GOAL-035 收口面；只读勘察把「按研究循环实际需要扩容承接面」落成**一条**可实测的目标 —— `review.read`（词表 46 条里有、声明面 19 条里**零**承接、`policy.yaml` 零放行、分类理由已被 GOAL-035 EC-01 推翻；真需要的证据 = 跨轮「结论驱动」读不到上一轮评审结论，且它是 GOAL-035 `N-3` 的前置）。五条 EC 全 `PENDING`。**不做数量目标**（MAINLINE 明文）；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

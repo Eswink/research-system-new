@@ -1,0 +1,66 @@
+id: review_consumption_v1_0_0
+version: 0.1.0
+
+# GOAL-20261008-036 EC-03（承接面**真的被用上**）：评审结论的**可读承接**在一条研究循环里
+# 被后续 phase 消费到。
+#
+# **为什么另立一份协议**：`review_scored_research_v1`（GOAL-035 EC-03）的 1 个 phase 只证
+# 「结论进判据面且可读（HTTP 读面）」；本协议证的是**另一件事** —— 同一 run 的**后续 phase**
+# 经**能力面**（`review.read`，策略裁决 + 工具证据）读到**前序 phase 落库的逐条判词**。
+# 改那份协议会同时改动它的既有判据取样对象（与 GOAL-031 EC-01(e) 另立协议同一手法）。
+#
+# **它证什么（三段可复核的事实）**：
+#
+#   * `produce`（先跑）：交付 `review_decision` ⇒ **验收门求值点落库逐条判词**
+#     （GOAL-035 EC-01 的 `ReviewFindingStore`；不依赖任何读面重算）。
+#   * `consume`（后跑）：phase 声明的 `review.read` **由运行链确定性执行**（
+#     `capability_execution: run_chain`）—— 不押在「模型恰好调了工具」上 —— 读的是
+#     **本 run 自己**（`run_id_argument`：执行期才有 run 标识，装配方无从写死）⇒
+#     读到的正是 `produce` 那一条落库结论。
+#   * **下游消费**的判据形态：工具结果内容里出现 `produce` 的**逐字**判词
+#     （不是「调了两遍工具」）。
+#
+# **受控范围（写明，不夸大）**：2 个 phase、2 个 role、1 条能力的运行链调用
+# （`review.read`）+ 1 条既有能力（`artifact.write`，两 phase 都要交付物）。
+# **不声称**：读到的评审结论**内容正确**（那是评审者的事）；也**不声称**多评审者聚合
+# （GOAL-035 的 `N-3` 仍未收口 —— 本轮只让结论**可读且被读到**）。
+#
+# **本协议不声称**：读结果影响了 `meta_review` 的科学结论（验收门只判它存在 ——
+# 与 `real_research_deliverable_v1` 的既有诚实边界同一条）。
+
+phases:
+  - id: produce
+    name: Produce Review Decision
+    strategy: single_agent
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      # 交付物写面（既有放行）。验收门 = `review_scored_deliverable`：交付 `review_decision`
+      # 且**评审判给自己的分数**参与判定 ⇒ 求值点把逐条判词落库。
+      - artifact.write
+    task_contract: review_scored_deliverable
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 120
+
+  - id: consume
+    name: Consume The Recorded Review Findings
+    strategy: single_agent
+    depends_on: [produce]
+    required_roles:
+      # 同角色池里的**另一位认证评审者**读前序 phase 落库的结论 —— 这正是多评审者聚合的
+      # 前置（先能读到，才谈得上聚合）。**如实登记**：`meta_reviewer` 角色也在 `roles.yaml`
+      # 里声明了 `review.read`，但本地离线控制面的 agent 池只有 `scientific_reviewer`
+      # 的实例（`reviewer_a` / `reviewer_b`）—— 本协议按**实际在场**的池选角，
+      # 不为了让判据过而往夹具里塞 agent。
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      # 本轮**新承接**的只读能力：读本 run 已落库的验收结论（逐条判词）。
+      - review.read
+    # 由运行链执行、不暴露为会话工具：能力仍在 `tool_requirements`（preflight 照判）、
+    # provider 仍在冻结集（越权执行仍被拒）。
+    capability_execution: run_chain
+    task_contract: review_consumption_deliverable
+    outputs: [meta_review]
+    gate: QUALITY_GATE
+    timeout_seconds: 120

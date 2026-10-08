@@ -29,7 +29,12 @@ from packages.application.ports.errors import InvalidInputError
 
 
 def _finding_row(scoped: Any) -> dict[str, object]:
-    """一条评审结论的**既有字段**投影（不新造字段名）。"""
+    """一条评审结论的投影（字段名直白：**一次裁决** + 它的**逐条判词**）。
+
+    为什么 `verdicts` 而不是沿用域字段名 `findings`：外层集合也叫「评审结论」，
+    同名会让模型/消费者把「有多少条裁决」与「一条裁决里有几条判据」混起来 ——
+    读面命名撞车是**消费方**最先踩到的坑，在这里用不同名字把两层分开。
+    """
     finding = scoped.finding
     timestamp = finding.reviewed_at
     return {
@@ -38,7 +43,8 @@ def _finding_row(scoped: Any) -> dict[str, object]:
         "contract_id": scoped.contract_id,
         "review_type": finding.review_type,
         "verdict": finding.verdict,
-        "findings": list(finding.findings),
+        #: 逐条判词（**逐字**：域在求值点落下的原文，读面不重排、不重算）。
+        "verdicts": list(finding.findings),
         "reviewed_by": finding.reviewed_by,
         "reviewed_at": timestamp.value.isoformat() if timestamp else None,
     }
@@ -61,7 +67,7 @@ def review_read(findings: Any | None, args: dict[str, object]) -> dict[str, obje
     return {
         "run_id": run_id,
         "count": len(records),
-        "findings": [_finding_row(scoped) for scoped in records],
+        "reviews": [_finding_row(scoped) for scoped in records],
     }
 
 
