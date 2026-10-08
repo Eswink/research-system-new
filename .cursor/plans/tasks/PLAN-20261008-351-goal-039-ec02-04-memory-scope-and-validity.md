@@ -98,7 +98,8 @@ exit_criteria:
 | --- | --- |
 | 新判据（适配器面） | `tests/adapters/sqlite/test_memory_scope_and_validity.py` **11 passed** |
 | 新判据（API 面） | `tests/api/test_memory_api.py` **9 passed**（含三条新增） |
-| 广面（api + adapters + domain + application + contracts + loaders + tooling + postgres） | **4379 passed, 179 skipped** |
+| 新判据（**PG 面**） | `tests/postgres/test_memory_scope_pg.py` **2 passed**（真库往返：`scope` + 两时点；未声明 ⇒ `None`）—— live PG 实测 `migration_version` 最新 = **18**、`m12_memory` 列表实见 `scope` |
+| 广面（api + adapters + domain + application + contracts + loaders + tooling + observability + postgres） | **4503 passed, 82 skipped** |
 | 隐私读面 | `tests/observability` **133 passed, 2 skipped** |
 | `mypy`（strict） | `Success: no issues found in 1166 source files` |
 
@@ -108,6 +109,8 @@ exit_criteria:
 > canonical × 显式时点，无业务写入）⇒ 改为 **GET**（写完面计数回 63，且不占幂等键面）。
 > ③ 三处读面登记同步（新 GET 需逐条表态）：首版放错「声明内容」档 ⇒ 触发声明面上界
 > （16 > 15）⇒ 更正为**零命中档**（它只给 id/scope/时间戳/三态，正文在兄弟路由）。
+> ④ **第四次真红**：`tests/api/test_memory_api.py` 的判定用例 **53 行**（超 50 上限）⇒
+> **抽 helper**（`_commit_expiring`），不调阈值。
 
 ## 无可复用事实
 

@@ -129,29 +129,18 @@ def test_the_list_face_discloses_the_scope(client: TestClient) -> None:
     assert rows and rows[0]["scope"] == "project", rows
 
 
-def test_the_validity_face_judges_at_the_time_the_caller_gives(client: TestClient) -> None:
-    """EC-04：`?at=` 显式时点 ⇒ 逐条三态判定；**不给时点的列表读面不猜**（`validity` 为 None）。"""
-    store = _wire(client)
-    from packages.domain.enums import MemoryTier, MemoryType
-    from packages.domain.memory import MemoryWriteProposal
-
-    with_expiry = _proposal(provenance="paper://memory-wpf")
-    created = client.post(
-        "/memory/proposals",
-        json=with_expiry,
-        headers={"Idempotency-Key": "mem-validity-1"},
-    )
-    assert created.status_code == 201, created.text
-    memory_id = str(created.json()["record"]["id"])
-    # 直写一条带时效的记录（提案面已支持；此处用 store 直写以钉住判定面本身）。
+def _commit_expiring(store: Any, memory_id: str) -> None:
+    """直写一条带明确到期时刻的记录（钉的是**判定面**本身，不经提案面）。"""
     from datetime import datetime, timezone
 
     from packages.domain.core import Timestamp
+    from packages.domain.enums import MemoryTier, MemoryType
+    from packages.domain.memory import MemoryWriteProposal
 
     store.allow_source("paper://memory-wpf")
     store.commit(
         MemoryWriteProposal(
-            id="memory-validity-explicit",
+            id=memory_id,
             tier=MemoryTier.SESSION,
             kind=MemoryType.FACT,
             content="c",
@@ -160,6 +149,20 @@ def test_the_validity_face_judges_at_the_time_the_caller_gives(client: TestClien
             expires_at=Timestamp(datetime(2027, 1, 1, tzinfo=timezone.utc)),
         )
     )
+
+
+def test_the_validity_face_judges_at_the_time_the_caller_gives(client: TestClient) -> None:
+    """EC-04：`?at=` 显式时点 ⇒ 逐条三态判定；**不给时点的列表读面不猜**（`validity` 为 None）。"""
+    store = _wire(client)
+    with_expiry = _proposal(provenance="paper://memory-wpf")
+    created = client.post(
+        "/memory/proposals",
+        json=with_expiry,
+        headers={"Idempotency-Key": "mem-validity-1"},
+    )
+    assert created.status_code == 201, created.text
+    memory_id = str(created.json()["record"]["id"])
+    _commit_expiring(store, "memory-validity-explicit")
     before = client.get(
         "/projects/example-project/memory/validity", params={"at": "2026-06-01T00:00:00+00:00"}
     )

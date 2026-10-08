@@ -23,7 +23,8 @@ owners:
 | --- | --- |
 | 域 | `MemoryRecord.scope` 缺省 `"project"`；空串 ⇒ `ValueError`（判据 `test_an_empty_scope_is_refused_by_the_domain`） |
 | 迁移 | `adapters/postgres/migrations/018_memory_scope_and_validity.sql` 在树（`ADD COLUMN IF NOT EXISTS ... DEFAULT 'project'`） |
-| 三实现同契约 | 判据 `test_scope_round_trips_through_the_store` **passed**（写 `organization` ⇒ 读回同值）；Fake 路径由 `tests/api/test_memory_api.py::test_the_list_face_discloses_the_scope` 覆盖 |
+| 三实现同契约 | ① SQLite：`test_scope_round_trips_through_the_store` **passed**；② **PG（真库）**：`tests/postgres/test_memory_scope_pg.py` **2 passed**（`scope` + 两时点往返）；③ Fake：`test_the_list_face_discloses_the_scope` 覆盖 |
+| 迁移落地（live PG 实测） | `migration_version` 最新 = **18**；`information_schema` 里 `m12_memory` 列清单**实见 `scope`**（此前两库皆无） |
 | 读面披露 | 列表读面逐条给 `scope`（API 判据断言 `rows[0]["scope"] == "project"`） |
 
 ### 2. 声明式时效（AC-2）
@@ -48,9 +49,9 @@ owners:
 
 ### 4. 门链与记录面（AC-4）
 
-`ruff` / `format` / `mypy`（1166 files）全绿；广面（api + adapters + domain + application +
-contracts + loaders + tooling + postgres）**4379 passed, 179 skipped**；隐私读面
-**133 passed, 2 skipped**；新读面登记 + OpenAPI 快照同轮同步。
+`ruff` / `format` / `mypy`（1167 files）全绿；广面（api + adapters + domain + application +
+contracts + loaders + tooling + observability + postgres）**4503 passed, 82 skipped**；
+新读面登记 + OpenAPI 快照同轮同步。
 
 ## 结论
 
@@ -58,10 +59,10 @@ contracts + loaders + tooling + postgres）**4379 passed, 179 skipped**；隐私
 
 ### Warnings
 
-- **W-1（三处真红并修，如实登记）**：① SQLite 的 `INSERT` 硬编码 12 个 `?`（加列后 13 列）
+- **W-1（四处真红并修，如实登记）**：① SQLite 的 `INSERT` 硬编码 12 个 `?`（加列后 13 列）
   ⇒ 改为**按列数生成**；② 新路由首版写成 POST ⇒ 写面告警线 63 → 64，复核后判它是**读面**
   ⇒ 改 **GET**（写面回到 63）；③ 读面登记首版放错「声明内容」档 ⇒ 撞声明面上界（16 > 15）
-  ⇒ 更正值**零命中档**（它不含记忆正文）。
+  ⇒ 更正值**零命中档**（它不含记忆正文）；④ API 判定用例 53 行超规模上限 ⇒ **抽 helper**（`_commit_expiring`）。
 - **W-2（旧库加列的射程）**：迁移用 `ADD COLUMN IF NOT EXISTS` ⇒ 既有 PG 库会被加列；
   **SQLite 开发库**若在建表**之后**才升级（无 ALTER 路径），旧表不会自动加列 —— 判据
   `test_legacy_rows_without_a_scope_column_read_the_default` 对这个形态**两种结果都接受**
