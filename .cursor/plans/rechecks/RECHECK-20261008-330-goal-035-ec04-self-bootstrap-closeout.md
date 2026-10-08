@@ -54,8 +54,16 @@ owners:
 ### 3. 两树复检（AC-3）
 
 ```
-回填（首轮 / 次轮读数 + 两路 sha256 + COMPARE 结论）
+TREE current=D:\research-system exit=0 verdicts=70 sha256=ae0fd81b39c83fee3323ed4526f9ef99145d7187b824236b650326f1972808b7
+TREE clean=D:\research-system-clean-tree exit=0 verdicts=70 sha256=ae0fd81b39c83fee3323ed4526f9ef99145d7187b824236b650326f1972808b7
+COMPARE identical=True
+TWO-TREE PASS
 ```
+
+| 轮次 | `--base-ref` | 读数 |
+| --- | --- | --- |
+| 首轮 | `8a744f7`（归档尚未生成、本轮交付面未提交） | current **70 判词 / 2 FAIL**（只有两份归档缺失）、clean **70 判词 / 6 FAIL**（另有本轮交付面四项未提交）⇒ `COMPARE identical=False`、`TWO-TREE RED`；**两份归档由此写出**（`current` `26013359…` / `clean` `23e27b76…`） |
+| 次轮 | `c499722`（含归档与交付面） | **`TWO-TREE PASS`**，两路 70 判词、`sha256` **相同** `ae0fd81b…`、`COMPARE identical=True` |
 
 **bootstrap 时序如实登记**：判词归档由**被归档的那个入口**写出 ⇒ 首轮必然红于「归档不存在」
 （两棵树都还没有归档文件）；次轮（`--base-ref` 指向**含归档**的提交）才 `TWO-TREE PASS`。
@@ -65,8 +73,10 @@ owners:
 
 | 读法 | 读数 |
 | --- | --- |
-| 落点（在树） | `.cursor/plans/goals/evidence/GOAL-20261008-035-verdict-{current,clean}.txt` |
-| 形态 | 回填（字节数 / 行数 / **`CR=0`** / 两份 `sha256` **相同**） |
+| 落点（在树） | `.cursor/plans/goals/evidence/GOAL-20261008-035-verdict-current.txt`（当前树）与 `.cursor/plans/goals/evidence/GOAL-20261008-035-verdict-clean.txt`（干净树） |
+| 形态 | 两份各 **2723 B / 70 行 / `CR=0`（逐字节判）/ `FAIL` 0 条**；两份 `sha256` **相同** `ae0fd81b39c83fee3323ed4526f9ef99145d7187b824236b650326f1972808b7` |
+
+（归档的**内容**不做一致性断言 —— 输入即输出；一致性由入口的 `COMPARE` 回答，见第 3 节。）
 
 ### 5. as-is m0（AC-5）
 

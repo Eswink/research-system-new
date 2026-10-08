@@ -41,8 +41,8 @@ PASS cases-test_review_score_linkage_on_the_run_path
 PASS prior-judge-test_review_finding_store_contracts
 PASS prior-judge-read_face_route_registry
 PASS prior-judge-test_m5_domain_increments
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
 PASS scope-declares-this-rounds-scripts
 PASS scope-still-pins-the-entry
 PASS goal-declares-four-ecs
