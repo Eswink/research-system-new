@@ -21,8 +21,10 @@ authorization:
     断言** —— 本轮无例外。
     (1) **本 GOAL 的授权开工**（MAINLINE 程序表序 3 的「一句话目标」逐条落地）：
     (i) **来源支持** —— 建档实测：`EVIDENCE_COVERAGE` 判据**两维**（计数 + 性质
-    `TrustLabel.RETRIEVED`）都已实现，但**出厂协议与合约里零使用**
-    （`rg -n "EVIDENCE_COVERAGE" examples/` 零命中）⇒ 「能力在，研究循环不用」；
+    `TrustLabel.RETRIEVED`）都已实现，**且 16 个合约声明计数维、4 处声明性质维、
+    多数已进研究协议**（`real_literature_chain_v1` 等）⇒ 靶子是**「判定 + 读面关系
+    两条是否同时成立且可复核」**（承 `MEM: evidence-read-face-claim-relation`：
+    只登记证据不挂 relation ⇒ 判据绿而读面空）；
     (ii) **可复现** —— `build_reproducibility_audit` / `verify_reproducibility_audit`
     只在 `packages/application/m12_reference/clean_run_stages.py`（遗留参考链）被调用，
     **研究循环的 run 路径零调用**；`experiments/metric_extraction.py` 有 semantic
@@ -217,17 +219,25 @@ memory_entries: []
 > 全节读数在**仓库 `.venv`** 下取得（`uv run --frozen --no-sync`）。凡与提示词起点表述
 > 不符者，**以实测为准**。主树零改动（只读勘察）。
 
-### 1. 来源支持 / 覆盖充分：**能力在，研究循环不用**（本轮 EC-01/EC-03 的靶子）
+### 1. 来源支持 / 覆盖充分：**两维都已产出、已进研究协议，但计数维 > 1 的那条不成立**（**建档首版读错，本版为更正**）
+
+> **更正记录（同轮修正，如实登记）**：建档首版我断言「出厂协议零使用 `EVIDENCE_COVERAGE`」
+> —— 那是**看错了扫描面**（只扫了 `examples/protocols/` 而没有扫
+> `examples/contracts/task_contracts.yaml`）。实测：**16 个合约声明 `minimum_sources`、
+> 4 处声明 `minimum_retrieved_sources`**，且多数已在研究协议里被引用。本版按实测重写。
 
 | # | 事实 | 命令 | 读数 |
 | --- | --- | --- | --- |
 | 1.1 | 两维判据已实现 | `packages/domain/acceptance.py::_evaluate_evidence_coverage` | 计数维（`minimum_sources`）+ **性质维**（`minimum_retrieved_sources`，要求 `TrustLabel.RETRIEVED`）；缺维度 fail-closed 并**点名缺哪一维** |
-| 1.2 | 检索来源数有取证口径 | `count_retrieved_sources`（编排侧） | 由 canonical 的 `SourceRecord` 判；与读面同源 |
-| 1.3 | **出厂协议与合约零使用** | `rg -n "EVIDENCE_COVERAGE" examples/` | **零命中** ⇒ 没有任何出厂研究协议声明它 |
-| 1.4 | 读面要求关系 | `MEM: evidence-read-face-claim-relation` | 只 `register_evidence` 不 `attach_relation` ⇒ **读面看不到**（判据绿、读面空） |
+| 1.2 | **两维在合约里都被声明** | `rg -c "minimum_sources:" examples/contracts/task_contracts.yaml` = **16**；`rg -c "minimum_retrieved_sources:"` = **4** | 性质维出现在 `real_retrieval_deliverable`、`multi_role_scouting` 等 |
+| 1.3 | **且已进研究协议** | 逐协议反查 | `real_retrieval_deliverable` ← `real_literature_chain_v1` / `real_experiment_research_v1` / `real_retrieval_research_v1`；`multi_role_scouting` ← `multi_role_research_v1` |
+| 1.4 | 评审契约的**如实边界**写得很好 | `multi_role_review` 的注释 | 它**不**声明性质维，并**说明理由**（评审不检索 ⇒ 要求它就是让评审者为没做的事背书）；检索那一维由侦察 phase 承担 |
+| 1.5 | 检索来源数有取证口径 | `count_retrieved_sources` | 由 canonical 的 `SourceRecord` 判；与读面同源 |
+| 1.6 | 读面要求关系 | `MEM: evidence-read-face-claim-relation` | 只 `register_evidence` 不 `attach_relation` ⇒ **读面看不到**（判据绿、读面空） |
 
-**结论**：判据实现完备（两维），但**研究循环里没有任何一条协议在用它** ⇒ 「可判定性」
-停留在**能力面**而不是**研究产出面**。这正是 MAINLINE 质量轴要消灭的形态。
+**更正后的结论**：EC-01 的靶子**不是**「协议不用它」（那条被实测推翻），而是
+**「两维的判定与读面关系是否在同一次实跑里同时成立且可复核」** —— 即
+**判据判定 + 读面关系**两条同时在场（承 1.6：判据绿而读面空是已知的假绿形态）。
 
 ### 2. 可复现：**审计只在遗留参考链里**（本轮 EC-02 的靶子）
 
