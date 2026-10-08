@@ -421,7 +421,10 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | `b189549`（台账尾 2） | 读数在本表下一行封闭（同批语义） | 只改 GOAL-037 记录（run id 对调更正）；本地治理绿 |
 | `dbaa318`（cycle 2 = EC-02 收口） | `37815108373` **M0 success**（8 job 全 success）+ `37815107567` **Push on main / CodeQL success**（3 分析全 success） | 三路由 + 启动面接线 + 双 run 实跑 + 同轮同步（四条登记面）；本地 as-is m0 **23/23**（5408 passed, 20 skipped）；**实测取证** ⇒ **`b189549` 的结论由此行覆盖** |
 | `2002092`（cycle 3 = EC-03 收口） | `37829090597` **M0 success**（8 job 全 success）+ `37829090361` **Push on main / CodeQL success**（3 分析全 success） | 跨 run 知识累积（`research_state.read` 承接 + 两轮实跑）；本地 as-is m0 **23/23**（5417 passed, 20 skipped）；**实测取证** ⇒ **`57f8143`（台账尾 3）的结论由此行覆盖** |
-| （本行所在提交：cycle 4 + 台账尾 4） | **自身结论在本行写入时尚不存在**（自我指涉边界） | cycle 4（EC-04 幂等与中断）+ 本表前一行；其结论由**EC-05 收口 / GOAL 收口的台账**取证，**不得循环引用** |
+| `bb5443d`（cycle 4 = EC-04 + 台账尾 4） | `37831675773` **M0 success**（8 job 全 success）+ `37831675431` **Push on main / CodeQL success**（3 分析全 success） | EC-04 幂等与中断 + 上一条台账行；**实测取证** ⇒ 其自身边界由本行封闭 |
+| `339d78f` / `e3c1c25`（cycle 5 提交 A/B） | **无自己的 run**（同批推送） | EC-05：验证器 + 断言集 + `IN_SCOPE` + 记录 + 归档（首轮 bootstrap / 次轮定格）；与 `dd967ea` **同一次 push** ⇒ 只有 HEAD 产生 run；`covered_by dd967ea`（**实测取证**：两个 SHA 的 `head_sha` 查询 `total_count=0`） |
+| `dd967ea`（cycle 5 · GOAL 收口 = 本批 HEAD） | `37834779397` **M0 success**（8 job 全 success）+ `37834778931` **Push on main / CodeQL success**（3 分析全 success） | **GOAL 收口提交**（EC-05 `PASS` + `status: ACHIEVED` + m0 读数 + MAINLINE 进展行）；`339d78f`/`e3c1c25` 两条的结论由此行覆盖（**实测取证**：两条 `total_count=0`）；**上一行的自我指涉边界已由此行封闭** |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：本行只改 `.cursor/plans/goals/GOAL-20261008-037-*.md`；其结论由**下一个 GOAL 的台账**取证，**不得循环引用** |
 
 ## 迭代日志
 
