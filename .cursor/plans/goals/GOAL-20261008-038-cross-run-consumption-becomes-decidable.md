@@ -176,7 +176,8 @@ escalation_triggers:
   - 需要改 `packages/domain/acceptance.py` 的**既有**求值器语义（本轮只**新增**求值路径）
 child_plans:
   - .cursor/plans/tasks/PLAN-20261008-347-goal-038-ec01-03-declared-consumption-evaluator.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-348-goal-038-ec01-03-declared-consumption-evaluator.md
+  - .cursor/plans/tasks/PLAN-20261008-349-goal-038-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-350-goal-038-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -324,12 +325,14 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | `R26-2` / `R26-3` / `R26-4` / `R26-6` | **保持** | 条件不满足 |
 | `R26-7` / `R26-8` | **保持** | 树外证据 / GOAL 正文投影 —— 属记录面结构 |
 
-### 本轮新增残余（随 cycle 增补）
+### 本轮新增残余（收口时逐条定格；`P-1`…`P-3`）
 
-- （建档时登记）**「影响」的判定只到「本轮产物携带了前序结论」**：判过 = 那条声明路径的值
-  与前序落库结论**逐字一致**；**未**证「因为读了它才这么写」（因果不可判 —— 那是过程面）。
-- （建档时登记）**跨程序 / 跨项目的知识影响不在本轮**（承 `O-3`）。
-- （建档时登记）**人工闸门式的影响（人看了结论再决定）不在本轮**（承 `O-2`）。
+- `P-1`（**只到「携带」不到「因果」**，未覆盖）：「影响」的判定 = 那条声明路径的值与前序落库
+  结论**逐字一致**；**未**证「因为读了它才这么写」（因果不可判 —— 那是过程面事实）。
+- `P-2`（**跨程序 / 跨项目的知识影响不在本轮**，未覆盖；承 `O-3`）：知识面按**程序**划界，
+  入口是本 run 的程序归属。
+- `P-3`（**人工闸门式的影响不在本轮**，未覆盖；承 `O-2`）：本轮的消费判定是**自动**的；
+  「人看了结论再决定」那条线（D 组审批通道）不触动。
 
 ### 未覆盖范围（逐条明写，不得据此宣称安全）
 
@@ -367,6 +370,7 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | `PLAN-20261008-349` | （见 CI 台账） | EC-05 七条 AC：验证器进树（复用标准断言集**一行未重写**；起草中间态 **71 PASS / 2 FAIL** 逐条为本轮记录未写 ⇒ 收口态 **73 判词 / 0 FAIL**）+ `IN_SCOPE` 纯收紧（+2 行；判据 8 passed）+ 治理 + 宪章判据 + 承继残余与本轮 `P-1`…`P-3` 逐条定格；**两树与 m0 读数在 `RECHECK-20261008-350` 回填** | （见 CI 台账） | — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-350`） |
 | 2 | `PLAN-20261008-347`（续） | （见 CI 台账） | EC-04 全 PASS：**合约声明消费路径**（`metric: meta_review.prior_verdict`）+ **编排层求值**在运行路径上真的执行 —— 两轮实跑：第 1 轮判据**不适用**（结构上无前序，判过+点名）、第 2 轮**消费成立**（判词点名来源 run id 与逐字值）；**两向反证**（带另一个值 ⇒ 判负且**两侧值点名**；声明路径缺失 ⇒ **点名配置错误**）；**接线**：`OrchestrationDependencies.prior_conclusion` → `fact_stores()` → `PhaseRunnerDeps`（同一桥，组合根与 run-ready 夹具同侧）；判据 4 例全绿；受影响套件 **5054 passed, 95 skipped** | （见 CI 台账） | **两次真红并修**：① 规模门（`resolve_consumption` 53 行 / `task_phase_helpers.py` 463 行）⇒ 拆函数 + 移函数；② **首版语义把「无前序」一律判负 ⇒ 每个程序第一轮必然失败**（判据不可用）⇒ 改为**两形态区分**（结构上无前序 = 不适用；有前序但读不到 = 判负）| EC-04 收口；**下一轮 EC-05**（自举收口） |
 | 1 | `PLAN-20261008-347` | （见 CI 台账） | EC-01/02/03 全 PASS：**声明式消费**（合约 `metric` 路径 + fail-closed 三态 + 未知求值器点名）+ **编排层求值**（结构化比对；相等判过含来源 run id / 不等两侧点名 / 前序缺席点名；**整段文本含来源串不算**）+ **门接线**（`EvaluationInputs.consumption` 贴回判据下标；未注入 ⇒ 域层判词逐字保留）；判据 **12 例全绿**；受影响套件 **2412 passed, 1 skipped**；四道门绿（mypy 1163 files） | （见 CI 台账） | 两处构造面按实际字段名修正（`TaskContract` 无 `trust_level`、`ResearchTask` 无 `title`）—— 属测试夹具写法，非产品缺陷 | EC-01/02/03 收口；**下一轮 EC-04**（两轮实跑 + 两向反证） |
 | 0 | —（建档） | （见 CI 台账） | 只读勘察（0 改动）；五条 EC 全 PENDING；MAINLINE 序 6 保留槽换成真实 id | （见 CI 台账） | — | 五条 EC 全 PENDING；求值器落点（②）与声明载体（③）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 声明面） |
