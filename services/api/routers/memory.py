@@ -20,12 +20,15 @@ packages.application.memory 用例，不另建第二套 gate。
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import APIRouter, Request
 
 from packages.application.memory.gate import MemoryGateDeps, commit_memory
 from packages.application.memory.lifecycle import MemoryLifecycleDeps, delete_memory
+from packages.application.memory.validity import validity_at
 from packages.application.ports import InvalidInputError
-from packages.domain.core import ID
+from packages.domain.core import ID, Timestamp
 from packages.domain.enums import MemoryTier, MemoryType
 from packages.domain.memory import MemoryRecord, MemoryWriteProposal
 from services.api.composition import ApiDeps
@@ -35,6 +38,8 @@ from services.api.dto.memory import (
     MemoryListViewDto,
     MemoryProposalDto,
     MemoryRecordDto,
+    MemoryValidityDto,
+    MemoryValidityViewDto,
 )
 from services.api.errors import ApiError
 
@@ -60,7 +65,9 @@ def _enum_value(value: object) -> str:
     return getattr(value, "value", str(value))
 
 
-def _record_dto(record: MemoryRecord) -> MemoryRecordDto:
+def _record_dto(record: MemoryRecord, *, now: Timestamp | None = None) -> MemoryRecordDto:
+    """记录 DTO。**只在给了时点时**填 `validity`（不给 ⇒ `None` = 未判定，不猜）。"""
+    validity = validity_at(record, now) if now is not None else None
     return MemoryRecordDto(
         id=record.id,
         tier=_enum_value(record.tier),
@@ -68,6 +75,8 @@ def _record_dto(record: MemoryRecord) -> MemoryRecordDto:
         content=record.content,
         provenance=record.provenance,
         confidence=record.confidence,
+        scope=record.scope,
+        validity=validity.value if validity is not None else None,
         valid_from=record.valid_from.value.isoformat() if record.valid_from else None,
         review_after=record.review_after.value.isoformat() if record.review_after else None,
         expires_at=record.expires_at.value.isoformat() if record.expires_at else None,
@@ -115,6 +124,39 @@ def _gate_deps(deps: ApiDeps) -> MemoryGateDeps:
         ledger=deps.ledger,
         publisher=deps.events,
     )
+
+
+@router.get("/projects/{project_id}/memory/validity", response_model=MemoryValidityViewDto)
+async def memory_validity(project_id: str, at: str, request: Request) -> MemoryValidityViewDto:
+    """**按显式时点**给出每条记忆的时效（GOAL-20261008-039 EC-04）。
+
+    **为什么是 GET**：判定只依赖（canonical 状态 × 显式时点）—— 是**读面**（与既有
+    `GET /projects/{id}/memory` 同一族，读面不认证）；**没有业务写入** ⇒ 不该挂进写面。
+
+    时点由调用方给（`?at=`）⇒ 判定可复现（**不读挂钟**）。三态见 `validity_at`：
+    `EXPIRED` / `REVIEW_DUE` / `None`（未到期**或未声明** —— 不猜）。
+    """
+    del project_id  # 单项目上下文（与既有列表读面同一条 scope_note 边界）
+    deps: ApiDeps = get_deps(request)
+    store = _store_of(deps)
+    try:
+        moment = Timestamp(datetime.fromisoformat(at))
+    except ValueError as exc:
+        raise ApiError(422, "Invalid Timestamp", str(exc)) from exc
+    records = store.query()  # type: ignore[attr-defined]
+    rows: list[MemoryValidityDto] = []
+    for record in records:
+        state = validity_at(record, moment)
+        rows.append(
+            MemoryValidityDto(
+                id=record.id,
+                scope=record.scope,
+                review_after=record.review_after.value.isoformat() if record.review_after else None,
+                expires_at=record.expires_at.value.isoformat() if record.expires_at else None,
+                validity=state.value if state is not None else None,
+            )
+        )
+    return MemoryValidityViewDto(at=moment.value.isoformat(), records=rows, scope_note=SCOPE_NOTE)
 
 
 @router.post("/memory/proposals", response_model=MemoryCommittedDto, status_code=201)

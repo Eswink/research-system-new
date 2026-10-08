@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS m12_memory (
     content TEXT NOT NULL,
     provenance TEXT NOT NULL,
     confidence REAL NOT NULL,
+    -- GOAL-20261008-039 EC-02：适用范围（缺省 'project'；既有行按缺省读出）。
+    scope TEXT NOT NULL DEFAULT 'project',
     valid_from TEXT,
     review_after TEXT,
     expires_at TEXT,
@@ -41,7 +43,7 @@ CREATE TABLE IF NOT EXISTS m12_memory (
 """
 
 _MEMORY_COLS = (
-    "id, tier, kind, content, provenance, confidence, valid_from, review_after, "
+    "id, tier, kind, content, provenance, confidence, scope, valid_from, review_after, "
     "expires_at, supersedes, contradictions, active"
 )
 
@@ -91,11 +93,17 @@ class SqliteMemoryStore(SqliteAdapterBase):
             content=proposal.content,
             provenance=proposal.provenance,
             confidence=proposal.confidence,
+            # GOAL-20261008-039 EC-02/EC-03：适用范围 + 声明式时效必须**随提案落库**
+            # （此前不落 ⇒ 提交回执与写面分叉，读面永远读到缺省）。
+            scope=proposal.scope,
+            review_after=proposal.review_after,
+            expires_at=proposal.expires_at,
             supersedes=list(proposal.supersedes),
         )
+        placeholders = ",".join("?" * len(_MEMORY_COLS.split(",")))
         with self._connection:
             self._connection.execute(
-                f"INSERT INTO m12_memory ({_MEMORY_COLS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                f"INSERT INTO m12_memory ({_MEMORY_COLS}) VALUES ({placeholders})",
                 self._values(record),
             )
         return record
@@ -164,6 +172,7 @@ class SqliteMemoryStore(SqliteAdapterBase):
             record.content,
             record.provenance,
             record.confidence,
+            record.scope,
             record.valid_from.value.isoformat() if record.valid_from else None,
             record.review_after.value.isoformat() if record.review_after else None,
             record.expires_at.value.isoformat() if record.expires_at else None,
@@ -181,6 +190,8 @@ class SqliteMemoryStore(SqliteAdapterBase):
             content=row["content"],
             provenance=row["provenance"],
             confidence=row["confidence"],
+            # GOAL-20261008-039 EC-02：适用范围（旧行无该列值时按缺省读出）。
+            scope=row["scope"] if "scope" in row.keys() and row["scope"] else "project",
             valid_from=(
                 Timestamp(datetime.fromisoformat(row["valid_from"])) if row["valid_from"] else None
             ),

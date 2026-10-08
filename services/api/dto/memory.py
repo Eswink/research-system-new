@@ -16,11 +16,16 @@ class MemoryRecordDto(BaseModel):
     content: str
     provenance: str
     confidence: float
+    # GOAL-20261008-039 EC-02：适用范围（AGENTS.md §8「有适用范围」的可判定形态）。
+    scope: str = "project"
     valid_from: str | None = None
     review_after: str | None = None
     expires_at: str | None = None
     supersedes: list[str] = Field(default_factory=list)
     active: bool
+    # GOAL-20261008-039 EC-04：**给定时点上的时效判定**（`EXPIRED` / `REVIEW_DUE` / None）。
+    # 只有显式给 `at` 的路由才填它 —— 不给时点的读面**不猜**（`None` = 未判定）。
+    validity: str | None = None
 
 
 class MemoryListViewDto(BaseModel):
@@ -42,3 +47,24 @@ class MemoryProposalDto(BaseModel):
 class MemoryCommittedDto(BaseModel):
     record: MemoryRecordDto
     decision: str
+
+
+class MemoryValidityDto(BaseModel):
+    """一条记忆在**给定时点**上的时效（GOAL-20261008-039 EC-04）。
+
+    时点由调用方给（`at`）⇒ 同一份数据同一时点判定必相同（可复现；**不读挂钟**）。
+    """
+
+    id: str
+    scope: str
+    review_after: str | None = None
+    expires_at: str | None = None
+    validity: str | None = None
+
+
+class MemoryValidityViewDto(BaseModel):
+    """按显式时点的时效读面（逐条给判定 + 原始两时点）。"""
+
+    at: str
+    records: list[MemoryValidityDto] = Field(default_factory=list)
+    scope_note: str

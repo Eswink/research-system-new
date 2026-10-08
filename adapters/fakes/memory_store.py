@@ -50,6 +50,11 @@ class FakeMemoryStore(FakeBase):
             content=proposal.content,
             provenance=proposal.provenance,
             confidence=proposal.confidence,
+            # GOAL-20261008-039 EC-02/EC-03：假实现必须与两个真适配器**同契约** ——
+            # 少带这两个字段会让「落库/时效」判据在 Fake 路径上假绿（实测过）。
+            scope=proposal.scope,
+            review_after=proposal.review_after,
+            expires_at=proposal.expires_at,
             supersedes=list(proposal.supersedes),
         )
         self._records[record.id] = record

@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261008-351](tasks/PLAN-20261008-351-goal-039-ec02-04-memory-scope-and-validity.md) | DONE |
 | [x] | [PLAN-20261008-349](tasks/PLAN-20261008-349-goal-038-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-347](tasks/PLAN-20261008-347-goal-038-ec01-03-declared-consumption-evaluator.md) | DONE |
 | [x] | [PLAN-20261008-345](tasks/PLAN-20261008-345-goal-037-ec05-self-bootstrap-closeout.md) | DONE |

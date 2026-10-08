@@ -111,3 +111,81 @@ def test_delete_lifecycle_and_idempotency_key(client: TestClient) -> None:
         raise AssertionError("deleted memory id must be unknown to the store")
     listed = client.get("/projects/example-project/memory")
     assert listed.json()["records"] == []
+
+
+# --- GOAL-20261008-039 EC-02 / EC-04：读面披露 + 按时点判定 -------------------------
+
+
+def test_the_list_face_discloses_the_scope(client: TestClient) -> None:
+    """EC-02：列表读面逐条披露 `scope`（此前该字段根本不落库）。"""
+    _wire(client)
+    created = client.post(
+        "/memory/proposals",
+        json=_proposal(provenance="paper://memory-wpf"),
+        headers={"Idempotency-Key": "mem-scope-1"},
+    )
+    assert created.status_code == 201, created.text
+    rows = client.get("/projects/example-project/memory").json()["records"]
+    assert rows and rows[0]["scope"] == "project", rows
+
+
+def test_the_validity_face_judges_at_the_time_the_caller_gives(client: TestClient) -> None:
+    """EC-04：`?at=` 显式时点 ⇒ 逐条三态判定；**不给时点的列表读面不猜**（`validity` 为 None）。"""
+    store = _wire(client)
+    from packages.domain.enums import MemoryTier, MemoryType
+    from packages.domain.memory import MemoryWriteProposal
+
+    with_expiry = _proposal(provenance="paper://memory-wpf")
+    created = client.post(
+        "/memory/proposals",
+        json=with_expiry,
+        headers={"Idempotency-Key": "mem-validity-1"},
+    )
+    assert created.status_code == 201, created.text
+    memory_id = str(created.json()["record"]["id"])
+    # 直写一条带时效的记录（提案面已支持；此处用 store 直写以钉住判定面本身）。
+    from datetime import datetime, timezone
+
+    from packages.domain.core import Timestamp
+
+    store.allow_source("paper://memory-wpf")
+    store.commit(
+        MemoryWriteProposal(
+            id="memory-validity-explicit",
+            tier=MemoryTier.SESSION,
+            kind=MemoryType.FACT,
+            content="c",
+            provenance="paper://memory-wpf",
+            confidence=0.5,
+            expires_at=Timestamp(datetime(2027, 1, 1, tzinfo=timezone.utc)),
+        )
+    )
+    before = client.get(
+        "/projects/example-project/memory/validity", params={"at": "2026-06-01T00:00:00+00:00"}
+    )
+    assert before.status_code == 200, before.text
+    payload = before.json()
+    assert payload["at"].startswith("2026-06-01")
+    assert {row["id"] for row in payload["records"]} >= {memory_id, "memory-validity-explicit"}
+    by_id = {row["id"]: row for row in payload["records"]}
+    assert by_id["memory-validity-explicit"]["validity"] is None, "未到期 ⇒ 不报"
+    after = client.get(
+        "/projects/example-project/memory/validity", params={"at": "2028-01-01T00:00:00+00:00"}
+    ).json()
+    by_id_after = {row["id"]: row for row in after["records"]}
+    assert by_id_after["memory-validity-explicit"]["validity"] == "EXPIRED", "到期 ⇒ 必报"
+    # **未声明时效的记录不被误报**（缺席不猜）。
+    assert by_id_after[memory_id]["validity"] is None, (
+        "未声明时效不得被误报（反证③）",
+        by_id_after[memory_id],
+    )
+    # 不给时点的**列表**读面：`validity` 不填（未判定，不猜）。
+    listed = client.get("/projects/example-project/memory").json()["records"]
+    assert all(row["validity"] is None for row in listed)
+
+
+def test_the_validity_face_refuses_a_bad_timestamp(client: TestClient) -> None:
+    """边界：非法时点 ⇒ 422（点名，不静默按当前时间兜底）。"""
+    _wire(client)
+    bad = client.get("/projects/example-project/memory/validity", params={"at": "not-a-time"})
+    assert bad.status_code == 422, bad.text

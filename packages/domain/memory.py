@@ -21,6 +21,9 @@ class MemoryRecord:
     content: str
     provenance: str
     confidence: float
+    # GOAL-20261008-039 EC-02：**适用范围**（AGENTS.md §8 要求「有适用范围」）。
+    # 缺省 `"project"` ⇒ 既有记录读出同一语义（迁移只加列 + 缺省回填，不改既有行语义）。
+    scope: str = "project"
     valid_from: Timestamp | None = None
     review_after: Timestamp | None = None
     expires_at: Timestamp | None = None
@@ -35,6 +38,8 @@ class MemoryRecord:
             raise ValueError("memory content must not be empty")
         if not self.provenance:
             raise ValueError("memory provenance must not be empty")
+        if not self.scope:
+            raise ValueError("memory scope must not be empty")
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be in [0, 1]")
 
@@ -50,6 +55,10 @@ class MemoryWriteProposal:
     scope: str = "project"
     proposed_by: str | None = None
     supersedes: list[str] = field(default_factory=list)
+    # GOAL-20261008-039 EC-03：**声明式时效**（可选；缺省 `None` ⇒ 既有行为逐字不变）。
+    # 由提案方声明，门链原样带进 canonical —— 不新造门链（仍是既有 §8 五段）。
+    review_after: Timestamp | None = None
+    expires_at: Timestamp | None = None
 
     def __post_init__(self) -> None:
         if not self.id:

@@ -164,6 +164,13 @@ ZERO_HIT_ROUTES: tuple[ReadRouteRule, ...] = (
     ReadRouteRule("/projects/{project_id}/ops/data-health", ZERO_HIT, _OPS + "(计数)"),
     ReadRouteRule("/projects/{project_id}/ops/incidents", ZERO_HIT, _OPS),
     ReadRouteRule(
+        "/projects/{project_id}/memory/validity",
+        ZERO_HIT,
+        "`MemoryValidityDto` 只给 id/scope/两个时间戳/三态判定 —— "
+        "记忆正文只在兄弟路由 `/memory`（声明载体），此处不得回正文"
+        "(GOAL-20261008-039 EC-04 登记;本轮金丝雀未命中)",
+    ),
+    ReadRouteRule(
         "/projects/{project_id}/protocol-drafts",
         ZERO_HIT,
         "`ProtocolDraftSummaryDto` 明文「草稿列表项(**不含正文**)」 —— 这条是契约断言,不是猜测",

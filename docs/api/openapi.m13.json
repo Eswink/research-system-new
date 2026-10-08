@@ -3756,6 +3756,11 @@
             ],
             "title": "Review After"
           },
+          "scope": {
+            "default": "project",
+            "title": "Scope",
+            "type": "string"
+          },
           "supersedes": {
             "items": {
               "type": "string"
@@ -3777,6 +3782,17 @@
               }
             ],
             "title": "Valid From"
+          },
+          "validity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validity"
           }
         },
         "required": [
@@ -3789,6 +3805,86 @@
           "active"
         ],
         "title": "MemoryRecordDto",
+        "type": "object"
+      },
+      "MemoryValidityDto": {
+        "additionalProperties": false,
+        "description": "一条记忆在**给定时点**上的时效（GOAL-20261008-039 EC-04）。\n\n时点由调用方给（`at`）⇒ 同一份数据同一时点判定必相同（可复现；**不读挂钟**）。",
+        "properties": {
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "review_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review After"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          },
+          "validity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validity"
+          }
+        },
+        "required": [
+          "id",
+          "scope"
+        ],
+        "title": "MemoryValidityDto",
+        "type": "object"
+      },
+      "MemoryValidityViewDto": {
+        "additionalProperties": false,
+        "description": "按显式时点的时效读面（逐条给判定 + 原始两时点）。",
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryValidityDto"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "scope_note": {
+            "title": "Scope Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "scope_note"
+        ],
+        "title": "MemoryValidityViewDto",
         "type": "object"
       },
       "ModelCreateDto": {
@@ -11411,6 +11507,58 @@
           }
         },
         "summary": "List Project Memory",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/projects/{project_id}/memory/validity": {
+      "get": {
+        "description": "**按显式时点**给出每条记忆的时效（GOAL-20261008-039 EC-04）。\n\n**为什么是 GET**：判定只依赖（canonical 状态 × 显式时点）—— 是**读面**（与既有\n`GET /projects/{id}/memory` 同一族，读面不认证）；**没有业务写入** ⇒ 不该挂进写面。\n\n时点由调用方给（`?at=`）⇒ 判定可复现（**不读挂钟**）。三态见 `validity_at`：\n`EXPIRED` / `REVIEW_DUE` / `None`（未到期**或未声明** —— 不猜）。",
+        "operationId": "memory_validity_projects__project_id__memory_validity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "at",
+            "required": true,
+            "schema": {
+              "title": "At",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryValidityViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Memory Validity",
         "tags": [
           "memory"
         ]

@@ -91,7 +91,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters tests/api -q` ⇒ 全绿；
       新判据：往返（写 `scope` ⇒ 读出同值）+ 旧行（无列值）读出缺省。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **声明式时效（缺省不变）**：提案面（DTO）可声明 `review_after` / `expires_at`
@@ -101,7 +101,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/memory tests/api -q`
       ⇒ 全绿；新判据：声明 ⇒ 落库为真实值；未声明 ⇒ `None`（既有语义）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **到期/待复核是可观测事实（+ 两向反证）**：查询面按**调用方给出的时点**（`now`，
@@ -113,7 +113,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/application -q` ⇒
       全绿；新判据文件全绿（三态 + 三反证）。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树（复用 `tools/closeout_recheck_tools`
@@ -178,8 +178,9 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
   - 需要对既有记忆记录做**破坏性**改写（本轮只加列与缺省；不改既有行的语义）
-child_plans: []
-latest_recheck: null
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261008-351-goal-039-ec02-04-memory-scope-and-validity.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-352-goal-039-ec02-04-memory-scope-and-validity.md
 memory_entries: []
 ---
 
@@ -196,9 +197,9 @@ memory_entries: []
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 勘察定稿 | `scope` 从不落库、两时效列从不被写/被判定、`query` 无时效过滤、§8 明文要求 | PENDING |
-| EC-02 | 适用范围落库 | `scope` 成为 canonical 一等字段（迁移 018 + 两适配器往返 + 读面披露） | PENDING |
-| EC-03 | 声明式时效 | 提案可声明两时点；缺省路径**逐字不变**（判据钉住） | PENDING |
-| EC-04 | 到期可观测 | 按**调用方给的时点**逐条判定（expired / review_due / None）+ 三反证 | PENDING |
+| EC-02 | 适用范围落库 | `scope` 成为 canonical 一等字段（迁移 018 + 两适配器往返 + 读面披露） | PASS |
+| EC-03 | 声明式时效 | 提案可声明两时点；缺省路径**逐字不变**（判据钉住） | PASS |
+| EC-04 | 到期可观测 | 按**调用方给的时点**逐条判定（expired / review_due / None）+ 三反证 | PASS |
 | EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**读挂钟做判定**；
@@ -380,10 +381,12 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261008-351` | （见 CI 台账） | EC-02/03/04 全 PASS：**`scope` 落库**（域 + 迁移 018 只加列 + 三实现同契约 + 读面披露；判据 11 例）+ **声明式时效**（声明 ⇒ 真实值 / 未声明 ⇒ None）+ **到期可观测**（三态纯函数**不读挂钟** + 边界含等号 + `GET .../memory/validity?at=` 读面；三反证）；广面 **4379 passed, 179 skipped**；隐私读面 **133 passed, 2 skipped**；四道门绿（mypy 1166 files） | （见 CI 台账） | **三处真红并修**：① SQLite `INSERT` 硬编码 12 个占位符（加列后 13 列）⇒ 按列数生成；② 新路由首版 POST ⇒ 写面告警线 63→64，复核后判定它是**读面** ⇒ 改 GET（写面回 63）；③ 读面登记首版放错「声明内容」档 ⇒ 撞上界（16>15）⇒ 更正为零命中档 | EC-02/03/04 收口；**下一轮 EC-05**（自举收口） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 7**（replan 留痕） | （见 CI 台账） | — | 五条 EC 全 PENDING；判定落点（②）与迁移形态（④）待 cycle 1 实现 | cycle 1（EC-02 落库 + EC-03 声明式时效） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 1（EC-02/03/04）收口**：记忆的**适用范围与时效**从「字段存在但从不落库/从不判定」推到**可判定事实** —— `scope` 成 canonical 一等字段（迁移 018 只加列 + 三实现同契约 + 读面披露）、提案可**声明式**给两时点（缺省路径逐字不变）、到期/待复核按**调用方给的时点**判三态（**不读挂钟** ⇒ 可复现）并经新 GET 读面逐条披露，三反证打满。**三处真红并修**（硬编码占位符 / POST 误入写面 / 读面登记放错档）。EC-02/03/04 `PASS`；EC-05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **replan + 建档（cycle 0）**：`replan_every_goals: 3` 到期 ⇒ 对 MAINLINE 程序表做 replan（序 7 **新增**一行，修订记录留痕）；从 GOAL-037/038 的实测残余（`O-1` / `P-1`）里定题 —— **记忆的适用范围与时效从未被判定**。只读勘察三条读数：① `MemoryWriteProposal.scope` 存在但**从不落库**（两库无列、PG 的 `_to_row` 连参数都没有）；② `review_after` / `expires_at` 在域与两库 schema 里都在，但 gate/promotion **从不设置**、PG **硬编码 `None`**、`query` **无时效过滤**（过期记录照常返回）；③ 读面只**转述**两时点、无任何判定。五条 EC 全 `PENDING`。**不做数量目标**；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

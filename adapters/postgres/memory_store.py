@@ -68,10 +68,10 @@ class PostgresMemoryStore(PostgresAdapterBase):
         with self._conn.transaction():
             cur = self._conn.execute(
                 "INSERT INTO m12_memory"
-                " (id, tier, kind, content, provenance, confidence,"
+                " (id, tier, kind, content, provenance, confidence, scope,"
                 " valid_from, review_after, expires_at,"
                 " supersedes, contradictions, active)"
-                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s)"
                 " ON CONFLICT (id) DO NOTHING",
                 _proposal_values(proposal),
             )
@@ -90,6 +90,10 @@ class PostgresMemoryStore(PostgresAdapterBase):
             content=proposal.content,
             provenance=proposal.provenance,
             confidence=proposal.confidence,
+            # EC-02/EC-03：提交回执必须与**写进去的**一致（否则读面与写面分叉）。
+            scope=proposal.scope,
+            review_after=proposal.review_after,
+            expires_at=proposal.expires_at,
             supersedes=list(proposal.supersedes),
         )
         return record
@@ -160,9 +164,12 @@ def _proposal_values(proposal: MemoryWriteProposal) -> tuple[Any, ...]:
         proposal.content,
         proposal.provenance,
         proposal.confidence,
-        None,  # valid_from
-        None,  # review_after
-        None,  # expires_at
+        # GOAL-20261008-039 EC-02：适用范围（提案面既有字段，此前从不落库）。
+        proposal.scope,
+        None,  # valid_from（提案面无该字段；读面如实给 None）
+        # EC-03：声明式时效 —— 提案声明什么就写什么（缺省 None ⇒ 既有行为逐字不变）。
+        proposal.review_after.value if proposal.review_after else None,
+        proposal.expires_at.value if proposal.expires_at else None,
         _json(proposal.supersedes),
         _json([]),  # contradictions (empty at commit)
         True,  # active
@@ -193,6 +200,8 @@ def _record_from_row(row: Any) -> MemoryRecord:
         content=row["content"],
         provenance=row["provenance"],
         confidence=float(row["confidence"]),
+        # GOAL-20261008-039 EC-02：适用范围（旧行按缺省读出）。
+        scope=str(row["scope"]) if row.get("scope") else "project",
         valid_from=_opt_ts(row["valid_from"]),
         review_after=_opt_ts(row["review_after"]),
         expires_at=_opt_ts(row["expires_at"]),
