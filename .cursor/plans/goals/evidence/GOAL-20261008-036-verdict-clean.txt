@@ -1,0 +1,71 @@
+PASS protected-judges-present
+PASS scale-gate-limits-present
+PASS runner-product-roots-unchanged
+PASS scale-judge-product-roots-unchanged
+PASS m0-check-count-stable
+PASS closeout-assertions-present
+PASS closeout-assertions-judge-present
+PASS two-tree-entry-present
+PASS governance-validator-present
+PASS evidence-scripts-are-path-independent
+PASS entry-judge-present
+PASS entry-refuses-degradation
+PASS entry-carries-a-reverse-proof-case
+PASS entry-refuses-single-tree-pass
+PASS conventions-clause-and-six-items
+PASS conventions-registered
+PASS conventions-name-the-entry-and-the-assertions
+PASS records-declare-existing-rechecks
+PASS ec02-implementation-module
+PASS ec02-tool-capability-mapping
+PASS ec02-provider-handler
+PASS ec02-provider-dependency
+PASS ec02-session-binding
+PASS ec02-both-roots-wired
+PASS ec02-catalog-declares-it
+PASS ec02-policy-grants-it-once
+PASS ec02-scope-mirror-synced
+PASS ec03-protocol-present
+PASS ec03-consume-declares-capability
+PASS ec03-both-phases-run-chain
+PASS ec03-consumption-contract
+PASS ec03-judge-present
+PASS ec03-downstream-consumption-is-asserted
+PASS ec04-in-scope-lists-it
+PASS ec04-registry-no-longer-lists-it
+PASS ec04-fixture-synced
+PASS ec04-difference-table-has-no-row
+PASS ec04-registered-count-is-seven
+PASS ec04-intersection-lists-it
+PASS cases-test_review_read_on_the_run_path
+PASS cases-test_canonical_read_provider
+PASS prior-judge-test_capability_coverage_is_implemented
+PASS prior-judge-test_release_expansion_is_read_only
+PASS prior-judge-test_read_grant_is_per_item
+PASS prior-judge-test_granted_read_capabilities_used_in_a_run
+FAIL verdict-archive-current -> missing/empty
+FAIL verdict-archive-clean -> missing/empty
+FAIL scope-declares-this-rounds-scripts -> tools/verify_goal036_closeout.py,tools/goal036_closeout_assertions.py
+PASS scope-still-pins-the-entry
+PASS goal-declares-five-ecs
+PASS goal-ec01-status
+PASS goal-ec02-status
+PASS goal-ec03-status
+PASS goal-ec04-status
+PASS goal-ec05-status
+PASS record-PLAN-20261008-331-goal-036-ec01-02-review-read-onboarding.md
+PASS record-PLAN-20261008-333-goal-036-ec03-04-consumption-and-registry.md
+FAIL record-PLAN-20261008-335-goal-036-ec05-self-bootstrap-closeout.md ->
+PASS record-RECHECK-20261008-332-goal-036-ec01-02-review-read-onboarding.md
+PASS record-RECHECK-20261008-334-goal-036-ec03-04-consumption-and-registry.md
+FAIL record-RECHECK-20261008-336-goal-036-ec05-self-bootstrap-closeout.md ->
+PASS record-README.md
+PASS record-MAINLINE.md
+PASS r26-R26-1-registered
+PASS r26-R26-2-registered
+PASS r26-R26-3-registered
+PASS r26-R26-4-registered
+PASS r26-R26-5-registered
+PASS r26-R26-6-registered
+PASS uncovered-scope-enumerated
+FAIL residuals-enumerated -> `M-1`,`M-2`,`M-3`,`M-4`,`M-5`
