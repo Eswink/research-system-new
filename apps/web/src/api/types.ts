@@ -1107,13 +1107,31 @@ export interface DataHealthViewDto {
   aggregate_reason: string | null;
 }
 
+/**
+ * 一条审计发现（GOAL-035 EC-02）：域 `AuditFinding` 的读面投影。
+ * `message` 会**点名**出问题的那一项（制品 id / 锚点名）。
+ */
+export interface AuditFindingDto {
+  code: string;
+  severity: string;
+  message: string;
+}
+
 export interface ExperimentRunDto {
   experiment_run_id: string;
   artifact_ids: string[];
   image_digest: string | null;
   environment_digest: string | null;
   metrics: Record<string, unknown>;
+  /** 审计在场（GOAL-035 EC-02 起由 run 路径在实验终态产出并落库） */
   reproduction_available: boolean;
+  /** 封存 digest（`sha256:…`）；无审计时为 null */
+  audit_digest: string | null;
+  /** 域锚点检查结论（PASS/FAIL）；无审计时为 null */
+  audit_status: string | null;
+  /** **重算**封存 digest 的结果（漂移/篡改检测）；无审计时为 null */
+  audit_verified: boolean | null;
+  audit_findings: AuditFindingDto[];
 }
 
 export interface ExperimentViewDto {

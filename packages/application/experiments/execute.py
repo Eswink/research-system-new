@@ -25,7 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
-from typing import Mapping
+from typing import Any, Mapping
 
 from packages.application.experiments.artifact_ingest import (
     read_result_payload,
@@ -85,6 +85,33 @@ class _Collected:
     referenced_ids: tuple[str, ...]
     transition_event: str
     failure_reason: str | None
+
+
+def _audit_for(run: ExperimentRun, artifacts: ArtifactStore) -> Any | None:
+    """终态实验 ⇒ 封存一份可复现审计（GOAL-20261008-035 EC-02）。
+
+    复用既有 use case `build_reproducibility_audit`（域类型、digest 口径、锚点检查
+    **都不重建**）。**可审态**沿用既有谓词 `is_auditable_state`（只有科学终态
+    `SUCCEEDED` / `NEGATIVE_RESULT` 入审计；执行失败/超时/取消**不**审计 —— 那是
+    既有口径，本处不另立一套）。不可审或缺 spec/result ⇒ 返回 None **而不抛**：
+    审计是**记录**这次执行的绑定，缺前置时它如实缺席（读面标 unavailable），不该把
+    一次跑完的实验变成失败。`audit_id` 用既有派生口径 ⇒ 同一实验 ⇒ 同一审计身份。
+    """
+    from packages.application.experiments.repro_audit import (
+        build_reproducibility_audit,
+        is_auditable_state,
+    )
+    from packages.application.m12_reference.clean_run_stages import derived_id
+    from packages.domain.core import ID
+
+    if not is_auditable_state(run.state) or run.spec is None or run.result is None:
+        return None
+
+    # 审计 id 与遗留 M12 链**同一派生口径**（`derived_id("audit", …)` ⇒ 同一实验 ⇒ 同一
+    # 审计身份；随机 id 会让「同一实验的两次审计」在 id 上互不相同）。
+    return build_reproducibility_audit(
+        run, audit_id=ID(derived_id("audit", str(run.id.value))), artifacts=artifacts
+    )
 
 
 def _gpu_fingerprint(summary: Mapping[str, object]) -> dict[str, str] | None:
@@ -335,6 +362,7 @@ class ExperimentExecutor:
             stdout_artifact_id=collected.stdout_id,
             stderr_artifact_id=collected.stderr_id,
             result_artifact_id=collected.result_artifact_id,
+            audit=_audit_for(run, self._artifacts),
         )
 
     def _build_run_spec(self, request: ExperimentExecutionRequest) -> ExperimentRunSpec:

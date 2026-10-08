@@ -195,7 +195,15 @@ ZERO_HIT_ROUTES: tuple[ReadRouteRule, ...] = (
         ZERO_HIT,
         "`EvidenceDto` 只给 digest/source_ref/来源标签 —— 正文在制品侧,不在这里",
     ),
-    ReadRouteRule("/runs/{run_id}/experiments", ZERO_HIT, _META),
+    ReadRouteRule(
+        "/runs/{run_id}/experiments",
+        ZERO_HIT,
+        _META + "; GOAL-20261008-035 EC-02 起另带**复现审计读数**"
+        "(`audit_digest` / `audit_status` / `audit_verified` / `audit_findings`):"
+        "digest 与判词按模板只含**制品 id 与锚点名**(ARTIFACT_CORRUPTED 点名制品 id、"
+        "CODE_DIGEST_NOT_PINNED 谈快照覆盖面),不含制品正文;"
+        "**一等边界**:`message` 是域函数渲染的模板句,新增锚点时须重走本登记",
+    ),
     ReadRouteRule("/runs/{run_id}/placement", ZERO_HIT, _META + "(放置/后端/就绪判词)"),
     ReadRouteRule(
         "/runs/{run_id}/reviews",

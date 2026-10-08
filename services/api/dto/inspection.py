@@ -202,8 +202,25 @@ class ProjectLineageDto(BaseModel):
     degraded_reason: str | None = None
 
 
+class AuditFindingDto(BaseModel):
+    """一条审计发现（GOAL-20261008-035 EC-02）：域类型 `AuditFinding` 的读面投影。
+
+    `message` 里会**点名**出问题的那一项（制品 id / 锚点名），故它同时是反证的读面。
+    """
+
+    code: str
+    severity: str
+    message: str
+
+
 class ExperimentRunDto(BaseModel):
-    """单个 experiment run 的只读视图（persisted truth）。"""
+    """单个 experiment run 的只读视图（persisted truth）。
+
+    `reproduction_*` 是**审计的读数**（GOAL-20261008-035 EC-02）：`audit_digest` 是封存
+    digest，`audit_status` 是域锚点检查的结论，`audit_verified` 是**重算**封存 digest 的
+    结果（漂移/篡改检测），`audit_findings` 逐条给出发现。没有审计 ⇒ 三个字段缺席 +
+    `reproduction_available=false`（诚实标注，不推测）。
+    """
 
     experiment_run_id: str
     artifact_ids: list[str] = Field(default_factory=list)
@@ -211,6 +228,10 @@ class ExperimentRunDto(BaseModel):
     environment_digest: str | None = None
     metrics: dict[str, object] = Field(default_factory=dict)
     reproduction_available: bool = False
+    audit_digest: str | None = None
+    audit_status: str | None = None
+    audit_verified: bool | None = None
+    audit_findings: list[AuditFindingDto] = Field(default_factory=list)
 
 
 class ExperimentViewDto(BaseModel):

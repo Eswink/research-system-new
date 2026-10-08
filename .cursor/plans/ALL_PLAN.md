@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261008-325](tasks/PLAN-20261008-325-goal-035-ec02-reproducibility-conclusion-on-the-run-path.md) | DONE |
 | [x] | [PLAN-20261008-323](tasks/PLAN-20261008-323-goal-035-ec01-finding-store-and-two-dimensional-coverage.md) | DONE |
 | [x] | [PLAN-20261008-321](tasks/PLAN-20261008-321-goal-034-ec04-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-319](tasks/PLAN-20261008-319-goal-034-ec01-multi-round-loop-declaration.md) | DONE |

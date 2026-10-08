@@ -96,7 +96,8 @@ export const COST: CostViewDto = {
 export const EXPERIMENTS: ExperimentViewDto = {
   experiments: [{ experiment_run_id: "experiment-one", artifact_ids: ["artifact-one"],
     image_digest: "sha256:image", environment_digest: "sha256:environment",
-    metrics: { accuracy: 0.85 }, reproduction_available: false }],
+    metrics: { accuracy: 0.85 }, reproduction_available: false,
+    audit_digest: null, audit_status: null, audit_verified: null, audit_findings: [] }],
   reproduction_note: "Persisted references only; reproduction is unavailable",
 };
 

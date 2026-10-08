@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import Any
 
 from packages.domain.core import ID, Digest
 from packages.domain.enums import PolicyDecision
@@ -49,6 +50,10 @@ class ExperimentExecutionOutcome:
     #: ——**如实记录已发生的事实**，不是在这里再判一次。治理包装未运行（裸 `ExperimentExecutor`）
     #: 或走了幂等复用分支时为空映射 ⇒ 验收门的 `POLICY_COMPLIANT` 维持 `policy decision unknown`。
     policy_decisions: Mapping[str, PolicyDecision] = field(default_factory=dict)
+    #: GOAL-20261008-035 EC-02：本实验的**可复现性审计**（终态即产出；未产出为 None）。
+    #: 复用既有域类型与 digest 口径（`build_reproducibility_audit`），**不建第二套**；
+    #: 落库由调用方负责（读面从实验存储读，不从执行体内存读）。
+    audit: Any | None = None
 
 
 def with_policy_decisions(

@@ -112,10 +112,17 @@ def sandbox_experiment_runner(
 
 
 def _persist_run(assembly: SandboxExperimentAssembly, result: TaskExecutionResult) -> None:
-    """把这次实验落进实验存储（读面的事实来源）；没有存储或没有结局时不做任何事。"""
+    """把这次实验（含**可复现审计**）落进实验存储（读面的事实来源）；没有存储或没有结局时不做任何事。
+
+    GOAL-20261008-035 EC-02：审计随实验一起落库 —— 读面（`GET /runs/{id}/experiments`）
+    读的是**存储**，只放在执行体内存里的结论对读面等于不存在（而那正是本轮之前的状态：
+    审计只在遗留 M12 链产出）。
+    """
     outcome = result.experiment_outcome
     if assembly.experiment_store is not None and outcome is not None:
         assembly.experiment_store.save_run(outcome.run)
+        if outcome.audit is not None:
+            assembly.experiment_store.save_audit(outcome.audit)
 
 
 def _governed_executor(assembly: SandboxExperimentAssembly) -> GovernedExperimentExecutor:

@@ -18,9 +18,14 @@ WP-E 新增：项目级 run 视图（跨 run evidence 聚合）、ExperimentPlan
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from fastapi import APIRouter, Request
 
+from packages.application.experiments.repro_audit import (
+    verify_audit_outputs,
+    verify_reproducibility_audit,
+)
 from packages.application.ports import EvidenceLedger
 from packages.domain.core import ID
 from packages.domain.evidence import Evidence
@@ -36,7 +41,11 @@ from services.api.dto.experiments import (
     ExperimentRunRowDto,
     ProjectExperimentsViewDto,
 )
-from services.api.dto.inspection import ExperimentRunDto, ExperimentViewDto
+from services.api.dto.inspection import (
+    AuditFindingDto,
+    ExperimentRunDto,
+    ExperimentViewDto,
+)
 from services.api.errors import ApiError
 from services.api.run_access import get_run_or_error
 
@@ -108,17 +117,73 @@ async def run_experiments(run_id: str, request: Request) -> ExperimentViewDto:
             metrics = _metrics_for(deps, artifact_id)
             if metrics:
                 experiment.metrics = {**experiment.metrics, **metrics}
+        _apply_audit(deps, experiment)
     return ExperimentViewDto(
         experiments=experiments,
-        reproduction_note=REPRODUCTION_NOTE,
+        reproduction_note=reproduction_note(experiments),
     )
 
 
 REPRODUCTION_NOTE = (
-    "ReproducibilityAudit 由 M12 参考链产出，不在控制面板持久化边界内，诚实标注 unavailable；"
-    "工作区快照的**文件级** diff 已由 GET /workspace-snapshots/{left}/diff/{right} 提供"
-    "（PLAN-20260915-058）"
+    "**没有审计的实验**：honest unavailable —— 本视图不推测复现性（GOAL-20261008-035 EC-02 "
+    "起，研究循环 run 路径会为终态实验落一份 ReproducibilityAudit，读面逐条给出 "
+    "audit_digest / audit_status / audit_verified / audit_findings）。工作区快照的"
+    "**文件级** diff 由 GET /workspace-snapshots/{left}/diff/{right} 提供（PLAN-20260915-058）"
 )
+AUDITED_NOTE = (
+    "复现结论来自**已落库**的 ReproducibilityAudit（run 路径在实验终态时产出）："
+    "audit_verified 是**重算封存 digest** 的结果（漂移/篡改检测），audit_findings 逐条"
+    "给出发现（缺失锚点 / 制品缺失 / 内容损坏 / digest 漂移，**逐条点名**）。"
+    "**边界**：本口径只声明「可重复配置」，不声明位级复现。"
+)
+
+
+def reproduction_note(experiments: list[ExperimentRunDto]) -> str:
+    """按**事实**选措辞：视图里有审计 ⇒ 谈读数；没有 ⇒ 诚实 unavailable。"""
+    if any(item.reproduction_available for item in experiments):
+        return AUDITED_NOTE
+    return REPRODUCTION_NOTE
+
+
+def _apply_audit(deps: ApiDeps, experiment: ExperimentRunDto) -> None:
+    """把**存储里**的审计读数贴到 DTO 上（没有审计 ⇒ 三个字段保持缺席）。
+
+    `audit_verified` 由**重算**得出（`verify_reproducibility_audit`），不是回读一个标记；
+    跨核对的发现（`verify_audit_outputs`）与锚点发现合并进 `audit_findings`。
+    """
+    store = deps.experiment_store
+    if store is None:
+        return
+    try:
+        audit = store.get_audit(experiment.experiment_run_id)
+    except Exception:  # noqa: BLE001 - 没有该实验的审计（读面如实缺席）
+        return
+    findings = [
+        AuditFindingDto(code=item.code, severity=item.severity, message=item.message)
+        for item in audit.findings()
+    ]
+    findings.extend(_output_findings(deps, audit))
+    experiment.reproduction_available = True
+    experiment.audit_digest = None if audit.audit_digest is None else str(audit.audit_digest)
+    experiment.audit_status = audit.status
+    experiment.audit_verified = verify_reproducibility_audit(audit)
+    experiment.audit_findings = findings
+
+
+def _output_findings(deps: ApiDeps, audit: Any) -> list[AuditFindingDto]:
+    """把审计绑定的输出 digest 与制品存储**当前内容**交叉核对（点名出问题的制品）。"""
+    store = deps.experiment_store
+    artifacts = deps.artifacts
+    if store is None or artifacts is None:
+        return []
+    try:
+        run = store.get_run(audit.experiment_run_id.value)
+    except Exception:  # noqa: BLE001 - 实验行不在（只有审计）⇒ 跳过交叉核对
+        return []
+    return [
+        AuditFindingDto(code=item.code, severity=item.severity, message=item.message)
+        for item in verify_audit_outputs(audit, run, artifacts)
+    ]
 
 
 def _project_runs(deps: ApiDeps, project_id: str) -> list[ResearchRun]:

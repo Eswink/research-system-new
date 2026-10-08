@@ -806,6 +806,31 @@
         "title": "ArtifactDto",
         "type": "object"
       },
+      "AuditFindingDto": {
+        "additionalProperties": false,
+        "description": "一条审计发现（GOAL-20261008-035 EC-02）：域类型 `AuditFinding` 的读面投影。\n\n`message` 里会**点名**出问题的那一项（制品 id / 锚点名），故它同时是反证的读面。",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
+        "title": "AuditFindingDto",
+        "type": "object"
+      },
       "BudgetAdjustLineDto": {
         "additionalProperties": false,
         "description": "budget_adjust 的单条调整：资源类型 + 目标额度（整个 run，非增量）。",
@@ -2390,7 +2415,7 @@
       },
       "ExperimentRunDto": {
         "additionalProperties": false,
-        "description": "单个 experiment run 的只读视图（persisted truth）。",
+        "description": "单个 experiment run 的只读视图（persisted truth）。\n\n`reproduction_*` 是**审计的读数**（GOAL-20261008-035 EC-02）：`audit_digest` 是封存\ndigest，`audit_status` 是域锚点检查的结论，`audit_verified` 是**重算**封存 digest 的\n结果（漂移/篡改检测），`audit_findings` 逐条给出发现。没有审计 ⇒ 三个字段缺席 +\n`reproduction_available=false`（诚实标注，不推测）。",
         "properties": {
           "artifact_ids": {
             "items": {
@@ -2398,6 +2423,46 @@
             },
             "title": "Artifact Ids",
             "type": "array"
+          },
+          "audit_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Digest"
+          },
+          "audit_findings": {
+            "items": {
+              "$ref": "#/components/schemas/AuditFindingDto"
+            },
+            "title": "Audit Findings",
+            "type": "array"
+          },
+          "audit_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Status"
+          },
+          "audit_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Verified"
           },
           "environment_digest": {
             "anyOf": [

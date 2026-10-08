@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261008-201](entries/MEM-20261008-201-an-unpersisted-conclusion-does-not-exist-for-the-read-face.md) | ACTIVE | repository | 0.92 | 2027-04-08 | PLAN-20261008-325 |
 | [MEM-20261008-200](entries/MEM-20261008-200-existing-judges-decide-where-a-new-read-face-may-land.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-323 |
 | [MEM-20261008-199](entries/MEM-20261008-199-a-judged-verdict-needs-a-recorded-read-face-not-a-recomputation.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-323 |
 | [MEM-20261008-198](entries/MEM-20261008-198-a-round-changes-identity-not-the-phase-id.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-319 |

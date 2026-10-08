@@ -108,7 +108,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/e2e tests/application
       tests/domain -q` ⇒ 全绿；新增判据文件全绿；配套留档：调用点清单、结论读数、
       反证判红原文。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **覆盖充分 + 评审联动（评审结论进判据面）**。
@@ -191,10 +191,12 @@ escalation_triggers:
   - 评审联动需要新增审批通道 / 改 `ReviewPanel` 域语义
 child_plans:
   - .cursor/plans/tasks/PLAN-20261008-323-goal-035-ec01-finding-store-and-two-dimensional-coverage.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-324-goal-035-ec01-finding-store-and-coverage.md
+  - .cursor/plans/tasks/PLAN-20261008-325-goal-035-ec02-reproducibility-conclusion-on-the-run-path.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-326-goal-035-ec02-reproducibility-conclusion.md
 memory_entries:
   - a-judged-verdict-needs-a-recorded-read-face-not-a-recomputation
   - existing-judges-decide-where-a-new-read-face-may-land
+  - an-unpersisted-conclusion-does-not-exist-for-the-read-face
 ---
 
 # GOAL-20261008-035 — 研究质量三类可判定 + 与评审联动
@@ -428,10 +430,12 @@ GOAL-019…034 的未覆盖范围原样保留。
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | （本文件所在提交） | 只读勘察（0 改动）；四条 EC 全 PENDING | PENDING | — | 四条 EC 全 PENDING；出厂协议落点待定 | cycle 1（EC-01 勘察 + 出厂协议落点） |
 | 1 | `PLAN-20261008-323` | （见 CI 台账 cycle 1 行） | EC-01 六条 AC 全 PASS：`tests/e2e/test_two_dimensional_coverage_and_claim_relation.py` **5 passed**；`tests/contracts/test_review_finding_store_contracts.py` 3 passed；PG 8 passed；`python` profile **6 项确定性检查全绿**（mypy 1139 文件 0 错）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5350 passed, 20 skipped**；收集数 +19 逐文件分解：3+5+3 新判据 + 8 源文件参数化；skipped 未升）；按压 P-1 **4 failed** / P-2 **1 failed** 且复原 | （见 CI 台账） | 首跑两处红并修：判据文件 2 处 `no-any-return`（mypy）、新读面未登记隐私清单（observability ×2）；规模门：`composition.py` 457 行、`service.py` 451 行 ⇒ 搬迁 + 归组（418 / 450） | EC-01 收口；**下一轮 EC-02**（可复现可判定：审计只在遗留 M12 链，run 路径零调用） |
+| 2 | `PLAN-20261008-325` | （见 CI 台账 cycle 2 行） | EC-02 五条 AC 全 PASS：`tests/e2e/test_reproducibility_conclusion_on_the_run_path.py` **3 passed**；`tests/application/experiments` + 既有离线链 **96 passed**；`tests/e2e` **252 passed**；`tests/observability` **133 passed**；mypy 1140 文件 0 错；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5354 passed, 20 skipped**，收集数 +4 逐文件分解）；按压 P-1 **3 failed** / P-2 **1 failed** 且复原 | （见 CI 台账） | 首版**自写可审态门**与既有 `is_auditable_state` 分叉 ⇒ 同轮改为复用；断言从「空发现列表」改为「零 FAIL」（域口径里 WARNING 是诚实标注）；首版 import 顺序错 ⇒ `UnboundLocalError` 39 failed，判据当场抓到 | EC-02 收口；**下一轮 EC-03**（评审联动：`review_score` 产品路径赋值 + `REVIEW_SCORE` 三态） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 2（EC-02）**：**可复现结论在 run 路径产出并进读面**。实验跑到科学终态时封存 `ReproducibilityAudit` 并**随实验落库**（复用既有 use case / 既有可审态谓词 `is_auditable_state` / 既有 id 派生，**未建第二套**）；读面 `GET /runs/{id}/experiments` 给出 `audit_digest` / `audit_status` / **重算的** `audit_verified` / 逐条 `audit_findings`（无审计则 honest unavailable）；主干判据**独立重算**与读面一致；反证两向（篡改载荷 ⇒ 重算判红；换掉引用 ⇒ 发现里点名制品 id）。EC-02 `PASS`；EC-03/EC-04 仍待收口。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 1（EC-01）**：两维覆盖判据与读面 claim↔evidence 关系**在同一次实跑**成立且可复核。产品面新增：验收结论**落 canonical**（`ReviewFindingStore` + SQLite/PG 实现 + 迁移 `016` + 组合根写读同实例）+ **只读路由** `GET /runs/{run_id}/reviews`（503/404 **不假装**）。判据 5 例（主角 + 计数维反证 + 性质维两式反证 + 读面边界）；两向反证判词逐字留档。**设计改变过一次并如实登记**：首版把判词放进新事件 payload，实测撞既有内容隐私金丝雀 ⇒ **改设计而非改判据**（制品面同样被既有条数断言挡下）。EC-01 `PASS`；EC-02/03/04 仍 `PENDING`。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 宪章 + `goals/README.md` 格式契约 + GOAL-034 全文；只读勘察把「质量三类可判定与评审联动」落成**三条可实测的缺口** —— ① `EVIDENCE_COVERAGE` 两维**实现完备但出厂协议零使用**（`rg examples/` 零命中）；② `build_reproducibility_audit` **只在遗留 M12 链被调用**，研究循环 run 路径零调用；③ `review_score` 在**产品路径从不赋值**（只在 tests 里喂值），而 `REVIEW_SCORE` 判据缺分即 fail-closed ⇒ 出厂协议声明它会一律判负。四条 EC 全 `PENDING`。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
