@@ -158,7 +158,7 @@ exit_criteria:
 | `tests/tooling/test_tooling_scripts_meet_product_gates.py` | **8 passed** |
 | `tools/verify_goal037_closeout.py --root . --verdict-only` | 起草中间态 **75 PASS / 4 FAIL**（逐条：归档未生成 ×2、本轮两份记录未写 ×2）⇒ 记录落地后收口态 **79 判词 / 0 FAIL** |
 | 两树复检 | 首轮 bootstrap 红（**实测**：current 79 判词 / 2 FAIL 仅归档缺失、clean 79 判词 / 8 FAIL（另有本轮交付面六项未提交）；归档由此写出）；次轮 `--base-ref 339d78f` ⇒ **`TWO-TREE PASS`**（两路 79 判词、`sha256` 相同 `ffcce304…`） |
-| as-is m0 | **`PASS: profile=m0; 23 deterministic checks`**（读数见 GOAL 迭代日志 cycle 5 行） |
+| as-is m0 | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5423 passed, 20 skipped**；收集数 +6 = 源文件参数化（新 `tools/` 两脚本不在产品根面 ⇒ +0）加上新判据文件进面后的一致性读数；`skipped` 20 未升）。日志 `scratch/m0-goal037-cycle5.log`（gitignored） |
 
 ## 无可复用事实
 

@@ -45,6 +45,7 @@
 
 | 日期 | GOAL | 一句话结论 | RECHECK |
 | --- | --- | --- | --- |
+| 2026-10-08 | GOAL-20261008-037 | 深度+质量轴落地：**研究程序级编排** —— 程序 ↔ run 的关联落 canonical（run 载荷内字段 + `for_program`）、推进**由上一轮落库结论驱动**（六判定可区分：START/CONTINUE/STOP_RULE/STOP_GUARDRAIL/WAIT/DEDUP；先结论后护栏）、**跨 run 知识累积**（`research_state.read` 承接：后一轮读到前一轮的判决值逐字，按 run id 归属）、编排步 **at-least-once + 幂等**（同键重放逐字节相同 / 崩溃窗口不产生第二个 run / 重启从 canonical 重建）；每轴两向反证；收口用本 GOAL 的验证器自举跑两树 | [RECHECK-20261008-346](../rechecks/RECHECK-20261008-346-goal-037-ec05-self-bootstrap-closeout.md) |
 | 2026-10-08 | GOAL-20261008-036 | 广度轴落地：按研究循环**实际需要**承接**一条**能力（`review.read`）并**端到端真跑** —— 声明 + 实现 + 绑定 + 两组合根接线 + **一条只读放行**五件事齐；一次实跑里后续 phase 经运行链**读到前序 phase 落库的逐字判词**（下游消费证据），两向反证（缺实现 / 未放行）点名；登记面清单纯收紧、覆盖读数 19/46 → 20/46 逐条；收口用本 GOAL 的验证器自举跑两树 | [RECHECK-20261008-336](../rechecks/RECHECK-20261008-336-goal-036-ec05-self-bootstrap-closeout.md) |
 | 2026-10-08 | GOAL-20261008-034 | 深度轴落地：多轮研究循环（三轮实跑，每轮不同的声明面）+ 结论驱动的停止（与上界护栏**可区分**、顺序固定为先结论后护栏）+ 停止/跳过落既有读面；三处真机制缺口先量后改（轮次不得改 phase id / 必须换任务 id / 三轮起制品选择收窄到上一轮） | [RECHECK-20261008-322](../rechecks/RECHECK-20261008-322-goal-034-ec04-self-bootstrap-closeout.md) |
 | 2026-10-08 | GOAL-20261008-033 | 连续性轴落地：死信恢复的**产品**入口（`POST /tasks/{id}/retry`）+ 死信↔续跑协同矩阵（三面实测 / B 路径如实登记）+ 续跑覆盖声明集（14 条 / 与源码按字段对账） | [RECHECK-20261008-318](../rechecks/RECHECK-20261008-318-goal-033-ec04-self-bootstrap-closeout.md) |

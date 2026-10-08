@@ -66,11 +66,16 @@ owners:
 
 （归档的**内容**不做一致性断言 —— 输入即输出；一致性由入口的 `COMPARE` 回答，见第 3 节。）
 
+**收口后的复跑取证（实测）**：GOAL 状态翻转与读数回填**之后**在当前树再跑一次验证器，
+判词与归档**逐字节相同**（`sha256` 同为 `ffcce304…`、79 判词 / 0 FAIL）⇒ 归档对**收口态**
+同样成立（状态翻转不改变任何一条判词）。
+
 ### 5. as-is m0（AC-5）
 
 在**全部记录写入之后**独占跑（`--profile m0 --keep-going`、仓库 `.venv`、
-`uv run --frozen --no-sync python -B`、不接管道）：终局行与 `passed/skipped` 读数在收口提交回填
-（日志落点 `scratch/`，gitignored）。
+`uv run --frozen --no-sync python -B`、不接管道）：终局行
+**`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** /
+**5423 passed, 20 skipped**；日志 `scratch/m0-goal037-cycle5.log`）。
 
 ### 6. 治理与宪章（AC-6）
 
