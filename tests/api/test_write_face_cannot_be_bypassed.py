@@ -55,7 +55,11 @@ _READ_ONLY = frozenset({"GET", "HEAD"})
 #: （死信人工恢复的产品入口）⇒ 60 → 61。**纯同步**：保护面的定义（方法分类）与
 #: 断言强度未动；新端点自动落在枚举面内，`test_every_mutating_endpoint_rejects_a_missing_token`
 #: 当场覆盖它（本文件不需要为新端点登记路径）。
-_MEASURED_MUTATING_COUNT = 61
+#: 2026-10-08（GOAL-20261008-037 EC-02）：`POST /projects/{project_id}/programs`
+#: 与 `POST /programs/{program_id}/advance`（研究程序控制面）⇒ 61 → 63。
+#: **纯同步**：保护面的定义（方法分类）与断言强度未动；两条新端点自动落在枚举面内，
+#: 全覆盖用例当场覆盖它们。
+_MEASURED_MUTATING_COUNT = 63
 
 
 def _placeholder_path(path: str) -> str:

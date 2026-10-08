@@ -46,10 +46,18 @@ class ProgramAdvance:
 
 
 def _verdicts(findings: FindingReader | None, run_id: str) -> tuple[str, ...]:
-    """上一轮落库的评审判词（逐字）——读不到时给空元组（由调用方判来源可用性）。"""
+    """上一轮落库的评审判词（逐字、**去重保序**）。
+
+    「这一轮的结论是什么」是**取值集合**：同一 run 的多个 phase 可能都落库判词
+    （实测：`produce` 与 `consume` 各一条），重复值不携带新信息 ⇒ 去重后进决策，
+    避免 `cited_facts` 出现同一条原文两遍。
+    """
     if findings is None:
         return ()
-    return tuple(str(item.finding.verdict) for item in findings.for_run(run_id))
+    seen: dict[str, None] = {}
+    for item in findings.for_run(run_id):
+        seen.setdefault(str(item.finding.verdict), None)
+    return tuple(seen)
 
 
 def _record(programs: ProgramStore, decision: ProgramDecision) -> ProgramDecision:

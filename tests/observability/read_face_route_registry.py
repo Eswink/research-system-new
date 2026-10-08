@@ -169,6 +169,19 @@ ZERO_HIT_ROUTES: tuple[ReadRouteRule, ...] = (
         "`ProtocolDraftSummaryDto` 明文「草稿列表项(**不含正文**)」 —— 这条是契约断言,不是猜测",
     ),
     ReadRouteRule("/projects/{project_id}/runs", ZERO_HIT, _META + "(run 摘要: id/状态/digest)"),
+    ReadRouteRule(
+        "/programs/{program_id}",
+        ZERO_HIT,
+        _META + "(程序声明 + 各轮 run 摘要 + 推进决策);"
+        "决策 `reason` / `cited_facts` 是**产品模板句 + 枚举**"
+        "(verdict / state 取值与序号/digest),不含任务输入或模型正文"
+        "(GOAL-20261008-037 EC-02 登记;本轮金丝雀未命中)",
+    ),
+    ReadRouteRule(
+        "/projects/{project_id}/programs",
+        ZERO_HIT,
+        "同上(程序列表,逐条同一形状)",
+    ),
     ReadRouteRule("/projects/{project_id}/settings", ZERO_HIT, _CFG),
     ReadRouteRule("/redoc", ZERO_HIT, _FRAME),
     ReadRouteRule("/roles", ZERO_HIT, _CFG),

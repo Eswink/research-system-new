@@ -4527,6 +4527,224 @@
         "title": "ProbeResultDto",
         "type": "object"
       },
+      "ProgramAdvanceDto": {
+        "additionalProperties": false,
+        "description": "一次推进的结果（决策 + 是否起了新 run + 程序内 run 数）。",
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/ProgramDecisionDto"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "run_count": {
+            "title": "Run Count",
+            "type": "integer"
+          },
+          "started_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started Run Id"
+          }
+        },
+        "required": [
+          "program_id",
+          "decision",
+          "run_count"
+        ],
+        "title": "ProgramAdvanceDto",
+        "type": "object"
+      },
+      "ProgramCreateDto": {
+        "additionalProperties": false,
+        "description": "建程序的输入（协议按 `examples/protocols/` 内路径解析，与启动 run 同一校验）。",
+        "properties": {
+          "continue_on_verdicts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Continue On Verdicts",
+            "type": "array"
+          },
+          "max_runs": {
+            "default": 3,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Max Runs",
+            "type": "integer"
+          },
+          "protocol_path": {
+            "title": "Protocol Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "protocol_path"
+        ],
+        "title": "ProgramCreateDto",
+        "type": "object"
+      },
+      "ProgramDecisionDto": {
+        "additionalProperties": false,
+        "description": "一次推进的 canonical 事实（读面逐条给）。",
+        "properties": {
+          "after_index": {
+            "title": "After Index",
+            "type": "integer"
+          },
+          "cited_facts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cited Facts",
+            "type": "array"
+          },
+          "cited_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cited Run Id"
+          },
+          "decided_at": {
+            "title": "Decided At",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "after_index",
+          "kind",
+          "reason",
+          "cited_facts",
+          "decided_at"
+        ],
+        "title": "ProgramDecisionDto",
+        "type": "object"
+      },
+      "ProgramDetailDto": {
+        "additionalProperties": false,
+        "description": "程序读面：声明 + 各轮 run + 逐条决策（含「为何继续 / 为何停」）。",
+        "properties": {
+          "continue_on_verdicts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Continue On Verdicts",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/ProgramDecisionDto"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "max_runs": {
+            "title": "Max Runs",
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "protocol_id": {
+            "title": "Protocol Id",
+            "type": "string"
+          },
+          "run_count": {
+            "title": "Run Count",
+            "type": "integer"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/ProgramRunDto"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "protocol_id",
+          "max_runs",
+          "continue_on_verdicts",
+          "created_at",
+          "updated_at",
+          "runs",
+          "decisions",
+          "run_count"
+        ],
+        "title": "ProgramDetailDto",
+        "type": "object"
+      },
+      "ProgramRunDto": {
+        "additionalProperties": false,
+        "description": "程序内一轮 run 的摘要（id / 序号 / 状态 / 冻结 digest）。",
+        "properties": {
+          "manifest_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Digest"
+          },
+          "program_index": {
+            "title": "Program Index",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "program_index",
+          "state"
+        ],
+        "title": "ProgramRunDto",
+        "type": "object"
+      },
       "ProjectCostDayDto": {
         "additionalProperties": false,
         "description": "项目日序列的一天：`included_in_projection=false` 时给出排除原因（G12）。",
@@ -10272,6 +10490,92 @@
         ]
       }
     },
+    "/programs/{program_id}": {
+      "get": {
+        "description": "程序读面（含「为何继续 / 为何停」的逐条决策）。",
+        "operationId": "get_program_programs__program_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramDetailDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Program",
+        "tags": [
+          "programs"
+        ]
+      }
+    },
+    "/programs/{program_id}/advance": {
+      "post": {
+        "description": "推进一次：判定取**落库事实**；必要时经既有 start-run 链起下一轮。",
+        "operationId": "advance_programs__program_id__advance_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramAdvanceDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Advance",
+        "tags": [
+          "programs"
+        ]
+      }
+    },
     "/projects": {
       "get": {
         "description": "注册表视图（确定性排序：created_at, id；默认项目恒在首位）。",
@@ -11436,6 +11740,104 @@
         "summary": "Preflight Endpoint",
         "tags": [
           "team-protocol"
+        ]
+      }
+    },
+    "/projects/{project_id}/programs": {
+      "get": {
+        "description": "项目内程序列表（按 id 排序；逐条给决策面）。",
+        "operationId": "list_programs_projects__project_id__programs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramDetailDto"
+                  },
+                  "title": "Response List Programs Projects  Project Id  Programs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Programs",
+        "tags": [
+          "programs"
+        ]
+      },
+      "post": {
+        "description": "建一次研究程序（声明面；协议路径按启动 run 的同一校验解析 ⇒ 不存在即 422）。",
+        "operationId": "create_program_projects__project_id__programs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramDetailDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Program",
+        "tags": [
+          "programs"
         ]
       }
     },

@@ -204,6 +204,7 @@ def _run_ready_sqlite_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.experiment_store import SqliteExperimentStore
     from adapters.sqlite.library_store import SqliteLibraryStore
     from adapters.sqlite.ops_store import SqliteOpsStore
+    from adapters.sqlite.program_store import SqliteProgramStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
     from adapters.sqlite.project_store import SqliteProjectStore
     from adapters.sqlite.run_store import SqliteRunStore
@@ -234,6 +235,9 @@ def _run_ready_sqlite_stores(connection: sqlite3.Connection) -> dict[str, Any]:
         # 与生产 composition 同侧：run 行落在共享连接上，派发面（claim_next）
         # 才读得到 canonical state —— 协作式暂停的事实来源（PLAN-20260914-048）。
         "runs_store": SqliteRunStore(connection=connection),
+        # GOAL-20261008-037 EC-02：程序面与生产 SQLite 组成同侧（建程序 / 推进 / 读面
+        # 的 live e2e 要真的走 HTTP 写链）。
+        "program_store": SqliteProgramStore(connection=connection),
     }
 
 

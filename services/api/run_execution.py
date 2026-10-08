@@ -50,6 +50,9 @@ class ExecutionInputs:
     command: StartRunCommand
     # GOAL-004 cycle 1：被解析的那份协议正文（随 run 落 canonical，供重启重建）。
     protocol_body: ProtocolBody | None = None
+    # GOAL-037 EC-02：程序归属（程序内序号）；两者同生同灭，None = 独立 run。
+    program_id: str | None = None
+    program_index: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +67,10 @@ class ExecutionRequest:
     project_id: str
     # GOAL-004 cycle 1：冻结正文（有它就不读文件/草稿库；重建路径走这一支）。
     protocol_body: ProtocolBody | None = None
+    # GOAL-037 EC-02：研究程序归属（程序内第几轮）。**与 run 的写入同一次**落 canonical
+    # （不设「先起 run 后绑定」的窗口）；None = 独立 run（HTTP 面缺省）。
+    program_id: str | None = None
+    program_index: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,7 +207,16 @@ def execution_inputs(req: ExecutionRequest) -> ExecutionInputs:
         protocol_source=source,
         protocol_body=protocol_body,
     )
-    return ExecutionInputs(protocol, catalog, project, preflight, command, protocol_body)
+    return ExecutionInputs(
+        protocol,
+        catalog,
+        project,
+        preflight,
+        command,
+        protocol_body,
+        program_id=req.program_id,
+        program_index=req.program_index,
+    )
 
 
 def run_from_execution(
@@ -230,6 +246,8 @@ def run_from_execution(
             pricing_digest=outcome.pricing_digest,
             protocol_source=inputs.command.protocol_source,
             protocol_body=inputs.protocol_body,
+            program_id=inputs.program_id,
+            program_index=inputs.program_index,
         )
         return row if row.manifest_digest else _with_frozen_refs(deps, row)
     except ValueError:
@@ -245,6 +263,8 @@ def run_from_execution(
                 state="FAILED",
                 protocol_source=inputs.command.protocol_source,
                 protocol_body=inputs.protocol_body,
+                program_id=inputs.program_id,
+                program_index=inputs.program_index,
             )
         )
 

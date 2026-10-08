@@ -202,6 +202,17 @@ def _collect_ids(client: TestClient, draft_id: str, run_id: str) -> dict[str, st
         "right_id": ARTIFACT_PARTNER_ID,
     }
     ids.update(_create_endpoint_and_model(client))
+    program = client.post(
+        f"/projects/{PROJECT_ID}/programs",
+        json={
+            "protocol_path": _PROTOCOL_PATH.name,
+            "max_runs": 2,
+            "continue_on_verdicts": ["PASS"],
+        },
+        headers={"Idempotency-Key": f"program-{_RUN}"},
+    )
+    assert program.status_code == 201, program.text
+    ids["program_id"] = str(program.json()["id"])
     for key, path, field_name in (("template_id", "/protocol-templates", "template_id"),):
         rows = client.get(path)
         if rows.status_code == 200 and rows.json():

@@ -38,6 +38,7 @@ from services.api.routers import (
     ops_schedules,
     ops_view,
     policy,
+    programs,
     project_cost_forecast,
     projects,
     protocol_drafts,
@@ -302,12 +303,20 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     register_error_handlers(app)
     app.add_middleware(IdempotencyMiddleware)
     _install_write_face_auth(app)
+    _register_routers(app)
+    return app
+
+
+def _register_routers(app: FastAPI) -> None:
+    """挂载控制面路由（逐条显式；`programs` 的读写两个面同挂）。"""
     app.include_router(llm_endpoints.router)
     app.include_router(models.router)
     app.include_router(team_protocol.router)
     app.include_router(team_custom.router)
     app.include_router(runs.router)
     app.include_router(runs.projects_router)
+    app.include_router(programs.router)
+    app.include_router(programs.projects_router)
     app.include_router(tasks.router)
     app.include_router(projects.router)
     app.include_router(run_events.router)
@@ -333,4 +342,3 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
     app.include_router(project_cost_forecast.router)
     app.include_router(policy.router)
     app.include_router(workspace_snapshots.router)
-    return app

@@ -464,6 +464,51 @@ export interface RunDetailDto {
   updated_at: string;
 }
 
+// GOAL-20261008-037 EC-02：研究程序控制面（建程序 / 推进 / 读面）。
+// `decisions` 是「为何继续 / 为何停」的可读面；`cited_facts` 是被引 canonical
+// 事实的**原文**（判词逐字 / 状态逐字）。
+export interface ProgramDecisionDto {
+  after_index: number;
+  kind: string;
+  reason: string;
+  cited_run_id: string | null;
+  cited_facts: string[];
+  decided_at: string;
+}
+
+export interface ProgramRunDto {
+  run_id: string;
+  program_index: number;
+  state: string;
+  manifest_digest: string | null;
+}
+
+export interface ProgramDetailDto {
+  id: string;
+  project_id: string;
+  protocol_id: string;
+  max_runs: number;
+  continue_on_verdicts: string[];
+  created_at: string;
+  updated_at: string;
+  runs: ProgramRunDto[];
+  decisions: ProgramDecisionDto[];
+  run_count: number;
+}
+
+export interface ProgramCreateDto {
+  protocol_path: string;
+  max_runs: number;
+  continue_on_verdicts: string[];
+}
+
+export interface ProgramAdvanceDto {
+  program_id: string;
+  decision: ProgramDecisionDto;
+  started_run_id: string | null;
+  run_count: number;
+}
+
 export interface TaskDto {
   task_id: string;
   contract_id: string;

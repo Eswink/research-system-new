@@ -2,11 +2,12 @@
 id: PLAN-20261008-339
 slug: goal-037-ec02-program-advance-entry
 title: GOAL-037 cycle 2（EC-02）：程序推进驱动 + advance 入口 + 双 run 实跑（结论驱动）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-08
 updated_at: 2026-10-08
-latest_recheck: null
-memory_entries: []
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-340-goal-037-ec02-program-advance-entry.md
+memory_entries:
+  - a-new-write-route-updates-the-measured-warning-lines
 parent_goal: GOAL-20261008-037
 cursor_plan_uri: null
 subagent_parallel_limit: 3
@@ -59,7 +60,7 @@ exit_criteria:
       第二个 run）；反证：无启动面 ⇒ 点名。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e -q` ⇒ 全绿；新增判据文件全绿。
-    status: PENDING
+    status: PASS
   - id: AC-4
     criterion: >-
       **门链 + 记录面**：ruff / format / mypy / 规模四道门绿；记录（本 PLAN、GOAL 行、
@@ -67,7 +68,7 @@ exit_criteria:
       （记录写完之后）。
     verify: >-
       门读数逐条 + `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261008-339 — GOAL-037 cycle 2（EC-02）程序推进驱动 + advance 入口
@@ -79,19 +80,19 @@ exit_criteria:
 | AC | 主题 | 状态 |
 | --- | --- | --- |
 | AC-1 | 驱动 + 六条判定（含 `DEDUP` 崩溃窗口） | PASS |
-| AC-2 | 产品入口与读面（三路由 + 同轮同步） | PENDING |
-| AC-3 | 双 run 实跑（结论驱动 + 四态 + 反证） | PENDING |
-| AC-4 | 四道门 + 记录面 + 治理 + as-is m0 23/23 | PENDING |
+| AC-2 | 产品入口与读面（三路由 + 同轮同步） | PASS |
+| AC-3 | 双 run 实跑（结论驱动 + 四态 + 反证） | PASS |
+| AC-4 | 四道门 + 记录面 + 治理 + as-is m0 23/23 | PASS |
 
 ## 实施清单
 
 - [x] WP-1：`program_runner.py`（`advance_program` + `_StartIntent`）+ 7 例判据。
-- [ ] WP-2：三个路由 + DTO（`ProgramDto` / `ProgramDecisionDto` / `ProgramDetailDto`）+
-      组合根接线（启动面 = 既有 start-run use case 的注入）。
-- [ ] WP-3：同轮同步（OpenAPI 重生成 + `types.ts` + e2e TS 夹具）。
-- [ ] WP-4：`tests/e2e/test_program_advance_on_the_run_path.py`（双 run 实跑 + 四态
-      + 反证）。
-- [ ] WP-5：`RECHECK-20261008-340` + GOAL 行 + `ALL_PLAN` + m0。
+- [x] WP-2：三个路由 + DTO（`ProgramCreateDto` / `ProgramDecisionDto` / `ProgramDetailDto`
+      / `ProgramAdvanceDto` / `ProgramRunDto`）+ 启动面接线（`ExecutionRequest` 带程序归属
+      ⇒ 与 run 的写入**同一次**落 canonical）。
+- [x] WP-3：同轮同步（OpenAPI 重生成 + `types.ts` + 读面登记 + 出口普查 + 写面告警线）。
+- [x] WP-4：`tests/e2e/test_program_advance_on_the_run_path.py`（双 run 实跑 + 四态 + 反证）。
+- [x] WP-5：`RECHECK-20261008-340` + GOAL 行 + `ALL_PLAN` + m0。
 
 ## 证据
 
@@ -121,9 +122,21 @@ ruff/format/mypy 绿。**未**触碰任何判据或阈值。
 `test_replay_does_not_start_a_second_run_at_the_same_index`（崩溃窗口 ⇒ `DEDUP`、run 数不变）；
 `test_missing_start_face_is_named_not_faked`（缺启动面**点名**）。
 
-### 剩余 WP 的读数
+### WP-2…WP-5 的读数
 
-（随 WP-2…WP-5 落地回填。）
+| 门 | 读数 |
+| --- | --- |
+| `tests/e2e/test_program_advance_on_the_run_path.py` | **6 passed**（`START` / `CONTINUE` / `STOP_RULE` / `STOP_GUARDRAIL` / 缺启动面点名 / 404 边界） |
+| `tests/application/run_orchestration/`（含驱动 7 例） | **123 passed** |
+| 广面（contracts + api + observability + tooling + architecture + e2e） | **3209 passed, 91 skipped**；唯一一次红是**已知类 flake**（`observability` 的 OTLP teardown race：`/v1/metrics` 连接被拒）—— **单跑该文件 4 passed**、紧接单跑该用例 1 passed（按既有配方处置，未动判据） |
+| `ruff` / `format` / `mypy` | 全绿（mypy 1157 files） |
+| 前端 | `pnpm typecheck`（根 + web）绿；`pnpm lint` 0 error（1 条**既存**软阈值 warning，非本轮文件） |
+| 同步面（如实登记） | 读面登记 +2 条（`/programs/{id}` / `/projects/{id}/programs`）+ 出口普查 +2 处 + 写面告警线 **61 → 63**（其 docstring 明说这是「有意增删 ⇒ 复核后更新」的告警线）+ `create_app` **51 行超 50 上限 ⇒ 拆出 `_register_routers`** |
+| as-is m0 | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5408 passed, 20 skipped**；收集数 +19 = 新判据 6 例（e2e）+ 源文件参数化（新模块 4 个 × 规模门）逐文件分解；`skipped` 20 未升）。日志 `scratch/m0-goal037-cycle2.log`（gitignored） |
+
+> **一次真红并修（本地，如实登记）**：`create_app` 因挂两条新路由变成 **51 行**（超 50 上限）
+> ⇒ **拆出 `_register_routers`**（不调阈值）；同轮还有两条登记面同步（读面登记 / 出口普查），
+> 均按既有「新读面 / 新出口 ⇒ 同轮登记」的纪律处置。
 
 ## 影响报告
 
@@ -140,3 +153,4 @@ ruff/format/mypy 绿。**未**触碰任何判据或阈值。
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-08 | IN_PROGRESS | WP-1 落地：驱动 + 六条判定 + 7 例判据全绿（四道门绿）。WP-2…WP-5 待推进。 |
+| 2026-10-08 | DONE | WP-2…WP-5 全部落地：三路由 + DTO + **启动面接线（程序归属与 run 同一次落库）**、同轮同步（OpenAPI / `types.ts` / 读面登记 / 出口普查 / 写面告警线）、双 run 实跑 6 例 + 驱动 7 例全绿；`create_app` 超限 ⇒ 拆 `_register_routers`（如实登记）。`RECHECK-20261008-340` 独立复检。 |

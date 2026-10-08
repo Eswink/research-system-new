@@ -100,7 +100,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e -q` ⇒ 全绿；双 run 实跑的
       终态 + 程序读面逐条判词；两向反证：结论缺失时的停止点名、护栏触顶点名。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **跨 run 知识累积（质量轴）**。(a) 后一轮**通过真实能力**读到前一轮落库的知识
@@ -200,9 +200,10 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261008-337-goal-037-ec01-canonical-program-skeleton.md
   - .cursor/plans/tasks/PLAN-20261008-339-goal-037-ec02-program-advance-entry.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-338-goal-037-ec01-canonical-program-skeleton.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-340-goal-037-ec02-program-advance-entry.md
 memory_entries:
   - jsonb-decodes-must-accept-parsed-objects
+  - a-new-write-route-updates-the-measured-warning-lines
 ---
 
 # GOAL-20261008-037 — 研究程序级编排（多轮 run + 跨 run 知识累积）
@@ -219,7 +220,7 @@ memory_entries:
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 勘察定稿 | 为什么是程序级编排 + 跨 run 知识：run 之间零关联、memory 有写入无读取、多轮止于 run 边界 | PENDING |
-| EC-02 | 程序编排（深度） | 双 run 实跑：关联落 canonical + 续跑/停止由上一轮落库结论驱动（先结论后护栏）+ 决策留档可读 | PENDING |
+| EC-02 | 程序编排（深度） | 双 run 实跑：关联落 canonical + 续跑/停止由上一轮落库结论驱动（先结论后护栏）+ 决策留档可读 | PASS |
 | EC-03 | 跨 run 知识累积（质量） | 后一轮**读到并用上**前一轮落库知识（逐字一致）+ 两向反证点名 | PENDING |
 | EC-04 | 幂等与中断（约束） | 编排步 at-least-once + 幂等（重放不产生第二个 run）+ 与 resume 边界明写 | PENDING |
 | EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
@@ -412,7 +413,7 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | （见 CI 台账） | 只读勘察（0 改动）；五条 EC 全 PENDING；MAINLINE 序 5 replan（`replan_every_goals: 3` 到期） | （见 CI 台账） | — | 五条 EC 全 PENDING；程序 ↔ run 的关联形态（①）与编排落点（②）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 程序编排落地） |
-| 2 | `PLAN-20261008-339` | （见 CI 台账，进行中） | **WP-1 落地**：程序推进驱动 `advance_program`（六条判定：`START` / `CONTINUE` / `STOP_RULE` / `STOP_GUARDRAIL` / `WAIT` / `DEDUP`；启动面**注入**、缺省点名；`cited_facts` 是判词/状态**原文**；护栏停与结论停**种类可区分**；崩溃窗口 ⇒ `DEDUP` 不产生第二个 run）+ **7 例判据全绿**；四道门绿（mypy 1153 files） | M0 `37781594902` **双平台真红** ⇒ 修后 `efddc86` M0 `37784058017` **success**（8/8）+ CodeQL success（3/3）；`86fd5b7`（M0 **cancelled**，原因如实登记）与 `7c0da21` 由 `efddc86` 覆盖 | `7c0da21` 的 M0 run `37781594902` **双平台真红**（规模门抓到 `advance_program` 108 行 ⇒ **拆函数**修复；修后本机 `tests/tooling` 1170 passed）—— 详见 `PLAN-20261008-339` 的「CI 真红并修」节 | WP-2…WP-5**未落地**（路由 / DTO / 同轮同步 / 双 run 实跑 / m0）⇒ EC-02 未收口 | cycle 2 续：WP-2 三个路由 + 读面（含「为何继续/为何停」逐条） |
+| 2 | `PLAN-20261008-339` | （见 CI 台账） | **EC-02 全落地**：程序推进驱动 `advance_program`（六条判定：`START` / `CONTINUE` / `STOP_RULE` / `STOP_GUARDRAIL` / `WAIT` / `DEDUP`；启动面**注入**、缺省点名；`cited_facts` 是判词/状态**原文**；护栏停与结论停**种类可区分**；崩溃窗口 ⇒ `DEDUP` 不产生第二个 run）+ **7 例判据全绿**；四道门绿（mypy 1153 files） | 见 CI 台账（本 cycle 的提交批次） | **规模门真红并修**（`advance_program` 108 行 ⇒ 拆 `_evaluate`/`_after_hit`/调度三件）；**四条登记面同轮同步**（写面告警线 61→63 / 读面登记 +2 / 出口普查 +2 / `create_app` 51 行 ⇒ 拆 `_register_routers`）；**已知类 flake** 一次（OTLP teardown race，单跑两次通过，如实登记） | 三路由 + DTO + 启动面接线（程序归属与 run **同一次**落库）+ 同轮同步 + 双 run 实跑 6 例 + 驱动 7 例全绿；广面 **3209 passed, 91 skipped**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5408 passed, 20 skipped**，收集数 +19 逐文件分解） | EC-02 收口；**下一轮 EC-03**（跨 run 知识的**读入**：承接 `research_state.read` + 下游消费 + 两向反证） |
 | 1 | `PLAN-20261008-337` | （见 CI 台账） | EC-01 决策定稿 + **canonical 骨架**：`ResearchRun` 增两字段（同生同灭 + 三个重建函数逐字段复制）、`RunStore.for_program`（SQLite `json_extract` / PG `->>`）、程序域类型 + 端口 + 两个适配器 + **迁移 017**（live PG 实测 `migration_version`=17）+ 两组合根接线；同轮同步（读面 / DTO / OpenAPI 重生成 +22 行 / `types.ts`）；新判据 **15 例全绿**（domain 9 / sqlite 4 / pg 2）；广面 `1590 passed, 5 skipped`（domain+adapters+contracts）/ `1063 passed, 1 skipped`（application+architecture）/ `2516 passed, 76 skipped`（contracts+api+tooling）；四道门绿（mypy 1151 files）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5389 passed, 20 skipped**；首跑真红于前端型检查 ⇒ 同轮同步 e2e 夹具后重跑取值） | `37773456975` M0 success + `37773457341` Push on main success（cycle 0 建档批，实测） | **门链抓到一次真红并修**（e2e TS 夹具缺两个新字段 ⇒ 同轮同步）；PG JSONB 解码（`str(dict)` 伪 JSON ⇒ 两形态都接住，`MEM-20261008-207`）；**mypy `arg-type` 点名 3 个测试假 RunStore** 缺 `for_program` ⇒ 补假实现（不给 Port 加默认实现、不加 `type: ignore`）；**落地形态修订**：关联查询走 JSON 抽取、不动 `runs` DDL（决策 ① 修订，爆炸半径压到零） | 骨架收口；**下一轮 EC-02**（驱动 + advance 入口 + 双 run 实跑） |
 
 ## 状态历史
@@ -420,6 +421,7 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-08 | ACTIVE | **cycle 2 的 CI 真红并修 + 全绿**：`7c0da21` 的 M0 双平台判红于规模门（`advance_program` 108 > 50 行）⇒ **拆函数**修复（`efddc86`），其 M0 `37784058017` **8/8 success** + CodeQL success ⇒ `86fd5b7`（M0 被 `cancel-in-progress` 取消，如实登记）与 `7c0da21` 的结论**由 `efddc86` 覆盖**。EC-02 仍未收口（WP-2…WP-5 未落地）。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
+| 2026-10-08 | ACTIVE | **cycle 2（EC-02）收口**：程序编排放到「真的跑起来」—— 三路由（建程序 / 推进 / 读面）+ DTO、**启动面接线（程序归属与 run 同一次落 canonical）**、双 run 实跑（`START` / `CONTINUE` / `STOP_RULE` / `STOP_GUARDRAIL` / 缺启动面点名 / 404）6 例 + 驱动 7 例全绿；**四条登记面同轮同步**（写面告警线 / 读面登记 / 出口普查 / `create_app` 拆函数）。EC-02 `PASS`；EC-03…05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 2（EC-02）进行中**：WP-1（推进驱动 + 六条判定 + 7 例判据）落地 —— 判定输入全是落库事实、启动面注入缺省点名、判词原文进决策、护栏停与结论停可区分、崩溃窗口 `DEDUP` 不产生第二个 run。**WP-2…WP-5 未落地**（产品入口 / 读面 / 双 run 实跑 / m0）⇒ EC-02 未收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 1（EC-01 决策定稿 + canonical 骨架）落地**：程序 ↔ run 的关联落 canonical（run 载荷内的 `program_id` / `program_index` + `RunStore.for_program`）、程序域类型与存储（SQLite + PG + 迁移 017）、两组合根接线、同轮同步（读面 / DTO / OpenAPI / 前端类型）；新判据 15 例全绿；四道门绿。**一次真红并修**（PG JSONB 解码 ⇒ 两形态都接住，`MEM-20261008-207`）+ **mypy 点名三处假 RunStore** ⇒ 补假实现。**落地形态修订**：按 JSON 抽取查程序内 run、不动 `runs` DDL。EC-01 收口；EC-02…05 仍待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 程序表序 5 + GOAL-036 收口面；只读勘察把「研究程序级编排：多轮 run + 跨 run 知识累积」落成**两条实测缺口** —— ① run 之间零关联（`ResearchRun` 零关联字段 / 单发启动 / `RUN_FORKED` 死名字 / 多轮止于 run 边界）；② 跨 run 知识**有写入、无读取**（memory 无项目维度 + run 路径零 memory 读取；结论本来就在 canonical）。五条 EC 全 `PENDING`；**程序表序 5 按实测 sharpen 并替换**（原文移入 MAINLINE 修订记录）。**不做数量目标**；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261008-208](entries/MEM-20261008-208-a-new-write-route-updates-the-measured-warning-lines.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-339 |
 | [MEM-20261008-207](entries/MEM-20261008-207-jsonb-decodes-must-accept-parsed-objects.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-337 |
 | [MEM-20261008-206](entries/MEM-20261008-206-closeout-floors-and-markers-are-measured-not-imagined.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-335 |
 | [MEM-20261008-205](entries/MEM-20261008-205-offline-agent-pool-decides-the-protocol-roles.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-333 |
