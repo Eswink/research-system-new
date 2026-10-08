@@ -2,7 +2,7 @@
 id: GOAL-20261008-034
 slug: multi-round-research-loop-and-stop-rules
 title: 多轮研究循环（至少三轮）+ 结论驱动的停止判据 —— 把 iterative_optimizer / stop_conditions 从「声明面」推进到「真循环且有停止规则」
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-08
 updated_at: 2026-10-08
 owners:
@@ -527,11 +527,14 @@ GOAL-019…033 的未覆盖范围原样保留。
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | （本文件所在提交） | 只读勘察（0 改动）；四条 EC 全 PENDING | PENDING | — | 四条 EC 全 PENDING；EC-02 的停止判据事实待定 | cycle 1（EC-01 勘察 + 三轮实现） |
 | 1 | `PLAN-20261008-319` | `f19425c` / `ce34208` / `8e9d9a6` / `cd578cf` / `4b11f7b` | 声明面 + 停止判据 + 状态机 **22 passed**；三轮 e2e **9 passed**；全量受判面 **2660 passed / 14 skipped**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / 5324 passed / 21 skipped）；四道门绿；治理绿 | 见「CI 台账」 | **三处真机制缺口**先量后改（轮次不得改 phase id / 必须换任务 id / 三轮起制品选择要收窄到上一轮）+ **一次判据假信号**（取第一条 run.completed）⇒ 均轮内修 | **AC-1…AC-5 全 PASS**；EC-01/EC-02 收口 | EC-03（停止/跳过落读面）| **EC-01 + EC-02 收口**（`RECHECK-20261008-320`）|
+| 2 | （并入 cycle 1 的第二段） | `8c1c7aa` / `f07b0ab` | 读面判据 **15 passed**；规模门 + 全量受判面绿 | M0（`f07b0ab`）**success** | **一次判据自证伪的返工**（首版「跳过不丢」按压没判红 + 一句恒真断言 ⇒ 补零命中轮夹具后重写） | EC-03 收口 | — | **EC-03 收口**（`RECHECK-20261008-320`）|
+| 3 | `PLAN-20261008-321` | `b136cc8` / `280bdf7` / `5de20ce` / 末条 | 验证器 **59 判词 / 0 FAIL**；两树 **TWO-TREE PASS**；归档 2039 B/CR=0；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / 5330 passed / 21 skipped）；治理绿 + 宪章判据绿 | 见「CI 台账」 | 门抓到 `assertion_verdicts` 77 行超限 ⇒ 拆 4 区（纯搬迁） | **四条 EC 全 PASS** | **GOAL 收口** | **GOAL 收口**（`RECHECK-20261008-322`）|
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACHIEVED | **cycle 3（EC-04 自举收口）落地 + GOAL 收口**：验证器 + 本轮断言集进树（复用标准断言集**一行未重写**，`IN_SCOPE` **纯收紧**）+ 本树 **59 判词 / 0 FAIL** + 两树 **`TWO-TREE PASS`**（两路 sha256 相同，bootstrap 时序如实登记）+ 判词归档进树（CR=0）+ as-is m0 **23/23**（全部记录写入之后）+ 治理绿 + 宪章判据绿 + CI 台账逐提交。**四条 EC 全 PASS**（EC-01 / EC-02 / EC-03 / EC-04）；`latest_recheck` = `RECHECK-20261008-322`（PASS_WITH_WARNINGS）。**收口后不再推进**；未覆盖范围与承继残余逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **cycle 1 第二/三段落地 + EC-01/EC-02 收口**：多轮循环**真的跑起来** —— `max_rounds=3` 三轮各用本轮的检索词、`ids_seen` 含三轮各一对 PMID、离线层收到 3 次检索；停止**两臂可区分且互斥**（护栏 `MAX_ROUNDS` / 结论 `CONCLUSION`），结论与上界重合时读成结论。**三处真机制缺口先量后改**：① 轮次改 phase id ⇒ 运行链 phase 级过滤查不到表 ⇒ **静默跳过全部调用**；② 轮次不换任务 id ⇒ 同任务重跑以不同 digest 重登记同一 `source_ref` ⇒ 撞 source 登记（实测第一轮成功、第二轮 FAILED）；③ 三轮起制品后缀判据匹配多份 ⇒ fail closed。**一次判据假信号**（首版取「第一条 run.completed」，而跑过循环的链里有两条）⇒ 改为点名带键那条。两向按压 `P1_RED 1 failed` / `P2_RED 7 failed` / `RESTORED True`。EC-01 = **PASS**、EC-02 = **PASS**（`RECHECK-20261008-320` = PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 1 第一/二段落地**：多轮循环**声明面**（`RoundLoop`：相序列 + `max_rounds` 护栏 + 判据名；展开**每轮 id 不同**，第 1 轮保持原始 id ⇒ 既有语义逐字不动）+ **停止判据**（`evaluate_stop`：**永远先读结论、再谈护栏**；反过来会把「结论已收敛」谎报成「只是上界到了」）+ **事实读取**（`new_ids` 是**集合差**不是计数）+ **循环控制状态机**。判据 **20 passed**；as-is m0 **23/23**；`tests/application + tests/e2e` 997 passed。**AC-1…AC-4 PASS；AC-5（执行接线：三轮真跑）PENDING**（如实登记，不把未做的记成已完成）。记录面判据抓到我自己的一处措辞违规（产品面禁用中文短语）⇒ 已改。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 宪章 + `goals/README.md` 格式契约 + GOAL-033 全文；只读勘察**复核并新增**了起点事实 —— ① 最深循环确为 2 轮（协议明文不声称上界）；② `ITERATIVE_OPTIMIZER` / `POPULATION_SEARCH` 是**枚举孤儿**（零消费点），而 `m12_reference_research_v1.yaml` 已在用 `iterative_optimizer`；③ **`stop_conditions` 运行期零消费**（解析 / 编译 / preflight 三段有、运行期无）⇒ `max_iterations: 4` 是装饰性声明；④ 相位执行链是**单遍**拓扑序（无轮次概念）⇒ 今天的「多轮」只能靠写死多个 phase。四条 EC 全 `PENDING`。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
