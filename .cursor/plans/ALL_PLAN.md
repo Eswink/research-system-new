@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261008-347](tasks/PLAN-20261008-347-goal-038-ec01-03-declared-consumption-evaluator.md) | DONE |
 | [x] | [PLAN-20261008-345](tasks/PLAN-20261008-345-goal-037-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-343](tasks/PLAN-20261008-343-goal-037-ec04-idempotent-advance-and-restart.md) | DONE |
 | [x] | [PLAN-20261008-341](tasks/PLAN-20261008-341-goal-037-ec03-cross-run-knowledge-read-in.md) | DONE |

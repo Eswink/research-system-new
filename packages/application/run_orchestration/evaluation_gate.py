@@ -11,6 +11,7 @@ Research Runtime 不能自行认证成功（AGENTS.md §13、QUALITY_GATES.md）
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping
@@ -54,6 +55,10 @@ class EvaluationInputs:
     #: `SCHEMA_VALID` 要用的校验回调：按**合约自己声明的** `output_schema` 由装配方给出
     #: （应用层不读 schema 文件）；未注入 ⇒ 维持 `schema validator unavailable`（fail-closed）。
     schema_check: SchemaCheck | None = None
+    #: GOAL-20261008-038 EC-03：`CUSTOM_EVALUATOR` 的**编排层求值结论**（按判据下标）。
+    #: 由装配方在**求值点之前**算好（域层不执行外部求值器 —— 那是它的设计与既有判据）；
+    #: 未注入 ⇒ 维持域层的既有判词「must be executed by the orchestration layer」。
+    consumption: Mapping[int, Any] = field(default_factory=dict)
 
     def to_criterion_inputs(self) -> CriterionInputs:
         return CriterionInputs(
@@ -119,6 +124,33 @@ class GateOutcome:
         return self.verdict == "PASS"
 
 
+def _apply_consumption(
+    evaluations: Sequence[CriterionEvaluation],
+    inputs: EvaluationInputs,
+) -> list[CriterionEvaluation]:
+    """把编排层的跨轮消费结论**贴回**判据下标（GOAL-20261008-038 EC-03）。
+
+    **只在调用方给了结论时替换**（键 = 判据下标）：没给 ⇒ 域层的既有判词**逐字保留**
+    （`must be executed by the orchestration layer`）—— 两条路径互不覆盖，既有判据不受影响。
+    """
+    if not inputs.consumption:
+        return list(evaluations)
+    updated: list[CriterionEvaluation] = []
+    for index, evaluation in enumerate(evaluations):
+        verdict = inputs.consumption.get(index)
+        if verdict is None:
+            updated.append(evaluation)
+            continue
+        updated.append(
+            CriterionEvaluation(
+                criterion_type=evaluation.criterion_type,
+                passed=bool(verdict.passed),
+                reason=str(verdict.reason),
+            )
+        )
+    return updated
+
+
 def evaluate_task_gate(
     task: ResearchTask,
     contract: TaskContract,
@@ -145,6 +177,7 @@ def evaluate_task_gate(
         effective.to_criterion_inputs(),
         schema_check=effective.schema_check,
     )
+    evaluations = _apply_consumption(evaluations, effective)
     passed = contract_passes(evaluations)
     verdict = "PASS" if passed else "REJECT"
     finding = ReviewFinding(

@@ -80,7 +80,7 @@ exit_criteria:
     verify: >-
       `rg -n "CUSTOM_EVALUATOR" packages/ services/ adapters/ examples/` ⇒ 仅域类型与
       域求值器；`rg -n "custom evaluator" .` 读数；`CriterionEvaluation` 的返回逐字。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **交付物声明它消费了什么（声明式，与 `REVIEW_SCORE` 同口径）**：合约的
@@ -89,7 +89,7 @@ exit_criteria:
       未声明 / 路径缺失 / 值不是字符串或对象 ⇒ 求值器**点名**（不回落、不猜）。
     verify: >-
       新判据文件：三态（声明在场且路径可取 / 声明在场但路径缺失 / 未声明 ⇒ 点名）逐条。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **编排层求值（结构化比对 + 判词进既有读面）**：验收门求值点执行该求值器 ——
@@ -99,7 +99,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q` ⇒
       全绿；新判据逐条。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真的被用上（跨轮）+ 两向反证**：(a) 程序跑两轮，第 2 轮交付物**声明并真的携带**
@@ -174,8 +174,9 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
   - 需要改 `packages/domain/acceptance.py` 的**既有**求值器语义（本轮只**新增**求值路径）
-child_plans: []
-latest_recheck: null
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261008-347-goal-038-ec01-03-declared-consumption-evaluator.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-348-goal-038-ec01-03-declared-consumption-evaluator.md
 memory_entries: []
 ---
 
@@ -191,9 +192,9 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | `CUSTOM_EVALUATOR` 已声明未实现（域在场 / 编排层求值器零命中 / `O-4` 是依据） | PENDING |
-| EC-02 | 交付物声明消费 | 合约用既有 `metric` 声明「哪条路径承载前序结论」；解析器 fail-closed 三态 | PENDING |
-| EC-03 | 编排层求值 | 结构化比对（声明路径取值 vs 前序落库结论）；相等判过留痕 / 不等点名 / 缺席点名 | PENDING |
+| EC-01 | 勘察定稿 | `CUSTOM_EVALUATOR` 已声明未实现（域在场 / 编排层求值器零命中 / `O-4` 是依据） | PASS |
+| EC-02 | 交付物声明消费 | 合约用既有 `metric` 声明「哪条路径承载前序结论」；解析器 fail-closed 三态 | PASS |
+| EC-03 | 编排层求值 | 结构化比对（声明路径取值 vs 前序落库结论）；相等判过留痕 / 不等点名 / 缺席点名 | PASS |
 | EC-04 | 真的被用上（跨轮） | 两轮实跑判词可复核 + 两向反证（不带 ⇒ 判负点名；路径不存在 ⇒ 点名配置错） | PENDING |
 | EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
 
@@ -364,10 +365,12 @@ GOAL-034 的 `W-1`…`W-4`；GOAL-033 的 `W-1`…`W-6`；GOAL-032 的 `W-1`…`
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261008-347` | （见 CI 台账） | EC-01/02/03 全 PASS：**声明式消费**（合约 `metric` 路径 + fail-closed 三态 + 未知求值器点名）+ **编排层求值**（结构化比对；相等判过含来源 run id / 不等两侧点名 / 前序缺席点名；**整段文本含来源串不算**）+ **门接线**（`EvaluationInputs.consumption` 贴回判据下标；未注入 ⇒ 域层判词逐字保留）；判据 **12 例全绿**；受影响套件 **2412 passed, 1 skipped**；四道门绿（mypy 1163 files） | （见 CI 台账） | 两处构造面按实际字段名修正（`TaskContract` 无 `trust_level`、`ResearchTask` 无 `title`）—— 属测试夹具写法，非产品缺陷 | EC-01/02/03 收口；**下一轮 EC-04**（两轮实跑 + 两向反证） |
 | 0 | —（建档） | （见 CI 台账） | 只读勘察（0 改动）；五条 EC 全 PENDING；MAINLINE 序 6 保留槽换成真实 id | （见 CI 台账） | — | 五条 EC 全 PENDING；求值器落点（②）与声明载体（③）待 cycle 1 定 | cycle 1（EC-01 勘察定稿 + EC-02 声明面） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 1（EC-01/02/03）收口**：`CUSTOM_EVALUATOR` 从「恒判负、由编排层执行」推进到**真的被求值** —— 合约用既有 `metric` 声明消费路径（fail-closed 三态）、编排层按**结构化比对**（声明路径取值 vs 前序落库结论逐字）判定并留痕、结论经注入位贴回**判据下标**且**未注入时域层判词逐字保留**（域层与 schema **零改动**）；判据 12 例全绿。EC-01/02/03 `PASS`；EC-04/05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 程序表序 6（保留槽）+ GOAL-037 收口面；只读勘察把「跨轮消费成为可判定」落成**一条已实测的缺口** —— `AcceptanceCriterionType.CUSTOM_EVALUATOR` 与 `AcceptanceCriterion.evaluator` **已声明**（域类型 + 合约字段），但 `_evaluate_custom_evaluator` **恒判负**且明说「must be executed by the orchestration layer」，而**全仓零命中**任何编排层求值器 ⇒ 本轮补这一环（立题依据 = GOAL-037 残余 `O-4`「读到 ≠ 影响科学结论」）。五条 EC 全 `PENDING`；**程序表序 6 保留槽换成真实 id**。**不做数量目标**；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
