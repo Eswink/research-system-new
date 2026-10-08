@@ -1,0 +1,29 @@
+id: review_scored_research_v1_0_1
+version: 0.4.0
+
+# GOAL-20261008-035 EC-03（评审联动）：**评审结论进入判据面**的最小实证协议。
+#
+# 受控范围（写明，不夸大）：**1 个 phase、1 件交付物、0 条检索/实验能力** —— 会话自己产出
+# 一件评审交付物，交付物里**评审判给自己的分数**参与验收判定（`REVIEW_SCORE`）。
+#
+# 分数**来源被点名**：合约 `review_scored_deliverable` 的 `REVIEW_SCORE` 判据用 `metric`
+# 写明路径 `review_decision.score`（会话结构化输出里那件交付物的 `score` 字段）。
+# 取不到那条路径 ⇒ 既有 fail-closed 判词 `review score unknown`（**不**回落到默认分）——
+# 「没有评审结论」与「评审结论很差」是两件相反的事，读面必须分开。
+#
+# 为什么另立一份协议而不是给 `sort_analysis_review` 加判据（**不改既有受判面**）：
+# 那份契约服务 M7 的 2-phase 参考场景，其结构化输出在多条既有判据里被复用；加一条新判据
+# 会让那些夹具的评审输出变成「缺分数」⇒ 既有判据连环判负 —— 那是改既有受判面，不是本 EC。
+
+phases:
+  - id: review
+    name: Scored Review
+    strategy: single_agent
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.write
+    task_contract: review_scored_deliverable
+    outputs: [review_decision]
+    timeout_seconds: 120
+    gate: QUALITY_GATE

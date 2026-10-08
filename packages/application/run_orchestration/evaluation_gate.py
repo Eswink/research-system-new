@@ -11,8 +11,8 @@ Research Runtime 不能自行认证成功（AGENTS.md §13、QUALITY_GATES.md）
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from decimal import Decimal
+from dataclasses import dataclass, field, replace
+from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping
 
 from packages.domain.acceptance import (
@@ -69,6 +69,42 @@ class EvaluationInputs:
         )
 
 
+def declared_review_score(
+    contract: TaskContract, structured_output: Mapping[str, Any]
+) -> Decimal | None:
+    """按合约**自己声明的**路径取评审分数（GOAL-20261008-035 EC-03）。
+
+    「评审结论进入判据面」的前提是分数**有来源**。来源只有一处：合约在
+    `REVIEW_SCORE` 判据里用 `metric` 写明的**结构化输出字段路径**（如
+    `review_decision.score`）—— 那是这次会话交付物里**评审者自己给出**的数。
+
+    fail-closed（返回 `None` ⇒ 既有判词 `review score unknown`）：没声明路径、路径缺失、
+    值不是数（布尔/字符串/缺失）。**绝不**回落到 0 或某个默认分：那会把「没有评审结论」
+    伪装成「评审结论很差」，两者处置完全相反。
+    """
+    paths = [
+        criterion.metric
+        for criterion in contract.acceptance_criteria
+        if criterion.type is AcceptanceCriterionType.REVIEW_SCORE
+    ]
+    for path in paths:
+        if not path:
+            continue
+        value: Any = structured_output
+        for part in path.split("."):
+            if not isinstance(value, Mapping) or part not in value:
+                value = None
+                break
+            value = value[part]
+        if isinstance(value, bool) or not isinstance(value, (int, float, Decimal, str)):
+            continue
+        try:
+            return Decimal(str(value))
+        except (InvalidOperation, ValueError):
+            continue
+    return None
+
+
 @dataclass(frozen=True, slots=True)
 class GateOutcome:
     """门禁结果：verdict + 证据化 findings + decision。"""
@@ -96,10 +132,18 @@ def evaluate_task_gate(
     它是**按合约声明的 `output_schema` 由装配方给出**的校验回调；未注入时域函数维持
     既有的 fail-closed 判词（`schema validator unavailable`）。
     """
+    # GOAL-20261008-035 EC-03：合约声明了 `REVIEW_SCORE` 时，分数从**它自己声明的**字段
+    # 路径取（评审交付物里评审判给自己的数）；取不到即维持 fail-closed。显式传入的分数
+    # （若有）优先——那是装配方更近的事实。
+    effective = inputs
+    if inputs.review_score is None:
+        resolved = declared_review_score(contract, inputs.structured_output)
+        if resolved is not None:
+            effective = replace(inputs, review_score=resolved)
     evaluations = evaluate_contract(
         contract.acceptance_criteria,
-        inputs.to_criterion_inputs(),
-        schema_check=inputs.schema_check,
+        effective.to_criterion_inputs(),
+        schema_check=effective.schema_check,
     )
     passed = contract_passes(evaluations)
     verdict = "PASS" if passed else "REJECT"
