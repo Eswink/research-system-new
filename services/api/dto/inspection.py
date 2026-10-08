@@ -61,6 +61,25 @@ class ClaimMapDto(BaseModel):
     degraded: bool = False
 
 
+class ReviewFindingDto(BaseModel):
+    """验收门求值结论（GOAL-20261008-035 EC-01）。
+
+    `findings` 是**域函数逐字给出的判词**（如覆盖判据的
+    `1 >= 1 sources; 1 >= 1 retrieved`）——读面读原文，不在读取时重算判据：
+    「门判过」与「门根本没跑」必须可区分（重算在这件事上是掩盖）。
+    """
+
+    id: str
+    run_id: str
+    task_id: str
+    contract_id: str
+    review_type: str
+    verdict: str
+    findings: list[str] = Field(default_factory=list)
+    reviewed_by: str | None = None
+    reviewed_at: str | None = None
+
+
 class UsageEntryDto(BaseModel):
     entry_id: str
     resource_type: ResourceTypeValue

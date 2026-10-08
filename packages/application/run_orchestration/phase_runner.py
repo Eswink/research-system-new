@@ -65,6 +65,9 @@ class PhaseRunnerDeps:
     artifacts: ArtifactStore
     budget: BudgetLedger | None = None
     ledger: EvidenceLedger | None = None
+    # GOAL-20261008-035 EC-01：验收门求值结论的落库面（ReviewFindingStore）。
+    # None（缺省）= 该装配不记结论（读面读不到）；生产组合根总是接上。
+    review_findings: Any | None = None
     experiment_task: (
         Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult] | None
     ) = None

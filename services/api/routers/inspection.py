@@ -23,6 +23,7 @@ from services.api.dto.inspection import (
     EvidenceDto,
     ExportBundleDto,
     RelationDto,
+    ReviewFindingDto,
     UsageEntryDto,
 )
 from services.api.errors import ApiError
@@ -158,6 +159,40 @@ async def run_claim_map(run_id: str, request: Request) -> ClaimMapDto:
         contradictory_claims=contradictions,
         degraded=False,
     )
+
+
+@router.get("/runs/{run_id}/reviews", response_model=list[ReviewFindingDto])
+async def run_reviews(run_id: str, request: Request) -> list[ReviewFindingDto]:
+    """run 的**验收门求值结论**（GOAL-20261008-035 EC-01；persisted truth，run 级隔离）。
+
+    为什么单开这张面：`GateOutcome.evaluations`（逐条判据 + 逐字判词）此前只在**被拒**
+    时随失败消息可见（`gate_rejection_reason`），通过时的判词无处可读 —— 于是「覆盖判据
+    真的判过、两个维度各自的数是多少」不可复核。结论在**求值点**落库（写面在编排），
+    这里只读；**不在读取时重算判据**：重算无法区分「门判过」与「门根本没跑」。
+
+    未接存储（`review_findings is None`）⇒ 503（与 /usage/ 同一口径，不假装空结论）；
+    未知 run → 404。
+    """
+    deps: ApiDeps = get_deps(request)
+    if deps.review_findings is None:
+        raise ApiError(503, "Review Findings Unavailable", "review finding store not configured")
+    get_run_or_error(deps, run_id)
+    return [
+        ReviewFindingDto(
+            id=item.finding.id,
+            run_id=item.run_id,
+            task_id=item.task_id,
+            contract_id=item.contract_id,
+            review_type=item.finding.review_type,
+            verdict=item.finding.verdict,
+            findings=list(item.finding.findings),
+            reviewed_by=item.finding.reviewed_by,
+            reviewed_at=None
+            if item.finding.reviewed_at is None
+            else item.finding.reviewed_at.value.isoformat(),
+        )
+        for item in deps.review_findings.for_run(run_id)
+    ]
 
 
 @router.get("/runs/{run_id}/usage", response_model=BudgetViewDto)

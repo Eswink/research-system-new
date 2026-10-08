@@ -55,7 +55,17 @@ class OrchestrationDependencies:
     # 停止判据（结论驱动）或上界护栏为止。与 `capabilities` 同层：**装配知识**，
     # 不改协议 schema、不改 `PhaseStrategy` 枚举语义。
     round_loops: tuple[Any, ...] = ()
+    # GOAL-20261008-035 EC-01：验收门求值结论的落库面（`ReviewFindingStore`）。
+    # None（缺省）= 该装配**不记录**验收结论（读面因此读不到它）——生产组合根总是接上；
+    # 与 `ledger` 同层的可选装配面。注解取 Any：本模块不因此导入 ports 的实现类型。
+    review_findings: Any | None = None
     default_actor: str = "system:orchestration"
 
+    def fact_stores(self) -> dict[str, Any]:
+        """执行循环要用的**事实存储面**（证据账本 + 验收结论），由组合根注入、原样转交。
 
-__all__ = ["OrchestrationDependencies"]
+        这两件必须是**同一实例**：证据账本是「判据读了什么」的写面，验收结论是「判据判成
+        什么」的写面，而读面（`GET /runs/{id}/evidence|reviews`）读的正是它们 —— 两层各自
+        取名会让写面与读面分叉（读面永远读不到刚判过的那一条）。
+        """
+        return {"ledger": self.ledger, "review_findings": self.review_findings}

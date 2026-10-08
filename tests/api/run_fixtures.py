@@ -130,10 +130,13 @@ def _run_ready_context() -> _RunReadyContext:
     # WP-C：编排产出与控制面读取共享同一 artifact store。
     # WP-H：编排链与 ApiDeps 共享同一审批 registry（注册与裁决同实例）。
     # WP-D：同一 evidence ledger（编排写、inspection 读）。
+    from adapters.sqlite.review_finding_store import SqliteReviewFindingStore
+
     shared = _RunReadyStores(
         registry=ApprovalRegistry(),
         artifacts=FakeArtifactStore(),
         ledger=FakeEvidenceLedger(),
+        review_findings=SqliteReviewFindingStore(connection=connection),
     )
     # GOAL-010 EC-02：console_demo 协议**声明**的输入制品必须真的在库里，
     # 否则 `EVIDENCE_COVERAGE`（收紧后只认非模型自述的来源）会如实判拒。
@@ -184,6 +187,7 @@ def make_run_ready_deps(*, gateway: FakeModelGateway | None = None) -> ApiDeps:
         # WP-Z live e2e 只读链装配：ledger/通知读状态/memory/artifact 均为受控 Fake。
         budget=ctx.budget,
         notification_reads=SqliteNotificationReadStore(connection=ctx.connection),
+        review_findings=ctx.shared.review_findings,
         memory=FakeMemoryStore(),
         artifacts=ctx.shared.artifacts,
         ledger=ctx.shared.ledger,
@@ -255,6 +259,8 @@ class _RunReadyStores:
     registry: ApprovalStore
     artifacts: ArtifactStore
     ledger: EvidenceLedger
+    # GOAL-20261008-035 EC-01：验收门结论（编排写、inspection 读，同一实例）。
+    review_findings: Any
 
 
 def _build_orchestration(
@@ -284,6 +290,7 @@ def _build_orchestration(
             pricing=pricing,
             pricing_store=pricing_store,
             approvals=shared.registry,
+            review_findings=shared.review_findings,
         )
     )
 

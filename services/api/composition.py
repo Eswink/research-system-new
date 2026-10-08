@@ -14,30 +14,19 @@ from typing import Any
 
 from adapters.relay.gateway import OpenAIChatGateway
 from adapters.relay.registry_credential_resolver import RegistryCredentialResolver
-from adapters.sqlite.agent_store import SqliteAgentStore
 from adapters.sqlite.approval_store import SqliteApprovalStore
 from adapters.sqlite.artifact_store import SqliteArtifactStore
 from adapters.sqlite.budget_ledger import SqliteBudgetLedger
-from adapters.sqlite.catalog_override_store import SqliteCatalogOverrideStore
 from adapters.sqlite.endpoint_store import SqliteEndpointStore
 from adapters.sqlite.eval_report_store import SqliteEvalReportStore
 from adapters.sqlite.event_publisher import SqliteOutboxEventPublisher
 from adapters.sqlite.evidence_ledger import SqliteEvidenceLedger
 from adapters.sqlite.experiment_store import SqliteExperimentStore
 from adapters.sqlite.idempotency_store import SqliteIdempotencyStore
-from adapters.sqlite.library_store import SqliteLibraryStore
-from adapters.sqlite.memory_store import SqliteMemoryStore
 from adapters.sqlite.model_store import SqliteModelStore
-from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
-from adapters.sqlite.ops_store import SqliteOpsStore
 from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
-from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
-from adapters.sqlite.project_store import SqliteProjectStore
+from adapters.sqlite.review_finding_store import SqliteReviewFindingStore
 from adapters.sqlite.run_store import SqliteRunStore
-from adapters.sqlite.schedule_store import SqliteScheduleStore
-from adapters.sqlite.tool_pack_store import SqliteToolPackStore
-from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
-from adapters.sqlite.worker_registry import SqliteWorkerRegistry
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
 from adapters.workspace.snapshot_reader import FileSnapshotReader
 from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
@@ -85,6 +74,7 @@ from services.api.assembly import (
     policy_bindings,
     sqlite_artifact_blob_dir,
 )
+from services.api.config_store_parts import config_store_parts
 from services.api.demo import _default_events, seed_declared_inputs
 from services.api.idempotency import IdempotencyStore
 from services.api.runtime_support import (
@@ -168,6 +158,8 @@ class ApiDeps:
     # PLAN-058：工作区快照只读读取器（仅 `RESEARCHOS_WORKSPACE_SNAPSHOT_ROOT`
     # 显式配置时构建；None → 快照端点诚实 503，不猜默认路径、不冒充空树）。
     workspace_snapshots: WorkspaceSnapshotReader | None = field(default=None, repr=False)
+    # GOAL-20261008-035 EC-01：验收门求值结论的读面（写面在编排侧，同一实例）。
+    review_findings: Any | None = field(default=None, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)
@@ -251,6 +243,7 @@ class _SqliteStoreParts:
     approvals: Any
     experiment_store: Any  # GOAL-029 EC-01：experiment(.plan).read 的来源
     runs_store: Any  # GOAL-030 EC-02：run.read 的来源（与 ApiDeps.runs_store 同一实例）
+    review_findings: Any  # GOAL-035 EC-01：验收门结论的写面（编排）与读面（API）同一实例
 
 
 def _sqlite_store_parts(
@@ -285,6 +278,7 @@ def _sqlite_store_parts(
         approvals=approvals,
         experiment_store=SqliteExperimentStore(connection=connection),
         runs_store=SqliteRunStore(connection=connection),
+        review_findings=SqliteReviewFindingStore(connection=connection),
     )
 
 
@@ -311,40 +305,13 @@ def _sqlite_orchestration(
             events=ports.events,
             budget=ports.budget,
             ledger=ports.ledger,
+            review_findings=ports.review_findings,
             telemetry=telemetry,
             pricing=ports.pricing,
             pricing_store=ports.pricing_store,
             approvals=ports.approvals,
         )
     )
-
-
-def _sqlite_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
-    """dev 路径配置/注册面 store（PLAN-040 WP-A / PLAN-041 WP-A；PG canonical
-    仍是研究数据真相；store=None → 诚实 503 的边界保持）。
-
-    PLAN-066（EC-03）：`schedule_registry` 与 `schedule_store` 一起装配——守护线程与 HTTP
-    写面必须共用同一个实例，否则 `trigger` 找不到执行体。
-    """
-    from services.api.schedule_support import build_registry
-
-    schedule_store = SqliteScheduleStore(connection=connection)
-    return {
-        "agent_store": SqliteAgentStore(connection=connection),
-        "catalog_overrides": SqliteCatalogOverrideStore(connection=connection),
-        "project_settings_store": SqliteProjectSettingsStore(connection=connection),
-        "project_store": SqliteProjectStore(connection=connection),
-        "notification_reads": SqliteNotificationReadStore(connection=connection),
-        "library_store": SqliteLibraryStore(connection=connection),
-        "memory": SqliteMemoryStore(connection=connection),
-        "experiment_store": SqliteExperimentStore(connection=connection),
-        "ops_store": SqliteOpsStore(connection=connection),
-        "tool_provider_registry": SqliteToolProviderRegistry(connection=connection),
-        "tool_pack_store": SqliteToolPackStore(connection=connection),
-        "worker_registry": SqliteWorkerRegistry(connection=connection),
-        "schedule_store": schedule_store,
-        "schedule_registry": build_registry(schedule_store),
-    }
 
 
 def _assemble_sqlite(
@@ -405,8 +372,9 @@ def _sqlite_apideps(  # noqa: PLR0913 - composition root 装配参数
         runs_store=parts.runs_store,
         artifacts=parts.artifacts,
         ledger=parts.ledger,
+        review_findings=parts.review_findings,
         budget=parts.budget,
-        **_sqlite_config_stores(connection),
+        **config_store_parts(connection),
         protocol_draft_service=build_sqlite_draft_service(connection),
         endpoint_url_policy=_endpoint_url_policy(effective),
         runtime_selection=faces.selection,

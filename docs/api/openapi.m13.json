@@ -5532,6 +5532,75 @@
         "title": "ResourceKind",
         "type": "string"
       },
+      "ReviewFindingDto": {
+        "additionalProperties": false,
+        "description": "验收门求值结论（GOAL-20261008-035 EC-01）。\n\n`findings` 是**域函数逐字给出的判词**（如覆盖判据的\n`1 >= 1 sources; 1 >= 1 retrieved`）——读面读原文，不在读取时重算判据：\n「门判过」与「门根本没跑」必须可区分（重算在这件事上是掩盖）。",
+        "properties": {
+          "contract_id": {
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "findings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "review_type": {
+            "title": "Review Type",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "run_id",
+          "task_id",
+          "contract_id",
+          "review_type",
+          "verdict"
+        ],
+        "title": "ReviewFindingDto",
+        "type": "object"
+      },
       "RoleDefinitionDto": {
         "additionalProperties": false,
         "description": "RoleDefinition 视图（不绑定模型；ADR-0011）。",
@@ -12766,6 +12835,53 @@
         "summary": "Resume Run",
         "tags": [
           "approvals"
+        ]
+      }
+    },
+    "/runs/{run_id}/reviews": {
+      "get": {
+        "description": "run 的**验收门求值结论**（GOAL-20261008-035 EC-01；persisted truth，run 级隔离）。\n\n为什么单开这张面：`GateOutcome.evaluations`（逐条判据 + 逐字判词）此前只在**被拒**\n时随失败消息可见（`gate_rejection_reason`），通过时的判词无处可读 —— 于是「覆盖判据\n真的判过、两个维度各自的数是多少」不可复核。结论在**求值点**落库（写面在编排），\n这里只读；**不在读取时重算判据**：重算无法区分「门判过」与「门根本没跑」。\n\n未接存储（`review_findings is None`）⇒ 503（与 /usage/ 同一口径，不假装空结论）；\n未知 run → 404。",
+        "operationId": "run_reviews_runs__run_id__reviews_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewFindingDto"
+                  },
+                  "title": "Response Run Reviews Runs  Run Id  Reviews Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Reviews",
+        "tags": [
+          "inspection"
         ]
       }
     },

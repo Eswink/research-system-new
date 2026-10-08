@@ -294,7 +294,7 @@ class RunOrchestrationService:
                 runtime=self._deps.runtime,
                 artifacts=self._deps.artifacts,
                 budget=self._deps.budget,
-                ledger=self._deps.ledger,
+                **self._deps.fact_stores(),
                 publish=self._publish_phase_event,
                 fail_run=self._fail_run,
                 degrade_run=self._degrade_run,

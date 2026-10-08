@@ -48,6 +48,7 @@ class PostgresAssembly:
     eval_report_store: Any = None
     pricing_snapshot_store: Any = None
     worker_registry: Any = None
+    review_findings_store: Any = None
     gateway_override: Any = None
     credentials_override: Any = None
     preflight_override: Any = None
@@ -92,6 +93,7 @@ def _pg_components(
     from adapters.postgres.experiment_store import PostgresExperimentStore
     from adapters.postgres.memory_store import PostgresMemoryStore
     from adapters.postgres.pricing_snapshot_store import PostgresPricingSnapshotStore
+    from adapters.postgres.review_finding_store import PostgresReviewFindingStore
     from adapters.postgres.run_projection import PostgresRunProjection
     from adapters.postgres.run_store import PostgresRunStore
     from adapters.postgres.worker_registry import PostgresWorkerRegistry
@@ -118,6 +120,8 @@ def _pg_components(
         "eval_store": PostgresEvalReportStore(connection=pg_conn),
         "pricing_store": PostgresPricingSnapshotStore(connection=pg_conn),
         "worker_registry": PostgresWorkerRegistry(connection=pg_conn),
+        # GOAL-035 EC-01：验收门结论（写面=编排、读面=API，同一实例）
+        "review_findings": PostgresReviewFindingStore(connection=pg_conn),
     }
 
 
@@ -179,6 +183,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         eval_report_store=c["eval_store"],
         pricing_snapshot_store=c["pricing_store"],
         worker_registry=c["worker_registry"],
+        review_findings_store=c["review_findings"],
         gateway_override=getattr(config, "gateway_override", None),
         credentials_override=getattr(config, "credentials_override", None),
         preflight_override=getattr(config, "preflight_override", None),
@@ -224,6 +229,7 @@ def _build_pg_orchestration(
             events=c["events"],
             budget=c["budget"],
             ledger=c["ledger"],
+            review_findings=c["review_findings"],
             telemetry=config.telemetry,
             pricing=_load_pricing(),
             pricing_store=c["pricing_store"],
@@ -298,6 +304,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         experiment_store=assembly.experiment_store,
         ledger=assembly.ledger,
         budget=assembly.budget,
+        review_findings=assembly.review_findings_store,
         memory=assembly.memory_store,
         preflight_override=assembly.preflight_override,
         telemetry=assembly.telemetry,

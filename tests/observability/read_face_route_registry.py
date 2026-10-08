@@ -198,6 +198,15 @@ ZERO_HIT_ROUTES: tuple[ReadRouteRule, ...] = (
     ReadRouteRule("/runs/{run_id}/experiments", ZERO_HIT, _META),
     ReadRouteRule("/runs/{run_id}/placement", ZERO_HIT, _META + "(放置/后端/就绪判词)"),
     ReadRouteRule(
+        "/runs/{run_id}/reviews",
+        ZERO_HIT,
+        "`ReviewFindingDto.findings` = 判据名 + **声明派生的**标识符/枚举/计数"
+        "(合约声明的制品名、测试名、指标名、policy 决定、覆盖计数),按判据模板不嵌正文;"
+        "**一等边界**:`SCHEMA_VALID` 判负时判词含校验器错误文本"
+        "(`schema violation: …`),该文本**可能**引用输出片段 —— 故这条面是"
+        "「按模板不含正文」而非「结构性保证零正文」(GOAL-035 EC-01 登记;本轮金丝雀未命中该类)",
+    ),
+    ReadRouteRule(
         "/runs/{run_id}/tasks",
         ZERO_HIT,
         "`TaskDto` 只给 id/契约/代理/状态/尝试次数 —— 任务输入不在这条读面上",

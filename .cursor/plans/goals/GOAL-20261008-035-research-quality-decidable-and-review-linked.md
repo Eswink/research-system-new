@@ -90,7 +90,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/e2e tests/domain
       tests/application -q` ⇒ 全绿；新增判据文件（两维判定 / 读面关系 / 两向反证）全绿；
       配套留档：勘察读数、判词逐字、两向反证判红原文。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **可复现可判定（run 路径上产出可复核的结论）**。
@@ -189,9 +189,12 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
   - 评审联动需要新增审批通道 / 改 `ReviewPanel` 域语义
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261008-323-goal-035-ec01-finding-store-and-two-dimensional-coverage.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-324-goal-035-ec01-finding-store-and-coverage.md
+memory_entries:
+  - a-judged-verdict-needs-a-recorded-read-face-not-a-recomputation
+  - existing-judges-decide-where-a-new-read-face-may-land
 ---
 
 # GOAL-20261008-035 — 研究质量三类可判定 + 与评审联动
@@ -238,6 +241,23 @@ memory_entries: []
 **更正后的结论**：EC-01 的靶子**不是**「协议不用它」（那条被实测推翻），而是
 **「两维的判定与读面关系是否在同一次实跑里同时成立且可复核」** —— 即
 **判据判定 + 读面关系**两条同时在场（承 1.6：判据绿而读面空是已知的假绿形态）。
+
+### 1.7 cycle 1 实测：**通过路径原本没有读面**，且两处既有判据决定了新读面不得落在哪里
+
+| # | 事实 | 命令 | 读数 |
+| --- | --- | --- | --- |
+| 1.7 | 逐条判词的既有读面 | `rg -n "gate_rejection_reason" packages/ services/` | **只在被拒路径**（拼进失败消息）；通过路径**零读面** |
+| 1.8 | `ReviewFinding` / `Decision` 的持久化 | `rg -n "ReviewFinding" --glob '*.py'`（排除定义/构造/本轮新模块） | **从不落库**；`handoff.decision_refs` 指向一个**不存在**的对象（既有空引用，本轮**未**收口，原样登记） |
+| 1.9 | 事件面不得放判词 | `tests/e2e/test_vertical_slice_happy_path.py::test_artifact_content_is_not_in_domain_json` | 该断言要求**任何**事件 payload 里零出现 `analysis_report`；而 `ARTIFACT_EXISTS` 判词逐字点名合约声明的制品名 ⇒ 判词进事件面即撞（**不放宽**） |
+| 1.10 | 制品面不得放结论 | `tests/e2e/test_idempotency.py` | 断言 `list_refs()` 条数**精确值** ⇒ 每任务新增一份「结论制品」即撞（**不放宽**） |
+| 1.11 | 新读面必须登记隐私清单 | `tests/observability/read_face_route_registry.py` + 派生一致性判据 | 未分类读面 ⇒ 两条判据点名判红（实测：`未分类的读面路由:/runs/{run_id}/reviews`） |
+| 1.12 | 实跑两维读数 | cycle 1 判据取样 | count=**3**（1 声明输入 + 2 检索来源）、retrieved=**2** ⇒ 判词 `3 >= 1 sources; 2 >= 1 retrieved` |
+| 1.13 | 判词渲染此前有**一处**（失败消息） | `gate_rejection_reason` | cycle 1 把它收成**唯一渲染点** `criterion_line`，落库面与失败消息共用（不各说一套） |
+
+**由此得出的设计约束**（cycle 1 已落地）：结论**在求值点落库**、经**独立只读路由**
+（`GET /runs/{run_id}/reviews`）读取；事件面与制品面都不动；读面必须登记并写明
+**一等边界**（`SCHEMA_VALID` 判负时判词含校验器错误文本、可能引用输出片段 ⇒
+「按模板不含正文」**而非**「结构性保证零正文」）。
 
 ### 2. 可复现：**审计只在遗留参考链里**（本轮 EC-02 的靶子）
 
@@ -404,9 +424,11 @@ GOAL-019…034 的未覆盖范围原样保留。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（建档） | （本文件所在提交） | 只读勘察（0 改动）；四条 EC 全 PENDING | PENDING | — | 四条 EC 全 PENDING；出厂协议落点待定 | cycle 1（EC-01 勘察 + 出厂协议落点） |
+| 1 | `PLAN-20261008-323` | （见 CI 台账 cycle 1 行） | EC-01 六条 AC 全 PASS：`tests/e2e/test_two_dimensional_coverage_and_claim_relation.py` **5 passed**；`tests/contracts/test_review_finding_store_contracts.py` 3 passed；PG 8 passed；`python` profile **6 项确定性检查全绿**（mypy 1139 文件 0 错）；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5350 passed, 20 skipped**；收集数 +19 逐文件分解：3+5+3 新判据 + 8 源文件参数化；skipped 未升）；按压 P-1 **4 failed** / P-2 **1 failed** 且复原 | （见 CI 台账） | 首跑两处红并修：判据文件 2 处 `no-any-return`（mypy）、新读面未登记隐私清单（observability ×2）；规模门：`composition.py` 457 行、`service.py` 451 行 ⇒ 搬迁 + 归组（418 / 450） | EC-01 收口；**下一轮 EC-02**（可复现可判定：审计只在遗留 M12 链，run 路径零调用） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 1（EC-01）**：两维覆盖判据与读面 claim↔evidence 关系**在同一次实跑**成立且可复核。产品面新增：验收结论**落 canonical**（`ReviewFindingStore` + SQLite/PG 实现 + 迁移 `016` + 组合根写读同实例）+ **只读路由** `GET /runs/{run_id}/reviews`（503/404 **不假装**）。判据 5 例（主角 + 计数维反证 + 性质维两式反证 + 读面边界）；两向反证判词逐字留档。**设计改变过一次并如实登记**：首版把判词放进新事件 payload，实测撞既有内容隐私金丝雀 ⇒ **改设计而非改判据**（制品面同样被既有条数断言挡下）。EC-01 `PASS`；EC-02/03/04 仍 `PENDING`。未覆盖范围原样保留；**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **建档（cycle 0）**：读 MAINLINE 宪章 + `goals/README.md` 格式契约 + GOAL-034 全文；只读勘察把「质量三类可判定与评审联动」落成**三条可实测的缺口** —— ① `EVIDENCE_COVERAGE` 两维**实现完备但出厂协议零使用**（`rg examples/` 零命中）；② `build_reproducibility_audit` **只在遗留 M12 链被调用**，研究循环 run 路径零调用；③ `review_score` 在**产品路径从不赋值**（只在 tests 里喂值），而 `REVIEW_SCORE` 判据缺分即 fail-closed ⇒ 出厂协议声明它会一律判负。四条 EC 全 `PENDING`。**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

@@ -8,6 +8,10 @@ from typing import Any
 from packages.application.experiments.types import ExperimentExecutionOutcome
 from packages.application.ports.agent_runtime import AgentSessionResult
 from packages.application.ports.errors import InvalidInputError
+from packages.application.run_orchestration.acceptance_observation import (
+    criterion_line,
+    record_acceptance_evaluation,
+)
 from packages.application.run_orchestration.evaluation_gate import (
     EvaluationInputs,
     GateOutcome,
@@ -274,7 +278,8 @@ def _experiment_facts(deps: Any, experiment: Any | None) -> dict[str, Any]:
 def gate_rejection_reason(gate: Any) -> str:
     """被拒时落进失败消息的**逐条判词**（点名判据与它的数，不写泛泛的「被拒」）。"""
     failed = [item for item in gate.evaluations if not item.passed]
-    detail = "; ".join(f"{item.criterion_type.value}: {item.reason}" for item in failed)
+    # 渲染与落库面**同一处**（`criterion_line`）：读面与失败消息不各说一套。
+    detail = "; ".join(criterion_line(item) for item in failed)
     return f"acceptance gate rejected: {detail}" if detail else "acceptance gate rejected"
 
 
@@ -326,6 +331,7 @@ def register_and_gate(
         )
     registration = registered
     gate = evaluate_gate(deps, tctx, registration, session_result)
+    record_acceptance_evaluation(deps, tctx, gate)
     if not gate.passed:
         return failure_step(
             deps,
@@ -353,6 +359,7 @@ def register_and_gate_experiment(
     assert execution.experiment_outcome is not None
     registration = registration_from_experiment(deps, execution, tctx)
     gate = evaluate_gate_experiment(deps, tctx, registration, execution.experiment_outcome)
+    record_acceptance_evaluation(deps, tctx, gate)
     if not gate.passed:
         return failure_step(
             deps,

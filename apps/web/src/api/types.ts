@@ -542,6 +542,25 @@ export interface ClaimMapDto {
   degraded: boolean;
 }
 
+/**
+ * 验收门求值结论（GOAL-035 EC-01；GET /runs/{run_id}/reviews）。
+ *
+ * `findings` 是**域函数逐字给出的判词**（`判据名: 判词`，如
+ * `EVIDENCE_COVERAGE: 1 >= 1 sources; 1 >= 1 retrieved`）：读面读原文，
+ * 不在读取时重算判据。
+ */
+export interface ReviewFindingDto {
+  id: string;
+  run_id: string;
+  task_id: string;
+  contract_id: string;
+  review_type: string;
+  verdict: string;
+  findings: string[];
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+}
+
 export interface UsageEntryDto {
   entry_id: string;
   resource_type: ResourceType;
