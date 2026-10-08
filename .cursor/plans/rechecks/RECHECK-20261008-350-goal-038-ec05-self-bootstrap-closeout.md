@@ -46,7 +46,7 @@ owners:
 | 轮次 | `--base-ref` | 读数 |
 | --- | --- | --- |
 | 首轮 | `760acf6`（本轮交付面未提交） | **`TWO-TREE RED`**（bootstrap 时序，非失败）：current **73 判词 / 0 FAIL**（工作树已含本轮全部交付面与记录）、clean **73 判词 / 3 FAIL**（`760acf6` 缺本轮两份记录与 `P-1`…`P-3` 残余标记）⇒ `COMPARE identical=False`；**两份归档由本首轮写出**（形态读数见第 4 节） |
-| 次轮 | 本轮交付面提交 | 读数在本节回填 |
+| 次轮 | `a0f3a9e` | **`TWO-TREE PASS`**，两路 **73 判词**、`sha256` **相同** `d6c0e160…`、`COMPARE identical=True` |
 
 **bootstrap 时序如实登记**：判词归档由**被归档的那个入口**写出 ⇒ 首轮必红于「归档不存在」；
 次轮才 `TWO-TREE PASS`。**未**为让首轮变绿而删掉存在性断言。

@@ -57,9 +57,9 @@ PASS goal-ec03-status
 PASS goal-ec04-status
 PASS goal-ec05-status
 PASS record-PLAN-20261008-347-goal-038-ec01-03-declared-consumption-evaluator.md
-FAIL record-PLAN-20261008-349-goal-038-ec05-self-bootstrap-closeout.md ->
+PASS record-PLAN-20261008-349-goal-038-ec05-self-bootstrap-closeout.md
 PASS record-RECHECK-20261008-348-goal-038-ec01-03-declared-consumption-evaluator.md
-FAIL record-RECHECK-20261008-350-goal-038-ec05-self-bootstrap-closeout.md ->
+PASS record-RECHECK-20261008-350-goal-038-ec05-self-bootstrap-closeout.md
 PASS record-README.md
 PASS record-MAINLINE.md
 PASS r26-R26-1-registered
@@ -69,5 +69,5 @@ PASS r26-R26-4-registered
 PASS r26-R26-5-registered
 PASS r26-R26-6-registered
 PASS uncovered-scope-enumerated
-FAIL residuals-enumerated -> `P-1`,`P-2`,`P-3`
+PASS residuals-enumerated
 PASS prior-residuals-kept
