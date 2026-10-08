@@ -417,7 +417,10 @@ GOAL-019…034 的未覆盖范围原样保留。
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| （cycle 1 起逐条追加） | | |
+| `40bb507` | **无自己的 run** | cycle 0 建档提交；与 `dbb3971` **同一次 push**（同批 ⇒ 只有 HEAD 产生 run，`git merge-base --is-ancestor` 已证）⇒ `covered_by dbb3971` |
+| `dbb3971` | `37711331007` **M0 success**（8 job 全 success）+ `37711330653` **Push/CodeQL success**（3 分析全 success） | 建档事实层更正（同轮修正扫描面） |
+| `c1cd752` | `37726029644` **M0 success**（8 job 全 success）+ `37726029238` **Push/CodeQL success**（3 分析全 success） | **cycle 1（EC-01）**：代码 + 记录同批；本地 as-is m0 **23/23** |
+| （本行所在提交） | **无自己的 run**（自我指涉边界的下一条） | 台账尾巴：本表末行的提交自身在进入 CI 时其结论尚未产生 ⇒ 以「**末条已取证提交**（`c1cd752`）+ **仅台账改动**（`.cursor/**`，按 `MEM: local-gate-protocol-and-flake-classes` 第 6 条只需 `--profile framework` 补全）」封闭，**不得循环引用** |
 
 ## 迭代日志
 
