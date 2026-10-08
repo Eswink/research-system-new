@@ -27,6 +27,7 @@ from typing import Any
 from packages.application.ports.program_store import ProgramStore
 from packages.application.ports.run_store import RunStore
 from packages.domain.program import ProgramDecision, ProgramDecisionKind, ResearchProgram
+from packages.domain.run import ResearchRun
 
 #: 启动面：给序号、返回新 run 的 id（组合根注入；应用层不 import 服务层）。
 StartRun = Callable[[int], str]
@@ -69,6 +70,91 @@ def _claimed_but_missing(
     return None
 
 
+def _evaluate(
+    program: ResearchProgram,
+    existing: tuple[ResearchRun, ...],
+    findings: FindingReader | None,
+    programs: ProgramStore,
+) -> _Evaluation:
+    """读落库事实并判定（**先结论后护栏**；返回的 `start_index` 非 None 才需要起 run）。"""
+    if not existing:
+        return _Evaluation(
+            kind=ProgramDecisionKind.START,
+            reason=f"程序内还没有 run ⇒ 起第 1 轮（max_runs={program.max_runs}）",
+            start_index=1,
+        )
+
+    last = existing[-1]
+    last_index = last.program_index or 0
+    if not last.is_terminal:
+        return _Evaluation(
+            kind=ProgramDecisionKind.WAIT,
+            reason=f"第 {last_index} 轮尚未终止（state={last.state}）⇒ 本轮不推进",
+            cited_run_id=last.id.value,
+            cited_facts=(f"state={last.state}",),
+        )
+
+    verdicts = _verdicts(findings, last.id.value)
+    hit = [item for item in verdicts if item in program.continue_rule.verdict_in]
+    if not hit:
+        return _Evaluation(
+            kind=ProgramDecisionKind.STOP_RULE,
+            reason=(
+                "上一轮落库结论不命中续跑规则 "
+                f"(verdicts={list(verdicts)}, want={list(program.continue_rule.verdict_in)})"
+                " ⇒ 按结论停"
+            ),
+            cited_run_id=last.id.value,
+            cited_facts=tuple(f"verdict {item}" for item in verdicts),
+        )
+
+    return _after_hit(program, existing, last, hit, programs)
+
+
+def _after_hit(
+    program: ResearchProgram,
+    existing: tuple[ResearchRun, ...],
+    last: ResearchRun,
+    hit: list[str],
+    programs: ProgramStore,
+) -> _Evaluation:
+    """结论面已判「续」之后：先上界护栏、再去重窗口、最后才是 `CONTINUE`。"""
+    last_index = last.program_index or 0
+    cited = tuple(f"verdict {item}" for item in hit)
+    if last_index >= program.max_runs:
+        return _Evaluation(
+            kind=ProgramDecisionKind.STOP_GUARDRAIL,
+            reason=(
+                f"结论面判「续」（verdict {hit[0]}）但已到上界 max_runs={program.max_runs}"
+                " ⇒ 按上界护栏停"
+            ),
+            cited_run_id=last.id.value,
+            cited_facts=cited,
+        )
+
+    claimed = _claimed_but_missing(
+        programs, program.id, last_index, {run.id.value for run in existing}
+    )
+    if claimed is not None:
+        return _Evaluation(
+            kind=ProgramDecisionKind.DEDUP,
+            reason=(
+                f"上一条 CONTINUE 已认领序号 {last_index + 1}（run={claimed}）但该 run 未落库"
+                " ⇒ 不产生第二个 run（点名人工/重试）"
+            ),
+            cited_run_id=claimed,
+            cited_facts=(f"claimed run {claimed}",),
+        )
+
+    return _Evaluation(
+        kind=ProgramDecisionKind.CONTINUE,
+        reason=f"结论面判「续」（verdict {hit[0]}）⇒ 起第 {last_index + 1} 轮",
+        cited_run_id=last.id.value,
+        cited_facts=cited,
+        start_index=last_index + 1,
+    )
+
+
 def advance_program(
     program: ResearchProgram,
     *,
@@ -79,104 +165,44 @@ def advance_program(
 ) -> ProgramAdvance:
     """推进一次：读事实 → 判定 → 落决策 →（必要时）起下一轮 run。"""
     existing = runs.for_program(program.id)
-    known = {run.id.value for run in existing}
-
-    if not existing:
+    evaluation = _evaluate(program, existing, findings, programs)
+    after_index = (existing[-1].program_index or 0) if existing else 0
+    if evaluation.start_index is not None:
         return _start(
             program,
             programs,
             start_run,
             _StartIntent(
-                index=1,
-                after_index=0,
-                kind=ProgramDecisionKind.START,
-                reason=f"程序内还没有 run ⇒ 起第 1 轮（max_runs={program.max_runs}）",
+                index=evaluation.start_index,
+                after_index=after_index,
+                kind=evaluation.kind,
+                reason=evaluation.reason,
+                cited_facts=evaluation.cited_facts,
             ),
         )
-
-    last = existing[-1]
-    last_index = last.program_index or 0
-    if not last.is_terminal:
-        decision = _record(
-            programs,
-            ProgramDecision(
-                program_id=program.id,
-                after_index=last_index,
-                kind=ProgramDecisionKind.WAIT,
-                reason=f"第 {last_index} 轮尚未终止（state={last.state}）⇒ 本轮不推进",
-                cited_run_id=last.id.value,
-                cited_facts=(f"state={last.state}",),
-            ),
-        )
-        return ProgramAdvance(program.id, decision, None, len(existing))
-
-    verdicts = _verdicts(findings, last.id.value)
-    hit = [item for item in verdicts if item in program.continue_rule.verdict_in]
-    if not hit:
-        decision = _record(
-            programs,
-            ProgramDecision(
-                program_id=program.id,
-                after_index=last_index,
-                kind=ProgramDecisionKind.STOP_RULE,
-                reason=(
-                    "上一轮落库结论不命中续跑规则 "
-                    f"(verdicts={list(verdicts)}, want={list(program.continue_rule.verdict_in)})"
-                    " ⇒ 按结论停"
-                ),
-                cited_run_id=last.id.value,
-                cited_facts=tuple(f"verdict {item}" for item in verdicts),
-            ),
-        )
-        return ProgramAdvance(program.id, decision, None, len(existing))
-
-    if last_index >= program.max_runs:
-        decision = _record(
-            programs,
-            ProgramDecision(
-                program_id=program.id,
-                after_index=last_index,
-                kind=ProgramDecisionKind.STOP_GUARDRAIL,
-                reason=(
-                    f"结论面判「续」（verdict {hit[0]}）但已到上界 max_runs={program.max_runs}"
-                    " ⇒ 按上界护栏停"
-                ),
-                cited_run_id=last.id.value,
-                cited_facts=tuple(f"verdict {item}" for item in hit),
-            ),
-        )
-        return ProgramAdvance(program.id, decision, None, len(existing))
-
-    claimed = _claimed_but_missing(programs, program.id, last_index, known)
-    if claimed is not None:
-        decision = _record(
-            programs,
-            ProgramDecision(
-                program_id=program.id,
-                after_index=last_index,
-                kind=ProgramDecisionKind.DEDUP,
-                reason=(
-                    f"上一条 CONTINUE 已认领序号 {last_index + 1}（run={claimed}）但该 run 未落库"
-                    " ⇒ 不产生第二个 run（点名人工/重试）"
-                ),
-                cited_run_id=claimed,
-                cited_facts=(f"claimed run {claimed}",),
-            ),
-        )
-        return ProgramAdvance(program.id, decision, None, len(existing))
-
-    return _start(
-        program,
+    decision = _record(
         programs,
-        start_run,
-        _StartIntent(
-            index=last_index + 1,
-            after_index=last_index,
-            kind=ProgramDecisionKind.CONTINUE,
-            reason=f"结论面判「续」（verdict {hit[0]}）⇒ 起第 {last_index + 1} 轮",
-            cited_facts=tuple(f"verdict {item}" for item in hit),
+        ProgramDecision(
+            program_id=program.id,
+            after_index=after_index,
+            kind=evaluation.kind,
+            reason=evaluation.reason,
+            cited_run_id=evaluation.cited_run_id,
+            cited_facts=evaluation.cited_facts,
         ),
     )
+    return ProgramAdvance(program.id, decision, None, len(existing))
+
+
+@dataclass(frozen=True, slots=True)
+class _Evaluation:
+    """一次判定的结果（`start_index` 非 None ⇒ 需要起这一轮）。"""
+
+    kind: ProgramDecisionKind
+    reason: str
+    cited_run_id: str | None = None
+    cited_facts: tuple[str, ...] = ()
+    start_index: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

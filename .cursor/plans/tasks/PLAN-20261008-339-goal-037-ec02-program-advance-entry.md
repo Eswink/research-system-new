@@ -95,6 +95,18 @@ exit_criteria:
 
 ## 证据
 
+### CI 真红并修（如实登记）
+
+**`7c0da21` 的 M0 run（`37781594902`）在 `quality-ubuntu-latest` + `quality-windows-latest`
+双平台真红**：`tests/tooling/test_python_source_limits.py` 判
+`packages/application/run_orchestration/program_runner.py 存在超过 50 行的函数:
+[('advance_program', 108)]`。**本地漏跑**：写驱动后我只跑了驱动判据与四道门
+（ruff/format/mypy），**没**跑规模门所在的 `tests/tooling` 全量 ⇒ 门链在 CI 才咬住。
+处置 = **拆函数**（不是调阈值）：`advance_program` → `_evaluate`（事实判定）+
+`_after_hit`（护栏 / 去重 / 继续）+ `advance_program`（调度）三件，各 ≤ 50 行；
+修后本机 `tests/tooling/test_python_source_limits.py` **1170 passed**、驱动判据 7 passed、
+ruff/format/mypy 绿。**未**触碰任何判据或阈值。
+
 ### WP-1（已完成轮的读数）
 
 | 门 | 读数 |
