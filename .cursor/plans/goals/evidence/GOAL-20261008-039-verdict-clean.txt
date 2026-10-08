@@ -51,15 +51,15 @@ PASS verdict-archive-clean
 PASS scope-declares-this-rounds-scripts
 PASS scope-still-pins-the-entry
 PASS goal-declares-five-ecs
-FAIL goal-ec01-status -> PENDING
+PASS goal-ec01-status
 PASS goal-ec02-status
 PASS goal-ec03-status
 PASS goal-ec04-status
 PASS goal-ec05-status
 PASS record-PLAN-20261008-351-goal-039-ec02-04-memory-scope-and-validity.md
-FAIL record-PLAN-20261008-353-goal-039-ec05-self-bootstrap-closeout.md ->
+PASS record-PLAN-20261008-353-goal-039-ec05-self-bootstrap-closeout.md
 PASS record-RECHECK-20261008-352-goal-039-ec02-04-memory-scope-and-validity.md
-FAIL record-RECHECK-20261008-354-goal-039-ec05-self-bootstrap-closeout.md ->
+PASS record-RECHECK-20261008-354-goal-039-ec05-self-bootstrap-closeout.md
 PASS record-README.md
 PASS record-MAINLINE.md
 PASS r26-R26-1-registered
@@ -69,5 +69,5 @@ PASS r26-R26-4-registered
 PASS r26-R26-5-registered
 PASS r26-R26-6-registered
 PASS uncovered-scope-enumerated
-FAIL residuals-enumerated -> `Q-1`,`Q-2`,`Q-3`
+PASS residuals-enumerated
 PASS prior-residuals-kept
