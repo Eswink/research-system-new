@@ -38,8 +38,8 @@ PASS cases-test_multi_round_research_loop
 PASS cases-test_round_loop_declaration
 PASS prior-suite-test_research_loop_second_round_derived
 PASS prior-suite-test_ec03_real_runtime_offline_chain
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
 PASS goal-declares-four-ecs
 PASS goal-ec01-status
 PASS goal-ec02-status
