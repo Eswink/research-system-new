@@ -37,8 +37,8 @@ PASS prior-judge-test_program_store_sqlite
 PASS prior-judge-test_program_store_pg
 PASS prior-judge-test_python_source_limits
 PASS prior-judge-test_delivery_semantics_wording
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
 PASS scope-declares-this-rounds-scripts
 PASS scope-still-pins-the-entry
 PASS goal-declares-five-ecs
