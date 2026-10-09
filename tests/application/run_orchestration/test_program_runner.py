@@ -54,6 +54,20 @@ class _FindingReader:
         return (type("Scoped", (), {"finding": finding})(),)
 
 
+def replace_program(program: ResearchProgram, **overrides: object) -> ResearchProgram:
+    """程序声明的替换（值对象 ⇒ 用 dataclasses.replace）。"""
+    from dataclasses import replace
+
+    return replace(program, **overrides)  # type: ignore[arg-type]
+
+
+def replace_run(run: ResearchRun, **overrides: object) -> ResearchRun:
+    """run 行的替换（值对象 ⇒ 用 dataclasses.replace）。"""
+    from dataclasses import replace
+
+    return replace(run, **overrides)  # type: ignore[arg-type]
+
+
 class _Harness:
     def __init__(self, *, max_runs: int = 3, rule: tuple[str, ...] = (ACCEPT,)) -> None:
         self.conn: sqlite3.Connection = connect(":memory:")
@@ -203,3 +217,90 @@ def test_missing_start_face_is_named_not_faked() -> None:
     assert "未提供启动面" in result.decision.reason
     assert result.started_run_id is None
     assert h.runs.for_program(h.program.id) == ()
+
+
+# --- GOAL-20261008-040：停止理由可区分（失败面 / 取消面 / 重试面） ------------------
+
+
+def test_a_failed_round_stops_by_failure_not_by_conclusion() -> None:
+    """**本轮要消灭的失真**：FAILED 轮 ⇒ `STOP_RUN_FAILED`（**不是** `STOP_RULE`），
+    且判词点名「未获结论」与 `state=FAILED`（不再是空 `cited_facts`）。"""
+    h = _Harness()
+    h.seed_run(1, state="FAILED")
+    result = advance_program(
+        h.program, runs=h.runs, programs=h.programs, findings=h.verdicts({}), start_run=h.start_run
+    )
+    assert result.decision.kind is ProgramDecisionKind.STOP_RUN_FAILED, result.decision
+    assert result.decision.cited_facts, "失败停必须点名（空 cited_facts 是旧形态）"
+    assert "state=FAILED" in result.decision.cited_facts
+    assert "未获结论" in result.decision.reason
+
+
+def test_a_failed_round_never_yields_the_conclusion_stop_shape() -> None:
+    """**反证臂的单元形态**：失败轮**不得**再落「`STOP_RULE` + 空 `cited_facts`」。"""
+    h = _Harness()
+    h.seed_run(1, state="FAILED")
+    result = advance_program(
+        h.program, runs=h.runs, programs=h.programs, findings=h.verdicts({}), start_run=h.start_run
+    )
+    assert not (
+        result.decision.kind is ProgramDecisionKind.STOP_RULE and result.decision.cited_facts == ()
+    ), ("「没有结论」不得被读成「结论说停」", result.decision)
+
+
+def test_a_cancelled_round_stops_without_retrying() -> None:
+    """取消是**人的决定** ⇒ `STOP_CANCELLED`，**不**自动重试（即使声明了重试）。"""
+    h = _Harness()
+    h.program = replace_program(h.program, max_attempts_per_index=3)
+    h.programs.create(h.program)
+    h.seed_run(1, state="CANCELLED")
+    result = advance_program(h.program, runs=h.runs, programs=h.programs, start_run=h.start_run)
+    assert result.decision.kind is ProgramDecisionKind.STOP_CANCELLED, result.decision
+    assert result.started_run_id is None, "取消不得被自动重试"
+    assert h.started == []
+
+
+def test_a_declared_retry_restarts_the_same_index_bounded() -> None:
+    """声明重试（`max_attempts_per_index=2`）⇒ 失败后落 `RETRY_FAILED_RUN`、**同序号**重起；
+    用尽 ⇒ `STOP_RUN_FAILED` 且点名上界。"""
+    h = _Harness()
+    h.program = replace_program(h.program, max_attempts_per_index=2)
+    h.programs.create(h.program)
+    h.seed_run(1, state="FAILED")
+    first = advance_program(h.program, runs=h.runs, programs=h.programs, start_run=h.start_run)
+    assert first.decision.kind is ProgramDecisionKind.RETRY_FAILED_RUN, first.decision
+    assert first.started_run_id == h.started[0]
+    assert any("attempts=1/2" in item for item in first.decision.cited_facts), first.decision
+    assert h.runs.for_program(h.program.id)[-1].program_index == 1, "重试是**同序号**（不推进轮次）"
+    # 第二次尝试也失败 ⇒ 用尽 ⇒ 失败停 + 点名上界。
+    attempts = [run for run in h.runs.for_program(h.program.id) if run.program_index == 1]
+    h.runs.save_run(replace_run(attempts[-1], state="FAILED"))
+    second = advance_program(h.program, runs=h.runs, programs=h.programs, start_run=h.start_run)
+    assert second.decision.kind is ProgramDecisionKind.STOP_RUN_FAILED, second.decision
+    assert any("attempts=2/2" in item for item in second.decision.cited_facts), second.decision
+    assert "重试已用尽" in second.decision.reason
+
+
+def test_the_default_declaration_does_not_retry() -> None:
+    """缺省（未声明重试）⇒ 行为 = 失败停（**不**隐式重跑）。"""
+    h = _Harness()
+    assert h.program.max_attempts_per_index == 1
+    h.seed_run(1, state="FAILED")
+    result = advance_program(h.program, runs=h.runs, programs=h.programs, start_run=h.start_run)
+    assert result.decision.kind is ProgramDecisionKind.STOP_RUN_FAILED
+    assert h.started == [], "缺省不得重跑"
+    assert "未声明重试" in result.decision.reason
+
+
+def test_the_success_path_still_uses_the_conclusion_face() -> None:
+    """既有四态**逐字保持**：SUCCEEDED 轮仍走结论面（`CONTINUE`）。"""
+    h = _Harness()
+    run_id = h.seed_run(1)
+    result = advance_program(
+        h.program,
+        runs=h.runs,
+        programs=h.programs,
+        findings=h.verdicts({run_id: ACCEPT}),
+        start_run=h.start_run,
+    )
+    assert result.decision.kind is ProgramDecisionKind.CONTINUE

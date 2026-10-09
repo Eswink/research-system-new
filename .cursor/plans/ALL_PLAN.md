@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261008-355](tasks/PLAN-20261008-355-goal-040-ec02-04-stop-reasons.md) | DONE |
 | [x] | [PLAN-20261008-353](tasks/PLAN-20261008-353-goal-039-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-351](tasks/PLAN-20261008-351-goal-039-ec02-04-memory-scope-and-validity.md) | DONE |
 | [x] | [PLAN-20261008-349](tasks/PLAN-20261008-349-goal-038-ec05-self-bootstrap-closeout.md) | DONE |

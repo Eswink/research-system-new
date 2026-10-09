@@ -108,15 +108,20 @@ def test_the_evidence_chain_names_the_tool_and_the_two_rounds_are_distinguishabl
 
 
 def test_missing_provider_is_named_not_silent() -> None:
-    """反证①：撤掉 provider 实例 ⇒ run 失败且判词点名 provider / 能力 / 工具。"""
+    """反证①：撤掉 provider 实例 ⇒ run 失败且判词点名 provider / 能力 / 工具。
+
+    **GOAL-20261008-040 的判据修正（如实登记）**：本用例原先靠「失败后还能起第 2 轮」
+    取那条 run —— 那**正是**旧的失真行为（失败轮被读成「结论说停」= 判「续」）。
+    现在失败轮两侧都不再起下一轮；而缺 provider 的失败发生在**第 1 轮**里
+    （`consume` 的执行期），故直接取第 1 轮取证，语义不变且更强。
+    """
     deps = cross_run_deps(omit_provider_capability=True)
     with TestClient(create_app(deps)) as client:
         program = create_program(client, max_runs=3, protocol=PROTOCOL)
         program_id = str(program["id"])
-        advance(client, program_id)
-        second = advance(client, program_id)
-        assert second["started_run_id"], second
-        run_id = str(second["started_run_id"])
+        first = advance(client, program_id)
+        run_id = str(first["started_run_id"])
+        assert run_id, first
         failed = [
             event
             for event in client.get(f"/runs/{run_id}/events").json()
@@ -125,6 +130,9 @@ def test_missing_provider_is_named_not_silent() -> None:
         assert failed, "缺 provider 的 run 必须收敛到 FAILED"
         message = json.dumps(failed[-1], ensure_ascii=False)
         assert PROVIDER in message and TOOL_ID in message and CAPABILITY in message, message
+        # 失败轮的推进面：走**失败面**并点名（不再有第 2 轮）。
+        after = advance(client, program_id)
+        assert after["decision"]["kind"] == "STOP_RUN_FAILED", after["decision"]
 
 
 def test_without_grant_the_capability_is_denied_at_preflight_by_name() -> None:

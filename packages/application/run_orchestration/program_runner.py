@@ -28,6 +28,7 @@ from packages.application.ports.program_store import ProgramStore
 from packages.application.ports.run_store import RunStore
 from packages.domain.program import ProgramDecision, ProgramDecisionKind, ResearchProgram
 from packages.domain.run import ResearchRun
+from packages.domain.run_state import ResearchRunState
 
 #: 启动面：给序号、返回新 run 的 id（组合根注入；应用层不 import 服务层）。
 StartRun = Callable[[int], str]
@@ -102,6 +103,11 @@ def _evaluate(
             cited_facts=(f"state={last.state}",),
         )
 
+    # GOAL-20261008-040 EC-03：**按终态分派** —— 失败面 / 取消面在结论面**之前**
+    # （只有 `SUCCEEDED` 的轮才有「结论」可言；把「没有结论」读成「结论说停」是范畴错误）。
+    if str(last.state) != ResearchRunState.State.SUCCEEDED:
+        return _non_success_terminal(program, existing, last)
+
     verdicts = _verdicts(findings, last.id.value)
     hit = [item for item in verdicts if item in program.continue_rule.verdict_in]
     if not hit:
@@ -117,6 +123,68 @@ def _evaluate(
         )
 
     return _after_hit(program, existing, last, hit, programs)
+
+
+def _non_success_terminal(
+    program: ResearchProgram,
+    existing: tuple[ResearchRun, ...],
+    last: ResearchRun,
+) -> _Evaluation:
+    """`FAILED` / `CANCELLED` 两个终态的判定（失败面 / 取消面；**不**与结论面混用）。
+
+    - `CANCELLED` ⇒ `STOP_CANCELLED`（人的决定，**不**自动重试）；
+    - `FAILED` ⇒ 见 `_failed_round`（重试未用尽 ⇒ 重试同序号；否则失败停并点名）。
+    """
+    last_index = last.program_index or 0
+    state = str(last.state)
+    if state == ResearchRunState.State.CANCELLED:
+        return _Evaluation(
+            kind=ProgramDecisionKind.STOP_CANCELLED,
+            reason=(
+                f"第 {last_index} 轮被取消（state=CANCELLED）⇒ 按取消停"
+                "（取消是人的决定，**不**自动重试）"
+            ),
+            cited_run_id=last.id.value,
+            cited_facts=(f"state={state}",),
+        )
+    return _failed_round(program, existing, last, last_index)
+
+
+def _failed_round(
+    program: ResearchProgram,
+    existing: tuple[ResearchRun, ...],
+    last: ResearchRun,
+    last_index: int,
+) -> _Evaluation:
+    """失败轮的判定：**重试有界**（计数不落第二套存储 —— 同序号的 run 数就是已用尝试数）。"""
+    state = str(last.state)
+    attempts = sum(1 for run in existing if (run.program_index or 0) == last_index)
+    allowed = program.max_attempts_per_index
+    cited = (f"state={state}", f"attempts={attempts}/{allowed}")
+    if attempts < allowed:
+        return _Evaluation(
+            kind=ProgramDecisionKind.RETRY_FAILED_RUN,
+            reason=(
+                f"第 {last_index} 轮执行失败（state=FAILED）但声明允许重试"
+                f"（已用 {attempts}/{allowed}）⇒ 重试**同序号**"
+            ),
+            cited_run_id=last.id.value,
+            cited_facts=cited,
+            start_index=last_index,
+        )
+    tail = (
+        f"，且重试已用尽（{attempts}/{allowed}）⇒ 按失败停"
+        if allowed > 1
+        else f"；未声明重试（max_attempts_per_index={allowed}）⇒ 按失败停"
+    )
+    return _Evaluation(
+        kind=ProgramDecisionKind.STOP_RUN_FAILED,
+        reason=(
+            f"第 {last_index} 轮执行失败（state=FAILED）⇒ **未获结论**（不是「结论说停」）{tail}"
+        ),
+        cited_run_id=last.id.value,
+        cited_facts=cited,
+    )
 
 
 def _after_hit(

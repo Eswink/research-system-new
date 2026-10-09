@@ -109,6 +109,10 @@ def test_decision_kinds_separate_conclusion_from_guardrail() -> None:
         "STOP_GUARDRAIL",
         "WAIT",
         "DEDUP",
+        # GOAL-20261008-040 EC-02：失败面 / 取消面 / 重试面各归各的（互不混用）。
+        "STOP_RUN_FAILED",
+        "STOP_CANCELLED",
+        "RETRY_FAILED_RUN",
     }
 
 

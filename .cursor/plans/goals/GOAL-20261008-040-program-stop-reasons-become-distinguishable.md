@@ -79,7 +79,7 @@ exit_criteria:
     verify: >-
       `rg -n "STOP_RULE" packages/application/run_orchestration/program_runner.py`；
       实跑读数（FAILED ⇒ `STOP_RULE` + 空 `cited_facts`）；`terminal()` 逐字。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **判定种类扩齐（可区分 + 有界重试）**：`ProgramDecisionKind` 增
@@ -90,7 +90,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest
       tests/application/run_orchestration/test_program_runner.py -q` ⇒ 全绿 + 新用例。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **判定面接线（按终态分派）**：驱动按上一轮**终态**分派 ——
@@ -100,7 +100,7 @@ exit_criteria:
       `state=FAILED` 与已用尝试数（不再是空数组）。
     verify: >-
       同上判据文件的终态分派用例（三终态 × 重试态）逐条。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真的被用上（+ 反证）**：(a) 实跑：第 1 轮执行失败 ⇒ 推进落 `STOP_RUN_FAILED`
@@ -111,7 +111,7 @@ exit_criteria:
       （空数组必须被判据点名）；(d) 缺省（未声明）⇒ 行为 = 失败停（**不**隐式重跑）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e -q` ⇒ 全绿；新增判据全绿。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树（复用 `tools/closeout_recheck_tools`
@@ -172,8 +172,9 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
-child_plans: []
-latest_recheck: null
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261008-355-goal-040-ec02-04-stop-reasons.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261008-356-goal-040-ec02-04-stop-reasons.md
 memory_entries: []
 ---
 
@@ -188,10 +189,10 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | 现状：FAILED 轮 ⇒ `STOP_RULE` + 空 `cited_facts`（把「没有结论」读成「结论说停」） | PENDING |
-| EC-02 | 判定种类扩齐 | `STOP_RUN_FAILED` / `STOP_CANCELLED` / `RETRY_FAILED_RUN`（+ 可选有界重试声明，缺省不重试） | PENDING |
-| EC-03 | 判定面接线 | 按上一轮**终态**分派（成功走结论面 / 失败走失败面 / 取消走取消面；互不混用） | PENDING |
-| EC-04 | 真的被用上 | 实跑判词点名「失败停」；声明重试 ⇒ 同序号重起且计数可见、用尽点名；**反证**：空 `cited_facts` 不再出现 | PENDING |
+| EC-01 | 勘察定稿 | 现状：FAILED 轮 ⇒ `STOP_RULE` + 空 `cited_facts`（把「没有结论」读成「结论说停」） | PASS |
+| EC-02 | 判定种类扩齐 | `STOP_RUN_FAILED` / `STOP_CANCELLED` / `RETRY_FAILED_RUN`（+ 可选有界重试声明，缺省不重试） | PASS |
+| EC-03 | 判定面接线 | 按上一轮**终态**分派（成功走结论面 / 失败走失败面 / 取消走取消面；互不混用） | PASS |
+| EC-04 | 真的被用上 | 实跑判词点名「失败停」；声明重试 ⇒ 同序号重起且计数可见、用尽点名；**反证**：空 `cited_facts` 不再出现 | PASS |
 | EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得把**没有结论**当成
@@ -342,10 +343,12 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261008-355` | （见 CI 台账） | EC-02/03/04 全 PASS：判定种类扩齐（三种 + 可选有界重试声明，**落库**：迁移 019 + 两适配器 + 建程序 DTO/读面）+ **按终态分派**（成功走结论面 / 失败走失败面 / 取消走取消面）+ **实跑取证**（失败停点名「未获结论」；声明重试 ⇒ **同序号**重起 + `attempts=1/2`，用尽 ⇒ `attempts=2/2` + 点名；缺省不重跑）；**反证**：空 `cited_facts` 旧形态不再出现；驱动 **13 passed**、e2e **4 passed**；广面 **5138 passed, 18 skipped**；四道门绿（mypy 1168 files）；live PG `migration_version` = **19** | （见 CI 台账） | **三处既有 e2e 用例按行为修正更新**（原先依赖「失败轮被判续 ⇒ 才有第 2 轮」；**先在干净树 `49b2c7d` 复跑确认原先通过**）；`_non_success_terminal` 超 50 行 ⇒ **拆函数** | EC-02/03/04 收口；**下一轮 EC-05**（自举收口） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **一处实测复现**（FAILED 轮 ⇒ `STOP_RULE` + 空 `cited_facts`）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 8** | （见 CI 台账） | — | 五条 EC 全 PENDING；分派落点（②）待 cycle 1 实现 | cycle 1（EC-02 判定种类 + EC-03 分派） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACTIVE | **cycle 1（EC-02/03/04）收口**：**停止理由互不混用** —— 判定种类扩齐（`STOP_RUN_FAILED` / `STOP_CANCELLED` / `RETRY_FAILED_RUN`），驱动**按上一轮终态分派**（只有 `SUCCEEDED` 走结论面；失败走失败面并点名「未获结论」；取消走取消面且不重试）；可选**有界重试**（`max_attempts_per_index`，缺省 1 = 不重试）并**真的落库**（迁移 019 + 两适配器 + 建程序 DTO/读面）；实跑 + 反证打满。**三处既有 e2e 用例按行为修正更新**（逐条理由 + 干净树复跑取证）。EC-02/03/04 `PASS`；EC-05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 8**。只读勘察 + 一处**实测复现**：程序推进只读最后一轮的落库判词，而 **FAILED 轮没有任何结论** ⇒ `verdicts` 为空 ⇒ 落 `STOP_RULE` 并给出「上一轮落库结论不命中续跑规则」—— 把「**没有结论**」读成了「**结论说停**」（实测：第 1 轮 FAILED ⇒ 第 2 次推进 `STOP_RULE`、`cited_facts=[]`）。域里终态**已可区分**（`terminal()` = SUCCEEDED/FAILED/CANCELLED）⇒ 缺的是**判定面**的分派。五条 EC 全 `PENDING`。**不做数量目标**；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

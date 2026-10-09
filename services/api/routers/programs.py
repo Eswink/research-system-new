@@ -141,6 +141,8 @@ async def create_program(
         protocol_id=payload.protocol_path,
         max_runs=payload.max_runs,
         continue_rule=rule,
+        # GOAL-20261008-040 EC-02：失败后可选的有界重试（缺省 1 = 不重试）。
+        max_attempts_per_index=payload.max_attempts_per_index,
     )
     del protocol  # 只用其可解析性做校验；声明面存的是路径（canonical 里的协议标识）
     store.create(program)
@@ -160,6 +162,7 @@ def _detail_dto(deps: ApiDeps, store: ProgramStore, program_id: str) -> ProgramD
         protocol_id=program.protocol_id,
         max_runs=program.max_runs,
         continue_on_verdicts=list(program.continue_rule.verdict_in),
+        max_attempts_per_index=program.max_attempts_per_index,
         created_at=program.created_at.value.isoformat(),
         updated_at=program.updated_at.value.isoformat(),
         runs=[

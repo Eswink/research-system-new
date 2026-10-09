@@ -122,6 +122,7 @@ def create_program(
     max_runs: int,
     continue_on: list[str] | None = None,
     protocol: str | None = None,
+    max_attempts_per_index: int = 1,
 ) -> dict[str, Any]:
     """建程序（经既有 HTTP 面；协议按启动 run 的同一校验解析）。
 
@@ -136,6 +137,7 @@ def create_program(
             "protocol_path": protocol if protocol is not None else PROTOCOL,
             "max_runs": max_runs,
             "continue_on_verdicts": continue_on if continue_on is not None else ["PASS"],
+            "max_attempts_per_index": max_attempts_per_index,
         },
         headers={"Idempotency-Key": f"prog-{uuid.uuid4()}"},
     )

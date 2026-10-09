@@ -21,6 +21,9 @@ class ProgramCreateDto(BaseModel):
     max_runs: int = Field(default=3, ge=1, le=20)
     #: 续跑规则：上一轮**落库**评审结论的 `verdict` 命中其中之一 ⇒ 结论面判「续」。
     continue_on_verdicts: list[str] = Field(default_factory=lambda: ["PASS"])
+    #: GOAL-20261008-040 EC-02：每个序号允许的尝试数（失败后可按声明重试）。
+    #: 缺省 `1` = **不重试**（既有行为逐字不变）。
+    max_attempts_per_index: int = Field(default=1, ge=1, le=10)
 
 
 class ProgramDecisionDto(BaseModel):
@@ -52,6 +55,8 @@ class ProgramDetailDto(BaseModel):
     protocol_id: str
     max_runs: int
     continue_on_verdicts: list[str]
+    #: GOAL-20261008-040 EC-02：每个序号允许的尝试数（缺省 1 = 不重试）。
+    max_attempts_per_index: int = 1
     created_at: str
     updated_at: str
     runs: list[ProgramRunDto]

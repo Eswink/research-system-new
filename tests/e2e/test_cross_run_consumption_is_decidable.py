@@ -61,8 +61,12 @@ def _two_rounds(deps: Any) -> tuple[TestClient, str, str, str]:
     advance(client, program_id)
     advance(client, program_id)
     runs = read_program(client, program_id)["runs"]
-    assert [row["program_index"] for row in runs] == [1, 2], runs
-    first, second = str(runs[0]["run_id"]), str(runs[1]["run_id"])
+    # GOAL-20261008-040：第 1 轮若以 FAILED 收敛 ⇒ **不再**有第 2 轮（失败面判停）。
+    # 本助手因此接受「只有第 1 轮」这一形态（`second` 回落到第 1 轮），
+    # 由**调用方**决定它要观测哪一轮 —— 判据本身不再依赖旧的失真行为。
+    assert runs and runs[0]["program_index"] == 1, runs
+    first = str(runs[0]["run_id"])
+    second = str(runs[1]["run_id"]) if len(runs) > 1 else first
     return client, first, second, _custom_lines(client, first)[0]
 
 
@@ -107,14 +111,20 @@ def test_a_mismatching_value_is_rejected_with_both_values_named() -> None:
 
 
 def test_a_missing_declared_path_is_named_as_a_configuration_error() -> None:
-    """反证②：声明路径在产物里**不存在** ⇒ **点名**（配置错误形态，不是静默判负）。"""
+    """反证②：声明路径在产物里**不存在** ⇒ **点名**（配置错误形态，不是静默判负）。
+
+    **GOAL-20261008-040 的判据修正（如实登记）**：本用例原先在第 **2** 轮取判词 ——
+    那依赖旧的失真行为（失败轮被判「续」⇒ 才有第 2 轮）。该形态使第 1 轮以 `FAILED`
+    收敛 ⇒ 现在**没有**第 2 轮；而「路径缺失」这条判定发生在**第 1 轮**（它的产物里就没有
+    那条路径），故直接取第 1 轮，语义不变且不再依赖失真。
+    """
     from tests.e2e.cross_run_support import CONSUME_CONTRACT
 
     deps = cross_run_deps()
     deps.runs = _runtime_carrying(deps, CONSUME_CONTRACT, {})
-    client, _first, second, _first_line = _two_rounds(deps)
+    client, first, _second, _first_line = _two_rounds(deps)
     try:
-        line = _custom_lines(client, second)[0]
+        line = _custom_lines(client, first)[0]
         assert _MISSING_PATH_LINE in line, line
         assert "meta_review.prior_verdict" in line, ("路径名要点名", line)
     finally:

@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS research_programs (
     project_id TEXT NOT NULL,
     protocol_id TEXT NOT NULL,
     max_runs INTEGER NOT NULL,
+    -- GOAL-20261008-040 EC-02：每序号尝试上界（缺省 1 = 不重试）。
+    max_attempts_per_index INTEGER NOT NULL DEFAULT 1,
     continue_rule_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -63,6 +65,7 @@ def _encode_program(program: ResearchProgram) -> tuple[object, ...]:
         program.project_id,
         program.protocol_id,
         program.max_runs,
+        program.max_attempts_per_index,
         _encode_rule(program.continue_rule),
         program.created_at.value.isoformat(),
         program.updated_at.value.isoformat(),
@@ -70,12 +73,22 @@ def _encode_program(program: ResearchProgram) -> tuple[object, ...]:
 
 
 def _decode_program(row: sqlite3.Row | tuple[object, ...]) -> ResearchProgram:
-    program_id, project_id, protocol_id, max_runs, rule, created_at, updated_at = row[:7]
+    (
+        program_id,
+        project_id,
+        protocol_id,
+        max_runs,
+        attempts,
+        rule,
+        created_at,
+        updated_at,
+    ) = row[:8]
     return ResearchProgram(
         id=str(program_id),
         project_id=str(project_id),
         protocol_id=str(protocol_id),
         max_runs=int(str(max_runs)),
+        max_attempts_per_index=int(str(attempts)),
         continue_rule=_decode_rule(rule),
         created_at=Timestamp(datetime.fromisoformat(str(created_at))),
         updated_at=Timestamp(datetime.fromisoformat(str(updated_at))),
@@ -117,8 +130,9 @@ class SqliteProgramStore(SqliteAdapterBase):
         with self._conn:
             self._conn.execute(
                 "INSERT OR IGNORE INTO research_programs (program_id, project_id,"
-                " protocol_id, max_runs, continue_rule_json, created_at, updated_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                " protocol_id, max_runs, max_attempts_per_index,"
+                " continue_rule_json, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 _encode_program(program),
             )
         self._record("create", program.id, result="ok")
@@ -126,7 +140,8 @@ class SqliteProgramStore(SqliteAdapterBase):
     def get(self, program_id: str) -> ResearchProgram:
         self._ensure_open()
         row = self._conn.execute(
-            "SELECT program_id, project_id, protocol_id, max_runs, continue_rule_json,"
+            "SELECT program_id, project_id, protocol_id, max_runs,"
+            " max_attempts_per_index, continue_rule_json,"
             " created_at, updated_at FROM research_programs WHERE program_id = ?",
             (program_id,),
         ).fetchone()
@@ -139,7 +154,8 @@ class SqliteProgramStore(SqliteAdapterBase):
     def for_project(self, project_id: str) -> tuple[ResearchProgram, ...]:
         self._ensure_open()
         rows = self._conn.execute(
-            "SELECT program_id, project_id, protocol_id, max_runs, continue_rule_json,"
+            "SELECT program_id, project_id, protocol_id, max_runs,"
+            " max_attempts_per_index, continue_rule_json,"
             " created_at, updated_at FROM research_programs WHERE project_id = ?"
             " ORDER BY program_id",
             (project_id,),

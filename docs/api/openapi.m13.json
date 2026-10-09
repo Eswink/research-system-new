@@ -4669,6 +4669,13 @@
             "title": "Continue On Verdicts",
             "type": "array"
           },
+          "max_attempts_per_index": {
+            "default": 1,
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Max Attempts Per Index",
+            "type": "integer"
+          },
           "max_runs": {
             "default": 3,
             "maximum": 20.0,
@@ -4761,6 +4768,11 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "max_attempts_per_index": {
+            "default": 1,
+            "title": "Max Attempts Per Index",
+            "type": "integer"
           },
           "max_runs": {
             "title": "Max Runs",

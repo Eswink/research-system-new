@@ -47,6 +47,17 @@ class ProgramDecisionKind(StrEnum):
     DEDUP = "DEDUP"
     """目标序号的 run **已存在** ⇒ 幂等命中：不产生第二个 run，只留一条去重事实。"""
 
+    # GOAL-20261008-040 EC-02：**失败面与取消面各归各的**（「没有结论」不得被读成
+    # 「结论说停」—— 前者是执行面故障，后者是科学判断，处置相反）。
+    STOP_RUN_FAILED = "STOP_RUN_FAILED"
+    """上一轮**执行失败**（`state == FAILED`）：**没有结论可依** ⇒ 失败停（点名「未获结论」）。"""
+
+    STOP_CANCELLED = "STOP_CANCELLED"
+    """上一轮被**取消**（`state == CANCELLED`）：取消是**人的决定** ⇒ 停，且**不**自动重试。"""
+
+    RETRY_FAILED_RUN = "RETRY_FAILED_RUN"
+    """上一轮失败但**声明允许重试且未用尽** ⇒ 重试**同序号**（有界：计数落决策、超界点名）。"""
+
 
 @dataclass(frozen=True, slots=True)
 class ProgramContinueRule:
@@ -74,6 +85,10 @@ class ResearchProgram:
     protocol_id: str
     max_runs: int
     continue_rule: ProgramContinueRule
+    # GOAL-20261008-040 EC-02：**每个序号允许的尝试数**（失败后可按声明重试）。
+    # 缺省 `1` = **不重试**（既有行为逐字不变）；>1 = 允许同序号重起，**有界**
+    # （计数由 `for_program` 的同序号 run 数算，不落第二套计数存储）。
+    max_attempts_per_index: int = 1
     created_at: Timestamp = field(default_factory=Timestamp.now)
     updated_at: Timestamp = field(default_factory=Timestamp.now)
 
@@ -86,6 +101,8 @@ class ResearchProgram:
             raise ValueError("program protocol_id must not be empty")
         if self.max_runs < 1:
             raise ValueError("max_runs must be >= 1")
+        if self.max_attempts_per_index < 1:
+            raise ValueError("max_attempts_per_index must be >= 1")
 
 
 @dataclass(frozen=True, slots=True)

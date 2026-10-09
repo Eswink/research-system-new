@@ -44,6 +44,7 @@ pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 _START = "START"
 _CONTINUE = "CONTINUE"
 _STOP_RULE = "STOP_RULE"
+_STOP_RUN_FAILED = "STOP_RUN_FAILED"
 _STOP_GUARDRAIL = "STOP_GUARDRAIL"
 _WAIT = "WAIT"
 
@@ -84,18 +85,26 @@ def test_second_advance_is_driven_by_the_recorded_verdict() -> None:
         assert all(row["state"] == "SUCCEEDED" for row in detail["runs"])
 
 
-def test_a_rejected_verdict_stops_the_program_by_conclusion() -> None:
-    """`STOP_RULE`：落库判词**不**命中规则 ⇒ 按结论停（不起第 2 轮）。"""
+def test_a_rejected_verdict_stops_the_program_on_the_failure_face() -> None:
+    """分数不达阈值 ⇒ 那一轮以 **FAILED** 收敛 ⇒ 走**失败面**（`STOP_RUN_FAILED`）。
+
+    **GOAL-20261008-040 的行为修正（如实登记）**：本用例原先断言 `STOP_RULE` ——
+    但实测那一轮的终态是 `FAILED`（验收门判拒 ⇒ 执行面失败），**没有落库结论**；
+    旧代码把「没有结论」读成「结论说停」正是本轮消灭的失真。现在它落 `STOP_RUN_FAILED`
+    并点名 `state=FAILED`。**结论面的 `STOP_RULE`** 由「跑成但判词不命中规则」的形态覆盖
+    （见 `test_program_stop_reasons_are_decidable.py` 与驱动单元判据）。
+    """
     with TestClient(create_app(program_deps(output=REJECT_OUTPUT))) as client:
         program = create_program(client, max_runs=3)
         advance(client, _program_id(program))
         second = advance(client, _program_id(program))
-        assert second["decision"]["kind"] == _STOP_RULE, second
+        assert second["decision"]["kind"] == _STOP_RUN_FAILED, second
         assert second["started_run_id"] is None
-        assert "verdict REJECT" in second["decision"]["cited_facts"], (
-            "落库判词必须**逐字**进决策（不笼统「评审不通过」）",
+        assert "state=FAILED" in second["decision"]["cited_facts"], (
+            "失败面必须点名终态（不笼统「没继续」）",
             second,
         )
+        assert "未获结论" in second["decision"]["reason"], second["decision"]["reason"]
         assert read_program(client, _program_id(program))["run_count"] == 1
 
 
