@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20261009-365](tasks/PLAN-20261009-365-goal-042-ec01-03-memory-consumption-on-the-run-path.md) | IN_PROGRESS |
 | [x] | [PLAN-20261009-363](tasks/PLAN-20261009-363-goal-041-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261009-361](tasks/PLAN-20261009-361-goal-041-ec02-04-bounded-retry-on-the-crash-window.md) | DONE |
 | [x] | [PLAN-20261009-359](tasks/PLAN-20261009-359-goal-040-discipline-retrospective-repair.md) | DONE |

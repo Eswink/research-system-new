@@ -174,7 +174,8 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261009-365-goal-042-ec01-03-memory-consumption-on-the-run-path.md
 latest_recheck: null
 memory_entries: []
 ---
