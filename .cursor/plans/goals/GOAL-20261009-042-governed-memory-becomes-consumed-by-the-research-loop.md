@@ -356,6 +356,8 @@ deduplication）。
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
 | `988f334`（replan，本 GOAL 建档所在批 = 本批 HEAD） | `37971731889` **M0 success**（8 job 全 success）+ `37971731185` **Push on main / CodeQL success**（3 分析全 success） | replan（序 10 新增）+ 建档（五 EC + 三条实测读数）；**实测取证**（按 `head_sha` 遍历该 SHA 全部 run） |
+| `fe5d661`（本 GOAL 建档） | `37974448170` **M0 cancelled** —— `cancel-in-progress` 形态（**非失败**） | **实测取证**：该 run 于 `18:39:45Z` 终止，而 `ab436e2` 的 M0 run `37974796397` 于 `18:39:28Z` **更早创建** ⇒ 同 ref 同 workflow 的新 run 取消了排队中的旧 run（`.github/workflows/*.yml` 的 `concurrency.cancel-in-progress: true`，逐字复核）。其结论由 `ab436e2` 所在批覆盖（`covered_by 37974796397`）|
+| `ab436e2`（cycle 1 子 PLAN 建档 = 本批 HEAD） | `37974796397` **M0 success**（8 job 全 success）+ `37974795395` **Push on main / CodeQL success**（3 分析全 success） | cycle 1 子 PLAN（`PLAN-20261009-365`）+ GOAL `child_plans` 投影 + `ALL_PLAN`；**实测取证** |
 | （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
 
 ## 迭代日志
