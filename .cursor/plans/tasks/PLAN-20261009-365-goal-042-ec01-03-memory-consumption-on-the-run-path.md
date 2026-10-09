@@ -5,7 +5,7 @@ title: GOAL-20261009-042 cycle 1（EC-01/EC-02/EC-03）：记忆的时效**被�
 status: IN_PROGRESS
 created_at: 2026-10-09
 updated_at: 2026-10-09
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-366-goal-042-ec03-04-memory-consumption-on-the-run-path.md
 memory_entries: []
 parent_goal: GOAL-20261009-042
 cursor_plan_uri: null

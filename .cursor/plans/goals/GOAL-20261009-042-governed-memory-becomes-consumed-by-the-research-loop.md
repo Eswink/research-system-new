@@ -176,7 +176,8 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261009-365-goal-042-ec01-03-memory-consumption-on-the-run-path.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20261010-367-goal-042-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-366-goal-042-ec03-04-memory-consumption-on-the-run-path.md
 memory_entries: []
 ---
 
