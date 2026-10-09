@@ -360,7 +360,10 @@ deduplication）。
 | --- | --- | --- |
 | `89e0d85`（GOAL-040 修复 cycle = 本 GOAL 建档所在批） | `37948976956` **M0 success**（8 job 全 success）+ `37948976453` **Push on main / CodeQL success**（3 分析全 success） | 同批含**序 9 建档**（程序表 + 五 EC + 事实层读数）；**实测取证**（`total_count=2`） |
 | `7c9b35c`（cycle 1 = EC-02/03/04） | `37961452386` **M0 success**（8 job 全 success）+ `37961452060` **Push on main / CodeQL success**（3 分析全 success） | 崩溃窗口去重 + 计数口径 + **静默丢弃缺陷**（`MEM-20261009-211`）；本地 **5278 passed, 228 skipped**（m0 通体）、广面 3799 passed；**实测取证** |
-| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
+| `dfcdb56`（cycle 2 提交 A = EC-05 首轮） | **无自己的 run**（同批推送） | 验证器 + 断言集 + `IN_SCOPE` 纯收紧；与后续提交**同一次 push** ⇒ `covered_by 6cd34cb` |
+| `b47bcd0`（cycle 2 提交 B = 归档） | **无自己的 run**（同批推送） | 两份判词归档进树；与收口提交**同一次 push** ⇒ `covered_by 6cd34cb` |
+| `6cd34cb`（cycle 2 · **GOAL 收口** = 本批 HEAD） | `37968848961` **M0 success**（8 job 全 success）+ `37968847792` **Push on main / CodeQL success**（3 分析全 success） | **GOAL 收口提交**（EC-05 `PASS` + `status: ACHIEVED` + 两树 `TWO-TREE PASS` + m0 23/23 + MAINLINE 进展行）；`dfcdb56` / `b47bcd0` 的结论由此行覆盖（**实测取证**） |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/plans/goals/GOAL-20261009-041-*.md`；其结论由**下一个 GOAL 的台账**取证 |
 
 ## 迭代日志
 
