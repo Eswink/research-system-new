@@ -199,6 +199,13 @@ PRESS SUMMARY: ALL RED + RESTORED
 - **上游版本影响**：无。
 - **下一项任务**：EC-05（自举收口 + GOAL 收口）。
 
+## CI 台账（逐提交）
+
+| commit | run/结论 | 备注 |
+| --- | --- | --- |
+| `7c9b35c`（本 cycle = 本批 HEAD） | `37961452386` **M0 success**（8 job 全 success：`container-quality` / `collector-quality` / `console-frontend` / `observability-overhead-windows-latest` / `quality-ubuntu-latest` / `quality-windows-latest` / `observability-overhead-ubuntu-latest` / `eval-gate`）+ `37961452060` **Push on main / CodeQL success**（3 分析全 success） | 域 + 驱动 + 判据 + 归档 + 记录；**实测取证**（`total_count=2`） |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
+
 ## 状态历史
 
 | 日期 | 状态 | 说明 |

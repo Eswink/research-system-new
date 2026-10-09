@@ -357,8 +357,9 @@ deduplication）。
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| （本 GOAL 建档提交） | 待取证 | 建档（程序表序 9 新增 + 五 EC + 事实层读数） |
-| （后续逐条填） | — | — |
+| `89e0d85`（GOAL-040 修复 cycle = 本 GOAL 建档所在批） | `37948976956` **M0 success**（8 job 全 success）+ `37948976453` **Push on main / CodeQL success**（3 分析全 success） | 同批含**序 9 建档**（程序表 + 五 EC + 事实层读数）；**实测取证**（`total_count=2`） |
+| `7c9b35c`（cycle 1 = EC-02/03/04） | `37961452386` **M0 success**（8 job 全 success）+ `37961452060` **Push on main / CodeQL success**（3 分析全 success） | 崩溃窗口去重 + 计数口径 + **静默丢弃缺陷**（`MEM-20261009-211`）；本地 **5278 passed, 228 skipped**（m0 通体）、广面 3799 passed；**实测取证** |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
 
 ## 迭代日志
 
