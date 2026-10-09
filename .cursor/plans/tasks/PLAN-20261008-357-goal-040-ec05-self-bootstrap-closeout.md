@@ -109,8 +109,8 @@ exit_criteria:
 | 规模（450 行 / 函数 50 行） | 断言集 / 验证器均 ≤ 450 行（函数均 ≤ 50） |
 | `tests/tooling/test_tooling_scripts_meet_product_gates.py` | **8 passed** |
 | `--verdict-only`（起草中间态） | **71 PASS / 2 FAIL**（本轮两份记录未写）⇒ 收口态 **73 判词 / 0 FAIL** |
-| 两树复检 | 首轮 bootstrap 红（读数见 `RECHECK-20261008-358`）；次轮 **`TWO-TREE PASS`** |
-| as-is m0 | 读数见 GOAL 迭代日志 cycle 2 行 |
+| 两树复检 | 首轮 bootstrap 红（实测：current 73 / 0 FAIL、clean 73 / 3 FAIL（缺本轮记录与残余标记））；次轮 `--base-ref 5cbbe18` ⇒ **`TWO-TREE PASS`**（两路 73 判词、`sha256` 相同 `2ba2d5b0…`） |
+| as-is m0 | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5473 passed, 20 skipped**；`skipped` 20 未升）。日志 `scratch/m0-goal040-cycle2.log`（gitignored） |
 
 ## 影响报告
 

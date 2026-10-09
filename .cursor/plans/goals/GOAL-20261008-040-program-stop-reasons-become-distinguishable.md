@@ -2,7 +2,7 @@
 id: GOAL-20261008-040
 slug: program-stop-reasons-become-distinguishable
 title: 程序推进的**停止理由可区分** —— 失败轮 / 无结论轮 / 结论判停**不混用同一种类**（「没有结论」不得被读成「结论说停」）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-08
 updated_at: 2026-10-08
 owners:
@@ -132,7 +132,7 @@ exit_criteria:
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`；配套留档：两路判词 sha256 相同的归档、
       m0 日志、CI 台账逐提交行。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -194,7 +194,7 @@ memory_entries: []
 | EC-02 | 判定种类扩齐 | `STOP_RUN_FAILED` / `STOP_CANCELLED` / `RETRY_FAILED_RUN`（+ 可选有界重试声明，缺省不重试） | PASS |
 | EC-03 | 判定面接线 | 按上一轮**终态**分派（成功走结论面 / 失败走失败面 / 取消走取消面；互不混用） | PASS |
 | EC-04 | 真的被用上 | 实跑判词点名「失败停」；声明重试 ⇒ 同序号重起且计数可见、用尽点名；**反证**：空 `cited_facts` 不再出现 | PASS |
-| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得把**没有结论**当成
 **结论说停**；不得让重试变成**隐式无限重跑**；不得让**取消**被自动重试；
@@ -344,7 +344,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2 | `PLAN-20261008-357` | （见 CI 台账） | EC-05 七条 AC：验证器进树（复用标准断言集**一行未重写**；起草中间态 **71 PASS / 2 FAIL** ⇒ 收口态 **73 判词 / 0 FAIL**）+ `IN_SCOPE` 纯收紧（+2 行；判据 8 passed）+ 治理 + 宪章判据 + 承继残余与本轮 `R-1`…`R-3` 逐条定格；**两树与 m0 读数在 `RECHECK-20261008-358` 回填** | （见 CI 台账） | — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-358`） |
+| 2 | `PLAN-20261008-357` | （见 CI 台账） | EC-05 七条 AC | EC-05 七条 AC：验证器进树（复用标准断言集**一行未重写**；起草中间态 **71 PASS / 2 FAIL** ⇒ 收口态 **73 判词 / 0 FAIL**）+ `IN_SCOPE` 纯收紧（+2 行；判据 8 passed）+ 治理 + 宪章判据 + 承继残余与本轮 `R-1`…`R-3` 逐条定格；**AC-3** 次轮 `--base-ref 5cbbe18` **`TWO-TREE PASS`**（两路 73 判词 / `sha256` 相同 `2ba2d5b0…`）+ 归档定格 **2518 B / 73 行 / CR=0 / 0 FAIL** + **AC-4** as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5473 passed, 20 skipped**） | （见 CI 台账） | — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261008-358`） |
 | 1 | `PLAN-20261008-355` | （见 CI 台账） | EC-02/03/04 全 PASS：判定种类扩齐（三种 + 可选有界重试声明，**落库**：迁移 019 + 两适配器 + 建程序 DTO/读面）+ **按终态分派**（成功走结论面 / 失败走失败面 / 取消走取消面）+ **实跑取证**（失败停点名「未获结论」；声明重试 ⇒ **同序号**重起 + `attempts=1/2`，用尽 ⇒ `attempts=2/2` + 点名；缺省不重跑）；**反证**：空 `cited_facts` 旧形态不再出现；驱动 **13 passed**、e2e **4 passed**；广面 **5138 passed, 18 skipped**；四道门绿（mypy 1168 files）；live PG `migration_version` = **19** | （见 CI 台账） | **三处既有 e2e 用例按行为修正更新**（原先依赖「失败轮被判续 ⇒ 才有第 2 轮」；**先在干净树 `49b2c7d` 复跑确认原先通过**）；`_non_success_terminal` 超 50 行 ⇒ **拆函数** | EC-02/03/04 收口；**下一轮 EC-05**（自举收口） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **一处实测复现**（FAILED 轮 ⇒ `STOP_RULE` + 空 `cited_facts`）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 8** | （见 CI 台账） | — | 五条 EC 全 PENDING；分派落点（②）待 cycle 1 实现 | cycle 1（EC-02 判定种类 + EC-03 分派） |
 
@@ -352,5 +352,6 @@ deduplication）。
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-08 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、`IN_SCOPE` **纯收紧**、两树 **`TWO-TREE PASS`**（73 判词 / 两路 `sha256` 相同 `2ba2d5b0…`）、判词归档进树（两份各 2518 B / 73 行 / `CR=0` / 0 FAIL）、as-is m0 **23/23**（记录写完之后：`PASS [` 24 / `FAILED [` 0 / **5473 passed, 20 skipped**）、治理 + 宪章判据绿、CI 台账逐提交。**一处时序如实登记**：两树首轮 bootstrap 红。**收口后不再推进本 GOAL**；残余 `R-1`…`R-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261008-358`（PASS_WITH_WARNINGS）。 |
 | 2026-10-08 | ACTIVE | **cycle 1（EC-02/03/04）收口**：**停止理由互不混用** —— 判定种类扩齐（`STOP_RUN_FAILED` / `STOP_CANCELLED` / `RETRY_FAILED_RUN`），驱动**按上一轮终态分派**（只有 `SUCCEEDED` 走结论面；失败走失败面并点名「未获结论」；取消走取消面且不重试）；可选**有界重试**（`max_attempts_per_index`，缺省 1 = 不重试）并**真的落库**（迁移 019 + 两适配器 + 建程序 DTO/读面）；实跑 + 反证打满。**三处既有 e2e 用例按行为修正更新**（逐条理由 + 干净树复跑取证）。EC-02/03/04 `PASS`；EC-05 待收口。**不得**宣称安全，**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-08 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 8**。只读勘察 + 一处**实测复现**：程序推进只读最后一轮的落库判词，而 **FAILED 轮没有任何结论** ⇒ `verdicts` 为空 ⇒ 落 `STOP_RULE` 并给出「上一轮落库结论不命中续跑规则」—— 把「**没有结论**」读成了「**结论说停**」（实测：第 1 轮 FAILED ⇒ 第 2 次推进 `STOP_RULE`、`cited_facts=[]`）。域里终态**已可区分**（`terminal()` = SUCCEEDED/FAILED/CANCELLED）⇒ 缺的是**判定面**的分派。五条 EC 全 `PENDING`。**不做数量目标**；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
