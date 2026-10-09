@@ -62,6 +62,9 @@ DEFAULT_SESSION_TOOL_BINDINGS: tuple[tuple[str, str, str], ...] = (
     # GOAL-20261008-037 EC-03：`research_state.read` 的承接 —— 读**程序内前序 run**
     # 的落库结论（`RunStore.for_program` + `ReviewFindingStore.for_run`）。
     ("research_state.read", "m12_artifact", "research_state_read"),
+    # GOAL-20261009-042 EC-02：`memory.read` 的承接 —— 读 governed memory（`MemoryStore.query`），
+    # 并按**调用方给的时点**给出时效与处置（`SKIP` / `ANNOTATE` / `USE`）。
+    ("memory.read", "m12_artifact", "memory_read"),
 )
 
 
@@ -130,6 +133,7 @@ def session_tool_face(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件
     run_store: Any = None,
     review_store: Any = None,
     program_store: Any = None,
+    memory_store: Any = None,
 ) -> Any:
     """位置参数形式的出厂注册面（组合根侧读起来最短；语义见 `canonical_read_register`）。"""
     return canonical_read_register(
@@ -141,6 +145,7 @@ def session_tool_face(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件
         run_store=run_store,
         review_store=review_store,
         program_store=program_store,
+        memory_store=memory_store,
     )
 
 
@@ -159,6 +164,39 @@ def sqlite_session_tools(faces: Any, ports: Any) -> Any:
         run_store=ports.runs_store,
         review_store=ports.review_findings,
         program_store=ports.program_store,
+        # GOAL-20261009-042 EC-02：`memory.read` 的来源（与 ApiDeps 同一实例）。
+        memory_store=ports.memory_store,
+    )
+
+
+def _canonical_reader(  # noqa: PLR0913 - provider 的 Port 依赖就这么几件（齐了才叫承接）
+    artifacts: Any,
+    ledger: Any,
+    *,
+    budget_ledger: Any | None = None,
+    experiment_store: Any | None = None,
+    run_store: Any | None = None,
+    review_store: Any | None = None,
+    memory_store: Any | None = None,
+) -> Any:
+    """造读面 provider 实例（把 `CanonicalReadProvider` 的构造收成一次性的小工厂）。
+
+    为什么实例在这儿造而不是在各组合根里各造一份：`m12_artifact` / `openhands_workspace`
+    声明的**读**能力此前全仓零实现，本轮的承接面统一用 `CanonicalReadProvider`
+    （它读的是 canonical state：ArtifactStore + EvidenceLedger）。两个组合根**只差 Port 实例**
+    （SQLite 根与 PG 根各自的 artifacts/ledger），装配决策因此收在这一处 ——
+    多一个入口就多一次漂移机会（与 `runtime_support` 收拢 runtime 选择同一个理由）。
+    """
+    from adapters.canonical import CanonicalReadProvider
+
+    return CanonicalReadProvider(
+        artifacts,
+        ledger,
+        budget_ledger=budget_ledger,
+        experiment_store=experiment_store,
+        run_store=run_store,
+        review_store=review_store,
+        memory_store=memory_store,
     )
 
 
@@ -172,29 +210,25 @@ def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么
     run_store: Any | None = None,
     review_store: Any | None = None,
     program_store: Any | None = None,
+    memory_store: Any | None = None,
     bindings: Sequence[tuple[str, str, str]] = DEFAULT_SESSION_TOOL_BINDINGS,
 ) -> Any:
     """**出厂形态**的注册回调：用 canonical 读面当 provider 实例（两个组合根共用）。
 
-    为什么实例在这儿造而不是在各组合根里各造一份：`m12_artifact` / `openhands_workspace`
-    声明的**读**能力此前全仓零实现，本轮的承接面统一用 `CanonicalReadProvider`
-    （它读的是 canonical state：ArtifactStore + EvidenceLedger）。两个组合根**只差 Port 实例**
-    （SQLite 根与 PG 根各自的 artifacts/ledger），装配决策因此收在这一处 ——
-    多一个入口就多一次漂移机会（与 `runtime_support` 收拢 runtime 选择同一个理由）。
-
+    实例在这儿造（而不是各组合根各造一份）的理由见 `_canonical_reader` 的说明；
     provider 的**声明**取自出厂目录（`tool_providers.yaml`）：目录里没有的 id **不进表**
     ⇒ 该名字不会被注册 ⇒ SDK 在 agent init 时点名 `ToolDefinition '<名>' is not registered`。
     """
-    from adapters.canonical import CanonicalReadProvider
     from services.api.catalog import load_catalog_snapshot
 
-    canonical_reader = CanonicalReadProvider(
+    canonical_reader = _canonical_reader(
         artifacts,
         ledger,
         budget_ledger=budget_ledger,
         experiment_store=experiment_store,
         run_store=run_store,
         review_store=review_store,
+        memory_store=memory_store,
     )
     instance_for = {
         "m12_artifact": canonical_reader,

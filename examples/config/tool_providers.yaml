@@ -46,6 +46,12 @@ tool_providers:
       # 的落库结论（入口是程序归属：`RunStore.for_program` + `ReviewFindingStore.for_run`）。
       # 实现在 `adapters/canonical/research_state_read.py`（同一条 450 行理由）。
       - research_state.read
+      # GOAL-20261009-042 EC-02：`memory.read` 的承接 —— 读 `MemoryStore.query()`
+      # （既有 Port，两个组合根都持有实例），与 HTTP 读面 `GET /projects/{id}/memory`
+      # 同一个查询口径；**多出来的是处置**：到期/待复核按调用方给的时点判定并给出
+      # `SKIP` / `ANNOTATE` / `USE`。实现在 `adapters/canonical/memory_read.py`
+      # （同一条 450 行理由）。
+      - memory.read
     effect_class: READ_ONLY
 
   ncbi_eutils:

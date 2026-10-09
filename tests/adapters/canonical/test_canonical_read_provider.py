@@ -71,6 +71,9 @@ _PROVIDER = ToolProviderSpec(
         # GOAL-20261008-037 EC-03：`research_state.read` 的承接（读程序内**前序 run** 的
         # 落库结论）—— 同上，夹具与出厂目录同轮同步。
         "research_state.read",
+        # GOAL-20261009-042 EC-02：`memory.read` 的承接（读 governed memory + 按调用方给的
+        # 时点给时效与处置）—— 同上，夹具与出厂目录同轮同步（**纯加法**）。
+        "memory.read",
     ],
     effect_class=EffectClass.READ_ONLY,
 )

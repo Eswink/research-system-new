@@ -78,6 +78,10 @@ _RELEASED: tuple[str, ...] = (
     # GOAL-20261008-037 EC-03：第 9 条逐条放行 —— `research_state.read`
     # （只读后缀 `read`；承接 provider `m12_artifact` 的 `effect_class: READ_ONLY`）。
     # 登记表随本轮放行**新增一条**；谓词与其余断言一字未改。
+    # GOAL-20261009-042 EC-02：第 10 条逐条放行 —— `memory.read`
+    # （只读后缀 `read`；承接 provider `m12_artifact` 的 `effect_class: READ_ONLY`）。
+    # **纯加法登记**：登记表 +1 条，谓词（只读后缀 / 等值断言）与其余条目一字未改。
+    "memory.read",
     "research_state.read",
 )
 
@@ -274,6 +278,8 @@ class TestTheExpansionIsReadOnly:
             "review.read": "project",
             # GOAL-20261008-037 EC-03：与同级读能力对齐 = `project`。
             "research_state.read": "project",
+            # GOAL-20261009-042 EC-02：与同级读能力对齐 = `project`（纯加法登记）。
+            "memory.read": "project",
         }
         scopes: dict[str, set[str]] = {}
         for rule in policy_body().get("allow") or []:

@@ -33,6 +33,9 @@ capabilities:
   - workspace.delete
   - artifact.read
   - artifact.write
+  # GOAL-20261009-042 EC-02：`memory.read` —— 读 governed memory 并按调用方给的时点
+  # 给出时效与处置（该能力此前**从未声明** ⇒ 记忆时效只被印在读面上、无人消费）。
+  - memory.read
   - memory.write
   - code.execute
   - package.install

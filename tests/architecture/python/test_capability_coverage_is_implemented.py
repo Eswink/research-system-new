@@ -3,7 +3,7 @@
 **它把什么变成机械事实**：`tool_providers.yaml` **声明**了某能力（provider 承接），
 而「声明」与「有可执行的实现」是两件事 —— GOAL-028 的 `W-1` 正是这条落差
 （映射机制成立 ≠ 出厂即可跑）。本判据对**每一条已声明承接的能力**断言
-「声明了 ⇒ 一定有实现注册」，并把 46 条能力**逐条**分类（承 MEM-158：射程显式分类）。
+「声明了 ⇒ 一定有实现注册」，并把**能力词表逐条**分类（承 MEM-158：射程显式分类）。
 
 **四件事**：
 
@@ -14,7 +14,7 @@
    - **声明了但没实现** ⇒ 判红（把一条能力加进 provider 的 capabilities 但绑定表不给实现）；
    - **实现了但没声明** ⇒ 也判红（绑定表里有工具名但 provider 未声明该能力）——
      防静默漂移（声明面与实现面各自演化）。
-3. **射程逐条分类**（承 MEM-158）：46 条能力**逐条**要么在**射程内**（已承接）、
+3. **射程逐条分类**（承 MEM-158）：词表里**逐条**要么在**射程内**（已承接）、
    要么**登记在案**（带组别与理由）；**未分类者判红**。
 4. **不得靠并集掩蔽**（承 MEM-160）：必备清单（射程内集合）有**下界断言**，
    且下界**显式写死**在本文件里（不随文档漂移）。
@@ -64,9 +64,13 @@ _IN_SCOPE: tuple[str, ...] = (
     # GOAL-20261008-037 EC-03：`research_state.read` 的射程内登记 —— 理由（「需要研究
     # 状态实体，今天没有」）已被 GOAL-037 EC-01/EC-02 推翻（程序实体 + 前序 run 结论可读）。
     "research_state.read",
+    # GOAL-20261009-042 EC-02：`memory.read` 的射程内登记（**纯加法**）—— 记忆实体与时效
+    # 字段都在（GOAL-039 已落库 `scope` / `review_after` / `expires_at`），本 GOAL 补的
+    # 是**消费面**：按调用方给的时点给出时效与处置（`SKIP` / `ANNOTATE` / `USE`）。
+    "memory.read",
 )
 
-#: 射程**外**的能力 → (组别, 理由)。46 条能力里**除 _IN_SCOPE 与已承接的 12 条之外**的
+#: 射程**外**的能力 → (组别, 理由)。**除 _IN_SCOPE 与已承接的之外**的
 #: 每一条都必须在此登记；未登记者由 `test_every_capability_is_classified` 判红。
 _OUT_OF_SCOPE_REASONS: dict[str, str] = {
     # --- A 组：零依赖读能力，但**放行需用户拍板**（D-02(b) 未决口径）---
@@ -272,9 +276,14 @@ def _find_orphans(implemented: set[str], declared: set[str]) -> set[str]:
 
 
 def test_every_capability_is_classified() -> None:
-    """射程逐条分类（承 MEM-158）：46 条**逐条**要么在射程内、要么登记在案。"""
+    """射程逐条分类（承 MEM-158）：**词表逐条**要么在射程内、要么登记在案。
+
+    **同轮同步登记（GOAL-20261009-042 EC-02，纯加法）**：`memory.read` 进射程
+    ⇒ 词表 **46 → 47**。谓词形态**一字未改**（仍是精确相等），且这条断言的作用
+    正是「条数变了 ⇒ 同轮复核分类」—— 本次复核已完成（`memory.read` 逐条登记如上）。
+    """
     words = vocabulary()
-    assert len(words) == 46, ("能力词表条数变了，本判据的分类需同轮复核", len(words))
+    assert len(words) == 47, ("能力词表条数变了，本判据的分类需同轮复核", len(words))
     unclassified = sorted(
         name for name in words if name not in _IN_SCOPE and name not in _OUT_OF_SCOPE_REASONS
     )

@@ -235,6 +235,8 @@ def _build_pg_orchestration(
                     c["review_findings"],
                     # GOAL-20261008-037 EC-03：`research_state.read` 的程序面来源。
                     c["program_store"],
+                    # GOAL-20261009-042 EC-02：`memory.read` 的来源（与 ApiDeps 同一实例）。
+                    c["memory"],
                 ),
             ),
             workflow=c["workflow"],

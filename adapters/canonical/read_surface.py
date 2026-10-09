@@ -43,6 +43,13 @@ _TOOL_DESCRIPTIONS: dict[str, str] = {
         "Read the recorded state of a research program's prior runs (their terminal state"
         " and verbatim review verdicts); the entry is the program, not this run."
     ),
+    # GOAL-20261009-042 EC-02：`memory.read` 的描述子（实现在 `memory_read.py`）——
+    # 读 governed memory，并按**调用方给的时点**给每条记忆的时效与处置（跳过 / 标注 / 照用）。
+    "memory_read": (
+        "Read governed memory records with their validity at a caller-supplied moment"
+        " (the read face never consults the wall clock) and the resulting disposition"
+        " (SKIP for expired, ANNOTATE when review is due, USE otherwise)."
+    ),
 }
 
 #: tool id → 它承载的能力名。**承接 = 声明 + 实现**：两者必须同时在，工具名与策略面同源。
@@ -61,6 +68,8 @@ _TOOL_CAPABILITIES: dict[str, str] = {
     # GOAL-20261008-037 EC-03：`research_state.read` 的承载 —— 读**程序内前序 run**
     # 的落库结论（入口是程序归属，不是本 run 的标识）。
     "research_state_read": "research_state.read",
+    # GOAL-20261009-042 EC-02：`memory.read` 的承载（工具名与策略面同源）。
+    "memory_read": "memory.read",
 }
 
 #: deliverable 的 canonical 落点（与 `services/api/routers/deliverable.py` 同一约定：

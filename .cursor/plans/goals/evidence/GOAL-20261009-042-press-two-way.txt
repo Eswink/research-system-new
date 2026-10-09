@@ -1,0 +1,3 @@
+M-1 未声明不猜（None ⇒ USE，不是 SKIP）: 按压 RED | sha 复原一致=True | ec884856a736
+M-2 三态不混用（EXPIRED ⇒ SKIP，不是 ANNOTATE）: 按压 RED | sha 复原一致=True | ec884856a736
+M-3 不读挂钟（缺 now 必须点名拒绝）: 按压 RED | sha 复原一致=True | ec884856a736

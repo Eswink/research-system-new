@@ -49,6 +49,13 @@ policy:
     # `require_approval` / `allow_with_constraints` 一律未动。
     - capability: research_state.read
       scope: project
+    # GOAL-20261009-042 EC-02：`memory.read` 的放行 —— **只读**（读 governed memory 并按
+    # **调用方给的时点**给出时效与处置；判定不读挂钟）。scope 与同级读能力
+    # （`research_state.read` / `review.read` / `run.read`）对齐 = `project`。
+    # **本改动只新增这一条 allow**：`default_effect` / `deny` / `require_approval` /
+    # `allow_with_constraints` 一律未动；写面（`memory.write` 的四条 tier allow）逐字保持。
+    - capability: memory.read
+      scope: project
     - capability: artifact.write
       scope: run
     - capability: literature.search

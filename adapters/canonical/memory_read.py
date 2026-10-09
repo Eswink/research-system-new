@@ -1,0 +1,161 @@
+"""`memory.read` 的**执行实现**（GOAL-20261009-042 EC-02；与 `read_provider.py` 分列）。
+
+**为什么单列**：`read_provider.py` 已到 **433/450 行**（规模门），本轮再往上接一条读能力
+就越界。拆分的切法与 `run_read.py` / `review_read.py` / `research_state_read.py` 同：
+本模块只放 `memory.read` 这一条的实现，`read_provider.py` 只留一行委派。
+
+**它读什么**：`MemoryStore.query()`（既有 Port）—— 与 HTTP 读面
+`GET /projects/{id}/memory` **同一个**查询口径，**不新造第二套**。
+
+**它比既有读面多什么（本 GOAL 的靶子）**：既有读面把 `validity` **印出来**就算完事；
+本读面对每条记忆给出**处置**（`disposition`）—— 到期/待复核的记忆**被跳过或被标注**，
+两者**互不混用**且都**点名理由**。这样研究循环有一条**可消费**的面，
+到期/待复核才**真的**改变后续行为（而不是只做成一个没人读的字段）。
+
+**三条硬约束（写进实现，不靠调用方自律）**：
+
+1. **不读挂钟**：`now` 由**调用方**给（`args["now"]`），本模块**不**调 `Timestamp.now()`
+   ⇒ 同一份记录 + 同一时点 ⇒ 判定必相同（可复现）。
+2. **未声明不猜**：`expires_at` / `review_after` 都没声明 ⇒ 处置是「照用」
+   （**不**当成已到期 —— AGENTS.md §8 的口径）。
+3. **点名**：缺 `MemoryStore` / 缺 `now` / `now` 形态非法 ⇒ **点名拒绝**；
+   **不**返回空列表冒充「没有记忆」。
+
+**边界**（与既有读面同一条纪律）：
+
+- **只读**：本模块不写任何 store；
+- **不**自动删除 / 降权 / 重建索引（`Q-1` 的另两条子面，`GOAL-20261009-042` 的 `T-1`）；
+- **不**跨项目（消费按项目内划界，`T-2`）。
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from packages.application.memory.validity import ValidityState, validity_at
+from packages.application.ports.errors import InvalidInputError
+from packages.domain.core import Timestamp
+
+#: 处置：**三态 + 未声明** 各自的唯一取值（读面按这个字段分派，不靠措辞）。
+DISPOSITION_USE = "USE"
+DISPOSITION_ANNOTATE = "ANNOTATE"
+DISPOSITION_SKIP = "SKIP"
+
+#: 时效状态 → 处置（**互不混用**：三态各归各的；`None` 见 `disposition_of`）。
+_DISPOSITIONS: dict[ValidityState, str] = {
+    ValidityState.EXPIRED: DISPOSITION_SKIP,
+    ValidityState.REVIEW_DUE: DISPOSITION_ANNOTATE,
+}
+
+
+def disposition_of(state: ValidityState | None) -> str:
+    """时效状态 → **处置**（纯函数；`None` = 未声明或未到 ⇒ 照用，**不猜**）。"""
+    if state is None:
+        return DISPOSITION_USE
+    return _DISPOSITIONS[state]
+
+
+def _moment(args: dict[str, object]) -> Timestamp:
+    """调用方给的时点（**必填**）：读面必须可复现 ⇒ 本模块不读挂钟。"""
+    raw = args.get("now")
+    if raw is None or str(raw).strip() == "":
+        raise InvalidInputError(
+            "memory_read requires an explicit 'now' (RFC3339) so the validity decision"
+            " is reproducible; this read face never consults the wall clock"
+        )
+    text = str(raw).strip()
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError as exc:
+        raise InvalidInputError(f"memory_read 'now' is not a valid timestamp: {text!r}") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise InvalidInputError(
+            "memory_read 'now' must be timezone-aware (got "
+            f"{text!r}); UTC is the only accepted zone"
+        )
+    try:
+        return Timestamp(parsed)
+    except ValueError as exc:
+        raise InvalidInputError(str(exc)) from exc
+
+
+def _memory_row(record: Any, moment: Timestamp) -> dict[str, object]:
+    """一条记忆的读面投影：**身份 + 内容 + 时效 + 处置 + 理由**（逐条点名）。"""
+    state = validity_at(record, moment)
+    disposition = disposition_of(state)
+    content = str(record.content)
+    return {
+        "memory_id": str(record.id),
+        "tier": str(record.tier),
+        "scope": str(record.scope),
+        "content": content,
+        "confidence": float(record.confidence),
+        "active": bool(record.active),
+        #: 时效状态（`None` = 未声明或未到 —— **不猜**，与「已到期」严格区分）。
+        "validity": state.value if state is not None else None,
+        #: 处置（供研究循环**按它分派**：`SKIP` / `ANNOTATE` / `USE`）。
+        "disposition": disposition,
+        #: 理由：处置是**可复核**的，不是不透明标签。
+        "reason": _reason(state, record),
+    }
+
+
+def _reason(state: ValidityState | None, record: Any) -> str:
+    """处置理由（点名状态与**被引的声明值** —— 读面原文，不重算）。"""
+    if state is ValidityState.EXPIRED:
+        return f"expires_at={record.expires_at.value.isoformat()} 已过 ⇒ 跳过（不参与后续行为）"
+    if state is ValidityState.REVIEW_DUE:
+        return f"review_after={record.review_after.value.isoformat()} 已到 ⇒ 标注（仍需复核）"
+    return "未声明时效或未到 ⇒ 照用（未声明不得被当成已到期）"
+
+
+def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, object]:
+    """读 governed memory 并按调用方给的时点给出**时效 + 处置**。
+
+    载荷形状（读面契约）：
+
+    - `now`：判定时点（**回显**调用方给的值 ⇒ 可复核）；
+    - `tier`：读的 tier（缺省 `None` = 全部）；
+    - `memory_count`：条数；
+    - `memories`：逐条（`memory_id` / `tier` / `scope` / `content` / `confidence` /
+      `active` / `validity` / `disposition` / `reason`）；
+    - `dispositions`：**计数摘要**（`USE` / `ANNOTATE` / `SKIP` 各几条 —— 供消费者
+      不解析数组就能看出「有没有被跳过」）。
+    """
+    if memory_store is None:
+        raise InvalidInputError("memory_read requires a MemoryStore, which is not in this assembly")
+    moment = _moment(args)
+    raw_tier = args.get("tier")
+    tier = str(raw_tier).strip() if raw_tier is not None and str(raw_tier).strip() else None
+    records = memory_store.query(_tier_of(tier))
+    rows = [_memory_row(record, moment) for record in records]
+    counts = {
+        DISPOSITION_USE: 0,
+        DISPOSITION_ANNOTATE: 0,
+        DISPOSITION_SKIP: 0,
+    }
+    for row in rows:
+        counts[str(row["disposition"])] += 1
+    return {
+        "now": moment.value.isoformat(),
+        "tier": tier,
+        "memory_count": len(rows),
+        "memories": rows,
+        "dispositions": counts,
+    }
+
+
+def _tier_of(name: str | None) -> Any | None:
+    """tier 名 → 域枚举（未知名 ⇒ **点名**，不静默读全部）。"""
+    if name is None:
+        return None
+    from packages.domain.enums import MemoryTier
+
+    try:
+        return MemoryTier(name)
+    except ValueError as exc:
+        allowed = ", ".join(item.value for item in MemoryTier)
+        raise InvalidInputError(
+            f"memory_read tier {name!r} is not a known tier (allowed: {allowed})"
+        ) from exc

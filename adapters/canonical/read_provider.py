@@ -37,6 +37,21 @@ from packages.domain.tools import (
     ToolSpec,
 )
 
+#: `spill_threshold_bytes` **默认 1**（即「内容必须可取回」）的取值理由 —— 不是
+#: `spill_large_result` 的 32 KiB 缺省，理由是**消费者的要求**（与运行链同一条）：
+#:
+#: - 会话工具桥（`adapters/openhands/session_tool_invocation.py`）**必须把内容交回模型**，
+#:   因此结果必须落在 ArtifactStore 里可被 `fetch_spilled_result` 取回；
+#: - 低于阈值的结果**不落盘**（`spill_large_result` 只返回 digest）⇒ 桥拿不到内容，
+#:   只能点名拒绝（`produced no spilled output`）—— 实测：默认阈值下**任何**小于
+#:   32 KiB 的读结果都会走到这条失败路径，而那正是绝大多数读；
+#: - 同一约定在运行链侧的既有表述：`tests/e2e/literature_chain_support.py` 的
+#:   `spill_threshold_bytes=1`（"运行链证据要求内容在场（准入会重算 digest）"）。
+#:
+#: 「大结果不进模型上下文」的治理目标由**调用方**（会话工具面的返回长度、运行链的
+#: chaining 语义）承担，不由本阈值承担 —— 在这里省掉落盘只会让工具**不可用**。
+_SPILL_RATIONALE = True
+
 
 class CanonicalReadProvider:
     """canonical 读面（ArtifactStore + EvidenceLedger）的 ToolProvider 实现。
@@ -55,24 +70,10 @@ class CanonicalReadProvider:
         run_store: Any | None = None,
         review_store: Any | None = None,
         program_store: Any | None = None,
+        memory_store: Any | None = None,
         spill_threshold_bytes: int = 1,
     ) -> None:
-        """构造读面 provider。
-
-        `spill_threshold_bytes` **默认 1**（即「内容必须可取回」），不是 `spill_large_result`
-        的 32 KiB 缺省 —— 理由是**消费者的要求**，与运行链同一条：
-
-        - 会话工具桥（`adapters/openhands/session_tool_invocation.py`）**必须把内容交回模型**，
-          因此结果必须落在 ArtifactStore 里可被 `fetch_spilled_result` 取回；
-        - 低于阈值的结果**不落盘**（`spill_large_result` 只返回 digest）⇒ 桥拿不到内容，
-          只能点名拒绝（`produced no spilled output`）—— 实测：默认阈值下**任何**小于
-          32 KiB 的读结果都会走到这条失败路径，而那正是绝大多数读。
-        - 同一约定在运行链侧的既有表述：`tests/e2e/literature_chain_support.py` 的
-          `spill_threshold_bytes=1`（"运行链证据要求内容在场（准入会重算 digest）"）。
-
-        「大结果不进模型上下文」的治理目标由**调用方**（会话工具面的返回长度、
-        运行链的 chaining 语义）承担，不由本阈值承担 —— 在这里省掉落盘只会让工具**不可用**。
-        """
+        """构造读面 provider（`spill_threshold_bytes` 的取值理由见 `_SPILL_RATIONALE`）。"""
         self._artifacts = artifacts
         self._ledger = ledger
         #: 预算账本（`budget.read` 的**真实**来源）。缺省 None ⇒ 该工具**点名**不可用，
@@ -91,6 +92,9 @@ class CanonicalReadProvider:
         #: 记录面）。本读面用 `RunStore.for_program` 取前序 run，program_store 只作装配
         #: 标记位（在场 = 该装配认得「程序」这个概念）。
         self._programs = program_store
+        #: 记忆存储（`memory.read` 的**真实**来源；GOAL-20261009-042 EC-02 的承接）。
+        #: 缺省 None ⇒ 该工具**点名**不可用，不返回空列表冒充「没有记忆」。
+        self._memories = memory_store
         self._spill_threshold = spill_threshold_bytes
 
     def execute(self, provider: ToolProviderSpec, call: ToolCallRecord) -> ToolResultRecord:
@@ -107,6 +111,7 @@ class CanonicalReadProvider:
             "run_read": self._run_read,
             "review_read": self._review_read,
             "research_state_read": self._research_state_read,
+            "memory_read": self._memory_read,
         }.get(call.tool_id)
         if handler is None:
             raise InvalidInputError(f"unknown tool id: {call.tool_id}")
@@ -428,6 +433,13 @@ class CanonicalReadProvider:
         from adapters.canonical.research_state_read import research_state_read
 
         return research_state_read(self._runs, self._reviews, args)
+
+    def _memory_read(self, args: dict[str, object]) -> dict[str, object]:
+        """读 governed memory 并按**调用方给的时点**给出时效与处置（实现见
+        `memory_read.py`，本行只委派）。"""
+        from adapters.canonical.memory_read import memory_read
+
+        return memory_read(self._memories, args)
 
 
 __all__ = ["CanonicalReadProvider"]
