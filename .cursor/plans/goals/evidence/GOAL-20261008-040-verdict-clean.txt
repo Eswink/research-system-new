@@ -57,9 +57,9 @@ PASS goal-ec03-status
 PASS goal-ec04-status
 PASS goal-ec05-status
 PASS record-PLAN-20261008-355-goal-040-ec02-04-stop-reasons.md
-FAIL record-PLAN-20261008-357-goal-040-ec05-self-bootstrap-closeout.md ->
+PASS record-PLAN-20261008-357-goal-040-ec05-self-bootstrap-closeout.md
 PASS record-RECHECK-20261008-356-goal-040-ec02-04-stop-reasons.md
-FAIL record-RECHECK-20261008-358-goal-040-ec05-self-bootstrap-closeout.md ->
+PASS record-RECHECK-20261008-358-goal-040-ec05-self-bootstrap-closeout.md
 PASS record-README.md
 PASS record-MAINLINE.md
 PASS r26-R26-1-registered
@@ -69,5 +69,5 @@ PASS r26-R26-4-registered
 PASS r26-R26-5-registered
 PASS r26-R26-6-registered
 PASS uncovered-scope-enumerated
-FAIL residuals-enumerated -> `R-1`,`R-2`,`R-3`
+PASS residuals-enumerated
 PASS prior-residuals-kept
