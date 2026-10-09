@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261009-210](entries/MEM-20261009-210-narrowing-an-existing-predicate-must-be-declared.md) | ACTIVE | repository | 0.95 | 2027-04-09 | PLAN-20261009-359 |
 | [MEM-20261008-209](entries/MEM-20261008-209-a-run-must-know-its-program-before-it-executes.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-341 |
 | [MEM-20261008-208](entries/MEM-20261008-208-a-new-write-route-updates-the-measured-warning-lines.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-339 |
 | [MEM-20261008-207](entries/MEM-20261008-207-jsonb-decodes-must-accept-parsed-objects.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-337 |

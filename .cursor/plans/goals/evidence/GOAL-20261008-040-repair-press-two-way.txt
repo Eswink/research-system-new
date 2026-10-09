@@ -1,0 +1,11 @@
+--- P-1 ---
+tests/e2e/test_program_advance_on_the_run_path.py: 按压 RED | sha 复原一致=True | c11c1ee8642d
+--- P-2 ---
+tests/e2e/test_cross_run_consumption_is_decidable.py: 按压 RED | sha 复原一致=True | b21f5740ed9a
+--- P-3 ---
+tests/e2e/test_cross_run_consumption_is_decidable.py: 按压 RED | sha 复原一致=True | b21f5740ed9a
+--- P-4 ---
+tests/e2e/test_cross_run_knowledge_on_the_run_path.py: 按压 RED | sha 复原一致=True | 23a5be3182da
+--- P-5 ---
+tests/e2e/test_cross_run_knowledge_on_the_run_path.py: 按压 RED | sha 复原一致=True | 23a5be3182da
+PRESS SUMMARY: ALL RED + RESTORED

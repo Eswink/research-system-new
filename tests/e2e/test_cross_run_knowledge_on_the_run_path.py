@@ -9,11 +9,14 @@
 2. **下游消费**（核心）：第 2 轮工具结果的**内容**里出现**第 1 轮**那一条落库判词的
    **逐字**行（`verdict PASS`；按 **run id 归属**区分两轮 —— 不靠顺序猜）。
 3. **入口是程序归属**：读结果的 `program_id` == 程序 id、`prior_runs[0].run_id` == 第 1 轮 run id。
-4. **反证①**：撤掉 provider 实例 ⇒ run 失败且判词**点名** provider / 能力 / 工具。
+4. **反证①**：撤掉 provider 实例 ⇒ 那一轮**恰好一轮**并以 `FAILED` 收敛（程序按失败面
+   判停、`STOP_RUN_FAILED`），且判词**点名** provider / 能力 / 工具。
 5. **反证②**：把 `research_state.read` 从 `allow` 删掉（内存内副本）⇒ 点名 `POLICY_DENIED`。
 
 **如实边界**（本文件不声称已解决）：读到的结论**影响**了第 2 轮的科学结论**不在范围**
 （验收门只判交付物存在）；memory 的跨 run 维度（决策 ④）与跨程序共享**不在本轮**。
+**形状显式声明（GOAL-20261009-041）**：成功面助手断言**恰好两轮**；反证①断言
+**恰好一轮 + 失败面判停** —— 两形态各自被断言，没有容错回退。
 """
 
 from __future__ import annotations
@@ -37,19 +40,28 @@ from tests.e2e.cross_run_support import (
     run_ids_of,
     tool_evidence_of_run,
 )
-from tests.e2e.program_advance_support import advance, create_program
+from tests.e2e.program_advance_support import advance, create_program, read_program
 
 pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 
 
 def _two_round_program(deps: Any) -> tuple[TestClient, str]:
-    """建程序 + 推进两次（第 2 轮由第 1 轮的落库判词驱动）。"""
+    """建程序 + 推进两次（第 2 轮由第 1 轮的落库判词驱动）。
+
+    **断言形态是「恰好两轮」**：本助手只服务**成功面**的用例（后一轮读前一轮的结论）。
+    第 1 轮若以 `FAILED` 收敛 ⇒ 程序按**失败面**判停、没有第 2 轮 ⇒ 这里直接判红
+    （失败面由 `test_missing_provider_is_named_not_silent` 与
+    `test_program_stop_reasons_are_decidable.py` 覆盖，不用本助手）。
+    """
     client = TestClient(create_app(deps)).__enter__()
     program = create_program(client, max_runs=3, protocol=PROTOCOL, continue_on=["PASS"])
     program_id = str(program["id"])
     advance(client, program_id)
     second = advance(client, program_id)
     assert second["started_run_id"], second
+    detail = read_program(client, program_id)
+    indices = [row["program_index"] for row in detail["runs"]]
+    assert indices == [1, 2], ("成功面必须是**恰好两轮**（失败轮会按失败面判停）", indices)
     return client, program_id
 
 
@@ -110,10 +122,14 @@ def test_the_evidence_chain_names_the_tool_and_the_two_rounds_are_distinguishabl
 def test_missing_provider_is_named_not_silent() -> None:
     """反证①：撤掉 provider 实例 ⇒ run 失败且判词点名 provider / 能力 / 工具。
 
-    **GOAL-20261008-040 的判据修正（如实登记）**：本用例原先靠「失败后还能起第 2 轮」
-    取那条 run —— 那**正是**旧的失真行为（失败轮被读成「结论说停」= 判「续」）。
-    现在失败轮两侧都不再起下一轮；而缺 provider 的失败发生在**第 1 轮**里
-    （`consume` 的执行期），故直接取第 1 轮取证，语义不变且更强。
+    **受判面收窄 + 理由（GOAL-20261009-041 纪律回溯修复，如实登记）**：本用例原先取**第 2**
+    轮那条 run —— 那依赖**旧代码的失真行为**（第 1 轮 FAILED 仍被判「续」⇒ 才有第 2 轮）。
+    旧树实测：第 1 轮与第 2 轮的 `run.failed` 正文**逐字相同**（同一条缺 provider 的失败被
+    跑了两遍），所以原形态的**额外**信息量 = 「同样的失败在第 2 轮也会报」；
+    而这条失败**本来就发生在第 1 轮**里（`consume` 的执行期）。
+    现在：受判轮次 **2 → 1**（观测宽度收窄），谓词（点名 provider / 工具 / 能力 +
+    必须收敛到 FAILED）逐字保持；**并且**该形态被断言为「**恰好一轮** ⇒ 失败面判停」
+    （多出第 2 轮即判红 —— 那正是 GOAL-040 消灭的失真行为）。
     """
     deps = cross_run_deps(omit_provider_capability=True)
     with TestClient(create_app(deps)) as client:
@@ -122,6 +138,15 @@ def test_missing_provider_is_named_not_silent() -> None:
         first = advance(client, program_id)
         run_id = str(first["started_run_id"])
         assert run_id, first
+        after = advance(client, program_id)
+        assert after["started_run_id"] is None, after
+        assert after["decision"]["kind"] == "STOP_RUN_FAILED", after["decision"]
+        runs = read_program(client, program_id)["runs"]
+        assert [row["program_index"] for row in runs] == [1], (
+            "失败面必须是**恰好一轮**（失败停不产生第 2 轮）",
+            runs,
+        )
+        assert runs[0]["state"] == "FAILED", runs
         failed = [
             event
             for event in client.get(f"/runs/{run_id}/events").json()
@@ -130,9 +155,6 @@ def test_missing_provider_is_named_not_silent() -> None:
         assert failed, "缺 provider 的 run 必须收敛到 FAILED"
         message = json.dumps(failed[-1], ensure_ascii=False)
         assert PROVIDER in message and TOOL_ID in message and CAPABILITY in message, message
-        # 失败轮的推进面：走**失败面**并点名（不再有第 2 轮）。
-        after = advance(client, program_id)
-        assert after["decision"]["kind"] == "STOP_RUN_FAILED", after["decision"]
 
 
 def test_without_grant_the_capability_is_denied_at_preflight_by_name() -> None:

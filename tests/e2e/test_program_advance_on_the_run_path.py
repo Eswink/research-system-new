@@ -12,11 +12,15 @@
 四态逐条（每态独立用例，全部读**既有读面**）：
 
 1. **继续**：`CONTINUE` + `started_run_id` 在场 + 程序内 run 数 = 2 + 两轮序号 1/2。
-2. **结论停**：执行体给 `REJECT`（分数 0.5 < 0.8）⇒ 第 1 轮落库判词不含规则值 ⇒
+2. **结论停**：那一轮**跑成**（`SUCCEEDED`）但落库判词不命中续跑规则 ⇒
    决策 `STOP_RULE` + **不**起第 2 轮（run 数仍 1）+ 判词**逐字**进 `cited_facts`。
-3. **护栏停（与结论停可区分）**：`max_runs=1` + 结论面判「续」⇒ 决策 `STOP_GUARDRAIL`
+   （形态：把 `continue_on` 声明成不命中上一轮判词的值。）
+3. **失败停（与结论停可区分）**：执行体给 `REJECT`（分数 0.5 < 0.8）⇒ 那一轮以
+   `FAILED` 收敛 ⇒ 决策 `STOP_RUN_FAILED`（**不是** `STOP_RULE`）+ 点名 `state=FAILED`
+   + **不**起第 2 轮。
+4. **护栏停（与结论停可区分）**：`max_runs=1` + 结论面判「续」⇒ 决策 `STOP_GUARDRAIL`
    （种类与 `STOP_RULE` 不同）+ 理由点名上界 + **不**起第 2 轮。
-4. **反证：缺启动面 ⇒ 点名**：把编排服务撤掉（`deps.runs=None`）⇒ 需要起 run 时决策
+5. **反证：缺启动面 ⇒ 点名**：把编排服务撤掉（`deps.runs=None`）⇒ 需要起 run 时决策
    落 `WAIT` 且理由**点名**「未提供启动面」（不静默 200 冒充已启动）。
 
 **如实边界**（本文件不声称已解决）：第 2 轮**读到**第 1 轮的结论（跨 run 知识的**读入**）
@@ -89,10 +93,8 @@ def test_a_rejected_verdict_stops_the_program_on_the_failure_face() -> None:
     """分数不达阈值 ⇒ 那一轮以 **FAILED** 收敛 ⇒ 走**失败面**（`STOP_RUN_FAILED`）。
 
     **GOAL-20261008-040 的行为修正（如实登记）**：本用例原先断言 `STOP_RULE` ——
-    但实测那一轮的终态是 `FAILED`（验收门判拒 ⇒ 执行面失败），**没有落库结论**；
-    旧代码把「没有结论」读成「结论说停」正是本轮消灭的失真。现在它落 `STOP_RUN_FAILED`
-    并点名 `state=FAILED`。**结论面的 `STOP_RULE`** 由「跑成但判词不命中规则」的形态覆盖
-    （见 `test_program_stop_reasons_are_decidable.py` 与驱动单元判据）。
+    但实测那一轮的终态是 `FAILED`（验收门判拒 ⇒ 执行面失败）；旧代码把「这一轮跑失败了」
+    读成「结论判续」正是本轮消灭的失真。现在它落 `STOP_RUN_FAILED` 并点名 `state=FAILED`。
     """
     with TestClient(create_app(program_deps(output=REJECT_OUTPUT))) as client:
         program = create_program(client, max_runs=3)
@@ -106,6 +108,40 @@ def test_a_rejected_verdict_stops_the_program_on_the_failure_face() -> None:
         )
         assert "未获结论" in second["decision"]["reason"], second["decision"]["reason"]
         assert read_program(client, _program_id(program))["run_count"] == 1
+
+
+def test_a_verdict_that_misses_the_rule_stops_the_program_by_conclusion() -> None:
+    """`STOP_RULE`（**结论面**）：那一轮**跑成**（`SUCCEEDED`）但落库判词不命中续跑规则
+    ⇒ 按结论停，且判词**逐字**进 `cited_facts`（不笼统「评审不通过」）。
+
+    **为什么这条在树**（GOAL-20261009-041 纪律回溯修复）：本用例是**回补**——
+    GOAL-20261008-040 把原先那条 `STOP_RULE` 用例改成失败面断言时，结论面在 e2e 上
+    **失去了覆盖**（新增的 `test_program_stop_reasons_are_decidable.py` 只有否定式
+    「空 `cited_facts` 不得出现」，没有一条真跑出 `STOP_RULE` 的用例；驱动单元判据里
+    那条用的 `_Harness` 是**假终态**路径，不经 HTTP 面）。本形态**可构造**且**必须**被覆盖：
+    把 `continue_on` 声明成**不命中**上一轮判词的值即可（实测：`SUCCEEDED` +
+    `verdict PASS` + `want=['ACCEPT']` ⇒ `STOP_RULE`）。
+    **与失败面的分界**（本用例断言两件事同时成立）：种类是 `STOP_RULE`（不是
+    `STOP_RUN_FAILED`）、**且**那一轮终态是 `SUCCEEDED` —— 后者保证它不是靠失败面
+    蒙对的（受判面非空、两向可分）。
+    """
+    with TestClient(create_app(program_deps())) as client:
+        program = create_program(client, max_runs=3, continue_on=["ACCEPT"])
+        advance(client, _program_id(program))
+        second = advance(client, _program_id(program))
+        assert second["decision"]["kind"] == _STOP_RULE, second
+        assert second["decision"]["kind"] != _STOP_RUN_FAILED
+        assert second["started_run_id"] is None
+        assert second["decision"]["cited_facts"] == ["verdict PASS"], (
+            "落库判词必须**逐字**进决策（不笼统「评审不通过」）",
+            second,
+        )
+        detail = read_program(client, _program_id(program))
+        assert detail["run_count"] == 1
+        assert [row["state"] for row in detail["runs"]] == ["SUCCEEDED"], (
+            "结论面停的前提是**这一轮跑成了**；失败轮走失败面（那条由上一个用例覆盖）",
+            detail["runs"],
+        )
 
 
 def test_the_guardrail_stop_is_distinguishable_from_the_conclusion_stop() -> None:

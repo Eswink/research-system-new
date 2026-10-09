@@ -16,6 +16,11 @@
 
 **如实边界**（本文件不声称已解决）：判据只证「本轮产物**携带**了前序结论且与来源逐字一致」；
 **未**证「因为读了它才这么写」（因果不可判 —— 那是过程面事实，已登记为本 GOAL 的残余）。
+
+**两形态显式声明（GOAL-20261009-041 纪律回溯修复）**：`_two_rounds` 只服务**成功面**
+（断言**恰好两轮** `[1, 2]`）；`_failing_round` 只服务**失败面**（断言**恰好一轮** `[1]`
+且第 2 次推进落 `STOP_RUN_FAILED`）。两个助手各自**断言自己那一面**，调用方按它要观测的
+形态择优 —— **不存在**「至少一轮」式的容错回退。
 """
 
 from __future__ import annotations
@@ -52,8 +57,11 @@ def _custom_lines(client: TestClient, run_id: str) -> list[str]:
 def _two_rounds(deps: Any) -> tuple[TestClient, str, str, str]:
     """建程序 + 推进两次；返回 `(client, 第 1 轮 run id, 第 2 轮 run id, 第 1 轮判词)`。
 
-    **不断言两轮都 SUCCEEDED**：反证臂里第 2 轮会因为消费不成立而被门判拒 —— 那正是
-    要观测的形态（判据读的是**判词**，不是终态）。
+    **断言形态是「恰好两轮」**（`program_index == [1, 2]`）：本助手只服务**成功面**的
+    用例（两轮都跑成、判据在第 2 轮被判定）。**不断言两轮都 SUCCEEDED**：反证臂里
+    第 2 轮会因为消费不成立而被门判拒 —— 那正是要观测的形态（判据读的是**判词**，
+    不是终态）。**失败面**（第 1 轮就 FAILED ⇒ 程序按失败面判停、**没有**第 2 轮）
+    由 `_failing_round` 服务，两形态由调用方**显式声明**，不存在容错回退。
     """
     client = TestClient(create_app(deps)).__enter__()
     program = create_program(client, max_runs=3, protocol=PROTOCOL)
@@ -61,13 +69,30 @@ def _two_rounds(deps: Any) -> tuple[TestClient, str, str, str]:
     advance(client, program_id)
     advance(client, program_id)
     runs = read_program(client, program_id)["runs"]
-    # GOAL-20261008-040：第 1 轮若以 FAILED 收敛 ⇒ **不再**有第 2 轮（失败面判停）。
-    # 本助手因此接受「只有第 1 轮」这一形态（`second` 回落到第 1 轮），
-    # 由**调用方**决定它要观测哪一轮 —— 判据本身不再依赖旧的失真行为。
-    assert runs and runs[0]["program_index"] == 1, runs
-    first = str(runs[0]["run_id"])
-    second = str(runs[1]["run_id"]) if len(runs) > 1 else first
+    indices = [row["program_index"] for row in runs]
+    assert indices == [1, 2], ("成功面必须是**恰好两轮**（失败轮会按失败面判停）", indices)
+    first, second = str(runs[0]["run_id"]), str(runs[1]["run_id"])
     return client, first, second, _custom_lines(client, first)[0]
+
+
+def _failing_round(deps: Any) -> tuple[TestClient, str, str]:
+    """建程序 + 推进两次；返回 `(client, 第 1 轮 run id, 第 1 轮判词)`。
+
+    **断言形态是「恰好一轮」**：第 1 轮以 `FAILED` 收敛 ⇒ 第 2 次推进走**失败面**
+    （`STOP_RUN_FAILED`，缺省不重试）⇒ **没有**第 2 轮。这一形态不是「容忍只有一轮」，
+    而是**被断言的受判形态**：多出第 2 轮即判红（那正是 GOAL-040 消灭的失真行为）。
+    """
+    client = TestClient(create_app(deps)).__enter__()
+    program = create_program(client, max_runs=3, protocol=PROTOCOL)
+    program_id = str(program["id"])
+    advance(client, program_id)
+    second = advance(client, program_id)
+    runs = read_program(client, program_id)["runs"]
+    indices = [row["program_index"] for row in runs]
+    assert indices == [1], ("失败面必须是**恰好一轮**（失败停不产生第 2 轮）", indices)
+    assert runs[0]["state"] == "FAILED", runs
+    assert second["decision"]["kind"] == "STOP_RUN_FAILED", second["decision"]
+    return client, str(runs[0]["run_id"]), _custom_lines(client, str(runs[0]["run_id"]))[0]
 
 
 def test_the_second_rounds_consumption_is_decided_with_the_source_named() -> None:
@@ -113,18 +138,20 @@ def test_a_mismatching_value_is_rejected_with_both_values_named() -> None:
 def test_a_missing_declared_path_is_named_as_a_configuration_error() -> None:
     """反证②：声明路径在产物里**不存在** ⇒ **点名**（配置错误形态，不是静默判负）。
 
-    **GOAL-20261008-040 的判据修正（如实登记）**：本用例原先在第 **2** 轮取判词 ——
-    那依赖旧的失真行为（失败轮被判「续」⇒ 才有第 2 轮）。该形态使第 1 轮以 `FAILED`
-    收敛 ⇒ 现在**没有**第 2 轮；而「路径缺失」这条判定发生在**第 1 轮**（它的产物里就没有
-    那条路径），故直接取第 1 轮，语义不变且不再依赖失真。
+    **受判面收窄 + 理由（GOAL-20261009-041 纪律回溯修复，如实登记）**：本用例原先在
+    **第 2** 轮取判词 —— 那依赖**旧代码的失真行为**（第 1 轮 FAILED 仍被判「续」⇒
+    才有第 2 轮）。旧树实测：第 1 轮与第 2 轮的判词**逐字相同**（同一条配置错误判定被
+    跑了两遍），所以原形态的**额外**信息量 = 「该判定在第 2 轮也会报」；
+    而**这条判定本来就发生在第 1 轮**（它的产物里就没有那条路径）。
+    现在：受判轮次 **2 → 1**（观测宽度收窄），谓词（点名配置错误 + 点名路径名）
+    逐字保持；**并且**该形态被断言为「恰好一轮 ⇒ 失败面判停」（多出第 2 轮即判红）。
     """
     from tests.e2e.cross_run_support import CONSUME_CONTRACT
 
     deps = cross_run_deps()
     deps.runs = _runtime_carrying(deps, CONSUME_CONTRACT, {})
-    client, first, _second, _first_line = _two_rounds(deps)
+    client, _first, line = _failing_round(deps)
     try:
-        line = _custom_lines(client, first)[0]
         assert _MISSING_PATH_LINE in line, line
         assert "meta_review.prior_verdict" in line, ("路径名要点名", line)
     finally:
