@@ -359,6 +359,30 @@ deduplication）。
 | `fe5d661`（本 GOAL 建档） | `37974448170` **M0 cancelled** —— `cancel-in-progress` 形态（**非失败**） | **实测取证**：该 run 于 `18:39:45Z` 终止，而 `ab436e2` 的 M0 run `37974796397` 于 `18:39:28Z` **更早创建** ⇒ 同 ref 同 workflow 的新 run 取消了排队中的旧 run（`.github/workflows/*.yml` 的 `concurrency.cancel-in-progress: true`，逐字复核）。其结论由 `ab436e2` 所在批覆盖（`covered_by 37974796397`）|
 | `ab436e2`（cycle 1 子 PLAN 建档 = 本批 HEAD） | `37974796397` **M0 success**（8 job 全 success）+ `37974795395` **Push on main / CodeQL success**（3 分析全 success） | cycle 1 子 PLAN（`PLAN-20261009-365`）+ GOAL `child_plans` 投影 + `ALL_PLAN`；**实测取证** |
 | `01606d2`（cycle 1 = EC-01/EC-02）：`memory.read` 承接 | `37989487322` **Push on main / CodeQL success**（3 分析全 success）；`37989487618` **M0 cancelled** —— `cancel-in-progress` 形态（**非失败**；**实测取证**：该 run 于 `21:06:04Z` 终止，而 `a0822ea` 的 M0 run 于 `21:05:56Z` 创建 ⇒ 同 ref 同 workflow 的新 run 取消了在飞的旧 run）⇒ `covered_by a0822ea 所在批` | 五件套 + 三态处置 + 15 判据 + 两向反证 + 改既有判据逐条申报；本地 **m0 23/23**（`PASS [` 24 / `FAILED [` 0 / 5295 passed, 228 skipped）；**M0 的 CI 结论待下一个 cycle 的台账取证** |
+| `a0822ea`（cycle 1 记录） | **无自己的 run**（同批推送） | 迭代日志 + 台账行；与 `fdb6b36` 同一次 push ⇒ `covered_by fdb6b36` |
+| `fdb6b36`（cycle 1 记录 = 本批 HEAD） | `37991481419` **Push on main / CodeQL success**（3 分析全 success）；`37991481989` **M0 failure** —— **基础设施红**（见下） | 记录面；**实测取证** |
+
+### `37991481989` 的分类：**基础设施红**（不是产品失败、不是我的改动）
+
+**三条取证**（承纪律「基础设施红须给三条取证，与 `cancel-in-progress` 形态区分」）：
+
+1. **逐 job 证据（基础设施原因逐字）**：`quality-ubuntu-latest`（attempt 1 与 **attempt 2**
+   各一次）日志里 `toomanyrequests|execution image not found|docker.errors` 命中
+   **96 / 248** 次；根因句逐字 = `docker.errors.BuildError: toomanyrequests: You have
+   reached your unauthenticated pull rate limit. https://www.docker.com/increase-rate-limit`
+   ⇒ Linux runner 拉不到沙箱镜像（Docker Hub **未认证拉取限流**）。
+2. **跨 attempt 复现（不是一次性抖动）**：`run_attempt: 2`（我按协议**等窗口重跑 1 次**）
+   后**同一签名**再次出现 ⇒ 限流窗口未过。
+3. **与我的改动无关（两个独立面）**：(a) **零**个我触碰的判据文件失败
+   （`tests/adapters/canonical` / `tests/application/preflight` /
+   `tests/architecture/python/test_capability_coverage_is_implemented.py` 在 CI 上全绿）；
+   (b) 同一套测试在 `quality-windows-latest` 上 **success**（那台 runner 不需要拉镜像）
+   ⇒ 差异在 **Linux runner 的镜像拉取**，不在判据面。
+
+**处置（如实登记，不伪装绿）**：分类 (iii) 基础设施 ⇒ 按协议**等窗口重跑 1 次**（已完成，
+仍败）；**不**动任何阈值 / 判据 / 门；本 cycle 的**本地**门链已全部绿（见上）。
+**M0 的 CI 结论待限流窗口过后由下一个 cycle 的台账重新取证**（不得据此宣称 CI 绿）。
+
 | （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
 
 ## 迭代日志
