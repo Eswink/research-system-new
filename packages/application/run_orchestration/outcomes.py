@@ -27,6 +27,9 @@ class TaskOutcome:
     # GOAL-20261008-034 EC-01：本任务运行链的**返回内容**（多轮循环的停止判据读它）。
     # 缺省空 = 既有行为逐字节不变。
     chain_outputs: tuple[object, ...] = ()
+    # GOAL-20261009-042 EC-03：**记忆时效门的标注**（待复核的记忆：执行了但带标注）。
+    # 与 `skipped` **互不混用**（那是「没执行」）。缺省空 = 既有行为逐字节不变。
+    annotations: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

@@ -34,6 +34,9 @@ from packages.application.run_orchestration.phase_pause import (
     pause_if_requested,
 )
 from packages.application.run_orchestration.round_loop_runner import execute_rounds
+from packages.application.run_orchestration.run_completion_payload import (
+    run_completion_payload,
+)
 from packages.application.run_orchestration.task_executor import (
     ExecutionDeps,
     SessionSpecContext,
@@ -212,17 +215,10 @@ def _execute_one_pass(
     tolerating = tuple(outcome for outcome in outcomes if outcome.failure_policy is not None)
     if tolerating:
         return deps.degrade(ctx, tolerating, handoffs)
-    payload: dict[str, object] = {"run_id": ctx.run_id}
-    # GOAL-20261006-031 EC-03：声明式跳过的调用进**既有读面**（事件链）——
-    # 任务照常成功，但「哪条工具因上一步的哪个字段没跑」必须可读。
-    # 无跳过 ⇒ 不带该键（既有 payload 逐字节不变）。
-    skips = [
-        {"task_id": outcome.task.id.value, "reasons": list(outcome.skipped)}
-        for outcome in outcomes
-        if outcome.skipped
-    ]
-    if skips:
-        payload["skipped"] = skips
+    # 载荷由**唯一构造点**给出（GOAL-20261009-042 EC-03 抽出：跳过与标注两条通道
+    # 只此一份字段清单；此处与 `round_loop_runner` 不再各写一份）。缺省不带键
+    # ⇒ 既有 payload 逐字节不变。
+    payload = run_completion_payload(ctx.run_id, outcomes)
     deps.emit(EventType.RUN_COMPLETED, payload, ctx.run_id, ctx.trace_id, None)
     return RunOutcome(
         run_id=ctx.run_id,
@@ -372,6 +368,7 @@ def _run_group_task(
             verdict=step.verdict,
             skipped=step.skipped,
             chain_outputs=step.chain_outputs,
+            annotations=step.annotations,
         )
     )
     return None
@@ -436,13 +433,11 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
         return register_and_gate_experiment(deps, tctx, execution)
     assert execution.session_result is not None
     # GOAL-011 EC-01：运行链取得的证据随会话结果**同一个** claim 登记（读面才看得到）。
-    return register_and_gate(
-        deps,
-        tctx,
-        execution.session_result,
-        ChainCarry(
-            retrieved=capability.evidences,
-            skipped=capability.skipped,
-            chain_outputs=capability.outputs,
-        ),
+    # GOAL-20261009-042 EC-03：`annotations` 与 `skipped` 两条通道同源带上（互不混用）。
+    carry = ChainCarry(
+        retrieved=capability.evidences,
+        skipped=capability.skipped,
+        chain_outputs=capability.outputs,
+        annotations=capability.annotations,
     )
+    return register_and_gate(deps, tctx, execution.session_result, carry)

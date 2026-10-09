@@ -34,10 +34,12 @@ from packages.application.run_orchestration.round_loop_facts import (
 from packages.domain.core import ID
 
 if TYPE_CHECKING:
-    from packages.application.run_orchestration.outcomes import RunOutcome
-
     # 只为类型：避免与 phase_runner 形成导入环
     pass
+from packages.application.run_orchestration.outcomes import RunOutcome
+from packages.application.run_orchestration.run_completion_payload import (
+    run_completion_payload,
+)
 
 
 @dataclass(slots=True)
@@ -205,22 +207,15 @@ def execute_rounds(deps: Any, ctx: Any) -> "RunOutcome":
 
 
 def _single_pass_payload(deps: Any, ctx: Any, outcome: Any) -> dict[str, object]:
-    """单遍执行那条 `run.completed` 的载荷（**逐字重建**，与既有构造同形）。
+    """单遍执行那条 `run.completed` 的载荷（走**唯一构造点**，字段清单只此一份）。
 
     为什么要重建而不是从事件里读：那条事件是本轮循环**上一轮**发出的，而本函数在
     循环收尾时执行 —— 从事件流回读会依赖「上一轮确实发过」这一时序（实测脆弱）。
-    重建的口径与 `_execute_one_pass` 里那把构造**同一份**字段清单（`run_id` + 有跳过
-    才带的 `skipped`）。
+    本轮起改为调用 `run_completion_payload`（GOAL-20261009-042 EC-03）：此前这里与
+    `phase_runner` **各写一份**字段清单，新增通道（如 `annotated`）会**只到一边**。
     """
-    payload: dict[str, object] = {"run_id": ctx.run_id}
-    skips = [
-        {"task_id": task_outcome.task.id.value, "reasons": list(task_outcome.skipped)}
-        for task_outcome in outcome.tasks
-        if task_outcome.skipped
-    ]
-    if skips:
-        payload["skipped"] = skips
-    return payload
+    del deps  # 载荷只依赖 canonical 事实；保留签名以不动调用点
+    return run_completion_payload(ctx.run_id, outcome.tasks)
 
 
 def round_loop_fields(

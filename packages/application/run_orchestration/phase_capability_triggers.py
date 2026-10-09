@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from packages.application.ports.errors import InvalidInputError
@@ -186,8 +187,117 @@ def skip_reason(call: RunChainCall) -> str:
     )
 
 
+#: 记忆时效门的三条**处置**（与 `adapters.canonical.memory_read` 同源：读面给处置，
+#: 这里按处置分派）。**互不混用**：三态各归各的处置，读面按值分派、不靠措辞。
+MEMORY_USE = "USE"
+MEMORY_ANNOTATE = "ANNOTATE"
+MEMORY_SKIP = "SKIP"
+
+
+def _memory_entries(payload: Mapping[str, object], tool_id: str) -> list[Mapping[str, object]]:
+    """读面上一步的 `memories` 列表（缺字段 / 形态不符 ⇒ **点名**，fail closed）。"""
+    raw = payload.get("memories")
+    if not isinstance(raw, list):
+        raise InvalidInputError(
+            f"run-chain tool {tool_id} declares a memory gate but the previous step's "
+            "result carries no 'memories' list to judge"
+        )
+    entries: list[Mapping[str, object]] = []
+    for item in raw:
+        if not isinstance(item, Mapping):
+            raise InvalidInputError(
+                f"run-chain tool {tool_id}: memory entry is not an object ({item!r})"
+            )
+        entries.append(item)
+    return entries
+
+
+def _split_by_disposition(
+    entries: list[Mapping[str, object]], tool_id: str
+) -> tuple[list[str], list[str]]:
+    """按 `disposition` 分成 `(已过期, 待复核)` 两组，**逐条点名**；未知取值 ⇒ 点名。"""
+    expired: list[str] = []
+    due: list[str] = []
+    for item in entries:
+        disposition = item.get("disposition")
+        memory_id = str(item.get("memory_id") or "")
+        note = f"{memory_id}（{item.get('validity')}；{item.get('reason')}）"
+        if disposition == MEMORY_SKIP:
+            expired.append(note)
+        elif disposition == MEMORY_ANNOTATE:
+            due.append(note)
+        elif disposition != MEMORY_USE:
+            raise InvalidInputError(
+                f"run-chain tool {tool_id}: memory {memory_id!r} carries an unknown "
+                f"disposition {disposition!r} (expected USE / ANNOTATE / SKIP)"
+            )
+    return expired, due
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryGateDecision:
+    """记忆时效门的判定结果（`skip=True` ⇒ 本步不执行；否则**执行**并带 `notes` 标注）。"""
+
+    skip: bool
+    notes: tuple[str, ...] = ()
+
+
+def memory_step_gate(
+    call: RunChainCall, previous: Mapping[str, object] | None
+) -> MemoryGateDecision:
+    """本步的记忆时效门判定（**未声明门 ⇒ 不跳过、不带标注** ⇒ 既有行为逐字节不变）。"""
+    if not call.memory_validity_gate:
+        return MemoryGateDecision(skip=False)
+    verdict, notes = memory_gate_verdict(previous or {}, call.tool_id)
+    return MemoryGateDecision(skip=verdict == MEMORY_SKIP, notes=notes)
+
+
+def memory_gate_verdict(
+    payload: Mapping[str, object],
+    tool_id: str,
+) -> tuple[str, tuple[str, ...]]:
+    """**记忆时效门**（GOAL-20261009-042 EC-03）：按读面的 `disposition` 决定本步做什么。
+
+    **为什么这是声明式而不是业务判断**：判定输入是**上一步读面的结果**（执行期才知道），
+    而「到期怎么办」由**装配方**在协议里声明 —— 本函数只按读面给的 `disposition`
+    三态分派（与 `should_skip` 同一形态：判断依据是**声明字段的取值**，不是应用层硬编码）。
+
+    三态与处置**互不混用**（逐条）：
+
+    - 任一记忆 `disposition == SKIP`（已过期）⇒ 整步**跳过**（不执行工具），
+      理由**逐条点名**该记忆 id 与状态；
+    - 否则若有 `disposition == ANNOTATE`（待复核）⇒ **照常执行**，但把**标注**带回
+      （哪些记忆待复核、各自的 `review_after`）—— 「待复核」不是「过期」，
+      不跳过、也不静默；
+    - 否则（全部 `USE` / 无可判定的记忆）⇒ **照用**，标注为空（**不得**凭空加标记）。
+
+    **缺字段点名**（fail closed，与全模块同一纪律）：`memories` 不在 / 不是列表 ⇒ 点名
+    （那是**声明与该步输出形态不符**，不是「没有记忆」）；单条记忆缺 `disposition` ⇒ 点名。
+    返回 `(verdict, notes)`；`verdict` ∈ `{USE, ANNOTATE, SKIP}`，`notes` 逐条点名。
+    """
+    raw = _memory_entries(payload, tool_id)
+    expired, due = _split_by_disposition(raw, tool_id)
+    if expired:
+        return MEMORY_SKIP, (
+            f"run-chain tool {tool_id} skipped: {len(expired)} expired memory record(s) "
+            "in the read result: " + "; ".join(expired),
+        )
+    if due:
+        return MEMORY_ANNOTATE, (
+            f"run-chain tool {tool_id} annotated: {len(due)} memory record(s) due for "
+            "review (not expired, still used): " + "; ".join(due),
+        )
+    return MEMORY_USE, ()
+
+
 __all__ = [
     "Lookup",
+    "MEMORY_ANNOTATE",
+    "MEMORY_SKIP",
+    "MEMORY_USE",
+    "MemoryGateDecision",
+    "memory_gate_verdict",
+    "memory_step_gate",
     "planned_in_this_phase",
     "previous_ids",
     "select_artifact_id",

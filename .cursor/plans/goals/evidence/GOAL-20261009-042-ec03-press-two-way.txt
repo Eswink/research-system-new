@@ -1,0 +1,4 @@
+G-1: 按压 RED | sha 复原一致=True | 5ac997781697
+G-2: 按压 RED | sha 复原一致=True | 5ac997781697
+G-3: 按压 RED | sha 复原一致=True | 5ac997781697
+G-4: 按压 RED | sha 复原一致=True | c08aed1ed613

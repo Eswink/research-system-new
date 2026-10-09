@@ -60,6 +60,7 @@ from packages.application.run_orchestration.phase_call_arguments import (
     lookup_path as _lookup,
 )
 from packages.application.run_orchestration.phase_capability_triggers import (
+    memory_step_gate,
     planned_in_this_phase,
     should_skip,
     skip_reason,
@@ -147,6 +148,10 @@ class RunChainCall:
     #: 与 `run_id_argument` 同层：声明的是"取值的来源"而不是值）挑出那一份。
     #: 缺省 `False` ⇒ 走既有后缀判据（单轮 / 两轮语义**逐字节不变**）。
     artifact_from_previous_round: bool = False
+    #: **记忆时效门**（GOAL-20261009-042 EC-03）：按**上一步读面给的 `disposition`** 决定要不要
+    #: 执行（细节见 `memory_step_gate`）；判定输入执行期才知道，同 `requires_previous_ids` 层。
+    #: 缺省 `False` ⇒ 既有行为**逐字节不变**。
+    memory_validity_gate: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,6 +185,8 @@ class CapabilityStepOutcome:
     # GOAL-20261008-034 EC-01：各步**返回内容**（`_payload` 的解析结果，按声明顺序）。
     # 多轮循环的停止判据读它（"本轮结论"的可观察事实）；缺省空 = 既有行为逐字节不变。
     outputs: tuple[Mapping[str, object], ...] = ()
+    # GOAL-20261009-042 EC-03：**记忆时效门的标注**（待复核则带标注；与 `skipped`
+    annotations: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,9 +245,10 @@ def _run_planned_calls(
     spec: SessionSpecContext,
     planned: tuple[RunChainCall, ...],
 ) -> CapabilityStepOutcome:
-    """逐步执行（前一步结果带入下一步）；跳过**带理由**记下，不静默。"""
+    """逐步执行（前一步结果带入下一步）；跳过 / 标注**都带理由**记下，不静默。"""
     evidences: list[Evidence] = []
     skipped: list[str] = []
+    annotations: list[str] = []
     outputs: list[Mapping[str, object]] = []
     previous: Mapping[str, object] | None = None
     material = _input_material(deps, spec)
@@ -248,6 +256,11 @@ def _run_planned_calls(
         if _should_skip(call, previous):
             skipped.append(skip_reason(call))
             continue
+        gate = memory_step_gate(call, previous)
+        if gate.skip:
+            skipped.extend(gate.notes)
+            continue
+        annotations.extend(gate.notes)
         previous, evidence = _execute_one(
             deps,
             task,
@@ -263,7 +276,10 @@ def _run_planned_calls(
         evidences.append(evidence)
         outputs.append(previous)
     return CapabilityStepOutcome(
-        evidences=tuple(evidences), skipped=tuple(skipped), outputs=tuple(outputs)
+        evidences=tuple(evidences),
+        skipped=tuple(skipped),
+        outputs=tuple(outputs),
+        annotations=tuple(annotations),
     )
 
 

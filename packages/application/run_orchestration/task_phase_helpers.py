@@ -64,6 +64,9 @@ class PhaseStep:
     # GOAL-20261008-034 EC-01：本任务的运行链**返回内容**（多轮循环的停止判据读它）。
     # 缺省空 = 既有行为逐字节不变。
     chain_outputs: tuple[object, ...] = ()
+    # GOAL-20261009-042 EC-03：**记忆时效门的标注**（待复核的记忆：执行了、但带标注）。
+    # 与 `skipped` **互不混用**：那是「没执行」，这是「执行了但需复核」。缺省空 = 不变。
+    annotations: tuple[str, ...] = ()
 
 
 def tolerated_outcome(task: ResearchTask, message: str) -> TaskOutcome:
@@ -308,6 +311,8 @@ class ChainCarry:
     retrieved: tuple[Evidence, ...] = ()
     skipped: tuple[str, ...] = ()
     chain_outputs: tuple[object, ...] = ()
+    #: 记忆时效门的标注（GOAL-20261009-042 EC-03；见 `PhaseStep.annotations`）。
+    annotations: tuple[str, ...] = ()
 
 
 def register_and_gate(
@@ -351,7 +356,12 @@ def register_and_gate(
         gate,
         producer=f"agent:{tctx.spec_context.agent.id}",
     )
-    return replace(step, skipped=carry.skipped, chain_outputs=carry.chain_outputs)
+    return replace(
+        step,
+        skipped=carry.skipped,
+        chain_outputs=carry.chain_outputs,
+        annotations=carry.annotations,
+    )
 
 
 def register_and_gate_experiment(
