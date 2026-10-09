@@ -383,6 +383,29 @@ deduplication）。
 仍败）；**不**动任何阈值 / 判据 / 门；本 cycle 的**本地**门链已全部绿（见上）。
 **M0 的 CI 结论待限流窗口过后由下一个 cycle 的台账重新取证**（不得据此宣称 CI 绿）。
 
+| `e5f210d`（基础设施红登记 = 本批 HEAD） | `37995872918` **Push on main / CodeQL success**；`37995873295` **M0 failure** —— **Docker registry 侧故障**（见下） | 记录面；**实测取证** |
+
+### `37995873295` 的分类：**Docker registry 侧故障**（不是产品失败、不是我的改动）
+
+**三条取证**（承同一纪律）：
+
+1. **逐 job 证据（根因逐字）**：`quality-ubuntu-latest` 日志里
+   `No such image: research-os-sandbox:m9-test` 命中 **40** 次，且**建镜像**那一步失败于
+   `docker.errors.BuildError: Get "https://registry-1.docker.io/v2/library/python/manifests/
+   sha256:dd29…": received unexpected HTTP status: 500 Internal Server Error`
+   ⇒ 上游 **Docker Hub registry 5xx**（此前一轮是 **429 未认证拉取限流** —— 同一面、
+   不同症状）⇒ 沙箱镜像既没拉到也没建成 ⇒ 依赖它的 e2e 全部 setup error。
+2. **规模读数**：该 job **5273 passed / 237 skipped / 10 errors**，**10 个 error 全在建镜像**；
+   **零**个我触碰的判据文件失败（`FAILED tests/(adapters/canonical|application/preflight|
+   architecture/python/test_capability)` 命中 **0**）。
+3. **与本 GOAL 的改动无关（独立面）**：本轮改动是 **Python 侧的能力承接 + 一条只读 allow**
+   （零 Docker / 零镜像 / 零网络面）；且 `quality-windows-latest`（同一套测试）**success**、
+   `container-quality` 本轮已 **success** ⇒ 差异在 **Linux runner 能否从 Docker Hub 取到镜像**。
+
+**处置（如实登记，不伪装绿）**：分类 (iii) 基础设施（上游 registry 5xx / 限流）⇒
+**不**动任何阈值 / 判据 / 门；**M0 的 CI 结论仍未取证**，待 registry 恢复后由**下一个 cycle
+的台账**重新取证。**不得**据此宣称 CI 绿。
+
 | （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
 
 ## 迭代日志
