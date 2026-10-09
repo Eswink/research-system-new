@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261009-361](tasks/PLAN-20261009-361-goal-041-ec02-04-bounded-retry-on-the-crash-window.md) | DONE |
 | [x] | [PLAN-20261009-359](tasks/PLAN-20261009-359-goal-040-discipline-retrospective-repair.md) | DONE |
 | [x] | [PLAN-20261008-357](tasks/PLAN-20261008-357-goal-040-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261008-355](tasks/PLAN-20261008-355-goal-040-ec02-04-stop-reasons.md) | DONE |

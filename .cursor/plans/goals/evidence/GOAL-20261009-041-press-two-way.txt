@@ -1,0 +1,4 @@
+R-1: 按压 RED | sha 复原一致=True | c93a3f67953c
+R-2: 按压 RED | sha 复原一致=True | c93a3f67953c
+R-3: 按压 RED | sha 复原一致=True | c93a3f67953c
+PRESS SUMMARY: ALL RED + RESTORED

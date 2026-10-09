@@ -304,3 +304,124 @@ def test_the_success_path_still_uses_the_conclusion_face() -> None:
         start_run=h.start_run,
     )
     assert result.decision.kind is ProgramDecisionKind.CONTINUE
+
+
+# --- GOAL-20261009-041：失败重试面的崩溃窗口（有界性成为真的） ------------------------
+
+
+def _crash_window(harness: _Harness, index: int, claim: str) -> None:
+    """制造「认领即崩」：启动面返回 id，但该 run **不落库**（等价于返回后进程崩了）。"""
+
+    def _claim_only(_index: int) -> str:
+        return claim
+
+    advance_program(
+        harness.program,
+        runs=harness.runs,
+        programs=harness.programs,
+        start_run=_claim_only,
+    )
+
+
+def test_a_retry_claim_that_never_landed_is_deduped_not_re_retried() -> None:
+    """**本轮要消灭的形态**：上一条重试认领了本序号而该 run 未落库 ⇒ `DEDUP_FAILED_RUN`
+    （**不**再起第二个同序号 run），且这一次推进**计入**已用尝试数。"""
+    h = _Harness()
+    h.program = replace_program(h.program, max_attempts_per_index=3)
+    h.programs.create(h.program)
+    h.seed_run(1, state="FAILED")
+    _crash_window(h, 1, "never-landed-0001")  # 第 1 次：认领（不落库）
+    second = advance_program(h.program, runs=h.runs, programs=h.programs, start_run=h.start_run)
+    assert second.decision.kind is ProgramDecisionKind.DEDUP_FAILED_RUN, second.decision
+    assert second.started_run_id is None, "未落库的认领不得被重复起"
+    assert second.decision.cited_run_id == "never-landed-0001", second.decision
+    assert any("claimed run never-landed-0001" in item for item in second.decision.cited_facts)
+    # 被阻塞的推进**计入**尝试数（否则上界可被无限绕过）。
+    assert any("attempts=2/3" in item for item in second.decision.cited_facts), second.decision
+    assert len(h.runs.for_program(h.program.id)) == 1, "不产生第二个同序号 run"
+    assert h.started == [], "去重分支不得调用启动面"
+
+
+def test_repeated_crash_windows_converge_to_the_bounded_failure_stop() -> None:
+    """**有界性**：反复「认领即崩」⇒ 判定**必然**在 ≤ `max_attempts_per_index` 步内收口到
+    `STOP_RUN_FAILED`（声明上界在**任意崩溃模式**下都成立）。"""
+    allowed = 3
+    h = _Harness()
+    h.program = replace_program(h.program, max_attempts_per_index=allowed)
+    h.programs.create(h.program)
+    h.seed_run(1, state="FAILED")
+    kinds: list[ProgramDecisionKind] = []
+    for round_no in range(1, allowed + 3):
+        _crash_window(h, 1, f"never-landed-{round_no:04d}")
+        kinds.append(h.programs.decisions_of(h.program.id)[-1].kind)
+        if kinds[-1] is ProgramDecisionKind.STOP_RUN_FAILED:
+            break
+    assert kinds[-1] is ProgramDecisionKind.STOP_RUN_FAILED, kinds
+    assert len(kinds) == allowed, ("步数必须用满且**不超**声明上界", kinds)
+    assert ProgramDecisionKind.DEDUP_FAILED_RUN in kinds, ("崩溃窗口要留下可区分的去重事实", kinds)
+    assert len(h.runs.for_program(h.program.id)) == 1, "始终不产生第二个同序号 run"
+
+
+def test_the_claim_accounting_does_not_change_the_landed_path() -> None:
+    """**反证臂（不该红时不红）**：正常落库的重试序列逐字保持 —— 认领数只在
+    「认领了却没落库」时才注入，落库的重试仍按行数计。"""
+    h = _Harness()
+    h.program = replace_program(h.program, max_attempts_per_index=3)
+    h.programs.create(h.program)
+    h.seed_run(1, state="FAILED")
+    first = advance_program(h.program, runs=h.runs, programs=h.programs, start_run=h.start_run)
+    assert first.decision.kind is ProgramDecisionKind.RETRY_FAILED_RUN, first.decision
+    assert any("attempts=1/3" in item for item in first.decision.cited_facts), first.decision
+    assert ProgramDecisionKind.DEDUP_FAILED_RUN not in {
+        d.kind for d in h.programs.decisions_of(h.program.id)
+    }, "落库的重试不得被读成崩溃窗口"
+
+
+def test_the_conclusion_face_dedup_is_unchanged() -> None:
+    """**反证臂**：结论面的 `DEDUP` 语义逐字保持（`CONTINUE` 认领的下一序号未落库）。"""
+    h = _Harness()
+    run_id = h.seed_run(1)
+    claimed = "ghost-next-index"
+    findings = h.verdicts({run_id: ACCEPT})
+    first = advance_program(
+        h.program,
+        runs=h.runs,
+        programs=h.programs,
+        findings=findings,
+        start_run=lambda _index: claimed,
+    )
+    assert first.decision.kind is ProgramDecisionKind.CONTINUE, first.decision
+    second = advance_program(
+        h.program,
+        runs=h.runs,
+        programs=h.programs,
+        findings=findings,
+        start_run=h.start_run,
+    )
+    assert second.decision.kind is ProgramDecisionKind.DEDUP, second.decision
+    assert second.decision.cited_run_id == claimed
+    # 两面不得混用：结论面认领的是**下一序号**的新 run（`DEDUP` 而非 `DEDUP_FAILED_RUN`）。
+    # 比字符串（`kind` 是 `StrEnum`）—— 直接比两个 Literal 会被 mypy 判为恒真。
+    assert second.decision.kind.value == "DEDUP", second.decision
+
+
+def test_every_advance_leaves_a_decision_even_in_the_same_clock_tick() -> None:
+    """**存储面的静默丢弃**（本轮实测的第二个缺陷）：决策自然键是
+    `(program_id, after_index, decided_at)`，而 `Timestamp.now()` 在同一刻度内给出**相同**
+    微秒 ⇒ 紧循环里的多条决策**互相顶掉**（实测：连录 50 条只留存 2 条）。
+    驱动把 `decided_at` 归一为**该程序内严格递增** ⇒ 每次推进都留下可读事实。"""
+    h = _Harness()
+    h.program = replace_program(h.program, max_attempts_per_index=4)
+    h.programs.create(h.program)
+    h.seed_run(1, state="FAILED")
+    steps = 0
+    for round_no in range(1, 6):
+        _crash_window(h, 1, f"tick-{round_no:04d}")
+        steps += 1
+        if h.programs.decisions_of(h.program.id)[-1].kind is ProgramDecisionKind.STOP_RUN_FAILED:
+            break
+    stored = h.programs.decisions_of(h.program.id)
+    assert len(stored) == steps, ("紧循环里每次推进都必须留下一条决策（不得静默丢弃）", steps)
+    stamps = [item.decided_at.value for item in stored]
+    assert stamps == sorted(stamps), ("决策时点必须单调（可读面的顺序事实）", stamps)
+    assert len(set(stamps)) == len(stamps), ("自然键不得碰撞", stamps)

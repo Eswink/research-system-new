@@ -81,7 +81,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B scratch/goal042_probe_unbounded_retry.py`
       ⇒ `unbounded_retry: true` / `bounded: false` / `cited_facts` 全为 `attempts=1/2`；
       `rg -n "只认 CONTINUE|is ProgramDecisionKind.CONTINUE" packages/application/run_orchestration/program_runner.py`。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **去重与计数（上界成为真的）**：失败重试面按「**已认领次数**」计入尝试数
@@ -93,7 +93,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest
       tests/application/run_orchestration/test_program_runner.py -q` ⇒ 全绿 + 新用例
       （含「认领即崩 ⇒ 计数上升 ⇒ 用尽 ⇒ 失败停」逐条）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **判定面接线（三形态互不混用）**：① **已落库的失败**（按行数计尝试）；
@@ -103,7 +103,7 @@ exit_criteria:
     verify: >-
       同判据文件的形态分派用例（三形态 × 声明重试）逐条；反证臂：任一形态都**不得**
       产出无界的 `RETRY_FAILED_RUN` 序列。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真的被用上（+ 反证）**：(a) 实跑：反复「认领即崩」⇒ 判定**收敛**到
@@ -115,7 +115,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e -q` ⇒ 全绿；新增判据全绿；
       `tests/e2e/test_program_idempotency_on_the_run_path.py`（既有，5 例）仍全绿。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树（复用 `tools/closeout_recheck_tools`
@@ -174,9 +174,11 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261009-361-goal-041-ec02-04-bounded-retry-on-the-crash-window.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261009-362-goal-041-ec02-04-bounded-retry-on-the-crash-window.md
+memory_entries:
+  - append-only-needs-a-tie-breaker-in-the-key
 ---
 
 # GOAL-20261009-041 — 重试的有界性成为可判定事实
@@ -200,10 +202,10 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | 现状：`attempts` 只数落库行 + 失败面不经 `_claimed_but_missing` ⇒ 上界失效（实测：连推 5 次全 `RETRY_FAILED_RUN`、`attempts=1/2` 不动） | PENDING |
-| EC-02 | 去重与计数 | 按**已认领次数**计入尝试；已认领未落库 ⇒ 不产生第二个 run 且点名 | PENDING |
-| EC-03 | 判定面接线 | 已落库失败 / 已认领未落库 / 用尽三形态**互不混用** | PENDING |
-| EC-04 | 真的被用上 | 实跑「认领即崩」⇒ 收敛到失败停且点名上界；**反证**：无界重试不再出现；缺省逐字不变 | PENDING |
+| EC-01 | 勘察定稿 | 现状：`attempts` 只数落库行 + 失败面不经 `_claimed_but_missing` ⇒ 上界失效（实测：连推 5 次全 `RETRY_FAILED_RUN`、`attempts=1/2` 不动） | PASS |
+| EC-02 | 去重与计数 | 按**已认领次数**计入尝试；已认领未落库 ⇒ 不产生第二个 run 且点名 | PASS |
+| EC-03 | 判定面接线 | 已落库失败 / 已认领未落库 / 用尽三形态**互不混用** | PASS |
+| EC-04 | 真的被用上 | 实跑「认领即崩」⇒ 收敛到失败停且点名上界；**反证**：无界重试不再出现；缺省逐字不变 | PASS |
 | EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得让重试变成**隐式无限重跑**；
@@ -362,10 +364,12 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261009-361` | （见 CI 台账） | EC-02/03/04 全 PASS：**上界成为真的** —— ① 修前读数（`allowed=2`、连推 5 次全 `RETRY_FAILED_RUN`、`attempts=1/2` 不动、`bounded=false`）；② `_retry_face_state` 把「未落库的认领」与「被阻塞的推进」**计入**已用尝试数；③ 三形态分派（**用尽 → 去重 → 重试**，排序是判据的一部分：反过来永不收口）；④ **本轮新发现并修复同轴第二个缺陷** —— 决策自然键 `(program_id, after_index, decided_at)` 在同一时钟刻度下**静默顶掉**（实测：连录 10 条只留存 1 条）⇒ `_record` 归一为**程序内严格递增**；⑤ 四组上界实测**全部收敛且 ≤ 上界**、始终不产生第二个同序号 run；对照臂（正常落库）逐字不变；⑥ 两向反证 **R-1/R-2/R-3 全红** + 二进制复原 raw `sha256` 相同 + 归档进树；⑦ 规模门：`_failed_round` 60 行 ⇒ 拆 `_bounded_stop` / `_returning_claim_stop` | （见 CI 台账） | — | EC-05（自举收口）待做；残余 `S-1`…`S-3` 与 W-1…W-3 见 RECHECK | EC-05 自举收口 |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察 + **一处实测复现**（`scratch/goal042_probe_unbounded_retry.py`：连推 5 次全 `RETRY_FAILED_RUN`、`attempts=1/2` 不动、`bounded=false`）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 9** | （见 CI 台账） | — | 五条 EC 全 PENDING；判定种类落点（③）待 cycle 1 决定 | cycle 1（EC-02 去重与计数 + EC-03 接线） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-09 | ACTIVE | **cycle 1（EC-02/03/04）收口**：**声明的重试上界成为真的** —— 失败重试面按「落库行数 + 未落库的认领数 + 被阻塞的推进数」计数，认领未落库 ⇒ `DEDUP_FAILED_RUN`（与结论面 `DEDUP` 可区分、不产生第二个同序号 run），判定序列**必然**在 ≤ 声明上界内收口到 `STOP_RUN_FAILED`（四组上界实测：`allowed=1/2/3/4` ⇒ 步数 1/2/3/4，全部收敛）；**新发现并修复同轴第二个缺陷**：决策自然键含挂钟 ⇒ 同一刻度内的多条决策被**静默顶掉**（紧循环连录 10 条只留存 1 条）⇒ 驱动侧 `decided_at` 归一为程序内严格递增（沉淀 `MEM-20261009-211`）。两向反证 3 条按压全红 + 二进制复原 raw `sha256` 一致；定向 37 passed、`tests/e2e` 319 passed。独立复检 `RECHECK-20261009-362`（PASS_WITH_WARNINGS）。EC-05 待收口。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-09 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 9**。只读勘察 + 一处**实测复现**：GOAL-040 声明「重试有界」（`max_attempts_per_index`），但尝试数只数**落库行**、且失败面**不经过** `_claimed_but_missing`（它只认 `CONTINUE`）⇒ **认领后未落库**时上界失效（实测：声明 `2`、连推 5 次全部 `RETRY_FAILED_RUN`、`attempts=1/2` 原样不动、`STOP_RUN_FAILED` 永不出现）—— 这正是 GOAL-040 自己写下的禁令形态（「让重试变成隐式的无限重跑」）。五条 EC 全 `PENDING`。**不做数量目标**；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

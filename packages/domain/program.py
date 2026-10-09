@@ -58,6 +58,14 @@ class ProgramDecisionKind(StrEnum):
     RETRY_FAILED_RUN = "RETRY_FAILED_RUN"
     """上一轮失败但**声明允许重试且未用尽** ⇒ 重试**同序号**（有界：计数落决策、超界点名）。"""
 
+    # GOAL-20261009-041 EC-02：**失败重试面的崩溃窗口**（认领了同序号却未落库）。
+    # 与结论面的 `DEDUP` **同类不同面**：那里认领的是**下一序号**的新 run，这里认领的是
+    # **同一序号**的重试；两者都**不产生第二个 run**，但读面必须分得清是哪一面。
+    DEDUP_FAILED_RUN = "DEDUP_FAILED_RUN"
+    """上一条重试已认领本序号（run id 记在决策里）但该 run **未落库** ⇒ 幂等命中：
+    不再起第二个同序号 run，点名认领的 run 与已认领数；该**认领**同样**计入**尝试数
+    （否则声明的上界可被反复的崩溃窗口无限绕过）。"""
+
 
 @dataclass(frozen=True, slots=True)
 class ProgramContinueRule:

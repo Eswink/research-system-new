@@ -113,6 +113,10 @@ def test_decision_kinds_separate_conclusion_from_guardrail() -> None:
         "STOP_RUN_FAILED",
         "STOP_CANCELLED",
         "RETRY_FAILED_RUN",
+        # GOAL-20261009-041 EC-02：**失败重试面的崩溃窗口**（认领了同序号却未落库）——
+        # 与结论面的 `DEDUP` 同类不同面（那里认领的是**下一序号**的新 run）。
+        # 同轮同步登记的**纯加法**：断言形态（集合相等）与判据口径一字未改。
+        "DEDUP_FAILED_RUN",
     }
 
 

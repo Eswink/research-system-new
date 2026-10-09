@@ -21,11 +21,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import timedelta
 from typing import Any
 
 from packages.application.ports.program_store import ProgramStore
 from packages.application.ports.run_store import RunStore
+from packages.domain.core import Timestamp
 from packages.domain.program import ProgramDecision, ProgramDecisionKind, ResearchProgram
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
@@ -61,9 +63,29 @@ def _verdicts(findings: FindingReader | None, run_id: str) -> tuple[str, ...]:
     return tuple(seen)
 
 
-def _record(programs: ProgramStore, decision: ProgramDecision) -> ProgramDecision:
-    programs.record_decision(decision)
-    return decision
+def _record(programs: ProgramStore, program_id: str, decision: ProgramDecision) -> ProgramDecision:
+    """落一条决策；`decided_at` 归一为**该程序内严格递增**的时点。
+
+    **为什么必须归一**（GOAL-20261009-041 EC-02 实测）：存储的决策自然键是
+    `(program_id, after_index, decided_at)`，而 `Timestamp.now()` 在**同一时钟刻度**
+    内会给出**相同**的微秒值 ⇒ 同一序号上的多条决策**互相顶掉**（`INSERT OR IGNORE` /
+    `ON CONFLICT DO NOTHING` 是**静默**的）。实测：紧循环连录 10 条 ⇒ 只留存 **1** 条。
+    计数面依赖「每次推进都留下一条决策」⇒ 被静默丢弃时**声明的上界不成立**。
+
+    归一的口径（**逻辑时钟**）：取该程序已落决策的**最大时点**；`now` 不大于它时
+    只推进 1 微秒（其余情形原样用挂钟）⇒ 既保住「决策各自带时间」的语义，
+    又让自然键**不再碰撞**。
+    """
+    latest = max(
+        (item.decided_at.value for item in programs.decisions_of(program_id)),
+        default=None,
+    )
+    now = decision.decided_at.value
+    if latest is not None and now <= latest:
+        now = latest + timedelta(microseconds=1)
+    stamped = replace(decision, decided_at=Timestamp(now))
+    programs.record_decision(stamped)
+    return stamped
 
 
 def _claimed_but_missing(
@@ -77,6 +99,52 @@ def _claimed_but_missing(
             return None if str(decision.cited_run_id) in known else str(decision.cited_run_id)
         return None
     return None
+
+
+#: 失败重试面「认领了同序号」的判定种类（下面两个函数的受判面）。
+_RETRY_CLAIM_KINDS: frozenset[ProgramDecisionKind] = frozenset({
+    ProgramDecisionKind.RETRY_FAILED_RUN,
+    ProgramDecisionKind.DEDUP_FAILED_RUN,
+})
+
+
+def _retry_face_state(
+    programs: ProgramStore, program_id: str, index: int, landed_ids: set[str]
+) -> tuple[int, str | None]:
+    """失败重试面的 `(已用尝试数, 未落库的认领 run id)`（GOAL-20261009-041 EC-02）。
+
+    **口径（逐条写死，避免含糊）**：本序号上「推进试图做出进展」的次数 =
+
+        **落库行数** + **未落库的认领数** + **被阻塞的推进数**
+
+    后两项的落点（都在决策面上，不落第二套存储）：
+
+    - `RETRY_FAILED_RUN` 认领了一个 run id 而该 id **没有**落库 ⇒ 那次请求没有落地 ⇒ +1；
+      （若它**落了库**则**不**+1 —— 那条 run 已经计在「落库行数」里，不能重复计。）
+    - `DEDUP_FAILED_RUN`（被未落库的认领阻塞的那次推进）⇒ +1。
+
+    **为什么必须这么算**：只数落库行时，认领后未落库的那一次**不计入** ⇒ 反复
+    「认领即崩」可把声明的上界**无限绕过**（实测：声明 `2`、连推 5 次全部
+    `RETRY_FAILED_RUN` 且 `attempts=1/2` 原样不动）。把「没落地的推进」也计入 ⇒
+    **上界在任意崩溃模式下都成立**，且推进序列**必然**在 ≤ `allowed` 次内收口到失败停。
+    """
+    attempts = len(landed_ids)
+    outstanding: str | None = None
+    for decision in programs.decisions_of(program_id):
+        if decision.after_index != index:
+            continue
+        if decision.kind not in _RETRY_CLAIM_KINDS:
+            continue
+        claimed = str(decision.cited_run_id) if decision.cited_run_id else None
+        if decision.kind is ProgramDecisionKind.DEDUP_FAILED_RUN:
+            # 被阻塞的推进：没有起新 run，但**确实推进过一次**（否则序列不收敛）。
+            attempts += 1
+            outstanding = claimed or outstanding
+            continue
+        if claimed is not None and claimed not in landed_ids:
+            attempts += 1
+            outstanding = claimed
+    return attempts, outstanding
 
 
 def _evaluate(
@@ -106,7 +174,7 @@ def _evaluate(
     # GOAL-20261008-040 EC-03：**按终态分派** —— 失败面 / 取消面在结论面**之前**
     # （只有 `SUCCEEDED` 的轮才有「结论」可言；把「没有结论」读成「结论说停」是范畴错误）。
     if str(last.state) != ResearchRunState.State.SUCCEEDED:
-        return _non_success_terminal(program, existing, last)
+        return _non_success_terminal(program, existing, last, programs)
 
     verdicts = _verdicts(findings, last.id.value)
     hit = [item for item in verdicts if item in program.continue_rule.verdict_in]
@@ -129,6 +197,7 @@ def _non_success_terminal(
     program: ResearchProgram,
     existing: tuple[ResearchRun, ...],
     last: ResearchRun,
+    programs: ProgramStore,
 ) -> _Evaluation:
     """`FAILED` / `CANCELLED` 两个终态的判定（失败面 / 取消面；**不**与结论面混用）。
 
@@ -147,7 +216,7 @@ def _non_success_terminal(
             cited_run_id=last.id.value,
             cited_facts=(f"state={state}",),
         )
-    return _failed_round(program, existing, last, last_index)
+    return _failed_round(program, existing, last, last_index, programs)
 
 
 def _failed_round(
@@ -155,23 +224,50 @@ def _failed_round(
     existing: tuple[ResearchRun, ...],
     last: ResearchRun,
     last_index: int,
+    programs: ProgramStore,
 ) -> _Evaluation:
-    """失败轮的判定：**重试有界**（计数不落第二套存储 —— 同序号的 run 数就是已用尝试数）。"""
+    """失败轮的判定（**三形态互不混用**；GOAL-20261009-041 EC-02/EC-03）。
+
+    ① **用尽**（`attempts >= allowed`）⇒ `STOP_RUN_FAILED` + 点名上界与已用数；
+    ② **已认领但未落库**（上一条重试认领了本序号而该 run 没落库）⇒ `DEDUP_FAILED_RUN`：
+       **不**再起第二个同序号 run，点名认领的 run；
+    ③ 否则 ⇒ `RETRY_FAILED_RUN`（重试**同序号**）。
+
+    **为什么「用尽」排在「去重」之前**：两条都在失败面，但**处置相反** ——
+    上界是**硬**约束（必须收口）；去重是**幂等**约束（同一认领不重复起 run）。
+    若把去重排在前面，被阻塞的推进**永远**落去重、**永不**收口 ⇒ 正是本轮要消灭的
+    「隐式无限重跑」。已用尝试数把「未落库的认领」与「被阻塞的推进」都计入
+    （`_retry_face_state`）⇒ 步数有界且必然收口。
+    """
     state = str(last.state)
-    attempts = sum(1 for run in existing if (run.program_index or 0) == last_index)
     allowed = program.max_attempts_per_index
+    landed_ids = {run.id.value for run in existing if (run.program_index or 0) == last_index}
+    attempts, outstanding = _retry_face_state(programs, program.id, last_index, landed_ids)
     cited = (f"state={state}", f"attempts={attempts}/{allowed}")
-    if attempts < allowed:
-        return _Evaluation(
-            kind=ProgramDecisionKind.RETRY_FAILED_RUN,
-            reason=(
-                f"第 {last_index} 轮执行失败（state=FAILED）但声明允许重试"
-                f"（已用 {attempts}/{allowed}）⇒ 重试**同序号**"
-            ),
-            cited_run_id=last.id.value,
-            cited_facts=cited,
-            start_index=last_index,
-        )
+    if attempts >= allowed:
+        return _bounded_stop(last, last_index, attempts, allowed, cited)
+    if outstanding is not None:
+        return _returning_claim_stop(last_index, outstanding, attempts, allowed, cited)
+    return _Evaluation(
+        kind=ProgramDecisionKind.RETRY_FAILED_RUN,
+        reason=(
+            f"第 {last_index} 轮执行失败（state=FAILED）但声明允许重试"
+            f"（已用 {attempts}/{allowed}）⇒ 重试**同序号**"
+        ),
+        cited_run_id=last.id.value,
+        cited_facts=cited,
+        start_index=last_index,
+    )
+
+
+def _bounded_stop(
+    last: ResearchRun,
+    last_index: int,
+    attempts: int,
+    allowed: int,
+    cited: tuple[str, ...],
+) -> _Evaluation:
+    """用尽 ⇒ 失败停（点名「未获结论」与上界；与「结论说停」严格区分）。"""
     tail = (
         f"，且重试已用尽（{attempts}/{allowed}）⇒ 按失败停"
         if allowed > 1
@@ -184,6 +280,25 @@ def _failed_round(
         ),
         cited_run_id=last.id.value,
         cited_facts=cited,
+    )
+
+
+def _returning_claim_stop(
+    last_index: int,
+    outstanding: str,
+    attempts: int,
+    allowed: int,
+    cited: tuple[str, ...],
+) -> _Evaluation:
+    """崩溃窗口（认领了本序号却未落库）⇒ 去重：**不**再起第二个同序号 run。"""
+    return _Evaluation(
+        kind=ProgramDecisionKind.DEDUP_FAILED_RUN,
+        reason=(
+            f"上一条重试已认领第 {last_index} 轮（run={outstanding}）但该 run **未落库**"
+            f" ⇒ 不再起第二个同序号 run（已用 {attempts}/{allowed}，点名人工）"
+        ),
+        cited_run_id=outstanding,
+        cited_facts=(*cited, f"claimed run {outstanding}"),
     )
 
 
@@ -258,6 +373,7 @@ def advance_program(
         )
     decision = _record(
         programs,
+        program.id,
         ProgramDecision(
             program_id=program.id,
             after_index=after_index,
@@ -302,6 +418,7 @@ def _start(
     if start_run is None:
         decision = _record(
             programs,
+            program.id,
             ProgramDecision(
                 program_id=program.id,
                 after_index=intent.after_index,
@@ -314,6 +431,7 @@ def _start(
     started = str(start_run(intent.index))
     decision = _record(
         programs,
+        program.id,
         ProgramDecision(
             program_id=program.id,
             after_index=intent.after_index,

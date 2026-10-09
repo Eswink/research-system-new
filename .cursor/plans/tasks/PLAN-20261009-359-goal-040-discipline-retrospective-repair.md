@@ -199,7 +199,11 @@ PRESS SUMMARY: ALL RED + RESTORED
 - 四道门（`ruff format --check` / `ruff check` / `mypy` strict）对三个改动文件**全绿**；
 - 全量 m0：**23/23**（在全部记录写入**之后**，见「证据」与 CI 台账）；
 - 治理 `validate.py` + `test_mainline_program_is_intact.py` 绿；
-- CI：逐提交台账见本 PLAN 末节。
+- CI：`89e0d85` ⇒ `37948976956` **M0 success**（8 job 全 success：
+  `collector-quality` / `quality-windows-latest` / `container-quality` / `console-frontend` /
+  `observability-overhead-ubuntu-latest` / `eval-gate` / `observability-overhead-windows-latest` /
+  `quality-ubuntu-latest`）+ `37948976453` **Push on main / CodeQL success**（3 分析全 success）。
+  台账表见本 PLAN 末节。
 
 ## 影响报告
 
@@ -223,6 +227,19 @@ PRESS SUMMARY: ALL RED + RESTORED
 4. **收窄受判面必须显式申报**：写明**收窄了什么**（轮次 / 取值域 / 观测宽度）与**理由**；
    **不得**称「强度不变」——「强度不变」是一句**需要自证**的断言；
 5. 属**同轮同步集之外**的形态 ⇒ 命中 `escalation_triggers`，须在 RECHECK 里**如实登记**。
+
+## CI 台账（逐提交）
+
+> 口径：无 `gh` CLI ⇒ `git credential fill` 取令牌走 REST API，按 `head_sha` 遍历全部 run
+> + `/jobs`；**空集合 = 未取证**；`cancelled` 如实登记 + 原因 + `covered_by`。
+> **自我指涉边界**：台账提交自身不产生可引用的 CI 结论（明写并以「末条提交 + 覆盖说明」
+> 封闭，**不得循环引用**）。
+
+| commit | run/结论 | 备注 |
+| --- | --- | --- |
+| `c32f4f9`（GOAL-040 台账尾巴，本批首行） | 读数由 `89e0d85` 所在批**同批语义**覆盖 | GOAL-040 的最后一个提交（仅 `.cursor/**` 记录改动） |
+| `89e0d85`（本修复 cycle = 本批 HEAD） | `37948976956` **M0 success**（8 job 全 success）+ `37948976453` **Push on main / CodeQL success**（3 分析全 success） | 三文件判据修复 + 回补结论面覆盖 + MEM-210 + RECHECK-360 + MAINLINE 修订记录 + **序 9 建档**；本地 as-is m0 **23/23**、广面 **3228 passed, 14 skipped**；**实测取证**（`total_count=2`） |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
 
 ## 无可复用事实
 
