@@ -83,7 +83,7 @@ exit_criteria:
       `rg -n "memory.read" examples/config/capabilities.yaml`（零命中）；
       `rg -n "memory" packages/application/run_orchestration/phase_capabilities.py`（零命中）；
       `rg -ln "validity_at" packages services adapters --glob '*.py'` ⇒ 只有两处。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **承接与判定（读能力 + 三态可判定）**：新增一条**读**能力（名称与既有命名面同族；
@@ -94,7 +94,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/adapters tests/api -q`
       ⇒ 全绿 + 新用例（三态逐条 + 不读挂钟的可复现判据）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **真的影响行为（研究循环的一条路径）**：研究循环的**至少一条**路径按该读面**改变行为** ——
@@ -192,8 +192,8 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | 现状：时效**可读但零消费**（`memory.read` 未声明 / 运行链零引用 / `validity_at` 只到 REST 读面） | PENDING |
-| EC-02 | 承接与判定 | 新增一条**读**能力（五件套齐）+ 按**调用方给的时点**披露三态与处置（互不混用、不读挂钟） | PENDING |
+| EC-01 | 勘察定稿 | 现状：时效**可读但零消费**（`memory.read` 未声明 / 运行链零引用 / `validity_at` 只到 REST 读面） | PASS |
+| EC-02 | 承接与判定 | 新增一条**读**能力（五件套齐）+ 按**调用方给的时点**披露三态与处置（互不混用、不读挂钟） | PASS |
 | EC-03 | 真的影响行为 | 研究循环**至少一条**路径按该读面改变行为（跳过 / 标注互不混用、都点名；未声明 ⇒ 逐字不变） | PENDING |
 | EC-04 | 真的被用上 | 实跑：两个时点下行为可区分且点名；**反证**：未声明不得被跳过 / 不得静默丢弃 / 未放行点名 | PENDING |
 | EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
@@ -358,17 +358,19 @@ deduplication）。
 | `988f334`（replan，本 GOAL 建档所在批 = 本批 HEAD） | `37971731889` **M0 success**（8 job 全 success）+ `37971731185` **Push on main / CodeQL success**（3 分析全 success） | replan（序 10 新增）+ 建档（五 EC + 三条实测读数）；**实测取证**（按 `head_sha` 遍历该 SHA 全部 run） |
 | `fe5d661`（本 GOAL 建档） | `37974448170` **M0 cancelled** —— `cancel-in-progress` 形态（**非失败**） | **实测取证**：该 run 于 `18:39:45Z` 终止，而 `ab436e2` 的 M0 run `37974796397` 于 `18:39:28Z` **更早创建** ⇒ 同 ref 同 workflow 的新 run 取消了排队中的旧 run（`.github/workflows/*.yml` 的 `concurrency.cancel-in-progress: true`，逐字复核）。其结论由 `ab436e2` 所在批覆盖（`covered_by 37974796397`）|
 | `ab436e2`（cycle 1 子 PLAN 建档 = 本批 HEAD） | `37974796397` **M0 success**（8 job 全 success）+ `37974795395` **Push on main / CodeQL success**（3 分析全 success） | cycle 1 子 PLAN（`PLAN-20261009-365`）+ GOAL `child_plans` 投影 + `ALL_PLAN`；**实测取证** |
-| `01606d2`（cycle 1 = EC-01/EC-02）：`memory.read` 承接 | `37989487322` **Push on main / CodeQL success**（3 分析全 success）；`37989487618` **M0 in_progress**（**尚未终态 ⇒ 未取证**） | 五件套 + 三态处置 + 15 判据 + 两向反证 + 改既有判据逐条申报；本地 **m0 23/23**（`PASS [` 24 / `FAILED [` 0 / 5295 passed, 228 skipped）；**M0 的 CI 结论待下一个 cycle 的台账取证** |
+| `01606d2`（cycle 1 = EC-01/EC-02）：`memory.read` 承接 | `37989487322` **Push on main / CodeQL success**（3 分析全 success）；`37989487618` **M0 cancelled** —— `cancel-in-progress` 形态（**非失败**；**实测取证**：该 run 于 `21:06:04Z` 终止，而 `a0822ea` 的 M0 run 于 `21:05:56Z` 创建 ⇒ 同 ref 同 workflow 的新 run 取消了在飞的旧 run）⇒ `covered_by a0822ea 所在批` | 五件套 + 三态处置 + 15 判据 + 两向反证 + 改既有判据逐条申报；本地 **m0 23/23**（`PASS [` 24 / `FAILED [` 0 / 5295 passed, 228 skipped）；**M0 的 CI 结论待下一个 cycle 的台账取证** |
 | （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261009-365` | `01606d2`（实现）+ `a0822ea`（记录） | EC-01/EC-02 **PASS**：① 五件套齐（目录声明 + 新模块 `adapters/canonical/memory_read.py` + `read_surface` 描述子与映射 + 两组合根（SQLite `ports.memory_store` / PG `c["memory"]`）+ **一条只读 allow**）；② 读面按**调用方给的时点**（`now` **必填**）给三态与处置：`EXPIRED ⇒ SKIP` / `REVIEW_DUE ⇒ ANNOTATE` / `None ⇒ USE`（**不猜**，§8 口径），理由点名被引声明值 + `dispositions` 计数摘要；③ 三条硬约束判据打满（**不读挂钟** / 未声明不猜 / 缺依赖与非法时点逐条点名）；④ 新增判据 **15 passed**；⑤ 两向反证 **M-1/M-2/M-3 全红** + 二进制复原 raw `sha256` 一致 + 归档进树（314 B / `CR=0`）；⑥ 改既有判据**逐条申报**（三文件：`+3/-0`、`+6/-0`、`+14/-5`；删除行**仅** 5 处 `46` 字面，谓词形态一字未改）；广面 **2325 passed**；**全量 m0 23/23** （5295 passed, 228 skipped）| `37989487322` Push/CodeQL **success**；M0 **待终态取证** | **四道门抓到三处真红并已修**：mypy 6 个 `object` 不可索引（测试面）/ 两处函数超 50 行 （`read_provider.__init__` 借 `_SPILL_RATIONALE` 移出长 docstring；`canonical_read_register` 抽 `_canonical_reader` 工厂）/ 一处 import 序 | EC-03（研究循环按处置改变行为）与 EC-04（两时点实跑 + 反证）待做 | cycle 2（EC-03 + EC-04） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **三条实测读数**（`memory.read` 未声明 / 运行链零引用 / `validity_at` 只到 REST 读面）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 10** | （见 CI 台账） | — | 五条 EC 全 PENDING；读能力名称与三态处置（①③）待 cycle 1 定 | cycle 1（EC-02 承接与判定 + EC-03 影响行为） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-09 | ACTIVE | **cycle 1（EC-01/EC-02）收口**：**`memory.read` 承接落地** —— 该能力此前**从未声明**、研究循环零引用、`validity_at` 只到 REST 读面 ⇒ 记忆时效**不改变任何后续行为**；本轮补齐**消费面**：读面按调用方给的时点（**必填** ⇒ 不读挂钟）给每条记忆三态（`EXPIRED` / `REVIEW_DUE` / `None`）与**处置**（`SKIP` / `ANNOTATE` / `USE`，**互不混用**）并逐条点名理由；五件套齐（含**只增一条只读 allow**）。新增判据 15 passed；两向反证 3 条按压全红 + 二进制复原 raw `sha256` 一致；广面 2325 passed；**全量 m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5295 passed, 228 skipped**）。EC-03/EC-04 待做。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-09 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 10**（保留槽 → 本 GOAL）。只读勘察 + **三条实测读数**：`memory.read` **不在**能力目录（只有 `memory.write`）、研究循环的运行链对 memory **零引用**、`validity_at` 的调用面只有定义处与 REST 读面 ⇒ 序 7 让时效「**可读**」但**没有任何读路径消费它**（正是 GOAL-039 的残余 `Q-1`）。五条 EC 全 `PENDING`。**不做数量目标**（只增一条只读能力）；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
