@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS research_programs (
     max_runs INTEGER NOT NULL,
     -- GOAL-20261008-040 EC-02：每序号尝试上界（缺省 1 = 不重试）。
     max_attempts_per_index INTEGER NOT NULL DEFAULT 1,
+    -- GOAL-20261010-046 EC-02：程序级人工闸门序号（NULL = 不设闸门 ⇒ 既有行为逐字不变）。
+    human_gate_at_index INTEGER,
     continue_rule_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -66,6 +68,7 @@ def _encode_program(program: ResearchProgram) -> tuple[object, ...]:
         program.protocol_id,
         program.max_runs,
         program.max_attempts_per_index,
+        program.human_gate_at_index,
         _encode_rule(program.continue_rule),
         program.created_at.value.isoformat(),
         program.updated_at.value.isoformat(),
@@ -79,16 +82,19 @@ def _decode_program(row: sqlite3.Row | tuple[object, ...]) -> ResearchProgram:
         protocol_id,
         max_runs,
         attempts,
+        gate_at,
         rule,
         created_at,
         updated_at,
-    ) = row[:8]
+    ) = row[:9]
     return ResearchProgram(
         id=str(program_id),
         project_id=str(project_id),
         protocol_id=str(protocol_id),
         max_runs=int(str(max_runs)),
         max_attempts_per_index=int(str(attempts)),
+        # GOAL-20261010-046 EC-02：NULL = 不设闸门（既有行为逐字不变）。
+        human_gate_at_index=int(str(gate_at)) if gate_at is not None else None,
         continue_rule=_decode_rule(rule),
         created_at=Timestamp(datetime.fromisoformat(str(created_at))),
         updated_at=Timestamp(datetime.fromisoformat(str(updated_at))),
@@ -130,9 +136,9 @@ class SqliteProgramStore(SqliteAdapterBase):
         with self._conn:
             self._conn.execute(
                 "INSERT OR IGNORE INTO research_programs (program_id, project_id,"
-                " protocol_id, max_runs, max_attempts_per_index,"
+                " protocol_id, max_runs, max_attempts_per_index, human_gate_at_index,"
                 " continue_rule_json, created_at, updated_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 _encode_program(program),
             )
         self._record("create", program.id, result="ok")
@@ -141,7 +147,7 @@ class SqliteProgramStore(SqliteAdapterBase):
         self._ensure_open()
         row = self._conn.execute(
             "SELECT program_id, project_id, protocol_id, max_runs,"
-            " max_attempts_per_index, continue_rule_json,"
+            " max_attempts_per_index, human_gate_at_index, continue_rule_json,"
             " created_at, updated_at FROM research_programs WHERE program_id = ?",
             (program_id,),
         ).fetchone()
@@ -155,7 +161,7 @@ class SqliteProgramStore(SqliteAdapterBase):
         self._ensure_open()
         rows = self._conn.execute(
             "SELECT program_id, project_id, protocol_id, max_runs,"
-            " max_attempts_per_index, continue_rule_json,"
+            " max_attempts_per_index, human_gate_at_index, continue_rule_json,"
             " created_at, updated_at FROM research_programs WHERE project_id = ?"
             " ORDER BY program_id",
             (project_id,),

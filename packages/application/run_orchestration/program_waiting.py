@@ -50,6 +50,70 @@ def pending_approval(approvals: ApprovalReader | None, run_id: str) -> str:
     return f"待审批 id={','.join(pending)}"
 
 
+def declared_gate_pending(
+    program: Any, last_index: int, approvals: ApprovalReader | None, run_id: str
+) -> str | None:
+    """**声明的人工闸门**是否仍在等人拍板（是 ⇒ 返回**点名句**，否 ⇒ `None`）。
+
+    语义**照抄 phase/run 面的 `pending_human_gates`**（少写一套判断）：
+    「声明的闸门 **−** 已裁决的审批（`status != "PENDING"`）」——
+
+    - 声明点 = `program.human_gate_at_index`（`None` ⇒ **不设闸门** ⇒ 直接 `None`，
+      既有行为逐字不变）；**且**只在**该序号那一轮跑完之后**才生效（`last_index` 相等）；
+    - 已裁决 ⇒ 闸门**已满足** ⇒ `None`（继续走结论面）；
+    - 仍有 `PENDING` ⇒ 返回**点名句**（等的是这一轮的闸门）；
+    - **缺审批面** ⇒ 也返回**点名句**（**不**静默当成「没有闸门」—— 那会让声明闸门的程序
+      悄悄绕过人）；
+    - **只读**：本函数**不**改任何审批状态（人没拍板就是没拍板；批准发生在**审批面**）。
+    """
+    declared = getattr(program, "human_gate_at_index", None)
+    if declared is None or int(declared) != int(last_index):
+        return None
+    if approvals is None:
+        return (
+            f"第 {last_index} 轮是**声明的人工闸门**，但本装配未提供审批面"
+            "（点名：声明了闸门却没有可查的审批面）"
+        )
+    try:
+        rows = approvals.list_for_run(run_id)
+    except Exception as error:  # noqa: BLE001 - 审批面故障必须**点名**，不得静默放行
+        return (
+            f"第 {last_index} 轮是**声明的人工闸门**，但审批面查询失败"
+            f"（{type(error).__name__}: {error}）"
+        )
+    pending = [str(row.id) for row in rows if str(getattr(row, "status", "")) == "PENDING"]
+    if pending:
+        return (
+            f"第 {last_index} 轮是**声明的人工闸门**（`human_gate_at_index={declared}`）"
+            f"⇒ 等人拍板待审批 id={','.join(pending)}（不自动放行）"
+        )
+    decided = [row for row in rows if str(getattr(row, "status", "")) != "PENDING"]
+    if decided:
+        return None
+    return (
+        f"第 {last_index} 轮是**声明的人工闸门**（`human_gate_at_index={declared}`）"
+        "⇒ 等人拍板（该 run 名下尚无审批记录；批准发生在审批面，本处不自动放行）"
+    )
+
+
+def declared_gate_verdict(
+    program: Any, last: Any, approvals: ApprovalReader | None
+) -> tuple[str, str, tuple[str, ...]] | None:
+    """**声明的闸门**是否要拦住本次推进；要 ⇒ `(kind, reason, cited_facts)`，不要 ⇒ `None`。
+
+    **返回判定值而不是值对象**：调用方（`program_runner`）自己构它的 `_Evaluation`
+    —— 本模块**不** import 它（避免导入环，也让 mypy 不必接受 `Any` 作为返回）。
+    """
+    note = declared_gate_pending(program, last.program_index or 0, approvals, last.id.value)
+    if note is None:
+        return None
+    return (
+        ProgramDecisionKind.WAIT_FOR_APPROVAL.value,
+        note + "；本轮不推进（不自动放行）",
+        (f"state={last.state}", f"human_gate_at_index={program.human_gate_at_index}"),
+    )
+
+
 def waiting_round_decision(
     last: ResearchRun,
     last_index: int,
@@ -74,4 +138,11 @@ def waiting_round_decision(
     )
 
 
-__all__ = ["AWAITING_HUMAN", "ApprovalReader", "pending_approval", "waiting_round_decision"]
+__all__ = [
+    "AWAITING_HUMAN",
+    "ApprovalReader",
+    "declared_gate_pending",
+    "declared_gate_verdict",
+    "pending_approval",
+    "waiting_round_decision",
+]

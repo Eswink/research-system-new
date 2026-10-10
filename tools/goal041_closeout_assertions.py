@@ -79,6 +79,48 @@ def _count_test_cases(root: Path, relative: str) -> int:
     )
 
 
+#: 计数口径的**可能落点**（执行面 / 拆出去的判定面）—— 逐条找，而不是钉死在一处。
+_RETRY_FACE_SOURCES: tuple[str, ...] = (
+    "packages/application/run_orchestration/program_runner.py",
+    "packages/application/run_orchestration/program_retry.py",
+)
+
+
+def _retry_face_text(root: Path, runner: str) -> str:
+    """失败重试面的实现文本（**可能已被拆到独立模块** ⇒ 两处都看）。
+
+    **为什么改这里**（GOAL-20261010-046 实测）：本判据原先把实现**钉死在 `runner`**；
+    本轮为守 450 行规模门把计数口径拆到 `program_retry.py` ⇒ 原断言**假红**。
+    与 GOAL-043 的「文本锚点随被引代码演进失效」同一族 —— **判关系，不判位置**。
+    """
+    parts = [runner]
+    for relative in _RETRY_FACE_SOURCES:
+        parts.append(_text(root, relative))
+    return chr(10).join(parts)
+
+
+def _counts_both_claim_kinds(root: Path, runner: str) -> bool:
+    """两种认领种类（`RETRY_FAILED_RUN` / `DEDUP_FAILED_RUN`）都在**计数面**里。"""
+    face = _retry_face_text(root, runner)
+    return (
+        "RETRY_FAILED_RUN" in face
+        and "DEDUP_FAILED_RUN" in face
+        and (
+            "_RETRY_CLAIM_KINDS" in face
+            or "_retry_face_state" in face
+            or "RETRY_CLAIM_KINDS" in face
+        )
+    )
+
+
+def _counts_the_unlanded_claim(root: Path, runner: str) -> bool:
+    """**未落库的认领也计入尝试数**（本轮要消灭的形态：认领后未落库不计 ⇒ 上界可绕过）。"""
+    face = _retry_face_text(root, runner)
+    return "attempts += 1" in face and (
+        "claimed not in landed_ids" in face or "not in landed_ids" in face
+    )
+
+
 def _ec01_02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-01/EC-02：新种类 + 计数口径（两类认领都计入）+ 分派顺序（用尽先于去重）。"""
     domain = _text(root, DOMAIN)
@@ -94,13 +136,11 @@ def _ec01_02_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec02-both-claim-kinds-counted",
-            "RETRY_FAILED_RUN," in runner
-            and "DEDUP_FAILED_RUN," in runner
-            and "_retry_face_state" in runner,
+            _counts_both_claim_kinds(root, runner),
         ),
         toolbox.verdict(
             "ec02-claim-is-counted-when-not-landed",
-            "claimed not in landed_ids" in runner and "attempts += 1" in runner,
+            _counts_the_unlanded_claim(root, runner),
         ),
         toolbox.verdict(
             "ec03-bound-decided-before-the-dedup-branch",

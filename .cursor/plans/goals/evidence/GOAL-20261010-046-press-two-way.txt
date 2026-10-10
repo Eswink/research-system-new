@@ -1,0 +1,3 @@
+G-1 闸门被绕过（判定面恒不拦）: 按压 RED | sha 复原一致=True | dccd130055ed
+G-2 轮前也拦（不在该轮流误拦）: 按压 RED | sha 复原一致=True | dccd130055ed
+G-3 已裁决也拦（语义与 phase 面不一致）: 按压 RED | sha 复原一致=True | dccd130055ed

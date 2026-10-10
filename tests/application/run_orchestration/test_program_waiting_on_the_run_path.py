@@ -17,6 +17,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from packages.application.run_orchestration.program_runner import advance_program
@@ -152,3 +154,123 @@ def test_waiting_for_a_human_never_touches_the_approval_store() -> None:
     )
     assert approvals.calls == [h.runs.for_program(h.program.id)[0].id.value], approvals.calls
     assert not hasattr(approvals, "replace") or True  # 面里根本没有写方法（只读形状）
+
+
+# --- GOAL-20261010-046：**声明的人工闸门**（程序自己声明「到第 N 轮停下等人」） ----------
+
+
+class _ApprovalRows:
+    """极小的审批读取面（只实现驱动用到的 `list_for_run`；状态可控）。"""
+
+    def __init__(self, rows: list[object]) -> None:
+        self._rows = rows
+        self.calls: list[str] = []
+
+    def list_for_run(self, run_id: str) -> tuple[object, ...]:
+        self.calls.append(run_id)
+        return tuple(self._rows)
+
+
+def _row(approval_id: str, *, status: str = "PENDING") -> object:
+    return type("Rec", (), {"id": approval_id, "status": status})()
+
+
+def _gated(*, gate: int | None, max_runs: int = 3, run_state: str = "SUCCEEDED") -> Any:
+    """一个声明了（或不声明）闸门的程序 + 一条已跑完的 run（返回 harness）。"""
+    from dataclasses import replace as _replace
+
+    h = _Harness(max_runs=max_runs)
+    h.program = _replace(h.program, human_gate_at_index=gate)
+    h.programs.create(h.program)
+    run_id = h.seed_run(1, state=run_state)
+    h._run_id = run_id  # type: ignore[attr-defined]
+    return h
+
+
+def _advance_with_verdict(h: Any, approvals: Any) -> Any:
+    """带 PASS 判词推进一次（结论面会判「续」，除非闸门先拦住）。"""
+    return advance_program(
+        h.program,
+        runs=h.runs,
+        programs=h.programs,
+        findings=h.verdicts({h._run_id: "ACCEPT"}),
+        approvals=approvals,
+        start_run=h.start_run,
+    )
+
+
+def test_a_declared_gate_stops_the_advance_and_names_the_index() -> None:
+    """**本轮的靶子**：声明闸门在第 1 轮 ⇒ 该轮跑完后的推进**被拦住**且**点名**声明值。"""
+    h = _gated(gate=1)
+    result = _advance_with_verdict(h, _ApprovalRows([_row("apr-g1")]))
+    assert result.decision.kind is ProgramDecisionKind.WAIT_FOR_APPROVAL, result.decision
+    assert "人工闸门" in result.decision.reason, result.decision.reason
+    assert "human_gate_at_index=1" in result.decision.reason, result.decision.reason
+    assert "apr-g1" in result.decision.reason, ("待审批要点名", result.decision.reason)
+    assert result.started_run_id is None, "等人拍板时不得起新轮"
+    assert any("human_gate_at_index=1" in item for item in result.decision.cited_facts), (
+        result.decision.cited_facts
+    )
+
+
+def test_the_gate_does_not_fire_before_its_round() -> None:
+    """**反证臂①**：闸门声明在第 2 轮 ⇒ 第 1 轮跑完的推进**照常续**（轮前不停）。"""
+    h = _gated(gate=2)
+    result = _advance_with_verdict(h, _ApprovalRows([_row("apr-g2")]))
+    assert result.decision.kind is ProgramDecisionKind.CONTINUE, result.decision
+    assert result.started_run_id, result
+
+
+def test_an_undeclared_gate_leaves_the_advance_unchanged() -> None:
+    """**反证臂②**：**未声明**闸门 ⇒ 推进逐字走结论面（`CONTINUE` + 逐字判词）。"""
+    h = _gated(gate=None)
+    result = _advance_with_verdict(h, _ApprovalRows([_row("apr-none")]))
+    assert result.decision.kind is ProgramDecisionKind.CONTINUE, result.decision
+    assert result.decision.cited_facts == ("verdict ACCEPT",), result.decision
+
+
+def test_a_decided_approval_satisfies_the_gate() -> None:
+    """**反证臂（不该红时不红）**：闸门已有**已裁决**的审批 ⇒ 不再拦（与 phase 面同语义）。"""
+    h = _gated(gate=1)
+    result = _advance_with_verdict(h, _ApprovalRows([_row("apr-done", status="APPROVED")]))
+    assert result.decision.kind is ProgramDecisionKind.CONTINUE, result.decision
+
+
+def test_a_gate_without_an_approval_face_is_named_not_skipped() -> None:
+    """**点名而非静默**：声明了闸门却**缺审批面** ⇒ 点名（**不**当成「没有闸门」放行）。"""
+    h = _gated(gate=1)
+    result = advance_program(
+        h.program,
+        runs=h.runs,
+        programs=h.programs,
+        findings=h.verdicts({h._run_id: "ACCEPT"}),
+        start_run=h.start_run,
+    )
+    assert result.decision.kind is ProgramDecisionKind.WAIT_FOR_APPROVAL, result.decision
+    assert "未提供审批面" in result.decision.reason, result.decision.reason
+
+
+def test_the_gate_never_touches_the_approval_face() -> None:
+    """**反证臂③**：闸门判定**只读**审批面（不自动放行、不消耗审批）。"""
+    h = _gated(gate=1)
+    approvals = _ApprovalRows([_row("apr-readonly")])
+    _advance_with_verdict(h, approvals)
+    assert approvals.calls == [h._run_id], ("只按本 run 查询一次", approvals.calls)
+    assert not hasattr(approvals, "replace") and not hasattr(approvals, "register")
+
+
+def test_a_gate_declared_out_of_range_is_named() -> None:
+    """非法声明（序号越界）⇒ **点名**（声明坏掉不是「没有闸门」）。"""
+    import pytest
+
+    from packages.domain.program import ProgramContinueRule, ResearchProgram
+
+    with pytest.raises(ValueError, match="human_gate_at_index must be within"):
+        ResearchProgram(
+            id="p-x",
+            project_id="p1",
+            protocol_id="proto",
+            max_runs=3,
+            continue_rule=ProgramContinueRule(verdict_in=("ACCEPT",)),
+            human_gate_at_index=9,
+        )

@@ -27,8 +27,10 @@ from typing import Any
 
 from packages.application.ports.program_store import ProgramStore
 from packages.application.ports.run_store import RunStore
+from packages.application.run_orchestration.program_retry import retry_face_state
 from packages.application.run_orchestration.program_waiting import (
     ApprovalReader,
+    declared_gate_verdict,
     waiting_round_decision,
 )
 from packages.domain.core import Timestamp
@@ -38,7 +40,7 @@ from packages.domain.run_state import ResearchRunState
 
 #: 启动面：给序号、返回新 run 的 id（组合根注入；应用层不 import 服务层）。
 StartRun = Callable[[int], str]
-#: 评审结论读取面（`ReviewFindingStore` 的形状；只用到 `for_run`）。
+#: 评审结论读取面（只用到 `for_run`）。
 FindingReader = Any
 
 
@@ -105,52 +107,6 @@ def _claimed_but_missing(
     return None
 
 
-#: 失败重试面「认领了同序号」的判定种类（下面两个函数的受判面）。
-_RETRY_CLAIM_KINDS: frozenset[ProgramDecisionKind] = frozenset({
-    ProgramDecisionKind.RETRY_FAILED_RUN,
-    ProgramDecisionKind.DEDUP_FAILED_RUN,
-})
-
-
-def _retry_face_state(
-    programs: ProgramStore, program_id: str, index: int, landed_ids: set[str]
-) -> tuple[int, str | None]:
-    """失败重试面的 `(已用尝试数, 未落库的认领 run id)`（GOAL-20261009-041 EC-02）。
-
-    **口径（逐条写死，避免含糊）**：本序号上「推进试图做出进展」的次数 =
-
-        **落库行数** + **未落库的认领数** + **被阻塞的推进数**
-
-    后两项的落点（都在决策面上，不落第二套存储）：
-
-    - `RETRY_FAILED_RUN` 认领了一个 run id 而该 id **没有**落库 ⇒ 那次请求没有落地 ⇒ +1；
-      （若它**落了库**则**不**+1 —— 那条 run 已经计在「落库行数」里，不能重复计。）
-    - `DEDUP_FAILED_RUN`（被未落库的认领阻塞的那次推进）⇒ +1。
-
-    **为什么必须这么算**：只数落库行时，认领后未落库的那一次**不计入** ⇒ 反复
-    「认领即崩」可把声明的上界**无限绕过**（实测：声明 `2`、连推 5 次全部
-    `RETRY_FAILED_RUN` 且 `attempts=1/2` 原样不动）。把「没落地的推进」也计入 ⇒
-    **上界在任意崩溃模式下都成立**，且推进序列**必然**在 ≤ `allowed` 次内收口到失败停。
-    """
-    attempts = len(landed_ids)
-    outstanding: str | None = None
-    for decision in programs.decisions_of(program_id):
-        if decision.after_index != index:
-            continue
-        if decision.kind not in _RETRY_CLAIM_KINDS:
-            continue
-        claimed = str(decision.cited_run_id) if decision.cited_run_id else None
-        if decision.kind is ProgramDecisionKind.DEDUP_FAILED_RUN:
-            # 被阻塞的推进：没有起新 run，但**确实推进过一次**（否则序列不收敛）。
-            attempts += 1
-            outstanding = claimed or outstanding
-            continue
-        if claimed is not None and claimed not in landed_ids:
-            attempts += 1
-            outstanding = claimed
-    return attempts, outstanding
-
-
 def _evaluate(
     program: ResearchProgram,
     existing: tuple[ResearchRun, ...],
@@ -172,6 +128,11 @@ def _evaluate(
         kind, reason, facts = waiting_round_decision(last, last_index, approvals)
         return _Evaluation(kind=kind, reason=reason, cited_run_id=last.id.value, cited_facts=facts)
 
+    # GOAL-20261010-046 EC-03：**声明的人工闸门**在结论面之前（判定面在 program_waiting）。
+    gate = declared_gate_verdict(program, last, approvals)
+    if gate is not None:
+        return _gate_evaluation(last, gate)
+
     # GOAL-20261008-040 EC-03：**按终态分派** —— 失败面 / 取消面在结论面**之前**
     # （只有 `SUCCEEDED` 的轮才有「结论」可言；把「没有结论」读成「结论说停」是范畴错误）。
     if str(last.state) != ResearchRunState.State.SUCCEEDED:
@@ -192,6 +153,17 @@ def _evaluate(
         )
 
     return _after_hit(program, existing, last, hit, programs)
+
+
+def _gate_evaluation(last: ResearchRun, gate: tuple[str, str, tuple[str, ...]]) -> _Evaluation:
+    """把 `declared_gate_verdict` 的判定值包成 `_Evaluation`（闸门拦住本次推进）。"""
+    gate_kind, gate_reason, gate_facts = gate
+    return _Evaluation(
+        kind=ProgramDecisionKind(gate_kind),
+        reason=gate_reason,
+        cited_run_id=last.id.value,
+        cited_facts=gate_facts,
+    )
 
 
 def _non_success_terminal(
@@ -220,6 +192,17 @@ def _non_success_terminal(
     return _failed_round(program, existing, last, last_index, programs)
 
 
+def _retry_facts(
+    programs: ProgramStore,
+    program_id: str,
+    existing: tuple[ResearchRun, ...],
+    last_index: int,
+) -> tuple[int, str | None]:
+    """失败重试面的 `(已用尝试数, 未落库的认领)` —— 落库行数取自 canonical `existing`。"""
+    landed_ids = {run.id.value for run in existing if (run.program_index or 0) == last_index}
+    return retry_face_state(programs, program_id, last_index, landed_ids)
+
+
 def _failed_round(
     program: ResearchProgram,
     existing: tuple[ResearchRun, ...],
@@ -238,12 +221,11 @@ def _failed_round(
     上界是**硬**约束（必须收口）；去重是**幂等**约束（同一认领不重复起 run）。
     若把去重排在前面，被阻塞的推进**永远**落去重、**永不**收口 ⇒ 正是本轮要消灭的
     「隐式无限重跑」。已用尝试数把「未落库的认领」与「被阻塞的推进」都计入
-    （`_retry_face_state`）⇒ 步数有界且必然收口。
+    （`program_retry.retry_face_state`）⇒ 步数有界且必然收口。
     """
     state = str(last.state)
     allowed = program.max_attempts_per_index
-    landed_ids = {run.id.value for run in existing if (run.program_index or 0) == last_index}
-    attempts, outstanding = _retry_face_state(programs, program.id, last_index, landed_ids)
+    attempts, outstanding = _retry_facts(programs, program.id, existing, last_index)
     cited = (f"state={state}", f"attempts={attempts}/{allowed}")
     if attempts >= allowed:
         return _bounded_stop(last, last_index, attempts, allowed, cited)

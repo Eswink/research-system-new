@@ -22,7 +22,7 @@ from packages.domain.program import (
 
 _PROGRAM_SELECT = (
     "SELECT program_id, project_id, protocol_id, max_runs, max_attempts_per_index,"
-    " continue_rule_json, created_at, updated_at FROM research_programs"
+    " human_gate_at_index, continue_rule_json, created_at, updated_at FROM research_programs"
 )
 _DECISION_SELECT = (
     "SELECT program_id, after_index, decided_at, kind, reason, cited_run_id,"
@@ -59,6 +59,10 @@ def _decode_program(row: Any) -> ResearchProgram:
         max_runs=int(row["max_runs"]),
         # GOAL-20261008-040 EC-02：每序号尝试上界（缺省 1 = 不重试）。
         max_attempts_per_index=int(row["max_attempts_per_index"]),
+        # GOAL-20261010-046 EC-02：NULL = 不设闸门（既有行为逐字不变）。
+        human_gate_at_index=(
+            int(row["human_gate_at_index"]) if row["human_gate_at_index"] is not None else None
+        ),
         continue_rule=ProgramContinueRule(
             verdict_in=tuple(str(item) for item in payload["verdict_in"])
         ),
@@ -114,8 +118,9 @@ class PostgresProgramStore(PostgresAdapterBase):
         self._ensure_open()
         self._conn.execute(
             "INSERT INTO research_programs (program_id, project_id, protocol_id, max_runs,"
-            " max_attempts_per_index, continue_rule_json, created_at, updated_at)"
-            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+            " max_attempts_per_index, human_gate_at_index, continue_rule_json, created_at,"
+            " updated_at)"
+            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
             " ON CONFLICT (program_id) DO NOTHING",
             (
                 program.id,
@@ -123,6 +128,7 @@ class PostgresProgramStore(PostgresAdapterBase):
                 program.protocol_id,
                 program.max_runs,
                 program.max_attempts_per_index,
+                program.human_gate_at_index,
                 json.dumps(
                     {"verdict_in": list(program.continue_rule.verdict_in)},
                     ensure_ascii=False,

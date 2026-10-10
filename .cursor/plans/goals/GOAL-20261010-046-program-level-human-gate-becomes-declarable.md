@@ -85,7 +85,7 @@ exit_criteria:
       packages/application/run_orchestration/program_{runner,waiting}.py` ⇒ 全 0；
       `rg -n "def pending_human_gates" -A12 packages/application/run_orchestration/human_gates.py`；
       `rg -n "max_attempts_per_index|human" adapters/{sqlite,postgres}/program_store.py`。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **声明面（可选 + 两库同契约）**：`ResearchProgram` 可**声明**闸门（候选：
@@ -95,7 +95,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/domain tests/adapters/sqlite
       tests/postgres tests/api -q` ⇒ 全绿 + 新用例（两库各一组 + 缺省 + 非法）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **判定与推进（点名）**：推进在**声明的闸门轮**停下等人 —— 判定种类**可区分**于
@@ -105,7 +105,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest
       tests/application/run_orchestration -q` ⇒ 全绿 + 新用例（在闸门轮 / 不在闸门轮 / 未声明）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真的被用上（+ 三条反证）**：(a) 实跑：程序声明「第 2 轮是人工闸门」⇒ 第 1 轮跑完后的推进
@@ -115,7 +115,7 @@ exit_criteria:
       （`ApprovalRecord` 未被写 / 未被消耗）；(e) 缺审批面 ⇒ **点名**（不静默当成无闸门）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e -q` ⇒ 全绿；新增判据全绿。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -171,9 +171,11 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261010-383-goal-046-ec01-04-program-human-gate.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-384-goal-046-ec01-04-program-human-gate.md
+memory_entries:
+  - extraction-must-not-re-point-existing-criteria
 ---
 
 # GOAL-20261010-046 — 程序级人工闸门可声明
@@ -188,10 +190,10 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | 程序面**零**闸门声明（域实体无字段 / 三文件零命中）+ phase/run 面实现可复用 | PENDING |
-| EC-02 | 声明面 | `ResearchProgram` 可声明闸门（可选、缺省逐字不变）；两库落库往返；非法点名 | PENDING |
-| EC-03 | 判定与推进 | 在闸门轮停下等人：判定可区分 + 点名闸门与待审批；不自动放行 | PENDING |
-| EC-04 | 真的被用上 | 实跑停在该轮；**反证**：轮前不停 / 未声明逐字不变 / 审批不被消耗 / 缺面点名 | PENDING |
+| EC-01 | 勘察定稿 | 程序面**零**闸门声明（域实体无字段 / 三文件零命中）+ phase/run 面实现可复用 | PASS |
+| EC-02 | 声明面 | `ResearchProgram` 可声明闸门（可选、缺省逐字不变）；两库落库往返；非法点名 | PASS |
+| EC-03 | 判定与推进 | 在闸门轮停下等人：判定可区分 + 点名闸门与待审批；不自动放行 | PASS |
+| EC-04 | 真的被用上 | 实跑停在该轮；**反证**：轮前不停 / 未声明逐字不变 / 审批不被消耗 / 缺面点名 | PASS |
 | EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PENDING |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**绕过或静默跳过**声明的人工闸门；
@@ -363,10 +365,12 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261010-383` | （见 CI 台账） | EC-01…EC-04 全 PASS：**程序级人工闸门可声明** —— ① 域 +1 **可选** `human_gate_at_index`（缺省 `None` ⇒ 逐字不变；越界**点名**）；② **两库同契约**（SQLite schema + 迁移 **020** 只加列；PG `INSERT` 带列）；③ DTO / 路由 / 读面透传；④ 第 N 轮**跑完之后**的推进被拦住（**复用**序 12 的 `WAIT_FOR_APPROVAL`）+ **点名**声明值与待审批；语义**照抄** phase 面 `pending_human_gates`（声明的闸门 − 已裁决）；⑤ **三向反证 G-1/G-2/G-3 全红**（绕过 / 轮前误拦 / 已裁决仍拦）+ 二进制复原 raw `sha256` 一致；⑥ **规模门逼出的搬迁撞红既有判据**—— `goal041` 的两条按**位置**写死 ⇒ 搬迁即假红，**被 GOAL-043 立的「零判负」判据当场捕获** ⇒ 改成**判关系不判位置**（沉淀 `MEM-20261010-215`）| （见 CI 台账）| 判据抓到「搬迁打断按位置写死的断言」| EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **四条实测读数**（域实体无闸门位 / 程序面三文件零命中 / phase 面实现可复用（语义 + 三步副作用）/ 闸门集按 run 算）⇒ 定位 `O-2` 形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 14** | （见 CI 台账） | — | 五条 EC 全 PENDING；声明形态（①）与判定种类（②）待 cycle 1 落 | cycle 1（EC-02 声明面 + EC-03 判定与推进） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-10 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**程序级人工闸门可声明** —— 此前程序只能**认得**别人留下的等待（序 12），**自己无法声明**闸门（域实体无字段 / 程序面三文件零命中）。**已修**：域 +1 可选声明（缺省逐字不变、越界点名）+ 两库同契约落库（迁移 **020** 只加列）+ DTO/路由透传 + 第 N 轮跑完后**被拦住并点名**（复用 `WAIT_FOR_APPROVAL`；语义照抄 phase 面 `pending_human_gates`）+ **不**自动放行。三向反证全红。**一处实测**：为守 450 行规模门所做的**搬迁**撞断了 `goal041` 的两条**按位置写死**的断言 —— **被 GOAL-043 立的「零判负」判据当场捕获** ⇒ 改成「判关系不判位置」，沉淀 `MEM-20261010-215`。EC-05 待收口。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-10 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 14**（承担者 = `GOAL-037` 的实测残余 `O-2`）。只读勘察 + **四条实测读数**：(a) `ResearchProgram` 字段表**无**任何闸门声明位；(b) 程序面三文件（`program.py` / `program_runner.py` / `program_waiting.py`）对 `human_gated` / `human_gate` **零命中**；(c) 序 12 只让程序**认得** `WAITING_FOR_APPROVAL` **状态**（别人留下的等待），**没让它自己声明闸门**；(d) **phase/run 面实现完整可复用** —— `human_gates.pending_human_gates` 的语义 = 声明的 `HUMAN_GATE` phase **减**已裁决审批（无 store ⇒ fail-closed），`phase_pause.pause_for_human_gate` 已含「注册审批 + 发事件 + 落 `WAITING_FOR_APPROVAL`」三步。**结论**：「人在环」目前只是**恰好发生过的外部事件**，不是**编排能力**。五条 EC 全 `PENDING`。**不做数量目标**；**不**新建第二套审批/闸门机制；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

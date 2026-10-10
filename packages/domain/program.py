@@ -104,6 +104,12 @@ class ResearchProgram:
     # 缺省 `1` = **不重试**（既有行为逐字不变）；>1 = 允许同序号重起，**有界**
     # （计数由 `for_program` 的同序号 run 数算，不落第二套计数存储）。
     max_attempts_per_index: int = 1
+    # GOAL-20261010-046 EC-02：**程序级人工闸门**（可选声明；缺省 `None` = **不设闸门**
+    # ⇒ 既有行为逐字不变）。语义 = 「第 N 轮**跑完之后**的推进停下等人看结果」——
+    # 与 phase 面的 `HUMAN_GATE` 同一件事（那里是 phase 维度，这里是**程序轮次**维度）。
+    # 为什么是程序自己声明：此前「人在环」只能由**别人**（协议 phase 闸门 / 外部操作）制造，
+    # 编排能力里没有它 ⇒「中断后可接回」缺了**中断可声明**这一半。
+    human_gate_at_index: int | None = None
     created_at: Timestamp = field(default_factory=Timestamp.now)
     updated_at: Timestamp = field(default_factory=Timestamp.now)
 
@@ -118,6 +124,14 @@ class ResearchProgram:
             raise ValueError("max_runs must be >= 1")
         if self.max_attempts_per_index < 1:
             raise ValueError("max_attempts_per_index must be >= 1")
+        # GOAL-20261010-046 EC-02：闸门序号**点名**非法值（越界 / 负数 ⇒ 声明坏掉）。
+        if self.human_gate_at_index is not None and not (
+            1 <= self.human_gate_at_index <= self.max_runs
+        ):
+            raise ValueError(
+                "human_gate_at_index must be within 1..max_runs when declared "
+                f"(got {self.human_gate_at_index}, max_runs={self.max_runs})"
+            )
 
 
 @dataclass(frozen=True, slots=True)

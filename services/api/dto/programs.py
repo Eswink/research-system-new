@@ -24,6 +24,9 @@ class ProgramCreateDto(BaseModel):
     #: GOAL-20261008-040 EC-02：每个序号允许的尝试数（失败后可按声明重试）。
     #: 缺省 `1` = **不重试**（既有行为逐字不变）。
     max_attempts_per_index: int = Field(default=1, ge=1, le=10)
+    #: GOAL-20261010-046 EC-02：**程序级人工闸门**序号（该轮**跑完之后**的推进停下等人）。
+    #: 缺省 `None` = **不设闸门**（既有行为逐字不变）。上界由 `max_runs` 在域层校验。
+    human_gate_at_index: int | None = Field(default=None, ge=1)
 
 
 class ProgramDecisionDto(BaseModel):
@@ -57,6 +60,8 @@ class ProgramDetailDto(BaseModel):
     continue_on_verdicts: list[str]
     #: GOAL-20261008-040 EC-02：每个序号允许的尝试数（缺省 1 = 不重试）。
     max_attempts_per_index: int = 1
+    #: GOAL-20261010-046 EC-02：程序级人工闸门序号（缺省 `None` = 不设闸门）。
+    human_gate_at_index: int | None = None
     created_at: str
     updated_at: str
     runs: list[ProgramRunDto]
