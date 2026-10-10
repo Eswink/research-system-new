@@ -51,9 +51,11 @@ GOAL = ".cursor/plans/goals/GOAL-20261010-048-a-program-gate-can-be-declared-as-
 #: 子计划 / 复检（记录面逐条在位）。
 CHILD_PLANS: tuple[str, ...] = (
     ".cursor/plans/tasks/PLAN-20261010-393-goal-048-ec01-04-a-declared-gate-can-be-a-condition.md",
+    ".cursor/plans/tasks/PLAN-20261010-395-goal-048-ec05-self-bootstrap-closeout.md",
 )
 RECHECKS: tuple[str, ...] = (
     ".cursor/plans/rechecks/RECHECK-20261010-394-goal-048-ec01-04-a-declared-gate-can-be-a-condition.md",
+    ".cursor/plans/rechecks/RECHECK-20261010-396-goal-048-ec05-self-bootstrap-closeout.md",
 )
 
 #: 记录面：GOAL 目录 README（格式契约）+ MAINLINE 宪章（本轮的战役程序）。
