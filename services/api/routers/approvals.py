@@ -25,6 +25,7 @@ from packages.domain.budget import BudgetPolicy, ResourceType
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from services.api.approvals import (
+    PROGRAM_GATE_ACTION_PREFIX,
     build_approval_event,
     decide_approval,
 )
@@ -126,6 +127,13 @@ async def decide(approval_id: str, payload: ApprovalDecideDto, request: Request)
         if_match=request.headers.get("If-Match"),
         run=run,
     )
+    # GOAL-20261010-047 EC-03：**程序级闸门**（`program-gate:` 前缀）的 run 已**终态**
+    # ⇒ 不走状态机、不续跑（闸门拦的是「第 N 轮跑完之后要不要继续起下一轮」，那是**程序面**
+    # 的推进决定，不是 run 的状态迁移）。裁决只落审批记录 + 审计事件。
+    # phase 面（`human-gate:`）**逐字保持**既有路径。
+    if decided.action.startswith(PROGRAM_GATE_ACTION_PREFIX):
+        deps.events.publish(build_approval_event(decided, actor=_decide_actor()))
+        return _approval_dto(decided)
     transition = (
         ResearchRunState.Transition.APPROVAL_GRANTED
         if payload.decision == "approve"

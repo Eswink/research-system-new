@@ -26,11 +26,18 @@ from packages.application.ports.approval_store import (
     ApprovalSpec,
     ApprovalStore,
 )
+from packages.application.run_orchestration.program_waiting import (
+    PROGRAM_GATE_ACTION,
+)
 from packages.domain.core import Timestamp
 from packages.domain.events import EventEnvelope, EventType, digest_of_payload
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 from services.api.errors import ApiError
+
+#: 程序级闸门的 `action` 前缀（GOAL-20261010-047 EC-03）。**单一来源**在应用层
+#: （`program_waiting` 注册时用的就是它）—— 两处各写一份会静默串台。
+PROGRAM_GATE_ACTION_PREFIX = PROGRAM_GATE_ACTION
 
 APPROVAL_VERSION_DIGEST = "sha256:" + "0" * 64  # M13 内存版恒为 0 基线（M14 换语义版本）
 
@@ -85,6 +92,34 @@ class ApprovalRegistry(ApprovalStore):
         self._approvals[approval.id] = approval
 
 
+def _require_admissible(approval: ApprovalRecord, run: ResearchRun) -> None:
+    """**准入**（按 `action` 前缀分派；GOAL-20261010-047 EC-03）—— 两条分支互斥。
+
+    - **phase/run 面**（不带 `program-gate:` 前缀）：**逐字保持**既有规则 ——
+      run 必须处于 `WAITING_FOR_APPROVAL`（否则 409 `Invalid Transition`）；
+    - **程序级闸门**（带该前缀）：闸门是**该轮跑完之后**才拦的 ⇒ 该 run 已**终态**
+      （实测：`SUCCEEDED`），**不可能**处在等待态 ⇒ 准入改为「run **终态**」。
+
+    **为什么用前缀分派而不是放宽整条规则**：现有「非等待态不得裁决」是**受判面**
+    （`test_decide_requires_waiting_state` 明写「hidden button != authorization」）⇒
+    放宽它 = 同时放宽 phase 面。前缀把两种语义**分开**：只有**程序自己注册**的闸门走新分支。
+    """
+    if approval.action.startswith(PROGRAM_GATE_ACTION_PREFIX):
+        if not run.is_terminal:
+            raise ApiError(
+                409,
+                "Invalid Transition",
+                f"program-gate approval expects a terminal run, got {run.state}",
+            )
+        return
+    if run.state != ResearchRunState.State.WAITING_FOR_APPROVAL:
+        raise ApiError(
+            409,
+            "Invalid Transition",
+            f"cannot decide approval in run state {run.state}",
+        )
+
+
 def decide_approval(
     *,
     registry: ApprovalStore,
@@ -93,7 +128,11 @@ def decide_approval(
     if_match: str | None,
     run: ResearchRun,
 ) -> ApprovalRecord:
-    """后端裁决：hidden button != authorization（直接调 API 同样执行规则）。"""
+    """后端裁决：hidden button != authorization（直接调 API 同样执行规则）。
+
+    **准入**见 `_require_admissible`（按 `action` 前缀两分支；GOAL-20261010-047 EC-03）。
+    **不**改 run 状态、**不**触发续跑 —— 两者都在调用方按同一前缀分派。
+    """
     approval = registry.get(approval_id)
     if approval is None:
         raise ApiError(404, "Not Found", f"approval not found: {approval_id}")
@@ -101,12 +140,7 @@ def decide_approval(
         raise ApiError(409, "Approval Already Decided", f"approval is {approval.status}")
     if approval.run_id != run.id.value:
         raise ApiError(409, "Approval Run Mismatch", "approval does not belong to this run")
-    if run.state != ResearchRunState.State.WAITING_FOR_APPROVAL:
-        raise ApiError(
-            409,
-            "Invalid Transition",
-            f"cannot decide approval in run state {run.state}",
-        )
+    _require_admissible(approval, run)
     if if_match is None:
         raise ApiError(428, "Precondition Required", "If-Match header is required for decision")
     if if_match != "*" and if_match != approval.version:

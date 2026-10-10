@@ -228,3 +228,64 @@ def test_an_undeclared_gate_leaves_the_http_advance_unchanged() -> None:
         assert second["decision"]["cited_facts"] == ["verdict PASS"], second["decision"]
         assert second["started_run_id"], second
         assert read_program(client, _program_id(program))["run_count"] == 2, "缺省路径照常续跑"
+
+
+def test_a_declared_gate_can_be_decided_and_the_program_resumes() -> None:
+    """GOAL-20261010-047 EC-03：声明的闸门**接得回** —— 经既有审批面裁决后推进照常继续。
+
+    **本轮的靶子**（此前实测「只停不回」）：闸门拦住后，`GET /runs/{id}/approvals`
+    返回**空**、`run_count` 恒 1，程序**永远**停在那一轮。本用例把**整条回路**走完：
+    闸门拦住 → 产品面上**有**一条待决（点名在判词里）→ 经 `POST /approvals/{id}/decide`
+    裁决 → 再推进**照常续**（`CONTINUE`）。**该轮不重跑**（第 1 轮仍只有一条 run）。
+    """
+    with TestClient(create_app(program_deps())) as client:
+        program = create_program(client, max_runs=3, human_gate_at_index=1)
+        pid = _program_id(program)
+        first = advance(client, pid)
+        run_id = first["started_run_id"]
+        assert run_id, first
+
+        second = advance(client, pid)
+        assert second["decision"]["kind"] == _WAIT_FOR_APPROVAL, second
+        named = [f for f in second["decision"]["cited_facts"] if f.startswith("approval_id=")]
+        assert named, ("判词必须点名注册到的审批标识", second["decision"])
+
+        listing = client.get(f"/runs/{run_id}/approvals")
+        assert listing.status_code == 200, listing.text
+        rows = listing.json()
+        assert len(rows) == 1, ("声明闸门必须在既有审批面上注册**一条**待决", rows)
+        assert rows[0]["status"] == "PENDING", rows
+        assert rows[0]["risk"] == "HUMAN_GATE", rows
+        approval_id = rows[0]["id"]
+
+        # 幂等：再推一次不新增待决（否则「等人拍板」堆成一串）
+        advance(client, pid)
+        assert len(client.get(f"/runs/{run_id}/approvals").json()) == 1, "重复推进不得堆积"
+
+        decided = client.post(
+            f"/approvals/{approval_id}/decide",
+            json={"decision": "approve"},
+            headers={"If-Match": "*", "Idempotency-Key": "goal047-decide"},
+        )
+        assert decided.status_code == 200, decided.text
+        assert decided.json()["status"] == "APPROVED", decided.json()
+
+        third = advance(client, pid)
+        assert third["decision"]["kind"] == _CONTINUE, ("裁决后必须照常续", third)
+        assert third["started_run_id"], third
+        detail = read_program(client, pid)
+        assert detail["run_count"] == 2, ("第 1 轮不得重跑；续跑落在该轮**之后**", detail)
+        assert [row["program_index"] for row in detail["runs"]] == [1, 2], detail["runs"]
+
+
+def test_an_undecided_gate_still_stops_the_program() -> None:
+    """GOAL-20261010-047 反证臂：**未裁决** ⇒ 仍停（注册了待决**不等于**放行）。"""
+    with TestClient(create_app(program_deps())) as client:
+        program = create_program(client, max_runs=3, human_gate_at_index=1)
+        pid = _program_id(program)
+        advance(client, pid)
+        for _ in range(2):
+            result = advance(client, pid)
+            assert result["decision"]["kind"] == _WAIT_FOR_APPROVAL, result
+            assert result["started_run_id"] is None, "人没拍板不得起下一轮"
+        assert read_program(client, pid)["run_count"] == 1

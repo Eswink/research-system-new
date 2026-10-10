@@ -21,6 +21,7 @@ from typing import Any
 
 import pytest
 
+from packages.application.ports.approval_store import ApprovalSpec
 from packages.application.run_orchestration.program_runner import advance_program
 from packages.domain.program import ProgramDecisionKind
 from tests.application.run_orchestration.test_program_runner import _Harness
@@ -274,3 +275,125 @@ def test_a_gate_declared_out_of_range_is_named() -> None:
             continue_rule=ProgramContinueRule(verdict_in=("ACCEPT",)),
             human_gate_at_index=9,
         )
+
+
+# --- GOAL-20261010-047：**接回面**（声明的闸门要能被裁决 ⇒ 先得有人注册它） --------------
+
+
+class _GateRow:
+    """一条待决审批的最小形状（`id` / `status` / `action` —— 判定面与断言只读这三个）。"""
+
+    def __init__(self, *, id: str, status: str = "PENDING", action: str = "") -> None:
+        self.id = id
+        self.status = status
+        self.action = action
+
+
+class _WritableApprovals:
+    """带**写面**的极小审批面（`list_for_run` + `register`）—— 接回面的最小形状。
+
+    与 `_ApprovalRows`（只读）配对：两者**都**是合法装配形态，差别是接回面有没有注册能力
+    （真实 `ApprovalStore` 是带写面的；只读面用来钉「既有的只读行为不得被悄悄改掉」）。
+    """
+
+    def __init__(self) -> None:
+        self.rows: list[_GateRow] = []
+        self.calls: list[str] = []
+        self.registered: list[ApprovalSpec] = []
+
+    def list_for_run(self, run_id: str) -> tuple[object, ...]:
+        self.calls.append(run_id)
+        return tuple(self.rows)
+
+    def register(self, spec: Any) -> "_GateRow":
+        row = _GateRow(id=f"apr-{len(self.registered) + 1}", status="PENDING", action=spec.action)
+        self.registered.append(spec)
+        self.rows.append(row)
+        return row
+
+
+def test_a_declared_gate_registers_a_decidable_approval() -> None:
+    """**本轮的靶子**：声明闸门 ⇒ 推进**注册一条待决审批**且判词**点名**它。
+
+    这是「接得回」的**必要条件**：没有这条记录，裁决面就无从下手（实测过 ——
+    `decide` 对不存在的 id 报 404；闸门此前**什么都不注册**）。
+    """
+    from packages.application.run_orchestration.program_waiting import PROGRAM_GATE_ACTION
+
+    h = _gated(gate=1)
+    approvals = _WritableApprovals()
+    result = _advance_with_verdict(h, approvals)
+    assert result.decision.kind is ProgramDecisionKind.WAIT_FOR_APPROVAL, result.decision
+    assert len(approvals.registered) == 1, ("声明闸门必须注册一条待决", approvals.registered)
+    spec = approvals.registered[0]
+    assert spec.action.startswith(PROGRAM_GATE_ACTION), spec.action
+    assert spec.risk == "HUMAN_GATE", spec.risk
+    assert h.program.id in spec.action, ("action 必须点名是哪个程序的闸门", spec.action)
+    assert any("approval_id=" in item for item in result.decision.cited_facts), (
+        "被引事实必须点名注册到的审批标识",
+        result.decision.cited_facts,
+    )
+    assert any("human_gate_at_index=1" in item for item in result.decision.cited_facts)
+
+
+def test_a_repeated_advance_does_not_register_a_second_pending() -> None:
+    """**幂等**：同一声明点重复推进**不新增**待决（否则「等人拍板」会堆成一串）。"""
+    h = _gated(gate=1)
+    approvals = _WritableApprovals()
+    _advance_with_verdict(h, approvals)
+    _advance_with_verdict(h, approvals)
+    assert len(approvals.registered) == 1, ("第二次推进不得再注册", approvals.registered)
+    assert len(approvals.rows) == 1, approvals.rows
+
+
+def test_a_decided_gate_is_not_re_registered() -> None:
+    """**幂等（已裁决侧）**：已有该闸门的记录（即使已裁决）⇒ 不再注册新的。
+
+    否则「裁决后推进继续」这一步会在下一轮**又造一条待决** ⇒ 闸门永远关不上。
+    """
+    h = _gated(gate=1)
+    approvals = _WritableApprovals()
+    approvals.rows.append(
+        type(
+            "Rec",
+            (),
+            {"id": "apr-old", "status": "APPROVED", "action": f"program-gate:{h.program.id}"},
+        )()
+    )
+    _advance_with_verdict(h, approvals)
+    assert approvals.registered == [], ("已有记录 ⇒ 不得重复注册", approvals.registered)
+
+
+def test_a_read_only_face_is_named_not_silently_treated_as_registered() -> None:
+    """**只读面 ⇒ 点名**：面不提供 `register` 时，判词必须说出来（**不**假装已注册）。
+
+    这条同时钉住序 14 的只读形状**不得被悄悄改掉**：`_ApprovalRows` 这类只读装配仍然是
+    合法输入，但它**接不回**，所以判词要如实讲清楚。
+    """
+    h = _gated(gate=1)
+    approvals = _ApprovalRows([_row("apr-readonly")])
+    result = _advance_with_verdict(h, approvals)
+    assert result.decision.kind is ProgramDecisionKind.WAIT_FOR_APPROVAL, result.decision
+    assert "只读" in result.decision.reason, ("必须点名只读面接不回", result.decision.reason)
+    assert not any("approval_id=" in item for item in result.decision.cited_facts), (
+        "没注册成 ⇒ 不得点名一个凭空的 approval_id",
+        result.decision.cited_facts,
+    )
+
+
+def test_an_undeclared_gate_registers_nothing() -> None:
+    """**反证臂**：未声明闸门 ⇒ 注册面**零调用**（缺省路径逐字不变）。"""
+    h = _gated(gate=None)
+    approvals = _WritableApprovals()
+    result = _advance_with_verdict(h, approvals)
+    assert result.decision.kind is ProgramDecisionKind.CONTINUE, result.decision
+    assert approvals.registered == [], ("未声明不得注册", approvals.registered)
+
+
+def test_the_gate_does_not_register_before_its_round() -> None:
+    """**反证臂**：闸门声明在第 2 轮 ⇒ 第 1 轮跑完的推进**不注册**（轮前不动）。"""
+    h = _gated(gate=2)
+    approvals = _WritableApprovals()
+    result = _advance_with_verdict(h, approvals)
+    assert result.decision.kind is ProgramDecisionKind.CONTINUE, result.decision
+    assert approvals.registered == [], approvals.registered

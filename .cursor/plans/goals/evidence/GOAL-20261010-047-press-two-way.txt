@@ -1,0 +1,11 @@
+H-1 未裁决也照常续（去掉拦住）: 按压 RED
+sha 复原一致=True | 1e162cc31574
+H-2 已裁决仍停（与 phase 面语义不一致）: 按压 RED
+sha 复原一致=True | 1e162cc31574
+H-3 只读面冒充注册面（不点名）: 按压 RED
+sha 复原一致=True | 1e162cc31574
+H-4 重复注册（幂等面失效）: 按压 RED
+sha 复原一致=True | 1e162cc31574
+H-5 准入被放宽（非前缀也接受终态 run）: 按压 RED
+sha 复原一致=True | 5e844bc1a63e
+SUMMARY presses=5 all_red_and_restored=True
