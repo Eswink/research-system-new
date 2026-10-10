@@ -353,8 +353,20 @@ deduplication）。
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| （本 GOAL 建档提交） | 待取证 | replan（序 11 新增）+ 建档（五 EC + 事实层读数） |
-| （后续逐条填） | — | — |
+| `59c0e31`（replan + 建档） | `38010532994` **Push on main / CodeQL success**；`38010533708` **M0 cancelled** —— `cancel-in-progress`（被 `d709f3c` 的推送取消）⇒ `covered_by 38011239724` | 程序表序 11 + 五 EC + 事实层读数 |
+| `d709f3c`（cycle 1 = EC-01…EC-04） | `38011239724` **M0 success**（8 job 全 success）+ `38011239702` **Push on main / CodeQL success** | 加载面 + 崩溃面（AST）+ 机器判据；本地 m0 23/23（5325 passed） |
+| `637ce67`（cycle 2 提交 A = EC-05 首轮） | `38012945487` **M0 failure** —— **真红且已修**（见下）| 验证器 + 断言集 + `IN_SCOPE` |
+| `f1ca193`（cycle 2 提交 B = 两树归档） | **无自己的 run**（同批推送） | 两份判词归档进树；⇒ `covered_by 38015753637` |
+| `90ad612`（cycle 2 · **GOAL 收口** = 本批 HEAD） | `38015753637` **M0 success**（8 job 全 success）+ `38015753446` **Push on main / CodeQL success** | **GOAL 收口提交**；覆盖 `637ce67` / `f1ca193` 的代码面；**实测取证** |
+
+### `637ce67` 的那次 red：**真红**（不是基础设施），且由**我自己的新判据**抓出
+
+**逐字**：`FAILED tests/tooling/test_closeout_verifiers_run_their_own_assertions.py::test_the_verifiers_list_partitions_every_verifier_explicitly - AssertionError: ('这些验证器没被分类（新增时必须显式决定）', ['tools/verify_goal043_closeout.py'])`
+
+**成因**：本轮新增了 `tools/verify_goal043_closeout.py`，但**忘了把它登记进 `_VERIFIERS`** ——
+正是**本轮刚立的射程分区判据**把它报了出来（**判据当场兑现价值**）。
+**处置**：登记 + 把清单下界 `_MIN_VERIFIERS` 12 → 13；本地复跑 7 passed、**全量 m0 23/23**；
+`90ad612` 的 CI **M0 success** 复取证。**未动任何阈值 / 未放宽判据**（只补登记）。
 
 ## 迭代日志
 
