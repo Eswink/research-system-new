@@ -2,7 +2,7 @@
 id: GOAL-20261010-043
 slug: closeout-recheck-assets-must-run-their-own-assertions
 title: 收口复检资产**自身**可信 —— 三处验证器声明自己的断言集却加载 037 的那份（自有断言**从未运行**），且 GOAL-040 的断言集**今天直接崩溃**（按文本匹配已被正当改签名的调用）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-10
 updated_at: 2026-10-10
 owners:
@@ -130,7 +130,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -172,7 +172,7 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-369-goal-043-ec01-04-closeout-assets-run-own-assertions.md
   - .cursor/plans/tasks/PLAN-20261010-371-goal-043-ec05-self-bootstrap-closeout.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-370-goal-043-ec01-04-closeout-assets.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-372-goal-043-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -192,7 +192,7 @@ memory_entries: []
 | EC-02 | 加载面修正 | 三处改为加载**各自**的断言集；改后**跑完不崩**且**自有断言真的在判词里**（判词数必然**变少** —— 见 EC-02 的修正登记） | PASS |
 | EC-03 | 崩溃面修正 | 按文本 index 匹配调用签名的判据改**结构判据**；受判面等价或更宽 | PASS |
 | EC-04 | 机器判据钉住 | 「声明 == 实载」+「被点名的断言集可执行」；**合成反例必红** | PASS |
-| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得让**加载错断言集**静默通过；
 不得把**崩溃**当成判负；不得**重写历史 GOAL 的复检结论**；不得宣称项目安全（`R-M1`）；
@@ -360,6 +360,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | `PLAN-20261010-371` | `637ce67` / `f1ca193` | EC-05 五条 AC 全 PASS：收口验证器 **57 判词 / 0 FAIL**（标准断言集**一行未重写**；判词集**逐条覆盖**本 GOAL 的 EC：加载面三处 + 结构判据两条 + 机器判据三条主函数名）+ `IN_SCOPE` **纯收紧**（+2 行；判据 8 passed）+ **两树 `TWO-TREE PASS`**（两路 **57 判词** / `sha256` 相同 `85688b62…`）+ 归档定格（两份各 **2094 B / 57 行**、`CR=0`）+ 治理 + 宪章判据 + **as-is m0 23/23**（5325 passed, 228 skipped）| （见 CI 台账）| **两处判据自纠**：子串搜索误判 docstring 引述 ⇒ 改 AST 且排除 docstring；区间写法与逐条匹配打架 ⇒ 取首尾锚点 | 五条 EC 全 PASS；GOAL 收口。**m0 抓到并已修一处**（我自己的新判据抓到我自己的漏登记：新增 `verify_goal043` 未进射程清单 ⇒ `partitions` 判据报红 ⇒ 登记 + 下界 12→13）| GOAL 收口（`RECHECK-20261010-372`）|
 | 1 | `PLAN-20261010-369` | （见 CI 台账） | EC-01…EC-04 全 PASS：**复检资产自身可信** —— ① 勘察读数（六处验证器声明/实载对拍 ⇒ 038/039/040 不一致；自有断言 0 命中；goal040 断言集崩溃）；② **加载面修正**（三处改为加载各自的断言集）⇒ 三处验证器各跑通（goal038/039 各 60 PASS、goal040 59 PASS，**0 FAIL**），且**自有断言名真的出现在判词里**；③ **崩溃面修正**：goal040 的文本 index 判据改 **AST 结构判据**（`_first_call_line` 按被调名取行号，与实参无关）⇒ 不再随签名演进崩溃，受判面等价（仍要求两者都在场）；④ **机器判据**（新增 `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py`，**7 passed**）：声明==实载（AST 读，含两种世代形态）+ 被点名断言集**可执行** + **射程分区不得漏项**（031…042 在射程 / 015·023…030 逐条登记为旧一代，理由非空）；⑤ 两向反证 **P-1/P-2 全红**（P-1 复现历史加载缺陷 / P-2 复现崩溃缺陷）+ 二进制复原 raw `sha256` 一致 + 归档进树（110 B / `CR=0`）；⑥ **如实修正建档子句**：EC-02 初版写「判词数只增不减」—— 实测**不成立且不该成立**（换加载面必然改变条数：037=34 / 038=39=21 / 040=20 ⇒ 73→59），已改为「**跑自己的**断言」并把该修正写进 EC-02 正文 | （见 CI 台账）| 门抓到我的两处行宽 + 一处格式 ⇒ 已修 | EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **两条实测读数**（六处验证器声明/实载对拍 ⇒ 038/039/040 不一致；`goal040` 断言集**崩溃** `ValueError: substring not found`）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 11** | （见 CI 台账） | — | 五条 EC 全 PENDING；加载面/崩溃面的修法（①②）待 cycle 1 落 | cycle 1（EC-02 加载面 + EC-03 崩溃面 + EC-04 判据） |
 
@@ -367,5 +368,6 @@ deduplication）。
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-10 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、`IN_SCOPE` **纯收紧**、两树 **`TWO-TREE PASS`**（两路 **57 判词** / `sha256` 相同 `85688b62…`）、判词归档进树（两份各 2094 B / 57 行 / `CR=0`）、as-is m0 **23/23**（记录写完之后：5325 passed, 228 skipped）、治理 + 宪章判据绿、CI 台账逐提交。**一处时序如实登记**：两树首轮红（bootstrap：归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `U-1`…`U-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261010-372`（PASS_WITH_WARNINGS）。 |
 | 2026-10-10 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**复检资产自身可信** —— 三处验证器（038/039/040）此前**声明自己的断言集却加载 037 的那份** ⇒ 自有断言从未运行；**已修**为加载各自的断言集（三处现各跑通：60/60/59 PASS、0 FAIL，自有断言名真的出现在判词里）；**并修崩溃面**：GOAL-040 的断言集按文本匹配一个已被正当改签名的调用 ⇒ `ValueError: substring not found`；改为 **AST 结构判据**（按被调名取行号）⇒ 不再随签名演进失效。**新增机器判据**（声明==实载 + 断言集可执行 + 射程分区不漏项，7 passed，含两种世代形态）；两向反证 P-1/P-2 全红 + raw `sha256` 复原一致。**一处建档子句如实修正**：EC-02 初版「判词数只增不减」实测不成立（换加载面必然改变条数）⇒ 改为「跑自己的断言」。EC-05 待收口。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-10 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 11**。只读勘察 + **两条实测读数**：(a) `verify_goal038/039/040_closeout.py` **声明**各自断言集却**加载** `goal037_closeout_assertions.py` ⇒ 三处自有断言**从未运行**（实测 goal040 验证器判词里其自有断言名 **0** 命中）；(b) 直接调 `goal040_closeout_assertions.assertion_verdicts` ⇒ **`ValueError: substring not found`**（按文本匹配一个已被 GOAL-041 正当改签名的调用）⇒ 复检资产**随被引代码演进静默失效**。五条 EC 全 `PENDING`。**不做数量目标**；**不重写历史结论**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

@@ -31,8 +31,8 @@ PASS prior-judge-test_closeout_assertions_are_in_tree
 PASS prior-judge-test_two_tree_recheck_entry
 PASS prior-judge-test_python_source_limits
 PASS prior-judge-test_delivery_semantics_wording
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
 PASS scope-declares-this-rounds-scripts
 PASS scope-still-pins-the-entry
 PASS goal-declares-five-ecs
