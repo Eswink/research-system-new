@@ -359,8 +359,24 @@ deduplication）。
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| `cd45d38`（replan，本 GOAL 建档所在批） | 待取证 | replan（序 13 新增）+ 建档（五 EC + 事实层读数） |
-| （后续逐条填） | — | — |
+| `cd45d38`（replan） | **无自己的 run**（同批推送） | 序 13 新增（保留槽）+ 修订记录行 |
+| `39bd48f`（本 GOAL 建档） | `38027004730` **M0 success**（8 job 全 success）+ `38027004247` **Push on main / CodeQL success** | 五 EC + 四条事实层读数 |
+| `61da733`（cycle 1 = EC-01…EC-04） | `38028094071` **M0 success** + `38028094040` **Push on main / CodeQL success** | 冲突与生效起点可判定（三适配器同契约 + 读面点名）；本地 m0 23/23（5345 passed） |
+| `cc3033d`（cycle 1 门读数） | **无自己的 run**（同批推送） | ⇒ `covered_by 38028094071` |
+| `320ac7a`（cycle 2 提交 A = EC-05 首轮） | `38030025954` **Push on main / CodeQL success**；`38030026138` **M0 failure** —— **时序红（bootstrap）**，见下 | 验证器 + 断言集 + `IN_SCOPE` |
+| `844680e`（cycle 2 · **GOAL 收口**） | `38031333962` **Push on main / CodeQL success**；`38031334295` **M0 cancelled** —— `cancel-in-progress`（被 `d577d0e` 取消）⇒ `covered_by 38031368649` | EC-05 PASS + `status: ACHIEVED` + 两树 + m0 读数 + MAINLINE 进展行 |
+| `d577d0e`（门读数修正 = 本批 HEAD） | `38031368736` **Push on main / CodeQL success** + `38031368649` **M0 success**（8 job 全 success） | 覆盖 `844680e` / `320ac7a` 的代码面；**实测取证** |
+
+### `320ac7a` 的那次 red：**bootstrap 时序**（不是产品缺陷、不是判据放宽）
+
+**逐字**：`FAILED …test_every_named_assertion_set_reports_no_negative_on_this_tree -
+AssertionError: ('这些断言集在本树上**有判负** ⇒ 被引代码演进导致失配（资产坏了，不是产品缺陷）',
+["goal045_closeout_assertions.py: ['verdict-archive-current', 'verdict-archive-clean']"])`
+
+**成因**：该提交时**归档尚未写入**（归档由随后的两树调用产出并**单独提交**）
+⇒ 断言集的**归档存在性**两条在该时刻为负 —— 这是 GOAL-043 立的「零判负」判据
+**如实反映当下树状态**（不是误报）。**处置**：归档提交后 `d577d0e` 的 CI **M0 success**
+复取证。**未动任何阈值 / 未放宽判据**。**如实登记为时序**。
 
 ## 迭代日志
 
