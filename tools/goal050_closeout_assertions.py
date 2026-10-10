@@ -143,7 +143,11 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec02-the-reverse-links-come-from-one-pass",
-            "_reverse_links" in names,
+            # 判**关系**：存在**一个**「从同一批记录算反向链接」的助手（**不判它的名字**）。
+            # GOAL-20261011-052 正当把它**改名公开**（`_reverse_links` → `superseded_by_index`，
+            # 因为 HTTP 读面也要共用它 ⇒ 它成了该模块的对外面）⇒ 钉名字会**假红**。
+            # 判据读的是「有一个把 `supersedes` 汇总成反向表的助手**在模块里定义**」。
+            any(name.endswith("reverse_links") or name == "superseded_by_index" for name in names),
             "反向链接必须**从同一批记录算一次**（不新增 Port 方法、不 N+1 查询）",
         ),
         toolbox.verdict(

@@ -122,7 +122,7 @@ def _memory_row(
     """一条记忆的读面投影：**身份 + 内容 + 时效 + 取代关系 + 处置 + 理由**（逐条点名）。
 
     `superseded_by` = **谁取代了它**（反向链接）。它**必须由调用方从同一批记录算出来**
-    —— 那是「不新增 Port 方法」的代价，也是本条唯一的非局部输入（见 `_reverse_links`）。
+    —— 那是「不新增 Port 方法」的代价，也是本条唯一的非局部输入（见 `superseded_by_index`）。
     """
     state = validity_at(record, moment)
     superseded = bool(superseded_by)
@@ -193,7 +193,7 @@ def _reason(
     return "未声明时效或未到 ⇒ 照用（未声明不得被当成已到期）"
 
 
-def _reverse_links(records: tuple[Any, ...]) -> dict[str, list[str]]:
+def superseded_by_index(records: tuple[Any, ...]) -> dict[str, list[str]]:
     """反向链接表（`被取代的 id → [取代它的 id, …]`）—— **只从同一批记录算**，不新增 Port 方法。
 
     「谁取代了我」在记录自身**读不到**（正向链接写在**新**记录上）⇒ 必须扫一遍同批记录。
@@ -262,7 +262,7 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     records = memory_store.query(_tier_of(tier), scope)
     # GOAL-20261010-050 EC-02：反向链接从**同一批记录**算一次（不新增 Port 方法、
     # 不逐条再查 —— 那是 N+1 次查询，且会在两处看到不同的世界）。
-    reverse = _reverse_links(records)
+    reverse = superseded_by_index(records)
     rows = [_memory_row(record, moment, reverse.get(str(record.id), [])) for record in records]
     counts = {
         DISPOSITION_USE: 0,

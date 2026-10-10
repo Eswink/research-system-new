@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261011-409](tasks/PLAN-20261011-409-goal-052-ec01-04-the-two-read-faces-agree.md) | DONE |
 | [x] | [PLAN-20261011-407](tasks/PLAN-20261011-407-goal-051-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261011-405](tasks/PLAN-20261011-405-goal-051-ec01-04-a-conflicting-memory-is-no-longer-used.md) | DONE |
 | [x] | [PLAN-20261010-403](tasks/PLAN-20261010-403-goal-050-ec05-self-bootstrap-closeout.md) | DONE |

@@ -3755,6 +3755,18 @@
             "title": "Content",
             "type": "string"
           },
+          "contradictions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Contradictions",
+            "type": "array"
+          },
+          "disposition": {
+            "default": "",
+            "title": "Disposition",
+            "type": "string"
+          },
           "expires_at": {
             "anyOf": [
               {
@@ -3778,6 +3790,11 @@
             "title": "Provenance",
             "type": "string"
           },
+          "reason": {
+            "default": "",
+            "title": "Reason",
+            "type": "string"
+          },
           "review_after": {
             "anyOf": [
               {
@@ -3793,6 +3810,13 @@
             "default": "project",
             "title": "Scope",
             "type": "string"
+          },
+          "superseded_by": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Superseded By",
+            "type": "array"
           },
           "supersedes": {
             "items": {

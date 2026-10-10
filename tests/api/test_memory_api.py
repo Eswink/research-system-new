@@ -15,6 +15,9 @@ from packages.application.ports.errors import InvalidInputError
 from packages.domain.enums import TrustLabel
 from packages.domain.evidence import SourceRecord
 
+#: 读面判定用的**显式时点**（读面不读挂钟 ⇒ 判定可复现）。
+_NOW = "2026-10-11T00:00:00+00:00"
+
 
 def _deps(client: TestClient) -> Any:
     return cast(Any, client.app).state.deps
@@ -244,3 +247,155 @@ def test_the_validity_face_refuses_a_bad_timestamp(client: TestClient) -> None:
     _wire(client)
     bad = client.get("/projects/example-project/memory/validity", params={"at": "not-a-time"})
     assert bad.status_code == 422, bad.text
+
+
+# --- GOAL-20261011-052：**两个读面在同一份事实上给出一致的可判定性** -----------------------
+
+
+def test_the_http_face_carries_the_four_facts_the_orchestration_face_has(
+    client: TestClient,
+) -> None:
+    """EC-02：HTTP 读面补齐**四样**（冲突 / 反向取代 / 处置 / 理由）—— **附加**，既有键不变。
+
+    此前序 10/17/18/19 把**编排消费面**的读面做成了十三键，而 HTTP 面**这四样一样没有**
+    ⇒ 同一份 canonical 事实，**一条读路径已可判定、另一条看不见**。本条钉住「补齐」。
+    """
+    store = _wire(client)
+    _commit_with_scope(store, "m-clean", "project")
+    _commit_conflicting(store, "m-conf", ["m-elsewhere"])
+    rows = client.get("/projects/example-project/memory").json()["records"]
+    by_id = {str(row["id"]): row for row in rows}
+
+    for field in ("contradictions", "superseded_by", "disposition", "reason"):
+        assert field in by_id["m-clean"], (
+            "四样必须都在场（缺：%s）" % field,
+            sorted(by_id["m-clean"]),
+        )
+    # **既有 13 字段一个不改名、不改语义**（逐条点名；剔除新增的四样后应与改动前的键集相等）
+    legacy = sorted(
+        set(by_id["m-clean"]) - {"contradictions", "superseded_by", "disposition", "reason"}
+    )
+    assert legacy == [
+        "active",
+        "confidence",
+        "content",
+        "expires_at",
+        "id",
+        "kind",
+        "provenance",
+        "review_after",
+        "scope",
+        "supersedes",
+        "tier",
+        "valid_from",
+        "validity",
+    ], ("既有字段集必须逐字不变", legacy)
+
+
+def test_the_two_faces_agree_on_the_same_records(client: TestClient) -> None:
+    """EC-03：**两处对同一记录给同值**（冲突 / 反向取代 / 处置 / 理由**逐项相等**）。
+
+    **同源**是这条能成立的原因：HTTP 面**直接调**编排面那两个纯函数
+    （`disposition_of` / `_reason`）+ 同一反向链接助手（`superseded_by_index`），
+    **不**在路由里重写第二套判定。
+    """
+    from adapters.canonical.memory_read import memory_read
+
+    store = _wire(client)
+    # 复合形态：`m-old` **既被取代、又带冲突** —— 一次写好（同一 id 不得提交两次）。
+    _commit_conflicting(store, "m-old", ["m-elsewhere"])
+    _commit_superseding(store, "m-new", "m-old")
+    rows = client.get("/projects/example-project/memory").json()["records"]
+    http = {str(row["id"]): row for row in rows}
+    raw = memory_read(store, {"now": _NOW})["memories"]
+    assert isinstance(raw, list), raw
+    orch = {str(row["memory_id"]): row for row in raw}
+    for rid in ("m-old", "m-new"):
+        assert http[rid]["disposition"] == orch[rid]["disposition"], rid
+        assert http[rid]["reason"] == orch[rid]["reason"], rid
+        assert list(http[rid]["contradictions"]) == list(orch[rid]["contradictions"]), rid
+        assert list(http[rid]["superseded_by"]) == list(orch[rid]["superseded_by"]), rid
+    assert http["m-old"]["superseded_by"] == ["m-new"], (
+        "反向链接必须在 HTTP 面也看得见（序 18 只在编排面成立）",
+        http["m-old"],
+    )
+
+
+def test_the_http_face_still_does_not_guess_validity(client: TestClient) -> None:
+    """EC-02 的**反证臂**：不给时点 ⇒ `validity` **仍为 `None`**（**不猜** —— 逐字保持）。
+
+    **受判面必须是「有声明时效」的记录**（本用例初版用了一条**没有任何时效声明**的记录 ⇒
+    两种行为都返回 `None` ⇒ 该断言**区分不了「不猜」与「拿挂钟猜」**，按压 N-4 因此**假绿**
+    —— 由反证脚本的**基线门 + 按压门**当场报出）。故这里用一条**已到复核期**的记录：
+    若读面拿挂钟去猜，它会立刻报 `REVIEW_DUE`（而正确行为是 `None` = **未判定**）。
+    """
+    store = _wire(client)
+    _commit_review_due(store, "m-due")
+    row = client.get("/projects/example-project/memory").json()["records"][0]
+    assert row["validity"] is None, (
+        "不给时点不得猜时效（这条记录**已到**复核期 ⇒ 猜的话会报 REVIEW_DUE）",
+        row,
+    )
+
+
+def _commit_review_due(store: FakeMemoryStore, memory_id: str) -> None:
+    """直写一条**复核期已到**的记录（「不猜时效」这条判据的受判面必须**有时效声明**）。"""
+    from datetime import datetime, timezone
+
+    from packages.domain.core import Timestamp
+    from packages.domain.enums import MemoryTier, MemoryType
+    from packages.domain.memory import MemoryWriteProposal
+
+    store.allow_source("test:goal052")
+    store.commit(
+        MemoryWriteProposal(
+            id=memory_id,
+            tier=MemoryTier.PROJECT,
+            kind=MemoryType.FACT,
+            content=f"内容 {memory_id}",
+            provenance="test:goal052",
+            confidence=0.9,
+            scope="project",
+            review_after=Timestamp(datetime(2020, 1, 1, tzinfo=timezone.utc)),
+        )
+    )
+
+
+def _commit_conflicting(store: FakeMemoryStore, memory_id: str, conflicts: list[str]) -> None:
+    """直写一条**声明了冲突**的记录（钉的是**读面**本身，不经提案面）。"""
+    from packages.domain.enums import MemoryTier, MemoryType
+    from packages.domain.memory import MemoryWriteProposal
+
+    store.allow_source("test:goal052")
+    store.commit(
+        MemoryWriteProposal(
+            id=memory_id,
+            tier=MemoryTier.PROJECT,
+            kind=MemoryType.FACT,
+            content=f"内容 {memory_id}",
+            provenance="test:goal052",
+            confidence=0.9,
+            scope="project",
+            contradictions=list(conflicts),
+        )
+    )
+
+
+def _commit_superseding(store: FakeMemoryStore, memory_id: str, old_id: str) -> None:
+    """直写一条**取代了旧记录**的新记录（反向链接的靶子）。"""
+    from packages.domain.enums import MemoryTier, MemoryType
+    from packages.domain.memory import MemoryWriteProposal
+
+    store.allow_source("test:goal052")
+    store.commit(
+        MemoryWriteProposal(
+            id=memory_id,
+            tier=MemoryTier.PROJECT,
+            kind=MemoryType.FACT,
+            content=f"内容 {memory_id}",
+            provenance="test:goal052",
+            confidence=0.9,
+            scope="project",
+            supersedes=[old_id],
+        )
+    )

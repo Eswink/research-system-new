@@ -26,6 +26,17 @@ class MemoryRecordDto(BaseModel):
     # GOAL-20261008-039 EC-04：**给定时点上的时效判定**（`EXPIRED` / `REVIEW_DUE` / None）。
     # 只有显式给 `at` 的路由才填它 —— 不给时点的读面**不猜**（`None` = 未判定）。
     validity: str | None = None
+    # GOAL-20261011-052 EC-02：**与编排消费面（`memory.read`）对齐的四样** ——
+    # 此前只有编排面能判定这些事实（冲突 / 反向取代 / 处置 / 理由），HTTP 面**完全看不见**
+    # ⇒ 同一份 canonical 事实在两条读路径上**可判定性不同**。
+    # **都是附加**：既有 13 字段一个不改名、不改语义；四处取值**复用**编排面的同一批纯函数
+    # （`disposition_of` / `_reason` / `_reverse_links`）⇒ 两处**同源同值**。
+    contradictions: list[str] = Field(default_factory=list)
+    superseded_by: list[str] = Field(default_factory=list)
+    #: 处置（五态之一：`USE` / `ANNOTATE` / `SKIP` / `SUPERSEDED` / `CONFLICTED`）。
+    disposition: str = ""
+    #: 处置理由（**逐字**与编排面同源；可复核，不是不透明标签）。
+    reason: str = ""
 
 
 class MemoryListViewDto(BaseModel):

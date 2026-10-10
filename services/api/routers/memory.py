@@ -24,6 +24,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request
 
+from adapters.canonical.memory_read import _reason, disposition_of, superseded_by_index
 from packages.application.memory.gate import MemoryGateDeps, commit_memory
 from packages.application.memory.lifecycle import MemoryLifecycleDeps, delete_memory
 from packages.application.memory.validity import validity_at
@@ -66,9 +67,23 @@ def _enum_value(value: object) -> str:
     return getattr(value, "value", str(value))
 
 
-def _record_dto(record: MemoryRecord, *, now: Timestamp | None = None) -> MemoryRecordDto:
-    """记录 DTO。**只在给了时点时**填 `validity`（不给 ⇒ `None` = 未判定，不猜）。"""
+def _record_dto(
+    record: MemoryRecord,
+    *,
+    now: Timestamp | None = None,
+    superseded_by: list[str] | None = None,
+) -> MemoryRecordDto:
+    """记录 DTO。**只在给了时点时**填 `validity`（不给 ⇒ `None` = 未判定，不猜）。
+
+    GOAL-20261011-052 EC-02/EC-03：**四样与编排消费面同源** ——
+    `contradictions` 取记录自身的声明；`superseded_by` 由调用方按**同一批记录**传入
+    （反向链接 `superseded_by_index` 需要看见别人，单条记录读不出来）；
+    `disposition` / `reason` **直接调**编排面那两个纯函数（`disposition_of` / `_reason`）
+    —— **不**在路由里重写第二套判定（两处各写一套 = 漂移无从发现）。
+    """
     validity = validity_at(record, now) if now is not None else None
+    links = list(superseded_by or ())
+    superseded = bool(links)
     return MemoryRecordDto(
         id=record.id,
         tier=_enum_value(record.tier),
@@ -83,6 +98,12 @@ def _record_dto(record: MemoryRecord, *, now: Timestamp | None = None) -> Memory
         expires_at=record.expires_at.value.isoformat() if record.expires_at else None,
         supersedes=list(record.supersedes),
         active=record.active,
+        contradictions=list(record.contradictions),
+        superseded_by=links,
+        disposition=disposition_of(
+            validity, superseded=superseded, conflicted=bool(record.contradictions)
+        ),
+        reason=_reason(validity, record, superseded_by=links),
     )
 
 
@@ -103,14 +124,22 @@ async def list_project_memory(
     deps: ApiDeps = get_deps(request)
     store = _store_of(deps)
     records = store.query(scope=scope)  # type: ignore[attr-defined]
+    # GOAL-20261011-052 EC-02：反向取代链接要看见**别人** ⇒ 按**同一批记录**扫一次
+    # （复用编排面同一助手；不逐条再查 —— 那会 N+1 且两处看到不同的世界）。
+    reverse = superseded_by_index(records)
     # 两个形态各自**显式**声明自己的键（不给路由开 `response_model_exclude_none`：那种开关
     # 会连**嵌套模型**一起递归应用，把别的读面上**有意义**的 `null` 抹掉 —— 实测过）。
     if scope is None:
         return MemoryListViewDto(
-            records=[_record_dto(record) for record in records], scope_note=SCOPE_NOTE
+            records=[
+                _record_dto(record, superseded_by=reverse.get(record.id, [])) for record in records
+            ],
+            scope_note=SCOPE_NOTE,
         )
     return MemoryFilteredListViewDto(
-        records=[_record_dto(record) for record in records],
+        records=[
+            _record_dto(record, superseded_by=reverse.get(record.id, [])) for record in records
+        ],
         scope_note=SCOPE_NOTE,
         scope=scope,
         filtered_out=len(store.query()) - len(records),  # type: ignore[attr-defined]
