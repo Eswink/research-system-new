@@ -100,7 +100,7 @@ exit_criteria:
 | `IN_SCOPE` 判据 | 8 passed（纯收紧：只增两条） |
 | 治理 | `validate.py` 通过 |
 | 宪章判据 | `test_mainline_program_is_intact.py` 绿 |
-| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（在全部记录写完之后） |
+| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / **5335 passed, 228 skipped**；在全部记录写完之后、独占、不接管道）|
 
 ## 影响报告
 
@@ -117,6 +117,13 @@ exit_criteria:
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
 | `905e602`（cycle 1 = EC-01…EC-04） | 见 GOAL 正文台账 | 等待理由可区分 + 点位点名 + 判据 |
+
+### m0 抓到并已修一处真红（如实登记）
+
+`python/tests` 判红：`test_the_verifiers_list_partitions_every_verifier_explicitly` ——
+本轮新增 `tools/verify_goal044_closeout.py` 却**忘了登记进 `_VERIFIERS`** ⇒ **GOAL-043 立的射程分区判据
+当场把它报了出来**（与 `637ce67` 同形，第二次兑现）。**处置**：登记 + 下界 `_MIN_VERIFIERS` 13 → 14；
+复跑 8 passed、**全量 m0 23/23**。**未动任何阈值 / 未放宽判据**（只补登记）。
 
 ## 状态历史
 

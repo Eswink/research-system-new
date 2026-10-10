@@ -2,7 +2,7 @@
 id: GOAL-20261010-044
 slug: program-wait-reasons-become-distinguishable
 title: 程序推进的**等待理由可区分** —— run 面已有「等审批」/「暂停」两个非终态，而**程序面**把「这一轮还在跑」与「这一轮停在人工闸门等人拍板」读成同一个 `WAIT`（恢复路径无法回答「该等谁」）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-10
 updated_at: 2026-10-10
 owners:
@@ -129,7 +129,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -171,7 +171,7 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-375-goal-044-ec01-04-program-wait-reasons.md
   - .cursor/plans/tasks/PLAN-20261010-377-goal-044-ec05-self-bootstrap-closeout.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-376-goal-044-ec01-04-program-wait-reasons.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-378-goal-044-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -191,7 +191,7 @@ memory_entries: []
 | EC-02 | 判定种类扩齐 | 新增等待审批的种类；既有各态**逐字保持** | PASS |
 | EC-03 | 点名面 | 等待审批时判词点名 run / 状态 / **待审批标识**（查不到也点名）；「还在跑」逐字不变 | PASS |
 | EC-04 | 真的被用上 | 实跑停在闸门 ⇒ 落新种类且点名；**反证**：「还在跑」仍落 `WAIT`；不得自动批准 / 跳过 | PASS |
-| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得把**等人拍板**读成**还在跑**；
 不得让程序推进**绕过人工闸门**；不得**静默等待**；不得宣称项目安全（`R-M1`）；
@@ -358,6 +358,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | `PLAN-20261010-377` | `1f99546` / `5ce9ead` | EC-05 五条 AC 全 PASS：收口验证器 **61 判词 / 0 FAIL**（标准断言集**一行未重写**；判词集**逐条覆盖**本 GOAL 的 EC：新种类 / 语义写进域 / **四态全点名** / **只读**审批面（\`list_for_run\` 在场且写方法不在场）/ 驱动按状态分派 / 组合根传既有实例 / **两向**断言 / \`cited_facts\` 点名审批 id）+ \`IN_SCOPE\` **纯收紧**（+2 行；判据 8 passed）+ **两树 \`TWO-TREE PASS\`**（两路 **61 判词** / \`sha256\` 相同 \`3550ee4e…\`）+ 归档定格（两份各 **2260 B / 61 行**、\`CR=0\`）+ 治理 + 宪章判据 + **as-is m0 23/23** | （见 CI 台账）| — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（\`RECHECK-20261010-378\`）|
 | 1 | `PLAN-20261010-375` | `905e602` | EC-01…EC-04 全 PASS：**等待理由可区分** —— ① 域 +`WAIT_FOR_APPROVAL`；② 新模块 `program_waiting.py`（`program_runner.py` 有 450 行硬上限）：`WAITING_FOR_APPROVAL` / `PAUSED` ⇒ 新种类 + **点名待审批 id**（经既有 `ApprovalStore.list_for_run`，**只读**）；其余非终态 ⇒ `WAIT`（理由串与 `cited_facts` **逐字保持**）；③ **点名四态**全点名（查到待决 / 无待决「查不到」/ 缺审批面「未提供审批面」/ 面抛异常点名异常）；④ 新判据 **7 passed**（含反证：RUNNING 即便有待决也仍 `WAIT` 逐字相同、非「待决」不算、只读面）；⑤ 两向反证 **W-1/W-2 全红** + 二进制复原 raw `sha256` 一致；⑥ **按压发现并清掉一处死值**（`pending_approval` 早先返回的 id 串无人用）；广面 2464 passed；**全量 m0 23/23**（5335 passed） | （见 CI 台账）| 规模门拆文件（`test_program_runner` 552→427 + 新 151）；mypy 的 Literal 恒真比较 ⇒ 改比 `.value` | EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **三条实测读数**（程序面只按 `is_terminal` 分派 ⇒ 非终态一律 `WAIT`；run 面已有两个非终态常量；phase 面人工闸门经 `pause_for_human_gate` + `APPROVAL_REQUESTED`）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 12** | （见 CI 台账） | — | 五条 EC 全 PENDING；新种类名与审批查询面（①②）待 cycle 1 落 | cycle 1（EC-02 种类 + EC-03 点名 + EC-04 实跑） |
 
@@ -365,5 +366,6 @@ deduplication）。
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-10 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、`IN_SCOPE` **纯收紧**、两树 **`TWO-TREE PASS`**（两路 **61 判词** / `sha256` 相同 `3550ee4e…`）、判词归档进树（两份各 2260 B / 61 行 / `CR=0`）、as-is m0 **23/23**（记录写完之后）、治理 + 宪章判据绿、CI 台账逐提交。**一处时序如实登记**：两树首轮红（bootstrap：归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `V-1`…`V-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261010-378`（PASS_WITH_WARNINGS）。 |
 | 2026-10-10 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**等待理由可区分** —— 程序推进此前把「这一轮**还在跑**（等机器）」与「停在**人工闸门**等人拍板（等人）」读成同一个 `WAIT`（实测：`_evaluate` 只按 `is_terminal` 分派）。**已修**：新增 `WAIT_FOR_APPROVAL`（`WAITING_FOR_APPROVAL` / `PAUSED` ⇒ 等人）+ 判词**点名待审批 id**（经既有 `ApprovalStore.list_for_run`，**只读**、**不**自动批准/跳过）；其余非终态仍 `WAIT` 且理由串**逐字保持**。**点名四态全点名**（查到待决 / 查不到 / 缺审批面 / 面故障）。新判据 7 passed（含反证）；两向反证 W-1/W-2 全红；**按压还发现并清掉一处死值**。广面 2464 passed；**全量 m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5335 passed, 228 skipped**）。EC-05 待收口。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-10 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 12**。只读勘察 + **三条实测读数**：(a) `program_runner.py::_evaluate` 只按 `last.is_terminal` 分派 ⇒ 非终态一律落 `WAIT`（理由串 `state=<s>`）；(b) `packages/domain/run_state.py` 已有「等审批」/「暂停」两个非终态常量（**run 面可区分**）；(c) 人工闸门在 phase 面（`pause_for_human_gate` 注册审批 + `APPROVAL_REQUESTED`），但**程序推进不知道这一轮在等人** ⇒ 恢复路径无法回答「该等谁」。**同族**：序 8 消灭的范畴错误在**非终态面**的形态。五条 EC 全 `PENDING`。**不做数量目标**；**不**新建第二套审批存储；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
