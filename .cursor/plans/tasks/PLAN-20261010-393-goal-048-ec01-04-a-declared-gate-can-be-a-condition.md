@@ -2,10 +2,10 @@
 id: PLAN-20261010-393
 slug: goal-048-ec01-04-a-declared-gate-can-be-a-condition
 title: GOAL-20261010-048 cycle 1（EC-01…EC-04）：条件式程序闸门 —— 声明面 + 求值接线 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-10
 updated_at: 2026-10-10
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-394-goal-048-ec01-04-a-declared-gate-can-be-a-condition.md
 memory_entries: []
 parent_goal: GOAL-20261010-048
 cursor_plan_uri: null

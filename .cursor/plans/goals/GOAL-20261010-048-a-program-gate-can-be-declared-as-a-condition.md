@@ -2,7 +2,7 @@
 id: GOAL-20261010-048
 slug: a-program-gate-can-be-declared-as-a-condition
 title: 程序级人工闸门**可以是条件式的** —— 序 14 加了声明位、序 15 让它接得回，但那条声明**只有一个维度**（`human_gate_at_index` 的类型是 `int` 或 `None` = **一个固定序号**）：既不能在多个轮次各设闸门，也不能声明「**当落库事实长成 X 时**停下等人」；而循环面（`round_loop.stop_when`）与程序结论面（`continue_rule.verdict_in`）都已证明**声明式判据**这套手法可行 ⇒ 缺的只是程序面的条件声明与求值
-status: DRAFT
+status: ACTIVE
 created_at: 2026-10-10
 updated_at: 2026-10-10
 owners:
@@ -91,7 +91,7 @@ exit_criteria:
       `rg -n "verdict_in|def _after_hit" packages/domain/program.py
       packages/application/run_orchestration/program_runner.py`；
       实跑：推进一次并读回决策的 `decided_at`。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **声明面（可机检的条件 + 缺省逐字不变 + 非法点名）**：`ResearchProgram` 可**声明**一个
@@ -102,7 +102,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/domain tests/adapters/sqlite
       tests/postgres tests/api -q` ⇒ 全绿 + 新用例（声明往返 / 缺省 / 非法 / 与单序号并存）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **求值与推进（点名）**：推进时对**声明条件**求值 —— 成立 ⇒ 走上条已成立的闸门语义
@@ -112,7 +112,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest
       tests/application/run_orchestration -q` ⇒ 全绿 + 新用例（成立 / 不成立 / 缺事实点名）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压）**：`J-1` 条件成立仍放行 ⇒ **RED**；`J-2` 条件不成立也拦 ⇒ **RED**；
@@ -122,7 +122,7 @@ exit_criteria:
     verify: >-
       `scratch/goal048-press.txt` 全 `RED` + `sha 复原一致=True`；归档
       `.cursor/plans/goals/evidence/GOAL-20261010-048-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -188,7 +188,8 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261010-393-goal-048-ec01-04-a-declared-gate-can-be-a-condition.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -206,10 +207,10 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | 「单序号」的完整形状：类型逐字 / 循环面 `stop_when` 已在而程序面为零 / 结论面分派手法可照抄 / 等待起点已落库 | PENDING |
-| EC-02 | 声明面 | 可声明**可机检的条件**（同族于 `verdict_in`）；缺省逐字不变；非法与并存**点名**；两库同契约 | PENDING |
-| EC-03 | 求值与推进 | 成立 ⇒ 走上条闸门语义（注册 + 等人 + 可接回）；不成立 ⇒ 逐字走结论面；求值先于结论面；缺事实点名 | PENDING |
-| EC-04 | 两向反证 | 成立不得放行 / 不成立不得拦 / 非法不得静默 / 未声明零副作用（`J-1`…`J-4` 全红） | PENDING |
+| EC-01 | 勘察定稿 | 「单序号」的完整形状：类型逐字 / 循环面 `stop_when` 已在而程序面为零 / 结论面分派手法可照抄 / 等待起点已落库 | PASS |
+| EC-02 | 声明面 | 可声明**可机检的条件**（同族于 `verdict_in`）；缺省逐字不变；非法与并存**点名**；两库同契约 | PASS |
+| EC-03 | 求值与推进 | 成立 ⇒ 走上条闸门语义（注册 + 等人 + 可接回）；不成立 ⇒ 逐字走结论面；求值先于结论面；缺事实点名 | PASS |
+| EC-04 | 两向反证 | 成立不得放行 / 不成立不得拦 / 非法不得静默 / 未声明零副作用（`J-1`…`J-4` 全红） | PASS |
 | EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PENDING |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**绕过或静默跳过**声明的闸门；
@@ -387,6 +388,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261010-393` | `643d7c7` | EC-01…EC-04 全 PASS：**条件式闸门** —— ① 域 +1 **可选**声明`human_gate_on_verdicts`（**与 `verdict_in` 同族**的可机检取值集合；三种坏声明各自**点名**；与序号声明**互斥**）；② **两库同契约**（SQLite 列 + **迁移 021 只加列** + PG `INSERT` / `_PROGRAM_SELECT`；`NULL` ≠ `[]`）；③ DTO / 路由 / 读面透传 + **OpenAPI 快照同轮重生成**（`+28 / -0`）；④ `declared_gate_trigger` 按**落库判词取值**判定（**只读**；**单一来源** —— 判定面与注册面都调它；落库判词**只读一次**供两处共用）；命中 ⇒ 走上条闸门语义（注册 + 等人 + 可接回）+ **点名条件与命中依据**，不命中 ⇒ **逐字**走结论面；⑤ **四向反证 J-1…J-4 全红** + 二进制复原 raw `sha256` 一致；⑥ 判据 +8（域 1 / 条件面 5 / e2e 2，**成对**：命中 / 不命中）；⑦ 三处规模门逼出的搬迁（抽两个助手 + 条件面测试**单列**）；⑧ **两处既有判据按「判关系不判位置」修正**（读取行 ≠ 结论面坐标）| （见 CI 台账）| 规模门三处抽查 + 两条既有断言假红（**判据拿读取行当坐标** ⇒ 改判分派点）| EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **六条实测读数**（声明位类型逐字单序号 / 越界已点名 / 循环面 `stop_when` 已在且**未知判据点名** / 程序面零命中 / 结论面取值分派手法现成 / 闸门等待起点 `decided_at` 已落库）⇒ 定位 `X-2` 的条件式形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 16** | （见 CI 台账） | — | 五条 EC 全 PENDING；条件形态（①）与并存/互斥（②）待 cycle 1 落 | cycle 1（EC-02 声明面 + EC-03 求值） |
 
 ## 状态历史
@@ -394,3 +396,4 @@ deduplication）。
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-10 | DRAFT | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 16**（承担者 = `X-2` 的**条件式这一半**）。只读勘察 + **六条实测读数**：(a) `human_gate_at_index: int \| None` 逐字一行 ⇒ **单序号**（无条件无多点）；(b) 越界声明已**点名**（序 14 的判据靶子）；(c) **循环面**已有声明式停止判据（`stop_when` + **未知判据点名**）；(d) **程序面零命中** ⇒ 同一类能力在循环面成立、在闸门面不存在；(e) 结论面的**取值分派**手法（`verdict_in` + 命中判定）现成可照抄；(f) 闸门**等待起点**已被记录（决策 `decided_at`）。五条 EC 全 PENDING。**不做数量目标**；**不**新建第二套闸门机制；**不**做自然语言条件 / 表达式引擎；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
+| 2026-10-10 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**条件式程序闸门**落地 —— 声明面（可机检取值集合，缺省逐字不变，坏声明点名，与序号声明互斥）+ 求值面（按落库判词触发，**只读**、**单一来源**、判词只读一次供两处共用，命中点名条件与依据）+ **四向反证全红**。判据 +8；三处规模门搬迁；**两处既有判据按关系修正**（承 `MEM-20261010-215`：判「谁先决定」，不判「哪条读取语句在哪行」）。独立复检：`RECHECK-20261010-394`（PASS_WITH_WARNINGS）。EC-05 待收口。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |

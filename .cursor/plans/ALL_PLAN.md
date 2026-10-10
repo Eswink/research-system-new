@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261010-393](tasks/PLAN-20261010-393-goal-048-ec01-04-a-declared-gate-can-be-a-condition.md) | DONE |
 | [x] | [PLAN-20261010-391](tasks/PLAN-20261010-391-goal-047-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-389](tasks/PLAN-20261010-389-goal-047-ec01-04-the-gate-can-be-resumed.md) | DONE |
 | [x] | [PLAN-20261010-387](tasks/PLAN-20261010-387-goal-046-repair-snapshot-sync-and-declared-cases.md) | DONE |
