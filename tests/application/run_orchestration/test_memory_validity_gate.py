@@ -28,6 +28,7 @@ from packages.application.run_orchestration.phase_capabilities import (
 )
 from packages.application.run_orchestration.phase_capability_triggers import (
     MEMORY_ANNOTATE,
+    MEMORY_CONFLICTED,
     MEMORY_SKIP,
     MEMORY_SUPERSEDED,
     MEMORY_USE,
@@ -49,6 +50,8 @@ def _row(memory_id: str, disposition: str) -> dict[str, Any]:
         MEMORY_USE: None,
         # GOAL-20261010-050 EC-03：**已取代**与**已过期**处置相同、**理由不同**。
         MEMORY_SUPERSEDED: None,
+        # GOAL-20261011-051 EC-03：**有未消解冲突**与「待复核」同类（执行带标注），理由不同。
+        MEMORY_CONFLICTED: None,
     }[disposition]
     return {
         "memory_id": memory_id,
@@ -212,3 +215,57 @@ class TestASupersededMemoryStopsTheStepWithItsOwnReason:
         joined = " ".join(decision.notes)
         assert "superseded" in joined, decision.notes
         assert "expired" not in joined, ("不得凭空说「过期」", decision.notes)
+
+
+class TestAConflictingMemoryIsFlaggedNotSkipped:
+    """GOAL-20261011-051 EC-03：**有未消解冲突**进消费端 —— **执行但带标注**，判词**分开点名**。
+
+    本 GOAL 的**消费面**判据：把第五态写进读面载荷**不算**「被用上」——
+    研究循环的记忆门必须**真的按它分派**，且读者能看出这一步是「待复核」还是「有冲突」。
+    **决策②的实证**：冲突**不等于不可用** ⇒ 与 `ANNOTATE` **同类**（执行 + 标注），
+    **不**与 `SKIP` 同处置（那会把「有分歧」误读成「不许用」）。
+    """
+
+    def test_a_conflicting_record_does_not_skip_the_step(self) -> None:
+        """有冲突 ⇒ **不跳过**（与「已过期」/「已取代」的处置**不同类**）。"""
+        call = RunChainCall(
+            provider_id="p",
+            tool_id="memory_read",
+            capability="memory.read",
+            memory_validity_gate=True,
+        )
+        decision = memory_step_gate(call, _payload(_row("m-c", MEMORY_CONFLICTED)))
+        assert decision.skip is False, ("冲突不等于不可用 ⇒ 不得跳过", decision)
+        assert decision.notes, ("但要带标注（未消解是要人看）", decision)
+
+    def test_conflict_and_review_due_are_named_separately(self) -> None:
+        """**同类不同因**：冲突与待复核**都**带标注，但判词**分开点名**（不共用一句）。"""
+        call = RunChainCall(
+            provider_id="p",
+            tool_id="memory_read",
+            capability="memory.read",
+            memory_validity_gate=True,
+        )
+        decision = memory_step_gate(
+            call, _payload(_row("m-due", MEMORY_ANNOTATE), _row("m-c", MEMORY_CONFLICTED))
+        )
+        joined = " ".join(decision.notes)
+        assert "due for review" in joined and "unresolved contradictions" in joined, (
+            "两个理由都要点名（否则读者分不出是哪一种）",
+            decision.notes,
+        )
+        assert "m-due" in joined and "m-c" in joined, decision.notes
+
+    def test_a_conflicting_only_step_names_that_reason(self) -> None:
+        """只有冲突 ⇒ 判词**只**报那一因（**不得**凭空说「待复核」）。"""
+        call = RunChainCall(
+            provider_id="p",
+            tool_id="memory_read",
+            capability="memory.read",
+            memory_validity_gate=True,
+        )
+        decision = memory_step_gate(call, _payload(_row("m-c", MEMORY_CONFLICTED)))
+        joined = " ".join(decision.notes)
+        assert "unresolved contradictions" in joined, decision.notes
+        assert "due for review" not in joined, ("不得凭空说「待复核」", decision.notes)
+        assert "expired" not in joined and "superseded" not in joined, decision.notes

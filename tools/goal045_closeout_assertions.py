@@ -162,20 +162,67 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
 
 
 def _reason_appends_the_conflict_note(face: str) -> bool:
-    """判**关系**：`reason` 的值仍是「时效理由 **加** 冲突点名」（**不判调用签名**）。
+    """判**关系**：`reason` 的值 = 时效理由 **加** 一个点名冲突的助手（**不判写法**）。
 
     **为什么改这里**（GOAL-20261010-050 实测）：本判据原先把调用式**逐字写死**
     （`_reason(state, record) + _conflict_note(record)`）—— 而后续 GOAL 正当给 `_reason`
     加了 `superseded_by=` 关键字实参（**已取代**成为第四态）⇒ 文本失配 ⇒ **假红**。
-    与 `MEM-20261010-215` 同族：**判关系，不判位置/写法**。
+    GOAL-20261011-051 又正当把「冲突本身是处置理由」那一支的重复点名拆到
+    `_extra_conflict_note` ⇒ 按行/按文本读都会再假一次。
 
-    判据读的是「`reason` 那一行的值表达式里**两个调用都出现**」—— 函数名与参数写法变了
-    都不影响结论；而**只要冲突点名被摘掉**（或不再拼进 `reason`）就**仍判红**。
+    **改法（第三次）**：用 **AST** 读那个字典**值**的表达式树 ——
+    要求它是 `BinOp(Add)`，左子树里**调用了 `_reason`**，右子树里**调用了任一
+    `*conflict_note*` 助手**。函数名、参数写法、折行**都不影响结论；
+    而**把冲突点名整条摘掉**（或不再拼进 `reason`）**仍判红**。
     """
-    for line in face.splitlines():
-        if '"reason"' not in line:
+    # **本函数收的是整个模块文本**（不是片段）—— 传片段给 `ast.parse` 会永远 SyntaxError
+    # ⇒ 判据恒假（实测：初版就这样「通过」了，是**恒真/恒假的空判据**，比假红更坏）。
+    if not face:
+        return False
+    try:
+        module = ast.parse(face)
+    except SyntaxError:
+        return False
+    for node in ast.walk(module):
+        if not isinstance(node, ast.Dict):
             continue
-        if "_reason(" in line and "_conflict_note(" in line and "+" in line:
+        for key, value in zip(node.keys, node.values, strict=False):
+            if not (isinstance(key, ast.Constant) and key.value == "reason"):
+                continue
+            return _is_reason_plus_conflict(value)
+    return False
+
+
+def _is_reason_plus_conflict(value: ast.expr) -> bool:
+    """`value` 是否形如「`_reason(...)` `+` 某个 `*conflict_note*` 助手调用」。"""
+    if not isinstance(value, ast.BinOp) or not isinstance(value.op, ast.Add):
+        return False
+    return _calls_named_in(value.left, "_reason") and _any_call_endswith(
+        value.right, "conflict_note"
+    )
+
+
+def _calls_named_in(node: ast.expr, name: str) -> bool:
+    """子树里是否**调用了**该名字（AST；两种调用形态都认）。"""
+    return any(
+        isinstance(child, ast.Call)
+        and (
+            (isinstance(child.func, ast.Name) and child.func.id == name)
+            or getattr(child.func, "attr", None) == name
+        )
+        for child in ast.walk(node)
+    )
+
+
+def _any_call_endswith(node: ast.expr, suffix: str) -> bool:
+    """子树里是否有**任一**以该后缀结尾的被调名（容许助手改名，如 `_extra_conflict_note`）。"""
+    for child in ast.walk(node):
+        if not isinstance(child, ast.Call):
+            continue
+        called = (
+            child.func.id if isinstance(child.func, ast.Name) else getattr(child.func, "attr", "")
+        )
+        if called.endswith(suffix):
             return True
     return False
 

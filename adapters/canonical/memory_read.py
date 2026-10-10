@@ -37,7 +37,7 @@ from packages.application.memory.validity import ValidityState, validity_at
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import Timestamp
 
-#: 处置：**四态 + 未声明** 各自的唯一取值（读面按这个字段分派，不靠措辞）。
+#: 处置：**五态 + 未声明** 各自的唯一取值（读面按这个字段分派，不靠措辞）。
 DISPOSITION_USE = "USE"
 DISPOSITION_ANNOTATE = "ANNOTATE"
 DISPOSITION_SKIP = "SKIP"
@@ -45,6 +45,11 @@ DISPOSITION_SKIP = "SKIP"
 #: **与 `SKIP` 分开**：「已过期」是**时效**理由，「已取代」是**被新版本替代** ——
 #: 两者处置都为「不适用」，但**理由与可复核依据不同**（判词必须点得出是哪一种）。
 DISPOSITION_SUPERSEDED = "SUPERSEDED"
+#: GOAL-20261011-051 EC-02：**带着未消解的冲突**。
+#: **与 `ANNOTATE`（待复核）分开**：待复核是**时效**上的「该看了」，冲突是**内容**上的
+#: 「这条与另一条说法不一致」—— 两者**处置同类**（执行但带标注）但**理由与可复核依据不同**
+#: （判词必须点得出是哪一种，并**点名**冲突的 id）。
+DISPOSITION_CONFLICTED = "CONFLICTED"
 
 #: 时效状态 → 处置（**互不混用**：三态各归各的；`None` 见 `disposition_of`）。
 _DISPOSITIONS: dict[ValidityState, str] = {
@@ -53,18 +58,35 @@ _DISPOSITIONS: dict[ValidityState, str] = {
 }
 
 
-def disposition_of(state: ValidityState | None, *, superseded: bool = False) -> str:
+def disposition_of(
+    state: ValidityState | None, *, superseded: bool = False, conflicted: bool = False
+) -> str:
     """时效状态 → **处置**（纯函数；`None` = 未声明或未到 ⇒ 照用，**不猜**）。
 
     GOAL-20261010-050 EC-03：**已取代**是**第四个**不适用理由 —— 它**不看时效**（一条
     未声明时效的被取代记忆，此前会报 `USE` = 「照用」，那是把**已被替代**的知识当成现行知识）。
 
-    优先级**固定**（与判据同源）：`已取代` **先于** 时效 —— 因为「这条已经不是当前版本」
-    比「这条过期没有」更根本；**已过期且已取代** ⇒ 报 `SUPERSEDED` 且理由**同时点名两者**
-    （见 `_reason`）。**`superseded=False`（缺省）⇒ 与改动前逐字相同**。
+    GOAL-20261011-051 EC-02：**带着未消解的冲突**是**第五个** —— 同样**不看时效**
+    （一条未声明时效的冲突记录，此前也会报 `USE`）。
+
+    优先级**固定**（与判据同源，**四件事**从根本到表层）：
+
+    1. `已取代` —— 「这条**已经不是当前版本**」最根本；
+    2. `已过期` —— 时效上**已失效**（不再适用）；
+    3. `有冲突` —— 内容上**有未消解的分歧**（可用，但要人看）；
+    4. `待复核` —— 时效上**该看了**；
+    5. 否则 `USE`。
+
+    **顺序的实证**：`已取代` 与 `有冲突` **并存**时以**取代**为先 —— 一条已被替代的记录，
+    「谁和它冲突」已无实际意义（它的去留已定）；而 `已过期` 与 `有冲突` 并存时以**过期**为先，
+    因为「不参与后续行为」比「要人看」更彻底。**两个缺省参数都为 `False` ⇒ 与改动前逐字相同**。
     """
     if superseded:
         return DISPOSITION_SUPERSEDED
+    if state is ValidityState.EXPIRED:
+        return DISPOSITION_SKIP
+    if conflicted:
+        return DISPOSITION_CONFLICTED
     if state is None:
         return DISPOSITION_USE
     return _DISPOSITIONS[state]
@@ -104,7 +126,10 @@ def _memory_row(
     """
     state = validity_at(record, moment)
     superseded = bool(superseded_by)
-    disposition = disposition_of(state, superseded=superseded)
+    # GOAL-20261011-051 EC-02：**未消解的冲突**是一维 —— `contradictions` 非空即「有」。
+    # 这里**只读声明**（不推断谁和谁冲突 —— 那是序 13 的 `W-2`，明确不做）。
+    conflicted = bool(record.contradictions)
+    disposition = disposition_of(state, superseded=superseded, conflicted=conflicted)
     content = str(record.content)
     return {
         "memory_id": str(record.id),
@@ -130,7 +155,11 @@ def _memory_row(
         #: 处置（供研究循环**按它分派**：`SKIP` / `ANNOTATE` / `USE` / `SUPERSEDED`）。
         "disposition": disposition,
         #: 理由：处置是**可复核**的，不是不透明标签。
-        "reason": _reason(state, record, superseded_by=superseded_by) + _conflict_note(record),
+        # GOAL-20261011-051：**冲突的处置理由由 `_reason` 自己点名**（那一支已逐字给出 id）
+        # ⇒ 不再叠加 `_conflict_note`（否则同一句出现两遍）。`_conflict_note` 保留给
+        # **未被 `_reason` 覆盖**的场合（见下）—— 「不是当前处置理由、但读者仍该知道有冲突」。
+        "reason": _reason(state, record, superseded_by=superseded_by)
+        + _extra_conflict_note(state, record),
     }
 
 
@@ -143,6 +172,7 @@ def _reason(
     （`已取代` 优先，且已过期时**两者都点名** —— 读者要能一次看全）。
     """
     superseded = list(superseded_by or ())
+    conflicts = list(record.contradictions)
     if superseded:
         note = f"被 {','.join(superseded)} 取代 ⇒ 已不是当前版本（不照用）"
         if state is ValidityState.EXPIRED:
@@ -151,7 +181,13 @@ def _reason(
             return note + f"；**并且** review_after={record.review_after.value.isoformat()} 已到"
         return note
     if state is ValidityState.EXPIRED:
-        return f"expires_at={record.expires_at.value.isoformat()} 已过 ⇒ 跳过（不参与后续行为）"
+        # 过期**先于**冲突（「不参与后续行为」比「要人看」更彻底）；仍点名冲突（读者要能看全）。
+        note = f"expires_at={record.expires_at.value.isoformat()} 已过 ⇒ 跳过（不参与后续行为）"
+        if conflicts:
+            return note + f"；**并且** 声明与 {','.join(conflicts)} 冲突（未消解）"
+        return note
+    if conflicts:
+        return f"声明与 {','.join(conflicts)} 冲突 ⇒ **有未消解的分歧**（照用但标注，未自动消解）"
     if state is ValidityState.REVIEW_DUE:
         return f"review_after={record.review_after.value.isoformat()} 已到 ⇒ 标注（仍需复核）"
     return "未声明时效或未到 ⇒ 照用（未声明不得被当成已到期）"
@@ -168,6 +204,25 @@ def _reverse_links(records: tuple[Any, ...]) -> dict[str, list[str]]:
         for old_id in record.supersedes:
             reverse.setdefault(str(old_id), []).append(str(record.id))
     return reverse
+
+
+def _extra_conflict_note(state: ValidityState | None, record: Any) -> str:
+    """**仅在处置理由没有覆盖冲突时**追加点名（否则会重复同一句）。
+
+    `_reason` 的哪些分支已经点名冲突：`已过期且带冲突`（「**并且** 声明与 … 冲突（未消解）」）、
+    `有冲突`（「声明与 … 冲突 ⇒ **有未消解的分歧**」）。**其余分支**（`已取代` / 待复核 / 照用）
+    仍应让读者看见冲突 ⇒ 这里补上。这是「处置理由」与「读者可见信息」的**分离**：
+    两者都不省，但也都不重复。
+    """
+    if not record.contradictions:
+        return ""
+    if state is ValidityState.EXPIRED:
+        return ""  # 那一支已点名
+    if state is None and not record.contradictions:
+        return ""
+    if disposition_of(state, conflicted=True) == DISPOSITION_CONFLICTED:
+        return ""  # 冲突本身就是处置理由 ⇒ 已点名
+    return _conflict_note(record)
 
 
 def _conflict_note(record: Any) -> str:
@@ -192,8 +247,8 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     - `memory_count`：条数；
     - `memories`：逐条（`memory_id` / `tier` / `scope` / `content` / `confidence` /
       `active` / `validity` / `disposition` / `reason`）；
-    - `dispositions`：**计数摘要**（`USE` / `ANNOTATE` / `SKIP` / `SUPERSEDED` 各几条 ——
-      供消费者不解析数组就能看出「有没有被跳过 / 有没有被取代」）。
+    - `dispositions`：**计数摘要**（`USE` / `ANNOTATE` / `SKIP` / `SUPERSEDED` / `CONFLICTED`
+      各几条 —— 供消费者不解析数组就能看出「有没有被跳过 / 被取代 / 带着冲突」）。
     """
     if memory_store is None:
         raise InvalidInputError("memory_read requires a MemoryStore, which is not in this assembly")
@@ -214,6 +269,7 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
         DISPOSITION_ANNOTATE: 0,
         DISPOSITION_SKIP: 0,
         DISPOSITION_SUPERSEDED: 0,
+        DISPOSITION_CONFLICTED: 0,
     }
     for row in rows:
         counts[str(row["disposition"])] += 1

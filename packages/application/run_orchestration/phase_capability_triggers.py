@@ -195,6 +195,10 @@ MEMORY_SKIP = "SKIP"
 #: GOAL-20261010-050 EC-03：**已取代**（读面第四态）—— 与「已过期」**分开报**，
 #: 但处置同为「本步不执行」。两者**理由可区分**（判词各自点名）。
 MEMORY_SUPERSEDED = "SUPERSEDED"
+#: GOAL-20261011-051 EC-03：**带着未消解的冲突**（读面第五态）。
+#: 处置 = **执行但带标注**（与 `ANNOTATE` **同类**：冲突不等于不可用，「未消解」是**要人看**）；
+#: 与 `ANNOTATE` 的差别在**判词**（各自点名是哪一种）。
+MEMORY_CONFLICTED = "CONFLICTED"
 
 
 def _memory_entries(payload: Mapping[str, object], tool_id: str) -> list[Mapping[str, object]]:
@@ -215,10 +219,8 @@ def _memory_entries(payload: Mapping[str, object], tool_id: str) -> list[Mapping
     return entries
 
 
-def _split_by_disposition(
-    entries: list[Mapping[str, object]], tool_id: str
-) -> tuple[list[str], list[str], list[str]]:
-    """按 `disposition` 分成 `(已过期, 已取代, 待复核)` 三组，**逐条点名**；未知取值 ⇒ 点名。
+def _split_by_disposition(entries: list[Mapping[str, object]], tool_id: str) -> _GateGroups:
+    """按 `disposition` 分成 `(已过期, 已取代, 待复核, 有冲突)` **四组**；未知取值 ⇒ 点名。
 
     GOAL-20261010-050 EC-03：**已取代**单独成组 —— 它与「已过期」**处置相同**（本步不执行）
     但**理由不同**（被新版本替代 vs 时效已过），所以判词要分得开、不能共用一句。
@@ -227,6 +229,7 @@ def _split_by_disposition(
     expired: list[str] = []
     superseded: list[str] = []
     due: list[str] = []
+    conflicted: list[str] = []
     for item in entries:
         disposition = item.get("disposition")
         memory_id = str(item.get("memory_id") or "")
@@ -235,14 +238,29 @@ def _split_by_disposition(
             expired.append(note)
         elif disposition == MEMORY_SUPERSEDED:
             superseded.append(note)
+        elif disposition == MEMORY_CONFLICTED:
+            # GOAL-20261011-051 EC-03：**与 `ANNOTATE` 同类**（执行但带标注）——
+            # 冲突**不等于不可用**；「未消解」是**要人看**，不是「不许用」。
+            conflicted.append(note)
         elif disposition == MEMORY_ANNOTATE:
             due.append(note)
         elif disposition != MEMORY_USE:
             raise InvalidInputError(
                 f"run-chain tool {tool_id}: memory {memory_id!r} carries an unknown "
-                f"disposition {disposition!r} (expected USE / ANNOTATE / SKIP / SUPERSEDED)"
+                f"disposition {disposition!r} "
+                "(expected USE / ANNOTATE / SKIP / SUPERSEDED / CONFLICTED)"
             )
-    return expired, superseded, due
+    return _GateGroups(expired=expired, superseded=superseded, due=due, conflicted=conflicted)
+
+
+@dataclass(frozen=True, slots=True)
+class _GateGroups:
+    """四个处置组（逐条点名后的做法）；分组由 `_split_by_disposition` 产出。"""
+
+    expired: list[str]
+    superseded: list[str]
+    due: list[str]
+    conflicted: list[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -284,34 +302,55 @@ def memory_gate_verdict(
 
     **缺字段点名**（fail closed，与全模块同一纪律）：`memories` 不在 / 不是列表 ⇒ 点名
     （那是**声明与该步输出形态不符**，不是「没有记忆」）；单条记忆缺 `disposition` ⇒ 点名。
-    返回 `(verdict, notes)`；`verdict` ∈ `{USE, ANNOTATE, SKIP}`（**已取代**与**已过期**
-    都落 `SKIP`，但判词**分别点名**是哪一种），`notes` 逐条点名。
+    返回 `(verdict, notes)`；`verdict` ∈ `{USE, ANNOTATE, SKIP}`。**三个理由互不混用**且
+    **各自点名**：`已过期` / `已取代` 落 `SKIP`；`待复核` / **`有未消解冲突`** 落 `ANNOTATE`
+    （同处置、**判词分开**）。`notes` 逐条点名。
     """
     raw = _memory_entries(payload, tool_id)
-    expired, superseded, due = _split_by_disposition(raw, tool_id)
-    if expired or superseded:
-        # 处置相同（本步不执行），**理由分开点名** —— 读者要能看出是「过期」还是「被取代」。
-        parts: list[str] = []
-        if expired:
-            parts.append(f"{len(expired)} expired memory record(s): " + "; ".join(expired))
-        if superseded:
-            parts.append(
-                f"{len(superseded)} superseded memory record(s) "
-                "(no longer the current version): " + "; ".join(superseded)
-            )
-        return MEMORY_SKIP, (f"run-chain tool {tool_id} skipped: " + " | ".join(parts),)
-    if due:
-        return MEMORY_ANNOTATE, (
-            f"run-chain tool {tool_id} annotated: {len(due)} memory record(s) due for "
-            "review (not expired, still used): " + "; ".join(due),
-        )
+    groups = _split_by_disposition(raw, tool_id)
+    if groups.expired or groups.superseded:
+        return MEMORY_SKIP, (f"run-chain tool {tool_id} skipped: " + _skip_parts(groups),)
+    if groups.due or groups.conflicted:
+        return MEMORY_ANNOTATE, (f"run-chain tool {tool_id} annotated: " + _annotate_parts(groups),)
     return MEMORY_USE, ()
+
+
+def _skip_parts(groups: "_GateGroups") -> str:
+    """`SKIP` 面的判词：两个理由**分开点名**（读者要能看出是「过期」还是「被取代」）。"""
+    parts: list[str] = []
+    if groups.expired:
+        parts.append(
+            f"{len(groups.expired)} expired memory record(s): " + "; ".join(groups.expired)
+        )
+    if groups.superseded:
+        parts.append(
+            f"{len(groups.superseded)} superseded memory record(s) "
+            "(no longer the current version): " + "; ".join(groups.superseded)
+        )
+    return " | ".join(parts)
+
+
+def _annotate_parts(groups: "_GateGroups") -> str:
+    """`ANNOTATE` 面的判词：两因**同类不同因** ⇒ 分开点名（读者要能看出是哪一种）。"""
+    parts: list[str] = []
+    if groups.due:
+        parts.append(
+            f"{len(groups.due)} memory record(s) due for review (not expired, still used): "
+            + "; ".join(groups.due)
+        )
+    if groups.conflicted:
+        parts.append(
+            f"{len(groups.conflicted)} memory record(s) carry unresolved contradictions "
+            "(still used, flagged for a human): " + "; ".join(groups.conflicted)
+        )
+    return " | ".join(parts)
 
 
 __all__ = [
     "Lookup",
     "MEMORY_ANNOTATE",
     "MEMORY_SKIP",
+    "MEMORY_CONFLICTED",
     "MEMORY_SUPERSEDED",
     "MEMORY_USE",
     "MemoryGateDecision",

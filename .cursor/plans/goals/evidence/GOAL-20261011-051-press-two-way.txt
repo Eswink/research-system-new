@@ -1,0 +1,9 @@
+M-1 有冲突仍报 USE（处置面没接上）: 按压 RED
+sha 复原一致=True | 94e1e0421458
+M-2 无冲突却被报为有冲突（凭空）: 按压 RED
+sha 复原一致=True | 94e1e0421458
+M-3 与「已过期」混用（过期时吞掉冲突那一路）: 按压 RED
+sha 复原一致=True | 94e1e0421458
+M-4 点名缺失（消费端把两因并成一句）: 按压 RED
+sha 复原一致=True | b587b45fa43c
+SUMMARY presses=4 all_red_and_restored=True

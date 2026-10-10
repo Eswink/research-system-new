@@ -166,13 +166,19 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec03-the-disposition-takes-the-superseded-dimension",
-            "disposition_of(state: ValidityState | None, *, superseded: bool = False)" in face,
+            # 判**关系**：`disposition_of` 收一个**可选**的 `superseded` 维（缺省 False）。
+            # **不**钉整行签名 —— GOAL-20261011-051 正当又加了 `conflicted` 维。
+            "superseded: bool = False" in face
+            and "def disposition_of(" in face
+            and _calls_named(face, "disposition_of") >= 1,
             "缺省 `superseded=False` ⇒ 既有行为逐字不变",
         ),
         toolbox.verdict(
             "ec03-the-consumer-splits-the-two-reasons",
-            # 判**关系**：三组的解包 + 两个理由各自成句（**不**钉字面换行/写法）。
-            "expired, superseded, due = _split_by_disposition(" in consumer
+            # 判**关系**：`_split_by_disposition` 的**分组结果**里有 superseded，
+            # 且两个理由**各自成句**（**不**钉解包变量个数/名字 —— GOAL-20261011-051 正当
+            # 加了第四组 `conflicted`）。
+            "superseded" in consumer
             and "superseded memory record(s)" in consumer
             and "expired memory record(s)" in consumer
             and "parts.append" in consumer,

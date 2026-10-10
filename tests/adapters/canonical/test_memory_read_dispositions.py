@@ -26,6 +26,7 @@ import pytest
 
 from adapters.canonical.memory_read import (
     DISPOSITION_ANNOTATE,
+    DISPOSITION_CONFLICTED,
     DISPOSITION_SKIP,
     DISPOSITION_SUPERSEDED,
     DISPOSITION_USE,
@@ -47,13 +48,14 @@ def _moment(offset_days: int) -> str:
     return (_EPOCH + timedelta(days=offset_days)).isoformat()
 
 
-def _record(
+def _record(  # noqa: PLR0913 - 一条待提交记忆的声明面即字段；参数对象会降低可读性
     memory_id: str,
     *,
     expires_at: datetime | None = None,
     review_after: datetime | None = None,
     scope: str = "project",
     supersedes: list[str] | None = None,
+    contradictions: list[str] | None = None,
 ) -> MemoryWriteProposal:
     """一条**待提交**的记忆（经既有 §8 写入门链落到 store ⇒ 与产品路径同一形态）。"""
     return MemoryWriteProposal(
@@ -65,6 +67,7 @@ def _record(
         confidence=0.9,
         scope=scope,
         supersedes=list(supersedes or ()),
+        contradictions=list(contradictions or ()),
         expires_at=Timestamp(expires_at) if expires_at is not None else None,
         review_after=Timestamp(review_after) if review_after is not None else None,
     )
@@ -152,14 +155,16 @@ class TestTheThreeDispositionsDoNotMix:
             _record("m-c"),
         )
         payload = memory_read(store, {"now": _moment(0)})
-        # GOAL-20261010-050 EC-03：契约的处置枚举**多了一个成员**（`SUPERSEDED`）⇒
-        # 本条的期望值**同轮跟上**。**谓词形态一字未改**（仍是 `==` 精确相等 —— 既不放宽也
-        # 不改成子集判定）；本条**没有**收窄受判面（原有的三个键仍然逐个被要求）。
+        # GOAL-20261010-050 EC-03 / GOAL-20261011-051 EC-02：契约的处置枚举**两次扩容**
+        # （`SUPERSEDED` / `CONFLICTED`）⇒ 本条的期望值**逐次同轮跟上**。
+        # **谓词形态一字未改**（仍是 `==` 精确相等 —— 既不放宽也不改成子集判定）；
+        # 本条**没有**收窄受判面（原有的键仍然逐个被要求）。
         assert payload["dispositions"] == {
             DISPOSITION_USE: 1,
             DISPOSITION_ANNOTATE: 1,
             DISPOSITION_SKIP: 1,
             DISPOSITION_SUPERSEDED: 0,
+            DISPOSITION_CONFLICTED: 0,
         }, payload["dispositions"]
         assert payload["memory_count"] == 3
 
