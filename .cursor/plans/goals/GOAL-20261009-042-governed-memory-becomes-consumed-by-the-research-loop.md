@@ -2,7 +2,7 @@
 id: GOAL-20261009-042
 slug: governed-memory-becomes-consumed-by-the-research-loop
 title: 记忆的**被消费**成为可判定 —— 续 7 让时效**可读**，但**没有任何读路径消费它**：`memory.read` 未声明、运行链零引用、`validity_at` 只到 REST 读面 ⇒ 到期/待复核**不改变任何后续行为**
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-09
 updated_at: 2026-10-09
 owners:
@@ -131,7 +131,7 @@ exit_criteria:
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`；配套留档：两路判词 `sha256` 相同的归档、
       m0 日志、CI 台账逐提交行。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -177,7 +177,7 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261009-365-goal-042-ec01-03-memory-consumption-on-the-run-path.md
   - .cursor/plans/tasks/PLAN-20261010-367-goal-042-ec05-self-bootstrap-closeout.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-366-goal-042-ec03-04-memory-consumption-on-the-run-path.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-368-goal-042-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -197,7 +197,7 @@ memory_entries: []
 | EC-02 | 承接与判定 | 新增一条**读**能力（五件套齐）+ 按**调用方给的时点**披露三态与处置（互不混用、不读挂钟） | PASS |
 | EC-03 | 真的影响行为 | 研究循环**至少一条**路径按该读面改变行为（跳过 / 标注互不混用、都点名；未声明 ⇒ 逐字不变） | PASS |
 | EC-04 | 真的被用上 | 实跑：两个时点下行为可区分且点名；**反证**：未声明不得被跳过 / 不得静默丢弃 / 未放行点名 | PASS |
-| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得把**未声明时效**读成
 **已到期**；不得**读挂钟**；不得**静默丢弃**；不得**宣称项目安全**（`R-M1`）；
@@ -414,6 +414,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | `PLAN-20261010-367` | `7123ee6` / `fadc15e` / `a21485f` | EC-05 五条 AC 全 PASS：收口验证器 **64 判词 / 0 FAIL**（标准断言集**一行未重写**；含 **AST 判据**（代码里不得调挂钟）—— 初版文本判**假红**，改 AST 后转绿：**判散文与判调用是两件事**）+ `IN_SCOPE` **纯收紧**（+2 行；判据 8 passed）+ **两树 `TWO-TREE PASS`**（两路 **64 判词** / `sha256` 相同 `566fc87f…`）+ 归档定格（两份各 **2389 / 2423 B**、`CR=0`）+ 治理 + 宪章判据 | （见 CI 台账）| — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261010-368`）|
 | 2 | `PLAN-20261009-365`（续） | （见 CI 台账） | EC-03/EC-04 **PASS**：**时效真的影响行为** —— ① 新声明 `RunChainCall.memory_validity_gate`（缺省 `False` ⇒ 既有行为逐字节不变）；② 门按读面 `disposition` 三态分派：`SKIP` ⇒ **不执行**工具（进 `skipped`，逐条点名 id/状态/理由）/ `ANNOTATE` ⇒ **照常执行** + 标注（进**新通道** `annotations`，与跳过互不混用）/ `USE` ⇒ 两条通道都空；③ 载荷**唯一构造点** `run_completion_payload`（本轮抽出：此前 `phase_runner` 与 `round_loop_runner` **各写一份**字段清单 ⇒ 新通道会只到一边）；④ 判据：单元 **19 passed**（三态/点名/fail-closed/缺省/两时点）+ 运行链实跑（**调用次数**可判：过期 ⇒ provider 只被调 1 次）；⑤ 两向反证 **G-1…G-4 全红**（含翻转 `validity_at` 的比较符）+ 二进制复原 raw `sha256` 一致 + 归档进树（220 B / `CR=0`）；广面 **2817 passed**；**全量 m0 23/23**（5317 passed, 228 skipped）| （见 CI 台账）| **门抓到三处真红并已修**：mypy（枚举导出路径 / `dict` 不变性 / `phase_id` 类型）+ **规模门**（判据文件 492 行 ⇒ 拆单元/集成两文件；`phase_capabilities` 466→**450** 行、`phase_runner` 453→**443**）| EC-05（自举收口）待做 | cycle 3（EC-05 收口）|
 | 1 | `PLAN-20261009-365` | `01606d2`（实现）+ `a0822ea`（记录） | EC-01/EC-02 **PASS**：① 五件套齐（目录声明 + 新模块 `adapters/canonical/memory_read.py` + `read_surface` 描述子与映射 + 两组合根（SQLite `ports.memory_store` / PG `c["memory"]`）+ **一条只读 allow**）；② 读面按**调用方给的时点**（`now` **必填**）给三态与处置：`EXPIRED ⇒ SKIP` / `REVIEW_DUE ⇒ ANNOTATE` / `None ⇒ USE`（**不猜**，§8 口径），理由点名被引声明值 + `dispositions` 计数摘要；③ 三条硬约束判据打满（**不读挂钟** / 未声明不猜 / 缺依赖与非法时点逐条点名）；④ 新增判据 **15 passed**；⑤ 两向反证 **M-1/M-2/M-3 全红** + 二进制复原 raw `sha256` 一致 + 归档进树（314 B / `CR=0`）；⑥ 改既有判据**逐条申报**（三文件：`+3/-0`、`+6/-0`、`+14/-5`；删除行**仅** 5 处 `46` 字面，谓词形态一字未改）；广面 **2325 passed**；**全量 m0 23/23** （5295 passed, 228 skipped）| `37989487322` Push/CodeQL **success**；M0 **待终态取证** | **四道门抓到三处真红并已修**：mypy 6 个 `object` 不可索引（测试面）/ 两处函数超 50 行 （`read_provider.__init__` 借 `_SPILL_RATIONALE` 移出长 docstring；`canonical_read_register` 抽 `_canonical_reader` 工厂）/ 一处 import 序 | EC-03（研究循环按处置改变行为）与 EC-04（两时点实跑 + 反证）待做 | cycle 2（EC-03 + EC-04） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **三条实测读数**（`memory.read` 未声明 / 运行链零引用 / `validity_at` 只到 REST 读面）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 10** | （见 CI 台账） | — | 五条 EC 全 PENDING；读能力名称与三态处置（①③）待 cycle 1 定 | cycle 1（EC-02 承接与判定 + EC-03 影响行为） |
@@ -422,6 +423,7 @@ deduplication）。
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-10 | ACHIEVED | **GOAL 收口（cycle 3 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、`IN_SCOPE` **纯收紧**、两树 **`TWO-TREE PASS`**（两路 **64 判词** / `sha256` 相同 `566fc87f…`）、判词归档进树（两份、`CR=0`）、as-is m0 **23/23**（记录写完之后）、治理 + 宪章判据绿、CI 台账逐提交。**一处时序如实登记**：两树首轮红（bootstrap：`latest_recheck` 指向的文件与归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `T-1`…`T-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261010-368`（PASS_WITH_WARNINGS）。 |
 | 2026-10-10 | ACTIVE | **cycle 2（EC-03/EC-04）收口**：**记忆时效真的影响研究循环的行为** —— 新声明 `memory_validity_gate`（缺省 `False` ⇒ 逐字节不变）让运行链步按读面 `disposition` 分派：过期 ⇒ **工具不被调用**（实测：provider 调用次数 2→1）且理由逐条点名 id / 状态 / 被引声明值；待复核 ⇒ **照常执行**但走**另一条通道**（`annotations`，与 `skipped` 互不混用）；全 `USE` ⇒ 两通道都空。**两时点实测**（EC-04a）：同一份记忆在 `expires_at` 两侧行为可区分。载荷抽出**唯一构造点**`run_completion_payload`（此前两处各写一份 ⇒ 新通道会只到一边）。判据 19 passed + 运行链实跑；两向反证 4 条按压全红 + raw `sha256` 复原一致；广面 2817 passed；**全量 m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5317 passed, 228 skipped**）。EC-05 待收口。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-09 | ACTIVE | **cycle 1（EC-01/EC-02）收口**：**`memory.read` 承接落地** —— 该能力此前**从未声明**、研究循环零引用、`validity_at` 只到 REST 读面 ⇒ 记忆时效**不改变任何后续行为**；本轮补齐**消费面**：读面按调用方给的时点（**必填** ⇒ 不读挂钟）给每条记忆三态（`EXPIRED` / `REVIEW_DUE` / `None`）与**处置**（`SKIP` / `ANNOTATE` / `USE`，**互不混用**）并逐条点名理由；五件套齐（含**只增一条只读 allow**）。新增判据 15 passed；两向反证 3 条按压全红 + 二进制复原 raw `sha256` 一致；广面 2325 passed；**全量 m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5295 passed, 228 skipped**）。EC-03/EC-04 待做。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-09 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 10**（保留槽 → 本 GOAL）。只读勘察 + **三条实测读数**：`memory.read` **不在**能力目录（只有 `memory.write`）、研究循环的运行链对 memory **零引用**、`validity_at` 的调用面只有定义处与 REST 读面 ⇒ 序 7 让时效「**可读**」但**没有任何读路径消费它**（正是 GOAL-039 的残余 `Q-1`）。五条 EC 全 `PENDING`。**不做数量目标**（只增一条只读能力）；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
