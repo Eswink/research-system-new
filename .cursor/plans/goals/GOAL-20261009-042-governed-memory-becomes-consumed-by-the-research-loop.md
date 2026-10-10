@@ -412,7 +412,8 @@ deduplication）。
 | `7123ee6`（cycle 3 提交 A = EC-05 首轮） | **无自己的 run**（同批推送） | 验证器 + 断言集 + `IN_SCOPE`；与后续提交**同一次 push** ⇒ `covered_by 38006516226` |
 | `fadc15e`（cycle 3 提交 B = 收口记录） | `38006516212` **Push on main / CodeQL success** + `38006516226` **M0 success**（8 job 全 success） | 收口 PLAN-367 + `RECHECK-20261010-368` + `ALL_PLAN`；**实测取证**；覆盖 `2b5f4d6` / `7123ee6` / `a21485f` 的代码面 |
 | `a21485f`（cycle 3 提交 C = 两树归档） | **无自己的 run**（同批推送） | 两份判词归档进树；⇒ `covered_by 38006516226` |
-| `34c369b`（cycle 3 · **GOAL 收口** = 本批 HEAD） | 见下一行（**同批**） | GOAL 收口提交（EC-05 `PASS` + `status: ACHIEVED` + 两树 + m0 读数 + MAINLINE 进展行） |
+| `34c369b`（cycle 3 · **GOAL 收口**） | `38008254852` **Push on main / CodeQL success**；`38008254973` **M0 cancelled** —— `cancel-in-progress`（被 `c50a563` 的推送取消）；⇒ `covered_by 38008358982` | GOAL 收口提交（EC-05 `PASS` + `status: ACHIEVED` + 两树 + m0 读数 + MAINLINE 进展行）|
+| `c50a563`（台账尾巴 = 本批 HEAD） | `38008358103` **Push on main / CodeQL success** + `38008358982` **M0 success**（8 job 全 success）| 台账行；**实测取证**；覆盖 `34c369b` 的代码面 |
 | （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/plans/goals/GOAL-20261009-042-*.md`；其结论由**下一个 GOAL 的台账**取证 |
 
 ## 迭代日志
