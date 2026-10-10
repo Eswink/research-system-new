@@ -408,7 +408,12 @@ deduplication）。
 的台账**重新取证。**不得**据此宣称 CI 绿。
 
 | `bb29969`（registry 故障登记 = 本批 HEAD） | `37997910933` **Push on main / CodeQL success** + `37997911692` **M0 success**（8 job **全 success**：`quality-ubuntu-latest` / `quality-windows-latest` / `container-quality` / `collector-quality` / `console-frontend` / `eval-gate` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest`）| **registry 恢复后的复取证**：`37991481989` / `37995873295` 两次红的**基础设施归因由此实证**（同一批改动在 registry 恢复后 **全绿** ⇒ 那两次红与代码无关）；`01606d2` 的 M0 也**由此行覆盖**（同批语义：它的 cancelled 是 `cancel-in-progress`，其代码面由本行取证）|
-| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/**` 记录；其结论由**下一个 cycle 的台账**取证 |
+| `2b5f4d6`（cycle 2 = EC-03/EC-04） | `38006169348` **Push on main / CodeQL success**；`38006169484` **M0 cancelled** —— `cancel-in-progress` 形态（**非失败**） | **实测取证**：该 run 于 `23:52:44Z` 终止，而 `fadc15e` 的 M0 run `38006516226` 于 `23:52:26Z` **更早创建** ⇒ 同 ref 同 workflow 的新 run 取消了在飞的旧 run（`.github/workflows/*.yml` 的 `concurrency.cancel-in-progress: true`）。其代码面由 `fadc15e` 所在批覆盖（`covered_by 38006516226`）|
+| `7123ee6`（cycle 3 提交 A = EC-05 首轮） | **无自己的 run**（同批推送） | 验证器 + 断言集 + `IN_SCOPE`；与后续提交**同一次 push** ⇒ `covered_by 38006516226` |
+| `fadc15e`（cycle 3 提交 B = 收口记录） | `38006516212` **Push on main / CodeQL success** + `38006516226` **M0 success**（8 job 全 success） | 收口 PLAN-367 + `RECHECK-20261010-368` + `ALL_PLAN`；**实测取证**；覆盖 `2b5f4d6` / `7123ee6` / `a21485f` 的代码面 |
+| `a21485f`（cycle 3 提交 C = 两树归档） | **无自己的 run**（同批推送） | 两份判词归档进树；⇒ `covered_by 38006516226` |
+| `34c369b`（cycle 3 · **GOAL 收口** = 本批 HEAD） | 见下一行（**同批**） | GOAL 收口提交（EC-05 `PASS` + `status: ACHIEVED` + 两树 + m0 读数 + MAINLINE 进展行） |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/plans/goals/GOAL-20261009-042-*.md`；其结论由**下一个 GOAL 的台账**取证 |
 
 ## 迭代日志
 
