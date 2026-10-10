@@ -43,7 +43,20 @@ PRIOR_JUDGES: tuple[str, ...] = (
 )
 
 #: EC-02 落点（读面；**可能落点清单**）。
-READ_FACE = "adapters/canonical/memory_read.py"
+#: GOAL-20261011-052：共用处置判定**已搬去应用层**（两个读面共用；HTTP 面不得 import 适配器）。
+#: `MEMORY_READ` 因此是**两个可能落点的合并文本**（判**关系**不判位置 —— 承 `MEM-20261010-215`；
+#: 本次搬迁正当，钉位置会**假红**）。
+_SHARED_DISPOSITION = "packages/application/memory/disposition.py"
+READ_FACE_SOURCES: tuple[str, ...] = (
+    "adapters/canonical/memory_read.py",
+    _SHARED_DISPOSITION,
+)
+
+
+def _face(root: Path, sources: tuple[str, ...]) -> str:
+    """多个**可能落点**的合并文本（搬迁不改变结论；判关系不判位置）。"""
+    return chr(10).join(_text(root, item) for item in sources)
+
 
 #: EC-03 落点（消费端）。
 CONSUMER = "packages/application/run_orchestration/phase_capability_triggers.py"
@@ -132,7 +145,7 @@ def _calls_named(source: str, name: str) -> int:
 
 def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-02：读面两向披露 + 反向链接从同一批记录算（不新增 Port 方法）。"""
-    face = _text(root, READ_FACE)
+    face = _face(root, READ_FACE_SOURCES)
     names = _function_names(face)
     return [
         toolbox.verdict(
@@ -160,7 +173,7 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
 
 def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-03：第四态 + 消费端真的分派 + 未知态仍 fail closed。"""
-    face = _text(root, READ_FACE)
+    face = _face(root, READ_FACE_SOURCES)
     consumer = _text(root, CONSUMER)
     return [
         toolbox.verdict(

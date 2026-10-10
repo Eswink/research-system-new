@@ -106,6 +106,31 @@ exit_criteria:
 | 宪章判据 | `test_mainline_program_is_intact.py` 绿 |
 | **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / passed/skipped 读数**待本轮全量 m0 实测回填**；在全部记录写完之后、独占、仓库 `.venv`、不接管道）|
 
+### 本轮全量 m0 **真红**（架构契约违例，已修 —— 如实登记）
+
+**逐字**：`FAILED tests/architecture/python/test_services_api_boundaries.py::
+test_control_plane_api_has_no_adapter_leak_outside_composition` ——
+`services.api.routers is not allowed to import adapters: services.api.routers.memory -> adapters (l.27)`。
+
+**成因**：EC-03 要求「两处**同源**」，我第一版把共用判定留在**适配器**里
+（`adapters/canonical/memory_read.py`）由路由**调用** —— 那**直接违反** `.importlinter.api`
+的契约：控制面 API **不得** import 具体适配器（组合根除外）。
+**为什么本地四道门没抓到**：`ruff` / `format` / `mypy` / 规模门都**不做分层判定**；
+分层由 `import-linter` 判，而它只在 **m0 / CI** 里跑（本地直连 `.venv/Scripts/python.exe`
+还会因 `lint-imports` 不在 PATH 而**假红** —— 必须 `uv run`）。
+
+**修法（正确的同源落点）**：把共用判定搬去**应用层**
+`packages/application/memory/disposition.py` —— 那是**两个读面都能 import 的那一层**
+（HTTP 面本来就在 import `packages.application.memory.*`）。`memory_read` **显式再导出**
+（严格 mypy 要求 `__all__`，否则 `attr-defined` 判红）⇒ 既有调用方与判据不受影响，
+**判定实现一字未动**。
+
+**连带**：四个既有收口断言集（`goal042` / `045` / `050` / `051`）把读面的**位置**
+写死（`READ_FACE = "adapters/canonical/memory_read.py"`）⇒ 搬迁后**假红**
+（被「零判负」判据当场报出）。四处均改为**「可能落点的合并文本」**
+（`*_FACE_SOURCES`，含 `disposition.py`）—— **判关系不判位置**（承 `MEM-20261010-215`）；
+`goal045` 的那条还额外接受**封装形态**（`disposition_reason` 把拼接收进应用层）。
+
 ### 本轮把 §8 的新增纪律（**判据不得恒假**）落成了机械面（如实登记）
 
 | # | 措施 | 读数 |

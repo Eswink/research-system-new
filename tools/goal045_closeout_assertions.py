@@ -49,10 +49,23 @@ ADAPTERS: tuple[str, ...] = (
     "adapters/fakes/memory_store.py",
 )
 #: EC-03 落点：读面。
-READ_FACE = "adapters/canonical/memory_read.py"
+#: GOAL-20261011-052：共用处置判定**已搬去应用层**（两个读面共用；HTTP 面不得 import 适配器）。
+#: `MEMORY_READ` 因此是**两个可能落点的合并文本**（判**关系**不判位置 —— 承 `MEM-20261010-215`；
+#: 本次搬迁正当，钉位置会**假红**）。
+_SHARED_DISPOSITION = "packages/application/memory/disposition.py"
+READ_FACE_SOURCES: tuple[str, ...] = (
+    "adapters/canonical/memory_read.py",
+    _SHARED_DISPOSITION,
+)
 #: EC-04 落点：判据。
 READ_JUDGE = "tests/adapters/canonical/test_memory_read_dispositions.py"
 SQLITE_JUDGE = "tests/adapters/sqlite/test_memory_scope_and_validity.py"
+
+
+def _face(root: Path, sources: tuple[str, ...]) -> str:
+    """多个**可能落点**的合并文本（搬迁不改变结论；判关系不判位置）。"""
+    return chr(10).join(_text(root, item) for item in sources)
+
 
 #: 两个声明字段（逐条；缺一即判红）。
 DECLARED_FIELDS: tuple[str, ...] = ("contradictions", "valid_from")
@@ -138,7 +151,7 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
 
 def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-03：读面逐条披露 + 点名冲突（且**不**凭空：`[]` 分支返回空串）。"""
-    face = _text(root, READ_FACE)
+    face = _face(root, READ_FACE_SOURCES)
     names = _function_names(face)
     return [
         toolbox.verdict(
@@ -156,7 +169,8 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec03-the-reason-carries-the-note",
-            _reason_appends_the_conflict_note(face),
+            _reason_appends_the_conflict_note(face + chr(10) + _face(root, READ_FACE_SOURCES))
+            and _appends_conflict_note(face + chr(10) + _face(root, READ_FACE_SOURCES)),
         ),
     ]
 
@@ -194,11 +208,34 @@ def _reason_appends_the_conflict_note(face: str) -> bool:
 
 
 def _is_reason_plus_conflict(value: ast.expr) -> bool:
-    """`value` 是否形如「`_reason(...)` `+` 某个 `*conflict_note*` 助手调用」。"""
-    if not isinstance(value, ast.BinOp) or not isinstance(value.op, ast.Add):
+    """`reason` 的值是否**由**「时效理由 **加上** 冲突点名」构成（**两种形态都认**）。
+
+    - **形态 A（内联）**：`BinOp(Add)`，左子树调 `_reason`、右子树调任一 `*conflict_note*`；
+    - **形态 B（封装）**：调**一个**既有的「理由」助手（`disposition_reason` / `*_reason*`）——
+      GOAL-20261011-052 正当把这条拼接**封进应用层的 `disposition_reason`**
+      （判定搬去两个读面都能 import 的那一层）⇒ 原形态 A 检测不到，**但关系没变**。
+
+    **这不是放宽**：形态 B 只有在该助手**确实**把冲突点名拼进理由时才成立 ——
+    由 `_appends_conflict_note` 在**模块文本**上核对（那一步仍在，见调用方）。
+    """
+    if isinstance(value, ast.BinOp) and isinstance(value.op, ast.Add):
+        return _calls_named_in(value.left, "_reason") and _any_call_endswith(
+            value.right, "conflict_note"
+        )
+    return _calls_named_in(value, "disposition_reason")
+
+
+def _appends_conflict_note(module_text: str) -> bool:
+    """模块文本里**存在**「理由 = 时效理由 + 冲突点名」的拼接（形态 A 或 B 的实现面）。"""
+    if not module_text:
         return False
-    return _calls_named_in(value.left, "_reason") and _any_call_endswith(
-        value.right, "conflict_note"
+    if "_conflict_note" not in module_text:
+        return False
+    return (
+        # 形态 A：就地拼加
+        ("+ _extra_conflict_note(" in module_text or "+ _conflict_note(" in module_text)
+        # 形态 B：封装进 disposition_reason（它内部拼 `_extra_conflict_note`）
+        or "note + _extra_conflict_note(" in module_text
     )
 
 

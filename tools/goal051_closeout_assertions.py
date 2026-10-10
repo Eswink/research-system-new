@@ -45,7 +45,20 @@ PRIOR_JUDGES: tuple[str, ...] = (
 )
 
 #: EC-02 落点（读面）。
-READ_FACE = "adapters/canonical/memory_read.py"
+#: GOAL-20261011-052：共用处置判定**已搬去应用层**（两个读面共用；HTTP 面不得 import 适配器）。
+#: `MEMORY_READ` 因此是**两个可能落点的合并文本**（判**关系**不判位置 —— 承 `MEM-20261010-215`；
+#: 本次搬迁正当，钉位置会**假红**）。
+_SHARED_DISPOSITION = "packages/application/memory/disposition.py"
+READ_FACE_SOURCES: tuple[str, ...] = (
+    "adapters/canonical/memory_read.py",
+    _SHARED_DISPOSITION,
+)
+
+
+def _face(root: Path, sources: tuple[str, ...]) -> str:
+    """多个**可能落点**的合并文本（搬迁不改变结论；判关系不判位置）。"""
+    return chr(10).join(_text(root, item) for item in sources)
+
 
 #: EC-03 落点（消费端）。
 CONSUMER = "packages/application/run_orchestration/phase_capability_triggers.py"
@@ -112,7 +125,7 @@ def _count_test_cases(root: Path, relative: str) -> int:
 
 def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-02：第五态 + 点名 + 优先级固定 + 缺省逐字不变。"""
-    face = _text(root, READ_FACE)
+    face = _face(root, READ_FACE_SOURCES)
     names = _function_names(face)
     return [
         toolbox.verdict(
@@ -148,14 +161,29 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     ]
 
 
+def _named_forms_face(root: Path, consumer: str) -> str:
+    """两个读面的合并文本（判关系不判位置 —— 判定已搬去应用层，钉位置会假红）。"""
+    return consumer + chr(10) + _face(root, READ_FACE_SOURCES)
+
+
+def _all_named_forms_present(root: Path, consumer: str) -> bool:
+    face = _named_forms_face(root, consumer)
+    return all(marker in face for marker in NAMED_FORMS)
+
+
+def _missing_named_forms(root: Path, consumer: str) -> list[str]:
+    face = _named_forms_face(root, consumer)
+    return [item for item in NAMED_FORMS if item not in face]
+
+
 def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-03：消费端真的分派为「执行但带标注」+ 两因分开点名 + 未知态仍 fail closed。"""
     consumer = _text(root, CONSUMER)
     return [
         toolbox.verdict(
             "ec03-every-required-form-is-named",
-            all(marker in consumer + _text(root, READ_FACE) for marker in NAMED_FORMS),
-            ",".join(item for item in NAMED_FORMS if item not in consumer + _text(root, READ_FACE)),
+            _all_named_forms_present(root, consumer),
+            ",".join(_missing_named_forms(root, consumer)),
         ),
         toolbox.verdict(
             "ec03-the-conflicted-arm-is-a-distinct-group",

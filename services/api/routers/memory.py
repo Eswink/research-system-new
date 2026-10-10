@@ -24,7 +24,13 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request
 
-from adapters.canonical.memory_read import _reason, disposition_of, superseded_by_index
+# GOAL-20261011-052 EC-03：共用判定取自**应用层**（`.importlinter.api` 的契约禁止
+# `services.api.routers` import 具体适配器 ⇒ 同源判定必须落在应用层，两处都从那里取）。
+from packages.application.memory.disposition import (
+    disposition_of,
+    disposition_reason,
+    superseded_by_index,
+)
 from packages.application.memory.gate import MemoryGateDeps, commit_memory
 from packages.application.memory.lifecycle import MemoryLifecycleDeps, delete_memory
 from packages.application.memory.validity import validity_at
@@ -78,7 +84,7 @@ def _record_dto(
     GOAL-20261011-052 EC-02/EC-03：**四样与编排消费面同源** ——
     `contradictions` 取记录自身的声明；`superseded_by` 由调用方按**同一批记录**传入
     （反向链接 `superseded_by_index` 需要看见别人，单条记录读不出来）；
-    `disposition` / `reason` **直接调**编排面那两个纯函数（`disposition_of` / `_reason`）
+    `disposition` / `reason` **直接调**应用层那两个纯函数（`disposition_of` / `disposition_reason`）
     —— **不**在路由里重写第二套判定（两处各写一套 = 漂移无从发现）。
     """
     validity = validity_at(record, now) if now is not None else None
@@ -103,7 +109,7 @@ def _record_dto(
         disposition=disposition_of(
             validity, superseded=superseded, conflicted=bool(record.contradictions)
         ),
-        reason=_reason(validity, record, superseded_by=links),
+        reason=disposition_reason(validity, record, superseded_by=links),
     )
 
 

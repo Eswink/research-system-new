@@ -46,7 +46,14 @@ PRIOR_JUDGES: tuple[str, ...] = (
 )
 
 #: EC-01/EC-02 落点（承接五件套）。
-MEMORY_READ = "adapters/canonical/memory_read.py"
+#: GOAL-20261011-052：共用处置判定**已搬去应用层**（两个读面共用；HTTP 面不得 import 适配器）。
+#: `MEMORY_READ` 因此是**两个可能落点的合并文本**（判**关系**不判位置 —— 承 `MEM-20261010-215`；
+#: 本次搬迁正当，钉位置会**假红**）。
+_SHARED_DISPOSITION = "packages/application/memory/disposition.py"
+MEMORY_READ_SOURCES: tuple[str, ...] = (
+    "adapters/canonical/memory_read.py",
+    _SHARED_DISPOSITION,
+)
 READ_PROVIDER = "adapters/canonical/read_provider.py"
 READ_SURFACE = "adapters/canonical/read_surface.py"
 CAPABILITIES = "examples/config/capabilities.yaml"
@@ -55,6 +62,12 @@ POLICY = "examples/config/policy.yaml"
 BINDINGS = "services/api/session_tool_support.py"
 SQLITE_ROOT = "services/api/composition.py"
 PG_ROOT = "services/api/pg_composition.py"
+
+
+def _face(root: Path, sources: tuple[str, ...]) -> str:
+    """多个**可能落点**的合并文本（搬迁不改变结论；判关系不判位置）。"""
+    return chr(10).join(_text(root, item) for item in sources)
+
 
 #: EC-03/EC-04 落点（消费面）。
 RUNNER = "packages/application/run_orchestration/phase_capabilities.py"
@@ -123,7 +136,7 @@ def _ec01_02_verdicts(root: Path, toolbox: Any) -> list[Any]:
             all(
                 marker in _text(root, relative)
                 for relative, marker in (
-                    (MEMORY_READ, "def memory_read("),
+                    ("adapters/canonical/memory_read.py", "def memory_read("),
                     (READ_PROVIDER, "memory_read"),
                     (READ_SURFACE, "memory_read"),
                     (CAPABILITIES, "memory.read"),
@@ -138,21 +151,27 @@ def _ec01_02_verdicts(root: Path, toolbox: Any) -> list[Any]:
         toolbox.verdict(
             "ec02-three-dispositions-are-explicit",
             all(
-                marker in _text(root, MEMORY_READ)
+                marker in _face(root, MEMORY_READ_SOURCES)
                 for marker in ("DISPOSITION_USE", "DISPOSITION_ANNOTATE", "DISPOSITION_SKIP")
             ),
         ),
         toolbox.verdict(
             "ec02-the-moment-is-required-so-the-decision-is-reproducible",
-            "requires an explicit 'now'" in _text(root, MEMORY_READ)
+            "requires an explicit 'now'" in _face(root, MEMORY_READ_SOURCES)
             # **代码**里不得读挂钟（docstring 提到它是说明，不是调用 ⇒ 用 AST 判，不判散文）。
-            and not _calls_wall_clock(_text(root, MEMORY_READ)),
+            and not _calls_wall_clock(_face(root, MEMORY_READ_SOURCES)),
         ),
         toolbox.verdict(
             "ec02-undeclared-validity-is-not-guessed",
-            "未声明" in _text(root, MEMORY_READ) and "不得被当成已到期" in _text(root, MEMORY_READ),
+            _both_in_face(root, "未声明", "不得被当成已到期"),
         ),
     ]
+
+
+def _both_in_face(root: Path, *needles: str) -> bool:
+    """这两个标记都在**合并文本**里（判关系不判位置 —— 判定已搬去应用层）。"""
+    face = _face(root, MEMORY_READ_SOURCES)
+    return all(needle in face for needle in needles)
 
 
 def _ec03_04_verdicts(root: Path, toolbox: Any) -> list[Any]:

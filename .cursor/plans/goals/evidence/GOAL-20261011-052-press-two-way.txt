@@ -1,15 +1,15 @@
 BASELINE（未按压，必须绿）: GREEN
-suite: 13 passed in 1.33s
+suite: 13 passed in 1.32s
 N-1 两处不一致（HTTP 面处置被改动）: 按压 RED
-sha 复原一致=True | 6895f22a878f
-suite: 1 failed, 12 passed in 2.67s
+sha 复原一致=True | a467ed526179
+suite: 1 failed, 12 passed in 2.83s
 N-2 HTTP 面凭空生造判定（不取既有纯函数）: 按压 RED
-sha 复原一致=True | 6895f22a878f
-suite: 1 failed, 12 passed in 2.82s
+sha 复原一致=True | a467ed526179
+suite: 1 failed, 12 passed in 3.17s
 N-3 既有键被改动（`provenance` 改名 ⇒ 既有读者会断）: 按压 RED
 sha 复原一致=True | a25d810d0056
-suite: 9 failed, 4 passed in 3.03s
+suite: 9 failed, 4 passed in 3.14s
 N-4 不给时点却填了 validity（猜）: 按压 RED
-sha 复原一致=True | 6895f22a878f
-suite: 1 failed, 12 passed in 3.04s
+sha 复原一致=True | a467ed526179
+suite: 1 failed, 12 passed in 2.67s
 SUMMARY presses=4 all_red_and_restored=True

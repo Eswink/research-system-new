@@ -43,6 +43,8 @@ PRIOR_JUDGES: tuple[str, ...] = (
 #: EC-02/EC-03 落点。
 DTO = "services/api/dto/memory.py"
 ROUTER = "services/api/routers/memory.py"
+#: 共用判定的**单一来源**（应用层 —— HTTP 面**不得** import 适配器，故判定必须在这一层）。
+SHARED_SOURCE = "packages/application/memory/disposition.py"
 ORCH_FACE = "adapters/canonical/memory_read.py"
 SNAPSHOT = "docs/api/openapi.m13.json"
 
@@ -72,7 +74,11 @@ LEGACY_FIELDS: tuple[str, ...] = (
 )
 
 #: EC-03：HTTP 面**必须复用**的编排面助手（同一批纯函数）。
-SHARED_HELPERS: tuple[str, ...] = ("disposition_of", "_reason", "superseded_by_index")
+SHARED_HELPERS: tuple[str, ...] = (
+    "disposition_of",
+    "disposition_reason",
+    "superseded_by_index",
+)
 
 #: EC-04 判据文件（逐条点名按压各自的用例）。
 API_JUDGE = "tests/api/test_memory_api.py"
@@ -185,11 +191,13 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
             "反向链接必须按**同一批记录**扫一次（不逐条再查 —— 那会 N+1）",
         ),
         toolbox.verdict(
-            "ec03-the-orchestration-face-still-owns-the-judgement",
-            # 编排面**仍是基准**：那两个助手仍在那里定义（HTTP 面只是调用）
-            "def disposition_of(" in _text(root, ORCH_FACE)
-            and "def superseded_by_index(" in _text(root, ORCH_FACE),
-            "判定仍属编排面（HTTP 面**不**重写第二套）",
+            "ec03-the-judgement-lives-in-the-application-layer",
+            # **单一来源在应用层**：HTTP 面**不得** import 适配器（`.importlinter.api` 契约），
+            # 而两个读面又必须共用同一套判定 ⇒ 判定必须落在两边都能 import 的那一层。
+            "def disposition_of(" in _text(root, SHARED_SOURCE)
+            and "def disposition_reason(" in _text(root, SHARED_SOURCE)
+            and "def superseded_by_index(" in _text(root, SHARED_SOURCE),
+            "共用判定必须在**应用层**（HTTP 面不 import 适配器 ⇒ 不能在适配器里）",
         ),
         toolbox.verdict(
             "ec03-the-snapshot-carries-the-four-facts",

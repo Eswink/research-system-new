@@ -33,63 +33,22 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from packages.application.memory.validity import ValidityState, validity_at
+# GOAL-20261011-052 EC-03：**判定已搬去应用层**（两个读面共用；HTTP 面**不得** import
+# 具体适配器 ⇒ 共用判定必须落在它能 import 的那一层）。本模块**原样再导出**这些名字
+# （既有调用方与判据不受影响；**判定实现一字未动**）。
+from packages.application.memory.disposition import (
+    DISPOSITION_ANNOTATE,
+    DISPOSITION_CONFLICTED,
+    DISPOSITION_SKIP,
+    DISPOSITION_SUPERSEDED,
+    DISPOSITION_USE,
+    disposition_of,
+    disposition_reason,
+    superseded_by_index,
+)
+from packages.application.memory.validity import validity_at
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import Timestamp
-
-#: 处置：**五态 + 未声明** 各自的唯一取值（读面按这个字段分派，不靠措辞）。
-DISPOSITION_USE = "USE"
-DISPOSITION_ANNOTATE = "ANNOTATE"
-DISPOSITION_SKIP = "SKIP"
-#: GOAL-20261010-050 EC-03：**已取代**（`active=False` 且**被别的记录取代**）。
-#: **与 `SKIP` 分开**：「已过期」是**时效**理由，「已取代」是**被新版本替代** ——
-#: 两者处置都为「不适用」，但**理由与可复核依据不同**（判词必须点得出是哪一种）。
-DISPOSITION_SUPERSEDED = "SUPERSEDED"
-#: GOAL-20261011-051 EC-02：**带着未消解的冲突**。
-#: **与 `ANNOTATE`（待复核）分开**：待复核是**时效**上的「该看了」，冲突是**内容**上的
-#: 「这条与另一条说法不一致」—— 两者**处置同类**（执行但带标注）但**理由与可复核依据不同**
-#: （判词必须点得出是哪一种，并**点名**冲突的 id）。
-DISPOSITION_CONFLICTED = "CONFLICTED"
-
-#: 时效状态 → 处置（**互不混用**：三态各归各的；`None` 见 `disposition_of`）。
-_DISPOSITIONS: dict[ValidityState, str] = {
-    ValidityState.EXPIRED: DISPOSITION_SKIP,
-    ValidityState.REVIEW_DUE: DISPOSITION_ANNOTATE,
-}
-
-
-def disposition_of(
-    state: ValidityState | None, *, superseded: bool = False, conflicted: bool = False
-) -> str:
-    """时效状态 → **处置**（纯函数；`None` = 未声明或未到 ⇒ 照用，**不猜**）。
-
-    GOAL-20261010-050 EC-03：**已取代**是**第四个**不适用理由 —— 它**不看时效**（一条
-    未声明时效的被取代记忆，此前会报 `USE` = 「照用」，那是把**已被替代**的知识当成现行知识）。
-
-    GOAL-20261011-051 EC-02：**带着未消解的冲突**是**第五个** —— 同样**不看时效**
-    （一条未声明时效的冲突记录，此前也会报 `USE`）。
-
-    优先级**固定**（与判据同源，**四件事**从根本到表层）：
-
-    1. `已取代` —— 「这条**已经不是当前版本**」最根本；
-    2. `已过期` —— 时效上**已失效**（不再适用）；
-    3. `有冲突` —— 内容上**有未消解的分歧**（可用，但要人看）；
-    4. `待复核` —— 时效上**该看了**；
-    5. 否则 `USE`。
-
-    **顺序的实证**：`已取代` 与 `有冲突` **并存**时以**取代**为先 —— 一条已被替代的记录，
-    「谁和它冲突」已无实际意义（它的去留已定）；而 `已过期` 与 `有冲突` 并存时以**过期**为先，
-    因为「不参与后续行为」比「要人看」更彻底。**两个缺省参数都为 `False` ⇒ 与改动前逐字相同**。
-    """
-    if superseded:
-        return DISPOSITION_SUPERSEDED
-    if state is ValidityState.EXPIRED:
-        return DISPOSITION_SKIP
-    if conflicted:
-        return DISPOSITION_CONFLICTED
-    if state is None:
-        return DISPOSITION_USE
-    return _DISPOSITIONS[state]
 
 
 def _moment(args: dict[str, object]) -> Timestamp:
@@ -158,83 +117,8 @@ def _memory_row(
         # GOAL-20261011-051：**冲突的处置理由由 `_reason` 自己点名**（那一支已逐字给出 id）
         # ⇒ 不再叠加 `_conflict_note`（否则同一句出现两遍）。`_conflict_note` 保留给
         # **未被 `_reason` 覆盖**的场合（见下）—— 「不是当前处置理由、但读者仍该知道有冲突」。
-        "reason": _reason(state, record, superseded_by=superseded_by)
-        + _extra_conflict_note(state, record),
+        "reason": disposition_reason(state, record, superseded_by=superseded_by),
     }
-
-
-def _reason(
-    state: ValidityState | None, record: Any, superseded_by: list[str] | None = None
-) -> str:
-    """处置理由（点名状态与**被引的声明值** —— 读面原文，不重算）。
-
-    GOAL-20261010-050：**已取代**与**已过期**是**两种**不适用理由，判词必须点得出是哪一种
-    （`已取代` 优先，且已过期时**两者都点名** —— 读者要能一次看全）。
-    """
-    superseded = list(superseded_by or ())
-    conflicts = list(record.contradictions)
-    if superseded:
-        note = f"被 {','.join(superseded)} 取代 ⇒ 已不是当前版本（不照用）"
-        if state is ValidityState.EXPIRED:
-            return note + f"；**并且** expires_at={record.expires_at.value.isoformat()} 已过"
-        if state is ValidityState.REVIEW_DUE:
-            return note + f"；**并且** review_after={record.review_after.value.isoformat()} 已到"
-        return note
-    if state is ValidityState.EXPIRED:
-        # 过期**先于**冲突（「不参与后续行为」比「要人看」更彻底）；仍点名冲突（读者要能看全）。
-        note = f"expires_at={record.expires_at.value.isoformat()} 已过 ⇒ 跳过（不参与后续行为）"
-        if conflicts:
-            return note + f"；**并且** 声明与 {','.join(conflicts)} 冲突（未消解）"
-        return note
-    if conflicts:
-        return f"声明与 {','.join(conflicts)} 冲突 ⇒ **有未消解的分歧**（照用但标注，未自动消解）"
-    if state is ValidityState.REVIEW_DUE:
-        return f"review_after={record.review_after.value.isoformat()} 已到 ⇒ 标注（仍需复核）"
-    return "未声明时效或未到 ⇒ 照用（未声明不得被当成已到期）"
-
-
-def superseded_by_index(records: tuple[Any, ...]) -> dict[str, list[str]]:
-    """反向链接表（`被取代的 id → [取代它的 id, …]`）—— **只从同一批记录算**，不新增 Port 方法。
-
-    「谁取代了我」在记录自身**读不到**（正向链接写在**新**记录上）⇒ 必须扫一遍同批记录。
-    只报**直接**链接（**不**做传递闭包 —— 那是本 GOAL 明确不做的 `BB-1`）。
-    """
-    reverse: dict[str, list[str]] = {}
-    for record in records:
-        for old_id in record.supersedes:
-            reverse.setdefault(str(old_id), []).append(str(record.id))
-    return reverse
-
-
-def _extra_conflict_note(state: ValidityState | None, record: Any) -> str:
-    """**仅在处置理由没有覆盖冲突时**追加点名（否则会重复同一句）。
-
-    `_reason` 的哪些分支已经点名冲突：`已过期且带冲突`（「**并且** 声明与 … 冲突（未消解）」）、
-    `有冲突`（「声明与 … 冲突 ⇒ **有未消解的分歧**」）。**其余分支**（`已取代` / 待复核 / 照用）
-    仍应让读者看见冲突 ⇒ 这里补上。这是「处置理由」与「读者可见信息」的**分离**：
-    两者都不省，但也都不重复。
-    """
-    if not record.contradictions:
-        return ""
-    if state is ValidityState.EXPIRED:
-        return ""  # 那一支已点名
-    if state is None and not record.contradictions:
-        return ""
-    if disposition_of(state, conflicted=True) == DISPOSITION_CONFLICTED:
-        return ""  # 冲突本身就是处置理由 ⇒ 已点名
-    return _conflict_note(record)
-
-
-def _conflict_note(record: Any) -> str:
-    """冲突声明的**点名**句（空列表 ⇒ 不追加任何文字 —— **不**凭空说「有冲突」）。
-
-    `[]` 与 `None` 的语义**互不混用**：`[]` = 已判定**无**冲突（本条不追加）；
-    「未声明」在域上不存在第三种取值（缺省即 `[]`）⇒ 读面不给「未知」态，**不猜**。
-    """
-    conflicts = list(record.contradictions)
-    if not conflicts:
-        return ""
-    return f"；**声明与 {','.join(conflicts)} 冲突**（点名，未自动消解）"
 
 
 def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, object]:
@@ -324,3 +208,18 @@ def _tier_of(name: str | None) -> Any | None:
         raise InvalidInputError(
             f"memory_read tier {name!r} is not a known tier (allowed: {allowed})"
         ) from exc
+
+
+#: GOAL-20261011-052：**显式再导出**应用层的处置面（两处共用同一套判定）。
+#: 严格 mypy 要求「再导出必须显式声明」——否则 `attr-defined` 判红（实测）。
+__all__ = [
+    "DISPOSITION_ANNOTATE",
+    "DISPOSITION_CONFLICTED",
+    "DISPOSITION_SKIP",
+    "DISPOSITION_SUPERSEDED",
+    "DISPOSITION_USE",
+    "disposition_of",
+    "disposition_reason",
+    "memory_read",
+    "superseded_by_index",
+]
