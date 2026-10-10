@@ -23,6 +23,7 @@ PASS ec02-the-metadata-mirrors-the-phase-face
 PASS ec02-every-missing-form-is-named
 PASS ec02-the-registration-is-idempotent
 PASS ec02-the-driver-registers-before-judging
+PASS ec02-the-judgment-face-stays-read-only
 PASS ec03-the-admissibility-helper-exists
 PASS ec03-the-new-branch-keys-on-the-prefix
 PASS ec03-the-new-branch-requires-a-terminal-run
