@@ -41,8 +41,8 @@ PASS cases-test_approvals_api
 PASS prior-judge-test_python_source_limits
 PASS prior-judge-test_delivery_semantics_wording
 PASS prior-judge-test_openapi_snapshot
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
 PASS press-archive-is-binary-safe
 PASS scope-declares-this-rounds-scripts
 PASS scope-still-pins-the-entry
