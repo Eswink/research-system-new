@@ -347,8 +347,11 @@ deduplication）。
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| `82ac5ba`（replan，本 GOAL 建档所在批） | 待取证 | replan（序 12 新增）+ 建档（五 EC + 事实层读数） |
-| （后续逐条填） | — | — |
+| `82ac5ba`（replan） | **无自己的 run**（同批推送） | 序 12 新增（保留槽）+ 修订记录行 |
+| `7bed255`（本 GOAL 建档） | `38019098501` **Push on main / CodeQL success**；`38019098883` **M0 cancelled** —— `cancel-in-progress`（被 `905e602` 的推送取消）⇒ `covered_by 38019928888` | 五 EC + 三条事实层读数 |
+| `905e602`（cycle 1 = EC-01…EC-04） | `38019928888` **M0 success**（8 job 全 success）+ `38019928509` **Push on main / CodeQL success** | 等待理由可区分 + 点名四态 + 判据 + 两向反证；本地 **m0 23/23**（5335 passed, 228 skipped）；**实测取证** |
+| `7a203d5`（cycle 1 记录回写 = 本批 HEAD） | `38021171660` **Push on main / CodeQL success** + `38021172370` **M0 success**（8 job 全 success） | EC 终态 + 迭代日志 + 状态历史；**实测取证**；覆盖 `82ac5ba` / `7bed255` 的记录面 |
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/plans/goals/GOAL-20261010-044-*.md`；其结论由**下一个 cycle 的台账**取证 |
 
 ## 迭代日志
 
