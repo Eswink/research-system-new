@@ -208,6 +208,10 @@ async def advance(program_id: str, request: Request) -> ProgramAdvanceDto:
         runs=_runs_of(deps),
         programs=store,
         findings=deps.review_findings,
+        # GOAL-20261010-044 EC-02/EC-03：审批面（**复用既有实例**，不建第二套存储）——
+        # 驱动据此把「停在人工闸门」与「还在跑」判成**不同种类**并点名待审批。
+        # 缺审批面 ⇒ 传 None（驱动**点名**「本装配未提供审批面」，不静默当成没有待审批）。
+        approvals=deps.approvals,
         # 缺编排面 ⇒ 传 None（驱动据此落一条**点名**「未提供启动面」的 WAIT 决策）；
         # 不是抛 503 —— 「需要起 run 但没有启动面」是**可读的决策事实**，不是传输层故障。
         start_run=(

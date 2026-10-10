@@ -117,6 +117,10 @@ def test_decision_kinds_separate_conclusion_from_guardrail() -> None:
         # 与结论面的 `DEDUP` 同类不同面（那里认领的是**下一序号**的新 run）。
         # 同轮同步登记的**纯加法**：断言形态（集合相等）与判据口径一字未改。
         "DEDUP_FAILED_RUN",
+        # GOAL-20261010-044 EC-02：**非终态面的两类等待必须可区分**（「等人」≠「等机器」）
+        # —— `WAIT_FOR_APPROVAL` 与 `WAIT` 互不混用。同轮同步登记的**纯加法**：
+        # 断言形态（集合相等）一字未改。
+        "WAIT_FOR_APPROVAL",
     }
 
 

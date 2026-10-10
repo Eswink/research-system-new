@@ -66,6 +66,13 @@ class ProgramDecisionKind(StrEnum):
     不再起第二个同序号 run，点名认领的 run 与已认领数；该**认领**同样**计入**尝试数
     （否则声明的上界可被反复的崩溃窗口无限绕过）。"""
 
+    # GOAL-20261010-044 EC-02：**非终态面的两类等待必须可区分**（「等人」≠「等机器」）。
+    # 序 8 消灭的是「没有结论 vs 结论说停」；本条是同一病在非终态面：`WAIT` 此前把
+    # 「这一轮还在跑」与「停在人工闸门等人拍板」混成一体 ⇒ 恢复路径无法回答「该等谁」。
+    WAIT_FOR_APPROVAL = "WAIT_FOR_APPROVAL"
+    """上一轮**停在人工闸门**（`state == WAITING_FOR_APPROVAL` / `PAUSED`）⇒ 等**人**拍板：
+    与 `WAIT`（等**机器**跑完）**互不混用**；判词点名待审批的标识（查不到也点名）。"""
+
 
 @dataclass(frozen=True, slots=True)
 class ProgramContinueRule:

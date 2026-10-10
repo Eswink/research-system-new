@@ -168,8 +168,9 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
-child_plans: []
-latest_recheck: null
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261010-375-goal-044-ec01-04-program-wait-reasons.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-376-goal-044-ec01-04-program-wait-reasons.md
 memory_entries: []
 ---
 

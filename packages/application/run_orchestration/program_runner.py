@@ -27,6 +27,10 @@ from typing import Any
 
 from packages.application.ports.program_store import ProgramStore
 from packages.application.ports.run_store import RunStore
+from packages.application.run_orchestration.program_waiting import (
+    ApprovalReader,
+    waiting_round_decision,
+)
 from packages.domain.core import Timestamp
 from packages.domain.program import ProgramDecision, ProgramDecisionKind, ResearchProgram
 from packages.domain.run import ResearchRun
@@ -152,6 +156,7 @@ def _evaluate(
     existing: tuple[ResearchRun, ...],
     findings: FindingReader | None,
     programs: ProgramStore,
+    approvals: ApprovalReader | None,
 ) -> _Evaluation:
     """读落库事实并判定（**先结论后护栏**；返回的 `start_index` 非 None 才需要起 run）。"""
     if not existing:
@@ -164,12 +169,8 @@ def _evaluate(
     last = existing[-1]
     last_index = last.program_index or 0
     if not last.is_terminal:
-        return _Evaluation(
-            kind=ProgramDecisionKind.WAIT,
-            reason=f"第 {last_index} 轮尚未终止（state={last.state}）⇒ 本轮不推进",
-            cited_run_id=last.id.value,
-            cited_facts=(f"state={last.state}",),
-        )
+        kind, reason, facts = waiting_round_decision(last, last_index, approvals)
+        return _Evaluation(kind=kind, reason=reason, cited_run_id=last.id.value, cited_facts=facts)
 
     # GOAL-20261008-040 EC-03：**按终态分派** —— 失败面 / 取消面在结论面**之前**
     # （只有 `SUCCEEDED` 的轮才有「结论」可言；把「没有结论」读成「结论说停」是范畴错误）。
@@ -346,17 +347,18 @@ def _after_hit(
     )
 
 
-def advance_program(
+def advance_program(  # noqa: PLR0913 - 推进面的读入就这几件（run/决策/结论/审批/启动）
     program: ResearchProgram,
     *,
     runs: RunStore,
     programs: ProgramStore,
     findings: FindingReader | None = None,
+    approvals: ApprovalReader | None = None,
     start_run: StartRun | None = None,
 ) -> ProgramAdvance:
     """推进一次：读事实 → 判定 → 落决策 →（必要时）起下一轮 run。"""
     existing = runs.for_program(program.id)
-    evaluation = _evaluate(program, existing, findings, programs)
+    evaluation = _evaluate(program, existing, findings, programs, approvals)
     after_index = (existing[-1].program_index or 0) if existing else 0
     if evaluation.start_index is not None:
         return _start(
