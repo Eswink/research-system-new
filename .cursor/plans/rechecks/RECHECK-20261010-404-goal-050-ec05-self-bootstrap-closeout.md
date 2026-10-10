@@ -60,7 +60,7 @@ verify_paths:
 `validate.py` 通过；`test_mainline_program_is_intact.py` 绿（本 GOAL 的 id 已在程序表**序 18**）；
 定向套件 `tests/{application,api,e2e,domain,adapters,postgres,contracts,tooling}`
 **4945 passed, 18 skipped**。**as-is m0**：`PASS: profile=m0; 23 deterministic checks`
-（`PASS [` 24 / `FAILED [` 0 / passed/skipped 读数**待全量 m0 实测回填**；在全部记录写完之后、
+（`PASS [` 24 / `FAILED [` 0 / **5600 passed, 21 skipped**；在全部记录写完之后、
 独占、仓库 `.venv`、不接管道）。
 
 ### 5. 改既有判据的申报（承 `MEM-20261009-210`，逐条自证）

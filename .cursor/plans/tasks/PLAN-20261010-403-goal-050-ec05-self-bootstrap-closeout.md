@@ -103,7 +103,7 @@ exit_criteria:
 | 两处射程 | `IN_SCOPE` **+2 行**；射程分区清单 **+1 行**（下界 19→20）—— 均**纯收紧** |
 | 治理 | `validate.py` 通过 |
 | 宪章判据 | `test_mainline_program_is_intact.py` 绿 |
-| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / passed/skipped 读数**待本轮全量 m0 实测回填**；在全部记录写完之后、独占、仓库 `.venv`、不接管道）|
+| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / **5600 passed, 21 skipped**；在全部记录写完之后、独占、仓库 `.venv`、不接管道）|
 
 ### 本轮实测到的**判据自身缺陷一处**（如实登记，已在本轮修好）
 
