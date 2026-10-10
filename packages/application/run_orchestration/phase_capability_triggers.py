@@ -192,6 +192,9 @@ def skip_reason(call: RunChainCall) -> str:
 MEMORY_USE = "USE"
 MEMORY_ANNOTATE = "ANNOTATE"
 MEMORY_SKIP = "SKIP"
+#: GOAL-20261010-050 EC-03：**已取代**（读面第四态）—— 与「已过期」**分开报**，
+#: 但处置同为「本步不执行」。两者**理由可区分**（判词各自点名）。
+MEMORY_SUPERSEDED = "SUPERSEDED"
 
 
 def _memory_entries(payload: Mapping[str, object], tool_id: str) -> list[Mapping[str, object]]:
@@ -214,9 +217,15 @@ def _memory_entries(payload: Mapping[str, object], tool_id: str) -> list[Mapping
 
 def _split_by_disposition(
     entries: list[Mapping[str, object]], tool_id: str
-) -> tuple[list[str], list[str]]:
-    """按 `disposition` 分成 `(已过期, 待复核)` 两组，**逐条点名**；未知取值 ⇒ 点名。"""
+) -> tuple[list[str], list[str], list[str]]:
+    """按 `disposition` 分成 `(已过期, 已取代, 待复核)` 三组，**逐条点名**；未知取值 ⇒ 点名。
+
+    GOAL-20261010-050 EC-03：**已取代**单独成组 —— 它与「已过期」**处置相同**（本步不执行）
+    但**理由不同**（被新版本替代 vs 时效已过），所以判词要分得开、不能共用一句。
+    未知取值仍然 **fail closed**（点名）—— 新增一个已知态**不是**放宽这条。
+    """
     expired: list[str] = []
+    superseded: list[str] = []
     due: list[str] = []
     for item in entries:
         disposition = item.get("disposition")
@@ -224,14 +233,16 @@ def _split_by_disposition(
         note = f"{memory_id}（{item.get('validity')}；{item.get('reason')}）"
         if disposition == MEMORY_SKIP:
             expired.append(note)
+        elif disposition == MEMORY_SUPERSEDED:
+            superseded.append(note)
         elif disposition == MEMORY_ANNOTATE:
             due.append(note)
         elif disposition != MEMORY_USE:
             raise InvalidInputError(
                 f"run-chain tool {tool_id}: memory {memory_id!r} carries an unknown "
-                f"disposition {disposition!r} (expected USE / ANNOTATE / SKIP)"
+                f"disposition {disposition!r} (expected USE / ANNOTATE / SKIP / SUPERSEDED)"
             )
-    return expired, due
+    return expired, superseded, due
 
 
 @dataclass(frozen=True, slots=True)
@@ -273,15 +284,22 @@ def memory_gate_verdict(
 
     **缺字段点名**（fail closed，与全模块同一纪律）：`memories` 不在 / 不是列表 ⇒ 点名
     （那是**声明与该步输出形态不符**，不是「没有记忆」）；单条记忆缺 `disposition` ⇒ 点名。
-    返回 `(verdict, notes)`；`verdict` ∈ `{USE, ANNOTATE, SKIP}`，`notes` 逐条点名。
+    返回 `(verdict, notes)`；`verdict` ∈ `{USE, ANNOTATE, SKIP}`（**已取代**与**已过期**
+    都落 `SKIP`，但判词**分别点名**是哪一种），`notes` 逐条点名。
     """
     raw = _memory_entries(payload, tool_id)
-    expired, due = _split_by_disposition(raw, tool_id)
-    if expired:
-        return MEMORY_SKIP, (
-            f"run-chain tool {tool_id} skipped: {len(expired)} expired memory record(s) "
-            "in the read result: " + "; ".join(expired),
-        )
+    expired, superseded, due = _split_by_disposition(raw, tool_id)
+    if expired or superseded:
+        # 处置相同（本步不执行），**理由分开点名** —— 读者要能看出是「过期」还是「被取代」。
+        parts: list[str] = []
+        if expired:
+            parts.append(f"{len(expired)} expired memory record(s): " + "; ".join(expired))
+        if superseded:
+            parts.append(
+                f"{len(superseded)} superseded memory record(s) "
+                "(no longer the current version): " + "; ".join(superseded)
+            )
+        return MEMORY_SKIP, (f"run-chain tool {tool_id} skipped: " + " | ".join(parts),)
     if due:
         return MEMORY_ANNOTATE, (
             f"run-chain tool {tool_id} annotated: {len(due)} memory record(s) due for "
@@ -294,6 +312,7 @@ __all__ = [
     "Lookup",
     "MEMORY_ANNOTATE",
     "MEMORY_SKIP",
+    "MEMORY_SUPERSEDED",
     "MEMORY_USE",
     "MemoryGateDecision",
     "memory_gate_verdict",

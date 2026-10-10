@@ -156,9 +156,28 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec03-the-reason-carries-the-note",
-            'reason": _reason(state, record) + _conflict_note(record)' in face,
+            _reason_appends_the_conflict_note(face),
         ),
     ]
+
+
+def _reason_appends_the_conflict_note(face: str) -> bool:
+    """判**关系**：`reason` 的值仍是「时效理由 **加** 冲突点名」（**不判调用签名**）。
+
+    **为什么改这里**（GOAL-20261010-050 实测）：本判据原先把调用式**逐字写死**
+    （`_reason(state, record) + _conflict_note(record)`）—— 而后续 GOAL 正当给 `_reason`
+    加了 `superseded_by=` 关键字实参（**已取代**成为第四态）⇒ 文本失配 ⇒ **假红**。
+    与 `MEM-20261010-215` 同族：**判关系，不判位置/写法**。
+
+    判据读的是「`reason` 那一行的值表达式里**两个调用都出现**」—— 函数名与参数写法变了
+    都不影响结论；而**只要冲突点名被摘掉**（或不再拼进 `reason`）就**仍判红**。
+    """
+    for line in face.splitlines():
+        if '"reason"' not in line:
+            continue
+        if "_reason(" in line and "_conflict_note(" in line and "+" in line:
+            return True
+    return False
 
 
 def _ec04_verdicts(root: Path, toolbox: Any) -> list[Any]:

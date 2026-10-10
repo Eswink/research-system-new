@@ -1,0 +1,9 @@
+L-1 被取代仍报 USE（处置面没接上）: 按压 RED
+sha 复原一致=True | 35e44c8c78f1
+L-2 未取代却被报为已取代（凭空）: 按压 RED
+sha 复原一致=True | 35e44c8c78f1
+L-3 两个方向只给一个（反向链接被抹掉）: 按压 RED
+sha 复原一致=True | 35e44c8c78f1
+L-4 把「已取代」与「已过期」混用（消费端共用一句理由）: 按压 RED
+sha 复原一致=True | 1d2fb335f57d
+SUMMARY presses=4 all_red_and_restored=True

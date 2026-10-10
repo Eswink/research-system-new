@@ -29,6 +29,7 @@ from packages.application.run_orchestration.phase_capabilities import (
 from packages.application.run_orchestration.phase_capability_triggers import (
     MEMORY_ANNOTATE,
     MEMORY_SKIP,
+    MEMORY_SUPERSEDED,
     MEMORY_USE,
     memory_gate_verdict,
     memory_step_gate,
@@ -42,9 +43,13 @@ _EPOCH = "2026-10-09T00:00:00+00:00"
 
 def _row(memory_id: str, disposition: str) -> dict[str, Any]:
     """读面形态的一行记忆（与 `memory_read` 的产物同形）。"""
-    validity = {MEMORY_SKIP: "EXPIRED", MEMORY_ANNOTATE: "REVIEW_DUE", MEMORY_USE: None}[
-        disposition
-    ]
+    validity = {
+        MEMORY_SKIP: "EXPIRED",
+        MEMORY_ANNOTATE: "REVIEW_DUE",
+        MEMORY_USE: None,
+        # GOAL-20261010-050 EC-03：**已取代**与**已过期**处置相同、**理由不同**。
+        MEMORY_SUPERSEDED: None,
+    }[disposition]
     return {
         "memory_id": memory_id,
         "disposition": disposition,
@@ -156,3 +161,54 @@ def test_the_step_outcome_carries_both_channels_separately() -> None:
     )
     assert outcome.skipped and outcome.annotations, outcome
     assert outcome.skipped != outcome.annotations, outcome
+
+
+class TestASupersededMemoryStopsTheStepWithItsOwnReason:
+    """GOAL-20261010-050 EC-03：**已取代**进消费端 —— 处置同「跳过」，**理由各自点名**。
+
+    这是本 GOAL 的**消费面**判据：只把新态写进读面载荷**不算**「被用上」——
+    研究循环的时效门必须**真的按它分派**，且读者能看出这一步是「过期」还是「被取代」。
+    """
+
+    def test_a_superseded_record_skips_the_step(self) -> None:
+        """被取代 ⇒ 本步**不执行**（与已过期同一处置）。"""
+        call = RunChainCall(
+            provider_id="p",
+            tool_id="memory_read",
+            capability="memory.read",
+            memory_validity_gate=True,
+        )
+        decision = memory_step_gate(call, _payload(_row("m-old", MEMORY_SUPERSEDED)))
+        assert decision.skip is True, decision
+
+    def test_the_two_reasons_are_named_separately(self) -> None:
+        """**两因不混用**：同时有过期与被取代 ⇒ 判词**分别点名**（不共用一句、不并成一格）。"""
+        call = RunChainCall(
+            provider_id="p",
+            tool_id="memory_read",
+            capability="memory.read",
+            memory_validity_gate=True,
+        )
+        decision = memory_step_gate(
+            call,
+            _payload(_row("m-exp", MEMORY_SKIP), _row("m-sup", MEMORY_SUPERSEDED)),
+        )
+        joined = " ".join(decision.notes)
+        assert "expired" in joined and "superseded" in joined, (
+            "两个理由都要点名（否则读者分不出是哪一种不适用）",
+            decision.notes,
+        )
+        assert "m-exp" in joined and "m-sup" in joined, decision.notes
+
+    def test_a_superseded_only_step_names_that_reason(self) -> None:
+        """只有被取代 ⇒ 判词**只**报那一因（**不得**凭空说「过期」）。"""
+        call = RunChainCall(
+            provider_id="p",
+            tool_id="memory_read",
+            capability="memory.read",
+            memory_validity_gate=True,
+        )
+        decision = memory_step_gate(call, _payload(_row("m-sup", MEMORY_SUPERSEDED)))
+        joined = " ".join(decision.notes)
+        assert "superseded" in joined, decision.notes
+        assert "expired" not in joined, ("不得凭空说「过期」", decision.notes)

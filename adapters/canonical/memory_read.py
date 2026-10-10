@@ -37,10 +37,14 @@ from packages.application.memory.validity import ValidityState, validity_at
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import Timestamp
 
-#: 处置：**三态 + 未声明** 各自的唯一取值（读面按这个字段分派，不靠措辞）。
+#: 处置：**四态 + 未声明** 各自的唯一取值（读面按这个字段分派，不靠措辞）。
 DISPOSITION_USE = "USE"
 DISPOSITION_ANNOTATE = "ANNOTATE"
 DISPOSITION_SKIP = "SKIP"
+#: GOAL-20261010-050 EC-03：**已取代**（`active=False` 且**被别的记录取代**）。
+#: **与 `SKIP` 分开**：「已过期」是**时效**理由，「已取代」是**被新版本替代** ——
+#: 两者处置都为「不适用」，但**理由与可复核依据不同**（判词必须点得出是哪一种）。
+DISPOSITION_SUPERSEDED = "SUPERSEDED"
 
 #: 时效状态 → 处置（**互不混用**：三态各归各的；`None` 见 `disposition_of`）。
 _DISPOSITIONS: dict[ValidityState, str] = {
@@ -49,8 +53,18 @@ _DISPOSITIONS: dict[ValidityState, str] = {
 }
 
 
-def disposition_of(state: ValidityState | None) -> str:
-    """时效状态 → **处置**（纯函数；`None` = 未声明或未到 ⇒ 照用，**不猜**）。"""
+def disposition_of(state: ValidityState | None, *, superseded: bool = False) -> str:
+    """时效状态 → **处置**（纯函数；`None` = 未声明或未到 ⇒ 照用，**不猜**）。
+
+    GOAL-20261010-050 EC-03：**已取代**是**第四个**不适用理由 —— 它**不看时效**（一条
+    未声明时效的被取代记忆，此前会报 `USE` = 「照用」，那是把**已被替代**的知识当成现行知识）。
+
+    优先级**固定**（与判据同源）：`已取代` **先于** 时效 —— 因为「这条已经不是当前版本」
+    比「这条过期没有」更根本；**已过期且已取代** ⇒ 报 `SUPERSEDED` 且理由**同时点名两者**
+    （见 `_reason`）。**`superseded=False`（缺省）⇒ 与改动前逐字相同**。
+    """
+    if superseded:
+        return DISPOSITION_SUPERSEDED
     if state is None:
         return DISPOSITION_USE
     return _DISPOSITIONS[state]
@@ -80,10 +94,17 @@ def _moment(args: dict[str, object]) -> Timestamp:
         raise InvalidInputError(str(exc)) from exc
 
 
-def _memory_row(record: Any, moment: Timestamp) -> dict[str, object]:
-    """一条记忆的读面投影：**身份 + 内容 + 时效 + 处置 + 理由**（逐条点名）。"""
+def _memory_row(
+    record: Any, moment: Timestamp, superseded_by: list[str] | None = None
+) -> dict[str, object]:
+    """一条记忆的读面投影：**身份 + 内容 + 时效 + 取代关系 + 处置 + 理由**（逐条点名）。
+
+    `superseded_by` = **谁取代了它**（反向链接）。它**必须由调用方从同一批记录算出来**
+    —— 那是「不新增 Port 方法」的代价，也是本条唯一的非局部输入（见 `_reverse_links`）。
+    """
     state = validity_at(record, moment)
-    disposition = disposition_of(state)
+    superseded = bool(superseded_by)
+    disposition = disposition_of(state, superseded=superseded)
     content = str(record.content)
     return {
         "memory_id": str(record.id),
@@ -101,20 +122,52 @@ def _memory_row(record: Any, moment: Timestamp) -> dict[str, object]:
         ),
         #: 时效状态（`None` = 未声明或未到 —— **不猜**，与「已到期」严格区分）。
         "validity": state.value if state is not None else None,
-        #: 处置（供研究循环**按它分派**：`SKIP` / `ANNOTATE` / `USE`）。
+        # GOAL-20261010-050 EC-02：**取代关系两个方向都披露**（`[]` = 无关系 —— 是**声明性**的
+        # 值而不是缺字段；与「缺字段点名」的既有纪律一致）。读者据此能回答
+        # 「这条被谁取代 / 它取代了谁」，而不必自己去比对 id 列表。
+        "supersedes": list(record.supersedes),
+        "superseded_by": list(superseded_by or ()),
+        #: 处置（供研究循环**按它分派**：`SKIP` / `ANNOTATE` / `USE` / `SUPERSEDED`）。
         "disposition": disposition,
         #: 理由：处置是**可复核**的，不是不透明标签。
-        "reason": _reason(state, record) + _conflict_note(record),
+        "reason": _reason(state, record, superseded_by=superseded_by) + _conflict_note(record),
     }
 
 
-def _reason(state: ValidityState | None, record: Any) -> str:
-    """处置理由（点名状态与**被引的声明值** —— 读面原文，不重算）。"""
+def _reason(
+    state: ValidityState | None, record: Any, superseded_by: list[str] | None = None
+) -> str:
+    """处置理由（点名状态与**被引的声明值** —— 读面原文，不重算）。
+
+    GOAL-20261010-050：**已取代**与**已过期**是**两种**不适用理由，判词必须点得出是哪一种
+    （`已取代` 优先，且已过期时**两者都点名** —— 读者要能一次看全）。
+    """
+    superseded = list(superseded_by or ())
+    if superseded:
+        note = f"被 {','.join(superseded)} 取代 ⇒ 已不是当前版本（不照用）"
+        if state is ValidityState.EXPIRED:
+            return note + f"；**并且** expires_at={record.expires_at.value.isoformat()} 已过"
+        if state is ValidityState.REVIEW_DUE:
+            return note + f"；**并且** review_after={record.review_after.value.isoformat()} 已到"
+        return note
     if state is ValidityState.EXPIRED:
         return f"expires_at={record.expires_at.value.isoformat()} 已过 ⇒ 跳过（不参与后续行为）"
     if state is ValidityState.REVIEW_DUE:
         return f"review_after={record.review_after.value.isoformat()} 已到 ⇒ 标注（仍需复核）"
     return "未声明时效或未到 ⇒ 照用（未声明不得被当成已到期）"
+
+
+def _reverse_links(records: tuple[Any, ...]) -> dict[str, list[str]]:
+    """反向链接表（`被取代的 id → [取代它的 id, …]`）—— **只从同一批记录算**，不新增 Port 方法。
+
+    「谁取代了我」在记录自身**读不到**（正向链接写在**新**记录上）⇒ 必须扫一遍同批记录。
+    只报**直接**链接（**不**做传递闭包 —— 那是本 GOAL 明确不做的 `BB-1`）。
+    """
+    reverse: dict[str, list[str]] = {}
+    for record in records:
+        for old_id in record.supersedes:
+            reverse.setdefault(str(old_id), []).append(str(record.id))
+    return reverse
 
 
 def _conflict_note(record: Any) -> str:
@@ -139,8 +192,8 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     - `memory_count`：条数；
     - `memories`：逐条（`memory_id` / `tier` / `scope` / `content` / `confidence` /
       `active` / `validity` / `disposition` / `reason`）；
-    - `dispositions`：**计数摘要**（`USE` / `ANNOTATE` / `SKIP` 各几条 —— 供消费者
-      不解析数组就能看出「有没有被跳过」）。
+    - `dispositions`：**计数摘要**（`USE` / `ANNOTATE` / `SKIP` / `SUPERSEDED` 各几条 ——
+      供消费者不解析数组就能看出「有没有被跳过 / 有没有被取代」）。
     """
     if memory_store is None:
         raise InvalidInputError("memory_read requires a MemoryStore, which is not in this assembly")
@@ -152,11 +205,15 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     if scope is not None:
         _require_known_scope(memory_store, scope)
     records = memory_store.query(_tier_of(tier), scope)
-    rows = [_memory_row(record, moment) for record in records]
+    # GOAL-20261010-050 EC-02：反向链接从**同一批记录**算一次（不新增 Port 方法、
+    # 不逐条再查 —— 那是 N+1 次查询，且会在两处看到不同的世界）。
+    reverse = _reverse_links(records)
+    rows = [_memory_row(record, moment, reverse.get(str(record.id), [])) for record in records]
     counts = {
         DISPOSITION_USE: 0,
         DISPOSITION_ANNOTATE: 0,
         DISPOSITION_SKIP: 0,
+        DISPOSITION_SUPERSEDED: 0,
     }
     for row in rows:
         counts[str(row["disposition"])] += 1

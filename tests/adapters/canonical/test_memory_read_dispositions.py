@@ -27,6 +27,7 @@ import pytest
 from adapters.canonical.memory_read import (
     DISPOSITION_ANNOTATE,
     DISPOSITION_SKIP,
+    DISPOSITION_SUPERSEDED,
     DISPOSITION_USE,
     memory_read,
 )
@@ -52,6 +53,7 @@ def _record(
     expires_at: datetime | None = None,
     review_after: datetime | None = None,
     scope: str = "project",
+    supersedes: list[str] | None = None,
 ) -> MemoryWriteProposal:
     """一条**待提交**的记忆（经既有 §8 写入门链落到 store ⇒ 与产品路径同一形态）。"""
     return MemoryWriteProposal(
@@ -62,6 +64,7 @@ def _record(
         provenance="test:goal042",
         confidence=0.9,
         scope=scope,
+        supersedes=list(supersedes or ()),
         expires_at=Timestamp(expires_at) if expires_at is not None else None,
         review_after=Timestamp(review_after) if review_after is not None else None,
     )
@@ -74,6 +77,24 @@ def _first(payload: dict[str, object]) -> dict[str, object]:
     first = rows[0]
     assert isinstance(first, dict), first
     return first
+
+
+def _rows_by_id(payload: dict[str, object]) -> dict[str, dict[str, object]]:
+    """载荷里 `memory_id → 那一行`（类型化取值：`memories` 是对象数组）。"""
+    rows = payload["memories"]
+    assert isinstance(rows, list), rows
+    out: dict[str, dict[str, object]] = {}
+    for item in rows:
+        assert isinstance(item, dict), item
+        out[str(item["memory_id"])] = item
+    return out
+
+
+def _counts(payload: dict[str, object]) -> dict[str, int]:
+    """载荷里的处置计数摘要（类型化取值：`dispositions` 是 `str -> int` 的对象）。"""
+    raw = payload["dispositions"]
+    assert isinstance(raw, dict), raw
+    return {str(k): int(v) for k, v in raw.items()}
 
 
 def _store(*records: MemoryWriteProposal) -> FakeMemoryStore:
@@ -131,10 +152,14 @@ class TestTheThreeDispositionsDoNotMix:
             _record("m-c"),
         )
         payload = memory_read(store, {"now": _moment(0)})
+        # GOAL-20261010-050 EC-03：契约的处置枚举**多了一个成员**（`SUPERSEDED`）⇒
+        # 本条的期望值**同轮跟上**。**谓词形态一字未改**（仍是 `==` 精确相等 —— 既不放宽也
+        # 不改成子集判定）；本条**没有**收窄受判面（原有的三个键仍然逐个被要求）。
         assert payload["dispositions"] == {
             DISPOSITION_USE: 1,
             DISPOSITION_ANNOTATE: 1,
             DISPOSITION_SKIP: 1,
+            DISPOSITION_SUPERSEDED: 0,
         }, payload["dispositions"]
         assert payload["memory_count"] == 3
 
@@ -290,3 +315,76 @@ class TestTheDeclaredScopeBecomesSelectable:
         payload = memory_read(_store(a, b), {"now": _moment(0), "tier": "PROJECT", "scope": "team"})
         assert payload["memory_count"] == 1, payload
         assert _first(payload)["memory_id"] == "m-b"
+
+
+class TestASupersededRecordIsNoLongerUsed:
+    """GOAL-20261010-050 EC-02/EC-03：**被取代**是第四种可判定的不适用理由。
+
+    **靶子**：`supersedes` 早已声明且有**写者**（`lifecycle.supersede_memory` 会把旧记录
+    `deactivate`），但读面**从不披露该链接**、且 `disposition_of` **只看时效** ⇒
+    被取代的记录经读面出来仍报 `USE`（「照用」）⇒ 被替代的知识**照样进下一步**。
+
+    本类钉住四件事：① **处置**不再是 `USE`；② 两个**方向**的链接都披露；
+    ③ 与「已过期」**可区分**（且两者都有时**都点名**）；④ **无取代关系 ⇒ 逐字不变**。
+    """
+
+    def test_a_superseded_record_is_no_longer_used(self) -> None:
+        """被取代 ⇒ `SUPERSEDED`（**不是** `USE`），理由**点名取代它的那条 id**。"""
+        old = _record("m-old")
+        new = _record("m-new", supersedes=["m-old"])
+        payload = memory_read(_store(old, new), {"now": _moment(0)})
+        rows = _rows_by_id(payload)
+        assert rows["m-old"]["disposition"] == DISPOSITION_SUPERSEDED, rows["m-old"]
+        assert rows["m-old"]["disposition"] != DISPOSITION_USE, "被取代不得被照用"
+        assert "m-new" in str(rows["m-old"]["reason"]), ("必须点名取代它的那条", rows["m-old"])
+
+    def test_both_link_directions_are_disclosed(self) -> None:
+        """两个方向都披露：新记录给 `supersedes`，旧记录给 `superseded_by`（**不调换**）。"""
+        old = _record("m-old")
+        new = _record("m-new", supersedes=["m-old"])
+        payload = memory_read(_store(old, new), {"now": _moment(0)})
+        rows = _rows_by_id(payload)
+        assert rows["m-new"]["supersedes"] == ["m-old"], rows["m-new"]
+        assert rows["m-new"]["superseded_by"] == [], ("正向记录不得凭空有反向链接", rows["m-new"])
+        assert rows["m-old"]["supersedes"] == [], rows["m-old"]
+        assert rows["m-old"]["superseded_by"] == ["m-new"], rows["m-old"]
+
+    def test_no_relation_keeps_the_previous_answer_verbatim(self) -> None:
+        """**反证臂**：无取代关系 ⇒ 处置仍是 `USE`、理由**逐字**与改动前相同。"""
+        payload = memory_read(_store(_record("m-a")), {"now": _moment(0)})
+        row = _first(payload)
+        assert row["disposition"] == DISPOSITION_USE, row
+        assert row["reason"] == "未声明时效或未到 ⇒ 照用（未声明不得被当成已到期）", row
+        assert row["supersedes"] == [] and row["superseded_by"] == [], (
+            "无关系 ⇒ 空列表（声明性的值，不是缺字段）",
+            row,
+        )
+
+    def test_superseded_and_expired_are_distinguishable(self) -> None:
+        """**两者可区分**：一条既过期又被取代 ⇒ 理由**同时点名两者**（不共用一句）。"""
+        old = _record("m-old", expires_at=_EPOCH - timedelta(days=1))
+        new = _record("m-new", supersedes=["m-old"])
+        payload = memory_read(_store(old, new), {"now": _moment(0)})
+        rows = _rows_by_id(payload)
+        reason = str(rows["m-old"]["reason"])
+        assert "取代" in reason, ("被取代要点名", reason)
+        assert "已过" in reason, ("既然也过期了，也要点名时效面", reason)
+        assert rows["m-old"]["disposition"] == DISPOSITION_SUPERSEDED, (
+            "优先级固定：已取代先于时效",
+            rows["m-old"],
+        )
+
+    def test_the_count_summary_separates_the_two_reasons(self) -> None:
+        """计数摘要**分开**报（不合并成一格）—— 消费者不解析数组也知道各有几条。"""
+        store = _store(
+            _record("m-expired", expires_at=_EPOCH - timedelta(days=1)),
+            _record("m-old"),
+            _record("m-new", supersedes=["m-old"]),
+        )
+        payload = memory_read(store, {"now": _moment(0)})
+        counts = _counts(payload)
+        assert counts[DISPOSITION_SUPERSEDED] == 1, counts
+        assert counts[DISPOSITION_SKIP] == 1, (
+            "「已取代」不得被并进「已过期」那一格",
+            counts,
+        )
