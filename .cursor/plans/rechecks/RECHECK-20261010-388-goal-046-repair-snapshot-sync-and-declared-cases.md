@@ -64,8 +64,12 @@ verify_paths:
 ### 4. 两树复检与归档（独立重跑）
 
 `tools/two_tree_recheck.py --script tools/verify_goal046_closeout.py --script-mode shared
---base-ref <含本轮归档的提交>` ⇒ 终局行见 GOAL 正文的门读数行（两路判词数与 `sha256` 相同）。
-归档两份、非空、`CR=0`（二进制写盘）。
+--base-ref HEAD` ⇒ 终局行 **`TWO-TREE PASS`**；两路 **76 判词**、`sha256` 相同
+`9d1c8a1c5996a12b…`、`COMPARE identical=True`。归档两份各 **2897 B / 76 行 / `CR=0` / 0 FAIL**
+（二进制写盘）。**as-is m0**：`PASS: profile=m0; 23 deterministic checks`
+（`PASS [` 24 / `FAILED [` 0 / **5565 passed, 21 skipped**；在全部记录写完之后、独占、
+仓库 `.venv`、不接管道；**读数口径**：本轮 postgres-test 容器已启 ⇒ PG 标记用例**实跑**，
+故与 GOAL-045 那轮（228 skipped）不可直接比）。
 
 ## 结论
 

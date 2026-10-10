@@ -100,7 +100,7 @@ exit_criteria:
 | `IN_SCOPE` 判据 | 8 passed（纯收紧：只增两条） |
 | 治理 | `validate.py` 通过 |
 | 宪章判据 | `test_mainline_program_is_intact.py` 绿 |
-| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / passed/skipped 读数**待本轮全量 m0 实测回填**；在全部记录写完之后、独占、不接管道）|
+| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / **5565 passed, 21 skipped**；在全部记录写完之后、独占、仓库 `.venv`、不接管道；**读数口径与 GOAL-045 那轮不同**：本轮 **postgres-test 容器已启**⇒ PG 标记的用例**实跑**（上一轮容器未启 ⇒ 228 skipped），故 passed 更高、skipped 更低）|
 
 ## 影响报告
 
