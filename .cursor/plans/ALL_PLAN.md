@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261010-399](tasks/PLAN-20261010-399-goal-049-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-397](tasks/PLAN-20261010-397-goal-049-ec01-04-memory-scope-becomes-selectable.md) | DONE |
 | [x] | [PLAN-20261010-395](tasks/PLAN-20261010-395-goal-048-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-393](tasks/PLAN-20261010-393-goal-048-ec01-04-a-declared-gate-can-be-a-condition.md) | DONE |

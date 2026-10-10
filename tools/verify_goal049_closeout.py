@@ -51,9 +51,11 @@ GOAL = ".cursor/plans/goals/GOAL-20261010-049-memory-scope-becomes-selectable.md
 #: 子计划 / 复检（记录面逐条在位）。
 CHILD_PLANS: tuple[str, ...] = (
     ".cursor/plans/tasks/PLAN-20261010-397-goal-049-ec01-04-memory-scope-becomes-selectable.md",
+    ".cursor/plans/tasks/PLAN-20261010-399-goal-049-ec05-self-bootstrap-closeout.md",
 )
 RECHECKS: tuple[str, ...] = (
     ".cursor/plans/rechecks/RECHECK-20261010-398-goal-049-ec01-04-memory-scope-becomes-selectable.md",
+    ".cursor/plans/rechecks/RECHECK-20261010-400-goal-049-ec05-self-bootstrap-closeout.md",
 )
 
 #: 记录面：GOAL 目录 README（格式契约）+ MAINLINE 宪章（本轮的战役程序）。

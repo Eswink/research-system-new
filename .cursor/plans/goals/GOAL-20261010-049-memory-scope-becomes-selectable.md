@@ -2,7 +2,7 @@
 id: GOAL-20261010-049
 slug: memory-scope-becomes-selectable
 title: 记忆的「适用范围」成为**可选择的** —— `MemoryRecord.scope` 早已声明（缺省 `project`）且读面**逐条披露**，但 `MemoryStore.query` 的签名**只有 `tier` 一个维度**（实测传 `scope=` ⇒ `TypeError`），全仓三个调用点**都只传 tier 或不传** ⇒ 调用方看得见一条记忆属于哪个范围，却**无法按范围选**；而 `memory.read` 的载荷已逐条列出 `scope` ⇒ 缺的是**选择面**（「只给我这个项目的知识」）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-10
 updated_at: 2026-10-10
 owners:
@@ -130,7 +130,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -179,7 +179,8 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-397-goal-049-ec01-04-memory-scope-becomes-selectable.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20261010-399-goal-049-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-400-goal-049-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -199,7 +200,7 @@ memory_entries: []
 | EC-02 | 查询面 | 可按 `scope` 筛；缺省逐字不变；三适配器同契约；未知范围**点名** | PASS |
 | EC-03 | 消费面 | `memory.read` 可传 `scope` + **点名筛掉多少**；既有 `tier` 维逐字保持；缺省载荷逐字相同 | PASS |
 | EC-04 | 两向反证 | 筛了不生效 / 没筛却筛掉 / 未知范围静默空集 / 筛掉数不点名（`K-1`…`K-4` 全红） | PASS |
-| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**静默丢弃**（筛掉多少要点名）；
 不得**把范围当权限**；不得**新建存储 / 索引**或做**语义检索**；不得改既有读面字段名；
@@ -385,6 +386,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | `PLAN-20261010-399` | （见 CI 台账） | EC-05 五条 AC 全 PASS：收口验证器 **69 判词 / 0 FAIL**（标准断言集**一行未重写**）+ 两处射程**纯收紧**（`IN_SCOPE` +2 行 / 射程清单 +1 行、下界 18→19）+ **两树 `TWO-TREE PASS`**（两路 **69 判词** / `sha256` 相同 `b089a277…`）+ 归档定格（两份各 **2562 B / 69 行**、`CR=0`、0 FAIL）+ 治理 + 宪章判据 + **as-is m0 23/23**（见门读数行）| （见 CI 台账）| **判据自纠两处**（下界条目的**路径写错** ⇒ 例数读 0 被当场报出；文本包含把**解释性注释**当违规 ⇒ 改 **AST 数关键字实参**）| 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261010-400`）|
 | 1 | `PLAN-20261010-397` | `e9761b4` | EC-01…EC-04 全 PASS：**记忆范围可选** —— ① 查询面`MemoryStore.query(tier=None, scope=None)`（两维**可并存**、都缺省 ⇒ 全部；**三适配器同契约** —— SQLite / PG / **Fake** 一并带上，承 `MEM-20261010-214`）；② 消费面 `memory_read` 可传 `scope` ⇒ 载荷**点名**范围与 **`filtered_out`**（与 `dispositions` 同一披露形态），**未知范围 ⇒ 点名**，**缺省载荷逐字相同**（那两键**不出现**）；③ HTTP 读面可选 `?scope=`，用**两个显式 DTO 形态**（继承复用）而不是给路由开 `response_model_exclude_none`（那会**递归**抹掉别的读面上有意义的 `null` —— 实测踩到）；④ **四向反证 K-1…K-4 全红**（1/3/1/1 例）+ 二进制复原 raw `sha256` 一致；⑤ 判据 +7（读面 4 / SQLite 1 / PG 1 / API 1，既有 33 例**一字未动**）；⑥ 定向套件 **4937 passed**；四道门全绿；**无迁移**（列早已在表上）；**OpenAPI 快照同轮重生成** | （见 CI 台账）| **两处真缺陷当场抓住并修好**：`K-2` 反证臂**假绿**（判据数据单一 tier ⇒ 区分不了两件事，修法是判据加第二个 tier）；`response_model_exclude_none` **递归**抹掉 validity 的 `null` （改两个显式 DTO 形态）| EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **七条实测读数**（域声明两处在场 / 查询面签名逐字一维 / 传 `scope=` 实测 `TypeError` / 三个调用点逐条 / 读面已逐条披露 / 两库列已在（无迁移）/ 计数摘要形态现成）⇒ 定位 `O-1` 形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 17** | （见 CI 台账） | — | 五条 EC 全 PENDING；取值域（①）与未知范围处理（②）待 cycle 1 落 | cycle 1（EC-02 查询面 + EC-03 消费面） |
 
@@ -394,3 +396,4 @@ deduplication）。
 | --- | --- | --- |
 | 2026-10-10 | DRAFT | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 17**（承担者 = `O-1`「memory 的项目维度仍缺」）。只读勘察 + **七条实测读数**：(a) `scope: str = "project"` 在 `MemoryRecord` 与提案上**各一行在场**；(b) `MemoryStore.query` 的签名**逐字只有 `tier` 一个维度**（三适配器同形）；(c) **反证**：`store.query(scope=...)` ⇒ `TypeError: unexpected keyword argument`；(d) 全仓 `query(` **只有三个调用点**，都只传 tier 或不传；(e) 读面**已逐条披露** `scope`（看得见）；(f) `scope` **已在两库表上**（序 13 落的）⇒ 预期**无新迁移**；(g) 「计数摘要（不解析数组就能看出有没有被过滤）」的形态**现成**（`dispositions`）⇒ 筛掉多少照此披露。**结论**：「看见已成立、按它选不存在」。五条 EC 全 PENDING。**不做数量目标**；**不**新建存储 / 索引；**不**做语义检索；**不**把范围当权限；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-10 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**记忆的适用范围成为可选择的** —— 查询面两维可并存 + 三适配器同契约；消费面点名范围与筛掉的条数、未知范围点名、缺省载荷逐字不变；HTTP 读面两个显式 DTO 形态。**四向反证全红**；判据 +7（既有 33 例一字未动）；定向套件 4937 例绿；四道门绿；无迁移；快照同轮。**两处真缺陷如实登记并修好**（假绿的反证臂 / 递归的 `exclude_none`）。独立复检：`RECHECK-20261010-398`（PASS_WITH_WARNINGS）。EC-05 待收口。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
+| 2026-10-10 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、**两处射程纯收紧**、两树 **`TWO-TREE PASS`**（两路 **69 判词** / `sha256` 相同 `b089a277…`）、判词归档进树（两份各 2562 B / 69 行 / `CR=0`）、as-is m0 **23/23**（记录写完之后）、治理 + 宪章判据绿、CI 台账逐提交。**两处判据自纠如实登记**（下界条目的路径写错 ⇒ 例数读 0 被当场报出；文本包含把解释性注释当违规 ⇒ 改 AST 数关键字实参 —— 承 `MEM-20261010-215`）。**一处时序**：两树首轮红（bootstrap：归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `AA-1`…`AA-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261010-400`（PASS_WITH_WARNINGS）。 |
