@@ -89,7 +89,7 @@ exit_criteria:
       ⇒ 全 0；`rg -n "\.register\(" packages/application/run_orchestration/phase_pause.py`；
       `rg -n "WAITING_FOR_APPROVAL" services/api/approvals.py`；
       实跑探针（`scratch/`）⇒ `[]` / 0 条 / `run_count=1`。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **接回面（复用既有审批面，不新建第二套）**：声明闸门在**该轮跑完之后**的推进里
@@ -101,7 +101,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest
       tests/application/run_orchestration tests/api -q` ⇒ 全绿 + 新用例
       （注册发生 / 点名标识 / 幂等去重 / 未声明不注册）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **真的接得回**：该待决审批**被裁决后**（经既有 `POST /approvals/{id}/decide` 或
@@ -111,7 +111,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e -q` ⇒ 全绿 + 新用例
       （裁决前停 / 裁决后续 / 该轮不重跑 / 缺面点名）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证**：(a) **未裁决**时把推进改成「照常续」⇒ 判据**判红**；
@@ -122,7 +122,7 @@ exit_criteria:
     verify: >-
       `scratch/goal047-press.txt` 各行全 `RED` + `sha 复原一致=True`；归档
       `.cursor/plans/goals/evidence/GOAL-20261010-047-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -138,7 +138,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -186,7 +186,7 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-389-goal-047-ec01-04-the-gate-can-be-resumed.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-390-goal-047-ec01-04-the-gate-can-be-resumed.md
 memory_entries: []
 ---
 
@@ -204,10 +204,10 @@ memory_entries: []
 
 | EC | 主题 | 一句话判据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿 | 「只停不回」的完整形状：程序面无写者 + 唯一注册落点在 phase 边界 + `decide` 准入 + 实跑取证空审批 | PENDING |
-| EC-02 | 接回面 | 闸门在**既有**审批面注册一条待决（语义与 phase 面同源）+ 点名标识 + 幂等去重 | PENDING |
-| EC-03 | 真的接得回 | 裁决后照常继续（该轮不重跑）；未裁决仍停；缺面仍点名 | PENDING |
-| EC-04 | 两向反证 | 未裁决不得续 / 已裁决必须续 / 只读面不得冒充 / 重复注册不增 / 未声明零调用 | PENDING |
+| EC-01 | 勘察定稿 | 「只停不回」的完整形状：程序面无写者 + 唯一注册落点在 phase 边界 + `decide` 准入 + 实跑取证空审批 | PASS |
+| EC-02 | 接回面 | 闸门在**既有**审批面注册一条待决（语义与 phase 面同源）+ 点名标识 + 幂等去重 | PASS |
+| EC-03 | 真的接得回 | 裁决后照常继续（该轮不重跑）；未裁决仍停；缺面仍点名 | PASS |
+| EC-04 | 两向反证 | 未裁决不得续 / 已裁决必须续 / 只读面不得冒充 / 重复注册不增 / 未声明零调用 | PASS |
 | EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PENDING |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**绕过或静默跳过**声明的人工闸门；
@@ -382,6 +382,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261010-389` | （见 CI 台账） | EC-01…EC-04 全 PASS：**声明的闸门接得回** —— ① 判定②由**五条实测读数**落定（run 停在 `SUCCEEDED` / `decide` ⇒ 409 即使记录**真的**存在 / 状态机无终态入边⇒ 靠挪状态接回不了）；② **注册面**经**既有** `ApprovalStore.register`（`risk=HUMAN_GATE` / `policy_source=program-gate` / `action` 用**本 GOAL 自己的**前缀 `program-gate:`）+ **点名**标识 + **幂等**（同 action 在场不重注册）+ 只读面 / 注册失败 / 查询失败**三种形态各自点名**；③ **裁决准入两分支**（`program-gate:` ⇒ run **终态**；其余**逐字保持**）且**窄**（同一个 `SUCCEEDED` run 上前缀决定 200 还是 409）；④ **实跑回路**：拦住 → 产品面有那条待决 → `decide` 200 → 推进 `CONTINUE`、该轮**不重跑**、序号 `[1, 2]`；⑤ **五条反证 H-1…H-5 全红**（5/3/1/3/6 例）+ 二进制复原 raw `sha256` 一致 + 归档 **523 B / `CR=0`**；⑥ 判据 +10 例（判定面 6 / e2e 2 / API 2，既有 33 例**一字未动**）；⑦ 定向套件 **1534 passed, 12 skipped**；四道门全绿；**OpenAPI 快照无需同步**（未动 DTO / 路由形状）| （见 CI 台账）| 规模门抓到 `decide_approval` **53 行** ⇒ 抽 `_require_admissible` 后过 | EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **四条实测读数**（程序面 `register(` 全 0 / 唯一注册落点 `phase_pause.py:65`（phase 边界）/ `decide` 要求 run 处 `WAITING_FOR_APPROVAL` / **实跑**：声明闸门后 `GET /runs/{id}/approvals` ⇒ `[]`、`GET /approvals` ⇒ 0 条、`run_count` 恒 1）⇒ 定位 `X-1` 的「接回」形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 15** + **预算核算 15→20** | （见 CI 台账） | — | 五条 EC 全 PENDING；接回形态（①）与 run 状态面（②）待 cycle 1 落 | cycle 1（EC-02 注册面 + EC-03 接回） |
 
 ## 状态历史
@@ -390,3 +391,4 @@ deduplication）。
 | --- | --- | --- |
 | 2026-10-10 | DRAFT | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 15**（承担者 = `GOAL-046` 的 `X-1` 收窄形态）+ 触顶 ⇒ 战役级核算 `max_goals` 15→20。只读勘察 + **四条实测读数**：程序面三文件对 `register(` **全 0**；全仓产品码唯一注册落点 = `phase_pause.py:65`（phase 边界）；`decide` 准入 = run 须处 `WAITING_FOR_APPROVAL`；**实跑反证** —— 声明 `human_gate_at_index=1` 的程序在第 1 轮跑完后推进落等待态，而 `GET /runs/{id}/approvals` = **`[]`**、`GET /approvals` = **0** 条、`run_count` 恒 **1** ⇒ **闸门只停不回**。五条 EC 全 PENDING。**不做数量目标**；**不**自动放行；**不**催办 / 通知；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-10 | ACTIVE | **cycle 1 开工**（`PLAN-20261010-389`）：决策②已由**五条实测读数**落定 —— 闸门触发后 run 停在 **`SUCCEEDED`**；对 `SUCCEEDED` 的 run 走 `decide` ⇒ **`409 Invalid Transition`**（即使审批记录**真的存在**也一样 ⇒ 卡的是**状态准入**）；状态机**没有**「终态 ⇒ `WAITING_FOR_APPROVAL`」的边 ⇒ 不能靠挪 run 状态接回；采纳形态 = 程序级闸门用**自己的 action 前缀**（`program-gate:`）+ `decide` 新增分支（既有分支逐字不变，其 18 例用例是回归网）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
+| 2026-10-10 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**声明的程序级人工闸门接得回** —— 登记「只停不回」的完整形状（程序面 `register(` 全 0 / 唯一落点在 phase 边界 / `decide` 准入 / 实跑 `[]` 与 `run_count` 恒 1），并补齐接回面：**注册**（既有 Port + 点名 + 幂等 + 三种点名形态）+ **裁决准入两分支**（新前缀走「run 终态」，其余逐字保持；**同一 run 上前缀决定 200/409** ⇒ 窄）+ **实跑回路**（裁决后 `CONTINUE`、该轮不重跑）。**五条反证全红**；判据 +10（既有 33 例一字未动）；定向套件 1534 例绿；四道门绿；快照无需同步。独立复检：`RECHECK-20261010-390`（PASS_WITH_WARNINGS）。EC-05 待收口。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |

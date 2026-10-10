@@ -2,10 +2,10 @@
 id: PLAN-20261010-389
 slug: goal-047-ec01-04-the-gate-can-be-resumed
 title: GOAL-20261010-047 cycle 1（EC-01…EC-04）：声明的闸门**接得回** —— 注册面 + 裁决后续跑 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-10
 updated_at: 2026-10-10
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-390-goal-047-ec01-04-the-gate-can-be-resumed.md
 memory_entries: []
 parent_goal: GOAL-20261010-047
 cursor_plan_uri: null
@@ -40,7 +40,7 @@ exit_criteria:
       `rg -n "cannot decide approval in run state" services/api/approvals.py`；
       `rg -n "RUNNING, Transition.REQUEST_APPROVAL" packages/domain/run_state.py`；
       实跑读数见 GOAL 正文 1.7 与 PLAN 的「实测读数」表。
-    status: PENDING
+    status: PASS
   - id: AC-2
     criterion: >-
       **注册面（复用既有 Port）**：推进在闸门轮**注册一条待决审批**（`ApprovalStore.register`，
@@ -52,7 +52,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/run_orchestration -q`
       ⇒ 全绿 + 新用例（注册发生 / 点名 / 幂等 / 只读面点名 / 未声明零调用）。
-    status: PENDING
+    status: PASS
   - id: AC-3
     criterion: >-
       **接回面（经既有 HTTP 面）**：`POST /approvals/{id}/decide` 对 `program-gate:` 审批
@@ -62,7 +62,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/e2e tests/api -q` ⇒ 全绿 + 新用例
       （裁决前停 / 裁决后续 / 该轮不重跑 / 只读面点名）。
-    status: PENDING
+    status: PASS
   - id: AC-4
     criterion: >-
       **两向反证（真按压）**：`H-1` 未裁决也照常续（去掉拦住）⇒ **RED**；`H-2` 已裁决仍停 ⇒ **RED**；
@@ -72,7 +72,7 @@ exit_criteria:
     verify: >-
       `scratch/goal047-press.txt` 全 `RED` + `sha 复原一致=True`；归档
       `.cursor/plans/goals/evidence/GOAL-20261010-047-press-two-way.txt`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261010-389 — GOAL-20261010-047 cycle 1（EC-01…EC-04）
@@ -83,19 +83,19 @@ exit_criteria:
 
 | AC | 主题 | 状态 |
 | --- | --- | --- |
-| AC-1 | 决策②的实测结论落定（不能靠挪 run 状态；采纳 `program-gate:` 新分支） | PENDING |
-| AC-2 | 注册面（复用既有 Port + 点名 + 幂等 + 缺写面点名） | PENDING |
-| AC-3 | 接回面（裁决后照常续 / 未裁决仍停 / 不重跑） | PENDING |
-| AC-4 | 两向反证 H-1…H-4 全红 + 二进制复原一致 | PENDING |
+| AC-1 | 决策②的实测结论落定（不能靠挪 run 状态；采纳 `program-gate:` 新分支） | PASS |
+| AC-2 | 注册面（复用既有 Port + 点名 + 幂等 + 缺写面点名） | PASS |
+| AC-3 | 接回面（裁决后照常续 / 未裁决仍停 / 不重跑） | PASS |
+| AC-4 | 两向反证 H-1…H-5 全红 + 二进制复原一致 | PASS |
 
 ## 实施清单
 
-- [ ] WP-1 `program_waiting`：注册助手（幂等去重 + 只读面点名）
-- [ ] WP-2 `program_runner`：闸门分支注册 + `cited_facts` 点名
-- [ ] WP-3 `approvals.py` + `decide` 路由：`program-gate:` 分支（既有分支逐字不变）
-- [ ] WP-4 判据：判定面 4 例 + e2e/API 4 例
-- [ ] WP-5 两向反证 H-1…H-4 + 归档进树
-- [ ] WP-6 四道门 + 定向套件 + OpenAPI 快照同轮（若动 DTO）
+- [x] WP-1 `program_waiting`：注册助手（幂等去重 + 只读面点名）
+- [x] WP-2 `program_runner`：闸门分支注册 + `cited_facts` 点名
+- [x] WP-3 `approvals.py` + `decide` 路由：`program-gate:` 分支（既有分支逐字不变）
+- [x] WP-4 判据：判定面 4 例 + e2e/API 4 例
+- [x] WP-5 两向反证 H-1…H-4 + 归档进树
+- [x] WP-6 四道门 + 定向套件 + OpenAPI 快照同轮（若动 DTO）
 
 ## 实测读数（cycle 1 的决策依据；**已测**）
 
@@ -112,9 +112,11 @@ exit_criteria:
 | 门 | 读数 |
 | --- | --- |
 | 勘察读数 | 上表 5 条（闸门后 run = `SUCCEEDED` / `decide` ⇒ `409 Invalid Transition` / 状态机无终态入边 / 真记录也 409 ⇒ 卡准入 / 续跑面对非 `human-gate:` 前缀是 no-op）|
-| 判据（待回填） | 判定面新用例 + e2e/API 新用例 |
-| 两向反证（待回填） | `H-1`…`H-4` 全 `RED` + 二进制复原 `sha256` 一致 |
-| 四道门（待回填） | `ruff check` / `ruff format --check` / `mypy` strict / 规模门 |
+| 判据 | 判定面 **20 passed**（14 旧 + 6 新）/ e2e **11 passed**（9 旧 + 2 新）/ API **12 passed**（10 旧 + 2 新）|
+| 两向反证 | `H-1`…`H-5` **全 `RED`**（5/3/1/3/6 例）+ 二进制复原 raw `sha256` 一致；归档 **523 B / `CR=0`** |
+| 四道门 | `ruff check` / `ruff format --check`（1001 files）/ `mypy` strict（**1179** files）/ 规模门（`decide_approval` 曾 53 行 ⇒ 抽 `_require_admissible` 后过）全绿 |
+| 定向套件 | `tests/{api,application,e2e,domain}` **1534 passed, 12 skipped** |
+| OpenAPI 快照 | **无需同步**（未动 DTO / 路由形状）；判据 8 passed 且工作树无差异（承 `MEM-20261010-216` 的申报项）|
 
 
 **结论**：接回面 = ① 注册（AC-2）+ ② `decide` 的**准入新增一个分支**（AC-3）。
@@ -135,3 +137,14 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-10 | IN_PROGRESS | 决策②的实测读数落定（5 条，见上表）；WP-1…WP-6 待执行。 |
+
+## 状态历史
+
+| 日期 | 状态 | 说明 |
+| --- | --- | --- |
+| 2026-10-10 | IN_PROGRESS | 决策②的实测读数落定（5 条）；WP-1…WP-6 开工。 |
+| 2026-10-10 | DONE | 注册面 + 裁决两分支 + 判据 + 五条反证；四道门 + 定向套件 1534 例全绿；`RECHECK-20261010-390` 独立复检。 |
+
+## 无可复用事实
+
+本 cycle 的机械面（**准入按 action 前缀分叉**：新增的准入分支必须与既有分支**互斥**、且不得放宽既有规则）已由 `MEM-20261010-216` 的同族纪律覆盖（「声明的行为必须有判据在受判面上」）；**未**沉淀新条目 —— 本轮未发现超出既有记忆范围的新可复用事实（新前缀的必要性与边界已写在`_require_admissible` 的 docstring 与 `RECHECK-20261010-390` 的 `W-1` 里）。
