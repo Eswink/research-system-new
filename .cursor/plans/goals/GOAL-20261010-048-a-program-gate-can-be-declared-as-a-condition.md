@@ -382,7 +382,22 @@ deduplication）。
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
+| `d077542`（replan + 序 16 建档） | 见序 15 的台账（同批推送） | 序 16 新增 |
+| `643d7c7`（cycle 1 = EC-01…EC-04） | `38055096911` **M0 cancelled** —— `cancel-in-progress`（被同 ref 的 `08a8cc8` 取消）⇒ `covered_by 38055172842`；`38055096729` **Push on main / CodeQL success** | 条件式闸门（域 + 两库 + 迁移 021 + 求值接线 + 四向反证）|
+| `08a8cc8`（cycle 1 记录面 = **本批 HEAD**） | `38055172842` **M0 success**（**8 job 全 success**）；`38055172798` **Push on main / CodeQL success**（3 job 全 success）| **实测取证**：记录面 + 代码面（同批，tip 的 tree 含两者）|
 | （待建档提交） | — | — |
+
+
+### 台账封闭（自我指涉边界）
+
+**本台账行自身所在的提交**（`docs(goal048): … 台账`）**不产生可引用的 CI 结论** ——
+它以「**末条有 run 的提交**」+ 覆盖说明封闭：本批**唯一**跑完成功的提交是 `08a8cc8`，
+`38055172842` **M0 success**（8 job 全 success）覆盖 `643d7c7` 的**全部代码面**
+（同批推送，tip 的 tree 包含它）；**不得**循环引用台账提交自身。
+
+**本 GOAL 的 cycle 1 结论以哪条为准**：`08a8cc8` 的 `38055172842` **M0 success** ——
+它跑在**含全部交付与记录**的树上。`643d7c7` 的 `cancelled` **不**被掩盖：逐字登记原因
+（`cancel-in-progress`，被同 ref 的后一提交取消）+ `covered_by`。
 
 ## 迭代日志
 
