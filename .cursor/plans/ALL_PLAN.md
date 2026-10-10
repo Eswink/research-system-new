@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20261010-389](tasks/PLAN-20261010-389-goal-047-ec01-04-the-gate-can-be-resumed.md) | IN_PROGRESS |
 | [x] | [PLAN-20261010-387](tasks/PLAN-20261010-387-goal-046-repair-snapshot-sync-and-declared-cases.md) | DONE |
 | [x] | [PLAN-20261010-385](tasks/PLAN-20261010-385-goal-046-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-383](tasks/PLAN-20261010-383-goal-046-ec01-04-program-human-gate.md) | DONE |

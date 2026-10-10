@@ -2,7 +2,7 @@
 id: GOAL-20261010-047
 slug: a-declared-program-gate-can-be-resumed
 title: 声明的程序级人工闸门**能被人接回** —— 序 14 让程序**可声明**「到第 N 轮停下等人」，但实测那条闸门**只停得住、接不回**：程序面对 `register(` 零命中（判定面只读 `list_for_run`），产品面上唯一注册审批的落点是 **phase 边界**（`pause_for_human_gate`），而 `decide` 要求 run 处于 `WAITING_FOR_APPROVAL`（程序推进只写决策、不改 run 状态）⇒ 实跑里 `GET /runs/{id}/approvals` 返回空、程序恒停该轮
-status: DRAFT
+status: ACTIVE
 created_at: 2026-10-10
 updated_at: 2026-10-10
 owners:
@@ -184,7 +184,8 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
   - 需要改**同轮同步集以外**的既有判据断言
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261010-389-goal-047-ec01-04-the-gate-can-be-resumed.md
 latest_recheck: null
 memory_entries: []
 ---
@@ -388,3 +389,4 @@ deduplication）。
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-10 | DRAFT | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 15**（承担者 = `GOAL-046` 的 `X-1` 收窄形态）+ 触顶 ⇒ 战役级核算 `max_goals` 15→20。只读勘察 + **四条实测读数**：程序面三文件对 `register(` **全 0**；全仓产品码唯一注册落点 = `phase_pause.py:65`（phase 边界）；`decide` 准入 = run 须处 `WAITING_FOR_APPROVAL`；**实跑反证** —— 声明 `human_gate_at_index=1` 的程序在第 1 轮跑完后推进落等待态，而 `GET /runs/{id}/approvals` = **`[]`**、`GET /approvals` = **0** 条、`run_count` 恒 **1** ⇒ **闸门只停不回**。五条 EC 全 PENDING。**不做数量目标**；**不**自动放行；**不**催办 / 通知；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
+| 2026-10-10 | ACTIVE | **cycle 1 开工**（`PLAN-20261010-389`）：决策②已由**五条实测读数**落定 —— 闸门触发后 run 停在 **`SUCCEEDED`**；对 `SUCCEEDED` 的 run 走 `decide` ⇒ **`409 Invalid Transition`**（即使审批记录**真的存在**也一样 ⇒ 卡的是**状态准入**）；状态机**没有**「终态 ⇒ `WAITING_FOR_APPROVAL`」的边 ⇒ 不能靠挪 run 状态接回；采纳形态 = 程序级闸门用**自己的 action 前缀**（`program-gate:`）+ `decide` 新增分支（既有分支逐字不变，其 18 例用例是回归网）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
