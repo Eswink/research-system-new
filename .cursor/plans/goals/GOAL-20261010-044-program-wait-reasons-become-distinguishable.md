@@ -352,7 +352,21 @@ deduplication）。
 | `7bed255`（本 GOAL 建档） | `38019098501` **Push on main / CodeQL success**；`38019098883` **M0 cancelled** —— `cancel-in-progress`（被 `905e602` 的推送取消）⇒ `covered_by 38019928888` | 五 EC + 三条事实层读数 |
 | `905e602`（cycle 1 = EC-01…EC-04） | `38019928888` **M0 success**（8 job 全 success）+ `38019928509` **Push on main / CodeQL success** | 等待理由可区分 + 点名四态 + 判据 + 两向反证；本地 **m0 23/23**（5335 passed, 228 skipped）；**实测取证** |
 | `7a203d5`（cycle 1 记录回写 = 本批 HEAD） | `38021171660` **Push on main / CodeQL success** + `38021172370` **M0 success**（8 job 全 success） | EC 终态 + 迭代日志 + 状态历史；**实测取证**；覆盖 `82ac5ba` / `7bed255` 的记录面 |
-| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/plans/goals/GOAL-20261010-044-*.md`；其结论由**下一个 cycle 的台账**取证 |
+| `1f99546`（cycle 2 提交 A = EC-05 首轮） | `38022665126` **Push on main / CodeQL success**；`38022665421` **M0 failure** —— **真红且已修**（见下） | 验证器 + 断言集 + `IN_SCOPE` |
+| `5ce9ead`（cycle 2 提交 B = 两树归档） | **无自己的 run**（同批推送） | 两份判词归档进树；⇒ `covered_by 38025487839` |
+| `ee2fcdd`（cycle 2 · **GOAL 收口**） | `38025457434` **Push on main / CodeQL success**；`38025457682` **M0 cancelled** —— `cancel-in-progress`（被 `27e73d3` 取消）⇒ `covered_by 38025487839` | EC-05 PASS + `status: ACHIEVED` + 两树 + m0 读数 + MAINLINE 进展行 |
+| `27e73d3`（迭代日志补记 = 本批 HEAD） | `38025487788` **Push on main / CodeQL success** + `38025487839` **M0 success**（8 job 全 success） | 覆盖 `5ce9ead` / `ee2fcdd` 的代码面；**实测取证** |
+
+### `1f99546` 的那次 red：**真红**（不是基础设施），且由 **GOAL-043 立的判据**抓出
+
+**逐字**：`FAILED tests/tooling/test_closeout_verifiers_run_their_own_assertions.py::test_the_verifiers_list_partitions_every_verifier_explicitly - AssertionError: ('这些验证器没被分类（新增时必须显式决定）', ['tools/verify_goal044_closeout.py'])`
+
+**成因**：本轮新增 `tools/verify_goal044_closeout.py`，但**忘了登记进 `_VERIFIERS`** ——
+**GOAL-043 立的射程分区判据当场把它报出**（**第二次兑现**；第一次是 `637ce67`）。
+**处置**：登记 + 下界 `_MIN_VERIFIERS` **13 → 14**；本地复跑 8 passed、**全量 m0 23/23**；
+`27e73d3` 的 CI **M0 success** 复取证。**未动任何阈值 / 未放宽判据**（只补登记）。
+
+| （本行所在提交：台账尾巴） | **自身结论在本行写入时尚不存在**（自我指涉边界） | 台账尾巴：只改 `.cursor/plans/goals/GOAL-20261010-044-*.md`；其结论由**下一个 GOAL 的台账**取证 |
 
 ## 迭代日志
 
