@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261010-214](entries/MEM-20261010-214-a-declared-field-needs-a-writer-in-every-adapter.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-379 |
 | [MEM-20261010-213](entries/MEM-20261010-213-waiting-reasons-must-not-share-one-kind.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-375 |
 | [MEM-20261010-212](entries/MEM-20261010-212-closeout-assets-must-run-their-own-assertions.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-369 |
 | [MEM-20261009-211](entries/MEM-20261009-211-append-only-needs-a-tie-breaker-in-the-key.md) | ACTIVE | repository | 0.95 | 2027-04-09 | PLAN-20261009-361 |

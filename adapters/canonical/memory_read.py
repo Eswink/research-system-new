@@ -92,12 +92,19 @@ def _memory_row(record: Any, moment: Timestamp) -> dict[str, object]:
         "content": content,
         "confidence": float(record.confidence),
         "active": bool(record.active),
+        # GOAL-20261010-045 EC-03：**冲突声明**与**生效起点**逐条披露。
+        # 为什么在读面上（而不只塞进判词）：读面是消费者唯一能自己回答「这条记忆与谁冲突」的地方；
+        # 判词只覆盖「本研究路径关心的那一条」，读面覆盖全部（两者**不互相顶替**）。
+        "contradictions": list(record.contradictions),
+        "valid_from": (
+            record.valid_from.value.isoformat() if record.valid_from is not None else None
+        ),
         #: 时效状态（`None` = 未声明或未到 —— **不猜**，与「已到期」严格区分）。
         "validity": state.value if state is not None else None,
         #: 处置（供研究循环**按它分派**：`SKIP` / `ANNOTATE` / `USE`）。
         "disposition": disposition,
         #: 理由：处置是**可复核**的，不是不透明标签。
-        "reason": _reason(state, record),
+        "reason": _reason(state, record) + _conflict_note(record),
     }
 
 
@@ -108,6 +115,18 @@ def _reason(state: ValidityState | None, record: Any) -> str:
     if state is ValidityState.REVIEW_DUE:
         return f"review_after={record.review_after.value.isoformat()} 已到 ⇒ 标注（仍需复核）"
     return "未声明时效或未到 ⇒ 照用（未声明不得被当成已到期）"
+
+
+def _conflict_note(record: Any) -> str:
+    """冲突声明的**点名**句（空列表 ⇒ 不追加任何文字 —— **不**凭空说「有冲突」）。
+
+    `[]` 与 `None` 的语义**互不混用**：`[]` = 已判定**无**冲突（本条不追加）；
+    「未声明」在域上不存在第三种取值（缺省即 `[]`）⇒ 读面不给「未知」态，**不猜**。
+    """
+    conflicts = list(record.contradictions)
+    if not conflicts:
+        return ""
+    return f"；**声明与 {','.join(conflicts)} 冲突**（点名，未自动消解）"
 
 
 def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, object]:

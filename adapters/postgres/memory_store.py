@@ -166,12 +166,14 @@ def _proposal_values(proposal: MemoryWriteProposal) -> tuple[Any, ...]:
         proposal.confidence,
         # GOAL-20261008-039 EC-02：适用范围（提案面既有字段，此前从不落库）。
         proposal.scope,
-        None,  # valid_from（提案面无该字段；读面如实给 None）
+        # GOAL-20261010-045 EC-02：生效起点（提案声明则写，缺省 None ⇒ 既有行为逐字不变）。
+        proposal.valid_from.value if proposal.valid_from else None,
         # EC-03：声明式时效 —— 提案声明什么就写什么（缺省 None ⇒ 既有行为逐字不变）。
         proposal.review_after.value if proposal.review_after else None,
         proposal.expires_at.value if proposal.expires_at else None,
         _json(proposal.supersedes),
-        _json([]),  # contradictions (empty at commit)
+        # GOAL-20261010-045 EC-02：冲突声明（此前**硬编码 `[]`** ⇒ 声明被静默丢弃）。
+        _json(proposal.contradictions),
         True,  # active
     )
 

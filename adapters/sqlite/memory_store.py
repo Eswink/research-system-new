@@ -99,6 +99,10 @@ class SqliteMemoryStore(SqliteAdapterBase):
             review_after=proposal.review_after,
             expires_at=proposal.expires_at,
             supersedes=list(proposal.supersedes),
+            # GOAL-20261010-045 EC-02：**声明式冲突与生效起点**必须随提案落库
+            # （此前这两个字段在 `MemoryRecord` 上有、在提案上无 ⇒ 永远落回缺省）。
+            contradictions=list(proposal.contradictions),
+            valid_from=proposal.valid_from,
         )
         placeholders = ",".join("?" * len(_MEMORY_COLS.split(",")))
         with self._connection:

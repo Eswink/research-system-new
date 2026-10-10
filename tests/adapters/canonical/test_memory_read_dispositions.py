@@ -199,3 +199,54 @@ class TestTheReadFaceIsScopeAware:
         payload = memory_read(store, {"now": _moment(0), "tier": "PROJECT"})
         assert payload["tier"] == "PROJECT", payload
         assert payload["memory_count"] == 0, payload
+
+
+# --- GOAL-20261010-045 EC-03/EC-04：冲突与生效起点**在读面上**（点名，不凭空） ----------
+
+
+def _declaring(
+    memory_id: str, *, conflicts: list[str], valid_from: str | None = None
+) -> MemoryWriteProposal:
+    """一条**声明了**冲突（与可选生效起点）的提案。"""
+    from datetime import datetime
+
+    from packages.domain.core import Timestamp
+    from packages.domain.enums import MemoryTier, MemoryType
+
+    extra: dict[str, object] = {"contradictions": conflicts}
+    if valid_from is not None:
+        extra["valid_from"] = Timestamp(datetime.fromisoformat(valid_from))
+    return MemoryWriteProposal(
+        id=memory_id,
+        tier=MemoryTier.PROJECT,
+        kind=MemoryType.FACT,
+        content=f"内容 {memory_id}",
+        provenance="test:goal042",
+        confidence=0.9,
+        **extra,  # type: ignore[arg-type]
+    )
+
+
+def test_a_declared_conflict_is_disclosed_and_named_in_the_reason() -> None:
+    """**EC-03 的靶子**：声明了冲突 ⇒ 读面**逐条披露**且理由**点名**它（不自动消解）。"""
+    store = _store(_declaring("m-c", conflicts=["memory:earlier-claim"]))
+    row = _first(memory_read(store, {"now": _moment(0)}))
+    assert row["contradictions"] == ["memory:earlier-claim"], row
+    assert "memory:earlier-claim" in str(row["reason"]), ("冲突必须**点名**", row["reason"])
+    assert "冲突" in str(row["reason"]), row["reason"]
+
+
+def test_a_declared_valid_from_is_disclosed_as_a_moment() -> None:
+    """**生效起点**逐条披露（ISO 串，可复核）。"""
+    store = _store(_declaring("m-v", conflicts=[], valid_from="2026-10-01T00:00:00+00:00"))
+    row = _first(memory_read(store, {"now": _moment(0)}))
+    assert row["valid_from"] == "2026-10-01T00:00:00+00:00", row
+
+
+def test_an_undeclared_memory_reports_no_conflict_at_all() -> None:
+    """**反证臂（不该红时不红）**：未声明 ⇒ `[]` **且**理由里**不得**出现「冲突」。"""
+    store = _store(_record("m-plain"))
+    row = _first(memory_read(store, {"now": _moment(0)}))
+    assert row["contradictions"] == [], row
+    assert row["valid_from"] is None, ("`None` = 不适用/未声明，**不猜**成时点", row)
+    assert "冲突" not in str(row["reason"]), row["reason"]

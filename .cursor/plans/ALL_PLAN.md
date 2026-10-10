@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261010-379](tasks/PLAN-20261010-379-goal-045-ec01-04-memory-conflicts-and-valid-from.md) | DONE |
 | [x] | [PLAN-20261010-377](tasks/PLAN-20261010-377-goal-044-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-375](tasks/PLAN-20261010-375-goal-044-ec01-04-program-wait-reasons.md) | DONE |
 | [x] | [PLAN-20261010-373](tasks/PLAN-20261010-373-goal-043-third-instance-text-anchor-realignment.md) | DONE |

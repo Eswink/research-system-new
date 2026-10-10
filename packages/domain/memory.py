@@ -59,6 +59,13 @@ class MemoryWriteProposal:
     # 由提案方声明，门链原样带进 canonical —— 不新造门链（仍是既有 §8 五段）。
     review_after: Timestamp | None = None
     expires_at: Timestamp | None = None
+    # GOAL-20261010-045 EC-02：**冲突声明**与**生效起点**（可选；缺省 `[]` / `None`
+    # ⇒ 既有行为逐字不变）。此前 `MemoryRecord` 上有这两个字段而**提案无法声明**
+    # （`commit` 也丢）⇒ 「有冲突」既写不进也读不出。
+    #: 声明与既有结论/记忆**冲突**的标识（`[]` = **已判定无冲突**；非空 = 点名冲突对象）。
+    contradictions: list[str] = field(default_factory=list)
+    #: 生效起点（`None` = **不适用/未声明**，**不猜** —— 与 `[]` 的语义各归各的）。
+    valid_from: Timestamp | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -69,6 +76,11 @@ class MemoryWriteProposal:
             raise ValueError("proposal provenance must not be empty")
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be in [0, 1]")
+        # GOAL-20261010-045 EC-04(d)：冲突是**标识列表** ⇒ **逐个点名**非法项
+        # （既有的 `supersedes` 无此校验；本条只**新增**校验，不动既有字段的语义）。
+        for item in self.contradictions:
+            if not isinstance(item, str) or not item.strip():
+                raise ValueError(f"proposal contradictions must be non-empty strings: {item!r}")
 
 
 @dataclass(frozen=True, slots=True)

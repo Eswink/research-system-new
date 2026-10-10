@@ -1,0 +1,3 @@
+C-1 声明被静默丢弃（SQLite 不带 contradictions）: 按压 RED | sha 复原一致=True | 84c4cef003ae
+C-2 点名面失效（读面不提冲突）: 按压 RED | sha 复原一致=True | b78d3c7e4aeb
+C-3 未声明也报冲突（凭空）: 按压 RED | sha 复原一致=True | b78d3c7e4aeb

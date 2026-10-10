@@ -56,6 +56,11 @@ class FakeMemoryStore(FakeBase):
             review_after=proposal.review_after,
             expires_at=proposal.expires_at,
             supersedes=list(proposal.supersedes),
+            # GOAL-20261010-045 EC-02：**同一条理由第二次生效** —— 本轮给提案加了
+            # `contradictions` / `valid_from`，三个适配器（SQLite / PG / 本 Fake）都必须带上；
+            # 少带一个 ⇒ 该路径上的「冲突可读」判据**假绿**（实测：Fake 侧曾漏掉）。
+            contradictions=list(proposal.contradictions),
+            valid_from=proposal.valid_from,
         )
         self._records[record.id] = record
         self._record("commit", proposal.id, result="committed")

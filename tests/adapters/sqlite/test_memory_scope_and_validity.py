@@ -223,3 +223,44 @@ def test_the_same_instant_yields_the_same_verdict() -> None:
     # 同一时点的两个**不同**表示（同值）也必须判相同。
     same = Timestamp(moment.value + timedelta(0))
     assert validity_at(record, same) is validity_at(record, moment)
+
+
+# --- GOAL-20261010-045 EC-02：声明式冲突与生效起点**真的落库**（本文件判适配器面） ------
+
+
+def test_declared_conflicts_and_valid_from_round_trip() -> None:
+    """**本轮的靶子**：提案声明了这两个 ⇒ 提交回执、重新读出、查询**三处一致**。
+
+    此前 SQLite 的 `commit` 从提案构记录时**只带 `supersedes`** ⇒ 两字段永远落回缺省
+    （实测：声明过 `contradictions` 也不在记录上 —— 而提案当时**连字段都没有**）。
+    """
+    from datetime import datetime, timezone
+
+    from packages.domain.core import Timestamp
+
+    store = SqliteMemoryStore()
+    store.allow_source(SOURCE)
+    proposal = _proposal(
+        "m-conflict",
+        contradictions=["memory:earlier-claim", "memory:another"],
+        valid_from=Timestamp(datetime(2026, 10, 1, tzinfo=timezone.utc)),
+    )
+    committed = store.commit(proposal)
+    assert committed.contradictions == ["memory:earlier-claim", "memory:another"], committed
+    assert committed.valid_from is not None, committed
+    # 重新读出（另开一条查询）⇒ 逐字一致。
+    read_back = [row for row in store.query() if row.id == "m-conflict"][0]
+    assert read_back.contradictions == committed.contradictions, read_back
+    assert read_back.valid_from == committed.valid_from, read_back
+
+
+def test_the_undeclared_defaults_still_round_trip_as_empty_and_none() -> None:
+    """**反证（不该红时不红）**：不声明 ⇒ `[]` / `None` 往返一致（既有语义逐字不变）。"""
+    store = SqliteMemoryStore()
+    store.allow_source(SOURCE)
+    committed = store.commit(_proposal("m-plain"))
+    assert committed.contradictions == [], committed
+    assert committed.valid_from is None, committed
+    read_back = [row for row in store.query() if row.id == "m-plain"][0]
+    assert read_back.contradictions == [], read_back
+    assert read_back.valid_from is None, read_back
