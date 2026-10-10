@@ -74,12 +74,21 @@ class FakeMemoryStore(FakeBase):
         self._record("get", memory_id)
         return self._records[memory_id]
 
-    def query(self, tier: MemoryTier | None = None) -> tuple[MemoryRecord, ...]:
-        self._enter("query", tier.value if tier else "*")
+    def query(
+        self, tier: MemoryTier | None = None, scope: str | None = None
+    ) -> tuple[MemoryRecord, ...]:
+        """按 `tier` / `scope` 筛（**与两个真适配器同契约** —— 少一维会让判据在此路径上假绿）。"""
+        self._enter("query", f"{tier.value if tier else '*'}/{scope if scope else '*'}")
         records = tuple(
-            record for record in self._records.values() if tier is None or record.tier is tier
+            record
+            for record in self._records.values()
+            if (tier is None or record.tier is tier) and (scope is None or record.scope == scope)
         )
-        self._record("query", tier.value if tier else "*", result=str(len(records)))
+        self._record(
+            "query",
+            f"{tier.value if tier else '*'}/{scope if scope else '*'}",
+            result=str(len(records)),
+        )
         return records
 
     def deactivate(self, memory_id: str) -> MemoryRecord:

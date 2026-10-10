@@ -64,6 +64,27 @@ def test_scope_round_trips_through_the_store() -> None:
     assert [row.scope for row in rows] == ["organization"]
 
 
+def test_the_declared_scope_becomes_selectable_at_the_query_face() -> None:
+    """GOAL-20261010-049 EC-02：**按范围筛**（此前只能按 tier）——缺省不筛、并存可叠加。
+
+    三条臂：① 传 `scope` ⇒ 只回该范围的记录；② **不传** ⇒ 全部（既有行为逐字不变）；
+    ③ `tier` 与 `scope` **并存** ⇒ 两者**同时**生效。
+    """
+    store = _store()
+    store.commit(_proposal("m-proj", scope="project"))
+    store.commit(_proposal("m-team", scope="team"))
+    # **第二个 tier** 也放一条：否则「按 tier 筛」在这份数据上与「不筛」同结果 ⇒
+    # 缺省路径被改动的反证臂会**假绿**（实测：K-2 按压没判负就是这个原因）。
+    store.commit(_proposal("m-team-session", tier=MemoryTier.SESSION, scope="team"))
+    assert [row.id for row in store.query(scope="team")] == ["m-team", "m-team-session"], (
+        "按范围筛必须真的生效"
+    )
+    assert len(store.query()) == 3, "缺省不筛 ⇒ 全部（既有行为逐字不变）"
+    assert len(store.query(tier=MemoryTier.PROJECT)) == 2, "只按 tier ⇒ 仍**不筛范围**"
+    both = store.query(tier=MemoryTier.PROJECT, scope="team")
+    assert [row.id for row in both] == ["m-team"], ("两维必须可并存", [row.id for row in both])
+
+
 def test_the_default_scope_is_project_and_unchanged() -> None:
     """未声明 scope ⇒ 既有缺省 `"project"`（逐字不变）。"""
     store = _store()

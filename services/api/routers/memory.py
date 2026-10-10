@@ -35,6 +35,7 @@ from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.memory import (
     MemoryCommittedDto,
+    MemoryFilteredListViewDto,
     MemoryListViewDto,
     MemoryProposalDto,
     MemoryRecordDto,
@@ -85,14 +86,34 @@ def _record_dto(record: MemoryRecord, *, now: Timestamp | None = None) -> Memory
     )
 
 
-@router.get("/projects/{project_id}/memory", response_model=MemoryListViewDto)
-async def list_project_memory(project_id: str, request: Request) -> MemoryListViewDto:
+@router.get(
+    "/projects/{project_id}/memory",
+    # 两个形态的**并集**：`MemoryFilteredListViewDto` 继承缺省形态并追加两键。
+    response_model=MemoryListViewDto | MemoryFilteredListViewDto,
+)
+async def list_project_memory(
+    project_id: str, request: Request, scope: str | None = None
+) -> MemoryListViewDto:
+    """项目内的记忆清单（**可选**按 `scope` 筛；缺省不筛 ⇒ 既有行为逐字不变）。
+
+    GOAL-20261010-049 EC-03：`scope` 是**声明的范围**（不是 ACL）—— `scope_note` 照旧
+    明示「无 principal/多项目授权」；带了 `scope` 时另报 `filtered_out`（**不静默丢**）。
+    """
     del project_id  # 单项目上下文；scope_note 明示无 principal 过滤
     deps: ApiDeps = get_deps(request)
     store = _store_of(deps)
-    records = store.query()  # type: ignore[attr-defined]
-    return MemoryListViewDto(
-        records=[_record_dto(record) for record in records], scope_note=SCOPE_NOTE
+    records = store.query(scope=scope)  # type: ignore[attr-defined]
+    # 两个形态各自**显式**声明自己的键（不给路由开 `response_model_exclude_none`：那种开关
+    # 会连**嵌套模型**一起递归应用，把别的读面上**有意义**的 `null` 抹掉 —— 实测过）。
+    if scope is None:
+        return MemoryListViewDto(
+            records=[_record_dto(record) for record in records], scope_note=SCOPE_NOTE
+        )
+    return MemoryFilteredListViewDto(
+        records=[_record_dto(record) for record in records],
+        scope_note=SCOPE_NOTE,
+        scope=scope,
+        filtered_out=len(store.query()) - len(records),  # type: ignore[attr-defined]
     )
 
 

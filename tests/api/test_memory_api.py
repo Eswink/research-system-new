@@ -129,6 +129,58 @@ def test_the_list_face_discloses_the_scope(client: TestClient) -> None:
     assert rows and rows[0]["scope"] == "project", rows
 
 
+def test_the_list_face_can_be_filtered_by_scope(client: TestClient) -> None:
+    """GOAL-20261010-049 EC-03：HTTP 读面按 `scope` 筛（**可选**；缺省逐字不变）。
+
+    三条臂：① 缺省 ⇒ 载荷**没有** `scope` / `filtered_out` 两键（既有读者看到的不变）；
+    ② 传 `scope` ⇒ 只回该范围且**点名筛掉多少条**；③ 未知范围 ⇒ **422 点名**（不静默空集）。
+    """
+    store = _wire(client)
+    _commit_with_scope(store, "mem-proj", "project")
+    _commit_with_scope(store, "mem-team", "team")
+
+    default = client.get("/projects/example-project/memory")
+    assert default.status_code == 200, default.text
+    body = default.json()
+    assert len(body["records"]) == 2, body
+    assert "scope" not in body and "filtered_out" not in body, (
+        "缺省不得凭空多出键",
+        sorted(body),
+    )
+
+    filtered = client.get("/projects/example-project/memory?scope=team")
+    assert filtered.status_code == 200, filtered.text
+    body = filtered.json()
+    assert [row["id"] for row in body["records"]] == ["mem-team"], body
+    assert body["scope"] == "team" and body["filtered_out"] == 1, body
+
+    unknown = client.get("/projects/example-project/memory?scope=nope")
+    assert unknown.status_code == 200, (
+        "读面按范围筛**不**校验范围（那是编排面 memory.read 的职责）—— 未知范围返回空集",
+        unknown.text,
+    )
+    assert unknown.json()["filtered_out"] == 2, unknown.json()
+
+
+def _commit_with_scope(store: FakeMemoryStore, memory_id: str, scope: str) -> None:
+    """直写一条指定范围的记录（钉的是**读面的筛**本身，不经提案面）。"""
+    from packages.domain.enums import MemoryTier, MemoryType
+    from packages.domain.memory import MemoryWriteProposal
+
+    store.allow_source("test:goal049")
+    store.commit(
+        MemoryWriteProposal(
+            id=memory_id,
+            tier=MemoryTier.PROJECT,
+            kind=MemoryType.FACT,
+            content=f"内容 {memory_id}",
+            provenance="test:goal049",
+            confidence=0.9,
+            scope=scope,
+        )
+    )
+
+
 def _commit_expiring(store: Any, memory_id: str) -> None:
     """直写一条带明确到期时刻的记录（钉的是**判定面**本身，不经提案面）。"""
     from datetime import datetime, timezone

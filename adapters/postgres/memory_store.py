@@ -106,15 +106,24 @@ class PostgresMemoryStore(PostgresAdapterBase):
             raise InvalidInputError(f"unknown memory id: {memory_id}")
         return _record_from_row(row)
 
-    def query(self, tier: MemoryTier | None = None) -> tuple[MemoryRecord, ...]:
+    def query(
+        self, tier: MemoryTier | None = None, scope: str | None = None
+    ) -> tuple[MemoryRecord, ...]:
+        """按 `tier` / `scope` 筛（两维可并存；都缺省 ⇒ 全部 —— 与 SQLite 同契约）。"""
         self._ensure_open()
-        self._record("query", tier.value if tier else "*")
-        if tier is None:
-            rows: Any = self._conn.execute("SELECT * FROM m12_memory ORDER BY id").fetchall()
-        else:
-            rows = self._conn.execute(
-                "SELECT * FROM m12_memory WHERE tier=%s ORDER BY id", (tier.value,)
-            ).fetchall()
+        self._record("query", f"{tier.value if tier else '*'}/{scope if scope else '*'}")
+        clauses: list[str] = []
+        params: list[str] = []
+        if tier is not None:
+            clauses.append("tier=%s")
+            params.append(tier.value)
+        if scope is not None:
+            clauses.append("scope=%s")
+            params.append(scope)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        rows: Any = self._conn.execute(
+            f"SELECT * FROM m12_memory{where} ORDER BY id", tuple(params)
+        ).fetchall()
         return tuple(_record_from_row(row) for row in rows)
 
     def deactivate(self, memory_id: str) -> MemoryRecord:

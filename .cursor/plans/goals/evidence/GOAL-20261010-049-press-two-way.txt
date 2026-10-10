@@ -1,0 +1,9 @@
+K-1 传了范围却不生效（返回全部）: 按压 RED
+sha 复原一致=True | a0e90db9e7d1
+K-2 没传范围却筛掉了（缺省被改动）: 按压 RED
+sha 复原一致=True | a0e90db9e7d1
+K-3 未知范围静默返回空集（不点名）: 按压 RED
+sha 复原一致=True | 7341a53c74df
+K-4 筛掉的条数不点名（静默丢）: 按压 RED
+sha 复原一致=True | 7341a53c74df
+SUMMARY presses=4 all_red_and_restored=True

@@ -147,7 +147,11 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     moment = _moment(args)
     raw_tier = args.get("tier")
     tier = str(raw_tier).strip() if raw_tier is not None and str(raw_tier).strip() else None
-    records = memory_store.query(_tier_of(tier))
+    raw_scope = args.get("scope")
+    scope = str(raw_scope).strip() if raw_scope is not None and str(raw_scope).strip() else None
+    if scope is not None:
+        _require_known_scope(memory_store, scope)
+    records = memory_store.query(_tier_of(tier), scope)
     rows = [_memory_row(record, moment) for record in records]
     counts = {
         DISPOSITION_USE: 0,
@@ -156,13 +160,42 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     }
     for row in rows:
         counts[str(row["disposition"])] += 1
-    return {
+    payload: dict[str, object] = {
         "now": moment.value.isoformat(),
         "tier": tier,
         "memory_count": len(rows),
         "memories": rows,
         "dispositions": counts,
     }
+    # GOAL-20261010-049 EC-03：**只有传了 `scope` 才加这两键** ⇒ 缺省路径的载荷与改动前
+    # **逐字相同**（既有读者看到的键一个不少、一个不多）。
+    if scope is not None:
+        payload["scope"] = scope
+        payload["filtered_out"] = _filtered_out(memory_store, tier, scope, len(rows))
+    return payload
+
+
+def _filtered_out(memory_store: Any, tier: str | None, scope: str, kept: int) -> int:
+    """按范围**筛掉了多少条**（同一 tier 维下、不含该范围的条数）—— **不静默丢**。
+
+    与 `dispositions` 同一种披露形态：调用方**不解析数组**就能看出「这次读有没有发生过滤」。
+    它读的是**同一份 Port**（`query`），不另开统计面。
+    """
+    same_tier = memory_store.query(_tier_of(tier))
+    return len(same_tier) - kept
+
+
+def _require_known_scope(memory_store: Any, scope: str) -> None:
+    """**未知范围 ⇒ 点名**（「你要的范围不存在」与「该范围当前没有记录」是两件事）。
+
+    实测口径（GOAL-20261010-049 EC-02）：把「该范围无记录」当成「范围非法」会让调用方
+    无法区分「拼错了」与「确实还没有这个范围的记忆」；本函数**只**在**全库任何 tier 下**
+    都不存在该范围时点名拒绝。
+    """
+    if any(record.scope == scope for record in memory_store.query()):
+        return
+    known = sorted({str(record.scope) for record in memory_store.query()})
+    raise InvalidInputError(f"memory_read scope {scope!r} is not a known scope (known: {known})")
 
 
 def _tier_of(name: str | None) -> Any | None:

@@ -120,15 +120,29 @@ class SqliteMemoryStore(SqliteAdapterBase):
             raise InvalidInputError(f"unknown memory id: {memory_id}")
         return self._record_from_row(row)
 
-    def query(self, tier: MemoryTier | None = None) -> tuple[MemoryRecord, ...]:
+    def query(
+        self, tier: MemoryTier | None = None, scope: str | None = None
+    ) -> tuple[MemoryRecord, ...]:
+        """按 `tier` / `scope` 筛（**两维可并存**；都缺省 ⇒ 全部 —— 既有行为逐字不变）。
+
+        GOAL-20261010-049 EC-02：`scope` 早在域里声明、读面也逐条披露，但**查询面此前只认
+        `tier`** ⇒ 「看得见、选不着」。两个条件都是**可选**：`None` = 该维不筛（**不是**「筛出
+        空集」）—— 语义差别写在签名与判据里。
+        """
         self._ensure_open()
-        self._record("query", tier.value if tier else "*")
-        if tier is None:
-            rows = self._connection.execute("SELECT * FROM m12_memory ORDER BY id").fetchall()
-        else:
-            rows = self._connection.execute(
-                "SELECT * FROM m12_memory WHERE tier=? ORDER BY id", (tier.value,)
-            ).fetchall()
+        self._record("query", f"{tier.value if tier else '*'}/{scope if scope else '*'}")
+        clauses: list[str] = []
+        params: list[str] = []
+        if tier is not None:
+            clauses.append("tier=?")
+            params.append(tier.value)
+        if scope is not None:
+            clauses.append("scope=?")
+            params.append(scope)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        rows = self._connection.execute(
+            f"SELECT * FROM m12_memory{where} ORDER BY id", tuple(params)
+        ).fetchall()
         return tuple(self._record_from_row(row) for row in rows)
 
     def deactivate(self, memory_id: str) -> MemoryRecord:

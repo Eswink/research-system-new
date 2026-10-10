@@ -68,6 +68,36 @@ def test_scope_and_validity_round_trip_on_pg() -> None:
     store.close()
 
 
+def test_the_declared_scope_becomes_selectable_on_pg() -> None:
+    """GOAL-20261010-049 EC-02：**PG 侧**的按范围筛 —— 与 SQLite 同一份契约。
+
+    两臂（与 SQLite 那份同形）：传 `scope` ⇒ 只回该范围；缺省 ⇒ 全部（既有行为逐字不变）；
+    `tier` 与 `scope` 并存 ⇒ 两者同时生效。
+    """
+    _clean()
+    source = f"test:memory-scope-{uuid.uuid4().hex[:8]}"
+    store = PostgresMemoryStore(dsn=_dsn(), allowed_sources=(source,))
+    for suffix, scope in (("proj", "project"), ("team", "team")):
+        store.commit(
+            MemoryWriteProposal(
+                id=f"mem-{suffix}-{uuid.uuid4().hex[:8]}",
+                tier=MemoryTier.PROJECT,
+                kind=MemoryType.FACT,
+                content="c",
+                provenance=source,
+                confidence=0.9,
+                scope=scope,
+            )
+        )
+    assert [row.scope for row in store.query(scope="team")] == ["team"], (
+        "按范围筛必须真的生效（PG 侧）"
+    )
+    assert len(store.query()) == 2, "缺省不筛 ⇒ 全部（既有行为逐字不变）"
+    both = store.query(tier=MemoryTier.PROJECT, scope="team")
+    assert [row.scope for row in both] == ["team"], ("两维必须可并存", [r.scope for r in both])
+    store.close()
+
+
 def test_undeclared_validity_stays_none_on_pg() -> None:
     """未声明 ⇒ `None`（缺省路径逐字不变）。"""
     _clean()

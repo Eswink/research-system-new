@@ -3618,8 +3618,41 @@
         "title": "MemoryCommittedDto",
         "type": "object"
       },
+      "MemoryFilteredListViewDto": {
+        "additionalProperties": false,
+        "description": "按 `scope` 筛过的清单（在缺省形态上**追加**两键：筛的范围与**筛掉了多少条**）。\n\n`filtered_out` 与 `dispositions` 同一披露形态：调用方**不解析数组**就知道这次读\n有没有发生过滤。**不静默丢**：筛掉的条数是必报项。",
+        "properties": {
+          "filtered_out": {
+            "title": "Filtered Out",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryRecordDto"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          },
+          "scope_note": {
+            "title": "Scope Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope_note",
+          "scope",
+          "filtered_out"
+        ],
+        "title": "MemoryFilteredListViewDto",
+        "type": "object"
+      },
       "MemoryListViewDto": {
         "additionalProperties": false,
+        "description": "项目内记忆清单（**缺省形态**：逐条记录 + 诚实边界说明）。\n\nGOAL-20261010-049：**按范围筛**是**另一个**形态 —— 见 `MemoryFilteredListViewDto`。\n分成两个 DTO 而不是给本模型加两个可空字段，是因为 pydantic 的响应模型会**把 `None`\n序列化成 `null`**、键仍在 ⇒ 既有读者会凭空多看到两个键（实测过）。两个形态各自\n**显式**声明自己的键，schema 与载荷一致。",
         "properties": {
           "records": {
             "items": {
@@ -11535,6 +11568,7 @@
     },
     "/projects/{project_id}/memory": {
       "get": {
+        "description": "项目内的记忆清单（**可选**按 `scope` 筛；缺省不筛 ⇒ 既有行为逐字不变）。\n\nGOAL-20261010-049 EC-03：`scope` 是**声明的范围**（不是 ACL）—— `scope_note` 照旧\n明示「无 principal/多项目授权」；带了 `scope` 时另报 `filtered_out`（**不静默丢**）。",
         "operationId": "list_project_memory_projects__project_id__memory_get",
         "parameters": [
           {
@@ -11545,6 +11579,22 @@
               "title": "Project Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope"
+            }
           }
         ],
         "responses": {
@@ -11552,7 +11602,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MemoryListViewDto"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MemoryListViewDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MemoryFilteredListViewDto"
+                    }
+                  ],
+                  "title": "Response List Project Memory Projects  Project Id  Memory Get"
                 }
               }
             },

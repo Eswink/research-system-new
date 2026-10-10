@@ -51,6 +51,7 @@ def _record(
     *,
     expires_at: datetime | None = None,
     review_after: datetime | None = None,
+    scope: str = "project",
 ) -> MemoryWriteProposal:
     """一条**待提交**的记忆（经既有 §8 写入门链落到 store ⇒ 与产品路径同一形态）。"""
     return MemoryWriteProposal(
@@ -60,7 +61,7 @@ def _record(
         content=f"内容 {memory_id}",
         provenance="test:goal042",
         confidence=0.9,
-        scope="project",
+        scope=scope,
         expires_at=Timestamp(expires_at) if expires_at is not None else None,
         review_after=Timestamp(review_after) if review_after is not None else None,
     )
@@ -250,3 +251,42 @@ def test_an_undeclared_memory_reports_no_conflict_at_all() -> None:
     assert row["contradictions"] == [], row
     assert row["valid_from"] is None, ("`None` = 不适用/未声明，**不猜**成时点", row)
     assert "冲突" not in str(row["reason"]), row["reason"]
+
+
+class TestTheDeclaredScopeBecomesSelectable:
+    """GOAL-20261010-049 EC-03：**适用范围成为可选的一维**（缺省逐字不变）。
+
+    `scope` 早在域里声明、读面也逐条披露，但**查询面此前只认 `tier`** ⇒「看得见、选不着」。
+    本类钉住四件事：① 传了 `scope` ⇒ **真的筛**；② **缺省不筛**（载荷与改动前**逐字相同**）；
+    ③ **未知范围点名**（「你要的范围不存在」≠「该范围没有记录」）；④ 与 `tier` **可并存**。
+    """
+
+    def test_the_default_payload_carries_no_scope_keys(self) -> None:
+        """**缺省逐字不变**：不传 `scope` ⇒ 载荷里**没有** `scope` / `filtered_out` 两键。"""
+        payload = memory_read(_store(_record("m-a")), {"now": _moment(0)})
+        assert payload["memory_count"] == 1
+        assert "scope" not in payload, ("缺省不得凭空多出键", sorted(payload))
+        assert "filtered_out" not in payload, sorted(payload)
+
+    def test_the_scope_selects_and_counts_what_it_filtered_out(self) -> None:
+        """传 `scope` ⇒ 只留该范围，且**点名筛掉了多少条**（不静默丢）。"""
+        kept = _record("m-keep")
+        other = _record("m-other", scope="team")
+        payload = memory_read(_store(kept, other), {"now": _moment(0), "scope": "project"})
+        assert payload["memory_count"] == 1, payload
+        assert payload["scope"] == "project"
+        assert payload["filtered_out"] == 1, ("必须点名筛掉几条", payload)
+        assert _first(payload)["memory_id"] == "m-keep"
+
+    def test_an_unknown_scope_is_named_not_read_as_empty(self) -> None:
+        """**未知范围 ⇒ 点名**（不静默返回空集 —— 那是「拼错了」被读成「没有记录」）。"""
+        with pytest.raises(InvalidInputError, match="not a known scope"):
+            memory_read(_store(_record("m-a")), {"now": _moment(0), "scope": "nope"})
+
+    def test_the_scope_and_tier_dimensions_coexist(self) -> None:
+        """两维**可并存**：`tier` 与 `scope` 都传 ⇒ 两者**同时**生效（不是互相顶替）。"""
+        a = _record("m-a")
+        b = _record("m-b", scope="team")
+        payload = memory_read(_store(a, b), {"now": _moment(0), "tier": "PROJECT", "scope": "team"})
+        assert payload["memory_count"] == 1, payload
+        assert _first(payload)["memory_id"] == "m-b"

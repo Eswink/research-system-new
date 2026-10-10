@@ -29,8 +29,27 @@ class MemoryRecordDto(BaseModel):
 
 
 class MemoryListViewDto(BaseModel):
+    """项目内记忆清单（**缺省形态**：逐条记录 + 诚实边界说明）。
+
+    GOAL-20261010-049：**按范围筛**是**另一个**形态 —— 见 `MemoryFilteredListViewDto`。
+    分成两个 DTO 而不是给本模型加两个可空字段，是因为 pydantic 的响应模型会**把 `None`
+    序列化成 `null`**、键仍在 ⇒ 既有读者会凭空多看到两个键（实测过）。两个形态各自
+    **显式**声明自己的键，schema 与载荷一致。
+    """
+
     records: list[MemoryRecordDto] = Field(default_factory=list)
     scope_note: str
+
+
+class MemoryFilteredListViewDto(MemoryListViewDto):
+    """按 `scope` 筛过的清单（在缺省形态上**追加**两键：筛的范围与**筛掉了多少条**）。
+
+    `filtered_out` 与 `dispositions` 同一披露形态：调用方**不解析数组**就知道这次读
+    有没有发生过滤。**不静默丢**：筛掉的条数是必报项。
+    """
+
+    scope: str
+    filtered_out: int
 
 
 class MemoryProposalDto(BaseModel):
