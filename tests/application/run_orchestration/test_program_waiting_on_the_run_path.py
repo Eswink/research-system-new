@@ -318,7 +318,9 @@ def test_a_declared_gate_registers_a_decidable_approval() -> None:
     这是「接得回」的**必要条件**：没有这条记录，裁决面就无从下手（实测过 ——
     `decide` 对不存在的 id 报 404；闸门此前**什么都不注册**）。
     """
-    from packages.application.run_orchestration.program_waiting import PROGRAM_GATE_ACTION
+    from packages.application.run_orchestration.program_gate_registration import (
+        PROGRAM_GATE_ACTION,
+    )
 
     h = _gated(gate=1)
     approvals = _WritableApprovals()

@@ -43,7 +43,13 @@ PRIOR_JUDGES: tuple[str, ...] = (
     "tests/contracts/test_openapi_snapshot.py",
 )
 
-#: EC-02 落点（注册面；**可能落点清单** —— 承 MEM-20261010-215）。
+#: EC-02 落点（**注册面**：有副作用的半件事单列成模块；**可能落点清单** 承 MEM-20261010-215）。
+#: **为什么不在 `program_waiting.py`**：那一份是**只读判定面**，被序 12/14 的既有判据钉住
+#: （「不得出现写方法」）—— 注册落进去会当场撞红它们（实测：`goal044` / `goal046` 各一条）。
+#: 分列与 `phase_pause.py` 之于 `phase_runner.py` 同一手法。
+REGISTRATION_SOURCES: tuple[str, ...] = (
+    "packages/application/run_orchestration/program_gate_registration.py",
+)
 WAITING_SOURCES: tuple[str, ...] = ("packages/application/run_orchestration/program_waiting.py",)
 RUNNER = "packages/application/run_orchestration/program_runner.py"
 
@@ -133,7 +139,8 @@ def _first_call_line(source: str, function_name: str) -> int | None:
 
 def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-02：注册面（既有 Port + 自有前缀 + 幂等 + 三种点名形态）。"""
-    waiting = _joined(root, WAITING_SOURCES)
+    waiting = _joined(root, REGISTRATION_SOURCES)
+    reader = _joined(root, WAITING_SOURCES)
     names = _function_names(waiting)
     return [
         toolbox.verdict(
@@ -168,9 +175,13 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec02-the-driver-registers-before-judging",
-            (_first_call_line(_text(root, RUNNER), "_gate_evaluation") or 0) > 0
-            and "declared_gate_verdict" in _text(root, RUNNER),
-            "驱动必须走判定面的同一条入口（注册在判定之内）",
+            _register_precedes_judging(_text(root, RUNNER)),
+            "驱动必须先**注册**（有副作用）再**判定**（只读）",
+        ),
+        toolbox.verdict(
+            "ec02-the-judgment-face-stays-read-only",
+            "register(" not in reader and "replace(" not in reader,
+            "只读判定面不得出现写方法（序 12/14 的既有判据钉住这件事）",
         ),
     ]
 
@@ -242,6 +253,15 @@ def _first_call_line_any(source: str, names: set[str]) -> int | None:
         if called in names:
             lines.append(node.lineno)
     return min(lines) if lines else None
+
+
+def _register_precedes_judging(runner: str) -> bool:
+    """注册的**调用行**必须早于判定的**调用行**（AST 取行号，两种调用形态都认）。"""
+    register_line = _first_call_line_any(runner, {"register_declared_gate"})
+    judge_line = _first_call_line_any(runner, {"declared_gate_verdict"})
+    if register_line is None or judge_line is None:
+        return False
+    return register_line < judge_line
 
 
 def _ec04_verdicts(root: Path, toolbox: Any) -> list[Any]:

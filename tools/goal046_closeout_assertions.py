@@ -200,12 +200,42 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
 
 
 def _gate_precedes_conclusion_face(runner: str) -> bool:
-    """闸门判定是否**先于**结论面求值（**AST 按被调名取行号**，与实参/位置无关）。"""
-    gate = _first_call_line(runner, "declared_gate_verdict")
-    conclusion = _first_call_line(runner, "_verdicts")
+    """闸门判定是否**先于**结论面求值（**按被调名取行号**，与实参/位置无关）。
+
+    **判的是「求值顺序」这件事，不是「某个定义在哪一行」**（承 `MEM-20261010-215` 的同族
+    教训）。GOAL-20261010-047 把闸门求值抽成 `_declared_gate_evaluation`（规模门逼出的搬迁）
+    ⇒ 原来钉 `declared_gate_verdict` 的**定义行**会随搬迁挪到结论面之后，从而**假红**。
+    正确的落点有二，取**任一**在结论面之前即可：
+
+    - 闸门求值的**调用点**（`_declared_gate_evaluation(...)`）；
+    - 或直调 `declared_gate_verdict(...)`（未经抽出的形态）。
+
+    两种形态都认 ⇒ 搬迁**不**改变结论；若有人把闸门挪到结论面**之后**，本条仍判红。
+    """
+    gate = _first_call_line_any(runner, {"declared_gate_verdict", "_declared_gate_evaluation"})
+    conclusion = _first_call_line_any(runner, {"_verdicts"})
     if gate is None or conclusion is None:
         return False
     return gate < conclusion
+
+
+def _first_call_line_any(source: str, names: set[str]) -> int | None:
+    """源码里**首次调用**这些名字之一的行号（AST；`Name` 与 `Attribute` 两种形态都认）。"""
+    if not source:
+        return None
+    try:
+        parsed = ast.parse(source)
+    except SyntaxError:
+        return None
+    lines: list[int] = []
+    for node in ast.walk(parsed):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        called = func.id if isinstance(func, ast.Name) else getattr(func, "attr", None)
+        if called in names:
+            lines.append(node.lineno)
+    return min(lines) if lines else None
 
 
 def _first_call_line(source: str, function_name: str) -> int | None:

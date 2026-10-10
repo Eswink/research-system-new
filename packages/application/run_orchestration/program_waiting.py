@@ -18,19 +18,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from packages.application.ports.approval_store import ApprovalSpec
 from packages.domain.program import ProgramDecisionKind
 from packages.domain.run import ResearchRun
 from packages.domain.run_state import ResearchRunState
 
 #: 审批读取面（`ApprovalStore` 的形状；只用到 `list_for_run` —— **不**新建第二套存储）。
 ApprovalReader = Any
-
-#: 程序级闸门的 `action` 前缀（GOAL-20261010-047 EC-02）。
-#: **必须**与 phase 面的 `human-gate:` 区分：裁决面的准入条件不同（本前缀允许 run 已终态）。
-PROGRAM_GATE_ACTION = "program-gate:"
-#: `policy_source`（与 `context` 一起让审批记录**自证**它是谁注册的）。
-PROGRAM_GATE_POLICY_SOURCE = "program-gate"
 
 #: 停在**人工闸门**的 run 状态（等**人**拍板；与「还在跑」等**机器**互不混用）。
 AWAITING_HUMAN: frozenset[str] = frozenset({
@@ -104,19 +97,22 @@ def declared_gate_pending(
 
 
 def declared_gate_verdict(
-    program: Any, last: Any, approvals: ApprovalReader | None
+    program: Any,
+    last: Any,
+    approvals: ApprovalReader | None,
+    gate_registration: tuple[str | None, str | None] | None = None,
 ) -> tuple[str, str, tuple[str, ...]] | None:
     """**声明的闸门**是否要拦住本次推进；要 ⇒ `(kind, reason, cited_facts)`，不要 ⇒ `None`。
 
     **返回判定值而不是值对象**：调用方（`program_runner`）自己构它的 `_Evaluation`
     —— 本模块**不** import 它（避免导入环，也让 mypy 不必接受 `Any` 作为返回）。
 
-    GOAL-20261010-047 EC-02：闸门**先注册**（`register_declared_gate`）再判 —— 注册是
-    「这条闸门**可被裁决**」的全部依据；**只读面**（缺 `register` 方法）⇒ 注册被跳过且
-    **判词点名**，此时仍按「等人拍板」拦住（**不**静默当成无闸门）。
+    GOAL-20261010-047 EC-02：注册（`program_gate_registration`，**有副作用**）由调用方
+    先做，本函数只**读**它的结果并把它写进判词 —— 本模块因此保持**只读**
+    （承序 12/14 的判据：判定面不得出现写方法）。
     """
     index = last.program_index or 0
-    registered, register_note = register_declared_gate(program, index, approvals, last.id.value)
+    registered, register_note = gate_registration or (None, None)
     note = declared_gate_pending(program, index, approvals, last.id.value)
     if note is None:
         return None
@@ -129,54 +125,6 @@ def declared_gate_verdict(
         note + "；本轮不推进（不自动放行）",
         tuple(facts),
     )
-
-
-def register_declared_gate(
-    program: Any, last_index: int, approvals: ApprovalReader | None, run_id: str
-) -> tuple[str | None, str | None]:
-    """为**声明在该轮**的闸门注册一条待决审批；返回 `(审批标识 | None, 点名句 | None)`。
-
-    `(None, None)` = **不需要注册**（未声明闸门 / 不在该轮 / 已有待决记录 ⇒ 幂等命中）。
-    `(None, <点名句>)` = **该注册却注册不了**（缺审批面、查询失败、面不提供 `register`）。
-
-    **语义与 phase 面同源**（`phase_pause.pause_for_human_gate` 的 `ApprovalSpec` 逐字段对照）：
-    `risk="HUMAN_GATE"`、`policy_source` 同名、`context` 换成程序侧的轮次标识；
-    `action` 用**本 GOAL 自己的前缀** `program-gate:` 与 phase 面的 `human-gate:`
-    **区分开** —— 裁决面的准入条件不同（本前缀允许 run 已终态，见 `routers/approvals.py`），
-    混用前缀会让两种语义互相串台。
-
-    **幂等**：查 `list_for_run` 里**同 action 前缀**的记录 —— 已有（无论待决或已裁决）即
-    视为**已注册**，不再新增（重复推进不得堆积待决记录）。
-    """
-    declared = getattr(program, "human_gate_at_index", None)
-    if declared is None or int(declared) != int(last_index):
-        return None, None
-    if approvals is None:
-        return None, "（尚无可注册的审批面）"
-    register = getattr(approvals, "register", None)
-    if not callable(register):
-        return None, "（该审批面**只读**，无法注册等待项）"
-    action = f"{PROGRAM_GATE_ACTION}{getattr(program, 'id', '')}"
-    try:
-        rows = approvals.list_for_run(run_id)
-    except Exception as error:  # noqa: BLE001 - 注册前的查询失败必须**点名**
-        return None, f"（注册前查询失败：{type(error).__name__}: {error}）"
-    if any(str(getattr(row, "action", "")) == action for row in rows):
-        return None, None
-    try:
-        record = register(
-            ApprovalSpec(
-                run_id=run_id,
-                action=action,
-                risk="HUMAN_GATE",
-                context=f"program-round:{last_index}",
-                policy_source=PROGRAM_GATE_POLICY_SOURCE,
-                requested_event_id="",
-            )
-        )
-    except Exception as error:  # noqa: BLE001 - 注册失败必须**点名**（不静默当成已注册）
-        return None, f"（注册失败：{type(error).__name__}: {error}）"
-    return str(getattr(record, "id", "")) or None, None
 
 
 def waiting_round_decision(
@@ -205,12 +153,9 @@ def waiting_round_decision(
 
 __all__ = [
     "AWAITING_HUMAN",
-    "PROGRAM_GATE_ACTION",
-    "PROGRAM_GATE_POLICY_SOURCE",
     "ApprovalReader",
     "declared_gate_pending",
     "declared_gate_verdict",
     "pending_approval",
-    "register_declared_gate",
     "waiting_round_decision",
 ]

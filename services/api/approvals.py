@@ -26,7 +26,7 @@ from packages.application.ports.approval_store import (
     ApprovalSpec,
     ApprovalStore,
 )
-from packages.application.run_orchestration.program_waiting import (
+from packages.application.run_orchestration.program_gate_registration import (
     PROGRAM_GATE_ACTION,
 )
 from packages.domain.core import Timestamp

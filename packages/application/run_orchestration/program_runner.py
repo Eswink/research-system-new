@@ -27,7 +27,13 @@ from typing import Any
 
 from packages.application.ports.program_store import ProgramStore
 from packages.application.ports.run_store import RunStore
-from packages.application.run_orchestration.program_retry import retry_face_state
+from packages.application.run_orchestration.program_gate_registration import (
+    register_declared_gate,
+)
+from packages.application.run_orchestration.program_retry import (
+    claimed_but_missing,
+    retry_face_state,
+)
 from packages.application.run_orchestration.program_waiting import (
     ApprovalReader,
     declared_gate_verdict,
@@ -94,19 +100,6 @@ def _record(programs: ProgramStore, program_id: str, decision: ProgramDecision) 
     return stamped
 
 
-def _claimed_but_missing(
-    programs: ProgramStore, program_id: str, after_index: int, known: set[str]
-) -> str | None:
-    """上一条 `CONTINUE` 认领的 run id（若它**没有**落库 ⇒ 返回它，供 DEDUP 点名）。"""
-    for decision in reversed(programs.decisions_of(program_id)):
-        if decision.after_index != after_index:
-            continue
-        if decision.kind is ProgramDecisionKind.CONTINUE and decision.cited_run_id:
-            return None if str(decision.cited_run_id) in known else str(decision.cited_run_id)
-        return None
-    return None
-
-
 def _evaluate(
     program: ResearchProgram,
     existing: tuple[ResearchRun, ...],
@@ -127,11 +120,9 @@ def _evaluate(
     if not last.is_terminal:
         kind, reason, facts = waiting_round_decision(last, last_index, approvals)
         return _Evaluation(kind=kind, reason=reason, cited_run_id=last.id.value, cited_facts=facts)
-
-    # GOAL-20261010-046 EC-03：**声明的人工闸门**在结论面之前（判定面在 program_waiting）。
-    gate = declared_gate_verdict(program, last, approvals)
-    if gate is not None:
-        return _gate_evaluation(last, gate)
+    gated = _declared_gate_evaluation(program, last, approvals)
+    if gated is not None:
+        return gated
 
     # GOAL-20261008-040 EC-03：**按终态分派** —— 失败面 / 取消面在结论面**之前**
     # （只有 `SUCCEEDED` 的轮才有「结论」可言；把「没有结论」读成「结论说停」是范畴错误）。
@@ -153,6 +144,30 @@ def _evaluate(
         )
 
     return _after_hit(program, existing, last, hit, programs)
+
+
+def _declared_gate_evaluation(
+    program: ResearchProgram, last: ResearchRun, approvals: ApprovalReader | None
+) -> _Evaluation | None:
+    """**声明的人工闸门**是否拦住本次推进（是 ⇒ 条 `_Evaluation`，否 ⇒ `None`）。
+
+    GOAL-20261010-046 EC-03 / GOAL-20261010-047 EC-02 —— 两件事**分列**：
+
+    1. **注册**（`program_gate_registration.register_declared_gate`，**有副作用**）：
+       把待决审批放进既有 `ApprovalStore` ⇒ 这条闸门**可被裁决**（不注册就永远关不上）；
+    2. **判定**（`program_waiting.declared_gate_verdict`，**只读**）：据声明与审批面现状
+       决定拦不拦，并把注册结果**写进判词**（点名 `approval_id`）。
+
+    顺序固定（先注册后判定）：判定要读注册的结果。判定面**不得**出现写方法
+    （序 12/14 的既有判据钉住这件事）⇒ 注册才单列成模块。
+    """
+    registration = register_declared_gate(
+        program, last.program_index or 0, approvals, last.id.value
+    )
+    gate = declared_gate_verdict(program, last, approvals, registration)
+    if gate is None:
+        return None
+    return _gate_evaluation(last, gate)
 
 
 def _gate_evaluation(last: ResearchRun, gate: tuple[str, str, tuple[str, ...]]) -> _Evaluation:
@@ -306,7 +321,7 @@ def _after_hit(
             cited_facts=cited,
         )
 
-    claimed = _claimed_but_missing(
+    claimed = claimed_but_missing(
         programs, program.id, last_index, {run.id.value for run in existing}
     )
     if claimed is not None:

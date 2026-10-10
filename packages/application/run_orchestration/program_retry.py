@@ -50,4 +50,17 @@ def retry_face_state(
     return attempts, outstanding
 
 
-__all__ = ["RETRY_CLAIM_KINDS", "retry_face_state"]
+def claimed_but_missing(
+    programs: Any, program_id: str, after_index: int, known: set[str]
+) -> str | None:
+    """上一条 `CONTINUE` 认领的 run id（若它**没有**落库 ⇒ 返回它，供 DEDUP 点名）。"""
+    for decision in reversed(programs.decisions_of(program_id)):
+        if decision.after_index != after_index:
+            continue
+        if decision.kind is ProgramDecisionKind.CONTINUE and decision.cited_run_id:
+            return None if str(decision.cited_run_id) in known else str(decision.cited_run_id)
+        return None
+    return None
+
+
+__all__ = ["RETRY_CLAIM_KINDS", "claimed_but_missing", "retry_face_state"]
