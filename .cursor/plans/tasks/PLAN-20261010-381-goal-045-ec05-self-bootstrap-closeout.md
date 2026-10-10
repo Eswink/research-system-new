@@ -100,7 +100,7 @@ exit_criteria:
 | `IN_SCOPE` 判据 | 8 passed（纯收紧：只增两条） |
 | 治理 | `validate.py` 通过 |
 | 宪章判据 | `test_mainline_program_is_intact.py` 绿 |
-| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / **5335 passed, 228 skipped**；在全部记录写完之后、独占、不接管道）|
+| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / **5345 passed, 228 skipped**；在全部记录写完之后、独占、不接管道）|
 
 ## 影响报告
 
