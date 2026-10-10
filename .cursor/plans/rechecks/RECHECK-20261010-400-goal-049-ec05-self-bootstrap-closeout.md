@@ -63,7 +63,7 @@ verify_paths:
 `validate.py` 通过；`test_mainline_program_is_intact.py` 绿（本 GOAL 的 id 已在程序表**序 17**）；
 `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py` + `test_two_tree_verdicts_are_archived.py`
 **22 passed**。**as-is m0**：`PASS: profile=m0; 23 deterministic checks`
-（`PASS [` 24 / `FAILED [` 0 / passed/skipped 读数**待本轮全量 m0 实测回填**；在全部记录写完之后、独占、
+（`PASS [` 24 / `FAILED [` 0 / **5592 passed, 21 skipped**；在全部记录写完之后、独占、
 仓库 `.venv`、不接管道）。
 
 ### 5. 改既有判据的申报（承 `MEM-20261009-210`，逐条自证）
