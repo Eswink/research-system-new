@@ -173,6 +173,7 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-383-goal-046-ec01-04-program-human-gate.md
+  - .cursor/plans/tasks/PLAN-20261010-385-goal-046-ec05-self-bootstrap-closeout.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-384-goal-046-ec01-04-program-human-gate.md
 memory_entries:
   - extraction-must-not-re-point-existing-criteria
