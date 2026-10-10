@@ -2,7 +2,7 @@
 id: GOAL-20261010-045
 slug: memory-conflicts-and-valid-from-become-decidable
 title: 记忆的**冲突**与**生效起点**成为可判定 —— `MemoryRecord` 上这两个字段**没有任何写者**（提案无该字段 / SQLite 静默丢弃 / PG 硬编码 `[]`），且**没有任何消费面**按冲突判定
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-10
 updated_at: 2026-10-10
 owners:
@@ -131,7 +131,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -177,7 +177,7 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-379-goal-045-ec01-04-memory-conflicts-and-valid-from.md
   - .cursor/plans/tasks/PLAN-20261010-381-goal-045-ec05-self-bootstrap-closeout.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-380-goal-045-ec01-04-memory-conflicts-and-valid-from.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-382-goal-045-ec05-self-bootstrap-closeout.md
 memory_entries:
   - a-declared-field-needs-a-writer-in-every-adapter
 ---
@@ -198,7 +198,7 @@ memory_entries:
 | EC-02 | 声明与落库 | 提案可**声明**；两库**真的落库**且往返一致；缺省**逐字不变** | PASS |
 | EC-03 | 判定与读面 | **至少一条**路径按冲突**点名**；读面逐条披露冲突与生效起点 | PASS |
 | EC-04 | 真的被用上 | 实跑带出冲突与 `valid_from`；**反证**：未声明不得凭空有冲突、`None` 不得被猜成时点 | PASS |
-| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树 + 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 宪章判据绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**让声明被静默丢弃**；
 不得**自动消解冲突**；不得把 `[]` 与 `None` **混用**；不得宣称项目安全（`R-M1`）；
@@ -366,6 +366,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | `PLAN-20261010-381` | `320ac7a` | EC-05 五条 AC 全 PASS：收口验证器 **64 判词 / 0 FAIL**（标准断言集**一行未重写**）+ `IN_SCOPE` **纯收紧**（+2 行）+ **射程分区清单**同步登记（下界 14→15）+ **两树 `TWO-TREE PASS`**（两路 **64 判词** / `sha256` 相同 `18de7cd1…`）+ 归档定格（两份各 **2322 B / 64 行**、`CR=0`）+ 治理 + 宪章判据 + **as-is m0 23/23**（5345 passed） | （见 CI 台账）| — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261010-382`）|
 | 1 | `PLAN-20261010-379` | （见 CI 台账） | EC-01…EC-04 全 PASS：**冲突与生效起点可判定** —— ① 域：提案 +2 **可选**字段（缺省 `[]` / `None` ⇒ 逐字不变）+ 非空字符串校验（非法点名）；② **三个适配器**的 `commit` 都带上（SQLite / PG（**替换**两处硬编码）/ **Fake**）；往返一致；③ 读面**逐条披露** + 理由**点名**冲突（`[]` 不追加，**不**凭空）；④ **本轮实测到第三个适配器**（Fake 同样漏字段 ⇒ 读面判据当场红，其注释**此前已警告过**同一纪律）⇒ 沉淀 `MEM-20261010-214`；⑤ 三向按压 **C-1/C-2/C-3 全红** + 二进制复原 raw `sha256` 一致；⑥ 域 4 例 / SQLite 13 例 / 读面 18 例；广面 1027 passed；**无新迁移**（两列已在表上） | （见 CI 台账）| 判据抓到 Fake 缺字段 + 判据文件重名（pytest `import file mismatch`）⇒ 改名 | EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **四条实测读数**（提案字段表无该两字段 / SQLite 构记录只带 `supersedes` / PG 注释 `empty at commit` / 全仓消费面零命中）+ **反证** `TypeError`；五条 EC 全 PENDING；MAINLINE 程序表**新增序 13** | （见 CI 台账） | — | 五条 EC 全 PENDING；迁移是否存在（②）与「点名落在哪条路径」（③）待 cycle 1 落 | cycle 1（EC-02 声明与落库 + EC-03 判定与读面） |
 
@@ -373,5 +374,6 @@ deduplication）。
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-10 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、`IN_SCOPE` **纯收紧**、两树 **`TWO-TREE PASS`**（两路 **64 判词** / `sha256` 相同 `18de7cd1…`）、判词归档进树（两份各 2322 B / 64 行 / `CR=0`）、as-is m0 **23/23**（记录写完之后：5345 passed, 228 skipped）、治理 + 宪章判据绿、CI 台账逐提交。**一处时序如实登记**：两树首轮红（bootstrap：归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `W-1`…`W-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261010-382`（PASS_WITH_WARNINGS）。 |
 | 2026-10-10 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**冲突与生效起点可判定** —— `MemoryRecord` 上这两个字段此前**有类型、零写者**（提案无字段 / SQLite 静默丢弃 / PG 硬编码 `[]`），且**消费面为零**。**已修**：提案可**声明**（缺省逐字不变）+ **三个适配器**同契约落库（**Fake 也漏过 —— 判据当场抓到，沉淀 `MEM-20261010-214`**）+ 读面逐条披露并**点名**冲突。三向按压全红；`[]` 与 `None` 语义互不混用；**无新迁移**。域 4 / SQLite 13 / 读面 18 例，广面 1027 passed。EC-05 待收口。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-10 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 13**。只读勘察 + **四条实测读数**：(a) `MemoryWriteProposal` **无** `contradictions` / `valid_from` 字段（提案**无从声明**）；(b) `MemoryRecord` **有**这两个字段 ⇒ **有类型、零写者**；(c) SQLite `commit` 从提案构记录时**只带 `supersedes`**（`contradictions` 落回缺省）；(d) PG 写 `contradictions` 处源码注释逐字 `empty at commit` ⇒ **两库一致地把冲突丢成空**；(e) **消费面为零**（全仓排除 tests 只命中域定义与两适配器读写）。**反证**：构造带 `contradictions=` 的提案 ⇒ **`TypeError`**（声明路径根本不存在）。与序 7（同类：字段从不落库）与序 10（时效被消费）同族。五条 EC 全 `PENDING`。**不做数量目标**；**不**自动消解冲突；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
