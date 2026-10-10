@@ -37,6 +37,9 @@ PASS ec04-the-missing-face-is-named
 PASS ec04-the-read-only-case-is-asserted
 PASS cases-test_program_waiting_on_the_run_path
 PASS cases-test_research_program
+PASS cases-test_program_store_sqlite
+PASS cases-test_program_store_pg
+PASS cases-test_program_advance_on_the_run_path
 PASS prior-judge-test_program_store_sqlite
 PASS prior-judge-test_program_store_pg
 PASS prior-judge-test_program_advance_on_the_run_path
@@ -47,6 +50,8 @@ PASS verdict-archive-clean
 PASS scope-declares-this-rounds-scripts
 PASS scope-still-pins-the-entry
 PASS verifier-scope-declares-this-rounds-scripts
+PASS snapshot-lists-the-gate
+PASS snapshot-generator-present
 PASS goal-declares-five-ecs
 PASS self-loads-its-own-assertions
 PASS goal-ec01-status
@@ -55,7 +60,9 @@ PASS goal-ec03-status
 PASS goal-ec04-status
 PASS goal-ec05-status
 PASS record-PLAN-20261010-383-goal-046-ec01-04-program-human-gate.md
+PASS record-PLAN-20261010-387-goal-046-repair-snapshot-sync-and-declared-cases.md
 PASS record-RECHECK-20261010-386-goal-046-ec05-self-bootstrap-closeout.md
+PASS record-RECHECK-20261010-388-goal-046-repair-snapshot-sync-and-declared-cases.md
 PASS record-README.md
 PASS record-MAINLINE.md
 PASS r26-R26-1-registered
