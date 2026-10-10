@@ -127,6 +127,9 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-050 EC-05：同上。
     "tools/goal050_closeout_assertions.py",
     "tools/verify_goal050_closeout.py",
+    # GOAL-051 EC-05：同上。
+    "tools/goal051_closeout_assertions.py",
+    "tools/verify_goal051_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
