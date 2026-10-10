@@ -22,7 +22,8 @@ from packages.domain.program import (
 
 _PROGRAM_SELECT = (
     "SELECT program_id, project_id, protocol_id, max_runs, max_attempts_per_index,"
-    " human_gate_at_index, continue_rule_json, created_at, updated_at FROM research_programs"
+    " human_gate_at_index, human_gate_on_verdicts_json, continue_rule_json, created_at,"
+    " updated_at FROM research_programs"
 )
 _DECISION_SELECT = (
     "SELECT program_id, after_index, decided_at, kind, reason, cited_run_id,"
@@ -62,6 +63,12 @@ def _decode_program(row: Any) -> ResearchProgram:
         # GOAL-20261010-046 EC-02：NULL = 不设闸门（既有行为逐字不变）。
         human_gate_at_index=(
             int(row["human_gate_at_index"]) if row["human_gate_at_index"] is not None else None
+        ),
+        # GOAL-20261010-048 EC-02：NULL = 未声明条件闸门（不是空数组；见 sqlite 侧同名助手）。
+        human_gate_on_verdicts=(
+            tuple(str(item) for item in _json_object(row["human_gate_on_verdicts_json"]))
+            if row["human_gate_on_verdicts_json"] is not None
+            else None
         ),
         continue_rule=ProgramContinueRule(
             verdict_in=tuple(str(item) for item in payload["verdict_in"])
@@ -118,9 +125,9 @@ class PostgresProgramStore(PostgresAdapterBase):
         self._ensure_open()
         self._conn.execute(
             "INSERT INTO research_programs (program_id, project_id, protocol_id, max_runs,"
-            " max_attempts_per_index, human_gate_at_index, continue_rule_json, created_at,"
-            " updated_at)"
-            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
+            " continue_rule_json, created_at, updated_at)"
+            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             " ON CONFLICT (program_id) DO NOTHING",
             (
                 program.id,
@@ -129,6 +136,13 @@ class PostgresProgramStore(PostgresAdapterBase):
                 program.max_runs,
                 program.max_attempts_per_index,
                 program.human_gate_at_index,
+                (
+                    json.dumps(
+                        list(program.human_gate_on_verdicts), ensure_ascii=False, sort_keys=True
+                    )
+                    if program.human_gate_on_verdicts is not None
+                    else None
+                ),
                 json.dumps(
                     {"verdict_in": list(program.continue_rule.verdict_in)},
                     ensure_ascii=False,

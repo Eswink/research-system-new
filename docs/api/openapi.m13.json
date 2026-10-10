@@ -4681,6 +4681,20 @@
             ],
             "title": "Human Gate At Index"
           },
+          "human_gate_on_verdicts": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Gate On Verdicts"
+          },
           "max_attempts_per_index": {
             "default": 1,
             "maximum": 10.0,
@@ -4787,6 +4801,20 @@
               }
             ],
             "title": "Human Gate At Index"
+          },
+          "human_gate_on_verdicts": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Gate On Verdicts"
           },
           "id": {
             "title": "Id",

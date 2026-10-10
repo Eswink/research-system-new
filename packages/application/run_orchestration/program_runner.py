@@ -120,7 +120,9 @@ def _evaluate(
     if not last.is_terminal:
         kind, reason, facts = waiting_round_decision(last, last_index, approvals)
         return _Evaluation(kind=kind, reason=reason, cited_run_id=last.id.value, cited_facts=facts)
-    gated = _declared_gate_evaluation(program, last, approvals)
+    # 落库判词读**一次**（结论面与条件闸门共用同一批事实 ⇒ 两处不可能看到不同结论）。
+    verdicts = _verdicts(findings, last.id.value)
+    gated = _declared_gate_evaluation(program, last, approvals, verdicts)
     if gated is not None:
         return gated
 
@@ -129,7 +131,6 @@ def _evaluate(
     if str(last.state) != ResearchRunState.State.SUCCEEDED:
         return _non_success_terminal(program, existing, last, programs)
 
-    verdicts = _verdicts(findings, last.id.value)
     hit = [item for item in verdicts if item in program.continue_rule.verdict_in]
     if not hit:
         return _Evaluation(
@@ -147,24 +148,30 @@ def _evaluate(
 
 
 def _declared_gate_evaluation(
-    program: ResearchProgram, last: ResearchRun, approvals: ApprovalReader | None
+    program: ResearchProgram,
+    last: ResearchRun,
+    approvals: ApprovalReader | None,
+    verdicts: tuple[str, ...],
 ) -> _Evaluation | None:
     """**声明的人工闸门**是否拦住本次推进（是 ⇒ 条 `_Evaluation`，否 ⇒ `None`）。
 
-    GOAL-20261010-046 EC-03 / GOAL-20261010-047 EC-02 —— 两件事**分列**：
+    GOAL-20261010-046 / 047 / 048 —— 三件事**分层**：
 
-    1. **注册**（`program_gate_registration.register_declared_gate`，**有副作用**）：
+    1. **求值**（`program_waiting.declared_gate_trigger`，**只读**）：两条声明各自判是否触发
+       —— 序号声明（序 14）与**条件声明**（GOAL-20261010-048：上一轮**落库判词**命中声明的
+       取值集合）。`verdicts` 与结论面读的是**同一批落库事实**（`_verdicts`），不另读一遍。
+    2. **注册**（`program_gate_registration.register_declared_gate`，**有副作用**）：
        把待决审批放进既有 `ApprovalStore` ⇒ 这条闸门**可被裁决**（不注册就永远关不上）；
-    2. **判定**（`program_waiting.declared_gate_verdict`，**只读**）：据声明与审批面现状
+    3. **判定**（`program_waiting.declared_gate_verdict`，**只读**）：据声明与审批面现状
        决定拦不拦，并把注册结果**写进判词**（点名 `approval_id`）。
 
     顺序固定（先注册后判定）：判定要读注册的结果。判定面**不得**出现写方法
-    （序 12/14 的既有判据钉住这件事）⇒ 注册才单列成模块。
+    （序 12/14 的既有判据钉住这件事）⇒ 注册单列成模块。
     """
     registration = register_declared_gate(
-        program, last.program_index or 0, approvals, last.id.value
+        program, last.program_index or 0, approvals, last.id.value, verdicts
     )
-    gate = declared_gate_verdict(program, last, approvals, registration)
+    gate = declared_gate_verdict(program, last, approvals, verdicts, registration)
     if gate is None:
         return None
     return _gate_evaluation(last, gate)

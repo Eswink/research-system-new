@@ -110,6 +110,13 @@ class ResearchProgram:
     # 为什么是程序自己声明：此前「人在环」只能由**别人**（协议 phase 闸门 / 外部操作）制造，
     # 编排能力里没有它 ⇒「中断后可接回」缺了**中断可声明**这一半。
     human_gate_at_index: int | None = None
+    # GOAL-20261010-048 EC-02：**条件式人工闸门**（可选声明；缺省 `None` = **不设**
+    # ⇒ 既有行为逐字不变）。语义 = 「上一轮落库的**判词取值命中其中之一**时，停下等人看结果」
+    # —— 与 `continue_rule.verdict_in` **同一族**（那里是「命中 ⇒ 续」，这里是「命中 ⇒ 停」），
+    # 形态**照抄**它：**可机检的取值集合**，不是自由文本、不引入表达式引擎。
+    # 与 `human_gate_at_index` **互斥**（同时声明 ⇒ 点名拒绝）：两条闸门声明各有各的
+    # 求值时序（按序号 / 按落库事实），并存会让「为什么停」读不出是哪一条**要求**的。
+    human_gate_on_verdicts: tuple[str, ...] | None = None
     created_at: Timestamp = field(default_factory=Timestamp.now)
     updated_at: Timestamp = field(default_factory=Timestamp.now)
 
@@ -124,14 +131,39 @@ class ResearchProgram:
             raise ValueError("max_runs must be >= 1")
         if self.max_attempts_per_index < 1:
             raise ValueError("max_attempts_per_index must be >= 1")
-        # GOAL-20261010-046 EC-02：闸门序号**点名**非法值（越界 / 负数 ⇒ 声明坏掉）。
-        if self.human_gate_at_index is not None and not (
-            1 <= self.human_gate_at_index <= self.max_runs
-        ):
-            raise ValueError(
-                "human_gate_at_index must be within 1..max_runs when declared "
-                f"(got {self.human_gate_at_index}, max_runs={self.max_runs})"
-            )
+        _validate_gate_declarations(self)
+
+    @property
+    def condition_gate_hit(self) -> bool:
+        """是否声明了**条件式**闸门（读面 / 判定面用来区分两条声明的**来源**）。"""
+        return self.human_gate_on_verdicts is not None
+
+
+def _validate_gate_declarations(program: ResearchProgram) -> None:
+    """两条闸门声明的校验（序 14 的序号 / GOAL-20261010-048 的条件）——**坏声明必须点名**。
+
+    抽出成模块级函数是为了守住**函数 ≤ 50 行 / 复杂度 ≤ 10** 两道门（`__post_init__`
+    此前已 8 个分支，再加 4 个就触顶）—— 与「行为独立即单列」同一手法，语义未变。
+    """
+    if program.human_gate_at_index is not None and not (
+        1 <= program.human_gate_at_index <= program.max_runs
+    ):
+        raise ValueError(
+            "human_gate_at_index must be within 1..max_runs when declared "
+            f"(got {program.human_gate_at_index}, max_runs={program.max_runs})"
+        )
+    declared = program.human_gate_on_verdicts
+    if declared is None:
+        return
+    if not declared:
+        raise ValueError("human_gate_on_verdicts must name at least one verdict when declared")
+    if any(not item for item in declared):
+        raise ValueError("human_gate_on_verdicts must not be empty strings")
+    if program.human_gate_at_index is not None:
+        raise ValueError(
+            "human_gate_at_index and human_gate_on_verdicts are mutually exclusive "
+            "(two gate declarations would make 'why did it stop' unreadable)"
+        )
 
 
 @dataclass(frozen=True, slots=True)

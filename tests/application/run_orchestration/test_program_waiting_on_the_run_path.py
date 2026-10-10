@@ -23,7 +23,7 @@ import pytest
 
 from packages.application.ports.approval_store import ApprovalSpec
 from packages.application.run_orchestration.program_runner import advance_program
-from packages.domain.program import ProgramDecisionKind
+from packages.domain.program import ProgramContinueRule, ProgramDecisionKind
 from tests.application.run_orchestration.test_program_runner import _Harness
 
 pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
@@ -264,7 +264,7 @@ def test_a_gate_declared_out_of_range_is_named() -> None:
     """非法声明（序号越界）⇒ **点名**（声明坏掉不是「没有闸门」）。"""
     import pytest
 
-    from packages.domain.program import ProgramContinueRule, ResearchProgram
+    from packages.domain.program import ResearchProgram
 
     with pytest.raises(ValueError, match="human_gate_at_index must be within"):
         ResearchProgram(

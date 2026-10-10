@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS research_programs (
     max_attempts_per_index INTEGER NOT NULL DEFAULT 1,
     -- GOAL-20261010-046 EC-02：程序级人工闸门序号（NULL = 不设闸门 ⇒ 既有行为逐字不变）。
     human_gate_at_index INTEGER,
+    -- GOAL-20261010-048 EC-02：**条件式**人工闸门（NULL = 不设 ⇒ 既有行为逐字不变）。
+    human_gate_on_verdicts_json TEXT,
     continue_rule_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -61,6 +63,24 @@ def _decode_rule(raw: object) -> ProgramContinueRule:
     return ProgramContinueRule(verdict_in=tuple(str(item) for item in payload["verdict_in"]))
 
 
+def _encode_gate_conditions(conditions: tuple[str, ...] | None) -> str | None:
+    """条件的落库形态（`None` = **未声明** ⇒ 存 `NULL`，不是空数组）。
+
+    与结论面的 `_encode_rule` 同形（JSON + `sort_keys`），但**不**复用：`None` 与 `()`
+    在这里**语义不同**（未声明 vs 声明了但没有取值 —— 后者在域层已被拒绝），
+    存成 `[]` 会让「未声明」与「坏声明」在落库层读起来一样。
+    """
+    if conditions is None:
+        return None
+    return json.dumps(list(conditions), ensure_ascii=False, sort_keys=True)
+
+
+def _decode_gate_conditions(raw: object) -> tuple[str, ...] | None:
+    if raw is None:
+        return None
+    return tuple(str(item) for item in json.loads(str(raw)))
+
+
 def _encode_program(program: ResearchProgram) -> tuple[object, ...]:
     return (
         program.id,
@@ -69,6 +89,7 @@ def _encode_program(program: ResearchProgram) -> tuple[object, ...]:
         program.max_runs,
         program.max_attempts_per_index,
         program.human_gate_at_index,
+        _encode_gate_conditions(program.human_gate_on_verdicts),
         _encode_rule(program.continue_rule),
         program.created_at.value.isoformat(),
         program.updated_at.value.isoformat(),
@@ -83,10 +104,11 @@ def _decode_program(row: sqlite3.Row | tuple[object, ...]) -> ResearchProgram:
         max_runs,
         attempts,
         gate_at,
+        conditions,
         rule,
         created_at,
         updated_at,
-    ) = row[:9]
+    ) = row[:10]
     return ResearchProgram(
         id=str(program_id),
         project_id=str(project_id),
@@ -95,6 +117,7 @@ def _decode_program(row: sqlite3.Row | tuple[object, ...]) -> ResearchProgram:
         max_attempts_per_index=int(str(attempts)),
         # GOAL-20261010-046 EC-02：NULL = 不设闸门（既有行为逐字不变）。
         human_gate_at_index=int(str(gate_at)) if gate_at is not None else None,
+        human_gate_on_verdicts=_decode_gate_conditions(conditions),
         continue_rule=_decode_rule(rule),
         created_at=Timestamp(datetime.fromisoformat(str(created_at))),
         updated_at=Timestamp(datetime.fromisoformat(str(updated_at))),
@@ -137,8 +160,8 @@ class SqliteProgramStore(SqliteAdapterBase):
             self._conn.execute(
                 "INSERT OR IGNORE INTO research_programs (program_id, project_id,"
                 " protocol_id, max_runs, max_attempts_per_index, human_gate_at_index,"
-                " continue_rule_json, created_at, updated_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " human_gate_on_verdicts_json, continue_rule_json, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 _encode_program(program),
             )
         self._record("create", program.id, result="ok")
@@ -147,8 +170,9 @@ class SqliteProgramStore(SqliteAdapterBase):
         self._ensure_open()
         row = self._conn.execute(
             "SELECT program_id, project_id, protocol_id, max_runs,"
-            " max_attempts_per_index, human_gate_at_index, continue_rule_json,"
-            " created_at, updated_at FROM research_programs WHERE program_id = ?",
+            " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
+            " continue_rule_json, created_at, updated_at FROM research_programs"
+            " WHERE program_id = ?",
             (program_id,),
         ).fetchone()
         if row is None:
@@ -161,9 +185,9 @@ class SqliteProgramStore(SqliteAdapterBase):
         self._ensure_open()
         rows = self._conn.execute(
             "SELECT program_id, project_id, protocol_id, max_runs,"
-            " max_attempts_per_index, human_gate_at_index, continue_rule_json,"
-            " created_at, updated_at FROM research_programs WHERE project_id = ?"
-            " ORDER BY program_id",
+            " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
+            " continue_rule_json, created_at, updated_at FROM research_programs"
+            " WHERE project_id = ? ORDER BY program_id",
             (project_id,),
         ).fetchall()
         self._record("for_project", project_id, result=str(len(rows)))

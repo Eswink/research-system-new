@@ -1,0 +1,9 @@
+J-1 条件成立仍放行（去掉拦住）: 按压 RED
+sha 复原一致=True | 182f3ef2787a
+J-2 条件不成立也拦（无条件触发）: 按压 RED
+sha 复原一致=True | 182f3ef2787a
+J-3 非法条件被静默当成「无条件」（不点名）: 按压 RED
+sha 复原一致=True | fba1f857caab
+J-4 未声明条件也产生副作用（注册面被调用）: 按压 RED
+sha 复原一致=True | 6de4ca915ac3
+SUMMARY presses=4 all_red_and_restored=True

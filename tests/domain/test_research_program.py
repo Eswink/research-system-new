@@ -127,6 +127,39 @@ def test_human_gate_is_optional_and_out_of_range_declarations_are_named() -> Non
             program(human_gate_at_index=bad)
 
 
+def test_conditional_gate_is_optional_and_bad_declarations_are_named() -> None:
+    """GOAL-20261010-048 EC-02：**条件式**闸门可选（缺省 = 不设），坏声明**点名**。
+
+    四条臂：① 不声明 ⇒ `None`；② 声明在位 ⇒ 逐字保留；③ 三种坏声明（空集合 / 空串 /
+    与序号声明**并存**）各自**点名** —— 「声明坏掉」不得被静默读成「没有闸门」；
+    ④ 与序号声明**互斥**是**结构**上的（域层拒绝），不是推进时才发现的。
+    """
+    rule = ProgramContinueRule(verdict_in=("ACCEPT",))
+
+    def program(**overrides: object) -> ResearchProgram:
+        base: dict[str, object] = {
+            "id": "prog-1",
+            "project_id": "p1",
+            "protocol_id": "proto",
+            "max_runs": 3,
+            "continue_rule": rule,
+        }
+        base.update(overrides)
+        return ResearchProgram(**base)  # type: ignore[arg-type]
+
+    assert program().human_gate_on_verdicts is None, "缺省必须是不设条件闸门"
+    declared = program(human_gate_on_verdicts=("REJECT",))
+    assert declared.human_gate_on_verdicts == ("REJECT",)
+    assert declared.condition_gate_hit is True, "读面要能区分是哪条声明"
+
+    with pytest.raises(ValueError, match="at least one verdict"):
+        program(human_gate_on_verdicts=())
+    with pytest.raises(ValueError, match="must not be empty strings"):
+        program(human_gate_on_verdicts=("REJECT", ""))
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        program(human_gate_at_index=1, human_gate_on_verdicts=("REJECT",))
+
+
 def test_decision_kinds_separate_conclusion_from_guardrail() -> None:
     """结论面与护栏面**不共用种类**（否则「为何停」读不出是结论还是上界）。"""
     kinds = {kind.value for kind in ProgramDecisionKind}

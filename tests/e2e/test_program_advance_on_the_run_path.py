@@ -278,6 +278,45 @@ def test_a_declared_gate_can_be_decided_and_the_program_resumes() -> None:
         assert [row["program_index"] for row in detail["runs"]] == [1, 2], detail["runs"]
 
 
+def test_a_conditional_gate_fires_on_the_landed_verdicts_over_the_http_face() -> None:
+    """GOAL-20261010-048 EC-03：**条件式**闸门经**既有 HTTP 面**成立 —— 按落库事实触发。
+
+    与序号闸门（序 14）的分工：那条按**轮次**拦，本条按**落库判词取值**拦。
+    配对的**反证臂**是下一条（条件不命中 ⇒ 逐字走结论面）。
+    """
+    with TestClient(create_app(program_deps())) as client:
+        program = create_program(client, max_runs=3, human_gate_on_verdicts=["PASS"])
+        pid = _program_id(program)
+        assert program["human_gate_on_verdicts"] == ["PASS"], ("读面必须回显声明", program)
+        first = advance(client, pid)
+        assert first["decision"]["kind"] == _START, first
+        second = advance(client, pid)
+        assert second["decision"]["kind"] == _WAIT_FOR_APPROVAL, second
+        facts = second["decision"]["cited_facts"]
+        assert "human_gate_on_verdicts=['PASS']" in facts, ("必须点名声明的条件", facts)
+        assert "verdict PASS" in facts, ("必须点名命中它的**落库事实**", facts)
+        assert second["started_run_id"] is None, "条件命中时不得起下一轮"
+        assert read_program(client, pid)["run_count"] == 1
+
+
+def test_a_conditional_gate_that_is_not_hit_leaves_the_advance_unchanged() -> None:
+    """**反证臂**：声明的条件**不命中**落库判词 ⇒ 逐字走结论面（`CONTINUE`），不注册、不停。
+
+    与上一条**配对**（同一协议 / 同一实跑装配）：唯一差别是**声明的取值**。
+    """
+    with TestClient(create_app(program_deps())) as client:
+        program = create_program(client, max_runs=3, human_gate_on_verdicts=["REJECT"])
+        pid = _program_id(program)
+        first = advance(client, pid)
+        assert first["decision"]["kind"] == _START, first
+        second = advance(client, pid)
+        assert second["decision"]["kind"] == _CONTINUE, second
+        assert second["decision"]["cited_facts"] == ["verdict PASS"], second["decision"]
+        assert second["started_run_id"], second
+        detail = read_program(client, pid)
+        assert detail["run_count"] == 2, ("条件不命中 ⇒ 照常续跑", detail)
+
+
 def test_an_undecided_gate_still_stops_the_program() -> None:
     """GOAL-20261010-047 反证臂：**未裁决** ⇒ 仍停（注册了待决**不等于**放行）。"""
     with TestClient(create_app(program_deps())) as client:

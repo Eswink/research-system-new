@@ -124,12 +124,14 @@ def create_program(  # noqa: PLR0913 - 建程序声明面即字段；参数对�
     protocol: str | None = None,
     max_attempts_per_index: int = 1,
     human_gate_at_index: int | None = None,
+    human_gate_on_verdicts: list[str] | None = None,
 ) -> dict[str, Any]:
     """建程序（经既有 HTTP 面；协议按启动 run 的同一校验解析）。
 
     `protocol` 缺省 = 本文件的 `PROTOCOL`；EC-03 的跨 run 判据传它自己那份协议
     （**同一入口、不同声明** —— 不复制第二个建程序路径）。
-    `human_gate_at_index`（GOAL-20261010-046 EC-04）只在显式传值时进载荷 ——
+    `human_gate_at_index`（GOAL-20261010-046 EC-04）/ `human_gate_on_verdicts`
+    （GOAL-20261010-048 EC-02）只在显式传值时进载荷 ——
     缺省**不发键**，这样「未声明」那一臂走的是与既有调用**逐字相同**的请求体。
     """
     import uuid
@@ -142,6 +144,8 @@ def create_program(  # noqa: PLR0913 - 建程序声明面即字段；参数对�
     }
     if human_gate_at_index is not None:
         payload["human_gate_at_index"] = human_gate_at_index
+    if human_gate_on_verdicts is not None:
+        payload["human_gate_on_verdicts"] = human_gate_on_verdicts
     response = client.post(
         f"/projects/{PROJECT}/programs",
         json=payload,

@@ -210,10 +210,14 @@ def _gate_precedes_conclusion_face(runner: str) -> bool:
     - 闸门求值的**调用点**（`_declared_gate_evaluation(...)`）；
     - 或直调 `declared_gate_verdict(...)`（未经抽出的形态）。
 
+    **结论面的坐标**是**它自己的分派点**（`_after_hit`），不是落库判词的**读取行**：
+    GOAL-20261010-048 把判词读一次供两处共用（条件闸门与结论面看到同一批事实）
+    ⇒ 拿读取行当坐标会**假红**（实测）。
+
     两种形态都认 ⇒ 搬迁**不**改变结论；若有人把闸门挪到结论面**之后**，本条仍判红。
     """
     gate = _first_call_line_any(runner, {"declared_gate_verdict", "_declared_gate_evaluation"})
-    conclusion = _first_call_line_any(runner, {"_verdicts"})
+    conclusion = _first_call_line_any(runner, {"_after_hit"})
     if gate is None or conclusion is None:
         return False
     return gate < conclusion

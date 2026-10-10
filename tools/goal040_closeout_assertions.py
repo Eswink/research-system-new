@@ -144,12 +144,17 @@ def _dispatch_precedes_conclusion_face(runner: str) -> bool:
     加了 `programs` 形参（多轮推进需要）⇒ 文本失配 ⇒ **整条断言集崩溃**
     （`ValueError: substring not found`），复检资产**随被引代码演进静默失效**。
 
-    改法：用 **AST** 按**被调用函数名**取行号（`_non_success_terminal` / `_verdicts`），
-    与实参列表无关 ⇒ 签名演进不再打断它。**受判面等价**（仍是「前者先于后者」这一件事），
-    **不**放宽（仍然要求两者**都在场**：任一缺 ⇒ 判红）。
+    改法：用 **AST** 按**被调用函数名**取行号，与实参列表无关 ⇒ 签名演进不再打断它。
+    **受判面等价**（仍是「前者先于后者」这一件事），**不**放宽（两者都必须在场）。
+
+    **第二次修正**（GOAL-20261010-048 实测）：落库判词此后被**读一次供两处共用**
+    （条件闸门与结论面看到同一批事实）⇒ `_verdicts` 的**读取行**移到两处之前，
+    原先拿它当「结论面」的坐标就**假红**了。正确的坐标是**结论面自己的分派点**
+    （`_after_hit` / `STOP_RULE` 那条分支的判定）—— 判的仍是「失败面分派先于结论面」，
+    而**不是**「某个读取语句在哪一行」（承 `MEM-20261010-215`：判关系，不判位置）。
     """
     dispatch = _first_call_line(runner, "_non_success_terminal")
-    conclusion = _first_call_line(runner, "_verdicts")
+    conclusion = _first_call_line(runner, "_after_hit")
     if dispatch is None or conclusion is None:
         return False
     return dispatch < conclusion

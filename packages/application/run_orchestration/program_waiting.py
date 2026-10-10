@@ -50,56 +50,81 @@ def pending_approval(approvals: ApprovalReader | None, run_id: str) -> str:
     return f"待审批 id={','.join(pending)}"
 
 
+def declared_gate_trigger(program: Any, last_index: int, verdicts: tuple[str, ...]) -> str | None:
+    """**声明的闸门**是否在本轮触发（触发 ⇒ 返回**点名句**，不触发 ⇒ `None`）。
+
+    两条声明各自求值（EC-03 的**求值先于结论面**）：
+
+    - `human_gate_at_index`（序 14）：**该序号那一轮**跑完之后触发 —— 与落库事实无关；
+    - `human_gate_on_verdicts`（GOAL-20261010-048 EC-03）：上一轮落库的**判词取值命中
+      其中之一**时触发 —— 与结论面的 `verdict_in` **同一族**（那里命中 ⇒ 续，这里命中 ⇒ 停）。
+      求值只读**落库事实**（调用方给的 `verdicts`，与结论面读的是**同一批**），
+      **不**推断、**不**猜。
+
+    **只读**：本函数不碰审批面、不改任何状态（注册在有副作用的那半边，见
+    `program_gate_registration`）。两条声明互斥（域层点名拒绝）⇒ 这里先判序号、再判条件，
+    至多一条能命中。
+    """
+    declared = getattr(program, "human_gate_at_index", None)
+    if declared is not None:
+        if int(declared) != int(last_index):
+            return None
+        return f"第 {last_index} 轮是**声明的人工闸门**（`human_gate_at_index={declared}`）"
+    on_verdicts = getattr(program, "human_gate_on_verdicts", None)
+    if on_verdicts is None:
+        return None
+    hit = [item for item in verdicts if item in on_verdicts]
+    if not hit:
+        return None
+    return (
+        f"第 {last_index} 轮落库判词命中**声明的条件式人工闸门**"
+        f"（`human_gate_on_verdicts={list(on_verdicts)}`，命中 {list(hit)}）"
+    )
+
+
 def declared_gate_pending(
-    program: Any, last_index: int, approvals: ApprovalReader | None, run_id: str
+    program: Any,
+    last_index: int,
+    approvals: ApprovalReader | None,
+    run_id: str,
+    verdicts: tuple[str, ...] = (),
 ) -> str | None:
-    """**声明的人工闸门**是否仍在等人拍板（是 ⇒ 返回**点名句**，否 ⇒ `None`）。
+    """**声明的闸门**是否仍在等人拍板（是 ⇒ 返回**点名句**，否 ⇒ `None`）。
 
     语义**照抄 phase/run 面的 `pending_human_gates`**（少写一套判断）：
     「声明的闸门 **−** 已裁决的审批（`status != "PENDING"`）」——
 
-    - 声明点 = `program.human_gate_at_index`（`None` ⇒ **不设闸门** ⇒ 直接 `None`，
-      既有行为逐字不变）；**且**只在**该序号那一轮跑完之后**才生效（`last_index` 相等）；
+    - **触发**由 `declared_gate_trigger` 判（序号声明 / 条件声明两种，见那里）；
+      未触发 ⇒ 直接 `None`（既有行为逐字不变）；
     - 已裁决 ⇒ 闸门**已满足** ⇒ `None`（继续走结论面）；
     - 仍有 `PENDING` ⇒ 返回**点名句**（等的是这一轮的闸门）；
     - **缺审批面** ⇒ 也返回**点名句**（**不**静默当成「没有闸门」—— 那会让声明闸门的程序
       悄悄绕过人）；
     - **只读**：本函数**不**改任何审批状态（人没拍板就是没拍板；批准发生在**审批面**）。
     """
-    declared = getattr(program, "human_gate_at_index", None)
-    if declared is None or int(declared) != int(last_index):
+    trigger = declared_gate_trigger(program, last_index, verdicts)
+    if trigger is None:
         return None
     if approvals is None:
-        return (
-            f"第 {last_index} 轮是**声明的人工闸门**，但本装配未提供审批面"
-            "（点名：声明了闸门却没有可查的审批面）"
-        )
+        return f"{trigger}，但本装配未提供审批面（点名：声明了闸门却没有可查的审批面）"
     try:
         rows = approvals.list_for_run(run_id)
     except Exception as error:  # noqa: BLE001 - 审批面故障必须**点名**，不得静默放行
-        return (
-            f"第 {last_index} 轮是**声明的人工闸门**，但审批面查询失败"
-            f"（{type(error).__name__}: {error}）"
-        )
+        return f"{trigger}，但审批面查询失败（{type(error).__name__}: {error}）"
     pending = [str(row.id) for row in rows if str(getattr(row, "status", "")) == "PENDING"]
     if pending:
-        return (
-            f"第 {last_index} 轮是**声明的人工闸门**（`human_gate_at_index={declared}`）"
-            f"⇒ 等人拍板待审批 id={','.join(pending)}（不自动放行）"
-        )
+        return f"{trigger} ⇒ 等人拍板待审批 id={','.join(pending)}（不自动放行）"
     decided = [row for row in rows if str(getattr(row, "status", "")) != "PENDING"]
     if decided:
         return None
-    return (
-        f"第 {last_index} 轮是**声明的人工闸门**（`human_gate_at_index={declared}`）"
-        "⇒ 等人拍板（该 run 名下尚无审批记录；批准发生在审批面，本处不自动放行）"
-    )
+    return f"{trigger} ⇒ 等人拍板（该 run 名下尚无审批记录；批准发生在审批面，本处不自动放行）"
 
 
 def declared_gate_verdict(
     program: Any,
     last: Any,
     approvals: ApprovalReader | None,
+    verdicts: tuple[str, ...] = (),
     gate_registration: tuple[str | None, str | None] | None = None,
 ) -> tuple[str, str, tuple[str, ...]] | None:
     """**声明的闸门**是否要拦住本次推进；要 ⇒ `(kind, reason, cited_facts)`，不要 ⇒ `None`。
@@ -113,10 +138,19 @@ def declared_gate_verdict(
     """
     index = last.program_index or 0
     registered, register_note = gate_registration or (None, None)
-    note = declared_gate_pending(program, index, approvals, last.id.value)
+    note = declared_gate_pending(program, index, approvals, last.id.value, verdicts)
     if note is None:
         return None
-    facts = [f"state={last.state}", f"human_gate_at_index={program.human_gate_at_index}"]
+    facts = [f"state={last.state}"]
+    # 被引事实**点名是哪条声明**（序号 / 条件）——「为什么停」要读得出是**哪一条要求**的。
+    declared_index = getattr(program, "human_gate_at_index", None)
+    on_verdicts = getattr(program, "human_gate_on_verdicts", None)
+    if declared_index is not None:
+        facts.append(f"human_gate_at_index={declared_index}")
+    else:
+        hit = [item for item in verdicts if item in (on_verdicts or ())]
+        facts.append(f"human_gate_on_verdicts={list(on_verdicts or ())}")
+        facts.extend(f"verdict {item}" for item in hit)
     if registered is not None:
         facts.append(f"approval_id={registered}")
     note = note if register_note is None else f"{note}；{register_note}"
@@ -155,6 +189,7 @@ __all__ = [
     "AWAITING_HUMAN",
     "ApprovalReader",
     "declared_gate_pending",
+    "declared_gate_trigger",
     "declared_gate_verdict",
     "pending_approval",
     "waiting_round_decision",

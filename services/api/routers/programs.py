@@ -145,6 +145,12 @@ async def create_program(
         max_attempts_per_index=payload.max_attempts_per_index,
         # GOAL-20261010-046 EC-02：程序级人工闸门（缺省 None = 不设闸门 ⇒ 逐字不变）。
         human_gate_at_index=payload.human_gate_at_index,
+        # GOAL-20261010-048 EC-02：条件式闸门（缺省 None = 不设 ⇒ 逐字不变）。
+        human_gate_on_verdicts=(
+            tuple(payload.human_gate_on_verdicts)
+            if payload.human_gate_on_verdicts is not None
+            else None
+        ),
     )
     del protocol  # 只用其可解析性做校验；声明面存的是路径（canonical 里的协议标识）
     store.create(program)
@@ -166,6 +172,11 @@ def _detail_dto(deps: ApiDeps, store: ProgramStore, program_id: str) -> ProgramD
         continue_on_verdicts=list(program.continue_rule.verdict_in),
         max_attempts_per_index=program.max_attempts_per_index,
         human_gate_at_index=program.human_gate_at_index,
+        human_gate_on_verdicts=(
+            list(program.human_gate_on_verdicts)
+            if program.human_gate_on_verdicts is not None
+            else None
+        ),
         created_at=program.created_at.value.isoformat(),
         updated_at=program.updated_at.value.isoformat(),
         runs=[
