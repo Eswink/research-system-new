@@ -2,7 +2,7 @@
 id: GOAL-20261011-052
 slug: the-two-memory-read-faces-agree
 title: 两个读面不再各说各话 —— 序 10/17/18/19 连续四轮把**编排消费面**的读面（`memory.read`）做成十三键（含 `contradictions` / `superseded_by` / `disposition` / `reason`），而 **HTTP 读面**（`MemoryRecordDto`）**这四样一样没有**：实测差集 `contradictions` / `superseded_by` / `disposition` / `reason` **全缺**（HTTP 面只有时效 `validity` 与**正向** `supersedes`）⇒ 同一个可控记忆，**经 HTTP 看**与**经编排看**得到**不同的可判定性**（冲突与五态处置在 HTTP 面**完全不可见**）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-11
 updated_at: 2026-10-11
 owners:
@@ -139,7 +139,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -193,7 +193,8 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261011-409-goal-052-ec01-04-the-two-read-faces-agree.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20261011-411-goal-052-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-412-goal-052-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -215,7 +216,7 @@ memory_entries: []
 | EC-02 | HTTP 披露 | 四条缺失面**逐条补齐**（附加）；既有 13 字段**逐字不变**；`validity` 时点语义保持 | PASS |
 | EC-03 | 同源一致 | 两处对**同一份事实**给出**相同**处置与理由（**不各写一套**）+ **快照同轮同步** | PASS |
 | EC-04 | 两向反证 | 两处不一致 / 凭空生造 / 既有键被改 / 不给时点却填 `validity`（`N-1`…`N-4` 全红） | PASS |
-| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**静默降级**（一律点名）；
 不得**改既有键**（只作附加）；不得**两处各写一套判定**；不得**新建第二套读面**；
@@ -397,6 +398,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | `PLAN-20261011-411` | （见 CI 台账） | EC-05 五条 AC 全 PASS：收口验证器 **63 判词 / 0 FAIL**（标准断言集**一行未重写**）+ 两处射程**纯收紧**（`IN_SCOPE` +2 行 / 射程清单 +1 行、下界 21→22）+ **两树 `TWO-TREE PASS`**（两路 **63 判词** / `sha256` 相同 `b976f18c…`）+ 归档定格（两份各 **2341 B / 63 行**、`CR=0`、0 FAIL）+ 治理 + 宪章判据 + 定向套件 **4956 passed** | （见 CI 台账）| **§8 新增纪律落成机械面**（AST 读字段 + 三条非空性实测 + 反证脚本**基线门**）| 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261011-412`）|
 | 1 | `PLAN-20261011-409` | `2a3ca6c` | EC-01…EC-04 全 PASS：**两个读面对齐** —— ① HTTP 读面**+4 字段**（`contradictions` / `superseded_by` / `disposition` / `reason`）—— **纯附加**（既有 13 字段**一个不改名不改语义**，判据逐条点名）；② **同源同值**（`_record_dto` **直接调**编排面那两个纯函数 + 同一反向链接助手，**不**在路由里重写第二套判定）；③ **`validity` 时点语义逐字保持**（不给时点 ⇒ `None`；受判面用**已到复核期**的记录 ⇒ 猜的话会立刻报 `REVIEW_DUE`）；④ **OpenAPI 快照同轮重生成**（`+24 / -0`，判据一字未改）；⑤ **四向反证 N-1…N-4 全红 + 基线 GREEN**（674 B / `CR=0`）；⑥ HTTP 判据 +3（13 passed）；定向套件 **4956 passed** | （见 CI 台账）| **假反证臂由新增的基线门当场抓到**（`N-4` 受判面区分不了两件事 ⇒ 换受判面）；**一处既有判据按关系修正**（`goal050` 钉助手名 ⇒ 改名公开后假红 ⇒ 改判关系）| EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **八条实测读数**（编排面 13 键逐字 / HTTP 面 13 字段逐字 / **差集四样** / `rg` 反证零命中 / **实跑**键集差 / 正向有反向无 / `validity` 时点语义 / 结论「可判定性不一致」）+ **一致性无判据**（`rg` 零命中）⇒ 定位 `W-4` 形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 20** + **预算核算 20→25** | （见 CI 台账） | — | 五条 EC 全 PENDING；四样怎么进 DTO（①）与反向链接在哪层扫（②）待 cycle 1 落 | cycle 1（EC-02 披露 + EC-03 同源） |
 
@@ -406,3 +408,4 @@ deduplication）。
 | --- | --- | --- |
 | 2026-10-11 | DRAFT | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 20**（承担者 = `W-4` 的**逐字段差集**形态）+ 触顶 ⇒ 战役级核算 `max_goals` 20→25。只读勘察 + **八条实测读数**：(a) **编排消费面**读面 **13 键**（含 `contradictions` / `superseded_by` / `disposition` / `reason`）；(b) **HTTP 读面** **13 字段**（无那四样）；(c) **差集**逐条成立；(d) `rg -n "contradictions\|superseded_by" services/api/dto/memory.py` ⇒ **零命中**；(e) **实跑**同一批记录 ⇒ 键集差 = 那四样；(f) HTTP 面**有正向** `supersedes`、**无反向** `superseded_by`；(g) `validity` 的**时点语义**（不给时点**不猜**）本轮**逐字保持**；(h) **结论**：同一份 canonical 事实，**一条读路径已可判定、另一条看不见**。**一致性**这条缺口**没有判据守**（`rg` 零命中）—— 本轮补。五条 EC 全 PENDING。**不做数量目标**；**不**改既有键、**不**新建第二套读面、**不**两处各写一套判定、**不**做 `DD-1`…`DD-3`；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**两个读面不再各说各话** —— HTTP 读面补齐四样（**附加**；既有 13 字段逐字不变）+ **同源同值**（直调同一批纯函数）+ `validity` 时点语义逐字保持 + 快照同轮。**四向反证全红且基线绿**（含**新增的基线门**）。**两处如实登记**：假反证臂（受判面区分不了两件事 —— 「有断言」≠「断言在下判断」）；既有判据按关系修正（钉助手名 ⇒ 改名公开后假红）。独立复检：`RECHECK-20261011-410`（PASS_WITH_WARNINGS）。EC-05 待收口。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
+| 2026-10-11 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、**两处射程纯收紧**、两树 **`TWO-TREE PASS`**（两路 **63 判词** / `sha256` 相同 `b976f18c…`）、判词归档进树（两份各 2341 B / 63 行 / `CR=0`）、治理 + 宪章判据绿、定向套件 4956 例绿、CI 台账逐提交。**§8 的新增纪律落成了机械面**（**判据不得恒假**：AST 读字段 + 三条非空性实测 + 反证脚本**基线门** —— 后者在 cycle 1 当场抓到一处**假反证臂**）。**一处时序**：两树首轮红（bootstrap：归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `DD-1`…`DD-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261011-412`（PASS_WITH_WARNINGS）。 |
