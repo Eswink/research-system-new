@@ -176,6 +176,7 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-379-goal-045-ec01-04-memory-conflicts-and-valid-from.md
+  - .cursor/plans/tasks/PLAN-20261010-381-goal-045-ec05-self-bootstrap-closeout.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-380-goal-045-ec01-04-memory-conflicts-and-valid-from.md
 memory_entries:
   - a-declared-field-needs-a-writer-in-every-adapter
