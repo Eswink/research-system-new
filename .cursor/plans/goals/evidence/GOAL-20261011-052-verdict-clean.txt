@@ -22,7 +22,9 @@ PASS ec02-every-new-field-carries-a-declared-shape
 PASS ec02-the-validity-is-still-not-guessed
 PASS ec03-the-http-face-reuses-the-orchestration-helpers
 PASS ec03-the-reverse-links-are-computed-once-per-batch
-PASS ec03-the-orchestration-face-still-owns-the-judgement
+PASS ec03-the-judgement-lives-in-the-application-layer
+PASS ec03-both-faces-take-the-judgement-from-the-one-source
+PASS ec03-neither-face-redefines-a-second-copy
 PASS ec03-the-snapshot-carries-the-four-facts
 PASS ec04-the-four-facts-case-is-asserted
 PASS ec04-the-agreement-case-is-asserted
@@ -49,7 +51,9 @@ PASS goal-ec03-status
 PASS goal-ec04-status
 PASS goal-ec05-status
 PASS record-PLAN-20261011-409-goal-052-ec01-04-the-two-read-faces-agree.md
+PASS record-PLAN-20261011-411-goal-052-ec05-self-bootstrap-closeout.md
 PASS record-RECHECK-20261011-410-goal-052-ec01-04-the-two-read-faces-agree.md
+PASS record-RECHECK-20261011-412-goal-052-ec05-self-bootstrap-closeout.md
 PASS record-README.md
 PASS record-MAINLINE.md
 PASS r26-R26-1-registered

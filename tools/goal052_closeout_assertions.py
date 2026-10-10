@@ -127,6 +127,46 @@ def _field_names(dto_source: str) -> set[str]:
     return set()
 
 
+#: 共用判定的三个名字（**同源**的实际内容物）。
+SHARED_NAMES: tuple[str, ...] = ("disposition_of", "disposition_reason", "superseded_by_index")
+
+
+def _imported_from(source: str, module: str) -> set[str]:
+    """`source` 从该模块 import 进来的**名字集合**（AST 读 —— 不靠文本巧合）。"""
+    if not source:
+        return set()
+    try:
+        parsed = ast.parse(source)
+    except SyntaxError:
+        return set()
+    names: set[str] = set()
+    for node in ast.walk(parsed):
+        if isinstance(node, ast.ImportFrom) and node.module == module:
+            names.update(alias.name for alias in node.names)
+    return names
+
+
+def _module_of(relative: str) -> str:
+    """`packages/application/memory/disposition.py` ⇒ `packages.application.memory.disposition`。"""
+    return relative[:-3].replace("/", ".")
+
+
+def _defines_in(source: str, name: str) -> bool:
+    """该模块**自己定义**了该名字（AST —— 「各写一套」的判据靠它，不靠文本巧合）。"""
+    if not source:
+        return False
+    try:
+        parsed = ast.parse(source)
+    except SyntaxError:
+        return False
+    return any(
+        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name == name
+        and node.col_offset == 0
+        for node in ast.walk(parsed)
+    )
+
+
 def _count_test_cases(root: Path, relative: str) -> int:
     source = _text(root, relative)
     if not source:
@@ -175,6 +215,55 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     ]
 
 
+def _same_source_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-03 的**同源关系**三条 —— 判「关系」而不是「位置」或「写法」。
+
+    三条**互补、无一条冗余**（每条只在它负责的那一面响；读数见 PLAN-20261011-411）：
+
+    1. `judgement-lives-in-the-application-layer`：那三个名字**由应用层模块定义**
+       （应用层模块**变空** ⇒ 只有这条响）；
+    2. `both-faces-take-the-judgement-from-the-one-source`：两个读面的 `ImportFrom`
+       **指向同一模块**（编排面**不再取** ⇒ 只有这条响）；
+    3. `neither-face-redefines-a-second-copy`：两个读面**都不得自己定义**那三个名字
+       （任一面**自写一套** ⇒ 这条响）。
+
+    **第 2 条的射程边界**（如实登记）：应用层模块**变空**时它**不响** ——
+    它判的是 import 语句的**指向**，语句仍在即成立；「模块里有没有那三个定义」由第 1 条负责。
+    """
+    router = _text(root, ROUTER)
+    orchestration = _text(root, ORCH_FACE)
+    shared = _module_of(SHARED_SOURCE)
+    missing_router = [name for name in SHARED_NAMES if name not in _imported_from(router, shared)]
+    missing_orchestration = [
+        name for name in SHARED_NAMES if name not in _imported_from(orchestration, shared)
+    ]
+    redefined = sorted(
+        name
+        for name in SHARED_NAMES
+        if _defines_in(router, name) or _defines_in(orchestration, name)
+    )
+    return [
+        toolbox.verdict(
+            "ec03-the-judgement-lives-in-the-application-layer",
+            all(_defines_in(_text(root, SHARED_SOURCE), name) for name in SHARED_NAMES),
+            "共用判定必须在**应用层**（HTTP 面不 import 适配器 ⇒ 不能在适配器里）",
+        ),
+        toolbox.verdict(
+            "ec03-both-faces-take-the-judgement-from-the-one-source",
+            not missing_router and not missing_orchestration,
+            "HTTP 缺:"
+            + ",".join(missing_router)
+            + " 编排读面缺:"
+            + ",".join(missing_orchestration),
+        ),
+        toolbox.verdict(
+            "ec03-neither-face-redefines-a-second-copy",
+            not redefined,
+            ",".join(redefined),
+        ),
+    ]
+
+
 def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-03：HTTP 面**复用**编排面助手（同一批纯函数）+ 快照同轮。"""
     router = _text(root, ROUTER)
@@ -190,15 +279,7 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
             "superseded_by_index(records)" in router,
             "反向链接必须按**同一批记录**扫一次（不逐条再查 —— 那会 N+1）",
         ),
-        toolbox.verdict(
-            "ec03-the-judgement-lives-in-the-application-layer",
-            # **单一来源在应用层**：HTTP 面**不得** import 适配器（`.importlinter.api` 契约），
-            # 而两个读面又必须共用同一套判定 ⇒ 判定必须落在两边都能 import 的那一层。
-            "def disposition_of(" in _text(root, SHARED_SOURCE)
-            and "def disposition_reason(" in _text(root, SHARED_SOURCE)
-            and "def superseded_by_index(" in _text(root, SHARED_SOURCE),
-            "共用判定必须在**应用层**（HTTP 面不 import 适配器 ⇒ 不能在适配器里）",
-        ),
+        *_same_source_verdicts(root, toolbox),
         toolbox.verdict(
             "ec03-the-snapshot-carries-the-four-facts",
             all(

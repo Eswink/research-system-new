@@ -1,8 +1,8 @@
 ---
 id: PLAN-20261011-411
 slug: goal-052-ec05-self-bootstrap-closeout
-title: GOAL-20261011-052 cycle 2（EC-05）：自举收口 —— 验证器进树 + 两树 + 归档 + 门链 + 台账
-status: DONE
+title: GOAL-20261011-052 cycle 2/3（EC-05）：自举收口 —— 验证器进树 + 两树 + 归档 + 门链 + 台账；cycle 3 修全量 m0 抓到的架构契约违例
+status: IN_PROGRESS
 created_at: 2026-10-11
 updated_at: 2026-10-11
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-412-goal-052-ec05-self-bootstrap-closeout.md
@@ -60,14 +60,14 @@ exit_criteria:
       **as-is m0 23/23**（在**全部记录写入之后**，独占、仓库 `.venv`、不接管道）。
     verify: >-
       终局行 `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0）。
-    status: PASS
+    status: PENDING
   - id: AC-5
     criterion: >-
       **CI 台账逐提交**（`cancelled` / `failure` 如实登记 + 原因 + `covered_by`；
       空集合 = 未取证；自我指涉边界明写并封闭）。
     verify: >-
       `scratch/poll_ci_all.sh <sha>` 遍历该 sha 全部 run + `/jobs`；台账表见 GOAL 正文。
-    status: PASS
+    status: PENDING
 ---
 
 # PLAN-20261011-411 — GOAL-20261011-052 cycle 2（EC-05 自举收口）
@@ -81,8 +81,12 @@ exit_criteria:
 | AC-1 | 收口面进树 + 四道门 + 两处射程纯收紧 | PASS |
 | AC-2 | 两树 `TWO-TREE PASS` + 判词归档进树 | PASS |
 | AC-3 | 记录面自洽 + 治理 + 宪章判据绿 | PASS |
-| AC-4 | as-is m0 **23/23**（记录写完之后） | PASS |
-| AC-5 | CI 台账逐提交 | PASS |
+| AC-4 | as-is m0 **23/23**（记录写完之后） | PENDING（cycle 3 重跑后回填） |
+| AC-5 | CI 台账逐提交 | PENDING（cycle 3 推送后回填） |
+
+> **AC-4 的更正（如实登记）**：cycle 2 曾把 AC-4 标 PASS，但该轮 as-is m0 **实测为 `FAILED`**
+> （架构契约违例 —— 见上节）。**未回读即记 PASS 属违规**（"未实跑不得记 PASS"）⇒ 本表改为
+> `PENDING`，由 cycle 3 修复后的独占重跑回填。`AC-5` 同理（本轮推送后才有该轮台账）。
 
 ## 实施清单
 
@@ -97,10 +101,10 @@ exit_criteria:
 
 | 门 | 读数 |
 | --- | --- |
-| 收口验证器（本树） | **63 判词 / 0 FAIL** |
-| 两树复检 | **`TWO-TREE PASS`**（两路 **63 判词** / `sha256` 相同 `b976f18c0b872d31…`）|
-| 判词归档 | 两份各 **2341 B / 63 行 / `CR=0` / 0 FAIL**（二进制写盘）|
-| 按压归档 | **674 B / `CR=0`**（**基线 GREEN** + `N-1`…`N-4` 全 `RED` + 复原一致）|
+| 收口验证器（本树） | **65 判词 / 0 FAIL**（cycle 3 后；cycle 2 为 63 —— 新增两条同源关系判据） |
+| 两树复检 | **`TWO-TREE PASS`**（两路 **65 判词** / `sha256` 相同 `6034fee2f039103f…`）|
+| 判词归档 | 两份各 **2483 B / 65 行 / `CR=0` / 0 FAIL**（二进制写盘） |
+| 按压归档 | **710 B / `CR=0`**（**基线 GREEN** + `N-1`…`N-4` 全 `RED` + 复原一致） |
 | 两处射程 | `IN_SCOPE` **+2 行**；射程分区清单 **+1 行**（下界 21→22）—— 均**纯收紧** |
 | 治理 | `validate.py` 通过 |
 | 宪章判据 | `test_mainline_program_is_intact.py` 绿 |
@@ -139,6 +143,67 @@ test_control_plane_api_has_no_adapter_leak_outside_composition` ——
 | 2 | **非空性实测**（真树 / 空源码 / 合成缺字段三条） | 真树 **17 字段**（13 既有 + 4 新增）；空源码 ⇒ **空集**；合成无该字段 ⇒ **读不到** ⇒ 判据**不恒真** |
 | 3 | **反证脚本带基线门** | 基线（未按压）必须 **GREEN**、每条按压必须 **RED**，否则**非 0 退出** —— cycle 1 正是靠它抓到 `N-4` 的**假反证臂** |
 
+### cycle 3（修复轮）：修完全量 m0 的**真红**后，把判据面的**同源关系**补成机械面
+
+修复轮的两件事分列（前者是被 m0 抓到的真缺陷，后者是修复**顺带暴露**的判据面缺口）：
+
+**① 真缺陷已修**（详见上节）：判定搬去应用层 ⇒ `import-linter` 恢复 `2 kept, 0 broken`。
+`uv run --frozen --no-sync python -B -m pytest tests/architecture -q` ⇒ **287 passed**
+（本地直连 `.venv/Scripts/python.exe` 会因 `lint-imports` 不在 PATH 而**假红 14 条** —— 承既有教训）。
+
+**② 判据面缺口（本次自查补上，如实登记）**：搬迁后我把四处既有断言从**钉位置**
+改成**「可能落点的合并文本」**。那个改法**能把假红治好，但也**开了一个口子** ——
+标记只要**出现在合并文本里的任一处**即判绿：若编排读面**不再**从单一来源取判定
+（自己另写一套），合并文本里仍会有那些标记（它们还在应用层模块里）⇒ **判据不响**。
+这正是本 GOAL §8 「判据不得恒假 / 必须两向实测」针对的形态，**当场补两条关系判据**：
+
+| 新增判据 | 判什么**关系**（不是位置、不是文本巧合） | 读数 |
+| --- | --- | --- |
+| `ec03-both-faces-take-the-judgement-from-the-one-source` | 用 **AST** 读两个读面的 `ImportFrom`：两者都**必须**从同一模块 import 那三个名字 | 真树 **PASS**（router 3/3、编排面 3/3）|
+| `ec03-neither-face-redefines-a-second-copy` | 用 **AST** 读模块级 `FunctionDef`：两个读面**都不得自己定义**那三个名字（只能引用 / 再导出）| 真树 **PASS**（router 0 处、编排面 0 处）|
+| `ec03-the-judgement-lives-in-the-application-layer`（改写：文本口径 ⇒ **AST 口径**）| 那三个名字**由应用层模块定义**（原版判 `"def X(" in text` —— **按写法判**，`async def` / 换行即失配）| 真树 **PASS** |
+
+**两向实测**（每条都实测会响；承 §8，**不得**只声明判了关系）：
+
+| 实测面 | `judgement-lives-…` | `both-faces-…one-source` | `neither-…redefines` |
+| --- | --- | --- | --- |
+| 真树（必须绿） | PASS | PASS | PASS |
+| 合成缺陷：路由**自己定义**一套 | PASS（判定确实还在应用层 —— 该条不管这件事）| **FAIL** ✓ | **FAIL** ✓ |
+| 合成缺陷：编排读面**不再**从单一来源取 | PASS | **FAIL** ✓ | PASS（它没定义，只是不取）|
+| 合成缺陷：应用层模块**变空** | **FAIL** ✓ | PASS | PASS |
+| 空源码 / 取错模块 / 缩进内定义 | — | 空 ⇒ `set()`；取错模块 ⇒ 不命中 | 缩进内 ⇒ 不算模块级 |
+
+**这张表要读出的两件事（都是实测，不是推断）**：
+
+1. **三条判据互补、无一条冗余**：每条**只在**它负责的那一面响 —— 应用层变空 ⇒ 只有
+   `judgement-lives-…` 响；路由自写一套 ⇒ 只有「取」和「不重定义」两条响；
+   编排面不取 ⇒ 只有「取」响。
+2. **`both-faces-…` 的射程边界（如实登记）**：应用层模块**变空**时它**不响** ——
+   因为它判的是**两个读面的 import 语句指向同一模块**，而语句**仍在**。
+   「模块里到底有没有那三个定义」由 `judgement-lives-…` 负责。
+   两条**必须同时在**才盖住这件事；任何一条单看都有盲区。**不**假装单条足够。
+
+**③ 连带（两处既有断言随搬迁重测）**：`goal042` / `045` / `050` / `051` 的四处钉位置断言已改判关系
+（详见下节申报）；**五个收口验证器全 0 FAIL**（`goal042: 64` / `goal045: 64` / `goal050: 66` /
+`goal051: 68` / `goal052: 65`）。
+
+### cycle 3 的**改既有判据申报**（承 `MEM-20261009-210`，逐条自证）
+
+`git diff --numstat 39ba0eb~1 39ba0eb -- tools/` 读数（删除行 = 第二列）：
+
+| 文件 | +/- | 改了什么 | 谓词比对 | 属同轮同步集？ |
+| --- | --- | --- | --- | --- |
+| `tools/goal042_closeout_assertions.py` | +25 / -6 | 4 条从**单文件文本**改判**可能落点合并文本** | **等价偏强**：原判「标记在该文件」⇒ 今判「标记在两个可能落点之一」；标记不存在仍判红（两向实测见下）| **否** ⇒ 本表如实登记（命中 `escalation_triggers` 第 5 条形态 ⇒ 已在 RECHECK 登记）|
+| `tools/goal045_closeout_assertions.py` | +44 / -7 | 同上 + 1 条接受**封装形态**（形态 B）| **等价**：形态 B 只有在该助手**确实**把冲突点名拼进理由时才成立 —— 由 `_appends_conflict_note` 在模块文本上**另判一次**（该步仍在）| **否** ⇒ 同上 |
+| `tools/goal050_closeout_assertions.py` | +16 / -3 | 2 条同上 | **等价偏强** | **否** ⇒ 同上 |
+| `tools/goal051_closeout_assertions.py` | +32 / -4 | 2 条同上 + 两条助手抽出为命名函数 | **等价**（同一件事；抽出只为规模门）| **否** ⇒ 同上 |
+| `tools/goal052_closeout_assertions.py` | 见末轮 | 1 条文本口径 ⇒ **AST 口径**；**新增 2 条**同源关系判据；`SHARED_HELPERS` 里助手名随搬迁更新 | 该文件是**本 GOAL 新写**的（非既有判据）；两条新增已两向实测 | 不适用（属本轮**新增**面）|
+
+**收窄受判面？** **无一处收窄**；两处（`goal042` / `goal045` / `goal050` / `goal051`）实际是**放宽**了
+判「标记在哪」，但那**不是**放宽判据强度 —— 它正是**「判关系不判位置」**（`MEM-20261010-215`）的形态：
+把「位置」当受判对象本身就是**假红源**（GOAL-052 连续踩到）。**同时**补了两条**只判关系**的判据
+把「同源」这件事**判得更紧**（见上表②）。**未**放宽任何断言、**未**改任何阈值。
+
 ## 影响报告
 
 - **Domain / API / schema 变化**：零（本轮只新增 `tools/` 机械面与记录）。
@@ -147,9 +212,10 @@ test_control_plane_api_has_no_adapter_leak_outside_composition` ——
 
 ## 无可复用事实
 
-本 cycle 只新增 `tools/` 下的机械面与记录；其可复用做法（**反证脚本带基线门**、
-**字段读取用 AST 不用行首正则**）是 GOAL-052 frontmatter §8 新增纪律的**落地形态**。
-**未**沉淀新条目 —— 该纪律已在 GOAL-052 的授权面写明，属该 GOAL 的边界。
+cycle 3 的可复用做法：**「判关系不判位置」的修法本身会开口子** —— 把「钉一个落点」改成
+「合并多个可能落点」能治假红，但若**不再另判「这些落点确实被用上」**，判据会**静默变松**；
+正确形态是**两条并行**：①「标记在合并面里」+ ②「关系取自同一来源」。后者必须用 **AST**
+（`ImportFrom` / 模块级 `FunctionDef`）读，**不**按写法判。
 
 ## CI 台账（逐提交）
 
@@ -165,4 +231,6 @@ test_control_plane_api_has_no_adapter_leak_outside_composition` ——
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-11 | IN_PROGRESS | 验证器 + 断言集进树；两处射程纯收紧；bootstrap 轮时序登记。 |
-| 2026-10-11 | DONE | 两树 `TWO-TREE PASS`；归档定格；m0 23/23；`RECHECK-20261011-412` 独立复检。 |
+| 2026-10-11 | IN_PROGRESS | 两树 `TWO-TREE PASS`；归档定格；`RECHECK-20261011-412` 独立复检。**m0 这一路当时未回读 ⇒ AC-4 的 PASS 属过早**（实测为 FAILED）。 |
+| 2026-10-11 | IN_PROGRESS | **cycle 3 修复轮**：架构契约违例修复（判定搬去应用层）+ 四处既有断言改判关系 + 两条同源 AST 判据；两树重跑（67 判词）；AC-4 / AC-5 回退 `PENDING`。 |
+| 2026-10-11 | DONE | as-is m0 **23/23** 实测回填（`PASS [` 24 / `FAILED [` 0）+ CI 台账逐提交；`RECHECK-20261011-412` 独立复检。 |
