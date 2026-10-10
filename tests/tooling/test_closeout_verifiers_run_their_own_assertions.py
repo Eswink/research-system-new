@@ -59,6 +59,7 @@ _VERIFIERS: tuple[str, ...] = (
     "tools/verify_goal044_closeout.py",
     "tools/verify_goal045_closeout.py",
     "tools/verify_goal046_closeout.py",
+    "tools/verify_goal047_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (
@@ -73,7 +74,7 @@ LEGACY_INLINE: tuple[tuple[str, str], ...] = (
     ("tools/verify_goal030_closeout.py", "旧一代：断言内联，无外部断言集"),
 )
 #: 清单下界（射程非空 ⇒ 断言不空转；与全仓「受判面非空」同一条纪律）。
-_MIN_VERIFIERS = 16
+_MIN_VERIFIERS = 17
 
 pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 
