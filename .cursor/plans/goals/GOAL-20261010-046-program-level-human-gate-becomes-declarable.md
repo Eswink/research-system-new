@@ -2,7 +2,7 @@
 id: GOAL-20261010-046
 slug: program-level-human-gate-becomes-declarable
 title: 程序级人工闸门**可声明** —— 程序**只能认得**别人留下的等待（序 12），**自己无法声明**「到第 N 轮停下等人」：程序域实体无闸门声明位、程序面三文件对 `human_gate` 零命中，而 phase/run 面的实现已完整可复用
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-10
 updated_at: 2026-10-10
 owners:
@@ -128,10 +128,13 @@ exit_criteria:
       ⑦ 未覆盖范围逐条明写。
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal046_closeout.py --root .
-      --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
-      --base-ref <含交付面的提交>` ⇒ `TWO_TREE PASS`（按入口实际措辞）；as-is m0 终局行
-      `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+      --verdict-only` ⇒ 全 PASS / 0 FAIL（修复轮后 **74 判词 / 0 FAIL**）；
+      `tools/two_tree_recheck.py --script-mode shared --base-ref <含交付面的提交>` ⇒
+      `TWO_TREE PASS`（按入口实际措辞）；as-is m0 终局行
+      `PASS: profile=m0; 23 deterministic checks`。**修复轮**（`PLAN-20261010-387`）补的
+      证据链：快照同步（`docs/api/openapi.m13.json` 含 `human_gate_at_index`）+
+      EC-02/EC-04 声明的行为面用例（SQLite `/` PG `/` 域 `/` e2e 逐条在场，例数下界钉住）。
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -174,9 +177,11 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-383-goal-046-ec01-04-program-human-gate.md
   - .cursor/plans/tasks/PLAN-20261010-385-goal-046-ec05-self-bootstrap-closeout.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-384-goal-046-ec01-04-program-human-gate.md
+  - .cursor/plans/tasks/PLAN-20261010-387-goal-046-repair-snapshot-sync-and-declared-cases.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-388-goal-046-repair-snapshot-sync-and-declared-cases.md
 memory_entries:
   - extraction-must-not-re-point-existing-criteria
+  - declared-verify-cases-must-actually-exist
 ---
 
 # GOAL-20261010-046 — 程序级人工闸门可声明
@@ -195,7 +200,7 @@ memory_entries:
 | EC-02 | 声明面 | `ResearchProgram` 可声明闸门（可选、缺省逐字不变）；两库落库往返；非法点名 | PASS |
 | EC-03 | 判定与推进 | 在闸门轮停下等人：判定可区分 + 点名闸门与待审批；不自动放行 | PASS |
 | EC-04 | 真的被用上 | 实跑停在该轮；**反证**：轮前不停 / 未声明逐字不变 / 审批不被消耗 / 缺面点名 | PASS |
-| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**绕过或静默跳过**声明的人工闸门；
 不得把「等人拍板」与「还在跑」**混用**；不得**自动**批准 / 放行 / 超时；不得宣称项目安全（`R-M1`）；
@@ -366,6 +371,8 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | `PLAN-20261010-387` | （见 CI 台账） | **修复轮**：① **CI 真红照实修** —— 快照按生成器重生成（`+23 / -0`），`test_openapi_snapshot.py` **一字未改**且 8 passed，并把该面写进收口断言集（**74 判词 / 0 FAIL**）；② **EC-02 / EC-04 声明的行为面用例补齐** —— SQLite 5 / PG 3 / 域 10 / e2e 9（含**成对**的「声明闸门拦下」vs「未声明逐字不变」），例数下界钉进断言集（**纯收紧**）；③ 两树 + 归档重新定格；④ 四道门 + 定向套件 41 例全绿 | （见 CI 台账）| 判据抓到「实现与文本在场但**用例不存在**」+ 本地看不见的快照漂移 | 五条 EC 收口（证据链补齐）| GOAL 收口复检（`RECHECK-20261010-388`）|
+| 2 | `PLAN-20261010-385` | `de9d396` | EC-05 五条 AC 全 PASS：收口验证器 **69 判词 / 0 FAIL**（标准断言集**一行未重写**）+ 两处射程**纯收紧**（`IN_SCOPE` +2 行 / **GOAL-043 立的分区清单** +1 行、下界 15→16）+ **两树 `TWO-TREE PASS`**（两路 **69 判词** / `sha256` 相同 `91de2b87…`）+ 归档定格（两份 **2585 B / 69 行**、`CR=0`）+ 治理 + 宪章判据 + **as-is m0 23/23** | （见 CI 台账）| — | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261010-386`）|
 | 1 | `PLAN-20261010-383` | （见 CI 台账） | EC-01…EC-04 全 PASS：**程序级人工闸门可声明** —— ① 域 +1 **可选** `human_gate_at_index`（缺省 `None` ⇒ 逐字不变；越界**点名**）；② **两库同契约**（SQLite schema + 迁移 **020** 只加列；PG `INSERT` 带列）；③ DTO / 路由 / 读面透传；④ 第 N 轮**跑完之后**的推进被拦住（**复用**序 12 的 `WAIT_FOR_APPROVAL`）+ **点名**声明值与待审批；语义**照抄** phase 面 `pending_human_gates`（声明的闸门 − 已裁决）；⑤ **三向反证 G-1/G-2/G-3 全红**（绕过 / 轮前误拦 / 已裁决仍拦）+ 二进制复原 raw `sha256` 一致；⑥ **规模门逼出的搬迁撞红既有判据**—— `goal041` 的两条按**位置**写死 ⇒ 搬迁即假红，**被 GOAL-043 立的「零判负」判据当场捕获** ⇒ 改成**判关系不判位置**（沉淀 `MEM-20261010-215`）| （见 CI 台账）| 判据抓到「搬迁打断按位置写死的断言」| EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **四条实测读数**（域实体无闸门位 / 程序面三文件零命中 / phase 面实现可复用（语义 + 三步副作用）/ 闸门集按 run 算）⇒ 定位 `O-2` 形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 14** | （见 CI 台账） | — | 五条 EC 全 PENDING；声明形态（①）与判定种类（②）待 cycle 1 落 | cycle 1（EC-02 声明面 + EC-03 判定与推进） |
 
@@ -373,5 +380,7 @@ deduplication）。
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-10 | ACTIVE | **cycle 3（修复轮 `PLAN-20261010-387`）—— 收口依据更正 + 三处缺口收口**：**CI 实测**在 `de9d396` 上抓到**真红**（`tests/contracts/test_openapi_snapshot.py` 的 `assert regenerated == committed`）—— cycle 1 改了建程序 DTO 却**未**重生成并提交 `docs/api/openapi.m13.json`；**为什么本地看不见**：该判据**重生成后比对**（会覆写文件）⇒ 本地跑一次就「自我修复」，工作树里的快照从此比 HEAD 新（**那个 `M` 的来源，不是 CRLF 伪影**）。另复核发现 **EC-02 / EC-04 的 `verify` 行点名的行为面用例当时并不存在**（实测 `rg -l human_gate_at_index tests/` 只有判定面那一个文件）。**已修**：① 快照按生成器重生成并提交（`+23 / -0`），判据**一字未改**且 8 passed，并把「快照含本轮字段」写进收口断言集；② 补齐 SQLite **5** / PG **3** / 域 **10** / e2e **9** 例（含**成对**的声明闸门拦下 vs 未声明逐字不变），例数下界钉进收口断言集（**纯收紧**）；③ 两树 + 归档重新定格。沉淀 `MEM-20261010-216`（「声明的 verify 用例必须真的存在」）。**收口状态在修复轮完成前不成立** —— 本行即为按实测的更正。独立复检：`RECHECK-20261010-388`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
+| 2026-10-10 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、**两处射程纯收紧**（`IN_SCOPE` + GOAL-043 立的射程分区清单）、两树 **`TWO-TREE PASS`**（两路 **69 判词** / `sha256` 相同 `91de2b87…`）、判词归档进树（两份各 2585 B / 69 行 / `CR=0`）、as-is m0 **23/23**（记录写完之后）、治理 + 宪章判据绿、CI 台账逐提交。**一处时序如实登记**：两树首轮红（bootstrap：归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `X-1`…`X-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261010-386`（PASS_WITH_WARNINGS）。 |
 | 2026-10-10 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**程序级人工闸门可声明** —— 此前程序只能**认得**别人留下的等待（序 12），**自己无法声明**闸门（域实体无字段 / 程序面三文件零命中）。**已修**：域 +1 可选声明（缺省逐字不变、越界点名）+ 两库同契约落库（迁移 **020** 只加列）+ DTO/路由透传 + 第 N 轮跑完后**被拦住并点名**（复用 `WAIT_FOR_APPROVAL`；语义照抄 phase 面 `pending_human_gates`）+ **不**自动放行。三向反证全红。**一处实测**：为守 450 行规模门所做的**搬迁**撞断了 `goal041` 的两条**按位置写死**的断言 —— **被 GOAL-043 立的「零判负」判据当场捕获** ⇒ 改成「判关系不判位置」，沉淀 `MEM-20261010-215`。EC-05 待收口。**不得**宣称安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-10 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 14**（承担者 = `GOAL-037` 的实测残余 `O-2`）。只读勘察 + **四条实测读数**：(a) `ResearchProgram` 字段表**无**任何闸门声明位；(b) 程序面三文件（`program.py` / `program_runner.py` / `program_waiting.py`）对 `human_gated` / `human_gate` **零命中**；(c) 序 12 只让程序**认得** `WAITING_FOR_APPROVAL` **状态**（别人留下的等待），**没让它自己声明闸门**；(d) **phase/run 面实现完整可复用** —— `human_gates.pending_human_gates` 的语义 = 声明的 `HUMAN_GATE` phase **减**已裁决审批（无 store ⇒ fail-closed），`phase_pause.pause_for_human_gate` 已含「注册审批 + 发事件 + 落 `WAITING_FOR_APPROVAL`」三步。**结论**：「人在环」目前只是**恰好发生过的外部事件**，不是**编排能力**。五条 EC 全 `PENDING`。**不做数量目标**；**不**新建第二套审批/闸门机制；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

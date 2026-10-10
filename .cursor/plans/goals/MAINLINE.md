@@ -2,7 +2,8 @@
 
 > **本文件只持有「程序与顺序」，不持有「状态」。**
 > 状态的唯一权威是各 GOAL 的 frontmatter（`status` / `exit_criteria`）；
-> 本文件**不得**镜像、复述或缓存任何 GOAL 的状态。
+> 本文件**不得**镜像、复述或缓存任| 2026-10-10 | GOAL-20261010-046 | 序 14 连续性轴落地：**程序级人工闸门可声明** —— 程序此前只能**认得**别人留下的等待（序 12），**自己无法声明**闸门（实测：域实体字段表无闸门位、程序面三文件对 `human_gated\|human_gate` **全 0**，而 phase 面的 `pending_human_gates` 语义与 `pause_for_human_gate` 三步副作用**完整可复用**）。本轮 ① 域 +1 **可选**声明 `human_gate_at_index`（缺省 `None` ⇒ 逐字不变；越界**点名**）；② **两库同契约**落库（SQLite schema + **迁移 020** 只加列；PG `INSERT` / `_PROJECT_SELECT` 带列）；③ DTO / 路由 / 读面透传；④ 第 N 轮**跑完之后**的推进被拦住（**复用**序 12 的等待面）且**点名**声明值与待审批，缺审批面 / 查询失败 / 查不到**三种形态各自点名**；⑤ **三向反证**（绕过 / 轮前误拦 / 已裁决仍拦）全红 + 二进制复原 raw `sha256` 一致。**修复轮**（实测驱动）：CI 抓到 cycle 1 改了建程序 DTO 却**未重生成并提交** OpenAPI 快照（**本地看不见** —— 该判据重生成后比对，会自我修复）⇒ 按生成器重生成 + 提交，判据**一字未改**；并补齐 EC 的 `verify` 行点名却**当时并不存在**的行为面用例（SQLite / PG / 域 / e2e 共 27 例，含**成对**的「声明闸门拦下」vs「未声明逐字不变」），例数下界钉进收口断言集（**纯收紧**）。沉淀 `MEM-20261010-215` / `MEM-20261010-216` | [RECHECK-20261010-388](../rechecks/RECHECK-20261010-388-goal-046-repair-snapshot-sync-and-declared-cases.md) |
+何 GOAL 的状态。
 > 冲突时以 `.cursor/plans/goals/README.md` 与各 GOAL frontmatter 为准。
 > 判据：`tests/tooling/test_mainline_program_is_intact.py`。
 

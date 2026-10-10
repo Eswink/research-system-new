@@ -51,9 +51,11 @@ GOAL = ".cursor/plans/goals/GOAL-20261010-046-program-level-human-gate-becomes-d
 #: 子计划 / 复检（记录面逐条在位）。
 CHILD_PLANS: tuple[str, ...] = (
     ".cursor/plans/tasks/PLAN-20261010-383-goal-046-ec01-04-program-human-gate.md",
+    ".cursor/plans/tasks/PLAN-20261010-387-goal-046-repair-snapshot-sync-and-declared-cases.md",
 )
 RECHECKS: tuple[str, ...] = (
     ".cursor/plans/rechecks/RECHECK-20261010-386-goal-046-ec05-self-bootstrap-closeout.md",
+    ".cursor/plans/rechecks/RECHECK-20261010-388-goal-046-repair-snapshot-sync-and-declared-cases.md",
 )
 
 #: 记录面：GOAL 目录 README（格式契约）+ MAINLINE 宪章（本轮的战役程序）。

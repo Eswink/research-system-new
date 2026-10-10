@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261010-387](tasks/PLAN-20261010-387-goal-046-repair-snapshot-sync-and-declared-cases.md) | DONE |
 | [x] | [PLAN-20261010-385](tasks/PLAN-20261010-385-goal-046-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-383](tasks/PLAN-20261010-383-goal-046-ec01-04-program-human-gate.md) | DONE |
 | [x] | [PLAN-20261010-381](tasks/PLAN-20261010-381-goal-045-ec05-self-bootstrap-closeout.md) | DONE |

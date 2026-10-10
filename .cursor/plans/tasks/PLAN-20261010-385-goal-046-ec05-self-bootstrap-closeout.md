@@ -36,7 +36,7 @@ exit_criteria:
     status: PASS
   - id: AC-2
     criterion: >-
-      **两树复检**：`tools/two_tree_recheck.py --script tools/verify_goal044_closeout.py
+      **两树复检**：`tools/two_tree_recheck.py --script tools/verify_goal046_closeout.py
       --script-mode shared --base-ref <含归档的提交>` ⇒ **`TWO-TREE PASS`**；
       判词归档**进树**（两份、`CR=0`）。
     verify: >-
@@ -77,7 +77,7 @@ exit_criteria:
 | --- | --- | --- |
 | AC-1 | 收口面进树 + 四道门 + `IN_SCOPE` 纯收紧 | PASS |
 | AC-2 | 两树 `TWO-TREE PASS` + 判词归档进树 | PASS |
-| AC-3 | 记录面自洽 + 治理 + 宪章判据绿 | PASS |
+| AC-3 | 记录面自洽 + 治理 + 宪章判据绿 | PASS（**修复轮**：cycle 3 更正记录面 + `RECHECK-20261010-388`）|
 | AC-4 | as-is m0 **23/23**（记录写完之后） | PASS |
 | AC-5 | CI 台账逐提交 | PASS |
 
@@ -94,13 +94,13 @@ exit_criteria:
 
 | 门 | 读数 |
 | --- | --- |
-| 收口验证器（本树） | **58 判词 / 0 FAIL**（归档项在归档写入后转绿） |
+| 收口验证器（本树） | **69 判词 / 0 FAIL**（归档项在归档写入后转绿；修复轮后 **74 判词 / 0 FAIL**） |
 | 两树复检 | **`TWO-TREE PASS`**（两路判词数相同、`sha256` 相同） |
 | 判词归档 | 两份、非空、`CR=0`（二进制写盘） |
 | `IN_SCOPE` 判据 | 8 passed（纯收紧：只增两条） |
 | 治理 | `validate.py` 通过 |
 | 宪章判据 | `test_mainline_program_is_intact.py` 绿 |
-| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / **5345 passed, 228 skipped**；在全部记录写完之后、独占、不接管道）|
+| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / passed/skipped 读数**待本轮全量 m0 实测回填**；在全部记录写完之后、独占、不接管道）|
 
 ## 影响报告
 
@@ -121,8 +121,8 @@ exit_criteria:
 ### m0 抓到并已修一处真红（如实登记）
 
 `python/tests` 判红：`test_the_verifiers_list_partitions_every_verifier_explicitly` ——
-本轮新增 `tools/verify_goal044_closeout.py` 却**忘了登记进 `_VERIFIERS`** ⇒ **GOAL-043 立的射程分区判据
-当场把它报了出来**（与 `637ce67` 同形，第二次兑现）。**处置**：登记 + 下界 `_MIN_VERIFIERS` 13 → 14；
+本轮新增 `tools/verify_goal046_closeout.py` 却**忘了登记进 `_VERIFIERS`** ⇒ **GOAL-043 立的射程分区判据
+当场把它报了出来**（与 `637ce67` 同形，第二次兑现）。**处置**：登记 + 下界 `_MIN_VERIFIERS` 15 → 16；
 复跑 8 passed、**全量 m0 23/23**。**未动任何阈值 / 未放宽判据**（只补登记）。
 
 ## 状态历史

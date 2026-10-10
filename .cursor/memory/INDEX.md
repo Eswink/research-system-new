@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261010-216](entries/MEM-20261010-216-declared-verify-cases-must-actually-exist.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-387 |
 | [MEM-20261010-215](entries/MEM-20261010-215-extraction-must-not-re-point-existing-criteria.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-383 |
 | [MEM-20261010-214](entries/MEM-20261010-214-a-declared-field-needs-a-writer-in-every-adapter.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-379 |
 | [MEM-20261010-213](entries/MEM-20261010-213-waiting-reasons-must-not-share-one-kind.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-375 |

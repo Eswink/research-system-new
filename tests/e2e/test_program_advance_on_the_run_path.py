@@ -51,6 +51,8 @@ _STOP_RULE = "STOP_RULE"
 _STOP_RUN_FAILED = "STOP_RUN_FAILED"
 _STOP_GUARDRAIL = "STOP_GUARDRAIL"
 _WAIT = "WAIT"
+#: 声明的人工闸门拦下推进时的种类（GOAL-20261010-046 复用序 12 的同一类等待）。
+_WAIT_FOR_APPROVAL = "WAIT_FOR_APPROVAL"
 
 
 def _program_id(recent: dict[str, Any]) -> str:
@@ -179,3 +181,50 @@ def test_advance_on_a_missing_program_is_404() -> None:
             headers={"Idempotency-Key": "advance-missing"},
         )
         assert response.status_code == 404, response.text
+
+
+def test_a_declared_gate_stops_the_http_advance_and_the_read_face_shows_it() -> None:
+    """GOAL-20261010-046 EC-04(a)：经**既有 HTTP 面**声明的闸门 ⇒ 该轮跑完后的推进停下等人。
+
+    与驱动单元判据（`test_program_waiting_on_the_run_path.py`）的分工：那条判**判定值**；
+    本条判**产品路径真的接上了** —— 建程序时声明 `human_gate_at_index=1`，第 1 轮跑完
+    （`SUCCEEDED`，判词 `PASS` 本可续跑）后的推进必须落 `WAIT_FOR_APPROVAL` 且**点名**
+    声明值，**不**起第 2 轮；读面把声明回显出来。
+    """
+    with TestClient(create_app(program_deps())) as client:
+        program = create_program(client, max_runs=3, human_gate_at_index=1)
+        assert program["human_gate_at_index"] == 1, ("建程序回执必须回显声明", program)
+        first = advance(client, _program_id(program))
+        assert first["decision"]["kind"] == _START, first
+        assert first["started_run_id"], first
+        second = advance(client, _program_id(program))
+        assert second["decision"]["kind"] == _WAIT_FOR_APPROVAL, second
+        assert second["decision"]["kind"] != _CONTINUE, (
+            "闸门必须**先于**结论面拦住（否则声明了闸门却照常续跑）",
+            second,
+        )
+        assert "human_gate_at_index=1" in second["decision"]["reason"], second["decision"]
+        assert "人工闸门" in second["decision"]["reason"], second["decision"]
+        assert second["started_run_id"] is None, "等人拍板时不得起新轮"
+        detail = read_program(client, _program_id(program))
+        assert detail["human_gate_at_index"] == 1, ("读面必须披露声明", detail)
+        assert detail["run_count"] == 1, "第 2 轮不得被起（闸门拦住）"
+
+
+def test_an_undeclared_gate_leaves_the_http_advance_unchanged() -> None:
+    """GOAL-20261010-046 EC-04 反证臂②：**未声明** ⇒ 同一实跑逐字走结论面（`CONTINUE`）。
+
+    与上一条配对（同一协议 / 同一实跑装配）：唯一差别是**不发** `human_gate_at_index`。
+    两轮都照常起，第 2 次推进落 `CONTINUE` 且被引事实只有**判词**（没有闸门字样）
+    —— 这是「缺省 ⇒ 既有行为逐字不变」在**产品路径**上的证据。
+    """
+    with TestClient(create_app(program_deps())) as client:
+        program = create_program(client, max_runs=3)
+        assert program["human_gate_at_index"] is None, ("未声明必须读面为 None", program)
+        first = advance(client, _program_id(program))
+        assert first["decision"]["kind"] == _START, first
+        second = advance(client, _program_id(program))
+        assert second["decision"]["kind"] == _CONTINUE, second
+        assert second["decision"]["cited_facts"] == ["verdict PASS"], second["decision"]
+        assert second["started_run_id"], second
+        assert read_program(client, _program_id(program))["run_count"] == 2, "缺省路径照常续跑"

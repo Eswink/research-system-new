@@ -99,6 +99,34 @@ def test_program_requires_positive_guardrail_and_identities() -> None:
         ResearchProgram(id="", project_id="p1", protocol_id="proto", max_runs=1, continue_rule=rule)
 
 
+def test_human_gate_is_optional_and_out_of_range_declarations_are_named() -> None:
+    """GOAL-20261010-046 EC-02：闸门**可选**（缺省 = 不设），越界声明**点名**。
+
+    三条臂：① 不声明 ⇒ `None`（既有行为逐字不变）；② 声明在位（含 `max_runs` **边界**
+    上的取值）⇒ 逐字保留；③ 越界（太大 / 零 / 负数）⇒ `ValueError` 且**点名**声明值
+    与上界 —— 「声明坏掉」不得被静默读成「没有闸门」（那会让声明了闸门的程序悄悄绕过人）。
+    """
+    rule = ProgramContinueRule(verdict_in=("ACCEPT",))
+
+    def program(**overrides: object) -> ResearchProgram:
+        base: dict[str, object] = {
+            "id": "prog-1",
+            "project_id": "p1",
+            "protocol_id": "proto",
+            "max_runs": 3,
+            "continue_rule": rule,
+        }
+        base.update(overrides)
+        return ResearchProgram(**base)  # type: ignore[arg-type]
+
+    assert program().human_gate_at_index is None, "缺省必须是不设闸门"
+    assert program(human_gate_at_index=2).human_gate_at_index == 2
+    assert program(human_gate_at_index=3).human_gate_at_index == 3, "max_runs 本身是合法闸门位"
+    for bad in (4, 0, -1):
+        with pytest.raises(ValueError, match="human_gate_at_index must be within"):
+            program(human_gate_at_index=bad)
+
+
 def test_decision_kinds_separate_conclusion_from_guardrail() -> None:
     """结论面与护栏面**不共用种类**（否则「为何停」读不出是结论还是上界）。"""
     kinds = {kind.value for kind in ProgramDecisionKind}

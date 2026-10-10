@@ -81,6 +81,40 @@ def test_program_and_decisions_round_trip_on_pg() -> None:
     store.close()
 
 
+def test_human_gate_round_trips_and_defaults_to_no_gate_on_pg() -> None:
+    """GOAL-20261010-046 EC-02：**PG 侧**的闸门往返 —— 与 SQLite 同一份契约。
+
+    两臂逐条（与 SQLite 那份逐字同形）：声明的 `human_gate_at_index=2` 读回来的就是 2；
+    未声明的读回 `None`（`NULL` = **不设闸门**，不是被回填出来的某个序号）。
+    """
+    _clean()
+    store = PostgresProgramStore(dsn=_dsn())
+    gated = f"prog-gated-{uuid.uuid4().hex[:8]}"
+    ungated = f"prog-ungated-{uuid.uuid4().hex[:8]}"
+    store.create(
+        ResearchProgram(
+            id=gated,
+            project_id="p1",
+            protocol_id="proto",
+            max_runs=3,
+            continue_rule=ProgramContinueRule(verdict_in=("ACCEPT",)),
+            human_gate_at_index=2,
+        )
+    )
+    store.create(
+        ResearchProgram(
+            id=ungated,
+            project_id="p1",
+            protocol_id="proto",
+            max_runs=3,
+            continue_rule=ProgramContinueRule(verdict_in=("ACCEPT",)),
+        )
+    )
+    assert store.get(gated).human_gate_at_index == 2
+    assert store.get(ungated).human_gate_at_index is None
+    store.close()
+
+
 def test_run_program_association_queries_on_pg() -> None:
     _clean()
     store = PostgresRunStore(dsn=_dsn())

@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import datetime, timezone
 
 from adapters.sqlite.db import RUNS_SCHEMA_SQL, connect
@@ -65,6 +66,20 @@ def test_program_round_trips_through_sqlite() -> None:
     assert loaded.continue_rule.verdict_in == ("ACCEPT",)
     assert [p.id for p in store.for_project("p1")] == ["prog-1"]
     assert store.for_project("other") == ()
+
+
+def test_human_gate_round_trips_and_defaults_to_no_gate() -> None:
+    """GOAL-20261010-046 EC-02：**声明的闸门真的落库**，缺省仍读到 `None`。
+
+    两臂逐条：声明的 `human_gate_at_index=2` 往返一致（读出来的就是声明值）；
+    未声明的程序读回 `None` —— 后者是「既有行为逐字不变」在**存储面**的证据：
+    若 `NULL` 被回填或猜成某个整数，缺省路径就会凭空多出一个闸门。
+    """
+    store = SqliteProgramStore()
+    store.create(replace(_program("prog-gated"), human_gate_at_index=2))
+    store.create(_program("prog-ungated"))
+    assert store.get("prog-gated").human_gate_at_index == 2
+    assert store.get("prog-ungated").human_gate_at_index is None
 
 
 def test_decisions_are_append_only_and_dedup_exact_repeats() -> None:

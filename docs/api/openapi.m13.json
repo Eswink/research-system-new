@@ -4669,6 +4669,18 @@
             "title": "Continue On Verdicts",
             "type": "array"
           },
+          "human_gate_at_index": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Gate At Index"
+          },
           "max_attempts_per_index": {
             "default": 1,
             "maximum": 10.0,
@@ -4764,6 +4776,17 @@
             },
             "title": "Decisions",
             "type": "array"
+          },
+          "human_gate_at_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Gate At Index"
           },
           "id": {
             "title": "Id",

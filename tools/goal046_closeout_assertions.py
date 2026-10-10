@@ -31,7 +31,12 @@ from typing import Any
 #: 本轮**新增 / 修改**的判据文件 → 例数**下界**（掉下去即判红；只上调不下调）。
 CASE_FLOORS: tuple[tuple[str, int], ...] = (
     ("tests/application/run_orchestration/test_program_waiting_on_the_run_path.py", 14),
-    ("tests/domain/test_research_program.py", 8),
+    ("tests/domain/test_research_program.py", 10),
+    # 修复轮补的**行为面**用例（EC-02 声明的「两库往返 + 缺省 + 非法」与
+    # EC-04 声明的「实跑」此前只有文本在场、没有用例 ⇒ 本轮补齐，此处钉住例数）。
+    ("tests/adapters/sqlite/test_program_store_sqlite.py", 5),
+    ("tests/postgres/test_program_store_pg.py", 3),
+    ("tests/e2e/test_program_advance_on_the_run_path.py", 9),
 )
 
 #: 本轮**引用**（而非重复）的既有判据 —— 必须仍在树。
@@ -74,6 +79,10 @@ VERIFIER_JUDGE = "tests/tooling/test_closeout_verifiers_run_their_own_assertions
 #: 归档（收口 cycle 由两树入口写入）。
 ARCHIVE_CURRENT = ".cursor/plans/goals/evidence/GOAL-20261010-046-verdict-current.txt"
 ARCHIVE_CLEAN = ".cursor/plans/goals/evidence/GOAL-20261010-046-verdict-clean.txt"
+
+#: 声明面的下游同步面（EC-02 的字段必须出现在提交态的 OpenAPI 快照里）。
+SNAPSHOT = "docs/api/openapi.m13.json"
+SNAPSHOT_GENERATOR = "tools/gen_openapi.py"
 
 
 def _text(root: Path, relative: str) -> str:
@@ -307,6 +316,31 @@ def _scope_verdicts(root: Path, toolbox: Any) -> list[Any]:
     ]
 
 
+def _snapshot_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """声明面的**下游同步**（本轮真红教训）：OpenAPI 快照必须已按生成器重生成。
+
+    为什么把这条放进本 GOAL 的断言集：cycle 1 改了建程序 DTO 却**没有**重生成并提交
+    `docs/api/openapi.m13.json` ⇒ 被 `tests/contracts/test_openapi_snapshot` 在 **CI 上**
+    判红（本地该判据会**自我修复**地把文件重写一遍 ⇒ 只看本地永远看不见）。判据读
+    **提交态的字节**（`snapshot-lists-the-gate`）+ **生成器在场**（`snapshot-generator-present`）
+    —— 「快照与生成器同源」由既有受保护判据判（本处不重复）。
+    """
+    snapshot = _text(root, SNAPSHOT)
+    generator = _text(root, SNAPSHOT_GENERATOR)
+    return [
+        toolbox.verdict(
+            "snapshot-lists-the-gate",
+            "human_gate_at_index" in snapshot,
+            "OpenAPI 快照必须含本轮新字段（漏了 ⇒ CI 的 snapshot 判据红）",
+        ),
+        toolbox.verdict(
+            "snapshot-generator-present",
+            "gen_openapi" in generator and bool(generator),
+            "快照必须由生成器产出（手写快照 = 单一 schema truth 被破坏）",
+        ),
+    ]
+
+
 def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """本轮特有断言（每条都能被单变量按压判红）。"""
     return [
@@ -316,4 +350,5 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
         *_judge_verdicts(root, toolbox),
         *_archive_verdicts(root, toolbox),
         *_scope_verdicts(root, toolbox),
+        *_snapshot_verdicts(root, toolbox),
     ]

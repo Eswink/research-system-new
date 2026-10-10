@@ -116,29 +116,35 @@ def deps_for_capabilities(
     return deps
 
 
-def create_program(
+def create_program(  # noqa: PLR0913 - 建程序声明面即字段；参数对象会降低可读性
     client: Any,
     *,
     max_runs: int,
     continue_on: list[str] | None = None,
     protocol: str | None = None,
     max_attempts_per_index: int = 1,
+    human_gate_at_index: int | None = None,
 ) -> dict[str, Any]:
     """建程序（经既有 HTTP 面；协议按启动 run 的同一校验解析）。
 
     `protocol` 缺省 = 本文件的 `PROTOCOL`；EC-03 的跨 run 判据传它自己那份协议
     （**同一入口、不同声明** —— 不复制第二个建程序路径）。
+    `human_gate_at_index`（GOAL-20261010-046 EC-04）只在显式传值时进载荷 ——
+    缺省**不发键**，这样「未声明」那一臂走的是与既有调用**逐字相同**的请求体。
     """
     import uuid
 
+    payload: dict[str, object] = {
+        "protocol_path": protocol if protocol is not None else PROTOCOL,
+        "max_runs": max_runs,
+        "continue_on_verdicts": continue_on if continue_on is not None else ["PASS"],
+        "max_attempts_per_index": max_attempts_per_index,
+    }
+    if human_gate_at_index is not None:
+        payload["human_gate_at_index"] = human_gate_at_index
     response = client.post(
         f"/projects/{PROJECT}/programs",
-        json={
-            "protocol_path": protocol if protocol is not None else PROTOCOL,
-            "max_runs": max_runs,
-            "continue_on_verdicts": continue_on if continue_on is not None else ["PASS"],
-            "max_attempts_per_index": max_attempts_per_index,
-        },
+        json=payload,
         headers={"Idempotency-Key": f"prog-{uuid.uuid4()}"},
     )
     assert response.status_code == 201, response.text
