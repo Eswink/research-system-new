@@ -98,6 +98,7 @@ exit_criteria:
 | 广面 | `tests/adapters + domain` **1027 passed, 3 skipped**；`tests/postgres` + 规模门 **1201 passed, 101 skipped** |
 | 四道门 | `ruff check` / `ruff format --check` / `mypy` strict（441 files）**全绿** |
 | 两向反证 | `C-1`/`C-2`/`C-3` **全红**；二进制复原 raw `sha256` 一致；归档 295 B / `CR=0` |
+| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / **5345 passed, 228 skipped**）|
 
 ### 本轮实测到的**第三个适配器**（同类缺陷，如实登记）
 
