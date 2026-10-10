@@ -136,6 +136,43 @@ def _ec01_02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     ]
 
 
+def _dispatch_precedes_conclusion_face(runner: str) -> bool:
+    """失败面分派是否**先于**结论面求值（**结构判据**，与调用签名无关）。
+
+    **为什么改这里**（GOAL-20261010-043 EC-03）：本判据原按**文本**匹配
+    `"_non_success_terminal(program, existing, last)"` —— 而 GOAL-041 已**正当**给该函数
+    加了 `programs` 形参（多轮推进需要）⇒ 文本失配 ⇒ **整条断言集崩溃**
+    （`ValueError: substring not found`），复检资产**随被引代码演进静默失效**。
+
+    改法：用 **AST** 按**被调用函数名**取行号（`_non_success_terminal` / `_verdicts`），
+    与实参列表无关 ⇒ 签名演进不再打断它。**受判面等价**（仍是「前者先于后者」这一件事），
+    **不**放宽（仍然要求两者**都在场**：任一缺 ⇒ 判红）。
+    """
+    dispatch = _first_call_line(runner, "_non_success_terminal")
+    conclusion = _first_call_line(runner, "_verdicts")
+    if dispatch is None or conclusion is None:
+        return False
+    return dispatch < conclusion
+
+
+def _first_call_line(source: str, function_name: str) -> int | None:
+    """源码里**首次调用**该函数名的行号（AST；看被调名，不看实参）。"""
+    if not source:
+        return None
+    try:
+        parsed = ast.parse(source)
+    except SyntaxError:
+        return None
+    lines = [
+        node.lineno
+        for node in ast.walk(parsed)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == function_name
+    ]
+    return min(lines) if lines else None
+
+
 def _ec03_04_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-03/04：按终态分派（结论面在之后）+ 反证断言在判据里。"""
     runner = _text(root, RUNNER)
@@ -148,8 +185,7 @@ def _ec03_04_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec03-conclusion-face-comes-after-the-dispatch",
-            runner.index("_non_success_terminal(program, existing, last)")
-            < runner.index("_verdicts(findings, last.id.value)"),
+            _dispatch_precedes_conclusion_face(runner),
         ),
         toolbox.verdict(
             "ec04-judge-asserts-the-old-shape-is-gone",

@@ -88,7 +88,9 @@ PRIOR_RESIDUAL_MARKERS: tuple[str, ...] = ("`Q-1`", "`Q-2`", "`Q-3`")
 
 def _load_assertions() -> Any:
     """按路径加载本轮特有断言集（`tools/` 不是包 ⇒ 静态 import 不行）。"""
-    path = Path(__file__).resolve().parent / "goal037_closeout_assertions.py"
+    # GOAL-20261010-043 EC-02：加载**本 GOAL 的**断言集（此前误载 037 的那份 ⇒
+    # 本 GOAL 自有断言从未在收口复检里运行；实测判词里其自有断言名命中 0）。
+    path = Path(__file__).resolve().parent / "goal040_closeout_assertions.py"
     spec = importlib.util.spec_from_file_location("goal040_assertions", path)
     assert spec is not None and spec.loader is not None, path
     module = importlib.util.module_from_spec(spec)

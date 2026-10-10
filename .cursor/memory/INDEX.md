@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261010-212](entries/MEM-20261010-212-closeout-assets-must-run-their-own-assertions.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-369 |
 | [MEM-20261009-211](entries/MEM-20261009-211-append-only-needs-a-tie-breaker-in-the-key.md) | ACTIVE | repository | 0.95 | 2027-04-09 | PLAN-20261009-361 |
 | [MEM-20261009-210](entries/MEM-20261009-210-narrowing-an-existing-predicate-must-be-declared.md) | ACTIVE | repository | 0.95 | 2027-04-09 | PLAN-20261009-359 |
 | [MEM-20261008-209](entries/MEM-20261008-209-a-run-must-know-its-program-before-it-executes.md) | ACTIVE | repository | 0.95 | 2027-04-08 | PLAN-20261008-341 |

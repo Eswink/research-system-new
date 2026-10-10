@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261010-369](tasks/PLAN-20261010-369-goal-043-ec01-04-closeout-assets-run-own-assertions.md) | DONE |
 | [x] | [PLAN-20261010-367](tasks/PLAN-20261010-367-goal-042-ec05-self-bootstrap-closeout.md) | DONE |
 | [ ] | [PLAN-20261009-365](tasks/PLAN-20261009-365-goal-042-ec01-03-memory-consumption-on-the-run-path.md) | IN_PROGRESS |
 | [x] | [PLAN-20261009-363](tasks/PLAN-20261009-363-goal-041-ec05-self-bootstrap-closeout.md) | DONE |
