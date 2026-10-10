@@ -51,9 +51,11 @@ GOAL = ".cursor/plans/goals/GOAL-20261011-051-a-conflicting-memory-is-no-longer-
 #: 子计划 / 复检（记录面逐条在位）。
 CHILD_PLANS: tuple[str, ...] = (
     ".cursor/plans/tasks/PLAN-20261011-405-goal-051-ec01-04-a-conflicting-memory-is-no-longer-used.md",
+    ".cursor/plans/tasks/PLAN-20261011-407-goal-051-ec05-self-bootstrap-closeout.md",
 )
 RECHECKS: tuple[str, ...] = (
     ".cursor/plans/rechecks/RECHECK-20261011-406-goal-051-ec01-04-a-conflicting-memory-is-no-longer-used.md",
+    ".cursor/plans/rechecks/RECHECK-20261011-408-goal-051-ec05-self-bootstrap-closeout.md",
 )
 
 #: 记录面：GOAL 目录 README（格式契约）+ MAINLINE 宪章（本轮的战役程序）。

@@ -2,7 +2,7 @@
 id: GOAL-20261011-051
 slug: a-conflicting-memory-is-no-longer-used
 title: 有冲突的记忆不再是「照用」 —— `contradictions` **可声明**（域字段 + 非空校验）、**可落库**（三适配器，列已在表上）、**读面逐条披露**（序 13），但**「有冲突时怎么办」从未做**：**实跑**一条声明冲突的记录与一条干净记录经 `memory_read` 出来**处置完全相同**（都 `disposition="USE"`），冲突只出现在 `reason` 的**后缀**里；消费端 `_split_by_disposition` 只按 `disposition` 分派 ⇒ 有冲突的记录**不落任何一组**、被当成照用放行，计数摘要里**没有**「有冲突」这一格
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-11
 updated_at: 2026-10-11
 owners:
@@ -136,7 +136,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -190,7 +190,8 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261011-405-goal-051-ec01-04-a-conflicting-memory-is-no-longer-used.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20261011-407-goal-051-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-408-goal-051-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -210,7 +211,7 @@ memory_entries: []
 | EC-02 | 处置面 | 有冲突**不再** `USE`；点名冲突 id；与四态**可区分**；无冲突**逐字不变** | PASS |
 | EC-03 | 消费端 | 研究循环**真的按它分派**；与过期/取代**三者互不混用**；计数分开报；未知态仍 fail closed | PASS |
 | EC-04 | 两向反证 | 仍报 USE / 凭空报冲突 / 与过期或取代混用 / 点名缺失（`M-1`…`M-4` 全红） | PASS |
-| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**静默降级**（一律点名）；
 不得把「有冲突」与「已过期」/「已取代」**混用**；不得**自动消解冲突**或做检测算法 / 链式推断；
@@ -390,6 +391,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | `PLAN-20261011-407` | （见 CI 台账） | EC-05 五条 AC 全 PASS：收口验证器 **66 判词 / 0 FAIL**（标准断言集**一行未重写**）+ 两处射程**纯收紧**（`IN_SCOPE` +2 行 / 射程清单 +1 行、下界 20→21）+ **两树 `TWO-TREE PASS`**（两路 **66 判词** / `sha256` 相同 `b528f739…`）+ 归档定格（两份各 **2466 B / 66 行**、`CR=0`、0 FAIL）+ 治理 + 宪章判据 + 定向套件 **4953 passed** | （见 CI 台账）| **恒假判据两处**（收口断言集把带括号的名字查裸名集合 / `goal045` 给 `ast.parse` 传片段）—— **永远不响**，比假红更坏；均由验证器首跑报出并改判关系 | 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261011-408`）|
 | 1 | `PLAN-20261011-405` | `e90f0ad` | EC-01…EC-04 全 PASS：**有冲突不再照用** —— ① 读面新增**第五态** `CONFLICTED`（与四态**互不混用**且**可区分**；判词**点名**冲突 id 与「未自动消解」；**无冲突 ⇒ 逐字不变**）；② **优先级固定且写明**（已取代 > 已过期 > 有冲突 > 待复核；并存时**两因都点名**）；③ **消费端真的分派**（落 `ANNOTATE`：**执行但带标注** —— 冲突不等于不可用；与「待复核」**同类不同因** ⇒ 判词分开点名；未知态仍 fail closed）；④ **四向反证 M-1…M-4 全红**（3/7/1/2 例）+ 二进制复原 raw `sha256` 一致；⑤ 判据 +8（读面 5 / 消费端 3）；⑥ **三处既有判据按「判关系」修正**（`goal045` 一条 + `goal050` 两条 —— 钉写法/整行签名/解包变量名 ⇒ 正当加维后假红）；⑦ 规模门两处逼迫：`memory_gate_verdict` 53 行 ⇒ 抽两助手 + 类型化组；读面判据 476 行 ⇒ 冲突面**单列**；⑧ **未动 DTO** ⇒ 快照无需重生成 | （见 CI 台账）| **判据自身抓到一处空判据**（AST 传片段 ⇒ 恒假，已改解析整个模块并两向实测）| EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **八条实测读数**（声明面两行在场 / 域已校验 / 三适配器都带（**无新迁移**）/ 读面已披露并点名 / **处置面为零**（`rg` 命中全是成本面与 SQL）/ **实跑**处置相同 / **实跑**不落任何一组 / 结论「可声明、可落库、可披露、但没有处置」）⇒ 定位 `BB-2` 形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 19** | （见 CI 台账） | — | 五条 EC 全 PENDING；第五态形态（①）与消费端落点（②）待 cycle 1 落 | cycle 1（EC-02 处置面 + EC-03 消费端） |
 
@@ -399,3 +401,4 @@ deduplication）。
 | --- | --- | --- |
 | 2026-10-11 | DRAFT | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 19**（承担者 = `GOAL-050` 的残余 `BB-2`）。只读勘察 + **八条实测读数**：(a) `contradictions` 在 `MemoryRecord` 与 `MemoryWriteProposal` 上**各一行在场**，域层**已校验**非空字符串；(b) **三适配器都带**（SQLite 列 + `commit` + `_to_json`；PG；Fake）⇒ **无新迁移**（列已在表上）；(c) 读面（序 13）**逐条披露** + `_conflict_note` **点名**冲突 id；(d) **处置面为零** —— `rg -n "CONFLICT\|resolve_conflict\|has_conflict"` 在 `packages/` 与 `adapters/` 上命中的**全是别的东西**（成本面 `CURRENCY_CONFLICT` / SQL `ON CONFLICT`）；(e) **实跑**：一条无冲突 + 一条声明冲突的记录 ⇒ 处置**都是** `disposition="USE"`（冲突只在 `reason` 后缀）；(f) **实跑**：`_split_by_disposition` 分派 `expired=0 superseded=0 due=0` ⇒ 有冲突的那条**不落任何一组**（被当成照用放行）；(g) 计数摘要 `{'USE': 2, ...}` —— **没有「有冲突」这一格**；(h) **结论**：**可声明、可落库、可披露，但没有处置**。五条 EC 全 PENDING。**不做数量目标**；**不**自动消解冲突、**不**做检测算法 / 链式推断；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**有冲突的记忆不再被照用** —— 第五态 `CONFLICTED` + 固定优先级（并存两因都点名）+ **消费端真的分派**（执行但带标注，与「待复核」同类不同因、判词分开点名）。**四向反证全红**；判据 +8；四道门绿；未动 DTO。**三处既有判据按关系修正** + **判据自身抓到一处恒假空判据**（均如实登记）。独立复检：`RECHECK-20261011-406`（PASS_WITH_WARNINGS）。EC-05 待收口。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
+| 2026-10-11 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、**两处射程纯收紧**、两树 **`TWO-TREE PASS`**（两路 **66 判词** / `sha256` 相同 `b528f739…`）、判词归档进树（两份各 2466 B / 66 行 / `CR=0`）、治理 + 宪章判据绿、定向套件 4953 例绿、CI 台账逐提交。**两处恒假判据如实登记并修好**（空判据**永远不响**，比假红更坏：会静默掩盖真回归；均由验证器首跑报出 —— 承 `MEM-20261010-215`）。**一处时序**：两树首轮红（bootstrap：归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `CC-1`…`CC-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261011-408`（PASS_WITH_WARNINGS）。 |
