@@ -384,6 +384,7 @@ deduplication）。
 | `819f51f`（真红修复：注册面单列 + 搬迁 + 两处判据按关系修正） | **无自己的 run**（同批推送）⇒ `covered_by 38049368688` | 只读判定面复原；两处既有断言集**判负清零** |
 | `8a0ea91`（归档重定格） | **无自己的 run**（同批推送）⇒ `covered_by 38049368688` | 两树 **70 判词** / `sha256` 相同 `a2ba7fa0…` |
 | `ff28c65`（GOAL 收口 = **本批 HEAD**） | `38049368688` **M0 success**（**8 job 全 success**，含此前判红的 `quality-ubuntu-latest` / `quality-windows-latest`）；`38049371159` **Push on main / CodeQL success**（3 job 全 success）| **实测取证**：真红修复生效 + EC-05 收口 + 宪章进展行 |
+| `043f077`（台账 = **末条提交**） | `38050533287` **M0 success**（**8 job 全 success**）+ `38050533170` **Push on main / CodeQL success**（3 job 全 success）| **实测取证**：台账提交自身也有 run （本轮**不**依赖自我指涉豁免 —— 它的 tree 含全部交付与记录）|
 | （待建档提交） | — | — |
 
 
