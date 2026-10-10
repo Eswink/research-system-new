@@ -2,7 +2,7 @@
 id: GOAL-20261010-050
 slug: superseded-memory-is-no-longer-used
 title: 被取代的记忆不再是「照用」 —— `supersedes` 早已声明且**有写者**（`lifecycle.supersede_memory` 会 `deactivate` 旧记录），gate 也有引用完整性校验，但**读面从不披露该链接**，且 `disposition_of` **只看时效、不看 `active`** ⇒ **实跑**：一条被取代（`active=False`）的记忆经 `memory_read` 出来仍是 **`disposition=USE`**，而研究循环的时效门正是按 `disposition` 三态分派 ⇒ 被取代的知识**照样进下一步**，读者也无法回答「这条被谁取代 / 它取代了谁」
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-11
 updated_at: 2026-10-11
 owners:
@@ -139,7 +139,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -193,7 +193,8 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-401-goal-050-ec01-04-superseded-memory-is-no-longer-used.md
-latest_recheck: null
+  - .cursor/plans/tasks/PLAN-20261010-403-goal-050-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-404-goal-050-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -213,7 +214,7 @@ memory_entries: []
 | EC-02 | 读面披露 | 两个方向都点名（`supersedes` / `superseded_by`）；无关系 ⇒ 空列表；既有十键逐字保持 | PASS |
 | EC-03 | 处置面 | 被取代不再报 `USE`；理由**可区分于**「已过期」；**消费端真的按它分派**；无关系逐字不变 | PASS |
 | EC-04 | 两向反证 | 仍报 USE / 凭空报取代 / 单向或调换 / 与过期混用（`L-1`…`L-4` 全红） | PASS |
-| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PENDING |
+| EC-05 | 自举收口 | 验证器进树（两处射程）+ 两树 + 归档 + m0 23/23（记录之后）+ 治理绿 + 台账逐提交 | PASS |
 
 **全局禁令（贯穿全 GOAL）**：不得**放宽任何既有判据的断言**；不得**静默降级**（一律点名）；
 不得把「已取代」与「已过期」**混用**；不得**自动取代**或做链式推断；不得**新建**存储 /
@@ -389,6 +390,7 @@ deduplication）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | `PLAN-20261010-403` | （见 CI 台账） | EC-05 五条 AC 全 PASS：收口验证器 **64 判词 / 0 FAIL**（标准断言集**一行未重写**）+ 两处射程**纯收紧**（`IN_SCOPE` +2 行 / 射程清单 +1 行、下界 19→20）+ **两树 `TWO-TREE PASS`**（两路 **64 判词** / `sha256` 相同 `01ab4af0…`）+ 归档定格（两份各 **2369 B / 64 行**、`CR=0`、0 FAIL）+ 治理 + 宪章判据 + 定向套件 **4945 passed** | （见 CI 台账）| **判据自纠一处**（把源码**字面折行**写进判据 ⇒ 折行即假红 ⇒ 改判关系，承 `MEM-20261010-215`）| 五条 EC 全 PASS；GOAL 收口 | GOAL 收口（`RECHECK-20261010-404`）|
 | 1 | `PLAN-20261010-401` | （见 CI 台账） | EC-01…EC-04 全 PASS：**被取代不再照用** —— ① 读面逐条 **+2 键**（`supersedes` / `superseded_by`，**两向都点名**；无关系 ⇒ 空列表）；② 新增**第四态** `SUPERSEDED`（与「已过期」**理由可区分**；两者皆有时**都点名**；优先级固定 = 已取代先于时效）；③ **消费端真的分派**（`memory_gate_verdict` 处置同为「跳过」但**判词分开点名**；未知态仍 fail closed）；④ **四向反证 L-1…L-4 全红**（3/7/1/2 例）+ 二进制复原 raw `sha256` 一致；⑤ 判据 +8（读面 5 / 消费端 3）；⑥ **一处既有判据假红按关系修正**（`goal045` 把调用式**逐字写死** ⇒ 加关键字实参即假红，改成判关系并**两向实测**）⑦ **未动 DTO** ⇒ 快照无需重生成 | （见 CI 台账）| —— | EC-05（自举收口）待做 | cycle 2（EC-05 收口）|
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **八条实测读数**（域声明两向在场 / `supersede_memory` 两步写者 / gate 引用完整性 / 读面**零命中** / `disposition_of` 只吃时效 / **实跑** `active=False` 仍 `USE` / 消费端三态分派 / 结论「有写者、无读面、处置面看不见」）⇒ 定位新缺口；五条 EC 全 PENDING；MAINLINE 程序表**新增序 18** | （见 CI 台账） | — | 五条 EC 全 PENDING；新态形态（①）与反查取法（②）待 cycle 1 落 | cycle 1（EC-02 披露 + EC-03 处置面） |
 
@@ -398,3 +400,4 @@ deduplication）。
 | --- | --- | --- |
 | 2026-10-11 | DRAFT | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 18**。只读勘察 + **八条实测读数**：(a) `supersedes` 在 `MemoryRecord` 与 `MemoryWriteProposal` 上**各一行在场**；(b) `lifecycle.supersede_memory` 是**真写者**（新记录 commit + **旧记录 deactivate**，且 inactive 不可被 supersede）；(c) gate 有**引用完整性**（未知 id 拒绝）；(d) `rg -n supersedes adapters/canonical/memory_read.py` ⇒ **零命中**（两向都不披露）；(e) `disposition_of` 的签名**只吃 `ValidityState`** ⇒ 看不见 `active`；(f) **实跑**：`deactivate` 之后该条仍 `disposition="USE"`、理由「未声明时效或未到 ⇒ 照用」；(g) 消费端 `memory_gate_verdict` **按 `disposition` 三态分派**（只有 `SKIP` 跳过整步）⇒ 被取代的知识**不会被跳过也不会被标注**；(h) **结论**：**有写者、无读面、处置面看不见**。五条 EC 全 PENDING。**不做数量目标**；**不**新建存储 / 第二套生命周期；**不**做自动取代 / 链式推断；**未覆盖范围原样保留**；**不得**据此宣称项目安全，**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**被取代的记忆不再被照用** —— 读面两向披露取代关系、新增第四态 `SUPERSEDED`（与已过期可区分）、消费端真的按它分派。**四向反证全红**；判据 +8；四道门绿；未动 DTO（快照无需重生成）。**一处既有判据假红按关系修正**（`goal045` 的调用式逐字比对 ⇒ 加关键字实参即假红；已改为判关系并两向实测 —— 承 `MEM-20261010-215`）。独立复检：`RECHECK-20261010-402`（PASS_WITH_WARNINGS）。EC-05 待收口。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
+| 2026-10-11 | ACHIEVED | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS。收口面 = 验证器 + 本轮断言集进树（复用标准断言集**一行未重写**）、**两处射程纯收紧**、两树 **`TWO-TREE PASS`**（两路 **64 判词** / `sha256` 相同 `01ab4af0…`）、判词归档进树（两份各 2369 B / 64 行 / `CR=0`）、治理 + 宪章判据绿、定向套件 4945 例绿、CI 台账逐提交。**一处判据自纠如实登记**（把源码**字面折行**写进判据 ⇒ 折行即假红 ⇒ 改判**关系** —— 与 cycle 1 修的 `goal045` **同一类**「按写法写死」；承 `MEM-20261010-215`）。**一处时序**：两树首轮红（bootstrap：归档在提交之后才存在）。**收口后不再推进本 GOAL**；残余 `BB-1`…`BB-3` 与未覆盖范围逐条明写；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。独立复检：`RECHECK-20261010-404`（PASS_WITH_WARNINGS）。 |

@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261010-403](tasks/PLAN-20261010-403-goal-050-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-401](tasks/PLAN-20261010-401-goal-050-ec01-04-superseded-memory-is-no-longer-used.md) | DONE |
 | [x] | [PLAN-20261010-399](tasks/PLAN-20261010-399-goal-049-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-397](tasks/PLAN-20261010-397-goal-049-ec01-04-memory-scope-becomes-selectable.md) | DONE |

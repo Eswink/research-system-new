@@ -51,9 +51,11 @@ GOAL = ".cursor/plans/goals/GOAL-20261010-050-superseded-memory-is-no-longer-use
 #: 子计划 / 复检（记录面逐条在位）。
 CHILD_PLANS: tuple[str, ...] = (
     ".cursor/plans/tasks/PLAN-20261010-401-goal-050-ec01-04-superseded-memory-is-no-longer-used.md",
+    ".cursor/plans/tasks/PLAN-20261010-403-goal-050-ec05-self-bootstrap-closeout.md",
 )
 RECHECKS: tuple[str, ...] = (
     ".cursor/plans/rechecks/RECHECK-20261010-402-goal-050-ec01-04-superseded-memory-is-no-longer-used.md",
+    ".cursor/plans/rechecks/RECHECK-20261010-404-goal-050-ec05-self-bootstrap-closeout.md",
 )
 
 #: 记录面：GOAL 目录 README（格式契约）+ MAINLINE 宪章（本轮的战役程序）。
