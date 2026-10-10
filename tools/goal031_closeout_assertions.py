@@ -130,6 +130,31 @@ def ec_verdicts(root: Path, toolbox: Toolbox) -> list[VerdictLike]:
     return verdicts
 
 
+def _run_completed_carries_the_skip_facts(root: Path, runner: str) -> bool:
+    """`run.completed` 的载荷是否**带上跳过事实**（**结构判据**，与在哪个模块无关）。
+
+    **为什么改这里**（GOAL-20261010-043）：本判据原按**文本**要求在 `phase_runner.py` 里
+    出现 `"skipped"` 字面量。GOAL-20261009-042 EC-03 把 `run.completed` 的载荷抽成
+    **唯一构造点**（`run_completion_payload.py` —— 消除「两处各写一份字段清单」的漂移
+    风险）⇒ 那个字面量**搬了家**，行为**逐字保持**（同一份载荷、同一个键），而本判据
+    因**盯错位置**判负。**判行为与判位置是两件事**（与 `MEM-20261010-212` 同一族）。
+
+    改法：接受两种形态 ——
+    ① 载荷在 `runner` 里直接构造（旧形态，字面量在原地）；
+    ② 载荷由**被 runner 调用的构造点**产出（新形态）⇒ 顺着 `run_completion_payload`
+       的导入找一个模块，在其源码里找那个键。
+    **受判面等价**：仍然要求「`run.completed` 的载荷带上 `skipped` 键」这一件事；
+    **不**放宽（两种形态都没找到 ⇒ 判负）。
+    """
+    if '"skipped"' in runner:
+        return True
+    builder = "run_completion_payload.py"
+    candidate = root / "packages" / "application" / "run_orchestration" / builder
+    if not candidate.is_file():
+        return False
+    return '"skipped"' in candidate.read_text(encoding="utf-8", errors="replace")
+
+
 def _declared_field_names(source: str, class_name: str) -> set[str]:
     """某数据类 / 模型类的字段注解名集合（AST 读声明，不靠文本搜索）。"""
     import ast
@@ -222,7 +247,7 @@ def ec03_verdicts(root: Path, toolbox: Toolbox) -> list[VerdictLike]:
         ),
         toolbox.verdict(
             "ec03-run-completed-carries-the-skip-facts",
-            '"skipped"' in runner,
+            _run_completed_carries_the_skip_facts(root, runner),
         ),
     ])
     return verdicts

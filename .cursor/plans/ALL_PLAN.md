@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261010-373](tasks/PLAN-20261010-373-goal-043-third-instance-text-anchor-realignment.md) | DONE |
 | [x] | [PLAN-20261010-371](tasks/PLAN-20261010-371-goal-043-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261010-369](tasks/PLAN-20261010-369-goal-043-ec01-04-closeout-assets-run-own-assertions.md) | DONE |
 | [x] | [PLAN-20261010-367](tasks/PLAN-20261010-367-goal-042-ec05-self-bootstrap-closeout.md) | DONE |

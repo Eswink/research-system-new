@@ -199,6 +199,35 @@ def test_every_named_assertion_set_is_executable_on_this_tree() -> None:
     assert not broken, ("这些断言集在本树上**不可执行**（崩溃不是判负，是资产坏了）", broken)
 
 
+def test_every_named_assertion_set_reports_no_negative_on_this_tree() -> None:
+    """**断言集在本树上不得有判负**（把 `U-2` 的「同类脆弱性」变成机器的）。
+
+    **为什么需要**（GOAL-20261010-043 收口后**新实测**到的第三个实例）：`goal031` 的
+    `ec03-run-completed-carries-the-skip-facts` 按**文本**要求在 `phase_runner.py` 里出现
+    `"skipped"` 字面量；而 GOAL-20261009-042 EC-03 把该载荷抽成**唯一构造点**
+    ⇒ 字面量**搬了家**（行为逐字保持）⇒ 该判据**盯错位置**判负。
+    ⇒ 「可执行」还不够：**跑出判负**同样是资产坏了（被引代码演进 ⇒ 断言失配）。
+
+    **射程（如实登记）**：本条要求「**判负数为 0**」；它**不**要求「断言条数不变」，
+    也**不**禁止断言集内部使用文本锚点（只要求它们当前**没有**失配）。
+    """
+    toolbox = _toolbox()
+    negative: list[str] = []
+    for relative in _VERIFIERS:
+        path = _ROOT.joinpath(*relative.split("/"))
+        loaded = _loaded_assertions(path.read_text(encoding="utf-8"))
+        assert loaded is not None, relative
+        module = _load_module(_TOOLS / loaded, f"goal043_neg_{loaded.removesuffix('.py')}")
+        verdicts = module.assertion_verdicts(_ROOT, toolbox)
+        failed = [item.name for item in verdicts if not item.ok]
+        if failed:
+            negative.append(f"{loaded}: {failed}")
+    assert not negative, (
+        "这些断言集在本树上**有判负** ⇒ 被引代码演进导致失配（资产坏了，不是产品缺陷）",
+        negative,
+    )
+
+
 def test_the_verifiers_list_partitions_every_verifier_explicitly() -> None:
     """**清单不得漏项**：`tools/` 下的 `verify_goal0NN_closeout.py` 要么在射程内、要么登记在案。
 
