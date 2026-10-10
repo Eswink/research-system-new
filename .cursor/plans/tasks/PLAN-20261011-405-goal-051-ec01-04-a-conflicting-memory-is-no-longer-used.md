@@ -2,10 +2,10 @@
 id: PLAN-20261011-405
 slug: goal-051-ec01-04-a-conflicting-memory-is-no-longer-used
 title: GOAL-20261011-051 cycle 1（EC-01…EC-04）：有冲突不再照用 —— 第五态 + 消费端分派 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-11
 updated_at: 2026-10-11
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-406-goal-051-ec01-04-a-conflicting-memory-is-no-longer-used.md
 memory_entries: []
 parent_goal: GOAL-20261011-051
 cursor_plan_uri: null
@@ -45,7 +45,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters/canonical -q`
       ⇒ 全绿 + 新用例（有冲突不照用 / 点名 id / 无冲突逐字不变 / 与四态可区分 / 并存优先级）。
-    status: PENDING
+    status: PASS
   - id: AC-3
     criterion: >-
       **消费端真的分派**：消费端按新态分派（**处置面 = 与 `ANNOTATE` 同类：执行但带标注** ——
@@ -54,7 +54,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/run_orchestration -q`
       ⇒ 全绿 + 新用例（按冲突分派为「执行带标注」/ 三因分开点名 / 未知态仍点名）。
-    status: PENDING
+    status: PASS
   - id: AC-4
     criterion: >-
       **两向反证（真按压）**：`M-1` 有冲突仍报 `USE` / `M-2` 无冲突却报有冲突（凭空）/
@@ -63,7 +63,7 @@ exit_criteria:
     verify: >-
       `scratch/goal051-press.txt` 全 `RED` + `sha 复原一致=True`；归档
       `.cursor/plans/goals/evidence/GOAL-20261011-051-press-two-way.txt`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261011-405 — GOAL-20261011-051 cycle 1（EC-01…EC-04）
@@ -81,14 +81,14 @@ exit_criteria:
 
 ## 实施清单
 
-- [ ] WP-1 读面：`DISPOSITION_CONFLICTED` 常量 + `disposition_of(..., *, conflicted=False)`
-- [ ] WP-2 读面：逐条判定 + 理由**点名冲突 id**（`_conflict_note` 复用）+ 并存优先级
-- [ ] WP-3 读面：计数摘要**加第五格**
-- [ ] WP-4 消费端：`MEMORY_CONFLICTED` + 分派到「执行但带标注」（与 `ANNOTATE` 同处置、
+- [x] WP-1 读面：`DISPOSITION_CONFLICTED` 常量 + `disposition_of(..., *, conflicted=False)`
+- [x] WP-2 读面：逐条判定 + 理由**点名冲突 id**（`_conflict_note` 复用）+ 并存优先级
+- [x] WP-3 读面：计数摘要**加第五格**
+- [x] WP-4 消费端：`MEMORY_CONFLICTED` + 分派到「执行但带标注」（与 `ANNOTATE` 同处置、
       判词**分开点名**）+ 未知态仍 fail closed
-- [ ] WP-5 判据：读面 +5 例 / 消费端 +3 例（含「与四态可区分」与「并存优先级」）
-- [ ] WP-6 两向反证 M-1…M-4 + 归档进树
-- [ ] WP-7 四道门 + 定向套件 + 记录面
+- [x] WP-5 判据：读面 +5 例 / 消费端 +3 例（含「与四态可区分」与「并存优先级」）
+- [x] WP-6 两向反证 M-1…M-4 + 归档进树
+- [x] WP-7 四道门 + 定向套件 + 记录面
 
 ## 决策登记（本 cycle 落定）
 
@@ -104,10 +104,11 @@ exit_criteria:
 
 | 门 | 读数 |
 | --- | --- |
-| 读面判据 | 见 RECHECK 的读数行（记录写完时回填）|
-| 消费端判据 | 见 RECHECK 的读数行（记录写完时回填）|
-| 两向反证 | 见 RECHECK 的读数行（记录写完时回填）|
-| 四道门 | 见 RECHECK 的读数行（记录写完时回填）|
+| 读面判据 | `test_memory_read_dispositions.py` **27 passed**（原 27）+ `test_memory_conflict_disposition.py` **5 passed**（本轮新增；规模门 450 行逼出的拆分）|
+| 消费端判据 | `test_memory_validity_gate.py` **18 passed**（原 15 + 3）|
+| 两向反证 | `M-1`…`M-4` **全 `RED`**（2/7/1/2 例）+ 二进制复原 raw `sha256` 一致；归档 **453 B / `CR=0`** |
+| 四道门 | `ruff check` / `ruff format --check`（1191 files）/ `mypy` strict（**1181** files）/ 规模门 全绿 |
+| 定向套件 | `tests/{application,api,e2e,domain,adapters,postgres,contracts,tooling}` **4953 passed, 18 skipped** |
 
 ## 改既有判据的申报（承 `MEM-20261009-210`）
 
@@ -140,3 +141,4 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-11 | IN_PROGRESS | 决策 ①/②/③ 落定；WP-1…WP-7 开工。 |
+| 2026-10-11 | DONE | 四道门 + 定向套件 4953 例绿；三处既有判据按关系修正；`RECHECK-20261011-406` 独立复检。 |
