@@ -364,6 +364,26 @@ deduplication）。
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
+| `c4e359c`（replan） | `38032699903` **M0 success**（8 job 全 success）+ `38032699777` **Push on main / CodeQL success** | 序 14 新增 + 修订记录行（**实测取证**）|
+| `04123a7`（cycle 1 = EC-01…EC-04） | `38034696827` **M0 cancelled** —— `cancel-in-progress`（被同 ref 的 `de9d396` 取消）⇒ `covered_by 38034876633`；`38034696739` **Push on main / CodeQL success** | 程序级人工闸门可声明（域 + 两库 + 迁移 020 + 判定接线 + 三向按压）|
+| `de9d396`（cycle 2 提交 A = EC-05 首轮） | `38034876633` **M0 failure** —— **真红（产品面缺同步）**：`quality-ubuntu-latest` / `quality-windows-latest` 的 `test_openapi_snapshot_is_current` 报 `assert regenerated == committed`；**同一次 run 的另一条**是**归档时序**（`verdict-archive-current/clean` 当时未写入）。另有 `38034876720` **Push on main / CodeQL success** | 验证器 + 断言集 + 两处射程纯收紧；**真红由 cycle 3 修复**（产品面重生成 + 提交）|
+| `06e9b01`（cycle 2 提交 B = 归档进树） | **无自己的 run**（同批推送；`06e9b01` 之后未再推进远端直到 cycle 3）⇒ 其代码面由 `38042881728` **M0 success** 覆盖 | 两份归档（2585 B / 69 行）；**该两份是 bootstrap 轮产物（含 2 条 FAIL）** ⇒ cycle 3 重跑并替换 |
+| `9f2a18a`（cycle 3 = 修复轮） | **无自己的 run**（与 `2b66360` 同批推送）⇒ `covered_by 38042881728` | 快照重生成 + 用例补齐 + 记录面更正 + `MEM-20261010-216`|
+| `37ed84c`（归档重定格 = 本批中间提交） | **无自己的 run**（同批推送）⇒ `covered_by 38042881728` | 归档两份各 2897 B / 76 行 / `CR=0` / 0 FAIL |
+| `2b66360`（门读数回填 = **本批 HEAD**） | `38042881728` **M0 success**（**8 job 全 success**，含此前判红的 `quality-ubuntu-latest` / `quality-windows-latest`）；`38042881467` **Push on main / CodeQL success**（3 job 全 success）| **实测取证**：门读数回填 + 归档与最终一轮同结论 |
+
+### 台账封闭（自我指涉边界）
+
+**本台账行自身所在的提交**（`docs(goal046): 台账逐提交`）**不产生可引用的 CI 结论** ——
+它以「**末条有 run 的提交**」+ 覆盖说明封闭：本批**唯一**带 run 的提交是 `2b66360`，
+`38042881728` **M0 success**（8 job 全 success）覆盖 `9f2a18a` / `37ed84c` 的**全部代码面**
+（三者同批推送，tree 面依次包含）；**不得**循环引用台账提交自身。
+
+**本 GOAL 的 CI 结论以哪条为准**：`2b66360` 的 `38042881728` **M0 success** —— 它跑在
+**含全部交付与记录**的树上，且把 `de9d396` 上判红的两条（快照漂移）**实测转为通过**。
+`de9d396` 的 `M0 failure` **不**被掩盖：它在本文里**逐字归因**（一条真红 + 一条时序），
+并指明由 cycle 3 修好。
+
 | （本 GOAL 建档提交） | 待取证 | replan（序 14 新增，承担者 `O-2`）+ 建档（五 EC + 事实层读数） |
 | （后续逐条填） | — | — |
 
