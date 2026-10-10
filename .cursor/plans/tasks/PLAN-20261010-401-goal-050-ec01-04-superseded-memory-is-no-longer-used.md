@@ -109,7 +109,7 @@ exit_criteria:
 | 消费端判据 | `test_memory_validity_gate.py` **15 passed**（原 12 + 3）|
 | 两向反证 | `L-1`…`L-4` **全 `RED`**（3/7/1/2 例）+ 二进制复原 raw `sha256` 一致；归档 **471 B / `CR=0`** |
 | 四道门 | `ruff check` / `ruff format --check` / `mypy` strict / 规模门 全绿 |
-| 定向套件 | 见 RECHECK 的读数行（记录写完时回填）|
+| 定向套件 | 定向套件 `tests/{application,api,e2e,domain,adapters,postgres,contracts,tooling}` **4945 passed, 18 skipped** |
 | **下游同步** | 本轮**未动** DTO / 路由 ⇒ **无需**重生成快照（§⑤ 的申报）|
 
 ## 改既有判据的申报（承 `MEM-20261009-210`）
