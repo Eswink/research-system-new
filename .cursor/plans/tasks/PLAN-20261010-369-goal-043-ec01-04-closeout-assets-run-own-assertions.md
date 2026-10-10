@@ -98,6 +98,7 @@ exit_criteria:
 | 新判据 | `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py` **7 passed** |
 | `tests/tooling` 全量 | **1422 passed** |
 | 四道门 | `ruff check` / `ruff format --check` / `mypy` strict 对本轮改动文件**全绿** |
+| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0）|
 | 两向反证 | `P-1` / `P-2` **全红**；二进制复原 raw `sha256` **逐字节相同**；归档 `GOAL-20261010-043-press-two-way.txt`（110 B / `CR=0`） |
 
 ### 判词数变化（**如实登记，不淡化**）

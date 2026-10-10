@@ -171,6 +171,7 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261010-369-goal-043-ec01-04-closeout-assets-run-own-assertions.md
+  - .cursor/plans/tasks/PLAN-20261010-371-goal-043-ec05-self-bootstrap-closeout.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261010-370-goal-043-ec01-04-closeout-assets.md
 memory_entries: []
 ---
