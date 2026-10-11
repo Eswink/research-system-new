@@ -1,7 +1,7 @@
 """GOAL-20261012-058 EC-03：**消解事实两处同值** —— HTTP 面与编排面（同源 ⇒ 同值）。"""
 
 from datetime import datetime, timezone
-from typing import cast
+from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
@@ -12,18 +12,15 @@ from packages.application.memory.lifecycle import (
 from packages.domain.core import Timestamp
 from packages.domain.enums import MemoryTier, MemoryType
 from packages.domain.memory import MemoryWriteProposal
-from tests.api.test_memory_api import _deps, _wire
+from tests.api.test_memory_api import _wire
 
 _NOW = Timestamp(datetime(2026, 5, 1, 12, 0, 0, tzinfo=timezone.utc))
 
 
-def test_the_resolution_facts_agree_between_the_two_faces(client: TestClient) -> None:
-    """GOAL-20261012-058 EC-03：**消解事实两处同值**（同源 ⇒ 同值）。"""
-    from adapters.canonical.memory_read import memory_read
+def _seed_resolved_pair(client: TestClient) -> Any:
+    """写一对（声明 + 消解）进**该客户端的 store**（产品路径）。"""
 
-    store = _wire(client)
-
-    live = _deps(client).memory
+    live = _wire(client)
     live.allow_source("source:article-1")
     live.commit(
         MemoryWriteProposal(
@@ -53,6 +50,14 @@ def test_the_resolution_facts_agree_between_the_two_faces(client: TestClient) ->
         resolved_by="curator:a",
         resolved_at=Timestamp(datetime(2026, 5, 1, 12, 0, 0, tzinfo=timezone.utc)),
     )
+    return live
+
+
+def test_the_resolution_facts_agree_between_the_two_faces(client: TestClient) -> None:
+    """GOAL-20261012-058 EC-03：**消解事实两处同值**（同源 ⇒ 同值）。"""
+    from adapters.canonical.memory_read import memory_read
+
+    store = _seed_resolved_pair(client)
     http_rows = cast(
         "list[dict[str, object]]",
         client.get("/projects/example-project/memory").json()["records"],
