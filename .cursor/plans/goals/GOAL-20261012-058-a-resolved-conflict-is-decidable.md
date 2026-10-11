@@ -89,7 +89,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-conflict-resolution.py` ⇒ 五组读数；
       `git diff --numstat <base> HEAD -- <受判文件>` ⇒ **零改动**（本轮只读）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **消解可记录（声明不被删除）**：新增一条**消解记载** —— 记**哪一对**（两个 id）、
@@ -205,7 +205,7 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿：消解面全零命中 + 改声明路径全零命中 + 五态无误 + 三个写路径都不碰冲突维 | `scratch/probe-conflict-resolution.py` | PENDING |
+| EC-01 | 勘察定稿：消解面全零命中 + 改声明路径全零命中 + 五态无误 + 三个写路径都不碰冲突维 | **实跑**：五组读数（零命中 / 五态逐个 / 三写路径 / 两适配器列）| **PASS** |
 | EC-02 | **消解可记录**（哪一对 + 由谁 + 何时；四种坏形态点名；**声明一字不动**）| `pytest tests/domain tests/application -q` + 新用例 | PENDING |
 | EC-03 | **读面披露**（同源；**未消解逐字仍是 `CONFLICTED`**）+ 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | PENDING |
 | EC-04 | **两向反证** `U-1`…`U-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | `scratch/goal058-press.txt` + 归档 | PENDING |
@@ -236,7 +236,7 @@ memory_entries: []
 | D-2 | 消解记 **哪一对**（两个 id）+ **由谁** + **何时** | 「消解了 A↔B 这一对」比「这条无冲突了」精确 —— 一条记录可以有**多个**冲突对，只能逐对消解 | 已定 |
 | D-3 | 未知冲突对（不在该记录 `contradictions` 里的）⇒ **点名拒绝** | 「点名而非静默降级」是本 GOAL 的禁令；静默接受会让消解记载与声明脱钩 | 已定 |
 | D-4 | **不**做自动消解（判定仍由**人**给） | 与 `W-2` 的边界划清（那一条是**检测**，本轮是**记载**） | 已定 |
-| D-5 | 落库形态（新表 / 新列 / 既有列扩展）由 EC-01 读**两个适配器**后定 | 涉及迁移 ⇒ 先量再定 | **待 EC-01** |
+| D-5 | 落库形态 = **附加**一列（既有 `supersedes` / `contradictions` / `active` **一字不动**） | EC-01 ⑤ 已读出三个既有列 ⇒ 「声明完整性」判据（序 22）不受影响；附加形态**不**撞 `escalation_triggers` | **已定（EC-01 后）** |
 | D-6 | 读面**未消解 ⇒ 逐字不变**（仍 `CONFLICTED`） | 「缺省形态逐字不变」是本战役的一贯纪律 | 已定 |
 
 ## 循环入口协议（幂等重入）
@@ -310,6 +310,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261012-423`（WP-1） | （待提交） | **EC-01 勘察定稿 PASS**：`scratch/probe-conflict-resolution.py` 跑**真实生产面** —— ① 消解面**全零命中**（五组标识符）；② **改既有声明的路径全零命中**（四组标识符）；③ 五态枚举**逐个读出**（`USE`/`ANNOTATE`/`SKIP`/`SUPERSEDED`/`CONFLICTED` —— **无**「已消解」）；④ `lifecycle.py` 三个写路径（`deactivate_memory`/`delete_memory`/`supersede_memory`）**都不碰冲突维**；⑤ **两适配器列面读出**（`supersedes TEXT` / `contradictions TEXT` / `active INTEGER` 都是既有列 ⇒ `D-5` 的落库前提是**附加**一列而非改既有列）| （见 CI 台账）| — | 五条 EC 里 EC-01 已 PASS；`D-5` 由 ⑤ 定：**附加**形态 | cycle 1 WP-2（消解记载） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **五条实测读数**（消解面全零命中 / 改声明路径全零命中 / 五态无误 / 三个写路径都不碰冲突维 / 声明语义已收口）⇒ 定位 `CC-1` 的**记载侧**；五条 EC 全 PENDING；MAINLINE 程序表**新增序 26** | （见 CI 台账） | — | 五条 EC 全 PENDING；落库形态（`D-5`）待 EC-01 读两个适配器后定 | cycle 1（EC-02 消解记载 + EC-03 读面披露） |
 
 ## 状态历史
