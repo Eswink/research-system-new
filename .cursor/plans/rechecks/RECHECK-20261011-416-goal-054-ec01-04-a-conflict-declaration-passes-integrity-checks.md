@@ -74,9 +74,24 @@ verify_paths:
 ③ `packages/application/memory/gate.py` 的改动是**产品行为**（收紧新提案的校验），
 其**后果面**已在 §3 逐条核对（零 FAILED）。
 
-### 6. 收口面（EC-05，待本轮随后回填）
+### 6. 收口面（EC-05，独立重跑）
 
-收口验证器 + 断言集进树；两处射程纯收紧；两树复检 + 归档；as-is m0 23/23（记录写完之后）。
+| 检查 | 读数 |
+| --- | --- |
+| 两个脚本在树 | `tools/verify_goal054_closeout.py` / `tools/goal054_closeout_assertions.py` |
+| `ruff` / `format` / **全量 mypy** | 全绿（**1185 files** Success）|
+| 规模门 | 文件 ≤ 450 行、函数 ≤ 50 行（全绿）|
+| `IN_SCOPE` **纯收紧** | `+2` 行；判据全绿 |
+| `_VERIFIERS` 射程清单 **同步登记** | `+1` 行（下界 22 不变）；判据全绿 |
+| 收口验证器（本树）| **60 判词 / 0 FAIL** |
+| 两树复检 | **`TWO-TREE PASS`**（两路 **60 判词** / `sha256` 相同 `8c844bdf6b5adfb5…`）|
+| 判词归档 | 两份各 **2262 B / 60 行 / `CR=0` / 0 FAIL**（二进制写盘）|
+| 治理 / 宪章判据 | `validate.py` 通过；`test_mainline_program_is_intact.py` **8 passed** |
+| **as-is m0** | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5624 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）。**+5 归因**：新用例 4 + 新文件进规模门参数化面 1 |
+
+**bootstrap 轮如实登记**：两树首轮 **`TWO-TREE RED`** —— 干净树停在**上一提交**，
+EC 状态与归档都还不存在；提交后重跑转绿。**另一处**：EC-01 的状态回填**前一提交未命中**
+（替换串与块内文本不符）⇒ 补一提交改为 PASS —— 判据当场报出（该判词把**未回填的 EC 状态**报了出来）。
 
 ## 结论
 

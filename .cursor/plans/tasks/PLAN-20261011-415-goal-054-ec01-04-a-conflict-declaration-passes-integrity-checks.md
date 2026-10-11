@@ -99,6 +99,12 @@ exit_criteria:
 | 四向反证 | **基线 GREEN**（4 passed）+ `Q-1`…`Q-4` **全 RED** + 四条 `sha 复原一致=True`；归档 **732 B / 15 行 / `CR=0`** |
 | 收紧的**连带面** | `tests/`（除 e2e/postgres）**5100 passed, 114 skipped / 零 FAILED** ⇒ **既有数据无一条被拒** |
 | 四道门 | `ruff` / `format` / **全量 mypy（1185 files Success）** / 规模门全绿 |
+| **as-is m0** | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5624 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；日志 `scratch/m0-goal054-ec05.log` |
+
+> **m0 条数 = 23**（终局行逐字）；`PASS [` **24** = 23 + `release-assets-immutable`（在计数之外）。
+> **passed 读数差（上一 GOAL 收口轮 `5619` → 本轮 `5624`，+5）逐条归因**：① 新用例 **4 条**
+> （`tests/application/memory/test_conflict_target_integrity.py`）；② 新增文件进入规模门的
+> **参数化面**（`PRODUCT_ROOTS` 含 `tests`）（**+1**）。**无**其他计数来源。
 
 ## 影响报告
 
