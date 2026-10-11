@@ -2,10 +2,10 @@
 id: PLAN-20261011-419
 slug: goal-056-ec01-04-the-waiting-face-has-a-start-point
 title: GOAL-20261011-056 cycle 1（EC-01…EC-04）：等待面有始点 + 超期可判定（只点名）+ 四向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-11
 updated_at: 2026-10-11
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-420-goal-056-ec01-04-the-waiting-face-has-a-start-point.md
 memory_entries: []
 parent_goal: GOAL-20261011-056
 cursor_plan_uri: null
