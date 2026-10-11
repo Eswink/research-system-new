@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 11 passed in 0.12s
+U-1 未消解被判已消解（conflicted 恒真）: 按压 RED
+    sha 复原一致=True | f3ce3ca73952
+    suite: 2 failed, 9 passed in 0.25s
+U-2 消解后被判未消解（conflicted 恒假）: 按压 RED
+    sha 复原一致=True | f3ce3ca73952
+    suite: 1 failed, 10 passed in 0.21s
+U-3 声明被删除 / 改写（披露把消解当声明清空）: 按压 RED
+    sha 复原一致=True | f3ce3ca73952
+    suite: 1 failed, 10 passed in 0.24s
+U-4 未知冲突对被接受（重复/未知对不拒）: 按压 RED
+    sha 复原一致=True | 1636f738a792
+    suite: 1 failed, 10 passed in 0.22s
+SUMMARY presses=4 all_red_and_restored=True
