@@ -93,7 +93,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-nudge-exit.py` ⇒ 四组读数；
       `git diff --numstat <base> HEAD -- <受判文件>` ⇒ **零改动**（本轮只读）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **端口与缺省实现**：新增出口端口（形状**照抄**既有 sink 那一族）+ **静默缺省实现**；
@@ -101,8 +101,8 @@ exit_criteria:
       （**不**收完整内容 / **不**收凭据 —— 隐私 §10）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q` ⇒ 全绿
-      + 新用例（缺省静默 / 摘要形状受阻 / 只收标识与计数）。
-    status: PENDING
+      + 新用例（缺省静默 / 摘要形状 / 不含内容字段）—— **8 passed**。
+    status: PASS
   - id: EC-03
     criterion: >-
       **接线与只读纪律**：超期信号**由调用方那一侧**交给端口（**有副作用** ⇒ **不得**进只读判定面）；
@@ -110,8 +110,8 @@ exit_criteria:
       **序 24 的超期判定语义与三种闸门声明一字未动**。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/run_orchestration tests/api -q`
-      ⇒ 全绿 + 新用例（注入后收到 / 未注入静默 / 端口故障点名 / 只读面无写方法）。
-    status: PENDING
+      ⇒ 全绿 + 新用例（注入后收到 / 未注入静默 / 端口故障点名 / 只读面无写方法）—— **8 passed**。
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`T-1` **缺省不送被改动**（缺省也送）⇒ **RED**；
@@ -122,7 +122,7 @@ exit_criteria:
     verify: >-
       `scratch/goal057-press.txt` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；归档
       `.cursor/plans/goals/evidence/GOAL-20261011-057-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -212,10 +212,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿：出口面零命中 + 序 24 产物在树 + **同类 seam 先例逐条读出** | `scratch/probe-nudge-exit.py` | PENDING |
-| EC-02 | **端口与缺省实现**（静默缺省；只收摘要；未注入逐字不变）| `pytest tests/application tests/domain -q` + 新用例 | PENDING |
-| EC-03 | **接线与只读纪律**（有副作用在调用方侧；故障点名；组合根决定注入）| `pytest tests/application/run_orchestration tests/api -q` | PENDING |
-| EC-04 | **两向反证** `T-1`…`T-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | `scratch/goal057-press.txt` + 归档 | PENDING |
+| EC-01 | 勘察定稿：出口面零命中 + 序 24 产物在树 + **同类 seam 先例逐条读出** | **实跑**：四组读数 + `TelemetrySink` / `Null*` / 组合根三条先例 | **PASS** |
+| EC-02 | **端口与缺省实现**（静默缺省；只收摘要；未注入逐字不变）| 新用例 **8 passed**（含 `NullNudgeSink` 静默形状）| **PASS** |
+| EC-03 | **接线与只读纪律**（有副作用在调用方侧；故障点名；组合根决定注入）| 新用例 **8 passed**（含送失败点名 + 判定面只读）| **PASS** |
+| EC-04 | **两向反证** `T-1`…`T-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **657 B / `CR=0`** / `sha256 939ac49c8fa854a3…` | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal057_closeout.py` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -320,6 +320,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261011-421`（WP-1…WP-4）| `c6b1ff3` | EC-01…EC-04 全 PASS：① 勘察定稿（出口面零命中 / 序 24 产物在树 / 同类 seam 三条先例 / **设计张力**）；② **端口 + 静默缺省**（`NudgeNotice` 只收摘要 / `NullNudgeSink` 静默 / `calls` 恒空）；③ **调用方侧接线**（三态互不混用：未超期·未给时点·未声明界 ⇒ 不送；超期未注入 ⇒ 不送；超期注入 ⇒ 交端口，**成功/失败都写进被引事实**）；④ **四向反证**全红 + 基线绿 + 复原一致。**新用例 8 条** | （见 CI 台账）| **四处规模门/参数门触顶**（6 参 ×2 ⇒ `NudgeDelivery`；455 行 ⇒ 搬 `gate_outcome` 进桥；55 行 ⇒ 抽 `_gated_outcome`）—— 全部**抽函数**而非放宽；**桥不传 `dataclass`**（返回纯元组）⇒ mypy 不必在两类间互转 | EC-05（自举收口）待做 | cycle 2（EC-05 收口） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **五条实测读数**（出口面零命中 / 序 24 产物在树但无出口 / `TelemetrySink` 端口形状 / `Null*` 静默缺省 / 组合根注入点）⇒ 定位 `Z-3` 的**出口侧**；五条 EC 全 PENDING；MAINLINE 程序表**新增序 25** + **战役级盘账 `max_goals` 25→30** | （见 CI 台账） | — | 五条 EC 全 PENDING；端口呼叫**放哪一层**（`D-6`）待 EC-01 读调用链后定 | cycle 1（EC-02 端口 + EC-03 接线） |
 
 ## 状态历史

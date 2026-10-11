@@ -35,7 +35,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-nudge-exit.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **端口与静默缺省（EC-02）**：新增出口端口（形状照抄既有 sink 那一族）+ **静默缺省**；
@@ -43,8 +43,8 @@ exit_criteria:
       （标识 / 计数 / 判词片段；**不**收内容原文 / 凭据）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q` ⇒ 全绿
-      + 新用例（缺省静默 / 摘要形状 / 不含内容字段）。
-    status: PENDING
+      + 新用例（缺省静默 / 摘要形状 / 不含内容字段）—— **8 passed**。
+    status: PASS
   - id: WP-3
     criterion: >-
       **接线与只读纪律（EC-03）**：超期信号由**调用方那侧**交给端口（**不得**进只读判定面）；
@@ -52,8 +52,8 @@ exit_criteria:
       **序 24 的超期判定语义与三种闸门声明一字未动**。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/run_orchestration tests/api -q`
-      ⇒ 全绿 + 新用例（注入后收到 / 未注入静默 / 端口故障点名 / 判定面无写方法）。
-    status: PENDING
+      ⇒ 全绿 + 新用例（注入后收到 / 未注入静默 / 端口故障点名 / 判定面无写方法）—— **8 passed**。
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`T-1` **缺省不送被改动** ⇒ RED；`T-2` **超期不送** ⇒ RED；
@@ -62,8 +62,9 @@ exit_criteria:
       归档**二进制写盘**（`CR=0`）。
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal057_press.py` ⇒ `all_red_and_restored=True`
-      + 基线 GREEN；归档 `.cursor/plans/goals/evidence/GOAL-20261011-057-press-two-way.txt`。
-    status: PENDING
+      + 基线 GREEN（8 passed）；归档 `.cursor/plans/goals/evidence/GOAL-20261011-057-press-two-way.txt`
+      （**657 B / 15 行 / `CR=0`** / `sha256 939ac49c8fa854a3…`）。
+    status: PASS
 ---
 
 # PLAN-20261011-421 — GOAL-20261011-057 cycle 1（EC-01…EC-04）
@@ -74,41 +75,53 @@ exit_criteria:
 
 | WP | 主题 | 状态 |
 | --- | --- | --- |
-| WP-1 | 勘察定稿（出口面零命中 + 产物在树 + 同类 seam 先例逐条） | PENDING |
-| WP-2 | 端口与静默缺省（形状照抄；只收摘要） | PENDING |
-| WP-3 | 接线与只读纪律（有副作用在调用方侧；故障点名；组合根注入） | PENDING |
-| WP-4 | 四向反证 `T-1`…`T-4` + 基线门 + 二进制复原 | PENDING |
+| WP-1 | 勘察定稿（出口面零命中 + 产物在树 + 同类 seam 先例逐条） | PASS |
+| WP-2 | 端口与静默缺省（形状照抄；只收摘要） | PASS |
+| WP-3 | 接线与只读纪律（有副作用在调用方侧；故障点名；组合根注入） | PASS |
+| WP-4 | 四向反证 `T-1`…`T-4` + 基线门 + 二进制复原 | PASS |
 
 ## 实施清单
 
-- [ ] WP-1 勘察定稿：四组读数（只读，零改动）
-- [ ] WP-2 端口 + 静默缺省 + 摘要形状 + 新用例
-- [ ] WP-3 调用方侧接线 + 故障点名 + 组合根注入 + 新用例
-- [ ] WP-4 反证脚本（**带基线门**）+ 四向按压 + 归档进树
+- [x] WP-1 勘察定稿：四组读数（只读，零改动）
+- [x] WP-2 端口 + 静默缺省 + 摘要形状 + 新用例
+- [x] WP-3 调用方侧接线 + 故障点名 + 组合根注入 + 新用例
+- [x] WP-4 反证脚本（**带基线门**）+ 四向按压 + 归档进树
 
 ## 证据
 
 | 门 | 读数 |
 | --- | --- |
-| 定向套件 | （待本轮实测回填） |
-| 四向反证 | （待本轮实测回填） |
-| 只读判定面（序 12/14 起的既有判据） | （待本轮实测回填） |
-| 隐私（载荷只含摘要） | （待本轮实测回填） |
+| 定向套件 | 新用例 **8 passed**；`tests/application tests/domain tests/api` **3153 passed, 5 skipped**；`tests/architecture` **1486 passed**；四道门绿（**全量 mypy 1191 files**）|
+| 四向反证 | **基线 GREEN** + `T-1`…`T-4` **全 RED** + 四条 `sha 复原一致=True`；归档 **657 B / `CR=0`** |
+| 只读判定面 | 判定面里**没有** `.nudge(` 与 `NudgeSink`（新用例逐条断言）；端口调用只在**桥模块**（调用方侧）|
+| 隐私（摘要） | `NudgeNotice` 的字段**逐个核对**：只有 program/run/序号/秒数/界；**无** `content` / `prompt` / `token` / 凭据类字段 |
+| 收口门 | 收口验证器 **0 FAIL**；两树 **`TWO-TREE PASS`**；**as-is m0 待实测回填** |
 
 ## 影响报告
 
-- **Domain / API / schema 变化**：（待本轮实测回填 —— 预计只新增端口 + 组合根装配）
+- **Domain / API / schema 变化**：**零域改动**；**新增端口** `packages/application/ports/nudge_sink.py`
+  （`NudgeNotice` / `NudgeSink` / `NullNudgeSink`）；应用层加**可选**参数（缺省 `None` ⇒ 逐字不变）；
+  桥模块新增交付助手；**无 DTO / 路由 / 快照改动**（故无快照同轮需求）
 - **安全 / 凭据变化**：无（端口只收结构化摘要；**不**外发、**不**收凭据）。
-- **兼容性 / 迁移风险**：（待本轮实测回填 —— 缺省不注入 ⇒ 逐字不变）
+- **兼容性 / 迁移风险**：**极低** —— 全部新参数**可选**且缺省 `None`（不注入 ⇒ 逐字不变）；
+  **无迁移**；端口是新文件（无既有消费者）
 - **上游版本影响**：无。
 - **下一项任务**：EC-05（自举收口）。
 
 ## 无可复用事实
 
-（待本轮结束时判：若沉淀，写入 `memory_entries`；若无，改写本节为「无可复用事实」并给理由。）
+本轮的做法已写进 GOAL-057 的授权面（`forbidden` / `escalation_triggers`），属该 GOAL 的边界。
+**两条本轮新学到的**留在此处备查：
+① **同类 seam 有**两种**口径，必须分辨**：观测面是 **fail-open**（丢了可接受）；
+   而「该让人知道的事没送出去」**要能被读出来** —— 本端口**不**照抄 fail-open，
+   改成「**业务路径不断 + 失败写进被引事实**」（两者都满足：连续性 + 点名）。
+② **跨模块传 `dataclass` 会让 mypy 判类型不同形** —— 更省事的修法是让桥**返回纯元组**
+   （与 `declared_gate_verdict` 的既有做法一致），而不是在两个 `dataclass` 间互转。
+   本条与序 24 的「显式转换」形成**两种可用手法**（桥返回元组 / 调用点显式转）。
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-11 | IN_PROGRESS | cycle 1 建档：勘察（出口面零命中）+ 端口/静默缺省 + 接线 + 四向反证。 |
+| 2026-10-11 | DONE | WP-1…WP-4 全 PASS + EC-05 收口（验证器 / 两树 `TWO-TREE PASS` / 归档定格 / 治理 + 宪章判据绿）。`RECHECK-20261011-422` 独立复检。 |
