@@ -255,16 +255,7 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec03-the-verdicts-are-read-once-for-both-faces",
-            # **判关系**：判词只读一次，且它被**传给闸门那一支**。
-            # GOAL-20261011-056 把闸门那一支抽成 `_gate_branch`（规模门）⇒
-            # 钉 `_declared_gate_evaluation(` 这个写法会**假红**；这里判「有一个把 `verdicts`
-            # 传下去的闸门调用」——**两种写法都认**（直调 / 抽出的桥）。
-            _count_calls(runner, "_verdicts") == 1
-            and ("verdicts, clock)" in runner or "verdicts," in runner)
-            and (
-                "_gate_branch(program, last, approvals, verdicts" in runner
-                or "_declared_gate_evaluation(program, last, approvals, verdicts" in runner
-            ),
+            _verdicts_are_read_once_for_both_faces(runner),
             "落库判词只读**一次**供两处共用（条件闸门与结论面看到同一批事实）",
         ),
         toolbox.verdict(
@@ -272,6 +263,25 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
             _gate_precedes_conclusion_face(runner),
         ),
     ]
+
+
+def _verdicts_are_read_once_for_both_faces(runner: str) -> bool:
+    """判词**只读一次**（计数）**且**它被**传给闸门那一支**（判关系）。
+
+    GOAL-20261011-056 把闸门那一支抽成 `_gate_branch`（规模门）⇒ 钉
+    `_declared_gate_evaluation(` 这个**写法**会**假红**；这里判「有一个把 `verdicts`
+    传下去的闸门调用」—— **直调**与**抽出的桥**两种写法都认。
+    计数仍用 AST（`_count_calls`）⇒ 「只读一次」这条**强度未变**。
+    """
+    if _count_calls(runner, "_verdicts") != 1:
+        return False
+    passed_down = "verdicts, clock)" in runner or "verdicts," in runner
+    if not passed_down:
+        return False
+    return (
+        "_gate_branch(program, last, approvals, verdicts" in runner
+        or "_declared_gate_evaluation(program, last, approvals, verdicts" in runner
+    )
 
 
 def _gate_precedes_conclusion_face(runner: str) -> bool:
