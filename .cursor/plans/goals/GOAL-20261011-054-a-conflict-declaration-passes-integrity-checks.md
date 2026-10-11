@@ -223,7 +223,7 @@ memory_entries: []
 | EC-02 | **gate 对齐**：`contradictions` 被引 id 存在性 + **不得自指**；`supersedes` 面一字不动 | 新用例 **4 passed**；`tests/application/memory` 全绿 | **PASS** |
 | EC-03 | **读面一致**：`CONFLICTED` 形态逐字不变；悬空 / 自指不再进入；既有键逐字不变 | `tests/api tests/adapters` **1207 passed, 7 skipped** | **PASS** |
 | EC-04 | **两向反证** `Q-1`…`Q-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **732 B / `CR=0`** / `sha256 232ebbb5d135b65f…` | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal054_closeout.py` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **60 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；m0 待实测回填 | PENDING（m0 回填后转 PASS）|
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -327,7 +327,8 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `PLAN-20261011-415`（WP-1） | （待提交） | **EC-01 勘察定稿 PASS**：`scratch/probe-conflict-integrity.py` 跑**两条路径** —— ① 适配器直写（`store.commit`，**绕过门链**）：两条都 ACCEPTED；② **产品路径**（`commit_memory`）：`supersedes` 悬空 ⇒ **`accepted=False stage=contradiction`**（点名「does not exist」），而 `contradictions` 悬空 / 自指 / 正常 ⇒ **都 `accepted=True stage=committed`**；读面后果：悬空与自指都进 `CONFLICTED` 并**逐字点名**那些 id | （见 CI 台账）| **一处实测更正（如实登记）**：建档初版用**直写路径**测量 ⇒ 把对照面读成「也接受」⇒ 差异**恰为**门链；以产品路径为准，**不对称成立** | CE-02（gate 对齐）待做 | cycle 1 WP-2（存在性 + 不得自指） |
+| 2 | `PLAN-20261011-415`（EC-05 收口轮）| `8be200a` / `3c36b98` / `f7880e8` / `1b330c7` / `967582f` | EC-05：① 收口验证器 + 断言集**进树**（**60 判词 / 0 FAIL**）；② 两处射程**纯收紧**（`IN_SCOPE` +2 / `_VERIFIERS` +1）；③ 两树 **`TWO-TREE PASS`**（两路 **60 判词** / `sha256` 相同 `8c844bdf6b5adfb5…`）+ 归档两份各 **2262 B / 60 行 / `CR=0`** | （见 CI 台账）| **bootstrap 轮如实登记**（干净树停在上一提交 ⇒ EC 状态与归档都还不存在）；**一处判据自查修正**（判词是 **f-string** ⇒ AST 分片 ⇒ 按整句核对**永不命中** ⇒ 五条全假红 ⇒ 改核对片段组合）| as-is m0 实测回填 | GOAL 收口 |
+| 1 | `PLAN-20261011-415`（WP-1…WP-4）| `ae742f3` | **EC-01 勘察定稿 PASS**：`scratch/probe-conflict-integrity.py` 跑**两条路径** —— ① 适配器直写（`store.commit`，**绕过门链**）：两条都 ACCEPTED；② **产品路径**（`commit_memory`）：`supersedes` 悬空 ⇒ **`accepted=False stage=contradiction`**（点名「does not exist」），而 `contradictions` 悬空 / 自指 / 正常 ⇒ **都 `accepted=True stage=committed`**；读面后果：悬空与自指都进 `CONFLICTED` 并**逐字点名**那些 id | （见 CI 台账）| **一处实测更正（如实登记）**：建档初版用**直写路径**测量 ⇒ 把对照面读成「也接受」⇒ 差异**恰为**门链；以产品路径为准，**不对称成立** | CE-02（gate 对齐）待做 | cycle 1 WP-2（存在性 + 不得自指） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **五条实测读数**（gate 只校验 `supersedes` / 悬空声明被接受 / 自指声明被接受 / 记忆面零检测实现 / 域上只校验非空字符串）⇒ 定位 `W-2` 的**声明面完整性**形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 22** | （见 CI 台账） | — | 五条 EC 全 PENDING；校验放哪一层（①）与自指怎么处置（②）待 cycle 1 落 | cycle 1（EC-02 校验 + EC-03 读面） |
 
 ## 状态历史
