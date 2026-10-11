@@ -86,6 +86,14 @@ services.api.routers.memory -> adapters (l.27)`（`.importlinter.api` 的
 `memory_read` **显式再导出**（严格 mypy 要求 `__all__`）—— **判定实现一字未动**。
 **独立复核**：`uv run --frozen --no-sync python -B -m pytest tests/architecture -q` ⇒ **287 passed**。
 
+**CI 侧复核（cycle 3 后按 `head_sha` 逐提交遍历 —— 更正了记录初稿的一处口径）**：
+`b2f7763` 的 M0 run **`38083285392` 结论 = `failure`**，`quality-{ubuntu,windows}` 的
+`Run all M0 gates` 失败，**签名与本地 m0 逐字相同**（`test_services_api_boundaries.py:43` / `:49`）。
+⇒ **CI 与本地全量门都抓到了这条真缺陷**；记录初稿写的「CI 是绿的、只有本地抓到」**不成立**，
+已在 GOAL 台账里按实测更正（**不抹掉**）。另一条 `f526fcc` 的 M0 run **`38082974499` = `cancelled`**，
+成因 = `.github/workflows/*.yml` 的 `concurrency.cancel-in-progress: true`（同 group 的下一批
+`38083285392` 起于 `20:19:19Z`，它止于 `20:19:36Z`）—— 按纪律登记**原因**，不当作「未取证」。
+
 ### 4c. cycle 3 的**判据面缺口**（自查补上 —— 独立复核）
 
 四处既有断言（`goal042` / `045` / `050` / `051`）从**钉位置**改成**合并文本**后，
