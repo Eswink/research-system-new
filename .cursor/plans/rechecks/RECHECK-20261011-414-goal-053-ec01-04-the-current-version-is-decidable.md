@@ -83,7 +83,7 @@ verify_paths:
 | `R26-*` 终态 | 六条**逐条明位**（初版只写区间 ⇒ 判据判红 ⇒ 已补齐 —— **自查抓到**）|
 | 治理 / 宪章判据 | `validate.py` 通过；`test_mainline_program_is_intact.py` **8 passed** |
 | 定向套件 | `tests/{application,api,e2e,domain,adapters,postgres,contracts,tooling,architecture}` **5072 passed, 196 skipped** |
-| **as-is m0** | **待收口轮实测回填**（记录写完之后、独占、仓库 `.venv`、不接管道；**未实跑不得记 PASS**）|
+| **as-is m0** | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5619 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）。**+6 逐条归因**：新用例 5 条 + 新文件进规模门参数化面 1 条 |
 
 **两处既有断言的修正（同 §6 申报）**：`goal045` / `goal050` 各一条**只认字典字面量写法**的断言，
 被本轮的**字段分组**（抽 `_identity_fields` / `_terminal_face`）打成**假红**

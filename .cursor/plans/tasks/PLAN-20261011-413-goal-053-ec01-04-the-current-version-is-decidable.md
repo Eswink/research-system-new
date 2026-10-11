@@ -131,7 +131,13 @@ exit_criteria:
 | 判词归档 | 两份各 **2383 B / 64 行 / `CR=0` / 0 FAIL**（二进制写盘）|
 | 两处射程 | `IN_SCOPE` **+2 行**；`_VERIFIERS` **+1 行**（下界 22 不变）—— 均**纯收紧** |
 | `R26-*` 终态 | 六条**逐条明写**（初版只写区间 `R26-*` ⇒ 判据判红 ⇒ 已按纪律补齐）|
-| **as-is m0** | **待本轮实测回填**（记录写完之后、独占、仓库 `.venv`、不接管道；**未实跑不得记 PASS** —— 承 GOAL-052 cycle 2 的教训）|
+| **as-is m0** | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5619 passed, 21 skipped** / `EXIT=0`；**独占**、仓库 `.venv`、不接管道、**在全部记录写完之后**）；日志 `scratch/m0-goal053-ec05.log` |
+
+> **m0 条数 = 23**（终局行逐字）；`PASS [` **24** = 23 + `release-assets-immutable`（在计数之外）。
+> **passed 读数差（GOAL-052 收口轮 `5613` → 本轮 `5619`，+6）逐条归因**：
+> ① 新用例 **5 条**（`tests/api/test_memory_chain_end.py`：链终点 / 无后继 / 环 / 跨范围 / HTTP 同值）；
+> ② 新增文件进入规模门的**参数化面**（`PRODUCT_ROOTS` 含 `tests`，每个 `.py` 一个用例）（**+1**）。
+> **无**其他计数来源。
 
 ### 收口轮的两处既有断言修正（如实登记）
 
