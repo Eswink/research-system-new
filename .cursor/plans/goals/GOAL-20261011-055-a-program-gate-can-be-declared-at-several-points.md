@@ -94,7 +94,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-multi-gate.py` ⇒ 字段与校验逐条读数；
       `git diff --numstat <base> HEAD -- <受判文件>` ⇒ **零改动**（本轮只读）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **多点可声明（缺省与单点逐字不变）**：新增**一组序号**的声明形态；**缺省 = 不拦**
@@ -216,7 +216,7 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿：闸门字段逐字 + 互斥引文 + **结构上不可能**多点 | `scratch/probe-multi-gate.py` | PENDING |
+| EC-01 | 勘察定稿：闸门字段逐字 + 互斥引文 + **结构上不可能**多点 | **实跑**：字段 2 个（可选整数 + 可选字符串元组）/ 互斥引文在位 / 机制三段 OK | **PASS** |
 | EC-02 | **多点可声明**（缺省 / 单点逐字不变；越界 / 重复 / 混用**点名拒绝**）| `pytest tests/domain tests/application -q` + 新用例 | PENDING |
 | EC-03 | **推进面按多点等**（每点各自可裁决；未命中轮次逐字不变）| `pytest tests/application/run_orchestration tests/e2e -q` | PENDING |
 | EC-04 | **两向反证** `R-1`…`R-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | `scratch/goal055-press.txt` + 归档 | PENDING |
@@ -321,6 +321,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261011-417`（WP-1） | （待提交） | **EC-01 勘察定稿 PASS**：`scratch/probe-multi-gate.py` 跑**真实生产面** —— （a）闸门字段**共 2 个**（`human_gate_at_index: int | None` / `human_gate_on_verdicts: tuple[str, ...] | None`）；（b）互斥引文**逐字在位**（`mutually exclusive` + 「two gate declarations would make 'why did it stop' unreadable」）；（c）**结构面反证**：类型是**单个**可选整数 ⇒ 第二个序号**无处可写**；（d）**机制三段已全在**（`register_declared_gate` / `declared_gate_verdict` / `declared_gate_pending` 三条 `def` 逐条 OK）⇒ 缺的只是**声明面** | （见 CI 台账）| — | EC-02（多点声明）待做 | cycle 1 WP-2（一组序号 + 点名拒绝） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **五条实测读数**（闸门字段只有两个 / 两者互斥 / 结构上不可能多点 / 机制三段已全在 / 条件式已可声明）⇒ 定位 `Z-1` 形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 23**（**深度轴** —— 自序 17 起未再推进）| （见 CI 台账） | — | 五条 EC 全 PENDING；新形态与既有单点字段的关系（`D-6`）待 EC-01 量后定 | cycle 1（EC-02 多点声明 + EC-03 推进面） |
 
 ## 状态历史
