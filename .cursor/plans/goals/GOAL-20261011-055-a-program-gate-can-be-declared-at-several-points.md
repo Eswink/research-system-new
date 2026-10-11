@@ -2,7 +2,7 @@
 id: GOAL-20261011-055
 slug: a-program-gate-can-be-declared-at-several-points
 title: 程序级闸门可以在**多个点**声明 —— 序 14 立了 `human_gate_at_index`、序 16 立了 `human_gate_on_verdicts`（条件式），但**声明的维度只有这两条**：**实测** `dataclasses.fields(ResearchProgram)` 里与闸门相关的字段**只有两个** —— 一个是**可选整数**（**一个固定序号**）、一个是**可选字符串元组**（**条件式**），且两者**互斥**（同时声明 ⇒ `_validate_gate_declarations` 点名拒绝）⇒ **结构上不可能**声明「第 1 轮与第 3 轮各停一次等人拍板」；`Z-1`（多点闸门）自 `GOAL-20261010-048` 登记以来**未做**，**深度轴自序 17 起未再推进**
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-11
 updated_at: 2026-10-11
 owners:
@@ -204,7 +204,7 @@ escalation_triggers:
     或**显式登记**为受判面收窄
 child_plans:
   - .cursor/plans/tasks/PLAN-20261011-417-goal-055-ec01-04-a-program-gate-can-be-declared-at-several-points.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-418-goal-055-ec01-04-a-program-gate-can-be-declared-at-several-points.md
 memory_entries: []
 ---
 
@@ -317,7 +317,21 @@ memory_entries: []
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| （待建档提交） | — | — |
+| `8ae7540`（replan + 建档） | **`total_count = 0`**（同批推送）⇒ **`covered_by 38135875716`** | 程序表新增序 23（**深度轴**）+ GOAL 建档 + 子 PLAN 投影 |
+| `8a77a49`（WP-1 勘察定稿） | **`total_count = 0`** ⇒ **`covered_by 38135875716`** | 探针四组读数（字段 2 个 / 互斥 / 结构不可能 / 机制三段 OK）|
+| `3fc6ab4`（WP-2…WP-4） | **`total_count = 0`** ⇒ **`covered_by 38135875716`** | 多点声明 + 两根落库 + 推进面第三支 + 四向反证 |
+| `304d7a9`（EC-05 首轮） | **`total_count = 0`** ⇒ **`covered_by 38135875716`** | 验证器 + 断言集进树 + 两处射程纯收紧 |
+| `a8d5e9d`（两树首轮归档） | **`total_count = 0`** ⇒ **`covered_by 38135875716`** | bootstrap 轮产物 |
+| `12059ad`（归档定格） | **`total_count = 0`** ⇒ **`covered_by 38135875716`** | 64 判词 / `sha256 6664b364…` |
+| `22e999f`（WP 记录面回填） | **`total_count = 0`** ⇒ **`covered_by 38135875716`** | 全 PASS + 三条判据面陷阱备查 |
+| `35530de`（**末条实测提交** = m0 回填）| `38135875716` **M0 success**（**8/8 job 全 success**）+ `38135875084` **Push on main success**（3/3）| **台账封闭于此提交** |
+
+**自我指涉边界（明写并封闭）**：写本台账本身要再提交 ⇒ 会产生新 run。**封闭口径**：
+**末条可引用的实测提交 = `35530de`**（上表最后一行，两 run 全绿）；**其后仅记录提交**，
+**不再追链** —— 若需复核本行结论，取 `35530de` 的两条 run 即足。
+
+**`covered_by` 的用法（逐条）**：七个提交**自身 `total_count = 0`**（**同批推送**只让 tip 起 run）
+⇒ 按纪律**不是**「未取证」，而是**由同批 tip 的 run 覆盖**（各自 `covered_by` 已在表内写明）。
 
 ## 迭代日志
 
@@ -331,4 +345,5 @@ memory_entries: []
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-11 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器 **64 判词 / 0 FAIL**（标准断言集一行未重写）；② 两树 **`TWO-TREE PASS`**（两路 64 判词 / `sha256` 相同 `6664b364a8a1f053…`）+ 归档两份各 **2436 B / 64 行 / `CR=0`**；③ **as-is m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5643 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**；**+19 逐条归因**）；④ 治理 + 宪章判据绿；⑤ **CI 台账逐提交**（`35530de`：M0 `38135875716` **8/8** + Push on main `38135875084` 3/3；`covered_by` 七条逐条写明；**边界封闭于 `35530de`**）。**四处如实登记**：① **f-string 的 AST 分片**（片段可能只是某个分片的一部分 ⇒ 按集合成员核对**永远失配**，五条判据一开始全假红）⇒ 改**子串**核对；② `defines` 要求**模块级**会让**方法**恒假 ⇒ 改 `_defines_method`；③ SQLite 共享连接门禁抓到**裸 `commit()`** ⇒ 登记进**构造期 bootstrap 白名单**（与既有 `eval_report_store` 同类同形，**不是**放宽）；④ 严格 mypy 的 `attr-defined` ⇒ harness 显式 `__all__`。**深度轴自序 17 起首次推进**。**残余**：`Z-1` 的**混合式**形态 / `Z-3` / `W-2` 内容级检测 / `CC-*` / `BB-3` / `DD-*` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261011-418`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 23**（承担者 = `GOAL-20261010-048` 登记的 `Z-1`；**轴 = 深度**），并写修订记录行（只追加）。**五条实测读数**（逐条见「事实层结论」表）：(a) `dataclasses.fields(ResearchProgram)` 里与闸门相关的字段**只有两个**（一个**可选整数**、一个**可选字符串元组**）；(b) 两者**互斥**（`mutually exclusive` ⇒ 同声明即点名拒绝）；(c) ⇒ **结构上不可能**声明两个序号；(d) 多点的**机制三段**（注册 / 判定 / 恢复）**已全在**（序 15/16 立的）；(e) 条件式是**另一维**（正交）。**深度轴自序 17 起未再推进**（序 18…22 都在质量轴）—— 本轮补。五条 EC 全 PENDING。**不做**混式声明 / **不**解除互斥 / **不**新建机制 / **不**做自动放行 / **不**触 `Z-3`。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
