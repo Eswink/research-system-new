@@ -83,9 +83,23 @@ verify_paths:
 ③ 产品面改动的后果面已由既有套件逐条核对（`tests/application/run_orchestration` **204 passed**；
 `tests/{application,domain,api}` **1945 passed, 5 skipped**；`tests/architecture` **1486 passed**）。
 
-### 7. 收口面（EC-05，待本轮随后回填）
+### 7. 收口面（EC-05，独立重跑）
 
-收口验证器 + 断言集进树；两处射程纯收紧；两树复检 + 归档；as-is m0 23/23（记录写完之后）。
+| 检查 | 读数 |
+| --- | --- |
+| 两个脚本在树 | `tools/verify_goal056_closeout.py` / `tools/goal056_closeout_assertions.py` |
+| `ruff` / `format` / **全量 mypy** | 全绿（**1189 files** Success）|
+| `IN_SCOPE` / `_VERIFIERS` **纯收紧** | `+2` / `+1` 行；判据全绿 |
+| 收口验证器（本树）| **61 判词 / 0 FAIL** |
+| 两树复检 | **`TWO-TREE PASS`**（两路 **61 判词** / `sha256` 相同 `ebc0ee1ee7182fa0…`）|
+| 判词归档 | 两份各 **2263 B / 61 行 / `CR=0` / 0 FAIL** |
+| 治理 / 宪章判据 | `validate.py` 通过；`test_mainline_program_is_intact.py` **8 passed** |
+| **as-is m0** | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5653 passed, 21 skipped** / `EXIT=0`；**独占**、仓库 `.venv`、不接管道、**在全部记录写完之后**）；日志 `scratch/m0-goal056-c3.log` — **+10 逐条归因**（8 + 1 + 1）|
+
+**两轮真红（如实登记，不抹掉）**：第一轮 `1 failed` —— 三处既有断言因本轮抽出 `_gate_branch`
+**假红**（`goal046` / `goal047` / `goal048`，逐字读数见 §5）；第二轮 `1 failed` ——
+判据按关系修好后 `goal048` 的 `_ec03_verdicts` **撞 50 行门限** ⇒ 抽命名助手。
+**两处都按「判关系 + 抽函数」解决，未放宽任何门禁**（这正是本 GOAL `forbidden` 的第一条）。
 
 ## 结论
 

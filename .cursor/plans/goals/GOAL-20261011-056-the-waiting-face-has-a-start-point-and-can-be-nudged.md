@@ -2,7 +2,7 @@
 id: GOAL-20261011-056
 slug: the-waiting-face-has-a-start-point-and-can-be-nudged
 title: 等待面有始点、可催办（有界）—— 序 12/14/15/16/23 把「程序停在**哪**等人拍板」做成了可声明、可裁决、可多点，但**等待本身没有任何时限面**：**实测** (a) 全仓 `gate_timeout`、`gate_deadline`、`nudge`、`escalat`、`awaiting_since`、`wait_since` 在 `packages/`·`adapters/`·`services/` **零命中**；(b) `ApprovalRecord` 的字段逐个读出（`id` / `run_id` / `action` / `risk` / `context` / `policy_source` / `requested_event_id` / `status` / `version`）—— **没有任何时间字段** ⇒ 「等了多久」读不出来；(c) 等待面的点名句只说「等人拍板」，**不含始点 / 时长 / 是否超期** ⇒ 声明的闸门**可以永远挂着**而系统里**没有任何可判定的信号**
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-11
 updated_at: 2026-10-11
 owners:
@@ -134,7 +134,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -195,7 +195,7 @@ escalation_triggers:
     或**显式登记**为受判面收窄
 child_plans:
   - .cursor/plans/tasks/PLAN-20261011-419-goal-056-ec01-04-the-waiting-face-has-a-start-point.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-420-goal-056-ec01-04-the-waiting-face-has-a-start-point.md
 memory_entries: []
 ---
 
@@ -214,7 +214,7 @@ memory_entries: []
 | EC-02 | **始点可读**（时点由调用方给，**不读挂钟**；缺省逐字不变）| 新用例 **8 passed**（含同一时点同结论）| **PASS** |
 | EC-03 | **催办 / 超期可判定**（有界；**只点名**；未声明/未给时点都不猜）| 新用例 **8 passed**（含坏界参数化）| **PASS** |
 | EC-04 | **两向反证** `S-1`…`S-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **660 B / `CR=0`** / `sha256 451f0848eb2f9a13…` | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal056_closeout.py` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **61 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5653 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -320,4 +320,5 @@ memory_entries: []
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-11 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器 **61 判词 / 0 FAIL**（标准断言集一行未重写）；② 两树 **`TWO-TREE PASS`**（两路 61 判词 / `sha256` 相同 `ebc0ee1ee7182fa0…`）+ 归档两份各 **2263 B / 61 行 / `CR=0`**；③ **as-is m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5653 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**；**+10 逐条归因**）；④ 治理 + 宪章判据绿；⑤ **产品路径接线**（推进路由给两个时点）。**四处如实登记**：① **两处规模门触顶**（文件 450 / 函数 50，均**抽函数**而非放宽）；② **两轮 m0 真红**（三处既有断言因抽出 `_gate_branch` 假红 ⇒ 按**关系**修正；随后判据修好又撞函数门 ⇒ 抽命名助手）；③ **跨模块 `dataclass` 不同形** ⇒ 调用点显式转换；④ `updated_at` 作为始点的**口径边界**（等待期被其它原因改动 ⇒ 时长偏短，不偏长）。**连续性轴自序 16 起首次推进**。**残余**：`Z-3` 的通知外发 / 升级链 / `Z-1` 混合式 / `W-2` 内容级检测 / `CC-*` / `BB-3` / `DD-*` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261011-420`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 24**（承担者 = `GOAL-20261010-048` 登记的 `Z-3`；**轴 = 连续性**），并写修订记录行（只追加）。**四条实测读数**（逐条见「事实层结论」表，命令与读数同在）：(a) 时限面在 `packages/`·`adapters/`·`services/` **零命中**；(b) `ApprovalRecord` 的字段逐个读出 —— **没有任何时间字段**（`id`/`run_id`/`action`/`risk`/`context`/`policy_source`/`requested_event_id`/`status`/`version`）；(c) 等待面三处点名句都**不含始点/时长/是否超期**；(d) 三种闸门声明（单点/条件式/多点）语义已定，本轮**只加时间侧**。**后果**：声明的闸门**可以永远挂着**而系统里**没有任何可判定的信号**。**连续性轴自序 16 起首次推进**。五条 EC 全 PENDING。**不做**自动放行/拒绝 / **不**做通知外发 / **不**做升级链 / **不**读挂钟。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
