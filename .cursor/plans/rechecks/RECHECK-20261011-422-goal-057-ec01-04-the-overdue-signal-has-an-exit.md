@@ -99,7 +99,11 @@ verify_paths:
 | 判词归档 | 两份各 **2153 B / 59 行 / `CR=0` / 0 FAIL** |
 | 按压归档 | **657 B / 15 行 / `CR=0`** |
 | 治理 / 宪章判据 | `validate.py` 通过；`test_mainline_program_is_intact.py` **8 passed** |
-| **as-is m0** | **待收口轮实测回填**（记录写完之后、独占、仓库 `.venv`、不接管道）|
+| **as-is m0** | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5663 passed, 21 skipped** / `EXIT=0`；**独占**、仓库 `.venv`、不接管道、**全部记录写完之后**）；日志 `scratch/m0-goal057-c2.log` — **+10 逐条归因** |
+
+**一轮真红（如实登记）**：第一轮 `1 failed` —— 两条既有顺序判据（`goal046` / `goal048`）因本轮
+**再抽一层**（`_gated_outcome`）**假红** ⇒ 按**关系**修正（候选名再补一层 / 改判「存在把
+`verdicts` 传下去的调用」）⇒ 第二轮 **23/23**。**抽函数 ≠ 放宽门禁**。
 
 ## 结论
 

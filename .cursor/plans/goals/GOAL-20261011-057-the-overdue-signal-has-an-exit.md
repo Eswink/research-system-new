@@ -2,7 +2,7 @@
 id: GOAL-20261011-057
 slug: the-overdue-signal-has-an-exit
 title: 超期信号有出口（可注入的 sink，缺省不送）—— 序 24 让等待面**有始点、能判超期**（`gate_nudge_after_seconds`），但那个信号**只能在被拉取时读**：**实测** (a) `NudgeSink`、`notify(`、`dispatch_notification`、`escalate` 在 `packages/`·`adapters/` **零命中**；(b) 序 24 的产物（「等太久了」+「决定权仍在人」）**在树**，但**没有任何出口**；(c) 而**同类 seam 的先例已全在**：`TelemetrySink` / `NullTelemetrySink`（`packages/application/ports/telemetry_sink.py`）+ 组合根注入 ⇒ 缺的是把这条**信号**接上一个**可注入的出口**
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-11
 updated_at: 2026-10-11
 owners:
@@ -138,7 +138,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO_TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -197,7 +197,7 @@ escalation_triggers:
     若命中，**不**放宽那条判据，而是把端口调用**放在调用方那一侧**（判定面继续只读）。
 child_plans:
   - .cursor/plans/tasks/PLAN-20261011-421-goal-057-ec01-04-the-overdue-signal-has-an-exit.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-422-goal-057-ec01-04-the-overdue-signal-has-an-exit.md
 memory_entries: []
 ---
 
@@ -216,7 +216,7 @@ memory_entries: []
 | EC-02 | **端口与缺省实现**（静默缺省；只收摘要；未注入逐字不变）| 新用例 **8 passed**（含 `NullNudgeSink` 静默形状）| **PASS** |
 | EC-03 | **接线与只读纪律**（有副作用在调用方侧；故障点名；组合根决定注入）| 新用例 **8 passed**（含送失败点名 + 判定面只读）| **PASS** |
 | EC-04 | **两向反证** `T-1`…`T-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **657 B / `CR=0`** / `sha256 939ac49c8fa854a3…` | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal057_closeout.py` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **59 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5663 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -328,4 +328,5 @@ memory_entries: []
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-11 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器 **59 判词 / 0 FAIL**（标准断言集一行未重写）；② 两树 **`TWO-TREE PASS`**（两路 59 判词 / `sha256` 相同 `67bd2f2dac64e508…`）+ 归档两份各 **2153 B / 59 行 / `CR=0`**；③ **as-is m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5663 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**；**+10** 逐条归因）；④ 治理 + 宪章判据绿；⑤ 按压归档 **657 B / `CR=0`**（基线 GREEN + `T-1`…`T-4` 全 RED + 复原一致）。**四处如实登记**：① **四处规模门 / 参数门触顶**（6 参 ×2 ⇒ `NudgeDelivery`；455 行 ⇒ 搬 `gate_outcome` 进桥；55 行 ⇒ 抽 `_gated_outcome`）—— 全部**抽函数**而非放宽；② **一轮 m0 真红**（两条既有顺序判据因再抽一层假红 ⇒ 按**关系**修正）；③ **跨模块传 `dataclass` 与 mypy 冲突** ⇒ 桥**返回纯元组**；④ **设计张力**（观测面 fail-open vs 本 GOAL「点名而非静默」）⇒ **分辨**处理（业务不断 + 失败点名）。**残余**：只有缝无真实外发 / **组合根尚未注入真实实现** / 升级链 / `Z-1` 混合式 / `W-2` 内容级检测 / `CC-*` / `BB-3` / `DD-*` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261011-422`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 25**（承担者 = `Z-3` 的**出口侧**；**轴 = 连续性**），并写修订记录行（只追加）；**同轮触顶** ⇒ 做了**战役级盘账**（`max_goals` **25 → 30**，三轴各有**实测**缺口，读数逐条进「战役预算」节的核算块）。**五条实测读数**（逐条见「事实层结论」表）：(a) `NudgeSink` / `notify(` / `dispatch_notification` / `escalate` 在 `packages/`·`adapters/` **零命中**；(b) 序 24 的产物（「等太久了」+「决定权仍在人」）**在树**但**没有任何出口**；(c) 同类 seam 的**形状 / 静默缺省 / 注入点**三条先例全在（`TelemetrySink` / `NullTelemetrySink` / 组合根）。**结论**：**信号有、出口无**。五条 EC 全 PENDING。**不做**真实外发 / **不**做重试·去重·投递保证 / **不**做升级链 / **不**读挂钟 / **不**把端口放进只读判定面 / **不**送完整内容（隐私 §10）。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
