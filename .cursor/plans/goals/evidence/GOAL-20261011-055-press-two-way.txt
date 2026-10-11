@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 14 passed in 0.20s
+R-1 多点只认第一个（求值退化成只看那一组的首项）: 按压 RED
+    sha 复原一致=True | 5031103b5147
+    suite: 1 failed, 13 passed in 0.34s
+R-2 越界序号被接受（范围校验整段摘掉）: 按压 RED
+    sha 复原一致=True | 98b4a8dcada6
+    suite: 1 failed, 13 passed in 0.32s
+R-3 重复序号被接受（去重校验整段摘掉）: 按压 RED
+    sha 复原一致=True | 98b4a8dcada6
+    suite: 1 failed, 13 passed in 0.32s
+R-4 未声明形态被改动（未声明也拦）: 按压 RED
+    sha 复原一致=True | 5031103b5147
+    suite: 2 failed, 12 passed in 0.32s
+SUMMARY presses=4 all_red_and_restored=True

@@ -4750,6 +4750,20 @@
             ],
             "title": "Human Gate At Index"
           },
+          "human_gate_at_indexes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Gate At Indexes"
+          },
           "human_gate_on_verdicts": {
             "anyOf": [
               {
@@ -4870,6 +4884,20 @@
               }
             ],
             "title": "Human Gate At Index"
+          },
+          "human_gate_at_indexes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Gate At Indexes"
           },
           "human_gate_on_verdicts": {
             "anyOf": [

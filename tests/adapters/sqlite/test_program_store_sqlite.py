@@ -82,6 +82,48 @@ def test_human_gate_round_trips_and_defaults_to_no_gate() -> None:
     assert store.get("prog-ungated").human_gate_at_index is None
 
 
+def test_the_multi_point_gate_round_trips_and_defaults_to_no_gate() -> None:
+    """GOAL-20261011-055 EC-02：**多点**闸门真的落库，缺省仍读到 `None`。
+
+    两臂逐条（与上一条同形）：声明的 `human_gate_at_indexes=(1, 3)` 往返一致
+    （**顺序也保持** —— 声明是有序的）；未声明的程序读回 `None` —— 后者是
+    「既有行为逐字不变」在**存储面**的证据：若 `NULL` 被回填成空数组，
+    「未声明」就与「坏声明」在落库层读起来一样（`()` 在域层已被点名拒绝）。
+    """
+    store = SqliteProgramStore()
+    store.create(replace(_program("prog-multi"), human_gate_at_indexes=(1, 3)))
+    store.create(_program("prog-ungated"))
+    assert store.get("prog-multi").human_gate_at_indexes == (1, 3)
+    assert store.get("prog-ungated").human_gate_at_indexes is None
+
+
+def test_an_old_table_gains_the_multi_point_column_additively() -> None:
+    """EC-02：**既有库文件**（在该列之前建的表）也能用 —— 加法式补齐，既有列一字不动。
+
+    **为什么这条必须有**：`CREATE TABLE IF NOT EXISTS` 对**已存在**的表不做任何事 ⇒
+    只把列加进 `_SCHEMA` 会让旧库在插入时报「no such column」。
+    受判面 = **先建一张没有该列的旧表**再打开 store（而不是新建库）。
+    """
+    import sqlite3
+
+    connection = sqlite3.connect(":memory:")
+    connection.row_factory = sqlite3.Row
+    connection.executescript(
+        "CREATE TABLE research_programs (program_id TEXT PRIMARY KEY, project_id TEXT NOT NULL,"
+        " protocol_id TEXT NOT NULL, max_runs INTEGER NOT NULL,"
+        " max_attempts_per_index INTEGER NOT NULL DEFAULT 1, human_gate_at_index INTEGER,"
+        " human_gate_on_verdicts_json TEXT, continue_rule_json TEXT NOT NULL,"
+        " created_at TEXT NOT NULL, updated_at TEXT NOT NULL);"
+        " CREATE TABLE program_decisions (program_id TEXT NOT NULL, after_index INTEGER NOT NULL,"
+        " decided_at TEXT NOT NULL, kind TEXT NOT NULL, reason TEXT NOT NULL,"
+        " cited_run_id TEXT, cited_facts_json TEXT NOT NULL,"
+        " PRIMARY KEY (program_id, after_index, decided_at));"
+    )
+    store = SqliteProgramStore(connection=connection)
+    store.create(replace(_program("prog-old"), human_gate_at_indexes=(2,)))
+    assert store.get("prog-old").human_gate_at_indexes == (2,)
+
+
 def test_decisions_are_append_only_and_dedup_exact_repeats() -> None:
     store = SqliteProgramStore()
     store.create(_program())

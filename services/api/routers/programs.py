@@ -151,6 +151,12 @@ async def create_program(
             if payload.human_gate_on_verdicts is not None
             else None
         ),
+        # GOAL-20261011-055 EC-02：多点闸门（缺省 None = 不设 ⇒ 逐字不变）。
+        human_gate_at_indexes=(
+            tuple(payload.human_gate_at_indexes)
+            if payload.human_gate_at_indexes is not None
+            else None
+        ),
     )
     del protocol  # 只用其可解析性做校验；声明面存的是路径（canonical 里的协议标识）
     store.create(program)
@@ -175,6 +181,11 @@ def _detail_dto(deps: ApiDeps, store: ProgramStore, program_id: str) -> ProgramD
         human_gate_on_verdicts=(
             list(program.human_gate_on_verdicts)
             if program.human_gate_on_verdicts is not None
+            else None
+        ),
+        human_gate_at_indexes=(
+            list(program.human_gate_at_indexes)
+            if program.human_gate_at_indexes is not None
             else None
         ),
         created_at=program.created_at.value.isoformat(),

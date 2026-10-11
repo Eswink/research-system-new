@@ -28,8 +28,11 @@ class ProgramCreateDto(BaseModel):
     #: 缺省 `None` = **不设闸门**（既有行为逐字不变）。上界由 `max_runs` 在域层校验。
     human_gate_at_index: int | None = Field(default=None, ge=1)
     #: GOAL-20261010-048 EC-02：**条件式**人工闸门 —— 上一轮落库判词命中其中之一 ⇒ 停下等人。
-    #: 缺省 `None` = 不设（既有行为逐字不变）；与 `human_gate_at_index` **互斥**（域层点名拒绝）。
+    #: 缺省 `None` = 不设（既有行为逐字不变）；与另外两条声明**互斥**（域层点名拒绝）。
     human_gate_on_verdicts: list[str] | None = None
+    #: GOAL-20261011-055 EC-02：**多点**人工闸门 —— **这一组**序号各自跑完之后停下等人。
+    #: 缺省 `None` = 不设（既有行为逐字不变）；逐点上界与**不得重复**由域层点名校验。
+    human_gate_at_indexes: list[int] | None = None
 
 
 class ProgramDecisionDto(BaseModel):
@@ -67,6 +70,8 @@ class ProgramDetailDto(BaseModel):
     human_gate_at_index: int | None = None
     #: GOAL-20261010-048 EC-02：条件式闸门的声明（缺省 `None` = 未声明）。
     human_gate_on_verdicts: list[str] | None = None
+    #: GOAL-20261011-055 EC-02：多点闸门的声明（缺省 `None` = 未声明）。
+    human_gate_at_indexes: list[int] | None = None
     created_at: str
     updated_at: str
     runs: list[ProgramRunDto]

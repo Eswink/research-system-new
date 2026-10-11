@@ -117,6 +117,13 @@ class ResearchProgram:
     # 与 `human_gate_at_index` **互斥**（同时声明 ⇒ 点名拒绝）：两条闸门声明各有各的
     # 求值时序（按序号 / 按落库事实），并存会让「为什么停」读不出是哪一条**要求**的。
     human_gate_on_verdicts: tuple[str, ...] | None = None
+    # GOAL-20261011-055 EC-02：**多点人工闸门**（可选声明；缺省 `None` = **不设**
+    # ⇒ 既有行为逐字不变）。语义 = 「**这一组**序号**各自**跑完之后，推进停下等人看结果」
+    # —— 序 14 的单点形态只能声明**一个**点（类型是单个可选整数），本形态让它成为**一组**
+    # （`Z-1`：此前**结构上**做不到「第 1 轮与第 3 轮各停一次」）。
+    # 与另外两条声明**互斥**（同时声明 ⇒ 点名拒绝）：一次只用一种闸门形态，
+    # 「为什么停」才读得出是**哪一条**要求的。
+    human_gate_at_indexes: tuple[int, ...] | None = None
     created_at: Timestamp = field(default_factory=Timestamp.now)
     updated_at: Timestamp = field(default_factory=Timestamp.now)
 
@@ -138,13 +145,26 @@ class ResearchProgram:
         """是否声明了**条件式**闸门（读面 / 判定面用来区分两条声明的**来源**）。"""
         return self.human_gate_on_verdicts is not None
 
+    @property
+    def multi_point_gate_hit(self) -> bool:
+        """是否声明了**多点**闸门（GOAL-20261011-055；同 `condition_gate_hit` 的用途）。"""
+        return self.human_gate_at_indexes is not None
+
 
 def _validate_gate_declarations(program: ResearchProgram) -> None:
-    """两条闸门声明的校验（序 14 的序号 / GOAL-20261010-048 的条件）——**坏声明必须点名**。
+    """三条闸门声明的校验（序 14 的序号 / 048 的条件 / 055 的**多点**）——**坏声明必须点名**。
 
     抽出成模块级函数是为了守住**函数 ≤ 50 行 / 复杂度 ≤ 10** 两道门（`__post_init__`
-    此前已 8 个分支，再加 4 个就触顶）—— 与「行为独立即单列」同一手法，语义未变。
+    此前已 8 个分支）；三条声明各自单列**再加**互斥校验，是同一手法（语义未变）。
     """
+    _validate_single_point_gate(program)
+    _validate_condition_gate(program)
+    _validate_multi_point_gate(program)
+    _validate_gate_exclusivity(program)
+
+
+def _validate_single_point_gate(program: ResearchProgram) -> None:
+    """序 14 的单点声明：序号必须在 `1..max_runs`（越界 ⇒ 点名）。"""
     if program.human_gate_at_index is not None and not (
         1 <= program.human_gate_at_index <= program.max_runs
     ):
@@ -152,6 +172,10 @@ def _validate_gate_declarations(program: ResearchProgram) -> None:
             "human_gate_at_index must be within 1..max_runs when declared "
             f"(got {program.human_gate_at_index}, max_runs={program.max_runs})"
         )
+
+
+def _validate_condition_gate(program: ResearchProgram) -> None:
+    """GOAL-20261010-048 的条件式声明：至少一个取值、且都不是空串（坏值 ⇒ 点名）。"""
     declared = program.human_gate_on_verdicts
     if declared is None:
         return
@@ -159,10 +183,50 @@ def _validate_gate_declarations(program: ResearchProgram) -> None:
         raise ValueError("human_gate_on_verdicts must name at least one verdict when declared")
     if any(not item for item in declared):
         raise ValueError("human_gate_on_verdicts must not be empty strings")
-    if program.human_gate_at_index is not None:
+
+
+def _validate_multi_point_gate(program: ResearchProgram) -> None:
+    """GOAL-20261011-055 EC-02 的**多点**声明：非空、逐点都在 `1..max_runs`、**不得重复**。
+
+    **越界与重复都点名**（不静默截断、不静默去重 —— 「点名而非静默降级」）：
+    越界点**永远不会触发**（那一轮不存在），重复点会让「这一轮为什么停」看起来像声明了两次。
+    """
+    declared = program.human_gate_at_indexes
+    if declared is None:
+        return
+    if not declared:
+        raise ValueError("human_gate_at_indexes must name at least one index when declared")
+    out_of_range = [item for item in declared if not (1 <= item <= program.max_runs)]
+    if out_of_range:
         raise ValueError(
-            "human_gate_at_index and human_gate_on_verdicts are mutually exclusive "
-            "(two gate declarations would make 'why did it stop' unreadable)"
+            "human_gate_at_indexes entries must be within 1..max_runs when declared "
+            f"(got {out_of_range}, max_runs={program.max_runs})"
+        )
+    repeated = sorted({item for item in declared if list(declared).count(item) > 1})
+    if repeated:
+        raise ValueError(f"human_gate_at_indexes must not repeat an index (got {repeated})")
+
+
+def _validate_gate_exclusivity(program: ResearchProgram) -> None:
+    """三条闸门声明**互斥**：一次只用一种形态（并用 ⇒ 点名拒绝）。
+
+    理由与序 16 立这条时**逐字相同**：两条（今为三条）声明的**求值时序**不同
+    （按序号 / 按落库事实 / 按一组序号），并存会让「为什么停」读不出是**哪一条**要求的。
+    **055 的多点与 048 的条件式同样互斥**（本轮**不**解除既有互斥，也不把它放宽）。
+    """
+    declared_forms = [
+        name
+        for name, value in (
+            ("human_gate_at_index", program.human_gate_at_index),
+            ("human_gate_on_verdicts", program.human_gate_on_verdicts),
+            ("human_gate_at_indexes", program.human_gate_at_indexes),
+        )
+        if value is not None
+    ]
+    if len(declared_forms) > 1:
+        raise ValueError(
+            f"{' and '.join(declared_forms)} are mutually exclusive "
+            "(more than one gate declaration would make 'why did it stop' unreadable)"
         )
 
 

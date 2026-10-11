@@ -26,6 +26,16 @@ from packages.application.run_orchestration.program_runner import advance_progra
 from packages.domain.program import ProgramContinueRule, ProgramDecisionKind
 from tests.application.run_orchestration.test_program_runner import _Harness
 
+#: 跨文件复用的名字**显式导出**（严格 mypy 的 `attr-defined` 要求；
+#: GOAL-20261011-055 的推进面用例复用本文件的 harness —— 不是把私有名当公共 API，
+#: 而是**声明**它们可以被同目录的姊妹用例复用）。
+__all__ = [
+    "_ApprovalRows",
+    "_Harness",
+    "_advance_with_verdict",
+    "_row",
+]
+
 pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 
 

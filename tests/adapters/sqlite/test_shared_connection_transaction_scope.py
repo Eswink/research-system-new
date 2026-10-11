@@ -239,6 +239,10 @@ def test_a_failing_block_still_swallows_nothing(tmp_path: Path) -> None:
 _BOOTSTRAP_COMMIT = {
     ("catalog_override_store.py", "__init__"),
     ("eval_report_store.py", "_ensure_compatible_schema"),
+    # GOAL-20261011-055 EC-02：**同一类**的构造期列补齐（多点闸门列）——
+    # 与上面那条同形（`PRAGMA table_info` + `ALTER TABLE ADD COLUMN`），
+    # 也是本连接的**初始化**而不是并发写路径。
+    ("program_store.py", "_ensure_compatible_schema"),
     ("evidence_ledger.py", "__init__"),
     ("experiment_store.py", "__init__"),
     ("library_store.py", "__init__"),

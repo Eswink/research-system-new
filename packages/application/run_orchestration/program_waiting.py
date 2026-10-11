@@ -53,23 +53,28 @@ def pending_approval(approvals: ApprovalReader | None, run_id: str) -> str:
 def declared_gate_trigger(program: Any, last_index: int, verdicts: tuple[str, ...]) -> str | None:
     """**声明的闸门**是否在本轮触发（触发 ⇒ 返回**点名句**，不触发 ⇒ `None`）。
 
-    两条声明各自求值（EC-03 的**求值先于结论面**）：
+    三条声明各自求值（EC-03 的**求值先于结论面**）：
 
     - `human_gate_at_index`（序 14）：**该序号那一轮**跑完之后触发 —— 与落库事实无关；
     - `human_gate_on_verdicts`（GOAL-20261010-048 EC-03）：上一轮落库的**判词取值命中
       其中之一**时触发 —— 与结论面的 `verdict_in` **同一族**（那里命中 ⇒ 续，这里命中 ⇒ 停）。
       求值只读**落库事实**（调用方给的 `verdicts`，与结论面读的是**同一批**），
-      **不**推断、**不**猜。
+      **不**推断、**不**猜；
+    - `human_gate_at_indexes`（GOAL-20261011-055 EC-03，`Z-1`）：**这一组序号中的任何一个**
+      是本轮 ⇒ 触发 —— 与单点那条**同一套求值时序**（按序号），只是点数从**一个**变成**一组**；
+      点名句**指出是哪一个点**触发的（一组里可能多个，逐个点名）。
 
     **只读**：本函数不碰审批面、不改任何状态（注册在有副作用的那半边，见
-    `program_gate_registration`）。两条声明互斥（域层点名拒绝）⇒ 这里先判序号、再判条件，
-    至多一条能命中。
+    `program_gate_registration`）。三条声明互斥（域层点名拒绝）⇒ 至多一条能命中。
     """
     declared = getattr(program, "human_gate_at_index", None)
     if declared is not None:
         if int(declared) != int(last_index):
             return None
         return f"第 {last_index} 轮是**声明的人工闸门**（`human_gate_at_index={declared}`）"
+    at_indexes = getattr(program, "human_gate_at_indexes", None)
+    if at_indexes is not None:
+        return _multi_point_trigger(list(at_indexes), last_index)
     on_verdicts = getattr(program, "human_gate_on_verdicts", None)
     if on_verdicts is None:
         return None
@@ -79,6 +84,22 @@ def declared_gate_trigger(program: Any, last_index: int, verdicts: tuple[str, ..
     return (
         f"第 {last_index} 轮落库判词命中**声明的条件式人工闸门**"
         f"（`human_gate_on_verdicts={list(on_verdicts)}`，命中 {list(hit)}）"
+    )
+
+
+def _multi_point_trigger(at_indexes: list[int], last_index: int) -> str | None:
+    """多点闸门在本轮是否触发（是 ⇒ 点名句，否 ⇒ `None`）。
+
+    **点名触发它的那个点**（判词要回答「为什么**这**一轮停了」）；
+    一组里若同时含同一序号（域层已拒绝重复 ⇒ 落库值不会这样，但读面**不假设**），
+    **逐个点名**而不是只报第一个 —— 静默取第一个就是「静默降级」的形态。
+    """
+    hits = [int(item) for item in at_indexes if int(item) == int(last_index)]
+    if not hits:
+        return None
+    return (
+        f"第 {last_index} 轮是**声明的人工闸门**之一"
+        f"（`human_gate_at_indexes={[int(item) for item in at_indexes]}`，本轮命中 {hits}）"
     )
 
 
@@ -142,11 +163,16 @@ def declared_gate_verdict(
     if note is None:
         return None
     facts = [f"state={last.state}"]
-    # 被引事实**点名是哪条声明**（序号 / 条件）——「为什么停」要读得出是**哪一条要求**的。
+    # 被引事实**点名是哪条声明**（序号 / 一组序号 / 条件）——「为什么停」要读得出是
+    # **哪一条要求**的（GOAL-20261011-055 把第三种形态也逐条点进来）。
     declared_index = getattr(program, "human_gate_at_index", None)
+    at_indexes = getattr(program, "human_gate_at_indexes", None)
     on_verdicts = getattr(program, "human_gate_on_verdicts", None)
     if declared_index is not None:
         facts.append(f"human_gate_at_index={declared_index}")
+    elif at_indexes is not None:
+        facts.append(f"human_gate_at_indexes={[int(item) for item in at_indexes]}")
+        facts.extend(f"gate index {int(item)}" for item in at_indexes if int(item) == int(index))
     else:
         hit = [item for item in verdicts if item in (on_verdicts or ())]
         facts.append(f"human_gate_on_verdicts={list(on_verdicts or ())}")
