@@ -142,7 +142,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -222,7 +222,7 @@ memory_entries: []
 | EC-02 | **多点可声明**（缺省 / 单点逐字不变；越界 / 重复 / 混用**点名拒绝**）| 新用例 **域 9 + 两根 3**；SQLite 含**旧表加法式补列**；PG 迁移 022 | **PASS** |
 | EC-03 | **推进面按多点等**（每点各自可裁决；未命中轮次逐字不变）| 新用例 **5 passed**（第 1 点拦 / 中间轮不拦 / 最后一点拦 / 未声明逐字 / 判词形态可区分）| **PASS** |
 | EC-04 | **两向反证** `R-1`…`R-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **722 B / `CR=0`** / `sha256 de221cf19e77a3a4…` | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal055_closeout.py` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **64 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5643 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -323,7 +323,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2 | `PLAN-20261011-417`（WP-2…WP-4）| `3fc6ab4` | EC-02/03/04 全 PASS：① 域新增**一组序号**形态（越界 / 重复 / 空组 / 混用**逐条点名**；校验抽 4 个命名函数守规模门）；② **SQLite** 新列 + **加法式列补齐**（旧库文件也能用 —— 受判面 = 先建旧表再打开 store）+ **PG 迁移 022**；③ **DTO + 快照同轮**（`+28 / -0` 纯附加）；④ **推进面逐点生效**（`_multi_point_trigger` **点名是哪一点**触发的）；⑤ **四向反证**全红 + 基线绿 + 复原一致。**新用例 21 条** | （见 CI 台账）| **两条门禁当场抓到本轮问题**：SQLite 共享连接门禁抓到裸 `commit()`（登记进构造期 bootstrap 白名单 —— 与既有同类同形，**不是**放宽）；严格 mypy 抓到跨文件复用私有名（harness 显式 `__all__`）| EC-05（自举收口）待做 | cycle 2（EC-05 收口） |
+| 2 | `PLAN-20261011-417`（WP-2…WP-4）| `3fc6ab4` | EC-02/03/04 全 PASS：① 域新增**一组序号**形态（越界 / 重复 / 空组 / 混用**逐条点名**；校验抽 4 个命名函数守规模门）；② **SQLite** 新列 + **加法式列补齐**（旧库文件也能用 —— 受判面 = 先建旧表再打开 store）+ **PG 迁移 022**；③ **DTO + 快照同轮**（`+28 / -0` 纯附加）；④ **推进面逐点生效**（`_multi_point_trigger` **点名是哪一点**触发的）；⑤ **四向反证**全红 + 基线绿 + 复原一致。**新用例 21 条** | （见 CI 台账）| **两条门禁当场抓到本轮问题**：SQLite 共享连接门禁抓到裸 `commit()`（登记进构造期 bootstrap 白名单 —— 与既有同类同形，**不是**放宽）；严格 mypy 抓到跨文件复用私有名（harness 显式 `__all__`）| **as-is m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5643 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**；**+19 逐条归因** = 9 + 5 + 2 + 1 + 2）| GOAL 收口 |
 | 1 | `PLAN-20261011-417`（WP-1） | （待提交） | **EC-01 勘察定稿 PASS**：`scratch/probe-multi-gate.py` 跑**真实生产面** —— （a）闸门字段**共 2 个**（`human_gate_at_index: int | None` / `human_gate_on_verdicts: tuple[str, ...] | None`）；（b）互斥引文**逐字在位**（`mutually exclusive` + 「two gate declarations would make 'why did it stop' unreadable」）；（c）**结构面反证**：类型是**单个**可选整数 ⇒ 第二个序号**无处可写**；（d）**机制三段已全在**（`register_declared_gate` / `declared_gate_verdict` / `declared_gate_pending` 三条 `def` 逐条 OK）⇒ 缺的只是**声明面** | （见 CI 台账）| — | EC-02（多点声明）待做 | cycle 1 WP-2（一组序号 + 点名拒绝） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **五条实测读数**（闸门字段只有两个 / 两者互斥 / 结构上不可能多点 / 机制三段已全在 / 条件式已可声明）⇒ 定位 `Z-1` 形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 23**（**深度轴** —— 自序 17 起未再推进）| （见 CI 台账） | — | 五条 EC 全 PENDING；新形态与既有单点字段的关系（`D-6`）待 EC-01 量后定 | cycle 1（EC-02 多点声明 + EC-03 推进面） |
 

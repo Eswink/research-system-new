@@ -86,6 +86,22 @@ PG 迁移 `022_program_multi_point_gate.sql`（`ADD COLUMN IF NOT EXISTS`，只�
 形态，在此**如实登记**；② **无一处收窄受判面**（白名单是**声明面**、`__all__` 是**导出面**）；
 ③ 删除行读数 **0**（两处都是纯加法）。
 
+### 7. 收口面（EC-05，独立重跑）
+
+| 检查 | 读数 |
+| --- | --- |
+| 两个脚本在树 | `tools/verify_goal055_closeout.py` / `tools/goal055_closeout_assertions.py` |
+| `ruff` / `format` / **全量 mypy** | 全绿（**1187 files** Success）|
+| `IN_SCOPE` / `_VERIFIERS` **纯收紧** | `+2` / `+1` 行（下界 22 不变）；判据全绿 |
+| 收口验证器（本树）| **64 判词 / 0 FAIL** |
+| 两树复检 | **`TWO-TREE PASS`**（两路 **64 判词** / `sha256` 相同 `6664b364a8a1f053…`）|
+| 判词归档 | 两份各 **2436 B / 64 行 / `CR=0` / 0 FAIL**（二进制写盘）|
+| 治理 / 宪章判据 | `validate.py` 通过；`test_mainline_program_is_intact.py` **8 passed** |
+| **as-is m0** | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5643 passed, 21 skipped** / `EXIT=0`；**独占**、仓库 `.venv`、不接管道、**在全部记录写完之后**）；日志 `scratch/m0-goal055-ec05.log` — **+19 逐条归因** = 9 + 5 + 2 + 1 + 2 |
+
+**bootstrap 轮如实登记**：两树首轮 **`TWO-TREE RED`** —— 干净树停在**上一提交**，
+判词归档还不存在；提交后重跑转绿。
+
 ## 结论
 
 **result: PASS_WITH_WARNINGS**。EC-01…EC-04 逐条独立成立：勘察读数与 GOAL 表逐条一致；

@@ -95,7 +95,16 @@ exit_criteria:
 | 定向套件 | 域 **8 passed** + 推进面 **5 passed**；两根 **SQLite 7 / PG 4 passed**；四道门全绿（**全量 mypy 1187 files**）|
 | 四向反证 | **基线 GREEN**（14 passed）+ `R-1`…`R-4` **全 RED** + 四条 `sha 复原一致=True`；归档 **722 B / `CR=0`** |
 | 落库形态 | SQLite 新列 + **加法式补齐**（旧表可用，已实测）；PG **迁移 022**；DTO + 快照同轮（`+28 / -0`）|
-| 收口门 | 收口验证器 **64 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**（`sha256 6664b364…`）；**as-is m0 待实测回填** |
+| 收口门 | 收口验证器 **64 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**（`sha256 6664b364…`）；**as-is m0** **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5643 passed, 21 skipped** / `EXIT=0`；**独占**、仓库 `.venv`、不接管道、**在全部记录写完之后**）；日志 `scratch/m0-goal055-ec05.log` |
+
+> **m0 条数 = 23**（终局行逐字）；`PASS [` **24** = 23 + `release-assets-immutable`（在计数之外）。
+> **passed 读数差（上一 GOAL 收口轮 `5624` → 本轮 `5643`，+19）逐条归因**：
+> ① 新增判据文件 `tests/domain/test_program_multi_point_gate.py`（**9** 条收集）；
+> ② 新增判据文件 `tests/application/run_orchestration/test_multi_point_gate_on_the_run_path.py`（**5** 条）；
+> ③ SQLite 往返用例 `+2`（5 → 7，含**旧表加法式补列**那条）；
+> ④ PG 往返用例 `+1`（3 → 4）；
+> ⑤ 两个新文件进入规模门的**参数化面**（`PRODUCT_ROOTS` 含 `tests`）（**+2**）。
+> 合计 **9 + 5 + 2 + 1 + 2 = 19** ⇒ 与读数差**逐条对齐**。**m0 条数仍是 23**。
 
 ## 影响报告
 
