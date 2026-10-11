@@ -2,7 +2,7 @@
 id: GOAL-20261012-058
 slug: a-resolved-conflict-is-decidable
 title: 被消解的冲突读得出来（声明不再是一扇单向门）—— 序 19 让「有冲突」成为**可判定的处置**（第五态 `CONFLICTED`）、序 22 让**声明本身**必须可查，但**「冲突被解决了」这件事读不出来**：**实测** (a) `resolve_conflict` / `arbitrate` / `prefer_` / `supersede_conflict` / `CONFLICT_RESOLVED` 在 `packages/`·`adapters/` **全零命中**；(b) `update_memory` / `amend_memory` / `edit_memory` / `rewrite` **全零命中** ⇒ **没有**任何「改一条已落库记忆的声明」的路径；(c) 五态枚举逐个读出 —— **没有**「已消解」态；(d) `lifecycle.py` 的三个写路径**都不处理「冲突」这一维**；⇒ 一经声明那条记录**永远** `CONFLICTED`
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-12
 updated_at: 2026-10-12
 owners:
@@ -191,7 +191,7 @@ escalation_triggers:
     （消解是**另一件事**，声明**一字不动**）。
 child_plans:
   - .cursor/plans/tasks/PLAN-20261012-423-goal-058-ec01-04-a-resolved-conflict-is-decidable.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-424-goal-058-ec01-04-a-resolved-conflict-is-decidable.md
 memory_entries: []
 ---
 
@@ -318,4 +318,5 @@ memory_entries: []
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-12 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器 **66 判词 / 0 FAIL**；② 两树 **\`TWO-TREE PASS\`**（两路 66 判词 / \`sha256\` 相同 \`5916d15d…\`）+ 归档两份各 **2517 B / 66 行 / \`CR=0\`**；③ **as-is m0 待实测回填**；④ 治理 + 宪章判据绿。**五处触顶 / 误伤逐条登记**（均以**抽函数 / 精准落点 / 校验入口**解决）。**残余**：自动消解 / 内容级检测 / \`CC-2\`·\`CC-3\` / \`Z-1\` 混合式 / \`Z-3\` 通知外发 / \`DD-*\` 等 + 未覆盖范围原样保留。独立复检：\`RECHECK-20261012-424\`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（\`R-M1\`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-12 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 26**（承担者 = `GOAL-20261010-050` 登记的 `CC-1`；**轴 = 质量**），并写修订记录行（只追加）。**五条实测读数**（逐条见「事实层结论」表，命令与读数同在）：(a) 消解面**全零命中**（五组标识符）；(b) **改既有声明的路径全零命中**（四组标识符）；(c) 五态枚举**逐个读出** —— **没有**「已消解」态；(d) `lifecycle.py` 的**三个写路径**都不处理「冲突」这一维；(e) `contradictions` 的**声明**语义已由序 22 收口（本轮**一字不动**）。**结论**：**一个已声明的冲突是终态**（单向门）。五条 EC 全 PENDING。**不做**自动消解 / **不**做内容级检测 / **不**删声明 / **不**走审批。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
