@@ -104,8 +104,8 @@ exit_criteria:
       （那一条是**基准**）；**新提案**与**更新面**都要过（若存在两处入口）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q` ⇒ 全绿
-      + 新用例（悬空拒绝 / 自指拒绝 / 正常通过 / `supersedes` 面逐字不变）。
-    status: PENDING
+      + 新用例（悬空拒绝 / 自指拒绝 / 正常通过 / `supersedes` 面逐字不变）—— **4 passed**。
+    status: PASS
   - id: EC-03
     criterion: >-
       **读面与一致（点名形态可区分）**：读面对「冲突声明」的点名**保持既有形态**
@@ -114,8 +114,8 @@ exit_criteria:
       HTTP 面既有字段）。**不各写一套判定**（沿用 `packages/application/memory/` 的同一批纯函数）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters -q` ⇒ 全绿
-      + 新用例（既有键逐字不变 / 正常冲突仍 `CONFLICTED`）。
-    status: PENDING
+      + 新用例（既有键逐字不变 / 正常冲突仍 `CONFLICTED`）；连带面 **5100 passed / 零 FAILED**。
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`Q-1` 悬空声明**被接受** ⇒ **RED**；
@@ -126,7 +126,7 @@ exit_criteria:
     verify: >-
       `scratch/goal054-press.txt` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；归档
       `.cursor/plans/goals/evidence/GOAL-20261011-054-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -220,9 +220,9 @@ memory_entries: []
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 勘察定稿：三态（悬空 / 自指 / 正常）**实跑**读数 + 校验面逐字引文 | **实跑**（产品路径）：`supersedes` 悬空**被拒** / `contradictions` 悬空·自指**被接受** | **PASS** |
-| EC-02 | **gate 对齐**：`contradictions` 被引 id 存在性 + **不得自指**；`supersedes` 面一字不动 | `pytest tests/application tests/domain -q` + 新用例 | PENDING |
-| EC-03 | **读面一致**：`CONFLICTED` 形态逐字不变；悬空 / 自指不再进入；既有键逐字不变 | `pytest tests/api tests/adapters -q` | PENDING |
-| EC-04 | **两向反证** `Q-1`…`Q-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | `scratch/goal054-press.txt` + 归档 | PENDING |
+| EC-02 | **gate 对齐**：`contradictions` 被引 id 存在性 + **不得自指**；`supersedes` 面一字不动 | 新用例 **4 passed**；`tests/application/memory` 全绿 | **PASS** |
+| EC-03 | **读面一致**：`CONFLICTED` 形态逐字不变；悬空 / 自指不再进入；既有键逐字不变 | `tests/api tests/adapters` **1207 passed, 7 skipped** | **PASS** |
+| EC-04 | **两向反证** `Q-1`…`Q-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **732 B / `CR=0`** / `sha256 232ebbb5d135b65f…` | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal054_closeout.py` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
