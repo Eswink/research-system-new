@@ -2,7 +2,7 @@
 id: PLAN-20261011-411
 slug: goal-052-ec05-self-bootstrap-closeout
 title: GOAL-20261011-052 cycle 2/3（EC-05）：自举收口 —— 验证器进树 + 两树 + 归档 + 门链 + 台账；cycle 3 修全量 m0 抓到的架构契约违例
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-11
 updated_at: 2026-10-11
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-412-goal-052-ec05-self-bootstrap-closeout.md
@@ -60,14 +60,14 @@ exit_criteria:
       **as-is m0 23/23**（在**全部记录写入之后**，独占、仓库 `.venv`、不接管道）。
     verify: >-
       终局行 `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0）。
-    status: PENDING
+    status: PASS
   - id: AC-5
     criterion: >-
       **CI 台账逐提交**（`cancelled` / `failure` 如实登记 + 原因 + `covered_by`；
       空集合 = 未取证；自我指涉边界明写并封闭）。
     verify: >-
       `scratch/poll_ci_all.sh <sha>` 遍历该 sha 全部 run + `/jobs`；台账表见 GOAL 正文。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261011-411 — GOAL-20261011-052 cycle 2（EC-05 自举收口）
@@ -81,12 +81,13 @@ exit_criteria:
 | AC-1 | 收口面进树 + 四道门 + 两处射程纯收紧 | PASS |
 | AC-2 | 两树 `TWO-TREE PASS` + 判词归档进树 | PASS |
 | AC-3 | 记录面自洽 + 治理 + 宪章判据绿 | PASS |
-| AC-4 | as-is m0 **23/23**（记录写完之后） | PENDING（cycle 3 重跑后回填） |
-| AC-5 | CI 台账逐提交 | PENDING（cycle 3 推送后回填） |
+| AC-4 | as-is m0 **23/23**（记录写完之后） | PASS（cycle 3 独占重跑回填：`PASS [` 24 / `FAILED [` 0 / 5613 passed, 21 skipped） |
+| AC-5 | CI 台账逐提交 | PASS |
 
-> **AC-4 的更正（如实登记）**：cycle 2 曾把 AC-4 标 PASS，但该轮 as-is m0 **实测为 `FAILED`**
-> （架构契约违例 —— 见上节）。**未回读即记 PASS 属违规**（"未实跑不得记 PASS"）⇒ 本表改为
-> `PENDING`，由 cycle 3 修复后的独占重跑回填。`AC-5` 同理（本轮推送后才有该轮台账）。
+> **AC-4 / AC-5 的更正过程（如实登记，不抹掉）**：cycle 2 曾把两条标 PASS，但那轮 as-is m0
+> **实测为 `FAILED`**（架构契约违例 —— 见上节），CI 台账也尚未产生 ⇒ **属过早**（违规形态：
+> 「未实跑不得记 PASS」）。cycle 3 起两条先**回退为待验**（`ALL_PLAN` 投影同步回退），
+> **修复 + 独占重跑拿到实测读数之后**才回填 PASS。形态与 `GOAL-20261010-046` 的修复轮一致。
 
 ## 实施清单
 
@@ -108,7 +109,13 @@ exit_criteria:
 | 两处射程 | `IN_SCOPE` **+2 行**；射程分区清单 **+1 行**（下界 21→22）—— 均**纯收紧** |
 | 治理 | `validate.py` 通过 |
 | 宪章判据 | `test_mainline_program_is_intact.py` 绿 |
-| **as-is m0** | `PASS: profile=m0; 23 deterministic checks`（`PASS [` 24 / `FAILED [` 0 / passed/skipped 读数**待本轮全量 m0 实测回填**；在全部记录写完之后、独占、仓库 `.venv`、不接管道）|
+| **as-is m0** | **`PASS: profile=m0; 23 deterministic checks`**（`PASS [` **24** / `FAILED [` **0** / **5613 passed, 21 skipped** / `EXIT=0`；**独占**、仓库 `.venv`、不接管道、**在全部记录写完之后**）；日志 `scratch/m0-goal052-c3.log` |
+
+> **m0 条数 = 23**（终局行逐字）；`PASS [` 行数 **24** = 23 + `release-assets-immutable`（在计数之外）。
+> **passed 读数差（cycle 2 **5610** → cycle 3 **5613**，+3）的逐条归因**：①
+> 架构契约违例修复后 `tests/architecture` 的 **2 条失败转为通过**（+2）；② 新增产品文件
+> `packages/application/memory/disposition.py` 进入 `tests/tooling/test_python_source_limits.py`
+> 的**参数化面**（`PRODUCT_ROOTS` 含 `packages`，每个 `.py` 一个用例）（+1）。**无**其他计数来源。
 
 ### 本轮全量 m0 **真红**（架构契约违例，已修 —— 如实登记）
 
@@ -232,5 +239,5 @@ cycle 3 的可复用做法：**「判关系不判位置」的修法本身会开�
 | --- | --- | --- |
 | 2026-10-11 | IN_PROGRESS | 验证器 + 断言集进树；两处射程纯收紧；bootstrap 轮时序登记。 |
 | 2026-10-11 | IN_PROGRESS | 两树 `TWO-TREE PASS`；归档定格；`RECHECK-20261011-412` 独立复检。**m0 这一路当时未回读 ⇒ AC-4 的 PASS 属过早**（实测为 FAILED）。 |
-| 2026-10-11 | IN_PROGRESS | **cycle 3 修复轮**：架构契约违例修复（判定搬去应用层）+ 四处既有断言改判关系 + 两条同源 AST 判据；两树重跑（67 判词）；AC-4 / AC-5 回退 `PENDING`。 |
-| 2026-10-11 | DONE | as-is m0 **23/23** 实测回填（`PASS [` 24 / `FAILED [` 0）+ CI 台账逐提交；`RECHECK-20261011-412` 独立复检。 |
+| 2026-10-11 | IN_PROGRESS | **cycle 3 修复轮**：架构契约违例修复（判定搬去应用层）+ 四处既有断言改判关系 + 两条同源 AST 判据；两树重跑（67 判词）；AC-4 / AC-5 **回退为待验**（收口依据更正）。 |
+| 2026-10-11 | DONE | as-is m0 **23/23** 实测回填（`PASS [` 24 / `FAILED [` 0 / 5613 passed, 21 skipped）+ CI 台账逐提交；`RECHECK-20261011-412` 独立复检。 |

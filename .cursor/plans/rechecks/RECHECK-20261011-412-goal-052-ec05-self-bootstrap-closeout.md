@@ -67,9 +67,13 @@ verify_paths:
 `validate.py` 通过；`test_mainline_program_is_intact.py` 绿（本 GOAL 的 id 已在程序表**序 20**）；
 **cycle 3 后重跑**：`tests/architecture`（经 `uv run`）**287 passed**（分层契约
 `2 kept, 0 broken`）；定向套件 `tests/{application,api,e2e,domain,adapters,postgres,contracts,tooling}`
-**4780 passed, 196 skipped**。**as-is m0**：`PASS: profile=m0; 23 deterministic checks`
-（`PASS [` 24 / `FAILED [` 0 / passed/skipped 读数**待全量 m0 实测回填**；在全部记录写完之后、
-独占、仓库 `.venv`、不接管道）。
+**4780 passed, 196 skipped**。**as-is m0**（cycle 2 那一轮 **FAILED** —— 见 §4b；**cycle 3 修复后独占重跑**）：
+**`PASS: profile=m0; 23 deterministic checks`**、`PASS [` **24** / `FAILED [` **0** /
+**5613 passed, 21 skipped** / `EXIT=0`（在全部记录写完之后、独占、仓库 `.venv`、不接管道；
+日志 `scratch/m0-goal052-c3.log`）。**与 cycle 2 的 passed 读数差 = +3，逐条归因**：
+① 架构契约违例修复 ⇒ `tests/architecture` 的 **2 条失败转为通过**；② 新增产品文件
+`packages/application/memory/disposition.py` 进入规模门的**参数化面**（`PRODUCT_ROOTS` 含
+`packages`，每个 `.py` 一个用例）（**+1**）。**无**其他计数来源，**m0 条数仍是 23**。
 
 ### 4b. cycle 3 的**真缺陷**（全量 m0 抓到，已修 —— 独立复核）
 
