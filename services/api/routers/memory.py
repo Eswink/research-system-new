@@ -35,7 +35,7 @@ from packages.application.memory.disposition import (
 )
 from packages.application.memory.gate import MemoryGateDeps, commit_memory
 from packages.application.memory.lifecycle import MemoryLifecycleDeps, delete_memory
-from packages.application.memory.validity import validity_at
+from packages.application.memory.validity import ValidityState, validity_at
 from packages.application.ports import InvalidInputError
 from packages.domain.core import ID, Timestamp
 from packages.domain.enums import MemoryTier, MemoryType
@@ -44,6 +44,7 @@ from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.memory import (
     MemoryCommittedDto,
+    MemoryConflictResolutionDto,
     MemoryFilteredListViewDto,
     MemoryListViewDto,
     MemoryProposalDto,
@@ -75,6 +76,44 @@ def _enum_value(value: object) -> str:
     return getattr(value, "value", str(value))
 
 
+def _resolution_dtos(record: MemoryRecord) -> list[MemoryConflictResolutionDto]:
+    """**冲突消解**逐对转成 DTO（GOAL-20261012-058 EC-03；与编排面**同源同值**）。
+
+    未消解 ⇒ 空列表 ⇒ 处置仍是 `CONFLICTED`（既有行为逐字不变）。
+    """
+    return [
+        MemoryConflictResolutionDto(
+            other_id=item.other_id,
+            resolved_by=item.resolved_by,
+            resolved_at=item.resolved_at.value.isoformat(),
+        )
+        for item in record.resolutions
+    ]
+
+
+def _time_and_linkage_fields(
+    record: MemoryRecord, validity: ValidityState | None, links: list[str]
+) -> dict[str, object]:
+    """**时效 + 取代**那几项（身份/内容字段就地写；判定项由 `_record_dto` 补上）。"""
+    return {
+        "id": record.id,
+        "tier": _enum_value(record.tier),
+        "kind": _enum_value(record.kind),
+        "content": record.content,
+        "provenance": record.provenance,
+        "confidence": record.confidence,
+        "scope": record.scope,
+        "validity": validity.value if validity is not None else None,
+        "valid_from": record.valid_from.value.isoformat() if record.valid_from else None,
+        "review_after": record.review_after.value.isoformat() if record.review_after else None,
+        "expires_at": record.expires_at.value.isoformat() if record.expires_at else None,
+        "supersedes": list(record.supersedes),
+        "active": record.active,
+        "contradictions": list(record.contradictions),
+        "superseded_by": links,
+    }
+
+
 def _record_dto(
     record: MemoryRecord,
     *,
@@ -98,33 +137,22 @@ def _record_dto(
     superseded = bool(links)
     chain: dict[str, object] = dict(terminal or {})
     chain_ids = chain.get("terminal")
-    return MemoryRecordDto(
-        id=record.id,
-        tier=_enum_value(record.tier),
-        kind=_enum_value(record.kind),
-        content=record.content,
-        provenance=record.provenance,
-        confidence=record.confidence,
-        scope=record.scope,
-        validity=validity.value if validity is not None else None,
-        valid_from=record.valid_from.value.isoformat() if record.valid_from else None,
-        review_after=record.review_after.value.isoformat() if record.review_after else None,
-        expires_at=record.expires_at.value.isoformat() if record.expires_at else None,
-        supersedes=list(record.supersedes),
-        active=record.active,
-        contradictions=list(record.contradictions),
-        superseded_by=links,
-        disposition=disposition_of(
-            validity, superseded=superseded, conflicted=bool(record.contradictions)
-        ),
-        reason=disposition_reason(validity, record, superseded_by=links),
-        # 缺省（调用方没给）⇒ 本条即当前版本 —— 与编排面 `_memory_row` **同一形态**，
-        # 免得两处对「没有链」这件事给出不同的默认值。
-        terminal_state=str(chain.get("state", TERMINAL_CURRENT)),
-        terminal_ids=(
-            [str(item) for item in chain_ids] if isinstance(chain_ids, list) else [str(record.id)]
-        ),
+    base = _time_and_linkage_fields(record, validity, links)
+    base["superseded_by"] = links
+    base["conflict_resolutions"] = _resolution_dtos(record)
+    base["disposition"] = disposition_of(
+        validity,
+        superseded=superseded,
+        conflicted=bool(record.unresolved_conflicts),
     )
+    base["reason"] = disposition_reason(validity, record, superseded_by=links)
+    base["terminal_state"] = str(chain.get("state", TERMINAL_CURRENT))
+    base["terminal_ids"] = (
+        [str(item) for item in chain_ids] if isinstance(chain_ids, list) else [str(record.id)]
+    )
+    # `base` 是 `dict[str, object]`（mypy 无法核对键名）⇒ 走 **pydantic 校验入口**
+    # （`model_validate`）而不是 `**base` 展开 —— 后者会让 6 个键各报 arg-type。
+    return MemoryRecordDto.model_validate(base)
 
 
 @router.get(

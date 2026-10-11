@@ -135,10 +135,23 @@ def _memory_row(
     state = validity_at(record, moment)
     # GOAL-20261011-051 EC-02：**未消解的冲突**是一维 —— `contradictions` 非空即「有」。
     # 这里**只读声明**（不推断谁和谁冲突 —— 那是序 13 的 `W-2`，明确不做）。
-    conflicted = bool(record.contradictions)
+    # GOAL-20261012-058 EC-03：**逐对**判冲突 —— 已消解的那些**不再计入**。
+    # 既有行为逐字不变：记录**没有**消解记载 ⇒ `unresolved` == `contradictions`
+    # ⇒ `conflicted` 与改动前**同值**。
+    conflicted = bool(record.unresolved_conflicts)
     row = _identity_fields(record, state)
     row["supersedes"] = list(record.supersedes)
     row["superseded_by"] = list(superseded_by or ())
+    # GOAL-20261012-058 EC-03：**冲突消解**逐对披露（**声明一字不动** —— `contradictions`
+    # 是历史事实，消解是另一件事）。未消解 ⇒ 空列表 ⇒ 处置仍是 `CONFLICTED`（既有行为逐字不变）。
+    row["conflict_resolutions"] = [
+        {
+            "other_id": item.other_id,
+            "resolved_by": item.resolved_by,
+            "resolved_at": item.resolved_at.value.isoformat(),
+        }
+        for item in record.resolutions
+    ]
     row["terminal"] = _terminal_face(record, terminal)
     row["disposition"] = disposition_of(
         state, superseded=bool(superseded_by), conflicted=conflicted

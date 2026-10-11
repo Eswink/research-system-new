@@ -9,6 +9,7 @@ rowcount validation (0 rows → InvalidInputError).
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any
 
@@ -18,7 +19,7 @@ from adapters.postgres.db import dsn_from_env
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import Timestamp
 from packages.domain.enums import MemoryTier, MemoryType
-from packages.domain.memory import MemoryRecord, MemoryWriteProposal
+from packages.domain.memory import ConflictResolution, MemoryRecord, MemoryWriteProposal
 
 
 class PostgresMemoryStore(PostgresAdapterBase):
@@ -70,8 +71,8 @@ class PostgresMemoryStore(PostgresAdapterBase):
                 "INSERT INTO m12_memory"
                 " (id, tier, kind, content, provenance, confidence, scope,"
                 " valid_from, review_after, expires_at,"
-                " supersedes, contradictions, active)"
-                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s)"
+                " supersedes, contradictions, resolutions, active)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s)"
                 " ON CONFLICT (id) DO NOTHING",
                 _proposal_values(proposal),
             )
@@ -157,8 +158,44 @@ class PostgresMemoryStore(PostgresAdapterBase):
     def _row(self, memory_id: str) -> Any:
         return self._conn.execute("SELECT * FROM m12_memory WHERE id = %s", (memory_id,)).fetchone()
 
+    # --- Internal helpers ---
 
-# --- Internal helpers ---
+    def resolve_conflict(
+        self, memory_id: str, other_id: str, resolved_by: str, resolved_at: Timestamp
+    ) -> MemoryRecord:
+        """GOAL-20261012-058 EC-02：**逐对**落消解记载（读-改-写；原子性由事务保证）。"""
+        record = self.get(memory_id)
+        if other_id not in record.contradictions:
+            raise InvalidInputError(
+                f"resolution target {other_id!r} is not declared in contradictions"
+            )
+        if any(item.other_id == other_id for item in record.resolutions):
+            raise InvalidInputError(f"conflict with {other_id!r} is already resolved")
+        updated = replace(
+            record,
+            resolutions=[
+                *record.resolutions,
+                ConflictResolution(
+                    other_id=other_id, resolved_by=resolved_by, resolved_at=resolved_at
+                ),
+            ],
+        )
+        with self._conn.transaction():
+            self._conn.execute(
+                "UPDATE m12_memory SET resolutions = %s::jsonb WHERE id = %s",
+                (
+                    _json([
+                        {
+                            "other_id": item.other_id,
+                            "resolved_by": item.resolved_by,
+                            "resolved_at": item.resolved_at.value.isoformat(),
+                        }
+                        for item in updated.resolutions
+                    ]),
+                    memory_id,
+                ),
+            )
+        return updated
 
 
 def _json(value: Any) -> str:
@@ -183,8 +220,19 @@ def _proposal_values(proposal: MemoryWriteProposal) -> tuple[Any, ...]:
         _json(proposal.supersedes),
         # GOAL-20261010-045 EC-02：冲突声明（此前**硬编码 `[]`** ⇒ 声明被静默丢弃）。
         _json(proposal.contradictions),
+        # GOAL-20261012-058 EC-02：**新提交的记录一律从「一对都没消解」开始**（消解是提交后
+        # 经 lifecycle 用例落库的，见 `resolve_conflict`）⇒ INSERT 恒写空数组。
+        "[]",
         True,  # active
     )
+
+
+def _required_ts(value: Any) -> Timestamp:
+    """**必填**时点的解码（缺/坏 ⇒ 点名 —— 消解记载没有时点就无可复核）。"""
+    stamp = _opt_ts(value)
+    if stamp is None:
+        raise ValueError("resolution resolved_at is missing or invalid")
+    return stamp
 
 
 def _opt_ts(value: Any) -> Timestamp | None:
@@ -199,11 +247,34 @@ def _opt_ts(value: Any) -> Timestamp | None:
     return None
 
 
+def _resolutions_from_row(row: Any) -> list[ConflictResolution]:
+    """消解记载的解码（JSONB 列可能是 dict / str / 缺列 ⇒ 全接住；缺列 ⇒ 空列表）。"""
+    raw = row.get("resolutions") if hasattr(row, "get") else None
+    if raw is None:
+        return []
+    payload = json.loads(raw) if isinstance(raw, str) else raw
+    if not isinstance(payload, list):
+        return []
+    out: list[ConflictResolution] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        out.append(
+            ConflictResolution(
+                other_id=str(item.get("other_id", "")),
+                resolved_by=str(item.get("resolved_by", "")),
+                resolved_at=_required_ts(item.get("resolved_at")),
+            )
+        )
+    return out
+
+
 def _record_from_row(row: Any) -> MemoryRecord:
     raw_sup = row["supersedes"]
     supersedes: list[str] = json.loads(raw_sup) if isinstance(raw_sup, str) else list(raw_sup)
     raw_con = row["contradictions"]
     contradictions: list[str] = json.loads(raw_con) if isinstance(raw_con, str) else list(raw_con)
+    resolutions = _resolutions_from_row(row)
     return MemoryRecord(
         id=row["id"],
         tier=MemoryTier(row["tier"]),
@@ -218,5 +289,6 @@ def _record_from_row(row: Any) -> MemoryRecord:
         expires_at=_opt_ts(row["expires_at"]),
         supersedes=supersedes,
         contradictions=contradictions,
+        resolutions=resolutions,
         active=bool(row["active"]),
     )

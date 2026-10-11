@@ -6,17 +6,20 @@ FakeMemoryStore 注入验证、DELETE lifecycle + 幂等键要求。
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
 from adapters.fakes.memory_store import FakeMemoryStore
 from packages.application.ports.errors import InvalidInputError
+from packages.domain.core import Timestamp
 from packages.domain.enums import TrustLabel
 from packages.domain.evidence import SourceRecord
 
 #: 读面判定用的**显式时点**（读面不读挂钟 ⇒ 判定可复现）。
-#: GOAL-20261011-052 的四样 + GOAL-20261011-053 的两样（HTTP 读面上的**新增**字段）。
+#: GOAL-20261011-052 的四样 + GOAL-20261011-053 的两样 + GOAL-20261012-058 的一样
+#: （HTTP 读面上的**新增**字段；同轮同步集的**加法** —— 各自另有正证）。
 NEW_FIELDS: frozenset[str] = frozenset({
     "contradictions",
     "superseded_by",
@@ -24,6 +27,7 @@ NEW_FIELDS: frozenset[str] = frozenset({
     "reason",
     "terminal_state",
     "terminal_ids",
+    "conflict_resolutions",
 })
 
 _NOW = "2026-10-11T00:00:00+00:00"
@@ -196,9 +200,7 @@ def _commit_with_scope(store: FakeMemoryStore, memory_id: str, scope: str) -> No
 
 def _commit_expiring(store: Any, memory_id: str) -> None:
     """直写一条带明确到期时刻的记录（钉的是**判定面**本身，不经提案面）。"""
-    from datetime import datetime, timezone
 
-    from packages.domain.core import Timestamp
     from packages.domain.enums import MemoryTier, MemoryType
     from packages.domain.memory import MemoryWriteProposal
 
@@ -359,9 +361,7 @@ def test_the_http_face_still_does_not_guess_validity(client: TestClient) -> None
 
 def _commit_review_due(store: FakeMemoryStore, memory_id: str) -> None:
     """直写一条**复核期已到**的记录（「不猜时效」这条判据的受判面必须**有时效声明**）。"""
-    from datetime import datetime, timezone
 
-    from packages.domain.core import Timestamp
     from packages.domain.enums import MemoryTier, MemoryType
     from packages.domain.memory import MemoryWriteProposal
 

@@ -3618,6 +3618,31 @@
         "title": "MemoryCommittedDto",
         "type": "object"
       },
+      "MemoryConflictResolutionDto": {
+        "additionalProperties": false,
+        "description": "一条**冲突消解**的记载（GOAL-20261012-058 EC-03；**与编排面同源同值**）。",
+        "properties": {
+          "other_id": {
+            "title": "Other Id",
+            "type": "string"
+          },
+          "resolved_at": {
+            "title": "Resolved At",
+            "type": "string"
+          },
+          "resolved_by": {
+            "title": "Resolved By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "other_id",
+          "resolved_by",
+          "resolved_at"
+        ],
+        "title": "MemoryConflictResolutionDto",
+        "type": "object"
+      },
       "MemoryFilteredListViewDto": {
         "additionalProperties": false,
         "description": "按 `scope` 筛过的清单（在缺省形态上**追加**两键：筛的范围与**筛掉了多少条**）。\n\n`filtered_out` 与 `dispositions` 同一披露形态：调用方**不解析数组**就知道这次读\n有没有发生过滤。**不静默丢**：筛掉的条数是必报项。",
@@ -3750,6 +3775,13 @@
           "confidence": {
             "title": "Confidence",
             "type": "number"
+          },
+          "conflict_resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryConflictResolutionDto"
+            },
+            "title": "Conflict Resolutions",
+            "type": "array"
           },
           "content": {
             "title": "Content",

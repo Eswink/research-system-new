@@ -14,6 +14,24 @@ from packages.domain.enums import MemoryTier, MemoryType
 
 
 @dataclass(frozen=True, slots=True)
+class ConflictResolution:
+    """**一条冲突消解的记载**（GOAL-20261012-058 EC-02）。
+
+    **为什么是独立记载而不是改声明**：`contradictions` 是**历史事实**（那条记录曾经声明过
+    与谁冲突 —— 序 22 让这件事可查）；「这个分歧被谁在何时消解了」是**另一件事**。
+    把两者混成一件事会让「曾经有过这个分歧」消失 ⇒ **声明一字不动**，消解另记。
+
+    **为什么记「哪一对」**：一条记录可以声明**多个**冲突（`contradictions` 是列表）⇒
+    只能**逐对**消解。「消解了 A↔B 这一对」比「这条无冲突了」精确 —— 后者会把其余
+    未消解的对一起抹掉。
+    """
+
+    other_id: str
+    resolved_by: str
+    resolved_at: Timestamp
+
+
+@dataclass(frozen=True, slots=True)
 class MemoryRecord:
     id: str
     tier: MemoryTier
@@ -29,6 +47,9 @@ class MemoryRecord:
     expires_at: Timestamp | None = None
     supersedes: list[str] = field(default_factory=list)
     contradictions: list[str] = field(default_factory=list)
+    # GOAL-20261012-058 EC-02：**逐对的消解记载**（缺省空列表 = **一对都没消解**
+    # ⇒ 既有行为**逐字不变**：未消解 ⇒ 读面仍报 `CONFLICTED`）。
+    resolutions: list[ConflictResolution] = field(default_factory=list)
     active: bool = True
 
     def __post_init__(self) -> None:
@@ -42,6 +63,41 @@ class MemoryRecord:
             raise ValueError("memory scope must not be empty")
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be in [0, 1]")
+        _validate_resolutions(self)
+
+    @property
+    def unresolved_conflicts(self) -> list[str]:
+        """**尚未消解**的冲突 id（**逐对**判 —— 已消解的那些不再计入）。
+
+        **为什么逐对判**：一条记录可以声明**多个**冲突，只消解其中一个**不等于**「无冲突」。
+        读面与处置面都按这里返回的集合分派 ⇒ 两处**同源**。
+        """
+        settled = {item.other_id for item in self.resolutions}
+        return [item for item in self.contradictions if item not in settled]
+
+
+def _validate_resolutions(record: MemoryRecord) -> None:
+    """**消解记载**的校验（GOAL-20261012-058 EC-02）—— 四种坏形态**逐条点名**。
+
+    - **未知冲突对**（`other_id` **不在** `contradictions` 里）：消解记载与声明**脱钩**
+      ⇒ 点名拒绝（静默接受会让「消解了一条不存在的分歧」看起来像成功）；
+    - **自己与自己**：语义上无意义（序 22 已对**声明**拒过这一形态 ⇒ 此处对**消解**同样拒）；
+    - **空 id**（`other_id` / `resolved_by` 为空串）：无可复核的主体。
+
+    **`resolved_at` 不在这里校验**：它的类型是 `Timestamp` ⇒ 非法值在**构造期**就被拒
+    （比运行期判更早、更近因）。
+    """
+    for item in record.resolutions:
+        if not item.other_id:
+            raise ValueError("resolution other_id must not be empty")
+        if item.other_id == record.id:
+            raise ValueError(f"a record cannot resolve a conflict with itself: {record.id!r}")
+        if item.other_id not in record.contradictions:
+            raise ValueError(
+                f"resolution target {item.other_id!r} is not declared in contradictions"
+            )
+        if not item.resolved_by:
+            raise ValueError("resolution resolved_by must not be empty")
 
 
 @dataclass(frozen=True, slots=True)

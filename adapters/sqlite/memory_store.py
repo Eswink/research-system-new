@@ -21,7 +21,7 @@ from adapters.sqlite.base import SqliteAdapterBase
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import Timestamp
 from packages.domain.enums import MemoryTier, MemoryType
-from packages.domain.memory import MemoryRecord, MemoryWriteProposal
+from packages.domain.memory import ConflictResolution, MemoryRecord, MemoryWriteProposal
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS m12_memory (
@@ -38,14 +38,56 @@ CREATE TABLE IF NOT EXISTS m12_memory (
     expires_at TEXT,
     supersedes TEXT NOT NULL,
     contradictions TEXT NOT NULL,
+    -- GOAL-20261012-058 EC-02：逐对的**消解记载**（JSON 列表；缺省 '[]' ⇒ 既有行不变）。
+    resolutions TEXT NOT NULL DEFAULT '[]',
     active INTEGER NOT NULL
 );
 """
 
 _MEMORY_COLS = (
     "id, tier, kind, content, provenance, confidence, scope, valid_from, review_after, "
-    "expires_at, supersedes, contradictions, active"
+    "expires_at, supersedes, contradictions, resolutions, active"
 )
+
+
+def _resolutions_to_json(items: list[ConflictResolution]) -> str:
+    """消解记载的落库形态（JSON 列表；空列表与**缺省**同形 ⇒ 既有行读出同一语义）。"""
+    return json.dumps(
+        [
+            {
+                "other_id": item.other_id,
+                "resolved_by": item.resolved_by,
+                "resolved_at": item.resolved_at.value.isoformat(),
+            }
+            for item in items
+        ],
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+
+
+def _resolutions_from_json(raw: object) -> list[ConflictResolution]:
+    """落库形态 → 消解记载（`None` / 空 / 坏值 ⇒ 空列表 —— **既有行不变**）。"""
+    if not raw:
+        return []
+    try:
+        payload = json.loads(str(raw))
+    except ValueError:
+        return []
+    if not isinstance(payload, list):
+        return []
+    out: list[ConflictResolution] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        out.append(
+            ConflictResolution(
+                other_id=str(item.get("other_id", "")),
+                resolved_by=str(item.get("resolved_by", "")),
+                resolved_at=Timestamp(datetime.fromisoformat(str(item["resolved_at"]))),
+            )
+        )
+    return out
 
 
 def _to_json(value: Any) -> str:
@@ -111,6 +153,35 @@ class SqliteMemoryStore(SqliteAdapterBase):
                 self._values(record),
             )
         return record
+
+    def resolve_conflict(
+        self, memory_id: str, other_id: str, resolved_by: str, resolved_at: Timestamp
+    ) -> MemoryRecord:
+        """GOAL-20261012-058 EC-02：**逐对**落消解记载（读-改-写；事务内完成）。"""
+        self._ensure_open()
+        record = self.get(memory_id)
+        if other_id not in record.contradictions:
+            raise InvalidInputError(
+                f"resolution target {other_id!r} is not declared in contradictions"
+            )
+        if any(item.other_id == other_id for item in record.resolutions):
+            raise InvalidInputError(f"conflict with {other_id!r} is already resolved")
+        updated = replace(
+            record,
+            resolutions=[
+                *record.resolutions,
+                ConflictResolution(
+                    other_id=other_id, resolved_by=resolved_by, resolved_at=resolved_at
+                ),
+            ],
+        )
+        with self._connection:
+            self._connection.execute(
+                "UPDATE m12_memory SET resolutions = ? WHERE id = ?",
+                (_resolutions_to_json(updated.resolutions), memory_id),
+            )
+        self._record("resolve_conflict", memory_id, result=other_id)
+        return updated
 
     def get(self, memory_id: str) -> MemoryRecord:
         self._ensure_open()
@@ -196,6 +267,7 @@ class SqliteMemoryStore(SqliteAdapterBase):
             record.expires_at.value.isoformat() if record.expires_at else None,
             _to_json(record.supersedes),
             _to_json(record.contradictions),
+            _resolutions_to_json(record.resolutions),
             1 if record.active else 0,
         )
 
@@ -223,6 +295,11 @@ class SqliteMemoryStore(SqliteAdapterBase):
             ),
             supersedes=json.loads(row["supersedes"]),
             contradictions=json.loads(row["contradictions"]),
+            # GOAL-20261012-058 EC-02：旧行**没有**这一列 ⇒ 空列表（= 一对都没消解
+            # ⇒ 既有行为逐字不变）。与 `scope` 那条同一手法（缺列按缺省读出）。
+            resolutions=_resolutions_from_json(
+                row["resolutions"] if "resolutions" in row.keys() else None
+            ),
             active=bool(row["active"]),
         )
 

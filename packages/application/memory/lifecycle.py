@@ -95,3 +95,27 @@ def supersede_memory(
     assert result.record is not None
     deactivate_memory(deps, old_id)
     return result.record
+
+
+def resolve_memory_conflict(
+    deps: MemoryLifecycleDeps,
+    memory_id: str,
+    other_id: str,
+    *,
+    resolved_by: str,
+    resolved_at: Timestamp,
+) -> MemoryRecord:
+    """**消解一条冲突**（GOAL-20261012-058 EC-02）—— 记录**谁在何时**消解了**哪一对**。
+
+    **边界（与既有 GOAL 的分工，逐条写明）**：
+
+    - **判定仍由人给**：本用例只**记录**「谁在何时消解了哪一对」，**不**做谁对谁错的推断；
+    - **声明一字不动**：`contradictions` 是历史事实；消解是**另一件事**（另记）；
+    - **校验双保险**：域层（`MemoryRecord.__post_init__`）与存储层（`resolve_conflict`）
+      都会拒绝未知冲突对 / 自指 —— 本用例**原样透传**（不吞、不降级）。
+
+    与 `supersede_memory` 同形：走 store 的对应方法；**不**走审批（D 组通道明确不做）。
+    """
+    return deps.store.resolve_conflict(
+        memory_id, other_id, resolved_by=resolved_by, resolved_at=resolved_at
+    )

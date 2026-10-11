@@ -26,6 +26,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from packages.domain.core import Timestamp
 from packages.domain.enums import MemoryTier
 from packages.domain.memory import MemoryRecord, MemoryWriteProposal
 
@@ -43,6 +44,12 @@ class MemoryStore(Protocol):
     ) -> tuple[MemoryRecord, ...]: ...
 
     def deactivate(self, memory_id: str) -> MemoryRecord: ...
+
+    def resolve_conflict(
+        self, memory_id: str, other_id: str, resolved_by: str, resolved_at: Timestamp
+    ) -> MemoryRecord:
+        """GOAL-20261012-058 EC-02：**消解记载**落 canonical（逐对；声明一字不动）。"""
+        ...
 
     def delete(self, memory_id: str) -> None: ...
 

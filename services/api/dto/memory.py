@@ -44,6 +44,17 @@ class MemoryRecordDto(BaseModel):
     # `terminal_ids` **点名**终点 —— 环与悬空后继都点名，**不**静默（承本 GOAL 的禁令）。
     terminal_state: str = ""
     terminal_ids: list[str] = Field(default_factory=list)
+    # GOAL-20261012-058 EC-03：**冲突消解**逐对披露（与编排面**同源同值**）。
+    # 未消解 ⇒ 空列表 ⇒ 处置仍是 `CONFLICTED`（既有行为逐字不变）。
+    conflict_resolutions: list[MemoryConflictResolutionDto] = Field(default_factory=list)
+
+
+class MemoryConflictResolutionDto(BaseModel):
+    """一条**冲突消解**的记载（GOAL-20261012-058 EC-03；**与编排面同源同值**）。"""
+
+    other_id: str
+    resolved_by: str
+    resolved_at: str
 
 
 class MemoryListViewDto(BaseModel):

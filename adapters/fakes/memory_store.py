@@ -6,8 +6,9 @@ from dataclasses import replace
 
 from adapters.fakes.base import FakeBase
 from packages.application.ports.errors import InvalidInputError
+from packages.domain.core import Timestamp
 from packages.domain.enums import MemoryTier
-from packages.domain.memory import MemoryRecord, MemoryWriteProposal
+from packages.domain.memory import ConflictResolution, MemoryRecord, MemoryWriteProposal
 
 
 class FakeMemoryStore(FakeBase):
@@ -90,6 +91,32 @@ class FakeMemoryStore(FakeBase):
             result=str(len(records)),
         )
         return records
+
+    def resolve_conflict(
+        self, memory_id: str, other_id: str, resolved_by: str, resolved_at: Timestamp
+    ) -> MemoryRecord:
+        """GOAL-20261012-058 EC-02：逐对落消解记载（内存内直接改）。"""
+        if memory_id not in self._records:
+            raise KeyError(f"memory not found: {memory_id!r}")
+        record = self._records[memory_id]
+        if other_id not in record.contradictions:
+            raise InvalidInputError(
+                f"resolution target {other_id!r} is not declared in contradictions"
+            )
+        if any(item.other_id == other_id for item in record.resolutions):
+            raise InvalidInputError(f"conflict with {other_id!r} is already resolved")
+        updated = replace(
+            record,
+            resolutions=[
+                *record.resolutions,
+                ConflictResolution(
+                    other_id=other_id, resolved_by=resolved_by, resolved_at=resolved_at
+                ),
+            ],
+        )
+        self._records[memory_id] = updated
+        self._record("resolve_conflict", memory_id, result=other_id)
+        return updated
 
     def deactivate(self, memory_id: str) -> MemoryRecord:
         """canonical tombstone：active=False 保留记录（审计历史）。"""
