@@ -37,8 +37,8 @@ PASS prior-judge-test_python_source_limits
 PASS prior-judge-test_openapi_snapshot
 PASS prior-judge-test_services_api_boundaries
 PASS prior-judge-test_memory_api
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
 PASS press-archive-is-binary-safe
 PASS scope-in-scope-covers-this-round
 PASS scope-verifier-registry-covers-this-round

@@ -197,14 +197,36 @@ def _reason_appends_the_conflict_note(face: str) -> bool:
         module = ast.parse(face)
     except SyntaxError:
         return False
+    values = _reason_values(module)
+    return bool(values) and all(_is_reason_plus_conflict(value) for value in values)
+
+
+def _reason_values(module: ast.Module) -> list[ast.expr]:
+    """模块里所有**给 `reason` 赋值**的值表达式（**两种写法都认**）。
+
+    - **字典字面量**：`{"reason": <expr>}`（旧形态）；
+    - **下标赋值**：`row["reason"] = <expr>`（GOAL-20261011-053 正当把 `_memory_row`
+      的函数体**按字段分了组**（抽 `_identity_fields` / `_terminal_face` 两个助手），
+      `reason` 因此从字典字面量搬进了下标赋值 ⇒ 只认一种写法会**假红**）。
+
+    **这不是放宽**：两种写法都必须满足 `_is_reason_plus_conflict`（`all(...)`）；
+    而**把冲突点名整条摘掉**（无论用哪种写法）**仍判红**。
+    """
+    found: list[ast.expr] = []
     for node in ast.walk(module):
-        if not isinstance(node, ast.Dict):
-            continue
-        for key, value in zip(node.keys, node.values, strict=False):
-            if not (isinstance(key, ast.Constant) and key.value == "reason"):
-                continue
-            return _is_reason_plus_conflict(value)
-    return False
+        if isinstance(node, ast.Dict):
+            for key, value in zip(node.keys, node.values, strict=False):
+                if isinstance(key, ast.Constant) and key.value == "reason":
+                    found.append(value)
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance((target := node.targets[0]), ast.Subscript)
+            and isinstance(target.slice, ast.Constant)
+            and target.slice.value == "reason"
+        ):
+            found.append(node.value)
+    return found
 
 
 def _is_reason_plus_conflict(value: ast.expr) -> bool:

@@ -143,6 +143,36 @@ def _calls_named(source: str, name: str) -> int:
     )
 
 
+def _discloses_both_directions(face: str) -> bool:
+    """判**关系**：`supersedes` 与 `superseded_by` **两个键都被赋了值**（**不判写法**）。
+
+    GOAL-20261109-053 实测：`_memory_row` 正当按字段分组（抽 `_identity_fields` /
+    `_terminal_face`）⇒ 这两项从**字典字面量**搬进**下标赋值** ⇒ 只认字面量写法会**假红**。
+    两种写法都认（AST）；**把任一方向整条摘掉**仍判红（受判面不减）。
+    """
+    if not face:
+        return False
+    try:
+        module = ast.parse(face)
+    except SyntaxError:
+        return False
+    assigned: set[str] = set()
+    for node in ast.walk(module):
+        if isinstance(node, ast.Dict):
+            for key in node.keys:
+                if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                    assigned.add(key.value)
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance((target := node.targets[0]), ast.Subscript)
+            and isinstance(target.slice, ast.Constant)
+            and isinstance(target.slice.value, str)
+        ):
+            assigned.add(target.slice.value)
+    return {"supersedes", "superseded_by"} <= assigned
+
+
 def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-02：读面两向披露 + 反向链接从同一批记录算（不新增 Port 方法）。"""
     face = _face(root, READ_FACE_SOURCES)
@@ -150,8 +180,7 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     return [
         toolbox.verdict(
             "ec02-the-two-directions-are-disclosed",
-            '"supersedes": list(record.supersedes)' in face
-            and '"superseded_by": list(superseded_by or ())' in face,
+            _discloses_both_directions(face),
             "两个方向都要披露（正向 + 反向）",
         ),
         toolbox.verdict(
