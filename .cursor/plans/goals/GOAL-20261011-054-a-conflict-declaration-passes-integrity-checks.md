@@ -2,7 +2,7 @@
 id: GOAL-20261011-054
 slug: a-conflict-declaration-passes-integrity-checks
 title: 冲突声明与被引 id 一样要过完整性校验 —— `supersedes` 的被引 id **会被 gate 校验**（`_contradiction_check`：引用未知 id ⇒ 拒绝提交），而 `contradictions` 的被引 id **从不被校验**：**实跑取证** ① 声明与一条**不存在**的记录冲突 ⇒ **照常落库**、读面照常报 `CONFLICTED` 并**逐字点名那个不存在的 id**；② 声明**与自己**冲突 ⇒ 同样被当成真的分歧；③ 全仓 `detect_conflict` / `conflicts_with` / `resolve_conflict` 在 `packages/`·`adapters/` 里**只命中无关子系统**（成本 / 工具面 / `team_plan`）⇒ 记忆面**没有**检测实现
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-11
 updated_at: 2026-10-11
 owners:
@@ -204,7 +204,7 @@ escalation_triggers:
     或**显式登记**为受判面收窄
 child_plans:
   - .cursor/plans/tasks/PLAN-20261011-415-goal-054-ec01-04-a-conflict-declaration-passes-integrity-checks.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-416-goal-054-ec01-04-a-conflict-declaration-passes-integrity-checks.md
 memory_entries: []
 ---
 
@@ -321,7 +321,21 @@ memory_entries: []
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| （待建档提交） | — | — |
+| `111e4ee`（replan + 建档） | **`total_count = 0`**（同批推送）⇒ **`covered_by 38129223612`** | 程序表新增序 22 + GOAL 建档 + 子 PLAN 投影 |
+| `ae742f3`（cycle 1 WP-1…WP-4） | **`total_count = 0`** ⇒ **`covered_by 38129223612`** | gate 两侧对齐 + 四向反证 + 归档 |
+| `8be200a`（EC-05 首轮） | **`total_count = 0`** ⇒ **`covered_by 38129223612`** | 验证器 + 断言集进树 + 两处射程纯收紧 |
+| `3c36b98`（两树首轮归档） | **`total_count = 0`** ⇒ **`covered_by 38129223612`** | bootstrap 轮产物（两份**不同** —— 干净树尚缺 EC 状态）|
+| `f7880e8`（EC 回填 PASS + 归档同结论）| **`total_count = 0`** ⇒ **`covered_by 38129223612`** | — |
+| `1b330c7`（EC-01 状态补回填）| **`total_count = 0`** ⇒ **`covered_by 38129223612`** | 前一提交的替换未命中（判据当场报出）|
+| `967582f`（两树终态归档定格）| **`total_count = 0`** ⇒ **`covered_by 38129223612`** | 60 判词 / `sha256 8c844bdf…` |
+| `295e63c`（**末条实测提交** = m0 回填）| `38129223612` **M0 success**（**8/8 job 全 success**）+ `38129222904` **Push on main success**（3/3）| **台账封闭于此提交** |
+
+**自我指涉边界（明写并封闭）**：写本台账本身要再提交 ⇒ 会产生新 run。**封闭口径**：
+**末条可引用的实测提交 = `295e63c`**（上表最后一行，两 run 全绿）；**其后仅记录提交**，
+**不再追链** —— 若需复核本行结论，取 `295e63c` 的两条 run 即足。
+
+**`covered_by` 的用法（逐条）**：七个提交**自身 `total_count = 0`**（**同批推送**只让 tip 起 run）
+⇒ 按纪律**不是**「未取证」，而是**由同批 tip 的 run 覆盖**（各自 `covered_by` 已在表内写明）。
 
 ## 迭代日志
 
@@ -335,5 +349,6 @@ memory_entries: []
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-11 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器 **60 判词 / 0 FAIL**（标准断言集一行未重写）；② 两树 **`TWO-TREE PASS`**（两路 60 判词 / `sha256` 相同 `8c844bdf6b5adfb5…`）+ 归档两份各 **2262 B / 60 行 / `CR=0`**；③ **as-is m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5624 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；④ 治理 + 宪章判据绿；⑤ **CI 台账逐提交**（`295e63c`：M0 `38129223612` **8/8** + Push on main `38129222904` 3/3；`covered_by` 七条逐条写明；**边界封闭于 `295e63c`**）。**四处如实登记**：① 建档初版**用错探针路径**（适配器直写绕过门链）⇒ 对照面读反，以**产品路径**为准；② **判词是 f-string** ⇒ AST 分片 ⇒ 按整句核对**永远不命中**（五条判据全假红）⇒ 改核对片段；③ 两树首轮 RED（时序）；④ EC-01 状态回填**前一提交未命中**（判据当场报出）。**连带面**：收紧 gate 后 `tests/`（除 e2e/postgres）**5100 passed / 零 FAILED** ⇒ 既有数据无一条被拒。**残余**：`W-1`·`W-3` / `CC-1`…`CC-3` / `BB-3` / `Z-1` / `Z-3` / `DD-1`…`DD-3` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261011-416`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 22**（承担者 = `GOAL-20261010-050` / `GOAL-20261011-051` 连续登记的 `W-2` 的**前半**），并写修订记录行（只追加）。**五条实测读数**（逐条见「事实层结论」表，命令与读数同在）：(a) gate 的阶段链**只校验 `supersedes`**（`_contradiction_check` 一行未查 `contradictions`）；(b) **实跑**：悬空被引 id ⇒ **落库成功** + 读面 `CONFLICTED` 并点名那个不存在的 id；(c) **自指**同样被接受；(d) 全仓 `detect_conflict|conflicts_with|resolve_conflict` 的命中**全在无关子系统** ⇒ 记忆面**没有**检测实现；(e) 域上只校验**非空字符串**。**不对称**：`supersedes` 的同类引用早就有校验。五条 EC 全 PENDING；**cycle 1 WP-1 随即跑出实测更正**（见迭代日志第 1 行：建档初版用错路径）。
 **不做**自动消解 / **不**做内容级检测 / **不**做历史回溯校验 / **不**改 `supersedes` 的既有校验。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
