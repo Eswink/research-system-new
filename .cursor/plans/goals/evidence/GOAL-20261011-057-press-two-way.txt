@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 8 passed in 0.29s
+T-1 缺省不送被改动（缺省也送）: 按压 RED
+    sha 复原一致=True | b5e4eea1c584
+    suite: 1 failed, 7 passed in 0.53s
+T-2 超期不送（超了也不交给端口）: 按压 RED
+    sha 复原一致=True | b5e4eea1c584
+    suite: 2 failed, 6 passed in 0.44s
+T-3 端口故障被静默（异常被吞）: 按压 RED
+    sha 复原一致=True | b5e4eea1c584
+    suite: 1 failed, 7 passed in 0.38s
+T-4 只读判定面被塞进写方法: 按压 RED
+    sha 复原一致=True | bfc7c0dcf37d
+    suite: 1 failed, 7 passed in 0.40s
+SUMMARY presses=4 all_red_and_restored=True
