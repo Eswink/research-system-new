@@ -25,10 +25,11 @@ from dataclasses import dataclass, replace
 from datetime import timedelta
 from typing import Any
 
+from packages.application.ports.nudge_sink import NudgeSink
 from packages.application.ports.program_store import ProgramStore
 from packages.application.ports.run_store import RunStore
 from packages.application.run_orchestration.program_gate_evaluation import (
-    declared_gate_evaluation,
+    gate_outcome,
 )
 from packages.application.run_orchestration.program_retry import (
     claimed_but_missing,
@@ -100,31 +101,28 @@ def _record(programs: ProgramStore, program_id: str, decision: ProgramDecision) 
     return stamped
 
 
-def _gate_branch(
+def _gated_outcome(  # noqa: PLR0913 - 与调用点同一组只读输入（照抄既有豁免理由）
     program: ResearchProgram,
     last: ResearchRun,
     approvals: ApprovalReader | None,
     verdicts: tuple[str, ...],
     clock: GateClock | None,
+    nudges: NudgeSink | None,
 ) -> _Evaluation | None:
-    """**声明的闸门**那一支（拦住 ⇒ 一条 `_Evaluation`，不拦 ⇒ `None`）。
+    """**声明的闸门**那一支包成本模块的 `_Evaluation`（不拦 ⇒ `None`）。
 
-    抽出成函数是为了守住**函数 ≤ 50 行**那道门（`_evaluate` 加了时点透传后触顶）——
-    **语义一字未动**：仍是「先注册后判定」，仍把桥返回值**显式转**成 `_Evaluation`。
-
-    **为什么要显式转**：桥（`program_gate_evaluation`）返回它自己的值对象
-    （`GateEvaluation`）—— 两者**字段逐一同形**；显式转比让 mypy 接受两个不同的
-    `dataclass` 更清楚。
+    **为什么单列**：`_evaluate` 有 **50 行**硬上限；这里只剩「取判定值 + 构值对象」。
+    **判定值**由桥以**纯元组**给出 —— 桥**不**传它的 `dataclass`（避免跨模块互转）。
     """
-    gated = declared_gate_evaluation(program, last, approvals, verdicts, clock)
+    gated = gate_outcome(program, last, approvals, verdicts, clock, nudges)
     if gated is None:
         return None
+    gate_kind, gate_reason, gate_facts = gated
     return _Evaluation(
-        kind=gated.kind,
-        reason=gated.reason,
-        cited_run_id=gated.cited_run_id,
-        cited_facts=gated.cited_facts,
-        start_index=gated.start_index,
+        kind=ProgramDecisionKind(gate_kind),
+        reason=gate_reason,
+        cited_run_id=last.id.value,
+        cited_facts=gate_facts,
     )
 
 
@@ -135,6 +133,7 @@ def _evaluate(  # noqa: PLR0913 - 与 `advance_program` 同一组只读输入（
     programs: ProgramStore,
     approvals: ApprovalReader | None,
     clock: GateClock | None = None,
+    nudges: NudgeSink | None = None,
 ) -> _Evaluation:
     """读落库事实并判定（**先结论后护栏**；返回的 `start_index` 非 None 才需要起 run）。"""
     if not existing:
@@ -151,7 +150,9 @@ def _evaluate(  # noqa: PLR0913 - 与 `advance_program` 同一组只读输入（
         return _Evaluation(kind=kind, reason=reason, cited_run_id=last.id.value, cited_facts=facts)
     # 落库判词读**一次**（结论面与条件闸门共用同一批事实 ⇒ 两处不可能看到不同结论）。
     verdicts = _verdicts(findings, last.id.value)
-    gated = _gate_branch(program, last, approvals, verdicts, clock)
+    # 闸门那一支（求值 + 注册 + 判定 + **超期信号交付**）—— 全在桥模块里，
+    # 返回的已经是 `_Evaluation`（本模块的值对象）⇒ 这里不再需要转类型。
+    gated = _gated_outcome(program, last, approvals, verdicts, clock, nudges)
     if gated is not None:
         return gated
 
@@ -348,6 +349,7 @@ def advance_program(  # noqa: PLR0913 - 推进面的读入就这几件（run/决
     approvals: ApprovalReader | None = None,
     start_run: StartRun | None = None,
     clock: GateClock | None = None,
+    nudges: NudgeSink | None = None,
 ) -> ProgramAdvance:
     """推进一次：读事实 → 判定 → 落决策 →（必要时）起下一轮 run。
 
@@ -356,7 +358,7 @@ def advance_program(  # noqa: PLR0913 - 推进面的读入就这几件（run/决
     **调用方给**而不是本函数读挂钟：推进面的判词必须**可复现**（同一输入 ⇒ 同一判词）。
     """
     existing = runs.for_program(program.id)
-    evaluation = _evaluate(program, existing, findings, programs, approvals, clock)
+    evaluation = _evaluate(program, existing, findings, programs, approvals, clock, nudges)
     after_index = (existing[-1].program_index or 0) if existing else 0
     if evaluation.start_index is not None:
         return _start(
