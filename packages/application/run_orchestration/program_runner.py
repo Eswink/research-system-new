@@ -100,6 +100,34 @@ def _record(programs: ProgramStore, program_id: str, decision: ProgramDecision) 
     return stamped
 
 
+def _gate_branch(
+    program: ResearchProgram,
+    last: ResearchRun,
+    approvals: ApprovalReader | None,
+    verdicts: tuple[str, ...],
+    clock: GateClock | None,
+) -> _Evaluation | None:
+    """**声明的闸门**那一支（拦住 ⇒ 一条 `_Evaluation`，不拦 ⇒ `None`）。
+
+    抽出成函数是为了守住**函数 ≤ 50 行**那道门（`_evaluate` 加了时点透传后触顶）——
+    **语义一字未动**：仍是「先注册后判定」，仍把桥返回值**显式转**成 `_Evaluation`。
+
+    **为什么要显式转**：桥（`program_gate_evaluation`）返回它自己的值对象
+    （`GateEvaluation`）—— 两者**字段逐一同形**；显式转比让 mypy 接受两个不同的
+    `dataclass` 更清楚。
+    """
+    gated = declared_gate_evaluation(program, last, approvals, verdicts, clock)
+    if gated is None:
+        return None
+    return _Evaluation(
+        kind=gated.kind,
+        reason=gated.reason,
+        cited_run_id=gated.cited_run_id,
+        cited_facts=gated.cited_facts,
+        start_index=gated.start_index,
+    )
+
+
 def _evaluate(  # noqa: PLR0913 - 与 `advance_program` 同一组只读输入（照抄它的豁免理由）
     program: ResearchProgram,
     existing: tuple[ResearchRun, ...],
@@ -123,18 +151,9 @@ def _evaluate(  # noqa: PLR0913 - 与 `advance_program` 同一组只读输入（
         return _Evaluation(kind=kind, reason=reason, cited_run_id=last.id.value, cited_facts=facts)
     # 落库判词读**一次**（结论面与条件闸门共用同一批事实 ⇒ 两处不可能看到不同结论）。
     verdicts = _verdicts(findings, last.id.value)
-    gated = declared_gate_evaluation(program, last, approvals, verdicts, clock)
+    gated = _gate_branch(program, last, approvals, verdicts, clock)
     if gated is not None:
-        # 桥（`program_gate_evaluation`）返回它自己的值对象（`GateEvaluation`）
-        # —— 两者**字段逐一同形**；在这里**显式转**成 `_Evaluation`（而不是让 mypy
-        # 接受两个不同的 `dataclass`）。
-        return _Evaluation(
-            kind=gated.kind,
-            reason=gated.reason,
-            cited_run_id=gated.cited_run_id,
-            cited_facts=gated.cited_facts,
-            start_index=gated.start_index,
-        )
+        return gated
 
     # GOAL-20261008-040 EC-03：**按终态分派** —— 失败面 / 取消面在结论面**之前**
     # （只有 `SUCCEEDED` 的轮才有「结论」可言；把「没有结论」读成「结论说停」是范畴错误）。

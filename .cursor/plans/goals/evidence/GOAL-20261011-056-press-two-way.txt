@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 8 passed in 0.23s
+S-1 始点读不出（不再报时长）: 按压 RED
+    sha 复原一致=True | bfc7c0dcf37d
+    suite: 4 failed, 4 passed in 0.38s
+S-2 超期不点名（超了也当没超）: 按压 RED
+    sha 复原一致=True | bfc7c0dcf37d
+    suite: 2 failed, 6 passed in 0.41s
+S-3 未声明的界被改动（未声明也催）: 按压 RED
+    sha 复原一致=True | bfc7c0dcf37d
+    suite: 1 failed, 7 passed in 0.37s
+S-4 坏界被接受（零 / 负不拒）: 按压 RED
+    sha 复原一致=True | a10c29810aa5
+    suite: 2 failed, 6 passed in 0.41s
+SUMMARY presses=4 all_red_and_restored=True
