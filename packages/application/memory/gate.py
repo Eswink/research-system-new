@@ -79,11 +79,31 @@ def _provenance_check(proposal: MemoryWriteProposal, deps: MemoryGateDeps) -> st
 
 
 def _contradiction_check(proposal: MemoryWriteProposal, deps: MemoryGateDeps) -> str | None:
+    """引用完整性：`supersedes` **与** `contradictions` 的被引 id 都要**点名可查**。
+
+    GOAL-20261011-054 EC-02（`W-2` 的**声明面完整性**）：本阶段此前**只**校验 `supersedes`
+    （引未知 id ⇒ 拒绝），`contradictions` **一字未查** ⇒ **实跑**：声明与一条**不存在**的记录
+    冲突会**照常提交**，读面报 `CONFLICTED` 并**逐字点名**那个不存在的 id ⇒ 一条**指向空气**的
+    「冲突」与一条**真实分歧**在读面**同处置**（序 19 的第五态因此会被**悬空声明**污染）。
+
+    现在两侧**同一条纪律**（`supersedes` 那条判词**逐字未动** —— 那一侧是**基准**）：
+
+    - **存在性**：被引 id 查不到 ⇒ 点名拒绝；
+    - **不得自指**：被引 id == 提案自身 id ⇒ 点名拒绝（「与自己冲突」不是分歧，是一句
+      无意义的声明；**点名**而不是静默丢弃 —— 静默会让调用方以为声明生效了）。
+    """
     for old_id in proposal.supersedes:
         try:
             deps.store.get(old_id)
         except InvalidInputError:
             return f"supersedes target {old_id!r} does not exist"
+    for other_id in proposal.contradictions:
+        if str(other_id) == str(proposal.id):
+            return f"contradiction target {other_id!r} is the proposal itself"
+        try:
+            deps.store.get(other_id)
+        except InvalidInputError:
+            return f"contradiction target {other_id!r} does not exist"
     return None
 
 

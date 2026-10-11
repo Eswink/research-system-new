@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 4 passed in 0.06s
+Q-1 悬空声明**被接受**（存在性校验整段摘掉）: 按压 RED
+    sha 复原一致=True | 6b8b9377b0b4
+    suite: 2 failed, 2 passed in 0.15s
+Q-2 **自指**被接受（只摘掉自指那一支）: 按压 RED
+    sha 复原一致=True | 6b8b9377b0b4
+    suite: 1 failed, 3 passed in 0.15s
+Q-3 校验**误伤正常声明**（存在性判据反转）: 按压 RED
+    sha 复原一致=True | 6b8b9377b0b4
+    suite: 2 failed, 2 passed in 0.18s
+Q-4 `supersedes` 的既有校验被**放宽**（未知 id 不再拒）: 按压 RED
+    sha 复原一致=True | 6b8b9377b0b4
+    suite: 1 failed, 3 passed in 0.16s
+SUMMARY presses=4 all_red_and_restored=True

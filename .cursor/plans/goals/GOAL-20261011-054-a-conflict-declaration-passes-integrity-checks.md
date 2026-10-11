@@ -219,7 +219,7 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿：三态（悬空 / 自指 / 正常）**实跑**读数 + 校验面逐字引文 | `scratch/probe-conflict-integrity.py` | PENDING |
+| EC-01 | 勘察定稿：三态（悬空 / 自指 / 正常）**实跑**读数 + 校验面逐字引文 | **实跑**（产品路径）：`supersedes` 悬空**被拒** / `contradictions` 悬空·自指**被接受** | **PASS** |
 | EC-02 | **gate 对齐**：`contradictions` 被引 id 存在性 + **不得自指**；`supersedes` 面一字不动 | `pytest tests/application tests/domain -q` + 新用例 | PENDING |
 | EC-03 | **读面一致**：`CONFLICTED` 形态逐字不变；悬空 / 自指不再进入；既有键逐字不变 | `pytest tests/api tests/adapters -q` | PENDING |
 | EC-04 | **两向反证** `Q-1`…`Q-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | `scratch/goal054-press.txt` + 归档 | PENDING |
@@ -233,8 +233,10 @@ memory_entries: []
 | # | 事实 | 复核命令 | 读数 |
 | --- | --- | --- | --- |
 | 1 | gate **只校验 `supersedes`** | `rg -n "_contradiction_check" -A 8 packages/application/memory/gate.py` | 函数体只 `for old_id in proposal.supersedes:` ⇒ 引未知 id 拒；`contradictions` **一字未查** |
-| 2 | 悬空声明**被接受** | `uv run … scratch/probe-conflict-integrity.py` | `contradictions=['m-nowhere']` ⇒ **落库成功**；读面 `disposition=CONFLICTED`、`reason` 点名 `m-nowhere` |
-| 3 | 自指声明**被接受** | 同上 | `contradictions=['m-self']` ⇒ 落库成功；读面同样 `CONFLICTED` 并点名自己 |
+| 2 | 悬空声明**被接受**（**产品路径**） | `uv run … scratch/probe-conflict-integrity.py` | 走 `commit_memory`（门链）⇒ `accepted=True stage=committed`；读面 `disposition=CONFLICTED`、`reason` 点名 `m-nowhere` |
+| 3 | 自指声明**被接受**（**产品路径**） | 同上 | 提案 id == 被引 id ⇒ 同样 `accepted=True stage=committed`；读面同样 `CONFLICTED` 并点名自己 |
+| 3b | **对照面**：`supersedes` 悬空**被拒**（同一次门链调用） | 同上 | `accepted=False stage=contradiction reasons=("supersedes target 'm-nowhere' does not exist",)` |
+| 3c | **路径差异（实测更正）** | 同上（路径 A） | `store.commit`（适配器直写）**绕过门链** ⇒ 两条都 ACCEPTED —— **建档初版正是用错了这条路径**，把对照面读成「也接受」；以**产品路径**（路径 B）为准 ⇒ **不对称成立** |
 | 4 | 记忆面**没有**检测实现 | `rg -n "detect_conflict\|conflicts_with\|resolve_conflict" packages/ adapters/` | 命中**全在无关子系统**（`cost/projection.py` / `tool_plane/resolver.py` / `team_plan.py` 等）|
 | 5 | 域上只校验**非空字符串** | `rg -n "contradictions" -A 3 packages/domain/memory.py` | `for item in self.contradictions: ... must be non-empty strings` ⇒ **不查存在性、不查自指** |
 
@@ -325,10 +327,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261011-415`（WP-1） | （待提交） | **EC-01 勘察定稿 PASS**：`scratch/probe-conflict-integrity.py` 跑**两条路径** —— ① 适配器直写（`store.commit`，**绕过门链**）：两条都 ACCEPTED；② **产品路径**（`commit_memory`）：`supersedes` 悬空 ⇒ **`accepted=False stage=contradiction`**（点名「does not exist」），而 `contradictions` 悬空 / 自指 / 正常 ⇒ **都 `accepted=True stage=committed`**；读面后果：悬空与自指都进 `CONFLICTED` 并**逐字点名**那些 id | （见 CI 台账）| **一处实测更正（如实登记）**：建档初版用**直写路径**测量 ⇒ 把对照面读成「也接受」⇒ 差异**恰为**门链；以产品路径为准，**不对称成立** | CE-02（gate 对齐）待做 | cycle 1 WP-2（存在性 + 不得自指） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **五条实测读数**（gate 只校验 `supersedes` / 悬空声明被接受 / 自指声明被接受 / 记忆面零检测实现 / 域上只校验非空字符串）⇒ 定位 `W-2` 的**声明面完整性**形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 22** | （见 CI 台账） | — | 五条 EC 全 PENDING；校验放哪一层（①）与自指怎么处置（②）待 cycle 1 落 | cycle 1（EC-02 校验 + EC-03 读面） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-10-11 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 22**（承担者 = `GOAL-20261010-050` / `GOAL-20261011-051` 连续登记的 `W-2` 的**前半**），并写修订记录行（只追加）。**五条实测读数**（逐条见「事实层结论」表，命令与读数同在）：(a) gate 的阶段链**只校验 `supersedes`**（`_contradiction_check` 一行未查 `contradictions`）；(b) **实跑**：悬空被引 id ⇒ **落库成功** + 读面 `CONFLICTED` 并点名那个不存在的 id；(c) **自指**同样被接受；(d) 全仓 `detect_conflict|conflicts_with|resolve_conflict` 的命中**全在无关子系统** ⇒ 记忆面**没有**检测实现；(e) 域上只校验**非空字符串**。**不对称**：`supersedes` 的同类引用早就有校验。五条 EC 全 PENDING。**不做**自动消解 / **不**做内容级检测 / **不**做历史回溯校验 / **不**改 `supersedes` 的既有校验。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
+| 2026-10-11 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 22**（承担者 = `GOAL-20261010-050` / `GOAL-20261011-051` 连续登记的 `W-2` 的**前半**），并写修订记录行（只追加）。**五条实测读数**（逐条见「事实层结论」表，命令与读数同在）：(a) gate 的阶段链**只校验 `supersedes`**（`_contradiction_check` 一行未查 `contradictions`）；(b) **实跑**：悬空被引 id ⇒ **落库成功** + 读面 `CONFLICTED` 并点名那个不存在的 id；(c) **自指**同样被接受；(d) 全仓 `detect_conflict|conflicts_with|resolve_conflict` 的命中**全在无关子系统** ⇒ 记忆面**没有**检测实现；(e) 域上只校验**非空字符串**。**不对称**：`supersedes` 的同类引用早就有校验。五条 EC 全 PENDING；**cycle 1 WP-1 随即跑出实测更正**（见迭代日志第 1 行：建档初版用错路径）。
+**不做**自动消解 / **不**做内容级检测 / **不**做历史回溯校验 / **不**改 `supersedes` 的既有校验。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
