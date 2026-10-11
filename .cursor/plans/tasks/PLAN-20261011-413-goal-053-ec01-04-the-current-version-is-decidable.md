@@ -38,7 +38,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-chain-supersede.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **链的终点成为可判定事实（EC-02）**：应用层纯函数给出**终点**与**形态**
@@ -47,8 +47,8 @@ exit_criteria:
       ⇒ 新增键的取值形态与既有约定一致）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters tests/api -q` ⇒ 全绿
-      + 新用例（链式终点 / 无后继点名 / 环点名 / 自指点名 / 既有键逐字不变）。
-    status: PENDING
+      + 新用例（链式终点 / 无后继点名 / 环点名 / 跨范围点名 / 既有键逐字不变）。
+    status: PASS
   - id: WP-3
     criterion: >-
       **同源与一致（EC-03）**：HTTP 读面**不得** import 适配器（`.importlinter.api`）⇒
@@ -57,7 +57,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/architecture -q`
       ⇒ 全绿 + 新用例（两处同值 / 复用同一助手）；`tests/architecture` 判分层契约。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`scratch/goal053_press.py` 逐条按压 —— `P-1` 终点**算错**（取直接
@@ -67,7 +67,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal053_press.py` ⇒ `all_red_and_restored=True`
       + 基线 GREEN；归档 `.cursor/plans/goals/evidence/GOAL-20261011-053-press-two-way.txt`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261011-413 — GOAL-20261011-053 cycle 1（EC-01…EC-04）
@@ -78,35 +78,49 @@ exit_criteria:
 
 | WP | 主题 | 状态 |
 | --- | --- | --- |
-| WP-1 | 勘察定稿（真实读面实测 + 反证无字段可答） | PENDING |
-| WP-2 | 链的终点进载荷（四态点名；既有 13 键逐字不变） | PENDING |
-| WP-3 | 两处同源同值 + 快照同轮 + 分层契约绿 | PENDING |
-| WP-4 | 四向反证 `P-1`…`P-4` + 基线门 + 二进制复原 | PENDING |
+| WP-1 | 勘察定稿（真实读面实测 + 反证无字段可答） | PASS |
+| WP-2 | 链的终点进载荷（四态点名；既有 13 键逐字不变） | PASS |
+| WP-3 | 两处同源同值 + 快照同轮 + 分层契约绿 | PASS |
+| WP-4 | 四向反证 `P-1`…`P-4` + 基线门 + 二进制复原 | PASS |
 
 ## 实施清单
 
-- [ ] WP-1 勘察定稿：真实读面实测 + 逐条反证（只读，零改动）
-- [ ] WP-2 应用层纯函数（终点 / 无后继 / 环 / 自指四态）+ 两个读面逐条披露 + 新用例
-- [ ] WP-3 HTTP 读面接应用层同一批纯函数 + OpenAPI 快照同轮 + 两处同值判据
-- [ ] WP-4 反证脚本（**带基线门**）+ 四向按压 + 归档进树
+- [x] WP-1 勘察定稿：真实读面实测 + 逐条反证（只读，零改动）
+- [x] WP-2 应用层纯函数（终点 / 无后继 / 环 / **跨范围**四态）+ 两个读面逐条披露 + 新用例
+- [x] WP-3 HTTP 读面接应用层同一批纯函数 + OpenAPI 快照同轮 + 两处同值判据
+- [x] WP-4 反证脚本（**带基线门**）+ 四向按压 + 归档进树
 
 ## 证据
 
 | 门 | 读数 |
 | --- | --- |
-| 定向套件 | （待本轮实测回填） |
-| 四向反证 | （待本轮实测回填） |
-| 既有键逐字不变 | （待本轮实测回填） |
+| 定向套件 | `tests/api tests/contracts` **1140 passed, 76 skipped**；`tests/architecture` **287 passed**（分层契约 `2 kept, 0 broken`）|
+| 四向反证 | **基线 GREEN**（18 passed）+ `P-1`…`P-4` **全 RED** + 四条 `sha 复原一致=True`；归档 **747 B / 15 行 / `CR=0`**（`sha256 e33739554f9dca42…`）|
+| 既有键逐字不变 | 新用例**逐条**断言 `superseded_by == ["mem-b"]` / `supersedes == ["mem-b"]`（仍是**直接**链接）；`+12 / -0` 的快照纯附加 |
+| 四道门 | `ruff` / `format` / **全量 mypy（1184 files Success）** / 规模门（抽出 4 个助手）全绿 |
+| 新用例 | `tests/api/test_memory_chain_end.py` **5 passed**（链终点 / 无后继 / 环 / 跨范围 / HTTP 同值）|
 
 ## 影响报告
 
-- **Domain / API / schema 变化**：（待本轮实测回填）
-- **安全 / 凭据变化**：无。**兼容性 / 迁移风险**：无。**上游版本影响**：无。
+- **Domain / API / schema 变化**：**HTTP 读面 +2 字段**（`terminal_state` / `terminal_ids`）与
+  **编排读面 +1 键**（`terminal{state,ids}`）—— 皆**纯附加**（既有键逐字不变）；
+  OpenAPI 快照**同轮**重生成（`+12 / -0`）。**Domain 零改动**（`supersedes` 早已声明）。
+- **安全 / 凭据变化**：无（纯读面事实；`terminal_versions` 是**只读**纯函数，不查 store）。
+- **兼容性 / 迁移风险**：无迁移（不新增列、不改写入语义）。**既有读者**：键**只增不减** ⇒
+  不破坏；`OUT_OF_VIEW` 是**新取值**，旧读者若按 `CURRENT` 判「是当前版本」需知悉新态
+  （已写进本 PLAN 与 GOAL 的 W-2）。
+- **上游版本影响**：无。
 - **下一项任务**：EC-05（自举收口）。
 
 ## 无可复用事实
 
-（待本轮结束时判：若沉淀，写入 `memory_entries`；若无，改写本节为「无可复用事实」并给理由。）
+本轮的可复用做法**已写进 GOAL-053 的 frontmatter §8**（「判关系不判位置」的修法要复查是否开口子；
+反证脚本带基线门）—— 属该 GOAL 的边界，**未**另沉淀条目。**两条本轮新学到的**留在此处备查
+（不升格为跨仓规则，因为它们是**设计被实测推翻**的两个具体案例）：
+① **不可达分支 = 恒假支**：「后继 id 不在批内」看似该有的防御，实测**不可能发生**
+   （后继全部来自批内）⇒ 写进判据就是**永不响**的空判据（承序 19/20 的同一形态）。
+② **图算法的环判据不能复用「见过的集合」**：BFS 会把手性菱形误报成环 ⇒ 用 **DFS 三色**，
+   并按「回到**当前路径上**的 id」判环。
 
 ## 状态历史
 

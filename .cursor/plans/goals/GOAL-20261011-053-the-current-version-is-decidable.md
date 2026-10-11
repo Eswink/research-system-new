@@ -98,7 +98,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-chain-supersede.py`（**读面口径**）
       ⇒ 逐条读数；`git diff --numstat <base> HEAD -- <受判文件>` ⇒ **零改动**（本轮只读）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **链的终点成为可判定事实（附加 + 既有键逐字不变）**：读面披露**链的终点**
@@ -108,8 +108,8 @@ exit_criteria:
       **缺省载荷逐字不变**（无取代链接的记录 ⇒ 新增键取值形态**逐字**保持既有约定）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters tests/api -q` ⇒ 全绿
-      + 新用例（链式终点 / 无后继点名 / 环点名 / 既有键逐字不变）。
-    status: PENDING
+      + 新用例（链式终点 / 无后继点名 / 环点名 / 跨范围点名 / 既有键逐字不变）。
+    status: PASS
   - id: EC-03
     criterion: >-
       **同源与一致（不各写一套判定）**：**两个读面**（编排消费面与 HTTP 读面）对**同一份事实**
@@ -119,7 +119,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts -q` ⇒ 全绿
       （含快照判据）+ 新用例（两处同值 / 复用同一助手）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`P-1` 终点**算错**（比如取直接后继而非链终点）
@@ -130,7 +130,7 @@ exit_criteria:
     verify: >-
       `scratch/goal053-press.txt` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；归档
       `.cursor/plans/goals/evidence/GOAL-20261011-053-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -203,7 +203,7 @@ escalation_triggers:
   - 需要改**同轮同步集以外**的既有判据断言
 child_plans:
   - .cursor/plans/tasks/PLAN-20261011-413-goal-053-ec01-04-the-current-version-is-decidable.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-414-goal-053-ec01-04-the-current-version-is-decidable.md
 memory_entries: []
 ---
 
@@ -217,10 +217,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿：**真实读面**实测链式取代，逐条读数 + 反证「载荷无字段可答」 | `scratch/probe-chain-supersede.py`（读面口径） | PENDING |
-| EC-02 | **链的终点**成为可判定事实（附加；既有 13 键逐字不变；环 / 自指 / 无后继均**点名**） | `pytest tests/adapters tests/api -q` + 新用例 | PENDING |
-| EC-03 | **同源**：两个读面同值（取自同一批纯函数）+ OpenAPI 快照同轮 | `pytest tests/api tests/contracts -q` | PENDING |
-| EC-04 | **两向反证** `P-1`…`P-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | `scratch/goal053-press.txt` + 归档 | PENDING |
+| EC-01 | 勘察定稿：**真实读面**实测链式取代，逐条读数 + 反证「载荷无字段可答」 | `scratch/probe-chain-supersede.py`（读面口径） | **PASS** |
+| EC-02 | **链的终点**成为可判定事实（附加；既有 13 键逐字不变；环 / 自指 / 无后继均**点名**） | `pytest tests/api -q` + 新用例 **5 passed** | **PASS** |
+| EC-03 | **同源**：两个读面同值（取自同一批纯函数）+ OpenAPI 快照同轮 | `pytest tests/api tests/contracts` **1140 passed**；`tests/architecture` **287 passed** | **PASS** |
+| EC-04 | **两向反证** `P-1`…`P-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **747 B / `CR=0`** / `sha256 e33739554f9dca42…` | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal053_closeout.py` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -320,10 +320,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `PLAN-20261011-413` | `b2ba09a` | EC-01…EC-04 全 PASS：① 勘察定稿（真实读面六条读数）；② **链的终点**进两个读面（四态 `CURRENT` / `SUCCEEDED` / `CYCLE` / `OUT_OF_VIEW`，**七个形态**逐条实测：单条 / 链 / 环 / 自指 / 跨范围 / **菱形** / 双终点）；③ **同源**（HTTP 面调**应用层**同一纯函数；分层契约 `2 kept, 0 broken`）+ 快照同轮（`+12 / -0`）；④ **四向反证**（基线 GREEN + `P-1`…`P-4` 全 RED + 复原一致；`P-1` 终点算错 / `P-2` 退回直接链接 / `P-3` 既有键改名 / `P-4` 环却静默）| （见 CI 台账）| **两处设计被实测推翻**：`DANGLING` 支**不可达** ⇒ 换 `OUT_OF_VIEW`（跨 scope 实测可达）；**菱形被 BFS 误报成环** ⇒ 改 DFS 三色。既有断言**同轮加法** 1 处（+28 / -9，谓词未放宽）| EC-05（自举收口）待做 | cycle 2（EC-05 收口） |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **六条实测读数**（「不做传递闭包」逐字在树 / 链式实跑 A 的替代品已死 / 无字段可答当前版本 / 两侧处置同值 / 前向也只一层 / 写者语义本轮不改）⇒ 定位 `BB-1` 形态；五条 EC 全 PENDING；MAINLINE 程序表**新增序 21** | （见 CI 台账） | — | 五条 EC 全 PENDING；终点怎么进载荷（①）与两处怎么同源（②）待 cycle 1 落 | cycle 1（EC-02 终点 + EC-03 同源） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-11 | ACTIVE | **cycle 1（EC-01…EC-04）收口**：**链式取代的「当前版本」可判定** —— 应用层纯函数 `terminal_versions`（四态互不混用）+ 两个读面**同源**披露（编排面 `terminal{state,ids}` / HTTP 面 `terminal_state`+`terminal_ids`）；**既有键逐字不变**（仍是**直接**链接）。**七个形态**逐条实测（含**菱形 ≠ 环**）；**四向反证**基线绿 + 全红 + 复原一致。**两处设计被实测推翻并如实登记**：不可达的 `DANGLING` 换成可达的 `OUT_OF_VIEW`；BFS 的环判据换成 DFS 三色。既有断言**同轮加法** 1 处（谓词未放宽，逐条申报）。独立复检：`RECHECK-20261011-414`（PASS_WITH_WARNINGS）。EC-05 待收口。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 21**（承担者 = `GOAL-20261010-050` 登记的 `BB-1`「链式取代」），并写修订记录行（只追加）。**六条实测读数**（逐条见「事实层结论」表，命令与读数同在）：(a) 助手文档**逐字**写「不做传递闭包 —— 那是 `BB-1`，明确不做」；(b) **真实读面**实测 A ⊂ B ⊂ C ⇒ `mem-a` 的替代品 `mem-b` **自身 `active=False`**；(c) 13 键里**没有任何字段**能回答「当前版本是谁」；(d) 两侧处置**同值**（都 `SUPERSEDED`，理由各只点名**直接**后继）；(e) 前向 `supersedes` 也**只一层**；(f) 写者语义（走 gate + `deactivate`）本轮**一字不动**。五条 EC 全 PENDING。**不做**自动消解 / **不**改写入语义 / **不**做通用图算法 / **不**新建存储。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

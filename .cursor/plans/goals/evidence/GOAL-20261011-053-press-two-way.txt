@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 18 passed in 1.52s
+P-1 终点算错（取**直接**后继而不是链终点）: 按压 RED
+    sha 复原一致=True | 41df39042a39
+    suite: 2 failed, 16 passed in 3.11s
+P-2 退回直接链接（不再披露终点）: 按压 RED
+    sha 复原一致=True | b3b54a5c15e6
+    suite: 3 failed, 15 passed in 3.17s
+P-3 既有键被改动（`superseded_by` 改名 ⇒ 既有读者会断）: 按压 RED
+    sha 复原一致=True | ef6e8ba4bb37
+    suite: 3 failed, 15 passed in 2.87s
+P-4 链上有环却静默（不点名，返回一个假装是终点的值）: 按压 RED
+    sha 复原一致=True | 41df39042a39
+    suite: 1 failed, 17 passed in 2.96s
+SUMMARY presses=4 all_red_and_restored=True
