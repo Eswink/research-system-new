@@ -2,10 +2,10 @@
 id: PLAN-20261011-413
 slug: goal-053-ec01-04-the-current-version-is-decidable
 title: GOAL-20261011-053 cycle 1（EC-01…EC-04）：链式取代的「当前版本」可判定 —— 终点进载荷 + 两处同源 + 四向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-11
 updated_at: 2026-10-11
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-414-goal-053-ec01-04-the-current-version-is-decidable.md
 memory_entries: []
 parent_goal: GOAL-20261011-053
 cursor_plan_uri: null
