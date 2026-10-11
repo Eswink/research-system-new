@@ -255,9 +255,16 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "ec03-the-verdicts-are-read-once-for-both-faces",
+            # **判关系**：判词只读一次，且它被**传给闸门那一支**。
+            # GOAL-20261011-056 把闸门那一支抽成 `_gate_branch`（规模门）⇒
+            # 钉 `_declared_gate_evaluation(` 这个写法会**假红**；这里判「有一个把 `verdicts`
+            # 传下去的闸门调用」——**两种写法都认**（直调 / 抽出的桥）。
             _count_calls(runner, "_verdicts") == 1
-            and "gated = _declared_gate_evaluation(" in runner
-            and "verdicts," in runner,
+            and ("verdicts, clock)" in runner or "verdicts," in runner)
+            and (
+                "_gate_branch(program, last, approvals, verdicts" in runner
+                or "_declared_gate_evaluation(program, last, approvals, verdicts" in runner
+            ),
             "落库判词只读**一次**供两处共用（条件闸门与结论面看到同一批事实）",
         ),
         toolbox.verdict(
@@ -269,7 +276,16 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
 
 def _gate_precedes_conclusion_face(runner: str) -> bool:
     """闸门求值是否**先于**结论面（AST 取行号；**按关系**，不按某条读取语句的位置）。"""
-    gate = _first_call_line_any(runner, {"declared_gate_verdict", "_declared_gate_evaluation"})
+    gate = _first_call_line_any(
+        runner,
+        {
+            "declared_gate_verdict",
+            "_declared_gate_evaluation",
+            # GOAL-20261011-056：规模门逼出**再抽一层** ⇒ 调用点成了 `_gate_branch`。
+            # **仍判关系**：它在 `_after_hit` 之前被调用 ⇒ 「先闸门后结论面」未变。
+            "_gate_branch",
+        },
+    )
     conclusion = _first_call_line_any(runner, {"_after_hit"})
     if gate is None or conclusion is None:
         return False

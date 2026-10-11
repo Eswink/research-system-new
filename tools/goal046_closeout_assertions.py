@@ -216,7 +216,16 @@ def _gate_precedes_conclusion_face(runner: str) -> bool:
 
     两种形态都认 ⇒ 搬迁**不**改变结论；若有人把闸门挪到结论面**之后**，本条仍判红。
     """
-    gate = _first_call_line_any(runner, {"declared_gate_verdict", "_declared_gate_evaluation"})
+    gate = _first_call_line_any(
+        runner,
+        {
+            "declared_gate_verdict",
+            "_declared_gate_evaluation",
+            # GOAL-20261011-056：规模门逼出**再抽一层** ⇒ 调用点成了 `_gate_branch`。
+            # **仍然判关系**：它在 `_after_hit` 之前被调用 ⇒ 「先闸门后结论面」未变。
+            "_gate_branch",
+        },
+    )
     conclusion = _first_call_line_any(runner, {"_after_hit"})
     if gate is None or conclusion is None:
         return False

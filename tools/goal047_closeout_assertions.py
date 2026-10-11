@@ -53,6 +53,13 @@ REGISTRATION_SOURCES: tuple[str, ...] = (
 WAITING_SOURCES: tuple[str, ...] = ("packages/application/run_orchestration/program_waiting.py",)
 RUNNER = "packages/application/run_orchestration/program_runner.py"
 
+#: 「注册 → 判定」这一对的**两处可能落点**（GOAL-20261011-056：规模门把这一对整体
+#: 搬进桥模块 —— 关系没变，只是落点从 runner 挪到桥里）。
+_PAIR_SOURCES: tuple[str, ...] = (
+    "packages/application/run_orchestration/program_runner.py",
+    "packages/application/run_orchestration/program_gate_evaluation.py",
+)
+
 #: EC-03 落点（裁决面）。
 DECIDE_MODULE = "services/api/approvals.py"
 DECIDE_ROUTER = "services/api/routers/approvals.py"
@@ -256,12 +263,21 @@ def _first_call_line_any(source: str, names: set[str]) -> int | None:
 
 
 def _register_precedes_judging(runner: str) -> bool:
-    """注册的**调用行**必须早于判定的**调用行**（AST 取行号，两种调用形态都认）。"""
-    register_line = _first_call_line_any(runner, {"register_declared_gate"})
-    judge_line = _first_call_line_any(runner, {"declared_gate_verdict"})
-    if register_line is None or judge_line is None:
-        return False
-    return register_line < judge_line
+    """注册的**调用行**必须早于判定的**调用行**（AST 取行号；**判关系不判落点**）。
+
+    两个调用**必须在同一份文本里**才可比（跨文件的「先/后」没有意义）⇒
+    逐个可能落点试：找出**同时含两个调用**的那一份，再比行号。
+    GOAL-20261011-056 把这一对**整体**搬进桥模块（`program_gate_evaluation`）——
+    关系没变，只是落点从 runner 挪进桥里 ⇒ 只钉 runner 会**假红**（实测）。
+    """
+    root = Path(__file__).resolve().parents[1]
+    for relative in _PAIR_SOURCES:
+        text = runner if relative == RUNNER else _text(root, relative)
+        register_line = _first_call_line_any(text, {"register_declared_gate"})
+        judge_line = _first_call_line_any(text, {"declared_gate_verdict"})
+        if register_line is not None and judge_line is not None:
+            return register_line < judge_line
+    return False
 
 
 def _ec04_verdicts(root: Path, toolbox: Any) -> list[Any]:
