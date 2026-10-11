@@ -134,7 +134,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -209,7 +209,7 @@ memory_entries: []
 | EC-02 | **消解可记录**（哪一对 + 由谁 + 何时；四种坏形态点名；**声明一字不动**）| 新用例 **8 passed**（含 SQLite 往返）| **PASS** |
 | EC-03 | **读面披露**（同源；**未消解逐字仍是 `CONFLICTED`**）+ 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | PENDING |
 | EC-04 | **两向反证** `U-1`…`U-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **714 B / `CR=0`** | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal058_closeout.py` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **66 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 待本轮回填 | **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 

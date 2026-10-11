@@ -58,7 +58,10 @@ def test_the_resolution_facts_agree_between_the_two_faces(client: TestClient) ->
         client.get("/projects/example-project/memory").json()["records"],
     )
     http = {str(row["id"]): row for row in http_rows}
-    orch_rows = cast("list[dict[str, object]]", memory_read(store, {"now": "2026-05-01T12:00:00+00:00"})["memories"])
+    orch_rows = cast(
+        "list[dict[str, object]]",
+        memory_read(store, {"now": "2026-05-01T12:00:00+00:00"})["memories"],
+    )
     orch = {str(row["memory_id"]): row for row in orch_rows}
     assert http["m-res"]["conflict_resolutions"] == orch["m-res"]["conflict_resolutions"], (
         http["m-res"]["conflict_resolutions"],
