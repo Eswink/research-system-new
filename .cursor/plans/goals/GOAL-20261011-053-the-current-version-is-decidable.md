@@ -2,7 +2,7 @@
 id: GOAL-20261011-053
 slug: the-current-version-is-decidable
 title: 链式取代的「当前版本」可判定 —— 序 18 把 `superseded_by` 做成**直接**反向链接（助手文档逐字写「只报**直接**链接（**不**做传递闭包 —— 那是 `BB-1`，明确不做）」），但 **A ⊂ B ⊂ C 链式取代实跑**：A 的 `superseded_by = ['mem-b']`，而 **B 自己 `active=False`（也已被取代）** ⇒ 读者顺着链接找到的「替代品」**可能是死的**，载荷里**没有任何字段**能回答「**当前**版本是谁」（要么自己追链、要么被误导）；两侧处置还相同（都 `SUPERSEDED`）⇒ 缺的是「链的终点」这一条可判定事实
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-11
 updated_at: 2026-10-11
 owners:
@@ -146,7 +146,7 @@ exit_criteria:
       --verdict-only` ⇒ 全 PASS / 0 FAIL；`tools/two_tree_recheck.py --script-mode shared
       --base-ref <含交付面的提交>` ⇒ `TWO-TREE PASS`；as-is m0 终局行
       `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -221,7 +221,7 @@ memory_entries: []
 | EC-02 | **链的终点**成为可判定事实（附加；既有 13 键逐字不变；环 / 自指 / 无后继均**点名**） | `pytest tests/api -q` + 新用例 **5 passed** | **PASS** |
 | EC-03 | **同源**：两个读面同值（取自同一批纯函数）+ OpenAPI 快照同轮 | `pytest tests/api tests/contracts` **1140 passed**；`tests/architecture` **287 passed** | **PASS** |
 | EC-04 | **两向反证** `P-1`…`P-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **747 B / `CR=0`** / `sha256 e33739554f9dca42…` | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal053_closeout.py` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **64 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；m0 **23/23**；CI `38123949363` **8/8** | **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -318,7 +318,20 @@ memory_entries: []
 
 | commit | run/结论 | 备注 |
 | --- | --- | --- |
-| （待建档提交） | — | — |
+| `c15f4d1`（replan + 建档） | **`total_count = 0`**（同批推送，其后未再推进远端直到收口）⇒ **`covered_by 38123949363`** | 程序表新增序 21 + GOAL 建档 + 子 PLAN 投影 |
+| `b2ba09a`（cycle 1 WP-1…WP-3） | **`total_count = 0`** ⇒ **`covered_by 38123949363`** | 终点四态进两个读面 + 同源 + 快照同轮 |
+| `2654b13`（EC-05 首轮） | **`total_count = 0`** ⇒ **`covered_by 38123949363`** | 验证器 + 断言集进树 + 两处射程纯收紧 + `R26-*` 逐条 |
+| `2e8cebb`（两树首轮归档） | **`total_count = 0`** ⇒ **`covered_by 38123949363`** | bootstrap 轮产物（两份 **不同** —— 干净树尚缺收口面）|
+| `f2cd7ec`（两处既有断言按关系修正 + 归档定格）| **`total_count = 0`** ⇒ **`covered_by 38123949363`** | `goal045` / `goal050` 假红修正 |
+| `ab63607`（cycle 2 记录面）| **`total_count = 0`** ⇒ **`covered_by 38123949363`** | 两树 PASS / 归档定格 / 三处如实登记 |
+| `3f6bc6e`（**末条实测提交** = m0 回填）| `38123949363` **M0 success**（**8/8 job 全 success**）+ `38123948936` **Push on main success**（3/3）| **台账封闭于此提交** |
+
+**自我指涉边界（明写并封闭）**：写本台账本身要再提交 ⇒ 会产生新 run。**封闭口径**：
+**末条可引用的实测提交 = `3f6bc6e`**（上表最后一行，两 run 全绿）；**其后仅记录提交**，
+**不再追链** —— 若需复核本行结论，取 `3f6bc6e` 的两条 run 即足。
+
+**`covered_by` 的用法（逐条）**：六个提交**自身 `total_count = 0`**（**同批推送**只让 tip 起 run）
+⇒ 按纪律**不是**「未取证」，而是**由同批 tip 的 run 覆盖**（各自的 `covered_by` 已在表内写明）。
 
 ## 迭代日志
 
@@ -332,6 +345,7 @@ memory_entries: []
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-11 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器 **64 判词 / 0 FAIL**（标准断言集一行未重写）；② 两树 **`TWO-TREE PASS`**（两路 64 判词 / `sha256` 相同 `d3bcd99d6fa0d682…`）+ 归档两份各 **2383 B / 64 行 / `CR=0`**；③ **as-is m0 23/23**（`PASS [` 24 / `FAILED [` 0 / **5619 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；④ 治理 + 宪章判据绿；⑤ **CI 台账逐提交**（`3f6bc6e`：M0 `38123949363` **8/8** + Push on main `38123948936` 3/3；`covered_by` 六条逐条写明；**边界封闭于 `3f6bc6e`**）。**三处如实登记**：bootstrap 轮 RED（时序）/ `R26-*` 初版只写区间（判据抓到）/ 两处既有断言因**字段分组**假红（改判关系，两向实测）。**残余**：`DD-1`…`DD-3` / `CC-*` / `W-2` / `BB-3` / `Z-*` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261011-414`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-11 | ACTIVE | **cycle 2（EC-05 自举收口）**：收口验证器 + 断言集进树并过四道门；**两处射程纯收紧**；
 **两树 `TWO-TREE PASS`**（64 判词 / `sha256` 相同）；判词归档进树（两份各 2383 B / 64 行 / `CR=0`）；
 治理 `validate.py` 绿 + 宪章判据绿。**三处如实登记**：① bootstrap 轮 RED（时序）；
