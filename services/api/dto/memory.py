@@ -37,6 +37,13 @@ class MemoryRecordDto(BaseModel):
     disposition: str = ""
     #: 处置理由（**逐字**与编排面同源；可复核，不是不透明标签）。
     reason: str = ""
+    # GOAL-20261011-053 EC-02（`BB-1`）：**链的终点**（与编排面**同源同值**）。
+    # 光有 `superseded_by`（**直接**链接）答不出「**现在**的版本是哪条」：在 A ⊂ B ⊂ C 上，
+    # A 的链接指向的 B **自己可能已被取代** ⇒ 读者要么自己追链、要么被误导。
+    # `terminal_state` 四态互不混用（`CURRENT` / `SUCCEEDED` / `CYCLE` / `DANGLING`）；
+    # `terminal_ids` **点名**终点 —— 环与悬空后继都点名，**不**静默（承本 GOAL 的禁令）。
+    terminal_state: str = ""
+    terminal_ids: list[str] = Field(default_factory=list)
 
 
 class MemoryListViewDto(BaseModel):

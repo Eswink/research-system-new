@@ -42,9 +42,14 @@ from packages.application.memory.disposition import (
     DISPOSITION_SKIP,
     DISPOSITION_SUPERSEDED,
     DISPOSITION_USE,
+    TERMINAL_CURRENT,
+    TERMINAL_CYCLE,
+    TERMINAL_OUT_OF_VIEW,
+    TERMINAL_SUCCEEDED,
     disposition_of,
     disposition_reason,
     superseded_by_index,
+    terminal_versions,
 )
 from packages.application.memory.validity import validity_at
 from packages.application.ports.errors import InvalidInputError
@@ -75,50 +80,90 @@ def _moment(args: dict[str, object]) -> Timestamp:
         raise InvalidInputError(str(exc)) from exc
 
 
-def _memory_row(
-    record: Any, moment: Timestamp, superseded_by: list[str] | None = None
-) -> dict[str, object]:
-    """一条记忆的读面投影：**身份 + 内容 + 时效 + 取代关系 + 处置 + 理由**（逐条点名）。
+def _identity_fields(record: Any, state: Any) -> dict[str, object]:
+    """身份 / 内容 / 时效那几项（**逐条披露**；判定项由 `_memory_row` 补上）。
 
-    `superseded_by` = **谁取代了它**（反向链接）。它**必须由调用方从同一批记录算出来**
-    —— 那是「不新增 Port 方法」的代价，也是本条唯一的非局部输入（见 `superseded_by_index`）。
+    GOAL-20261010-045 EC-03：**冲突声明**与**生效起点**逐条披露 —— 为什么在读面上
+    （而不只塞进判词）：读面是消费者唯一能自己回答「这条记忆与谁冲突」的地方；
+    判词只覆盖「本研究路径关心的那一条」，读面覆盖全部（两者**不互相顶替**）。
     """
-    state = validity_at(record, moment)
-    superseded = bool(superseded_by)
-    # GOAL-20261011-051 EC-02：**未消解的冲突**是一维 —— `contradictions` 非空即「有」。
-    # 这里**只读声明**（不推断谁和谁冲突 —— 那是序 13 的 `W-2`，明确不做）。
-    conflicted = bool(record.contradictions)
-    disposition = disposition_of(state, superseded=superseded, conflicted=conflicted)
-    content = str(record.content)
     return {
         "memory_id": str(record.id),
         "tier": str(record.tier),
         "scope": str(record.scope),
-        "content": content,
+        "content": str(record.content),
         "confidence": float(record.confidence),
         "active": bool(record.active),
-        # GOAL-20261010-045 EC-03：**冲突声明**与**生效起点**逐条披露。
-        # 为什么在读面上（而不只塞进判词）：读面是消费者唯一能自己回答「这条记忆与谁冲突」的地方；
-        # 判词只覆盖「本研究路径关心的那一条」，读面覆盖全部（两者**不互相顶替**）。
         "contradictions": list(record.contradictions),
         "valid_from": (
             record.valid_from.value.isoformat() if record.valid_from is not None else None
         ),
         #: 时效状态（`None` = 未声明或未到 —— **不猜**，与「已到期」严格区分）。
         "validity": state.value if state is not None else None,
-        # GOAL-20261010-050 EC-02：**取代关系两个方向都披露**（`[]` = 无关系 —— 是**声明性**的
-        # 值而不是缺字段；与「缺字段点名」的既有纪律一致）。读者据此能回答
-        # 「这条被谁取代 / 它取代了谁」，而不必自己去比对 id 列表。
-        "supersedes": list(record.supersedes),
-        "superseded_by": list(superseded_by or ()),
-        #: 处置（供研究循环**按它分派**：`SKIP` / `ANNOTATE` / `USE` / `SUPERSEDED`）。
-        "disposition": disposition,
-        #: 理由：处置是**可复核**的，不是不透明标签。
-        # GOAL-20261011-051：**冲突的处置理由由 `_reason` 自己点名**（那一支已逐字给出 id）
-        # ⇒ 不再叠加 `_conflict_note`（否则同一句出现两遍）。`_conflict_note` 保留给
-        # **未被 `_reason` 覆盖**的场合（见下）—— 「不是当前处置理由、但读者仍该知道有冲突」。
-        "reason": disposition_reason(state, record, superseded_by=superseded_by),
     }
+
+
+def _terminal_face(record: Any, terminal: dict[str, object] | None) -> dict[str, object]:
+    """GOAL-20261011-053 EC-02（`BB-1`）：**链的终点** —— 上面那两个键只给**直接**链接，
+    在 A ⊂ B ⊂ C 时 A 的「替代品」B **自己可能已被取代** ⇒ 「**现在**的版本是哪条」
+    在载荷里**答不出来**。本键让读者**不必自己追链**。
+
+    四态互不混用（见 `terminal_versions`）：`CURRENT`（本条即当前版本）/
+    `SUCCEEDED`（终点是点名的那些）/ `CYCLE`（有环，**点名**环上 id）/
+    `OUT_OF_VIEW`（后继不在本批查询范围 ⇒ **点名**「看不见」，**不**假装它是当前版本）。
+    """
+    chain: dict[str, object] = dict(terminal or {})
+    ids = chain.get("terminal")
+    return {
+        "state": str(chain.get("state", TERMINAL_CURRENT)),
+        "ids": [str(item) for item in ids] if isinstance(ids, list) else [str(record.id)],
+    }
+
+
+def _memory_row(
+    record: Any,
+    moment: Timestamp,
+    superseded_by: list[str] | None = None,
+    terminal: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """一条记忆的读面投影：**身份 + 内容 + 时效 + 取代关系 + 当前版本 + 处置 + 理由**。
+
+    `superseded_by` = **谁取代了它**（反向链接）；`terminal` = **链的终点**（`BB-1`）。
+    两者**都必须由调用方从同一批记录算出来** —— 那是「不新增 Port 方法」的代价，
+    也是本条唯一的非局部输入（见 `superseded_by_index` / `terminal_versions`）。
+    """
+    state = validity_at(record, moment)
+    # GOAL-20261011-051 EC-02：**未消解的冲突**是一维 —— `contradictions` 非空即「有」。
+    # 这里**只读声明**（不推断谁和谁冲突 —— 那是序 13 的 `W-2`，明确不做）。
+    conflicted = bool(record.contradictions)
+    row = _identity_fields(record, state)
+    row["supersedes"] = list(record.supersedes)
+    row["superseded_by"] = list(superseded_by or ())
+    row["terminal"] = _terminal_face(record, terminal)
+    row["disposition"] = disposition_of(
+        state, superseded=bool(superseded_by), conflicted=conflicted
+    )
+    #: 理由：处置是**可复核**的，不是不透明标签。
+    # GOAL-20261011-051：**冲突的处置理由由 `_reason` 自己点名**（那一支已逐字给出 id）
+    # ⇒ 不再叠加 `_conflict_note`（否则同一句出现两遍）。`_conflict_note` 保留给
+    # **未被 `_reason` 覆盖**的场合（见下）—— 「不是当前处置理由、但读者仍该知道有冲突」。
+    row["reason"] = disposition_reason(state, record, superseded_by=superseded_by)
+    return row
+
+
+def _selection(memory_store: Any, args: dict[str, object]) -> tuple[str | None, str | None]:
+    """解析两个**可选**筛选维度（`tier` / `scope`）：缺省或空白 ⇒ `None` = 不筛。
+
+    **范围必须先确认为已知**（`_require_known_scope`）—— 未知范围**点名拒绝**，
+    不静默当成「不筛」（那会让调用方以为自己筛过了）。
+    """
+    raw_tier = args.get("tier")
+    tier = str(raw_tier).strip() if raw_tier is not None and str(raw_tier).strip() else None
+    raw_scope = args.get("scope")
+    scope = str(raw_scope).strip() if raw_scope is not None and str(raw_scope).strip() else None
+    if scope is not None:
+        _require_known_scope(memory_store, scope)
+    return tier, scope
 
 
 def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, object]:
@@ -137,17 +182,18 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     if memory_store is None:
         raise InvalidInputError("memory_read requires a MemoryStore, which is not in this assembly")
     moment = _moment(args)
-    raw_tier = args.get("tier")
-    tier = str(raw_tier).strip() if raw_tier is not None and str(raw_tier).strip() else None
-    raw_scope = args.get("scope")
-    scope = str(raw_scope).strip() if raw_scope is not None and str(raw_scope).strip() else None
-    if scope is not None:
-        _require_known_scope(memory_store, scope)
+    tier, scope = _selection(memory_store, args)
     records = memory_store.query(_tier_of(tier), scope)
     # GOAL-20261010-050 EC-02：反向链接从**同一批记录**算一次（不新增 Port 方法、
     # 不逐条再查 —— 那是 N+1 次查询，且会在两处看到不同的世界）。
     reverse = superseded_by_index(records)
-    rows = [_memory_row(record, moment, reverse.get(str(record.id), [])) for record in records]
+    # GOAL-20261011-053 EC-02（`BB-1`）：**链的终点**同样从**同一批记录**算一次
+    # （纯函数；只读声明。与反向链接是同一份事实的两种索引 —— 不各定义一遍「谁取代了谁」）。
+    terminals = terminal_versions(records)
+    rows = [
+        _memory_row(record, moment, reverse.get(str(record.id), []), terminals.get(str(record.id)))
+        for record in records
+    ]
     counts = {
         DISPOSITION_USE: 0,
         DISPOSITION_ANNOTATE: 0,
@@ -221,5 +267,10 @@ __all__ = [
     "disposition_of",
     "disposition_reason",
     "memory_read",
+    "TERMINAL_CURRENT",
+    "TERMINAL_CYCLE",
+    "TERMINAL_OUT_OF_VIEW",
+    "TERMINAL_SUCCEEDED",
     "superseded_by_index",
+    "terminal_versions",
 ]

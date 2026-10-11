@@ -3825,6 +3825,18 @@
             "title": "Supersedes",
             "type": "array"
           },
+          "terminal_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Terminal Ids",
+            "type": "array"
+          },
+          "terminal_state": {
+            "default": "",
+            "title": "Terminal State",
+            "type": "string"
+          },
           "tier": {
             "title": "Tier",
             "type": "string"

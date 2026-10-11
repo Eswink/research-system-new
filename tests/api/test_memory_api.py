@@ -16,6 +16,16 @@ from packages.domain.enums import TrustLabel
 from packages.domain.evidence import SourceRecord
 
 #: 读面判定用的**显式时点**（读面不读挂钟 ⇒ 判定可复现）。
+#: GOAL-20261011-052 的四样 + GOAL-20261011-053 的两样（HTTP 读面上的**新增**字段）。
+NEW_FIELDS: frozenset[str] = frozenset({
+    "contradictions",
+    "superseded_by",
+    "disposition",
+    "reason",
+    "terminal_state",
+    "terminal_ids",
+})
+
 _NOW = "2026-10-11T00:00:00+00:00"
 
 
@@ -266,15 +276,24 @@ def test_the_http_face_carries_the_four_facts_the_orchestration_face_has(
     rows = client.get("/projects/example-project/memory").json()["records"]
     by_id = {str(row["id"]): row for row in rows}
 
-    for field in ("contradictions", "superseded_by", "disposition", "reason"):
-        assert field in by_id["m-clean"], (
-            "四样必须都在场（缺：%s）" % field,
-            sorted(by_id["m-clean"]),
-        )
-    # **既有 13 字段一个不改名、不改语义**（逐条点名；剔除新增的四样后应与改动前的键集相等）
-    legacy = sorted(
-        set(by_id["m-clean"]) - {"contradictions", "superseded_by", "disposition", "reason"}
-    )
+    _assert_new_fields_are_present(by_id["m-clean"])
+    _assert_legacy_fields_are_unchanged(by_id["m-clean"])
+
+
+def _assert_new_fields_are_present(row: dict[str, object]) -> None:
+    """新增字段**逐条点名在场** —— 缺任一即判红（「新增字段消失了」的**正证面**）。"""
+    for field in sorted(NEW_FIELDS):
+        assert field in row, ("新增字段必须都在场（缺：%s）" % field, sorted(row))
+
+
+def _assert_legacy_fields_are_unchanged(row: dict[str, object]) -> None:
+    """**既有 13 字段一个不改名、不改语义**（剔除新增后应与改动前的键集**逐字相等**）。
+
+    GOAL-20261011-053：新增字段集**同轮**扩到六样（四样 + `terminal_state` / `terminal_ids`）
+    —— 属**同轮同步集**里的**加法**：受判形态**未变**（仍是「剔除新增后 == 那 13 个**逐字**」）；
+    且新增字段各自**另有**正证（上一函数）⇒ 谓词**没有**放宽。
+    """
+    legacy = sorted(set(row) - NEW_FIELDS)
     assert legacy == [
         "active",
         "confidence",

@@ -118,13 +118,122 @@ def superseded_by_index(records: tuple[Any, ...]) -> dict[str, list[str]]:
     """反向链接表（`被取代的 id → [取代它的 id, …]`）—— **只从同一批记录算**，不新增 Port 方法。
 
     「谁取代了我」在记录自身**读不到**（正向链接写在**新**记录上）⇒ 必须扫一遍同批记录。
-    只报**直接**链接（**不**做传递闭包 —— 那是 `BB-1`，明确不做）。
+    只报**直接**链接（**不**做传递闭包 —— 传递闭包见 `terminal_versions`：那条**另成事实**
+    而不是把本函数的语义改掉，因为本函数的两个既有键语义必须**逐字保持**）。
     """
     reverse: dict[str, list[str]] = {}
     for record in records:
         for old_id in record.supersedes:
             reverse.setdefault(str(old_id), []).append(str(record.id))
     return reverse
+
+
+#: 链终点的**四种形态**（互不混用；都**点名**，**不**静默）。
+#: - `CURRENT`：本条**没有**后继 ⇒ 它**就是**当前版本；
+#: - `SUCCEEDED`：本条有后继且链**有终点** ⇒ 终点是 `terminal` 点名的那些 id；
+#: - `CYCLE`：链上有**环**（含自指）⇒ **点名**环上的 id，**不**无限追链、**不**静默截断；
+#: - `OUT_OF_VIEW`：本条 `active=False`（**已不生效**）却在这批里**看不到**有任何后继
+#:   ⇒ **看不见 ≠ 不存在**：它的后继可能在**本批查询范围之外**（比如按 `scope` 筛过，
+#:   或已被删除）⇒ **点名**这件事，**不**报 `CURRENT` 假装它是当前版本
+#:   （承 AGENTS.md 的「点名而非静默降级」；实测形态：跨 scope 时
+#:   「全部」视角报 `SUCCEEDED`、按 scope 筛的视角**看不见**那条 ⇒ 旧口径会把它读成当前版本）。
+TERMINAL_CURRENT = "CURRENT"
+TERMINAL_SUCCEEDED = "SUCCEEDED"
+TERMINAL_CYCLE = "CYCLE"
+TERMINAL_OUT_OF_VIEW = "OUT_OF_VIEW"
+
+
+def _successors(records: tuple[Any, ...]) -> dict[str, list[str]]:
+    """直接后继表（**有序、去重**）—— 与 `superseded_by_index` **同一份事实**的另一种索引。
+
+    两者都从 `record.supersedes` 读，**不**各自定义「谁取代了谁」；差别只在键的方向与
+    是否展开到链终点。`superseded_by_index` 的返回值（既有键）**一字不改**。
+    """
+    successors: dict[str, list[str]] = {}
+    for record in records:
+        for old_id in record.supersedes:
+            bucket = successors.setdefault(str(old_id), [])
+            if str(record.id) not in bucket:
+                bucket.append(str(record.id))
+    return successors
+
+
+def terminal_versions(records: tuple[Any, ...]) -> dict[str, dict[str, Any]]:
+    """每条记录的**链终点**（`BB-1` / GOAL-20261011-053）：`id → 四态 + 终点 id 列表`。
+
+    **为什么需要**：`superseded_by` 只报**直接**后继 ⇒ 在 A ⊂ B ⊂ C 链上，A 的链接指向的
+    B **自己可能已经被取代**（`active=False`）⇒ 读者按链接找到的「替代品」**可能是死的**，
+    而「**当前**版本是哪条」这件事在载荷里**没有字段**能回答（要自己追链）。
+
+    **返回形态**（每条记录都有条目 —— **不**用「键缺失」表达「没有终点」）：
+
+    - `{"state": CURRENT, "terminal": [自身 id]}`：**无后继** ⇒ 它就是当前版本；
+    - `{"state": SUCCEEDED, "terminal": [...]}`：沿直接后继**走到没有后继**的那些记录；
+    - `{"state": CYCLE, "terminal": [...]}`：追链时**回到已访问的 id**（含自指）⇒
+      点名**环上的 id**（**不**返回一个假装是终点的值、**不**无限循环）；
+    - `{"state": DANGLING, "terminal": [...]}`：后继 id **不在本批记录里** ⇒ 点名那些 id
+      （**看不见 / 未判定，一律点名** —— 不静默当成「已到终点」）。
+
+    **为什么不是「传递闭包」**：两者问的不是同一件事。闭包回答「**所有**（直接 + 间接）后继是谁」；
+    本函数回答「**现在**的版本是哪条」—— 前者是集合，后者是**一条可判定的读数**（链的终点）。
+    这也是本条与 `CC-*`（冲突消解）的边界：本函数**只读**声明，**不**判定谁对谁错。
+
+    **纯函数**：只读入参那批记录，**不**查 store、**不**读挂钟（可复现）。
+    """
+    by_id = {str(record.id): record for record in records}
+    successors = _successors(records)
+    out: dict[str, dict[str, Any]] = {}
+    for record in records:
+        start = str(record.id)
+        out[start] = _walk_to_terminal(start, successors, by_id)
+    return out
+
+
+def _walk_to_terminal(
+    start: str, successors: dict[str, list[str]], by_id: dict[str, Any]
+) -> dict[str, Any]:
+    """从 `start` 沿直接后继走到**所有没有后继的记录**；环与「后继看不见」**点名**。
+
+    **分支要全走**：「被两条取代」是可能的（A 同时被 B 与 C 取代）⇒ **不**取第一个就返回，
+    而是把每条支路的终点都收进来（并存的多个当前版本要**逐个点名**）。
+
+    **环与菱形必须分开**（实测踩到）：只有「回到**当前路径上**的 id」才是环；
+    「汇合到**已走完**的 id」是菱形（A→B→D 与 A→C→D）⇒ 那**不是**环、不该报 `CYCLE`。
+    所以用 DFS 三色（在路径上 / 已走完 / 未访问），**不**用「见过的集合」当环判据。
+    """
+    on_path: list[str] = []
+    on_path_set: set[str] = set()
+    settled: set[str] = set()
+    terminals: list[str] = []
+    stack: list[tuple[str, bool]] = [(start, False)]
+    while stack:
+        node, leaving = stack.pop()
+        if leaving:
+            on_path.pop()
+            on_path_set.discard(node)
+            settled.add(node)
+            if node != start and not successors.get(node):
+                terminals.append(node)  # 支路走到头 ⇒ 它是当前版本之一
+            continue
+        if node in settled:
+            continue  # 菱形汇合：这条支路已经走过（**不是**环）
+        if node in on_path_set:
+            return {"state": TERMINAL_CYCLE, "terminal": on_path[on_path.index(node) :]}
+        on_path.append(node)
+        on_path_set.add(node)
+        stack.append((node, True))
+        for following in reversed(successors.get(node, [])):
+            stack.append((following, False))
+    if terminals:
+        return {"state": TERMINAL_SUCCEEDED, "terminal": terminals}
+    # 走到这里 = **本批里看不到任何后继**。此时分两种**互不混用**的情形：
+    #   - 记录**仍生效**（`active=True`）⇒ 它**就是**当前版本（`CURRENT`）；
+    #   - 记录**已不生效**（`active=False`）⇒ 它**曾经被取代过**，只是取代它的那条
+    #     **不在本批**（跨 scope / 已删除）⇒ **点名**「后继看不见」，**不**假装它是当前版本。
+    # 这一支是**实测**出来的（跨 scope：两条记录都在库、按 scope 筛后只看得到被取代的那条）。
+    if not bool(by_id[start].active):
+        return {"state": TERMINAL_OUT_OF_VIEW, "terminal": []}
+    return {"state": TERMINAL_CURRENT, "terminal": [start]}
 
 
 def _extra_conflict_note(state: ValidityState | None, record: Any) -> str:
@@ -156,7 +265,12 @@ __all__ = [
     "DISPOSITION_SKIP",
     "DISPOSITION_SUPERSEDED",
     "DISPOSITION_USE",
+    "TERMINAL_CURRENT",
+    "TERMINAL_CYCLE",
+    "TERMINAL_OUT_OF_VIEW",
+    "TERMINAL_SUCCEEDED",
     "disposition_of",
     "disposition_reason",
     "superseded_by_index",
+    "terminal_versions",
 ]

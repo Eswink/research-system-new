@@ -27,9 +27,11 @@ from fastapi import APIRouter, Request
 # GOAL-20261011-052 EC-03：共用判定取自**应用层**（`.importlinter.api` 的契约禁止
 # `services.api.routers` import 具体适配器 ⇒ 同源判定必须落在应用层，两处都从那里取）。
 from packages.application.memory.disposition import (
+    TERMINAL_CURRENT,
     disposition_of,
     disposition_reason,
     superseded_by_index,
+    terminal_versions,
 )
 from packages.application.memory.gate import MemoryGateDeps, commit_memory
 from packages.application.memory.lifecycle import MemoryLifecycleDeps, delete_memory
@@ -78,6 +80,7 @@ def _record_dto(
     *,
     now: Timestamp | None = None,
     superseded_by: list[str] | None = None,
+    terminal: dict[str, object] | None = None,
 ) -> MemoryRecordDto:
     """记录 DTO。**只在给了时点时**填 `validity`（不给 ⇒ `None` = 未判定，不猜）。
 
@@ -86,10 +89,15 @@ def _record_dto(
     （反向链接 `superseded_by_index` 需要看见别人，单条记录读不出来）；
     `disposition` / `reason` **直接调**应用层那两个纯函数（`disposition_of` / `disposition_reason`）
     —— **不**在路由里重写第二套判定（两处各写一套 = 漂移无从发现）。
+
+    GOAL-20261011-053 EC-02/EC-03：**链的终点**同理 —— `terminal` 也由调用方按**同一批记录**
+    传入（`terminal_versions` 是应用层的纯函数，与反向链接**同一份事实的两种索引**）。
     """
     validity = validity_at(record, now) if now is not None else None
     links = list(superseded_by or ())
     superseded = bool(links)
+    chain: dict[str, object] = dict(terminal or {})
+    chain_ids = chain.get("terminal")
     return MemoryRecordDto(
         id=record.id,
         tier=_enum_value(record.tier),
@@ -110,6 +118,12 @@ def _record_dto(
             validity, superseded=superseded, conflicted=bool(record.contradictions)
         ),
         reason=disposition_reason(validity, record, superseded_by=links),
+        # 缺省（调用方没给）⇒ 本条即当前版本 —— 与编排面 `_memory_row` **同一形态**，
+        # 免得两处对「没有链」这件事给出不同的默认值。
+        terminal_state=str(chain.get("state", TERMINAL_CURRENT)),
+        terminal_ids=(
+            [str(item) for item in chain_ids] if isinstance(chain_ids, list) else [str(record.id)]
+        ),
     )
 
 
@@ -133,18 +147,31 @@ async def list_project_memory(
     # GOAL-20261011-052 EC-02：反向取代链接要看见**别人** ⇒ 按**同一批记录**扫一次
     # （复用编排面同一助手；不逐条再查 —— 那会 N+1 且两处看到不同的世界）。
     reverse = superseded_by_index(records)
+    # GOAL-20261011-053 EC-03：**链的终点**同样按同一批记录算一次（应用层纯函数；
+    # 与反向链接是**同一份事实的两种索引** ⇒ 两处**同源同值**，不各写一套判定）。
+    terminals = terminal_versions(records)
     # 两个形态各自**显式**声明自己的键（不给路由开 `response_model_exclude_none`：那种开关
     # 会连**嵌套模型**一起递归应用，把别的读面上**有意义**的 `null` 抹掉 —— 实测过）。
     if scope is None:
         return MemoryListViewDto(
             records=[
-                _record_dto(record, superseded_by=reverse.get(record.id, [])) for record in records
+                _record_dto(
+                    record,
+                    superseded_by=reverse.get(record.id, []),
+                    terminal=terminals.get(record.id),
+                )
+                for record in records
             ],
             scope_note=SCOPE_NOTE,
         )
     return MemoryFilteredListViewDto(
         records=[
-            _record_dto(record, superseded_by=reverse.get(record.id, [])) for record in records
+            _record_dto(
+                record,
+                superseded_by=reverse.get(record.id, []),
+                terminal=terminals.get(record.id),
+            )
+            for record in records
         ],
         scope_note=SCOPE_NOTE,
         scope=scope,
