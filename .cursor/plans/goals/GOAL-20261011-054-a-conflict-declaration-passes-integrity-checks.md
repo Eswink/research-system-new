@@ -92,9 +92,9 @@ exit_criteria:
       (c) `rg` 反证：记忆面**没有**检测实现（命中的都在无关子系统，逐条列名）；
       (d) 结论：**声明面缺完整性校验** ⇒ 悬空与真实分歧在处置面**同值**。
     verify: >-
-      `uv run --frozen --no-sync python -B scratch/probe-conflict-integrity.py`（**读面口径**）
+      `uv run --frozen --no-sync python -B scratch/probe-conflict-integrity.py`（**两条路径都跑**）
       ⇒ 三态逐条读数；`rg -n "_contradiction_check" packages/application/memory/gate.py`。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **gate 对齐（与 `supersedes` 同一条纪律）**：新提案的 `contradictions` 被引 id
