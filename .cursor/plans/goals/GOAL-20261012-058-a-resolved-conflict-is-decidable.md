@@ -97,8 +97,8 @@ exit_criteria:
       `contradictions` 里的对）；**声明本身**（`contradictions`）**一字不动**（历史事实保留）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/domain tests/application -q` ⇒ 全绿
-      + 新用例（消解可记 / 四种坏形态点名 / 声明逐字不变）。
-    status: PENDING
+      + 新用例（消解可记 / 四种坏形态点名 / 声明逐字不变）—— **8 passed**。
+    status: PASS
   - id: EC-03
     criterion: >-
       **读面披露 + 缺省逐字不变**：两个读面（编排消费面 + HTTP 读面）**同源**披露「已消解」与
@@ -106,8 +106,8 @@ exit_criteria:
       动 DTO ⇒ **同轮**重生成并提交 `docs/api/openapi.m13.json`。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
-      ⇒ 全绿 + 新用例（两处同值 / 未消解逐字不变 / 快照含新字段）。
-    status: PENDING
+      ⇒ 全绿 + 新用例（两处同值 / 未消解逐字不变 / 快照含新字段）—— **3 + 1 passed**。
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`U-1` **未消解被判已消解** ⇒ **RED**；
@@ -118,7 +118,7 @@ exit_criteria:
     verify: >-
       `scratch/goal058-press.txt` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；归档
       `.cursor/plans/goals/evidence/GOAL-20261012-058-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -206,9 +206,9 @@ memory_entries: []
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 勘察定稿：消解面全零命中 + 改声明路径全零命中 + 五态无误 + 三个写路径都不碰冲突维 | **实跑**：五组读数（零命中 / 五态逐个 / 三写路径 / 两适配器列）| **PASS** |
-| EC-02 | **消解可记录**（哪一对 + 由谁 + 何时；四种坏形态点名；**声明一字不动**）| `pytest tests/domain tests/application -q` + 新用例 | PENDING |
+| EC-02 | **消解可记录**（哪一对 + 由谁 + 何时；四种坏形态点名；**声明一字不动**）| 新用例 **8 passed**（含 SQLite 往返）| **PASS** |
 | EC-03 | **读面披露**（同源；**未消解逐字仍是 `CONFLICTED`**）+ 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | PENDING |
-| EC-04 | **两向反证** `U-1`…`U-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | `scratch/goal058-press.txt` + 归档 | PENDING |
+| EC-04 | **两向反证** `U-1`…`U-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **714 B / `CR=0`** | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal058_closeout.py` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -287,7 +287,8 @@ memory_entries: []
 - **`R26-*` 终态（逐条保持，不改写）**：`R26-1`（读面认证）/ `R26-2` / `R26-3` / `R26-4` /
   `R26-5` / `R26-6` —— 六条**原样保留**（本轮**不**推进其中任何一条；`R26-2/3/4/6` 属
   「明确不做」清单，触达即 BLOCKED）。
-- **本轮不推进（原样保留）**：**自动消解**（谁对谁错的判定）/ **内容级检测**（`W-2` 的另一半）；
+- **本轮不推进（原样保留）**：`Z-3` 的**通知外发 / 升级链**（序 25 已做出口侧，
+  通知面**仍未做**）；**自动消解**（谁对谁错的判定）/ **内容级检测**（`W-2` 的另一半）；
   `CC-2`（冲突有效性）· `CC-3`（冲突时效性）；`BB-3`；`Z-1`（混合式）；`DD-1`…`DD-3`；
   `AA-*` / `Y-*` / `X-*` / `V-*` / `U-*` / `T-*` / `S-*` / `R-*` / `Q-*` / `P-*` / `O-1`…`O-5`。
 - **未覆盖范围（逐条明写）**：读面**未认证**；**多租户 / RBAC / BOLA / BFLA**；**部署面**验证；
