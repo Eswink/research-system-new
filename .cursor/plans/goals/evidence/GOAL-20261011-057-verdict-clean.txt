@@ -26,15 +26,15 @@ PASS ec04-the-silent-default-case-is-asserted
 PASS ec04-the-not-delivered-case-is-asserted
 PASS ec04-the-delivery-case-is-asserted
 PASS ec04-the-read-only-case-is-asserted
-FAIL ec04-the-baseline-gate-is-in-the-archive -> 归档必须含**基线行**（未按压不得红 —— 承 §8 的一级纪律）
-FAIL ec04-every-press-is-red-in-the-archive -> 四条的读数必须全红且复原一致
+PASS ec04-the-baseline-gate-is-in-the-archive
+PASS ec04-every-press-is-red-in-the-archive
 PASS cases-test_nudge_exit_on_the_run_path
 PASS prior-judge-test_python_source_limits
 PASS prior-judge-test_gate_nudge_on_the_run_path
 PASS prior-judge-test_program_waiting_on_the_run_path
-FAIL verdict-archive-current -> missing/empty
-FAIL verdict-archive-clean -> missing/empty
-FAIL press-archive-is-binary-safe -> missing/empty
+PASS verdict-archive-current
+PASS verdict-archive-clean
+PASS press-archive-is-binary-safe
 PASS scope-in-scope-covers-this-round
 PASS scope-verifier-registry-covers-this-round
 PASS goal-declares-five-ecs
