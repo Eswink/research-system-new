@@ -2,10 +2,10 @@
 id: PLAN-20261011-415
 slug: goal-054-ec01-04-a-conflict-declaration-passes-integrity-checks
 title: GOAL-20261011-054 cycle 1（EC-01…EC-04）：冲突声明的被引 id 过完整性校验（与 `supersedes` 对齐）+ 四向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-11
 updated_at: 2026-10-11
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-416-goal-054-ec01-04-a-conflict-declaration-passes-integrity-checks.md
 memory_entries: []
 parent_goal: GOAL-20261011-054
 cursor_plan_uri: null
