@@ -278,9 +278,16 @@ def _verdicts_are_read_once_for_both_faces(runner: str) -> bool:
     passed_down = "verdicts, clock)" in runner or "verdicts," in runner
     if not passed_down:
         return False
-    return (
-        "_gate_branch(program, last, approvals, verdicts" in runner
-        or "_declared_gate_evaluation(program, last, approvals, verdicts" in runner
+    # **判关系**（不钉实现名）：存在**某个**闸门调用**把 `verdicts` 传下去** ——
+    # 历轮规模门层层抽函数（`_declared_gate_evaluation` → `_gate_branch` →
+    # `_gated_outcome`）⇒ 钉名字会**反复假红**；这里判「有调用点、且参数里有 verdicts」。
+    return any(
+        marker in runner
+        for marker in (
+            "_gated_outcome(program, last, approvals, verdicts",
+            "_gate_branch(program, last, approvals, verdicts",
+            "_declared_gate_evaluation(program, last, approvals, verdicts",
+        )
     )
 
 
@@ -291,9 +298,11 @@ def _gate_precedes_conclusion_face(runner: str) -> bool:
         {
             "declared_gate_verdict",
             "_declared_gate_evaluation",
-            # GOAL-20261011-056：规模门逼出**再抽一层** ⇒ 调用点成了 `_gate_branch`。
-            # **仍判关系**：它在 `_after_hit` 之前被调用 ⇒ 「先闸门后结论面」未变。
+            # GOAL-20261011-056 / 057：规模门**连抽两层** ⇒ 调用点成了
+            # `_gate_branch` → `_gated_outcome`。**仍判关系**：它仍在 `_after_hit`
+            # **之前**被调用 ⇒ 「先闸门后结论面」未变。
             "_gate_branch",
+            "_gated_outcome",
         },
     )
     conclusion = _first_call_line_any(runner, {"_after_hit"})

@@ -222,8 +222,10 @@ def _gate_precedes_conclusion_face(runner: str) -> bool:
             "declared_gate_verdict",
             "_declared_gate_evaluation",
             # GOAL-20261011-056：规模门逼出**再抽一层** ⇒ 调用点成了 `_gate_branch`。
-            # **仍然判关系**：它在 `_after_hit` 之前被调用 ⇒ 「先闸门后结论面」未变。
+            # GOAL-20261011-057：又抽一层 ⇒ 成了 `_gated_outcome`。
+            # **仍然判关系**：它仍在 `_after_hit` **之前**被调用 ⇒ 「先闸门后结论面」未变。
             "_gate_branch",
+            "_gated_outcome",
         },
     )
     conclusion = _first_call_line_any(runner, {"_after_hit"})
