@@ -124,6 +124,12 @@ class ResearchProgram:
     # 与另外两条声明**互斥**（同时声明 ⇒ 点名拒绝）：一次只用一种闸门形态，
     # 「为什么停」才读得出是**哪一条**要求的。
     human_gate_at_indexes: tuple[int, ...] | None = None
+    # GOAL-20261011-056 EC-03：**等待的时限界**（可选声明；缺省 `None` = **不催、不报超期**
+    # ⇒ 既有行为逐字不变）。语义 = 「本轮等人拍板**超过**这么多秒 ⇒ 判词**点名**它等太久了」。
+    # **与三种闸门声明正交**（那三条决定「停在哪」，本条决定「停多久要说话」）——
+    # 因此**不参与互斥**：单点 / 条件式 / 多点都能配它。
+    # **只点名，不自动放行 / 不自动拒绝**（决定权仍在人）。
+    gate_nudge_after_seconds: int | None = None
     created_at: Timestamp = field(default_factory=Timestamp.now)
     updated_at: Timestamp = field(default_factory=Timestamp.now)
 
@@ -158,6 +164,7 @@ def _validate_gate_declarations(program: ResearchProgram) -> None:
     此前已 8 个分支）；三条声明各自单列**再加**互斥校验，是同一手法（语义未变）。
     """
     _validate_single_point_gate(program)
+    _validate_nudge_bound(program)
     _validate_condition_gate(program)
     _validate_multi_point_gate(program)
     _validate_gate_exclusivity(program)
@@ -171,6 +178,20 @@ def _validate_single_point_gate(program: ResearchProgram) -> None:
         raise ValueError(
             "human_gate_at_index must be within 1..max_runs when declared "
             f"(got {program.human_gate_at_index}, max_runs={program.max_runs})"
+        )
+
+
+def _validate_nudge_bound(program: ResearchProgram) -> None:
+    """GOAL-20261011-056 EC-03：**时限界**必须是**正整数**（零 / 负 ⇒ 点名拒绝）。
+
+    坏界**点名**而不是静默当成「不催」—— 后者会让「我声明了界但没生效」变成看不见的故障。
+    """
+    bound = program.gate_nudge_after_seconds
+    if bound is None:
+        return
+    if bound <= 0:
+        raise ValueError(
+            f"gate_nudge_after_seconds must be a positive integer when declared (got {bound})"
         )
 
 

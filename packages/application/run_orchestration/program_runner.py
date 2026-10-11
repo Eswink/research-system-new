@@ -27,8 +27,8 @@ from typing import Any
 
 from packages.application.ports.program_store import ProgramStore
 from packages.application.ports.run_store import RunStore
-from packages.application.run_orchestration.program_gate_registration import (
-    register_declared_gate,
+from packages.application.run_orchestration.program_gate_evaluation import (
+    declared_gate_evaluation,
 )
 from packages.application.run_orchestration.program_retry import (
     claimed_but_missing,
@@ -36,7 +36,7 @@ from packages.application.run_orchestration.program_retry import (
 )
 from packages.application.run_orchestration.program_waiting import (
     ApprovalReader,
-    declared_gate_verdict,
+    GateClock,
     waiting_round_decision,
 )
 from packages.domain.core import Timestamp
@@ -100,12 +100,13 @@ def _record(programs: ProgramStore, program_id: str, decision: ProgramDecision) 
     return stamped
 
 
-def _evaluate(
+def _evaluate(  # noqa: PLR0913 - 与 `advance_program` 同一组只读输入（照抄它的豁免理由）
     program: ResearchProgram,
     existing: tuple[ResearchRun, ...],
     findings: FindingReader | None,
     programs: ProgramStore,
     approvals: ApprovalReader | None,
+    clock: GateClock | None = None,
 ) -> _Evaluation:
     """读落库事实并判定（**先结论后护栏**；返回的 `start_index` 非 None 才需要起 run）。"""
     if not existing:
@@ -122,9 +123,18 @@ def _evaluate(
         return _Evaluation(kind=kind, reason=reason, cited_run_id=last.id.value, cited_facts=facts)
     # 落库判词读**一次**（结论面与条件闸门共用同一批事实 ⇒ 两处不可能看到不同结论）。
     verdicts = _verdicts(findings, last.id.value)
-    gated = _declared_gate_evaluation(program, last, approvals, verdicts)
+    gated = declared_gate_evaluation(program, last, approvals, verdicts, clock)
     if gated is not None:
-        return gated
+        # 桥（`program_gate_evaluation`）返回它自己的值对象（`GateEvaluation`）
+        # —— 两者**字段逐一同形**；在这里**显式转**成 `_Evaluation`（而不是让 mypy
+        # 接受两个不同的 `dataclass`）。
+        return _Evaluation(
+            kind=gated.kind,
+            reason=gated.reason,
+            cited_run_id=gated.cited_run_id,
+            cited_facts=gated.cited_facts,
+            start_index=gated.start_index,
+        )
 
     # GOAL-20261008-040 EC-03：**按终态分派** —— 失败面 / 取消面在结论面**之前**
     # （只有 `SUCCEEDED` 的轮才有「结论」可言；把「没有结论」读成「结论说停」是范畴错误）。
@@ -145,47 +155,6 @@ def _evaluate(
         )
 
     return _after_hit(program, existing, last, hit, programs)
-
-
-def _declared_gate_evaluation(
-    program: ResearchProgram,
-    last: ResearchRun,
-    approvals: ApprovalReader | None,
-    verdicts: tuple[str, ...],
-) -> _Evaluation | None:
-    """**声明的人工闸门**是否拦住本次推进（是 ⇒ 条 `_Evaluation`，否 ⇒ `None`）。
-
-    GOAL-20261010-046 / 047 / 048 —— 三件事**分层**：
-
-    1. **求值**（`program_waiting.declared_gate_trigger`，**只读**）：两条声明各自判是否触发
-       —— 序号声明（序 14）与**条件声明**（GOAL-20261010-048：上一轮**落库判词**命中声明的
-       取值集合）。`verdicts` 与结论面读的是**同一批落库事实**（`_verdicts`），不另读一遍。
-    2. **注册**（`program_gate_registration.register_declared_gate`，**有副作用**）：
-       把待决审批放进既有 `ApprovalStore` ⇒ 这条闸门**可被裁决**（不注册就永远关不上）；
-    3. **判定**（`program_waiting.declared_gate_verdict`，**只读**）：据声明与审批面现状
-       决定拦不拦，并把注册结果**写进判词**（点名 `approval_id`）。
-
-    顺序固定（先注册后判定）：判定要读注册的结果。判定面**不得**出现写方法
-    （序 12/14 的既有判据钉住这件事）⇒ 注册单列成模块。
-    """
-    registration = register_declared_gate(
-        program, last.program_index or 0, approvals, last.id.value, verdicts
-    )
-    gate = declared_gate_verdict(program, last, approvals, verdicts, registration)
-    if gate is None:
-        return None
-    return _gate_evaluation(last, gate)
-
-
-def _gate_evaluation(last: ResearchRun, gate: tuple[str, str, tuple[str, ...]]) -> _Evaluation:
-    """把 `declared_gate_verdict` 的判定值包成 `_Evaluation`（闸门拦住本次推进）。"""
-    gate_kind, gate_reason, gate_facts = gate
-    return _Evaluation(
-        kind=ProgramDecisionKind(gate_kind),
-        reason=gate_reason,
-        cited_run_id=last.id.value,
-        cited_facts=gate_facts,
-    )
 
 
 def _non_success_terminal(
@@ -359,10 +328,16 @@ def advance_program(  # noqa: PLR0913 - 推进面的读入就这几件（run/决
     findings: FindingReader | None = None,
     approvals: ApprovalReader | None = None,
     start_run: StartRun | None = None,
+    clock: GateClock | None = None,
 ) -> ProgramAdvance:
-    """推进一次：读事实 → 判定 → 落决策 →（必要时）起下一轮 run。"""
+    """推进一次：读事实 → 判定 → 落决策 →（必要时）起下一轮 run。
+
+    `clock`（GOAL-20261011-056，**可选**）= 「现在几点 + 何时开始等」的一对时点；
+    **缺省 `None` ⇒ 判词里不出现任何时长**（既有行为**逐字不变**）。
+    **调用方给**而不是本函数读挂钟：推进面的判词必须**可复现**（同一输入 ⇒ 同一判词）。
+    """
     existing = runs.for_program(program.id)
-    evaluation = _evaluate(program, existing, findings, programs, approvals)
+    evaluation = _evaluate(program, existing, findings, programs, approvals, clock)
     after_index = (existing[-1].program_index or 0) if existing else 0
     if evaluation.start_index is not None:
         return _start(

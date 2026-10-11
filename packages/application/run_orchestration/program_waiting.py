@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from packages.domain.program import ProgramDecisionKind
@@ -103,12 +104,26 @@ def _multi_point_trigger(at_indexes: list[int], last_index: int) -> str | None:
     )
 
 
+def _gate_inputs(inputs: GateInputs | tuple[str, ...] | None) -> GateInputs:
+    """把调用方给的输入**归一**成 `GateInputs`。
+
+    **为什么兼容裸元组**：本模块的 `verdicts` 参数**原先**就是裸元组（序 13 起），
+    既有调用点与判据都按那个形态传 ⇒ 直接换成参数对象会把它们全打断。
+    两种都收（元组 ⇒ 视为 `verdicts`），既有行为**逐字不变**。
+    """
+    if inputs is None:
+        return GateInputs()
+    if isinstance(inputs, GateInputs):
+        return inputs
+    return GateInputs(verdicts=tuple(str(item) for item in inputs))
+
+
 def declared_gate_pending(
     program: Any,
     last_index: int,
     approvals: ApprovalReader | None,
     run_id: str,
-    verdicts: tuple[str, ...] = (),
+    inputs: GateInputs | tuple[str, ...] | None = None,
 ) -> str | None:
     """**声明的闸门**是否仍在等人拍板（是 ⇒ 返回**点名句**，否 ⇒ `None`）。
 
@@ -123,7 +138,8 @@ def declared_gate_pending(
       悄悄绕过人）；
     - **只读**：本函数**不**改任何审批状态（人没拍板就是没拍板；批准发生在**审批面**）。
     """
-    trigger = declared_gate_trigger(program, last_index, verdicts)
+    resolved = _gate_inputs(inputs)
+    trigger = declared_gate_trigger(program, last_index, resolved.verdicts)
     if trigger is None:
         return None
     if approvals is None:
@@ -132,20 +148,74 @@ def declared_gate_pending(
         rows = approvals.list_for_run(run_id)
     except Exception as error:  # noqa: BLE001 - 审批面故障必须**点名**，不得静默放行
         return f"{trigger}，但审批面查询失败（{type(error).__name__}: {error}）"
+    note = _elapsed_note(program, resolved.clock)
     pending = [str(row.id) for row in rows if str(getattr(row, "status", "")) == "PENDING"]
     if pending:
-        return f"{trigger} ⇒ 等人拍板待审批 id={','.join(pending)}（不自动放行）"
+        return f"{trigger} ⇒ 等人拍板待审批 id={','.join(pending)}（不自动放行）{note}"
     decided = [row for row in rows if str(getattr(row, "status", "")) != "PENDING"]
     if decided:
         return None
-    return f"{trigger} ⇒ 等人拍板（该 run 名下尚无审批记录；批准发生在审批面，本处不自动放行）"
+    return (
+        f"{trigger} ⇒ 等人拍板（该 run 名下尚无审批记录；批准发生在审批面，本处不自动放行）{note}"
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class GateClock:
+    """**门面时点**（GOAL-20261011-056）：判定等待时长所需的两个时刻。
+
+    **为什么是两个都给**：等待面**不读挂钟** ⇒ 「现在几点」与「何时开始等」都由**调用方**给
+    ⇒ 同一份记录 + 同一对时点 ⇒ 判词**必相同**（可复现）。
+    """
+
+    now: Any
+    waited_since: Any
+
+
+@dataclass(frozen=True, slots=True)
+class GateInputs:
+    """**等待面的输入**（GOAL-20261011-056）：落库判词取值 + 可选时点。
+
+    **为什么合成一个**：两个都是「判定所需的额外输入」，且都会被**透传**到下游
+    （`declared_gate_pending` / `declared_gate_verdict`）—— 合成一个参数对象既守住
+    `max-args = 5`（仓库既有手法），也让「这一层需要什么」一眼可见。
+    **缺省全空** ⇒ 与加它之前**逐字等价**（既有行为逐字不变）。
+    """
+
+    verdicts: tuple[str, ...] = ()
+    clock: GateClock | None = None
+
+
+def _elapsed_note(program: Any, clock: GateClock | None) -> str:
+    """**等待时长**的后缀（GOAL-20261011-056 EC-02/EC-03）——缺省返回**空串**。
+
+    **不读挂钟**（与 `validity_at` / `memory_read` 同一条纪律）：两个时点都由**调用方**给 ⇒
+    同一份记录 + 同一对时点 ⇒ 判词**必相同**（可复现）。
+
+    三态**互不混用**（都**点名**，**不**静默）：
+
+    - **未给时点** ⇒ 空串（**不猜** —— 调用方没问时长，就不报）；
+    - **给了时点但未声明界** ⇒ 只报**时长**（「等了 X 秒」）；
+    - **给了时点且声明了界** ⇒ 报时长 + **是否超期**（超 ⇒ **点名**「等太久了」，
+      **不**自动放行 / **不**自动拒绝 —— 决定权仍在人）。
+    """
+    if clock is None:
+        return ""
+    seconds = int((clock.now.value - clock.waited_since.value).total_seconds())
+    note = f"；已等待 {seconds} 秒"
+    bound = getattr(program, "gate_nudge_after_seconds", None)
+    if bound is None:
+        return note
+    if seconds >= int(bound):
+        return note + f"（**超过声明的界 {int(bound)} 秒 ⇒ 等太久了**；决定权仍在人，不自动放行）"
+    return note + f"（未超过声明的界 {int(bound)} 秒）"
 
 
 def declared_gate_verdict(
     program: Any,
     last: Any,
     approvals: ApprovalReader | None,
-    verdicts: tuple[str, ...] = (),
+    inputs: GateInputs | tuple[str, ...] | None = None,
     gate_registration: tuple[str | None, str | None] | None = None,
 ) -> tuple[str, str, tuple[str, ...]] | None:
     """**声明的闸门**是否要拦住本次推进；要 ⇒ `(kind, reason, cited_facts)`，不要 ⇒ `None`。
@@ -158,8 +228,10 @@ def declared_gate_verdict(
     （承序 12/14 的判据：判定面不得出现写方法）。
     """
     index = last.program_index or 0
+    resolved = _gate_inputs(inputs)
+    verdicts = resolved.verdicts
     registered, register_note = gate_registration or (None, None)
-    note = declared_gate_pending(program, index, approvals, last.id.value, verdicts)
+    note = declared_gate_pending(program, index, approvals, last.id.value, inputs)
     if note is None:
         return None
     facts = [f"state={last.state}"]
@@ -214,6 +286,8 @@ def waiting_round_decision(
 __all__ = [
     "AWAITING_HUMAN",
     "ApprovalReader",
+    "GateClock",
+    "GateInputs",
     "declared_gate_pending",
     "declared_gate_trigger",
     "declared_gate_verdict",
