@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [ ] | [PLAN-20261011-413](tasks/PLAN-20261011-413-goal-053-ec01-04-the-current-version-is-decidable.md) | IN_PROGRESS |
 | [x] | [PLAN-20261011-411](tasks/PLAN-20261011-411-goal-052-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261011-409](tasks/PLAN-20261011-409-goal-052-ec01-04-the-two-read-faces-agree.md) | DONE |
 | [x] | [PLAN-20261011-407](tasks/PLAN-20261011-407-goal-051-ec05-self-bootstrap-closeout.md) | DONE |
