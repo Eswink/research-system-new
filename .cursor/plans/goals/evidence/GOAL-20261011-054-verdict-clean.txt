@@ -40,10 +40,10 @@ PASS scope-in-scope-covers-this-round
 PASS scope-verifier-registry-covers-this-round
 PASS goal-declares-five-ecs
 PASS self-loads-its-own-assertions
-FAIL goal-ec01-status -> PENDING
-FAIL goal-ec02-status -> PENDING
-FAIL goal-ec03-status -> PENDING
-FAIL goal-ec04-status -> PENDING
+PASS goal-ec01-status
+PASS goal-ec02-status
+PASS goal-ec03-status
+PASS goal-ec04-status
 PASS goal-ec05-status
 PASS record-PLAN-20261011-415-goal-054-ec01-04-a-conflict-declaration-passes-integrity-checks.md
 PASS record-RECHECK-20261011-416-goal-054-ec01-04-a-conflict-declaration-passes-integrity-checks.md

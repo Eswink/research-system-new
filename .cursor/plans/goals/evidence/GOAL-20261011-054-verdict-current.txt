@@ -40,7 +40,7 @@ PASS scope-in-scope-covers-this-round
 PASS scope-verifier-registry-covers-this-round
 PASS goal-declares-five-ecs
 PASS self-loads-its-own-assertions
-FAIL goal-ec01-status -> PENDING
+PASS goal-ec01-status
 PASS goal-ec02-status
 PASS goal-ec03-status
 PASS goal-ec04-status
