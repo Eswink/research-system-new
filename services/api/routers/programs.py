@@ -28,7 +28,8 @@ from fastapi import APIRouter, Request
 
 from packages.application.ports.program_store import ProgramStore
 from packages.application.run_orchestration.program_runner import advance_program
-from packages.domain.core import ID
+from packages.application.run_orchestration.program_waiting import GateClock
+from packages.domain.core import ID, Timestamp
 from packages.domain.program import (
     ProgramContinueRule,
     ProgramDecision,
@@ -75,6 +76,26 @@ def _decision_dto(decision: ProgramDecision) -> ProgramDecisionDto:
         cited_facts=list(decision.cited_facts),
         decided_at=decision.decided_at.value.isoformat(),
     )
+
+
+def _advance_clock(runs: Any, program_id: str) -> GateClock | None:
+    """**等待时长**所需的一对时点（GOAL-20261011-056）——取不到时返回 `None`。
+
+    - `waited_since` = 「**最后一条** run 的 `updated_at`」：状态转移**会刷新它** ⇒
+      停在等待态（`AWAITING_HUMAN` / `PAUSED`）的 run 上，它就是**进入等待的时刻**；
+    - `now` = **本请求到达的时刻**（由这里给 ⇒ 等待面**不读挂钟**，判词可复现）。
+
+    **取不到就返回 `None`**（**不猜、不编一个假时点**）：等待面收到 `None` ⇒ 判词里
+    **不含任何时长**（既有行为），而不是报一个**编出来的**秒数。
+    **只读**：只查一次既有 run 面，不写任何东西。
+    """
+    try:
+        existing = runs.for_program(program_id)
+    except Exception:  # noqa: BLE001 - 取不到就**不报时长**（不静默编造）
+        return None
+    if not existing:
+        return None
+    return GateClock(now=Timestamp.now(), waited_since=existing[-1].updated_at)
 
 
 def _start_run_for_program(deps: ApiDeps, program: ResearchProgram, index: int) -> str:
@@ -244,6 +265,11 @@ async def advance(program_id: str, request: Request) -> ProgramAdvanceDto:
             if deps.runs is not None
             else None
         ),
+        # GOAL-20261011-056 EC-02/EC-03：**等待时长**的两个时点 ——
+        # `waited_since` 取「上一轮 run 进入当前（等待）态的时刻」（`updated_at`：状态转移
+        # 会刷新它 ⇒ 停在等待态的 run 上它就是**始点**）；`now` 取**请求时刻**。
+        # 两个都由这里给 ⇒ 判词**可复现**（等待面自己**不读挂钟**）。
+        clock=_advance_clock(_runs_of(deps), program.id),
     )
     return ProgramAdvanceDto(
         program_id=result.program_id,
