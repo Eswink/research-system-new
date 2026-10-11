@@ -88,7 +88,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-waiting-clock.py` ⇒ 四组读数；
       `git diff --numstat <base> HEAD -- <受判文件>` ⇒ **零改动**（本轮只读）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **始点可读（不读挂钟）**：等待面能回答「**何时**开始等」—— 时点由**调用方给**
@@ -96,8 +96,8 @@ exit_criteria:
       ⇒ 判定**必相同**（可复现）；**缺省形态逐字不变**（不给时点 ⇒ 不报始点，不猜）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/adapters -q` ⇒ 全绿
-      + 新用例（始点可读 / 同一时点同结论 / 不给时点不猜）。
-    status: PENDING
+      + 新用例（始点可读 / 同一时点同结论 / 不给时点不猜）—— **8 passed**。
+    status: PASS
   - id: EC-03
     criterion: >-
       **催办 / 超期可判定（有界，只点名）**：超过**声明的界** ⇒ **点名**「等太久了」
@@ -106,8 +106,8 @@ exit_criteria:
       界必须是**正整数**（负数 / 零 ⇒ 点名拒绝）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/run_orchestration tests/domain -q`
-      ⇒ 全绿 + 新用例（超期点名 / 未声明不催 / 未给时点点名 / 坏界点名）。
-    status: PENDING
+      ⇒ 全绿 + 新用例（超期点名 / 未声明不催 / 未给时点点名 / 坏界点名）—— **8 passed**。
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`S-1` 始点**读不出**（不再报始点）⇒ **RED**；
@@ -118,7 +118,7 @@ exit_criteria:
     verify: >-
       `scratch/goal056-press.txt` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；归档
       `.cursor/plans/goals/evidence/GOAL-20261011-056-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -210,10 +210,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿：时限面**零命中** + `ApprovalRecord` 字段逐条 + 点名句引文 | `scratch/probe-waiting-clock.py` | PENDING |
-| EC-02 | **始点可读**（时点由调用方给，**不读挂钟**；缺省逐字不变）| `pytest tests/application tests/adapters -q` + 新用例 | PENDING |
-| EC-03 | **催办 / 超期可判定**（有界；**只点名**；未声明/未给时点都不猜）| `pytest tests/application/run_orchestration tests/domain -q` | PENDING |
-| EC-04 | **两向反证** `S-1`…`S-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | `scratch/goal056-press.txt` + 归档 | PENDING |
+| EC-01 | 勘察定稿：时限面**零命中** + `ApprovalRecord` 字段逐条 + 点名句引文 | **实跑**：零命中 / 9 字段无时间字段 / 三处引文 | **PASS** |
+| EC-02 | **始点可读**（时点由调用方给，**不读挂钟**；缺省逐字不变）| 新用例 **8 passed**（含同一时点同结论）| **PASS** |
+| EC-03 | **催办 / 超期可判定**（有界；**只点名**；未声明/未给时点都不猜）| 新用例 **8 passed**（含坏界参数化）| **PASS** |
+| EC-04 | **两向反证** `S-1`…`S-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **660 B / `CR=0`** / `sha256 451f0848eb2f9a13…` | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | `tools/verify_goal056_closeout.py` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
