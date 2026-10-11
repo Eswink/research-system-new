@@ -6,7 +6,8 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20261011-421](tasks/PLAN-20261011-421-goal-057-ec01-04-the-overdue-signal-has-an-exit.md) | IN_PROGRESS |
+| [ ] | [PLAN-20261012-423](tasks/PLAN-20261012-423-goal-058-ec01-04-a-resolved-conflict-is-decidable.md) | IN_PROGRESS |
+| [x] | [PLAN-20261011-421](tasks/PLAN-20261011-421-goal-057-ec01-04-the-overdue-signal-has-an-exit.md) | DONE |
 | [x] | [PLAN-20261011-419](tasks/PLAN-20261011-419-goal-056-ec01-04-the-waiting-face-has-a-start-point.md) | DONE |
 | [x] | [PLAN-20261011-417](tasks/PLAN-20261011-417-goal-055-ec01-04-a-program-gate-can-be-declared-at-several-points.md) | DONE |
 | [x] | [PLAN-20261011-415](tasks/PLAN-20261011-415-goal-054-ec01-04-a-conflict-declaration-passes-integrity-checks.md) | DONE |

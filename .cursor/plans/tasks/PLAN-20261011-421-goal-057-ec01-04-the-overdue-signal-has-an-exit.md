@@ -2,10 +2,10 @@
 id: PLAN-20261011-421
 slug: goal-057-ec01-04-the-overdue-signal-has-an-exit
 title: GOAL-20261011-057 cycle 1（EC-01…EC-04）：超期信号的可注入出口 + 静默缺省 + 只读纪律 + 四向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-11
 updated_at: 2026-10-11
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261011-422-goal-057-ec01-04-the-overdue-signal-has-an-exit.md
 memory_entries: []
 parent_goal: GOAL-20261011-057
 cursor_plan_uri: null
