@@ -87,9 +87,19 @@ verify_paths:
 ③ 产品面改动的后果面已由既有套件逐条核对（`tests/application tests/domain tests/api`
 **3153 passed, 5 skipped**；`tests/architecture` **1486 passed**）。
 
-### 7. 收口面（EC-05，待本轮随后回填）
+### 7. 收口面（EC-05，独立重跑）
 
-收口验证器 + 断言集进树；两处射程纯收紧；两树复检 + 归档；as-is m0 23/23（记录写完之后）。
+| 检查 | 读数 |
+| --- | --- |
+| 两个脚本在树 | `tools/verify_goal057_closeout.py` / `tools/goal057_closeout_assertions.py` |
+| `ruff` / `format` / **全量 mypy** | 全绿（**1191 files** Success）|
+| `IN_SCOPE` / `_VERIFIERS` **纯收紧** | `+2` / `+1` 行；判据全绿 |
+| 收口验证器（本树）| **59 判词 / 0 FAIL** |
+| 两树复检 | **`TWO-TREE PASS`**（两路 **59 判词** / `sha256` 相同 `67bd2f2dac64e508…`）|
+| 判词归档 | 两份各 **2153 B / 59 行 / `CR=0` / 0 FAIL** |
+| 按压归档 | **657 B / 15 行 / `CR=0`** |
+| 治理 / 宪章判据 | `validate.py` 通过；`test_mainline_program_is_intact.py` **8 passed** |
+| **as-is m0** | **待收口轮实测回填**（记录写完之后、独占、仓库 `.venv`、不接管道）|
 
 ## 结论
 
