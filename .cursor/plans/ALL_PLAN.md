@@ -6,7 +6,8 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
-| [ ] | [PLAN-20261011-417](tasks/PLAN-20261011-417-goal-055-ec01-04-a-program-gate-can-be-declared-at-several-points.md) | IN_PROGRESS |
+| [ ] | [PLAN-20261011-419](tasks/PLAN-20261011-419-goal-056-ec01-04-the-waiting-face-has-a-start-point.md) | IN_PROGRESS |
+| [x] | [PLAN-20261011-417](tasks/PLAN-20261011-417-goal-055-ec01-04-a-program-gate-can-be-declared-at-several-points.md) | DONE |
 | [x] | [PLAN-20261011-415](tasks/PLAN-20261011-415-goal-054-ec01-04-a-conflict-declaration-passes-integrity-checks.md) | DONE |
 | [x] | [PLAN-20261011-413](tasks/PLAN-20261011-413-goal-053-ec01-04-the-current-version-is-decidable.md) | DONE |
 | [x] | [PLAN-20261011-411](tasks/PLAN-20261011-411-goal-052-ec05-self-bootstrap-closeout.md) | DONE |
