@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 19 passed in 0.29s
+X-1 失效判成有效（STALE 支被摘）: 按压 RED
+    sha 复原一致=True | 4eeae16954cd
+    suite: 5 failed, 14 passed in 0.42s
+X-2 未到期判成失效（界比较反向）: 按压 RED
+    sha 复原一致=True | 4eeae16954cd
+    suite: 6 failed, 13 passed in 0.39s
+X-3 未声明被当成已到期（不猜被破坏）: 按压 RED
+    sha 复原一致=True | 4eeae16954cd
+    suite: 4 failed, 15 passed in 0.37s
+X-4 缺省形态被改动（无冲突也判时效）: 按压 RED
+    sha 复原一致=True | 4eeae16954cd
+    suite: 5 failed, 14 passed in 0.38s
+SUMMARY presses=4 all_red_and_restored=True
