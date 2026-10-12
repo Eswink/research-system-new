@@ -48,7 +48,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-reverse-conflict.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **反向链接与分派（本轮验收主体）**：被声明方读面**逐条披露**反向链接（谁是声明方）；
@@ -57,7 +57,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q`
       ⇒ 全绿 + 新用例（反向可读 / 缺省逐字不变 / 跨范围不猜）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **两个读面同源**：编排消费面与 HTTP 读面**同源**（同一批纯函数）披露反向链接；
@@ -66,7 +66,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例（两处同值 / 既有键逐字不变 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`Y-1` 反向链接被摘掉（被声明方读不到）⇒ RED；
@@ -76,7 +76,7 @@ exit_criteria:
       逐字节相同；**反证脚本带基线门**；判词归档进树（**二进制写盘**、`CR=0`）。
     verify: >-
       `scratch/goal062_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -89,7 +89,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal062_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -115,7 +115,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261012-433-goal-062-ec01-05-a-conflict-declaration-is-no-longer-one-way.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-434-goal-062-ec01-04-a-conflict-declaration-is-no-longer-one-way.md
 memory_entries: []
 ---
 
@@ -129,10 +129,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（反向面零命中 + 实跑缺口 + 先例 + 正向读法未动） | **实跑**：`scratch/probe-reverse-conflict.py` | PENDING |
-| EC-02 | 反向链接可读 + 处置面分派（缺省逐字不变；跨范围点名） | `pytest tests/application tests/domain -q` | PENDING |
-| EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | PENDING |
-| EC-04 | 两向反证 `Y-1`…`Y-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（反向面零命中 + 实跑缺口 + 先例 + 正向读法未动） | **实跑**：`scratch/probe-reverse-conflict.py` | **PASS** |
+| EC-02 | 反向链接可读 + 处置面分派（缺省逐字不变；跨范围点名） | `pytest tests/application tests/domain -q` | **PASS** |
+| EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
+| EC-04 | 两向反证 `Y-1`…`Y-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -233,10 +233,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（触顶核算 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 30** + 预算核算 30→35 | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 反向链接 + 分派） |
+| 0 | —（触顶核算 + 建档） | `c6af848` | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 反向链接 + 分派） |
+| 1 | `PLAN-20261012-433`（WP-1…WP-5） | `f20b0e3`（反向索引 + 两成因 + 两读面同源）、`060dcd7`（判据 16 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 四段读数（零命中 + 实跑缺口 + 先例 + 正向未动）；② `conflicted_by_index` 扫同批记录 + 处置面按其分派 + **两成因可区分**（受判面 = 两个形态）；③ 两读面**都引用**同一纯函数 + 缺省逐字不变 + 快照同轮（`+7 / -0`）；④ **四向反证** `Y-1`…`Y-4` 全红 + 基线绿 + 复原一致。`tests/application tests/api tests/adapters` 全绿；mypy **1205 files** 零问题 | （见 CI 台账） | — | EC-05 待做 | cycle 2（EC-05 收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-12 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**残余**：`conflicted_by` 为派生事实（跨范围读不到，如实点名）/ 自动消解 / 内容级检测 / 三维以上组合 / `BB-3` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261012-434`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-12 | ACTIVE | **触顶核算 + 建档（cycle 0）**：MAINLINE 程序表**新增序 30**（**轴 = 质量**），并写修订记录行（只追加）+ 预算核算（`max_goals` 30 → 35）。**实测读数**（逐条见「事实层结论」表）：① 反向面**零命中**；② **实跑**：A 声明与 B 冲突 ⇒ A 侧 `CONFLICTED` / **B 侧 `USE` 且无反向键**；③ 先例 `superseded_by_index` **已全在**；④ 正向读法**逐字仍是一向**。五条 EC 全 PENDING。**不**做自动消解 / **不**做内容级检测 / **不**改声明语义。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

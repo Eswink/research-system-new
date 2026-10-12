@@ -2,10 +2,10 @@
 id: PLAN-20261012-433
 slug: goal-062-ec01-05-a-conflict-declaration-is-no-longer-one-way
 title: GOAL-20261012-062 cycle 1（EC-01…EC-05）：反向链接可读 + 处置面分派 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-12
 updated_at: 2026-10-12
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-434-goal-062-ec01-04-a-conflict-declaration-is-no-longer-one-way.md
 memory_entries: []
 parent_goal: GOAL-20261012-062
 cursor_plan_uri: null
@@ -37,7 +37,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-reverse-conflict.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **反向链接与分派（EC-02）**：新增反向索引（**扫同批记录**，与序 18 同一手法）；
@@ -46,7 +46,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q` ⇒ 全绿
       + 新用例（反向可读 / 缺省逐字不变 / 跨范围不猜）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **两读面同源（EC-03）**：编排面与 HTTP 读面**同源**（同一批纯函数）披露反向链接；
@@ -55,7 +55,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例（两处同值 / 既有键逐字不变 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`Y-1` 反向链接被摘掉 ⇒ RED；`Y-2` 处置面**不**按反向分派 ⇒ RED；
@@ -64,7 +64,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal062_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -73,7 +73,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal062_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261012-433 — GOAL-20261012-062 cycle 1
@@ -125,3 +125,4 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-12 | IN_PROGRESS | cycle 1 建档：反向链接 + 处置分派 + 四向反证。 |
+| 2026-10-12 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261012-434` = PASS_WITH_WARNINGS）。**交付**：`conflicted_by_index`（与序 18 同一手法）+ 处置面按其分派（两成因可区分）+ 两读面同源披露 + 快照同轮；判据 16 例；四向反证全红 + 归档（`CR=0`）。 |

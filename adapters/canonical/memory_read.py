@@ -136,6 +136,50 @@ def _terminal_face(record: Any, terminal: dict[str, object] | None) -> dict[str,
     }
 
 
+def _resolution_face(record: Any) -> list[dict[str, str]]:
+    """**逐对**消解记载的读面形态（GOAL-20261012-058 EC-03）。
+
+    **声明一字不动**：`contradictions` 是历史事实，消解是**另一件事**；
+    未消解 ⇒ 空列表 ⇒ 处置仍是 `CONFLICTED`（既有行为逐字不变）。
+    """
+    return [
+        {
+            "other_id": item.other_id,
+            "resolved_by": item.resolved_by,
+            "resolved_at": item.resolved_at.value.isoformat(),
+        }
+        for item in record.resolutions
+    ]
+
+
+def _project_records(records: Any, moment: Timestamp) -> list[dict[str, object]]:
+    """把一批记录投影成读面行（三个索引**各算一次**，不逐条再查）。
+
+    **为什么单列**：`memory_read` 有 50 行硬上限 —— 序 29/30 各加一个索引/键之后一度把它
+    顶爆 ⇒ 逐段搬到这里（**语义一字未动**，只是换落点），并守住那道门。
+
+    **三个索引都从同一批记录算**（不新增 Port 方法、不逐条再查 —— 那是 N+1 次查询，
+    且会在两处看到不同的世界）：
+
+    - `superseded_by_index`（序 18）：谁取代了它；
+    - `terminal_versions`（序 21）：链的终点；
+    - `conflicted_by_index`（序 30）：**谁声明了与它冲突**（与第一款**同一手法**）。
+    """
+    reverse = superseded_by_index(records)
+    terminals = terminal_versions(records)
+    conflicted_by = conflicted_by_index(records)
+    return [
+        _memory_row(
+            record,
+            moment,
+            reverse.get(str(record.id), []),
+            terminals.get(str(record.id)),
+            conflicted_by.get(str(record.id), []),
+        )
+        for record in records
+    ]
+
+
 def _memory_row(
     record: Any,
     moment: Timestamp,
@@ -159,16 +203,7 @@ def _memory_row(
     row = _identity_fields(record, state)
     row["supersedes"] = list(record.supersedes)
     row["superseded_by"] = list(superseded_by or ())
-    # GOAL-20261012-058 EC-03：**冲突消解**逐对披露（**声明一字不动** —— `contradictions`
-    # 是历史事实，消解是另一件事）。未消解 ⇒ 空列表 ⇒ 处置仍是 `CONFLICTED`（既有行为逐字不变）。
-    row["conflict_resolutions"] = [
-        {
-            "other_id": item.other_id,
-            "resolved_by": item.resolved_by,
-            "resolved_at": item.resolved_at.value.isoformat(),
-        }
-        for item in record.resolutions
-    ]
+    row["conflict_resolutions"] = _resolution_face(record)
     # GOAL-20261012-061 EC-03：**冲突声明的时效**逐条披露（按**调用方给的时点**判 ——
     # 本面**不读挂钟**，与 `validity_at` 同一纪律）。未声明 ⇒ `None`（**不猜**：
     # 未声明**不得**被当成「已失效」）。声明面（谁与谁冲突 / 谁消解了哪一对）**一字不动**。
@@ -227,25 +262,7 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     moment = _moment(args)
     tier, scope = _selection(memory_store, args)
     records = memory_store.query(_tier_of(tier), scope)
-    # GOAL-20261010-050 EC-02：反向链接从**同一批记录**算一次（不新增 Port 方法、
-    # 不逐条再查 —— 那是 N+1 次查询，且会在两处看到不同的世界）。
-    reverse = superseded_by_index(records)
-    # GOAL-20261011-053 EC-02（`BB-1`）：**链的终点**同样从**同一批记录**算一次
-    # （纯函数；只读声明。与反向链接是同一份事实的两种索引 —— 不各定义一遍「谁取代了谁」）。
-    terminals = terminal_versions(records)
-    # GOAL-20261012-062 EC-02：**冲突的反向链接**同样扫同批记录一次
-    # （与 `superseded_by_index` **同一手法**；正向链接写在**声明方**的记录上）。
-    conflicted_by = conflicted_by_index(records)
-    rows = [
-        _memory_row(
-            record,
-            moment,
-            reverse.get(str(record.id), []),
-            terminals.get(str(record.id)),
-            conflicted_by.get(str(record.id), []),
-        )
-        for record in records
-    ]
+    rows = _project_records(records, moment)
     counts = {
         DISPOSITION_USE: 0,
         DISPOSITION_ANNOTATE: 0,

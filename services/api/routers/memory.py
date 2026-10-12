@@ -20,6 +20,7 @@ packages.application.memory 用例，不另建第二套 gate。
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 
 from fastapi import APIRouter, Request
@@ -140,39 +141,78 @@ def _record_dto(
     """
     validity = validity_at(record, now) if now is not None else None
     links = list(superseded_by or ())
-    superseded = bool(links)
     chain: dict[str, object] = dict(terminal or {})
-    chain_ids = chain.get("terminal")
     base = _time_and_linkage_fields(record, validity, links)
     base["superseded_by"] = links
-    base["conflict_resolutions"] = _resolution_dtos(record)
-    # GOAL-20261012-062 EC-03：**被别人声明冲突**（同源：与编排面**同一批记录**算出的
-    # 反向链接；本记录自己没声明的那一种）。
-    by_others = list(conflicted_by or ())
-    base["conflicted_by"] = by_others
-    base["disposition"] = disposition_of(
-        validity,
-        superseded=superseded,
-        conflicted=bool(record.unresolved_conflicts),
-        conflicted_by=bool(by_others),
-    )
-    base["reason"] = disposition_reason(
-        validity, record, superseded_by=links, conflicted_by=by_others
-    )
-    # GOAL-20261012-061 EC-03：**冲突时效**同样**直接调**应用层纯函数（与编排面同源；
-    # 不给时点 ⇒ `None` = 未判定，**不猜** —— 与 `validity` 那一条**同一口径**）。
-    base["conflict_timeliness"] = (
-        state.value
-        if now is not None and (state := conflict_timeliness_at(record, now)) is not None
-        else None
-    )
-    base["terminal_state"] = str(chain.get("state", TERMINAL_CURRENT))
-    base["terminal_ids"] = (
-        [str(item) for item in chain_ids] if isinstance(chain_ids, list) else [str(record.id)]
+    _decorate_conflict_and_terminal(
+        base,
+        record,
+        _ConflictFacts(
+            validity=validity,
+            links=links,
+            by_others=list(conflicted_by or ()),
+            now=now,
+            chain=chain,
+        ),
     )
     # `base` 是 `dict[str, object]`（mypy 无法核对键名）⇒ 走 **pydantic 校验入口**
     # （`model_validate`）而不是 `**base` 展开 —— 后者会让 6 个键各报 arg-type。
     return MemoryRecordDto.model_validate(base)
+
+
+@dataclass(frozen=True, slots=True)
+class _ConflictFacts:
+    """冲突面 + 链终点所需的**只读事实**（合成一个参数对象守 `max-args` 门）。
+
+    六件都在这里（都是「同批记录算出来 / 调用方给的」）：`validity`（时效）/ `links`
+    （反向取代）/ `by_others`（反向冲突）/ `now`（时点）/ `chain`（链终点）。
+    """
+
+    validity: ValidityState | None
+    links: list[str]
+    by_others: list[str]
+    now: Timestamp | None
+    chain: dict[str, object]
+
+
+def _decorate_conflict_and_terminal(
+    base: dict[str, object], record: MemoryRecord, facts: _ConflictFacts
+) -> None:
+    """把**冲突面 + 链终点**的键写进 `base`（**同源**：一律直接调应用层纯函数）。
+
+    **为什么单列**：`_record_dto` 有 50 行硬上限 —— 序 29/30 各加一个键之后一度把它顶爆
+    ⇒ 逐段搬到这里（**语义一字未动**，只是换落点），并守住那道门。
+
+    三件（都**不重写第二套判定** —— 两处各写一套 = 漂移无从发现）：
+
+    - **消解 / 处置 / 理由**（序 17/18/19/26/30，`disposition_of` + `disposition_reason`）；
+    - **冲突时效**（序 29，`conflict_timeliness_at`；不给时点 ⇒ `None` = 未判定，**不猜**）；
+    - **链终点**（序 21，`chain` 由调用方按同批记录算好）。
+    """
+    links = facts.links
+    by_others = facts.by_others
+    chain_ids = facts.chain.get("terminal")
+    base["conflict_resolutions"] = _resolution_dtos(record)
+    base["conflicted_by"] = list(by_others)
+    base["disposition"] = disposition_of(
+        facts.validity,
+        superseded=bool(links),
+        conflicted=bool(record.unresolved_conflicts),
+        conflicted_by=bool(by_others),
+    )
+    base["reason"] = disposition_reason(
+        facts.validity, record, superseded_by=links, conflicted_by=by_others
+    )
+    base["conflict_timeliness"] = (
+        state.value
+        if facts.now is not None
+        and (state := conflict_timeliness_at(record, facts.now)) is not None
+        else None
+    )
+    base["terminal_state"] = str(facts.chain.get("state", TERMINAL_CURRENT))
+    base["terminal_ids"] = (
+        [str(item) for item in chain_ids] if isinstance(chain_ids, list) else [str(record.id)]
+    )
 
 
 @router.get(
