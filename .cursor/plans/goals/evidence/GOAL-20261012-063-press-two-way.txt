@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 30 passed in 1.57s
+Z-1 反向消解表被摘掉（对端读不到）: 按压 RED
+    sha 复原一致=True | 0f897f0912fb
+    suite: 4 failed, 26 passed in 2.88s
+Z-2 处置面不扣已消解（对端仍冲突）: 按压 RED
+    sha 复原一致=True | d4a06b4966cf
+    suite: 3 failed, 27 passed in 3.12s
+Z-3 缺省形态被改动（无消解也有非空键）: 按压 RED
+    sha 复原一致=True | d4a06b4966cf
+    suite: 3 failed, 27 passed in 3.17s
+Z-4 逐对被破坏（只消解一对却整条抹掉）: 按压 RED
+    sha 复原一致=True | d4a06b4966cf
+    suite: 1 failed, 29 passed in 2.94s
+SUMMARY presses=4 all_red_and_restored=True
