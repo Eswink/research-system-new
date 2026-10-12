@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261012-435](tasks/PLAN-20261012-435-goal-063-ec01-05-a-resolved-pair-is-visible-on-both-sides.md) | IN_PROGRESS |
+| [x] | [PLAN-20261012-435](tasks/PLAN-20261012-435-goal-063-ec01-05-a-resolved-pair-is-visible-on-both-sides.md) | DONE |
 | [x] | [PLAN-20261012-433](tasks/PLAN-20261012-433-goal-062-ec01-05-a-conflict-declaration-is-no-longer-one-way.md) | DONE |
 | [x] | [PLAN-20261012-431](tasks/PLAN-20261012-431-goal-061-ec01-05-the-timeliness-of-a-conflict-is-decidable.md) | DONE |
 | [x] | [PLAN-20261012-429](tasks/PLAN-20261012-429-goal-060-ec01-05-the-hybrid-form-of-gate-declarations.md) | DONE |

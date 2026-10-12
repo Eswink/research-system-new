@@ -50,7 +50,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-resolved-pair-face.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **对端可读（本轮验收主体）**：被消解方的读面**逐条披露**「**这一对已被消解**」
@@ -61,7 +61,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q`
       ⇒ 全绿 + 新用例（对端可读 / 逐对 / 缺省逐字不变）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **两个读面同源**：编排消费面与 HTTP 读面**同源**（同一批纯函数）披露对端可见性；
@@ -70,7 +70,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例（两处同值 / 既有键逐字不变 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`Z-1` 反向消解表被摘掉（对端读不到）⇒ RED；
@@ -80,7 +80,7 @@ exit_criteria:
       raw `sha256` 逐字节相同；**反证脚本带基线门**；判词归档进树（**二进制写盘**、`CR=0`）。
     verify: >-
       `scratch/goal063_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -93,7 +93,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal063_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -119,7 +119,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261012-435-goal-063-ec01-05-a-resolved-pair-is-visible-on-both-sides.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-436-goal-063-ec01-04-a-resolved-pair-is-visible-on-both-sides.md
 memory_entries: []
 ---
 
@@ -132,10 +132,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（零命中 + 实跑缺口 + 先例 + 记载读法未动） | **实跑**：`scratch/probe-resolved-pair-face.py` | PENDING |
-| EC-02 | 对端可读 + 处置面扣已消解（逐对；缺省逐字不变） | `pytest tests/application tests/domain -q` | PENDING |
-| EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | PENDING |
-| EC-04 | 两向反证 `Z-1`…`Z-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（零命中 + 实跑缺口 + 先例 + 记载读法未动） | **实跑**：`scratch/probe-resolved-pair-face.py` | **PASS** |
+| EC-02 | 对端可读 + 处置面扣已消解（逐对；缺省逐字不变） | `pytest tests/application tests/domain -q` | **PASS** |
+| EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
+| EC-04 | 两向反证 `Z-1`…`Z-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -235,10 +235,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（逐轴复评 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 31** | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 对端可读 + 分派） |
+| 0 | —（逐轴复评 + 建档） | `fe6a8a1` | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 对端可读 + 扣减） |
+| 1 | `PLAN-20261012-435`（WP-1…WP-5） | `4c654de`（反向消解表 + 扣减 + 两读面同源）、`3b741d1`（判据 10 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 四段读数；② 一对被消解 ⇒ **两端都是 `USE`** + `resolved_with` 点名（不静默消失）+ **逐对**扣减 + 缺省逐字不变；③ 两读面**都引用**同一纯函数 + 既有键逐字仍在 + 快照同轮（`+7 / -0`）；④ **四向反证** `Z-1`…`Z-4` 全红 + 基线绿 + 复原一致。`tests/application tests/adapters tests/api` **1323 passed**；mypy **1205 files** 零问题 | （见 CI 台账） | 四处如实登记：① `Z-3` 首版锚点**空操作**（不可观测）⇒ 改打可观测面；② 规模门**两处** `max-args`（6 > 5）⇒ 合成 `_RowFacts` 参数对象（两读面同形）；③ 读面重构后三处旧引用未改名（`superseded_by`）⇒ 逐处修；④ 长行 / import 排序 ⇒ 格式化 | EC-05 待做 | cycle 2（EC-05 收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-12 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**四处如实登记**（`Z-3` 空操作 / 两处 `max-args` / 三处旧引用 / 格式化）。**残余**：`resolved_with` 为派生事实（跨范围读不到，如实点名）/ 自动消解 / 内容级检测 / 三维以上组合 / `BB-3` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261012-436`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-12 | ACTIVE | **逐轴复评 + 建档（cycle 0）**：MAINLINE 程序表**新增序 31**（**轴 = 质量**），并写修订记录行（只追加）。**实测读数**（逐条见「事实层结论」表）：① 消解的反向面**零命中**；② **实跑**：一对被消解 ⇒ **A 侧 `USE` / B 侧 `CONFLICTED`**（两端不一致）；③ 先例 `conflicted_by_index` **已全在**；④ 记载读法**逐字仍是单向**。五条 EC 全 PENDING。**不**做自动消解 / **不**做内容级检测 / **不**改记载语义。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

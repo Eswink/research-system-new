@@ -189,7 +189,8 @@ def test_only_the_resolved_pair_is_deducted() -> None:
 def test_the_recorded_side_keeps_its_own_reading() -> None:
     """EC-02 ⑧：**记载方**的既有读法一字不动（`conflict_resolutions` 仍是它的记载）。"""
     rows = _rows(_store())
-    assert len(rows["m-a"]["conflict_resolutions"]) == 1, rows["m-a"]
+    resolutions = cast("list[object]", rows["m-a"]["conflict_resolutions"])
+    assert len(resolutions) == 1, rows["m-a"]
     assert rows["m-a"]["resolved_with"] == [], ("记载方没有被别人消解", rows["m-a"])
 
 

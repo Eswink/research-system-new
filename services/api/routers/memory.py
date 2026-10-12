@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Request
 
@@ -250,53 +251,45 @@ async def list_project_memory(
     deps: ApiDeps = get_deps(request)
     store = _store_of(deps)
     records = store.query(scope=scope)  # type: ignore[attr-defined]
-    # GOAL-20261011-052 EC-02：反向取代链接要看见**别人** ⇒ 按**同一批记录**扫一次
-    # （复用编排面同一助手；不逐条再查 —— 那会 N+1 且两处看到不同的世界）。
-    reverse = superseded_by_index(records)
-    # GOAL-20261012-062 EC-03：**冲突的反向链接**同样按**同一批记录**算一次
-    # （与编排面**同一手法 / 同一份事实** —— 两处不各写一套）。
-    conflicted_by = conflicted_by_index(records)
-    # GOAL-20261012-063 EC-03：**反向消解表**同样扫同批记录一次（先扣后判 ——
-    # 已消解的那一对不再算作反向冲突；「同源」与编排面**同一手法**）。
-    resolved = resolved_pair_index(records)
-    # GOAL-20261011-053 EC-03：**链的终点**同样按同一批记录算一次（应用层纯函数；
-    # 与反向链接是**同一份事实的两种索引** ⇒ 两处**同源同值**，不各写一套判定）。
-    terminals = terminal_versions(records)
+    rows = _record_dtos(records)
     # 两个形态各自**显式**声明自己的键（不给路由开 `response_model_exclude_none`：那种开关
     # 会连**嵌套模型**一起递归应用，把别的读面上**有意义**的 `null` 抹掉 —— 实测过）。
     if scope is None:
-        return MemoryListViewDto(
-            records=[
-                _record_dto(
-                    record,
-                    facts=_RowFacts(
-                        superseded_by=reverse.get(record.id, []),
-                        terminal=dict(terminals.get(record.id) or {}),
-                        conflicted_by=conflicted_by.get(record.id, []),
-                        resolved_with=sorted(resolved.get(record.id, set())),
-                    ),
-                )
-                for record in records
-            ],
-            scope_note=SCOPE_NOTE,
-        )
+        return MemoryListViewDto(records=rows, scope_note=SCOPE_NOTE)
     return MemoryFilteredListViewDto(
-        records=[
-            _record_dto(
-                record,
-                facts=_RowFacts(
-                    superseded_by=reverse.get(record.id, []),
-                    terminal=dict(terminals.get(record.id) or {}),
-                    conflicted_by=conflicted_by.get(record.id, []),
-                    resolved_with=sorted(resolved.get(record.id, set())),
-                ),
-            )
-            for record in records
-        ],
+        records=rows,
         scope_note=SCOPE_NOTE,
         scope=scope,
         filtered_out=len(store.query()) - len(records),  # type: ignore[attr-defined]
     )
+
+
+def _record_dtos(records: Any) -> list[MemoryRecordDto]:
+    """一批记录 ⇒ 读面 DTO 列表（**四个反向索引各扫一次**，不逐条再查）。
+
+    **为什么单列**：`list_project_memory` 有 50 行硬上限 —— 序 29/30/31 逐轮加索引之后
+    一度把它顶爆 ⇒ 逐段搬到这里（**语义一字未动**，只是换落点），并守住那道门。
+
+    四件都由**同一批记录**算出来（与编排面**同一手法**；不逐条再查 —— 那会 N+1 且
+    两处看到不同的世界）：反向取代（序 18）/ 反向冲突（序 30）/ 反向消解（序 31）/
+    链终点（序 21）。
+    """
+    reverse = superseded_by_index(records)
+    conflicted_by = conflicted_by_index(records)
+    resolved = resolved_pair_index(records)
+    terminals = terminal_versions(records)
+    return [
+        _record_dto(
+            record,
+            facts=_RowFacts(
+                superseded_by=reverse.get(record.id, []),
+                terminal=dict(terminals.get(record.id) or {}),
+                conflicted_by=conflicted_by.get(record.id, []),
+                resolved_with=sorted(resolved.get(record.id, set())),
+            ),
+        )
+        for record in records
+    ]
 
 
 def _proposal(payload: MemoryProposalDto) -> MemoryWriteProposal:

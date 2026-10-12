@@ -2,10 +2,10 @@
 id: PLAN-20261012-435
 slug: goal-063-ec01-05-a-resolved-pair-is-visible-on-both-sides
 title: GOAL-20261012-063 cycle 1（EC-01…EC-05）：对端可读 + 处置扣已消解 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-12
 updated_at: 2026-10-12
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-436-goal-063-ec01-04-a-resolved-pair-is-visible-on-both-sides.md
 memory_entries: []
 parent_goal: GOAL-20261012-063
 cursor_plan_uri: null
@@ -37,7 +37,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-resolved-pair-face.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **对端可读 + 处置扣已消解（EC-02）**：新增**反向消解表**（扫同批记录，与序 30 同一手法）；
@@ -46,7 +46,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q` ⇒ 全绿
       + 新用例（对端可读 / 逐对 / 缺省逐字不变）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **两读面同源（EC-03）**：编排面与 HTTP 读面**同源**披露对端可见性；
@@ -54,7 +54,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例（两处同值 / 既有键逐字不变 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`Z-1` 反向消解表被摘掉 ⇒ RED；`Z-2` 处置面**不**扣已消解 ⇒ RED；
@@ -63,7 +63,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal063_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -72,7 +72,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal063_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261012-435 — GOAL-20261012-063 cycle 1
@@ -123,3 +123,4 @@ A 声明与 B 冲突、人把这一对**消解**掉 ⇒ **A 读 `USE`**（记载
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-12 | IN_PROGRESS | cycle 1 建档：对端可读 + 处置扣减 + 四向反证。 |
+| 2026-10-12 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261012-436` = PASS_WITH_WARNINGS）。**交付**：`resolved_pair_index`（与序 30 同一手法）+ 读面先扣后判（逐对）+ `resolved_with` 披露（不静默消失）+ 两读面同源 + `_RowFacts` 参数对象守两道 `max-args` 门；判据 10 例；四向反证全红 + 归档（`CR=0`）。 |
