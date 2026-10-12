@@ -8,7 +8,7 @@ title: >-
   （`['m-x','m-y']`）、载荷键仍只有 `['records','scope_note']` ⇒ **参数被静默忽略**
   （既不筛、也不报错、也不披露）；而对照 `?scope=project` **会筛并披露 `filtered_out`**
   ⇒ 同一个读面上**两个查询参数的待遇不对称**，调用方**以为筛过了**（承「点名失败而非静默降级」）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-13
 updated_at: 2026-10-13
 owners:
@@ -234,7 +234,7 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| （待 push 后逐条回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
 
 ## 迭代日志
 
