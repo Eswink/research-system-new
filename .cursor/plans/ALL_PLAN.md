@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261012-431](tasks/PLAN-20261012-431-goal-061-ec01-05-the-timeliness-of-a-conflict-is-decidable.md) | IN_PROGRESS |
+| [x] | [PLAN-20261012-431](tasks/PLAN-20261012-431-goal-061-ec01-05-the-timeliness-of-a-conflict-is-decidable.md) | DONE |
 | [x] | [PLAN-20261012-429](tasks/PLAN-20261012-429-goal-060-ec01-05-the-hybrid-form-of-gate-declarations.md) | DONE |
 | [x] | [PLAN-20261012-427](tasks/PLAN-20261012-427-goal-059-ec01-05-the-waiting-face-timeline-is-reachable.md) | DONE |
 | --- | --- | --- |

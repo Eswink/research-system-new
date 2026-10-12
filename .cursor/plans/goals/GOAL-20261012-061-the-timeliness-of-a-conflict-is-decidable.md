@@ -41,7 +41,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-conflict-timeliness.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **实现面（本轮验收的主体）**：冲突的时效可判定（按调用方给的时点；三态互不混用且
@@ -49,7 +49,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/domain tests/application -q`
       ⇒ 全绿 + 新用例（缺省逐字不变 / 坏形态点名）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **读面 / 产品面接线**：两个读面（编排消费面 + HTTP 读面）**同源**披露冲突时效
@@ -58,7 +58,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`X-1` 过期冲突仍被判有效 ⇒ RED；
@@ -68,7 +68,7 @@ exit_criteria:
       判词归档进树（`.cursor/plans/goals/evidence/`，`CR=0`）。
     verify: >-
       `scratch/goal061_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -81,7 +81,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal061_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -107,7 +107,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261012-431-goal-061-ec01-05-the-timeliness-of-a-conflict-is-decidable.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-432-goal-061-ec01-04-the-timeliness-of-a-conflict-is-decidable.md
 memory_entries: []
 ---
 
@@ -122,10 +122,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（时效面零命中 + 字段逐个读出 + 记忆自身时效面可复用） | **实跑**：`scratch/probe-conflict-timeliness.py` | PENDING |
-| EC-02 | 冲突时效可判定（三态互不混用且点名；缺省逐字不变；坏时点点名） | `pytest tests/domain tests/application -q` | PENDING |
-| EC-03 | 两读面**同源**披露 + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | PENDING |
-| EC-04 | 两向反证 `X-1`…`X-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（时效面零命中 + 字段逐个读出 + 记忆自身时效面可复用） | **实跑**：`scratch/probe-conflict-timeliness.py` | **PASS** |
+| EC-02 | 冲突时效可判定（三态互不混用且点名；缺省逐字不变；坏时点点名） | `pytest tests/domain tests/application -q` | **PASS** |
+| EC-03 | 两读面**同源**披露 + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
+| EC-04 | 两向反证 `X-1`…`X-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -226,10 +226,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实测读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 29** | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（按 EC 顺序） |
+| 0 | —（replan + 建档） | `9715151`（归档检查）、`f0ce872`（derive） | 只读勘察（0 改动）+ 实测读数（见「事实层结论」） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 时效 + EC-03 披露） |
+| 1 | `PLAN-20261012-431`（WP-1…WP-5） | `1a903fa`（时效三态 + 三适配器 + 两读面 + 迁移 026）、`dc50ef6`（判据 19 例 + 按压归档）、`d7dbb88`（收口面） | **EC-01/02/03/04 PASS**：① 四段读数；② 三态互不混用且**不猜**（未声明 ⇒ `None`）+ 两条坏形态点名；③ **两读面同源**（都引用同一纯函数）+ 三适配器同契约 + 快照同轮；④ **四向反证** `X-1`…`X-4` 全红 + 基线绿 + 复原一致 | （见 CI 台账） | 三处如实登记：① `X-4` 首版按压**不可观测**（域层让「无冲突却有声明」不可构造）⇒ 改打可观测面；② 断言集「不猜」判据首版**按文件末尾形态**判 ⇒ **改判关系**（AST）+ 四种写法逐条两向实测；③ HTTP 面的时点 `now` 可为 `None` ⇒ mypy 抓到 ⇒ 加守卫 | EC-05 待做 | cycle 2（EC-05 收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-12 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**三处如实登记**（`X-4` 不可观测 / 「不猜」判据改判关系 / mypy 抓到 `now` 守卫）。**残余**：`STALE` 只点名（不自动消解/失效）/ 内容级检测 / 真实外发 / `BB-3` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261012-432`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-12 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 29**（**轴 = 质量**），并写修订记录行（只追加）。实测读数见「事实层结论」表（命令与读数同在）。五条 EC 全 PENDING。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

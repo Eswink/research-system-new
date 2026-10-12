@@ -2,10 +2,10 @@
 id: PLAN-20261012-431
 slug: goal-061-ec01-05-the-timeliness-of-a-conflict-is-decidable
 title: GOAL-20261012-061 cycle 1（EC-01…EC-05）：冲突时效可判定 + 两读面同源 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-12
 updated_at: 2026-10-12
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-432-goal-061-ec01-04-the-timeliness-of-a-conflict-is-decidable.md
 memory_entries: []
 parent_goal: GOAL-20261012-061
 cursor_plan_uri: null
@@ -37,7 +37,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-conflict-timeliness.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **冲突时效可判定（EC-02）**：按**调用方给的时点**判定冲突声明的时效（三态**互不混用**
@@ -46,7 +46,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/domain tests/application -q` ⇒ 全绿
       + 新用例（三态各自可判 / 缺省逐字不变 / 坏形态点名）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **两读面同源披露（EC-03）**：编排消费面与 HTTP 读面**同源**（同一批纯函数）披露冲突时效；
@@ -55,7 +55,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例（两处同值 / 未声明逐字不变 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`X-1` 过期冲突仍被判有效 ⇒ RED；`X-2` 未到期被判失效 ⇒ RED；
@@ -64,7 +64,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal061_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -73,7 +73,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal061_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261012-431 — GOAL-20261012-061 cycle 1
@@ -125,3 +125,4 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-12 | IN_PROGRESS | cycle 1 建档：冲突时效可判定 + 两读面同源 + 四向反证。 |
+| 2026-10-12 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261012-432` = PASS_WITH_WARNINGS）。**交付**：两个声明位（记录 + 提案）+ `ConflictTimelinessState` 三态纯函数 + 两条坏形态点名 + 三适配器同契约（迁移 `026`）+ 两读面同源披露 + 快照同轮；判据 19 例；四向反证全红 + 归档（`CR=0`）。 |
