@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261012-429](tasks/PLAN-20261012-429-goal-060-ec01-05-the-hybrid-form-of-gate-declarations.md) | IN_PROGRESS |
+| [x] | [PLAN-20261012-429](tasks/PLAN-20261012-429-goal-060-ec01-05-the-hybrid-form-of-gate-declarations.md) | DONE |
 | [x] | [PLAN-20261012-427](tasks/PLAN-20261012-427-goal-059-ec01-05-the-waiting-face-timeline-is-reachable.md) | DONE |
 | --- | --- | --- |
 | [x] | [PLAN-20261012-425](tasks/PLAN-20261012-425-mainline-archive-and-the-history-is-kept-checkable.md) | DONE |

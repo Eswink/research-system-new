@@ -2,10 +2,10 @@
 id: PLAN-20261012-429
 slug: goal-060-ec01-05-the-hybrid-form-of-gate-declarations
 title: GOAL-20261012-060 cycle 1（EC-01…EC-05）：混合式闸门可声明 + 双触发各自点名 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-12
 updated_at: 2026-10-12
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-430-goal-060-ec01-04-the-hybrid-form-of-gate-declarations.md
 memory_entries: []
 parent_goal: GOAL-20261012-060
 cursor_plan_uri: null
@@ -36,7 +36,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-gate-hybrid.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **混合式可声明（EC-02）**：域上 +1 声明形态（多点 **且** 条件）；缺省 `None` ⇒
@@ -45,7 +45,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/domain -q` ⇒ 全绿
       + 新用例（混合式可声明 / 缺省逐字不变 / 各坏形态点名）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **推进面按混合式判定（EC-03）**：两种触发**各自点名**是哪一条触发的（多点命中 /
@@ -54,7 +54,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/adapters tests/api
       tests/contracts -q` ⇒ 全绿 + 新用例（两种触发各自点名 / 都命中都点名 / 两库往返）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`W-1` 混合声明被拒 ⇒ RED；`W-2` 只按多点判（条件被忽略）⇒ RED；
@@ -63,7 +63,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal060_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -72,7 +72,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal060_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261012-429 — GOAL-20261012-060 cycle 1
@@ -124,3 +124,4 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-12 | IN_PROGRESS | cycle 1 建档：混合式可声明 + 双触发各自点名 + 四向反证。 |
+| 2026-10-12 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261012-430` = PASS_WITH_WARNINGS）。**交付**：`HybridGateDeclaration` 值对象（两维缺一不可）+ 越界/重复点名 + 互斥清单同轮；触发面两维各自判、各自点名（三态可区分）；两库两列 + 迁移 `025`；DTO/快照同轮；判据 39 例（域 10 / 推进面 5 / 产品路径 4 / 两库 2 / 既有回归）；四向反证全红 + 归档（`CR=0`）。 |
