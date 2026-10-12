@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 34 passed in 1.40s
+W-1 记录侧字段被摘掉（落库丢作者）: 按压 RED
+    sha 复原一致=True | ee368f92d223
+    suite: 1 failed, 33 passed in 3.20s
+W-2 适配器不带该列（往返丢失）: 按压 RED
+    sha 复原一致=True | ee368f92d223
+    suite: 1 failed, 33 passed in 3.14s
+W-3 缺省形态被改动（伪造未声明）: 按压 RED
+    sha 复原一致=True | 8c11993291b7
+    suite: 1 failed, 33 passed in 3.10s
+W-4 读面披露被摘掉（canonical 有、读不出）: 按压 RED
+    sha 复原一致=True | 8c11993291b7
+    suite: 2 failed, 32 passed in 3.05s
+SUMMARY presses=4 all_red_and_restored=True

@@ -151,7 +151,7 @@ memory_entries: []
 | --- | --- | --- | --- |
 | 1 | 两处字段表**逐个读出**（提案有 / 记录无） | `uv run --frozen --no-sync python -B scratch/probe-memory-author.py` | 提案 **含** `proposed_by`；记录**不含**（`hasattr` 亦 `False`） |
 | 2 | **零命中复核** | `rg -n "proposed_by" adapters/canonical/memory_read.py adapters/sqlite/memory_store.py adapters/postgres/memory_store.py` | **（零命中）** |
-| 3 | 命中**只在**提案面与两个内部调用点 | `rg -rn "proposed_by" packages/ services/`（见探针逐文件计数） | `packages/domain/memory.py`（提案定义）/ `memory_promotion.py` / `m12_chain.py` / `services/api/dto/memory.py`（**写面** DTO） |
+| 3 | 命中**只在写面**（提案定义 / 写面 DTO / 写入口 / 两个内部调用点） | 探针第 2 段的**逐文件计数** | `packages/domain/memory.py`**1** / `services/api/dto/memory.py`**1** / `services/api/routers/memory.py`**2**（**写入口**把载荷带进提案）/ `memory_promotion.py`**1** / `m12_chain.py`**1**；**读面与三适配器全 0**（**EC-01 实测更正**：建档表初版写「两个内部调用点」，实际含**写入口**） |
 | 4 | **实跑**：带作者的提案 ⇒ 记录无作者面 | 探针第 3 段 | `hasattr(record, "proposed_by") == False`；读面 20 键里**没有**它 |
 | 5 | `provenance` 是**来源**（≠ 提议者，本轮**不**改它） | `rg -n "provenance" packages/domain/memory.py` | 提案与记录上**各自都有**（既有语义逐字保留） |
 
