@@ -2,10 +2,10 @@
 id: PLAN-20261013-441
 slug: goal-066-ec01-05-a-memory-author-is-selectable
 title: GOAL-20261013-066 cycle 1（EC-01…EC-05）：查询面第三维 + 消费面可传 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-13
 updated_at: 2026-10-13
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-442-goal-066-ec01-04-a-memory-author-is-selectable.md
 memory_entries: []
 parent_goal: GOAL-20261013-066
 cursor_plan_uri: null
@@ -35,7 +35,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-author-selectable.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **查询面第三维（EC-02）**：`MemoryStore.query` +1 可选形参；**三适配器同契约**
@@ -44,7 +44,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters tests/postgres -q` ⇒ 全绿
       + 新用例（同契约 / 缺省不变 / 两维并存 / 未知空集）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **消费面可传（EC-03）**：`memory_read` 可传作者 ⇒ 载荷**点名**筛了什么与**筛掉了多少条**
@@ -52,7 +52,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/memory tests/api -q`
       ⇒ 全绿 + 新用例。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`X-1` 查询面忽略作者筛 ⇒ RED；`X-2` 适配器不带该维度 ⇒ RED；
@@ -61,7 +61,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal066_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -70,7 +70,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal066_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261013-441 — GOAL-20261013-066 cycle 1
@@ -122,3 +122,4 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-13 | IN_PROGRESS | cycle 1 建档：查询面第三维 + 消费面可传 + 四向反证。 |
+| 2026-10-13 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261013-442` = PASS_WITH_WARNINGS）。**交付**：`query` 第三维（三适配器同契约）+ 消费面可传 + 载荷点名 + `_Selection` 参数对象；判据 10 + PG 1 例；四向反证全红 + 归档（`CR=0`）。 |

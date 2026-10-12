@@ -47,7 +47,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-author-selectable.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **作者成为可选维度（本轮验收主体）**：`MemoryStore.query` +1 **可选**形参（缺省 ⇒ **不筛**，
@@ -56,7 +56,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters tests/postgres -q` ⇒ 全绿
       + 新用例（三适配器同契约 / 缺省逐字不变 / 两维可并存 / 未知作者空集）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **消费面可传（可选，缺省不变）**：`memory_read` 可传作者 ⇒ 载荷**点名**筛了什么与
@@ -65,7 +65,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/memory tests/api -q`
       ⇒ 全绿 + 新用例（载荷点名 / 缺省逐字不变 / 既有键不动）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`X-1` 查询面**忽略**作者筛（当全选）⇒ RED；
@@ -75,7 +75,7 @@ exit_criteria:
     verify: >-
       `scratch/goal066_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；
       归档 `.cursor/plans/goals/evidence/GOAL-20261013-066-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -88,7 +88,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal066_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -114,7 +114,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261013-441-goal-066-ec01-05-a-memory-author-is-selectable.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-442-goal-066-ec01-04-a-memory-author-is-selectable.md
 memory_entries: []
 ---
 
@@ -128,10 +128,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（签名逐个 + 实跑 TypeError + 先例 + 三适配器签名） | **实跑**：`scratch/probe-author-selectable.py` | PENDING |
-| EC-02 | 作者成为查询面可选维度（三适配器同契约；缺省不筛；未知作者空集） | `pytest tests/adapters tests/postgres -q` | PENDING |
-| EC-03 | 消费面可传 + 载荷点名（缺省逐字不变） | `pytest tests/application/memory tests/api -q` | PENDING |
-| EC-04 | 两向反证 `X-1`…`X-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（签名逐个 + 实跑 TypeError + 先例 + 三适配器签名） | **实跑**：`scratch/probe-author-selectable.py` | **PASS** |
+| EC-02 | 作者成为查询面可选维度（三适配器同契约；缺省不筛；未知作者空集） | `pytest tests/adapters tests/postgres -q` | **PASS** |
+| EC-03 | 消费面可传 + 载荷点名（缺省逐字不变） | `pytest tests/application/memory tests/api -q` | **PASS** |
+| EC-04 | 两向反证 `X-1`…`X-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -233,10 +233,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（逐轴复评 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 34**（**同轮建档**，GOAL + 子 PLAN + `ALL_PLAN`） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 查询面第三维） |
+| 0 | —（逐轴复评 + 建档） | `171dfa0`（同轮建档）、`139f527`（frontmatter 修复） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」） | （见 CI 台账） | `139f527`（**治理判据当场抓到** title 里的冒号破坏 YAML ⇒ 改块标量） | 五条 EC 全 PENDING | cycle 1（EC-02 查询面第三维） |
+| 1 | `PLAN-20261013-441`（WP-1…WP-5） | `2df0a40`（Port 第三维 + 三适配器 + 消费面）、`73a305b`（判据 10 例 + 按压归档）、`97fc003`（收口面 + PG 判据 + 049 改签） | **EC-01/02/03/04 PASS**：① 四段读数；② Port +1 可选形参 + 三适配器**各自真筛** + 缺省不筛 + 未知作者空集；③ 消费面可传 + 载荷点名（含筛掉条数）+ 缺省逐字不变 + **序 17 的 `scope` 支一字不动**；④ **四向反证** `X-1`…`X-4` 全红 + 基线绿 + 复原一致。`tests/application tests/adapters tests/api tests/contracts tests/domain tests/postgres` 全绿；mypy **1208 files** 零问题 | （见 CI 台账） | 四处如实登记：① **回归**：`_filtered_out` 初版把 `scope` 传进分母 ⇒ 序 17 的判据当场红 ⇒ **分母只按 tier 维**（与序 17 逐字一致）；② `X-4` 锚点**不唯一**（`payload["filtered_out"]` 出现 2 次）⇒ 改打作者支整段；③ **049 断言集改签**（字面锚 → 关系锚，`+6 / -1`，两向实测）；④ 治理判据抓到 title 冒号 ⇒ 改块标量 | EC-05 待做 | cycle 2（EC-05 收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-13 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**四处如实登记**（`_filtered_out` 回归当场红 / `X-4` 锚点不唯一 / 049 断言集改签 / frontmatter 冒号）。**残余**：未知作者与不存在不可分（无作者注册面）/ 作者鉴权不做（选择非 ACL）/ HTTP 面未加该筛选 / 模糊匹配不做 / 内容级检测 / 三维以上组合等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261013-442`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-13 | ACTIVE | **逐轴复评 + 建档（cycle 0）**：MAINLINE 程序表**新增序 34**（**轴 = 质量**），并写修订记录行（只追加）。**实测读数**（逐条见「事实层结论」表）：① `query` 形参只有 `tier` / `scope`；② **实跑**两条不同作者的记忆 ⇒ 读面报得出作者而**选不着**（传 `proposed_by=` ⇒ `TypeError`）；③ 先例（序 17 的 `scope`）在树；④ 三适配器签名同缺。**GOAL 文件 / 子 PLAN / `ALL_PLAN` 投影同轮落地**（承序 33 的教训）。五条 EC 全 PENDING。**不**做作者鉴权 / **不**做模糊匹配 / **不**给 HTTP 面加该筛选。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

@@ -307,11 +307,11 @@ def _selection(memory_store: Any, args: dict[str, object]) -> "_Selection":
     **自由声明的标识**（与 `scope` 的已知集合不同 —— 后者有域上的枚举面），未知作者
     ⇒ **空结果**（**不猜**），不是拒绝。
     """
-    return _Selection(
-        tier=_optional_arg(args, "tier"),
-        scope=_scoped(memory_store, _optional_arg(args, "scope")),
-        proposed_by=_optional_arg(args, "proposed_by"),
-    )
+    tier = _optional_arg(args, "tier")
+    raw_scope = _optional_arg(args, "scope")
+    if raw_scope is not None:
+        _require_known_scope(memory_store, raw_scope)
+    return _Selection(tier=tier, scope=raw_scope, proposed_by=_optional_arg(args, "proposed_by"))
 
 
 def _optional_arg(args: dict[str, object], key: str) -> str | None:
@@ -321,13 +321,6 @@ def _optional_arg(args: dict[str, object], key: str) -> str | None:
         return None
     text = str(raw).strip()
     return text or None
-
-
-def _scoped(memory_store: Any, scope: str | None) -> str | None:
-    """范围维（**必须先确认为已知** —— 未知范围**点名拒绝**，不静默当成「不筛」）。"""
-    if scope is not None:
-        _require_known_scope(memory_store, scope)
-    return scope
 
 
 def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, object]:

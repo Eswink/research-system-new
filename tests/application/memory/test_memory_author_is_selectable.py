@@ -115,7 +115,10 @@ def test_the_scope_disclosure_is_untouched() -> None:
 
 
 def test_an_unknown_author_on_the_consumption_face_is_empty_not_refused() -> None:
-    """EC-03 ④：消费面上的**未知作者** ⇒ 空载荷（**不猜**、**不**拒绝 —— 与 `scope` 的已知集合不同）。"""
+    """EC-03 ④：消费面上的**未知作者** ⇒ 空载荷。
+
+    **不猜**、**不**拒绝 —— 与 `scope` 的**已知集合**不同（作者是自由声明的标识）。
+    """
     payload = memory_read(_store(), {"now": _NOW, "proposed_by": "agent:nowhere"})
     assert payload["memory_count"] == 0, payload
     assert payload["proposed_by"] == "agent:nowhere", payload
