@@ -120,6 +120,6 @@ def test_without_a_declared_bound_the_sink_stays_empty() -> None:
         second = advance(client, _program_id(program))
         assert second["decision"]["kind"] == _WAIT_FOR_APPROVAL, second
         assert sink.seen == [], ("未声明界不得报超期（缺省形态逐字不变）", sink.seen)
-        assert not any("nudge" in item for item in second["decision"]["cited_facts"]), (
-            second["decision"]
-        )
+        assert not any("nudge" in item for item in second["decision"]["cited_facts"]), second[
+            "decision"
+        ]

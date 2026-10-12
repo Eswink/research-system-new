@@ -50,7 +50,7 @@ from packages.application.ports.event_publisher import EventPublisher
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.model_gateway import ModelGateway
 from packages.application.ports.model_store import ModelStore
-from packages.application.ports.nudge_sink import NullNudgeSink, NudgeSink
+from packages.application.ports.nudge_sink import NudgeSink, NullNudgeSink
 from packages.application.ports.ops_store import OpsStore
 from packages.application.ports.policy_evaluator import PolicyEvaluator
 from packages.application.ports.resource_catalog import PreflightContext

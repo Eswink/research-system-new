@@ -122,7 +122,7 @@ def test_the_declared_bound_reaches_the_judgement_on_the_product_path() -> None:
     from packages.application.run_orchestration.program_runner import advance_program
     from packages.application.run_orchestration.program_waiting import GateClock
     from packages.domain.core import Timestamp
-    from tests.application.run_orchestration.test_nudge_exit_on_the_run_path import (
+    from tests.application.run_orchestration.test_program_waiting_on_the_run_path import (
         _ApprovalRows,
         _Harness,
         _row,

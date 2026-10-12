@@ -171,6 +171,8 @@ def test_run_program_association_queries_on_pg() -> None:
     assert [r.program_index for r in ordered] == [1, 2]
     assert store.for_program("prog-missing") == ()
     store.close()
+
+
 def test_the_nudge_bound_round_trips_and_defaults_to_undeclared_on_pg() -> None:
     """GOAL-20261012-059 EC-02：**PG 侧**的超期界往返 —— 与 SQLite 同一份契约。
 
