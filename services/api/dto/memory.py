@@ -51,6 +51,10 @@ class MemoryRecordDto(BaseModel):
     #: 但别的记录声明了与它冲突）。与 `contradictions`（**正向**）**互不顶替** ——
     #: 两者都要读得出（缺省 `[]` ⇒ 没有任何反向声明 ⇒ 与改动前逐字相同）。
     conflicted_by: list[str] = Field(default_factory=list)
+    #: GOAL-20261012-063 EC-03：**已与本记录消解的那些声明方** —— 对端可见性；
+    #: `conflicted_by` 里**扣掉**的那些在这里逐条点名（**不静默消失**）。
+    #: 缺省 `[]` ⇒ 没有任何消解记载 ⇒ 与改动前逐字相同。
+    resolved_with: list[str] = Field(default_factory=list)
     #: GOAL-20261012-061 EC-03：**冲突声明的时效**（`STALE` / `REVIEW_DUE` / `None`）——
     #: 与 `validity`（**记录**的时效）**互不顶替**（两件事：这条记忆过期了吗 / 当年声明的
     #: 那个分歧还算不算数）。**只在给了时点时**判（不给 ⇒ `None` = 未判定，**不猜**）。

@@ -30,6 +30,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
@@ -49,6 +50,7 @@ from packages.application.memory.disposition import (  # noqa: E402
     conflicted_by_index,
     disposition_of,
     disposition_reason,
+    resolved_pair_index,
     superseded_by_index,
     terminal_versions,
 )
@@ -168,28 +170,64 @@ def _project_records(records: Any, moment: Timestamp) -> list[dict[str, object]]
     reverse = superseded_by_index(records)
     terminals = terminal_versions(records)
     conflicted_by = conflicted_by_index(records)
+    # GOAL-20261012-063 EC-02：**已消解的那一对不再算作反向冲突**（先扣后判）——
+    # 与 `conflicted_by_index` **同一手法**（同族的第三个实例）。
+    resolved = resolved_pair_index(records)
     return [
         _memory_row(
             record,
             moment,
-            reverse.get(str(record.id), []),
-            terminals.get(str(record.id)),
-            conflicted_by.get(str(record.id), []),
+            _RowFacts(
+                superseded_by=reverse.get(str(record.id), []),
+                terminal=dict(terminals.get(str(record.id)) or {}),
+                conflicted_by=_unresolved_declarers(
+                    str(record.id), conflicted_by.get(str(record.id), []), resolved
+                ),
+                resolved_with=sorted(resolved.get(str(record.id), set())),
+            ),
         )
         for record in records
     ]
 
 
+def _unresolved_declarers(
+    record_id: str, declarers: list[str], resolved: dict[str, set[str]]
+) -> list[str]:
+    """扣掉**已与它消解**的声明方（**逐对**；只消解一对 ⇒ 其余仍算数）。
+
+    `declarers` = 声明了与**本记录**冲突的那些 id；`resolved[record_id]` = **已经与
+    本记录消解**过的那些 id（反向表按**被消解方**索引、值是**记载方**）
+    ⇒ 只留差集。**空 ⇒ 空**（缺省形态逐字不变）。
+
+    **为什么逐对**：一条记录可以同时被多个人声明冲突 ⇒ 扣掉「声明方 A 与我消解的那一对」
+    **不**等于「我这边的冲突都没了」（其余声明方仍在）。
+    """
+    if not declarers:
+        return []
+    settled = resolved.get(record_id, set())
+    return [item for item in declarers if item not in settled]
+
+
+@dataclass(frozen=True, slots=True)
+class _RowFacts:
+    """一条记录投影所需的**同批事实**（合成一个参数对象守 `max-args` 门）。
+
+    四件都**不**来自记录自身（由调用方按同一批记录算出来）：反向取代 / 链终点 /
+    反向冲突（已扣消解）/ 已消解的声明方。
+    """
+
+    superseded_by: list[str] = field(default_factory=list)
+    terminal: dict[str, object] = field(default_factory=dict)
+    conflicted_by: list[str] = field(default_factory=list)
+    resolved_with: list[str] = field(default_factory=list)
+
+
 def _memory_row(
-    record: Any,
-    moment: Timestamp,
-    superseded_by: list[str] | None = None,
-    terminal: dict[str, object] | None = None,
-    conflicted_by: list[str] | None = None,
+    record: Any, moment: Timestamp, facts: _RowFacts | None = None
 ) -> dict[str, object]:
     """一条记忆的读面投影：**身份 + 内容 + 时效 + 取代关系 + 当前版本 + 处置 + 理由**。
 
-    `superseded_by` = **谁取代了它**（反向链接）；`terminal` = **链的终点**（`BB-1`）。
+    `facts.superseded_by` = **谁取代了它**（反向链接）；`facts.terminal` = **链的终点**（`BB-1`）。
     两者**都必须由调用方从同一批记录算出来** —— 那是「不新增 Port 方法」的代价，
     也是本条唯一的非局部输入（见 `superseded_by_index` / `terminal_versions`）。
     """
@@ -202,20 +240,25 @@ def _memory_row(
     conflicted = bool(record.unresolved_conflicts)
     row = _identity_fields(record, state)
     row["supersedes"] = list(record.supersedes)
-    row["superseded_by"] = list(superseded_by or ())
+    resolved = facts or _RowFacts()
+    row["superseded_by"] = list(resolved.superseded_by)
     row["conflict_resolutions"] = _resolution_face(record)
     # GOAL-20261012-061 EC-03：**冲突声明的时效**逐条披露（按**调用方给的时点**判 ——
     # 本面**不读挂钟**，与 `validity_at` 同一纪律）。未声明 ⇒ `None`（**不猜**：
     # 未声明**不得**被当成「已失效」）。声明面（谁与谁冲突 / 谁消解了哪一对）**一字不动**。
     row["conflict_timeliness"] = _conflict_timeliness_face(record, moment)
-    row["terminal"] = _terminal_face(record, terminal)
+    row["terminal"] = _terminal_face(record, resolved.terminal)
     # GOAL-20261012-062 EC-02：**被别人声明冲突**（本记录自己没声明）—— 由调用方按
     # **同一批记录**算出来（`conflicted_by_index`，与 `superseded_by` **同一手法**）。
-    by_others = list(conflicted_by or ())
+    by_others = list(resolved.conflicted_by)
     row["conflicted_by"] = by_others
+    # GOAL-20261012-063 EC-03：**已与本记录消解的那些声明方**（对端可见性）——
+    # `conflicted_by` 里**扣掉**的那些在这一键里逐条点名（**不静默消失**：
+    # 读者要能回答「那一对是被消解了，还是从来没声明过」）。
+    row["resolved_with"] = list(resolved.resolved_with)
     row["disposition"] = disposition_of(
         state,
-        superseded=bool(superseded_by),
+        superseded=bool(resolved.superseded_by),
         conflicted=conflicted,
         conflicted_by=bool(by_others),
     )
@@ -224,7 +267,7 @@ def _memory_row(
     # ⇒ 不再叠加 `_conflict_note`（否则同一句出现两遍）。`_conflict_note` 保留给
     # **未被 `_reason` 覆盖**的场合（见下）—— 「不是当前处置理由、但读者仍该知道有冲突」。
     row["reason"] = disposition_reason(
-        state, record, superseded_by=superseded_by, conflicted_by=by_others
+        state, record, superseded_by=resolved.superseded_by, conflicted_by=by_others
     )
     return row
 

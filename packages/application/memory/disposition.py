@@ -176,6 +176,27 @@ def conflicted_by_index(records: tuple[Any, ...]) -> dict[str, list[str]]:
     return reverse
 
 
+def resolved_pair_index(records: tuple[Any, ...]) -> dict[str, set[str]]:
+    """反向消解表（`被消解方的 id → {已与它消解的对方 id, …}`）—— GOAL-20261012-063 EC-02。
+
+    **与 `conflicted_by_index` 同一手法**（同族的第三个实例）：消解记载写在**记载方**
+    的记录上（`resolutions=[…]`）⇒ 「与它冲突的那一对**被消解了吗**」在被消解方的记录里
+    **读不出来**，必须扫一遍同批记录。**只从同一批记录算**，不新增 Port 方法。
+
+    **为什么要有它**：**实跑**（序 31 勘察）—— A 与 B 的一对被消解 ⇒ **A 读 `USE`**，
+    而 **B 仍读 `CONFLICTED`**（`conflicted_by=['m-a']` 未被抵消）⇒ **同一条已消解的分歧
+    两端处置不一致**。本表让**被消解方**也能扣掉那一对（**逐对**：只消解一对 ⇒ 其余仍算数）。
+
+    **不猜**：只报**本批里真的记过**的那些（记载方可能在查询范围之外 —— 那种形态由调用方
+    按「看不见 ≠ 不存在」**点名**，不由本函数假装）。
+    """
+    resolved: dict[str, set[str]] = {}
+    for record in records:
+        for item in record.resolutions:
+            resolved.setdefault(str(item.other_id), set()).add(str(record.id))
+    return resolved
+
+
 #: 链终点的**四种形态**（互不混用；都**点名**，**不**静默）。
 #: - `CURRENT`：本条**没有**后继 ⇒ 它**就是**当前版本；
 #: - `SUCCEEDED`：本条有后继且链**有终点** ⇒ 终点是 `terminal` 点名的那些 id；

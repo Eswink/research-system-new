@@ -20,7 +20,7 @@ packages.application.memory 用例，不另建第二套 gate。
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from fastapi import APIRouter, Request
@@ -32,6 +32,7 @@ from packages.application.memory.disposition import (
     conflicted_by_index,
     disposition_of,
     disposition_reason,
+    resolved_pair_index,
     superseded_by_index,
     terminal_versions,
 )
@@ -120,13 +121,22 @@ def _time_and_linkage_fields(
     }
 
 
+@dataclass(frozen=True, slots=True)
+class _RowFacts:
+    """一条记录投影所需的**同批事实**（合成一个参数对象守 `max-args` 门）。
+
+    四件都由调用方按**同一批记录**算出来（记录自身读不出来）：反向取代 / 链终点 /
+    反向冲突（已扣消解）/ 已消解的声明方。与编排面 `_RowFacts` **同形**（同源同值）。
+    """
+
+    superseded_by: list[str] = field(default_factory=list)
+    terminal: dict[str, object] = field(default_factory=dict)
+    conflicted_by: list[str] = field(default_factory=list)
+    resolved_with: list[str] = field(default_factory=list)
+
+
 def _record_dto(
-    record: MemoryRecord,
-    *,
-    now: Timestamp | None = None,
-    superseded_by: list[str] | None = None,
-    terminal: dict[str, object] | None = None,
-    conflicted_by: list[str] | None = None,
+    record: MemoryRecord, *, now: Timestamp | None = None, facts: _RowFacts | None = None
 ) -> MemoryRecordDto:
     """记录 DTO。**只在给了时点时**填 `validity`（不给 ⇒ `None` = 未判定，不猜）。
 
@@ -139,9 +149,10 @@ def _record_dto(
     GOAL-20261011-053 EC-02/EC-03：**链的终点**同理 —— `terminal` 也由调用方按**同一批记录**
     传入（`terminal_versions` 是应用层的纯函数，与反向链接**同一份事实的两种索引**）。
     """
+    facts = facts or _RowFacts()
     validity = validity_at(record, now) if now is not None else None
-    links = list(superseded_by or ())
-    chain: dict[str, object] = dict(terminal or {})
+    links = list(facts.superseded_by)
+    chain: dict[str, object] = dict(facts.terminal)
     base = _time_and_linkage_fields(record, validity, links)
     base["superseded_by"] = links
     _decorate_conflict_and_terminal(
@@ -150,7 +161,10 @@ def _record_dto(
         _ConflictFacts(
             validity=validity,
             links=links,
-            by_others=list(conflicted_by or ()),
+            by_others=[
+                item for item in facts.conflicted_by if item not in set(facts.resolved_with)
+            ],
+            resolved_with=list(facts.resolved_with),
             now=now,
             chain=chain,
         ),
@@ -171,6 +185,7 @@ class _ConflictFacts:
     validity: ValidityState | None
     links: list[str]
     by_others: list[str]
+    resolved_with: list[str]
     now: Timestamp | None
     chain: dict[str, object]
 
@@ -194,6 +209,9 @@ def _decorate_conflict_and_terminal(
     chain_ids = facts.chain.get("terminal")
     base["conflict_resolutions"] = _resolution_dtos(record)
     base["conflicted_by"] = list(by_others)
+    # GOAL-20261012-063 EC-03：**已与本记录消解的那些声明方**（对端可见性 —— 从
+    # `conflicted_by` 里扣掉的那些在这里逐条点名，**不静默消失**）。
+    base["resolved_with"] = list(facts.resolved_with)
     base["disposition"] = disposition_of(
         facts.validity,
         superseded=bool(links),
@@ -238,6 +256,9 @@ async def list_project_memory(
     # GOAL-20261012-062 EC-03：**冲突的反向链接**同样按**同一批记录**算一次
     # （与编排面**同一手法 / 同一份事实** —— 两处不各写一套）。
     conflicted_by = conflicted_by_index(records)
+    # GOAL-20261012-063 EC-03：**反向消解表**同样扫同批记录一次（先扣后判 ——
+    # 已消解的那一对不再算作反向冲突；「同源」与编排面**同一手法**）。
+    resolved = resolved_pair_index(records)
     # GOAL-20261011-053 EC-03：**链的终点**同样按同一批记录算一次（应用层纯函数；
     # 与反向链接是**同一份事实的两种索引** ⇒ 两处**同源同值**，不各写一套判定）。
     terminals = terminal_versions(records)
@@ -248,9 +269,12 @@ async def list_project_memory(
             records=[
                 _record_dto(
                     record,
-                    superseded_by=reverse.get(record.id, []),
-                    terminal=terminals.get(record.id),
-                    conflicted_by=conflicted_by.get(record.id, []),
+                    facts=_RowFacts(
+                        superseded_by=reverse.get(record.id, []),
+                        terminal=dict(terminals.get(record.id) or {}),
+                        conflicted_by=conflicted_by.get(record.id, []),
+                        resolved_with=sorted(resolved.get(record.id, set())),
+                    ),
                 )
                 for record in records
             ],
@@ -260,9 +284,12 @@ async def list_project_memory(
         records=[
             _record_dto(
                 record,
-                superseded_by=reverse.get(record.id, []),
-                terminal=terminals.get(record.id),
-                conflicted_by=conflicted_by.get(record.id, []),
+                facts=_RowFacts(
+                    superseded_by=reverse.get(record.id, []),
+                    terminal=dict(terminals.get(record.id) or {}),
+                    conflicted_by=conflicted_by.get(record.id, []),
+                    resolved_with=sorted(resolved.get(record.id, set())),
+                ),
             )
             for record in records
         ],

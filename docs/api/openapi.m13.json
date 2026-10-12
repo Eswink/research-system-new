@@ -3871,6 +3871,13 @@
             "title": "Reason",
             "type": "string"
           },
+          "resolved_with": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resolved With",
+            "type": "array"
+          },
           "review_after": {
             "anyOf": [
               {
