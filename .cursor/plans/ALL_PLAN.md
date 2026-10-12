@@ -6,6 +6,7 @@
 
 |  | Plan | Status |
 | --- | --- | --- |
+| [x] | [PLAN-20261012-425](tasks/PLAN-20261012-425-mainline-archive-and-the-history-is-kept-checkable.md) | DONE |
 | [ ] | [PLAN-20261012-423](tasks/PLAN-20261012-423-goal-058-ec01-04-a-resolved-conflict-is-decidable.md) | IN_PROGRESS |
 | [x] | [PLAN-20261011-421](tasks/PLAN-20261011-421-goal-057-ec01-04-the-overdue-signal-has-an-exit.md) | DONE |
 | [x] | [PLAN-20261011-419](tasks/PLAN-20261011-419-goal-056-ec01-04-the-waiting-face-has-a-start-point.md) | DONE |
