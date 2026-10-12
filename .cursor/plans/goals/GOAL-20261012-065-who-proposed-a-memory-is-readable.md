@@ -236,7 +236,21 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待 push 后逐条回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
+| `dcd778d`（补建档） | **`total_count = 0`** ⇒ **`covered_by 38304123643`** | GOAL + 子 PLAN + ALL_PLAN 投影 |
+| `b976441`（WP-2/WP-3） | **`total_count = 0`** ⇒ **`covered_by 38304123643`** | 记录字段 + 三适配器 + 迁移 027 + 两读面 |
+| `aaaf0b3`（判据 + 归档） | **`total_count = 0`** ⇒ **`covered_by 38304123643`** | 判据 11 例 + 按压归档 + EC-01 更正 |
+| `52b09dd`（WP-5 主体） | **`total_count = 0`** ⇒ **`covered_by 38304123643`** | 收口验证器 + 断言集 + PG 判据 |
+| `5734910`（EC-05 回填） | **`total_count = 0`** ⇒ **`covered_by 38304123643`** | as-is m0 读数（5803 passed） |
+| `30dbb8e`（**末条实测提交** = 两树归档 + 收口） | `38304123643` **M0 success**（**8/8 job 全 success**）+ `38304122364` **Push on main success** | 两树判词定格归档 + MAINLINE 进展行 + 归档搬运 |
+
+**自我指涉边界（明写并封闭）**：写本台账本身要再提交 ⇒ 会产生新 run。**封闭口径**：
+**末条可引用的实测提交 = `30dbb8e`**（上表最后一行，两 run 全绿）；**其后仅记录提交**，
+**不再追链** —— 若需复核本行结论，取 `30dbb8e` 的两条 run 即足。
+
+**`covered_by` 的用法（逐条）**：五个提交**自身 `total_count = 0`**（**同批推送**只让 tip 起 run）
+⇒ 按纪律**不是**「未取证」，而是**由同批 tip 的 run 覆盖**（各自 `covered_by` 已在表内写明）。
+**空集合 = 未取证**，本表**无一处**留空。**本轮无 `failure` / 无 `cancelled`**（承序 32 的
+`format-check` 真红教训 ⇒ 本轮提交前**先核 `git status` 与 `ruff format --check`**）。
 
 ## 迭代日志
 
