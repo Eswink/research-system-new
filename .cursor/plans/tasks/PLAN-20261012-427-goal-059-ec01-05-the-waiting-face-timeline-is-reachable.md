@@ -2,10 +2,10 @@
 id: PLAN-20261012-427
 slug: goal-059-ec01-05-the-waiting-face-timeline-is-reachable
 title: GOAL-20261012-059 cycle 1（EC-01…EC-05）：界可声明可落库 + 出口可注入 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-12
 updated_at: 2026-10-12
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-428-goal-059-ec01-04-the-timeline-chain-is-reachable.md
 memory_entries: []
 parent_goal: GOAL-20261012-059
 cursor_plan_uri: null
@@ -37,7 +37,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-nudge-reachability.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **界可声明、可落库（EC-02）**：`ProgramCreateDto` / `ProgramDetailDto` 各 +1**可选**键
@@ -47,7 +47,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters tests/domain -q` ⇒ 全绿
       + 新用例（两库往返 / 缺省逐字不变 / 坏界点名）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **出口可注入（EC-03）**：组合根依赖面 +1 可注入字段（缺省 `NullNudgeSink`）；
@@ -56,7 +56,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/application tests/architecture -q`
       ⇒ 全绿 + 新用例（注入后收到 / 未注入静默 / 只读面无写方法 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`V-1` 落库去掉新列 ⇒ RED；`V-2` DTO 摘掉新键 ⇒ RED；
@@ -65,7 +65,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal059_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -74,7 +74,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal059_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261012-427 — GOAL-20261012-059 cycle 1
@@ -126,3 +126,4 @@ round-trip **静默丢弃**（`60` ⇒ `None`，两库都无该列）；③ `ser
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-12 | IN_PROGRESS | cycle 1 建档：三段读数定稿 + 接线三段（声明 / 落库 / 注入）+ 四向反证。 |
+| 2026-10-12 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261012-428` = PASS_WITH_WARNINGS）。**交付**：两 DTO +1 可选键 / SQLite 加法式列 + PG 迁移 `024` / 组合根可注入出口 + 推进路由交出 / 产品路径判据 4 例 + 落库往返判据 19 例 / 四向反证全红 + 归档（`CR=0`）/ 收口验证器 + 断言集进树。 |

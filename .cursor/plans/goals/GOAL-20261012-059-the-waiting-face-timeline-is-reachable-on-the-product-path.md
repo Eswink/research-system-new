@@ -50,7 +50,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-nudge-reachability.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **界可声明、可落库**：`ProgramCreateDto` 与 `ProgramDetailDto` 各 +1 **可选**键
@@ -60,7 +60,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/adapters tests/api tests/domain -q`
       ⇒ 全绿 + 新用例（两库往返 / 缺省逐字不变 / 坏界点名）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **出口可注入（组合根决定；缺省静默）**：组合根的依赖面 +1 可注入字段（缺省
@@ -69,7 +69,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/application tests/architecture -q`
       ⇒ 全绿 + 新用例（注入后收到 / 未注入静默 / 只读面无写方法）+ OpenAPI 快照**同轮**重生成。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`V-1` 落库**去掉新列** ⇒ RED；
@@ -80,7 +80,7 @@ exit_criteria:
     verify: >-
       `scratch/goal059_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；
       归档 `.cursor/plans/goals/evidence/GOAL-20261012-059-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -93,7 +93,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal059_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -119,7 +119,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261012-427-goal-059-ec01-05-the-waiting-face-timeline-is-reachable.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-428-goal-059-ec01-04-the-timeline-chain-is-reachable.md
 memory_entries: []
 ---
 
@@ -133,11 +133,11 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿：三段读数（声明面 / 落库面 / 出口面）逐段实跑 + 序 24/25 产物在位 | **实跑**：`scratch/probe-nudge-reachability.py` | PENDING |
-| EC-02 | **界可声明、可落库**（两 DTO +1 可选键；两库同契约 round-trip；坏形态点名） | `pytest tests/adapters tests/api tests/domain -q` | PENDING |
-| EC-03 | **出口可注入（组合根决定；缺省静默）**+ 快照同轮 | `pytest tests/api tests/application tests/architecture -q` | PENDING |
-| EC-04 | **两向反证** `V-1`…`V-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-01 | 勘察定稿：三段读数（声明面 / 落库面 / 出口面）逐段实跑 + 序 24/25 产物在位 | **实跑**：三段读数**逐条与改动前相反**（RECHECK-428 §1） | **PASS** |
+| EC-02 | **界可声明、可落库**（两 DTO +1 可选键；两库同契约 round-trip；坏形态点名） | 新用例 **19 passed**（SQLite 14 + PG 5）；快照同轮（`+23 / -0`） | **PASS** |
+| EC-03 | **出口可注入（组合根决定；缺省静默）**+ 快照同轮 | 产品路径新用例 **4 passed**（经 HTTP 面注入 ⇒ 出口真收到） | **PASS** |
+| EC-04 | **两向反证** `V-1`…`V-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **691 B / `CR=0`**；`all_red_and_restored=True` | **PASS** |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 / 两树 / as-is m0 待本轮回填 | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -245,10 +245,13 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ **三段实测读数**（声明面零命中 / 落库静默丢弃 / 出口零命中）⇒ 定位时限链的三层断点；五条 EC 全 PENDING；MAINLINE 程序表**新增序 27**（**连续性轴**） | （见 CI 台账） | — | 五条 EC 全 PENDING；组合根注入落点（`D-6`）待 EC-01 读装配链后定 | cycle 1（EC-02 声明 + 落库） |
+| 0 | —（replan + 建档） | `107e9e7` | 只读勘察（0 改动）+ **三段实测读数**（声明面零命中 / 落库静默丢弃 / 出口零命中）⇒ 定位时限链的三层断点 | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 声明 + 落库） |
+| 1 | `PLAN-20261012-427`（WP-1…WP-3） | `107e9e7`（derive）、`75f761e`（界可声明可落库 + 出口可注入 + 快照同轮） | **EC-01/02/03 PASS**：三段接线逐段落地 —— ① 声明面两 DTO +1 可选键（缺省 `None` ⇒ 逐字不变）；② 落库面 SQLite 加法式列 + PG 迁移 `024` 只加列 + 两条 SELECT 带列；③ 出口面组合根 +1 可注入字段（缺省 `NullNudgeSink`）+ 推进路由交出。`tests/adapters tests/domain tests/api tests/application tests/contracts` **3104 passed / 80 skipped**；PG **5 passed** | （见 CI 台账） | 三处自纠（如实登记）：① e2e 共享助手需 +1 可选 kwarg（**加法式**，缺省不发键 ⇒ 既有请求逐字不变）；② 新用例初版误用 harness 预建行（`INSERT OR IGNORE` ⇒ 二次建是静默空操作）⇒ 改直写一行；③ 断言集两处 ruff 门（长行 + 引号风格）⇒ 抽局部变量 | EC-04/05 待做 | cycle 2（EC-04 按压 + EC-05 收口） |
+| 2 | `PLAN-20261012-427`（WP-4、WP-5） | `44e8946`（产品路径判据 + 四向反证归档）、`bcf426c`（收口验证器 + 断言集进树 + PG 判据）、本轮回写提交 | **EC-04 PASS**：`V-1`…`V-4` **全红** + 基线 **GREEN** + 四条 `sha 复原一致=True`；**首轮 `V-3`/`V-4` 按 GREEN ⇒ 两条反证臂失效**，按「该红时红」改判据面后全红（**如实登记** —— 这正是该纪律的现场兑现）。**EC-05 待本轮回填**（验证器 / 两树 / as-is m0 23/23） | （见 CI 台账） | — | 收口面（两树 + m0 + 治理 + 台账） | 无（待收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-12 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**两处如实登记**：① `V-3`/`V-4` 首轮按 GREEN（反证臂失效）⇒ 改判据面后全红；② 新用例初版误用 harness 预建行（`INSERT OR IGNORE` 静默空操作）⇒ 改直写。**残余**：真实外发 / 投递保证 / `Z-1` 混合式 / `W-2` 内容级检测 / `CC-3` 等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261012-428`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-12 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 27**（**轴 = 连续性**），并写修订记录行（只追加）。**三段实测读数**（逐条见「事实层结论」表，命令与读数同在）：(a) 声明面两个 DTO **无该键**；(b) 落库面 round-trip **静默丢弃**（`60` ⇒ `None`）；(c) 出口面 `services/` **零命中**。⇒ **信号与出口建好了，产品面上没有任何东西能到达它们**。五条 EC 全 PENDING。**不**做真实外发 / **不**做升级链 / **不**改序 24/25 的语义。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
