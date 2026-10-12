@@ -133,7 +133,7 @@ memory_entries: []
 | EC-02 | 反向链接可读 + 处置面分派（缺省逐字不变；跨范围点名） | `pytest tests/application tests/domain -q` | **PASS** |
 | EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
 | EC-04 | 两向反证 `Y-1`…`Y-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5806 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -234,7 +234,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（触顶核算 + 建档） | `c6af848` | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 反向链接 + 分派） |
-| 1 | `PLAN-20261012-433`（WP-1…WP-5） | `f20b0e3`（反向索引 + 两成因 + 两读面同源）、`060dcd7`（判据 16 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 四段读数（零命中 + 实跑缺口 + 先例 + 正向未动）；② `conflicted_by_index` 扫同批记录 + 处置面按其分派 + **两成因可区分**（受判面 = 两个形态）；③ 两读面**都引用**同一纯函数 + 缺省逐字不变 + 快照同轮（`+7 / -0`）；④ **四向反证** `Y-1`…`Y-4` 全红 + 基线绿 + 复原一致。`tests/application tests/api tests/adapters` 全绿；mypy **1205 files** 零问题 | （见 CI 台账） | — | EC-05 待做 | cycle 2（EC-05 收口） |
+| 1 | `PLAN-20261012-433`（WP-1…WP-5） | `f20b0e3`（反向索引 + 两成因 + 两读面同源）、`060dcd7`（判据 16 例 + 按压归档）、`a7c3269`（收口面 + 规模门三处抽函数） | **EC-01/02/03/04 PASS**：① 四段读数（零命中 + 实跑缺口 + 先例 + 正向未动）；② `conflicted_by_index` 扫同批记录 + 处置面按其分派 + **两成因可区分**（受判面 = 两个形态）；③ 两读面**都引用**同一纯函数 + 缺省逐字不变 + 快照同轮（`+7 / -0`）；④ **四向反证** `Y-1`…`Y-4` 全红 + 基线绿 + 复原一致。`tests/application tests/api tests/adapters` 全绿；mypy **1205 files** 零问题。**EC-05 PASS**（验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5806 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿）。**一处如实登记**：规模门三处触顶（`_record_dto` 54 / `memory_read` 59 / `_memory_row` 56）⇒ 抽三处助手（语义一字未动） | （见 CI 台账） | — | 无 | 无（本 GOAL 已收口） |
 
 ## 状态历史
 
