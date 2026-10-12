@@ -2,7 +2,7 @@
 id: GOAL-20261012-064
 slug: references-to-a-deleted-record-are-no-longer-silent
 title: 引用被删的记录不再是静默的 —— 写面**校验**被引 id 的存在性（序 22：`supersedes` / `contradictions` 引未知 id ⇒ 拒提交），但**删除之后没人再查**；**实跑取证**：A 声明 `contradictions=['m-b']` 与 `supersedes=['m-b']`，随后 **m-b 被删** ⇒ 读面**照旧披露那两个 id**、**没有任何悬空标记**，`terminal` 甚至报 **`CURRENT`**（「这条就是当前版本」）；**零命中复核**：`dangling_reference` / `missing_reference` / `referenced_but_missing` 三个产品根**全零**；**先例已全在**（序 21 的 `OUT_OF_VIEW` 就是「看不见 ≠ 不存在」的同一纪律）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-12
 updated_at: 2026-10-12
 owners:
@@ -230,7 +230,7 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| （待 push 后逐条回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
 
 ## 迭代日志
 
