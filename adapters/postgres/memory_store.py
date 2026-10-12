@@ -86,26 +86,7 @@ class PostgresMemoryStore(PostgresAdapterBase):
                 # Idempotent: same provenance, return existing record.
                 return _record_from_row(existing)
             raise InvalidInputError(f"memory id already committed: {proposal.id}")
-        record = MemoryRecord(
-            id=proposal.id,
-            tier=proposal.tier,
-            kind=proposal.kind,
-            content=proposal.content,
-            provenance=proposal.provenance,
-            confidence=proposal.confidence,
-            # EC-02/EC-03：提交回执必须与**写进去的**一致（否则读面与写面分叉）。
-            scope=proposal.scope,
-            review_after=proposal.review_after,
-            expires_at=proposal.expires_at,
-            supersedes=list(proposal.supersedes),
-            # GOAL-20261010-045 EC-02 / GOAL-20261012-061 EC-02：提交回执必须与**写进去的**
-            # 一致（此前冲突与生效起点在这里被漏掉 ⇒ 回执与落库分叉）。
-            contradictions=list(proposal.contradictions),
-            valid_from=proposal.valid_from,
-            conflict_review_after=proposal.conflict_review_after,
-            conflict_expires_at=proposal.conflict_expires_at,
-        )
-        return record
+        return _record_from_proposal(proposal)
 
     def get(self, memory_id: str) -> MemoryRecord:
         self._ensure_open()
@@ -208,6 +189,35 @@ class PostgresMemoryStore(PostgresAdapterBase):
 
 def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True)
+
+
+def _record_from_proposal(proposal: MemoryWriteProposal) -> MemoryRecord:
+    """提交回执的记录（**必须与写进去的一致** —— 否则读面与写面分叉）。
+
+    **为什么单列**：`commit` 有 50 行硬上限；声明面变多之后这一段一度把它顶爆
+    ⇒ 逐项搬到这里（**语义一字未动**，只是换落点），并守住那道门。
+    历史上这段漏过 `contradictions` / `valid_from`（序 13 实测）⇒ 逐字段对照
+    `_proposal_values` 的列序。
+    """
+    return MemoryRecord(
+        id=proposal.id,
+        tier=proposal.tier,
+        kind=proposal.kind,
+        content=proposal.content,
+        provenance=proposal.provenance,
+        confidence=proposal.confidence,
+        # EC-02/EC-03：提交回执必须与**写进去的**一致（否则读面与写面分叉）。
+        scope=proposal.scope,
+        review_after=proposal.review_after,
+        expires_at=proposal.expires_at,
+        supersedes=list(proposal.supersedes),
+        # GOAL-20261010-045 EC-02 / GOAL-20261012-061 EC-02：提交回执必须与**写进去的**
+        # 一致（此前冲突与生效起点在这里被漏掉 ⇒ 回执与落库分叉）。
+        contradictions=list(proposal.contradictions),
+        valid_from=proposal.valid_from,
+        conflict_review_after=proposal.conflict_review_after,
+        conflict_expires_at=proposal.conflict_expires_at,
+    )
 
 
 def _proposal_values(proposal: MemoryWriteProposal) -> tuple[Any, ...]:
