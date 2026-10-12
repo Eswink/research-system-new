@@ -2,7 +2,7 @@
 id: GOAL-20261012-060
 slug: the-hybrid-form-of-gate-declarations
 title: 闸门声明的混合式 —— 序 14（单序号）/ 16（条件式）/ 23（多点）三条声明**互斥**（`_validate_gate_exclusivity` 实测点名拒绝）⇒ 「第 1、3 轮停，**且**判词为 X 时也停」**结构上做不到**；`Z-1` 的混合式形态自 `GOAL-20261010-048` 登记以来**未做**
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-12
 updated_at: 2026-10-12
 owners:
@@ -217,7 +217,7 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| （待 push 后回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
 
 ## 迭代日志
 
