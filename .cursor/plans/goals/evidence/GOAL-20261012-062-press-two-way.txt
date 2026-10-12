@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 29 passed in 1.48s
+Y-1 反向链接被摘掉（被声明方读不到）: 按压 RED
+    sha 复原一致=True | d7a9cee49246
+    suite: 1 failed, 28 passed in 2.95s
+Y-2 处置面不按反向分派（仍照用）: 按压 RED
+    sha 复原一致=True | d7a9cee49246
+    suite: 2 failed, 27 passed in 3.16s
+Y-3 缺省形态被改动（没人声明也判冲突）: 按压 RED
+    sha 复原一致=True | d7a9cee49246
+    suite: 2 failed, 27 passed in 2.98s
+Y-4 两种成因混用（反向句无条件追加）: 按压 RED
+    sha 复原一致=True | d7a9cee49246
+    suite: 1 failed, 28 passed in 2.98s
+SUMMARY presses=4 all_red_and_restored=True
