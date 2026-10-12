@@ -2756,6 +2756,32 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HybridGateDto": {
+        "additionalProperties": false,
+        "description": "**混合式**人工闸门的声明（GOAL-20261012-060 EC-02）—— 两维**同时生效**。\n\n为什么是嵌套对象而不是两个可选字段：两维**缺一不可**（只给一半就不是混合式），\n放进同一个对象 ⇒ 「只声明一半」在**建程序面上**就写不出来（缺键 ⇒ 422）。\n两个列表各自非空由域层校验（`HybridGateDeclaration`）。",
+        "properties": {
+          "at_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "At Indexes",
+            "type": "array"
+          },
+          "on_verdicts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "On Verdicts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "at_indexes",
+          "on_verdicts"
+        ],
+        "title": "HybridGateDto",
+        "type": "object"
+      },
       "IncidentAssignDto": {
         "additionalProperties": false,
         "properties": {
@@ -4808,6 +4834,16 @@
             ],
             "title": "Human Gate At Indexes"
           },
+          "human_gate_hybrid": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HybridGateDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "human_gate_on_verdicts": {
             "anyOf": [
               {
@@ -4953,6 +4989,16 @@
               }
             ],
             "title": "Human Gate At Indexes"
+          },
+          "human_gate_hybrid": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HybridGateDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "human_gate_on_verdicts": {
             "anyOf": [

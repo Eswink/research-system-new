@@ -31,6 +31,7 @@ from packages.application.run_orchestration.program_runner import advance_progra
 from packages.application.run_orchestration.program_waiting import GateClock
 from packages.domain.core import ID, Timestamp
 from packages.domain.program import (
+    HybridGateDeclaration,
     ProgramContinueRule,
     ProgramDecision,
     ResearchProgram,
@@ -39,6 +40,7 @@ from packages.domain.run import ResearchRun
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.programs import (
+    HybridGateDto,
     ProgramAdvanceDto,
     ProgramCreateDto,
     ProgramDecisionDto,
@@ -180,6 +182,15 @@ async def create_program(
         ),
         # GOAL-20261012-059 EC-02：超期界（缺省 None = 未声明 ⇒ 逐字不变）。
         gate_nudge_after_seconds=payload.gate_nudge_after_seconds,
+        # GOAL-20261012-060 EC-02：混合式闸门（缺省 None = 不设 ⇒ 逐字不变）。
+        human_gate_hybrid=(
+            HybridGateDeclaration(
+                at_indexes=tuple(payload.human_gate_hybrid.at_indexes),
+                on_verdicts=tuple(payload.human_gate_hybrid.on_verdicts),
+            )
+            if payload.human_gate_hybrid is not None
+            else None
+        ),
     )
     del protocol  # 只用其可解析性做校验；声明面存的是路径（canonical 里的协议标识）
     store.create(program)
@@ -213,6 +224,15 @@ def _detail_dto(deps: ApiDeps, store: ProgramStore, program_id: str) -> ProgramD
         ),
         # GOAL-20261012-059 EC-02：超期界的声明（缺省 None = 未声明）。
         gate_nudge_after_seconds=program.gate_nudge_after_seconds,
+        # GOAL-20261012-060 EC-02：混合式闸门的声明（缺省 None = 未声明）。
+        human_gate_hybrid=(
+            HybridGateDto(
+                at_indexes=list(program.human_gate_hybrid.at_indexes),
+                on_verdicts=list(program.human_gate_hybrid.on_verdicts),
+            )
+            if program.human_gate_hybrid is not None
+            else None
+        ),
         created_at=program.created_at.value.isoformat(),
         updated_at=program.updated_at.value.isoformat(),
         runs=[

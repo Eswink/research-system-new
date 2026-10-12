@@ -92,6 +92,34 @@ class ProgramContinueRule:
 
 
 @dataclass(frozen=True, slots=True)
+class HybridGateDeclaration:
+    """**混合式**人工闸门的声明（GOAL-20261012-060 EC-02）—— 两个维度**同时生效**。
+
+    为什么是一个值对象而不是两个并列字段：两个维度**缺一不可**（只给一半就不是混合式 ——
+    那是序 23 的多点或序 16 的条件式），把它们放进同一个对象 ⇒ 「只声明一半」在**构造上**
+    写不出来（`__post_init__` 拒，不是靠调用方自律）。
+
+    **两个维度**：
+
+    - `at_indexes`：**这一组**序号各自跑完之后停下等人（与序 23 的多点**同一语义**）；
+    - `on_verdicts`：上一轮落库判词命中其中之一时停下等人（与序 16 的条件式**同一语义**）。
+
+    任一命中即停，判词**各自点名**是哪一维（或两维）命中的 —— 这是本形态成立的前提。
+    """
+
+    at_indexes: tuple[int, ...]
+    on_verdicts: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not self.at_indexes:
+            raise ValueError("hybrid gate at_indexes must name at least one index when declared")
+        if not self.on_verdicts:
+            raise ValueError("hybrid gate on_verdicts must name at least one verdict when declared")
+        if any(not item for item in self.on_verdicts):
+            raise ValueError("hybrid gate on_verdicts must not be empty strings")
+
+
+@dataclass(frozen=True, slots=True)
 class ResearchProgram:
     """一次「研究程序」的声明（项目内、按协议推进的多轮 run 编排单位）。"""
 
@@ -130,6 +158,17 @@ class ResearchProgram:
     # 因此**不参与互斥**：单点 / 条件式 / 多点都能配它。
     # **只点名，不自动放行 / 不自动拒绝**（决定权仍在人）。
     gate_nudge_after_seconds: int | None = None
+    # GOAL-20261012-060 EC-02：**混合式人工闸门**（可选声明；缺省 `None` = **不设**
+    # ⇒ 既有行为逐字不变）。语义 = 「**这一组**序号各自跑完之后停下等人」**且**「上一轮落库
+    # 判词命中其中之一时也停下等人」—— 两个维度**同时生效**（任一命中即停，判词**各自点名**
+    # 是哪一维命中的）。
+    # 为什么单列一个形态而不是解除互斥：三条既有声明各有各的**语义**（序 14 按序号 / 048 按
+    # 落库事实 / 055 按一组序号），把它们**同时声明**会让「为什么停」读不出是哪一条要求的
+    # —— 那条互斥是**同一维度**上的重复声明纪律，**本轮不解除**（承 GOAL-20261011-055 的
+    # `_validate_gate_exclusivity`）。本形态是**一维组合**：序号组 × 取值集合，两种触发
+    # 分开点名 ⇒ 「为什么停」仍读得出。
+    # 与另外三条声明**互斥**（同时声明 ⇒ 点名拒绝，理由同上）。
+    human_gate_hybrid: HybridGateDeclaration | None = None
     created_at: Timestamp = field(default_factory=Timestamp.now)
     updated_at: Timestamp = field(default_factory=Timestamp.now)
 
@@ -156,6 +195,11 @@ class ResearchProgram:
         """是否声明了**多点**闸门（GOAL-20261011-055；同 `condition_gate_hit` 的用途）。"""
         return self.human_gate_at_indexes is not None
 
+    @property
+    def hybrid_gate_hit(self) -> bool:
+        """是否声明了**混合式**闸门（GOAL-20261012-060；同 `condition_gate_hit` 的用途）。"""
+        return self.human_gate_hybrid is not None
+
 
 def _validate_gate_declarations(program: ResearchProgram) -> None:
     """三条闸门声明的校验（序 14 的序号 / 048 的条件 / 055 的**多点**）——**坏声明必须点名**。
@@ -167,6 +211,7 @@ def _validate_gate_declarations(program: ResearchProgram) -> None:
     _validate_nudge_bound(program)
     _validate_condition_gate(program)
     _validate_multi_point_gate(program)
+    _validate_hybrid_gate(program)
     _validate_gate_exclusivity(program)
 
 
@@ -228,12 +273,38 @@ def _validate_multi_point_gate(program: ResearchProgram) -> None:
         raise ValueError(f"human_gate_at_indexes must not repeat an index (got {repeated})")
 
 
-def _validate_gate_exclusivity(program: ResearchProgram) -> None:
-    """三条闸门声明**互斥**：一次只用一种形态（并用 ⇒ 点名拒绝）。
+def _validate_hybrid_gate(program: ResearchProgram) -> None:
+    """GOAL-20261012-060 EC-02 的**混合式**声明：逐点都在 `1..max_runs`、**不得重复**。
 
-    理由与序 16 立这条时**逐字相同**：两条（今为三条）声明的**求值时序**不同
-    （按序号 / 按落库事实 / 按一组序号），并存会让「为什么停」读不出是**哪一条**要求的。
-    **055 的多点与 048 的条件式同样互斥**（本轮**不**解除既有互斥，也不把它放宽）。
+    两个维度各自的**非空**由 `HybridGateDeclaration.__post_init__` 保证（值对象在构造上
+    就写不出「只声明一半」）；这里补**与 `max_runs` 有关**的那一半校验（值对象看不见它）。
+    越界与重复**都点名**（与序 23 的多点声明**同一理由**）：越界点**永远不会触发**，
+    重复点会让「这一轮为什么停」看起来像声明了两次。
+    """
+    declared = program.human_gate_hybrid
+    if declared is None:
+        return
+    out_of_range = [item for item in declared.at_indexes if not (1 <= item <= program.max_runs)]
+    if out_of_range:
+        raise ValueError(
+            "human_gate_hybrid at_indexes entries must be within 1..max_runs when declared "
+            f"(got {out_of_range}, max_runs={program.max_runs})"
+        )
+    repeated = sorted(
+        {item for item in declared.at_indexes if list(declared.at_indexes).count(item) > 1}
+    )
+    if repeated:
+        raise ValueError(f"human_gate_hybrid must not repeat an index (got {repeated})")
+
+
+def _validate_gate_exclusivity(program: ResearchProgram) -> None:
+    """四条闸门声明**互斥**：一次只用一种形态（并用 ⇒ 点名拒绝）。
+
+    理由与序 16 立这条时**逐字相同**：各条声明的**求值时序**不同（按序号 / 按落库事实 /
+    按一组序号 / 按**一组序号 × 取值集合**），并存会让「为什么停」读不出是**哪一条**要求的。
+    **055 的多点与 048 的条件式同样互斥**（本轮**不**解除既有互斥，也不把它放宽）；
+    **060 的混合式**同列其中 —— 它**本身**就是「两维同时生效」的那一种形态，
+    再叠别的声明同样会让「为什么停」读不出。
     """
     declared_forms = [
         name
@@ -241,6 +312,7 @@ def _validate_gate_exclusivity(program: ResearchProgram) -> None:
             ("human_gate_at_index", program.human_gate_at_index),
             ("human_gate_on_verdicts", program.human_gate_on_verdicts),
             ("human_gate_at_indexes", program.human_gate_at_indexes),
+            ("human_gate_hybrid", program.human_gate_hybrid),
         )
         if value is not None
     ]

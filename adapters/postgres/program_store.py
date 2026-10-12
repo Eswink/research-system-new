@@ -51,6 +51,25 @@ def _as_datetime(value: Any) -> datetime:
     return value
 
 
+def _decode_hybrid(row: Any) -> Any:
+    """混合式声明的两列解码（**成对**；任一为 `NULL` ⇒ 整条未声明）。
+
+    与 SQLite 侧同名助手**同一口径**（一列有一列无 = 落库被外部改写，**不猜**）。
+    """
+    if row["human_gate_hybrid_indexes_json"] is None or row["human_gate_hybrid_verdicts_json"] is None:
+        return None
+    from packages.domain.program import HybridGateDeclaration
+
+    return HybridGateDeclaration(
+        at_indexes=tuple(
+            int(str(item)) for item in _json_object(row["human_gate_hybrid_indexes_json"])
+        ),
+        on_verdicts=tuple(
+            str(item) for item in _json_object(row["human_gate_hybrid_verdicts_json"])
+        ),
+    )
+
+
 def _decode_program(row: Any) -> ResearchProgram:
     payload = _json_object(row["continue_rule_json"])
     return ResearchProgram(
@@ -82,6 +101,8 @@ def _decode_program(row: Any) -> ResearchProgram:
             if row["gate_nudge_after_seconds"] is not None
             else None
         ),
+        # GOAL-20261012-060 EC-02：混合式（两列**成对**；任一 NULL ⇒ 未声明）。
+        human_gate_hybrid=_decode_hybrid(row),
         continue_rule=ProgramContinueRule(
             verdict_in=tuple(str(item) for item in payload["verdict_in"])
         ),
@@ -138,9 +159,10 @@ class PostgresProgramStore(PostgresAdapterBase):
         self._conn.execute(
             "INSERT INTO research_programs (program_id, project_id, protocol_id, max_runs,"
             " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
-            " human_gate_at_indexes_json, gate_nudge_after_seconds, continue_rule_json,"
-            " created_at, updated_at)"
-            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            " human_gate_at_indexes_json, gate_nudge_after_seconds,"
+            " human_gate_hybrid_indexes_json, human_gate_hybrid_verdicts_json,"
+            " continue_rule_json, created_at, updated_at)"
+            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             " ON CONFLICT (program_id) DO NOTHING",
             (
                 program.id,
@@ -165,6 +187,24 @@ class PostgresProgramStore(PostgresAdapterBase):
                 ),
                 # GOAL-20261012-059 EC-02：NULL = 未声明（列序与 `_PROGRAM_SELECT` 同源）。
                 program.gate_nudge_after_seconds,
+                (
+                    json.dumps(
+                        list(program.human_gate_hybrid.at_indexes),
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    )
+                    if program.human_gate_hybrid is not None
+                    else None
+                ),
+                (
+                    json.dumps(
+                        list(program.human_gate_hybrid.on_verdicts),
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    )
+                    if program.human_gate_hybrid is not None
+                    else None
+                ),
                 json.dumps(
                     {"verdict_in": list(program.continue_rule.verdict_in)},
                     ensure_ascii=False,

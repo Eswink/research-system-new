@@ -64,6 +64,9 @@ def declared_gate_trigger(program: Any, last_index: int, verdicts: tuple[str, ..
     - `human_gate_at_indexes`（GOAL-20261011-055 EC-03，`Z-1`）：**这一组序号中的任何一个**
       是本轮 ⇒ 触发 —— 与单点那条**同一套求值时序**（按序号），只是点数从**一个**变成**一组**；
       点名句**指出是哪一个点**触发的（一组里可能多个，逐个点名）。
+    - `human_gate_hybrid`（GOAL-20261012-060 EC-03）：**两维同时生效** —— 序号维命中
+      **或**条件维命中即触发；**命中的维各自点名**（两维都命中 ⇒ 两条都点名，见
+      `_hybrid_trigger`）。
 
     **只读**：本函数不碰审批面、不改任何状态（注册在有副作用的那半边，见
     `program_gate_registration`）。三条声明互斥（域层点名拒绝）⇒ 至多一条能命中。
@@ -76,6 +79,9 @@ def declared_gate_trigger(program: Any, last_index: int, verdicts: tuple[str, ..
     at_indexes = getattr(program, "human_gate_at_indexes", None)
     if at_indexes is not None:
         return _multi_point_trigger(list(at_indexes), last_index)
+    hybrid = getattr(program, "human_gate_hybrid", None)
+    if hybrid is not None:
+        return _hybrid_trigger(hybrid, last_index, verdicts)
     on_verdicts = getattr(program, "human_gate_on_verdicts", None)
     if on_verdicts is None:
         return None
@@ -102,6 +108,39 @@ def _multi_point_trigger(at_indexes: list[int], last_index: int) -> str | None:
         f"第 {last_index} 轮是**声明的人工闸门**之一"
         f"（`human_gate_at_indexes={[int(item) for item in at_indexes]}`，本轮命中 {hits}）"
     )
+
+
+def _hybrid_trigger(declaration: Any, last_index: int, verdicts: tuple[str, ...]) -> str | None:
+    """**混合式**闸门在本轮是否触发（是 ⇒ 点名句，否 ⇒ `None`）—— GOAL-20261012-060。
+
+    **两维各自判、各自点名**（这是本形态成立的前提：判词要回答「为什么停」，而两维的
+    理由**不同** —— 一维是「这一轮本来就该停」，另一维是「落库事实长成了声明的样子」）：
+
+    - 序号维命中 ⇒ 点名**是哪个点**（与序 23 的多点**同一措辞族**）；
+    - 条件维命中 ⇒ 点名**命中哪些取值**（与序 16 的条件式**同一措辞族**）；
+    - **两维都命中 ⇒ 两条都点名**（不静默取先命中的那一条 —— 后者会让读者以为只命中了一维）。
+
+    只读：不碰审批面、不改状态（与 `declared_gate_trigger` 的其余分支同一纪律）。
+    """
+    hits_index = [int(item) for item in declaration.at_indexes if int(item) == int(last_index)]
+    declared_verdicts = tuple(str(item) for item in declaration.on_verdicts)
+    hits_verdict = [item for item in verdicts if item in declared_verdicts]
+    notes: list[str] = []
+    if hits_index:
+        notes.append(
+            f"第 {last_index} 轮是**声明的人工闸门**之一"
+            f"（`human_gate_hybrid.at_indexes={[int(item) for item in declaration.at_indexes]}`，"
+            f"本轮命中 {hits_index}）"
+        )
+    if hits_verdict:
+        notes.append(
+            "上一轮落库判词命中**声明的条件式人工闸门**"
+            f"（`human_gate_hybrid.on_verdicts={list(declared_verdicts)}`，"
+            f"命中 {list(hits_verdict)}）"
+        )
+    if not notes:
+        return None
+    return "**混合式**闸门命中： " + "； 且 ".join(notes)
 
 
 def _gate_inputs(inputs: GateInputs | tuple[str, ...] | None) -> GateInputs:

@@ -14,6 +14,18 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
+class HybridGateDto(BaseModel):
+    """**混合式**人工闸门的声明（GOAL-20261012-060 EC-02）—— 两维**同时生效**。
+
+    为什么是嵌套对象而不是两个可选字段：两维**缺一不可**（只给一半就不是混合式），
+    放进同一个对象 ⇒ 「只声明一半」在**建程序面上**就写不出来（缺键 ⇒ 422）。
+    两个列表各自非空由域层校验（`HybridGateDeclaration`）。
+    """
+
+    at_indexes: list[int]
+    on_verdicts: list[str]
+
+
 class ProgramCreateDto(BaseModel):
     """建程序的输入（协议按 `examples/protocols/` 内路径解析，与启动 run 同一校验）。"""
 
@@ -37,6 +49,10 @@ class ProgramCreateDto(BaseModel):
     #: 且**交给注入的出口**。缺省 `None` = **不设界**（既有行为逐字不变）；
     #: 必须是**正整数**（零 / 负由域层点名拒绝）。与三种闸门声明**正交**（不参与互斥）。
     gate_nudge_after_seconds: int | None = Field(default=None, ge=1)
+    #: GOAL-20261012-060 EC-02：**混合式**人工闸门（序号组 **且** 取值集合）——
+    #: 任一维命中即停下等人。缺省 `None` = 不设（既有行为逐字不变）；
+    #: 与另外三条声明**互斥**（域层点名拒绝）。
+    human_gate_hybrid: HybridGateDto | None = None
 
 
 class ProgramDecisionDto(BaseModel):
@@ -78,6 +94,8 @@ class ProgramDetailDto(BaseModel):
     human_gate_at_indexes: list[int] | None = None
     #: GOAL-20261012-059 EC-02：超期界（秒）的声明（缺省 `None` = 未声明）。
     gate_nudge_after_seconds: int | None = None
+    #: GOAL-20261012-060 EC-02：混合式闸门的声明（缺省 `None` = 未声明）。
+    human_gate_hybrid: HybridGateDto | None = None
     created_at: str
     updated_at: str
     runs: list[ProgramRunDto]
