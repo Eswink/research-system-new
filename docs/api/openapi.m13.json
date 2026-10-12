@@ -3820,6 +3820,13 @@
             ],
             "title": "Conflict Timeliness"
           },
+          "conflicted_by": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conflicted By",
+            "type": "array"
+          },
           "content": {
             "title": "Content",
             "type": "string"

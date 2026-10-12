@@ -36,7 +36,7 @@ from typing import Any
 # GOAL-20261011-052 EC-03：**判定已搬去应用层**（两个读面共用；HTTP 面**不得** import
 # 具体适配器 ⇒ 共用判定必须落在它能 import 的那一层）。本模块**原样再导出**这些名字
 # （既有调用方与判据不受影响；**判定实现一字未动**）。
-from packages.application.memory.disposition import (
+from packages.application.memory.disposition import (  # noqa: E402
     DISPOSITION_ANNOTATE,
     DISPOSITION_CONFLICTED,
     DISPOSITION_SKIP,
@@ -46,6 +46,7 @@ from packages.application.memory.disposition import (
     TERMINAL_CYCLE,
     TERMINAL_OUT_OF_VIEW,
     TERMINAL_SUCCEEDED,
+    conflicted_by_index,
     disposition_of,
     disposition_reason,
     superseded_by_index,
@@ -140,6 +141,7 @@ def _memory_row(
     moment: Timestamp,
     superseded_by: list[str] | None = None,
     terminal: dict[str, object] | None = None,
+    conflicted_by: list[str] | None = None,
 ) -> dict[str, object]:
     """一条记忆的读面投影：**身份 + 内容 + 时效 + 取代关系 + 当前版本 + 处置 + 理由**。
 
@@ -172,14 +174,23 @@ def _memory_row(
     # 未声明**不得**被当成「已失效」）。声明面（谁与谁冲突 / 谁消解了哪一对）**一字不动**。
     row["conflict_timeliness"] = _conflict_timeliness_face(record, moment)
     row["terminal"] = _terminal_face(record, terminal)
+    # GOAL-20261012-062 EC-02：**被别人声明冲突**（本记录自己没声明）—— 由调用方按
+    # **同一批记录**算出来（`conflicted_by_index`，与 `superseded_by` **同一手法**）。
+    by_others = list(conflicted_by or ())
+    row["conflicted_by"] = by_others
     row["disposition"] = disposition_of(
-        state, superseded=bool(superseded_by), conflicted=conflicted
+        state,
+        superseded=bool(superseded_by),
+        conflicted=conflicted,
+        conflicted_by=bool(by_others),
     )
     #: 理由：处置是**可复核**的，不是不透明标签。
     # GOAL-20261011-051：**冲突的处置理由由 `_reason` 自己点名**（那一支已逐字给出 id）
     # ⇒ 不再叠加 `_conflict_note`（否则同一句出现两遍）。`_conflict_note` 保留给
     # **未被 `_reason` 覆盖**的场合（见下）—— 「不是当前处置理由、但读者仍该知道有冲突」。
-    row["reason"] = disposition_reason(state, record, superseded_by=superseded_by)
+    row["reason"] = disposition_reason(
+        state, record, superseded_by=superseded_by, conflicted_by=by_others
+    )
     return row
 
 
@@ -222,8 +233,17 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     # GOAL-20261011-053 EC-02（`BB-1`）：**链的终点**同样从**同一批记录**算一次
     # （纯函数；只读声明。与反向链接是同一份事实的两种索引 —— 不各定义一遍「谁取代了谁」）。
     terminals = terminal_versions(records)
+    # GOAL-20261012-062 EC-02：**冲突的反向链接**同样扫同批记录一次
+    # （与 `superseded_by_index` **同一手法**；正向链接写在**声明方**的记录上）。
+    conflicted_by = conflicted_by_index(records)
     rows = [
-        _memory_row(record, moment, reverse.get(str(record.id), []), terminals.get(str(record.id)))
+        _memory_row(
+            record,
+            moment,
+            reverse.get(str(record.id), []),
+            terminals.get(str(record.id)),
+            conflicted_by.get(str(record.id), []),
+        )
         for record in records
     ]
     counts = {

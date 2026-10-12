@@ -40,7 +40,11 @@ _DISPOSITIONS: dict[ValidityState, str] = {
 
 
 def disposition_of(
-    state: ValidityState | None, *, superseded: bool = False, conflicted: bool = False
+    state: ValidityState | None,
+    *,
+    superseded: bool = False,
+    conflicted: bool = False,
+    conflicted_by: bool = False,
 ) -> str:
     """时效状态 → **处置**（纯函数；`None` = 未声明或未到 ⇒ 照用，**不猜**）。
 
@@ -66,7 +70,10 @@ def disposition_of(
         return DISPOSITION_SUPERSEDED
     if state is ValidityState.EXPIRED:
         return DISPOSITION_SKIP
-    if conflicted:
+    # GOAL-20261012-062 EC-02：**被别人声明冲突**（本记录自己没声明）⇒ 与 `conflicted`
+    # **同类不同因**（都落 `CONFLICTED`：可用但**要人看**）—— 判词点得出是哪一种
+    # （见 `disposition_reason` 的 `conflicted_by` 那一支）。
+    if conflicted or conflicted_by:
         return DISPOSITION_CONFLICTED
     if state is None:
         return DISPOSITION_USE
@@ -74,7 +81,10 @@ def disposition_of(
 
 
 def disposition_reason(
-    state: ValidityState | None, record: Any, superseded_by: list[str] | None = None
+    state: ValidityState | None,
+    record: Any,
+    superseded_by: list[str] | None = None,
+    conflicted_by: list[str] | None = None,
 ) -> str:
     """处置理由（点名状态与**被引的声明值** —— 读面原文，不重算）+ 冲突补充点名。
 
@@ -86,7 +96,24 @@ def disposition_reason(
     —— 「处置理由」与「读者可见信息」的**分离**：两者都不省，也都不重复。
     """
     note = _reason(state, record, superseded_by=superseded_by)
-    return note + _extra_conflict_note(state, record)
+    # GOAL-20261012-062 EC-02：**被别人声明冲突**（本记录自己没声明）—— 与 `conflicted`
+    # **同类不同因**：都落 `CONFLICTED`，但判词必须点得出是**哪一种**
+    # （读者要能回答「这条是我声明的冲突，还是别人声明与它冲突」）。
+    by_note = _conflicted_by_note(state, record, list(conflicted_by or ()))
+    return note + by_note + _extra_conflict_note(state, record)
+
+
+def _conflicted_by_note(state: ValidityState | None, record: Any, others: list[str]) -> str:
+    """**被声明方**的点名句（`others` 空 ⇒ 空串 —— **不**凭空）。
+
+    只在「**自己没有**正向冲突声明」时追加：两条都点名会读成同一件事被说两遍
+    （正向那一支已由 `_reason` 点名）。
+    """
+    if not others:
+        return ""
+    if record.contradictions:
+        return ""
+    return f"；**被 {','.join(others)} 声明与它冲突**（未消解 ⇒ 照用但标注）"
 
 
 def _reason(
@@ -125,6 +152,27 @@ def superseded_by_index(records: tuple[Any, ...]) -> dict[str, list[str]]:
     for record in records:
         for old_id in record.supersedes:
             reverse.setdefault(str(old_id), []).append(str(record.id))
+    return reverse
+
+
+def conflicted_by_index(records: tuple[Any, ...]) -> dict[str, list[str]]:
+    """反向链接表（`被声明的 id → [声明方的 id, …]`）—— GOAL-20261012-062 EC-02。
+
+    **与 `superseded_by_index` 同一手法**（同族的第二个实例）：正向链接写在**声明方**
+    的记录上（`contradictions=[...]`）⇒ 「谁声明了与我冲突」在被声明方的记录里**读不出来**，
+    必须扫一遍同批记录。**只从同一批记录算**，不新增 Port 方法。
+
+    **为什么要有它**：一条记忆「能不能进下一步」不该取决于「**是不是它**先声明了冲突」——
+    序 19 让**声明方**可判定（`CONFLICTED`），而**被声明方**此前**完全看不见**
+    （实测：B 侧 `disposition=USE` 照用）。
+
+    **不猜**：只报**本批里真的声明过**的那些（看不见 ≠ 不存在 —— 声明方可能在查询范围之外，
+    跨范围那种形态由调用方按 `OUT_OF_VIEW` 一类**点名**，不由本函数假装）。
+    """
+    reverse: dict[str, list[str]] = {}
+    for record in records:
+        for other_id in record.contradictions:
+            reverse.setdefault(str(other_id), []).append(str(record.id))
     return reverse
 
 

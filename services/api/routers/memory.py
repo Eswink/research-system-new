@@ -28,6 +28,7 @@ from fastapi import APIRouter, Request
 # `services.api.routers` import 具体适配器 ⇒ 同源判定必须落在应用层，两处都从那里取）。
 from packages.application.memory.disposition import (
     TERMINAL_CURRENT,
+    conflicted_by_index,
     disposition_of,
     disposition_reason,
     superseded_by_index,
@@ -124,6 +125,7 @@ def _record_dto(
     now: Timestamp | None = None,
     superseded_by: list[str] | None = None,
     terminal: dict[str, object] | None = None,
+    conflicted_by: list[str] | None = None,
 ) -> MemoryRecordDto:
     """记录 DTO。**只在给了时点时**填 `validity`（不给 ⇒ `None` = 未判定，不猜）。
 
@@ -144,12 +146,19 @@ def _record_dto(
     base = _time_and_linkage_fields(record, validity, links)
     base["superseded_by"] = links
     base["conflict_resolutions"] = _resolution_dtos(record)
+    # GOAL-20261012-062 EC-03：**被别人声明冲突**（同源：与编排面**同一批记录**算出的
+    # 反向链接；本记录自己没声明的那一种）。
+    by_others = list(conflicted_by or ())
+    base["conflicted_by"] = by_others
     base["disposition"] = disposition_of(
         validity,
         superseded=superseded,
         conflicted=bool(record.unresolved_conflicts),
+        conflicted_by=bool(by_others),
     )
-    base["reason"] = disposition_reason(validity, record, superseded_by=links)
+    base["reason"] = disposition_reason(
+        validity, record, superseded_by=links, conflicted_by=by_others
+    )
     # GOAL-20261012-061 EC-03：**冲突时效**同样**直接调**应用层纯函数（与编排面同源；
     # 不给时点 ⇒ `None` = 未判定，**不猜** —— 与 `validity` 那一条**同一口径**）。
     base["conflict_timeliness"] = (
@@ -186,6 +195,9 @@ async def list_project_memory(
     # GOAL-20261011-052 EC-02：反向取代链接要看见**别人** ⇒ 按**同一批记录**扫一次
     # （复用编排面同一助手；不逐条再查 —— 那会 N+1 且两处看到不同的世界）。
     reverse = superseded_by_index(records)
+    # GOAL-20261012-062 EC-03：**冲突的反向链接**同样按**同一批记录**算一次
+    # （与编排面**同一手法 / 同一份事实** —— 两处不各写一套）。
+    conflicted_by = conflicted_by_index(records)
     # GOAL-20261011-053 EC-03：**链的终点**同样按同一批记录算一次（应用层纯函数；
     # 与反向链接是**同一份事实的两种索引** ⇒ 两处**同源同值**，不各写一套判定）。
     terminals = terminal_versions(records)
@@ -198,6 +210,7 @@ async def list_project_memory(
                     record,
                     superseded_by=reverse.get(record.id, []),
                     terminal=terminals.get(record.id),
+                    conflicted_by=conflicted_by.get(record.id, []),
                 )
                 for record in records
             ],
@@ -209,6 +222,7 @@ async def list_project_memory(
                 record,
                 superseded_by=reverse.get(record.id, []),
                 terminal=terminals.get(record.id),
+                conflicted_by=conflicted_by.get(record.id, []),
             )
             for record in records
         ],
