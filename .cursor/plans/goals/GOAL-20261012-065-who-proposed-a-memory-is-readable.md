@@ -2,7 +2,7 @@
 id: GOAL-20261012-065
 slug: who-proposed-a-memory-is-readable
 title: 谁提议的这条记忆读得出来 —— `proposed_by` 在**提案**上有（序 13 起），但**提交后丢弃**；**实测（字段逐个读出）**：`dataclasses.fields` 两次对照 ⇒ `MemoryWriteProposal` **有** `proposed_by` 而 `MemoryRecord` **根本没有该字段**（`hasattr` 亦为 `False`）⇒ 「这条记忆是谁提的」在 canonical **无从可查**；**实跑**：经产品路径提交带 `proposed_by` 的提案 ⇒ 落库记录**没有作者面**，**编排读面 20 个键里也没有它**（`sorted(row)` 逐个读出）；**零命中复核**：`proposed_by` 在**读面 / 两个适配器**上**全零**（只在提案面与两个内部调用点）| 序 13、22 |
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-13
 updated_at: 2026-10-13
 owners:
@@ -236,7 +236,7 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| （待 push 后逐条回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
 
 ## 迭代日志
 
