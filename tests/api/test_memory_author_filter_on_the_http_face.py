@@ -26,11 +26,19 @@ _PATH = f"/projects/{_PROJECT}/memory"
 
 
 def _seeded_deps() -> Any:
-    """两条不同作者的记忆（走 store 落 canonical）—— 受控装配（判据只读面）。"""
+    """两条不同作者的记忆（走 store 落 canonical）—— 受控装配（判据只读面）。
+
+    与 `tests/api/test_memory_api.py` 的既有手法**同形**：**显式注入**一个具体的
+    `FakeMemoryStore`（不是 `deps.memory` 的 `Any | None` ⇒ 顺带守住严格 mypy）。
+    """
+    from adapters.fakes.memory_store import FakeMemoryStore
+
     deps = make_run_ready_deps()
-    deps.memory.allow_source("probe:author")
+    store = FakeMemoryStore(allowed_sources=("probe:author",))
+    store.allow_source("probe:author")
+    deps.memory = store
     for memory_id, author in (("m-x", "agent:x"), ("m-y", "agent:y")):
-        deps.memory.commit(
+        store.commit(
             MemoryWriteProposal(
                 id=memory_id,
                 tier=MemoryTier.PROJECT,
@@ -120,9 +128,13 @@ def test_the_write_face_is_untouched() -> None:
     与 `tests/api/test_memory_api.py` 的既有手法**同形**：来源**先注册**再直写 store
     （deny-by-default 的门链 —— 未注册 ⇒ 422 点名拒绝；本判据钉的是**读面的筛**本身）。
     """
+    from adapters.fakes.memory_store import FakeMemoryStore
+
     deps = make_run_ready_deps()
-    deps.memory.allow_source("test:goal067")
-    deps.memory.commit(
+    store = FakeMemoryStore(allowed_sources=("test:goal067",))
+    store.allow_source("test:goal067")
+    deps.memory = store
+    store.commit(
         MemoryWriteProposal(
             id="m-writer",
             tier=MemoryTier.PROJECT,
