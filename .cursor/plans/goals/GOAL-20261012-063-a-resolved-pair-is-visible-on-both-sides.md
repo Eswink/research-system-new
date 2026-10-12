@@ -136,7 +136,7 @@ memory_entries: []
 | EC-02 | 对端可读 + 处置面扣已消解（逐对；缺省逐字不变） | `pytest tests/application tests/domain -q` | **PASS** |
 | EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
 | EC-04 | 两向反证 `Z-1`…`Z-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **64 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5779 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -236,7 +236,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（逐轴复评 + 建档） | `fe6a8a1` | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 对端可读 + 扣减） |
-| 1 | `PLAN-20261012-435`（WP-1…WP-5） | `4c654de`（反向消解表 + 扣减 + 两读面同源）、`3b741d1`（判据 10 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 四段读数；② 一对被消解 ⇒ **两端都是 `USE`** + `resolved_with` 点名（不静默消失）+ **逐对**扣减 + 缺省逐字不变；③ 两读面**都引用**同一纯函数 + 既有键逐字仍在 + 快照同轮（`+7 / -0`）；④ **四向反证** `Z-1`…`Z-4` 全红 + 基线绿 + 复原一致。`tests/application tests/adapters tests/api` **1323 passed**；mypy **1205 files** 零问题 | （见 CI 台账） | 四处如实登记：① `Z-3` 首版锚点**空操作**（不可观测）⇒ 改打可观测面；② 规模门**两处** `max-args`（6 > 5）⇒ 合成 `_RowFacts` 参数对象（两读面同形）；③ 读面重构后三处旧引用未改名（`superseded_by`）⇒ 逐处修；④ 长行 / import 排序 ⇒ 格式化 | EC-05 待做 | cycle 2（EC-05 收口） |
+| 1 | `PLAN-20261012-435`（WP-1…WP-5） | `4c654de`（反向消解表 + 扣减 + 两读面同源）、`3b741d1`（判据 10 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 四段读数；② 一对被消解 ⇒ **两端都是 `USE`** + `resolved_with` 点名（不静默消失）+ **逐对**扣减 + 缺省逐字不变；③ 两读面**都引用**同一纯函数 + 既有键逐字仍在 + 快照同轮（`+7 / -0`）；④ **四向反证** `Z-1`…`Z-4` 全红 + 基线绿 + 复原一致。`tests/application tests/adapters tests/api` **1323 passed**；mypy **1205 files** 零问题 | （见 CI 台账） | 四处如实登记：① `Z-3` 首版锚点**空操作**（不可观测）⇒ 改打可观测面；② 规模门**两处** `max-args`（6 > 5）⇒ 合成 `_RowFacts` 参数对象（两读面同形）；③ 读面重构后三处旧引用未改名（`superseded_by`）⇒ 逐处修；④ 长行 / import 排序 ⇒ 格式化。**EC-05 PASS**（验证器 **64 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5779 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿） | （见 CI 台账） | — | 无 | 无（本 GOAL 已收口） |
 
 ## 状态历史
 
