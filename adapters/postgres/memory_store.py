@@ -72,9 +72,9 @@ class PostgresMemoryStore(PostgresAdapterBase):
                 " (id, tier, kind, content, provenance, confidence, scope,"
                 " valid_from, review_after, expires_at,"
                 " supersedes, contradictions, resolutions,"
-                " conflict_review_after, conflict_expires_at, active)"
+                " conflict_review_after, conflict_expires_at, proposed_by, active)"
                 " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,"
-                "%s,%s,%s)"
+                "%s,%s,%s,%s)"
                 " ON CONFLICT (id) DO NOTHING",
                 _proposal_values(proposal),
             )
@@ -217,6 +217,8 @@ def _record_from_proposal(proposal: MemoryWriteProposal) -> MemoryRecord:
         valid_from=proposal.valid_from,
         conflict_review_after=proposal.conflict_review_after,
         conflict_expires_at=proposal.conflict_expires_at,
+        # GOAL-20261012-065 EC-02：提交回执必须与**写进去的**一致。
+        proposed_by=proposal.proposed_by,
     )
 
 
@@ -244,6 +246,8 @@ def _proposal_values(proposal: MemoryWriteProposal) -> tuple[Any, ...]:
         # GOAL-20261012-061 EC-02：冲突时效（提案声明则写，缺省 None ⇒ 逐字不变）。
         proposal.conflict_review_after.value if proposal.conflict_review_after else None,
         proposal.conflict_expires_at.value if proposal.conflict_expires_at else None,
+        # GOAL-20261012-065 EC-02：**提议者**（提案声明则写，缺省 None ⇒ 逐字不变）。
+        proposal.proposed_by,
         True,  # active
     )
 
@@ -254,6 +258,11 @@ def _required_ts(value: Any) -> Timestamp:
     if stamp is None:
         raise ValueError("resolution resolved_at is missing or invalid")
     return stamp
+
+
+def _opt_text(value: Any) -> str | None:
+    """可选文本（`None` ⇒ `None`；**不**把空串当未声明 —— 域层已拒空字符串）。"""
+    return None if value is None else str(value)
 
 
 def _opt_ts(value: Any) -> Timestamp | None:
@@ -314,5 +323,7 @@ def _record_from_row(row: Any) -> MemoryRecord:
         # GOAL-20261012-061 EC-02：冲突时效（旧行按缺省读出 —— 与 sqlite 侧同一口径）。
         conflict_review_after=_opt_ts(row.get("conflict_review_after")),
         conflict_expires_at=_opt_ts(row.get("conflict_expires_at")),
+        # GOAL-20261012-065 EC-02：提议者（旧行按缺省读出 —— 与 sqlite 侧同一口径）。
+        proposed_by=_opt_text(row.get("proposed_by")),
         active=bool(row["active"]),
     )

@@ -50,6 +50,13 @@ class MemoryRecord:
     # GOAL-20261012-058 EC-02：**逐对的消解记载**（缺省空列表 = **一对都没消解**
     # ⇒ 既有行为**逐字不变**：未消解 ⇒ 读面仍报 `CONFLICTED`）。
     resolutions: list[ConflictResolution] = field(default_factory=list)
+    # GOAL-20261012-065 EC-02：**提议者**（可选；缺省 `None` = **未声明**
+    # ⇒ 既有记录读出**同值**）。由**提案面既有的** `proposed_by` 原样带进 canonical
+    # （**不**新造第二个作者字段：同一个概念只应有一个声明点）。
+    # **与 `provenance` 是两件事**：`provenance` 是**来源**（这条知识从哪来），
+    # `proposed_by` 是**谁提议**把它记下来 —— 两者各自独立、互不顶替。
+    # **不是 ACL**（与 `scope` 的边界同形）：它只回答「是谁」，不授权任何访问。
+    proposed_by: str | None = None
     # GOAL-20261012-061 EC-02：**冲突声明的时效**（可选；缺省 `None` = **未声明**
     # ⇒ 既有行为**逐字不变**：冲突照旧永久算数）。
     # 语义与记忆自身的时效**同一纪律**（`review_after` 到点 ⇒ 该复核；`expires_at` 到点

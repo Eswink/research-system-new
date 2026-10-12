@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS m12_memory (
     -- GOAL-20261012-061 EC-02：**冲突声明的时效**（NULL = 未声明 ⇒ 既有行为逐字不变）。
     conflict_review_after TEXT,
     conflict_expires_at TEXT,
+    -- GOAL-20261012-065 EC-02：**提议者**（NULL = 未声明 ⇒ 既有行读出同值）。
+    proposed_by TEXT,
     active INTEGER NOT NULL
 );
 """
@@ -50,7 +52,7 @@ CREATE TABLE IF NOT EXISTS m12_memory (
 _MEMORY_COLS = (
     "id, tier, kind, content, provenance, confidence, scope, valid_from, review_after, "
     "expires_at, supersedes, contradictions, resolutions, conflict_review_after, "
-    "conflict_expires_at, active"
+    "conflict_expires_at, proposed_by, active"
 )
 
 
@@ -153,6 +155,9 @@ class SqliteMemoryStore(SqliteAdapterBase):
             # （否则「声明了却永远读到未声明」= 同族缺陷的第三次）。
             conflict_review_after=proposal.conflict_review_after,
             conflict_expires_at=proposal.conflict_expires_at,
+            # GOAL-20261012-065 EC-02：**提议者**必须随提案落库
+            # （否则「提案写了、提交后丢弃」= 本 GOAL 的靶子）。
+            proposed_by=proposal.proposed_by,
         )
         placeholders = ",".join("?" * len(_MEMORY_COLS.split(",")))
         with self._connection:
@@ -280,6 +285,7 @@ class SqliteMemoryStore(SqliteAdapterBase):
             if record.conflict_review_after
             else None,
             record.conflict_expires_at.value.isoformat() if record.conflict_expires_at else None,
+            record.proposed_by,
             1 if record.active else 0,
         )
 
@@ -316,8 +322,20 @@ class SqliteMemoryStore(SqliteAdapterBase):
             # ⇒ 既有行为逐字不变）。与 `resolutions` 那条同一手法（缺列按缺省读出）。
             conflict_review_after=_optional_ts(row, "conflict_review_after"),
             conflict_expires_at=_optional_ts(row, "conflict_expires_at"),
+            # GOAL-20261012-065 EC-02：旧行**没有**这一列 ⇒ `None`（未声明 ⇒ 同值）。
+            proposed_by=_optional_text(row, "proposed_by"),
             active=bool(row["active"]),
         )
+
+
+def _optional_text(row: sqlite3.Row, column: str) -> str | None:
+    """可选文本列（**缺列**或 NULL ⇒ `None`；旧库文件读出「未声明」）。
+
+    与 `_optional_ts` **同一纪律**：旧库文件在加列之前建的记录逐字保持「未声明」，
+    **不**被回填成某个值。
+    """
+    value = row[column] if column in row.keys() else None
+    return None if value is None else str(value)
 
 
 def _optional_ts(row: sqlite3.Row, column: str) -> Timestamp | None:

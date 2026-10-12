@@ -51,6 +51,9 @@ class MemoryRecordDto(BaseModel):
     #: 但别的记录声明了与它冲突）。与 `contradictions`（**正向**）**互不顶替** ——
     #: 两者都要读得出（缺省 `[]` ⇒ 没有任何反向声明 ⇒ 与改动前逐字相同）。
     conflicted_by: list[str] = Field(default_factory=list)
+    #: GOAL-20261012-065 EC-03：**提议者**（谁把这条知识记下来）—— 与 `provenance`
+    #: （**来源**）**互不顶替**。缺省 `None` ⇒ 未声明（既有记录读出同一语义）。
+    proposed_by: str | None = None
     #: GOAL-20261012-064 EC-03：**悬空引用**（本批里找不到的被引 id）—— 两个方向**各自点名**：
     #: 一条记录的「来源可查」在**删除之后**不该静默失效（写面对未知 id 是拒提交的）。
     #: 缺省 `[]` ⇒ 没有悬空引用 ⇒ 与改动前逐字相同。

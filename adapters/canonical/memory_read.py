@@ -259,6 +259,9 @@ def _memory_row(
     conflicted = bool(record.unresolved_conflicts)
     row = _identity_fields(record, state)
     row["supersedes"] = list(record.supersedes)
+    # GOAL-20261012-065 EC-03：**提议者**逐条披露（与 `provenance`（来源）**互不顶替**：
+    # 一个回答「知识从哪来」，一个回答「谁把它记下来」）。未声明 ⇒ `None`（**不猜**）。
+    row["proposed_by"] = record.proposed_by
     resolved = facts or _RowFacts()
     by_others = list(resolved.conflicted_by)
     row["superseded_by"] = list(resolved.superseded_by)

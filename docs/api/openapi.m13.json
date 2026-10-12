@@ -3876,6 +3876,17 @@
             "title": "Kind",
             "type": "string"
           },
+          "proposed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed By"
+          },
           "provenance": {
             "title": "Provenance",
             "type": "string"

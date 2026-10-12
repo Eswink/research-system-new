@@ -120,6 +120,8 @@ def _time_and_linkage_fields(
         "active": record.active,
         "contradictions": list(record.contradictions),
         "superseded_by": links,
+        # GOAL-20261012-065 EC-03：**提议者**（同一份 canonical 事实，不重写第二套判定）。
+        "proposed_by": record.proposed_by,
     }
 
 
