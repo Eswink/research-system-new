@@ -205,16 +205,24 @@ class SqliteMemoryStore(SqliteAdapterBase):
         return self._record_from_row(row)
 
     def query(
-        self, tier: MemoryTier | None = None, scope: str | None = None
+        self,
+        tier: MemoryTier | None = None,
+        scope: str | None = None,
+        proposed_by: str | None = None,
     ) -> tuple[MemoryRecord, ...]:
-        """按 `tier` / `scope` 筛（**两维可并存**；都缺省 ⇒ 全部 —— 既有行为逐字不变）。
+        """按 `tier` / `scope` / `proposed_by` 筛（**各维可并存**；都缺省 ⇒ 全部）。
 
         GOAL-20261010-049 EC-02：`scope` 早在域里声明、读面也逐条披露，但**查询面此前只认
-        `tier`** ⇒ 「看得见、选不着」。两个条件都是**可选**：`None` = 该维不筛（**不是**「筛出
-        空集」）—— 语义差别写在签名与判据里。
+        `tier`** ⇒ 「看得见、选不着」。**GOAL-20261013-066 EC-02**：`proposed_by` 是同族的
+        **第三个**维度（序 33 让它读得出，本轮让它选得着）。各条件都是**可选**：
+        `None` = 该维不筛（**不是**「筛出空集」）—— 语义差别写在签名与判据里。
         """
         self._ensure_open()
-        self._record("query", f"{tier.value if tier else '*'}/{scope if scope else '*'}")
+        self._record(
+            "query",
+            f"{tier.value if tier else '*'}/{scope if scope else '*'}/"
+            f"{proposed_by if proposed_by else '*'}",
+        )
         clauses: list[str] = []
         params: list[str] = []
         if tier is not None:
@@ -223,6 +231,9 @@ class SqliteMemoryStore(SqliteAdapterBase):
         if scope is not None:
             clauses.append("scope=?")
             params.append(scope)
+        if proposed_by is not None:
+            clauses.append("proposed_by=?")
+            params.append(proposed_by)
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
         rows = self._connection.execute(
             f"SELECT * FROM m12_memory{where} ORDER BY id", tuple(params)

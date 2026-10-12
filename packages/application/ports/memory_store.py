@@ -40,8 +40,21 @@ class MemoryStore(Protocol):
     def get(self, memory_id: str) -> MemoryRecord: ...
 
     def query(
-        self, tier: MemoryTier | None = None, scope: str | None = None
-    ) -> tuple[MemoryRecord, ...]: ...
+        self,
+        tier: MemoryTier | None = None,
+        scope: str | None = None,
+        proposed_by: str | None = None,
+    ) -> tuple[MemoryRecord, ...]:
+        """按 `tier` / `scope` / `proposed_by` 筛（**各维可并存**；都缺省 ⇒ 全部）。
+
+        GOAL-20261013-066 EC-02：`proposed_by` 是**第三个**维度 —— 序 33 让它**读得出**
+        （两读面披露），而查询面此前**选不着** ⇒ 与序 17 的 `scope` **同一缺口形态**
+        （看得见、选不着）。**三适配器同契约**（SQLite / PG / Fake）。
+
+        `None` = 该维**不筛**（**不是**「筛出空集」）；**精确匹配**（**不**做通配 / 模糊）。
+        **筛是选择，不是 ACL**（与 `scope` 的边界**逐字同形**）。
+        """
+        ...
 
     def deactivate(self, memory_id: str) -> MemoryRecord: ...
 

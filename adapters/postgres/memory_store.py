@@ -97,11 +97,19 @@ class PostgresMemoryStore(PostgresAdapterBase):
         return _record_from_row(row)
 
     def query(
-        self, tier: MemoryTier | None = None, scope: str | None = None
+        self,
+        tier: MemoryTier | None = None,
+        scope: str | None = None,
+        proposed_by: str | None = None,
     ) -> tuple[MemoryRecord, ...]:
-        """按 `tier` / `scope` 筛（两维可并存；都缺省 ⇒ 全部 —— 与 SQLite 同契约）。"""
+        """按 `tier` / `scope` / `proposed_by` 筛
+        （各维可并存；都缺省 ⇒ 全部 —— 与 SQLite 同契约）。"""
         self._ensure_open()
-        self._record("query", f"{tier.value if tier else '*'}/{scope if scope else '*'}")
+        self._record(
+            "query",
+            f"{tier.value if tier else '*'}/{scope if scope else '*'}/"
+            f"{proposed_by if proposed_by else '*'}",
+        )
         clauses: list[str] = []
         params: list[str] = []
         if tier is not None:
@@ -110,6 +118,9 @@ class PostgresMemoryStore(PostgresAdapterBase):
         if scope is not None:
             clauses.append("scope=%s")
             params.append(scope)
+        if proposed_by is not None:
+            clauses.append("proposed_by=%s")
+            params.append(proposed_by)
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
         rows: Any = self._conn.execute(
             f"SELECT * FROM m12_memory{where} ORDER BY id", tuple(params)

@@ -83,20 +83,29 @@ class FakeMemoryStore(FakeBase):
         return self._records[memory_id]
 
     def query(
-        self, tier: MemoryTier | None = None, scope: str | None = None
+        self,
+        tier: MemoryTier | None = None,
+        scope: str | None = None,
+        proposed_by: str | None = None,
     ) -> tuple[MemoryRecord, ...]:
-        """按 `tier` / `scope` 筛（**与两个真适配器同契约** —— 少一维会让判据在此路径上假绿）。"""
-        self._enter("query", f"{tier.value if tier else '*'}/{scope if scope else '*'}")
+        """按 `tier` / `scope` / `proposed_by` 筛。
+
+        **与两个真适配器同契约** —— 少一维会让判据在此路径上**假绿**
+        （承序 13/45/61/65 的实测教训）。
+        """
+        label = (
+            f"{tier.value if tier else '*'}/{scope if scope else '*'}/"
+            f"{proposed_by if proposed_by else '*'}"
+        )
+        self._enter("query", label)
         records = tuple(
             record
             for record in self._records.values()
-            if (tier is None or record.tier is tier) and (scope is None or record.scope == scope)
+            if (tier is None or record.tier is tier)
+            and (scope is None or record.scope == scope)
+            and (proposed_by is None or record.proposed_by == proposed_by)
         )
-        self._record(
-            "query",
-            f"{tier.value if tier else '*'}/{scope if scope else '*'}",
-            result=str(len(records)),
-        )
+        self._record("query", label, result=str(len(records)))
         return records
 
     def resolve_conflict(

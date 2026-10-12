@@ -286,19 +286,48 @@ def _memory_row(
     return row
 
 
-def _selection(memory_store: Any, args: dict[str, object]) -> tuple[str | None, str | None]:
-    """解析两个**可选**筛选维度（`tier` / `scope`）：缺省或空白 ⇒ `None` = 不筛。
+@dataclass(frozen=True, slots=True)
+class _Selection:
+    """三个**可选**筛选维度（缺省或空白 ⇒ `None` = 不筛）。
+
+    GOAL-20261013-066 EC-03：`proposed_by` 是**第三个**维度（序 33 让它读得出，
+    本轮让它**选得着**）。三个都**精确匹配**、都**可选** —— 与 `scope` 同一形态。
+    """
+
+    tier: str | None
+    scope: str | None
+    proposed_by: str | None
+
+
+def _selection(memory_store: Any, args: dict[str, object]) -> "_Selection":
+    """解析三个**可选**筛选维度（`tier` / `scope` / `proposed_by`）：缺省或空白 ⇒ `None` = 不筛。
 
     **范围必须先确认为已知**（`_require_known_scope`）—— 未知范围**点名拒绝**，
-    不静默当成「不筛」（那会让调用方以为自己筛过了）。
+    不静默当成「不筛」（那会让调用方以为自己筛过了）。**作者不做存在性校验**：作者是
+    **自由声明的标识**（与 `scope` 的已知集合不同 —— 后者有域上的枚举面），未知作者
+    ⇒ **空结果**（**不猜**），不是拒绝。
     """
-    raw_tier = args.get("tier")
-    tier = str(raw_tier).strip() if raw_tier is not None and str(raw_tier).strip() else None
-    raw_scope = args.get("scope")
-    scope = str(raw_scope).strip() if raw_scope is not None and str(raw_scope).strip() else None
+    return _Selection(
+        tier=_optional_arg(args, "tier"),
+        scope=_scoped(memory_store, _optional_arg(args, "scope")),
+        proposed_by=_optional_arg(args, "proposed_by"),
+    )
+
+
+def _optional_arg(args: dict[str, object], key: str) -> str | None:
+    """取可选参数（缺省 / 空白 ⇒ `None` = 该维不筛）。"""
+    raw = args.get(key)
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    return text or None
+
+
+def _scoped(memory_store: Any, scope: str | None) -> str | None:
+    """范围维（**必须先确认为已知** —— 未知范围**点名拒绝**，不静默当成「不筛」）。"""
     if scope is not None:
         _require_known_scope(memory_store, scope)
-    return tier, scope
+    return scope
 
 
 def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, object]:
@@ -317,8 +346,9 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     if memory_store is None:
         raise InvalidInputError("memory_read requires a MemoryStore, which is not in this assembly")
     moment = _moment(args)
-    tier, scope = _selection(memory_store, args)
-    records = memory_store.query(_tier_of(tier), scope)
+    selection = _selection(memory_store, args)
+    tier, scope = selection.tier, selection.scope
+    records = memory_store.query(_tier_of(tier), scope, selection.proposed_by)
     rows = _project_records(records, moment)
     counts = {
         DISPOSITION_USE: 0,
@@ -341,15 +371,35 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
     if scope is not None:
         payload["scope"] = scope
         payload["filtered_out"] = _filtered_out(memory_store, tier, scope, len(rows))
+    # GOAL-20261013-066 EC-03：**只有传了作者才加这两键** ⇒ 缺省路径的载荷与改动前
+    # **逐字相同**（与 `scope` 那一条**同一形态**：点名筛了什么 + **筛掉了多少条**）。
+    if selection.proposed_by is not None:
+        payload["proposed_by"] = selection.proposed_by
+        payload["filtered_out"] = _filtered_out(
+            memory_store, tier, scope, len(rows), proposed_by=selection.proposed_by
+        )
     return payload
 
 
-def _filtered_out(memory_store: Any, tier: str | None, scope: str, kept: int) -> int:
-    """按范围**筛掉了多少条**（同一 tier 维下、不含该范围的条数）—— **不静默丢**。
+def _filtered_out(
+    memory_store: Any,
+    tier: str | None,
+    scope: str | None,
+    kept: int,
+    proposed_by: str | None = None,
+) -> int:
+    """按**已声明的筛选维度**筛掉了多少条 —— **不静默丢**。
 
     与 `dispositions` 同一种披露形态：调用方**不解析数组**就能看出「这次读有没有发生过滤」。
-    它读的是**同一份 Port**（`query`），不另开统计面。
+    它读的是**同一份 Port**（`query`），不另开统计面：**除被筛的那一维之外**的其余维度
+    照传（这样分母是「同一 tier / 同一 scope 下的全部」，而不是全库）。
+
+    GOAL-20261013-066 EC-03：本函数**沿用序 17 的形态**（分母只按 tier 维）——
+    只传作者时，得到的是「同一 tier 下、**不按作者筛**」的条数（其余维度不进分母）。
     """
+    # **分母只按 tier 维**（与序 17 立的判据**逐字一致**：`scope` 那一支的语义
+    # 「同一 tier 维下、不含该范围的条数」**一字不动**）。传了作者时，分母同样只按 tier
+    # ⇒ 得到的是「同一 tier 下、**不按作者筛**」的条数（其余维度不进分母）。
     same_tier = memory_store.query(_tier_of(tier))
     return len(same_tier) - kept
 
