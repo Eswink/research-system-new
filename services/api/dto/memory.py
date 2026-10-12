@@ -91,13 +91,27 @@ class MemoryListViewDto(BaseModel):
 
 
 class MemoryFilteredListViewDto(MemoryListViewDto):
-    """按 `scope` 筛过的清单（在缺省形态上**追加**两键：筛的范围与**筛掉了多少条**）。
+    """按某个维度筛过的清单（在缺省形态上**追加**键：筛了什么与**筛掉了多少条**）。
 
     `filtered_out` 与 `dispositions` 同一披露形态：调用方**不解析数组**就知道这次读
     有没有发生过滤。**不静默丢**：筛掉的条数是必报项。
+
+    GOAL-20261013-067 EC-03：本形态**扩到两个维度**（`scope` / `proposed_by`）——
+    `scope` 仍必报（序 17 的既有语义**逐字保持**），`proposed_by` **只在这一维被筛时**出现
+    （作者维的**专用形态**见 `MemoryAuthoredListViewDto`，两者**互斥**：一次只筛一维）。
     """
 
-    scope: str
+    scope: str | None = None
+    filtered_out: int
+
+
+class MemoryAuthoredListViewDto(MemoryListViewDto):
+    """按**作者**筛过的清单（GOAL-20261013-067 EC-03）—— 与本轮之前的 `scope` 形态
+    **同一手法**（缺省形态 + 追加键），**不**给路由开 `response_model_exclude_none`
+    （那会连嵌套模型一起递归抹掉别的读面上有意义的 `null` —— 序 17 实测过）。
+    """
+
+    proposed_by: str
     filtered_out: int
 
 

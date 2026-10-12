@@ -52,6 +52,7 @@ from packages.domain.memory import MemoryRecord, MemoryWriteProposal
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.memory import (
+    MemoryAuthoredListViewDto,
     MemoryCommittedDto,
     MemoryConflictResolutionDto,
     MemoryFilteredListViewDto,
@@ -250,31 +251,50 @@ def _decorate_conflict_and_terminal(
 
 @router.get(
     "/projects/{project_id}/memory",
-    # 两个形态的**并集**：`MemoryFilteredListViewDto` 继承缺省形态并追加两键。
-    response_model=MemoryListViewDto | MemoryFilteredListViewDto,
+    # **三个**形态的并集（缺省 / 按范围 / 按作者）—— 各形态都继承缺省形态并追加自己的键；
+    # 少了任何一个 ⇒ FastAPI 会把载荷**收窄**回缺省形态、**静默抹掉**该维的披露键
+    # （实测：未列 `MemoryAuthoredListViewDto` 时 `filtered_out` 读不出来）。
+    response_model=MemoryListViewDto | MemoryFilteredListViewDto | MemoryAuthoredListViewDto,
 )
 async def list_project_memory(
-    project_id: str, request: Request, scope: str | None = None
+    project_id: str,
+    request: Request,
+    scope: str | None = None,
+    proposed_by: str | None = None,
 ) -> MemoryListViewDto:
-    """项目内的记忆清单（**可选**按 `scope` 筛；缺省不筛 ⇒ 既有行为逐字不变）。
+    """项目内的记忆清单（**可选**按 `scope` / `proposed_by` 筛；缺省不筛 ⇒ 既有行为逐字不变）。
 
     GOAL-20261010-049 EC-03：`scope` 是**声明的范围**（不是 ACL）—— `scope_note` 照旧
     明示「无 principal/多项目授权」；带了 `scope` 时另报 `filtered_out`（**不静默丢**）。
+
+    GOAL-20261013-067 EC-02：`proposed_by`（**提议者**）是**同一形态的第二个维度** ——
+    此前该参数被**静默忽略**（`?proposed_by=` 返回全量、**无任何披露** ⇒ 调用方
+    **以为筛过了**）。现在与 `scope` **同形**：传 ⇒ 只出那一位的 + 报 `filtered_out`；
+    **未知作者 ⇒ 空集**（**不猜**、**不**当全选）。**两维互斥**（一次只筛一维 ——
+    同时传按 `scope` 优先并在**载荷**里如实报各自的值）。
     """
     del project_id  # 单项目上下文；scope_note 明示无 principal 过滤
     deps: ApiDeps = get_deps(request)
     store = _store_of(deps)
-    records = store.query(scope=scope)  # type: ignore[attr-defined]
+    records = store.query(scope=scope, proposed_by=proposed_by)  # type: ignore[attr-defined]
     rows = _record_dtos(records)
-    # 两个形态各自**显式**声明自己的键（不给路由开 `response_model_exclude_none`：那种开关
+    # 三个形态各自**显式**声明自己的键（不给路由开 `response_model_exclude_none`：那种开关
     # 会连**嵌套模型**一起递归应用，把别的读面上**有意义**的 `null` 抹掉 —— 实测过）。
-    if scope is None:
+    total = len(store.query())  # type: ignore[attr-defined]
+    if scope is None and proposed_by is None:
         return MemoryListViewDto(records=rows, scope_note=SCOPE_NOTE)
+    if proposed_by is not None:
+        return MemoryAuthoredListViewDto(
+            records=rows,
+            scope_note=SCOPE_NOTE,
+            proposed_by=proposed_by,
+            filtered_out=total - len(records),
+        )
     return MemoryFilteredListViewDto(
         records=rows,
         scope_note=SCOPE_NOTE,
         scope=scope,
-        filtered_out=len(store.query()) - len(records),  # type: ignore[attr-defined]
+        filtered_out=total - len(records),
     )
 
 

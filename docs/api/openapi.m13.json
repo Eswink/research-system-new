@@ -3626,6 +3626,38 @@
         "title": "LlmEndpointUpdateDto",
         "type": "object"
       },
+      "MemoryAuthoredListViewDto": {
+        "additionalProperties": false,
+        "description": "按**作者**筛过的清单（GOAL-20261013-067 EC-03）—— 与本轮之前的 `scope` 形态\n**同一手法**（缺省形态 + 追加键），**不**给路由开 `response_model_exclude_none`\n（那会连嵌套模型一起递归抹掉别的读面上有意义的 `null` —— 序 17 实测过）。",
+        "properties": {
+          "filtered_out": {
+            "title": "Filtered Out",
+            "type": "integer"
+          },
+          "proposed_by": {
+            "title": "Proposed By",
+            "type": "string"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryRecordDto"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "scope_note": {
+            "title": "Scope Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope_note",
+          "proposed_by",
+          "filtered_out"
+        ],
+        "title": "MemoryAuthoredListViewDto",
+        "type": "object"
+      },
       "MemoryCommittedDto": {
         "additionalProperties": false,
         "properties": {
@@ -3671,7 +3703,7 @@
       },
       "MemoryFilteredListViewDto": {
         "additionalProperties": false,
-        "description": "按 `scope` 筛过的清单（在缺省形态上**追加**两键：筛的范围与**筛掉了多少条**）。\n\n`filtered_out` 与 `dispositions` 同一披露形态：调用方**不解析数组**就知道这次读\n有没有发生过滤。**不静默丢**：筛掉的条数是必报项。",
+        "description": "按某个维度筛过的清单（在缺省形态上**追加**键：筛了什么与**筛掉了多少条**）。\n\n`filtered_out` 与 `dispositions` 同一披露形态：调用方**不解析数组**就知道这次读\n有没有发生过滤。**不静默丢**：筛掉的条数是必报项。\n\nGOAL-20261013-067 EC-03：本形态**扩到两个维度**（`scope` / `proposed_by`）——\n`scope` 仍必报（序 17 的既有语义**逐字保持**），`proposed_by` **只在这一维被筛时**出现\n（作者维的**专用形态**见 `MemoryAuthoredListViewDto`，两者**互斥**：一次只筛一维）。",
         "properties": {
           "filtered_out": {
             "title": "Filtered Out",
@@ -3685,8 +3717,15 @@
             "type": "array"
           },
           "scope": {
-            "title": "Scope",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
           },
           "scope_note": {
             "title": "Scope Note",
@@ -3695,7 +3734,6 @@
         },
         "required": [
           "scope_note",
-          "scope",
           "filtered_out"
         ],
         "title": "MemoryFilteredListViewDto",
@@ -11783,7 +11821,7 @@
     },
     "/projects/{project_id}/memory": {
       "get": {
-        "description": "项目内的记忆清单（**可选**按 `scope` 筛；缺省不筛 ⇒ 既有行为逐字不变）。\n\nGOAL-20261010-049 EC-03：`scope` 是**声明的范围**（不是 ACL）—— `scope_note` 照旧\n明示「无 principal/多项目授权」；带了 `scope` 时另报 `filtered_out`（**不静默丢**）。",
+        "description": "项目内的记忆清单（**可选**按 `scope` / `proposed_by` 筛；缺省不筛 ⇒ 既有行为逐字不变）。\n\nGOAL-20261010-049 EC-03：`scope` 是**声明的范围**（不是 ACL）—— `scope_note` 照旧\n明示「无 principal/多项目授权」；带了 `scope` 时另报 `filtered_out`（**不静默丢**）。\n\nGOAL-20261013-067 EC-02：`proposed_by`（**提议者**）是**同一形态的第二个维度** ——\n此前该参数被**静默忽略**（`?proposed_by=` 返回全量、**无任何披露** ⇒ 调用方\n**以为筛过了**）。现在与 `scope` **同形**：传 ⇒ 只出那一位的 + 报 `filtered_out`；\n**未知作者 ⇒ 空集**（**不猜**、**不**当全选）。**两维互斥**（一次只筛一维 ——\n同时传按 `scope` 优先并在**载荷**里如实报各自的值）。",
         "operationId": "list_project_memory_projects__project_id__memory_get",
         "parameters": [
           {
@@ -11810,6 +11848,22 @@
               ],
               "title": "Scope"
             }
+          },
+          {
+            "in": "query",
+            "name": "proposed_by",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Proposed By"
+            }
           }
         ],
         "responses": {
@@ -11823,6 +11877,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/MemoryFilteredListViewDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MemoryAuthoredListViewDto"
                     }
                   ],
                   "title": "Response List Project Memory Projects  Project Id  Memory Get"
