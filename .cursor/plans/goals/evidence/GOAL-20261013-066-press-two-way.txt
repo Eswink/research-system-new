@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 50 passed in 1.56s
+X-1 查询面忽略作者筛（当全选）: 按压 RED
+    sha 复原一致=True | b9ba9cc327b4
+    suite: 5 failed, 45 passed in 3.21s
+X-2 适配器不带该维度（真库丢筛）: 按压 RED
+    sha 复原一致=True | f3a35ffa324b
+    suite: 1 failed, 49 passed in 3.30s
+X-3 缺省形态被改动（不传也筛）: 按压 RED
+    sha 复原一致=True | 4d5522884404
+    suite: 19 failed, 31 passed in 3.35s
+X-4 消费面不点名（静默丢条数）: 按压 RED
+    sha 复原一致=True | 4d5522884404
+    suite: 1 failed, 49 passed in 2.99s
+SUMMARY presses=4 all_red_and_restored=True
