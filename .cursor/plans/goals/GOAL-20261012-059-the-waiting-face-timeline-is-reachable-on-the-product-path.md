@@ -2,7 +2,7 @@
 id: GOAL-20261012-059
 slug: the-waiting-face-timeline-is-reachable-on-the-product-path
 title: 等待面的时限链在产品面上可达 —— 序 24 让等待面**有始点、能判超期**（`gate_nudge_after_seconds`）、序 25 让那条信号**有可注入的出口**，但**实跑取证**整条链是**三层断的**：① 声明面（`ProgramCreateDto` / `ProgramDetailDto`）**没有**该键 ⇒ 界**声明不出来**；② 两库 round-trip **静默丢弃**（实测：进程内声明 `60` ⇒ 落库读回 `None`）⇒ 界**存不下来**；③ `services/` 对 `nudges=` / `NudgeSink` **零命中** ⇒ 出口**从不被注入** ⇒ 「等待面有始点、可催办」在产品面上**不可达**（只在进程内测试里成立）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-12
 updated_at: 2026-10-12
 owners:
@@ -137,7 +137,7 @@ memory_entries: []
 | EC-02 | **界可声明、可落库**（两 DTO +1 可选键；两库同契约 round-trip；坏形态点名） | 新用例 **19 passed**（SQLite 14 + PG 5）；快照同轮（`+23 / -0`） | **PASS** |
 | EC-03 | **出口可注入（组合根决定；缺省静默）**+ 快照同轮 | 产品路径新用例 **4 passed**（经 HTTP 面注入 ⇒ 出口真收到） | **PASS** |
 | EC-04 | **两向反证** `V-1`…`V-4` 全红 + 基线门 + 二进制复原 `sha256` 一致 | 归档 **691 B / `CR=0`**；`all_red_and_restored=True` | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **56 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5704 passed, 21 skipped**）| **PASS** |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **66 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5704 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -239,7 +239,23 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待本轮回填） | （待轮询） | — |
+| `107e9e7`（derive：PLAN + ALL_PLAN + 程序表序 27/28/29） | **`total_count = 0`** ⇒ **`covered_by 38242418003`** | replan + 建档 |
+| `75f761e`（WP-2/WP-3） | **`total_count = 0`** ⇒ **`covered_by 38242418003`** | 界可声明可落库 + 出口可注入 + 快照同轮 |
+| `44e8946`（WP-4） | **`total_count = 0`** ⇒ **`covered_by 38242418003`** | 产品路径判据 + 四向反证归档 |
+| `bcf426c`（WP-5 主体） | **`total_count = 0`** ⇒ **`covered_by 38242418003`** | 收口验证器 + 断言集进树 + 射程纯收紧 |
+| `f6287dd`（收口记录） | **`total_count = 0`** ⇒ **`covered_by 38242418003`** | EC 回填 + RECHECK-428 + MAINLINE 进展行 |
+| `75d67b0`（m0 真红修复） | **`total_count = 0`** ⇒ **`covered_by 38242418003`** | import 排序 / format / 复用名导入 |
+| `1f83566`（EC-05 回填） | **`total_count = 0`** ⇒ **`covered_by 38242418003`** | as-is m0 23/23 读数 |
+| `c28deac`（**末条实测提交** = 两树归档） | `38242418003` **M0 success**（**8/8 job 全 success**）+ `38242417665` **Push on main success** | 两树判词定格归档 |
+
+**自我指涉边界（明写并封闭）**：写本台账本身要再提交 ⇒ 会产生新 run。**封闭口径**：
+**末条可引用的实测提交 = `c28deac`**（上表最后一行，两 run 全绿：M0 `38242418003` 8/8 +
+Push on main `38242417665`）；**其后仅记录提交**，**不再追链** —— 若需复核本行结论，
+取 `c28deac` 的两条 run 即足。
+
+**`covered_by` 的用法（逐条）**：七个提交**自身 `total_count = 0`**（**同批推送**只让 tip 起 run）
+⇒ 按纪律**不是**「未取证」，而是**由同批 tip 的 run 覆盖**（各自 `covered_by` 已在表内写明）。
+**空集合 = 未取证**，本表**无一处**留空。
 
 ## 迭代日志
 
@@ -247,7 +263,7 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（replan + 建档） | `107e9e7` | 只读勘察（0 改动）+ **三段实测读数**（声明面零命中 / 落库静默丢弃 / 出口零命中）⇒ 定位时限链的三层断点 | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 声明 + 落库） |
 | 1 | `PLAN-20261012-427`（WP-1…WP-3） | `107e9e7`（derive）、`75f761e`（界可声明可落库 + 出口可注入 + 快照同轮） | **EC-01/02/03 PASS**：三段接线逐段落地 —— ① 声明面两 DTO +1 可选键（缺省 `None` ⇒ 逐字不变）；② 落库面 SQLite 加法式列 + PG 迁移 `024` 只加列 + 两条 SELECT 带列；③ 出口面组合根 +1 可注入字段（缺省 `NullNudgeSink`）+ 推进路由交出。`tests/adapters tests/domain tests/api tests/application tests/contracts` **3104 passed / 80 skipped**；PG **5 passed** | （见 CI 台账） | 三处自纠（如实登记）：① e2e 共享助手需 +1 可选 kwarg（**加法式**，缺省不发键 ⇒ 既有请求逐字不变）；② 新用例初版误用 harness 预建行（`INSERT OR IGNORE` ⇒ 二次建是静默空操作）⇒ 改直写一行；③ 断言集两处 ruff 门（长行 + 引号风格）⇒ 抽局部变量 | EC-04/05 待做 | cycle 2（EC-04 按压 + EC-05 收口） |
-| 2 | `PLAN-20261012-427`（WP-4、WP-5） | `44e8946`（产品路径判据 + 四向反证归档）、`bcf426c`（收口验证器 + 断言集进树 + PG 判据）、本轮回写提交 | **EC-04 PASS**：`V-1`…`V-4` **全红** + 基线 **GREEN** + 四条 `sha 复原一致=True`；**首轮 `V-3`/`V-4` 按 GREEN ⇒ 两条反证臂失效**，按「该红时红」改判据面后全红（**如实登记** —— 这正是该纪律的现场兑现）。**EC-05 PASS**（验证器 **56 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23** （`PASS [` 24 / `FAILED [` 0 / **5704 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿） | （见 CI 台账） | — | 收口面（两树 + m0 + 治理 + 台账） | 无（待收口） |
+| 2 | `PLAN-20261012-427`（WP-4、WP-5） | `44e8946`（产品路径判据 + 四向反证归档）、`bcf426c`（收口验证器 + 断言集进树 + PG 判据）、本轮回写提交 | **EC-04 PASS**：`V-1`…`V-4` **全红** + 基线 **GREEN** + 四条 `sha 复原一致=True`；**首轮 `V-3`/`V-4` 按 GREEN ⇒ 两条反证臂失效**，按「该红时红」改判据面后全红（**如实登记** —— 这正是该纪律的现场兑现）。**EC-05 PASS**（验证器 **66 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23** （`PASS [` 24 / `FAILED [` 0 / **5704 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿） | `c28deac`：M0 `38242418003` **8/8** + Push on main `38242417665` **success**；同批七条提交 `total_count = 0` ⇒ `covered_by` 逐条写明 | — | 无 | 无（本 GOAL 已收口） |
 
 ## 状态历史
 
