@@ -138,7 +138,7 @@ memory_entries: []
 | EC-02 | 悬空引用可读（两方向各自点名；缺省逐字不变；跨范围不猜） | `pytest tests/application tests/domain -q` | **PASS** |
 | EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
 | EC-04 | 两向反证 `V-1`…`V-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **63 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5790 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -237,7 +237,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（逐轴复评 + 建档） | `2f45cba` | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 悬空可读） |
-| 1 | `PLAN-20261012-437`（WP-1…WP-5） | `09b1d85`（悬空索引 + 两方向 + 两读面同源）、`1524aa3`（判据 10 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 四段读数（零命中 + 实跑 + 写面对照 + 先例）；② 悬空**两方向各自点名** + **既有键一字不动**（`terminal` 仍 `CURRENT`）+ 缺省逐字不变 + 跨范围不猜；③ 两读面**都引用**同一纯函数 + 两个悬空键 + 快照同轮（`+14 / -0`）；④ **四向反证** `V-1`…`V-4` 全红 + 基线绿 + 复原一致。`tests/api tests/application/memory tests/adapters` **1333 passed**；mypy **1206 files** 零问题 | （见 CI 台账） | 三处如实登记：① `_ConflictFacts` **漏加两字段**（12 红 ⇒ 逐处补；**参数对象扩展时要同步全部构造点**）；② 调用点 / dataclass 字段两处锚点未命中（脚本中止 ⇒ 重跑精准落点）；③ 断言集三处长行 ⇒ 折行 | EC-05 待做 | cycle 2（EC-05 收口） |
+| 1 | `PLAN-20261012-437`（WP-1…WP-5） | `09b1d85`（悬空索引 + 两方向 + 两读面同源）、`1524aa3`（判据 10 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 四段读数（零命中 + 实跑 + 写面对照 + 先例）；② 悬空**两方向各自点名** + **既有键一字不动**（`terminal` 仍 `CURRENT`）+ 缺省逐字不变 + 跨范围不猜；③ 两读面**都引用**同一纯函数 + 两个悬空键 + 快照同轮（`+14 / -0`）；④ **四向反证** `V-1`…`V-4` 全红 + 基线绿 + 复原一致。`tests/api tests/application/memory tests/adapters` **1333 passed**；mypy **1206 files** 零问题 | （见 CI 台账） | 三处如实登记：① `_ConflictFacts` **漏加两字段**（12 红 ⇒ 逐处补；**参数对象扩展时要同步全部构造点**）；② 调用点 / dataclass 字段两处锚点未命中（脚本中止 ⇒ 重跑精准落点）；③ 断言集三处长行 ⇒ 折行；④ `_memory_row` 52 行 ⇒ 抽 `_dangling_face` + 注释内联（**语义一字未动**）。**EC-05 PASS**（验证器 **63 判词 / 0 FAIL**；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5790 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿） | （见 CI 台账） | — | 无 | 无（本 GOAL 已收口） |
 
 ## 状态历史
 
