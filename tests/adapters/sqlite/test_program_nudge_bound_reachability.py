@@ -180,3 +180,27 @@ def test_replace_keeps_the_bound_when_unrelated_fields_change() -> None:
     """EC-02：界与其它字段**正交**（改 `max_runs` 不带掉界 —— 承 `D-1` 的正交口径）。"""
     program = _program(gate_nudge_after_seconds=BOUND)
     assert replace(program, max_runs=5).gate_nudge_after_seconds == BOUND
+
+
+def test_the_hybrid_gate_round_trips_through_sqlite() -> None:
+    """GOAL-20261012-060 EC-02：混合式声明经 SQLite round-trip **两维原样读回**。
+
+    两臂逐条：声明了 ⇒ 两维都在（**顺序保持**）；未声明 ⇒ `None`
+    （两列都是 `NULL` —— 不是被回填出来的空对象）。
+    """
+    from packages.domain.program import HybridGateDeclaration
+
+    store = SqliteProgramStore(":memory:")
+    # 混合式与单点声明**互斥** ⇒ 这一臂显式去掉默认的单点声明（那不是本轮要验的面）。
+    declared = _program(
+        human_gate_at_index=None,
+        human_gate_hybrid=HybridGateDeclaration(at_indexes=(1, 3), on_verdicts=("REJECT",)),
+    )
+    store.create(declared)
+    back = store.get("prog-nudge")
+    assert back.human_gate_hybrid is not None
+    assert back.human_gate_hybrid.at_indexes == (1, 3)
+    assert back.human_gate_hybrid.on_verdicts == ("REJECT",)
+    plain = _program(id="prog-plain", human_gate_at_index=None)
+    store.create(plain)
+    assert store.get("prog-plain").human_gate_hybrid is None

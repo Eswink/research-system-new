@@ -206,3 +206,42 @@ def test_the_nudge_bound_round_trips_and_defaults_to_undeclared_on_pg() -> None:
     assert store.get(declared).gate_nudge_after_seconds == 60
     assert store.get(undeclared).gate_nudge_after_seconds is None
     store.close()
+
+
+def test_the_hybrid_gate_round_trips_on_pg() -> None:
+    """GOAL-20261012-060 EC-02：**PG 侧**的混合式往返 —— 与 SQLite 同一份契约。
+
+    两臂逐条（与 SQLite 那份逐字同形）：声明了 ⇒ 两维原样读回；未声明 ⇒ `None`
+    （两列 `NULL` = **未声明**，不是空对象）。
+    """
+    from packages.domain.program import HybridGateDeclaration
+
+    _clean()
+    store = PostgresProgramStore(dsn=_dsn())
+    declared = f"prog-hybrid-{uuid.uuid4().hex[:8]}"
+    undeclared = f"prog-nohybrid-{uuid.uuid4().hex[:8]}"
+    store.create(
+        ResearchProgram(
+            id=declared,
+            project_id="p1",
+            protocol_id="proto",
+            max_runs=3,
+            continue_rule=ProgramContinueRule(verdict_in=("ACCEPT",)),
+            human_gate_hybrid=HybridGateDeclaration(at_indexes=(1, 3), on_verdicts=("REJECT",)),
+        )
+    )
+    store.create(
+        ResearchProgram(
+            id=undeclared,
+            project_id="p1",
+            protocol_id="proto",
+            max_runs=3,
+            continue_rule=ProgramContinueRule(verdict_in=("ACCEPT",)),
+        )
+    )
+    back = store.get(declared)
+    assert back.human_gate_hybrid is not None
+    assert back.human_gate_hybrid.at_indexes == (1, 3)
+    assert back.human_gate_hybrid.on_verdicts == ("REJECT",)
+    assert store.get(undeclared).human_gate_hybrid is None
+    store.close()

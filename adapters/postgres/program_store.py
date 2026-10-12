@@ -23,7 +23,9 @@ from packages.domain.program import (
 _PROGRAM_SELECT = (
     "SELECT program_id, project_id, protocol_id, max_runs, max_attempts_per_index,"
     " human_gate_at_index, human_gate_on_verdicts_json, human_gate_at_indexes_json,"
-    " gate_nudge_after_seconds, continue_rule_json, created_at, updated_at FROM research_programs"
+    " gate_nudge_after_seconds, human_gate_hybrid_indexes_json,"
+    " human_gate_hybrid_verdicts_json, continue_rule_json, created_at, updated_at"
+    " FROM research_programs"
 )
 _DECISION_SELECT = (
     "SELECT program_id, after_index, decided_at, kind, reason, cited_run_id,"
