@@ -154,6 +154,9 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-20261012-059 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal059_closeout_assertions.py",
     "tools/verify_goal059_closeout.py",
+    # GOAL-20261012-060 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
+    "tools/goal060_closeout_assertions.py",
+    "tools/verify_goal060_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
