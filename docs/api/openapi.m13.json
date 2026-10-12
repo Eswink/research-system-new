@@ -3838,6 +3838,20 @@
             "title": "Contradictions",
             "type": "array"
           },
+          "dangling_contradictions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dangling Contradictions",
+            "type": "array"
+          },
+          "dangling_supersedes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dangling Supersedes",
+            "type": "array"
+          },
           "disposition": {
             "default": "",
             "title": "Disposition",

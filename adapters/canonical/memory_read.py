@@ -48,6 +48,7 @@ from packages.application.memory.disposition import (  # noqa: E402
     TERMINAL_OUT_OF_VIEW,
     TERMINAL_SUCCEEDED,
     conflicted_by_index,
+    dangling_reference_index,
     disposition_of,
     disposition_reason,
     resolved_pair_index,
@@ -173,6 +174,8 @@ def _project_records(records: Any, moment: Timestamp) -> list[dict[str, object]]
     # GOAL-20261012-063 EC-02：**已消解的那一对不再算作反向冲突**（先扣后判）——
     # 与 `conflicted_by_index` **同一手法**（同族的第三个实例）。
     resolved = resolved_pair_index(records)
+    # GOAL-20261012-064 EC-03：**悬空引用**同样扫同批记录一次（同族的第四个实例）。
+    dangling = dangling_reference_index(records)
     return [
         _memory_row(
             record,
@@ -184,6 +187,8 @@ def _project_records(records: Any, moment: Timestamp) -> list[dict[str, object]]
                     str(record.id), conflicted_by.get(str(record.id), []), resolved
                 ),
                 resolved_with=sorted(resolved.get(str(record.id), set())),
+                dangling_supersedes=list(dangling.get(str(record.id), ([], []))[0]),
+                dangling_contradictions=list(dangling.get(str(record.id), ([], []))[1]),
             ),
         )
         for record in records
@@ -220,6 +225,8 @@ class _RowFacts:
     terminal: dict[str, object] = field(default_factory=dict)
     conflicted_by: list[str] = field(default_factory=list)
     resolved_with: list[str] = field(default_factory=list)
+    dangling_supersedes: list[str] = field(default_factory=list)
+    dangling_contradictions: list[str] = field(default_factory=list)
 
 
 def _memory_row(
@@ -256,6 +263,11 @@ def _memory_row(
     # `conflicted_by` 里**扣掉**的那些在这一键里逐条点名（**不静默消失**：
     # 读者要能回答「那一对是被消解了，还是从来没声明过」）。
     row["resolved_with"] = list(resolved.resolved_with)
+    # GOAL-20261012-064 EC-03：**悬空引用**逐条披露（**两个方向各自点名** ——
+    # `supersedes` 与 `contradictions` 语义不同，混一个列表会让读者分不出是哪一种）。
+    # **既有键一字不动**（`terminal` 的取值**不**因悬空而改变 —— 那是序 21 判据钉住的）。
+    row["dangling_supersedes"] = list(resolved.dangling_supersedes)
+    row["dangling_contradictions"] = list(resolved.dangling_contradictions)
     row["disposition"] = disposition_of(
         state,
         superseded=bool(resolved.superseded_by),

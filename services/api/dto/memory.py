@@ -51,6 +51,11 @@ class MemoryRecordDto(BaseModel):
     #: 但别的记录声明了与它冲突）。与 `contradictions`（**正向**）**互不顶替** ——
     #: 两者都要读得出（缺省 `[]` ⇒ 没有任何反向声明 ⇒ 与改动前逐字相同）。
     conflicted_by: list[str] = Field(default_factory=list)
+    #: GOAL-20261012-064 EC-03：**悬空引用**（本批里找不到的被引 id）—— 两个方向**各自点名**：
+    #: 一条记录的「来源可查」在**删除之后**不该静默失效（写面对未知 id 是拒提交的）。
+    #: 缺省 `[]` ⇒ 没有悬空引用 ⇒ 与改动前逐字相同。
+    dangling_supersedes: list[str] = Field(default_factory=list)
+    dangling_contradictions: list[str] = Field(default_factory=list)
     #: GOAL-20261012-063 EC-03：**已与本记录消解的那些声明方** —— 对端可见性；
     #: `conflicted_by` 里**扣掉**的那些在这里逐条点名（**不静默消失**）。
     #: 缺省 `[]` ⇒ 没有任何消解记载 ⇒ 与改动前逐字相同。

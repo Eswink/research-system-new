@@ -197,6 +197,41 @@ def resolved_pair_index(records: tuple[Any, ...]) -> dict[str, set[str]]:
     return resolved
 
 
+def dangling_reference_index(
+    records: tuple[Any, ...],
+) -> dict[str, tuple[list[str], list[str]]]:
+    """**悬空引用**表（`本批里被引但找不到的记录 id` → （正向被引 / 反向被引））。
+
+    GOAL-20261012-064 EC-02。**与 `conflicted_by_index` 同一手法**（同族的第四个实例）：
+    引用写在**引用方**的记录上，而「被引的那条**还在不在**」只有**扫同批记录**才知道。
+
+    **为什么要有它**：序 22 让**写面**的引用完整性可判定（未知 id ⇒ 拒绝提交），
+    但**删除**这条路径**绕过了它**（校验只在提交时跑一次）⇒ **实跑**：A 引用 `m-b` 后
+    `m-b` 被删 ⇒ 读面照旧披露那两个 id、**没有任何悬空标记**，`terminal` 甚至报 `CURRENT`
+    ⇒ 一条记录的「来源可查」在**生命周期后半段**失效。
+
+    **两个方向各自报**（`supersedes` / `contradictions` 的**语义不同**，混成一个列表会让
+    读者分不出是哪一种引用悬空了）：
+
+    - 第一个列表：**`supersedes` 指向**的、本批里不存在的 id（正向）；
+    - 第二个列表：**`contradictions` 指向**的、本批里不存在的 id（正向）。
+
+    **本批范围**（**不猜**）：只在**本批记录**里判存在性 —— 分不清「被删」与「在本批之外」
+    （比如按 `scope` 筛过）⇒ 返回值是**候选**（调用方按「看不见 ≠ 不存在」**点名**，
+    与序 21 的 `OUT_OF_VIEW` **同一纪律**）。
+    """
+    present = {str(record.id) for record in records}
+    dangling: dict[str, tuple[list[str], list[str]]] = {}
+    for record in records:
+        missing_supersedes = [item for item in record.supersedes if str(item) not in present]
+        missing_contradictions = [
+            item for item in record.contradictions if str(item) not in present
+        ]
+        if missing_supersedes or missing_contradictions:
+            dangling[str(record.id)] = (missing_supersedes, missing_contradictions)
+    return dangling
+
+
 #: 链终点的**四种形态**（互不混用；都**点名**，**不**静默）。
 #: - `CURRENT`：本条**没有**后继 ⇒ 它**就是**当前版本；
 #: - `SUCCEEDED`：本条有后继且链**有终点** ⇒ 终点是 `terminal` 点名的那些 id；

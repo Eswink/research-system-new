@@ -31,6 +31,7 @@ from fastapi import APIRouter, Request
 from packages.application.memory.disposition import (
     TERMINAL_CURRENT,
     conflicted_by_index,
+    dangling_reference_index,
     disposition_of,
     disposition_reason,
     resolved_pair_index,
@@ -134,6 +135,8 @@ class _RowFacts:
     terminal: dict[str, object] = field(default_factory=dict)
     conflicted_by: list[str] = field(default_factory=list)
     resolved_with: list[str] = field(default_factory=list)
+    dangling_supersedes: list[str] = field(default_factory=list)
+    dangling_contradictions: list[str] = field(default_factory=list)
 
 
 def _record_dto(
@@ -166,6 +169,8 @@ def _record_dto(
                 item for item in facts.conflicted_by if item not in set(facts.resolved_with)
             ],
             resolved_with=list(facts.resolved_with),
+            dangling_supersedes=list(facts.dangling_supersedes),
+            dangling_contradictions=list(facts.dangling_contradictions),
             now=now,
             chain=chain,
         ),
@@ -180,13 +185,17 @@ class _ConflictFacts:
     """冲突面 + 链终点所需的**只读事实**（合成一个参数对象守 `max-args` 门）。
 
     六件都在这里（都是「同批记录算出来 / 调用方给的」）：`validity`（时效）/ `links`
-    （反向取代）/ `by_others`（反向冲突）/ `now`（时点）/ `chain`（链终点）。
+    （反向取代）/ `by_others`（反向冲突）/ `resolved_with`（对端可见性）/
+    `dangling_supersedes` + `dangling_contradictions`（悬空引用，两个方向）/
+    `now`（时点）/ `chain`（链终点）。
     """
 
     validity: ValidityState | None
     links: list[str]
     by_others: list[str]
     resolved_with: list[str]
+    dangling_supersedes: list[str]
+    dangling_contradictions: list[str]
     now: Timestamp | None
     chain: dict[str, object]
 
@@ -213,6 +222,9 @@ def _decorate_conflict_and_terminal(
     # GOAL-20261012-063 EC-03：**已与本记录消解的那些声明方**（对端可见性 —— 从
     # `conflicted_by` 里扣掉的那些在这里逐条点名，**不静默消失**）。
     base["resolved_with"] = list(facts.resolved_with)
+    # GOAL-20261012-064 EC-03：**悬空引用**两个方向各自点名（既有键一字不动）。
+    base["dangling_supersedes"] = list(facts.dangling_supersedes)
+    base["dangling_contradictions"] = list(facts.dangling_contradictions)
     base["disposition"] = disposition_of(
         facts.validity,
         superseded=bool(links),
@@ -277,6 +289,8 @@ def _record_dtos(records: Any) -> list[MemoryRecordDto]:
     reverse = superseded_by_index(records)
     conflicted_by = conflicted_by_index(records)
     resolved = resolved_pair_index(records)
+    # GOAL-20261012-064 EC-03：**悬空引用**同样扫同批记录一次（同族的第四个实例）。
+    dangling = dangling_reference_index(records)
     terminals = terminal_versions(records)
     return [
         _record_dto(
@@ -286,6 +300,8 @@ def _record_dtos(records: Any) -> list[MemoryRecordDto]:
                 terminal=dict(terminals.get(record.id) or {}),
                 conflicted_by=conflicted_by.get(record.id, []),
                 resolved_with=sorted(resolved.get(record.id, set())),
+                dangling_supersedes=list(dangling.get(record.id, ([], []))[0]),
+                dangling_contradictions=list(dangling.get(record.id, ([], []))[1]),
             ),
         )
         for record in records
