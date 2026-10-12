@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 31 passed in 3.29s
+Y-1 路由忽略该参数（静默忽略）: 按压 RED
+    sha 复原一致=True | 5c8e3e08ed5b
+    suite: 3 failed, 28 passed in 4.98s
+Y-2 缺省形态被改动（不传也筛）: 按压 RED
+    sha 复原一致=True | 5c8e3e08ed5b
+    suite: 3 failed, 28 passed in 4.75s
+Y-3 不披露（筛了不报条数）: 按压 RED
+    sha 复原一致=True | 5c8e3e08ed5b
+    suite: 2 failed, 29 passed in 4.59s
+Y-4 未知作者被当成全选（不猜被破坏）: 按压 RED
+    sha 复原一致=True | 5c8e3e08ed5b
+    suite: 2 failed, 29 passed in 4.84s
+SUMMARY presses=4 all_red_and_restored=True
