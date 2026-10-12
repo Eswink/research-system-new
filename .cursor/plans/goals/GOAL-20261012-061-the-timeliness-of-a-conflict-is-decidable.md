@@ -2,7 +2,7 @@
 id: GOAL-20261012-061
 slug: the-timeliness-of-a-conflict-is-decidable
 title: 冲突的时效性成为可判定 —— `contradictions` 可声明、可落库、可处置（五态）、可消解（序 19/22/26），但**一条很久以前声明的冲突是否仍算数**毫无面 —— **实测** `conflict_valid` / `contradiction_valid` / `conflict_review` **零命中**，`ConflictResolution` 只有（对端 / 消解者 / 时点）⇒ 冲突**一经声明永久算数**，与记忆自身的复核/过期机制（序 7 起的 `review_after` / `expires_at`）**不对称**
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-12
 updated_at: 2026-10-12
 owners:
@@ -220,7 +220,7 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| （待 push 后逐条回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
 
 ## 迭代日志
 
