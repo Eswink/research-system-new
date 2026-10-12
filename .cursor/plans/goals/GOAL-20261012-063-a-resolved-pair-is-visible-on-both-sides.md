@@ -2,7 +2,7 @@
 id: GOAL-20261012-063
 slug: a-resolved-pair-is-visible-on-both-sides
 title: 已消解的一对在两端都看得见 —— 序 30 让**冲突声明**的反向可读（`conflicted_by`），但**消解记载**仍是**单向**的；**实跑取证**：A 声明与 B 冲突、人把这一对**消解**掉 ⇒ **A 读 `USE`**，而 **B 仍读 `CONFLICTED`**（`conflicted_by=['m-a']` 未被消解记载抵消）⇒ **同一条已消解的分歧两端处置不一致**；**零命中复核**：`resolved_by_index` / `reverse_resolution` / `resolved_pairs` 三个产品根**全零**；**先例已全在**（序 30 的 `conflicted_by_index` 就是同一手法的第三个实例）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-12
 updated_at: 2026-10-12
 owners:
@@ -229,7 +229,7 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| （待 push 后逐条回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
 
 ## 迭代日志
 
