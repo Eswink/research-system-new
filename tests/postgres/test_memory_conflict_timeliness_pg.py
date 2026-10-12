@@ -117,3 +117,29 @@ def test_the_proposed_by_round_trips_on_pg() -> None:
     )
     assert store.get(authored).proposed_by == "agent:x"
     assert store.get(plain).proposed_by is None
+
+
+def test_the_author_dimension_selects_on_pg() -> None:
+    """GOAL-20261013-066 EC-02：**PG 侧**按作者选 —— 与 SQLite / Fake 同一份契约。
+
+    两臂逐条：按作者选 ⇒ 只出那一位的；不传作者 ⇒ 全部（既有行为逐字不变）。
+    """
+    _clean()
+    source = f"test:memory-author-select-{uuid.uuid4().hex[:8]}"
+    store = PostgresMemoryStore(dsn=_dsn(), allowed_sources=(source,))
+    for suffix, author in (("x", "agent:x"), ("y", "agent:y")):
+        store.commit(
+            MemoryWriteProposal(
+                id=f"mem-{suffix}-{uuid.uuid4().hex[:8]}",
+                tier=MemoryTier.PROJECT,
+                kind=MemoryType.FACT,
+                content="c",
+                provenance=source,
+                confidence=0.9,
+                proposed_by=author,
+            )
+        )
+    assert len(store.query(proposed_by="agent:x")) == 1
+    assert len(store.query(proposed_by="agent:y")) == 1
+    assert len(store.query()) == 2
+    assert store.query(proposed_by="agent:nowhere") == ()

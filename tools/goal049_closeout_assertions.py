@@ -197,7 +197,12 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
     return [
         toolbox.verdict(
             "ec03-the-read-face-accepts-a-scope",
-            'args.get("scope")' in read_face,
+            # **判关系**（GOAL-20261013-066 改签）：该读面必须**从调用方给的那批参数里取
+            # `scope`** —— 取值点由 `_optional_arg` 承担（序 34 把三个维度的解析收进那里），
+            # 故判**关系**：读面里出现 scope 维的取值路径（不钉具体那一行）。
+            # **两向实测**：把 `_optional_arg(args, "scope")` 改成常量 ⇒ 该条判红。
+            ('args.get("scope")' in read_face)
+            or ('_optional_arg(args, "scope")' in read_face),
         ),
         toolbox.verdict(
             "ec03-every-missing-form-is-named",
