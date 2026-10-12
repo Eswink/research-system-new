@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [ ] | [PLAN-20261013-443](tasks/PLAN-20261013-443-goal-067-ec01-05-the-http-read-face-does-not-silently-ignore-the-author-filter.md) | IN_PROGRESS |
 | [x] | [PLAN-20261013-441](tasks/PLAN-20261013-441-goal-066-ec01-05-a-memory-author-is-selectable.md) | DONE |
 | [x] | [PLAN-20261013-439](tasks/PLAN-20261013-439-goal-065-ec01-05-who-proposed-a-memory-is-readable.md) | DONE |
 | [x] | [PLAN-20261012-437](tasks/PLAN-20261012-437-goal-064-ec01-05-references-to-a-deleted-record-are-no-longer-silent.md) | DONE |
