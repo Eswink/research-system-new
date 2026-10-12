@@ -132,7 +132,7 @@ memory_entries: []
 | EC-02 | 作者成为查询面可选维度（三适配器同契约；缺省不筛；未知作者空集） | `pytest tests/adapters tests/postgres -q` | **PASS** |
 | EC-03 | 消费面可传 + 载荷点名（缺省逐字不变） | `pytest tests/application/memory tests/api -q` | **PASS** |
 | EC-04 | 两向反证 `X-1`…`X-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5815 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -234,7 +234,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（逐轴复评 + 建档） | `171dfa0`（同轮建档）、`139f527`（frontmatter 修复） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」） | （见 CI 台账） | `139f527`（**治理判据当场抓到** title 里的冒号破坏 YAML ⇒ 改块标量） | 五条 EC 全 PENDING | cycle 1（EC-02 查询面第三维） |
-| 1 | `PLAN-20261013-441`（WP-1…WP-5） | `2df0a40`（Port 第三维 + 三适配器 + 消费面）、`73a305b`（判据 10 例 + 按压归档）、`97fc003`（收口面 + PG 判据 + 049 改签） | **EC-01/02/03/04 PASS**：① 四段读数；② Port +1 可选形参 + 三适配器**各自真筛** + 缺省不筛 + 未知作者空集；③ 消费面可传 + 载荷点名（含筛掉条数）+ 缺省逐字不变 + **序 17 的 `scope` 支一字不动**；④ **四向反证** `X-1`…`X-4` 全红 + 基线绿 + 复原一致。`tests/application tests/adapters tests/api tests/contracts tests/domain tests/postgres` 全绿；mypy **1208 files** 零问题 | （见 CI 台账） | 四处如实登记：① **回归**：`_filtered_out` 初版把 `scope` 传进分母 ⇒ 序 17 的判据当场红 ⇒ **分母只按 tier 维**（与序 17 逐字一致）；② `X-4` 锚点**不唯一**（`payload["filtered_out"]` 出现 2 次）⇒ 改打作者支整段；③ **049 断言集改签**（字面锚 → 关系锚，`+6 / -1`，两向实测）；④ 治理判据抓到 title 冒号 ⇒ 改块标量 | EC-05 待做 | cycle 2（EC-05 收口） |
+| 1 | `PLAN-20261013-441`（WP-1…WP-5） | `2df0a40`（Port 第三维 + 三适配器 + 消费面）、`73a305b`（判据 10 例 + 按压归档）、`97fc003`（收口面 + PG 判据 + 049 改签） | **EC-01/02/03/04 PASS**：① 四段读数；② Port +1 可选形参 + 三适配器**各自真筛** + 缺省不筛 + 未知作者空集；③ 消费面可传 + 载荷点名（含筛掉条数）+ 缺省逐字不变 + **序 17 的 `scope` 支一字不动**；④ **四向反证** `X-1`…`X-4` 全红 + 基线绿 + 复原一致。`tests/application tests/adapters tests/api tests/contracts tests/domain tests/postgres` 全绿；mypy **1208 files** 零问题 | （见 CI 台账） | 四处如实登记：① **回归**：`_filtered_out` 初版把 `scope` 传进分母 ⇒ 序 17 的判据当场红 ⇒ **分母只按 tier 维**（与序 17 逐字一致）；② `X-4` 锚点**不唯一**（`payload["filtered_out"]` 出现 2 次）⇒ 改打作者支整段；③ **049 断言集改签**（字面锚 → 关系锚，`+6 / -1`，两向实测）；④ 治理判据抓到 title 冒号 ⇒ 改块标量；⑤ 规模门 452 行 ⇒ **压实到 448**（守 450 行硬上限；**语义一字未动**）。**EC-05 PASS**（验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5815 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿） | （见 CI 台账） | — | 无 | 无（本 GOAL 已收口） |
 
 ## 状态历史
 
