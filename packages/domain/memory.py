@@ -50,6 +50,14 @@ class MemoryRecord:
     # GOAL-20261012-058 EC-02：**逐对的消解记载**（缺省空列表 = **一对都没消解**
     # ⇒ 既有行为**逐字不变**：未消解 ⇒ 读面仍报 `CONFLICTED`）。
     resolutions: list[ConflictResolution] = field(default_factory=list)
+    # GOAL-20261012-061 EC-02：**冲突声明的时效**（可选；缺省 `None` = **未声明**
+    # ⇒ 既有行为**逐字不变**：冲突照旧永久算数）。
+    # 语义与记忆自身的时效**同一纪律**（`review_after` 到点 ⇒ 该复核；`expires_at` 到点
+    # ⇒ 过期）—— 但它说的是**冲突声明本身**还算不算数：一条三年前记录的冲突声明，
+    # 与今天声明的**同处置**（都 `CONFLICTED`）是不对称的。
+    # **不**自动消解 / **不**自动失效：到点**只点名**（决定权仍在**人**）。
+    conflict_review_after: Timestamp | None = None
+    conflict_expires_at: Timestamp | None = None
     active: bool = True
 
     def __post_init__(self) -> None:
@@ -64,6 +72,7 @@ class MemoryRecord:
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be in [0, 1]")
         _validate_resolutions(self)
+        _validate_conflict_timeliness(self)
 
     @property
     def unresolved_conflicts(self) -> list[str]:
@@ -74,6 +83,36 @@ class MemoryRecord:
         """
         settled = {item.other_id for item in self.resolutions}
         return [item for item in self.contradictions if item not in settled]
+
+
+def _validate_conflict_timeliness(record: MemoryRecord) -> None:
+    """**冲突时效**的校验（GOAL-20261012-061 EC-02）—— 坏形态**点名拒绝**。
+
+    两件（与记忆自身的时效**同一纪律**，见 `validity.py` 的 `expires_at` 优先）：
+
+    - **时效不许空转**：声明了时效**却没有任何冲突** ⇒ 点名拒绝 —— 否则
+      「我声明了冲突时效但永远不生效」（`contradictions` 是空的）会变成看不见的故障；
+    - **互斥的先后**：`conflict_expires_at` **早于** `conflict_review_after` ⇒ 点名拒绝
+      （那样「该复核」永远不会到来 —— 过期已把它们都盖住了；与 `validity_at` 里
+      「过期是更强的状态」同一口径，但**声明期**就该拒绝这种不可能的组合）。
+    """
+    review_after = record.conflict_review_after
+    expires_at = record.conflict_expires_at
+    if (review_after is not None or expires_at is not None) and not record.contradictions:
+        raise ValueError(
+            "conflict timeliness declared but the record declares no contradictions"
+            " (nothing would ever become due)"
+        )
+    if (
+        review_after is not None
+        and expires_at is not None
+        and expires_at.value < review_after.value
+    ):
+        raise ValueError(
+            "conflict_expires_at must not precede conflict_review_after"
+            f" (got expires_at={expires_at.value.isoformat()},"
+            f" review_after={review_after.value.isoformat()})"
+        )
 
 
 def _validate_resolutions(record: MemoryRecord) -> None:
@@ -122,6 +161,12 @@ class MemoryWriteProposal:
     contradictions: list[str] = field(default_factory=list)
     #: 生效起点（`None` = **不适用/未声明**，**不猜** —— 与 `[]` 的语义各归各的）。
     valid_from: Timestamp | None = None
+    # GOAL-20261012-061 EC-02：**冲突声明的时效**（可选；缺省 `None` = 未声明
+    # ⇒ 既有行为逐字不变）。由提案方声明、门链原样带进 canonical ——
+    # 与 `review_after` / `expires_at`（序 7 起）**同一形态**，
+    # 说的是**冲突声明本身**还算不算数（见 `MemoryRecord` 上同名两字段的说明）。
+    conflict_review_after: Timestamp | None = None
+    conflict_expires_at: Timestamp | None = None
 
     def __post_init__(self) -> None:
         if not self.id:

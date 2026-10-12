@@ -40,13 +40,17 @@ CREATE TABLE IF NOT EXISTS m12_memory (
     contradictions TEXT NOT NULL,
     -- GOAL-20261012-058 EC-02：逐对的**消解记载**（JSON 列表；缺省 '[]' ⇒ 既有行不变）。
     resolutions TEXT NOT NULL DEFAULT '[]',
+    -- GOAL-20261012-061 EC-02：**冲突声明的时效**（NULL = 未声明 ⇒ 既有行为逐字不变）。
+    conflict_review_after TEXT,
+    conflict_expires_at TEXT,
     active INTEGER NOT NULL
 );
 """
 
 _MEMORY_COLS = (
     "id, tier, kind, content, provenance, confidence, scope, valid_from, review_after, "
-    "expires_at, supersedes, contradictions, resolutions, active"
+    "expires_at, supersedes, contradictions, resolutions, conflict_review_after, "
+    "conflict_expires_at, active"
 )
 
 
@@ -145,6 +149,10 @@ class SqliteMemoryStore(SqliteAdapterBase):
             # （此前这两个字段在 `MemoryRecord` 上有、在提案上无 ⇒ 永远落回缺省）。
             contradictions=list(proposal.contradictions),
             valid_from=proposal.valid_from,
+            # GOAL-20261012-061 EC-02：**冲突时效**必须随提案落库
+            # （否则「声明了却永远读到未声明」= 同族缺陷的第三次）。
+            conflict_review_after=proposal.conflict_review_after,
+            conflict_expires_at=proposal.conflict_expires_at,
         )
         placeholders = ",".join("?" * len(_MEMORY_COLS.split(",")))
         with self._connection:
@@ -268,6 +276,10 @@ class SqliteMemoryStore(SqliteAdapterBase):
             _to_json(record.supersedes),
             _to_json(record.contradictions),
             _resolutions_to_json(record.resolutions),
+            record.conflict_review_after.value.isoformat()
+            if record.conflict_review_after
+            else None,
+            record.conflict_expires_at.value.isoformat() if record.conflict_expires_at else None,
             1 if record.active else 0,
         )
 
@@ -300,8 +312,22 @@ class SqliteMemoryStore(SqliteAdapterBase):
             resolutions=_resolutions_from_json(
                 row["resolutions"] if "resolutions" in row.keys() else None
             ),
+            # GOAL-20261012-061 EC-02：旧行**没有**这两列 ⇒ `None`（= 未声明
+            # ⇒ 既有行为逐字不变）。与 `resolutions` 那条同一手法（缺列按缺省读出）。
+            conflict_review_after=_optional_ts(row, "conflict_review_after"),
+            conflict_expires_at=_optional_ts(row, "conflict_expires_at"),
             active=bool(row["active"]),
         )
+
+
+def _optional_ts(row: sqlite3.Row, column: str) -> Timestamp | None:
+    """可选时点列（**缺列**或 NULL ⇒ `None`；旧库文件没有该列 ⇒ 读出「未声明」）。
+
+    与 `resolutions` 的「缺列按缺省读出」**同一纪律**：旧库文件在加列之前建的记录
+    逐字保持「未声明」，**不**被回填成某个时刻。
+    """
+    value = row[column] if column in row.keys() else None
+    return Timestamp(datetime.fromisoformat(value)) if value else None
 
 
 __all__ = ["SqliteMemoryStore"]

@@ -39,4 +39,45 @@ def validity_at(record: MemoryRecord, now: Timestamp) -> ValidityState | None:
     return None
 
 
-__all__ = ["ValidityState", "validity_at"]
+class ConflictTimelinessState(StrEnum):
+    """**冲突声明本身**在给定时点上的时效状态（GOAL-20261012-061 EC-02）。
+
+    与 `ValidityState` **同一族但**说的是另一件事：那里是**记录**的时效
+    （「这条记忆过期了吗」），这里是**冲突声明**的时效（「这条记录当年声明的那个
+    分歧**还算不算数**」）—— 两者**互不顶替**（记录的时效到了不代表冲突声明失效）。
+    """
+
+    REVIEW_DUE = "REVIEW_DUE"
+    """`conflict_review_after <= now`（这条冲突声明该复核了）—— 在未失效的前提下。"""
+
+    STALE = "STALE"
+    """`conflict_expires_at <= now`（这条冲突声明**已失效**）—— 读面仍披露声明本身，
+    但处置面据此判「不再算作当前冲突」。**不**自动删除 / **不**自动消解。"""
+
+
+def conflict_timeliness_at(record: MemoryRecord, now: Timestamp) -> ConflictTimelinessState | None:
+    """给定时点上该记录的**冲突声明**时效（`None` = 未到期且无需复核，**或**未声明）。
+
+    三态**互不混用**（承 `validity_at` 的同一纪律）：
+
+    - `STALE`：`conflict_expires_at <= now` —— **失效**（更强的状态，优先判）；
+    - `REVIEW_DUE`：`conflict_review_after <= now` —— **该复核**（在未失效的前提下）；
+    - `None`：两者都未到，**或都没声明** ⇒ **不猜**（未声明**不得**被当成「已失效」——
+      那是 `X-3` 反证臂的形态）。
+
+    **不读挂钟**：`now` 由调用方给（可复现）；**未声明冲突** ⇒ 也返回 `None`
+    （没有冲突声明就没有「冲突时效」可言 —— 与 `_validate_conflict_timeliness` 的
+    「声明了时效却没有冲突」点名拒绝互为两面）。
+    """
+    if not record.contradictions:
+        return None
+    expires_at = record.conflict_expires_at
+    if expires_at is not None and expires_at.value <= now.value:
+        return ConflictTimelinessState.STALE
+    review_after = record.conflict_review_after
+    if review_after is not None and review_after.value <= now.value:
+        return ConflictTimelinessState.REVIEW_DUE
+    return None
+
+
+__all__ = ["ConflictTimelinessState", "ValidityState", "conflict_timeliness_at", "validity_at"]

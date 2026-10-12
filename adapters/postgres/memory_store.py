@@ -71,8 +71,10 @@ class PostgresMemoryStore(PostgresAdapterBase):
                 "INSERT INTO m12_memory"
                 " (id, tier, kind, content, provenance, confidence, scope,"
                 " valid_from, review_after, expires_at,"
-                " supersedes, contradictions, resolutions, active)"
-                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s)"
+                " supersedes, contradictions, resolutions,"
+                " conflict_review_after, conflict_expires_at, active)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,"
+                "%s,%s,%s)"
                 " ON CONFLICT (id) DO NOTHING",
                 _proposal_values(proposal),
             )
@@ -96,6 +98,12 @@ class PostgresMemoryStore(PostgresAdapterBase):
             review_after=proposal.review_after,
             expires_at=proposal.expires_at,
             supersedes=list(proposal.supersedes),
+            # GOAL-20261010-045 EC-02 / GOAL-20261012-061 EC-02：提交回执必须与**写进去的**
+            # 一致（此前冲突与生效起点在这里被漏掉 ⇒ 回执与落库分叉）。
+            contradictions=list(proposal.contradictions),
+            valid_from=proposal.valid_from,
+            conflict_review_after=proposal.conflict_review_after,
+            conflict_expires_at=proposal.conflict_expires_at,
         )
         return record
 
@@ -223,6 +231,9 @@ def _proposal_values(proposal: MemoryWriteProposal) -> tuple[Any, ...]:
         # GOAL-20261012-058 EC-02：**新提交的记录一律从「一对都没消解」开始**（消解是提交后
         # 经 lifecycle 用例落库的，见 `resolve_conflict`）⇒ INSERT 恒写空数组。
         "[]",
+        # GOAL-20261012-061 EC-02：冲突时效（提案声明则写，缺省 None ⇒ 逐字不变）。
+        proposal.conflict_review_after.value if proposal.conflict_review_after else None,
+        proposal.conflict_expires_at.value if proposal.conflict_expires_at else None,
         True,  # active
     )
 
@@ -290,5 +301,8 @@ def _record_from_row(row: Any) -> MemoryRecord:
         supersedes=supersedes,
         contradictions=contradictions,
         resolutions=resolutions,
+        # GOAL-20261012-061 EC-02：冲突时效（旧行按缺省读出 —— 与 sqlite 侧同一口径）。
+        conflict_review_after=_opt_ts(row.get("conflict_review_after")),
+        conflict_expires_at=_opt_ts(row.get("conflict_expires_at")),
         active=bool(row["active"]),
     )

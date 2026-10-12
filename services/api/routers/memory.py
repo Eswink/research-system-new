@@ -35,7 +35,11 @@ from packages.application.memory.disposition import (
 )
 from packages.application.memory.gate import MemoryGateDeps, commit_memory
 from packages.application.memory.lifecycle import MemoryLifecycleDeps, delete_memory
-from packages.application.memory.validity import ValidityState, validity_at
+from packages.application.memory.validity import (
+    ValidityState,
+    conflict_timeliness_at,
+    validity_at,
+)
 from packages.application.ports import InvalidInputError
 from packages.domain.core import ID, Timestamp
 from packages.domain.enums import MemoryTier, MemoryType
@@ -146,6 +150,13 @@ def _record_dto(
         conflicted=bool(record.unresolved_conflicts),
     )
     base["reason"] = disposition_reason(validity, record, superseded_by=links)
+    # GOAL-20261012-061 EC-03：**冲突时效**同样**直接调**应用层纯函数（与编排面同源；
+    # 不给时点 ⇒ `None` = 未判定，**不猜** —— 与 `validity` 那一条**同一口径**）。
+    base["conflict_timeliness"] = (
+        state.value
+        if now is not None and (state := conflict_timeliness_at(record, now)) is not None
+        else None
+    )
     base["terminal_state"] = str(chain.get("state", TERMINAL_CURRENT))
     base["terminal_ids"] = (
         [str(item) for item in chain_ids] if isinstance(chain_ids, list) else [str(record.id)]

@@ -62,6 +62,10 @@ class FakeMemoryStore(FakeBase):
             # 少带一个 ⇒ 该路径上的「冲突可读」判据**假绿**（实测：Fake 侧曾漏掉）。
             contradictions=list(proposal.contradictions),
             valid_from=proposal.valid_from,
+            # GOAL-20261012-061 EC-02：**同一条理由第三次生效** —— 提案上的冲突时效
+            # 三个适配器都必须带上（少带一个 ⇒ 该路径上的判据假绿；承序 13 的实测教训）。
+            conflict_review_after=proposal.conflict_review_after,
+            conflict_expires_at=proposal.conflict_expires_at,
         )
         self._records[record.id] = record
         self._record("commit", proposal.id, result="committed")

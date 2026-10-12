@@ -3809,6 +3809,17 @@
             "title": "Conflict Resolutions",
             "type": "array"
           },
+          "conflict_timeliness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conflict Timeliness"
+          },
           "content": {
             "title": "Content",
             "type": "string"

@@ -28,6 +28,10 @@ NEW_FIELDS: frozenset[str] = frozenset({
     "terminal_state",
     "terminal_ids",
     "conflict_resolutions",
+    # GOAL-20261012-061 EC-03：**冲突声明的时效**（与编排面同源同值）——
+    # 同轮同步集里的**加法**（受判形态未变：仍是「剔除新增后 == 那 13 个逐字」，
+    # 且新增字段各自**另有**正证）。
+    "conflict_timeliness",
 })
 
 _NOW = "2026-10-11T00:00:00+00:00"

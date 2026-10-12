@@ -47,6 +47,10 @@ class MemoryRecordDto(BaseModel):
     # GOAL-20261012-058 EC-03：**冲突消解**逐对披露（与编排面**同源同值**）。
     # 未消解 ⇒ 空列表 ⇒ 处置仍是 `CONFLICTED`（既有行为逐字不变）。
     conflict_resolutions: list[MemoryConflictResolutionDto] = Field(default_factory=list)
+    #: GOAL-20261012-061 EC-03：**冲突声明的时效**（`STALE` / `REVIEW_DUE` / `None`）——
+    #: 与 `validity`（**记录**的时效）**互不顶替**（两件事：这条记忆过期了吗 / 当年声明的
+    #: 那个分歧还算不算数）。**只在给了时点时**判（不给 ⇒ `None` = 未判定，**不猜**）。
+    conflict_timeliness: str | None = None
 
 
 class MemoryConflictResolutionDto(BaseModel):

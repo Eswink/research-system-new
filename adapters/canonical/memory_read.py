@@ -51,7 +51,7 @@ from packages.application.memory.disposition import (
     superseded_by_index,
     terminal_versions,
 )
-from packages.application.memory.validity import validity_at
+from packages.application.memory.validity import conflict_timeliness_at, validity_at
 from packages.application.ports.errors import InvalidInputError
 from packages.domain.core import Timestamp
 
@@ -103,6 +103,21 @@ def _identity_fields(record: Any, state: Any) -> dict[str, object]:
     }
 
 
+def _conflict_timeliness_face(record: Any, moment: Timestamp) -> str | None:
+    """**冲突声明**的时效（`STALE` / `REVIEW_DUE` / `None`）—— 与 `validity` **互不顶替**。
+
+    为什么单列一个键而不是复用语义的 `validity`：两者说的是**两件事** ——
+    `validity` 是**记录**的时效（这条记忆过期了吗），本键是**冲突声明**的时效
+    （当年声明的那个分歧**还算不算数**）。记录的时效到了**不代表**冲突声明失效，
+    反之亦然 ⇒ 两个键各自披露（读面**不合并**、**不推断**）。
+
+    **`STALE` 不等于「没有冲突」**：声明仍在 `contradictions` 里、读面**照旧披露**；
+    本键只回答「它还算不算数」。判定**在域层**（本面不重写第二套）。
+    """
+    state = conflict_timeliness_at(record, moment)
+    return state.value if state is not None else None
+
+
 def _terminal_face(record: Any, terminal: dict[str, object] | None) -> dict[str, object]:
     """GOAL-20261011-053 EC-02（`BB-1`）：**链的终点** —— 上面那两个键只给**直接**链接，
     在 A ⊂ B ⊂ C 时 A 的「替代品」B **自己可能已被取代** ⇒ 「**现在**的版本是哪条」
@@ -152,6 +167,10 @@ def _memory_row(
         }
         for item in record.resolutions
     ]
+    # GOAL-20261012-061 EC-03：**冲突声明的时效**逐条披露（按**调用方给的时点**判 ——
+    # 本面**不读挂钟**，与 `validity_at` 同一纪律）。未声明 ⇒ `None`（**不猜**：
+    # 未声明**不得**被当成「已失效」）。声明面（谁与谁冲突 / 谁消解了哪一对）**一字不动**。
+    row["conflict_timeliness"] = _conflict_timeliness_face(record, moment)
     row["terminal"] = _terminal_face(record, terminal)
     row["disposition"] = disposition_of(
         state, superseded=bool(superseded_by), conflicted=conflicted
