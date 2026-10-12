@@ -50,6 +50,7 @@ from packages.application.ports.event_publisher import EventPublisher
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.model_gateway import ModelGateway
 from packages.application.ports.model_store import ModelStore
+from packages.application.ports.nudge_sink import NullNudgeSink, NudgeSink
 from packages.application.ports.ops_store import OpsStore
 from packages.application.ports.policy_evaluator import PolicyEvaluator
 from packages.application.ports.resource_catalog import PreflightContext
@@ -165,6 +166,9 @@ class ApiDeps:
     review_findings: Any | None = field(default=None, repr=False)
     # GOAL-20261008-037 EC-01：研究程序的声明与推进决策（canonical；两组成同侧）。
     program_store: Any | None = field(default=None, repr=False)
+    # GOAL-20261012-059 EC-03：**超期信号的出口**（进程内 seam，与 `telemetry` 同形）。
+    # 缺省 `NullNudgeSink` ⇒ 未注入时静默（既有行为逐字不变）；**不**做真实外发。
+    nudges: NudgeSink = field(default_factory=NullNudgeSink, repr=False)
     outbox_relay_enabled: bool = False
     _connection: sqlite3.Connection | None = field(default=None, repr=False)
     _pg_connection: Any | None = field(default=None, repr=False)

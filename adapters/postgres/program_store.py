@@ -23,7 +23,7 @@ from packages.domain.program import (
 _PROGRAM_SELECT = (
     "SELECT program_id, project_id, protocol_id, max_runs, max_attempts_per_index,"
     " human_gate_at_index, human_gate_on_verdicts_json, human_gate_at_indexes_json,"
-    " continue_rule_json, created_at, updated_at FROM research_programs"
+    " gate_nudge_after_seconds, continue_rule_json, created_at, updated_at FROM research_programs"
 )
 _DECISION_SELECT = (
     "SELECT program_id, after_index, decided_at, kind, reason, cited_run_id,"
@@ -74,6 +74,12 @@ def _decode_program(row: Any) -> ResearchProgram:
         human_gate_at_indexes=(
             tuple(int(str(item)) for item in _json_object(row["human_gate_at_indexes_json"]))
             if row["human_gate_at_indexes_json"] is not None
+            else None
+        ),
+        # GOAL-20261012-059 EC-02：NULL = 未声明超期界（不是 0；见 sqlite 侧同名列）。
+        gate_nudge_after_seconds=(
+            int(row["gate_nudge_after_seconds"])
+            if row["gate_nudge_after_seconds"] is not None
             else None
         ),
         continue_rule=ProgramContinueRule(
@@ -132,8 +138,9 @@ class PostgresProgramStore(PostgresAdapterBase):
         self._conn.execute(
             "INSERT INTO research_programs (program_id, project_id, protocol_id, max_runs,"
             " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
-            " human_gate_at_indexes_json, continue_rule_json, created_at, updated_at)"
-            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            " human_gate_at_indexes_json, gate_nudge_after_seconds, continue_rule_json,"
+            " created_at, updated_at)"
+            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             " ON CONFLICT (program_id) DO NOTHING",
             (
                 program.id,
@@ -156,6 +163,8 @@ class PostgresProgramStore(PostgresAdapterBase):
                     if program.human_gate_at_indexes is not None
                     else None
                 ),
+                # GOAL-20261012-059 EC-02：NULL = 未声明（列序与 `_PROGRAM_SELECT` 同源）。
+                program.gate_nudge_after_seconds,
                 json.dumps(
                     {"verdict_in": list(program.continue_rule.verdict_in)},
                     ensure_ascii=False,

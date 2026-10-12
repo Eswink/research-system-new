@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS research_programs (
     -- GOAL-20261011-055 EC-02：**多点**人工闸门（NULL = 不设 ⇒ 既有行为逐字不变）。
     -- 落库形态与条件式**同形**（JSON 列表 + `None` ⇒ NULL）；两者语义不同但存法一致。
     human_gate_at_indexes_json TEXT,
+    -- GOAL-20261012-059 EC-02：**超期界**（秒；NULL = 未声明 ⇒ 既有行为逐字不变）。
+    -- 与三种闸门声明**正交**（不参与互斥）：它不决定「停不停」，只决定「等太久了要不要报」。
+    gate_nudge_after_seconds INTEGER,
     continue_rule_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -111,6 +114,8 @@ def _encode_program(program: ResearchProgram) -> tuple[object, ...]:
         program.human_gate_at_index,
         _encode_gate_conditions(program.human_gate_on_verdicts),
         _encode_index_list(program.human_gate_at_indexes),
+        # GOAL-20261012-059 EC-02：超期界（NULL = 未声明 ⇒ 既有行为逐字不变）。
+        program.gate_nudge_after_seconds,
         _encode_rule(program.continue_rule),
         program.created_at.value.isoformat(),
         program.updated_at.value.isoformat(),
@@ -127,10 +132,11 @@ def _decode_program(row: sqlite3.Row | tuple[object, ...]) -> ResearchProgram:
         gate_at,
         conditions,
         gate_indexes,
+        nudge_bound,
         rule,
         created_at,
         updated_at,
-    ) = row[:11]
+    ) = row[:12]
     return ResearchProgram(
         id=str(program_id),
         project_id=str(project_id),
@@ -142,6 +148,8 @@ def _decode_program(row: sqlite3.Row | tuple[object, ...]) -> ResearchProgram:
         human_gate_on_verdicts=_decode_gate_conditions(conditions),
         # GOAL-20261011-055 EC-02：NULL = 不设（既有行为逐字不变）。
         human_gate_at_indexes=_decode_index_list(gate_indexes),
+        # GOAL-20261012-059 EC-02：NULL = 未声明（既有行为逐字不变）。
+        gate_nudge_after_seconds=int(str(nudge_bound)) if nudge_bound is not None else None,
         continue_rule=_decode_rule(rule),
         created_at=Timestamp(datetime.fromisoformat(str(created_at))),
         updated_at=Timestamp(datetime.fromisoformat(str(updated_at))),
@@ -186,7 +194,7 @@ class SqliteProgramStore(SqliteAdapterBase):
             str(row["name"])
             for row in self._conn.execute("PRAGMA table_info(research_programs)").fetchall()
         }
-        additions = {"human_gate_at_indexes_json": "TEXT"}
+        additions = {"human_gate_at_indexes_json": "TEXT", "gate_nudge_after_seconds": "INTEGER"}
         for name, declaration in additions.items():
             if name not in columns:
                 self._conn.execute(f"ALTER TABLE research_programs ADD COLUMN {name} {declaration}")
@@ -204,8 +212,8 @@ class SqliteProgramStore(SqliteAdapterBase):
                 "INSERT OR IGNORE INTO research_programs (program_id, project_id,"
                 " protocol_id, max_runs, max_attempts_per_index, human_gate_at_index,"
                 " human_gate_on_verdicts_json, human_gate_at_indexes_json,"
-                " continue_rule_json, created_at, updated_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " gate_nudge_after_seconds, continue_rule_json, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 _encode_program(program),
             )
         self._record("create", program.id, result="ok")
@@ -215,7 +223,8 @@ class SqliteProgramStore(SqliteAdapterBase):
         row = self._conn.execute(
             "SELECT program_id, project_id, protocol_id, max_runs,"
             " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
-            " human_gate_at_indexes_json, continue_rule_json, created_at, updated_at"
+            " human_gate_at_indexes_json, gate_nudge_after_seconds, continue_rule_json, "
+            "created_at, updated_at"
             " FROM research_programs"
             " WHERE program_id = ?",
             (program_id,),
@@ -231,7 +240,8 @@ class SqliteProgramStore(SqliteAdapterBase):
         rows = self._conn.execute(
             "SELECT program_id, project_id, protocol_id, max_runs,"
             " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
-            " human_gate_at_indexes_json, continue_rule_json, created_at, updated_at"
+            " human_gate_at_indexes_json, gate_nudge_after_seconds, continue_rule_json, "
+            "created_at, updated_at"
             " FROM research_programs"
             " WHERE project_id = ? ORDER BY program_id",
             (project_id,),

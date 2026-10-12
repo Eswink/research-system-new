@@ -178,6 +178,8 @@ async def create_program(
             if payload.human_gate_at_indexes is not None
             else None
         ),
+        # GOAL-20261012-059 EC-02：超期界（缺省 None = 未声明 ⇒ 逐字不变）。
+        gate_nudge_after_seconds=payload.gate_nudge_after_seconds,
     )
     del protocol  # 只用其可解析性做校验；声明面存的是路径（canonical 里的协议标识）
     store.create(program)
@@ -209,6 +211,8 @@ def _detail_dto(deps: ApiDeps, store: ProgramStore, program_id: str) -> ProgramD
             if program.human_gate_at_indexes is not None
             else None
         ),
+        # GOAL-20261012-059 EC-02：超期界的声明（缺省 None = 未声明）。
+        gate_nudge_after_seconds=program.gate_nudge_after_seconds,
         created_at=program.created_at.value.isoformat(),
         updated_at=program.updated_at.value.isoformat(),
         runs=[
@@ -270,6 +274,9 @@ async def advance(program_id: str, request: Request) -> ProgramAdvanceDto:
         # 会刷新它 ⇒ 停在等待态的 run 上它就是**始点**）；`now` 取**请求时刻**。
         # 两个都由这里给 ⇒ 判词**可复现**（等待面自己**不读挂钟**）。
         clock=_advance_clock(_runs_of(deps), program.id),
+        # GOAL-20261012-059 EC-03：**超期信号的出口** —— 组合根决定注入什么；
+        # 缺省 `NullNudgeSink` ⇒ 静默（既有行为逐字不变）。**不**做真实外发。
+        nudges=deps.nudges,
     )
     return ProgramAdvanceDto(
         program_id=result.program_id,

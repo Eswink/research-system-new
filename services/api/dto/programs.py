@@ -33,6 +33,10 @@ class ProgramCreateDto(BaseModel):
     #: GOAL-20261011-055 EC-02：**多点**人工闸门 —— **这一组**序号各自跑完之后停下等人。
     #: 缺省 `None` = 不设（既有行为逐字不变）；逐点上界与**不得重复**由域层点名校验。
     human_gate_at_indexes: list[int] | None = None
+    #: GOAL-20261012-059 EC-02：**超期界**（秒）—— 等待超过它 ⇒ 判词点名「等太久了」，
+    #: 且**交给注入的出口**。缺省 `None` = **不设界**（既有行为逐字不变）；
+    #: 必须是**正整数**（零 / 负由域层点名拒绝）。与三种闸门声明**正交**（不参与互斥）。
+    gate_nudge_after_seconds: int | None = Field(default=None, ge=1)
 
 
 class ProgramDecisionDto(BaseModel):
@@ -72,6 +76,8 @@ class ProgramDetailDto(BaseModel):
     human_gate_on_verdicts: list[str] | None = None
     #: GOAL-20261011-055 EC-02：多点闸门的声明（缺省 `None` = 未声明）。
     human_gate_at_indexes: list[int] | None = None
+    #: GOAL-20261012-059 EC-02：超期界（秒）的声明（缺省 `None` = 未声明）。
+    gate_nudge_after_seconds: int | None = None
     created_at: str
     updated_at: str
     runs: list[ProgramRunDto]

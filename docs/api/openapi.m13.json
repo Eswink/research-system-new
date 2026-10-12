@@ -4770,6 +4770,18 @@
             "title": "Continue On Verdicts",
             "type": "array"
           },
+          "gate_nudge_after_seconds": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Nudge After Seconds"
+          },
           "human_gate_at_index": {
             "anyOf": [
               {
@@ -4905,6 +4917,17 @@
             },
             "title": "Decisions",
             "type": "array"
+          },
+          "gate_nudge_after_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Nudge After Seconds"
           },
           "human_gate_at_index": {
             "anyOf": [
