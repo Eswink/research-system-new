@@ -54,7 +54,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-http-author-filter.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **HTTP 读面按作者筛（本轮验收主体）**：路由 +1 **可选**查询参数；传 ⇒ 只出那一位作者的；
@@ -63,7 +63,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（按作者筛 / 披露 / 缺省逐字不变 / 未知作者空集 / 与 scope 可并存）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **两个形态的 DTO 与快照同轮**：新增的筛选走**既有的两个形态**（缺省 / 追加键的
@@ -73,7 +73,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts -q` ⇒ 全绿
       + 新用例（两个形态各自的键集 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`Y-1` 路由**忽略**该参数（静默忽略原样回来）⇒ RED；
@@ -83,7 +83,7 @@ exit_criteria:
     verify: >-
       `scratch/goal067_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；
       归档 `.cursor/plans/goals/evidence/GOAL-20261013-067-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -96,7 +96,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal067_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -122,7 +122,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261013-443-goal-067-ec01-05-the-http-read-face-does-not-silently-ignore-the-author-filter.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-444-goal-067-ec01-04-the-http-read-face-does-not-silently-ignore-the-author-filter.md
 memory_entries: []
 ---
 
@@ -136,10 +136,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（实跑静默忽略 + 不对称对照 + 路由签名 + 先例） | **实跑**：`scratch/probe-http-author-filter.py` | PENDING |
-| EC-02 | HTTP 读面按作者筛 + 披露 + 缺省逐字不变 + 未知空集 | `pytest tests/api -q` | PENDING |
-| EC-03 | 两个 DTO 形态与快照同轮 | `pytest tests/api tests/contracts -q` | PENDING |
-| EC-04 | 两向反证 `Y-1`…`Y-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（实跑静默忽略 + 不对称对照 + 路由签名 + 先例） | **实跑**：`scratch/probe-http-author-filter.py` | **PASS** |
+| EC-02 | HTTP 读面按作者筛 + 披露 + 缺省逐字不变 + 未知空集 | `pytest tests/api -q` | **PASS** |
+| EC-03 | 两个 DTO 形态与快照同轮 | `pytest tests/api tests/contracts -q` | **PASS** |
+| EC-04 | 两向反证 `Y-1`…`Y-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -240,10 +240,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（逐轴复评 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 35** + 预算核算 35→40（**同轮建档**） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 HTTP 面按作者筛） |
+| 0 | —（逐轴复评 + 建档） | `dadb3bb` | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；**同轮建档** | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 HTTP 面按作者筛） |
+| 1 | `PLAN-20261013-443`（WP-1…WP-5） | `6c0ae2d`（路由 + 三形态 + 快照）、`872b94a`（判据 8 例 + 按压归档）、`93fcaa2`（收口面）、`ca7ed11`（长行修复） | **EC-01/02/03/04 PASS**：① 四段读数（实跑静默忽略 + 不对称对照 + 签名 + 先例）；② 传作者 ⇒ 真筛 + 披露两键；缺省逐字不变；未知作者空集；`?scope=` 一字不动；③ **三形态并集**（少一个就静默丢键 —— 实测过）+ 专用形状 + 快照同轮（`+62 / -5`）；④ **四向反证** `Y-1`…`Y-4` 全红 + 基线绿 + 复原一致。`tests/api tests/contracts tests/application tests/adapters tests/domain` **2372 passed**；mypy **1209 files** 零问题 | （见 CI 台账） | 三处如实登记：① **并集漏形态**（首版只列两个 ⇒ FastAPI 收窄载荷、`filtered_out` 读不出来）；② 断言集 `exclude_none` 判据**按短语出现判** ⇒ 被**注释**命中**假红** ⇒ 改判**调用形态**；③ 注释按**显示宽度**超 100（中文占两列）⇒ 缩短措辞 | EC-05 待做 | cycle 2（EC-05 收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-13 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**三处如实登记**（并集漏形态 / `exclude_none` 判据假红 / 注释显示宽度）。**残余**：未知查询参数仍静默忽略（通用拒绝属全仓纪律面）/ 作者鉴权不做 / 模糊匹配不做 / 两维互斥 / 内容级检测 / 三维以上组合等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261013-444`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-13 | ACTIVE | **逐轴复评 + 建档（cycle 0）**：MAINLINE 程序表**新增序 35**（**轴 = 质量**），并写修订记录行（只追加）+ 预算核算（`max_goals` 35 → 40）。**实测读数**（逐条见「事实层结论」表）：① **实跑** `?proposed_by=` ⇒ 200 + 全量 + 无披露（**静默忽略**）；② **对照** `?scope=` ⇒ 会筛并披露两键（**不对称**）；③ 路由签名只有 `scope`；④ 先例（序 17 的 `?scope=` 形态）在树。**GOAL 文件 / 子 PLAN / `ALL_PLAN` 投影同轮落地**。五条 EC 全 PENDING。**不**做未知参数的通用拒绝 / **不**做作者鉴权 / **不**做模糊匹配／**不**改 `?scope=` 语义。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

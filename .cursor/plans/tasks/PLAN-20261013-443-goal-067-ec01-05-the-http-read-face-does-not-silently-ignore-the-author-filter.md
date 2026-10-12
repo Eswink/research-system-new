@@ -2,10 +2,10 @@
 id: PLAN-20261013-443
 slug: goal-067-ec01-05-the-http-read-face-does-not-silently-ignore-the-author-filter
 title: GOAL-20261013-067 cycle 1（EC-01…EC-05）：HTTP 面按作者筛 + 披露 + 缺省不变 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-13
 updated_at: 2026-10-13
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-444-goal-067-ec01-04-the-http-read-face-does-not-silently-ignore-the-author-filter.md
 memory_entries: []
 parent_goal: GOAL-20261013-067
 cursor_plan_uri: null
@@ -35,7 +35,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-http-author-filter.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **HTTP 面按作者筛（EC-02）**：路由 +1 **可选**查询参数；传 ⇒ 只出那一位的；
@@ -44,7 +44,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（按作者筛 / 披露 / 缺省不变 / 未知空集 / 可并存）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **DTO 形态与快照同轮（EC-03）**：走**既有的两个形态**（并集形态追加键 —— **不**开
@@ -53,7 +53,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts -q` ⇒ 全绿
       + 新用例（两个形态各自的键集 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`Y-1` 路由忽略该参数 ⇒ RED；`Y-2` 缺省形态被改动 ⇒ RED；
@@ -62,7 +62,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal067_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -71,7 +71,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal067_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261013-443 — GOAL-20261013-067 cycle 1
@@ -123,3 +123,4 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-13 | IN_PROGRESS | cycle 1 建档：HTTP 面按作者筛 + 披露 + 四向反证。 |
+| 2026-10-13 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261013-444` = PASS_WITH_WARNINGS）。**交付**：路由接受并交给 Port + 披露两键 + **三形态并集**（缺省 / 按范围 / 按作者）+ 快照同轮；判据 8 例；四向反证全红 + 归档（`CR=0`）。 |
