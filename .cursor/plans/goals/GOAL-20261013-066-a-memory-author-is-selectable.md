@@ -1,7 +1,8 @@
 ---
 id: GOAL-20261013-066
 slug: a-memory-author-is-selectable
-title: 记忆的作者可筛选 —— 序 33 让**提议者**读得出（`proposed_by` 落 canonical + 两读面披露），但**选不着**；**实测**：`inspect.signature(MemoryStore.query)` 的形参**只有** `tier` / `scope` 两个维度（`proposed_by` **不在**），传 `proposed_by=` ⇒ **`TypeError: unexpected keyword argument`**；**实跑**：两条不同作者的记忆经产品路径提交 ⇒ 读面**逐条报得出作者**，却**无法只取其中一位作者的**（与序 17 的 `scope` **同一缺口形态**：看得见、选不着）；**先例已全在**（序 17 的 `scope` 第三维就是同一推进的同族形态）| 序 17、33 |
+title: >-
+  记忆的作者可筛选 —— 序 33 让**提议者**读得出（`proposed_by` 落 canonical + 两读面披露），但**选不着**；**实测**：`inspect.signature(MemoryStore.query)` 的形参**只有** `tier` / `scope` 两个维度（`proposed_by` **不在**），传 `proposed_by=` ⇒ **`TypeError: unexpected keyword argument`**；**实跑**：两条不同作者的记忆经产品路径提交 ⇒ 读面**逐条报得出作者**，却**无法只取其中一位作者的**（与序 17 的 `scope` **同一缺口形态**：看得见、选不着）；**先例已全在**（序 17 的 `scope` 第三维就是同一推进的同族形态）| 序 17、33 |
 status: ACTIVE
 created_at: 2026-10-13
 updated_at: 2026-10-13
