@@ -47,7 +47,10 @@ STANDARD = "tools/closeout_recheck_assertions.py"
 SELF = "tools/verify_goal067_closeout.py"
 ASSERTIONS = "tools/goal067_closeout_assertions.py"
 
-GOAL = ".cursor/plans/goals/GOAL-20261013-067-the-http-read-face-does-not-silently-ignore-the-author-filter.md"
+GOAL = (
+    ".cursor/plans/goals/GOAL-20261013-067-the-http-read-face-does-not"
+    "-silently-ignore-the-author-filter.md"
+)
 #: 子计划 / 复检（记录面逐条在位）。
 CHILD_PLANS: tuple[str, ...] = (
     ".cursor/plans/tasks/PLAN-20261013-443-goal-067-ec01-05-the-http-read-face-does-not-silently-ignore-the-author-filter.md",
