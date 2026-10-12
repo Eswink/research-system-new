@@ -77,9 +77,9 @@ def _rows(store: FakeMemoryStore) -> dict[str, dict[str, object]]:
 
 def test_the_dangling_index_names_both_directions() -> None:
     """EC-02 ①：悬空表**两个方向各自报**（`supersedes` 与 `contradictions` 语义不同）。"""
-    dangling = dangling_reference_index(
-        (_Row(id="m-a", supersedes=["m-gone"], contradictions=["m-also-gone"]),)
-    )
+    dangling = dangling_reference_index((
+        _Row(id="m-a", supersedes=["m-gone"], contradictions=["m-also-gone"]),
+    ))
     assert dangling == {"m-a": (["m-gone"], ["m-also-gone"])}, dangling
 
 
