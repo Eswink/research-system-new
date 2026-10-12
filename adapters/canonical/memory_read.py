@@ -139,6 +139,22 @@ def _terminal_face(record: Any, terminal: dict[str, object] | None) -> dict[str,
     }
 
 
+def _dangling_face(facts: "_RowFacts") -> dict[str, list[str]]:
+    """**悬空引用**的两个键（GOAL-20261012-064 EC-03）。
+
+    **为什么单列**：`_memory_row` 有 50 行硬上限 —— 本轮加两个键之后一度把它顶爆
+    ⇒ 搬到这里（**语义一字未动**，只是换落点），并守住那道门。
+
+    **两个方向各自一个键**（`supersedes` / `contradictions` 语义不同，混一个列表会让读者
+    分不出是哪一种）；**既有键一字不动**（`terminal` 的取值**不**因悬空而改变 —— 那是
+    序 21 判据钉住的）。
+    """
+    return {
+        "dangling_supersedes": list(facts.dangling_supersedes),
+        "dangling_contradictions": list(facts.dangling_contradictions),
+    }
+
+
 def _resolution_face(record: Any) -> list[dict[str, str]]:
     """**逐对**消解记载的读面形态（GOAL-20261012-058 EC-03）。
 
@@ -239,45 +255,28 @@ def _memory_row(
     也是本条唯一的非局部输入（见 `superseded_by_index` / `terminal_versions`）。
     """
     state = validity_at(record, moment)
-    # GOAL-20261011-051 EC-02：**未消解的冲突**是一维 —— `contradictions` 非空即「有」。
-    # 这里**只读声明**（不推断谁和谁冲突 —— 那是序 13 的 `W-2`，明确不做）。
-    # GOAL-20261012-058 EC-03：**逐对**判冲突 —— 已消解的那些**不再计入**。
-    # 既有行为逐字不变：记录**没有**消解记载 ⇒ `unresolved` == `contradictions`
-    # ⇒ `conflicted` 与改动前**同值**。
+    # 序 13/19/26 的口径：**逐对**判未消解的冲突（已消解的不再计入；无记载 ⇒ 与改动前同值）。
     conflicted = bool(record.unresolved_conflicts)
     row = _identity_fields(record, state)
     row["supersedes"] = list(record.supersedes)
     resolved = facts or _RowFacts()
+    by_others = list(resolved.conflicted_by)
     row["superseded_by"] = list(resolved.superseded_by)
     row["conflict_resolutions"] = _resolution_face(record)
-    # GOAL-20261012-061 EC-03：**冲突声明的时效**逐条披露（按**调用方给的时点**判 ——
-    # 本面**不读挂钟**，与 `validity_at` 同一纪律）。未声明 ⇒ `None`（**不猜**：
-    # 未声明**不得**被当成「已失效」）。声明面（谁与谁冲突 / 谁消解了哪一对）**一字不动**。
+    # 序 29 的冲突时效 / 序 21 的链终点（都**不读挂钟**；未声明 ⇒ `None`，**不猜**）。
     row["conflict_timeliness"] = _conflict_timeliness_face(record, moment)
     row["terminal"] = _terminal_face(record, resolved.terminal)
-    # GOAL-20261012-062 EC-02：**被别人声明冲突**（本记录自己没声明）—— 由调用方按
-    # **同一批记录**算出来（`conflicted_by_index`，与 `superseded_by` **同一手法**）。
-    by_others = list(resolved.conflicted_by)
     row["conflicted_by"] = by_others
-    # GOAL-20261012-063 EC-03：**已与本记录消解的那些声明方**（对端可见性）——
-    # `conflicted_by` 里**扣掉**的那些在这一键里逐条点名（**不静默消失**：
-    # 读者要能回答「那一对是被消解了，还是从来没声明过」）。
+    # 序 31 的对端可见性 / 序 32 的悬空引用（两键各自披露，见各自助手）。
     row["resolved_with"] = list(resolved.resolved_with)
-    # GOAL-20261012-064 EC-03：**悬空引用**逐条披露（**两个方向各自点名** ——
-    # `supersedes` 与 `contradictions` 语义不同，混一个列表会让读者分不出是哪一种）。
-    # **既有键一字不动**（`terminal` 的取值**不**因悬空而改变 —— 那是序 21 判据钉住的）。
-    row["dangling_supersedes"] = list(resolved.dangling_supersedes)
-    row["dangling_contradictions"] = list(resolved.dangling_contradictions)
+    row.update(_dangling_face(resolved))
     row["disposition"] = disposition_of(
         state,
         superseded=bool(resolved.superseded_by),
         conflicted=conflicted,
         conflicted_by=bool(by_others),
     )
-    #: 理由：处置是**可复核**的，不是不透明标签。
-    # GOAL-20261011-051：**冲突的处置理由由 `_reason` 自己点名**（那一支已逐字给出 id）
-    # ⇒ 不再叠加 `_conflict_note`（否则同一句出现两遍）。`_conflict_note` 保留给
-    # **未被 `_reason` 覆盖**的场合（见下）—— 「不是当前处置理由、但读者仍该知道有冲突」。
+    #: 理由：处置**可复核**（处置理由的自我点名见 `disposition_reason`）。
     row["reason"] = disposition_reason(
         state, record, superseded_by=resolved.superseded_by, conflicted_by=by_others
     )

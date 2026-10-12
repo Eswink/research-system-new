@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261012-437](tasks/PLAN-20261012-437-goal-064-ec01-05-references-to-a-deleted-record-are-no-longer-silent.md) | IN_PROGRESS |
+| [x] | [PLAN-20261012-437](tasks/PLAN-20261012-437-goal-064-ec01-05-references-to-a-deleted-record-are-no-longer-silent.md) | DONE |
 | [x] | [PLAN-20261012-435](tasks/PLAN-20261012-435-goal-063-ec01-05-a-resolved-pair-is-visible-on-both-sides.md) | DONE |
 | [x] | [PLAN-20261012-433](tasks/PLAN-20261012-433-goal-062-ec01-05-a-conflict-declaration-is-no-longer-one-way.md) | DONE |
 | [x] | [PLAN-20261012-431](tasks/PLAN-20261012-431-goal-061-ec01-05-the-timeliness-of-a-conflict-is-decidable.md) | DONE |

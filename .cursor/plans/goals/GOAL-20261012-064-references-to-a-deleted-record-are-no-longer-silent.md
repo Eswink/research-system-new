@@ -52,7 +52,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-dangling-reference.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **悬空引用可读（本轮验收主体）**：读面**逐条披露**哪些被引 id **在本批里找不到**
@@ -62,7 +62,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application tests/domain -q`
       ⇒ 全绿 + 新用例（悬空可读 / 缺省逐字不变 / 跨范围不猜）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **两个读面同源**：编排消费面与 HTTP 读面**同源**（同一批纯函数）披露悬空引用；
@@ -71,7 +71,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例（两处同值 / 既有键逐字不变 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`V-1` 悬空表被摘掉（读不到）⇒ RED；
@@ -82,7 +82,7 @@ exit_criteria:
       判词归档进树（**二进制写盘**、`CR=0`）。
     verify: >-
       `scratch/goal064_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -95,7 +95,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal064_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -121,7 +121,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261012-437-goal-064-ec01-05-references-to-a-deleted-record-are-no-longer-silent.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261012-438-goal-064-ec01-04-references-to-a-deleted-record-are-no-longer-silent.md
 memory_entries: []
 ---
 
@@ -134,10 +134,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（零命中 + 实跑 + 写面对照 + 先例） | **实跑**：`scratch/probe-dangling-reference.py` | PENDING |
-| EC-02 | 悬空引用可读（两方向各自点名；缺省逐字不变；跨范围不猜） | `pytest tests/application tests/domain -q` | PENDING |
-| EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | PENDING |
-| EC-04 | 两向反证 `V-1`…`V-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（零命中 + 实跑 + 写面对照 + 先例） | **实跑**：`scratch/probe-dangling-reference.py` | **PASS** |
+| EC-02 | 悬空引用可读（两方向各自点名；缺省逐字不变；跨范围不猜） | `pytest tests/application tests/domain -q` | **PASS** |
+| EC-03 | 两读面**同源** + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
+| EC-04 | 两向反证 `V-1`…`V-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -236,10 +236,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（逐轴复评 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 32** | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 悬空可读） |
+| 0 | —（逐轴复评 + 建档） | `2f45cba` | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 悬空可读） |
+| 1 | `PLAN-20261012-437`（WP-1…WP-5） | `09b1d85`（悬空索引 + 两方向 + 两读面同源）、`1524aa3`（判据 10 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 四段读数（零命中 + 实跑 + 写面对照 + 先例）；② 悬空**两方向各自点名** + **既有键一字不动**（`terminal` 仍 `CURRENT`）+ 缺省逐字不变 + 跨范围不猜；③ 两读面**都引用**同一纯函数 + 两个悬空键 + 快照同轮（`+14 / -0`）；④ **四向反证** `V-1`…`V-4` 全红 + 基线绿 + 复原一致。`tests/api tests/application/memory tests/adapters` **1333 passed**；mypy **1206 files** 零问题 | （见 CI 台账） | 三处如实登记：① `_ConflictFacts` **漏加两字段**（12 红 ⇒ 逐处补；**参数对象扩展时要同步全部构造点**）；② 调用点 / dataclass 字段两处锚点未命中（脚本中止 ⇒ 重跑精准落点）；③ 断言集三处长行 ⇒ 折行 | EC-05 待做 | cycle 2（EC-05 收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-12 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**三处如实登记**（`_ConflictFacts` 漏字段 / 锚点未命中 / 长行）。**残余**：悬空判定只在本批内（分不清「被删」与「在批外」）/ 级联删除 / 自愈 / 内容级检测 / 三维以上组合等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261012-438`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-12 | ACTIVE | **逐轴复评 + 建档（cycle 0）**：MAINLINE 程序表**新增序 32**（**轴 = 质量**），并写修订记录行（只追加）。**实测读数**（逐条见「事实层结论」表）：① 悬空面**零命中**；② **实跑**：删掉被引记录 ⇒ 读面照旧披露且**无悬空标记**（`terminal` 报 `CURRENT`）；③ **写面对照**：未知 id **拒绝提交**（不对称）；④ 先例 `OUT_OF_VIEW` 在树。五条 EC 全 PENDING。**不**级联删除 / **不**自愈 / **不**阻断删除 / **不**改 `terminal` 取值。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

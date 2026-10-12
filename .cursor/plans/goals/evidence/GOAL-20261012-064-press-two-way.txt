@@ -1,15 +1,15 @@
 BASELINE（未按压，必须绿）: GREEN
-    suite: 33 passed in 1.41s
+    suite: 33 passed in 1.37s
 V-1 悬空表被摘掉（悬空引用又静默）: 按压 RED
     sha 复原一致=True | 6e86a3537e6b
-    suite: 3 failed, 30 passed in 3.15s
+    suite: 3 failed, 30 passed in 3.02s
 V-2 存在性判空（全都算悬空）: 按压 RED
     sha 复原一致=True | 6e86a3537e6b
-    suite: 3 failed, 30 passed in 3.06s
+    suite: 3 failed, 30 passed in 2.85s
 V-3 缺省形态被改动（干净也报悬空）: 按压 RED
-    sha 复原一致=True | 068523df3436
-    suite: 3 failed, 30 passed in 2.90s
+    sha 复原一致=True | 15434709f584
+    suite: 3 failed, 30 passed in 3.28s
 V-4 两个方向混用（键串了）: 按压 RED
-    sha 复原一致=True | 068523df3436
-    suite: 1 failed, 32 passed in 2.93s
+    sha 复原一致=True | 15434709f584
+    suite: 1 failed, 32 passed in 3.05s
 SUMMARY presses=4 all_red_and_restored=True
