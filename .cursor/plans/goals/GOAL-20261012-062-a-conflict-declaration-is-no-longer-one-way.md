@@ -2,7 +2,7 @@
 id: GOAL-20261012-062
 slug: a-conflict-declaration-is-no-longer-one-way
 title: 冲突声明不再是一扇单向门（反向链接）—— `contradictions` 是**单方向**的声明：A 声明与 B 冲突 ⇒ **B 那侧读不出来**；**实跑取证**：B 的 `contradictions` 是 `[]`、**没有**任何反向键，且 B 的 `disposition` 是 **`USE`（照用）** ⇒ **一条被别人声明冲突的记忆照样进下一步**；而**同类先例已全在**（序 18 的 `superseded_by_index` 正是同一个问题的**反向索引**解法）⇒ 缺的是冲突面的**反向索引与分派**
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-12
 updated_at: 2026-10-12
 owners:
@@ -227,7 +227,7 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| （待 push 后逐条回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
 
 ## 迭代日志
 
