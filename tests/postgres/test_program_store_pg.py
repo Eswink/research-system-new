@@ -171,3 +171,36 @@ def test_run_program_association_queries_on_pg() -> None:
     assert [r.program_index for r in ordered] == [1, 2]
     assert store.for_program("prog-missing") == ()
     store.close()
+def test_the_nudge_bound_round_trips_and_defaults_to_undeclared_on_pg() -> None:
+    """GOAL-20261012-059 EC-02：**PG 侧**的超期界往返 —— 与 SQLite 同一份契约。
+
+    两臂逐条（与 SQLite 那份逐字同形）：声明的 `gate_nudge_after_seconds=60`
+    读回来的就是 60；未声明的读回 `None`（`NULL` = **未声明**，不是被回填出来的 `0`
+    —— 域层把「未声明」与「坏界」分成两件事，落库层必须分得开）。
+    """
+    _clean()
+    store = PostgresProgramStore(dsn=_dsn())
+    declared = f"prog-bound-{uuid.uuid4().hex[:8]}"
+    undeclared = f"prog-nobound-{uuid.uuid4().hex[:8]}"
+    store.create(
+        ResearchProgram(
+            id=declared,
+            project_id="p1",
+            protocol_id="proto",
+            max_runs=3,
+            continue_rule=ProgramContinueRule(verdict_in=("ACCEPT",)),
+            gate_nudge_after_seconds=60,
+        )
+    )
+    store.create(
+        ResearchProgram(
+            id=undeclared,
+            project_id="p1",
+            protocol_id="proto",
+            max_runs=3,
+            continue_rule=ProgramContinueRule(verdict_in=("ACCEPT",)),
+        )
+    )
+    assert store.get(declared).gate_nudge_after_seconds == 60
+    assert store.get(undeclared).gate_nudge_after_seconds is None
+    store.close()
