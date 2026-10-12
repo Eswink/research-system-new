@@ -81,3 +81,39 @@ def test_the_conflict_timeliness_round_trips_on_pg() -> None:
     assert back.conflict_expires_at.value == expires.value
     assert store.get(plain).conflict_review_after is None
     assert store.get(plain).conflict_expires_at is None
+
+
+def test_the_proposed_by_round_trips_on_pg() -> None:
+    """GOAL-20261012-065 EC-02：**提议者**在 PG 侧往返 —— 与 SQLite / Fake 同一份契约。
+
+    两臂逐条：声明的 `proposed_by="agent:x"` 读回同值；未声明的读回 `None`
+    （`NULL` = **未声明**，不是被回填出来的某个值）。
+    """
+    _clean()
+    source = f"test:memory-author-{uuid.uuid4().hex[:8]}"
+    authored = f"mem-{uuid.uuid4().hex[:8]}"
+    plain = f"mem-{uuid.uuid4().hex[:8]}"
+    store = PostgresMemoryStore(dsn=_dsn(), allowed_sources=(source,))
+    store.commit(
+        MemoryWriteProposal(
+            id=authored,
+            tier=MemoryTier.PROJECT,
+            kind=MemoryType.FACT,
+            content="c",
+            provenance=source,
+            confidence=0.9,
+            proposed_by="agent:x",
+        )
+    )
+    store.commit(
+        MemoryWriteProposal(
+            id=plain,
+            tier=MemoryTier.PROJECT,
+            kind=MemoryType.FACT,
+            content="c",
+            provenance=source,
+            confidence=0.9,
+        )
+    )
+    assert store.get(authored).proposed_by == "agent:x"
+    assert store.get(plain).proposed_by is None

@@ -50,7 +50,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-memory-author.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **作者面落 canonical（本轮验收主体）**：`MemoryRecord` +1 **可选**字段（缺省 `None`
@@ -60,7 +60,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/domain tests/adapters tests/postgres -q`
       ⇒ 全绿 + 新用例（两处声明面同源 / 三适配器往返 / 既有行读出 `None`）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **两个读面同源披露**：编排消费面 + HTTP 读面**都**披露作者面（同一份 canonical 事实，
@@ -69,7 +69,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例（两处同值 / 既有键逐字不变 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`W-1` 记录侧字段被摘掉（落库丢作者）⇒ RED；
@@ -80,7 +80,7 @@ exit_criteria:
     verify: >-
       `scratch/goal065_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；
       归档 `.cursor/plans/goals/evidence/GOAL-20261012-065-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -93,7 +93,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal065_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -119,7 +119,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261013-439-goal-065-ec01-05-who-proposed-a-memory-is-readable.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-440-goal-065-ec01-04-who-proposed-a-memory-is-readable.md
 memory_entries: []
 ---
 
@@ -136,10 +136,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（字段逐个 + 零命中 + 实跑 + 来源语义） | **实跑**：`scratch/probe-memory-author.py` | PENDING |
-| EC-02 | 作者面落 canonical（记录 +1 可选字段；三适配器同契约；既有行 `None`） | `pytest tests/domain tests/adapters tests/postgres -q` | PENDING |
-| EC-03 | 两读面**同源**披露 + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | PENDING |
-| EC-04 | 两向反证 `W-1`…`W-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（字段逐个 + 零命中 + 实跑 + 来源语义） | **实跑**：`scratch/probe-memory-author.py` | **PASS** |
+| EC-02 | 作者面落 canonical（记录 +1 可选字段；三适配器同契约；既有行 `None`） | `pytest tests/domain tests/adapters tests/postgres -q` | **PASS** |
+| EC-03 | 两读面**同源**披露 + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
+| EC-04 | 两向反证 `W-1`…`W-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -242,10 +242,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（逐轴复评 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 33**（登记 2026-10-12 / 文件补建档 2026-10-13） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 作者面落 canonical） |
+| 0 | —（补建档 + 推进） | `dcd778d`（补建档：GOAL + 子 PLAN + ALL_PLAN） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」，含**一处实测更正**） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 作者面落 canonical） |
+| 1 | `PLAN-20261013-439`（WP-1…WP-5） | `b976441`（记录 +1 字段 + `commit` 带进 + 三适配器 + 迁移 027 + 两读面）、`aaaf0b3`（判据 11 例 + 按压归档 + EC-01 更正） | **EC-01/02/03/04 PASS**：① 四段读数 + 一处实测更正（命中**都在写面**，读面与三适配器全 0）；② 记录有 `proposed_by` + SQLite/PG 往返 + Fake 同契约 + 未声明 `None`；③ 两读面**都直接读** canonical 字段 + 既有 13 键逐条仍在 + 来源与作者互不顶替 + 快照同轮（`+11 / -0`）；④ **四向反证** `W-1`…`W-4` 全红 + 基线绿 + 复原一致（`W-1`/`W-2` 逐条核实打**不同层**）。`tests/api tests/application/memory tests/adapters tests/domain tests/postgres` **全绿**；mypy **1207 files** 零问题 | （见 CI 台账） | 两处如实登记：① 建档表第 3 行初版「两个内部调用点」**漏了写入口**（探针逐文件计数抓到）⇒ 按实测更正；② 判据三条初版把 `provenance` 当读面键断言（**该面从无此键**）⇒ 改为在**记录侧**判分离（贴合实际契约） | EC-05 待做 | cycle 2（EC-05 收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-13 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**两处如实登记**（建档表漏写入口 / 判据初版误解读面契约）。**残余**：按作者筛选未做 / 作者鉴权不做（声明非 ACL）/ `provenance` 在编排面仍不披露 / 内容级检测 / 三维以上组合等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261013-440`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-13 | ACTIVE | **补建档 + 推进（cycle 0）**：上一层触发把序 33 写进了 MAINLINE 程序表与修订记录（含「已建档」的表述）**但没落地文件** ⇒ 本轮**先补文件**（本 GOAL + 子 PLAN + `ALL_PLAN` 投影）使**声明与树一致**，再按程序表推进。**实测读数**（逐条见「事实层结论」表）：① 提案**有** `proposed_by` / 记录**没有**该字段；② 读面与两适配器**零命中**；③ **实跑**带作者的提案 ⇒ 记录无作者面且读面 20 键里没有它；④ `provenance`（来源）与作者是两件事（**不**改）。五条 EC 全 PENDING。**不**做按作者筛选 / **不**做作者鉴权 / **不**改 `provenance`。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

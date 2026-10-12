@@ -2,10 +2,10 @@
 id: PLAN-20261013-439
 slug: goal-065-ec01-05-who-proposed-a-memory-is-readable
 title: GOAL-20261012-065 cycle 1（EC-01…EC-05）：作者面落 canonical + 两读面同源 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-13
 updated_at: 2026-10-13
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-440-goal-065-ec01-04-who-proposed-a-memory-is-readable.md
 memory_entries: []
 parent_goal: GOAL-20261012-065
 cursor_plan_uri: null
@@ -35,7 +35,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-memory-author.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **作者面落 canonical（EC-02）**：`MemoryRecord` +1 **可选**字段（缺省 `None`）；
@@ -44,7 +44,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/domain tests/adapters tests/postgres -q`
       ⇒ 全绿 + 新用例（三适配器往返 / 既有行 `None` / 两声明面同源）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **两个读面同源披露（EC-03）**：编排面与 HTTP 读面**都**披露作者面（同一份 canonical 事实）；
@@ -53,7 +53,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/adapters tests/contracts -q`
       ⇒ 全绿 + 新用例（两处同值 / 既有键逐字不变 / 快照含新键）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`W-1` 记录侧字段被摘掉 ⇒ RED；`W-2` 适配器不带该列 ⇒ RED；
@@ -62,7 +62,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal065_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -71,7 +71,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal065_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261013-439 — GOAL-20261012-065 cycle 1
@@ -123,3 +123,4 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-13 | IN_PROGRESS | cycle 1 建档：作者面落 canonical + 两读面同源 + 四向反证。 |
+| 2026-10-13 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261013-440` = PASS_WITH_WARNINGS）。**交付**：`MemoryRecord.proposed_by`（可选）+ `commit` 带进 + 三适配器同契约（迁移 `027`）+ 两读面同源披露 + 快照同轮；判据 11 + PG 1 例；四向反证全红 + 归档（`CR=0`）。 |
