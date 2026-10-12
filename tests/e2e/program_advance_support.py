@@ -125,6 +125,7 @@ def create_program(  # noqa: PLR0913 - 建程序声明面即字段；参数对�
     max_attempts_per_index: int = 1,
     human_gate_at_index: int | None = None,
     human_gate_on_verdicts: list[str] | None = None,
+    gate_nudge_after_seconds: int | None = None,
 ) -> dict[str, Any]:
     """建程序（经既有 HTTP 面；协议按启动 run 的同一校验解析）。
 
@@ -146,6 +147,8 @@ def create_program(  # noqa: PLR0913 - 建程序声明面即字段；参数对�
         payload["human_gate_at_index"] = human_gate_at_index
     if human_gate_on_verdicts is not None:
         payload["human_gate_on_verdicts"] = human_gate_on_verdicts
+    if gate_nudge_after_seconds is not None:
+        payload["gate_nudge_after_seconds"] = gate_nudge_after_seconds
     response = client.post(
         f"/projects/{PROJECT}/programs",
         json=payload,

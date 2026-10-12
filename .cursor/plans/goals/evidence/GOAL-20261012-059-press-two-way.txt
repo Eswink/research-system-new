@@ -1,0 +1,15 @@
+BASELINE（未按压，必须绿）: GREEN
+    suite: 26 passed in 10.04s
+V-1 落库面去掉新列（界又静默丢弃）: 按压 RED
+    sha 复原一致=True | 7f7aa1ac5330
+    suite: 4 failed, 22 passed in 11.24s
+V-2 声明面摘掉新键（界又声明不出来）: 按压 RED
+    sha 复原一致=True | 70d35398afc6
+    suite: 8 failed, 18 passed in 10.79s
+V-3 出口面不交下去（出口又不可达）: 按压 RED
+    sha 复原一致=True | 4f011c25fccb
+    suite: 2 failed, 24 passed in 11.44s
+V-4 三态纪律被改动（缺省也送）: 按压 RED
+    sha 复原一致=True | b5e4eea1c584
+    suite: 1 failed, 25 passed in 10.93s
+SUMMARY presses=4 all_red_and_restored=True
