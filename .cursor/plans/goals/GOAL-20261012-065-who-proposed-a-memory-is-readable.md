@@ -140,7 +140,7 @@ memory_entries: []
 | EC-02 | 作者面落 canonical（记录 +1 可选字段；三适配器同契约；既有行 `None`） | `pytest tests/domain tests/adapters tests/postgres -q` | **PASS** |
 | EC-03 | 两读面**同源**披露 + 既有键逐字不变 + 快照同轮 | `pytest tests/api tests/adapters tests/contracts -q` | **PASS** |
 | EC-04 | 两向反证 `W-1`…`W-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5803 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -243,7 +243,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（补建档 + 推进） | `dcd778d`（补建档：GOAL + 子 PLAN + ALL_PLAN） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」，含**一处实测更正**） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 作者面落 canonical） |
-| 1 | `PLAN-20261013-439`（WP-1…WP-5） | `b976441`（记录 +1 字段 + `commit` 带进 + 三适配器 + 迁移 027 + 两读面）、`aaaf0b3`（判据 11 例 + 按压归档 + EC-01 更正） | **EC-01/02/03/04 PASS**：① 四段读数 + 一处实测更正（命中**都在写面**，读面与三适配器全 0）；② 记录有 `proposed_by` + SQLite/PG 往返 + Fake 同契约 + 未声明 `None`；③ 两读面**都直接读** canonical 字段 + 既有 13 键逐条仍在 + 来源与作者互不顶替 + 快照同轮（`+11 / -0`）；④ **四向反证** `W-1`…`W-4` 全红 + 基线绿 + 复原一致（`W-1`/`W-2` 逐条核实打**不同层**）。`tests/api tests/application/memory tests/adapters tests/domain tests/postgres` **全绿**；mypy **1207 files** 零问题 | （见 CI 台账） | 两处如实登记：① 建档表第 3 行初版「两个内部调用点」**漏了写入口**（探针逐文件计数抓到）⇒ 按实测更正；② 判据三条初版把 `provenance` 当读面键断言（**该面从无此键**）⇒ 改为在**记录侧**判分离（贴合实际契约） | EC-05 待做 | cycle 2（EC-05 收口） |
+| 1 | `PLAN-20261013-439`（WP-1…WP-5） | `b976441`（记录 +1 字段 + `commit` 带进 + 三适配器 + 迁移 027 + 两读面）、`aaaf0b3`（判据 11 例 + 按压归档 + EC-01 更正） | **EC-01/02/03/04 PASS**：① 四段读数 + 一处实测更正（命中**都在写面**，读面与三适配器全 0）；② 记录有 `proposed_by` + SQLite/PG 往返 + Fake 同契约 + 未声明 `None`；③ 两读面**都直接读** canonical 字段 + 既有 13 键逐条仍在 + 来源与作者互不顶替 + 快照同轮（`+11 / -0`）；④ **四向反证** `W-1`…`W-4` 全红 + 基线绿 + 复原一致（`W-1`/`W-2` 逐条核实打**不同层**）。`tests/api tests/application/memory tests/adapters tests/domain tests/postgres` **全绿**；mypy **1207 files** 零问题 | （见 CI 台账） | 两处如实登记：① 建档表第 3 行初版「两个内部调用点」**漏了写入口**（探针逐文件计数抓到）⇒ 按实测更正；② 判据三条初版把 `provenance` 当读面键断言（**该面从无此键**）⇒ 改为在**记录侧**判分离（贴合实际契约）。**EC-05 PASS**（验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5803 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿） | （见 CI 台账） | — | 无 | 无（本 GOAL 已收口） |
 
 ## 状态历史
 
