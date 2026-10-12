@@ -166,8 +166,7 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
             # **判关系**：写侧读 `payload`、读侧读 `program` —— **不**钉字面写法
             # （GOAL-060 把转换抽进 `declared_gate_fields` 后，原字面锚点假红 ⇒ 改判关系；
             #  两向实测：抽走任一侧的引用 ⇒ 该条判红）。
-            "payload." + FIELD in _text(root, ROUTER)
-            and "program." + FIELD in _text(root, ROUTER),
+            "payload." + FIELD in _text(root, ROUTER) and "program." + FIELD in _text(root, ROUTER),
             "路由必须把声明透传（建侧读载荷、读侧读域对象）",
         ),
         toolbox.verdict(
