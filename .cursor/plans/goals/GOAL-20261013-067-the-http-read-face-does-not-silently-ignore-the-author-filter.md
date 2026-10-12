@@ -140,7 +140,7 @@ memory_entries: []
 | EC-02 | HTTP 读面按作者筛 + 披露 + 缺省逐字不变 + 未知空集 | `pytest tests/api -q` | **PASS** |
 | EC-03 | 两个 DTO 形态与快照同轮 | `pytest tests/api tests/contracts -q` | **PASS** |
 | EC-04 | 两向反证 `Y-1`…`Y-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5824 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -241,7 +241,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（逐轴复评 + 建档） | `dadb3bb` | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；**同轮建档** | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 HTTP 面按作者筛） |
-| 1 | `PLAN-20261013-443`（WP-1…WP-5） | `6c0ae2d`（路由 + 三形态 + 快照）、`872b94a`（判据 8 例 + 按压归档）、`93fcaa2`（收口面）、`ca7ed11`（长行修复） | **EC-01/02/03/04 PASS**：① 四段读数（实跑静默忽略 + 不对称对照 + 签名 + 先例）；② 传作者 ⇒ 真筛 + 披露两键；缺省逐字不变；未知作者空集；`?scope=` 一字不动；③ **三形态并集**（少一个就静默丢键 —— 实测过）+ 专用形状 + 快照同轮（`+62 / -5`）；④ **四向反证** `Y-1`…`Y-4` 全红 + 基线绿 + 复原一致。`tests/api tests/contracts tests/application tests/adapters tests/domain` **2372 passed**；mypy **1209 files** 零问题 | （见 CI 台账） | 三处如实登记：① **并集漏形态**（首版只列两个 ⇒ FastAPI 收窄载荷、`filtered_out` 读不出来）；② 断言集 `exclude_none` 判据**按短语出现判** ⇒ 被**注释**命中**假红** ⇒ 改判**调用形态**；③ 注释按**显示宽度**超 100（中文占两列）⇒ 缩短措辞 | EC-05 待做 | cycle 2（EC-05 收口） |
+| 1 | `PLAN-20261013-443`（WP-1…WP-5） | `6c0ae2d`（路由 + 三形态 + 快照）、`872b94a`（判据 8 例 + 按压归档）、`93fcaa2`（收口面）、`ca7ed11`（长行修复） | **EC-01/02/03/04 PASS**：① 四段读数（实跑静默忽略 + 不对称对照 + 签名 + 先例）；② 传作者 ⇒ 真筛 + 披露两键；缺省逐字不变；未知作者空集；`?scope=` 一字不动；③ **三形态并集**（少一个就静默丢键 —— 实测过）+ 专用形状 + 快照同轮（`+62 / -5`）；④ **四向反证** `Y-1`…`Y-4` 全红 + 基线绿 + 复原一致。`tests/api tests/contracts tests/application tests/adapters tests/domain` **2372 passed**；mypy **1209 files** 零问题 | （见 CI 台账） | 三处如实登记：① **并集漏形态**（首版只列两个 ⇒ FastAPI 收窄载荷、`filtered_out` 读不出来）；② 断言集 `exclude_none` 判据**按短语出现判** ⇒ 被**注释**命中**假红** ⇒ 改判**调用形态**；③ 注释按**显示宽度**超 100（中文占两列）⇒ 缩短措辞；④ **m0 的 mypy 真红**（`deps.memory` 是 `Any | None` ⇒ `union-attr` ×4）⇒ 改**显式注入具体 store**（与 `test_memory_api.py` 既有手法同形）⇒ 重跑 **23/23**。**EC-05 PASS**（验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5824 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿） | （见 CI 台账） | — | 无 | 无（本 GOAL 已收口） |
 
 ## 状态历史
 
