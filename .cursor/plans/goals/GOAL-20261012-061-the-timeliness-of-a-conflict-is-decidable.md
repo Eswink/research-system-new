@@ -105,7 +105,8 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
   - 触达 D 组审批通道 / 真实外发 / 读面认证 / 多租户
   - 需要放开默认网络 / 需要真实凭据
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261012-431-goal-061-ec01-05-the-timeliness-of-a-conflict-is-decidable.md
 latest_recheck: null
 memory_entries: []
 ---
