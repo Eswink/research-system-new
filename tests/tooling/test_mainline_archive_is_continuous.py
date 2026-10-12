@@ -81,6 +81,23 @@ def _progress_keys(text: str) -> list[tuple[str, str]]:
     return keys
 
 
+#: 修订记录的数据行（`| 日期 | 序 | 被替换的行（原文） | …`）—— 与进展行**格数不同**
+#: （修订 **5** 格 / 进展 **4** 格）⇒ 用格数把它们分开，**不**靠列内容猜。
+def _revision_keys(text: str) -> list[tuple[str, str]]:
+    """修订记录行 → `(日期, 序格)`（**只取该节** —— 进展行也在别处出现 5 格表格）。"""
+    if "## 修订记录" not in text:
+        return []
+    section = text.split("## 修订记录", 1)[1]
+    keys: list[tuple[str, str]] = []
+    for line in section.splitlines():
+        if not line.startswith("| 20"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) >= 5:  # 修订行 5 格；进展行 4 格
+            keys.append((cells[0], cells[1][:24]))
+    return keys
+
+
 def _archive_paths(charter: str) -> list[Path]:
     """活跃面提到的归档文件（**去重**）。
 
@@ -112,9 +129,20 @@ def test_no_progress_row_was_dropped_in_the_move() -> None:
         archived += len(_progress_keys(path.read_text(encoding="utf-8")))
     kept = len(_progress_keys(charter))
     baseline = len(_progress_keys(original))
+    # **强判据**（2026-10-13 收紧，与修订面同形）：基线（HEAD 版）里的**每一条**进展行
+    # 都必须仍然可复核 —— 要么在活跃面、要么在归档里。只比**行数**会被「归档补上」掩蔽
+    # （实测：删一条活跃行而归档行数不变时，行数上界仍成立 ⇒ 假绿）。
+    live = set(_progress_keys(charter))
+    gone = set(_progress_keys(original)) - live
+    for path in _archive_paths(charter):
+        gone -= set(_progress_keys(path.read_text(encoding="utf-8")))
+    assert gone == set(), (
+        f"进展记录**丢了** {len(gone)} 条（既不在活跃面、也不在任何归档）：{sorted(gone)} —— "
+        "移出时必须原样搬进归档，不得顺手删"
+    )
     assert archived + kept >= baseline, (
         f"进展记录少了 {baseline - archived - kept} 行（原文 {baseline} / "
-        f"活跃面保留 {kept} / 归档 {archived}）—— 移出时必须原样搬进归档，不得顺手删"
+        f"活跃面保留 {kept} / 归档 {archived}）"
     )
 
 
@@ -131,7 +159,53 @@ def test_no_progress_row_appears_on_both_sides() -> None:
         )
 
 
+def test_no_revision_row_was_dropped_in_the_move() -> None:
+    """**不漏（修订面）**：活跃面保留 + 归档收录 的修订行数 ≥ 原文该段行数。
+
+    **为什么要有这一条**（2026-10-13 实测的 Coverage 缺口）：原判据**只**覆盖进展行
+    ⇒ 修订记录**丢行不会被抓到**。本轮实测到一次**真丢失**：连续插入修订行时用了
+    「按行替换」而非「追加」，六行（序 27/28/29 / 30 / 31 / 32 / 33 / 34）被逐次**顶掉**
+    ⇒ 活跃面长期停在 4 行而**判据全绿**。已从各提交复原并补齐，同时把这一面**纳入受判面**。
+    """
+    charter = _charter_text()
+    original = _original_charter_text()
+    archived = 0
+    for path in _archive_paths(charter):
+        archived += len(_revision_keys(path.read_text(encoding="utf-8")))
+    kept = len(_revision_keys(charter))
+    baseline = len(_revision_keys(original))
+    # **强判据**：基线（HEAD 版）里的**每一条**修订行都必须仍然可复核 ——
+    # 要么在活跃面、要么在归档里。只比**行数**会被「归档补上」掩蔽（实测：
+    # 删一条活跃行、归档里恰好有同数 ⇒ 行数上界仍成立 ⇒ 假绿）。
+    live = set(_revision_keys(charter))
+    gone = set(_revision_keys(original)) - live
+    for path in _archive_paths(charter):
+        gone -= set(_revision_keys(path.read_text(encoding="utf-8")))
+    assert gone == set(), (
+        f"修订记录**丢了** {len(gone)} 条（既不在活跃面、也不在任何归档）：{sorted(gone)} —— "
+        "移出时必须原样搬进归档，且**插入新行时必须是追加**（顶掉旧行正是本轮实测到的形态）"
+    )
+    assert archived + kept >= baseline, (
+        f"修订记录少了 {baseline - archived - kept} 行（原文 {baseline} / "
+        f"活跃面保留 {kept} / 归档 {archived}）"
+    )
+
+
+def test_no_revision_row_appears_on_both_sides() -> None:
+    """**不重（修订面）**：同一条修订记录不得同时出现在活跃面与归档里。"""
+    charter = _charter_text()
+    kept = set(_revision_keys(charter))
+    for path in _archive_paths(charter):
+        archived = set(_revision_keys(path.read_text(encoding="utf-8")))
+        both = sorted(kept & archived)
+        assert both == [], (
+            f"{path.relative_to(_ROOT)} 与宪章同时收录了同一条修订记录：{both} —— "
+            "「移入」意味着只在一处"
+        )
+
+
 def test_the_helpers_are_not_vacuous(tmp_path: Path) -> None:
+    """受判面自检：合成输入上给出预期读数（正例 + 反例），隔离真树。"""
     """受判面自检：合成输入上给出预期读数（正例 + 反例），隔离真树。"""
     good = (
         "| 2026-01-01 | GOAL-20260101-001 | 甲 | [R](../rechecks/R.md) |\n"
@@ -147,3 +221,12 @@ def test_the_helpers_are_not_vacuous(tmp_path: Path) -> None:
         "archive/Y.md",
     ]
     assert _ARCHIVE_LINK.findall("见 [R](../rechecks/R.md)") == [], "复检链接不是归档链接"
+    rev = (
+        "## 修订记录\n\n| 日期 | 序 | 被替换的行（原文） | 替换为 | 理由 |\n"
+        "| --- | --- | --- | --- | --- |\n"
+        "| 2026-01-01 | 7（新增） | （无替换） | 序 7 | 理由 |\n"
+    )
+    assert _revision_keys(rev) == [("2026-01-01", "7（新增）")], _revision_keys(rev)
+    assert (
+        _revision_keys("| 2026-01-01 | GOAL-20260101-001 | 甲 | [R](../rechecks/R.md) |") == []
+    ), "进展行（4 格）不得被当成修订行"
