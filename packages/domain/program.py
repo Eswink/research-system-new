@@ -290,9 +290,9 @@ def _validate_hybrid_gate(program: ResearchProgram) -> None:
             "human_gate_hybrid at_indexes entries must be within 1..max_runs when declared "
             f"(got {out_of_range}, max_runs={program.max_runs})"
         )
-    repeated = sorted(
-        {item for item in declared.at_indexes if list(declared.at_indexes).count(item) > 1}
-    )
+    repeated = sorted({
+        item for item in declared.at_indexes if list(declared.at_indexes).count(item) > 1
+    })
     if repeated:
         raise ValueError(f"human_gate_hybrid must not repeat an index (got {repeated})")
 

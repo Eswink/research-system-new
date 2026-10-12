@@ -1,15 +1,15 @@
 BASELINE（未按压，必须绿）: GREEN
-    suite: 19 passed in 9.17s
+    suite: 19 passed in 8.37s
 W-1 混合式不再互斥（回到结构上做不到）: 按压 RED
-    sha 复原一致=True | 4cfeb26c9b0f
-    suite: 1 failed, 18 passed in 10.24s
+    sha 复原一致=True | bedbf9a8e0ed
+    suite: 1 failed, 18 passed in 10.96s
 W-2 序号维被忽略（只判条件维）: 按压 RED
     sha 复原一致=True | a70b549f822e
-    suite: 3 failed, 16 passed in 10.63s
+    suite: 3 failed, 16 passed in 10.15s
 W-3 条件维被忽略（只判序号维）: 按压 RED
     sha 复原一致=True | a70b549f822e
-    suite: 3 failed, 16 passed in 10.48s
+    suite: 3 failed, 16 passed in 10.01s
 W-4 缺省形态被改动（未声明也拦）: 按压 RED
     sha 复原一致=True | a70b549f822e
-    suite: 2 errors in 8.31s
+    suite: 2 errors in 7.96s
 SUMMARY presses=4 all_red_and_restored=True

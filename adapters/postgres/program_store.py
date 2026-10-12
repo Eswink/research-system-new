@@ -33,6 +33,54 @@ _DECISION_SELECT = (
 )
 
 
+_PROGRAM_INSERT = (
+    "INSERT INTO research_programs (program_id, project_id, protocol_id, max_runs,"
+    " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
+    " human_gate_at_indexes_json, gate_nudge_after_seconds,"
+    " human_gate_hybrid_indexes_json, human_gate_hybrid_verdicts_json,"
+    " continue_rule_json, created_at, updated_at)"
+    " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    " ON CONFLICT (program_id) DO NOTHING"
+)
+
+
+def _json_or_none(items: Any) -> Any:
+    """列表 ⇒ JSON 文本；`None` ⇒ `NULL`（**未声明**与「空列表」在落库层分得开）。"""
+    if items is None:
+        return None
+    return json.dumps(list(items), ensure_ascii=False, sort_keys=True)
+
+
+def _insert_values(program: ResearchProgram) -> tuple[Any, ...]:
+    """`create` 的取值元组（**列序与 `_PROGRAM_SELECT` 同源**）。
+
+    **为什么单列**：`create` 有 50 行硬上限 —— 声明形态变多之后，取值列表一度把它顶爆
+    ⇒ 逐项搬到这里（**语义一字未动**，只是换落点），并守住那道门。
+    """
+    hybrid = program.human_gate_hybrid
+    return (
+        program.id,
+        program.project_id,
+        program.protocol_id,
+        program.max_runs,
+        program.max_attempts_per_index,
+        program.human_gate_at_index,
+        _json_or_none(program.human_gate_on_verdicts),
+        _json_or_none(program.human_gate_at_indexes),
+        # GOAL-20261012-059 EC-02：NULL = 未声明（列序与 `_PROGRAM_SELECT` 同源）。
+        program.gate_nudge_after_seconds,
+        _json_or_none(hybrid.at_indexes if hybrid is not None else None),
+        _json_or_none(hybrid.on_verdicts if hybrid is not None else None),
+        json.dumps(
+            {"verdict_in": list(program.continue_rule.verdict_in)},
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+        program.created_at.value,
+        program.updated_at.value,
+    )
+
+
 def _json_object(value: Any) -> Any:
     """JSONB 列可能是**已解析对象**（psycopg 的 jsonb 返回）或字符串（驱动差异）。
 
@@ -58,7 +106,10 @@ def _decode_hybrid(row: Any) -> Any:
 
     与 SQLite 侧同名助手**同一口径**（一列有一列无 = 落库被外部改写，**不猜**）。
     """
-    if row["human_gate_hybrid_indexes_json"] is None or row["human_gate_hybrid_verdicts_json"] is None:
+    if (
+        row["human_gate_hybrid_indexes_json"] is None
+        or row["human_gate_hybrid_verdicts_json"] is None
+    ):
         return None
     from packages.domain.program import HybridGateDeclaration
 
@@ -159,62 +210,8 @@ class PostgresProgramStore(PostgresAdapterBase):
     def create(self, program: ResearchProgram) -> None:
         self._ensure_open()
         self._conn.execute(
-            "INSERT INTO research_programs (program_id, project_id, protocol_id, max_runs,"
-            " max_attempts_per_index, human_gate_at_index, human_gate_on_verdicts_json,"
-            " human_gate_at_indexes_json, gate_nudge_after_seconds,"
-            " human_gate_hybrid_indexes_json, human_gate_hybrid_verdicts_json,"
-            " continue_rule_json, created_at, updated_at)"
-            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            " ON CONFLICT (program_id) DO NOTHING",
-            (
-                program.id,
-                program.project_id,
-                program.protocol_id,
-                program.max_runs,
-                program.max_attempts_per_index,
-                program.human_gate_at_index,
-                (
-                    json.dumps(
-                        list(program.human_gate_on_verdicts), ensure_ascii=False, sort_keys=True
-                    )
-                    if program.human_gate_on_verdicts is not None
-                    else None
-                ),
-                (
-                    json.dumps(
-                        list(program.human_gate_at_indexes), ensure_ascii=False, sort_keys=True
-                    )
-                    if program.human_gate_at_indexes is not None
-                    else None
-                ),
-                # GOAL-20261012-059 EC-02：NULL = 未声明（列序与 `_PROGRAM_SELECT` 同源）。
-                program.gate_nudge_after_seconds,
-                (
-                    json.dumps(
-                        list(program.human_gate_hybrid.at_indexes),
-                        ensure_ascii=False,
-                        sort_keys=True,
-                    )
-                    if program.human_gate_hybrid is not None
-                    else None
-                ),
-                (
-                    json.dumps(
-                        list(program.human_gate_hybrid.on_verdicts),
-                        ensure_ascii=False,
-                        sort_keys=True,
-                    )
-                    if program.human_gate_hybrid is not None
-                    else None
-                ),
-                json.dumps(
-                    {"verdict_in": list(program.continue_rule.verdict_in)},
-                    ensure_ascii=False,
-                    sort_keys=True,
-                ),
-                program.created_at.value,
-                program.updated_at.value,
-            ),
+            _PROGRAM_INSERT,
+            _insert_values(program),
         )
         self._record("create", program.id, result="ok")
 

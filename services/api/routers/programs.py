@@ -138,6 +138,45 @@ def _start_run_for_program(deps: ApiDeps, program: ResearchProgram, index: int) 
     return run_id.value
 
 
+def declared_gate_fields(payload: ProgramCreateDto) -> dict[str, Any]:
+    """建程序声明面的**闸门字段**（每条声明各自转换；缺省 ⇒ `None` ⇒ 既有行为逐字不变）。
+
+    **为什么单列**：`create_program` 有 50 行硬上限，四条声明 + 超期界的转换一度把它顶爆
+    —— 逐条搬到这里（**语义一字未动**，只是换落点），并守住那道门。
+
+    四条声明**互斥**由域层点名拒绝（这里**不**预判，也不静默挑一条）。
+    """
+    hybrid = payload.human_gate_hybrid
+    return {
+        "max_attempts_per_index": payload.max_attempts_per_index,
+        # GOAL-20261010-046 EC-02：程序级人工闸门（缺省 None = 不设闸门 ⇒ 逐字不变）。
+        "human_gate_at_index": payload.human_gate_at_index,
+        # GOAL-20261010-048 EC-02：条件式闸门（缺省 None = 不设 ⇒ 逐字不变）。
+        "human_gate_on_verdicts": (
+            tuple(payload.human_gate_on_verdicts)
+            if payload.human_gate_on_verdicts is not None
+            else None
+        ),
+        # GOAL-20261011-055 EC-02：多点闸门（缺省 None = 不设 ⇒ 逐字不变）。
+        "human_gate_at_indexes": (
+            tuple(payload.human_gate_at_indexes)
+            if payload.human_gate_at_indexes is not None
+            else None
+        ),
+        # GOAL-20261012-059 EC-02：超期界（缺省 None = 未声明 ⇒ 逐字不变）。
+        "gate_nudge_after_seconds": payload.gate_nudge_after_seconds,
+        # GOAL-20261012-060 EC-02：混合式闸门（缺省 None = 不设 ⇒ 逐字不变）。
+        "human_gate_hybrid": (
+            HybridGateDeclaration(
+                at_indexes=tuple(hybrid.at_indexes),
+                on_verdicts=tuple(hybrid.on_verdicts),
+            )
+            if hybrid is not None
+            else None
+        ),
+    }
+
+
 @projects_router.post(
     "/projects/{project_id}/programs", response_model=ProgramDetailDto, status_code=201
 )
@@ -158,39 +197,19 @@ async def create_program(
     except ValueError as exc:
         raise ApiError(422, "Protocol Not Loadable", str(exc)) from exc
     rule = ProgramContinueRule(verdict_in=tuple(payload.continue_on_verdicts))
+    decl = declared_gate_fields(payload)
     program = ResearchProgram(
         id=ID.generate().value,
         project_id=project_id,
         protocol_id=payload.protocol_path,
         max_runs=payload.max_runs,
         continue_rule=rule,
-        # GOAL-20261008-040 EC-02：失败后可选的有界重试（缺省 1 = 不重试）。
-        max_attempts_per_index=payload.max_attempts_per_index,
-        # GOAL-20261010-046 EC-02：程序级人工闸门（缺省 None = 不设闸门 ⇒ 逐字不变）。
-        human_gate_at_index=payload.human_gate_at_index,
-        # GOAL-20261010-048 EC-02：条件式闸门（缺省 None = 不设 ⇒ 逐字不变）。
-        human_gate_on_verdicts=(
-            tuple(payload.human_gate_on_verdicts)
-            if payload.human_gate_on_verdicts is not None
-            else None
-        ),
-        # GOAL-20261011-055 EC-02：多点闸门（缺省 None = 不设 ⇒ 逐字不变）。
-        human_gate_at_indexes=(
-            tuple(payload.human_gate_at_indexes)
-            if payload.human_gate_at_indexes is not None
-            else None
-        ),
-        # GOAL-20261012-059 EC-02：超期界（缺省 None = 未声明 ⇒ 逐字不变）。
-        gate_nudge_after_seconds=payload.gate_nudge_after_seconds,
-        # GOAL-20261012-060 EC-02：混合式闸门（缺省 None = 不设 ⇒ 逐字不变）。
-        human_gate_hybrid=(
-            HybridGateDeclaration(
-                at_indexes=tuple(payload.human_gate_hybrid.at_indexes),
-                on_verdicts=tuple(payload.human_gate_hybrid.on_verdicts),
-            )
-            if payload.human_gate_hybrid is not None
-            else None
-        ),
+        max_attempts_per_index=cast(int, decl["max_attempts_per_index"]),
+        human_gate_at_index=cast(int | None, decl["human_gate_at_index"]),
+        human_gate_on_verdicts=cast(tuple[str, ...] | None, decl["human_gate_on_verdicts"]),
+        human_gate_at_indexes=cast(tuple[int, ...] | None, decl["human_gate_at_indexes"]),
+        gate_nudge_after_seconds=cast(int | None, decl["gate_nudge_after_seconds"]),
+        human_gate_hybrid=cast(HybridGateDeclaration | None, decl["human_gate_hybrid"]),
     )
     del protocol  # 只用其可解析性做校验；声明面存的是路径（canonical 里的协议标识）
     store.create(program)
