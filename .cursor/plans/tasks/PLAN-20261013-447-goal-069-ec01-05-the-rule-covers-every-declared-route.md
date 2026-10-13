@@ -2,10 +2,10 @@
 id: PLAN-20261013-447
 slug: goal-069-ec01-05-the-rule-covers-every-declared-route
 title: GOAL-20261013-069 cycle 1（EC-01…EC-05）：签名导出守卫 + 9 条路由覆盖 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-13
 updated_at: 2026-10-13
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-448-goal-069-ec01-04-the-rule-covers-every-declared-route.md
 memory_entries: []
 parent_goal: GOAL-20261013-069
 cursor_plan_uri: null
@@ -37,7 +37,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-query-param-coverage.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **签名导出守卫（EC-02）**：已知集**从路由签名导出**（不手写清单）；未知参数
@@ -45,7 +45,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（导出面与签名一致 / 逐路由点名 / 多个逐个 / 已知不变 / 缺省不变）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **射程如实 + 无回归（EC-03）**：无查询参数的路由**不受影响**（对照组）；
@@ -54,7 +54,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/tooling -q`
       ⇒ 全绿 + 新用例（对照组 / 记忆读面回归）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`W-1` 导出面返回空集 ⇒ RED；`W-2` 导出面**多收**（含路径参数）⇒ RED；
@@ -63,7 +63,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal069_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -72,7 +72,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal069_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261013-447 — GOAL-20261013-069 cycle 1
