@@ -37,12 +37,13 @@ PRIOR_JUDGES: tuple[str, ...] = (
     "tests/application/memory/test_dangling_reference_read_faces.py",
 )
 
-#: EC-02 / EC-03 落点。
+#: EC-02 / EC-03 落点。**守卫**在它自己的模块里（规模门：路由文件 450 行硬上限）。
 ROUTER = "services/api/routers/memory.py"
+GUARD_MODULE = "services/api/memory_query_guard.py"
 DTO = "services/api/dto/memory.py"
 
 #: 本轮引入的名字（**逐条点名**；缺一即判红）。
-GUARD = "_reject_unknown_query_params"
+GUARD = "reject_unknown_query_params"
 KNOWN = "_KNOWN_QUERY_PARAMS"
 BOTH_GETS: tuple[str, ...] = ('/memory"', '/memory/validity"')
 KNOWN_VALUES: tuple[str, ...] = ("scope", "proposed_by", "at")
@@ -104,17 +105,18 @@ def _contains(literals: set[str], fragment: str) -> bool:
 def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-02：守卫在位 + **点名**（含已知集）+ **逐个** + **两个 GET 都调用它**。"""
     router = _text(root, ROUTER)
-    literals = _module_string_literals(router)
-    missing_known = [name for name in KNOWN_VALUES if name not in literals]
+    guard = _text(root, GUARD_MODULE)
+    guard_literals = _module_string_literals(guard)
+    missing_known = [name for name in KNOWN_VALUES if name not in guard_literals]
     return [
         toolbox.verdict(
             "ec02-the-guard-exists",
-            f"def {GUARD}" in router,
-            "未知参数的守卫必须单列（射程与理由写在它自己的 docstring 里）",
+            f"{GUARD}(" in guard,
+            "未知参数的守卫必须在树（单列模块：射程与理由写在它自己的 docstring 里）",
         ),
         toolbox.verdict(
             "ec02-the-known-set-is-explicit",
-            f"{KNOWN}: frozenset[str]" in router and not missing_known,
+            f"{KNOWN}: frozenset[str]" in guard and not missing_known,
             ",".join(missing_known) or "已知参数集必须**显式登记**（加参数要同步改它）",
         ),
         toolbox.verdict(
@@ -122,17 +124,17 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
             # **判关系**：正文里**逐个**列出（不是只报第一个）。
             # **注**：`join(unknown)` 在 f-string 里是 `FormattedValue`（**不是** `Constant`）
             # ⇒ AST 字面量读不到；改判**源码文本**里的那个**取值形态**（首版按 AST 判**假红**）。
-            "join(unknown)" in router,
+            "join(unknown)" in guard,
             "点名必须**逐个**（只报第一个会让「还有哪些打错了」读不出来）",
         ),
         toolbox.verdict(
             "ec02-both-memory-gets-call-it",
-            router.count(f"{GUARD}(request)") >= 2,
+            f"{GUARD}(request)" in router and router.count(f"{GUARD}(request)") >= 2,
             "**两个**记忆 GET 都要调用守卫（射程 = 那两条）",
         ),
         toolbox.verdict(
             "ec02-the-error-is-a-422",
-            "422," in router and _contains(literals, "Unknown Query Parameter"),
+            "422," in guard and _contains(guard_literals, "Unknown Query Parameter"),
             "**422 + 点名**（不静默忽略、不 500）",
         ),
     ]
@@ -158,7 +160,9 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
         toolbox.verdict(
             "ec03-the-known-values-are-not-rejected",
             # **判关系**：已知集合**包含**那三个（少一个 ⇒ 正确请求被误拒 = `Z-2` 的形态）。
-            all(name in _module_string_literals(router) for name in KNOWN_VALUES),
+            all(
+                name in _module_string_literals(_text(root, GUARD_MODULE)) for name in KNOWN_VALUES
+            ),
             "已知参数必须**在集合里**（否则正确请求被误拒）",
         ),
         toolbox.verdict(

@@ -121,7 +121,8 @@ def test_the_known_parameter_set_is_declared_explicitly() -> None:
     import inspect
     from pathlib import Path
 
-    from services.api.routers.memory import _KNOWN_QUERY_PARAMS, list_project_memory
+    from services.api.memory_query_guard import _KNOWN_QUERY_PARAMS
+    from services.api.routers.memory import list_project_memory
 
     signature = inspect.signature(list_project_memory)
     # `project_id` / `request` 是路径参数与框架注入，不是查询参数。
@@ -135,7 +136,7 @@ def test_the_known_parameter_set_is_declared_explicitly() -> None:
         sorted(query_params - set(_KNOWN_QUERY_PARAMS)),
     )
     source = (
-        Path(__file__).resolve().parents[2] / "services" / "api" / "routers" / "memory.py"
+        Path(__file__).resolve().parents[2] / "services" / "api" / "memory_query_guard.py"
     ).read_text(encoding="utf-8")
     for name in ("scope", "proposed_by", "at"):
         assert f'"{name}"' in source, name

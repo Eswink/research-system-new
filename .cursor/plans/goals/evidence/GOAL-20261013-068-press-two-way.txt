@@ -1,15 +1,15 @@
 BASELINE（未按压，必须绿）: GREEN
-    suite: 29 passed in 5.15s
+    suite: 29 passed in 2.88s
 Z-1 未知参数被忽略（静默吞掉）: 按压 RED
-    sha 复原一致=True | 990d631eb939
-    suite: 4 failed, 25 passed in 6.61s
+    sha 复原一致=True | 51739845c295
+    suite: 4 failed, 25 passed in 3.71s
 Z-2 已知参数被误拒（拒绝面过宽）: 按压 RED
-    sha 复原一致=True | 990d631eb939
-    suite: 10 failed, 19 passed in 6.72s
+    sha 复原一致=True | 51739845c295
+    suite: 10 failed, 19 passed in 3.87s
 Z-3 缺省形态被改动（不传也报错）: 按压 RED
-    sha 复原一致=True | 990d631eb939
-    suite: 18 failed, 11 passed in 6.40s
+    sha 复原一致=True | 51739845c295
+    suite: 18 failed, 11 passed in 3.61s
 Z-4 多个未知只报第一个: 按压 RED
-    sha 复原一致=True | 990d631eb939
-    suite: 1 failed, 28 passed in 6.53s
+    sha 复原一致=True | 51739845c295
+    suite: 1 failed, 28 passed in 3.70s
 SUMMARY presses=4 all_red_and_restored=True
