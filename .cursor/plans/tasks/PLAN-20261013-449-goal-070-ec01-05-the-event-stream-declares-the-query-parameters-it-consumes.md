@@ -105,7 +105,12 @@ exit_criteria:
 
 ## 证据
 
-（逐 WP 回填：命令 + 读数 + commit。）
+| WP | 命令 | 读数 | commit |
+| --- | --- | --- | --- |
+| WP-1 | `uv run --frozen --no-sync python -B scratch/probe-event-stream-params.py` | 差集：唯一消费却不声明 = `run_events.py`；OpenAPI query 面 = `[]`；`?po11=0` / `?nonsense=1` 都 **200**；`?poll=0` 有界 200；`?cursor=zzz` 裁剪 0 条；头路径 200 | （本轮） |
+| WP-2 | `pytest tests/api -q` | **647 passed**（新 7 例全绿；`?po11=0` ⇒ 422 点名 `known: cursor, poll`；头优先语义逐字） | `0e4f6a2d` |
+| WP-3 | `pytest tests/contracts tests/tooling tests/e2e -q` | **2304 passed / 85 skipped**；快照**预期变化**并同轮提交（+31/−1：两参数进 schema + docstring 成 public description）；序 37 判据受判面 **9 → 10**（射程**扩大**，逐条登记） | `0e4f6a2d` |
+| WP-4 | `uv run --frozen --no-sync python -B scratch/goal070_press.py` | **BASELINE GREEN**（18 passed）；V-1/V-2/V-3/V-4 全 **RED**（V-3 = TIMEOUT：无限流挂死被判 RED）；逐条 `sha 复原一致=True`；`SUMMARY presses=4 all_red_and_restored=True`；**V-2 首跑 GREEN ⇒ 判据面被当场抓出缺口**（缺省无人钉）⇒ 补 OpenAPI `default=="1"` 断言后 RED（同签名 1 次修复，未超 `fix_policy`）；归档 `evidence/GOAL-20261013-070-press-two-way.txt`（二进制、`CR=0`）；零进程泄漏 | （本轮） |
 
 ## 影响报告
 

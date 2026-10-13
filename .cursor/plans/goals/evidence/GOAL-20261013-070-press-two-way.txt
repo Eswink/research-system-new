@@ -1,0 +1,21 @@
+GOAL-20261013-070 EC-04 四向反证判词（V-1…V-4 全 RED + 基线门 GREEN + raw sha256 复原）
+命令：uv run --frozen --no-sync python -B scratch/goal070_press.py
+受判面：tests/api/test_event_stream_declares_query_parameters.py + tests/api/test_unknown_query_params_cover_every_declared_route.py
+按压文件：services/api/routers/run_events.py（二进制读写，逐条 raw sha256 复原）
+注：V-3 的 RED 形态 = TIMEOUT（无限流挂死本身就是危害；子进程树 taskkill /T /F 收口）
+----------------------------------------------------------------------------------------------------
+BASELINE（未按压，必须绿）: GREEN
+    suite: 18 passed in 6.00s
+V-1 声明被移除（守卫重新跳过）: 按压 RED
+    sha 复原一致=True | 8e7cdca991ad
+    suite: 4 failed, 14 passed in 8.37s
+V-2 缺省被改动（poll 缺省 1→0）: 按压 RED
+    sha 复原一致=True | 8e7cdca991ad
+    suite: 1 failed, 17 passed in 7.73s
+V-3 poll=0 语义被破坏（永远轮询）: 按压 RED
+    sha 复原一致=True | 8e7cdca991ad
+    suite: TIMEOUT（>240s：无限流挂死 —— 被判 RED）
+V-4 cursor 续传被破坏（不再裁剪）: 按压 RED
+    sha 复原一致=True | 8e7cdca991ad
+    suite: 2 failed, 16 passed in 8.41s
+SUMMARY presses=4 all_red_and_restored=True

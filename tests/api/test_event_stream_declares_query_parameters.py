@@ -37,11 +37,23 @@ def _run(client: TestClient, tag: str = "078") -> str:
 
 
 def test_the_stream_declares_the_parameters_it_consumes() -> None:
-    """EC-02 ①：签名**声明** `cursor` / `poll` ⇒ OpenAPI 的 `parameters[in=query]` 反映。"""
+    """EC-02 ①：签名**声明** `cursor` / `poll` ⇒ OpenAPI 的 `parameters[in=query]` 反映。
+
+    **同时钉缺省**（`V-2` 反证臂的受判面）：`poll` 的 schema 缺省必须仍是 `"1"`
+    （声明前的解析缺省）—— 缺省改了 ⇒ 客户端生成的请求/文档与运行时**不一致**。
+    `cursor` 可空（无缺省值）。
+    """
     spec = create_app(make_run_ready_deps()).openapi()
     params = spec["paths"]["/runs/{run_id}/events"]["get"].get("parameters", [])
-    query = sorted(p["name"] for p in params if p["in"] == "query")
-    assert query == ["cursor", "poll"], query
+    by_name = {p["name"]: p for p in params if p["in"] == "query"}
+    assert sorted(by_name) == ["cursor", "poll"], sorted(by_name)
+    assert by_name["poll"]["schema"].get("default") == "1", (
+        "`poll` 的**声明缺省**必须与声明前的解析缺省一致（`\"1\"`）",
+        by_name["poll"]["schema"],
+    )
+    assert "default" not in by_name["cursor"]["schema"], (
+        "`cursor` 无缺省值（可空）", by_name["cursor"]["schema"]
+    )
 
 
 def test_an_unknown_parameter_on_the_stream_is_named() -> None:
