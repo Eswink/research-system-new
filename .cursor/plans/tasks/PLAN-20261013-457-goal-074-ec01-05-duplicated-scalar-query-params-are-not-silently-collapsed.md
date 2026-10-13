@@ -2,10 +2,10 @@
 id: PLAN-20261013-457
 slug: goal-074-ec01-05-duplicated-scalar-query-params-are-not-silently-collapsed
 title: GOAL-20261013-074 cycle 1（EC-01…EC-05）：标量查询参数重复点名拒绝 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-13
 updated_at: 2026-10-13
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-458-goal-074-ec01-04-duplicated-scalar-query-params-are-not-silently-collapsed.md
 memory_entries: []
 parent_goal: GOAL-20261013-074
 cursor_plan_uri: null
@@ -38,7 +38,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-duplicate-query-params.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **重复臂（EC-02）**：标量参数重复 ⇒ **422 + 逐个点名 + 明写「只接受一个值」**；
@@ -46,7 +46,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（标量重复点名 / 多个逐个 / list 不回归 / 单值不变）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **射程如实 + 无回归（EC-03）**：三面（序 37/40/41）+ 写面体（序 39）+ 事件流（序 38）
@@ -54,7 +54,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/tooling -q`
       ⇒ 全绿 + `pnpm --dir apps/web test:e2e:live` ⇒ 全绿。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`W5-1` 重复又静默折叠 ⇒ RED；`W5-2` list 声明被误伤 ⇒ RED；
@@ -63,7 +63,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal074_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -72,7 +72,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal074_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261013-457 — GOAL-20261013-074 cycle 1

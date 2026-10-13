@@ -86,6 +86,7 @@ _VERIFIERS: tuple[str, ...] = (
     "tools/verify_goal071_closeout.py",
     "tools/verify_goal072_closeout.py",
     "tools/verify_goal073_closeout.py",
+    "tools/verify_goal074_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (
