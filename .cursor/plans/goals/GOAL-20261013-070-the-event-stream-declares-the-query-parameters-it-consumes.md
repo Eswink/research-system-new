@@ -243,11 +243,19 @@ memory_entries: []
 | --- | --- | --- |
 | `713e27af`（replan：序 38 登记 + 修订表归档搬运） | **M0 run 38373226619 `cancelled`**（原因 = 紧随其后的 `e1bcf171` 推送触发 `concurrency.cancel-in-progress`；**`covered_by` = `e1bcf171` 的 run 38373388019** —— tip 树含本提交全部内容）+ Push on main run 38373226961 `success` | —（程序面） |
 | `e1bcf171`（序 38 建档：GOAL + 子 PLAN + ALL_PLAN） | **M0 Quality Gates run 38373388019 `success`**（8 job 全 success）+ **Push on main run 38373388975 `success`**（CodeQL 三语言 success） | WP 建档 |
+| `0e4f6a2d`（WP-2/3：声明进签名 + 守卫自动接管 + 快照同轮） | 无独立 run（**批量推送**，见下）| WP-2 / WP-3 |
+| `068d2d2b`（WP-1/4：探针记录 + 四向反证归档 + EC-01…04 回填） | 无独立 run（批量）| WP-1 / WP-4 |
+| `042ba5fd`（WP-5：验证器 + 断言集 + RECHECK-450 + ACHIEVED + 进展行 + 归档搬运） | 无独立 run（批量）| WP-5（收口面） |
+| `30aa2004`（收口断言集 format 修复：**本地门抓到**） | 无独立 run（批量）| WP-5（门修复） |
+| `2505f58c`（两树判词归档 + 迭代日志收口行） | 无独立 run（批量）| WP-5（记录面） |
+| `c4809a28`（V-2 补丁后判据文件的 format 修复 + **批量推送 tip**） | **M0 Quality Gates run 38384915908 `success`**（8 job 全 success）+ **Push on main run 38384915431 `success`**（CodeQL 三语言 success） | **全部 WP**（tip 树含以上全部内容） |
 
-**自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `e1bcf171`**（其 run 已到终态且全绿）；
-台账自身的**记录提交不产生可引用的 CI 结论** ⇒ **到 `e1bcf171` 为止，不再向后追链**。
+**自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `c4809a28`**（其 run 已到终态且全绿）；
+台账自身的**记录提交不产生可引用的 CI 结论** ⇒ **到 `c4809a28` 为止，不再向后追链**。
 `713e27af` 的 `cancelled` 属**已知基础设施形态**（批量推送竞态），如实登记原因 + `covered_by`，
-**不动**任何阈值。
+**不动**任何阈值。cycle 1 的中间提交无独立 run 的原因 = **批量推送**（宪章既定纪律）；
+**修复记录**：本地全量 m0 **两次**抓到 `python/format-check` 真红（`30aa2004` / `c4809a28` ——
+改判据文件后又编辑、未重跑 format）—— **CI 之前**被本地门拦住，未消耗 CI 轮次。
 
 ## 迭代日志
 
