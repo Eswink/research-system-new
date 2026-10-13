@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261013-451](tasks/PLAN-20261013-451-goal-071-ec01-05-typos-in-write-body-field-names-are-no-longer-silently-dropped.md) | IN_PROGRESS |
+| [x] | [PLAN-20261013-451](tasks/PLAN-20261013-451-goal-071-ec01-05-typos-in-write-body-field-names-are-no-longer-silently-dropped.md) | DONE |
 | [x] | [PLAN-20261013-449](tasks/PLAN-20261013-449-goal-070-ec01-05-the-event-stream-declares-the-query-parameters-it-consumes.md) | DONE |
 | [x] | [PLAN-20261013-447](tasks/PLAN-20261013-447-goal-069-ec01-05-the-rule-covers-every-declared-route.md) | DONE |
 | [x] | [PLAN-20261013-445](tasks/PLAN-20261013-445-goal-068-ec01-05-unknown-query-parameters-are-no-longer-silently-swallowed.md) | DONE |
