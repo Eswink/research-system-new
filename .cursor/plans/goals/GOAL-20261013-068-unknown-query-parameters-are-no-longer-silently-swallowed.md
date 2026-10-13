@@ -56,7 +56,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-unknown-query-param.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **未知参数点名拒绝（本轮验收主体）**：记忆读面的两个 GET 收到**未知查询参数** ⇒
@@ -65,7 +65,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（未知点名 / 多个未知逐个 / 已知逐字不变 / 缺省逐字不变）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **射程如实**：**只**那两个 GET 受此纪律（其余路由**逐条读出**仍然照旧 ——
@@ -75,7 +75,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts -q` ⇒ 全绿
       + 新用例（对照组逐条 / 既有键不变）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`Z-1` 未知参数**被忽略**（静默吞掉原样回来）⇒ RED；
@@ -86,7 +86,7 @@ exit_criteria:
     verify: >-
       `scratch/goal068_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；
       归档 `.cursor/plans/goals/evidence/GOAL-20261013-068-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -99,7 +99,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal068_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -125,7 +125,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261013-445-goal-068-ec01-05-unknown-query-parameters-are-no-longer-silently-swallowed.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-446-goal-068-ec01-04-unknown-query-parameters-are-no-longer-silently-swallowed.md
 memory_entries: []
 ---
 
@@ -139,10 +139,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（实跑 + 对照 + 零命中 + 射程逐个 + 全仓计数） | **实跑**：`scratch/probe-unknown-query-param.py` | PENDING |
-| EC-02 | 未知参数**点名拒绝**（422 + 点进正文；多个逐个）；已知与缺省逐字不变 | `pytest tests/api -q` | PENDING |
-| EC-03 | 射程如实（对照组逐条仍照旧）+ 既有键不变 + 快照同轮 | `pytest tests/api tests/contracts -q` | PENDING |
-| EC-04 | 两向反证 `Z-1`…`Z-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（实跑 + 对照 + 零命中 + 射程逐个 + 全仓计数） | **实跑**：`scratch/probe-unknown-query-param.py` | **PASS** |
+| EC-02 | 未知参数**点名拒绝**（422 + 点进正文；多个逐个）；已知与缺省逐字不变 | `pytest tests/api -q` | **PASS** |
+| EC-03 | 射程如实（对照组逐条仍照旧）+ 既有键不变 + 快照同轮 | `pytest tests/api tests/contracts -q` | **PASS** |
+| EC-04 | 两向反证 `Z-1`…`Z-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -246,10 +246,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 36**（**同轮建档**） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 未知参数点名） |
+| 0 | —（replan + 建档） | `9721c90`（序 36 登记）、`d89b974`（建档） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；**同轮建档** | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 未知参数点名） |
+| 1 | `PLAN-20261013-445`（WP-1…WP-5） | `5b5743f`（守卫 + 射程）、`73b770e`（判据 8 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 五段读数；② 未知 ⇒ **422 + 逐个点名**（含已知集）；**两个 GET** 都受判；已知与缺省**一字不动**；③ **射程如实**（不装全局；对照组照旧）+ **不动 DTO** ⇒ 快照零 diff（如实登记理由）；④ **四向反证** `Z-1`…`Z-4` 全红 + 基线绿 + 复原一致。`tests/api tests/contracts tests/application tests/adapters tests/e2e` 全绿（**621 + 1586**）；mypy **1211 files** 零问题 | （见 CI 台账） | 三处如实登记：① 判据初版**来源必须同时注册 store 白名单与 ledger**（`SourceRecord`）+ PROJECT 层级要策展人批准 ⇒ 走 SESSION；② `?at=` 的 `+` 必须 **percent-encode**（否则被解成空格）；③ 收口断言集 **f-string 的 AST 分片**（`FormattedValue` 读不到）⇒ 改判**源码文本** | EC-05 待做 | cycle 2（EC-05 收口） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-13 | **ACHIEVED** | **GOAL 收口（cycle 2 = EC-05 自举收口）**：五条 EC 全 PASS，收口依据**全部实测**。① 收口验证器判词全 `PASS`；② 两树 `TWO-TREE PASS`（两路判词 / `sha256` 相同）；③ **as-is m0 23/23**（在**全部记录写入之后**）；④ 治理 + 宪章判据绿。**三处如实登记**（ledger 注册 / `+` 编码 / AST 分片）。**残余**：**全仓 65 条 GET** 的未知参数仍被静默吞掉（有意边界）/ 写面请求体另成一面 / 参数值语义未校验 / 内容级检测 / 三维以上组合等 + 未覆盖范围原样保留。独立复检：`RECHECK-20261013-446`（PASS_WITH_WARNINGS）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为那四个字（**明确否认**）。 |
 | 2026-10-13 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 36**（**轴 = 质量**），并写修订记录行（只追加）。**实测读数**（逐条见「事实层结论」表）：① **实跑**未知参数 ⇒ 200 + 无披露（**静默吞掉**）；② **对照**已知参数 ⇒ 筛 + 披露；③ 零命中（三组标识符）；④ 射程 = 记忆读面两个 GET；⑤ 全仓 65 条 GET（**不扩散**是有意边界）。**GOAL 文件 / 子 PLAN / `ALL_PLAN` 投影同轮落地**。五条 EC 全 PENDING。**不**做全仓拒绝 / **不**改写面 / **不**动已知参数语义。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |

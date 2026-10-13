@@ -2,10 +2,10 @@
 id: PLAN-20261013-445
 slug: goal-068-ec01-05-unknown-query-parameters-are-no-longer-silently-swallowed
 title: GOAL-20261013-068 cycle 1（EC-01…EC-05）：未知参数点名拒绝（射程两个 GET）+ 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-13
 updated_at: 2026-10-13
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-446-goal-068-ec01-04-unknown-query-parameters-are-no-longer-silently-swallowed.md
 memory_entries: []
 parent_goal: GOAL-20261013-068
 cursor_plan_uri: null
@@ -36,7 +36,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-unknown-query-param.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **未知参数点名拒绝（EC-02）**：两个 GET 对未知查询参数 ⇒ **422 + 正文点名**；
@@ -44,7 +44,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（未知点名 / 多个逐个 / 已知不变 / 缺省不变）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **射程如实（EC-03）**：**只**那两个 GET 受此纪律；**对照组**（其余路由**逐条读出**）
@@ -53,7 +53,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts -q` ⇒ 全绿
       + 新用例（对照组）。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`Z-1` 未知参数被忽略 ⇒ RED；`Z-2` 已知参数被误拒 ⇒ RED；
@@ -62,7 +62,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal068_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -71,7 +71,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal068_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261013-445 — GOAL-20261013-068 cycle 1
@@ -122,3 +122,4 @@ exit_criteria:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-13 | IN_PROGRESS | cycle 1 建档：未知参数点名拒绝（射程两个 GET）+ 四向反证。 |
+| 2026-10-13 | DONE | cycle 1 收口：WP-1…WP-5 全 PASS（独立复检 `RECHECK-20261013-446` = PASS_WITH_WARNINGS）。**交付**：`_reject_unknown_query_params` 守卫 + 已知集常量 + 两个 GET 接线；判据 8 例；四向反证全红 + 归档（`CR=0`）。 |
