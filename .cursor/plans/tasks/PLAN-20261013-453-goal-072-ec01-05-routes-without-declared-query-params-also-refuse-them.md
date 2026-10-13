@@ -103,7 +103,12 @@ exit_criteria:
 
 ## 证据
 
-（逐 WP 回填：命令 + 读数 + commit。）
+| WP | 命令 | 读数 | commit |
+| --- | --- | --- | --- |
+| WP-1 | `uv run --frozen --no-sync python -B scratch/probe-undeclared-query-params.py` | **58 条**未声明 GET；实跑 `/projects?definitely_unknown=1` / `/health?zz=1` 都 **200**；影响面 **17 处命中**逐条分类（12 处已声明路由 / 2 处 false positive / **2 处真受判面**）；缺省基线（`/projects` list[1]、`/health` 四键） | （本轮） |
+| WP-2 | `pytest tests/api -q` | **653 passed**（新 6 例全绿）；**两处对照臂同轮改签**（序 36 `test_the_range_...`、序 37 `test_routes_without_declared_parameters_are_untouched` —— 属**射程扩大**，逐条申报写法与语义） | `0482d972` |
+| WP-3 | `pytest tests/contracts tests/tooling -q` + `tests/e2e` + **live e2e** | 1999 + 307 + **53 passed**（live 套件先跑，防序 39 的 CI 真红形态）；快照 `git diff --numstat` ⇒ **零 diff**（不动签名，如实登记） | `0482d972` |
+| WP-4 | `uv run --frozen --no-sync python -B scratch/goal072_press.py` | **BASELINE GREEN**（25 passed）；Y-1/Y-2/Y-3/Y-4 全 **RED**；逐条 `sha 复原一致=True`；`SUMMARY presses=4 all_red_and_restored=True`；**Y-4 首跑 GREEN ⇒ 判据面缺口**（写面带查询参数的对照臂缺位）⇒ 补断言后 RED（同签名 1 次，未超上限）；归档 `evidence/GOAL-20261013-072-press-two-way.txt`（二进制、`CR=0`）；零进程泄漏 | （本轮） |
 
 ## 影响报告
 

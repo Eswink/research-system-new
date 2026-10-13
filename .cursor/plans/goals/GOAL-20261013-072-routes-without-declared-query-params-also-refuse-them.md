@@ -52,7 +52,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-undeclared-query-params.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **纪律扩到未声明的读面（本轮验收主体）**：**未声明**查询参数的 GET/HEAD 路由收到
@@ -61,7 +61,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（未声明路由点名 / 多个逐个 / 缺省不变 / 非读面不受影响）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **射程如实 + 既有面不回归**：**已声明**读面（序 37/38 判据）与**写面**（序 39）
@@ -71,7 +71,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/tooling -q`
       ⇒ 全绿 + 新用例（对照组 / 已声明面回归 / 写面回归）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`Y-1` 未声明面**又被静默忽略**（退回归零）⇒ RED；
@@ -82,7 +82,7 @@ exit_criteria:
     verify: >-
       `scratch/goal072_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；
       归档 `.cursor/plans/goals/evidence/GOAL-20261013-072-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -135,10 +135,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（实跑 / 射程清单 / 影响面盘点 / 缺省基线） | **实跑**：`scratch/probe-undeclared-query-params.py` | PENDING |
-| EC-02 | 未声明读面收到查询参数 ⇒ 422 + 逐个点名；缺省逐字不变 | `pytest tests/api -q` + 新用例 | PENDING |
-| EC-03 | 射程如实（已声明面 / 写面不回归）+ 快照同轮（预期零 diff） | `pytest tests/api tests/contracts tests/tooling -q` | PENDING |
-| EC-04 | 两向反证 `Y-1`…`Y-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（实跑 / 射程清单 / 影响面盘点 / 缺省基线） | **实跑**：`scratch/probe-undeclared-query-params.py` | **PASS** |
+| EC-02 | 未声明读面收到查询参数 ⇒ 422 + 逐个点名；缺省逐字不变 | `pytest tests/api -q`（653 passed）+ 新 6 例 | **PASS** |
+| EC-03 | 射程如实（已声明面 / 写面不回归）+ 快照同轮（**实测零 diff**） | 1999 + 307 + **53 live** passed | **PASS** |
+| EC-04 | 两向反证 `Y-1`…`Y-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/GOAL-20261013-072-press-two-way.txt`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -149,9 +149,10 @@ memory_entries: []
 | # | 事实 | 复核命令 | 读数 |
 | --- | --- | --- | --- |
 | 1 | **实跑**：未声明读面收到查询串 ⇒ **200** | `TestClient` + 真实装配 | `/projects?definitely_unknown=1` ⇒ **200**；`/health?zz=1` ⇒ **200** |
-| 2 | 未声明查询参数的 GET 路由**条数** | `app.openapi()` 过滤 `parameters[in=query]` 为空 | **58** 条 |
+| 2 | 未声明查询参数的 GET 路由**条数** | `app.openapi()` 过滤 `parameters[in=query]` 为空 | **58** 条（逐条清单在探针第 2 段） |
 | 3 | 现守卫的**语义区分**（`None` vs 空集）在树 | `services/api/query_param_guard.py` | `declared_query_params` 已**区分**：`None` = 非读面（不在射程）/ 空集 = 读面但无参数（**当前跳过**）⇒ 本轮把后者从「跳过」改成「拒绝」 |
-| 4 | 影响面（web/tests 对这些路由带查询串） | EC-01 ③ | （勘察读数；已知序 39 的教训：spread-into-write 曾在 CI 侧兑现 ⇒ 本轮先量） |
+| 4 | **影响面（逐条）** | 探针第 3 段（扫 web/tests 对未声明路径的带查询串调用） | **17 处命中**，逐条分类：**12 处是对「已声明」路由的调用**（library/cost-forecast/memory —— 序 37/38 已覆盖、不受影响）；**2 处是 false positive**（`before?.digest` 可选链、`/?source=example#/` 非 API）；**2 处是真受判面**：`/projects?unknown_here=1`（序 36 对照组）与 `/health?definitely_unknown=1` + `/runs/.../telemetry`（序 37 对照臂）—— **本轮纪律正是要改变它们** ⇒ 这两个判据的**对照臂语义失效**，按「射程扩大」同轮改签（逐条申报，见迭代日志） |
+| 5 | 缺省基线（不传参数的状态码 + 键） | 探针第 4 段 | `/projects` ⇒ 200（list[1]）；`/health` ⇒ 200（键 `['composition','pricing_degraded','status','version']`） |
 
 **结论**：「静默吞掉」族已连接通三面（读面已声明 37/38、写面 39），**仅剩**「读面
 **未声明**」这一面仍静默 —— 且序 37/38 两轮都把它登记为后续候选。
@@ -242,6 +243,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（实测缺口登记 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 40**（**同轮建档**） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 空集支改拒绝 + 影响面处理） |
+| 1 | PLAN-20261013-453 | `0482d972`（+ 本轮记录提交） | 探针四段读数（58 条 / 影响面逐条）；空集支改拒绝；两处对照臂改签；api 653 / contracts+tooling 1999 / e2e 307 / **live 53** 全绿；快照零 diff；四向按压全 RED（Y-4 首跑 GREEN 抓出判据缺口 ⇒ 补写面带查询参数断言） | （见 CI 台账） | Y-4 缺口（同签名 1 次，未超上限） | EC-01…04 PASS；剩 EC-05 收口 | EC-05（验证器 + 两树 + m0 + 台账） |
 
 ## 状态历史
 

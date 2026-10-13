@@ -95,7 +95,9 @@ def test_the_declared_routes_keep_their_own_shape() -> None:
 def test_the_write_face_is_not_in_this_scope() -> None:
     """EC-03 ③（射程反证臂）：**写面**不受本纪律（序 39 的 DTO 纪律另有其面）。
 
-    受判面 = 一次**正确**的写请求（**不带**查询参数）照旧成功 ⇒ 守卫只作用在**读面**。
+    受判面两臂（`Y-4` 反证臂的受判面）：① 正确的写请求（**不带**查询参数）照旧成功；
+    ② 写请求**带**查询参数 ⇒ **不**被本守卫打断（`declared_query_params` 对非读面
+    返回 `None` ⇒ 不在射程）；若序列 40 把 `None` 支也纳入 ⇒ ② 立刻变红。
     """
     with _client() as client:
         response = client.post(
@@ -104,3 +106,13 @@ def test_the_write_face_is_not_in_this_scope() -> None:
             headers={"Idempotency-Key": f"g072-{uuid.uuid4()}"},
         )
         assert response.status_code == 201, response.text
+        with_query = client.post(
+            "/projects?zz=1",
+            json={"name": "probe-scope-2"},
+            headers={"Idempotency-Key": f"g072-{uuid.uuid4()}"},
+        )
+        assert with_query.status_code == 201, (
+            "写面**不**在本纪律射程内（`None` 支一字不动）—— 射程越界会误伤",
+            with_query.status_code,
+            with_query.text[:200],
+        )
