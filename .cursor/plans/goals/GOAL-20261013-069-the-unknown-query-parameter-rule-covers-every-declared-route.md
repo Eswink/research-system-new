@@ -103,7 +103,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal069_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -129,7 +129,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261013-447-goal-069-ec01-05-the-rule-covers-every-declared-route.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-448-goal-069-ec01-04-the-rule-covers-every-declared-route.md
 memory_entries: []
 ---
 
@@ -148,7 +148,7 @@ memory_entries: []
 | EC-02 | 未知参数在**每条已声明路由**上点名拒绝；已知集**从签名导出** | `pytest tests/api -q`（629 passed）+ 新 11 例 | **PASS** |
 | EC-03 | 射程如实（无参数路由不受影响）+ 序 36 回归 + 快照同轮 | 2635 + 439 + 1574 passed；快照零 diff | **PASS** |
 | EC-04 | 两向反证 `W-1`…`W-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/GOAL-20261013-069-press-two-way.txt`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **64 PASS / 0 FAIL**；两树 `TWO-TREE PASS`（sha256 一致） | **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -254,10 +254,11 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 37**（**同轮建档**）+ 预算 40→45 | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 导出面 + 全员覆盖） |
-| 1 | PLAN-20261013-447 | `8670404` `17c527b` `e17c72d`（待收口） | 探针两面交叉对齐（9 条）；守卫落地（签名导出 + 构造期应用级依赖）；判据 11 例；api/contracts/tooling/e2e/observability/application/adapters 全绿；快照零 diff；四向按压全 RED + 基线门 GREEN + 字节复原 | （见 CI 台账） | — | EC-01…04 PASS；剩 EC-05 收口 | EC-05（验证器 + 两树 + m0 + 台账） |
+| 1 | PLAN-20261013-447 | `8670404` `17c527b` `74fba93d` `1e97552a` | 探针两面交叉对齐（9 条）；守卫落地（签名导出 + 构造期应用级依赖）；判据 11 例；api/contracts/tooling/e2e/observability/application/adapters 全绿；快照零 diff；四向按压全 RED + 基线门 GREEN + 字节复原 | （见 CI 台账） | — | EC-01…04 PASS；剩 EC-05 收口 | EC-05（验证器 + 两树 + m0 + 台账） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-13 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 37**（**轴 = 质量**），并写修订记录行（只追加）+ 预算核算（`max_goals` 40 → 45）。**实测读数**（逐条见「事实层结论」表）：① **9 条 GET 已声明查询参数**（两个独立面交叉核对，逐条相同）；② **实跑**两条不同路由打错参数名 ⇒ **200 + 静默吞掉**；③ 通用守卫**零命中**（只有序 36 的两文件）；④ 全仓 68 条 GET 的射程分类（9 已声明 / 59 无参数）；⑤ 序 36 的守卫仍在树。**GOAL 文件 / 子 PLAN / `ALL_PLAN` 投影同轮落地**。五条 EC 全 PENDING。**不**覆盖无参数路由 / **不**改写面 / **不**动已知参数语义。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
+| 2026-10-13 | ACTIVE | **cycle 1 全交付（EC-01…EC-05 全 PASS）**：探针两面交叉对齐（9 条已声明路由）；守卫从签名导出 + 构造期应用级依赖（D-5 实测定案）；判据 11 例（逐条 9 路由 / 该路由已知集 / 多个逐个 / 已知与缺省不变 / 对照臂 / 不手写清单静态+行为 / 受判面=app 全部声明面）；api 629 / contracts 528 / tooling 全绿 / e2e 439 / observability / application+adapters 1574；快照零 diff；四向按压全 RED + 基线门 GREEN + 字节复原；验证器 64 PASS；两树 `TWO-TREE PASS`；RECHECK-448 PASS。**残余**：无参数路由 / 写面请求体字段（逐条保留）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
