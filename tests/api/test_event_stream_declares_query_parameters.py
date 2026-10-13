@@ -48,11 +48,12 @@ def test_the_stream_declares_the_parameters_it_consumes() -> None:
     by_name = {p["name"]: p for p in params if p["in"] == "query"}
     assert sorted(by_name) == ["cursor", "poll"], sorted(by_name)
     assert by_name["poll"]["schema"].get("default") == "1", (
-        "`poll` 的**声明缺省**必须与声明前的解析缺省一致（`\"1\"`）",
+        '`poll` 的**声明缺省**必须与声明前的解析缺省一致（`"1"`）',
         by_name["poll"]["schema"],
     )
     assert "default" not in by_name["cursor"]["schema"], (
-        "`cursor` 无缺省值（可空）", by_name["cursor"]["schema"]
+        "`cursor` 无缺省值（可空）",
+        by_name["cursor"]["schema"],
     )
 
 
