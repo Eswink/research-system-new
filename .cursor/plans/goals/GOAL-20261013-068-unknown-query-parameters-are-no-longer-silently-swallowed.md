@@ -143,7 +143,7 @@ memory_entries: []
 | EC-02 | 未知参数**点名拒绝**（422 + 点进正文；多个逐个）；已知与缺省逐字不变 | `pytest tests/api -q` | **PASS** |
 | EC-03 | 射程如实（对照组逐条仍照旧）+ 既有键不变 + 快照同轮 | `pytest tests/api tests/contracts -q` | **PASS** |
 | EC-04 | 两向反证 `Z-1`…`Z-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5836 passed, 21 skipped**）| **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -247,7 +247,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（replan + 建档） | `9721c90`（序 36 登记）、`d89b974`（建档） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；**同轮建档** | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 未知参数点名） |
-| 1 | `PLAN-20261013-445`（WP-1…WP-5） | `5b5743f`（守卫 + 射程）、`73b770e`（判据 8 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 五段读数；② 未知 ⇒ **422 + 逐个点名**（含已知集）；**两个 GET** 都受判；已知与缺省**一字不动**；③ **射程如实**（不装全局；对照组照旧）+ **不动 DTO** ⇒ 快照零 diff（如实登记理由）；④ **四向反证** `Z-1`…`Z-4` 全红 + 基线绿 + 复原一致。`tests/api tests/contracts tests/application tests/adapters tests/e2e` 全绿（**621 + 1586**）；mypy **1211 files** 零问题 | （见 CI 台账） | 三处如实登记：① 判据初版**来源必须同时注册 store 白名单与 ledger**（`SourceRecord`）+ PROJECT 层级要策展人批准 ⇒ 走 SESSION；② `?at=` 的 `+` 必须 **percent-encode**（否则被解成空格）；③ 收口断言集 **f-string 的 AST 分片**（`FormattedValue` 读不到）⇒ 改判**源码文本** | EC-05 待做 | cycle 2（EC-05 收口） |
+| 1 | `PLAN-20261013-445`（WP-1…WP-5） | `5b5743f`（守卫 + 射程）、`73b770e`（判据 8 例 + 按压归档） | **EC-01/02/03/04 PASS**：① 五段读数；② 未知 ⇒ **422 + 逐个点名**（含已知集）；**两个 GET** 都受判；已知与缺省**一字不动**；③ **射程如实**（不装全局；对照组照旧）+ **不动 DTO** ⇒ 快照零 diff（如实登记理由）；④ **四向反证** `Z-1`…`Z-4` 全红 + 基线绿 + 复原一致。`tests/api tests/contracts tests/application tests/adapters tests/e2e` 全绿（**621 + 1586**）；mypy **1211 files** 零问题 | （见 CI 台账） | 三处如实登记：① 判据初版**来源必须同时注册 store 白名单与 ledger**（`SourceRecord`）+ PROJECT 层级要策展人批准 ⇒ 走 SESSION；② `?at=` 的 `+` 必须 **percent-encode**（否则被解成空格）；③ 收口断言集 **f-string 的 AST 分片**（`FormattedValue` 读不到）⇒ 改判**源码文本**；④ 规模门 **457 行** ⇒ 守卫**单列成模块**（判据 / 按压 / 断言集**随之重定向**）；⑤ **m0 真红**：隐私出口普查抓到新模块的 `ApiError.detail` 出口 ⇒ 归入既有 **JUDGED `failure_payload`** 面（**不是**豁免）。**EC-05 PASS**（验证器判词全 `PASS`；两树 **`TWO-TREE PASS`**；as-is m0 **23/23**（`PASS [` 24 / `FAILED [` 0 / **5836 passed, 21 skipped** / `EXIT=0`；独占、仓库 `.venv`、不接管道、**记录写完之后**）；治理 + 宪章判据绿） | （见 CI 台账） | — | 无 | 无（本 GOAL 已收口） |
 
 ## 状态历史
 
