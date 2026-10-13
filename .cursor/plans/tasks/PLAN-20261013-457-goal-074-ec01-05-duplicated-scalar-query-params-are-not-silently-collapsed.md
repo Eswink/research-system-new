@@ -104,7 +104,12 @@ exit_criteria:
 
 ## 证据
 
-（逐 WP 回填：命令 + 读数 + commit。）
+| WP | 命令 | 读数 | commit |
+| --- | --- | --- | --- |
+| WP-1 | `uv run --frozen --no-sync python -B scratch/probe-duplicate-query-params.py` | `?limit=1&limit=2` ⇒ **200**（静默末值）；`?endpoint_id=a&endpoint_id=b` ⇒ 200；序 38 的 `?cursor=a&cursor=b` ⇒ 200；**标量 16 个 / list 1 个**（判别器更正：`list[str] \| None` 是 `anyOf` ⇒ 只看顶层 type 会误判，首版探针已修）；单值基线（200 + 两键） | （本轮） |
+| WP-2 | `pytest tests/api -q` | **672 passed**（新 7 例）；**★ 实测更正**：`QueryParams.keys()` **去重** ⇒ 计数必须用 `multi_items()`（首版用 keys() ⇒ 永远数不到重复）；射程由**签名注解**导出（`list[...]` 判型；本版 FastAPI 的 ModelField 类型面全 None）；序 37 判据抓到我 docstring 里的示例字样 ⇒ 改写措辞（判据意图未动） | `2ef490c6` |
+| WP-3 | `pytest tests/contracts tests/tooling -q` + `tests/e2e` + **live e2e** | 2001 + 307 + **53 passed**；快照 `git diff --numstat` ⇒ **零 diff** | `2ef490c6` / `23a20c34` |
+| WP-4 | `uv run --frozen --no-sync python -B scratch/goal074_press.py` | **BASELINE GREEN**（24 passed）；W5-1/W5-2/W5-3/W5-4 全 **RED**（**首跑即全红**）；逐条 `sha 复原一致=True`；`SUMMARY presses=4 all_red_and_restored=True`；归档 `evidence/GOAL-20261013-074-press-two-way.txt`（二进制、`CR=0`）；零进程泄漏 | （本轮） |
 
 ## 影响报告
 
