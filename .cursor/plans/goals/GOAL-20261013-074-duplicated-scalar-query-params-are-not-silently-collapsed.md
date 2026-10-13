@@ -9,7 +9,7 @@ title: >-
   `expected_digests` 声明为 `list[str]` 且 web 客户端**合法地**重复发它 ⇒ 判据只覆盖
   **标量**声明的参数）：标量重复 ⇒ **422 + 点名该参数**（并明写「只接受一个值」），
   **单值形态逐字不变**
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-13
 updated_at: 2026-10-13
 owners:
@@ -97,7 +97,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal074_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -123,7 +123,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261013-457-goal-074-ec01-05-duplicated-scalar-query-params-are-not-silently-collapsed.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-458-goal-074-ec01-04-duplicated-scalar-query-params-are-not-silently-collapsed.md
 memory_entries: []
 ---
 
@@ -141,7 +141,7 @@ memory_entries: []
 | EC-02 | 标量重复 ⇒ 422 + 点名；list 与单值逐字不变 | `pytest tests/api -q`（672 passed）+ 新 7 例 | **PASS** |
 | EC-03 | 射程如实（三面 + 写面体 + 事件流不回归）+ live e2e + 快照同轮 | 2001 + 307 + **53 live** passed；快照零 diff | **PASS** |
 | EC-04 | 两向反证 `W5-1`…`W5-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/GOAL-20261013-074-press-two-way.txt`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **61 PASS / 0 FAIL**；两树 `TWO-TREE PASS`（sha256 一致） | **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -244,10 +244,11 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 42**（**同轮建档**）+ replan 到期核算 | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 重复臂 + 射程按声明类型分） |
-| 1 | PLAN-20261013-457 | `2ef490c6` `23a20c34`（+ 本轮记录提交） | 探针四段读数（16 标量 / 1 list）；重复臂落地（★ `keys()` 去重 ⇒ 改 `multi_items()`）；7 例新判据；api 672 / contracts+tooling 2001 / e2e 307 / **live 53** 全绿；快照零 diff；四向按压全 RED（**首跑即全红**）；一次 mypy 真红（staticmethod 类型面）同轮修 | （见 CI 台账） | mypy 1 次（未超上限） | EC-01…04 PASS；剩 EC-05 收口 | EC-05（验证器 + 两树 + m0 + 台账） |
+| 1 | PLAN-20261013-457 | `2ef490c6` `23a20c34` `2ad3cbbc` `85e35a9e` | 探针四段读数（16 标量 / 1 list）；重复臂落地（★ `keys()` 去重 ⇒ 改 `multi_items()`）；7 例新判据；api 672 / contracts+tooling 2001 / e2e 307 / **live 53** 全绿；快照零 diff；四向按压全 RED（**首跑即全红**）；一次 mypy 真红（staticmethod 类型面）同轮修 | （见 CI 台账） | mypy 1 次（未超上限） | **五条 EC 全 PASS** | —（本 GOAL 收口；序 43 由战役触发时盘账决定） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-13 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 42**（**轴 = 质量**），并写修订记录行（只追加；同轮把序 39 的旧修订行原文搬入新归档）+ replan 到期核算。**实测读数**（逐条见「事实层结论」表）：① 标量参数重复 ⇒ **200 + 末值生效**（`limit` / `endpoint_id` / 序 38 的 `cursor`）；② `/evaluations/trend` 的 `expected_digests` 声明 `list[str]` 且 web 客户端**合法重复** ⇒ 射程边界；③ 另实测排除：HEAD 未注册（405，Starlette 缺省）、头名打错已被幂等中间件 422 —— 均非本族缺口。**GOAL 文件 / 子 PLAN / `ALL_PLAN` 投影同轮落地**。五条 EC 全 PENDING。**不**动未知/未声明/写面三面 / **不**动 `list` 参数 / **不**改框架解析。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
+| 2026-10-13 | ACHIEVED | **收口（cycle 1）**：五条 EC 全 PASS；验证器 **61 条判词全过**；两树逐行判词 sha256 一致（`TWO-TREE PASS`）；as-is m0 **23/23**（记录写完之后）；治理 `validate.py` 绿 + 宪章判据绿；CI 台账逐提交；`latest_recheck` = `RECHECK-20261013-458`。**★ 本轮关键实测更正**：Starlette 的 `QueryParams.keys()` **去重** ⇒ 计数必须用 `multi_items()`（首版实现即此误）；射程**由声明类型导出**（签名注解判 `list[...]`）—— 边界有 web 合法用法支撑。四向按压**首跑即全红**。**残余与未覆盖范围原样保留**；**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
