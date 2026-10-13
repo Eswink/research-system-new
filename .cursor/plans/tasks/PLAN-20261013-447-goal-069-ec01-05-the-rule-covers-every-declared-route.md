@@ -104,13 +104,18 @@ exit_criteria:
 
 ## 证据
 
-（逐 WP 回填：命令 + 读数 + commit。）
+| WP | 命令 | 读数 | commit |
+| --- | --- | --- | --- |
+| WP-1 | `uv run --frozen --no-sync python -B scratch/probe-query-param-coverage.py` | 两面交叉：GET 68 / 已声明 **9** / 无参数 59；两面逐条相同；实跑 `?limt=` `?horizon_day=` 均 200；守卫零命中（只序 36 两文件） | `8670404` |
+| WP-2 | `uv run --frozen --no-sync python -B -m pytest tests/api/test_unknown_query_params_cover_every_declared_route.py tests/api/test_memory_unknown_query_params_are_named.py -q` | **19 passed**（新 11 + 序 36 的 8）；`tests/api` 629 passed；ruff check + format 绿 | `17c527b` |
+| WP-3 | `pytest tests/api tests/contracts tests/tooling -q` / `tests/e2e tests/observability` / `tests/application tests/adapters` | 2635 + 439 + 1574 passed；`tools/gen_openapi.py` 后快照 `git diff --numstat` **零 diff**（未动 DTO ⇒ 无需重生成，实测确认） | （本轮） |
+| WP-4 | `uv run --frozen --no-sync python -B scratch/goal069_press.py` | **BASELINE GREEN**；W-1/W-2/W-3/W-4 全 **RED**；逐条 `sha 复原一致=True`；`SUMMARY presses=4 all_red_and_restored=True`；判词归档 `.cursor/plans/goals/evidence/GOAL-20261013-069-press-two-way.txt`（二进制、`CR=0`） | （本轮） |
 
 ## 影响报告
 
-- **Domain / API / schema 变化**：（EC-02 回填：请求处理链的参数校验面）——**无迁移**。
+- **Domain / API / schema 变化**：请求处理链新增**应用级依赖**（读面参数校验面）；OpenAPI 快照**零 diff**（参数校验面不进 schema —— `tools/gen_openapi.py` 实测）；**无迁移**。
 - **安全 / 凭据变化**：无。
-- **兼容性 / 迁移风险**：（EC-02 回填：只拒绝**未知**参数 ⇒ 既有调用逐字不变）
+- **兼容性 / 迁移风险**：只拒绝**未知**参数 ⇒ 既有调用逐字不变（web 四个 client 逐条核对：参数名全对、无越界参数）；**一处行为变化**如实登记：`/memory?at=` 原先被序 36 的并集守卫放行（并集含 `at`），现在按**该路由自己的签名**被拒（422 点名）—— 这是本轮纪律的直接后果。
 - **上游版本影响**：无。
 - **下一项任务**：按 EC 顺序推进。
 

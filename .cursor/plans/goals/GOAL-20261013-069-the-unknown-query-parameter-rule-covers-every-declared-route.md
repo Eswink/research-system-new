@@ -59,7 +59,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-query-param-coverage.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **纪律扩到全体已声明路由（本轮验收主体）**：未知查询参数在**每一条已声明查询参数的 GET**
@@ -69,7 +69,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（逐路由点名 / 多个逐个 / 已知不变 / 缺省不变 / 导出面与签名一致）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **射程如实 + 既有面不回归**：**无查询参数**的路由**不受影响**（受判面 = 那条对照组）；
@@ -79,7 +79,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/tooling -q`
       ⇒ 全绿 + 新用例（对照组 / 记忆读面回归 / 既有键不变）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`W-1` 导出面**返回空集**（守卫失效）⇒ RED；
@@ -90,7 +90,7 @@ exit_criteria:
     verify: >-
       `scratch/goal069_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；
       归档 `.cursor/plans/goals/evidence/GOAL-20261013-069-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -144,10 +144,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（AST 导出 / 实跑 / 零命中 / 射程分类 / 序 36 在位） | **实跑**：`scratch/probe-query-param-coverage.py` | PENDING |
-| EC-02 | 未知参数在**每条已声明路由**上点名拒绝；已知集**从签名导出** | `pytest tests/api -q` | PENDING |
-| EC-03 | 射程如实（无参数路由不受影响）+ 序 36 回归 + 快照同轮 | `pytest tests/api tests/contracts tests/tooling -q` | PENDING |
-| EC-04 | 两向反证 `W-1`…`W-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（签名导出（两面交叉） / 实跑 / 零命中 / 射程分类 / 序 36 在位） | **实跑**：`scratch/probe-query-param-coverage.py` | **PASS** |
+| EC-02 | 未知参数在**每条已声明路由**上点名拒绝；已知集**从签名导出** | `pytest tests/api -q`（629 passed）+ 新 11 例 | **PASS** |
+| EC-03 | 射程如实（无参数路由不受影响）+ 序 36 回归 + 快照同轮 | 2635 + 439 + 1574 passed；快照零 diff | **PASS** |
+| EC-04 | 两向反证 `W-1`…`W-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/GOAL-20261013-069-press-two-way.txt`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -175,7 +175,7 @@ memory_entries: []
 | D-2 | 未知参数 ⇒ **422 + 逐个点名 + 给出该路由的已知集** | 与序 36 **同一形态**（调用方可自纠） | 已定 |
 | D-3 | **缺省形态逐字不变**（不传未知参数 ⇒ 逐字相同） | 「缺省形态逐字不变」是本战役的一贯纪律 | 已定 |
 | D-4 | **无查询参数**的路由**不受影响**（本轮**不**覆盖那种面） | 没有「已知集」可言；那种面另成一条（登记为后续候选） | 已定 |
-| D-5 | 走**既有中间件层**还是**逐路由调用**，由 EC-01 读 app 装配后定 | 涉及请求处理链 ⇒ 先量再定（`add_middleware` 的**顺序语义**在 `AGENTS`/既有判据里有钉住的先例） | **待 EC-01** |
+| D-5 | 走**应用级依赖**（构造期 `FastAPI(dependencies=[...])`），**不是**中间件、**不是**逐路由调用 | **实测**：依赖在路由匹配**之后**解析 ⇒ 读得到该路由自己的签名；中间件在匹配**之前**（读不到）；事后 `router.dependencies.append` **不**生效（装配顺序 = 契约的一部分） | 已定（EC-01 实测后） |
 
 ## 循环入口协议（幂等重入）
 
@@ -254,6 +254,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 37**（**同轮建档**）+ 预算 40→45 | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 导出面 + 全员覆盖） |
+| 1 | PLAN-20261013-447 | `8670404` `17c527b` `e17c72d`（待收口） | 探针两面交叉对齐（9 条）；守卫落地（签名导出 + 构造期应用级依赖）；判据 11 例；api/contracts/tooling/e2e/observability/application/adapters 全绿；快照零 diff；四向按压全 RED + 基线门 GREEN + 字节复原 | （见 CI 台账） | — | EC-01…04 PASS；剩 EC-05 收口 | EC-05（验证器 + 两树 + m0 + 台账） |
 
 ## 状态历史
 

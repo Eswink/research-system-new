@@ -1,0 +1,20 @@
+GOAL-20261013-069 EC-04 四向反证判词（W-1…W-4 全 RED + 基线门 GREEN + raw sha256 复原）
+命令：uv run --frozen --no-sync python -B scratch/goal069_press.py
+受判面：tests/api/test_unknown_query_params_cover_every_declared_route.py + tests/api/test_memory_unknown_query_params_are_named.py
+按压文件：services/api/query_param_guard.py（二进制读写，逐条 raw sha256 复原）
+----------------------------------------------------------------------------------------------------
+BASELINE（未按压，必须绿）: GREEN
+    suite: 19 passed in 4.61s
+W-1 导出面返回空集（守卫失效）: 按压 RED
+    sha 复原一致=True | 4f06434e928a
+    suite: 5 failed, 14 passed in 6.53s
+W-2 导出面把路径参数当查询参数（误拒正确请求）: 按压 RED
+    sha 复原一致=True | 4f06434e928a
+    suite: 8 failed, 11 passed in 6.00s
+W-3 缺省形态被改动（不传也报错）: 按压 RED
+    sha 复原一致=True | 4f06434e928a
+    suite: 5 failed, 14 passed in 5.88s
+W-4 只覆盖记忆读面（射程没扩）: 按压 RED
+    sha 复原一致=True | 4f06434e928a
+    suite: 5 failed, 14 passed in 6.23s
+SUMMARY presses=4 all_red_and_restored=True guard_sha=4f06434e928a
