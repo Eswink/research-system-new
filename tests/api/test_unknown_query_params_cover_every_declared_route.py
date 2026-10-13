@@ -165,24 +165,36 @@ def test_the_known_set_is_exported_from_the_signature_not_hand_written() -> None
     )
 
 
-def test_the_guard_is_inert_for_non_read_methods() -> None:
-    """EC-03 ③（反证臂）：**写面不受影响** —— 非 GET/HEAD 上导出面返回 `None`。
+def test_the_export_face_reads_the_route_regardless_of_method() -> None:
+    """EC-03 ③（GOAL-20261013-073 起**改签**：写面**也**在射程）。
 
-    与「未知参数」纪律的边界一致：写面的额外字段是 pydantic 的既有校验面
-    （本 GOAL 明确不做）。
+    **改动申报（逐条）**：序 40 时非读面被**提前返回 `None`** 而跳过；序 41 去掉那个
+    方法闸门（**实测**：63 条非读面路由**全部**声明 0 个查询参数 ⇒ 走「零声明 ⇒ 不接受
+    任何查询参数」那支）。受判面从「POST 返回 `None`」改签为「**方法不影响**导出面读数」
+    —— 同一路由同一签名，GET 与 POST 读到的已知集**相同**；`None` 现在只留给
+    **无法解析路由**的边缘请求（该形态由下方的 `route` 缺位臂判）。
     """
     from starlette.requests import Request as StarletteRequest
 
     dependant = type("D", (), {"query_params": [type("F", (), {"alias": "alpha"})()]})()
-    scope = {
-        "type": "http",
-        "method": "POST",
-        "route": type("R", (), {"dependant": dependant})(),
-        "path": "/x",
-        "headers": [],
-    }
-    assert declared_query_params(StarletteRequest(scope)) is None, (
-        "写面不该被本守卫覆盖（`None` = 不在射程内）"
+
+    def scope_for(method: str) -> dict[str, object]:
+        return {
+            "type": "http",
+            "method": method,
+            "route": type("R", (), {"dependant": dependant})(),
+            "path": "/x",
+            "headers": [],
+        }
+
+    read = declared_query_params(StarletteRequest(scope_for("GET")))
+    write = declared_query_params(StarletteRequest(scope_for("POST")))
+    assert read == frozenset({"alpha"}), read
+    assert write == read, ("方法**不影响**导出面读数（序 41：写面也在射程）", write, read)
+    # `None` 只留给「路由无法解析」：`route` 缺位 ⇒ 不在射程（边缘形态）。
+    bare = {"type": "http", "method": "GET", "path": "/x", "headers": []}
+    assert declared_query_params(StarletteRequest(bare)) is None, (
+        "`route` 缺位 ⇒ 无法解析 ⇒ `None`（唯一的不在射程形态）"
     )
 
 

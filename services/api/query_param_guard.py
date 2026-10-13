@@ -25,19 +25,20 @@ from fastapi import Request
 
 from services.api.errors import ApiError
 
-#: 读面方法（GET 路由在 Starlette 下同时接受 HEAD）。
-_READ_METHODS: frozenset[str] = frozenset({"GET", "HEAD"})
-
 
 def declared_query_params(request: Request) -> frozenset[str] | None:
-    """本请求匹配到的路由**自己声明**的查询参数集（非读面 ⇒ `None`）。
+    """本请求匹配到的路由**自己声明**的查询参数集（无法解析路由 ⇒ `None`）。
 
-    `None` 与空集**语义不同**（GOAL-20261013-072 把这条区分用起来）：
-    `None` = 该路由**不在射程内**（非读面 ⇒ 一字不动）；空集 = **读面但无声明**
-    ⇒ 该路由**不接受任何**查询参数（收到即 422 点名，见下）。
+    三态语义（逐条，GOAL-20261013-072/073 把它用起来）：
+
+    - `None` = **路由无法解析**（不在射程：没有 `route`/`dependant` 的边缘请求）；
+    - 空集 = 路由**声明零个**查询参数 ⇒ **不接受任何**查询参数（收到即 422 点名）；
+    - 非空集 = 该路由的已知集（不在集里的 ⇒ 点名）。
+
+    **GOAL-20261013-073**：非读面（写面）此前被**提前返回 `None`** 而跳过 ——
+    本轮去掉那个闸门 ⇒ 写面同样走「声明零个 ⇒ 不接受任何」那支（**实测**：63 条非读面
+    路由**全部**声明 0 个查询参数；写面带查询参数此前**照样成功**：POST ⇒ 201、PATCH ⇒ 200）。
     """
-    if request.method not in _READ_METHODS:
-        return None
     route = request.scope.get("route")
     dependant = getattr(route, "dependant", None)
     if dependant is None:
@@ -48,18 +49,19 @@ def declared_query_params(request: Request) -> frozenset[str] | None:
 def reject_unknown_query_params(request: Request) -> None:
     """未知查询参数 ⇒ **422 + 逐个点名 + 该路由的已知集**（供调用方自纠）。
 
-    **两种形态**（同一纪律的两个分支）：
+    **三种形态**（同一纪律的分支）：
 
     - **已声明**的路由（已知集非空）：不在集里的 ⇒ 点名（序 37 起）；
-    - **未声明**的路由（已知集**空**）：**任何**查询参数都点名，并**明写该路由不接受
+    - **零声明**的路由（已知集**空**）：**任何**查询参数都点名，并**明写该路由不接受
       查询参数**（空集的「已知集」清单是空串 ⇒ 正文要说清楚，否则读者以为漏了清单）。
-      GOAL-20261013-072：「静默吞掉」族的**最后一面**（此前这类路由收到查询串照样 200）。
+      GOAL-20261013-072 接通**读面**；**GOAL-20261013-073** 接通**写面**
+      （「静默吞掉」族的**第五面**；此前写面带查询串照样 201/200）。
 
-    **射程**：非读面（`None`）**一字不动** —— 写面按序 39 的 DTO 纪律处理。
+    **射程**：路由**无法解析**（`None`）⇒ 一字不动（没有可判的声明面）。
     """
     known = declared_query_params(request)
     if known is None:
-        return  # 非读面 ⇒ 不在射程
+        return  # 路由无法解析 ⇒ 不在射程
     unknown = sorted(set(request.query_params.keys()) - known)
     if not unknown:
         return

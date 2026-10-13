@@ -174,9 +174,14 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
             "对照臂必须在树（未声明参数的路由一字不动）",
         ),
         toolbox.verdict(
-            "ec03-the-read-methods-gate-is-explicit",
-            '"GET", "HEAD"' in _text(root, GUARD_MODULE),
-            "读面方法闸门要**显式**（写面不在射程内 —— 那是 pydantic 的既有校验面）",
+            "ec03-the-scope-is-derived-from-the-route-signature",
+            # **GOAL-20261013-073 改签**（逐条申报）：序 37 钉的是「方法闸门字面量
+            # `"GET", "HEAD"`」——那是**当时**的射程实现（写面不在射程）。序 41
+            # **有意**去掉该闸门（写面接通，射程**扩大**）⇒ 字面锚失效。
+            # 改判**关系**：射程仍**从路由签名导出**（不手写清单），这是序 37 的本体。
+            "dependant.query_params" in _text(root, GUARD_MODULE)
+            and "request.query_params" in _text(root, GUARD_MODULE),
+            "射程必须仍**从路由签名导出**（不手写清单；GOAL-073 起方法不再收窄射程 —— 射程扩大）",
         ),
         toolbox.verdict(
             "ec03-the-prior-memory-judge-still-exists",

@@ -63,7 +63,10 @@ _PRESS_JUDGES: tuple[tuple[str, str], ...] = (
     ("Y-1", "test_an_undeclared_read_route_refuses_any_query_parameter"),
     ("Y-2", "test_the_declared_routes_keep_their_own_shape"),
     ("Y-3", "test_the_default_form_is_verbatim"),
-    ("Y-4", "test_the_write_face_is_not_in_this_scope"),
+    # **GOAL-20261013-073 改签**（逐条申报）：序 41 把写面纳入射程 ⇒ 该用例
+    # 改名为 `test_the_write_face_is_now_in_the_scope`（射程**扩大**，断言由
+    # 「带查询参数 ⇒ 201」改为「⇒ 422」）。判词仍钉同一受判面（写面对照臂）。
+    ("Y-4", "test_the_write_face_is_now_in_the_scope"),
 )
 
 
@@ -113,7 +116,7 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
         toolbox.verdict(
             "ec02-the-judge-covers-default-and-write",
             "test_the_default_form_is_verbatim" in judge
-            and "test_the_write_face_is_not_in_this_scope" in judge,
+            and "test_the_write_face_is_now_in_the_scope" in judge,
             "缺省形态与写面对照臂都必须在判据面",
         ),
     ]

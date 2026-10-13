@@ -92,12 +92,13 @@ def test_the_declared_routes_keep_their_own_shape() -> None:
             assert "accepts no query parameters" not in detail, (path, detail)
 
 
-def test_the_write_face_is_not_in_this_scope() -> None:
-    """EC-03 ③（射程反证臂）：**写面**不受本纪律（序 39 的 DTO 纪律另有其面）。
+def test_the_write_face_is_now_in_the_scope() -> None:
+    """EC-03 ③（GOAL-20261013-073 起**改签**：写面**也**在本纪律射程内）。
 
-    受判面两臂（`Y-4` 反证臂的受判面）：① 正确的写请求（**不带**查询参数）照旧成功；
-    ② 写请求**带**查询参数 ⇒ **不**被本守卫打断（`declared_query_params` 对非读面
-    返回 `None` ⇒ 不在射程）；若序列 40 把 `None` 支也纳入 ⇒ ② 立刻变红。
+    **改动申报（逐条）**：序 40 时写面不在射程（判据断言「带查询参数 ⇒ 201」）；
+    序 41 把非读面接通（**实测**：写面带查询参数此前照样 201/200）⇒ 本条改签为
+    **两臂**：① 正确的写请求（**不带**查询参数）照旧成功；② 写请求**带**查询参数
+    ⇒ **422 + 明写「不接受查询参数」**。**这是射程扩大，不是收窄**。
     """
     with _client() as client:
         response = client.post(
@@ -111,8 +112,10 @@ def test_the_write_face_is_not_in_this_scope() -> None:
             json={"name": "probe-scope-2"},
             headers={"Idempotency-Key": f"g072-{uuid.uuid4()}"},
         )
-        assert with_query.status_code == 201, (
-            "写面**不**在本纪律射程内（`None` 支一字不动）—— 射程越界会误伤",
+        assert with_query.status_code == 422, (
+            "序 41 起：写面同样拒绝查询参数（射程扩大）",
             with_query.status_code,
             with_query.text[:200],
         )
+        detail = with_query.json()["detail"]
+        assert "zz" in detail and "accepts no query parameters" in detail, detail

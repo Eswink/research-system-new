@@ -106,9 +106,9 @@ def test_the_range_is_the_two_memory_gets_only() -> None:
     """
     deps = _deps()
     with TestClient(create_app(deps)) as client:
-        # 真对照（本轮语义）：**写面**不受本纪律 —— 带 Idempotency-Key 之外无查询参数，
-        # 这里只证「守卫不看非读面」（`declared_query_params` 对 POST 返回 None）。
-        # 未声明**读面** `/projects` 现在**也**拒绝（序 40 的射程扩大，非回归）。
+        # 未声明**读面** `/projects` 现在**也**拒绝（序 40 的射程扩大，非回归）；
+        # 序 41 起**写面**也在射程（注释更正：`declared_query_params` 不再按方法跳过）。
+
         control = client.get("/projects?unknown_here=1")
         assert control.status_code == 422, (
             "序 40 起：未声明参数的读面**同样**拒绝（射程扩大；此前模糊集断言已改签）",
