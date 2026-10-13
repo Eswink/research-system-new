@@ -236,7 +236,18 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| `a7ab5e2e`（WP-1/2/3：去方法闸门 + 写面判据 + 四处改签） | 无独立 run（**批量推送**，见下）| WP-1 / WP-2 / WP-3 |
+| `e987efe5`（WP-4：四向反证归档 + EC-01…04 回填） | 无独立 run（批量）| WP-4 |
+| `76d9cc12`（WP-5：验证器 + 断言集 + RECHECK-456 + DONE） | 无独立 run（批量）| WP-5（收口面） |
+| `23fb5302`（EC-05 回填 + 两树判词归档 + 进展行 + **批量推送 tip**） | **M0 Quality Gates run 38419602109 `success`**（8 job 全 success，含 `console-frontend`）+ **Push on main run 38419600908 `success`**（CodeQL 三语言 success）| **全部 WP**（tip 树含以上全部内容）|
+
+**自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `23fb5302`**（其 run 已到终态且全绿）；
+台账自身的**记录提交不产生可引用的 CI 结论** ⇒ **到 `23fb5302` 为止，不再向后追链**。
+中间提交无独立 run 的原因 = **批量推送**（宪章既定纪律，防 `cancel-in-progress`）；
+其覆盖由 tip 的 run 承担（`covered_by` 语义）。**失败记录**：本轮 **CI 零真红**；
+一次**本地真红**由 `test_closeout_verifiers_run_their_own_assertions` 抓到（序 37 收口断言
+钉了被移除的方法闸门字面量 ⇒ 改判关系；**同签名 1 次**，未消耗 CI 轮次）。
+**不动**任何阈值。
 
 ## 迭代日志
 
