@@ -42,13 +42,16 @@ _DECLARED: tuple[tuple[str, tuple[str, ...], str, str], ...] = (
         "at=2026-05-01T12:00:00%2B00:00",
     ),
     ("/notifications", ("limit",), "limt", ""),
+    # GOAL-070（序 38）：事件流路由**声明**了它消费的 `cursor` / `poll`
+    # ⇒ 守卫**自动**接管（本清单是「app 声明面」的投影，故**必须**跟着长）。
+    ("/runs/run-missing/events", ("cursor", "poll"), "po11", ""),
 )
 
 #: 无查询声明的读面（对照臂：**不**受此纪律）。
 _UNDECLARED: tuple[str, ...] = (
     "/projects",
     "/health",
-    "/runs/run-missing/events",
+    "/runs/run-missing/telemetry",
 )
 
 
@@ -232,9 +235,14 @@ def test_the_judged_list_matches_every_declared_route_in_the_app() -> None:
         for path, ops in spec["paths"].items()
         if "get" in ops and any(p.get("in") == "query" for p in ops["get"].get("parameters", []))
     }
-    # OpenAPI 用**路径模板**（`{project_id}`），本组用**具体值**（`example-project`）
-    # ⇒ 归一化到同一形态再比（否则是「拿两种写法比」的假红）。
-    judged = {path.replace("example-project", "{project_id}") for path, _, _, _ in _DECLARED}
+
+    # OpenAPI 用**路径模板**（`{project_id}` / `{run_id}`），本组用**具体值**
+    # （`example-project` / `run-missing`）⇒ 归一化到同一形态再比（否则是
+    # 「拿两种写法比」的假红）。
+    def _template(path: str) -> str:
+        return path.replace("example-project", "{project_id}").replace("run-missing", "{run_id}")
+
+    judged = {_template(path) for path, _, _, _ in _DECLARED}
     assert judged == declared_in_app, (
         "受判面必须 = 应用里全部已声明路由（漏判即判红）",
         "本组缺:",

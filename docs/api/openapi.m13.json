@@ -13471,7 +13471,7 @@
     },
     "/runs/{run_id}/events": {
       "get": {
-        "description": "Run Timeline 端点（双模式）：\n\n- `Accept: application/json`（默认 replay）：一次性返回全量事件\n  （初始加载 / 刷新恢复，来自 outbox 持久事件投影）；\n- `Accept: text/event-stream`（SSE）：Last-Event-ID / ?cursor= 续传\n  增量事件，客户端按 event_id 去重（重连安全）。",
+        "description": "Run Timeline 端点（双模式）：\n\n- `Accept: application/json`（默认 replay）：一次性返回全量事件\n  （初始加载 / 刷新恢复，来自 outbox 持久事件投影）；\n- `Accept: text/event-stream`（SSE）：Last-Event-ID / ?cursor= 续传\n  增量事件，客户端按 event_id 去重（重连安全）。\n\nGOAL-20261013-070：`cursor` / `poll` **声明进签名**（此前只从\n`request.query_params` 读 ⇒ OpenAPI 不可见、打错名字静默吞掉）。\n缺省与解析**逐字沿用**解析前的行为（`poll` 的 `\"0\"` 判定在下方）。",
         "operationId": "run_events_runs__run_id__events_get",
         "parameters": [
           {
@@ -13480,6 +13480,36 @@
             "required": true,
             "schema": {
               "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "续传游标（event_id 之后增量）。",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "续传游标（event_id 之后增量）。",
+              "title": "Cursor"
+            }
+          },
+          {
+            "description": "SSE 增量轮询；`0` 发送快照后关闭。",
+            "in": "query",
+            "name": "poll",
+            "required": false,
+            "schema": {
+              "default": "1",
+              "description": "SSE 增量轮询；`0` 发送快照后关闭。",
+              "title": "Poll",
               "type": "string"
             }
           }

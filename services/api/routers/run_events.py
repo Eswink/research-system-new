@@ -11,7 +11,7 @@ import asyncio
 import json
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 
 from packages.application.ports import RunProjection
@@ -76,24 +76,32 @@ async def event_stream(
 
 
 @router.get("/{run_id}/events", response_model=None)
-async def run_events(run_id: str, request: Request) -> StreamingResponse | list[dict[str, object]]:
+async def run_events(
+    run_id: str,
+    request: Request,
+    cursor: str | None = Query(default=None, description="续传游标（event_id 之后增量）。"),
+    poll: str = Query(default="1", description="SSE 增量轮询；`0` 发送快照后关闭。"),
+) -> StreamingResponse | list[dict[str, object]]:
     """Run Timeline 端点（双模式）：
 
     - `Accept: application/json`（默认 replay）：一次性返回全量事件
       （初始加载 / 刷新恢复，来自 outbox 持久事件投影）；
     - `Accept: text/event-stream`（SSE）：Last-Event-ID / ?cursor= 续传
       增量事件，客户端按 event_id 去重（重连安全）。
+
+    GOAL-20261013-070：`cursor` / `poll` **声明进签名**（此前只从
+    `request.query_params` 读 ⇒ OpenAPI 不可见、打错名字静默吞掉）。
+    缺省与解析**逐字沿用**解析前的行为（`poll` 的 `"0"` 判定在下方）。
     """
     deps: ApiDeps = get_deps(request)
     if deps.projection is None:
         raise ApiError(503, "Projection Unavailable", "run projection not configured")
     get_run_or_error(deps, run_id)
     events = events_of(deps.projection, run_id)
-    cursor = request.headers.get("Last-Event-ID") or request.query_params.get("cursor")
+    cursor = request.headers.get("Last-Event-ID") or cursor
     if request.headers.get("accept", "").startswith("text/event-stream"):
-        poll = request.query_params.get("poll", "1") != "0"
         return StreamingResponse(
-            event_stream(deps.projection, run_id, cursor, poll),
+            event_stream(deps.projection, run_id, cursor, poll != "0"),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
