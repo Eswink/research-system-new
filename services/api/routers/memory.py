@@ -273,6 +273,7 @@ async def list_project_memory(
     **未知作者 ⇒ 空集**（**不猜**、**不**当全选）。**两维互斥**（一次只筛一维 ——
     同时传按 `scope` 优先并在**载荷**里如实报各自的值）。
     """
+    _reject_unknown_query_params(request)
     del project_id  # 单项目上下文；scope_note 明示无 principal 过滤
     deps: ApiDeps = get_deps(request)
     store = _store_of(deps)
@@ -295,6 +296,34 @@ async def list_project_memory(
         scope_note=SCOPE_NOTE,
         scope=scope,
         filtered_out=total - len(records),
+    )
+
+
+#: 记忆读面的**已知查询参数**（GOAL-20261013-068 EC-02）—— 每加一个参数都要**显式**登记。
+_KNOWN_QUERY_PARAMS: frozenset[str] = frozenset({"scope", "proposed_by", "at"})
+
+
+def _reject_unknown_query_params(request: Request) -> None:
+    """**未知查询参数 ⇒ 422 点名**（GOAL-20261013-068 EC-02）。
+
+    **为什么**：此前打错名字的参数**照样 200 + 全量**（**实跑**：`?definitely_not_a_param=1`
+    ⇒ 键仍只有 `['records','scope_note']`）⇒ 调用方**以为筛过了**而拿到的是全量
+    ——「静默降级」的形态（承本战役「点名失败而非静默降级」的禁令）。
+
+    **射程（有意边界）**：本纪律**只**覆盖记忆读面的两个 GET（`/memory` 与
+    `/memory/validity`）—— 全仓 **65** 条 GET 的「已知参数」口径**未定**
+    ⇒ 扩散会撞出大量未定义行为（登记为后续候选）。
+
+    **多个未知 ⇒ 逐个点名**（只报第一个会让「还有哪些打错了」读不出来）。
+    """
+    unknown = sorted(set(request.query_params.keys()) - _KNOWN_QUERY_PARAMS)
+    if not unknown:
+        return
+    raise ApiError(
+        422,
+        "Unknown Query Parameter",
+        f"unknown query parameter(s): {', '.join(unknown)}"
+        f" (known: {', '.join(sorted(_KNOWN_QUERY_PARAMS))})",
     )
 
 
@@ -370,6 +399,7 @@ async def memory_validity(project_id: str, at: str, request: Request) -> MemoryV
     时点由调用方给（`?at=`）⇒ 判定可复现（**不读挂钟**）。三态见 `validity_at`：
     `EXPIRED` / `REVIEW_DUE` / `None`（未到期**或未声明** —— 不猜）。
     """
+    _reject_unknown_query_params(request)
     del project_id  # 单项目上下文（与既有列表读面同一条 scope_note 边界）
     deps: ApiDeps = get_deps(request)
     store = _store_of(deps)
