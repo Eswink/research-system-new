@@ -111,16 +111,18 @@ def test_a_list_declared_export_and_scalar_export_agree() -> None:
 
     def endpoint(expected: list[str] | None = None, limit: int = 50) -> None: ...
 
-    def scope_for(route_endpoint: object) -> dict[str, object]:
+    def scope_for() -> dict[str, object]:
+        # `staticmethod` 包装（承上条的「绑定方法吞首参」坑）；类型面按 mypy 期望收窄。
+        route = type("R", (), {"endpoint": staticmethod(endpoint)})()
         return {
             "type": "http",
             "method": "GET",
-            "route": type("R", (), {"endpoint": staticmethod(route_endpoint)})(),
+            "route": route,
             "path": "/x",
             "headers": [],
         }
 
-    assert scalar_query_params(StarletteRequest(scope_for(endpoint))) == frozenset({"expected"}), (
+    assert scalar_query_params(StarletteRequest(scope_for())) == frozenset({"expected"}), (
         "`list[...]` 注解的参数必须被识别（射程边界由**声明类型**导出）"
     )
     bare = {"type": "http", "method": "GET", "path": "/x", "headers": []}
