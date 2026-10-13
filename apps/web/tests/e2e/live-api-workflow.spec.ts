@@ -247,9 +247,19 @@ test("live: 项目设置参考协议 + 实验双支持 + 审批历史 404 gate�
   // 此处不硬编码具体值，避免与同进程内先前 PUT 的持久化顺序耦合）。
   expect(typeof settings.reference_protocol).toBe("string");
 
+  // 只发明**可写字段**：GET 载荷还带 `project_id`（只读键）—— 此前 spread 全量靠
+  // 「未知字段被静默吞掉」，GOAL-071 起写面拒未知字段（422）⇒ 逐键取。
+  const writable = {
+    team_template_id: settings.team_template_id,
+    default_model_profile_id: settings.default_model_profile_id ?? null,
+    budget_policy_id: settings.budget_policy_id,
+    workspace_backend: settings.workspace_backend,
+    compute_profile: settings.compute_profile ?? null,
+    policy_id: settings.policy_id,
+  };
   const saved = await page.request.put("/api/projects/example-project/settings", {
     headers: idem("live-settings"),
-    data: { ...settings, reference_protocol: "sort_analysis_v1.yaml" },
+    data: { ...writable, reference_protocol: "sort_analysis_v1.yaml" },
   });
   expect(saved.ok()).toBeTruthy();
   expect(((await saved.json()) as Record<string, unknown>).reference_protocol).toBe(
@@ -258,7 +268,7 @@ test("live: 项目设置参考协议 + 实验双支持 + 审批历史 404 gate�
   // 恢复原值，避免同进程后续用例读到被本测试改写的持久设置。
   const restore = await page.request.put("/api/projects/example-project/settings", {
     headers: idem("live-settings-restore"),
-    data: settings,
+    data: { ...writable, reference_protocol: settings.reference_protocol ?? null },
   });
   expect(restore.ok()).toBeTruthy();
 
