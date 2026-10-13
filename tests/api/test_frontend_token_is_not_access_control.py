@@ -52,7 +52,7 @@ class TestTheBackendIsTheOnlyDecisionPoint:
         """**不经过前端**直接调 API：不带 token ⇒ 401。"""
         response = authed_client.post(
             "/projects",
-            json={"id": "convenience-probe-a", "name": "probe"},
+            json={"name": "probe"},  # id 服务端生成（此前多传 ⇒ 被静默吞掉；GOAL-071 起 ⇒ 422）
             headers={"Idempotency-Key": "convenience-probe-a"},
         )
         assert response.status_code == 401, response.text
@@ -65,7 +65,7 @@ class TestTheBackendIsTheOnlyDecisionPoint:
         """
         response = authed_client.post(
             "/projects",
-            json={"id": "convenience-probe-b", "name": "probe"},
+            json={"name": "probe"},  # 同上
             headers={
                 "Authorization": f"Bearer {_FIXTURE_TOKEN}",
                 "Idempotency-Key": "convenience-probe-b",
@@ -94,7 +94,7 @@ class TestTheBackendIsTheOnlyDecisionPoint:
         before = authed_client.get("/projects").json()
         rejected = authed_client.post(
             "/projects",
-            json={"id": "convenience-probe-c", "name": "probe"},
+            json={"name": "probe"},  # 同上
             headers={"Idempotency-Key": "convenience-probe-c"},
         )
         assert rejected.status_code == 401

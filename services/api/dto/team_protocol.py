@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 
 class RoleDefinitionDto(BaseModel):
     """RoleDefinition 视图（不绑定模型；ADR-0011）。"""
@@ -45,7 +47,7 @@ class AgentSpecDto(BaseModel):
     version: str = Field(default="", description="resource version（ETag 值，If-Match 用）")
 
 
-class AgentCreateDto(BaseModel):
+class AgentCreateDto(StrictRequestDto):
     """创建 Agent 实例（Role 的配置实例；同 Role 可多实例）。"""
 
     role: str = Field(min_length=1, max_length=200)
@@ -55,7 +57,7 @@ class AgentCreateDto(BaseModel):
     max_iterations: int | None = Field(default=None, ge=1)
 
 
-class AgentUpdateDto(BaseModel):
+class AgentUpdateDto(StrictRequestDto):
     """per-Agent ModelBinding 更新（semantic 变更走 Manifest Revision/Fork）。"""
 
     model_binding: dict[str, str | None] | None = None
@@ -64,13 +66,13 @@ class AgentUpdateDto(BaseModel):
     max_iterations: int | None = None
 
 
-class AgentCloneDto(BaseModel):
+class AgentCloneDto(StrictRequestDto):
     """克隆 Agent（WP-B，G10 配套）：new_id 缺省由服务端生成。"""
 
     new_id: str | None = Field(default=None, min_length=1, max_length=200)
 
 
-class ProjectSettingsUpdateDto(BaseModel):
+class ProjectSettingsUpdateDto(StrictRequestDto):
     """项目设置保存（全量显式；template/workspace 引用由服务端校验）。"""
 
     team_template_id: str = Field(min_length=1, max_length=200)
@@ -94,7 +96,7 @@ class ProjectSettingsDto(BaseModel):
     reference_protocol: str | None = None
 
 
-class ProtocolSourceDto(BaseModel):
+class ProtocolSourceDto(StrictRequestDto):
     """协议来源（WP-B）：受控模板路径（examples/protocols/ 内，wizard 选择）
     或已保存草稿的不可变修订引用；二者互斥（loader 统一裁决 422）。"""
 

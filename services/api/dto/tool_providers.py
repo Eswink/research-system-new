@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 
 class ToolProviderDto(BaseModel):
     id: str
@@ -29,7 +31,7 @@ class ToolProviderListDto(BaseModel):
     management_reason: str | None = None
 
 
-class ToolProviderRegisterDto(BaseModel):
+class ToolProviderRegisterDto(StrictRequestDto):
     """注册请求：pin 必填且必须是 `sha256:<hex>`（不接受可漂移的 tag/分支名）。"""
 
     id: str = Field(min_length=1, max_length=128)
@@ -45,7 +47,7 @@ class ToolProviderRegisterDto(BaseModel):
     credential_ref: str | None = Field(default=None, min_length=1, max_length=128)
 
 
-class ToolProviderUpdateDto(BaseModel):
+class ToolProviderUpdateDto(StrictRequestDto):
     """更新可变字段；`id`/`kind`/`state` 不在其中（kind 变更须新注册）。"""
 
     capabilities: list[str] | None = None
@@ -59,7 +61,7 @@ class ToolProviderUpdateDto(BaseModel):
     credential_ref: str | None = Field(default=None, min_length=1, max_length=128)
 
 
-class ToolProviderRevokeDto(BaseModel):
+class ToolProviderRevokeDto(StrictRequestDto):
     reason: str = Field(min_length=1, max_length=1024)
 
 

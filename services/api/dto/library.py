@@ -6,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 ResourceKindValue = Literal["prompt", "dataset", "notebook"]
 ResourceStatusValue = Literal["ACTIVE", "ARCHIVED"]
 
@@ -23,7 +25,7 @@ class LibraryResourceDto(BaseModel):
     updated_at: str
 
 
-class LibraryResourceCreateDto(BaseModel):
+class LibraryResourceCreateDto(StrictRequestDto):
     """创建库条目：id 服务端生成；kind 决定归属页面。"""
 
     kind: ResourceKindValue
@@ -33,7 +35,7 @@ class LibraryResourceCreateDto(BaseModel):
     tags: list[str] = Field(default_factory=list, max_length=32)
 
 
-class LibraryResourceUpdateDto(BaseModel):
+class LibraryResourceUpdateDto(StrictRequestDto):
     """重命名与/或归档（ACTIVE ⇄ ARCHIVED；不提供删除）。"""
 
     name: str | None = Field(default=None, min_length=1, max_length=200)

@@ -10,6 +10,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 CredentialState = Literal["configured", "missing"]
 
 
@@ -18,7 +20,7 @@ class DiscoveryConfigDto(BaseModel):
     allow_models: list[str] = Field(default_factory=list)
 
 
-class LlmEndpointCreateDto(BaseModel):
+class LlmEndpointCreateDto(StrictRequestDto):
     """创建端点：api_key 仅在入口接收，绝不回显。"""
 
     name: str = Field(min_length=1, max_length=200)
@@ -33,7 +35,7 @@ class LlmEndpointCreateDto(BaseModel):
     discovery: DiscoveryConfigDto | None = None
 
 
-class LlmEndpointUpdateDto(BaseModel):
+class LlmEndpointUpdateDto(StrictRequestDto):
     """更新端点：全部可选；api_key 更新时重新注册（不返回）。"""
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
@@ -62,7 +64,7 @@ class LlmEndpointReadDto(BaseModel):
     version: str = Field(description="resource version（ETag 值，If-Match 用）")
 
 
-class EndpointTestRequestDto(BaseModel):
+class EndpointTestRequestDto(StrictRequestDto):
     """端点测试：需要引用一个已配置模型（真实模型 ID 探测）。"""
 
     model_id: str = Field(min_length=1)

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
 
-class RunStartDto(BaseModel):
+
+class RunStartDto(StrictRequestDto):
     """启动运行：旧 `protocol_path` 与新草稿修订引用二选一。
 
     草稿修订引用（PLAN-20260908-033）：服务端加载不可变修订正文后走

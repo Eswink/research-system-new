@@ -11,8 +11,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
 
-class ToolPackSubmitDto(BaseModel):
+
+class ToolPackSubmitDto(StrictRequestDto):
     """install / update 请求：manifest 文档（含内容与 digest）。"""
 
     manifest: dict[str, Any] = Field(
@@ -21,7 +23,7 @@ class ToolPackSubmitDto(BaseModel):
     note: str = Field(default="", max_length=280, description="审批说明（可选，随事件留痕）")
 
 
-class ToolPackRevokeDto(BaseModel):
+class ToolPackRevokeDto(StrictRequestDto):
     reason: str = Field(min_length=1, max_length=280)
 
 

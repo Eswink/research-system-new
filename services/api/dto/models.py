@@ -13,6 +13,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 #: 与域枚举 `ThinkingIntensity` 同值（结构判据保证不漂移）。
 ThinkingIntensityLiteral = Literal["MINIMAL", "LOW", "MEDIUM", "HIGH", "MAX"]
 
@@ -40,7 +42,7 @@ class ModelRuntimeFingerprintDto(BaseModel):
     observed_capabilities: list[str] = Field(default_factory=list)
 
 
-class ModelCreateDto(BaseModel):
+class ModelCreateDto(StrictRequestDto):
     endpoint_id: str = Field(min_length=1)
     model_name: str = Field(min_length=1, max_length=500)
     display_name: str | None = Field(default=None, max_length=500)
@@ -51,7 +53,7 @@ class ModelCreateDto(BaseModel):
     thinking_intensity: ThinkingIntensityLiteral | None = None
 
 
-class ModelUpdateDto(BaseModel):
+class ModelUpdateDto(StrictRequestDto):
     """更新模型：全部可选；capabilities 整体替换（含 PROBED 断言）。"""
 
     display_name: str | None = Field(default=None, max_length=500)

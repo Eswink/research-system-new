@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 
 class ScheduleEntryDto(BaseModel):
     name: str
@@ -43,7 +45,7 @@ class SchedulesViewDto(BaseModel):
     management_reason: str | None = None
 
 
-class ScheduleCreateDto(BaseModel):
+class ScheduleCreateDto(StrictRequestDto):
     name: str
     job: str = Field(
         description=(
@@ -56,7 +58,7 @@ class ScheduleCreateDto(BaseModel):
     note: str = ""
 
 
-class ScheduleUpdateDto(BaseModel):
+class ScheduleUpdateDto(StrictRequestDto):
     """启停 / 改 interval；作业类型不可变（换作业等于换执行体绑定）。"""
 
     enabled: bool | None = None

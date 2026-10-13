@@ -29,7 +29,10 @@ authorization:
     ⇒ **200**（typo 字段**无声丢弃**）；对照 `{"protocol_path": "…"}` ⇒ 200（正确形态）。
     这与序 36/37/38 的靶子同族（「静默吞掉 ⇒ 调用方以为设了」），**落点从读面转到写面**。
     (2) **为什么属质量轴**：轴的反面是「把判据做成表层合规」—— 读面已经三条连接通
-    （36/37/38），而写面的同族缺口**仍然静默**；本 GOAL 把纪律**机械扩到写面**。
+    （36/37/38），而写面的同族缺口**仍然静默**；**更锋利的实测**：OpenAPI 快照里
+    `additionalProperties: false` **早已写着**（生成器强制补写），运行时却**静默接受**
+    额外字段 ⇒ 这正是「契约说 A、运行时做 B」的**表层合规**实例；本 GOAL 把运行时
+    补到与契约一致（纪律**从契约面收口回运行时**）。
     (3) **本 GOAL 只做这一条**（不做数量目标）：给**已声明的写面 DTO** 声明
     「未知字段 ⇒ 422 + 点名**那个字段**」，**已知/缺省形态逐字不变**（正确请求的响应与
     副作用一字不动）。做法由 EC-01 实测选定（`extra="forbid"` vs 逐路由校验）。
@@ -150,10 +153,14 @@ memory_entries: []
 
 | # | 事实 | 复核命令 | 读数 |
 | --- | --- | --- | --- |
-| 1 | **实跑**：打错字段名 ⇒ **200 + 无声丢弃** | `TestClient` + 真实装配 | `{"protocol_path": "…", "trace_di": "typo"}` ⇒ **200**（typo 字段无任何披露） |
-| 2 | 正确形态对照 | 同上 | `{"protocol_path": "…"}` ⇒ 200（正常冻结/启动） |
-| 3 | 现有 `extra` 设定 | `rg -n 'extra=' services/api/dto/` | （勘察读数：见 EC-01 ③） |
-| 4 | 影响面（web/tests 是否带非声明字段） | 逐条盘点（EC-01 ③） | （勘察读数） |
+| 1 | **实跑**：打错字段名 ⇒ **200 + 无声丢弃** | `TestClient` + 真实装配 | `{"protocol_path": "…", "trace_di": "typo"}` ⇒ **200**（typo 字段无任何披露）；正确形态 ⇒ 200 + 15 键（含 `id` / `state` / `manifest_digest`） |
+| 2 | 正确形态基线 | 同上 | 状态码 200；键集 `['created_at','dispatch','execution','id','manifest_digest','manifest_semantic_digest','paused_dispatch','program_id','program_index','project_id','protocol_body_digest','protocol_id','rebuild','state','updated_at']` |
+| 3 | **写面 DTO 共 37 条**（请求体形态，逐条清单在探针第 2 段） | `rg -n "(payload|body|dto): [A-Z]\w+Dto" services/api/routers/` | 37 条，**全部**在 `services/api/dto/` 里定义；**零条**已有 `extra=` 设定（全部走 pydantic 缺省 = **ignore**） |
+| 4 | 影响面（机制对照实验） | `extra="forbid"` 最小复现 | 已知字段 ⇒ 200；多余字段 ⇒ **422**，正文 `{"detail":[{"type":"extra_forbidden","loc":["body","trace_di"],…}]}` ⇒ **字段名在 `loc` 里**（点名可用）；与既有 422 形态（`{'type':'missing','loc':['body','name']}`）**同形** ⇒ 不需要新错误通道 |
+| 5 | **契约早已声明闭包**（关键发现）：`tools/gen_openapi.py` 的 `_finalize` 为每个 object schema
+**强制补写** `additionalProperties: false` ⇒ 快照**早就**写「不许额外字段」，而运行时此前**静默接受**
+⇒ **契约与运行时不一致**（本行正是「表层合规」的实体形态） | `grep -c '"additionalProperties": false' docs/api/openapi.m13.json`（=201）+ `git diff --numstat` 后跑一次生成器 | 生成器输出与 HEAD 快照**逐字节相同**（零 diff：本轮该值**不变**，变的是**运行时行为**） |
+| 6 | 影响面盘点（web/tests 是否带非声明字段） | 探针第 3 段（**上界读数**） | 写请求调用点 **357 条**（上界）；**逐条核字段名成本高** ⇒ **如实登记**：本条的**逐个判定**由 EC-02 的**全量回归套件**承担（落 `extra="forbid"` 后套件若全绿 ⇒ 影响面为零的**行为证据**；若有红 ⇒ 逐个处理） |
 
 **结论**：读面已三条连接通（序 36/37/38），**写面的同族缺口仍然静默** ——
 调用方打错字段名**不报错、不点名**。
@@ -162,10 +169,10 @@ memory_entries: []
 
 | # | 决策 | 依据 | 状态 |
 | --- | --- | --- | --- |
-| D-1 | 做法 = **`extra="forbid"` 形态**还是逐路由校验，由 EC-01 实测选定 | `extra="forbid"` 一次声明全 DTO 生效（DRY），但要**先量**影响面（web/tests 有没有带多余字段的调用） | **待 EC-01** |
+| D-1 | 做法 = **`extra="forbid"` 形态**（EC-01 实测选定） | 实测：多余字段 ⇒ 422 且**字段名在 `loc` 里**、与既有 422 形态同形；一次声明按类生效（DRY）；逐路由校验要改 37 处调用点、且会漏 | 已定（EC-01 实测后） |
 | D-2 | 未知字段 ⇒ **422 + 逐个点名**（与读面同形） | 与序 37 的「点名而非静默降级」同口径 | 已定 |
 | D-3 | **已知/缺省形态逐字不变**（正确请求的响应与副作用） | 「缺省形态逐字不变」是本战役的一贯纪律 | 已定 |
-| D-4 | 快照**预期会变**（`extra="forbid"` 进 schema）⇒ **同轮**重生成 + 提交 | 与序 38 同形（如实登记为预期） | 已定 |
+| D-4 | 快照**不会变**（**实测更正**）：`tools/gen_openapi.py` 的 `_finalize` **早已**为每个 object schema **强制补写** `additionalProperties: false` ⇒ 契约资产**早就声明**了闭包；**变的是运行时**（此前 `extra="ignore"` 与契约**不一致**）。如实登记为「契约先行、运行时补齐」 | 实测：`git diff --numstat docs/api/openapi.m13.json` ⇒ **零 diff**；HEAD 快照的 `RunStartDto.additionalProperties` 已是 `False`（201 处） | 已定（实测更正） |
 | D-5 | **不**把 `extra="forbid"` 装到**响应**模型 | 响应由我们生成 ⇒ 禁字段没有调用方受益面 | 已定 |
 
 ## 循环入口协议（幂等重入）

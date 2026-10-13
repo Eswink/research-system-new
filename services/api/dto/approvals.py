@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 
 class ApprovalDto(BaseModel):
     id: str
@@ -16,7 +18,7 @@ class ApprovalDto(BaseModel):
     version: str
 
 
-class ApprovalDecideDto(BaseModel):
+class ApprovalDecideDto(StrictRequestDto):
     decision: str = Field(pattern="^(approve|deny)$")
 
 
@@ -28,7 +30,7 @@ class BudgetAdjustLineDto(BaseModel):
     unit: str = Field(min_length=1, max_length=64)
 
 
-class InterventionDto(BaseModel):
+class InterventionDto(StrictRequestDto):
     """干预请求（pause/resume 走状态机；budget_adjust 走 BudgetLedger；
     语义变更 replace_agent 保持 501）。"""
 

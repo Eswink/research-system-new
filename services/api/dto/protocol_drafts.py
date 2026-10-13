@@ -8,22 +8,24 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
 
-class ProtocolDraftCreateDto(BaseModel):
+
+class ProtocolDraftCreateDto(StrictRequestDto):
     """创建草稿（正文必须通过服务端校验）。"""
 
     name: str = Field(min_length=1, max_length=120)
     yaml_text: str = Field(min_length=1, max_length=131072)
 
 
-class ProtocolDraftSaveDto(BaseModel):
+class ProtocolDraftSaveDto(StrictRequestDto):
     """保存新修订（expected_revision 乐观并发；配合 If-Match）。"""
 
     yaml_text: str = Field(min_length=1, max_length=131072)
     expected_revision: int = Field(ge=1)
 
 
-class ProtocolDraftValidateDto(BaseModel):
+class ProtocolDraftValidateDto(StrictRequestDto):
     """未保存 YAML 的服务端校验请求。"""
 
     yaml_text: str = Field(min_length=1, max_length=131072)

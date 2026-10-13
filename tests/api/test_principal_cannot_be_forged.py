@@ -115,7 +115,7 @@ class TestTheCallerCannotDeclareItsOwnIdentity:
         """真实控制面：带自报头的写请求照常成功，但**主体不变**（落 canonical 的是配置主体）。"""
         created = authed_client.post(
             "/projects",
-            json={"id": "forge-probe-project", "name": "forge probe"},
+            json={"name": "forge probe"},  # id 服务端生成（GOAL-071：多余字段 ⇒ 422）
             headers={
                 **_bearer(),
                 "Idempotency-Key": "forge-probe-create",

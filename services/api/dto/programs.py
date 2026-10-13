@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 
 class HybridGateDto(BaseModel):
     """**混合式**人工闸门的声明（GOAL-20261012-060 EC-02）—— 两维**同时生效**。
@@ -26,7 +28,7 @@ class HybridGateDto(BaseModel):
     on_verdicts: list[str]
 
 
-class ProgramCreateDto(BaseModel):
+class ProgramCreateDto(StrictRequestDto):
     """建程序的输入（协议按 `examples/protocols/` 内路径解析，与启动 run 同一校验）。"""
 
     protocol_path: str

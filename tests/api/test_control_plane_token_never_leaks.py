@@ -189,7 +189,7 @@ class TestTheTokenNeverReachesResponses:
         """**成功**响应同样不回显凭据（换一种提交路径复验）。"""
         response = authed_client.post(
             "/projects",
-            json={"id": "leak-probe-project", "name": "leak probe"},
+            json={"name": "leak probe"},  # id 服务端生成（GOAL-071：多余字段 ⇒ 422）
             headers={
                 "Authorization": f"Bearer {_FIXTURE_TOKEN}",
                 "Idempotency-Key": "leak-probe-create",

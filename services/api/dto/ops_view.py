@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 
 class AlertItemDto(BaseModel):
     kind: str
@@ -47,14 +49,14 @@ class AlertRulesViewDto(BaseModel):
     rules_reason: str | None = None
 
 
-class AlertRuleCreateDto(BaseModel):
+class AlertRuleCreateDto(StrictRequestDto):
     name: str
     kind: str | None = None
     max_severity: str | None = None
     enabled: bool = True
 
 
-class AlertRuleUpdateDto(BaseModel):
+class AlertRuleUpdateDto(StrictRequestDto):
     name: str | None = None
     kind: str | None = None
     max_severity: str | None = None
@@ -94,17 +96,17 @@ class IncidentsViewDto(BaseModel):
     workflow_reason: str | None = None
 
 
-class IncidentDeclareDto(BaseModel):
+class IncidentDeclareDto(StrictRequestDto):
     title: str
     severity: str = "WARNING"
     run_id: str | None = None
 
 
-class IncidentAssignDto(BaseModel):
+class IncidentAssignDto(StrictRequestDto):
     assignee: str
 
 
-class IncidentCloseDto(BaseModel):
+class IncidentCloseDto(StrictRequestDto):
     resolution: str
 
 

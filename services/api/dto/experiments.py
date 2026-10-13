@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from services.api.dto.common import StrictRequestDto
+
 
 class ExperimentRunRowDto(BaseModel):
     """项目级 experiment run 行（evidence 聚合 + run 归属）。"""
@@ -27,7 +29,7 @@ class ProjectExperimentsViewDto(BaseModel):
     reproduction_note: str = ""
 
 
-class ExperimentPlanCreateDto(BaseModel):
+class ExperimentPlanCreateDto(StrictRequestDto):
     name: str = Field(min_length=1, max_length=200)
     hypothesis: str | None = Field(default=None, max_length=2000)
     task_contract_ref: str | None = Field(default=None, max_length=200)
@@ -44,7 +46,7 @@ class ExperimentPlanDto(BaseModel):
     updated_at: str
 
 
-class ExperimentQueueEnqueueDto(BaseModel):
+class ExperimentQueueEnqueueDto(StrictRequestDto):
     """入队请求：协议来源二选一（path 或 draft 修订）+ 可选排期。"""
 
     protocol_path: str | None = Field(default=None, max_length=500)
@@ -53,7 +55,7 @@ class ExperimentQueueEnqueueDto(BaseModel):
     not_before: str | None = Field(default=None, max_length=40)
 
 
-class ExperimentQueueRescheduleDto(BaseModel):
+class ExperimentQueueRescheduleDto(StrictRequestDto):
     """改期请求：null 表示清除排期（立即到期）。"""
 
     not_before: str | None = Field(default=None, max_length=40)
