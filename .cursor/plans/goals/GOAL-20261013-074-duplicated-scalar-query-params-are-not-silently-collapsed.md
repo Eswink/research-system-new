@@ -150,10 +150,10 @@ memory_entries: []
 
 | # | 事实 | 复核命令 | 读数 |
 | --- | --- | --- | --- |
-| 1 | **实跑**：标量参数重复 ⇒ 静默取末值 | `TestClient` + 真实装配 | `?limit=1&limit=2` ⇒ **200**（无披露）；`?endpoint_id=a&endpoint_id=b` ⇒ **200**；`?cursor=a&cursor=b`（序 38 路由）⇒ **200** |
-| 2 | **`list` 声明合法重复**（射程边界） | `rg -n "expected_digests" services/api/routers/operations.py apps/web/src/api/operationsClient.ts` | 路由声明 `list[str] \| None = Query(...)`；web 客户端 `params.append("expected_digests", digest)` **循环追加** ⇒ 重复是**契约**（禁它会打断前端） |
-| 3 | 框架形态 | `Query(default=...)`（标量）vs `Query(default=None)` + `list[str]` | FastAPI 对标量取**末值**、对 `list` 取**多值** ⇒ 前者的「静默」是框架缺省，不是我们的显式决定 |
-| 4 | 单值基线 | 探针第 4 段 | （勘察读数 —— 单值/缺省形态的状态码 + 键集，供「逐字不变」比对） |
+| 1 | **实跑**：标量参数重复 ⇒ 静默取末值 | `TestClient` + 真实装配 | `/notifications?limit=1&limit=2` ⇒ **200**（无披露）；`/models?endpoint_id=a&endpoint_id=b` ⇒ **200**；`/runs/{id}/events?cursor=a&cursor=b`（序 38 路由）⇒ **200** |
+| 2 | **`list` 声明合法重复**（射程边界） | `rg -n "expected_digests" services/api/routers/operations.py apps/web/src/api/operationsClient.ts` | 路由声明 `list[str] \| None = Query(default=None)`；web 客户端 `params.append("expected_digests", digest)` **循环追加** ⇒ 重复是**契约**（禁它会打断前端） |
+| 3 | **射程清单：标量 16 个 / list 1 个** | 探针第 3 段（OpenAPI `parameters[in=query]` 的 schema 判别） | 标量 16 个（`limit` / `endpoint_id` / `cursor` / `poll` / `state` / `kind` / `at` / `date_from` / `date_to` / `dataset_id` / `scope` / `proposed_by` / `horizon_days` 等）；**list 声明恰 1 个** = `/evaluations/trend?expected_digests`。**判别器更正（实测）**：`list[str] \| None` 的 OpenAPI 形态是 `anyOf: [{type: array}, {type: null}]` ⇒ 只看顶层 `type` 会把 list **误判成标量**（首版探针即此误，已修） |
+| 4 | 单值基线 | 探针第 4 段 | `/notifications?limit=5` ⇒ 200（键 `['note','notifications']`）；缺省 ⇒ 200（同键） |
 
 **结论**：三面（未知 / 未声明 / 写面）已接通，而**重复出现**这一形态**从未被量过**；
 且射程**必须**按声明类型分（`list` 的合法重复在 web 客户端**真实存在**）。

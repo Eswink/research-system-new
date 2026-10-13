@@ -14,12 +14,15 @@
 运行（读不到路由）。**实测**：构造期声明生效、事后 `router.dependencies.append`
 **不**生效（装配顺序 = 契约的一部分）。
 
-**射程（有意边界）**：**只**在「声明了查询参数」的读面路由（GET/HEAD）上生效；
-**未声明**参数的路由**一字不动** —— 那种面没有「已知集」可言（另成一面，登记为
-后续候选，承序 36 的既有登记）。
+**射程（有意边界，逐面演进）**：序 37（已声明读面）→ 序 40（未声明读面）→
+序 41（写面）→ **序 42（重复形态，本轮的第四面）**。**`list` 声明**的参数
+（`/evaluations/trend?expected_digests`）**合法重复**（web 客户端循环追加）
+⇒ 重复纪律只覆盖**标量声明**。
 """
 
 from __future__ import annotations
+
+import inspect
 
 from fastapi import Request
 
@@ -46,6 +49,34 @@ def declared_query_params(request: Request) -> frozenset[str] | None:
     return frozenset(field.alias for field in dependant.query_params)
 
 
+def scalar_query_params(request: Request) -> frozenset[str]:
+    """本请求匹配到的路由里**声明为标量**的查询参数（`list[...]` 声明**不算**）。
+
+    **为什么需要**（GOAL-20261013-074）：`list` 声明的参数**合法重复**
+    （**实测**：`/evaluations/trend?expected_digests` 声明 `list[str] | None`，
+    web 客户端 `params.append(...)` 循环追加 ⇒ 重复是**契约**）；而**标量**声明
+    重复时框架**静默取末值**（`?limit=1&limit=2` ⇒ 200，无披露）。
+    ⇒ 重复纪律只覆盖标量。
+
+    **判型面（实测选定）**：`scope["route"].endpoint` 的**签名注解**
+    （`list[str] | None` vs `int`）—— `dependant.query_params` 的 `ModelField`
+    在本版 FastAPI 上 `type_`/`annotation` 都是 `None`（实测），注解面是**可靠**的。
+    """
+    route = request.scope.get("route")
+    endpoint = getattr(route, "endpoint", None)
+    if endpoint is None:
+        return frozenset()
+    try:
+        signature = inspect.signature(endpoint)
+    except (TypeError, ValueError):
+        return frozenset()
+    return frozenset(
+        name
+        for name, parameter in signature.parameters.items()
+        if "list[" in str(parameter.annotation)
+    )
+
+
 def reject_unknown_query_params(request: Request) -> None:
     """未知查询参数 ⇒ **422 + 逐个点名 + 该路由的已知集**（供调用方自纠）。
 
@@ -64,6 +95,14 @@ def reject_unknown_query_params(request: Request) -> None:
         return  # 路由无法解析 ⇒ 不在射程
     unknown = sorted(set(request.query_params.keys()) - known)
     if not unknown:
+        repeated = _repeated_scalar_params(request, known)
+        if repeated:
+            raise ApiError(
+                422,
+                "Repeated Query Parameter",
+                f"repeated query parameter(s): {', '.join(repeated)}"
+                " (scalar parameters accept exactly one value)",
+            )
         return
     if not known:
         raise ApiError(
@@ -79,4 +118,22 @@ def reject_unknown_query_params(request: Request) -> None:
     )
 
 
-__all__ = ["declared_query_params", "reject_unknown_query_params"]
+def _repeated_scalar_params(request: Request, known: frozenset[str]) -> list[str]:
+    """已知参数里**重复出现**的**标量**声明（`list` 声明的排除在外）。
+
+    **必须用 `multi_items()`**（实测更正）：Starlette 的 `QueryParams.keys()`
+    **去重**（同一个键出现两次时 `keys()` 只出一个）⇒ 用 `keys()` 计数
+    永远数不到 1 以上（首版实现即此误 ⇒ 按压面假绿）。
+    """
+    list_declared = scalar_query_params(request)
+    counts: dict[str, int] = {}
+    for key, _ in request.query_params.multi_items():
+        counts[key] = counts.get(key, 0) + 1
+    return sorted(
+        key
+        for key, count in counts.items()
+        if count > 1 and key in known and key not in list_declared
+    )
+
+
+__all__ = ["declared_query_params", "reject_unknown_query_params", "scalar_query_params"]
