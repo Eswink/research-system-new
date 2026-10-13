@@ -237,7 +237,18 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| `5be4d507`（序 43 建档：GOAL + 子 PLAN + ALL_PLAN） | **M0 Quality Gates run 38436632953 `success`**（8 job 全 success）+ Push on main run 38436633542 `success`（CodeQL 三语言）| WP 建档 |
+| `2e195bf3`（WP-1/2/3：空值臂 + 6 例判据） | 无独立 run（**批量推送**，见下）| WP-1 / WP-2 / WP-3 |
+| `9f88959f`（WP-4：四向反证归档 + EC-01…04 回填） | 无独立 run（批量）| WP-4 |
+| `fec4dd3c`（WP-5：验证器 + 断言集 + RECHECK-460 + DONE） | 无独立 run（批量）| WP-5（收口面） |
+| `cae4fbe6`（EC-05 回填 + 两树判词归档 + 进展行 + **批量推送 tip**） | **M0 Quality Gates run 38442969636 `success`**（8 job 全 success）+ **Push on main run 38442969081 `success`**（CodeQL 三语言 success）| **全部 WP**（tip 树含以上全部内容）|
+
+**自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `cae4fbe6`**（其 run 已到终态且全绿）；
+台账自身的**记录提交不产生可引用的 CI 结论** ⇒ **到 `cae4fbe6` 为止，不再向后追链**。
+中间提交无独立 run 的原因 = **批量推送**（宪章既定纪律，防 `cancel-in-progress`）；
+其覆盖由 tip 的 run 承担（`covered_by` 语义）。**失败记录**：本轮 **CI 零真红**；
+**本地零真红**（两条按压锚点首跑未命中由脚本自身的命中数断言拦下 —— 纪律现场兑现）。
+**不动**任何阈值。
 
 ## 迭代日志
 
