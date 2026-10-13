@@ -80,13 +80,16 @@ def scalar_query_params(request: Request) -> frozenset[str]:
 def reject_unknown_query_params(request: Request) -> None:
     """未知查询参数 ⇒ **422 + 逐个点名 + 该路由的已知集**（供调用方自纠）。
 
-    **三种形态**（同一纪律的分支）：
+    **四种形态**（同一纪律的分支）：
 
     - **已声明**的路由（已知集非空）：不在集里的 ⇒ 点名（序 37 起）；
     - **零声明**的路由（已知集**空**）：**任何**查询参数都点名，并**明写该路由不接受
       查询参数**（空集的「已知集」清单是空串 ⇒ 正文要说清楚，否则读者以为漏了清单）。
       GOAL-20261013-072 接通**读面**；**GOAL-20261013-073** 接通**写面**
       （「静默吞掉」族的**第五面**；此前写面带查询串照样 201/200）。
+    - **重复**（序 42）：**标量声明**的参数出现多于一次 ⇒ 点名（`list` 合法重复）；
+    - **空值**（序 43）：**标量声明**的参数给空串 ⇒ 点名（此前 str 型静默筛成 0 条、
+      校验型 422 —— 同一形态两种行为）。
 
     **射程**：路由**无法解析**（`None`）⇒ 一字不动（没有可判的声明面）。
     """
@@ -95,6 +98,14 @@ def reject_unknown_query_params(request: Request) -> None:
         return  # 路由无法解析 ⇒ 不在射程
     unknown = sorted(set(request.query_params.keys()) - known)
     if not unknown:
+        blank = _blank_params(request, known)
+        if blank:
+            raise ApiError(
+                422,
+                "Empty Query Parameter",
+                f"empty query parameter(s): {', '.join(blank)}"
+                " (a declared parameter does not accept an empty value)",
+            )
         repeated = _repeated_scalar_params(request, known)
         if repeated:
             raise ApiError(
@@ -134,6 +145,26 @@ def _repeated_scalar_params(request: Request, known: frozenset[str]) -> list[str
         for key, count in counts.items()
         if count > 1 and key in known and key not in list_declared
     )
+
+
+def _blank_params(request: Request, known: frozenset[str]) -> list[str]:
+    """已知参数里给了**空值**的（`list` 声明的排除在外 —— 与重复臂同一射程边界）。
+
+    **为什么要点名**（GOAL-20261014-075）：**实测**空值形态**各路由不一致** ——
+    `?scope=` / `?proposed_by=` / `?state=`（**str 型**）⇒ 200 且**静默筛成 0 条**
+    （调用方读作「没有匹配」）；而 `?limit=` / `?date_from=` / `?horizon_days=`
+    （**校验型**）⇒ 422。**分界 = 类型面**（str 型没有校验面 ⇒ 空串被当合法筛选值）。
+    统一为点名（「点名失败而非静默降级」）。
+
+    **取值面**：`multi_items()`（`keys()` 会去重；空值判定虽不数重复，但同一取值面
+    口径统一，避免将来再踩序 42 的坑）。
+    """
+    list_declared = scalar_query_params(request)
+    return sorted({
+        key
+        for key, value in request.query_params.multi_items()
+        if value == "" and key in known and key not in list_declared
+    })
 
 
 __all__ = ["declared_query_params", "reject_unknown_query_params", "scalar_query_params"]

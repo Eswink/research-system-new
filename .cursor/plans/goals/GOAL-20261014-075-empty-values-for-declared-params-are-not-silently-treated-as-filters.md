@@ -150,8 +150,9 @@ memory_entries: []
 | --- | --- | --- | --- |
 | 1 | **实跑**：空值形态**各路由不一致** | `TestClient` + 受控装配（造 1 条记忆） | `?scope=` ⇒ **200** 且 `records: []`（**筛成 0 条**）；`?proposed_by=` ⇒ 200；`?state=` ⇒ 200；**而** `?at=` ⇒ **422**（Invalid Timestamp）、`?kind=` ⇒ **422** |
 | 2 | 空值被当成**筛选值**的证据 | 同上（`?scope=` 的载荷） | 载荷键 = `['filtered_out','records','scope','scope_note']` ⇒ 走了「筛」那一支（`filtered_out` 在），而**无参**载荷键 = `['records','scope_note']` ⇒ 空值**不是**「不筛」 |
-| 3 | **影响面**（web/tests 是否发空值） | `rg -n '!== ""' apps/web/src/api/` | web 客户端**已显式挡空值**（`datasetId` / `dateFrom` / `dateTo` 都判 `!== ""` 才 `params.set`）⇒ 统一为 422 **不打断**既有调用 |
-| 4 | 缺省基线 | 探针第 4 段 | （勘察读数 —— 不传参数的状态码 + 键集，供「逐字不变」比对） |
+| 3 | **分界 = 类型面**（关键读数） | 探针第 2 段（四类参数给空值） | **str 型静默**：`endpoint_id` ⇒ 200；**校验型拒绝**：`limit`（int）⇒ 422、`date_from`（date）⇒ 422、`horizon_days`（int）⇒ 422 ⇒ 不一致的**根因**是「str 型没有校验面 ⇒ 空串被当合法筛选值」 |
+| 4 | **影响面**（web/tests 是否发空值） | `rg -n '!== ""' apps/web/src/api/` | web 客户端**已显式挡空值**（`datasetId` / `dateFrom` / `dateTo` 都判 `!== ""` 才 `params.set`）⇒ 统一为 422 **不打断**既有调用 |
+| 5 | 缺省基线 | 探针第 4 段 | `/projects/example-project/memory`（无参）⇒ 200（键 `['records','scope_note']`，1 条）；`/notifications`（缺省）⇒ 200（键 `['note','notifications']`） |
 
 **结论**：前四面已接通，而**空值**这一形态**一半静默（筛 0 条）一半报错（422）** ⇒ 调用方
 **读不出**「我给空了」还是「确实没有匹配」。
