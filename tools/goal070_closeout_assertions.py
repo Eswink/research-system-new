@@ -105,8 +105,7 @@ def _ec02_verdicts(root: Path, toolbox: Any) -> list[Any]:
             # **判调用形态**（`.get(` / `[`），**不**判散文字符串 —— docstring 里
             # 点名「此前从它读」正是本轮要记的事（承序 36 的 `exclude_none` 教训：
             # 按短语判会被**解释为何不用它**的注释命中 ⇒ 假红）。
-            "request.query_params.get(" not in router
-            and "request.query_params[" not in router,
+            "request.query_params.get(" not in router and "request.query_params[" not in router,
             "**不得**再从原始 `request.query_params` 读（本轮靶子形态：消费却不声明）",
         ),
         toolbox.verdict(
