@@ -30,10 +30,11 @@ _READ_METHODS: frozenset[str] = frozenset({"GET", "HEAD"})
 
 
 def declared_query_params(request: Request) -> frozenset[str] | None:
-    """本请求匹配到的路由**自己声明**的查询参数集（非读面 / 未声明 ⇒ `None`）。
+    """本请求匹配到的路由**自己声明**的查询参数集（非读面 ⇒ `None`）。
 
-    `None` 与空集**语义不同**：`None` = 该路由不在射程内（一字不动）；空集 = 在射程内
-    但无参数（同样跳过）。都跳过，但区分开是为了让「为什么没管」可读。
+    `None` 与空集**语义不同**（GOAL-20261013-072 把这条区分用起来）：
+    `None` = 该路由**不在射程内**（非读面 ⇒ 一字不动）；空集 = **读面但无声明**
+    ⇒ 该路由**不接受任何**查询参数（收到即 422 点名，见下）。
     """
     if request.method not in _READ_METHODS:
         return None
@@ -45,13 +46,30 @@ def declared_query_params(request: Request) -> frozenset[str] | None:
 
 
 def reject_unknown_query_params(request: Request) -> None:
-    """未知查询参数 ⇒ **422 + 逐个点名 + 该路由的已知集**（供调用方自纠）。"""
+    """未知查询参数 ⇒ **422 + 逐个点名 + 该路由的已知集**（供调用方自纠）。
+
+    **两种形态**（同一纪律的两个分支）：
+
+    - **已声明**的路由（已知集非空）：不在集里的 ⇒ 点名（序 37 起）；
+    - **未声明**的路由（已知集**空**）：**任何**查询参数都点名，并**明写该路由不接受
+      查询参数**（空集的「已知集」清单是空串 ⇒ 正文要说清楚，否则读者以为漏了清单）。
+      GOAL-20261013-072：「静默吞掉」族的**最后一面**（此前这类路由收到查询串照样 200）。
+
+    **射程**：非读面（`None`）**一字不动** —— 写面按序 39 的 DTO 纪律处理。
+    """
     known = declared_query_params(request)
-    if not known:
-        return
+    if known is None:
+        return  # 非读面 ⇒ 不在射程
     unknown = sorted(set(request.query_params.keys()) - known)
     if not unknown:
         return
+    if not known:
+        raise ApiError(
+            422,
+            "Unknown Query Parameter",
+            f"unknown query parameter(s): {', '.join(unknown)}"
+            " (this route accepts no query parameters)",
+        )
     raise ApiError(
         422,
         "Unknown Query Parameter",

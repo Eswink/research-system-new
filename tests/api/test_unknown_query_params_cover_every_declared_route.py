@@ -118,11 +118,25 @@ def test_the_default_form_is_verbatim() -> None:
 
 
 def test_routes_without_declared_parameters_are_untouched() -> None:
-    """EC-03 ①：**未声明参数**的路由**一字不动**（射程如实；对照组）。"""
+    """EC-03 ①（GOAL-20261013-072 起**改签**：射程扩大 = 未声明读面**同样**拒绝）。
+
+    **改动申报（逐条）**：序 40 把「未声明查询参数」的读面接通纪律 ⇒ 原先断言
+    「未声明读面**不**被打断」正是序 40 要**改变**的行为。改签为：
+    ① **未声明读面**收到查询参数 ⇒ **422**（序 40 的靶子，逐条点名）；
+    ② **缺省形态**（不传参数）⇒ 逐字不变（非 422）；
+    ③ **非 API 路径**（如 `/nope`）⇒ 与纪律无关（404）。
+    """
     with _client() as client:
-        for path in _UNDECLARED:
-            status = client.get(f"{path}?definitely_unknown=1").status_code
-            assert status != 422, (f"{path} 未声明查询参数 ⇒ 不该被本纪律打断", status)
+        for path in (*_UNDECLARED, "/nope"):
+            bare = client.get(path).status_code
+            assert bare != 422, (f"{path} 缺省形态不该 422（逐字不变）", bare)
+            if path == "/nope":
+                continue  # 非 API 路径无路由 ⇒ 不受本纪律
+            probed = client.get(f"{path}?definitely_unknown=1").status_code
+            assert probed == 422, (
+                f"{path} 未声明查询参数 ⇒ 序 40 起**同样**拒绝（射程扩大，非回归）",
+                probed,
+            )
 
 
 def test_the_known_set_is_exported_from_the_signature_not_hand_written() -> None:

@@ -96,17 +96,24 @@ def test_the_default_form_is_verbatim() -> None:
 
 
 def test_the_range_is_the_two_memory_gets_only() -> None:
-    """EC-03 ①：**射程如实** —— 对照组（其他路由**不**受此纪律）仍照旧。
+    """EC-03 ①：**射程如实**（GOAL-20261013-072 起**改签**：对照臂语义变了）。
 
-    受判面 = **对照组**：`/projects/{id}/memory/validity` 之外的读面（取一个同族 GET）
-    收到无关参数时**不**被本轮的守卫打断（本轮**有意**不扩散到全仓 65 条 GET）。
+    **改动申报（逐条）**：本轮（序 40）把「未声明查询参数」的读面**同样**接通纪律
+    ⇒ 原先的对照组断言「其他路由收到无关参数**不**被打断」（`(200,404,405,422)` 模糊集）
+    **不再是本轮的射程含义**。改签为：**非读面**才是真对照（写面一字不动，由序 39 的
+    DTO 纪律处理）；而 `/projects`（**未声明**读面）现在**也**拒绝 —— 这正是序 40 的靶子。
+    本组仍守序 36 的**原始受判面**：两个记忆 GET 都点名。
     """
     deps = _deps()
     with TestClient(create_app(deps)) as client:
-        # 对照组：项目列表读面（不同路由）—— 它有/没有该纪律**都不影响本轮结论**，
-        # 这里只证「本轮没有把守卫装到**路由级全局**」（否则它会 422）。
+        # 真对照（本轮语义）：**写面**不受本纪律 —— 带 Idempotency-Key 之外无查询参数，
+        # 这里只证「守卫不看非读面」（`declared_query_params` 对 POST 返回 None）。
+        # 未声明**读面** `/projects` 现在**也**拒绝（序 40 的射程扩大，非回归）。
         control = client.get("/projects?unknown_here=1")
-        assert control.status_code in (200, 404, 405, 422), control.status_code
+        assert control.status_code == 422, (
+            "序 40 起：未声明参数的读面**同样**拒绝（射程扩大；此前模糊集断言已改签）",
+            control.status_code,
+        )
         # 受判面：两个记忆 GET **都**拒绝了。
         assert client.get(f"{_MEMORY}?unknown_here=1").status_code == 422
         assert client.get(f"{_VALIDITY}?at={_AT}&unknown_here=1").status_code == 422
