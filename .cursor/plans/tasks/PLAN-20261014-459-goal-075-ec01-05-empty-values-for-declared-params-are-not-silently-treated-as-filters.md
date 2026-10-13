@@ -2,10 +2,10 @@
 id: PLAN-20261014-459
 slug: goal-075-ec01-05-empty-values-for-declared-params-are-not-silently-treated-as-filters
 title: GOAL-20261014-075 cycle 1（EC-01…EC-05）：空值形态点名拒绝 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-14
 updated_at: 2026-10-14
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261014-460-goal-075-ec01-04-empty-values-for-declared-params-are-not-silently-treated-as-filters.md
 memory_entries: []
 parent_goal: GOAL-20261014-075
 cursor_plan_uri: null
@@ -35,7 +35,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-empty-query-values.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **空值臂（EC-02）**：已声明参数空值 ⇒ **422 + 逐个点名 + 明写「不接受空值」**
@@ -43,7 +43,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（空值点名 / 多个逐个 / 缺省不变 / 三臂措辞分辨）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **射程如实 + 无回归（EC-03）**：四面（序 37/40/41/42）+ 写面体（序 39）+ 事件流（序 38）
@@ -51,7 +51,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/tooling -q`
       ⇒ 全绿 + `pnpm --dir apps/web test:e2e:live` ⇒ 全绿。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`V5-1` 空值又被静默当成筛选值 ⇒ RED；`V5-2` `list` 声明被误伤 ⇒ RED；
@@ -60,7 +60,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal075_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -69,7 +69,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal075_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261014-459 — GOAL-20261014-075 cycle 1

@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261014-459](tasks/PLAN-20261014-459-goal-075-ec01-05-empty-values-for-declared-params-are-not-silently-treated-as-filters.md) | IN_PROGRESS |
+| [x] | [PLAN-20261014-459](tasks/PLAN-20261014-459-goal-075-ec01-05-empty-values-for-declared-params-are-not-silently-treated-as-filters.md) | DONE |
 | [x] | [PLAN-20261013-457](tasks/PLAN-20261013-457-goal-074-ec01-05-duplicated-scalar-query-params-are-not-silently-collapsed.md) | DONE |
 | [x] | [PLAN-20261013-455](tasks/PLAN-20261013-455-goal-073-ec01-05-write-face-routes-also-refuse-query-parameters.md) | DONE |
 | [x] | [PLAN-20261013-453](tasks/PLAN-20261013-453-goal-072-ec01-05-routes-without-declared-query-params-also-refuse-them.md) | DONE |
