@@ -2,10 +2,10 @@
 id: PLAN-20261013-455
 slug: goal-073-ec01-05-write-face-routes-also-refuse-query-parameters
 title: GOAL-20261013-073 cycle 1（EC-01…EC-05）：写面拒绝查询参数 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-13
 updated_at: 2026-10-13
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-456-goal-073-ec01-04-write-face-routes-also-refuse-query-parameters.md
 memory_entries: []
 parent_goal: GOAL-20261013-073
 cursor_plan_uri: null
@@ -38,7 +38,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-write-face-query-params.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **None 支改拒绝（EC-02）**：非读面路由收到查询参数 ⇒ **422 + 逐个点名 + 明写
@@ -46,7 +46,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（写面点名 / 多个逐个 / 读面不回归 / 缺省不变）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **射程如实 + 无回归（EC-03）**：读面（序 36/37/38/40）与写面体（序 39）判据全绿；
@@ -54,7 +54,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/tooling -q`
       ⇒ 全绿 + `pnpm --dir apps/web test:e2e:live` ⇒ 全绿。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`Z-1` 写面又被静默忽略 ⇒ RED；`Z-2` 读面被误伤 ⇒ RED；
@@ -63,7 +63,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal073_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -72,7 +72,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal073_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261013-455 — GOAL-20261013-073 cycle 1
