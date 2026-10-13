@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
 from services.api.composition import ApiDeps, assemble
 from services.api.errors import register_error_handlers
@@ -19,6 +19,7 @@ from services.api.middleware import (
     auth_disabled_warning,
     control_plane_auth_from_env,
 )
+from services.api.query_param_guard import reject_unknown_query_params
 from services.api.routers import (
     approvals,
     artifacts,
@@ -287,7 +288,13 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 def create_app(deps: ApiDeps | None = None) -> FastAPI:
-    """创建控制面应用；deps 注入（生产 assemble()；测试注入 Fakes）。"""
+    """创建控制面应用；deps 注入（生产 assemble()；测试注入 Fakes）。
+
+    应用级依赖 `reject_unknown_query_params`（GOAL-069 EC-02）在**构造期**声明 ——
+    **实测**：依赖在**路由匹配之后**解析 ⇒ 能读到该路由自己的 `dependant.query_params`
+    （已知集**从签名导出**）；事后 `router.dependencies.append` **不**生效
+    （装配顺序 = 契约的一部分，`Z-1` 反证臂钉住）。
+    """
     version = (
         Path(__file__).resolve().parents[2].joinpath("VERSION").read_text(encoding="utf-8").strip()
     )
@@ -296,6 +303,7 @@ def create_app(deps: ApiDeps | None = None) -> FastAPI:
         description="Research Console 控制面：配置 / 探测 / 运行 / 审批 / 审计",
         version=version,
         lifespan=_lifespan,
+        dependencies=[Depends(reject_unknown_query_params)],
     )
     resolved = deps if deps is not None else assemble(ApiSettings.from_env())
     app.state.deps = resolved

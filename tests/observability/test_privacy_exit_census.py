@@ -141,6 +141,7 @@ EXIT_SURFACES: tuple[ExitSurface, ...] = (
             "services/api/deps.py",
             "services/api/idempotency.py",
             "services/api/memory_query_guard.py",
+            "services/api/query_param_guard.py",
             "services/api/mappers/cost_daily.py",
             "services/api/mappers/endpoints.py",
             "services/api/mappers/operations.py",
