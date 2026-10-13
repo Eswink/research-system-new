@@ -226,8 +226,7 @@ def test_the_judged_list_matches_every_declared_route_in_the_app() -> None:
     ① 本组清单的路径集合**等于**应用里已声明查询参数的 GET 路径集合（少一条 ⇒ 漏判；
     ② 若应用新增一条已声明路由而本清单没跟上 ⇒ **判红**（不是静默漏掉）。
     """
-    with _client() as client:
-        spec = client.app.openapi()  # type: ignore[union-attr]
+    spec = create_app(make_run_ready_deps()).openapi()
     declared_in_app = {
         path
         for path, ops in spec["paths"].items()
@@ -235,8 +234,7 @@ def test_the_judged_list_matches_every_declared_route_in_the_app() -> None:
     }
     # OpenAPI 用**路径模板**（`{project_id}`），本组用**具体值**（`example-project`）
     # ⇒ 归一化到同一形态再比（否则是「拿两种写法比」的假红）。
-    normal = lambda path: path.replace("example-project", "{project_id}")  # noqa: E731
-    judged = {normal(path) for path, _, _, _ in _DECLARED}
+    judged = {path.replace("example-project", "{project_id}") for path, _, _, _ in _DECLARED}
     assert judged == declared_in_app, (
         "受判面必须 = 应用里全部已声明路由（漏判即判红）",
         "本组缺:",
