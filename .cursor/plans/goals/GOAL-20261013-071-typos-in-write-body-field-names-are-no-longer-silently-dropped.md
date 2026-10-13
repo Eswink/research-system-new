@@ -244,7 +244,18 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| `9e868fb0`（WP-2/3：StrictRequestDto + 37 DTO + 影响面修正） | 无独立 run（**批量推送**，见下）| WP-2 / WP-3 |
+| `9f55b10a`（WP-4：四向反证归档 + EC-01…04 回填） | 无独立 run（批量）| WP-4 |
+| `d30d072f`（WP-5：验证器 + 断言集 + RECHECK-452 + DONE） | 无独立 run（批量）| WP-5（收口面） |
+| `0fd52985`（EC-05 回填 + 两树判词归档 + 进展行） | **M0 run 38394559165 `failure`**（真红：`console-frontend` job 的 *Console live API e2e* ⇒ `live-api-workflow.spec.ts:241` 的 PUT settings 用 **spread 把 GET 载荷全量回写** ⇒ 带只读键 `project_id` ⇒ 落 strict 后 422。Push on main run 38394558137 `success`）| WP-5（记录面）|
+| `148d3de7`（**修复**：live spec 只发可写字段 + **批量推送 tip**） | **M0 Quality Gates run（本行见下）** + Push on main | **全部 WP** |
+
+**修复记录（CI 真红 ⇒ 同轮纠错，未超 `fix_policy`）**：`console-frontend` 的红**不是**判据假红
+——是 wp-2/3 的 shared 基类改动打到的**既有调用面**（EC-01 ③ 预测的形态在 CI 侧兑现）。
+处置：**本地先复现**（`playwrightLive.config.ts` 起 uvicorn:8011 + vite:5174）⇒ 隔离跑该用例
+⇒ **修后 passed**（21.1s）；`fix` 只改**请求体**（**断言未动**）；另跑**全量 live 套件** ⇒
+**53 passed**（无其余调用依赖旧吞掉行为）；全仓扫 `data: { ...` / `json={ ...` 形态 ⇒ 仅此一处。
+**同签名修复 1 次**（`same_signature_retries: 2` 未触顶）。
 
 ## 迭代日志
 
