@@ -241,7 +241,13 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| `713e27af`（replan：序 38 登记 + 修订表归档搬运） | **M0 run 38373226619 `cancelled`**（原因 = 紧随其后的 `e1bcf171` 推送触发 `concurrency.cancel-in-progress`；**`covered_by` = `e1bcf171` 的 run 38373388019** —— tip 树含本提交全部内容）+ Push on main run 38373226961 `success` | —（程序面） |
+| `e1bcf171`（序 38 建档：GOAL + 子 PLAN + ALL_PLAN） | **M0 Quality Gates run 38373388019 `success`**（8 job 全 success）+ **Push on main run 38373388975 `success`**（CodeQL 三语言 success） | WP 建档 |
+
+**自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `e1bcf171`**（其 run 已到终态且全绿）；
+台账自身的**记录提交不产生可引用的 CI 结论** ⇒ **到 `e1bcf171` 为止，不再向后追链**。
+`713e27af` 的 `cancelled` 属**已知基础设施形态**（批量推送竞态），如实登记原因 + `covered_by`，
+**不动**任何阈值。
 
 ## 迭代日志
 
