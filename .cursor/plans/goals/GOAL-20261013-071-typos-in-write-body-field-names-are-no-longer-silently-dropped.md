@@ -248,7 +248,7 @@ memory_entries: []
 | `9f55b10a`（WP-4：四向反证归档 + EC-01…04 回填） | 无独立 run（批量）| WP-4 |
 | `d30d072f`（WP-5：验证器 + 断言集 + RECHECK-452 + DONE） | 无独立 run（批量）| WP-5（收口面） |
 | `0fd52985`（EC-05 回填 + 两树判词归档 + 进展行） | **M0 run 38394559165 `failure`**（真红：`console-frontend` job 的 *Console live API e2e* ⇒ `live-api-workflow.spec.ts:241` 的 PUT settings 用 **spread 把 GET 载荷全量回写** ⇒ 带只读键 `project_id` ⇒ 落 strict 后 422。Push on main run 38394558137 `success`）| WP-5（记录面）|
-| `148d3de7`（**修复**：live spec 只发可写字段 + **批量推送 tip**） | **M0 Quality Gates run（本行见下）** + Push on main | **全部 WP** |
+| `148d3de7`（**修复**：live spec 只发可写字段 + **批量推送 tip**） | **M0 Quality Gates run 38397143646 `success`**（8 job 全 success —— 含此前红的 `console-frontend`）+ **Push on main run 38397144346 `success`**（CodeQL 三语言 success）| **全部 WP**（tip 树含以上全部内容）|
 
 **修复记录（CI 真红 ⇒ 同轮纠错，未超 `fix_policy`）**：`console-frontend` 的红**不是**判据假红
 ——是 wp-2/3 的 shared 基类改动打到的**既有调用面**（EC-01 ③ 预测的形态在 CI 侧兑现）。
@@ -256,6 +256,12 @@ memory_entries: []
 ⇒ **修后 passed**（21.1s）；`fix` 只改**请求体**（**断言未动**）；另跑**全量 live 套件** ⇒
 **53 passed**（无其余调用依赖旧吞掉行为）；全仓扫 `data: { ...` / `json={ ...` 形态 ⇒ 仅此一处。
 **同签名修复 1 次**（`same_signature_retries: 2` 未触顶）。
+
+**自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `148d3de7`**（其 run 已到终态且全绿）；
+台账自身的**记录提交不产生可引用的 CI 结论** ⇒ **到 `148d3de7` 为止，不再向后追链**。
+cycle 1 的中间提交无独立 run 的原因 = **批量推送**（宪章既定纪律，防 `cancel-in-progress`
+取消在飞 run）；其覆盖由 tip 的那次 run 承担（`covered_by` 语义：run 检出的树 = 含全部中间
+提交内容的 `148d3de7`）。**不动**任何阈值。
 
 ## 迭代日志
 
