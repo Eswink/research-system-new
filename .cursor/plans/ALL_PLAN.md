@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [ ] | [PLAN-20261013-445](tasks/PLAN-20261013-445-goal-068-ec01-05-unknown-query-parameters-are-no-longer-silently-swallowed.md) | IN_PROGRESS |
 | [x] | [PLAN-20261013-443](tasks/PLAN-20261013-443-goal-067-ec01-05-the-http-read-face-does-not-silently-ignore-the-author-filter.md) | DONE |
 | [x] | [PLAN-20261013-441](tasks/PLAN-20261013-441-goal-066-ec01-05-a-memory-author-is-selectable.md) | DONE |
 | [x] | [PLAN-20261013-439](tasks/PLAN-20261013-439-goal-065-ec01-05-who-proposed-a-memory-is-readable.md) | DONE |
