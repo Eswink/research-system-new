@@ -100,7 +100,12 @@ exit_criteria:
 
 ## 证据
 
-（逐 WP 回填：命令 + 读数 + commit。）
+| WP | 命令 | 读数 | commit |
+| --- | --- | --- | --- |
+| WP-1 | `uv run --frozen --no-sync python -B scratch/probe-empty-query-values.py` | `?scope=` ⇒ 200 且 `records: []`（载荷含 `filtered_out` ⇒ 走「筛」支）；`?at=` / `?kind=` ⇒ 422；**分界 = 类型面**（str 型静默 / 校验型拒绝：`endpoint_id` 200 vs `limit`/`date_from`/`horizon_days` 422）；web 已挡空值（`!== ""`）；缺省基线 | （本轮） |
+| WP-2 | `pytest tests/api -q` | **672 passed**（新 6 例）；空值臂落地（措辞三分辨） | `2e195bf3` |
+| WP-3 | `pytest tests/api tests/contracts tests/tooling -q` + `tests/e2e` + **live e2e** | 2680 + 307 + **53 passed**；快照 `git diff --numstat` ⇒ **零 diff** | `2e195bf3` |
+| WP-4 | `uv run --frozen --no-sync python -B scratch/goal075_press.py` | **BASELINE GREEN**（30 passed）；V5-1/V5-2/V5-3/V5-4 全 **RED**；逐条 `sha 复原一致=True`；`SUMMARY presses=4 all_red_and_restored=True`；**两条锚点首跑未命中**（缩进 / 非唯一）⇒ 按纪律改唯一锚点后全红；归档 `evidence/GOAL-20261014-075-press-two-way.txt`（二进制、`CR=0`）；零进程泄漏 | （本轮） |
 
 ## 影响报告
 

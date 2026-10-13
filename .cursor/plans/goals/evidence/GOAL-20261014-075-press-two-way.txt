@@ -1,0 +1,21 @@
+GOAL-20261014-075 EC-04 四向反证判词（V5-1…V5-4 全 RED + 基线门 GREEN + raw sha256 复原）
+命令：uv run --frozen --no-sync python -B scratch/goal075_press.py
+受判面：tests/api/test_empty_query_values_are_refused.py + test_unknown_query_params_cover_every_declared_route.py + test_undeclared_query_params_are_refused.py + test_duplicate_scalar_query_params_are_refused.py
+按压文件：services/api/query_param_guard.py（二进制读写，逐条 raw sha256 复原）
+注：首跑两条锚点未命中（缩进/非唯一）⇒ 按「先数命中数」纪律改用唯一锚点后全 RED。
+----------------------------------------------------------------------------------------------------
+BASELINE（未按压，必须绿）: GREEN
+    suite: 30 passed in 7.35s
+V5-1 空值又被静默当成筛选值（摘掉空值臂）: 按压 RED
+    sha 复原一致=True | 0acde046db12
+    suite: 3 failed, 27 passed in 8.51s
+V5-2 list 声明被误伤（射程越界）: 按压 RED
+    sha 复原一致=True | 0acde046db12
+    suite: 1 failed, 29 passed in 9.04s
+V5-3 缺省形态被改动（不传也报错）: 按压 RED
+    sha 复原一致=True | 0acde046db12
+    suite: 13 failed, 17 passed in 8.57s
+V5-4 重复臂被误伤（序 42 靶子回退）: 按压 RED
+    sha 复原一致=True | 0acde046db12
+    suite: 4 failed, 26 passed in 8.73s
+SUMMARY presses=4 all_red_and_restored=True
