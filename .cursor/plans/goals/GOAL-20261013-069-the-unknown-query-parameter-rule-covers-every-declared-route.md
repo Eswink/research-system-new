@@ -9,7 +9,7 @@ title: >-
   ⇒ 调用方**以为设了参数**而实际用的是默认值（与序 36 同形的「静默降级」）。
   **射程可导出**：`inspect` / AST 从**路由签名**取「已知参数」，无需手写清单 ⇒ 扩到全体（那 9 条）是机械动作；
   **先例已全在**（序 36 的守卫 + 已知集形态）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-13
 updated_at: 2026-10-13
 owners:
@@ -247,14 +247,28 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| `fcec459`（replan：序 37 登记 + 预算 40→45） | 无独立 run（**批量推送**，见下）| —（程序面） |
+| `3bcb1dc`（序 37 建档：GOAL + 子 PLAN + ALL_PROJECTION） | 无独立 run（批量）| WP 建档 |
+| `a19c486`（建档读数更正 17→9） | 无独立 run（批量）| WP-1 前置 |
+| `8670404`（WP-1：探针两面交叉对齐） | 无独立 run（批量）| WP-1（EC-01） |
+| `17c527b`（WP-2：签名导出守卫 + 11 例） | 无独立 run（批量）| WP-2（EC-02） |
+| `74fba93`（WP-3/4：四向反证 + 回填） | 无独立 run（批量）| WP-3/WP-4（EC-03/04） |
+| `1e97552`（WP-5：验证器 + 断言集 + RECHECK + DONE） | 无独立 run（批量）| WP-5（EC-05 收口面） |
+| `139b125`（EC-05 回填 + 两树判词归档 + 进展行） | 无独立 run（批量）| WP-5（记录面） |
+| `94e7da7`（mypy 真红修复 + **批量推送 tip**） | **M0 Quality Gates run 38368903984 `success`**（8 job 全 success：container-quality / observability-overhead×2 / console-frontend / collector-quality / quality×2 / eval-gate）+ **Push on main run 38368903320 `success`**（CodeQL 三语言 success）| **全部 WP**（tip 树包含以上全部提交的内容 ⇒ 一次 run 覆盖整批）|
+
+**自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `94e7da7f`**（其 run 已到终态且全绿）；
+台账自身的**记录提交不产生可引用的 CI 结论**（它只改记录，不改产品面）⇒ 台账**到 `94e7da7f` 为止**，
+**不再向后追链**。中间提交无独立 run 的原因 = **批量推送**（一个 cycle 攒成一次推送 —— 宪章的
+既定纪律，防 `cancel-in-progress` 取消在飞 run）；它们的覆盖由 tip 的那次 run 承担（`covered_by`
+语义：run 检出的树 = 含全部中间提交内容的 `94e7da7f`）。
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（replan + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 37**（**同轮建档**）+ 预算 40→45 | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 导出面 + 全员覆盖） |
-| 1 | PLAN-20261013-447 | `8670404` `17c527b` `74fba93d` `1e97552a` | 探针两面交叉对齐（9 条）；守卫落地（签名导出 + 构造期应用级依赖）；判据 11 例；api/contracts/tooling/e2e/observability/application/adapters 全绿；快照零 diff；四向按压全 RED + 基线门 GREEN + 字节复原 | （见 CI 台账） | — | EC-01…04 PASS；剩 EC-05 收口 | EC-05（验证器 + 两树 + m0 + 台账） |
+| 1 | PLAN-20261013-447 | `8670404` `17c527b` `74fba93d` `1e97552a` `139b125b` `94e7da7f` | 探针两面交叉对齐（9 条）；守卫落地（签名导出 + 构造期应用级依赖）；判据 11 例；api 629 / contracts 528 / tooling / e2e 439 / observability / application+adapters 1574 全绿；快照零 diff；四向按压全 RED + 基线门 GREEN + 字节复原；验证器 64 条判词全过；两树逐行判词一致；**m0 首跑抓到 mypy 真红**（`TestClient.app` union + lambda 无注解）⇒ 修复后 **23/23** | **M0 run 38368903984 success（8 job）+ Push on main run 38368903320 success（CodeQL 三语言）**；中间提交批量推送无独立 run（`covered_by` 见台账） | mypy 真红（同签名 1 次，未超上限） | **五条 EC 全 PASS** | —（本 GOAL 收口；下一行由战役触发时 replan 决定） |
 
 ## 状态历史
 
@@ -262,3 +276,4 @@ memory_entries: []
 | --- | --- | --- |
 | 2026-10-13 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 37**（**轴 = 质量**），并写修订记录行（只追加）+ 预算核算（`max_goals` 40 → 45）。**实测读数**（逐条见「事实层结论」表）：① **9 条 GET 已声明查询参数**（两个独立面交叉核对，逐条相同）；② **实跑**两条不同路由打错参数名 ⇒ **200 + 静默吞掉**；③ 通用守卫**零命中**（只有序 36 的两文件）；④ 全仓 68 条 GET 的射程分类（9 已声明 / 59 无参数）；⑤ 序 36 的守卫仍在树。**GOAL 文件 / 子 PLAN / `ALL_PLAN` 投影同轮落地**。五条 EC 全 PENDING。**不**覆盖无参数路由 / **不**改写面 / **不**动已知参数语义。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
 | 2026-10-13 | ACTIVE | **cycle 1 全交付（EC-01…EC-05 全 PASS）**：探针两面交叉对齐（9 条已声明路由）；守卫从签名导出 + 构造期应用级依赖（D-5 实测定案）；判据 11 例（逐条 9 路由 / 该路由已知集 / 多个逐个 / 已知与缺省不变 / 对照臂 / 不手写清单静态+行为 / 受判面=app 全部声明面）；api 629 / contracts 528 / tooling 全绿 / e2e 439 / observability / application+adapters 1574；快照零 diff；四向按压全 RED + 基线门 GREEN + 字节复原；验证器 64 PASS；两树 `TWO-TREE PASS`；RECHECK-448 PASS。**残余**：无参数路由 / 写面请求体字段（逐条保留）。**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
+| 2026-10-13 | ACHIEVED | **收口（cycle 1）**：五条 EC 全 PASS；验证器 **64 条判词全过**；两树逐行判词 sha256 一致（`TWO-TREE PASS`）；as-is m0 首跑抓到 **mypy 真红**（真缺陷，非 flake）⇒ 修复后终局 **23/23**（记录写完之后）；治理 `validate.py` 绿 + 宪章判据绿；CI 台账逐提交（tip `94e7da7f` 两 run 全 success，中间提交批量推送 `covered_by` 明写）；`latest_recheck` = `RECHECK-20261013-448`。**残余与未覆盖范围原样保留**；**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
