@@ -9,7 +9,7 @@ title: >-
   `?kind=`（library）⇒ **422** ⇒ 同一形态**一半静默一半报错**。
   本轮统一为 **422 + 点名该参数 + 明写「不接受空值」**，
   **缺省（不传）形态逐字不变**（web 客户端已显式挡空值 ⇒ 不打断既有调用）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-14
 updated_at: 2026-10-14
 owners:
@@ -95,7 +95,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal075_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -121,7 +121,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261014-459-goal-075-ec01-05-empty-values-for-declared-params-are-not-silently-treated-as-filters.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261014-460-goal-075-ec01-04-empty-values-for-declared-params-are-not-silently-treated-as-filters.md
 memory_entries: []
 ---
 
@@ -139,7 +139,7 @@ memory_entries: []
 | EC-02 | 空值 ⇒ 422 + 点名；缺省与 list 逐字不变 | `pytest tests/api -q`（672 passed）+ 新 6 例 | **PASS** |
 | EC-03 | 射程如实（四面 + 写面体 + 事件流不回归）+ live e2e + 快照同轮 | 2680 + 307 + **53 live** passed；快照零 diff | **PASS** |
 | EC-04 | 两向反证 `V5-1`…`V5-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/GOAL-20261014-075-press-two-way.txt`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **61 PASS / 0 FAIL**；两树 `TWO-TREE PASS`（sha256 一致） | **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -244,10 +244,11 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（实测缺口登记 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 43**（**同轮建档**） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 空值臂 + 影响面处理） |
-| 1 | PLAN-20261014-459 | `2e195bf3`（+ 本轮记录提交） | 探针四段读数（分界 = 类型面）；空值臂落地（措辞三分辨）；6 例新判据；api 672 / contracts+tooling 2001 / e2e 307 / **live 53** 全绿；快照零 diff；四向按压全 RED（两条锚点首跑未命中 ⇒ 改唯一锚点后全红） | （见 CI 台账） | — | EC-01…04 PASS；剩 EC-05 收口 | EC-05（验证器 + 两树 + m0 + 台账） |
+| 1 | PLAN-20261014-459 | `2e195bf3` `9f88959f` `fec4dd3c` | 探针四段读数（分界 = 类型面）；空值臂落地（措辞三分辨）；6 例新判据；api 672 / contracts+tooling 2001 / e2e 307 / **live 53** 全绿；快照零 diff；四向按压全 RED（两条锚点首跑未命中 ⇒ 改唯一锚点后全红） | （见 CI 台账） | —（两条锚点首跑未命中 = 纪律现场兑现，非缺陷） | **五条 EC 全 PASS** | —（本 GOAL 收口；序 44 由战役触发时盘账决定） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-14 | ACTIVE | **实测缺口登记 + 建档（cycle 0）**：MAINLINE 程序表**新增序 43**（**轴 = 质量**），并写修订记录行（只追加；同轮把序 40 的旧修订行原文搬入新归档）。**实测读数**（逐条见「事实层结论」表）：① 空值形态**各路由不一致**（`?scope=` / `?proposed_by=` / `?state=` ⇒ 200 且筛 0 条；`?at=` / `?kind=` ⇒ 422）；② 空值走「筛」支（载荷含 `filtered_out`）；③ web 客户端**已挡空值** ⇒ 统一为 422 不打断既有调用。**GOAL 文件 / 子 PLAN / `ALL_PLAN` 投影同轮落地**。五条 EC 全 PENDING。**不**动前四面 / **不**动 `list` 声明 / **不**改已声明值的语义。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
+| 2026-10-14 | ACHIEVED | **收口（cycle 1）**：五条 EC 全 PASS；验证器 **61 条判词全过**；两树逐行判词 sha256 一致（`TWO-TREE PASS`）；as-is m0 **23/23**（记录写完之后）；治理 `validate.py` 绿 + 宪章判据绿；CI 台账逐提交；`latest_recheck` = `RECHECK-20261014-460`。**本轮要点**：空值形态统一为点名（此前 str 型静默筛 0 条 vs 校验型 422 的不一致）；措辞**三分辨**（未知 / 重复 / 空值）；四向按压全 RED（两条锚点首跑未命中 ⇒ 按纪律改唯一锚点）。**残余与未覆盖范围原样保留**；**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
