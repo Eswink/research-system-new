@@ -1,0 +1,22 @@
+GOAL-20261013-073 EC-04 四向反证判词（Z-1…Z-4 全 RED + 基线门 GREEN + raw sha256 复原）
+命令：uv run --frozen --no-sync python -B scratch/goal073_press.py
+受判面：tests/api/test_write_face_query_params_are_refused.py + test_undeclared_query_params_are_refused.py + test_unknown_query_params_cover_every_declared_route.py
+按压文件：services/api/query_param_guard.py（二进制读写，逐条 raw sha256 复原）
+注：四条首跑即全 RED（无假绿）—— 承接序 39/40 的假绿教训，本轮判据把两侧都钉住
+    （写面 ⇒ 422 + 读面两支 ⇒ 各自形态 + 缺省逐字）。
+----------------------------------------------------------------------------------------------------
+BASELINE（未按压，必须绿）: GREEN
+    suite: 23 passed in 5.50s
+Z-1 写面又被静默忽略（加回方法闸门）: 按压 RED
+    sha 复原一致=True | a5a0ce7c2209
+    suite: 4 failed, 19 passed in 7.79s
+Z-2 读面被误伤（known 清单被抹掉）: 按压 RED
+    sha 复原一致=True | a5a0ce7c2209
+    suite: 4 failed, 19 passed in 7.31s
+Z-3 缺省形态被改动（不传也报错）: 按压 RED
+    sha 复原一致=True | a5a0ce7c2209
+    suite: 10 failed, 13 passed in 7.25s
+Z-4 读面未声明面被误伤（空集支又跳过）: 按压 RED
+    sha 复原一致=True | a5a0ce7c2209
+    suite: 4 failed, 19 passed in 7.07s
+SUMMARY presses=4 all_red_and_restored=True

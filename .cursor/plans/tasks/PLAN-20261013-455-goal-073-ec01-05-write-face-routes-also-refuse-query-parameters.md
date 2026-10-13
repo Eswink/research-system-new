@@ -104,7 +104,12 @@ exit_criteria:
 
 ## 证据
 
-（逐 WP 回填：命令 + 读数 + commit。）
+| WP | 命令 | 读数 | commit |
+| --- | --- | --- | --- |
+| WP-1 | `uv run --frozen --no-sync python -B scratch/probe-write-face-query-params.py` | `POST /projects?definitely_unknown=1` ⇒ **201**；`PATCH ?zz=1` ⇒ **200**；**63 条非读面路由 / 声明 0 条**；影响面：626 写调用点**同行带查询串 0**（如实登记为上界）；缺省基线（201/200 + 五键） | （本轮） |
+| WP-2 | `pytest tests/api -q` | **665 passed**（新 6 例）；**四处改签**（序 37 判据改名+改判 / 序 40 判据改名+改判 / 序 36 过期注释 / 两处收口断言集 —— 后者被 `test_closeout_verifiers` **当场抓到**） | `a7ab5e2e` |
+| WP-3 | `pytest tests/contracts tests/tooling -q` + `tests/e2e` + **live e2e** | 1999 + 307 + **53 passed**；快照 `git diff --numstat` ⇒ **零 diff**（不动签名） | `a7ab5e2e` |
+| WP-4 | `uv run --frozen --no-sync python -B scratch/goal073_press.py` | **BASELINE GREEN**（23 passed）；Z-1/Z-2/Z-3/Z-4 全 **RED**（**首跑即全红、无假绿**）；逐条 `sha 复原一致=True`；`SUMMARY presses=4 all_red_and_restored=True`；归档 `evidence/GOAL-20261013-073-press-two-way.txt`（二进制、`CR=0`）；零进程泄漏 | （本轮） |
 
 ## 影响报告
 

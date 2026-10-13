@@ -52,7 +52,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-write-face-query-params.py`；
       GOAL 的「事实层结论」表逐行与实测对齐（不符则登记差异，以实测为准）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **纪律扩到非读面（本轮验收主体）**：**非读面**路由收到查询参数 ⇒ **422 + 逐个点名 +
@@ -61,7 +61,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（写面点名 / 多个逐个 / 读面不回归 / 缺省不变）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **射程如实 + 既有面不回归**：读面判据（序 36/37/38/40）与写面体判据（序 39）**全绿**；
@@ -70,7 +70,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/tooling -q`
       ⇒ 全绿 + live 套件（`pnpm --dir apps/web test:e2e:live`）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **两向反证（真按压，每条必须实测会响）**：`Z-1` 写面**又被静默忽略**（退回归零）⇒ RED；
@@ -81,7 +81,7 @@ exit_criteria:
     verify: >-
       `scratch/goal073_press.py` 全 `RED` + `sha 复原一致=True` + `BASELINE…: GREEN`；
       归档 `.cursor/plans/goals/evidence/GOAL-20261013-073-press-two-way.txt`。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口（复用既有机器）**。① 收口验证器进树并加入
@@ -134,10 +134,10 @@ memory_entries: []
 
 | EC | 标准（要点） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
-| EC-01 | 勘察定稿（实跑 / 写面清单 / 影响面盘点 / 缺省基线） | **实跑**：`scratch/probe-write-face-query-params.py` | PENDING |
-| EC-02 | 非读面收到查询参数 ⇒ 422 + 逐个点名；读面与缺省逐字不变 | `pytest tests/api -q` + 新用例 | PENDING |
-| EC-03 | 射程如实（读面 / 写面体不回归）+ live e2e + 快照同轮（预期零 diff） | `pytest tests/api tests/contracts tests/tooling -q` + live | PENDING |
-| EC-04 | 两向反证 `Z-1`…`Z-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/`（`CR=0`） | PENDING |
+| EC-01 | 勘察定稿（实跑 / 写面清单 / 影响面盘点 / 缺省基线） | **实跑**：`scratch/probe-write-face-query-params.py` | **PASS** |
+| EC-02 | 非读面收到查询参数 ⇒ 422 + 逐个点名；读面与缺省逐字不变 | `pytest tests/api -q`（665 passed）+ 新 6 例 | **PASS** |
+| EC-03 | 射程如实（读面 / 写面体不回归）+ live e2e + 快照同轮（**实测零 diff**） | 1999 + 307 + **53 live** passed | **PASS** |
+| EC-04 | 两向反证 `Z-1`…`Z-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/GOAL-20261013-073-press-two-way.txt`（`CR=0`） | **PASS** |
 | EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
@@ -243,6 +243,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | —（实测缺口登记 + 建档） | （见 CI 台账） | 只读勘察（0 改动）+ 实跑读数（见「事实层结论」）；五条 EC 全 PENDING；MAINLINE 程序表**新增序 41**（**同轮建档**） | （见 CI 台账） | — | 五条 EC 全 PENDING | cycle 1（EC-02 None 支改拒绝 + 影响面处理） |
+| 1 | PLAN-20261013-455 | `a7ab5e2e`（+ 本轮记录提交） | 探针四段读数（63 写路由 / 0 声明）；去方法闸门；四处改签（含两处收口断言集 —— 被门当场抓到）；api 665 / contracts+tooling 1999 / e2e 307 / **live 53** 全绿；快照零 diff；四向按压全 RED（**首跑即全红**） | （见 CI 台账） | —（无假绿；门抓到的改签非缺陷） | EC-01…04 PASS；剩 EC-05 收口 | EC-05（验证器 + 两树 + m0 + 台账） |
 
 ## 状态历史
 
