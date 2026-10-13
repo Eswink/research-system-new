@@ -9,7 +9,7 @@ title: >-
   会筛并**披露**其键 ⇒ 同一读面**已知与未知的待遇不对称**。**零命中复核**：
   `unknown_param` / `unexpected_query` / `strict_query` 在 `services/api/` **全零命中**；
   **先例已全在**（同一读面的两个已知参数各自的披露形态）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-13
 updated_at: 2026-10-13
 owners:
@@ -240,7 +240,7 @@ memory_entries: []
 
 | 提交 | CI run / 结论 | 覆盖的 WP |
 | --- | --- | --- |
-| （待开 cycle 1 后回填） | （待轮询） | — |
+| （待 push 后逐条回填；同批推送只让 tip 起 run ⇒ 各自 `covered_by` 见下） | （待轮询） | — |
 
 ## 迭代日志
 
