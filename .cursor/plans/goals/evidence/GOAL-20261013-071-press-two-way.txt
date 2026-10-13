@@ -1,0 +1,23 @@
+GOAL-20261013-071 EC-04 四向反证判词（X-1…X-4 全 RED + 基线门 GREEN + raw sha256 复原）
+命令：uv run --frozen --no-sync python -B scratch/goal071_press.py
+受判面：tests/api/test_write_body_typos_are_named.py + tests/api/test_unknown_query_params_cover_every_declared_route.py
+按压文件：services/api/dto/common.py（X-1/X-3/X-4）+ services/api/dto/projects.py（X-2）
+（二进制读写，逐条 raw sha256 复原）
+注：X-2 首跑 GREEN ⇒ 判据面缺口被抓出（只判拒绝 ⇒ 「拒绝面过宽」假绿）⇒ 补
+    「同一 DTO 的正确形态仍成功」断言后 RED（同签名 1 次修复，未超 fix_policy）。
+----------------------------------------------------------------------------------------------------
+BASELINE（未按压，必须绿）: GREEN
+    suite: 17 passed in 3.38s
+X-1 未知字段又被静默忽略（退回 ignore）: 按压 RED
+    sha 复原一致=True | eaf66da189d1
+    suite: 4 failed, 13 passed in 5.15s
+X-2 已知字段被误拒（声明被移除 ⇒ 正确请求 422）: 按压 RED
+    sha 复原一致=True | 2735477e9e6c
+    suite: 1 failed, 16 passed in 5.23s
+X-3 多个未知只报第一个（逐个点名被破坏）: 按压 RED
+    sha 复原一致=True | eaf66da189d1
+    suite: 3 failed, 14 passed in 5.25s
+X-4 错误正文不点名（通用消息）: 按压 RED
+    sha 复原一致=True | eaf66da189d1
+    suite: 3 failed, 14 passed in 5.53s
+SUMMARY presses=4 all_red_and_restored=True

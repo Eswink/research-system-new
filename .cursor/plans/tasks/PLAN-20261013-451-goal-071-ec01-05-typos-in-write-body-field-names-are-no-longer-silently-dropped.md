@@ -103,7 +103,12 @@ exit_criteria:
 
 ## 证据
 
-（逐 WP 回填：命令 + 读数 + commit。）
+| WP | 命令 | 读数 | commit |
+| --- | --- | --- | --- |
+| WP-1 | `uv run --frozen --no-sync python -B scratch/probe-write-face-extra-fields.py` | 打错字段名 ⇒ **200**（静默吞掉）；正确形态 200 + 15 键；**37 条请求 DTO**（零 `extra=` 设定）；`extra="forbid"` 对照实验 ⇒ 422 且字段名在 `loc` 里；影响面上界 357 调用点（如实登记口径） | （本轮） |
+| WP-2 | `pytest tests/api -q` | **647 passed**（新 6 例）；3 处既有调用带多余字段（`POST /projects` 传 `id`）⇒ 逐条修正调用点（断言未动） | `9e868fb0` |
+| WP-3 | `pytest tests/contracts tests/tooling -q` + `tests/e2e` | 1998 passed / 72 skipped；e2e **一次组合跑 flake**（隔离与重跑全绿：307 passed）；快照 `git diff --numstat` ⇒ **零 diff**（**实测更正 D-4**：生成器早已强制补写 `additionalProperties: false` ⇒ 契约早就声明闭包，变的是运行时） | `9e868fb0` |
+| WP-4 | `uv run --frozen --no-sync python -B scratch/goal071_press.py` | **BASELINE GREEN**（17 passed）；X-1/X-2/X-3/X-4 全 **RED**；逐条 `sha 复原一致=True`；`SUMMARY presses=4 all_red_and_restored=True`；**X-2 首跑 GREEN ⇒ 判据面缺口**（只判拒绝 ⇒ 拒绝面过宽假绿）⇒ 补正确形态断言后 RED（同签名 1 次，未超上限）；归档 `evidence/GOAL-20261013-071-press-two-way.txt`（二进制、`CR=0`）；零进程泄漏 | （本轮） |
 
 ## 影响报告
 

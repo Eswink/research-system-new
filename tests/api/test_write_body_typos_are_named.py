@@ -72,7 +72,11 @@ def test_the_known_forms_are_verbatim() -> None:
 
 
 def test_a_second_module_dto_is_covered_too() -> None:
-    """EC-02 ④：**射程覆盖多个模块的 DTO**（不是只修了 runs 这一处）。"""
+    """EC-02 ④：**射程覆盖多个模块的 DTO**（不是只修了 runs 这一处）。
+
+    两臂都要：**未知字段被拒**（`nam`）+ **同一 DTO 的正确形态仍成功**
+    （`name` ⇒ 201；`X-2` 反证臂的受判面 —— 只判拒绝会让「拒绝面过宽」假绿）。
+    """
     with _client() as client:
         response = client.post(
             "/projects",
@@ -83,6 +87,13 @@ def test_a_second_module_dto_is_covered_too() -> None:
         assert any("nam" in str(item.get("loc", [])) for item in response.json()["detail"]), (
             response.json()
         )
+        known = client.post(
+            "/projects",
+            json={"name": "probe-known"},  # 正确形态必须**照样成功**（否则禁得太宽）
+            headers={"Idempotency-Key": f"g071-{uuid.uuid4()}"},
+        )
+        assert known.status_code == 201, known.text
+        assert known.json().get("name") == "probe-known", known.json()
 
 
 def test_the_shared_strict_base_is_the_mechanism() -> None:
