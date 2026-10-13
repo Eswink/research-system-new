@@ -2,10 +2,10 @@
 id: PLAN-20261013-449
 slug: goal-070-ec01-05-the-event-stream-declares-the-query-parameters-it-consumes
 title: GOAL-20261013-070 cycle 1（EC-01…EC-05）：事件流声明它消费的查询参数 + 两向反证
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-13
 updated_at: 2026-10-13
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-450-goal-070-ec01-04-the-event-stream-declares-the-query-parameters-it-consumes.md
 memory_entries: []
 parent_goal: GOAL-20261013-070
 cursor_plan_uri: null
@@ -37,7 +37,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/probe-event-stream-params.py`；
       GOAL 的「事实层结论」表逐行与实测对齐。
-    status: PENDING
+    status: PASS
   - id: WP-2
     criterion: >-
       **声明进签名（EC-02）**：`cursor: str | None = Query(default=None)` /
@@ -46,7 +46,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api -q` ⇒ 全绿
       + 新用例（声明面 / 未知点名 / `?poll=0` 与 `?cursor=` 逐字 / 头路径不变 / 缺省不变）。
-    status: PENDING
+    status: PASS
   - id: WP-3
     criterion: >-
       **射程如实 + 无回归（EC-03）**：SSE 帧 / 续传 / 去重**一字不动**（既有 SSE 用例全绿）；
@@ -54,7 +54,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/api tests/contracts tests/tooling -q`
       ⇒ 全绿 + 快照 diff 与声明面一致。
-    status: PENDING
+    status: PASS
   - id: WP-4
     criterion: >-
       **两向反证（EC-04）**：`V-1` 声明被移除 ⇒ RED；`V-2` 缺省被改动 ⇒ RED；
@@ -63,7 +63,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B scratch/goal070_press.py` ⇒ 全 `RED` +
       `sha 复原一致=True` + `BASELINE…: GREEN`。
-    status: PENDING
+    status: PASS
   - id: WP-5
     criterion: >-
       **自举收口（EC-05）**：收口验证器 + 断言集进树（`IN_SCOPE` 纯收紧 + 射程清单）；
@@ -72,7 +72,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal070_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 ---
 
 # PLAN-20261013-449 — GOAL-20261013-070 cycle 1

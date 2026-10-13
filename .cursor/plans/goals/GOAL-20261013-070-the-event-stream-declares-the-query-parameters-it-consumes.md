@@ -8,7 +8,7 @@ title: >-
   **不可见**（读面契约不完整）；② 序 37 的守卫按签名跳过它 ⇒ 打错名字**静默吞掉**
   （**实测**：`?po11=0` 与 `?nonsense=1` 都 200 —— 且前者**静默保持轮询**，与调用方意图**相反**）。
   本轮把这两个参数**声明出来**：契约补全 + 守卫自动接管 + 已知/缺省形态逐字不变
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-13
 updated_at: 2026-10-13
 owners:
@@ -101,7 +101,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal070_closeout.py` ⇒ 全 `PASS`；
       两树 `TWO-TREE PASS`；m0 终局行 `PASS: profile=m0; 23 deterministic checks`。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 6
   per_cycle_minutes: 90
@@ -127,7 +127,7 @@ escalation_triggers:
   - 需要放开默认网络 / 需要真实凭据
 child_plans:
   - .cursor/plans/tasks/PLAN-20261013-449-goal-070-ec01-05-the-event-stream-declares-the-query-parameters-it-consumes.md
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261013-450-goal-070-ec01-04-the-event-stream-declares-the-query-parameters-it-consumes.md
 memory_entries: []
 ---
 
@@ -145,7 +145,7 @@ memory_entries: []
 | EC-02 | 声明 `cursor` / `poll`；守卫自动接管；头路径不变 | `pytest tests/api -q`（647 passed）+ 新 7 例 | **PASS** |
 | EC-03 | 射程如实（SSE 语义不动）+ 序 37 不回归 + 快照同轮（**预期会变**） | 2304 passed；快照 +31/−1（同轮提交） | **PASS** |
 | EC-04 | 两向反证 `V-1`…`V-4` 全红 + 基线门 + `sha256` 复原 | 归档 `.cursor/plans/goals/evidence/GOAL-20261013-070-press-two-way.txt`（`CR=0`） | **PASS** |
-| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器全 `PASS`；两树 `TWO-TREE PASS` | PENDING |
+| EC-05 | 自举收口（验证器 / 两树 / m0 23/23 / 治理 / 台账 / 残余在位） | 验证器 **62 PASS / 0 FAIL**；两树 `TWO-TREE PASS` | **PASS** |
 
 ## 事实层结论（建档勘察；**每条都有复核命令与读数**）
 
@@ -261,3 +261,4 @@ memory_entries: []
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-13 | ACTIVE | **replan + 建档（cycle 0）**：MAINLINE 程序表**新增序 38**（**轴 = 质量**），并写修订记录行（只追加；同轮把序 35 的旧修订行原文搬入新归档）。**实测读数**（逐条见「事实层结论」表）：① 唯一消费原始 `query_params` 却未声明的路由 = `run_events.py`；② OpenAPI 声明面**空**；③ 实跑 `?po11=0` / `?nonsense=1` 都 **200**（静默吞掉）；④ **SSE 模式下打错 `poll` ⇒ 静默保持轮询**（探针需 `timeout` 收口 —— 如实登记）；⑤ 正确形态（`?poll=0` / `?cursor=` / 头路径）照旧。**GOAL 文件 / 子 PLAN / `ALL_PLAN` 投影同轮落地**。五条 EC 全 PENDING。**不**改 SSE 语义 / **不**改写面 / **不**动序 37 的守卫。残余与未覆盖范围**原样保留**；**不得**宣称项目安全（`R-M1`），**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
+| 2026-10-13 | ACHIEVED | **收口（cycle 1）**：五条 EC 全 PASS；验证器 **62 条判词全过**；两树逐行判词 sha256 一致（`TWO-TREE PASS`）；as-is m0 **23/23**（记录写完之后）；治理 `validate.py` 绿 + 宪章判据绿；CI 台账逐提交；`latest_recheck` = `RECHECK-20261013-450`。**关键修复**：`V-2` 首跑假绿（缺省无人钉）⇒ 补 OpenAPI `default=="1"` 断言（同签名 1 次，未超上限）；`V-3` 的 RED 形态 = TIMEOUT（无限流挂死）；判据面两处缺口（raw-read 短语判 + 残余措辞）按**关系**改签。**残余与未覆盖范围原样保留**；**不得**宣称项目安全（`R-M1`）；**不得**宣称投递语义为「恰好一次」（**明确否认**）。 |
