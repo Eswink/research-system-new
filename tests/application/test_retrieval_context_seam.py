@@ -267,6 +267,138 @@ class TestOnlySystemRetrievedSourcesEnter:
         assert view.snapshot.selected_refs == [], view.snapshot.selected_refs
 
 
+#: 另一个 run 的工具结果制品与它的 run 标识（跨 run 隔离用例的「别人」）。
+_OTHER_ARTIFACT = "tool-result:task-other:literature_search:q:literature_search"
+_OTHER_RUN = "run-ctx-0002"
+
+
+def _two_run_store(mine: str, theirs: str) -> FakeArtifactStore:
+    """同一个库里放**两个 run** 的工具结果（隔离用例的夹具；单列以守住函数长度门）。"""
+    store = _store_with_tool_result(mine, {"articles": [{"pmid": "39284801", "title": "mine"}]})
+    content = json.dumps(
+        {"articles": [{"pmid": "99999999", "title": "theirs"}]},
+        ensure_ascii=False,
+        sort_keys=True,
+    ).encode("utf-8")
+    store.put(
+        Artifact(
+            id=theirs,
+            digest=Digest.of_bytes(content),
+            size_bytes=len(content),
+            media_type="application/json",
+            created_by="tool:literature_search",
+        ),
+        content,
+    )
+    store.mark(theirs, ArtifactState.VERIFIED)
+    return store
+
+
+class TestTheRunFilterBites:
+    """**跨 run 的隔离**：别的 run 的检索证据不得进本 run 的上下文。
+
+    为什么单列：**按压实测**（GOAL-078 cycle 2）—— 把 `_retrieved_evidence` 的
+    `run_id` 过滤去掉时，e2e 的射程判据**没有变红**（那个夹具里只有一个 run ⇒
+    「按 run 过滤」这条性质**根本没被覆盖**）。本条把它补上：两个 run 的证据同时在库。
+    """
+
+    def _two_run_ledger_and_store(self) -> tuple[Any, Any]:
+        mine = f"tool-result:{_TASK}:literature_search:q:literature_search"
+        theirs = _OTHER_ARTIFACT
+        store = _two_run_store(mine, theirs)
+        ledger = _ledger_with(
+            artifact_id=mine,
+            trust=TrustLabel.RETRIEVED,
+            source_ref=f"tool:literature_search:{_TASK}",
+        )
+        ledger = _ledger_with(
+            artifact_id=mine,
+            trust=TrustLabel.RETRIEVED,
+            source_ref=f"tool:literature_search:{_TASK}",
+        )
+        ledger.register_source(
+            SourceRecord(
+                origin="tool:literature_search:task-other",
+                content_digest="sha256:" + "0" * 64,
+                trust_label=TrustLabel.RETRIEVED,
+                access_time=Timestamp.now(),
+            )
+        )
+        other_evidence = Evidence(
+            id=f"evidence:{theirs}",
+            source_ref="tool:literature_search:task-other",
+            content_digest="sha256:" + "0" * 64,
+            artifact_id=theirs,
+            run_id=_OTHER_RUN,
+        )
+        ledger.register_evidence(other_evidence)
+        other_claim = Claim(
+            id="claim:task-other:result",
+            statement="other run",
+            status=ClaimStatus.PROPOSED,
+            author="system:test",
+            evidence_relations=[(other_evidence.id, EvidenceRelationType.SUPPORTS)],
+        )
+        ledger.register_claim(other_claim)
+        ledger.attach_relation(
+            EvidenceRelation(
+                claim_id=other_claim.id,
+                evidence_id=other_evidence.id,
+                relation=EvidenceRelationType.SUPPORTS,
+            )
+        )
+        return store, ledger
+
+    def test_another_runs_evidence_does_not_enter(self) -> None:
+        store, ledger = self._two_run_ledger_and_store()
+        view = build_retrieval_context(store, ledger, _RUN)
+        assert view.entries, ("本 run 的证据必须仍然进上下文（否则本用例空转）", view.reason)
+        identifiers = {entry.identifier for entry in view.entries}
+        assert identifiers == {"39284801"}, (
+            "别的 run 的证据不得进本 run 的上下文",
+            identifiers,
+        )
+
+
+class TestAToolResultWithoutTheRetrievedLabelDoesNotEnter:
+    """**性质与命名是两件事**：`tool-result:` 前缀只说明「谁产出的」，不说明「系统取得」。
+
+    为什么单列：**按压实测**（GOAL-078 cycle 2）—— 把性质判据改成恒真时 e2e **没有变红**
+    （那个协议的声明输入不带 `tool-result:` 前缀 ⇒ 被前缀过滤先挡住了）。但**真实现里**
+    「带 `tool-result:` 前缀而性质不是 `RETRIEVED`」是存在的：canonical 读面 provider
+    （`m12_artifact`）的工具结果就是这一形态（它不声明 `network_domains` ⇒ `GENERATED`）。
+    """
+
+    def _view_for(self, trust: TrustLabel) -> RetrievalContextView:
+        """同一条**可读**的工具结果（`ids` 形状），只改**性质**标签。
+
+        为什么用 `ids` 形状：本用例的靶子是**性质分派**，不是「内容形状」——
+        两者混在一个夹具里会让「性质判据坏了」与「形状没认出来」给出同一条红。
+        「形状不认识就不进」另有一条（见 `_records_of` 的覆盖）。
+        """
+        artifact_id = f"tool-result:{_TASK}:tool_bridge:q:artifact_read"
+        store = _store_with_tool_result(artifact_id, {"ids": ["artifact:some-id"]})
+        ledger = _ledger_with(
+            artifact_id=artifact_id, trust=trust, source_ref=f"tool:tool_bridge:{_TASK}"
+        )
+        return build_retrieval_context(store, ledger, _RUN)
+
+    def test_a_generated_tool_result_does_not_enter(self) -> None:
+        view = self._view_for(TrustLabel.GENERATED)
+        assert view.snapshot.selected_refs == [], (
+            "本地计算/读取（`GENERATED`）不得冒充「系统取得」——即使它的制品前缀是 `tool-result:`",
+            view.snapshot.selected_refs,
+        )
+        assert view.reason and "no retrieved evidence" in view.reason, view.reason
+
+    def test_a_retrieved_tool_result_still_enters(self) -> None:
+        """正向对照：同一条路径、只把性质换成 `RETRIEVED` ⇒ 进上下文（否则上一条可能空转）。"""
+        view = self._view_for(TrustLabel.RETRIEVED)
+        assert view.snapshot.selected_refs == [
+            f"tool-result:{_TASK}:tool_bridge:q:artifact_read"
+        ], (view.snapshot.selected_refs, view.reason)
+
+
 def test_the_seam_is_zero_egress_by_construction() -> None:
     """**零出网的构造性证据**：本模块的源码里没有任何网络/HTTP 记号。
 

@@ -41,7 +41,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_retrieval_context_seam.py -q`
       ⇒ 全绿；判据覆盖：**逐条 ref 在场**、digest 由内容**重算**、
       `token_allocation` 有界且**不超声明上限**、空集合点名。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **经产品路径进入会话**：带运行链检索的协议在**产品装配**下跑一次，
@@ -52,7 +52,7 @@ exit_criteria:
       `SUCCEEDED`；对下游 phase 的会话 spec 断言 `selected_refs` 非空、
       逐条可在 `GET /runs/{id}/evidence` 找到（性质 `RETRIEVED`）、
       且**上游没有检索时该集合为空并点名**（反证臂）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **「进了什么」可复核**：上下文装配的结果在**既有读面**上可读——
@@ -85,6 +85,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
+    status: PENDING
 
 budget:
   max_cycles: 12
@@ -127,9 +128,12 @@ escalation_triggers:
     接缝需要**把检索正文无损注入**才能成立（与 §10 的有界口径冲突）—— 立即 BLOCKED，
     留人工拍板（**不得**自行放宽隐私边界）
 
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261014-469-goal-078-ec01-retrieval-content-reaches-the-session-context.md
+  - .cursor/plans/tasks/PLAN-20261014-471-goal-078-ec02-retrieval-context-reaches-a-downstream-session.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-472-goal-078-ec02-retrieval-context-reaches-a-downstream-session.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20261014-221-declared-but-never-constructed-is-a-dead-seam.md
 ---
 
 ## 目标与退出标准
@@ -209,6 +213,16 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（接缝在树且判定成对） |
 | 1 | PLAN-20261014-469 | 见「CI 台账」 | 接缝判据 **13 passed**；既有四套件 **2752 passed, 8 skipped**（+13）；`mypy` 1232 源文件零问题；产品装配实测 `retrieval_context is not None`；**m0 终态行 `PASS: profile=m0; 23 deterministic checks`** | 见「CI 台账」 | 4 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（经产品路径进入会话 + 反证臂） |
+| 2 | PLAN-20261014-471 | 见「CI 台账」 | 新 e2e **5 passed**（正向 / 反证 / 射程 / 自检）；接缝判据 **16 passed**（+3）；三向按压全红且逐字节复原；受影响套件 **997 passed, 1 skipped** | 见「CI 台账」 | 2 次（见「cycle 2 的修复记录」） | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（读面可复核「进了什么」） |
+
+### cycle 2 的修复记录（逐条如实）
+
+1. **夹具缺装配**（实测抓到·真缺口）：run-ready 夹具不经产品组合根，因此**不带**`retrieval_context`（与 `capabilities` / `experiment_task` / `report_task` 三条缝同一形态）⇒ 首跑 4 例失败、失败形态正是「下游上下文为 `None`」。判据侧以装配方身份补一行（用**产品件本身** `retrieval_context_builder`，不复制实现）。
+2. **两条按压臂首轮没咬住**（实测抓到·**判据覆盖缺口**，不是按压问题）：
+   `V8-2`（去掉 run 过滤）与 `V8-3`（性质判据恒真）在 e2e 上**都不变红** ——
+   该夹具只有一个 run，「按 run 过滤」这条性质**无处可测**；而协议的声明输入不带`tool-result:` 前缀 ⇒ 被前缀过滤先挡住。**处置 = 补判据不调按压**：新增`TestTheRunFilterBites`（两 run 的证据同时在库）与`TestAToolResultWithoutTheRetrievedLabelDoesNotEnter`（带前缀但性质为 `GENERATED` 的工具结果 —— 这正是 canonical 读面 provider 的真实形态）⇒ 两条臂**全红**。
+3. **正对照一度失败**（实测）：`GENERATED` 那一条的「正向对照」用了只有 `content` 键的载荷 ⇒ 装配器认不出记录形状 ⇒ 空集。改用 `ids` 形状（本用例的靶子是**性质分派**，不是形状识别 —— 两者混在一个夹具里会让两种缺陷给出同一条红）。
+
 
 ### cycle 1 的修复记录（逐条如实；本地 m0 抓到的四处，**push 前**）
 

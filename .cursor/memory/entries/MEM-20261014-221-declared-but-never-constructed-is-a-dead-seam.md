@@ -67,6 +67,15 @@ print(d.runs._deps.retrieval_context is not None)"     # ⇒ True
   判据断言上界，**不得**读成精确 token 预算。
 - **两种空分得开**：「没有检索证据」与「有证据但内容读不出来」必须是两句判词 ——
   否则「读不到」会被读成「没有」（本 GOAL 要消灭的正是这种含混）。
+- **按压不咬时先怀疑射程，不是先怀疑按压**（GOAL-078 cycle 2 实测）：两条臂首轮没咬住
+  ——「去掉 run 过滤」在**只有一个 run** 的夹具里**无处可测**；「性质判据恒真」被
+  `tool-result:` **前缀过滤先挡住**（协议的声明输入不带该前缀）。补判据时要选
+  **真实存在的形态**（canonical 读面 provider 的 `tool-result:` + `GENERATED` 就是真实形态），
+  不要造边角情形去凑红。⇒ 现在 16 例里有 `TestTheRunFilterBites`（同库两个 run）与
+  `TestAToolResultWithoutTheRetrievedLabelDoesNotEnter`。
+- **夹具缺装配会以「值为 None」暴露**：run-ready 夹具不经产品组合根 ⇒ 不带
+  `retrieval_context`（与 `capabilities`/`experiment_task`/`report_task` 同一形态）。
+  判据侧补装配要用**产品件本身**（`services/api/retrieval_context_support`），不复制实现。
 - 本记忆**不**作任何安全结论（`R-M1` 未收口）。
 
 ## 来源

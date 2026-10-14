@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261014-471](tasks/PLAN-20261014-471-goal-078-ec02-retrieval-context-reaches-a-downstream-session.md) | DONE |
 | [x] | [PLAN-20261014-469](tasks/PLAN-20261014-469-goal-078-ec01-retrieval-content-reaches-the-session-context.md) | DONE |
 | [x] | [PLAN-20261014-466](tasks/PLAN-20261014-466-goal-077-ec02-03-report-on-the-product-path.md) | DONE |
 | [ ] | [PLAN-20261014-464](tasks/PLAN-20261014-464-goal-077-research-report-assembler-and-arc.md) | IN_PROGRESS |
