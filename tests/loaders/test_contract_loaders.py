@@ -130,8 +130,8 @@ def test_load_llm_endpoints_from_fixture() -> None:
     assert endpoint.request_timeout_seconds == 120
     assert endpoint.discovery is not None
     assert endpoint.discovery.enabled is True
-    # M13 agnes migration: allow_models now single agnes entry
-    assert endpoint.discovery.allow_models == ("agnes-2.5-flash",)
+    # intern-ai migration: allow_models now single deepseek entry
+    assert endpoint.discovery.allow_models == ("deepseek-v4-flash-vision",)
     assert endpoint.circuit_breaker is not None
     assert endpoint.circuit_breaker.failure_threshold == 5
 
@@ -140,7 +140,7 @@ def test_load_models_from_fixture() -> None:
     models = load_models("examples/config/models.yaml")
     model = models["research_alpha"]
     assert model.endpoint_id == "main"
-    assert model.model_name == "agnes-2.5-flash"
+    assert model.model_name == "deepseek-v4-flash-vision"
     assert ModelCapability.TOOL_CALLING_NATIVE in model.capabilities
 
 
@@ -148,7 +148,8 @@ def test_load_models_carries_declared_parameters() -> None:
     """声明参数经契约读到域实体（EC-02）：有值可判、未声明者保持 None。"""
     models = load_models("examples/config/models.yaml")
     declared = models["agnes_flash"]
-    assert declared.context_window_tokens == 512000
+    # 读数来源：`GET /v1/models` 的 `max_context_length`（2026-10-14 实查 = 1048576）
+    assert declared.context_window_tokens == 1048576
     assert declared.thinking_intensity is ThinkingIntensity.MAX
     # 未声明的模型不得被"补默认值"
     undeclared = models["research_alpha"]

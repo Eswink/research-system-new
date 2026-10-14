@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261014-218](entries/MEM-20261014-218-relay-switch-is-a-config-round-trip-and-the-returned-name-differs.md) | ACTIVE | repository | 0.95 | 2027-04-14 | PLAN-20261014-462 |
 | [MEM-20261012-217](entries/MEM-20261012-217-archiving-is-a-move-not-a-deletion-and-it-needs-a-judge.md) | ACTIVE | repository | 0.9 | 2027-04-12 | PLAN-20261012-425 |
 | [MEM-20261010-216](entries/MEM-20261010-216-declared-verify-cases-must-actually-exist.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-387 |
 | [MEM-20261010-215](entries/MEM-20261010-215-extraction-must-not-re-point-existing-criteria.md) | ACTIVE | repository | 0.95 | 2027-04-10 | PLAN-20261010-383 |

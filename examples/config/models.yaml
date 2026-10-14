@@ -1,10 +1,11 @@
 models:
   agnes_flash:
     endpoint: main
-    display_name: Agnes Flash
-    model_name: agnes-2.5-flash
+    display_name: DeepSeek V4 Flash Vision
+    model_name: deepseek-v4-flash-vision
     # 声明值（由登记方声明、非探测）：本版本不发送给 provider，也不参与 eligibility 判定
-    context_window_tokens: 512000
+    # 读数来源：`GET /v1/models` 的 `max_context_length`（2026-10-14 实查 = 1048576）。
+    context_window_tokens: 1048576
     thinking_intensity: MAX
     capabilities:
       CHAT: &user_declared_supported
@@ -21,7 +22,7 @@ models:
   research_alpha:
     endpoint: main
     display_name: Research Alpha
-    model_name: agnes-2.5-flash
+    model_name: deepseek-v4-flash-vision
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -32,7 +33,7 @@ models:
   coding_beta:
     endpoint: main
     display_name: Coding Beta
-    model_name: agnes-2.5-flash
+    model_name: deepseek-v4-flash-vision
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -42,7 +43,7 @@ models:
   reviewer_gamma:
     endpoint: main
     display_name: Reviewer Gamma
-    model_name: agnes-2.5-flash
+    model_name: deepseek-v4-flash-vision
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
