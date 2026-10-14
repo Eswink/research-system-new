@@ -199,9 +199,25 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（接缝在树且判定成对） |
+| 1 | PLAN-20261014-469 | 见「CI 台账」 | 接缝判据 **13 passed**；既有四套件 **2752 passed, 8 skipped**（+13）；`mypy` 1232 源文件零问题；产品装配实测 `retrieval_context is not None`；**m0 终态行 `PASS: profile=m0; 23 deterministic checks`** | 见「CI 台账」 | 4 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（经产品路径进入会话 + 反证臂） |
+
+### cycle 1 的修复记录（逐条如实；本地 m0 抓到的四处，**push 前**）
+
+1. **`mypy` 真红**：判据里的 `imported = set()` 缺类型注解（`var-annotated`）⇒ 加 `set[str]`。
+2. **`phase_runner.py` 464 行 > 450**：新增的检索上下文用点让本文件越界 ⇒ 把实现移到
+   `retrieval_context.with_retrieval_context`（本模块只留一行调用），并把冗余字段注释按
+   「细节留在定义处」收敛；`_run_group_task` 也一度 54 行 ⇒ 抽出 `_task_correlation`。
+3. **`pg_composition._build_pg_orchestration` 54 行 > 50**：runtime 装配抽出成 `_pg_runtime`
+   （**纯搬运**，与 SQLite 根只差 Port 实例）。
+4. **连带发现（判据**误判**，已改正）**：`test_production_session_tool_registration` 判的是
+   「注册面是否交给 `build_agent_runtime`」，但实现写成了「关键字必须写在该函数体里」⇒
+   把**提取**误判成缺口。改判**一跳可达**（判据**更强**：拆出去却没人调 ⇒ 判红）——
+   实测按压：把调用改名 ⇒ 该判据红、逐字节复原一致。
+
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-14 | **ACTIVE** | **建档**：承 GOAL-077 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「检索」域 **L1 → L2**（`下一级是什么` 逐字：活检索的结果进模型上下文）。**建档实测**：`ContextSnapshot`（含 `selected_refs` / `retrieval_digest` 槽位）在域层已声明，但**全仓零构造点**（`rg "ContextSnapshot("` 只有定义处与 Port 注解）⇒ 会话上下文里没有任何检索内容；`rg` 在 `packages/`·`services/` 下对 `context_snapshot=` **零命中** ⇒ 该槽位在运行路径上**从未被填充**。这两条读数就是本 GOAL 的靶子。 |
+| 2026-10-14 | ACTIVE | **cycle 1 落地**（EC-01，PLAN-469）：`ContextSnapshot` 这个**早就声明、全仓零构造点**的槽位有了**唯一**生产者（`retrieval_context.py`，只读 canonical、零出网、摘录有界、空集合点名），经**两个组合根**接进产品路径（各一行装配 + 一处装配决策模块）并填入 `AgentSessionSpec.context_snapshot`。判据 13 例（含**构造性**的零出网证据 + 两种空分得开）；既有四套件 2752 passed。**EC-01 → PASS**（RECHECK-470 = PASS）；EC-02/03/04/05 PENDING。 |

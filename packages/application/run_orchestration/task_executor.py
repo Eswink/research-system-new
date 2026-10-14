@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import timedelta
-from typing import Any
+from typing import Any, cast
 
 from packages.application.experiments.evidence_admission import ExperimentEvidenceResult
 from packages.application.experiments.types import ExperimentExecutionOutcome
@@ -36,6 +36,7 @@ from packages.application.ports.workflow_engine import (
 )
 from packages.application.run_orchestration.usage_recording import record_attempt_usage
 from packages.domain.enums import FailureCategory
+from packages.domain.memory import ContextSnapshot
 from packages.domain.models import LLMEndpoint, ModelDefinition
 from packages.domain.roles import AgentSpec, RoleDefinition
 from packages.domain.run import ResearchRun
@@ -121,6 +122,12 @@ class SessionSpecContext:
     #: （`RunContext.run`）随 spec 交下去：与 `run_id_argument` 同层 —— 取值的来源是执行期
     #: 才有的对象，不是装配方能写死的量。缺省 `None` ⇒ 该装配不提供（既有语义逐字节不变）。
     run: "ResearchRun | None" = None
+    #: GOAL-20261014-078 EC-01：**检索内容进会话上下文**的装配结果
+    #: （`retrieval_context.build_retrieval_context` 的产物）。它随 spec 走到会话创建点，
+    #: 在那里落进 `AgentSessionSpec.context_snapshot` —— 这是阶梯「检索」域 L1 → L2 的
+    #: 机械含义：上游取回的文献**内容**进入模型上下文，而不只是落证据链与报告。
+    #: 缺省 `None` ⇒ 本 phase 不带检索上下文（既有语义逐字节不变）。
+    retrieval_context: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -359,12 +366,28 @@ def _run_session(
         run_chain_tool_ids=spec_context.run_chain_tool_ids,
         session_tool_bindings=spec_context.session_tool_bindings,
         manifest_ref=spec_context.frozen_manifest_digest,
+        # GOAL-20261014-078 EC-01：检索内容进会话上下文（缺省 None ⇒ 逐字节不变）。
+        context_snapshot=_context_snapshot(spec_context),
         endpoint=spec_context.endpoint,
         model=spec_context.model,
     )
     handle = runtime.create_session(spec)
     _assert_frozen_manifest(spec, spec_context)
     return runtime.run(handle.session_id)
+
+
+def _context_snapshot(spec_context: SessionSpecContext) -> ContextSnapshot | None:
+    """会话上下文快照（GOAL-20261014-078 EC-01）。
+
+    `retrieval_context` 是 `retrieval_context.RetrievalContextView`（装配结果：快照 +
+    逐条读数 + 空集合的理由）；**缺省 `None` ⇒ 返回 `None`**（不带上下文 —— 与这个槽位
+    出现之前**逐字节相同**）。本处只**取值**、不构造：构造发生在编排层的装配点
+    （那里才有 ledger / artifacts 与 run 标识）。
+    """
+    view = spec_context.retrieval_context
+    if view is None:
+        return None
+    return cast(ContextSnapshot | None, view.snapshot)
 
 
 def _assert_frozen_manifest(spec: AgentSessionSpec, context: SessionSpecContext) -> None:

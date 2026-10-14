@@ -76,6 +76,9 @@ def runner_deps(  # noqa: PLR0913 - 装配面：Port 聚合 + 现场面（齐了
         # GOAL-20261014-077 EC-02：报告汇编的执行缝（缺省 None ⇒ 声明了 `report` 的
         # 任务点名拒绝；既有装配语义逐字节不变）。
         report_task=deps.report_task,
+        # GOAL-20261014-078 EC-01：检索内容 → 会话上下文的装配器（缺省 None ⇒
+        # 会话不带检索上下文；既有装配语义逐字节不变）。
+        retrieval_context=deps.retrieval_context,
         output_schema_validator=deps.output_schema_validator,
         human_gated=pending_human_gates(deps.approvals, context.plan, run_id),
         on_pause=paused.append,

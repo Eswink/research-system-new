@@ -22,6 +22,7 @@ from packages.application.run_orchestration.service import (
 from services.api.assembly import _endpoint_url_policy, _load_pricing, policy_bindings
 from services.api.composition import ApiDeps
 from services.api.demo import seed_declared_inputs
+from services.api.retrieval_context_support import retrieval_context_builder
 from services.api.runtime_support import build_agent_runtime, resolve_runtime_selection
 
 
@@ -203,6 +204,34 @@ from packages.application.run_orchestration.declared_consumption import (  # noq
 from services.api.session_tool_support import session_tool_face  # noqa: E402
 
 
+def _pg_runtime(c: dict[str, Any], config: PgAssemblyConfig, inputs: _PgRuntimeInputs) -> Any:
+    """PG 根的 runtime 装配（单列以守住 50 行函数门；语义逐字取自原 `_build_pg_orchestration`）。
+
+    与 SQLite 根**只差 Port 实例**（同一份装配决策：选择面 + 会话工具注册面）。
+    """
+    return build_agent_runtime(
+        config.effective,
+        selection=inputs.selection,
+        credentials=inputs.credentials,
+        policy_evaluator=inputs.policy_bindings["policy_evaluator"],
+        budget_ledger=c["budget"],
+        register_session_tools=session_tool_face(
+            c["artifacts"],
+            c["ledger"],
+            inputs.policy_bindings.get("policy_evaluator"),
+            c["budget"],
+            c["experiment_store"],
+            c["runs_store"],
+            # GOAL-20261008-036 EC-02：`review.read` 的来源（与 ApiDeps 同一实例）。
+            c["review_findings"],
+            # GOAL-20261008-037 EC-03：`research_state.read` 的程序面来源。
+            c["program_store"],
+            # GOAL-20261009-042 EC-02：`memory.read` 的来源（与 ApiDeps 同一实例）。
+            c["memory"],
+        ),
+    )
+
+
 def _build_pg_orchestration(
     c: dict[str, Any], config: PgAssemblyConfig, inputs: _PgRuntimeInputs
 ) -> RunOrchestrationService:
@@ -218,27 +247,7 @@ def _build_pg_orchestration(
     """
     return RunOrchestrationService(
         OrchestrationDependencies(
-            runtime=build_agent_runtime(
-                config.effective,
-                selection=inputs.selection,
-                credentials=inputs.credentials,
-                policy_evaluator=inputs.policy_bindings["policy_evaluator"],
-                budget_ledger=c["budget"],
-                register_session_tools=session_tool_face(
-                    c["artifacts"],
-                    c["ledger"],
-                    inputs.policy_bindings.get("policy_evaluator"),
-                    c["budget"],
-                    c["experiment_store"],
-                    c["runs_store"],
-                    # GOAL-20261008-036 EC-02：`review.read` 的来源（与 ApiDeps 同一实例）。
-                    c["review_findings"],
-                    # GOAL-20261008-037 EC-03：`research_state.read` 的程序面来源。
-                    c["program_store"],
-                    # GOAL-20261009-042 EC-02：`memory.read` 的来源（与 ApiDeps 同一实例）。
-                    c["memory"],
-                ),
-            ),
+            runtime=_pg_runtime(c, config, inputs),
             workflow=c["workflow"],
             artifacts=c["artifacts"],
             events=c["events"],
@@ -247,6 +256,10 @@ def _build_pg_orchestration(
             review_findings=c["review_findings"],
             # GOAL-20261008-038 EC-04：前序结论读取器（与 SQLite 根同侧，同一实现）。
             prior_conclusion=prior_conclusion_reader(c["runs_store"], c["review_findings"]),
+            # GOAL-20261014-078 EC-01：检索内容 → 会话上下文（与 SQLite 根同侧）。
+            retrieval_context=retrieval_context_builder(
+                artifacts=c["artifacts"], ledger=c["ledger"]
+            ),
             telemetry=config.telemetry,
             pricing=_load_pricing(),
             pricing_store=c["pricing_store"],

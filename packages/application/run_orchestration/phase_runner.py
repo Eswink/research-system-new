@@ -33,6 +33,7 @@ from packages.application.run_orchestration.phase_pause import (
     pause_if_requested,
 )
 from packages.application.run_orchestration.report_task import register_and_gate_report
+from packages.application.run_orchestration.retrieval_context import with_retrieval_context
 from packages.application.run_orchestration.round_loop_runner import execute_rounds
 from packages.application.run_orchestration.run_completion_payload import (
     run_completion_payload,
@@ -67,8 +68,7 @@ class PhaseRunnerDeps:
     artifacts: ArtifactStore
     budget: BudgetLedger | None = None
     ledger: EvidenceLedger | None = None
-    # GOAL-20261008-035 EC-01：验收门求值结论的落库面（ReviewFindingStore）。
-    # None（缺省）= 该装配不记结论（读面读不到）；生产组合根总是接上。
+    # GOAL-20261008-035 EC-01：验收门求值结论的落库面（None ⇒ 读面读不到；生产根总是接上）。
     review_findings: Any | None = None
     # GOAL-20261008-038 EC-04：跨轮消费的前序结论读取器（`(run_id) -> (结论, run_id)`）。
     prior_conclusion: Any | None = None
@@ -81,6 +81,9 @@ class PhaseRunnerDeps:
     report_task: (
         Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult] | None
     ) = None
+    #: GOAL-20261014-078 EC-01：检索内容 → 会话上下文的装配器（每任务求值；
+    #: 理由与实现见 `retrieval_context.py`）。None ⇒ 不带检索上下文（逐字节不变）。
+    retrieval_context: Callable[[str], Any] | None = None
     output_schema_validator: Any | None = None
     memory_gate: MemoryGateDeps | None = None
     publish: Callable[[EventType, dict[str, object], str, str, str | None], None] | None = None
@@ -96,15 +99,12 @@ class PhaseRunnerDeps:
     approvals: Any | None = None
     human_gated: frozenset[str] = frozenset()
     on_pause: Callable[[tuple[SessionSpec, ...]], None] | None = None
-    # PLAN-048：协作式暂停信号（读 canonical run state）。为真时在组边界停止，
-    # 不执行该组任何任务；剩余 specs 经 on_pause 交回 service 暂存供 resume 续跑。
+    # PLAN-048：协作式暂停信号（读 canonical run state）；剩余 specs 经 on_pause 暂存。
     pause_requested: Callable[[], bool] | None = None
-    # GOAL-010 EC-04：会话期的运行时观测交回方（service 收集，run 终止时落 canonical）。
-    # 只在**真的有观测**时被调用——没有观测不是一次空调用，而是不发这条事实。
+    # GOAL-010 EC-04：会话期观测交回方（只在**真有观测**时调用——不发空事实）。
     on_observation: Callable[[RunSessionObservation], None] | None = None
     # GOAL-20261008-034 EC-01：**多轮循环**的驱动面（service 注入；None ⇒ 单遍语义
-    # 逐字节不变）。它提供两个能力：`next_round()`（还有没有下一轮）与
-    # `resolve(round_index)`（**懒展开**：该轮的 specs），以及 `record(...)` 记一轮事实。
+    # 逐字节不变）：`next_round()` / `resolve(round_index)`（懒展开，该轮的 specs）/ `record(...)`。
     round_driver: Any | None = None
     #: 单遍执行的**原始** specs 解析器（无循环时用它；有循环时由驱动按轮调用）。
     resolve_round: Callable[[int], tuple["SessionSpec", ...]] | None = None
@@ -183,9 +183,9 @@ class TaskContext:
 def execute_phases(deps: PhaseRunnerDeps, ctx: PhaseContext) -> RunOutcome:
     """按 phase DAG 拓扑序执行任务；human gate 前注册审批并进入 WAITING。
 
-    **多轮循环**（GOAL-20261008-034 EC-01）：注入了 `round_driver` 时按轮重复执行
-    （见 `round_loop_runner.execute_rounds` —— 那段循环控制**不在本模块**，本模块
-    只暴露单遍执行这一具备复用价值的原语）。**无注入路径逐字节不变**。
+    **多轮循环**：注入 `round_driver` 时按轮重复执行（循环控制在
+    `round_loop_runner.execute_rounds`，本模块只暴露**单遍执行**这一原语）；
+    无注入路径逐字节不变。
     """
     if deps.round_driver is not None and deps.resolve_round is not None:
         outcome: RunOutcome = execute_rounds(deps, ctx)
@@ -308,9 +308,21 @@ class _GroupFrame:
 def _dispatch_task_execution(deps: PhaseRunnerDeps, tctx: TaskContext) -> TaskExecutionResult:
     """「谁执行这件工作」的派发（实现见 `task_dispatch.py`；本行只委派）。
 
-    单列的理由与 GOAL-011 EC-03 拆 `experiment_task` 同源：本模块卡在 450 行上限上。
+    单列的理由与 GOAL-011 EC-03 拆 `experiment_task` 同源：本模块卡在 **450 行硬上限**上 ——
+    GOAL-20261014-078 的检索上下文接缝同样因此**不在这里写实现**（见
+    `retrieval_context.with_retrieval_context`）。
     """
     return dispatch_task_execution(deps, tctx)
+
+
+def _task_correlation(ctx: PhaseContext, task: ResearchTask, phase_id: str) -> CorrelationRef:
+    """本任务的观测 correlation（单列以守住函数长度门）。"""
+    return CorrelationRef(
+        run_id=ctx.run_id,
+        task_id=task.id.value,
+        phase_run_id=phase_id if phase_id else None,
+        trace_id=ctx.trace_id or None,
+    )
 
 
 def _run_group_task(
@@ -325,17 +337,14 @@ def _run_group_task(
     """
     deps, ctx, phase_id = frame.deps, frame.ctx, frame.phase_id
     task, contract, spec_context = group[position]
-    task_correlation = CorrelationRef(
-        run_id=ctx.run_id,
-        task_id=task.id.value,
-        phase_run_id=phase_id if phase_id else None,
-        trace_id=ctx.trace_id or None,
-    )
+    # GOAL-20261014-078 EC-01：此刻已取回的检索内容 → 本任务的会话上下文（求值点说明
+    # 见 `retrieval_context.with_retrieval_context`）。
+    spec_context = with_retrieval_context(deps, task, spec_context)
     with operation(
         deps.telemetry,
         scope=OperationScope.TASK,
         name="task",
-        correlation=task_correlation,
+        correlation=_task_correlation(ctx, task, phase_id),
     ):
         step = _execute_one_task(
             deps,

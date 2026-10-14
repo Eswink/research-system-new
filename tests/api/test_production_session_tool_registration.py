@@ -45,14 +45,35 @@ _RUNTIME_SUPPORT = "services/api/runtime_support.py"
 
 
 def _defines_call_to(path: str, function_name: str, keyword: str) -> bool:
-    """`path` 里名为 `function_name` 的函数体内是否有以 `keyword=` 传的调用（AST 判定）。"""
+    """`function_name` **可达**的地方是否有以 `keyword=` 传的调用（AST 判定，**一跳**）。
+
+    判据的**意图**是「该组合根把注册面交给了 `build_agent_runtime`」，而不是「关键字必须
+    写在这个函数体里」—— 后者会把**提取**（把装配拆成小函数守 50 行门）误判成缺口。
+    一跳可达判定因此**更强**：它同时要求那个被提取的函数**真的被调用**
+    （拆出去却没人调 ⇒ 判红，这正是本判据要抓的形态）。
+    """
     source = (_ROOT / path).read_text(encoding="utf-8")
-    for node in ast.walk(ast.parse(source, filename=path)):
-        if not isinstance(node, ast.FunctionDef) or node.name != function_name:
-            continue
-        for inner in ast.walk(node):
-            if isinstance(inner, ast.Call) and any(item.arg == keyword for item in inner.keywords):
-                return True
+    functions = {
+        node.name: node
+        for node in ast.walk(ast.parse(source, filename=path))
+        if isinstance(node, ast.FunctionDef)
+    }
+    roots = [node for name, node in functions.items() if name == function_name]
+    for root in roots:
+        called = {
+            inner.func.id
+            for inner in ast.walk(root)
+            if isinstance(inner, ast.Call) and isinstance(inner.func, ast.Name)
+        }
+        for name in {function_name, *called}:
+            target = functions.get(name)
+            if target is None:
+                continue
+            for inner in ast.walk(target):
+                if isinstance(inner, ast.Call) and any(
+                    item.arg == keyword for item in inner.keywords
+                ):
+                    return True
     return False
 
 

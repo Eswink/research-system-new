@@ -81,6 +81,7 @@ from services.api.assembly import (
 from services.api.config_store_parts import config_store_parts
 from services.api.demo import _default_events, seed_declared_inputs
 from services.api.idempotency import IdempotencyStore
+from services.api.retrieval_context_support import retrieval_context_builder
 from services.api.runtime_support import (
     RuntimeSelection,
     build_agent_runtime,
@@ -323,6 +324,10 @@ def _sqlite_orchestration(
             review_findings=ports.review_findings,
             # GOAL-20261008-038 EC-04：前序 run 结论读取器（声明了跨轮消费判据的合约用它）。
             prior_conclusion=prior_conclusion_reader(ports.runs_store, ports.review_findings),
+            # GOAL-20261014-078 EC-01：检索内容 → 会话上下文（只读 canonical、零出网）。
+            retrieval_context=retrieval_context_builder(
+                artifacts=ports.artifacts, ledger=ports.ledger
+            ),
             telemetry=telemetry,
             pricing=ports.pricing,
             pricing_store=ports.pricing_store,
