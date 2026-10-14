@@ -2,7 +2,7 @@
 id: GOAL-20261014-077
 slug: research-report-and-the-end-to-end-research-arc
 title: 端到端研究 + 人类可读研究报告（报告域 L0 → L1）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-14
 updated_at: 2026-10-14
 owners:
@@ -91,7 +91,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 20
   per_cycle_minutes: 120
@@ -257,15 +257,18 @@ memory_entries:
 | 2026-10-14 | ACTIVE | **cycle 1 落地**（PLAN-466）：报告经**产品路径**产出（`report: {}` 声明 ⇒ 编排派发 ⇒ 汇编器读持久事实 ⇒ `{run_id}:research_report.md` 落 canonical，内联 `text/markdown`）；新协议 `research_report_chain_v1`（4 phase）跑通；立题格的两维覆盖判据在同一次实跑上判过（`3 >= 1 sources; 2 >= 1 retrieved`）。**EC-02 / EC-03 → PASS**（RECHECK-467 = PASS）。两条反证各自点名。**EC-04 / EC-05 仍 PENDING**（cycle 2 / cycle 3）。 |
 | 2026-10-14 | ACTIVE | **cycle 2 落地**（EC-04）：**新站**（`discovery-api.intern-ai.org.cn` / `deepseek-v4-flash-vision`）上的**一次真实 run**（run `02c0adf5-b59c-4726-ac12-73f8d7ef4cc4`）跑完整 4 phase 链到 **`SUCCEEDED`**，报告落盘
 `scratch/goal077-ec04-02c0adf5-b59c-4726-ac12-73f8d7ef4cc4.md`：含**活检索**取得的真标识（`42781891` / `10.12688/f1000research.180013.2` / `10.31234/osf.io/w7xpq_v2`）与真标题、**真容器**的 8 条实测指标、**真实评审**的逐字判词。**EC-04 → PASS**（RECHECK-468 = PASS）。装配侧补两处执行体（provider 实例 / 文献会话工具实现表），**不注入判词**，两处都有实测的失败形态。**EC-05 仍 PENDING**（cycle 3）。 |
+| 2026-10-14 | **ACHIEVED** | **cycle 3 收口**（EC-05）：收口复检本树 **70 条判词全 PASS**；**两树复检 `TWO-TREE PASS`**（两树各 70 条、逐行相同、`sha256` 一致）；四向按压全红且逐字节复原；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；治理通过；凭据审计四面 `offenders=0`；**CI 台账逐提交**（tip `a99d8123` M0 八 job 全 success + CodeQL 三条 success；`c0f793ad` 的**真红**与其三处修复、`912d0667` 的**零 run** 与 `covered_by` 均如实登记）。**五 EC 全 PASS** ⇒ 阶梯「报告」域 **L0.5 → L1**。 |
 
 ## CI 台账
 
 （逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
 
-| 推送 | 提交 | run | 八 job 结论 |
+| 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
-| cycle 1（报告经产品路径 + 协议 + 判据） | `d3a1d754` | [M0 Quality Gates 38583663672](https://github.com/Eswink/research-system-new/actions/runs/38583663672) / [Push on main 38583663565](https://github.com/Eswink/research-system-new/actions/runs/38583663565) | **M0 八 job 全 `success`**（container-quality / collector-quality / eval-gate / quality-ubuntu / quality-windows / console-frontend / observability-overhead × 2）+ Push-on-main 三条 CodeQL（python / actions / javascript-typescript）全 `success`；两 run 均 `run_attempt=1`，**零 cancelled、零重跑** |
-| cycle 2（EC-04 live 判据） | `c0f793ad` | 见下方「cycle 2 台账」 | 见下方「cycle 2 台账」 |
+| cycle 1（报告经产品路径 + 协议 + 判据） | `d3a1d754` | [M0 38583663672](https://github.com/Eswink/research-system-new/actions/runs/38583663672) / [Push 38583663565](https://github.com/Eswink/research-system-new/actions/runs/38583663565) | **M0 八 job 全 `success`**（container-quality / collector-quality / eval-gate / quality-ubuntu / quality-windows / console-frontend / observability-overhead × 2）+ Push-on-main 三条 CodeQL（python / actions / javascript-typescript）全 `success`；两 run 均 `run_attempt=1`，**零 cancelled、零重跑** |
+| cycle 2（EC-04 live 判据） | `c0f793ad` | [M0 38586633161](https://github.com/Eswink/research-system-new/actions/runs/38586633161) / [Push 38586633747](https://github.com/Eswink/research-system-new/actions/runs/38586633747) | 🔴 **`M0` 真红**：`quality-ubuntu-latest` = `failure`、`quality-windows-latest` = `failure`（其余六 job success；Push 三条 CodeQL 全 success）。**分类 = 产品测试失败 / typecheck，三处都在判据文件自身**（与产品代码无关）：① `python/typecheck` —— live 判据里 `deps.artifacts` / `deps.runs` 是可选类型而未收窄；② `test_live_switch_is_single_source` 的两条**显式清单**未登记新 live 模块；③ `_live_deps` 58 行超 50 行函数门。**处置** = 同轮修复（提交 `912d0667`），逐条判词见 `RECHECK-468` 的 `W-7` |
+| cycle 2 修复（判据自身三处） | `912d0667` | **无 CI run（如实登记）** | 该提交**没有** CI run：它在 `c0f793ad` 的 run 仍在飞时被推送，随后 `a99d8123` 又在**约 2 分钟内**推送 ⇒ `head_sha` 查询实测 `total_count=0`（快速连续推送下这一条从未成为 tip）。**`covered_by = a99d8123`**：该提交的全部改动都**包含在** tip 里（tip = 它 + 仅两个判词归档文件）⇒ 由 tip 的 run 覆盖。**不是**跳过取证：这是 `MEM: m0-ci-concurrency-batch-push` 记录的同一形态（一个 cycle 攒成一次推送）；本轮**没攒**，因此把这条如实登记为**零 run** 而不是记绿 |
+| cycle 3（EC-05 收口资产 + 两树判词归档） | `a99d8123`（**tip**） | [M0 38594072553](https://github.com/Eswink/research-system-new/actions/runs/38594072553) / [Push 38594071618](https://github.com/Eswink/research-system-new/actions/runs/38594071618) | **M0 八 job 全 `success`**（observability-overhead × 2 / eval-gate / quality-windows / quality-ubuntu / collector-quality / console-frontend / container-quality）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 
 ### cycle 2 台账（`c0f793ad`）
 
@@ -279,4 +282,16 @@ memory_entries:
 | 活检索真标识 | `42781891` / `10.12688/f1000research.180013.2` / `10.31234/osf.io/w7xpq_v2`（各带真标题） |
 | 真容器指标 | 8 条（`agreement=true`、`comparison_reduction_ratio=7990.0`、`pairwise_comparisons=319600` …） |
 | §4 漂移事实 | 声明名 `deepseek-v4-flash-vision` ≠ 返回名 `dsv4-flash-vision`（既有登记，本 run 同站同模型） |
-| CI run | 见本表下方（轮询到终态后回填） |
+| CI run | 见上表 `c0f793ad` 行（真红 + 处置）与 `a99d8123` 行（全绿） |
+
+### cycle 3 台账（EC-05 收口，tip `a99d8123`）
+
+| 项 | 读数 |
+| --- | --- |
+| 收口复检（本树） | `tools/verify_goal077_closeout.py --root . --verdict-only` ⇒ **70 条判词全 PASS** |
+| 两树复检 | `tools/two_tree_recheck.py --script tools/verify_goal077_closeout.py --root . --base-ref HEAD --script-mode shared` ⇒ `TREE current exit=0 verdicts=70` / `TREE clean exit=0 verdicts=70` / `COMPARE identical=True` / **`TWO-TREE PASS`**，两树 `sha256=da5adf2aadf864290306db4101de77bf174d278a842e597ddab818fdc6f6cfbe`（**一致**） |
+| 判词归档 | `.cursor/plans/goals/evidence/GOAL-20261014-077-verdict-current.txt` / `…-verdict-clean.txt`（各 2918 字节、`CR=0`、**逐行相同**） |
+| 四向按压 | `.cursor/plans/goals/evidence/GOAL-20261014-077-press-two-way.txt`：`BASELINE 未按压全绿=True` + `V7-1…V7-4` 逐条 `按压 RED=True` + `sha 复原一致=True` + `all_red_and_restored=True`（`CR=0`） |
+| m0 终态行 | **`PASS: profile=m0; 23 deterministic checks`**（本机、仓库 `.venv`、`uv run --frozen --no-sync python -B`、独占） |
+| 治理 | `validate.py` ⇒ `Cursor 治理验证通过` |
+| 凭据审计 | `tools/credential_audit.py` ⇒ 四面 `offenders=0`（tracked / records / config_db / logs） |

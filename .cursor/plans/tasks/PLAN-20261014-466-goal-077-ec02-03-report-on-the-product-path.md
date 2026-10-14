@@ -90,6 +90,25 @@ memory_entries:
   `test_declared_input_sources` 的「控制面组合根必须种入」判据不受影响（组合根集合未变）。
 - **无 schema 迁移、无依赖变化、无放行面变化、无凭据变化**。
 
+## cycle 2 / cycle 3（同一子 PLAN 的续跑面）
+
+本子 PLAN 的 EC-02/EC-03 在 cycle 1 收口；其后的 EC-04（新站真实 run）与 EC-05（自举收口）
+**共用同一子 PLAN 档**（GOAL 的迭代日志逐轮登记）：
+
+- **cycle 2（EC-04）**：`tests/e2e/test_research_report_chain_live.py` —— 新站真实 run 跑完整
+  4 phase 链到 `SUCCEEDED`，报告落盘 `scratch/goal077-ec04-02c0adf5-….md`；实跑
+  **1 passed in 151.89s**（修复后重跑 62.36s）。⇒ `RECHECK-20261014-468` = **PASS**。
+- **cycle 3（EC-05）**：`tools/goal077_closeout_assertions.py` +
+  `tools/verify_goal077_closeout.py` + 两份判词归档 + 四向按压归档。收口复检本树
+  **70 条判词全 PASS**；**两树 `TWO-TREE PASS`**（逐行相同 + `sha256` 一致）；
+  m0 终态行 `PASS: profile=m0; 23 deterministic checks`。
+
+**CI 真红与零 run（如实登记，见 GOAL 的 CI 台账）**：`c0f793ad` 的 M0 在
+`quality-ubuntu` / `quality-windows` 上判红（三处**都在判据文件自身**：typecheck 的可选类型
+未收窄 / 两条显式清单未登记新 live 模块 / 58 行函数超门）；修复提交 `912d0667` 因快速连续
+推送**没有** CI run（`head_sha` 查询 `total_count=0`）⇒ 记**零 run** + `covered_by = a99d8123`，
+**不**记绿。
+
 ## 残余与未覆盖
 
 - EC-04（新站真实 run）与 EC-05（自举收口）**不在本 cycle**：cycle 2 / cycle 3。
