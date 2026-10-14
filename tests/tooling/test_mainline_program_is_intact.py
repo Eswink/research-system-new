@@ -57,10 +57,12 @@ _AXES: tuple[str, ...] = ("连续性", "深度", "质量")
 #: （宪章：广度不是一条轴，只在研究循环**真正用到**时补 ⇒ 它出现即须带「真实用到」的
 #: 语义，由「一句话目标」列承担）与**保留槽**占位。
 _AXIS_FREE_VALUES: tuple[str, ...] = ("广度", "深度+质量", "—")
-#: 程序表列头（宪章：不得改表格列）。
-_PROGRAM_COLUMNS: tuple[str, ...] = ("序", "GOAL id", "轴", "一句话目标", "依赖")
-#: 进展记录列头。
-_PROGRESS_COLUMNS: tuple[str, ...] = ("日期", "GOAL", "一句话结论", "RECHECK")
+#: 程序表列头（宪章：不得改表格列）。第 6 列 `能力域` = 与「科研能力阶梯」的**挂钩**
+#: （`—` = 非科研；闭集与判定见 `test_mainline_research_ladder_advances.py`）。
+_PROGRAM_COLUMNS: tuple[str, ...] = ("序", "GOAL id", "轴", "一句话目标", "依赖", "能力域")
+#: 进展记录列头。`能力域` **插在 `RECHECK` 之前** —— `RECHECK` 必须留在末格，
+#: 因为 `_bad_recheck_links` 取 `row[-1]`（把新列追加在末尾会让每条记录被判「缺链接行」）。
+_PROGRESS_COLUMNS: tuple[str, ...] = ("日期", "GOAL", "一句话结论", "能力域", "RECHECK")
 #: 总目标下的轴定义表列头（`反面` 列在 ⇒ 三分轴的判据不含糊化）。
 _AXIS_TABLE_COLUMNS: tuple[str, ...] = ("轴", "定义", "反面（不算推进）")
 
@@ -249,9 +251,9 @@ def test_the_helpers_are_not_vacuous(tmp_path: Path) -> None:
     (tmp_path / "rechecks").mkdir()
     (tmp_path / "rechecks" / "RECHECK-20260101-002-x.md").write_text("x", encoding="utf-8")
     good = (
-        "## 进展记录\n\n| 日期 | GOAL | 一句话结论 | RECHECK |\n"
-        "| --- | --- | --- | --- |\n"
-        "| 2026-01-01 | GOAL-20260101-001 | 例子 | "
+        "## 进展记录\n\n| 日期 | GOAL | 一句话结论 | 能力域 | RECHECK |\n"
+        "| --- | --- | --- | --- | --- |\n"
+        "| 2026-01-01 | GOAL-20260101-001 | 例子 | 报告 | "
         "[RECHECK-20260101-002](../rechecks/RECHECK-20260101-002-x.md) |\n"
     )
     section = _section(good, "## 进展记录")

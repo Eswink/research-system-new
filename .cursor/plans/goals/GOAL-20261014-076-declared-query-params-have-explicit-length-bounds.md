@@ -9,7 +9,7 @@ title: >-
   ⇒ 同一形态**读面不设界、写面设界**。本轮给那 10 条补**显式长度界**
   （**在路由签名里声明** ⇒ 框架校验面自动生效，与 `date_from` 同形），
   **缺省与合法值逐字不变**
-status: ACTIVE
+status: PAUSED
 created_at: 2026-10-14
 updated_at: 2026-10-14
 owners:

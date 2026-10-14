@@ -559,3 +559,47 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  research_report_plan:
+    version: 1.0.0
+    purpose: >
+      GOAL-20261014-077 的**立题** phase 交付物契约（报告域 L0 → L1 的第一步）：
+      计划制品存在，且它**声明输入**的那份检索产出在场、可复核
+      （`EVIDENCE_COVERAGE: minimum_retrieved_sources: 1` 要求覆盖里至少一条**系统取得**的来源
+      —— 检索是侦察 phase 做的，本 phase 消费它 ⇒ 立题**由检索产出派生**，不是凭空写的）。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: research_plan
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+        minimum_retrieved_sources: 1
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  research_report_deliverable:
+    version: 1.0.0
+    purpose: >
+      GOAL-20261014-077 的**报告** phase 交付物契约：人类可读研究报告
+      （`research_report.md`，四节 + 每数字可溯源）存在，且覆盖里至少一条**系统取得**的来源
+      —— 报告必须站在**真实检索**之上，否则它只是一段自述。
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - deliverable.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: research_report.md
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+        minimum_retrieved_sources: 1
+    timeout_seconds: 300
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [ ] | [PLAN-20261014-464](tasks/PLAN-20261014-464-goal-077-research-report-assembler-and-arc.md) | IN_PROGRESS |
 | [x] | [PLAN-20261014-462](tasks/PLAN-20261014-462-relay-switch-to-intern-ai-and-a-real-run-on-it.md) | DONE |
 | [ ] | [PLAN-20261014-461](tasks/PLAN-20261014-461-goal-076-ec01-05-declared-query-params-have-explicit-length-bounds.md) | IN_PROGRESS |
 | [x] | [PLAN-20261014-459](tasks/PLAN-20261014-459-goal-075-ec01-05-empty-values-for-declared-params-are-not-silently-treated-as-filters.md) | DONE |
