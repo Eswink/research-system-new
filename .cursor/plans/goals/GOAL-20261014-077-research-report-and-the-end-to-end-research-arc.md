@@ -77,7 +77,7 @@ exit_criteria:
       live e2e 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且报告制品在位；
       **若模型侧不可用** ⇒ 按降级梯如实登记（② 会话面回退 Fake 但检索/实验/报告仍真；
       ③ 记 BLOCKED + 阻塞点明细），**不得**伪造成真实跑成功。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口**：验证器进树（复用 `tools/closeout_recheck_tools` + 标准断言集）+
@@ -184,6 +184,30 @@ memory_entries:
   `max_cycles` 触顶 / 连续 `no_progress_stop_cycles` 轮未推进任何 EC。
 - **ABORTED**：用户撤销。
 
+## 残余与未覆盖范围（逐条明写）
+
+**残余**（本轮**实测**到的、未做的）：
+
+- `W-1` —— **本 GOAL 之外**：出厂会话工具绑定表只覆盖 canonical 读面，文献类会话工具
+  （`literature.search` / `literature.read`）需要装配方另补一张实现表；这与
+- `F-10`（产品组合根不自己接执行体缝）是同一家族的缺口。本轮以**判据侧装配方**身份
+  补上（不改产品代码），**未**把它收进出厂形态。
+- `W-2` —— 报告在 run **内**汇编 ⇒ 抬头是「**汇编时状态**」（那时 run 尚未到终态）；
+  报告的读者要终态须另读 `GET /runs/{id}`。这是**如实边界**，不是缺陷。
+- `W-3` —— 报告的来源标识同时含 PMID 与 DOI（工具结果里就有这两列）⇒ 同一篇文献可能
+  以两个标识各出现一次；判据读的是「报告里的标识 ⊆ 证据读面里出现过的标识」。
+- `W-4`…`W-6` —— 见 `RECHECK-20261014-468`（`R-M1` 未收口 / 只跑一次 run / 装配侧两表）。
+
+**未覆盖范围**（逐条明写；本 GOAL **不声称**已解决）：
+
+- **读面认证**、**多租户·RBAC·BOLA·BFLA**（M18 deferred）、**部署面验证**、
+  **D 组审批通道**、`G24-5`、`R26-2/3/4/6` —— 均**不做**；
+- 报告的**叙述性撰写**（模型写正文）—— 那是阶梯「报告」域的**再下一级**；
+- **活检索结果进模型上下文** —— 那是阶梯「检索」域的**下一级**；本 GOAL 只保证
+  「报告站在真检索上」（来源逐条入报告 + 覆盖两维判过）；
+- 默认 runtime 改真（§11）—— 默认仍是 Fake（§11 的既定边界）；真实 run 由 live 判据
+  在**显式开关下**跑。
+
 ## 不进入循环 / 需人工拍板
 
 - 序 44（`GOAL-20261014-076`）**已置 PAUSED**（用户指令）⇒ 本 GOAL **不**继续它；
@@ -197,7 +221,17 @@ memory_entries:
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交与 PLAN-464 同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01 **PASS**（汇编器 + 7 例判据）；EC-02/03/04/05 PENDING | cycle 1 = EC-03（新协议 `research_report_chain_v1`：plan phase 由检索派生 + report phase 汇编） |
-| 1 | PLAN-20261014-466 | 见「CI 台账」（同一批提交） | e2e 7 passed（含 2 反证）；架构+工具面 1741 passed；应用/域/适配器/API 2739 passed；e2e/集成/合约 865 passed；架构 252 passed | 见「CI 台账」 | 3 次（见下） | EC-02 **PASS** / EC-03 **PASS**；**EC-04 / EC-05 仍 PENDING** | cycle 2 = EC-04（新站真实 run 跑完整协议 + 报告落盘） |
+| 1 | PLAN-20261014-466 | 见「CI 台账」（同一批提交） | e2e 7 passed（含 2 反证）；架构+工具面 1741 passed；应用/域/适配器/API 2739 passed；e2e/集成/合约 865 passed；架构 252 passed；m0 终态行 `PASS: profile=m0; 23 deterministic checks` | `d3a1d754`：M0 八 job 全 success + CodeQL 三 analysis 全 success | 6 次（见下） | EC-02 **PASS** / EC-03 **PASS**；**EC-04 / EC-05 仍 PENDING** | cycle 2 = EC-04（新站真实 run 跑完整协议 + 报告落盘） |
+| 2 | PLAN-20261014-466（同一子 PLAN，续跑它的 EC-04 面） | `c0f793ad` | live 实跑 **1 passed in 151.89s**（新站、4 phase、报告落盘）；Ruff 零告警 | 见「cycle 2 台账」（轮询中） | 3 次（见下） | EC-04 **PASS**；**EC-05 仍 PENDING** | cycle 3 = EC-05（自举收口：验证器 + 两树 + m0 终态 + 治理 + 台账） |
+
+### cycle 2 的修复记录（逐条如实）
+
+1. **冻结被拒（实测抓到）**：只注册一件 REST provider 实例 ⇒ 另一件健康 `UNKNOWN` ⇒
+   冻结门点名拒冻（判词逐字见 RECHECK-468）。补上第二件实例后冻结真发生。
+2. **`KeyError: 'literature.search'`（我的代码写错**）：三元素元组
+   `(工具名, provider_id, tool_id)` 被按 `(provider_id, _, _)` 解包 ⇒ 查表用错了键。
+3. **`ToolDefinition 'literature…' is not registered`（实测抓到的装配缺口）**：出厂会话工具
+   绑定表只覆盖 canonical 读面；本协议的文献会话工具由**装配方**补实现表（与 `W-1` 同类）。
 
 ### cycle 1 的修复记录（逐条如实）
 
@@ -221,6 +255,8 @@ memory_entries:
 | --- | --- | --- |
 | 2026-10-14 | ACTIVE | **建档**：用户指令「每轮迭代必须更近科研」+ 要求端到端实验（报告即可）。**定位** = 阶梯「报告」域 L0 → L1。同时**序 44 置 PAUSED**（API 卫生，离科研最远）。EC-01（报告汇编器 + 判据）已在建档同轮落地并实跑 7 passed。中转站已切到新站（`discovery-api.intern-ai.org.cn` / `deepseek-v4-flash-vision`），真实 run 冒烟通过（`1 passed`，258s）。 |
 | 2026-10-14 | ACTIVE | **cycle 1 落地**（PLAN-466）：报告经**产品路径**产出（`report: {}` 声明 ⇒ 编排派发 ⇒ 汇编器读持久事实 ⇒ `{run_id}:research_report.md` 落 canonical，内联 `text/markdown`）；新协议 `research_report_chain_v1`（4 phase）跑通；立题格的两维覆盖判据在同一次实跑上判过（`3 >= 1 sources; 2 >= 1 retrieved`）。**EC-02 / EC-03 → PASS**（RECHECK-467 = PASS）。两条反证各自点名。**EC-04 / EC-05 仍 PENDING**（cycle 2 / cycle 3）。 |
+| 2026-10-14 | ACTIVE | **cycle 2 落地**（EC-04）：**新站**（`discovery-api.intern-ai.org.cn` / `deepseek-v4-flash-vision`）上的**一次真实 run**（run `02c0adf5-b59c-4726-ac12-73f8d7ef4cc4`）跑完整 4 phase 链到 **`SUCCEEDED`**，报告落盘
+`scratch/goal077-ec04-02c0adf5-b59c-4726-ac12-73f8d7ef4cc4.md`：含**活检索**取得的真标识（`42781891` / `10.12688/f1000research.180013.2` / `10.31234/osf.io/w7xpq_v2`）与真标题、**真容器**的 8 条实测指标、**真实评审**的逐字判词。**EC-04 → PASS**（RECHECK-468 = PASS）。装配侧补两处执行体（provider 实例 / 文献会话工具实现表），**不注入判词**，两处都有实测的失败形态。**EC-05 仍 PENDING**（cycle 3）。 |
 
 ## CI 台账
 
@@ -228,4 +264,19 @@ memory_entries:
 
 | 推送 | 提交 | run | 八 job 结论 |
 | --- | --- | --- | --- |
-| 换站 + 真实 run 冒烟 | `855aef5a` | 见回合报告 | 见回合报告 |
+| cycle 1（报告经产品路径 + 协议 + 判据） | `d3a1d754` | [M0 Quality Gates 38583663672](https://github.com/Eswink/research-system-new/actions/runs/38583663672) / [Push on main 38583663565](https://github.com/Eswink/research-system-new/actions/runs/38583663565) | **M0 八 job 全 `success`**（container-quality / collector-quality / eval-gate / quality-ubuntu / quality-windows / console-frontend / observability-overhead × 2）+ Push-on-main 三条 CodeQL（python / actions / javascript-typescript）全 `success`；两 run 均 `run_attempt=1`，**零 cancelled、零重跑** |
+| cycle 2（EC-04 live 判据） | `c0f793ad` | 见下方「cycle 2 台账」 | 见下方「cycle 2 台账」 |
+
+### cycle 2 台账（`c0f793ad`）
+
+| 项 | 读数 |
+| --- | --- |
+| live 实跑 | **1 passed in 151.89s**（`tests/e2e/test_research_report_chain_live.py`） |
+| run id | `02c0adf5-b59c-4726-ac12-73f8d7ef4cc4` |
+| 协议 / 终态 | `research_report_chain_v1_0_0` / **`SUCCEEDED`**（`manifest_digest` 在场） |
+| 报告制品 | `{run_id}:research_report.md`（`GET /artifacts/{id}/content` ⇒ 200 + `text/markdown`） |
+| 报告落盘 | `scratch/goal077-ec04-02c0adf5-b59c-4726-ac12-73f8d7ef4cc4.md`（2341 字节） |
+| 活检索真标识 | `42781891` / `10.12688/f1000research.180013.2` / `10.31234/osf.io/w7xpq_v2`（各带真标题） |
+| 真容器指标 | 8 条（`agreement=true`、`comparison_reduction_ratio=7990.0`、`pairwise_comparisons=319600` …） |
+| §4 漂移事实 | 声明名 `deepseek-v4-flash-vision` ≠ 返回名 `dsv4-flash-vision`（既有登记，本 run 同站同模型） |
+| CI run | 见本表下方（轮询到终态后回填） |

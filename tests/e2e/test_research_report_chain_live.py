@@ -88,47 +88,25 @@ def _live_deps(db_path: str) -> Any:
     """
     from dataclasses import replace
 
-    from adapters.research_tools import EuropePmcProvider, NcbiEutilsProvider
     from packages.application.run_orchestration.service import RunOrchestrationService
     from services.api.catalog_merge import merged_catalog_snapshot
     from services.api.composition import assemble
-    from services.api.experiment_support import (
-        docker_experiment_assembly,
-        sandbox_experiment_runner,
-    )
     from services.api.report_support import report_task_runner
     from services.api.settings import ApiSettings
 
     deps = assemble(ApiSettings(db_path=db_path))
     assert deps.preflight_override is None, "live 判据不得带任何 preflight_override"
+    assert deps.runs is not None and deps.artifacts is not None, (
+        "产品组合根必须给出编排服务与制品店（live 判据的直接前提）"
+    )
+    deps.tool_providers = _probeable_providers(deps)
     catalog = merged_catalog_snapshot(deps)
-    # 两件 REST provider 都注册**可探测的实例**：本协议的能力面同时含 `europe_pmc`
-    # （运行链检索）与 `ncbi_eutils`（评审格的会话绑定）—— 只注册一件时另一件的
-    # 健康是三态里的 UNKNOWN，而冻结对「未获接受通道的 EXECUTE 风险警示」**点名拒冻**
-    # （实测：`WARNING TOOL_HEALTH_UNPROVEN (provider:ncbi_eutils) is not an explicitly
-    # allowed EXECUTE risk`）。注册实例 ⇒ 健康由**真探测**得出（不是夹具给的判词）。
-    europe = EuropePmcProvider(deps.artifacts, spill_threshold_bytes=1)
-    eutils = NcbiEutilsProvider(
-        deps.artifacts, credentials=deps.credentials, spill_threshold_bytes=1
-    )
-    deps.tool_providers = {"europe_pmc": europe, "ncbi_eutils": eutils}
-    spec = catalog.tool_providers["europe_pmc"]
     inner = deps.runs._deps
-    runner = sandbox_experiment_runner(
-        docker_experiment_assembly(
-            artifacts=deps.artifacts,
-            ledger=deps.ledger,
-            policy=deps.policy_evaluator,
-            script=_EXPERIMENT_SCRIPT,
-            image=_EXPERIMENT_IMAGE,
-            experiment_store=deps.experiment_store,
-        )
-    )
     deps.runs = RunOrchestrationService(
         replace(
             inner,
-            capabilities=_capability_step(deps, europe, spec),
-            experiment_task=runner,
+            capabilities=_capability_step(deps, deps.tool_providers["europe_pmc"], catalog),
+            experiment_task=_sandbox_runner(deps),
             report_task=report_task_runner(
                 artifacts=deps.artifacts,
                 ledger=deps.ledger,
@@ -140,10 +118,48 @@ def _live_deps(db_path: str) -> Any:
     return deps
 
 
-def _capability_step(deps: Any, provider: Any, spec: Any) -> Any:
+def _probeable_providers(deps: Any) -> dict[str, Any]:
+    """两件 REST provider 的**可探测实例**（真传输；健康由**真探测**得出）。
+
+    两件都要：本协议的能力面同时含 `europe_pmc`（运行链检索）与 `ncbi_eutils`
+    （评审格的会话绑定）—— 只注册一件时另一件的健康是三态里的 `UNKNOWN`，而冻结对
+    「未获接受通道的 EXECUTE 风险警示」**点名拒冻**（实测：`WARNING TOOL_HEALTH_UNPROVEN
+    (provider:ncbi_eutils) is not an explicitly allowed EXECUTE risk`）。
+    """
+    from adapters.research_tools import EuropePmcProvider, NcbiEutilsProvider
+
+    return {
+        "europe_pmc": EuropePmcProvider(deps.artifacts, spill_threshold_bytes=1),
+        "ncbi_eutils": NcbiEutilsProvider(
+            deps.artifacts, credentials=deps.credentials, spill_threshold_bytes=1
+        ),
+    }
+
+
+def _sandbox_runner(deps: Any) -> Any:
+    """沙箱实验执行体（脚本与镜像由**装配上下文**给出：合约不 pin 这两个量）。"""
+    from services.api.experiment_support import (
+        docker_experiment_assembly,
+        sandbox_experiment_runner,
+    )
+
+    return sandbox_experiment_runner(
+        docker_experiment_assembly(
+            artifacts=deps.artifacts,
+            ledger=deps.ledger,
+            policy=deps.policy_evaluator,
+            script=_EXPERIMENT_SCRIPT,
+            image=_EXPERIMENT_IMAGE,
+            experiment_store=deps.experiment_store,
+        )
+    )
+
+
+def _capability_step(deps: Any, provider: Any, catalog: Any) -> Any:
     from packages.application.run_orchestration.phase_capabilities import CapabilityDeps
     from tests.e2e.literature_chain_support import europepmc_calls
 
+    spec = catalog.tool_providers["europe_pmc"]
     return CapabilityDeps(
         calls=europepmc_calls(),
         providers={str(spec.id): provider},

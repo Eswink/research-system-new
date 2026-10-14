@@ -1,0 +1,13 @@
+GOAL-20261014-077 press (two-way) root=research-system
+
+V7-1 examples/protocols/research_report_chain_v1.yaml TestTheRefutationsBite::test_removing_the_retrieval_wiring_rejects_the_plan_phase
+  BASELINE GREEN=True  按压 RED=True  sha 复原一致=True（74b0dcbd207d -> 74b0dcbd207d）
+V7-2 examples/contracts/task_contracts.yaml TestTheRunProducesAHumanReadableReport::test_the_run_succeeds_and_the_report_is_on_the_read_face
+  BASELINE GREEN=True  按压 RED=True  sha 复原一致=True（bc6b1303d174 -> bc6b1303d174）
+V7-3 packages/application/run_orchestration/report_facts.py TestTheRunProducesAHumanReadableReport::test_the_metric_table_matches_the_experiment_read_face
+  BASELINE GREEN=True  按压 RED=True  sha 复原一致=True（7a351cec5c46 -> 7a351cec5c46）
+V7-4 examples/protocols/research_report_chain_v1.yaml test_the_declared_report_contract_is_the_one_that_declares_the_assembler
+  BASELINE GREEN=True  按压 RED=True  sha 复原一致=True（74b0dcbd207d -> 74b0dcbd207d）
+
+BASELINE 未按压全绿=True
+all_red_and_restored=True

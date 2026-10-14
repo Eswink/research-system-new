@@ -129,8 +129,8 @@ def dispatch_report(deps: Any, tctx: Any) -> TaskExecutionResult:
             task=tctx.task,
             outcome="FAILED",
             message=(
-                f"contract {tctx.contract.id} declares a report assembly but no "
-                "report assembler is wired into this assembly"
+                f"contract {tctx.contract.id} declares a report assembly "
+                "but no report assembler is wired into this assembly"
             ),
             failure_category=FailureCategory.CONFIGURATION,
         )

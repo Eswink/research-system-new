@@ -77,6 +77,8 @@ LITERAL_MENTIONS: dict[str, str] = {
     "tests/e2e/test_live_model_absence.py": "模块 docstring 的操作者口令（两道门并列）",
     "tests/e2e/test_m12_usage_real_relay.py": "模块 docstring 的操作者口令",
     "tests/e2e/test_run_chain_retrieval_live.py": "模块 docstring 的操作者口令",
+    # GOAL-20261014-077 EC-04：本模块 docstring 里的操作者口令（跑法一行）。
+    "tests/e2e/test_research_report_chain_live.py": "模块 docstring 的操作者口令",
 }
 
 #: 带 `requires_live_llm` 的模块清单（**逐条列出**：新加一个就在这儿露头）。
@@ -93,6 +95,8 @@ LIVE_MODULES: tuple[str, ...] = (
     "tests/e2e/test_real_deliverable_contract_live.py",
     "tests/e2e/test_real_protocol_run_live.py",
     "tests/e2e/test_run_chain_retrieval_live.py",
+    # GOAL-20261014-077 EC-04：新站真实 run 跑完整链并留报告（本 GOAL 的 live 面）。
+    "tests/e2e/test_research_report_chain_live.py",
 )
 
 #: 模块级或函数级 mark 都算（`pytestmark = ...` 或标注装饰器形态）。
