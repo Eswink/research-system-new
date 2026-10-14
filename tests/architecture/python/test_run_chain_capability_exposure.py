@@ -51,6 +51,19 @@ _RUN_CHAIN = {
         "analysis",
         {"artifact.read", "literature.search", "literature.read"},
     ),
+    # GOAL-20261014-077 EC-02/EC-03：报告链协议的立题格 —— 检索由运行链执行（本协议
+    # 的「立题由检索产出派生」正是靠它的覆盖判据取证）。能力集取自**文档原文**
+    # （phase 的 `required_capabilities`）、不 import 产品常量。
+    "research_report_chain_v1.yaml": (
+        "plan",
+        {
+            "artifact.read",
+            "literature.search",
+            "literature.read",
+            "workspace.read",
+            "evidence.read",
+        },
+    ),
 }
 #: 未声明该字段的协议 ⇒ 会话工具列表必须**逐字等于**冻结集（既有语义）。
 #: `real_research_task_v1` 在这里还有第二重身份：它是**默认装配下真的会跑**的那条真实

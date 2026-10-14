@@ -55,7 +55,8 @@
       }
     },
     "idempotency_scope": {"type": "string", "minLength": 1},
-    "experiment": {"$ref": "#/$defs/experimentExecution"}
+    "experiment": {"$ref": "#/$defs/experimentExecution"},
+    "report": {"$ref": "#/$defs/reportAssembly"}
   },
   "$defs": {
     "experimentExecution": {
@@ -66,6 +67,14 @@
         "script": {"type": "string", "minLength": 1},
         "image": {"type": "string", "minLength": 1},
         "command": {"type": "string", "minLength": 1},
+        "timeout_seconds": {"type": "integer", "minimum": 1}
+      }
+    },
+    "reportAssembly": {
+      "description": "GOAL-20261014-077 EC-02: the task runs as the deterministic report assembler over this run's persisted facts, not an agent session. Absent = session semantics. The declaration deliberately carries no input fields: the report reads run-scoped truth from the existing read faces, so the assembly context cannot pin them here.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "timeout_seconds": {"type": "integer", "minimum": 1}
       }
     },

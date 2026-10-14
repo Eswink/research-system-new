@@ -600,6 +600,17 @@ task_contracts:
         minimum_sources: 1
         minimum_retrieved_sources: 1
     timeout_seconds: 300
+    # GOAL-20261014-077 **EC-02**（报告域 L0 → L1 的产品路径）：**谁执行这件工作**的声明
+    # —— 与 `experiment_execution` 的 `experiment: {}` **同形同层**。
+    #
+    # 报告是**编排层派发的确定性汇编**（`deliverable/research_report.py`），**不是**一次
+    # 模型会话：把它接到会话上等于让模型转述一遍，那会让「报告的数字逐字来自持久状态」
+    # 这条判据退化成「模型说的数字碰巧对」。声明里**没有任何输入字段**：报告的输入是本
+    # run 已落库的来源 / 指标 / 判词，全部经既有读面取得 ⇒ 装配方无从在契约里写死它们。
+    #
+    # 与 `experiment` 的声明**互斥**（`TaskContract.__post_init__` 点名拒绝）：
+    # 两个执行体同时在场会让「谁执行」不可判。
+    report: {}
     retry_policy:
       max_attempts: 1
       retryable_categories: []

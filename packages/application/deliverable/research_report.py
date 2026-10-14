@@ -71,13 +71,18 @@ def _bullet_list(items: tuple[Mapping[str, str], ...], empty_reason: str) -> lis
 
 
 def _header_lines(inputs: ReportInputs) -> list[str]:
-    """报告抬头（run / 协议 / 终态 / 目标 / 预算）。"""
+    """报告抬头（run / 协议 / 状态 / 目标 / 预算）。
+
+    `state` 标成**汇编时状态**（不是「终态」）：报告是**在 run 内**汇编的，那时 run 的
+    终态**尚未产生**（它由所有 phase 跑完后才定）。把它写成「终态」会让读者以为这是
+    最终读数——那就把「汇编时的读数」冒充成了「结论时刻的事实」。
+    """
     lines = [
         "# 研究报告",
         "",
         f"- **run**: `{inputs.run_id}`",
         f"- **协议**: `{inputs.protocol_id}`",
-        f"- **终态**: `{inputs.state}`",
+        f"- **汇编时状态**: `{inputs.state}`",
     ]
     if inputs.objective:
         lines.append(f"- **目标（来自协议/合约声明）**: {inputs.objective}")

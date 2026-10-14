@@ -26,22 +26,21 @@ from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import WorkflowEngine
 from packages.application.run_orchestration.commands import StartRunCommand
-from packages.application.run_orchestration.experiment_task import dispatch_experiment
 from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome, handoff_digests
 from packages.application.run_orchestration.phase_capabilities import execute_run_chain_capabilities
 from packages.application.run_orchestration.phase_pause import (
     pause_for_human_gate,
     pause_if_requested,
 )
+from packages.application.run_orchestration.report_task import register_and_gate_report
 from packages.application.run_orchestration.round_loop_runner import execute_rounds
 from packages.application.run_orchestration.run_completion_payload import (
     run_completion_payload,
 )
+from packages.application.run_orchestration.task_dispatch import dispatch_task_execution
 from packages.application.run_orchestration.task_executor import (
-    ExecutionDeps,
     SessionSpecContext,
     TaskExecutionResult,
-    execute_task,
 )
 from packages.application.run_orchestration.task_phase_helpers import (
     ChainCarry,
@@ -74,6 +73,12 @@ class PhaseRunnerDeps:
     # GOAL-20261008-038 EC-04：跨轮消费的前序结论读取器（`(run_id) -> (结论, run_id)`）。
     prior_conclusion: Any | None = None
     experiment_task: (
+        Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult] | None
+    ) = None
+    #: GOAL-20261014-077 EC-02：**报告汇编**阶段的执行缝（与 `experiment_task` 同型同层）。
+    #: None（缺省）= 没接。此时契约里**声明了** `report` 的任务以**点名拒绝**收敛
+    #: （fail-closed，不静默回退到会话 —— 否则「声明了汇编」与「真的汇编了」会分叉）。
+    report_task: (
         Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult] | None
     ) = None
     output_schema_validator: Any | None = None
@@ -301,25 +306,11 @@ class _GroupFrame:
 
 
 def _dispatch_task_execution(deps: PhaseRunnerDeps, tctx: TaskContext) -> TaskExecutionResult:
-    """按**契约声明**选执行体：沙箱实验或会话（自 `_execute_one_task` 拆出守 50 行门）。
+    """「谁执行这件工作」的派发（实现见 `task_dispatch.py`；本行只委派）。
 
-    「谁执行这件工作」是契约事实（`TaskContract.experiment`），不按合约 id 的字面量——
-    写死一个名字会漏掉语义相同的别的合约。判定与幅度逐字不变（纯搬运）。
+    单列的理由与 GOAL-011 EC-03 拆 `experiment_task` 同源：本模块卡在 450 行上限上。
     """
-    task = tctx.task
-    if tctx.contract.experiment is not None:
-        return dispatch_experiment(deps, tctx)
-    return execute_task(
-        # budget 必须接进来:失败/重试路径的 attempt 记账在
-        # `record_attempt_usage` 里以 `budget is None` 提前返回,原先这里
-        # 漏传导致生产 run 的失败尝试**从不落账**——"失败消耗不丢失"无从成立
-        # (M15 复审 BLOCKER-5 的第二半)。
-        ExecutionDeps(deps.workflow, deps.runtime, budget=deps.budget),
-        task,
-        tctx.contract,
-        tctx.spec_context,
-        trace_id=tctx.ctx.trace_id,
-    )
+    return dispatch_task_execution(deps, tctx)
 
 
 def _run_group_task(
@@ -431,6 +422,9 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
         )
     if execution.experiment_outcome is not None:
         return register_and_gate_experiment(deps, tctx, execution)
+    # GOAL-20261014-077 EC-02：报告汇编（契约声明 `report`）走与实验**同形**的登记+门链。
+    if execution.report_outcome is not None:
+        return register_and_gate_report(deps, tctx, execution)
     assert execution.session_result is not None
     # GOAL-011 EC-01：运行链取得的证据随会话结果**同一个** claim 登记（读面才看得到）。
     # GOAL-20261009-042 EC-03：`annotations` 与 `skipped` 两条通道同源带上（互不混用）。

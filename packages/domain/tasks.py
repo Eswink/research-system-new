@@ -124,6 +124,33 @@ class ExperimentExecutionSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class ReportAssemblySpec:
+    """契约声明：本任务的工作**不是一次会话**，而是由**报告汇编器**按持久事实汇出报告。
+
+    GOAL-20261014-077 EC-02。与 `ExperimentExecutionSpec` **同形同层**（都是任务级的
+    「这件工作由谁执行」），但**另立一个类型**而不是复用它：那个类型的字段名（`script` /
+    `image` / `command`）说的是**沙箱实验**，拿它来声明「汇编一份报告」是语义错配 ——
+    读者会以为跑了容器。本类型刻意**不带任何字段**：报告的输入是**本 run 已落库的事实**
+    （来源 / 指标 / 判词），全部经既有读面取得，装配方**无从**在契约里写死它们。
+
+    声明是**承诺**，不是提示：派发方读到它就**不得**把该任务交给模型会话；装配方没把
+    汇编器接进来时，该任务以**点名拒绝**收敛（fail-closed），**不**静默回退到会话 ——
+    否则「声明了汇编」与「真的汇编了」会分叉，而 run 仍会显示成功（与实验侧同一条纪律）。
+    """
+
+    #: 本类型**不承载报告输入**是刻意的：见 docstring。只留一个**已声明**哨兵
+    #: （`ExperimentExecutionSpec` 的 `{}` 同形）与一个可选的执行上界。
+    declared: bool = True
+    timeout_seconds: int | None = None
+
+    def __post_init__(self) -> None:
+        if not self.declared:
+            raise ValueError("report assembly declaration must not be empty")
+        if self.timeout_seconds is not None and self.timeout_seconds < 1:
+            raise ValueError("report assembly timeout_seconds must be >= 1")
+
+
+@dataclass(frozen=True, slots=True)
 class TaskContract:
     id: str
     version: str
@@ -141,6 +168,11 @@ class TaskContract:
     #: GOAL-011 EC-03：非空 ⇒ 本任务交给**沙箱实验后端**执行（`ExperimentExecutionSpec`）。
     #: 缺省 `None` ⇒ 会话语义（既有行为逐字不变）。
     experiment: ExperimentExecutionSpec | None = None
+    #: GOAL-20261014-077 EC-02：非空 ⇒ 本任务交给**报告汇编器**执行
+    #: （`ReportAssemblySpec`）。它必须是**排他**的：两个执行体声明同时在场会让
+    #: 「谁执行」不可判（派发方只能猜一个）—— `__post_init__` 点名拒绝。
+    #: 缺省 `None` ⇒ 会话语义（既有行为逐字不变）。
+    report: ReportAssemblySpec | None = None
 
     def failure_policy_view(self) -> FailurePolicyView:
         """这份契约声明的失败策略**实际被消费**的部分（GOAL-004 cycle 3 = EC-03）。
@@ -223,6 +255,13 @@ class TaskContract:
             raise ValueError("task contract must declare at least one acceptance criterion")
         if self.timeout_seconds is not None and self.timeout_seconds < 1:
             raise ValueError("timeout_seconds must be >= 1")
+        if self.experiment is not None and self.report is not None:
+            # 两个执行体声明同时在场 ⇒ 「谁执行」不可判。点名拒绝，不猜一个：
+            # 猜错的方向（挑实验去代表报告）会让 run「成功」而报告根本没被汇编。
+            raise ValueError(
+                "task contract must not declare both an experiment and a report assembly: "
+                "'which body executes this work' would be undecidable"
+            )
 
 
 @dataclass(frozen=True, slots=True)

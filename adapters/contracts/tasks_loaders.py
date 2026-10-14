@@ -18,6 +18,7 @@ from packages.domain.tasks import (
     AcceptanceCriterion,
     ExperimentExecutionSpec,
     HandoffBundle,
+    ReportAssemblySpec,
     RetryPolicy,
     TaskContract,
 )
@@ -107,6 +108,7 @@ def load_task_contracts(relative_path: str) -> dict[str, TaskContract]:
             failure_policy=_load_failure_policy(raw.get("failure_policy")),
             idempotency_scope=raw.get("idempotency_scope", "task"),
             experiment=_load_experiment(raw.get("experiment")),
+            report=_load_report(raw.get("report")),
         )
     return collection
 
@@ -129,6 +131,26 @@ def _load_experiment(raw: object) -> ExperimentExecutionSpec | None:
         image=str(raw.get("image", "")),
         command=str(raw.get("command", "python experiment.py")),
         timeout_seconds=int(raw.get("timeout_seconds", 180)),
+    )
+
+
+def _load_report(raw: object) -> ReportAssemblySpec | None:
+    """GOAL-20261014-077 EC-02：`report` 声明（缺省 `None` = 会话语义）。
+
+    与 `_load_experiment` 同一条纪律：只接受 schema 已限定的键（schema 里
+    `additionalProperties: false`；这里再挡一次 —— schema 校验与构造之间不许有静默透传的窗口）。
+    """
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ContractLoadError(f"report must be a mapping, got {raw!r}")
+    unknown = sorted(set(raw) - {"timeout_seconds"})
+    if unknown:
+        raise ContractLoadError(f"unsupported report keys: {', '.join(unknown)}")
+    return ReportAssemblySpec(
+        timeout_seconds=(
+            int(raw["timeout_seconds"]) if raw.get("timeout_seconds") is not None else None
+        )
     )
 
 

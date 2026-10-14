@@ -51,6 +51,10 @@ _PROTOCOLS = _ROOT / "examples" / "protocols"
 _BOUND = {
     "tool_binding_research_v1.yaml": "analysis",
     "multi_role_research_v1.yaml": "review",
+    # GOAL-20261014-077 EC-02/EC-03：报告链协议的评审格（四条绑定）。它的立题格是
+    # **空会话面**（`capability_execution: run_chain` 把该 phase 的全部 provider 排除）
+    # ⇒ 没有名字需要绑定，故不在 `_BOUND` 的第二项里（`_BOUND` 只标一个 phase）。
+    "research_report_chain_v1.yaml": "review",
 }
 #: 未声明该字段的协议 ⇒ 绑定为空、会话工具面逐字等于（冻结集 − run-chain 排除）。
 _UNDECLARED = (
@@ -82,6 +86,14 @@ _EXPECTED_DECLARED: dict[str, list[dict[str, str]]] = {
     # EC-03 的真实协议：review phase 四条（run-chain 排除是 per-phase 的 ⇒
     # europe_pmc 在这一相位仍在会话工具面内，必须绑）。
     "multi_role_research_v1.yaml": [
+        {"provider_id": "m12_artifact", "tool_name": "artifact.read"},
+        {"provider_id": "openhands_workspace", "tool_name": "workspace.read"},
+        {"provider_id": "ncbi_eutils", "tool_name": "literature.search"},
+        {"provider_id": "europe_pmc", "tool_name": "literature.read"},
+    ],
+    # GOAL-20261014-077 EC-02/EC-03：报告链协议的评审格 —— 同四条（本 phase 没有
+    # run-chain 排除 ⇒ `europe_pmc` 也在会话工具面内，必须绑）。
+    "research_report_chain_v1.yaml": [
         {"provider_id": "m12_artifact", "tool_name": "artifact.read"},
         {"provider_id": "openhands_workspace", "tool_name": "workspace.read"},
         {"provider_id": "ncbi_eutils", "tool_name": "literature.search"},

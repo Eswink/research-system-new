@@ -38,6 +38,7 @@ from packages.application.run_orchestration.usage_recording import record_attemp
 from packages.domain.enums import FailureCategory
 from packages.domain.models import LLMEndpoint, ModelDefinition
 from packages.domain.roles import AgentSpec, RoleDefinition
+from packages.domain.run import ResearchRun
 from packages.domain.tasks import ResearchTask, RetryPolicy, TaskContract
 
 
@@ -48,6 +49,10 @@ class TaskExecutionResult:
     session_result: AgentSessionResult | None = None
     experiment_outcome: ExperimentExecutionOutcome | None = None
     experiment_admission: ExperimentEvidenceResult | None = None
+    #: GOAL-20261014-077 EC-02：契约声明 `report` 时，本任务由**报告汇编器**执行 ⇒
+    #: 这里装它的产物（`report_task.ReportAdmission`；注解取 `Any` 以免 application 层
+    #: 两个模块互相 import 成环）。缺省 `None` ⇒ 该任务不是报告汇编。
+    report_outcome: Any | None = None
     attempts: int = 1
     failure_category: FailureCategory | None = None
     message: str = ""
@@ -108,6 +113,14 @@ class SessionSpecContext:
     round_calls: tuple[Any, ...] = field(default_factory=tuple)
     #: **上一轮**任务的制品前缀（`artifact_from_previous_round` 的收窄条件；执行期才知道）。
     previous_round_task_prefixes: tuple[str, ...] = field(default_factory=tuple)
+    #: GOAL-20261014-077 EC-02：**本次 run 的领域实体**（本 phase 所属的那一个）。
+    #:
+    #: 为什么需要它（而不是去 `RunStore` 读）：run 行由**控制面**在编排返回**之后**才落库
+    #: （`services/api/run_execution.run_from_execution`），所以执行**期间**存储里还没有这一行
+    #: —— 一个在 run 内运行的任务若去存储读，只会读到「未知 run」。这里把**在场的那份事实**
+    #: （`RunContext.run`）随 spec 交下去：与 `run_id_argument` 同层 —— 取值的来源是执行期
+    #: 才有的对象，不是装配方能写死的量。缺省 `None` ⇒ 该装配不提供（既有语义逐字节不变）。
+    run: "ResearchRun | None" = None
 
 
 @dataclass(frozen=True, slots=True)

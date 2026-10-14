@@ -56,7 +56,7 @@ exit_criteria:
       指标值与 `GET /runs/{run_id}/experiments` 的落库值**逐字相同**；
       报告 digest 由内容重算（内容寻址）。**本机若无法完成 ⇒ 记 PENDING + 点名阻塞点**，
       不得假绿。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **立题由检索产出派生**（承阶梯「计划」行的第一步）：plan phase 的交付物声明它
@@ -67,7 +67,7 @@ exit_criteria:
       （其 `acceptance_criteria` 含 `minimum_retrieved_sources: 1`）；
       **反证**：把 plan phase 的 `inputs` 声明摘掉 ⇒ 该 phase 判拒并点名（与
       `multi_role_research_v1` 的评审反证同形）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真实中转站上跑通一次完整研究并留报告**：用**新站**（`discovery-api.intern-ai.org.cn` /
@@ -128,7 +128,8 @@ escalation_triggers:
   - 未经 pin 的 provider / D 组通道 / 真实外发 —— 立即 BLOCKED
 child_plans:
   - .cursor/plans/tasks/PLAN-20261014-464-goal-077-research-report-assembler-and-arc.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261014-465-goal-077-research-report-and-the-end-to-end-research-arc.md
+  - .cursor/plans/tasks/PLAN-20261014-466-goal-077-ec02-03-report-on-the-product-path.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261014-467-goal-077-ec02-03-report-on-the-product-path.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261014-219-every-round-must-advance-the-ladder-and-that-is-a-judged-convention.md
 ---
@@ -196,12 +197,30 @@ memory_entries:
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交与 PLAN-464 同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01 **PASS**（汇编器 + 7 例判据）；EC-02/03/04/05 PENDING | cycle 1 = EC-03（新协议 `research_report_chain_v1`：plan phase 由检索派生 + report phase 汇编） |
+| 1 | PLAN-20261014-466 | 见「CI 台账」（同一批提交） | e2e 7 passed（含 2 反证）；架构+工具面 1741 passed；应用/域/适配器/API 2739 passed；e2e/集成/合约 865 passed；架构 252 passed | 见「CI 台账」 | 3 次（见下） | EC-02 **PASS** / EC-03 **PASS**；**EC-04 / EC-05 仍 PENDING** | cycle 2 = EC-04（新站真实 run 跑完整协议 + 报告落盘） |
+
+### cycle 1 的修复记录（逐条如实）
+
+1. **`report_task.py` 532 行 ⇒ 365 行**：初版把「读事实」与「准入」写在一个模块里 ⇒ 撞
+   450 行硬上限。按全仓既有的「读面 vs 写面分列」把读面拆成 `report_facts.py`（240 行）。
+2. **`phase_runner.py` 459 行 / `service.py` 453 行**：新增第三条执行体声明与它的装配关键字
+   各让这两个文件越界 ⇒ 按既有先例（`experiment_task.py` 就是因 450 行被拆出来的）把
+   **派发点**拆成 `task_dispatch.py`、把**装配**拆成 `runner_wiring.py`（均纯搬运、零语义变化）。
+3. **报告抬头写「终态」**：报告在 run **内**汇编，那时 run 的终态**尚未产生** ⇒ 改标
+   「**汇编时状态**」（把「汇编时的读数」冒充成「结论时刻的事实」是夸大）。
+4. **指标来源与读面不一致**（实测抓到）：初版从「任何带 `metrics` 键的制品」取，而
+   `GET /runs/{id}/experiments` 只读 `experiment_result.json` ⇒ 两处各读一份来源必然漂移。
+   改为**同一份字节**（`RESULT_FILES` 后缀判），值按 JSON 逐字（`300.0` 不归一成 `300`）。
+5. **e2e 长用例 71 行 ⇒ 拆成 3 个**（规模门的 50 行函数上限）。
+6. **三份同源判据的字面量清单**：新协议声明了既有输入 id 与 run-chain / 绑定 ⇒
+   登记进原判断（**扩面不是放宽**；谓词一条未改）。
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-14 | ACTIVE | **建档**：用户指令「每轮迭代必须更近科研」+ 要求端到端实验（报告即可）。**定位** = 阶梯「报告」域 L0 → L1。同时**序 44 置 PAUSED**（API 卫生，离科研最远）。EC-01（报告汇编器 + 判据）已在建档同轮落地并实跑 7 passed。中转站已切到新站（`discovery-api.intern-ai.org.cn` / `deepseek-v4-flash-vision`），真实 run 冒烟通过（`1 passed`，258s）。 |
+| 2026-10-14 | ACTIVE | **cycle 1 落地**（PLAN-466）：报告经**产品路径**产出（`report: {}` 声明 ⇒ 编排派发 ⇒ 汇编器读持久事实 ⇒ `{run_id}:research_report.md` 落 canonical，内联 `text/markdown`）；新协议 `research_report_chain_v1`（4 phase）跑通；立题格的两维覆盖判据在同一次实跑上判过（`3 >= 1 sources; 2 >= 1 retrieved`）。**EC-02 / EC-03 → PASS**（RECHECK-467 = PASS）。两条反证各自点名。**EC-04 / EC-05 仍 PENDING**（cycle 2 / cycle 3）。 |
 
 ## CI 台账
 

@@ -349,7 +349,7 @@ def register_and_gate(
             f"task {task.id.value} rejected by acceptance gate ({gate_rejection_reason(gate)})",
             False,
         )
-    step = _finish_task_step(
+    step = finish_task_step(
         deps,
         tctx,
         registration,
@@ -388,7 +388,7 @@ def register_and_gate_experiment(
         and execution.experiment_outcome.run.state == ExperimentRunState.State.NEGATIVE_RESULT
         else MemoryType.FACT
     )
-    return _finish_task_step(
+    return finish_task_step(
         deps,
         tctx,
         registration,
@@ -398,7 +398,7 @@ def register_and_gate_experiment(
     )
 
 
-def _finish_task_step(  # noqa: PLR0913
+def finish_task_step(  # noqa: PLR0913
     deps: Any,
     tctx: Any,
     registration: ResultRegistration,

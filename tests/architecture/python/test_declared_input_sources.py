@@ -28,6 +28,9 @@ _PROTOCOLS = {
     "sort_analysis_v1.yaml": {"input-corpus:sort_analysis_v1"},
     # GOAL-010 EC-03：真实协议（真实执行体可如实执行）声明操作者简报作为输入。
     "real_research_task_v1.yaml": {"input-brief:real_research_v1"},
+    # GOAL-20261014-077 EC-02/EC-03：报告链协议（4 phase）声明同一份操作者简报。
+    # 它复用**既有** id（不新造输入面）⇒ 与制品表的等号判据仍成立。
+    "research_report_chain_v1.yaml": {"input-brief:real_research_v1"},
 }
 
 

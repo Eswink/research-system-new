@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261014-466](tasks/PLAN-20261014-466-goal-077-ec02-03-report-on-the-product-path.md) | DONE |
 | [ ] | [PLAN-20261014-464](tasks/PLAN-20261014-464-goal-077-research-report-assembler-and-arc.md) | IN_PROGRESS |
 | [x] | [PLAN-20261014-462](tasks/PLAN-20261014-462-relay-switch-to-intern-ai-and-a-real-run-on-it.md) | DONE |
 | [ ] | [PLAN-20261014-461](tasks/PLAN-20261014-461-goal-076-ec01-05-declared-query-params-have-explicit-length-bounds.md) | IN_PROGRESS |

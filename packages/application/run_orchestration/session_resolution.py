@@ -161,6 +161,10 @@ def _spec_context(  # noqa: PLR0913 - 装配面：context + phase/agent/role/目
         # 「非模型自述」的来源。声明在协议里（产品面），校验在注册处（对象必须在库且
         # 内容可重算）——本层只搬运、不解释。
         declared_input_artifacts=tuple(phase.inputs),
+        # GOAL-20261014-077 EC-02：**本次 run 的领域实体**随 spec 交下去。执行的**当时**
+        # 存储里还没有这一行（控制面在编排返回后才落库）⇒ 需要它的执行体（报告汇编读
+        # run 的协议 / 状态）只能从这里取「在场的那份事实」。缺省既有的 `None` 语义不变。
+        run=context.run,
     )
 
 

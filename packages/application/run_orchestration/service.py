@@ -47,14 +47,11 @@ from packages.application.run_orchestration.eventing import (
     frozen_payload,
     publish_event,
 )
-from packages.application.run_orchestration.human_gates import pending_human_gates
 from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome
 from packages.application.run_orchestration.phase_runner import (
     PhaseContext,
-    PhaseRunnerDeps,
     execute_phases,
 )
-from packages.application.run_orchestration.round_loop_runner import round_loop_fields
 from packages.application.run_orchestration.run_terminals import (
     compensate_failed_resume,
     preflight_failure_message,
@@ -62,6 +59,7 @@ from packages.application.run_orchestration.run_terminals import (
     publish_degraded_run,
     publish_failed_run,
 )
+from packages.application.run_orchestration.runner_wiring import RunnerFaces, runner_deps
 from packages.application.run_orchestration.runtime_fingerprint import (
     RuntimeFingerprintCollector,
 )
@@ -289,25 +287,21 @@ class RunOrchestrationService:
         paused: list[tuple[SessionSpec, ...]] = []
         run_id = context.run.id.value
         outcome = execute_phases(
-            PhaseRunnerDeps(
-                workflow=self._deps.workflow,
-                runtime=self._deps.runtime,
-                artifacts=self._deps.artifacts,
-                budget=self._deps.budget,
-                **self._deps.fact_stores(),
-                publish=self._publish_phase_event,
-                fail_run=self._fail_run,
-                degrade_run=self._degrade_run,
-                telemetry=self._deps.telemetry,
-                approvals=self._deps.approvals,
-                capabilities=self._deps.capabilities,
-                experiment_task=self._deps.experiment_task,
-                output_schema_validator=self._deps.output_schema_validator,
-                human_gated=pending_human_gates(self._deps.approvals, context.plan, run_id),
-                on_pause=paused.append,
-                on_observation=None if collector is None else collector.observe,
+            # GOAL-20261014-077 EC-02：装配面单列（`runner_wiring`）——本文件卡在
+            # 450 行硬上限上，逐字搬运、零语义变化。
+            runner_deps(
+                self._deps,
+                context,
+                run_id,
+                faces=RunnerFaces(
+                    publish=self._publish_phase_event,
+                    fail_run=self._fail_run,
+                    degrade_run=self._degrade_run,
+                    resolve_sessions=self._resolve_sessions,
+                ),
+                paused=paused,
+                collector=collector,
                 pause_requested=lambda: self.pause_requested(run_id),
-                **round_loop_fields(self._deps.round_loops, self._resolve_sessions(context)),
             ),
             PhaseContext(
                 command=command,

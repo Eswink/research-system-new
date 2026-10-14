@@ -25,6 +25,7 @@ from packages.domain.serialization import canonical_json_bytes, digest_of
 from packages.domain.tasks import (
     AcceptanceCriterion,
     ExperimentExecutionSpec,
+    ReportAssemblySpec,
     ResearchTask,
     RetryPolicy,
     TaskContract,
@@ -97,7 +98,17 @@ def _decode_task_contract(payload: dict[str, Any]) -> TaskContract:
         idempotency_scope=payload.get("idempotency_scope", "task"),
         # GOAL-011 EC-03：`experiment` 声明往返（缺省 None ⇒ 会话语义）。
         experiment=_decode_experiment(payload.get("experiment")),
+        # GOAL-20261014-077 EC-02：`report` 声明往返（缺省 None ⇒ 会话语义）。
+        report=_decode_report(payload.get("report")),
     )
+
+
+def _decode_report(payload: dict[str, Any] | None) -> ReportAssemblySpec | None:
+    """`report` 声明往返（键集与 `adapters/contracts/tasks_loaders._load_report` 同源）。"""
+    if payload is None:
+        return None
+    timeout = payload.get("timeout_seconds")
+    return ReportAssemblySpec(timeout_seconds=int(timeout) if timeout is not None else None)
 
 
 def _decode_experiment(payload: dict[str, Any] | None) -> ExperimentExecutionSpec | None:

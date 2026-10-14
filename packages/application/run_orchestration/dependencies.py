@@ -45,6 +45,10 @@ class OrchestrationDependencies:
     # None（缺省）= 没接。此时契约里**声明了** `experiment` 的任务以**点名拒绝**收敛
     # （fail-closed，不静默回退到会话——否则"声明了实验"与"真的跑了实验"会分叉）。
     experiment_task: Any | None = None
+    # GOAL-20261014-077 EC-02：**报告汇编**阶段的执行缝（与上一行同型同层）。
+    # None（缺省）= 没接。此时契约里**声明了** `report` 的任务以**点名拒绝**收敛
+    # （fail-closed，不静默回退到会话——否则"声明了汇编"与"真的汇编了"会分叉）。
+    report_task: Any | None = None
     # GOAL-014 EC-02（A/a）：`SCHEMA_VALID` 的**产品路径**校验回调工厂
     # （`output_schema` 名 → `SchemaCheck`）。缺省就是产品实现（按合约声明的 schema 名从
     # 仓内 `schemas/` 取；见 `output_schema_check`）——装配方可以换，但**不接**不等于
