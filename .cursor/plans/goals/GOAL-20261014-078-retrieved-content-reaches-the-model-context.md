@@ -201,6 +201,7 @@ memory_entries: []
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
 | cycle 1（EC-01 接缝 + 两组合根接线 + 13 例判据） | `bd5d5896` | [M0 38630762702](https://github.com/Eswink/research-system-new/actions/runs/38630762702) / [Push 38630762356](https://github.com/Eswink/research-system-new/actions/runs/38630762356) | **M0 八 job 全 `success`**（quality-windows / quality-ubuntu / observability-overhead × 2 / collector-quality / container-quality / console-frontend / eval-gate）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**；**本 GOAL 的第一次推送 = 第一次全绿**（四处问题在**本地 m0** 抓掉后才推送 —— 逐条见「cycle 1 的修复记录」） |
+| cycle 1 台账回填（末条） | `00526faf`（**tip**） | [M0 38636832193](https://github.com/Eswink/research-system-new/actions/runs/38636832193) / [Push 38636831371](https://github.com/Eswink/research-system-new/actions/runs/38636831371) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（只改 CI 台账的文档行） |
 
 ## 迭代日志
 
