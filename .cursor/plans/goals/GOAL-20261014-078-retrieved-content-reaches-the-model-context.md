@@ -194,6 +194,14 @@ memory_entries: []
 - **无损注入检索正文**（与 §10 冲突）—— 需人工拍板；
 - `R-M1` 未收口 ⇒ **不得**宣称项目安全；投递语义**不是**「恰好一次」。
 
+## CI 台账
+
+（逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
+
+| 推送 | 提交 | run | job 结论 |
+| --- | --- | --- | --- |
+| cycle 1（EC-01 接缝 + 两组合根接线 + 13 例判据） | `bd5d5896` | [M0 38630762702](https://github.com/Eswink/research-system-new/actions/runs/38630762702) / [Push 38630762356](https://github.com/Eswink/research-system-new/actions/runs/38630762356) | **M0 八 job 全 `success`**（quality-windows / quality-ubuntu / observability-overhead × 2 / collector-quality / container-quality / console-frontend / eval-gate）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**；**本 GOAL 的第一次推送 = 第一次全绿**（四处问题在**本地 m0** 抓掉后才推送 —— 逐条见「cycle 1 的修复记录」） |
+
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
