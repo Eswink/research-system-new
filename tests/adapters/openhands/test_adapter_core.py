@@ -117,6 +117,76 @@ class TestEventMapping:
         assert mapped[0].kind is RuntimeEventKind.TOOL_CALL_REQUESTED
         assert mapped[0].payload["tool_name"] == "echo"
 
+    def test_a_finish_action_carries_the_final_message_as_a_message(self) -> None:
+        """GOAL-20261015-080 EC-04：`finish` 的 message 是**答复** ⇒ 必须投影成 MESSAGE。
+
+        **实测缺陷**：真实模型用 `finish` 收尾，答复在动作里（不在 MessageEvent 里）
+        ⇒ 不投影它，交付物只剩提示词那一条消息（`message_count = 1`）。
+        """
+        from openhands.sdk.tool.builtins.finish import FinishAction
+
+        event = ActionEvent(
+            source="agent",
+            thought=[],
+            tool_name="finish",
+            tool_call_id="call-finish-1",
+            tool_call=MessageToolCall(
+                id="call-finish-1",
+                name="finish",
+                arguments='{"message": "the design is in the plan"}',
+                origin="completion",
+            ),
+            action=FinishAction(message="the design is in the plan"),
+            llm_response_id="resp-f",
+        )
+        mapped = map_event(event, "s1")
+        kinds = [item.kind for item in mapped]
+        assert RuntimeEventKind.MESSAGE in kinds, kinds
+        answer = next(item for item in mapped if item.kind is RuntimeEventKind.MESSAGE)
+        assert "the design is in the plan" in answer.message
+        # **顺序**：答复在前、工具动作在后（交付物取最后一条 MESSAGE）。
+        assert kinds[-1] is RuntimeEventKind.TOOL_CALL_REQUESTED, kinds
+
+    def test_a_non_finish_action_carries_no_message(self) -> None:
+        """反证：**非** `finish` 的动作不产生 MESSAGE（不猜、不放大）。"""
+        event = ActionEvent(
+            source="agent",
+            thought=[],
+            tool_name="echo",
+            tool_call_id="call-9",
+            tool_call=MessageToolCall(
+                id="call-9",
+                name="echo",
+                arguments="{}",
+                origin="completion",
+            ),
+            action=None,
+            llm_response_id="resp-1",
+        )
+        mapped = map_event(event, "s1")
+        assert [item.kind for item in mapped] == [RuntimeEventKind.TOOL_CALL_REQUESTED]
+
+    def test_a_finish_action_without_a_message_carries_none(self) -> None:
+        """`finish` 但 message 为空 ⇒ 不产生 MESSAGE（缺席不冒充答复）。"""
+        from openhands.sdk.tool.builtins.finish import FinishAction
+
+        event = ActionEvent(
+            source="agent",
+            thought=[],
+            tool_name="finish",
+            tool_call_id="call-finish-2",
+            tool_call=MessageToolCall(
+                id="call-finish-2",
+                name="finish",
+                arguments="{}",
+                origin="completion",
+            ),
+            action=FinishAction(message="   "),
+            llm_response_id="resp-f2",
+        )
+        mapped = map_event(event, "s1")
+        assert [item.kind for item in mapped] == [RuntimeEventKind.TOOL_CALL_REQUESTED]
+
     def test_observation_event_maps_to_step_completed(self) -> None:
         event = ObservationEvent(
             source="environment",

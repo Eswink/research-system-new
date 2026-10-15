@@ -5,6 +5,7 @@ SDK 事件树与 RuntimeEvent 无 1:1（M5_PORT_COMPATIBILITY_MATRIX §1）；�
 
 映射基准（M6_ADAPTER_DESIGN_NOTES §2 + SDK v1.42.0 event 树实测）：
 - MessageEvent          → MESSAGE
+- ActionEvent(finish)   → MESSAGE（**末条答复**）+ TOOL_CALL_REQUESTED（GOAL-20261015-080）
 - ActionEvent           → TOOL_CALL_REQUESTED（携带 tool_name/tool_call_id）
 - ObservationEvent      → STEP_COMPLETED（携带 tool_name；工具结果）
 - AgentErrorEvent       → STEP_COMPLETED（携带 tool_name + error 标记）
@@ -45,6 +46,28 @@ def _message_text(event: Event) -> str:
     return redact_exception_message(str(getattr(event, "message", None) or "")[:500])
 
 
+#: SDK 的收尾动词名（`openhands.sdk.tool.builtins.finish.FinishTool.name` 逐字）。
+#: 判据不 import 产品常量当预言机 ⇒ 这个名字在两处都写成**字面量**。
+FINISH_TOOL_NAME = "finish"
+
+
+def _finish_message(event: ActionEvent) -> str | None:
+    """`finish` 动作的 message（SDK 逐字：*Final message to send to the user*）。
+
+    **为什么必须投影它**（GOAL-20261015-080 EC-04 实测）：真实模型用 `finish` 收尾，
+    而**答复正文在动作里**（不在 MessageEvent 里）—— 不投影它，交付物就只剩提示词那一条
+    消息（实测：`message_count = 1`、`content` = 合约 purpose 正文）。
+    非 `finish` 动作 / 无 message ⇒ `None`（**不猜**）。
+    """
+    if getattr(event, "tool_name", "") != FINISH_TOOL_NAME:
+        return None
+    action = getattr(event, "action", None)
+    text = getattr(action, "message", None)
+    if not isinstance(text, str) or not text.strip():
+        return None
+    return redact_exception_message(text[:500])
+
+
 def _tool_call_requested(event: ActionEvent, session_id: str) -> RuntimeEvent:
     tool_name = getattr(event, "tool_name", "") or "unknown_tool"
     tool_call_id = str(getattr(event, "tool_call_id", "") or "")
@@ -82,7 +105,15 @@ def map_event(event: Event, session_id: str) -> tuple[RuntimeEvent, ...]:
         text = _message_text(event)
         return (RuntimeEvent(session_id=session_id, kind=RuntimeEventKind.MESSAGE, message=text),)
     if isinstance(event, ActionEvent):
-        return (_tool_call_requested(event, session_id),)
+        call = _tool_call_requested(event, session_id)
+        answer = _finish_message(event)
+        if answer is None:
+            return (call,)
+        # 顺序：**答复在前**、工具动作在后 —— 交付物取「最后一条 MESSAGE」时取到答复。
+        answered = RuntimeEvent(
+            session_id=session_id, kind=RuntimeEventKind.MESSAGE, message=answer
+        )
+        return (answered, call)
     if isinstance(event, AgentErrorEvent):
         tool_name = getattr(event, "tool_name", "") or "unknown_tool"
         return (

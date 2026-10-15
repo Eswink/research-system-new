@@ -7,6 +7,14 @@ agent loop 与 direct execution 的执行点是 Agent._execute_action_event（�
 下划线方法）。本模块是该 internal symbol 的必要使用边界：SDK 周更可能调整
 内部签名，Upgrade Gate 必须重跑 contract suite 与本模块测试。
 
+- **SDK 循环控制动词不走能力策略**（GOAL-20261015-080 EC-04 实测）：`think` / `finish`
+  是 SDK 内置的**循环控制**（`readOnlyHint=True` / `destructiveHint=False` /
+  `openWorldHint=False`，且 SDK 文档逐字写着 these are *required* for the agent to work）；
+  它们**不是能力**（不在能力词表 / 不触达环境 / 无副作用）⇒ 拿能力策略去评它们是**范畴错误**。
+  实测后果（真实 run）：`think` 与 `finish` 双双落 `default_effect: DENY` ⇒ 模型**无法思考、
+  无法收尾**（自陈「even `think` is being denied」）⇒ 会话永远产不出最终答复。
+  **豁免面恰是这两个名字**（`LOOP_CONTROL_VERBS`，判据逐字钉住）；
+  **其余一切动词照旧全门禁**（未放行的能力仍 DENY，见 `test_session_tool_reaches_executor`）。
 - DENY：返回 AgentErrorEvent 拒绝反馈（agent loop 可转向），不抛 SDK 异常；
 - REQUIRE_APPROVAL：队列 APPROVAL_REQUESTED RuntimeEvent（M6 无审批通道，
   由 adapter 冲刷到会话事件流）并返回拒绝反馈；
@@ -36,6 +44,10 @@ from packages.application.ports.agent_runtime import RuntimeEvent, RuntimeEventK
 from packages.application.ports.policy_evaluator import PolicyEvaluator, PolicyRequest
 from packages.application.preflight.policy_check import policy_scope_for
 from packages.domain.enums import PolicyDecision
+
+#: SDK 循环控制动词（**唯一**豁免能力策略的动词集合；判据逐字钉住这两个名字）。
+#: 它们由 SDK 定义为「不与环境交互」的内置工具（见模块 docstring 的实测理由）。
+LOOP_CONTROL_VERBS: frozenset[str] = frozenset({"think", "finish"})
 
 _POLICY_REGISTRY: dict[str, PolicyEvaluator] = {}
 
@@ -120,7 +132,14 @@ class PolicyEnforcingAgent(OpenHandsAgent):
         return evaluation.decision
 
     def _execute_action_event(self, conversation: Any, action_event: ActionEvent) -> list[Any]:
-        """策略裁决后委托 SDK 执行；拒绝不触达工具 executor。"""
+        """策略裁决后委托 SDK 执行；拒绝不触达工具 executor。
+
+        **循环控制动词直接委托**（`LOOP_CONTROL_VERBS`）：它们不是能力（模块 docstring
+        逐条写明理由与实测后果）⇒ 不进入能力策略求值。**其余动词一律照旧裁决**
+        —— 本分支是**名字相等**的白名单，不是「放过某类工具」的规则。
+        """
+        if action_event.tool_name in LOOP_CONTROL_VERBS:
+            return super()._execute_action_event(conversation, action_event)
         decision = self._evaluate(action_event.tool_name)
         if decision is PolicyDecision.DENY:
             return [self._denied_event(action_event, "denied by Research OS policy")]
@@ -133,6 +152,7 @@ class PolicyEnforcingAgent(OpenHandsAgent):
 
 
 __all__ = [
+    "LOOP_CONTROL_VERBS",
     "PolicyEnforcingAgent",
     "register_policy_context",
     "unregister_policy_context",

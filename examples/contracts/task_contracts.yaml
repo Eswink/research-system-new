@@ -563,17 +563,28 @@ task_contracts:
   research_report_plan:
     version: 1.0.0
     purpose: >
-      GOAL-20261014-077 的**立题** phase 交付物契约（报告域 L0 → L1 的第一步）：
-      计划制品存在，且它**声明输入**的那份检索产出在场、可复核
-      （`EVIDENCE_COVERAGE: minimum_retrieved_sources: 1` 要求覆盖里至少一条**系统取得**的来源
-      —— 检索是侦察 phase 做的，本 phase 消费它 ⇒ 立题**由检索产出派生**，不是凭空写的）。
-      **★ GOAL-20261015-080 EC-04**：计划**同时承载实验设计** —— 下一位执行者（布置实验的
-      `experiment` phase）从此处读「跑几个臂、每臂什么参数」。执行者按本 purpose 行事：
-      计划正文之后附一个 **`experiment_design` 块**（JSON），形如
-      `{"experiment_design": {"arms": {"control": {}, "treatment": {"n_items": 120}}}}`
-      —— 臂名自定、参数只从 `seed` / `n_items` / `duplicate_pairs` 三个键里取
-      （沙箱参数面的白名单；越界会被点名拒绝）。**这是唯一**让「实验设计由计划派生」
-      成立的方式：设计写在计划里，实验读它。
+      TASK — write the research plan for this study, and end your reply with a
+      machine-readable design block. The system will read your reply as the
+      `research_plan` artifact; the next phase (which sets up the experiment)
+      reads the design block from it. There is nothing to implement or explore —
+      reply directly with the plan text.
+
+      Your reply must contain, in this order:
+
+      1. The plan itself: the question this study addresses, the hypothesis, and how
+         the evidence you were given bears on it (the run retrieved real literature
+         records before this phase; at least one retrieved source must be present in
+         your coverage, so ground the plan in the material you were given rather than
+         writing it from scratch).
+      2. A fenced JSON block named `experiment_design` that states which experiment
+         arms to run and each arm's parameters, exactly in this shape:
+
+             {"experiment_design": {"arms": {"control": {}, "treatment": {"n_items": 120}}}}
+
+      Rules for the design block: the arm names are yours to choose; parameter keys
+      are limited to `seed`, `n_items` and `duplicate_pairs` (anything else is
+      refused by the sandbox parameter surface); the first arm you list is the one
+      whose verdict decides the task, so put the arm you expect to be central first.
     required_capabilities:
       - artifact.read
       - evidence.read
