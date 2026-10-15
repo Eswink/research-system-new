@@ -197,6 +197,41 @@ class TestTheFailureModesAreNamedSeparately:
             read_design_from_plan(store, ledger, run_id=RUN_ID)
 
 
+class TestTheDeliverableEnvelopeIsUnderstood:
+    """**真形态**：模型正文在交付物信封的 `content` 里（cycle 4 实测到的真缺口）。
+
+    受控夹具把设计放在载荷**顶层** ⇒ 只认顶层的读取器在**真实路径**上永远读不到
+    （而夹具里全绿 —— 形状分叉时的典型假绿）。本组判据把信封形态也钉住。
+    """
+
+    def test_a_design_inside_the_envelope_content_is_found(self) -> None:
+        body = json.dumps(_design({"control": {}, "treatment": {"n_items": 42}}))
+        envelope = {"content": body, "message_count": 3, "session_id": "s-1"}
+        store, ledger = _setup(envelope)
+        design = read_design_from_plan(store, ledger, run_id=RUN_ID)
+        assert [arm.name for arm in design.arms] == ["control", "treatment"], design.arms
+        assert dict(design.arms[1].parameters) == {"n_items": 42}
+
+    def test_a_design_inside_a_markdown_fence_is_found(self) -> None:
+        """模型爱用围栏 —— 围栏里的 JSON 也算（**不**做模糊猜测，只剥围栏）。"""
+        body = "```json" + chr(10) + json.dumps(_design({"a": {}})) + chr(10) + "```"
+        store, ledger = _setup({"content": body})
+        design = read_design_from_plan(store, ledger, run_id=RUN_ID)
+        assert [arm.name for arm in design.arms] == ["a"]
+
+    def test_an_envelope_without_a_design_is_named(self) -> None:
+        """信封在场但正文里没有设计 ⇒ 与「读不到制品」**分开**点名。"""
+        store, ledger = _setup({"content": "I analysed the subject and wrote prose only."})
+        with pytest.raises(ExperimentDesignUnreadableError, match="carries no 'experiment_design'"):
+            read_design_from_plan(store, ledger, run_id=RUN_ID)
+
+    def test_unparseable_prose_is_named_not_crashed(self) -> None:
+        """正文不是 JSON ⇒ 同上（**不崩** —— 崩了就不是判据）。"""
+        store, ledger = _setup({"content": "the design is {not json at all"})
+        with pytest.raises(ExperimentDesignUnreadableError, match="carries no 'experiment_design'"):
+            read_design_from_plan(store, ledger, run_id=RUN_ID)
+
+
 class TestTheWhitelistIsEnforcedOnTheDesign:
     """§9 纪律：设计块里的键**逐键**过既有白名单（不是「计划写的就照单全收」）。"""
 

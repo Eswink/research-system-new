@@ -90,7 +90,7 @@ def read_design_from_plan(
             "registered for it in the evidence ledger ⇒ the plan cannot be located"
         )
     artifact_id, payload = _the_one_plan(artifacts, run_id, in_view, max_chars=max_chars)
-    design = payload.get(DESIGN_KEY)
+    design = _design_block(payload)
     if design is None:
         raise ExperimentDesignUnreadableError(
             f"the plan artifact {artifact_id!r} carries no {DESIGN_KEY!r} block "
@@ -98,6 +98,61 @@ def read_design_from_plan(
         )
     arms = _arms_of(design, artifact_id)
     return PlanDerivedDesign(artifact_id=artifact_id, run_id=run_id, arms=arms)
+
+
+#: 会话交付物的**信封**里承载模型正文的那个键（`real_research_deliverable_v1` 的 `content`）。
+#: **为什么读取器要认它**（cycle 4 实测到的真缺口）：真实 run 的计划制品**不是**
+#: 「模型直接写的一段 JSON」，而是交付物信封 —— 模型正文在 `content` 里（字符串）。
+#: 只认顶层键会让「计划驱动」在真实路径上**永远读不到**（判据在受控夹具上却全绿 ——
+#: 夹具形状与产品形状分叉时最典型的假绿）。
+ENVELOPE_CONTENT_KEY = "content"
+
+
+def _design_block(payload: Mapping[str, Any]) -> object | None:
+    """计划制品载荷 → 设计块（**两种形态都认**，都读不到 ⇒ `None`）。
+
+    1. **真形态**：交付物信封 —— 模型正文在 `ENVELOPE_CONTENT_KEY` 里，正文本身
+       是一段（可能被围栏包着的）JSON，其中带设计块；
+    2. **直形态**：载荷顶层**直接**是带设计块的对象（cycle 1/2/3 的受控夹具用的形态）。
+
+    两种都**如实**读：先看顶层，再看信封正文；正文里的 JSON 解析**失败不抛**
+    （那是「模型没写 JSON」这一种「没有设计」，由调用方与「读不到制品」分开点名）。
+    """
+    direct: object | None = payload.get(DESIGN_KEY)
+    if direct is not None:
+        return direct
+    content = payload.get(ENVELOPE_CONTENT_KEY)
+    if not isinstance(content, str) or DESIGN_KEY not in content:
+        return None
+    return _design_in_text(content)
+
+
+def _design_in_text(text: str) -> object | None:
+    """模型正文 → 设计块（容忍 markdown 围栏；**不**做模糊猜测）。"""
+    stripped = text.strip()
+    for candidate in (stripped, _fenced_block(stripped)):
+        if candidate is None:
+            continue
+        try:
+            parsed: Any = json.loads(candidate)
+        except ValueError:
+            continue
+        if isinstance(parsed, Mapping) and DESIGN_KEY in parsed:
+            found: object = parsed[DESIGN_KEY]
+            return found
+    return None
+
+
+def _fenced_block(text: str) -> str | None:
+    """取第一个 ``` 围栏里的内容（没有围栏 ⇒ `None`）。"""
+    if "```" not in text:
+        return None
+    parts = text.split("```")
+    if len(parts) < 3:
+        return None
+    body = parts[1]
+    first_newline = body.find("\n")
+    return body[first_newline + 1 :] if first_newline != -1 else body
 
 
 def _the_one_plan(
