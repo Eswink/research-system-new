@@ -119,6 +119,66 @@ def _runs_the_chain(deps: Any) -> dict[str, Any]:
     return sample
 
 
+def _declared_pairs(arms: object) -> list[tuple[str, dict[str, object]]]:
+    """臂声明 → `[(臂名, 参数)]`（两种形态都归一；不认的条目跳过）。"""
+    from collections.abc import Mapping as _Mapping
+
+    pairs: list[tuple[str, dict[str, object]]] = []
+    if isinstance(arms, _Mapping):
+        return [(str(name), dict(params or {})) for name, params in arms.items()]
+    if isinstance(arms, (list, tuple)):
+        for entry in arms:
+            if not isinstance(entry, _Mapping):
+                continue
+            pairs.append((str(entry.get("name")), dict(entry.get("parameters") or {})))
+    return pairs
+
+
+def _assert_the_declared_parameters_took_effect(
+    sample: dict[str, Any], arms: object, experiments: list[dict[str, Any]]
+) -> None:
+    """★ **参数真的生效**（本判据的射程补强 —— 只对臂名会让「读了设计但参数没进容器」假绿）。
+
+    每个臂在计划里声明的参数，必须**逐键**落到该臂实验的落库指标里。
+    **两层名字**（实测到的一处口径）：计划里写的是**参数名**（`ALLOWED_PARAMETERS`），
+    而脚本**回报**的指标名可能不同 —— 实测 `duplicate_pairs` 在指标里叫
+    `duplicates_expected`（脚本自己就是这么报的）。⇒ 用 `PARAMETER_METRIC_NAMES` 做映射；
+    **没映射就没法判**（不假装判过），因此该表是判据的一部分。
+    臂声明两种形态（映射 / 显式列表）都归一成 `{臂名: 参数}`。
+    """
+    from packages.application.experiments.arms import arm_experiment_id
+    from packages.application.experiments.plan_parameters import ALLOWED_PARAMETERS
+
+    by_arm = {
+        arm_experiment_id(sample["run_id"], name): params for name, params in _declared_pairs(arms)
+    }
+    #: 参数名 → 脚本**回报的指标名**（实测：脚本把 `duplicate_pairs` 报成 `duplicates_expected`）。
+    #: 不在此表里的参数 ⇒ **不判**（本判据不假装判过它），且由表的上界断言钉住射程。
+    parameter_metric_names = {
+        "seed": "seed",
+        "n_items": "n_items",
+        "duplicate_pairs": "duplicates_expected",
+    }
+    assert set(parameter_metric_names) <= set(ALLOWED_PARAMETERS), (
+        "映射表里出现了白名单外的参数名",
+        sorted(set(parameter_metric_names) - set(ALLOWED_PARAMETERS)),
+    )
+    for item in experiments:
+        params = by_arm[str(item.get("experiment_run_id"))]
+        metrics = item.get("metrics") or {}
+        for key, metric_name in sorted(parameter_metric_names.items()):
+            if key not in params:
+                continue
+            assert str(metrics.get(metric_name)) == str(params[key]), (
+                "计划里声明的参数必须**真的进容器并生效**",
+                item.get("experiment_run_id"),
+                key,
+                f"metric={metric_name}",
+                params[key],
+                metrics.get(metric_name),
+            )
+
+
 def _assert_the_design_came_from_the_plan(sample: dict[str, Any]) -> None:
     """EC-04：计划产物里**写着设计**，且**读面跑出来的臂就是它**。"""
     import json
@@ -159,6 +219,8 @@ def _assert_the_design_came_from_the_plan(sample: dict[str, Any]) -> None:
         sorted(listed),
         sorted(expected),
     )
+
+    _assert_the_declared_parameters_took_effect(sample, arms, experiments)
 
 
 def test_the_plan_the_model_wrote_drives_the_experiment(tmp_path: Path) -> None:

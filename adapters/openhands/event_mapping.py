@@ -35,15 +35,65 @@ from openhands.sdk.event.user_action import InterruptEvent, PauseEvent
 from packages.application.ports.agent_runtime import RuntimeEvent, RuntimeEventKind
 from packages.domain.redaction import redact_exception_message
 
+#: 事件流里单条消息的字符上限（**遥测面**的有界口径，AGENTS §10）。
+#: 交付物**不**受它约束（那是产品制品，见 `final_answer_text`）。
+EVENT_MESSAGE_LIMIT = 500
+
+
+def _content_text(content: object) -> str:
+    """`Message.content` → **正文**（取每个 `TextContent.text`，不取 repr）。
+
+    **为什么必须这样取**（GOAL-20261015-080 EC-04 实测）：`str(content)` 给出的是
+    `[TextContent(cache_prompt=False, type='text', text='…')]` —— 一段 Python repr，
+    **不是文本**。它既不可读，也让下游（按文本找 JSON 块的读取器）**永远解析不出来**。
+    非文本块（图片等）不进去（本 Port 的事件面只承载文本）。
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, (list, tuple)):
+        parts = [getattr(item, "text", None) for item in content]
+        texts = [str(part) for part in parts if isinstance(part, str)]
+        if texts:
+            return chr(10).join(texts)
+    return str(content or "")
+
 
 def _message_text(event: Event) -> str:
     llm_message = getattr(event, "llm_message", None)
     if llm_message is not None:
         content = getattr(llm_message, "content", None)
         if content is not None:
-            return redact_exception_message(str(content)[:500])
-        return redact_exception_message(str(llm_message)[:500])
-    return redact_exception_message(str(getattr(event, "message", None) or "")[:500])
+            return redact_exception_message(_content_text(content)[:EVENT_MESSAGE_LIMIT])
+        return redact_exception_message(str(llm_message)[:EVENT_MESSAGE_LIMIT])
+    fallback = str(getattr(event, "message", None) or "")
+    return redact_exception_message(fallback[:EVENT_MESSAGE_LIMIT])
+
+
+def final_answer_text(events: Iterable[Event]) -> str | None:
+    """会话里**最后一条 agent 产出的正文**（交付物用；**不截断**、仍脱敏）。
+
+    **与 `_message_text` 的差别只有一处**：不套 500 上限 —— 交付物是**产品制品**
+    （canonical artifact 的正文），§10 的有界口径管的是**遥测**；把研究计划截在
+    500 字符既是可读性问题（句子中途断掉），也让「计划里带设计块」**结构上做不到**
+    （实测：设计块正好落在截断处）。**脱敏走同一函数**（不新开绕过脱敏的通道）。
+
+    取法：从后往前找第一条 agent 产出的文本 —— 先看 `finish` 动作的 message
+    （SDK 逐字：*Final message to send to the user*），再看 agent 的 MessageEvent。
+    """
+    for event in reversed(list(events)):
+        if isinstance(event, ActionEvent) and getattr(event, "tool_name", "") == FINISH_TOOL_NAME:
+            action = getattr(event, "action", None)
+            message = getattr(action, "message", None)
+            if isinstance(message, str) and message.strip():
+                return redact_exception_message(message)
+        if isinstance(event, MessageEvent) and getattr(event, "source", "") == "agent":
+            llm_message = getattr(event, "llm_message", None)
+            content = getattr(llm_message, "content", None)
+            if content is not None:
+                text = _content_text(content)
+                if text.strip():
+                    return redact_exception_message(text)
+    return None
 
 
 #: SDK 的收尾动词名（`openhands.sdk.tool.builtins.finish.FinishTool.name` 逐字）。
@@ -65,7 +115,7 @@ def _finish_message(event: ActionEvent) -> str | None:
     text = getattr(action, "message", None)
     if not isinstance(text, str) or not text.strip():
         return None
-    return redact_exception_message(text[:500])
+    return redact_exception_message(text[:EVENT_MESSAGE_LIMIT])
 
 
 def _tool_call_requested(event: ActionEvent, session_id: str) -> RuntimeEvent:
@@ -175,4 +225,4 @@ def map_event_stream(events: Iterable[Event], session_id: str) -> tuple[RuntimeE
     return tuple(mapped)
 
 
-__all__ = ["map_event", "map_event_stream"]
+__all__ = ["final_answer_text", "map_event", "map_event_stream"]

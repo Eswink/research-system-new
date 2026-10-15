@@ -1,0 +1,19 @@
+GOAL-20261015-080 EC-04 live 读数归档（真实中转站 · 设计由模型写出并驱动实验）
+命令：set -a; . ./.env; set +a; RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 \
+      uv run --frozen --no-sync python -B -m pytest tests/e2e/test_experiment_design_from_the_plan_live.py -q
+
+run_id: 748a56a6-b051-4ad4-a5e0-1eed38fd2d5e
+state: SUCCEEDED（failures: []）
+计划制品: c85aef65-b957-4686-a284-4ba230b09fbb:research_plan（4240 字符正文；message_count=2）
+
+计划里**模型写出的设计块**（逐字）：
+{"experiment_design": {"arms": {"deduped": {"seed": 42, "n_items": 120, "duplicate_pairs": 0}, "raw": {"seed": 42, "n_items": 120, "duplicate_pairs": 12}}}}
+
+各臂落库指标（**声明逐键生效**）：
+  experiment 13189898-7784-4e04-9211-a54e64006847
+    n_items=120 duplicates_expected=0 seed=42 pairwise=7140 ratio=0.0
+  experiment ab7554a6-4f61-4349-93c3-ccf9037f1f72
+    n_items=120 duplicates_expected=12 seed=42 pairwise=7140 ratio=595.0
+
+判词：设计与臂**逐条对得上**（臂名 → 派生实验 id）；且每个臂声明的参数**逐键**
+落在该臂实验的落库指标里（0 vs 12 个重复对 ⇒ 比值 0.0 vs 595.0）。

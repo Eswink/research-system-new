@@ -37,7 +37,7 @@ from adapters.openhands.error_mapping import (
     map_conversation_run_error,
     map_unexpected_exception,
 )
-from adapters.openhands.event_mapping import map_event
+from adapters.openhands.event_mapping import final_answer_text, map_event
 from adapters.openhands.policy_enforcing_agent import PolicyEnforcingAgent
 from adapters.openhands.policy_wrapper import PolicyWrappedToolExecutor
 from adapters.openhands.session_builder import SessionBuilder
@@ -92,9 +92,14 @@ def _deliverable(entry: _SessionEntry, terminal: str) -> dict[str, object]:
     只有 `SUCCEEDED` 才产出交付物：失败会话没有结论，把它中间的文本当结论登记进
     canonical 会把「没做完」伪装成「有产出」（与 Fake 侧同口径：非成功返回空）。
 
-    文本取自**已映射**的 `RuntimeEvent.MESSAGE`——`event_mapping._message_text` 已经
-    做过 redact 与截断，因此这里不新开一条绕过脱敏的通道，也不直接读 SDK 对象的
-    原始字段。
+    **文本取自 SDK 事件树**（`event_mapping.final_answer_text`）：它取**最后一条 agent
+    产出的正文**（`finish` 动作的 message 优先 —— SDK 逐字：*Final message to send to
+    the user*），并且**不套事件流的 500 上限**。
+
+    **为什么不再从映射事件里取**（GOAL-20261015-080 EC-04 实测）：映射层为遥测口径
+    （§10）给每条消息套了 500 字符上限，而交付物是**产品制品** —— 研究计划被截在
+    500 字符处时，`[:500]` 正好切在设计块中间（真实 run 三次复现）⇒「计划里带设计块」
+    结构上做不到。**脱敏一字不改**（仍走同一 `redact_exception_message`）。
 
     **键名由合约声明决定**：声明**恰一个** artifact 名时用该名，否则回落到事实名
     `session_message`。名字的声明权归合约，本 adapter 只把声明**读出来**、不发明映射。
@@ -103,19 +108,18 @@ def _deliverable(entry: _SessionEntry, terminal: str) -> dict[str, object]:
     """
     if terminal != AgentSessionState.State.SUCCEEDED:
         return {}
-    messages = [
-        event.message
-        for event in entry.events
-        if event.kind is RuntimeEventKind.MESSAGE and event.message
-    ]
-    if not messages:
+    content_text = final_answer_text(entry.conversation.state.events)
+    if content_text is None:
         return {}
+    message_count = sum(
+        1 for event in entry.events if event.kind is RuntimeEventKind.MESSAGE and event.message
+    )
     contract = entry.spec.task_contract
     declared = _declared_deliverable_name(contract)
     return {
         declared or _FACT_NAME: {
-            "content": messages[-1],
-            "message_count": len(messages),
+            "content": content_text,
+            "message_count": message_count,
             "conversation_id": entry.conversation_id,
             "session_id": entry.session_id,
             "fact_name": _FACT_NAME,
