@@ -1,0 +1,13 @@
+GOAL-20261015-080 EC-01 三向按压判词（V10-1…V10-3 全 RED + 基线门 GREEN + raw sha256 复原）
+命令：uv run --frozen --no-sync python -B scratch/goal080c1_press.py
+受判面：tests/application/test_experiment_design_reader.py（设计来源读取器）
+V10-1 = 去掉 run 过滤（他 run 的计划漏进来 ⇒ 红）；
+V10-2 = 白名单判定恒空（任意键照单全收 ⇒ 红）；
+V10-3 = 空臂检查恒假（「计划忘了写」被读成「合法空设计」⇒ 红）。
+V10-1
+  V10-1 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V10-2
+  V10-2 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V10-3
+  V10-3 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+all_red_and_restored=True
