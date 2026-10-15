@@ -245,7 +245,7 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
-| 建档（序 48） | 见「状态历史」 | 见「状态历史」 | **待 cycle 1 首次推送后回填**（建档提交与 cycle 1 同批推送时并入该行） |
+| 建档（序 48） | `754d91ed`（**tip**） | [M0 38751287254](https://github.com/Eswink/research-system-new/actions/runs/38751287254) / [Push 38751286129](https://github.com/Eswink/research-system-new/actions/runs/38751286129) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（**本 GOAL 的第一次推送 = 第一次全绿**） |
 
 ## 状态历史
 

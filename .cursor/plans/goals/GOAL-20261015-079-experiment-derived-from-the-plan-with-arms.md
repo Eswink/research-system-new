@@ -319,6 +319,15 @@ memory_entries:
 
 | cycle 5（EC-05 收口：同族缺陷修复 + 收口资产 + 阶梯记账） | `a8bff586`（**tip**） | [M0 38746372702](https://github.com/Eswink/research-system-new/actions/runs/38746372702) / [Push 38746371173](https://github.com/Eswink/research-system-new/actions/runs/38746371173) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（**本 GOAL 的末条实测提交**） |
 
+**台账尾巴的 CI（如实登记）**：尾巴提交 `a9cbf887` 的 run
+[M0 38750027650](https://github.com/Eswink/research-system-new/actions/runs/38750027650)
+**`conclusion=cancelled`** —— `quality-windows-latest` / `quality-ubuntu-latest` 两 job 被取消，
+其余六 job `success`；Push-on-main 三条 CodeQL 全 `success`。**原因** = `cancel-in-progress`：
+紧接其后的**序 48 建档**推送（`754d91ed`）把它取消了 —— 这是 `MEM: m0-ci-concurrency-batch-push`
+的同一形态。**`covered_by = 754d91ed`**：序 48 的树**包含** `a9cbf887` 的全部内容
+（只多新 GOAL 文件与程序表行）⇒ 由 [M0 38751287254](https://github.com/Eswink/research-system-new/actions/runs/38751287254)
+（八 job 全 `success`，`run_attempt=1`）覆盖。**不**记绿、**不**跳过取证。
+
 **自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `a07a2532`**（其 run 已到终态且
 **八 job 全绿**）；**cycle 5（EC-05 收口）的提交与其 CI 结论不在本台账内** —— 它的
 run 要等本提交推送之后才存在，**台账提交自身不产生可引用的 CI 结论** ⇒
