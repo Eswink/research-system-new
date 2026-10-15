@@ -52,8 +52,12 @@ from packages.application.model_relay.live_run_gate import (
 from services.api.runtime_support import OPENHANDS_RUNTIME
 from tests.e2e.live_switch_support import live_e2e_switch_enabled
 from tests.e2e.retrieval_context_support import (
+    assert_the_arms_ran,
     assert_the_context_reached_sessions,
     context_payloads,
+    identifiers_of,
+    install_spec_recorder,
+    metric_text,
 )
 
 pytestmark = pytest.mark.requires_live_llm
@@ -125,20 +129,8 @@ def _live_deps(db_path: str) -> Any:
         )
     )
     _register_session_tools(deps)
-    _install_spec_recorder(deps)
+    install_spec_recorder(deps)
     return deps
-
-
-def _install_spec_recorder(deps: Any) -> None:
-    """把 **spec 记录器**装成编排实跑的 runtime（观察、不改行为；产品代码零改动）。"""
-    from dataclasses import replace
-
-    from packages.application.run_orchestration.service import RunOrchestrationService
-    from tests.e2e.test_retrieval_context_reaches_the_session import SessionSpecRecorder
-
-    recorder = SessionSpecRecorder(deps.runs._deps.runtime)
-    deps.runs = RunOrchestrationService(replace(deps.runs._deps, runtime=recorder))
-    deps.session_specs = recorder
 
 
 def _probeable_providers(deps: Any) -> dict[str, Any]:
@@ -159,8 +151,15 @@ def _probeable_providers(deps: Any) -> dict[str, Any]:
     }
 
 
+#: GOAL-20261015-079 EC-04：live run 上声明的**两个臂**（对照 + 处理）。
+_LIVE_ARMS: dict[str, dict[str, object]] = {"control": {}, "treatment": {"n_items": 120}}
+
+
 def _sandbox_runner(deps: Any) -> Any:
-    """沙箱实验执行体（脚本与镜像由**装配上下文**给出：合约不 pin 这两个量）。"""
+    """沙箱实验执行体（脚本与镜像由**装配上下文**给出：合约不 pin 这两个量）。
+
+    GOAL-20261015-079 EC-04：同时声明**两个臂** ⇒ 真实 run 上多臂实验也真跑。
+    """
     from services.api.experiment_support import (
         docker_experiment_assembly,
         sandbox_experiment_runner,
@@ -174,6 +173,7 @@ def _sandbox_runner(deps: Any) -> Any:
             script=_EXPERIMENT_SCRIPT,
             image=_EXPERIMENT_IMAGE,
             experiment_store=deps.experiment_store,
+            arms=_LIVE_ARMS,
         )
     )
 
@@ -373,41 +373,27 @@ def _assert_live_report(sample: dict[str, Any]) -> None:
     # 来源：报告里的标识与证据读面的检索来源逐条一致（真标识，不是自述）。
     retrieved = [item for item in sample["evidence"] if item.get("tool_refs")]
     assert retrieved, ("真实 run 必须有检索证据", sample["evidence"])
-    report_digits = _identifiers_of(retrieved)
+    report_digits = identifiers_of(retrieved)
     assert report_digits, ("检索证据里必须读得出标识", retrieved)
     missing = sorted(item for item in report_digits if item not in report)
     assert missing == [], ("报告必须逐字给出检索到的标识", missing, report[:600])
 
     # 指标：报告里的值 == experiments 读面上的值（逐字）。
+    #
+    # GOAL-20261015-079 EC-04：**逐臂**核对（多臂时**每一臂**的读数都必须在报告里）。
+    # 本条此前只查 `entries[0]` —— 真 run 一上多臂就暴露：报告只带一臂的数字而**看不出来**
+    # （`metrics_of` 曾按名字归并、后一臂静默覆盖前一臂）。判据因此改成**全臂遍历**。
     entries = sample["experiments"]["experiments"]
-    if entries:
-        for name, value in (entries[0].get("metrics") or {}).items():
-            assert str(name) in report, (name, report[:600])
-            assert _metric_text(value) in report, (name, value, report[:600])
-
-
-def _identifiers_of(retrieved: list[dict[str, Any]]) -> set[str]:
-    """检索证据里可读的标识（逐条从 `source_ref` / `id` 里取 PMID / DOI 形态的串）。
-
-    判据侧**不**去读制品内容重算一遍标识：报告自己已经给出标识，这里要判的是
-    「报告给的标识确实是这次检索里的那些」——取自读面上那条证据的同一串。
-    """
-    found: set[str] = set()
-    for item in retrieved:
-        text = f"{item.get('id', '')} {item.get('source_ref', '')}"
-        for token in text.replace(":", " ").replace("+", " ").split():
-            if token.isdigit() and len(token) >= 7:
-                found.add(token)
-            elif token.count(".") >= 2 and "/" in token:
-                found.add(token)
-    return found
-
-
-def _metric_text(value: object) -> str:
-    """读面指标值 → 报告里应逐字出现的文本（与报告读取面同源；判据里重写这条规则）。"""
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    return str(value)
+    assert entries, ("真实 run 必须留下实验记录", sample["experiments"])
+    for entry in entries:
+        for name, value in (entry.get("metrics") or {}).items():
+            assert str(name) in report, (entry["experiment_run_id"], name, report[:600])
+            assert metric_text(value) in report, (
+                entry["experiment_run_id"],
+                name,
+                value,
+                report[:600],
+            )
 
 
 def test_the_new_relay_runs_the_full_chain_and_leaves_a_report(tmp_path: Path) -> None:
@@ -429,6 +415,7 @@ def test_the_new_relay_runs_the_full_chain_and_leaves_a_report(tmp_path: Path) -
         )
     _assert_live_report(sample)
     assert_the_context_reached_sessions(sample)
+    assert_the_arms_ran(sample)
     # 同源：会话拿到的上下文 digest 必须出现在读面制品的 digest 里。
     listed = {
         str(item["digest"])

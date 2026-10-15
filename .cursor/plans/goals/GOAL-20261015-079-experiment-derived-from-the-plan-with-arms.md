@@ -64,7 +64,7 @@ exit_criteria:
       如实登记（记 PENDING + 点名阻塞点），**不得**伪造成真实跑成功。
     verify: >-
       live 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且两臂读数在树。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口**：验证器进树（复用 `tools/closeout_recheck_tools` + 标准断言集）+
@@ -125,7 +125,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261015-477-goal-079-ec01-experiment-parameters-come-from-the-declaration.md
   - .cursor/plans/tasks/PLAN-20261015-479-goal-079-ec02-two-arms-with-a-control.md
   - .cursor/plans/tasks/PLAN-20261015-481-goal-079-ec03-the-arms-are-comparable.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-482-goal-079-ec03-the-arms-are-comparable.md
+  - .cursor/plans/tasks/PLAN-20261015-483-goal-079-ec04-live-two-arm-run.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-484-goal-079-ec04-live-two-arm-run.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md
 ---
@@ -208,6 +209,18 @@ memory_entries:
 | 1 | PLAN-20261015-477 | 见「CI 台账」 | 参数面判据 **11 passed**（白名单 / 逐键传递 / 零回归 / 脚本真读 / 非法点名 / 命名空间）；三向按压全红且逐字节复原 | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（多臂/对照） |
 | 2 | PLAN-20261015-479 | 见「CI 台账」 | 臂判据 **14 passed**；e2e **6 passed**（含真容器 run 级：读面 2 条实验、两臂比率 **7990.0 vs 178.5**）；五向按压全红且逐字节复原 | 见「CI 台账」 | 3 次（见「cycle 2 的修复记录」） | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（臂间可比） |
 | 3 | PLAN-20261015-481 | 见「CI 台账」 | 对比判据 **13 passed**；e2e **8 passed**（真容器 run：差值 `178.5 - 7990.0 = -7811.5`，判据自己重算核对；`agreement` 进 `not_numeric`）；七向按压全红且逐字节复原 | 见「CI 台账」 | 1 次（见「cycle 3 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站） |
+| 4 | PLAN-20261015-483 | 见「CI 台账」 | live 实跑 **1 passed**（三次：172.90 / 169.68 / **190.08s**）；两臂各落库（同一镜像 digest）、指标 **7990.0 vs 178.5**；差值落盘 `-7811.5` / `-680` / `-312460` / `0`；`agreement` 进 `not_numeric`；报告第 3 节 4 列 16 行 | 见「CI 台账」 | 0 次（缺陷在 live 取证中一次定位并修复） | EC-04 **PASS**；EC-05 PENDING | cycle 5 = EC-05（自举收口） |
+
+### cycle 4 的修复记录（逐条如实 —— **本轮的价值就在这里**）
+
+**live 取证抓出两处产品真缺陷 + 一处判据盲区**（第一次真实多臂 run 就暴露）：
+
+1. **报告静默丢一臂**：`report_facts.metrics_of` 按**指标名**归并 ⇒ 两臂的同名指标**后写覆盖先写**（报告只带一臂的数字，读者看不出）。⇒ 改成**逐臂一行**（带 `experiment_run_id`）。
+2. **表格被撑破**：修 ① 后我用 `" | "` 把两臂并进**同一格** ⇒ 那一行变成 **4 列**而 markdown 表头只有 3 列 ⇒ **渲染坏掉**（第二次 live 跑实测）。⇒ 渲染器在指标带实验标识时**表头多一列「实验」**、每个 (指标, 实验) 一行。
+3. **判据盲区**：`_assert_live_report` 只查 `entries[0]` ⇒ **判据本身也看不见** ①②。⇒ 改成**逐臂遍历**；汇编器判据补**表格形态**（管道符计数一致）与**单臂零回归**。
+
+三次真实 run 逐次验证（修复前红、修复中红、修复后绿）—— **这就是 live 取证的用途**。
+
 
 ### cycle 3 的修复记录（逐条如实）
 
@@ -246,3 +259,4 @@ memory_entries:
 | 2026-10-15 | ACTIVE | **cycle 1 落地**（EC-01，PLAN-477）：实验参数从**脚本模块常量**变成**声明事实** —— 装配声明经「执行请求 → 容器环境」到脚本（逐键 / 白名单 / 前缀命名空间不相交），**未声明零回归**（请求环境与脚本产出都与改动前逐字相同），**值非法点名失败**。判据 11 例；三向按压全红。**EC-01 → PASS**（RECHECK-478 = PASS）；EC-02/03/04/05 PENDING。 |
 | 2026-10-15 | ACTIVE | **cycle 2 落地**（EC-02，PLAN-479）：实验支持**多臂/对照** —— 臂声明（两种形态 + 重复/非法点名拒绝）、臂 id **独立派生**（不复用「一 run 一实验」）、派发体**逐臂各跑一次**、主臂代表任务且消息点名全部臂。真容器 run 上：读面 **2** 条实验、两臂同指标 **7990.0 vs 178.5**（参数不同 ⇒ 读数不同）。判据 14 + 6 例；五向按压全红。**EC-02 → PASS**（RECHECK-480 = PASS）；EC-03/04/05 PENDING。 |
 | 2026-10-15 | ACTIVE | **cycle 3 落地**（EC-03，PLAN-481）：臂间**可比** —— 纯函数对比器（消费既有读面载荷，**零 DTO/路由/快照改动**）：`delta = right − left`、**同名列才比**、缺指标**逐臂点名**（不折算成 0）、非数值（布尔等）**排除并点名**、空对比 `comparable=False` **不是**「差值为 0」。真容器 run 上差值 `-7811.5`。判据 13 + e2e 2 例；七向按压全红。**EC-03 → PASS**（RECHECK-482 = PASS）；EC-04/05 PENDING。 |
+| 2026-10-15 | ACTIVE | **cycle 4 落地**（EC-04，PLAN-483）：**新站**上的一次真实 run 里声明的**两个臂**各在真容器跑一次、各自落库、指标不同、差值可算且记档。**live 取证抓出两处产品真缺陷 + 一处判据盲区**（报告静默丢一臂 / 表格被撑破 / 判据只查首条）⇒ 三处一次修掉并用**再次真实 run** 验证渲染正确。**EC-04 → PASS**（RECHECK-484 = PASS）；EC-05 PENDING。 |

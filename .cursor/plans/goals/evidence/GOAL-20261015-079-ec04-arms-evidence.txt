@@ -1,0 +1,35 @@
+GOAL-20261015-079 EC-04 多臂面读数（新站真实 run）
+run_id: db79f148-84ea-46b9-9316-2887b03ea011
+state: SUCCEEDED
+protocol: research_report_chain_v1_0_0
+declared arms: {"control": {}, "treatment": {"n_items": 120}}
+--- 读面上的实验记录（GET /runs/{id}/experiments） ---
+experiment: 2ae79cbe-16d1-464c-b536-841801ca421f
+  image_digest: sha256:e95de2424c6555d4906aab43388b99ee50f71ab7100ee64052456f28ff896099
+  metric agreement: True
+  metric comparison_reduction_ratio: 178.5
+  metric duplicates_expected: 40
+  metric duplicates_found: 40
+  metric indexed_comparisons: 40
+  metric n_items: 120
+  metric pairwise_comparisons: 7140
+  metric seed: 7
+experiment: 9d534c46-35d4-4b8c-a572-4ad41f11413e
+  image_digest: sha256:e95de2424c6555d4906aab43388b99ee50f71ab7100ee64052456f28ff896099
+  metric agreement: True
+  metric comparison_reduction_ratio: 7990.0
+  metric duplicates_expected: 40
+  metric duplicates_found: 40
+  metric indexed_comparisons: 40
+  metric n_items: 800
+  metric pairwise_comparisons: 319600
+  metric seed: 7
+--- 臂间差值（compare_arms；delta = right - left） ---
+delta comparison_reduction_ratio: 178.5 -> 7990.0 = 7811.5
+delta duplicates_expected: 40 -> 40 = 0
+delta duplicates_found: 40 -> 40 = 0
+delta indexed_comparisons: 40 -> 40 = 0
+delta n_items: 120 -> 800 = 680
+delta pairwise_comparisons: 7140 -> 319600 = 312460
+delta seed: 7 -> 7 = 0
+not_numeric (逐条点名): ['agreement']

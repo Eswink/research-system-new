@@ -167,9 +167,12 @@ def metrics_of(
     值按 **JSON 逐字**取值：数字用其规范文本（`300.0` 就是 `300.0`，**不**归一成 `300`）、
     布尔用 `true` / `false`、字符串原样（空白串丢掉）。**不折算**：把 `true` 写成 `1`
     或把 `300.0` 写成 `300` 都是**编造**，而报告的第一条纪律是「不重算不编造」。
-    按名字排序 ⇒ 报告确定（EC-01 (d) 的前置）。
+
+    **多臂（GOAL-20261015-079 EC-02 起）：同名指标**来自**不同实验**时，逐臂各出一行**
+    并带上 `experiment_run_id`（**不得**让后一个静默覆盖前一个 —— 那是把「两臂的读数」
+    丢成「一臂的读数」而报告看不出来）。**单臂时行为逐字不变**（一个名字一行、不带臂列）。
     """
-    collected: dict[str, str] = {}
+    by_name: dict[str, dict[str, str]] = {}
     for item in evidence:
         if not item.experiment_run_id or not item.artifact_id:
             continue
@@ -182,8 +185,25 @@ def metrics_of(
         for name, value in block.items():
             text = _metric_text(value)
             if text is not None:
-                collected[str(name)] = text
-    return tuple({"name": name, "value": value} for name, value in sorted(collected.items()))
+                by_name.setdefault(str(name), {})[str(item.experiment_run_id)] = text
+    return tuple(row for name in sorted(by_name) for row in _metric_rows(name, by_name[name]))
+
+
+def _metric_rows(name: str, per_run: Mapping[str, str]) -> tuple[Mapping[str, str], ...]:
+    """一个指标的读数行：**每个实验一行**（多臂 ⇒ 逐臂一行，不并格、不丢臂）。
+
+    **为什么逐臂一行而不是并成一格**（本轮 live 取证**实测**到的真缺陷）：把两臂的值用
+    分隔符连进**一格**会把 markdown 表格**撑成比表头多一列** ⇒ 渲染直接坏掉
+    （`research_report._experiment_section` 的表头只有固定列数）。逐臂一行则：
+    ① 两臂的读数都**在**；② 表格列数与表头**一致**；③ 读者一眼看出同名指标来自**多个实验**。
+
+    **单臂**（该指标只在一个实验里出现）⇒ 逐字沿用既有形态（含 `experiment_run_id` 一列，
+    值原样）—— 渲染器的三列表格由它按「有没有该列」自动分派。
+    """
+    return tuple(
+        {"name": name, "value": per_run[run_id], "experiment_run_id": run_id}
+        for run_id in sorted(per_run)
+    )
 
 
 def _metric_text(value: object) -> str | None:

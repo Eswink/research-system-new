@@ -11,11 +11,19 @@
 from __future__ import annotations
 
 import json
+from decimal import Decimal
 from typing import Any
 
 from fastapi.testclient import TestClient
 
-__all__ = ["assert_the_context_reached_sessions", "context_payloads"]
+__all__ = [
+    "assert_the_arms_ran",
+    "assert_the_context_reached_sessions",
+    "context_payloads",
+    "identifiers_of",
+    "install_spec_recorder",
+    "metric_text",
+]
 
 
 def context_payloads(client: TestClient, run_id: str) -> dict[str, Any]:
@@ -59,3 +67,68 @@ def assert_the_context_reached_sessions(sample: dict[str, Any]) -> None:
         "上下文里的制品必须指向**本次 run 系统取得**的证据",
         sorted(refs - retrieved_ids),
     )
+
+
+def install_spec_recorder(deps: Any) -> None:
+    """把 **spec 记录器**装成编排实跑的 runtime（观察、不改行为；产品代码零改动）。"""
+    from dataclasses import replace
+
+    from packages.application.run_orchestration.service import RunOrchestrationService
+    from tests.e2e.test_retrieval_context_reaches_the_session import SessionSpecRecorder
+
+    recorder = SessionSpecRecorder(deps.runs._deps.runtime)
+    deps.runs = RunOrchestrationService(replace(deps.runs._deps, runtime=recorder))
+    deps.session_specs = recorder
+
+
+def assert_the_arms_ran(sample: dict[str, Any]) -> None:
+    """EC-04 的多臂面：真实 run 上**两个臂**各自落库，且**两臂的指标差**可算。
+
+    与 EC-02/EC-03 的分工：那两条用受控装配取证；本条在**真实中转站**的一次 run 上
+    复核同一组事实（真容器 + 真模型会话）。
+    """
+    from packages.application.experiments.arm_comparison import compare_arms
+
+    experiments = list(sample["experiments"]["experiments"])
+    assert len(experiments) == 2, [item["experiment_run_id"] for item in experiments]
+    ids = [str(item["experiment_run_id"]) for item in experiments]
+    assert len(set(ids)) == 2, ids
+    ratios = [(item.get("metrics") or {}).get("comparison_reduction_ratio") for item in experiments]
+    assert all(value is not None for value in ratios), ratios
+    assert ratios[0] != ratios[1], (
+        "两臂参数不同 ⇒ 同一指标的落库值必须不同（否则「臂」没生效）",
+        ratios,
+    )
+    comparison = compare_arms(
+        "control", experiments[0]["metrics"], "treatment", experiments[1]["metrics"]
+    )
+    assert comparison.comparable, comparison
+    deltas = {delta.metric: delta for delta in comparison.deltas}
+    assert "comparison_reduction_ratio" in deltas, sorted(deltas)
+    delta = deltas["comparison_reduction_ratio"]
+    assert Decimal(delta.delta) == Decimal(delta.right_value) - Decimal(delta.left_value), delta
+    assert Decimal(delta.delta) != 0, delta
+
+
+def identifiers_of(retrieved: list[dict[str, Any]]) -> set[str]:
+    """检索证据里可读的标识（逐条从 `source_ref` / `id` 里取 PMID / DOI 形态的串）。
+
+    判据侧**不**去读制品内容重算一遍标识：报告自己已经给出标识，这里要判的是
+    「报告给的标识确实是这次检索里的那些」——取自读面上那条证据的同一串。
+    """
+    found: set[str] = set()
+    for item in retrieved:
+        text = f"{item.get('id', '')} {item.get('source_ref', '')}"
+        for token in text.replace(":", " ").replace("+", " ").split():
+            if token.isdigit() and len(token) >= 7:
+                found.add(token)
+            elif token.count(".") >= 2 and "/" in token:
+                found.add(token)
+    return found
+
+
+def metric_text(value: object) -> str:
+    """读面指标值 → 报告里应逐字出现的文本（与报告读取面同源；判据里重写这条规则）。"""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)

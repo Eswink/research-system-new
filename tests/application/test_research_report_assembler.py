@@ -131,3 +131,54 @@ def test_the_declared_artifact_name_is_markdown() -> None:
     """制品名与 MIME 是合约的一部分（改即改契约）。"""
     assert REPORT_ARTIFACT_NAME.endswith(".md"), REPORT_ARTIFACT_NAME
     assert REPORT_MIME == "text/markdown"
+
+
+def test_multiple_arms_appear_as_separate_rows_with_a_stable_table_shape() -> None:
+    """GOAL-20261015-079 EC-04：**多臂**时指标表逐臂一行，且表格**列数一致**。
+
+    为什么单列这一条：本 GOAL 的 live 取证**实测**到一个真缺陷 —— 两个臂的同名指标曾被
+    并进**同一格**（用分隔符连接），而 markdown 表头只有 3 列 ⇒ 那一行**变成 4 列**、
+    渲染直接坏掉。本条把正确形态钉住：每个 (指标, 实验) **一行**，表头随之多一列
+    「实验」，且**所有行与分隔行的 `|` 计数一致**（表格结构的机械判据）。
+    """
+    multi = ReportInputs(
+        run_id="run-report-multi",
+        protocol_id="p_v1",
+        state="SUCCEEDED",
+        objective=None,
+        sources=(),
+        metrics=(
+            {"name": "ratio", "value": "2.0", "experiment_run_id": "exp-control"},
+            {"name": "ratio", "value": "9.0", "experiment_run_id": "exp-treatment"},
+        ),
+        verdict=None,
+    )
+    report = build_research_report(multi)
+
+    # **两臂的值都在**（不得丢任何一臂）。
+    assert "2.0" in report and "9.0" in report, report
+    assert "exp-control" in report and "exp-treatment" in report, report
+    # 表格**逐臂一行**：该指标恰两行数据行（不是一格两值）。
+    rows = [line for line in report.splitlines() if line.startswith("| `ratio`")]
+    assert len(rows) == 2, rows
+    # 表格形态**一致**：表头 / 分隔 / 数据行的管道符计数相同（渲染不会坏）。
+    table = [line for line in report.splitlines() if line.startswith("|")]
+    assert len({line.count("|") for line in table}) == 1, table
+
+
+def test_a_single_arm_keeps_the_original_three_column_table() -> None:
+    """单臂（无实验标识）⇒ **既有三列表格逐字不变**（零回归）。"""
+    single = ReportInputs(
+        run_id="run-report-single",
+        protocol_id="p_v1",
+        state="SUCCEEDED",
+        objective=None,
+        sources=(),
+        metrics=({"name": "ratio", "value": "2.0"},),
+        verdict=None,
+    )
+    report = build_research_report(single)
+    assert "| 指标 | 值 | 单位 |" in report, report
+    assert "| `ratio` | 2.0 | — |" in report, report
+    table = [line for line in report.splitlines() if line.startswith("|")]
+    assert {line.count("|") for line in table} == {4}, table

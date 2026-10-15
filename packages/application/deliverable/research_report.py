@@ -128,20 +128,33 @@ def _evidence_section(inputs: ReportInputs) -> list[str]:
 
 
 def _experiment_section(inputs: ReportInputs) -> list[str]:
-    """第 3 节：实验与指标（值取自 canonical，本报告不重算）。"""
+    """第 3 节：实验与指标（值取自 canonical，本报告不重算）。
+
+    **多臂（GOAL-20261015-079 EC-02 起）**：指标行带实验标识时，表格**多一列「实验」**
+    —— 一个 (指标, 实验) 一行。**为什么不能挤在一格里**：把两臂的值用分隔符连成一格
+    会把表格**撑成 4 列**（markdown 表头只有 3 列）⇒ 渲染直接坏掉（本 GOAL 的 live
+    取证**实测**到这一点）。逐行才是既保**可读**又保**不丢臂**的形态。
+    """
     section = [SECTION_HEADINGS[2], ""]
     if inputs.metrics:
+        multi_arm = any(metric.get("experiment_run_id") for metric in inputs.metrics)
+        headers = "| 指标 | 值 | 单位 |" if not multi_arm else "| 指标 | 实验 | 值 | 单位 |"
+        rule = "| --- | --- | --- |" if not multi_arm else "| --- | --- | --- | --- |"
         section += [
             "实验阶段产出的**实测指标**（值取自 canonical，非本报告计算）：",
             "",
-            "| 指标 | 值 | 单位 |",
-            "| --- | --- | --- |",
+            headers,
+            rule,
         ]
         for metric in inputs.metrics:
-            section.append(
-                f"| `{metric.get('name', '?')}` | {metric.get('value', '?')} | "
-                f"{metric.get('unit', '—')} |"
-            )
+            name = metric.get("name", "?")
+            value = metric.get("value", "?")
+            unit = metric.get("unit", "—")
+            experiment = metric.get("experiment_run_id")
+            if not multi_arm:
+                section.append(f"| `{name}` | {value} | {unit} |")
+            else:
+                section.append(f"| `{name}` | `{experiment or '?'}` | {value} | {unit} |")
     else:
         section.append("_（无：本 run 没有实验阶段，或实验未产出指标）_")
     return [*section, ""]
