@@ -62,7 +62,7 @@ exit_criteria:
       读面判据：`GET /runs/{run_id}` 或既有制品读面上能取回该 run 的
       `retrieval_digest` 与所选 ref 清单（**逐条**）；判据断言读面值与装配点
       **同源**（不重算第二遍）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真实中转站上跑通一次**（承 GOAL-077 的 live 门）：上游真实检索取回的内容
@@ -131,7 +131,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261014-469-goal-078-ec01-retrieval-content-reaches-the-session-context.md
   - .cursor/plans/tasks/PLAN-20261014-471-goal-078-ec02-retrieval-context-reaches-a-downstream-session.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-472-goal-078-ec02-retrieval-context-reaches-a-downstream-session.md
+  - .cursor/plans/tasks/PLAN-20261015-473-goal-078-ec03-what-entered-the-context-is-readable.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-474-goal-078-ec03-what-entered-the-context-is-readable.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261014-221-declared-but-never-constructed-is-a-dead-seam.md
 ---
@@ -215,6 +216,13 @@ memory_entries:
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（接缝在树且判定成对） |
 | 1 | PLAN-20261014-469 | 见「CI 台账」 | 接缝判据 **13 passed**；既有四套件 **2752 passed, 8 skipped**（+13）；`mypy` 1232 源文件零问题；产品装配实测 `retrieval_context is not None`；**m0 终态行 `PASS: profile=m0; 23 deterministic checks`** | 见「CI 台账」 | 4 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（经产品路径进入会话 + 反证臂） |
 | 2 | PLAN-20261014-471 | 见「CI 台账」 | 新 e2e **5 passed**（正向 / 反证 / 射程 / 自检）；接缝判据 **16 passed**（+3）；三向按压全红且逐字节复原；受影响套件 **997 passed, 1 skipped** | 见「CI 台账」 | 2 次（见「cycle 2 的修复记录」） | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（读面可复核「进了什么」） |
+| 3 | PLAN-20261015-473 | 见「CI 台账」 | 读面判据 **5 passed**；接缝 16 passed；e2e **7 passed**（含 HTTP 面 + 同源）；四向按压全红且逐字节复原 | 见「CI 台账」 | 1 次（见「cycle 3 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站实跑） |
+
+### cycle 3 的修复记录（逐条如实）
+
+1. **`AttributeError: 'RetrievalContextView' object has no attribute 'run_id'`**（实测抓到）：读面载荷要 run 标识，而视图没带它 ⇒ 给视图补 `run_id` 字段（缺省 `""`），并在两处构造点**用关键字**写上。
+2. **判据模块超 450 行**（504）：EC-03 的 5 例另立模块`test_retrieval_context_read_face.py`（复用既有夹具，不复制）。
+
 
 ### cycle 2 的修复记录（逐条如实）
 

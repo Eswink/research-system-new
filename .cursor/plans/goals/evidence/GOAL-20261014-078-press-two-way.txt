@@ -1,8 +1,8 @@
-GOAL-20261014-078 EC-02 三向按压判词（V8-1…V8-3 全 RED + 基线门 GREEN + raw sha256 复原）
+GOAL-20261014-078 四向按压判词（V8-1…V8-4 全 RED + 基线门 GREEN + raw sha256 复原）
 命令：uv run --frozen --no-sync python -B scratch/goal078c2_press.py
 受判面：tests/e2e/test_retrieval_context_reaches_the_session.py + tests/application/test_retrieval_context_seam.py
 V8-1 = 摘掉装配接线（下游上下文应非空 ⇒ 红）；V8-2 = 去掉 run 过滤（跨 run 隔离 ⇒ 红）；
-V8-3 = 性质判据恒真（GENERATED 冒充系统取得 ⇒ 红）。
+V8-3 = 性质判据恒真（GENERATED 冒充系统取得 ⇒ 红）；V8-4 = 不落制品（EC-03 的读面 ⇒ 红）。
 ★ 两条 dead arm 的来历：首轮 V8-2 / V8-3 没咬住（e2e 射程覆盖不到这两条性质）
 ⇒ 补了 TestTheRunFilterBites 与 TestAToolResultWithoutTheRetrievedLabelDoesNotEnter
 两条判据后才全红 —— 这正是按压的用途（判据不咬 ⇒ 补判据，不调按压）。
@@ -12,4 +12,6 @@ V8-2
   V8-2 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
 V8-3
   V8-3 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V8-4
+  V8-4 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
 all_red_and_restored=True

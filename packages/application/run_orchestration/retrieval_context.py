@@ -46,6 +46,8 @@ DEFAULT_MAX_CHARS = 240
 DEFAULT_MAX_ITEMS = 12
 #: 只认工具结果的制品前缀（与 `tool_evidence._spilled_artifact_id` 同源）。
 _TOOL_RESULT_PREFIX = "tool-result:"
+#: 上下文制品的 `created_by`（编排层写的**装配事实**，不是任何 agent 的产出）。
+_CONTEXT_CREATOR = "system:retrieval-context"
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +69,8 @@ class RetrievalContextView:
 
     snapshot: ContextSnapshot
     entries: tuple[RetrievalEntry, ...]
+    #: 本次装配的 run 标识（EC-03 的读面载荷要它 —— 读面必须能回答「哪个 run 的上下文」）。
+    run_id: str = ""
     #: 空集合时的**点名**理由（非空集合时为 `None`）。
     reason: str | None = None
 
@@ -105,6 +109,7 @@ def build_retrieval_context(
     return RetrievalContextView(
         snapshot=_snapshot(run_id, entries),
         entries=entries,
+        run_id=run_id,
     )
 
 
@@ -118,13 +123,19 @@ def _empty(run_id: str, *, reason: str | None = None) -> RetrievalContextView:
             trust_labels=[],
         ),
         entries=(),
+        run_id=run_id,
         reason=reason or f"run {run_id} has no retrieved evidence to place in the context",
     )
 
 
-def _snapshot(run_id: str, entries: tuple[RetrievalEntry, ...]) -> ContextSnapshot:
-    """逐条摘录 → `ContextSnapshot`（`retrieval_digest` 由**拼出来的字节**算）。"""
-    payload = {
+def context_payload(run_id: str, entries: tuple[RetrievalEntry, ...]) -> dict[str, object]:
+    """上下文的**载荷**（唯一构造点）。
+
+    GOAL-20261014-078 EC-03：读面写出的**就是这些字节** —— 因此
+    `ArtifactStore` 里那份制品的 digest 与 `ContextSnapshot.retrieval_digest`
+    **同源**（同一份字节算两次必然相等），读面值与装配点的值不可能分叉。
+    """
+    return {
         "run_id": run_id,
         "entries": [
             {
@@ -136,7 +147,16 @@ def _snapshot(run_id: str, entries: tuple[RetrievalEntry, ...]) -> ContextSnapsh
             for entry in entries
         ],
     }
-    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+
+
+def payload_bytes(payload: dict[str, object]) -> bytes:
+    """载荷 → 规范字节（**唯一**编码点；`retrieval_digest` 与写盘的字节都来自它）。"""
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+
+
+def _snapshot(run_id: str, entries: tuple[RetrievalEntry, ...]) -> ContextSnapshot:
+    """逐条摘录 → `ContextSnapshot`（`retrieval_digest` 由**拼出来的字节**算）。"""
+    raw = payload_bytes(context_payload(run_id, entries))
     return ContextSnapshot(
         selected_refs=[entry.artifact_id for entry in entries],
         retrieval_digest=str(Digest.of_bytes(raw)),
@@ -257,14 +277,77 @@ def with_retrieval_context(deps: Any, task: Any, spec_context: Any) -> Any:
     未接装配器（`deps.retrieval_context is None`）⇒ **原样返回**（既有语义逐字节不变）。
     接了 ⇒ 调装配器并把结果放进 spec；装配器**抛错** ⇒ 让异常冒到执行循环
     （那里的失败路径会**点名** —— 不静默给一个空上下文：那会让「读不到」与「没有」
-    不可区分，正是本 GOAL 要消灭的含混）。
+    不可区分，正是本 GOAL 要消灭的那种含混）。
+
+    EC-03：会话任务的上下文**同时落成制品**（可读面见 `persist_retrieval_context`）。
     """
     build = getattr(deps, "retrieval_context", None)
     if build is None:
         return spec_context
     from dataclasses import replace
 
-    return replace(spec_context, retrieval_context=build(str(task.run_id.value)))
+    view = build(str(task.run_id.value))
+    _persist_for_session_task(deps, task, view)
+    return replace(spec_context, retrieval_context=view)
+
+
+def context_artifact_id(task_id: str) -> str:
+    """上下文制品的 id（**task 前缀** ⇒ 它天然落在 `GET /runs/{id}/artifacts` 上）。"""
+    return f"{task_id}:retrieval_context"
+
+
+def _persist_for_session_task(deps: Any, task: Any, view: "RetrievalContextView") -> None:
+    """会话任务的上下文 → 制品（EC-03 的读面；**只对会建会话的任务**做）。
+
+    为什么只对会话任务：`context_snapshot` 的去处就是**会话**。实验 / 报告格不建会话
+    ⇒ 为它们写一件「进了什么上下文」的制品会**答非所问**（那两格没有「进去」这回事）。
+
+    **缺 store / 缺 task id ⇒ 不做**（装配方没接 ⇒ 读面**如实**为空，不伪造）。
+    """
+    artifacts = getattr(deps, "artifacts", None)
+    contract = getattr(task, "contract", None)
+    if artifacts is None or task is None:
+        return
+    from packages.domain.tasks import TaskContract
+
+    if isinstance(contract, TaskContract) and (
+        contract.experiment is not None or contract.report is not None
+    ):
+        return
+    persist_retrieval_context(artifacts, task.id.value, view)
+
+
+def persist_retrieval_context(artifacts: Any, task_id: str, view: "RetrievalContextView") -> str:
+    """上下文载荷 → 内容寻址制品（**写出的字节 = digest 的源**）。返回制品 id。
+
+    空集合也写（理由在载荷里）—— 「没有内容进去」本身是**要读得出来的事实**，
+    而不是「读面缺一条」。
+    """
+    from packages.domain.artifacts import Artifact
+    from packages.domain.enums import ArtifactState
+
+    content = payload_bytes(_payload_for(view))
+    artifact_id = context_artifact_id(task_id)
+    artifact = Artifact(
+        id=artifact_id,
+        digest=Digest.of_bytes(content),
+        size_bytes=len(content),
+        media_type="application/json",
+        created_by=_CONTEXT_CREATOR,
+        source_refs=[f"task:{task_id}"],
+        classification="retrieval_context",
+    )
+    artifacts.put(artifact, content)
+    artifacts.mark(artifact_id, ArtifactState.VERIFIED)
+    return artifact_id
+
+
+def _payload_for(view: "RetrievalContextView") -> dict[str, object]:
+    """视图 → 写盘载荷（非空 ⇒ 与 `retrieval_digest` **同一份字节**的源；空 ⇒ 带理由）。"""
+    payload = context_payload(view.run_id, view.entries)
+    if not view.entries and view.reason:
+        payload["reason"] = view.reason
+    return payload
 
 
 __all__ = [
