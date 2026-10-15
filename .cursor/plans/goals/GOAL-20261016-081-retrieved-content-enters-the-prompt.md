@@ -41,7 +41,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/adapters/openhands/test_retrieval_context_in_prompt.py -q`
       ⇒ 全绿；判据覆盖：有摘录 ⇒ 正文含每条标识 / 上限截断标注 / 无摘录 ⇒ 不加该段 /
       摘录来自 `ContextSnapshot`（同源，不是第二套查询）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **有界**（§10）：进提示词的摘录受**逐条字符上限 + 条数上限**约束，且**截断可见**
@@ -50,7 +50,7 @@ exit_criteria:
     verify: >-
       判据断言：超长标题被截且**带标注** / 条数超上限时只取前 N 条且**点名**了被省略的条数 /
       上限常量与 `retrieval_context.DEFAULT_MAX_*` **是同一个值**（不新造第二份上限）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **可复核**：提示词里那段摘录 == **本 run 上下文制品**里同一批记录（逐条标识与截断后
@@ -127,8 +127,9 @@ escalation_triggers:
     把检索**正文**无损注入会话与 §10 的有界口径冲突 ⇒ **需人工拍板**（本 GOAL 只做
     **有界摘录**；若「看到全文」成为必需，记 BLOCKED 留拍板）
 
-child_plans: []
-latest_recheck: null
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261016-497-goal-081-ec01-retrieval-excerpts-reach-the-prompt.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-498-goal-081-ec01-retrieval-excerpts-reach-the-prompt.md
 memory_entries: []
 ---
 
@@ -232,6 +233,20 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（摘录进提示词） |
+| 1 | PLAN-20261016-497 | 见「CI 台账」 | 渲染器判据 **14 passed**；e2e **7 passed**（下游有那段 + 逐条标识在场；上游没有那段）；受影响套件 **1184 passed, 1 skipped**；规模门 **1267 passed** | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01/EC-02 **PASS**；EC-03/04/05 PENDING | cycle 2 = EC-03（同源：提示词那段 == 读面制品，逐条逐字） |
+
+### cycle 1 的修复记录（逐条如实）
+
+1. **帮助函数的形参名与调用点不一致**（实测红）：`TypeError: _identifiers_of() got an
+   unexpected keyword argument 'read'` —— 定义用 `reads`、调用写 `read=`。判据自己报出来，
+   改正调用点。
+2. **`_ChainReads` 上没有上下文载荷**（实测红）：我的第一版从 `reads.context_payloads` 取数，
+   而那个属性属于**另一个**读写面对象 ⇒ 改成从 `reads.artifacts` 里按后缀挑上下文制品、
+   再经 `/artifacts/{id}/content` 取值（**同一读面**，不新造第二条查询）。
+3. **本机那份帮助函数是重复实现**（实测发现）：支持件 `retrieval_context_support` 里**已有**
+   `context_payloads` —— 我新写的 `_identifiers_of` 是第二份。⇒ 改成复用既有函数
+   （`context_identifiers` 进支持件、用例文件 import 它），并把**记录器类**也搬进支持件
+   （用例文件曾涨到 **473 行**，超 450 硬上限）。
 
 ## CI 台账
 
@@ -239,10 +254,17 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
-| 建档（序 49） | 见「状态历史」 | 见「状态历史」 | 与 cycle 1 同批推送时并入该行 |
+| 建档（序 49） | `98131839` | [M0 38821998809](https://github.com/Eswink/research-system-new/actions/runs/38821998809) / [Push 38821999212](https://github.com/Eswink/research-system-new/actions/runs/38821999212) | ⚠️ **M0 `conclusion=cancelled`**（`quality-windows-latest` 一 job；其余七 job `success`；CodeQL 三条 `success`）= `cancel-in-progress`（紧随的 cycle 1 推送 `18d02d9b`）。**`covered_by = 18d02d9b`**。**不**记绿 |
+| cycle 1 落地（渲染器 + 接线 + 两向读数） | `18d02d9b`（**tip**） | 见「状态历史」（轮询中） | 待回填 |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-16 | **ACTIVE** | **cycle 1 落地**（EC-01/EC-02，PLAN-497）：**检索摘录进提示词** ——
+新增纯函数渲染器（**有界**：只排既有摘录、不新造第二份上限；**截断可见**：逐条标注；
+**同源**：渲染文本就是 `entry.shown`）+ `AgentSessionSpec.retrieval_prompt`（缺省 `None` ⇒
+提示词**逐字**不变、fork 继承）+ 会话创建点把那段拼在合约文本**之后**。e2e 两条**相反读数**：
+下游有那段且逐条标识在场 / 上游没有那段。**EC-01/EC-02 → PASS**（RECHECK-498 = PASS）；
+EC-03/04/05 PENDING。 |
 | 2026-10-16 | **ACTIVE** | **建档**：承 GOAL-20261015-080 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「检索」/「计划」/「实验」**三域的共同下一格**。**建档实测**（三条）：① 真实 run 上模型**自陈**没收到检索记录、并拒绝编造引用（`748a56a6…` 的计划正文）；② 会话的**唯一**出站消息是 `send_message(contract.purpose)`（`session_builder.py:83`）；③ `context_snapshot` 在 spec 上且被带进 fork（`session_builder.py:171`）但**没有渲染进提示词的消费者**。这三条就是本 GOAL 的靶子与可行性依据。 |
