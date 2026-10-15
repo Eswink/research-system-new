@@ -34,20 +34,27 @@ objective: >
 exit_criteria:
   - id: EC-01
     criterion: >-
-      **计划产物成为实验的声明输入**：`experiment` phase（协议层）声明
-      `research_plan` 为其输入制品，且该声明经既有缝（`phase.inputs` →
-      `spec_context.declared_input_artifacts` → 结果注册面）**真的到达执行体**。
-      判据成对：**声明在**（协议 + 装配面都指出同一份制品）+ **到达在**（装配上下文里
-      能看到它）；反证：摘掉协议里的 `inputs` 声明 ⇒ 判据红。
+      **设计来源成为声明的、且是 run 作用域的读**：装配面可声明「本 run 的实验设计
+      取自**计划产物**」（缺省不声明 ⇒ 既有语义逐字不变）；声明后，设计经**确定性读取器**
+      从**本 run** 的计划制品（canonical 读面，按 run 过滤）读出 —— 读取器**不建会话、
+      不出网**，且**读不到制品 ⇒ 点名拒绝**（不回落装配常量）。
+      **★ 建档（cycle 0）实测更正**：本 EC 原写「experiment phase 声明 `research_plan`
+      为其 `inputs` 制品」，**实测不可行且不该做** —— `test_declared_input_sources.py`
+      要求声明输入是**仓库文件字节可重算、组合根种入**的制品（逐条判据在树），而计划产物
+      是**本 run 的模型产物**；`inputs` 的既有口径逐字写着「只声明**外部供应**的输入，
+      **不解析** phase 间的产物引用」（`services/api/demo.py`）。⇒ 改走
+      **执行期 run 作用域读**（与 GOAL-078 的 `retrieval_context` 同一形态），
+      **一条既有判据都不动**。
     verify: >-
-      离线判据：`tests/e2e/test_experiment_design_from_the_plan.py` ⇒ 声明到达装配上下文；
-      `tests/application/test_experiment_design_reader.py` ⇒ 读取器成对判据全绿。
+      `uv run --frozen --no-sync python -B -m pytest tests/application/test_experiment_design_reader.py -q`
+      ⇒ 全绿；判据覆盖：按 run 过滤（他 run 的计划读不到）/ 读不到制品点名 /
+      未声明来源 ⇒ 零回归。**反证**：去掉 run 过滤 ⇒ 判据红。
     status: PENDING
   - id: EC-02
     criterion: >-
       **设计由计划产物的内容派生**：确定性读取器从计划产物**内容**里读出实验设计
       （臂名 + 参数集），逐键过**既有白名单**（`ALLOWED_PARAMETERS`，不新开口子）；
-      **缺设计 ⇒ 点名拒绝**（不是静默回落装配常量 —— 那会让「计划驱动」变成一句空话）。
+      **声明了计划来源而设计缺席 ⇒ 点名拒绝**（不是静默回落装配常量 —— 那会让「计划驱动」变成一句空话；**未声明来源时**走既有装配语义，逐字不变）。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_experiment_design_reader.py -q`
       ⇒ 全绿；判据覆盖：合法设计逐键读出 / 白名单外键点名拒绝 / 缺设计块点名拒绝 /
@@ -252,3 +259,4 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-20261015-079 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「计划」域与「实验」域的**同一个下一格**（两行逐字都指向「设计由计划/立题派生」）。**建档实测**（四条）：① `experiment` phase **没有 `inputs:` 声明**（`research_report_chain_v1.yaml` 里 `inputs:` 只在 plan/review/report 三处）⇒ 计划产物从未被声明为实验的输入；② 全仓 `research_plan` 在 `packages/`·`services/` **零命中** ⇒ 产品代码里没有消费者；③ 臂与参数由**装配常量**给出（live 就是 `_LIVE_ARMS`）⇒ 设计是测试作者写的；④ `ExperimentPlan` 字段逐个读出，**仍无参数位**。这四条就是本 GOAL 的靶子与可行性依据。 |
+| 2026-10-15 | **ACTIVE** | **cycle 0 建档更正（实测驱动）**：EC-01 原文写「experiment phase 声明 `research_plan` 为其 `inputs` 制品」——**规划期实测判定不可行**：`tests/architecture/python/test_declared_input_sources.py` 的两条判据要求声明输入是**仓库文件字节可重算 + 组合根种入**（`created_by == "composition-root"`），而计划产物是**本 run 的模型产物**；且 `inputs` 的既有口径逐字写着「只声明**外部供应**的输入，**不解析** phase 间的产物引用」。⇒ 改走**执行期 run 作用域读**（与 GOAL-078 的 `retrieval_context` 同一形态）——**不为让新目标成立而改任何既有判据**。EC-01 同轮改写，EC-02 补「未声明来源 ⇒ 既有语义逐字不变」的边界。 |
