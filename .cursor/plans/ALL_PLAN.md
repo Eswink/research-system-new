@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261015-481](tasks/PLAN-20261015-481-goal-079-ec03-the-arms-are-comparable.md) | DONE |
 | [x] | [PLAN-20261015-479](tasks/PLAN-20261015-479-goal-079-ec02-two-arms-with-a-control.md) | DONE |
 | [x] | [PLAN-20261015-477](tasks/PLAN-20261015-477-goal-079-ec01-experiment-parameters-come-from-the-declaration.md) | DONE |
 | [x] | [PLAN-20261015-475](tasks/PLAN-20261015-475-goal-078-ec04-live-run-on-the-new-relay.md) | DONE |

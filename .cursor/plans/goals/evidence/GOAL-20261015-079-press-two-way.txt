@@ -5,7 +5,9 @@ V9-1 = 白名单判定恒真假（未声明的键不再被拒 ⇒ 红）；
 V9-2 = 声明不再进请求（参数面断链 ⇒ 红）；
 V9-3 = 脚本不读声明（继续用模块常量 ⇒ 红）；
 V9-4 = 臂声明被架空（逐臂派发退化为单臂 ⇒ 红）；
-V9-5 = 臂 id 退回「一 run 一实验」（两臂撞同一个 id ⇒ 红）。
+V9-5 = 臂 id 退回「一 run 一实验」（两臂撞同一个 id ⇒ 红）；
+V9-6 = 非数值指标不再排除（布尔被当 0/1 求差 ⇒ 红）；
+V9-7 = 只比同名列改成比并集（单侧指标被折算进差值 ⇒ 红）。
 V9-1
   V9-1 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
 V9-2
@@ -14,6 +16,10 @@ V9-3
   V9-3 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
 V9-4
   V9-4 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V9-6
+  V9-6 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V9-7
+  V9-7 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
 V9-5
   V9-5 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
 all_red_and_restored=True

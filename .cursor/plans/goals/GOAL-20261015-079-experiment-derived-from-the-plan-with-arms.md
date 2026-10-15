@@ -56,7 +56,7 @@ exit_criteria:
     verify: >-
       读面判据：同一 run 的两个实验记录的指标按**同名列**求差；
       任一侧缺该指标 ⇒ 该指标**不在**对比里且**点名**（不得当成 0 参与比较）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真实中转站上跑通一次**：真实模型会话产出的**计划声明**（而非夹具）驱动两臂实验，
@@ -124,7 +124,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261015-477-goal-079-ec01-experiment-parameters-come-from-the-declaration.md
   - .cursor/plans/tasks/PLAN-20261015-479-goal-079-ec02-two-arms-with-a-control.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-480-goal-079-ec02-two-arms-with-a-control.md
+  - .cursor/plans/tasks/PLAN-20261015-481-goal-079-ec03-the-arms-are-comparable.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-482-goal-079-ec03-the-arms-are-comparable.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md
 ---
@@ -206,6 +207,13 @@ memory_entries:
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（参数面经声明传递） |
 | 1 | PLAN-20261015-477 | 见「CI 台账」 | 参数面判据 **11 passed**（白名单 / 逐键传递 / 零回归 / 脚本真读 / 非法点名 / 命名空间）；三向按压全红且逐字节复原 | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（多臂/对照） |
 | 2 | PLAN-20261015-479 | 见「CI 台账」 | 臂判据 **14 passed**；e2e **6 passed**（含真容器 run 级：读面 2 条实验、两臂比率 **7990.0 vs 178.5**）；五向按压全红且逐字节复原 | 见「CI 台账」 | 3 次（见「cycle 2 的修复记录」） | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（臂间可比） |
+| 3 | PLAN-20261015-481 | 见「CI 台账」 | 对比判据 **13 passed**；e2e **8 passed**（真容器 run：差值 `178.5 - 7990.0 = -7811.5`，判据自己重算核对；`agreement` 进 `not_numeric`）；七向按压全红且逐字节复原 | 见「CI 台账」 | 1 次（见「cycle 3 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站） |
+
+### cycle 3 的修复记录（逐条如实）
+
+1. **判据里把缺指标方向写反了**（实测抓到的**判据自身**缺陷）：`missing_in_left` 的语义是「**左臂缺**的指标」（= 右臂有、左臂没有），我按「右臂缺」写 ⇒ 两条判据红。实现是对的（实测读数逐字见判据开发过程）⇒ 改判据并在 docstring 里**明写方向口径**（免得后来者再猜）。**没有**改实现去迁就写错的判据。
+2. **判据里漏了一行 import**（`Decimal`）：用于「判据自己重算差值」的算术核对 ⇒ 补上。
+
 
 ### cycle 2 的修复记录（逐条如实）
 
@@ -228,6 +236,7 @@ memory_entries:
 | --- | --- | --- | --- |
 | 建档（序 47） | `b05b0067` | [M0 38677344100](https://github.com/Eswink/research-system-new/actions/runs/38677344100) / [Push 38677343399](https://github.com/Eswink/research-system-new/actions/runs/38677343399) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 | cycle 1（EC-01 参数面 + 11 例 + 三向按压） | `f2291483` | [M0 38682201374](https://github.com/Eswink/research-system-new/actions/runs/38682201374) / [Push 38682200974](https://github.com/Eswink/research-system-new/actions/runs/38682200974) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| cycle 2（EC-02 多臂 + 逐臂派发 + 20 例 + 七向按压） | `aad54b4d` | [M0 38708199118](https://github.com/Eswink/research-system-new/actions/runs/38708199118) / [Push 38708198186](https://github.com/Eswink/research-system-new/actions/runs/38708198186) | **第 1 次尝试（`run_attempt=1`）：`quality-ubuntu-latest` = `failure`** —— 10 条 `docker.errors.BuildError`（`registry-1.docker.io` 拉 `${python:3.12-slim}` 基础镜像时 `unable to decode token response … Client.Timeout`），**全部**落在 `tests/adapters/execution/test_docker_backend_e2e.py`（**本 commit 未触碰该文件**，同一 job 在上一 run `f2291483` 为 `success`）；同 run 其余七 job 全 `success`，**本 cycle 新增的 `tests/e2e/test_two_arm_experiment_offline.py` 6 例在该 attempt 里全绿** ⇒ 失败分类 = **基础设施（镜像仓库不可达）**，非代码缺陷。**处置** = `rerun-failed-jobs`，**第 2 次尝试（`run_attempt=2`）八 job 全 `success`**（未改任何代码、未动任何阈值） |
 
 ## 状态历史
 
@@ -236,3 +245,4 @@ memory_entries:
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-078 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「实验」域 **L2 → L3**（`下一级是什么` 逐字：实验由计划派生，多臂 / 对照组）。**建档实测**（四条）：① 实验脚本参数是**模块常量**（`SEED = 7` / `N_ITEMS = 800` / `N_DUPLICATE_PAIRS = 40`）；② `ExperimentPlan` **无参数位**（字段逐个读出）；③ 域层对 `arm` / `arms` / `control_group` **零命中** ⇒ 臂概念不存在；④ **缝已在**：`ExperimentExecutionRequest.environment` 经 `execute.py` → `docker_backend.py`（`environment = dict(spec.environment)`）**真的进容器**且已被记 digest，而产品路径今天只塞了 `EXPERIMENT_RUN_ID`。这四条就是本 GOAL 的靶子与可行性依据。 |
 | 2026-10-15 | ACTIVE | **cycle 1 落地**（EC-01，PLAN-477）：实验参数从**脚本模块常量**变成**声明事实** —— 装配声明经「执行请求 → 容器环境」到脚本（逐键 / 白名单 / 前缀命名空间不相交），**未声明零回归**（请求环境与脚本产出都与改动前逐字相同），**值非法点名失败**。判据 11 例；三向按压全红。**EC-01 → PASS**（RECHECK-478 = PASS）；EC-02/03/04/05 PENDING。 |
 | 2026-10-15 | ACTIVE | **cycle 2 落地**（EC-02，PLAN-479）：实验支持**多臂/对照** —— 臂声明（两种形态 + 重复/非法点名拒绝）、臂 id **独立派生**（不复用「一 run 一实验」）、派发体**逐臂各跑一次**、主臂代表任务且消息点名全部臂。真容器 run 上：读面 **2** 条实验、两臂同指标 **7990.0 vs 178.5**（参数不同 ⇒ 读数不同）。判据 14 + 6 例；五向按压全红。**EC-02 → PASS**（RECHECK-480 = PASS）；EC-03/04/05 PENDING。 |
+| 2026-10-15 | ACTIVE | **cycle 3 落地**（EC-03，PLAN-481）：臂间**可比** —— 纯函数对比器（消费既有读面载荷，**零 DTO/路由/快照改动**）：`delta = right − left`、**同名列才比**、缺指标**逐臂点名**（不折算成 0）、非数值（布尔等）**排除并点名**、空对比 `comparable=False` **不是**「差值为 0」。真容器 run 上差值 `-7811.5`。判据 13 + e2e 2 例；七向按压全红。**EC-03 → PASS**（RECHECK-482 = PASS）；EC-04/05 PENDING。 |

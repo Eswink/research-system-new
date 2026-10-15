@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -213,3 +214,79 @@ class TestTheTwoArmsLandOnTheRunReadFace:
         for item in experiments:
             assert item["image_digest"], item
             assert item["artifact_ids"], item
+
+
+@pytest.mark.requires_docker
+class TestTheArmsAreComparableFromTheReadFace:
+    """EC-03：**「两臂差多少」由落库的指标算出来**（读面取数 → 纯函数求差）。
+
+    与上一个类的分工：那个证「两臂各自落库」；本类证「两臂**可比**」——
+    取读面上那两条记录的 `metrics`，交给 `compare_arms`，核**具体的差值**与
+    **缺指标的点名**。**不做**任何重跑（读面给什么就算什么）。
+    """
+
+    def _read_face_metrics(self, mock_relay: str) -> list[dict[str, Any]]:
+        from dataclasses import replace
+
+        from fastapi.testclient import TestClient
+
+        from packages.application.run_orchestration.service import RunOrchestrationService
+        from services.api.app import create_app
+        from services.api.assembly import policy_bindings
+        from services.api.experiment_support import (
+            docker_experiment_assembly,
+            sandbox_experiment_runner,
+        )
+        from tests.e2e.literature_chain_support import OfflineEuropePmc
+        from tests.e2e.live_run_support import start_run
+        from tests.e2e.test_research_report_arc_offline import _PROTOCOL, _assembled_deps
+
+        deps, _recorder = _assembled_deps(mock_relay, OfflineEuropePmc(requests=[]))
+        policy = policy_bindings().get("policy_evaluator")
+        assert policy is not None, "policy.yaml must be loadable for the two-arm experiment"
+        runner = sandbox_experiment_runner(
+            docker_experiment_assembly(
+                artifacts=deps.artifacts,
+                ledger=deps.ledger,
+                policy=policy,
+                script="examples/experiments/exact_match_index_benchmark.py",
+                image="research-os-sandbox:m9-test",
+                experiment_store=deps.experiment_store,
+                arms={"control": {}, "treatment": {"n_items": 120}},
+            )
+        )
+        deps.runs = RunOrchestrationService(replace(deps.runs._deps, experiment_task=runner))
+        with TestClient(create_app(deps)) as client:
+            run = start_run(client, _PROTOCOL)
+            detail = client.get(f"/runs/{run['id']}").json()
+            experiments = list(client.get(f"/runs/{run['id']}/experiments").json()["experiments"])
+        assert detail["state"] == "SUCCEEDED", (detail, experiments)
+        return [dict(item.get("metrics") or {}) for item in experiments]
+
+    def test_the_delta_comes_from_the_persisted_metrics(self, mock_relay: str) -> None:
+        from packages.application.experiments.arm_comparison import compare_arms
+
+        metrics = self._read_face_metrics(mock_relay)
+        assert len(metrics) == 2, metrics
+        comparison = compare_arms("control", metrics[0], "treatment", metrics[1])
+
+        assert comparison.comparable, ("两臂必须有可比指标", comparison)
+        by_name = {delta.metric: delta for delta in comparison.deltas}
+        assert "comparison_reduction_ratio" in by_name, sorted(by_name)
+        delta = by_name["comparison_reduction_ratio"]
+        # 差值与两条落库读数**算术一致**（判据自己算一遍，不信任实现）。
+        expected = Decimal(delta.right_value) - Decimal(delta.left_value)
+        assert Decimal(delta.delta) == expected, (delta, expected)
+        assert Decimal(delta.delta) != 0, ("两臂参数不同 ⇒ 该指标不该差 0", delta)
+        # 缺指标 / 非数值**逐条点名**（本实验两臂测的是同一批指标 ⇒ 两侧都空）。
+        assert comparison.missing_in_left == (), comparison.missing_in_left
+        assert comparison.missing_in_right == (), comparison.missing_in_right
+
+    def test_a_boolean_metric_is_named_rather_than_subtracted(self, mock_relay: str) -> None:
+        """`agreement` 是布尔 ⇒ **不**参与差值，但**点名**在场（不静默丢）。"""
+        from packages.application.experiments.arm_comparison import compare_arms
+
+        metrics = self._read_face_metrics(mock_relay)
+        comparison = compare_arms("control", metrics[0], "treatment", metrics[1])
+        assert "agreement" in comparison.not_numeric, comparison.not_numeric
+        assert all(delta.metric != "agreement" for delta in comparison.deltas), comparison.deltas
