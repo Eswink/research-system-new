@@ -89,6 +89,25 @@ def read_design_from_plan(
             f"run {run_id!r} declared a plan-derived experiment design, but nothing is "
             "registered for it in the evidence ledger ⇒ the plan cannot be located"
         )
+    artifact_id, payload = _the_one_plan(artifacts, run_id, in_view, max_chars=max_chars)
+    design = payload.get(DESIGN_KEY)
+    if design is None:
+        raise ExperimentDesignUnreadableError(
+            f"the plan artifact {artifact_id!r} carries no {DESIGN_KEY!r} block "
+            "(declare the design in the plan, or do not declare a plan-derived source)"
+        )
+    arms = _arms_of(design, artifact_id)
+    return PlanDerivedDesign(artifact_id=artifact_id, run_id=run_id, arms=arms)
+
+
+def _the_one_plan(
+    artifacts: ArtifactStore,
+    run_id: str,
+    in_view: set[str],
+    *,
+    max_chars: int,
+) -> tuple[str, Mapping[str, Any]]:
+    """本 run 视角里**恰好一份**可读的计划制品（零份 / 多份都点名，**不猜**）。"""
     found: list[tuple[str, Mapping[str, Any]]] = []
     for artifact_id in sorted(in_view):
         if not artifact_id.endswith(f":{PLAN_ARTIFACT_NAME}"):
@@ -108,15 +127,7 @@ def read_design_from_plan(
             "more than one plan artifact is in view; the design source would be "
             f"undecidable: {sorted(item[0] for item in found)}"
         )
-    artifact_id, payload = found[0]
-    design = payload.get(DESIGN_KEY)
-    if design is None:
-        raise ExperimentDesignUnreadableError(
-            f"the plan artifact {artifact_id!r} carries no {DESIGN_KEY!r} block "
-            "(declare the design in the plan, or do not declare a plan-derived source)"
-        )
-    arms = _arms_of(design, artifact_id)
-    return PlanDerivedDesign(artifact_id=artifact_id, run_id=run_id, arms=arms)
+    return found[0]
 
 
 def _run_artifact_ids(ledger: Any, run_id: str) -> set[str]:
