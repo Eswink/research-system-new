@@ -77,17 +77,7 @@ exit_criteria:
       或模型不产出设计块** ⇒ 按降级梯如实登记（记 PENDING + 点名阻塞点），**不得**伪造。
     verify: >-
       live 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且设计读数在树。
-    status: PENDING
-    blocker: >-
-      **实测阻塞点（2026-10-15 cycle 4）**：真实 run 上计划的交付物信封里
-      `content` **就是合约 purpose 的正文**（会话首条消息 / 提示词），`message_count = 1`
-      ⇒ 落进计划制品的是**提示词**而不是模型的回答 ⇒ 模型写的设计块**结构上不可能**
-      到达该制品。**取证**：`evidence/GOAL-20261015-080-ec04-blocker.txt`（真实 run 后
-      读计划制品的实际字节）。**另一条同向读数**：该会话 IDE 侧 `Loaded 0 tools from spec`，
-      模型自陈「only `think` and `finish`」且工具调用被 `policy denied tool execution`
-      ⇒ 本轮**无法**在本机取证「模型写出的设计」。
-      **按降级梯如实登记为 PENDING**，**不**伪造成功；阻塞点已点名（交付物内容取自**首条**
-      消息而非**末条** + 该相位的会话工具面为空）。
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口**：验证器进树（复用 `tools/closeout_recheck_tools` + 标准断言集）+
@@ -283,7 +273,33 @@ memory_entries: []
 | 2 | PLAN-20261015-489 | 见「CI 台账」 | 设计判据 **11 passed**（正向 / 来源唯一 / fail-closed / 零回归）；三向按压 V10-4…V10-6 **全 RED** 且逐字节复原；受影响套件 **1064 passed, 1 skipped** | 见「CI 台账」 | 0 次 | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（换计划 ⇒ 换实验：端到端读数） |
 | 3 | PLAN-20261015-491 | 见「CI 台账」 | e2e 判据 **8 passed**（换计划 / 逐键参数 / 不撞命名空间 / 来源唯一派发前拒绝 / 零回归 ×2 / 确定性 ×2）；合计 **21 passed**；规模门 **1278 passed** | 见「CI 台账」 | 0 次 | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站上模型写出的设计驱动实验） |
 
-| 4 | PLAN-20261015-493（执行中） | 见「CI 台账」 | live 判据在树且默认门 **skip**；**真实 run 两次实跑** ⇒ 计划的交付物信封 `content` = 合约 purpose 正文（`message_count = 1`、500 字符截断处正是设计块）⇒ **模型写的设计结构上到不了该制品**；该相位会话 `Loaded 0 tools` + 工具调用 `policy denied` | 见「CI 台账」 | 1 次（见「cycle 4 的修复记录」） | EC-04 **PENDING（点名阻塞）**；EC-05 PENDING | cycle 5 = EC-05（自举收口）—— EC-04 待人工拍板（见「残余」`W-5`） |
+| 4 | PLAN-20261015-493（EC-04） | 见「CI 台账」 | **真实 run 实跑四次**：前三次暴露并修掉三处产品缺陷（循环控制动词被当能力拒 / `finish` 答复不投影 / 正文取自 repr + 交付物被遥测上限截断）；末次 **1 passed**：模型自写设计块（`deduped` 0 重复 vs `raw` 12）、两臂各跑一次、**声明逐键生效**（`duplicates_expected` **0 vs 12**、比值 **0.0 vs 595.0**）、run `SUCCEEDED` | 见「CI 台账」 | 3 次（见「cycle 4 的修复记录」） | EC-04 **PASS**；EC-05 PENDING | cycle 5 = EC-05（自举收口） |
+
+### cycle 4 的修复记录（逐条如实 —— **本轮的价值就在这里**）
+
+**真实 run 逐次暴露，共三处产品缺陷**（都不是判据问题，都在产品代码里）：
+
+1. **SDK 的循环控制动词被当成能力拒掉**：`think` / `finish` 双双落 `default_effect: DENY` ⇒
+   模型**无法思考、无法收尾**（自陈「even `think` is being denied」「I have no way to
+   interact」）。它们不是能力（SDK 逐字：these are *required* for the agent to work；
+   `readOnlyHint=True` / `destructiveHint=False` / `openWorldHint=False`，经
+   `include_default_tools` **默认注入**）。⇒ 逐字白名单 `LOOP_CONTROL_VERBS`，**只在 agent loop**
+   豁免；**R-03 直达通道照旧全门禁**（判据三条钉住：豁免面恰两名 / 不扩散 / 其余动词照旧 DENY）。
+2. **`finish` 动作的 message 从不变成 MESSAGE**：SDK 逐字称它 *Final message to send to
+   the user* ⇒ 答复正文在动作里，不在 MessageEvent 里 ⇒ 交付物只剩提示词那一条
+   （`message_count = 1`）。⇒ `map_event` 投影它（**答复在前**、工具动作在后）。
+3. **正文取自 Python repr + 交付物被遥测上限截断**：`str(content)` 给出
+   `[TextContent(cache_prompt=False, …)]` 这样一段 repr（**不是文本**）⇒ 按文本找 JSON 块的
+   读取器永远解析不出来；且交付物从**映射事件**取正文，而映射层为遥测（§10）套了 500 上限
+   ⇒ 计划被切在设计块中间（三次真实 run 复现）。⇒ 新增 `_content_text()`（取 `TextContent.text`）
+   与 `final_answer_text()`（交付物专用：**不套 500 上限**、脱敏不变）。
+
+**同时补强判据**（此前只对**臂名** ⇒ 会让「读了设计但参数没进容器」假绿）：每个臂**声明的参数**
+必须**逐键**落在该臂实验的**落库指标**里，两层名字（参数名 vs 脚本回报名）用显式映射表对齐，
+表外的参数**不判**并由上界断言钉住射程。
+
+**合约 purpose 改写**（第三处非缺陷但是前提）：它**就是模型读到的任务书**
+（`send_message(purpose)`），原文是内部文档口吻 ⇒ 改为第二人称任务指令 + 逐字的设计块形状。
 
 ## CI 台账
 
@@ -317,6 +333,12 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-20261015-079 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「计划」域与「实验」域的**同一个下一格**（两行逐字都指向「设计由计划/立题派生」）。**建档实测**（四条）：① `experiment` phase **没有 `inputs:` 声明**（`research_report_chain_v1.yaml` 里 `inputs:` 只在 plan/review/report 三处）⇒ 计划产物从未被声明为实验的输入；② 全仓 `research_plan` 在 `packages/`·`services/` **零命中** ⇒ 产品代码里没有消费者；③ 臂与参数由**装配常量**给出（live 就是 `_LIVE_ARMS`）⇒ 设计是测试作者写的；④ `ExperimentPlan` 字段逐个读出，**仍无参数位**。这四条就是本 GOAL 的靶子与可行性依据。 |
+| 2026-10-16 | **ACTIVE** | **cycle 4 达成**（EC-04）：**真实 run 上模型写出的设计驱动实验** ——
+修掉三处实测到的产品缺陷后，末次真实 run：模型自写 `experiment_design` 块
+（`deduped` / `raw` 两臂）、两臂各在真容器跑一次、**每个臂声明的参数逐键生效**
+（`duplicates_expected` **0 vs 12**、`comparison_reduction_ratio` **0.0 vs 595.0**）、
+run `SUCCEEDED`、`failures` 为空。**EC-04 → PASS**（读数归档
+`evidence/GOAL-20261015-080-ec04-design-evidence.txt`）；EC-05 PENDING。 |
 | 2026-10-15 | **ACTIVE** | **cycle 4 阻塞点登记**（EC-04）：**真实 run 上计划制品装的是提示词** ——
 交付物信封 `content` = 合约 purpose 正文（`message_count = 1`、`[:500]` 截断），
 **模型回答从不进入该制品** ⇒ 「模型写出的设计驱动实验」在本机**结构上不可能**。
