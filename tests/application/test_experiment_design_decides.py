@@ -62,7 +62,9 @@ def _assembly_of(*, design_source: str | None, arms: object | None) -> SandboxEx
     )
 
 
-def _seed_plan(assembly: SandboxExperimentAssembly, payload: object) -> None:
+def _seed_plan(
+    assembly: SandboxExperimentAssembly, payload: object, *, run_id: str = RUN_ID
+) -> None:
     """把一份计划产物**登记进本 run 的证据链**（= 它对本 run「在场」）。"""
     ledger = assembly.ledger
     assert ledger is not None, "本夹具的装配面总是带 ledger"
@@ -89,7 +91,7 @@ def _seed_plan(assembly: SandboxExperimentAssembly, payload: object) -> None:
         extracted_by="agent:research_director",
         captured_at=Timestamp.now(),
         artifact_id=artifact_id,
-        run_id=RUN_ID,
+        run_id=run_id,
     )
     claim = Claim(
         id="claim:plan:seed",
