@@ -1,0 +1,26 @@
+GOAL-20261014-078 EC-04 上下文面读数（新站真实 run）
+run_id: 218280b6-5aa5-43f8-9556-3981c2fe6033
+state: SUCCEEDED
+protocol: research_report_chain_v1_0_0
+--- 读面上的上下文制品（既有路由 GET /runs/{id}/artifacts + /content） ---
+artifact: 84042b38-f3c3-4a42-8442-1b6db2422de2:retrieval_context
+  run_id: 218280b6-5aa5-43f8-9556-3981c2fe6033
+  entries: 4
+  - 42781891 | tool-result:f4c568c5-3977-4713-aadc-6df510f73269:literature_read:10.12688/f1000research.180013.2+10.31234/osf.io/w7xpq_v2+42781891:literature_read
+  - 10.12688/f1000research.180013.2 | tool-result:f4c568c5-3977-4713-aadc-6df510f73269:literature_search:literature_search
+  - 10.31234/osf.io/w7xpq_v2 | tool-result:f4c568c5-3977-4713-aadc-6df510f73269:literature_search:literature_search
+  - 42781891 | tool-result:f4c568c5-3977-4713-aadc-6df510f73269:literature_search:literature_search
+artifact: f4c568c5-3977-4713-aadc-6df510f73269:retrieval_context
+  run_id: 218280b6-5aa5-43f8-9556-3981c2fe6033
+  entries: 0
+  reason: run 218280b6-5aa5-43f8-9556-3981c2fe6033 has no retrieved evidence to place in the context
+--- 会话 spec 的上下文（同源面） ---
+session contract: multi_role_review
+  digest: sha256:8cfa62f321e2cd770cc7cba6a52efc150c1a10dfa3587cd8bcc17d85771d1af6
+  refs: 4 token_allocation: 390
+session contract: research_report_plan
+  digest: None
+  refs: 0 token_allocation: 0
+--- 检索证据（系统取得） ---
+retrieved: tool-result:f4c568c5-3977-4713-aadc-6df510f73269:literature_read:10.12688/f1000research.180013.2+10.31234/osf.io/w7xpq_v2+42781891:literature_read
+retrieved: tool-result:f4c568c5-3977-4713-aadc-6df510f73269:literature_search:literature_search

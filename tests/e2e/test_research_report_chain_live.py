@@ -51,6 +51,10 @@ from packages.application.model_relay.live_run_gate import (
 )
 from services.api.runtime_support import OPENHANDS_RUNTIME
 from tests.e2e.live_switch_support import live_e2e_switch_enabled
+from tests.e2e.retrieval_context_support import (
+    assert_the_context_reached_sessions,
+    context_payloads,
+)
 
 pytestmark = pytest.mark.requires_live_llm
 
@@ -92,6 +96,7 @@ def _live_deps(db_path: str) -> Any:
     from services.api.catalog_merge import merged_catalog_snapshot
     from services.api.composition import assemble
     from services.api.report_support import report_task_runner
+    from services.api.retrieval_context_support import retrieval_context_builder
     from services.api.settings import ApiSettings
 
     deps = assemble(ApiSettings(db_path=db_path))
@@ -112,10 +117,28 @@ def _live_deps(db_path: str) -> Any:
                 ledger=deps.ledger,
                 review_findings=deps.review_findings,
             ),
+            # GOAL-20261014-078 EC-04：检索内容 → 会话上下文（与产品组合根同一处装配决策；
+            # run-ready/live 判据不经组合根 ⇒ 由装配方补这一行，用**产品件本身**）。
+            retrieval_context=retrieval_context_builder(
+                artifacts=deps.artifacts, ledger=deps.ledger
+            ),
         )
     )
     _register_session_tools(deps)
+    _install_spec_recorder(deps)
     return deps
+
+
+def _install_spec_recorder(deps: Any) -> None:
+    """把 **spec 记录器**装成编排实跑的 runtime（观察、不改行为；产品代码零改动）。"""
+    from dataclasses import replace
+
+    from packages.application.run_orchestration.service import RunOrchestrationService
+    from tests.e2e.test_retrieval_context_reaches_the_session import SessionSpecRecorder
+
+    recorder = SessionSpecRecorder(deps.runs._deps.runtime)
+    deps.runs = RunOrchestrationService(replace(deps.runs._deps, runtime=recorder))
+    deps.session_specs = recorder
 
 
 def _probeable_providers(deps: Any) -> dict[str, Any]:
@@ -296,10 +319,13 @@ def _execute(deps: Any) -> dict[str, Any]:
                 if event["type"] in ("run.failed", "task.failed")
             ],
             "artifact_ids": [str(item["id"]) for item in artifacts],
+            "artifacts_full": [{"id": str(i["id"]), "digest": str(i["digest"])} for i in artifacts],
             "report_status": content.status_code,
             "report_content_type": content.headers.get("content-type", ""),
             "evidence": client.get(f"/runs/{run_id}/evidence").json(),
             "experiments": client.get(f"/runs/{run_id}/experiments").json(),
+            # GOAL-20261014-078 EC-04：上下文面（会话 spec + 既有读面制品）。
+            "context_artifacts": context_payloads(client, run_id),
         }
         if content.status_code == 200:
             report = content.content.decode("utf-8")
@@ -392,8 +418,27 @@ def test_the_new_relay_runs_the_full_chain_and_leaves_a_report(tmp_path: Path) -
 
     deps = _live_deps(str(tmp_path / "control-plane.db"))
     sample = _execute(deps)
+    sample["session_context_digests"] = [
+        str(spec.context_snapshot.retrieval_digest)
+        for spec in deps.session_specs.specs.values()
+        if spec.context_snapshot is not None
+    ]
     if sample["state"] != "SUCCEEDED":
         (tmp_path / "ec04-sample.json").write_text(
             json.dumps(sample, ensure_ascii=False, indent=2), encoding="utf-8"
         )
     _assert_live_report(sample)
+    assert_the_context_reached_sessions(sample)
+    # 同源：会话拿到的上下文 digest 必须出现在读面制品的 digest 里。
+    listed = {
+        str(item["digest"])
+        for artifact_id, _payload in sample["context_artifacts"].items()
+        for item in sample["artifacts_full"]
+        if str(item["id"]) == artifact_id
+    }
+    for digest in sample["session_context_digests"]:
+        assert digest in listed or digest == "None", (
+            "会话拿到的上下文 digest 必须在读面制品的 digest 里（同源）",
+            digest,
+            sorted(listed),
+        )

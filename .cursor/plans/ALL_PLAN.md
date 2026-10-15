@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261015-475](tasks/PLAN-20261015-475-goal-078-ec04-live-run-on-the-new-relay.md) | DONE |
 | [x] | [PLAN-20261015-473](tasks/PLAN-20261015-473-goal-078-ec03-what-entered-the-context-is-readable.md) | DONE |
 | [x] | [PLAN-20261014-471](tasks/PLAN-20261014-471-goal-078-ec02-retrieval-context-reaches-a-downstream-session.md) | DONE |
 | [x] | [PLAN-20261014-469](tasks/PLAN-20261014-469-goal-078-ec01-retrieval-content-reaches-the-session-context.md) | DONE |

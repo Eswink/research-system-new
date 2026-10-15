@@ -72,7 +72,7 @@ exit_criteria:
     verify: >-
       live 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且
       `selected_refs` 里的标识（PMID 等）能追回**本次**检索结果。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口**：验证器进树（复用 `tools/closeout_recheck_tools` + 标准断言集）+
@@ -132,7 +132,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261014-469-goal-078-ec01-retrieval-content-reaches-the-session-context.md
   - .cursor/plans/tasks/PLAN-20261014-471-goal-078-ec02-retrieval-context-reaches-a-downstream-session.md
   - .cursor/plans/tasks/PLAN-20261015-473-goal-078-ec03-what-entered-the-context-is-readable.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-474-goal-078-ec03-what-entered-the-context-is-readable.md
+  - .cursor/plans/tasks/PLAN-20261015-475-goal-078-ec04-live-run-on-the-new-relay.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-476-goal-078-ec04-live-run-on-the-new-relay.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261014-221-declared-but-never-constructed-is-a-dead-seam.md
 ---
@@ -218,6 +219,14 @@ memory_entries:
 | 1 | PLAN-20261014-469 | 见「CI 台账」 | 接缝判据 **13 passed**；既有四套件 **2752 passed, 8 skipped**（+13）；`mypy` 1232 源文件零问题；产品装配实测 `retrieval_context is not None`；**m0 终态行 `PASS: profile=m0; 23 deterministic checks`** | 见「CI 台账」 | 4 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（经产品路径进入会话 + 反证臂） |
 | 2 | PLAN-20261014-471 | 见「CI 台账」 | 新 e2e **5 passed**（正向 / 反证 / 射程 / 自检）；接缝判据 **16 passed**（+3）；三向按压全红且逐字节复原；受影响套件 **997 passed, 1 skipped** | 见「CI 台账」 | 2 次（见「cycle 2 的修复记录」） | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（读面可复核「进了什么」） |
 | 3 | PLAN-20261015-473 | 见「CI 台账」 | 读面判据 **5 passed**；接缝 16 passed；e2e **7 passed**（含 HTTP 面 + 同源）；四向按压全红且逐字节复原 | 见「CI 台账」 | 1 次（见「cycle 3 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站实跑） |
+| 4 | PLAN-20261015-475 | 见「CI 台账」 | live 实跑 **1 passed in 72.64s**（run `218280b6…`，终态 `SUCCEEDED`）；下游会话 4 条真标识、digest `sha256:8cfa62f3…`；读面两件制品（下游 4 / 上游 0 带理由）；同源逐一对应 | 见「CI 台账」 | 1 次（见「cycle 4 的修复记录」） | EC-04 **PASS**；EC-05 PENDING | cycle 5 = EC-05（自举收口） |
+
+### cycle 4 的修复记录（逐条如实）
+
+1. **live 装配缺 `retrieval_context`**（实测）：与 EC-02 的 `W-3` 同一形态（live 判据不经组合根）⇒ 判据侧补一行（用产品件本身）。
+2. **判据文件超 450 行**（483）：上下文取证单列成 `tests/e2e/retrieval_context_support.py`。
+3. **取证脚本首版漏采会话 digest**（实测：落盘读数里「同源面」一节为空）⇒ 补采并重跑 ⇒ 两向读数齐备。
+
 
 ### cycle 3 的修复记录（逐条如实）
 
