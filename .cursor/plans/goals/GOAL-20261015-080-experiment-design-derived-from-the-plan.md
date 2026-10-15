@@ -340,7 +340,12 @@ memory_entries: []
 | cycle 4 登记修复 | `275a0284` | [M0 38796415927](https://github.com/Eswink/research-system-new/actions/runs/38796415927) / [Push 38796415349](https://github.com/Eswink/research-system-new/actions/runs/38796415349) | ⚠️ **M0 `cancelled`**（五 job `cancelled`；`eval-gate` + 两条 observability `success`；CodeQL 三条 `success`）= `cancel-in-progress`（紧随的台账更正 `637a331d`）。**`covered_by = 637a331d`**。**不**记绿 |
 | 台账更正 + **当前 tip** | `637a331d` | [M0 38796562764](https://github.com/Eswink/research-system-new/actions/runs/38796562764) / [Push 38796560328](https://github.com/Eswink/research-system-new/actions/runs/38796560328) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 | 台账到 tip（只改记录） | `fb9d52b6` | [M0 38800108…（见下行覆盖）] | 被紧随的推送取消 ⇒ **`covered_by = 137adf67`**，**不**记绿 |
-| live 判据复用既有装配（**一行不同**） | `137adf67`（**tip**） | [M0 38800098789](https://github.com/Eswink/research-system-new/actions/runs/38800098789) / [Push 38800108658](https://github.com/Eswink/research-system-new/actions/runs/38800108658) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| live 判据复用既有装配（**一行不同**） | `137adf67` |
+| EC-04 前半（live 判据 + 合约 purpose 教会设计块） | `deb9e07f` | [M0 38790668018](https://github.com/Eswink/research-system-new/actions/runs/38790668018) | 🔴 **`quality-ubuntu-latest` = `failure`**（新 live 模块未登记 —— 同一真红，已由 `275a0284` 修）；其余 job `success`、CodeQL 三条 `success`。**分类 = 产品缺陷** |
+| EC-04 产品修复（循环控制豁免 + finish 投影） | `9f0fd47b` | 见下行覆盖 | 批量推送；其内容包含在 `de818ef1` 的树里 |
+| EC-04 产品修复（正文提取 + 交付物不截断） | `03911e19` | 见下行覆盖 | 同上 |
+| cycle 5 收口资产（断言集 + 验证器 + 阶梯记账） | `2cb1f54e` | 见下行覆盖 | 同上 |
+| EC-04 达成入账 + **收口**（GOAL ACHIEVED） | `de818ef1`（**tip**） | [M0 38819162296](https://github.com/Eswink/research-system-new/actions/runs/38819162296) / [Push 38819162266](https://github.com/Eswink/research-system-new/actions/runs/38819162266) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（**本 GOAL 的末条实测提交**） | [M0 38800098789](https://github.com/Eswink/research-system-new/actions/runs/38800098789) / [Push 38800108658](https://github.com/Eswink/research-system-new/actions/runs/38800108658) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 
 ## 状态历史
 
