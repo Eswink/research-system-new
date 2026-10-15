@@ -192,10 +192,17 @@ def _live_deps(db_path: str) -> Any:
     from packages.application.run_orchestration.service import RunOrchestrationService
     from services.api.composition import assemble
     from services.api.settings import ApiSettings
+    from tests.e2e.test_research_report_chain_live import (
+        _probeable_providers,
+        _register_session_tools,
+    )
 
     deps = assemble(ApiSettings(db_path=db_path))
     assert deps.preflight_override is None, "live 判据不得带任何 preflight_override"
-    from tests.e2e.test_research_report_chain_live import _register_session_tools
+    # 两件 REST provider 的**可探测实例**：本协议的能力面同时用 `europe_pmc`（运行链检索）
+    # 与 `ncbi_eutils`（评审格的会话绑定）⇒ 只注册一件时另一件健康 `UNKNOWN` ⇒ 冻结
+    # **点名拒冻**（与既有 live 判据同一处置，同一行；不新造一条路径）。
+    deps.tool_providers = _probeable_providers(deps)
 
     assert deps.runs is not None, "产品组合根必须给出编排服务（live 判据的直接前提）"
     inner = deps.runs._deps
