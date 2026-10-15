@@ -10,7 +10,7 @@ review_after: 2027-04-15
 source_plans:
   - .cursor/plans/tasks/PLAN-20261015-485-goal-079-ec05-self-bootstrap-closeout.md
 source_rechecks:
-  - .cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-self-bootstrap-closeout.md
+  - .cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-closeout-recheck.md
 supersedes: []
 tags: [closeout, recheck, assertions, own-ness, self-reference, goal-079]
 ---
@@ -77,7 +77,7 @@ uv run --frozen --no-sync python -B scratch/goal079c5_press.py
 | 类型 | 引用 | 支持的结论 |
 | --- | --- | --- |
 | plan | `.cursor/plans/tasks/PLAN-20261015-485-goal-079-ec05-self-bootstrap-closeout.md` | 缺陷读数 / 三处修复 / 按压设计 |
-| recheck | `.cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-self-bootstrap-closeout.md` | 独立复检：零命中 / 修复后真跑 / 两树 PASS |
+| recheck | `.cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-closeout-recheck.md` | 独立复检：零命中 / 修复后真跑 / 两树 PASS |
 | repository | `tools/verify_goal078_closeout.py` | 缺陷现场与修后形态（自指判词按文件名推） |
 | repository | `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py` | 第三项对拍 + 三条反例 |
 | evidence | `.cursor/plans/goals/evidence/GOAL-20261015-079-c5-ownness-press.txt` | 按压两处红 + 逐字节复原 |

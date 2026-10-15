@@ -263,6 +263,17 @@ memory_entries:
    `records-declare-existing-rechecks`（PLAN-485 的 `latest_recheck` 尚未落盘）
    ⇒ 记录按序写入后自消。**不是**放宽任何判据。
 
+3. **as-is m0（在全部记录写入之后）抓到两处真红 —— 都是我自己刚造出来的**（实测）：
+   把 RECHECK-486 的 slug 从 `self-bootstrap-closeout` 改成收口复检判据认的形式
+   （`closeout-recheck`）时，只改了「声明」面，**两处引用面**没跟着改：
+   `MAINLINE.md` 的进展行链接与 `MEM-223` 的 `source_rechecks` 仍指旧文件名 ⇒
+   `framework/validate_bundle`（本地链接不存在）与 `framework/validate`
+   （工程记忆来源不存在 + Markdown 链接失效）**双双判红**。
+   **处置 = 改引用（不是改判据）**：三处全部重新指向真文件名 ⇒ 两条判据复跑绿，
+   **再跑一次全量 m0** 得终态行 `PASS: profile=m0; 23 deterministic checks`（24 条 `PASS [`、0 `FAILED`）。
+   **这正是 `MEM: record-face-gates-catch-your-own-record` 的同一形态**：改记录的名字，
+   受判面（链接/来源）会**自己**找上门 —— 而它们在 m0 里，不在我的记忆里。
+
 ### cycle 4 的修复记录（逐条如实 —— **本轮的价值就在这里**）
 
 **live 取证抓出两处产品真缺陷 + 一处判据盲区**（第一次真实多臂 run 就暴露）：
@@ -317,6 +328,8 @@ run 承担 —— 若该 run 判红，按「CI 失败分类与纠错」回到 cy
 **本地零真红**（两次修复都由判据自己抓出并点名，见 cycle 2/3/5 的修复记录）。
 
 **凭据审计**：收口前 `tools/credential_audit.py` 四面 `offenders=0`。
+
+**as-is m0（在全部记录写入之后）**：`PASS: profile=m0; 23 deterministic checks`（24 条 `PASS [` / **0 `FAILED`**）。**本终态行采自记录写到此处之后的实跑** —— 此前一次同款实跑抓到我改 RECHECK slug 时留下的两处引用面真红（`MAINLINE` 链接 / `MEM-223` 来源），**改引用、零判据改动**后复跑即得此终态行。
 
 ## 状态历史
 
