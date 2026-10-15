@@ -343,10 +343,12 @@ def docker_experiment_assembly(  # noqa: PLR0913 -- 装配面的量就这么多�
     experiment_store: Any | None = None,
     parameters: dict[str, object] | None = None,
     arms: object | None = None,
+    design_source: str | None = None,
 ) -> SandboxExperimentAssembly:
     """本地装配：执行体 = **既有** `DockerExecutionBackend`（不新增后端/依赖）。
 
-    `parameters` / `arms`（GOAL-20261015-079）由调用方声明；缺省 ⇒ **既有单臂语义逐字不变**。
+    `parameters` / `arms`（GOAL-20261015-079）与 `design_source`（GOAL-20261015-080）
+    由调用方声明；缺省 ⇒ **既有单臂语义逐字不变**。
     """
     return SandboxExperimentAssembly(
         execution=DockerExecutionBackend(image=image),
@@ -358,4 +360,5 @@ def docker_experiment_assembly(  # noqa: PLR0913 -- 装配面的量就这么多�
         script=script,
         parameters=dict(parameters or {}),
         arms=arms,
+        design_source=design_source,
     )
