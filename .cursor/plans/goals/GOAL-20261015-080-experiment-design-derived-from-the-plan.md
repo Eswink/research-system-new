@@ -69,7 +69,7 @@ exit_criteria:
       离线 e2e：`tests/e2e/test_experiment_design_from_the_plan.py` ⇒ run `SUCCEEDED`；
       读面逐臂给出计划里声明的那些臂与参数；**反证**：装配面声明臂与计划声明臂不同 ⇒
       判据如实判否并点名（设计来源必须唯一）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真实中转站上跑通一次**：真实模型会话写出的计划产物**驱动**该 run 的实验臂与参数，
@@ -142,7 +142,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261015-487-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md
   - .cursor/plans/tasks/PLAN-20261015-489-goal-080-ec02-the-design-content-decides-the-experiment.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-490-goal-080-ec02-the-design-content-decides-the-experiment.md
+  - .cursor/plans/tasks/PLAN-20261015-491-goal-080-ec03-plan-change-means-experiment-change.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-492-goal-080-ec03-plan-change-means-experiment-change.md
 memory_entries: []
 ---
 
@@ -270,6 +271,7 @@ memory_entries: []
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（计划产物成为实验的声明输入） |
 | 1 | PLAN-20261015-487 | 见「CI 台账」 | 读取器判据 **18 passed**（正向 / run 作用域 / fail-closed 六态 / 白名单 / 非目标 / 自检）；三向按压 V10-1…V10-3 **全 RED** 且逐字节复原；受影响套件 **1056 passed, 1 skipped** | 见「CI 台账」 | 1 次（**CI 抓到的真红：`read_design_from_plan` 57 行 > 50**；见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（设计的内容真正决定臂与参数） |
 | 2 | PLAN-20261015-489 | 见「CI 台账」 | 设计判据 **11 passed**（正向 / 来源唯一 / fail-closed / 零回归）；三向按压 V10-4…V10-6 **全 RED** 且逐字节复原；受影响套件 **1064 passed, 1 skipped** | 见「CI 台账」 | 0 次 | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（换计划 ⇒ 换实验：端到端读数） |
+| 3 | PLAN-20261015-491 | 见「CI 台账」 | e2e 判据 **8 passed**（换计划 / 逐键参数 / 不撞命名空间 / 来源唯一派发前拒绝 / 零回归 ×2 / 确定性 ×2）；合计 **21 passed**；规模门 **1278 passed** | 见「CI 台账」 | 0 次 | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站上模型写出的设计驱动实验） |
 
 ## CI 台账
 
@@ -295,6 +297,7 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-20261015-079 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「计划」域与「实验」域的**同一个下一格**（两行逐字都指向「设计由计划/立题派生」）。**建档实测**（四条）：① `experiment` phase **没有 `inputs:` 声明**（`research_report_chain_v1.yaml` 里 `inputs:` 只在 plan/review/report 三处）⇒ 计划产物从未被声明为实验的输入；② 全仓 `research_plan` 在 `packages/`·`services/` **零命中** ⇒ 产品代码里没有消费者；③ 臂与参数由**装配常量**给出（live 就是 `_LIVE_ARMS`）⇒ 设计是测试作者写的；④ `ExperimentPlan` 字段逐个读出，**仍无参数位**。这四条就是本 GOAL 的靶子与可行性依据。 |
+| 2026-10-15 | **ACTIVE** | **cycle 3 落地**（EC-03，PLAN-491）：**「设计因计划而不同」在产品派发路径上可判定** —— 同一装配 + 两份计划 ⇒ 两套不同的实验（逐条对派生 id 与参数）；来源唯一在**派发之前**拒绝；未声明来源 ⇒ 既有语义逐字不变**且不读计划**；臂 id 判**确定性 + 换 run 会变**（哈希派生的正确判法）。八条 e2e 判据（执行体是受控替身 ⇒ 本 cycle **不**声称跑了容器）。**EC-03 → PASS**（RECHECK-492 = PASS）；EC-04/05 PENDING。 |
 | 2026-10-15 | **ACTIVE** | **cycle 2 落地**（EC-02，PLAN-489）：**设计的内容真正决定实验** —— 装配面可声明 `design_source="plan"` ⇒ 臂从**本 run 的计划产物**读出（执行期解析）；**来源唯一**（与装配声明臂并存 ⇒ 点名拒绝）、**未认得的来源点名拒绝**（即使有臂也不放行）、计划不可读 ⇒ fail-closed（不回落装配常量）；未声明来源 ⇒ 既有语义逐字不变**且不读计划**。判据 **11 例**；三向按压**全 RED** 且逐字节复原。**EC-02 → PASS**（RECHECK-490 = PASS）；EC-03/04/05 PENDING。 |
 | 2026-10-15 | **ACTIVE** | **cycle 1 落地**（EC-01，PLAN-487）：计划的**设计来源可声明**，读取器
 确定性（只读 canonical、零出网）/ **run 作用域**（经 claim → relation 投影按 `evidence.run_id`
