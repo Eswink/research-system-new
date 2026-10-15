@@ -182,30 +182,25 @@ def test_the_plan_the_model_wrote_drives_the_experiment(tmp_path: Path) -> None:
 
 
 def _live_deps(db_path: str) -> Any:
-    """产品组合根 + 本判据要的那几段缝（**只注入执行体，不注入判词**）。
+    """**既有 live 装配** + 本判据唯一要变的那一行（实验段换成「设计取自计划」）。
 
-    与 `test_research_report_chain_live._live_deps` 的分工：那一个连报告汇编与检索上下文
-    一起注入（它判那些面）；本判据**只**要实验段（它判设计来源），其余保持产品缺省。
+    **为什么直接复用**：既有 live 判据的 `_live_deps` 已经把三段执行体缝（运行链检索 /
+    沙箱实验 / 报告汇编）与检索上下文都接好了 —— 那些是**本协议跑通的既有前提**
+    （缺运行链检索 ⇒ 立题格的 `EVIDENCE_COVERAGE: minimum_retrieved_sources` **点名判拒**，
+    实测第一次真实跑即命中 ⇒ 如实登记）。本判据只改**实验段**：把「装配声明臂」换成
+    「设计取自计划」。**一行不同**，其余同源 ⇒ 两个判据不会各说一套。
     """
     from dataclasses import replace
 
     from packages.application.run_orchestration.service import RunOrchestrationService
-    from services.api.composition import assemble
-    from services.api.settings import ApiSettings
-    from tests.e2e.test_research_report_chain_live import (
-        _probeable_providers,
-        _register_session_tools,
-    )
+    from tests.e2e.test_research_report_chain_live import _live_deps as _base_live_deps
 
-    deps = assemble(ApiSettings(db_path=db_path))
-    assert deps.preflight_override is None, "live 判据不得带任何 preflight_override"
-    # 两件 REST provider 的**可探测实例**：本协议的能力面同时用 `europe_pmc`（运行链检索）
-    # 与 `ncbi_eutils`（评审格的会话绑定）⇒ 只注册一件时另一件健康 `UNKNOWN` ⇒ 冻结
-    # **点名拒冻**（与既有 live 判据同一处置，同一行；不新造一条路径）。
-    deps.tool_providers = _probeable_providers(deps)
-
-    assert deps.runs is not None, "产品组合根必须给出编排服务（live 判据的直接前提）"
+    deps = _base_live_deps(db_path)
     inner = deps.runs._deps
-    deps.runs = RunOrchestrationService(replace(inner, experiment_task=_sandbox_runner(deps)))
-    _register_session_tools(deps)
+    deps.runs = RunOrchestrationService(
+        replace(
+            inner,
+            experiment_task=_sandbox_runner(deps),
+        )
+    )
     return deps
