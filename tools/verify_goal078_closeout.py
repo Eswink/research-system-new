@@ -45,7 +45,13 @@ TOOLBOX = cast(Any, _load_toolbox())
 
 STANDARD = "tools/closeout_recheck_assertions.py"
 SELF = "tools/verify_goal078_closeout.py"
-ASSERTIONS = "tools/goal077_closeout_assertions.py"
+#: 本 GOAL **自己的**断言集。**实测缺陷修复**（GOAL-20261015-079 cycle 5）：
+#: 本行与下方 `_load_assertions()` 曾双双写着 `goal077_closeout_assertions.py`
+#: ⇒ `goal078_closeout_assertions.py` 的 29 条自有断言**从未**在本验证器里运行过
+#: （与 GOAL-038/039/040 被 `test_closeout_verifiers_run_their_own_assertions.py`
+#: 记录的历史缺陷同形；那一轮把「声明 == 实载」钉住了，但**自洽地加载上一轮**
+#: 这个形态当时抓不到 —— 该判据在本 cycle 一并收紧为「实载必须是自己那份」）。
+ASSERTIONS = "tools/goal078_closeout_assertions.py"
 
 GOAL = ".cursor/plans/goals/GOAL-20261014-078-retrieved-content-reaches-the-model-context.md"
 #: 子计划 / 复检（记录面逐条在位）。
@@ -93,14 +99,14 @@ LADDER_DOMAIN = "| 检索 |"
 
 
 def _load_assertions() -> Any:
-    """按路径加载本轮特有断言集（`tools/` 不是包 ⇒ 静态 import 不行）。
+    """按路径加载**本 GOAL 自己**的断言集（`tools/` 不是包 ⇒ 静态 import 不行）。
 
-    **必须加载本 GOAL 声明的那一份**（GOAL-038/039/040 实测到一处同族缺陷：
-    它们声明了自己的断言集却加载了 `goal037_closeout_assertions.py` ⇒ 自有断言**从未运行**）。
-    本验证器由 `test_tooling_scripts_meet_product_gates.py` 的 `IN_SCOPE` 钉住，
-    且下方 `self-loads-its-own-assertions` 判词会在**加载错文件**时判红。
+    **两处同族缺陷**（`goal038/039/040` 是「声明自己的、加载上一轮的」；本文件 cycle 5
+    实测是同一个形态的第二例）⇒ 只把常量改对不够，**加载行也必须是自己那份**。
+    上游守卫是 `test_closeout_verifiers_run_their_own_assertions.py`（cycle 5 已收紧为
+    「实载必须是**自己**那份」），下方 `self-loads-its-own-assertions` 判词是第二道。
     """
-    path = Path(__file__).resolve().parent / "goal077_closeout_assertions.py"
+    path = Path(__file__).resolve().parent / "goal078_closeout_assertions.py"
     spec = importlib.util.spec_from_file_location("goal078_assertions", path)
     assert spec is not None and spec.loader is not None, path
     module = importlib.util.module_from_spec(spec)
@@ -138,13 +144,22 @@ def ec_status(goal_text: str, ec_id: str) -> str:
 
 
 def _self_loading_verdict() -> Any:
-    """自指：本验证器**加载的是本 GOAL 的断言集**（不是上一轮的）。"""
+    """自指：本验证器**加载的是它自己那份**断言集（不是上一轮的）。
+
+    **这里曾写死 `'goal077_closeout_assertions.py"'`**（GOAL-20261015-079 cycle 5 实测）：
+    判词问的是「字符串在不在」，而它写的那个名字**恰好就是当时实载的那个**（上一轮那份）
+    ⇒ 判词**恒绿**，缺陷从它眼皮底下过去。改为**按本文件名推**自己那份
+    （`verify_goal078_closeout.py` ⇒ `goal078_closeout_assertions.py`）⇒
+    判词与实载同源可比，写死的那一版在构造上不可能再通过。
+    """
+    digits = "".join(ch for ch in Path(__file__).name.split("_")[1] if ch.isdigit())
+    expected = f"goal{digits}_closeout_assertions.py"
     source = Path(__file__).read_text(encoding="utf-8")
-    loaded_own = 'goal077_closeout_assertions.py"' in source.split("def _load_assertions")[1]
+    loaded_own = f'"{expected}"' in source.split("def _load_assertions")[1]
     return TOOLBOX.verdict(
         "self-loads-its-own-assertions",
         loaded_own,
-        "" if loaded_own else "加载的不是本轮断言集（GOAL-038/039/040 的同族缺陷形态）",
+        "" if loaded_own else f"加载的不是本轮断言集（应为 {expected}）",
     )
 
 

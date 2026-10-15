@@ -1,0 +1,13 @@
+GOAL-20261015-079 cycle 5 按压判词（V9-8 两处红 + 逐字节复原）
+命令：uv run --frozen --no-sync python -B scratch/goal079c5_press.py
+受判面：tests/tooling/test_closeout_verifiers_run_their_own_assertions.py（家族判据）
+        + tools/verify_goal078_closeout.py 的 --verdict-only（该验证器自己的判词）
+V9-8 = 把 verify_goal078 的常量与加载行**同时**指回 goal077（真树上实测到的自洽形态）
+       ⇒ 家族判据 + 该验证器的 self-loads-its-own-assertions 判词**都**必须红。
+★ 这条形态的来历：GOAL-078 收口复检**实际**跑的是 goal077 的断言集（29 条自有断言零命中），
+   而当时的「声明 == 实载」对它成立 ⇒ 静默通过。本 cycle 才把它做成机器可检的事实。
+V9-8 BASELINE family_green=True verifier_green=True
+  PASS self-loads-its-own-assertions
+V9-8 PRESSED family_red=True verifier_red=True sha 复原一致=True
+  FAIL self-loads-its-own-assertions -> 加载的不是本轮断言集（应为 goal078_closeout_assertions.py）
+all_red_and_restored=True

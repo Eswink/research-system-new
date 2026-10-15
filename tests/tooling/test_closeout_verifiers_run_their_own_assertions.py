@@ -176,11 +176,17 @@ def _expected_assertion_file(relative: str) -> str:
 
 
 def test_every_verifier_declares_the_assertion_set_it_actually_loads() -> None:
-    """**声明 == 实载**（本 GOAL 的靶子形态；逐条对拍，缺一即判红）。
+    """**声明 == 实载 == 自己那份**（本 GOAL 的靶子形态；逐条对拍，缺一即判红）。
 
     两种写法都接受，但都要求「实际加载的**就是自己的**」：
-    ① 有 `ASSERTIONS` 常量 ⇒ 它与实载必须**逐字相同**；
+    ① 有 `ASSERTIONS` 常量 ⇒ 它与实载必须**逐字相同**，且**都等于**该 GOAL 自己的那份；
     ② 无常量（`_NO_ASSERTIONS_CONSTANT` 逐条登记）⇒ 实载必须等于**该 GOAL 自己的**断言集名。
+
+    **`== 自己那份` 是本 cycle 新加的一半**（GOAL-20261015-079 cycle 5 实测到的第二例）：
+    `verify_goal078_closeout.py` 的常量与加载行**自洽地**双双写着
+    `goal077_closeout_assertions.py` ⇒ 「声明 == 实载」**成立而自有断言从未运行**
+    （29 条判词在 GOAL-078 的收口复检归档里**零命中**）。原来的判据只对拍
+    「两者一致」，这个形态**自洽** ⇒ 抓不到；现在第三个对拍项把它钉死。
     """
     assert len(_VERIFIERS) >= _MIN_VERIFIERS, "射程过小 ⇒ 受判面不成立"
     mismatched: list[str] = []
@@ -204,6 +210,11 @@ def test_every_verifier_declares_the_assertion_set_it_actually_loads() -> None:
             continue
         if declared.rsplit("/", 1)[-1] != loaded:
             mismatched.append(f"{relative}: 声明 {declared!r} 但实载 {loaded!r}")
+        elif loaded != expected:
+            # ① 的后半：自洽地加载**别的** GOAL 的断言集（本 cycle 实测到的形态）
+            mismatched.append(
+                f"{relative}: 声明与实载自洽（{loaded!r}），但**不是自己那份**（应 {expected!r}）"
+            )
     assert not unreadable, ("这两个读法必须能从验证器里取到值（形状假设失效）", unreadable)
     assert not mismatched, (
         "收口验证器必须加载**自己的**断言集（否则自有断言从未运行）",
@@ -311,6 +322,29 @@ class TestTheCriterionBitesInBothDirections:
         loaded = _loaded_assertions(source)
         assert declared is not None and loaded is not None
         assert declared.rsplit("/", 1)[-1] == loaded
+
+    def test_a_self_consistent_but_foreign_load_is_reported(self) -> None:
+        """反向③：**自洽地加载别的 GOAL 的断言集** ⇒ 新的「== 自己那份」对拍必须报红。
+
+        这是本 cycle 在**真树**上实测到的形态：`verify_goal078_closeout.py` 的
+        `ASSERTIONS` 常量与 `_load_assertions()` 双双写着 `goal077_closeout_assertions.py`
+        ⇒ 「声明 == 实载」**通过**，而 `goal078` 的 29 条自有断言从未运行。
+        原来的判据对这个形态**没有第三项对拍** ⇒ 抓不到；本用例把那一项钉住。
+        """
+        source = (
+            'ASSERTIONS = "tools/goal077_closeout_assertions.py"\n\n\n'
+            "def _load_assertions():\n"
+            '    path = Path(__file__).resolve().parent / "goal077_closeout_assertions.py"\n'
+            "    return path\n"
+        )
+        declared = _declared_assertions(source)
+        loaded = _loaded_assertions(source)
+        assert declared is not None and loaded is not None
+        # 「声明 == 实载」对这条合成例**成立** —— 这正是老判据放行的理由。
+        assert declared.rsplit("/", 1)[-1] == loaded, "（本合成例必须自洽，否则不是这个形态）"
+        expected = _expected_assertion_file("tools/verify_goal078_closeout.py")
+        assert expected == "goal078_closeout_assertions.py", expected
+        assert loaded != expected, "（自洽但非己有 ⇒ 第三项对拍必须把它判出来）"
 
     def test_an_assertion_set_that_raises_is_reported(self, tmp_path: Path) -> None:
         """反向②：断言集**抛异常** ⇒ 可执行性判据必须报红（崩了不是判负）。"""
