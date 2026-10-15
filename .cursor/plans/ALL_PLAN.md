@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261015-485](tasks/PLAN-20261015-485-goal-079-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261015-483](tasks/PLAN-20261015-483-goal-079-ec04-live-two-arm-run.md) | DONE |
 | [x] | [PLAN-20261015-481](tasks/PLAN-20261015-481-goal-079-ec03-the-arms-are-comparable.md) | DONE |
 | [x] | [PLAN-20261015-479](tasks/PLAN-20261015-479-goal-079-ec02-two-arms-with-a-control.md) | DONE |
