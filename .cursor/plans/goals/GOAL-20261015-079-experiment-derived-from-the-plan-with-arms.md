@@ -218,6 +218,7 @@ memory_entries:
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
 | 建档（序 47） | `b05b0067` | [M0 38677344100](https://github.com/Eswink/research-system-new/actions/runs/38677344100) / [Push 38677343399](https://github.com/Eswink/research-system-new/actions/runs/38677343399) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| cycle 1（EC-01 参数面 + 11 例 + 三向按压） | `f2291483` | [M0 38682201374](https://github.com/Eswink/research-system-new/actions/runs/38682201374) / [Push 38682200974](https://github.com/Eswink/research-system-new/actions/runs/38682200974) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 
 ## 状态历史
 
