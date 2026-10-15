@@ -1,0 +1,248 @@
+---
+id: GOAL-20261016-081
+slug: retrieved-content-enters-the-prompt
+title: 检索内容进提示词（立题因检索而不同）
+status: ACTIVE
+created_at: 2026-10-16
+updated_at: 2026-10-16
+owners:
+  - root-agent
+authorization:
+  source: user-request
+  ref: >-
+    战役宪章（`.cursor/plans/goals/MAINLINE.md`）的「科研能力阶梯」有**三行**指向同一件事：
+    **检索**域的 `下一级是什么` =「**检索内容驱动立题**（现内容进了上下文，但尚无判据证明
+    立题/实验设计**因它而不同**）」；**计划**域 =「**计划由检索产出派生**（现设计由计划内容
+    派生且已被实验消费，但「立题本身因检索而不同」仍无判据）」；**实验**域 =「**实验设计本身
+    由检索/立题派生**」。承用户 2026-10-06 全部权限下放 + 2026-10-14 方向指令（「每一次自动
+    迭代都必须让科研能力越来越近」）。authorization 要点：
+    (1) **本 GOAL 的定位** = 上述**三域的共同下一格**；它**必须让阶梯前进**
+    （由 `tests/tooling/test_mainline_research_ladder_advances.py` 机械强制）。
+    (2) **不做**：默认 runtime 改真（§11）/ 读面认证 / 多租户·RBAC·BOLA·BFLA /
+    D 组审批通道 / 部署面验证 / `G24-5` / `R26-2/3/4/6` / destructive 能力改 allow /
+    为凑数扩承接面 / 宣称项目安全（`R-M1`）/ 宣称投递语义为「恰好一次」（**明确否认**）。
+    (3) **来源与授权口径**：push-to-main-for-CI（只推 `main`、不 force、不重写历史、
+    不推旁支）；默认 runtime 保持 Fake、默认 CI 离线（`RESEARCHOS_AGENT_RUNTIME` /
+    `RESEARCHOS_LIVE_E2E` **不进 `.env`**，只在单条命令上显式传）。
+
+objective: >
+    让**已进上下文的检索内容真的进到模型的提示词里**：会话的首条消息除合约 purpose 之外，
+    还必须携带 `context_snapshot` 里那些**有界摘录**（只收 `RETRIEVED`、有字符与条数上限），
+    且「模型**拿到了**什么」在既有读面上**可复核**（同一份摘录 + 同一份上限）。
+
+exit_criteria:
+  - id: EC-01
+    criterion: >-
+      **摘录进了提示词**：会话的**首条消息**（`send_message` 那条）在合约 purpose 之外
+      **携带检索摘录** —— 逐条标识（PMID / DOI 形态）在消息正文里在场，且带**来源标注**
+      （它是系统取回的，不是模型自述）。判据成对：**有摘录 ⇒ 在提示词里**+
+      **上游无检索 ⇒ 提示词里没有该段**（不伪造、不留空壳）。
+    verify: >-
+      `uv run --frozen --no-sync python -B -m pytest tests/adapters/openhands/test_retrieval_context_in_prompt.py -q`
+      ⇒ 全绿；判据覆盖：有摘录 ⇒ 正文含每条标识 / 上限截断标注 / 无摘录 ⇒ 不加该段 /
+      摘录来自 `ContextSnapshot`（同源，不是第二套查询）。
+    status: PENDING
+  - id: EC-02
+    criterion: >-
+      **有界**（§10）：进提示词的摘录受**逐条字符上限 + 条数上限**约束，且**截断可见**
+      （被截的条目**标注**它被截了，而不是静默变短）；上限值与既有 `retrieval_context`
+      的常量**同源**（不改那一份）。
+    verify: >-
+      判据断言：超长标题被截且**带标注** / 条数超上限时只取前 N 条且**点名**了被省略的条数 /
+      上限常量与 `retrieval_context.DEFAULT_MAX_*` **是同一个值**（不新造第二份上限）。
+    status: PENDING
+  - id: EC-03
+    criterion: >-
+      **可复核**：提示词里那段摘录 == **本 run 上下文制品**里同一批记录（逐条标识与截断后
+      文本**逐字**相同）——即「模型拿到了什么」能对着既有读面（`{task_id}:retrieval_context`）
+      核对，不靠回忆、不靠日志。
+    verify: >-
+      e2e：`tests/e2e/test_retrieval_content_reaches_the_prompt.py` ⇒ 会话首条消息里的摘录
+      与读面制品**逐条逐字**相同；**反证**：改读面制品 ⇒ 判据红（证明判的是同一份事实）。
+    status: PENDING
+  - id: EC-04
+    criterion: >-
+      **真实中转站上跑通一次**：真实模型会话的提示词里携带**真检索标识**（PMID / DOI 形态），
+      且该 run 的计划/设计**引用了**其中的标识（立题因检索而不同的**最小可判证据**）。
+      **若模型侧不可用或模型不引用** ⇒ 按降级梯如实登记（PENDING + 点名阻塞点），**不得**伪造。
+    verify: >-
+      live 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且提示词里的标识读数在树。
+    status: PENDING
+  - id: EC-05
+    criterion: >-
+      **自举收口**：验证器进树（复用 `tools/closeout_recheck_tools` + 标准断言集）+
+      两树复检（判词归档**进树**、二进制写盘、CR=0）+ as-is m0 23/23
+      （**在全部记录写入之后**）+ 治理绿 + CI 台账**逐提交**（`cancelled` 如实登记 +
+      原因 + `covered_by`；**空集合 = 未取证**；自我指涉边界**明写并封闭**）+
+      残余与未覆盖范围逐条。**★ 并含阶梯记账**：向宪章 `进展记录` 追加本行
+      （**能力域 = 检索**），使阶梯的「检索」域 `依据 GOAL` 收录本 GOAL。
+    verify: >-
+      验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
+      `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
+      `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
+    status: PENDING
+
+budget:
+  max_cycles: 14
+  per_cycle_minutes: 120
+  no_progress_stop_cycles: 2
+fix_policy:
+  same_signature_retries: 2
+  cycle_fix_retries: 3
+  forbidden:
+    - 修改 validator / 门禁 / 快照 / 测试断言使其通过
+    - 放宽任何既有判据的断言、词表、扫描面或阈值
+    - 把受判面写成交集、并集掩蔽或写法清单
+    - 收窄既有受判面而不逐条申报（逐条枚举 + `numstat` 删除行读数 + 谓词比对）
+    - 改 `default_effect: DENY` / 放宽 §9 / 新增任何 allow
+    - 把 `RESEARCHOS_AGENT_RUNTIME` 或 `RESEARCHOS_LIVE_E2E` 写进 `.env`
+    - >-
+      把真实凭据（`sk-…` / `cpk-…` 等）写进**任何 tracked 文件**（记录 / GOAL / PLAN /
+      `examples/**` / 测试 / 文档）—— **只在 gitignored 的 `.env` 落位**；
+      判据自证 = `tools/credential_audit.py` 四面 `offenders=0`
+    - >-
+      把**无界正文**塞进提示词（§10 的有界口径）：摘录必须是**有界**的（逐条字符上限 +
+      条数上限），且**截断可见**（标注），不得静默变短或整段原样注入
+    - >-
+      新造第二套检索查询或第二份上限：摘录**必须**取自既有 `ContextSnapshot`
+      （GOAL-078 的唯一生产者），上限必须复用既有常量
+    - 为让「进了提示词」成立而**放宽**既有判据（GOAL-078 的判据一字不动）
+    - git push --force / 重写历史 / 推非 main 分支触发 CI
+    - 伪造或夸大验证证据（未实跑不得记 PASS）
+    - git add -A（并发工作树；只加显式路径）
+    - 新增任何依赖
+    - 宣称项目安全（`R-M1` 未收口）；宣称投递语义为「恰好一次」（**明确否认**）
+
+escalation_triggers:
+  - 需要修改 Accepted ADR / 核心安全策略 / Canonical State 边界
+  - 破坏性数据迁移或不可逆动作
+  - 新依赖/上游版本 pin 变更
+  - 同一失败签名超过 fix_policy 上限
+  - >-
+    **真实凭据出现在 tracked 文件里**（含记录）—— **立即 BLOCKED** 并清理
+  - >-
+    **新站不可用**（连通 / 协议面 / 工具调用任一不通）且无替代路径 —— 记 BLOCKED，
+    逐条写明阻塞点（**不得**为此放宽任何判据或伪造成功）
+  - >-
+    把检索**正文**无损注入会话与 §10 的有界口径冲突 ⇒ **需人工拍板**（本 GOAL 只做
+    **有界摘录**；若「看到全文」成为必需，记 BLOCKED 留拍板）
+
+child_plans: []
+latest_recheck: null
+memory_entries: []
+---
+
+## 目标与退出标准
+
+**一句话**：让**已经进上下文**的检索内容**真的进到模型的提示词里** —— 阶梯「检索」/「计划」/
+「实验」三域的**共同下一格**。
+
+**主线归属（宪章要求逐条声明）**：
+
+- **轴** = **深度**（研究能多轮推进：立题站在真材料上才谈得上「下一轮问新问题」）与
+  **质量**（产出的可判定性：模型看到什么、基于什么立题，可复核）**同时**受益；
+- **能力域** = **检索**（阶梯逐字：`检索内容驱动立题`）；**同时**推进**计划**与**实验**
+  （两行的 `下一级` 逐字都指向「因检索而不同」）。
+
+**为什么这一条更近科研**（对照阶梯，**建档实测**）：
+
+- **实测 ①**（本轮 live 取证）：真实 run 上模型**自陈**「This session did **not** receive the
+  retrieved literature records referenced in the task … I have no source list, abstracts, or
+  retrieved records in my context, so I cannot honestly cite a specific retrieved source by
+  name … doing so would require inventing a citation, which I won't do」
+  （run `748a56a6…` 的计划正文，逐字在 `evidence/GOAL-20261015-080-ec04-design-evidence.txt` 同源的
+  `scratch/goal080-ec04-*.json` 里）⇒ **模型看不见检索结果**是**实测事实**，不是推断；
+- **实测 ②**：会话的**唯一**一条出站消息是 `send_message(spec.task_contract.purpose)`
+  （`adapters/openhands/session_builder.py:83`）⇒ 提示词里**只有**合约文本；
+- **实测 ③**：`context_snapshot` 确实**在** spec 上（`session_builder.py:171` 把它带进
+  fork 后的 spec；`task_executor.py:370` 从 `spec_context` 取）⇒ **内容进了上下文**
+  （GOAL-078 成立），但**没有消费者把它写成提示词**（全仓 `adapters/` 对
+  `context_snapshot` 只有**搬运**、没有**渲染**）。
+
+⇒ 缺口**不是**「检索有没有发生」（GOAL-027/029 已通），也不是「内容有没有进上下文」
+（GOAL-078 已通），而是「**上下文有没有进模型的眼睛**」——这正是三域共同的 `下一级`。
+
+**本 GOAL 不加新依赖、不放宽任何判据。** 若新判据**证明**某处是真缺陷 ⇒ 在授权内修
+产品代码；若某条**本机无法验证** ⇒ **登记为 PENDING** 并点名阻塞点，**不得**记 PASS。
+
+## 循环入口协议
+
+按 `.cursor/plans/goals/README.md` 的 7 步判定续点（以「文件 + 工作树 + 远端实况」为准，
+**禁止凭记忆假设**）。每步完成后立即回写本文件。
+
+## 单 cycle SOP
+
+沿用宪章与既有 GOAL 的既定纪律（记录 → 记录面判据 → 全量 m0 → 治理 → 显式路径提交 →
+批量推送 → CI 到终态 → 纠错 → 回写）。**本 GOAL 特有**：
+
+- **§10 纪律**：摘录**有界**（逐条字符上限 + 条数上限）且**截断可见**；**不得**把无界正文
+  塞进提示词。
+- **同源纪律**：摘录**只**取自既有 `ContextSnapshot`（GOAL-078 的唯一生产者），上限**只**
+  复用既有常量 —— 不新造第二套查询、不新造第二份上限。
+- **凭据纪律**：key 只在 `.env`；每一批提交前跑 `tools/credential_audit.py` 自证 `offenders=0`。
+- **live 运行姿势**：`RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1` **逐命令传**，
+  **不写进 `.env`**（否则污染默认门）。
+- **降级梯（诚实登记）**：① 全 phase live；② 若模型侧不可用**或模型不引用标识** ⇒
+  记 PENDING + 点名阻塞点；**不伪造**。
+
+## CI 失败分类与纠错
+
+沿用既有四类（lint/typecheck / 产品测试失败 / flake-env / 基础设施）。基础设施红须三条取证
+（逐 job annotation / 同时终止时刻 / 状态页 incident），与 `cancel-in-progress`
+（`run conclusion=cancelled`）形态区分。
+
+## 终止与收口
+
+- **ACHIEVED**：EC-01…EC-05 全 PASS 且有实跑证据 + 独立 RECHECK + 本文件收口
+  （`latest_recheck` 为**仓库相对路径**）+ CI 台账到终态 + 残余与未覆盖范围逐条
+  + **阶梯记账成立**（本 GOAL 被某个域的 `依据 GOAL` 收录）。
+- **BLOCKED**：命中任一 `escalation_triggers` / 同一失败签名超过 `fix_policy` 上限 /
+  `max_cycles` 触顶 / 连续 `no_progress_stop_cycles` 轮未推进任何 EC。
+- **ABORTED**：用户撤销。
+
+## 残余与未覆盖范围（逐条明写）
+
+**建档时已知的残余**（将在各 cycle 如实更新）：
+
+- `W-1` —— **EC-05 本身**在收口复检跑之前仍是待办（它的判词由本 GOAL 的收口验证器产出）。
+- `W-2` —— **「立题质量因检索而不同」只判到「引用了标识」这一格**：模型可能引用标识却
+  写出与文献无关的结论；**内容一致性**（说法与摘要是否相符）**无人判**（承 GOAL-080 `W-2`）。
+- `W-3` —— **摘录形态受既有上下文限制**：进提示词的是 `ContextSnapshot` 里那些**有界摘录**
+  （逐条字符上限），所以「看到全文」仍**不在**射程（§10 与 ADR 口径）。
+- `W-4` —— 设计质量 / 臂数 > 2 / 择优不在射程（承 GOAL-080 `W-4`）。
+
+**未覆盖范围**（逐条明写；本 GOAL **不声称**已解决）：
+
+- **读面认证**、**多租户·RBAC·BOLA·BFLA**（M18 deferred）、**部署面验证**、
+  **D 组审批通道** —— 均**不做**；
+- **无损注入检索正文**（与 §10 冲突）—— **需人工拍板**；
+- 默认 runtime 改真（§11）—— 默认仍是 Fake；真实 run 由 live 判据在**显式开关下**跑；
+- `R-M1` 未收口 ⇒ **不得**宣称项目安全；投递语义**不是**「恰好一次」（**明确否认**）。
+
+## 不进入循环 / 需人工拍板
+
+- 默认 runtime 改真（§11）/ 读面认证 / 多租户·RBAC·BOLA·BFLA / D 组审批通道 /
+  部署面验证 / `G24-5` / `R26-2/3/4/6` / destructive 能力改 allow —— **均不做**；
+- 真实外发（邮件 / webhook / IM）—— 不做；
+- **无损注入检索正文**（与 §10 冲突）—— 需人工拍板；
+- `R-M1` 未收口 ⇒ **不得**宣称项目安全；投递语义**不是**「恰好一次」。
+
+## 迭代日志
+
+| # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（摘录进提示词） |
+
+## CI 台账
+
+（逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
+
+| 推送 | 提交 | run | job 结论 |
+| --- | --- | --- | --- |
+| 建档（序 49） | 见「状态历史」 | 见「状态历史」 | 与 cycle 1 同批推送时并入该行 |
+
+## 状态历史
+
+| 时间 | 状态 | 说明 |
+| --- | --- | --- |
+| 2026-10-16 | **ACTIVE** | **建档**：承 GOAL-20261015-080 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「检索」/「计划」/「实验」**三域的共同下一格**。**建档实测**（三条）：① 真实 run 上模型**自陈**没收到检索记录、并拒绝编造引用（`748a56a6…` 的计划正文）；② 会话的**唯一**出站消息是 `send_message(contract.purpose)`（`session_builder.py:83`）；③ `context_snapshot` 在 spec 上且被带进 fork（`session_builder.py:171`）但**没有渲染进提示词的消费者**。这三条就是本 GOAL 的靶子与可行性依据。 |
