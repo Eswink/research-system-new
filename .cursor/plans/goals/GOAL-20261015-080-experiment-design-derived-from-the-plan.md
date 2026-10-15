@@ -252,6 +252,12 @@ memory_entries: []
 2. **读取器首版按 task 前缀猜 run 归属**（实测改进）：那需要一张 run→tasks 表，而本层
    不该持有它 ⇒ 改成**经 claim → relation 投影按 `evidence.run_id` 逐条过滤**
    （与 `GET /runs/{id}/evidence` 同一口径，也是 GOAL-078 的现成形态）。
+4. **CI 抓到一处真缺陷，而本地规模门错过了它**（**如实登记**）：`read_design_from_plan`
+   **57 行 > 50**（`test_python_source_size_limits.py`）。**为什么本地没抓到** —— 上一次本地跑
+   规模门时该函数 48 行；其后我把它从「按 task 前缀扫」改成「经 ledger 投影扫」时**多加了 9 行**
+   （下界检查 + 点名分支），而**那一次本地没重跑规模门**（只跑了功能判据）。
+   **处置** = 抽出 `_the_one_plan`（**纯搬运**，零行为变化）⇒ 复跑 **1273 passed**。
+   **教训**：改完函数体就要重跑规模门 —— 它是**独立的**一道门，功能判据绿不代表它绿。
 3. **测试里一处 `pytest.raises(match=...)` 猜错了判词**（实测红）：他 run 登记时本 run 视角是
    「**nothing is registered**」而不是「no readable」—— 判词**分得开**正是本模块的设计，
    改判据去认**实际**的那一句（不是把实现改得含混）。
@@ -261,7 +267,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（计划产物成为实验的声明输入） |
-| 1 | PLAN-20261015-487 | 见「CI 台账」 | 读取器判据 **18 passed**（正向 / run 作用域 / fail-closed 六态 / 白名单 / 非目标 / 自检）；三向按压 V10-1…V10-3 **全 RED** 且逐字节复原；受影响套件 **1056 passed, 1 skipped** | 见「CI 台账」 | 1 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（设计的内容真正决定臂与参数） |
+| 1 | PLAN-20261015-487 | 见「CI 台账」 | 读取器判据 **18 passed**（正向 / run 作用域 / fail-closed 六态 / 白名单 / 非目标 / 自检）；三向按压 V10-1…V10-3 **全 RED** 且逐字节复原；受影响套件 **1056 passed, 1 skipped** | 见「CI 台账」 | 1 次（**CI 抓到的真红：`read_design_from_plan` 57 行 > 50**；见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（设计的内容真正决定臂与参数） |
 
 ## CI 台账
 
@@ -271,7 +277,9 @@ memory_entries: []
 | --- | --- | --- | --- |
 | 建档（序 48） | `754d91ed`（**tip**） | [M0 38751287254](https://github.com/Eswink/research-system-new/actions/runs/38751287254) / [Push 38751286129](https://github.com/Eswink/research-system-new/actions/runs/38751286129) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（**本 GOAL 的第一次推送 = 第一次全绿**） |
 | cycle 1 派生（子 PLAN + ALL_PLAN + 规划期实测更正） | `65b41271` | [M0 38755298688](https://github.com/Eswink/research-system-new/actions/runs/38755298688) / [Push 38755298578](https://github.com/Eswink/research-system-new/actions/runs/38755298578) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
-| cycle 1 落地（读取器 + 18 例 + 三向按压） | `fd5b3bb1`（**tip**） | 见「状态历史」（轮询中） | 待回填 |
+| cycle 1 落地（读取器 + 18 例 + 三向按压） | `fd5b3bb1` | [M0 38758868844](https://github.com/Eswink/research-system-new/actions/runs/38758868844) / [Push 38758869619](https://github.com/Eswink/research-system-new/actions/runs/38758869619) | ⚠️ **M0 `conclusion=cancelled`**（`quality-windows` / `container-quality` / `quality-ubuntu` / `console-frontend` 四 job `cancelled`，其余四 job `success`；Push-on-main 三条 CodeQL 全 `success`）。**原因** = `cancel-in-progress`：紧随其后的 cycle 1 记录推送（`a58deb60`）把它取消了。**`covered_by = 05d57dc3`**（tip）：其后两批（记录 + 规模门修复）的树**包含** `fd5b3bb1` 的全部改动。**不**记绿 |
+| cycle 1 记录面（PLAN/RECHECK/GOAL/ALL_PLAN） | `a58deb60` | [M0 38759244297](https://github.com/Eswink/research-system-new/actions/runs/38759244297) / [Push 38759243279](https://github.com/Eswink/research-system-new/actions/runs/38759243279) | 🔴 **M0 两 job `failure`**（`quality-ubuntu-latest` / `quality-windows-latest`）：`test_python_source_size_limits` 判 `read_design_from_plan` **57 行 > 50**；其余六 job `success`、CodeQL 三条 `success`。**分类** = **产品缺陷（真红）**，非基础设施 —— 修见下行 |
+| cycle 1 修复（抽 `_the_one_plan`，纯搬运） | `05d57dc3`（**tip**） | [M0 38763219901](https://github.com/Eswink/research-system-new/actions/runs/38763219901) / [Push 38763218727](https://github.com/Eswink/research-system-new/actions/runs/38763218727) | **M0 八 job 全 `success`**（含此前判红的两个 quality job）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 
 ## 状态历史
 
