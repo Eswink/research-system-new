@@ -1,0 +1,13 @@
+GOAL-20261015-079 EC-01 三向按压判词（V9-1…V9-3 全 RED + 基线门 GREEN + raw sha256 复原）
+命令：uv run --frozen --no-sync python -B scratch/goal079_press.py
+受判面：tests/application/test_experiment_parameters.py
+V9-1 = 白名单判定恒真假（未声明的键不再被拒 ⇒ 红）；
+V9-2 = 声明不再进请求（参数面断链 ⇒ 红）；
+V9-3 = 脚本不读声明（继续用模块常量 ⇒ 红）。
+V9-1
+  V9-1 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V9-2
+  V9-2 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V9-3
+  V9-3 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+all_red_and_restored=True

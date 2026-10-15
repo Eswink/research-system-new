@@ -38,7 +38,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_experiment_parameters.py -q`
       ⇒ 全绿；判据覆盖：逐键传递、环境白名单不被绕过、未声明 ⇒ 既有行为不变。
       **反证**：把某个声明键从传参面摘掉 ⇒ 判据红。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **多臂/对照真跑**：一次 run 里**至少两个臂**（含对照）各执行一次实验，
@@ -121,9 +121,11 @@ escalation_triggers:
     两臂实验需要**改动沙箱镜像或镜像 pin** 才能成立 —— 立即 BLOCKED，留人工拍板
     （镜像 pin 是既有安全面，不得自行改）
 
-child_plans: []
-latest_recheck: null
-memory_entries: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261015-477-goal-079-ec01-experiment-parameters-come-from-the-declaration.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-478-goal-079-ec01-experiment-parameters-come-from-the-declaration.md
+memory_entries:
+  - .cursor/memory/entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md
 ---
 
 ## 目标与退出标准
@@ -201,13 +203,25 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（参数面经声明传递） |
+| 1 | PLAN-20261015-477 | 见「CI 台账」 | 参数面判据 **11 passed**（白名单 / 逐键传递 / 零回归 / 脚本真读 / 非法点名 / 命名空间）；三向按压全红且逐字节复原 | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（多臂/对照） |
+
+### cycle 1 的修复记录（逐条如实）
+
+1. **判据里的域对象手搓错了**（实测）：`RoleDefinition(id=..., title=...)` —— 那个类**没有** `title` 字段；`ID(...)` 还要求**合法 UUID4**（两次实测报错逐字见判据开发过程）⇒ 改用**既有共享夹具**（`tests.contracts.fixtures.role_definition` / `agent_spec`）与 `uuid4()`，**不手搓域对象**。
+2. **`examples/experiments/**` 不在 mypy 的 `files` 面内**（如实登记）：脚本侧的类型面由**判据**（真跑子进程 + 逐项断言指标）承担，不由静态检查承担。
+
 
 ## CI 台账
 
 （逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
+
+| 推送 | 提交 | run | job 结论 |
+| --- | --- | --- | --- |
+| 建档（序 47） | `b05b0067` | [M0 38677344100](https://github.com/Eswink/research-system-new/actions/runs/38677344100) / [Push 38677343399](https://github.com/Eswink/research-system-new/actions/runs/38677343399) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-078 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「实验」域 **L2 → L3**（`下一级是什么` 逐字：实验由计划派生，多臂 / 对照组）。**建档实测**（四条）：① 实验脚本参数是**模块常量**（`SEED = 7` / `N_ITEMS = 800` / `N_DUPLICATE_PAIRS = 40`）；② `ExperimentPlan` **无参数位**（字段逐个读出）；③ 域层对 `arm` / `arms` / `control_group` **零命中** ⇒ 臂概念不存在；④ **缝已在**：`ExperimentExecutionRequest.environment` 经 `execute.py` → `docker_backend.py`（`environment = dict(spec.environment)`）**真的进容器**且已被记 digest，而产品路径今天只塞了 `EXPERIMENT_RUN_ID`。这四条就是本 GOAL 的靶子与可行性依据。 |
+| 2026-10-15 | ACTIVE | **cycle 1 落地**（EC-01，PLAN-477）：实验参数从**脚本模块常量**变成**声明事实** —— 装配声明经「执行请求 → 容器环境」到脚本（逐键 / 白名单 / 前缀命名空间不相交），**未声明零回归**（请求环境与脚本产出都与改动前逐字相同），**值非法点名失败**。判据 11 例；三向按压全红。**EC-01 → PASS**（RECHECK-478 = PASS）；EC-02/03/04/05 PENDING。 |

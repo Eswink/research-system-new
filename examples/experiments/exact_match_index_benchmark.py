@@ -27,11 +27,31 @@ import random
 import time
 from pathlib import Path
 
+#: 模块常量是**缺省值**（GOAL-20261015-079 EC-01：声明缺席时的回落 —— 既有行为逐字不变）。
 SEED = 7
 N_ITEMS = 800
 #: 语料里**故意**注入的重复项数（重复项由同一素材复制而来，两法都该找到它们）。
 N_DUPLICATE_PAIRS = 40
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+
+#: 声明参数的**环境变量前缀**（与 `plan_parameters.PARAMETER_PREFIX` 同源；脚本不 import
+#: 产品包 —— 运行链的沙箱脚本只有标准库，这是**容器边界**的既有约束）。
+_PARAMETER_PREFIX = "EXPERIMENT_PARAM_"
+
+
+def _declared_int(name: str, default: int) -> int:
+    """声明参数（环境）→ int；**缺席用缺省**、**非法点名失败**（不静默回落到缺省）。
+
+    「值非法」与「没声明」是两件事：前者多半是上游写错了，静默回落会让**声明被吞掉**
+    （正是本 GOAL 要消灭的那种含混）。
+    """
+    raw = os.environ.get(f"{_PARAMETER_PREFIX}{name.upper()}")
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        raise SystemExit(f"{_PARAMETER_PREFIX}{name.upper()} must be an integer, got {raw!r}") from None
 
 
 def build_corpus(seed: int, n_items: int, duplicate_pairs: int) -> list[str]:
@@ -80,16 +100,20 @@ def indexed_duplicates(items: list[str]) -> tuple[list[tuple[int, int]], int]:
 
 def run() -> dict[str, object]:
     started = time.monotonic()
-    items = build_corpus(SEED, N_ITEMS, N_DUPLICATE_PAIRS)
+    # GOAL-20261015-079 EC-01：参数**由声明给出**（缺省 = 既有模块常量）。
+    seed = _declared_int("seed", SEED)
+    n_items = _declared_int("n_items", N_ITEMS)
+    duplicate_pairs = _declared_int("duplicate_pairs", N_DUPLICATE_PAIRS)
+    items = build_corpus(seed, n_items, duplicate_pairs)
     flat_pairs, flat_comparisons = pairwise_duplicates(items)
     index_pairs, index_comparisons = indexed_duplicates(items)
     elapsed = time.monotonic() - started
     agreement = sorted(flat_pairs) == sorted(index_pairs)
     ratio = (flat_comparisons / index_comparisons) if index_comparisons else 0.0
     return {
-        "seed": SEED,
+        "seed": seed,
         "n_items": len(items),
-        "duplicates_expected": N_DUPLICATE_PAIRS,
+        "duplicates_expected": duplicate_pairs,
         "duplicates_found": len(index_pairs),
         "pairwise_comparisons": flat_comparisons,
         "indexed_comparisons": index_comparisons,
@@ -104,7 +128,7 @@ def main() -> None:
     if not run_id:
         raise SystemExit("EXPERIMENT_RUN_ID is required (the executor supplies it)")
     metrics = run()
-    if metrics["agreement"] is not True or metrics["duplicates_found"] != N_DUPLICATE_PAIRS:
+    if metrics["agreement"] is not True or metrics["duplicates_found"] != metrics["duplicates_expected"]:
         raise SystemExit(
             "experiment self-check failed: "
             f"agreement={metrics['agreement']} found={metrics['duplicates_found']}"

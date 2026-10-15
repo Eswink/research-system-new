@@ -36,6 +36,7 @@ from packages.application.experiments import (
     ExperimentProvenance,
     GovernedExperimentExecutor,
 )
+from packages.application.experiments.plan_parameters import parameter_environment
 from packages.application.m12_reference.clean_run_stages import derived_id, experiment_run_id_of
 from packages.application.ports.errors import InvalidInputError
 from packages.application.run_orchestration.experiment_task import (
@@ -80,6 +81,9 @@ class SandboxExperimentAssembly:
     script: str | None = None
     root: str | None = None
     environment: dict[str, str] = field(default_factory=dict)
+    #: GOAL-20261015-079 EC-01：**声明的实验参数**（白名单校验后进容器环境；
+    #: 缺省空 ⇒ 请求里的环境与今天逐字相同 —— 脚本回落既有模块常量）。
+    parameters: dict[str, object] = field(default_factory=dict)
 
 
 def sandbox_experiment_runner(
@@ -169,7 +173,13 @@ def _request_builder(
             seed=7,
             # 实验脚本要能在 `experiment_result.json` 里回声**执行器期望的**那个 id
             # （解析器逐字比对，不等即 `InvalidInputError`）⇒ 由装配面交进去，不靠猜。
-            environment={"EXPERIMENT_RUN_ID": experiment_run_id, **assembly.environment},
+            # GOAL-20261015-079 EC-01：**声明的参数**一并进容器（白名单校验；缺省空
+            # ⇒ 与今天逐字相同）。参数值因此是**声明事实**，不是脚本里的常量。
+            environment={
+                "EXPERIMENT_RUN_ID": experiment_run_id,
+                **assembly.environment,
+                **parameter_environment(assembly.parameters),
+            },
             timeout_seconds=declaration.timeout_seconds,
         )
 

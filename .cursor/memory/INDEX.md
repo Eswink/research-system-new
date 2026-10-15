@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261015-222](entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md) | ACTIVE | repository | 0.9 | 2027-04-15 | PLAN-20261015-477 |
 | [MEM-20261014-221](entries/MEM-20261014-221-declared-but-never-constructed-is-a-dead-seam.md) | ACTIVE | repository | 0.9 | 2027-04-14 | PLAN-20261014-469 |
 | [MEM-20261014-220](entries/MEM-20261014-220-who-executes-is-a-contract-declaration-not-a-contract-id.md) | ACTIVE | repository | 0.9 | 2027-04-14 | PLAN-20261014-466 |
 | [MEM-20261014-219](entries/MEM-20261014-219-every-round-must-advance-the-ladder-and-that-is-a-judged-convention.md) | ACTIVE | repository | 0.95 | 2027-04-14 | PLAN-20261014-464 |
