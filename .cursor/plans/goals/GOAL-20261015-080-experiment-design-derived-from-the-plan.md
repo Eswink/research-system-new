@@ -78,6 +78,16 @@ exit_criteria:
     verify: >-
       live 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且设计读数在树。
     status: PENDING
+    blocker: >-
+      **实测阻塞点（2026-10-15 cycle 4）**：真实 run 上计划的交付物信封里
+      `content` **就是合约 purpose 的正文**（会话首条消息 / 提示词），`message_count = 1`
+      ⇒ 落进计划制品的是**提示词**而不是模型的回答 ⇒ 模型写的设计块**结构上不可能**
+      到达该制品。**取证**：`evidence/GOAL-20261015-080-ec04-blocker.txt`（真实 run 后
+      读计划制品的实际字节）。**另一条同向读数**：该会话 IDE 侧 `Loaded 0 tools from spec`，
+      模型自陈「only `think` and `finish`」且工具调用被 `policy denied tool execution`
+      ⇒ 本轮**无法**在本机取证「模型写出的设计」。
+      **按降级梯如实登记为 PENDING**，**不**伪造成功；阻塞点已点名（交付物内容取自**首条**
+      消息而非**末条** + 该相位的会话工具面为空）。
   - id: EC-05
     criterion: >-
       **自举收口**：验证器进树（复用 `tools/closeout_recheck_tools` + 标准断言集）+
@@ -273,6 +283,8 @@ memory_entries: []
 | 2 | PLAN-20261015-489 | 见「CI 台账」 | 设计判据 **11 passed**（正向 / 来源唯一 / fail-closed / 零回归）；三向按压 V10-4…V10-6 **全 RED** 且逐字节复原；受影响套件 **1064 passed, 1 skipped** | 见「CI 台账」 | 0 次 | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（换计划 ⇒ 换实验：端到端读数） |
 | 3 | PLAN-20261015-491 | 见「CI 台账」 | e2e 判据 **8 passed**（换计划 / 逐键参数 / 不撞命名空间 / 来源唯一派发前拒绝 / 零回归 ×2 / 确定性 ×2）；合计 **21 passed**；规模门 **1278 passed** | 见「CI 台账」 | 0 次 | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站上模型写出的设计驱动实验） |
 
+| 4 | PLAN-20261015-493（执行中） | 见「CI 台账」 | live 判据在树且默认门 **skip**；**真实 run 两次实跑** ⇒ 计划的交付物信封 `content` = 合约 purpose 正文（`message_count = 1`、500 字符截断处正是设计块）⇒ **模型写的设计结构上到不了该制品**；该相位会话 `Loaded 0 tools` + 工具调用 `policy denied` | 见「CI 台账」 | 1 次（见「cycle 4 的修复记录」） | EC-04 **PENDING（点名阻塞）**；EC-05 PENDING | cycle 5 = EC-05（自举收口）—— EC-04 待人工拍板（见「残余」`W-5`） |
+
 ## CI 台账
 
 （逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
@@ -299,6 +311,13 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-20261015-079 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「计划」域与「实验」域的**同一个下一格**（两行逐字都指向「设计由计划/立题派生」）。**建档实测**（四条）：① `experiment` phase **没有 `inputs:` 声明**（`research_report_chain_v1.yaml` 里 `inputs:` 只在 plan/review/report 三处）⇒ 计划产物从未被声明为实验的输入；② 全仓 `research_plan` 在 `packages/`·`services/` **零命中** ⇒ 产品代码里没有消费者；③ 臂与参数由**装配常量**给出（live 就是 `_LIVE_ARMS`）⇒ 设计是测试作者写的；④ `ExperimentPlan` 字段逐个读出，**仍无参数位**。这四条就是本 GOAL 的靶子与可行性依据。 |
+| 2026-10-15 | **ACTIVE** | **cycle 4 阻塞点登记**（EC-04）：**真实 run 上计划制品装的是提示词** ——
+交付物信封 `content` = 合约 purpose 正文（`message_count = 1`、`[:500]` 截断），
+**模型回答从不进入该制品** ⇒ 「模型写出的设计驱动实验」在本机**结构上不可能**。
+另一条同向读数：该相位会话 `Loaded 0 tools from spec`、模型自陈只有 `think`/`finish`、
+工具调用 `policy denied tool execution`。**按降级梯如实记 PENDING + 点名阻塞点**，
+**不**伪造（`evidence/GOAL-20261015-080-ec04-blocker.txt`）。**EC-01/02/03 仍 PASS**；
+EC-04 PENDING；EC-05 PENDING。 |
 | 2026-10-15 | **ACTIVE** | **cycle 3 落地**（EC-03，PLAN-491）：**「设计因计划而不同」在产品派发路径上可判定** —— 同一装配 + 两份计划 ⇒ 两套不同的实验（逐条对派生 id 与参数）；来源唯一在**派发之前**拒绝；未声明来源 ⇒ 既有语义逐字不变**且不读计划**；臂 id 判**确定性 + 换 run 会变**（哈希派生的正确判法）。八条 e2e 判据（执行体是受控替身 ⇒ 本 cycle **不**声称跑了容器）。**EC-03 → PASS**（RECHECK-492 = PASS）；EC-04/05 PENDING。 |
 | 2026-10-15 | **ACTIVE** | **cycle 2 落地**（EC-02，PLAN-489）：**设计的内容真正决定实验** —— 装配面可声明 `design_source="plan"` ⇒ 臂从**本 run 的计划产物**读出（执行期解析）；**来源唯一**（与装配声明臂并存 ⇒ 点名拒绝）、**未认得的来源点名拒绝**（即使有臂也不放行）、计划不可读 ⇒ fail-closed（不回落装配常量）；未声明来源 ⇒ 既有语义逐字不变**且不读计划**。判据 **11 例**；三向按压**全 RED** 且逐字节复原。**EC-02 → PASS**（RECHECK-490 = PASS）；EC-03/04/05 PENDING。 |
 | 2026-10-15 | **ACTIVE** | **cycle 1 落地**（EC-01，PLAN-487）：计划的**设计来源可声明**，读取器

@@ -1,0 +1,14 @@
+GOAL-20261015-080 EC-04 的阻塞点取证（真实 run 之后读计划制品的**实际字节**）
+命令：set -a; . ./.env; set +a; RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 \n      uv run --frozen --no-sync python -B scratch/goal080_ec04_probe.py
+
+结论：计划的交付物信封里 `content` **就是合约 purpose 的正文**（会话的首条消息 / 提示词），
+`message_count = 1` ⇒ 落进计划制品的是**提示词**而不是模型的回答 ⇒ 模型写的设计块
+**结构上不可能**到达该制品（cycle 4 的实测阻塞点）。
+
+实测：`content` 长度 = 500 字符（信封上限 500 ⇒ **正好被截断**）
+
+plan artifacts: ['b34df279-70ab-46b3-b4b2-4a5924d2fe6e:research_plan']
+--- b34df279-70ab-46b3-b4b2-4a5924d2fe6e:research_plan (1080 bytes) ---
+{"content":"[TextContent(cache_prompt=False, type='text', text='GOAL-20261014-077 的**立题** phase 交付物契约（报告域 L0 → L1 的第一步）： 计划制品存在，且它**声明输入**的那份检索产出在场、可复核 （`EVIDENCE_COVERAGE: minimum_retrieved_sources: 1` 要求覆盖里至少一条**系统取得**的来源 —— 检索是侦察 phase 做的，本 phase 消费它 ⇒ 立题**由检索产出派生**，不是凭空写的）。 **★ GOAL-20261015-080 EC-04**：计划**同时承载实验设计** —— 下一位执行者（布置实验的 `experiment` phase）从此处读「跑几个臂、每臂什么参数」。执行者按本 purpose 行事： 计划正文之后附一个 **`experiment_design` 块**（JSON），形如 `{\"experiment_design\": {\"arms\": {\"control\": {}, \"treatment\": {\"n_items\":","contract_id":"research_report_plan","conversation_id":"f90b550a-734b-4cb2-bd8c-d9dd605d2774","declared_artifact":"research_plan","fact_name":"session_message","message_count":1,"session_id":"6bdcbf8f-b2bc-4cc5-ba21-86aa8038c384"}
+top-level keys: ['content', 'contract_id', 'conversation_id', 'declared_artifact', 'fact_name', 'message_count', 'session_id']
+content length = 500 (envelope truncates at 500)
