@@ -90,6 +90,15 @@ class SandboxExperimentAssembly:
     #: `[{name, parameters}]`）。缺省 `None` ⇒ **单臂**（今天的语义，逐字不变）；
     #: 声明 ≥ 1 个臂 ⇒ 每个臂各跑一次实验（各有自己的实验 id 与参数环境）。
     arms: object | None = None
+    #: GOAL-20261015-080 EC-02：**设计的来源**。缺省 `None` ⇒ 臂来自本装配面（今天
+    #: 的语义，逐字不变）；`"plan"` ⇒ 臂从**本 run 的计划产物内容**里读出（读取器见
+    #: `design_from_plan`；读不到 / 白名单外 / 畸形一律**点名拒绝**，**不**回落本字段）。
+    #: **与 `arms` 互斥**：两者同时声明 ⇒ 点名拒绝（「哪个说了算」不可判定）。
+    design_source: str | None = None
+
+
+#: `design_source` 认得的唯一取值（本轮只有「取自计划产物」这一种来源）。
+DESIGN_SOURCE_PLAN = "plan"
 
 
 def sandbox_experiment_runner(
@@ -108,9 +117,6 @@ def sandbox_experiment_runner(
         provenance_builder=_provenance_builder,
     )
 
-    arms = declare_arms(assembly)
-    per_arm = {arm.name: _arm_deps(assembly, arm, deps) for arm in arms}
-
     def run(
         task: ResearchTask,
         contract: TaskContract,
@@ -119,9 +125,13 @@ def sandbox_experiment_runner(
     ) -> TaskExecutionResult:
         """执行本任务的实验：**声明了臂 ⇒ 逐臂各跑一次**，否则单臂（既有语义）。
 
-        返回**主臂**（声明中的第一个臂；未声明臂时即那唯一的实验）的结果 —— 门禁按它裁决，
-        而**所有臂**都落库 + 进证据链（读面因此逐臂可读，见 EC-02/EC-03）。
+        臂的**来源**由 `design_source` 决定（GOAL-080 EC-02）：缺省 ⇒ 装配面声明；
+        `"plan"` ⇒ 从**本 run 的计划产物内容**读出（执行期解析 —— 那一刻 run 已知，
+        而构造期不可能知道）。返回**主臂**（声明顺序的第一个）：门禁按它裁决，
+        而**所有臂**都落库 + 进证据链（读面因此逐臂可读）。
         """
+        arms = _arms_for(assembly, task)
+        per_arm = {arm.name: _arm_deps(assembly, arm, deps) for arm in arms}
         if not arms:
             result = execute_experiment_task(deps, task, contract, spec_context, trace_id)
             _persist_run(assembly, result)
@@ -136,6 +146,38 @@ def sandbox_experiment_runner(
         return _primary_arm_result(results)
 
     return run
+
+
+def _arms_for(assembly: SandboxExperimentAssembly, task: ResearchTask) -> tuple[Any, ...]:
+    """本任务的实验臂（**来源唯一**：装配面声明，或计划产物 —— 不可兼有）。
+
+    - `design_source is None` ⇒ 装配面声明（`declare_arms`，缺省空 ⇒ 单臂，逐字不变）；
+    - `design_source == "plan"` ⇒ 读**本 run** 的计划产物内容（确定性、零出网、fail-closed）；
+    - **两者同时非空** ⇒ 点名拒绝：两条来源都在时「哪个说了算」不可判定
+      （静默取其一正是本 GOAL 要消灭的那种含混）；
+    - 未认得的来源名 ⇒ 点名拒绝（**不**当成「没有来源」）。
+    """
+    source = getattr(assembly, "design_source", None)
+    if source is None:
+        return declare_arms(assembly)
+    if source != DESIGN_SOURCE_PLAN:
+        raise InvalidInputError(
+            f"unknown experiment design source: {source!r} "
+            f"(declared sources: {DESIGN_SOURCE_PLAN!r})"
+        )
+    declared = declare_arms(assembly)
+    if declared:
+        raise InvalidInputError(
+            "both a plan-derived design source and an explicit arm declaration are in "
+            "effect; which one decides the experiment would be undecidable "
+            f"(declared arms: {', '.join(arm.name for arm in declared)})"
+        )
+    from packages.application.experiments.design_from_plan import read_design_from_plan
+
+    design = read_design_from_plan(
+        assembly.artifacts, assembly.ledger, run_id=str(task.run_id.value)
+    )
+    return tuple(design.arms)
 
 
 def _arm_deps(assembly: SandboxExperimentAssembly, arm: Any, base: Any) -> Any:

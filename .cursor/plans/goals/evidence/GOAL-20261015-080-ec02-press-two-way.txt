@@ -1,0 +1,13 @@
+GOAL-20261015-080 EC-02 三向按压判词（V10-4…V10-6 全 RED + 基线门 GREEN + raw sha256 复原）
+命令：uv run --frozen --no-sync python -B scratch/goal080c2_press.py
+受判面：tests/application/test_experiment_design_decides.py（设计的来源唯一 + 计划内容决定臂）
+V10-4 = 去掉来源互斥检查（两条来源并存时静默取其一 ⇒ 红）；
+V10-5 = 去掉来源名检查（拼错的来源被读成「没有来源」⇒ 红）；
+V10-6 = 计划来源分支短路（臂恒空 ⇒「计划驱动」变成空话 ⇒ 红）。
+V10-4
+  V10-4 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V10-5
+  V10-5 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+V10-6
+  V10-6 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+all_red_and_restored=True
