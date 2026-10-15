@@ -27,8 +27,8 @@ owners:
 | AC | 判据 | 结果 | 证据 |
 | --- | --- | --- | --- |
 | AC-1 | **收口资产进树** | **PASS** | `tools/goal080_closeout_assertions.py`（36 条）+ `tools/verify_goal080_closeout.py`；两处射程**纯收紧**（`IN_SCOPE` / `_VERIFIERS` 各 +2）；四道门绿（`test_tooling_scripts_meet_product_gates` / 规模门 / `ruff` / `mypy`） |
-| AC-2 | **两树复检** | **PASS** | `tools/two_tree_recheck.py --script tools/verify_goal080_closeout.py --script-mode shared --base-ref HEAD` ⇒ **`TWO-TREE PASS`**（两路判词逐行相同 + `sha256` 一致）；判词归档进树（两份 `CR=0`） |
-| AC-3 | **as-is m0 23/23**（在全部记录写入之后） | **PASS** | 终态行 `PASS: profile=m0; 23 deterministic checks`（24 条 `PASS [`、0 `FAILED`） |
+| AC-2 | **两树复检** | **PASS** | `tools/two_tree_recheck.py --script tools/verify_goal080_closeout.py --script-mode shared --base-ref HEAD` ⇒ **`TWO-TREE PASS`**：两路各 **77** 判词、`sha256` **相同** `d5f5e8daf68a19494cfe50f2bc9efc0dc81d0187a3186a6749acb413478184c2`、`COMPARE identical=True`；判词归档 `.cursor/plans/goals/evidence/GOAL-20261015-080-verdict-{current,clean}.txt` **进树**（各 **3297 B / 77 行 / `CR=0` / `cmp` 逐字节相同**，**0 `FAIL`**） |
+| AC-3 | **as-is m0 23/23**（在全部记录写入之后） | **PASS** | 终态行 `PASS: profile=m0; 23 deterministic checks`（**24 条 `PASS [`**、**0 `FAIL [`**、`1 FAILED` 行数为 0；`grep` 逐字核对） |
 | AC-4 | **治理 + 三条 MAINLINE 判据** | **PASS** | `validate.py` = `Cursor 治理验证通过`；程序面 / 归档连续性 / **阶梯推进** 全绿 |
 | AC-5 | **阶梯记账**（★ EC-05 逐字要求） | **PASS** | 宪章 `进展记录` 追加本行（**能力域 = 计划**）+ 「计划」域 `依据 GOAL` 收录本 GOAL + `下一级是什么` 前移 |
 | AC-6 | **CI 台账逐提交** | **PASS** | 见 GOAL 的「CI 台账」（含 `cancelled` 如实登记 + 原因 + `covered_by`） |
