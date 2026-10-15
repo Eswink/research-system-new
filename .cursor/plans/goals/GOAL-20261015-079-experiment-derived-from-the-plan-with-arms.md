@@ -340,6 +340,19 @@ run 承担 —— 若该 run 判红，按「CI 失败分类与纠错」回到 cy
 
 **凭据审计**：收口前 `tools/credential_audit.py` 四面 `offenders=0`。
 
+**收口后的两次补交（如实登记）**：
+
+1. `873aa2e8`（GOAL-080 cycle 1 台账补齐）的 run 被**紧随的对齐提交**取消 —— 与本节其余
+   `cancel-in-progress` 条目同形；其覆盖由 tip 承担。
+2. **对齐提交 `f2573c0f`**（【本 GOAL 的证据与记录对齐】）：实测发现三份文件**曾被重跑改写
+   而未随那一批提交** —— 归档两份 `GOAL-20261015-079-verdict-{current,clean}.txt` 在收口 tip
+   上被两树复检**同字节改写**（首轮 `2c9121ae…` / 3285 B ⇒ 收口态 `cc6e6d33…` / 3278 B），
+   而 `RECHECK-486` 的 `sha256` 行也随之上修 ⇒ 已提交的记录与树上的证据**互相矛盾**了几个提交。
+   **处置 = 让记录跟证据对齐**（改记录、**不动**判据）；该提交 **M0 八 job 全 `success`** +
+   CodeQL 三条 `success`（`run_attempt=1`、零 cancelled）。
+   **教训**：**归档被重跑改写后必须重新提交** —— 「记录写过了」不等于「记录与证据一致」，
+   而这一条**没有任何门禁把守**（同 `MEM: record-face-gates-catch-your-own-record` 家族）。
+
 **as-is m0（在全部记录写入之后）**：`PASS: profile=m0; 23 deterministic checks`（24 条 `PASS [` / **0 `FAILED`**） **采点说明**：该实跑发生在**全部交付与记录写入之后**、在本台账尾巴（只改记录的提交）**之前**——台账尾巴与其后仅含记录的提交**不再重跑本地门**，其**记录面**最终覆盖由 CI 承担（承 `MEM: record-face-is-gated-run-the-gate-last`）。**本终态行采自记录写到此处之后的实跑** —— 此前一次同款实跑抓到我改 RECHECK slug 时留下的两处引用面真红（`MAINLINE` 链接 / `MEM-223` 来源），**改引用、零判据改动**后复跑即得此终态行。
 
 ## 状态历史
