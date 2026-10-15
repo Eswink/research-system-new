@@ -49,7 +49,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_experiment_design_reader.py -q`
       ⇒ 全绿；判据覆盖：按 run 过滤（他 run 的计划读不到）/ 读不到制品点名 /
       未声明来源 ⇒ 零回归。**反证**：去掉 run 过滤 ⇒ 判据红。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **设计由计划产物的内容派生**：确定性读取器从计划产物**内容**里读出实验设计
@@ -139,8 +139,9 @@ escalation_triggers:
     需要**改动沙箱镜像或镜像 pin** 才能成立 —— 立即 BLOCKED，留人工拍板
     （镜像 pin 是既有安全面，不得自行改）
 
-child_plans: []
-latest_recheck: null
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261015-487-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-488-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md
 memory_entries: []
 ---
 
@@ -240,11 +241,27 @@ memory_entries: []
 - **改沙箱镜像 / 镜像 pin** —— 需人工拍板（既有安全面）；
 - `R-M1` 未收口 ⇒ **不得**宣称项目安全；投递语义**不是**「恰好一次」。
 
+### cycle 1 的修复记录（逐条如实）
+
+1. **规划期实测更正**（**本 cycle 最有价值的那条**）：原设计把 `research_plan` 写进 phase 的
+   `inputs:` —— 规划时**实测**发现它与既有判据 `test_declared_input_sources.py` **不相容**
+   （该判据要求声明输入是**仓库文件字节可重算 + 组合根种入**的制品，而计划产物是本 run 的
+   **模型产物**），且 `inputs` 的既有口径逐字写着「只声明**外部供应**的输入，**不解析**
+   phase 间的产物引用」⇒ 改走**执行期 run 作用域读**（与 GOAL-078 同一形态）。
+   **一条既有判据未动** —— 这是「不为让新目标成立而改判据」的现场兑现。
+2. **读取器首版按 task 前缀猜 run 归属**（实测改进）：那需要一张 run→tasks 表，而本层
+   不该持有它 ⇒ 改成**经 claim → relation 投影按 `evidence.run_id` 逐条过滤**
+   （与 `GET /runs/{id}/evidence` 同一口径，也是 GOAL-078 的现成形态）。
+3. **测试里一处 `pytest.raises(match=...)` 猜错了判词**（实测红）：他 run 登记时本 run 视角是
+   「**nothing is registered**」而不是「no readable」—— 判词**分得开**正是本模块的设计，
+   改判据去认**实际**的那一句（不是把实现改得含混）。
+
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（计划产物成为实验的声明输入） |
+| 1 | PLAN-20261015-487 | 见「CI 台账」 | 读取器判据 **18 passed**（正向 / run 作用域 / fail-closed 六态 / 白名单 / 非目标 / 自检）；三向按压 V10-1…V10-3 **全 RED** 且逐字节复原；受影响套件 **1056 passed, 1 skipped** | 见「CI 台账」 | 1 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（设计的内容真正决定臂与参数） |
 
 ## CI 台账
 
@@ -253,10 +270,17 @@ memory_entries: []
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
 | 建档（序 48） | `754d91ed`（**tip**） | [M0 38751287254](https://github.com/Eswink/research-system-new/actions/runs/38751287254) / [Push 38751286129](https://github.com/Eswink/research-system-new/actions/runs/38751286129) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（**本 GOAL 的第一次推送 = 第一次全绿**） |
+| cycle 1 派生（子 PLAN + ALL_PLAN + 规划期实测更正） | `65b41271` | [M0 38755298688](https://github.com/Eswink/research-system-new/actions/runs/38755298688) / [Push 38755298578](https://github.com/Eswink/research-system-new/actions/runs/38755298578) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| cycle 1 落地（读取器 + 18 例 + 三向按压） | `fd5b3bb1`（**tip**） | 见「状态历史」（轮询中） | 待回填 |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-20261015-079 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「计划」域与「实验」域的**同一个下一格**（两行逐字都指向「设计由计划/立题派生」）。**建档实测**（四条）：① `experiment` phase **没有 `inputs:` 声明**（`research_report_chain_v1.yaml` 里 `inputs:` 只在 plan/review/report 三处）⇒ 计划产物从未被声明为实验的输入；② 全仓 `research_plan` 在 `packages/`·`services/` **零命中** ⇒ 产品代码里没有消费者；③ 臂与参数由**装配常量**给出（live 就是 `_LIVE_ARMS`）⇒ 设计是测试作者写的；④ `ExperimentPlan` 字段逐个读出，**仍无参数位**。这四条就是本 GOAL 的靶子与可行性依据。 |
+| 2026-10-15 | **ACTIVE** | **cycle 1 落地**（EC-01，PLAN-487）：计划的**设计来源可声明**，读取器
+确定性（只读 canonical、零出网）/ **run 作用域**（经 claim → relation 投影按 `evidence.run_id`
+过滤）/ **fail-closed**（六态点名：无登记 / 无制品 / 无设计块 / 畸形 / 空臂 / 多制品）；
+设计块里的键**逐键**过既有白名单（§9）。判据 **18 例**；三向按压**全 RED** 且逐字节复原。
+**EC-01 → PASS**（RECHECK-488 = PASS）；EC-02/03/04/05 PENDING。 |
 | 2026-10-15 | **ACTIVE** | **cycle 0 建档更正（实测驱动）**：EC-01 原文写「experiment phase 声明 `research_plan` 为其 `inputs` 制品」——**规划期实测判定不可行**：`tests/architecture/python/test_declared_input_sources.py` 的两条判据要求声明输入是**仓库文件字节可重算 + 组合根种入**（`created_by == "composition-root"`），而计划产物是**本 run 的模型产物**；且 `inputs` 的既有口径逐字写着「只声明**外部供应**的输入，**不解析** phase 间的产物引用」。⇒ 改走**执行期 run 作用域读**（与 GOAL-078 的 `retrieval_context` 同一形态）——**不为让新目标成立而改任何既有判据**。EC-01 同轮改写，EC-02 补「未声明来源 ⇒ 既有语义逐字不变」的边界。 |

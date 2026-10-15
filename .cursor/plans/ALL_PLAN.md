@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261015-487](tasks/PLAN-20261015-487-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md) | IN_PROGRESS |
+| [x] | [PLAN-20261015-487](tasks/PLAN-20261015-487-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md) | DONE |
 | [x] | [PLAN-20261015-485](tasks/PLAN-20261015-485-goal-079-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261015-483](tasks/PLAN-20261015-483-goal-079-ec04-live-two-arm-run.md) | DONE |
 | [x] | [PLAN-20261015-481](tasks/PLAN-20261015-481-goal-079-ec03-the-arms-are-comparable.md) | DONE |

@@ -2,14 +2,14 @@
 id: PLAN-20261015-487
 slug: goal-080-ec01-the-design-source-is-declared-and-run-scoped
 title: GOAL-080 cycle 1 — 设计来源可声明 + 确定性读取器（EC-01）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-15
 updated_at: 2026-10-15
 parent_goal: GOAL-20261015-080
 owners:
   - root-agent
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-488-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md
 ---
@@ -18,14 +18,14 @@ memory_entries:
 
 ## 验收条件
 
-- [ ] **读取器在树**：`packages/application/experiments/design_from_plan.py` —— 确定性、
+- [x] **读取器在树**：`packages/application/experiments/design_from_plan.py` —— 确定性、
       零出网、**run 作用域读**、逐键过既有白名单
-- [ ] **声明面**：装配面可声明「设计取自计划产物」（缺省不声明 ⇒ 既有语义逐字不变）
-- [ ] **读不到制品 ⇒ 点名拒绝**（不回落装配常量）
-- [ ] **按 run 过滤**（他 run 的计划读不到）+ 反证臂
-- [ ] 判据成对（正向 / 反证 / 零回归 / 自检）且有例数下界
-- [ ] 三向按压全 RED + 逐字节复原（归档进树、`CR=0`）
-- [ ] 记录面（PLAN + RECHECK）与 GOAL 回写；`ALL_PLAN` 投影
+- [x] **声明面**：装配面可声明「设计取自计划产物」（缺省不声明 ⇒ 既有语义逐字不变）
+- [x] **读不到制品 ⇒ 点名拒绝**（不回落装配常量）
+- [x] **按 run 过滤**（他 run 的计划读不到）+ 反证臂
+- [x] 判据成对（正向 / 反证 / 零回归 / 自检）且有例数下界
+- [x] 三向按压全 RED + 逐字节复原（归档进树、`CR=0`）
+- [x] 记录面（PLAN + RECHECK）与 GOAL 回写；`ALL_PLAN` 投影
 
 ## 目标（本 cycle 的可独立验收主题）
 
@@ -64,10 +64,17 @@ memory_entries:
 
 ## 证据
 
-（cycle 执行时逐条回填。）
+| 面 | 读数 | 命令 |
+| --- | --- | --- |
+| 读取器 | 193 行；确定性（零传输层名字）/ run 作用域（`evidence.run_id`）/ fail-closed（六态） | `uv run --frozen --no-sync python -B -m pytest tests/application/test_experiment_design_reader.py -q` |
+| 判据 | **18 passed**（正向 / run 作用域 3 / fail-closed 5 / 白名单 4 / 非目标 2 / 自检） | 同上 |
+| 按压 | V10-1…V10-3 **全 RED** + `sha 复原一致=True`；归档 743 B、`CR=0` | `uv run --frozen --no-sync python -B scratch/goal080c1_press.py` |
+| 受影响套件 | **1056 passed, 1 skipped** | `uv run --frozen --no-sync python -B -m pytest tests/application tests/e2e/test_two_arm_experiment_offline.py -q` |
+| 四道门 | `ruff check` / `format --check` / `mypy` 全绿 | — |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | IN_PROGRESS | cycle 1 建档（含规划期实测更正：改走执行期 run 作用域读）。 |
+| 2026-10-15 | DONE | 读取器 + 18 例判据落地；三向按压全 RED 且逐字节复原；受影响套件 1056 passed。RECHECK-488 = PASS。 |
