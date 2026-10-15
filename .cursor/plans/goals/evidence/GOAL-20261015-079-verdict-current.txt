@@ -71,7 +71,7 @@ PASS record-RECHECK-20261015-478-goal-079-ec01-experiment-parameters-come-from-t
 PASS record-RECHECK-20261015-480-goal-079-ec02-two-arms-with-a-control.md
 PASS record-RECHECK-20261015-482-goal-079-ec03-the-arms-are-comparable.md
 PASS record-RECHECK-20261015-484-goal-079-ec04-live-two-arm-run.md
-PASS record-RECHECK-20261015-486-goal-079-ec05-self-bootstrap-closeout.md
+PASS record-RECHECK-20261015-486-goal-079-ec05-closeout-recheck.md
 PASS record-README.md
 PASS record-MAINLINE.md
 PASS uncovered-scope-enumerated
