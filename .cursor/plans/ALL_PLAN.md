@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261015-489](tasks/PLAN-20261015-489-goal-080-ec02-the-design-content-decides-the-experiment.md) | DONE |
 | [x] | [PLAN-20261015-487](tasks/PLAN-20261015-487-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md) | DONE |
 | [x] | [PLAN-20261015-485](tasks/PLAN-20261015-485-goal-079-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261015-483](tasks/PLAN-20261015-483-goal-079-ec04-live-two-arm-run.md) | DONE |

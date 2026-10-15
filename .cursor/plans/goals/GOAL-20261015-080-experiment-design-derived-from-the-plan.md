@@ -59,7 +59,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_experiment_design_reader.py -q`
       ⇒ 全绿；判据覆盖：合法设计逐键读出 / 白名单外键点名拒绝 / 缺设计块点名拒绝 /
       畸形设计点名拒绝。**反证**：让读取器对缺失回落缺省 ⇒ 判据红。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **「设计因计划而不同」可判定**：一次 run 的实验设计**由计划内容决定** ——
@@ -141,7 +141,8 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261015-487-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-488-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md
+  - .cursor/plans/tasks/PLAN-20261015-489-goal-080-ec02-the-design-content-decides-the-experiment.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-490-goal-080-ec02-the-design-content-decides-the-experiment.md
 memory_entries: []
 ---
 
@@ -268,6 +269,7 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（计划产物成为实验的声明输入） |
 | 1 | PLAN-20261015-487 | 见「CI 台账」 | 读取器判据 **18 passed**（正向 / run 作用域 / fail-closed 六态 / 白名单 / 非目标 / 自检）；三向按压 V10-1…V10-3 **全 RED** 且逐字节复原；受影响套件 **1056 passed, 1 skipped** | 见「CI 台账」 | 1 次（**CI 抓到的真红：`read_design_from_plan` 57 行 > 50**；见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（设计的内容真正决定臂与参数） |
+| 2 | PLAN-20261015-489 | 见「CI 台账」 | 设计判据 **11 passed**（正向 / 来源唯一 / fail-closed / 零回归）；三向按压 V10-4…V10-6 **全 RED** 且逐字节复原；受影响套件 **1064 passed, 1 skipped** | 见「CI 台账」 | 0 次 | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（换计划 ⇒ 换实验：端到端读数） |
 
 ## CI 台账
 
@@ -288,6 +290,7 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-20261015-079 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「计划」域与「实验」域的**同一个下一格**（两行逐字都指向「设计由计划/立题派生」）。**建档实测**（四条）：① `experiment` phase **没有 `inputs:` 声明**（`research_report_chain_v1.yaml` 里 `inputs:` 只在 plan/review/report 三处）⇒ 计划产物从未被声明为实验的输入；② 全仓 `research_plan` 在 `packages/`·`services/` **零命中** ⇒ 产品代码里没有消费者；③ 臂与参数由**装配常量**给出（live 就是 `_LIVE_ARMS`）⇒ 设计是测试作者写的；④ `ExperimentPlan` 字段逐个读出，**仍无参数位**。这四条就是本 GOAL 的靶子与可行性依据。 |
+| 2026-10-15 | **ACTIVE** | **cycle 2 落地**（EC-02，PLAN-489）：**设计的内容真正决定实验** —— 装配面可声明 `design_source="plan"` ⇒ 臂从**本 run 的计划产物**读出（执行期解析）；**来源唯一**（与装配声明臂并存 ⇒ 点名拒绝）、**未认得的来源点名拒绝**（即使有臂也不放行）、计划不可读 ⇒ fail-closed（不回落装配常量）；未声明来源 ⇒ 既有语义逐字不变**且不读计划**。判据 **11 例**；三向按压**全 RED** 且逐字节复原。**EC-02 → PASS**（RECHECK-490 = PASS）；EC-03/04/05 PENDING。 |
 | 2026-10-15 | **ACTIVE** | **cycle 1 落地**（EC-01，PLAN-487）：计划的**设计来源可声明**，读取器
 确定性（只读 canonical、零出网）/ **run 作用域**（经 claim → relation 投影按 `evidence.run_id`
 过滤）/ **fail-closed**（六态点名：无登记 / 无制品 / 无设计块 / 畸形 / 空臂 / 多制品）；
