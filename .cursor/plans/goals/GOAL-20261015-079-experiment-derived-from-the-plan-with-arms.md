@@ -317,19 +317,21 @@ memory_entries:
 | cycle 3（EC-03 落地） | `2a4c1692` | [M0 38717129906](https://github.com/Eswink/research-system-new/actions/runs/38717129906) / [Push 38717129517](https://github.com/Eswink/research-system-new/actions/runs/38717129517) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 | cycle 4（EC-04 live 多臂 + 两处产品缺陷修复 + 判据盲区） | `a07a2532`（**tip**） | [M0 38726525799](https://github.com/Eswink/research-system-new/actions/runs/38726525799) / [Push 38726525638](https://github.com/Eswink/research-system-new/actions/runs/38726525638) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 
+| cycle 5（EC-05 收口：同族缺陷修复 + 收口资产 + 阶梯记账） | `a8bff586`（**tip**） | [M0 38746372702](https://github.com/Eswink/research-system-new/actions/runs/38746372702) / [Push 38746371173](https://github.com/Eswink/research-system-new/actions/runs/38746371173) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（**本 GOAL 的末条实测提交**） |
+
 **自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `a07a2532`**（其 run 已到终态且
 **八 job 全绿**）；**cycle 5（EC-05 收口）的提交与其 CI 结论不在本台账内** —— 它的
 run 要等本提交推送之后才存在，**台账提交自身不产生可引用的 CI 结论** ⇒
-**到 `a07a2532` 为止，不再向后追链**（**不得**循环引用）。收口面（收口复检 / 两树 /
+**到 `a8bff586` 为止，不再向后追链**（**不得**循环引用）。收口面（收口复检 / 两树 /
 m0 / 治理）由本 GOAL 的 `latest_recheck`（RECHECK-486）承担；**CI 面**由 tip 提交的
 run 承担 —— 若该 run 判红，按「CI 失败分类与纠错」回到 cycle 6 处置，
 **不**修改本台账的历史行。**失败记录**：本轮 **CI 零真红**（`aad54b4d` 的 `attempt=1`
 基础设施红已如实登记 + `rerun-failed-jobs` 后 `attempt=2` 全绿）；
-**本地零真红**（两次修复都由判据自己抓出并点名，见 cycle 2/3/5 的修复记录）。
+**本地零真红**（三次修复都由判据自己抓出并点名，见 cycle 2/3/5 的修复记录 —— 含 m0 抓到的两处引用面真红）。
 
 **凭据审计**：收口前 `tools/credential_audit.py` 四面 `offenders=0`。
 
-**as-is m0（在全部记录写入之后）**：`PASS: profile=m0; 23 deterministic checks`（24 条 `PASS [` / **0 `FAILED`**）。**本终态行采自记录写到此处之后的实跑** —— 此前一次同款实跑抓到我改 RECHECK slug 时留下的两处引用面真红（`MAINLINE` 链接 / `MEM-223` 来源），**改引用、零判据改动**后复跑即得此终态行。
+**as-is m0（在全部记录写入之后）**：`PASS: profile=m0; 23 deterministic checks`（24 条 `PASS [` / **0 `FAILED`**） **采点说明**：该实跑发生在**全部交付与记录写入之后**、在本台账尾巴（只改记录的提交）**之前**——台账尾巴与其后仅含记录的提交**不再重跑本地门**，其**记录面**最终覆盖由 CI 承担（承 `MEM: record-face-is-gated-run-the-gate-last`）。**本终态行采自记录写到此处之后的实跑** —— 此前一次同款实跑抓到我改 RECHECK slug 时留下的两处引用面真红（`MAINLINE` 链接 / `MEM-223` 来源），**改引用、零判据改动**后复跑即得此终态行。
 
 ## 状态历史
 
