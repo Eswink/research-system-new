@@ -16,7 +16,11 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
+from packages.application.ports.agent_runtime import AgentSessionHandle, AgentSessionSpec
+
 __all__ = [
+    "SessionSpecRecorder",
+    "context_identifiers",
     "assert_the_arms_ran",
     "assert_the_context_reached_sessions",
     "context_payloads",
@@ -35,6 +39,59 @@ def context_payloads(client: TestClient, run_id: str) -> dict[str, Any]:
             client.get(f"/artifacts/{artifact_id}/content").content.decode("utf-8")
         )
         for artifact_id in ids
+    }
+
+
+class SessionSpecRecorder:
+    """记录每次 `create_session` 的 **spec**（装配方包装；产品代码零改动）。
+
+    为什么必须包在 runtime 上而不是读内部对象：`AgentSessionSpec` 是**产品路径**交给
+    runtime 的那份事实本身 —— 判据读它，判的就是「会话拿到了什么」，不是「装配器返回了什么」。
+    其余方法经 `__getattr__` **原样透传**（本包装只观察、不改行为）。
+    """
+
+    def __init__(self, inner: Any) -> None:
+        self._inner = inner
+        self.specs: dict[str, AgentSessionSpec] = {}
+
+    def create_session(self, spec: AgentSessionSpec) -> AgentSessionHandle:
+        self.specs[spec.task_contract.id] = spec
+        return self._inner.create_session(spec)  # type: ignore[no-any-return]
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._inner, name)
+
+    def context_of(self, contract_id: str) -> Any:
+        """该合约那次会话的 `context_snapshot`（没有那次会话 ⇒ 判据自己点名失败）。"""
+        spec = self.specs.get(contract_id)
+        assert spec is not None, (
+            f"本 run 没有为合约 {contract_id} 创建会话（已记录的合约：{sorted(self.specs)}）"
+        )
+        return spec.context_snapshot
+
+    def retrieval_prompt_of(self, contract_id: str) -> str | None:
+        """该合约那次会话的**提示词那一段**（GOAL-20261016-081 EC-01）。
+
+        读的是 spec 上的 `retrieval_prompt` —— 它**就是**会话创建点会拼进
+        `send_message` 的那段文本（同一份字节，不重算）。
+        """
+        spec = self.specs.get(contract_id)
+        assert spec is not None, (
+            f"本 run 没有为合约 {contract_id} 创建会话（已记录的合约：{sorted(self.specs)}）"
+        )
+        return spec.retrieval_prompt
+
+
+def context_identifiers(client: TestClient, run_id: str) -> set[str]:
+    """读面上下文制品里的逐条标识（与 `entries[].identifier` 同源的那一列）。
+
+    复用 `context_payloads`（**同一条读面**）—— 不新造第二条查询。
+    """
+    return {
+        str(entry["identifier"])
+        for payload in context_payloads(client, run_id).values()
+        for entry in payload.get("entries", ())
+        if entry.get("identifier")
     }
 
 
@@ -74,7 +131,6 @@ def install_spec_recorder(deps: Any) -> None:
     from dataclasses import replace
 
     from packages.application.run_orchestration.service import RunOrchestrationService
-    from tests.e2e.test_retrieval_context_reaches_the_session import SessionSpecRecorder
 
     recorder = SessionSpecRecorder(deps.runs._deps.runtime)
     deps.runs = RunOrchestrationService(replace(deps.runs._deps, runtime=recorder))

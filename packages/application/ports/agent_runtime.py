@@ -52,6 +52,11 @@ class AgentSessionSpec:
     session_tool_bindings: tuple[tuple[str, str], ...] = ()
     workspace_lease: WorkspaceLease | None = None
     context_snapshot: ContextSnapshot | None = None
+    # GOAL-20261016-081 EC-01：**进提示词的那一段**（检索摘录的有界渲染）。
+    # 与 `context_snapshot` 的分工：快照是**结构化事实**（refs / digest / token 额度），
+    # 本字段是**给人/模型看的文本**（逐条摘录，截断可见）。缺省 `None` ⇒ 提示词
+    # **逐字节**等于 `task_contract.purpose`（既有语义不变）。
+    retrieval_prompt: str | None = None
     budget_reservation: BudgetReservation | None = None
     manifest_ref: str | None = None
     endpoint: LLMEndpoint | None = None

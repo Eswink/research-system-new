@@ -368,6 +368,10 @@ def _run_session(
         manifest_ref=spec_context.frozen_manifest_digest,
         # GOAL-20261014-078 EC-01：检索内容进会话上下文（缺省 None ⇒ 逐字节不变）。
         context_snapshot=_context_snapshot(spec_context),
+        # GOAL-20261016-081 EC-01：同一份摘录**进提示词**（缺省 None ⇒ 提示词逐字不变）。
+        # 渲染是**确定性纯函数**（有界 / 截断可见 / 同一份 `entry.shown`）；
+        # 取值点与快照**同一处** —— 两者消费同一个视图，不各自去查一次。
+        retrieval_prompt=_retrieval_prompt(spec_context),
         endpoint=spec_context.endpoint,
         model=spec_context.model,
     )
@@ -388,6 +392,22 @@ def _context_snapshot(spec_context: SessionSpecContext) -> ContextSnapshot | Non
     if view is None:
         return None
     return cast(ContextSnapshot | None, view.snapshot)
+
+
+def _retrieval_prompt(spec_context: SessionSpecContext) -> str | None:
+    """检索摘录 → 提示词那一段（GOAL-20261016-081 EC-01）。
+
+    `retrieval_context` 是装配结果视图；**缺省 `None` ⇒ 返回 `None`**（提示词里不加
+    那一段 —— 与这个槽位出现之前**逐字节相同**）。渲染器是纯函数，**不读**原始字节、
+    **不新造**上限：它只把视图里已经摘录好的 `shown` 排成段落。
+    """
+    view = spec_context.retrieval_context
+    if view is None:
+        return None
+    from packages.application.run_orchestration.retrieval_prompt import render_retrieval_prompt
+
+    rendered = render_retrieval_prompt(view)
+    return rendered or None
 
 
 def _assert_frozen_manifest(spec: AgentSessionSpec, context: SessionSpecContext) -> None:

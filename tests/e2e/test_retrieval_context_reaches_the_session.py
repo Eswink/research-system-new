@@ -42,7 +42,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from adapters.openhands.session_tools import build_session_tools
-from packages.application.ports.agent_runtime import AgentSessionHandle, AgentSessionSpec
 from services.api.app import create_app
 from services.api.runtime_support import build_agent_runtime, resolve_runtime_selection
 from tests.e2e.literature_chain_support import (
@@ -55,6 +54,10 @@ from tests.e2e.literature_chain_support import (
 )
 from tests.e2e.live_control_plane_support import with_contract_declared_experiment
 from tests.e2e.live_run_support import openhands_deps, start_run
+from tests.e2e.retrieval_context_support import (
+    SessionSpecRecorder,
+    context_identifiers,
+)
 
 # 读面快照与 mock 端点与既有离线 e2e 同源（同一套装配，避免两处各写一份）。
 from tests.e2e.test_ec03_real_runtime_offline_chain import _read_chain, mock_relay
@@ -79,34 +82,6 @@ _REVIEW_BINDINGS = {
 }
 #: 制品命名的固定前缀（工具结果；与 `tool_evidence._spilled_artifact_id` 同源）。
 _TOOL_RESULT_PREFIX = "tool-result:"
-
-
-class SessionSpecRecorder:
-    """记录每次 `create_session` 的 **spec**（装配方包装；产品代码零改动）。
-
-    为什么必须包在 runtime 上而不是读内部对象：`AgentSessionSpec` 是**产品路径**交给
-    runtime 的那份事实本身 —— 判据读它，判的就是「会话拿到了什么」，不是「装配器返回了什么」。
-    其余方法经 `__getattr__` **原样透传**（本包装只观察、不改行为）。
-    """
-
-    def __init__(self, inner: Any) -> None:
-        self._inner = inner
-        self.specs: dict[str, AgentSessionSpec] = {}
-
-    def create_session(self, spec: AgentSessionSpec) -> AgentSessionHandle:
-        self.specs[spec.task_contract.id] = spec
-        return self._inner.create_session(spec)  # type: ignore[no-any-return]
-
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self._inner, name)
-
-    def context_of(self, contract_id: str) -> Any:
-        """该合约那次会话的 `context_snapshot`（没有那次会话 ⇒ 判据自己点名失败）。"""
-        spec = self.specs.get(contract_id)
-        assert spec is not None, (
-            f"本 run 没有为合约 {contract_id} 创建会话（已记录的合约：{sorted(self.specs)}）"
-        )
-        return spec.context_snapshot
 
 
 def _assembled_deps(
@@ -261,6 +236,21 @@ class TestTheDownstreamSessionSeesTheRetrievedContent:
                 ref,
                 sorted(retrieved),
             )
+
+        # GOAL-20261016-081 EC-01：同一份摘录**进提示词**（不只是进上下文）。
+        prompt_section = recorder.retrieval_prompt_of(_DOWNSTREAM_CONTRACT)
+        assert prompt_section, (
+            "下游会话的提示词里必须有检索那一段（否则模型看不见内容 —— 本 GOAL 的靶子）",
+            prompt_section,
+        )
+        identifiers = context_identifiers(client, str(run["id"]))
+        assert identifiers, ("读面上必须有可读的标识（否则本判据在空集上恒真）", reads.evidence)
+        for identifier in identifiers:
+            assert identifier in prompt_section, (
+                "每条系统取得的标识都必须进提示词那一段",
+                identifier,
+                prompt_section,
+            )
         # 上下文的内容也带性质标签与内容寻址摘要（不是裸 id 列表）。
         assert context.trust_labels == ["RETRIEVED"], context.trust_labels
         assert context.retrieval_digest, context
@@ -311,6 +301,16 @@ class TestTheUpstreamSessionGetsNothing:
             context,
             downstream,
         )
+
+        # GOAL-20261016-081 EC-01 的**反证臂**：上游会话的提示词里**没有**检索那一段。
+        upstream_prompt = recorder.retrieval_prompt_of(_UPSTREAM_CONTRACT)
+        assert not upstream_prompt, (
+            "上游会话开工时没有检索内容 ⇒ 提示词里不得有那段（不留空壳）",
+            upstream_prompt,
+        )
+        # 同一条链上的两个相反读数：下游**有**那段、上游**没有**。
+        downstream_prompt = recorder.retrieval_prompt_of(_DOWNSTREAM_CONTRACT)
+        assert downstream_prompt, ("下游会话的提示词必须有检索那一段", downstream_prompt)
 
 
 class TestOnlyThisRunsRetrievedContentEnters:

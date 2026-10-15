@@ -80,7 +80,13 @@ class SessionBuilder:
             persistence_dir=self._persistence_dir,
             callbacks=self._callbacks,
         )
-        conversation.send_message(spec.task_contract.purpose)
+        # GOAL-20261016-081 EC-01：合约文本 + **检索摘录那一段**（缺省无那段 ⇒ 逐字不变）。
+        # 渲染由 `retrieval_prompt.prompt_with_retrieval` 完成（有界 / 截断可见 / 同源）；
+        # 本层只把**已渲染好的 str** 送进去 —— 不在 adapter 里做检索解释（职责边界不变）。
+        headline = spec.task_contract.purpose
+        if spec.retrieval_prompt:
+            headline = headline + "\n\n" + spec.retrieval_prompt
+        conversation.send_message(headline)
         return _SessionEntry(
             session_id=session_id,
             spec=spec,
@@ -169,6 +175,7 @@ class SessionBuilder:
             run_chain_tool_ids=spec.run_chain_tool_ids,
             workspace_lease=spec.workspace_lease,
             context_snapshot=spec.context_snapshot,
+            retrieval_prompt=spec.retrieval_prompt,
             budget_reservation=spec.budget_reservation,
             manifest_ref=fork.manifest_revision_ref or spec.manifest_ref,
         )
