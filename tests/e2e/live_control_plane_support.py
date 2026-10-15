@@ -81,7 +81,9 @@ def capability_step(deps: Any, provider: Any, spec: Any) -> Any:
     )
 
 
-def with_contract_declared_experiment(deps: Any, *, script: str, image: str) -> None:
+def with_contract_declared_experiment(
+    deps: Any, *, script: str, image: str, arms: object | None = None
+) -> None:
     """接上**第三段**执行体缝：合约声明的沙箱实验（GOAL-014 EC-02）。
 
     与 `live_run_support.with_sandbox_experiment` 的分工**是本质的**：那条路要走
@@ -112,6 +114,8 @@ def with_contract_declared_experiment(deps: Any, *, script: str, image: str) -> 
             artifacts=deps.artifacts,
             ledger=deps.ledger,
             policy=policy_evaluator,
+            # GOAL-20261015-079 EC-02：**臂声明**透传给装配面（缺省 None ⇒ 单臂语义不变）。
+            arms=arms,
             script=script,
             image=image,
             experiment_store=deps.experiment_store,

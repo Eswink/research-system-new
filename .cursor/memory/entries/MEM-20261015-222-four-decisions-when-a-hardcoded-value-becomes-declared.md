@@ -1,6 +1,6 @@
 ---
 id: MEM-20261015-222
-title: "把写死的量变成声明量时的四个决定点：声明层选在哪、白名单还是转发、缺省怎么回落、命名空间会不会撞"
+title: "把写死的量变成声明量时的五个决定点：声明层选在哪、白名单还是转发、缺省怎么回落、命名空间会不会撞"
 status: ACTIVE
 created_at: 2026-10-15
 updated_at: 2026-10-15
@@ -21,7 +21,7 @@ tags: [research-loop, experiment, parameter-surface, whitelist, fail-closed, san
 变成**声明量**（GOAL-20261015-079 EC-01）：声明经「装配 → `ExperimentExecutionRequest.environment`
 → 容器」到达脚本，脚本读环境、**缺省回落**既有常量。
 
-## 为什么这样做（四个决定点，都可复用）
+## 为什么这样做（五个决定点，都可复用）
 
 1. **声明层选在哪** —— 参数放在**装配面**（`SandboxExperimentAssembly.parameters`），
    **不是**契约。依据是既有文档逐字写着的边界：`TaskContract.experiment` 的 docstring
@@ -35,6 +35,12 @@ tags: [research-loop, experiment, parameter-surface, whitelist, fail-closed, san
    而那正是这类改造最典型的隐性缺陷。
 4. **命名空间会不会撞** —— 参数键带固定前缀（`EXPERIMENT_PARAM_`），与执行器自己的键
    （`EXPERIMENT_RUN_ID`）**不相交**；判据显式断言这一点（参数面**覆盖不了**执行器的键）。
+
+5. **派生 id 的命名空间**（GOAL-20261015-079 EC-02 实测补） —— 新概念（**臂**）必须有自己的
+   **id 派生**，**不能**复用「一 run 一个 X」那条既有派生：实测 `experiment_run_id_of(run_id)`
+   只吃 run id ⇒ **两个臂会撞同一个实验 id**。正确做法是**两条派生并存**（单臂路径逐字不变 +
+   `arm_experiment_id(run_id, arm)` 按 run+臂确定性派生），而不是改既有派生 —— 改它会动到
+   已冻结的 M12 参考身份。
 
 ## 怎么做与复现
 

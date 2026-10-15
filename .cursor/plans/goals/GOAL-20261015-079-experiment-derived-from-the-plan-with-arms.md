@@ -48,7 +48,7 @@ exit_criteria:
       `GET /runs/{id}/experiments` 上**逐臂**给出实验记录与指标；
       两臂的 `environment_digest`（或等价的可判事实）**不同**；
       **反证**：只声明一个臂 ⇒ 「两臂」判据如实判否并点名。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **臂间可比**：读面能回答「**两臂的同一个指标差多少**」——不是「两条记录都在」
@@ -123,7 +123,8 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261015-477-goal-079-ec01-experiment-parameters-come-from-the-declaration.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-478-goal-079-ec01-experiment-parameters-come-from-the-declaration.md
+  - .cursor/plans/tasks/PLAN-20261015-479-goal-079-ec02-two-arms-with-a-control.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-480-goal-079-ec02-two-arms-with-a-control.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md
 ---
@@ -204,6 +205,14 @@ memory_entries:
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（参数面经声明传递） |
 | 1 | PLAN-20261015-477 | 见「CI 台账」 | 参数面判据 **11 passed**（白名单 / 逐键传递 / 零回归 / 脚本真读 / 非法点名 / 命名空间）；三向按压全红且逐字节复原 | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01 **PASS**；EC-02/03/04/05 PENDING | cycle 2 = EC-02（多臂/对照） |
+| 2 | PLAN-20261015-479 | 见「CI 台账」 | 臂判据 **14 passed**；e2e **6 passed**（含真容器 run 级：读面 2 条实验、两臂比率 **7990.0 vs 178.5**）；五向按压全红且逐字节复原 | 见「CI 台账」 | 3 次（见「cycle 2 的修复记录」） | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（臂间可比） |
+
+### cycle 2 的修复记录（逐条如实）
+
+1. **`mock_relay` 夹具不在本模块**（实测）：新 e2e 直接引用它会 `fixture not found` ⇒ 从既有离线 e2e **导入**同一夹具（`__all__` 声明），避免两处各写一份。
+2. **V9-4 的锚点过宽**（按压实测）：最初压在「`declare_arms` 调用」这一行，而它同时被 EC-01 的判据使用 ⇒ **基线就不绿**。按压的纪律是「未按压必须绿」⇒ 把受判面改成 **EC-02 自己的**用例类（`TestTwoArmsReallyRun`），基线恢复绿、按压真红。
+3. **V9-2 锚点随实现演进失配**（实测）：`parameter_environment(assembly.parameters)` 在 EC-02 改成 `parameter_environment(parameters)`（臂可覆盖）⇒ 锚点命中 0 次。按压脚本的锚点是**实现文本**，实现变了就要同轮改 —— 这正是「锚点必须唯一且在场」那条断言的用途（命中 0 次时它**点名**而不是静默跳过）。
+
 
 ### cycle 1 的修复记录（逐条如实）
 
@@ -226,3 +235,4 @@ memory_entries:
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-078 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「实验」域 **L2 → L3**（`下一级是什么` 逐字：实验由计划派生，多臂 / 对照组）。**建档实测**（四条）：① 实验脚本参数是**模块常量**（`SEED = 7` / `N_ITEMS = 800` / `N_DUPLICATE_PAIRS = 40`）；② `ExperimentPlan` **无参数位**（字段逐个读出）；③ 域层对 `arm` / `arms` / `control_group` **零命中** ⇒ 臂概念不存在；④ **缝已在**：`ExperimentExecutionRequest.environment` 经 `execute.py` → `docker_backend.py`（`environment = dict(spec.environment)`）**真的进容器**且已被记 digest，而产品路径今天只塞了 `EXPERIMENT_RUN_ID`。这四条就是本 GOAL 的靶子与可行性依据。 |
 | 2026-10-15 | ACTIVE | **cycle 1 落地**（EC-01，PLAN-477）：实验参数从**脚本模块常量**变成**声明事实** —— 装配声明经「执行请求 → 容器环境」到脚本（逐键 / 白名单 / 前缀命名空间不相交），**未声明零回归**（请求环境与脚本产出都与改动前逐字相同），**值非法点名失败**。判据 11 例；三向按压全红。**EC-01 → PASS**（RECHECK-478 = PASS）；EC-02/03/04/05 PENDING。 |
+| 2026-10-15 | ACTIVE | **cycle 2 落地**（EC-02，PLAN-479）：实验支持**多臂/对照** —— 臂声明（两种形态 + 重复/非法点名拒绝）、臂 id **独立派生**（不复用「一 run 一实验」）、派发体**逐臂各跑一次**、主臂代表任务且消息点名全部臂。真容器 run 上：读面 **2** 条实验、两臂同指标 **7990.0 vs 178.5**（参数不同 ⇒ 读数不同）。判据 14 + 6 例；五向按压全红。**EC-02 → PASS**（RECHECK-480 = PASS）；EC-03/04/05 PENDING。 |

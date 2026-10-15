@@ -24,7 +24,7 @@ from __future__ import annotations
 import shutil
 import tempfile
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +36,7 @@ from packages.application.experiments import (
     ExperimentProvenance,
     GovernedExperimentExecutor,
 )
+from packages.application.experiments.arms import arm_experiment_id, declare_arms
 from packages.application.experiments.plan_parameters import parameter_environment
 from packages.application.m12_reference.clean_run_stages import derived_id, experiment_run_id_of
 from packages.application.ports.errors import InvalidInputError
@@ -83,7 +84,12 @@ class SandboxExperimentAssembly:
     environment: dict[str, str] = field(default_factory=dict)
     #: GOAL-20261015-079 EC-01：**声明的实验参数**（白名单校验后进容器环境；
     #: 缺省空 ⇒ 请求里的环境与今天逐字相同 —— 脚本回落既有模块常量）。
+    #: EC-02：声明了 `arms` 时，本字段作为**单臂**（未声明臂名）的缺省参数。
     parameters: dict[str, object] = field(default_factory=dict)
+    #: GOAL-20261015-079 EC-02：**声明的实验臂**（`{臂名: 参数}` 或
+    #: `[{name, parameters}]`）。缺省 `None` ⇒ **单臂**（今天的语义，逐字不变）；
+    #: 声明 ≥ 1 个臂 ⇒ 每个臂各跑一次实验（各有自己的实验 id 与参数环境）。
+    arms: object | None = None
 
 
 def sandbox_experiment_runner(
@@ -102,17 +108,67 @@ def sandbox_experiment_runner(
         provenance_builder=_provenance_builder,
     )
 
+    arms = declare_arms(assembly)
+    per_arm = {arm.name: _arm_deps(assembly, arm, deps) for arm in arms}
+
     def run(
         task: ResearchTask,
         contract: TaskContract,
         spec_context: SessionSpecContext,
         trace_id: str,
     ) -> TaskExecutionResult:
-        result = execute_experiment_task(deps, task, contract, spec_context, trace_id)
-        _persist_run(assembly, result)
-        return result
+        """执行本任务的实验：**声明了臂 ⇒ 逐臂各跑一次**，否则单臂（既有语义）。
+
+        返回**主臂**（声明中的第一个臂；未声明臂时即那唯一的实验）的结果 —— 门禁按它裁决，
+        而**所有臂**都落库 + 进证据链（读面因此逐臂可读，见 EC-02/EC-03）。
+        """
+        if not arms:
+            result = execute_experiment_task(deps, task, contract, spec_context, trace_id)
+            _persist_run(assembly, result)
+            return result
+        results: list[TaskExecutionResult] = []
+        for arm in arms:
+            arm_result = execute_experiment_task(
+                per_arm[arm.name], task, contract, spec_context, trace_id
+            )
+            _persist_run(assembly, arm_result)
+            results.append(arm_result)
+        return _primary_arm_result(results)
 
     return run
+
+
+def _arm_deps(assembly: SandboxExperimentAssembly, arm: Any, base: Any) -> Any:
+    """某臂的执行依赖（**同一执行链**，只换 request builder：该臂的参数与实验 id）。
+
+    执行器/制品店/账本与单臂共用同一批实例（**不另开执行路径**）。
+    """
+    from packages.application.run_orchestration.experiment_task import ExperimentTaskDeps
+
+    return ExperimentTaskDeps(
+        executor=base.executor,
+        artifacts=base.artifacts,
+        ledger=base.ledger,
+        request_builder=_request_builder(assembly, arm=arm),
+        provenance_builder=_provenance_builder,
+    )
+
+
+def _primary_arm_result(results: list[TaskExecutionResult]) -> TaskExecutionResult:
+    """主臂结果（声明顺序的第一个）+ 在消息里**点名**全部臂。
+
+    为什么门禁只看主臂：门要的是**一个**裁决（`TaskExecutionResult` 就是一次任务）。
+    多臂不是「多次任务」，而是「一次任务的多次运行」⇒ 主臂代表这次任务，其余臂的
+    读数在**读面**上逐条可查（EC-03 的靶子）。声明顺序因此是**语义**的一部分：
+    第一个臂是主臂。
+    """
+    primary = results[0]
+    labels = ", ".join(
+        str(result.experiment_outcome.run.id.value)
+        for result in results
+        if result.experiment_outcome is not None
+    )
+    return replace(primary, message=f"{primary.message} (arms: {labels})")
 
 
 def _persist_run(assembly: SandboxExperimentAssembly, result: TaskExecutionResult) -> None:
@@ -156,16 +212,35 @@ def _governed_executor(assembly: SandboxExperimentAssembly) -> GovernedExperimen
 
 def _request_builder(
     assembly: SandboxExperimentAssembly,
+    *,
+    arm: Any | None = None,
 ) -> Callable[[ResearchTask, TaskContract, SessionSpecContext], ExperimentExecutionRequest]:
+    """本装配（或**某个臂**）的执行请求构造器。
+
+    `arm is None` ⇒ **单臂**（既有语义：`experiment_run_id_of(run_id)` + `assembly.parameters`）；
+    `arm` 非空 ⇒ 该臂的实验 id 由 `arm_experiment_id(run_id, arm.name)` 派生、参数取该臂声明的
+    （`params = {**assembly.parameters, **arm.parameters}` —— 臂可覆盖装配缺省，也可只给差异）。
+    """
+
     def build(
         task: ResearchTask, contract: TaskContract, spec_context: SessionSpecContext
     ) -> ExperimentExecutionRequest:
         declaration = contract.experiment
         if declaration is None:  # 派发方只在声明非空时调用本函数；这里挡住装配期误用。
             raise InvalidInputError(f"contract {contract.id} declares no sandboxed experiment")
-        experiment_run_id = experiment_run_id_of(str(task.run_id.value))
+        run_id_text = str(task.run_id.value)
+        experiment_run_id = (
+            arm_experiment_id(run_id_text, arm.name)
+            if arm is not None
+            else experiment_run_id_of(run_id_text)
+        )
+        parameters = (
+            dict(assembly.parameters)
+            if arm is None
+            else {**assembly.parameters, **dict(arm.parameters)}
+        )
         return ExperimentExecutionRequest(
-            plan=_preregistered_plan(task),
+            plan=_preregistered_plan(task, arm=arm),
             run_id=ID(experiment_run_id),
             command=declaration.command,
             workspace=_sandbox_workspace(),
@@ -178,7 +253,7 @@ def _request_builder(
             environment={
                 "EXPERIMENT_RUN_ID": experiment_run_id,
                 **assembly.environment,
-                **parameter_environment(assembly.parameters),
+                **parameter_environment(parameters),
             },
             timeout_seconds=declaration.timeout_seconds,
         )
@@ -190,18 +265,23 @@ def _sandbox_workspace() -> Workspace:
     return Workspace(id=SANDBOX_WORKSPACE_ID, name=PLAN_NAME)
 
 
-def _preregistered_plan(task: ResearchTask) -> ExperimentPlan:
-    """本次任务的实验计划（预注册态）。
+def _preregistered_plan(task: ResearchTask, *, arm: Any | None = None) -> ExperimentPlan:
+    """本次任务的实验计划（预注册态）；**每个臂一份**（计划 id 含臂名 ⇒ 不复用同一个计划）。
 
     id 必须**合法 UUID** 且**按任务确定性派生**（同一任务重跑得同一个 id，重启后可复算）。
     这里此前是 `experiment_run_id_of(f"plan-{task.id.value}")`：那个函数要求输入本身是
     UUID（`UUID(ID(x).value)`），而 `plan-<uuid>` 不是 ⇒ **任何一次真实派发都在这一行抛**
     `ValueError: invalid UUID`（GOAL-011 cycle 9 实测；cycle 6 接缝时该路径从未被派发过）。
     改用同一个模块里既有的确定性派生 `derived_id`（审计 id 用的就是它），不新造第二套命名。
+
+    GOAL-20261015-079 EC-02：`arm` 非空时**种子的字符串带上臂名** ⇒ 各臂的计划 id 不同
+    （同一个计划 id 被两个臂复用会让「哪个计划属于哪个臂」不可判）；`arm is None` ⇒
+    逐字沿用既有种子（零回归）。
     """
+    seed = str(task.id.value) if arm is None else f"{task.id.value}:{arm.name}"
     plan = ExperimentPlan(
-        id=ID(derived_id("sandbox-plan", str(task.id.value))),
-        name=PLAN_NAME,
+        id=ID(derived_id("sandbox-plan", seed)),
+        name=PLAN_NAME if arm is None else f"{PLAN_NAME}:{arm.name}",
         hypothesis=f"sandboxed experiment for task {task.id.value}",
     )
     return plan.transition(ExperimentPlanState.Transition.PREREGISTER)
@@ -219,8 +299,13 @@ def docker_experiment_assembly(  # noqa: PLR0913 -- 装配面的量就这么多�
     image: str = "research-os-sandbox:m9-test",
     ledger: Any | None = None,
     experiment_store: Any | None = None,
+    parameters: dict[str, object] | None = None,
+    arms: object | None = None,
 ) -> SandboxExperimentAssembly:
-    """本地装配：执行体 = **既有** `DockerExecutionBackend`（不新增后端/依赖）。"""
+    """本地装配：执行体 = **既有** `DockerExecutionBackend`（不新增后端/依赖）。
+
+    `parameters` / `arms`（GOAL-20261015-079）由调用方声明；缺省 ⇒ **既有单臂语义逐字不变**。
+    """
     return SandboxExperimentAssembly(
         execution=DockerExecutionBackend(image=image),
         artifacts=artifacts,
@@ -229,4 +314,6 @@ def docker_experiment_assembly(  # noqa: PLR0913 -- 装配面的量就这么多�
         ledger=ledger,
         experiment_store=experiment_store,
         script=script,
+        parameters=dict(parameters or {}),
+        arms=arms,
     )
