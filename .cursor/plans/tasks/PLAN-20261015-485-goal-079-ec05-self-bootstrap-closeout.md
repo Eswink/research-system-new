@@ -9,7 +9,7 @@ parent_goal: GOAL-20261015-079
 owners:
   - root-agent
 subagent_parallel_limit: 3
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md
   - .cursor/memory/entries/MEM-20261015-223-closeout-assets-need-ownness-not-just-self-consistency.md

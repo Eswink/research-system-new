@@ -1,6 +1,6 @@
 ---
 id: RECHECK-20261015-486
-slug: goal-079-ec05-self-bootstrap-closeout
+slug: goal-079-ec05-closeout-recheck
 title: 独立复检：GOAL-20261015-079 EC-05 自举收口（两树 + 归档 + m0 + 治理 + 阶梯记账）
 plan_id: PLAN-20261015-485
 parent_goal: GOAL-20261015-079
@@ -30,7 +30,7 @@ owners:
 | AC-2 | **本 cycle 抓到的同族缺陷已修**（本记录**唯一的独立发现**） | **PASS** | `verify_goal078_closeout.py` 的常量与加载行**双双**写着 `goal077_closeout_assertions.py` ⇒ 29 条自有断言**从未运行**（078 归档 73 条判词里零命中，逐条 grep）；修后**真跑 29 条、0 判负**（68 = 18 + 29 + 21） |
 | AC-3 | **缺陷形态已机器封死** | **PASS** | 家族判据加**第三项对拍**（`declared == loaded == 自己那份`）+ 反向反例「自洽但非己有」；自指判词改为**按本文件名推**应载名（写死版在构造上不可能再通过） |
 | AC-4 | **按压两处红 + 逐字节复原** | **PASS** | `scratch/goal079c5_press.py`：`BASELINE family_green=True / verifier_green=True` ⇒ `PRESSED family_red=True / verifier_red=True` + `sha 复原一致=True`；归档 `evidence/GOAL-20261015-079-c5-ownness-press.txt`（1092 B、`CR=0`） |
-| AC-5 | **两树复检** | **PASS** | `tools/two_tree_recheck.py --script tools/verify_goal079_closeout.py --script-mode shared` ⇒ **`TWO-TREE PASS`**（两路 78 判词逐行相同、`sha256` 一致）；判词归档进树（`…-verdict-current.txt` / `…-verdict-clean.txt`，`CR=0`） |
+| AC-5 | **两树复检** | **PASS** | `tools/two_tree_recheck.py --script tools/verify_goal079_closeout.py --script-mode shared --base-ref HEAD` ⇒ **`TWO-TREE PASS`**：两路各 **78** 判词、`sha256` **相同** `2c9121ae5a0d3d1a87e93348ba7b131249a4c2c2eb2f7d4c989f0455df7c1774`、`COMPARE identical=True`；两份判词归档 `.cursor/plans/goals/evidence/GOAL-20261015-079-verdict-current.txt`（当前树）与 `.cursor/plans/goals/evidence/GOAL-20261015-079-verdict-clean.txt`（干净 checkout）**进树**（各 **3285 B / 78 行 / `CR=0` / `cmp` 逐字节相同**，0 `FAIL`） |
 | AC-6 | **as-is m0 23/23**（在全部记录写入之后） | **PASS** | 终态行 `PASS: profile=m0; 23 deterministic checks`；零 `FAILED` |
 | AC-7 | **治理 + 宪章判据** | **PASS** | `validate.py` = `Cursor 治理验证通过`；三条 MAINLINE 判据（程序面 / 归档连续性 / **阶梯推进**）全绿 |
 | AC-8 | **阶梯记账**（★ EC-05 逐字要求） | **PASS** | 宪章 `进展记录` 追加本行（**能力域 = 实验**）+ 「实验」域 `依据 GOAL` 收录 `GOAL-20261015-079` + `下一级是什么` 前移一格 |

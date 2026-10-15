@@ -70,7 +70,7 @@ RECHECKS: tuple[str, ...] = (
     ".cursor/plans/rechecks/RECHECK-20261015-480-goal-079-ec02-two-arms-with-a-control.md",
     ".cursor/plans/rechecks/RECHECK-20261015-482-goal-079-ec03-the-arms-are-comparable.md",
     ".cursor/plans/rechecks/RECHECK-20261015-484-goal-079-ec04-live-two-arm-run.md",
-    ".cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-self-bootstrap-closeout.md",
+    ".cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-closeout-recheck.md",
 )
 
 #: 记录面：GOAL 目录 README（格式契约）+ MAINLINE 宪章（本轮的战役程序：程序表 + 阶梯）。

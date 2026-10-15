@@ -2,7 +2,7 @@
 id: GOAL-20261015-079
 slug: experiment-derived-from-the-plan-with-arms
 title: 实验由计划派生 + 多臂/对照（实验域 L2 → L3）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-15
 updated_at: 2026-10-15
 owners:
@@ -77,7 +77,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 
 budget:
   max_cycles: 14
@@ -126,9 +126,11 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261015-479-goal-079-ec02-two-arms-with-a-control.md
   - .cursor/plans/tasks/PLAN-20261015-481-goal-079-ec03-the-arms-are-comparable.md
   - .cursor/plans/tasks/PLAN-20261015-483-goal-079-ec04-live-two-arm-run.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-484-goal-079-ec04-live-two-arm-run.md
+  - .cursor/plans/tasks/PLAN-20261015-485-goal-079-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-486-goal-079-ec05-closeout-recheck.md
 memory_entries:
   - .cursor/memory/entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md
+  - .cursor/memory/entries/MEM-20261015-223-closeout-assets-need-ownness-not-just-self-consistency.md
 ---
 
 ## 目标与退出标准
@@ -239,6 +241,27 @@ memory_entries:
 | 2 | PLAN-20261015-479 | 见「CI 台账」 | 臂判据 **14 passed**；e2e **6 passed**（含真容器 run 级：读面 2 条实验、两臂比率 **7990.0 vs 178.5**）；五向按压全红且逐字节复原 | 见「CI 台账」 | 3 次（见「cycle 2 的修复记录」） | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（臂间可比） |
 | 3 | PLAN-20261015-481 | 见「CI 台账」 | 对比判据 **13 passed**；e2e **8 passed**（真容器 run：差值 `178.5 - 7990.0 = -7811.5`，判据自己重算核对；`agreement` 进 `not_numeric`）；七向按压全红且逐字节复原 | 见「CI 台账」 | 1 次（见「cycle 3 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站） |
 | 4 | PLAN-20261015-483 | 见「CI 台账」 | live 实跑 **1 passed**（三次：172.90 / 169.68 / **190.08s**）；两臂各落库（同一镜像 digest）、指标 **7990.0 vs 178.5**；差值落盘 `-7811.5` / `-680` / `-312460` / `0`；`agreement` 进 `not_numeric`；报告第 3 节 4 列 16 行 | 见「CI 台账」 | 0 次（缺陷在 live 取证中一次定位并修复） | EC-04 **PASS**；EC-05 PENDING | cycle 5 = EC-05（自举收口） |
+| 5 | PLAN-20261015-485（收口） | 见「CI 台账」 | 本树 **78 条判词全绿**；**两树 `TWO-TREE PASS`**（78 条逐行相同 + `sha256` 一致 `2c9121ae…`、归档 `CR=0`）；家族判据 **9 passed**；按压 `V9-8` 两处红 + 逐字节复原；as-is m0 终态行 `PASS: profile=m0; 23 deterministic checks` | 见「CI 台账」 | 1 次（见「cycle 5 的修复记录」） | **五 EC 全 PASS** ⇒ 阶梯「实验」域 **L2 → L3 成立** | 下一轮 = 收口后按宪章「第四件」开下一个 GOAL |
+
+### cycle 5 的修复记录（逐条如实）
+
+**本 cycle 抓到的真缺陷**（读收口资产时实测，**同族缺陷第二例**）：
+`tools/verify_goal078_closeout.py` 的 `ASSERTIONS` 常量与 `_load_assertions()` **双双**
+写着 `goal077_closeout_assertions.py` ⇒ ① 「声明 == 实载」成立（首版家族判据放行）；
+② `goal078` 的 **29 条自有断言从未运行**（在 078 归档 73 条判词里零命中）；
+③ 该验证器自己的 `self-loads-its-own-assertions` 判词**恒绿**（它问的字符串**就是**
+当时实载的上一轮文件名）。处置 = 三处：常量与加载行改回自己那份；自指判词**按本文件名推**；
+家族判据加**第三项对拍** + 「自洽但非己有」反向反例。按压 `V9-8` 两处红 + 逐字节复原。
+
+**本 cycle 的修复记录（本 GOAL 自身，逐条如实）**：
+
+1. **断言集里我的猜测被自己的判据抓红**（实测）：`ec04` 那条最初写「`for arm in`」——
+   而 live 判据**实际**的逐臂遍历形态是 `for entry in entries`（真读出来才发现）
+   ⇒ 判据红并**点名**缺哪个标记；改为实测形态。这正是「判据要认**在场的事实**，
+   不认我记忆里的形状」。
+2. **验证器首跑两红 = 时序而非缺陷**（实测）：`record-RECHECK-20261015-486` 与
+   `records-declare-existing-rechecks`（PLAN-485 的 `latest_recheck` 尚未落盘）
+   ⇒ 记录按序写入后自消。**不是**放宽任何判据。
 
 ### cycle 4 的修复记录（逐条如实 —— **本轮的价值就在这里**）
 
@@ -279,6 +302,21 @@ memory_entries:
 | 建档（序 47） | `b05b0067` | [M0 38677344100](https://github.com/Eswink/research-system-new/actions/runs/38677344100) / [Push 38677343399](https://github.com/Eswink/research-system-new/actions/runs/38677343399) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 | cycle 1（EC-01 参数面 + 11 例 + 三向按压） | `f2291483` | [M0 38682201374](https://github.com/Eswink/research-system-new/actions/runs/38682201374) / [Push 38682200974](https://github.com/Eswink/research-system-new/actions/runs/38682200974) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 | cycle 2（EC-02 多臂 + 逐臂派发 + 20 例 + 七向按压） | `aad54b4d` | [M0 38708199118](https://github.com/Eswink/research-system-new/actions/runs/38708199118) / [Push 38708198186](https://github.com/Eswink/research-system-new/actions/runs/38708198186) | **第 1 次尝试（`run_attempt=1`）：`quality-ubuntu-latest` = `failure`** —— 10 条 `docker.errors.BuildError`（`registry-1.docker.io` 拉 `${python:3.12-slim}` 基础镜像时 `unable to decode token response … Client.Timeout`），**全部**落在 `tests/adapters/execution/test_docker_backend_e2e.py`（**本 commit 未触碰该文件**，同一 job 在上一 run `f2291483` 为 `success`）；同 run 其余七 job 全 `success`，**本 cycle 新增的 `tests/e2e/test_two_arm_experiment_offline.py` 6 例在该 attempt 里全绿** ⇒ 失败分类 = **基础设施（镜像仓库不可达）**，非代码缺陷。**处置** = `rerun-failed-jobs`，**第 2 次尝试（`run_attempt=2`）八 job 全 `success`**（未改任何代码、未动任何阈值） |
+| cycle 3（EC-03 臂间可比 + 13 例 + 七向按压 + 台账一行） | `c94ad646` | [M0 38684256082](https://github.com/Eswink/research-system-new/actions/runs/38684256082) / [Push 38684256185](https://github.com/Eswink/research-system-new/actions/runs/38684256185) | **M0 八 job 全 `success`**（`console-frontend` / `observability-overhead-ubuntu` / `quality-windows` / `eval-gate` / `quality-ubuntu` / `container-quality` / `collector-quality` / `observability-overhead-windows`）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| cycle 3（EC-03 落地） | `2a4c1692` | [M0 38717129906](https://github.com/Eswink/research-system-new/actions/runs/38717129906) / [Push 38717129517](https://github.com/Eswink/research-system-new/actions/runs/38717129517) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| cycle 4（EC-04 live 多臂 + 两处产品缺陷修复 + 判据盲区） | `a07a2532`（**tip**） | [M0 38726525799](https://github.com/Eswink/research-system-new/actions/runs/38726525799) / [Push 38726525638](https://github.com/Eswink/research-system-new/actions/runs/38726525638) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+
+**自我指涉边界（明写并封闭）**：本台账的**末条实测提交 = `a07a2532`**（其 run 已到终态且
+**八 job 全绿**）；**cycle 5（EC-05 收口）的提交与其 CI 结论不在本台账内** —— 它的
+run 要等本提交推送之后才存在，**台账提交自身不产生可引用的 CI 结论** ⇒
+**到 `a07a2532` 为止，不再向后追链**（**不得**循环引用）。收口面（收口复检 / 两树 /
+m0 / 治理）由本 GOAL 的 `latest_recheck`（RECHECK-486）承担；**CI 面**由 tip 提交的
+run 承担 —— 若该 run 判红，按「CI 失败分类与纠错」回到 cycle 6 处置，
+**不**修改本台账的历史行。**失败记录**：本轮 **CI 零真红**（`aad54b4d` 的 `attempt=1`
+基础设施红已如实登记 + `rerun-failed-jobs` 后 `attempt=2` 全绿）；
+**本地零真红**（两次修复都由判据自己抓出并点名，见 cycle 2/3/5 的修复记录）。
+
+**凭据审计**：收口前 `tools/credential_audit.py` 四面 `offenders=0`。
 
 ## 状态历史
 
@@ -289,3 +327,4 @@ memory_entries:
 | 2026-10-15 | ACTIVE | **cycle 2 落地**（EC-02，PLAN-479）：实验支持**多臂/对照** —— 臂声明（两种形态 + 重复/非法点名拒绝）、臂 id **独立派生**（不复用「一 run 一实验」）、派发体**逐臂各跑一次**、主臂代表任务且消息点名全部臂。真容器 run 上：读面 **2** 条实验、两臂同指标 **7990.0 vs 178.5**（参数不同 ⇒ 读数不同）。判据 14 + 6 例；五向按压全红。**EC-02 → PASS**（RECHECK-480 = PASS）；EC-03/04/05 PENDING。 |
 | 2026-10-15 | ACTIVE | **cycle 3 落地**（EC-03，PLAN-481）：臂间**可比** —— 纯函数对比器（消费既有读面载荷，**零 DTO/路由/快照改动**）：`delta = right − left`、**同名列才比**、缺指标**逐臂点名**（不折算成 0）、非数值（布尔等）**排除并点名**、空对比 `comparable=False` **不是**「差值为 0」。真容器 run 上差值 `-7811.5`。判据 13 + e2e 2 例；七向按压全红。**EC-03 → PASS**（RECHECK-482 = PASS）；EC-04/05 PENDING。 |
 | 2026-10-15 | ACTIVE | **cycle 4 落地**（EC-04，PLAN-483）：**新站**上的一次真实 run 里声明的**两个臂**各在真容器跑一次、各自落库、指标不同、差值可算且记档。**live 取证抓出两处产品真缺陷 + 一处判据盲区**（报告静默丢一臂 / 表格被撑破 / 判据只查首条）⇒ 三处一次修掉并用**再次真实 run** 验证渲染正确。**EC-04 → PASS**（RECHECK-484 = PASS）；EC-05 PENDING。 |
+| 2026-10-15 | **ACHIEVED** | **cycle 5 收口**（EC-05）：本树 **78 条判词全绿**；**两树 `TWO-TREE PASS`**（78 条逐行相同、`sha256` 一致 `2c9121ae…`、归档 `CR=0`、`cmp` 逐字节相同）；as-is m0 终态行 `PASS: profile=m0; 23 deterministic checks`（在全部记录写入之后）；治理 + 三条 MAINLINE 判据全绿；凭据审计四面 `offenders=0`。**同轮修掉一处收口资产同族缺陷**（`verify_goal078_closeout.py` 自洽地加载上一轮断言集 ⇒ 29 条自有断言从未运行）+ 家族判据加第三项对拍。**五 EC 全 PASS** ⇒ 阶梯「实验」域 **L2 → L3**：实验参数由**声明**给出、一次 run 跑**两个臂**（含对照）、臂间**差值可算且记档**（真容器 + 新站真实 run 上 `7990.0 vs 178.5`）。**残余与未覆盖范围逐条在位**；**不得**宣称项目安全（`R-M1`）；投递语义**不是**「恰好一次」（**明确否认**）。 |
