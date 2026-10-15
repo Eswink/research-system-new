@@ -2,7 +2,7 @@
 id: GOAL-20261014-078
 slug: retrieved-content-reaches-the-model-context
 title: 活检索的结果进模型上下文（检索域 L1 → L2）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-14
 updated_at: 2026-10-14
 owners:
@@ -85,7 +85,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 
 budget:
   max_cycles: 12
@@ -236,6 +236,8 @@ memory_entries:
 | cycle 1 台账回填（末条） | `00526faf`（**tip**） | [M0 38636832193](https://github.com/Eswink/research-system-new/actions/runs/38636832193) / [Push 38636831371](https://github.com/Eswink/research-system-new/actions/runs/38636831371) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（只改 CI 台账的文档行） |
 | cycle 2（EC-02 e2e + 两条补判据） | `a93cd215` | [M0 38650611946](https://github.com/Eswink/research-system-new/actions/runs/38650611946) / [Push 38650611542](https://github.com/Eswink/research-system-new/actions/runs/38650611542) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 | cycle 3（EC-03 读面 + 同源 + V8-4） | `7bd6068e` | [M0 38661606028](https://github.com/Eswink/research-system-new/actions/runs/38661606028) / [Push 38661606062](https://github.com/Eswink/research-system-new/actions/runs/38661606062) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| cycle 4（EC-04 live 判据 + 读数归档） | `4ab851d9` | [M0 38667166913](https://github.com/Eswink/research-system-new/actions/runs/38667166913) / [Push 38667166580](https://github.com/Eswink/research-system-new/actions/runs/38667166580) | ⚠️ **M0 `conclusion=cancelled`**（`quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` 三 job `cancelled`；其余五 job `success`；Push-on-main 三条 CodeQL 全 `success`）。**原因** = `cancel-in-progress`：紧接其后的 cycle 5 推送（`3fcc7ed0`）把它取消了。**`covered_by = 3fcc7ed0`**：cycle 5 的树**包含** cycle 4 的全部改动（只多收口资产）⇒ 由 tip 的 run 覆盖。**不是**跳过取证 —— 这是 `MEM: m0-ci-concurrency-batch-push` 记录的同一形态；本轮**没攒批**，故如实登记为 `cancelled` |
+| cycle 5（EC-05 收口资产 + 两树判词归档） | `3fcc7ed0`（**tip**） | [M0 38667834433](https://github.com/Eswink/research-system-new/actions/runs/38667834433) / [Push 38667166580](https://github.com/Eswink/research-system-new/actions/runs/38667166580) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 
 ## 迭代日志
 
@@ -246,6 +248,13 @@ memory_entries:
 | 2 | PLAN-20261014-471 | 见「CI 台账」 | 新 e2e **5 passed**（正向 / 反证 / 射程 / 自检）；接缝判据 **16 passed**（+3）；三向按压全红且逐字节复原；受影响套件 **997 passed, 1 skipped** | 见「CI 台账」 | 2 次（见「cycle 2 的修复记录」） | EC-02 **PASS**；EC-03/04/05 PENDING | cycle 3 = EC-03（读面可复核「进了什么」） |
 | 3 | PLAN-20261015-473 | 见「CI 台账」 | 读面判据 **5 passed**；接缝 16 passed；e2e **7 passed**（含 HTTP 面 + 同源）；四向按压全红且逐字节复原 | 见「CI 台账」 | 1 次（见「cycle 3 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 4 = EC-04（真实中转站实跑） |
 | 4 | PLAN-20261015-475 | 见「CI 台账」 | live 实跑 **1 passed in 72.64s**（run `218280b6…`，终态 `SUCCEEDED`）；下游会话 4 条真标识、digest `sha256:8cfa62f3…`；读面两件制品（下游 4 / 上游 0 带理由）；同源逐一对应 | 见「CI 台账」 | 1 次（见「cycle 4 的修复记录」） | EC-04 **PASS**；EC-05 PENDING | cycle 5 = EC-05（自举收口） |
+| 5 | PLAN-20261017-477（收口） | 见「CI 台账」 | 收口复检本树 **73 条判词全绿**；**两树 `TWO-TREE PASS`**（73 条逐行相同 + `sha256` 一致）；m0 终态行 `PASS: profile=m0; 23 deterministic checks` | 见「CI 台账」 | 2 次（见「cycle 5 的修复记录」） | **五 EC 全 PASS** ⇒ 阶梯「检索」域 **L1 → L2 成立** | 下一轮 = 收口后按宪章「第四件」开下一个 GOAL |
+
+### cycle 5 的修复记录（逐条如实）
+
+1. **验证器首跑判红 `residuals-enumerated`**（实测）：EC-05 要求 GOAL 有「残余」一节，而本 GOAL 建档时**没有写**这一节 ⇒ 补上（六条残余 + 未覆盖范围逐条）。这正是判据的用途（缺就红，不靠人记得）。
+2. **两树首跑 RED**（实测）：当时我的改动**尚未提交**，干净树停在旧 tip ⇒ 提交后重跑 ⇒ `TWO-TREE PASS`（两树 sha256 一致）。**这不是**放宽任何判据。
+
 
 ### cycle 4 的修复记录（逐条如实）
 
@@ -289,3 +298,4 @@ memory_entries:
 | --- | --- | --- |
 | 2026-10-14 | **ACTIVE** | **建档**：承 GOAL-077 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「检索」域 **L1 → L2**（`下一级是什么` 逐字：活检索的结果进模型上下文）。**建档实测**：`ContextSnapshot`（含 `selected_refs` / `retrieval_digest` 槽位）在域层已声明，但**全仓零构造点**（`rg "ContextSnapshot("` 只有定义处与 Port 注解）⇒ 会话上下文里没有任何检索内容；`rg` 在 `packages/`·`services/` 下对 `context_snapshot=` **零命中** ⇒ 该槽位在运行路径上**从未被填充**。这两条读数就是本 GOAL 的靶子。 |
 | 2026-10-14 | ACTIVE | **cycle 1 落地**（EC-01，PLAN-469）：`ContextSnapshot` 这个**早就声明、全仓零构造点**的槽位有了**唯一**生产者（`retrieval_context.py`，只读 canonical、零出网、摘录有界、空集合点名），经**两个组合根**接进产品路径（各一行装配 + 一处装配决策模块）并填入 `AgentSessionSpec.context_snapshot`。判据 13 例（含**构造性**的零出网证据 + 两种空分得开）；既有四套件 2752 passed。**EC-01 → PASS**（RECHECK-470 = PASS）；EC-02/03/04/05 PENDING。 |
+| 2026-10-15 | **ACHIEVED** | **cycle 5 收口**（EC-05）：收口复检本树 **73 条判词全绿**；**两树 `TWO-TREE PASS`**（73 条逐行相同、`sha256` 一致 `91595a8f…`）；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；治理通过；凭据审计四面 `offenders=0`；**CI 台账逐提交**（tip `3fcc7ed0` 八 job 全 success；cycle 4 的 `cancelled` 如实登记 + `covered_by`）。**五 EC 全 PASS** ⇒ 阶梯「检索」域 **L1 → L2**：**活检索的内容进了会话上下文**（新站真实 run 上 4 条真标识到达下游会话），且「进了什么」在既有读面上可复核（同源）。 |
