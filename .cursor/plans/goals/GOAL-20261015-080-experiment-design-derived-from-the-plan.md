@@ -2,7 +2,7 @@
 id: GOAL-20261015-080
 slug: experiment-design-derived-from-the-plan
 title: 实验设计由计划派生（计划/实验域 → 下一级）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-15
 updated_at: 2026-10-15
 owners:
@@ -91,7 +91,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 
 budget:
   max_cycles: 14
@@ -143,7 +143,9 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261015-487-goal-080-ec01-the-design-source-is-declared-and-run-scoped.md
   - .cursor/plans/tasks/PLAN-20261015-489-goal-080-ec02-the-design-content-decides-the-experiment.md
   - .cursor/plans/tasks/PLAN-20261015-491-goal-080-ec03-plan-change-means-experiment-change.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261015-492-goal-080-ec03-plan-change-means-experiment-change.md
+  - .cursor/plans/tasks/PLAN-20261015-493-goal-080-ec04-live-design-from-the-plan.md
+  - .cursor/plans/tasks/PLAN-20261016-495-goal-080-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-496-goal-080-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -301,6 +303,18 @@ memory_entries: []
 **合约 purpose 改写**（第三处非缺陷但是前提）：它**就是模型读到的任务书**
 （`send_message(purpose)`），原文是内部文档口吻 ⇒ 改为第二人称任务指令 + 逐字的设计块形状。
 
+| 5 | PLAN-20261016-495（收口） | 见「CI 台账」 | 本树判词全绿；**两树 `TWO-TREE PASS`**（判词逐行相同 + `sha256` 一致、归档 `CR=0`）；as-is m0 终态行 `PASS: profile=m0; 23 deterministic checks`；治理 + 三条 MAINLINE 判据全绿 | 见「CI 台账」 | 1 次（归档序号笔误，自查改正，见「cycle 5 的修复记录」） | **五 EC 全 PASS** ⇒ 阶梯「计划」域 **L2 → L3 成立**（设计由计划派生并被实验消费） | 下一轮 = 收口后按宪章「第四件」开下一个 GOAL |
+
+### cycle 5 的修复记录（逐条如实）
+
+1. **归档搬运序号写错**（**自查发现**）：把 GOAL-20261014-077 的进展行搬进新归档时，文件名与
+   指针都写成了 `…-075-only.md`（应为 `…-077-only.md`）——**归档判据没抓到**（它们只判
+   「不漏 / 不重 / 可解析」，不与内容对号）⇒ 自查改正两处，并在 RECHECK-496 的 `W-2` 里
+   把这条**判据缺口**如实登记为**未覆盖**。
+2. **断言集首版有两条锚点是我猜的措辞**（实测红）：`"nothing is registered"` 在源码里跨行
+   （`"nothing is "` + `"registered for it"`），且 adapter 侧对 `final_answer_text` 是**调用**
+   而非定义 ⇒ 两条断言按**源码实际措辞**改正（并列明「跨行拼接用行内片段」这条注意）。
+
 ## CI 台账
 
 （逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
@@ -333,6 +347,12 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-15 | **ACTIVE** | **建档**：承 GOAL-20261015-079 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「计划」域与「实验」域的**同一个下一格**（两行逐字都指向「设计由计划/立题派生」）。**建档实测**（四条）：① `experiment` phase **没有 `inputs:` 声明**（`research_report_chain_v1.yaml` 里 `inputs:` 只在 plan/review/report 三处）⇒ 计划产物从未被声明为实验的输入；② 全仓 `research_plan` 在 `packages/`·`services/` **零命中** ⇒ 产品代码里没有消费者；③ 臂与参数由**装配常量**给出（live 就是 `_LIVE_ARMS`）⇒ 设计是测试作者写的；④ `ExperimentPlan` 字段逐个读出，**仍无参数位**。这四条就是本 GOAL 的靶子与可行性依据。 |
+| 2026-10-16 | **ACHIEVED** | **cycle 5 收口**（EC-05）：收口复检本树全绿；**两树 `TWO-TREE PASS`**
+（判词逐行相同 + `sha256` 一致、归档 `CR=0`）；as-is m0 终态行 `PASS: profile=m0; 23 deterministic
+checks`（在全部记录写入之后）；治理 + 三条 MAINLINE 判据全绿；凭据审计四面 `offenders=0`。
+**阶梯记账**：「计划」域当前级前移一格（计划产物成为下游输入）+ 进展记录追加本行（能力域 = 计划）。
+**五 EC 全 PASS** ⇒ **实验设计由计划派生**成立。**残余与未覆盖范围逐条在位**；
+**不得**宣称项目安全（`R-M1`）；投递语义**不是**「恰好一次」（**明确否认**）。 |
 | 2026-10-16 | **ACTIVE** | **cycle 4 达成**（EC-04）：**真实 run 上模型写出的设计驱动实验** ——
 修掉三处实测到的产品缺陷后，末次真实 run：模型自写 `experiment_design` 块
 （`deduped` / `raw` 两臂）、两臂各在真容器跑一次、**每个臂声明的参数逐键生效**
