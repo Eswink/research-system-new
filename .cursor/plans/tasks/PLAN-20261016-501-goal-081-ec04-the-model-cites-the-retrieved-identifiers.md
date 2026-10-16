@@ -2,14 +2,14 @@
 id: PLAN-20261016-501
 slug: goal-081-ec04-the-model-cites-the-retrieved-identifiers
 title: GOAL-081 cycle 3 — 真实 run：模型引用检索到的标识（EC-04）
-status: DONE
+status: IN_PROGRESS
 created_at: 2026-10-16
 updated_at: 2026-10-16
 parent_goal: GOAL-20261016-081
 owners:
   - root-agent
 subagent_parallel_limit: 3
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-502-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md
+latest_recheck: null
 memory_entries: []
 ---
 
@@ -17,11 +17,11 @@ memory_entries: []
 
 ## 验收条件
 
-- [x] live 判据断言：**提示词里携带真检索标识**（PMID / DOI 形态），且那些标识来自**本次 run**
-- [x] live 判据断言：模型的**计划正文里引用了**其中至少一条标识（「立题因检索而不同」的最小可判证据）
-- [x] 真实 run 实跑通过（新站 + 真容器 + 真模型）
-- [x] 读数归档进树（`CR=0`）
-- [x] 记录面（PLAN + RECHECK）与 GOAL 回写
+- [ ] live 判据断言：**提示词里携带真检索标识**（PMID / DOI 形态），且那些标识来自**本次 run**
+- [ ] live 判据断言：模型的**计划正文里引用了**其中至少一条标识（「立题因检索而不同」的最小可判证据）
+- [ ] 真实 run 实跑通过（新站 + 真容器 + 真模型）
+- [ ] 读数归档进树（`CR=0`）
+- [ ] 记录面（PLAN + RECHECK）与 GOAL 回写
 
 ## 目标（本 cycle 的可独立验收主题）
 
