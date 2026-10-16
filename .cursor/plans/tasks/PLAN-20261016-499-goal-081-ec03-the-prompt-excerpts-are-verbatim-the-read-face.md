@@ -2,14 +2,14 @@
 id: PLAN-20261016-499
 slug: goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face
 title: GOAL-081 cycle 2 — 提示词那段 == 读面制品（逐条逐字）+ 反证（EC-03）
-status: DONE
+status: IN_PROGRESS
 created_at: 2026-10-16
 updated_at: 2026-10-16
 parent_goal: GOAL-20261016-081
 owners:
   - root-agent
 subagent_parallel_limit: 3
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-500-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md
+latest_recheck: null
 memory_entries: []
 ---
 
@@ -17,12 +17,12 @@ memory_entries: []
 
 ## 验收条件
 
-- [x] **逐条逐字**判据：提示词那段的每一行 == 读面制品对应条目的 `identifier` + `shown`
+- [ ] **逐条逐字**判据：提示词那段的每一行 == 读面制品对应条目的 `identifier` + `shown`
       （**行级逐字**，不是「包含」）
-- [x] **条数一致**：提示词那段的条目行数 == 读面制品 `entries` 条数（不丢条、不多条）
-- [x] **反证臂**：把读面制品的某一条改掉 ⇒ 同一比较**判红**（证明判据有分辨力，
+- [ ] **条数一致**：提示词那段的条目行数 == 读面制品 `entries` 条数（不丢条、不多条）
+- [ ] **反证臂**：把读面制品的某一条改掉 ⇒ 同一比较**判红**（证明判据有分辨力，
       不是「两边都在场」的同义反复）
-- [x] 记录面（PLAN + RECHECK）与 GOAL 回写；`ALL_PLAN` 投影
+- [ ] 记录面（PLAN + RECHECK）与 GOAL 回写；`ALL_PLAN` 投影
 
 ## 目标（本 cycle 的可独立验收主题）
 
