@@ -257,6 +257,7 @@ memory_entries: []
 | 建档（序 49） | `98131839` | [M0 38821998809](https://github.com/Eswink/research-system-new/actions/runs/38821998809) / [Push 38821999212](https://github.com/Eswink/research-system-new/actions/runs/38821999212) | ⚠️ **M0 `conclusion=cancelled`**（`quality-windows-latest` 一 job；其余七 job `success`；CodeQL 三条 `success`）= `cancel-in-progress`（紧随的 cycle 1 推送 `18d02d9b`）。**`covered_by = 18d02d9b`**。**不**记绿 |
 | cycle 1 落地（渲染器 + 接线 + 两向读数） | `18d02d9b` | 见下行覆盖 | 批量推送；其内容包含在 `8bfadce4` 的树里 |
 | cycle 1 记录面（PLAN/RECHECK/GOAL/ALL_PLAN） | `8bfadce4`（**tip**） | [M0 38823969492](https://github.com/Eswink/research-system-new/actions/runs/38823969492) / [Push 38823968888](https://github.com/Eswink/research-system-new/actions/runs/38823968888) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（**本 cycle 的末条实测提交**） |
+| cycle 1 台账（只改记录） | `adfb4aa8`（**tip**） | [M0 38825652170](https://github.com/Eswink/research-system-new/actions/runs/38825652170) / [Push 38825651597](https://github.com/Eswink/research-system-new/actions/runs/38825651597) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 
 ## 状态历史
 
