@@ -29,6 +29,12 @@ from tests.e2e.test_retrieval_context_reaches_the_session import (
 
 __all__ = ["mock_relay"]
 
+# **实测缺陷**（CI 的 `quality-windows-latest` 抓到）：本文件的用例与源文件**同一条路径**
+# （同一个协议、同一段沙箱实验缝）⇒ 也需要容器 —— 漏了这个标记时，无 Docker 的环境里
+# run 走不到实验格 ⇒ 检索从未发生 ⇒ 上下文为空 ⇒ 判据以「恰有一条非空上下文」失败。
+# 判据**没有**放宽：那条断言是对的；缺的是**前置条件**的声明（与源文件同款）。
+pytestmark = pytest.mark.requires_docker
+
 
 class TestThePromptIsVerbatimTheReadFace:
     def _prompt_and_read_face(self, mock_relay: str) -> tuple[str, dict[str, Any]]:
