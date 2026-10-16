@@ -2,14 +2,14 @@
 id: PLAN-20261016-499
 slug: goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face
 title: GOAL-081 cycle 2 — 提示词那段 == 读面制品（逐条逐字）+ 反证（EC-03）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-16
 updated_at: 2026-10-16
 parent_goal: GOAL-20261016-081
 owners:
   - root-agent
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-500-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md
 memory_entries: []
 ---
 
@@ -17,12 +17,12 @@ memory_entries: []
 
 ## 验收条件
 
-- [ ] **逐条逐字**判据：提示词那段的每一行 == 读面制品对应条目的 `identifier` + `shown`
+- [x] **逐条逐字**判据：提示词那段的每一行 == 读面制品对应条目的 `identifier` + `shown`
       （**行级逐字**，不是「包含」）
-- [ ] **条数一致**：提示词那段的条目行数 == 读面制品 `entries` 条数（不丢条、不多条）
-- [ ] **反证臂**：把读面制品的某一条改掉 ⇒ 同一比较**判红**（证明判据有分辨力，
+- [x] **条数一致**：提示词那段的条目行数 == 读面制品 `entries` 条数（不丢条、不多条）
+- [x] **反证臂**：把读面制品的某一条改掉 ⇒ 同一比较**判红**（证明判据有分辨力，
       不是「两边都在场」的同义反复）
-- [ ] 记录面（PLAN + RECHECK）与 GOAL 回写；`ALL_PLAN` 投影
+- [x] 记录面（PLAN + RECHECK）与 GOAL 回写；`ALL_PLAN` 投影
 
 ## 目标（本 cycle 的可独立验收主题）
 
@@ -49,10 +49,18 @@ memory_entries: []
 
 ## 证据
 
-（执行时回填。）
+| 面 | 读数 | 命令 |
+| --- | --- | --- |
+| EC-03 判据 | **2 passed**（逐条逐字 + 反证两形态） | `uv run --frozen --no-sync python -B -m pytest tests/e2e/test_the_prompt_matches_the_read_face.py -q` |
+| 读面截断判据 | **6 passed**（新增「真被截条目 ⇒ 读面可重建」） | `uv run --frozen --no-sync python -B -m pytest tests/application/test_retrieval_context_read_face.py -q` |
+| 按压 | V11-1 **红** + `sha 复原一致=True`；归档 684 B、`CR=0` | `uv run --frozen --no-sync python -B scratch/goal081c2_press.py` |
+| 既有两个收口验证器 | **68 + 78 全绿**（078/079 的受判面未被动） | `uv run --frozen --no-sync python -B tools/verify_goal078_closeout.py --root . --verdict-only` |
+| 受影响套件 | **1419 passed, 16 skipped** | `uv run --frozen --no-sync python -B -m pytest tests/e2e tests/application -q` |
+| 规模门 | **1270 passed** | `uv run --frozen --no-sync python -B -m pytest tests/tooling/test_python_source_limits.py -q` |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-16 | IN_PROGRESS | cycle 2 建档（逐条逐字 + 反证臂）。 |
+| 2026-10-16 | DONE | 逐条逐字 + 反证两形态落地；抓出并修掉「读面不记 truncated」；078 受判面复原。 |

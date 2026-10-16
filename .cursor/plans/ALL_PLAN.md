@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261016-499](tasks/PLAN-20261016-499-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md) | IN_PROGRESS |
+| [x] | [PLAN-20261016-499](tasks/PLAN-20261016-499-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md) | DONE |
 | [x] | [PLAN-20261016-497](tasks/PLAN-20261016-497-goal-081-ec01-retrieval-excerpts-reach-the-prompt.md) | DONE |
 | [x] | [PLAN-20261016-495](tasks/PLAN-20261016-495-goal-080-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261015-493](tasks/PLAN-20261015-493-goal-080-ec04-live-design-from-the-plan.md) | DONE |

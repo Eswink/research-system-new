@@ -59,7 +59,7 @@ exit_criteria:
     verify: >-
       e2e：`tests/e2e/test_retrieval_content_reaches_the_prompt.py` ⇒ 会话首条消息里的摘录
       与读面制品**逐条逐字**相同；**反证**：改读面制品 ⇒ 判据红（证明判的是同一份事实）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **真实中转站上跑通一次**：真实模型会话的提示词里携带**真检索标识**（PMID / DOI 形态），
@@ -129,7 +129,8 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261016-497-goal-081-ec01-retrieval-excerpts-reach-the-prompt.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-498-goal-081-ec01-retrieval-excerpts-reach-the-prompt.md
+  - .cursor/plans/tasks/PLAN-20261016-499-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-500-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md
 memory_entries: []
 ---
 
@@ -234,6 +235,7 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（摘录进提示词） |
 | 1 | PLAN-20261016-497 | 见「CI 台账」 | 渲染器判据 **14 passed**；e2e **7 passed**（下游有那段 + 逐条标识在场；上游没有那段）；受影响套件 **1184 passed, 1 skipped**；规模门 **1267 passed** | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01/EC-02 **PASS**；EC-03/04/05 PENDING | cycle 2 = EC-03（同源：提示词那段 == 读面制品，逐条逐字） |
+| 2 | PLAN-20261016-499 | 见「CI 台账」 | EC-03 判据 **2 passed**（逐条逐字 + 反证两形态）；读面截断判据 **6 passed**；按压 V11-1 **红** + 逐字节复原；既有收口验证器 **68 + 78 全绿**；受影响套件 **1419 passed, 16 skipped** | 见「CI 台账」 | 2 次（见「cycle 2 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 3 = EC-04（真实 run：模型引用检索到的标识） |
 
 ### cycle 1 的修复记录（逐条如实）
 
@@ -247,6 +249,22 @@ memory_entries: []
    `context_payloads` —— 我新写的 `_identifiers_of` 是第二份。⇒ 改成复用既有函数
    （`context_identifiers` 进支持件、用例文件 import 它），并把**记录器类**也搬进支持件
    （用例文件曾涨到 **473 行**，超 450 硬上限）。
+
+### cycle 2 的修复记录（逐条如实）
+
+1. **读面不记 `truncated`**（**真缺口**，本 cycle 的主要价值）：提示词那段给被截条目加
+   `[truncated]` 标注，而 `context_payload` **不记**这一列 ⇒ 读者拿读面**重建不出**
+   「模型看到的那一行」（未截条目无碍、被截条目必然对不上）；旧判据只在**无截断**的
+   夹具里跑 ⇒ **假绿**。⇒ 载荷补列 + 用**真被截**条目（`max_chars=8`）走全链的新判据。
+2. **digest 重算判据如实判红**（既有判据，形态正确）：它按**字段列表**独立拼 payload
+   重算 sha256 ⇒ 加列后读数不一致（`0c0eaded…` vs `edbc6a70…`）。**处置 = 把新列补进
+   那份独立重建**（不是放宽它）—— 这正是「判据独立于实现」的证明。
+3. **拆文件撞了已收口 GOAL 的受判面**（实测）：首版把 078 的整个类搬进新文件 ⇒
+   `cases-test_retrieval_context_reaches_the_session 6 < 7`（078 收口断言钉了**例数下界**）
+   与 `press-v8-4-arm-is-asserted`（钉了**类名**）两处红。**处置 = 078 的面原地复原**
+   （类 + 两个用例 + 同源用例全搬回），新文件只留 081 新增的两条。
+   **教训**：拆文件前**先数谁拿它的例数与类名当受判面** —— 受判面不只钉**内容**，
+   也钉**位置与计数**。
 
 ## CI 台账
 
@@ -263,6 +281,11 @@ memory_entries: []
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-16 | **ACTIVE** | **cycle 2 落地**（EC-03，PLAN-499）：**「模型拿到了什么」逐条逐字可核对** ——
+提示词那段与读面制品的 `entries` **行级相同**（含顺序与截断标注），两形态反证（改一条 /
+多一条）**都判红**。**抓出并修掉一条真缺口**：读面原本**不记** `truncated` ⇒ 提示词里
+`[truncated]` 那行**重建不出来**，而旧判据只在无截断夹具里跑（假绿）。**EC-03 → PASS**
+（RECHECK-500 = PASS）；EC-04/05 PENDING。 |
 | 2026-10-16 | **ACTIVE** | **cycle 1 落地**（EC-01/EC-02，PLAN-497）：**检索摘录进提示词** ——
 新增纯函数渲染器（**有界**：只排既有摘录、不新造第二份上限；**截断可见**：逐条标注；
 **同源**：渲染文本就是 `entry.shown`）+ `AgentSessionSpec.retrieval_prompt`（缺省 `None` ⇒
