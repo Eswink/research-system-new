@@ -134,6 +134,11 @@ def context_payload(run_id: str, entries: tuple[RetrievalEntry, ...]) -> dict[st
     GOAL-20261014-078 EC-03：读面写出的**就是这些字节** —— 因此
     `ArtifactStore` 里那份制品的 digest 与 `ContextSnapshot.retrieval_digest`
     **同源**（同一份字节算两次必然相等），读面值与装配点的值不可能分叉。
+
+    **GOAL-20261016-081 EC-03 补一列 `truncated`**（实测缺口）：提示词那一段会把被截的
+    条目**标注**出来（`[truncated]`），而载荷原本**不记**`truncated` ⇒ 读者拿读面**重建不出**
+    「模型看到的到底是哪一行」（对未截条目无碍，对被截条目必然对不上）。⇒ 加这一列，
+    使「模型拿到了什么」**逐字**可复核（少这一列时，那条判据只在**无截断**的夹具里假绿）。
     """
     return {
         "run_id": run_id,
@@ -143,6 +148,7 @@ def context_payload(run_id: str, entries: tuple[RetrievalEntry, ...]) -> dict[st
                 "evidence_id": entry.evidence_id,
                 "artifact_id": entry.artifact_id,
                 "shown": entry.shown,
+                "truncated": entry.truncated,
             }
             for entry in entries
         ],

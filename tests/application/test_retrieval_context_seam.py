@@ -166,6 +166,9 @@ class TestTheDigestIsRecomputedFromContent:
                     "evidence_id": entry.evidence_id,
                     "artifact_id": entry.artifact_id,
                     "shown": entry.shown,
+                    # GOAL-20261016-081 EC-03：载荷新增这一列（读面必须能读出「被截过」，
+                    # 否则提示词那行的 `[truncated]` 标注**重建不出来**）。
+                    "truncated": entry.truncated,
                 }
                 for entry in view.entries
             ],

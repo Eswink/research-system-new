@@ -20,7 +20,9 @@ from packages.application.ports.agent_runtime import AgentSessionHandle, AgentSe
 
 __all__ = [
     "SessionSpecRecorder",
+    "assert_the_prompt_matches_the_read_face",
     "context_identifiers",
+    "prompt_lines_for",
     "assert_the_arms_ran",
     "assert_the_context_reached_sessions",
     "context_payloads",
@@ -93,6 +95,39 @@ def context_identifiers(client: TestClient, run_id: str) -> set[str]:
         for entry in payload.get("entries", ())
         if entry.get("identifier")
     }
+
+
+def prompt_lines_for(payload: dict[str, Any]) -> list[str]:
+    """读面载荷 → 提示词那一段应有的**逐行**形态（与渲染器同一口径）。
+
+    口径取自渲染器（`retrieval_prompt.render_retrieval_prompt`）**逐字**：
+    `- {identifier}{[truncated]}: {shown}`。判据侧把它**重写一遍**（不 import 渲染器
+    当预言机），这样「渲染器改了而判据没跟上」会被判红。
+    """
+    lines: list[str] = []
+    for entry in payload.get("entries", ()):
+        mark = " [truncated]" if entry.get("truncated") else ""
+        lines.append(f"- {entry['identifier']}{mark}: {entry['shown']}")
+    return lines
+
+
+def assert_the_prompt_matches_the_read_face(prompt: str | None, payload: dict[str, Any]) -> None:
+    """EC-03：提示词那段 == 读面制品**逐条逐字**（行级，不是「包含」）。
+
+    **逐条**：读面 `entries` 有几条，提示词那段就有几行，且**逐行相同**（顺序也相同 ——
+    渲染器按读面顺序排）。**逐字**：`identifier` 与 `shown` 原样出现，截断标注也逐字。
+
+    为什么不用「包含」：包含判据在**丢条**（渲染器少排一条）与**截断标注变化**上都会假绿。
+    """
+    assert prompt, "提示词里必须有检索那一段（否则无从比对）"
+    expected = prompt_lines_for(payload)
+    assert expected, "读面制品必须非空（否则本判据在空集上恒真）"
+    item_lines = [line for line in prompt.splitlines() if line.startswith("- ")]
+    assert item_lines == expected, (
+        "提示词那段必须与读面制品**逐条逐字**相同（行级、含顺序）",
+        item_lines,
+        expected,
+    )
 
 
 def assert_the_context_reached_sessions(sample: dict[str, Any]) -> None:

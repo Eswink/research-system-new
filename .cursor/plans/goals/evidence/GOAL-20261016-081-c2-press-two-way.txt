@@ -1,0 +1,9 @@
+GOAL-20261016-081 cycle 2 按压判词（摘掉读面那列 ⇒ 判据必红 + 逐字节复原）
+命令：uv run --frozen --no-sync python -B scratch/goal081c2_press.py
+受判面：tests/application/test_retrieval_context_read_face.py::TestTheContextIsReadableAftheFact::test_a_truncated_entry_is_readable_as_truncated
+V11-1 = 读面载荷摘掉 `truncated` 列（读者重建不出提示词那一行）⇒ 判据红；
+★ 这条形态的来历：cycle 2 实测发现「提示词标了截断、读面没记截断」的缺口，
+  而旧判据只在**无截断**的夹具里跑 ⇒ 假绿。
+
+V11-1 BASELINE GREEN=True 按压 RED=True sha 复原一致=True
+all_red_and_restored=True
