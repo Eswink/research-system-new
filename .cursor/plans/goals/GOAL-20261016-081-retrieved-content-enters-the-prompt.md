@@ -4,7 +4,7 @@ slug: retrieved-content-enters-the-prompt
 title: 检索内容进提示词（立题因检索而不同）
 status: ACTIVE
 created_at: 2026-10-16
-updated_at: 2026-10-16
+updated_at: 2026-10-17
 owners:
   - root-agent
 authorization:
@@ -67,31 +67,19 @@ exit_criteria:
       **若模型侧不可用或模型不引用** ⇒ 按降级梯如实登记（PENDING + 点名阻塞点），**不得**伪造。
     verify: >-
       live 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且提示词里的标识读数在树。
-    status: PENDING
+      **cycle 4 实跑**：run `36bebc9b-cc28-443c-867d-a1966b13e836` ⇒ `SUCCEEDED`；
+      **写计划的会话**（`research_report_plan`）的提示词带三个真标识
+      （`42853652` / `10.12688/f1000research.180013.2` / `10.31234/osf.io/w7xpq_v2`），
+      且**计划正文引用了全部三条**。归档：`evidence/GOAL-20261016-081-ec04-live-citations.txt`。
+    status: PASS
     blocker: >-
-      **实测阻塞点（2026-10-16 cycle 3，三次真实 run + 离线复现）**：检索内容**确实**进了提示词
-      （三个真标识逐字在场，543 字符那一段），但**拿到它的是下游 `multi_role_review`**；
-      **写计划的 `plan` 相位拿不到** ⇒ 计划正文零引用。**根因已定位到两条，都实测：**
-      **(a) 运行链证据在上下文装配时没有 claim 关系**：`register_tool_evidence` 只
-      `register_source` + `register_evidence`，而 `_retrieved_evidence` **只经 claim→relation
-      投影**读（与读面同口径）⇒ 同一 phase 自己刚取回的检索**在它自己的上下文里看不见**
-      （关系由 `register_session_result` 在会话**之后**才挂上）；
-      **(b) 立题格的覆盖门只数**本任务**的证据**：`EVIDENCE_COVERAGE` 的 retrieved 计数取自
-      本任务的 registration ⇒ 上游 `scouting` 相取回的来源**不计入** `plan` 格。
-      **取证**：`evidence/GOAL-20261016-081-ec04-evidence.txt`（真实 run 读数 + 提示词原文）；
-      离线复现（`grounded_report_chain_v1` 的 scouting 相**成功**：6 条证据 + `scouting_report`
-      制品；`plan` 相被判拒 `EVIDENCE_COVERAGE: 0 < 1 retrieved sources`）。
-      **(c) `inputs` 不能引用上游 phase 的产物**（实测·第三处）：想在 `grounded_report_chain_v1`
-      的 `plan` 格写 `inputs: [scouting_report]` ⇒ 运行期报
-      「declared input artifact scouting_report is not in the artifact store」——
-      `inputs` 里的 id 被**逐字**当制品 id 解析，而 run 内制品的真 id 是
-      `{scouting task id}:scouting_report`，**任务 id 在编排期才生成** ⇒ 协议里写不死。
-      **已排除的假解法（实测）**：把 `with_retrieval_context` 从「任务前」移到「运行链之后」——
-      **无效**（(a) 的 claim 关系仍不在），且会破坏 GOAL-078 的「上游会话为空」反证臂 ⇒ **已回退**。
-      **解法（下一 cycle，属产品结构改动）**：让**上游相位的产物**能作为下游的声明输入
-      （`phase.inputs` 今天只认**组合根种入**的制品，不解析 phase 间引用），
-      或让覆盖门按 **run 作用域**数 retrieved 来源。两条都需设计取舍，**不得**为过判据放宽门。
-      **按降级梯记 PENDING + 点名阻塞点**，**不**伪造。
+      **（已闭合，保留为证据）** cycle 3 实测到的三处阻塞点：
+      (a) 运行链证据在上下文装配时没有 claim 关系（由 cycle 3 的求值点修复 + 本轮的协议结构承担）；
+      (b) 覆盖门只数本任务（**不改**：按 GOAL 取舍表判定解法 B 会削弱反编造门 ⇒ 明确不做）；
+      (c) `inputs` 不能引用上游 phase 的产物（**cycle 4 闭合**：新增跨相引用形态，编译期解析并
+      点名非法引用，性质由产出方决定，反编造门并列接受两种来源）。
+      **取证**：`evidence/GOAL-20261016-081-ec04-evidence.txt`（cycle 3）；
+      `evidence/GOAL-20261016-081-ec04-live-citations.txt`（cycle 4，达成）。
   - id: EC-05
     criterion: >-
       **自举收口**：验证器进树（复用 `tools/closeout_recheck_tools` + 标准断言集）+
@@ -155,7 +143,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261016-497-goal-081-ec01-retrieval-excerpts-reach-the-prompt.md
   - .cursor/plans/tasks/PLAN-20261016-499-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md
   - .cursor/plans/tasks/PLAN-20261016-501-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-502-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md
+  - .cursor/plans/tasks/PLAN-20261016-503-goal-081-ec04-cross-phase-inputs-close-the-coverage-gap.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-504-goal-081-ec04-cross-phase-inputs.md
 memory_entries: []
 ---
 
@@ -261,6 +250,15 @@ EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候�
 **不削弱**任何既有断言。A 的落地还需要：① 新来源类别的判据；② `grounded_report_chain_v1`
 的 `plan` 相声明 `inputs: [scouting_report]`；③ 覆盖门对「声明输入」的计数口径确认。
 
+**落地下文（cycle 4 已完成，见 PLAN-503 / RECHECK-504）**：A 按以下形态实现 ——
+
+- 形态 = `{phase_id}:{artifact_name}`（不是裸产物名）：**产出方必须写出来**，否则一个拼错的
+  产物名会被当成「本地输入」静默放行；
+- **编译期**解析（不是运行期才发现）：六类非法引用各自点名，run 不会带着必死的声明过 preflight；
+- ③ 的答案 = **不改覆盖门**：覆盖门仍然只数「本任务登记的证据」，跨相输入作为**一类来源**
+  进登记面（与组合根供给并列），性质由产出方决定 ⇒ 门本身一个字都不用改，语义也没被放宽；
+- **不做** B（run 作用域计数）：那条会让一个任务「继承」别的 phase 取回的东西来满足自己的覆盖。
+
 ## 不进入循环 / 需人工拍板
 
 - 默认 runtime 改真（§11）/ 读面认证 / 多租户·RBAC·BOLA·BFLA / D 组审批通道 /
@@ -276,6 +274,7 @@ EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候�
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（摘录进提示词） |
 | 1 | PLAN-20261016-497 | 见「CI 台账」 | 渲染器判据 **14 passed**；e2e **7 passed**（下游有那段 + 逐条标识在场；上游没有那段）；受影响套件 **1184 passed, 1 skipped**；规模门 **1267 passed** | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01/EC-02 **PASS**；EC-03/04/05 PENDING | cycle 2 = EC-03（同源：提示词那段 == 读面制品，逐条逐字） |
 | 2 | PLAN-20261016-499 | 见「CI 台账」 | EC-03 判据 **2 passed**（逐条逐字 + 反证两形态）；读面截断判据 **6 passed**；按压 V11-1 **红** + 逐字节复原；既有收口验证器 **68 + 78 全绿**；受影响套件 **1419 passed, 16 skipped** | 见「CI 台账」 | 2 次（见「cycle 2 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 3 = EC-04（真实 run：模型引用检索到的标识） |
+| 4 | PLAN-20261016-503 | 见「CI 台账」 | 跨相输入单元判据 **11 passed**（含两条按压）；e2e **2 passed**（两维判词 + 按压臂点名性质维）；离线复现 run **`SUCCEEDED`**；**live 实跑 `SUCCEEDED`，计划正文引用全部 3 条标识**；受影响套件 **1399 passed, 1 skipped**；规模门 **1267 passed** | 见「CI 台账」 | 3 次（见「cycle 4 的修复记录」） | **EC-04 → PASS**；EC-05 PENDING | cycle 5 = EC-05（自举收口） |
 
 ### cycle 1 的修复记录（逐条如实）
 
@@ -325,6 +324,25 @@ EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候�
 **仍未解决（EC-04 的阻塞点）**：即使求值点修好，`plan` 相位的会话**也**看不见本格取回的内容 ——
 **检索在它自己的 phase 内执行**。解法需要一个**独立检索相**（写计划之前），属产品结构改动。
 
+### cycle 4 的修复记录（逐条如实）
+
+1. **形态判据与既有 `input-brief:` 前缀冲突**（实测红，`CROSS_PHASE_INPUT_INVALID` × 4）：
+   首版按「含恰好一个 `:`」判跨相引用 ⇒ 组合根种入的 `input-brief:real_research_v1` 被当成
+   「phase `input-brief` 的产物」。**处置**：判定改成依赖协议本身的两条规则 ——（i）左段是某个
+   phase id ⇒ 跨相；（ii）否则右段是某个 phase 声明的产物名 ⇒ 也是跨相（**拼错产出方**必须
+   点名，不能静默当成本地输入）。`input-brief:` 两段都不命中 ⇒ 本地输入，既有四条判据零改动。
+2. **`phase_runner.py` / `task_phase_helpers.py` 撞 450 行硬上限**（规模门）：跨相通道让两个
+   文件都越界。**处置**：拆出三个模块（`session_carry.py` / `experiment_registration.py` /
+   运行期 `cross_phase_inputs.py`），并把 `_failure_or_deferred` 搬进 `task_phase_helpers`；
+   两个原文件回到 447 / 425 行，**零语义变化**（既有 20 条 e2e 与 1399 条 application 判据全绿）。
+3. **按压臂里重建 `ProtocolPhase` 时漏了 `stop_conditions`**（我自己的判据缺陷，实测红）：
+   手写字段构造把这一项丢了 ⇒ 任务无限重试、判词被 `retry budget exhausted` 覆盖。
+   **处置**：改用 `dataclasses.replace(phase, inputs=...)`（**只改一处，其余逐字继承**）。
+   这条也顺带证明按压臂的构造必须**最小改动**，否则量到的是自己的 bug。
+4. **按压臂一度走了实时 preflight**（`_live_preflight`）⇒ 去探真实中转站、撞 `invalid API key`。
+   **处置**：run-ready 夹具**总是**给出 `preflight_override`（目录已指向本机 mock 端点），
+   按压臂据实断言它存在，不再回落到实时探活。
+
 
 （逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
 
@@ -338,16 +356,26 @@ EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候�
 | cycle 2 落地（逐条逐字 + 反证 + 读面补列） | `9e937a82` | [M0 38829688947](https://github.com/Eswink/research-system-new/actions/runs/38829688947) / [Push 38829688970](https://github.com/Eswink/research-system-new/actions/runs/38829688970) | ⚠️ **M0 `cancelled`**（两 job；其余 job `success`、CodeQL 三条 `success`）= `cancel-in-progress`（紧随的重构推送）。**`covered_by = 55c35175`**。**不**记绿 |
 | cycle 2 重构（078 受判面复原） | `276cdf0e` | [M0 38830616150](https://github.com/Eswink/research-system-new/actions/runs/38830616150) / [Push 38830616264](https://github.com/Eswink/research-system-new/actions/runs/38830616264) | ⚠️ **M0 `cancelled`**（多 job）= `cancel-in-progress`（紧随的记录推送）。**`covered_by = 55c35175`**。**不**记绿 |
 | cycle 2 记录面（PLAN/RECHECK/GOAL/ALL_PLAN） | `22a58a49` | [M0 38830722643](https://github.com/Eswink/research-system-new/actions/runs/38830722643) / [Push 38830722616](https://github.com/Eswink/research-system-new/actions/runs/38830722616) | 🔴 **`quality-windows-latest` = `failure`（真红）**：新 e2e 漏 `requires_docker` 标记 ⇒ 无 Docker 环境下 run 走不到实验格 ⇒ 上下文为空 ⇒ 两条用例以「恰有一条非空上下文」失败（其余七 job `success`、CodeQL 三条 `success`）。**分类 = 产品缺陷（判据前置条件漏声明）**。**处置见下行** |
-| cycle 2 修复（补 `requires_docker` 标记）+ **当前 tip** | `55c35175` |
+| cycle 2 修复（补 `requires_docker` 标记） | `55c35175` | [M0 38832831325](https://github.com/Eswink/research-system-new/actions/runs/38832831325) / [Push 38832831229](https://github.com/Eswink/research-system-new/actions/runs/38832831229) | **M0 八 job 全 `success`**（含此前判红的 `quality-windows-latest`）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 | cycle 3 派生（PLAN-501 + ALL_PLAN） | `1cc4e428` / `79070840` | 见下行覆盖 | 批量推送；其内容包含在 `667a01d5` 的树里 |
 | cycle 3 诊断落地（带侦察相的新协议 + live 判据 + 阻塞点两处） | `e87f1f38` | [M0 39039090555](https://github.com/Eswink/research-system-new/actions/runs/39039090555) / [Push 39039090704](https://github.com/Eswink/research-system-new/actions/runs/39039090704) | 🔴 **`quality-ubuntu` / `quality-windows` 两 job `failure`（真红）**：新 live 模块未在 `LIVE_MODULES` / `LITERAL_MENTIONS` 登记（**同族缺陷第二次**，GOAL-080 也踩过）；其余六 job `success`、CodeQL 三条 `success`。**处置见下行** |
-| cycle 3 修复（两处登记 + 口令用法行）+ **当前 tip** | `667a01d5` | [M0 39040691876](https://github.com/Eswink/research-system-new/actions/runs/39040691876) / [Push 39040691660](https://github.com/Eswink/research-system-new/actions/runs/39040691660) | **M0 八 job 全 `success`**（含此前判红的两 job）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** | [M0 38832831325](https://github.com/Eswink/research-system-new/actions/runs/38832831325) / [Push 38832831229](https://github.com/Eswink/research-system-new/actions/runs/38832831229) | **M0 八 job 全 `success`**（含此前判红的 `quality-windows-latest`）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| cycle 3 修复（两处登记 + 口令用法行） | `667a01d5` | [M0 39040691876](https://github.com/Eswink/research-system-new/actions/runs/39040691876) / [Push 39040691660](https://github.com/Eswink/research-system-new/actions/runs/39040691660) | **M0 八 job 全 `success`**（含此前判红的两 job）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
 | cycle 3 记录面（PLAN/RECHECK/GOAL/ALL_PLAN）+ **当前 tip** | `182c31f5`（**tip**） | [M0 39042251468](https://github.com/Eswink/research-system-new/actions/runs/39042251468) / [Push 39042251185](https://github.com/Eswink/research-system-new/actions/runs/39042251185) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled** |
+| cycle 3 阻塞点第三处（只改记录：`inputs` 不能引用上游 phase 产物） | `aecd3515` | [M0 39043807771](https://github.com/Eswink/research-system-new/actions/runs/39043807771) / [Push 39043807448](https://github.com/Eswink/research-system-new/actions/runs/39043807448) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**（2026-10-17 轮询到终态补记） |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-17 | **ACTIVE** | **cycle 4 落地**（EC-04，PLAN-503）：**跨相输入闭合第三条阻塞点**。`inputs` 新增
+`{phase_id}:{artifact_name}` 形态 —— 编译期解析（六类非法引用**点名**，不留到运行期）、
+**性质由产出方决定**（`capability_execution: run_chain` + provider 声明 `network_domains`
+⇒ `RETRIEVED`，读取方不得自报）、**反编造门并列接受**「组合根供给」与「有性质的 phase 产出」
+（原内容校验一字未改）。`grounded_report_chain_v1` 的 `plan` 相接入
+`scouting:scouting_report` ⇒ 覆盖的性质维成立。**离线与 live 两路都到 `SUCCEEDED`**：
+真实 run `36bebc9b-…` 上 `research_report_plan` 的提示词带三个真标识，且**计划正文引用了
+全部三条**。按压两条：摘掉产出方的 run-chain 声明 ⇒ 性质变 `GENERATED`；摘掉跨相证据 ⇒
+覆盖性质维判拒。**EC-04 → PASS**；EC-05 PENDING。 |
 | 2026-10-16 | **ACTIVE** | **cycle 2 落地**（EC-03，PLAN-499）：**「模型拿到了什么」逐条逐字可核对** ——
 提示词那段与读面制品的 `entries` **行级相同**（含顺序与截断标注），两形态反证（改一条 /
 多一条）**都判红**。**抓出并修掉一条真缺口**：读面原本**不记** `truncated` ⇒ 提示词里

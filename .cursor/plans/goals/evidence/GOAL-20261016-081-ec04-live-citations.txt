@@ -1,0 +1,31 @@
+GOAL-20261016-081 EC-04 取证归档（cycle 4 · 跨 phase 输入接入后）
+命令：set -a; . ./.env; set +a; RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 \
+      uv run --frozen --no-sync python -B -m pytest tests/e2e/test_the_model_cites_the_retrieved_identifiers_live.py -q
+
+run_id: 36bebc9b-cc28-443c-867d-a1966b13e836（state SUCCEEDED）
+检索标识（读面）：["10.12688/f1000research.180013.2", "10.31234/osf.io/w7xpq_v2", "42853652"]
+带检索段的会话（逐合约）：['multi_role_review', 'research_report_plan']
+计划正文长度：2504 字符
+
+**读数（逐条）**：
+  · **写计划的那个会话**（`research_report_plan`）的提示词里带本次 run 的检索标识
+    （提示词段长度 595 字符）；
+  · **计划正文引用了全部 3 条标识**：["10.12688/f1000research.180013.2", "10.31234/osf.io/w7xpq_v2", "42853652"]
+    —— 这是「立题因检索而不同」的最小可判证据；
+  · 三条标识与读面制品 `entries[].identifier` **同源**（判据内的 `_assert_the_model_cited_what_it_saw` 逐条比对）。
+
+**与 cycle 3 的对比（同一判据、同一协议，只差跨相输入这一条接线）**：
+  · cycle 3（`aecd3515` 记录的那一轮）：run SUCCEEDED 但 `plan` 格被判拒
+    `EVIDENCE_COVERAGE: 0 < 1 retrieved sources`（离线复现同形态）⇒ 模型零引用；
+  · 本轮：`plan` 的 `inputs` 接入 `scouting:scouting_report`（编译期解析成
+    `(scouting, scouting_report, RETRIEVED)`）⇒ 覆盖两维都成立，模型引用三条。
+
+--- 计划正文里引用标识的那一段（逐字，截断到 700 字符）---
+**How the retrieved evidence bears on it.** The retrieved records motivate both the mechanism and the prediction. Source **42853652** (hpci) supplies the central mechanism: coupling CI with HPC clusters makes builds reproducible by construction, capturing the exact computational environment so that analyses can be re-run deterministically. Source **10.31234/osf.io/w7xpq_v2** (Ten simple rules for computational reproducibility in cognitive neuroscience) grounds the failure model the study tests — most reproducibility cracks arise from unversioned code, unpinned environments, and non-automated run paths, i.e., exactly the defects CI/HPC integration eliminates. Source **10.12688/f1000research.1
+
+--- 写计划会话的提示词那一段（逐字，截断到 400 字符）---
+RETRIEVED SOURCES (system-fetched; cite these by identifier)
+
+- 42853652: hpci improves reproducibility of computational biology research by integrating Continuous Integration with High Performance Computing clusters.
+- 42853652: hpci improves reproducibility of computational biology research by integrating Continuous Integration with High Performance Computing clusters.
+- 10.12688/f1000research.1
