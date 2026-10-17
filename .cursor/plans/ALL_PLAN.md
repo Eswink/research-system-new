@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261018-507](tasks/PLAN-20261018-507-goal-082-ec01-prior-knowledge-reaches-the-plan-prompt.md) | DONE |
 | [x] | [PLAN-20261016-505](tasks/PLAN-20261016-505-goal-081-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261016-503](tasks/PLAN-20261016-503-goal-081-ec04-cross-phase-inputs-close-the-coverage-gap.md) | DONE |
 | [x] | [PLAN-20261016-501](tasks/PLAN-20261016-501-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md) | DONE |

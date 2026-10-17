@@ -1,0 +1,41 @@
+GOAL-20261018-082 EC-04 取证归档（真实中转站 · 前序知识是否改变立题）
+命令：set -a; . ./.env; set +a; RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 \
+      uv run --frozen --no-sync python -B -m pytest tests/e2e/test_prior_knowledge_changes_the_plan_live.py -q
+
+**三次真实 run 的逐条读数**（同一判据、同一预置记忆 `mem-live-prior-lesson`）：
+
+- run `65d580c1-a52a-4061-9d92-61d38710f949` · state `SUCCEEDED`
+  · 前序知识段：**302 字符**（在场）
+  · 检索段：**595 字符**（在场）
+  · 有前序知识段的会话：{'multi_role_scouting': True, 'research_report_plan': True, 'multi_role_review': True}
+  · 计划正文长度 3572；引用 `memory_id`：**无**
+  · 引用的检索标识：DOI ['10.1038/451397a**'] / PMID ['18216824']
+- run `e15a4bc2-eb5e-4617-a66e-97425d806659` · state `SUCCEEDED`
+  · 前序知识段：**302 字符**（在场）
+  · 检索段：**595 字符**（在场）
+  · 有前序知识段的会话：{'multi_role_scouting': True, 'research_report_plan': True, 'multi_role_review': True}
+  · 计划正文长度 3965；引用 `memory_id`：**无**
+  · 引用的检索标识：DOI ['10.1037/0278-7393.21.4.803'] / PMID 无
+- run `70456638-513d-47b0-baed-5dac6bbef983` · state `SUCCEEDED`
+  · 前序知识段：**302 字符**（在场）
+  · 检索段：**0 字符**（在场）
+  · 有前序知识段的会话：None
+  · 计划正文长度 527；引用 `memory_id`：**无**
+  · 引用的检索标识：DOI 无 / PMID 无
+
+**判定**：EC-01/EC-02/EC-03 在**产品路径**上成立（提示词那段在场、有界、与读面同源），
+e2e 判据 `3 passed`（含空库按压：无记忆 ⇒ 无该段）。**EC-04 未达成**：三次真实 run 上
+模型**均未引用** `memory_id` —— 即便合约 purpose 已**明写**要求（第二次真实 run 之后补的），
+模型仍然只引用检索标识、不引用前序知识条目。⇒ 按 GOAL 的降级梯记 **PENDING + 点名阻塞点**，
+**不**伪造。
+
+**阻塞点（点名）**：`deepseek-v4-flash-vision`（声明名）在**同一提示词里有两段来源类材料**时，
+只会把「本次检索」那一段的标识写进正文；对「前序知识」段只做**内容层面的采纳**
+（第二次 run 里 `duplicate_pairs: 30` 正是那条 lesson 的参数）而**不做标识层面的引用**。
+这不是产品缺陷（提示词与读面都对得上），是**模型侧行为**。
+
+--- 第三次 run 的计划正文里引用检索标识的那一段（逐字，截断到 700）---
+gher rate of answers that fail to reflect the true body of independent evidence. I predict a monotonic, adverse relationship between the number of duplicate pairs and the correctness/consistency of the synthesised answer, independent of total item count.
+
+## How the retrieved evidence bears on it
+This study stands on the retrieved record **Errami M, Garner H. "A tale of two citations." Nature 2008;451(7177):397-399. DOI: 10.1038/451397a** (PMID 18216824), which established that duplicate/similar publications of the same underlying work are common in the biomedical literature and that their presence distorts citation- and evidence-based analyses that treat each record as an independent signal. That source frames duplicate records a
