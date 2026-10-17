@@ -19,6 +19,13 @@ doing so would require inventing a citation, which I won't do」—— 它**明�
 **不得**伪造。判据因此把「没引用」与「没看到」分开点名。
 
 **离线纪律**：默认门下如实 skip（`requires_live_llm` + 显式开关）。
+
+用法（与既有 live 判据同一口令形态）：
+
+    set -a; . ./.env; set +a
+    RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 \
+      uv run --frozen --no-sync python -B -m pytest
+      tests/e2e/test_the_model_cites_the_retrieved_identifiers_live.py -q
 """
 
 from __future__ import annotations
