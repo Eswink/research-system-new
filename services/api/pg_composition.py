@@ -22,6 +22,7 @@ from packages.application.run_orchestration.service import (
 from services.api.assembly import _endpoint_url_policy, _load_pricing, policy_bindings
 from services.api.composition import ApiDeps
 from services.api.demo import seed_declared_inputs
+from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.retrieval_context_support import retrieval_context_builder
 from services.api.runtime_support import build_agent_runtime, resolve_runtime_selection
 
@@ -260,6 +261,8 @@ def _build_pg_orchestration(
             retrieval_context=retrieval_context_builder(
                 artifacts=c["artifacts"], ledger=c["ledger"]
             ),
+            # GOAL-20261018-082 EC-01：前序知识 → 会话提示词（与检索同一求值点）。
+            prior_knowledge=prior_knowledge_builder(memory_store=c["memory"]),
             telemetry=config.telemetry,
             pricing=_load_pricing(),
             pricing_store=c["pricing_store"],

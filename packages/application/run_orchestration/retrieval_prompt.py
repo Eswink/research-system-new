@@ -32,8 +32,13 @@ from typing import Any
 #: 提示词里那一段的标题（**逐字**；判据按它定位）。
 PROMPT_SECTION_TITLE = "RETRIEVED SOURCES (system-fetched; cite these by identifier)"
 
+#: GOAL-20261018-082 EC-01：**前序知识**那一段的标题（与检索段**并列**，不替换）。
+PRIOR_SECTION_TITLE = "PRIOR KNOWLEDGE (from earlier runs in this project; build on it)"
+
 #: 被截断条目的标注（**逐字**；判据按它判「截断可见」）。
 TRUNCATED_MARK = "[truncated]"
+#: 待复核条目的标注（**逐字**）。
+REVIEW_DUE_MARK = "[review-due]"
 
 
 def render_retrieval_prompt(view: Any) -> str:
@@ -57,6 +62,33 @@ def render_retrieval_prompt(view: Any) -> str:
     return "\n".join(lines)
 
 
+def render_prior_knowledge_prompt(view: Any) -> str:
+    """`PriorKnowledgeView` → **前序知识**那一段（**空集合 ⇒ 空串**）。
+
+    与检索段**并列**：两段的语义不同（「这次取回了什么」vs「前几轮已经知道什么」），
+    因此不合并、不互相替代 —— 合并会让「模型是因检索还是因前序知识而改变了立题」不可判。
+
+    逐条带 **`memory_id`（逐字标识）+ 来源 `provenance`**：前者是 EC-04 判「模型引用了
+    前序知识」的锚点，后者让「这条知识来自哪一轮」在提示词里就可见（不是靠外部台账猜）。
+    """
+    entries = tuple(getattr(view, "entries", ()) or ())
+    if not entries:
+        return ""
+    lines = [PRIOR_SECTION_TITLE, ""]
+    for entry in entries:
+        memory_id = str(getattr(entry, "memory_id", "") or "")
+        provenance = str(getattr(entry, "provenance", "") or "")
+        shown = str(getattr(entry, "shown", "") or "")
+        marks = ""
+        if getattr(entry, "truncated", False):
+            marks += f" {TRUNCATED_MARK}"
+        if getattr(entry, "review_due", False):
+            marks += f" {REVIEW_DUE_MARK}"
+        lines.append(f"- {memory_id}{marks}: {shown} (source: {provenance})")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def prompt_with_retrieval(purpose: str, view: Any) -> str:
     """合约 purpose + 检索那一段（**无摘录 ⇒ 逐字返回 purpose**）。
 
@@ -68,9 +100,42 @@ def prompt_with_retrieval(purpose: str, view: Any) -> str:
     return f"{purpose}\n\n{section}"
 
 
+def prompt_with_prior_knowledge(purpose: str, view: Any) -> str:
+    """合约 purpose + **前序知识**那一段（**无条目 ⇒ 逐字返回 purpose**）。
+
+    单独一个入口（不复用 `prompt_with_retrieval`）：两段可以**同时**在场，也可以各自缺席；
+    把「拼接顺序」写在一处（`compose_prompt`）而不是散在调用点。
+    """
+    section = render_prior_knowledge_prompt(view)
+    if not section:
+        return purpose
+    return f"{purpose}\n\n{section}"
+
+
+def compose_prompt(purpose: str, *, prior_knowledge: Any = None, retrieval: Any = None) -> str:
+    """合约 purpose + [前序知识] + [检索摘录]（两段都缺 ⇒ **逐字**返回 purpose）。
+
+    **顺序 = 先前序、后检索**：模型先知道自己**已经**知道什么（那是立题的起点），
+    再看到这一轮新取回的材料（那是对起点的更新）。
+    """
+    text = purpose
+    for view, render in (
+        (prior_knowledge, prompt_with_prior_knowledge),
+        (retrieval, prompt_with_retrieval),
+    ):
+        if view is not None:
+            text = render(text, view)
+    return text
+
+
 __all__ = [
     "PROMPT_SECTION_TITLE",
+    "PRIOR_SECTION_TITLE",
+    "REVIEW_DUE_MARK",
     "TRUNCATED_MARK",
+    "compose_prompt",
+    "prompt_with_prior_knowledge",
     "prompt_with_retrieval",
+    "render_prior_knowledge_prompt",
     "render_retrieval_prompt",
 ]

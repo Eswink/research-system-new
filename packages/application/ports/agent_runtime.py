@@ -57,6 +57,10 @@ class AgentSessionSpec:
     # 本字段是**给人/模型看的文本**（逐条摘录，截断可见）。缺省 `None` ⇒ 提示词
     # **逐字节**等于 `task_contract.purpose`（既有语义不变）。
     retrieval_prompt: str | None = None
+    # GOAL-20261018-082 EC-01：**前序知识那一段**（跨 run 受治记忆的有界渲染）。
+    # 与 `retrieval_prompt` **并列**（不是替换）：前者是「这次系统取回了什么」，
+    # 后者是「前几轮已经知道什么」。缺省 `None` ⇒ 提示词逐字节等于既有形态。
+    prior_knowledge_prompt: str | None = None
     budget_reservation: BudgetReservation | None = None
     manifest_ref: str | None = None
     endpoint: LLMEndpoint | None = None

@@ -53,6 +53,9 @@ class OrchestrationDependencies:
     # （`(run_id) -> RetrievalContextView`）。None（缺省）⇒ 会话不带检索上下文
     # （既有语义逐字节不变）；接了 ⇒ 每个任务开始前按**此刻已取回**的内容装配。
     retrieval_context: Any | None = None
+    #: GOAL-20261018-082 EC-01：**前序知识** → 会话提示词的装配器（每任务求值）。
+    #: None ⇒ 提示词里没有那一段（既有语义逐字不变）。
+    prior_knowledge: Any | None = None
     # GOAL-014 EC-02（A/a）：`SCHEMA_VALID` 的**产品路径**校验回调工厂
     # （`output_schema` 名 → `SchemaCheck`）。缺省就是产品实现（按合约声明的 schema 名从
     # 仓内 `schemas/` 取；见 `output_schema_check`）——装配方可以换，但**不接**不等于

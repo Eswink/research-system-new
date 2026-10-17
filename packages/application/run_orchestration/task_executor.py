@@ -135,6 +135,10 @@ class SessionSpecContext:
     #: 机械含义：上游取回的文献**内容**进入模型上下文，而不只是落证据链与报告。
     #: 缺省 `None` ⇒ 本 phase 不带检索上下文（既有语义逐字节不变）。
     retrieval_context: Any | None = None
+    #: GOAL-20261018-082 EC-01：**前序知识**的装配结果（`prior_knowledge.PriorKnowledgeView`）。
+    #: 与 `retrieval_context` **并列**：前者是「前几轮已经知道什么」（跨 run），后者是
+    #: 「这一轮系统取回了什么」。缺省 `None` ⇒ 提示词里没有那一段（既有语义逐字不变）。
+    prior_knowledge: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -379,6 +383,9 @@ def _run_session(
         # 渲染是**确定性纯函数**（有界 / 截断可见 / 同一份 `entry.shown`）；
         # 取值点与快照**同一处** —— 两者消费同一个视图，不各自去查一次。
         retrieval_prompt=_retrieval_prompt(spec_context),
+        # GOAL-20261018-082 EC-01：**前序知识那一段**（缺省 None ⇒ 提示词逐字不变）。
+        # 与检索段**并列**：两段语义不同（前几轮已知 vs 这一轮取回），不合并、不互相替代。
+        prior_knowledge_prompt=_prior_knowledge_prompt(spec_context),
         endpoint=spec_context.endpoint,
         model=spec_context.model,
     )
@@ -414,6 +421,24 @@ def _retrieval_prompt(spec_context: SessionSpecContext) -> str | None:
     from packages.application.run_orchestration.retrieval_prompt import render_retrieval_prompt
 
     rendered = render_retrieval_prompt(view)
+    return rendered or None
+
+
+def _prior_knowledge_prompt(spec_context: SessionSpecContext) -> str | None:
+    """前序知识 → 提示词那一段（GOAL-20261018-082 EC-01）。
+
+    `prior_knowledge` 是装配结果视图；**缺省 `None` ⇒ 返回 `None`**（提示词里不加那一段
+    —— 与这个槽位出现之前**逐字节相同**）。渲染器是纯函数：只把视图里已经摘录好的
+    `shown` 排成段落，**不读**原始正文、**不新造**上限。
+    """
+    view = spec_context.prior_knowledge
+    if view is None:
+        return None
+    from packages.application.run_orchestration.retrieval_prompt import (
+        render_prior_knowledge_prompt,
+    )
+
+    rendered = render_prior_knowledge_prompt(view)
     return rendered or None
 
 

@@ -33,6 +33,7 @@ from packages.application.ports.agent_runtime import (
 )
 from packages.application.ports.errors import InvalidInputError
 from packages.application.ports.policy_evaluator import PolicyEvaluator
+from packages.application.run_orchestration.retrieval_prompt import compose_prompt
 
 
 class SessionBuilder:
@@ -81,11 +82,14 @@ class SessionBuilder:
             callbacks=self._callbacks,
         )
         # GOAL-20261016-081 EC-01：合约文本 + **检索摘录那一段**（缺省无那段 ⇒ 逐字不变）。
-        # 渲染由 `retrieval_prompt.prompt_with_retrieval` 完成（有界 / 截断可见 / 同源）；
-        # 本层只把**已渲染好的 str** 送进去 —— 不在 adapter 里做检索解释（职责边界不变）。
-        headline = spec.task_contract.purpose
-        if spec.retrieval_prompt:
-            headline = headline + "\n\n" + spec.retrieval_prompt
+        # GOAL-20261018-082 EC-01：**前序知识那一段**与之**并列**（先前序、后检索）。
+        # 两段的顺序与拼法由 `retrieval_prompt.compose_prompt` **唯一**决定；
+        # 本层只把**已渲染好的 str** 送进去 —— 不在 adapter 里做检索/记忆解释。
+        headline = compose_prompt(
+            spec.task_contract.purpose,
+            prior_knowledge=spec.prior_knowledge_prompt,
+            retrieval=spec.retrieval_prompt,
+        )
         conversation.send_message(headline)
         return _SessionEntry(
             session_id=session_id,

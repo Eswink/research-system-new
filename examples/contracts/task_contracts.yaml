@@ -579,6 +579,12 @@ task_contracts:
          their identifiers before your task text — **cite at least one of them by
          its identifier** (the PMID or DOI string) inside the plan text, so a
          reader can see which retrieved source the study stands on.
+         If earlier runs in this project left governed knowledge for you (it is
+         listed before your task text under "PRIOR KNOWLEDGE"), build on it
+         explicitly: **cite at least one of those entries by its memory id**
+         inside the plan text (the id is the token before the colon on each
+         bullet), so a reader can see which earlier result this study continues
+         from. If there is no such section, ignore this paragraph.
       2. A fenced JSON block named `experiment_design` that states which experiment
          arms to run and each arm's parameters, exactly in this shape:
 

@@ -81,6 +81,7 @@ from services.api.assembly import (
 from services.api.config_store_parts import config_store_parts
 from services.api.demo import _default_events, seed_declared_inputs
 from services.api.idempotency import IdempotencyStore
+from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.retrieval_context_support import retrieval_context_builder
 from services.api.runtime_support import (
     RuntimeSelection,
@@ -328,6 +329,8 @@ def _sqlite_orchestration(
             retrieval_context=retrieval_context_builder(
                 artifacts=ports.artifacts, ledger=ports.ledger
             ),
+            # GOAL-20261018-082 EC-01：前序知识 → 会话提示词（与检索同一求值点）。
+            prior_knowledge=prior_knowledge_builder(memory_store=ports.memory_store),
             telemetry=telemetry,
             pricing=ports.pricing,
             pricing_store=ports.pricing_store,

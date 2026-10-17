@@ -32,6 +32,7 @@ from packages.application.run_orchestration.phase_pause import (
     pause_for_human_gate,
     pause_if_requested,
 )
+from packages.application.run_orchestration.prior_knowledge import with_prior_knowledge
 from packages.application.run_orchestration.report_task import register_and_gate_report
 from packages.application.run_orchestration.retrieval_context import with_retrieval_context
 from packages.application.run_orchestration.round_loop_runner import execute_rounds
@@ -90,6 +91,9 @@ class PhaseRunnerDeps:
     #: GOAL-20261014-078 EC-01：检索内容 → 会话上下文的装配器（每任务求值；
     #: 理由与实现见 `retrieval_context.py`）。None ⇒ 不带检索上下文（逐字节不变）。
     retrieval_context: Callable[[str], Any] | None = None
+    #: GOAL-20261018-082 EC-01：**前序知识** → 会话提示词的装配器（每任务求值；
+    #: 与 `retrieval_context` 同一个求值点）。None ⇒ 提示词里没有那一段。
+    prior_knowledge: Callable[[str], Any] | None = None
     output_schema_validator: Any | None = None
     memory_gate: MemoryGateDeps | None = None
     publish: Callable[[EventType, dict[str, object], str, str, str | None], None] | None = None
@@ -346,6 +350,9 @@ def _run_group_task(
     # GOAL-20261014-078 EC-01：此刻已取回的检索内容 → 本任务的会话上下文（求值点说明
     # 见 `retrieval_context.with_retrieval_context`）。
     spec_context = with_retrieval_context(deps, task, spec_context)
+    # GOAL-20261018-082 EC-01：**前序知识**（跨 run 受治记忆）→ 同一条 spec 的第二个槽位。
+    # 与检索上下文**同一个求值点**（每个任务开始前）：两者都是「本任务开工时已知的事实」。
+    spec_context = with_prior_knowledge(deps, task, spec_context)
     with operation(
         deps.telemetry,
         scope=OperationScope.TASK,
