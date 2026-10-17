@@ -149,7 +149,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261016-497-goal-081-ec01-retrieval-excerpts-reach-the-prompt.md
   - .cursor/plans/tasks/PLAN-20261016-499-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-500-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md
+  - .cursor/plans/tasks/PLAN-20261016-501-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-502-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md
 memory_entries: []
 ---
 

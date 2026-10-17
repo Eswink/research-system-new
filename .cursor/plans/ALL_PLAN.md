@@ -5,7 +5,7 @@
 ## Active
 
 |  | Plan | Status |
-| [ ] | [PLAN-20261016-501](tasks/PLAN-20261016-501-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md) | IN_PROGRESS |
+| [x] | [PLAN-20261016-501](tasks/PLAN-20261016-501-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md) | DONE |
 | [x] | [PLAN-20261016-499](tasks/PLAN-20261016-499-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md) | DONE |
 | [x] | [PLAN-20261016-497](tasks/PLAN-20261016-497-goal-081-ec01-retrieval-excerpts-reach-the-prompt.md) | DONE |
 | [x] | [PLAN-20261016-495](tasks/PLAN-20261016-495-goal-080-ec05-self-bootstrap-closeout.md) | DONE |
