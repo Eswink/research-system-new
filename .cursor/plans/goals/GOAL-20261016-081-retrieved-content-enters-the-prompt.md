@@ -68,6 +68,25 @@ exit_criteria:
     verify: >-
       live 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且提示词里的标识读数在树。
     status: PENDING
+    blocker: >-
+      **实测阻塞点（2026-10-16 cycle 3，三次真实 run + 离线复现）**：检索内容**确实**进了提示词
+      （三个真标识逐字在场，543 字符那一段），但**拿到它的是下游 `multi_role_review`**；
+      **写计划的 `plan` 相位拿不到** ⇒ 计划正文零引用。**根因已定位到两条，都实测：**
+      **(a) 运行链证据在上下文装配时没有 claim 关系**：`register_tool_evidence` 只
+      `register_source` + `register_evidence`，而 `_retrieved_evidence` **只经 claim→relation
+      投影**读（与读面同口径）⇒ 同一 phase 自己刚取回的检索**在它自己的上下文里看不见**
+      （关系由 `register_session_result` 在会话**之后**才挂上）；
+      **(b) 立题格的覆盖门只数**本任务**的证据**：`EVIDENCE_COVERAGE` 的 retrieved 计数取自
+      本任务的 registration ⇒ 上游 `scouting` 相取回的来源**不计入** `plan` 格。
+      **取证**：`evidence/GOAL-20261016-081-ec04-evidence.txt`（真实 run 读数 + 提示词原文）；
+      离线复现（`grounded_report_chain_v1` 的 scouting 相**成功**：6 条证据 + `scouting_report`
+      制品；`plan` 相被判拒 `EVIDENCE_COVERAGE: 0 < 1 retrieved sources`）。
+      **已排除的假解法（实测）**：把 `with_retrieval_context` 从「任务前」移到「运行链之后」——
+      **无效**（(a) 的 claim 关系仍不在），且会破坏 GOAL-078 的「上游会话为空」反证臂 ⇒ **已回退**。
+      **解法（下一 cycle，属产品结构改动）**：让**上游相位的产物**能作为下游的声明输入
+      （`phase.inputs` 今天只认**组合根种入**的制品，不解析 phase 间引用），
+      或让覆盖门按 **run 作用域**数 retrieved 来源。两条都需设计取舍，**不得**为过判据放宽门。
+      **按降级梯记 PENDING + 点名阻塞点**，**不**伪造。
   - id: EC-05
     criterion: >-
       **自举收口**：验证器进树（复用 `tools/closeout_recheck_tools` + 标准断言集）+
@@ -266,7 +285,25 @@ memory_entries: []
    **教训**：拆文件前**先数谁拿它的例数与类名当受判面** —— 受判面不只钉**内容**，
    也钉**位置与计数**。
 
-## CI 台账
+| 3 | PLAN-20261016-501（EC-04） | 见「CI 台账」 | live 判据 **2 passed**（离线 skip 形态正确 + 断言成对）；**两次真实 run**：① 修复「求值点在运行链之前」（`with_retrieval_context` 移到 `_execute_one_task` 的运行链之后）—— 提示词那一段**确实**带三个真标识；② 但拿到它的是 `multi_role_review`（下游），写计划的 `plan` 相位**看不见自己这一格取回的**内容 ⇒ 计划正文零引用 | 见「CI 台账」 | 2 次（见「cycle 3 的修复记录」） | EC-04 **PENDING（点名阻塞点：协议结构）**；EC-05 PENDING | 下一 cycle = 加「检索相」在写计划之前（结构改动）|
+
+### cycle 3 的修复记录（逐条如实 —— **本 cycle 的价值在诊断**）
+
+1. **求值点在运行链之前**（**真缺陷，已修**）：`with_retrieval_context` 原先在
+   `_run_group_task` 里、即**任务开始前**求值，而 `execute_run_chain_capabilities` 在
+   `_execute_one_task` 里、即**任务内部**执行 ⇒ 同一 phase 自己刚取回的检索**它自己看不见**。
+   ⇒ 把求值点移到运行链**之后**（`tctx = replace(tctx, spec_context=…)`），并补注释说明
+   实测缺口；`phase_runner.py` 因此涨到 451 行 ⇒ 收敛注释回到 449（≤450 硬上限）。
+2. **判据里的一处错写法**（实测）：`set().union(*prompt_sections)` 把**字符串**按**字符**并集
+   ⇒ 「哪些标识在提示词里」恒判空集。⇒ 改成**逐字拼接**再判包含。
+3. **`_run_once` 58 行 > 50**（规模门）：抽出 `_plan_content` 与 `_prompt_sections`。
+4. **合约 purpose 补一句**（前提而非缺陷）：原文只说「ground the plan in the material you were
+   given」，**从未要求**引用标识 ⇒ 补「cite at least one of them by its identifier」
+   （与提示词那段标题「cite these by identifier」同口径）。
+
+**仍未解决（EC-04 的阻塞点）**：即使求值点修好，`plan` 相位的会话**也**看不见本格取回的内容 ——
+**检索在它自己的 phase 内执行**。解法需要一个**独立检索相**（写计划之前），属产品结构改动。
+
 
 （逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
 

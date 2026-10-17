@@ -1,0 +1,150 @@
+id: grounded_report_chain_v1_0_0
+version: 0.1.0
+
+# 端到端研究链：**先把检索跑完、再让模型在它之上立题**（GOAL-20261016-081 EC-04）。
+#
+# **它补哪一格**：`research_report_chain_v1` 把检索声明在 **plan phase 自己**身上
+# （`capability_execution: run_chain`）⇒ 运行链在该 phase 的**会话创建之后**才执行，
+# 而检索上下文/提示词在**会话创建时**装配 ⇒ **写计划的那个会话永远看不见它自己这一格
+# 取回的内容**（实测：模型自陈「the retrieved-record list … were not included in the
+# context I received for this phase」，而下游 `review` 格拿到 4 条）。
+# ⇒ 本协议把检索**提前到一个独立的 `scouting` 相**（`multi_role_research_v1` 的既有形态），
+# 使 `plan` 格**开工时上游的检索内容已在 canonical 里** ⇒ 它真的能引用标识。
+#
+# 与 `research_report_chain_v1` 的关系：**新增，不替代**（那份协议的判据一字不动）；
+# 差别只有一处结构：**多一个 `scouting` 相**，`plan` 格不再自己跑检索。
+#
+# 四个 phase 各承担研究弧的一格，**每一格都有机械判据**（不靠叙述）：
+#
+#   1. `plan`（`research_director`）—— **立题由检索产出派生**：本 phase 的检索能力**由
+#      运行链执行**（`capability_execution: run_chain`，provider `europe_pmc`）：系统
+#      确定性检索真实记录并落进证据链（`RETRIEVED`），随后本 phase 的会话在这份覆盖之上
+#      写出 `research_plan`。合约 `research_report_plan` 的**两条覆盖判据**（计数维
+#      `minimum_sources` + **性质维** `minimum_retrieved_sources`）因此是**立题的前提**：
+#      没有真实检索 ⇒ 本 phase 判拒并**点名** `retrieved sources`（反证臂见判据）。
+#      **为什么性质维在这里（而不是让本 phase 继承侦察 phase 的检索）**：性质维数的是
+#      **本任务自己**的系统取得来源（`count_retrieved_sources` 的既有口径，
+#      `multi_role_scouting` 的注释逐字写死了这条）——跨任务**没有**证据继承这回事，
+#      所以「立题站在真检索上」在今天就**必须**由本 phase 自己取回材料。
+#   2. `experiment`（`experiment_engineer`）—— 由**既有出厂合约** `experiment_execution`
+#      声明「本任务由沙箱实验后端执行」（`experiment: {}` ⇒ 脚本/镜像由装配上下文给出），
+#      产出真实指标（容器制品 + 镜像指纹）。
+#   3. `review`（`scientific_reviewer`）—— 独立复核：它的合约（`multi_role_review`）
+#      要求覆盖里至少一条**非自产**来源 ⇒ 读到上游留下的东西时通过，读不到时**判拒**。
+#   4. `report`（`research_writer`）—— **本 GOAL 的落点**：合约
+#      `research_report_deliverable` 声明 `report: {}` ⇒ 本 phase **不建会话**，
+#      由**报告汇编器**按本 run 的持久事实（来源 / 指标 / 判词）汇出 `research_report.md`
+#      （四节 + 每数字可溯源）。这一步是「报告域 L0 → L1」的机械含义：报告**经产品路径**
+#      产出、可复核。
+#
+# 受控范围（写明，不夸大也不缩小）：**4 个 phase、1 次真实检索两步链（`retmax=3`）、
+# 2 次真实模型会话（立题 / 评审）、1 次真实沙箱实验、1 次确定性汇编**。
+# 报告是**汇编**而非模型撰写（那属报告域的再下一级，本 GOAL 明确不做）；
+# 检索到的内容**不进模型上下文**（那属阶梯「检索」域的下一级，本 GOAL 明确不做）。
+#
+# 与既有协议的关系（**新增，不替代**）：
+#   * `multi_role_research_v1.yaml` 是 3 phase（scouting / experiment / review），**无报告**；
+#   * 本协议保留它的后两格语义（同一批合约 `experiment_execution` / `multi_role_review`，
+#     判据一条不改），把首格从「侦察」换成「立题（自带检索）」并**追加** `report` 格。
+
+phases:
+  - id: scouting
+    name: Literature Scouting
+    strategy: single_agent
+    required_roles:
+      - {role: literature_scout, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+      - workspace.read
+      - evidence.read
+    # 检索**在本相**由运行链执行 ⇒ 它落进 canonical 的**早于** plan 格的会话创建。
+    capability_execution: run_chain
+    # 侦察格的契约（既有）：产物存在 + 覆盖里至少一条**系统取得**的来源。
+    task_contract: multi_role_scouting
+    inputs: [input-brief:real_research_v1]
+    outputs: [scouting_report]
+    timeout_seconds: 120
+
+  - id: plan
+    name: Plan Derived From Retrieval
+    strategy: single_agent
+    # **依赖 scouting** ⇒ 本格开工时上游的检索内容已在 canonical 里。
+    depends_on: [scouting]
+    required_roles:
+      - {role: research_director, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      # 冻结集是 plan 级的（`flatten_tool_providers(plan)`），而某个 phase 的会话工具列表
+      # = 冻结集 − 该 phase 的 run-chain provider。实验格引入的 `openhands_workspace` 若不
+      # 在这里被声明，就会落进**本相位**的会话工具列表，而生产装配今天没有 provider→SDK
+      # 映射时会话创建**点名失败**（既有边界，与 `real_experiment_research_v1.yaml` 同源）。
+      - workspace.read
+      - evidence.read
+    # **不声明 `capability_execution`**：检索在 `scouting` 相跑完了（本格只消费它）。
+    # 本 phase **不再跑运行链** ⇒ 会话工具面 = 冻结集（四件 provider 全在）⇒ 四件都要绑
+    # （与 `review` 格同一手法；`session_tool_bindings` 越界/漏绑会被点名拒绝）。
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+      - {provider_id: openhands_workspace, tool_name: workspace.read}
+      - {provider_id: ncbi_eutils, tool_name: literature.search}
+      - {provider_id: europe_pmc, tool_name: literature.read}    # 立题的合约：产物 `research_plan` 存在 + 覆盖**两维**（计数 + 性质）。
+    task_contract: research_report_plan
+    inputs: [input-brief:real_research_v1]
+    outputs: [research_plan]
+    timeout_seconds: 300
+
+  - id: experiment
+    name: Controlled Experiment
+    strategy: deterministic
+    depends_on: [plan]
+    required_roles:
+      - {role: experiment_engineer, min_instances: 1, max_instances: 1}
+    # 本任务的执行体**不是会话**：合约声明「由既有沙箱实验后端跑一次实验」
+    # （`experiment: {}` ⇒ 脚本/镜像由装配上下文给出）。判据一条不改。
+    task_contract: experiment_execution
+    outputs: [experiment_runs]
+    timeout_seconds: 300
+
+  - id: review
+    name: Independent Scientific Review
+    strategy: single_agent
+    depends_on: [experiment]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    # 本 phase 没有 run-chain 排除 ⇒ 会话工具面 = **整个冻结集**（四件 provider 全在）⇒
+    # 四件都要绑（含 `europe_pmc`：它在别的 phase 被 run-chain 排除，在本 phase 不排除）。
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+      - {provider_id: openhands_workspace, tool_name: workspace.read}
+      - {provider_id: ncbi_eutils, tool_name: literature.search}
+      - {provider_id: europe_pmc, tool_name: literature.read}
+    # 评审的判定依据是它自己声明输入的那份材料（`EVIDENCE_COVERAGE: minimum_sources`
+    # 只数本任务能看到的**非自产**来源）⇒ 判据在读到上游留下的证据时通过，读不到时判拒。
+    task_contract: multi_role_review
+    inputs: [input-brief:real_research_v1]
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 180
+
+  - id: report
+    name: Research Report Assembly
+    strategy: deterministic
+    depends_on: [plan, experiment, review]
+    required_roles:
+      - {role: research_writer, min_instances: 1, max_instances: 1}
+    # 本 phase **不建会话**：合约声明 `report: {}` ⇒ 由**报告汇编器**按本 run 的持久事实
+    # 汇出 `research_report.md`。判据两条（产物存在 + 覆盖两维），与立题格同一份合约形态：
+    # 报告必须站在**真实检索**之上（它**消费**本 run 的工具证据，见报告汇编器的准入面）。
+    # 为什么 `strategy: deterministic`：本 phase 的执行体是确定性汇编（同输入 ⇒ 逐字节
+    # 相同），与会话无关。`strategy` 在产品侧只有编译器一个消费者（phase 数 = 会话数），
+    # 这里写它不会改变执行路径 —— 是**如实描述**，不是开关。
+    task_contract: research_report_deliverable
+    inputs: [input-brief:real_research_v1]
+    outputs: [research_report.md]
+    timeout_seconds: 300

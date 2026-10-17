@@ -575,7 +575,10 @@ task_contracts:
          the evidence you were given bears on it (the run retrieved real literature
          records before this phase; at least one retrieved source must be present in
          your coverage, so ground the plan in the material you were given rather than
-         writing it from scratch).
+         writing it from scratch). The retrieved records are listed for you with
+         their identifiers before your task text — **cite at least one of them by
+         its identifier** (the PMID or DOI string) inside the plan text, so a
+         reader can see which retrieved source the study stands on.
       2. A fenced JSON block named `experiment_design` that states which experiment
          arms to run and each arm's parameters, exactly in this shape:
 

@@ -1,0 +1,34 @@
+GOAL-20261016-081 EC-04 取证归档（真实中转站 · 检索标识是否到达并驱动立题）
+命令：set -a; . ./.env; set +a; RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 \
+      uv run --frozen --no-sync python -B -m pytest tests/e2e/test_the_model_cites_the_retrieved_identifiers_live.py -q
+
+run_id: 8e2a99f7-f2fb-433f-b4c6-d25a4b748d2f（state SUCCEEDED）
+检索标识（读面）：["10.12688/f1000research.180013.2", "10.31234/osf.io/w7xpq_v2", "42781891"]
+带检索段的会话数：1
+计划正文长度：4339 字符
+
+**读数（逐条）**：
+  · 提示词那一段**确实携带**本次 run 的三个真标识（PMID 42781891 + 两个 DOI）——
+    这三串在建档轮（GOAL-078）与 GOAL-080 的真实 run 里也出现过，来自真检索；
+  · 但**拿到那一段的会话是 `multi_role_review`（下游）**，不是写计划的 `plan` 相位的会话；
+  · 因此模型写出的计划正文里**没有引用任何标识**（含 PMID 形态零命中）。
+
+**根因（本 cycle 实测确认）**：`research_report_chain_v1` 把检索声明在 **plan phase 自己**身上
+（`capability_execution: run_chain`），而会话上下文/提示词在**同一 phase 的会话开始时**装配；
+运行链检索在那之后才执行 ⇒ **写计划的那个会话永远看不见它自己这一格取回的内容**。
+⇒ 该 run 里模型自陈「the retrieved-record list … were not included in the context I received
+for this phase」是**如实陈述**（与读面一致），不是模型的问题。
+
+**处置**：按 GOAL 的降级梯记 **PENDING + 点名阻塞点**（EC-04 原文逐字：「若模型侧不可用
+或模型不引用 ⇒ 按降级梯如实登记（记 PENDING + 点名阻塞点），**不得**伪造」）。
+阻塞点 = **协议结构**：需要一个**在写计划之前**完成检索的独立 phase
+（`multi_role_research_v1.yaml` 已有此形态的 scouting 相；`research_report_chain_v1` 没有）。
+
+--- 提示词那一段（逐字，543 字符）---
+RETRIEVED SOURCES (system-fetched; cite these by identifier)
+
+- 42781891: From reproducibility to comparability in computational photochemistry: lessons from the PhotoChem explorer prototype.
+- 10.12688/f1000research.180013.2: Insights from the SwissRN Computational Reproducibility Hackathon 2025
+- 10.31234/osf.io/w7xpq_v2: Ten simple rules for achieving computational reproducibility in cognitive neuroscience
+- 42781891: From reproducibility to comparability in computational photochemistry: lessons from the PhotoChem explorer prototype.
+
