@@ -279,6 +279,9 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
+| cycle 1 落地（装配器 + 渲染 + 两组合根 + 4 个判据文件） | `6592bf73` | 见下行覆盖 | 批量推送；其内容包含在 `c70926f2` 的树里 |
+| cycle 1 记录面（GOAL/PLAN/RECHECK/MAINLINE/ALL_PLAN/证据） | `c70926f2` | [M0 39074322989](https://github.com/Eswink/research-system-new/actions/runs/39074322989) / [Push 39074322726](https://github.com/Eswink/research-system-new/actions/runs/39074322726) | 🔴 **`quality-ubuntu` = `failure`（真红）**：`phase_runner.py` **454 行** / `task_executor.py` **451 行** 撞 **450 行硬上限**（我加通道时越界）；`quality-windows` = `cancelled`（`cancel-in-progress`，紧随的修复推送）。其余六 job `success`，CodeQL 三条 `success`。**分类 = 我的规模越界（非 flake）**；**处置 = 下一次提交收紧注释**（零语义变化），**不** rerun 同一棵树、**不**改阈值。`cancelled` 的 `covered_by = 43d7df29` |
+| cycle 1 修复（两个文件回到 450/449 行）+ **当前 tip** | `43d7df29`（**tip**） | [M0 39078976052](https://github.com/Eswink/research-system-new/actions/runs/39078976052) / [Push 39078975906](https://github.com/Eswink/research-system-new/actions/runs/39078975906) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**、**零 rerun**。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`**（静止工作树；此前一轮的 `TIMED_OUT`（Docker 集成）与 `WinError 5`（框架 eval）**单独复跑均通过** ⇒ 既有并发 flake 类，如实登记） |
 
 **自我指涉边界（明写并封闭）**：台账每补一行都会产生一个新提交、从而产生一次新的 CI ——
 若要求「台账最后一行的 CI 也登记」，则永远有下一行。封闭规则：受判的是**代码面**与**收口面**
