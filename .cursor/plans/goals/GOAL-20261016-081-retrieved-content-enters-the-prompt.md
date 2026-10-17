@@ -346,6 +346,13 @@ EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候�
 
 （逐 run 逐 job；`cancelled` 如实登记 + 原因 + `covered_by`；**空集合 = 未取证**。）
 
+**自我指涉边界（明写并封闭）**：台账每补一行都会产生一个新提交、从而产生一次新的 CI —— 若要求「台账最后一行的 CI 也登记」，则永远有下一行。本 GOAL 的封闭规则：
+
+1. **受判的是代码面**：`be84fba5`（落地）与 `f512fc5b`（记录面）的 CI 必须到终态且如实登记 —— 这两条决定「改了什么」；
+2. **台账提交本身不需要 CI 全绿作为达成条件**：它们是**只改 `.cursor/plans/**` 的记录提交**，其 CI 结果**照实登记**（当前 tip 那一行），但**不**再为它追加新行 —— 边界在「tip 那一行」闭合；
+3. 因此本节的最后一行即**收口时的 tip**；其后若再有提交（例如别的 GOAL），归**那一轮**的台账。
+
+
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
 | 建档（序 49） | `98131839` | [M0 38821998809](https://github.com/Eswink/research-system-new/actions/runs/38821998809) / [Push 38821999212](https://github.com/Eswink/research-system-new/actions/runs/38821999212) | ⚠️ **M0 `conclusion=cancelled`**（`quality-windows-latest` 一 job；其余七 job `success`；CodeQL 三条 `success`）= `cancel-in-progress`（紧随的 cycle 1 推送 `18d02d9b`）。**`covered_by = 18d02d9b`**。**不**记绿 |
