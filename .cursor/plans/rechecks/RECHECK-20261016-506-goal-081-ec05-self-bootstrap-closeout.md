@@ -27,13 +27,13 @@ owners:
 | --- | --- | --- | --- |
 | AC-1 | **验证器进树且加载自己那份断言集** | **PASS** | `tools/verify_goal081_closeout.py` 的 `self-loads-its-own-assertions` 按**本文件名**推导应载 `goal081_closeout_assertions.py`（GOAL-078 的自洽错误形态不再可能） |
 | AC-2 | **本树判词全 PASS** | **PASS** | `66 PASS / 0 FAIL`（`--verdict-only`） |
-| AC-3 | **两树复检：逐行相同 + `sha256` 相同** | **PASS** | `COMPARE identical=True`；两树 `sha256=e36a901d…`（同一个值）。首轮曾因判词名用 `hash()` 而红（受 `PYTHONHASHSEED` 影响）⇒ 改为按序号取名，**不是**放宽比对 |
+| AC-3 | **两树复检：逐行相同 + `sha256` 相同** | **PASS** | 最终读数：`TWO-TREE PASS`，`COMPARE identical=True`，两树 `verdicts=66`、`sha256=bcf4b012…`（**同一个值**）、`exit=0`。首轮曾因判词名用 `hash()` 而红（受 `PYTHONHASHSEED` 影响）⇒ 改为按序号取名，**不是**放宽比对 |
 | AC-4 | **反编造门未被削弱**（本 GOAL 的核心纪律） | **PASS** | 断言语义四条逐条在位：`store.verify` 守卫、两条点名消息原文、`count_retrieved_sources` 的「不接受自称」口径；另有**并列结构**断言（`_merged_evidence` 里两类来源都在） |
 | AC-5 | **EC-01…EC-04 终态** | **PASS** | `goal-ec01-status` … `goal-ec04-status` 全 `PASS` |
 | AC-6 | **子计划 / 复检在位** | **PASS** | 四条子 PLAN + 四条历史 RECHECK + 本文件 + README + MAINLINE 逐条在树 |
 | AC-7 | **阶梯记账** | **PASS** | `ladder-records-this-goal`：宪章阶梯「检索」域那行收录 `GOAL-20261016-081` |
 | AC-8 | **残余与未覆盖逐条明写** | **PASS** | `uncovered-scope-enumerated` / `residuals-enumerated` 均 PASS（marker 逐条取自 GOAL 原文措辞） |
-| AC-9 | **as-is m0 23/23**（在全部记录写入之后） | **PASS** | `PASS: profile=m0; 23 deterministic checks`（`EXIT=0`；24 行 `PASS [`，含计数之外的 `release-assets-immutable`） |
+| AC-9 | **as-is m0 23/23**（在全部记录写入之后，**静止工作树**） | **PASS** | 提交 `5349d9ba` 之后重跑：`PASS: profile=m0; 23 deterministic checks`（`EXIT=0`；24 行 `PASS [`，含计数之外的 `release-assets-immutable`）。**前一轮红是我在 m0 运行期间改文件造成的**（纪律：跑门时别改工作树）——如实登记 |
 | AC-10 | **治理绿** | **PASS** | `Cursor 治理验证通过`（六条子项逐条打印） |
 | AC-11 | **凭据审计** | **PASS** | `tools/credential_audit.py` 四面 `offenders=0` |
 | AC-12 | **CI 台账逐提交** | **PASS** | GOAL 的「CI 台账」逐行：`be84fba5` / `f512fc5b`（首轮 `console-frontend` 时序红 + `rerun` 后八 job 全绿，**attempt 2**）/ `85ed8762` / `8aacc48f` / `626345c2` / `917096d5` 逐条登记；`cancelled` 集合为空（**已取证**，非未登记）；**自我指涉边界明写并封闭** |
