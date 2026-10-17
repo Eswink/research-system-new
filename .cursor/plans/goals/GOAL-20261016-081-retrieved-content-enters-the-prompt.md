@@ -241,6 +241,21 @@ memory_entries: []
 - 默认 runtime 改真（§11）—— 默认仍是 Fake；真实 run 由 live 判据在**显式开关下**跑；
 - `R-M1` 未收口 ⇒ **不得**宣称项目安全；投递语义**不是**「恰好一次」（**明确否认**）。
 
+## 下一 cycle 的取舍表（EC-04 的两条候选解法，含各自代价）
+
+EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候选解法互斥，各有明确代价**：
+
+| 解法 | 做法 | 代价（实测/结构） | 会不会碰已钉住的性质 |
+| --- | --- | --- | --- |
+| **A. 上游产物作下游声明输入** | 让 `phase.inputs` 能引用**上游 phase 的产物**（今天只认组合根种入的制品） | 要改 `declared_input_sources` 的校验口径（今天要求 `created_by=composition-root` + 仓库文件可重算）⇒ 得为「run 内产物」开一条**新**的、可判的来源类别 | **否**（不动 GOAL-078 的按时刻装配语义） |
+| **B. 覆盖门按 run 作用域计数** | `EVIDENCE_COVERAGE.minimum_retrieved_sources` 改为数**本 run**的 retrieved 来源 | 那正是**反编造门**：它今天只数本任务**自己看到**的来源；改成 run 作用域 ⇒ 一个任务可以「继承」别的 phase 取回的东西来满足自己的覆盖 | **是**（削弱既有的 anti-fabrication 判据） |
+
+**驱动的判断（如实记录，供下一轮复核）**：**A 才对**——B 放宽的正是「来源必须是自己看到的」
+这条既有判据（`count_retrieved_sources` 的注释逐字：「判据面**不接受**调用方的自称」）；
+而 A 只是**新增一类合法来源**（run 内产物 + 可重算 digest + 明确 created_by），
+**不削弱**任何既有断言。A 的落地还需要：① 新来源类别的判据；② `grounded_report_chain_v1`
+的 `plan` 相声明 `inputs: [scouting_report]`；③ 覆盖门对「声明输入」的计数口径确认。
+
 ## 不进入循环 / 需人工拍板
 
 - 默认 runtime 改真（§11）/ 读面认证 / 多租户·RBAC·BOLA·BFLA / D 组审批通道 /
