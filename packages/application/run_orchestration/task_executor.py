@@ -135,9 +135,7 @@ class SessionSpecContext:
     #: 机械含义：上游取回的文献**内容**进入模型上下文，而不只是落证据链与报告。
     #: 缺省 `None` ⇒ 本 phase 不带检索上下文（既有语义逐字节不变）。
     retrieval_context: Any | None = None
-    #: GOAL-20261018-082 EC-01：**前序知识**的装配结果（`prior_knowledge.PriorKnowledgeView`）。
-    #: 与 `retrieval_context` **并列**：前者是「前几轮已经知道什么」（跨 run），后者是
-    #: 「这一轮系统取回了什么」。缺省 `None` ⇒ 提示词里没有那一段（既有语义逐字不变）。
+    #: GOAL-20261018-082 EC-01：前序知识的装配结果（与 `retrieval_context` 并列；None ⇒ 无该段）。
     prior_knowledge: Any | None = None
 
 

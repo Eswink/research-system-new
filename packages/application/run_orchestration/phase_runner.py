@@ -91,8 +91,7 @@ class PhaseRunnerDeps:
     #: GOAL-20261014-078 EC-01：检索内容 → 会话上下文的装配器（每任务求值；
     #: 理由与实现见 `retrieval_context.py`）。None ⇒ 不带检索上下文（逐字节不变）。
     retrieval_context: Callable[[str], Any] | None = None
-    #: GOAL-20261018-082 EC-01：**前序知识** → 会话提示词的装配器（每任务求值；
-    #: 与 `retrieval_context` 同一个求值点）。None ⇒ 提示词里没有那一段。
+    #: GOAL-20261018-082 EC-01：前序知识 → 提示词的装配器（与检索同一求值点；None ⇒ 无该段）。
     prior_knowledge: Callable[[str], Any] | None = None
     output_schema_validator: Any | None = None
     memory_gate: MemoryGateDeps | None = None
@@ -350,8 +349,7 @@ def _run_group_task(
     # GOAL-20261014-078 EC-01：此刻已取回的检索内容 → 本任务的会话上下文（求值点说明
     # 见 `retrieval_context.with_retrieval_context`）。
     spec_context = with_retrieval_context(deps, task, spec_context)
-    # GOAL-20261018-082 EC-01：**前序知识**（跨 run 受治记忆）→ 同一条 spec 的第二个槽位。
-    # 与检索上下文**同一个求值点**（每个任务开始前）：两者都是「本任务开工时已知的事实」。
+    # GOAL-20261018-082 EC-01：前序知识 → 同一 spec 的第二个槽位（与检索同一求值点）。
     spec_context = with_prior_knowledge(deps, task, spec_context)
     with operation(
         deps.telemetry,
@@ -429,13 +427,11 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
     if capability.failure_message is not None:
         return failure_step(deps, tctx, capability.failure_message, capability.system_failure)
     execution = _dispatch_task_execution(deps, tctx)
-    # GOAL-010 EC-04：这次会话的运行时观测交回 service（没有观测 ⇒ 什么都不交）。
     observe_session(deps.on_observation, tctx.spec_context.endpoint, execution.session_result)
     if not execution.succeeded:
         return failure_or_deferred(deps, tctx, execution)
     if execution.experiment_outcome is not None:
         return register_and_gate_experiment(deps, tctx, execution)
-    # GOAL-20261014-077 EC-02：报告汇编（契约声明 `report`）走与实验**同形**的登记+门链。
     if execution.report_outcome is not None:
         return register_and_gate_report(deps, tctx, execution)
     assert execution.session_result is not None
