@@ -38,14 +38,20 @@ from packages.application.run_orchestration.round_loop_runner import execute_rou
 from packages.application.run_orchestration.run_completion_payload import (
     run_completion_payload,
 )
+from packages.application.run_orchestration.session_carry import (
+    SessionCarryInputs,
+)
+from packages.application.run_orchestration.session_carry import (
+    build_session_carry as session_carry,
+)
 from packages.application.run_orchestration.task_dispatch import dispatch_task_execution
 from packages.application.run_orchestration.task_executor import (
     SessionSpecContext,
     TaskExecutionResult,
 )
 from packages.application.run_orchestration.task_phase_helpers import (
-    ChainCarry,
     PhaseStep,
+    failure_or_deferred,
     failure_step,
     register_and_gate,
     register_and_gate_experiment,
@@ -419,28 +425,23 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
     # GOAL-010 EC-04：这次会话的运行时观测交回 service（没有观测 ⇒ 什么都不交）。
     observe_session(deps.on_observation, tctx.spec_context.endpoint, execution.session_result)
     if not execution.succeeded:
-        if execution.retry_deferred:
-            # 不是终局失败：durable 侧已经排了下一次尝试（带 deadline），由派发方
-            # 再来取。这里不 fail run——FAILED 是终态，会把那条重排变成孤儿。
-            return PhaseStep(retry_deferred=True)
-        return failure_step(
-            deps,
-            tctx,
-            f"task {task.id.value} failed: {execution.message}",
-            execution.failure_category is not None,
-        )
+        return failure_or_deferred(deps, tctx, execution)
     if execution.experiment_outcome is not None:
         return register_and_gate_experiment(deps, tctx, execution)
     # GOAL-20261014-077 EC-02：报告汇编（契约声明 `report`）走与实验**同形**的登记+门链。
     if execution.report_outcome is not None:
         return register_and_gate_report(deps, tctx, execution)
     assert execution.session_result is not None
-    # GOAL-011 EC-01：运行链取得的证据随会话结果**同一个** claim 登记（读面才看得到）。
-    # GOAL-20261009-042 EC-03：`annotations` 与 `skipped` 两条通道同源带上（互不混用）。
-    carry = ChainCarry(
-        retrieved=capability.evidences,
-        skipped=capability.skipped,
-        chain_outputs=capability.outputs,
-        annotations=capability.annotations,
+    carry = session_carry(
+        SessionCarryInputs(
+            workflow=deps.workflow,
+            artifacts=deps.artifacts,
+            ledger=deps.ledger,
+            task=tctx.task,
+            declared=tctx.spec_context.cross_phase_inputs,
+            capability=capability,
+        )
     )
+    if isinstance(carry, str):
+        return failure_step(deps, tctx, carry, True)
     return register_and_gate(deps, tctx, execution.session_result, carry)

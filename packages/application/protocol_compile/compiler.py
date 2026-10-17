@@ -5,6 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from packages.application.ports import CatalogSnapshot, ProjectSettings
+from packages.application.protocol_compile.cross_phase_inputs import (
+    CrossPhaseResolution,
+    local_inputs,
+    resolve_cross_phase_inputs,
+)
 from packages.application.protocol_compile.dag import DagResult, compile_dag, is_phase_id
 from packages.application.protocol_compile.requirements import (
     budget_reservations,
@@ -48,13 +53,19 @@ class PlanParts:
     tools: list[ToolRequirement]
     workspaces: list[WorkspaceRequirement]
     gates: list[GateRequirement]
+    #: GOAL-20261016-081 EC-04：跨相输入（编译期解析结果；非法引用已进 findings）。
+    cross_phase: CrossPhaseResolution
 
 
 def _finding(code: str, message: str, subject: str | None = None) -> PreflightFinding:
     return PreflightFinding(code, FindingSeverity.ERROR, message, subject)
 
 
-def _compiled_phases(protocol: ProtocolDefinition, ordered: tuple[str, ...]) -> list[CompiledPhase]:
+def _compiled_phases(
+    protocol: ProtocolDefinition,
+    ordered: tuple[str, ...],
+    cross_phase: CrossPhaseResolution,
+) -> list[CompiledPhase]:
     phases = {phase.id: phase for phase in protocol.phases}
     return [
         CompiledPhase(
@@ -63,7 +74,13 @@ def _compiled_phases(protocol: ProtocolDefinition, ordered: tuple[str, ...]) -> 
             depends_on=tuple(sorted(phases[phase_id].depends_on)),
             task_contract_refs=tuple(phases[phase_id].task_contracts),
             timeout_seconds=phases[phase_id].timeout_seconds,
-            inputs=tuple(phases[phase_id].inputs),
+            # 跨相引用**不**进 `inputs`：两类的来源类别不同（外部供应 vs 本 run 上游产物），
+            # 混在一个字段里会让 `test_declared_input_sources.py` 的等号判据失真。
+            inputs=local_inputs(protocol, phases[phase_id]),
+            cross_phase_inputs=tuple(
+                (item.producer_phase_id, item.artifact_name, item.trust_label)
+                for item in cross_phase.for_phase(phase_id)
+            ),
             # GOAL-011 EC-01：原样透传（编译不解释它；解释在会话解析处）。
             capability_execution=phases[phase_id].capability_execution,
             # GOAL-028 EC-01：会话工具绑定同样原样透传（解释在会话解析处）。
@@ -123,7 +140,7 @@ def _assemble_plan(
         protocol_version=protocol.version,
         protocol_digest=digest_of(protocol),
         phase_dag=parts.dag.phase_dag,
-        phases=_compiled_phases(protocol, parts.dag.ordered_phase_ids),
+        phases=_compiled_phases(protocol, parts.dag.ordered_phase_ids, parts.cross_phase),
         task_contract_refs=parts.task_contract_refs,
         role_pools=parts.roles.role_pools,
         agent_candidates=parts.roles.agent_candidates,
@@ -172,6 +189,8 @@ def compile_protocol(
     findings.extend(tool_findings)
     workspaces, workspace_findings = workspace_requirements(protocol, catalog, project)
     findings.extend(workspace_findings)
+    cross_phase = resolve_cross_phase_inputs(protocol, catalog)
+    findings.extend(cross_phase.findings)
     parts = PlanParts(
         dag=dag,
         roles=roles,
@@ -179,6 +198,7 @@ def compile_protocol(
         tools=tools,
         workspaces=workspaces,
         gates=gates,
+        cross_phase=cross_phase,
     )
     plan = _assemble_plan(protocol, parts, catalog)
     # ERROR 使计划不可用；INFO/WARNING（如策略退化、孤立 phase）随计划携带，

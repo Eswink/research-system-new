@@ -13,7 +13,7 @@ from enum import StrEnum
 
 from packages.domain.budget import BudgetReservation
 from packages.domain.core import Digest, Money, Version
-from packages.domain.enums import GateType, ModelCapability
+from packages.domain.enums import GateType, ModelCapability, TrustLabel
 from packages.domain.serialization import digest_of
 from packages.domain.team_plan import PhaseAssignment, RoleActivationRecord
 
@@ -96,6 +96,10 @@ class CompileFindingCode(StrEnum):
     WORKSPACE_POLICY_VIOLATION = "WORKSPACE_POLICY_VIOLATION"
     SELECTION_STRATEGY_DEGRADED = "SELECTION_STRATEGY_DEGRADED"
     PROTOCOL_INVALID = "PROTOCOL_INVALID"
+    # GOAL-20261016-081 EC-04：`inputs` 里的**跨相引用**解析不了（phase 不存在 /
+    # 引用自己 / 不是上游 / 产物名不在产出方 `outputs` / 产出方不唯一 / 读取方执行体
+    # 不消费声明输入）。编译期点名，不留到运行期。
+    CROSS_PHASE_INPUT_INVALID = "CROSS_PHASE_INPUT_INVALID"
 
 
 class PreflightFindingCode(StrEnum):
@@ -280,7 +284,17 @@ class CompiledPhase:
     timeout_seconds: int | None = None
     # GOAL-010 EC-02：编译期**原样携带** phase 声明的输入制品 id（`ProtocolPhase.inputs`）。
     # 编译**不**解析它们——解析要 ArtifactStore，属执行期；这里只保证声明不在这步丢掉。
+    # GOAL-20261016-081 EC-04：**跨相引用**（`{phase_id}:{artifact_name}`）在这里已经被
+    # 拆成 `(产出方 phase, 产物名)`（见 `cross_phase_inputs`）；它们**不**进本字段
+    # —— 本字段仍只装组合根种入的制品 id（既有语义与既有判据逐字不变）。
     inputs: tuple[str, ...] = ()
+    # GOAL-20261016-081 EC-04：本 phase 从**上游 phase 的产物**读输入。
+    # 每项 = `(产出方 phase id, 产物名, 性质)`；编译期已校验「产出方存在 / 是自己的上游 /
+    # 该产物在产出方 `outputs` 里 / 产出方唯一」⇒ 非法引用在编译期点名（不入计划）。
+    # **第三项是来源性质**（`TrustLabel`）：由**产出方**的编译期事实决定
+    # （`capability_execution: run_chain` + 其 provider 声明了 `network_domains`
+    # ⇒ `RETRIEVED`，否则 `GENERATED`），**不由读取方自报** —— 否则性质维可被伪造。
+    cross_phase_inputs: tuple[tuple[str, str, TrustLabel], ...] = ()
     # GOAL-011 EC-01：编译期**原样携带**「能力由谁执行」。`run_chain` 的 phase，
     # 其能力仍进 `tool_requirements`（preflight/策略/冻结面不减），只是不进会话工具列表。
     capability_execution: CapabilityExecution = CapabilityExecution.SESSION

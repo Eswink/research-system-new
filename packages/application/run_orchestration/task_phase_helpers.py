@@ -32,12 +32,11 @@ from packages.application.run_orchestration.result_handler import (
     RegistrationDeps,
     ResultRegistration,
     count_retrieved_sources,
-    register_declared_input_sources,
     register_session_result,
 )
 from packages.domain.enums import MemoryType
 from packages.domain.events import EventType
-from packages.domain.evidence import Evidence, EvidenceRelation, EvidenceRelationType
+from packages.domain.evidence import Evidence
 from packages.domain.experiment_state import ExperimentRunState
 from packages.domain.failure_policy import OnTaskFailure
 from packages.domain.session_state import AgentSessionState
@@ -108,50 +107,33 @@ def failure_step(
     return PhaseStep(failure=deps.fail(tctx.ctx.run_id, message, system_failure))
 
 
+def failure_or_deferred(deps: Any, tctx: Any, execution: Any) -> PhaseStep:
+    """未成功的执行 → 「停车等重排」或「按契约失败策略落地」（两件事必须分开）。
+
+    `retry_deferred` 不是终局失败：durable 侧已经排了下一次尝试（带 deadline），由派发方
+    再来取。这里不 fail run —— FAILED 是终态，会把那条重排变成孤儿（PLAN-20260915-081）。
+    """
+    if execution.retry_deferred:
+        return PhaseStep(retry_deferred=True)
+    return failure_step(
+        deps,
+        tctx,
+        f"task {tctx.task.id.value} failed: {execution.message}",
+        execution.failure_category is not None,
+    )
+
+
 def registration_from_experiment(
     deps: Any,
     execution: Any,
     tctx: Any,
 ) -> ResultRegistration:
-    outcome = execution.experiment_outcome
-    assert outcome is not None
-    artifact_ids = (
-        set(outcome.run.result.artifact_refs) if outcome.run.result is not None else set()
+    """沙箱实验路径的 `ResultRegistration`（实现单列以守 450 行规模门）。"""
+    from packages.application.run_orchestration.experiment_registration import (
+        registration_from_experiment as _impl,
     )
-    artifacts = tuple(
-        artifact for artifact in deps.artifacts.list_refs() if artifact.id in artifact_ids
-    )
-    admission = execution.experiment_admission
-    claim_id = admission.claim.id if admission is not None else f"claim:{tctx.task.id.value}:result"
-    inputs = register_declared_input_sources(
-        RegistrationDeps(
-            store=deps.artifacts,
-            agent_id=tctx.spec_context.agent.id,
-            ledger=deps.ledger,
-            declared_inputs=tctx.spec_context.declared_input_artifacts,
-        ),
-        tctx.task,
-        claim_id=claim_id,
-    )
-    # 声明输入的 evidence 必须挂到 claim 上，否则 `GET /runs/{id}/evidence` 的
-    # claim-relation 投影看不到它（GOAL-010 EC-02：判据要求来源**可读**）。
-    if admission is not None and deps.ledger is not None:
-        for evidence in inputs:
-            deps.ledger.attach_relation(
-                EvidenceRelation(
-                    claim_id=claim_id,
-                    evidence_id=evidence.id,
-                    relation=EvidenceRelationType.SUPPORTS,
-                )
-            )
-    return ResultRegistration(
-        artifacts=artifacts,
-        evidence=(admission.evidence if admission is not None else ()) + inputs,
-        claims=(admission.claim,) if admission is not None else (),
-        # 同一判别性质（GOAL-010 EC-02）：本路径的「自身产物」是该 experiment run
-        # 自己登记的 artifact_refs ⇒ 它们不构成覆盖来源。
-        self_artifact_ids=frozenset(artifact_ids),
-    )
+
+    return _impl(deps, execution, tctx)
 
 
 def evaluate_gate_experiment(
@@ -202,6 +184,7 @@ def register_or_fail(
     tctx: Any,
     session_result: AgentSessionResult,
     retrieved: tuple[Evidence, ...] = (),
+    cross_phase: tuple[Evidence, ...] = (),
 ) -> ResultRegistration | str:
     try:
         return register_session_result(
@@ -211,6 +194,8 @@ def register_or_fail(
                 ledger=deps.ledger,
                 declared_inputs=tctx.spec_context.declared_input_artifacts,
                 retrieved_evidence=retrieved,
+                # GOAL-20261016-081 EC-04：跨相输入（已由编排登记；性质由产出方决定）。
+                cross_phase_evidence=cross_phase,
             ),
             tctx.task,
             tctx.contract,
@@ -313,6 +298,9 @@ class ChainCarry:
     chain_outputs: tuple[object, ...] = ()
     #: 记忆时效门的标注（GOAL-20261009-042 EC-03；见 `PhaseStep.annotations`）。
     annotations: tuple[str, ...] = ()
+    #: GOAL-20261016-081 EC-04：**跨相输入**登记出的证据（上游 phase 的产物；
+    #: 性质由产出方决定）。缺省空 ⇒ 既有行为逐字节不变。
+    cross_phase: tuple[Evidence, ...] = ()
 
 
 def register_and_gate(
@@ -331,7 +319,7 @@ def register_and_gate(
     """
     task = tctx.task
     carry = carry or ChainCarry()
-    registered = register_or_fail(deps, tctx, session_result, carry.retrieved)
+    registered = register_or_fail(deps, tctx, session_result, carry.retrieved, carry.cross_phase)
     if isinstance(registered, str):
         return failure_step(
             deps,

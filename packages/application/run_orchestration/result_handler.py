@@ -204,6 +204,11 @@ class RegistrationDeps:
     # relations（读面经 claim relations 投影，不挂就读不到），并进返回值
     # （覆盖计数只认非自身来源，检索来源不在 `self_artifact_ids` 里）。
     retrieved_evidence: tuple[Evidence, ...] = ()
+    # GOAL-20261016-081 EC-04：**跨相输入**登记出的证据（上游 phase 的产物；
+    # 性质由产出方决定，见 `cross_phase_inputs.CrossPhaseSource`）。与
+    # `declared_inputs`（组合根供给）**并列**：两者都是「非模型自述」的合法来源，
+    # 前者读仓库文件字节、后者读上游产物 + 编译期性质。缺省空 ⇒ 既有语义逐字节不变。
+    cross_phase_evidence: tuple[Evidence, ...] = ()
 
 
 def _input_evidence(
@@ -302,6 +307,15 @@ def register_declared_input_sources(
     return tuple(evidence for _source, evidence in pairs)
 
 
+def _merged_evidence(deps: RegistrationDeps, inputs: tuple[Evidence, ...]) -> tuple[Evidence, ...]:
+    """一次会话结果的**全部**证据（自产 + 组合根供给 + 运行链 + 跨相输入）。
+
+    三类非自述来源在这里**并列**出现，缺任一类就会让覆盖门的对应维度失去依据
+    （GOAL-011 EC-01 的运行链、GOAL-20261016-081 EC-04 的跨相输入）。
+    """
+    return tuple(deps.cross_phase_evidence) + inputs + tuple(deps.retrieved_evidence)
+
+
 def register_session_result(
     deps: RegistrationDeps,
     task: ResearchTask,
@@ -321,6 +335,11 @@ def register_session_result(
     **运行链取得**（`deps.retrieved_evidence`，GOAL-011 EC-01）在登记阶段已经写好
     SourceRecord/Evidence，这里只把它们挂进同一个 claim（relations）并并进返回值：
     两者少一个，检索来源要么读不到，要么不计入覆盖。
+
+    **跨相输入**（`deps.cross_phase_evidence`，GOAL-20261016-081 EC-04）同理：登记已在
+    编排侧完成（那里才知道产出方的真实 task id），这里只挂 relation + 并进返回值。
+    它与 `declared_inputs` 是**并列**的两类合法非自述来源，缺任一类都会让覆盖门的
+    某一维失去依据。
     """
     if not structured_output:
         raise InvalidInputError(
@@ -329,6 +348,7 @@ def register_session_result(
     claim_id = f"claim:{task.id.value}:result"
     artifacts, evidences, claims = _produced_outputs(deps, task, structured_output, claim_id)
     inputs = register_declared_input_sources(deps, task, claim_id=claim_id)
+    extras = _merged_evidence(deps, inputs)
     if deps.ledger is not None and claims:
         _register_into_ledger(
             deps.ledger,
@@ -337,13 +357,12 @@ def register_session_result(
                 evidences=evidences,
                 claims=claims,
                 claim_id=claim_id,
-                extra_evidence_ids=tuple(evidence.id for evidence in inputs)
-                + tuple(evidence.id for evidence in deps.retrieved_evidence),
+                extra_evidence_ids=tuple(evidence.id for evidence in extras),
             ),
         )
     return ResultRegistration(
         artifacts=tuple(artifacts),
-        evidence=tuple(evidences) + inputs + deps.retrieved_evidence,
+        evidence=tuple(evidences) + extras,
         claims=tuple(claims),
         self_artifact_ids=frozenset(artifact.id for artifact in artifacts),
     )

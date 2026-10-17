@@ -35,7 +35,7 @@ from packages.application.ports.workflow_engine import (
     WorkflowEngine,
 )
 from packages.application.run_orchestration.usage_recording import record_attempt_usage
-from packages.domain.enums import FailureCategory
+from packages.domain.enums import FailureCategory, TrustLabel
 from packages.domain.memory import ContextSnapshot
 from packages.domain.models import LLMEndpoint, ModelDefinition
 from packages.domain.roles import AgentSpec, RoleDefinition
@@ -99,6 +99,13 @@ class SessionSpecContext:
     # （这是如实的失败，不是缺陷）。命名空间与模型产出**不相交**：模型产出恒为
     # `{task_id}:{name}`，工具结果是 `tool-result:...`，本处由组合根以独立前缀种入。
     declared_input_artifacts: tuple[str, ...] = field(default_factory=tuple)
+    # GOAL-20261016-081 EC-04：本 phase 从**上游 phase 的产物**读输入（编译期已校验：
+    # 产出方是自己的上游、该产物在它的 `outputs` 里、产出方唯一）。每项
+    # `(产出方, 产物名, 性质)`；运行期由编排把产出方的**真实任务**解析出来，再拼成
+    # `{task_id}:{artifact_name}`。第三项（`TrustLabel`）**由产出方决定**，不在这里推导。
+    # 与 `declared_input_artifacts` 的**性质差别**：那一类是组合根供给（`USER_PROVIDED`），
+    # 这一类是**上游 phase 自己取回/产出**的东西 —— 它的 trust label 由产出方的声明性质决定。
+    cross_phase_inputs: tuple[tuple[str, str, TrustLabel], ...] = field(default_factory=tuple)
     # GOAL-011 EC-01：本 phase **由运行链执行**的能力所属 provider id（源头是协议 phase 的
     # `capability_execution: run_chain`）。它们是冻结集的**子集**，被拿掉的只有「会话工具」
     # 这一个面：冻结集 / preflight / 策略判定都不变 ⇒ **声明化排除**，不是静默丢弃。
