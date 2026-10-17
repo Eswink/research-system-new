@@ -92,6 +92,8 @@ _VERIFIERS: tuple[str, ...] = (
     "tools/verify_goal078_closeout.py",
     "tools/verify_goal079_closeout.py",
     "tools/verify_goal080_closeout.py",
+    # GOAL-20261016-081 EC-05：收口验证器（纯收紧 ⇒ 只增不删）。
+    "tools/verify_goal081_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (

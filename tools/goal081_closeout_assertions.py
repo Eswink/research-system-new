@@ -92,27 +92,26 @@ def _text(root: Path, relative: str) -> str:
     return path.read_text(encoding="utf-8") if path.is_file() else ""
 
 
-def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
-    """本 GOAL 特有的断言（公共面不在此处）。"""
+def _floor_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """例数下界 + 既有判据仍在树。"""
     verdicts: list[Any] = []
-
     for relative, floor in CASE_FLOORS:
-        text = _text(root, relative)
-        count = len(TEST_DEFINITION.findall(text))
+        count = len(TEST_DEFINITION.findall(_text(root, relative)))
         verdicts.append(
             toolbox.verdict(
-                f"case-floor-{Path(relative).stem}",
-                count >= floor,
-                f"{count} < {floor}",
+                f"case-floor-{Path(relative).stem}", count >= floor, f"{count} < {floor}"
             )
         )
     for relative in PRIOR_JUDGES:
         verdicts.append(
             toolbox.verdict(f"prior-judge-{Path(relative).stem}", (root / relative).is_file())
         )
+    return verdicts
 
-    # EC-04 落点与形态（逐条）。
-    for relative, needle, name in (
+
+def _placement_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-01…EC-04 的落点与形态（逐条点名）。"""
+    points: tuple[tuple[str, str, str], ...] = (
         (COMPILE_RESOLVER, COMPILE_ENTRY, "compile-resolver-in-tree"),
         (COMPILE_RESOLVER, TRUST_FROM_PRODUCER, "trust-label-from-producer"),
         (COMPILE_RESOLVER, INVALID_CODE, "invalid-reference-named"),
@@ -126,34 +125,47 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
         (LIVE, "_assert_the_model_cited_what_it_saw", "live-judge-in-tree"),
         (RENDERER, "def render_retrieval_prompt(", "renderer-in-tree"),
         (READ_FACE, '"truncated": entry.truncated', "read-face-records-truncation"),
-    ):
-        verdicts.append(
-            toolbox.verdict(name, needle in _text(root, relative), f"{relative} 缺 {needle!r}")
-        )
+    )
+    return [
+        toolbox.verdict(name, needle in _text(root, relative), f"{relative} 缺 {needle!r}")
+        for relative, needle, name in points
+    ]
 
-    # (c) 反编造门的既有断言逐条仍在（判词名**按序号**，不用 `hash()`
-    # —— 它受 `PYTHONHASHSEED` 影响，两树会把同一个断言打印成不同名字 ⇒ 逐行比对必红）。
-    for index, (relative, needle) in enumerate(ANTI_FABRICATION, start=1):
-        verdicts.append(
-            toolbox.verdict(
-                f"anti-fabrication-{index}",
-                needle in _text(root, relative),
-                f"{relative} 丢了 {needle!r}（门被削弱）",
-            )
+
+def _anti_fabrication_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """(c) 反编造门的既有断言逐条仍在 + 并列结构仍在。
+
+    判词名**按序号**（不用 `hash()` —— 它受 `PYTHONHASHSEED` 影响，两树会把同一个断言
+    打印成不同名字 ⇒ 逐行比对必红；实测踩过一次）。
+    """
+    verdicts: list[Any] = [
+        toolbox.verdict(
+            f"anti-fabrication-{index}",
+            needle in _text(root, relative),
+            f"{relative} 丢了 {needle!r}（门被削弱）",
         )
-    # 并列结构：两类来源都在 `_merged_evidence` 的返回里。
+        for index, (relative, needle) in enumerate(ANTI_FABRICATION, start=1)
+    ]
     handler = _text(root, RESULT_HANDLER)
     merged = handler.split("def _merged_evidence", 1)[-1].split("\ndef ", 1)[0]
-    for needle in PARALLEL_SOURCES:
-        verdicts.append(
-            toolbox.verdict(
-                f"parallel-source-{needle.split('.')[-1]}",
-                needle in merged,
-                "_merged_evidence 里缺 {needle}（两条来源不再并列）".format(needle=needle),
-            )
+    verdicts.extend(
+        toolbox.verdict(
+            f"parallel-source-{needle.split('.')[-1]}",
+            needle in merged,
+            "_merged_evidence 里缺 {needle}（两条来源不再并列）".format(needle=needle),
         )
+        for needle in PARALLEL_SOURCES
+    )
+    return verdicts
 
-    # 读数归档（EC-04 的 live 证据）必须在树且非空。
+
+def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """本 GOAL 特有的断言（公共面不在此处）。"""
+    verdicts = [
+        *_floor_verdicts(root, toolbox),
+        *_placement_verdicts(root, toolbox),
+        *_anti_fabrication_verdicts(root, toolbox),
+    ]
     evidence = root / ".cursor/plans/goals/evidence/GOAL-20261016-081-ec04-live-citations.txt"
     verdicts.append(
         toolbox.verdict(

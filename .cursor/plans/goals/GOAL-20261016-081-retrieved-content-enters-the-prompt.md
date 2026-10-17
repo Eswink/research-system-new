@@ -2,7 +2,7 @@
 id: GOAL-20261016-081
 slug: retrieved-content-enters-the-prompt
 title: 检索内容进提示词（立题因检索而不同）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-16
 updated_at: 2026-10-17
 owners:
@@ -92,7 +92,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 
 budget:
   max_cycles: 14
@@ -144,7 +144,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261016-499-goal-081-ec03-the-prompt-excerpts-are-verbatim-the-read-face.md
   - .cursor/plans/tasks/PLAN-20261016-501-goal-081-ec04-the-model-cites-the-retrieved-identifiers.md
   - .cursor/plans/tasks/PLAN-20261016-503-goal-081-ec04-cross-phase-inputs-close-the-coverage-gap.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-504-goal-081-ec04-cross-phase-inputs.md
+  - .cursor/plans/tasks/PLAN-20261016-505-goal-081-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261016-506-goal-081-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -274,6 +275,7 @@ EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候�
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（摘录进提示词） |
 | 1 | PLAN-20261016-497 | 见「CI 台账」 | 渲染器判据 **14 passed**；e2e **7 passed**（下游有那段 + 逐条标识在场；上游没有那段）；受影响套件 **1184 passed, 1 skipped**；规模门 **1267 passed** | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01/EC-02 **PASS**；EC-03/04/05 PENDING | cycle 2 = EC-03（同源：提示词那段 == 读面制品，逐条逐字） |
 | 2 | PLAN-20261016-499 | 见「CI 台账」 | EC-03 判据 **2 passed**（逐条逐字 + 反证两形态）；读面截断判据 **6 passed**；按压 V11-1 **红** + 逐字节复原；既有收口验证器 **68 + 78 全绿**；受影响套件 **1419 passed, 16 skipped** | 见「CI 台账」 | 2 次（见「cycle 2 的修复记录」） | EC-03 **PASS**；EC-04/05 PENDING | cycle 3 = EC-04（真实 run：模型引用检索到的标识） |
+| 5 | PLAN-20261016-505 | 见「CI 台账」 | 验证器 **66 PASS / 0 FAIL**；两树 `sha256` 相同；as-is m0 **23/23**；治理绿；凭据审计四面 `offenders=0` | 见「CI 台账」 | 2 次（见「cycle 5 的修复记录」） | **EC-05 → PASS**，五 EC 全 PASS ⇒ **本 GOAL ACHIEVED** | 下一轮 = 阶梯「检索」域的再下一级（检索改变**下一轮问题**） |
 | 4 | PLAN-20261016-503 | 见「CI 台账」 | 跨相输入单元判据 **11 passed**（含两条按压）；e2e **2 passed**（两维判词 + 按压臂点名性质维）；离线复现 run **`SUCCEEDED`**；**live 实跑 `SUCCEEDED`，计划正文引用全部 3 条标识**；受影响套件 **1399 passed, 1 skipped**；规模门 **1267 passed** | 见「CI 台账」 | 3 次（见「cycle 4 的修复记录」） | **EC-04 → PASS**；EC-05 PENDING | cycle 5 = EC-05（自举收口） |
 
 ### cycle 1 的修复记录（逐条如实）
@@ -323,6 +325,21 @@ EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候�
 
 **仍未解决（EC-04 的阻塞点）**：即使求值点修好，`plan` 相位的会话**也**看不见本格取回的内容 ——
 **检索在它自己的 phase 内执行**。解法需要一个**独立检索相**（写计划之前），属产品结构改动。
+
+### cycle 5 的修复记录（逐条如实）
+
+1. **判词名用了 `hash()`**（两树复检实测红）：`abs(hash(needle)) % 10000` 受
+   `PYTHONHASHSEED` 影响 ⇒ 同一个断言在两棵树里打印成**不同名字**，
+   `COMPARE identical=False`。**处置**：判词名改**按序号**（`anti-fabrication-1…4`）。
+   这条是「输出必须纯」的具体形态：**纯**不只是「不含绝对路径」，还包括「不含进程随机量」。
+2. **`assertion_verdicts` 超过 50 行**（`tools/` 四道门）：拆成三个子函数
+   （例数下界 / 落点形态 / 反编造门与并列结构）。
+3. **新 `tools/` 脚本未登记射程**（四道门）：`tests/tooling/test_tooling_scripts_meet_product_gates.py`
+   的射程分区清单要求**显式决定**是否纳入 —— 照十个先行 GOAL 的形态登记为**纳入射程**
+   （纯收紧，只增不删）。
+4. **一条提交消息被 shell 吞掉反引号内容**（`917096d5`）：`git commit -m` 的双引号串里
+   有反引号 ⇒ bash 做了命令替换，正文少了三个标识符名。**处置**：不重写历史（本仓禁止）；
+   内容面（两条 `tools/` 脚本 + PLAN）完整无损，此处如实登记（RECHECK-506 `W-5`）。
 
 ### cycle 4 的修复记录（逐条如实）
 
@@ -399,3 +416,11 @@ EC-04 的阻塞点已定位到两条（见 EC-04 的 `blocker`）。**两条候�
 下游有那段且逐条标识在场 / 上游没有那段。**EC-01/EC-02 → PASS**（RECHECK-498 = PASS）；
 EC-03/04/05 PENDING。 |
 | 2026-10-16 | **ACTIVE** | **建档**：承 GOAL-20261015-080 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「检索」/「计划」/「实验」**三域的共同下一格**。**建档实测**（三条）：① 真实 run 上模型**自陈**没收到检索记录、并拒绝编造引用（`748a56a6…` 的计划正文）；② 会话的**唯一**出站消息是 `send_message(contract.purpose)`（`session_builder.py:83`）；③ `context_snapshot` 在 spec 上且被带进 fork（`session_builder.py:171`）但**没有渲染进提示词的消费者**。这三条就是本 GOAL 的靶子与可行性依据。 |
+    evidence: >-
+      **cycle 5 落地**：`tools/verify_goal081_closeout.py` + `tools/goal081_closeout_assertions.py`
+      （验证器**加载自己那份**断言集）⇒ 本树 `--verdict-only` **66 PASS / 0 FAIL**；
+      `tools/two_tree_recheck.py` 两树判词**逐行相同 + `sha256` 相同**；as-is m0
+      **`PASS: profile=m0; 23 deterministic checks`**（在全部记录写入之后）；
+      `validate.py` = `Cursor 治理验证通过`；`credential_audit.py` 四面 `offenders=0`。
+
+
