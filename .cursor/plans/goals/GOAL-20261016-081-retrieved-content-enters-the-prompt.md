@@ -81,6 +81,11 @@ exit_criteria:
       **取证**：`evidence/GOAL-20261016-081-ec04-evidence.txt`（真实 run 读数 + 提示词原文）；
       离线复现（`grounded_report_chain_v1` 的 scouting 相**成功**：6 条证据 + `scouting_report`
       制品；`plan` 相被判拒 `EVIDENCE_COVERAGE: 0 < 1 retrieved sources`）。
+      **(c) `inputs` 不能引用上游 phase 的产物**（实测·第三处）：想在 `grounded_report_chain_v1`
+      的 `plan` 格写 `inputs: [scouting_report]` ⇒ 运行期报
+      「declared input artifact scouting_report is not in the artifact store」——
+      `inputs` 里的 id 被**逐字**当制品 id 解析，而 run 内制品的真 id 是
+      `{scouting task id}:scouting_report`，**任务 id 在编排期才生成** ⇒ 协议里写不死。
       **已排除的假解法（实测）**：把 `with_retrieval_context` 从「任务前」移到「运行链之后」——
       **无效**（(a) 的 claim 关系仍不在），且会破坏 GOAL-078 的「上游会话为空」反证臂 ⇒ **已回退**。
       **解法（下一 cycle，属产品结构改动）**：让**上游相位的产物**能作为下游的声明输入

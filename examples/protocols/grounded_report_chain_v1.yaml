@@ -91,6 +91,12 @@ phases:
       - {provider_id: ncbi_eutils, tool_name: literature.search}
       - {provider_id: europe_pmc, tool_name: literature.read}    # 立题的合约：产物 `research_plan` 存在 + 覆盖**两维**（计数 + 性质）。
     task_contract: research_report_plan
+    # GOAL-20261016-081 EC-04：**上游 `scouting` 相的产物**应当作为本格的声明输入
+    # （「立题站在检索之上」的机械形态）。**但今天做不到**，实测：`inputs` 里的 id 被
+    # **逐字**当制品 id 解析（`declared input artifact scouting_report is not in the
+    # artifact store`），而 run 内制品的真 id 是 `{scouting task id}:scouting_report`
+    # —— 任务的 id 在**编排期**才生成 ⇒ 协议里无法写死。⇒ 需要一个新的「跨相引用」形态
+    # （本 GOAL 的 `blocker` 解法 A）；**不是**把门放宽。
     inputs: [input-brief:real_research_v1]
     outputs: [research_plan]
     timeout_seconds: 300
