@@ -1,0 +1,12 @@
+-- 028_review_finding_reviewer_model: 评审判词点名**它的模型**（GOAL-20261018-085 EC-01）。
+--
+-- 为什么落库：`reviewed_by` 装的是**agent 实例**（`gate:<agent id>`），而 GOAL-084 已证明
+-- agent 名与底层模型可以完全脱钩（出厂目录里四个 ModelDefinition 曾共用同一个
+-- `model_name`）⇒ 只凭 `reviewed_by`，「这条评审是谁判的」**不可归因**。
+--
+-- `reviewer_model` 的形态是 `endpoint/model_name`（与 `preflight/review_independence`
+-- 的解析面**同源**），因此「两个评审者是不是同一个底层模型」可以直接在落库事实上判。
+--
+-- **纯新增列、可空**：既有行的该列为 NULL = 未声明该面（不是「同一个模型」）；
+-- 既有读面 / 写面在未提供该值时的行为逐字不变。
+ALTER TABLE review_findings ADD COLUMN IF NOT EXISTS reviewer_model TEXT;

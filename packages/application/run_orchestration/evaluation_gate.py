@@ -157,12 +157,18 @@ def evaluate_task_gate(
     inputs: EvaluationInputs,
     *,
     reviewer: str,
+    reviewer_model: str | None = None,
 ) -> GateOutcome:
     """对一次任务的全部验收标准求值，产出 ReviewFinding 与 Decision。
 
     `schema_check` 随 `EvaluationInputs` 一起进来（GOAL-014 EC-02 / F-11 的四维之一）：
     它是**按合约声明的 `output_schema` 由装配方给出**的校验回调；未注入时域函数维持
     既有的 fail-closed 判词（`schema validator unavailable`）。
+
+    `reviewer_model`（GOAL-20261018-085 EC-01）：评审者**跑在哪个模型上**的稳定串形
+    （`endpoint/model_name`）。缺省 `None` = 调用方未声明该面 ⇒ 判词的 `reviewer_model`
+    保持 `None`（既有调用点逐字不变）；记上模型**不等于**「独立」—— 独立性由
+    `evaluation.panel_verdict.aggregate_panel` 按目标是否互异来判。
     """
     # GOAL-20261008-035 EC-03：合约声明了 `REVIEW_SCORE` 时，分数从**它自己声明的**字段
     # 路径取（评审交付物里评审判给自己的数）；取不到即维持 fail-closed。显式传入的分数
@@ -179,20 +185,48 @@ def evaluate_task_gate(
     )
     evaluations = _apply_consumption(evaluations, effective)
     passed = contract_passes(evaluations)
+    return _gate_outcome(
+        task,
+        evaluations,
+        passed,
+        GateAttribution(reviewer=reviewer, reviewer_model=reviewer_model),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class GateAttribution:
+    """**谁判的**：agent 实例 + 它跑在哪个模型上（GOAL-20261018-085 EC-01）。
+
+    两者分开：`reviewer` 是既有语义（`gate:<agent id>`，逐字不变），`reviewer_model`
+    是新增的**可归因到模型**那一格（`endpoint/model_name`，缺省 `None` = 未声明）。
+    """
+
+    reviewer: str
+    reviewer_model: str | None = None
+
+
+def _gate_outcome(
+    task: ResearchTask,
+    evaluations: Sequence[CriterionEvaluation],
+    passed: bool,
+    who: GateAttribution,
+) -> GateOutcome:
+    """把求值结果包成 `GateOutcome`（判词 + 裁决；两处构造集中在这里）。"""
     verdict = "PASS" if passed else "REJECT"
     finding = ReviewFinding(
         id=f"finding:{task.id.value}:gate",
         review_type="acceptance_gate",
         verdict=verdict,
         findings=[item.reason for item in evaluations],
-        reviewed_by=reviewer,
+        reviewed_by=who.reviewer,
         reviewed_at=Timestamp.now(),
+        reviewer_model=who.reviewer_model,
     )
     decision = Decision(
         id=f"decision:{task.id.value}:gate",
         decision="APPROVE" if passed else "REJECT",
         rationale="; ".join(item.reason for item in evaluations),
-        decided_by=reviewer,
+        decided_by=who.reviewer,
         decided_at=Timestamp.now(),
     )
     return GateOutcome(

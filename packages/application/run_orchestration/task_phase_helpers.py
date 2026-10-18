@@ -34,6 +34,7 @@ from packages.application.run_orchestration.result_handler import (
     count_retrieved_sources,
     register_session_result,
 )
+from packages.application.run_orchestration.review_attribution import reviewer_model_of
 from packages.domain.enums import MemoryType
 from packages.domain.events import EventType
 from packages.domain.evidence import Evidence
@@ -242,6 +243,7 @@ def evaluate_gate(
             **_experiment_facts(deps, experiment),
         ),
         reviewer=f"gate:{tctx.spec_context.agent.id}",
+        reviewer_model=reviewer_model_of(tctx.spec_context),
     )
 
 

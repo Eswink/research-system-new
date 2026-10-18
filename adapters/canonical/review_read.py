@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from packages.application.evaluation.panel_verdict import aggregate_panel
 from packages.application.ports.errors import InvalidInputError
 
 
@@ -46,8 +47,32 @@ def _finding_row(scoped: Any) -> dict[str, object]:
         #: 逐条判词（**逐字**：域在求值点落下的原文，读面不重排、不重算）。
         "verdicts": list(finding.findings),
         "reviewed_by": finding.reviewed_by,
+        #: 评审者**跑在哪个模型上**（`endpoint/model_name`；GOAL-20261018-085 EC-01）。
+        #: `None` = 该条判词未声明该面 —— **不是**「同一个模型」，也不得读成「独立」。
+        "reviewer_model": finding.reviewer_model,
         "reviewed_at": timestamp.value.isoformat() if timestamp else None,
     }
+
+
+def _panel_rows(records: tuple[Any, ...]) -> list[dict[str, object]]:
+    """本 run 的**评审小组**聚合（advisory；GOAL-20261018-085 EC-02/EC-03）。
+
+    少于两份可归因的判词 ⇒ 该组不出现（**单评审不聚合**：既有读面逐字不变）。
+
+    **为什么按 `(task_id, contract_id)` 分组而不是整 run 一把聚合**：同一 run 里不同任务
+    评的是**不同产物**（审计 phase 与 peer_review phase 各有各的判词）；混在一票里会让
+    「多数票」失去对象。组序按键排序 ⇒ 稳定。
+    """
+    groups: dict[tuple[str, str], list[Any]] = {}
+    for scoped in records:
+        groups.setdefault((str(scoped.task_id), str(scoped.contract_id)), []).append(scoped.finding)
+    rows: list[dict[str, object]] = []
+    for (task_id, contract_id), group in sorted(groups.items()):
+        verdict = aggregate_panel(group)
+        if verdict is None:
+            continue
+        rows.append({"task_id": task_id, "contract_id": contract_id, **verdict.as_payload()})
+    return rows
 
 
 def review_read(findings: Any | None, args: dict[str, object]) -> dict[str, object]:
@@ -64,10 +89,16 @@ def review_read(findings: Any | None, args: dict[str, object]) -> dict[str, obje
     if not run_id:
         raise InvalidInputError("review_read requires a non-empty run_id")
     records = findings.for_run(run_id)
+    panels = _panel_rows(records)
     return {
         "run_id": run_id,
         "count": len(records),
         "reviews": [_finding_row(scoped) for scoped in records],
+        #: 评审小组的 advisory 聚合（逐票 + 分歧 + 独立性）。**空列表** = 本 run 没有
+        #: 任何任务上存在两份及以上可归因判词 —— 那是「没有小组」这个事实，不是读面失败
+        #: （读面失败由 `InvalidInputError` 点名，两者不可混淆）。
+        "panels": panels,
+        "panel_count": len(panels),
     }
 
 

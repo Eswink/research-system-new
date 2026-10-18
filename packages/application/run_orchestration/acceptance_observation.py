@@ -34,6 +34,10 @@ def acceptance_finding(
 
     判词逐字来自域函数（`evaluation.reason`），只加判据名前缀 —— 不加前缀读者无法从
     读面知道「这句话是哪条判据说的」，而失败路径早已是这个约定。
+
+    `reviewer_model`（GOAL-20261018-085 EC-01）**原样搬运**：不搬运的话，门上的归因
+    会在落库这一步丢掉，读面又只剩 `reviewed_by`（agent 名）—— 「评审是谁判的」
+    依旧不可归因。
     """
     return ScopedReviewFinding(
         finding=ReviewFinding(
@@ -43,6 +47,7 @@ def acceptance_finding(
             findings=[criterion_line(item) for item in gate.evaluations],
             reviewed_by=gate.review_finding.reviewed_by,
             reviewed_at=gate.review_finding.reviewed_at,
+            reviewer_model=getattr(gate.review_finding, "reviewer_model", None),
         ),
         run_id=run_id,
         task_id=task_id,

@@ -42,7 +42,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_review_attribution.py -q`
       ⇒ 全绿；判据覆盖：判词带模型身份 / 身份取**解析后的目标**（非 agent 名）/
       解析不了 ⇒ 点名 / 既有 `reviewed_by` 语义逐字不变。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **多评审可聚合成一条结论**：一个 phase 上**多于一个**评审 agent 时，它们的独立判词
@@ -53,7 +53,7 @@ exit_criteria:
       `tests/application/test_review_panel_aggregation.py` ⇒ 全绿；判据覆盖：
       两票一致 / 两票相反（平票点名） / 一票失败一票通过（部分失败不折算成通过）/
       单评审 ⇒ 不聚合（既有语义逐字不变）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **独立性可判且与 GOAL-084 同源**：聚合结论里必须能读出**评审者之间是否独立**
@@ -62,7 +62,7 @@ exit_criteria:
       **反证**：把第二个评审者指回与第一个相同的模型 ⇒ 结论翻转。
     verify: >-
       同一判据文件；成对断言；判词**点名**重复的那个目标。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **接进产品路径且默认零回归**：上述能力在**运行链**上生效（不是只在测试里）；
@@ -72,7 +72,7 @@ exit_criteria:
       `tests/e2e/test_review_panel_on_the_run_path.py` ⇒ 全绿；
       **按压**：关掉聚合 ⇒ 该 run 的读面只剩单票、聚合缺席（可判）；
       既有 `tests/` 全绿。
-    status: PENDING
+    status: PASS
   - id: EC-05
     criterion: >-
       **自举收口**：验证器进树（复用 `tools/closeout_recheck_assertions` 标准断言集）+
@@ -134,8 +134,9 @@ escalation_triggers:
     canonical 记录的含义改变，属 Canonical State 边界）—— 停下登记；
     **新增**列 / **新增**并列结构不算（本 GOAL 只做新增）
 
-child_plans: []
-latest_recheck: null
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261018-520-goal-085-verdict-names-its-model-and-panel-aggregates.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-521-goal-085-verdict-attribution-and-panel.md
 memory_entries: []
 ---
 
@@ -239,6 +240,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01/02（归因 + 聚合） |
+| 1 | PLAN-20261018-520 | 待本 cycle 推送后回填 | 新判据 **29 条**（归因 10 / 聚合 13 / 运行路径 6）；application **1201**；含 e2e 宽面 **3086 passed / 94 skipped**；静态门 `ruff` / `format` / `mypy`（1279 files）全绿；as-is m0 **23/23** | 见「CI 台账」 | 0（首轮 m0 抓到三处自查缺陷：两个函数参数 >5、e2e 判据 5 处 mypy 错 —— 均已修） | EC-01…EC-04 达成；**EC-05 待做** | 收口 cycle：EC-05 自举复检 + 阶梯记账 + 两树同结论 |
 
 ## CI 台账
 
@@ -255,3 +257,4 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-18 | **ACTIVE** | **建档**：承 GOAL-084 收口后按阶梯 `下一级` 续推（序 53）。**建档实测四条**：① `evidence.ReviewFinding` 无 `model_identity`，SQLite 表也无该列；② `reviewed_by` 逐字是 `gate:<agent id>`（agent 名，不是模型）；③ `run_panel` / `LlmReviewer` / `ReviewAssignment` 在产品代码**零构造点** ⇒ 多评审互不相干；④ `eval_result.ReviewerFinding` 有 `model_identity`，但那是另一条链 ⇒ 同一概念一有一无。 |
+| 2026-10-18 | **ACTIVE**（cycle 1 落地） | EC-01…EC-04 达成：判词带 `reviewer_model`（`endpoint/model_name`，与 GOAL-084 的解析面同源）、多票确定性聚合（平票与无身份者**分开点名**、advisory **不夺真相权**）、独立性与 GOAL-084 同源（同目标两个实例 ⇒ 不独立并点名）、读面与落库链都带归因。新判据 **29 条**；零回归 **1201 + 3086**；as-is m0 **23/23**。**EC-05（自举复检）待做**。 |

@@ -131,6 +131,13 @@ class ReviewFinding:
     findings: list[str] = field(default_factory=list)
     reviewed_by: str | None = None
     reviewed_at: Timestamp | None = None
+    #: 评审者**跑在哪个模型上**（GOAL-20261018-085 EC-01）：`(endpoint_id, model_name)`
+    #: 的稳定串形 `endpoint/model_name`，与 `preflight/review_independence` 的解析面
+    #: **同源**。`reviewed_by` 装的是 agent 实例（`gate:<agent id>`），而 agent 名与
+    #: 底层模型可以完全脱钩 ⇒ 没有这一格，「这条评审是谁判的」在产品上不可归因。
+    #: **缺省 `None` = 未声明该面**（既有构造点逐字不变）；`None` 不是「同一个模型」，
+    #: 也不得被读成「独立」—— 判据按 `None` **点名**。
+    reviewer_model: str | None = None
 
     def __post_init__(self) -> None:
         if not self.id:

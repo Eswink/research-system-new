@@ -154,6 +154,14 @@ pytest tests/application tests/api tests/loaders tests/contracts tests/architect
 - `R-M1` **未收口** ⇒ **不得**宣称项目安全；
 - 投递语义**不是**「恰好一次」—— **明确否认**。
 
+
+## CI 台账（逐提交）
+
+| 提交 | run | job 结论 |
+| --- | --- | --- |
+| `e7d43001`（代码面） | **零 run** | `GET /actions/runs?head_sha=e7d4300179cd…` ⇒ `total_count = 0`。**原因**：两次提交一次性推送，GitHub 只为推送 tip 建 run ⇒ 由 `6c6d9456` 的 run `covered_by`（连续祖先、记录提交只改 `.cursor/plans/**`）。**零 run 不等于绿**：本行只登记「没有自己的 run」这个事实 |
+| `6c6d9456`（tip） | [M0 39120372117](https://github.com/Eswink/research-system-new/actions/runs/39120372117) / [Push 39120371810](https://github.com/Eswink/research-system-new/actions/runs/39120371810) | **八 job 全 `success`** + 三条 CodeQL `success`；`run_attempt=1`、零 `cancelled`、零 rerun |
+
 ## 结论
 
 **PASS**。EC-01…EC-04 各有可复核读数（21 条新判据 + 5 条异构专项 + 28 条受影响 API），
