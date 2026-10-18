@@ -141,7 +141,7 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261018-526-goal-087-ec01-04-a-rejecting-reviewer-does-not-cancel-the-panel.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-527-goal-087-a-rejecting-reviewer-does-not-cancel-the-panel.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-528-goal-087-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -247,7 +247,7 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01/02/03/04 |
 | 1 | PLAN-20261018-526 | `3128efb0` | 新判据 **3 条**（运行链成对）；application+api+contracts **2411 passed / 77 skipped**；e2e **363 passed / 17 skipped**；静态门全绿 | 见「CI 台账」 | 1（首轮真回归：组末判定误吃 `CONTINUE` 容忍失败 ⇒ 三处既有用例变红；已按「只认本模块记账」修正） | EC-01…EC-04 达成 | 收口（EC-05） |
-| 2 | （收口 cycle，无新子 PLAN） | 待回填 | 验证器 **60 条全绿**；两树同结论；as-is m0 **23/23** | 见「CI 台账」 | — | 无（EC 全达成） | **收口** |
+| 2 | （收口 cycle，无新子 PLAN） | `0562bbf9` + 收口提交 | 验证器 **60 条全绿**；两树逐行相同 + `sha256` 一致；as-is m0 **23/23**；治理通过；凭据四面 `offenders=0` | 见「CI 台账」 | 1（首跑 `python/tests` 判红：`_run_group_task` 54 行超门 ⇒ 成功记账搬进 `review_panel_judging`，runner 回到 440 行） | 无（EC 全达成） | **收口** |
 
 ## CI 台账
 
@@ -265,3 +265,4 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-18 | **ACTIVE** | **建档**：承 GOAL-086 收口后按阶梯 `下一级` 续推（序 55，预算 `max_goals: 55` 的**最后一格**）。**建档实测两条**：① `_run_group_task` 在 `step.failure` 非空时立即返回失败 ⇒ 组内后续任务不跑；② 实测两位评审者都判负 ⇒ `state: FAILED, records: 1, panels: []`（只有 `reviewer_a` 落库）⇒ 分歧在出现之前被短路。**已有 `on_task_failure: CONTINUE` 但语义不同**（那让 run 收敛 `DEGRADED`；本 GOAL 要判负仍 `FAILED`，只改判定时机与可见性）。 |
+| 2026-10-18 | **ACHIEVED**（cycle 2 收口） | EC-01…EC-05 全部 `PASS`。EC-05：验证器本树 **60 条全绿**；两树逐行相同且 `sha256` 一致（`0ede4637…`）；as-is m0 **23/23**（在全部记录写入之后、静止工作树）；治理通过；凭据四面 `offenders=0`。阶梯两个面都由判词钉住；程序表序 55 登记 ⇒ 预算 **55/55 触顶**（按宪章规则做战役级核算，见交付报告）。 |
