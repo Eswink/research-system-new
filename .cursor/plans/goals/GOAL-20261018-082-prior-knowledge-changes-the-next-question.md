@@ -2,7 +2,7 @@
 id: GOAL-20261018-082
 slug: prior-knowledge-changes-the-next-question
 title: 前序知识改变下一轮立题（跨 run 记忆/计划进立题）
-status: ACTIVE
+status: BLOCKED
 created_at: 2026-10-18
 updated_at: 2026-10-18
 owners:
@@ -67,7 +67,7 @@ exit_criteria:
     verify: >-
       live 实跑（`requires_live_llm` + 显式开关）⇒ 终态 `SUCCEEDED` 且两条读数的归档在树：
       提示词带前序记忆标识 / 计划正文引用它；**按压**：清空前序记忆 ⇒ 第二轮提示词里没有那一段。
-    status: PENDING
+    status: BLOCKED
     blocker: >-
       **实测阻塞点（2026-10-18 cycle 1，三次真实 run）**：**产品路径已成立** —— 立题会话的
       提示词里**两段都在场**（前序知识 302 字符 + 检索 595 字符），`contracts_with_prompts`
@@ -82,6 +82,22 @@ exit_criteria:
       **可能的下一步（需拍板，不在本 cycle 射程）**：把「前序知识」的呈现形态改成与检索段
       **同一形状**（例如给每条记忆一个 PMID/DOI 式的稳定短标识并放进同一段），或允许
       「内容采纳」作为可判证据（例如判「计划里的参数值来自前序记忆」而非「引用了 id」）。
+    blocked_reason: >-
+      **为什么记 BLOCKED 而不是改判「内容采纳」**（cycle 2 的决定，有实测依据）：
+      本轮评估过把判据从「引用 `memory_id`」改成「采纳记忆内容」——**否决**，理由是它会**假绿**：
+      前序记忆里写的是 `duplicate_pairs` 应当固定，而三次真实 run 的计划里该参数取值为
+      **30 / 30 / 10**（不一致）⇒ 「文中出现 `duplicate_pairs`」既可能是采纳，也可能只是
+      实验参数白名单里本来就有的名字，**两件事不可区分**。把不可区分的形态写成判据，等于
+      放宽判据（GOAL 的 `forbidden` 明确禁止）。
+      **阻塞点（逐条）**：
+      ① **模型侧**：两段来源材料同时在提示词里时，`deepseek-v4-flash-vision` 只按「本次检索」
+         那一段的标识（DOI / PMID）写正文，对「前序知识」段只做**不可判的内容采纳**；
+      ② **判据侧**：本仓**没有**可靠的「记忆内容 → 计划正文」同源判据（内容短、且落在
+         参数白名单词汇里，任何子串判据都会假绿）；
+      ③ **产品侧已无缺口**：提示词两段都在场（302 + 595 字符）、与读面逐字对得上、空库按压成立。
+      **解除条件**（下一轮或人工拍板）：给每条记忆一个**DOI 式的稳定短标识**并让它成为
+      引用契约的一部分（改呈现形态），或引入「计划引用了哪条记忆」的结构化字段（改协议）。
+      两条都属产品结构改动，需单独建档。
 
   - id: EC-05
     criterion: >-
@@ -95,7 +111,14 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      **cycle 2 落地**：`tools/verify_goal082_closeout.py` + `tools/goal082_closeout_assertions.py`
+      （验证器**加载自己那份**断言集）⇒ 本树 `--verdict-only` **62 PASS / 0 FAIL**；
+      `tools/two_tree_recheck.py` 两树判词**逐行相同 + `sha256` 相同**；as-is m0
+      **`PASS: profile=m0; 23 deterministic checks`**（静止工作树）；`validate.py` 通过；
+      `credential_audit.py` 四面 `offenders=0`。
+
 
 budget:
   max_cycles: 14
@@ -147,7 +170,8 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261018-507-goal-082-ec01-prior-knowledge-reaches-the-plan-prompt.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-508-goal-082-ec01-prior-knowledge.md
+  - .cursor/plans/tasks/PLAN-20261018-509-goal-082-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-510-goal-082-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -254,6 +278,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | PLAN-20261018-509（EC-05） | 见「CI 台账」 | 验证器 **62 PASS / 0 FAIL**；两树 `sha256` 相同；as-is m0 **23/23**；治理绿；凭据审计四面 `offenders=0` | 见「CI 台账」 | 2 次（见「cycle 2 的修复记录」） | EC-05 **PASS**；**EC-04 记 BLOCKED**（改判「内容采纳」被否决：实测 30/30/10 不一致 ⇒ 不可判别）⇒ **本 GOAL BLOCKED**，留人工决策 | 无（阻塞点需产品结构改动） |
 | 1 | PLAN-20261018-507 | 见「CI 台账」 | EC-01/02/03 判据 **9 + 3 + 3 passed**（含读面同源与两条反证）；**三次真实 run**：提示词两段都在场（302 + 595 字符），`memory_id` **零命中** ⇒ **EC-04 未达成**；受影响套件 **1408 passed, 1 skipped**；受撞 e2e **24 passed** | 见「CI 台账」 | 2 次（见「cycle 1 的修复记录」） | EC-01/02/03 **PASS**；**EC-04 未达成（点名阻塞点：模型不按 id 引用）**；EC-05 待办 | 下一 cycle = EC-04 的第二条路（判「内容采纳」而不是「id 引用」，或改呈现形态）|
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01（记忆摘录进立题会话） |
 
@@ -293,5 +318,6 @@ memory_entries: []
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-18 | **BLOCKED** | **cycle 2 收口**（EC-05 → PASS）：验证器 **62 条判词全 PASS**、两树 `sha256` 相同、as-is m0 **23/23**（静止工作树）、治理与凭据审计绿；阶梯「迭代」行前移并收录本 GOAL。**EC-04 记 BLOCKED**：评估过改判「内容采纳」——**否决**，因为三次 run 的 `duplicate_pairs` 取值为 **30 / 30 / 10**（不一致，且该词本就在实验参数白名单里）⇒ 子串判据会**假绿**。产品侧无缺口（提示词两段在场、与读面逐字对得上、空库按压成立）；阻塞点在**模型侧**（不按 `memory_id` 引用）与**判据侧**（无可靠的内容同源判据）。**解除条件**：给记忆一个DOI 式稳定短标识，或引入结构化的「引用了哪条记忆」字段（均属产品结构改动，需单独建档）。 |
 | 2026-10-18 | **ACTIVE** | **cycle 1 落地**（PLAN-507）：**前序知识进立题会话**。新增装配器（只读 `MemoryStore.query`、只收 `PROJECT`/`ORGANIZATION`、`expires_at` 过 ⇒ 排除、`review_after` 过 ⇒ 标注、逐条截断**复用** `retrieval_context` 上限）+ 渲染器（与检索段**并列**、先前序后检索）+ 两个组合根接线。**EC-01/02/03 → PASS**（9 + 3 + 3 passed，含读面同源与两条反证）。**EC-04 未达成**：三次真实 run 上提示词两段都在场（302 + 595 字符），但模型**不按 `memory_id` 引用**（只采纳内容：`duplicate_pairs: 30` 来自那条 lesson）⇒ 按降级梯记未达成 + 点名阻塞点，**不**伪造。EC-05 待办。 |
 | 2026-10-18 | **ACTIVE** | **建档**：承 GOAL-081 收口后宪章「第四件」（收口后立即开下一个）。**定位** = 阶梯「检索」/「计划」/「迭代」**三域的共同下一格**。**建档实测四条**（逐条带命令）：① 23 份协议 + 全部合约**零**声明 `memory.read`；② 记忆写入缺省 `MemoryTier.RUN`（跨 run 读不到）；③ 提示词装配面三处对 `memory` 的提及为 0/0/1；④ `cross_run_knowledge_v1` 自陈「不声称改变了后续 run 的科学结论」⇒ 已判到的是「读到了」而不是「立题因它而不同」。 |
