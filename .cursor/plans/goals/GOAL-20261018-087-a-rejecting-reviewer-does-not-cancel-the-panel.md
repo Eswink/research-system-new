@@ -255,7 +255,11 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
-| （建档提交，待回填） | 待回填 | 待回填 | 待回填 |
+| 建档（序 55 登记，无子 PLAN） | `3128efb0` 之前的记录提交 | **零 run** | 与 `3128efb0` 同一次推送内的中间提交 ⇒ 由 `677954d4` 的 run `covered_by` |
+| cycle 1 落地（声明键 + 组级判定 + 分歧可见 + 连带修 `dissent`） | `3128efb0` | **零 run** | 同上（产品面与判据面同批推送） |
+| cycle 1 记录（PLAN-526 / RECHECK-527 / ALL_PLAN） | `b79aa5bf` | **零 run** | 同上（记录提交） |
+| 规模门修复（成功记账搬进 `review_panel_judging`） | `0562bbf9` | **零 run** | 同上 |
+| EC-05 收口（两树判词归档 + RECHECK-528 + GOAL 终态）**tip** | `677954d4` | [M0 39173001935](https://github.com/Eswink/research-system-new/actions/runs/39173001935) / [Push 39173001537](https://github.com/Eswink/research-system-new/actions/runs/39173001537) | **M0 八 job 全 `success`**（`container-quality` / `quality-{ubuntu,windows}-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
 
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
