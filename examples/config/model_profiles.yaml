@@ -15,7 +15,8 @@ model_profiles:
       - CHAT
       - TOOL_CALLING_NATIVE
 
+  # 独立评审 profile（GOAL-20261018-084）：primary 是**底层 model_name 与生产者不同**的
+  # 第三方模型；**fallback 刻意留空** —— 原先它回落到 `research_alpha`（= 生产者模型），
+  # 那正是本轮要消灭的形态：一个名字叫「独立」的 profile 却能落到生产者的同一个模型上。
   critic_independent:
-    primary: reviewer_gamma
-    fallback:
-      - research_alpha
+    primary: reviewer_independent

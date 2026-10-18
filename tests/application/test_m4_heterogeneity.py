@@ -127,6 +127,12 @@ def test_heterogeneity_rejects_shared_writer_reviewer_model() -> None:
 
 
 def test_heterogeneity_allows_distinct_models() -> None:
+    """**不同底层模型**（`model_name` 不同）⇒ 判绿。
+
+    GOAL-20261018-084 收紧：本用例原先用「两个不同 model id、但 `model_name` 相同」的副本
+    当作「不同模型」—— 按新口径那是**同一个底层模型**。这里把 `model-2` 改成
+    **`model_name` 也不同**；谓词（`== []`）本身未变。
+    """
     catalog = _catalog(
         roles={
             _WRITER_ROLE_ID: _panel_role(
@@ -147,7 +153,9 @@ def test_heterogeneity_allows_distinct_models() -> None:
         catalog,
         models={
             **catalog.models,
-            "model-2": replace(catalog.models["model-1"], id="model-2"),
+            "model-2": replace(
+                catalog.models["model-1"], id="model-2", model_name="other-underlying-model"
+            ),
         },
     )
     plan = _compile(
@@ -158,6 +166,48 @@ def test_heterogeneity_allows_distinct_models() -> None:
         ]),
     )
     assert check_heterogeneity(plan, fixtures.context(catalog)) == []
+
+
+def test_a_model_with_the_same_underlying_name_is_not_distinct() -> None:
+    """**反证**：两个 model id 不同、但 `(endpoint, model_name)` 相同 ⇒ **判违规**。
+
+    这正是 GOAL-20261018-084 建档实测的出厂形态（`research_alpha` vs `reviewer_gamma`）：
+    id 不同**不构成**独立性证据。本用例是「按 id 比」与「按解析目标比」的机械分界。
+    """
+    catalog = _catalog(
+        roles={
+            _WRITER_ROLE_ID: _panel_role(
+                _role(_WRITER_ROLE_ID, capabilities=["deliverable.write"]),
+                ReviewPanelRole.WRITER,
+            ),
+            _REVIEWER_ROLE_ID: _panel_role(
+                _role(_REVIEWER_ROLE_ID, capabilities=["review.write"]),
+                ReviewPanelRole.REVIEWER,
+            ),
+        },
+        agents={
+            "writer": _agent("writer", _WRITER_ROLE_ID),
+            "reviewer": _agent("reviewer", _REVIEWER_ROLE_ID, model_id="model-2"),
+        },
+    )
+    catalog = replace(
+        catalog,
+        models={
+            **catalog.models,
+            # 与 model-1 **同一个** model_name + endpoint，只是 id 不同
+            "model-2": replace(catalog.models["model-1"], id="model-2"),
+        },
+    )
+    plan = _compile(
+        catalog,
+        _protocol([
+            RoleRequirement(_WRITER_ROLE_ID, 1, 1),
+            RoleRequirement(_REVIEWER_ROLE_ID, 1, 1),
+        ]),
+    )
+    findings = check_heterogeneity(plan, fixtures.context(catalog))
+    assert [item.code for item in findings] == ["HETEROGENEITY_VIOLATION"], findings
+    assert "endpoint-1/fixture-model" in findings[0].message, findings[0].message
 
 
 def test_heterogeneity_applies_to_custom_role_ids_by_attribute() -> None:

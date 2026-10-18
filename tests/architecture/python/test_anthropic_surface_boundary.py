@@ -26,15 +26,18 @@ from pathlib import Path
 
 from adapters.contracts.models_loaders import (
     load_llm_endpoints,
+    load_model_profiles,
     load_models,
 )
 from adapters.contracts.protocol_loaders import load_protocol
 from adapters.contracts.roles_loaders import load_agents
+from packages.domain.enums import ModelBindingMode
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PROTOCOL = "examples/protocols/console_demo_research_v1.yaml"
 AGENTS = "examples/config/agents.yaml"
 MODELS = "examples/config/models.yaml"
+MODEL_PROFILES = "examples/config/model_profiles.yaml"
 ENDPOINTS = "examples/config/llm_endpoints.yaml"
 
 LIVE_TEST = REPO_ROOT / "tests/e2e/test_ec04_live_first_run.py"
@@ -58,17 +61,32 @@ _BACKTICK = re.compile(r"`([^`]+)`")
 
 
 def _run_leg_endpoint_protocols() -> dict[str, str]:
-    """协议 phase 的 `required_roles` → agent → 模型 → 端点 → 协议（run 腿的真实链条）。"""
+    """协议 phase 的 `required_roles` → agent → 模型 → 端点 → 协议（run 腿的真实链条）。
+
+    **GOAL-20261018-084**：agent 的绑定可以是 `EXPLICIT_MODEL` 或 `MODEL_PROFILE`；
+    profile 形态（如 `reviewer_a` → `critic_independent`）必须先解析到它的 **primary**
+    才能取端点 —— 否则这条判据会因「profile 名不是模型名」而误红。
+    谓词未变：仍然判**该 run 消费的模型都在哪一面**。
+    """
     protocol = load_protocol(PROTOCOL)
     roles = {pool.role for phase in protocol.phases for pool in phase.required_roles}
     agents = load_agents(AGENTS)
     models = load_models(MODELS)
+    profiles = load_model_profiles(MODEL_PROFILES)
     endpoints = load_llm_endpoints(ENDPOINTS)
     resolved: dict[str, str] = {}
     for agent in agents.values():
         if agent.role not in roles:
             continue
-        model_id = agent.model_binding.value
+        binding = agent.model_binding
+        if binding.mode is ModelBindingMode.MODEL_PROFILE:
+            profile = profiles.get(str(binding.value))
+            assert profile is not None, (
+                f"agent {agent.id!r} binds unknown profile {binding.value!r}"
+            )
+            model_id: str | None = profile.primary
+        else:
+            model_id = binding.value
         assert model_id is not None, f"agent {agent.id!r} has a binding with no model value"
         model = models.get(model_id)
         assert model is not None, f"agent {agent.id!r} binds unknown model {model_id!r}"

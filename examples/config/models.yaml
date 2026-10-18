@@ -49,3 +49,47 @@ models:
       STREAMING: *user_declared_supported
       STRUCTURED_OUTPUT_PROMPTED: *user_declared_supported
       TOOL_CALLING_NATIVE: *user_declared_supported
+
+  # 第三方评审模型（GOAL-20261018-084 EC-01/EC-02）：**底层 model_name 与生产者不同**
+  # （`deepseek-v4-flash-vision` vs `glm-5.3`），这是「评审独立于生产者」可判的前提。
+  # 读数来源（2026-10-18 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
+  #   - `GET /v1/models` 回报该 id `is_ready: true`、`max_context_length = 1048576`；
+  #   - `POST /v1/chat/completions` ⇒ HTTP 200、`content: "OK"`、**返回名 = 声明名** `glm-5.3`
+  #     （与主模型的 `deepseek-v4-flash-vision` → `dsv4-flash-vision` 不同，仍属 §4
+  #     「可重复配置」而非「完全模型可复现」）；
+  #   - `tool_choice: required` ⇒ 真返回标准 `tool_calls`（`TOOL_CALLING_NATIVE`）；
+  #   - `stream: true` ⇒ SSE chunk（`STREAMING`）；`usage` 逐次回报（`USAGE_REPORTING`）。
+  #   - **`STRUCTURED_OUTPUT_NATIVE` 不声明**：provider 的 `/v1/models` 把
+  #     `structured_outputs` 声称支持，但实跑 `response_format: json_schema` 时**多出 schema
+  #     之外的键且把 string 写成 number** ⇒ 实测未强制 ⇒ 声明为 `PROMPTED`（按实测，不按声称）。
+  reviewer_independent:
+    endpoint: main
+    display_name: Reviewer Independent (GLM-5.3, third-party reviewer)
+    model_name: glm-5.3
+    context_window_tokens: 1048576
+    capabilities:
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported
+      STRUCTURED_OUTPUT_PROMPTED: *user_declared_supported
+      USAGE_REPORTING: *user_declared_supported
+
+  # 第二个第三方评审模型（`max_instances: 2` 的评审 panel 的第二个成员）。
+  # 读数来源（2026-10-18 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
+  #   - `GET /v1/models` ⇒ `is_ready: true`、`max_context_length = 262144`；
+  #   - `POST /v1/chat/completions` ⇒ HTTP 200、`content: "OK"`、**返回名 = 声明名**；
+  #   - `tool_choice: required` ⇒ 真返回标准 `tool_calls`；`stream: true` ⇒ SSE chunk；
+  #     `usage` 逐次回报；
+  #   - `response_format: json_schema` 实测**被遵守**（只回 schema 内的键、类型正确）
+  #     ⇒ 这里是唯一声明 `STRUCTURED_OUTPUT_NATIVE` 的第三方模型（按**实测**，不按声称）。
+  kimi_k2_6:
+    endpoint: main
+    display_name: Kimi K2.6 (third-party reviewer, second panel member)
+    model_name: kimi-k2.6
+    context_window_tokens: 262144
+    capabilities:
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported
+      STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
+      USAGE_REPORTING: *user_declared_supported

@@ -10,8 +10,13 @@ llm_endpoints:
     enabled: true
     discovery:
       enabled: true
+      # GOAL-20261018-084：`glm-5.3` / `kimi-k2.6` 是**第三方评审模型**（与生产侧的
+      # `deepseek-v4-flash-vision` 底层不同）⇒ 发现面必须放行它们，否则
+      # 「评审独立于生产者」只能靠目录声明、无法经发现面核对。
       allow_models:
         - deepseek-v4-flash-vision
+        - glm-5.3
+        - kimi-k2.6
     circuit_breaker:
       failure_threshold: 5
       open_timeout_seconds: 60

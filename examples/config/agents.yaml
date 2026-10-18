@@ -39,15 +39,21 @@ agents:
     runtime_kind: OPENHANDS_NATIVE
     budget_policy_ref: low_cost
 
+  # 评审 agent 绑**底层 model_name 与生产者不同**的模型（GOAL-20261018-084）：
+  # 生产侧 `research_alpha` / `research_fast` 等解析到 `deepseek-v4-flash-vision`；
+  # 评审侧必须落在**不同** `(endpoint, model_name)` 上，「独立复核」才是可判事实。
+  # `reviewer_a` 走 `MODEL_PROFILE critic_independent`（primary = `reviewer_independent`
+  # = `glm-5.3`，**无 fallback**），`reviewer_b` 走 `kimi_k2_6`（`kimi-k2.6`）——
+  # 两个评审者**彼此也不同模型**（`max_instances: 2` 的 panel 不再同质）。
   reviewer_a:
     role: scientific_reviewer
-    model_binding: {type: EXPLICIT_MODEL, value: reviewer_gamma}
+    model_binding: {type: MODEL_PROFILE, value: critic_independent}
     workspace_policy: read_only
     skill_refs: [scientific_review]
 
   reviewer_b:
     role: scientific_reviewer
-    model_binding: {type: EXPLICIT_MODEL, value: coding_beta}
+    model_binding: {type: EXPLICIT_MODEL, value: kimi_k2_6}
     workspace_policy: read_only
     skill_refs: [scientific_review]
 

@@ -130,8 +130,13 @@ def test_load_llm_endpoints_from_fixture() -> None:
     assert endpoint.request_timeout_seconds == 120
     assert endpoint.discovery is not None
     assert endpoint.discovery.enabled is True
-    # intern-ai migration: allow_models now single deepseek entry
-    assert endpoint.discovery.allow_models == ("deepseek-v4-flash-vision",)
+    # intern-ai migration: producer model + the two third-party reviewer models
+    # (GOAL-20261018-084: the review panel must sit on different underlying models)
+    assert endpoint.discovery.allow_models == (
+        "deepseek-v4-flash-vision",
+        "glm-5.3",
+        "kimi-k2.6",
+    )
     assert endpoint.circuit_breaker is not None
     assert endpoint.circuit_breaker.failure_threshold == 5
 
