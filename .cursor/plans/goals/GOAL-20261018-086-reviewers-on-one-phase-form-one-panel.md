@@ -275,6 +275,8 @@ memory_entries: []
 | EC-05 收口资产（验证器 + 断言集 + 两处注册 + 阶梯记账） | `fcd42593` | **零 run** | 同上 |
 | EC-05 收口（两树判词归档 + RECHECK-525 + GOAL 终态）**tip** | `6f0704ae` | [M0 39160852998](https://github.com/Eswink/research-system-new/actions/runs/39160852998) / [Push 39160853687](https://github.com/Eswink/research-system-new/actions/runs/39160853687) | **M0 八 job 全 `success`**（`container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
 
+| CI 台账（记录提交，**最终 tip**） | `37dc9fc0` | [M0 39162266801](https://github.com/Eswink/research-system-new/actions/runs/39162266801) / [Push 39162266363](https://github.com/Eswink/research-system-new/actions/runs/39162266363) | **M0 八 job 全 `success`** + Push-on-main `success`；`run_attempt=1`、零 `cancelled`。只改 `.cursor/plans/**` ⇒ 下面那条自我指涉边界在此闭合。 |
+
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
 
