@@ -141,104 +141,87 @@ def _names_model_names(source: str) -> tuple[str, str, str]:
     )
 
 
-def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
-    """本轮特有的断言（逐条一个判词）。"""
+def _resolver_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-01：解析面在树 + 三个入口 + 零出网。"""
     verdict = toolbox.verdict
     resolver = _text(root, RESOLVER)
-    role_checks = _text(root, ROLE_CHECKS)
-    verdicts: list[Any] = []
-
-    # EC-01：解析面在树 + 三个入口 + 零出网。
-    verdicts.append(verdict("resolver-module-exists", bool(resolver), RESOLVER))
-    verdicts.append(verdict("resolver-entry", RESOLVER_ENTRY in resolver, RESOLVER_ENTRY))
-    verdicts.append(verdict("resolver-by-role", RESOLVER_BY_ROLE in resolver, RESOLVER_BY_ROLE))
-    verdicts.append(verdict("resolver-describe", RESOLVER_DESCRIBE in resolver, RESOLVER_DESCRIBE))
-    verdicts.append(verdict("resolver-uses-target-tuple", TARGET_TUPLE in resolver, TARGET_TUPLE))
-    verdicts.append(
+    banned = imported_roots(resolver) & set(FORBIDDEN_IMPORTS)
+    return [
+        verdict("resolver-module-exists", bool(resolver), RESOLVER),
+        verdict("resolver-entry", RESOLVER_ENTRY in resolver, RESOLVER_ENTRY),
+        verdict("resolver-by-role", RESOLVER_BY_ROLE in resolver, RESOLVER_BY_ROLE),
+        verdict("resolver-describe", RESOLVER_DESCRIBE in resolver, RESOLVER_DESCRIBE),
+        verdict("resolver-uses-target-tuple", TARGET_TUPLE in resolver, TARGET_TUPLE),
         verdict(
             "resolver-states-the-target-identity",
             TARGET_DOC in resolver,
             "解析面必须写明「同一个 (endpoint, model_name) = 同一个底层模型」",
-        )
-    )
-    banned = imported_roots(resolver) & set(FORBIDDEN_IMPORTS)
-    verdicts.append(
+        ),
         verdict(
             "resolver-has-no-outbound-imports",
             bool(resolver) and not banned,
             ",".join(sorted(banned)),
-        )
-    )
+        ),
+    ]
 
-    # EC-02：判定面接上解析面 + 解析失败点名。
-    verdicts.append(
-        verdict("role-checks-imports-resolver", ROLE_CHECK_IMPORT in role_checks, ROLE_CHECK_IMPORT)
-    )
-    verdicts.append(
-        verdict("role-checks-uses-target-labels", ROLE_CHECK_USES in role_checks, ROLE_CHECK_USES)
-    )
-    verdicts.append(
+
+def _judgment_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-02：判定面接上解析面 + 解析失败点名 + 出厂目录真实读数。"""
+    verdict = toolbox.verdict
+    role_checks = _text(root, ROLE_CHECKS)
+    producer_name, reviewer_name, second_name = _names_model_names(_text(root, FACTORY_MODELS))
+    critic_block = _text(root, FACTORY_PROFILES).split(f"{CRITIC_PROFILE}:", 1)[-1]
+    return [
+        verdict(
+            "role-checks-imports-resolver", ROLE_CHECK_IMPORT in role_checks, ROLE_CHECK_IMPORT
+        ),
+        verdict("role-checks-uses-target-labels", ROLE_CHECK_USES in role_checks, ROLE_CHECK_USES),
         verdict(
             "unresolved-role-is-named",
             UNRESOLVED_CODE in role_checks and UNRESOLVED_PROMPT in role_checks,
             "解析失败必须逐条 MODEL_MISSING 点名（不得静默跳过 ⇒ 不得把空集读成「无交集」）",
-        )
-    )
-
-    # EC-02 的真实读数：出厂目录里生产者与评审者的底层 model_name 不同。
-    models_source = _text(root, FACTORY_MODELS)
-    producer_name, reviewer_name, second_name = _names_model_names(models_source)
-    verdicts.append(
-        verdict("factory-producer-model-present", bool(producer_name), PRODUCER_MODEL_NAME)
-    )
-    verdicts.append(
-        verdict("factory-reviewer-model-present", bool(reviewer_name), REVIEWER_MODEL_NAME)
-    )
-    verdicts.append(
-        verdict("factory-second-reviewer-present", bool(second_name), SECOND_REVIEWER_MODEL_NAME)
-    )
-    verdicts.append(
+        ),
+        verdict("factory-producer-model-present", bool(producer_name), PRODUCER_MODEL_NAME),
+        verdict("factory-reviewer-model-present", bool(reviewer_name), REVIEWER_MODEL_NAME),
+        verdict("factory-second-reviewer-present", bool(second_name), SECOND_REVIEWER_MODEL_NAME),
         verdict(
             "factory-reviewer-differs-from-producer",
             bool(reviewer_name) and reviewer_name != producer_name,
             f"{producer_name} vs {reviewer_name}",
-        )
-    )
-    # profile 的 primary 必须指向第三方模型，且 fallback 不再回落生产者模型。
-    profiles_source = _text(root, FACTORY_PROFILES)
-    critic_block = profiles_source.split(f"{CRITIC_PROFILE}:", 1)[-1]
-    verdicts.append(
+        ),
         verdict(
             "critic-primary-is-the-third-party-model",
             "primary: reviewer_independent" in critic_block,
             critic_block.strip()[:80],
-        )
-    )
-    verdicts.append(
+        ),
         verdict(
             "critic-does-not-fall-back-to-the-producer-model",
             "research_alpha" not in critic_block,
             "critic_independent 的 fallback 不得回落生产者模型",
-        )
-    )
+        ),
+    ]
 
-    # EC-03：fallback 展开 + 成对用例。
-    verdicts.append(verdict("resolver-reads-profile-fallback", FALLBACK_READ in resolver))
+
+def _coverage_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-03 / EC-04：fallback 成对用例 + 产品路径三条用例。"""
+    verdict = toolbox.verdict
+    resolver = _text(root, RESOLVER)
     judgment = _text(root, JUDGMENT_TEST)
-    verdicts.append(
-        verdict("fallback-overlap-case", FALLBACK_OVERLAP_CASE in judgment, FALLBACK_OVERLAP_CASE)
-    )
-    verdicts.append(
-        verdict("fallback-cleared-case", FALLBACK_CLEARED_CASE in judgment, FALLBACK_CLEARED_CASE)
-    )
-
-    # EC-04：产品路径的三条用例（正向通过 / 反向按压 / 未声明不判）。
     gate = _text(root, GATE_TEST)
-    verdicts.append(verdict("factory-protocol-passes-case", FACTORY_PASS_CASE in gate))
-    verdicts.append(verdict("reverse-press-case", PRESS_CASE in gate))
-    verdicts.append(verdict("no-panel-is-not-judged-case", NO_PANEL_CASE in gate))
+    return [
+        verdict("resolver-reads-profile-fallback", FALLBACK_READ in resolver),
+        verdict("fallback-overlap-case", FALLBACK_OVERLAP_CASE in judgment, FALLBACK_OVERLAP_CASE),
+        verdict("fallback-cleared-case", FALLBACK_CLEARED_CASE in judgment, FALLBACK_CLEARED_CASE),
+        verdict("factory-protocol-passes-case", FACTORY_PASS_CASE in gate),
+        verdict("reverse-press-case", PRESS_CASE in gate),
+        verdict("no-panel-is-not-judged-case", NO_PANEL_CASE in gate),
+    ]
 
-    # 判据文件在位 + 例数下界。
+
+def _floor_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """判据文件在位 + 例数下界（删掉任一条用例即判红）。"""
+    verdict = toolbox.verdict
+    verdicts: list[Any] = []
     for relative, floor in CASE_FLOORS:
         count = collected_case_count(root, relative)
         verdicts.append(
@@ -252,6 +235,16 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
     for relative in PRIOR_JUDGES:
         verdicts.append(verdict(f"prior-judge-{Path(relative).name}", (root / relative).is_file()))
     return verdicts
+
+
+def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """本轮特有的断言（逐条一个判词；按 EC 分组，每组一个函数）。"""
+    return [
+        *_resolver_verdicts(root, toolbox),
+        *_judgment_verdicts(root, toolbox),
+        *_coverage_verdicts(root, toolbox),
+        *_floor_verdicts(root, toolbox),
+    ]
 
 
 __all__ = [

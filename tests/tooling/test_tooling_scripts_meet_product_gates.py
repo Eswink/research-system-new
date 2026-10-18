@@ -13,15 +13,13 @@
 
 **射程有界、且射程写在判据源码里**（承 MEM-141：只靠文档取射程会被改文案绕过）：
 
-- **必备清单** `IN_SCOPE`（源码里固化，至少含两树入口、标准收口断言集，以及
-  收口验证器本身）—— 每加一个脚本都要**显式**加进来（见下方分区判据）；
+- **必备清单** `IN_SCOPE`（源码里固化，至少含两树入口、标准收口断言集与收口验证器本身）
+  —— 每加一个脚本都要**显式**加进来（见下方分区判据）；
 - **加**规范页点名的脚本（`docs/architecture/RECHECK_SCRIPT_CONVENTIONS.md` 里出现的
   `tools/**.py`）—— 这条是**推导**，不是手改；
-- **不得**是「扫整个 `tools/`」：实测既有 `ruff check` **73 条**错误、
-  `ruff format --check` **10 个文件**待重排，是历史遗留资产 ⇒
-  它们以**清单 + 理由**逐条登记在 `LEGACY_OUT_OF_SCOPE`（不纳入射程），
-  **清单增删必须显式**（`test_scope_partitions_every_tools_script_explicitly` 会把
-  未分类的脚本判红）。
+- **不得**是「扫整个 `tools/`」：既有 `ruff check` **73 条**错误、`ruff format --check`
+  **10 个文件**待重排，是历史遗留资产 ⇒ 以**清单 + 理由**登记在 `LEGACY_OUT_OF_SCOPE`，
+  **清单增删必须显式**（`test_scope_partitions_every_tools_script_explicitly` 会把未分类的脚本判红）。
 """
 
 from __future__ import annotations
@@ -206,7 +204,7 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal077_closeout.py",
     "tools/goal078_closeout_assertions.py",
     "tools/verify_goal078_closeout.py",
-    # GOAL-20261015-079…20261016-083 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
+    # GOAL-20261015-079…20261018-084 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal079_closeout_assertions.py",
     "tools/verify_goal079_closeout.py",
     "tools/goal080_closeout_assertions.py",
@@ -217,6 +215,8 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal082_closeout.py",
     "tools/goal083_closeout_assertions.py",
     "tools/verify_goal083_closeout.py",
+    "tools/goal084_closeout_assertions.py",
+    "tools/verify_goal084_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
