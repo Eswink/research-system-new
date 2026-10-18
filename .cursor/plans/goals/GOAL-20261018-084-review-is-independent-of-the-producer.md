@@ -330,6 +330,11 @@ cycle 1 的 `escalation_triggers` 条目把「接入第二个模型」笼统归�
 | cycle 2 代码面（配置 + 解析面 + 判定面 + 判据） | `e7d43001` | **零 run（如实登记，非未取证的正向结论）** | `GET /actions/runs?head_sha=e7d4300179cd…` ⇒ **`total_count = 0`**。**原因**：两次提交一次性推送，GitHub 只为**推送 tip** 建 run ⇒ 本提交由 `6c6d9456` 的 run **`covered_by`**（同一棵树的连续祖先，代码面完全相同 —— 记录提交只改 `.cursor/plans/**`） |
 | cycle 2 记录面 + **当前 tip** | `6c6d9456` | [M0 39120372117](https://github.com/Eswink/research-system-new/actions/runs/39120372117) / [Push 39120371810](https://github.com/Eswink/research-system-new/actions/runs/39120371810) | **M0 八 job 全 `success`**（`container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**、**零 rerun**。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`**（静止工作树） |
 
+| EC-05 收口资产（验证器 + 断言集 + 证据） | `bd1414df` | **零 run** | `head_sha=bd1414df…` ⇒ `total_count = 0`（同一推送内的中间提交）⇒ 由 `272d42e8` 的 run `covered_by` |
+| 收口记账（迭代日志 + 两树口径修正） | `272d42e8` | [M0 39122421575](https://github.com/Eswink/research-system-new/actions/runs/39122421575) | 🔴 **`quality-ubuntu-latest` 真红**：`test_closeout_verifiers_run_their_own_assertions` 与 `test_tooling_scripts_meet_product_gates` 报「新增 `tools/` 脚本未显式分类」⇒ **判据要求登记，不是 flake**；其余 7 job `success` |
+| 分区登记 + 50 行拆函数 | `a67d8006` | **零 run** | 同一推送内的中间提交 ⇒ 由 `5e3fde73` 的 run `covered_by` |
+| lint 修复（docstring 超长行）+ **当前 tip** | `5e3fde73` | [M0 39129255361](https://github.com/Eswink/research-system-new/actions/runs/39129255361) / [Push 39129255304](https://github.com/Eswink/research-system-new/actions/runs/39129255304) | **M0 八 job 全 `success`** + CodeQL 三条 `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
+
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
 
