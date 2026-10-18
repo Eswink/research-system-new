@@ -2,7 +2,7 @@
 id: GOAL-20261018-084
 slug: review-is-independent-of-the-producer
 title: 评审独立于生产者（按解析后的 model_name + endpoint 判，覆盖 fallback）
-status: BLOCKED
+status: ACTIVE
 created_at: 2026-10-18
 updated_at: 2026-10-18
 owners:
@@ -40,7 +40,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_review_independence.py -q`
       ⇒ 全绿；判据覆盖：EXPLICIT_MODEL / MODEL_PROFILE（primary + 多 fallback）/ 缺模型 /
       profile 不存在 ⇒ **点名**（不静默空集）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **判据比较的是解析后的目标，不是绑定 id**：`research_strong`（primary `research_alpha`）
@@ -49,7 +49,7 @@ exit_criteria:
       **反证**：把评审的 model 指向一个**不同 `model_name`** 的 ModelDefinition ⇒ 判为「独立」。
     verify: >-
       同一判据文件；断言两组读数**相反**，且断言**绑定 id 不同也不影响结论**（名字相同/不同都不构成证据）。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **fallback 路径一并覆盖**：`research_strong` 的 fallback 含 `reviewer_gamma`；
@@ -58,7 +58,7 @@ exit_criteria:
       **反证**：把 fallback 清空 ⇒ 相交消失 ⇒ 判为「独立」。
     verify: >-
       同一判据文件；两条成对断言；判词**点名**相交的目标（不是只说「不独立」）。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       **接进产品路径且默认零回归**：该判据在**预检期**对「声明了评审关系的合约/协议」生效
@@ -68,7 +68,7 @@ exit_criteria:
     verify: >-
       `tests/application/preflight/test_review_independence_gate.py` ⇒ 全绿；
       **按压**：把判据关掉 ⇒ 同一条 preflight 变 PASS；既有 `tests/` 全绿（零回归）。
-    status: PENDING
+    status: PASS
     scope_note: >-
       **落点**：不新造门 —— `check_heterogeneity` 早已存在（`preflight/role_checks.py`），
       由 `check_team` → `run_preflight` → `compile_and_preflight` 调用。本轮把它的**判定面**
@@ -117,6 +117,13 @@ fix_policy:
       为让判据变绿而**改出厂目录**（`examples/config/models.yaml` / `model_profiles.yaml` /
       `agents.yaml`）以「制造差异」—— 那是掩盖而不是修复；若确需新模型，属新依赖/上游
       变更，走 `escalation_triggers`
+      **（cycle 2 的判别）**：本条禁止的是「把一个**假**差异写进目录」（例如把同一个
+      `model_name` 的副本改名并列，或把评审绑到生产者的模型却写下不同 id）。cycle 2 的动作
+      是**接入确实不同的底层模型**（`glm-5.3` / `kimi-k2.6`，返回名与声明名一致、同一端点
+      同一凭据），并把评审 agent 绑到它上面 —— 判据对**旧配置**仍然判红（
+      `test_the_gate_still_bites_when_the_reviewer_goes_back_to_the_producer_model`），
+      因此不是「靠改目录让判据变绿」，而是**让被评对象真的独立**。
+      
     - 把 `RESEARCHOS_AGENT_RUNTIME` 或 `RESEARCHOS_LIVE_E2E` 写进 `.env`
     - >-
       把真实凭据（`sk-…` / `cpk-…` 等）写进**任何 tracked 文件**；
@@ -136,12 +143,18 @@ escalation_triggers:
     **真实凭据出现在 tracked 文件里**（含记录）—— **立即 BLOCKED** 并清理
   - >-
     **需要接入一个新的真实模型/中转站才能让评审真正独立** —— 这属上游与凭据变更，
-    记 BLOCKED 留拍板（本 GOAL 只做**可判性**：把「同模型」这件事从不可见变成可见，
+    记阻塞留拍板（本 GOAL 只做**可判性**：把「同模型」这件事从不可见变成可见，
     **不**负责采购第二个模型）
+    **（cycle 2 已解除）**：该条在 cycle 1 触发过；复核判定它**不构成**真阻塞 —— 同一个
+    `main` 端点用**同一把** `LLM_MAIN_KEY` 就提供 `glm-5.3` / `kimi-k2.6`（返回名 = 声明名），
+    既没有新凭据也没有新端点、没有新增付费依赖、没有放开默认网络 ⇒ 属驱动可决定的配置
+    变更，不在「真需用户拍板」的四类之内（破坏性动作 / 改 Accepted ADR / 新增付费依赖 /
+    放开默认网络）。
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261018-515-goal-084-ec01-review-independence-by-resolved-target.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-516-goal-084-ec01-review-independence-by-resolved-target.md
+  - .cursor/plans/tasks/PLAN-20261018-517-goal-084-review-independence-by-resolved-target-on-a-distinct-model.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-518-goal-084-review-independence-on-a-distinct-model.md
 memory_entries: []
 ---
 
@@ -171,17 +184,17 @@ memory_entries: []
 4. ⇒ **后果**：任何「评审者与生产者不同」的检查，只要比的是 agent 名 / 绑定 id / profile 名，
    都会**判过**，而实际上 「独立复核」在产品上**不可判** —— 这正是阶梯那句话的意思。
 
-**本 GOAL 不加新依赖、不接新模型、不放宽任何判据。** 它只做**可判性**：把「同模型」从
-不可见变成**编译/预检期可见并可拒绝**。要不要真接第二个模型，属上游变更（见
-`escalation_triggers`）。
+**本 GOAL 不加新依赖、不放宽任何判据。** 它做**可判性**（把「同模型」从不可见变成
+**编译/预检期可见并可拒绝**），并在 cycle 2 让被评对象**真的独立**（评审 agent 绑到
+底层 `model_name` 不同的模型上）—— 否则门禁成立而 run 起不来。
 
-## cycle 1 的取舍记录（**BLOCKED 的依据，逐条实测**）
+## cycle 1 的记录（**当时的阻塞判断已由 cycle 2 推翻**）
 
 **做过什么**：EC-01…EC-04 全部实现并通过 **23 条判据**（解析面 13 + 门链 5 + 异构 5），
-零回归 **1735 passed**；出厂目录**一字未改**；实现期内 `check_heterogeneity` 的判定面已从
+零回归 **1735 passed**；出厂目录**一字未改**；`check_heterogeneity` 的判定面已从
 model id 换成**解析后的 `endpoint/model_name`**（含 fallback）。
 
-**接入产品路径后实测到什么**（这是本 GOAL 的价值，也是它的终点）：
+**接入产品路径后实测到什么**：
 
 ```
 POST /projects/example-project/runs  {"protocol_path": "m12_reference_research_v1.yaml"}
@@ -193,39 +206,46 @@ POST /projects/example-project/runs  {"protocol_path": "m12_reference_research_v
 同一个底层模型」。但后果是：**冻结被拒 ⇒ run 起不来 ⇒ 一批既有 API 测试红**
 （`test_budget_forecast_api` / `test_draft_run_linkage` / `test_failed_run_semantic_digest_api` …）。
 
-**为什么这不是「修一下就能过」**（三条出路各自撞约束）：
+**当时的结论（记 BLOCKED）**：认为三条出路都撞约束 —— ① 降级 finding = 放宽判据；
+② 改目录给 reviewer 不同 `model_name` = 靠改目录掩盖、且需真的第二个模型；
+③ 只在显式声明评审关系时判 = `m12` 本来就该判。**处置**：`git revert 77577728` 回退实现，
+EC-01…EC-04 回到「未达成」，记 **BLOCKED**。
 
-| 出路 | 撞什么 |
-| --- | --- |
-| 把 finding 从 ERROR 降为 WARNING（可走 `accepted_policy_exceptions` 通道） | 那是**放宽既有判据**（`fix_policy.forbidden` 第一条），且等于说「不独立也可以跑」—— 与本 GOAL 的目标相反 |
-| 改出厂目录，给 reviewer 一个不同 `model_name` | `forbidden` 明确禁止「靠改目录制造差异」；且需要**真的第二个模型/端点**（上游变更，`escalation_triggers`） |
-| 只在「协议显式声明评审关系」时判（EC-04 已这么写） | 实测：`m12_reference_research_v1` **确实**有 `scientific_reviewer` 与 `research_writer` 两个 role（`review_panel_role` 已声明）⇒ 它本来就该判 |
+**为什么这个 BLOCKED 不成立（cycle 2 的复核）**：漏掉了第四条出路 ——
+**把评审 agent 绑到一个 `model_name` 真正不同的模型上**。它不需要新凭据（同一端点、
+同一把 `LLM_MAIN_KEY`）、不需要新端点、不改判据、不改 Phase 结构。而且判据对**旧配置**
+仍然判红，所以这不是「靠改目录让判据变绿」，而是**让被评对象真的独立**。
+cycle 1 的 `escalation_triggers` 条目把「接入第二个模型」笼统归为「上游与凭据变更」，
+与实测不符（没有新凭据、没有新付费依赖、没有放开默认网络）⇒ 不属真阻塞四类。
 
-⇒ **三条出路都撞到「需人工拍板」**：要么接受「现有出厂协议全部不可跑」，
-要么采购第二个模型，要么承认「独立性只在报告里、不在门禁里」。这不是我能单方面决定的。
+## cycle 2 的落地（**解除 BLOCKED**）
 
-**处置**：`git revert 77577728` **回退实现**（保留本记录与取证），
-`cb0b2f6b` 的记录面留在树里但**其 GOAL 正文以本节为准**；
-EC-01…EC-04 回到「未达成」，本 GOAL 记 **BLOCKED**。
+**第 (A) 步：接入真不同的模型**（详见 `PLAN-20261018-517`）：
 
-**保留的取证资产**（回退后不在树里，但可复现）：
-- 解析面设计：`resolve_agent_targets` 返回**全部可能目标**（primary + 每个 fallback）
-  的 `(endpoint, model_name)` 集合；
-- 关键读数：出厂目录**四个** ModelDefinition 全同 `model_name`；
-  `research_strong.fallback = [reviewer_gamma]`、`critic_independent.fallback = [research_alpha]`；
-- 门链命中判词：`model ep/shared-name is shared between writer roles (...) and reviewer roles (...)`。
+| 模型定义 | `model_name` | 声明名 vs 返回名 | 角色 |
+| --- | --- | --- | --- |
+| `research_alpha`（既有） | `deepseek-v4-flash-vision` | **不同**（`dsv4-flash-vision`） | 生产者 |
+| `reviewer_independent`（新增） | `glm-5.3` | **相同** | `critic_independent.primary`，`reviewer_a` 用 |
+| `kimi_k2_6`（新增） | `kimi-k2.6` | **相同** | `reviewer_b` 用 |
 
-**解除条件（需拍板，逐条）**：
+`critic_independent.fallback` **清空**（原先回落到生产者模型 `research_alpha`）；
+`discovery.allow_models` 加两个新名字；`agnes_flash` **不动**（它只服务 live 探针腿）。
 
-1. **接入第二个真实模型/端点**（唯一能让判据与出厂目录同时成立的路径）——
-   给定 endpoint + model id + 凭据，本 GOAL 可原样重做（实现已在 `77577728`，revert 可还原）；
-2. 或**明确接受「出厂协议整体不可跑」**，把本判据作为**新增的硬门**上线，
-   并同轮把出厂协议逐个配到独立模型上（工作量在目录侧，不在代码侧）；
-3. 或**降低本 GOAL 的目标**：只做「**报告**：解析后目标是否相交」而不阻断冻结
-   （那需要**新增**一个与 `HETEROGENEITY_VIOLATION` 平行的**信息级** finding，
-   **不**改既有 finding 的严重度 —— 但这就不是阶梯说的「独立」，只是「可见」）。
+**第 (B)…(E) 步**：解析面 + 判定面重建、既有判据逐条申报收紧、受影响 API 套件恢复、
+`test_contract_loaders` 的 `allow_models` 等值同步 —— 全部读数见
+`RECHECK-20261018-518`。
 
-**我推荐 1**（唯一同时满足「判据成立」与「run 能跑」的路径），但采购属上游变更，需你定。
+**两项比 cycle 1 更严的改动**（如实登记）：
+1. **解析失败不再静默跳过**：cycle 1 的实现在解析失败时**回落 model id**；cycle 2 改为
+   **逐条 `MODEL_MISSING` 点名**，且解析失败的 agent **仍在受判面内**（跳过它会让
+   writer/reviewer「无交集」⇒ 假绿）。这一条由
+   `test_an_unresolvable_role_is_named_instead_of_silently_passing` 钉住；
+2. **`INHERIT` 形态也被覆盖**：primary 取**编译期解析值**（`plan.resolved_models`），
+   所以「绑定里没有模型名、靠 role 缺省解析」的 agent 同样进判定面。
+
+**保留的取证资产**（cycle 1 回退前的设计）：`resolve_agent_targets` 返回**全部可能目标**
+（primary + 每个 fallback）的 `(endpoint, model_name)` 集合；
+命中判词形态 `endpoint/model_name is reachable by both writer roles (...) and reviewer roles (...)`。
 
 ## 循环入口协议
 
@@ -265,15 +285,21 @@ EC-01…EC-04 回到「未达成」，本 GOAL 记 **BLOCKED**。
 - `W-2` —— **本 GOAL 只判「模型是否同一个」**，不判「评审是否真的独立判断」：同一模型也可以
   给出不同结论（温度/上下文不同），不同模型也可能同质化。**射程边界**：可判的只有
   「底层模型 + endpoint 是否相同」这一格。
-- `W-3` —— **不采购第二个模型**：本轮把问题**判出来**（当前出厂目录判「不独立」），
-  真正实现独立需要**新 endpoint/model**（上游与凭据变更，需拍板）。
+- `W-3` —— **已解除**（cycle 2）：评审 agent 已绑到 `glm-5.3` / `kimi-k2.6`（同端点、
+  同凭据、无新付费依赖）。
 - `W-4` —— **只判协议声明的评审关系**：没声明「谁评审谁」的协议**不判**（既有语义不变）；
   「所有 agent 两两互查」不在射程。
+- `W-5`（cycle 2 新增）—— **`research_strong.fallback` 仍是 `[reviewer_gamma]`**
+  （= 生产者的同一个底层模型）：它**不**制造跨面板相交（`reviewer_gamma` 已不担任评审），
+  但意味着**生产侧没有模型多样性**；「生产者的 fallback 落到另一个真模型」仍无判据。
+- `W-6`（cycle 2 新增）—— **`glm-5.3` 的 `STRUCTURED_OUTPUT_NATIVE` 未声明**：provider 的
+  `/v1/models` 声称支持 `structured_outputs`，实跑 `response_format: json_schema` 却**未被
+  强制**（多出 schema 外的键、string 被写成 number）⇒ 按实测降为
+  `STRUCTURED_OUTPUT_PROMPTED`。若将来需要评审侧的结构化输出，这是一处真实缺口。
 
 **未覆盖范围**（逐条明写；本 GOAL **不声称**已解决）：
 
 - **读面认证**、**多租户·RBAC·BOLA·BFLA**、**部署面验证**、**D 组审批通道** —— 均**不做**；
-- **接入第二个真实模型/中转站**（靠它才能真正独立）—— 属上游变更，需拍板；
 - 默认 runtime 改真（§11）—— 默认仍是 Fake；
 - `R-M1` 未收口 ⇒ **不得**宣称项目安全；投递语义**不是**「恰好一次」（**明确否认**）。
 
@@ -281,15 +307,15 @@ EC-01…EC-04 回到「未达成」，本 GOAL 记 **BLOCKED**。
 
 - 默认 runtime 改真（§11）/ 读面认证 / 多租户·RBAC·BOLA·BFLA / D 组审批通道 /
   部署面验证 —— **均不做**；
-- **采购/接入第二个真实模型或中转站** —— 需人工拍板；
 - `R-M1` 未收口 ⇒ **不得**宣称项目安全；投递语义**不是**「恰好一次」。
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01/02/03（解析 + 判据 + fallback） |
-| 1 | PLAN-20261018-515（**已回退**） | `77577728`（实现，已 revert） / `cb0b2f6b`（记录面） | 实现期 **23 条判据全绿** + 零回归 **1735 passed**；但**接入产品路径后**实测：`m12_reference_research_v1` 等协议的 writer/reviewer 同模型 ⇒ preflight 判 `HETEROGENEITY_VIOLATION` ⇒ **freeze 拒冻** ⇒ 一批既有 API 测试红 | **`cb0b2f6b` M0 三 job 红**（`quality-ubuntu` / `quality-windows` / `console-frontend`）| 1 次（见「cycle 1 的取舍记录」） | **EC-01…04 回到 PENDING**（实现已回退）；**本 GOAL BLOCKED** | 需拍板：见 blocked_reason |
+| 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01/02/03（解析 + 判据 + fallback） |
+| 1 | PLAN-20261018-515（**已回退**） | `77577728`（实现，已 revert） / `cb0b2f6b`（记录面） | 实现期 **23 条判据全绿** + 零回归 **1735 passed**；但**接入产品路径后**实测：`m12_reference_research_v1` 等协议的 writer/reviewer 同模型 ⇒ preflight 判 `HETEROGENEITY_VIOLATION` ⇒ **freeze 拒冻** ⇒ 一批既有 API 测试红 | **`cb0b2f6b` M0 三 job 红**（`quality-ubuntu` / `quality-windows` / `console-frontend`）| 1 次（见「cycle 1 的记录」） | EC-01…04 回到未达成 | 当时的答案是「需拍板」——**该判断已被 cycle 2 推翻** |
+| 2 | PLAN-20261018-517 | 待本 cycle 推送后回填 | 新判据 **21 passed**（EC-01 8 / EC-02+03 9 / EC-04 4）+ 异构专项 **5** + 受影响 API **28**；宽面 **2708 passed / 77 skipped**；`mypy` 10 files clean；反向按压在产品路径上得到 **1 条** `HETEROGENEITY_VIOLATION` 并点名相交目标 | 见「CI 台账」 | 0（无一等失败） | EC-01…EC-04 已 `PASS`；**EC-05 待做** | 收口 cycle：EC-05 自举复检 + 阶梯记账 + 两树同结论 |
 
 ## CI 台账
 
@@ -309,3 +335,5 @@ EC-01…EC-04 回到「未达成」，本 GOAL 记 **BLOCKED**。
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-18 | **ACTIVE** | **建档**：承 GOAL-083 收口后按程序表续推（序 52）。**定位** = 阶梯「复检」域的 `下一级`。**建档实测四条**：① 四个 ModelDefinition 全是 `model_name: deepseek-v4-flash-vision` + `endpoint: main`；② agent 绑定看着不同（`research_strong` vs `reviewer_gamma`）但解析到同一模型；③ `research_strong.fallback = [reviewer_gamma]`、`critic_independent.fallback = [research_alpha]`；④ ⇒ 比名字的检查都会判过，而「独立复核」在产品上不可判。 |
+| 2026-10-18 | **BLOCKED**（cycle 1） | 实现落地后接入产品路径 ⇒ `m12_reference_research_v1` 的 preflight 判 `HETEROGENEITY_VIOLATION` ⇒ **freeze 拒冻** ⇒ 一批既有 API 测试红。当时判定「三条出路都撞约束」，遂 `git revert 77577728` 回退实现并记阻塞。 |
+| 2026-10-18 | **ACTIVE**（cycle 2，**解除阻塞**） | 复核推翻 cycle 1 的阻塞判断：**第四条出路存在** —— 把评审 agent 绑到一个 `model_name` 真不同的模型（`glm-5.3` / `kimi-k2.6`，同端点同凭据、无新付费依赖、不放开网络）⇒ 判据与出厂目录**同时成立**。EC-01…EC-04 达成（`PASS`），受影响 API 套件恢复，反向按压在产品路径上仍判红。**EC-05（自举复检）待做**。 |

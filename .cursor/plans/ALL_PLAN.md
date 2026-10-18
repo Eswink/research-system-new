@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261018-517](tasks/PLAN-20261018-517-goal-084-review-independence-by-resolved-target-on-a-distinct-model.md) | DONE |
 | [ ] | [PLAN-20261018-515](tasks/PLAN-20261018-515-goal-084-ec01-review-independence-by-resolved-target.md) | CANCELLED |
 | [x] | [PLAN-20261018-513](tasks/PLAN-20261018-513-goal-083-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261018-511](tasks/PLAN-20261018-511-goal-083-ec01-content-level-conflict-detection.md) | DONE |
