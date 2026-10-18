@@ -19,7 +19,7 @@
   `tools/**.py`）—— 这条是**推导**，不是手改；
 - **不得**是「扫整个 `tools/`」：既有 `ruff check` **73 条**错误、`ruff format --check`
   **10 个文件**待重排，是历史遗留资产 ⇒ 以**清单 + 理由**登记在 `LEGACY_OUT_OF_SCOPE`，
-  **清单增删必须显式**（`test_scope_partitions_every_tools_script_explicitly` 会把未分类的脚本判红）。
+  **清单增删必须显式**（`test_scope_partitions_every_tools_script_explicitly` 判未分类）。
 """
 
 from __future__ import annotations
