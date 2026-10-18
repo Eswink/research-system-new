@@ -66,7 +66,11 @@ ATTRIBUTION_MODEL = 'getattr(model, "model_name", None)'
 OBSERVATION_PASSES = 'getattr(gate.review_finding, "reviewer_model", None)'
 READ_FACE_FIELD = '"reviewer_model": finding.reviewer_model,'
 SQLITE_COLUMN = "reviewer_model TEXT"
-POSTGRES_COLUMN = "reviewer_model)"
+#: PG 落库链里 `reviewer_model` 仍**在 INSERT 列清单里**。形态随 GOAL-086 追加 `phase_id`
+#: 而变宽（`reviewer_model,` 换行 + `phase_id)`），锚点因此取「列名在 INSERT 列清单内」
+#: 这一形态：只认它出现在 `findings_json, reviewer_model,` 这一段，不认只出现在
+#: `_SELECT`（那样「读得到但写不进」也会绿）。
+POSTGRES_COLUMN = "findings_json, reviewer_model,"
 
 #: EC-02 的形态。
 PANEL_ENTRY = "def aggregate_panel("
@@ -80,7 +84,13 @@ SHARED_TARGET_NOTE = "share the same target"
 
 #: EC-04 的形态（读面 + 分组键）。
 READ_FACE_PANELS = '"panels": panels,'
-READ_FACE_GROUPS = "groups.setdefault((str(scoped.task_id), str(scoped.contract_id))"
+#: 分组键的**两档形态**（GOAL-20261018-086 EC-01/EC-02）：带 `phase_id` 的记录按被评对象
+#: 聚合（`"PHASE", str(phase_id), …`），没有的沿用迁移前的任务口径
+#: （`"TASK", str(scoped.task_id), …`）。
+#: 两条**都必须**在位 —— 只认其中一条会让另一条被悄悄删掉（那正是 GOAL-086 建档实测到的
+#: 假绿形态：按任务分组时每个任务至多一条判词，多评审阶段的小组永远不存在）。
+READ_FACE_GROUPS = '("PHASE", str(phase_id), str(scoped.contract_id))'
+READ_FACE_GROUPS_LEGACY = '("TASK", str(scoped.task_id), str(scoped.contract_id))'
 
 #: 本轮的三条成对用例（逐条点名）。
 PAIR_CASES: tuple[tuple[str, str], ...] = (
@@ -173,6 +183,7 @@ def _panel_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-02 / EC-03：聚合与独立性的形态（含**不夺真相权**的机械判据）。"""
     verdict = toolbox.verdict
     panel = _text(root, PANEL)
+    read_face = _text(root, READ_FACE)
     traces = [token for token in TRUTH_OWNER_TRACES if token in panel]
     return [
         verdict("panel-entry-exists", PANEL_ENTRY in panel, PANEL_ENTRY),
@@ -180,8 +191,17 @@ def _panel_verdicts(root: Path, toolbox: Any) -> list[Any]:
         verdict("panel-does-not-take-truth-ownership", traces == [], ",".join(traces)),
         verdict("target-shape-is-endpoint-model", TARGET_SHAPE in panel, TARGET_SHAPE),
         verdict("shared-target-is-named", SHARED_TARGET_NOTE in panel, SHARED_TARGET_NOTE),
-        verdict("read-face-exposes-panels", READ_FACE_PANELS in _text(root, READ_FACE)),
-        verdict("panels-group-by-task-and-contract", READ_FACE_GROUPS in _text(root, READ_FACE)),
+        verdict("read-face-exposes-panels", READ_FACE_PANELS in read_face),
+        verdict(
+            "panels-group-by-the-object-under-review",
+            READ_FACE_GROUPS in read_face,
+            READ_FACE_GROUPS,
+        ),
+        verdict(
+            "panels-keep-the-legacy-task-scope",
+            READ_FACE_GROUPS_LEGACY in read_face,
+            READ_FACE_GROUPS_LEGACY,
+        ),
     ]
 
 

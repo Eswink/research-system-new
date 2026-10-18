@@ -17,7 +17,7 @@ from packages.domain.evidence import ReviewFinding
 
 _SELECT = (
     "SELECT finding_id, run_id, task_id, contract_id, review_type, verdict,"
-    " reviewed_by, reviewed_at, findings_json, reviewer_model FROM review_findings"
+    " reviewed_by, reviewed_at, findings_json, reviewer_model, phase_id FROM review_findings"
 )
 
 
@@ -38,6 +38,7 @@ def _decode(row: Any) -> ScopedReviewFinding:
         run_id=str(row["run_id"]),
         task_id=str(row["task_id"]),
         contract_id=str(row["contract_id"]),
+        phase_id=(None if row["phase_id"] is None else str(row["phase_id"])),
     )
 
 
@@ -77,8 +78,8 @@ class PostgresReviewFindingStore(PostgresAdapterBase):
         finding = scoped.finding
         self._conn.execute(
             "INSERT INTO review_findings (finding_id, run_id, task_id, contract_id,"
-            " review_type, verdict, reviewed_by, reviewed_at, findings_json, reviewer_model)"
-            " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            " review_type, verdict, reviewed_by, reviewed_at, findings_json, reviewer_model,"
+            " phase_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             " ON CONFLICT (finding_id) DO NOTHING",
             (
                 finding.id,
@@ -91,6 +92,7 @@ class PostgresReviewFindingStore(PostgresAdapterBase):
                 None if finding.reviewed_at is None else finding.reviewed_at.value,
                 json.dumps(list(finding.findings), ensure_ascii=False),
                 finding.reviewer_model,
+                scoped.phase_id,
             ),
         )
         self._record("put", finding.id, result="ok")

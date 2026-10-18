@@ -112,3 +112,39 @@ def test_for_run_is_scoped_by_run() -> None:
     assert store.for_run(other)[0].run_id == other
     assert store.for_run(uuid.uuid4().hex) == ()
     store.close()
+
+
+def test_the_reviewed_object_roundtrips() -> None:
+    """`phase_id`（GOAL-20261018-086 EC-02）逐字往返，缺省 `None` 也往返（PG 侧）。"""
+    _clean()
+    store = PostgresReviewFindingStore(dsn=_dsn())
+    run_id = uuid.uuid4().hex
+    with_phase = ScopedReviewFinding(
+        finding=ReviewFinding(
+            id="finding:task-a:gate",
+            review_type="acceptance_gate",
+            verdict="PASS",
+            findings=["ARTIFACT_EXISTS: ok"],
+        ),
+        run_id=run_id,
+        task_id="task-a",
+        contract_id="review_scored_deliverable",
+        phase_id="review",
+    )
+    without_phase = ScopedReviewFinding(
+        finding=ReviewFinding(
+            id="finding:task-b:gate",
+            review_type="acceptance_gate",
+            verdict="PASS",
+            findings=["ARTIFACT_EXISTS: ok"],
+        ),
+        run_id=run_id,
+        task_id="task-b",
+        contract_id="review_scored_deliverable",
+    )
+    store.put(with_phase)
+    store.put(without_phase)
+    by_task = {item.task_id: item for item in store.for_run(run_id)}
+    assert by_task["task-a"].phase_id == "review"
+    assert by_task["task-b"].phase_id is None
+    store.close()

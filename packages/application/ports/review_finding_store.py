@@ -23,12 +23,23 @@ from packages.domain.evidence import ReviewFinding
 
 @dataclass(frozen=True, slots=True)
 class ScopedReviewFinding:
-    """一条评审结论 + 它的作用域（哪个 run 的哪个 task、按哪份合约判的）。"""
+    """一条评审结论 + 它的作用域（哪个 run 的哪个 task、按哪份合约判的）。
+
+    `phase_id`（GOAL-20261018-086 EC-02）是**被评对象**的那一格：同一 phase 上被派发的
+    每个评审 agent 各拿一个 `ResearchTask`（`resolve_sessions` 逐个 agent 展开），
+    所以 `task_id` 标识的是**谁在评**，不是**评的是哪一批产物**。多评审阶段若按
+    `task_id` 分组，每个任务至多一条判词 ⇒ 评审小组在该分组下**永远不存在**。
+    这里把「评的是哪一批」显式落库，读面据此分组。
+
+    缺省 `None` = 该记录没有这一格（迁移前的既有行、或调用方未提供）⇒ 读面**不**把它
+    并进任何小组，并**逐条点名**它没有参与聚合（既不并组也不丢弃）。
+    """
 
     finding: ReviewFinding
     run_id: str
     task_id: str
     contract_id: str
+    phase_id: str | None = None
 
 
 @runtime_checkable

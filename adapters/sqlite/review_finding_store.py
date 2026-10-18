@@ -30,15 +30,19 @@ CREATE TABLE IF NOT EXISTS review_findings (
     reviewed_at TEXT,
     findings_json TEXT NOT NULL,
     recorded_at TEXT NOT NULL,
-    reviewer_model TEXT
+    reviewer_model TEXT,
+    phase_id TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_review_findings_run ON review_findings(run_id);
 """
 
 #: 既有库的**增量列**（GOAL-20261018-085 EC-01）：`CREATE TABLE IF NOT EXISTS` 不给已存在的
 #: 表加列 ⇒ 必须显式 `ALTER`。可空、无缺省 ⇒ 既有行保持 NULL（= 未声明该面）。
+#: `phase_id`（GOAL-20261018-086 EC-02）同形追加：可空 ⇒ 既有行保持 NULL（= 该记录没有
+#: 「被评对象」这一格，读面因此只把它并进 `scope="TASK"` 的小组）。
 _ADDED_COLUMNS: tuple[tuple[str, str], ...] = (
     ("reviewer_model", "ALTER TABLE review_findings ADD COLUMN reviewer_model TEXT"),
+    ("phase_id", "ALTER TABLE review_findings ADD COLUMN phase_id TEXT"),
 )
 
 
@@ -61,7 +65,8 @@ def _decode(row: sqlite3.Row | tuple[object, ...]) -> ScopedReviewFinding:
         at,
         findings,
         reviewer_model,
-    ) = row[:10]
+        phase_id,
+    ) = row[:11]
     reviewed_at = datetime.fromisoformat(str(at)) if at else None
     return ScopedReviewFinding(
         finding=ReviewFinding(
@@ -76,6 +81,7 @@ def _decode(row: sqlite3.Row | tuple[object, ...]) -> ScopedReviewFinding:
         run_id=str(run_id),
         task_id=str(task_id),
         contract_id=str(contract_id),
+        phase_id=None if phase_id is None else str(phase_id),
     )
 
 
@@ -104,8 +110,8 @@ class SqliteReviewFindingStore(SqliteAdapterBase):
             self._conn.execute(
                 "INSERT OR IGNORE INTO review_findings (finding_id, run_id, task_id,"
                 " contract_id, review_type, verdict, reviewed_by, reviewed_at,"
-                " findings_json, recorded_at, reviewer_model)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " findings_json, recorded_at, reviewer_model, phase_id)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     finding.id,
                     scoped.run_id,
@@ -118,6 +124,7 @@ class SqliteReviewFindingStore(SqliteAdapterBase):
                     json.dumps(list(finding.findings), ensure_ascii=False),
                     now_iso(None),
                     finding.reviewer_model,
+                    scoped.phase_id,
                 ),
             )
         self._record("put", finding.id, result="ok")
@@ -126,7 +133,8 @@ class SqliteReviewFindingStore(SqliteAdapterBase):
         self._ensure_open()
         rows = self._conn.execute(
             "SELECT finding_id, run_id, task_id, contract_id, review_type, verdict,"
-            " reviewed_by, reviewed_at, findings_json, reviewer_model FROM review_findings"
+            " reviewed_by, reviewed_at, findings_json, reviewer_model, phase_id"
+            " FROM review_findings"
             " WHERE run_id = ? ORDER BY finding_id",
             (run_id,),
         ).fetchall()

@@ -28,7 +28,12 @@ def criterion_line(evaluation: Any) -> str:
 
 
 def acceptance_finding(
-    run_id: str, task_id: str, contract_id: str, gate: Any
+    run_id: str,
+    task_id: str,
+    contract_id: str,
+    gate: Any,
+    *,
+    phase_id: str | None = None,
 ) -> ScopedReviewFinding:
     """把门的求值结论包上作用域落库（**全量逐条**：判过与判负都在）。
 
@@ -38,6 +43,11 @@ def acceptance_finding(
     `reviewer_model`（GOAL-20261018-085 EC-01）**原样搬运**：不搬运的话，门上的归因
     会在落库这一步丢掉，读面又只剩 `reviewed_by`（agent 名）—— 「评审是谁判的」
     依旧不可归因。
+
+    `phase_id`（GOAL-20261018-086 EC-02）同样是**原样搬运**，它标识**被评对象**：
+    同 phase 的多个评审 agent 各拿一个任务（`task_id` 各不相同），所以只有这一格能让
+    读面把它们收成同一个评审小组。空串视同缺席（`SessionSpecContext.phase_id` 的缺省
+    是 `""`，表示「本次装配未提供」），落成 `None` 而不是一个看起来像 id 的空值。
     """
     return ScopedReviewFinding(
         finding=ReviewFinding(
@@ -52,6 +62,7 @@ def acceptance_finding(
         run_id=run_id,
         task_id=task_id,
         contract_id=contract_id,
+        phase_id=(phase_id or None),
     )
 
 
@@ -70,6 +81,7 @@ def record_acceptance_evaluation(deps: Any, tctx: Any, gate: Any) -> None:
             tctx.task.id.value,
             tctx.contract.id,
             gate,
+            phase_id=getattr(tctx.spec_context, "phase_id", None),
         )
     )
 

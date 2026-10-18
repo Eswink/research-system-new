@@ -1,0 +1,11 @@
+-- GOAL-20261018-086 EC-02：评审判词的**被评对象**那一格。
+--
+-- 为什么需要它：运行链给同一个 phase 的**每个**评审 agent 各生成一个 ResearchTask
+-- （`resolve_sessions` 逐个 agent 展开），而判词 id 又是 `finding:{task_id}:gate`
+-- ⇒ 按 task 分组时每个任务下至多一条判词，多评审阶段的小组**永远不存在**。
+-- 这一列让「评的是哪一批产物」显式落库，读面据此把同一 phase 的评审者收成一个小组。
+--
+-- 非破坏性：可空、无缺省 ⇒ 既有行保持 NULL，读面让它们走迁移前的 `scope="TASK"` 口径，
+-- 不并进任何 phase 小组。本迁移**不回填**（回填需要从 task 反查 phase，而 task 行
+-- 不含 phase 列 —— 那是另一件事，登记在 GOAL-086 的 W-6）。
+ALTER TABLE review_findings ADD COLUMN IF NOT EXISTS phase_id TEXT;

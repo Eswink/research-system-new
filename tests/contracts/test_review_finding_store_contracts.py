@@ -90,3 +90,89 @@ def test_for_run_is_scoped_by_run(tmp_path: Path) -> None:
     assert store.for_run(other)[0].run_id == other
     assert store.for_run(uuid.uuid4().hex) == ()
     store.close()
+
+
+def test_the_reviewed_object_survives_reopen(tmp_path: Path) -> None:
+    """`phase_id`（GOAL-20261018-086 EC-02）**逐字往返**且缺省 `None` 也往返。
+
+    为什么这条必须在**契约层**判：读面按它分组（同一 phase 的评审者收成一份小组），
+    落库时丢掉这一格会让小组在生产上**重新消失** —— 而单元层的分组判据仍会绿。
+    """
+    db_path = tmp_path / "reviews.db"
+    run_id = uuid.uuid4().hex
+    with_phase = ScopedReviewFinding(
+        finding=ReviewFinding(
+            id="finding:task-a:gate",
+            review_type="acceptance_gate",
+            verdict="PASS",
+            findings=["ARTIFACT_EXISTS: ok"],
+        ),
+        run_id=run_id,
+        task_id="task-a",
+        contract_id="review_scored_deliverable",
+        phase_id="review",
+    )
+    without_phase = ScopedReviewFinding(
+        finding=ReviewFinding(
+            id="finding:task-b:gate",
+            review_type="acceptance_gate",
+            verdict="PASS",
+            findings=["ARTIFACT_EXISTS: ok"],
+        ),
+        run_id=run_id,
+        task_id="task-b",
+        contract_id="review_scored_deliverable",
+    )
+    store = SqliteReviewFindingStore(db_path)
+    store.put(with_phase)
+    store.put(without_phase)
+    store.close()
+
+    reopened = SqliteReviewFindingStore(db_path)
+    by_task = {item.task_id: item for item in reopened.for_run(run_id)}
+    assert by_task["task-a"].phase_id == "review"
+    assert by_task["task-b"].phase_id is None
+    reopened.close()
+
+
+def test_an_existing_database_gains_the_phase_column(tmp_path: Path) -> None:
+    """既有库（表已存在、**无** `phase_id` 列）⇒ 打开时补列，旧行保持 `None`。
+
+    `CREATE TABLE IF NOT EXISTS` **不**给已存在的表加列 —— 只写建表语句会让**升级**后的
+    开发库在读面崩掉（`no such column: phase_id`），而新建库的判据照绿。
+    """
+    import sqlite3
+
+    db_path = tmp_path / "legacy.db"
+    legacy = sqlite3.connect(str(db_path))
+    legacy.executescript(
+        "CREATE TABLE review_findings ("
+        " finding_id TEXT PRIMARY KEY, run_id TEXT NOT NULL, task_id TEXT NOT NULL,"
+        " contract_id TEXT NOT NULL, review_type TEXT NOT NULL, verdict TEXT NOT NULL,"
+        " reviewed_by TEXT, reviewed_at TEXT, findings_json TEXT NOT NULL,"
+        " recorded_at TEXT NOT NULL, reviewer_model TEXT);"
+    )
+    legacy.execute(
+        "INSERT INTO review_findings VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            "finding:old:gate",
+            "run-old",
+            "task-old",
+            "c",
+            "acceptance_gate",
+            "PASS",
+            None,
+            None,
+            "[]",
+            "2026-10-18T00:00:00+00:00",
+            None,
+        ),
+    )
+    legacy.commit()
+    legacy.close()
+
+    store = SqliteReviewFindingStore(db_path)
+    stored = store.for_run("run-old")
+    assert len(stored) == 1
+    assert stored[0].phase_id is None
+    store.close()
