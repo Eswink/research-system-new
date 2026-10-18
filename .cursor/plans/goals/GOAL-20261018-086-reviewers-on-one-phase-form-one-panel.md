@@ -2,7 +2,7 @@
 id: GOAL-20261018-086
 slug: reviewers-on-one-phase-form-one-panel
 title: 同一批评审者**真的判同一件东西**——评审小组按「被评对象」而非「任务」聚合
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-18
 updated_at: 2026-10-18
 owners:
@@ -89,7 +89,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 
 budget:
   max_cycles: 14
@@ -142,7 +142,7 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261018-523-goal-086-ec01-04-panel-groups-by-the-object-under-review.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-524-goal-086-panel-groups-by-the-object-under-review.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-525-goal-086-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -262,6 +262,7 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01/02/03/04 |
 | 1 | PLAN-20261018-523 | 待本 cycle 推送后回填 | 新判据 **11 条**（运行链 3 / 读面 8）+ 落库往返 **5 条**；application+api+contracts **2411 passed / 77 skipped**；e2e **360 passed / 17 skipped**；静态门全绿；as-is m0 **23/23** | 见「CI 台账」 | 0（首轮自查修了 3 处：e2e 判据 4 个 mypy 错、1 处 104 列行宽、1 处格式化） | EC-01…EC-04 达成；**EC-05 待做** | 下一轮 = 收口（EC-05） |
+| 2 | （收口 cycle，无新子 PLAN） | 待回填 | 验证器 **66 条全绿**；两树同结论；as-is m0 **23/23**；治理通过；凭据四面 `offenders=0` | 见「CI 台账」 | 首次 m0 **判红两处**（PLAN 未勾选项 + GOAL-085 断言集锚点迁移）—— 均已修并**逐条申报** | 无（EC 全达成） | **收口** |
 
 ## CI 台账
 
