@@ -10,10 +10,6 @@
 from __future__ import annotations
 
 from packages.application.ports import PreflightContext
-from packages.application.preflight.review_independence import (
-    describe_target,
-    resolve_targets_by_role,
-)
 from packages.application.preflight.skill_checks import check_role_skills, skill_issue_findings
 from packages.application.protocol_compile.workspace_policy import check_workspace_capability
 from packages.domain.enums import ReviewPanelRole, WorkspacePolicy
@@ -198,41 +194,14 @@ def _workspace_capability_findings(
 def _panel_role_map(
     plan: CompiledRunPlan, context: PreflightContext
 ) -> tuple[dict[str, set[str]], dict[str, ReviewPanelRole]]:
-    """role → 模型集合 与 role → review_panel_role 的聚合视图。
-
-    **GOAL-20261018-084 EC-02**：模型集合**优先**装**解析后的执行目标**
-    （`endpoint/model_name`，见 `review_independence`）—— 因为出厂目录里**四个**
-    ModelDefinition 的 `model_name` 全相同（都是同一个底层模型），比 id 会让
-    「评审与生产者同模型」判绿。
-
-    **回落（`EC-01` 的第三条边界）**：某些夹具 / 装配只给 `plan.resolved_models` 而不给
-    完整 catalog（既有 `test_m4_heterogeneity` 就是这种形态）⇒ 解析会点名「模型未注册」。
-    此时**回落到 model id**（既有口径），使**既有判据逐字不变**：
-    能解析 ⇒ 比 `endpoint/model_name`（更严）；解析不了 ⇒ 比 model id（不比原来更松）。
-    两条都**不**把「解析失败」当成「独立」—— 失败只让判定退回旧口径。
-    """
+    """role → 模型集合 与 role → review_panel_role 的聚合视图。"""
     model_by_role: dict[str, set[str]] = {}
     panel_role_by_role: dict[str, ReviewPanelRole] = {}
-    role_of_agent = _agent_role_map(plan, context)
-    role_ids = {role_id for role_id in role_of_agent.values() if role_id is not None}
-    agents_of_role: dict[str, tuple[str, ...]] = {}
-    for agent_id, role_id in role_of_agent.items():
-        if role_id is None:
+    for agent_id, role_id in _agent_role_map(plan, context).items():
+        model_id = plan.resolved_models.get(agent_id)
+        if model_id is None:
             continue
-        agents_of_role[role_id] = (*agents_of_role.get(role_id, ()), agent_id)
-    targets_by_role, _problems = resolve_targets_by_role(role_ids, agents_of_role, context.catalog)
-    for role_id in role_ids:
-        labels = {describe_target(target) for target in targets_by_role.get(role_id, set())}
-        if not labels:
-            # 解析不了 ⇒ 既有口径（model id）；不比原来更松。
-            labels = {
-                str(model_id)
-                for agent_id in agents_of_role.get(role_id, ())
-                if (model_id := plan.resolved_models.get(agent_id)) is not None
-            }
-        if not labels:
-            continue
-        model_by_role[role_id] = labels
+        model_by_role.setdefault(role_id, set()).add(model_id)
         role = context.catalog.roles.get(role_id)
         panel_role_by_role[role_id] = (
             role.review_panel_role if role is not None else ReviewPanelRole.NONE
@@ -298,13 +267,3 @@ def check_team(plan: CompiledRunPlan, context: PreflightContext) -> list[Preflig
     findings.extend(check_heterogeneity(plan, context))
     findings.extend(check_role_skills(plan, context))
     return findings
-
-
-__all__ = [
-    "check_heterogeneity",
-    "check_role_skills",
-    "check_workspace_capability",
-    "describe_target",
-    "resolve_targets_by_role",
-    "skill_issue_findings",
-]

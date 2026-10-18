@@ -2,7 +2,7 @@
 id: GOAL-20261018-084
 slug: review-is-independent-of-the-producer
 title: 评审独立于生产者（按解析后的 model_name + endpoint 判，覆盖 fallback）
-status: ACTIVE
+status: BLOCKED
 created_at: 2026-10-18
 updated_at: 2026-10-18
 owners:
@@ -40,7 +40,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_review_independence.py -q`
       ⇒ 全绿；判据覆盖：EXPLICIT_MODEL / MODEL_PROFILE（primary + 多 fallback）/ 缺模型 /
       profile 不存在 ⇒ **点名**（不静默空集）。
-    status: PASS
+    status: PENDING
   - id: EC-02
     criterion: >-
       **判据比较的是解析后的目标，不是绑定 id**：`research_strong`（primary `research_alpha`）
@@ -49,7 +49,7 @@ exit_criteria:
       **反证**：把评审的 model 指向一个**不同 `model_name`** 的 ModelDefinition ⇒ 判为「独立」。
     verify: >-
       同一判据文件；断言两组读数**相反**，且断言**绑定 id 不同也不影响结论**（名字相同/不同都不构成证据）。
-    status: PASS
+    status: PENDING
   - id: EC-03
     criterion: >-
       **fallback 路径一并覆盖**：`research_strong` 的 fallback 含 `reviewer_gamma`；
@@ -58,7 +58,7 @@ exit_criteria:
       **反证**：把 fallback 清空 ⇒ 相交消失 ⇒ 判为「独立」。
     verify: >-
       同一判据文件；两条成对断言；判词**点名**相交的目标（不是只说「不独立」）。
-    status: PASS
+    status: PENDING
   - id: EC-04
     criterion: >-
       **接进产品路径且默认零回归**：该判据在**预检期**对「声明了评审关系的合约/协议」生效
@@ -68,7 +68,7 @@ exit_criteria:
     verify: >-
       `tests/application/preflight/test_review_independence_gate.py` ⇒ 全绿；
       **按压**：把判据关掉 ⇒ 同一条 preflight 变 PASS；既有 `tests/` 全绿（零回归）。
-    status: PASS
+    status: PENDING
     scope_note: >-
       **落点**：不新造门 —— `check_heterogeneity` 早已存在（`preflight/role_checks.py`），
       由 `check_team` → `run_preflight` → `compile_and_preflight` 调用。本轮把它的**判定面**
@@ -175,6 +175,58 @@ memory_entries: []
 不可见变成**编译/预检期可见并可拒绝**。要不要真接第二个模型，属上游变更（见
 `escalation_triggers`）。
 
+## cycle 1 的取舍记录（**BLOCKED 的依据，逐条实测**）
+
+**做过什么**：EC-01…EC-04 全部实现并通过 **23 条判据**（解析面 13 + 门链 5 + 异构 5），
+零回归 **1735 passed**；出厂目录**一字未改**；实现期内 `check_heterogeneity` 的判定面已从
+model id 换成**解析后的 `endpoint/model_name`**（含 fallback）。
+
+**接入产品路径后实测到什么**（这是本 GOAL 的价值，也是它的终点）：
+
+```
+POST /projects/example-project/runs  {"protocol_path": "m12_reference_research_v1.yaml"}
+=> 200，但 state = FAILED，manifest_digest = null
+=> run.failed: "preflight failed: HETEROGENEITY_VIOLATION"
+```
+
+判据**真的生效了** —— 它抓到了「`m12_reference_research_v1` 的 writer 与 reviewer 落到
+同一个底层模型」。但后果是：**冻结被拒 ⇒ run 起不来 ⇒ 一批既有 API 测试红**
+（`test_budget_forecast_api` / `test_draft_run_linkage` / `test_failed_run_semantic_digest_api` …）。
+
+**为什么这不是「修一下就能过」**（三条出路各自撞约束）：
+
+| 出路 | 撞什么 |
+| --- | --- |
+| 把 finding 从 ERROR 降为 WARNING（可走 `accepted_policy_exceptions` 通道） | 那是**放宽既有判据**（`fix_policy.forbidden` 第一条），且等于说「不独立也可以跑」—— 与本 GOAL 的目标相反 |
+| 改出厂目录，给 reviewer 一个不同 `model_name` | `forbidden` 明确禁止「靠改目录制造差异」；且需要**真的第二个模型/端点**（上游变更，`escalation_triggers`） |
+| 只在「协议显式声明评审关系」时判（EC-04 已这么写） | 实测：`m12_reference_research_v1` **确实**有 `scientific_reviewer` 与 `research_writer` 两个 role（`review_panel_role` 已声明）⇒ 它本来就该判 |
+
+⇒ **三条出路都撞到「需人工拍板」**：要么接受「现有出厂协议全部不可跑」，
+要么采购第二个模型，要么承认「独立性只在报告里、不在门禁里」。这不是我能单方面决定的。
+
+**处置**：`git revert 77577728` **回退实现**（保留本记录与取证），
+`cb0b2f6b` 的记录面留在树里但**其 GOAL 正文以本节为准**；
+EC-01…EC-04 回到「未达成」，本 GOAL 记 **BLOCKED**。
+
+**保留的取证资产**（回退后不在树里，但可复现）：
+- 解析面设计：`resolve_agent_targets` 返回**全部可能目标**（primary + 每个 fallback）
+  的 `(endpoint, model_name)` 集合；
+- 关键读数：出厂目录**四个** ModelDefinition 全同 `model_name`；
+  `research_strong.fallback = [reviewer_gamma]`、`critic_independent.fallback = [research_alpha]`；
+- 门链命中判词：`model ep/shared-name is shared between writer roles (...) and reviewer roles (...)`。
+
+**解除条件（需拍板，逐条）**：
+
+1. **接入第二个真实模型/端点**（唯一能让判据与出厂目录同时成立的路径）——
+   给定 endpoint + model id + 凭据，本 GOAL 可原样重做（实现已在 `77577728`，revert 可还原）；
+2. 或**明确接受「出厂协议整体不可跑」**，把本判据作为**新增的硬门**上线，
+   并同轮把出厂协议逐个配到独立模型上（工作量在目录侧，不在代码侧）；
+3. 或**降低本 GOAL 的目标**：只做「**报告**：解析后目标是否相交」而不阻断冻结
+   （那需要**新增**一个与 `HETEROGENEITY_VIOLATION` 平行的**信息级** finding，
+   **不**改既有 finding 的严重度 —— 但这就不是阶梯说的「独立」，只是「可见」）。
+
+**我推荐 1**（唯一同时满足「判据成立」与「run 能跑」的路径），但采购属上游变更，需你定。
+
 ## 循环入口协议
 
 按 `.cursor/plans/goals/README.md` 的 7 步判定续点（以「文件 + 工作树 + 远端实况」为准，
@@ -237,6 +289,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 PENDING | cycle 1 = EC-01/02/03（解析 + 判据 + fallback） |
+| 1 | PLAN-20261018-515（**已回退**） | `77577728`（实现，已 revert） / `cb0b2f6b`（记录面） | 实现期 **23 条判据全绿** + 零回归 **1735 passed**；但**接入产品路径后**实测：`m12_reference_research_v1` 等协议的 writer/reviewer 同模型 ⇒ preflight 判 `HETEROGENEITY_VIOLATION` ⇒ **freeze 拒冻** ⇒ 一批既有 API 测试红 | **`cb0b2f6b` M0 三 job 红**（`quality-ubuntu` / `quality-windows` / `console-frontend`）| 1 次（见「cycle 1 的取舍记录」） | **EC-01…04 回到 PENDING**（实现已回退）；**本 GOAL BLOCKED** | 需拍板：见 blocked_reason |
 
 ## CI 台账
 

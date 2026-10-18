@@ -126,48 +126,6 @@ def test_heterogeneity_rejects_shared_writer_reviewer_model() -> None:
     assert any(item.code == "HETEROGENEITY_VIOLATION" for item in findings)
 
 
-def test_a_model_with_the_same_underlying_name_is_not_distinct() -> None:
-    """**GOAL-20261018-084 EC-02**：id 不同但 `model_name` + `endpoint` 相同 ⇒ **仍违规**。
-
-    这条钉住收紧后的口径：`model-2` 是 `model-1` 的副本（同 `model_name` 同 endpoint）
-    ⇒ 底层是**同一个模型**，「id 不同」不构成独立性证据。
-    """
-    catalog = _catalog(
-        roles={
-            _WRITER_ROLE_ID: _panel_role(
-                _role(_WRITER_ROLE_ID, capabilities=["deliverable.write"]),
-                ReviewPanelRole.WRITER,
-            ),
-            _REVIEWER_ROLE_ID: _panel_role(
-                _role(_REVIEWER_ROLE_ID, capabilities=["review.write"]),
-                ReviewPanelRole.REVIEWER,
-            ),
-        },
-        agents={
-            "writer": _agent("writer", _WRITER_ROLE_ID),
-            "reviewer": _agent("reviewer", _REVIEWER_ROLE_ID, model_id="model-2"),
-        },
-    )
-    catalog = replace(
-        catalog,
-        models={
-            **catalog.models,
-            "model-2": replace(catalog.models["model-1"], id="model-2"),
-        },
-    )
-    plan = _compile(
-        catalog,
-        _protocol([
-            RoleRequirement(_WRITER_ROLE_ID, 1, 1),
-            RoleRequirement(_REVIEWER_ROLE_ID, 1, 1),
-        ]),
-    )
-    findings = check_heterogeneity(plan, fixtures.context(catalog))
-    assert any(item.code == "HETEROGENEITY_VIOLATION" for item in findings), (
-        "同 model_name + 同 endpoint 的两个 id ⇒ 底层同一模型 ⇒ 必须判违规"
-    )
-
-
 def test_heterogeneity_allows_distinct_models() -> None:
     catalog = _catalog(
         roles={
@@ -189,11 +147,7 @@ def test_heterogeneity_allows_distinct_models() -> None:
         catalog,
         models={
             **catalog.models,
-            # **真正不同的模型**：不同的 `model_name`（GOAL-20261018-084 之后，
-            # 「id 不同」不再算独立 —— 必须底层模型不同）。
-            "model-2": replace(
-                catalog.models["model-1"], id="model-2", model_name="model-2-name"
-            ),
+            "model-2": replace(catalog.models["model-1"], id="model-2"),
         },
     )
     plan = _compile(

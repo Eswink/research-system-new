@@ -2,7 +2,7 @@
 id: PLAN-20261018-515
 slug: goal-084-ec01-review-independence-by-resolved-target
 title: GOAL-084 cycle 1 — 评审独立性的解析面与判定面（EC-01…EC-04）
-status: DONE
+status: CANCELLED
 created_at: 2026-10-18
 updated_at: 2026-10-18
 parent_goal: GOAL-20261018-084
@@ -88,3 +88,11 @@ memory_entries: []
 | --- | --- | --- |
 | 2026-10-18 | IN_PROGRESS | cycle 1 建档（解析 + 判定 + fallback）。 |
 | 2026-10-18 | DONE | EC-01…EC-04 全 PASS（23 条判据）；一条既有用例**随语义收紧**并新增反证；出厂目录零改动。 |
+
+## 回退说明（**以本节为准**）
+
+本 PLAN 的实现已 `git revert 77577728` 回退：接入产品路径后，`m12_reference_research_v1`
+等出厂协议因 writer/reviewer 同模型被 preflight 判 `HETEROGENEITY_VIOLATION` ⇒ **freeze 拒冻**
+⇒ 一批既有 API 测试红。三条出路都撞到「需拍板」，详见 GOAL 的「cycle 1 的取舍记录」。
+
+**上面的验收条件与证据只代表「实现期读数」**，不代表产品可用性；本 PLAN 记为取消。
