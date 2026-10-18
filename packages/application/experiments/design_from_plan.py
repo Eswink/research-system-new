@@ -90,7 +90,7 @@ def read_design_from_plan(
             "registered for it in the evidence ledger ⇒ the plan cannot be located"
         )
     artifact_id, payload = _the_one_plan(artifacts, run_id, in_view, max_chars=max_chars)
-    design = _design_block(payload)
+    design = design_block_in(payload)
     if design is None:
         raise ExperimentDesignUnreadableError(
             f"the plan artifact {artifact_id!r} carries no {DESIGN_KEY!r} block "
@@ -108,7 +108,12 @@ def read_design_from_plan(
 ENVELOPE_CONTENT_KEY = "content"
 
 
-def _design_block(payload: Mapping[str, Any]) -> object | None:
+def design_block_in(payload: Mapping[str, Any]) -> object | None:
+    """公开的**同形态**入口（GOAL-20261018-088：检索来源复用同一个解析器）。
+
+    与 `_design_block` 是**同一个函数**（下面的私有名保留为它的别名）——
+    「两种来源怎么认设计块」只此一份，两个来源因此不会漂成两套口径。
+    """
     """计划制品载荷 → 设计块（**两种形态都认**，都读不到 ⇒ `None`）。
 
     1. **真形态**：交付物信封 —— 模型正文在 `ENVELOPE_CONTENT_KEY` 里，正文本身
@@ -249,9 +254,14 @@ def _json_object(
     return parsed if isinstance(parsed, Mapping) else None
 
 
+#: 私有别名（既有判据按这个名字读；行为与 `design_block_in` 完全同一个函数）。
+#: 放在定义之后：模块加载期求值，不依赖定义顺序。
+_design_block = design_block_in
+
 __all__ = [
     "DESIGN_KEY",
     "PLAN_ARTIFACT_NAME",
+    "design_block_in",
     "ExperimentDesignUnreadableError",
     "PlanDerivedDesign",
     "plan_artifact_id",

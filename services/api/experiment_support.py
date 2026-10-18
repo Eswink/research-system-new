@@ -97,8 +97,13 @@ class SandboxExperimentAssembly:
     design_source: str | None = None
 
 
-#: `design_source` 认得的唯一取值（本轮只有「取自计划产物」这一种来源）。
+#: `design_source` 认得的取值（**两个来源**，互斥）。
 DESIGN_SOURCE_PLAN = "plan"
+#: GOAL-20261018-088 EC-01：臂从**本 run 的系统取得证据**（`TrustLabel.RETRIEVED`）里读出
+#: （读取器见 `experiments/design_from_retrieval`）。与 `"plan"` 互斥。
+DESIGN_SOURCE_RETRIEVAL = "retrieval"
+#: 认得的全部来源（点名拒绝时逐条列出）。
+DESIGN_SOURCES: tuple[str, ...] = (DESIGN_SOURCE_PLAN, DESIGN_SOURCE_RETRIEVAL)
 
 
 def sandbox_experiment_runner(
@@ -153,25 +158,43 @@ def _arms_for(assembly: SandboxExperimentAssembly, task: ResearchTask) -> tuple[
 
     - `design_source is None` ⇒ 装配面声明（`declare_arms`，缺省空 ⇒ 单臂，逐字不变）；
     - `design_source == "plan"` ⇒ 读**本 run** 的计划产物内容（确定性、零出网、fail-closed）；
-    - **两者同时非空** ⇒ 点名拒绝：两条来源都在时「哪个说了算」不可判定
+    - `design_source == "retrieval"`（GOAL-20261018-088）⇒ 读**本 run 的系统取得证据**
+      （`TrustLabel.RETRIEVED`）—— 两个来源各自 fail-closed，互不回落；
+    - **与 `arms` 同时非空** ⇒ 点名拒绝：两条来源都在时「哪个说了算」不可判定
       （静默取其一正是本 GOAL 要消灭的那种含混）；
     - 未认得的来源名 ⇒ 点名拒绝（**不**当成「没有来源」）。
     """
     source = getattr(assembly, "design_source", None)
     if source is None:
         return declare_arms(assembly)
-    if source != DESIGN_SOURCE_PLAN:
+    if source not in DESIGN_SOURCES:
         raise InvalidInputError(
             f"unknown experiment design source: {source!r} "
-            f"(declared sources: {DESIGN_SOURCE_PLAN!r})"
+            f"(declared sources: {', '.join(DESIGN_SOURCES)})"
         )
     declared = declare_arms(assembly)
     if declared:
         raise InvalidInputError(
-            "both a plan-derived design source and an explicit arm declaration are in "
+            f"both a {source}-derived design source and an explicit arm declaration are in "
             "effect; which one decides the experiment would be undecidable "
             f"(declared arms: {', '.join(arm.name for arm in declared)})"
         )
+    if source == DESIGN_SOURCE_RETRIEVAL:
+        from packages.application.experiments.design_from_retrieval import (
+            read_design_from_retrieval,
+        )
+
+        # 没有证据账本就**没有「系统取得」这一面** ⇒ 点名拒绝（不是空设计、更不是回落到
+        # 装配面的臂）：与「读不到就说读不到」同一条纪律。
+        if assembly.ledger is None:
+            raise InvalidInputError(
+                "a retrieval-derived experiment design needs an evidence ledger "
+                "(this assembly has none, so nothing could have been retrieved)"
+            )
+        retrieved = read_design_from_retrieval(
+            assembly.artifacts, assembly.ledger, run_id=str(task.run_id.value)
+        )
+        return tuple(retrieved.arms)
     from packages.application.experiments.design_from_plan import read_design_from_plan
 
     design = read_design_from_plan(

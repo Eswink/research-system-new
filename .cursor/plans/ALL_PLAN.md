@@ -7,6 +7,7 @@
 |  | Plan | Status |
 | [x] | [PLAN-20261018-523](tasks/PLAN-20261018-523-goal-086-ec01-04-panel-groups-by-the-object-under-review.md) | DONE |
 | [x] | [PLAN-20261018-526](tasks/PLAN-20261018-526-goal-087-ec01-04-a-rejecting-reviewer-does-not-cancel-the-panel.md) | DONE |
+| [x] | [PLAN-20261018-529](tasks/PLAN-20261018-529-goal-088-ec01-04-experiment-design-from-retrieval.md) | DONE |
 | [x] | [PLAN-20261018-520](tasks/PLAN-20261018-520-goal-085-verdict-names-its-model-and-panel-aggregates.md) | DONE |
 | [x] | [PLAN-20261018-517](tasks/PLAN-20261018-517-goal-084-review-independence-by-resolved-target-on-a-distinct-model.md) | DONE |
 | [ ] | [PLAN-20261018-515](tasks/PLAN-20261018-515-goal-084-ec01-review-independence-by-resolved-target.md) | CANCELLED |
