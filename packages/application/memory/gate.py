@@ -104,7 +104,54 @@ def _contradiction_check(proposal: MemoryWriteProposal, deps: MemoryGateDeps) ->
             deps.store.get(other_id)
         except InvalidInputError:
             return f"contradiction target {other_id!r} does not exist"
+    return _content_conflict_check(proposal, deps)
+
+
+def _content_conflict_check(
+    proposal: MemoryWriteProposal, deps: MemoryGateDeps
+) -> str | None:
+    """**内容级**判定（GOAL-20261018-083 EC-02）：说法真的相反时**点名拒绝**。
+
+    **它补哪一格**：上面那段只查**引用完整性** —— `contradictions` 为空时，「这条与库里某条
+    说法相反」这件事**完全没人看**，读面会照旧报 `USE`。本函数在同 `scope` 的**现行**记录上
+    跑确定性判定（`content_conflict.detect_content_conflict`，**零出网 / 零模型 / 零时钟**），
+    命中即拒绝并**点名**那一条 id 与**判词形态**。
+
+    **三条边界**（判据逐条钉住）：
+
+    1. **只扫同 `scope`**：跨 scope 是**另一件事**（选择面，不是 ACL）—— 不在这里判，
+       否则一条 `run` 档的临时记录会把项目知识卡死；
+    2. **不重复判已声明的**：提案方已在 `contradictions` 里点名的对象，其内容判定**不再**
+       影响结论（声明优先 —— 既有语义「声明即可」**逐字不变**）；
+    3. **不判已否定的记录**（`active=False`）：被取代 / 已删除的知识不构成现行分歧。
+
+    **`None` 时与改动前逐字相同**：没有命中 ⇒ 返回 `None`，门链继续走 policy / curator。
+    """
+    from packages.application.memory.content_conflict import detect_content_conflict
+
+    declared = {str(item) for item in proposal.contradictions}
+    for other in _active_records_in_scope(deps, proposal.scope):
+        other_id = str(getattr(other, "id", ""))
+        if not other_id or other_id == str(proposal.id) or other_id in declared:
+            continue
+        found = detect_content_conflict(proposal.content, str(getattr(other, "content", "")))
+        if found is not None:
+            return (
+                f"content contradicts memory {other_id!r} ({found.form}): "
+                f"the two statements are opposed on {found.shared!r}"
+            )
     return None
+
+
+def _active_records_in_scope(deps: MemoryGateDeps, scope: str) -> tuple[object, ...]:
+    """同 `scope` 的**现行**记录（`active` 未显式为假 ⇒ 参与判定）。"""
+    try:
+        records = deps.store.query(scope=scope)
+    except (InvalidInputError, TypeError):  # 适配器不认 scope ⇒ 不判（保持既有语义）
+        return ()
+    return tuple(
+        record for record in records if getattr(record, "active", True) is not False
+    )
 
 
 def evaluate_memory_proposal(
