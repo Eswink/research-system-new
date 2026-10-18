@@ -19,7 +19,7 @@ memory_entries: []
 
 - [x] 验证器进树（`tools/verify_goal082_closeout.py`）+ 本轮断言集
       （`tools/goal082_closeout_assertions.py`，**由验证器自己加载**）
-- [x] 本树 `--verdict-only` 全 PASS（**62 条**）
+- [x] 本树 `--verdict-only` 全 PASS（**64 条**）
 - [x] 两树复检（`tools/two_tree_recheck.py`）判词逐行相同 + `sha256` 相同
 - [x] as-is m0 **23/23**（在全部记录写入之后、**静止工作树**）
 - [x] 治理绿 + 凭据审计四面 `offenders=0`
@@ -73,7 +73,7 @@ memory_entries: []
 
 | 面 | 读数 | 命令 |
 | --- | --- | --- |
-| 本树判词 | **62 PASS / 0 FAIL** | `uv run --frozen --no-sync python -B tools/verify_goal082_closeout.py --root . --verdict-only` |
+| 本树判词 | **64 PASS / 0 FAIL** | `uv run --frozen --no-sync python -B tools/verify_goal082_closeout.py --root . --verdict-only` |
 | 两树复检 | `COMPARE identical=True`，两树 `sha256` 相同 | `uv run --frozen --no-sync python -B tools/two_tree_recheck.py --script tools/verify_goal082_closeout.py --root . --script-mode shared --base-ref HEAD` |
 | as-is m0 | **`PASS: profile=m0; 23 deterministic checks`** | `uv run --frozen --no-sync python -B .cursor/skills/cursor-framework-check/scripts/run_all_checks.py --profile m0 --keep-going` |
 | 治理 / 凭据 | `Cursor 治理验证通过` / 四面 `offenders=0` | `validate.py` / `tools/credential_audit.py` |
@@ -88,4 +88,4 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-18 | IN_PROGRESS | cycle 2 建档（自举收口 + EC-04 判定）。 |
-| 2026-10-18 | DONE | 验证器 **62 PASS / 0 FAIL**；两树 `sha256` 相同；as-is m0 **23/23**；**EC-04 记 BLOCKED**（否决「内容采纳」改判，理由有实测）。 |
+| 2026-10-18 | DONE | 验证器 **64 PASS / 0 FAIL**；两树 `sha256` 相同；as-is m0 **23/23**；**EC-04 记 BLOCKED**（否决「内容采纳」改判，理由有实测）。 |

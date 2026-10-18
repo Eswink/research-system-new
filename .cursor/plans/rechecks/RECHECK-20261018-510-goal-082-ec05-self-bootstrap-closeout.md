@@ -26,13 +26,13 @@ owners:
 | AC | 判据 | 结果 | 证据 |
 | --- | --- | --- | --- |
 | AC-1 | **验证器进树且加载自己那份断言集** | **PASS** | `self-loads-its-own-assertions` 按**本文件名**推导应载 `goal082_closeout_assertions.py` |
-| AC-2 | **本树判词全 PASS** | **PASS** | **62 PASS / 0 FAIL**（`--verdict-only`） |
+| AC-2 | **本树判词全 PASS** | **PASS** | **64 PASS / 0 FAIL**（`--verdict-only`） |
 | AC-3 | **两树复检：逐行相同 + `sha256` 相同** | **PASS** | `COMPARE identical=True`；两树同一 `sha256`（见下「实测读数」） |
 | AC-4 | **EC-01/02/03 终态** | **PASS** | `goal-ec01-status` … `goal-ec03-status` 全 `PASS` |
 | AC-5 | **EC-04 有据的终态** | **PASS（记 BLOCKED，理由可复核）** | `goal-ec04-status` = `BLOCKED`；`ec04-blocker-marker-1…3` 全 PASS（`memory_id` / `零命中` / `模型侧行为` 三个事实仍在树）；证据归档 >300 字符 |
 | AC-6 | **EC-05 终态** | **PASS** | `goal-ec05-status` = `PASS` |
 | AC-7 | **子计划 / 复检在位** | **PASS** | PLAN-507 / PLAN-509 + RECHECK-508 / 本文件 + README + MAINLINE 逐条在树 |
-| AC-8 | **阶梯记账** | **PASS** | `ladder-records-this-goal`：「迭代」域那行收录 `GOAL-20261018-082` |
+| AC-8 | **阶梯记账 + 进展记录** | **PASS** | `ladder-records-this-goal`（「迭代」域那行收录本 GOAL）+ `progress-records-this-goal` / `progress-row-names-the-recheck`（**新增**：EC-05 契约逐字要求「向宪章 `进展记录` 追加本行」，首版收口漏了这一项） |
 | AC-9 | **残余与未覆盖逐条明写** | **PASS** | `uncovered-scope-enumerated` / `residuals-enumerated` |
 | AC-10 | **两段并列 + 上限同源 + 两组合根** | **PASS** | `parallel-section-1/2`（`prior_knowledge=` 与 `retrieval=` 都在 `compose_prompt` 调用里）、`limits-imported-from-retrieval-context`、`composition-sqlite-wires-prior` / `composition-pg-wires-prior` |
 | AC-11 | **EC-04「改判内容采纳」的否决有实测** | **PASS** | 三次 run 的 `duplicate_pairs` = **30 / 30 / 10**（不一致）；该词本就在 `ALLOWED_PARAMETERS` ⇒ 子串判据会假绿。判定写进 GOAL 的 `blocked_reason` |
@@ -43,8 +43,8 @@ owners:
 
 ## 实测读数（本轮）
 
-- 验证器：`SUMMARY total=62 failed=0`
-- 两树：`TWO-TREE PASS`（`current` / `clean` 各 **62** verdicts，`sha256=a5ec128f…` **同一个值**，`exit=0`）
+- 验证器：`SUMMARY total=64 failed=0`（含两条**进展记录**断言）
+- 两树：`TWO-TREE PASS`（`current` / `clean` 各 **64** verdicts，`sha256=a5ec128f…` **同一个值**，`exit=0`）
 - m0 终态行：`PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，含计数之外的
   `release-assets-immutable`）。**此前两轮红均为并发 flake**：
   ① `test_tooling_scripts_meet_product_gates.py` **453 行**撞 450 行硬上限（**我的越界**，已修到 450）；
@@ -52,6 +52,13 @@ owners:
   与报告链 e2e 的 mock 端点在高并发下的响应时延有关）。两者都**未改任何阈值**。
 
 ## 警告（如实登记）
+
+- **`W-0`**（**本轮补记，最重要的过程缺陷**）：**首版收口把「阶梯记账」误当成「进展记录记账」**。
+  EC-05 的契约逐字写着「向宪章 `进展记录` 追加本行」，而我当时只改了阶梯「迭代」行的
+  `依据 GOAL`，且验证器的 `ladder-records-this-goal` **只查阶梯行** ⇒ 判成 PASS。
+  **处置**：补进展记录行 + 把验证器扩成**两个面都查**（`progress-records-this-goal` /
+  `progress-row-names-the-recheck`），并**按压**：删掉那一行 ⇒ 两条断言转红，恢复 ⇒ 转绿。
+  **教训**：判据要覆盖**契约原文**，不能只覆盖它容易实现的那一半。
 
 - **`W-1`**：**EC-04 阻塞** —— 阻塞点在**模型侧**（不按 `memory_id` 引用）与**判据侧**
   （无可靠的内容同源判据），**产品侧已无缺口**。解除条件是产品结构改动，需单独建档。
@@ -70,7 +77,7 @@ owners:
 
 ## 结论
 
-**PASS_WITH_WARNINGS**。收口资产自举成立（验证器 **62 条判词**、两树 `sha256` 相同、
+**PASS_WITH_WARNINGS**。收口资产自举成立（验证器 **64 条判词**、两树 `sha256` 相同、
 as-is m0 **23/23**、治理与凭据审计绿），阶梯「迭代」行已收录本 GOAL。
 
 **EC-04 记 BLOCKED 是一个决定，不是遗留**：我评估并**否决**了「改判内容采纳」这条路 ——

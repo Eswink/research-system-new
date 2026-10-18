@@ -145,10 +145,22 @@ def _self_loading_verdict() -> Any:
 
 
 def _ladder_verdicts(root: Path) -> list[Any]:
-    """宪章阶梯：**迭代**域那一行必须**收录本 GOAL**（战役的每轮记账面）。"""
+    """宪章记账的**两个面**都必须收录本 GOAL（这是本轮实测抓到的漏项）。
+
+    ① **阶梯行**（`依据 GOAL` 列）—— 「离科研多远」的读数；
+    ② **进展记录行**（`进展记录` 表）—— 「这一轮做了什么」的台账。
+
+    **为什么必须两个都查**：本 GOAL 的首版收口只改了阶梯行，`进展记录` 那一行**没写**，
+    而当时的断言只查阶梯行 ⇒ 判成 PASS。EC-05 的契约逐字要求「向宪章 `进展记录` 追加本行」，
+    漏掉它就是漏掉一条契约项 —— 判据必须覆盖契约的**原文**，不能只覆盖它容易实现的那一半。
+    """
     charter = TOOLBOX.text(root, ".cursor/plans/goals/MAINLINE.md")
     rows = [line for line in charter.splitlines() if line.startswith(LADDER_DOMAIN)]
     recorded = [line for line in rows if LADDER_GOAL in line]
+    progress = _progress_section(charter)
+    progress_rows = [
+        line for line in progress.splitlines() if line.startswith("| ") and LADDER_GOAL in line
+    ]
     return [
         TOOLBOX.verdict(
             "ladder-iteration-row-exists", bool(rows), "宪章阶梯里必须有「迭代」域那一行"
@@ -158,7 +170,28 @@ def _ladder_verdicts(root: Path) -> list[Any]:
             bool(recorded),
             "迭代域那一行的「依据 GOAL」必须收录本 GOAL（每轮必须更近科研）",
         ),
+        TOOLBOX.verdict(
+            "progress-records-this-goal",
+            bool(progress_rows),
+            "宪章「进展记录」必须有本 GOAL 的一行（EC-05 契约逐字要求）",
+        ),
+        TOOLBOX.verdict(
+            "progress-row-names-the-recheck",
+            any("RECHECK-20261018-510" in line for line in progress_rows),
+            "进展记录那一行的 RECHECK 列必须指向本轮的复检文件",
+        ),
     ]
+
+
+def _progress_section(charter: str) -> str:
+    """宪章「进展记录」小节正文（到下一个 `## ` 为止）。"""
+    marker = "## 进展记录"
+    start = charter.find(marker)
+    if start == -1:
+        return ""
+    tail = charter[start + len(marker) :]
+    stop = tail.find("\n## ")
+    return tail[: stop if stop != -1 else len(tail)]
 
 
 def record_verdicts(root: Path) -> list[Any]:
