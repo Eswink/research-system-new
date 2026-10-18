@@ -262,7 +262,7 @@ memory_entries: []
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01/02/03/04 |
 | 1 | PLAN-20261018-523 | 待本 cycle 推送后回填 | 新判据 **11 条**（运行链 3 / 读面 8）+ 落库往返 **5 条**；application+api+contracts **2411 passed / 77 skipped**；e2e **360 passed / 17 skipped**；静态门全绿；as-is m0 **23/23** | 见「CI 台账」 | 0（首轮自查修了 3 处：e2e 判据 4 个 mypy 错、1 处 104 列行宽、1 处格式化） | EC-01…EC-04 达成；**EC-05 待做** | 下一轮 = 收口（EC-05） |
-| 2 | （收口 cycle，无新子 PLAN） | 待回填 | 验证器 **66 条全绿**；两树同结论；as-is m0 **23/23**；治理通过；凭据四面 `offenders=0` | 见「CI 台账」 | 首次 m0 **判红两处**（PLAN 未勾选项 + GOAL-085 断言集锚点迁移）—— 均已修并**逐条申报** | 无（EC 全达成） | **收口** |
+| 2 | （收口 cycle，无新子 PLAN） | `fcd42593` / `6f0704ae` | 验证器 **66 条全绿**；两树同结论；as-is m0 **23/23**；治理通过；凭据四面 `offenders=0` | 见「CI 台账」 | 首次 m0 **判红两处**（PLAN 未勾选项 + GOAL-085 断言集锚点迁移）—— 均已修并**逐条申报** | 无（EC 全达成） | **收口** |
 
 ## CI 台账
 
@@ -270,7 +270,10 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
-| （建档提交，待回填） | 待回填 | 待回填 | 待回填 |
+| cycle 1 落地（分组键 + phase_id + 迁移 029 + 两处断言修正） | `a0c60b89` | **零 run** | 同一推送内的中间提交 ⇒ 由 `6f0704ae` 的 run `covered_by`（产品面与判据面同批推送） |
+| cycle 1 记录（序 54 建档 + PLAN + RECHECK-524） | `68016a13` | **零 run** | 同上（记录提交） |
+| EC-05 收口资产（验证器 + 断言集 + 两处注册 + 阶梯记账） | `fcd42593` | **零 run** | 同上 |
+| EC-05 收口（两树判词归档 + RECHECK-525 + GOAL 终态）**tip** | `6f0704ae` | [M0 39160852998](https://github.com/Eswink/research-system-new/actions/runs/39160852998) / [Push 39160853687](https://github.com/Eswink/research-system-new/actions/runs/39160853687) | **M0 八 job 全 `success`**（`container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
 
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
@@ -281,3 +284,4 @@ memory_entries: []
 | --- | --- | --- |
 | 2026-10-18 | **ACTIVE** | **建档**：承 GOAL-085 收口后按阶梯 `下一级` 续推（序 54）。**建档实测五条**：① `_panel_rows` 按 `(task_id, contract_id)` 分组；② `resolve_sessions` 对每个评审 agent 各生成一个 task（幂等键 `{run}:{phase}:{agent}`）；③ 判词 id 逐字 `finding:{task_id}:gate` ⇒ 一个任务至多一条判词；④ **实测复现** `count: 2, panel_count: 0`；⑤ 多评审 phase 在出厂目录里真实存在（`ai_ml_research_v0_4_0` + `standard` 模板 + `project.yaml`）。⇒ 阶梯「复检」的下一个要求**前提不成立**，先补它。 |
 | 2026-10-18 | **ACTIVE**（cycle 1 落地） | EC-01…EC-04 达成。**关键读数**：运行链上两位评审者（`glm-5.3` / `kimi-k2.6`）在同一 phase ⇒ `panels` 一条、`scope="PHASE"`、`voters=2`、`independent=True`；按压同模型 ⇒ `independent=False` 并点名 `main/glm-5.3`；不同 phase ⇒ `panels == []`。`phase_id` 落库（SQLite 增量列 + PG `029`）并逐字往返，**既有库补列**亦实测。零回归：application+api+contracts **2411 passed / 77 skipped**、e2e **360 passed / 17 skipped**、as-is m0 **23/23**。**EC-05（自举收口）待做**。 |
+| 2026-10-18 | **ACHIEVED**（cycle 2 收口） | EC-01…EC-05 全部 `PASS`。EC-05：验证器本树 **66 条全绿**；两树逐行相同且 `sha256` 一致（`2f357b6c…`）；as-is m0 **23/23**（**在全部记录写入之后**、静止工作树）；治理通过；凭据四面 `offenders=0`；CI 八 job 全 `success`（`6f0704ae`，`run_attempt=1`、零 cancelled）。阶梯两个面都由判词钉住；程序表序 54 登记、预算 55 未触顶。 |
