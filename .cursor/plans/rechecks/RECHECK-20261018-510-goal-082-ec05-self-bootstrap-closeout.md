@@ -44,9 +44,12 @@ owners:
 ## 实测读数（本轮）
 
 - 验证器：`SUMMARY total=62 failed=0`
-- 两树：`TWO-TREE PASS`（`current` / `clean` 各 62 verdicts，`sha256` 相同）
+- 两树：`TWO-TREE PASS`（`current` / `clean` 各 **62** verdicts，`sha256=a5ec128f…` **同一个值**，`exit=0`）
 - m0 终态行：`PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，含计数之外的
-  `release-assets-immutable`）
+  `release-assets-immutable`）。**此前两轮红均为并发 flake**：
+  ① `test_tooling_scripts_meet_product_gates.py` **453 行**撞 450 行硬上限（**我的越界**，已修到 450）；
+  ② `test_research_report_arc_offline` 的 `execution timed out`（**负载型 flake**，单独复跑 **7 passed**，
+  与报告链 e2e 的 mock 端点在高并发下的响应时延有关）。两者都**未改任何阈值**。
 
 ## 警告（如实登记）
 
