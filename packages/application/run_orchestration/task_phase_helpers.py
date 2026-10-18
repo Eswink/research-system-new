@@ -85,6 +85,8 @@ def failure_step(
     tctx: Any,
     message: str,
     system_failure: bool,
+    *,
+    verdict: str | None = None,
 ) -> PhaseStep:
     """一个任务失败该怎么落地——**唯一的失败分叉点**（EC-03）。
 
@@ -104,8 +106,8 @@ def failure_step(
             tctx.ctx.trace_id,
             tctx.task.id.value,
         )
-        return PhaseStep(tolerated_failure=message)
-    return PhaseStep(failure=deps.fail(tctx.ctx.run_id, message, system_failure))
+        return PhaseStep(tolerated_failure=message, verdict=verdict)
+    return PhaseStep(failure=deps.fail(tctx.ctx.run_id, message, system_failure), verdict=verdict)
 
 
 def failure_or_deferred(deps: Any, tctx: Any, execution: Any) -> PhaseStep:
@@ -338,6 +340,7 @@ def register_and_gate(
             tctx,
             f"task {task.id.value} rejected by acceptance gate ({gate_rejection_reason(gate)})",
             False,
+            verdict=gate.verdict,
         )
     step = finish_task_step(
         deps,
@@ -371,6 +374,7 @@ def register_and_gate_experiment(
             tctx,
             f"task {task.id.value} rejected by acceptance gate ({gate_rejection_reason(gate)})",
             False,
+            verdict=gate.verdict,
         )
     kind = (
         MemoryType.NEGATIVE_RESULT

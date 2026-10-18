@@ -118,11 +118,7 @@ def aggregate_panel(findings: Sequence[ReviewFinding]) -> PanelVerdict | None:
         )
     notes.extend(ineligible)
     advisory = _advisory(votes)
-    dissent = tuple(
-        f"{_speaker(item)}:{item.verdict.strip().upper()}"
-        for item in sorted(voters, key=_speaker)
-        if advisory is not None and item.verdict.strip().upper() != advisory
-    )
+    dissent = _dissent(voters, advisory)
     return PanelVerdict(
         voters=len(voters),
         votes=dict(sorted(votes.items())),
@@ -132,6 +128,28 @@ def aggregate_panel(findings: Sequence[ReviewFinding]) -> PanelVerdict | None:
         targets=tuple(targets),
         independent=not notes,
         independence_notes=tuple(notes),
+    )
+
+
+def _dissent(voters: Sequence[ReviewFinding], advisory: str | None) -> tuple[str, ...]:
+    """少数意见（未被采纳的票），逐条 `reviewer:verdict`。
+
+    **平票时全部票都是少数意见**（GOAL-20261018-087 EC-03 实测的缺口）：原实现只在
+    `advisory is not None` 时才记录 —— 而平票**正是分歧最大的那一刻**，于是「有分歧」
+    与「没有少数意见」在读面上看起来一样。现在平票 ⇒ **每票都列**（没有多数，就都是少数），
+    无票 ⇒ 空。
+    """
+    if advisory is None:
+        if not voters:
+            return ()
+        return tuple(
+            f"{_speaker(item)}:{item.verdict.strip().upper()}"
+            for item in sorted(voters, key=_speaker)
+        )
+    return tuple(
+        f"{_speaker(item)}:{item.verdict.strip().upper()}"
+        for item in sorted(voters, key=_speaker)
+        if item.verdict.strip().upper() != advisory
     )
 
 

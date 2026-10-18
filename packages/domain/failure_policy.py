@@ -38,8 +38,27 @@ class OnTaskFailure:
     VALUES = frozenset({FAIL_RUN, CONTINUE})
 
 
+class ReviewPanelFailure:
+    """评审 phase 级：一位评审者判负时，**同批评审**还评不评得完（GOAL-20261018-087）。
+
+    **与 `on_task_failure` 是两件事**（混用会把「判负」说成「可容忍的瑕疵」）：
+
+    - `on_task_failure: CONTINUE` ⇒ 失败被**容忍**（run 收敛 `DEGRADED`，判负成了
+      「可以带着走」的瑕疵）；
+    - 本键 ⇒ 先把**同批**评审者都评完并落库（分歧因此可读），**再**按全体结论判定：
+      只要有任一位判负，run 仍 `FAILED`。改的是**时机与可见性**，不是后果。
+    """
+
+    COMPLETE_THEN_JUDGE = "COMPLETE_THEN_JUDGE"
+
+    VALUES = frozenset({COMPLETE_THEN_JUDGE})
+
+
 # 已知键 → 取值域（确定性来源；新增消费点时必须同时进这里与文档）
-KNOWN_KEYS: dict[str, frozenset[str]] = {"on_task_failure": OnTaskFailure.VALUES}
+KNOWN_KEYS: dict[str, frozenset[str]] = {
+    "on_task_failure": OnTaskFailure.VALUES,
+    "review_panel": ReviewPanelFailure.VALUES,
+}
 
 _FAILURE_POLICY_VALUE = str | bool | int | list[str]
 
@@ -52,6 +71,8 @@ class FailurePolicyView:
     """
 
     on_task_failure: str = OnTaskFailure.FAIL_RUN
+    #: 空串 = 未声明该面（既有语义；逐字不变）。
+    review_panel: str = ""
     declared: tuple[str, ...] = ()
     unhonored: tuple[str, ...] = ()
 
@@ -59,6 +80,15 @@ class FailurePolicyView:
     def tolerated(self) -> bool:
         """被容忍的失败是否允许 run 继续跑完剩余工作。"""
         return self.on_task_failure == OnTaskFailure.CONTINUE
+
+    @property
+    def panel_completes_before_judging(self) -> bool:
+        """同批评审是否要**先评完再判**（GOAL-20261018-087 EC-02）。
+
+        假 ⇒ 既有 fail-fast（第一个判负就停，同批后续评审者不跑）。这条**不是**
+        `tolerated` 的别名：两者可以同时为假（各自独立的声明面）。
+        """
+        return self.review_panel == ReviewPanelFailure.COMPLETE_THEN_JUDGE
 
 
 def failure_policy_view(
@@ -75,11 +105,23 @@ def failure_policy_view(
     if not policy:
         return FailurePolicyView(declared=declared)
     unhonored = tuple(sorted(key for key in declared if key not in KNOWN_KEYS))
-    raw = policy.get("on_task_failure")
-    if raw is None or "on_task_failure" not in policy:
-        return FailurePolicyView(declared=declared, unhonored=unhonored)
+    return FailurePolicyView(
+        # 缺省 `FAIL_RUN`（既有隐式 fail-fast）：**不**随新增键而漂成空串。
+        on_task_failure=_value(policy, "on_task_failure", OnTaskFailure.VALUES)
+        or OnTaskFailure.FAIL_RUN,
+        review_panel=_value(policy, "review_panel", ReviewPanelFailure.VALUES),
+        declared=declared,
+        unhonored=unhonored,
+    )
+
+
+def _value(policy: Mapping[str, _FAILURE_POLICY_VALUE], key: str, values: frozenset[str]) -> str:
+    """一个已知键的取值（**缺席 ⇒ 空串**；非法 ⇒ 响亮失败，不静默回退）。"""
+    raw = policy.get(key)
+    if raw is None or key not in policy:
+        return ""
     value = str(raw)
-    if value not in OnTaskFailure.VALUES:
-        allowed = ", ".join(sorted(OnTaskFailure.VALUES))
-        raise ValueError(f"unsupported on_task_failure value: {value!r} (allowed: {allowed})")
-    return FailurePolicyView(on_task_failure=value, declared=declared, unhonored=unhonored)
+    if value not in values:
+        allowed = ", ".join(sorted(values))
+        raise ValueError(f"unsupported {key} value: {value!r} (allowed: {allowed})")
+    return value

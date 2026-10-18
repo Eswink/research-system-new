@@ -35,6 +35,11 @@ from packages.application.run_orchestration.phase_pause import (
 from packages.application.run_orchestration.prior_knowledge import with_prior_knowledge
 from packages.application.run_orchestration.report_task import register_and_gate_report
 from packages.application.run_orchestration.retrieval_context import with_retrieval_context
+from packages.application.run_orchestration.review_panel_judging import (
+    panel_plan,
+    panel_rejection,
+    record_rejection,
+)
 from packages.application.run_orchestration.round_loop_runner import execute_rounds
 from packages.application.run_orchestration.run_completion_payload import (
     run_completion_payload,
@@ -262,11 +267,7 @@ def _phase_groups(
 
 @dataclass(slots=True)
 class _GroupRun:
-    """一个 phase 组的执行现场：累积结果 + 本组之后的剩余组（参数对象）。
-
-    `_execute_phase_group` / `_park_for_retry` 需要同时拿到"已经成功的任务""本组
-    之后的 specs""handoff 累积"，逐个当参数传会撞上 5 参数上限——收敛成一个现场对象。
-    """
+    """一个 phase 组的执行现场：累积结果 + 本组之后的剩余组（参数对象；避免参数爆炸）。"""
 
     outcomes: list[TaskOutcome]
     handoffs: dict[str, object]
@@ -301,6 +302,11 @@ def _execute_phase_group(
             outcome = _run_group_task(frame, group, position, run)
             if outcome is not None:
                 return outcome
+        # GOAL-20261018-087 EC-01：声明了「先评完再判」的组 ⇒ 全体评完后才判负。
+        rejection = panel_rejection(deps, group, run, ctx.run_id)
+        if rejection is not None:
+            phase_op.set_outcome(OperationOutcome.FAILED, "panel_rejected")
+            return rejection  # type: ignore[no-any-return]
     return None
 
 
@@ -312,16 +318,6 @@ class _GroupFrame:
     ctx: PhaseContext
     phase_id: str
     phase_op: Any
-
-
-def _dispatch_task_execution(deps: PhaseRunnerDeps, tctx: TaskContext) -> TaskExecutionResult:
-    """「谁执行这件工作」的派发（实现见 `task_dispatch.py`；本行只委派）。
-
-    单列的理由与 GOAL-011 EC-03 拆 `experiment_task` 同源：本模块卡在 **450 行硬上限**上 ——
-    GOAL-20261014-078 的检索上下文接缝同样因此**不在这里写实现**（见
-    `retrieval_context.with_retrieval_context`）。
-    """
-    return dispatch_task_execution(deps, tctx)
 
 
 def _task_correlation(ctx: PhaseContext, task: ResearchTask, phase_id: str) -> CorrelationRef:
@@ -369,6 +365,11 @@ def _run_group_task(
         run.outcomes.append(tolerated_outcome(task, step.tolerated_failure))
         return None
     if step.failure is not None:
+        # GOAL-20261018-087 EC-01：同批评审声明了「先评完再判」⇒ 记下判负、让同组继续
+        # （组末由 `panel_rejection` 统一判负）；未声明 ⇒ 逐字回到既有 fail-fast。
+        if panel_plan(group):
+            record_rejection(run, task, step)
+            return None
         frame.phase_op.set_outcome(OperationOutcome.FAILED, "task_failed")
         return step.failure  # type: ignore[no-any-return]
     run.handoffs[task.id.value] = step.handoff
@@ -394,10 +395,8 @@ def _park_for_retry(
 ) -> RunOutcome:
     """把"重排还没到期"的 run 停在 PAUSED，而不是判失败（PLAN-20260915-081）。
 
-    失败的那个任务与它后面的所有 specs 一起交回 service 暂存供 resume 续跑。
-    为什么不能判失败：run 的 FAILED 是**终态**（`FAILED --RESUME-->` 不在迁移表里），
-    一旦落 FAILED，durable 侧那条 `RETRY_SCHEDULED`（带 `retry_at`）就再没有派发方
-    会来取——声明了退避的重排会变成孤儿（RECHECK-20260915-080 W-1）。
+    失败的任务与其后全部 specs 一起交回 service 暂存供 resume。不能判失败：`FAILED`
+    是终态（不在迁移表里），一落 FAILED 那条 `RETRY_SCHEDULED` 就再没有派发方会来取。
     """
     if deps.on_pause is not None:
         deps.on_pause(tuple(group[position:]) + tuple(spec for chunk in run.tail for spec in chunk))
@@ -426,7 +425,7 @@ def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:
     capability = execute_run_chain_capabilities(deps.capabilities, task, tctx.spec_context)
     if capability.failure_message is not None:
         return failure_step(deps, tctx, capability.failure_message, capability.system_failure)
-    execution = _dispatch_task_execution(deps, tctx)
+    execution = dispatch_task_execution(deps, tctx)
     observe_session(deps.on_observation, tctx.spec_context.endpoint, execution.session_result)
     if not execution.succeeded:
         return failure_or_deferred(deps, tctx, execution)

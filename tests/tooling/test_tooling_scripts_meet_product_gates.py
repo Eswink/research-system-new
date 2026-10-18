@@ -1,21 +1,19 @@
 """GOAL-20260928-023 EC-02 判据：被点名的 `tools/` 脚本也要过产品同款的四道门。
-
-**为什么需要**：`tools/` **不在** `PRODUCT_ROOTS`（`("apps", "services", "packages",
-"adapters", "tests")`）⇒ 落在 `tools/` 的脚本**不被** `python/product-lint`、
-`python/format-check`、`python/typecheck` 与规模门覆盖（GOAL-022 EC-01 的 `W-1` / `W-4`）。
-本判据**不改** `PRODUCT_ROOTS`、**不改**任何既有 check、**不改** m0 条数 ——
-它以**新增判据**的形式，对一个**有界射程**执行同样的四道检查：
+**为什么需要**：`tools/` **不在** `PRODUCT_ROOTS`（`("apps", "services", "packages", "adapters",
+"tests")`）⇒ 落在 `tools/` 的脚本**不被** `python/product-lint` / `format-check` /
+`typecheck` 与规模门覆盖（GOAL-022 EC-01 的 `W-1` / `W-4`）。
+本判据**不改** `PRODUCT_ROOTS` / 任何既有 check / m0 条数，只对**有界射程**跑同样四道：
 
 1. `ruff format --check`；
-2. `ruff check`（既有 `pyproject.toml` 配置已含 `max-complexity = 10` 与 `line-length = 100`）；
-3. **规模**：函数 ≤ 50 行（口径 `end_lineno - lineno + 1`）、文件 ≤ 450 行（`splitlines()`）；
-4. `mypy`（既有 `strict = true` 配置；**实测可稳定机械执行** ⇒ 无豁免）。
-**射程有界、且射程写在判据源码里**（承 MEM-141：只靠文档取射程会被改文案绕过）：
+2. `ruff check`（既有 `pyproject.toml` 已含 `max-complexity = 10` 与 `line-length = 100`）；
+3. **规模**：函数 ≤ 50 行（`end_lineno - lineno + 1`）、文件 ≤ 450 行（`splitlines()`）；
+4. `mypy`（既有 `strict = true`；**实测可稳定机械执行** ⇒ 无豁免）。
+**射程写在判据源码里**（承 MEM-141：只靠文档取射程会被改文案绕过）：
 
 - **必备清单** `IN_SCOPE`（源码里固化；每加一个脚本都要**显式**加进来，见分区判据）；
-- **加**规范页点名的脚本（`RECHECK_SCRIPT_CONVENTIONS.md` 里的 `tools/**.py`）—— 这条是**推导**；
+- **加**规范页点名的脚本（`RECHECK_SCRIPT_CONVENTIONS.md` 的 `tools/**.py`）；
 - **不得**是「扫整个 `tools/`」：既有 lint / format 错 ⇒ 以**清单 + 理由**登记在
-  `LEGACY_OUT_OF_SCOPE`，增删必须显式（分区判据会判红）。
+  `LEGACY_OUT_OF_SCOPE`。
 """
 
 from __future__ import annotations
@@ -217,6 +215,8 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal085_closeout.py",
     "tools/goal086_closeout_assertions.py",  # GOAL-20261018-086 EC-05：验证器 + 断言集。
     "tools/verify_goal086_closeout.py",
+    "tools/goal087_closeout_assertions.py",  # GOAL-20261018-087 EC-05：同上。
+    "tools/verify_goal087_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
