@@ -242,6 +242,9 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
+| cycle 1 落地（判定 + 门链 + 60 条判据） | `47eaf71b` | 见下行覆盖 | 批量推送；其内容包含在 `1349ea27` 的树里 |
+| cycle 1 记录面（GOAL/PLAN/RECHECK/MAINLINE 扩表/ALL_PLAN） | `1349ea27` | [M0 39094592380](https://github.com/Eswink/research-system-new/actions/runs/39094592380) / [Push 39094592556](https://github.com/Eswink/research-system-new/actions/runs/39094592556) | 🔴 **`quality-ubuntu` / `quality-windows` = `failure`（真红）**：`python/format-check` —— 我只格式化了**新文件**，没跑全量 format 检查，`gate.py` 里我加的两处折行不合 formatter 口径。其余六 job `success`，CodeQL 三条 `success`。**分类 = 我的遗漏（非 flake）**；**处置 = 下一提交跑全量 `ruff format`**（零语义变化），**不** rerun 同一棵树 |
+| cycle 1 修复（`gate.py` 的 ruff format）+ **当前 tip** | `e58215c1`（**tip**） | [M0 39095881562](https://github.com/Eswink/research-system-new/actions/runs/39095881562) / [Push 39095881070](https://github.com/Eswink/research-system-new/actions/runs/39095881070) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**、**零 rerun**。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`**（静止工作树） |
 
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
