@@ -61,7 +61,8 @@ memory_entries: []
 
 | 项 | 读数 |
 | --- | --- |
-| 解释器 | 两侧都是**主树 `.venv`**（`--script-mode shared`；干净树不自建环境） |
+| 解释器 | 两侧都是**主树 `.venv`**（干净树不自建环境） |
+| 模式 | **`tree`（缺省）** —— 脚本按**各自树根**解析，因此这条判据同时证明「干净 checkout 里**真的有**解析面与验证器」。**首轮用 `--script-mode shared` 是错的**：该模式把两侧脚本都解析到主树 ⇒ 干净树缺文件也会「通过」；已改回 `tree`，并**先建持久化 worktree 逐条确认**两棵树都含 `tools/verify_goal084_closeout.py` 与 `packages/application/preflight/review_independence.py`（同一 HEAD）再重跑 |
 | 输出纯度 | 只接受 `PASS` / `FAIL` 开头的判词行；判词**不含任何树的绝对路径** |
 | 判词数 | current **67** / clean **67** |
 | `sha256` | `0e04121fe61676a528be7dc0dad58ae626a0051c438b98f500245034cae880a1`（两侧**相同**） |

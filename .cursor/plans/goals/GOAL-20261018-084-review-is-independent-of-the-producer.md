@@ -316,6 +316,7 @@ cycle 1 的 `escalation_triggers` 条目把「接入第二个模型」笼统归�
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01/02/03（解析 + 判据 + fallback） |
 | 1 | PLAN-20261018-515（**已回退**） | `77577728`（实现，已 revert） / `cb0b2f6b`（记录面） | 实现期 **23 条判据全绿** + 零回归 **1735 passed**；但**接入产品路径后**实测：`m12_reference_research_v1` 等协议的 writer/reviewer 同模型 ⇒ preflight 判 `HETEROGENEITY_VIOLATION` ⇒ **freeze 拒冻** ⇒ 一批既有 API 测试红 | **`cb0b2f6b` M0 三 job 红**（`quality-ubuntu` / `quality-windows` / `console-frontend`）| 1 次（见「cycle 1 的记录」） | EC-01…04 回到未达成 | 当时的答案是「需拍板」——**该判断已被 cycle 2 推翻** |
 | 2 | PLAN-20261018-517 | `e7d43001`（代码面）/ `6c6d9456`（记录面，tip） | 新判据 **21 passed**（EC-01 8 / EC-02+03 9 / EC-04 4）+ 异构专项 **5** + 受影响 API **28**；宽面 **2708 passed / 77 skipped**；`mypy` 10 files clean；反向按压在产品路径上得到 **1 条** `HETEROGENEITY_VIOLATION` 并点名相交目标 | **`6c6d9456` M0 八 job 全 `success`** + CodeQL 三条 `success`；`e7d43001` **零 run**（同树 `covered_by`） | 0（无一等失败） | EC-01…EC-04 已 `PASS`；**EC-05 待做** | **已收口**：EC-05 达成（`RECHECK-20261018-519`） |
+| 3 | （收口 cycle，无新子 PLAN） | `bd1414df` | 验证器本树 **67 条判词全绿**；两树逐行相同 + `sha256` 一致（`tree` 模式，先确认干净树真的含文件）；as-is m0 **23/23**；治理通过；凭据四面 `offenders=0` | 见「CI 台账」 | 0 | **无（全部 EC 达成）** | 按阶梯 `下一级` 选下一轮 |
 
 ## CI 台账
 

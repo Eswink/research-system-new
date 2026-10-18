@@ -164,9 +164,7 @@ def _ladder_verdicts(root: Path) -> list[Any]:
         line for line in progress.splitlines() if line.startswith("| ") and LADDER_GOAL in line
     ]
     return [
-        TOOLBOX.verdict(
-            "ladder-review-row-exists", bool(rows), "宪章阶梯里必须有「复检」域那一行"
-        ),
+        TOOLBOX.verdict("ladder-review-row-exists", bool(rows), "宪章阶梯里必须有「复检」域那一行"),
         TOOLBOX.verdict(
             "ladder-records-this-goal",
             bool(recorded),

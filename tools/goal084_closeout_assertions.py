@@ -66,7 +66,7 @@ ROLE_CHECK_IMPORT = "from packages.application.preflight.review_independence imp
 ROLE_CHECK_USES = "describe_target(target)"
 
 #: 解析失败点名（不是静默跳过）。
-UNRESOLVED_CODE = 'PreflightFindingCode.MODEL_MISSING.value'
+UNRESOLVED_CODE = "PreflightFindingCode.MODEL_MISSING.value"
 UNRESOLVED_PROMPT = "review independence cannot be judged for this role"
 
 #: 出厂目录的真实读数：评审者与生产者的 `model_name` 必须不同。
