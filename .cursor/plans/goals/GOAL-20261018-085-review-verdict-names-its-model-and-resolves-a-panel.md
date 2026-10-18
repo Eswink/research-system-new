@@ -2,7 +2,7 @@
 id: GOAL-20261018-085
 slug: review-verdict-names-its-model-and-resolves-a-panel
 title: 评审判词点名**它的模型**，且多评审真的聚合成一条结论（修正阶梯「复检」的下一级）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-18
 updated_at: 2026-10-18
 owners:
@@ -85,7 +85,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 
 budget:
   max_cycles: 14
@@ -136,7 +136,7 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261018-520-goal-085-verdict-names-its-model-and-panel-aggregates.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-521-goal-085-verdict-attribution-and-panel.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-522-goal-085-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -222,6 +222,8 @@ memory_entries: []
   射程外；与 GOAL-084 的 `W-2` 同一条边界）。
 - `W-4` —— **不改既有 `reviewed_by` 的写法**：要在**新增**的并列结构里放模型身份；
   既有读面字段逐字不变。
+- `W-5` —— **两个评审实例的 `task_id` 必须相同才会被聚成一票**：这是有意的（不同任务评的是不同产物），但意味着「跨任务的评审小组」**不在射程**。
+- `W-6` —— `panels` 里**没有**「哪一票来自哪个 phase」这一格：阶段归属要从 `reviews[].task_id` 反查；「按阶段看小组」属新增读面字段，不在本轮。
 
 **未覆盖范围**（逐条明写；本 GOAL **不声称**已解决）：
 
@@ -248,6 +250,7 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
+| cycle 1 落地（归因 + 聚合 + 独立性 + 读面） | `941752a1`（**tip**） | [M0 39138987866](https://github.com/Eswink/research-system-new/actions/runs/39138987866) / [Push 39138987152](https://github.com/Eswink/research-system-new/actions/runs/39138987152) | **M0 八 job 全 `success`**（`container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main 三条 CodeQL `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
 
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
@@ -258,3 +261,4 @@ memory_entries: []
 | --- | --- | --- |
 | 2026-10-18 | **ACTIVE** | **建档**：承 GOAL-084 收口后按阶梯 `下一级` 续推（序 53）。**建档实测四条**：① `evidence.ReviewFinding` 无 `model_identity`，SQLite 表也无该列；② `reviewed_by` 逐字是 `gate:<agent id>`（agent 名，不是模型）；③ `run_panel` / `LlmReviewer` / `ReviewAssignment` 在产品代码**零构造点** ⇒ 多评审互不相干；④ `eval_result.ReviewerFinding` 有 `model_identity`，但那是另一条链 ⇒ 同一概念一有一无。 |
 | 2026-10-18 | **ACTIVE**（cycle 1 落地） | EC-01…EC-04 达成：判词带 `reviewer_model`（`endpoint/model_name`，与 GOAL-084 的解析面同源）、多票确定性聚合（平票与无身份者**分开点名**、advisory **不夺真相权**）、独立性与 GOAL-084 同源（同目标两个实例 ⇒ 不独立并点名）、读面与落库链都带归因。新判据 **29 条**；零回归 **1201 + 3086**；as-is m0 **23/23**。**EC-05（自举复检）待做**。 |
+| 2026-10-18 | **ACHIEVED**（cycle 2 收口） | EC-01…EC-05 全部 `PASS`。EC-05：验证器本树 **67 条判词全绿**；两树逐行相同且 `sha256` 一致；as-is m0 **23/23**；治理通过；凭据四面 `offenders=0`；CI 台账逐提交（`941752a1` 八 job 全 `success`）。阶梯两个面（阶梯行 + 进展记录）都由判词钉住。 |
