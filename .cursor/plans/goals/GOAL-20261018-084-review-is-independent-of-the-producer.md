@@ -297,6 +297,9 @@ EC-01…EC-04 回到「未达成」，本 GOAL 记 **BLOCKED**。
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
+| cycle 1 落地（解析面 + 判定面 + 23 条判据） | `77577728` | 见下行覆盖 | 已 `git revert`；其内容曾包含在 `cb0b2f6b` 的树里 |
+| cycle 1 记录面（GOAL/PLAN/RECHECK/MAINLINE/ALL_PLAN） | `cb0b2f6b` | [M0 39103704350](https://github.com/Eswink/research-system-new/actions/runs/39103704350) / [Push 39103704232](https://github.com/Eswink/research-system-new/actions/runs/39103704232) | 🔴 **三 job `failure`（真红，且是判据生效的真实后果）**：`quality-ubuntu` / `quality-windows` （`python/tests` 里一批 API 测试因 `preflight failed: HETEROGENEITY_VIOLATION` ⇒ freeze 拒冻而红）与 `console-frontend`。CodeQL 三条 `success`。**分类 = 判据收紧的后果（非 flake）**；**处置 = 回退实现**（见下行） |
+| cycle 1 回退（实现 revert + BLOCKED 记录）+ **当前 tip** | `f4d6b03c`（**tip**） | [M0 39106389699](https://github.com/Eswink/research-system-new/actions/runs/39106389699) / [Push 39106389552](https://github.com/Eswink/research-system-new/actions/runs/39106389552) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**、**零 rerun**。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`**（回退后，静止工作树） |
 
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
