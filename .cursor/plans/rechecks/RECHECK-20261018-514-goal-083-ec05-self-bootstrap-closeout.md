@@ -46,10 +46,16 @@ owners:
 ## 实测读数（本轮）
 
 - 验证器：`SUMMARY total=66 failed=0`
-- 两树：`TWO-TREE PASS`（两树各 66 verdicts，`sha256` 相同）
-- m0 终态行：`PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`）
+- 两树：`TWO-TREE PASS`（两树各 **66** verdicts、`sha256=4401e480…` **同一个值**、`exit=0`）
+- m0 终态行：`PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，`EXIT=0`，静止工作树）
 
 ## 警告（如实登记）
+
+- **`W-0`**（**本轮的过程失误，已撤销**）：我在跑收口时执行了 `ruff format tools/`，把 **10 个
+  射程外的历史脚本**（`PA1R*` 六个 + `backup.py` 等）一起重排了 —— 672 行无关改动。
+  **处置**：`git checkout -- tools/` **全部撤销**（那些是历史资产，不该被本轮的格式化波及）；
+  撤销后验证器仍 66/66、两树 `sha256` 不变。**教训**：格式化只对**本轮新增/改动的文件**跑，
+  对 `tools/` 整目录跑会碰到历史资产。
 
 - **`W-1`**：**例数下界的第一版是错的**（`EC-05` 实测）：我按「模块级 `def test_` 的个数」
   写下界（7 / 5），而 `parametrize` 展开后真实条数是 24 / 21 ⇒ 判据判红。**处置**：改为
