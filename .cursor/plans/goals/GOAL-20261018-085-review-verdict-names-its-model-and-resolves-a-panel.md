@@ -250,7 +250,12 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
-| cycle 1 落地（归因 + 聚合 + 独立性 + 读面） | `941752a1`（**tip**） | [M0 39138987866](https://github.com/Eswink/research-system-new/actions/runs/39138987866) / [Push 39138987152](https://github.com/Eswink/research-system-new/actions/runs/39138987152) | **M0 八 job 全 `success`**（`container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main 三条 CodeQL `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
+| cycle 1 落地（归因 + 聚合 + 独立性 + 读面） | `941752a1` | [M0 39138987866](https://github.com/Eswink/research-system-new/actions/runs/39138987866) / [Push 39138987152](https://github.com/Eswink/research-system-new/actions/runs/39138987152) | **M0 八 job 全 `success`**（`container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main 三条 CodeQL `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
+
+| EC-05 收口资产（验证器 + 断言集 + 阶梯记账） | `ce9add21` | **零 run** | 同一推送内的中间提交 ⇒ 由 `6866b069` 的 run `covered_by`（只改 `tools/**` 与 `.cursor/plans/**`） |
+| EC-05 复检记录 | `db120a8e` | **零 run** | 同上（记录提交） |
+| 门禁缺陷修复（分区登记 + 拆函数 + 行宽/行数） | `1eded92e` | **零 run** | 同上 |
+| 两树判词归档 + **当前 tip** | `6866b069` | [M0 39145213218](https://github.com/Eswink/research-system-new/actions/runs/39145213218) / [Push 39145212228](https://github.com/Eswink/research-system-new/actions/runs/39145212228) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL `success`；`run_attempt=1`、零 `cancelled`、零 rerun |
 
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
