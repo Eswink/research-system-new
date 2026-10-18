@@ -107,9 +107,7 @@ def _contradiction_check(proposal: MemoryWriteProposal, deps: MemoryGateDeps) ->
     return _content_conflict_check(proposal, deps)
 
 
-def _content_conflict_check(
-    proposal: MemoryWriteProposal, deps: MemoryGateDeps
-) -> str | None:
+def _content_conflict_check(proposal: MemoryWriteProposal, deps: MemoryGateDeps) -> str | None:
     """**内容级**判定（GOAL-20261018-083 EC-02）：说法真的相反时**点名拒绝**。
 
     **它补哪一格**：上面那段只查**引用完整性** —— `contradictions` 为空时，「这条与库里某条
@@ -149,9 +147,7 @@ def _active_records_in_scope(deps: MemoryGateDeps, scope: str) -> tuple[object, 
         records = deps.store.query(scope=scope)
     except (InvalidInputError, TypeError):  # 适配器不认 scope ⇒ 不判（保持既有语义）
         return ()
-    return tuple(
-        record for record in records if getattr(record, "active", True) is not False
-    )
+    return tuple(record for record in records if getattr(record, "active", True) is not False)
 
 
 def evaluate_memory_proposal(
