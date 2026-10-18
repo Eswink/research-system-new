@@ -2,7 +2,7 @@
 id: GOAL-20261018-084
 slug: review-is-independent-of-the-producer
 title: 评审独立于生产者（按解析后的 model_name + endpoint 判，覆盖 fallback）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-18
 updated_at: 2026-10-18
 owners:
@@ -91,7 +91,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 
 budget:
   max_cycles: 14
@@ -154,7 +154,7 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261018-515-goal-084-ec01-review-independence-by-resolved-target.md
   - .cursor/plans/tasks/PLAN-20261018-517-goal-084-review-independence-by-resolved-target-on-a-distinct-model.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-518-goal-084-review-independence-on-a-distinct-model.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-519-goal-084-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -315,7 +315,7 @@ cycle 1 的 `escalation_triggers` 条目把「接入第二个模型」笼统归�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01/02/03（解析 + 判据 + fallback） |
 | 1 | PLAN-20261018-515（**已回退**） | `77577728`（实现，已 revert） / `cb0b2f6b`（记录面） | 实现期 **23 条判据全绿** + 零回归 **1735 passed**；但**接入产品路径后**实测：`m12_reference_research_v1` 等协议的 writer/reviewer 同模型 ⇒ preflight 判 `HETEROGENEITY_VIOLATION` ⇒ **freeze 拒冻** ⇒ 一批既有 API 测试红 | **`cb0b2f6b` M0 三 job 红**（`quality-ubuntu` / `quality-windows` / `console-frontend`）| 1 次（见「cycle 1 的记录」） | EC-01…04 回到未达成 | 当时的答案是「需拍板」——**该判断已被 cycle 2 推翻** |
-| 2 | PLAN-20261018-517 | 待本 cycle 推送后回填 | 新判据 **21 passed**（EC-01 8 / EC-02+03 9 / EC-04 4）+ 异构专项 **5** + 受影响 API **28**；宽面 **2708 passed / 77 skipped**；`mypy` 10 files clean；反向按压在产品路径上得到 **1 条** `HETEROGENEITY_VIOLATION` 并点名相交目标 | 见「CI 台账」 | 0（无一等失败） | EC-01…EC-04 已 `PASS`；**EC-05 待做** | 收口 cycle：EC-05 自举复检 + 阶梯记账 + 两树同结论 |
+| 2 | PLAN-20261018-517 | `e7d43001`（代码面）/ `6c6d9456`（记录面，tip） | 新判据 **21 passed**（EC-01 8 / EC-02+03 9 / EC-04 4）+ 异构专项 **5** + 受影响 API **28**；宽面 **2708 passed / 77 skipped**；`mypy` 10 files clean；反向按压在产品路径上得到 **1 条** `HETEROGENEITY_VIOLATION` 并点名相交目标 | **`6c6d9456` M0 八 job 全 `success`** + CodeQL 三条 `success`；`e7d43001` **零 run**（同树 `covered_by`） | 0（无一等失败） | EC-01…EC-04 已 `PASS`；**EC-05 待做** | **已收口**：EC-05 达成（`RECHECK-20261018-519`） |
 
 ## CI 台账
 
@@ -325,7 +325,9 @@ cycle 1 的 `escalation_triggers` 条目把「接入第二个模型」笼统归�
 | --- | --- | --- | --- |
 | cycle 1 落地（解析面 + 判定面 + 23 条判据） | `77577728` | 见下行覆盖 | 已 `git revert`；其内容曾包含在 `cb0b2f6b` 的树里 |
 | cycle 1 记录面（GOAL/PLAN/RECHECK/MAINLINE/ALL_PLAN） | `cb0b2f6b` | [M0 39103704350](https://github.com/Eswink/research-system-new/actions/runs/39103704350) / [Push 39103704232](https://github.com/Eswink/research-system-new/actions/runs/39103704232) | 🔴 **三 job `failure`（真红，且是判据生效的真实后果）**：`quality-ubuntu` / `quality-windows` （`python/tests` 里一批 API 测试因 `preflight failed: HETEROGENEITY_VIOLATION` ⇒ freeze 拒冻而红）与 `console-frontend`。CodeQL 三条 `success`。**分类 = 判据收紧的后果（非 flake）**；**处置 = 回退实现**（见下行） |
-| cycle 1 回退（实现 revert + BLOCKED 记录）+ **当前 tip** | `f4d6b03c`（**tip**） | [M0 39106389699](https://github.com/Eswink/research-system-new/actions/runs/39106389699) / [Push 39106389552](https://github.com/Eswink/research-system-new/actions/runs/39106389552) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**、**零 rerun**。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`**（回退后，静止工作树） |
+| cycle 1 回退（实现 revert + BLOCKED 记录）+ **此前 tip** | `f4d6b03c` / `4bae6bfd` | [M0 39106389699](https://github.com/Eswink/research-system-new/actions/runs/39106389699) / [M0 39107412728](https://github.com/Eswink/research-system-new/actions/runs/39107412728) | **M0 八 job 全 `success`** + Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**、**零 rerun** |
+| cycle 2 代码面（配置 + 解析面 + 判定面 + 判据） | `e7d43001` | **零 run（如实登记，非未取证的正向结论）** | `GET /actions/runs?head_sha=e7d4300179cd…` ⇒ **`total_count = 0`**。**原因**：两次提交一次性推送，GitHub 只为**推送 tip** 建 run ⇒ 本提交由 `6c6d9456` 的 run **`covered_by`**（同一棵树的连续祖先，代码面完全相同 —— 记录提交只改 `.cursor/plans/**`） |
+| cycle 2 记录面 + **当前 tip** | `6c6d9456` | [M0 39120372117](https://github.com/Eswink/research-system-new/actions/runs/39120372117) / [Push 39120371810](https://github.com/Eswink/research-system-new/actions/runs/39120371810) | **M0 八 job 全 `success`**（`container-quality` / `quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main 三条 CodeQL 全 `success`；`run_attempt=1`、**零 cancelled**、**零 rerun**。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`**（静止工作树） |
 
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
@@ -337,3 +339,4 @@ cycle 1 的 `escalation_triggers` 条目把「接入第二个模型」笼统归�
 | 2026-10-18 | **ACTIVE** | **建档**：承 GOAL-083 收口后按程序表续推（序 52）。**定位** = 阶梯「复检」域的 `下一级`。**建档实测四条**：① 四个 ModelDefinition 全是 `model_name: deepseek-v4-flash-vision` + `endpoint: main`；② agent 绑定看着不同（`research_strong` vs `reviewer_gamma`）但解析到同一模型；③ `research_strong.fallback = [reviewer_gamma]`、`critic_independent.fallback = [research_alpha]`；④ ⇒ 比名字的检查都会判过，而「独立复核」在产品上不可判。 |
 | 2026-10-18 | **BLOCKED**（cycle 1） | 实现落地后接入产品路径 ⇒ `m12_reference_research_v1` 的 preflight 判 `HETEROGENEITY_VIOLATION` ⇒ **freeze 拒冻** ⇒ 一批既有 API 测试红。当时判定「三条出路都撞约束」，遂 `git revert 77577728` 回退实现并记阻塞。 |
 | 2026-10-18 | **ACTIVE**（cycle 2，**解除阻塞**） | 复核推翻 cycle 1 的阻塞判断：**第四条出路存在** —— 把评审 agent 绑到一个 `model_name` 真不同的模型（`glm-5.3` / `kimi-k2.6`，同端点同凭据、无新付费依赖、不放开网络）⇒ 判据与出厂目录**同时成立**。EC-01…EC-04 达成（`PASS`），受影响 API 套件恢复，反向按压在产品路径上仍判红。**EC-05（自举复检）待做**。 |
+| 2026-10-18 | **ACHIEVED**（cycle 2 收口） | EC-01…EC-05 全部 `PASS`。EC-05 自举复检：本树 **67 条判词全绿**、两树逐行相同且 `sha256` 一致（`0e04121f…`）、as-is m0 **23/23**、治理通过、凭据四面 `offenders=0`、两树证据文件二进制写盘（CR=0）。台阶记账两个面（阶梯行 + 进展记录）都由判词钉住。 |
