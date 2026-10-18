@@ -202,22 +202,19 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-20261014-075 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal075_closeout_assertions.py",
     "tools/verify_goal075_closeout.py",
-    # GOAL-20261014-077 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
+    # GOAL-20261014-077 / 078 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal077_closeout_assertions.py",
     "tools/verify_goal077_closeout.py",
-    # GOAL-20261014-078 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal078_closeout_assertions.py",
     "tools/verify_goal078_closeout.py",
-    # GOAL-20261015-079 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
+    # GOAL-20261015-079 / 080 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal079_closeout_assertions.py",
     "tools/verify_goal079_closeout.py",
-    # GOAL-20261015-080 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal080_closeout_assertions.py",
     "tools/verify_goal080_closeout.py",
-    # GOAL-20261016-081 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
+    # GOAL-20261016-081 / 082 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal081_closeout_assertions.py",
     "tools/verify_goal081_closeout.py",
-    # GOAL-20261018-082 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal082_closeout_assertions.py",
     "tools/verify_goal082_closeout.py",
 )
