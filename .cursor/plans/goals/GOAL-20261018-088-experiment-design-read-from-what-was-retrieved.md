@@ -2,7 +2,7 @@
 id: GOAL-20261018-088
 slug: experiment-design-read-from-what-was-retrieved
 title: 实验设计由**系统真的取回了什么**派生（第二个设计来源：检索证据）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-18
 updated_at: 2026-10-18
 owners:
@@ -80,7 +80,7 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
 
 budget:
   max_cycles: 14
@@ -128,7 +128,7 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261018-529-goal-088-ec01-04-experiment-design-from-retrieval.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-530-goal-088-experiment-design-from-retrieval.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-531-goal-088-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -228,7 +228,8 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01…EC-04 |
-| 1 | PLAN-20261018-529 | 待回填 | 新判据 **10 条**；既有实验判据 **40 passed**；静态门全绿 | 见「CI 台账」 | 0（首轮自查修了 3 处 lint：函数 6 参数、1 处 101 列、import 排序/未用） | EC-01…EC-04 达成 | 收口（EC-05） |
+| 1 | PLAN-20261018-529 | `f45d9349` | 新判据 **10 条**；既有实验判据 **40 passed**；静态门全绿 | 见「CI 台账」 | 0（首轮自查修了 3 处 lint：函数 6 参数、1 处 101 列、import 排序/未用） | EC-01…EC-04 达成 | 收口（EC-05） |
+| 2 | （收口 cycle，无新子 PLAN） | `2447fa60` + 收口提交 | 验证器 **68 条全绿**；两树逐行相同 + `sha256` 一致；as-is m0 **23/23**；治理通过；凭据四面 `offenders=0` | 见「CI 台账」 | 1（`RESIDUAL_MARKERS` 从模板继承的 `W-6` 与本文档登记的五条不符 ⇒ 清单按实际收窄，注释写明；少了任一条仍判红） | 无（EC 全达成） | **收口** |
 
 ## CI 台账
 
@@ -246,3 +247,4 @@ memory_entries: []
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-18 | **ACTIVE** | **建档**：承序 55 触顶核算后按阶梯 `下一级` 续推（序 56）。**建档实测四条**：① `DESIGN_SOURCE_PLAN = "plan"` 是唯一取值、未认得即点名拒绝；② 计划内容是**模型正文** ⇒ 今天「设计由检索派生」实为「由计划作者派生」；③ 检索证据的 run 作用域读取器**已存在**（`_retrieved_evidence`，同一判据面）；④ 性质维度的权威来源是 `SourceRecord.trust_label`。cycle 1 的读取器与 10 条判据已落地（见 PLAN-529）。 |
+| 2026-10-18 | **ACHIEVED**（cycle 2 收口） | EC-01…EC-05 全部 `PASS`。EC-05：验证器本树 **68 条全绿**；两树逐行相同且 `sha256` 一致；as-is m0 **23/23**（在全部记录写入之后、静止工作树）；治理通过；凭据四面 `offenders=0`。阶梯「实验」行与宪章进展记录都由判词钉住；程序表序 56 ⇒ 预算 56/60。 |
