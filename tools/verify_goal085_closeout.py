@@ -50,7 +50,9 @@ STANDARD = "tools/closeout_recheck_assertions.py"
 SELF = "tools/verify_goal085_closeout.py"
 ASSERTIONS = "tools/goal085_closeout_assertions.py"
 
-GOAL = ".cursor/plans/goals/GOAL-20261018-085-review-verdict-names-its-model-and-resolves-a-panel.md"
+GOAL = (
+    ".cursor/plans/goals/GOAL-20261018-085-review-verdict-names-its-model-and-resolves-a-panel.md"
+)
 #: 子计划 / 复检（记录面逐条在位）。
 CHILD_PLANS: tuple[str, ...] = (
     ".cursor/plans/tasks/PLAN-20261018-515-goal-084-ec01-review-independence-by-resolved-target.md",

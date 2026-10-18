@@ -108,8 +108,8 @@ def collected_case_count(root: Path, relative: str) -> int:
     return len(TEST_DEFINITION.findall(_text(root, relative)))
 
 
-def _attribution_verdicts(root: Path, toolbox: Any) -> list[Any]:
-    """EC-01：归因在域、门、运行链、落库链与两个存储上**都**在。"""
+def _attribution_domain_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-01（域 + 门 + 运行链）：归因从执行目标取，且**拒拼半个目标**。"""
     verdict = toolbox.verdict
     return [
         verdict(
@@ -138,6 +138,13 @@ def _attribution_verdicts(root: Path, toolbox: Any) -> list[Any]:
             TARGET_REFUSAL in _text(root, ATTRIBUTION),
             TARGET_REFUSAL,
         ),
+    ]
+
+
+def _attribution_storage_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-01（落库链 + 读面 + 两个存储 + 迁移）：归因**没有在落库这一步丢掉**。"""
+    verdict = toolbox.verdict
+    return [
         verdict(
             "record-chain-carries-the-attribution",
             OBSERVATION_PASSES in _text(root, OBSERVATION),
@@ -148,9 +155,7 @@ def _attribution_verdicts(root: Path, toolbox: Any) -> list[Any]:
             READ_FACE_FIELD in _text(root, READ_FACE),
             READ_FACE_FIELD,
         ),
-        verdict(
-            "sqlite-store-has-the-column", SQLITE_COLUMN in _text(root, SQLITE), SQLITE_COLUMN
-        ),
+        verdict("sqlite-store-has-the-column", SQLITE_COLUMN in _text(root, SQLITE), SQLITE_COLUMN),
         verdict(
             "postgres-store-has-the-column",
             POSTGRES_COLUMN in _text(root, POSTGRES),
@@ -205,7 +210,8 @@ def _case_verdicts(root: Path, toolbox: Any) -> list[Any]:
 def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """本轮特有的断言（逐条一个判词；按 EC 分组，每组一个函数）。"""
     return [
-        *_attribution_verdicts(root, toolbox),
+        *_attribution_domain_verdicts(root, toolbox),
+        *_attribution_storage_verdicts(root, toolbox),
         *_panel_verdicts(root, toolbox),
         *_case_verdicts(root, toolbox),
     ]

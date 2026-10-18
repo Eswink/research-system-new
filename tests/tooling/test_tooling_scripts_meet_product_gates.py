@@ -15,11 +15,9 @@
 
 - **必备清单** `IN_SCOPE`（源码里固化，至少含两树入口、标准收口断言集与收口验证器本身）
   —— 每加一个脚本都要**显式**加进来（见下方分区判据）；
-- **加**规范页点名的脚本（`docs/architecture/RECHECK_SCRIPT_CONVENTIONS.md` 里出现的
-  `tools/**.py`）—— 这条是**推导**，不是手改；
-- **不得**是「扫整个 `tools/`」：既有 `ruff check` **73 条**错误、`ruff format --check`
-  **10 个文件**待重排，是历史遗留资产 ⇒ 以**清单 + 理由**登记在 `LEGACY_OUT_OF_SCOPE`，
-  **清单增删必须显式**（`test_scope_partitions_every_tools_script_explicitly` 判未分类）。
+- **加**规范页点名的脚本（`RECHECK_SCRIPT_CONVENTIONS.md` 里的 `tools/**.py`）—— 这条是**推导**；
+- **不得**是「扫整个 `tools/`」：既有 `ruff check` 73 条错、`ruff format --check` 10 个文件待重排
+  ⇒ 以**清单 + 理由**登记在 `LEGACY_OUT_OF_SCOPE`，增删必须显式（分区判据会判红）。
 """
 
 from __future__ import annotations
@@ -217,6 +215,8 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal083_closeout.py",
     "tools/goal084_closeout_assertions.py",
     "tools/verify_goal084_closeout.py",
+    "tools/goal085_closeout_assertions.py",
+    "tools/verify_goal085_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"

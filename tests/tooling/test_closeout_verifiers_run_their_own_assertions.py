@@ -99,7 +99,8 @@ _VERIFIERS: tuple[str, ...] = (
     # GOAL-20261018-083 EC-05：同上。
     "tools/verify_goal083_closeout.py",
     # GOAL-20261018-084 EC-05：外部断言集形态（`goal084_closeout_assertions.py`）。
-    "tools/verify_goal084_closeout.py",
+    "tools/verify_goal084_closeout.py",  # GOAL-20261018-085 EC-05：同上。
+    "tools/verify_goal085_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (
