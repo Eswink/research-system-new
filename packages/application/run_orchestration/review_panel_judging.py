@@ -84,6 +84,25 @@ def _verdict_of(step: Any) -> str | None:
     return getattr(step, "verdict", None)
 
 
+def record_success(run: Any, task: Any, step: Any) -> None:
+    """一个任务成功：handoff + outcome 记账。
+
+    放在本模块（而不是执行器里）是为了守住 `phase_runner` 的 **450 行硬上限** ——
+    它已经贴着上限，组级记账的三件事（判负 / 成功 / 组末判定）因此收在一处。
+    """
+    run.handoffs[task.id.value] = step.handoff
+    run.outcomes.append(
+        TaskOutcome(
+            task=task,
+            outcome="SUCCEEDED",
+            verdict=step.verdict,
+            skipped=step.skipped,
+            chain_outputs=step.chain_outputs,
+            annotations=step.annotations,
+        )
+    )
+
+
 def panel_rejection(deps: Any, group: tuple[Any, ...], run: Any, run_id: str) -> Any | None:
     """组末判定：有**未被容忍的**判负 ⇒ 返回一条点名全体票型的失败；否则 `None`。
 
@@ -136,5 +155,6 @@ __all__ = [
     "panel_plan",
     "panel_rejection",
     "record_rejection",
+    "record_success",
     "reviewer_target",
 ]

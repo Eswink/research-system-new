@@ -39,6 +39,7 @@ from packages.application.run_orchestration.review_panel_judging import (
     panel_plan,
     panel_rejection,
     record_rejection,
+    record_success,
 )
 from packages.application.run_orchestration.round_loop_runner import execute_rounds
 from packages.application.run_orchestration.run_completion_payload import (
@@ -365,24 +366,14 @@ def _run_group_task(
         run.outcomes.append(tolerated_outcome(task, step.tolerated_failure))
         return None
     if step.failure is not None:
-        # GOAL-20261018-087 EC-01：同批评审声明了「先评完再判」⇒ 记下判负、让同组继续
-        # （组末由 `panel_rejection` 统一判负）；未声明 ⇒ 逐字回到既有 fail-fast。
+        # GOAL-20261018-087 EC-01：声明了「先评完再判」⇒ 记下判负、让同组继续（组末统一判负）；
+        # 未声明 ⇒ 逐字回到既有 fail-fast。
         if panel_plan(group):
             record_rejection(run, task, step)
             return None
         frame.phase_op.set_outcome(OperationOutcome.FAILED, "task_failed")
         return step.failure  # type: ignore[no-any-return]
-    run.handoffs[task.id.value] = step.handoff
-    run.outcomes.append(
-        TaskOutcome(
-            task=task,
-            outcome="SUCCEEDED",
-            verdict=step.verdict,
-            skipped=step.skipped,
-            chain_outputs=step.chain_outputs,
-            annotations=step.annotations,
-        )
-    )
+    record_success(run, task, step)
     return None
 
 
