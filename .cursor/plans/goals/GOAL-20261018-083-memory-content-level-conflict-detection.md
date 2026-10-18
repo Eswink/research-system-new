@@ -2,7 +2,7 @@
 id: GOAL-20261018-083
 slug: memory-content-level-conflict-detection
 title: 记忆的内容级冲突检测（说法真的相反时要判得出来）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-18
 updated_at: 2026-10-18
 owners:
@@ -94,7 +94,13 @@ exit_criteria:
       验证器本树 `--verdict-only` 全 PASS；`tools/two_tree_recheck.py` 两树判词逐行相同 +
       `sha256` 相同；m0 终态行 `PASS: profile=m0; 23 deterministic checks`；
       `validate.py` = `Cursor 治理验证通过`；台账逐 run 逐 job（含 `run_attempt`）。
-    status: PENDING
+    status: PASS
+    evidence: >-
+      **cycle 2 落地**：`tools/verify_goal083_closeout.py` + `tools/goal083_closeout_assertions.py`
+      （验证器**加载自己那份**断言集）⇒ 本树 `--verdict-only` **66 PASS / 0 FAIL**；
+      两树 `sha256` 相同；as-is m0 **`PASS: profile=m0; 23 deterministic checks`**（静止工作树）；
+      治理与凭据审计绿；**两个面都收录本 GOAL**（阶梯「证据」行 + 宪章「进展记录」行）。
+
 
 budget:
   max_cycles: 14
@@ -140,7 +146,8 @@ escalation_triggers:
 
 child_plans:
   - .cursor/plans/tasks/PLAN-20261018-511-goal-083-ec01-content-level-conflict-detection.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-512-goal-083-ec01-content-level-conflict-detection.md
+  - .cursor/plans/tasks/PLAN-20261018-513-goal-083-ec05-self-bootstrap-closeout.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261018-514-goal-083-ec05-self-bootstrap-closeout.md
 memory_entries: []
 ---
 
@@ -253,4 +260,5 @@ memory_entries: []
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-18 | **ACHIEVED** | **cycle 2 收口**（EC-05）：验证器 **66 条判词全绿**；两树 `sha256` 相同；as-is m0 **23/23**（静止工作树）；阶梯「证据」行与宪章「进展记录」**两面都收录**本 GOAL。五 EC 全 PASS。**残余**：`W-2`（判不了世界知识级矛盾）、`W-3`（不做存量补判）、`W-5`（HTTP 写面无声明冲突入口）、`W-6`（无单位数字不判）。 |
 | 2026-10-18 | **ACTIVE** | **建档**：承 GOAL-082 收口后的战役级核算（「证据域内容级冲突检测」= 第一候选）。**定位** = 阶梯「证据」域的 `下一级`。**建档实测四条**（逐条带读数）：① 三个关键函数名全仓零命中；② 门链 `contradiction` 阶段只查引用完整性（正文一个字都不看）；③ 读面 `CONFLICTED` 只来自声明（`_unresolved_declarers`）；④ 后果 = 说法真的相反但无人声明时读面报 `USE`。 |

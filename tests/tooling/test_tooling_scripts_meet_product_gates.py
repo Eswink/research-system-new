@@ -193,10 +193,9 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-20261013-072 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal072_closeout_assertions.py",
     "tools/verify_goal072_closeout.py",
-    # GOAL-20261013-073 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
+    # GOAL-20261013-073 / 074 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal073_closeout_assertions.py",
     "tools/verify_goal073_closeout.py",
-    # GOAL-20261013-074 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal074_closeout_assertions.py",
     "tools/verify_goal074_closeout.py",
     # GOAL-20261014-075 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
@@ -207,16 +206,17 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal077_closeout.py",
     "tools/goal078_closeout_assertions.py",
     "tools/verify_goal078_closeout.py",
-    # GOAL-20261015-079 / 080 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
+    # GOAL-20261015-079…20261016-083 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal079_closeout_assertions.py",
     "tools/verify_goal079_closeout.py",
     "tools/goal080_closeout_assertions.py",
     "tools/verify_goal080_closeout.py",
-    # GOAL-20261016-081 / 082 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal081_closeout_assertions.py",
     "tools/verify_goal081_closeout.py",
     "tools/goal082_closeout_assertions.py",
     "tools/verify_goal082_closeout.py",
+    "tools/goal083_closeout_assertions.py",
+    "tools/verify_goal083_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"

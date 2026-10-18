@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261018-513](tasks/PLAN-20261018-513-goal-083-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261018-511](tasks/PLAN-20261018-511-goal-083-ec01-content-level-conflict-detection.md) | DONE |
 | [x] | [PLAN-20261018-509](tasks/PLAN-20261018-509-goal-082-ec05-self-bootstrap-closeout.md) | DONE |
 | [x] | [PLAN-20261018-507](tasks/PLAN-20261018-507-goal-082-ec01-prior-knowledge-reaches-the-plan-prompt.md) | DONE |
