@@ -314,6 +314,8 @@ memory_entries: []
    「三到六个高信号词、不加同义词/限定词、超长 query 常零命中」的规则 ——
    **改的是提示词，不是判据**；覆盖门（`EVIDENCE_COVERAGE`）保留零命中即红。
 
+**收口补齐（2026-10-20）**：`2dc324d8` 的 M0 run `39324938465` 已到终态 **success**（8/8 job）；既有判据改动的 `numstat` + 谓词比对逐条写进 RECHECK；本记录之后的最后一轮全量 m0 终态行 `PASS: profile=m0; 23 deterministic checks`、`PASS [` **24 行**、`FAILED` **0 行**。
+
 **两树复检**（`tools/two_tree_recheck.py`）：本树与干净 checkout 判词**逐行相同**、
 `sha256` 相同（`67894073…55ab`，89 条）；归档在
 `evidence/GOAL-20261019-089-verdict-current.txt` / `-verdict-clean.txt`。
@@ -339,6 +341,8 @@ memory_entries: []
 | 批 1 | `dc5646fe` | **39312496694** / **39312495592** | `M0 Quality Gates` **success**（attempt 1）：`container-quality`、`console-frontend`、`observability-overhead-windows-latest`、`quality-windows-latest`、`quality-ubuntu-latest`、`observability-overhead-ubuntu-latest`、`collector-quality`、`eval-gate` **8/8 success**；`Push on main` success |
 | 批 2（一次推送：`dc5646fe..43ca33dc`） | `43ca33dc` | **39318206267** / **39318207666** | `M0 Quality Gates` **success**（attempt 1）：8/8 job success（`container-quality` / `console-frontend` / `observability-overhead-windows-latest` / `quality-windows-latest` / `quality-ubuntu-latest` / `observability-overhead-ubuntu-latest` / `collector-quality` / `eval-gate`）；`Push on main` success |
 | 批 3（一次推送：`43ca33dc..0645bd08`） | `0645bd08` | **39321868670** / **39321870140** | `M0 Quality Gates` **success**（attempt 1）：8/8 job success；`Push on main` success。本行是**自指边界**：该提交只改记录（台账批 2），它自己那次 run 的结论写入时已经跑完，但**写下**这个结论这个动作本身没有经过任何门 —— 如实登记，不假装闭合。 |
+| 批 4（一次推送：`0645bd08..2dc324d8`） | `2dc324d8` | **39324938465** / **39324938696** | `M0 Quality Gates` **success**（attempt 1）：`console-frontend`、`collector-quality`、`quality-windows-latest`、`eval-gate`、`quality-ubuntu-latest`、`observability-overhead-ubuntu-latest`、`observability-overhead-windows-latest`、`container-quality` **8/8 success**；`Push on main` success。**自指边界**：本行与后续「收口补齐」的台账写入提交，其自身那次 run 的结论由**下一提交**记录；链条在「最后一个台账提交」处停止 —— 那里如实写明边界，不假装闭合。 |
+| 收口补齐（一次推送：`2dc324d8..<本提交>`） | 本文件的最后一个提交 | **未轮询（自指边界）** | 该提交只改记录（`2dc324d8` 的 CI 到终态 + `numstat` 申报 + 最后一轮 m0 读数），**它自己那次 run 的结论不外推**：台账在「读过它」之前就结束 —— 这是显式边界，不是遗漏。此前每个提交都有 run 结论或 `covered_by`；本地最终 m0 终态行为 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`、0 FAILED）。 |
 
 ## 状态历史
 

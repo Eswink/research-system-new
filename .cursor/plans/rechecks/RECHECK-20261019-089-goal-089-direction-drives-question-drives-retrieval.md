@@ -21,6 +21,29 @@ memory_entries: []
 
 ## 检查结果
 
+### 既有判据改动逐条申报（`numstat` + 谓词比对）
+
+基线 `3f763fd5`（本轮起点）→ `2dc324d8`。**判定口径**：删除行必须逐条给出
+「原谓词 → 新谓词 + 为什么不是放宽」；新增行一律是**收紧或显式登记**。
+
+| 文件 | `numstat`（+/-） | 删除的谓词 / 行 | 现在的谓词 | 性质 |
+| --- | --- | --- | --- | --- |
+| `tests/adapters/sqlite/test_program_nudge_bound_reachability.py` | +15 / -3 | `source = ...routers/programs.py` + `assert "nudges=deps.nudges" in source` | 同一句 `assert "nudges=deps.nudges" in source`，但 `source` 读 `services/api/program_advance.py`；**外加** `assert "advance_for(deps, program_id)" in router` | **落点迁移 + 收紧**（判据从 1 条变 2 条；删掉新落点那行仍红） |
+| `tests/api/test_ops_schedules_api.py` | +2 / -0 | —（纯新增） | `_BUILTIN_NAMES` 增 `"program_advance"` | 纯收紧（少登记一个 ⇒ 词表判据红） |
+| `tests/api/test_write_face_cannot_be_bypassed.py` | +4 / -1 | `_MEASURED_MUTATING_COUNT = 63` | `= 64` | **纯同步**：方法是保护面定义、断言强度未动；新端点自动落入枚举面并被全覆盖用例覆盖（该文件自己的注释逐字要求「新增写面时改这一行」） |
+| `tests/api/test_write_face_query_params_are_refused.py` | +19 / -6 | 两处 `sorted(...) == ["created_at","id","name","status","updated_at"]` | 两处列表多一个 `"direction"`（位置保持字母序） | **纯同步**：键集必须与 DTO 一致；键集**收窄**（多一个名字 ⇒ 任何多余键仍判红） |
+| `tests/architecture/python/test_live_switch_is_single_source.py` | +4 / -0 | —（纯新增） | `LITERAL_MENTIONS` 与 `LIVE_MODULES` 各加一条（同一文件） | 纯收紧（两处都是「新加一个就露头」的显式清单） |
+| `tests/observability/test_privacy_exit_census.py` | +2 / -0 | —（纯新增） | 两个新模块登记为**受判**出口（`program_advance.py` 的 `failure_payload`、`program_advance_scheduler.py` 的 `otlp_span`） | 纯收紧（**不是豁免**：`ExitSurface` 的 `JUDGED` 面，要有观测方式） |
+| `tests/observability/read_face_route_registry.py` | +8 / -1 | `ReadRouteRule("/projects", ZERO_HIT, _META)` | `"/projects"` 移入 `DECLARED_CONTENT`（`+` 行，含「一等边界」注记） | **受判面迁移（如实申报）**：`/projects` 现在披露 `direction` ⇒ 从「零命中」改为「有内容披露」；`MAX_DECLARED = 15` **恰好到界未超**（实测 `len(DECLARED_CONTENT) == 15`）；`MIN_EXERCISED = 40` 未动 |
+| `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py` | +2 / -0 | —（纯新增） | `_VERIFIERS` 加 `tools/verify_goal089_closeout.py` | 纯收紧（新验证器必须跑自己的断言集） |
+| `tests/tooling/test_tooling_scripts_meet_product_gates.py` | +13 / -14 | 三个门包装各自内联 `paths=...` / `_run([...])` / `return [...]`（三个函数 × 4–5 行） | 三个包装共用 `_gate(root, relatives, argv, label)`，各自一行转发；四条 `test_` 用例**一行未删** | **等价重构**（文件原本正好 450 行，加两条登记会越界）；按压判据 `test_every_gate_actually_detects_a_broken_script` 未动 ⇒ 三道门仍各自可证伪 |
+| `tools/goal044_closeout_assertions.py` | +7 / -1 | `"approvals=deps.approvals" in _text(root, ROUTER)` | 同一句改为 `in _text(root, ADVANCE)` **且** `"advance_for(deps, program_id)" in _text(root, ROUTER)` | 历史资产**落点迁移 + 收紧**（判词名与意图不变，条件变严） |
+| `tools/goal059_closeout_assertions.py` | +7 / -2 | `"nudges=deps.nudges" in router`（+ 原判词串） | 同一句改为 `in _text(root, ADVANCE)` **且** 端点断言；判词串**逐字保留** | 同上（判词串未改，只换受判文件并加一条） |
+| `tests/e2e/live_control_plane_support.py` | +18 / -3 | `def product_control_plane_deps(db_path: str)` + 一行 docstring + `assemble(ApiSettings(db_path=db_path))` | 签名多两个**关键字-only** 参数（`agent_runtime=""`、`allow_host_shell=False`），缺省值保持既有行为；`ApiSettings` 多传两个字段 | **向后兼容的接线面**（缺省逐字等价；既有调用点一行未改） |
+
+**结论**：无一处删除断言、无一处放宽阈值 / 词表 / 扫描面。唯一「受判面迁移」的
+`read_face_route_registry.py` 逐条写明方向（`ZERO_HIT` → `DECLARED_CONTENT`）与上界读数。
+
 ### EC-01：方向 → 问题 → 检索
 
 **判什么**：检索词是否**真的**来自上游模型写下的问题，而不是操作者预填的简报。
@@ -105,6 +128,41 @@ memory_entries: []
 **两处反向按压（证明判据不是恒真）**：
 
 - 把 `PROGRAM_ADVANCE = "program_advance"` 改成 `"program_advance_X"` ⇒ `schedule-vocabulary-has-the-job` 立刻 **FAIL**；还原后该文件 `sha256` 逐字节相同（`0c7a7b4af19b38c32d143c2cd88607cf59fbb76562ccba04d6d9235f04f7f378`）。
+
+### 收口补齐（2026-10-20）
+
+- **`2dc324d8` 的 CI 已到终态**：M0 run `39324938465` **success**（attempt 1），
+  `console-frontend` / `collector-quality` / `quality-windows-latest` / `eval-gate` /
+  `quality-ubuntu-latest` / `observability-overhead-ubuntu-latest` /
+  `observability-overhead-windows-latest` / `container-quality` **8/8 success**；
+  `Push on main` run `39324938696` success；
+- **既有判据改动逐条申报**：见上一节（11 个文件，`numstat` + 谓词比对）；
+- **本记录之后的最后一轮全量 m0**（独占、静止工作树、`.venv`）：终态行
+  `PASS: profile=m0; 23 deterministic checks`；`PASS [` **24 行**（含
+  `release-assets-immutable`）；`FAILED` **0 行**。
+
+### 推送纪律的偏差（如实登记，不改写历史）
+
+**本轮实际推送 4 次**：`3f763fd5..dc5646fe`、`dc5646fe..43ca33dc`、
+`43ca33dc..0645bd08`、`0645bd08..2dc324d8`。硬纪律写的是「批量推送（一个 cycle 一次）」，
+实际做法偏离了它，偏差是**收口期的台账自指**造成的：
+
+1. 第一次（含 6 个提交）符合纪律；
+2. 第二次是因为「两树复检要以含本轮改动的提交为基准」⇒ 必须先落地；
+3. 第三 / 四次是**台账写入自身**：每记一个提交的 CI 结论，就产生一个新的记录提交，
+   而那个提交又会触发一次 CI —— 这是一个**自指环**（记录 CI 的动作触发 CI）。
+
+**处置（不是掩饰）**：
+
+- 台账逐提交登记全部 4 批，零 run 与 `cancelled` 都如实写明 `covered_by`；
+- 自指环在**第五次**（本文件所在的收口补齐提交）处**停止**：该提交只改记录，
+  它自己那次 run 的结论**不写回台账**，而是把边界写在这里 —— 继续追会让「最后一个提交」
+  永远不存在；
+- 这不是放宽判据：台账仍要求「每个提交要么有 run 结论、要么有 `covered_by`、
+  要么有明写边界」，本段的边界声明就是第三种形态的显式登记。
+
+**下一轮的约束**（写进记忆）：收口期把「台账写入」与「推送」合并成**一次** ——
+先在本地把所有结论写全（包括「本轮共 N 次推送」的说明），再一次性推送并轮询。
 
 ### 如实登记的残余
 
