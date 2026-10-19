@@ -94,7 +94,13 @@ memory_entries: []
 - `tools/verify_goal089_closeout.py`（标准断言集 + 本轮特有 + 记录面；`self-loads-its-own-assertions` 按本文件名推导）；
 - 两处注册表显式登记（`IN_SCOPE` 与 `_VERIFIERS`）；`test_tooling_scripts_meet_product_gates.py` 原本**正好 450 行**，同轮把三个门包装压成共用一个 `_gate`（**判据语义一字未改**），腾出空间后仍 ≤ 450。
 
-**本树判词**：89 条（收口时全绿）。
+**判词读数**：
+
+- 本树：`exit=0`，**89 条判词**，`sha256=67894073183c053543473bfef0a23ef7a1c2bd2d2ec0db6e16f11e2a5bf355ab`；
+- 干净 checkout（`../rs-goal089-clean` @ `493020b8`）：同一份 **89 条**，**同一个 `sha256`**；
+- `COMPARE identical=True` ⇒ **TWO-TREE PASS**；
+- 判词归档进树：`evidence/GOAL-20261019-089-verdict-current.txt` 与 `-verdict-clean.txt`
+  （各 3693 字节、89 行、**CR=0** —— 二进制写盘）。
 
 **两处反向按压（证明判据不是恒真）**：
 

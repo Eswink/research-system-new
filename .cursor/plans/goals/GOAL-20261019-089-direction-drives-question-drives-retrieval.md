@@ -314,6 +314,10 @@ memory_entries: []
    「三到六个高信号词、不加同义词/限定词、超长 query 常零命中」的规则 ——
    **改的是提示词，不是判据**；覆盖门（`EVIDENCE_COVERAGE`）保留零命中即红。
 
+**两树复检**（`tools/two_tree_recheck.py`）：本树与干净 checkout 判词**逐行相同**、
+`sha256` 相同（`67894073…55ab`，89 条）；归档在
+`evidence/GOAL-20261019-089-verdict-current.txt` / `-verdict-clean.txt`。
+
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
