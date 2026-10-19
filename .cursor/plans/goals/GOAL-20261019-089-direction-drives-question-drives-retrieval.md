@@ -323,6 +323,7 @@ memory_entries: []
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 建档提交同批推送 | 见「状态历史」 | 见「CI 台账」 | — | EC-01…EC-05 待达成 | cycle 1 = EC-01 |
+| 1 | PLAN-20261019-089 | `99f9a642`…`dc5646fe` | m0 **23/23**（24 行 `PASS [`、0 FAILED）；两树 **89 条**判词 `sha256` 相同；治理 `Cursor 治理验证通过`；凭据四面 `offenders=0` | `dc5646fe` ⇒ M0 **8/8 success** | 上述「真跑读数」小节里的两条真缺陷 + 三处清单登记 | **EC-01…EC-05 全达成** | 战役层下一步（`W-6` 需拍板） |
 
 ## CI 台账
 
@@ -330,9 +331,16 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
+| 批 1（一次推送：`3f763fd5..dc5646fe`） | `99f9a642` | **零 run** | `covered_by=39312496694`（同一批推送里 GitHub 只为分支最新提交创建 workflow run；该提交的时代码由那次 M0 全量门覆盖） |
+| 批 1 | `c806691f` | **零 run** | `covered_by=39312496694`（同上） |
+| 批 1 | `dbec2c38` | **零 run** | `covered_by=39312496694`（同上） |
+| 批 1 | `493020b8` | **零 run** | `covered_by=39312496694`（同上） |
+| 批 1 | `d91daec0` | **零 run** | `covered_by=39312496694`（同上） |
+| 批 1 | `dc5646fe` | **39312496694** / **39312495592** | `M0 Quality Gates` **success**（attempt 1）：`container-quality`、`console-frontend`、`observability-overhead-windows-latest`、`quality-windows-latest`、`quality-ubuntu-latest`、`observability-overhead-ubuntu-latest`、`collector-quality`、`eval-gate` **8/8 success**；`Push on main` success |
 
 ## 状态历史
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-19 | **ACTIVE** | **建档**：承用户北极星指令的三处断点（方向无载体 / 选题不由系统产生 / 迭代不自动）。**建档实测第四条**（本轮新发现）：`phase_capabilities._input_material` 只扫本地声明输入，**跨相输入不进 run-chain 参数材料** ⇒ 即协议写了 `inputs: [A:research_question]` 也读不到，这是 EC-01 必须打开的缝。程序表序 57 ⇒ 预算 57/60。 |
+| 2026-10-19 | **ACHIEVED** | 五 EC 全 PASS；真跑 `SUCCEEDED`（3 条真实 PMID）；两树 89 条判词 `sha256` 相同；CI M0 8/8 success；残余 `W-6` 如实登记。 |
