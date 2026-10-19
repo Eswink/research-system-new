@@ -71,7 +71,10 @@ def runner_deps(  # noqa: PLR0913 - 装配面：Port 聚合 + 现场面（齐了
         degrade_run=faces.degrade_run,
         telemetry=deps.telemetry,
         approvals=deps.approvals,
-        capabilities=deps.capabilities,
+        # GOAL-20261019-089 EC-01：运行链要解析**跨相输入**的真实制品 id（上游产物）——
+        # 身份面就是本装配的 workflow 引擎（与 `cross_phase_evidence` 同一份事实）。
+        # 不声明跨相输入的 phase 逐字节不变（`resolve_cross_phase_material` 提前返回空）。
+        capabilities=_with_workflow(deps.capabilities, deps.workflow),
         experiment_task=deps.experiment_task,
         # GOAL-20261014-077 EC-02：报告汇编的执行缝（缺省 None ⇒ 声明了 `report` 的
         # 任务点名拒绝；既有装配语义逐字节不变）。
@@ -90,4 +93,63 @@ def runner_deps(  # noqa: PLR0913 - 装配面：Port 聚合 + 现场面（齐了
     )
 
 
-__all__ = ["RunnerFaces", "runner_deps"]
+def run_context(  # noqa: PLR0913 - 与拆出前的 `_start_run_impl` 同一组输入（照抄既有豁免）
+    deps: "OrchestrationDependencies",
+    protocol: Any,
+    plan: Any,
+    report: Any,
+    run: Any,
+    catalog: Any,
+    project: Any,
+    preflight_context: Any,
+    command: Any,
+) -> Any:
+    """冻结之后的那份执行上下文（单列：`_start_run_impl` 卡在 50 行函数门）。
+
+    GOAL-20261019-089 EC-02：**项目方向**在这里解析一次（组合根注入的解析器；
+    缺省 `None` ⇒ 提示词既有形态逐字不变）。
+    """
+    from packages.application.run_orchestration.context import RunContext as _RunContext
+
+    return _RunContext(
+        protocol=protocol,
+        plan=plan,
+        report=report,
+        run=run,
+        catalog=catalog,
+        project=project,
+        preflight=preflight_context,
+        trace_id=command.trace_id,
+        direction=project_direction(deps, project.project_id),
+    )
+
+
+def project_direction(deps: "OrchestrationDependencies", project_id: str) -> str | None:
+    """本项目的**研究方向**（GOAL-20261019-089 EC-02；缺省 None ⇒ 提示词不含那一段）。
+
+    **不吞异常**：解析器抛错就让它冒出去 —— 「读不到方向」与「没有方向」是两件事，
+    静默当成后者会把一个装配缺陷伪装成「用户没声明方向」。
+    """
+    resolve = deps.project_direction
+    if resolve is None:
+        return None
+    value = resolve(project_id)
+    return value if isinstance(value, str) else None
+
+
+def _with_workflow(capabilities: Any, workflow: Any) -> Any:
+    """把 workflow 身份面补进运行链能力装配（GOAL-20261019-089 EC-01）。
+
+    `CapabilityDeps` 是 frozen dataclass ⇒ 用 `replace` 派生一份，**其它字段逐字保留**。
+    装配面缺省 `None`（该步不启用）⇒ 原样返回 `None`（既有语义不变）。
+    """
+    if capabilities is None:
+        return None
+    if getattr(capabilities, "workflow", None) is not None:
+        return capabilities
+    from dataclasses import replace
+
+    return replace(capabilities, workflow=workflow)
+
+
+__all__ = ["RunnerFaces", "project_direction", "run_context", "runner_deps"]

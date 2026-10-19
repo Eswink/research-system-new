@@ -29,6 +29,10 @@ class RunContext:
     project: ProjectSettings
     preflight: PreflightContext
     trace_id: str
+    #: GOAL-20261019-089 EC-02：本 run 所属项目的**研究方向**（canonical 的
+    #: `ProjectDefinition.direction`，由组合根在执行前解析）。缺省 `None` = 未声明
+    #: ⇒ 会话提示词里**没有**那一段（既有形态逐字节不变）。
+    direction: str | None = None
 
     @property
     def frozen_manifest_digest(self) -> str:

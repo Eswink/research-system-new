@@ -56,6 +56,10 @@ class OrchestrationDependencies:
     #: GOAL-20261018-082 EC-01：**前序知识** → 会话提示词的装配器（每任务求值）。
     #: None ⇒ 提示词里没有那一段（既有语义逐字不变）。
     prior_knowledge: Any | None = None
+    #: GOAL-20261019-089 EC-02：**本项目的研究方向**解析器（`(project_id) -> str | None`）。
+    #: None（缺省）⇒ 没有方向面，提示词逐字节等于既有形态。解析失败由**调用方**决定：
+    #: 本层不吞异常（「读不到方向」与「没有方向」必须分得开）。
+    project_direction: Any | None = None
     # GOAL-014 EC-02（A/a）：`SCHEMA_VALID` 的**产品路径**校验回调工厂
     # （`output_schema` 名 → `SchemaCheck`）。缺省就是产品实现（按合约声明的 schema 名从
     # 仓内 `schemas/` 取；见 `output_schema_check`）——装配方可以换，但**不接**不等于

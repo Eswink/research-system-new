@@ -59,7 +59,11 @@ from packages.application.run_orchestration.run_terminals import (
     publish_degraded_run,
     publish_failed_run,
 )
-from packages.application.run_orchestration.runner_wiring import RunnerFaces, runner_deps
+from packages.application.run_orchestration.runner_wiring import (
+    RunnerFaces,
+    run_context,
+    runner_deps,
+)
 from packages.application.run_orchestration.runtime_fingerprint import (
     RuntimeFingerprintCollector,
 )
@@ -156,17 +160,10 @@ class RunOrchestrationService:
             run_id=run.id.value,
             trace_id=command.trace_id,
         )
-        context = RunContext(
-            protocol=protocol,
-            plan=plan,
-            report=report,
-            run=run,
-            catalog=catalog,
-            project=project,
-            preflight=preflight_context,
-            trace_id=command.trace_id,
+        ctx = run_context(
+            self._deps, protocol, plan, report, run, catalog, project, preflight_context, command
         )
-        return self._execute_with_context(context, command)
+        return self._execute_with_context(ctx, command)
 
     def _started_run(self, run: ResearchRun, manifest: RunManifest) -> ResearchRun:
         """回填冻结引用并进入 START（逐字段保留定价引用，见 ResearchRun）。"""
@@ -287,8 +284,7 @@ class RunOrchestrationService:
         paused: list[tuple[SessionSpec, ...]] = []
         run_id = context.run.id.value
         outcome = execute_phases(
-            # GOAL-20261014-077 EC-02：装配面单列（`runner_wiring`）——本文件卡在
-            # 450 行硬上限上，逐字搬运、零语义变化。
+            # GOAL-077 EC-02：装配面单列（`runner_wiring`），逐字搬运、零语义变化。
             runner_deps(
                 self._deps,
                 context,

@@ -85,8 +85,10 @@ class SessionBuilder:
         # GOAL-20261018-082 EC-01：**前序知识那一段**与之**并列**（先前序、后检索）。
         # 两段的顺序与拼法由 `retrieval_prompt.compose_prompt` **唯一**决定；
         # 本层只把**已渲染好的 str** 送进去 —— 不在 adapter 里做检索/记忆解释。
+        # GOAL-20261019-089 EC-02：**方向那一段**在最前（「被要求研究什么」）。
         headline = compose_prompt(
             spec.task_contract.purpose,
+            direction=spec.direction_prompt,
             prior_knowledge=spec.prior_knowledge_prompt,
             retrieval=spec.retrieval_prompt,
         )

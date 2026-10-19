@@ -37,22 +37,29 @@ _UPSERT_SQL = (
 
 
 def _encode(project: ProjectDefinition) -> dict[str, Any]:
-    return {
+    payload: dict[str, Any] = {
         "id": project.id,
         "name": project.name,
         "status": project.status.value,
         "created_at": project.created_at.value.isoformat(),
         "updated_at": project.updated_at.value.isoformat(),
     }
+    # GOAL-20261019-089 EC-02：**未声明就不写那个键**（既有行字节面因此逐字不变）。
+    if project.direction is not None:
+        payload["direction"] = project.direction
+    return payload
 
 
 def _decode(payload: dict[str, Any]) -> ProjectDefinition:
+    direction = payload.get("direction")
     return ProjectDefinition(
         id=payload["id"],
         name=payload["name"],
         status=ProjectStatus(payload["status"]),
         created_at=Timestamp(parse_iso(payload["created_at"])),
         updated_at=Timestamp(parse_iso(payload["updated_at"])),
+        # 旧行（本轮之前写入的 JSON blob）没有这个键 ⇒ `None`（未声明），不是 ""。
+        direction=str(direction) if direction is not None else None,
     )
 
 

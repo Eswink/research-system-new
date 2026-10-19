@@ -168,6 +168,9 @@ def _spec_context(  # noqa: PLR0913 - 装配面：context + phase/agent/role/目
         # 存储里还没有这一行（控制面在编排返回后才落库）⇒ 需要它的执行体（报告汇编读
         # run 的协议 / 状态）只能从这里取「在场的那份事实」。缺省既有的 `None` 语义不变。
         run=context.run,
+        # GOAL-20261019-089 EC-02：**本项目的研究方向**（canonical 事实，组合根在执行前
+        # 解析）。缺省 `None` ⇒ 提示词没有那一段（既有形态逐字节不变）。
+        direction=context.direction,
     )
 
 

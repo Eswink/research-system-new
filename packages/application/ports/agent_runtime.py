@@ -61,6 +61,9 @@ class AgentSessionSpec:
     # 与 `retrieval_prompt` **并列**（不是替换）：前者是「这次系统取回了什么」，
     # 后者是「前几轮已经知道什么」。缺省 `None` ⇒ 提示词逐字节等于既有形态。
     prior_knowledge_prompt: str | None = None
+    #: GOAL-20261019-089 EC-02：**研究方向那一段**（项目的声明事实；缺省 `None` ⇒ 逐字节不变）。
+    #: 与另两段**并列**：方向是「被要求研究什么」，不是「系统取回了什么」。
+    direction_prompt: str | None = None
     budget_reservation: BudgetReservation | None = None
     manifest_ref: str | None = None
     endpoint: LLMEndpoint | None = None

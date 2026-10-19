@@ -35,6 +35,9 @@ PROMPT_SECTION_TITLE = "RETRIEVED SOURCES (system-fetched; cite these by identif
 #: GOAL-20261018-082 EC-01：**前序知识**那一段的标题（与检索段**并列**，不替换）。
 PRIOR_SECTION_TITLE = "PRIOR KNOWLEDGE (from earlier runs in this project; build on it)"
 
+#: GOAL-20261019-089 EC-02：**研究方向**那一段的标题（与另两段**并列**）。
+DIRECTION_SECTION_TITLE = "PROJECT DIRECTION (the operator's stated research direction)"
+
 #: 被截断条目的标注（**逐字**；判据按它判「截断可见」）。
 TRUNCATED_MARK = "[truncated]"
 #: 待复核条目的标注（**逐字**）。
@@ -112,13 +115,40 @@ def prompt_with_prior_knowledge(purpose: str, view: Any) -> str:
     return f"{purpose}\n\n{section}"
 
 
-def compose_prompt(purpose: str, *, prior_knowledge: Any = None, retrieval: Any = None) -> str:
-    """合约 purpose + [前序知识] + [检索摘录]（两段都缺 ⇒ **逐字**返回 purpose）。
+def render_direction_prompt(direction: str | None) -> str:
+    """研究方向 → 提示词那一段（**未声明 ⇒ 空串**：既有提示词逐字不变）。
 
-    **顺序 = 先前序、后检索**：模型先知道自己**已经**知道什么（那是立题的起点），
-    再看到这一轮新取回的材料（那是对起点的更新）。
+    **为什么它是一段而不是塞进 purpose**：purpose 是**合约**的一部分（同一条合约的
+    所有 run 共用同一段文本）；方向是**这个项目**的事实。混在一起会让「合约改了什么」
+    与「项目研究什么」不可区分（与 GOAL-010 的「声明化命名」同一条纪律）。
     """
-    text = purpose
+    text = (direction or "").strip()
+    if not text:
+        return ""
+    return chr(10).join([DIRECTION_SECTION_TITLE, "", text, ""])
+
+
+def prompt_with_direction(purpose: str, direction: str | None) -> str:
+    """合约 purpose + **方向**那一段（未声明 ⇒ **逐字**返回 purpose）。"""
+    section = render_direction_prompt(direction)
+    if not section:
+        return purpose
+    return chr(10).join([purpose, "", section])
+
+
+def compose_prompt(
+    purpose: str,
+    *,
+    direction: str | None = None,
+    prior_knowledge: Any = None,
+    retrieval: Any = None,
+) -> str:
+    """合约 purpose + [方向] + [前序知识] + [检索摘录]（全缺 ⇒ **逐字**返回 purpose）。
+
+    **顺序 = 先方向、再前序、最后检索**：模型先知道**被要求研究什么**，再知道自己
+    **已经**知道什么（立题的起点），最后看到这一轮新取回的材料（对起点的更新）。
+    """
+    text = prompt_with_direction(purpose, direction)
     for view, render in (
         (prior_knowledge, prompt_with_prior_knowledge),
         (retrieval, prompt_with_retrieval),
@@ -129,13 +159,16 @@ def compose_prompt(purpose: str, *, prior_knowledge: Any = None, retrieval: Any 
 
 
 __all__ = [
+    "DIRECTION_SECTION_TITLE",
     "PROMPT_SECTION_TITLE",
     "PRIOR_SECTION_TITLE",
     "REVIEW_DUE_MARK",
     "TRUNCATED_MARK",
     "compose_prompt",
+    "prompt_with_direction",
     "prompt_with_prior_knowledge",
     "prompt_with_retrieval",
+    "render_direction_prompt",
     "render_prior_knowledge_prompt",
     "render_retrieval_prompt",
 ]

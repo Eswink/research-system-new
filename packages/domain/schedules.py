@@ -45,6 +45,9 @@ class ScheduleJob(StrEnum):
     RETENTION = "retention"
     WORKER_REAPER = "worker_reaper"
     RETRY_DISPATCH = "retry_dispatch"
+    #: GOAL-20261019-089 EC-03：**研究程序的周期推进**（与 `POST /programs/{id}/advance`
+    #: 同一条装配链）。它让「第 N 轮终态后进入第 N+1 轮」不再需要人工点一次。
+    PROGRAM_ADVANCE = "program_advance"
 
 
 JOB_PURPOSE: dict[ScheduleJob, str] = {
@@ -53,6 +56,7 @@ JOB_PURPOSE: dict[ScheduleJob, str] = {
     ScheduleJob.RETENTION: "按 retention policy 清理 artifact",
     ScheduleJob.WORKER_REAPER: "把心跳过期的 worker 标记为 LOST",
     ScheduleJob.RETRY_DISPATCH: "重排到期的停车 run 自动续跑（交付下一次尝试）",
+    ScheduleJob.PROGRAM_ADVANCE: "按落库事实推进研究程序（第 N 轮终态后进入第 N+1 轮）",
 }
 
 
@@ -126,6 +130,14 @@ BUILTIN_SCHEDULES: tuple[ScheduleDefinition, ...] = (
         name=ScheduleJob.RETRY_DISPATCH.value,
         job=ScheduleJob.RETRY_DISPATCH,
         interval_seconds=15.0,
+        builtin=True,
+    ),
+    # GOAL-20261019-089 EC-03：程序推进也是**内置**定义（可启停、不可删 —— 与其余执行体
+    # 同款；`executor_attached` 如实反映本装配有没有把它接上）。
+    ScheduleDefinition(
+        name=ScheduleJob.PROGRAM_ADVANCE.value,
+        job=ScheduleJob.PROGRAM_ADVANCE,
+        interval_seconds=30.0,
         builtin=True,
     ),
 )

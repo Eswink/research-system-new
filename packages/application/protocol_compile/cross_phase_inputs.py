@@ -46,6 +46,10 @@ from packages.domain.protocols import (
 #: 跨相引用的分隔符（`{phase_id}:{artifact_name}`）。
 SEPARATOR = ":"
 
+#: 组合根**种入**的输入前缀（`services/api/demo.DECLARED_INPUTS` 是这些 id 的登记面）。
+#: 只有这两个命名空间里的冒号项算本地输入；其余 `a:b` 一律按**跨相引用**解析并点名。
+LOCAL_INPUT_PREFIXES: tuple[str, ...] = ("input-brief", "input-corpus")
+
 
 @dataclass(frozen=True, slots=True)
 class CrossPhaseInput:
@@ -88,7 +92,22 @@ def is_cross_phase_reference(protocol: ProtocolDefinition, reference: str) -> bo
         return False
     if left in {phase.id for phase in protocol.phases}:
         return True
-    return any(right in phase.outputs for phase in protocol.phases)
+    if any(right in phase.outputs for phase in protocol.phases):
+        return True
+    # GOAL-20261019-089 EC-01（第 3 条）：**两段都是名字但两段都不是本协议的相位/产物**
+    # ⇒ 同样是跨相引用（悬空），由 `_structural_failure` **点名**。
+    #
+    # 为什么必须这样（否则「摘掉上游」会被静默降级）：`inputs` 的本地那一类**只有**
+    # `input-brief:` / `input-corpus:` 两个命名空间（组合根种入，`services/api/demo.py`
+    # 的 `DECLARED_INPUTS` 是唯一登记面）。把 `question:research_question` 当本地输入
+    # ⇒ 编译期不报，运行期在 **A 不在场**时点名 —— 那就成了「运行期才发现」，
+    # 而且若恰好有同名本地输入，它会**静默取到别的东西**（正是本 EC 要消灭的分支）。
+    return not is_local_input_namespace(left)
+
+
+def is_local_input_namespace(prefix: str) -> bool:
+    """组合根种入的那一类前缀（唯一登记面 = `services/api/demo.DECLARED_INPUTS`）。"""
+    return prefix in LOCAL_INPUT_PREFIXES
 
 
 def _error(message: str, subject: str) -> PreflightFinding:

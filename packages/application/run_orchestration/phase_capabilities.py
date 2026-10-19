@@ -17,7 +17,7 @@
    Evidence。**只登记不挂 relation 的读不到**（`GET /runs/{id}/evidence` 走 claim
    relations 投影）：调用方把返回的 evidence 并入会话结果的 claim（`register_and_gate`）。
 
-两条**如实边界**（本模块不声称已解决）：
+三条**如实边界**（本模块不声称已解决）：
 
 - 证据的准入要求**内容寻址的内容在场**（`register_tool_evidence` 会重算 digest）。
   工具结果只有超过 provider 的 spill 阈值才落 ArtifactStore ⇒ 装配方必须让运行链
@@ -25,6 +25,7 @@
   fail closed 而不是伪造 digest。
 - 检索到的内容**不进模型上下文**（会话工具面在生产装配里仍是惰性的）⇒ 交付物与检索
   结果之间只有 claim relation 这一条 grounded 关系，没有"模型读到了文献"这层主张。
+- 跨相输入（GOAL-089 EC-01）：上游产物既进证据链（GOAL-081），也按产物名进参数材料。
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from packages.application.evidence.tool_evidence import (
     ToolEvidenceInput,
@@ -64,6 +65,11 @@ from packages.application.run_orchestration.phase_capability_triggers import (
     planned_in_this_phase,
     should_skip,
     skip_reason,
+)
+from packages.application.run_orchestration.phase_input_material import (
+    CrossPhaseMaterial,
+    input_material,
+    resolve_cross_phase_material,
 )
 from packages.application.tool_plane.execution import execute_tool_call, require_frozen_tool_set
 from packages.application.tool_plane.results import fetch_spilled_result
@@ -166,6 +172,7 @@ class CapabilityDeps:
     ledger: EvidenceLedger
     actor: str = "system:run-chain"
     telemetry: TelemetrySink | None = None
+    workflow: Any | None = None  #: GOAL-089 EC-01：解析跨相输入的身份面（None ⇒ 不变）
 
 
 @dataclass(frozen=True, slots=True)
@@ -251,7 +258,10 @@ def _run_planned_calls(
     annotations: list[str] = []
     outputs: list[Mapping[str, object]] = []
     previous: Mapping[str, object] | None = None
-    material = _input_material(deps, spec)
+    cross_phase = resolve_cross_phase_material(
+        deps.workflow, deps.artifacts, task, spec.cross_phase_inputs
+    )
+    material = input_material(deps, spec, cross_phase=cross_phase)
     for call in planned:
         if _should_skip(call, previous):
             skipped.append(skip_reason(call))
@@ -410,17 +420,6 @@ def _operation_key(call: RunChainCall, args: Mapping[str, object]) -> str:
     return call.tool_id
 
 
-def _input_material(deps: CapabilityDeps, spec: SessionSpecContext) -> dict[str, object]:
-    """本 phase 声明输入的 JSON 顶层字段合并成一份参数材料（缺件 ⇒ fail closed）。"""
-    material: dict[str, object] = {}
-    for artifact_id in spec.declared_input_artifacts:
-        parsed = json.loads(deps.artifacts.get(artifact_id).decode("utf-8"))
-        if not isinstance(parsed, dict):
-            raise InvalidInputError(f"declared input {artifact_id} is not a JSON object")
-        material.update(parsed)
-    return material
-
-
 def _payload(
     deps: CapabilityDeps,
     result: ToolResultRecord,
@@ -443,6 +442,7 @@ def _payload(
 __all__ = [
     "ARGS_ARTIFACT_PREFIX",
     "CapabilityDeps",
+    "CrossPhaseMaterial",
     "CapabilityStepOutcome",
     "RunChainCall",
     "ScopedPolicy",
