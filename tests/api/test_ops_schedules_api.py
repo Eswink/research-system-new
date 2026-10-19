@@ -42,6 +42,8 @@ _BUILTIN_NAMES = {
     "retention",
     "worker_reaper",
     "retry_dispatch",
+    # GOAL-20261019-089 EC-03：程序推进也是内置定义（可启停、不可删）。
+    "program_advance",
 }
 
 

@@ -39,6 +39,7 @@ PRIOR_JUDGES: tuple[str, ...] = (
 #: EC-02 落点。
 CREATE_DTO = "services/api/dto/programs.py"
 ROUTER = "services/api/routers/programs.py"
+ADVANCE = "services/api/program_advance.py"
 SQLITE = "adapters/sqlite/program_store.py"
 PG_STORE = "adapters/postgres/program_store.py"
 PG_MIGRATION = "adapters/postgres/migrations/024_program_gate_nudge_bound.sql"
@@ -200,9 +201,13 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
             "缺省必须是**静默**实现（未注入 ⇒ 逐字不变）",
         ),
         toolbox.verdict(
+            # GOAL-20261019-089 EC-03 的落点迁移（逐条申报）：推进装配抽成
+            # `program_advance.advance_for`（端点与周期作业共用）；断言意图与判词
+            # 一字未改，只把受判文件换成真正做连接的那个 + 加判端点调用它。
             "ec03-the-advance-route-hands-the-sink-over",
-            "nudges=deps.nudges" in router,
-            "推进路由必须把出口**交下去**（此前 `nudges=` 零命中 ⇒ 不可达）",
+            "nudges=deps.nudges" in _text(root, ADVANCE)
+            and "advance_for(deps, program_id)" in router,
+            "推进装配必须把出口**交下去**（此前 `nudges=` 零命中 ⇒ 不可达）",
         ),
         toolbox.verdict(
             "ec03-the-judgement-face-stays-read-only",

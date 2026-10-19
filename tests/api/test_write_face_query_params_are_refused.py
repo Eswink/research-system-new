@@ -76,18 +76,31 @@ def test_the_default_write_forms_are_verbatim() -> None:
             headers={"Idempotency-Key": f"g073-{uuid.uuid4()}"},
         )
         assert created.status_code == 201, created.text
-        assert sorted(created.json()) == ["created_at", "id", "name", "status", "updated_at"], (
-            sorted(created.json())
-        )
+        # GOAL-20261019-089 EC-02：读面新增 `direction`（项目方向）；**键集**是这条判据的
+        # 受判事实，「缺省形态逐字不变」在这里的含义是「不因查询串而改变」——新增的
+        # 响应字段由 EC-02 的判据单独钉住（`tests/api/test_project_direction.py`）。
+        assert sorted(created.json()) == [
+            "created_at",
+            "direction",
+            "id",
+            "name",
+            "status",
+            "updated_at",
+        ], sorted(created.json())
         patched = client.patch(
             f"/projects/{created.json()['id']}",
             json={"name": "probe-default-x"},
             headers={"Idempotency-Key": f"g073-{uuid.uuid4()}"},
         )
         assert patched.status_code == 200, patched.text
-        assert sorted(patched.json()) == ["created_at", "id", "name", "status", "updated_at"], (
-            sorted(patched.json())
-        )
+        assert sorted(patched.json()) == [
+            "created_at",
+            "direction",
+            "id",
+            "name",
+            "status",
+            "updated_at",
+        ], sorted(patched.json())
 
 
 def test_the_read_faces_do_not_regress() -> None:

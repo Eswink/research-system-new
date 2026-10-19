@@ -106,9 +106,21 @@ def test_the_composition_root_injects_a_nudge_sink_by_default() -> None:
 
 
 def test_the_advance_route_hands_the_sink_over() -> None:
-    """EC-03：推进路由把出口**交给**既有推进入口（改动前：`nudges=` 零命中）。"""
-    source = (_ROOT / "services" / "api" / "routers" / "programs.py").read_text(encoding="utf-8")
-    assert "nudges=deps.nudges" in source, "推进路由必须把组合根的出口传下去"
+    """EC-03：推进装配把出口**交给**既有推进入口（改动前：`nudges=` 零命中）。
+
+    **锚点迁移（GOAL-20261019-089 EC-03，逐条申报）**：断言原读
+    `services/api/routers/programs.py`。本轮把推进装配抽成**唯一入口**
+    `services/api/program_advance.advance_for`（人工端点与周期作业共用 ⇒ 不建第二套），
+    于是这条连接语句按设计**搬家**了 —— `nudges=deps.nudges` 现在在共享装配里。
+
+    **断言意图一字未改**：仍然要求「组合根的出口被传进推进判定」，只是受判文件换到
+    那个真正做连接的模块。收窄/放宽都没有：删掉那一行，这条照样判红。
+    **外加一条新断言**（不是替代）：端点必须调那个共享入口。
+    """
+    source = (_ROOT / "services" / "api" / "program_advance.py").read_text(encoding="utf-8")
+    assert "nudges=deps.nudges" in source, "推进装配必须把组合根的出口传下去"
+    router = (_ROOT / "services" / "api" / "routers" / "programs.py").read_text(encoding="utf-8")
+    assert "advance_for(deps, program_id)" in router, "端点必须走那条唯一的装配入口"
 
 
 def test_the_declared_bound_reaches_the_judgement_on_the_product_path() -> None:

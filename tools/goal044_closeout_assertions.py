@@ -48,6 +48,7 @@ DOMAIN_JUDGE = "tests/domain/test_research_program.py"
 WAITING = "packages/application/run_orchestration/program_waiting.py"
 RUNNER = "packages/application/run_orchestration/program_runner.py"
 ROUTER = "services/api/routers/programs.py"
+ADVANCE = "services/api/program_advance.py"
 #: EC-04 落点（判据）。
 WAIT_JUDGE = "tests/application/run_orchestration/test_program_waiting_on_the_run_path.py"
 
@@ -153,8 +154,13 @@ def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
             "waiting_round_decision(last, last_index, approvals)" in _text(root, RUNNER),
         ),
         toolbox.verdict(
+            # GOAL-20261019-089 EC-03 的落点迁移（逐条申报）：推进装配从路由抽成
+            # `services/api/program_advance.advance_for`（人工端点与周期作业**共用**
+            # 一条链 ⇒ 不建第二套）。断言意图一字未改，仍判「组合根的审批实例被交进
+            # 判定面」，只是受判文件换成真正做连接的那个；另加一条：端点必须调它。
             "ec03-the-router-passes-the-existing-approval-instance",
-            "approvals=deps.approvals" in _text(root, ROUTER),
+            "approvals=deps.approvals" in _text(root, ADVANCE)
+            and "advance_for(deps, program_id)" in _text(root, ROUTER),
         ),
     ]
 

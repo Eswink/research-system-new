@@ -217,6 +217,8 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal087_closeout.py",
     "tools/goal088_closeout_assertions.py",  # GOAL-20261018-088 EC-05：同上。
     "tools/verify_goal088_closeout.py",
+    "tools/goal089_closeout_assertions.py",  # GOAL-20261019-089 EC-05：同上。
+    "tools/verify_goal089_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
@@ -314,31 +316,28 @@ def _run(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
     )
 
 
-def format_problems(root: Path, relatives: Sequence[str]) -> list[str]:
-    """`ruff format --check`：不通过即返回问题（不是「打印一下」）。"""
+def _gate(root: Path, relatives: Sequence[str], argv: Sequence[str], label: str) -> list[str]:
+    """跑一道门：不通过即返回问题（不是「打印一下」）；三个包装共用这一份。"""
     paths = [str(root.joinpath(*item.split("/"))) for item in relatives]
-    result = _run(["ruff", "format", "--check", *paths])
+    result = _run([*argv, *paths])
     if result.returncode == 0:
         return []
-    return [f"ruff format --check 不通过：{result.stdout.strip() or result.stderr.strip()}"]
+    return [f"{label} 不通过：{result.stdout.strip() or result.stderr.strip()}"]
+
+
+def format_problems(root: Path, relatives: Sequence[str]) -> list[str]:
+    """`ruff format --check`：不通过即返回问题（不是「打印一下」）。"""
+    return _gate(root, relatives, ["ruff", "format", "--check"], "ruff format --check")
 
 
 def lint_problems(root: Path, relatives: Sequence[str]) -> list[str]:
     """`ruff check`：既有配置（含 `max-complexity = 10`、行宽 100）原样生效。"""
-    paths = [str(root.joinpath(*item.split("/"))) for item in relatives]
-    result = _run(["ruff", "check", *paths])
-    if result.returncode == 0:
-        return []
-    return [f"ruff check 不通过：{result.stdout.strip() or result.stderr.strip()}"]
+    return _gate(root, relatives, ["ruff", "check"], "ruff check")
 
 
 def typecheck_problems(root: Path, relatives: Sequence[str]) -> list[str]:
     """`mypy`：既有 `strict = true` 配置；**实测可稳定机械执行** ⇒ 不得假绿。"""
-    paths = [str(root.joinpath(*item.split("/"))) for item in relatives]
-    result = _run(["mypy", *paths])
-    if result.returncode == 0:
-        return []
-    return [f"mypy 不通过：{result.stdout.strip() or result.stderr.strip()}"]
+    return _gate(root, relatives, ["mypy"], "mypy")
 
 
 def function_spans(path: Path) -> Iterator[tuple[str, int]]:

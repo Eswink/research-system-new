@@ -40,15 +40,30 @@ PROVIDER_ID = "ncbi_eutils"
 ENDPOINT_ID = "agnes-anthropic"
 
 
-def product_control_plane_deps(db_path: str) -> Any:
-    """产品组合根装配 + 两段**执行体**缝；`preflight_override` 必须为 `None`。"""
+def product_control_plane_deps(
+    db_path: str, *, agent_runtime: str = "", allow_host_shell: bool = False
+) -> Any:
+    """产品组合根装配 + 两段**执行体**缝；`preflight_override` 必须为 `None`。
+
+    `agent_runtime` 缺省 `""` ⇒ 选择面回落 `fake`（既有调用点的语义**逐字不变**）。
+    GOAL-20261019-089 EC-04 传 `openhands`：**真实执行体**必须由调用方显式声明
+    （`ApiSettings` 从环境变量取，而本支持模块构造 settings 时只给 db_path）。
+    """
     from adapters.research_tools import NcbiEutilsProvider
     from packages.application.run_orchestration.service import RunOrchestrationService
     from services.api.catalog_merge import merged_catalog_snapshot
     from services.api.composition import assemble
     from services.api.settings import ApiSettings
 
-    deps = assemble(ApiSettings(db_path=db_path))
+    deps = assemble(
+        ApiSettings(
+            db_path=db_path,
+            agent_runtime=agent_runtime,
+            # AGENTS §9 默认 deny；真实 runtime 要建会话必须**由调用方显式**打开
+            # （与 agent_runtime 同一条纪律：显式配置，不静默回退）。
+            workspace_allow_host_shell=allow_host_shell,
+        )
+    )
     assert deps.preflight_override is None, "本支持模块只用于无 override 的产品装配"
     assert deps.artifacts is not None, "产品组合根必须给出制品店（运行链证据要内容寻址）"
     assert deps.runs is not None, "产品组合根必须给出编排服务"
