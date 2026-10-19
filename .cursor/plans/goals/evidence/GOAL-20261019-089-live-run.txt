@@ -1,0 +1,47 @@
+GOAL-20261019-089 EC-04 真跑读数（live run, real relay + real runtime）
+==============================================================================
+
+命令（凭据由操作者注入；本文件不记录任何凭据值）：
+  set -a; . ./.env; set +a
+  RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 \
+    uv run --frozen --no-sync python -B -m pytest \
+    tests/e2e/test_direction_to_question_to_retrieval_live.py -q -rs
+
+结果：1 passed（egress guard: judged 6 connection attempt(s); blocked 0）
+
+run id              : 07f339e2-2845-4df0-bb3b-4d9fa3146a04
+protocol id         : direction_to_question_v1_0_0
+终态                : SUCCEEDED
+一句话方向（输入）  : retrieval augmentation for scientific hypothesis generation
+
+模型自己提出的问题正文（`research_question` 制品 content 的原文）：
+  | The direction is clearly stated: "retrieval augmentation for scientific hypothesis generation."
+  | 
+  | **Research question:** To what extent does retrieval augmentation — grounding a language model in relevant scientific literature and structured knowledge retrieved at inference time — improve the novelty and validity of hypotheses generated for scientific discovery, and what remains unmeasured by current evaluations?
+  | 
+  | ```json
+  | {"research_question": {"query": "retrieval-augmented generation scientific hypothesis discovery", "rationale": "The direction asks how retrieval augmentation supports hypothesis generation in science, so the search targets the core terms a paper on this would use in its title."}}
+  | ```
+
+检索词（问题块里的 query）: retrieval-augmented generation scientific hypothesis discovery
+发给 provider 的参数制品  : tool-args:360d2038-1b93-4dcd-8813-922e34ed4276:literature_search
+  （判据从制品面枚举取证：`tool-args:` 制品不挂 claim relation ⇒ 不在 /runs/{id}/artifacts 里；
+    运行链步在 engine.submit 之前执行 ⇒ run 失败时没有任务行，只有枚举才证得了「发给 provider 的那串字」。）
+
+命中的真实标识（literature_read 的 source_ref 末段）: 41408154, 41743026, 42160738
+
+证据 digest：
+  - sha256:269960f97cae6af58b21d8dc615e957926f18a01cc13e2999b582903bea578dc
+
+制品 digest：
+  - 2c9fae7f-eaf6-43f3-b65f-6876f88211e9:research_question: sha256:e3b56a660179cfdb9e4e5bc092571fc848619943e20c31caa0f9cc160f3a2c97
+  - 2c9fae7f-eaf6-43f3-b65f-6876f88211e9:retrieval_context: sha256:8584baf6d62eb825d9f2b3cd1619f5ff16aadb95a077aa1d6288200bd1f35374
+  - 360d2038-1b93-4dcd-8813-922e34ed4276:retrieval_context: sha256:8584baf6d62eb825d9f2b3cd1619f5ff16aadb95a077aa1d6288200bd1f35374
+  - 360d2038-1b93-4dcd-8813-922e34ed4276:retrieval_report: sha256:c736c6a2a323531901a423c22037d477880571a19ba4578edf50084f43349493
+  - tool-args:360d2038-1b93-4dcd-8813-922e34ed4276:literature_read:42160738+41743026+41408154: sha256:385757a6009f2a332f8ae75d9db09b33ba8abd70ba776b268b8c1cdd04f40023
+  - tool-args:360d2038-1b93-4dcd-8813-922e34ed4276:literature_search: sha256:94ccaaf0fa05b5f894b9400bf4ef9713f735055875990eef4f3573ebc40b1b60
+  - tool-result:360d2038-1b93-4dcd-8813-922e34ed4276:literature_read:42160738+41743026+41408154:literature_read: sha256:269960f97cae6af58b21d8dc615e957926f18a01cc13e2999b582903bea578dc
+  - tool-result:360d2038-1b93-4dcd-8813-922e34ed4276:literature_search:literature_search: sha256:f93236f8d5b5d654fd67a0354fa65e99856b1e537ad39588046dc0b170493493
+
+判据边界：本读数证明「检索词逐字等于模型自己写下、并落库为 research_question 的 query」
+这一条机械事实；它不判问题提得好不好，也不声称报告叙述质量。
