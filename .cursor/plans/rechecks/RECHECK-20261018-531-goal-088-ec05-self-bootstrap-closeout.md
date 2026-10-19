@@ -45,8 +45,12 @@ memory_entries: []
 
 ### 4. 两树复检
 
-- `TREE current` 与 `TREE clean` 各 **68 条判词**，`sha256` **完全相同**；
-  `COMPARE identical=True` / `TWO-TREE PASS`（详见下方读数）。
+- `TREE current` 与 `TREE clean` 各 **68 条判词**，`sha256` **完全相同**
+  （`d398d6947cd1eff3…`）；`COMPARE identical=True` / `TWO-TREE PASS`。
+- **首跑真红并已修**：收口轮首次 as-is m0 判红 `python/tests` ——
+  `tests/application/test_experiment_design_from_retrieval.py` 的 `_seed_retrieval` **52 行**
+  （超 50 行门），而定向套件当时是绿的（我只跑了业务判据，没跑规模门）。处置：
+  把证据登记拆成 `_register`（**无逻辑删除**、无判据改动）；修后 m0 **23/23**。
 - 判词归档：`.cursor/plans/goals/evidence/GOAL-20261018-088-ec05-{current,clean}.txt`
   —— 二进制写盘、`CR=0`、逐字节相同。
 
@@ -69,7 +73,7 @@ memory_entries: []
 | 新判据 / 既有实验判据 | **10 passed** / **40 passed** |
 | 治理校验 | `Cursor 治理验证通过` |
 | 凭据审计 | 四面 `offenders=0` |
-| as-is m0 | 见下方读数（收口轮实测） |
+| as-is m0 | **23/23**（终态 `PASS: profile=m0; 23 deterministic checks`） |
 
 ## 结论
 
