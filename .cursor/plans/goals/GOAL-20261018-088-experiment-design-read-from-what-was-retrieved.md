@@ -237,7 +237,10 @@ memory_entries: []
 
 | 推送 | 提交 | run | job 结论 |
 | --- | --- | --- | --- |
-| （建档提交，待回填） | 待回填 | 待回填 | 待回填 |
+| 建档 + cycle 1（读取器 + 声明面 + 10 条判据 + 记录） | `f45d9349` | **零 run** | 中间提交 ⇒ 由 `3aa9d838` 的 run `covered_by`（代码面与判据面同批推送） |
+| EC-05 收口资产（验证器 + 断言集 + 两处注册） | `2447fa60` | **零 run** | 同上 |
+| 规模门修复（证据登记拆 `_register`） | `f2f6557a` | **零 run** | 同上 |
+| EC-05 读数回填 + **tip** | `3aa9d838` | [M0 39182686242](https://github.com/Eswink/research-system-new/actions/runs/39182686242) / [Push 39182685977](https://github.com/Eswink/research-system-new/actions/runs/39182685977) | **M0 八 job 全 `success`**（`container-quality` / `quality-{ubuntu,windows}-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
 
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
