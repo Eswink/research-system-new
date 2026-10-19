@@ -343,6 +343,8 @@ memory_entries: []
 | 批 3（一次推送：`43ca33dc..0645bd08`） | `0645bd08` | **39321868670** / **39321870140** | `M0 Quality Gates` **success**（attempt 1）：8/8 job success；`Push on main` success。本行是**自指边界**：该提交只改记录（台账批 2），它自己那次 run 的结论写入时已经跑完，但**写下**这个结论这个动作本身没有经过任何门 —— 如实登记，不假装闭合。 |
 | 批 4（一次推送：`0645bd08..2dc324d8`） | `2dc324d8` | **39324938465** / **39324938696** | `M0 Quality Gates` **success**（attempt 1）：`console-frontend`、`collector-quality`、`quality-windows-latest`、`eval-gate`、`quality-ubuntu-latest`、`observability-overhead-ubuntu-latest`、`observability-overhead-windows-latest`、`container-quality` **8/8 success**；`Push on main` success。**自指边界**：本行与后续「收口补齐」的台账写入提交，其自身那次 run 的结论由**下一提交**记录；链条在「最后一个台账提交」处停止 —— 那里如实写明边界，不假装闭合。 |
 | 收口补齐（一次推送：`2dc324d8..` 本文件所在提交） | **本文件所在提交**（结构性指称，不写死 hash） | **未轮询（自指边界）** | 该提交只改记录（`2dc324d8` 的 CI 到终态 + `numstat` 申报 + 最后一轮 m0 读数），**它自己那次 run 的结论不外推**：台账在「读过它」之前就结束 —— 这是显式边界，不是遗漏。**指称不写死 hash**：写死会让「改 hash」本身又产生一个提交（自指环）。此前每个提交都有 run 结论或 `covered_by`；本地最终 m0 终态行为 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`、0 FAILED）。 |
+| 收口补齐（一次推送：`2dc324d8..9d280a90`） | `c2c90e88` | **零 run** | `covered_by=39330533519`（同一批推送里 GitHub 只为分支最新提交创建 run） |
+| 收口补齐 | `9d280a90` | **39330533519** / **39330532902** | `M0 Quality Gates` **success**（attempt 1）：`observability-overhead-ubuntu-latest` / `container-quality` / `console-frontend` / `eval-gate` / `quality-windows-latest` / `quality-ubuntu-latest` / `collector-quality` / `observability-overhead-windows-latest` **8/8 success**；`Push on main` success。**（追认更新）**：收口期原本把「本文件所在提交」记为未轮询的自指边界；补拉后确认它**有** run 且全绿 ⇒ 边界下移一句，并把零 run 的那个提交按 `covered_by` 登记。 |
 
 ## 状态历史
 
