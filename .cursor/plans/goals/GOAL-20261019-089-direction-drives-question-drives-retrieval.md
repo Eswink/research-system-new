@@ -337,6 +337,7 @@ memory_entries: []
 | 批 1 | `493020b8` | **零 run** | `covered_by=39312496694`（同上） |
 | 批 1 | `d91daec0` | **零 run** | `covered_by=39312496694`（同上） |
 | 批 1 | `dc5646fe` | **39312496694** / **39312495592** | `M0 Quality Gates` **success**（attempt 1）：`container-quality`、`console-frontend`、`observability-overhead-windows-latest`、`quality-windows-latest`、`quality-ubuntu-latest`、`observability-overhead-ubuntu-latest`、`collector-quality`、`eval-gate` **8/8 success**；`Push on main` success |
+| 批 2（一次推送：`dc5646fe..43ca33dc`） | `43ca33dc` | **39318206267** / **39318207666** | `M0 Quality Gates` **success**（attempt 1）：8/8 job success（`container-quality` / `console-frontend` / `observability-overhead-windows-latest` / `quality-windows-latest` / `quality-ubuntu-latest` / `observability-overhead-ubuntu-latest` / `collector-quality` / `eval-gate`）；`Push on main` success |
 
 ## 状态历史
 
