@@ -338,6 +338,7 @@ memory_entries: []
 | 批 1 | `d91daec0` | **零 run** | `covered_by=39312496694`（同上） |
 | 批 1 | `dc5646fe` | **39312496694** / **39312495592** | `M0 Quality Gates` **success**（attempt 1）：`container-quality`、`console-frontend`、`observability-overhead-windows-latest`、`quality-windows-latest`、`quality-ubuntu-latest`、`observability-overhead-ubuntu-latest`、`collector-quality`、`eval-gate` **8/8 success**；`Push on main` success |
 | 批 2（一次推送：`dc5646fe..43ca33dc`） | `43ca33dc` | **39318206267** / **39318207666** | `M0 Quality Gates` **success**（attempt 1）：8/8 job success（`container-quality` / `console-frontend` / `observability-overhead-windows-latest` / `quality-windows-latest` / `quality-ubuntu-latest` / `observability-overhead-ubuntu-latest` / `collector-quality` / `eval-gate`）；`Push on main` success |
+| 批 3（一次推送：`43ca33dc..0645bd08`） | `0645bd08` | **39321868670** / **39321870140** | `M0 Quality Gates` **success**（attempt 1）：8/8 job success；`Push on main` success。本行是**自指边界**：该提交只改记录（台账批 2），它自己那次 run 的结论写入时已经跑完，但**写下**这个结论这个动作本身没有经过任何门 —— 如实登记，不假装闭合。 |
 
 ## 状态历史
 
