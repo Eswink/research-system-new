@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import pytest
 
@@ -116,6 +117,11 @@ def _seed_retrieval(
         content,
     )
     assembly.artifacts.mark(artifact_id, ArtifactState.VERIFIED)
+    _register(ledger, artifact_id, content, where)
+
+
+def _register(ledger: Any, artifact_id: str, content: bytes, where: _Seed) -> None:
+    """登记来源 / 证据 / claim / 关系（**必须挂关系**：只登记不挂关系的读不到）。"""
     source = SourceRecord(
         origin=f"tool:{artifact_id}",
         content_digest=str(Digest.of_bytes(content)),
