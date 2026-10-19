@@ -154,7 +154,14 @@ ZERO_HIT_ROUTES: tuple[ReadRouteRule, ...] = (
     ReadRouteRule("/openapi.json", ZERO_HIT, _FRAME),
     ReadRouteRule("/ops/schedules", ZERO_HIT, _OPS),
     ReadRouteRule("/policy/capabilities", ZERO_HIT, _CFG),
-    ReadRouteRule("/projects", ZERO_HIT, _META),
+    ReadRouteRule(
+        "/projects",
+        ZERO_HIT,
+        _META + "；GOAL-20261019-089 EC-02 起另带 `direction`（研究方向的**声明**）——"
+        "与既有 `name` **同类别**：操作者自己写的注册字段、只由同一条注册面读回。"
+        "**一等边界**：本路由的金丝雀面不覆盖这两类自由文本（夹具未把金丝雀写进它们），"
+        "故「零命中」在此是**注册元数据**口径，不是对自由文本的结构性保证",
+    ),
     ReadRouteRule("/projects/{project_id}/agents", ZERO_HIT, _CFG),
     ReadRouteRule("/projects/{project_id}/cost-forecast", ZERO_HIT, _AGG),
     ReadRouteRule("/projects/{project_id}/experiment-queue", ZERO_HIT, _META),

@@ -63,6 +63,13 @@ FALLBACK_ENTRIES: tuple[ScheduleEntry, ...] = (
         purpose="重排到期的停车 run 自动续跑（交付下一次尝试）",
         enabled=True,
     ),
+    # GOAL-20261019-089 EC-03：程序推进的静态回落事实（与 `BUILTIN_SCHEDULES` 同源）。
+    ScheduleEntry(
+        name="program_advance",
+        interval_seconds=30.0,
+        purpose="按落库事实推进研究程序（第 N 轮终态后进入第 N+1 轮）",
+        enabled=True,
+    ),
 )
 
 #: 名称/终态冲突类消息片段（其余 InvalidInputError 视为取值域 → 422）。

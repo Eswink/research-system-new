@@ -641,3 +641,75 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # GOAL-20261019-089 EC-01：**方向 → 问题 → 检索** 两格各一份契约。
+  #
+  # 为什么需要两份新契约（不复用 `research_report_plan`）：那一份要求本 phase
+  # **自己**取回检索来源（`minimum_retrieved_sources: 1`）——立题与检索在同一个 phase。
+  # 本协议的形态相反：**先立题、再检索**（跨相输入 `question:research_question`）。
+  # 把两种形态塞进同一份契约会让其中一条判据永远无法同时满足。
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  research_question_proposal:
+    version: 1.0.0
+    purpose: >
+      TASK — turn the operator's stated research direction into **one answerable research
+      question**, and end your reply with a machine-readable block. The system will read
+      your reply as the `research_question` artifact; the next phase (which runs the
+      literature search) reads `query` from that block. There is nothing to implement —
+      reply directly.
+
+      The project's direction is given to you before this task text, under "PROJECT
+      DIRECTION". If that section is absent, say so explicitly in one line and stop:
+      do **not** invent a direction.
+
+      Your reply must contain, in this order:
+
+      1. The question itself, in one or two sentences, written so that a literature
+         search can be built from it. State the gap you are addressing and why it
+         matters for the stated direction.
+      2. A fenced JSON block named `research_question`, exactly in this shape:
+
+             {"research_question": {"query": "<search string>", "rationale": "<one sentence>"}}
+
+      Rules for the block: `query` is the string the search will be executed with, so
+      make it a compact keyword query (not a sentence). Keep it to **three to six
+      high-signal terms** and do **not** add synonyms, hedges, or one-off qualifiers
+      ("novelty", "strategy", "evidence quality", …): the engine AND-joins every term, so
+      each extra term narrows the result set, and a long query commonly returns **zero**
+      records — in which case nothing can be read and the run fails. Prefer the terms
+      that a paper on this subject would put in its own title. `rationale` says why this
+      question follows from the direction. Both fields are required.
+    required_capabilities:
+      - artifact.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: research_question
+    timeout_seconds: 120
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  research_question_retrieval:
+    version: 1.0.0
+    purpose: >-
+      GOAL-20261019-089 EC-01：**检索格**的交付物契约 —— 它读**上游提出的问题**
+      （`inputs: [question:research_question]`），检索词由运行链从那份产物的 `query`
+      取用（`arguments_from_input: ["research_question.query"]`）。
+      覆盖判据两维：至少一条非自产来源 + 其中至少一条是**系统取得**（`RETRIEVED`）——
+      后者正是「检索真的发生了」的可判定事实，也是本格存在的理由。
+    required_capabilities:
+      - artifact.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: retrieval_report
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+        minimum_retrieved_sources: 1
+    timeout_seconds: 300
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

@@ -27,6 +27,7 @@ from adapters.sqlite.memory_store import SqliteMemoryStore
 from adapters.sqlite.model_store import SqliteModelStore
 from adapters.sqlite.pricing_snapshot_store import SqlitePricingSnapshotStore
 from adapters.sqlite.program_store import SqliteProgramStore
+from adapters.sqlite.project_store import SqliteProjectStore
 from adapters.sqlite.review_finding_store import SqliteReviewFindingStore
 from adapters.sqlite.run_store import SqliteRunStore
 from adapters.sqlite.workflow_engine import SqliteWorkflowEngine
@@ -82,6 +83,7 @@ from services.api.config_store_parts import config_store_parts
 from services.api.demo import _default_events, seed_declared_inputs
 from services.api.idempotency import IdempotencyStore
 from services.api.prior_knowledge_support import prior_knowledge_builder
+from services.api.project_direction_support import project_direction_builder
 from services.api.retrieval_context_support import retrieval_context_builder
 from services.api.runtime_support import (
     RuntimeSelection,
@@ -257,6 +259,7 @@ class _SqliteStoreParts:
     review_findings: Any  # GOAL-035 EC-01：验收门结论的写面（编排）与读面（API）同一实例
     program_store: Any  # GOAL-037 EC-01：研究程序声明 + 推进决策（canonical，两组合根同侧）
     memory_store: Any  # GOAL-20261009-042 EC-02：`memory.read` 的来源（与 ApiDeps.memory 同一实例）
+    project_store: Any  # GOAL-089 EC-02：方向提示词的来源（与 ApiDeps 同一实例）
 
 
 def _sqlite_store_parts(
@@ -296,6 +299,7 @@ def _sqlite_store_parts(
         # GOAL-20261009-042 EC-02：与 `config_store_parts(connection)["memory"]` 同一份构造
         # （同一 connection ⇒ 同一 canonical 面；`ApiDeps.memory` 取的是那里的实例）。
         memory_store=SqliteMemoryStore(connection=connection),
+        project_store=SqliteProjectStore(connection=connection),  # GOAL-089 EC-02：同上一条口径
     )
 
 
@@ -331,6 +335,7 @@ def _sqlite_orchestration(
             ),
             # GOAL-20261018-082 EC-01：前序知识 → 会话提示词（与检索同一求值点）。
             prior_knowledge=prior_knowledge_builder(memory_store=ports.memory_store),
+            project_direction=project_direction_builder(project_store=ports.project_store),
             telemetry=telemetry,
             pricing=ports.pricing,
             pricing_store=ports.pricing_store,

@@ -19,6 +19,7 @@ from services.api.middleware import (
     auth_disabled_warning,
     control_plane_auth_from_env,
 )
+from services.api.program_advance_scheduler import ProgramAdvanceScheduler
 from services.api.query_param_guard import reject_unknown_query_params
 from services.api.routers import (
     approvals,
@@ -232,6 +233,31 @@ def _start_retry_dispatch(deps: ApiDeps) -> "RetryDispatchScheduler | None":
         return None
 
 
+def _start_program_advance(deps: ApiDeps) -> "ProgramAdvanceScheduler | None":
+    """GOAL-20261019-089 EC-03：**周期推进研究程序**（与 `POST /programs/{id}/advance` 同一条链）。
+
+    Gated on the program store（没有它就没有「有哪些程序」的事实 ⇒ 不启执行体；
+    读面因此如实给出 `executor_attached=false`）。
+
+    **为什么**：`advance_program` 早就有、程序域也齐备，但唯一入口是人工点一次 ——
+    程序在第 N 轮终态后就停在那里。本守护线程让「进入第 N+1 轮」成为**无人工**的事，
+    而闸门语义（停在哪、为什么停）仍由既有判定原样给出。
+    """
+    if getattr(deps, "program_store", None) is None:
+        return None
+    try:
+        sched = ProgramAdvanceScheduler(
+            deps,
+            interval_seconds=30.0,
+            telemetry=getattr(deps, "telemetry", None),
+            control=_schedule_control(deps),
+        )
+        sched.start()
+        return sched
+    except Exception:
+        return None
+
+
 def _stop_schedulers(*schedulers: Any) -> None:
     """Reverse-order daemon shutdown; a failing stop must not block the rest."""
     for sched in schedulers:
@@ -265,6 +291,7 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     reaper_sched: WorkerReaperScheduler | None = None
     dispatch_sched: RetryDispatchScheduler | None = None
     queue_dispatcher: ExperimentQueueDispatcher | None = None
+    program_advance: ProgramAdvanceScheduler | None = None
     telemetry = getattr(deps, "telemetry", None) if deps is not None else None
     if deps is not None and deps.runs is not None:
         lease_sched = _start_lease_scheduler(deps)
@@ -274,9 +301,17 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         dispatch_sched = _start_retry_dispatch(deps)
     if deps is not None:
         queue_dispatcher = _start_experiment_queue(deps)
+        # GOAL-20261019-089 EC-03：程序的**周期**推进（与手动端点同一条装配链）。
+        program_advance = _start_program_advance(deps)
     yield
     _stop_schedulers(
-        reaper_sched, retention_sched, outbox_sched, queue_dispatcher, dispatch_sched, lease_sched
+        reaper_sched,
+        retention_sched,
+        outbox_sched,
+        queue_dispatcher,
+        program_advance,
+        dispatch_sched,
+        lease_sched,
     )
     if telemetry is not None:
         shutdown = getattr(telemetry, "shutdown", None)

@@ -5412,8 +5412,20 @@
       },
       "ProjectCreateDto": {
         "additionalProperties": false,
-        "description": "创建项目：仅命名；id 服务端生成，默认设置自动落行（可随后编辑）。",
+        "description": "创建项目：命名 + 可选研究方向；id 服务端生成，默认设置自动落行。",
         "properties": {
+          "direction": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
           "name": {
             "maxLength": 200,
             "minLength": 1,
@@ -5427,12 +5439,43 @@
         "title": "ProjectCreateDto",
         "type": "object"
       },
+      "ProjectDirectionUpdateDto": {
+        "additionalProperties": false,
+        "description": "方向字段的**专用**写面（与 `PATCH /projects/{id}` 的 direction 同一条落库路径）。\n\n单独一条路由是为了让「只改方向」不必与「改名 / 归档」共用一个请求体：\n调用方（尤其是程序推进链）可以只声明方向而**不可能**顺手改名。",
+        "properties": {
+          "direction": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          }
+        },
+        "title": "ProjectDirectionUpdateDto",
+        "type": "object"
+      },
       "ProjectDto": {
         "additionalProperties": false,
         "properties": {
           "created_at": {
             "title": "Created At",
             "type": "string"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
           },
           "id": {
             "title": "Id",
@@ -5767,8 +5810,20 @@
       },
       "ProjectUpdateDto": {
         "additionalProperties": false,
-        "description": "重命名与/或归档（ACTIVE ⇄ ARCHIVED；不提供删除）。",
+        "description": "重命名 / 归档 / **声明或清除方向**（ACTIVE ⇄ ARCHIVED；不提供删除）。\n\n`direction` 的三种形态**分得开**：缺省（不出现）= 不动；`null` = 清除；\n字符串 = 声明。这把「没提到」与「清掉」分开 —— 与既有 `name` / `status` 的口径一致。",
         "properties": {
+          "direction": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
           "name": {
             "anyOf": [
               {
@@ -11407,6 +11462,59 @@
         "summary": "Project Cost Forecast",
         "tags": [
           "budget"
+        ]
+      }
+    },
+    "/projects/{project_id}/direction": {
+      "put": {
+        "description": "**只**声明 / 清除研究方向（`null` = 清除；不触碰 name / status）。\n\n单列这条路由的理由：方向是研究链的输入，而改名是标签动作 —— 让「改方向」的\n调用方**不可能**顺手改名（两份语义不共用一个请求体）。",
+        "operationId": "set_project_direction_projects__project_id__direction_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectDirectionUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Project Direction",
+        "tags": [
+          "projects"
         ]
       }
     },

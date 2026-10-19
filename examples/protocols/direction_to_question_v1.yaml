@@ -1,0 +1,84 @@
+id: direction_to_question_v1_0_0
+version: 0.1.0
+
+# 真实**方向 → 问题 → 检索**研究协议（GOAL-20261019-089 EC-01）。
+#
+# **它补哪一格**：此前所有协议的检索词都来自**操作者预填的简报**
+# （`examples/inputs/real-research-brief-v1.json` 的 `retrieval.query`，经
+# `arguments_from_input` 读入）⇒ 用户能表达的是「搜什么」，不是「研究什么」。
+# 而 `research_plan` / 任何上游模型产物在 run-chain 侧**从未被读过**。
+#
+# **两格的分工**（跨相输入是它们之间唯一的通道）：
+#
+#   1. `question`（会话）—— 读**项目方向**（提示词里那一段），写出 `research_question`：
+#      一条可检索的问题 + 它的 query 字符串。判据：产物存在。
+#   2. `retrieval`（运行链）—— `inputs: [question:research_question]` ⇒ 本格开工时
+#      上游产物已在 canonical；运行链把 `research_question.query` 作为检索词**逐字**
+#      发给 provider（`arguments_from_input: ["research_question.query"]`）。
+#      判据：产物存在 + 覆盖两维（非自产来源 / 其中至少一条 `RETRIEVED`）。
+#
+# **为什么必须是两格**：运行链在**会话之前**执行（`_run_planned_calls` →
+# `dispatch_task_execution`）⇒ 同一 phase 内做不到「先让模型想问题、再拿它去检索」。
+# 跨相输入（`{phase}:{artifact}`）是既有的唯一通道（`grounded_report_chain_v1:100`
+# 是先例）；本 GOAL 让这条通道**也进 run-chain 的参数材料**（此前只进证据链）。
+#
+# **受控范围**（写明，不夸大也不缩小）：**2 个 phase、1 次真实模型会话、1 次真实检索
+# 两步链**。它**不**声称问题提得好（那要人评或评审面）；它判的是
+# 「检索词来自上游模型写下的话」这一条机械事实。
+
+phases:
+  - id: question
+    name: Research Question From Direction
+    strategy: single_agent
+    required_roles:
+      - {role: research_director, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      # 下面两条**不是为了在本相检索**：会话工具面 = 冻结集 − 本相的 run-chain 排除，
+      # 而排除面由本相 `tool_requirements` 的 provider 并集决定 ⇒ 能力面不覆盖某个
+      # provider，它就**漏进**会话面而没有注册实现。与 `research_report_chain_v1` 的立题格
+      # 逐条同一手法（那里同样把 literature.* / workspace.read 一并声明）。
+      - literature.search
+      - literature.read
+    # 本 phase 的输入是**项目方向**（`ProjectDefinition.direction` → 提示词那一段），
+    # 不是制品：方向是配置/canonical 事实，不是本 run 的产物。
+    #
+    # **为什么本相也声明 `run_chain`**：不排除的话，会话工具面会含 `literature.*` 的名字
+    # 而没有注册实现（实测：`ToolDefinition 'europe_pmc' is not registered`）。声明
+    # `run_chain` 把本相 capability 面的 provider **全部**排除出会话工具面（空面），
+    # 于是没有名字需要一个不存在的实现。
+    #
+    # **它不改变本相的执行体**：没有 `RunChainCall` 指向本相（检索调用声明在 `retrieval`
+    # 相）⇒ `execute_run_chain_capabilities` **不执行任何调用**；`artifact.read` 仍进
+    # `tool_requirements` / 冻结集 / 策略面（一字不减）—— 被拿掉的只有「会话工具」这一面。
+    capability_execution: run_chain
+    task_contract: research_question_proposal
+    # **无声明输入**：本格要的是**项目方向**（提示词里那一段），不是某份制品；
+    # 声明 `input-brief:*` 会让它被登记成一条「非自产来源」，而那会掩蔽
+    # 「问题来自方向」这件事的可判定性。
+    outputs: [research_question]
+    timeout_seconds: 180
+
+  - id: retrieval
+    name: Retrieval Driven By The Question
+    strategy: single_agent
+    depends_on: [question]
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+    # 检索由运行链执行、不暴露为会话工具（与 `real_retrieval_research_v1` 同款）。
+    capability_execution: run_chain
+    # 本格的**声明输入**就是上游的产物：编译期校验（产出方是自己的上游、该产物名在它的
+    # outputs 里、产出方唯一）⇒ 摘掉 `question` 这个 phase 会**编译期点名**失败。
+    inputs: [question:research_question]
+    # 覆盖判据两维（既有 `real_retrieval_deliverable` 同形）：本格必须真的取回内容。
+    # 本 phase 声明 `run_chain` ⇒ 它声明的**全部**能力（含合约带来的 `artifact.read`）
+    # 与其 provider 一起从**会话工具面**排除 ⇒ 会话面为**空**（`research_report_chain_v1`
+    # 的立题格同一形态）。空面没有任何名字需要绑定，而**越界绑定会被点名拒绝** ——
+    # 所以这里**不写**绑定是唯一正确的形态。
+    task_contract: research_question_retrieval
+    outputs: [retrieval_report]
+    timeout_seconds: 300

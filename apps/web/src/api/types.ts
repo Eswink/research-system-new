@@ -301,15 +301,24 @@ export interface ProjectDto {
   status: "ACTIVE" | "ARCHIVED";
   created_at: string;
   updated_at: string;
+  /** GOAL-20261019-089 EC-02：研究方向（null = 未声明）。与 `name` 分开。 */
+  direction?: string | null;
 }
 
 export interface ProjectCreateDto {
   name: string;
+  direction?: string | null;
 }
 
 export interface ProjectUpdateDto {
   name?: string | null;
   status?: "ACTIVE" | "ARCHIVED" | null;
+  direction?: string | null;
+}
+
+/** 方向字段的专用写面（`PUT /projects/{id}/direction`；null = 清除）。 */
+export interface ProjectDirectionUpdateDto {
+  direction?: string | null;
 }
 
 export interface ProjectSettingsDto {

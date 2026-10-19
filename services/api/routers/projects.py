@@ -19,7 +19,12 @@ from packages.domain.projects import ProjectDefinition, ProjectStatus
 from services.api.catalog import load_project_name, load_project_settings
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
-from services.api.dto.projects import ProjectCreateDto, ProjectDto, ProjectUpdateDto
+from services.api.dto.projects import (
+    ProjectCreateDto,
+    ProjectDirectionUpdateDto,
+    ProjectDto,
+    ProjectUpdateDto,
+)
 from services.api.errors import ApiError
 
 router = APIRouter(tags=["projects"])
@@ -64,6 +69,8 @@ def _dto(project: ProjectDefinition) -> ProjectDto:
         status=project.status.value,
         created_at=project.created_at.value.isoformat(),
         updated_at=project.updated_at.value.isoformat(),
+        # GOAL-20261019-089 EC-02：方向是**项目自己的字段**（不塞进 name）。
+        direction=project.direction,
     )
 
 
@@ -91,6 +98,7 @@ async def create_project(payload: ProjectCreateDto, request: Request) -> Project
         status=ProjectStatus.ACTIVE,
         created_at=now,
         updated_at=now,
+        direction=(payload.direction.strip() if payload.direction is not None else None),
     )
     store.save_project(project)
     if deps.project_settings_store is not None:
@@ -121,13 +129,39 @@ async def update_project(
     current = _merged_projects(deps).get(project_id)
     if current is None:
         raise ApiError(404, "Not Found", f"project not found: {project_id}")
-    if payload.name is None and payload.status is None:
-        raise ApiError(422, "Empty Patch", "name or status is required")
+    # 「空载荷」的判定看**请求体里出现了哪些键**，不看取值：`{"direction": null}` 是
+    # **一个动作**（清除方向），不是空补丁。
+    if not payload.model_fields_set & {"name", "status", "direction"}:
+        raise ApiError(422, "Empty Patch", "name, status or direction is required")
     project = current
     if payload.name is not None:
         project = project.renamed(payload.name.strip(), at=Timestamp.now())
     if payload.status is not None:
         project = project.with_status(ProjectStatus(payload.status), at=Timestamp.now())
+    if "direction" in payload.model_fields_set:
+        # 三种形态分得开：**不出现** = 不动；`null` = 清除；字符串 = 声明。
+        direction = payload.direction.strip() if payload.direction is not None else None
+        project = project.with_direction(direction or None, at=Timestamp.now())
+    store.save_project(project)
+    return _dto(project)
+
+
+@router.put("/projects/{project_id}/direction", response_model=ProjectDto)
+async def set_project_direction(
+    project_id: str, payload: ProjectDirectionUpdateDto, request: Request
+) -> ProjectDto:
+    """**只**声明 / 清除研究方向（`null` = 清除；不触碰 name / status）。
+
+    单列这条路由的理由：方向是研究链的输入，而改名是标签动作 —— 让「改方向」的
+    调用方**不可能**顺手改名（两份语义不共用一个请求体）。
+    """
+    deps: ApiDeps = get_deps(request)
+    store = _store_of(deps)
+    current = _merged_projects(deps).get(project_id)
+    if current is None:
+        raise ApiError(404, "Not Found", f"project not found: {project_id}")
+    direction = payload.direction.strip() if payload.direction is not None else None
+    project = current.with_direction(direction or None, at=Timestamp.now())
     store.save_project(project)
     return _dto(project)
 

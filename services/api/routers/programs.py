@@ -26,17 +26,13 @@ from typing import Any, cast
 
 from fastapi import APIRouter, Request
 
-from packages.application.ports.program_store import ProgramStore
-from packages.application.run_orchestration.program_runner import advance_program
-from packages.application.run_orchestration.program_waiting import GateClock
-from packages.domain.core import ID, Timestamp
+from packages.domain.core import ID
 from packages.domain.program import (
     HybridGateDeclaration,
     ProgramContinueRule,
     ProgramDecision,
     ResearchProgram,
 )
-from packages.domain.run import ResearchRun
 from services.api.composition import ApiDeps
 from services.api.deps import get_deps
 from services.api.dto.programs import (
@@ -48,25 +44,10 @@ from services.api.dto.programs import (
     ProgramRunDto,
 )
 from services.api.errors import ApiError
+from services.api.program_advance import advance_for, runs_of, store_of
 
 router = APIRouter(tags=["programs"])
 projects_router = APIRouter(tags=["programs"])
-
-_STORE_ABSENT = "Research Program Store Unavailable"
-_STORE_ABSENT_DETAIL = "program store not configured"
-
-
-def _store_of(deps: ApiDeps) -> ProgramStore:
-    store = deps.program_store
-    if store is None:
-        raise ApiError(503, _STORE_ABSENT, _STORE_ABSENT_DETAIL)
-    return cast(ProgramStore, store)
-
-
-def _runs_of(deps: ApiDeps) -> Any:
-    if deps.runs_store is None:
-        raise ApiError(503, "Run Store Unavailable", "run store not configured")
-    return deps.runs_store
 
 
 def _decision_dto(decision: ProgramDecision) -> ProgramDecisionDto:
@@ -78,64 +59,6 @@ def _decision_dto(decision: ProgramDecision) -> ProgramDecisionDto:
         cited_facts=list(decision.cited_facts),
         decided_at=decision.decided_at.value.isoformat(),
     )
-
-
-def _advance_clock(runs: Any, program_id: str) -> GateClock | None:
-    """**等待时长**所需的一对时点（GOAL-20261011-056）——取不到时返回 `None`。
-
-    - `waited_since` = 「**最后一条** run 的 `updated_at`」：状态转移**会刷新它** ⇒
-      停在等待态（`AWAITING_HUMAN` / `PAUSED`）的 run 上，它就是**进入等待的时刻**；
-    - `now` = **本请求到达的时刻**（由这里给 ⇒ 等待面**不读挂钟**，判词可复现）。
-
-    **取不到就返回 `None`**（**不猜、不编一个假时点**）：等待面收到 `None` ⇒ 判词里
-    **不含任何时长**（既有行为），而不是报一个**编出来的**秒数。
-    **只读**：只查一次既有 run 面，不写任何东西。
-    """
-    try:
-        existing = runs.for_program(program_id)
-    except Exception:  # noqa: BLE001 - 取不到就**不报时长**（不静默编造）
-        return None
-    if not existing:
-        return None
-    return GateClock(now=Timestamp.now(), waited_since=existing[-1].updated_at)
-
-
-def _start_run_for_program(deps: ApiDeps, program: ResearchProgram, index: int) -> str:
-    """起第 `index` 轮：**同一条** start-run 链（协议来源解析 → preflight → freeze → execute）。
-
-    程序归属**随 run 的写入同一次**落 canonical（`program_id` / `program_index` 进
-    `ExecutionRequest`），不设「先起 run 后绑定」的窗口（GOAL-037 EC-01 的硬约束）。
-    """
-    from services.api.run_access import save_run
-    from services.api.run_execution import ExecutionRequest, execution_inputs, run_from_execution
-
-    run_id = ID.generate()
-    req = ExecutionRequest(
-        deps=deps,
-        protocol_path=program.protocol_id,
-        run_id=run_id,
-        trace_id=None,
-        draft_ref=None,
-        project_id=program.project_id,
-        program_id=program.id,
-        program_index=index,
-    )
-    inputs = execution_inputs(req)
-    # 先落 run 行（含程序归属）再执行：读链里的工具可能在**执行期**回读本 run 的行
-    # （`research_state.read` 由 run_id 反查程序归属 ⇒ 没有这一行就点不到程序）。
-    # 行先落 = 与 HTTP 面的写序同侧（那里是执行后落），此处**必须**反过来，否则
-    # 「本 run 是自己的程序成员」这件事实在执行期不可见。
-    provisional = ResearchRun(
-        id=run_id,
-        project_id=inputs.project.project_id,
-        protocol_id=inputs.protocol.id,
-        program_id=program.id,
-        program_index=index,
-    )
-    save_run(deps, provisional)
-    run = run_from_execution(deps, run_id, inputs.project.project_id, inputs.protocol.id, inputs)
-    save_run(deps, run)
-    return run_id.value
 
 
 def declared_gate_fields(payload: ProgramCreateDto) -> dict[str, Any]:
@@ -187,7 +110,7 @@ async def create_program(
     from services.api.protocol_source import load_protocol_for_source
 
     deps: ApiDeps = get_deps(request)
-    store = _store_of(deps)
+    store = store_of(deps)
     if not payload.continue_on_verdicts:
         raise ApiError(
             422, "Continue Rule Required", "continue_on_verdicts must name at least one verdict"
@@ -216,13 +139,13 @@ async def create_program(
     return _detail_dto(deps, store, program.id)
 
 
-def _detail_dto(deps: ApiDeps, store: ProgramStore, program_id: str) -> ProgramDetailDto:
+def _detail_dto(deps: ApiDeps, store: Any, program_id: str) -> ProgramDetailDto:
     """读面：声明 + 各轮 run 摘要 + 逐条决策（`runs` 经 canonical `for_program`）。"""
     try:
         program = store.get(program_id)
     except KeyError as exc:
         raise ApiError(404, "Not Found", f"program not found: {program_id}") from exc
-    runs = _runs_of(deps).for_program(program_id)
+    runs = runs_of(deps).for_program(program_id)
     return ProgramDetailDto(
         id=program.id,
         project_id=program.project_id,
@@ -272,14 +195,14 @@ def _detail_dto(deps: ApiDeps, store: ProgramStore, program_id: str) -> ProgramD
 async def get_program(program_id: str, request: Request) -> ProgramDetailDto:
     """程序读面（含「为何继续 / 为何停」的逐条决策）。"""
     deps: ApiDeps = get_deps(request)
-    return _detail_dto(deps, _store_of(deps), program_id)
+    return _detail_dto(deps, store_of(deps), program_id)
 
 
 @projects_router.get("/projects/{project_id}/programs", response_model=list[ProgramDetailDto])
 async def list_programs(project_id: str, request: Request) -> list[ProgramDetailDto]:
     """项目内程序列表（按 id 排序；逐条给决策面）。"""
     deps: ApiDeps = get_deps(request)
-    store = _store_of(deps)
+    store = store_of(deps)
     return [_detail_dto(deps, store, program.id) for program in store.for_project(project_id)]
 
 
@@ -287,36 +210,10 @@ async def list_programs(project_id: str, request: Request) -> list[ProgramDetail
 async def advance(program_id: str, request: Request) -> ProgramAdvanceDto:
     """推进一次：判定取**落库事实**；必要时经既有 start-run 链起下一轮。"""
     deps: ApiDeps = get_deps(request)
-    store = _store_of(deps)
-    try:
-        program = store.get(program_id)
-    except KeyError as exc:
-        raise ApiError(404, "Not Found", f"program not found: {program_id}") from exc
-    result = advance_program(
-        program,
-        runs=_runs_of(deps),
-        programs=store,
-        findings=deps.review_findings,
-        # GOAL-20261010-044 EC-02/EC-03：审批面（**复用既有实例**，不建第二套存储）——
-        # 驱动据此把「停在人工闸门」与「还在跑」判成**不同种类**并点名待审批。
-        # 缺审批面 ⇒ 传 None（驱动**点名**「本装配未提供审批面」，不静默当成没有待审批）。
-        approvals=deps.approvals,
-        # 缺编排面 ⇒ 传 None（驱动据此落一条**点名**「未提供启动面」的 WAIT 决策）；
-        # 不是抛 503 —— 「需要起 run 但没有启动面」是**可读的决策事实**，不是传输层故障。
-        start_run=(
-            (lambda index: _start_run_for_program(deps, program, index))
-            if deps.runs is not None
-            else None
-        ),
-        # GOAL-20261011-056 EC-02/EC-03：**等待时长**的两个时点 ——
-        # `waited_since` 取「上一轮 run 进入当前（等待）态的时刻」（`updated_at`：状态转移
-        # 会刷新它 ⇒ 停在等待态的 run 上它就是**始点**）；`now` 取**请求时刻**。
-        # 两个都由这里给 ⇒ 判词**可复现**（等待面自己**不读挂钟**）。
-        clock=_advance_clock(_runs_of(deps), program.id),
-        # GOAL-20261012-059 EC-03：**超期信号的出口** —— 组合根决定注入什么；
-        # 缺省 `NullNudgeSink` ⇒ 静默（既有行为逐字不变）。**不**做真实外发。
-        nudges=deps.nudges,
-    )
+    # GOAL-089 EC-03：**唯一的推进装配**（`program_advance.advance_for`）——
+    # 周期作业 `program_advance` 调的就是这同一个函数（不建第二套语义）。
+    # 未知程序由该函数抛 404（与既有语义逐字相同）。
+    result = advance_for(deps, program_id)
     return ProgramAdvanceDto(
         program_id=result.program_id,
         decision=_decision_dto(result.decision),

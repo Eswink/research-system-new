@@ -103,11 +103,11 @@ def _pg_components(
     from adapters.postgres.run_store import PostgresRunStore
     from adapters.postgres.worker_registry import PostgresWorkerRegistry
     from adapters.postgres.workflow_engine import PostgresWorkflowEngine
+    from adapters.sqlite.project_store import SqliteProjectStore  # GOAL-089 EC-02
 
     pg_conn = pg_connect(pg_dsn)
     workflow: Any = PostgresWorkflowEngine(connection=pg_conn)
-    if events_sink is None:
-        events_sink = SqliteOutboxEventPublisher(connection=connection)
+    events_sink = events_sink or SqliteOutboxEventPublisher(connection=connection)
     projection: Any = PostgresRunProjection(connection=pg_conn)
     projection.bind_events(events_sink)
     return {
@@ -127,8 +127,9 @@ def _pg_components(
         "worker_registry": PostgresWorkerRegistry(connection=pg_conn),
         # GOAL-035 EC-01：验收门结论（写面=编排、读面=API，同一实例）
         "review_findings": PostgresReviewFindingStore(connection=pg_conn),
-        # GOAL-037 EC-01：研究程序声明 + 推进决策（canonical，两组合根同侧）
+        # GOAL-037 EC-01：程序声明 + 推进决策（canonical）
         "program_store": PostgresProgramStore(connection=pg_conn),
+        "project_store": SqliteProjectStore(connection=connection),  # GOAL-089 EC-02
     }
 
 
@@ -202,6 +203,7 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
 from packages.application.run_orchestration.declared_consumption import (  # noqa: E402
     prior_conclusion_reader,
 )
+from services.api.project_direction_support import project_direction_builder  # noqa: E402
 from services.api.session_tool_support import session_tool_face  # noqa: E402
 
 
@@ -263,6 +265,7 @@ def _build_pg_orchestration(
             ),
             # GOAL-20261018-082 EC-01：前序知识 → 会话提示词（与检索同一求值点）。
             prior_knowledge=prior_knowledge_builder(memory_store=c["memory"]),
+            project_direction=project_direction_builder(project_store=c["project_store"]),
             telemetry=config.telemetry,
             pricing=_load_pricing(),
             pricing_store=c["pricing_store"],
@@ -286,7 +289,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
     from adapters.sqlite.notification_read_store import SqliteNotificationReadStore
     from adapters.sqlite.ops_store import SqliteOpsStore
     from adapters.sqlite.project_settings_store import SqliteProjectSettingsStore
-    from adapters.sqlite.project_store import SqliteProjectStore
+    from adapters.sqlite.project_store import SqliteProjectStore  # GOAL-089 EC-02
     from adapters.sqlite.schedule_store import SqliteScheduleStore
     from adapters.sqlite.tool_pack_store import SqliteToolPackStore
     from adapters.sqlite.tool_provider_registry import SqliteToolProviderRegistry
