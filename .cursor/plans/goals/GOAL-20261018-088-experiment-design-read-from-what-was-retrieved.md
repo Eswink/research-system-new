@@ -242,6 +242,8 @@ memory_entries: []
 | 规模门修复（证据登记拆 `_register`） | `f2f6557a` | **零 run** | 同上 |
 | EC-05 读数回填 + **tip** | `3aa9d838` | [M0 39182686242](https://github.com/Eswink/research-system-new/actions/runs/39182686242) / [Push 39182685977](https://github.com/Eswink/research-system-new/actions/runs/39182685977) | **M0 八 job 全 `success`**（`container-quality` / `quality-{ubuntu,windows}-latest` / `eval-gate` / `collector-quality` / `observability-overhead-{ubuntu,windows}-latest` / `console-frontend`）+ Push-on-main `success`；`run_attempt=1`、零 `cancelled`、零 rerun。本地 as-is m0：**`PASS: profile=m0; 23 deterministic checks`** |
 
+| CI 台账（记录提交，**最终 tip**） | `84d43db6` | [M0 39184125947](https://github.com/Eswink/research-system-new/actions/runs/39184125947) / [Push 39184125257](https://github.com/Eswink/research-system-new/actions/runs/39184125257) | **M0 八 job 全 `success`** + Push-on-main `success`；`run_attempt=1`、零 `cancelled`。只改 `.cursor/plans/**` ⇒ 自我指涉边界在此闭合。 |
+
 **自我指涉边界（明写并封闭）**：受判的是**代码面**与**收口面**的 CI；只改 `.cursor/plans/**`
 的记录提交，其 CI 照实登记但**不再**为它追加新行 —— 边界在「收口时的 tip 那一行」闭合。
 
