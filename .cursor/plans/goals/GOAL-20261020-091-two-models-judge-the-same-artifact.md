@@ -253,6 +253,13 @@ memory_entries:
 「`--verify-only` 报覆盖不成立」的真缺陷（新增文件在被跟踪前不在受判面），已在提交后
 重跑 m0 并取得覆盖成立的正式见证（4540 个受判面文件）。
 
+**收口面（最后一步）**：
+
+- **两树复检**：`TWO-TREE PASS` —— 两棵树各 **65 条判词**、`sha256` 逐字相同
+  （`b947d020…`）。口径 `--script-mode shared`（理由见 RECHECK「八之四」）。
+- **收口脚本**：`tools/verify_goal091_closeout.py` + `tools/goal091_closeout_assertions.py`
+  （进树、可复跑）。
+
 **如实说明**：表中两次「本地验证」列的读数分别来自：cycle 1 = 定向判据 4/12/4 passed
 + 受影响套件 298/47/282 passed；cycle 2 = 真跑（一个 run 两张判词）+ 三轮探针定位
 提示词缝；cycle 3 = 记录面 48 passed + 全量 m0（24 条 `PASS [`、终态行

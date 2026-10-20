@@ -265,6 +265,24 @@ HEAD），每一版都在 CI 上立刻红；这一次**本地全绿、`--verify-
   **三 job 全 `success`** —— **零判红、零 cancelled**（`aec28e2c` 是记录提交，与 `5e949122`
   一起推，run 覆盖后者）。
 
+## 八之四、两树复检（收口面）
+
+```
+TREE current=D:esearch-system exit=0 verdicts=65 sha256=b947d020939c926e568783358893c647f1914e88176e754c60c37d98610f32ee
+TREE clean=D:esearch-system-clean-tree exit=0 verdicts=65 sha256=b947d020939c926e568783358893c647f1914e88176e754c60c37d98610f32ee
+COMPARE identical=True
+TWO-TREE PASS
+```
+
+**口径说明（如实登记）**：本轮用 `--script-mode shared`（两树共用**主树**的复检脚本）。
+原因是 `tree` 模式按**字节**比对两棵树的脚本，而本仓 `.gitattributes` 是
+`* text=auto eol=lf`，Windows 主树检出 CRLF、干净 worktree 由 git 归一化 ⇒ 同一份脚本
+两处字节不同（`SETUP 入口失败：两树的复检脚本字节不同`）。这与 GOAL-090 的见证指纹
+（工作树字节 vs `git hash-object`）是**同一个坑**的第二次现身。
+
+**收口脚本**：`tools/verify_goal091_closeout.py`（标准断言集 + `tools/goal091_closeout_assertions.py`
+的本轮特有断言 + 记录面），**65 条判词全 PASS、零 FAIL**。
+
 ## 九、未覆盖范围（如实登记）
 
 - **`W-1`：`REVIEW_SCORE` 的分数仍是「评审者自述」**。本轮只让它的**来源**（信封里的正文）
