@@ -32,6 +32,7 @@ from packages.application.run_orchestration.result_handler import (
     RegistrationDeps,
     ResultRegistration,
     count_retrieved_sources,
+    count_tool_evidences,
     register_session_result,
 )
 from packages.application.run_orchestration.review_attribution import reviewer_model_of
@@ -237,6 +238,10 @@ def evaluate_gate(
             # 性质维度（GOAL-011 EC-02）：从 canonical 的 SourceRecord 判**检索来源**数，
             # 与读面同源；合约没声明 `minimum_retrieved_sources` 时它不参与判定。
             retrieved_source_count=count_retrieved_sources(deps.ledger, registration.evidence),
+            # 工具维度（GOAL-20261020-090）：只数**带 tool_refs** 的证据 ⇒ 问的是
+            # 「本任务真的调用过工具吗」，与「来源性质」（可由跨相输入的产出方声明推出）
+            # 判的是**不同的面**；合约没声明 `minimum_tool_evidences` 时不参与判定。
+            tool_evidence_count=count_tool_evidences(registration.evidence),
             schema_check=_output_schema_check(deps, tctx.contract),
             # GOAL-20261008-038 EC-04：合约声明了 `cross_run_consumption` 时，按**前序 run
             # 的落库结论**先算好求值器结论（域层不执行外部求值器 —— 那是它的设计）；

@@ -1,0 +1,9 @@
+# MAINLINE 进展记录归档 — GOAL-20261018-086 / 087
+
+> 原文搬运自 `.cursor/plans/goals/MAINLINE.md` 的「进展记录」节（活跃面只保留最近 3 条）。
+> 唯一允许的改动是相对链接基准修正：`../rechecks/` → `../../rechecks/`。
+
+| 日期 | GOAL | 一句话结论 | 能力域 | RECHECK |
+| --- | --- | --- | --- | --- |
+| 2026-10-18 | GOAL-20261018-087 | **复检域：判负不取消同批评审** —— `failure_policy` 新增**并列**键 `review_panel: COMPLETE_THEN_JUDGE`（缺省不出现 ⇒ 逐字不变）；`phase_runner` 在组级失败路径上：声明了 ⇒ 记账继续（同批全体评完）、未声明 ⇒ 既有 fail-fast；`failure_step` 多一个可选 `verdict`（缺省 `None` ⇒ 既有调用点不变）。**咬住的缺口**：第一位判负的评审者把 run 打死、第二位连跑都不跑（实测 `records: 1, panels: []`）⇒ 阶梯「两个模型在同一产物上给出不同判词」在结构上不可达。读数：声明后两位都跑、`votes` 两票、run 仍 `FAILED` 且消息逐字点名 `main/glm-5.3=REJECT`；未声明 ⇒ `records == 1`、`panels == []`；一负一过 ⇒ 平票且 `dissent` 逐条可读（连带修掉平票时 `dissent` 为空的老盲区）。application+api+contracts **2411 passed / 77 skipped**；e2e **363 passed / 17 skipped**。 | 复检 | [RECHECK-20261018-527](../../rechecks/RECHECK-20261018-527-goal-087-a-rejecting-reviewer-does-not-cancel-the-panel.md) |
+| 2026-10-18 | GOAL-20261018-086 | **复检域：评审小组按被评对象聚合** —— `ScopedReviewFinding` 新增**可空** `phase_id`（被评对象那一格；`task_id` 只说明**谁在评**），落库链原样搬运，sqlite 增量列 + PG 迁移 `029`（非破坏性）；`review_read` 按 `(phase, contract)` 分组并把**射程**写进载荷（`scope` ∈ `PHASE` / `TASK`，无 `phase_id` 的旧行**逐字保留**迁移前的任务口径）。**咬住的假绿**：运行链给同 phase 的每个评审 agent 各生成一个任务，而判词 id 是 `finding:{task_id}:gate` ⇒ 按 task 分组时每个任务至多一条判词，多评审阶段的小组**永远不存在**（实测 `count: 2, panels: 0`）。读数：运行链上两位评审者（`glm-5.3` / `kimi-k2.6`）同 phase ⇒ `panels` 一条、`voters=2`、`independent=True`；按压同模型 ⇒ `independent=False` 并点名 `main/glm-5.3`；不同 phase ⇒ `panels == []`。新判据 **16 条**；application+api+contracts **2411 passed / 77 skipped**；e2e **360 passed / 17 skipped**；as-is m0 **23/23**；GOAL-085 断言集两处**文本锚点**随形态迁移（事实未变、判据 67→68 只增不减，逐条申报）。 | 复检 | [RECHECK-20261018-524](../../rechecks/RECHECK-20261018-524-goal-086-panel-groups-by-the-object-under-review.md) |

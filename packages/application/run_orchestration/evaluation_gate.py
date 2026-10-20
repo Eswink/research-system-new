@@ -39,6 +39,11 @@ class EvaluationInputs:
     #: 其中的**检索来源**数（`TrustLabel.RETRIEVED`）。由编排按 canonical 的 SourceRecord
     #: 判出（`count_retrieved_sources`）；未知即 `None` ⇒ 声明了性质维度的合约 fail-closed。
     retrieved_source_count: int | None = None
+    #: **本任务自己的**工具证据条数（`Evidence.tool_refs` 非空，GOAL-20261020-090）。
+    #: 由编排按证据条数算（`count_tool_evidences`）；与 `retrieved_source_count` 判的是
+    #: **不同的面**（后者是来源性质、可由跨相输入的产出方声明推出；本项是调用事实）。
+    #: 未知即 `None` ⇒ 声明了本维度的合约 fail-closed。
+    tool_evidence_count: int | None = None
     review_score: Decimal | None = None
     human_approved: bool | None = None
     #: 实验**自报**的测试结果（名 → 通过与否）。生产者是实验产物
@@ -68,6 +73,7 @@ class EvaluationInputs:
             metrics=dict(self.metrics),
             evidence_source_count=self.evidence_source_count,
             retrieved_source_count=self.retrieved_source_count,
+            tool_evidence_count=self.tool_evidence_count,
             review_score=self.review_score,
             policy_decision=self.policy_decision,
             human_approved=self.human_approved,

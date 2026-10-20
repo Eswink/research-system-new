@@ -32,6 +32,10 @@ class CriterionInputs:
     #: 其中的**检索来源**数（`TrustLabel.RETRIEVED`，GOAL-011 EC-02）。它是**性质分类下的
     #: 计数**，由编排从 canonical 的 SourceRecord 判出来，不是由证据条数推的。
     retrieved_source_count: int | None = None
+    #: 本任务**自己的**工具证据条数（`Evidence.tool_refs` 非空，GOAL-20261020-090）。
+    #: 与 `retrieved_source_count` 判的是**不同的面**：后者是「来源的性质」（可由跨相输入的
+    #: 产出方声明推出），本项是「本任务真的调用过工具」。两者都不彼此顶替。
+    tool_evidence_count: int | None = None
     review_score: Decimal | None = None
     policy_decision: PolicyDecision | None = None
     human_approved: bool | None = None
@@ -144,43 +148,98 @@ def _compare(value: Decimal, operator: ComparisonOperator, threshold: Decimal) -
     return False
 
 
+def _missing_dimension(
+    criterion: AcceptanceCriterion, inputs: CriterionInputs
+) -> CriterionEvaluation | None:
+    """三维各自「声明了但事实未知」的 fail-closed 点名（任一 ⇒ 返回判负）。"""
+    if criterion.minimum_sources is None:
+        return CriterionEvaluation(criterion.type, False, "minimum_sources not configured")
+    if inputs.evidence_source_count is None:
+        return CriterionEvaluation(criterion.type, False, "evidence source count unknown")
+    if criterion.minimum_retrieved_sources is not None and inputs.retrieved_source_count is None:
+        return CriterionEvaluation(criterion.type, False, "retrieved source count unknown")
+    if criterion.minimum_tool_evidences is not None and inputs.tool_evidence_count is None:
+        return CriterionEvaluation(criterion.type, False, "tool evidence count unknown")
+    return None
+
+
+def _dimension_failure(
+    criterion: AcceptanceCriterion, inputs: CriterionInputs
+) -> CriterionEvaluation | None:
+    """三维各自「事实不足阈值」的判负（判词**点名缺的是哪一维**）。"""
+    # 三者在 `_missing_dimension` 之后都非空；用局部名让下面的比较可读。
+    count = inputs.evidence_source_count
+    assert count is not None and criterion.minimum_sources is not None
+    if count < criterion.minimum_sources:
+        return CriterionEvaluation(
+            criterion.type, False, f"{count} < {criterion.minimum_sources} sources"
+        )
+    if criterion.minimum_retrieved_sources is not None:
+        retrieved = inputs.retrieved_source_count
+        assert retrieved is not None
+        if retrieved < criterion.minimum_retrieved_sources:
+            return CriterionEvaluation(
+                criterion.type,
+                False,
+                f"{retrieved} < {criterion.minimum_retrieved_sources} retrieved sources "
+                f"({count} >= {criterion.minimum_sources} sources)",
+            )
+    if criterion.minimum_tool_evidences is not None:
+        tools = inputs.tool_evidence_count
+        assert tools is not None
+        if tools < criterion.minimum_tool_evidences:
+            return CriterionEvaluation(
+                criterion.type,
+                False,
+                f"{tools} < {criterion.minimum_tool_evidences} tool evidences owned by this task "
+                f"({count} >= {criterion.minimum_sources} sources); "
+                "a cross-phase input is not a tool call",
+            )
+    return None
+
+
+def _coverage_reason(criterion: AcceptanceCriterion, inputs: CriterionInputs) -> str:
+    """通过时的判词：只拼**已声明**的维度（未声明的不出现在判词里）。"""
+    parts = [f"{inputs.evidence_source_count} >= {criterion.minimum_sources} sources"]
+    if criterion.minimum_retrieved_sources is not None:
+        parts.append(
+            f"{inputs.retrieved_source_count} >= {criterion.minimum_retrieved_sources} retrieved"
+        )
+    if criterion.minimum_tool_evidences is not None:
+        parts.append(
+            f"{inputs.tool_evidence_count} >= {criterion.minimum_tool_evidences} tool evidences"
+        )
+    return "; ".join(parts)
+
+
 def _evaluate_evidence_coverage(
     criterion: AcceptanceCriterion, inputs: CriterionInputs, schema_check: SchemaCheck | None
 ) -> CriterionEvaluation:
-    """覆盖判据：既有**计数**维度（非自产来源数）＋可选的**性质**维度（GOAL-011 EC-02）。
+    """覆盖判据：**计数**维（非自产来源数）＋可选的**性质**维 ＋可选的**工具**维。
 
-    性质维度只在合约**显式声明** `minimum_retrieved_sources` 时生效：它要求被计的来源里
-    至少有那么几条是**系统取得**（`TrustLabel.RETRIEVED`）。两个维度**都要过**——
-    「总数够」不能顶替「有检索来源」（反过来也一样，检索来源也计入总数）。
+    三个维度各自只在合约**显式声明**时生效，且**都要过**：
+
+    * `minimum_sources` —— 被计的非自产来源数；
+    * `minimum_retrieved_sources`（GOAL-011 EC-02）—— 其中性质为 `TrustLabel.RETRIEVED`
+      的条数（由编排从 canonical 的 SourceRecord 判出，不采信调用方自称）；
+    * `minimum_tool_evidences`（GOAL-20261020-090）—— **本任务自己的**工具证据条数
+      （`Evidence.tool_refs` 非空）。它补的是前两维**结构上补不了**的那一格：跨相输入的
+      `trust_label` 由**产出方**的声明推出（`producer_trust_label`），于是一个「声明了
+      run_chain 但没有真的执行任何检索调用」的会话格也会被算成 `RETRIEVED` ⇒ 性质维
+      可被一条与被测能力无关的跨相边满足（GOAL-089 `W-6`）。工具维只数带 `tool_refs`
+      的证据（工具证据登记时必然带 provider/tool，跨相输入的为空）⇒ 它问的是
+      「**本任务**真的调用过工具吗」，不能被间接满足。
+
     缺维度一律 fail-closed 判拒并**点名缺的是哪一维**，不给出一个含糊的 False。
+    三段判定拆成三个小函数（规模门：本函数此前 59 行超过 50 行上限）。
     """
-    minimum = criterion.minimum_sources
-    if minimum is None:
-        return CriterionEvaluation(criterion.type, False, "minimum_sources not configured")
-    count = inputs.evidence_source_count
-    if count is None:
-        return CriterionEvaluation(criterion.type, False, "evidence source count unknown")
-    minimum_retrieved = criterion.minimum_retrieved_sources
-    retrieved: int | None = None
-    if minimum_retrieved is not None:
-        retrieved = inputs.retrieved_source_count
-        if retrieved is None:
-            return CriterionEvaluation(criterion.type, False, "retrieved source count unknown")
-    if count < minimum:
-        return CriterionEvaluation(criterion.type, False, f"{count} < {minimum} sources")
-    if minimum_retrieved is not None and retrieved is not None and retrieved < minimum_retrieved:
-        return CriterionEvaluation(
-            criterion.type,
-            False,
-            f"{retrieved} < {minimum_retrieved} retrieved sources ({count} >= {minimum} sources)",
-        )
-    if minimum_retrieved is None:
-        return CriterionEvaluation(criterion.type, True, f"{count} >= {minimum} sources")
-    return CriterionEvaluation(
-        criterion.type,
-        True,
-        f"{count} >= {minimum} sources; {retrieved} >= {minimum_retrieved} retrieved",
-    )
+    missing = _missing_dimension(criterion, inputs)
+    if missing is not None:
+        return missing
+    failure = _dimension_failure(criterion, inputs)
+    if failure is not None:
+        return failure
+    return CriterionEvaluation(criterion.type, True, _coverage_reason(criterion, inputs))
 
 
 def _evaluate_review_score(

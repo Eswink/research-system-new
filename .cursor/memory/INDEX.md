@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261020-224](entries/MEM-20261020-224-a-witness-must-not-describe-itself.md) | ACTIVE | repository | 0.9 | 2027-04-20 | PLAN-20261020-090 |
 | [MEM-20261015-223](entries/MEM-20261015-223-closeout-assets-need-ownness-not-just-self-consistency.md) | ACTIVE | repository | 0.95 | 2027-04-15 | PLAN-20261015-485 |
 | [MEM-20261015-222](entries/MEM-20261015-222-four-decisions-when-a-hardcoded-value-becomes-declared.md) | ACTIVE | repository | 0.9 | 2027-04-15 | PLAN-20261015-477 |
 | [MEM-20261014-221](entries/MEM-20261014-221-declared-but-never-constructed-is-a-dead-seam.md) | ACTIVE | repository | 0.9 | 2027-04-14 | PLAN-20261014-469 |

@@ -693,13 +693,19 @@ task_contracts:
       retryable_categories: []
 
   research_question_retrieval:
-    version: 1.0.0
+    version: 1.1.0
     purpose: >-
-      GOAL-20261019-089 EC-01：**检索格**的交付物契约 —— 它读**上游提出的问题**
-      （`inputs: [question:research_question]`），检索词由运行链从那份产物的 `query`
-      取用（`arguments_from_input: ["research_question.query"]`）。
-      覆盖判据两维：至少一条非自产来源 + 其中至少一条是**系统取得**（`RETRIEVED`）——
-      后者正是「检索真的发生了」的可判定事实，也是本格存在的理由。
+      GOAL-20261019-089 EC-01 / GOAL-20261020-090：**检索格**的交付物契约 —— 它读
+      **上游提出的问题**（`inputs: [question:research_question]`），检索词由运行链从
+      那份产物的 `query` 取用（`arguments_from_input: ["research_question.query"]`）。
+      覆盖判据**三维**：至少一条非自产来源 + 其中至少一条是**系统取得**（`RETRIEVED`）
+      + **本任务自己的**工具证据至少一条（`minimum_tool_evidences`）。
+      第三维补的是 GOAL-089 `W-6` 实测到的洞：上游 `question` phase 为把文献 provider
+      排除出**会话工具面**而必须声明 `run_chain`，这会让 `producer_trust_label` 把它
+      （模型写的字）推成 `RETRIEVED` ⇒「系统取得」这一性质维可被一条**与被测能力无关的
+      跨相边**满足，检索一次都没发生也能过门。工具维只数带 `tool_refs` 的证据，而跨相
+      输入的 `tool_refs` 为空 ⇒ 它问的是**调用事实**，不能被间接满足。
+      `version` 由 1.0.0 升到 1.1.0：判据**变严**（新增一维），既有通过面不因此放松。
     required_capabilities:
       - artifact.read
     output_schema: real_research_deliverable_v1
@@ -709,6 +715,7 @@ task_contracts:
       - type: EVIDENCE_COVERAGE
         minimum_sources: 1
         minimum_retrieved_sources: 1
+        minimum_tool_evidences: 1
     timeout_seconds: 300
     retry_policy:
       max_attempts: 1

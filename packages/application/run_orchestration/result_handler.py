@@ -368,6 +368,27 @@ def register_session_result(
     )
 
 
+def count_tool_evidences(evidence: tuple[Evidence, ...]) -> int:
+    """**本任务自己的**工具证据条数（GOAL-20261020-090）。
+
+    判据 = `Evidence.tool_refs` 非空。工具证据由 `register_tool_evidence` 登记，
+    `tool_refs` 必然是 `(provider_id, tool_id)`；跨相输入由
+    `register_cross_phase_sources` 登记，**不带** `tool_refs`。
+
+    **为什么需要这一维**（GOAL-089 `W-6` 实测）：跨相输入的 `trust_label` 来自
+    **产出方**的声明（`producer_trust_label`：声明了 `run_chain` + 能力面落在带
+    `network_domains` 的 provider 上 ⇒ `RETRIEVED`），而这个推导**不问那个 phase
+    本次是否真的执行过任何调用**。于是一个「只为把 provider 排除出会话工具面」而
+    声明 `run_chain` 的会话格，会被当成检索来源 ⇒ `minimum_retrieved_sources` 可被
+    一条与被测能力无关的跨相边满足。
+    本函数数的是**调用事实**，不是**声明事实** ⇒ 它不能被间接满足。
+
+    与 `count_retrieved_sources` 的**返回类型差异**是有意的：本维度不需要 ledger
+    （`tool_refs` 在 Evidence 自身），所以它**总是**有确定值，不存在「未知」态。
+    """
+    return sum(1 for item in evidence if item.tool_refs)
+
+
 def count_retrieved_sources(
     ledger: EvidenceLedger | None, evidence: tuple[Evidence, ...]
 ) -> int | None:

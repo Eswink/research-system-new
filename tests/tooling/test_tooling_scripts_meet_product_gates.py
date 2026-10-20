@@ -40,6 +40,7 @@ MAX_FUNCTION_LINES = 50
 #: `tools/verify_goal027_closeout.py` 由 EC-05 显式加入（均为纯收紧：
 #: 新增受判文件，不删任何条目）；它是交付型产品件（MCP server 本体），必须过四道门。
 IN_SCOPE: tuple[str, ...] = (
+    "tools/run_m0_with_witness.py",
     "tools/two_tree_recheck.py",
     "tools/closeout_recheck_assertions.py",
     "tools/verify_goal023_closeout.py",

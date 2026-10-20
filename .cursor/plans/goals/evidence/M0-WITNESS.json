@@ -1,0 +1,258 @@
+{
+  "exit_code": 0,
+  "fingerprint_after": {
+    "dirty": [
+      {
+        "path": ".cursor/memory/INDEX.md",
+        "sha256": "2da0c8076bd14b396a6ae4f6cd954fb1a30311f8678bb01c916962b0f9e29a4e",
+        "status": "M"
+      },
+      {
+        "path": ".cursor/memory/entries/MEM-20261020-224-a-witness-must-not-describe-itself.md",
+        "sha256": "3e530b2691a5b34fce3b5950545e24f7c23f9f03805b188aa03ef5b8e393893a",
+        "status": "??"
+      },
+      {
+        "path": ".cursor/plans/ALL_PLAN.md",
+        "sha256": "6d11e9ff5e3212be39ac1679b775adb70e3d4a4013a719da114c420a0836a209",
+        "status": "M"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261020-090-evidence-coverage-tool-dimension-and-m0-witness.md",
+        "sha256": "0d49707ac0bbdfbf5a8a77229dd328314064b800487ee8dc6c343c0517800e0f",
+        "status": "??"
+      },
+      {
+        "path": ".cursor/plans/goals/MAINLINE.md",
+        "sha256": "131602d7dcfd01b3aeb9cb9b328b1cd0e877354fc47f97a1b8740b0d423df671",
+        "status": "M"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-progress-086-through-087.md",
+        "sha256": "74a336394ec0cb3dc14b7695ec62360f7bd5a18154223368d5594ad9a5a2b307",
+        "status": "??"
+      },
+      {
+        "path": ".cursor/plans/rechecks/RECHECK-20261020-090-goal-090-tool-dimension-and-m0-witness.md",
+        "sha256": "adcef3550e8aca68c3416aed7ecc086b77007d98b4ad13d120bf551bad7ffff7",
+        "status": "??"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261020-090-goal-090-tool-dimension-and-m0-witness.md",
+        "sha256": "94e53bf2f39dc11ed0b5bf22e2d353aefaabb85e297557f166a5bcc58c7e3ed2",
+        "status": "??"
+      },
+      {
+        "path": "adapters/contracts/tasks_loaders.py",
+        "sha256": "56118a702ec6968b520bbe391e0205e6096d48df86145d8d9758c80910f4a25b",
+        "status": "M"
+      },
+      {
+        "path": "apps/web/src/features/models/ModelDetails.tsx",
+        "sha256": "c2c29f0bad8afcdde7a895dc2a7fbfca3cadfb893572057e63b57194ef0db762",
+        "status": "M"
+      },
+      {
+        "path": "examples/contracts/task_contracts.yaml",
+        "sha256": "997fe81695859df32309c9369f72dd162c4dbaf93b006e55db4c551743fbfd44",
+        "status": "M"
+      },
+      {
+        "path": "packages/application/run_orchestration/evaluation_gate.py",
+        "sha256": "3f1dc7b1caf33a519bc396e8e10943039e3f62300116db4795fa0d2bc9c5b642",
+        "status": "M"
+      },
+      {
+        "path": "packages/application/run_orchestration/result_handler.py",
+        "sha256": "4a7682d0db14e0d580a22ba87da17ca71e9a6098509881a4ccd6bd6e810f71e6",
+        "status": "M"
+      },
+      {
+        "path": "packages/application/run_orchestration/task_phase_helpers.py",
+        "sha256": "f489317637e8e82c64653c8de7eaaee9660b7190e1c1297d0fc0c5c4c8e910a1",
+        "status": "M"
+      },
+      {
+        "path": "packages/domain/acceptance.py",
+        "sha256": "b270d8e8ef57d9716baefe76e95e5ae9c5d1489ae8399c292d93181759475fc4",
+        "status": "M"
+      },
+      {
+        "path": "packages/domain/model_drift.py",
+        "sha256": "c2e8904460acdac6d1d7d3000fd8e6b27ebd4b809757d138c3e69bb024659715",
+        "status": "M"
+      },
+      {
+        "path": "packages/domain/tasks.py",
+        "sha256": "faf875e68971f3f603cf1543cc2cb43ab3e87ef05ab572fabeb44a8a29dc461b",
+        "status": "M"
+      },
+      {
+        "path": "schemas/task-contract.schema.json",
+        "sha256": "38341aeb80d54af40d761542f0a90e3dd5b7d79836f7ebf2c310edfc9b09a660",
+        "status": "M"
+      },
+      {
+        "path": "services/api/middleware.py",
+        "sha256": "fb7e68813b8b2d5ad887946c818dec4bfb61583924bc2f8a33529c5283b7a7fe",
+        "status": "M"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_evidence_coverage_tool_dimension.py",
+        "sha256": "f7f511b6639941fd24c3357d2168fd30d756d28f221cd25710eed2ba9275fb09",
+        "status": "??"
+      },
+      {
+        "path": "tests/domain/test_m5_domain_increments.py",
+        "sha256": "f3bd22ea2465dc537145cef22e8126d1d6ebabfad8e3062142cb25b316227083",
+        "status": "M"
+      },
+      {
+        "path": "tests/tooling/test_m0_witness_matches_the_tree.py",
+        "sha256": "17dfc698ad0b3cf81362850dc4192c0698a9f969acd0d57a12d37165a6803bf8",
+        "status": "??"
+      },
+      {
+        "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
+        "sha256": "98fe1442a7cb750dadb6c484634b7415072bde4ba7beaaa773a5f99142e4b2e2",
+        "status": "M"
+      },
+      {
+        "path": "tools/run_m0_with_witness.py",
+        "sha256": "620dac6d35df37792e86416ee6bfe3b0c8b7654fe0a2e47d75205390ec37f439",
+        "status": "??"
+      }
+    ],
+    "head": "0c64195505b44b4022a96a660852f05e799c05a6"
+  },
+  "fingerprint_before": {
+    "dirty": [
+      {
+        "path": ".cursor/memory/INDEX.md",
+        "sha256": "2da0c8076bd14b396a6ae4f6cd954fb1a30311f8678bb01c916962b0f9e29a4e",
+        "status": "M"
+      },
+      {
+        "path": ".cursor/memory/entries/MEM-20261020-224-a-witness-must-not-describe-itself.md",
+        "sha256": "3e530b2691a5b34fce3b5950545e24f7c23f9f03805b188aa03ef5b8e393893a",
+        "status": "??"
+      },
+      {
+        "path": ".cursor/plans/ALL_PLAN.md",
+        "sha256": "6d11e9ff5e3212be39ac1679b775adb70e3d4a4013a719da114c420a0836a209",
+        "status": "M"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261020-090-evidence-coverage-tool-dimension-and-m0-witness.md",
+        "sha256": "0d49707ac0bbdfbf5a8a77229dd328314064b800487ee8dc6c343c0517800e0f",
+        "status": "??"
+      },
+      {
+        "path": ".cursor/plans/goals/MAINLINE.md",
+        "sha256": "131602d7dcfd01b3aeb9cb9b328b1cd0e877354fc47f97a1b8740b0d423df671",
+        "status": "M"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-progress-086-through-087.md",
+        "sha256": "74a336394ec0cb3dc14b7695ec62360f7bd5a18154223368d5594ad9a5a2b307",
+        "status": "??"
+      },
+      {
+        "path": ".cursor/plans/rechecks/RECHECK-20261020-090-goal-090-tool-dimension-and-m0-witness.md",
+        "sha256": "adcef3550e8aca68c3416aed7ecc086b77007d98b4ad13d120bf551bad7ffff7",
+        "status": "??"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261020-090-goal-090-tool-dimension-and-m0-witness.md",
+        "sha256": "94e53bf2f39dc11ed0b5bf22e2d353aefaabb85e297557f166a5bcc58c7e3ed2",
+        "status": "??"
+      },
+      {
+        "path": "adapters/contracts/tasks_loaders.py",
+        "sha256": "56118a702ec6968b520bbe391e0205e6096d48df86145d8d9758c80910f4a25b",
+        "status": "M"
+      },
+      {
+        "path": "apps/web/src/features/models/ModelDetails.tsx",
+        "sha256": "c2c29f0bad8afcdde7a895dc2a7fbfca3cadfb893572057e63b57194ef0db762",
+        "status": "M"
+      },
+      {
+        "path": "examples/contracts/task_contracts.yaml",
+        "sha256": "997fe81695859df32309c9369f72dd162c4dbaf93b006e55db4c551743fbfd44",
+        "status": "M"
+      },
+      {
+        "path": "packages/application/run_orchestration/evaluation_gate.py",
+        "sha256": "3f1dc7b1caf33a519bc396e8e10943039e3f62300116db4795fa0d2bc9c5b642",
+        "status": "M"
+      },
+      {
+        "path": "packages/application/run_orchestration/result_handler.py",
+        "sha256": "4a7682d0db14e0d580a22ba87da17ca71e9a6098509881a4ccd6bd6e810f71e6",
+        "status": "M"
+      },
+      {
+        "path": "packages/application/run_orchestration/task_phase_helpers.py",
+        "sha256": "f489317637e8e82c64653c8de7eaaee9660b7190e1c1297d0fc0c5c4c8e910a1",
+        "status": "M"
+      },
+      {
+        "path": "packages/domain/acceptance.py",
+        "sha256": "b270d8e8ef57d9716baefe76e95e5ae9c5d1489ae8399c292d93181759475fc4",
+        "status": "M"
+      },
+      {
+        "path": "packages/domain/model_drift.py",
+        "sha256": "c2e8904460acdac6d1d7d3000fd8e6b27ebd4b809757d138c3e69bb024659715",
+        "status": "M"
+      },
+      {
+        "path": "packages/domain/tasks.py",
+        "sha256": "faf875e68971f3f603cf1543cc2cb43ab3e87ef05ab572fabeb44a8a29dc461b",
+        "status": "M"
+      },
+      {
+        "path": "schemas/task-contract.schema.json",
+        "sha256": "38341aeb80d54af40d761542f0a90e3dd5b7d79836f7ebf2c310edfc9b09a660",
+        "status": "M"
+      },
+      {
+        "path": "services/api/middleware.py",
+        "sha256": "fb7e68813b8b2d5ad887946c818dec4bfb61583924bc2f8a33529c5283b7a7fe",
+        "status": "M"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_evidence_coverage_tool_dimension.py",
+        "sha256": "f7f511b6639941fd24c3357d2168fd30d756d28f221cd25710eed2ba9275fb09",
+        "status": "??"
+      },
+      {
+        "path": "tests/domain/test_m5_domain_increments.py",
+        "sha256": "f3bd22ea2465dc537145cef22e8126d1d6ebabfad8e3062142cb25b316227083",
+        "status": "M"
+      },
+      {
+        "path": "tests/tooling/test_m0_witness_matches_the_tree.py",
+        "sha256": "17dfc698ad0b3cf81362850dc4192c0698a9f969acd0d57a12d37165a6803bf8",
+        "status": "??"
+      },
+      {
+        "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
+        "sha256": "98fe1442a7cb750dadb6c484634b7415072bde4ba7beaaa773a5f99142e4b2e2",
+        "status": "M"
+      },
+      {
+        "path": "tools/run_m0_with_witness.py",
+        "sha256": "620dac6d35df37792e86416ee6bfe3b0c8b7654fe0a2e47d75205390ec37f439",
+        "status": "??"
+      }
+    ],
+    "head": "0c64195505b44b4022a96a660852f05e799c05a6"
+  },
+  "green": true,
+  "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
+  "ran_at_head": "0c64195505b44b4022a96a660852f05e799c05a6",
+  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
+  "tree_changed_during_the_run": false
+}

@@ -82,6 +82,20 @@ class AcceptanceCriterion:
     # **逐字不变**；声明了才会多受一条**更严**的性质判据——判的是**性质分类下的计数**，
     # 不是总数 ⇒「计数 ≥ 1」不能代替来源性质。
     minimum_retrieved_sources: int | None = None
+    # 「本任务**自己的**工具证据至少要有几条」（GOAL-20261020-090）。缺省 `None` ⇒ 不加
+    # 这条要求，`EVIDENCE_COVERAGE` 的既有行为**逐字不变**。
+    #
+    # 与前两维**正交**（判的是另一个面）：
+    # * `minimum_sources` 数「非自身来源」—— 跨相输入也算（它确实非自产）；
+    # * `minimum_retrieved_sources` 数这些来源里**性质**为 `RETRIEVED` 的条数，而跨相输入的
+    #   `trust_label` 由**产出方**的声明推导（`producer_trust_label`）⇒ 一个「声明了
+    #   run_chain、但本次并未真的执行任何检索调用」的会话格会被推成 `RETRIEVED`
+    #   （GOAL-089 `W-6` 实测）⇒ 性质边**可能**被一条与被测能力无关的跨相边喂饱；
+    # * 本维度只数**带 `tool_refs` 的证据**（工具证据登记时必然带 provider/tool 引用，
+    #   跨相输入的 `tool_refs` 为空）⇒ 它问的是「**本任务**真的调用过工具吗」。
+    #
+    # 因此它是「检索真的发生了」这件事**不被间接满足**的那一维。
+    minimum_tool_evidences: int | None = None
     metric: str | None = None
     operator: ComparisonOperator | None = None
     threshold: Decimal | None = None
@@ -92,6 +106,8 @@ class AcceptanceCriterion:
             raise ValueError("minimum_sources must be >= 0")
         if self.minimum_retrieved_sources is not None and self.minimum_retrieved_sources < 0:
             raise ValueError("minimum_retrieved_sources must be >= 0")
+        if self.minimum_tool_evidences is not None and self.minimum_tool_evidences < 0:
+            raise ValueError("minimum_tool_evidences must be >= 0")
 
 
 @dataclass(frozen=True, slots=True)
