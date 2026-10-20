@@ -1319,6 +1319,10 @@
         "sha256": "3d7566c35ef584e5819cb49d0f06b9e2bf9da4fc"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261020-225-prompt-segments-were-dropped-at-the-handoff-layer.md",
+        "sha256": "7543bc5903da8a4c6811e15d8382ce2406c0c40b"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "39cd5b95194750e80b22a6bc4b3eb5e1acb6f4f7"
       },
@@ -1715,6 +1719,10 @@
         "sha256": "6259b2cfecc59b69fc64a225cbd99ee2629d57df"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261020-091-two-models-judge-the-same-artifact.md",
+        "sha256": "577f22feced24caf7f93e9e2ec4aed53b4a2f505"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
         "sha256": "9a05ab4404a39be348a8dc86b5b4d9463cdd35d6"
       },
@@ -1819,8 +1827,16 @@
         "sha256": "39f67af0d124b7fc56010d4d197f44defdb7ce57"
       },
       {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-progress-088-only.md",
+        "sha256": "c6854866f9d37ee32174e756cccf42675dedf16e"
+      },
+      {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-revisions-43-through-48.md",
         "sha256": "971921debde157b8b0117e7cf5043f50c44a893e"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-revisions-52-only.md",
+        "sha256": "69ae8718d659eac154900acc505289da00501f66"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -3939,6 +3955,10 @@
         "sha256": "ec10a4b4f50b334b8a39c2d099670f3c5ebdef7f"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261020-091-goal-091-two-models-judge-the-same-artifact.md",
+        "sha256": "d9765dde3c591bfec658c0107235f3fbaccc44eb"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5293,6 +5313,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261020-090-goal-090-tool-dimension-and-m0-witness.md",
         "sha256": "790b3eb3137401f8fdb228c48dfe729fc5ecbd07"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261020-091-goal-091-two-models-judge-the-same-artifact.md",
+        "sha256": "49134f9f52814b1816843442f6b2f82374fb44b4"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -12523,6 +12547,10 @@
         "sha256": "41a2a7319ea9811e8879e86d3a946a96b344a9a5"
       },
       {
+        "path": "examples/protocols/dual_model_review_v1.yaml",
+        "sha256": "0df250e5b0beb8848cda7cb92dff6441047d169b"
+      },
+      {
         "path": "examples/protocols/granted_reads_used_in_a_run_v1.yaml",
         "sha256": "708495a0de9e534ae04848c5786381fc93d5da5c"
       },
@@ -13411,6 +13439,10 @@
         "sha256": "8c6ec37f45ae16fa259b5d1c43a125c48b18048e"
       },
       {
+        "path": "packages/application/run_orchestration/review_material.py",
+        "sha256": "93ade75a3538ebf039060f037c6bd0ae00b51106"
+      },
+      {
         "path": "packages/application/run_orchestration/review_panel_judging.py",
         "sha256": "3a7722c987132bf84ad1e584d7e4efeed51d6431"
       },
@@ -14133,6 +14165,10 @@
       {
         "path": "services/api/retrieval_context_support.py",
         "sha256": "f67670f24ac7187243a85165802115fee38d0206"
+      },
+      {
+        "path": "services/api/review_material_support.py",
+        "sha256": "9f1b113857e9c0465a6af795c71896ca4b0bbf72"
       },
       {
         "path": "services/api/routers/__init__.py",
@@ -15459,6 +15495,14 @@
         "sha256": "4c9704a7210b144dd8bbbb40a2765b89e8009855"
       },
       {
+        "path": "tests/application/run_orchestration/test_review_material_in_prompt.py",
+        "sha256": "c960c28cb01e1ac319e6a1cc8dc8a48525f57f6f"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_review_score_reads_the_envelope.py",
+        "sha256": "6bd8b3416bf3309b966dcfb91afe5eb0069ecc55"
+      },
+      {
         "path": "tests/application/run_orchestration/test_round_loop_declaration.py",
         "sha256": "da0cc20ef488896fe850bf65e59d0c574ae5fa7a"
       },
@@ -16697,6 +16741,14 @@
       {
         "path": "tests/e2e/test_two_dimensional_coverage_and_claim_relation.py",
         "sha256": "24de87b4e1589c8c9f71712a4459cfa850af26a4"
+      },
+      {
+        "path": "tests/e2e/test_two_models_judge_the_same_artifact.py",
+        "sha256": "c7824b3b5a789fcdcdffef1723fcea8b86a81100"
+      },
+      {
+        "path": "tests/e2e/test_two_models_judge_the_same_artifact_live.py",
+        "sha256": "916ef67272be724ecd45e87dca4dd0574fafbf85"
       },
       {
         "path": "tests/e2e/test_vertical_slice_happy_path.py",
@@ -18111,7 +18163,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "1463a8f2e7070c1e95ad1559ec9a2a80256ee2f1"
+    "head": "7f5446abb83a698b24ab15294957a70c87772b56"
   },
   "fingerprint_before": {
     "files": [
@@ -19432,6 +19484,10 @@
         "sha256": "3d7566c35ef584e5819cb49d0f06b9e2bf9da4fc"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261020-225-prompt-segments-were-dropped-at-the-handoff-layer.md",
+        "sha256": "7543bc5903da8a4c6811e15d8382ce2406c0c40b"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "39cd5b95194750e80b22a6bc4b3eb5e1acb6f4f7"
       },
@@ -19828,6 +19884,10 @@
         "sha256": "6259b2cfecc59b69fc64a225cbd99ee2629d57df"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261020-091-two-models-judge-the-same-artifact.md",
+        "sha256": "577f22feced24caf7f93e9e2ec4aed53b4a2f505"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
         "sha256": "9a05ab4404a39be348a8dc86b5b4d9463cdd35d6"
       },
@@ -19932,8 +19992,16 @@
         "sha256": "39f67af0d124b7fc56010d4d197f44defdb7ce57"
       },
       {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-progress-088-only.md",
+        "sha256": "c6854866f9d37ee32174e756cccf42675dedf16e"
+      },
+      {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-revisions-43-through-48.md",
         "sha256": "971921debde157b8b0117e7cf5043f50c44a893e"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-revisions-52-only.md",
+        "sha256": "69ae8718d659eac154900acc505289da00501f66"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -22052,6 +22120,10 @@
         "sha256": "ec10a4b4f50b334b8a39c2d099670f3c5ebdef7f"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261020-091-goal-091-two-models-judge-the-same-artifact.md",
+        "sha256": "f44f8b812aa0d753cf56180fa2c282aa22b8d995"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -23406,6 +23478,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261020-090-goal-090-tool-dimension-and-m0-witness.md",
         "sha256": "790b3eb3137401f8fdb228c48dfe729fc5ecbd07"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261020-091-goal-091-two-models-judge-the-same-artifact.md",
+        "sha256": "49134f9f52814b1816843442f6b2f82374fb44b4"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -30636,6 +30712,10 @@
         "sha256": "41a2a7319ea9811e8879e86d3a946a96b344a9a5"
       },
       {
+        "path": "examples/protocols/dual_model_review_v1.yaml",
+        "sha256": "0df250e5b0beb8848cda7cb92dff6441047d169b"
+      },
+      {
         "path": "examples/protocols/granted_reads_used_in_a_run_v1.yaml",
         "sha256": "708495a0de9e534ae04848c5786381fc93d5da5c"
       },
@@ -31524,6 +31604,10 @@
         "sha256": "8c6ec37f45ae16fa259b5d1c43a125c48b18048e"
       },
       {
+        "path": "packages/application/run_orchestration/review_material.py",
+        "sha256": "93ade75a3538ebf039060f037c6bd0ae00b51106"
+      },
+      {
         "path": "packages/application/run_orchestration/review_panel_judging.py",
         "sha256": "3a7722c987132bf84ad1e584d7e4efeed51d6431"
       },
@@ -32246,6 +32330,10 @@
       {
         "path": "services/api/retrieval_context_support.py",
         "sha256": "f67670f24ac7187243a85165802115fee38d0206"
+      },
+      {
+        "path": "services/api/review_material_support.py",
+        "sha256": "9f1b113857e9c0465a6af795c71896ca4b0bbf72"
       },
       {
         "path": "services/api/routers/__init__.py",
@@ -33572,6 +33660,14 @@
         "sha256": "4c9704a7210b144dd8bbbb40a2765b89e8009855"
       },
       {
+        "path": "tests/application/run_orchestration/test_review_material_in_prompt.py",
+        "sha256": "c960c28cb01e1ac319e6a1cc8dc8a48525f57f6f"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_review_score_reads_the_envelope.py",
+        "sha256": "6bd8b3416bf3309b966dcfb91afe5eb0069ecc55"
+      },
+      {
         "path": "tests/application/run_orchestration/test_round_loop_declaration.py",
         "sha256": "da0cc20ef488896fe850bf65e59d0c574ae5fa7a"
       },
@@ -34810,6 +34906,14 @@
       {
         "path": "tests/e2e/test_two_dimensional_coverage_and_claim_relation.py",
         "sha256": "24de87b4e1589c8c9f71712a4459cfa850af26a4"
+      },
+      {
+        "path": "tests/e2e/test_two_models_judge_the_same_artifact.py",
+        "sha256": "c7824b3b5a789fcdcdffef1723fcea8b86a81100"
+      },
+      {
+        "path": "tests/e2e/test_two_models_judge_the_same_artifact_live.py",
+        "sha256": "916ef67272be724ecd45e87dca4dd0574fafbf85"
       },
       {
         "path": "tests/e2e/test_vertical_slice_happy_path.py",
@@ -36224,11 +36328,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "1463a8f2e7070c1e95ad1559ec9a2a80256ee2f1"
+    "head": "7f5446abb83a698b24ab15294957a70c87772b56"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "1463a8f2e7070c1e95ad1559ec9a2a80256ee2f1",
+  "ran_at_head": "7f5446abb83a698b24ab15294957a70c87772b56",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
-  "tree_changed_during_the_run": false
+  "tree_changed_during_the_run": true
 }
