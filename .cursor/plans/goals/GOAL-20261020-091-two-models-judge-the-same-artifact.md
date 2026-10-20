@@ -245,7 +245,9 @@ memory_entries:
 | --- | --- | --- | --- |
 | `7f5446ab` | [M0 39486782767](https://github.com/Eswink/research-system-new/actions/runs/39486782767) | **八 job 全 `success`** | `collector-quality` / `container-quality` / `observability-overhead-{ubuntu,windows}` / `quality-{ubuntu,windows}` / `console-frontend` / `eval-gate` |
 | `7f5446ab` | [CodeQL 39486782251](https://github.com/Eswink/research-system-new/actions/runs/39486782251) | **三 job 全 `success`** | `Analyze (javascript-typescript)` / `(python)` / `(actions)` |
-| `eff7c34d` | 同一个 run（推送合并） | 见上 | 第二个提交只改记录 + 重新封印见证；CI 覆盖的是 `eff7c34d` |
+| `eff7c34d` | [M0 39486782767](https://github.com/Eswink/research-system-new/actions/runs/39486782767) | **八 job 全 `success`** | `eff7c34d` 与 `7f5446ab` 的推送被合并成一个 run；两条都跑在内 |
+| `aec28e2c` | （记录提交） | — | 只改 GOAL / RECHECK 两份记录；**未单独触发 run**（与下一条一起推） |
+| `5e949122` | [M0 39494047272](https://github.com/Eswink/research-system-new/actions/runs/39494047272) | **八 job 全 `success`** | 最终树（含 CI 台账 + 重新封印的见证）；CodeQL [39494047688](https://github.com/Eswink/research-system-new/actions/runs/39494047688) 三 job 全 `success` |
 
 **零判红**：本轮 CI **一次全绿**，与 GOAL-090（三次判红）不同 —— 但**本地**抓到一次
 「`--verify-only` 报覆盖不成立」的真缺陷（新增文件在被跟踪前不在受判面），已在提交后

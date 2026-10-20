@@ -258,9 +258,12 @@ HEAD），每一版都在 CI 上立刻红；这一次**本地全绿、`--verify-
   `--verify-only` 退出码 `0`（「覆盖成立」）。
 - **m0 计数**：`PASS [` **24** 行、`FAILED:` **0** 行（23 项 deterministic checks +
   `release-assets-immutable` 在计数之外）。
-- **CI**：[M0 39486782767](https://github.com/Eswink/research-system-new/actions/runs/39486782767)
-  **八 job 全 `success`**；[CodeQL 39486782251](https://github.com/Eswink/research-system-new/actions/runs/39486782251)
-  **三 job 全 `success`** —— **零判红、零 cancelled**。
+- **CI**（逐提交）：`7f5446ab` / `eff7c34d` → [M0 39486782767](https://github.com/Eswink/research-system-new/actions/runs/39486782767)
+  **八 job 全 `success`**、[CodeQL 39486782251](https://github.com/Eswink/research-system-new/actions/runs/39486782251)
+  **三 job 全 `success`**；最终树 `5e949122` → [M0 39494047272](https://github.com/Eswink/research-system-new/actions/runs/39494047272)
+  **八 job 全 `success`**、[CodeQL 39494047688](https://github.com/Eswink/research-system-new/actions/runs/39494047688)
+  **三 job 全 `success`** —— **零判红、零 cancelled**（`aec28e2c` 是记录提交，与 `5e949122`
+  一起推，run 覆盖后者）。
 
 ## 九、未覆盖范围（如实登记）
 
