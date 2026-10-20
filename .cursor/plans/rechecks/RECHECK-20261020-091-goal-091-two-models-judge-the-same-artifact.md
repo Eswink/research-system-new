@@ -251,6 +251,17 @@ HEAD），每一版都在 CI 上立刻红；这一次**本地全绿、`--verify-
 --exclude-standard`），但那会改变 GOAL-090 定下的口径（且 `--verify-only` 的语义随之变化）
 —— 属下一轮，不在本轮范围。
 
+## 八之三、正式见证与 CI 读数
+
+- **正式见证**（提交后重跑，覆盖成立）：`terminal_line` = `PASS: profile=m0; 23 deterministic checks`，
+  `green: true`，`tree_changed_during_the_run: false`，受判面 **4540** 个文件；
+  `--verify-only` 退出码 `0`（「覆盖成立」）。
+- **m0 计数**：`PASS [` **24** 行、`FAILED:` **0** 行（23 项 deterministic checks +
+  `release-assets-immutable` 在计数之外）。
+- **CI**：[M0 39486782767](https://github.com/Eswink/research-system-new/actions/runs/39486782767)
+  **八 job 全 `success`**；[CodeQL 39486782251](https://github.com/Eswink/research-system-new/actions/runs/39486782251)
+  **三 job 全 `success`** —— **零判红、零 cancelled**。
+
 ## 九、未覆盖范围（如实登记）
 
 - **`W-1`：`REVIEW_SCORE` 的分数仍是「评审者自述」**。本轮只让它的**来源**（信封里的正文）
@@ -262,3 +273,6 @@ HEAD），每一版都在 CI 上立刻红；这一次**本地全绿、`--verify-
   `retry budget exhausted` ⇒ 该位判词为 `UNKNOWN`、面板仍报「1 of 2 rejected」。这是
   **设施失败**，不是评审判负；读面已按 `UNKNOWN` 如实点名（不冒充 REJECT）。
 - **`W-5`：`--verify-only` 只覆盖本地树**；CI 覆盖推送后的树，两者对象不同。
+- **`W-6`：见证不记录未跟踪的受判面文件**（本轮实测的第二盲区）。提交前新增的文件在
+  `git add` 之前不在 `git ls-files` 里 ⇒ 「门看到的树」与「提交后的树」内容不一致而见证
+  看不出来。本轮的处置是「提交后重跑」，**判据本身未修**（收口要改 GOAL-090 定下的口径）。

@@ -213,9 +213,9 @@ memory_entries:
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261020-091 | 见「CI 台账」 | 建档探针钉住三处缺口；EC-01 判据 4 passed；EC-02 判据 12 passed；EC-03 判据 4 passed；受影响套件 298 + 47 + 282 passed | 见「CI 台账」 | 3（三处自己造成的缺陷，见下） | EC-04 真跑 / EC-05 收口 | 真跑取证 |
-| 2 | （同上，真跑 cycle） | 同上 | **真跑**：`glm-5.3` REJECT 0.45 / `kimi-k2.6` PASS 0.82，`dissent` 非空；三轮探针剥出「提示词段被静默丢弃」的既有缺陷并修掉；live 判据 1 passed | 同上 | 3（合约措辞 / 既有缝合线 / 中转站瞬时失败重跑） | 记录 + 收口 | 写 RECHECK / 阶梯 |
-| 3 | （同上，收口 cycle） | 同上 | RECHECK + 阶梯「复检」行升级 + 进展记录；记录面判据 → 全量 m0（含见证） | 同上 | 0 | 无（EC 全达成） | **收口** |
+| 1 | PLAN-20261020-091 | `7f5446ab` | 建档探针钉住三处缺口；EC-01 判据 4 passed；EC-02 判据 12 passed；EC-03 判据 4 passed；受影响套件 298 + 47 + 282 passed | 见「CI 台账」 | 3（三处自己造成的缺陷，见下） | EC-04 真跑 / EC-05 收口 | 真跑取证 |
+| 2 | （同上，真跑 cycle） | `7f5446ab` | **真跑**：`glm-5.3` REJECT 0.45 / `kimi-k2.6` PASS 0.82，`dissent` 非空；三轮探针剥出「提示词段被静默丢弃」的既有缺陷并修掉；live 判据 1 passed | 同上 | 3（合约措辞 / 既有缝合线 / 中转站瞬时失败重跑） | 记录 + 收口 | 写 RECHECK / 阶梯 |
+| 3 | （同上，收口 cycle） | `7f5446ab` + `eff7c34d` | RECHECK + 阶梯「复检」行升级 + 进展记录；记录面判据 → 全量 m0（含见证） | 同上 | 0 | 无（EC 全达成） | **收口** |
 
 **本轮修掉的三处自己造成的缺陷**（都由读数剥出，不是事后发现）：
 
@@ -236,3 +236,22 @@ memory_entries:
 | --- | --- | --- |
 | 2026-10-20 | **ACTIVE** | **建档**：承用户 goal-mode 指令「优先做复检」。建档实测出三处缺口，其中前两处是**结构不可达**的根因（判词进不了判定面 / 被评对象进不了提示词），第三处（聚合面）已由 GOAL-085/086/087 补齐。`max_cycles: 14`。 |
 | 2026-10-20 | **ACHIEVED** | EC-01…EC-06 全达成。**真跑取得有效分歧读数**（`main/glm-5.3` REJECT 0.45 / `main/kimi-k2.6` PASS 0.82，`dissent` 非空、`independent is true`），因此**未触发**「同质化」停止条件。过程中修掉一处**既有缺陷**（提示词段在真实会话里被静默丢弃）。如实登记 `W-1`…`W-5` 五条未覆盖范围。 |
+
+## CI 台账
+
+（逐提交逐 job。**零 run ≠ cancelled**；判红也如实登记，含根因与修法。）
+
+| 提交 | run | 结论 | 说明 |
+| --- | --- | --- | --- |
+| `7f5446ab` | [M0 39486782767](https://github.com/Eswink/research-system-new/actions/runs/39486782767) | **八 job 全 `success`** | `collector-quality` / `container-quality` / `observability-overhead-{ubuntu,windows}` / `quality-{ubuntu,windows}` / `console-frontend` / `eval-gate` |
+| `7f5446ab` | [CodeQL 39486782251](https://github.com/Eswink/research-system-new/actions/runs/39486782251) | **三 job 全 `success`** | `Analyze (javascript-typescript)` / `(python)` / `(actions)` |
+| `eff7c34d` | 同一个 run（推送合并） | 见上 | 第二个提交只改记录 + 重新封印见证；CI 覆盖的是 `eff7c34d` |
+
+**零判红**：本轮 CI **一次全绿**，与 GOAL-090（三次判红）不同 —— 但**本地**抓到一次
+「`--verify-only` 报覆盖不成立」的真缺陷（新增文件在被跟踪前不在受判面），已在提交后
+重跑 m0 并取得覆盖成立的正式见证（4540 个受判面文件）。
+
+**如实说明**：表中两次「本地验证」列的读数分别来自：cycle 1 = 定向判据 4/12/4 passed
++ 受影响套件 298/47/282 passed；cycle 2 = 真跑（一个 run 两张判词）+ 三轮探针定位
+提示词缝；cycle 3 = 记录面 48 passed + 全量 m0（24 条 `PASS [`、终态行
+`PASS: profile=m0; 23 deterministic checks`、0 FAILED）。
