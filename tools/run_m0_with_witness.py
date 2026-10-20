@@ -95,33 +95,62 @@ def _watched(relative: str) -> bool:
 
 
 def tree_fingerprint() -> dict[str, object]:
-    """当前树的指纹：HEAD + **受判面文件内容**的 sha256 清单。
+    """当前树的指纹：HEAD + **受判面文件内容**的 blob 哈希清单。
 
-    **为什么是「内容清单」而不是「脏文件清单」**（GOAL-090 CI 实测的缺陷）：
-    第一版只记 `git status` 的脏文件。本地跑门时工作树有 24 个未提交改动，
-    而 CI 是**干净检出**（0 个脏文件）⇒ 同一个提交在两处的指纹**永远不相等**
-    ⇒ 判据在 CI 上恒红。这不只是噪声：它让「覆盖关系」与「有没有未提交改动」
-    被错误地绑在一起，而后者根本不是这条纪律要问的东西。
+    **两次 CI 判红定下的口径**（GOAL-090 实测，两次都是本地全绿、CI 判红）：
 
-    正确的语义是「门看到的**内容**现在还在不在」。所以指纹按**文件内容**算：
-    对受判面下每个被跟踪文件取 `git ls-files` 的路径、读工作树字节算 sha256。
-    ⇒ 干净检出与「已提交 + 工作树同内容」得到**同一个**指纹；只有**内容**变了
-    才变。未提交但内容相同的改动不影响（那是 git 的状态问题，不是覆盖问题）。
+    1. **不能是「脏文件清单」**（第一版）：本地跑门时工作树有未提交改动、CI 是干净检出
+       ⇒ 同一个提交在两处指纹**永远不相等** ⇒ 判据在 CI 上恒红。
+    2. **也不能是「工作树字节的 sha256」**（第二版）：本仓 `.gitattributes` 是
+       `* text=auto eol=lf` ⇒ Windows 工作树检出为 CRLF、Linux 为 LF ⇒ 同一份内容在
+       两个平台字节不同（实测 489 个文件 hash 全不同）⇒ 仍然恒红。
+
+    **最终口径 = `git hash-object`**：它取的是 git **归一化之后**的 blob 内容哈希，
+    与平台行尾无关、与工作树是否干净无关 ⇒ 干净检出与「已提交 + 工作树同内容」给出
+    **同一个**指纹；只有**内容**真的变了才变。这问的正是「门看到的内容现在还在不在」。
+
+    `git hash-object` 按批调用（`--stdin-paths`）一次算完 4500+ 个文件，避免逐文件起进程。
     """
     head = _git("rev-parse", "HEAD").strip()
     tracked = [line for line in _git("ls-files", "-z").split("\0") if line]
-    files: list[dict[str, str]] = []
-    for relative in tracked:
-        if not _watched(relative):
-            continue
-        target = ROOT / relative
-        if not target.is_file():
-            # 被跟踪但工作树里已删除 ⇒ 记录为缺失（这也是一种内容状态）。
-            files.append({"path": relative, "sha256": ""})
-            continue
-        files.append({"path": relative, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
+    watched = [relative for relative in tracked if _watched(relative)]
+    present = [relative for relative in watched if (ROOT / relative).is_file()]
+    missing = [relative for relative in watched if relative not in set(present)]
+    hashes = _hash_objects(present)
+    files: list[dict[str, str]] = [
+        {"path": relative, "sha256": hashes[relative]} for relative in present
+    ]
+    # 被跟踪但工作树里已删除 ⇒ 记为空哈希（这也是一种内容状态，不能静默略过）。
+    files.extend({"path": relative, "sha256": ""} for relative in missing)
     files.sort(key=lambda item: item["path"])
     return {"head": head, "files": files}
+
+
+def _hash_objects(paths: list[str]) -> dict[str, str]:
+    """`git hash-object` 批量取 blob 哈希（**归一化后**的内容哈希，跨平台可比）。
+
+    为什么不用 `hashlib.sha256(工作树字节)`：本仓 `.gitattributes` 是
+    `* text=auto eol=lf` ⇒ Windows 检出 CRLF、Linux 检出 LF，字节不同而内容相同。
+    实测：同一提交在 CI 上 489 个文件 hash 全不同 ⇒ 判据恒红。
+    `hash-object` 走 git 自己的归一化，因此是**唯一**跨平台稳定的口径。
+    """
+    if not paths:
+        return {}
+    payload = "".join(relative + "\n" for relative in paths).encode("utf-8")
+    result = subprocess.run(
+        ("git", "hash-object", "--stdin-paths"),
+        cwd=ROOT,
+        input=payload,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.decode("utf-8", "replace")[:300]
+        raise SystemExit(f"git hash-object failed: {detail}")
+    lines = result.stdout.decode("utf-8").split()
+    if len(lines) != len(paths):
+        raise SystemExit(f"git hash-object returned {len(lines)} hashes for {len(paths)} paths")
+    return {relative: digest for relative, digest in zip(paths, lines, strict=True)}
 
 
 def fingerprint_digest(fingerprint: dict[str, object]) -> str:

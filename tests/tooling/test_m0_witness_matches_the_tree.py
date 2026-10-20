@@ -200,13 +200,16 @@ def test_the_in_progress_state_is_a_real_third_state_not_a_silent_pass() -> None
 def test_the_fingerprint_does_not_depend_on_git_dirtiness() -> None:
     """**指纹必须与「有没有未提交改动」无关**（GOAL-090 CI 实测的回归钉）。
 
-    第一版指纹记的是 `git status` 的脏文件清单 ⇒ 本地（24 个未提交改动）与
-    CI（干净检出）对**同一个提交**给出不同指纹 ⇒ 判据在 CI 上恒红。这条判据钉住
-    修好后的语义：指纹只由**文件内容**决定。
+    **两次 CI 判红定下的口径**：
 
-    反证方式不靠「再跑一次 git」：直接断言指纹的载荷**不含**任何 git 状态字段
-    （`dirty` / `status`），且含内容字段 `files` —— 结构上就不可能有「同一内容、
-    不同状态 ⇒ 不同指纹」这件事。
+    1. 第一版记 `git status` 的脏文件 ⇒ 本地（有未提交改动）与 CI（干净检出）对
+       同一个提交给出不同指纹；
+    2. 第二版记**工作树字节**的 sha256 ⇒ 本仓 `.gitattributes` 是 `* text=auto eol=lf`
+       ⇒ Windows 检出 CRLF、Linux 检出 LF ⇒ 同一内容在两平台字节不同（实测 489 个
+       文件 hash 全不同）⇒ 仍然恒红。
+
+    最终口径 = `git hash-object`（git **归一化后**的 blob 哈希）：与平台行尾无关、
+    与工作树是否干净无关。这条判据钉住该语义。
     """
     tool = _tool_module()
     fingerprint = tool.tree_fingerprint()

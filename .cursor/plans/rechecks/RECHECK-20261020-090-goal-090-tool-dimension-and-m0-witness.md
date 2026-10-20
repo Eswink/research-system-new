@@ -139,7 +139,7 @@ memory_entries: []
 | `tree_changed_during_the_run` | `False`（跑门期间工作树静止，见证与运行同一棵树） |
 | 见证落点 | `.cursor/plans/goals/evidence/M0-WITNESS.json`（**树内被跟踪**，CR=0） |
 | 见证判据复跑 | **7 passed**（指纹相等 ⇒ 覆盖关系成立） |
-| 指纹口径 | **按文件内容**（4526 个受判面文件 × sha256），**不含** git 脏状态 |
+| 指纹口径 | **`git hash-object`**（4526 个受判面文件的归一化 blob 哈希）—— 与平台行尾、与工作树是否干净均无关 |
 
 **运行条件**：`RESEARCHOS_AGENT_RUNTIME` / `RESEARCHOS_LIVE_E2E` / `RESEARCHOS_LIVE_LLM`
 均未设置；`RESEARCHOS_POSTGRES_DSN` 与 `RESEARCHOS_POSTGRES_TEST_DSN` 置空；
@@ -164,6 +164,15 @@ Failed: m0 见证与当前树**不一致** ⇒ 最后一次全量 m0 覆盖的�
 CI 是干净检出 ⇒ **同一个提交在两处指纹永远不等**。本地 23/23 全绿**没能预测**它，因为
 本地那次运行的指纹与本地工作树天然自洽。
 
-**修法**：指纹改按**文件内容**算（4500+ 个受判面文件的 sha256），并单列判据禁止
-`dirty` / `status` 回到指纹里。**这条记入「本地绿 ≠ CI 绿」的实例**：判据的正确性
-必须在**两种工作树形态**（有未提交改动 / 干净检出）下都成立。
+**修法是两轮才对的**：
+
+1. 第一版改按「工作树字节的 sha256」⇒ `67ea1e87` 的 CI **仍然红**，差 **489 个文件**，
+   内容相同而 hash 全不同 ⇒ 根因是 `.gitattributes` 的 `* text=auto eol=lf`
+   （Windows CRLF / Linux LF）；
+2. 最终改按 **`git hash-object`**（git 归一化后的 blob 哈希）⇒ 与平台行尾、
+   与工作树是否干净都无关。旁证：4526 个受判面文件的 blob 哈希与 `git ls-tree HEAD`
+   比对，**只有**当时正在编辑的 1 个文件不一致。
+
+**这条记入「本地绿 ≠ CI 绿」的实例，而且是双份的**：判据的正确性必须在
+**另一种工作树形态**与**另一个平台**下都成立。第二版那个写法**看起来完全合理**，
+所以我在判据里加了一条断言**禁止 `read_bytes()` 出现在指纹函数内**。
