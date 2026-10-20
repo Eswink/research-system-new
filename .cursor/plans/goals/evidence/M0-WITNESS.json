@@ -1712,11 +1712,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261020-090-evidence-coverage-tool-dimension-and-m0-witness.md",
-        "sha256": "b303fac4cffabff2df3736fdf94906deae7192b3"
+        "sha256": "6259b2cfecc59b69fc64a225cbd99ee2629d57df"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "29af796bcf48f12b8db6b5e1685e360322553dd1"
+        "sha256": "092adb3f1d6973e558ec532233be30c0c167c4ab"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -18107,7 +18107,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "696d3159a6f9feeb5511cab90bb36e4e3f83645a"
+    "head": "94f8bd83f049f954259a7be7d748b37f15b49915"
   },
   "fingerprint_before": {
     "files": [
@@ -19821,11 +19821,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261020-090-evidence-coverage-tool-dimension-and-m0-witness.md",
-        "sha256": "b303fac4cffabff2df3736fdf94906deae7192b3"
+        "sha256": "6259b2cfecc59b69fc64a225cbd99ee2629d57df"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "29af796bcf48f12b8db6b5e1685e360322553dd1"
+        "sha256": "092adb3f1d6973e558ec532233be30c0c167c4ab"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -36216,11 +36216,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "696d3159a6f9feeb5511cab90bb36e4e3f83645a"
+    "head": "94f8bd83f049f954259a7be7d748b37f15b49915"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "696d3159a6f9feeb5511cab90bb36e4e3f83645a",
+  "ran_at_head": "94f8bd83f049f954259a7be7d748b37f15b49915",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

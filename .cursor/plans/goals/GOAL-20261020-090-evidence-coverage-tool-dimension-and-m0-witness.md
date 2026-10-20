@@ -92,7 +92,7 @@ exit_criteria:
       治理 `validate.py` = `Cursor 治理验证通过`。
     status: PASS
 budget:
-  max_cycles: 8
+  max_cycles: 12
   per_cycle_minutes: 90
   no_progress_stop_cycles: 2
 fix_policy:
@@ -198,9 +198,15 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261020-090 | `2b37f8a8`… | 工具维判据 10 passed；两向按压各判红并逐字节复原；受影响套件 1270 passed / 72 skipped | 见「CI 台账」 | 2（见下） | EC-01…EC-04 达成 | 收口（EC-05） |
+| 1 | PLAN-20261020-090 | `effbe9e5` | 工具维判据 10 passed；两向按压各判红并逐字节复原；受影响套件 1270 passed / 72 skipped；本地 as-is m0 23/23 | `effbe9e5` M0 **六绿二红**（见证指纹绑了脏文件清单） | 1（改按文件内容） | EC-01…EC-04 达成 | 修 CI 红 |
+| 2 | （同上，CI 修复 cycle） | `67ea1e87` | 指纹改按工作树字节 sha256；本地 m0 23/23 | `67ea1e87` M0 **六绿二红**（489 个文件「内容相同、hash 全不同」） | 1（改走 `git hash-object`） | 同上 | 修 CI 红 |
+| 3 | （同上，CI 修复 cycle） | `3ad1279b` | 指纹改走归一化 blob 哈希；本地 m0 23/23；**blob 哈希与 `git ls-tree HEAD` 逐条比对，只有 1 个在编辑中的文件不一致** | `3ad1279b` M0 **六绿二红**（内容零差异，但 HEAD 变了） | 1（HEAD 不进比较） | 同上 | 修 CI 红 |
+| 4 | （同上，CI 修复 cycle） | `479771db` + `c9a5e6d5` | 新增 `covered_files()` 把判定收窄到内容清单；见证判据 8 passed | **M0 八 job 全 `success`** | 0 | EC-05 收口 | 写 CI 台账 |
+| 5 | （同上，收口 cycle） | `696d3159` | CI 台账 + 重新封印见证；m0 23/23 | 见「CI 台账」 | 0 | — | MEM 沉淀 |
+| 6 | （同上，收口 cycle） | `94f8bd83` | MEM 补「见证绑定对象」三层教训 + 重新封印；治理绿 + 记录面 37 passed + m0 23/23 | M0 **八 job 全 `success`** | 0 | 无（EC 全达成） | **收口** |
 
-**本轮修掉的两处自己造成的缺陷**（都是判据先抓到，不是事后才发现）：
+**本轮修掉的六处自己造成的缺陷**（前三处由本地判据抓到；后三处**由 CI 抓到**，
+是本轮最贵的教训 —— 每一条都是「本地全绿、CI 判红」）：
 
 1. **见证自我指涉（位置）**：初版把 `.cursor/` 整个算进受判面，而见证文件本身落在
    `.cursor/plans/goals/evidence/` ⇒ 写见证这个动作改变了它所描述的树 ⇒ `--skip-run`
