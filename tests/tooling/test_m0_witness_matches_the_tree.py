@@ -89,18 +89,21 @@ def _witness() -> dict[str, Any]:
 
 
 def test_the_witness_is_for_the_tree_we_are_looking_at() -> None:
-    """核心：见证里的指纹 == 当前树的指纹（**按文件内容**比，不按 git 状态比）。
+    """核心：见证覆盖的**文件内容** == 当前树的文件内容（不比 git 状态、不比 HEAD）。
 
-    **为什么必须按内容**（GOAL-090 CI 实测）：第一版指纹只记 `git status` 的脏文件，
-    本地跑门时有 24 个未提交改动、CI 是干净检出 ⇒ 同一个提交在两处的指纹**永远不等**
-    ⇒ 判据在 CI 上恒红（`effbe9e5` 的 M0 两个 quality job 就是这样红的）。
-    这条纪律问的是「门看到的**内容**现在还在不在」，不是「有没有未提交改动」。
+    **三次 CI 判红定下的口径**（每一条都是「本地绿、CI 红」）：
+
+    1. 记 `git status` 的脏文件 ⇒ 本地有未提交改动、CI 干净检出 ⇒ 恒不等；
+    2. 记工作树字节的 sha256 ⇒ `.gitattributes` 的 `* text=auto eol=lf` 让
+       Windows/Linux 字节不同（489 个文件）⇒ 恒不等；
+    3. 连 `head` 一起比 ⇒ 见证写在提交**之前**，CI 检查提交**之后** ⇒ 恒不等
+       （实测报「新增 0 项、缺失 0 项」，只因 HEAD 变了）。
+
+    这条纪律问的始终是「门看到的**内容**现在还在不在」。提交不改内容 ⇒ HEAD 不进比较。
     """
     tool = _tool_module()
     recorded = _witness()
     current = tool.tree_fingerprint()
-    if current == recorded.get("fingerprint_after"):
-        return
 
     # 逐条点名差异，而不是只说「不相等」：判词要能直接指向该改哪一步。
     def rows(fingerprint: Any) -> set[tuple[str, str]]:
@@ -109,10 +112,12 @@ def test_the_witness_is_for_the_tree_we_are_looking_at() -> None:
 
     before = rows(recorded.get("fingerprint_after"))
     now = rows(current)
+    if before == now:
+        return
     added = sorted(now - before)
     removed = sorted(before - now)
     pytest.fail(
-        "m0 见证与当前树**不一致** ⇒ 最后一次全量 m0 覆盖的不是现在这棵树"
+        "m0 见证覆盖**的文件内容**与当前树不一致 ⇒ 最后一次全量 m0 跑的不是这份内容"
         "（典型成因：跑完门之后又改动了受判文件，于是那次终态行失效）。\n"
         f"  见证记录的 HEAD: {recorded.get('ran_at_head')}；当前 HEAD: {current.get('head')}\n"
         f"  内容变了/新增（{len(added)} 项）：{added[:10]}\n"
@@ -222,3 +227,27 @@ def test_the_fingerprint_does_not_depend_on_git_dirtiness() -> None:
         assert item["path"] not in {".cursor/plans/goals/evidence/M0-WITNESS.json"}, (
             "见证文件本身必须在自我指涉边界之外"
         )
+
+
+def test_the_head_does_not_participate_in_the_coverage_decision() -> None:
+    """**提交本身不改内容 ⇒ HEAD 不得参与覆盖判定**（GOAL-090 第三次 CI 实测的钉）。
+
+    见证写在提交**之前**的工作树上，CI 检查的是那个提交**之后**的 HEAD。若把 `head`
+    纳入比较，每一次「跑门 → 提交」都会让见证失效（实测 `3ad1279b` 的 CI 报
+    「新增 0 项、缺失 0 项」，只因 HEAD 从 `67ea1e87` 变成 `3ad1279b`）。
+    `head` 仍应留在见证里（供人读「在哪次提交上跑的」），但不进判定。
+    """
+    tool = _tool_module()
+    recorded = _witness()
+    # HEAD 是记录的（可读），但覆盖判定只看内容清单。
+    assert recorded.get("ran_at_head"), "见证应记录 ran_at_head 供人读"
+    assert hasattr(tool, "covered_files"), (
+        "必须有 `covered_files`：参与判定的部分只应是内容清单（不含 HEAD）"
+    )
+    files = tool.covered_files(recorded["fingerprint_after"])
+    assert isinstance(files, list) and files, f"covered_files 应给出非空清单：{files[:2]}"
+    assert all(set(item) == {"path", "sha256"} for item in files), files[:2]
+    # 反证：把 head 改掉不该影响 covered_files。
+    mutated = dict(recorded["fingerprint_after"])
+    mutated["head"] = "0" * 40
+    assert tool.covered_files(mutated) == files, "改 head 不该改变覆盖判定的输入"

@@ -126,6 +126,23 @@ def tree_fingerprint() -> dict[str, object]:
     return {"head": head, "files": files}
 
 
+def covered_files(fingerprint: dict[str, object]) -> list[dict[str, str]]:
+    """指纹里**参与覆盖判定**的部分 = 受判面文件的内容清单（**不含 HEAD**）。
+
+    **为什么把 HEAD 排除在比较之外**（GOAL-090 第三次 CI 实测）：见证在提交**之前**的
+    工作树上写下，而 CI 检查的是那个提交**之后**的 HEAD ⇒ 两次运行的 `head` 必然不同，
+    即使受判面**一个字节都没变**（实测：`3ad1279b` 的 CI 报「内容变了/新增 0 项、
+    见证有而当前没有 0 项」，只因 HEAD 从 `67ea1e87` 变成 `3ad1279b`）。
+
+    提交**不改内容** ⇒ 它不该影响「门看到的内容还在不在」。`head` 仍留在见证里
+    （供人读「这是在哪次提交上跑的」），但**不参与**覆盖判定。
+    这与「见证绑定的是内容、不是 git 状态」是同一条纪律的第二次应用。
+    """
+    files = fingerprint.get("files", [])
+    assert isinstance(files, list)
+    return files
+
+
 def _hash_objects(paths: list[str]) -> dict[str, str]:
     """`git hash-object` 批量取 blob 哈希（**归一化后**的内容哈希，跨平台可比）。
 
