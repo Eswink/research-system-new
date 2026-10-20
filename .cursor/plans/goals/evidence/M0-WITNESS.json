@@ -17164,7 +17164,7 @@
       },
       {
         "path": "tests/tooling/test_m0_witness_matches_the_tree.py",
-        "sha256": "4bf9d5c6d0dad5b6fcf907ae91a6fb8e2e12aa31"
+        "sha256": "a22ba998f8217bb73df3c9500c6feacff12aa79b"
       },
       {
         "path": "tests/tooling/test_mainline_archive_is_continuous.py",
@@ -17796,7 +17796,7 @@
       },
       {
         "path": "tools/run_m0_with_witness.py",
-        "sha256": "86cbb049e1d3501e2b289c067fa01658b9d3eb81"
+        "sha256": "32a106983f5a670d9a9872dc8a648c0f507cad89"
       },
       {
         "path": "tools/snapshot_migrate.py",
@@ -18107,7 +18107,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "67ea1e8725897e08239cab47f08e6c757b972ecf"
+    "head": "479771db4f16bb41ce20b36eb81065cb6445f3e2"
   },
   "fingerprint_before": {
     "files": [
@@ -35273,7 +35273,7 @@
       },
       {
         "path": "tests/tooling/test_m0_witness_matches_the_tree.py",
-        "sha256": "4bf9d5c6d0dad5b6fcf907ae91a6fb8e2e12aa31"
+        "sha256": "a22ba998f8217bb73df3c9500c6feacff12aa79b"
       },
       {
         "path": "tests/tooling/test_mainline_archive_is_continuous.py",
@@ -35905,7 +35905,7 @@
       },
       {
         "path": "tools/run_m0_with_witness.py",
-        "sha256": "86cbb049e1d3501e2b289c067fa01658b9d3eb81"
+        "sha256": "32a106983f5a670d9a9872dc8a648c0f507cad89"
       },
       {
         "path": "tools/snapshot_migrate.py",
@@ -36216,11 +36216,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "67ea1e8725897e08239cab47f08e6c757b972ecf"
+    "head": "479771db4f16bb41ce20b36eb81065cb6445f3e2"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "67ea1e8725897e08239cab47f08e6c757b972ecf",
+  "ran_at_head": "479771db4f16bb41ce20b36eb81065cb6445f3e2",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
