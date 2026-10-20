@@ -141,6 +141,10 @@ class SessionSpecContext:
     retrieval_context: Any | None = None
     #: GOAL-20261018-082 EC-01：前序知识的装配结果（与 `retrieval_context` 并列；None ⇒ 无该段）。
     prior_knowledge: Any | None = None
+    #: GOAL-20261020-091 EC-02：**被评对象**的装配结果（`review_material.ReviewMaterialView`）。
+    #: 与前三段**并列**：前几段说「被要求做什么 / 已经知道什么 / 取回了什么」，这一段说
+    #: 「你要判的是这一件东西」。缺省 `None` ⇒ 提示词逐字节等于既有形态。
+    review_material: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -388,6 +392,8 @@ def _run_session(
         # GOAL-20261018-082 EC-01：**前序知识那一段**（缺省 None ⇒ 提示词逐字不变）。
         # 与检索段**并列**：两段语义不同（前几轮已知 vs 这一轮取回），不合并、不互相替代。
         prior_knowledge_prompt=session_prompts.prior_knowledge_prompt(spec_context),
+        # GOAL-20261020-091 EC-02：**被评对象**那一段（缺省 None ⇒ 提示词逐字不变）。
+        review_material_prompt=session_prompts.review_material_prompt(spec_context),
         # GOAL-20261019-089 EC-02：**研究方向那一段**（缺省 None ⇒ 提示词逐字不变）。
         direction_prompt=session_prompts.direction_prompt(spec_context),
         endpoint=spec_context.endpoint,

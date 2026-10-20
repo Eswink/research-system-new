@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "3885d13f55fbb2c342e9d75a8a18db1021786fc1"
+        "sha256": "f3b6b756f22f57316d43b062158bfca45c08a9da"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1320,7 +1320,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "96b05ed15f7cf56645dbf23e0f7a67cbe3754786"
+        "sha256": "39cd5b95194750e80b22a6bc4b3eb5e1acb6f4f7"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1716,7 +1716,7 @@
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "092adb3f1d6973e558ec532233be30c0c167c4ab"
+        "sha256": "9a05ab4404a39be348a8dc86b5b4d9463cdd35d6"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -5848,7 +5848,7 @@
       },
       {
         "path": "adapters/openhands/session_builder.py",
-        "sha256": "c8d98ce811b05ffc34efbbd0abc6fe021147826d"
+        "sha256": "dc2871824dcf4959da9e51a40bb93daca7b71e0a"
       },
       {
         "path": "adapters/openhands/session_tool_invocation.py",
@@ -12440,7 +12440,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "bf3ca51ec1cbf59b8979da39f95d693c2feadc00"
+        "sha256": "1be9101597174f0740ad1d70fe0868c9914c3ac5"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -12988,7 +12988,7 @@
       },
       {
         "path": "packages/application/ports/agent_runtime.py",
-        "sha256": "64998a37de5ed5ea99392386a6a3cff85f8d862f"
+        "sha256": "ff815f823749b36d6a01e13ffb7226059ee43083"
       },
       {
         "path": "packages/application/ports/agent_store.py",
@@ -13288,11 +13288,11 @@
       },
       {
         "path": "packages/application/run_orchestration/dependencies.py",
-        "sha256": "fd552b4ccf99e9395fc08e55c24e93aa9b9ad3cd"
+        "sha256": "10cea5561746ace0a2df6584389839734ea48a41"
       },
       {
         "path": "packages/application/run_orchestration/evaluation_gate.py",
-        "sha256": "cf7fe7a1959fc080ee996d98e6ed612cfb4bfd11"
+        "sha256": "93e700df86b6f653aa46d3b7e41de1f92d34f98d"
       },
       {
         "path": "packages/application/run_orchestration/eventing.py",
@@ -13348,7 +13348,7 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_input_material.py",
-        "sha256": "4f9575002fcfbb4d9adb8d3ba583131a382d0aef"
+        "sha256": "6a9e2d6809128d50392b696799d0f6056c1dba3e"
       },
       {
         "path": "packages/application/run_orchestration/phase_pause.py",
@@ -13356,7 +13356,7 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_runner.py",
-        "sha256": "51915e869367b71ace69bf3df19563db02169e5b"
+        "sha256": "630a9e09b5daf837f559d3b9f93f4b2a1dc0b627"
       },
       {
         "path": "packages/application/run_orchestration/prior_knowledge.py",
@@ -13404,7 +13404,7 @@
       },
       {
         "path": "packages/application/run_orchestration/retrieval_prompt.py",
-        "sha256": "4823a960f33405c3b87d5dd065d9319b919a7e9c"
+        "sha256": "fc38e91ba64e1a72a6e2fc5a8fbd2a12c7c9986f"
       },
       {
         "path": "packages/application/run_orchestration/review_attribution.py",
@@ -13436,7 +13436,7 @@
       },
       {
         "path": "packages/application/run_orchestration/runner_wiring.py",
-        "sha256": "4d0fbf61167b1ba4cc1578f06b7b138ab8d70d57"
+        "sha256": "ffd9c8b0e0d491b1e40fa4f8998a31352f6cf15e"
       },
       {
         "path": "packages/application/run_orchestration/runtime_fingerprint.py",
@@ -13452,7 +13452,7 @@
       },
       {
         "path": "packages/application/run_orchestration/session_prompts.py",
-        "sha256": "82e65c85bc23037ed90c774af8c90347ed6d5e85"
+        "sha256": "04d843faf2c190ff685918325799678fe555aa08"
       },
       {
         "path": "packages/application/run_orchestration/session_resolution.py",
@@ -13468,7 +13468,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_executor.py",
-        "sha256": "20a3be7b4ae0fd3888fbd598ec9e5f51b1297a99"
+        "sha256": "f1b407ae9c1cd999a8765930530388521b11accd"
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
@@ -13900,7 +13900,7 @@
       },
       {
         "path": "services/api/composition.py",
-        "sha256": "0d3b91922ada13ece93fe3265131bfadece7ebfb"
+        "sha256": "bcc882268a7eb20dc7463859d8b120fbe89dc713"
       },
       {
         "path": "services/api/config_store_parts.py",
@@ -14092,7 +14092,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "58e269dea9f199d981a2359a6712287441081aaa"
+        "sha256": "3fb4cc29ccfdbc68a0aad3eefe81610e69690306"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -15832,7 +15832,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "ef093de9c61d650b8aad0944fb28b6ac877d65af"
+        "sha256": "4537e094e7bd02121d90f9a4ff63c662ec541247"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -17168,7 +17168,7 @@
       },
       {
         "path": "tests/tooling/test_m0_witness_matches_the_tree.py",
-        "sha256": "a22ba998f8217bb73df3c9500c6feacff12aa79b"
+        "sha256": "74602a0cf4c768a9e3ba78f19c6f33e6f082e8f5"
       },
       {
         "path": "tests/tooling/test_mainline_archive_is_continuous.py",
@@ -17800,7 +17800,7 @@
       },
       {
         "path": "tools/run_m0_with_witness.py",
-        "sha256": "32a106983f5a670d9a9872dc8a648c0f507cad89"
+        "sha256": "9fdd14a8d227a4d2b7bbcc166600e98306468648"
       },
       {
         "path": "tools/snapshot_migrate.py",
@@ -18111,7 +18111,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "d45fb23de2574068d3b032e5ce3a67cef6eddf3e"
+    "head": "1463a8f2e7070c1e95ad1559ec9a2a80256ee2f1"
   },
   "fingerprint_before": {
     "files": [
@@ -18533,7 +18533,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "3885d13f55fbb2c342e9d75a8a18db1021786fc1"
+        "sha256": "f3b6b756f22f57316d43b062158bfca45c08a9da"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -19433,7 +19433,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "96b05ed15f7cf56645dbf23e0f7a67cbe3754786"
+        "sha256": "39cd5b95194750e80b22a6bc4b3eb5e1acb6f4f7"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -19829,7 +19829,7 @@
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "092adb3f1d6973e558ec532233be30c0c167c4ab"
+        "sha256": "9a05ab4404a39be348a8dc86b5b4d9463cdd35d6"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -23961,7 +23961,7 @@
       },
       {
         "path": "adapters/openhands/session_builder.py",
-        "sha256": "c8d98ce811b05ffc34efbbd0abc6fe021147826d"
+        "sha256": "dc2871824dcf4959da9e51a40bb93daca7b71e0a"
       },
       {
         "path": "adapters/openhands/session_tool_invocation.py",
@@ -30553,7 +30553,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "bf3ca51ec1cbf59b8979da39f95d693c2feadc00"
+        "sha256": "1be9101597174f0740ad1d70fe0868c9914c3ac5"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -31101,7 +31101,7 @@
       },
       {
         "path": "packages/application/ports/agent_runtime.py",
-        "sha256": "64998a37de5ed5ea99392386a6a3cff85f8d862f"
+        "sha256": "ff815f823749b36d6a01e13ffb7226059ee43083"
       },
       {
         "path": "packages/application/ports/agent_store.py",
@@ -31401,11 +31401,11 @@
       },
       {
         "path": "packages/application/run_orchestration/dependencies.py",
-        "sha256": "fd552b4ccf99e9395fc08e55c24e93aa9b9ad3cd"
+        "sha256": "10cea5561746ace0a2df6584389839734ea48a41"
       },
       {
         "path": "packages/application/run_orchestration/evaluation_gate.py",
-        "sha256": "cf7fe7a1959fc080ee996d98e6ed612cfb4bfd11"
+        "sha256": "93e700df86b6f653aa46d3b7e41de1f92d34f98d"
       },
       {
         "path": "packages/application/run_orchestration/eventing.py",
@@ -31461,7 +31461,7 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_input_material.py",
-        "sha256": "4f9575002fcfbb4d9adb8d3ba583131a382d0aef"
+        "sha256": "6a9e2d6809128d50392b696799d0f6056c1dba3e"
       },
       {
         "path": "packages/application/run_orchestration/phase_pause.py",
@@ -31469,7 +31469,7 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_runner.py",
-        "sha256": "51915e869367b71ace69bf3df19563db02169e5b"
+        "sha256": "630a9e09b5daf837f559d3b9f93f4b2a1dc0b627"
       },
       {
         "path": "packages/application/run_orchestration/prior_knowledge.py",
@@ -31517,7 +31517,7 @@
       },
       {
         "path": "packages/application/run_orchestration/retrieval_prompt.py",
-        "sha256": "4823a960f33405c3b87d5dd065d9319b919a7e9c"
+        "sha256": "fc38e91ba64e1a72a6e2fc5a8fbd2a12c7c9986f"
       },
       {
         "path": "packages/application/run_orchestration/review_attribution.py",
@@ -31549,7 +31549,7 @@
       },
       {
         "path": "packages/application/run_orchestration/runner_wiring.py",
-        "sha256": "4d0fbf61167b1ba4cc1578f06b7b138ab8d70d57"
+        "sha256": "ffd9c8b0e0d491b1e40fa4f8998a31352f6cf15e"
       },
       {
         "path": "packages/application/run_orchestration/runtime_fingerprint.py",
@@ -31565,7 +31565,7 @@
       },
       {
         "path": "packages/application/run_orchestration/session_prompts.py",
-        "sha256": "82e65c85bc23037ed90c774af8c90347ed6d5e85"
+        "sha256": "04d843faf2c190ff685918325799678fe555aa08"
       },
       {
         "path": "packages/application/run_orchestration/session_resolution.py",
@@ -31581,7 +31581,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_executor.py",
-        "sha256": "20a3be7b4ae0fd3888fbd598ec9e5f51b1297a99"
+        "sha256": "f1b407ae9c1cd999a8765930530388521b11accd"
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
@@ -32013,7 +32013,7 @@
       },
       {
         "path": "services/api/composition.py",
-        "sha256": "0d3b91922ada13ece93fe3265131bfadece7ebfb"
+        "sha256": "bcc882268a7eb20dc7463859d8b120fbe89dc713"
       },
       {
         "path": "services/api/config_store_parts.py",
@@ -32205,7 +32205,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "58e269dea9f199d981a2359a6712287441081aaa"
+        "sha256": "3fb4cc29ccfdbc68a0aad3eefe81610e69690306"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -33945,7 +33945,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "ef093de9c61d650b8aad0944fb28b6ac877d65af"
+        "sha256": "4537e094e7bd02121d90f9a4ff63c662ec541247"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -35281,7 +35281,7 @@
       },
       {
         "path": "tests/tooling/test_m0_witness_matches_the_tree.py",
-        "sha256": "a22ba998f8217bb73df3c9500c6feacff12aa79b"
+        "sha256": "74602a0cf4c768a9e3ba78f19c6f33e6f082e8f5"
       },
       {
         "path": "tests/tooling/test_mainline_archive_is_continuous.py",
@@ -35913,7 +35913,7 @@
       },
       {
         "path": "tools/run_m0_with_witness.py",
-        "sha256": "32a106983f5a670d9a9872dc8a648c0f507cad89"
+        "sha256": "9fdd14a8d227a4d2b7bbcc166600e98306468648"
       },
       {
         "path": "tools/snapshot_migrate.py",
@@ -36224,11 +36224,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "d45fb23de2574068d3b032e5ce3a67cef6eddf3e"
+    "head": "1463a8f2e7070c1e95ad1559ec9a2a80256ee2f1"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "d45fb23de2574068d3b032e5ce3a67cef6eddf3e",
+  "ran_at_head": "1463a8f2e7070c1e95ad1559ec9a2a80256ee2f1",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

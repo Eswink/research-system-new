@@ -35,6 +35,7 @@ from packages.application.run_orchestration.phase_pause import (
 from packages.application.run_orchestration.prior_knowledge import with_prior_knowledge
 from packages.application.run_orchestration.report_task import register_and_gate_report
 from packages.application.run_orchestration.retrieval_context import with_retrieval_context
+from packages.application.run_orchestration.review_material import with_review_material
 from packages.application.run_orchestration.review_panel_judging import (
     panel_plan,
     panel_rejection,
@@ -99,6 +100,8 @@ class PhaseRunnerDeps:
     retrieval_context: Callable[[str], Any] | None = None
     #: GOAL-20261018-082 EC-01：前序知识 → 提示词的装配器（与检索同一求值点；None ⇒ 无该段）。
     prior_knowledge: Callable[[str], Any] | None = None
+    #: GOAL-20261020-091 EC-02：被评对象 → 评审者提示词的装配器（同上求值点；None ⇒ 无该段）。
+    review_material: Callable[[Any, Any], Any] | None = None
     output_schema_validator: Any | None = None
     memory_gate: MemoryGateDeps | None = None
     publish: Callable[[EventType, dict[str, object], str, str, str | None], None] | None = None
@@ -348,6 +351,8 @@ def _run_group_task(
     spec_context = with_retrieval_context(deps, task, spec_context)
     # GOAL-20261018-082 EC-01：前序知识 → 同一 spec 的第二个槽位（与检索同一求值点）。
     spec_context = with_prior_knowledge(deps, task, spec_context)
+    # GOAL-20261020-091 EC-02：**被评对象** → 同一 spec 的第四槽位（只有评审者挂）。
+    spec_context = with_review_material(deps, task, spec_context)
     with operation(
         deps.telemetry,
         scope=OperationScope.TASK,

@@ -24,6 +24,7 @@ from services.api.composition import ApiDeps
 from services.api.demo import seed_declared_inputs
 from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.retrieval_context_support import retrieval_context_builder
+from services.api.review_material_support import review_material_builder
 from services.api.runtime_support import build_agent_runtime, resolve_runtime_selection
 
 
@@ -265,6 +266,8 @@ def _build_pg_orchestration(
             ),
             # GOAL-20261018-082 EC-01：前序知识 → 会话提示词（与检索同一求值点）。
             prior_knowledge=prior_knowledge_builder(memory_store=c["memory"]),
+            # GOAL-20261020-091 EC-02：**被评对象** → 评审者提示词（与 SQLite 根同侧）。
+            review_material=review_material_builder(c),
             project_direction=project_direction_builder(project_store=c["project_store"]),
             telemetry=config.telemetry,
             pricing=_load_pricing(),

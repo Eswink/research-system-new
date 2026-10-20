@@ -149,9 +149,13 @@ def declared_object(payload: Mapping[str, Any], *, key: str | None = None) -> Ma
     if parsed is None:
         # 给了期望键却解不出来 ⇒ **点名**（不静默返回信封：那会让下游看到
         # `content` 而不是模型声明的那份对象，而错误会出现在更远的地方、指错方向）。
+        # 形状用**字面量**给（GOAL-20261020-091：原先写在一个 f-string 的嵌套花括号里，
+        # 那道表达式会被当成格式说明符 ⇒ 这条 fail-closed 分支自己抛 `ValueError`，
+        # 于是「解不出来」被报成一个无关的格式化错误）。
+        shape = "{'" + str(key) + "': {...}}"
         raise InvalidInputError(
             f"the producer's reply carries no JSON object with the key {key!r}"
-            f" (expected a block like {{{'{key}': { {...} }}}} in the reply text)"
+            f" (expected a block like {shape} in the reply text)"
         )
     return parsed
 

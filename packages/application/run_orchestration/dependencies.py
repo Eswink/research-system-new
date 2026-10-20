@@ -56,6 +56,10 @@ class OrchestrationDependencies:
     #: GOAL-20261018-082 EC-01：**前序知识** → 会话提示词的装配器（每任务求值）。
     #: None ⇒ 提示词里没有那一段（既有语义逐字不变）。
     prior_knowledge: Any | None = None
+    #: GOAL-20261020-091 EC-02：**被评对象** → 评审者提示词的装配器
+    #: （`(task, declared_cross_phase_inputs) -> ReviewMaterialView`；每任务求值）。
+    #: None（缺省）⇒ 提示词里没有那一段（既有语义逐字不变）。
+    review_material: Any | None = None
     #: GOAL-20261019-089 EC-02：**本项目的研究方向**解析器（`(project_id) -> str | None`）。
     #: None（缺省）⇒ 没有方向面，提示词逐字节等于既有形态。解析失败由**调用方**决定：
     #: 本层不吞异常（「读不到方向」与「没有方向」必须分得开）。

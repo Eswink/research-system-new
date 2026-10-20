@@ -85,6 +85,7 @@ from services.api.idempotency import IdempotencyStore
 from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.project_direction_support import project_direction_builder
 from services.api.retrieval_context_support import retrieval_context_builder
+from services.api.review_material_support import review_material_builder
 from services.api.runtime_support import (
     RuntimeSelection,
     build_agent_runtime,
@@ -333,8 +334,8 @@ def _sqlite_orchestration(
             retrieval_context=retrieval_context_builder(
                 artifacts=ports.artifacts, ledger=ports.ledger
             ),
-            # GOAL-20261018-082 EC-01：前序知识 → 会话提示词（与检索同一求值点）。
             prior_knowledge=prior_knowledge_builder(memory_store=ports.memory_store),
+            review_material=review_material_builder(ports),  # 被评对象（只挂 REVIEWER）
             project_direction=project_direction_builder(project_store=ports.project_store),
             telemetry=telemetry,
             pricing=ports.pricing,

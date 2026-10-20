@@ -251,3 +251,41 @@ def test_the_head_does_not_participate_in_the_coverage_decision() -> None:
     mutated = dict(recorded["fingerprint_after"])
     mutated["head"] = "0" * 40
     assert tool.covered_files(mutated) == files, "改 head 不该改变覆盖判定的输入"
+
+
+def test_verify_only_reports_the_three_states_without_writing() -> None:
+    """`--verify-only`（GOAL-20261020-091 EC-06）：**只读**地报三态，且**不写见证**。
+
+    为什么需要这一档：跑完门之后、提交之前，人需要一个不改变见证的办法确认「刚才那次 m0
+    覆盖的还是这棵树吗」。写见证会改变它所描述的对象（GOAL-090 的三次 CI 判红就是这个
+    形态），所以这一档必须是**纯读**。
+
+    判据（三条都钉住）：
+    1. 见证在位时：返回 `0`（覆盖成立）或 `1`（指纹不等），且**见证字节一字不变**；
+    2. 见证不在位时（搬到临时目录）：返回 `2`，且**不创建**见证；
+    3. 它**不跑门**：没有任何 runner 进程被启动（用一条假的 `RUNNER` 路径钉住 —— 真被调用
+       就会因路径不存在而抛错，而不是静默跳过）。
+    """
+    tool = _tool_module()
+    import shutil
+    import tempfile
+    from pathlib import Path
+
+    if not WITNESS.is_file():
+        pytest.skip("见证不在位 ⇒ 本用例的第一段无对象可测（覆盖关系由其它用例负责）")
+
+    before = WITNESS.read_bytes()
+    code = tool.verify_only()
+    assert code in (0, 1), code
+    assert WITNESS.read_bytes() == before, "`--verify-only` 不得写见证（它是纯读的一面）"
+
+    with tempfile.TemporaryDirectory() as directory:
+        moved = Path(directory) / "witness.json"
+        shutil.copyfile(WITNESS, moved)
+        original = tool.WITNESS
+        tool.WITNESS = Path(directory) / "absent.json"
+        try:
+            assert tool.verify_only() == 2, "见证缺失 ⇒ 必须报第三态（2），不得与「不等」混为一谈"
+            assert not tool.WITNESS.exists(), "缺失态下不得凭空创建见证"
+        finally:
+            tool.WITNESS = original

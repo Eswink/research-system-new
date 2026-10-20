@@ -226,13 +226,78 @@ def _record(
     }
 
 
+def verify_only() -> int:
+    """只重算当前树指纹并与**已有**见证比对（**不跑门、不写见证**）。
+
+    它是顺序纪律的**只读一面**（GOAL-20261020-091 EC-06）：跑完门、提交之前想确认
+    「刚才那次 m0 覆盖的还是这棵树吗」时用它 —— 它**不改变**见证，因此用它检查不会把
+    「谁覆盖了什么」这件事搅混（写见证会；那正是 GOAL-090 三次 CI 判红的形态）。
+
+    退出码表达**三态**（与判据的三态逐条对应）：
+    `0` = 覆盖成立；`1` = 指纹不等（逐条点名差在哪个文件）；`2` = 见证缺失/不可解析。
+    """
+    if not WITNESS.is_file():
+        # 用 `_label()` 而不是 `relative_to`：见证路径可被注入（判据用它测第三态），
+        # 注入值不一定是树内路径，`relative_to` 会抛 `ValueError` 而不是报第三态。
+        print(f"覆盖不成立：见证不存在（{_label(WITNESS)}）", flush=True)
+        return 2
+    try:
+        recorded = json.loads(WITNESS.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        print(f"覆盖不成立：见证不可解析（{error}）", flush=True)
+        return 2
+    current = tree_fingerprint()
+    before = _rows(recorded.get("fingerprint_after"))
+    now = _rows(current)
+    if before == now:
+        print(f"覆盖成立：见证覆盖的就是当前这棵树（{len(now)} 个受判面文件）", flush=True)
+        return 0
+    added = sorted(now - before)
+    removed = sorted(before - now)
+    print(
+        f"覆盖不成立：见证与当前树的内容不同 ⇒ 最后一次全量 m0 跑的不是这份内容。"
+        f" 内容变了/新增 {len(added)} 项；见证里有而当前没有 {len(removed)} 项。",
+        flush=True,
+    )
+    for path, digest in (added + removed)[:10]:
+        print(f"  {path}  {digest}", flush=True)
+    print(
+        "修法：若刚跑完门又改了树，**重跑门**（不要改判据）："
+        " uv run --frozen --no-sync python -B tools/run_m0_with_witness.py",
+        flush=True,
+    )
+    return 1
+
+
+def _label(path: Path) -> str:
+    """路径的可读标签（树内 ⇒ 相对路径；树外 ⇒ 原样）—— 判据会注入树外路径。"""
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def _rows(fingerprint: object) -> set[tuple[str, str]]:
+    """指纹 → `(路径, 内容哈希)` 集合（覆盖判定用的那一面；与判据同一口径）。"""
+    files = fingerprint.get("files", []) if isinstance(fingerprint, dict) else []
+    return {(str(item.get("path")), str(item.get("sha256"))) for item in files}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run m0 and write a tree-bound witness.")
     parser.add_argument(
         "--keep-going", action="store_true", default=True, help="传给 runner（默认开）"
     )
     parser.add_argument("--skip-run", action="store_true", help="只重算并写指纹（调试用）")
+    parser.add_argument(
+        "--verify-only",
+        action="store_true",
+        help="只比对已有见证与当前树（不跑门、不写见证；退出码表达三态）",
+    )
     args = parser.parse_args(argv)
+
+    if args.verify_only:
+        return verify_only()
 
     before = tree_fingerprint()
     log, code = ("", 0) if args.skip_run else _run_gate(str(before["head"]))

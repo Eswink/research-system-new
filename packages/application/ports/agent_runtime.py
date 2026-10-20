@@ -64,6 +64,10 @@ class AgentSessionSpec:
     #: GOAL-20261019-089 EC-02：**研究方向那一段**（项目的声明事实；缺省 `None` ⇒ 逐字节不变）。
     #: 与另两段**并列**：方向是「被要求研究什么」，不是「系统取回了什么」。
     direction_prompt: str | None = None
+    #: GOAL-20261020-091 EC-02：**被评对象那一段**（本 phase 声明的上游产物的有界摘录）。
+    #: 与另三段**并列**：前几段说「被要求做什么 / 已经知道什么 / 取回了什么」，这一段说
+    #: 「你要判的是这一件东西」。缺省 `None` ⇒ 提示词逐字节等于既有形态。
+    review_material_prompt: str | None = None
     budget_reservation: BudgetReservation | None = None
     manifest_ref: str | None = None
     endpoint: LLMEndpoint | None = None

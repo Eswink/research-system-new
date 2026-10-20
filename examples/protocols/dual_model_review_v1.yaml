@@ -1,0 +1,82 @@
+id: dual_model_review_v1_0_0
+version: 0.1.0
+
+# **两个真不同的模型对同一产物各判一次**的研究协议（GOAL-20261020-091 EC-03 / EC-04）。
+#
+# **它补哪一格**：阶梯「复检」域的 `下一级` 是「评审真的用不同模型判出负」。在它之前，
+# 三件事已就位（GOAL-084 配置不相交 / 085 判词可归因且可聚合 / 086–087 同 phase 成组且
+# 一位判负不取消同批），但**结构上仍做不到**「判出不同结论」：
+#
+#   1. 真实会话的交付物是**信封**（模型正文在 `content` 里），而 `REVIEW_SCORE` 只按顶层
+#      点分路径取值 ⇒ 判词恒 `review score unknown` ⇒ 恒判负。**两个模型无论各自判什么，
+#      判定面看到的都是同一个「不知道」**。GOAL-091 EC-01 让取值面也认信封。
+#   2. 上游产物只以**证据**身份落库、不进评审者的提示词 ⇒ 两位评的**不是同一件东西**。
+#      GOAL-091 EC-02 让声明了跨相输入的评审 phase 拿到**被评对象**的有界摘录（第四段）。
+#
+# **两格的分工**（跨相输入是它们之间唯一的通道）：
+#
+#   1. `author`（会话）—— 写 `research_plan`：一段可被判读的产物（问题 / 假设 / 判据）。
+#      判据：产物存在（**不**判内容质量 —— 与既有真实合约同一条诚实边界）。
+#   2. `review`（会话 × 2）—— `inputs: [author:research_plan]` ⇒ 本格开工时上游产物已在
+#      canonical；两位评审者（`reviewer_a` → `glm-5.3`、`reviewer_b` → `kimi-k2.6`）
+#      **各自**读到同一份被评对象，各写一条判词与一个分数。
+#      合约 `dual_model_review_deliverable` 的 `REVIEW_SCORE`（`review_decision.score`，
+#      `GTE 0.8`）让**每位评审者自己给的数**参与判定；`review_panel:
+#      COMPLETE_THEN_JUDGE` 让同批**都评完再判**（一位判负不取消另一位）。
+#
+# **受控范围**（写明，不夸大也不缩小）：**2 个 phase、3 次真实模型会话（1 位作者 + 2 位
+# 评审者）、0 条检索、0 次实验**。它判的是「两位评审者**跑在不同的执行目标上**、
+# 读到**同一件被评对象**、各自的判词**可归因**且分歧**可读**」这几条机械事实；
+# 它**不**判「评审判得对」（那要人评），也**不**声称两个模型一定给出不同结论 ——
+# 若真跑同判，那是**同质化读数**（GOAL 的 EC-04 明写：如实登记，不构造人为分歧）。
+#
+# **为什么评审格声明 `run_chain`**：会话工具面 = 冻结集 − 本相 run-chain 排除。本协议
+# 没有任何运行链调用（`RunChainCall`），声明它只是把本相能力面的 provider 全部排除出
+# **会话工具列表** ⇒ 会话面为**空**，于是没有名字需要一个生产装配里不存在的实现
+# （与 `direction_to_question_v1` 的 `question` 格同一手法）。冻结集 / preflight / 策略面
+# **一字不减**。
+
+phases:
+  - id: author
+    name: Author The Artifact Under Review
+    strategy: single_agent
+    required_roles:
+      - {role: research_director, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      # 下面两条**不是为了在本相检索**：会话工具面 = 冻结集 − 本相 run-chain 排除，而
+      # 排除面由本相 `tool_requirements` 的 provider 并集决定 ⇒ 能力面不覆盖某个 provider，
+      # 它就**漏进**会话面而没有注册实现。与 `research_report_chain_v1` 的立题格同一手法。
+      - literature.search
+      - literature.read
+    capability_execution: run_chain
+    task_contract: dual_model_review_plan
+    # **无声明输入**：作者要写的是**新产物**，不是「读某件东西再判」。声明输入会让它
+    # 多一条与实际执行无关的来源，而那会掩蔽本协议要看的「两位评审者读的是同一件产物」。
+    outputs: [research_plan]
+    timeout_seconds: 300
+
+  - id: review
+    name: Two Independent Reviewers Judge The Same Artifact
+    strategy: single_agent
+    depends_on: [author]
+    required_roles:
+      # **两位**评审者：`min_instances: 2` 让同一个 phase 上出现两个 agent 实例
+      # （`reviewer_a` → `glm-5.3`、`reviewer_b` → `kimi-k2.6`）—— 判词因此可归因到
+      # **两个不同的执行目标**，而它们评的是**同一件**被评对象（跨相输入逐字同一份）。
+      - {role: scientific_reviewer, min_instances: 2, max_instances: 2}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - literature.search
+      - literature.read
+    capability_execution: run_chain
+    # 本格的**声明输入**就是上游的产物：编译期校验（产出方是自己的上游、该产物名在它的
+    # `outputs` 里、产出方唯一）⇒ 摘掉 `author` 这个 phase 会**编译期点名**失败。
+    # 运行期这条输入有两个消费者：① 证据链（覆盖门）；② **提示词的第四段**（被评对象，
+    # GOAL-091 EC-02）—— 后者是本协议存在的理由。
+    inputs: [author:research_plan]
+    task_contract: dual_model_review_deliverable
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 300

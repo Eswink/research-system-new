@@ -38,6 +38,9 @@ PRIOR_SECTION_TITLE = "PRIOR KNOWLEDGE (from earlier runs in this project; build
 #: GOAL-20261019-089 EC-02：**研究方向**那一段的标题（与另两段**并列**）。
 DIRECTION_SECTION_TITLE = "PROJECT DIRECTION (the operator's stated research direction)"
 
+#: GOAL-20261020-091 EC-02：**被评对象**那一段的标题（与另三段**并列**）。
+REVIEW_MATERIAL_SECTION_TITLE = "UNDER REVIEW (the artifact you are asked to judge)"
+
 #: 被截断条目的标注（**逐字**；判据按它判「截断可见」）。
 TRUNCATED_MARK = "[truncated]"
 #: 待复核条目的标注（**逐字**）。
@@ -92,12 +95,28 @@ def render_prior_knowledge_prompt(view: Any) -> str:
     return "\n".join(lines)
 
 
+def _section_of(value: Any, render: Any) -> str:
+    """一段的值 → **那段文本**（已渲染的 `str` 原样用，视图对象交给 `render`）。
+
+    **为什么必须两种都认**（GOAL-20261020-091 实测到的既有缺陷）：
+    `task_executor._run_session` 把 **已渲染好的 `str`** 放进 `AgentSessionSpec`
+    （`session_prompts.*_prompt` 的返回），而 `SessionBuilder` 又把它交给 `compose_prompt`
+    —— 若这里只按**视图对象**渲染，`render_retrieval_prompt("<已渲染的 str>")` 会去找
+    `entries` 属性、拿不到 ⇒ 返回**空串** ⇒ **那一段被静默丢弃**。实测读数：真实 run 的
+    reviewer 会话收到的提示词长度 1082、内容只有合约文本（被评对象段整个不见），
+    两位模型都如实报告「UNDER REVIEW 段不存在」。同一条缝对检索段 / 前序段一直存在。
+    """
+    if isinstance(value, str):
+        return value
+    return str(render(value) or "")
+
+
 def prompt_with_retrieval(purpose: str, view: Any) -> str:
     """合约 purpose + 检索那一段（**无摘录 ⇒ 逐字返回 purpose**）。
 
     顺序：**先任务后来源** —— 模型先知道要做什么，再看到手上的材料。
     """
-    section = render_retrieval_prompt(view)
+    section = _section_of(view, render_retrieval_prompt)
     if not section:
         return purpose
     return f"{purpose}\n\n{section}"
@@ -109,7 +128,7 @@ def prompt_with_prior_knowledge(purpose: str, view: Any) -> str:
     单独一个入口（不复用 `prompt_with_retrieval`）：两段可以**同时**在场，也可以各自缺席；
     把「拼接顺序」写在一处（`compose_prompt`）而不是散在调用点。
     """
-    section = render_prior_knowledge_prompt(view)
+    section = _section_of(view, render_prior_knowledge_prompt)
     if not section:
         return purpose
     return f"{purpose}\n\n{section}"
@@ -136,22 +155,61 @@ def prompt_with_direction(purpose: str, direction: str | None) -> str:
     return chr(10).join([purpose, "", section])
 
 
+def render_review_material_prompt(view: Any) -> str:
+    """`ReviewMaterialView` → **被评对象**那一段（**空集合 ⇒ 空串**）。
+
+    与另三段**并列**、不替换：那三段说的是「被要求做什么 / 已经知道什么 / 取回了什么」，
+    这一段说的是「你要评的是这一件东西」—— 混进任何一段都会让「模型看到的被评对象」
+    与「落库的那份制品」不可分辨。
+
+    逐条带**产物名 + 内容摘要**：前者是「这是谁的哪件产物」，后者让读面能把提示词里
+    的那段字节与 canonical 制品对上（截断后也一样 —— 摘要是**展示出去的那些字节**的摘要）。
+    """
+    entries = tuple(getattr(view, "entries", ()) or ())
+    if not entries:
+        return ""
+    lines = [REVIEW_MATERIAL_SECTION_TITLE, ""]
+    for entry in entries:
+        name = str(getattr(entry, "artifact_name", "") or "")
+        digest = str(getattr(entry, "digest", "") or "")
+        shown = str(getattr(entry, "shown", "") or "")
+        mark = f" {TRUNCATED_MARK}" if getattr(entry, "truncated", False) else ""
+        lines.append(f"- {name}{mark} (content digest: {digest}):")
+        lines.append(shown)
+        lines.append("")
+    return "\n".join(lines)
+
+
+def prompt_with_review_material(purpose: str, view: Any) -> str:
+    """合约 purpose + **被评对象**那一段（**无条目 ⇒ 逐字返回 purpose**）。"""
+    section = _section_of(view, render_review_material_prompt)
+    if not section:
+        return purpose
+    return f"{purpose}\n\n{section}"
+
+
 def compose_prompt(
     purpose: str,
     *,
     direction: str | None = None,
     prior_knowledge: Any = None,
     retrieval: Any = None,
+    review_material: Any = None,
 ) -> str:
-    """合约 purpose + [方向] + [前序知识] + [检索摘录]（全缺 ⇒ **逐字**返回 purpose）。
+    """合约 purpose + [方向] + [前序知识] + [检索摘录] + [被评对象]。
 
-    **顺序 = 先方向、再前序、最后检索**：模型先知道**被要求研究什么**，再知道自己
-    **已经**知道什么（立题的起点），最后看到这一轮新取回的材料（对起点的更新）。
+    **顺序 = 先方向、再前序、再检索、最后被评对象**：模型先知道**被要求研究什么**，
+    再知道自己**已经**知道什么（起点），再看到这一轮新取回的材料（对起点的更新），
+    最后看到**它这一轮要判的那件东西**（`GOAL-20261020-091 EC-02`）—— 被评对象放在
+    最后读，紧贴它要给出的判词。
+
+    **全缺 ⇒ 逐字返回 purpose**（四段各自的零回归口径在本函数里合成一条）。
     """
     text = prompt_with_direction(purpose, direction)
     for view, render in (
         (prior_knowledge, prompt_with_prior_knowledge),
         (retrieval, prompt_with_retrieval),
+        (review_material, prompt_with_review_material),
     ):
         if view is not None:
             text = render(text, view)
@@ -163,12 +221,15 @@ __all__ = [
     "PROMPT_SECTION_TITLE",
     "PRIOR_SECTION_TITLE",
     "REVIEW_DUE_MARK",
+    "REVIEW_MATERIAL_SECTION_TITLE",
     "TRUNCATED_MARK",
     "compose_prompt",
     "prompt_with_direction",
     "prompt_with_prior_knowledge",
     "prompt_with_retrieval",
+    "prompt_with_review_material",
     "render_direction_prompt",
     "render_prior_knowledge_prompt",
     "render_retrieval_prompt",
+    "render_review_material_prompt",
 ]

@@ -16,6 +16,8 @@ from dataclasses import dataclass, field, replace
 from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping
 
+from packages.application.ports.errors import InvalidInputError
+from packages.application.run_orchestration.phase_input_material import declared_object
 from packages.domain.acceptance import (
     CriterionEvaluation,
     CriterionInputs,
@@ -92,6 +94,18 @@ def declared_review_score(
     fail-closed（返回 `None` ⇒ 既有判词 `review score unknown`）：没声明路径、路径缺失、
     值不是数（布尔/字符串/缺失）。**绝不**回落到 0 或某个默认分：那会把「没有评审结论」
     伪装成「评审结论很差」，两者处置完全相反。
+
+    **信封形态**（GOAL-20261020-091 EC-01）：真实会话的交付物是**信封** ——
+    `{declared_artifact: {content: "<模型正文>", message_count: …}}`（见
+    `adapters/openhands/runtime_adapter.py::_deliverable`）。模型自己写下的分数在
+    **正文**里，不在顶层键下；只按顶层路径取值会让每一份真实评审都落进
+    `review score unknown` ⇒ 两个评审模型无论各自判什么，判定面看到的都是同一个
+    「不知道」——「评审真的用不同模型判出负」因此**结构不可达**。
+    本函数在**路径的每一段**上先看它是不是信封，是则用**既有** `declared_object`
+    的解包口径取出模型声明的那份对象，再继续走路径。
+
+    解包**只**发生在信封的两个判别键同时成立时（`declared_artifact` 在场 + `content`
+    是字符串）；解析不出 / 不是对象 ⇒ 走既有 fail-closed（**不**猜、**不**回落）。
     """
     paths = [
         criterion.metric
@@ -107,6 +121,9 @@ def declared_review_score(
                 value = None
                 break
             value = value[part]
+            unwrapped = _unwrap_deliverable(value, key=part)
+            if unwrapped is not None:
+                value = unwrapped
         if isinstance(value, bool) or not isinstance(value, (int, float, Decimal, str)):
             continue
         try:
@@ -114,6 +131,30 @@ def declared_review_score(
         except (InvalidOperation, ValueError):
             continue
     return None
+
+
+def _unwrap_deliverable(value: Any, *, key: str) -> Mapping[str, Any] | None:
+    """一个值若是**交付物信封** ⇒ 模型声明的那份对象；否则 `None`（原样继续）。
+
+    为什么复用 `phase_input_material.declared_object` 而不是在这里写第二份解包：两处问的是
+    同一个问题（「模型正文里它声明的对象是哪个」），两份解析必然漂 —— 运行链参数材料与
+    验收判据会给出不同的答案，而那种漂移在读数上表现为「分数在某些路径上取得到、
+    在另一些路径上取不到」。**解不出来 ⇒ `None`**（信封判别键不在场 / 正文不是字符串 /
+    正文里没有带该键的对象）⇒ 调用方保持既有 fail-closed。
+    """
+    if not isinstance(value, Mapping):
+        return None
+    if "declared_artifact" not in value or not isinstance(value.get("content"), str):
+        return None
+    try:
+        declared = declared_object(value, key=key)
+    except InvalidInputError:
+        # 正文里没有带该键的对象 ⇒ 不可判 ⇒ 不猜（由调用方 fail-closed）。
+        return None
+    # 正文里的形状是 `{产物名: {...}}`（合约给的形状）；取**内层**，与
+    # `phase_input_material.input_material` 的取法逐字一致（同一个解包口径，不双挂）。
+    inner = declared.get(key)
+    return inner if isinstance(inner, Mapping) else declared
 
 
 @dataclass(frozen=True, slots=True)

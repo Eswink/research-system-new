@@ -609,6 +609,88 @@ task_contracts:
       max_attempts: 1
       retryable_categories: []
 
+  # GOAL-20261020-091 EC-03/EC-04：**两位评审者判同一件产物**的两份契约。
+  #
+  # 与 `review_scored_deliverable` 的关系：那份是「一件评审交付物、分数进判据面」的
+  # 最小实证（1 phase / 1 会话），它的 `REVIEW_SCORE` 被 GOAL-035 的判据与夹具逐字复用
+  # ⇒ **不改它**。本组新增的是**配对**：上游写产物 + 下游两位评审者各判一次。
+  #
+  # 为什么评审契约声明 `review_panel: COMPLETE_THEN_JUDGE`（GOAL-087 的并列键）：评审格
+  # 有**两位** agent，而 `_run_group_task` 在一位判负时会立刻返回 ⇒ 第二位连跑都不跑、
+  # 分歧永远不出现（实测：`state: FAILED, records: 1, panels: []`）。声明它 ⇒ 同批都评完
+  # 并落库、组末再判负（**终态仍是 `FAILED`**，改的只是时机与可见性）。
+
+  dual_model_review_plan:
+    version: 1.0.0
+    purpose: >
+      TASK — write a short research plan that another model will independently review.
+      The system will read your reply as the `research_plan` artifact; two reviewers
+      (running on **different** models) then judge that same artifact, each with its own
+      verdict and score. There is nothing to implement or explore — reply directly.
+
+      Your reply must contain, in this order:
+
+      1. The plan itself: the question this study addresses, the hypothesis, and a
+         concrete falsification test (what observation would refute the hypothesis).
+      2. A fenced JSON block named `research_plan`, exactly in this shape:
+
+             {"research_plan": {"question": "<one sentence>", "hypothesis": "<one sentence>", "refutation_test": "<one sentence>"}}
+
+      Keep it under 200 words. Do not claim that any experiment was run.
+    required_capabilities:
+      - artifact.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: research_plan
+    timeout_seconds: 300
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  dual_model_review_deliverable:
+    version: 1.0.0
+    purpose: >
+      TASK — judge the `research_plan` you were given, then state a score. The artifact
+      under review is included **below this task text**, under the heading
+      "UNDER REVIEW (the artifact you are asked to judge)"; it is the same artifact the
+      other reviewer on this phase receives, so judge **only** what is written there.
+      There is nothing to implement.
+
+      Your reply must contain, in this order:
+
+      1. Your verdict and the reasons for it: does the plan state a question, a hypothesis
+         and a falsification test that could actually refute the hypothesis? Name the
+         weakest link you can see. Be specific about what is missing or wrong.
+      2. A fenced JSON block named `review_decision`, exactly in this shape:
+
+             {"review_decision": {"verdict": "<ACCEPT or REJECT>", "score": <0.0-1.0>, "weakest_link": "<one sentence>"}}
+
+      Scoring rule: `score` is your own confidence that the plan is worth executing as
+      written; use a value **below 0.8** if you believe it should not be executed as
+      written, and **0.8 or above** if it should. State the number you actually mean —
+      the acceptance gate reads it.
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: review_decision
+      # 分数来源被点名：`review_decision.score`（评审者自己给的数）。真实会话的交付物是
+      # **信封**（正文在 `content` 里）⇒ 取值面认信封（GOAL-091 EC-01）。
+      - type: REVIEW_SCORE
+        metric: review_decision.score
+        operator: GTE
+        threshold: 0.8
+    timeout_seconds: 300
+    failure_policy:
+      # 同批**都评完再判**（一位判负不取消另一位）—— 否则分歧永远不出现（GOAL-087）。
+      review_panel: COMPLETE_THEN_JUDGE
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
   research_report_deliverable:
     version: 1.0.0
     purpose: >
