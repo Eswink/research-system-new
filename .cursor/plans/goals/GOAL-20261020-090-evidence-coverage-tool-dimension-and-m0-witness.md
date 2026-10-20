@@ -263,3 +263,20 @@ memory_entries: []
 | --- | --- | --- |
 | 2026-10-20 | **ACTIVE** | **建档**：承 GOAL-089 的 `W-6` 残余（其 `escalation_triggers` 明写「改 `TrustLabel` ⇒ 停下登记」）与用户「走你推荐的吧」的授权，按上一轮分析里的「C 先收口、A 下一轮」落地。 |
 | 2026-10-20 | **ACHIEVED** | EC-01…EC-05 全达成。工具维三维正交且两向按压判红并逐字节复原；出厂检索格声明并升版 1.1.0；m0 见证三态语义成立、自我指涉边界经实测修掉。如实登记 `A` 未做、见证边界三条。 |
+
+
+## CI 台账
+
+（逐提交逐 job。**判红也如实登记**，含根因与修法 —— 本轮三次判红全是同一个
+「见证到底绑什么」的问题被 CI 逐层剥出来的。）
+
+| 提交 | run | 结论 | 说明 |
+| --- | --- | --- | --- |
+| `effbe9e5` | [M0 39393817815](https://github.com/Eswink/research-system-new/actions/runs/39393817815) | **六绿二红** | `quality-{ubuntu,windows}-latest` 判红：见证记的是**脏文件清单**（本地 24 项 vs CI 0 项）⇒ 恒不等 |
+| `67ea1e87` | [M0 39402864270](https://github.com/Eswink/research-system-new/actions/runs/39402864270) | **六绿二红** | 仍红：改按**工作树字节** sha256 后差 **489 个文件** —— `.gitattributes` 的 `* text=auto eol=lf` 让 Windows/Linux 字节不同 |
+| `3ad1279b` | [M0 39408628948](https://github.com/Eswink/research-system-new/actions/runs/39408628948) | **六绿二红** | 仍红：改走 `git hash-object` 后内容**零差异**，但见证把 `head` 纳入比较 ⇒ 提交前后 HEAD 不同即判红 |
+| `479771db` + `c9a5e6d5` | [M0 39414187734](https://github.com/Eswink/research-system-new/actions/runs/39414187734) | **八 job 全 `success`** | 见证只比**内容清单**（`covered_files`，不含 HEAD）⇒ 本地与 CI、提交前后都吻合 |
+
+**这三次红是同一个判据在三次自我修正**，不是三个独立缺陷 —— 每一次都揭示了
+「见证的**绑定对象**选错了」：先绑 git 状态，再绑平台相关的字节，最后绑提交身份。
+正确的对象只有一个：**门看到的内容**。
