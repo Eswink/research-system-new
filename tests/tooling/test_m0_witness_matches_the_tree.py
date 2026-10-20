@@ -89,7 +89,13 @@ def _witness() -> dict[str, Any]:
 
 
 def test_the_witness_is_for_the_tree_we_are_looking_at() -> None:
-    """核心：见证里的指纹 == 当前树的指纹。"""
+    """核心：见证里的指纹 == 当前树的指纹（**按文件内容**比，不按 git 状态比）。
+
+    **为什么必须按内容**（GOAL-090 CI 实测）：第一版指纹只记 `git status` 的脏文件，
+    本地跑门时有 24 个未提交改动、CI 是干净检出 ⇒ 同一个提交在两处的指纹**永远不等**
+    ⇒ 判据在 CI 上恒红（`effbe9e5` 的 M0 两个 quality job 就是这样红的）。
+    这条纪律问的是「门看到的**内容**现在还在不在」，不是「有没有未提交改动」。
+    """
     tool = _tool_module()
     recorded = _witness()
     current = tool.tree_fingerprint()
@@ -97,12 +103,9 @@ def test_the_witness_is_for_the_tree_we_are_looking_at() -> None:
         return
 
     # 逐条点名差异，而不是只说「不相等」：判词要能直接指向该改哪一步。
-    def rows(fingerprint: Any) -> set[tuple[str, str, str]]:
-        dirty = fingerprint.get("dirty", []) if isinstance(fingerprint, dict) else []
-        return {
-            (str(item.get("path")), str(item.get("status")), str(item.get("sha256")))
-            for item in dirty
-        }
+    def rows(fingerprint: Any) -> set[tuple[str, str]]:
+        files = fingerprint.get("files", []) if isinstance(fingerprint, dict) else []
+        return {(str(item.get("path")), str(item.get("sha256"))) for item in files}
 
     before = rows(recorded.get("fingerprint_after"))
     now = rows(current)
@@ -110,10 +113,10 @@ def test_the_witness_is_for_the_tree_we_are_looking_at() -> None:
     removed = sorted(before - now)
     pytest.fail(
         "m0 见证与当前树**不一致** ⇒ 最后一次全量 m0 覆盖的不是现在这棵树"
-        "（典型成因：跑完门之后又提交/改动了受判文件，于是那次终态行失效）。\n"
+        "（典型成因：跑完门之后又改动了受判文件，于是那次终态行失效）。\n"
         f"  见证记录的 HEAD: {recorded.get('ran_at_head')}；当前 HEAD: {current.get('head')}\n"
-        f"  当前有而见证没有（{len(added)} 项）：{added[:10]}\n"
-        f"  见证有而当前没有（{len(removed)} 项）：{removed[:10]}\n"
+        f"  内容变了/新增（{len(added)} 项）：{added[:10]}\n"
+        f"  见证里有而当前没有（{len(removed)} 项）：{removed[:10]}\n"
         "  修法：把记录推到最后一个动作，然后重跑 "
         "`uv run --frozen --no-sync python -B tools/run_m0_with_witness.py`，之后**不再改树**。"
     )
@@ -192,3 +195,27 @@ def test_the_in_progress_state_is_a_real_third_state_not_a_silent_pass() -> None
     assert "finally:" in tool_source and "MARKER.unlink(missing_ok=True)" in tool_source, (
         tool_source[:800]
     )
+
+
+def test_the_fingerprint_does_not_depend_on_git_dirtiness() -> None:
+    """**指纹必须与「有没有未提交改动」无关**（GOAL-090 CI 实测的回归钉）。
+
+    第一版指纹记的是 `git status` 的脏文件清单 ⇒ 本地（24 个未提交改动）与
+    CI（干净检出）对**同一个提交**给出不同指纹 ⇒ 判据在 CI 上恒红。这条判据钉住
+    修好后的语义：指纹只由**文件内容**决定。
+
+    反证方式不靠「再跑一次 git」：直接断言指纹的载荷**不含**任何 git 状态字段
+    （`dirty` / `status`），且含内容字段 `files` —— 结构上就不可能有「同一内容、
+    不同状态 ⇒ 不同指纹」这件事。
+    """
+    tool = _tool_module()
+    fingerprint = tool.tree_fingerprint()
+    assert "files" in fingerprint, f"指纹必须按内容记录（files）：{list(fingerprint)}"
+    assert "dirty" not in fingerprint, (
+        f"指纹不得含 git 脏文件清单（那会让本地与 CI 永远不等）：{list(fingerprint)}"
+    )
+    for item in fingerprint["files"]:
+        assert set(item) == {"path", "sha256"}, f"每个条目只应有 path 与 sha256（无状态码）：{item}"
+        assert item["path"] not in {".cursor/plans/goals/evidence/M0-WITNESS.json"}, (
+            "见证文件本身必须在自我指涉边界之外"
+        )

@@ -95,26 +95,33 @@ def _watched(relative: str) -> bool:
 
 
 def tree_fingerprint() -> dict[str, object]:
-    """当前树的指纹：HEAD + **受判面**里每个脏文件的（状态, sha256）。"""
+    """当前树的指纹：HEAD + **受判面文件内容**的 sha256 清单。
+
+    **为什么是「内容清单」而不是「脏文件清单」**（GOAL-090 CI 实测的缺陷）：
+    第一版只记 `git status` 的脏文件。本地跑门时工作树有 24 个未提交改动，
+    而 CI 是**干净检出**（0 个脏文件）⇒ 同一个提交在两处的指纹**永远不相等**
+    ⇒ 判据在 CI 上恒红。这不只是噪声：它让「覆盖关系」与「有没有未提交改动」
+    被错误地绑在一起，而后者根本不是这条纪律要问的东西。
+
+    正确的语义是「门看到的**内容**现在还在不在」。所以指纹按**文件内容**算：
+    对受判面下每个被跟踪文件取 `git ls-files` 的路径、读工作树字节算 sha256。
+    ⇒ 干净检出与「已提交 + 工作树同内容」得到**同一个**指纹；只有**内容**变了
+    才变。未提交但内容相同的改动不影响（那是 git 的状态问题，不是覆盖问题）。
+    """
     head = _git("rev-parse", "HEAD").strip()
-    porcelain = _git("status", "--porcelain")
-    dirty: list[dict[str, str]] = []
-    for line in porcelain.splitlines():
-        if not line.strip():
+    tracked = [line for line in _git("ls-files", "-z").split("\0") if line]
+    files: list[dict[str, str]] = []
+    for relative in tracked:
+        if not _watched(relative):
             continue
-        status, _, relative = line[:2], line[2:3], line[3:]
-        # 重命名形态 `R  old -> new`：两边都记（旧侧消失也算树的改动）。
-        parts = [part.strip() for part in relative.split("->")]
-        for part in parts:
-            if not _watched(part):
-                continue
-            target = ROOT / part
-            digest = ""
-            if target.is_file():
-                digest = hashlib.sha256(target.read_bytes()).hexdigest()
-            dirty.append({"path": part, "status": status.strip(), "sha256": digest})
-    dirty.sort(key=lambda item: (item["path"], item["status"], item["sha256"]))
-    return {"head": head, "dirty": dirty}
+        target = ROOT / relative
+        if not target.is_file():
+            # 被跟踪但工作树里已删除 ⇒ 记录为缺失（这也是一种内容状态）。
+            files.append({"path": relative, "sha256": ""})
+            continue
+        files.append({"path": relative, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
+    files.sort(key=lambda item: item["path"])
+    return {"head": head, "files": files}
 
 
 def fingerprint_digest(fingerprint: dict[str, object]) -> str:

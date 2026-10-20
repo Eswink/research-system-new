@@ -138,7 +138,8 @@ memory_entries: []
 | `exit_code` | `0` |
 | `tree_changed_during_the_run` | `False`（跑门期间工作树静止，见证与运行同一棵树） |
 | 见证落点 | `.cursor/plans/goals/evidence/M0-WITNESS.json`（**树内被跟踪**，CR=0） |
-| 见证判据复跑 | **6 passed**（指纹相等 ⇒ 覆盖关系成立） |
+| 见证判据复跑 | **7 passed**（指纹相等 ⇒ 覆盖关系成立） |
+| 指纹口径 | **按文件内容**（4526 个受判面文件 × sha256），**不含** git 脏状态 |
 
 **运行条件**：`RESEARCHOS_AGENT_RUNTIME` / `RESEARCHOS_LIVE_E2E` / `RESEARCHOS_LIVE_LLM`
 均未设置；`RESEARCHOS_POSTGRES_DSN` 与 `RESEARCHOS_POSTGRES_TEST_DSN` 置空；
@@ -147,3 +148,22 @@ memory_entries: []
 **这一节本身是顺序纪律的产物**：见证绑定的是「跑门那一刻的树」，所以读数只能**在门之后**
 写。GOAL-089 为此多跑了三次全量 m0；本轮把顺序当受判对象走，只跑一次得到正式见证，
 并在门内以第三态（进行中标记）处理「见证尚未写」这个结构必然。
+
+## 七、CI 判红如实登记（`effbe9e5`，已修）
+
+`effbe9e5` 的 M0：`quality-ubuntu-latest` 与 `quality-windows-latest` **判红**，其余六 job
+`success`。红点逐字：
+
+```
+Failed: m0 见证与当前树**不一致** ⇒ 最后一次全量 m0 覆盖的不是现在这棵树
+  见证记录的 HEAD: 0c641955…；当前 HEAD: effbe9e5…
+  见证有而当前没有（24 项）：[('.cursor/memory/INDEX.md', 'M', …), …]
+```
+
+**这是本轮的真缺陷，不是 flake**：第一版指纹记的是「脏文件清单」，本地有 24 个未提交改动、
+CI 是干净检出 ⇒ **同一个提交在两处指纹永远不等**。本地 23/23 全绿**没能预测**它，因为
+本地那次运行的指纹与本地工作树天然自洽。
+
+**修法**：指纹改按**文件内容**算（4500+ 个受判面文件的 sha256），并单列判据禁止
+`dirty` / `status` 回到指纹里。**这条记入「本地绿 ≠ CI 绿」的实例**：判据的正确性
+必须在**两种工作树形态**（有未提交改动 / 干净检出）下都成立。
