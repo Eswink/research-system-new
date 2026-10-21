@@ -249,10 +249,20 @@ memory_entries:
 | `eff7c34d` | [M0 39486782767](https://github.com/Eswink/research-system-new/actions/runs/39486782767) | **八 job 全 `success`** | `eff7c34d` 与 `7f5446ab` 的推送被合并成一个 run；两条都跑在内 |
 | `aec28e2c` | （记录提交） | — | 只改 GOAL / RECHECK 两份记录；**未单独触发 run**（与下一条一起推） |
 | `5e949122` | [M0 39494047272](https://github.com/Eswink/research-system-new/actions/runs/39494047272) | **八 job 全 `success`** | 最终树（含 CI 台账 + 重新封印的见证）；CodeQL [39494047688](https://github.com/Eswink/research-system-new/actions/runs/39494047688) 三 job 全 `success` |
+| `00a78259` | [M0 39519158090](https://github.com/Eswink/research-system-new/actions/runs/39519158090) | **八 job 全 `success`** | 收口脚本进射程后的最终树：`console-frontend` / `collector-quality` / `container-quality` / `eval-gate` / `observability-overhead-{ubuntu,windows}-latest` / `quality-{ubuntu,windows}-latest` 全 success；`Push on main` 39519157628 success |
+
+**判红只发生在本地**（`python/tests` 因判据文件自身超 450 行），修完推送后 CI 一次全绿；
+下句是当时（`5e949122`）的读数，`00a78259` 这一批同样零判红。
 
 **零判红**：本轮 CI **一次全绿**，与 GOAL-090（三次判红）不同 —— 但**本地**抓到一次
 「`--verify-only` 报覆盖不成立」的真缺陷（新增文件在被跟踪前不在受判面），已在提交后
 重跑 m0 并取得覆盖成立的正式见证（4540 个受判面文件）。
+
+**自指边界（如实登记，不假装闭合）**：台账里 `00a78259` 这一行的结论是在该提交推送**之后**
+才写下的 ⇒ 写下它这件事本身又产生（且必须产生）一个新提交，而新提交自己那次 run 的结论
+无法再写回树而不产生第三个提交。链条在**本文件所在提交**处终止：它只改记录，其自身 run 的
+结论在收口报告里如实给出、**不写回台账**（GOAL-089 同一手法）。本地最终 m0 的终态行与
+见证覆盖关系在提交前成立，这就是本 GOAL 的最后一笔受判读数。
 
 **收口面（最后一步）**：
 

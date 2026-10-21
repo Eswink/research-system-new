@@ -309,6 +309,17 @@ TWO-TREE PASS
   文件）」）；`tree_changed_during_the_run: false`。
 - 受判面从 4540 涨到 4542 = 本轮收口脚本两件（提交后才进入受判面，故第二次重跑）。
 
+## 八之七、推送后的 CI 读数（`00a78259`）
+
+- [M0 39519158090](https://github.com/Eswink/research-system-new/actions/runs/39519158090)：**八 job 全 `success`**（`console-frontend` / `collector-quality` / `container-quality` /
+  `eval-gate` / `observability-overhead-{ubuntu,windows}-latest` / `quality-{ubuntu,windows}-latest`）；
+  `Push on main` 39519157628 `success`。
+- **零判红**：本轮的唯一一次判红发生在**本地**（`python/tests`，判据文件自身 452 行），
+  修完推送后 CI 一次全绿 —— 与 GOAL-090 的「三次 CI 判红逐层剥出见证绑错对象」不同。
+- **自指边界**：这一行是 `00a78259` 推送后才写下的 ⇒ 记录改动让见证如实判红（`test_the_witness_is_for_the_tree_we_are_looking_at`），因此收口前**再跑一次**全量 m0 并把见证与记录一起提交；
+  该提交自身那次 run 的结论不写回树（与上一行同一理由）。
+
+
 ## 九、未覆盖范围（如实登记）
 
 - **`W-1`：`REVIEW_SCORE` 的分数仍是「评审者自述」**。本轮只让它的**来源**（信封里的正文）
