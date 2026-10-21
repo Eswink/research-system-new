@@ -180,6 +180,8 @@ FAILED tests/tooling/test_m0_witness_matches_the_tree.py::test_the_witness_is_fo
 文件**的树重写。读数：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、
 0 FAILED、`tree changed during the run: False`、覆盖 **4554** 个受判面文件
 （上轮 4555，差的那一个正是被删的文件）、`--verify-only` 退出码 `0`。
+**最终读数（收口 tip）**：覆盖 **4556** 个受判面文件 —— 收口补正后记录变了、门重跑过，
+以 `M0-WITNESS.json` 为准。
 
 ## 八、残余风险与未覆盖范围
 
