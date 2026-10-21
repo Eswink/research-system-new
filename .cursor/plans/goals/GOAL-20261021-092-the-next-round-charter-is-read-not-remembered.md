@@ -2,7 +2,7 @@
 id: GOAL-20261021-092
 slug: the-next-round-charter-is-read-not-remembered
 title: 下一轮的 charter 由上一轮的残余与阶梯机械派生，读取器带反证臂
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-21
 updated_at: 2026-10-21
 owners:

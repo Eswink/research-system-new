@@ -113,8 +113,18 @@ m0 条数（23）、`test_mainline_*.py` 三条宪章判据、`test_python_sourc
   → 提交推送
 ```
 
-**读数**：（见下方「m0 见证」一栏；由正式见证 `M0-WITNESS.json` 的 `terminal_line` 与
-`tree_changed_during_the_run` 承担）。
+**读数**（正式见证 `.cursor/plans/goals/evidence/M0-WITNESS.json` 与 runner 日志）：
+
+| 项 | 读数 |
+| --- | --- |
+| 终态行 | `PASS: profile=m0; 23 deterministic checks` |
+| `PASS [` 行数 | **24** |
+| `FAILED` | **0** |
+| `tree changed during the run` | `False` |
+| 见证覆盖 | **4556** 个受判面文件（`--verify-only` 退出码 `0`） |
+
+**CI 到终态**：见 GOAL「CI 台账」逐提交逐 job —— 前两轮各判红一次（都是**见证与树的绑定**
+问题、都是我造成的树状态），最终 tip 八 job 全 `success`。
 
 ## 七、既有缺陷 / 真实发现（本轮）
 
