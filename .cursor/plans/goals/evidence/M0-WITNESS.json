@@ -1728,7 +1728,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261021-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "61bf9ea0796cb0987f5dcca477f5aa442040e46d"
+        "sha256": "652d3baca3379001d926ebb24feea5329b2255f5"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -3988,7 +3988,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "1f26eaa940bf7fd6880eea1b27420154b7676b0d"
+        "sha256": "ac8bfb86532cd76477e683bd72c1b1e57be3512a"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -17820,7 +17820,7 @@
       },
       {
         "path": "tools/goal092_closeout_assertions.py",
-        "sha256": "d9e7b2d02d48105904a73d6877d9f897fb4b905b"
+        "sha256": "90bed0855c768a3e2b45a48f7642f5367f0ee6a6"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -18227,7 +18227,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "27e4056466ea672ecb9e056c29d13c384f3b10a4"
+    "head": "e3e53cfb193e7dee3e00745f7695c204c5001572"
   },
   "fingerprint_before": {
     "files": [
@@ -19957,7 +19957,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261021-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "61bf9ea0796cb0987f5dcca477f5aa442040e46d"
+        "sha256": "652d3baca3379001d926ebb24feea5329b2255f5"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -22217,7 +22217,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "1f26eaa940bf7fd6880eea1b27420154b7676b0d"
+        "sha256": "ac8bfb86532cd76477e683bd72c1b1e57be3512a"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -36049,7 +36049,7 @@
       },
       {
         "path": "tools/goal092_closeout_assertions.py",
-        "sha256": "d9e7b2d02d48105904a73d6877d9f897fb4b905b"
+        "sha256": "90bed0855c768a3e2b45a48f7642f5367f0ee6a6"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -36456,11 +36456,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "27e4056466ea672ecb9e056c29d13c384f3b10a4"
+    "head": "e3e53cfb193e7dee3e00745f7695c204c5001572"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "27e4056466ea672ecb9e056c29d13c384f3b10a4",
+  "ran_at_head": "e3e53cfb193e7dee3e00745f7695c204c5001572",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
