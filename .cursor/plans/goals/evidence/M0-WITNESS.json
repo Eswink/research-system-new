@@ -1728,7 +1728,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261021-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "f035f59b156b081b4b8eaf63f1e1b1d80a48d4f8"
+        "sha256": "c6630df36775d1f3436a9891414a8e4e3f00c3c1"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -18227,7 +18227,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "ab87f47c634adb190868f2a062acae8988021023"
+    "head": "0abcd99992016d2dbda7af0ba192793d8baf85d9"
   },
   "fingerprint_before": {
     "files": [
@@ -19957,7 +19957,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261021-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "f035f59b156b081b4b8eaf63f1e1b1d80a48d4f8"
+        "sha256": "c6630df36775d1f3436a9891414a8e4e3f00c3c1"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -36456,11 +36456,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "ab87f47c634adb190868f2a062acae8988021023"
+    "head": "0abcd99992016d2dbda7af0ba192793d8baf85d9"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "ab87f47c634adb190868f2a062acae8988021023",
+  "ran_at_head": "0abcd99992016d2dbda7af0ba192793d8baf85d9",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
