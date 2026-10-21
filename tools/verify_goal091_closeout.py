@@ -51,7 +51,9 @@ SELF = "tools/verify_goal091_closeout.py"
 ASSERTIONS = "tools/goal091_closeout_assertions.py"
 
 GOAL = ".cursor/plans/goals/GOAL-20261020-091-two-models-judge-the-same-artifact.md"
-EVIDENCE = ".cursor/plans/rechecks/RECHECK-20261020-091-goal-091-two-models-judge-the-same-artifact.md"
+EVIDENCE = (
+    ".cursor/plans/rechecks/RECHECK-20261020-091-goal-091-two-models-judge-the-same-artifact.md"
+)
 #: 子计划 / 复检（记录面逐条在位）。
 CHILD_PLANS: tuple[str, ...] = (
     ".cursor/plans/tasks/PLAN-20261020-091-goal-091-two-models-judge-the-same-artifact.md",

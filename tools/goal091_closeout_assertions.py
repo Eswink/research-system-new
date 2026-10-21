@@ -78,42 +78,43 @@ def _has(root: Path, relative: str, needle: str) -> bool:
     return needle in path.read_text(encoding="utf-8")
 
 
-def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
-    """本 GOAL 特有的断言（判关系；判词不含绝对路径）。"""
-    verdicts: list[Any] = []
-
-    # ---- EC-01：信封形态的取值面 ----
-    verdicts.append(
+def _ec01_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-01：信封形态的取值面（判词进判定面）。"""
+    return [
         toolbox.verdict(
             "review-score-unwraps-the-deliverable-envelope",
             _has(root, GATE, ENVELOPE_GUARD) and _has(root, GATE, UNWRAP_CALL),
-            "`declared_review_score` 必须在路径每段上解信封（否则真实会话恒 `review score unknown`）",
-        )
-    )
-    verdicts.append(
+            "`declared_review_score` 必须在路径每段上解信封"
+            "（否则真实会话恒 `review score unknown`）",
+        ),
         toolbox.verdict(
             "envelope-unwrap-reuses-the-existing-parser",
-            _has(root, GATE, "from packages.application.run_orchestration.phase_input_material import")
+            _has(
+                root,
+                GATE,
+                "from packages.application.run_orchestration.phase_input_material import",
+            )
             and _has(root, GATE, "declared_object"),
             "解包必须复用 `declared_object`（两处各写一份解析必然漂）",
-        )
-    )
-    verdicts.append(
+        ),
         toolbox.verdict(
             "review-score-stays-fail-closed",
-            _has(root, GATE, '"review score unknown"') or _has(root, "packages/domain/acceptance.py", "review score unknown"),
+            _has(root, GATE, "review score unknown")
+            or _has(root, "packages/domain/acceptance.py", "review score unknown"),
             "解不出来必须仍报 `review score unknown`（不得回落默认分）",
-        )
-    )
-    verdicts.append(
+        ),
         toolbox.verdict(
             "phase-input-material-format-bug-is-gone",
-            not _has(root, MATERIAL, "{'{key}': { {...} }}"),
-            "`declared_object` 的 fail-closed 分支不得再用嵌套花括号当格式说明符（会自己抛 ValueError）",
-        )
-    )
+            not _has(root, MATERIAL, "'{key}': { {...} }"),
+            "`declared_object` 的 fail-closed 分支不得再用嵌套花括号当格式说明符"
+            "（会自己抛 ValueError）",
+        ),
+    ]
 
-    # ---- EC-02：被评对象进提示词 ----
+
+def _ec02_module_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-02 前半：`review_material.py` 的五个公开面。"""
+    verdicts: list[Any] = []
     for name in (
         "def build_review_material(",
         "def is_reviewer(",
@@ -128,13 +129,18 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
                 f"`review_material.py` 缺 `{name}`",
             )
         )
-    verdicts.append(
+    return verdicts
+
+
+def _ec02_prompt_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-02 后半：提示词第四段、缝合线与两个组合根的接线。"""
+    verdicts: list[Any] = [
         toolbox.verdict(
             "prompt-has-a-fourth-section",
             _has(root, PROMPT, REVISION_SECTION),
             "`retrieval_prompt` 必须有被评对象那一段的标题常量",
         )
-    )
+    ]
     verdicts.append(
         toolbox.verdict(
             "compose-prompt-takes-the-fourth-slot",
@@ -146,7 +152,8 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
         toolbox.verdict(
             "rendered-strings-pass-through-the-composer",
             _has(root, PROMPT, SECTION_OF) and _has(root, PROMPT, STRING_PASSTHROUGH),
-            "`_section_of` 必须在位：`SessionBuilder` 提交的是**已渲染的 str**，只按视图渲染会把段静默丢掉",
+            "`_section_of` 必须在位：`SessionBuilder` 提交的是**已渲染的 str**，"
+            "只按视图渲染会把段静默丢掉",
         )
     )
     for relative in (SQLITE_ROOT, PG_ROOT):
@@ -164,31 +171,28 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
             "装配面闭包必须在 `services/api/review_material_support.py`",
         )
     )
+    return verdicts
 
-    # ---- EC-03/04：协议、契约、真跑 ----
-    verdicts.append(
+
+def _ec03_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-03/04：协议、契约、真跑与例数下界。"""
+    verdicts: list[Any] = [
         toolbox.verdict(
             "protocol-declares-two-reviewers",
             _has(root, PROTOCOL, TWO_INSTANCES),
             "评审格必须有**两位**评审者（否则面板无从成立）",
-        )
-    )
-    verdicts.append(
+        ),
         toolbox.verdict(
             "protocol-feeds-the-upstream-artifact-to-the-reviewers",
             _has(root, PROTOCOL, "inputs: [author:research_plan]"),
             "评审格必须声明跨相输入（被评对象只能是上游产物）",
-        )
-    )
-    verdicts.append(
+        ),
         toolbox.verdict(
             "review-contract-completes-the-panel-before-judging",
             _has(root, CONTRACTS, PANEL_KEY),
             "评审契约必须声明 `review_panel: COMPLETE_THEN_JUDGE`（一位判负不取消同批）",
-        )
-    )
-
-    # ---- 判据文件的例数下界 ----
+        ),
+    ]
     for relative, floor in CASE_FLOORS:
         path = root / relative
         count = _count_cases(path.read_text(encoding="utf-8")) if path.is_file() else 0
@@ -201,23 +205,35 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
         verdicts.append(
             toolbox.verdict(f"prior-judge-{Path(relative).stem}", (root / relative).is_file())
         )
+    return verdicts
 
-    # ---- EC-06：见证的只读面 ----
-    verdicts.append(
+
+def _ec06_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-06：见证的只读面（`--verify-only`）。"""
+    return [
         toolbox.verdict(
             "witness-tool-has-verify-only",
             _has(root, WITNESS_TOOL, CLI_FLAG),
             "见证工具必须有 `--verify-only`（纯读、三态退出码）",
-        )
-    )
-    verdicts.append(
+        ),
         toolbox.verdict(
             "verify-only-does-not-write-the-witness",
-            _has(root, WITNESS_TOOL, "def verify_only() -> int:") and _has(root, WITNESS_TOOL, "_rows("),
+            _has(root, WITNESS_TOOL, "def verify_only() -> int:")
+            and _has(root, WITNESS_TOOL, "_rows("),
             "`verify_only` 必须只读（不得写见证）——写它会改变它所描述的对象",
-        )
-    )
-    return verdicts
+        ),
+    ]
+
+
+def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """本 GOAL 特有的断言（按 EC 分组；判关系；判词不含绝对路径）。"""
+    return [
+        *_ec01_verdicts(root, toolbox),
+        *_ec02_module_verdicts(root, toolbox),
+        *_ec02_prompt_verdicts(root, toolbox),
+        *_ec03_verdicts(root, toolbox),
+        *_ec06_verdicts(root, toolbox),
+    ]
 
 
 __all__ = ["CASE_FLOORS", "PRIOR_JUDGES", "assertion_verdicts"]

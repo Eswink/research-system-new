@@ -1720,7 +1720,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261020-091-two-models-judge-the-same-artifact.md",
-        "sha256": "25ed82ee3d0d9f1427e5a27d09d7d69ca0053ed6"
+        "sha256": "0d485e6a98b68eca417335c323b90a98144fbf01"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -3956,7 +3956,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261020-091-goal-091-two-models-judge-the-same-artifact.md",
-        "sha256": "fbb504b038e896b85ee07ce61a7fd142a6942057"
+        "sha256": "11a027712d6f09923bee12c2bd53b1255cc746d4"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -17176,7 +17176,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "5e91b6bac31ee0549fbf486bc3c1a8e2135bbf10"
+        "sha256": "4f2080f0a1120274a3c4e224406d9b4d2c477c12"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -17272,7 +17272,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "b4893c69bd17350fad216fc5bc068ef3e5fb6079"
+        "sha256": "e555c264446409cb8a1c2c6734af760439dc5839"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -17771,6 +17771,10 @@
         "sha256": "f5ce62f4d85bcdf1327a4d0effad818300037673"
       },
       {
+        "path": "tools/goal091_closeout_assertions.py",
+        "sha256": "b5c4cde013b0bcd8af07dae020bc3ac879866232"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -18159,11 +18163,15 @@
         "sha256": "d3e527dad83d118d2aab06911cd2ae8a07a2dd07"
       },
       {
+        "path": "tools/verify_goal091_closeout.py",
+        "sha256": "34c05b514df0117b26c0c63dd9e73937151e4e1f"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "a6b1c44f608dba5b0dd4155e0b3d63f291972eed"
+    "head": "b3a1e1e8b3d55dea39c80c000888cb3eb7d2252b"
   },
   "fingerprint_before": {
     "files": [
@@ -19885,7 +19893,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261020-091-two-models-judge-the-same-artifact.md",
-        "sha256": "25ed82ee3d0d9f1427e5a27d09d7d69ca0053ed6"
+        "sha256": "0d485e6a98b68eca417335c323b90a98144fbf01"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -22121,7 +22129,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261020-091-goal-091-two-models-judge-the-same-artifact.md",
-        "sha256": "fbb504b038e896b85ee07ce61a7fd142a6942057"
+        "sha256": "11a027712d6f09923bee12c2bd53b1255cc746d4"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -35341,7 +35349,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "5e91b6bac31ee0549fbf486bc3c1a8e2135bbf10"
+        "sha256": "4f2080f0a1120274a3c4e224406d9b4d2c477c12"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -35437,7 +35445,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "b4893c69bd17350fad216fc5bc068ef3e5fb6079"
+        "sha256": "e555c264446409cb8a1c2c6734af760439dc5839"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -35936,6 +35944,10 @@
         "sha256": "f5ce62f4d85bcdf1327a4d0effad818300037673"
       },
       {
+        "path": "tools/goal091_closeout_assertions.py",
+        "sha256": "b5c4cde013b0bcd8af07dae020bc3ac879866232"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -36324,15 +36336,19 @@
         "sha256": "d3e527dad83d118d2aab06911cd2ae8a07a2dd07"
       },
       {
+        "path": "tools/verify_goal091_closeout.py",
+        "sha256": "34c05b514df0117b26c0c63dd9e73937151e4e1f"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "a6b1c44f608dba5b0dd4155e0b3d63f291972eed"
+    "head": "b3a1e1e8b3d55dea39c80c000888cb3eb7d2252b"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "a6b1c44f608dba5b0dd4155e0b3d63f291972eed",
+  "ran_at_head": "b3a1e1e8b3d55dea39c80c000888cb3eb7d2252b",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

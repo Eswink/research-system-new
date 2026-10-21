@@ -268,8 +268,10 @@ HEAD），每一版都在 CI 上立刻红；这一次**本地全绿、`--verify-
 ## 八之四、两树复检（收口面）
 
 ```
-TREE current=D:esearch-system exit=0 verdicts=65 sha256=b947d020939c926e568783358893c647f1914e88176e754c60c37d98610f32ee
-TREE clean=D:esearch-system-clean-tree exit=0 verdicts=65 sha256=b947d020939c926e568783358893c647f1914e88176e754c60c37d98610f32ee
+TREE current=D:
+esearch-system exit=0 verdicts=65 sha256=b947d020939c926e568783358893c647f1914e88176e754c60c37d98610f32ee
+TREE clean=D:
+esearch-system-clean-tree exit=0 verdicts=65 sha256=b947d020939c926e568783358893c647f1914e88176e754c60c37d98610f32ee
 COMPARE identical=True
 TWO-TREE PASS
 ```
@@ -282,6 +284,30 @@ TWO-TREE PASS
 
 **收口脚本**：`tools/verify_goal091_closeout.py`（标准断言集 + `tools/goal091_closeout_assertions.py`
 的本轮特有断言 + 记录面），**65 条判词全 PASS、零 FAIL**。
+
+## 八之五、收口后又抓到一处（本轮第二次「判据文件自身的缺陷」）
+
+**现象**：把本轮两个收口脚本登记进 `IN_SCOPE`（四道门的显式清单）之后，**全量 m0 判红**
+一处：`test_python_source_size_limits` 说 `tests/tooling/test_tooling_scripts_meet_product_gates.py`
+自己超了 450 行硬顶。定向套件（`test_tooling_scripts_meet_product_gates.py`）当时是绿的 ——
+因为该文件自己受 `tests/` 的规模门约束，而定向跑不经过那个参数化测试。
+
+**这与 GOAL-090 记下的形态同族**：新判据文件自身的三类缺陷（可选类型未收窄 / 显式清单未
+登记 / 函数或文件超限）**只有全量 m0 抓得到**。本轮第二次撞上同一个坑的第三个分支（文件
+行数）。
+
+**修法（纯位移，不改判据语义）**：把该文件顶部的射程说明散文压缩一行（三条 bullet 合成
+两行），腾出被两条新登记项占用的体积，回到恰好 **450** 行；`ruff format --check` /
+`ruff check` / 规模门 / mypy 四道门重跑全绿（1330 passed）。
+
+**如实说明**：这不是「为了绿而改判据」——判据的逻辑一字未改，改的是该文件自己的散文排版。
+
+## 八之六、收口读数（第二次全量 m0，覆盖成立）
+
+- `PASS [` **24** 行、`FAILED:` **0** 行、终态行 `PASS: profile=m0; 23 deterministic checks`。
+- 见证：`--verify-only` 退出码 `0`（「覆盖成立：见证覆盖的就是当前这棵树（**4542** 个受判面
+  文件）」）；`tree_changed_during_the_run: false`。
+- 受判面从 4540 涨到 4542 = 本轮收口脚本两件（提交后才进入受判面，故第二次重跑）。
 
 ## 九、未覆盖范围（如实登记）
 

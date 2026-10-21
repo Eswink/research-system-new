@@ -7,11 +7,9 @@
 2. `ruff check`（既有 `pyproject.toml` 已含 `max-complexity = 10` 与 `line-length = 100`）；
 3. **规模**：函数 ≤ 50 行（`end_lineno - lineno + 1`）、文件 ≤ 450 行（`splitlines()`）；
 4. `mypy`（既有 `strict = true`；**实测可稳定机械执行** ⇒ 无豁免）。
-**射程写在判据源码里**（承 MEM-141：只靠文档取射程会被改文案绕过）：
-- **必备清单** `IN_SCOPE`（源码里固化；每加一个脚本都要**显式**加进来，见分区判据）；
-- **加**规范页点名的脚本（`RECHECK_SCRIPT_CONVENTIONS.md` 的 `tools/**.py`）；
-- **不得**是「扫整个 `tools/`」：既有 lint / format 错 ⇒ 以**清单 + 理由**登记在
-  `LEGACY_OUT_OF_SCOPE`。
+**射程写在判据源码里**（承 MEM-141：只靠文档取射程会被改文案绕过）：必备清单 `IN_SCOPE`
+（源码里固化；每加一个脚本都要**显式**加进来，见分区判据）+ 规范页点名的脚本；**不得**是
+「扫整个 `tools/`」：既有 lint / format 错 ⇒ 以**清单 + 理由**登记在 `LEGACY_OUT_OF_SCOPE`。
 """
 
 from __future__ import annotations
@@ -218,8 +216,10 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal087_closeout.py",
     "tools/goal088_closeout_assertions.py",  # GOAL-20261018-088 EC-05：同上。
     "tools/verify_goal088_closeout.py",
-    "tools/goal089_closeout_assertions.py",  # GOAL-20261019-089 EC-05：同上。
+    "tools/goal089_closeout_assertions.py",
     "tools/verify_goal089_closeout.py",
+    "tools/goal091_closeout_assertions.py",  # GOAL-20261020-091 EC-05：同上。
+    "tools/verify_goal091_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
