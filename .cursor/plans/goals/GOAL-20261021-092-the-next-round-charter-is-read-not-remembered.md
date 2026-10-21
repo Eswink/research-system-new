@@ -95,7 +95,7 @@ exit_criteria:
       见证 `terminal_line` = `PASS: profile=m0; 23 deterministic checks`、`PASS [` 24 行、
       0 FAILED、`tree changed during the run: False`；`tools/two_tree_recheck.py` 两树同结论；
       治理校验器通过。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 14
   per_cycle_minutes: 90
@@ -298,6 +298,7 @@ memory_entries:
 | --- | --- | --- |
 | 2026-10-21 | **ACTIVE** | **建档**：承用户 goal-mode 指令「把上一轮输出 → 下一轮提示词这一步从人工变成机器」。建档实测三处缺口（无「下一轮输入」制品 / `W-NN` 编号只是弱约定 / 阶梯的「下一级」无消费者）。序 60 = 程序表最后一个名额；`max_cycles: 14`。 |
 | 2026-10-21 | **ACTIVE** | **CI 首轮 2/8 判红**（`9326c788`）：见证里有而树里没有 `tests/tooling/tools_gate_scope.py` —— 那是我中途试拆分清单、`git add` 过又回退删除留下的一条空哈希记录。判据（正确地）判红；修法是**重跑门让见证对着新树重写**，不碰判据。 |
+| 2026-10-21 | **ACHIEVED** | 五个 EC 全达成。**CI 到终态**：`975d7780` 八 job 全 `success`（前两轮各判红一次，都是**见证与树的绑定**问题、都是我自己造成的树状态，判据两次都正确地咬住）。**两树复检**：62 条判词、两树 `sha256` 逐字相同（`7cb35313…`）。**战役预算从此用尽**（`max_goals` 60，序 60 是最后一行）⇒ 已登记「需用户决定扩表或收兵」。 |
 
 ## CI 台账
 
@@ -306,4 +307,5 @@ memory_entries:
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | `9326c788` | [M0 39553118966](https://github.com/Eswink/research-system-new/actions/runs/39553118966) | **2/8 job 判红** | `quality-ubuntu-latest` / `quality-windows-latest` 同一个判据：`test_the_witness_is_for_the_tree_we_are_looking_at`，点名「见证里有而当前没有 1 项：`tests/tooling/tools_gate_scope.py`」。**根因是我造成的树状态**（中途试过拆分清单文件、`git add` 过又回退删除，见证记住了那个已删条目）。**本地那一次 `--verify-only` 报「覆盖成立」** ⇒ 这是「本地绿、CI 红」的一个**具体可指**的实例：见证与本地树互相自洽。其余 6 job（`collector-quality` / `container-quality` / `observability-overhead-{ubuntu,windows}` / `console-frontend` / `eval-gate`）全 `success` |
-| （修复提交） | — | — | 重跑 `run_m0_with_witness.py`（对**没有那个文件**的树重写见证）后提交；读数：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`、覆盖 **4554** 个受判面文件、`--verify-only` 退出码 `0` |
+| `7f8bf2a5` | [M0 39558553519](https://github.com/Eswink/research-system-new/actions/runs/39558553519) | **1 判红 / 1 取消 / 6 success** | 同一个见证判据，**但根因换了**：我在门跑完之后又改了 GOAL 与 RECHECK（去登记上一轮判红本身）⇒ 见证覆盖的不是提交后的树（差 **4** 项内容 + **2** 项名称）。`quality-windows-latest` 是 **`cancelled`**（`cancel-in-progress` 在 `quality-ubuntu` 判红后取消在途 job）—— **零 run ≠ cancelled、cancelled ≠ 判红**，如实分开记 |
+| `975d7780` | [M0 39564741935](https://github.com/Eswink/research-system-new/actions/runs/39564741935) | **八 job 全 `success`** | **最终树**：`console-frontend` / `collector-quality` / `container-quality` / `eval-gate` / `observability-overhead-{ubuntu,windows}-latest` / `quality-{ubuntu,windows}-latest` 全 success；`Push on main` [39564740930](https://github.com/Eswink/research-system-new/actions/runs/39564740930) success。**本次只提交见证**（记录一个字未改）⇒ 见证覆盖的就是 CI 检出的那棵树。**CodeQL 未触发**（该工作流的触发面不含本提交路径；如实登记为「无 run」而非「通过」） |
