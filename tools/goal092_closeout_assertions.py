@@ -269,10 +269,59 @@ def _latest_recheck(goal_text: str) -> str:
     return match.group(1) if match else ""
 
 
+#: 提交短哈希（台账与迭代日志里的形态）。
+_COMMIT = re.compile(r"`([0-9a-f]{7,40})`")
+
+
+def _section(text: str, heading: str) -> str:
+    """某个二级小节的正文（到下一个 `## ` 为止；缺节 ⇒ 空串）。"""
+    start = text.find(heading)
+    if start == -1:
+        return ""
+    tail = text[start + len(heading) :]
+    end = tail.find("\n## ")
+    return tail if end == -1 else tail[:end]
+
+
+def _log_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """**迭代日志必须逐 cycle 一行**（提示词的显式要求；GOAL-090 因此被补正过一次）。
+
+    不写「行数 >= N」这种拍脑袋的下界 —— 那既可能漏（把两次修复并成一行）也可能假红。
+    判的是**可核对的覆盖关系**：CI 台账里出现的**每一个提交**，都必须在迭代日志的某一行的
+    `commits` 格里出现。把多次修复压成散文的日志，必然有提交只活在台账、不在任何 cycle 行里
+    ⇒ 判红并逐条点名是哪些提交。
+    """
+    goal = _text(root, GOAL)
+    ledger = _section(goal, "## CI 台账")
+    log = _section(goal, "## 迭代日志")
+    logged = set(_COMMIT.findall(log))
+    committed = set(_COMMIT.findall(ledger))
+    unlogged = sorted(item for item in committed if item not in logged)
+    rows = len([line for line in log.splitlines() if re.match(r"^\| \d+ \|", line)])
+    return [
+        toolbox.verdict(
+            "iteration-log-has-one-row-per-cycle",
+            rows >= 2,
+            f"迭代日志只有 {rows} 行 ⇒ 多次修复被压成散文（要求逐 cycle 一行）",
+        ),
+        toolbox.verdict(
+            "every-ledgered-commit-appears-in-a-cycle-row",
+            not unlogged,
+            f"这些提交只出现在 CI 台账、没有任何 cycle 行收录：{unlogged}",
+        ),
+        toolbox.verdict(
+            "the-iteration-log-is-not-vacuous",
+            bool(committed) and bool(logged),
+            "受判面为空（台账无提交或日志无提交）⇒ 本条失去判据对象",
+        ),
+    ]
+
+
 def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """本轮特有断言（验证器把它与标准断言集拼起来）。"""
     return [
         *_delivery_verdicts(root, toolbox),
         *_usage_verdicts(root, toolbox),
         *_record_verdicts(root, toolbox),
+        *_log_verdicts(root, toolbox),
     ]

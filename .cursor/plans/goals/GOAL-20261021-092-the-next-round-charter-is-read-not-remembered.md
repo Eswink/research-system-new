@@ -223,10 +223,20 @@ memory_entries:
 
 ## 迭代日志
 
+（**逐 cycle 一行**，不把多次修复压成散文。每一行的「修复」是该 cycle **真的修掉**的东西，
+「剩余差距」是该 cycle 结束时**仍未达成**的东西 —— 两者都按当时的读数写。）
+
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261021-092 | 见「CI 台账」 | 读取器 + 解析原语落地；判据 **19 passed**（含 9 条拒绝臂与 2 条确定性）；在 GOAL-091 真文件上产出骨架（残余 **7/7**、阶梯命中「复检」、CI「全绿」），两次落盘 `sha256` 相同 | 见「CI 台账」 | 0（四道门与判据首轮全绿：新脚本**先登记后写**） | EC-05 收口 | 见「上一轮残余的处置」 |
+| 1 | PLAN-20261021-092 | （未提交） | 读取器与解析原语落地；`pytest tests/tooling/test_next_round_charter.py` ⇒ **19 passed**（9 条拒绝臂 + 2 条确定性 + 口径同源）；对 GOAL-091 真文件产出骨架：残余 **7/7**、阶梯命中「复检」、CI 台账 5 success + 1 无 run ⇒「全绿」；两次落盘 `sha256` 相同（`2776ad06…`）；四道门自跑全绿 | 无（未推送） | **4**：① 读取器首版 **517 行** > 450 ⇒ 拆出 `charter_parse.py`；② 判据辅助函数把 `R-1…R-3` 的缩进续行吞进最后一条 ⇒ 显式「非缩进行结束当前条」；③ `_delivery_verdicts` **52 行** > 50 ⇒ 拆 `_face_verdicts` / `_guard_verdicts`；④ `IN_SCOPE` 加 4 条后判据文件 **456 行** > 450（先试搬清单进新文件，被 goal031/032/038 三个按字面量读 `IN_SCOPE` 的历史断言集**正确地判红**）⇒ 换道合并 39 行重复注释、条目一条未动 | EC-05 收口；记录面 / 两树 / CI 全部未跑 | 写 GOAL/PLAN/RECHECK/MEM + 阶梯与程序表 |
+| 2 | （同上） | `9326c788` | 记录写完 → `git add` 全部受判文件（**13 个新增**）→ 记录面判据 → **最后**跑 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`、覆盖 **4555** 个受判面文件；两树复检 **62 条判词**、两树 `sha256` 逐字相同（`7cb35313…`）；治理校验通过 | [M0 39553118966](https://github.com/Eswink/research-system-new/actions/runs/39553118966) ⇒ **2/8 job 判红**（`quality-ubuntu` / `quality-windows` 同一判据） | **1**：判红 #1 = **见证幽灵条目**。根因是我中途把 `IN_SCOPE` 试搬进 `tests/tooling/tools_gate_scope.py`、`git add` 过又回退删除 ⇒ 见证记住了那条「被跟踪但工作树已删除」的空哈希（`sha256: ''`）；本地 `--verify-only` 与本地树**互相自洽**（都含它）⇒ 本地绿，CI 检出的树里没有该文件 ⇒ 判据（正确地）判红 | 剩下 6 job 全 success；**判据本身未改**（改它会动 GOAL-090 定下的口径） | 重跑门让见证对着「没有那个文件」的树重写 |
+| 3 | （同上） | `7f8bf2a5` | 对无幽灵的树重跑 m0：同一终态行、`PASS [` 24、0 FAILED、`tree changed: False`、覆盖 **4554**、`--verify-only` 退出码 `0` | [M0 39558553519](https://github.com/Eswink/research-system-new/actions/runs/39558553519) ⇒ **1 判红 / 1 取消 / 6 success** | **1**：判红 #2 = **门后改记录**（同一判据、**根因换了**）。我在门跑完之后又改了 GOAL 与 RECHECK 去登记判红 #1 本身 ⇒ 见证覆盖的不是提交后的树（差 4 项内容 + 2 项名称）。`quality-windows-latest` 是 **`cancelled`**（`cancel-in-progress` 在 ubuntu 判红后取消在途 job）—— cancelled ≠ 判红，分开记 | EC-05 仍未收口；**顺序纪律再次被自己的动作破坏** | 让「最后一次改记录」发生在跑门**之前** |
+| 4 | （同上） | `975d7780` → `7bc2560f` → `0b7ce86b` → `5b0e9f2f` → `609bab8a` | 每次记录改动后重跑门重封见证；最终覆盖 **4556**、`--verify-only` 退出码 `0` | `975d7780` [M0 39564741935](https://github.com/Eswink/research-system-new/actions/runs/39564741935) **八 job 全 success**；`7bc2560f` / `5b0e9f2f` **无 run**（`covered_by` 相邻提交的 run：同批推送被 GitHub 合并）；`0b7ce86b` [M0 39570501350](https://github.com/Eswink/research-system-new/actions/runs/39570501350) **八 job全 success** + CodeQL [39570500949](https://github.com/Eswink/research-system-new/actions/runs/39570500949) 三 job success；`609bab8a` [M0 39576562340](https://github.com/Eswink/research-system-new/actions/runs/39576562340) **八 job 全 success** | **1**：台账里两个 run id 是我**按模式猜的占位符**（真实值从轮询日志取回后修正）——记录面的读数也必须有来源 | EC-05 尚未 PASS（还在等最终树）；三个「无 run」提交靠 `covered_by` 记账 | 完成核验（会揪出 status 与归档两处缺口） |
+| 5 | （同上） | `dcd6228c` → `e9ef7685` | **完成核验判负补正**：① 加载 `validate.py` 并**实跑**只对 ACHIEVED 生效的三条检查（5 个 EC 全 PASS、`latest_recheck` 解析到 RECHECK-092 `result: PASS`、`ERRORS` 为空）；② 两表各 **3 行**、两处 `archive/` 指针在位、089 与 54/55 在活跃面零命中、活跃与归档**交集为空**；`test_mainline_archive_is_continuous.py` + 另两条宪章判据 **20 passed** | `dcd6228c` **无 run**（`covered_by` 下一条）；`e9ef7685` [M0 39582771457](https://github.com/Eswink/research-system-new/actions/runs/39582771457) **八 job 全 success** + [Push 39582771217](https://github.com/Eswink/research-system-new/actions/runs/39582771217) success | **3**：① frontmatter 仍是 `ACTIVE`（收口脚本只改 EC-05 与状态历史行）⇒ 改 `ACHIEVED` 并实跑 ACHIEVED-专属三项；② 归档搬运只做了一半（两份 archive 写出，但活跃面两表各 4 行、归档无人引用）⇒ 原样移出两行 + 补两处指针；③ RECHECK 第六节写「见下方 m0 见证一栏」而该栏不存在 ⇒ 补成实表 | 记录里仍有 `4554` 与 `4556` 两个覆盖数并存（历史读数未标注） | 收口补正已落地，等最终树 |
+| 6 | （同上） | `3a3a7abd` → `6eae045f` → `27e40564` → `91b69112` | 台账补记 `dcd6228c`；RECHECK 的 `4554` 标注为历史读数并**指向最终 `4556`**（以 `M0-WITNESS.json` 为准）；每次记录改动后重跑门重封见证 | `3a3a7abd` / `27e40564` **无 run**（`covered_by` 相邻提交）；`6eae045f` [M0 39588049247](https://github.com/Eswink/research-system-new/actions/runs/39588049247) **八 job 全 success** + [Push 39588048732](https://github.com/Eswink/research-system-new/actions/runs/39588048732) success；`91b69112` [M0 39593672439](https://github.com/Eswink/research-system-new/actions/runs/39593672439) **八 job全 success** + [Push 39593671983](https://github.com/Eswink/research-system-new/actions/runs/39593671983) success | **1**：同一份记录里 `4554` 与 `4556` 并存且都没说哪个算数 ⇒ 标注历史读数 + 指向见证 | **无**（五个 EC 全 PASS、CI 到终态） | 收口 |
 
+**如实说明**：本轮 `max_cycles: 14`，实际用了 **6** 个 cycle（1 开发 + 2 判红修复 + 1 收口 + 2 补正）。
+两次判红**都不是判据错**，而是**我自己造成的树状态**；两次修法都没有碰判据。
 ## 上一轮残余的处置（7/7，逐条）
 
 **这一节就是「骨架被真的用了」的物证**：`W-1`…`W-7` 是读取器从 GOAL-091 的正文里
@@ -300,16 +310,35 @@ memory_entries:
 | 2026-10-21 | **ACTIVE** | **CI 首轮 2/8 判红**（`9326c788`）：见证里有而树里没有 `tests/tooling/tools_gate_scope.py` —— 那是我中途试拆分清单、`git add` 过又回退删除留下的一条空哈希记录。判据（正确地）判红；修法是**重跑门让见证对着新树重写**，不碰判据。 |
 | 2026-10-21 | **ACHIEVED** | 五个 EC 全达成。**CI 到终态**：`975d7780` 八 job 全 `success`（前两轮各判红一次，都是**见证与树的绑定**问题、都是我自己造成的树状态，判据两次都正确地咬住）。**两树复检**：62 条判词、两树 `sha256` 逐字相同（`7cb35313…`）。**战役预算从此用尽**（`max_goals` 60，序 60 是最后一行）⇒ 已登记「需用户决定扩表或收兵」。 |
 | 2026-10-21 | **ACHIEVED**（补正） | **完成核验判负两处并修掉**：(1) frontmatter 仍是 `ACTIVE` —— 收口脚本只改了 EC-05 与状态历史，`validate.py` 的 ACHIEVED-专属检查（全 EC PASS / `latest_recheck` 存在 / result 通过）从未运行；现已改为 `ACHIEVED` 并实跑该三项：5 个 EC 全 PASS、复检解析到 RECHECK-092（`result: PASS`）、`ERRORS` 为空。(2) 归档搬运只做了一半（两份 archive 写出，但活跃面两表仍是 4 行、归档无人引用）；现已移出 089 进展行与 54/55 修订行（移出前逐字比对归档已收录）并补两处指针，两表各 3 行、`test_mainline_archive_is_continuous.py` 绿。另补 RECHECK 第六节的 m0 读数表（原先指向一个不存在的栏）。CI `dcd6228c` 八 job 全 `success`。 |
+| 2026-10-21 | **ACHIEVED**（补正二） | **完成核验第二次判负并修掉**：迭代日志只有 1 行、与 CI 台账的两轮判红直接矛盾（提示词要求逐 cycle 一行，GOAL-090 有先例）。已重写为 **6 行**（开发 / 判红#1 / 判红#2 / 收口重封 / 完成核验补正 / 台账对账），CI 台账改为**一提交一行 13 行**（补齐四个「无 run」提交、修正 `dcd6228c` 蹭用 `e9ef7685` run 的错记，五处 `covered_by` 逐一指名）。并给这条纪律**装上判据**（此前无人看着它）：`_log_verdicts` 判「台账里每个提交都在某个 cycle 行里」，两向按压各判红、raw `sha256` 逐字节复原；收口判词 62 → **65**。 |
 
 ## CI 台账
 
-（逐提交逐 job。**零 run ≠ cancelled**；判红也如实登记，含根因与修法。）
+（**逐提交逐 job**，一个提交一行。**零 run ≠ cancelled**：`cancel-in-progress` 造成的
+`cancelled` 与「同批推送被 GitHub 合并成一个 run」的 `无 run` 是**两种不同**的形态，
+分别登记；后者用 `covered_by` 指名它被哪一条 run 覆盖。）
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `9326c788` | [M0 39553118966](https://github.com/Eswink/research-system-new/actions/runs/39553118966) | **2/8 job 判红** | `quality-ubuntu-latest` / `quality-windows-latest` 同一个判据：`test_the_witness_is_for_the_tree_we_are_looking_at`，点名「见证里有而当前没有 1 项：`tests/tooling/tools_gate_scope.py`」。**根因是我造成的树状态**（中途试过拆分清单文件、`git add` 过又回退删除，见证记住了那个已删条目）。**本地那一次 `--verify-only` 报「覆盖成立」** ⇒ 这是「本地绿、CI 红」的一个**具体可指**的实例：见证与本地树互相自洽。其余 6 job（`collector-quality` / `container-quality` / `observability-overhead-{ubuntu,windows}` / `console-frontend` / `eval-gate`）全 `success` |
-| `7f8bf2a5` | [M0 39558553519](https://github.com/Eswink/research-system-new/actions/runs/39558553519) | **1 判红 / 1 取消 / 6 success** | 同一个见证判据，**但根因换了**：我在门跑完之后又改了 GOAL 与 RECHECK（去登记上一轮判红本身）⇒ 见证覆盖的不是提交后的树（差 **4** 项内容 + **2** 项名称）。`quality-windows-latest` 是 **`cancelled`**（`cancel-in-progress` 在 `quality-ubuntu` 判红后取消在途 job）—— **零 run ≠ cancelled、cancelled ≠ 判红**，如实分开记 |
-| `975d7780` | [M0 39564741935](https://github.com/Eswink/research-system-new/actions/runs/39564741935) | **八 job 全 `success`** | **最终树**：`console-frontend` / `collector-quality` / `container-quality` / `eval-gate` / `observability-overhead-{ubuntu,windows}-latest` / `quality-{ubuntu,windows}-latest` 全 success；`Push on main` [39564740930](https://github.com/Eswink/research-system-new/actions/runs/39564740930) success。**本次只提交见证**（记录一个字未改）⇒ 见证覆盖的就是 CI 检出的那棵树。**CodeQL 未触发**（该工作流的触发面不含本提交路径；如实登记为「无 run」而非「通过」） |
-| `0b7ce86b` | [M0 39570501350](https://github.com/Eswink/research-system-new/actions/runs/39570501350) / [CodeQL 39570500949](https://github.com/Eswink/research-system-new/actions/runs/39570500949) | **八 job 全 `success`**；CodeQL 三 job 全 `success` | **最终树**：见证在上一个记录提交之后重封，本提交**只改见证**。`Push on main` 全 success。**自指边界在此终止**：本行的结论写于该提交之后，其自身 run 的结论在收口报告里给出、不回流到树（GOAL-089/091 同一手法） |
-| `dcd6228c` | [M0 39582771457](https://github.com/Eswink/research-system-new/actions/runs/39582771457) / [Push 39582771217](https://github.com/Eswink/research-system-new/actions/runs/39582771217) | **八 job 全 `success`** | **完成核验补正**：① frontmatter `status: ACTIVE` → **`ACHIEVED`**（此前只有 EC-05 与状态历史行被改写，`validate.py` 只对 ACHIEVED 生效的三条检查从未在本 GOAL 上跑过）；② 归档搬运补完（089 进展行 / 54/55 修订行从活跃面移出 + 两处 `archive/` 指针）；③ RECHECK 第六节的 m0 读数值回表 |
-| `e9ef7685` | 见上方同一 run 的 `covered_by` | — | 只改见证（`dcd6228c` 改了记录 ⇒ 旧见证失效 ⇒ 重跑门重封） |
+| `9326c788` | [M0 39553118966](https://github.com/Eswink/research-system-new/actions/runs/39553118966) | **2/8 job 判红**；[Push 39553118615](https://github.com/Eswink/research-system-new/actions/runs/39553118615) success | 判红 #1（**见证幽灵条目**）：`quality-ubuntu-latest` / `quality-windows-latest` 同一个判据 `test_the_witness_is_for_the_tree_we_are_looking_at`，点名「见证里有而当前没有 1 项：`tests/tooling/tools_gate_scope.py`」。其余 6 job（`collector-quality` / `container-quality` / `observability-overhead-{ubuntu,windows}` / `console-frontend` / `eval-gate`）全 success |
+| `7f8bf2a5` | [M0 39558553519](https://github.com/Eswink/research-system-new/actions/runs/39558553519) | **1 判红 / 1 `cancelled` / 6 success**；[Push 39558553226](https://github.com/Eswink/research-system-new/actions/runs/39558553226) success | 判红 #2（**门后改记录**）：同一判据、**根因换了** —— 门跑完后我又改 GOAL/RECHECK 去登记判红 #1 本身，见证覆盖的不是提交后的树（差 4 项内容 + 2 项名称）。`quality-windows-latest` 是 **`cancelled`**（`cancel-in-progress` 在 ubuntu 判红后取消在途 job），**不是判红** |
+| `975d7780` | [M0 39564741935](https://github.com/Eswink/research-system-new/actions/runs/39564741935) | **八 job 全 `success`**；[Push 39564740930](https://github.com/Eswink/research-system-new/actions/runs/39564740930) success | 对无幽灵的树重封见证后的树；**记录一个字未改** ⇒ 见证覆盖的就是 CI 检出的那棵 |
+| `7bc2560f` | **无 run** | — | 只改记录（CI 台账 + EC-05 → PASS + 预算触顶登记）；与下一条**同批推送**被 GitHub 合并成一个 run ⇒ `covered_by` = `0b7ce86b` 的 [M0 39570501350](https://github.com/Eswink/research-system-new/actions/runs/39570501350) |
+| `0b7ce86b` | [M0 39570501350](https://github.com/Eswink/research-system-new/actions/runs/39570501350) / [CodeQL 39570500949](https://github.com/Eswink/research-system-new/actions/runs/39570500949) | **八 job 全 `success`**；CodeQL 三 job 全 `success` | 该 run 同时覆盖 `7bc2560f`（同批推送）。本提交**只改见证** |
+| `5b0e9f2f` | **无 run** | — | 修正 CI 台账的两个**占位 run id**（真实值从轮询日志取回）；`covered_by` = `609bab8a` 的 [M0 39576562340](https://github.com/Eswink/research-system-new/actions/runs/39576562340) |
+| `609bab8a` | [M0 39576562340](https://github.com/Eswink/research-system-new/actions/runs/39576562340) | **八 job 全 `success`**；[Push 39576561704](https://github.com/Eswink/research-system-new/actions/runs/39576561704) success | 该 run 同时覆盖 `5b0e9f2f`。本提交只改见证 |
+| `dcd6228c` | **无 run** | — | **完成核验判负补正**（frontmatter → ACHIEVED / 归档搬运补完 / RECHECK m0 读数回表）；`covered_by` = `e9ef7685` 的 [M0 39582771457](https://github.com/Eswink/research-system-new/actions/runs/39582771457) |
+| `e9ef7685` | [M0 39582771457](https://github.com/Eswink/research-system-new/actions/runs/39582771457) / [Push 39582771217](https://github.com/Eswink/research-system-new/actions/runs/39582771217) | **八 job 全 `success`** | 该 run 同时覆盖 `dcd6228c`。本提交只改见证 |
+| `3a3a7abd` | **无 run** | — | 台账补记 `dcd6228c` + 状态历史补正；`covered_by` = `6eae045f` 的 [M0 39588049247](https://github.com/Eswink/research-system-new/actions/runs/39588049247) |
+| `6eae045f` | [M0 39588049247](https://github.com/Eswink/research-system-new/actions/runs/39588049247) / [Push 39588048732](https://github.com/Eswink/research-system-new/actions/runs/39588048732) | **八 job 全 `success`** | 该 run 同时覆盖 `3a3a7abd`。本提交只改见证 |
+| `27e40564` | **无 run** | — | RECHECK 把历史读数 `4554` 标注并指向最终 `4556`；`covered_by` = `91b69112` 的 [M0 39593672439](https://github.com/Eswink/research-system-new/actions/runs/39593672439) |
+| `91b69112` | [M0 39593672439](https://github.com/Eswink/research-system-new/actions/runs/39593672439) / [Push 39593671983](https://github.com/Eswink/research-system-new/actions/runs/39593671983) | **八 job 全 `success`** | 该 run 同时覆盖 `27e40564`。**最终树**（本轮收口前的 tip） |
+
+**判红只发生在本地 / CI 各两次，全部是「见证与树的绑定」问题**（不是判据缺陷）：
+`9326c788` = 曾跟踪后删除的文件留了空哈希条目；`7f8bf2a5` = 门跑完后改记录。
+**两次修法都没有碰判据** —— 都是「重跑门、让见证对着真正要提交的树重写」。
+
+**自指边界（如实登记，不假装闭合）**：本表中最后若干行的结论写于对应提交**之后**，
+写下它们本身又产生新提交，而新提交自己那次 run 的结论无法再写回本表而不产生第三个提交。
+链条在**本文件所在提交**处终止：它只改记录，其自身 run 的结论在收口报告里给出、
+**不写回台账**（GOAL-089 / 091 同一手法）。
