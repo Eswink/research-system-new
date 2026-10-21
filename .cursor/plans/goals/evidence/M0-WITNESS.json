@@ -1728,7 +1728,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261021-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "8796b88f44e10a0086fa3058b992deafbad181cc"
+        "sha256": "7497339ecc330b2c5cefb5ab0e289e0abe55fa00"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -2545,6 +2545,14 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-next-round-charter.md",
         "sha256": "ea6957ee88f7ee4f1751c61ada69fe2f1ac96633"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-verdict-clean.txt",
+        "sha256": "28f7a45fc32ff1ba6a33b0215f8cc4deba529e01"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-verdict-current.txt",
+        "sha256": "28f7a45fc32ff1ba6a33b0215f8cc4deba529e01"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -3980,7 +3988,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "498ab2ccaab3211b7ffc4380463e0bbcec208023"
+        "sha256": "b59fdaebf518f322a677ca982145c5c84290d411"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -18219,7 +18227,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "9326c7887fc3dbf4a66b88161c0621139501e5d3"
+    "head": "7f8bf2a5888256afda67ff42026a6de921d1b91d"
   },
   "fingerprint_before": {
     "files": [
@@ -19949,7 +19957,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261021-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "8796b88f44e10a0086fa3058b992deafbad181cc"
+        "sha256": "7497339ecc330b2c5cefb5ab0e289e0abe55fa00"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -20766,6 +20774,14 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-next-round-charter.md",
         "sha256": "ea6957ee88f7ee4f1751c61ada69fe2f1ac96633"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-verdict-clean.txt",
+        "sha256": "28f7a45fc32ff1ba6a33b0215f8cc4deba529e01"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-verdict-current.txt",
+        "sha256": "28f7a45fc32ff1ba6a33b0215f8cc4deba529e01"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -22201,7 +22217,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md",
-        "sha256": "498ab2ccaab3211b7ffc4380463e0bbcec208023"
+        "sha256": "b59fdaebf518f322a677ca982145c5c84290d411"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -36440,11 +36456,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "9326c7887fc3dbf4a66b88161c0621139501e5d3"
+    "head": "7f8bf2a5888256afda67ff42026a6de921d1b91d"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "9326c7887fc3dbf4a66b88161c0621139501e5d3",
+  "ran_at_head": "7f8bf2a5888256afda67ff42026a6de921d1b91d",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
