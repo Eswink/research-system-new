@@ -86,6 +86,11 @@ provider / tool-pack / 目录覆盖各一处，逐条只把两行合成一行，
 | 规模门 | `tests/tooling/test_python_source_limits.py` ⇒ **1316 passed** |
 | mypy | `packages/` + `services/` + `adapters/` ⇒ **no issues in 610 source files** |
 | 四道门（新脚本） | `ruff format --check` / `ruff check` / 规模 / mypy 全绿（17 passed 的两条登记判据） |
+| 全量 mypy | **1309 个源文件，no issues**（`m0` 的 `python/typecheck` 用的是**同一组参数**——**首跑 m0 就是在这里判红的**：我写的 `# type: ignore[arg-type]` 在 strict 下是**语法错误**，单独跑 `mypy <files>` 看不见它；改用 `cast` 后 1309 个文件全绿） |
+| 正式见证（m0） | `terminal_line` = `PASS: profile=m0; 23 deterministic checks`；`PASS [` **24** 行；0 FAILED；覆盖 **4570** 个受判面文件；`tree changed during the run: False` |
+| 两树复检 | `TWO-TREE PASS`：两树各 **68** 条判词、`sha256` 逐字相同（`c0cdf7a4…`） |
+| 凭据审计 | 四面 `offenders=0`（tracked 4614 / records 1016 / config_db 1 / logs 901） |
+| CI | `7fa4f651` [M0 39636053290](https://github.com/Eswink/research-system-new/actions/runs/39636053290) **八 job 全 success** + [CodeQL 39636053234](https://github.com/Eswink/research-system-new/actions/runs/39636053234) 三 job success |
 
 ## 六、射程与边界（如实登记）
 

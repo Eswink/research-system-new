@@ -2,7 +2,7 @@
 id: GOAL-20261022-093
 slug: the-review-verdict-drives-the-next-round
 title: 上一轮评审的判词驱动下一轮的会话（第五个提示词槽位 + 跨 run 搬运）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-22
 updated_at: 2026-10-22
 owners:
@@ -90,7 +90,7 @@ exit_criteria:
       见证 `terminal_line` = `PASS: profile=m0; 23 deterministic checks`、0 FAILED、
       `tree changed during the run: False`；`tools/two_tree_recheck.py` 两树同结论；
       治理校验器通过；`tools/verify_goal093_closeout.py --root . --verdict-only` 全 PASS。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 14
   per_cycle_minutes: 90
@@ -222,7 +222,7 @@ memory_entries:
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PLAN-20261022-093 | （未提交） | 读取器自举（GOAL-092 → 本 GOAL 的 charter，5 条残余）；宪章扩表 60→70 + 序 61（三条宪章判据 **20 passed**）；`review_outcome` 通道落地（第五槽位 + 渲染器 + 两个组合根接线）；新判据 **13 passed**；受影响套件 **325 passed**；全量 e2e **369 passed / 19 skipped** | 无（未推送） | **4**：① `runs.get_run` 对**本 run 尚未落库**抛 `KeyError` ⇒ 真 run 的产品路径直接 404（新增 `NO_RUN_ROW` 第三态，**不**判失败）；② 测试里先接闭包再装 spec 记录器 ⇒ 两次 `replace` 互相顶掉（改成一次 `replace` 装两件事）；③ `ReviewOutcomeView` 缺 `targets` ⇒ 「两个模型分歧」与「一个模型自言自语」不可区分（补字段并在提示词里逐条列出）；④ `composition.py` 恰在 450 行 ⇒ 接一行就超（合并三处重复注释，条目一条未减） | EC-05 收口；记录面 / 两树 / CI 全未跑 | 写 GOAL/PLAN/RECHECK/MEM + 阶梯「复检」行 + 进展记录 |
-| 2 | （同上） | （待填） | 记录写完 → `git add` 全部受判文件 → 记录面判据 → **最后**跑 m0 → 提交推送 → CI 到终态 | （待填） | （待填） | 见下 | 收口 |
+| 2 | （同上） | `7fa4f651` | 记录写完 → `git add` 全部受判文件（**21 个新增 + 9 个修改**）→ 记录面判据（治理校验通过、37 passed）→ **最后**跑 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4570**、`tree changed during the run: False`；两树复检 **68 条判词**、两树 `sha256` 逐字相同（`c0cdf7a4…`）；凭据审计四面 `offenders=0` | [M0 39636053290](https://github.com/Eswink/research-system-new/actions/runs/39636053290) **八 job 全 success** + [CodeQL 39636053234](https://github.com/Eswink/research-system-new/actions/runs/39636053234) 三 job success | **2**：① 首跑 m0 **真红**：`python/typecheck` 报我自己写的 `# type: ignore[arg-type]` 在 strict 下是**语法错误**（`mypy` 单独跑不带同一组参数时看不见）⇒ 改用 `cast`；② 治理校验抓出记录面 8 处缺陷（PLAN 缺四个必含章节 + ALL_PLAN 投影 + RECHECK 缺 `## 结论` + MEM 未进 INDEX）⇒ 逐条补 | **无**（五个 EC 全 PASS、CI 到终态） | 收口 |
 
 ## 上一轮残余的处置（5/5，逐条）
 
@@ -268,6 +268,7 @@ memory_entries:
 | --- | --- | --- |
 | 2026-10-22 | **ACTIVE** | **建档**：承用户 goal-mode 指令（扩表 60→70 + 序 61）。**扩表理由有两半**：① 「迭代」域的**战役级**那一面从未在真实序列自举（GOAL-092 `W-2` 明写读取器只适用于按新纪律写的 GOAL）—— 本轮以 GOAL-092 为输入跑通 `exit 0` / 5 条残余 / 阶梯命中「迭代」/ CI 台账 17 行；② 「复检」域的 `下一级` 实测**可推进**（判词在产品三根零消费者、四个提示词槽位无一携带判词）。`max_cycles: 14`。 |
 | 2026-10-22 | **ACTIVE** | **收口面落地**：五个 EC 全 PASS（EC-01…04 判据面 13 例；EC-05 记录面）；读取器**自举**（GOAL-092 → 本 GOAL charter，5 条残余 5/5 处置）；扩表 60→70 + 序 61；阶梯「复检」行升级。收口验证器 `tools/verify_goal093_closeout.py` **68/68 PASS**。CI 台账待推送后回填。 |
+| 2026-10-22 | **ACHIEVED** | 五个 EC 全达成（EC-01…04 判据面 13 例；EC-05 记录面 + 见证）。**CI 到终态**：`7fa4f651` 八 job 全 `success` + CodeQL 三 job success。**两树复检** 68 条判词、两树 `sha256` 逐字相同。**凭据审计**四面 `offenders=0`。**读取器自举**：GOAL-092 的五条残余 5/5 有处置。**扩表已按用户授权执行**：`max_goals` 60→70、序 61 登记。 |
 
 ## CI 台账
 
@@ -277,4 +278,4 @@ memory_entries:
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| （待填） | （待填） | （待填） | 收口时逐提交回填 |
+| `7fa4f651` | [M0 39636053290](https://github.com/Eswink/research-system-new/actions/runs/39636053290) / [CodeQL 39636053234](https://github.com/Eswink/research-system-new/actions/runs/39636053234) | **八 job 全 `success`**；CodeQL 三 job 全 `success` | 本轮全部交付面（通道 + 13 判据 + 宪章扩表 + 记录 + 收口验证器）。本地 m0 已先绿：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4570** 个受判面文件、`tree changed during the run: False`。**两树复检 68 条判词、两树 `sha256` 逐字相同**（`c0cdf7a4…`）。凭据审计四面 `offenders=0` |
