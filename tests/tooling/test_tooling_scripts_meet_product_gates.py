@@ -77,125 +77,88 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-037 EC-05：收口验证器 + 它复用的本轮断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal037_closeout_assertions.py",
     "tools/verify_goal037_closeout.py",
-    # GOAL-038 EC-05：同上。
+    # GOAL-031…20261021 的收口验证器 / 断言集 / 读取器：同一纪律逐轮登记
+    # （纯收紧 ⇒ 只增不删；登记即进四道门射程）。各行原文曾逐轮重复，此处合并。
     "tools/goal038_closeout_assertions.py",
     "tools/verify_goal038_closeout.py",
-    # GOAL-039 EC-05：同上。
     "tools/goal039_closeout_assertions.py",
     "tools/verify_goal039_closeout.py",
-    # GOAL-040 EC-05：同上。
     "tools/goal040_closeout_assertions.py",
     "tools/verify_goal040_closeout.py",
-    # GOAL-041 EC-05：同上。
     "tools/goal041_closeout_assertions.py",
     "tools/verify_goal041_closeout.py",
-    # GOAL-042 EC-05：同上。
     "tools/goal042_closeout_assertions.py",
     "tools/verify_goal042_closeout.py",
-    # GOAL-043 EC-05：同上。
     "tools/goal043_closeout_assertions.py",
     "tools/verify_goal043_closeout.py",
-    # GOAL-044 EC-05：同上。
     "tools/goal044_closeout_assertions.py",
     "tools/verify_goal044_closeout.py",
-    # GOAL-045 EC-05：同上。
     "tools/goal045_closeout_assertions.py",
     "tools/verify_goal045_closeout.py",
-    # GOAL-046 EC-05：同上。
     "tools/goal046_closeout_assertions.py",
     "tools/verify_goal046_closeout.py",
-    # GOAL-047 EC-05：同上。
     "tools/goal047_closeout_assertions.py",
     "tools/verify_goal047_closeout.py",
-    # GOAL-048 EC-05：同上。
     "tools/goal048_closeout_assertions.py",
     "tools/verify_goal048_closeout.py",
-    # GOAL-049 EC-05：同上。
     "tools/goal049_closeout_assertions.py",
     "tools/verify_goal049_closeout.py",
-    # GOAL-050 EC-05：同上。
     "tools/goal050_closeout_assertions.py",
     "tools/verify_goal050_closeout.py",
-    # GOAL-051 EC-05：同上。
     "tools/goal051_closeout_assertions.py",
     "tools/verify_goal051_closeout.py",
-    # GOAL-052 EC-05：同上。
     "tools/goal052_closeout_assertions.py",
     "tools/verify_goal052_closeout.py",
-    # GOAL-053 EC-05：同上。
     "tools/goal053_closeout_assertions.py",
     "tools/verify_goal053_closeout.py",
-    # GOAL-054 EC-05：同上。
     "tools/goal054_closeout_assertions.py",
     "tools/verify_goal054_closeout.py",
-    # GOAL-055 EC-05：同上。
     "tools/goal055_closeout_assertions.py",
     "tools/verify_goal055_closeout.py",
-    # GOAL-056 EC-05：同上。
     "tools/goal056_closeout_assertions.py",
     "tools/verify_goal056_closeout.py",
-    # GOAL-057 EC-05：同上。
     "tools/goal057_closeout_assertions.py",
     "tools/verify_goal057_closeout.py",
-    # GOAL-058 EC-05：同上。
     "tools/goal058_closeout_assertions.py",
     "tools/verify_goal058_closeout.py",
-    # GOAL-20261012-059 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal059_closeout_assertions.py",
     "tools/verify_goal059_closeout.py",
-    # GOAL-20261012-060 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal060_closeout_assertions.py",
     "tools/verify_goal060_closeout.py",
-    # GOAL-20261012-061 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal061_closeout_assertions.py",
     "tools/verify_goal061_closeout.py",
-    # GOAL-20261012-062 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal062_closeout_assertions.py",
     "tools/verify_goal062_closeout.py",
-    # GOAL-20261012-063 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal063_closeout_assertions.py",
     "tools/verify_goal063_closeout.py",
-    # GOAL-20261012-064 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal064_closeout_assertions.py",
     "tools/verify_goal064_closeout.py",
-    # GOAL-20261012-065 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal065_closeout_assertions.py",
     "tools/verify_goal065_closeout.py",
-    # GOAL-20261013-066 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal066_closeout_assertions.py",
     "tools/verify_goal066_closeout.py",
-    # GOAL-20261013-067 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal067_closeout_assertions.py",
     "tools/verify_goal067_closeout.py",
-    # GOAL-20261013-068 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal068_closeout_assertions.py",
     "tools/verify_goal068_closeout.py",
-    # GOAL-20261013-069 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal069_closeout_assertions.py",
     "tools/verify_goal069_closeout.py",
-    # GOAL-20261013-070 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal070_closeout_assertions.py",
     "tools/verify_goal070_closeout.py",
-    # GOAL-20261013-071 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal071_closeout_assertions.py",
     "tools/verify_goal071_closeout.py",
-    # GOAL-20261013-072 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal072_closeout_assertions.py",
     "tools/verify_goal072_closeout.py",
-    # GOAL-20261013-073 / 074 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal073_closeout_assertions.py",
     "tools/verify_goal073_closeout.py",
     "tools/goal074_closeout_assertions.py",
     "tools/verify_goal074_closeout.py",
-    # GOAL-20261014-075 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal075_closeout_assertions.py",
     "tools/verify_goal075_closeout.py",
-    # GOAL-20261014-077 / 078 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal077_closeout_assertions.py",
     "tools/verify_goal077_closeout.py",
     "tools/goal078_closeout_assertions.py",
     "tools/verify_goal078_closeout.py",
-    # GOAL-20261015-079…20261018-084 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal079_closeout_assertions.py",
     "tools/verify_goal079_closeout.py",
     "tools/goal080_closeout_assertions.py",
@@ -218,8 +181,13 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal088_closeout.py",
     "tools/goal089_closeout_assertions.py",
     "tools/verify_goal089_closeout.py",
-    "tools/goal091_closeout_assertions.py",  # GOAL-20261020-091 EC-05：同上。
+    "tools/goal091_closeout_assertions.py",
     "tools/verify_goal091_closeout.py",
+    # GOAL-20261021-092 EC-05：读取器 + 解析原语 + 收口资产（纯收紧）。
+    "tools/next_round_charter.py",
+    "tools/charter_parse.py",
+    "tools/goal092_closeout_assertions.py",
+    "tools/verify_goal092_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"

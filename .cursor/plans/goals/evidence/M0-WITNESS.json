@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "f3b6b756f22f57316d43b062158bfca45c08a9da"
+        "sha256": "63b9be3d551e9d0b1a50f73ff68856e7d243ba2c"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1323,8 +1323,12 @@
         "sha256": "7543bc5903da8a4c6811e15d8382ce2406c0c40b"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261021-226-the-next-round-charter-is-read-not-remembered.md",
+        "sha256": "8094a3fda22b1c8337b2b22c8ce446ae9bb5282e"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "39cd5b95194750e80b22a6bc4b3eb5e1acb6f4f7"
+        "sha256": "14a1fcaacf81e14ee8d88d3dd2e203fd077fc7fb"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1723,8 +1727,12 @@
         "sha256": "f8292d9e55543111d93759c135d29f62252428a4"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261021-092-the-next-round-charter-is-read-not-remembered.md",
+        "sha256": "8796b88f44e10a0086fa3058b992deafbad181cc"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "9a05ab4404a39be348a8dc86b5b4d9463cdd35d6"
+        "sha256": "8a2fa07896c60867cb5e4fe430610245beb602a2"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -1837,6 +1845,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-revisions-52-only.md",
         "sha256": "69ae8718d659eac154900acc505289da00501f66"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-revisions-54-through-55.md",
+        "sha256": "2e6c7049bf0739dda62a0393cd2fb80a4e2248bb"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-19-progress-089-only.md",
+        "sha256": "eac63667ccb4b38223e8b5998fe6e7ff9294592d"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -2525,6 +2541,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261019-089-verdict-current.txt",
         "sha256": "f8b77a6068b8653fe76d769f36d28e7cf0445d70"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-next-round-charter.md",
+        "sha256": "ea6957ee88f7ee4f1751c61ada69fe2f1ac96633"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -3959,6 +3979,10 @@
         "sha256": "54f165e9b04e7a70feb334b130f6622ef96f10aa"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md",
+        "sha256": "498ab2ccaab3211b7ffc4380463e0bbcec208023"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5317,6 +5341,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261020-091-goal-091-two-models-judge-the-same-artifact.md",
         "sha256": "49134f9f52814b1816843442f6b2f82374fb44b4"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md",
+        "sha256": "45a4a03792673bebdd45aae3ab5a5522fd0b23e2"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -17176,7 +17204,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "4f2080f0a1120274a3c4e224406d9b4d2c477c12"
+        "sha256": "6fc184831674d74eef2b732e5c442ab0b446edbc"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -17235,6 +17263,10 @@
         "sha256": "cf0683698b6cc7dfa196761fa4c4f43cd398e603"
       },
       {
+        "path": "tests/tooling/test_next_round_charter.py",
+        "sha256": "ec19210e88161287e2a924a83e12af073b8f6085"
+      },
+      {
         "path": "tests/tooling/test_pending_decisions_briefing.py",
         "sha256": "13eec5eb865eee445efa708d26fdc1d1a0b61c9f"
       },
@@ -17272,7 +17304,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "e555c264446409cb8a1c2c6734af760439dc5839"
+        "sha256": "23223294bc2b4fc53dd0b246e369e58d48ed85bf"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -17313,6 +17345,10 @@
       {
         "path": "tests/tooling/test_恢复生命周期v1.py",
         "sha256": "bfc21e7db1842db5229d853ee01e38cc44abbdd2"
+      },
+      {
+        "path": "tests/tooling/tools_gate_scope.py",
+        "sha256": ""
       },
       {
         "path": "tests/tooling/typescript/exhaustive-switch.ts",
@@ -17389,6 +17425,10 @@
       {
         "path": "tools/backup.py",
         "sha256": "9e41da798a67065c1703ecccce831390d703b9fd"
+      },
+      {
+        "path": "tools/charter_parse.py",
+        "sha256": "2b5a4295cbea7b2a6bddf7060a1b2ed3b8b805ec"
       },
       {
         "path": "tools/classify_local_gate_reds.py",
@@ -17775,6 +17815,10 @@
         "sha256": "b5c4cde013b0bcd8af07dae020bc3ac879866232"
       },
       {
+        "path": "tools/goal092_closeout_assertions.py",
+        "sha256": "d9e7b2d02d48105904a73d6877d9f897fb4b905b"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -17785,6 +17829,10 @@
       {
         "path": "tools/m12_relay_smoke.py",
         "sha256": "ac1d5c05373644f25317046e4a32dd2ff5c64a12"
+      },
+      {
+        "path": "tools/next_round_charter.py",
+        "sha256": "6e77b86a916f9da9ab1265987ea7d643e856f66a"
       },
       {
         "path": "tools/personal_reference_workflow.py",
@@ -18167,11 +18215,15 @@
         "sha256": "34c05b514df0117b26c0c63dd9e73937151e4e1f"
       },
       {
+        "path": "tools/verify_goal092_closeout.py",
+        "sha256": "86b4a16bffb3ec007ba99a529bdf32c4182375b2"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "00a78259af7ff8af9d40e4573e206429730227ba"
+    "head": "9a5d1214f4b7539e3c2088de450dfd44f8331d07"
   },
   "fingerprint_before": {
     "files": [
@@ -18593,7 +18645,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "f3b6b756f22f57316d43b062158bfca45c08a9da"
+        "sha256": "63b9be3d551e9d0b1a50f73ff68856e7d243ba2c"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -19496,8 +19548,12 @@
         "sha256": "7543bc5903da8a4c6811e15d8382ce2406c0c40b"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261021-226-the-next-round-charter-is-read-not-remembered.md",
+        "sha256": "8094a3fda22b1c8337b2b22c8ce446ae9bb5282e"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "39cd5b95194750e80b22a6bc4b3eb5e1acb6f4f7"
+        "sha256": "14a1fcaacf81e14ee8d88d3dd2e203fd077fc7fb"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -19896,8 +19952,12 @@
         "sha256": "f8292d9e55543111d93759c135d29f62252428a4"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261021-092-the-next-round-charter-is-read-not-remembered.md",
+        "sha256": "8796b88f44e10a0086fa3058b992deafbad181cc"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "9a05ab4404a39be348a8dc86b5b4d9463cdd35d6"
+        "sha256": "8a2fa07896c60867cb5e4fe430610245beb602a2"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -20010,6 +20070,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-revisions-52-only.md",
         "sha256": "69ae8718d659eac154900acc505289da00501f66"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-18-revisions-54-through-55.md",
+        "sha256": "2e6c7049bf0739dda62a0393cd2fb80a4e2248bb"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-19-progress-089-only.md",
+        "sha256": "eac63667ccb4b38223e8b5998fe6e7ff9294592d"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -20698,6 +20766,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261019-089-verdict-current.txt",
         "sha256": "f8b77a6068b8653fe76d769f36d28e7cf0445d70"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-next-round-charter.md",
+        "sha256": "ea6957ee88f7ee4f1751c61ada69fe2f1ac96633"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -22132,6 +22204,10 @@
         "sha256": "54f165e9b04e7a70feb334b130f6622ef96f10aa"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md",
+        "sha256": "498ab2ccaab3211b7ffc4380463e0bbcec208023"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -23490,6 +23566,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261020-091-goal-091-two-models-judge-the-same-artifact.md",
         "sha256": "49134f9f52814b1816843442f6b2f82374fb44b4"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md",
+        "sha256": "45a4a03792673bebdd45aae3ab5a5522fd0b23e2"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -35349,7 +35429,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "4f2080f0a1120274a3c4e224406d9b4d2c477c12"
+        "sha256": "6fc184831674d74eef2b732e5c442ab0b446edbc"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -35408,6 +35488,10 @@
         "sha256": "cf0683698b6cc7dfa196761fa4c4f43cd398e603"
       },
       {
+        "path": "tests/tooling/test_next_round_charter.py",
+        "sha256": "ec19210e88161287e2a924a83e12af073b8f6085"
+      },
+      {
         "path": "tests/tooling/test_pending_decisions_briefing.py",
         "sha256": "13eec5eb865eee445efa708d26fdc1d1a0b61c9f"
       },
@@ -35445,7 +35529,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "e555c264446409cb8a1c2c6734af760439dc5839"
+        "sha256": "23223294bc2b4fc53dd0b246e369e58d48ed85bf"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -35486,6 +35570,10 @@
       {
         "path": "tests/tooling/test_恢复生命周期v1.py",
         "sha256": "bfc21e7db1842db5229d853ee01e38cc44abbdd2"
+      },
+      {
+        "path": "tests/tooling/tools_gate_scope.py",
+        "sha256": ""
       },
       {
         "path": "tests/tooling/typescript/exhaustive-switch.ts",
@@ -35562,6 +35650,10 @@
       {
         "path": "tools/backup.py",
         "sha256": "9e41da798a67065c1703ecccce831390d703b9fd"
+      },
+      {
+        "path": "tools/charter_parse.py",
+        "sha256": "2b5a4295cbea7b2a6bddf7060a1b2ed3b8b805ec"
       },
       {
         "path": "tools/classify_local_gate_reds.py",
@@ -35948,6 +36040,10 @@
         "sha256": "b5c4cde013b0bcd8af07dae020bc3ac879866232"
       },
       {
+        "path": "tools/goal092_closeout_assertions.py",
+        "sha256": "d9e7b2d02d48105904a73d6877d9f897fb4b905b"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -35958,6 +36054,10 @@
       {
         "path": "tools/m12_relay_smoke.py",
         "sha256": "ac1d5c05373644f25317046e4a32dd2ff5c64a12"
+      },
+      {
+        "path": "tools/next_round_charter.py",
+        "sha256": "6e77b86a916f9da9ab1265987ea7d643e856f66a"
       },
       {
         "path": "tools/personal_reference_workflow.py",
@@ -36340,15 +36440,19 @@
         "sha256": "34c05b514df0117b26c0c63dd9e73937151e4e1f"
       },
       {
+        "path": "tools/verify_goal092_closeout.py",
+        "sha256": "86b4a16bffb3ec007ba99a529bdf32c4182375b2"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "00a78259af7ff8af9d40e4573e206429730227ba"
+    "head": "9a5d1214f4b7539e3c2088de450dfd44f8331d07"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "00a78259af7ff8af9d40e4573e206429730227ba",
+  "ran_at_head": "9a5d1214f4b7539e3c2088de450dfd44f8331d07",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
