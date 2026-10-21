@@ -297,6 +297,7 @@ memory_entries:
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-21 | **ACTIVE** | **建档**：承用户 goal-mode 指令「把上一轮输出 → 下一轮提示词这一步从人工变成机器」。建档实测三处缺口（无「下一轮输入」制品 / `W-NN` 编号只是弱约定 / 阶梯的「下一级」无消费者）。序 60 = 程序表最后一个名额；`max_cycles: 14`。 |
+| 2026-10-21 | **ACTIVE** | **CI 首轮 2/8 判红**（`9326c788`）：见证里有而树里没有 `tests/tooling/tools_gate_scope.py` —— 那是我中途试拆分清单、`git add` 过又回退删除留下的一条空哈希记录。判据（正确地）判红；修法是**重跑门让见证对着新树重写**，不碰判据。 |
 
 ## CI 台账
 
@@ -304,4 +305,5 @@ memory_entries:
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| （待推送） | — | — | 本文件首次提交后填入 |
+| `9326c788` | [M0 39553118966](https://github.com/Eswink/research-system-new/actions/runs/39553118966) | **2/8 job 判红** | `quality-ubuntu-latest` / `quality-windows-latest` 同一个判据：`test_the_witness_is_for_the_tree_we_are_looking_at`，点名「见证里有而当前没有 1 项：`tests/tooling/tools_gate_scope.py`」。**根因是我造成的树状态**（中途试过拆分清单文件、`git add` 过又回退删除，见证记住了那个已删条目）。**本地那一次 `--verify-only` 报「覆盖成立」** ⇒ 这是「本地绿、CI 红」的一个**具体可指**的实例：见证与本地树互相自洽。其余 6 job（`collector-quality` / `container-quality` / `observability-overhead-{ubuntu,windows}` / `console-frontend` / `eval-gate`）全 `success` |
+| （修复提交） | — | — | 重跑 `run_m0_with_witness.py`（对**没有那个文件**的树重写见证）后提交；读数：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`、覆盖 **4554** 个受判面文件、`--verify-only` 退出码 `0` |

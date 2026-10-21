@@ -139,6 +139,38 @@ m0 条数（23）、`test_mainline_*.py` 三条宪章判据、`test_python_sourc
    `LEGACY_OUT_OF_SCOPE` **38 条逐条相同**（程序化比对：`set` 差集为空、legacy 元组相等）。
    这是「**先试小改动、被真判据拦住就换道**」的一次实测，也是既有判据**有效**的证据。
 
+## 七之二、CI 首轮判红（如实登记：**本地绿、CI 红**，根因在见证的内容面）
+
+**首轮提交 `9326c788`**：`M0 Quality Gates` **2/8 job 判红**（`quality-ubuntu-latest` /
+`quality-windows-latest`），两者同一个判据：
+
+```text
+FAILED tests/tooling/test_m0_witness_matches_the_tree.py::test_the_witness_is_for_the_tree_we_are_looking_at
+  见证记录的 HEAD: 9a5d1214…；当前 HEAD: 9326c788…
+  内容变了/新增（0 项）：[]
+  见证里有而当前没有（1 项）：[('tests/tooling/tools_gate_scope.py', '')]
+```
+
+**根因**（不是判据错，是**我自己造成的树状态**）：本轮中途试过把 `IN_SCOPE` 清单整体搬进
+新文件 `tests/tooling/tools_gate_scope.py`（为绕开 450 行门），该文件一度被我 `git add`；
+发现历史断言集按字面量读原文件后**回退了这个方案**并删除了文件。但**当时的见证**记住了
+它的名字（`sha256: ''` = 「被跟踪但工作树已删除」这一态）⇒ 本地那一次 `--verify-only`
+读的是同一份见证与同一棵树，自然「覆盖成立」；CI 检出的是**提交后的树**，那个文件
+**从未被提交** ⇒ 见证里有、树里没有 ⇒ 判据（正确地）判红。
+
+**这一条同时复证了两件事**：
+
+1. `W-6` 的形态**依然真实**（见证看不见「未跟踪」，但它**看得见**「曾跟踪后又删除」
+   —— 那是 `files` 里 `sha256: ''` 的那一条）；
+2. 「本地绿 ≠ CI 绿」的理由**具体可指**：见证绑定的是**内容清单**，而本地那棵树的内容
+   与见证**互相自洽**（一起含那个空哈希条目）。**唯一可靠的取证是另一种工作树形态**
+   —— 这次是 CI 本身。
+
+**修法**（不碰判据）：重新跑一次 `tools/run_m0_with_witness.py`，让见证对着**没有那个
+文件**的树重写。读数：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、
+0 FAILED、`tree changed during the run: False`、覆盖 **4554** 个受判面文件
+（上轮 4555，差的那一个正是被删的文件）、`--verify-only` 退出码 `0`。
+
 ## 八、残余风险与未覆盖范围
 
 见 GOAL 正文的「残余与未覆盖范围（逐条）」与「战役预算触顶登记」两节 —— 本复检不重复，
