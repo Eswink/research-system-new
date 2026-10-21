@@ -86,6 +86,7 @@ from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.project_direction_support import project_direction_builder
 from services.api.retrieval_context_support import retrieval_context_builder
 from services.api.review_material_support import review_material_builder
+from services.api.review_outcome_support import review_outcome_builder
 from services.api.runtime_support import (
     RuntimeSelection,
     build_agent_runtime,
@@ -116,19 +117,18 @@ class ApiDeps:
     run_contexts: dict[str, RunContext] = field(default_factory=dict)
     artifacts: ArtifactStore | None = field(default=None, repr=False)
     agent_store: AgentStore | None = field(default=None, repr=False)
-    # WP-B（PLAN-040）：用户自定义 Role/TeamTemplate 覆盖（SQLite 配置面；
-    # 未配置时 merged_catalog 无 overrides、custom POST 诚实 503）。
+    # WP-B（PLAN-040）：用户自定义 Role/TeamTemplate 覆盖（SQLite 配置面；未配置 ⇒ 无 overrides、
+    # custom POST 诚实 503）。
     catalog_overrides: CatalogOverrideStore | None = field(default=None, repr=False)
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
     # WP-A（PLAN-041）：项目注册表（单用户；SQLite 配置面，两组成同侧）。
     project_store: ProjectStore | None = field(default=None, repr=False)
     approvals: ApprovalStore | None = field(default=None, repr=False)
     memory: Any | None = field(default=None, repr=False)
-    # WP-E（PLAN-037）：ExperimentStore（PG canonical state；PLAN-040 WP-A 起
-    # SQLite 开发路径同 Port 实现，消灭 dev 路径诚实 503）。
+    # WP-E（PLAN-037）：ExperimentStore（PG canonical state；PLAN-040 WP-A 起 SQLite 开发路径
+    # 同 Port 实现，消灭 dev 路径诚实 503）。
     experiment_store: Any | None = field(default=None, repr=False)
-    # WP-G：通知已读 view-state（控制面 SQLite；两路径同侧）。
-    notification_reads: Any | None = field(default=None, repr=False)
+    notification_reads: Any | None = field(default=None, repr=False)  # WP-G：通知已读 view-state
     # WP-A（PLAN-044）：库目录（prompts/datasets/notebooks；配置面，两组成同侧）。
     library_store: LibraryStore | None = field(default=None, repr=False)
     # WP-D：provider_id → ToolProvider port 实例注册表（生产未注册时空 dict，
@@ -146,9 +146,8 @@ class ApiDeps:
     pricing: Any | None = field(default=None, repr=False)
     worker_registry: WorkerRegistry | None = field(default=None, repr=False)
     protocol_draft_service: Any | None = field(default=None, repr=False)
-    # WP-B（PLAN-049）：policy 面（examples/config/policy.yaml）与控制面求值器。
-    # 两组成同侧装配；加载失败/缺文件时保持 None（调用方须按诚实缺口处理，
-    # 不得假装存在默认策略）。
+    # WP-B（PLAN-049）：policy 面（examples/config/policy.yaml）与控制面求值器。两组成同侧装配；
+    # 加载失败/缺文件时保持 None（调用方须按诚实缺口处理，不得假装存在默认策略）。
     policy: PolicyDefinition | None = field(default=None, repr=False)
     policy_evaluator: PolicyEvaluator | None = field(default=None, repr=False)
     # PLAN-059（EC-04）：ops 写面 store（告警规则 CRUD + 事故处置）。两组成同侧；
@@ -298,9 +297,9 @@ def _sqlite_store_parts(
         review_findings=SqliteReviewFindingStore(connection=connection),
         program_store=SqliteProgramStore(connection=connection),
         # GOAL-20261009-042 EC-02：与 `config_store_parts(connection)["memory"]` 同一份构造
-        # （同一 connection ⇒ 同一 canonical 面；`ApiDeps.memory` 取的是那里的实例）。
+        # （同一 connection ⇒ 同一 canonical 面；`ApiDeps.memory` 取那里的实例）。
         memory_store=SqliteMemoryStore(connection=connection),
-        project_store=SqliteProjectStore(connection=connection),  # GOAL-089 EC-02：同上一条口径
+        project_store=SqliteProjectStore(connection=connection),
     )
 
 
@@ -336,6 +335,7 @@ def _sqlite_orchestration(
             ),
             prior_knowledge=prior_knowledge_builder(memory_store=ports.memory_store),
             review_material=review_material_builder(ports),  # 被评对象（只挂 REVIEWER）
+            review_outcome=review_outcome_builder(ports),  # GOAL-093：上一轮判词 → 下一轮
             project_direction=project_direction_builder(project_store=ports.project_store),
             telemetry=telemetry,
             pricing=ports.pricing,

@@ -41,6 +41,11 @@ DIRECTION_SECTION_TITLE = "PROJECT DIRECTION (the operator's stated research dir
 #: GOAL-20261020-091 EC-02：**被评对象**那一段的标题（与另三段**并列**）。
 REVIEW_MATERIAL_SECTION_TITLE = "UNDER REVIEW (the artifact you are asked to judge)"
 
+#: GOAL-20261022-093：**上一轮评审结论**那一段的标题（与另四段**并列**）。
+#: 逐字取自阶梯「复检」域的下一级（「评审的判词驱动下一轮修订」）：这一段把上一轮
+#: 判成什么**送达下一轮的会话**，模型据此决定这一轮改什么。
+REVIEW_OUTCOME_SECTION_TITLE = "PRIOR REVIEW (how the last round was judged; revise against it)"
+
 #: 被截断条目的标注（**逐字**；判据按它判「截断可见」）。
 TRUNCATED_MARK = "[truncated]"
 #: 待复核条目的标注（**逐字**）。
@@ -188,27 +193,105 @@ def prompt_with_review_material(purpose: str, view: Any) -> str:
     return f"{purpose}\n\n{section}"
 
 
-def compose_prompt(
+def render_review_outcome_prompt(view: Any) -> str:
+    """`ReviewOutcomeView` → **上一轮评审结论**那一段（**无可搬运内容 ⇒ 空串**）。
+
+    与另四段**并列**、各有语义：方向 = 被要求研究什么；前序知识 = 已经知道什么；
+    检索 = 这一轮取回了什么；被评对象 = 你要判的那件东西；**本段 = 上一轮被判成什么**。
+
+    **分歧优先**：面板有分歧时逐条列出**每一位**的 verdict（含未被采纳的那些），
+    并在抬头写明建议性结论 —— 只报多数票会把上一轮刚做出来的「分歧可读」压回一个
+    数字，那正是 GOAL-087 修掉的那件事。无分歧时只报结论与票型。
+
+    逐条带**发言者 + 执行目标**：前者让「谁说的」可追（`gate:<agent>`），后者让「哪个
+    模型说的」可追（`endpoint/model_name`）—— 两者缺一，读者就无法判断这条分歧是不是
+    同一个模型自言自语。
+    """
+    if getattr(view, "empty", True):
+        return ""
+    lines = [REVIEW_OUTCOME_SECTION_TITLE, ""]
+    prior = str(getattr(view, "prior_run_id", "") or "")
+    advisory = getattr(view, "advisory", None)
+    votes = dict(getattr(view, "votes", {}) or {})
+    voters = int(getattr(view, "voters", 0) or 0)
+    lines.append(f"- carried from prior run: {prior}")
+    lines.append(f"- reviewers who voted: {voters}")
+    targets = tuple(getattr(view, "targets", ()) or ())
+    if targets:
+        # **谁判的**与**判成什么**分两行：只看票数时，「两个模型分歧」与「一个模型
+        # 自言自语」不可区分 —— 目标集合把归因面钉在提示词里（与 `PanelVerdict.targets`
+        # 同源）。
+        lines.append(f"- reviewer targets: {', '.join(targets)}")
+    lines.append(f"- advisory verdict: {advisory or 'none (tie or no eligible vote)'}")
+    if votes:
+        tally = ", ".join(f"{key}={votes[key]}" for key in sorted(votes))
+        lines.append(f"- votes: {tally}")
+    dissent = tuple(getattr(view, "dissent", ()) or ())
+    lines.extend(_dissent_lines(dissent))
+    ineligible = tuple(getattr(view, "ineligible", ()) or ())
+    if ineligible:
+        lines.append("- findings that could not vote (named, not folded into any tally):")
+        lines.extend(f"  - {item}" for item in ineligible)
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _dissent_lines(dissent: tuple[Any, ...]) -> list[str]:
+    """分歧逐条（**每位**未采纳者的 verdict + 执行目标 + 它自己写的正文）。
+
+    单列的理由是**可读性 + 规模门**：这一段的形状（发言者 / 目标 / 截断标记 / 正文
+    缩进）与上半段的票型是两件事，混在一个函数里会同时撞 50 行门与可读性。
+    """
+    if not dissent:
+        return []
+    lines = ["- dissent (every verdict that is not the advisory; read these):"]
+    for item in dissent:
+        speaker = str(getattr(item, "speaker", "") or "")
+        verdict = str(getattr(item, "verdict", "") or "")
+        target = str(getattr(item, "target", "") or "unknown target")
+        detail = str(getattr(item, "detail", "") or "")
+        mark = f" {TRUNCATED_MARK}" if getattr(item, "truncated", False) else ""
+        lines.append(f"  - {speaker} on {target}: {verdict}{mark}")
+        if detail:
+            lines.append(f"    {detail}")
+    return lines
+
+
+def prompt_with_review_outcome(purpose: str, view: Any) -> str:
+    """合约 purpose + **上一轮评审结论**那一段（**无可搬运内容 ⇒ 逐字返回 purpose**）。"""
+    section = _section_of(view, render_review_outcome_prompt)
+    if not section:
+        return purpose
+    return f"{purpose}\n\n{section}"
+
+
+def compose_prompt(  # noqa: PLR0913 - 提示词五段并列：少一个形参就得让所有调用点先拼对象
     purpose: str,
     *,
     direction: str | None = None,
     prior_knowledge: Any = None,
     retrieval: Any = None,
     review_material: Any = None,
+    review_outcome: Any = None,
 ) -> str:
-    """合约 purpose + [方向] + [前序知识] + [检索摘录] + [被评对象]。
+    """合约 purpose + [方向] + [前序知识] + [检索摘录] + [上一轮评审] + [被评对象]。
 
-    **顺序 = 先方向、再前序、再检索、最后被评对象**：模型先知道**被要求研究什么**，
-    再知道自己**已经**知道什么（起点），再看到这一轮新取回的材料（对起点的更新），
-    最后看到**它这一轮要判的那件东西**（`GOAL-20261020-091 EC-02`）—— 被评对象放在
-    最后读，紧贴它要给出的判词。
+    **顺序 = 先方向、再前序、再检索、再上一轮评审、最后被评对象**：模型先知道**被要求
+    研究什么**，再知道自己**已经**知道什么（起点），再看到这一轮新取回的材料（对起点的
+    更新），再看到**上一轮被判成什么**（要改什么），最后看到**它这一轮要判的那件东西**
+    （`GOAL-20261020-091 EC-02`）—— 被评对象放在最后读，紧贴它要给出的判词。
 
-    **全缺 ⇒ 逐字返回 purpose**（四段各自的零回归口径在本函数里合成一条）。
+    **上一轮评审排在检索之后、被评对象之前**（`GOAL-20261022-093`）：它是「这一轮该改
+    什么」的依据，而它依据的是**上一轮**的被评对象 —— 与被评对象段（**本轮**要判的东西）
+    是两件事，故分列且先读评审结论（先知道要改什么，再读要判什么）。
+
+    **全缺 ⇒ 逐字返回 purpose**（五段各自的零回归口径在本函数里合成一条）。
     """
     text = prompt_with_direction(purpose, direction)
     for view, render in (
         (prior_knowledge, prompt_with_prior_knowledge),
         (retrieval, prompt_with_retrieval),
+        (review_outcome, prompt_with_review_outcome),
         (review_material, prompt_with_review_material),
     ):
         if view is not None:
@@ -222,14 +305,17 @@ __all__ = [
     "PRIOR_SECTION_TITLE",
     "REVIEW_DUE_MARK",
     "REVIEW_MATERIAL_SECTION_TITLE",
+    "REVIEW_OUTCOME_SECTION_TITLE",
     "TRUNCATED_MARK",
     "compose_prompt",
     "prompt_with_direction",
     "prompt_with_prior_knowledge",
     "prompt_with_retrieval",
     "prompt_with_review_material",
+    "prompt_with_review_outcome",
     "render_direction_prompt",
     "render_prior_knowledge_prompt",
     "render_retrieval_prompt",
     "render_review_material_prompt",
+    "render_review_outcome_prompt",
 ]

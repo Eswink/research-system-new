@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "63b9be3d551e9d0b1a50f73ff68856e7d243ba2c"
+        "sha256": "3745b744a5acc546c42a7ee7f40f28d4bc2bd81f"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1327,8 +1327,12 @@
         "sha256": "8094a3fda22b1c8337b2b22c8ce446ae9bb5282e"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261022-227-a-verdict-that-does-not-leave-its-run-is-not-a-driver.md",
+        "sha256": "0e10125fb33939934395bc95822215e9c2e9fd15"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "14a1fcaacf81e14ee8d88d3dd2e203fd077fc7fb"
+        "sha256": "86a142cea32b5d45a28737a775e4f14158ff6def"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1731,8 +1735,12 @@
         "sha256": "c6630df36775d1f3436a9891414a8e4e3f00c3c1"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261022-093-the-review-verdict-drives-the-next-round.md",
+        "sha256": "70cc84e8d7b8f9f64cb1dda126ab792305f3d87e"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "7f51fdad72bb1ca43112402f17c0e3d416fa4b15"
+        "sha256": "dcda8eba0b212e94c9352d7b2d0c908a7b8b2903"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -1853,6 +1861,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-19-progress-089-only.md",
         "sha256": "eac63667ccb4b38223e8b5998fe6e7ff9294592d"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-19-revisions-57-only.md",
+        "sha256": "0c279e9ab14170f6600f46c9d87e764276614107"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-21-progress-090-only.md",
+        "sha256": "a5d2acc6b45b46acb3b66a15af50187491ef83eb"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -2553,6 +2569,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-verdict-current.txt",
         "sha256": "28f7a45fc32ff1ba6a33b0215f8cc4deba529e01"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261022-093-next-round-charter.md",
+        "sha256": "f11f906b940e867e7d7eb071ab64b0975da05f33"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -3991,6 +4011,10 @@
         "sha256": "ac8bfb86532cd76477e683bd72c1b1e57be3512a"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261022-093-goal-093-the-review-verdict-drives-the-next-round.md",
+        "sha256": "149cdfd051dbecb46d0570b2dbddc7a172c0767e"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5355,6 +5379,10 @@
         "sha256": "45a4a03792673bebdd45aae3ab5a5522fd0b23e2"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261022-093-goal-093-the-review-verdict-drives-the-next-round.md",
+        "sha256": "cc2ec50b6fcefefbc723d5606d30bd5f450d42c2"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -5908,7 +5936,7 @@
       },
       {
         "path": "adapters/openhands/session_builder.py",
-        "sha256": "dc2871824dcf4959da9e51a40bb93daca7b71e0a"
+        "sha256": "016c33f74c7a2266d5b6540910cd4f645cb674cc"
       },
       {
         "path": "adapters/openhands/session_tool_invocation.py",
@@ -13052,7 +13080,7 @@
       },
       {
         "path": "packages/application/ports/agent_runtime.py",
-        "sha256": "ff815f823749b36d6a01e13ffb7226059ee43083"
+        "sha256": "ef1cb504f9d50ecb7d36a32d674880c543d13e86"
       },
       {
         "path": "packages/application/ports/agent_store.py",
@@ -13352,7 +13380,7 @@
       },
       {
         "path": "packages/application/run_orchestration/dependencies.py",
-        "sha256": "10cea5561746ace0a2df6584389839734ea48a41"
+        "sha256": "c31eadb4b0cb211ff625b8a40f072d027faf4a50"
       },
       {
         "path": "packages/application/run_orchestration/evaluation_gate.py",
@@ -13420,7 +13448,7 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_runner.py",
-        "sha256": "630a9e09b5daf837f559d3b9f93f4b2a1dc0b627"
+        "sha256": "adcda76efb9e81a227c8488dcecf1d030216f6e9"
       },
       {
         "path": "packages/application/run_orchestration/prior_knowledge.py",
@@ -13468,7 +13496,7 @@
       },
       {
         "path": "packages/application/run_orchestration/retrieval_prompt.py",
-        "sha256": "fc38e91ba64e1a72a6e2fc5a8fbd2a12c7c9986f"
+        "sha256": "bf660f5195f298d476a6eaba7edef83b9cfb18ce"
       },
       {
         "path": "packages/application/run_orchestration/review_attribution.py",
@@ -13477,6 +13505,10 @@
       {
         "path": "packages/application/run_orchestration/review_material.py",
         "sha256": "93ade75a3538ebf039060f037c6bd0ae00b51106"
+      },
+      {
+        "path": "packages/application/run_orchestration/review_outcome.py",
+        "sha256": "2221eff873f880f3c79c4248f228cbdc702ea0f0"
       },
       {
         "path": "packages/application/run_orchestration/review_panel_judging.py",
@@ -13504,7 +13536,7 @@
       },
       {
         "path": "packages/application/run_orchestration/runner_wiring.py",
-        "sha256": "ffd9c8b0e0d491b1e40fa4f8998a31352f6cf15e"
+        "sha256": "57cbdf62809c5ccfdf497a7b176b31413b7beed5"
       },
       {
         "path": "packages/application/run_orchestration/runtime_fingerprint.py",
@@ -13520,7 +13552,7 @@
       },
       {
         "path": "packages/application/run_orchestration/session_prompts.py",
-        "sha256": "04d843faf2c190ff685918325799678fe555aa08"
+        "sha256": "02e1d412193480c720505739a67469c732bc178d"
       },
       {
         "path": "packages/application/run_orchestration/session_resolution.py",
@@ -13536,7 +13568,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_executor.py",
-        "sha256": "f1b407ae9c1cd999a8765930530388521b11accd"
+        "sha256": "1b2c83c112b35317a86818e0ec16557f471fa34b"
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
@@ -13968,7 +14000,7 @@
       },
       {
         "path": "services/api/composition.py",
-        "sha256": "bcc882268a7eb20dc7463859d8b120fbe89dc713"
+        "sha256": "64eca6d58f384061a7fee0ae8dfd7dc843227e43"
       },
       {
         "path": "services/api/config_store_parts.py",
@@ -14160,7 +14192,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "3fb4cc29ccfdbc68a0aad3eefe81610e69690306"
+        "sha256": "4b202d1592a829b59c3ab075c1cd2027ed3efce5"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -14205,6 +14237,10 @@
       {
         "path": "services/api/review_material_support.py",
         "sha256": "9f1b113857e9c0465a6af795c71896ca4b0bbf72"
+      },
+      {
+        "path": "services/api/review_outcome_support.py",
+        "sha256": "c9c0dc2036001dec70c087429dd8f9d4cc716637"
       },
       {
         "path": "services/api/routers/__init__.py",
@@ -15431,6 +15467,10 @@
         "sha256": "1bccfa86b869f19e82cad98b680d466ef2d86633"
       },
       {
+        "path": "tests/application/run_orchestration/review_outcome_support.py",
+        "sha256": "7e43bd814d746fa556f8bf6e4f2c37446c264362"
+      },
+      {
         "path": "tests/application/run_orchestration/test_acceptance_gate_input_face.py",
         "sha256": "145a91b93e51953968691f6f59c804e5a1cc25e4"
       },
@@ -15533,6 +15573,14 @@
       {
         "path": "tests/application/run_orchestration/test_review_material_in_prompt.py",
         "sha256": "c960c28cb01e1ac319e6a1cc8dc8a48525f57f6f"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_review_outcome_across_runs.py",
+        "sha256": "868a1c3f3ed7525fcaec3723440c0ba57d582a03"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_review_outcome_in_prompt.py",
+        "sha256": "b2ba341ffe5cb58b12ac3cca27ef993ec8074af2"
       },
       {
         "path": "tests/application/run_orchestration/test_review_score_reads_the_envelope.py",
@@ -17212,7 +17260,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "6fc184831674d74eef2b732e5c442ab0b446edbc"
+        "sha256": "f7f43ea1a8138b6c6ba8b9206cfb6f75aca70051"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -17312,7 +17360,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "23223294bc2b4fc53dd0b246e369e58d48ed85bf"
+        "sha256": "67eccf0f1fcd29a22af0213ab7063d0054ecc29f"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -17823,6 +17871,10 @@
         "sha256": "90bed0855c768a3e2b45a48f7642f5367f0ee6a6"
       },
       {
+        "path": "tools/goal093_closeout_assertions.py",
+        "sha256": "8776f3a3d5f5b66e6e5eb9f6bdde5539d784d147"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -18223,11 +18275,15 @@
         "sha256": "86b4a16bffb3ec007ba99a529bdf32c4182375b2"
       },
       {
+        "path": "tools/verify_goal093_closeout.py",
+        "sha256": "3de18a81e1b056c50c05e62c499c29d69ff7cd04"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "0abcd99992016d2dbda7af0ba192793d8baf85d9"
+    "head": "a1150ab55d7484ba42e5c0d85e139ba9c0289257"
   },
   "fingerprint_before": {
     "files": [
@@ -18649,7 +18705,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "63b9be3d551e9d0b1a50f73ff68856e7d243ba2c"
+        "sha256": "3745b744a5acc546c42a7ee7f40f28d4bc2bd81f"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -19556,8 +19612,12 @@
         "sha256": "8094a3fda22b1c8337b2b22c8ce446ae9bb5282e"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261022-227-a-verdict-that-does-not-leave-its-run-is-not-a-driver.md",
+        "sha256": "0e10125fb33939934395bc95822215e9c2e9fd15"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "14a1fcaacf81e14ee8d88d3dd2e203fd077fc7fb"
+        "sha256": "86a142cea32b5d45a28737a775e4f14158ff6def"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -19960,8 +20020,12 @@
         "sha256": "c6630df36775d1f3436a9891414a8e4e3f00c3c1"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261022-093-the-review-verdict-drives-the-next-round.md",
+        "sha256": "70cc84e8d7b8f9f64cb1dda126ab792305f3d87e"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "7f51fdad72bb1ca43112402f17c0e3d416fa4b15"
+        "sha256": "dcda8eba0b212e94c9352d7b2d0c908a7b8b2903"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -20082,6 +20146,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-19-progress-089-only.md",
         "sha256": "eac63667ccb4b38223e8b5998fe6e7ff9294592d"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-19-revisions-57-only.md",
+        "sha256": "0c279e9ab14170f6600f46c9d87e764276614107"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-21-progress-090-only.md",
+        "sha256": "a5d2acc6b45b46acb3b66a15af50187491ef83eb"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -20782,6 +20854,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261021-092-verdict-current.txt",
         "sha256": "28f7a45fc32ff1ba6a33b0215f8cc4deba529e01"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261022-093-next-round-charter.md",
+        "sha256": "f11f906b940e867e7d7eb071ab64b0975da05f33"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -22220,6 +22296,10 @@
         "sha256": "ac8bfb86532cd76477e683bd72c1b1e57be3512a"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261022-093-goal-093-the-review-verdict-drives-the-next-round.md",
+        "sha256": "149cdfd051dbecb46d0570b2dbddc7a172c0767e"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -23584,6 +23664,10 @@
         "sha256": "45a4a03792673bebdd45aae3ab5a5522fd0b23e2"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261022-093-goal-093-the-review-verdict-drives-the-next-round.md",
+        "sha256": "cc2ec50b6fcefefbc723d5606d30bd5f450d42c2"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -24137,7 +24221,7 @@
       },
       {
         "path": "adapters/openhands/session_builder.py",
-        "sha256": "dc2871824dcf4959da9e51a40bb93daca7b71e0a"
+        "sha256": "016c33f74c7a2266d5b6540910cd4f645cb674cc"
       },
       {
         "path": "adapters/openhands/session_tool_invocation.py",
@@ -31281,7 +31365,7 @@
       },
       {
         "path": "packages/application/ports/agent_runtime.py",
-        "sha256": "ff815f823749b36d6a01e13ffb7226059ee43083"
+        "sha256": "ef1cb504f9d50ecb7d36a32d674880c543d13e86"
       },
       {
         "path": "packages/application/ports/agent_store.py",
@@ -31581,7 +31665,7 @@
       },
       {
         "path": "packages/application/run_orchestration/dependencies.py",
-        "sha256": "10cea5561746ace0a2df6584389839734ea48a41"
+        "sha256": "c31eadb4b0cb211ff625b8a40f072d027faf4a50"
       },
       {
         "path": "packages/application/run_orchestration/evaluation_gate.py",
@@ -31649,7 +31733,7 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_runner.py",
-        "sha256": "630a9e09b5daf837f559d3b9f93f4b2a1dc0b627"
+        "sha256": "adcda76efb9e81a227c8488dcecf1d030216f6e9"
       },
       {
         "path": "packages/application/run_orchestration/prior_knowledge.py",
@@ -31697,7 +31781,7 @@
       },
       {
         "path": "packages/application/run_orchestration/retrieval_prompt.py",
-        "sha256": "fc38e91ba64e1a72a6e2fc5a8fbd2a12c7c9986f"
+        "sha256": "bf660f5195f298d476a6eaba7edef83b9cfb18ce"
       },
       {
         "path": "packages/application/run_orchestration/review_attribution.py",
@@ -31706,6 +31790,10 @@
       {
         "path": "packages/application/run_orchestration/review_material.py",
         "sha256": "93ade75a3538ebf039060f037c6bd0ae00b51106"
+      },
+      {
+        "path": "packages/application/run_orchestration/review_outcome.py",
+        "sha256": "2221eff873f880f3c79c4248f228cbdc702ea0f0"
       },
       {
         "path": "packages/application/run_orchestration/review_panel_judging.py",
@@ -31733,7 +31821,7 @@
       },
       {
         "path": "packages/application/run_orchestration/runner_wiring.py",
-        "sha256": "ffd9c8b0e0d491b1e40fa4f8998a31352f6cf15e"
+        "sha256": "57cbdf62809c5ccfdf497a7b176b31413b7beed5"
       },
       {
         "path": "packages/application/run_orchestration/runtime_fingerprint.py",
@@ -31749,7 +31837,7 @@
       },
       {
         "path": "packages/application/run_orchestration/session_prompts.py",
-        "sha256": "04d843faf2c190ff685918325799678fe555aa08"
+        "sha256": "02e1d412193480c720505739a67469c732bc178d"
       },
       {
         "path": "packages/application/run_orchestration/session_resolution.py",
@@ -31765,7 +31853,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_executor.py",
-        "sha256": "f1b407ae9c1cd999a8765930530388521b11accd"
+        "sha256": "1b2c83c112b35317a86818e0ec16557f471fa34b"
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
@@ -32197,7 +32285,7 @@
       },
       {
         "path": "services/api/composition.py",
-        "sha256": "bcc882268a7eb20dc7463859d8b120fbe89dc713"
+        "sha256": "64eca6d58f384061a7fee0ae8dfd7dc843227e43"
       },
       {
         "path": "services/api/config_store_parts.py",
@@ -32389,7 +32477,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "3fb4cc29ccfdbc68a0aad3eefe81610e69690306"
+        "sha256": "4b202d1592a829b59c3ab075c1cd2027ed3efce5"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -32434,6 +32522,10 @@
       {
         "path": "services/api/review_material_support.py",
         "sha256": "9f1b113857e9c0465a6af795c71896ca4b0bbf72"
+      },
+      {
+        "path": "services/api/review_outcome_support.py",
+        "sha256": "c9c0dc2036001dec70c087429dd8f9d4cc716637"
       },
       {
         "path": "services/api/routers/__init__.py",
@@ -33660,6 +33752,10 @@
         "sha256": "1bccfa86b869f19e82cad98b680d466ef2d86633"
       },
       {
+        "path": "tests/application/run_orchestration/review_outcome_support.py",
+        "sha256": "7e43bd814d746fa556f8bf6e4f2c37446c264362"
+      },
+      {
         "path": "tests/application/run_orchestration/test_acceptance_gate_input_face.py",
         "sha256": "145a91b93e51953968691f6f59c804e5a1cc25e4"
       },
@@ -33762,6 +33858,14 @@
       {
         "path": "tests/application/run_orchestration/test_review_material_in_prompt.py",
         "sha256": "c960c28cb01e1ac319e6a1cc8dc8a48525f57f6f"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_review_outcome_across_runs.py",
+        "sha256": "868a1c3f3ed7525fcaec3723440c0ba57d582a03"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_review_outcome_in_prompt.py",
+        "sha256": "b2ba341ffe5cb58b12ac3cca27ef993ec8074af2"
       },
       {
         "path": "tests/application/run_orchestration/test_review_score_reads_the_envelope.py",
@@ -35441,7 +35545,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "6fc184831674d74eef2b732e5c442ab0b446edbc"
+        "sha256": "f7f43ea1a8138b6c6ba8b9206cfb6f75aca70051"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -35541,7 +35645,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "23223294bc2b4fc53dd0b246e369e58d48ed85bf"
+        "sha256": "67eccf0f1fcd29a22af0213ab7063d0054ecc29f"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -36052,6 +36156,10 @@
         "sha256": "90bed0855c768a3e2b45a48f7642f5367f0ee6a6"
       },
       {
+        "path": "tools/goal093_closeout_assertions.py",
+        "sha256": "8776f3a3d5f5b66e6e5eb9f6bdde5539d784d147"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -36452,15 +36560,19 @@
         "sha256": "86b4a16bffb3ec007ba99a529bdf32c4182375b2"
       },
       {
+        "path": "tools/verify_goal093_closeout.py",
+        "sha256": "3de18a81e1b056c50c05e62c499c29d69ff7cd04"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "0abcd99992016d2dbda7af0ba192793d8baf85d9"
+    "head": "a1150ab55d7484ba42e5c0d85e139ba9c0289257"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "0abcd99992016d2dbda7af0ba192793d8baf85d9",
+  "ran_at_head": "a1150ab55d7484ba42e5c0d85e139ba9c0289257",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

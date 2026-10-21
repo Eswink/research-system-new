@@ -68,6 +68,11 @@ class AgentSessionSpec:
     #: 与另三段**并列**：前几段说「被要求做什么 / 已经知道什么 / 取回了什么」，这一段说
     #: 「你要判的是这一件东西」。缺省 `None` ⇒ 提示词逐字节等于既有形态。
     review_material_prompt: str | None = None
+    #: GOAL-20261022-093：**上一轮评审结论那一段**（前序 run 的落库判词：面板结论 +
+    #: 逐条分歧）。与另四段**并列**：那几段说的是「做什么 / 知道什么 / 取回什么 /
+    #: 要判什么」，这一段说「**上一轮被判成什么**」—— 下一轮据此修订。缺省 `None` ⇒
+    #: 提示词逐字节等于既有形态。
+    review_outcome_prompt: str | None = None
     budget_reservation: BudgetReservation | None = None
     manifest_ref: str | None = None
     endpoint: LLMEndpoint | None = None

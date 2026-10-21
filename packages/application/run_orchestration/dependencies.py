@@ -60,6 +60,10 @@ class OrchestrationDependencies:
     #: （`(task, declared_cross_phase_inputs) -> ReviewMaterialView`；每任务求值）。
     #: None（缺省）⇒ 提示词里没有那一段（既有语义逐字不变）。
     review_material: Any | None = None
+    #: GOAL-20261022-093：**上一轮评审结论** → 会话提示词的装配器
+    #: （`(run_id) -> ReviewOutcomeView`；每任务求值）。None（缺省）⇒ 提示词里没有那一段
+    #: （既有语义逐字不变）。读的是**同一程序内序号最大的前序 run** 的落库判词。
+    review_outcome: Any | None = None
     #: GOAL-20261019-089 EC-02：**本项目的研究方向**解析器（`(project_id) -> str | None`）。
     #: None（缺省）⇒ 没有方向面，提示词逐字节等于既有形态。解析失败由**调用方**决定：
     #: 本层不吞异常（「读不到方向」与「没有方向」必须分得开）。

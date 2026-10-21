@@ -61,9 +61,22 @@ def direction_prompt(spec_context: "SessionSpecContext") -> str | None:
     return render_direction_prompt(spec_context.direction) or None
 
 
+def review_outcome_prompt(spec_context: "SessionSpecContext") -> str | None:
+    """**上一轮评审结论** → 提示词那一段；**缺省 `None` ⇒ `None`**（不加那一段）。"""
+    view = spec_context.review_outcome
+    if view is None:
+        return None
+    from packages.application.run_orchestration.retrieval_prompt import (
+        render_review_outcome_prompt,
+    )
+
+    return render_review_outcome_prompt(view) or None
+
+
 __all__ = [
     "direction_prompt",
     "prior_knowledge_prompt",
     "retrieval_prompt",
     "review_material_prompt",
+    "review_outcome_prompt",
 ]

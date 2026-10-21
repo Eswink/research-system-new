@@ -8,6 +8,7 @@
 | [x] | [PLAN-20261018-523](tasks/PLAN-20261018-523-goal-086-ec01-04-panel-groups-by-the-object-under-review.md) | DONE |
 | [x] | [PLAN-20261018-526](tasks/PLAN-20261018-526-goal-087-ec01-04-a-rejecting-reviewer-does-not-cancel-the-panel.md) | DONE |
 | [x] | [PLAN-20261020-090](tasks/PLAN-20261020-090-goal-090-tool-dimension-and-m0-witness.md) | DONE |
+| [x] | [PLAN-20261022-093](tasks/PLAN-20261022-093-goal-093-the-review-verdict-drives-the-next-round.md) | DONE |
 | [x] | [PLAN-20261021-092](tasks/PLAN-20261021-092-goal-092-the-next-round-charter-is-read-not-remembered.md) | DONE |
 | [x] | [PLAN-20261020-091](tasks/PLAN-20261020-091-goal-091-two-models-judge-the-same-artifact.md) | DONE |
 | [x] | [PLAN-20261019-089](tasks/PLAN-20261019-089-goal-089-ec01-05-direction-drives-question.md) | DONE |

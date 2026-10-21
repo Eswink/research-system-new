@@ -13,6 +13,7 @@
 
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
+| [MEM-20261022-227](entries/MEM-20261022-227-a-verdict-that-does-not-leave-its-run-is-not-a-driver.md) | ACTIVE | repository | 0.9 | 2027-04-22 | PLAN-20261022-093 |
 | [MEM-20261021-226](entries/MEM-20261021-226-the-next-round-charter-is-read-not-remembered.md) | ACTIVE | repository | 0.9 | 2027-04-21 | PLAN-20261021-092 |
 | [MEM-20261020-224](entries/MEM-20261020-224-a-witness-must-not-describe-itself.md) | ACTIVE | repository | 0.9 | 2027-04-20 | PLAN-20261020-090 |
 | [MEM-20261020-225](entries/MEM-20261020-225-prompt-segments-were-dropped-at-the-handoff-layer.md) | ACTIVE | repository | 0.95 | 2027-04-20 | PLAN-20261020-091 |

@@ -25,6 +25,7 @@ from services.api.demo import seed_declared_inputs
 from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.retrieval_context_support import retrieval_context_builder
 from services.api.review_material_support import review_material_builder
+from services.api.review_outcome_support import review_outcome_builder
 from services.api.runtime_support import build_agent_runtime, resolve_runtime_selection
 
 
@@ -268,6 +269,8 @@ def _build_pg_orchestration(
             prior_knowledge=prior_knowledge_builder(memory_store=c["memory"]),
             # GOAL-20261020-091 EC-02：**被评对象** → 评审者提示词（与 SQLite 根同侧）。
             review_material=review_material_builder(c),
+            # GOAL-20261022-093：上一轮评审结论 → 下一轮提示词（与 SQLite 根同侧）。
+            review_outcome=review_outcome_builder(c),
             project_direction=project_direction_builder(project_store=c["project_store"]),
             telemetry=config.telemetry,
             pricing=_load_pricing(),

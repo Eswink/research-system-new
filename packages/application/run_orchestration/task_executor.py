@@ -145,6 +145,10 @@ class SessionSpecContext:
     #: 与前三段**并列**：前几段说「被要求做什么 / 已经知道什么 / 取回了什么」，这一段说
     #: 「你要判的是这一件东西」。缺省 `None` ⇒ 提示词逐字节等于既有形态。
     review_material: Any | None = None
+    #: GOAL-20261022-093：**上一轮评审结论**的装配结果（`review_outcome.ReviewOutcomeView`）。
+    #: 与另四段**并列**：那几段说「做什么 / 知道什么 / 取回什么 / 要判什么」，这一段说
+    #: 「**上一轮被判成什么**」。缺省 `None` ⇒ 提示词逐字节等于既有形态。
+    review_outcome: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -394,6 +398,8 @@ def _run_session(
         prior_knowledge_prompt=session_prompts.prior_knowledge_prompt(spec_context),
         # GOAL-20261020-091 EC-02：**被评对象**那一段（缺省 None ⇒ 提示词逐字不变）。
         review_material_prompt=session_prompts.review_material_prompt(spec_context),
+        # GOAL-20261022-093：**上一轮评审结论**那一段（缺省 None ⇒ 提示词逐字不变）。
+        review_outcome_prompt=session_prompts.review_outcome_prompt(spec_context),
         # GOAL-20261019-089 EC-02：**研究方向那一段**（缺省 None ⇒ 提示词逐字不变）。
         direction_prompt=session_prompts.direction_prompt(spec_context),
         endpoint=spec_context.endpoint,
