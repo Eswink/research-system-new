@@ -130,6 +130,17 @@ GOAL-20261022-094（序 62）：CI 台账第 3 行的 `提交` 格里没有反�
 
 **按压重做**：修正后重做「删 `33e48f57`」一向 ⇒ 仍判红并点名它；逐字节复原后 `sha256` 往返不变（`95c8b240…`）、`git diff` 为空、7 passed。
 
+## 十、两树复检与终局读数（收口时实证）
+
+| 项 | 读数 |
+| --- | --- |
+| 两树复检 | `TREE current … exit=0 verdicts=77` / `TREE clean … exit=0 verdicts=77` / `COMPARE identical=True` / `TWO-TREE PASS`；两树 `sha256` 逐字相同 （`9bb0a1c98cbcc5661b9e7eefeaf3b471c428d911fcc07717eaa17f85d303012a`）|
+| 收口验证器 | `tools/verify_goal094_closeout.py --root . --verdict-only` ⇒ **77 PASS / 0 FAIL** |
+| 治理校验 | `Cursor 治理验证通过`（ALL_PLAN / Task Plan / Recheck / Memory 交叉引用一致；GOAL 循环记录结构合规）|
+| 凭据审计 | 四面 `offenders=0`（tracked 4614 / records 1022 / config_db 1 / logs 901）|
+| 终局见证 | `b07c3398` 的树：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False` |
+| CI | `80e844b1` / `38edc9ac` / `b07c3398` 三次 M0 各 **八 job 全 success**；CodeQL 三 job 全 success |
+
 ## 结论
 
 **PASS**。五个 EC 全达成：跨 GOAL 台账判据在树且自动覆盖新 GOAL（8 条判据 + 两向按压 +
