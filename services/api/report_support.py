@@ -24,6 +24,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from packages.application.run_orchestration.report_narrative_task import llm_narrator
 from packages.application.run_orchestration.report_task import (
     ReportTaskDeps,
     execute_report_task,
@@ -40,13 +41,19 @@ def report_task_runner(
     artifacts: Any,
     ledger: Any,
     review_findings: Any,
+    narrator: Any | None = None,
 ) -> Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult]:
     """构造可直接放进 `PhaseRunnerDeps.report_task` 的派发器。
 
     三件 Port（制品店 / 证据账本 / 评审结论存储）都是**既有**装配件的引用（组合根持有）；
     本函数只把它们收成一个 `ReportTaskDeps` 并把调用转给 `execute_report_task`。
+
+    `narrator`（GOAL-20261022-062）：接上了 ⇒ 正文由模型撰写（数字留在确定性事实表）；
+    缺省 `None` ⇒ 逐字回到确定性汇编。**装配方必须显式选**，不由本函数猜。
     """
-    deps = ReportTaskDeps(artifacts=artifacts, ledger=ledger, reviews=review_findings)
+    deps = ReportTaskDeps(
+        artifacts=artifacts, ledger=ledger, reviews=review_findings, narrator=narrator
+    )
 
     def run(
         task: ResearchTask,
@@ -59,4 +66,26 @@ def report_task_runner(
     return run
 
 
-__all__ = ["report_task_runner"]
+def narrative_runner(
+    *,
+    gateway: Any,
+    credentials: Any,
+    endpoint: Any,
+    model_name: str,
+    credential_ref: str,
+) -> Any:
+    """模型叙述者的**产品闭包**（与 `report_task_runner` 同形同层；只是多给一个可注入面）。
+
+    它只转调 `llm_narrator`：端点 / 模型 / 凭据引用由**装配方**解析后传入 ⇒ 本模块不读
+    配置、不读目录、不碰凭据值（与 `experiment_support` 的边界同一纪律）。
+    """
+    return llm_narrator(
+        gateway=gateway,
+        credentials=credentials,
+        endpoint=endpoint,
+        model_name=model_name,
+        credential_ref=credential_ref,
+    )
+
+
+__all__ = ["narrative_runner", "report_task_runner"]

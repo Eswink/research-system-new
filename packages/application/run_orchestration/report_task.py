@@ -26,6 +26,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from packages.application.deliverable.report_narrative import NarrativeError
 from packages.application.deliverable.research_report import (
     REPORT_ARTIFACT_NAME,
     REPORT_MIME,
@@ -46,6 +47,7 @@ from packages.application.run_orchestration.report_facts import (
     report_inputs,
     tool_evidence,
 )
+from packages.application.run_orchestration.report_narrative_task import narrate
 from packages.application.run_orchestration.result_handler import (
     RegistrationDeps,
     ResultRegistration,
@@ -91,12 +93,17 @@ class ReportTaskDeps:
 
     `runs` **不在这里**：run 实体是**执行期在场的事实**（`spec_context.run`），
     不从存储读 —— 执行期间控制面还没把 run 行落库（见 `SessionSpecContext.run`）。
+
+    `narrator`（GOAL-20261022-062）：接上了 ⇒ 正文由**模型**撰写、数字留在确定性事实表；
+    缺省 `None` ⇒ 逐字回到**确定性汇编**（既有行为零回归）。**不把它做成「有就偷偷用、
+    没有就猜」**：两条路径的报告字节与 `created_by` 都不同，「谁写的」在制品上可读。
     """
 
     artifacts: ArtifactStore
     ledger: EvidenceLedger | None = None
     reviews: Any | None = None
     actor: str = "system:report-assembler"
+    narrator: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,6 +121,8 @@ class ReportAdmission:
     claim: Claim
     #: 同源元数据（JSON 文本；供 `SCHEMA_VALID` 类判据与读面核对，不进报告正文）。
     metadata: str
+    #: 叙述的归因面（GOAL-20261022-062；`None` = 确定性汇编，没有模型作者）。
+    narrative: Any | None = None
 
 
 def dispatch_report(deps: Any, tctx: Any) -> TaskExecutionResult:
@@ -146,30 +155,22 @@ def execute_report_task(
 ) -> TaskExecutionResult:
     """一次报告汇编任务（契约声明 `report` ⇒ 派发到这里；**不**建会话）。"""
     del trace_id  # 本任务的执行体不是会话，没有会话级标识可用
-    missing = _missing_faces(deps)
-    if missing is not None:
-        return _failed(
-            task,
-            f"contract {contract.id} declares a report assembly but {missing} "
-            "is not wired into this assembly",
-            FailureCategory.CONFIGURATION,
-        )
-    # run 实体取自 spec（**在场的那份事实**）：执行期间控制面还没把 run 行落库
-    # （`run_from_execution` 在编排返回之后才写），去存储读只会读到「未知 run」。
-    if spec_context.run is None:
-        return _failed(
-            task,
-            f"contract {contract.id} declares a report assembly but this run carries no "
-            "RunContext entity: the report reads the run's protocol/state from it",
-            FailureCategory.CONFIGURATION,
-        )
+    blocked = _admission_blocker(deps, task, contract, spec_context)
+    if blocked is not None:
+        return blocked
     try:
         assert deps.ledger is not None and deps.reviews is not None
         inputs = report_inputs(
             deps.artifacts, deps.ledger, deps.reviews, spec_context.run, task.run_id.value
         )
-        report = build_research_report(inputs)
-        admission = _admit(deps, task, inputs, report)
+        report, narrative = _body(deps, inputs)
+        admission = _admit(deps, task, inputs, report, narrative)
+    except NarrativeError as error:
+        return _failed(
+            task,
+            f"narrative for run {task.run_id.value} is unusable: {error}",
+            FailureCategory.EXECUTION_FAILURE,
+        )
     except (ReportBuildError, ValueError, KeyError) as error:
         return _failed(
             task,
@@ -183,6 +184,35 @@ def execute_report_task(
         attempts=task.attempt,
         message=f"report {admission.artifact.id} assembled (digest {admission.artifact.digest})",
     )
+
+
+def _admission_blocker(
+    deps: ReportTaskDeps,
+    task: ResearchTask,
+    contract: TaskContract,
+    spec_context: SessionSpecContext,
+) -> TaskExecutionResult | None:
+    """准入前的两件**声明面**缺件（缺则点名拒绝；齐了返回 `None`）。
+
+    run 实体取自 spec（**在场的那份事实**）：执行期间控制面还没把 run 行落库
+    （`run_from_execution` 在编排返回之后才写），去存储读只会读到「未知 run」。
+    """
+    missing = _missing_faces(deps)
+    if missing is not None:
+        return _failed(
+            task,
+            f"contract {contract.id} declares a report assembly but {missing} "
+            "is not wired into this assembly",
+            FailureCategory.CONFIGURATION,
+        )
+    if spec_context.run is None:
+        return _failed(
+            task,
+            f"contract {contract.id} declares a report assembly but this run carries no "
+            "RunContext entity: the report reads the run's protocol/state from it",
+            FailureCategory.CONFIGURATION,
+        )
+    return None
 
 
 def _failed(task: ResearchTask, message: str, category: FailureCategory) -> TaskExecutionResult:
@@ -199,14 +229,30 @@ def _missing_faces(deps: ReportTaskDeps) -> str | None:
     return None
 
 
+def _body(deps: ReportTaskDeps, inputs: ReportInputs) -> tuple[str, Any | None]:
+    """报告正文：接上了叙述者 ⇒ 模型写正文（数字留在事实表）；否则确定性汇编。
+
+    **两态各自可判**：返回的第二个值是叙述归因面（`None` = 汇编器写的）——
+    制品的 `created_by` 与 `report_metadata` 都从它推出「谁写的」。
+    """
+    if deps.narrator is None:
+        return build_research_report(inputs), None
+    narrated = narrate(inputs, deps.narrator)
+    return narrated.report, narrated.admission
+
+
 def _admit(
-    deps: ReportTaskDeps, task: ResearchTask, inputs: ReportInputs, report: str
+    deps: ReportTaskDeps,
+    task: ResearchTask,
+    inputs: ReportInputs,
+    report: str,
+    narrative: Any | None,
 ) -> ReportAdmission:
     """报告字节 → 内容寻址制品 + SourceRecord/Evidence/Claim（**唯一**准入入口）。"""
     assert deps.ledger is not None
     run_id = str(task.run_id.value)
     consumed = tool_evidence(evidence_of_run(deps.ledger, run_id))
-    artifact = _put_report(deps.artifacts, task, report_digest_payload(report), inputs)
+    artifact = _put_report(deps.artifacts, task, report_digest_payload(report), inputs, narrative)
     own = _register_report_evidence(deps, run_id, artifact)
     claim = _register_report_claim(deps, task, run_id, own, consumed)
     return ReportAdmission(
@@ -216,7 +262,8 @@ def _admit(
         own_evidence=own,
         consumed=consumed,
         claim=claim,
-        metadata=report_metadata(inputs),
+        metadata=report_metadata(inputs, narrative),
+        narrative=narrative,
     )
 
 
@@ -278,16 +325,24 @@ def _register_report_claim(
 
 
 def _put_report(
-    artifacts: ArtifactStore, task: ResearchTask, content: bytes, inputs: ReportInputs
+    artifacts: ArtifactStore,
+    task: ResearchTask,
+    content: bytes,
+    inputs: ReportInputs,
+    narrative: Any | None,
 ) -> Artifact:
-    """写报告制品（run 级 id；同一 run 重复汇编 ⇒ 覆盖写，内容寻址语义不变）。"""
+    """写报告制品（run 级 id；同一 run 重复汇编 ⇒ 覆盖写，内容寻址语义不变）。
+
+    `created_by` 读得懂「谁写的」：`model:<endpoint>/<returned>`（模型撰写正文）或
+    `system:report-assembler`（确定性汇编）—— 不靠读正文猜。
+    """
     artifact = Artifact(
         id=report_artifact_id(inputs.run_id),
         digest=Digest.of_bytes(content),
         size_bytes=len(content),
         media_type=REPORT_MIME,
         storage_uri=None,
-        created_by="system:report-assembler",
+        created_by=narrative.author if narrative is not None else "system:report-assembler",
         source_refs=[f"task:{task.id.value}", f"run:{inputs.run_id}"],
         classification="research_report",
     )

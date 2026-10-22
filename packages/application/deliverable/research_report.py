@@ -212,20 +212,27 @@ def report_digest_payload(report: str) -> bytes:
     return report.encode("utf-8")
 
 
-def report_metadata(inputs: ReportInputs) -> str:
-    """报告的同源元数据（JSON；供读面与判据核对，不进报告正文）。"""
-    return json.dumps(
-        {
-            "run_id": inputs.run_id,
-            "protocol_id": inputs.protocol_id,
-            "source_count": len(inputs.sources),
-            "metric_count": len(inputs.metrics),
-            "has_verdict": inputs.verdict is not None,
-            "sections": list(SECTION_HEADINGS),
-        },
-        ensure_ascii=False,
-        sort_keys=True,
-    )
+def report_metadata(inputs: ReportInputs, narrative: Any | None = None) -> str:
+    """报告的同源元数据（JSON；供读面与判据核对，不进报告正文）。
+
+    `narrative`（GOAL-20261022-062）：模型撰写正文时的归因面；缺省 `None` ⇒ 键集
+    **逐字不变**（既有确定性汇编的元数据零回归）。
+    """
+    payload: dict[str, Any] = {
+        "run_id": inputs.run_id,
+        "protocol_id": inputs.protocol_id,
+        "source_count": len(inputs.sources),
+        "metric_count": len(inputs.metrics),
+        "has_verdict": inputs.verdict is not None,
+        "sections": list(SECTION_HEADINGS),
+    }
+    if narrative is not None:
+        payload["narrative"] = {
+            "author": narrative.author,
+            "returned_model": narrative.returned_model,
+            "digest": narrative.digest,
+        }
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
 
 
 __all__ = [
