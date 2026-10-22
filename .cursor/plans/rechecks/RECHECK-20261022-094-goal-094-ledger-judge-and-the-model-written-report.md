@@ -149,7 +149,7 @@ GOAL-20261022-094（序 62）：CI 台账第 3 行的 `提交` 格里没有反�
 | 治理校验 | `Cursor 治理验证通过`（ALL_PLAN / Task Plan / Recheck / Memory 交叉引用一致；GOAL 循环记录结构合规）|
 | 凭据审计 | 四面 `offenders=0`（tracked 4614 / records 1022 / config_db 1 / logs 901）|
 | 终局见证 | `b07c3398` 的树：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False` |
-| CI | `80e844b1` / `38edc9ac` / `b07c3398` 三次 M0 各 **八 job 全 success**；CodeQL 三 job 全 success |
+| CI（六个提交，逐条） | `80e844b1` / `38edc9ac` / `b07c3398` / `b11ab450` / `f8c61422` ⇒ M0 **八 job 全 success**；`b911e4a0` ⇒ **2/8 判红**（见证与树失配：记录改在跑门之后，判据正确、未改），由 `b11ab450` 重跑门重封见证处置；`068e16c4` ⇒ attempt 1/2 各 1 `cancelled`（`quality-windows-latest` 撞 **20 分钟作业上限**，实测 20:03 / 20:07；同一 job 在 `b11ab450` 上 19:19 通过）⇒ attempt 3 **八 job 全 success**。**阈值一字未动**。CodeQL 三 job 在上述各提交全 `success` |
 
 ## 十一、完成核验判负后的四项补正（逐条，含实跑读数）
 
@@ -169,6 +169,25 @@ GOAL-20261022-094（序 62）：CI 台账第 3 行的 `提交` 格里没有反�
 
 **这三处（`b911e4a0` / `b11ab450` / 本次补正）都不写回台账**（写回会再产生一个提交）：
 它们的 run 结论在收口报告里给出。见 GOAL 的「自指边界」段。
+
+## 十二、补正之后又自查到的两处台账缺口（如实登记）
+
+在追 `068e16c4` 的 CI 时逐条比对全部 run，抓到**两处我自己写坏的台账**（都已补齐，判据未改）：
+
+| # | 我原先写的 | 真实读数 | 处置 |
+| --- | --- | --- | --- |
+| 1 | `b911e4a0` 记成「见下方自指边界」（**没有**给它一行台账） | 它自己的 M0 是 **2/8 判红**（[39835359599](https://github.com/Eswink/research-system-new/actions/runs/39835359599)：`quality-{ubuntu,windows}-latest` 同一判据 `test_the_witness_is_for_the_tree_we_are_looking_at`） | 补成真台账行并点名判红；由 `b11ab450`（对改完的树重跑门）处置 |
+| 2 | `b11ab450` / `068e16c4` 只写在自指边界段里，**没进台账表**；`068e16c4` 的 CI 写「待回填」 | `b11ab450` ⇒ 8/8 `success`；`068e16c4` ⇒ attempt 1/2 各 1 **`cancelled`**（`quality-windows-latest` **作业超时**：20:03 / 20:07 vs `timeout-minutes: 20`；同一 job 在 `b11ab450` 上 19:19 通过）⇒ attempt 3 **8/8 `success`**；`f8c61422` ⇒ 8/8 `success` | 三个提交各补一行台账并折进 cycle 行 |
+
+**为什么这值得单列**：这正是本轮那个判据要挡的形态 ——「台账里有、cycle 行里没有」与
+「结论只在散文里、台账里没有」是**两种不同的漏记**。第一处是判据能抓的（台账 → cycle），
+第二处**它抓不到**（台账里没这个提交，就没东西可对） ⇒ 后者只能靠**逐提交与 GitHub 实际
+run 对账**。本轮两处都是这样自查出来的，如实登记。
+
+**`cancelled` 的归因（三条取证）**：① 两次 attempt 都是**恰好 20 分 0x 秒**结束；
+② 该 job 的 `timeout-minutes` 字面是 **20**；③ **同一个 job** 在前一个提交上 **19:19**
+通过。三条合起来是「撞上限」而不是「并发取消」（后者会看到 `cancel-in-progress` 与同批
+在飞 job 一起终止）。**阈值一字未动**。
 
 ## 结论
 

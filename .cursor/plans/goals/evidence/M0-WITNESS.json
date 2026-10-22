@@ -4036,7 +4036,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md",
-        "sha256": "806ad6644706bd72d4ded8a5b87f8d0da83606ec"
+        "sha256": "bae4f586bdbdc20f74e16657cf369ecbb915bc81"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -18343,7 +18343,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "068e16c4fb9959a7f52a7600a96a3040160a87d1"
+    "head": "f8c614224eb5d75254adb4a3b2908fdc663489b8"
   },
   "fingerprint_before": {
     "files": [
@@ -22381,7 +22381,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md",
-        "sha256": "806ad6644706bd72d4ded8a5b87f8d0da83606ec"
+        "sha256": "bae4f586bdbdc20f74e16657cf369ecbb915bc81"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -36688,11 +36688,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "068e16c4fb9959a7f52a7600a96a3040160a87d1"
+    "head": "f8c614224eb5d75254adb4a3b2908fdc663489b8"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "068e16c4fb9959a7f52a7600a96a3040160a87d1",
+  "ran_at_head": "f8c614224eb5d75254adb4a3b2908fdc663489b8",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
