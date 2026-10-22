@@ -66,6 +66,11 @@ GOAL-093 因此**没有**这条判据：台账 **4 行**、实际提交 **7 个*
 - **测试替身别用 `type("_D", (), {"narrator": f})`**：函数变成类属性后就是**绑定方法**，
   `deps.narrator(prompt)` 会把 deps 当第一个参数传进去（`TypeError: takes 1 positional
   argument but 2 were given`）。用 `@dataclass` 才是普通可调用对象。
+- **`inspect.getsource` 的子串不是行为判据**：`"narrative.author if narrative is not None" in source`
+  判的是**代码形态** —— 把那一行改成 `narrative.author or "x"` 或写死常量，子串判据仍绿而
+  制品上的作者已经错了。正确形态是**真的跑一次** `execute_report_task`，再从 `FakeArtifactStore`
+  读回 `Artifact.created_by`（`tests/application/test_report_task_narrator_behaviour.py`）。
+  同一纪律：`str(ID)` 是 dataclass 的 **repr**（`ID(value='…')`），不是 UUID 文本 ⇒ 拼制品 id 必须取 `.value`。
 
 ## 射程边界（本记忆**不**声称的）
 

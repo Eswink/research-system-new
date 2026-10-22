@@ -1332,7 +1332,7 @@
       },
       {
         "path": ".cursor/memory/entries/MEM-20261022-228-judge-inheritance-and-the-model-written-report.md",
-        "sha256": "c5f50f2e496fce18d4806a4b37aa45feec58c1ae"
+        "sha256": "fe3ed700c3accfe4a65261be671bec29c350186b"
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
@@ -1744,7 +1744,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261022-094-goal-ledger-judge-and-the-model-written-report.md",
-        "sha256": "934081a230b083fb984d9899fa1f458bc30fe29f"
+        "sha256": "e1edae5635a7384db038cca49310303920e8da1c"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4036,7 +4036,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md",
-        "sha256": "5b4e62dc938116d08715b5c04545a8fc27c0c4bf"
+        "sha256": "806ad6644706bd72d4ded8a5b87f8d0da83606ec"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -5408,7 +5408,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md",
-        "sha256": "7e8161359b495034c62671f04fc4db88840ed81f"
+        "sha256": "5e4b46f13812fc314b5d2e943ce7dff1a7e62c31"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -15807,6 +15807,10 @@
         "sha256": "a6ffe79ba12c08cb34ca014053705fe2118dee1d"
       },
       {
+        "path": "tests/application/test_report_task_narrator_behaviour.py",
+        "sha256": "633e2367237e831273ec938eecae882fa0cd281c"
+      },
+      {
         "path": "tests/application/test_research_report_assembler.py",
         "sha256": "01114c1ab67c12c9439a2b850d24000263b6d2ff"
       },
@@ -17924,7 +17928,7 @@
       },
       {
         "path": "tools/goal094_closeout_assertions.py",
-        "sha256": "fdf20f791be1c00ea9ce67e25400465534916986"
+        "sha256": "79b941f77dcfc2e054cf43e17414dfa6190d463b"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -18339,7 +18343,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "b911e4a0bbc9134bb1006c3b556f706241f206cc"
+    "head": "b11ab45066d3fff00d713eea008c8ec4e53e8cbe"
   },
   "fingerprint_before": {
     "files": [
@@ -19673,7 +19677,7 @@
       },
       {
         "path": ".cursor/memory/entries/MEM-20261022-228-judge-inheritance-and-the-model-written-report.md",
-        "sha256": "c5f50f2e496fce18d4806a4b37aa45feec58c1ae"
+        "sha256": "fe3ed700c3accfe4a65261be671bec29c350186b"
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
@@ -20085,7 +20089,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261022-094-goal-ledger-judge-and-the-model-written-report.md",
-        "sha256": "934081a230b083fb984d9899fa1f458bc30fe29f"
+        "sha256": "e1edae5635a7384db038cca49310303920e8da1c"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -22377,7 +22381,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md",
-        "sha256": "5b4e62dc938116d08715b5c04545a8fc27c0c4bf"
+        "sha256": "806ad6644706bd72d4ded8a5b87f8d0da83606ec"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -23749,7 +23753,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md",
-        "sha256": "7e8161359b495034c62671f04fc4db88840ed81f"
+        "sha256": "5e4b46f13812fc314b5d2e943ce7dff1a7e62c31"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -34148,6 +34152,10 @@
         "sha256": "a6ffe79ba12c08cb34ca014053705fe2118dee1d"
       },
       {
+        "path": "tests/application/test_report_task_narrator_behaviour.py",
+        "sha256": "633e2367237e831273ec938eecae882fa0cd281c"
+      },
+      {
         "path": "tests/application/test_research_report_assembler.py",
         "sha256": "01114c1ab67c12c9439a2b850d24000263b6d2ff"
       },
@@ -36265,7 +36273,7 @@
       },
       {
         "path": "tools/goal094_closeout_assertions.py",
-        "sha256": "fdf20f791be1c00ea9ce67e25400465534916986"
+        "sha256": "79b941f77dcfc2e054cf43e17414dfa6190d463b"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -36680,11 +36688,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "b911e4a0bbc9134bb1006c3b556f706241f206cc"
+    "head": "b11ab45066d3fff00d713eea008c8ec4e53e8cbe"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "b911e4a0bbc9134bb1006c3b556f706241f206cc",
+  "ran_at_head": "b11ab45066d3fff00d713eea008c8ec4e53e8cbe",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

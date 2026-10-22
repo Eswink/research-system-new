@@ -31,7 +31,7 @@ memory_entries:
 | EC-01 | `tests/tooling/test_goal_ledger_covers_every_commit.py`（`ledger_problems` 唯一谓词 + `_terminal_goals_in_scope` 遍历） | 同左（8 条） |
 | EC-02 | 同上（`_CUTOFF_SEQ = 61` / `_CUTOFF_DATE`）+ 按压记录 | 同左（`test_the_scope_reaches_this_generation_and_skips_the_grandfathered_ones`）+ RECHECK 第三节 |
 | EC-03 | `.cursor/plans/goals/GOAL-20261022-093-...md`（台账 +3 行、cycle 2 `commits` 格 + 自指边界补正） | 新判据 + `tools/verify_goal093_closeout.py` |
-| EC-04 | `deliverable/report_narrative.py`（渲染 / 校验 / 事实表 / 任务书）、`run_orchestration/report_narrative_task.py`（`narrate` / `llm_narrator`）、`report_task.py`（`narrator` 缝 + `_body` + `_admission_blocker`）、`report_support.py`（`narrative_runner`） | `tests/application/test_report_narrative.py`（17）+ `tests/application/test_report_narrative_on_the_product_path.py`（7） |
+| EC-04 | `deliverable/report_narrative.py`（渲染 / 校验 / 事实表 / 任务书）、`run_orchestration/report_narrative_task.py`（`narrate` / `llm_narrator`）、`report_task.py`（`narrator` 缝 + `_body` + `_admission_blocker`）、`report_support.py`（`narrative_runner`） | `tests/application/test_report_narrative.py`（12）+ `tests/application/test_report_narrative_on_the_product_path.py`（7）+ `tests/application/test_report_task_narrator_behaviour.py`（**8，行为面**：真跑 `execute_report_task` 后从 store 读回 `created_by`；`llm_narrator` 正常路径）|
 | EC-05 | GOAL / PLAN / RECHECK / MEM / 宪章（序 62 + 阶梯「报告」+ 进展记录 + 归档）+ 见证 | `tools/verify_goal094_closeout.py` + 见证 `terminal_line` |
 
 ## 实施清单
@@ -43,7 +43,7 @@ memory_entries:
 - [x] **WP-5**：`report_narrative_task.py`（`narrate` / `llm_narrator` / `NarratorUnavailable`）。
 - [x] **WP-6**：`report_task.py` 接入（`ReportTaskDeps.narrator` / `_body` / `ReportAdmission.narrative` / `created_by` 随作者）。
 - [x] **WP-7**：`report_support.narrative_runner` 产品闭包（与 `report_task_runner` 同形同层）。
-- [x] **WP-8**：24 条报告判据（两块面 / 数字禁令 / 来源列 / 零回归 / 四态点名 / 归因同源）。
+- [x] **WP-8**：32 条报告判据（两块面 / 数字禁令 / 来源列 / 零回归 / 四态点名 / 归因同源），其中 **8 条是行为判据**（从 `ArtifactStore` 读回 `created_by`，不是 `getsource` 子串）。
 - [x] **WP-9**：宪章（序 62 / 阶梯「报告」行升级 / 进展记录 / 两表归档）。
 - [x] **WP-10**：记录面（GOAL / PLAN / RECHECK / MEM）+ 见证 + CI 台账。
 
@@ -55,8 +55,8 @@ memory_entries:
 | 按压①（压日志） | 判红：`CI 台账里的 4 个提交没有任何 cycle 行的 commits 格收录：['33e48f57', '3d53676e', '7fa4f651', 'a905c6c3']`；`sha256` `89e2fda8…` → `c9dcb895…` → 复原 `89e2fda8…` |
 | 按压②（删 `33e48f57`） | 判红：`CI 台账里的 1 个提交没有任何 cycle 行的 commits 格收录：['33e48f57']`；`sha256` `89e2fda8…` → `fb67595f…` → 复原 `89e2fda8…` |
 | GOAL-093 台账 | 补后 **7 行 = 7 个提交**（`7fa4f651` / `33e48f57` / `a905c6c3` / `3d53676e` / `ff7546d7` / `c626aced` / `2998649d`） |
-| 报告面判据 | 两文件 ⇒ **24 passed** |
-| 报告面反证 | 撤掉数字禁令 ⇒ **3 failed**（`test_a_numeral_in_the_narrative_is_refused_by_name` ×3）；复原后 `sha256` `91198c6c…` 复绿 |
+| 报告面判据 | 三个文件 ⇒ **32 passed**（含 8 条行为判据）|
+| 报告面反证 | ① 撤掉数字禁令 ⇒ **3 failed**；② 把 `created_by` 写死 ⇒ **3 failed**；③ 让 `llm_narrator` 忽略返回名 ⇒ **1 failed**。三处均按 raw `sha256` 逐字节复原（`91198c6c…` / `044602e3…` / `80606a97…`）|
 | 受影响套件 | `tests/application` + `tests/e2e/test_research_report_arc_offline.py` ⇒ **1297 passed / 1 skipped** |
 | 规模门 | `tests/tooling/test_python_source_limits.py` ⇒ **1324 passed**（`report_task.py` 418 行、`execute_report_task` 拆分后 ≤ 50 行） |
 | 三面清零 | `ruff format --check`（8 files）/ `ruff check` / `mypy`（8 source files）⇒ 全过 |

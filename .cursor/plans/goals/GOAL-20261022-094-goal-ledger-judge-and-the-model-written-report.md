@@ -62,7 +62,7 @@ exit_criteria:
       判据**：判据一字未因它而改。
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal093_closeout.py --root . --verdict-only`
-      ⇒ 全 PASS；`tests/tooling/test_goal_ledger_covers_every_commit.py` ⇒ 8 passed；
+      ⇒ **实跑读数：exit 0、68 `PASS` / 0 `FAIL`**（2026-10-23 在本树跑，原始输出 68 行 PASS；`SUMMARY` 行被 `--verdict-only` 略去，故以 `grep -c '^PASS'` = 68、`grep -c '^FAIL'` = 0 取证）；`tests/tooling/test_goal_ledger_covers_every_commit.py` ⇒ 8 passed；
       `rg -c '^\| \`[0-9a-f]{7,8}\` \|'` 在 GOAL-093 的 CI 台账节 ⇒ **7**。
     status: PASS
   - id: EC-04
@@ -74,11 +74,19 @@ exit_criteria:
       元数据有 `narrative` 块；没接 ⇒ **逐字节**回到既有确定性汇编、`created_by` 仍是
       `system:report-assembler`、元数据键集不变；④模型任务书**不发数值与标识符**（它无从复述）。
       判据：`tests/application/test_report_narrative.py` +
-      `tests/application/test_report_narrative_on_the_product_path.py`。
+      `tests/application/test_report_narrative_on_the_product_path.py` +
+      `tests/application/test_report_task_narrator_behaviour.py`（**行为面**：真的跑一次
+      `execute_report_task` 再从 `FakeArtifactStore` 读回 `Artifact.created_by`；
+      `llm_narrator` 的**正常解析路径**用假 gateway + 假 resolver 取证）。
     verify: >-
-      `uv run --frozen --no-sync python -B -m pytest tests/application/test_report_narrative.py
-      tests/application/test_report_narrative_on_the_product_path.py -q` ⇒ **24 passed**；
-      反证臂（按下无需放行）：撤掉数字禁令 ⇒ 3 条判据判红（`sha256` 复原后复绿）。
+      三个文件 ⇒ **32 passed**；`test_the_artifact_created_by_is_the_model_when_a_narrator_is_wired` /
+      `test_the_created_by_follows_a_different_narrator` /
+      `test_without_a_narrator_the_artifact_is_the_compiled_report_byte_for_byte` /
+      `test_llm_narrator_on_the_happy_path_attributes_the_returned_model`。
+      反证臂（不改判据）：① 撤掉数字禁令 ⇒ 3 条判红；② 把 `created_by` 写死成
+      `system:report-assembler` ⇒ **3 条判红**；③ 让 `llm_narrator` 忽略返回名 ⇒ **1 条判红**；
+      三处都按 raw `sha256` 逐字节复原（`report_task.py` `044602e3…`、
+      `report_narrative_task.py` `80606a97…`）。
     status: PASS
   - id: EC-05
     criterion: >-
@@ -235,6 +243,7 @@ memory_entries:
 | 1 | PLAN-20261022-094 | （未提交） | 新判据 **8 passed**（真树）；两向按压各判红并逐字节复原（`89e2fda8…` → `c9dcb895…`/`fb67595f…` → `89e2fda8…`）；GOAL-093 台账补至 **7 行 = 7 个提交**后仍 8 passed；报告面新判据 **24 passed**（两文件）；受影响套件 `tests/application` + 报告离线 e2e ⇒ **1297 passed / 1 skipped**；规模门 **1324 passed**；`ruff format` / `ruff check` / `mypy` 三面清零 | 无（未推送） | **3**：① 首版 `execute_report_task` 因新增分支涨到 **52 行**（上限 50）⇒ 把两处声明面缺件提出 `_admission_blocker`；② 首版模型任务书把**来源标识**（`39000001`）发给模型，而叙述被禁止含数字 ⇒ 判据自己抓出「请它违规」的形态，任务书改为只给**类别计数 + 指标名**；③ 测试替身用 `type("_D", (), {"narrator": f})` ⇒ 函数变绑定方法，`TypeError: takes 1 positional argument but 2 were given` ⇒ 改 dataclass | EC-05 收口；记录面 / 治理 / m0 / 两树 / CI 全未跑 | 写 GOAL/PLAN/RECHECK/MEM + 阶梯「报告」行 + 进展记录 + 归档 |
 | 2 | （同上） | `80e844b1` | 记录写完（GOAL / PLAN / RECHECK / MEM / 宪章序 62 + 阶梯「报告」行 + 进展记录 + 两表归档）→ `git add` **全部受判文件**（23 个：11 新增 + 12 修改）→ 记录面判据（治理校验通过 + **55 passed**）→ **最后**跑 m0 两遍（第一遍用管道跑，输出被 `tail` 截断 ⇒ 为取证 `PASS [` 行数重跑一遍并**直接写文件**）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False`；凭据审计四面 `offenders=0` | [M0 39811518364](https://github.com/Eswink/research-system-new/actions/runs/39811518364) **八 job 全 success** + [Push 39811517931](https://github.com/Eswink/research-system-new/actions/runs/39811517931) success | **2**：① 收口验证器自己抓出两处**判据缺陷**：用例下界写高（`def test_` 实为 12 而非 15）、把 `packages/` 与 `tests/` 的文件也要求进 `IN_SCOPE`（范畴错误 —— 它们本就在 `PRODUCT_ROOTS` 里）⇒ 逐条修正；② 宪章判据抓出我在程序表里写了 `68 PASS / 0 FAIL`（状态枚举词）⇒ 改为「68 条判词全过 / 0 条不过」| **无**（五个 EC 全 PASS、CI 到终态） | 收口 |
 | 3 | （同上） |`38edc9ac` → `b07c3398` → `b911e4a0`| 判据修正（表格边界 + 标题只认行首）+ 两条新判据（8 条用例）+ 记录修正；见证：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False` | [M0 39823432168](https://github.com/Eswink/research-system-new/actions/runs/39823432168) **八 job 全 success** + [Push 39823434219](https://github.com/Eswink/research-system-new/actions/runs/39823434219) success | **2**：① 首轮封口 m0 **真红**（`23 PASS / 3 FAILED`）：判据把 `## CI 台账` 里混进的**另一张三列表的列头**当数据行 ⇒ `_table` 改为「连续 `｜` 行 + 列数一致」；② 同一判据的 `_section` 用朴素 `find`，被 cycle 行**正文里引用**的 `` `## CI 台账` `` 骗过而提前截断 ⇒ 标题只认**行首**。两条各配一条判据（8 条） | **无**（五个 EC 全 PASS、CI 到终态；判据修正只收紧实现，受判面定义未变） | 收口 |
+| 4 | （同上） | `（本次补正提交）` | 四项补正：EC-03 回填 `verify_goal093_closeout.py` 的**实跑读数**（exit 0 / 68 PASS / 0 FAIL）；自指边界段重写（逐条点名 `b911e4a0` / `b11ab450`）；RECHECK 第五节 `numstat` 按实测重写（补 `test_closeout_verifiers_run_their_own_assertions.py` 的 +1）；新增 **8 条行为判据**（`test_report_task_narrator_behaviour.py`：真跑 `execute_report_task` 后从 store 读回 `created_by`；`llm_narrator` 正常路径）。台账判据 8 passed；报告面三文件 **32 passed**；收口验证器 **78 PASS** | 本提交推送后回填 | **4**（全是**验证强度 / 记录自洽**缺口，非产品缺陷）：① EC-03 的 `verify` 用「⇒ 全 PASS」代替真实输出 ⇒ 实跑取证；② 自指边界段与表自相矛盾 ⇒ 重写并点名两个提交；③ `numstat` 表漏一处 +1 ⇒ 按实测重写；④ `created_by` 只由 `inspect.getsource` 子串证明、`llm_narrator` 正常路径未测 ⇒ 补 8 条行为判据。**没有改任何受判面的定义**（两向按压：写死 `created_by` ⇒ 3 判红；忽略返回名 ⇒ 1 判红） | **无**（五个 EC 仍全 PASS；补正只增强取证强度） | 收口 |
 
 ## 上一轮残余的处置（5/5，逐条）
 
@@ -284,6 +293,7 @@ memory_entries:
 | 2026-10-22 | **ACTIVE** | **建档**：承用户 goal-mode 指令（先补元缺陷、再做一格功能）。建档**实测**四处缺口：① `_log_verdicts` 只在 `goal092_closeout_assertions.py`，`rg` 在 `tools/goal093*` 零命中；② GOAL-093 台账 4 行 vs 实际 7 个提交、三个提交两张表都不进；③ 报告 `created_by="system:report-assembler"` 且 docstring 自陈不调模型；④ 阶梯「报告」行 `下一级` 逐字是「报告由模型撰写」。`max_cycles: 14`。 |
 | 2026-10-22 | **ACTIVE** | **收口面落地**：五个 EC 全 PASS（EC-01…04 判据面 6 + 24 例；EC-05 记录面）；GOAL-093 台账补至 **7 行 = 7 个提交**；两向按压各判红并逐字节复原；收口验证器 **77/77**；读取器自举（GOAL-093 → 本 GOAL charter，`W-1…W-5` 5/5 有处置）。CI 台账待推送后回填。 |
 | 2026-10-22 | **ACHIEVED** | 五个 EC 全达成。**CI 到终态**：`80e844b1` 八 job 全 `success` + CodeQL 三 job `success`。**本地 m0**：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、覆盖 **4584**、`tree changed during the run: False`。**凭据审计**四面 `offenders=0`。**阶梯前进**：「报告」行升级为「叙述由模型撰写、数字仍在事实表」。残余如实留（`W-1`…`W-5` / `R-1`…`R-3`）。 |
+| 2026-10-23 | **ACHIEVED**（补正） | **完成核验判负后的四项补正**：EC-03 回填实跑读数（`verify_goal093_closeout.py` ⇒ exit 0 / **68 PASS / 0 FAIL**）；自指边界段重写（点名 `b911e4a0` / `b11ab450`，并写明「链条的地基是最后一次跑门的那棵树」）；`numstat` 表按 `git diff --numstat 2998649d..` 重写（补上 `test_closeout_verifiers_run_their_own_assertions.py` 的 +1）；新增 **8 条行为判据**（从 `ArtifactStore` 读回 `created_by`，替代 `getsource` 子串；`llm_narrator` 正常路径用假 gateway 取证）。两向按压：写死 `created_by` ⇒ **3 判红**、忽略返回名 ⇒ **1 判红**，均按 raw `sha256` 逐字节复原。收口验证器 **78 PASS / 0 FAIL**。 |
 
 ## CI 台账
 
@@ -298,4 +308,17 @@ memory_entries:
 | `b07c3398` | [M0 39831150946](https://github.com/Eswink/research-system-new/actions/runs/39831150946) / [Push 39831148629](https://github.com/Eswink/research-system-new/actions/runs/39831148629) | **八 job 全 `success`**；CodeQL 三 job 全 `success` | 只改见证（对封印后的树重跑全量 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False`）⇒ **最终树** |
 | `b911e4a0` | 见下方自指边界 | — | 只改记录（台账补 `b07c3398` + 两树复检读数）；它的 run 结论在收口报告里给出、**不写回本表** —— 写回会再产生一个提交（GOAL-089/091/092/093 同一手法）|
 
-**自指边界（如实登记，不假装闭合）**：本表最后两行（`38edc9ac` 的判据修正、`b07c3398` 的见证封印）的结论写于对应提交**之后**，写下它们本身又产生新提交（`b07c3398` 之后再无提交改动受判面：本轮**到此为止**，其后的收口报告在会话里给出、**不写回台账**）—— 与 GOAL-089 / 091 / 092 / 093 同一手法。链条在**最后一次跑门的那棵树**处终止：`b07c3398` 的见证覆盖 **4584** 个受判面文件、`tree changed during the run: False`。
+**自指边界（如实登记，不假装闭合）**：本表里有**三个**只改记录的提交，它们各自的 run
+结论无法再写回本表而不产生第四个提交：
+
+- `b911e4a0` —— 台账补 `b07c3398` + 两树复检读数；它的 run 结论在收口报告里给出；
+- `b11ab450` —— 对**完成后**的记录树重跑全量 m0 并封印见证（`PASS: profile=m0; 23 deterministic checks`、
+  `PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False`）；
+- `（本次补正提交）` —— 验证器指出的四项补正（见 RECHECK 第十一节）。
+
+**所以链条的地基是「最后一次跑门的那棵树」，不是「表的最后一行」**：
+`b07c3398` 的见证覆盖 **4584** 个受判面文件、`tree changed during the run: False`；
+而 `b911e4a0` / `b11ab450` / 本次补正**只改记录面与判据面**（`git diff --name-only`
+逐条可核：`.cursor/plans/` 下的 GOAL / RECHECK / PLAN 与 ``tests/application`` 下的一条新判据，
+**没有任何产品代码**）。本次补正之后**不再**改动受判面；它的 run 结论在收口报告里给出、
+**不写回台账**（GOAL-089 / 091 / 092 / 093 同一手法）。

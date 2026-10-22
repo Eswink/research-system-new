@@ -29,6 +29,7 @@ CASE_FLOORS: tuple[tuple[str, int], ...] = (
     ("tests/tooling/test_goal_ledger_covers_every_commit.py", 8),
     ("tests/application/test_report_narrative.py", 12),
     ("tests/application/test_report_narrative_on_the_product_path.py", 6),
+    ("tests/application/test_report_task_narrator_behaviour.py", 8),
 )
 
 #: 本轮**引用**（而非重复）的既有判据 —— 必须仍在树。

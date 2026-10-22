@@ -72,12 +72,22 @@ GOAL-093 实测抓到的记账退化（台账 4 行 vs 7 个提交、三个提�
 
 **没有改任何既有判据的断言。** `numstat` 逐条：
 
-| 文件 | 性质 | 说明 |
-| --- | --- | --- |
-| `packages/application/deliverable/research_report.py` | 产品（+18 / −12） | `report_metadata(inputs, narrative=None)` 新增**可选**参数；缺省时键集**逐字不变**（`test_the_compiled_form_is_byte_identical_without_a_narrator` 钉住） |
-| `packages/application/run_orchestration/report_task.py` | 产品（+52 / −22） | 新增 `ReportTaskDeps.narrator`（可选）、`ReportAdmission.narrative`（可选）、`_body` / `_admission_blocker`；`_admit` / `_put_report` 多一个参数；`execute_report_task` 的既有两条失败分支**逐字保留**（只是移进 `_admission_blocker`） |
-| `services/api/report_support.py` | 产品（+26 / −4） | `report_task_runner` 多一个**可选** `narrator=` 参数（缺省 `None` ⇒ 既有行为）；新增 `narrative_runner` |
-| `tests/tooling/test_tooling_scripts_meet_product_gates.py` | **判据**（+2 / −0） | `IN_SCOPE` 追加本轮的验证器与断言集两行（**纯收紧**，与 GOAL-092 `W-7` 同一纪律） |
+读数口径：`git diff --numstat 2998649d..<收口提交>`（`+` = 新增行 / `−` = 删除行）。
+**四个既有文件被改动，其余全是新增**（`numstat` 里没有第四个数）。
+
+| 文件 | numstat | 性质 | 说明 |
+| --- | --- | --- | --- |
+| `packages/application/deliverable/research_report.py` | **+21 / −14** | 产品 | `report_metadata(inputs, narrative=None)` 新增**可选**参数；缺省时键集**逐字不变**（`test_the_compiled_form_is_byte_identical_without_a_narrator` 钉住） |
+| `packages/application/run_orchestration/report_task.py` | **+80 / −25** | 产品 | 新增 `ReportTaskDeps.narrator`（可选）、`ReportAdmission.narrative`（可选）、`_body` / `_admission_blocker`；`_admit` / `_put_report` 多一个参数；`execute_report_task` 的既有两条失败分支**逐字保留**（只是移进 `_admission_blocker`） |
+| `services/api/report_support.py` | **+31 / −2** | 产品 | `report_task_runner` 多一个**可选** `narrator=` 参数（缺省 `None` ⇒ 既有行为）；新增 `narrative_runner` |
+| `tests/tooling/test_tooling_scripts_meet_product_gates.py` | **+3 / −0** | **判据** | `IN_SCOPE` 追加本轮的验证器 + 断言集两行，并把既有「GOAL-031…」那行的注释沿用（**纯收紧**，与 GOAL-092 `W-7` 同一纪律） |
+| `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py` | **+1 / −0** | **判据** | 把 `tools/verify_goal094_closeout.py` 加进**验证器清单**（`_VERIFIERS`）。**此前漏登记**：不登记它，「声明 == 实载」与「断言集可执行」两条就看不见本轮的验证器（本轮自审补上） |
+
+**为什么这五处都不算「改判据使其通过」**：四处是**新增可选面**（缺省逐字不变，有两个
+`byte-identical` 判据钉住）；两处 `tests/tooling` 的改动都是**纯收紧**（只加受判对象，
+不删条目、不改任何断言）。`git diff --numstat` 的删除行全部落在 `report_task.py` /
+`research_report.py` / `report_support.py` 的**函数体搬移**（`_admission_blocker` 抽出）与
+**签名扩展**上，没有一行删在判据文件里。
 
 ## 六、读数
 
@@ -140,6 +150,25 @@ GOAL-20261022-094（序 62）：CI 台账第 3 行的 `提交` 格里没有反�
 | 凭据审计 | 四面 `offenders=0`（tracked 4614 / records 1022 / config_db 1 / logs 901）|
 | 终局见证 | `b07c3398` 的树：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False` |
 | CI | `80e844b1` / `38edc9ac` / `b07c3398` 三次 M0 各 **八 job 全 success**；CodeQL 三 job 全 success |
+
+## 十一、完成核验判负后的四项补正（逐条，含实跑读数）
+
+第四轮完成核验指出四处**验证强度 / 记录自洽**的缺口（不是产品缺陷）。逐条处置：
+
+| # | 判负 | 补正 | 实跑读数 |
+| --- | --- | --- | --- |
+| 1 | EC-03 的 `verify` 写「`verify_goal093_closeout.py` ⇒ 全 PASS」，但**没有任何一次它的真实输出** —— 违反「未实跑不得记 PASS」 | 在本树实跑并把读数写进 EC-03 的 `verify` | `uv run --frozen --no-sync python -B tools/verify_goal093_closeout.py --root . --verdict-only` ⇒ **exit 0**、`grep -c '^PASS'` = **68**、`grep -c '^FAIL'` = **0**（`--verdict-only` 略去 `SUMMARY` 行，故以两条 grep 计数取证） |
+| 2 | 自指边界段写「`b07c3398` 之后再无提交改动受判面：本轮**到此为止**」，而同表随后有 `b911e4a0`、`b11ab450` —— 段与表**自相矛盾** | 重写该段：**逐条点名** `b911e4a0`（台账补记 + 两树读数）与 `b11ab450`（完成后重跑 m0 并封印见证），并写明「链条的地基是**最后一次跑门的那棵树**，不是表的最后一行」 | 见 GOAL 的「自指边界」段（现在三个只改记录的提交各有一行） |
+| 3 | RECHECK 第五节声称「`numstat` 逐条」，却漏了 `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py` 的 **+1**（把本轮验证器加进 `_VERIFIERS`） | 重写该表：改用**实测 `numstat`**（`git diff --numstat 2998649d..`），五处改动逐个列出含该 +1 | 表内读数：`research_report.py` +21/−14、`report_task.py` +80/−25、`report_support.py` +31/−2、`test_tooling_scripts_meet_product_gates.py` +3/−0、`test_closeout_verifiers_run_their_own_assertions.py` **+1/−0** |
+| 4 | EC-04 的「接上叙述者 ⇒ `Artifact.created_by` 是 `model:<endpoint>/<returned>`」只由 `inspect.getsource` 的**子串**证明；`llm_narrator` 只测了凭据缺失分支，**正常解析路径未测** | 新增 `tests/application/test_report_task_narrator_behaviour.py`（**8 条**）：真的跑 `execute_report_task` → 从 `FakeArtifactStore` 读回 `created_by`；`llm_narrator` 用假 gateway + 假 resolver 走正常路径 | **8 passed**；两向按压：把 `created_by` 写死 ⇒ **3 条判红**；让 `llm_narrator` 忽略返回名 ⇒ **1 条判红**；均按 raw `sha256` 复原（`044602e3…` / `80606a97…`） |
+
+**为什么第 4 条是真实缺口**：`inspect.getsource(...)` 里的子串判据判的是**代码形态**。
+把那一行改成 `narrative.author or "x"`、或干脆写死一个常量，子串判据仍绿而制品上的作者
+已经错了 —— 这正是本仓反复出现的「形态判据 ≠ 行为判据」。新的行为判据从 **store 读回**
+`Artifact`，因此**只有真的把作者写对**才会绿。
+
+**这三处（`b911e4a0` / `b11ab450` / 本次补正）都不写回台账**（写回会再产生一个提交）：
+它们的 run 结论在收口报告里给出。见 GOAL 的「自指边界」段。
 
 ## 结论
 
