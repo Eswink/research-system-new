@@ -28,7 +28,7 @@ memory_entries:
 
 | EC | 落点 | 判据 |
 | --- | --- | --- |
-| EC-01 | `tests/tooling/test_goal_ledger_covers_every_commit.py`（`ledger_problems` 唯一谓词 + `_terminal_goals_in_scope` 遍历） | 同左（6 条） |
+| EC-01 | `tests/tooling/test_goal_ledger_covers_every_commit.py`（`ledger_problems` 唯一谓词 + `_terminal_goals_in_scope` 遍历） | 同左（8 条） |
 | EC-02 | 同上（`_CUTOFF_SEQ = 61` / `_CUTOFF_DATE`）+ 按压记录 | 同左（`test_the_scope_reaches_this_generation_and_skips_the_grandfathered_ones`）+ RECHECK 第三节 |
 | EC-03 | `.cursor/plans/goals/GOAL-20261022-093-...md`（台账 +3 行、cycle 2 `commits` 格 + 自指边界补正） | 新判据 + `tools/verify_goal093_closeout.py` |
 | EC-04 | `deliverable/report_narrative.py`（渲染 / 校验 / 事实表 / 任务书）、`run_orchestration/report_narrative_task.py`（`narrate` / `llm_narrator`）、`report_task.py`（`narrator` 缝 + `_body` + `_admission_blocker`）、`report_support.py`（`narrative_runner`） | `tests/application/test_report_narrative.py`（17）+ `tests/application/test_report_narrative_on_the_product_path.py`（7） |
@@ -36,7 +36,7 @@ memory_entries:
 
 ## 实施清单
 
-- [x] **WP-1**：跨 GOAL 台账判据（唯一谓词 + 遍历受判面 + 祖父条款 + 6 条用例）。
+- [x] **WP-1**：跨 GOAL 台账判据（唯一谓词 + 遍历受判面 + 祖父条款 + 8 条用例，含表格边界与标题行首两条）。
 - [x] **WP-2**：两向按压 + `sha256` 逐字节复原（`scratch/goal094-press/`）。
 - [x] **WP-3**：GOAL-093 台账补 3 行 + cycle 2 `commits` 格补齐 + 自指边界补正说明。
 - [x] **WP-4**：`report_narrative.py`（四键叙述 / 数字禁令 / 事实表 / 任务书）。
@@ -51,7 +51,7 @@ memory_entries:
 
 | 证据 | 读数 |
 | --- | --- |
-| 新台账判据（真树） | `tests/tooling/test_goal_ledger_covers_every_commit.py` ⇒ **6 passed** |
+| 新台账判据（真树） | `tests/tooling/test_goal_ledger_covers_every_commit.py` ⇒ **8 passed** |
 | 按压①（压日志） | 判红：`CI 台账里的 4 个提交没有任何 cycle 行的 commits 格收录：['33e48f57', '3d53676e', '7fa4f651', 'a905c6c3']`；`sha256` `89e2fda8…` → `c9dcb895…` → 复原 `89e2fda8…` |
 | 按压②（删 `33e48f57`） | 判红：`CI 台账里的 1 个提交没有任何 cycle 行的 commits 格收录：['33e48f57']`；`sha256` `89e2fda8…` → `fb67595f…` → 复原 `89e2fda8…` |
 | GOAL-093 台账 | 补后 **7 行 = 7 个提交**（`7fa4f651` / `33e48f57` / `a905c6c3` / `3d53676e` / `ff7546d7` / `c626aced` / `2998649d`） |
@@ -66,7 +66,7 @@ memory_entries:
 
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-10-22 | **DONE** | 五个 EC 全部达成；判据面本地全绿（台账 6 条 + 报告 24 条 + 受影响 1297 条 + 规模 1324 条）；两向按压各判红并以 raw `sha256` 逐字节复原。 |
+| 2026-10-22 | **DONE** | 五个 EC 全部达成；判据面本地全绿（台账 8 条 + 报告 24 条 + 受影响 1297 条 + 规模 1324 条）；两向按压各判红并以 raw `sha256` 逐字节复原。 |
 
 ## 影响报告
 
@@ -82,7 +82,7 @@ memory_entries:
   （`test_the_compiled_form_is_byte_identical_without_a_narrator` 钉住）；`created_by` 只在
   **接上叙述者**时变化。
 - **上游版本影响**：无新增依赖、无 pin 变更。
-- **判据面变化**：新增 `tests/tooling/test_goal_ledger_covers_every_commit.py`（6 条，跨 GOAL）+
+- **判据面变化**：新增 `tests/tooling/test_goal_ledger_covers_every_commit.py`（8 条，跨 GOAL）+
   `tests/application/test_report_narrative.py`（17 条）+ `test_report_narrative_on_the_product_path.py`
   （7 条）。`tests/tooling/test_tooling_scripts_meet_product_gates.py` 的 `IN_SCOPE` **追加两行**
   （纯收紧）。**没有改任何既有判据的断言。**

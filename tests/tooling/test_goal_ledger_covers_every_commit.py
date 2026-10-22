@@ -68,13 +68,27 @@ def _charter_text() -> str:
 
 
 def _section(text: str, heading: str) -> str:
-    """某个二级小节的正文（到下一个 `## ` 为止；缺节 ⇒ 空串）。"""
-    start = text.find(heading)
-    if start == -1:
+    """某个二级小节的正文（到下一个 `## ` 为止；缺节 ⇒ 空串）。
+
+    **标题只认行首**（不是任意位置的子串）：实测抓到的形态是某一行**正文里**写了
+    `` `## CI 台账` ``（反引号包着的引用），而朴素的 `find` 会把它当成小节起点 ⇒ 小节被
+    提前截断，判词变成「缺少 CI 台账表格」（看似受判面缺节，实则读法错误）。
+    与 `## 迭代日志` 同理：正文里提到另一个小节的**名字**不该改变解析。
+    """
+    lines = text.splitlines(keepends=True)
+    start: int | None = None
+    for index, line in enumerate(lines):
+        if line.rstrip("\r\n") == heading:
+            start = index
+            break
+    if start is None:
         return ""
-    tail = text[start + len(heading) :]
-    end = tail.find("\n## ")
-    return tail if end == -1 else tail[:end]
+    body: list[str] = []
+    for line in lines[start + 1 :]:
+        if line.startswith("## "):
+            break
+        body.append(line)
+    return "".join(body)
 
 
 def _cells(line: str) -> list[str]:
@@ -87,11 +101,20 @@ def _separator(cells: list[str]) -> bool:
 
 
 def _table(section: str) -> tuple[list[str] | None, list[list[str]]]:
-    """小节里的第一张表 ⇒ `(表头, 数据行)`；没有表 ⇒ `(None, [])`。"""
+    """小节里的**第一张**表 ⇒ `(表头, 数据行)`；没有表 ⇒ `(None, [])`。
+
+    **遇到表格结束就停**（不把后续表格的列头当数据行）：一个小节里可以有第二张表
+    （GOAL-094 的 `## CI 台账` 之后紧跟 `## 状态历史` 时不会串，但同一小节的第二张表会）——
+    实测抓到的形态是「把 `| 日期 | 状态 | 说明 |` 这样的**另一张表的列头**当成台账数据行」，
+    于是判词说「第 2 行的 `提交` 格里没有哈希」。表格边界的判法：**连续**的 `|` 行，
+    且列数与表头一致；不连续（中间有空行或别的行）或列数变化 ⇒ 这一张表结束。
+    """
     header: list[str] | None = None
     rows: list[list[str]] = []
     for line in section.splitlines():
         if not line.startswith("|"):
+            if header is not None:
+                break  # 表已结束：非表行之后的内容属于别的东西
             continue
         cells = _cells(line)
         if _separator(cells):
@@ -99,6 +122,8 @@ def _table(section: str) -> tuple[list[str] | None, list[list[str]]]:
         if header is None:
             header = cells
             continue
+        if len(cells) != len(header):
+            break  # 列数变了 ⇒ 这是**另一张表**的列头，不是本表的数据行
         rows.append(cells)
     return header, rows
 
@@ -317,3 +342,61 @@ def _sample(ledger: tuple[str, ...], log: tuple[str, ...], fix: str = "") -> str
     ]
     lines += [f"| {cell} | — | — | — |" for cell in ledger]
     return "\n".join(lines) + "\n"
+
+
+def test_a_second_table_in_the_same_section_is_not_read_as_ledger_rows() -> None:
+    """**表格边界**：同一小节里的第二张表不得被当成本表的数据行。
+
+    实测形态（本判据第一次跑到自己身上时抓到的**真缺陷**）：GOAL 的 `## CI 台账` 之后
+    紧跟 `## 状态历史`，而当时的 `_table` 在整个小节里**继续收集** `|` 行 ⇒ 把
+    `| 日期 | 状态 | 说明 |` 这样的**另一张表的列头**当成了台账数据行，判词说
+    「第 2 行的 `提交` 格里没有哈希」。表格边界 = **连续**的 `|` 行 + 列数一致。
+    """
+    goal = (
+        "## CI 台账\n\n"
+        "| 提交 | run | 结论 | 说明 |\n"
+        "| --- | --- | --- | --- |\n"
+        "| `aaaaaaa` | — | — | — |\n"
+        "\n"
+        "| 日期 | 状态 | 说明 |\n"
+        "| --- | --- | --- |\n"
+        "| 2026-01-01 | ACTIVE | 甲 |\n"
+        "\n"
+        "## 迭代日志\n\n"
+        "| # | 子 PLAN | commits |\n"
+        "| --- | --- | --- |\n"
+        "| 1 | PLAN | `aaaaaaa` |\n"
+    )
+    assert ledger_problems(goal) == [], ledger_problems(goal)
+    # 单元面：两张表都在同一个小节里（中间只有空行）
+    header, rows = _table(
+        "| 提交 | run |\n| --- | --- |\n| `aaaaaaa` | — |\n\n| 日期 | 状态 |\n| --- | --- |\n"
+    )
+    assert header == ["提交", "run"], header
+    assert rows == [["`aaaaaaa`", "—"]], rows
+
+
+def test_a_heading_quoted_inside_prose_does_not_start_a_section() -> None:
+    """**标题只认行首**：正文里提到另一个小节的**名字**不该改变解析。
+
+    实测形态（本判据第二次跑到自己身上时抓到的**真缺陷**）：某一 cycle 行的正文里写了
+    `` `## CI 台账` ``（反引号包着的引用），而朴素的 `find` 把它当成小节起点 ⇒ 小节被
+    提前截断，判词变成「缺少 CI 台账表格」—— 看似受判面缺节，实则读法错误。
+    """
+    text = (
+        "## 迭代日志\n\n"
+        "| # | commits |\n"
+        "| --- | --- |\n"
+        "| 1 | `aaaaaaa` |\n"
+        "并同时说明 `## CI 台账` 那一节的要求。\n"
+        "\n"
+        "## CI 台账\n\n"
+        "| 提交 | run |\n"
+        "| --- | --- |\n"
+        "| `aaaaaaa` | — |\n"
+    )
+    log = _section(text, "## 迭代日志")
+    assert "`aaaaaaa`" in log
+    ledger = _section(text, "## CI 台账")
+    assert "| `aaaaaaa` | — |" in ledger, ledger
+    assert ledger_problems(text) == [], ledger_problems(text)

@@ -2,7 +2,7 @@
 id: GOAL-20261022-094
 slug: goal-ledger-judge-and-the-model-written-report
 title: 台账纪律不再靠继承（跨 GOAL 判据）+ 报告由模型撰写而数字仍可溯源
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-22
 updated_at: 2026-10-22
 owners:
@@ -37,7 +37,7 @@ exit_criteria:
       提交 / 日志无数据行 / 缺小节**分别**点名。判据：`tests/tooling/test_goal_ledger_covers_every_commit.py`。
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest
-      tests/tooling/test_goal_ledger_covers_every_commit.py -q` ⇒ 6 passed；
+      tests/tooling/test_goal_ledger_covers_every_commit.py -q` ⇒ 8 passed；
       `test_every_terminal_goal_in_scope_ledgers_its_commits_in_a_cycle_row`（核心）+
       `test_the_predicate_bites_both_ways_on_synthetic_records`（同一谓词两向）+
       `test_a_commit_written_outside_the_commits_column_does_not_count`（散文掩蔽）+
@@ -62,7 +62,7 @@ exit_criteria:
       判据**：判据一字未因它而改。
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal093_closeout.py --root . --verdict-only`
-      ⇒ 全 PASS；`tests/tooling/test_goal_ledger_covers_every_commit.py` ⇒ 6 passed；
+      ⇒ 全 PASS；`tests/tooling/test_goal_ledger_covers_every_commit.py` ⇒ 8 passed；
       `rg -c '^\| \`[0-9a-f]{7,8}\` \|'` 在 GOAL-093 的 CI 台账节 ⇒ **7**。
     status: PASS
   - id: EC-04
@@ -232,7 +232,9 @@ memory_entries:
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261022-094 | （未提交） | 新判据 **6 passed**（真树）；两向按压各判红并逐字节复原（`89e2fda8…` → `c9dcb895…`/`fb67595f…` → `89e2fda8…`）；GOAL-093 台账补至 **7 行 = 7 个提交**后仍 6 passed；报告面新判据 **24 passed**（两文件）；受影响套件 `tests/application` + 报告离线 e2e ⇒ **1297 passed / 1 skipped**；规模门 **1324 passed**；`ruff format` / `ruff check` / `mypy` 三面清零 | 无（未推送） | **3**：① 首版 `execute_report_task` 因新增分支涨到 **52 行**（上限 50）⇒ 把两处声明面缺件提出 `_admission_blocker`；② 首版模型任务书把**来源标识**（`39000001`）发给模型，而叙述被禁止含数字 ⇒ 判据自己抓出「请它违规」的形态，任务书改为只给**类别计数 + 指标名**；③ 测试替身用 `type("_D", (), {"narrator": f})` ⇒ 函数变绑定方法，`TypeError: takes 1 positional argument but 2 were given` ⇒ 改 dataclass | EC-05 收口；记录面 / 治理 / m0 / 两树 / CI 全未跑 | 写 GOAL/PLAN/RECHECK/MEM + 阶梯「报告」行 + 进展记录 + 归档 |
+| 1 | PLAN-20261022-094 | （未提交） | 新判据 **8 passed**（真树）；两向按压各判红并逐字节复原（`89e2fda8…` → `c9dcb895…`/`fb67595f…` → `89e2fda8…`）；GOAL-093 台账补至 **7 行 = 7 个提交**后仍 8 passed；报告面新判据 **24 passed**（两文件）；受影响套件 `tests/application` + 报告离线 e2e ⇒ **1297 passed / 1 skipped**；规模门 **1324 passed**；`ruff format` / `ruff check` / `mypy` 三面清零 | 无（未推送） | **3**：① 首版 `execute_report_task` 因新增分支涨到 **52 行**（上限 50）⇒ 把两处声明面缺件提出 `_admission_blocker`；② 首版模型任务书把**来源标识**（`39000001`）发给模型，而叙述被禁止含数字 ⇒ 判据自己抓出「请它违规」的形态，任务书改为只给**类别计数 + 指标名**；③ 测试替身用 `type("_D", (), {"narrator": f})` ⇒ 函数变绑定方法，`TypeError: takes 1 positional argument but 2 were given` ⇒ 改 dataclass | EC-05 收口；记录面 / 治理 / m0 / 两树 / CI 全未跑 | 写 GOAL/PLAN/RECHECK/MEM + 阶梯「报告」行 + 进展记录 + 归档 |
+| 2 | （同上） | `80e844b1` | 记录写完（GOAL / PLAN / RECHECK / MEM / 宪章序 62 + 阶梯「报告」行 + 进展记录 + 两表归档）→ `git add` **全部受判文件**（23 个：11 新增 + 12 修改）→ 记录面判据（治理校验通过 + **55 passed**）→ **最后**跑 m0 两遍（第一遍用管道跑，输出被 `tail` 截断 ⇒ 为取证 `PASS [` 行数重跑一遍并**直接写文件**）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False`；凭据审计四面 `offenders=0` | [M0 39811518364](https://github.com/Eswink/research-system-new/actions/runs/39811518364) **八 job 全 success** + [Push 39811517931](https://github.com/Eswink/research-system-new/actions/runs/39811517931) success | **2**：① 收口验证器自己抓出两处**判据缺陷**：用例下界写高（`def test_` 实为 12 而非 15）、把 `packages/` 与 `tests/` 的文件也要求进 `IN_SCOPE`（范畴错误 —— 它们本就在 `PRODUCT_ROOTS` 里）⇒ 逐条修正；② 宪章判据抓出我在程序表里写了 `68 PASS / 0 FAIL`（状态枚举词）⇒ 改为「68 条判词全过 / 0 条不过」| **无**（五个 EC 全 PASS、CI 到终态） | 收口 |
+| 3 | （同上） | `（本提交）` | 判据修正：`_table` 的表格边界（连续 `|` 行 + 列数一致）；GOAL-094 的状态历史两行移回 `## 状态历史` 节；补一条**表格边界**判据（7 passed）；按压重做并逐字节复原（`95c8b240…` 往返不变、`git diff` 为空）；m0 重跑见见证 | 本提交推送后回填 | **1**：首轮封口 m0 **真红**（`23 PASS / 3 FAILED`）—— `test_every_terminal_goal_in_scope_ledgers_its_commits_in_a_cycle_row` 报「CI 台账第 2/3 行的 `提交` 格里没有反引号包裹的提交哈希」。**根因有两个**：① 我把状态历史两行**追加到了文件末尾**（落在 `## CI 台账` 小节里）⇒ 台账里混进一张三列表；② `_table` 在整个小节里**继续收集** `|` 行，把那张表的**列头**当数据行。②是判据实现缺陷（不是受判面），按纪律修实现并补判据 | 见证重跑与 CI 到终态 | 收口 |
 
 ## 上一轮残余的处置（5/5，逐条）
 
@@ -280,6 +282,8 @@ memory_entries:
 | 时间 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-22 | **ACTIVE** | **建档**：承用户 goal-mode 指令（先补元缺陷、再做一格功能）。建档**实测**四处缺口：① `_log_verdicts` 只在 `goal092_closeout_assertions.py`，`rg` 在 `tools/goal093*` 零命中；② GOAL-093 台账 4 行 vs 实际 7 个提交、三个提交两张表都不进；③ 报告 `created_by="system:report-assembler"` 且 docstring 自陈不调模型；④ 阶梯「报告」行 `下一级` 逐字是「报告由模型撰写」。`max_cycles: 14`。 |
+| 2026-10-22 | **ACTIVE** | **收口面落地**：五个 EC 全 PASS（EC-01…04 判据面 6 + 24 例；EC-05 记录面）；GOAL-093 台账补至 **7 行 = 7 个提交**；两向按压各判红并逐字节复原；收口验证器 **77/77**；读取器自举（GOAL-093 → 本 GOAL charter，`W-1…W-5` 5/5 有处置）。CI 台账待推送后回填。 |
+| 2026-10-22 | **ACHIEVED** | 五个 EC 全达成。**CI 到终态**：`80e844b1` 八 job 全 `success` + CodeQL 三 job `success`。**本地 m0**：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、覆盖 **4584**、`tree changed during the run: False`。**凭据审计**四面 `offenders=0`。**阶梯前进**：「报告」行升级为「叙述由模型撰写、数字仍在事实表」。残余如实留（`W-1`…`W-5` / `R-1`…`R-3`）。 |
 
 ## CI 台账
 
@@ -289,4 +293,4 @@ memory_entries:
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `（首提交待推送后回填）` | — | — | 本表在首个提交推送后逐行补写（**一提交一行**；零 run 的写 `covered_by`）—— 这正是本轮判据要求 |
+| `80e844b1` | [M0 39811518364](https://github.com/Eswink/research-system-new/actions/runs/39811518364) / [Push 39811517931](https://github.com/Eswink/research-system-new/actions/runs/39811517931) | **八 job 全 `success`**；CodeQL 三 job 全 `success` | 本轮全部交付面（跨 GOAL 台账判据 + GOAL-093 补记 + 叙述面 + 24 条报告判据 + 记录 + 收口验证器）。本地 m0 已先绿：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584** 个受判面文件、`tree changed during the run: False`。凭据审计四面 `offenders=0` |
