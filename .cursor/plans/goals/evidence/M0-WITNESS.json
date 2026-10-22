@@ -1744,7 +1744,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261022-094-goal-ledger-judge-and-the-model-written-report.md",
-        "sha256": "e3dcf91a0c10189d777dec43f3915772bb9dea1f"
+        "sha256": "830c23dcee1c035c0cbf6ef7a495b03c6ccfeb85"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -18339,7 +18339,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "80e844b1c7ad186e47da8a4976da55b11751c0bd"
+    "head": "38edc9ac733aa20e1236a6e6bfe9cf98ac583ff3"
   },
   "fingerprint_before": {
     "files": [
@@ -20085,7 +20085,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261022-094-goal-ledger-judge-and-the-model-written-report.md",
-        "sha256": "e3dcf91a0c10189d777dec43f3915772bb9dea1f"
+        "sha256": "830c23dcee1c035c0cbf6ef7a495b03c6ccfeb85"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -36680,11 +36680,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "80e844b1c7ad186e47da8a4976da55b11751c0bd"
+    "head": "38edc9ac733aa20e1236a6e6bfe9cf98ac583ff3"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "80e844b1c7ad186e47da8a4976da55b11751c0bd",
+  "ran_at_head": "38edc9ac733aa20e1236a6e6bfe9cf98ac583ff3",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
