@@ -1748,7 +1748,7 @@
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "5eeb5070e4f414f85070a23ec1cfbf69875621f5"
+        "sha256": "9940d8ced8180f8291ca66706529bc35291511eb"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -1877,6 +1877,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-21-progress-090-only.md",
         "sha256": "a5d2acc6b45b46acb3b66a15af50187491ef83eb"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-21-progress-092-only.md",
+        "sha256": "b81b842e9ee7b5bd8630a3a7a3e5193de58ccb5b"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-21-revisions-60-only.md",
+        "sha256": "a691947d53689d3489d7135d7eaf2109f5407dc3"
       },
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-progress-091-only.md",
@@ -18343,7 +18351,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "ca4565d7932cd0e99ccc6c56c4fc6101845b54d0"
+    "head": "2fc009682c160bf2ba5c9f7be231da85aaec1021"
   },
   "fingerprint_before": {
     "files": [
@@ -20093,7 +20101,7 @@
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "5eeb5070e4f414f85070a23ec1cfbf69875621f5"
+        "sha256": "9940d8ced8180f8291ca66706529bc35291511eb"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -20222,6 +20230,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-21-progress-090-only.md",
         "sha256": "a5d2acc6b45b46acb3b66a15af50187491ef83eb"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-21-progress-092-only.md",
+        "sha256": "b81b842e9ee7b5bd8630a3a7a3e5193de58ccb5b"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-21-revisions-60-only.md",
+        "sha256": "a691947d53689d3489d7135d7eaf2109f5407dc3"
       },
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-progress-091-only.md",
@@ -36688,11 +36704,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "ca4565d7932cd0e99ccc6c56c4fc6101845b54d0"
+    "head": "2fc009682c160bf2ba5c9f7be231da85aaec1021"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "ca4565d7932cd0e99ccc6c56c4fc6101845b54d0",
+  "ran_at_head": "2fc009682c160bf2ba5c9f7be231da85aaec1021",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
