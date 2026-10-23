@@ -310,17 +310,25 @@ memory_entries:
 | `b11ab450` | [M0 39839726441](https://github.com/Eswink/research-system-new/actions/runs/39839726441) / [Push 39839725914](https://github.com/Eswink/research-system-new/actions/runs/39839725914) | **八 job 全 `success`**；CodeQL 三 job 全 `success` | 对**改完的记录树**重跑全量 m0 并重封见证（`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False`）⇒ 处置了 `b911e4a0` 的判红 #3 |
 | `068e16c4` | [M0 39848248670](https://github.com/Eswink/research-system-new/actions/runs/39848248670) / [Push 39848246985](https://github.com/Eswink/research-system-new/actions/runs/39848246985) | attempt 1 **7 success / 1 `cancelled`**（`quality-windows-latest`，实测 **20:03**，`timeout-minutes: 20`）⇒ attempt 2 **同样 `cancelled`**（**20:07**）⇒ attempt 3 **八 job 全 `success`**；Push success | **`cancelled` ≠ 判红**，分开登记（同批其余 7 job 两轮全 `success`）。**已归因**：同一 job 在 `b11ab450` 上 **19:19** 通过、在本提交上 **20:03 / 20:07** ⇒ 撞 **20 分钟作业上限**，**不是**产品缺陷、**不是** `cancel-in-progress`。**阈值一字未动**。本提交 = 四项补正（EC-03 实跑读数 / 自指边界重写 / `numstat` 实测重写 / 8 条行为判据）|
 
-**自指边界（如实登记，不假装闭合）**：本表里有**三个**只改记录的提交，它们各自的 run
-结论无法再写回本表而不产生第四个提交：
+**自指边界（如实登记，不假装闭合）**。先说**已经进表**的三条（它们一度只在散文里，
+第十二节补进表了）：`b911e4a0`（**2/8 判红**，见证与树失配）、`b11ab450`（八 job 全 success，
+处置上一条）、`068e16c4`（attempt 1/2 各 1 `cancelled`＝作业超时、attempt 3 八 job 全 success）。
+**台账表在 `068e16c4` 那一行结束**。
 
-- `b911e4a0` —— 台账补 `b07c3398` + 两树复检读数；它的 run 结论在收口报告里给出；
-- `b11ab450` —— 对**完成后**的记录树重跑全量 m0 并封印见证（`PASS: profile=m0; 23 deterministic checks`、
-  `PASS [` **24** 行、0 FAILED、覆盖 **4584**、`tree changed during the run: False`）；
-- `068e16c4` —— 完成核验判负后的四项补正（见 RECHECK 第十一节）。**它是个例外**：结论**已经**写回本表（三次 attempt 逐次登记），因为补正的内容之一正是「不许用『全过』代替真实输出」—— 那一行如果不写回来，本表就又是一句无出处的断言。
+其后的两条**只改记录**，因此**不进表** —— 但**必须在此点名，附 run 读数**，否则就是匿踪：
 
-**所以链条的地基是「最后一次跑门的那棵树」，不是「表的最后一行」**：
+- `f8c61422` —— 台账补 `b911e4a0` / `b11ab450` / `068e16c4` 三行并折进 cycle 行；
+  [M0 39863901569](https://github.com/Eswink/research-system-new/actions/runs/39863901569) **八 job 全 `success`**；
+- `2c913d1f` —— RECHECK 第十二节（两处台账缺口的归因 + `cancelled` 的三条取证）；
+  [M0 39869801382](https://github.com/Eswink/research-system-new/actions/runs/39869801382) **八 job 全 `success`**。
+
+**为什么它们不能进表**：写它们那一行本身又是一个只改记录的提交 ⇒ 新提交自己的结论
+又要一行 ⇒ 无终止。**所以本段就是它们的台账**（两者都有 sha、run id、逐 job 结论）。
+**这条规则是终点，不是新的开环**：本段所在的补正提交（修正第十一节末段 + 写本段）同样只改记录，
+它的 run 读数在**收口报告**里给出；此后凡只改记录的提交一律按本条处理 ——
+**不要求再改本文件**（改本文件会再产生一个提交，那就是上面那个无终止）。
+
+**链条的地基是「最后一次跑门的那棵树」，不是「表的最后一行」**：
 `b07c3398` 的见证覆盖 **4584** 个受判面文件、`tree changed during the run: False`；
-而 `b911e4a0` / `b11ab450` / `068e16c4` **只改记录面与判据面**（`git diff --name-only`
-逐条可核：`.cursor/plans/` 下的 GOAL / RECHECK / PLAN 与 ``tests/application`` 下的一条新判据，
-**没有任何产品代码**）。本次补正之后**不再**改动受判面；它的 run 结论在收口报告里给出、
-**不写回台账**（GOAL-089 / 091 / 092 / 093 同一手法）。
+而上述五个提交**只改记录面与判据面**（`git diff --name-only` 逐条可核：`.cursor/plans/`
+下的 GOAL / RECHECK / PLAN 与 `tests/application/` 下的一条新判据），**没有任何产品代码**。

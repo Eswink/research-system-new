@@ -1744,7 +1744,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261022-094-goal-ledger-judge-and-the-model-written-report.md",
-        "sha256": "de69479dfad68fc001ed886b9fef5f029e0858c1"
+        "sha256": "e6b4919a20b3d0510565e4952e726c6aa8c3ec4a"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4036,7 +4036,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md",
-        "sha256": "bae4f586bdbdc20f74e16657cf369ecbb915bc81"
+        "sha256": "4aef8bd2ad9b12dea0129118da7ae5d392faedcf"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -18343,7 +18343,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "f8c614224eb5d75254adb4a3b2908fdc663489b8"
+    "head": "2c913d1f0eb58ad6e1f2b53bfa93886788762b9d"
   },
   "fingerprint_before": {
     "files": [
@@ -20089,7 +20089,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261022-094-goal-ledger-judge-and-the-model-written-report.md",
-        "sha256": "de69479dfad68fc001ed886b9fef5f029e0858c1"
+        "sha256": "e6b4919a20b3d0510565e4952e726c6aa8c3ec4a"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -22381,7 +22381,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md",
-        "sha256": "bae4f586bdbdc20f74e16657cf369ecbb915bc81"
+        "sha256": "4aef8bd2ad9b12dea0129118da7ae5d392faedcf"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -36688,11 +36688,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "f8c614224eb5d75254adb4a3b2908fdc663489b8"
+    "head": "2c913d1f0eb58ad6e1f2b53bfa93886788762b9d"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "f8c614224eb5d75254adb4a3b2908fdc663489b8",
+  "ran_at_head": "2c913d1f0eb58ad6e1f2b53bfa93886788762b9d",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
