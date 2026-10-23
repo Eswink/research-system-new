@@ -231,7 +231,7 @@ c9ee898b52c78bb902139a7b5a503a65e474afd69a0e6fec78bb32ea8362d098
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261023-095 | `1797c683` → `4b7fdf50` → `ff6deb0d` | 正反向 **14 passed**；存量聚合 **9 passed**；`tests/adapters/` + `tests/application/memory/` **266 passed**；`tests/tooling/` + `tests/application/memory/` **1829 passed / 1 failed**（唯一红 = m0 见证未重封，属记录顺序的正常态）；mypy **1319 files 无问题**；ruff check / format 全绿 | PENDING | 建档：反方向判据（新建 `goal_commit_chain.py` + `test_goal_commit_chain_reaches_the_ledger.py`，正向文件只加 import 与一条挂钩判据）+ GOAL-094 补四行 + 存量矛盾聚合（`conflict_sweep.py` + 读面可选键）+ 成本曲线 | 无（五个 EC 待收口复检） | 收口 |
+| 1 | PLAN-20261023-095 | `1797c683` → `4b7fdf50` → `ff6deb0d` → `6db5f5b4` （**HEAD 不写进自己的台账** —— 结构必然，见 `## 两向按压`；下一个提交补记上一个）| 正反向 **14 passed**；存量聚合 **9 passed**；`tests/adapters/` + `tests/application/memory/` **266 passed**；`tests/tooling/` + `tests/application/memory/` **1829 passed / 1 failed**（唯一红 = m0 见证未重封，属记录顺序的正常态）；mypy **1319 files 无问题**；ruff check / format 全绿 | PENDING | 建档：反方向判据（新建 `goal_commit_chain.py` + `test_goal_commit_chain_reaches_the_ledger.py`，正向文件只加 import 与一条挂钩判据）+ GOAL-094 补四行 + 存量矛盾聚合（`conflict_sweep.py` + 读面可选键）+ 成本曲线 | 无（五个 EC 待收口复检） | 收口 |
 
 ## CI 台账
 
@@ -243,6 +243,8 @@ c9ee898b52c78bb902139a7b5a503a65e474afd69a0e6fec78bb32ea8362d098
 | --- | --- | --- | --- |
 | `1797c683` | [M0 39933470022](https://github.com/Eswink/research-system-new/actions/runs/39933470022) / [Push 39933470100](https://github.com/Eswink/research-system-new/actions/runs/39933470100) | **八 job 全 `success`**；Push `success` | 本轮全部交付面（反方向判据 + GOAL-094 补四行 + 存量矛盾聚合 + 记录 + 宪章序 63 + 阶梯「证据」行）。本地 m0 已先绿：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`。凭据审计四面 `offenders=0` |
 | `4b7fdf50` | [M0 39939638989](https://github.com/Eswink/research-system-new/actions/runs/39939638989) | **八 job 全 `success`** | **封印提交**（只改记录）：台账补 `1797c683` 的真实 run id + 迭代日志点名它 + 状态历史追加；并对**封印后的记录树**重跑全量 m0 重封见证（24 行通过、0 FAILED、`tree changed during the run: False`）。零 run 不豁免、只改记录的提交也不豁免 |
+| `ff6deb0d` | [M0 39944550344](https://github.com/Eswink/research-system-new/actions/runs/39944550344) | **八 job 全 `success`** | **只改记录**：把「`_CUTOFF_SEQ` 改 63 实测**判红**（空真守卫）而非预期变绿」这个偏差逐字写进 GOAL 与 RECHECK，并补上受判面非空的等价取证（只排除 GOAL-094 ⇒ 变绿）。零 run 不豁免、只改记录的提交也不豁免 |
+| `6db5f5b4` | [M0 39951252433](https://github.com/Eswink/research-system-new/actions/runs/39951252433) | **八 job 全 `success`** | **只改记录**：补 `4b7fdf50` 的台账行与 cycle 格 —— 反方向判据在 HEAD 前移后**自己抓到了这个缺口**（它是对作者而非对 GOAL-094 生效）。这正是「链收敛」的形态：每个新提交补记上一个，只豁免 HEAD 自己 |
 
 ## 状态历史
 
