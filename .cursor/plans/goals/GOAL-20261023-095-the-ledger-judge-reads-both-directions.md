@@ -2,7 +2,7 @@
 id: GOAL-20261023-095
 slug: the-ledger-judge-reads-both-directions
 title: 台账判据补上反方向（提交链 → 台账），并让证据域的存量矛盾可聚合
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-23
 updated_at: 2026-10-23
 owners: [root-agent]
@@ -225,7 +225,7 @@ c9ee898b52c78bb902139a7b5a503a65e474afd69a0e6fec78bb32ea8362d098
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261023-095 | （未提交） | 正反向 **14 passed**；存量聚合 **9 passed**；`tests/adapters/` + `tests/application/memory/` **266 passed**；`tests/tooling/` + `tests/application/memory/` **1829 passed / 1 failed**（唯一红 = m0 见证未重封，属记录顺序的正常态）；mypy **1319 files 无问题**；ruff check / format 全绿 | PENDING | 建档：反方向判据（新建 `goal_commit_chain.py` + `test_goal_commit_chain_reaches_the_ledger.py`，正向文件只加 import 与一条挂钩判据）+ GOAL-094 补四行 + 存量矛盾聚合（`conflict_sweep.py` + 读面可选键）+ 成本曲线 | 无（五个 EC 待收口复检） | 收口 |
+| 1 | PLAN-20261023-095 | `1797c683` | 正反向 **14 passed**；存量聚合 **9 passed**；`tests/adapters/` + `tests/application/memory/` **266 passed**；`tests/tooling/` + `tests/application/memory/` **1829 passed / 1 failed**（唯一红 = m0 见证未重封，属记录顺序的正常态）；mypy **1319 files 无问题**；ruff check / format 全绿 | PENDING | 建档：反方向判据（新建 `goal_commit_chain.py` + `test_goal_commit_chain_reaches_the_ledger.py`，正向文件只加 import 与一条挂钩判据）+ GOAL-094 补四行 + 存量矛盾聚合（`conflict_sweep.py` + 读面可选键）+ 成本曲线 | 无（五个 EC 待收口复检） | 收口 |
 
 ## CI 台账
 
@@ -235,7 +235,7 @@ c9ee898b52c78bb902139a7b5a503a65e474afd69a0e6fec78bb32ea8362d098
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| （本提交 = 代码 + 记录） | 推送后回填 | — | 收口封印提交将补上真实 run id（一提交一行） |
+| `1797c683` | [M0 39933470022](https://github.com/Eswink/research-system-new/actions/runs/39933470022) / [Push 39933470100](https://github.com/Eswink/research-system-new/actions/runs/39933470100) | **八 job 全 `success`**；Push `success` | 本轮全部交付面（反方向判据 + GOAL-094 补四行 + 存量矛盾聚合 + 记录 + 宪章序 63 + 阶梯「证据」行）。本地 m0 已先绿：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`。凭据审计四面 `offenders=0` |
 
 ## 状态历史
 
@@ -243,6 +243,8 @@ c9ee898b52c78bb902139a7b5a503a65e474afd69a0e6fec78bb32ea8362d098
 | --- | --- | --- |
 | 2026-10-23 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 63）。建档实测五处缺口（见「为什么这一轮是必要的」）。`max_cycles: 14`。CI 侧历史可得性定为**方案 B**（见下）。 |
 | 2026-10-23 | **ACTIVE** | **收口面落地**：EC-01…04 判据面全绿（14 + 9 例）；两向按压各判红/绿并按 raw `sha256` 逐字节复原；GOAL-094 补四行后正反向同时绿。CI 台账待推送后回填。 |
+
+| 2026-10-23 | **ACHIEVED** | 五个 EC 全达成。**CI 到终态**：`1797c683` 八 job 全 `success` + Push `success`（[M0 39933470022](https://github.com/Eswink/research-system-new/actions/runs/39933470022)）。**本地 m0**：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、`tree changed during the run: False`。**凭据审计**四面 `offenders=0`。**阶梯前进**：证据域升级为「写入时检测 **+** 存量可聚合」，`下一级` 收窄为「矛盾的处置闭环」。残余如实留（`W-1`…`W-4` / `R-1`…`R-3`）。 |
 
 ## CI 侧的历史可得性：选 B（并登记为残余）
 
