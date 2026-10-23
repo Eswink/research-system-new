@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "2280744186199d09e8a79ad75864ee67974e3714"
+        "sha256": "24df379a9fe0bc15233a2291f740764811c5e652"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1335,8 +1335,12 @@
         "sha256": "fe3ed700c3accfe4a65261be671bec29c350186b"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261023-229-the-ledger-judge-reads-both-directions.md",
+        "sha256": "33eab6fc5119ae594ebfd9a65ad6eebe89bbd4d7"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "7cdfd21f2a9193c68cb561e3180224456c95f9e1"
+        "sha256": "d66e8aa22d13c4973e0a3875e6a3db323d47678c"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1744,11 +1748,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261022-094-goal-ledger-judge-and-the-model-written-report.md",
-        "sha256": "e7d0cf969f2d21567366be0739e11001a9bd27db"
+        "sha256": "1065bba13c4c1dbfb2d82926a6af74c37482215a"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261023-095-the-ledger-judge-reads-both-directions.md",
+        "sha256": "ed5479ffbd71c7f4fa2b5853090c80080166b853"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "9940d8ced8180f8291ca66706529bc35291511eb"
+        "sha256": "0ebe4f19f9893e77fa28c10f42eb2f1af6086252"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -4047,6 +4055,10 @@
         "sha256": "4aef8bd2ad9b12dea0129118da7ae5d392faedcf"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261023-095-goal-095-the-ledger-judge-reads-both-directions.md",
+        "sha256": "65ed6135d57be03899ecd97f509ba2db3edd51f9"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5419,6 +5431,10 @@
         "sha256": "5e4b46f13812fc314b5d2e943ce7dff1a7e62c31"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261023-095-goal-095-the-ledger-judge-reads-both-directions.md",
+        "sha256": "d3206378ce58b4d262aed94837530bc57ae487b1"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -5692,7 +5708,7 @@
       },
       {
         "path": "adapters/canonical/memory_read.py",
-        "sha256": "5fb407fe8d262f35fa285e73253aec01d2859d67"
+        "sha256": "f8637deb2773da2096a03b561286ae4add0cf12f"
       },
       {
         "path": "adapters/canonical/read_projection.py",
@@ -13007,6 +13023,10 @@
         "sha256": "5b1037f7b84a84e098945cb83f15bdda156527e8"
       },
       {
+        "path": "packages/application/memory/conflict_sweep.py",
+        "sha256": "6905744f277b5806f57ce592ada31e7d414d26ac"
+      },
+      {
         "path": "packages/application/memory/consistency.py",
         "sha256": "1d659a1b821dd67d885f3410617228cd54f11c2e"
       },
@@ -15363,6 +15383,10 @@
         "sha256": "2c9666792e9c5a0372808ad2d5b57a71ddea6a29"
       },
       {
+        "path": "tests/application/memory/test_conflict_sweep.py",
+        "sha256": "db36837493613882e068e6a690eec11727195ed1"
+      },
+      {
         "path": "tests/application/memory/test_conflict_target_integrity.py",
         "sha256": "d82f062ce7817b7ec8028c588fa755387c1f821a"
       },
@@ -17303,6 +17327,10 @@
         "sha256": "3c3473615975418d2fba6c7fead847c399e11500"
       },
       {
+        "path": "tests/tooling/goal_commit_chain.py",
+        "sha256": "610136d034bac9dceda6f5876a0e6031c60526b7"
+      },
+      {
         "path": "tests/tooling/resume_coverage_declaration.py",
         "sha256": "4132e5af9c0e154b4e0da047f1501d0d138245ef"
       },
@@ -17343,8 +17371,12 @@
         "sha256": "15bfcae2170b0718ae3aa3683977d449fca062dd"
       },
       {
+        "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
+        "sha256": "1ccff3154fe16edef36a40d2016db4a557f90d95"
+      },
+      {
         "path": "tests/tooling/test_goal_ledger_covers_every_commit.py",
-        "sha256": "252a2436e283b701ba9bd9868b3a59b45ad1c771"
+        "sha256": "afb84b18a3e80738795fc97560fd7789fc10d996"
       },
       {
         "path": "tests/tooling/test_landed_decisions_are_citable.py",
@@ -18351,7 +18383,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "2fc009682c160bf2ba5c9f7be231da85aaec1021"
+    "head": "86b504a1757c35e1f8189d717b9674a9c6ed7633"
   },
   "fingerprint_before": {
     "files": [
@@ -18773,7 +18805,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "2280744186199d09e8a79ad75864ee67974e3714"
+        "sha256": "24df379a9fe0bc15233a2291f740764811c5e652"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -19688,8 +19720,12 @@
         "sha256": "fe3ed700c3accfe4a65261be671bec29c350186b"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261023-229-the-ledger-judge-reads-both-directions.md",
+        "sha256": "33eab6fc5119ae594ebfd9a65ad6eebe89bbd4d7"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "7cdfd21f2a9193c68cb561e3180224456c95f9e1"
+        "sha256": "d66e8aa22d13c4973e0a3875e6a3db323d47678c"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -20097,11 +20133,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261022-094-goal-ledger-judge-and-the-model-written-report.md",
-        "sha256": "e7d0cf969f2d21567366be0739e11001a9bd27db"
+        "sha256": "1065bba13c4c1dbfb2d82926a6af74c37482215a"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261023-095-the-ledger-judge-reads-both-directions.md",
+        "sha256": "ed5479ffbd71c7f4fa2b5853090c80080166b853"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "9940d8ced8180f8291ca66706529bc35291511eb"
+        "sha256": "0ebe4f19f9893e77fa28c10f42eb2f1af6086252"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -22400,6 +22440,10 @@
         "sha256": "4aef8bd2ad9b12dea0129118da7ae5d392faedcf"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261023-095-goal-095-the-ledger-judge-reads-both-directions.md",
+        "sha256": "65ed6135d57be03899ecd97f509ba2db3edd51f9"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -23772,6 +23816,10 @@
         "sha256": "5e4b46f13812fc314b5d2e943ce7dff1a7e62c31"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261023-095-goal-095-the-ledger-judge-reads-both-directions.md",
+        "sha256": "d3206378ce58b4d262aed94837530bc57ae487b1"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -24045,7 +24093,7 @@
       },
       {
         "path": "adapters/canonical/memory_read.py",
-        "sha256": "5fb407fe8d262f35fa285e73253aec01d2859d67"
+        "sha256": "f8637deb2773da2096a03b561286ae4add0cf12f"
       },
       {
         "path": "adapters/canonical/read_projection.py",
@@ -31360,6 +31408,10 @@
         "sha256": "5b1037f7b84a84e098945cb83f15bdda156527e8"
       },
       {
+        "path": "packages/application/memory/conflict_sweep.py",
+        "sha256": "6905744f277b5806f57ce592ada31e7d414d26ac"
+      },
+      {
         "path": "packages/application/memory/consistency.py",
         "sha256": "1d659a1b821dd67d885f3410617228cd54f11c2e"
       },
@@ -33716,6 +33768,10 @@
         "sha256": "2c9666792e9c5a0372808ad2d5b57a71ddea6a29"
       },
       {
+        "path": "tests/application/memory/test_conflict_sweep.py",
+        "sha256": "db36837493613882e068e6a690eec11727195ed1"
+      },
+      {
         "path": "tests/application/memory/test_conflict_target_integrity.py",
         "sha256": "d82f062ce7817b7ec8028c588fa755387c1f821a"
       },
@@ -35656,6 +35712,10 @@
         "sha256": "3c3473615975418d2fba6c7fead847c399e11500"
       },
       {
+        "path": "tests/tooling/goal_commit_chain.py",
+        "sha256": "610136d034bac9dceda6f5876a0e6031c60526b7"
+      },
+      {
         "path": "tests/tooling/resume_coverage_declaration.py",
         "sha256": "4132e5af9c0e154b4e0da047f1501d0d138245ef"
       },
@@ -35696,8 +35756,12 @@
         "sha256": "15bfcae2170b0718ae3aa3683977d449fca062dd"
       },
       {
+        "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
+        "sha256": "1ccff3154fe16edef36a40d2016db4a557f90d95"
+      },
+      {
         "path": "tests/tooling/test_goal_ledger_covers_every_commit.py",
-        "sha256": "252a2436e283b701ba9bd9868b3a59b45ad1c771"
+        "sha256": "afb84b18a3e80738795fc97560fd7789fc10d996"
       },
       {
         "path": "tests/tooling/test_landed_decisions_are_citable.py",
@@ -36704,11 +36768,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "2fc009682c160bf2ba5c9f7be231da85aaec1021"
+    "head": "86b504a1757c35e1f8189d717b9674a9c6ed7633"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "2fc009682c160bf2ba5c9f7be231da85aaec1021",
+  "ran_at_head": "86b504a1757c35e1f8189d717b9674a9c6ed7633",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

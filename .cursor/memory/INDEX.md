@@ -14,6 +14,7 @@
 | ID | Status | Scope | Confidence | Review After | Source Plan |
 | --- | --- | --- | --- | --- | --- |
 | [MEM-20261022-227](entries/MEM-20261022-227-a-verdict-that-does-not-leave-its-run-is-not-a-driver.md) | ACTIVE | repository | 0.9 | 2027-04-22 | PLAN-20261022-093 |
+| [MEM-20261023-229](entries/MEM-20261023-229-the-ledger-judge-reads-both-directions.md) | ACTIVE | repository | 0.95 | 2027-04-23 | PLAN-20261023-095 |
 | [MEM-20261022-228](entries/MEM-20261022-228-judge-inheritance-and-the-model-written-report.md) | ACTIVE | repository | 0.95 | 2027-04-22 | PLAN-20261022-094 |
 | [MEM-20261021-226](entries/MEM-20261021-226-the-next-round-charter-is-read-not-remembered.md) | ACTIVE | repository | 0.9 | 2027-04-21 | PLAN-20261021-092 |
 | [MEM-20261020-224](entries/MEM-20261020-224-a-witness-must-not-describe-itself.md) | ACTIVE | repository | 0.9 | 2027-04-20 | PLAN-20261020-090 |

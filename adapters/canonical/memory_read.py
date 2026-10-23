@@ -34,6 +34,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from packages.application.memory.conflict_sweep import conflict_sweep
+
 # GOAL-20261011-052 EC-03：**判定已搬去应用层**（两个读面共用；HTTP 面**不得** import
 # 具体适配器 ⇒ 共用判定必须落在它能 import 的那一层）。本模块**原样再导出**这些名字
 # （既有调用方与判据不受影响；**判定实现一字未动**）。
@@ -359,18 +361,18 @@ def memory_read(memory_store: Any | None, args: dict[str, object]) -> dict[str, 
         "memories": rows,
         "dispositions": counts,
     }
-    # GOAL-20261010-049 EC-03：**只有传了 `scope` 才加这两键** ⇒ 缺省路径的载荷与改动前
-    # **逐字相同**（既有读者看到的键一个不少、一个不多）。
+    # 只有传了 `scope` / `proposed_by` / `sweep_conflicts` 才加各自的键 ⇒ 缺省路径的
+    # 载荷与改动前**逐字相同**（GOAL-049/066/095 同形：点名筛了什么 / 要了哪一面）。
     if scope is not None:
         payload["scope"] = scope
         payload["filtered_out"] = _filtered_out(memory_store, tier, scope, len(rows))
-    # GOAL-20261013-066 EC-03：**只有传了作者才加这两键** ⇒ 缺省路径的载荷与改动前
-    # **逐字相同**（与 `scope` 那一条**同一形态**：点名筛了什么 + **筛掉了多少条**）。
     if selection.proposed_by is not None:
         payload["proposed_by"] = selection.proposed_by
         payload["filtered_out"] = _filtered_out(
             memory_store, tier, scope, len(rows), proposed_by=selection.proposed_by
         )
+    if _optional_arg(args, "sweep_conflicts") is not None:
+        payload["conflicts"] = conflict_sweep(memory_store)
     return payload
 
 

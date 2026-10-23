@@ -400,3 +400,31 @@ def test_a_heading_quoted_inside_prose_does_not_start_a_section() -> None:
     ledger = _section(text, "## CI 台账")
     assert "| `aaaaaaa` | — |" in ledger, ledger
     assert ledger_problems(text) == [], ledger_problems(text)
+
+
+#: ---------------------------------------------------------------------------
+#: **反方向**（GOAL-20261023-095）：提交链 → 台账。上面 8 条判的是「台账 ⊆ 迭代日志」，
+#: 一条也**没有**判「提交链里的提交是否进了台账」—— 实测 GOAL-094 的 10 个提交里
+#: 只有 6 个进表，四个只改记录的提交从未被看。谓词与反证在
+#: `tests/tooling/test_goal_commit_chain_reaches_the_ledger.py`（本文件已贴 450 行硬顶）。
+#: ---------------------------------------------------------------------------
+
+
+def test_the_reverse_direction_is_wired_into_the_cross_goal_judge() -> None:
+    """反方向判据**必须与正向同一个受判面**（共用 `_CUTOFF_SEQ` / `_scope_reason`）。
+
+    本条只判**挂钩**：真正的执法在
+    `tests/tooling/test_goal_commit_chain_reaches_the_ledger.py`（它 import 本文件的
+    `_terminal_goals_in_scope` / `_ledger_commits` 与 `_CUTOFF_SEQ`，不另造受判面）。
+    不建这个挂钩，反方向会退化成一份**自己的**清单 —— 新一轮 GOAL 建档即不受判。
+
+    **按限定名比较，不按对象身份**：pytest 会以两个模块名加载同一个文件
+    （`tests.tooling.x` 与 `test_x`），`is` 在同一份代码上也会判否（实测踩到）。
+    """
+    import tests.tooling.test_goal_commit_chain_reaches_the_ledger as reverse
+
+    assert reverse.SCOPE.__name__ == "_terminal_goals_in_scope"
+    assert reverse.LEDGER.__name__ == "_ledger_commits"
+    assert reverse.SCOPE.__module__ == reverse.LEDGER.__module__
+    assert reverse.CUTOFF_SEQ == _CUTOFF_SEQ
+    assert reverse.CUTOFF_DATE == _CUTOFF_DATE
