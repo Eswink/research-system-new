@@ -1752,11 +1752,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261023-095-the-ledger-judge-reads-both-directions.md",
-        "sha256": "c116a76e683bef2d1d0acc2de04e62fdc5ecc4b7"
+        "sha256": "2a211934704a0a1720fbb7543ef865d5145ee858"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "0ebe4f19f9893e77fa28c10f42eb2f1af6086252"
+        "sha256": "64782ba477481e1f52893b73f21c332cca66f478"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -1899,8 +1899,16 @@
         "sha256": "1a441fbfe612aafb382c9dba3f140c95f4e62f0f"
       },
       {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-progress-093-only.md",
+        "sha256": "446dc30e06534e1102f8fda9611492e2f61cebc3"
+      },
+      {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-59-only.md",
         "sha256": "2caede93c137ba600647da558fcebcf62ebede3a"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-61-only.md",
+        "sha256": "d97e00a8aeaef369cfff6eb02297a768a6366966"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -18383,7 +18391,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "6db5f5b4764196b10708e79e030d0ebf35a6bd2b"
+    "head": "e70cb5f69f1643563b05ea7ba5561b1717f286ec"
   },
   "fingerprint_before": {
     "files": [
@@ -20137,11 +20145,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261023-095-the-ledger-judge-reads-both-directions.md",
-        "sha256": "c116a76e683bef2d1d0acc2de04e62fdc5ecc4b7"
+        "sha256": "2a211934704a0a1720fbb7543ef865d5145ee858"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "0ebe4f19f9893e77fa28c10f42eb2f1af6086252"
+        "sha256": "64782ba477481e1f52893b73f21c332cca66f478"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -20284,8 +20292,16 @@
         "sha256": "1a441fbfe612aafb382c9dba3f140c95f4e62f0f"
       },
       {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-progress-093-only.md",
+        "sha256": "446dc30e06534e1102f8fda9611492e2f61cebc3"
+      },
+      {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-59-only.md",
         "sha256": "2caede93c137ba600647da558fcebcf62ebede3a"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-61-only.md",
+        "sha256": "d97e00a8aeaef369cfff6eb02297a768a6366966"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -36768,11 +36784,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "6db5f5b4764196b10708e79e030d0ebf35a6bd2b"
+    "head": "e70cb5f69f1643563b05ea7ba5561b1717f286ec"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "6db5f5b4764196b10708e79e030d0ebf35a6bd2b",
+  "ran_at_head": "e70cb5f69f1643563b05ea7ba5561b1717f286ec",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
