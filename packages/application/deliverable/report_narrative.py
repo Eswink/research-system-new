@@ -206,7 +206,9 @@ def build_narrative_report(inputs: ReportInputs, admission: NarrativeAdmission) 
         f"- **叙述摘要**: `{admission.digest}`",
     ]
     if inputs.objective:
-        header.append(f"- **目标（来自协议/合约声明）**: {inputs.objective}")
+        # GOAL-20261024-096 EC-03 起，生产路径的 `objective` 来自本 run 自己的
+        # `research_question` 制品（与 `research_report._header_lines` 同一口径）。
+        header.append(f"- **研究问题（本 run 自提；逐字引用）**: {inputs.objective}")
     body: list[str] = [*header, ""]
     for heading, key in zip(SECTION_HEADINGS, NARRATIVE_KEYS, strict=True):
         body += [heading, "", admission.sections[key].strip(), ""]

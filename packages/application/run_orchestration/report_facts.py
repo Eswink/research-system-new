@@ -28,6 +28,7 @@ from packages.application.deliverable.research_report import ReportInputs
 from packages.application.experiments.types import RESULT_FILE
 from packages.application.ports.artifact_store import ArtifactStore
 from packages.application.ports.evidence_ledger import EvidenceLedger
+from packages.application.run_orchestration.report_question import question_objective
 from packages.domain.evidence import Evidence
 
 #: 来源只认**工具证据**（`source_ref` 的固定前缀，由 `tool_evidence.source_origin_for` 生成）。
@@ -54,7 +55,10 @@ def report_inputs(
         sources=sources_of(artifacts, evidence),
         metrics=metrics_of(artifacts, evidence),
         verdict=latest_verdict(reviews, run_id),
-        objective=None,
+        # GOAL-20261024-096 EC-03：第 1 节的问题正文来自**本 run 自己**的
+        # `research_question` 制品（读取面在 `report_question.py`；无该制品 ⇒ `None`，
+        # 渲染器把那一节写成「无 + 原因」）。此前这里写死 `None` ⇒ 该节恒空。
+        objective=question_objective(artifacts, evidence),
         budget=None,
     )
 

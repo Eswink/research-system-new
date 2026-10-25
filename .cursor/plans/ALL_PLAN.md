@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261024-096](tasks/PLAN-20261024-096-goal-096-direction-to-report-in-one-run.md) | DONE |
 | [x] | [PLAN-20261018-523](tasks/PLAN-20261018-523-goal-086-ec01-04-panel-groups-by-the-object-under-review.md) | DONE |
 | [x] | [PLAN-20261018-526](tasks/PLAN-20261018-526-goal-087-ec01-04-a-rejecting-reviewer-does-not-cancel-the-panel.md) | DONE |
 | [x] | [PLAN-20261020-090](tasks/PLAN-20261020-090-goal-090-tool-dimension-and-m0-witness.md) | DONE |

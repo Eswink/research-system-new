@@ -91,6 +91,8 @@ LITERAL_MENTIONS: dict[str, str] = {
     "tests/e2e/test_direction_to_question_to_retrieval_live.py": ("模块 docstring 的操作者口令"),
     # GOAL-20261020-091 EC-04：同上（跑法两行：开关 + runtime 各一条）。
     "tests/e2e/test_two_models_judge_the_same_artifact_live.py": ("模块 docstring 的操作者口令"),
+    # GOAL-20261024-096 EC-04：同上（六相链真跑；跑法两行：开关 + runtime 各一条）。
+    "tests/e2e/test_direction_to_report_live.py": ("模块 docstring 的操作者口令"),
 }
 
 #: 带 `requires_live_llm` 的模块清单（**逐条列出**：新加一个就在这儿露头）。
@@ -117,6 +119,8 @@ LIVE_MODULES: tuple[str, ...] = (
     "tests/e2e/test_prior_knowledge_changes_the_plan_live.py",
     # GOAL-20261019-089 EC-04：一句话方向是否自己变成问题并驱动真检索（本 GOAL 的 live 面）。
     "tests/e2e/test_direction_to_question_to_retrieval_live.py",
+    # GOAL-20261024-096 EC-04：六相链在一次真 run 里走完（本 GOAL 的 live 面）。
+    "tests/e2e/test_direction_to_report_live.py",
     # GOAL-20261020-091 EC-04：两位评审模型是否真的各判一次（本 GOAL 的 live 面）。
     "tests/e2e/test_two_models_judge_the_same_artifact_live.py",
 )

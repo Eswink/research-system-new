@@ -44,25 +44,62 @@ from services.api.catalog import load_catalog_snapshot, load_project_settings
 _ROOT = Path(__file__).resolve().parents[3]
 _PROTOCOLS = _ROOT / "examples" / "protocols"
 
-#: 声明「由运行链执行」的协议 → 它的哪个 phase 声明了、以及该 phase 的能力。
+#: 声明「由运行链执行」的协议 → 它声明 run_chain 的**每个** phase 与该相的能力。
 #: 字面量写在判据里（不 import 产品常量当预言机）。
-_RUN_CHAIN = {
+#: GOAL-20261024-096：值从单 `(phase, capabilities)` 扩成**元组**（六相协议有**三个**
+#: run_chain 相，只登记一个会把另两个的声明面留在判据之外）—— 纯收紧，既有条目
+#: 逐字搬进单元素元组，谓词只多不少。
+_RUN_CHAIN: dict[str, tuple[tuple[str, frozenset[str]], ...]] = {
     "real_retrieval_research_v1.yaml": (
-        "analysis",
-        {"artifact.read", "literature.search", "literature.read"},
+        ("analysis", frozenset({"artifact.read", "literature.search", "literature.read"})),
     ),
     # GOAL-20261014-077 EC-02/EC-03：报告链协议的立题格 —— 检索由运行链执行（本协议
     # 的「立题由检索产出派生」正是靠它的覆盖判据取证）。能力集取自**文档原文**
     # （phase 的 `required_capabilities`）、不 import 产品常量。
     "research_report_chain_v1.yaml": (
-        "plan",
-        {
-            "artifact.read",
-            "literature.search",
-            "literature.read",
-            "workspace.read",
-            "evidence.read",
-        },
+        (
+            "plan",
+            frozenset({
+                "artifact.read",
+                "literature.search",
+                "literature.read",
+                "workspace.read",
+                "evidence.read",
+            }),
+        ),
+    ),
+    # GOAL-20261024-096：六相链的三个 run_chain 相（question / retrieval / plan）。
+    # 前两相的能力集照文档原文（含 `workspace.read` —— 六相协议的冻结集比两相版多一件
+    # openhands_workspace，不声明它会漏进会话工具面）。
+    "direction_to_report_v1.yaml": (
+        (
+            "question",
+            frozenset({
+                "artifact.read",
+                "literature.search",
+                "literature.read",
+                "workspace.read",
+            }),
+        ),
+        (
+            "retrieval",
+            frozenset({
+                "artifact.read",
+                "literature.search",
+                "literature.read",
+                "workspace.read",
+            }),
+        ),
+        (
+            "plan",
+            frozenset({
+                "artifact.read",
+                "literature.search",
+                "literature.read",
+                "workspace.read",
+                "evidence.read",
+            }),
+        ),
     ),
 }
 #: 未声明该字段的协议 ⇒ 会话工具列表必须**逐字等于**冻结集（既有语义）。
@@ -89,21 +126,25 @@ def _compiled(name: str) -> CompiledRunPlan:
 
 def test_declared_protocol_says_run_chain_in_the_document_itself() -> None:
     """第 1 面：**文档自己**写了 `capability_execution: run_chain`（不靠产品代码转述）。"""
-    for name, (phase_id, capabilities) in _RUN_CHAIN.items():
-        phase = _raw_phases(name)[phase_id]
-        assert phase.get("capability_execution") == "run_chain", (name, phase_id, phase)
-        assert set(phase.get("required_capabilities", [])) == capabilities, (name, phase_id)
+    for name, declared in _RUN_CHAIN.items():
+        raw = _raw_phases(name)
+        assert {phase_id for phase_id, _ in declared} <= set(raw), (name, sorted(raw))
+        for phase_id, capabilities in declared:
+            phase = raw[phase_id]
+            assert phase.get("capability_execution") == "run_chain", (name, phase_id, phase)
+            assert set(phase.get("required_capabilities", [])) == capabilities, (name, phase_id)
 
 
 def test_loader_and_compiler_carry_the_declaration() -> None:
     """第 2/3 面：加载器读成域枚举、编译器原样透传（缺省仍是 session）。"""
-    for name, (phase_id, _) in _RUN_CHAIN.items():
+    for name, declared in _RUN_CHAIN.items():
         protocol = load_protocol(f"examples/protocols/{name}")
         loaded = {phase.id: phase for phase in protocol.phases}
-        assert loaded[phase_id].capability_execution is CapabilityExecution.RUN_CHAIN
         plan = _compiled(name)
         compiled = {phase.id: phase for phase in plan.phases}
-        assert compiled[phase_id].capability_execution is CapabilityExecution.RUN_CHAIN
+        for phase_id, _ in declared:
+            assert loaded[phase_id].capability_execution is CapabilityExecution.RUN_CHAIN
+            assert compiled[phase_id].capability_execution is CapabilityExecution.RUN_CHAIN
 
     for name in _UNDECLARED:
         protocol = load_protocol(f"examples/protocols/{name}")
@@ -114,29 +155,31 @@ def test_loader_and_compiler_carry_the_declaration() -> None:
 
 def test_declaration_does_not_shrink_the_frozen_tool_set() -> None:
     """第 4 面：冻结集**不**因声明而缩小——这是「声明化排除 ⇔ 静默丢弃」的分界。"""
-    for name, (phase_id, _) in _RUN_CHAIN.items():
+    for name, declared in _RUN_CHAIN.items():
         plan = _compiled(name)
         frozen = flatten_tool_providers(plan)
         assert frozen, f"{name} 的冻结集为空 ⇒ 本判据空转"
-        run_chain = run_chain_tool_ids(plan, phase_id)
-        assert run_chain, f"{name} 的 {phase_id} 没有解析出 run-chain provider"
-        assert set(run_chain) <= set(frozen), (frozen, run_chain)
-        # 该 phase 的能力仍逐条落在 tool_requirements 里（preflight/策略面一字不减）
-        declared = {
-            (item.phase_id, item.capability)
-            for item in plan.tool_requirements
-            if item.phase_id == phase_id
-        }
-        assert declared, f"{name} 的 {phase_id} 在 tool_requirements 里没有任何能力"
+        for phase_id, _ in declared:
+            run_chain = run_chain_tool_ids(plan, phase_id)
+            assert run_chain, f"{name} 的 {phase_id} 没有解析出 run-chain provider"
+            assert set(run_chain) <= set(frozen), (frozen, run_chain)
+            # 该 phase 的能力仍逐条落在 tool_requirements 里（preflight/策略面一字不减）
+            requirements = {
+                (item.phase_id, item.capability)
+                for item in plan.tool_requirements
+                if item.phase_id == phase_id
+            }
+            assert requirements, f"{name} 的 {phase_id} 在 tool_requirements 里没有任何能力"
 
 
 def test_session_tools_exclude_exactly_the_run_chain_providers() -> None:
     """第 5 面：被拿掉的只有会话工具列表，且**只**拿掉声明过的那部分。"""
-    for name, (phase_id, _) in _RUN_CHAIN.items():
+    for name, declared in _RUN_CHAIN.items():
         plan = _compiled(name)
         frozen = flatten_tool_providers(plan)
-        session = session_tool_ids(frozen, run_chain_tool_ids(plan, phase_id))
-        assert session == (), (name, frozen, session)
+        for phase_id, _ in declared:
+            session = session_tool_ids(frozen, run_chain_tool_ids(plan, phase_id))
+            assert session == (), (name, phase_id, frozen, session)
 
     for name in _UNDECLARED:
         plan = _compiled(name)

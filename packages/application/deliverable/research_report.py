@@ -58,7 +58,9 @@ class ReportInputs:
     metrics: tuple[Mapping[str, str], ...]
     #: 评审结论（判词 + 决定）。None 表示本 run 没有评审阶段。
     verdict: Mapping[str, Any] | None
-    #: 客观陈述：本 run 声明的目标是**协议/合约**给的，不是模型编的。
+    #: 第 1 节的问题正文。GOAL-20261024-096 EC-03 起：生产路径取自**本 run 自己**的
+    #: `research_question` 制品（`report_question.py` 读取面，逐字引用）；
+    #: `None` = 本 run 没有该制品（渲染器把那一节写成「无 + 原因」）。
     objective: str | None
     #: 预算读数（已消费 / 上限），来自账本。
     budget: Mapping[str, str] | None = None
@@ -85,7 +87,9 @@ def _header_lines(inputs: ReportInputs) -> list[str]:
         f"- **汇编时状态**: `{inputs.state}`",
     ]
     if inputs.objective:
-        lines.append(f"- **目标（来自协议/合约声明）**: {inputs.objective}")
+        # GOAL-20261024-096 EC-03 起，生产路径的 `objective` 来自**本 run 自己**的
+        # `research_question` 制品（`report_question.py` 读取面）；逐字引用，不重述。
+        lines.append(f"- **研究问题（本 run 自提；逐字引用）**: {inputs.objective}")
     if inputs.budget:
         lines.append(
             f"- **预算**: 已用 `{inputs.budget.get('consumed', '?')}` / "
@@ -95,16 +99,21 @@ def _header_lines(inputs: ReportInputs) -> list[str]:
 
 
 def _question_section(inputs: ReportInputs) -> list[str]:
-    """第 1 节：问题与动机（目标由协议/合约声明，不是模型自述）。"""
+    """第 1 节：问题与动机（GOAL-20261024-096 EC-03：问题由本 run 自己提出）。"""
     section = [SECTION_HEADINGS[0], ""]
     if inputs.objective:
         section += [
-            "本 run 的研究目标由**协议的 phase 声明 + 任务合约**给出（不是模型自述）：",
+            "本 run 的研究问题由**本 run 自己**在问题相提出"
+            "（逐字取自落库的 `research_question` 制品；不是操作者预填的简报，"
+            "也不是汇编器改写）：",
             "",
             f"> {inputs.objective}",
         ]
     else:
-        section.append("_（无：本 run 未声明目标）_")
+        section.append(
+            "_（无：本 run 没有 research_question 制品 —— 问题相未跑或未产出；"
+            "本 run 也未声明协议级目标）_"
+        )
     return [*section, ""]
 
 
