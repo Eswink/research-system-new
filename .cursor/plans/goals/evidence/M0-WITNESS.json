@@ -1,5 +1,5 @@
 {
-  "exit_code": 1,
+  "exit_code": 0,
   "fingerprint_after": {
     "files": [
       {
@@ -1760,7 +1760,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261024-096-direction-to-report-in-one-run.md",
-        "sha256": "10336bc58c88231b11370639912df60651754059"
+        "sha256": "baf5b4239481b421ca4f3de8720c6575852632a2"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -18459,7 +18459,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "43040b0142221e1c1861a6f3a47c953f59c68874"
+    "head": "d683c7d305d07b35bf00cd5058181f5a5a86a17e"
   },
   "fingerprint_before": {
     "files": [
@@ -20221,7 +20221,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261024-096-direction-to-report-in-one-run.md",
-        "sha256": "10336bc58c88231b11370639912df60651754059"
+        "sha256": "baf5b4239481b421ca4f3de8720c6575852632a2"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -36920,11 +36920,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "43040b0142221e1c1861a6f3a47c953f59c68874"
+    "head": "d683c7d305d07b35bf00cd5058181f5a5a86a17e"
   },
-  "green": false,
+  "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "43040b0142221e1c1861a6f3a47c953f59c68874",
-  "terminal_line": "FAILED: 1 check(s): python/tests=1",
+  "ran_at_head": "d683c7d305d07b35bf00cd5058181f5a5a86a17e",
+  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

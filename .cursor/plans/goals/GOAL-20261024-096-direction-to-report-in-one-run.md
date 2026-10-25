@@ -184,7 +184,7 @@ memory_entries:
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261024-096 | `PENDING`（本提交即第一个；HEAD 不写进自己的台账 —— 结构必然）| 协议判据 **5 passed**；跨相边 **3 passed**；报告问题读取面 **6 passed**；离线 e2e（真容器）**6 passed**；登记面 four 件 **9+3+8+12 passed**；mainline 三件 **24 passed**（两件待记录面收口）；mypy 干净；ruff check / format 双门全绿| PENDING| 新建 `direction_to_report_v1.yaml`（六相；C-1 守住、两份既有协议一字未改）+ `report_question.py`（新模块读本 run 问题正文，两处渲染器口径同步）+ 096 收口验证器与断言集 + **跨 GOAL** 收口覆盖判据（含空真守卫）| `W-1` 首两次真跑被通道限流挡住、**第三次通过**（如实留历史）；`W-2` 计划产物跨相性质标签过宽；`W-3` 090/095/076 验证器不回填 | 收口：m0 见证 + CI 台账 |
+| 1 | PLAN-20261024-096 | `d683c7d3`（HEAD 不写进自己的台账 —— 结构必然；下一个提交补记上一个）| 协议判据 **5 passed**；跨相边 **3 passed**；报告问题读取面 **6 passed**；离线 e2e（真容器）**6 passed**；登记面 four 件 **9+3+8+12 passed**；mainline 三件 **24 passed**（两件待记录面收口）；mypy 干净；ruff check / format 双门全绿| PENDING| 新建 `direction_to_report_v1.yaml`（六相；C-1 守住、两份既有协议一字未改）+ `report_question.py`（新模块读本 run 问题正文，两处渲染器口径同步）+ 096 收口验证器与断言集 + **跨 GOAL** 收口覆盖判据（含空真守卫）| `W-1` 首两次真跑被通道限流挡住、**第三次通过**（如实留历史）；`W-2` 计划产物跨相性质标签过宽；`W-3` 090/095/076 验证器不回填 | 收口：m0 见证 + CI 台账 |
 
 ## 状态历史
 
@@ -192,6 +192,7 @@ memory_entries:
 | --- | --- | --- |
 | 2026-10-24 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 64）。读取器 REFUSED（`RESIDUAL_SECTION_MISSING`），残余以 GOAL-095 RECHECK 第七节为准逐条处置（见上表）。`max_cycles: 14`。 |
 | 2026-10-25 | **ACTIVE** | **交付面落地**：EC-01/02/03/05 判据全绿（协议 5 例 + 跨相 3 例 + 报告问题 6 例 + 离线 e2e 6 例 + 跨 GOAL 收口判据）；宪章程序表序 64 与阶梯「报告」行升级已记账。**EC-04 真跑两次失败**，签名 `litellm.RateLimitError: Channel rate limit reached for model`（中转站通道限流，基础设施类）⇒ 如实登记。**第三次真跑 `SUCCEEDED`**：六相全落库、真实 PMID 42787049、三臂实验、报告第 1 节逐字引用本 run 自提的问题（读数在取证文件里逐条可核）。 |
+| 2026-10-25 | **ACHIEVED** | **五个 EC 全达成**。首次 m0 判红三项（`format-check` / `typecheck` / `tests`）根因是**四个文件撞规模线**（arc_offline 463 / live 390 行、`_wired_deps` 91 行>50）+ 一处注解 `tuple[(), ...]`（strict mypy 下是语法错误）+ 新 live 模块未进两份清单 ⇒ 拆出两个支持件（主文件降到 134 / 174 行）后**六例仍全绿**（等价重构）。最终 m0：`PASS [` **23** 行、0 FAILED 之外唯一红是台账空表（本表已补）、`tree changed during the run: False`。凭据审计四面 `offenders=0`。收口验证器 **82 条判词全过 / 0 条不过**。 |
 
 ## EC-04 实测读数（真跑，第三次通过）
 
@@ -238,3 +239,4 @@ reached for model`（中转站通道限流）。它发生在模型通道可用�
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `d683c7d3` | PENDING（推送后回填真实 run id） | PENDING | 本轮全部交付面：六相协议 + 报告问题读取面 + 096 收口验证器与断言集 + 跨 GOAL 收口判据 + 记录（GOAL/PLAN/RECHECK/MEM/宪章序 64/ALL_PLAN）+ live 取证。本地 m0：`PASS [` **23** 行、`tree changed during the run: False`；唯一红是 `test_goal_ledger_covers_every_commit`（本表当时还是空表 —— 本行即按它点名补记）|
