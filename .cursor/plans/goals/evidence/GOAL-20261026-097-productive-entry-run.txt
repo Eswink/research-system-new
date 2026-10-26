@@ -1,0 +1,18 @@
+# GOAL-20261026-097 EC-02 真跑读数
+
+入口形态：`TestClient(create_app(assemble(...)))` —— **产品组合根**，**未**做任何 `replace(deps.runs._deps, ...)` / `deps.tool_providers = ...` 补缝；仅注入部署凭据与显式 `preflight_override`（既有运维路径）。
+
+## 读数
+
+- `http_status`: 200
+- `http_body`: {"id":"02d7c47f-4336-413c-8c97-651c951fbcef","project_id":"example-project","protocol_id":"direction_to_report_v2_0_0","state":"SUCCEEDED","manifest_digest":"sha256:46f85a2984a39dde4bee4626e8a5dfc7e3bb059e6e1069154ff1c64ac3ec4121","manifest_semantic_digest":"sha256:5f5fe5a6b8d5a978b7ffe48c0699c45ff06302e819d4070dcdcee03008d56f46","protocol_body_digest":"sha256:2734019686e8b8afa8e3812e00c626e092e06a86edb6dfd9f549b5ea98e5e54a","paused_dispatch":null,"dispatch":{"kind":"NONE","retry":{"scheduled":0,"due":0,"next_retry_at":null},"holders":[]},"rebuild":{"status":"SELF_CONTAINED","missing":[]},"exe
+- `state`: SUCCEEDED
+- `run_id`: 02d7c47f-4336-413c-8c97-651c951fbcef
+- `protocol`: direction_to_report_v2_0_0
+- `direction`: retrieval augmentation for scientific hypothesis generation
+- `artifact_ids`: ['02d7c47f-4336-413c-8c97-651c951fbcef:research_report.md', '1c88d9b6-f59e-42cb-a5fc-1a1f77243e7d:retrieval_context', '1c88d9b6-f59e-42cb-a5fc-1a1f77243e7d:review_decision', '333ff08b-7431-4294-851f-7008889bb249:novelty_claim', '333ff08b-7431-4294-851f-7008889bb249:retrieval_context', '50c54638-287c-490c-91db-a0f118e0b49e:research_question', '50c54638-287c-490c-91db-a0f118e0b49e:retrieval_context', '7b7bf8e1-ddae-4ace-878b-b019ed073794:retrieval_context', '7b7bf8e1-ddae-4ace-878b-b019ed073794:review_decision', '96c34032-3786-4acf-87d8-fc6cd4512259:retrieval_context', '96c34032-3786-4acf-87d8-fc6cd4512259:retrieval_report', 'b492b9db-f3fc-4f1e-bcce-f4ba3f55c6d0:experiment_result.json', 'b492b9db-f3fc-4f1e-bcce-f4ba3f55c6d0:metrics', 'b492b9db-f3fc-4f1e-bcce-f4ba3f55c6d0:stderr.log', 'b492b9db-f3fc-4f1e-bcce-f4ba3f55c6d0:stdout.log', 'c01c4de4-b315-4517-9f41-8fb0e0a62612:experiment_result.json', 'c01c4de4-b315-4517-9f41-8fb0e0a62612:metrics', 'c01c4de4-b315-4517-9f41-8fb0e0a62612:stderr.log', 'c01c4de4-b315-4517-9f41-8fb0e0a62612:stdout.log', 'cb081d05-9868-4c95-9d74-3a2fe8d8a341:research_plan', 'cb081d05-9868-4c95-9d74-3a2fe8d8a341:retrieval_context', 'tool-args:96c34032-3786-4acf-87d8-fc6cd4512259:literature_read:42579838+42787049', 'tool-args:96c34032-3786-4acf-87d8-fc6cd4512259:literature_search', 'tool-result:96c34032-3786-4acf-87d8-fc6cd4512259:literature_read:42579838+42787049:literature_read', 'tool-result:96c34032-3786-4acf-87d8-fc6cd4512259:literature_search:literature_search']
+- `missing_phase_artifacts`: []
+- `experiment_rows`: 2
+- `review_rows`: 8
+- `novelty_matched_prior`: PMID:42579838
+- `review_texts_cite_that_identifier`: 2

@@ -1,0 +1,204 @@
+id: direction_to_report_v2_0_0
+version: 0.1.0
+
+# 一次 run 走完「方向 → 问题 → 检索 → **创新点** → 立题 → 实验 → 评审 → 报告」**七相**
+# （GOAL-20261026-097 EC-04；v1 的六相 + `novelty`）。
+#
+# **它补哪一格**：v1（`direction_to_report_v1.yaml`）证明了一次 run 能走完六相，但「创新点」
+# 在域层**结构性缺席** —— `packages/domain/` 里 `novel`/`idea` 零命中、
+# `rg -iln "novelty" packages/ services/ adapters/` 零条、`novelty_reviewer` 是**死配置**
+# （无 `review_panel_role` ⇒ `NONE`、无 agent 绑定、无协议点名 ⇒ 域层判
+# `"role not required by protocol"`）。于是「这项研究与最近的前人工作差在哪」**从未被写下**，
+# 也**从未被任何模型判过**。
+#
+# v2 把创新点做成**两面并列**（缺一面即不成立）：
+#
+#   (a) **声明面** —— 新增 `novelty` 相（会话），合约 `novelty_claim_proposal` 要求模型
+#       在正文里给出 `novelty_claim` 块：`claim` + `why_novel` + `nearest_prior`（至少一条
+#       **本 run 检索到的**标识）。读取面 `packages/application/run_orchestration/
+#       novelty_claim.py` 只读 canonical、零出网、fail-closed：`nearest_prior` 必须命中
+#       **本 run 工具证据里真实出现的标识**（PMID / DOI 逐字取自落库内容），否则点名拒绝。
+#   (b) **评审面** —— `novelty_reviewer` 加 `review_panel_role: REVIEWER`（⇒ `is_reviewer()`
+#       为真 ⇒ 被评对象进它的提示词），协议在 `review` 相点名它（⇒ 激活理由
+#       `"role is required by protocol"`；池在 `standard` 模板里，否则编译期 `ROLE_CAPACITY`），
+#       agent `novelty_a` 绑**第三个**底层模型（`minimax-m3`；另两位评审者是 `glm-5.3` /
+#       `kimi-k2.6`，生产侧是 `deepseek-v4-flash-vision`）。
+#
+# **两面互相引用**：novelty 声明的正文是 `review` 相的被评对象之一（跨相输入
+# `novelty:novelty_claim`），因此评审者的提示词里**看得见**那个检索标识；判据要求它的
+# 判词**引用同一个标识**（否则「判了创新点」与「判的真是这份声明」两件事会分叉）。
+#
+# **与 v1 的关系（C-2：不改既有协议）**：v1 的相集钉在
+# `tests/contracts/test_direction_to_report_protocol.py`（六相、三条跨相边、四条绑定）——
+# 那份一字未改，仍全绿就是「未改」的机械证据。v2 是**新增**协议。
+#
+# **七相分工**（v1 的六相逐相保留，`novelty` 插在 `retrieval` 与 `plan` 之间）：
+#
+#   1. `question`（会话）—— 读项目方向，写 `research_question`。
+#   2. `retrieval`（运行链）—— 检索词逐字取自上游问题的 `query`；判据三维。
+#   3. `novelty`（会话）—— `inputs: [retrieval:retrieval_report]`（**会话相**，跨相输入
+#      可以正常声明）。合约要求 `nearest_prior` 至少一条命中本 run 检索到的标识。
+#      `capability_execution: run_chain`：本相能力面覆盖四件 provider ⇒ 会话工具面为空
+#      （与 `plan` 相同一手法；检索调用收窄在 `retrieval` 相）。
+#   4. `plan`（会话）—— `inputs: [retrieval:retrieval_report, novelty:novelty_claim]`：
+#      立题同时站在**检索**与**创新点声明**上（声明的正文是计划材料的一部分）。
+#   5. `experiment`（deterministic）—— 沙箱实验。**C-1**：本相不声明跨相 `inputs`
+#      （`experiment` 执行体不消费声明输入 ⇒ 写了会被编译期点名拒绝）；实验设计经装配面
+#      `design_source` 从 canonical 的计划产物读。
+#   6. `review`（会话）—— 独立复核；被评对象 = `plan:research_plan` **与**
+#      `novelty:novelty_claim`（两位评审者都收到同一份材料）。`novelty_reviewer` 在此
+#      点名 ⇒ 它与 `scientific_reviewer` 并列为**同一相的两个评审面**。
+#   7. `report`（deterministic）—— 报告汇编器按本 run 的持久事实汇出报告。
+#
+# **受控范围**（写明，不夸大也不缩小）：7 个 phase、5 次真实模型会话（question / novelty /
+# plan / review 两位评审）、1 次真实检索两步链、1 次沙箱实验、1 次确定性汇编。
+# 它**不**声称：模型写的「创新」真的新（那要人评或外部检索对照）；`nearest_prior` 的
+# 语义相关性（只判**标识真实**，不判「这一条真的是最接近的前人工作」）；叙述质量。
+
+phases:
+  - id: question
+    name: Research Question From Direction
+    strategy: single_agent
+    required_roles:
+      - {role: research_director, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      # 与 direction_to_question_v1 同一条注释：这两条不是为了在本相检索 ——
+      # 会话工具面 = 冻结集 − 本相的 run-chain 排除，能力面不覆盖某个 provider，
+      # 它就漏进会话面而没有注册实现。
+      - literature.search
+      - literature.read
+      # 本协议的冻结集比两相版**多一件** `openhands_workspace`（立题/评审相声明了
+      # `workspace.read`）⇒ 本相不声明它就会漏进会话工具面（与 research_report_chain_v1
+      # 立题格声明 workspace.read 同一条理由）。
+      - workspace.read
+    capability_execution: run_chain
+    task_contract: research_question_proposal
+    # 无声明输入：本格要的是项目方向（提示词那一段），不是制品 —— 声明 input-brief
+    # 会把「问题来自方向」掩蔽掉（direction_to_question_v1 同款）。
+    outputs: [research_question]
+    timeout_seconds: 180
+
+  - id: retrieval
+    name: Retrieval Driven By The Question
+    strategy: single_agent
+    depends_on: [question]
+    required_roles:
+      - {role: domain_researcher, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+      # 同 question 相：不声明 `workspace.read`，它的 provider 会漏进本相会话工具面。
+      - workspace.read
+    capability_execution: run_chain
+    inputs: [question:research_question]
+    # GOAL-20261026-097 EC-02：**本协议专属**的检索格合约（`research_question_retrieval`
+    # 被另两份协议共用，改它属 C-2 禁止面）。差别只在任务书把「检索已由运行链做完、
+    # 本相没有工具、必须给 `retrieval_report` 块」写清楚 —— 覆盖判据三维逐字相同。
+    task_contract: retrieval_report_from_the_run_chain
+    outputs: [retrieval_report]
+    timeout_seconds: 300
+
+  - id: novelty
+    name: Novelty Claim Against The Retrieved Work
+    strategy: single_agent
+    depends_on: [retrieval]
+    required_roles:
+      - {role: novelty_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+      # 与 question 相同一理由：本相 `capability_execution: run_chain` 把四件 provider 的
+      # 运行链调用归到 `retrieval` 相，而**声明面**仍需覆盖它们（否则它们漏进会话工具面
+      # 而没有注册实现 —— `workspace.read` 是冻结集里的第四件）。
+      - workspace.read
+      - evidence.read
+    capability_execution: run_chain
+    # 会话相 ⇒ 跨相输入可以正常声明（C-1 只禁 `experiment` / `report` 两个执行体）。
+    # 声明的产物是**检索报告**：模型要指名的前人工作必须来自本 run 真的取回的那些记录。
+    inputs: [retrieval:retrieval_report]
+    task_contract: novelty_claim_proposal
+    outputs: [novelty_claim]
+    timeout_seconds: 180
+
+  - id: plan
+    name: Plan Derived From The Retrieved Material
+    strategy: single_agent
+    depends_on: [retrieval, novelty]
+    required_roles:
+      - {role: research_director, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+      - workspace.read
+      - evidence.read
+    capability_execution: run_chain
+    # GOAL-20261026-097：立题同时站在**检索**与**创新点声明**上 —— 声明的正文进
+    # `plan` 相的材料（两条跨相边，产出方各自唯一、都是上游）。
+    inputs: [retrieval:retrieval_report, novelty:novelty_claim]
+    task_contract: research_report_plan
+    outputs: [research_plan]
+    timeout_seconds: 300
+
+  - id: experiment
+    name: Controlled Experiment
+    strategy: deterministic
+    depends_on: [plan]
+    required_roles:
+      - {role: experiment_engineer, min_instances: 1, max_instances: 1}
+    # C-1：experiment 执行体不消费声明输入 ⇒ 不声明跨相 inputs（写了编译期点名拒绝）。
+    # 实验设计经装配面 `design_source="plan"` 从本 run 的计划产物读（GOAL-080 先例）。
+    task_contract: experiment_execution
+    outputs: [experiment_runs]
+    timeout_seconds: 300
+
+  - id: review
+    name: Independent Scientific Review
+    strategy: single_agent
+    # GOAL-20261026-097：评审相依赖**创新点声明**（它是被评对象之一），因此把 `novelty`
+    # 也列进 `depends_on` —— 声明输入的产出方必须在上游，而这里有两个产出方
+    # （`experiment` 的读数、`novelty` 的声明）。
+    depends_on: [experiment, novelty]
+    required_roles:
+      - {role: scientific_reviewer, min_instances: 1, max_instances: 1}
+      # 第二位评审者：**同一个相**上的第二个评审面。两位都用 `REVIEWER` 面板角色 ⇒
+      # 都收到同一份「被评对象」（`plan:research_plan` + `novelty:novelty_claim`）；
+      # `novelty_a` 绑 `minimax-m3`，与 `reviewer_a`（`glm-5.3`）/ `reviewer_b`
+      # （`kimi-k2.6`）都不同 ⇒ 三个独立目标（`check_heterogeneity` 判 writer∪reviewer）。
+      - {role: novelty_reviewer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - workspace.read
+    # 本相没有 run-chain 排除 ⇒ 会话工具面 = 整个冻结集（四件 provider 全在）⇒
+    # 四件都要绑（与 research_report_chain_v1 的 review 相同一形态）。
+    session_tool_bindings:
+      - {provider_id: m12_artifact, tool_name: artifact.read}
+      - {provider_id: openhands_workspace, tool_name: workspace.read}
+      - {provider_id: ncbi_eutils, tool_name: literature.search}
+      - {provider_id: europe_pmc, tool_name: literature.read}
+    # 被评对象 = 本 run 自己的立题产物（跨相输入）：
+    # scientific_reviewer / novelty_reviewer 的 review_panel_role 都是 REVIEWER ⇒ 它们
+    # 进评审者提示词。GOAL-20261026-097：**创新点声明也是被评对象**（第二个跨相输入）——
+    # 「两面互相引用」的物证就在这一行：评审者读得到那个检索标识。
+    inputs: [plan:research_plan, novelty:novelty_claim]
+    task_contract: multi_role_review
+    outputs: [review_decision]
+    gate: QUALITY_GATE
+    timeout_seconds: 180
+
+  - id: report
+    name: Research Report Assembly
+    strategy: deterministic
+    depends_on: [plan, novelty, experiment, review]
+    required_roles:
+      - {role: research_writer, min_instances: 1, max_instances: 1}
+    # C-1：report 执行体不消费声明输入 ⇒ 不声明跨相 inputs（同 experiment 相）。
+    # 报告第 1 节经 report_facts 的新读取面读本 run 的 research_question 制品（EC-03）；
+    # 其余各节读 canonical 的来源 / 指标 / 判词。
+    task_contract: research_report_deliverable
+    outputs: [research_report.md]
+    timeout_seconds: 300

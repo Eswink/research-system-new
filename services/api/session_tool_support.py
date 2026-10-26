@@ -65,6 +65,12 @@ DEFAULT_SESSION_TOOL_BINDINGS: tuple[tuple[str, str, str], ...] = (
     # GOAL-20261009-042 EC-02：`memory.read` 的承接 —— 读 governed memory（`MemoryStore.query`），
     # 并按**调用方给的时点**给出时效与处置（`SKIP` / `ANNOTATE` / `USE`）。
     ("memory.read", "m12_artifact", "memory_read"),
+    # GOAL-20261026-097 EC-02：**检索**两个能力名的会话实现（契约要求「本相没有工具」的那
+    # 几个相不走向这里；评审相**有**整个冻结集 ⇒ 它需要这两个名字有实现）。
+    # 实测：缺这两条时，六相已跑完、评审相在 agent init 撞
+    # `ToolDefinition 'literature.read' is not registered`。
+    ("literature.search", "europe_pmc", "literature_search"),
+    ("literature.read", "europe_pmc", "literature_read"),
 )
 
 
@@ -134,6 +140,7 @@ def session_tool_face(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件
     review_store: Any = None,
     program_store: Any = None,
     memory_store: Any = None,
+    extra_providers: Mapping[str, Any] | None = None,
 ) -> Any:
     """位置参数形式的出厂注册面（组合根侧读起来最短；语义见 `canonical_read_register`）。"""
     return canonical_read_register(
@@ -146,6 +153,7 @@ def session_tool_face(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件
         review_store=review_store,
         program_store=program_store,
         memory_store=memory_store,
+        extra_providers=extra_providers,
     )
 
 
@@ -154,6 +162,10 @@ def sqlite_session_tools(faces: Any, ports: Any) -> Any:
 
     单列一个两行包装而不是让组合根写三个关键字：`composition.py` 恰好卡在 450 行硬上限上，
     而 wiring 本身是一行 —— 包装把「读哪三个依赖」的决策留在本模块（装配决策面）。
+
+    GOAL-20261026-097：`ports.tool_providers`（出厂检索实例）一并进表 —— 评审相没有
+    run-chain 排除 ⇒ 它的会话工具面是整个冻结集，检索 provider 没有实例就会撞
+    `ToolDefinition 'literature.read' is not registered`（真实 run 实测）。
     """
     return canonical_read_register(
         artifacts=ports.artifacts,
@@ -166,6 +178,7 @@ def sqlite_session_tools(faces: Any, ports: Any) -> Any:
         program_store=ports.program_store,
         # GOAL-20261009-042 EC-02：`memory.read` 的来源（与 ApiDeps 同一实例）。
         memory_store=ports.memory_store,
+        extra_providers=getattr(ports, "tool_providers", None),
     )
 
 
@@ -200,6 +213,34 @@ def _canonical_reader(  # noqa: PLR0913 - provider 的 Port 依赖就这么几�
     )
 
 
+def _provider_instances(  # noqa: PLR0913 - 与注册面同一组 Port（收成工厂守函数门）
+    *,
+    artifacts: Any,
+    ledger: Any,
+    budget_ledger: Any | None,
+    experiment_store: Any | None,
+    run_store: Any | None,
+    review_store: Any | None,
+    memory_store: Any | None,
+    extra_providers: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """provider 实例表：canonical 读面 + 组合根手里已有的实例（同一次构造）。"""
+    canonical_reader = _canonical_reader(
+        artifacts,
+        ledger,
+        budget_ledger=budget_ledger,
+        experiment_store=experiment_store,
+        run_store=run_store,
+        review_store=review_store,
+        memory_store=memory_store,
+    )
+    return {
+        "m12_artifact": canonical_reader,
+        "openhands_workspace": canonical_reader,
+        **(dict(extra_providers) if extra_providers else {}),
+    }
+
+
 def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么几件（齐了才叫承接）
     *,
     artifacts: Any,
@@ -212,8 +253,15 @@ def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么
     program_store: Any | None = None,
     memory_store: Any | None = None,
     bindings: Sequence[tuple[str, str, str]] = DEFAULT_SESSION_TOOL_BINDINGS,
+    extra_providers: Mapping[str, Any] | None = None,
 ) -> Any:
     """**出厂形态**的注册回调：用 canonical 读面当 provider 实例（两个组合根共用）。
+
+    `extra_providers`（GOAL-20261026-097）：组合根手里**已经有实例**的 provider（出厂检索
+    面 —— `retrieval_wiring.retrieval_providers`）。为什么要这一口：评审相没有 run-chain
+    排除 ⇒ 它的**会话工具面 = 整个冻结集**，而检索 provider 之前只有运行链有实例 ⇒
+    评审者一旦用到 `literature.read` 就撞 `ToolDefinition 'literature.read' is not
+    registered`（真实 run 实测）。传进来的实例与运行链共用**同一批**（同一次构造）。
 
     实例在这儿造（而不是各组合根各造一份）的理由见 `_canonical_reader` 的说明；
     provider 的**声明**取自出厂目录（`tool_providers.yaml`）：目录里没有的 id **不进表**
@@ -221,19 +269,16 @@ def canonical_read_register(  # noqa: PLR0913 - 装配面：Port 依赖就这么
     """
     from services.api.catalog import load_catalog_snapshot
 
-    canonical_reader = _canonical_reader(
-        artifacts,
-        ledger,
+    instance_for = _provider_instances(
+        artifacts=artifacts,
+        ledger=ledger,
         budget_ledger=budget_ledger,
         experiment_store=experiment_store,
         run_store=run_store,
         review_store=review_store,
         memory_store=memory_store,
+        extra_providers=extra_providers,
     )
-    instance_for = {
-        "m12_artifact": canonical_reader,
-        "openhands_workspace": canonical_reader,
-    }
     declared = load_catalog_snapshot().tool_providers
     return session_tool_register(
         providers=instance_for,

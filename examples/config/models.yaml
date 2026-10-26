@@ -93,3 +93,28 @@ models:
       TOOL_CALLING_NATIVE: *user_declared_supported
       STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
       USAGE_REPORTING: *user_declared_supported
+
+  # 第三个第三方评审模型（GOAL-20261026-097 EC-04(b)）：`novelty_reviewer` 的评审者。
+  # **为什么必须再要一个**：`check_heterogeneity` 只判「writer ∪ reviewer 的目标集不相交」，
+  # 而**不**判「两位评审者彼此不同」⇒ 若新 agent 复用一个已有评审模型，判据会绿，但
+  # 「两个独立的评审面」这件事就只剩一个模型说了算（`panel_verdict.independent` 在运行期
+  # 才看得见）。本轮的取舍：用**第三个**底层模型，让独立性在**目录声明**上就成立。
+  #
+  # 读数来源（2026-10-26 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
+  #   - `GET /v1/models` ⇒ `is_ready: true`（13 个可用模型之一）；
+  #   - `POST /v1/chat/completions`（`max_tokens=512`）⇒ HTTP 200、`content: "OK"`、
+  #     **返回名 = 声明名** `minimax-m3`（与 `deepseek-v4-flash-vision` → `dsv4-flash-vision`
+  #     的改名形态不同；仍属 §4「可重复配置」而非「完全模型可复现」）；
+  #   - `tool_choice: required` ⇒ 真返回标准 `tool_calls`（`TOOL_CALLING_NATIVE`）；
+  #   - **不**声明 `STRUCTURED_OUTPUT_NATIVE`：本轮只实测了 chat 与 tool_calls，
+  #     「按实测声明」是本仓的既有纪律（`reviewer_independent` 的注释同一条）。
+  novelty_review_model:
+    endpoint: main
+    display_name: MiniMax M3 (third-party novelty reviewer)
+    model_name: minimax-m3
+    context_window_tokens: 1048576
+    capabilities:
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported
+      USAGE_REPORTING: *user_declared_supported

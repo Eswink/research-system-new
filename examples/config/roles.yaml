@@ -133,11 +133,20 @@ roles:
     category: exploration
     default_model_profile: critic_independent
     activation_default: REQUIRED_BY_PROTOCOL
+    # GOAL-20261026-097 EC-04(b)：**评审面**。此前本角色没有这一行 ⇒ 解析成 `NONE`
+    # （`adapters/contracts/roles_loaders.py:52` 的缺省）⇒ `is_reviewer()` 为假 ⇒
+    # 被评对象（`review_material`）**不进它的提示词**，它只是一个「被要求评审」的
+    # 普通会话角色。加上这一行之后，协议点名它即激活，且它接收与本相另几位评审者
+    # **同一份**被评对象（`review_material.build_review_material`）。
+    # `idea.review` **不在** `requested_capabilities` 里：它虽有词表声明，但
+    # `examples/config/policy.yaml` 零 allow ⇒ 任何协议把它写进 `required_capabilities`
+    # 都会被 `test_no_protocol_reachable_capability_lacks_a_rule` 判红（加 allow 属改
+    # 默认 deny 姿态，需用户拍板）。本角色的能力面因此只用**已放行**的读能力。
+    review_panel_role: REVIEWER
     requested_capabilities:
     - literature.search
     - literature.read
     - evidence.read
-    - idea.review
     hard_model_capabilities:
       all_of:
       - CHAT

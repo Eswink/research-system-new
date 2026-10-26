@@ -63,6 +63,8 @@ class PostgresAssembly:
     # `RegistryCredentialResolver` 实例必须两处共享（它是**有状态的**：API 注册的
     # API Key 只活在实例内存里，`register()` 写进的是哪一个实例，另一个就解析不到）。
     runtime_inputs: Any = None
+    #: GOAL-20261026-097：出厂检索 provider 实例（同一批同时给编排与预检健康探测）。
+    tool_providers: Any = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,13 +168,14 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         pg_migrate(pg_dsn)
 
     c = _pg_components(pg_dsn, connection, config.events_sink, config.artifact_blob_dir)
-    # GOAL-010 EC-02：与 SQLite 组合根同一职责——demo 协议**声明**的输入制品必须真的
-    # 在库里。`EVIDENCE_COVERAGE` 收紧后只认非模型自述的来源，声明的输入就是那个来源；
-    # 漏种 ⇒ 每个跑该协议的 run 都在登记输入时点名失败（PG 路径曾因此回归）。
-    # `seed_declared_inputs` 是 put+mark，二者合起来可重入（put 把行重置为 STAGED）。
+    # GOAL-010 EC-02：与 SQLite 根同一职责——声明输入必须真的在库里（PG 曾因此回归）。
+    # `seed_declared_inputs` 是 put+mark，可重入（put 把行重置为 STAGED）。
     seed_declared_inputs(c["artifacts"])
     runtime_inputs = _pg_runtime_inputs(config)
-    orchestration = _build_pg_orchestration(c, config, runtime_inputs)
+    providers = retrieval_providers(
+        artifacts=c["artifacts"], credentials=runtime_inputs.credentials
+    )
+    orchestration = _build_pg_orchestration(c, config, runtime_inputs, providers)
     return PostgresAssembly(
         effective=effective,
         connection=connection,
@@ -199,13 +202,16 @@ def build_postgres_assembly(config: PgAssemblyConfig) -> PostgresAssembly:
         credentials_override=getattr(config, "credentials_override", None),
         preflight_override=getattr(config, "preflight_override", None),
         runtime_inputs=runtime_inputs,
+        tool_providers=providers,
     )
 
 
 from packages.application.run_orchestration.declared_consumption import (  # noqa: E402
     prior_conclusion_reader,
 )
+from services.api.executor_wiring import pg_executor_seams  # noqa: E402
 from services.api.project_direction_support import project_direction_builder  # noqa: E402
+from services.api.retrieval_wiring import retrieval_providers  # noqa: E402
 from services.api.session_tool_support import session_tool_face  # noqa: E402
 
 
@@ -238,7 +244,10 @@ def _pg_runtime(c: dict[str, Any], config: PgAssemblyConfig, inputs: _PgRuntimeI
 
 
 def _build_pg_orchestration(
-    c: dict[str, Any], config: PgAssemblyConfig, inputs: _PgRuntimeInputs
+    c: dict[str, Any],
+    config: PgAssemblyConfig,
+    inputs: _PgRuntimeInputs,
+    providers: dict[str, Any],
 ) -> RunOrchestrationService:
     """PG 编排服务装配；与 ApiDeps 共享同一 approvals 实例（decide 读、执行循环写）。
 
@@ -259,6 +268,7 @@ def _build_pg_orchestration(
             budget=c["budget"],
             ledger=c["ledger"],
             review_findings=c["review_findings"],
+            **pg_executor_seams(c, inputs, providers),
             # GOAL-20261008-038 EC-04：前序结论读取器（与 SQLite 根同侧，同一实现）。
             prior_conclusion=prior_conclusion_reader(c["runs_store"], c["review_findings"]),
             # GOAL-20261014-078 EC-01：检索内容 → 会话上下文（与 SQLite 根同侧）。
@@ -320,9 +330,7 @@ def _pg_config_stores(connection: sqlite3.Connection) -> dict[str, Any]:
 def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
     """PG assembly -> ApiDeps（composition root 装配点唯一）。
 
-    PLAN-20260919-107（EC-01）：凭据解析面与 policy 装载面沿用 `assembly.runtime_inputs`
-    的**同一实例**（不再各建一套——`RegistryCredentialResolver` 有状态，两套会让
-    运行时解析不到 API 注册的凭据）。
+    PLAN-20260919-107：凭据/policy 面沿用 `assembly.runtime_inputs` 的**同一实例**。
     """
     from adapters.fakes.artifact_store import FakeArtifactStore
     from adapters.relay.gateway import OpenAIChatGateway
@@ -350,6 +358,7 @@ def build_postgres_apideps(assembly: PostgresAssembly) -> ApiDeps:
         program_store=assembly.program_store,
         memory=assembly.memory_store,
         preflight_override=assembly.preflight_override,
+        tool_providers=assembly.tool_providers or {},
         telemetry=assembly.telemetry,
         eval_report_store=assembly.eval_report_store,
         pricing_snapshot_store=assembly.pricing_snapshot_store,

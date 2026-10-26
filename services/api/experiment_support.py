@@ -26,9 +26,9 @@ import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
-from adapters.execution import DockerExecutionBackend
 from adapters.workspace import FileWorkspaceBackend
 from packages.application.experiments import (
     ExperimentExecutionRequest,
@@ -75,6 +75,12 @@ class SandboxExperimentAssembly:
     policy: Any
     image: str
     ledger: Any | None = None
+    #: GOAL-20261026-097 EC-03：**执行后端的工厂**（`(image) -> ExecutionBackend`）。
+    #: 非空 ⇒ `execution` 不得同时给（「两个后端」不可判定）；第一次派发时才调用它
+    #: ⇒ **装配期零连接**（``docker.from_env`` 在构造时就摸 daemon，组合根若在装配期
+    #: 构造后端，默认门里没有 Docker 的机器上 `assemble()` 直接炸）。
+    #: 缺省 `None` ⇒ 逐字沿用 `execution`（既有语义不变）。
+    execution_factory: Any | None = None
     #: 实验产物读面（`GET /runs/{id}/experiments`）读的是**实验存储**：执行完必须把
     #: `ExperimentRun` 存进去，否则"实验真的跑了"在读面上看不见。None ⇒ 不落库（调用方
     #: 自担：读面会如实为空，不伪造）。
@@ -113,14 +119,12 @@ def sandbox_experiment_runner(
 
     每次调用执行**一次**实验：准备沙箱工作区 → 预注册计划 → 交给既有执行链 →
     结果由 `execute_experiment_task` 登记/门禁（调用方 `phase_runner` 继续处理）。
+
+    **执行后端在首次派发时才取**（GOAL-20261026-097 EC-01/EC-03）：`execution_factory`
+    非空时，本函数**不**碰它 —— 装配期零连接；镜像取**声明优先**解析后的那个
+    （契约 pin 了就用契约的，否则用装配面的）。
     """
-    deps = ExperimentTaskDeps(
-        executor=_governed_executor(assembly),
-        artifacts=assembly.artifacts,
-        ledger=assembly.ledger,
-        request_builder=_request_builder(assembly),
-        provenance_builder=_provenance_builder,
-    )
+    execution = _DeferredExecution(assembly)
 
     def run(
         task: ResearchTask,
@@ -128,13 +132,16 @@ def sandbox_experiment_runner(
         spec_context: SessionSpecContext,
         trace_id: str,
     ) -> TaskExecutionResult:
-        """执行本任务的实验：**声明了臂 ⇒ 逐臂各跑一次**，否则单臂（既有语义）。
-
-        臂的**来源**由 `design_source` 决定（GOAL-080 EC-02）：缺省 ⇒ 装配面声明；
-        `"plan"` ⇒ 从**本 run 的计划产物内容**读出（执行期解析 —— 那一刻 run 已知，
-        而构造期不可能知道）。返回**主臂**（声明顺序的第一个）：门禁按它裁决，
-        而**所有臂**都落库 + 进证据链（读面因此逐臂可读）。
-        """
+        """执行本任务的实验：声明了臂 ⇒ 逐臂各跑一次，否则单臂（返回主臂 = 第一个）。"""
+        script, image = declared_or_assembled(assembly, contract)
+        resolved = replace(assembly, script=script, image=image, execution=execution.proxy(image))
+        deps = ExperimentTaskDeps(
+            executor=_governed_executor(resolved),
+            artifacts=assembly.artifacts,
+            ledger=assembly.ledger,
+            request_builder=_request_builder(assembly),
+            provenance_builder=_provenance_builder,
+        )
         arms = _arms_for(assembly, task)
         per_arm = {arm.name: _arm_deps(assembly, arm, deps) for arm in arms}
         if not arms:
@@ -151,6 +158,59 @@ def sandbox_experiment_runner(
         return _primary_arm_result(results)
 
     return run
+
+
+def declared_or_assembled(
+    assembly: SandboxExperimentAssembly, contract: TaskContract
+) -> tuple[str | None, str]:
+    """本任务**该跑哪个脚本、哪个镜像**（GOAL-20261026-097 EC-03：声明优先）。
+
+    与 `ExperimentExecutionSpec` 的 docstring 逐字一致：契约 pin 了就必须照用
+    （**装配方不得覆盖契约 pin 的量**）；为空（`experiment_execution: {}` 的既有语义）
+    ⇒ **逐字**回到装配面那两件。两个字段**各自独立**判 —— 只 pin 脚本的契约仍用装配面镜像。
+    """
+    declaration = contract.experiment
+    script = assembly.script
+    image = assembly.image
+    if declaration is not None:
+        script = declaration.script or script
+        image = declaration.image or image
+    return script, image
+
+
+class _DeferredExecution:
+    """按镜像**惰性**取得执行后端，同一镜像复用同一实例（GOAL-20261026-097 EC-01）。
+
+    为什么必须惰性：`DockerExecutionBackend.__init__` 就 `docker.from_env()`（构造即连
+    daemon）。组合根在装配期构造它 ⇒ 没有 Docker 的机器上 `assemble()` 直接炸，而
+    `assemble()` 是默认门里被反复调用的装配入口。为什么按镜像缓存：契约可以 `pin` 不同
+    镜像（EC-03），同一镜像重跑不该每次重建连接。
+    """
+
+    def __init__(self, assembly: SandboxExperimentAssembly) -> None:
+        self._assembly = assembly
+        self._by_image: dict[str, Any] = {}
+
+    def proxy(self, image: str) -> Any:
+        """本镜像的**惰性代理**（第一次 `execute` 时才取后端）。
+
+        为什么是代理而不是「先取后端」：`_governed_executor(assembly)` 的签名不能变
+        （既有判据用 `lambda _assembly: executor` 替换它）⇒ 「何时连 Docker」必须由
+        `assembly.execution` 这个**值**自己决定。代理对 `ExperimentExecutor` 是透明的：
+        它只被调用 `execute(...)`。
+        """
+        factory = self._assembly.execution_factory
+        if factory is None:
+            return self._assembly.execution
+
+        def execute(spec: Any, timeout_seconds: int | None = None, **kwargs: Any) -> Any:
+            backend = self._by_image.get(image)
+            if backend is None:
+                backend = factory(image)
+                self._by_image[image] = backend
+            return backend.execute(spec, timeout_seconds, **kwargs)
+
+        return SimpleNamespace(execute=execute)  # 代理面 = `experiment` 用到的那一个方法
 
 
 def _arms_for(assembly: SandboxExperimentAssembly, task: ResearchTask) -> tuple[Any, ...]:
@@ -255,7 +315,12 @@ def _governed_executor(assembly: SandboxExperimentAssembly) -> GovernedExperimen
 
     `workspace_dir` 返回脚本已落盘的那个根（容器只挂它）。租约由 `ExperimentExecutor`
     自己取（`acquire_lease(request.workspace, request.agent_session_id)`），本模块不重复取。
+
+    `assembly.execution` 可以是一个**惰性代理**（`_DeferredExecution.proxy(image)`）——
+    它在第一次真正执行时才构造后端（GOAL-097 EC-01：装配期零 Docker 连接）；
+    直接给实例时行为与既有逐字相同。
     """
+    backend = assembly.execution
     root = Path(assembly.root or tempfile.mkdtemp(prefix="sandbox-root-"))
     root.mkdir(parents=True, exist_ok=True)
     if assembly.script is not None:
@@ -267,7 +332,7 @@ def _governed_executor(assembly: SandboxExperimentAssembly) -> GovernedExperimen
     # 也是先 `create_workspace` 再跑（见 `tools/m12_reference_workflow.py`）。
     workspaces.create_workspace(_sandbox_workspace())
     inner = ExperimentExecutor(
-        execution=assembly.execution,
+        execution=backend,
         workspaces=workspaces,
         artifacts=assembly.artifacts,
         workspace_dir=lambda lease: root,
@@ -356,32 +421,29 @@ def _provenance_builder(task: ResearchTask) -> ExperimentProvenance:
     return ExperimentProvenance(run_id=str(task.run_id.value), manifest_digest=None)
 
 
-def docker_experiment_assembly(  # noqa: PLR0913 -- 装配面的量就这么多；缺省值让调用点只给必需的
-    *,
-    artifacts: Any,
-    policy: Any,
-    script: str,
-    image: str = "research-os-sandbox:m9-test",
-    ledger: Any | None = None,
-    experiment_store: Any | None = None,
-    parameters: dict[str, object] | None = None,
-    arms: object | None = None,
-    design_source: str | None = None,
-) -> SandboxExperimentAssembly:
-    """本地装配：执行体 = **既有** `DockerExecutionBackend`（不新增后端/依赖）。
+def docker_experiment_assembly(**kwargs: Any) -> Any:
+    """转发到 `experiment_factories`（**构造即连 Docker**；判据/工具侧用）。"""
+    from services.api import experiment_factories
 
-    `parameters` / `arms`（GOAL-20261015-079）与 `design_source`（GOAL-20261015-080）
-    由调用方声明；缺省 ⇒ **既有单臂语义逐字不变**。
-    """
-    return SandboxExperimentAssembly(
-        execution=DockerExecutionBackend(image=image),
-        artifacts=artifacts,
-        policy=policy,
-        image=image,
-        ledger=ledger,
-        experiment_store=experiment_store,
-        script=script,
-        parameters=dict(parameters or {}),
-        arms=arms,
-        design_source=design_source,
-    )
+    return experiment_factories.docker_experiment_assembly(**kwargs)
+
+
+def lazy_docker_experiment_assembly(**kwargs: Any) -> Any:
+    """转发到 `experiment_factories`（**装配期零连接**；组合根用）。"""
+    from services.api import experiment_factories
+
+    return experiment_factories.lazy_docker_experiment_assembly(**kwargs)
+
+
+__all__ = [
+    "DESIGN_SOURCE_PLAN",
+    "DESIGN_SOURCE_RETRIEVAL",
+    "DESIGN_SOURCES",
+    "SANDBOX_WORKSPACE_ID",
+    "SCRIPT_NAME",
+    "SandboxExperimentAssembly",
+    "declared_or_assembled",
+    "docker_experiment_assembly",
+    "lazy_docker_experiment_assembly",
+    "sandbox_experiment_runner",
+]

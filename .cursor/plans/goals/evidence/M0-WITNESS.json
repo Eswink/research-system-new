@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "4f0c745dd01876180810b2a62d78358643a5cf97"
+        "sha256": "6d99a0b69b982fac30bac9cadb6e45058ea4df44"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1344,7 +1344,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "3a067f18e88e39adfdd4857b6273ca064e7f6b3a"
+        "sha256": "55f606eb66394cacb40ec844ca97dde03370991f"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1764,7 +1764,7 @@
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "e8e3c55cdbf1a97ed1a82dcd7a473fda4365c1a7"
+        "sha256": "43c2ce112026e88177d90f3b69c713c54061bdb1"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -12524,7 +12524,7 @@
       },
       {
         "path": "examples/config/agents.yaml",
-        "sha256": "cd537646c139bed23004f2f76f68ff81e7ef8e58"
+        "sha256": "32e165d535f001bae93456a588b4d250c9f508c9"
       },
       {
         "path": "examples/config/autonomy_levels.yaml",
@@ -12560,7 +12560,7 @@
       },
       {
         "path": "examples/config/models.yaml",
-        "sha256": "35af1e3ea45f1c725f6195ed047307780a1e02c7"
+        "sha256": "2ee83faee96276c203c69610a829db26ba4eeb45"
       },
       {
         "path": "examples/config/policy.yaml",
@@ -12580,7 +12580,7 @@
       },
       {
         "path": "examples/config/roles.yaml",
-        "sha256": "7b1ff46b28c33be266b89cc6eec179ccc8c8dd98"
+        "sha256": "a1c3e8405c6ee552eda0a3678b180fa31027f172"
       },
       {
         "path": "examples/config/skills.yaml",
@@ -12588,7 +12588,7 @@
       },
       {
         "path": "examples/config/team_templates.yaml",
-        "sha256": "e5209c12e673bcae9d3bff976f05793173f16175"
+        "sha256": "fd75fa525aef1e65331d0fa45c91d302113d7313"
       },
       {
         "path": "examples/config/tool_providers.yaml",
@@ -12624,7 +12624,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "1be9101597174f0740ad1d70fe0868c9914c3ac5"
+        "sha256": "c3ea1819b0d41b85fa241704dd820768ab176827"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -13688,7 +13688,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
-        "sha256": "6ff6dbc99c622b7ea29a9db1fd7136c728745246"
+        "sha256": "f8f325786e998fdfc03f3904f14351278b51bef4"
       },
       {
         "path": "packages/application/run_orchestration/usage_recording.py",
@@ -14116,7 +14116,7 @@
       },
       {
         "path": "services/api/composition.py",
-        "sha256": "64eca6d58f384061a7fee0ae8dfd7dc843227e43"
+        "sha256": "298ca6b1717a46bbcdd37a5ee5cfc3dd3ab1b943"
       },
       {
         "path": "services/api/config_store_parts.py",
@@ -14248,7 +14248,7 @@
       },
       {
         "path": "services/api/experiment_support.py",
-        "sha256": "8f7bd7e28116eb3ea373c4132354e8dcd9e77aaa"
+        "sha256": "d188186f086a05d5f3393a76b3985c8acadbc0ab"
       },
       {
         "path": "services/api/idempotency.py",
@@ -14308,7 +14308,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "4b202d1592a829b59c3ab075c1cd2027ed3efce5"
+        "sha256": "a281a4273dcb4107e043b75944bcc047176e0ead"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -14532,11 +14532,11 @@
       },
       {
         "path": "services/api/session_tool_support.py",
-        "sha256": "8249f3818a1426968d5ef6f1af3890ee1f1ce79a"
+        "sha256": "562e8d9608a0a769d0d17d82869abcc58a3b7abe"
       },
       {
         "path": "services/api/settings.py",
-        "sha256": "61319ed601220d76b9fe1a3ebfe62c574dfd5112"
+        "sha256": "1deee89a9bcdb9fee472b71696660f95be2d0bc6"
       },
       {
         "path": "services/api/team_support.py",
@@ -16100,7 +16100,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "05ffc629f509677844ccf31108b751f9f900eba5"
+        "sha256": "c3c2edfa9c3505b3ef17555d24108a9d2edc1d6a"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -17424,7 +17424,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "792c07402678c30c3d1518303f7c49e31f1c3607"
+        "sha256": "50e57996f9ef2315e7839f37dceb4127bac19141"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -17536,7 +17536,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "987da44a2e0edf8921a1dbf0f847d40b9af1ef96"
+        "sha256": "e43b90277e62cc6282db9d165012a6f57a7b2e51"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -17620,27 +17620,27 @@
       },
       {
         "path": "tools/PA1R发布真相v1.py",
-        "sha256": "84e9410a5ee3e9ada2e39d4a6319503a6ad486be"
+        "sha256": "3a427aeaf2626d5f389d1a4412ca8fba9ab28fa9"
       },
       {
         "path": "tools/PA1R密钥审计v1.py",
-        "sha256": "a5f5cf3a9a394d76cc0bc54c440b593d2bb60c32"
+        "sha256": "fa22bd647897b00a61991a2e2f64bc6aa2715732"
       },
       {
         "path": "tools/PA1R恢复闭包v1.py",
-        "sha256": "e3785ce41cd55c68d67121fb685e569ba98b51b0"
+        "sha256": "3c1a13f742a650a7706bf010946c89b22d764d0b"
       },
       {
         "path": "tools/PA1R故障演练v1.py",
-        "sha256": "881e2ec8852fe82b92810a6a9ced8386483ac632"
+        "sha256": "e3d7ab5a59a078203ec3d51aa88f564ea995f18f"
       },
       {
         "path": "tools/PA1R质量门禁v1.py",
-        "sha256": "93a1ca34aa8265045956733611e96744670dde8b"
+        "sha256": "94503c926d185c90baae0628cd83ab7922665e4f"
       },
       {
         "path": "tools/PA1R运行演练v1.py",
-        "sha256": "d46e337210215e5e1e5d75963dcc409386613e10"
+        "sha256": "2e698d72626332abd2a18ea542e529bf1f51d187"
       },
       {
         "path": "tools/audit_goal026_ledger.py",
@@ -17652,7 +17652,7 @@
       },
       {
         "path": "tools/backup.py",
-        "sha256": "9e41da798a67065c1703ecccce831390d703b9fd"
+        "sha256": "d95176ff4f070b2ffa4f598556a28ce906b3c8be"
       },
       {
         "path": "tools/charter_parse.py",
@@ -17660,7 +17660,7 @@
       },
       {
         "path": "tools/classify_local_gate_reds.py",
-        "sha256": "4517e906cb30c45254223429cbd512500d6e409f"
+        "sha256": "99f6b838a754111ee9f53d04c561fdad821b71f6"
       },
       {
         "path": "tools/closeout_recheck_assertions.py",
@@ -18160,11 +18160,11 @@
       },
       {
         "path": "tools/upstream-spikes/S1_import_fingerprint.py",
-        "sha256": "5cddea24dd03f869b308b10972627fc5511dff39"
+        "sha256": "1c3206e4722039d3c421668ebcb64e64718d578b"
       },
       {
         "path": "tools/upstream-spikes/S2_llm_construction.py",
-        "sha256": "51b5251db97cdbf45417dd747e14d8b66dd4b782"
+        "sha256": "0f680cd0155114f3b8ffbb6bd724cd32aa1dd79f"
       },
       {
         "path": "tools/upstream-spikes/S3_agent_conversation_run.py",
@@ -18475,7 +18475,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "9d167f399cb80fdf9c82fd442f0acf3430c91cd5"
+    "head": "7189b498a24a5d5886bdbf9d71c5e73283cccdbe"
   },
   "fingerprint_before": {
     "files": [
@@ -18897,7 +18897,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "4f0c745dd01876180810b2a62d78358643a5cf97"
+        "sha256": "6d99a0b69b982fac30bac9cadb6e45058ea4df44"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -19821,7 +19821,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "3a067f18e88e39adfdd4857b6273ca064e7f6b3a"
+        "sha256": "55f606eb66394cacb40ec844ca97dde03370991f"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -20241,7 +20241,7 @@
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "e8e3c55cdbf1a97ed1a82dcd7a473fda4365c1a7"
+        "sha256": "43c2ce112026e88177d90f3b69c713c54061bdb1"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -31001,7 +31001,7 @@
       },
       {
         "path": "examples/config/agents.yaml",
-        "sha256": "cd537646c139bed23004f2f76f68ff81e7ef8e58"
+        "sha256": "32e165d535f001bae93456a588b4d250c9f508c9"
       },
       {
         "path": "examples/config/autonomy_levels.yaml",
@@ -31037,7 +31037,7 @@
       },
       {
         "path": "examples/config/models.yaml",
-        "sha256": "35af1e3ea45f1c725f6195ed047307780a1e02c7"
+        "sha256": "2ee83faee96276c203c69610a829db26ba4eeb45"
       },
       {
         "path": "examples/config/policy.yaml",
@@ -31057,7 +31057,7 @@
       },
       {
         "path": "examples/config/roles.yaml",
-        "sha256": "7b1ff46b28c33be266b89cc6eec179ccc8c8dd98"
+        "sha256": "a1c3e8405c6ee552eda0a3678b180fa31027f172"
       },
       {
         "path": "examples/config/skills.yaml",
@@ -31065,7 +31065,7 @@
       },
       {
         "path": "examples/config/team_templates.yaml",
-        "sha256": "e5209c12e673bcae9d3bff976f05793173f16175"
+        "sha256": "fd75fa525aef1e65331d0fa45c91d302113d7313"
       },
       {
         "path": "examples/config/tool_providers.yaml",
@@ -31101,7 +31101,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "1be9101597174f0740ad1d70fe0868c9914c3ac5"
+        "sha256": "c3ea1819b0d41b85fa241704dd820768ab176827"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -32165,7 +32165,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
-        "sha256": "6ff6dbc99c622b7ea29a9db1fd7136c728745246"
+        "sha256": "f8f325786e998fdfc03f3904f14351278b51bef4"
       },
       {
         "path": "packages/application/run_orchestration/usage_recording.py",
@@ -32593,7 +32593,7 @@
       },
       {
         "path": "services/api/composition.py",
-        "sha256": "64eca6d58f384061a7fee0ae8dfd7dc843227e43"
+        "sha256": "298ca6b1717a46bbcdd37a5ee5cfc3dd3ab1b943"
       },
       {
         "path": "services/api/config_store_parts.py",
@@ -32725,7 +32725,7 @@
       },
       {
         "path": "services/api/experiment_support.py",
-        "sha256": "8f7bd7e28116eb3ea373c4132354e8dcd9e77aaa"
+        "sha256": "d188186f086a05d5f3393a76b3985c8acadbc0ab"
       },
       {
         "path": "services/api/idempotency.py",
@@ -32785,7 +32785,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "4b202d1592a829b59c3ab075c1cd2027ed3efce5"
+        "sha256": "a281a4273dcb4107e043b75944bcc047176e0ead"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -33009,11 +33009,11 @@
       },
       {
         "path": "services/api/session_tool_support.py",
-        "sha256": "8249f3818a1426968d5ef6f1af3890ee1f1ce79a"
+        "sha256": "562e8d9608a0a769d0d17d82869abcc58a3b7abe"
       },
       {
         "path": "services/api/settings.py",
-        "sha256": "61319ed601220d76b9fe1a3ebfe62c574dfd5112"
+        "sha256": "1deee89a9bcdb9fee472b71696660f95be2d0bc6"
       },
       {
         "path": "services/api/team_support.py",
@@ -34577,7 +34577,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "05ffc629f509677844ccf31108b751f9f900eba5"
+        "sha256": "c3c2edfa9c3505b3ef17555d24108a9d2edc1d6a"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -35901,7 +35901,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "792c07402678c30c3d1518303f7c49e31f1c3607"
+        "sha256": "50e57996f9ef2315e7839f37dceb4127bac19141"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -36013,7 +36013,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "987da44a2e0edf8921a1dbf0f847d40b9af1ef96"
+        "sha256": "e43b90277e62cc6282db9d165012a6f57a7b2e51"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -36097,27 +36097,27 @@
       },
       {
         "path": "tools/PA1R发布真相v1.py",
-        "sha256": "84e9410a5ee3e9ada2e39d4a6319503a6ad486be"
+        "sha256": "3a427aeaf2626d5f389d1a4412ca8fba9ab28fa9"
       },
       {
         "path": "tools/PA1R密钥审计v1.py",
-        "sha256": "a5f5cf3a9a394d76cc0bc54c440b593d2bb60c32"
+        "sha256": "fa22bd647897b00a61991a2e2f64bc6aa2715732"
       },
       {
         "path": "tools/PA1R恢复闭包v1.py",
-        "sha256": "e3785ce41cd55c68d67121fb685e569ba98b51b0"
+        "sha256": "3c1a13f742a650a7706bf010946c89b22d764d0b"
       },
       {
         "path": "tools/PA1R故障演练v1.py",
-        "sha256": "881e2ec8852fe82b92810a6a9ced8386483ac632"
+        "sha256": "e3d7ab5a59a078203ec3d51aa88f564ea995f18f"
       },
       {
         "path": "tools/PA1R质量门禁v1.py",
-        "sha256": "93a1ca34aa8265045956733611e96744670dde8b"
+        "sha256": "94503c926d185c90baae0628cd83ab7922665e4f"
       },
       {
         "path": "tools/PA1R运行演练v1.py",
-        "sha256": "d46e337210215e5e1e5d75963dcc409386613e10"
+        "sha256": "2e698d72626332abd2a18ea542e529bf1f51d187"
       },
       {
         "path": "tools/audit_goal026_ledger.py",
@@ -36129,7 +36129,7 @@
       },
       {
         "path": "tools/backup.py",
-        "sha256": "9e41da798a67065c1703ecccce831390d703b9fd"
+        "sha256": "d95176ff4f070b2ffa4f598556a28ce906b3c8be"
       },
       {
         "path": "tools/charter_parse.py",
@@ -36137,7 +36137,7 @@
       },
       {
         "path": "tools/classify_local_gate_reds.py",
-        "sha256": "4517e906cb30c45254223429cbd512500d6e409f"
+        "sha256": "99f6b838a754111ee9f53d04c561fdad821b71f6"
       },
       {
         "path": "tools/closeout_recheck_assertions.py",
@@ -36637,11 +36637,11 @@
       },
       {
         "path": "tools/upstream-spikes/S1_import_fingerprint.py",
-        "sha256": "5cddea24dd03f869b308b10972627fc5511dff39"
+        "sha256": "1c3206e4722039d3c421668ebcb64e64718d578b"
       },
       {
         "path": "tools/upstream-spikes/S2_llm_construction.py",
-        "sha256": "51b5251db97cdbf45417dd747e14d8b66dd4b782"
+        "sha256": "0f680cd0155114f3b8ffbb6bd724cd32aa1dd79f"
       },
       {
         "path": "tools/upstream-spikes/S3_agent_conversation_run.py",
@@ -36952,11 +36952,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "9d167f399cb80fdf9c82fd442f0acf3430c91cd5"
+    "head": "7189b498a24a5d5886bdbf9d71c5e73283cccdbe"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "9d167f399cb80fdf9c82fd442f0acf3430c91cd5",
+  "ran_at_head": "7189b498a24a5d5886bdbf9d71c5e73283cccdbe",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

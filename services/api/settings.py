@@ -37,6 +37,13 @@ class OtelSettings:
         )
 
 
+def _lease_ttl(value: int) -> int:
+    """租约 TTL 的取值校验（单列守 `ApiSettings.__init__` 的 50 行门）。"""
+    if value < 1:
+        raise ValueError("workflow_lease_ttl_seconds must be >= 1")
+    return value
+
+
 class ApiSettings:
     """控制面配置；来自显式构造或环境变量。
 
@@ -68,6 +75,8 @@ class ApiSettings:
         workspace_snapshot_root: str | None = None,
         agent_runtime: str = "",
         workspace_allow_host_shell: bool = False,
+        experiment_design_source: str | None = None,
+        workflow_lease_ttl_seconds: int = 300,
         otel: OtelSettings | None = None,
     ) -> None:
         if not db_path:
@@ -80,6 +89,15 @@ class ApiSettings:
         self.agent_runtime = agent_runtime
         # EC-03：workspace host shell 的显式开发开关（默认 deny 不变）。
         self.workspace_allow_host_shell = workspace_allow_host_shell
+        # GOAL-20261026-097 EC-01：沙箱实验的**设计来源**（`None` ⇒ 臂来自装配面，
+        # 逐字沿用既有语义；`"plan"` ⇒ 臂从本 run 的计划产物读，机制见
+        # `design_from_plan`）。取值校验归 `experiment_support._arms_for`（那里是
+        # 唯一解释点，此处不复制一份判定）。
+        self.experiment_design_source = experiment_design_source
+        # GOAL-097 EC-02：任务租约 TTL（秒；缺省 300 与既有装配逐字一致）。同步执行路径
+        # 在会话**开始前**只心跳一次，真实会话常超 300 秒 ⇒ 租约过期 ⇒ `no matching lease`
+        # （既有执行语义，本轮不改；组合根可按会话预算调大）。
+        self.workflow_lease_ttl_seconds = _lease_ttl(workflow_lease_ttl_seconds)
         # M14: PostgreSQL DSN (optional) — explicit construct or env
         self.database_url = database_url
         if self.database_url is not None and not self.database_url.strip():
@@ -145,6 +163,12 @@ class ApiSettings:
             workspace_allow_host_shell=(
                 os.environ.get("RESEARCHOS_WORKSPACE_ALLOW_HOST_SHELL", "0").strip().lower()
                 in ("1", "true", "yes", "on")
+            ),
+            experiment_design_source=(
+                os.environ.get("RESEARCHOS_EXPERIMENT_DESIGN_SOURCE") or None
+            ),
+            workflow_lease_ttl_seconds=int(
+                os.environ.get("RESEARCHOS_WORKFLOW_LEASE_TTL_SECONDS", "300")
             ),
             otel=OtelSettings.from_env(),
         )

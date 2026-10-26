@@ -57,6 +57,15 @@ agents:
     workspace_policy: read_only
     skill_refs: [scientific_review]
 
+  # GOAL-20261026-097 EC-04(b)：`novelty_reviewer` 的**绑定 agent**（此前无绑定 ⇒
+  # 协议点名该角色也解析不到实例）。模型落在 `minimax-m3` —— 与生产侧
+  # （`deepseek-v4-flash-vision`）及另两位评审者（`glm-5.3` / `kimi-k2.6`）**都不同**，
+  # 让「三个独立评审面」在目录声明上就成立，而不是只靠运行期的 `panel_verdict.independent`。
+  novelty_a:
+    role: novelty_reviewer
+    model_binding: {type: EXPLICIT_MODEL, value: novelty_review_model}
+    workspace_policy: read_only
+
   writer:
     role: research_writer
     model_binding: {type: MODEL_PROFILE, value: research_strong}

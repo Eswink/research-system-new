@@ -117,6 +117,8 @@ LIVE_MODULES: tuple[str, ...] = (
     "tests/e2e/test_the_model_cites_the_retrieved_identifiers_live.py",
     # GOAL-20261018-082 EC-04：真实 run 上模型是否用上前序知识（本 GOAL 的 live 面）。
     "tests/e2e/test_prior_knowledge_changes_the_plan_live.py",
+    # GOAL-20261026-097 EC-02：产品入口（真 API + 真中转站 + 真容器）跑完七相链。
+    "tests/e2e/test_productive_entry_runs_the_whole_chain.py",
     # GOAL-20261019-089 EC-04：一句话方向是否自己变成问题并驱动真检索（本 GOAL 的 live 面）。
     "tests/e2e/test_direction_to_question_to_retrieval_live.py",
     # GOAL-20261024-096 EC-04：六相链在一次真 run 里走完（本 GOAL 的 live 面）。

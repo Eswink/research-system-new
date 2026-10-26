@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Any
+from typing import Any, cast
 
 from packages.application.experiments.types import ExperimentExecutionOutcome
 from packages.application.ports.agent_runtime import AgentSessionResult
@@ -220,15 +220,15 @@ def evaluate_gate(
     """验收门的求值结果**总是**返回（含被拒时的逐条判词）。
 
     GOAL-011 EC-02 之前这里把被拒的结局换成 `None`，调用方只能写「rejected by
-    acceptance gate」——**哪一条**判据判的、判词里的数是多少，被丢掉了（GOAL-010
-    收口登记的 W-9「诊断更钝」同源）。反证判据要求读面看得到「覆盖判拒」这一事实，
-    所以求值结果原样交回，由调用方决定怎么落地。
+    acceptance gate」——**哪一条**判据判的、判词里的数是多少被丢掉了（GOAL-010 W-9）。
 
-    `experiment` 非空（= 本次任务由**沙箱实验**执行）时，把实验侧**已经产生的事实**
-    一起送进门（GOAL-014 EC-02 / F-11 的四维接线）：自报指标 / 自报测试 / 执行期
-    **已经执行过的**策略决定。会话路径不传 ⇒ 这三项维持既有的 fail-closed 判词。
+    `experiment` 非空（= 本次任务由**沙箱实验**执行）时，把实验侧**已经产生的**三项事实
+    一起送进门（GOAL-014 EC-02 / F-11）。会话路径不传 ⇒ 维持既有 fail-closed 判词。
+    GOAL-097 EC-04(a)：创新点合约另过一道判据（`novelty_claim_step`）；其余合约逐字不变。
     """
-    return evaluate_task_gate(
+    from packages.application.run_orchestration.novelty_claim_step import with_novelty
+
+    gate = evaluate_task_gate(
         tctx.task,
         tctx.contract,
         EvaluationInputs(
@@ -252,6 +252,7 @@ def evaluate_gate(
         reviewer=f"gate:{tctx.spec_context.agent.id}",
         reviewer_model=reviewer_model_of(tctx.spec_context),
     )
+    return cast(GateOutcome, with_novelty(deps, tctx, gate))
 
 
 def _output_schema_check(deps: Any, contract: TaskContract) -> Any:

@@ -29,6 +29,12 @@ team_templates:
       result_analyst: {min_instances: 1, max_instances: 2}
       statistician: {min_instances: 1, max_instances: 1}
       scientific_reviewer: {min_instances: 2, max_instances: 4}
+      # GOAL-20261026-097 EC-04(b)：`novelty_reviewer` 进 **standard**（不是只留在
+      # `rigorous`）。理由：`examples/config/project.yaml` 选的就是 `standard`，而
+      # 协议点名一个池里没有的角色 ⇒ 编译期 `ROLE_CAPACITY` ERROR（`resolution.py`
+      # `_role_findings`：`pool is None` ⇒ "team template cannot satisfy role"）⇒
+      # 预检 FAIL ⇒ run 起不来。换句话说：不进池 = 创新点评审在产品上不可能被激活。
+      novelty_reviewer: {min_instances: 1, max_instances: 1}
       evidence_reviewer: {min_instances: 1, max_instances: 1}
       methodology_reviewer: {min_instances: 1, max_instances: 1}
       meta_reviewer: {min_instances: 1, max_instances: 1}

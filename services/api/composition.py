@@ -1,8 +1,8 @@
 """Control Plane API composition root。
 
-仅本模块装配具体 adapter（依赖方向：services/api → packages/application → packages/domain；
-具体实现只由此处注入，routers 只消费 Port）。SQLite 配置存储与 outbox 共享连接；凭据永不落盘；
-Run 编排用 Fake 全链（CI 一致）。M14: `database_url` 为 postgresql 时自动选 Postgres 引擎。
+仅本模块装配具体 adapter（services/api → packages/application → packages/domain；具体实现只由
+此处注入，routers 只消费 Port）。SQLite 配置存储与 outbox 共享连接；凭据永不落盘。M14:
+`database_url` 为 postgresql 时自动选 Postgres 引擎。
 """
 
 from __future__ import annotations
@@ -81,10 +81,12 @@ from services.api.assembly import (
 )
 from services.api.config_store_parts import config_store_parts
 from services.api.demo import _default_events, seed_declared_inputs
+from services.api.executor_wiring import sqlite_executor_seams
 from services.api.idempotency import IdempotencyStore
 from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.project_direction_support import project_direction_builder
 from services.api.retrieval_context_support import retrieval_context_builder
+from services.api.retrieval_wiring import retrieval_providers
 from services.api.review_material_support import review_material_builder
 from services.api.review_outcome_support import review_outcome_builder
 from services.api.runtime_support import (
@@ -229,21 +231,18 @@ def _assemble_postgres(  # noqa: PLR0913 - composition root 装配参数
 class _ControlFaces:
     """控制面装配的共享输入面（settings + 有状态凭据面 + policy 求值面）。
 
-    PLAN-20260919-107（EC-01）：这三件必须**同一实例**贯穿 runtime 装配与 ApiDeps
-    ——`RegistryCredentialResolver` 有状态（API 注册的 Key 只在该实例内存里），
-    两套会让运行时解析不到凭据。
-    """
+    PLAN-20260919-107（EC-01）：三件必须**同一实例**贯穿 runtime 装配与 ApiDeps。"""
 
     settings: ApiSettings
     credentials: RegistryCredentialResolver
     policy_evaluator: PolicyEvaluator | None
-    #: 已解析的 runtime 选择（解析一次；装配与读面披露共用同一对象）。
+    #: 已解析的 runtime 选择（装配与读面披露共用同一对象）。
     selection: RuntimeSelection
 
 
 @dataclass(frozen=True, slots=True)
 class _SqliteStoreParts:
-    """SQLite 共享连接的 Port 面（类型化装配产物；编排服务另经 `_sqlite_orchestration` 装配）。"""
+    """SQLite 共享连接的 Port 面（编排另经 `_sqlite_orchestration`）。"""
 
     events: SqliteOutboxEventPublisher
     workflow: SqliteWorkflowEngine
@@ -254,33 +253,34 @@ class _SqliteStoreParts:
     pricing_store: SqlitePricingSnapshotStore
     artifacts: Any
     approvals: Any
-    experiment_store: Any  # GOAL-029 EC-01：experiment(.plan).read 的来源
-    runs_store: Any  # GOAL-030 EC-02：run.read 的来源（与 ApiDeps.runs_store 同一实例）
-    review_findings: Any  # GOAL-035 EC-01：验收门结论的写面（编排）与读面（API）同一实例
-    program_store: Any  # GOAL-037 EC-01：研究程序声明 + 推进决策（canonical，两组合根同侧）
-    memory_store: Any  # GOAL-20261009-042 EC-02：`memory.read` 的来源（与 ApiDeps.memory 同一实例）
-    project_store: Any  # GOAL-089 EC-02：方向提示词的来源（与 ApiDeps 同一实例）
+    experiment_store: Any  # GOAL-029：experiment(.plan).read 的来源
+    runs_store: Any  # GOAL-030：run.read 的来源（与 ApiDeps.runs_store 同一实例）
+    review_findings: Any  # GOAL-035：验收门结论的写面与读面同一实例
+    program_store: Any  # GOAL-037：研究程序声明 + 推进决策（canonical）
+    memory_store: Any  # GOAL-042：`memory.read` 的来源（与 ApiDeps.memory 同一实例）
+    project_store: Any  # GOAL-089：方向提示词的来源（与 ApiDeps 同一实例）
+    #: GOAL-097：出厂检索实例（只给运行链执行面；预检探测面仍为空）。
+    tool_providers: dict[str, Any] = field(default_factory=dict)
 
 
-def _sqlite_store_parts(
+def _sqlite_store_parts(  # noqa: PLR0913 - 装配面：四件输入
     connection: sqlite3.Connection,
     telemetry: TelemetrySink,
     blob_dir: str,
+    lease_ttl_seconds: int = 300,
 ) -> _SqliteStoreParts:
-    """SQLite 共享连接的 store 部分（helper 控制函数长度；实例**共享**给编排与会话工具）。"""
+    """SQLite 共享连接的 store 部分（helper 控长度；实例**共享**给编排与会话工具）。"""
     events = SqliteOutboxEventPublisher(connection=connection)
-    workflow = SqliteWorkflowEngine(connection=connection, telemetry=telemetry)
+    workflow = SqliteWorkflowEngine(
+        connection=connection, telemetry=telemetry, lease_ttl_seconds=lease_ttl_seconds
+    )
     from adapters.sqlite.run_projection import SqliteRunProjection
 
     projection = SqliteRunProjection(connection, events)
     ledger = SqliteEvidenceLedger(connection=connection)
     budget = SqliteBudgetLedger(connection=connection)
     pricing, pricing_store = _load_pricing(), SqlitePricingSnapshotStore(connection=connection)
-    # WP-A（PLAN-040）：内容寻址持久存储替换进程内 FakeArtifactStore；单一实例共享给
-    # orchestration 与控制面读取端点（两个独立实例会让 run 产出的 artifact 对读取端永远为空）。
-    artifacts = SqliteArtifactStore(connection=connection, blob_dir=blob_dir)
-    # GOAL-010 EC-02：声明输入必须真的在库里（覆盖收紧后只认非模型自述的来源）。
-    seed_declared_inputs(artifacts)
+    artifacts = SqliteArtifactStore(connection=connection, blob_dir=blob_dir)  # WP-A
     approvals = SqliteApprovalStore(connection=connection)  # WP-H：与 decide/GET 同一实例
     return _SqliteStoreParts(
         events=events,
@@ -296,10 +296,9 @@ def _sqlite_store_parts(
         runs_store=SqliteRunStore(connection=connection),
         review_findings=SqliteReviewFindingStore(connection=connection),
         program_store=SqliteProgramStore(connection=connection),
-        # GOAL-20261009-042 EC-02：与 `config_store_parts(connection)["memory"]` 同一份构造
-        # （同一 connection ⇒ 同一 canonical 面；`ApiDeps.memory` 取那里的实例）。
         memory_store=SqliteMemoryStore(connection=connection),
         project_store=SqliteProjectStore(connection=connection),
+        tool_providers=retrieval_providers(artifacts=artifacts, credentials=None),
     )
 
 
@@ -308,8 +307,8 @@ def _sqlite_orchestration(
 ) -> RunOrchestrationService:
     """编排服务装配：runtime 经选择面（EC-01），其余 Port 显式注入。
 
-    PLAN-20260919-107：runtime 不再硬编码——两个组合根同侧都经 `build_agent_runtime(...)`，
-    凭据/policy 面与 ApiDeps 同一实例；GOAL-029 EC-01(b) 接 `register_session_tools`。"""
+    PLAN-107 / GOAL-029：runtime 经 `build_agent_runtime(...)`；GOAL-097：三道缝由
+    `sqlite_executor_seams` 给。"""
     runtime = build_agent_runtime(
         faces.settings,
         selection=faces.selection,
@@ -327,15 +326,14 @@ def _sqlite_orchestration(
             budget=ports.budget,
             ledger=ports.ledger,
             review_findings=ports.review_findings,
-            # GOAL-20261008-038 EC-04：前序 run 结论读取器（声明了跨轮消费判据的合约用它）。
+            **sqlite_executor_seams(faces, ports, dict(ports.tool_providers)),
             prior_conclusion=prior_conclusion_reader(ports.runs_store, ports.review_findings),
-            # GOAL-20261014-078 EC-01：检索内容 → 会话上下文（只读 canonical、零出网）。
             retrieval_context=retrieval_context_builder(
                 artifacts=ports.artifacts, ledger=ports.ledger
             ),
             prior_knowledge=prior_knowledge_builder(memory_store=ports.memory_store),
             review_material=review_material_builder(ports),  # 被评对象（只挂 REVIEWER）
-            review_outcome=review_outcome_builder(ports),  # GOAL-093：上一轮判词 → 下一轮
+            review_outcome=review_outcome_builder(ports),  # GOAL-093：判词 → 下一轮
             project_direction=project_direction_builder(project_store=ports.project_store),
             telemetry=telemetry,
             pricing=ports.pricing,
@@ -354,7 +352,13 @@ def _assemble_sqlite(
 ) -> ApiDeps:
     bindings = policy_bindings()
     credentials = RegistryCredentialResolver()
-    parts = _sqlite_store_parts(connection, telemetry, sqlite_artifact_blob_dir(effective))
+    parts = _sqlite_store_parts(
+        connection,
+        telemetry,
+        sqlite_artifact_blob_dir(effective),
+        effective.workflow_lease_ttl_seconds,
+    )
+    seed_declared_inputs(parts.artifacts)  # GOAL-010 EC-02：声明输入必须真的在库里
     return _sqlite_apideps(
         effective,
         connection,
@@ -391,8 +395,7 @@ def _sqlite_apideps(  # noqa: PLR0913 - composition root 装配参数
         pricing_snapshot_store=parts.pricing_store,
         pricing=parts.pricing,
         gateway=OpenAIChatGateway(
-            default_timeout_seconds=effective.endpoint_timeout_seconds,
-            telemetry=telemetry,
+            default_timeout_seconds=effective.endpoint_timeout_seconds, telemetry=telemetry
         ),
         idempotency=SqliteIdempotencyStore(connection=connection),
         events=parts.events,
@@ -417,18 +420,13 @@ def _sqlite_apideps(  # noqa: PLR0913 - composition root 装配参数
 
 
 def assemble(settings: ApiSettings | None = None) -> ApiDeps:
-    """装配控制面（生产路径：SQLite 配置持久化 + Fake run 编排全链）。
-
-    M14: 若 settings/database_url 为 postgresql://，workflow 使用 Postgres；
-    配置存储仍为 SQLite（Postgres canonical state 仅 workflow 队列/lease/outbox）。
-    """
+    """装配控制面（SQLite 配置 + 可选 Postgres workflow；M14 见 `effective_database_url`）。"""
     effective = settings if settings is not None else ApiSettings.from_env()
     pg_dsn = effective.effective_database_url()
     use_pg = _is_postgres_dsn(pg_dsn)
     connection = _open_sqlite(effective.db_path)
     endpoint_store = SqliteEndpointStore(connection=connection)
     model_store = SqliteModelStore(connection=connection)
-    # M15: telemetry 默认 off(Null);RESEARCHOS_OTEL_ENABLED=1 时为 OTel 组合
     telemetry = build_api_telemetry(effective)
     if use_pg:
         assert pg_dsn is not None
@@ -444,7 +442,7 @@ def assemble(settings: ApiSettings | None = None) -> ApiDeps:
 
 
 def _build_snapshot_reader(effective: ApiSettings) -> WorkspaceSnapshotReader | None:
-    """快照读取器：仅显式配置根目录时构建（未配置 → None → 端点诚实 503）。"""
+    """快照读取器：仅显式配置根目录时构建（未配置 → None → 端点 503）。"""
     if not effective.workspace_snapshot_root:
         return None
     return FileSnapshotReader(effective.workspace_snapshot_root)

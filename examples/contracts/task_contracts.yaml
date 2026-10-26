@@ -802,3 +802,113 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # GOAL-20261026-097 EC-04(a)：**创新点声明**的交付物契约。
+  #
+  # 它补哪一格：`novelty_reviewer`（`examples/config/roles.yaml`）此前是**死配置** ——
+  # 无 `review_panel_role` ⇒ 解析成 `NONE`、`agents.yaml` 无绑定、无协议点名 ⇒ 域层
+  # 走 `"role not required by protocol"`。而「创新点」在域层**零命中**
+  # （`rg -i "novelty" packages/ services/ adapters/` 零条）⇒ 没有任何一次 run 说过
+  # 「我与最近的工作差在哪」。本合约把**声明面**建起来：模型必须同时给出
+  # (1) 主张、(2) 为什么新、(3) **最近的前人工作**（至少一条**本 run 检索到的**标识）。
+  #
+  # 判据在 `packages/application/run_orchestration/novelty_claim.py`：只读 canonical、
+  # 零出网、fail-closed；`nearest_prior` 至少要有一条命中**本 run 检索证据里真实出现的
+  # 标识**（PMID / DOI 逐字取自落库的工具结果内容，与 `report_facts.sources_of` 同一口径）。
+  # 判据落地在评审相：`novelty_reviewer` 的提示词里带被评对象（跨相输入），评审者必须
+  # **引用那个标识** —— 两面并列且互相引用，而不是「声明了就算」。
+  novelty_claim_proposal:
+    version: 1.0.0
+    purpose: >
+      TASK — state what is new about this study, and what it is new **relative to**.
+      The run has already retrieved real literature records; they are listed with their
+      identifiers in the material before your task text. Reply directly: there is nothing
+      to install, nothing to run, and no tool to call in this phase — a reply that starts
+      setting up an environment leaves the run without a claim.
+
+      Your reply must contain, in this order:
+
+      1. The claim itself: in one or two sentences, what this study contributes that the
+         retrieved work does not already provide.
+      2. Why it is new **against the nearest prior work**: name the closest retrieved
+         record(s) and say concretely what they leave open that this study addresses.
+         "No one has done this" is not an answer; the difference must be stated against
+         a specific record.
+      3. A fenced JSON block named `novelty_claim`, exactly in this shape:
+
+             {"novelty_claim": {"claim": "<one or two sentences>",
+                                "why_novel": "<the difference against the nearest prior work>",
+                                "nearest_prior": ["PMID:12345678", "DOI:10.1000/xyz"]}}
+
+      Rules for the block: `claim` and `why_novel` must both be non-empty. `nearest_prior`
+      must carry **at least one identifier that actually appears in the records retrieved
+      for this run** (copy the PMID or DOI string exactly as it is listed — a fabricated
+      or unrelated identifier is refused, not silently dropped). Both faces of "novelty"
+      are therefore on record: the difference you claim, and the prior work it is a
+      difference from.
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: novelty_claim
+    timeout_seconds: 180
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  # GOAL-20261026-097 EC-02：**v2 七相链**的检索格合约（与 `research_question_retrieval`
+  # 并列，不改那一份 —— 它被 `direction_to_question_v1` / `direction_to_report_v1` 共用，
+  # 改它属 C-2 禁止面）。
+  #
+  # **为什么需要另一份**（真跑实测）：那一份只写判据（三维覆盖），**没有告诉模型检索已经
+  # 由运行链做完了**。真实模型因此把「去探索仓库/去检索」当成自己的活，第一句是
+  # `I'll start by exploring the repository structure…` 就停在那里 —— 而本相的会话工具面
+  # 是**空**的（run-chain 排除），它没有任何工具可用，于是制品里只有那句意图、没有
+  # `retrieval_report` 块，下游计划相解析失败（`the producer's reply carries no JSON object
+  # with the key 'retrieval_report'`）。
+  #
+  # 本合约把三件事写进任务书（都是**本相的事实**，不是放宽判据）：
+  #   1. 检索**已经执行**、结果列在任务正文前（`RETRIEVED RECORDS`）；
+  #   2. 不许探索仓库 / 不许调用工具（本相没有工具面）；
+  #   3. 必须结尾给 `retrieval_report` 的 fenced JSON 块（下游按它取材料）。
+  # 覆盖判据与 `research_question_retrieval` **逐字相同**（三维），不放松任何一维。
+  retrieval_report_from_the_run_chain:
+    version: 1.0.0
+    purpose: >
+      TASK — write the retrieval report for this study, and end your reply with a
+      machine-readable block. The literature search has **already been executed** for you
+      before this task text: its records are listed under "RETRIEVED RECORDS" with their
+      identifiers. Do **not** explore the repository, do **not** look for files, and do
+      **not** call any tool — this phase has **no tools**; a reply that only says what you
+      are about to do leaves the run without a report.
+
+      Your reply must contain, in this order:
+
+      1. The report itself: what the search returned, which records bear on the question
+         this study addresses, and what they leave open. Cite at least one record by its
+         identifier (the PMID or DOI string exactly as it is listed) so a reader can see
+         which retrieved source the report stands on.
+      2. A fenced JSON block named `retrieval_report`, exactly in this shape:
+
+             {"retrieval_report": {"decision": "<one sentence verdict>",
+                                   "rationale": "<two or three sentences>",
+                                   "cited_ids": ["<identifier>", "..."]}}
+
+      Both fields are required and `cited_ids` must repeat the identifier(s) you cited
+      in the report text.
+    required_capabilities:
+      - artifact.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: retrieval_report
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+        minimum_retrieved_sources: 1
+        minimum_tool_evidences: 1
+    timeout_seconds: 300
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
