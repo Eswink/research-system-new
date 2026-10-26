@@ -1,0 +1,7 @@
+# MAINLINE 进展记录归档 —— 序 62（GOAL-20261022-094）
+
+（自 `MAINLINE.md` 的 `## 进展记录` **原样搬入**；唯一允许的改动是相对链接基准修正：`../rechecks/` → `../../rechecks/`。活跃面保留**最近三条**。）
+
+| 日期 | GOAL | 一句话结论 | 能力域 | RECHECK |
+| --- | --- | --- | --- | --- |
+| 2026-10-22 | GOAL-20261022-094 | **台账纪律不再靠继承 + 报告由模型撰写**。① **元缺陷**（实测）：`_log_verdicts` 只在 `tools/goal092_closeout_assertions.py`，`rg _log_verdicts tools/goal093*` **零命中** ⇒ 判据只保护它自己那个 GOAL；后果是 GOAL-093 台账 **4 行** vs 实际 **7 个提交**、三个提交两张表都不进，而它的收口验证器仍报 **68 条判词全过 / 0 条不过**。提成**跨 GOAL 的 tooling 判据**（`tests/tooling/test_goal_ledger_covers_every_commit.py` 遍历树里所有终态 GOAL + 祖父条款 `_CUTOFF_SEQ = 61`；**只认 `commits` 列**；空台账 / 无提交行 / 无数据行 / 缺小节分别点名）⇒ 新增 GOAL **自动**受判，69 个验证器一个不改；两向按压各判红并以 raw `sha256` 逐字节复原（`89e2fda8…` → `c9dcb895…` / `fb67595f…` → `89e2fda8…`）；同轮把三个提交如数补进台账与 cycle 行（**7 行 = 7 个提交**，**判据未因它而改**）。② **报告域 L1 → L2**（阶梯「报告」行 `下一级` 逐字）：报告此前是**确定性汇编**（`created_by="system:report-assembler"`，docstring 自陈不调模型）⇒ 叙述（第 1…4 节）改由**模型**写、数字（第 5 节事实表）仍由**汇编器**写，两面互不越界（模型写任何 Unicode 十进制数位 ⇒ **点名拒绝**，不静默抽掉）；事实表逐行带来源列、值逐字来自持久事实；**谁写的**可读（`created_by = model:<endpoint>/<returned>` + 元数据 `narrative` 块）；未接叙述者 ⇒ **逐字节**回到既有汇编。读数：台账判据 **8 条**、报告判据 **24 条**、受影响套件 **1297 passed / 1 skipped**、规模门 **1324 passed**；同轮**读取器自举**（`tools/next_round_charter.py` 读 GOAL-093 ⇒ `exit 0`、`W-1…W-5` **5/5** 有处置、`sha256:d0aaae8f…`）。残余如实留：**叙述质量与事实一致性仍无判据**。 | 报告 | [RECHECK-20261022-094](../../rechecks/RECHECK-20261022-094-goal-094-ledger-judge-and-the-model-written-report.md) |
