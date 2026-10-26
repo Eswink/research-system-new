@@ -1760,11 +1760,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261024-096-direction-to-report-in-one-run.md",
-        "sha256": "c827f71060e4a48b7d27ceab406653e864878a8c"
+        "sha256": "80d370bdf0f17eef870a8db682322292043ae8e7"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "170a4bb9bf7dcd0dcc2dd24e50cbbdcf041ace20"
+        "sha256": "e8e3c55cdbf1a97ed1a82dcd7a473fda4365c1a7"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -1911,12 +1911,20 @@
         "sha256": "446dc30e06534e1102f8fda9611492e2f61cebc3"
       },
       {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-progress-094-only.md",
+        "sha256": "4b4101e3717663ae3c42728bcfdb47d688202f8b"
+      },
+      {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-59-only.md",
         "sha256": "2caede93c137ba600647da558fcebcf62ebede3a"
       },
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-61-only.md",
         "sha256": "d97e00a8aeaef369cfff6eb02297a768a6366966"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-62-only.md",
+        "sha256": "0e90f0b4d399a420a46391cd50fbc7d8376fb748"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -4088,7 +4096,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261024-096-goal-096-direction-to-report-in-one-run.md",
-        "sha256": "763161c8982e9b2e3d6e5367669753ea057039b4"
+        "sha256": "ecc5a66e3b02afb374c0681d1403f52732ea56e9"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -18467,7 +18475,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "85bddfb63765669b86065b99a75727aa2e9ea146"
+    "head": "9d167f399cb80fdf9c82fd442f0acf3430c91cd5"
   },
   "fingerprint_before": {
     "files": [
@@ -20229,11 +20237,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261024-096-direction-to-report-in-one-run.md",
-        "sha256": "c827f71060e4a48b7d27ceab406653e864878a8c"
+        "sha256": "80d370bdf0f17eef870a8db682322292043ae8e7"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "170a4bb9bf7dcd0dcc2dd24e50cbbdcf041ace20"
+        "sha256": "e8e3c55cdbf1a97ed1a82dcd7a473fda4365c1a7"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -20380,12 +20388,20 @@
         "sha256": "446dc30e06534e1102f8fda9611492e2f61cebc3"
       },
       {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-progress-094-only.md",
+        "sha256": "4b4101e3717663ae3c42728bcfdb47d688202f8b"
+      },
+      {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-59-only.md",
         "sha256": "2caede93c137ba600647da558fcebcf62ebede3a"
       },
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-61-only.md",
         "sha256": "d97e00a8aeaef369cfff6eb02297a768a6366966"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-22-revisions-62-only.md",
+        "sha256": "0e90f0b4d399a420a46391cd50fbc7d8376fb748"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261004-029-verdict-clean.txt",
@@ -22557,7 +22573,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261024-096-goal-096-direction-to-report-in-one-run.md",
-        "sha256": "763161c8982e9b2e3d6e5367669753ea057039b4"
+        "sha256": "ecc5a66e3b02afb374c0681d1403f52732ea56e9"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -36936,11 +36952,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "85bddfb63765669b86065b99a75727aa2e9ea146"
+    "head": "9d167f399cb80fdf9c82fd442f0acf3430c91cd5"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "85bddfb63765669b86065b99a75727aa2e9ea146",
+  "ran_at_head": "9d167f399cb80fdf9c82fd442f0acf3430c91cd5",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
