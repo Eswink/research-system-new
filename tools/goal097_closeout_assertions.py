@@ -28,7 +28,7 @@ from typing import Any
 
 #: 本轮**新增**的判据文件 → 用例数**下界**（掉下去即判红；只上调不下调）。
 CASE_FLOORS: tuple[tuple[str, int], ...] = (
-    ("tests/api/test_product_roots_carry_the_execution_seams.py", 9),
+    ("tests/api/test_product_roots_carry_the_execution_seams.py", 10),
     ("tests/api/test_contract_pinned_experiment_spec_takes_effect.py", 9),
     ("tests/contracts/test_direction_to_report_v2_novelty.py", 15),
 )

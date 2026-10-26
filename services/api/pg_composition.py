@@ -268,7 +268,7 @@ def _build_pg_orchestration(
             budget=c["budget"],
             ledger=c["ledger"],
             review_findings=c["review_findings"],
-            **pg_executor_seams(c, inputs, providers),
+            **pg_executor_seams(c, inputs, config, providers),
             # GOAL-20261008-038 EC-04：前序结论读取器（与 SQLite 根同侧，同一实现）。
             prior_conclusion=prior_conclusion_reader(c["runs_store"], c["review_findings"]),
             # GOAL-20261014-078 EC-01：检索内容 → 会话上下文（与 SQLite 根同侧）。

@@ -171,6 +171,27 @@ def test_both_roots_depend_on_the_shared_seam_builder() -> None:
         assert {"runtime", "workflow", "artifacts"} <= names, (path.name, sorted(names))
 
 
+def test_the_pg_seam_reads_settings_from_the_config_object() -> None:
+    """PG 缝的设置面取自 **`config.effective`**，不是 `inputs`（CI 抓到的真缺陷）。
+
+    `_PgRuntimeInputs` 只有 credentials / policy_bindings / selection —— 从它取
+    `effective` 会让三条 PG e2e 在 CI 上全红
+    （`'_PgRuntimeInputs' object has no attribute 'effective'`），而本机跑不了 PG ⇒
+    本地门看不见。所以这条判据是**静态**的：读签名与函数体。
+    """
+    import inspect
+
+    from services.api import executor_wiring
+
+    signature = inspect.signature(executor_wiring.pg_executor_seams)
+    assert "config" in signature.parameters, sorted(signature.parameters)
+    source = inspect.getsource(executor_wiring.pg_executor_seams)
+    assert "config.effective.experiment_design_source" in source
+    assert "inputs.effective" not in source.replace("`inputs`", ""), (
+        "PG 缝不得从 `_PgRuntimeInputs` 取 `effective`（它没有那个字段）"
+    )
+
+
 def test_the_seams_cover_all_three_slots() -> None:
     """两个根的 seam 构造器都返回**三个**关键字（实验 / 报告 / 运行链检索面）。"""
     expected = {"experiment_task", "report_task", "capabilities"}

@@ -103,9 +103,16 @@ def sqlite_executor_seams(faces: Any, ports: Any, providers: dict[str, Any]) -> 
     }
 
 
-def pg_executor_seams(components: Any, inputs: Any, providers: dict[str, Any]) -> dict[str, Any]:
-    """PG 组合根的三道缝（与 SQLite 根**同一份装配决策**，只差 Port 实例）。"""
-    effective = inputs.effective
+def pg_executor_seams(  # noqa: PLR0913 - 装配面：三个输入对象
+    components: Any, inputs: Any, config: Any, providers: dict[str, Any]
+) -> dict[str, Any]:
+    """PG 组合根的三道缝（与 SQLite 根**同一份装配决策**，只差 Port 实例）。
+
+    设置面取自 **`config.effective`**（`ApiSettings`），不是 `inputs`：`_PgRuntimeInputs`
+    只有 credentials / policy_bindings / selection —— 从 `inputs` 取是 CI 抓到的真缺陷
+    （`collector-quality` 三条 PG e2e 全红：`'_PgRuntimeInputs' object has no attribute
+    'effective'`）。
+    """
     return {
         "capabilities": product_retrieval(
             artifacts=components["artifacts"],
@@ -118,7 +125,7 @@ def pg_executor_seams(components: Any, inputs: Any, providers: dict[str, Any]) -
             policy=inputs.policy_bindings.get("policy_evaluator"),
             ledger=components["ledger"],
             experiment_store=components["experiment_store"],
-            design_source=effective.experiment_design_source,
+            design_source=config.effective.experiment_design_source,
         ),
         "report_task": report_task_for(
             artifacts=components["artifacts"],

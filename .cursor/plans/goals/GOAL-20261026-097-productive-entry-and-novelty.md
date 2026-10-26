@@ -121,7 +121,17 @@ EC-01…EC-06 的判据见 frontmatter；每条都写明「取证形态」与「
 
 每一轮 cycle 的开始状态取三件**可提取**事实（不靠记忆）：
 
-1. 上一轮 cycle 的「剩余差距」列（本文件 `## 残余与未覆盖范围
+1. 上一轮 cycle 的「剩余差距」列（本文件 `## CI 台账
+
+（**逐提交逐 job**，一个提交一行。**零 run ≠ cancelled**：`cancel-in-progress` 造成的
+`cancelled` 与「同批推送被 GitHub 合并成一个 run」的 `无 run` 是**两种不同**的形态，
+分别登记；后者用 `covered_by` 指名它被哪一条 run 覆盖。）
+
+| 提交 | run | 结论 | 说明 |
+| --- | --- | --- | --- |
+| `3748213b` | [M0 40381462122](https://github.com/Eswink/research-system-new/actions/runs/40381462122) / [Push 40381462020](https://github.com/Eswink/research-system-new/actions/runs/40381462020) | Push **success**（三条 Analyze 全 success）；M0 **failure**（5/8 job success，3 job 判红） | 本轮全部交付面：三道执行缝 + 惰性后端 + 声明优先 + 七相协议 + novelty 两面 + 收口资产 + 记录 + 真跑取证。**三个红 job 的归因（都不是宽泛失败）**：① `quality-ubuntu-latest` / `quality-windows-latest` ⇒ **同一签名**：`test_m0_witness_matches_the_tree` 判「见证覆盖的内容与当前树不一致」—— 我在跑完本地 m0 之后又改了受判文件（压缩 `composition.py`、改 `experiment_support.py`、修判据、补记录）⇒ 那次终态行按纪律**作废**。② `collector-quality` ⇒ **真缺陷**：`'_PgRuntimeInputs' object has no attribute 'effective'`（我在 `pg_executor_seams` 里从 `inputs` 取设置面；三条 PG e2e 全红）。已修（改从 `config.effective` 取）+ 新增**静态判据**钉住（本机跑不了 PG ⇒ 本地门看不见这类）。本行先记 `failure`，修完的下一提交另记一行 |
+
+## 残余与未覆盖范围
 
 | 编 | 内容 | 状态与理由 |
 | --- | --- | --- |
@@ -193,7 +203,7 @@ EC-01…EC-06 的判据见 frontmatter；每条都写明「取证形态」与「
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261026-097 | 见「CI 台账」 | 判据 9 + 9 + 15 全过；真跑 **1 passed**（`SUCCEEDED`，七相全落库）；m0 见证待跑 | 见「CI 台账」 | 真跑过程中修掉 **3** 个产品缺陷：① 运行链调用未标 `phase_id` ⇒ 问题相也执行检索并失败；② 检索格合约没告诉模型「检索已跑完、本相没有工具」⇒ 模型去探索仓库、不产块；③ 会话工具面缺 `literature.*` 实现 ⇒ 评审相 `ToolDefinition ... is not registered`；另把任务租约 TTL 做成**可配**（同步路径只心跳一次、真实会话常超 300s） | `W-1` REST provider 探测出网（预检拒冻，需拍板）；`W-2` 检索 `phase_id` 是常量；`W-3` 实验脚本仍预置 | 下一轮：让实验脚本也由方向决定；检索结果驱动下一轮问题 |
+| 1 | PLAN-20261026-097 | `3748213b`（收口提交见下一行/台账） | 判据 9 + 9 + 15 全过；真跑 **1 passed**（`SUCCEEDED`，七相全落库）；m0 见证待跑 | 见「CI 台账」 | 真跑过程中修掉 **3** 个产品缺陷：① 运行链调用未标 `phase_id` ⇒ 问题相也执行检索并失败；② 检索格合约没告诉模型「检索已跑完、本相没有工具」⇒ 模型去探索仓库、不产块；③ 会话工具面缺 `literature.*` 实现 ⇒ 评审相 `ToolDefinition ... is not registered`；另把任务租约 TTL 做成**可配**（同步路径只心跳一次、真实会话常超 300s） | `W-1` REST provider 探测出网（预检拒冻，需拍板）；`W-2` 检索 `phase_id` 是常量；`W-3` 实验脚本仍预置 | 下一轮：让实验脚本也由方向决定；检索结果驱动下一轮问题 |
 
 ## 状态历史
 

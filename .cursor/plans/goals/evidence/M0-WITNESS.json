@@ -1343,6 +1343,10 @@
         "sha256": "7ee3cb744e5c30328fd39f299af7ebed038f843e"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261026-231-productive-entry-needs-three-things.md",
+        "sha256": "bc6460dd9feba53eefe5bcb9e0445ed055a4efee"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "55f606eb66394cacb40ec844ca97dde03370991f"
       },
@@ -1760,7 +1764,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261024-096-direction-to-report-in-one-run.md",
-        "sha256": "80d370bdf0f17eef870a8db682322292043ae8e7"
+        "sha256": "19e4fb5be957ee54867e9ccd7e1ff80f0b6f3706"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261026-097-productive-entry-and-novelty.md",
+        "sha256": "734bc85889ffb2e21ddacc37d76f2ea4815911d9"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -2645,6 +2653,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261024-096-verdict-current.txt",
         "sha256": "8a6d95a972f8ce1266766204c83b770b3eb7ea6e"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261026-097-productive-entry-run.txt",
+        "sha256": "002daf57a8e7c70cf35789b9f2409c263583c9af"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4099,6 +4111,10 @@
         "sha256": "ecc5a66e3b02afb374c0681d1403f52732ea56e9"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261026-097-goal-097-productive-entry-and-novelty.md",
+        "sha256": "a0acf92a1329d4649db465e4d372766f02ba7ab1"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5477,6 +5493,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261024-096-goal-096-direction-to-report-in-one-run.md",
         "sha256": "f2a5a3cf4a5d835d883edfe0b17b4fbcdf7e326e"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261026-097-goal-097-productive-entry-and-novelty.md",
+        "sha256": "f299a6bc6442e6d73ce798a24f5cc010f1eddf47"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -12711,6 +12731,10 @@
         "sha256": "3b10b04e29bda6f887462a75ce70d9c2ad04a4f1"
       },
       {
+        "path": "examples/protocols/direction_to_report_v2.yaml",
+        "sha256": "ed973c123805183782056e86a25cc6ed5df5e143"
+      },
+      {
         "path": "examples/protocols/dual_model_review_v1.yaml",
         "sha256": "0df250e5b0beb8848cda7cb92dff6441047d169b"
       },
@@ -13527,6 +13551,14 @@
         "sha256": "2b5ff58d1ad0c4dda2a4fde2bcf159e9e01c034a"
       },
       {
+        "path": "packages/application/run_orchestration/novelty_claim.py",
+        "sha256": "166aeaa3c3e4a58414072e6150240b4dc9aeb5d7"
+      },
+      {
+        "path": "packages/application/run_orchestration/novelty_claim_step.py",
+        "sha256": "6b97e7fbf5ca1f1666fdc78b8406217f37c843ff"
+      },
+      {
         "path": "packages/application/run_orchestration/outcomes.py",
         "sha256": "3a3efa57590455a2ae883c42e046e311454d1237"
       },
@@ -14243,6 +14275,14 @@
         "sha256": "3e2b934b8879ab939e9a1d94760040d06a3e102d"
       },
       {
+        "path": "services/api/executor_wiring.py",
+        "sha256": "a9d385e7c103f56b1fcd20ff69ddb79f2def1fe1"
+      },
+      {
+        "path": "services/api/experiment_factories.py",
+        "sha256": "63e39fdbb92e80596cf5be12d282b633f8edd66a"
+      },
+      {
         "path": "services/api/experiment_queue.py",
         "sha256": "429a8869fed85b8e33379f3535c8fd0bd860f857"
       },
@@ -14308,7 +14348,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "a281a4273dcb4107e043b75944bcc047176e0ead"
+        "sha256": "4d716e46232ea4da76d43a0a14dd0fb37628cdb2"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -14349,6 +14389,10 @@
       {
         "path": "services/api/retrieval_context_support.py",
         "sha256": "f67670f24ac7187243a85165802115fee38d0206"
+      },
+      {
+        "path": "services/api/retrieval_wiring.py",
+        "sha256": "183bebe4fef40a54cdb3db40603cf5d297f56599"
       },
       {
         "path": "services/api/review_material_support.py",
@@ -15023,6 +15067,10 @@
         "sha256": "2cef66674f3080a73f4458647235bdeb033ace55"
       },
       {
+        "path": "tests/api/test_contract_pinned_experiment_spec_takes_effect.py",
+        "sha256": "f0019d6a7841b6087671f3ac8a29e5fabc3dfa29"
+      },
+      {
         "path": "tests/api/test_control_plane_token_never_leaks.py",
         "sha256": "c445a843749eee6cb4815a4b140d54dfb5ca6a48"
       },
@@ -15153,6 +15201,10 @@
       {
         "path": "tests/api/test_principal_cannot_be_forged.py",
         "sha256": "04d1c493db6a021fdcb7b123e8c284ab622c32da"
+      },
+      {
+        "path": "tests/api/test_product_roots_carry_the_execution_seams.py",
+        "sha256": "06ec01108dd1c00e554f941bbe4c20d63574e44a"
       },
       {
         "path": "tests/api/test_production_session_tool_registration.py",
@@ -16303,6 +16355,10 @@
         "sha256": "c013e0b6f3418a05abab760fd29c6f084fd7b9ed"
       },
       {
+        "path": "tests/contracts/test_direction_to_report_v2_novelty.py",
+        "sha256": "d398328a82d74c44173fd4780187b3cdc2613da7"
+      },
+      {
         "path": "tests/contracts/test_dispatch_ownership_contract.py",
         "sha256": "10f3e37e010f4743d5617488712b30e43d398b22"
       },
@@ -16845,6 +16901,10 @@
       {
         "path": "tests/e2e/test_prior_knowledge_reaches_the_prompt.py",
         "sha256": "0ca2a06e4d3db755596197ce15e422095defe7d5"
+      },
+      {
+        "path": "tests/e2e/test_productive_entry_runs_the_whole_chain.py",
+        "sha256": "4dfa6db0761d16e86f23e61fa87f35330d34d760"
       },
       {
         "path": "tests/e2e/test_program_advance_on_the_run_path.py",
@@ -17620,27 +17680,27 @@
       },
       {
         "path": "tools/PA1R发布真相v1.py",
-        "sha256": "3a427aeaf2626d5f389d1a4412ca8fba9ab28fa9"
+        "sha256": "84e9410a5ee3e9ada2e39d4a6319503a6ad486be"
       },
       {
         "path": "tools/PA1R密钥审计v1.py",
-        "sha256": "fa22bd647897b00a61991a2e2f64bc6aa2715732"
+        "sha256": "a5f5cf3a9a394d76cc0bc54c440b593d2bb60c32"
       },
       {
         "path": "tools/PA1R恢复闭包v1.py",
-        "sha256": "3c1a13f742a650a7706bf010946c89b22d764d0b"
+        "sha256": "e3785ce41cd55c68d67121fb685e569ba98b51b0"
       },
       {
         "path": "tools/PA1R故障演练v1.py",
-        "sha256": "e3d7ab5a59a078203ec3d51aa88f564ea995f18f"
+        "sha256": "881e2ec8852fe82b92810a6a9ced8386483ac632"
       },
       {
         "path": "tools/PA1R质量门禁v1.py",
-        "sha256": "94503c926d185c90baae0628cd83ab7922665e4f"
+        "sha256": "93a1ca34aa8265045956733611e96744670dde8b"
       },
       {
         "path": "tools/PA1R运行演练v1.py",
-        "sha256": "2e698d72626332abd2a18ea542e529bf1f51d187"
+        "sha256": "d46e337210215e5e1e5d75963dcc409386613e10"
       },
       {
         "path": "tools/audit_goal026_ledger.py",
@@ -17652,7 +17712,7 @@
       },
       {
         "path": "tools/backup.py",
-        "sha256": "d95176ff4f070b2ffa4f598556a28ce906b3c8be"
+        "sha256": "9e41da798a67065c1703ecccce831390d703b9fd"
       },
       {
         "path": "tools/charter_parse.py",
@@ -17660,7 +17720,7 @@
       },
       {
         "path": "tools/classify_local_gate_reds.py",
-        "sha256": "99f6b838a754111ee9f53d04c561fdad821b71f6"
+        "sha256": "4517e906cb30c45254223429cbd512500d6e409f"
       },
       {
         "path": "tools/closeout_recheck_assertions.py",
@@ -18059,6 +18119,10 @@
         "sha256": "8eb3db3a0099923db702b74e192e5060781af0fc"
       },
       {
+        "path": "tools/goal097_closeout_assertions.py",
+        "sha256": "9d3f7602dc9dde5e7d41c47ddce7b50b4e9e1048"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -18160,11 +18224,11 @@
       },
       {
         "path": "tools/upstream-spikes/S1_import_fingerprint.py",
-        "sha256": "1c3206e4722039d3c421668ebcb64e64718d578b"
+        "sha256": "5cddea24dd03f869b308b10972627fc5511dff39"
       },
       {
         "path": "tools/upstream-spikes/S2_llm_construction.py",
-        "sha256": "0f680cd0155114f3b8ffbb6bd724cd32aa1dd79f"
+        "sha256": "51b5251db97cdbf45417dd747e14d8b66dd4b782"
       },
       {
         "path": "tools/upstream-spikes/S3_agent_conversation_run.py",
@@ -18471,11 +18535,15 @@
         "sha256": "aa984ce7fe150d21bff55f661de3c8e2dcbfe9df"
       },
       {
+        "path": "tools/verify_goal097_closeout.py",
+        "sha256": "a04d43621c5df48da420aac6d2cdb97e005211ea"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "7189b498a24a5d5886bdbf9d71c5e73283cccdbe"
+    "head": "3748213b90fe2615aa610a76198810a19f822fa9"
   },
   "fingerprint_before": {
     "files": [
@@ -19820,6 +19888,10 @@
         "sha256": "7ee3cb744e5c30328fd39f299af7ebed038f843e"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261026-231-productive-entry-needs-three-things.md",
+        "sha256": "bc6460dd9feba53eefe5bcb9e0445ed055a4efee"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "55f606eb66394cacb40ec844ca97dde03370991f"
       },
@@ -20237,7 +20309,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261024-096-direction-to-report-in-one-run.md",
-        "sha256": "80d370bdf0f17eef870a8db682322292043ae8e7"
+        "sha256": "19e4fb5be957ee54867e9ccd7e1ff80f0b6f3706"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261026-097-productive-entry-and-novelty.md",
+        "sha256": "734bc85889ffb2e21ddacc37d76f2ea4815911d9"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -21122,6 +21198,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261024-096-verdict-current.txt",
         "sha256": "8a6d95a972f8ce1266766204c83b770b3eb7ea6e"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261026-097-productive-entry-run.txt",
+        "sha256": "002daf57a8e7c70cf35789b9f2409c263583c9af"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -22576,6 +22656,10 @@
         "sha256": "ecc5a66e3b02afb374c0681d1403f52732ea56e9"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261026-097-goal-097-productive-entry-and-novelty.md",
+        "sha256": "a0acf92a1329d4649db465e4d372766f02ba7ab1"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -23954,6 +24038,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261024-096-goal-096-direction-to-report-in-one-run.md",
         "sha256": "f2a5a3cf4a5d835d883edfe0b17b4fbcdf7e326e"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261026-097-goal-097-productive-entry-and-novelty.md",
+        "sha256": "f299a6bc6442e6d73ce798a24f5cc010f1eddf47"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -31188,6 +31276,10 @@
         "sha256": "3b10b04e29bda6f887462a75ce70d9c2ad04a4f1"
       },
       {
+        "path": "examples/protocols/direction_to_report_v2.yaml",
+        "sha256": "ed973c123805183782056e86a25cc6ed5df5e143"
+      },
+      {
         "path": "examples/protocols/dual_model_review_v1.yaml",
         "sha256": "0df250e5b0beb8848cda7cb92dff6441047d169b"
       },
@@ -32004,6 +32096,14 @@
         "sha256": "2b5ff58d1ad0c4dda2a4fde2bcf159e9e01c034a"
       },
       {
+        "path": "packages/application/run_orchestration/novelty_claim.py",
+        "sha256": "166aeaa3c3e4a58414072e6150240b4dc9aeb5d7"
+      },
+      {
+        "path": "packages/application/run_orchestration/novelty_claim_step.py",
+        "sha256": "6b97e7fbf5ca1f1666fdc78b8406217f37c843ff"
+      },
+      {
         "path": "packages/application/run_orchestration/outcomes.py",
         "sha256": "3a3efa57590455a2ae883c42e046e311454d1237"
       },
@@ -32720,6 +32820,14 @@
         "sha256": "3e2b934b8879ab939e9a1d94760040d06a3e102d"
       },
       {
+        "path": "services/api/executor_wiring.py",
+        "sha256": "a9d385e7c103f56b1fcd20ff69ddb79f2def1fe1"
+      },
+      {
+        "path": "services/api/experiment_factories.py",
+        "sha256": "63e39fdbb92e80596cf5be12d282b633f8edd66a"
+      },
+      {
         "path": "services/api/experiment_queue.py",
         "sha256": "429a8869fed85b8e33379f3535c8fd0bd860f857"
       },
@@ -32785,7 +32893,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "a281a4273dcb4107e043b75944bcc047176e0ead"
+        "sha256": "4d716e46232ea4da76d43a0a14dd0fb37628cdb2"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -32826,6 +32934,10 @@
       {
         "path": "services/api/retrieval_context_support.py",
         "sha256": "f67670f24ac7187243a85165802115fee38d0206"
+      },
+      {
+        "path": "services/api/retrieval_wiring.py",
+        "sha256": "183bebe4fef40a54cdb3db40603cf5d297f56599"
       },
       {
         "path": "services/api/review_material_support.py",
@@ -33500,6 +33612,10 @@
         "sha256": "2cef66674f3080a73f4458647235bdeb033ace55"
       },
       {
+        "path": "tests/api/test_contract_pinned_experiment_spec_takes_effect.py",
+        "sha256": "f0019d6a7841b6087671f3ac8a29e5fabc3dfa29"
+      },
+      {
         "path": "tests/api/test_control_plane_token_never_leaks.py",
         "sha256": "c445a843749eee6cb4815a4b140d54dfb5ca6a48"
       },
@@ -33630,6 +33746,10 @@
       {
         "path": "tests/api/test_principal_cannot_be_forged.py",
         "sha256": "04d1c493db6a021fdcb7b123e8c284ab622c32da"
+      },
+      {
+        "path": "tests/api/test_product_roots_carry_the_execution_seams.py",
+        "sha256": "06ec01108dd1c00e554f941bbe4c20d63574e44a"
       },
       {
         "path": "tests/api/test_production_session_tool_registration.py",
@@ -34780,6 +34900,10 @@
         "sha256": "c013e0b6f3418a05abab760fd29c6f084fd7b9ed"
       },
       {
+        "path": "tests/contracts/test_direction_to_report_v2_novelty.py",
+        "sha256": "d398328a82d74c44173fd4780187b3cdc2613da7"
+      },
+      {
         "path": "tests/contracts/test_dispatch_ownership_contract.py",
         "sha256": "10f3e37e010f4743d5617488712b30e43d398b22"
       },
@@ -35322,6 +35446,10 @@
       {
         "path": "tests/e2e/test_prior_knowledge_reaches_the_prompt.py",
         "sha256": "0ca2a06e4d3db755596197ce15e422095defe7d5"
+      },
+      {
+        "path": "tests/e2e/test_productive_entry_runs_the_whole_chain.py",
+        "sha256": "4dfa6db0761d16e86f23e61fa87f35330d34d760"
       },
       {
         "path": "tests/e2e/test_program_advance_on_the_run_path.py",
@@ -36097,27 +36225,27 @@
       },
       {
         "path": "tools/PA1R发布真相v1.py",
-        "sha256": "3a427aeaf2626d5f389d1a4412ca8fba9ab28fa9"
+        "sha256": "84e9410a5ee3e9ada2e39d4a6319503a6ad486be"
       },
       {
         "path": "tools/PA1R密钥审计v1.py",
-        "sha256": "fa22bd647897b00a61991a2e2f64bc6aa2715732"
+        "sha256": "a5f5cf3a9a394d76cc0bc54c440b593d2bb60c32"
       },
       {
         "path": "tools/PA1R恢复闭包v1.py",
-        "sha256": "3c1a13f742a650a7706bf010946c89b22d764d0b"
+        "sha256": "e3785ce41cd55c68d67121fb685e569ba98b51b0"
       },
       {
         "path": "tools/PA1R故障演练v1.py",
-        "sha256": "e3d7ab5a59a078203ec3d51aa88f564ea995f18f"
+        "sha256": "881e2ec8852fe82b92810a6a9ced8386483ac632"
       },
       {
         "path": "tools/PA1R质量门禁v1.py",
-        "sha256": "94503c926d185c90baae0628cd83ab7922665e4f"
+        "sha256": "93a1ca34aa8265045956733611e96744670dde8b"
       },
       {
         "path": "tools/PA1R运行演练v1.py",
-        "sha256": "2e698d72626332abd2a18ea542e529bf1f51d187"
+        "sha256": "d46e337210215e5e1e5d75963dcc409386613e10"
       },
       {
         "path": "tools/audit_goal026_ledger.py",
@@ -36129,7 +36257,7 @@
       },
       {
         "path": "tools/backup.py",
-        "sha256": "d95176ff4f070b2ffa4f598556a28ce906b3c8be"
+        "sha256": "9e41da798a67065c1703ecccce831390d703b9fd"
       },
       {
         "path": "tools/charter_parse.py",
@@ -36137,7 +36265,7 @@
       },
       {
         "path": "tools/classify_local_gate_reds.py",
-        "sha256": "99f6b838a754111ee9f53d04c561fdad821b71f6"
+        "sha256": "4517e906cb30c45254223429cbd512500d6e409f"
       },
       {
         "path": "tools/closeout_recheck_assertions.py",
@@ -36536,6 +36664,10 @@
         "sha256": "8eb3db3a0099923db702b74e192e5060781af0fc"
       },
       {
+        "path": "tools/goal097_closeout_assertions.py",
+        "sha256": "9d3f7602dc9dde5e7d41c47ddce7b50b4e9e1048"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -36637,11 +36769,11 @@
       },
       {
         "path": "tools/upstream-spikes/S1_import_fingerprint.py",
-        "sha256": "1c3206e4722039d3c421668ebcb64e64718d578b"
+        "sha256": "5cddea24dd03f869b308b10972627fc5511dff39"
       },
       {
         "path": "tools/upstream-spikes/S2_llm_construction.py",
-        "sha256": "0f680cd0155114f3b8ffbb6bd724cd32aa1dd79f"
+        "sha256": "51b5251db97cdbf45417dd747e14d8b66dd4b782"
       },
       {
         "path": "tools/upstream-spikes/S3_agent_conversation_run.py",
@@ -36948,15 +37080,19 @@
         "sha256": "aa984ce7fe150d21bff55f661de3c8e2dcbfe9df"
       },
       {
+        "path": "tools/verify_goal097_closeout.py",
+        "sha256": "a04d43621c5df48da420aac6d2cdb97e005211ea"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "7189b498a24a5d5886bdbf9d71c5e73283cccdbe"
+    "head": "3748213b90fe2615aa610a76198810a19f822fa9"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "7189b498a24a5d5886bdbf9d71c5e73283cccdbe",
+  "ran_at_head": "3748213b90fe2615aa610a76198810a19f822fa9",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
