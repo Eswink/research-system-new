@@ -116,6 +116,38 @@ memory_entries: []
 | `W-1`：失败读数**不在**取证文件里（该文件覆盖写、只在成功断言前调用） | GOAL-096 正文 `## 残余与未覆盖范围` | 在位，未回退；本轮**修了机制**（先写盘再断言） |
 | `W-2`：被推成 `RETRIEVED` 的是 `review` 消费的 `plan:research_plan` 边 | 同上 | 在位，未回退 |
 
+## 五、收口复检（两树）
+
+`tools/two_tree_recheck.py --script tools/verify_goal097_closeout.py --script-mode shared`
+⇒ **`TWO-TREE PASS`**：两树各 **78** 条判词、`sha256=7ae342800523c5340561dca7ed331eb22379994b2914a7fe3a475e5438632669`
+完全相同；判词归档在 `evidence/GOAL-20261026-097-verdict-{current,clean}.txt`。
+
+`verify_paths` 声明的路数 ≥ 2（19 条），覆盖产品面（`executor_wiring` / `experiment_factories` /
+`retrieval_wiring` / 两个组合根 / `experiment_support`）、声明面（协议 / 合约 / 四份配置）与
+判据面（三份新判据 + 真跑 + 收口资产）。
+
+## 六、CI
+
+`3748213b` 三个 job 判红（见证过期 + PG 缝真缺陷），修后 `a228ff66` **M0 八 job 全 success**、
+Push 三条 Analyze 全 success。逐提交逐 job 见 GOAL 的 `## CI 台账`。
+
 ## 结论
 
-（见下方「结论」节的最终判词。）
+**PASS_WITH_WARNINGS**：六个 EC 全达成 ——
+
+- **EC-01**：两个组合根接上三道缝，装配期零 Docker 连接（正 + 反两向）；
+- **EC-02**：从**产品入口**（`assemble()` 的 deps，**不补缝**）跑通七相链 —— `SUCCEEDED`、
+  `missing_phase_artifacts: []`、真实容器实验、`novelty_matched_prior: PMID:42579838`、
+  **两位评审者的正文都引用了那个标识**（`review_texts_cite_that_identifier: 2`）；
+- **EC-03**：契约 pin 的 `script`/`image` 真的生效（声明优先 + 按压可证）；
+- **EC-04**：创新点两面都在，且**互相引用**；
+- **EC-05**：收口验证器 + 断言集在树并登记（78 条判词全过，两树同结论）；
+- **EC-06**：上一轮三处记录更正逐条核对未回退。
+
+**残留（如实登记，不掩盖）**：`W-1` REST provider 探测出网 ⇒ 预检 `TOOL_HEALTH_UNPROVEN`
+无接受通道 ⇒ 拒冻（**既有**语义不一致，需拍板）；`W-2` 出厂检索 `phase_id` 是常量；
+`W-3` 实验脚本仍是预置脚本；`W-4` **同步执行只在会话前心跳一次** ⇒ 长会话租约过期 ⇒
+`no matching lease` 冒成 422（本轮只把 TTL 做成可配，**根因未修**）；`U-1`「创新是否真的新」未判；
+`U-2` 叙述质量未判；`U-3` `idea.*` 无 policy allow。
+
+`R-M1` 未收口 ⇒ 本复检**不**宣称项目安全；投递语义**不是**「恰好一次」。

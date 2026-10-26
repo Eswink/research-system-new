@@ -2,7 +2,7 @@
 id: GOAL-20261026-097
 slug: productive-entry-and-novelty
 title: 让产品入口真能跑完整链，并让「创新点」有两面
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-26
 updated_at: 2026-10-26
 owners: [maintainer]
@@ -130,6 +130,7 @@ EC-01…EC-06 的判据见 frontmatter；每条都写明「取证形态」与「
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | `3748213b` | [M0 40381462122](https://github.com/Eswink/research-system-new/actions/runs/40381462122) / [Push 40381462020](https://github.com/Eswink/research-system-new/actions/runs/40381462020) | Push **success**（三条 Analyze 全 success）；M0 **failure**（5/8 job success，3 job 判红） | 本轮全部交付面：三道执行缝 + 惰性后端 + 声明优先 + 七相协议 + novelty 两面 + 收口资产 + 记录 + 真跑取证。**三个红 job 的归因（都不是宽泛失败）**：① `quality-ubuntu-latest` / `quality-windows-latest` ⇒ **同一签名**：`test_m0_witness_matches_the_tree` 判「见证覆盖的内容与当前树不一致」—— 我在跑完本地 m0 之后又改了受判文件（压缩 `composition.py`、改 `experiment_support.py`、修判据、补记录）⇒ 那次终态行按纪律**作废**。② `collector-quality` ⇒ **真缺陷**：`'_PgRuntimeInputs' object has no attribute 'effective'`（我在 `pg_executor_seams` 里从 `inputs` 取设置面；三条 PG e2e 全红）。已修（改从 `config.effective` 取）+ 新增**静态判据**钉住（本机跑不了 PG ⇒ 本地门看不见这类）。本行先记 `failure`，修完的下一提交另记一行 |
+| `a228ff66` | [M0 40392491625](https://github.com/Eswink/research-system-new/actions/runs/40392491625) / [Push 40392492053](https://github.com/Eswink/research-system-new/actions/runs/40392492053) | **全 `success`**：M0 **八 job 全 success**（含此前变红的 `collector-quality` / `quality-ubuntu-latest` / `quality-windows-latest`）、Push 三条 Analyze 全 `success` | **收口提交**：修 PG 缝的设置面（CI 才抓到的真缺陷）+ 静态判据钉住 + 补记 096 收口 tip（两张表）+ 重封 m0 见证（本提交自身即 HEAD ⇒ **无收口 tip 债**）。本地 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`；收口验证器 **78** 条判词全过 |
 
 ## 残余与未覆盖范围
 
@@ -145,29 +146,6 @@ EC-01…EC-06 的判据见 frontmatter；每条都写明「取证形态」与「
 | `R-1` | `R-M1` 未收口 —— 本 GOAL **不**宣称项目安全。 | — |
 | `R-2` | 投递语义**不是**「恰好一次」（at-least-once + 幂等 + 去重）。 | — |
 | `R-3` | GOAL-096 的 `W-1`（CI 浅克隆）、`W-3`（090/095/076 验证器不回填）状态不变。 | — |
-
-## 迭代日志
-
-`）；
-2. `git status --porcelain` 的**非受判**脏文件（他方 4 个 CRLF 文件，不动不提交）；
-3. 本文件 `## 状态历史` 最后一行写下的**下一步**。
-
-判断面（本轮该做什么）由我在这里写；不做「读上一轮报告后手抄」那一步 —— 那一步的产物
-就是序 60 交付的读取器（`tools/next_round_charter.py`）。
-
-**本轮读取器读数**：`REFUSED RESIDUAL_EMPTY`。理由已取证：GOAL-096 的
-`## 残余与未覆盖范围` 写成了**表格**（`| \`W-1\` | … |`），而读取器的
-`_W_ITEM`（`tools/charter_parse.py:39`）只认列表项 `- **\`W-1\`**`。按本轮指令：**记录拒绝码
-与理由，改以 GOAL-096 正文残余节为准，不为让读取器通过而改写历史记录**。GOAL-096 的
-`W-1`/`W-2` 文本在 `7189b498` 已更正，下面按更正后的版本处置。
-
-**GOAL-096 残余逐条处置**：
-
-| 残余 | 处置 | 理由 |
-| --- | --- | --- |
-| `W-1`（首两次真跑被限流；失败读数只在三份记录里，取证文件只承载通过那次） | **承接**：本轮 EC-02 的取证文件同时记录**失败路径**（先写盘再断言），使「失败读数在取证文件里」这条口径对 097 成立；096 的历史不追改 | 记录文本已在 `7189b498` 更正为准确表述；本轮的写法是**修机制**而不是改旧记录 |
-| `W-2`（跨相性质标签过宽：被推成 `RETRIEVED` 的是 `review` 消费的 `plan:research_plan` 边） | **不做**（改性质语义需拍板） | 补偿：检索「真的发生」由 provider 收到的参数逐字取证 |
-| `W-3`（`tools/verify_goal{076,090,095}_closeout.py` 仍不存在） | **不做**（不回填） | 回填等于把今天的要求追认成历史义务；跨 GOAL 判据的祖父条款 `_CUTOFF_SEQ = 64` 只兜本轮及以后 |
 
 ## 单 cycle SOP
 
@@ -199,14 +177,26 @@ EC-01…EC-06 的判据见 frontmatter；每条都写明「取证形态」与「
   任何 EC / 需用户拍板（改 TrustLabel、放宽判据、动冻结面、改 workflow、新增依赖、给
   `idea.*` 加 policy allow、定叙述质量口径、换第三个独立评审模型）。
 
+## CI 台账
+
+（**逐提交逐 job**，一个提交一行。**零 run ≠ cancelled**：`cancel-in-progress` 造成的
+`cancelled` 与「同批推送被 GitHub 合并成一个 run」的 `无 run` 是**两种不同**的形态，
+分别登记；后者用 `covered_by` 指名它被哪一条 run 覆盖。）
+
+| 提交 | run | 结论 | 说明 |
+| --- | --- | --- | --- |
+| `3748213b` | [M0 40381462122](https://github.com/Eswink/research-system-new/actions/runs/40381462122) / [Push 40381462020](https://github.com/Eswink/research-system-new/actions/runs/40381462020) | Push **success**；M0 **failure**（5/8 job success） | 本轮全部交付面。**三个红 job 的归因**：① `quality-ubuntu-latest` / `quality-windows-latest` ⇒ 同一签名 `test_m0_witness_matches_the_tree`（跑完本地 m0 之后又改了受判文件 ⇒ 那次终态行按纪律作废）；② `collector-quality` ⇒ **真缺陷** `'_PgRuntimeInputs' object has no attribute 'effective'`（PG 缝从 `inputs` 取设置面；本机跑不了 PG ⇒ 本地门结构上看不见）。已修 + 加静态判据 |
+| `a228ff66` | [M0 40392491625](https://github.com/Eswink/research-system-new/actions/runs/40392491625) / [Push 40392492053](https://github.com/Eswink/research-system-new/actions/runs/40392492053) | **全 `success`**：M0 **八 job 全 success**（含此前变红的三条）、Push 三条 Analyze 全 success | 修 PG 缝 + 静态判据 + 补记 096 收口 tip（两张表）+ 重封见证。本地 m0：24 PASS / 0 FAIL / tree unchanged；收口验证器 78 条全过 |
+
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261026-097 | `3748213b`（收口提交见下一行/台账） | 判据 9 + 9 + 15 全过；真跑 **1 passed**（`SUCCEEDED`，七相全落库）；m0 见证待跑 | 见「CI 台账」 | 真跑过程中修掉 **3** 个产品缺陷：① 运行链调用未标 `phase_id` ⇒ 问题相也执行检索并失败；② 检索格合约没告诉模型「检索已跑完、本相没有工具」⇒ 模型去探索仓库、不产块；③ 会话工具面缺 `literature.*` 实现 ⇒ 评审相 `ToolDefinition ... is not registered`；另把任务租约 TTL 做成**可配**（同步路径只心跳一次、真实会话常超 300s） | `W-1` REST provider 探测出网（预检拒冻，需拍板）；`W-2` 检索 `phase_id` 是常量；`W-3` 实验脚本仍预置 | 下一轮：让实验脚本也由方向决定；检索结果驱动下一轮问题 |
+| 1 | PLAN-20261026-097 | `3748213b` → `a228ff66`（收口） | 判据 9 + 9 + 15 全过；真跑 **1 passed**（`SUCCEEDED`，七相全落库）；m0 **24 PASS / 0 FAIL / tree unchanged** | CI 逐 job 见「CI 台账」（`3748213b` 3 job 红 ⇒ 修后 `a228ff66` 全绿） | 真跑过程中修掉 **3** 个产品缺陷：① 运行链调用未标 `phase_id` ⇒ 问题相也执行检索并失败；② 检索格合约没告诉模型「检索已跑完、本相没有工具」⇒ 模型去探索仓库、不产块；③ 会话工具面缺 `literature.*` 实现 ⇒ 评审相 `ToolDefinition ... is not registered`；另把任务租约 TTL 做成**可配**（同步路径只心跳一次、真实会话常超 300s） | `W-1` REST provider 探测出网（预检拒冻，需拍板）；`W-2` 检索 `phase_id` 是常量；`W-3` 实验脚本仍预置 | 下一轮：让实验脚本也由方向决定；检索结果驱动下一轮问题 |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
+| 2026-10-26 | **ACHIEVED（收口确认）** | 六个 EC 全达成；真跑 `SUCCEEDED`（七相全落库、novelty 两面互相引用）；两树复检 `TWO-TREE PASS`（各 78 条判词、`sha256` 相同）；CI `a228ff66` M0 八 job 全 `success`。残余 `W-1`…`W-4` / `U-1`…`U-3` / `R-1`…`R-3` 逐条登记。 |
 | 2026-10-26 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 65）。读取器 `REFUSED RESIDUAL_EMPTY`（GOAL-096 残余节写成表格，读取器只认列表项）⇒ 记拒绝码、改以正文为准逐条处置。`max_cycles: 14`。 |
