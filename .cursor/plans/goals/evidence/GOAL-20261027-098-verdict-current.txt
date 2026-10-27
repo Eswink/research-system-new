@@ -36,6 +36,9 @@ PASS ec03-path-traversal-is-named
 PASS ec03-reader-returns-the-block
 PASS ec03-the-runner-calls-the-selector
 PASS ec03-the-contract-tells-the-model-the-closed-set
+PASS ec03-container-judge-in-tree
+PASS ec03-container-evidence-in-tree
+PASS ec03-no-dangling-evidence-reference
 PASS ec04-verify_goal076_closeout-in-tree
 PASS ec04-goal076_closeout_assertions-in-tree
 PASS ec04-verify_goal076_closeout-registered

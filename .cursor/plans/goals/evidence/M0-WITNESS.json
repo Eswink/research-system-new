@@ -1776,7 +1776,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261027-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "554481c242150550e93ce307d1c75240b565880b"
+        "sha256": "14bf9c9cb6c7ce83a5adffa311b5d75017d98d3d"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -2696,11 +2696,11 @@
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261027-098-verdict-clean.txt",
-        "sha256": "354c8c99a0711daf4d5ab772c14259dea18a529e"
+        "sha256": "5166ea59e212e6b37e047f49e42187206724aedd"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261027-098-verdict-current.txt",
-        "sha256": "354c8c99a0711daf4d5ab772c14259dea18a529e"
+        "sha256": "5166ea59e212e6b37e047f49e42187206724aedd"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -18659,7 +18659,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "967643ef06ee6a102fd981f3c188f3343d7c201d"
+    "head": "fbde73f297c075140f80da5f90f5e5bfc2ec8950"
   },
   "fingerprint_before": {
     "files": [
@@ -20437,7 +20437,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261027-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "554481c242150550e93ce307d1c75240b565880b"
+        "sha256": "14bf9c9cb6c7ce83a5adffa311b5d75017d98d3d"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -21357,11 +21357,11 @@
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261027-098-verdict-clean.txt",
-        "sha256": "354c8c99a0711daf4d5ab772c14259dea18a529e"
+        "sha256": "5166ea59e212e6b37e047f49e42187206724aedd"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261027-098-verdict-current.txt",
-        "sha256": "354c8c99a0711daf4d5ab772c14259dea18a529e"
+        "sha256": "5166ea59e212e6b37e047f49e42187206724aedd"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -37320,11 +37320,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "967643ef06ee6a102fd981f3c188f3343d7c201d"
+    "head": "fbde73f297c075140f80da5f90f5e5bfc2ec8950"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "967643ef06ee6a102fd981f3c188f3343d7c201d",
+  "ran_at_head": "fbde73f297c075140f80da5f90f5e5bfc2ec8950",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
