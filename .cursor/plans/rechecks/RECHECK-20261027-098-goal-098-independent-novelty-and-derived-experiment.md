@@ -3,7 +3,7 @@ id: RECHECK-20261027-098
 slug: goal-098-independent-novelty-and-derived-experiment
 title: GOAL-098 复检 —— 拆开创新点的作者与评审者，并让实验脚本由计划选择
 status: COMPLETED
-result: REVISE
+result: PASS_WITH_WARNINGS
 created_at: 2026-10-27
 updated_at: 2026-10-27
 plan_id: PLAN-20261027-098
@@ -36,18 +36,18 @@ memory_entries: []
 
 ## 检查结果
 
-**REVISE**。七个 EC 中**六个 PASS**，`EC-02`（真跑）**未达成** —— 上游 Europe PMC 服务级
-不可用（两次同签名 + 独立探针）。逐条如下，不粉饰。
+**PASS_WITH_WARNINGS**。七个 EC **全部 PASS**（`EC-02` 在上游恢复后真跑 `SUCCEEDED` 取证成功）。
+两条警告见「未覆盖 / 残余」。逐条如下。
 
 ## 逐 EC
 
 | EC | 结论 | 证据 |
 | --- | --- | --- |
 | EC-01 | **PASS** | `tests/contracts/test_direction_to_report_v2_independence.py` 18 例全过；含真文件按压（把 `novelty` 相角色改回 `novelty_reviewer` ⇒ 自评扫描点名判红 + 按 raw `sha256` 复原）与**跨 28 份出厂协议**的自评形态扫描（修复前只有 v2 命中） |
-| EC-02 | **PENDING** | 凭据与 Docker **都可用**，但**上游服务不可用**：两次真跑同签名停在检索相（`europe pmc temporarily unavailable`）；独立 `curl` 探针连 `query=cancer` 也 **503** ⇒ 服务级不可用。产品接线刻意只接 Europe PMC ⇒ **不**为让判据变绿而改实现。`review_row_count=0` ⇒ 无运行期读数。**不用同一个模型凑** |
+| EC-02 | **PASS** | `run_id=783e6dc7-30fa-48cd-a1c5-4b34d9c7a6ef`，`state=SUCCEEDED`；`review_row_count=2`，两条判词的 `reviewer_model` = `main/glm-5.3`（`gate:reviewer_a`）+ `main/minimax-m3`（`gate:novelty_a`），`reviewers_with_no_model=[]`；`novelty_claim` 的 `created_by=novelty_writer`（作者）**不在**评审者之列，作者的 `main/deepseek-v4-pro-0813` 也不在 `reviewer_models` 里。**真跑另外抓到第 6 个真缺陷**（`with_novelty` 读不存在的 `GateOutcome.verdicts` ⇒ 判负路径必崩），已修 + 8 例判据（含真文件按压） |
 | EC-03 | **PASS** | `tests/application/test_experiment_script_comes_from_the_plan.py` 17 例全过；子进程按压（删掉 `plan_selected_script` 那一行 ⇒ 行为判据真的 exit 1，`assert seen == [...]` 指向装配兜底脚本） |
 | EC-04 | **PASS** | 三个验证器判词 48 / 51 / 54 条全过、零 FAIL；`test_short_archive_revision_rows_are_registered.py` 7 例（含两条真文件按压）；`progress-075` 链接在宪章里可解析 |
-| EC-05 | **PENDING** | 本次复检时点尚未建；它的判词就是后续收口复检的产出 |
+| EC-05 | **PASS** | `tools/verify_goal098_closeout.py` **100 条判词全过**、零 `FAIL`；两处登记在位 |
 | EC-06 | **PASS** | 宪章 `max_goals: 100`；`## 修订记录` 的序 66 行写明「扩表前 70 / 已用 65 / 新增序 66 ⇒ 66 / 扩到 100」 |
 | EC-07 | **PASS** | 序 65 的 5 格行在 `archive/MAINLINE-2026-10-26-revisions-65-only.md`；活跃面短行判据 `test_no_revision_row_in_the_live_table_is_too_short_to_be_seen` 在树且带反证臂；本轮修订行为 5 格 |
 
@@ -104,6 +104,10 @@ memory_entries: []
 
 ## 结论
 
-EC-01 / EC-03 / EC-04 / EC-05 / EC-06 / EC-07 **达成**；EC-02（真跑）**未达成** —— 上游
-（Europe PMC）服务级不可用，两次同签名、独立探针复现，且**不**为让判据变绿而改产品接线。
-已如实登记为 `W-5`。GOAL 保持 **ACTIVE**，下一 cycle 或上游恢复后补取证。
+**七个 EC 全部达成**。`EC-02` 的关键过程如实保留：前两次真跑被上游 Europe PMC 503 挡住
+（连 `query=cancer` 也 503），第三次在上游恢复后**抓到一个真缺陷**（判负路径读不存在的
+`GateOutcome.verdicts`），第四次 `SUCCEEDED` 并取证成功，第五次又因 `retry budget exhausted`
+失败 —— 于是取证写出面改成**追加**（一次抖动曾把成功的读数盖掉）。
+
+**两条警告**：① 真跑能否一次成功依赖上游可用性（`W-5` 的残余口径）；② `W-3`（方案 (a)，
+模型写脚本进容器）仍待拍板。

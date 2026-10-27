@@ -153,7 +153,7 @@ memory_entries: []
 - [x] WP-4 `verify_goal098` + 断言集 + 两处登记
 - [x] WP-4 宪章记账（程序表 / 预算 / 阶梯 / 进展 / 修订）+ ALL_PLAN
 - [x] WP-5 收口验证器 100 条判词全过
-- [ ] WP-6 EC-02 真跑取证（**被上游 503 挡住**，见 GOAL `W-5`）
+- [x] WP-6 EC-02 真跑取证（上游恢复后 `SUCCEEDED`；真跑另外抓到第 8 个真缺陷并修复）
 
 ## 证据
 
@@ -164,14 +164,14 @@ memory_entries: []
 | EC-04 回填验证器 | `tools/verify_goal{076,090,095}_closeout.py` | 48 / 51 / 54 条判词，0 FAIL |
 | EC-04 短行登记 | `tests/tooling/test_short_archive_revision_rows_are_registered.py` | 7 passed（含两条按压） |
 | EC-05 收口资产 | `tools/verify_goal098_closeout.py` | 100 条判词，0 FAIL |
-| EC-02 真跑 | `.cursor/plans/goals/evidence/GOAL-20261027-098-ec02-novelty-independence-run.txt` | **未达成**：两次同签名 `europe pmc temporarily unavailable`；独立 curl 探针 503 |
+| EC-02 真跑 | `.cursor/plans/goals/evidence/GOAL-20261027-098-ec02-novelty-independence-run.txt` | **`SUCCEEDED`**（`783e6dc7`）：两条判词 = `main/glm-5.3` + `main/minimax-m3`，作者 `novelty_writer` 不在其中；前几次失败读数逐条保留 |
 | 契约与门 | `tests/contracts/ tests/loaders/ tests/tooling/…` | 634 passed / 72 skipped / 0 failed |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
-| 2026-10-27 | IN_PROGRESS | 建档 + WP-1…WP-5 落地；EC-01/03/04/05/06/07 PASS，EC-02 被上游 503 挡住 |
+| 2026-10-27 | IN_PROGRESS | 建档 + WP-1…WP-6 落地；**七个 EC 全 PASS**（EC-02 在上游恢复后真跑成功取证） |
 
 ## 影响报告
 

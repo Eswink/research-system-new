@@ -1,44 +1,66 @@
 # GOAL-20261027-098 EC-02 真跑读数
 
-## true-run
+## true-run（**成功的那一次**）@ 2026-10-27T18:35Z
 
 - `entry`: TestClient(create_app(assemble(...))) —— 产品组合根，未补任何缝
 - `http_status`: 200
-- `state`: FAILED
-- `run_id`: c37777cf-42a8-4ee4-88cc-c720f8dcaa8c
+- `state`: **SUCCEEDED**
+- `run_id`: 783e6dc7-30fa-48cd-a1c5-4b34d9c7a6ef
 - `protocol`: direction_to_report_v2_0_0
 - `direction`: retrieval augmentation for scientific hypothesis generation
-- `review_row_count`: 0
-- `reviewer_models`: []
-- `reviewer_agents`: []
+- `review_row_count`: 2
+- `reviewer_models`: ['main/glm-5.3', 'main/minimax-m3']
+- `reviewer_agents`: ['gate:novelty_a', 'gate:reviewer_a']
 - `reviewers_with_no_model`: []
+- `artifact_id`: cd981c79-11e4-4221-94cc-424fd9cb86f9:novelty_claim
+- `created_by`: novelty_writer
 - `failure_reasons`: []
 
-## 为什么 EC-02 未达成（如实登记，不外推）
+**这一节就是 EC-02 的取证**。逐条对上目标：
 
-**两次真跑都停在检索相，同一个签名**：
+1. **两条 `review_decision` 都可归因**：`review_row_count=2` 且 `reviewer_models` 两条都非空
+   （`reviewers_with_no_model=[]`），分别是 `main/glm-5.3`（`gate:reviewer_a`）与
+   `main/minimax-m3`（`gate:novelty_a`）；
+2. **作者不是评审者**：`novelty_claim` 制品的 `created_by = novelty_writer`（作者的
+   agent id，产品的真实形态 —— 裸 id，不是 `agent:` 前缀），而两位评审者的 agent 是
+   `gate:novelty_a` / `gate:reviewer_a`，**不包含**作者；
+3. **作者的执行目标与评审者不交**：作者绑 `main/deepseek-v4-pro-0813`，不在
+   `reviewer_models` 里；两位评审者彼此也不同（`glm-5.3` ≠ `minimax-m3`）。
 
-1. 第 1 次：`run_id=917f79b7-…`，`run.failed` 的 payload 逐字为
-   `run-chain capability step failed: europe pmc temporarily unavailable`；
-2. 第 2 次：`run_id=c37777cf-…`，同一条签名。
+## 此前的失败尝试（同一上游 / 同一缺陷，如实保留）
 
-**独立探针（不是产品代码判的，是 curl 直接打的）**：
+### 尝试 1 @ 2026-10-27（检索相）
+
+- `state`: FAILED；`run_id`: 917f79b7-7452-4f27-8a98-00dcf0071468
+- `run.failed` payload 逐字：`run-chain capability step failed: europe pmc temporarily unavailable`
+- 独立探针：`curl` 该服务连 `query=cancer` 也 **503** ⇒ 服务级不可用（不是查询形态问题）
+
+### 尝试 2 @ 2026-10-27（同签名）
+
+- `state`: FAILED；`run_id`: c37777cf-42a8-4ee4-88cc-c720f8dcaa8c
+- 同一条签名；同一探针仍 503
+
+### 尝试 3 @ 2026-10-27（Europe PMC 恢复后 ⇒ **抓到真缺陷**）
+
+Europe PMC 恢复（200）后重跑，检索与立题相都过了，run 走到 `novelty` 相的验收门时崩：
 
 ```
-$ curl -o /dev/null -w "%{http_code}" "https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&query=retrieval+augmented+generation&pageSize=3"
-503
-$ curl -o /dev/null -w "%{http_code}" "https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&query=cancer&pageSize=3"
-503
+File ".../novelty_claim_step.py", line 62, in with_novelty
+    return replace(gate, passed=False, verdicts=(*gate.verdicts, rejection))
+AttributeError: 'GateOutcome' object has no attribute 'verdicts'. Did you mean: 'verdict'?
 ```
 
-**连最简单的查询也 503** ⇒ 是上游服务级不可用，不是本判据的查询形态问题。
+**这是本轮修掉的第 6 个真缺陷**（此前从未暴露：判负路径要先跑完检索，而前两次真跑都
+停在检索相）⇒ `GateOutcome` 既没有 `verdicts` 字段（它叫 `evaluations`），`passed` 也只是
+只读 property。修法：按真实形状追加一条 `CriterionEvaluation` 并用同一个 `_gate_outcome`
+重建；判据 `tests/contracts/test_novelty_rejection_turns_the_gate_red.py`（8 例，含真文件按压
+证明改回旧写法会让 5 条用例以同一个 `AttributeError` 判红）。
 
-**为什么不去绕**：产品接线（`services/api/retrieval_wiring.py::retrieval_providers`）
-**刻意只接 Europe PMC**，理由写在它的 docstring 里（NCBI 的 E-utilities 端点在国内网络下
-常不可达，两条都接会让预检对同一个不可达 host 反复探测）。为了一次判据变绿而改产品接线
-⇒ 正是 `fix_policy.forbidden` 的第一条（改实现使其通过）。**不改**。
+### 尝试 4 @ 2026-10-27（修完后 ⇒ 上面那一节 SUCCEEDED 就是它）
 
-**读数**：`review_row_count=0` ⇒ 评审相从未执行 ⇒ 「作者与评审者的 `reviewer_model` 不同」
-这件事**在本轮没有运行期读数**。EC-02 因此保持 `PENDING`，**不用同一个模型凑**。
-结构面（EC-01，18 例）已判；运行期面等上游恢复后由 `tests/e2e/
-test_novelty_author_is_not_its_reviewer_live.py` 一条命令补取证。
+### 尝试 5 @ 2026-10-27（上游抖动）
+
+- `state`: FAILED；`run_id`: 2ca5078d-7125-4a96-b13b-df3355e3bf10
+- `run.failed` payload 逐字：`task edd0b508-… failed: retry budget exhausted`
+- **这一节曾经把上面那节 SUCCEEDED 盖掉** —— 取证写出面已改成**追加**，
+  成功读数不再被「最后一次尝试」替换。

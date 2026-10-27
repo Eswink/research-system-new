@@ -53,13 +53,50 @@ def novelty_verdict(deps: Any, tctx: Any) -> str | None:
 
 
 def with_novelty(deps: Any, tctx: Any, gate: Any) -> Any:
-    """创新点判据并入门（不通过 ⇒ 门不过；其余合约逐字返回原 gate）。"""
-    from dataclasses import replace
+    """创新点判据并入门（不通过 ⇒ 门不过；其余合约逐字返回原 gate）。
 
+    **本轮修的真缺陷**（GOAL-20261027-098 EC-02 的真跑抓到）：这里原先写
+    `replace(gate, passed=False, verdicts=(*gate.verdicts, rejection))` —— 而
+    `GateOutcome` 既没有 `verdicts` 字段（它叫 `evaluations`），`passed` 也只是**只读
+    property**（不是字段）⇒ 这一行在**任何一次判负**时都抛 `AttributeError`，
+    把「创新点不成立」变成「运行时崩」。它此前从未暴露，是因为判负路径要先跑完检索，
+    而真跑在检索相就因上游 503 停了（GOAL 的 `W-5`）。
+
+    ⇒ 现在按 `GateOutcome` 的**真实形状**重建：追加一条 `CriterionEvaluation`
+    （类型 `CUSTOM_EVALUATOR`、`passed=False`、reason = 那句点名判词），再用同一个
+    `_gate_outcome` 重建 —— 判词 / 裁决 / `ReviewFinding` 三处口径不另写一份。
+    """
     rejection = novelty_verdict(deps, tctx)
     if rejection is None:
         return gate
-    return replace(gate, passed=False, verdicts=(*gate.verdicts, rejection))
+    from packages.application.run_orchestration.evaluation_gate import _gate_outcome
+    from packages.domain.acceptance import CriterionEvaluation
+    from packages.domain.enums import AcceptanceCriterionType
+
+    evaluations = (
+        *gate.evaluations,
+        CriterionEvaluation(
+            criterion_type=AcceptanceCriterionType.CUSTOM_EVALUATOR,
+            passed=False,
+            reason=rejection,
+        ),
+    )
+    return _gate_outcome(tctx.task, evaluations, False, _attribution_of(gate))
+
+
+def _attribution_of(gate: Any) -> Any:
+    """从既有 `GateOutcome` 取回**归因面**（`reviewer` / `reviewer_model`），不重算。
+
+    为什么不重新推导：归因是**执行事实**（这条判词跑在哪个 agent / 哪个模型上），
+    门里已经把归因写进 `review_finding`；重建时读回原值，这一步才不会改写它。
+    """
+    from packages.application.run_orchestration.evaluation_gate import GateAttribution
+
+    finding = gate.review_finding
+    return GateAttribution(
+        reviewer=str(finding.reviewed_by or ""),
+        reviewer_model=getattr(finding, "reviewer_model", None),
+    )
 
 
 __all__ = [

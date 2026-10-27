@@ -75,6 +75,8 @@ CASE_FLOORS: tuple[tuple[str, int], ...] = (
     (INDEPENDENCE_JUDGE, 14),
     (SCRIPT_JUDGE, 12),
     (SHORT_ROWS_JUDGE, 6),
+    # EC-02 真跑抓到的第 8 个真缺陷（判负路径读不存在的 `GateOutcome.verdicts`）。
+    ("tests/contracts/test_novelty_rejection_turns_the_gate_red.py", 6),
 )
 
 TEST_DEFINITION = re.compile(r"(?m)^\s*def test_")

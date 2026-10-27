@@ -187,21 +187,18 @@ def _ladder_verdicts(root: Path) -> list[Any]:
 
 
 def _ec_status_verdicts(goal: str) -> list[Any]:
-    """EC 终态：1/3/4/6/7 必须 PASS；2（真跑）与 5（收口资产）接受「达成 ∪ 待办」。
+    """EC 终态：除 EC-05 外**逐条必须 PASS**。
 
-    `EC-05` 的接受面是**时序**：它的判词就是本文件产出的。`EC-02` 的接受面是**环境**：
-    真跑要凭据 + 容器，缺一即如实登记未达成 —— 那条如实登记本身也在受判面里
-    （见 `HONEST_GAPS`）。
+    `EC-05` 的接受面是**时序**（它的判词就是本文件产出的）。`EC-02` 一度因上游
+    Europe PMC 503 而接受 `PENDING`；服务恢复后真跑 `SUCCEEDED` 并取证成功 ⇒ 受判面
+    **收紧**回「必须 PASS」（收紧是纯收紧，不是放宽）。
     """
     verdicts: list[Any] = []
-    for index in (1, 3, 4, 6, 7):
+    for index in (1, 2, 3, 4, 6, 7):
         status = ec_status(goal, f"EC-0{index}")
         verdicts.append(TOOLBOX.verdict(f"goal-ec0{index}-status", status == "PASS", status))
-    for index in (2, 5):
-        status = ec_status(goal, f"EC-0{index}")
-        verdicts.append(
-            TOOLBOX.verdict(f"goal-ec0{index}-status", status in {"PASS", "PENDING"}, status)
-        )
+    ec05 = ec_status(goal, "EC-05")
+    verdicts.append(TOOLBOX.verdict("goal-ec05-status", ec05 in {"PASS", "PENDING"}, ec05))
     return verdicts
 
 

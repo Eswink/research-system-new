@@ -54,8 +54,19 @@ exit_criteria:
       Europe PMC（理由在 `retrieval_wiring.py` 的 docstring 里）⇒ **不**为让判据变绿而改
       接线。⇒ `review_row_count=0`，评审相从未执行 ⇒ 本 EC **无运行期读数**，保持 `PENDING`。
       结构面（EC-01）已判；运行期面等上游恢复后一条命令补取证。
+      **上游恢复后已达成**（`run_id=783e6dc7-30fa-48cd-a1c5-4b34d9c7a6ef`，`state=SUCCEEDED`）：
+      `review_row_count=2`，两条 `review_decision` 的 `reviewer_model` 分别是
+      `main/glm-5.3`（`gate:reviewer_a`）与 `main/minimax-m3`（`gate:novelty_a`），
+      `reviewers_with_no_model=[]`；`novelty_claim` 制品的 `created_by=novelty_writer`
+      （作者的 agent id）**不在**两位评审者之列，作者的执行目标
+      `main/deepseek-v4-pro-0813` 也不在 `reviewer_models` 里。
+      **这一轮的真跑另外抓到一个真缺陷**：`novelty_claim_step.with_novelty` 的判负路径读
+      `GateOutcome.verdicts`（字段名是 `evaluations`，`passed` 是只读 property）⇒ 任何一次
+      创新点判负都会抛 `AttributeError`。此前从未暴露，因为判负要先跑完检索，而前两次真跑都
+      停在检索相。已修 + 判据 `tests/contracts/test_novelty_rejection_turns_the_gate_red.py`
+      （8 例，含真文件按压）。
     verify: 真跑取证落 `.cursor/plans/goals/evidence/GOAL-20261027-098-ec02-novelty-independence-run.txt`
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       **实验脚本由计划选择**（方案 (b) 白名单）：(i) `experiment_design.script` 从出厂闭集
@@ -144,7 +155,7 @@ memory_entries: []
 | EC | 标准（摘要） | 验证命令 / 证据 | 状态 |
 | --- | --- | --- | --- |
 | EC-01 | 作者 ≠ 评审者：角色 / agent / `(endpoint, model_name)` 三者都不同 + 跨协议自评扫描 | `tests/contracts/test_direction_to_report_v2_independence.py`（18 例）+ 按压 | **PASS** |
-| EC-02 | **真跑**：作者与评审者 `reviewer_model` 不同、每个判词可归因 | 取证文件（两次真跑都被上游 503 挡住，如实登记） | PENDING |
+| EC-02 | **真跑**：作者与评审者 `reviewer_model` 不同、每个判词可归因 | 取证文件：`783e6dc7` SUCCEEDED，两条判词 = `main/glm-5.3` + `main/minimax-m3`，作者 `novelty_writer` 不在其中 | **PASS** |
 | EC-03 | 实验脚本由计划**选择**（白名单）+ 三档优先级 + 点名拒绝 | `tests/application/test_experiment_script_comes_from_the_plan.py`（17 例）+ 子进程按压 | **PASS** |
 | EC-04 | `progress-075` 补链 + 10 条短行逐条登记 + 三个验证器补建登记 | `tools/verify_goal{076,090,095}_closeout.py` + 两条归档判据 | **PASS** |
 | EC-05 | `verify_goal098` + 断言集 + 登记 + 判词跑通 | 收口验证器 99 条判词全过 | **PASS** |
@@ -212,11 +223,11 @@ memory_entries: []
   显式长度界**从来没有**加进去（实测 `services/api/routers/` 只有 `operations.py` 的两处
   `max_length=10`，正是建档时已有的那两条）。本轮补的是它的**记录面**（判「未做仍是未做」），
   **不是**补它的实现。
-- `W-5`｜**EC-02 的运行期面被上游挡住**：Europe PMC 在本轮两次真跑时返回 503（连
-  `query=cancer` 也 503 ⇒ 服务级不可用），而产品接线刻意只接这一条检索 provider ⇒
-  run 停在检索相、评审相从未执行。**如实登记未达成**，不用同一个模型凑；
-  `tests/e2e/test_novelty_author_is_not_its_reviewer_live.py` 一条命令即可补取证
-  （`RESEARCHOS_LIVE_E2E=1 RESEARCHOS_AGENT_RUNTIME=openhands`）。
+- `W-5`｜**上游抖动会让真跑偶发失败**（**已不再阻塞 EC-02**）：本轮 5 次真跑里，2 次停在
+  检索相（Europe PMC 503，`curl` 连 `query=cancer` 也 503 ⇒ 服务级）、1 次 `retry budget
+  exhausted`（模型侧重试预算）。第 4 次在服务恢复后 **SUCCEEDED** 并取证成功；取证写出面
+  已改成**追加**（此前一次抖动把成功的读数盖掉了 —— 「留存证据」被「最后一次尝试」替换）。
+  残余口径：**EC-02 已达成**，但「真跑能否一次成功」依赖上游可用性，属既有环境事实。
 - `U-1`｜「创新」是否**真的新**未判：`nearest_prior` 只判「那条标识在本 run 的检索结果里
   真实出现」，**不**判「它真的是最接近的前人工作」。需人评或外部检索对照。
 - `U-2`｜叙述质量与事实一致性仍无判据（承 GOAL-096 `U-1` / GOAL-097 `U-2`）。未获授权定义口径。
@@ -243,7 +254,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261027-098 | `a93b59a6` | EC-01：18 例全过（含真文件按压 + 跨 28 份出厂协议扫描）；EC-03：17 例全过（含**子进程**按压：删掉选择调用 ⇒ 行为判据真的 exit 1）；EC-04：三个回填验证器 **48/51/54** 条判词全过 + 短行登记判据 7 例（含两条真文件按压）；EC-05：收口验证器 **100** 条判词全过；EC-06/07：宪章记账与程序表/阶梯/归档判据 22 例；`ruff check` + `ruff format` 全绿；`validate_bundle` **验证通过**；契约/加载器/四道门/收口注册套件 **634 passed / 72 skipped / 0 failed** | PENDING | 修掉 7 个真缺陷：① `importlib.reload` 会污染同会话其它测试 ⇒ 按压改**子进程**；② 按压的 `pytest` 目标名缺类名 ⇒ exit 4（**按压假绿**，被「按压后确认真的红了」抓住）；③ `test_contract_loaders` 的 `len(roles)` 26→27（新增角色的**事实变更**，逐条申报）；④ `validate_bundle` 的「系统 Role 数量 26」同一事实变更；⑤ `goal090` 断言集的块提取偏移错 1（判据自己判红暴露）；⑥ `experiment_support.py` 450/450 零余量 ⇒ 压缩三行注释换回（后又因一行超长再压一次）；⑦ 两个新 `assertion_verdicts` 超 50 行门 ⇒ 按 EC 分组拆函数 | `W-3` 方案 (a) 待拍板；`W-5` EC-02 被上游 503 挡住（两次同签名 + 独立探针）；`W-1` 租约根因 | 下一轮：① 上游恢复后一条命令补 EC-02 取证；② `(a)` 若获拍板则接「模型写脚本」执行面；③ `W-1` 长会话租约根因（会话期心跳 + 错误映射） |
+| 1 | PLAN-20261027-098 | `a93b59a6` | EC-01：18 例全过（含真文件按压 + 跨 28 份出厂协议扫描）；EC-03：17 例全过（含**子进程**按压：删掉选择调用 ⇒ 行为判据真的 exit 1）；EC-04：三个回填验证器 **48/51/54** 条判词全过 + 短行登记判据 7 例（含两条真文件按压）；EC-05：收口验证器 **100** 条判词全过；EC-06/07：宪章记账与程序表/阶梯/归档判据 22 例；`ruff check` + `ruff format` 全绿；`validate_bundle` **验证通过**；契约/加载器/四道门/收口注册套件 **634 passed / 72 skipped / 0 failed** | PENDING | 修掉 **8** 个真缺陷（第 8 个由 EC-02 的真跑抓到）：① `importlib.reload` 会污染同会话其它测试 ⇒ 按压改**子进程**；② 按压的 `pytest` 目标名缺类名 ⇒ exit 4（**按压假绿**，被「按压后确认真的红了」抓住）；③ `test_contract_loaders` 的 `len(roles)` 26→27（新增角色的**事实变更**，逐条申报）；④ `validate_bundle` 的「系统 Role 数量 26」同一事实变更；⑤ `goal090` 断言集的块提取偏移错 1（判据自己判红暴露）；⑥ `experiment_support.py` 450/450 零余量 ⇒ 压缩三行注释换回（后又因一行超长再压一次）；⑦ 两个新 `assertion_verdicts` 超 50 行门 ⇒ 按 EC 分组拆函数；⑧ **`novelty_claim_step.with_novelty` 的判负路径必崩**（读 `GateOutcome.verdicts`，而字段名是 `evaluations`、`passed` 是只读 property）—— 只有真跑跑到那条路径才暴露，前两次真跑都被上游 503 挡在检索相 | `W-3` 方案 (a) 待拍板；`W-5` 真跑一次成功率依赖上游可用性（5 次里 3 次被外部原因打断）；`W-1` 租约根因 | 下一轮：① `(a)` 若获拍板则接「模型写脚本」执行面；③ `W-1` 长会话租约根因（会话期心跳 + 错误映射） |
 
 ## 状态历史
 

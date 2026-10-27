@@ -58,12 +58,25 @@ _AUTHOR_TARGET = "main/deepseek-v4-pro-0813"
 
 
 def _write_evidence(entry: str, readings: dict[str, Any]) -> None:
-    """读数逐条落盘（**先写再断言**；失败路径同样留下可归因的读数）。"""
+    """Readings are appended, never overwritten (a later flaky attempt must not erase a pass).
+
+    Measured this round: after a successful capture, one upstream hiccup
+    (`retry budget exhausted`) overwrote that SUCCEEDED reading with a FAILED one -- the
+    preserved evidence was replaced by "the last attempt". Each attempt now appends a
+    timestamped section, so the successful section survives.
+    """
+    import time
+
     _EVIDENCE.parent.mkdir(parents=True, exist_ok=True)
-    lines = ["# GOAL-20261027-098 EC-02 真跑读数", "", f"## {entry}", ""]
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    lines: list[str] = []
+    if not _EVIDENCE.exists():
+        lines.append("# GOAL-20261027-098 EC-02 live-run readings")
+    lines += ["", f"## {entry} @ {stamp}", ""]
     lines += [f"- `{key}`: {value}" for key, value in readings.items()]
     lines.append("")
-    _EVIDENCE.write_bytes(("\n".join(lines)).encode("utf-8"))
+    with _EVIDENCE.open("a", encoding="utf-8", newline=chr(10)) as handle:
+        handle.write(chr(10).join(lines))
 
 
 def _gate() -> Any:
@@ -234,7 +247,12 @@ def test_the_novelty_author_and_its_reviewer_run_on_different_models() -> None:
     assert targets - {"main/minimax-m3"}, targets
 
     # (3) **作者不是评审者**：声明的产出方是作者 agent，且它**不在**评审者之列。
-    assert readings.get("created_by") == "agent:novelty_writer", readings
-    assert "agent:novelty_writer" not in readings["reviewer_agents"], readings
+    #
+    # `created_by` 的**产品形态**是裸 agent id（`result_handler`：
+    # `created_by=agent_id or task.id.value`）——本轮第一次写成 `agent:novelty_writer` 是
+    # **判据自己的错**（真跑读到的是 `novelty_writer`）⇒ 按产品事实更正，不是把产品改成
+    # 判据想要的样子。`reviewed_by` 走的是另一条口径（`gate:<agent id>`），两者不同源。
+    assert readings.get("created_by") == "novelty_writer", readings
+    assert "gate:novelty_writer" not in readings["reviewer_agents"], readings
     # 作者的执行目标（出厂目录声明）与评审者的目标集**不交**。
     assert _AUTHOR_TARGET not in targets, targets

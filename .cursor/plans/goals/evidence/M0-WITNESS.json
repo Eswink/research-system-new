@@ -1772,7 +1772,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261027-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "6aa641ab03b5cb782de9d380ef746161b3114806"
+        "sha256": "25d4981cbf9752df9ff4bdddf771f671e6c4f9b3"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -2684,7 +2684,7 @@
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261027-098-ec02-novelty-independence-run.txt",
-        "sha256": "9646642529f68c0d1ab6f55c3548118fb9b642a8"
+        "sha256": "b4da898905fd54b32be5c05153d9893f3d2d669f"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4144,7 +4144,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261027-098-goal-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "970bafd4e7a1d9be6f309fa21a136292ad4c8c9b"
+        "sha256": "be228804a2558fe5aa3da7126cefb0488172c28b"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -5532,7 +5532,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261027-098-goal-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "b3f4b1587fe608ddb6dea3d611b70a2f54b83662"
+        "sha256": "cb06e49ae437a1efd9507c84cb6704c1cd60b267"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -13596,7 +13596,7 @@
       },
       {
         "path": "packages/application/run_orchestration/novelty_claim_step.py",
-        "sha256": "6b97e7fbf5ca1f1666fdc78b8406217f37c843ff"
+        "sha256": "c71936cdaefe7213cc7741f0b20cb95b2fbd38f4"
       },
       {
         "path": "packages/application/run_orchestration/outcomes.py",
@@ -16479,6 +16479,10 @@
         "sha256": "534827b6c142a6a9cde1a4f5d924a23c8421997c"
       },
       {
+        "path": "tests/contracts/test_novelty_rejection_turns_the_gate_red.py",
+        "sha256": "993b0e738b6d1e60db6ad97d49159c2f2a732974"
+      },
+      {
         "path": "tests/contracts/test_openapi_snapshot.py",
         "sha256": "a8131dab29cef0ee17aa998912785342ad5587e8"
       },
@@ -16936,7 +16940,7 @@
       },
       {
         "path": "tests/e2e/test_novelty_author_is_not_its_reviewer_live.py",
-        "sha256": "cfdb5118b74bfa92c46ac3ddd50c60864d51c8bc"
+        "sha256": "900d688ef2293a275840f6917da448d648b15710"
       },
       {
         "path": "tests/e2e/test_orchestration_convergence.py",
@@ -18196,7 +18200,7 @@
       },
       {
         "path": "tools/goal098_closeout_assertions.py",
-        "sha256": "5824f761f2d71afabd4e724811ee2b5c8497eda5"
+        "sha256": "c10dd0a64851a7f121f5fbb2da0279355462aea9"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -18628,14 +18632,14 @@
       },
       {
         "path": "tools/verify_goal098_closeout.py",
-        "sha256": "2339dd246ce1b7fe7078a636d83690ca48b522cc"
+        "sha256": "08d84e6f330452a5bdbf9b7fef358273ffb19e97"
       },
       {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "a93b59a61fdd752446a5621a09a435b4e698a765"
+    "head": "ee8ff1477a5d6bef779d23ee9465ad573a78c835"
   },
   "fingerprint_before": {
     "files": [
@@ -20409,7 +20413,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261027-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "6aa641ab03b5cb782de9d380ef746161b3114806"
+        "sha256": "25d4981cbf9752df9ff4bdddf771f671e6c4f9b3"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -21321,7 +21325,7 @@
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261027-098-ec02-novelty-independence-run.txt",
-        "sha256": "9646642529f68c0d1ab6f55c3548118fb9b642a8"
+        "sha256": "b4da898905fd54b32be5c05153d9893f3d2d669f"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -22781,7 +22785,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261027-098-goal-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "970bafd4e7a1d9be6f309fa21a136292ad4c8c9b"
+        "sha256": "be228804a2558fe5aa3da7126cefb0488172c28b"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -24169,7 +24173,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261027-098-goal-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "b3f4b1587fe608ddb6dea3d611b70a2f54b83662"
+        "sha256": "cb06e49ae437a1efd9507c84cb6704c1cd60b267"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -32233,7 +32237,7 @@
       },
       {
         "path": "packages/application/run_orchestration/novelty_claim_step.py",
-        "sha256": "6b97e7fbf5ca1f1666fdc78b8406217f37c843ff"
+        "sha256": "c71936cdaefe7213cc7741f0b20cb95b2fbd38f4"
       },
       {
         "path": "packages/application/run_orchestration/outcomes.py",
@@ -35116,6 +35120,10 @@
         "sha256": "534827b6c142a6a9cde1a4f5d924a23c8421997c"
       },
       {
+        "path": "tests/contracts/test_novelty_rejection_turns_the_gate_red.py",
+        "sha256": "993b0e738b6d1e60db6ad97d49159c2f2a732974"
+      },
+      {
         "path": "tests/contracts/test_openapi_snapshot.py",
         "sha256": "a8131dab29cef0ee17aa998912785342ad5587e8"
       },
@@ -35573,7 +35581,7 @@
       },
       {
         "path": "tests/e2e/test_novelty_author_is_not_its_reviewer_live.py",
-        "sha256": "cfdb5118b74bfa92c46ac3ddd50c60864d51c8bc"
+        "sha256": "900d688ef2293a275840f6917da448d648b15710"
       },
       {
         "path": "tests/e2e/test_orchestration_convergence.py",
@@ -36833,7 +36841,7 @@
       },
       {
         "path": "tools/goal098_closeout_assertions.py",
-        "sha256": "5824f761f2d71afabd4e724811ee2b5c8497eda5"
+        "sha256": "c10dd0a64851a7f121f5fbb2da0279355462aea9"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -37265,18 +37273,18 @@
       },
       {
         "path": "tools/verify_goal098_closeout.py",
-        "sha256": "2339dd246ce1b7fe7078a636d83690ca48b522cc"
+        "sha256": "08d84e6f330452a5bdbf9b7fef358273ffb19e97"
       },
       {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "a93b59a61fdd752446a5621a09a435b4e698a765"
+    "head": "ee8ff1477a5d6bef779d23ee9465ad573a78c835"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "a93b59a61fdd752446a5621a09a435b4e698a765",
+  "ran_at_head": "ee8ff1477a5d6bef779d23ee9465ad573a78c835",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
