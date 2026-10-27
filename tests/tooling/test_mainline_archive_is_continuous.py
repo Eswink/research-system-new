@@ -43,6 +43,8 @@ _ARCHIVE_DIR = _GOALS / "archive"
 _PROGRESS_ROW = re.compile(r"^\|\s*(\d{4}-\d\d-\d\d)\s*\|\s*(GOAL-\d{8}-\d{3})")
 #: 活跃面里指向归档文件的相对链接。
 _ARCHIVE_LINK = re.compile(r"\]\((archive/[^)]+\.md)\)")
+#: 修订记录数据行的**形状**（容忍竖线后的任意空白 —— 手写常有双空格）。
+_REVISION_ROW_SHAPE = re.compile(r"^\|\s*\d{4}-\d\d-\d\d\s*\|")
 
 
 def _charter_text() -> str:
@@ -108,6 +110,37 @@ def _archive_paths(charter: str) -> list[Path]:
     for relative in _ARCHIVE_LINK.findall(charter):
         seen.setdefault(relative, (_GOALS / relative).resolve())
     return list(seen.values())
+
+
+def _short_revision_rows(text: str) -> list[str]:
+    """`## 修订记录` 里**格数不足 5** 的数据行（原样返回，供判据点名）。
+
+    **为什么单列一条判据**（2026-10-27 实测的真缺陷）：`_revision_keys` 用
+    `len(cells) >= 5` 把修订行与进展行分开 ⇒ 一条写成 3 格的修订行会被**静默跳过**，
+    于是它对「不漏 / 不重」两条判据**完全不可见**：既不会因为缺失而判红，也不会因为
+    重复而判红。序 65 的条目就是这样写坏的（`| 日期 | 序 | 说明 |`，3 格），
+    在活跃面里待了一整轮而全部判据仍绿 —— 与 GOAL-096 `U-3` 登记的老归档 4 格行同族。
+
+    **射程边界**：本判据只扫**活跃面**（`MAINLINE.md` 的 `## 修订记录`）。
+    历史归档里的短行不在此列 —— 那需要逐条判断「原文是否本来就只有那几列」，
+    硬补等于编造；它们由各自的记录逐条登记（见 GOAL-096 `U-3` / 序 66 的靶子）。
+
+    **前缀匹配不能用 `startswith("| 20")`**（实测的坑）：那个字面量要求「竖线后
+    **恰好一个**空格再跟 `20`」。一条手写成 `|  2026-…`（两个空格）的行会**既不**
+    被 `_revision_keys` 收录、**也不**被本判据看到 ⇒ 两条判据同时沉默。这里改用
+    正则，让「像不像数据行」由一个明确的正则决定，而不是由空格的个数决定。
+    """
+    if "## 修订记录" not in text:
+        return []
+    section = text.split("## 修订记录", 1)[1]
+    short: list[str] = []
+    for line in section.splitlines():
+        if not _REVISION_ROW_SHAPE.match(line):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 5:
+            short.append(line[:120])
+    return short
 
 
 def test_the_archive_claimed_by_the_charter_exists_and_is_not_empty() -> None:
@@ -204,8 +237,39 @@ def test_no_revision_row_appears_on_both_sides() -> None:
         )
 
 
+def test_no_revision_row_in_the_live_table_is_too_short_to_be_seen() -> None:
+    """**活跃面**的修订行必须够 5 格 —— 否则它对「不漏 / 不重」两条判据**不可见**。
+
+    这是 2026-10-27 实测到的真缺陷（不是假想）：序 65 的修订行写成
+    `| 2026-10-26 | 序 65 / GOAL-… | 说明 |`（**3 格**），而 `_revision_keys` 用
+    `len(cells) >= 5` 区分修订行与进展行 ⇒ 它被静默跳过，于是「移出时会不会丢」
+    与「两处并存」这两条判据都对它**无话可说**。它在活跃面待了一整轮、全部判据皆绿。
+
+    这与 `test_the_helpers_are_not_vacuous` 里那条「进展行 4 格不得被当成修订行」
+    是同一把尺子的另一面：**跳过**是正确语义（两类行格数不同），但**沉默**不是
+    —— 所以短行必须被单独点名，而不是被合法地忽略。
+    """
+    short = _short_revision_rows(_charter_text())
+    assert short == [], (
+        f"`## 修订记录` 有 {len(short)} 行不足 5 格 ⇒ 它们对「不漏 / 不重」判据不可见"
+        "（`_revision_keys` 会静默跳过）：\n" + "\n".join(short)
+    )
+
+
+def test_the_short_revision_row_judge_catches_a_real_short_row(tmp_path: Path) -> None:
+    """**反证臂**：合成一条 3 格的修订行 ⇒ 判据必须点名它（不是空真）。"""
+    text = (
+        "## 修订记录\n\n| 日期 | 序 | 被替换的行（原文） | 替换为 | 理由 |\n"
+        "| --- | --- | --- | --- | --- |\n"
+        "| 2026-01-01 | 7（新增） | （无替换） | 序 7 | 理由 |\n"
+        "| 2026-01-02 | 序 8 / GOAL-20260102-008 | 只有三格的说明 |\n"
+    )
+    short = _short_revision_rows(text)
+    assert len(short) == 1, short
+    assert "序 8" in short[0], short
+
+
 def test_the_helpers_are_not_vacuous(tmp_path: Path) -> None:
-    """受判面自检：合成输入上给出预期读数（正例 + 反例），隔离真树。"""
     """受判面自检：合成输入上给出预期读数（正例 + 反例），隔离真树。"""
     good = (
         "| 2026-01-01 | GOAL-20260101-001 | 甲 | [R](../rechecks/R.md) |\n"
