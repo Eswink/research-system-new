@@ -2,7 +2,7 @@
 id: GOAL-20261027-098
 slug: independent-novelty-and-derived-experiment
 title: 拆开创新点的作者与评审者，并让实验脚本由计划选择
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-27
 updated_at: 2026-10-27
 owners: [maintainer]
@@ -144,7 +144,8 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
 child_plans:
   - .cursor/plans/tasks/PLAN-20261027-098-goal-098-independent-novelty-and-derived-experiment.md
-latest_recheck: null
+latest_recheck: >-
+  .cursor/plans/rechecks/RECHECK-20261027-098-goal-098-independent-novelty-and-derived-experiment.md
 memory_entries: []
 ---
 
@@ -247,17 +248,18 @@ memory_entries: []
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `11e17b05` | [M0 40431116098](https://github.com/Eswink/research-system-new/actions/runs/40431116098) | **全 `success`**：M0 八 job 全 success | GOAL-097 的收口 tip。**它在序 66 的第一个推送之后被推离 HEAD** ⇒ 反方向判据（`test_goal_commit_chain_reaches_the_ledger`）会点名它 ⇒ 本行按那个点名补记（两张表都已补：本表 + 迭代日志 `commits` 格） |
 | `a93b59a6` | [M0 40480147706](https://github.com/Eswink/research-system-new/actions/runs/40480147706) / [Push 40480147542](https://github.com/Eswink/research-system-new/actions/runs/40480147542) | **全 `success`**：M0 **八 job 全 success**（含 `quality-ubuntu-latest` / `quality-windows-latest` / `collector-quality` / `container-quality`）、Push 三条 Analyze 全 `success` | 本轮唯一一段交付（一 cycle 一推送）：EC-01/03/04/05/06/07 的实现 + 判据 + 三个回填验证器 + 全部记录 + 宪章记账 + 10 条短行处置。本地 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`。**第一版**（同一提交的前一次本地 m0）曾以 `FAILED: 1 check(s): python/typecheck=1` 收敛 —— 5 条**真缺陷**（新文件里的 `getattr` 默认值类型、`EvidenceRelation.relation` 传了 `str` 而非枚举、缺类型注解、`review_read` 的返回值是 `object`）→ 修完 mypy `Success: 1343 source files` → 重跑全绿。**CI 逐字也是绿的** ⇒ 两类门在这一点上一致 |
+| `ee8ff147` | [M0 40485214785](https://github.com/Eswink/research-system-new/actions/runs/40485214785) / [Push 40485214810](https://github.com/Eswink/research-system-new/actions/runs/40485214810) | **全 `success`**：M0 八 job 全 success、Push 三条 Analyze 全 success | 台账补记 + 重封见证（只改记录 + 见证）。**它当时是 HEAD ⇒ 结构例外**；含本行的下一个提交把它推离 HEAD 后，反方向判据会点名 —— 那一刻按点名补记 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261027-098 | `a93b59a6` | EC-01：18 例全过（含真文件按压 + 跨 28 份出厂协议扫描）；EC-03：17 例全过（含**子进程**按压：删掉选择调用 ⇒ 行为判据真的 exit 1）；EC-04：三个回填验证器 **48/51/54** 条判词全过 + 短行登记判据 7 例（含两条真文件按压）；EC-05：收口验证器 **100** 条判词全过；EC-06/07：宪章记账与程序表/阶梯/归档判据 22 例；`ruff check` + `ruff format` 全绿；`validate_bundle` **验证通过**；契约/加载器/四道门/收口注册套件 **634 passed / 72 skipped / 0 failed** | PENDING | 修掉 **8** 个真缺陷（第 8 个由 EC-02 的真跑抓到）：① `importlib.reload` 会污染同会话其它测试 ⇒ 按压改**子进程**；② 按压的 `pytest` 目标名缺类名 ⇒ exit 4（**按压假绿**，被「按压后确认真的红了」抓住）；③ `test_contract_loaders` 的 `len(roles)` 26→27（新增角色的**事实变更**，逐条申报）；④ `validate_bundle` 的「系统 Role 数量 26」同一事实变更；⑤ `goal090` 断言集的块提取偏移错 1（判据自己判红暴露）；⑥ `experiment_support.py` 450/450 零余量 ⇒ 压缩三行注释换回（后又因一行超长再压一次）；⑦ 两个新 `assertion_verdicts` 超 50 行门 ⇒ 按 EC 分组拆函数；⑧ **`novelty_claim_step.with_novelty` 的判负路径必崩**（读 `GateOutcome.verdicts`，而字段名是 `evaluations`、`passed` 是只读 property）—— 只有真跑跑到那条路径才暴露，前两次真跑都被上游 503 挡在检索相 | `W-3` 方案 (a) 待拍板；`W-5` 真跑一次成功率依赖上游可用性（5 次里 3 次被外部原因打断）；`W-1` 租约根因 | 下一轮：① `(a)` 若获拍板则接「模型写脚本」执行面；③ `W-1` 长会话租约根因（会话期心跳 + 错误映射） |
+| 1 | PLAN-20261027-098 | `a93b59a6` → `ee8ff147` → `1310dee4` | EC-01：18 例全过（含真文件按压 + 跨 28 份出厂协议扫描）；EC-03：17 例全过（含**子进程**按压：删掉选择调用 ⇒ 行为判据真的 exit 1）；EC-04：三个回填验证器 **48/51/54** 条判词全过 + 短行登记判据 7 例（含两条真文件按压）；EC-05：收口验证器 **100** 条判词全过；EC-06/07：宪章记账与程序表/阶梯/归档判据 22 例；`ruff check` + `ruff format` 全绿；`validate_bundle` **验证通过**；契约/加载器/四道门/收口注册套件 **634 passed / 72 skipped / 0 failed** | PENDING | 修掉 **8** 个真缺陷（第 8 个由 EC-02 的真跑抓到）：① `importlib.reload` 会污染同会话其它测试 ⇒ 按压改**子进程**；② 按压的 `pytest` 目标名缺类名 ⇒ exit 4（**按压假绿**，被「按压后确认真的红了」抓住）；③ `test_contract_loaders` 的 `len(roles)` 26→27（新增角色的**事实变更**，逐条申报）；④ `validate_bundle` 的「系统 Role 数量 26」同一事实变更；⑤ `goal090` 断言集的块提取偏移错 1（判据自己判红暴露）；⑥ `experiment_support.py` 450/450 零余量 ⇒ 压缩三行注释换回（后又因一行超长再压一次）；⑦ 两个新 `assertion_verdicts` 超 50 行门 ⇒ 按 EC 分组拆函数；⑧ **`novelty_claim_step.with_novelty` 的判负路径必崩**（读 `GateOutcome.verdicts`，而字段名是 `evaluations`、`passed` 是只读 property）—— 只有真跑跑到那条路径才暴露，前两次真跑都被上游 503 挡在检索相 | `W-3` 方案 (a) 待拍板；`W-5` 真跑一次成功率依赖上游可用性（5 次里 3 次被外部原因打断）；`W-1` 租约根因 | 下一轮：① `(a)` 若获拍板则接「模型写脚本」执行面；③ `W-1` 长会话租约根因（会话期心跳 + 错误映射） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-27 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 66）。读取器对 GOAL-097 `REFUSED RESIDUAL_EMPTY` ⇒ 记拒绝码、改以正文为准。`max_goals` 70 → 100。EC-01/03/04/06/07 已 PASS。 |
+| 2026-10-27 | **ACHIEVED** | **七个 EC 全 PASS**。EC-02 的真跑经历五轮：两次被上游 Europe PMC 503 挡住（连 `query=cancer` 也 503）、第三次在上游恢复后**抓到第 8 个真缺陷**（`with_novelty` 的判负路径读不存在的 `GateOutcome.verdicts` ⇒ 必崩）、第四次 `SUCCEEDED` 取证（`783e6dc7`：两条判词 `main/glm-5.3` + `main/minimax-m3`，作者 `novelty_writer` 不在其中）、第五次 `retry budget exhausted` —— 于是取证写出面改成**追加**。收口验证器 **101 条判词全过**、零 `FAIL`；本地 m0 `PASS: profile=m0; 23 deterministic checks`、24 PASS、0 FAILED、tree unchanged；CI 逐提交全 `success`。 |
