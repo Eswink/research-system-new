@@ -23,8 +23,15 @@
 **反证臂**：摘掉 `plan_selected_script` 那一行（真文件实测）⇒ 判据**点名判红**，并按
 raw `sha256` 逐字节复原。没有这一臂，「脚本变了」可能只是「装配面刚好有两份」。
 
-**不出容器、不出网**：执行体是受控替身（与 GOAL-079/080 的 e2e 同一手法）。真容器那一段是
-`EC-03` 的 live 取证（`evidence/GOAL-20261027-098-ec03-*.txt`），不在这里假装。
+**不出容器、不出网**：执行体是受控替身（与 GOAL-079/080 的 e2e 同一手法）—— 本文件判的是
+**派发面**（`assembly.script` 这一格换成了计划点名的那个）。**容器面**由
+`tests/e2e/test_experiment_script_selection_docker.py` 判（`requires_docker`：真跑两个脚本、
+按**容器产出的指标**区分跑的是哪一个），取证在
+`evidence/GOAL-20261027-098-ec03-container-run.txt`。
+
+**为什么两段都要**：`assembly.script` 是**输入**，容器读数才是**输出**。只判派发面时，
+「复制脚本进工作区」那一步若出偏差，判据会照绿 —— 本轮就抓到过同类位置的真缺陷
+（`with_novelty` 读了一个不存在的字段）。两段钉在一起才算「真跑用的是它」。
 """
 
 from __future__ import annotations

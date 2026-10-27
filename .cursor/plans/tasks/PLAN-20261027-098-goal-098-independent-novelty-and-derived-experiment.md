@@ -2,7 +2,7 @@
 id: PLAN-20261027-098
 slug: goal-098-independent-novelty-and-derived-experiment
 title: GOAL-098 子计划 —— 拆开作者与评审者 + 实验脚本由计划选择
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-10-27
 updated_at: 2026-10-27
 parent_goal: GOAL-20261027-098
@@ -11,7 +11,8 @@ owners:
 subagent_parallel_limit: 3
 latest_recheck: >-
   .cursor/plans/rechecks/RECHECK-20261027-098-goal-098-independent-novelty-and-derived-experiment.md
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261028-232-half-covered-judges-read-as-green.md
 ---
 
 # PLAN-20261027-098
@@ -172,6 +173,7 @@ memory_entries: []
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-27 | IN_PROGRESS | 建档 + WP-1…WP-6 落地；**七个 EC 全 PASS**（EC-02 在上游恢复后真跑成功取证） |
+| 2026-10-28 | **DONE** | 收口账合上：EC-03 的**容器面**补取证（`test_experiment_script_selection_docker.py` + `evidence/GOAL-20261027-098-ec03-container-run.txt`，两个脚本各跑一次真容器、按容器指标的签名区分）⇒ 那份 docstring 里的悬空引用改成真实文件，并加一条**判据**钉住「引用了就必须在树」；本 PLAN 置 DONE、`ALL_PLAN` 勾选同步；两树复检在**最终 HEAD** 上重跑并归档判词 |
 
 ## 影响报告
 

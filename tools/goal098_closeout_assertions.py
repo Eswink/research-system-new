@@ -42,6 +42,9 @@ DESIGN_PLAN = "packages/application/experiments/design_from_plan.py"
 SUPPORT = "services/api/experiment_support.py"
 CONTRACTS = "examples/contracts/task_contracts.yaml"
 SCRIPT_JUDGE = "tests/application/test_experiment_script_comes_from_the_plan.py"
+#: EC-03 的**容器面**（`requires_docker`）：真跑两个脚本、按容器产出的指标区分。
+CONTAINER_JUDGE = "tests/e2e/test_experiment_script_selection_docker.py"
+CONTAINER_EVIDENCE = ".cursor/plans/goals/evidence/GOAL-20261027-098-ec03-container-run.txt"
 
 #: 三、归档与记账
 SHORT_ROWS_REGISTRY = ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md"
@@ -139,6 +142,16 @@ def _independence_verdicts(root: Path, toolbox: Any) -> list[Any]:
     ]
 
 
+def _referenced_evidence_exists(root: Path) -> bool:
+    """`SCRIPT_JUDGE` 的 docstring 里点了名的取证文件是否**真的在树**。
+
+    **它补哪一格**（本轮验收方点出的真缺陷）：那份 docstring 曾写「真容器那一段是
+    `evidence/GOAL-20261027-098-ec03-*.txt`，不在这里假装」，而该文件**从未创建** ——
+    与本轮替 GOAL-076 修掉的悬空引用同类。悬空引用比没写更坏：它读起来像取证已存在。
+    """
+    return (root / CONTAINER_EVIDENCE).is_file()
+
+
 def _selection_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-03：白名单 / 三档优先级 / 点名拒绝 / 装配面调用 / 合约任务书。"""
     verdict = toolbox.verdict
@@ -184,6 +197,33 @@ def _selection_verdicts(root: Path, toolbox: Any) -> list[Any]:
             # 合约正文按 80 列折行 ⇒ 只取那一行里连续的一段。
             "optional `script` key naming" in contracts,
             "合约任务书必须告诉模型这个键存在且是闭集（否则它无从选择）",
+        ),
+    ]
+
+
+def _container_face_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-03 的**容器面**：派发面判「选中的是哪个」，这一组判「跑的就是它」。
+
+    `assembly.script` 是**输入**，容器读数是**输出** —— 只判派发面时，复制脚本那一步
+    出偏差判据会照绿（本轮就抓到过同类位置的真缺陷）。
+    """
+    verdict = toolbox.verdict
+    return [
+        verdict(
+            "ec03-container-judge-in-tree", (root / CONTAINER_JUDGE).is_file(), CONTAINER_JUDGE
+        ),
+        verdict(
+            "ec03-container-evidence-in-tree",
+            (root / CONTAINER_EVIDENCE).is_file(),
+            "容器面取证必须在树（`assembly.script` 是输入、容器读数是输出）",
+        ),
+        verdict(
+            "ec03-no-dangling-evidence-reference",
+            # 引用了取证文件 ⇒ 该文件必须在树；否则就是本轮替 076 修掉的那类悬空引用。
+            _referenced_evidence_exists(root)
+            if CONTAINER_EVIDENCE.rsplit("/", 1)[-1] in _text(root, SCRIPT_JUDGE)
+            else True,
+            f"`{Path(SCRIPT_JUDGE).name}` 里点名的取证文件必须真实存在（悬空引用 = 谎）",
         ),
     ]
 
@@ -328,6 +368,7 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
     return [
         *_independence_verdicts(root, toolbox),
         *_selection_verdicts(root, toolbox),
+        *_container_face_verdicts(root, toolbox),
         *_archive_verdicts(root, toolbox),
         *_asset_verdicts(root, toolbox),
         *_budget_verdicts(root, toolbox),

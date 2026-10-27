@@ -76,7 +76,15 @@ exit_criteria:
       `..` / 盘符 / 非字符串 ⇒ **点名拒绝**（不静默回落）。反证：删掉
       `plan_selected_script` 那一行调用（真文件 + 子进程）⇒ 行为判据真的判红，按 raw
       `sha256` 逐字节复原。
-    verify: tests/application/test_experiment_script_comes_from_the_plan.py（17 条用例）
+      **(v) 容器面**（收口前补齐）：派发面判的是 `assembly.script` 这个**输入**，容器读数是
+      **输出** —— 只判派发面时，「复制脚本进工作区」那一步出偏差判据会照绿。⇒
+      `tests/e2e/test_experiment_script_selection_docker.py`（`requires_docker`）让计划分别点名
+      两个脚本各跑**一次真容器**，再按**脚本各自的签名指标**判跑的是哪一个
+      （去重：`duplicates_found`；排序：`worst_case_comparisons`）。取证在
+      `evidence/GOAL-20261027-098-ec03-container-run.txt`（真镜像摘要 + 各自的指标集）。
+      并加一条判据 `ec03-no-dangling-evidence-reference`：docstring 点名了取证文件，
+      该文件就必须在树（悬空引用比没写更坏 —— 读起来像取证已存在）。
+    verify: tests/application/test_experiment_script_comes_from_the_plan.py（17 条用例）+ 容器面
     status: PASS
   - id: EC-04
     criterion: >-
@@ -146,7 +154,8 @@ child_plans:
   - .cursor/plans/tasks/PLAN-20261027-098-goal-098-independent-novelty-and-derived-experiment.md
 latest_recheck: >-
   .cursor/plans/rechecks/RECHECK-20261027-098-goal-098-independent-novelty-and-derived-experiment.md
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261028-232-half-covered-judges-read-as-green.md
 ---
 
 # GOAL-20261027-098 — 拆开创新点的作者与评审者，并让实验脚本由计划选择
@@ -157,7 +166,7 @@ memory_entries: []
 | --- | --- | --- | --- |
 | EC-01 | 作者 ≠ 评审者：角色 / agent / `(endpoint, model_name)` 三者都不同 + 跨协议自评扫描 | `tests/contracts/test_direction_to_report_v2_independence.py`（18 例）+ 按压 | **PASS** |
 | EC-02 | **真跑**：作者与评审者 `reviewer_model` 不同、每个判词可归因 | 取证文件：`783e6dc7` SUCCEEDED，两条判词 = `main/glm-5.3` + `main/minimax-m3`，作者 `novelty_writer` 不在其中 | **PASS** |
-| EC-03 | 实验脚本由计划**选择**（白名单）+ 三档优先级 + 点名拒绝 | `tests/application/test_experiment_script_comes_from_the_plan.py`（17 例）+ 子进程按压 | **PASS** |
+| EC-03 | 实验脚本由计划**选择**（白名单）+ 三档优先级 + 点名拒绝 | `tests/application/test_experiment_script_comes_from_the_plan.py`（17 例）+ 子进程按压；**容器面** `test_experiment_script_selection_docker.py`（两个脚本各一次真容器，按签名指标区分） | **PASS** |
 | EC-04 | `progress-075` 补链 + 10 条短行逐条登记 + 三个验证器补建登记 | `tools/verify_goal{076,090,095}_closeout.py` + 两条归档判据 | **PASS** |
 | EC-05 | `verify_goal098` + 断言集 + 登记 + 判词跑通 | 收口验证器 99 条判词全过 | **PASS** |
 | EC-06 | `max_goals` 70 → 100 + 修订记录登记扩表 | 宪章预算行 + 程序表判据 | **PASS** |
@@ -268,4 +277,5 @@ memory_entries: []
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-27 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 66）。读取器对 GOAL-097 `REFUSED RESIDUAL_EMPTY` ⇒ 记拒绝码、改以正文为准。`max_goals` 70 → 100。EC-01/03/04/06/07 已 PASS。 |
+| 2026-10-28 | **ACHIEVED（收口账合上）** | 验收方点出四处**收口账**缺口，逐条补：① 最后一个 closeout todo 关掉（本行即状态更新）；② `PLAN-20261027-098` 置 **DONE** + `ALL_PLAN` 勾选同步 + 写 `MEM-20261028-232`（DONE 门要求「有记忆引用或声明无可复用事实」）；③ EC-03 的**悬空取证引用**：docstring 曾点名 `evidence/…-ec03-*.txt` 而该文件从未创建（与本轮替 076 修掉的悬空引用同类）⇒ 补**真容器**取证（两个脚本各跑一次，真镜像摘要 + 各自签名指标）+ 加判据 `ec03-no-dangling-evidence-reference` 钉住「引用了就必须在树」；④ 两树复检在**最终 HEAD** 上重跑并归档判词（此前那份在 `93db3c5e` 上生成）。收口验证器 **104** 条判词。 |
 | 2026-10-27 | **ACHIEVED** | **七个 EC 全 PASS**。EC-02 的真跑经历五轮：两次被上游 Europe PMC 503 挡住（连 `query=cancer` 也 503）、第三次在上游恢复后**抓到第 8 个真缺陷**（`with_novelty` 的判负路径读不存在的 `GateOutcome.verdicts` ⇒ 必崩）、第四次 `SUCCEEDED` 取证（`783e6dc7`：两条判词 `main/glm-5.3` + `main/minimax-m3`，作者 `novelty_writer` 不在其中）、第五次 `retry budget exhausted` —— 于是取证写出面改成**追加**。收口验证器 **101 条判词全过**、零 `FAIL`；**两树复检 `TWO-TREE PASS`**（两棵各 101 条判词、`sha256` **相同** `a990c129…`）；本地 m0 `PASS: profile=m0; 23 deterministic checks`、24 PASS、0 FAILED、tree unchanged；CI 逐提交全 `success`。 |

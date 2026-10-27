@@ -1,0 +1,81 @@
+# GOAL-20261027-098 EC-03 container run readings
+
+## plan-selects-exact-match @ 2026-10-27T16:32:51Z
+
+- `selected_script`: examples/experiments/exact_match_index_benchmark.py
+- `outcome`: SUCCEEDED
+- `message`: experiment 9264c7db-1349-4324-bde1-4a003d6333f7 SUCCEEDED admitted=claim:9264c7db-1349-4324-bde1-4a003d6333f7:result (arms: 9264c7db-1349-4324-bde1-4a003d6333f7)
+- `experiment_run_state`: SUCCEEDED
+- `metric_names`: ['agreement', 'comparison_reduction_ratio', 'duplicates_expected', 'duplicates_found', 'indexed_comparisons', 'n_items', 'pairwise_comparisons', 'seed']
+- `image_digest`: sha256:e95de2424c6555d49
+- `admitted_evidence`: 4
+
+## plan-selects-sort-baseline @ 2026-10-27T16:32:52Z
+
+- `selected_script`: examples/experiments/sort_analysis_baseline.py
+- `outcome`: SUCCEEDED
+- `message`: experiment 41a27dd4-ae4b-4b3e-9b14-97a13268459b SUCCEEDED admitted=claim:41a27dd4-ae4b-4b3e-9b14-97a13268459b:result (arms: 41a27dd4-ae4b-4b3e-9b14-97a13268459b)
+- `experiment_run_state`: SUCCEEDED
+- `metric_names`: ['corpus_size', 'worst_case_comparisons']
+- `image_digest`: sha256:e95de2424c6555d49
+- `admitted_evidence`: 4
+
+## plan-selects-exact-match @ 2026-10-27T16:59:35Z
+
+- `selected_script`: examples/experiments/exact_match_index_benchmark.py
+- `outcome`: SUCCEEDED
+- `message`: experiment b914717d-cd3e-441f-bcc3-3858b06b11c7 SUCCEEDED admitted=claim:b914717d-cd3e-441f-bcc3-3858b06b11c7:result (arms: b914717d-cd3e-441f-bcc3-3858b06b11c7)
+- `experiment_run_state`: SUCCEEDED
+- `metric_names`: ['agreement', 'comparison_reduction_ratio', 'duplicates_expected', 'duplicates_found', 'indexed_comparisons', 'n_items', 'pairwise_comparisons', 'seed']
+- `image_digest`: sha256:e95de2424c6555d49
+- `admitted_evidence`: 4
+
+## plan-selects-sort-baseline @ 2026-10-27T16:59:35Z
+
+- `selected_script`: examples/experiments/sort_analysis_baseline.py
+- `outcome`: SUCCEEDED
+- `message`: experiment 31a65738-d511-4016-95a7-62f9d5644fd2 SUCCEEDED admitted=claim:31a65738-d511-4016-95a7-62f9d5644fd2:result (arms: 31a65738-d511-4016-95a7-62f9d5644fd2)
+- `experiment_run_state`: SUCCEEDED
+- `metric_names`: ['corpus_size', 'worst_case_comparisons']
+- `image_digest`: sha256:e95de2424c6555d49
+- `admitted_evidence`: 4
+
+## plan-selects-exact-match @ 2026-10-27T17:31:14Z
+
+- `selected_script`: examples/experiments/exact_match_index_benchmark.py
+- `outcome`: SUCCEEDED
+- `message`: experiment 0d3d2f6c-82ae-440a-ac0d-720aec06d88a SUCCEEDED admitted=claim:0d3d2f6c-82ae-440a-ac0d-720aec06d88a:result (arms: 0d3d2f6c-82ae-440a-ac0d-720aec06d88a)
+- `experiment_run_state`: SUCCEEDED
+- `metric_names`: ['agreement', 'comparison_reduction_ratio', 'duplicates_expected', 'duplicates_found', 'indexed_comparisons', 'n_items', 'pairwise_comparisons', 'seed']
+- `image_digest`: sha256:e95de2424c6555d49
+- `admitted_evidence`: 4
+
+## plan-selects-sort-baseline @ 2026-10-27T17:31:15Z
+
+- `selected_script`: examples/experiments/sort_analysis_baseline.py
+- `outcome`: SUCCEEDED
+- `message`: experiment 3bc1f6ec-cbc8-4974-885e-8e5d87ba8ff4 SUCCEEDED admitted=claim:3bc1f6ec-cbc8-4974-885e-8e5d87ba8ff4:result (arms: 3bc1f6ec-cbc8-4974-885e-8e5d87ba8ff4)
+- `experiment_run_state`: SUCCEEDED
+- `metric_names`: ['corpus_size', 'worst_case_comparisons']
+- `image_digest`: sha256:e95de2424c6555d49
+- `admitted_evidence`: 4
+
+## plan-selects-exact-match @ 2026-10-27T17:48:12Z
+
+- `selected_script`: examples/experiments/exact_match_index_benchmark.py
+- `outcome`: SUCCEEDED
+- `message`: experiment 1d9485be-58f0-476a-b669-73aa9a5737f9 SUCCEEDED admitted=claim:1d9485be-58f0-476a-b669-73aa9a5737f9:result (arms: 1d9485be-58f0-476a-b669-73aa9a5737f9)
+- `experiment_run_state`: SUCCEEDED
+- `metric_names`: ['agreement', 'comparison_reduction_ratio', 'duplicates_expected', 'duplicates_found', 'indexed_comparisons', 'n_items', 'pairwise_comparisons', 'seed']
+- `image_digest`: sha256:e95de2424c6555d49
+- `admitted_evidence`: 4
+
+## plan-selects-sort-baseline @ 2026-10-27T17:48:13Z
+
+- `selected_script`: examples/experiments/sort_analysis_baseline.py
+- `outcome`: SUCCEEDED
+- `message`: experiment 07e3c57d-a742-447f-afa9-815df3a1f7d3 SUCCEEDED admitted=claim:07e3c57d-a742-447f-afa9-815df3a1f7d3:result (arms: 07e3c57d-a742-447f-afa9-815df3a1f7d3)
+- `experiment_run_state`: SUCCEEDED
+- `metric_names`: ['corpus_size', 'worst_case_comparisons']
+- `image_digest`: sha256:e95de2424c6555d49
+- `admitted_evidence`: 4
