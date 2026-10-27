@@ -442,8 +442,11 @@ def check_yaml_and_references() -> None:
     fixture_types = {x.get("role_type") for x in roles.values()}
     if catalog_types != fixture_types:
         ERRORS.append(f"Role Catalog/fixture 不一致: {sorted(catalog_types ^ fixture_types)}")
-    if len(fixture_types) != 26:
-        ERRORS.append(f"系统 Role 数量应为 26，实际 {len(fixture_types)}")
+    # 26 → 27（GOAL-20261027-098 EC-01）：`novelty_author` 是**新增角色** ⇒ 条目数变了
+    # 是**事实变更**。本格问的仍是「出厂目录的角色数是一个被显式声明的数」，
+    # 不是「必须是 26」—— 放宽的是**这个数**，不是「它与 fixture 一致」那条（上一格）。
+    if len(fixture_types) != 27:
+        ERRORS.append(f"系统 Role 数量应为 27，实际 {len(fixture_types)}")
 
     # Schema instances and endpoint/model refs.
     for eid, endpoint in endpoints.items():

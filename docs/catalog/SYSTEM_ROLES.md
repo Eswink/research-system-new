@@ -207,7 +207,27 @@ Capabilities：
 
 ---
 
-### 11. Skeptic
+### 11. NoveltyAuthor
+
+**职责**：写出本研究的创新点声明 —— 与检索到的最近前人工作差在哪、为什么那不是重组。
+**它是作者，不是评审者**（`review_panel_role` 缺省 `NONE`）：同一份声明由另一个角色
+（`NoveltyReviewer`）独立评审，两侧落在不同的底层模型上（GOAL-20261027-098 EC-01）。
+
+Capabilities：
+
+- artifact.read
+- literature.search
+- literature.read
+- evidence.read
+
+推荐 ModelProfile：`research_strong`
+
+`idea.write` / `idea.review` **不**在能力面内：它们有词表声明但 `policy.yaml` 零 allow
+（加 allow 属改默认 deny 姿态，需拍板）⇒ 本角色只用**已放行**的读能力。
+
+---
+
+### 12. Skeptic
 
 **职责**：主动寻找反例、trivial explanation、confounder、不可证伪问题和价值不足。
 
@@ -223,7 +243,7 @@ Capabilities：
 
 ## D. Experiment
 
-### 12. Methodologist
+### 13. Methodologist
 
 **职责**：研究设计、baseline、control、ablation、metric、validity。
 
@@ -237,7 +257,7 @@ Capabilities：
 
 ---
 
-### 13. ExperimentDesigner
+### 14. ExperimentDesigner
 
 **职责**：把 Hypothesis 转成结构化 ExperimentPlan。
 
@@ -265,7 +285,7 @@ Capabilities：
 
 ---
 
-### 14. ExperimentEngineer
+### 15. ExperimentEngineer
 
 **职责**：代码、调试、执行、观察、迭代。
 
@@ -285,7 +305,7 @@ Workspace：隔离可写 sandbox/worktree。
 
 ---
 
-### 15. ResultAnalyst
+### 16. ResultAnalyst
 
 **职责**：分析 metrics、曲线、baseline 差异、异常、confounders，形成 Evidence 候选。
 
@@ -300,7 +320,7 @@ Capabilities：
 
 ---
 
-### 16. Statistician
+### 17. Statistician
 
 **职责**：统计设计和统计解释。
 
@@ -316,7 +336,7 @@ Capabilities：
 
 ---
 
-### 17. ReproducibilityAuditor
+### 18. ReproducibilityAuditor
 
 **职责**：检查 code/environment/seed/dataset/command/artifact/metric lineage。
 
@@ -336,7 +356,7 @@ Workspace：只读。
 
 ## E. Evaluation & Peer Review
 
-### 18. ScientificReviewer
+### 19. ScientificReviewer
 
 **职责**：整体科学合理性、论证链、重要性、替代解释。
 
@@ -354,7 +374,7 @@ Workspace：只读。
 
 ---
 
-### 19. MethodologyReviewer
+### 20. MethodologyReviewer
 
 **职责**：实验和方法设计审查。
 
@@ -369,7 +389,7 @@ Capabilities：
 
 ---
 
-### 20. StatisticalReviewer
+### 21. StatisticalReviewer
 
 **职责**：独立审查统计结论、effect size、variance、sampling、robustness。
 
@@ -383,7 +403,7 @@ Capabilities：
 
 ---
 
-### 21. EvidenceReviewer
+### 22. EvidenceReviewer
 
 **职责**：逐 Claim 审核支持、反证和引用强度。
 
@@ -398,7 +418,7 @@ Capabilities：
 
 ---
 
-### 22. TargetFitReviewer
+### 23. TargetFitReviewer
 
 **职责**：根据 TargetProfile 检查 scope、贡献类型、rubric 和交付要求。
 
@@ -413,7 +433,7 @@ Capabilities：
 
 ---
 
-### 23. MetaReviewer
+### 24. MetaReviewer
 
 **职责**：聚合多 Reviewer finding，处理冲突并生成统一 Decision 建议。
 
@@ -429,7 +449,7 @@ Capabilities：
 
 ## F. Deliverable
 
-### 24. ResearchWriter
+### 25. ResearchWriter
 
 **职责**：从 Verified Claims、Evidence、Experiment、Decision 组装研究交付物。
 
@@ -462,7 +482,7 @@ ResearchWriter 不能直接把 unsupported prose 变成 VERIFIED Claim。
 
 ---
 
-### 25. ScientificEditor
+### 26. ScientificEditor
 
 **职责**：结构、语言、逻辑、术语和一致性编辑。
 
@@ -481,7 +501,7 @@ Capabilities：
 
 ---
 
-### 26. CitationAuditor
+### 27. CitationAuditor
 
 **职责**：引用存在性、映射、claim-attribution、一致性审核。
 

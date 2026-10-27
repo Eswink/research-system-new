@@ -1,0 +1,252 @@
+---
+id: GOAL-20261027-098
+slug: independent-novelty-and-derived-experiment
+title: 拆开创新点的作者与评审者，并让实验脚本由计划选择
+status: ACTIVE
+created_at: 2026-10-27
+updated_at: 2026-10-27
+owners: [maintainer]
+authorization:
+  source: user-goal-mode-instruction
+  ref: >-
+    序 66 / GOAL-20261027-098（用户 goal-mode 指令）。push-to-main-for-CI：只推 main、
+    不 force、不重写历史、不推旁支；RESEARCHOS_AGENT_RUNTIME / RESEARCHOS_LIVE_E2E
+    逐命令传，绝不写进 `.env`。
+objective: >-
+  序 65 跨过了「产品入口能跑」这道门；本轮修的是**质量**与**自主性**的两处结构性缺陷。
+  (1) **自评**（实测，不重新推导）：`direction_to_report_v2.yaml` 的 `novelty` 相与 `review` 相
+  **都**点名 `novelty_reviewer`，而 `protocol_compile` 的解析面（`resolution.py` 的
+  `agent_candidates` / `assignments.py` 的 `phase_assignments` / `selection.py` 的
+  `select_agents`）**只按 `agent.role == role_id` 取候选、不看 phase** ⇒ 同一角色在两相
+  **必然**选到同一个 agent 实例（`novelty_a` / `minimax-m3`）⇒ `review` 相那两个
+  `review_decision` 里有一个是「评审自己刚写的声明」，而复述是**结构必然**（`novelty_claim`
+  本来就在它的提示词里），不构成独立认可。修法：新增专用作者角色 `novelty_author`
+  （agent `novelty_writer`，第四个底层模型）⇒ 两个面的角色 id / agent id /
+  `(endpoint, model_name)` **三者都不同**，且判据**跨协议**判「评审者不得评自己写的产物」。
+  (2) **选择级派生**：实验脚本此前由装配常量决定（`DEFAULT_EXPERIMENT_SCRIPT`），
+  `design_source="plan"` 只派生臂与参数 ⇒ 换方向换多少次跑的都是同一个脚本。本轮按用户
+  拍板走 **(b) 白名单选择**：计划可以在**出厂脚本闭集**里点一个，真跑用的就是它；越界一律
+  点名拒绝。**(a)「模型为新问题写实验脚本」登记为下一轮待拍板**（模型产出的 Python 进容器
+  属安全面变更）。
+  (3) 顺带补齐三处归档面既有漏洞（承 GOAL-096 `U-3` / GOAL-097）：`progress-075` 无宪章
+  链接、10 条 4 格历史修订行未处置、`verify_goal{076,090,095}` **从未存在**。
+exit_criteria:
+  - id: EC-01
+    criterion: >-
+      `novelty` 相的作者与 `review` 相的评审者**结构上不同**：(i) 角色 id 不同
+      （`novelty_author` ∉ `review` 相评审者集合）；(ii) 作者角色**不是** `REVIEWER`
+      面板角色（`is_reviewer()` 为假 ⇒ 被评对象不进它的提示词）；(iii) 两相解析到的
+      **agent id 不同**；(iv) `(endpoint, model_name)` 也不同（只判 id 会漏「换个名字
+      同一个模型」）；(v) **跨 28 份出厂协议**遍历：「某相的评审者不得同时是它评审的那件
+      产物的作者」。反证：把作者角色改回 `novelty_reviewer`（真文件）⇒ 判据点名判红，
+      按 raw `sha256` 逐字节复原。
+    verify: tests/contracts/test_direction_to_report_v2_independence.py（18 条用例）
+    status: PASS
+  - id: EC-02
+    criterion: >-
+      **真跑**证明两面独立：`novelty_claim` 的作者与评审它那位的 `reviewer_model` 不同，
+      且取证里每个 `review_decision` 都能归因到具体 agent（`reviewer_model` 非空且可区分）。
+      反证：改回同一角色 ⇒ 判红（结构面已由 EC-01 判，本 EC 判**运行期读数**）。
+      **第四/第五模型凭据不可用 ⇒ 如实登记未达成，不用同一个模型凑。**
+      **本轮实测读数**：两次真跑都停在**检索相**（`run-chain capability step failed:
+      europe pmc temporarily unavailable`，两次同签名）；独立 `curl` 探针显示该服务
+      **连最简单的查询也 503** ⇒ 上游不可用，不是本判据的查询形态问题。产品接线刻意只接
+      Europe PMC（理由在 `retrieval_wiring.py` 的 docstring 里）⇒ **不**为让判据变绿而改
+      接线。⇒ `review_row_count=0`，评审相从未执行 ⇒ 本 EC **无运行期读数**，保持 `PENDING`。
+      结构面（EC-01）已判；运行期面等上游恢复后一条命令补取证。
+    verify: 真跑取证落 `.cursor/plans/goals/evidence/GOAL-20261027-098-ec02-novelty-independence-run.txt`
+    status: PENDING
+  - id: EC-03
+    criterion: >-
+      **实验脚本由计划选择**（方案 (b) 白名单）：(i) `experiment_design.script` 从出厂闭集
+      里点名 ⇒ 真跑交给沙箱的就是那个脚本（判 `assembly.script`，即被复制进工作区的文件）；
+      (ii) 同一装配 + 两份计划 ⇒ 两次派发跑**不同**脚本；(iii) 零回归：没写 `script` ⇒
+      **逐字**回到装配面那一个；契约 pin 仍最强（三档优先级）；(iv) 白名单外 / 绝对路径 /
+      `..` / 盘符 / 非字符串 ⇒ **点名拒绝**（不静默回落）。反证：删掉
+      `plan_selected_script` 那一行调用（真文件 + 子进程）⇒ 行为判据真的判红，按 raw
+      `sha256` 逐字节复原。
+    verify: tests/application/test_experiment_script_comes_from_the_plan.py（17 条用例）
+    status: PASS
+  - id: EC-04
+    criterion: >-
+      归档面三件：(i) `archive/MAINLINE-2026-10-15-progress-075-only.md` 补上宪章链接
+      （此前**完全没有**链接 ⇒ 不参与「不漏 / 不重」，因为 `_archive_paths` 只认
+      `](archive/...)`）；(ii) 历史归档里的 **10 条 4 格修订行逐条处置** —— 结论是
+      **保留 4 格、不补**（原文把「替换为」与「理由」写进同一格，其中 5 份文件自声明不再
+      改动；补第 5 格须自定断句 = 编造列边界）⇒ 登记进
+      `archive/SHORT-REVISION-ROWS.md` + 双向判据；(iii) `tools/verify_goal{076,090,095}
+      _closeout.py` 三个**从未存在**的验证器 + 断言集补建、登记进 `_VERIFIERS` 与
+      `IN_SCOPE`、判词跑通。**回填是补齐历史，不是过门禁**（`_CUTOFF_SEQ = 64` 让它们
+      不判红；076 的 GOAL 状态是 `PAUSED`、那 10 条长度界从未加进去 ⇒ 它的断言集判的是
+      「记录与树一致（未做仍是未做）」）。
+    verify: tools/verify_goal{076,090,095}_closeout.py（48/51/54 条判词）+ 两条归档判据
+    status: PASS
+  - id: EC-05
+    criterion: >-
+      收口资产齐备：`tools/verify_goal098_closeout.py` + `tools/goal098_closeout_assertions.py`
+      在树，登记进 `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py` 的
+      `_VERIFIERS` 与 `tests/tooling/test_tooling_scripts_meet_product_gates.py` 的 `IN_SCOPE`，
+      判词跑通（含自指「加载自己那份断言集」）。
+    verify: tools/verify_goal098_closeout.py --root . --verdict-only
+    status: PASS
+  - id: EC-06
+    criterion: >-
+      **预算长期化**：`max_goals` **70 → 100**，且 `## 修订记录` 里逐行登记扩表
+      （原文读数 70 + 新读数 100 + 本轮已用 66 + 理由）。**不删键**（判据要求它存在且为
+      正整数）。若后续仍需更多 ⇒ 继续扩，不设上限。
+    verify: tests/tooling/test_mainline_program_is_intact.py + 宪章预算行读数
+    status: PASS
+  - id: EC-07
+    criterion: >-
+      **上一轮的记录缺陷已修，本轮核对不回退**：序 65 的修订行从 3 格补成 5 格并搬入归档
+      （`archive/MAINLINE-2026-10-26-revisions-65-only.md`）；「活跃面修订行 <5 格即判红」的
+      判据 `test_no_revision_row_in_the_live_table_is_too_short_to_be_seen` 在树且带反证臂；
+      本轮追加的修订行**必须是 5 格**；别处若还有短行 ⇒ 按 EC-04(ii) 处置（本轮已找到
+      历史归档的 10 条并登记）。
+    verify: tests/tooling/test_mainline_archive_is_continuous.py + 本文件「修订记录」行格数
+    status: PASS
+budget:
+  max_cycles: 20
+  per_cycle_minutes: 150
+  no_progress_stop_cycles: 2
+fix_policy:
+  max_same_signature: 3
+  forbidden:
+    - 改 validator / 门禁 / 快照 / 测试断言使其通过
+    - 放宽任何既有判据
+    - 把受判面写成交集或并集掩蔽
+    - 收窄受判面而不逐条申报
+    - git push --force / 重写历史 / 推非 main
+    - 伪造或夸大验证证据（**尤其**：用同一个模型冒充「独立评审者」、把 skip 记成 PASS、
+      把「不可修复的短行」硬补成编造内容）
+    - git add -A
+    - 宣称项目安全（`R-M1` 未收口）
+    - 宣称投递语义为「恰好一次」
+escalation_triggers:
+  - 需要修改 Accepted ADR / 核心安全策略 / Canonical State 边界
+  - 破坏性数据迁移或不可逆动作
+  - 新增第三方依赖或上游版本 pin 变更
+  - 改 CI workflow
+  - 给 idea.* 加 policy allow
+  - 模型写代码进容器（方案 (a)）
+  - 定「叙述质量」判定口径
+  - 同一失败签名超过 fix_policy 上限
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261027-098-goal-098-independent-novelty-and-derived-experiment.md
+latest_recheck: null
+memory_entries: []
+---
+
+# GOAL-20261027-098 — 拆开创新点的作者与评审者，并让实验脚本由计划选择
+
+## 目标与退出标准
+
+| EC | 标准（摘要） | 验证命令 / 证据 | 状态 |
+| --- | --- | --- | --- |
+| EC-01 | 作者 ≠ 评审者：角色 / agent / `(endpoint, model_name)` 三者都不同 + 跨协议自评扫描 | `tests/contracts/test_direction_to_report_v2_independence.py`（18 例）+ 按压 | **PASS** |
+| EC-02 | **真跑**：作者与评审者 `reviewer_model` 不同、每个判词可归因 | 取证文件（两次真跑都被上游 503 挡住，如实登记） | PENDING |
+| EC-03 | 实验脚本由计划**选择**（白名单）+ 三档优先级 + 点名拒绝 | `tests/application/test_experiment_script_comes_from_the_plan.py`（17 例）+ 子进程按压 | **PASS** |
+| EC-04 | `progress-075` 补链 + 10 条短行逐条登记 + 三个验证器补建登记 | `tools/verify_goal{076,090,095}_closeout.py` + 两条归档判据 | **PASS** |
+| EC-05 | `verify_goal098` + 断言集 + 登记 + 判词跑通 | 收口验证器 99 条判词全过 | **PASS** |
+| EC-06 | `max_goals` 70 → 100 + 修订记录登记扩表 | 宪章预算行 + 程序表判据 | **PASS** |
+| EC-07 | 序 65 记录缺陷不回退 + 本轮修订行 5 格 | 归档判据 | **PASS** |
+
+## 循环入口协议
+
+每一轮 cycle 的开始状态取三件**可提取**事实（不靠记忆）：
+
+1. 上一轮 GOAL 的「残余与未覆盖范围」（本文件 `## 残余与未覆盖范围`）；
+2. 迭代日志最后一行的「下一轮输入」；
+3. 工作树 / 远端实况（`git status`、`git log --oneline -5`）。
+
+**本轮开场的读取器读数**：`tools/next_round_charter.py` 对 GOAL-097 **`REFUSED RESIDUAL_EMPTY`**
+（该轮的残余节写成**表格**，读取器只认列表项 `W-NN`）。按纪律记拒绝码，改以 GOAL-097 正文
+「残余与未覆盖范围」逐条处置 —— **不**为让读取器通过而改写历史记录。
+
+## 单 cycle SOP
+
+1. **勘察取证**：任何「已实现 / 未实现」的判断先落 `rg -n` 读数（不用 `-r`，那是替换）。
+2. **先量规模**：动 `services/` 与 `packages/` 之前先 `wc -l`；450 行硬上限、50 行函数门
+   是**每次**都要过的门（本轮 `experiment_support.py` 一度 450/450 ⇒ 靠压缩三行注释换回）。
+3. **判据先写反证臂**：每条新判据至少一个「按掉实现就判红」的按压，且按压在**真文件**上做；
+   **按压后必须确认判据真的红了**（本轮两次踩到「按压工具自己有 bug」：`monkeypatch` 改不了
+   已导入的字节码、`pytest` 目标名少了类名 —— 两次都是靠「按压后仍绿」发现的）。
+4. **记录顺序**：写全部记录 → `git add` 全部受判文件（含未跟踪）→ 记录面判据 →
+   最后跑 `tools/run_m0_with_witness.py` → 之后不再 `git add` 任何受判文件 → 提交推送。
+5. **一个 cycle 一次推送**（`cancel-in-progress` 会取消在飞的 M0 run）。
+
+## CI 失败分类与纠错
+
+| 类别 | 识别 | 处置 |
+| --- | --- | --- |
+| (i) 真缺陷 | job 报 ruff / eslint / tsc / mypy / pytest 断言 | 改**实现**（不改判据）→ fix commit → 重推 |
+| (ii) 资源阈值型 | `RSS < 128MiB` 一类偶发红 | `rerun-failed-jobs`，**绝不动阈值** |
+| (iii) 基础设施 | Docker registry / 中转站限流 / runner 挂 | 如实记录，重跑；不改代码 |
+| (iv) 判据自身时序 | 如 `evolution_state.json` 的 `WinError 5` | 单跑取证后独占重跑 |
+
+同一失败签名超过 `fix_policy.max_same_signature` ⇒ 停 BLOCKED 并写清被堵的路。
+
+## 终止与收口
+
+- **ACHIEVED**：七个 EC 全达成 + 真跑取证 ⇒ 跑 `tools/two_tree_recheck.py --script-mode shared`
+  （两树判词逐行 + `sha256` 相同）⇒ 归档判词进树 ⇒ 写收口报告与 RECHECK。
+- **以下不是失败**：中转站限流（如实记录）；Docker 不可用（`requires_docker` 如实 skip，
+  **skip 不是 PASS**）；第四个模型凭据不可用（EC-02 如实登记未达成）；读取器拒绝（记拒绝码）。
+- **BLOCKED**：撞 `escalation_triggers` / 同一签名超上限 / 需用户拍板（改 TrustLabel、
+  放宽判据、动冻结面、改 workflow、新增依赖、给 `idea.*` 加 policy allow、
+  **模型写代码进容器**、定叙述质量口径）。
+
+## 残余与未覆盖范围
+
+- `W-1`｜**同步执行路径只在会话开始前心跳一次**（`task_executor._attempt_once`）：真实会话
+  超过 `lease_ttl_seconds`（缺省 300s）后租约被回收 ⇒ 下一次心跳抛 `no matching lease` ⇒
+  HTTP 422。本轮把 TTL 做成可配（`workflow_lease_ttl_seconds`，缺省 300 逐字不变），真跑用
+  3600；**执行语义与错误映射未改**。属产品行为变更，需拍板。
+- `W-2`｜**出厂检索调用的 `phase_id` 是常量 `"retrieval"`**：一个把检索格取名成别的 id 的
+  协议**不会**在该相执行检索。按协议解析调用归属属新机制，不在本轮射程。
+- `W-3`｜**方案 (a) 未做**：让模型为新问题**写**实验脚本并在沙箱里跑它。那是**安全面变更**
+  （模型产出的任意 Python 进容器；`policy` / `classify_risk` / `EXECUTE` 类 HIGH 的既有门
+  **没有**覆盖「这类产物」，不是「门不够严」而是「它不在受判面里」）⇒ 需用户拍板。本轮只
+  做到**选择级**（(b) 白名单）。
+- `W-4`｜**076 的交付面从未完成**：GOAL-20261014-076 的状态是 `PAUSED`，那 10 条查询参数的
+  显式长度界**从来没有**加进去（实测 `services/api/routers/` 只有 `operations.py` 的两处
+  `max_length=10`，正是建档时已有的那两条）。本轮补的是它的**记录面**（判「未做仍是未做」），
+  **不是**补它的实现。
+- `W-5`｜**EC-02 的运行期面被上游挡住**：Europe PMC 在本轮两次真跑时返回 503（连
+  `query=cancer` 也 503 ⇒ 服务级不可用），而产品接线刻意只接这一条检索 provider ⇒
+  run 停在检索相、评审相从未执行。**如实登记未达成**，不用同一个模型凑；
+  `tests/e2e/test_novelty_author_is_not_its_reviewer_live.py` 一条命令即可补取证
+  （`RESEARCHOS_LIVE_E2E=1 RESEARCHOS_AGENT_RUNTIME=openhands`）。
+- `U-1`｜「创新」是否**真的新**未判：`nearest_prior` 只判「那条标识在本 run 的检索结果里
+  真实出现」，**不**判「它真的是最接近的前人工作」。需人评或外部检索对照。
+- `U-2`｜叙述质量与事实一致性仍无判据（承 GOAL-096 `U-1` / GOAL-097 `U-2`）。未获授权定义口径。
+- `U-3`｜`idea.review` / `idea.write` 在词表里而无 policy allow ⇒ 新增的 `novelty_author`
+  只用**已放行**的读能力。加 allow = 改默认 deny 姿态 ⇒ 需拍板。
+- `R-1`｜`R-M1` 未收口 —— 本 GOAL **不**宣称项目安全。
+- `R-2`｜投递语义**不是**「恰好一次」（at-least-once + 幂等 + 去重）。
+- `R-3`｜**`novelty_author` 的能力面不含 `idea.write`**：写声明的产物面走会话交付物通道
+  （`artifact.read` 同一个 provider），不是 `idea.write` 那条词表能力。这与「作者能写声明」
+  不矛盾，但**不能**读成「`idea.write` 已被放行」。
+
+## CI 台账
+
+（逐提交逐 job，一个提交一行。**零 run ≠ cancelled**：`cancel-in-progress` 造成的
+`cancelled` 与「同批推送被 GitHub 合并成一个 run」的 `无 run` 是两种形态，分别登记；
+后者用 `covered_by` 指名它被哪一条 run 覆盖。）
+
+| 提交 | run | 结论 | 说明 |
+| --- | --- | --- | --- |
+| `11e17b05` | [M0 40431116098](https://github.com/Eswink/research-system-new/actions/runs/40431116098) | **全 `success`**：M0 八 job 全 success | GOAL-097 的收口 tip。**它在序 66 的第一个推送之后被推离 HEAD** ⇒ 反方向判据（`test_goal_commit_chain_reaches_the_ledger`）会点名它 ⇒ 本行按那个点名补记（两张表都已补：本表 + 迭代日志 `commits` 格） |
+| `PENDING` | PENDING | PENDING | 本轮唯一一段交付（一 cycle 一推送）：EC-01/03/04/05/06/07 的实现 + 判据 + 三个回填验证器 + 全部记录 + 宪章记账 + 10 条短行处置。提交哈希在本行写成时尚未存在 ⇒ 推送后回填（**HEAD 不写进自己的台账**是结构例外，判据只豁免 HEAD） |
+
+## 迭代日志
+
+| # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | PLAN-20261027-098 | `PENDING`（本 cycle 的提交在推送后回填） | EC-01：18 例全过（含真文件按压 + 跨 28 份出厂协议扫描）；EC-03：17 例全过（含**子进程**按压：删掉选择调用 ⇒ 行为判据真的 exit 1）；EC-04：三个回填验证器 **48/51/54** 条判词全过 + 短行登记判据 7 例（含两条真文件按压）；EC-05：收口验证器 **100** 条判词全过；EC-06/07：宪章记账与程序表/阶梯/归档判据 22 例；`ruff check` + `ruff format` 全绿；`validate_bundle` **验证通过**；契约/加载器/四道门/收口注册套件 **634 passed / 72 skipped / 0 failed** | PENDING | 修掉 7 个真缺陷：① `importlib.reload` 会污染同会话其它测试 ⇒ 按压改**子进程**；② 按压的 `pytest` 目标名缺类名 ⇒ exit 4（**按压假绿**，被「按压后确认真的红了」抓住）；③ `test_contract_loaders` 的 `len(roles)` 26→27（新增角色的**事实变更**，逐条申报）；④ `validate_bundle` 的「系统 Role 数量 26」同一事实变更；⑤ `goal090` 断言集的块提取偏移错 1（判据自己判红暴露）；⑥ `experiment_support.py` 450/450 零余量 ⇒ 压缩三行注释换回（后又因一行超长再压一次）；⑦ 两个新 `assertion_verdicts` 超 50 行门 ⇒ 按 EC 分组拆函数 | `W-3` 方案 (a) 待拍板；`W-5` EC-02 被上游 503 挡住（两次同签名 + 独立探针）；`W-1` 租约根因 | 下一轮：① 上游恢复后一条命令补 EC-02 取证；② `(a)` 若获拍板则接「模型写脚本」执行面；③ `W-1` 长会话租约根因（会话期心跳 + 错误映射） |
+
+## 状态历史
+
+| 日期 | 状态 | 说明 |
+| --- | --- | --- |
+| 2026-10-27 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 66）。读取器对 GOAL-097 `REFUSED RESIDUAL_EMPTY` ⇒ 记拒绝码、改以正文为准。`max_goals` 70 → 100。EC-01/03/04/06/07 已 PASS。 |

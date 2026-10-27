@@ -66,6 +66,17 @@ agents:
     model_binding: {type: EXPLICIT_MODEL, value: novelty_review_model}
     workspace_policy: read_only
 
+  # GOAL-20261027-098 EC-01：`novelty_author` 的**绑定 agent**（此前没有作者角色 ⇒
+  # `novelty` 相与 `review` 相都点名 `novelty_reviewer`，而解析面按 role 取前 N 个候选、
+  # **不看 phase** ⇒ 同一个 `novelty_a` 实例既写声明又评审它自己写的声明）。
+  # 模型落在 `deepseek-v4-pro-0813` —— 与生产侧（`deepseek-v4-flash-vision`）及三位
+  # 评审者（`glm-5.3` / `kimi-k2.6` / `minimax-m3`）**都不同**：四个不同的底层模型，
+  # 独立性因此在**目录声明**上就成立，而不是只在运行期由 `panel_verdict.independent` 判。
+  novelty_writer:
+    role: novelty_author
+    model_binding: {type: EXPLICIT_MODEL, value: novelty_author_model}
+    workspace_policy: read_only
+
   writer:
     role: research_writer
     model_binding: {type: MODEL_PROFILE, value: research_strong}

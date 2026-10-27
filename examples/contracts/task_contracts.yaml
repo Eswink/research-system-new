@@ -594,6 +594,21 @@ task_contracts:
       are limited to `seed`, `n_items` and `duplicate_pairs` (anything else is
       refused by the sandbox parameter surface); the first arm you list is the one
       whose verdict decides the task, so put the arm you expect to be central first.
+
+      You may also add an optional `script` key naming **which shipped experiment
+      script** to run, chosen from this closed list (omit the key to keep the
+      system default):
+
+          examples/experiments/exact_match_index_benchmark.py   (exact-duplicate detection cost)
+          examples/experiments/sort_analysis_baseline.py        (sorting comparison counts)
+          examples/experiments/m12_reference_classification.py  (reference classification)
+
+      Pick the one whose measured quantity actually bears on your hypothesis, e.g.:
+
+          {"experiment_design": {"arms": {"control": {}, "treatment": {"n_items": 120}},
+                                 "script": "examples/experiments/sort_analysis_baseline.py"}}
+
+      Anything outside that list (including absolute paths) is refused by name.
     required_capabilities:
       - artifact.read
       - evidence.read

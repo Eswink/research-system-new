@@ -128,6 +128,31 @@ roles:
       all_of:
       - CHAT
     workspace_policy: read_only
+  novelty_author:
+    role_type: NoveltyAuthor
+    category: exploration
+    default_model_profile: research_strong
+    activation_default: REQUIRED_BY_PROTOCOL
+    # GOAL-20261027-098 EC-01：**声明的作者**（此前 `novelty` 相与 `review` 相都点名
+    # `novelty_reviewer` ⇒ 解析面只按 `agent.role == role_id` 过滤、不看 phase
+    # （`protocol_compile/resolution.py`），于是**同一 agent 实例**既写 `novelty_claim`
+    # 又评审它自己写的声明 —— 自评）。
+    # **刻意没有 `review_panel_role`**：缺省 `NONE` ⇒ `is_reviewer()` 为假 ⇒ 被评对象
+    # 不会进它的提示词。作者不是评审者，这一格是**结构**事实，不是措辞。
+    # `idea.write` / `idea.review` **不在** `requested_capabilities` 里：词表声明它们在，
+    # 但 `examples/config/policy.yaml` 零 allow（加 allow 属改默认 deny 姿态，需拍板；
+    # `test_policy_surface_difference_set.py` 会判红）。本角色因此只用**已放行**的读能力 ——
+    # 写创新点声明的产物面走 `artifact.read` 同一个 provider 的会话交付物通道。
+    requested_capabilities:
+    - artifact.read
+    - literature.search
+    - literature.read
+    - evidence.read
+    hard_model_capabilities:
+      all_of:
+      - CHAT
+      - TOOL_CALLING_NATIVE
+    workspace_policy: read_only
   novelty_reviewer:
     role_type: NoveltyReviewer
     category: exploration

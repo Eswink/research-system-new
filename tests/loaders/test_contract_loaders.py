@@ -47,7 +47,11 @@ def test_load_yaml_missing_file_raises() -> None:
 
 def test_load_roles_from_fixture() -> None:
     roles = load_roles("examples/config/roles.yaml")
-    assert len(roles) == 26
+    # GOAL-20261027-098 EC-01：26 → 27。`novelty_author` 是**新增角色**（拆开创新点的
+    # 作者与评审者）⇒ 条目数变了是**事实变更**，不是放宽：本判据问的仍是「加载器读到
+    # 出厂文件的每一个条目」，一条都没少读（下面逐条断言照旧，新的那一格由
+    # `tests/contracts/test_direction_to_report_v2_independence.py` 判结构）。
+    assert len(roles) == 27
     director = roles["research_director"]
     assert director.category is RoleCategory.MANAGEMENT
     assert director.activation_default is ActivationPolicy.REQUIRED_BY_PROTOCOL
@@ -243,7 +247,9 @@ def test_handoff_schema_rejects_invalid_digest() -> None:
 
 def test_load_collection_generic_dispatch() -> None:
     roles = load_collection("roles", "examples/config/roles.yaml")
-    assert len(roles) == 26
+    # 26 → 27：同上一条（GOAL-20261027-098 EC-01 新增 `novelty_author`）。两条计数是
+    # **同一件事实**（出厂文件有 27 个角色），通用分派读到的条数必须与专用加载器一致。
+    assert len(roles) == 27
     with pytest.raises(ContractLoadError):
         load_collection("unknown_kind", "examples/config/roles.yaml")
 

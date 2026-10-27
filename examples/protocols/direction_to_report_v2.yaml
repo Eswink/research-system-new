@@ -18,15 +18,21 @@ version: 0.1.0
 #       **本 run 检索到的**标识）。读取面 `packages/application/run_orchestration/
 #       novelty_claim.py` 只读 canonical、零出网、fail-closed：`nearest_prior` 必须命中
 #       **本 run 工具证据里真实出现的标识**（PMID / DOI 逐字取自落库内容），否则点名拒绝。
+#       **作者是 `novelty_author`**（GOAL-20261027-098 EC-01：此前这一相点名
+#       `novelty_reviewer`，与评审相同一个角色 ⇒ 解析面按 role 取候选、不看 phase ⇒
+#       同一个 agent 实例既写声明又评审它自己）。
 #   (b) **评审面** —— `novelty_reviewer` 加 `review_panel_role: REVIEWER`（⇒ `is_reviewer()`
 #       为真 ⇒ 被评对象进它的提示词），协议在 `review` 相点名它（⇒ 激活理由
 #       `"role is required by protocol"`；池在 `standard` 模板里，否则编译期 `ROLE_CAPACITY`），
 #       agent `novelty_a` 绑**第三个**底层模型（`minimax-m3`；另两位评审者是 `glm-5.3` /
-#       `kimi-k2.6`，生产侧是 `deepseek-v4-flash-vision`）。
+#       `kimi-k2.6`，生产侧是 `deepseek-v4-flash-vision`）。**它不再是作者**。
 #
-# **两面互相引用**：novelty 声明的正文是 `review` 相的被评对象之一（跨相输入
-# `novelty:novelty_claim`），因此评审者的提示词里**看得见**那个检索标识；判据要求它的
-# 判词**引用同一个标识**（否则「判了创新点」与「判的真是这份声明」两件事会分叉）。
+# **两面互相引用 + 作者与评审者分开**：novelty 声明的正文是 `review` 相的被评对象之一
+# （跨相输入 `novelty:novelty_claim`），因此评审者的提示词里**看得见**那个检索标识；判据
+# 要求它的判词**引用同一个标识**（否则「判了创新点」与「判的真是这份声明」两件事会分叉）。
+# 而写那份声明的是 `novelty_writer`（`deepseek-v4-pro-0813`）、评审它的是 `novelty_a`
+# （`minimax-m3`）—— **四个不同的底层模型**（生产侧 `deepseek-v4-flash-vision` +
+# 三位评审者），所以「评审者认可」不再可能是「复述自己刚写的东西」。
 #
 # **与 v1 的关系（C-2：不改既有协议）**：v1 的相集钉在
 # `tests/contracts/test_direction_to_report_protocol.py`（六相、三条跨相边、四条绑定）——
@@ -38,8 +44,9 @@ version: 0.1.0
 #   2. `retrieval`（运行链）—— 检索词逐字取自上游问题的 `query`；判据三维。
 #   3. `novelty`（会话）—— `inputs: [retrieval:retrieval_report]`（**会话相**，跨相输入
 #      可以正常声明）。合约要求 `nearest_prior` 至少一条命中本 run 检索到的标识。
-#      `capability_execution: run_chain`：本相能力面覆盖四件 provider ⇒ 会话工具面为空
-#      （与 `plan` 相同一手法；检索调用收窄在 `retrieval` 相）。
+#      **作者角色 = `novelty_author`**（与 `review` 相的评审者不同角色、不同 agent、
+#      不同执行目标）。`capability_execution: run_chain`：本相能力面覆盖四件 provider ⇒
+#      会话工具面为空（与 `plan` 相同一手法；检索调用收窄在 `retrieval` 相）。
 #   4. `plan`（会话）—— `inputs: [retrieval:retrieval_report, novelty:novelty_claim]`：
 #      立题同时站在**检索**与**创新点声明**上（声明的正文是计划材料的一部分）。
 #   5. `experiment`（deterministic）—— 沙箱实验。**C-1**：本相不声明跨相 `inputs`
@@ -104,8 +111,15 @@ phases:
     name: Novelty Claim Against The Retrieved Work
     strategy: single_agent
     depends_on: [retrieval]
+    # GOAL-20261027-098 EC-01：**作者与评审者分开**。此前本相点名 `novelty_reviewer`，
+    # 而 `review` 相也点名它 ⇒ 编译期 `agent_candidates` 只按 `agent.role == role_id`
+    # 过滤、**不看 phase**（`protocol_compile/resolution.py`）⇒ 两相解析到**同一个 agent
+    # 实例** ⇒ 「评审者」评的是自己刚写的声明（复述是结构必然，不构成独立认可）。
+    # 现在：本相 = `novelty_author`（`novelty_writer`，`deepseek-v4-pro-0813`），
+    # `review` 相 = `novelty_reviewer`（`novelty_a`，`minimax-m3`）⇒ 角色 id、agent id、
+    # 执行目标三者都不同。判据见 `tests/contracts/test_direction_to_report_v2_independence.py`。
     required_roles:
-      - {role: novelty_reviewer, min_instances: 1, max_instances: 1}
+      - {role: novelty_author, min_instances: 1, max_instances: 1}
     required_capabilities:
       - artifact.read
       - literature.search
@@ -168,6 +182,9 @@ phases:
       # 都收到同一份「被评对象」（`plan:research_plan` + `novelty:novelty_claim`）；
       # `novelty_a` 绑 `minimax-m3`，与 `reviewer_a`（`glm-5.3`）/ `reviewer_b`
       # （`kimi-k2.6`）都不同 ⇒ 三个独立目标（`check_heterogeneity` 判 writer∪reviewer）。
+      # GOAL-20261027-098 EC-01：**它只做评审** —— `novelty` 相的作者已改为
+      # `novelty_author`（`novelty_writer` / `deepseek-v4-pro-0813`），不再出现
+      # 「同一个 agent 写声明又评审声明」的自评形态。
       - {role: novelty_reviewer, min_instances: 1, max_instances: 1}
     required_capabilities:
       - artifact.read

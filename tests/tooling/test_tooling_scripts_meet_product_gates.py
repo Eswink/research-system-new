@@ -200,6 +200,18 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-20261026-097 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal097_closeout_assertions.py",
     "tools/verify_goal097_closeout.py",
+    # GOAL-20261027-098 靶子 3：**回填** 076 / 090 / 095 三个从未存在的验证器
+    # （GOAL-096 的 `W-3` 记的就是这件事；`_CUTOFF_SEQ = 64` 让它们不判红）。
+    # 纳入射程 = 它们此后过四道门（规模 / lint / format / mypy）⇒ 回填不是免检。
+    "tools/goal076_closeout_assertions.py",
+    "tools/verify_goal076_closeout.py",
+    "tools/goal090_closeout_assertions.py",
+    "tools/verify_goal090_closeout.py",
+    "tools/goal095_closeout_assertions.py",
+    "tools/verify_goal095_closeout.py",
+    # GOAL-20261027-098 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
+    "tools/goal098_closeout_assertions.py",
+    "tools/verify_goal098_closeout.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"

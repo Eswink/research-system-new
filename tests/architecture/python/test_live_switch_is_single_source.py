@@ -125,6 +125,10 @@ LIVE_MODULES: tuple[str, ...] = (
     "tests/e2e/test_direction_to_report_live.py",
     # GOAL-20261020-091 EC-04：两位评审模型是否真的各判一次（本 GOAL 的 live 面）。
     "tests/e2e/test_two_models_judge_the_same_artifact_live.py",
+    # GOAL-20261027-098 EC-02：创新点的作者与评审者是否真的落在不同执行目标（本 GOAL 的 live 面）。
+    # **现状**：本模块 2026-10-27 两次真跑都被上游 Europe PMC 503 挡住（见 GOAL `W-5`）⇒
+    # 它**在**清单里但尚未取证通过；登记在这里只表示「它走同一个 live 开关」，不表示已达成。
+    "tests/e2e/test_novelty_author_is_not_its_reviewer_live.py",
 )
 
 #: 模块级或函数级 mark 都算（`pytestmark = ...` 或标注装饰器形态）。

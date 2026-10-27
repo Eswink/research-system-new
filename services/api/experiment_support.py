@@ -37,6 +37,7 @@ from packages.application.experiments import (
     GovernedExperimentExecutor,
 )
 from packages.application.experiments.arms import arm_experiment_id, declare_arms
+from packages.application.experiments.design_script import plan_selected_script
 from packages.application.experiments.plan_parameters import parameter_environment
 from packages.application.m12_reference.clean_run_stages import derived_id, experiment_run_id_of
 from packages.application.ports.errors import InvalidInputError
@@ -77,9 +78,7 @@ class SandboxExperimentAssembly:
     ledger: Any | None = None
     #: GOAL-20261026-097 EC-03：**执行后端的工厂**（`(image) -> ExecutionBackend`）。
     #: 非空 ⇒ `execution` 不得同时给（「两个后端」不可判定）；第一次派发时才调用它
-    #: ⇒ **装配期零连接**（``docker.from_env`` 在构造时就摸 daemon，组合根若在装配期
-    #: 构造后端，默认门里没有 Docker 的机器上 `assemble()` 直接炸）。
-    #: 缺省 `None` ⇒ 逐字沿用 `execution`（既有语义不变）。
+    #: ⇒ **装配期零连接**（``docker.from_env`` 构造即连）；缺省 `None` ⇒ 沿用 `execution`。
     execution_factory: Any | None = None
     #: 实验产物读面（`GET /runs/{id}/experiments`）读的是**实验存储**：执行完必须把
     #: `ExperimentRun` 存进去，否则"实验真的跑了"在读面上看不见。None ⇒ 不落库（调用方
@@ -134,6 +133,7 @@ def sandbox_experiment_runner(
     ) -> TaskExecutionResult:
         """执行本任务的实验：声明了臂 ⇒ 逐臂各跑一次，否则单臂（返回主臂 = 第一个）。"""
         script, image = declared_or_assembled(assembly, contract)
+        script = plan_selected_script(assembly, task, contract=contract, assembled=script)
         resolved = replace(assembly, script=script, image=image, execution=execution.proxy(image))
         deps = ExperimentTaskDeps(
             executor=_governed_executor(resolved),

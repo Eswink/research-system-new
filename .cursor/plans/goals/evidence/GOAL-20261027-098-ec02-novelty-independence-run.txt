@@ -1,0 +1,44 @@
+# GOAL-20261027-098 EC-02 真跑读数
+
+## true-run
+
+- `entry`: TestClient(create_app(assemble(...))) —— 产品组合根，未补任何缝
+- `http_status`: 200
+- `state`: FAILED
+- `run_id`: c37777cf-42a8-4ee4-88cc-c720f8dcaa8c
+- `protocol`: direction_to_report_v2_0_0
+- `direction`: retrieval augmentation for scientific hypothesis generation
+- `review_row_count`: 0
+- `reviewer_models`: []
+- `reviewer_agents`: []
+- `reviewers_with_no_model`: []
+- `failure_reasons`: []
+
+## 为什么 EC-02 未达成（如实登记，不外推）
+
+**两次真跑都停在检索相，同一个签名**：
+
+1. 第 1 次：`run_id=917f79b7-…`，`run.failed` 的 payload 逐字为
+   `run-chain capability step failed: europe pmc temporarily unavailable`；
+2. 第 2 次：`run_id=c37777cf-…`，同一条签名。
+
+**独立探针（不是产品代码判的，是 curl 直接打的）**：
+
+```
+$ curl -o /dev/null -w "%{http_code}" "https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&query=retrieval+augmented+generation&pageSize=3"
+503
+$ curl -o /dev/null -w "%{http_code}" "https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&query=cancer&pageSize=3"
+503
+```
+
+**连最简单的查询也 503** ⇒ 是上游服务级不可用，不是本判据的查询形态问题。
+
+**为什么不去绕**：产品接线（`services/api/retrieval_wiring.py::retrieval_providers`）
+**刻意只接 Europe PMC**，理由写在它的 docstring 里（NCBI 的 E-utilities 端点在国内网络下
+常不可达，两条都接会让预检对同一个不可达 host 反复探测）。为了一次判据变绿而改产品接线
+⇒ 正是 `fix_policy.forbidden` 的第一条（改实现使其通过）。**不改**。
+
+**读数**：`review_row_count=0` ⇒ 评审相从未执行 ⇒ 「作者与评审者的 `reviewer_model` 不同」
+这件事**在本轮没有运行期读数**。EC-02 因此保持 `PENDING`，**不用同一个模型凑**。
+结构面（EC-01，18 例）已判；运行期面等上游恢复后由 `tests/e2e/
+test_novelty_author_is_not_its_reviewer_live.py` 一条命令补取证。

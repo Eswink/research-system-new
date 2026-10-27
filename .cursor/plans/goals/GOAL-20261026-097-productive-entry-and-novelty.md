@@ -182,12 +182,14 @@ EC-01…EC-06 的判据见 frontmatter；每条都写明「取证形态」与「
 | `83e45f01` | [M0 40418817365](https://github.com/Eswink/research-system-new/actions/runs/40418817365) / [Push 40418817364](https://github.com/Eswink/research-system-new/actions/runs/40418817364) | **全 `success`**：M0 八 job 全 success、Push 三条 Analyze 全 success | 台账补前两行 + 迭代日志 `commits` 格同步 ⇒ 两向都对上。**如实登记一处偶发**：一次全量 m0 里 `test_two_arm_experiment_offline::test_both_arms_are_recorded…` 判 `FAILED`，而 e2e 目录整批 **375 passed**、紧接着的全量 m0 全绿 ⇒ **负载型偶发**（不是回归） |
 | `a222e69e` | [M0 40423728201](https://github.com/Eswink/research-system-new/actions/runs/40423728201) / [Push 40423727518](https://github.com/Eswink/research-system-new/actions/runs/40423727518) | **全 `success`**：M0 八 job 全 success、Push 三条 Analyze 全 success | **最终封印**（只改记录 + 见证）：台账补 `83e45f01`、`commits` 格同步、重封 m0 见证。**它是当时的 HEAD ⇒ 结构例外**（提交哈希写不进自身内容）；下一个提交补记它 —— 链收敛的必然形态，不是豁免 |
 | `3b69f6f8` | [M0 40431116098](https://github.com/Eswink/research-system-new/actions/runs/40431116098) / [Push 40431115823](https://github.com/Eswink/research-system-new/actions/runs/40431115823) | **全 `success`**：M0 八 job 全 success、Push 三条 Analyze 全 success | **收口 tip**（只改记录 + 见证）：修台账表并重封见证。当时它是 HEAD ⇒ 结构例外；**序 66 的归档推送把它推离 HEAD 后，反方向判据立刻点名它**（`1 个提交不在台账（链 7 个，台账 6 个）`），本行即按该点名补记 |
+| `aac3ce0a` | 无 run（**`covered_by: 955cfce4`**） | 覆盖：归档搬运只改记录 + 见证 | **归档搬运**（序 63 的进展记录与序 65 的修订条目移入 `archive/` + 让短修订行可见）。**零 run 的形态**：它与上一个提交同批推送、被 GitHub 合并进同一条 run ⇒ 按纪律写 `covered_by` 指名覆盖它的那一条，而不是记 `cancelled`（那是另一种形态） |
+| `11e17b05` | 无 run（**`covered_by: 955cfce4`**） | 覆盖：台账补记 + 见证重封 | **收口 tip**（只改记录 + 见证）：把 `3b69f6f8` 补进台账并重封 m0 见证。当时它是 HEAD ⇒ 结构例外（提交哈希写不进自身内容）；**序 66 的第一个提交把它推离 HEAD 后，反方向判据点名它** ⇒ 本行按该点名补记 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261026-097 | `3748213b` → `a228ff66` → `9995f6cc` → `955cfce4` → `83e45f01` → `a222e69e` → `3b69f6f8`（最终封印；HEAD 不写进自己的台账，下一个提交补记上一个） | 判据 9 + 9 + 15 全过；真跑 **1 passed**（`SUCCEEDED`，七相全落库）；m0 **24 PASS / 0 FAIL / tree unchanged** | CI 逐 job 见「CI 台账」（`3748213b` 3 job 红 ⇒ 修后 `a228ff66` 全绿） | 真跑过程中修掉 **3** 个产品缺陷：① 运行链调用未标 `phase_id` ⇒ 问题相也执行检索并失败；② 检索格合约没告诉模型「检索已跑完、本相没有工具」⇒ 模型去探索仓库、不产块；③ 会话工具面缺 `literature.*` 实现 ⇒ 评审相 `ToolDefinition ... is not registered`；另把任务租约 TTL 做成**可配**（同步路径只心跳一次、真实会话常超 300s） | `W-1` REST provider 探测出网（预检拒冻，需拍板）；`W-2` 检索 `phase_id` 是常量；`W-3` 实验脚本仍预置 | 下一轮：让实验脚本也由方向决定；检索结果驱动下一轮问题 |
+| 1 | PLAN-20261026-097 | `3748213b` → `a228ff66` → `9995f6cc` → `955cfce4` → `83e45f01` → `a222e69e` → `3b69f6f8` → `aac3ce0a` → `11e17b05`（九个提交；HEAD 不写进自己的台账，下一个提交补记上一个 —— 序 66 已按反方向判据点名补齐） | 判据 9 + 9 + 15 全过；真跑 **1 passed**（`SUCCEEDED`，七相全落库）；m0 **24 PASS / 0 FAIL / tree unchanged** | CI 逐 job 见「CI 台账」（`3748213b` 3 job 红 ⇒ 修后 `a228ff66` 全绿） | 真跑过程中修掉 **3** 个产品缺陷：① 运行链调用未标 `phase_id` ⇒ 问题相也执行检索并失败；② 检索格合约没告诉模型「检索已跑完、本相没有工具」⇒ 模型去探索仓库、不产块；③ 会话工具面缺 `literature.*` 实现 ⇒ 评审相 `ToolDefinition ... is not registered`；另把任务租约 TTL 做成**可配**（同步路径只心跳一次、真实会话常超 300s） | `W-1` REST provider 探测出网（预检拒冻，需拍板）；`W-2` 检索 `phase_id` 是常量；`W-3` 实验脚本仍预置 | 下一轮：让实验脚本也由方向决定；检索结果驱动下一轮问题 |
 
 ## 状态历史
 

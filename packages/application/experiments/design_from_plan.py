@@ -190,6 +190,39 @@ def _the_one_plan(
     return found[0]
 
 
+def plan_design_block(
+    artifacts: ArtifactStore, ledger: Any, *, run_id: str, max_chars: int = 200_000
+) -> tuple[str, object]:
+    """本 run 的计划制品 → `(制品 id, 设计块)`；**不**解释臂（GOAL-098 EC-03 的脚本选择面用）。
+
+    与 `read_design_from_plan` 的**前一半完全相同**（同一 `_run_artifact_ids` / `_the_one_plan`
+    / `design_block_in`），区别只在**不往下解析臂**：脚本选择只需要「计划里那个
+    `experiment_design` 对象」，把臂解析也跑一遍会要求计划同时声明 `arms`（那是另一件事，
+    且会让「只选脚本、臂用装配面」这种合法组合变得不可能）。
+
+    两条失败面**如实分开**（与 `read_design_from_plan` 逐字同形）：找不到计划制品 / 有制品
+    但没有设计块 ⇒ 都点名拒绝，**不**回落成「没选脚本」—— 与「声明了来源却读不到设计」
+    同一条纪律（静默回落会把「计划没写」伪装成「计划驱动」）。
+
+    `design_source != "plan"` 的调用方**不应**调本函数（那会让「计划没声明」也去读计划）；
+    是否调用由 `design_script.plan_selected_script` 一处判定。
+    """
+    in_view = _run_artifact_ids(ledger, run_id)
+    if not in_view:
+        raise ExperimentDesignUnreadableError(
+            f"run {run_id!r} declared a plan-derived experiment source, but nothing is "
+            "registered for it in the evidence ledger ⇒ the plan cannot be located"
+        )
+    artifact_id, payload = _the_one_plan(artifacts, run_id, in_view, max_chars=max_chars)
+    design = design_block_in(payload)
+    if design is None:
+        raise ExperimentDesignUnreadableError(
+            f"the plan artifact {artifact_id!r} carries no {DESIGN_KEY!r} block "
+            "(declare the design in the plan, or do not declare a plan-derived source)"
+        )
+    return artifact_id, design
+
+
 def _run_artifact_ids(ledger: Any, run_id: str) -> set[str]:
     """本 run 的**制品 id 集**：经 claim → relation 投影（既有读面口径）。
 
@@ -265,5 +298,6 @@ __all__ = [
     "ExperimentDesignUnreadableError",
     "PlanDerivedDesign",
     "plan_artifact_id",
+    "plan_design_block",
     "read_design_from_plan",
 ]

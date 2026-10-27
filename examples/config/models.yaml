@@ -118,3 +118,30 @@ models:
       STREAMING: *user_declared_supported
       TOOL_CALLING_NATIVE: *user_declared_supported
       USAGE_REPORTING: *user_declared_supported
+
+  # 第四个第三方模型（GOAL-20261027-098 EC-01）：`novelty_author` 的**绑定 agent**。
+  # **为什么必须再要一个**：拆开「创新点的作者」与「评审者」之后，作者**不得**落在
+  # 任何评审者或生产侧的执行目标上，否则「独立评审」在声明面上就不成立 ——
+  # `check_heterogeneity`（writer∪reviewer）与 `validate_bundle.py` 的
+  # writer/reviewer 集合不交两条判据都会判负。
+  #
+  # 读数来源（2026-10-27 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
+  #   - `GET /v1/models` ⇒ 在 13 个可用模型之列（`is_ready` 由该接口的判定给出）；
+  #   - `POST /v1/chat/completions`（`max_tokens=64`）⇒ HTTP 200、`content: "OK"`、
+  #     **返回名 = 声明名** `deepseek-v4-pro-0813`（与主模型的
+  #     `deepseek-v4-flash-vision` → `dsv4-flash-vision` 的改名形态不同；仍属 §4
+  #     「可重复配置」而非「完全模型可复现」）；
+  #   - `tool_choice: required` ⇒ 真返回标准 `tool_calls`（`TOOL_CALLING_NATIVE`）；
+  #     `usage` 逐次回报。
+  #   - **不**声明 `STRUCTURED_OUTPUT_NATIVE`：本轮只实测了 chat 与 tool_calls，
+  #     「按实测声明」是本仓的既有纪律（`novelty_review_model` 的注释同一条）。
+  novelty_author_model:
+    endpoint: main
+    display_name: DeepSeek V4 Pro 0813 (novelty author)
+    model_name: deepseek-v4-pro-0813
+    context_window_tokens: 1048576
+    capabilities:
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported
+      USAGE_REPORTING: *user_declared_supported

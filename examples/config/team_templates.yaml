@@ -35,6 +35,11 @@ team_templates:
       # `_role_findings`：`pool is None` ⇒ "team template cannot satisfy role"）⇒
       # 预检 FAIL ⇒ run 起不来。换句话说：不进池 = 创新点评审在产品上不可能被激活。
       novelty_reviewer: {min_instances: 1, max_instances: 1}
+      # GOAL-20261027-098 EC-01：`novelty_author` 也必须在池里（理由与上一行逐字同形：
+      # 协议点名一个池里没有的角色 ⇒ 编译期 `ROLE_CAPACITY` ERROR ⇒ run 起不来）。
+      # `max_instances: 1` 是**语义**要求：作者与评审者要可区分，多个作者实例只会让
+      # 「谁写的这条声明」在运行期重新变得不可判。
+      novelty_author: {min_instances: 1, max_instances: 1}
       evidence_reviewer: {min_instances: 1, max_instances: 1}
       methodology_reviewer: {min_instances: 1, max_instances: 1}
       meta_reviewer: {min_instances: 1, max_instances: 1}
