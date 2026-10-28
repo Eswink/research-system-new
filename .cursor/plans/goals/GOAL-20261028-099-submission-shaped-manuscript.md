@@ -2,7 +2,7 @@
 id: GOAL-20261028-099
 slug: submission-shaped-manuscript
 title: 让系统产出投稿形状的手稿（IMRaD + 真参考文献 + 图表数据表）
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-28
 updated_at: 2026-10-28
 owners: [maintainer]
@@ -76,7 +76,7 @@ exit_criteria:
       收口资产齐备：`tools/verify_goal099_closeout.py` + `tools/goal099_closeout_assertions.py`
       在树，登记进 `tests/tooling/test_closeout_verifiers_run_their_own_assertions.py` 的
       `_VERIFIERS` 与 `tests/tooling/test_tooling_scripts_meet_product_gates.py` 的
-      `IN_SCOPE`，判词跑通（含自指「加载自己那份断言集」与反证臂）。
+      `IN_SCOPE`，判词跑通（含自指「加载自己那份断言集」与反证臂）。**本 EC 的一个既述后果要求本文件 frontmatter 是终态**：`test_terminal_goals_have_closeout_verifiers.py` 的受判面只认`_TERMINAL = {ACHIEVED, BLOCKED, ABANDONED}`（`:48`）⇒ 只要 `status` 还是 `ACTIVE`，099 **根本不进**那条判据的受判面，「不登记就判红」这句话就还没有对象。本 GOAL 收口时把 `status` 改为 `ACHIEVED`，该后果才真的成立。
     verify: tools/verify_goal099_closeout.py --root . --verdict-only
     status: PASS
   - id: EC-06
@@ -236,9 +236,11 @@ memory_entries: []
 `cancelled` 与「同批推送被 GitHub 合并成一个 run」的 `无 run` 是两种形态，分别登记；
 后者用 `covered_by` 指名它被哪一条 run 覆盖。）
 
+
+> **继承的 GOAL-098 tip 债不在本表**：`9de93b59` 不属于本 GOAL 的提交链，写进本表会被 `goal_commit_chain` 判成「台账点名了不属于本链的哈希」。那笔债**已补记**在 GOAL-098 自己的两张表里（`## CI 台账` + 迭代日志 `commits` 格）—— 反方向判据按 **GOAL 的链**点名，补记也就落在被点名的那一本账上。
+
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `9de93b59` | 零 run（**`covered_by: 184f9566`**） | 覆盖：GOAL-098 的收口 tip（只改记录 + 见证） | **继承的债已补**（写进 GOAL-098 的两张表）：它当时是 HEAD ⇒ 结构例外；本轮提交 `a3ac0e47` 把它推离 HEAD 后反方向判据点名「1 个提交不在台账（链 13 个，台账 12 个）」，按点名补记 |
 | `a3ac0e47` | 零 run（**`covered_by: a7559222`**） | 覆盖：与 `a7559222` 同批推送，被合并进那一条 run | **本轮交付提交**：手稿三件（八相协议 + 真参考文献 + 数字可核）+ 产品入口开关 + 96 条新判据 + 收口验证器 80 条判词 + 宪章四处记账 + `ALL_PLAN`；**并补记 GOAL-098 的两个债**（`11e2b976` / `9de93b59`）。本地 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False` |
 | `a7559222` | [M0 40657642888](https://github.com/Eswink/research-system-new/actions/runs/40657642888) / [Push 40657642253](https://github.com/Eswink/research-system-new/actions/runs/40657642253) | **全 `success`**：M0 **八 job 全 success**（`eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `collector-quality` / `container-quality`）、Push 三条 Analyze 全 `success` | **收口 tip**（只改记录 + 见证，本提交即 HEAD）：台账补 `11e2b976` / `9de93b59`（GOAL-098 的两张表）与本轮的 `a3ac0e47`，并重封见证。本地 m0（记录落盘**之后**跑）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False` |
 | `ab2837a7` | [M0 40664158717](https://github.com/Eswink/research-system-new/actions/runs/40664158717) / [Push 40664157575](https://github.com/Eswink/research-system-new/actions/runs/40664157575) | **逐 job 全 `success`**（run 级 conclusion 首轮为 `cancelled`，见下）；Push 三条 Analyze 全 `success` | **收口 tip**（只改记录 + 见证，本提交即 HEAD）：CI 台账写入两条 run 的真实读数 + 重封见证。**如实登记这个形态**（不是绿、也不是红）：首轮 attempt 1 里 `quality-windows-latest` 被标 `cancelled` 而其余七 job 全 `success`；`rerun-failed-jobs`（HTTP 201）后该 job **`success`**，此刻八个 job 逐条全 `success`、**run 级 conclusion 也是 `success`（attempt 2）**。归类：**基础设施（iii）**，不改代码、不改门禁；判据以**逐 job 结论**为准 |
@@ -248,7 +250,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261028-099 | `a3ac0e47` → `a7559222` → `ab2837a7` → `a19fdd0e`（HEAD 不写进自己的台账） | EC-01：38 例全过（含两条真文件按压）；EC-02：24 例全过；EC-03：22 例全过（20 + 2；含两条真文件按压 + 编号顺序判据）；EC-05：收口验证器 **80 条判词全过** + 4 例按压证明它会红；EC-04：产品入口 7 例 + 同一 run 字面逐字节 5 例（`requires_docker` 真容器）；元数据普查取证落盘 | **M0 全绿**（两提交逐 job `success`）+ **TWO-TREE PASS**（两棵各 80 条判词、`sha256` 相同 `44332689…`） | 修掉 6 处**判据自身**的错（不是产品缺陷，逐条见下）：① `cross_phase_inputs` 是三元组不是对象；② 三条跨相边的性质全为 `RETRIEVED`（既有 `producer_trust_label` 的读数，我先猜成 GENERATED）；③ `assert plan is None` 是**假判据**（`compile_protocol` 只在 DAG 阻塞时返回 None，跨相 ERROR 随计划携带）；④ 正文数字扫描把**汇编器写的抬头与节号**算成模型违规；⑤ 缺 `authors` 时填占位符会让「缺失计数」**自己沉默**（判据与被防的动作改同一个量）⇒ 改判结构面（渲染里不得出现占位符词）；⑥ 产品入口跨两次 run **不可能**逐字节相同（uuid + 随机臂序）⇒ 拆成「产品入口判内容面」+「同一 run 判字面字节」 | `W-1` 编号化提示词未做；`W-3` 臂序既有性质；`W-4` `retmax=3`；`W-5` 叙述质量无判据 | 下一轮：① 把 `[1]`…`[n]` 写进检索摘录段（要动共用渲染器 ⇒ 需回归另外七份协议）；② `retmax` 配置化；③ `Related Work` 从单条 `nearest_prior` 扩到主题聚类 |
+| 1 | PLAN-20261028-099 | `a3ac0e47` → `a7559222` → `ab2837a7` → `a19fdd0e` → `be663854`（本 GOAL 的链；HEAD 不写进自己的台账，下一个提交补记上一个）。**继承的 GOAL-098 tip 债**已补记进 **GOAL-098** 的两张表（那个哈希不属于本链，写在本书会被`goal_commit_chain` 判成越界） | EC-01：38 例全过（含两条真文件按压）；EC-02：24 例全过；EC-03：22 例全过（20 + 2；含两条真文件按压 + 编号顺序判据）；EC-05：收口验证器 **80 条判词全过** + 4 例按压证明它会红；EC-04：产品入口 7 例 + 同一 run 字面逐字节 5 例（`requires_docker` 真容器）；元数据普查取证落盘 | **M0 全绿**（两提交逐 job `success`）+ **TWO-TREE PASS**（两棵各 80 条判词、`sha256` 相同 `44332689…`） | 修掉 6 处**判据自身**的错（不是产品缺陷，逐条见下）：① `cross_phase_inputs` 是三元组不是对象；② 三条跨相边的性质全为 `RETRIEVED`（既有 `producer_trust_label` 的读数，我先猜成 GENERATED）；③ `assert plan is None` 是**假判据**（`compile_protocol` 只在 DAG 阻塞时返回 None，跨相 ERROR 随计划携带）；④ 正文数字扫描把**汇编器写的抬头与节号**算成模型违规；⑤ 缺 `authors` 时填占位符会让「缺失计数」**自己沉默**（判据与被防的动作改同一个量）⇒ 改判结构面（渲染里不得出现占位符词）；⑥ 产品入口跨两次 run **不可能**逐字节相同（uuid + 随机臂序）⇒ 拆成「产品入口判内容面」+「同一 run 判字面字节」 | `W-1` 编号化提示词未做；`W-3` 臂序既有性质；`W-4` `retmax=3`；`W-5` 叙述质量无判据 | 下一轮：① 把 `[1]`…`[n]` 写进检索摘录段（要动共用渲染器 ⇒ 需回归另外七份协议）；② `retmax` 配置化；③ `Related Work` 从单条 `nearest_prior` 扩到主题聚类 |
 
 ## 状态历史
 
