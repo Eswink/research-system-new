@@ -112,6 +112,8 @@ PLACEHOLDER_TOKENS: tuple[str, ...] = ("Unknown", "N/A", "n.d.", "Anonymous", "T
 EVIDENCE_FILES: tuple[str, ...] = (
     f"{EVIDENCE_DIR}/GOAL-20261028-099-ec03-metadata-census.txt",
     f"{EVIDENCE_DIR}/GOAL-20261028-099-ec04-product-path.txt",
+    f"{EVIDENCE_DIR}/GOAL-20261028-099-two-tree-current.txt",
+    f"{EVIDENCE_DIR}/GOAL-20261028-099-two-tree-clean.txt",
 )
 
 GOAL = ".cursor/plans/goals/GOAL-20261028-099-submission-shaped-manuscript.md"

@@ -69,7 +69,7 @@ exit_criteria:
       Vancouver 行、正文无数字、数据表带来源列；**不补任何测试专用缝**（只注入 mock 传输 +
       既有执行体缝）。**零回归**：装配开关关掉 ⇒ `manuscript.md` **不在**库里而报告照出；
       同一 run id 上开/关两臂的报告**字面逐字节相同**（`test_manuscript_assembly.py`）。
-    verify: tests/e2e/test_direction_to_manuscript_product_path.py（7 例）+ tests/application/test_manuscript_assembly.py（5 例）+ evidence/GOAL-20261028-099-ec04-product-path.txt
+    verify: tests/e2e/test_direction_to_manuscript_product_path.py（7 例）+ tests/application/test_manuscript_assembly.py（5 例）+ evidence/GOAL-20261028-099-ec04-product-path.txt；收口两树 `TWO-TREE PASS`（80 条判词、`sha256` 相同）
     status: PASS
   - id: EC-05
     criterion: >-
@@ -133,7 +133,7 @@ memory_entries: []
 | EC-02 | IMRaD + Abstract + References；`[n]` ↔ References 双向闭合；正文无数字（引用标记除外） | `tests/application/test_manuscript_assembler.py`（24 例） | **PASS** |
 | EC-03 | 真参考文献（作者 / 年 / 刊名逐字来自落盘字节）；两种作者形态；缺失点名不填占位符 | `test_manuscript_references.py`（20 例）+ `test_manuscript_reference_order.py`（2 例）+ 元数据普查取证 | **PASS** |
 | EC-04 | 从**产品入口**产出 `manuscript.md`；关掉开关 ⇒ 报告字面逐字节不变 | `tests/e2e/test_direction_to_manuscript_product_path.py`（7 例）+ `tests/application/test_manuscript_assembly.py`（5 例） | **PASS** |
-| EC-05 | `verify_goal099` + 断言集 + `_VERIFIERS` / `IN_SCOPE` 登记 + 判词跑通 | `tools/verify_goal099_closeout.py --root . --verdict-only`（**78 条判词全过**） | **PASS** |
+| EC-05 | `verify_goal099` + 断言集 + `_VERIFIERS` / `IN_SCOPE` 登记 + 判词跑通 | `tools/verify_goal099_closeout.py --root . --verdict-only`（**82 条判词全过**；两树那次为 80） | **PASS** |
 | EC-06 | 宪章记四件：序 67 / 阶梯「报告」行 / 进展记录 3 行 / 修订行 5 格 + ALL_PLAN | 宪章四处 + `ALL_PLAN.md`（判词已过） | **PASS** |
 
 ## 循环入口协议
@@ -241,16 +241,17 @@ memory_entries: []
 | `9de93b59` | 零 run（**`covered_by: 184f9566`**） | 覆盖：GOAL-098 的收口 tip（只改记录 + 见证） | **继承的债已补**（写进 GOAL-098 的两张表）：它当时是 HEAD ⇒ 结构例外；本轮提交 `a3ac0e47` 把它推离 HEAD 后反方向判据点名「1 个提交不在台账（链 13 个，台账 12 个）」，按点名补记 |
 | `a3ac0e47` | 零 run（**`covered_by: a7559222`**） | 覆盖：与 `a7559222` 同批推送，被合并进那一条 run | **本轮交付提交**：手稿三件（八相协议 + 真参考文献 + 数字可核）+ 产品入口开关 + 96 条新判据 + 收口验证器 80 条判词 + 宪章四处记账 + `ALL_PLAN`；**并补记 GOAL-098 的两个债**（`11e2b976` / `9de93b59`）。本地 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False` |
 | `a7559222` | [M0 40657642888](https://github.com/Eswink/research-system-new/actions/runs/40657642888) / [Push 40657642253](https://github.com/Eswink/research-system-new/actions/runs/40657642253) | **全 `success`**：M0 **八 job 全 success**（`eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `collector-quality` / `container-quality`）、Push 三条 Analyze 全 `success` | **收口 tip**（只改记录 + 见证，本提交即 HEAD）：台账补 `11e2b976` / `9de93b59`（GOAL-098 的两张表）与本轮的 `a3ac0e47`，并重封见证。本地 m0（记录落盘**之后**跑）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False` |
+| `ab2837a7` | [M0 40664158717](https://github.com/Eswink/research-system-new/actions/runs/40664158717) / [Push 40664157575](https://github.com/Eswink/research-system-new/actions/runs/40664157575) | **逐 job 全 `success`**（run 级 conclusion 首轮为 `cancelled`，见下）；Push 三条 Analyze 全 `success` | **收口 tip**（只改记录 + 见证，本提交即 HEAD）：CI 台账写入两条 run 的真实读数 + 重封见证。**如实登记这个形态**（不是绿、也不是红）：首轮 attempt 1 里 `quality-windows-latest` 被标 `cancelled` 而其余七 job 全 `success`；`rerun-failed-jobs`（HTTP 201）后该 job **`success`**，此刻八个 job 逐条全 `success`、**run 级 conclusion 也是 `success`（attempt 2）**。归类：**基础设施（iii）**，不改代码、不改门禁；判据以**逐 job 结论**为准 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261028-099 | `a3ac0e47` → `a7559222`（CI 结论见本表 CI 台账；HEAD 不写进自己的台账，下一个提交补记上一个） | EC-01：38 例全过（含两条真文件按压）；EC-02：24 例全过；EC-03：22 例全过（20 + 2；含两条真文件按压 + 编号顺序判据）；EC-05：收口验证器 **80 条判词全过** + 4 例按压证明它会红；EC-04：产品入口 7 例 + 同一 run 字面逐字节 5 例（`requires_docker` 真容器）；元数据普查取证落盘 | PENDING | 修掉 6 处**判据自身**的错（不是产品缺陷，逐条见下）：① `cross_phase_inputs` 是三元组不是对象；② 三条跨相边的性质全为 `RETRIEVED`（既有 `producer_trust_label` 的读数，我先猜成 GENERATED）；③ `assert plan is None` 是**假判据**（`compile_protocol` 只在 DAG 阻塞时返回 None，跨相 ERROR 随计划携带）；④ 正文数字扫描把**汇编器写的抬头与节号**算成模型违规；⑤ 缺 `authors` 时填占位符会让「缺失计数」**自己沉默**（判据与被防的动作改同一个量）⇒ 改判结构面（渲染里不得出现占位符词）；⑥ 产品入口跨两次 run **不可能**逐字节相同（uuid + 随机臂序）⇒ 拆成「产品入口判内容面」+「同一 run 判字面字节」 | `W-1` 编号化提示词未做；`W-3` 臂序既有性质；`W-4` `retmax=3`；`W-5` 叙述质量无判据 | 下一轮：① 把 `[1]`…`[n]` 写进检索摘录段（要动共用渲染器 ⇒ 需回归另外七份协议）；② `retmax` 配置化；③ `Related Work` 从单条 `nearest_prior` 扩到主题聚类 |
+| 1 | PLAN-20261028-099 | `a3ac0e47` → `a7559222` → `ab2837a7`（HEAD 不写进自己的台账，下一个提交补记上一个） | EC-01：38 例全过（含两条真文件按压）；EC-02：24 例全过；EC-03：22 例全过（20 + 2；含两条真文件按压 + 编号顺序判据）；EC-05：收口验证器 **80 条判词全过** + 4 例按压证明它会红；EC-04：产品入口 7 例 + 同一 run 字面逐字节 5 例（`requires_docker` 真容器）；元数据普查取证落盘 | **M0 全绿**（两提交逐 job `success`）+ **TWO-TREE PASS**（两棵各 80 条判词、`sha256` 相同 `44332689…`） | 修掉 6 处**判据自身**的错（不是产品缺陷，逐条见下）：① `cross_phase_inputs` 是三元组不是对象；② 三条跨相边的性质全为 `RETRIEVED`（既有 `producer_trust_label` 的读数，我先猜成 GENERATED）；③ `assert plan is None` 是**假判据**（`compile_protocol` 只在 DAG 阻塞时返回 None，跨相 ERROR 随计划携带）；④ 正文数字扫描把**汇编器写的抬头与节号**算成模型违规；⑤ 缺 `authors` 时填占位符会让「缺失计数」**自己沉默**（判据与被防的动作改同一个量）⇒ 改判结构面（渲染里不得出现占位符词）；⑥ 产品入口跨两次 run **不可能**逐字节相同（uuid + 随机臂序）⇒ 拆成「产品入口判内容面」+「同一 run 判字面字节」 | `W-1` 编号化提示词未做；`W-3` 臂序既有性质；`W-4` `retmax=3`；`W-5` 叙述质量无判据 | 下一轮：① 把 `[1]`…`[n]` 写进检索摘录段（要动共用渲染器 ⇒ 需回归另外七份协议）；② `retmax` 配置化；③ `Related Work` 从单条 `nearest_prior` 扩到主题聚类 |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-28 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 67）。读取器对 GOAL-098 `REFUSED RESIDUAL_EMPTY` ⇒ 记拒绝码与理由、改以正文为准。EC-01/02/03/04 已 PASS；EC-05/06 待收口。 |
-| 2026-10-28 | **ACHIEVED（CI 全绿）** | **六个 EC 全 PASS**。收口验证器 **80 条判词全过 / 零 FAIL**；三条**真文件按压**证明它会红（摘本 GOAL 的 id / 把 `下一级` 冒认成「已判」/ 给手稿合约加 `report: {}`），另一文件 4 例全过。本轮新判据合计 **96 例**（收集数：38 编译 + 24 结构 + 22 参考文献 + 5 同一 run 字节 + 7 产品入口）；既有报告套件 41 例仍全过（开关缺省关，五处既有调用点逐字沿用旧语义）。**CI 逐字全绿**：M0 40657642888 八 job 全 `success`、Push 40657642253 三条 Analyze 全 `success`。 |
+| 2026-10-28 | **ACHIEVED（CI 全绿）** | **六个 EC 全 PASS**。收口验证器 **80 条判词全过 / 零 FAIL**（两树那次；归档文件加入判据后本地 **82** 条，同样零 FAIL）；三条**真文件按压**证明它会红（摘本 GOAL 的 id / 把 `下一级` 冒认成「已判」/ 给手稿合约加 `report: {}`），另一文件 4 例全过。本轮新判据合计 **96 例**（收集数：38 编译 + 24 结构 + 22 参考文献 + 5 同一 run 字节 + 7 产品入口）；既有报告套件 41 例仍全过（开关缺省关，五处既有调用点逐字沿用旧语义）。**CI 逐 job 全绿**：`a3ac0e47`/`a7559222` 的 run 八 job 全 `success`；`ab2837a7` 的 run 首轮 `quality-windows-latest` 记 `cancelled` ⇒ `rerun-failed-jobs` 后八 job 全 `success`、run 级也 `success`（attempt 2）。**两树复检 `TWO-TREE PASS`**：两棵各 **80** 条判词、`sha256` **相同** `44332689c5bd693a…`，判词归档进树（`evidence/GOAL-20261028-099-two-tree-{current,clean}.txt`，`cmp` 逐字节一致）。**读数先后如实登记**：那一次两树跑的时候验证器是 **80** 条；之后我把两份判词归档文件加进「引用了就必须在树」那条判据 ⇒ 本地现在是 **82** 条（多出的 2 条 = 两份归档在位，本地零 FAIL）。**两树那次的 80 条读数不追改成 82**（那是另一次读数）。 |

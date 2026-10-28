@@ -34,6 +34,8 @@ verify_paths:
   - tests/application/test_manuscript_assembly.py
   - tests/e2e/test_direction_to_manuscript_product_path.py
   - tests/e2e/direction_to_manuscript_support.py
+  - .cursor/plans/goals/evidence/GOAL-20261028-099-two-tree-current.txt
+  - .cursor/plans/goals/evidence/GOAL-20261028-099-two-tree-clean.txt
   - tools/verify_goal099_closeout.py
   - tools/goal099_closeout_assertions.py
 memory_entries: []
@@ -111,7 +113,18 @@ memory_entries: []
 
 ### EC-05 / EC-06
 
-由 `tools/verify_goal099_closeout.py` 与宪章四处判（见该验证器判词）。
+由 `tools/verify_goal099_closeout.py`（**82 条判词，0 FAIL**；两树复检那次为 **80** 条 ——
+两份判词归档文件是那之后才加进「引用了就必须在树」那条判据的）与宪章四处判。
+四条**真文件按压**由 `tests/tooling/test_goal099_closeout_verifier_goes_red.py` 判
+（摘本 GOAL 的 id / 把 `下一级` 冒认成「已判」/ 给手稿合约加 `report: {}` / 基线全绿）。
+
+### 收口两树（GOAL 第九节停止条件 1）
+
+`tools/two_tree_recheck.py --script tools/verify_goal099_closeout.py --root . --script-mode shared`
+⇒ **`TWO-TREE PASS`**（该次读数：**80** 条判词/棵）：两棵各 **80** 条判词、`sha256` **相同**
+`44332689c5bd693a2af7c21ba4a24ed2c338771ee9f325901c47bae2a65f6adb`、`exit=0`。
+判词归档进树（`evidence/GOAL-20261028-099-two-tree-{current,clean}.txt`，各 3265 字节，
+`cmp` **逐字节一致**）。
 
 ## 按压假绿的教训（本轮最该记住的一条）
 
